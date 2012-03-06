@@ -86,6 +86,7 @@ public:
 
   // Required: blockDim.x == block.dimension()
   // Required: blockDim.y > 1
+  // Computing: Y[ threadIdx.x ]
   template< typename MatrixValue , typename VectorValue >
   __device__
   static VectorValue apply( const block_type  & block ,

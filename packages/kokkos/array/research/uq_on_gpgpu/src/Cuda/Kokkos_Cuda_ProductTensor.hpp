@@ -59,14 +59,170 @@ class Multiply< SparseProductTensor< 3 , TensorScalar , Cuda > , void , void >
 {
 public:
   typedef Cuda::size_type size_type ;
-  typedef SparseProductTensor< 3 , TensorScalar , Cuda > tensor_type ;
+  typedef SparseProductTensor< 3 , TensorScalar , Cuda > block_type ;
 
-  static size_type matrix_size( const tensor_type & tensor )
+  static size_type matrix_size( const block_type & tensor )
   { return tensor.dimension(); }
   
-  static size_type vector_size( const tensor_type & tensor )
+  static size_type vector_size( const block_type & tensor )
   { return tensor.dimension(); }
+
+  //----------------------------------------
+
+  static dim3 thread_block( const block_type & block )
+  {
+    const int n = cuda_internal_maximum_warp_count() * CudaTraits::WarpSize ;
+
+    if ( n < block.dimension() ) {
+      throw std::runtime_error( std::string("Kokkos::Impl::Multiply< SparseProductTensor<3,Scalar,Cuda> > ERROR: block too large") );
+    }
+
+    const dim3 d( block.dimension() ,
+                  std::min( n / block.dimension() , block.entry_count() ) , 1 );
+
+    return d ;
+  }
+
+  template< typename VectorValue >
+  __host__
+  static size_type shmem_size( const block_type & block )
+  {
+    const dim3 d = thread_block( block );
+
+    const size_type size_reduce = d.x * d.y * sizeof(VectorValue);
+
+    const size_type size_work =
+      2 * d.x * sizeof(VectorValue) +
+      d.x * d.y * sizeof(TensorScalar) +
+      d.x * d.y * 3 * sizeof(int);
+
+    return std::max( size_reduce , size_work );
+  }
+
+  //----------------------------------------
+
+  template< typename MatrixValue , typename VectorValue >
+  __device__
+  static VectorValue apply( const block_type & block ,
+                            const MatrixValue * const a ,
+                            const VectorValue * const x )
+  {
+    VectorValue  * const shX = kokkos_impl_cuda_shared_memory<VectorValue>();
+    VectorValue  * const shA = (VectorValue  *)( shX + blockDim.x );
+
+    VectorValue yVal = 0 ;
+
+    // Load shared x and A vectors:
+
+    if ( threadIdx.y == 0 ) {
+      shX[ threadIdx.x ] = x[ threadIdx.x ];
+    }
+
+    if ( threadIdx.y == blockDim.y - 1 ) {
+      shA[ threadIdx.x ] = a[ threadIdx.x ];
+    }
+
+    __syncthreads(); // wait for all data reads
+
+    // Loop through sparse tensor contributions:
+
+#if 0
+
+    const size_type nThread = blockDim.x * blockDim.y ;
+    const size_type iThread = threadIdx.x + blockDim.x * threadIdx.y ;
+
+    TensorScalar * const shValue = (TensorScalar *)( shA + blockDim.x );
+    int          * const shCoord = (int *)( shValue + nThread );
+
+    size_type nOuterLoop = ( block.entry_count() + nThread - 1 ) / nThread ;
+
+    for ( size_type iOuterLoop = 0 ;
+                    iOuterLoop < nOuterLoop ; ++iOuterLoop ) {
+
+      const size_type base = iOuterLoop * nThread ;
+      const size_type iThreadBase = iThread + base ;
+
+      shCoord[ iThread ] = -1 ;
+
+      if ( iThreadBase < block.entry_count() ) {
+        shCoord[ iThread               ] = block.coord( iThreadBase , 0 );
+        shCoord[ iThread + nThread     ] = block.coord( iThreadBase , 1 );
+        shCoord[ iThread + nThread * 2 ] = block.coord( iThreadBase , 2 );
+        shValue[ iThread               ] = block.value( iThreadBase );
+      }
+
+      __syncthreads(); // Wait for load of 'nThread' entries.
+
+      size_type endEntry = base + nThread ;
+      if ( block.entry_count() < endEntry ) endEntry = block.entry_count();
+
+      for ( size_type iEntry = threadIdx.y ;
+                      iEntry < endEntry ; iEntry += blockDim.y ) {
+
+        int i = shCoord[ iEntry ];
+        int j = shCoord[ iEntry + nThread ];
+        int k = shCoord[ iEntry + nThread * 2 ];
+
+        if      ( threadIdx.x == i ) { ; }
+        else if ( threadIdx.x == j ) { j = i ; }
+        else if ( threadIdx.x == k ) { k = i ; }
+        else { i = -1 ; }
+
+        if ( i != -1 ) {
+          VectorValue tmp = shX[j] * shA[k];
+          if ( j != k ) { tmp += shX[k] * shA[j]; }
+          yVal += tmp * shValue[ iEntry ];
+        }
+      }
+
+      __syncthreads(); // Wait for use of 'nThread' entries.
+
+    }
+
+#else
+
+    for ( size_type iEntry = threadIdx.y ;
+                    iEntry < block.entry_count() ; iEntry += blockDim.y ) {
+
+      int i = block.coord(iEntry,0);
+      int j = block.coord(iEntry,1);
+      int k = block.coord(iEntry,2);
+
+      if      ( threadIdx.x == i ) { ; }
+      else if ( threadIdx.x == j ) { j = i ; }
+      else if ( threadIdx.x == k ) { k = i ; }
+      else { i = -1 ; }
+
+      if ( i != -1 ) {
+        VectorValue tmp = shX[j] * shA[k];
+        if ( j != k ) { tmp += shX[k] * shA[j]; }
+        yVal += tmp * block.value(iEntry);
+      }
+    }
+
+#endif
+
+    if ( 1 < blockDim.y ) {
+      __syncthreads(); // wait for all data uses
+
+      if ( 0 < threadIdx.y ) {
+        shX[ threadIdx.x + blockDim.x * threadIdx.y ] = yVal ;
+      }
+
+      __syncthreads(); // wait for all data loads
+
+      for ( int i = 1 ; i < blockDim.y ; ++i ) {
+        yVal += shX[ threadIdx.x + i * blockDim.x ];
+      }
+    }
+
+    return yVal ;
+  }
 };
+
+//----------------------------------------------------------------------------
+
+#if 1
 
 template< typename TensorScalar ,
           typename MatrixScalar ,
@@ -320,7 +476,10 @@ public:
       }
     }
   }
+
 };
+
+#endif
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

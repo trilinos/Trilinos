@@ -114,7 +114,7 @@ void generate_matrix(
 
   const size_t block_size = Kokkos::Impl::Multiply< block_type >::matrix_size( matrix.block );
 
-  matrix.graph  = Kokkos::create_labeled_crsmap<Device>( std::string("test crs graph") , graph );
+  matrix.graph  = Kokkos::create_labeled_crsmap<graph_type>( std::string("test crs graph") , graph );
   matrix.values = Kokkos::create_multivector<long,Device>( block_size , total );
 
   host_graph_type  h_graph  = Kokkos::create_mirror( matrix.graph );

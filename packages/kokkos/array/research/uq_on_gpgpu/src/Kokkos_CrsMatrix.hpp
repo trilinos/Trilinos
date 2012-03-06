@@ -41,45 +41,35 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_BLOCKCRSMATRIX_HPP
-#define KOKKOS_BLOCKCRSMATRIX_HPP
+#ifndef KOKKOS_CRSMATRIX_HPP
+#define KOKKOS_CRSMATRIX_HPP
 
 #include <Kokkos_CrsMap.hpp>
 #include <Kokkos_MultiVector.hpp>
 
 namespace Kokkos {
 
-/** \brief  CRS matrix of dense blocks.
- *
- *  Matrix coefficients are stored by block and then by Crs entry.
- *    m_values( block.size() , m_graph.entry_count() )
- *
- *  Vectors are conformally stored as
- *    MultiVector( block.dimension() , m_graph.row_count() )
- */
-template< class BlockSpec , typename ValueType , class Device >
-class BlockCrsMatrix {
+/** \brief  CRS matrix.  */
+
+template< typename ValueType , class Device >
+class CrsMatrix {
 public:
   typedef Device     device_type ;
   typedef ValueType  value_type ;
-  typedef BlockSpec  block_spec ;
-  typedef CrsMap< device_type , CrsColumnMap > graph_type ;
 
-  MultiVector< value_type, device_type >  values ;
-  graph_type                              graph ;
-  block_spec                              block ;
+  MultiVector< value_type, device_type >      values ;
+  CrsMap< device_type , CrsColumnMap , int >  graph ;
 };
 
-template< class BlockSpec ,
-          typename MatrixValueType ,
+template< typename MatrixValueType ,
           typename VectorValueType ,
           class Device >
-void multiply( const BlockCrsMatrix<BlockSpec,MatrixValueType,Device> & A ,
-               const MultiVector<VectorValueType,Device>              & x ,
-               const MultiVector<VectorValueType,Device>              & y )
+void multiply( const CrsMatrix<MatrixValueType,Device> & A ,
+               const MultiVector<VectorValueType,Device>         & x ,
+               const MultiVector<VectorValueType,Device>         & y )
 {
-  typedef BlockCrsMatrix<BlockSpec,MatrixValueType,Device> matrix_type ;
-  typedef MultiVector<VectorValueType,Device>              vector_type ;
+  typedef CrsMatrix<MatrixValueType,Device>    matrix_type ;
+  typedef MultiVector<VectorValueType,Device>  vector_type ;
 
   Impl::Multiply<matrix_type,vector_type,vector_type>::apply( A , x , y );
 }
@@ -89,5 +79,5 @@ void multiply( const BlockCrsMatrix<BlockSpec,MatrixValueType,Device> & A ,
 
 } // namespace Kokkos
 
-#endif /* #ifndef KOKKOS_BLOCKCRSMATRIX_HPP */
+#endif /* #ifndef KOKKOS_CRSMATRIX_HPP */
 

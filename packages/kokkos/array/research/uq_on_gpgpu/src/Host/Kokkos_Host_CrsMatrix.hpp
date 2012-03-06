@@ -2,8 +2,8 @@
 //@HEADER
 // ************************************************************************
 // 
-//                         Kokkos Array
-//              Copyright (2012) Sandia Corporation
+//          Kokkos: Node API and Parallel Node Kernels
+//              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,59 +35,71 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact H. Carter Edwards (hcedwar@sandia.gov)
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
 */
 
-#ifndef KOKKOS_BLOCKCRSMATRIX_HPP
-#define KOKKOS_BLOCKCRSMATRIX_HPP
-
-#include <Kokkos_CrsMap.hpp>
-#include <Kokkos_MultiVector.hpp>
+#ifndef KOKKOS_HOST_CRSMATRIX_HPP
+#define KOKKOS_HOST_CRSMATRIX_HPP
 
 namespace Kokkos {
+namespace Impl {
 
-/** \brief  CRS matrix of dense blocks.
- *
- *  Matrix coefficients are stored by block and then by Crs entry.
- *    m_values( block.size() , m_graph.entry_count() )
- *
- *  Vectors are conformally stored as
- *    MultiVector( block.dimension() , m_graph.row_count() )
- */
-template< class BlockSpec , typename ValueType , class Device >
-class BlockCrsMatrix {
+template< typename MatrixValue , typename VectorValue >
+class Multiply<
+  CrsMatrix< MatrixValue , Host > ,
+  Kokkos::MultiVector< VectorValue , Host > ,
+  Kokkos::MultiVector< VectorValue , Host > >
+{
 public:
-  typedef Device     device_type ;
-  typedef ValueType  value_type ;
-  typedef BlockSpec  block_spec ;
-  typedef CrsMap< device_type , CrsColumnMap > graph_type ;
+  typedef Host                                      device_type ;
+  typedef device_type::size_type                    size_type ;
+  typedef MultiVector< VectorValue , device_type >  vector_type ;
+  typedef CrsMatrix< MatrixValue , device_type >    matrix_type ;
 
-  MultiVector< value_type, device_type >  values ;
-  graph_type                              graph ;
-  block_spec                              block ;
+  const matrix_type  m_A ;
+  const vector_type  m_x ;
+  const vector_type  m_y ;
+
+  Multiply( const matrix_type & A ,
+            const vector_type & x ,
+            const vector_type & y )
+  : m_A( A )
+  , m_x( x )
+  , m_y( y )
+  {}
+
+  //--------------------------------------------------------------------------
+
+  inline
+  void operator()( const size_type iRow ) const
+  {
+    const size_type iEntryBegin = m_A.graph.row_entry_begin(iRow);
+    const size_type iEntryEnd   = m_A.graph.row_entry_end(iRow);
+
+    double sum = 0 ;
+
+    for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
+      sum += m_A.values(iEntry) * m_x( m_A.graph.column(iEntry) );
+    }
+
+    m_y(iRow) = sum ;
+  }
+
+  static void apply( const matrix_type & A ,
+                     const vector_type & x ,
+                     const vector_type & y )
+  {
+    parallel_for( A.graph.row_count() , Multiply(A,x,y) );
+  }
 };
 
-template< class BlockSpec ,
-          typename MatrixValueType ,
-          typename VectorValueType ,
-          class Device >
-void multiply( const BlockCrsMatrix<BlockSpec,MatrixValueType,Device> & A ,
-               const MultiVector<VectorValueType,Device>              & x ,
-               const MultiVector<VectorValueType,Device>              & y )
-{
-  typedef BlockCrsMatrix<BlockSpec,MatrixValueType,Device> matrix_type ;
-  typedef MultiVector<VectorValueType,Device>              vector_type ;
-
-  Impl::Multiply<matrix_type,vector_type,vector_type>::apply( A , x , y );
-}
-
-//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
+} // namespace Impl
 } // namespace Kokkos
 
-#endif /* #ifndef KOKKOS_BLOCKCRSMATRIX_HPP */
+#endif /* #ifndef KOKKOS_HOST_CRSMATRIX_HPP */
 
