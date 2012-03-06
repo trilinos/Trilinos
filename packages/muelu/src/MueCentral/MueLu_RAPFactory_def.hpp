@@ -1,11 +1,12 @@
 #ifndef MUELU_RAPFACTORY_DEF_HPP
 #define MUELU_RAPFACTORY_DEF_HPP
 
+#include <Xpetra_Operator.hpp>
+#include <Xpetra_BlockedCrsOperator.hpp>
+
 #include "MueLu_RAPFactory_decl.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
-
-#include "Xpetra_BlockedCrsOperator.hpp"
 
 namespace MueLu {
 
@@ -18,9 +19,9 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-    fineLevel.DeclareInput("A", AFact_.get(),this);  // AFact per default Teuchos::null -> default factory for this
-    coarseLevel.DeclareInput("P",PFact_.get(),this); // transfer operators (from PRFactory, not from PFactory and RFactory!)
-    coarseLevel.DeclareInput("R",RFact_.get(),this); //TODO: must be request according to (implicitTranspose flag!!!!!
+    fineLevel.DeclareInput("A", AFact_.get(), this);  // AFact per default Teuchos::null -> default factory for this
+    coarseLevel.DeclareInput("P", PFact_.get(), this); // transfer operators (from PRFactory, not from PFactory and RFactory!)
+    coarseLevel.DeclareInput("R", RFact_.get(), this); //TODO: must be request according to (implicitTranspose flag!!!!!
 
     // call DeclareInput of all user-given transfer factories
     std::vector<RCP<FactoryBase> >::const_iterator it;
@@ -35,34 +36,49 @@ namespace MueLu {
 
     {
       Monitor m(*this, "Computing Ac = RAP");
-      
-      Teuchos::OSTab tab(this->getOStream());
+
+      //
+      // Inputs: A, P
+      //
+
+      RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A", AFact_.get());
       RCP<Operator> P = coarseLevel.Get< RCP<Operator> >("P", PFact_.get());
-      RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A",AFact_.get());
-      
+
+      //
+      // Build Ac = RAP
+      //
+      RCP<Operator> Ac;
+
       const RCP<BlockedCrsOperatorClass> bA = Teuchos::rcp_dynamic_cast<BlockedCrsOperatorClass>(A);
-      if(bA!=Teuchos::null) {
+      if( bA != Teuchos::null) {
         RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", RFact_.get());
-        BuildRAPBlock(fineLevel,coarseLevel, R, A, P);
-      }
-      else {
-        
+        Ac = BuildRAPBlock(R, A, P);
+      } else {
         if (implicitTranspose_) {
-          BuildRAPImplicit(fineLevel,coarseLevel,A,P);
+          Ac = BuildRAPImplicit(A, P);
         } else {
           // explicit version
           RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", RFact_.get());
-          BuildRAPExplicit(fineLevel,coarseLevel,R,A,P);
+          Ac = BuildRAPExplicit(R, A, P);
         }
       }
+
+      TEUCHOS_TEST_FOR_EXCEPT(Ac == Teuchos::null);
+      
+      coarseLevel.Set("A", Ac, this);
+
     }
+
+    //
+    //
+    //
 
     if (TransferFacts_.begin() != TransferFacts_.end()) {
       Monitor m(*this, "Projections");
 
       // call Build of all user-given transfer factories
       std::vector<RCP<FactoryBase> >::const_iterator it;
-      for(it=TransferFacts_.begin(); it!=TransferFacts_.end(); it++) {
+      for(it = TransferFacts_.begin(); it != TransferFacts_.end(); it++) {
         GetOStream(Runtime0, 0) << "Ac: call transfer factory " << (*it).get() << ": " << (*it)->description() << std::endl;
         (*it)->CallBuild(coarseLevel);
       }
@@ -70,38 +86,39 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildRAPExplicit(Level &fineLevel, Level &coarseLevel, const RCP<Operator>& R, const RCP<Operator>& A, const RCP<Operator>& P) const {
+  RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildRAPExplicit(const RCP<Operator>& R, const RCP<Operator>& A, const RCP<Operator>& P) const {
     SubMonitor m(*this, "Build RAP explicitly");
 
     RCP<Operator> AP;
     {
       SubMonitor m2(*this, "MxM: A x P");
-      AP = Utils::TwoMatrixMultiply(A,false,P,false);
+      AP = Utils::TwoMatrixMultiply(A, false, P, false);
       //std::string filename="AP.dat";
-      //Utils::Write(filename,AP);
+      //Utils::Write(filename, AP);
     }
 
     RCP<Operator> RAP;
     {
       SubMonitor m2(*this, "MxM: R x (AP)");
-      RAP = Utils::TwoMatrixMultiply(R,false,AP,false);
+      RAP = Utils::TwoMatrixMultiply(R, false, AP, false);
     }
 
-    coarseLevel.Set("A", RAP, this);
     GetOStream(Statistics0, 0) << "Ac (explicit): # global rows = " << RAP->getGlobalNumRows() << ", estim. global nnz = " << RAP->getGlobalNumEntries() << std::endl;
+    return RAP;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildRAPImplicit(Level &fineLevel, Level &coarseLevel, const RCP<Operator>& A, const RCP<Operator>& P) const {
+  RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildRAPImplicit(const RCP<Operator>& A, const RCP<Operator>& P) const {
     GetOStream(Warnings0, 0) << "The implicitTranspose_ flag within RAPFactory for Epetra in parallel produces wrong results" << std::endl;
-    RCP<Operator> AP = Utils::TwoMatrixMultiply(A,false,P,false);
-    RCP<Operator> RAP = Utils::TwoMatrixMultiply(P,true,AP,false);
-    coarseLevel.Set("A", RAP, this);
+    RCP<Operator> AP  = Utils::TwoMatrixMultiply(A, false, P, false);
+    RCP<Operator> RAP = Utils::TwoMatrixMultiply(P, true, AP, false);
+
     GetOStream(Statistics0, 0) << "Ac (implicit): # global rows = " << RAP->getGlobalNumRows() << ", estim. global nnz = " << RAP->getGlobalNumEntries() << std::endl;
+    return RAP;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildRAPBlock(Level &fineLevel, Level &coarseLevel, const RCP<Operator>& R, const RCP<Operator>& A, const RCP<Operator>& P) const {
+  RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildRAPBlock(const RCP<Operator>& R, const RCP<Operator>& A, const RCP<Operator>& P) const {
     typedef Xpetra::BlockedCrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsOperatorClass;
     const RCP<BlockedCrsOperatorClass> bR = Teuchos::rcp_dynamic_cast<BlockedCrsOperatorClass>(R);
     const RCP<BlockedCrsOperatorClass> bA = Teuchos::rcp_dynamic_cast<BlockedCrsOperatorClass>(A);
@@ -116,8 +133,8 @@ namespace MueLu {
     RCP<BlockedCrsOperatorClass> bAP  = Utils::TwoMatrixMultiplyBlock(bA, false, bP, false, true, true);
     RCP<BlockedCrsOperatorClass> bRAP = Utils::TwoMatrixMultiplyBlock(bR, false, bAP, false, true, true);
 
-    coarseLevel.Set("A", Teuchos::rcp_dynamic_cast<Operator>(bRAP), this);
     GetOStream(Statistics0, 0) << "Ac (blocked): # global rows = " << bRAP->getGlobalNumRows() << ", estim. global nnz = " << bRAP->getGlobalNumEntries() << std::endl;
+    return bRAP;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -128,7 +145,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddTransferFactory(const RCP<FactoryBase>& factory) {
     // check if it's a TwoLevelFactoryBase based transfer factory
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<TwoLevelFactoryBase>(factory) == Teuchos::null,Exceptions::BadCast, "Transfer factory is not derived from TwoLevelFactoryBase. This is very strange. (Note: you can remove this exception if there's a good reason for)");
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<TwoLevelFactoryBase>(factory) == Teuchos::null, Exceptions::BadCast, "Transfer factory is not derived from TwoLevelFactoryBase. This is very strange. (Note: you can remove this exception if there's a good reason for)");
     TransferFacts_.push_back(factory);
   }
 
