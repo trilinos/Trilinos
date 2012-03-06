@@ -37,6 +37,8 @@ namespace Zoltan2 {
       \li MatrixInput
 
     \todo instantiations for GraphInput, MeshInput
+    \todo why did we need to add a CoordinateInput version in order to
+             compile. Shouldn't it have used the generic Adapter version?
 */
 template <typename Adapter>
 class GraphModel : public Model<Adapter>

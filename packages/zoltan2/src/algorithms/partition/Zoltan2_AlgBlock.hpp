@@ -129,7 +129,7 @@ void AlgPTBlock(
   int weightDim = (wtflag ? wtflag : 1);
 
   ArrayView<const gno_t> idList;
-  ArrayView<const StridedInput<lno_t, scalar_t> > wgtList;
+  ArrayView<StridedInput<lno_t, scalar_t> > wgtList;
   
   ids->getIdentifierList(idList, wgtList);
 

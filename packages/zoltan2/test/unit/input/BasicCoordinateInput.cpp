@@ -147,10 +147,36 @@ int main(int argc, char *argv[])
   RCP<Zoltan2::BasicCoordinateInput<userTypes_t> > ia;
 
   ////////////////////////////////////////////////////////////////
-  // 3-dimensional coordinates with stride one and no weights
+  // 3-dimensional coordinates with stride one and no weights,
+  //   using simpler constructor
 
   int ncoords = 3;
   int nweights = 0;
+
+  valuePtrs[0] = x_values; valueStrides[0] = 1;
+  valuePtrs[1] = y_values; valueStrides[1] = 1;
+  valuePtrs[2] = z_values; valueStrides[2] = 1;
+
+  try{
+   ia = rcp(new Zoltan2::BasicCoordinateInput<userTypes_t>(
+     numLocalIds, myIds, x_values, y_values, z_values));
+  }
+  catch (std::exception &e){
+    fail = 1;
+  }
+
+  TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 0", fail);
+
+  fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, numLocalIds*nprocs, 
+    myIds, xyz_values, weights, ncoords, nweights);
+
+  TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check adapter 0", fail);
+
+  ////////////////////////////////////////////////////////////////
+  // 3-dimensional coordinates with stride one and no weights
+
+  ncoords = 3;
+  nweights = 0;
 
   valuePtrs[0] = x_values; valueStrides[0] = 1;
   valuePtrs[1] = y_values; valueStrides[1] = 1;

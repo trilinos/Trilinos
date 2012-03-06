@@ -10,47 +10,47 @@ INCLUDE(TribitsAddExecutableAndTest)
 # Tests for src/environment
 #
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  DebugManager
-  SOURCES environment/DebugManager.cpp
-  NUM_MPI_PROCS 4
-  COMM serial mpi
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-  )
-
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Environment
-  SOURCES environment/Environment.cpp
-  NUM_MPI_PROCS 4
-  COMM serial mpi
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  MetricOutputManager
-  SOURCES environment/MetricOutputManager.cpp
-  NUM_MPI_PROCS 4
-  COMM serial mpi
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Parameters
-  SOURCES environment/Parameters.cpp
-  NUM_MPI_PROCS 1
-  COMM serial mpi
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-  )
-
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  DebugManager
+#  SOURCES environment/DebugManager.cpp
+#  NUM_MPI_PROCS 4
+#  COMM serial mpi
+#  PASS_REGULAR_EXPRESSION "PASS"
+#  FAIL_REGULAR_EXPRESSION "FAIL"
+#  )
 #
-# Tests for src/input
 #
-
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  Environment
+#  SOURCES environment/Environment.cpp
+#  NUM_MPI_PROCS 4
+#  COMM serial mpi
+#  PASS_REGULAR_EXPRESSION "PASS"
+#  FAIL_REGULAR_EXPRESSION "FAIL"
+#  )
+#
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  MetricOutputManager
+#  SOURCES environment/MetricOutputManager.cpp
+#  NUM_MPI_PROCS 4
+#  COMM serial mpi
+#  PASS_REGULAR_EXPRESSION "PASS"
+#  FAIL_REGULAR_EXPRESSION "FAIL"
+#  )
+#
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  Parameters
+#  SOURCES environment/Parameters.cpp
+#  NUM_MPI_PROCS 1
+#  COMM serial mpi
+#  PASS_REGULAR_EXPRESSION "PASS"
+#  FAIL_REGULAR_EXPRESSION "FAIL"
+#  )
+#
+##
+## Tests for src/input
+##
+#
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   BasicCoordinateInput
   SOURCES input/BasicCoordinateInput.cpp
@@ -123,87 +123,87 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
+##
+## Tests for src/models
+##
 #
-# Tests for src/models
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  GraphModel
+#  SOURCES models/GraphModel.cpp 
+#  NUM_MPI_PROCS 4
+#  COMM serial mpi
+#  PASS_REGULAR_EXPRESSION "PASS"
+#  FAIL_REGULAR_EXPRESSION "FAIL"
+#  )
 #
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  GraphModel
-  SOURCES models/GraphModel.cpp 
-  NUM_MPI_PROCS 4
-  COMM serial mpi
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  IdentifierModel
-  SOURCES models/IdentifierModel.cpp
-  NUM_MPI_PROCS 4
-  COMM serial mpi
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-  )
-
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  IdentifierModel
+#  SOURCES models/IdentifierModel.cpp
+#  NUM_MPI_PROCS 4
+#  COMM serial mpi
+#  PASS_REGULAR_EXPRESSION "PASS"
+#  FAIL_REGULAR_EXPRESSION "FAIL"
+#  )
 #
-# Tests for src/problems
+##
+## Tests for src/problems
+##
 #
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  PartitioningSolution
-  SOURCES problems/PartitioningSolution.cpp
-  NUM_MPI_PROCS 4
-  COMM serial mpi
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-  )
-
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  PartitioningSolution
+#  SOURCES problems/PartitioningSolution.cpp
+#  NUM_MPI_PROCS 4
+#  COMM serial mpi
+#  PASS_REGULAR_EXPRESSION "PASS"
+#  FAIL_REGULAR_EXPRESSION "FAIL"
+#  )
 #
-# Tests for src/util
+##
+## Tests for src/util
+##
 #
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  StridedInput
-  SOURCES util/StridedInput.cpp
-  NUM_MPI_PROCS 4
-  COMM serial mpi
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Metric
-  SOURCES util/Metric.cpp
-  NUM_MPI_PROCS 4
-  COMM serial mpi
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  IdentifierMap
-  SOURCES util/IdentifierMap.cpp 
-  NUM_MPI_PROCS 4
-  COMM serial mpi
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  IdentifierTraits
-  SOURCES util/IdentifierTraits.cpp 
-  NUM_MPI_PROCS 4
-  COMM serial mpi
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  AlltoAll
-  SOURCES util/AlltoAll.cpp
-  NUM_MPI_PROCS 4
-  COMM serial mpi
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-  )
-
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  StridedInput
+#  SOURCES util/StridedInput.cpp
+#  NUM_MPI_PROCS 4
+#  COMM serial mpi
+#  PASS_REGULAR_EXPRESSION "PASS"
+#  FAIL_REGULAR_EXPRESSION "FAIL"
+#  )
+#
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  Metric
+#  SOURCES util/Metric.cpp
+#  NUM_MPI_PROCS 4
+#  COMM serial mpi
+#  PASS_REGULAR_EXPRESSION "PASS"
+#  FAIL_REGULAR_EXPRESSION "FAIL"
+#  )
+#
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  IdentifierMap
+#  SOURCES util/IdentifierMap.cpp 
+#  NUM_MPI_PROCS 4
+#  COMM serial mpi
+#  PASS_REGULAR_EXPRESSION "PASS"
+#  FAIL_REGULAR_EXPRESSION "FAIL"
+#  )
+#
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  IdentifierTraits
+#  SOURCES util/IdentifierTraits.cpp 
+#  NUM_MPI_PROCS 4
+#  COMM serial mpi
+#  PASS_REGULAR_EXPRESSION "PASS"
+#  FAIL_REGULAR_EXPRESSION "FAIL"
+#  )
+#
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  AlltoAll
+#  SOURCES util/AlltoAll.cpp
+#  NUM_MPI_PROCS 4
+#  COMM serial mpi
+#  PASS_REGULAR_EXPRESSION "PASS"
+#  FAIL_REGULAR_EXPRESSION "FAIL"
+#  )
+#
