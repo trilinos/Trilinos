@@ -65,8 +65,6 @@ Other libraries used by this library:
 Other header files used by this library
    mem_const.h
    comm_const.h
-   lbi_const.h
-   lb_id_const.h
    zoltan_util.h
 
 
