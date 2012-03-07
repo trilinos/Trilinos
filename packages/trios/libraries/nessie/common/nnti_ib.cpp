@@ -817,7 +817,7 @@ NNTI_result_t NNTI_ib_register_memory (
             return(NNTI_ENOMEM);
         }
 
-        register_memory(ib_mem_hdl, 0, (uint64_t)reg_buf, buffer, element_size, IBV_ACCESS_LOCAL_WRITE);
+        register_memory(ib_mem_hdl, 0, (uint64_t)reg_buf, buffer, element_size, (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
         ib_mem_hdl->offset[0]=0;
         ib_mem_hdl->comp_channel=transport_global_data.data_comp_channel;
         ib_mem_hdl->cq          =transport_global_data.data_cq;
@@ -843,7 +843,7 @@ NNTI_result_t NNTI_ib_register_memory (
             return(NNTI_ENOMEM);
         }
 
-        register_memory(ib_mem_hdl, 0, (uint64_t)reg_buf, buffer, element_size, (ibv_access_flags)0);
+        register_memory(ib_mem_hdl, 0, (uint64_t)reg_buf, buffer, element_size, (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
         ib_mem_hdl->offset[0]=0;
 
     } else if (ops == NNTI_GET_DST) {
@@ -1087,6 +1087,12 @@ NNTI_result_t NNTI_ib_send (
         ib_mem_hdl->qp          =ib_mem_hdl->conn->data_qp.qp;
         ib_mem_hdl->qpn         =(uint64_t)ib_mem_hdl->conn->data_qp.qpn;
         ib_mem_hdl->peer_qpn    =(uint64_t)ib_mem_hdl->conn->data_qp.peer_qpn;
+
+        ib_mem_hdl->sq_wr[0].wr.rdma.rkey        = dest_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.key;
+        ib_mem_hdl->sq_wr[0].wr.rdma.remote_addr = dest_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.buf;
+
+        ib_mem_hdl->sq_wr[0].imm_data = htonl(dest_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.buf);
+        ib_mem_hdl->sq_wr[0].opcode = IBV_WR_RDMA_WRITE_WITH_IMM;
     }
 
     log_debug(nnti_debug_level, "sending to (%s, qp=%p, qpn=%lu, sge[0].addr=%p, sge[0].length=%llu, sq_wr[0].wr.rdma.rkey=%x, sq_wr[0].wr.rdma.remote_addr=%p)",
@@ -1151,6 +1157,8 @@ NNTI_result_t NNTI_ib_put (
     ib_mem_hdl->sq_wr[0].wr.rdma.rkey        = dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.key;
     ib_mem_hdl->sq_wr[0].wr.rdma.remote_addr = dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.buf+dest_offset;
 
+    ib_mem_hdl->sq_wr[0].imm_data = htonl(dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.buf);
+
     ib_mem_hdl->ack.op    =IB_OP_PUT_TARGET;
     ib_mem_hdl->ack.offset=dest_offset;
     ib_mem_hdl->ack.length=src_length;
@@ -1160,6 +1168,8 @@ NNTI_result_t NNTI_ib_put (
     ib_mem_hdl->ack_sge.length               =src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.ack_size;
     ib_mem_hdl->ack_sq_wr.wr.rdma.rkey       =dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.ack_key;
     ib_mem_hdl->ack_sq_wr.wr.rdma.remote_addr=dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.ack_buf;
+
+    ib_mem_hdl->ack_sq_wr.imm_data = htonl(dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.ack_buf);
 #endif
 
     log_debug(nnti_debug_level, "putting to (%s, qp=%p, qpn=%lu)", dest_buffer_hdl->buffer_owner.url, ib_mem_hdl->qp, ib_mem_hdl->qpn);
@@ -1217,6 +1227,8 @@ NNTI_result_t NNTI_ib_get (
     ib_mem_hdl->sq_wr[0].wr.rdma.rkey        = src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.key;
     ib_mem_hdl->sq_wr[0].wr.rdma.remote_addr = src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.buf+src_offset;
 
+    ib_mem_hdl->sq_wr[0].imm_data = htonl(dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.buf);
+
     ib_mem_hdl->ack.op    =IB_OP_GET_TARGET;
     ib_mem_hdl->ack.offset=src_offset;
     ib_mem_hdl->ack.length=src_length;
@@ -1226,6 +1238,8 @@ NNTI_result_t NNTI_ib_get (
     ib_mem_hdl->ack_sge.length               =dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.ack_size;
     ib_mem_hdl->ack_sq_wr.wr.rdma.rkey       =src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.ack_key;
     ib_mem_hdl->ack_sq_wr.wr.rdma.remote_addr=src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.ack_buf;
+
+    ib_mem_hdl->ack_sq_wr.imm_data = htonl(src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.ack_buf);
 #endif
 
     log_debug(nnti_debug_level, "getting from (%s, qp=%p, qpn=%lu)", src_buffer_hdl->buffer_owner.url, ib_mem_hdl->qp, ib_mem_hdl->qpn);
@@ -2061,7 +2075,6 @@ static int register_memory(ib_memory_handle *hdl, uint32_t mr_index, uint64_t wr
     }
     trios_stop_timer("register", callTime);
 
-
     hdl->mr[mr_index]=mr;
 
     memset(&hdl->sge[mr_index], 0, sizeof(hdl->sge[mr_index]));
@@ -2086,12 +2099,12 @@ static int register_memory(ib_memory_handle *hdl, uint32_t mr_index, uint64_t wr
                 hdl->sq_wr[mr_index].send_flags = IBV_SEND_SIGNALED;
                 break;
             case GET_DST_BUFFER:
-                hdl->sq_wr[mr_index].opcode         = IBV_WR_RDMA_READ;
-                hdl->sq_wr[mr_index].send_flags     = IBV_SEND_SIGNALED;
+                hdl->sq_wr[mr_index].opcode     = IBV_WR_RDMA_READ;
+                hdl->sq_wr[mr_index].send_flags = IBV_SEND_SIGNALED;
                 break;
             case PUT_SRC_BUFFER:
-                hdl->sq_wr[mr_index].opcode         = IBV_WR_RDMA_WRITE;
-                hdl->sq_wr[mr_index].send_flags     = IBV_SEND_SIGNALED;
+                hdl->sq_wr[mr_index].opcode     = IBV_WR_RDMA_WRITE;
+                hdl->sq_wr[mr_index].send_flags = IBV_SEND_SIGNALED;
                 break;
         }
     }
@@ -2121,7 +2134,7 @@ static int register_ack(ib_memory_handle *hdl, uint64_t wr_id)
     trios_stop_timer("mlock", callTime);
 
     trios_start_timer(callTime);
-    mr = ibv_reg_mr(transport_global_data.pd, &hdl->ack, len, IBV_ACCESS_LOCAL_WRITE);
+    mr = ibv_reg_mr(transport_global_data.pd, &hdl->ack, len, (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
     if (!mr) {
         log_error(nnti_debug_level, "failed to register memory region");
         perror("errno");
@@ -2150,7 +2163,7 @@ static int register_ack(ib_memory_handle *hdl, uint64_t wr_id)
             hdl->ack_sq_wr.wr_id  =wr_id;
             hdl->ack_sq_wr.sg_list=&hdl->ack_sge;
             hdl->ack_sq_wr.num_sge=1;
-            hdl->ack_sq_wr.opcode     = IBV_WR_SEND;
+            hdl->ack_sq_wr.opcode     = IBV_WR_RDMA_WRITE_WITH_IMM;
             hdl->ack_sq_wr.send_flags = IBV_SEND_SIGNALED;
             break;
     }
@@ -2303,6 +2316,11 @@ int process_event(
                 ib_mem_hdl->last_op=IB_OP_SEND;
                 ib_mem_hdl->op_state = SEND_COMPLETE;
             }
+            if (wc->opcode==IBV_WC_RDMA_WRITE) {
+                log_debug(debug_level, "send completion - wc==%p, event_buf==%p", wc, event_buf);
+                ib_mem_hdl->last_op=IB_OP_SEND;
+                ib_mem_hdl->op_state = SEND_COMPLETE;
+            }
             break;
         case PUT_SRC_BUFFER:
             if (wc->opcode==IBV_WC_RDMA_WRITE) {
@@ -2315,11 +2333,9 @@ int process_event(
 #else
                     ib_mem_hdl->op_state = RDMA_WRITE_COMPLETE;
 #endif
-                    }
-            }
-            if (wc->opcode==IBV_WC_SEND) {
+                }
 #if defined(USE_RDMA_TARGET_ACK)
-                if (ib_mem_hdl->op_state==RDMA_WRITE_NEED_ACK) {
+                else if (ib_mem_hdl->op_state==RDMA_WRITE_NEED_ACK) {
                     log_debug(debug_level, "RDMA write ACK (initiator) completion - wc==%p, event_buf==%p", wc, event_buf);
                     ib_mem_hdl->last_op=IB_OP_PUT_INITIATOR;
                     ib_mem_hdl->op_state = RDMA_WRITE_COMPLETE;
@@ -2340,7 +2356,7 @@ int process_event(
 #endif
                 }
             }
-            if (wc->opcode==IBV_WC_SEND) {
+            if (wc->opcode==IBV_WC_RDMA_WRITE) {
 #if defined(USE_RDMA_TARGET_ACK)
                 if (ib_mem_hdl->op_state==RDMA_READ_NEED_ACK) {
                     log_debug(debug_level, "RDMA read ACK (initiator) completion - wc==%p, event_buf==%p", wc, event_buf);
@@ -2358,28 +2374,28 @@ int process_event(
             }
             break;
         case RECEIVE_BUFFER:
-            if (wc->opcode==IBV_WC_RECV) {
+            if (wc->opcode==IBV_WC_RECV_RDMA_WITH_IMM) {
                 log_debug(debug_level, "recv completion - wc==%p, event_buf==%p", wc, event_buf);
                 ib_mem_hdl->last_op=IB_OP_RECEIVE;
                 ib_mem_hdl->op_state = RECV_COMPLETE;
             }
             break;
         case PUT_DST_BUFFER:
-            if (wc->opcode==IBV_WC_RECV) {
+            if (wc->opcode==IBV_WC_RECV_RDMA_WITH_IMM) {
                 log_debug(debug_level, "RDMA write (target) completion - wc==%p, event_buf==%p", wc, event_buf);
                 ib_mem_hdl->last_op=IB_OP_PUT_TARGET;
                 ib_mem_hdl->op_state = RDMA_WRITE_COMPLETE;
             }
             break;
         case GET_SRC_BUFFER:
-            if (wc->opcode==IBV_WC_RECV) {
+            if (wc->opcode==IBV_WC_RECV_RDMA_WITH_IMM) {
                 log_debug(debug_level, "RDMA read (target) completion - wc==%p, event_buf==%p", wc, event_buf);
                 ib_mem_hdl->last_op=IB_OP_GET_TARGET;
                 ib_mem_hdl->op_state = RDMA_READ_COMPLETE;
             }
             break;
         case RDMA_TARGET_BUFFER:
-            if (wc->opcode==IBV_WC_RECV) {
+            if (wc->opcode==IBV_WC_RECV_RDMA_WITH_IMM) {
                 log_debug(debug_level, "RDMA target completion - wc==%p, event_buf==%p", wc, event_buf);
                 ib_mem_hdl->op_state = RDMA_COMPLETE;
 #if defined(USE_RDMA_TARGET_ACK)
@@ -3409,7 +3425,7 @@ static struct ibv_device *get_ib_device(void)
 static void print_wc(const struct ibv_wc *wc)
 {
     if (wc->status != 0) {
-        log_error(nnti_debug_level, "wc=%p, wc.opcode=%d, wc.status=%d (%s), wc.wr_id=%lu, wc.vendor_err=%u, wc.byte_len=%u, wc.qp_num=%u, wc.src_qp=%u",
+        log_error(nnti_debug_level, "wc=%p, wc.opcode=%d, wc.status=%d (%s), wc.wr_id=%lu, wc.vendor_err=%u, wc.byte_len=%u, wc.qp_num=%u, wc.imm_data=%x, wc.src_qp=%u",
             wc,
             wc->opcode,
             wc->status,
@@ -3418,9 +3434,10 @@ static void print_wc(const struct ibv_wc *wc)
             wc->vendor_err,
             wc->byte_len,
             wc->qp_num,
+            ntohl(wc->imm_data),
             wc->src_qp);
     } else {
-        log_debug(nnti_debug_level, "wc=%p, wc.opcode=%d, wc.status=%d (%s), wc.wr_id=%lu, wc.vendor_err=%u, wc.byte_len=%u, wc.qp_num=%u, wc.src_qp=%u",
+        log_debug(nnti_debug_level, "wc=%p, wc.opcode=%d, wc.status=%d (%s), wc.wr_id=%lu, wc.vendor_err=%u, wc.byte_len=%u, wc.qp_num=%u, wc.imm_data=%x, wc.src_qp=%u",
             wc,
             wc->opcode,
             wc->status,
@@ -3429,6 +3446,7 @@ static void print_wc(const struct ibv_wc *wc)
             wc->vendor_err,
             wc->byte_len,
             wc->qp_num,
+            ntohl(wc->imm_data),
             wc->src_qp);
     }
 }
