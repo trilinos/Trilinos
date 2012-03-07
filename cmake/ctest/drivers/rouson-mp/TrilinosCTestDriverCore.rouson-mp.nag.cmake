@@ -53,31 +53,62 @@
 # ************************************************************************
 # @HEADER
 
-
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.rouson-mp.gcc.cmake")
-
-#
-# Set the options specific to this build case
-#
-
-SET(COMM_TYPE SERIAL)
-SET(BUILD_TYPE DEBUG)
-SET(BUILD_DIR_NAME SERIAL_DEBUG_DEV)
-SET(CTEST_PARALLEL_LEVEL 8)
-#SET(CTEST_TEST_TIMEOUT 900)
-
-# Exclude Sundance because of strange segfault (see bug 4382)
-SET(EXTRA_EXCLUDE_PACKAGES Sundance PyTrilinos STK)
-
-SET( EXTRA_CONFIGURE_OPTIONS
-  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
-  "-DForTrilinos_ENABLE_TESTS:BOOL=ON"
-  "-DForTrilinos_ENABLE_EXAMPLES:BOOL=ON"
-  "-DForTrilinos_ENABLE_OBJECT_ORIENTED:BOOL=ON"
-  )
+  
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 #
-# Set the rest of the system-specific options and run the dashboard build/test
+# Platform/compiler specific options for rouson-mp using gcc and nagfor
 #
 
-TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()
+MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
+
+  # Base of Trilinos/cmake/ctest then BUILD_DIR_NAME
+
+  SET( CTEST_DASHBOARD_ROOT "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
+
+  SET( CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
+  
+#  SET( CTEST_BUILD_FLAGS "-j8 -i" )
+
+  SET_DEFAULT( CTEST_PARALLEL_LEVEL "8" )
+
+  SET_DEFAULT( Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
+  
+  # Only turn on PyTrilinos for shared libraries
+  SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
+  
+  SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
+    "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
+    "-DTrilinos_ENABLE_DEPENCENCY_UNIT_TESTS:BOOL=ON"
+    "-DCMAKE_VERBOSE_MAKEFILE:BOOL=TRUE"
+    )
+
+  SET_DEFAULT(COMPILER_VERSION "GCC-4.2")
+  
+  IF (COMM_TYPE STREQUAL MPI)
+  
+    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
+      ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
+      "-DTPL_ENABLE_MPI:BOOL=ON"
+      "-DMPI_BASE_DIR:PATH=/usr/local/openmpi/nagfor"
+      "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/local/openmpi/nagfor/bin/mpicxx"
+      "-DCMAKE_C_COMPILER:FILEPATH=/usr/local/openmpi/nagfor/bin/mpicc"
+      "-DCMAKE_Fortran_COMPILER:FILEPATH=/usr/local/openmpi/nagfor/bin/mpif90"
+      "-DCMAKE_Fortran_FLAGS:STRING=-f2003 -g -C=all -wmismatch=mpi_scatterv,mpi_alltoallv,mpi_gatherv,mpi_allgatherv,mpi_bcast" 
+      )
+  
+  ELSE()
+  
+    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
+      ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
+      "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/g++"
+      "-DCMAKE_C_COMPILER:FILEPATH=/usr/bin/gcc"
+      "-DCMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/nagfor"
+      "-DCMAKE_Fortran_FLAGS:STRING=-f2003 -g -C=all"
+      )
+  
+  ENDIF()
+
+  TRILINOS_CTEST_DRIVER()
+
+ENDMACRO()

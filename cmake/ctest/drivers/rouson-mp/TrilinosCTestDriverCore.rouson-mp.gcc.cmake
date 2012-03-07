@@ -57,7 +57,7 @@
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 #
-# Platform/compiler specific options for rouson-mp using gcc and nagfor
+# Platform/compiler specific options for rouson-mp using gcc 
 #
 
 MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
@@ -68,7 +68,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   SET( CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
   
-  SET( CTEST_BUILD_FLAGS "-j8 -i" )
+#  SET( CTEST_BUILD_FLAGS "-j8 -i" )
 
   SET_DEFAULT( CTEST_PARALLEL_LEVEL "8" )
 
@@ -83,28 +83,26 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=TRUE"
     )
 
-  SET_DEFAULT(COMPILER_VERSION "GCC-4.2.1")
+  SET_DEFAULT(COMPILER_VERSION "GCC-4.7")
   
   IF (COMM_TYPE STREQUAL MPI)
   
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
       "-DTPL_ENABLE_MPI:BOOL=ON"
-      "-DMPI_BASE_DIR:PATH=/usr/local/openmpi/nagfor"
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/local/openmpi/nagfor/bin/mpicxx"
-      "-DCMAKE_C_COMPILER:FILEPATH=/usr/local/openmpi/nagfor/bin/mpicc"
-      "-DCMAKE_Fortran_COMPILER:FILEPATH=/usr/local/openmpi/nagfor/bin/mpif90"
-      "-DCMAKE_Fortran_FLAGS:STRING=-f2003 -g -C=all -wmismatch=mpi_scatterv,mpi_alltoallv,mpi_gatherv,mpi_allgatherv,mpi_bcast" 
+      "-DMPI_BASE_DIR:PATH=/usr/local/openmpi/GCC47"
+      "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/local/openmpi/GCC47/bin/mpicxx"
+      "-DCMAKE_C_COMPILER:FILEPATH=/usr/local/openmpi/GCC47/bin/mpicc"
+      "-DCMAKE_Fortran_COMPILER:FILEPATH=/usr/local/openmpi/GCC47/bin/mpif90"
       )
   
   ELSE()
   
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/g++"
-      "-DCMAKE_C_COMPILER:FILEPATH=/usr/bin/gcc"
-      "-DCMAKE_Fortran_COMPILER:FILEPATH=/usr/local/bin/nagfor"
-      "-DCMAKE_Fortran_FLAGS:STRING=-f2003 -g -C=all"
+      "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/local/gcc-4-7-svn/bin/x86_64-apple-darwin10-g++"
+      "-DCMAKE_C_COMPILER:FILEPATH=/usr/local/gcc-4-7-svn/bin/x86_64-apple-darwin10-gcc"
+      "-DCMAKE_Fortran_COMPILER:FILEPATH=/usr/local/gcc-4-7-svn/bin/x86_64-apple-darwin10-gfortran"
       )
   
   ENDIF()

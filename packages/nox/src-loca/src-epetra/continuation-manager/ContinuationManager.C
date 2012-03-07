@@ -234,7 +234,7 @@ BuildLOCAStepper()
 		    sublist("Constraint Parameters");
 
     // Getting the parameter names from the user-defined list
-    Teuchos::map<string, Teuchos::ParameterEntry>::const_iterator i;
+    Teuchos::ParameterList::ConstIterator i;
     for (i = constraintParams.begin(); i !=constraintParams.end(); ++i) 
       constraintParamsNames->push_back(
 	  constraintParams.get<string>(constraintParams.name(i)));
@@ -388,7 +388,7 @@ cout << "XXX  num time steps on domain = " <<  globalComm->NumTimeStepsOnDomain(
 		    sublist("Constraint Parameters");
 
     // Getting the parameter names from the user-defined list
-    Teuchos::map<string, Teuchos::ParameterEntry>::const_iterator i;
+    Teuchos::ParameterList::ConstIterator i;
     for (i = constraintParams.begin(); i !=constraintParams.end(); ++i) 
       constraintParamsNames->push_back(
 	  constraintParams.get<string>(constraintParams.name(i)));

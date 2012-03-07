@@ -1063,7 +1063,7 @@ double cm[3];                 /* Center of mass of objects */
 double evec[3];               /* Eigenvector defining direction */
 int set0, set1;
 int i;
-double start_time, end_time;
+double start_time=0., end_time;
 
   if (num_parts == 1) {
     for (i = 0; i < dotnum; i++)

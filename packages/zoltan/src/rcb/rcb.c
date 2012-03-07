@@ -1551,7 +1551,7 @@ static int serial_rcb(
   double max_box;                   /* largest length of bbox */
   double *c, *w;
   double uniformWeight;
-  double start_time, end_time;
+  double start_time=0., end_time;
 
   wgtdim = (wgtflag>0 ? wgtflag : 1);
 

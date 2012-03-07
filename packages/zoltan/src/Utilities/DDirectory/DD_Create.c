@@ -18,6 +18,7 @@
 
 #include "DD.h"
 #include "zoltan_align.h"
+#include "zz_hash.h"
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */

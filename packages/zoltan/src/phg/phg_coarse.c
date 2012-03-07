@@ -102,7 +102,7 @@ int Zoltan_PHG_Coarsening
   ZOLTAN_GNO_TYPE *gnoptr;
   int *intptr;
   float *floatptr;
-  double *doubleptr;
+  double *doubleptr = NULL;
   MPI_Datatype zoltan_gno_mpi_type;
   struct phg_timer_indices *timer = NULL;
   int time_details;
@@ -469,9 +469,6 @@ if (VTX_LNO_TO_GNO(hg, i) == 35 || VTX_LNO_TO_GNO(hg, i) == 65 || VTX_LNO_TO_GNO
 
     lno = (int)LevelMap[lno];
     if (hg->nDim) {
-#ifdef KDDKDD_DEBUG
-if (gnoptr[0] == 35 || gnoptr[0] == 65 || gnoptr[0] == 66) printf("%d RECEIVED %d (%f %f %f) into lno %d coorcount %f doublptr %x\n", zz->Proc, gnoptr[0], *doubleptr, *(doubleptr+1), *(doubleptr+2), lno, coorcount[lno]+1., doubleptr);
-#endif
       for (j = 0; j < hg->nDim; j++){
         /* NOTE:  This code must preceed accumulation of vwgt below so that 
          * floatptr is correct. */

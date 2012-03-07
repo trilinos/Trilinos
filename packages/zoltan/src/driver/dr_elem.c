@@ -815,8 +815,8 @@ int get_side_id(E_Type etype, const ZOLTAN_ID_TYPE *connect, const int nsnodes,
   const char *func_name="get_side_id";
   char  err_buff[300];
 
-  ZOLTAN_ID_TYPE nnodes, i, j, num;
-  ZOLTAN_ID_TYPE dup, location = 0;
+  int nnodes, i, j, num;
+  int dup, location = 0;
 
   /* check if this is a degenerate face */
   dup = 0;

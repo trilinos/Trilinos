@@ -428,6 +428,7 @@ void MpiComm<Ordinal>::reduceAll(
     const_cast<char*>(sendBuffer),globalReducts,1,char_block,op.mpi_op()
     ,*rawMpiComm_
     );
+  MPI_Type_free(&char_block);
 }
 
 
@@ -731,7 +732,9 @@ MpiComm<Ordinal>::split(const int color, const int key) const
   if (newComm == MPI_COMM_NULL) {
     return RCP< Comm<Ordinal> >();
   } else {
-    return rcp(new MpiComm<Ordinal>(opaqueWrapper(newComm)));
+    return rcp(new MpiComm<Ordinal>(
+      rcp_implicit_cast<const OpaqueWrapper<MPI_Comm> >( opaqueWrapper(newComm) )
+      ) );
   }
 }
 
@@ -761,7 +764,9 @@ MpiComm<Ordinal>::createSubcommunicator(const ArrayView<const int> &ranks) const
   if (newComm == MPI_COMM_NULL) {
     return RCP< Comm<Ordinal> >();
   } else {
-    return rcp(new MpiComm<Ordinal>(opaqueWrapper(newComm)));
+    return rcp(new MpiComm<Ordinal>(
+      rcp_implicit_cast<const OpaqueWrapper<MPI_Comm> >( opaqueWrapper(newComm) )
+      ));
   }
 }
 

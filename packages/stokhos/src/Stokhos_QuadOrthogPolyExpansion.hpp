@@ -55,7 +55,7 @@ namespace Stokhos {
     const Teuchos::RCP<const OrthogPolyBasis<ordinal_type, value_type> >& basis,
     const Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk,
     const Teuchos::RCP<const Quadrature<ordinal_type, value_type> >& quad,
-    bool use_quad_for_times = false);
+    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     //! Destructor
     virtual ~QuadOrthogPolyExpansion() {}
@@ -176,6 +176,9 @@ namespace Stokhos {
 
     //! Use quadrature for times functions
     bool use_quad_for_times;
+
+    //! Use quadrature for division functions
+    bool use_quad_for_division;
 
     //! Expansions size
     ordinal_type sz;

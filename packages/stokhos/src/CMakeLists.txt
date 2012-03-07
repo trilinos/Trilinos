@@ -95,6 +95,10 @@ SET(HEADERS ${HEADERS}
   Stokhos_OrthogPolyApprox.hpp
   Stokhos_OrthogPolyApproxImp.hpp
   Stokhos_OrthogPolyExpansion.hpp
+  Stokhos_DivisionExpansionStrategy.hpp
+  Stokhos_MeanBasedDivisionExpansionStrategy.hpp
+  Stokhos_DenseDirectDivisionExpansionStrategy.hpp
+  Stokhos_SPDDenseDirectDivisionExpansionStrategy.hpp
   Stokhos_OrthogPolyExpansionBase.hpp
   Stokhos_OrthogPolyExpansionBaseImp.hpp
   Stokhos_ConstantOrthogPolyExpansion.hpp

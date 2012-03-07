@@ -101,8 +101,8 @@ public:
       y_count += size ;
     }
 
-    dx = Kokkos::create_labeled_crsmap<device>( "dx" , x_row_size );
-    dy = Kokkos::create_labeled_crsmap<device>( "dy" , y_row_size );
+    dx = Kokkos::create_labeled_crsmap<dView>( "dx" , x_row_size );
+    dy = Kokkos::create_labeled_crsmap<dView>( "dy" , y_row_size );
 
     ASSERT_TRUE(dx);
     ASSERT_TRUE(dy);
@@ -165,7 +165,7 @@ public:
       }
     }
 
-    dx = Kokkos::create_labeled_crsmap<device>( "dx" , graph );
+    dx = Kokkos::create_labeled_crsmap<dView>( "dx" , graph );
     hx = Kokkos::create_mirror( dx );
    
     ASSERT_EQ( hx.row_count() , LENGTH );

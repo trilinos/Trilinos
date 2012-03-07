@@ -243,6 +243,7 @@ namespace Tpetra {
 	      out << " numReceives: " << getNumReceives() << endl;
 	      out << " totalReceiveLength: " << getTotalReceiveLength() << endl;
 	      out << " lengthsFrom: " << toString(lengthsFrom_) << endl;
+	      out << " startsFrom: " << toString(startsFrom_) << endl;
 	      out << " imagesFrom: " << toString(imagesFrom_) << endl;
 	    }
 	    // Last output is a flush; it leaves a space and also 

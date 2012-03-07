@@ -215,7 +215,7 @@ float edgeSizeThreshold;
 int randomizeInitDist;
 int final_output;
 
-int nCoords;
+int nCoords=0;
 double *tmpcoords = NULL;
  
 phg_GID_lookup  *lookup_myObjs = NULL;

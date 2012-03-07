@@ -107,7 +107,7 @@ void generate_matrix(
   const size_t total      = unit_test::generate_fem_graph( N , graph );
   const size_t block_size = tensor_multiply::matrix_size( matrix.block );
 
-  matrix.graph  = Kokkos::create_labeled_crsmap<Device>( std::string("test crs graph") , graph );
+  matrix.graph  = Kokkos::create_labeled_crsmap<graph_type>( std::string("test crs graph") , graph );
   matrix.values = Kokkos::create_multivector<ScalarType,Device>( block_size , total );
 
   host_graph_type  h_graph  = Kokkos::create_mirror( matrix.graph );
