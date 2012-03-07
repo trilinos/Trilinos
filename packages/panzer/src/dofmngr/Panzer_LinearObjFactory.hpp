@@ -44,6 +44,7 @@ public:
       \code
          template <typename EvalT> Teuchos::RCP<panzer::CloneableEvaluator> buildScatter() const;
          template <typename EvalT> Teuchos::RCP<panzer::CloneableEvaluator> buildGather() const;
+         template <typename EvalT> Teuchos::RCP<panzer::CloneableEvaluator> buildGatherOrientation() const;
          template <typename EvalT> Teuchos::RCP<panzer::CloneableEvaluator> buildScatterDirichlet() const;
          template <typename EvalT> Teuchos::RCP<panzer::CloneableEvaluator> buildScatterInitialCondition() const;
       \endcode
@@ -52,6 +53,7 @@ public:
   * function which takes a parameter list). The cloned evaluators will be the ones
   * actually returned from the 
      <code>buildGather(const Teuchos::ParameterList & pl) const</code>,
+     <code>buildGatherOrientation(const Teuchos::ParameterList & pl) const</code>,
      <code>buildScatter(const Teuchos::ParameterList & pl) const</code>, or
      <code>buildScatterDirichlet(const Teuchos::ParameterList & pl) const</code>
      <code>buildScatterInitialCondition(const Teuchos::ParameterList & pl) const</code>
@@ -72,6 +74,7 @@ public:
       \code
          template <typename EvalT> Teuchos::RCP<panzer::CloneableEvaluator> buildScatter() const;
          template <typename EvalT> Teuchos::RCP<panzer::CloneableEvaluator> buildGather() const;
+         template <typename EvalT> Teuchos::RCP<panzer::CloneableEvaluator> buildGatherOrientation() const;
          template <typename EvalT> Teuchos::RCP<panzer::CloneableEvaluator> buildScatterDirichlet() const;
          template <typename EvalT> Teuchos::RCP<panzer::CloneableEvaluator> buildScatterInitialCondition() const;
       \endcode

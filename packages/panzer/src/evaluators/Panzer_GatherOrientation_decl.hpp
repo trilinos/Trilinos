@@ -39,7 +39,7 @@ public:
   void evaluateFields(typename Traits::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new GatherOrientation<panzer::Traits::Residual,Traits,LO,GO>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new GatherOrientation<EvalT,Traits,LO,GO>(globalIndexer_,pl)); }
   
 private:
 

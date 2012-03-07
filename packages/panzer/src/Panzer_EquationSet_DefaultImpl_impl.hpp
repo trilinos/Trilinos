@@ -212,7 +212,6 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("Use Time Derivative Solution Vector", true);
     
     RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGather<EvalT>(p);
-    //   rcp(new panzer::GatherSolution_Epetra<EvalT,panzer::Traits>(p));
     
     fm.template registerEvaluator<EvalT>(op);
   }
@@ -241,8 +240,8 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("DOF Names", m_dof_names);
     p.set("Indexer Names", m_dof_names);
     
-    RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGather<EvalT>(p);
-    
+    RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGatherOrientation<EvalT>(p);
+
     fm.template registerEvaluator<EvalT>(op);
   }
 
