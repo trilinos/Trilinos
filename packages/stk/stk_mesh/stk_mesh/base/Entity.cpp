@@ -17,11 +17,15 @@
 #include <stk_mesh/base/MetaData.hpp>
 
 #ifdef SIERRA_MIGRATION
+namespace {
+static const std::vector<stk::mesh::Relation> dummy_vector;
+}
+
 namespace sierra {
 namespace Fmwk {
 
 const unsigned int INVALID_LOCAL_ID = std::numeric_limits<unsigned int>::max();
-const stk::mesh::RelationIterator INVALID_RELATION_ITR;
+const stk::mesh::RelationIterator INVALID_RELATION_ITR = dummy_vector.end(); // Some STL implementation use POD for iterators
 
 unsigned get_derived_type(const stk::mesh::Entity&);
 
