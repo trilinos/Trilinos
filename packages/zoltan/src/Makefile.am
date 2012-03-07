@@ -356,48 +356,28 @@ ZZ = \
 
 EXTRA_FORTRAN_H = \
     $(srcdir)/fort/cwrap_fmangle.h \
-    $(srcdir)/fort/lbfn.h \
-    $(srcdir)/fort/lbif.h \
     $(srcdir)/fort/set_borderobjlist.fn \
-    $(srcdir)/fort/set_borderobjlist.fn.lbfn \
     $(srcdir)/fort/set_borderobjlist.if \
-    $(srcdir)/fort/set_borderobjlist.if.lbif \
     $(srcdir)/fort/set_childlist.fn \
-    $(srcdir)/fort/set_childlist.fn.lbfn \
     $(srcdir)/fort/set_childlist.if \
-    $(srcdir)/fort/set_childlist.if.lbif \
     $(srcdir)/fort/set_childweight.fn \
-    $(srcdir)/fort/set_childweight.fn.lbfn \
     $(srcdir)/fort/set_childweight.if \
-    $(srcdir)/fort/set_childweight.if.lbif \
     $(srcdir)/fort/set_coarseobjlist.fn \
-    $(srcdir)/fort/set_coarseobjlist.fn.lbfn \
     $(srcdir)/fort/set_coarseobjlist.if \
-    $(srcdir)/fort/set_coarseobjlist.if.lbif \
     $(srcdir)/fort/set_edgelist.fn \
-    $(srcdir)/fort/set_edgelist.fn.lbfn \
     $(srcdir)/fort/set_edgelist.if \
-    $(srcdir)/fort/set_edgelist.if.lbif \
     $(srcdir)/fort/set_edgelistmulti.fn \
     $(srcdir)/fort/set_edgelistmulti.if \
     $(srcdir)/fort/set_firstborderobj.fn \
-    $(srcdir)/fort/set_firstborderobj.fn.lbfn \
     $(srcdir)/fort/set_firstborderobj.if \
-    $(srcdir)/fort/set_firstborderobj.if.lbif \
     $(srcdir)/fort/set_firstcoarseobj.fn \
-    $(srcdir)/fort/set_firstcoarseobj.fn.lbfn \
     $(srcdir)/fort/set_firstcoarseobj.if \
-    $(srcdir)/fort/set_firstcoarseobj.if.lbif \
     $(srcdir)/fort/set_firstobj.fn \
-    $(srcdir)/fort/set_firstobj.fn.lbfn \
     $(srcdir)/fort/set_firstobj.if \
-    $(srcdir)/fort/set_firstobj.if.lbif \
     $(srcdir)/fort/set_fixedobjlist.fn \
     $(srcdir)/fort/set_fixedobjlist.if \
     $(srcdir)/fort/set_geom.fn \
-    $(srcdir)/fort/set_geom.fn.lbfn \
     $(srcdir)/fort/set_geom.if \
-    $(srcdir)/fort/set_geom.if.lbif \
     $(srcdir)/fort/set_geommulti.fn \
     $(srcdir)/fort/set_geommulti.if \
     $(srcdir)/fort/set_hgcs.fn \
@@ -415,65 +395,39 @@ EXTRA_FORTRAN_H = \
     $(srcdir)/fort/set_hierpartition.fn \
     $(srcdir)/fort/set_hierpartition.if \
     $(srcdir)/fort/set_midmigrate.fn \
-    $(srcdir)/fort/set_midmigrate.fn.lbfn \
     $(srcdir)/fort/set_midmigrate.if \
-    $(srcdir)/fort/set_midmigrate.if.lbif \
     $(srcdir)/fort/set_midmigratepp.fn \
     $(srcdir)/fort/set_midmigratepp.if \
     $(srcdir)/fort/set_nextborderobj.fn \
-    $(srcdir)/fort/set_nextborderobj.fn.lbfn \
     $(srcdir)/fort/set_nextborderobj.if \
-    $(srcdir)/fort/set_nextborderobj.if.lbif \
     $(srcdir)/fort/set_nextcoarseobj.fn \
-    $(srcdir)/fort/set_nextcoarseobj.fn.lbfn \
     $(srcdir)/fort/set_nextcoarseobj.if \
-    $(srcdir)/fort/set_nextcoarseobj.if.lbif \
     $(srcdir)/fort/set_nextobj.fn \
-    $(srcdir)/fort/set_nextobj.fn.lbfn \
     $(srcdir)/fort/set_nextobj.if \
-    $(srcdir)/fort/set_nextobj.if.lbif \
     $(srcdir)/fort/set_numborderobj.fn \
-    $(srcdir)/fort/set_numborderobj.fn.lbfn \
     $(srcdir)/fort/set_numborderobj.if \
-    $(srcdir)/fort/set_numborderobj.if.lbif \
     $(srcdir)/fort/set_numchild.fn \
-    $(srcdir)/fort/set_numchild.fn.lbfn \
     $(srcdir)/fort/set_numchild.if \
-    $(srcdir)/fort/set_numchild.if.lbif \
     $(srcdir)/fort/set_numcoarseobj.fn \
-    $(srcdir)/fort/set_numcoarseobj.fn.lbfn \
     $(srcdir)/fort/set_numcoarseobj.if \
-    $(srcdir)/fort/set_numcoarseobj.if.lbif \
     $(srcdir)/fort/set_numedges.fn \
-    $(srcdir)/fort/set_numedges.fn.lbfn \
     $(srcdir)/fort/set_numedges.if \
-    $(srcdir)/fort/set_numedges.if.lbif \
     $(srcdir)/fort/set_numedgesmulti.fn \
     $(srcdir)/fort/set_numedgesmulti.if \
     $(srcdir)/fort/set_numfixedobj.fn \
     $(srcdir)/fort/set_numfixedobj.if \
     $(srcdir)/fort/set_numgeom.fn \
-    $(srcdir)/fort/set_numgeom.fn.lbfn \
     $(srcdir)/fort/set_numgeom.if \
-    $(srcdir)/fort/set_numgeom.if.lbif \
     $(srcdir)/fort/set_numobj.fn \
-    $(srcdir)/fort/set_numobj.fn.lbfn \
     $(srcdir)/fort/set_numobj.if \
-    $(srcdir)/fort/set_numobj.if.lbif \
     $(srcdir)/fort/set_objlist.fn \
-    $(srcdir)/fort/set_objlist.fn.lbfn \
     $(srcdir)/fort/set_objlist.if \
-    $(srcdir)/fort/set_objlist.if.lbif \
     $(srcdir)/fort/set_objsize.fn \
-    $(srcdir)/fort/set_objsize.fn.lbfn \
     $(srcdir)/fort/set_objsize.if \
-    $(srcdir)/fort/set_objsize.if.lbif \
     $(srcdir)/fort/set_objsizemulti.fn \
     $(srcdir)/fort/set_objsizemulti.if \
     $(srcdir)/fort/set_packobj.fn \
-    $(srcdir)/fort/set_packobj.fn.lbfn \
     $(srcdir)/fort/set_packobj.if \
-    $(srcdir)/fort/set_packobj.if.lbif \
     $(srcdir)/fort/set_packobjmulti.fn \
     $(srcdir)/fort/set_packobjmulti.if \
     $(srcdir)/fort/set_partition.fn \
@@ -481,21 +435,15 @@ EXTRA_FORTRAN_H = \
     $(srcdir)/fort/set_partitionmulti.fn \
     $(srcdir)/fort/set_partitionmulti.if \
     $(srcdir)/fort/set_postmigrate.fn \
-    $(srcdir)/fort/set_postmigrate.fn.lbfn \
     $(srcdir)/fort/set_postmigrate.if \
-    $(srcdir)/fort/set_postmigrate.if.lbif \
     $(srcdir)/fort/set_postmigratepp.fn \
     $(srcdir)/fort/set_postmigratepp.if \
     $(srcdir)/fort/set_premigrate.fn \
-    $(srcdir)/fort/set_premigrate.fn.lbfn \
     $(srcdir)/fort/set_premigrate.if \
-    $(srcdir)/fort/set_premigrate.if.lbif \
     $(srcdir)/fort/set_premigratepp.fn \
     $(srcdir)/fort/set_premigratepp.if \
     $(srcdir)/fort/set_unpackobj.fn \
-    $(srcdir)/fort/set_unpackobj.fn.lbfn \
     $(srcdir)/fort/set_unpackobj.if \
-    $(srcdir)/fort/set_unpackobj.if.lbif \
     $(srcdir)/fort/set_unpackobjmulti.fn \
     $(srcdir)/fort/set_unpackobjmulti.if 
 
@@ -503,7 +451,6 @@ EXTRA_FORTRAN = \
     $(srcdir)/fort/ztypes.f90 \
     $(srcdir)/fort/cwrap.c \
     $(srcdir)/fort/zoltan_user_data.f90 \
-    $(srcdir)/fort/lb_user_const.f90 \
     $(srcdir)/fort/fwrap.f90 
 
 if BUILD_ZOLTAN_F90_INTERFACE

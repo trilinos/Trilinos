@@ -1142,37 +1142,6 @@ INCLUDE "set_hiernumlevels.if"
 INCLUDE "set_hierpartition.if"
 INCLUDE "set_hiermethod.if"
 
-!-------------------------------------------------------------------------
-! Include LB_* interface for backward compatibility.
-
-INCLUDE "lbif.h"
-INCLUDE "set_numgeom.if.lbif"
-INCLUDE "set_geom.if.lbif"
-INCLUDE "set_numedges.if.lbif"
-INCLUDE "set_edgelist.if.lbif"
-INCLUDE "set_numobj.if.lbif"
-INCLUDE "set_objlist.if.lbif"
-INCLUDE "set_firstobj.if.lbif"
-INCLUDE "set_nextobj.if.lbif"
-INCLUDE "set_numborderobj.if.lbif"
-INCLUDE "set_borderobjlist.if.lbif"
-INCLUDE "set_firstborderobj.if.lbif"
-INCLUDE "set_nextborderobj.if.lbif"
-INCLUDE "set_premigrate.if.lbif"
-INCLUDE "set_midmigrate.if.lbif"
-INCLUDE "set_postmigrate.if.lbif"
-INCLUDE "set_objsize.if.lbif"
-INCLUDE "set_packobj.if.lbif"
-INCLUDE "set_unpackobj.if.lbif"
-INCLUDE "set_numcoarseobj.if.lbif"
-INCLUDE "set_coarseobjlist.if.lbif"
-INCLUDE "set_firstcoarseobj.if.lbif"
-INCLUDE "set_nextcoarseobj.if.lbif"
-INCLUDE "set_numchild.if.lbif"
-INCLUDE "set_childlist.if.lbif"
-INCLUDE "set_childweight.if.lbif"
-
-
 contains
 
 !--------------------------------------------------------------------------
@@ -2291,36 +2260,5 @@ INCLUDE "set_fixedobjlist.fn"
 INCLUDE "set_hiernumlevels.fn"
 INCLUDE "set_hierpartition.fn"
 INCLUDE "set_hiermethod.fn"
-
-!-------------------------------------------------------------------------
-! Include LB_* interface for backward compatibility.
-!-------------------------------------------------------------------------
-
-INCLUDE "lbfn.h"
-INCLUDE "set_numgeom.fn.lbfn"
-INCLUDE "set_geom.fn.lbfn"
-INCLUDE "set_numedges.fn.lbfn"
-INCLUDE "set_edgelist.fn.lbfn"
-INCLUDE "set_numobj.fn.lbfn"
-INCLUDE "set_objlist.fn.lbfn"
-INCLUDE "set_firstobj.fn.lbfn"
-INCLUDE "set_nextobj.fn.lbfn"
-INCLUDE "set_numborderobj.fn.lbfn"
-INCLUDE "set_borderobjlist.fn.lbfn"
-INCLUDE "set_firstborderobj.fn.lbfn"
-INCLUDE "set_nextborderobj.fn.lbfn"
-INCLUDE "set_premigrate.fn.lbfn"
-INCLUDE "set_midmigrate.fn.lbfn"
-INCLUDE "set_postmigrate.fn.lbfn"
-INCLUDE "set_objsize.fn.lbfn"
-INCLUDE "set_packobj.fn.lbfn"
-INCLUDE "set_unpackobj.fn.lbfn"
-INCLUDE "set_numcoarseobj.fn.lbfn"
-INCLUDE "set_coarseobjlist.fn.lbfn"
-INCLUDE "set_firstcoarseobj.fn.lbfn"
-INCLUDE "set_nextcoarseobj.fn.lbfn"
-INCLUDE "set_numchild.fn.lbfn"
-INCLUDE "set_childlist.fn.lbfn"
-INCLUDE "set_childweight.fn.lbfn"
 
 end module zoltan
