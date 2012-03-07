@@ -46,7 +46,49 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-void testInitialzation(panzer::InputPhysicsBlock& ipb,
+
+//
+// This is the Mathematica code used to generate this example.
+// It also generates a plot of the vector field so it is clear
+// what the solution is doing.
+// 
+//      Needs["VectorAnalysis`"]
+//
+//      phi0[x_,y_]=(1-x)*(1-y)
+//      phi1[x_,y_]=x*(1-y)
+//      phi2[x_,y_]=x*y
+//      phi3[x_,y_]=y*(1-x)
+//      
+//      psi0[x_,y_]={1-y,0,0}
+//      psi1[x_,y_]={0,x,0}
+//      psi2[x_,y_]={y,0,0}
+//      psi3[x_,y_]={0,1-x,0}
+//      
+//      u[x_,y_]=phi2[x,y]*psi0[x,y]+phi3[x,y]*psi1[x,y]+phi0[x,y]*psi2[x,y]+phi1[x,y]*psi3[x,y]
+//      f[x_,y_]=u[x,y]+Curl[Curl[u[x,y],Cartesian[x,y,z]],Cartesian[x,y,z]]
+//      
+//      TwoDVec[g_]={g[[1]],g[[2]]}
+//      
+//      DotProduct[u[0.5,0],{1,0,0}]
+//      DotProduct[u[1,0.5],{0,1,0}]
+//      DotProduct[u[0.5,1],{1,0,0}]
+//      DotProduct[u[0,0.5],{0,1,0}]
+//      
+//      Out[118]= 0.
+//      Out[119]= 0.
+//      Out[120]= 0.
+//      Out[121]= 0.
+//      
+//      VectorPlot[TwoDVec[u[x,y]],{x,0,1},{y,0,1}]
+//      Simplify[u[x,y]]
+//      Simplify[f[x,y]]
+//      
+//      Out[144]= {-(-1+y) y,-(-1+x) x,0}
+//      Out[145]= {2+y-y^2,2+x-x^2,0}
+//
+
+
+void testInitialization(panzer::InputPhysicsBlock& ipb,
 		       std::vector<panzer::BC>& bcs);
 
 // calls MPI_Init and MPI_Finalize
@@ -97,7 +139,7 @@ int main(int argc,char * argv[])
    {
       bool build_transient_support = false;
 
-      testInitialzation(ipb, bcs);
+      testInitialization(ipb, bcs);
       
       int base_cell_dimension = mesh->getCellTopology("eblock-0_0")->getDimension();
       const panzer::CellData volume_cell_data(workset_size, base_cell_dimension,mesh->getCellTopology("eblock-0_0"));
@@ -165,9 +207,10 @@ int main(int argc,char * argv[])
    cm_factory.buildObjects(cm_builder);
 
    Teuchos::ParameterList closure_models("Closure Models");
-   closure_models.sublist("solid").sublist("SOURCE_EFIELD_X").set<double>("Value",1.0); // a constant source
-   closure_models.sublist("solid").sublist("SOURCE_EFIELD_Y").set<double>("Value",2.0); // a constant source
-   closure_models.sublist("solid").sublist("SOURCE_EFIELD").set<std::string>("Scalar Names","SOURCE_EFIELD_X, SOURCE_EFIELD_Y"); // a constant source
+   // closure_models.sublist("solid").sublist("SOURCE_EFIELD_X").set<double>("Value",1.0); // a constant source
+   // closure_models.sublist("solid").sublist("SOURCE_EFIELD_Y").set<double>("Value",2.0); // a constant source
+   // closure_models.sublist("solid").sublist("SOURCE_EFIELD").set<std::string>("Scalar Names","SOURCE_EFIELD_X, SOURCE_EFIELD_Y"); // a constant source
+   closure_models.sublist("solid").sublist("SOURCE_EFIELD").set<std::string>("Type","SIMPLE SOURCE"); // a constant source
       // SOURCE_EFIELD field is required by the CurlLaplacianEquationSet
 
    Teuchos::ParameterList user_data("User Data"); // user data can be empty here
@@ -255,7 +298,7 @@ int main(int argc,char * argv[])
       EpetraExt::VectorToMatrixMarketFile("b_vec.mm",*ep_container->f);
    }
 
-   // write out solution to matrix
+   // write out solution
    if(true) {
       // redistribute solution vector to ghosted vector
       linObjFactory->globalToGhostContainer(*container,*ghostCont, panzer::EpetraLinearObjContainer::X 
@@ -273,7 +316,7 @@ int main(int argc,char * argv[])
    return 0;
 }
 
-void testInitialzation(panzer::InputPhysicsBlock& ipb,
+void testInitialization(panzer::InputPhysicsBlock& ipb,
 		       std::vector<panzer::BC>& bcs)
 {
    panzer::InputEquationSet ies;
@@ -286,7 +329,6 @@ void testInitialzation(panzer::InputPhysicsBlock& ipb,
    ipb.physics_block_id = "4";
    ipb.eq_sets.push_back(ies);
    
-/*
    {
       std::size_t bc_id = 0;
       panzer::BCType bctype = panzer::BCT_Dirichlet;
@@ -294,7 +336,7 @@ void testInitialzation(panzer::InputPhysicsBlock& ipb,
       std::string element_block_id = "eblock-0_0";
       std::string dof_name = "EFIELD";
       std::string strategy = "Constant";
-      double value = 5.0;
+      double value = 0.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
       panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
@@ -309,12 +351,41 @@ void testInitialzation(panzer::InputPhysicsBlock& ipb,
       std::string element_block_id = "eblock-0_0";
       std::string dof_name = "EFIELD";
       std::string strategy = "Constant";
-      double value = -5.0;
+      double value = 0.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
       panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
   		    strategy, p);
       bcs.push_back(bc);
    }    
-*/
+
+   {
+      std::size_t bc_id = 2;
+      panzer::BCType bctype = panzer::BCT_Dirichlet;
+      std::string sideset_id = "right";
+      std::string element_block_id = "eblock-0_0";
+      std::string dof_name = "EFIELD";
+      std::string strategy = "Constant";
+      double value = 0.0;
+      Teuchos::ParameterList p;
+      p.set("Value",value);
+      panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
+  		    strategy, p);
+      bcs.push_back(bc);
+   }    
+
+   {
+      std::size_t bc_id = 3;
+      panzer::BCType bctype = panzer::BCT_Dirichlet;
+      std::string sideset_id = "bottom";
+      std::string element_block_id = "eblock-0_0";
+      std::string dof_name = "EFIELD";
+      std::string strategy = "Constant";
+      double value = 0.0;
+      Teuchos::ParameterList p;
+      p.set("Value",value);
+      panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
+  		    strategy, p);
+      bcs.push_back(bc);
+   }    
 }

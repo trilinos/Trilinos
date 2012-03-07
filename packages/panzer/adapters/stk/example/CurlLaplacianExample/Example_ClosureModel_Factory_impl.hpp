@@ -17,6 +17,8 @@
 #include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 
+#include "Example_SimpleSource.hpp"
+
 // ********************************************************************
 // ********************************************************************
 template<typename EvalT>
@@ -95,6 +97,20 @@ buildClosureModels(const std::string& model_id,
 	evaluators->push_back(e);
       }
       found = true;
+    }
+
+    if (plist.isType<std::string>("Type")) {
+      std::string type = plist.get<std::string>("Type");
+      if(type=="SIMPLE SOURCE") {
+        Teuchos::RCP<panzer::IntegrationRule> ir = default_params.get<RCP<panzer::IntegrationRule> >("IR");
+	RCP< Evaluator<panzer::Traits> > e = 
+	  rcp(new Example::SimpleSource<EvalT,panzer::Traits>(key,*ir));
+	evaluators->push_back(e);
+
+        found = true;
+      }
+
+      // none found!
     }
 
 
