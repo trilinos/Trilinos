@@ -245,8 +245,9 @@ namespace MueLu {
 
     // 2011/12 JG: Requests on the fine level are now posted at the beginning of the subroutine: Setup(fineLevelManager, coarseLevelManager, nextLevelManager)
 
-    // Monitor h(*this, "Setup"); Use a MonitorBase instead to avoid printing "{numLevels = 1}" as numLevels will increase...
-    MonitorBase h("Setup (" + this->MueLu::Describable::description() + ")", this->GetVerbLevel(), this->getOStream(), this->shortClassName() + ": Setup", Runtime0, this->IsPrint(Timings0));
+    // Use PrintMonitor/TimerMonitor instead of Monitor to avoid printing "{numLevels = 1}" (numLevels will increase...)
+    PrintMonitor(*this, "Setup");
+    TimerMonitor(*this, this->ShortClassName() + ": " + "Setup");
 
     //TODO Xpetra::global_size_t sumCoarseNnz = 0;
 

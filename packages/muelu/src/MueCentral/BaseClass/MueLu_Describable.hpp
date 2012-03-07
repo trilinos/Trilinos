@@ -42,7 +42,7 @@ namespace MueLu {
     //@}
 
     //! Return the class name of the object, without template parameters and without namespace
-    virtual std::string shortClassName() const;
+    virtual std::string ShortClassName() const;
 
   }; // class Describable
 
