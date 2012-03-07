@@ -132,7 +132,7 @@ namespace MueLu {
     // Use PrintMonitor/TimerMonitor instead of just a FactoryMonitor to print "Level 0" instead of Hierarchy(0)
     PrintMonitor m0(*this, "Level " +  Teuchos::Utils::toString(coarseLevelID));
     TimerMonitor m1(*this, this->ShortClassName() + ": " + "Setup");
-    TimerMonitor m2(*this, this->ShortClassName() + "(" + Teuchos::Utils::toString(coarseLevelID) + "): " + "Setup");
+    TimerMonitor m2(*this, this->ShortClassName() + ": " + "Setup" + " (level=" + Teuchos::Utils::toString(coarseLevelID) + ")");
 
     TEUCHOS_TEST_FOR_EXCEPTION(coarseLevelManager == Teuchos::null, Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): argument coarseLevelManager cannot be null"); //So, it should not be passed as a pointer but as a reference
 
