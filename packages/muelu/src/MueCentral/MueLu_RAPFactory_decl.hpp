@@ -70,9 +70,9 @@ namespace MueLu {
   private:
     //! @name internal Build methods.
     //@{
-    RCP<Operator> BuildRAPExplicit(const RCP<Operator>& R, const RCP<Operator>& A, const RCP<Operator>& P) const; //TODO: remove RCP for input args.
-    RCP<Operator> BuildRAPImplicit(const RCP<Operator>& A, const RCP<Operator>& P) const;
-    RCP<Operator> BuildRAPBlock   (const RCP<Operator>& R, const RCP<Operator>& A, const RCP<Operator>& P) const;
+    RCP<Operator> BuildRAPExplicit(const RCP<Operator>& R, const RCP<Operator>& A, const RCP<Operator>& P, int levelID) const; //TODO: remove RCP for input args.
+    RCP<Operator> BuildRAPImplicit(const RCP<Operator>& A, const RCP<Operator>& P, int levelID) const;
+    RCP<Operator> BuildRAPBlock   (const RCP<Operator>& R, const RCP<Operator>& A, const RCP<Operator>& P, int levelID) const;
     //@}
 
     //! P Factory

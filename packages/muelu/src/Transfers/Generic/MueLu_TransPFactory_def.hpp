@@ -33,7 +33,7 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildR(Level & fineLevel, Level & coarseLevel) const {
 
-    Monitor m(*this, "Transpose P");
+    FactoryMonitor m(*this, "Transpose P", coarseLevel);
 
     Teuchos::OSTab tab(this->getOStream());
     Teuchos::ParameterList matrixList;

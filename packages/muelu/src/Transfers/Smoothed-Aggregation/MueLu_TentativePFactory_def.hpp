@@ -53,7 +53,7 @@ namespace MueLu {
     RCP<Aggregates>  aggregates = fineLevel.Get< RCP<Aggregates> >("Aggregates", aggregatesFact_.get());
     RCP<MultiVector> nullspace  = fineLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
 
-    Monitor m(*this, "Tentative prolongator");
+    FactoryMonitor m(*this, "Tentative prolongator", coarseLevel);
 
     // Build
     RCP<MultiVector> coarseNullspace; RCP<Operator> Ptentative; // output of MakeTentative()

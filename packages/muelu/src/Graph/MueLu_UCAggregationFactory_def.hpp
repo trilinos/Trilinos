@@ -29,16 +29,13 @@ namespace MueLu {
 
     RCP<Aggregates> aggregates;
     {
-      Monitor m(*this, "Aggregation");
+      FactoryMonitor m(*this, "Aggregation", currentLevel);
       
       //TODO check for reuse of aggregates here
       //FIXME should there be some way to specify the name of the graph in the needs table, i.e., could
       //FIXME there ever be more than one graph?
       //FIXME TAW: The graph is always labeled with "Graph". There can be more than one graph of course
       //FIXME TAW: We can distinguish them by their factory!
-      
-      RCP<Teuchos::Time> timer = rcp(new Teuchos::Time("UCAggregationFactory::Build_" + Teuchos::toString(currentLevel.GetLevelID())));
-      timer->start(true);
       
       // Level Get
       RCP<const Graph> graph = currentLevel.Get< RCP<Graph> >("Graph", graphFact_.get());

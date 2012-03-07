@@ -46,7 +46,7 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void GenericRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildR(Level & fineLevel, Level & coarseLevel) const {
-    Monitor m(*this, "Call prolongator factory for calculating restrictor");
+    FactoryMonitor m(*this, "Call prolongator factory for calculating restrictor", coarseLevel);
 
     // BuildR
     bool rmode = PFact_->isRestrictionModeSet();

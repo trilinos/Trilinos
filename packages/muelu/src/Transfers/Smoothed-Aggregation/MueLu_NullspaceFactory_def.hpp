@@ -33,7 +33,7 @@ namespace MueLu {
   void NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
     RCP<MultiVector> nullspace;
 
-    Monitor m(*this, "Nullspace factory");
+    FactoryMonitor m(*this, "Nullspace factory", currentLevel);
 
     TEUCHOS_TEST_FOR_EXCEPTION(currentLevel.GetLevelID() != 0, Exceptions::RuntimeError, "MueLu::NullspaceFactory::Build(): NullspaceFactory can be used for finest level (LevelID == 0) only.");
 

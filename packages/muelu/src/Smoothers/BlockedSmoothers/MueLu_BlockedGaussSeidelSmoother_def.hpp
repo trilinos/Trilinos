@@ -61,7 +61,7 @@ namespace MueLu {
   void BlockedGaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(Level &currentLevel) {
     //typedef Xpetra::BlockedCrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsOOperator;
 
-    Monitor m(*this, "Setup blocked Gauss-Seidel Smoother");
+    FactoryMonitor m(*this, "Setup blocked Gauss-Seidel Smoother", currentLevel);
     if (SmootherPrototype::IsSetup() == true) this->GetOStream(Warnings0, 0) << "Warning: MueLu::Amesos2Smoother::Setup(): Setup() has already been called";
 
     // extract blocked operator A from current level

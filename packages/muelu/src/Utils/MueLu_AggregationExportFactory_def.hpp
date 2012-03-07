@@ -44,7 +44,7 @@ namespace MueLu {
     Teuchos::RCP<Aggregates> aggregates = fineLevel.Get< Teuchos::RCP<Aggregates> >("Aggregates",AggFact_);
     LocalOrdinal DofsPerNode =                 fineLevel.Get< LocalOrdinal > ("DofsPerNode", CoalesceDropFact_);
 
-    Monitor m(*this, "AggregationExportFactory");
+    FactoryMonitor m(*this, "AggregationExportFactory", coarseLevel);
 
     GetOStream(Runtime0, 0) << "AggregationExportFactory: DofsPerNode: " << DofsPerNode << std::endl;
 

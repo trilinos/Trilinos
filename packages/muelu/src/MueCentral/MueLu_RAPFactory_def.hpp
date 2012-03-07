@@ -35,7 +35,8 @@ namespace MueLu {
     typedef Xpetra::BlockedCrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsOperatorClass; // TODO move me
 
     {
-      Monitor m(*this, "Computing Ac = RAP");
+      int levelID = coarseLevel.GetLevelID();
+      FactoryMonitor m(*this, "Computing Ac = RAP", coarseLevel);
 
       //
       // Inputs: A, P
@@ -52,14 +53,14 @@ namespace MueLu {
       const RCP<BlockedCrsOperatorClass> bA = Teuchos::rcp_dynamic_cast<BlockedCrsOperatorClass>(A);
       if( bA != Teuchos::null) {
         RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", RFact_.get());
-        Ac = BuildRAPBlock(R, A, P);
+        Ac = BuildRAPBlock(R, A, P, levelID);
       } else {
         if (implicitTranspose_) {
-          Ac = BuildRAPImplicit(A, P);
+          Ac = BuildRAPImplicit(A, P, levelID);
         } else {
           // explicit version
           RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", RFact_.get());
-          Ac = BuildRAPExplicit(R, A, P);
+          Ac = BuildRAPExplicit(R, A, P, levelID);
         }
       }
 
@@ -74,7 +75,7 @@ namespace MueLu {
     //
 
     if (TransferFacts_.begin() != TransferFacts_.end()) {
-      Monitor m(*this, "Projections");
+      FactoryMonitor m(*this, "Projections", coarseLevel);
 
       // call Build of all user-given transfer factories
       std::vector<RCP<FactoryBase> >::const_iterator it;
@@ -86,12 +87,12 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildRAPExplicit(const RCP<Operator>& R, const RCP<Operator>& A, const RCP<Operator>& P) const {
-    SubMonitor m(*this, "Build RAP explicitly");
+  RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildRAPExplicit(const RCP<Operator>& R, const RCP<Operator>& A, const RCP<Operator>& P, int levelID) const {
+    SubFactoryMonitor m(*this, "Build RAP explicitly", levelID);
 
     RCP<Operator> AP;
     {
-      SubMonitor m2(*this, "MxM: A x P");
+      SubFactoryMonitor m2(*this, "MxM: A x P", levelID);
       AP = Utils::TwoMatrixMultiply(A, false, P, false);
       //std::string filename="AP.dat";
       //Utils::Write(filename, AP);
@@ -99,7 +100,7 @@ namespace MueLu {
 
     RCP<Operator> RAP;
     {
-      SubMonitor m2(*this, "MxM: R x (AP)");
+      SubFactoryMonitor m2(*this, "MxM: R x (AP)", levelID);
       RAP = Utils::TwoMatrixMultiply(R, false, AP, false);
     }
 
@@ -108,7 +109,9 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildRAPImplicit(const RCP<Operator>& A, const RCP<Operator>& P) const {
+  RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildRAPImplicit(const RCP<Operator>& A, const RCP<Operator>& P, int levelID) const {
+    SubFactoryMonitor m(*this, "Build RAP implicitly", levelID);
+
     GetOStream(Warnings0, 0) << "The implicitTranspose_ flag within RAPFactory for Epetra in parallel produces wrong results" << std::endl;
     RCP<Operator> AP  = Utils::TwoMatrixMultiply(A, false, P, false);
     RCP<Operator> RAP = Utils::TwoMatrixMultiply(P, true, AP, false);
@@ -118,7 +121,9 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildRAPBlock(const RCP<Operator>& R, const RCP<Operator>& A, const RCP<Operator>& P) const {
+  RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildRAPBlock(const RCP<Operator>& R, const RCP<Operator>& A, const RCP<Operator>& P, int levelID) const {
+    SubFactoryMonitor m(*this, "Build RAP block", levelID);
+    
     typedef Xpetra::BlockedCrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsOperatorClass;
     const RCP<BlockedCrsOperatorClass> bR = Teuchos::rcp_dynamic_cast<BlockedCrsOperatorClass>(R);
     const RCP<BlockedCrsOperatorClass> bA = Teuchos::rcp_dynamic_cast<BlockedCrsOperatorClass>(A);

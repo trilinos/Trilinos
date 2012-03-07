@@ -86,14 +86,14 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Teuchos::ParameterList Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::FullPopulate(const FactoryBase & PFact, 
-                                                 const FactoryBase & RFact, 
-                                                 const TwoLevelFactoryBase & AcFact, 
-                                                 const SmootherFactory & SmooFact, 
-                                                 const int &startLevel, const int &numDesiredLevels) {
-
+                                                                                                         const FactoryBase & RFact, 
+                                                                                                         const TwoLevelFactoryBase & AcFact, 
+                                                                                                         const SmootherFactory & SmooFact, 
+                                                                                                         const int &startLevel, const int &numDesiredLevels) {
+    
     // Note: It's OK to use rcpFromRef here, because data will only be kept by the FactoryManager
     //       and the FactoryManager is deleted at the end of this function.
-
+    
 
     //TODO:FIXME
 
@@ -128,6 +128,11 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   bool Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(int coarseLevelID, const Teuchos::Ptr<const FactoryManagerBase> fineLevelManager, const Teuchos::Ptr<const FactoryManagerBase> coarseLevelManager,
                const Teuchos::Ptr<const FactoryManagerBase> nextLevelManager) {
+
+    // Use PrintMonitor/TimerMonitor instead of just a FactoryMonitor to print "Level 0" instead of Hierarchy(0)
+    PrintMonitor m0(*this, "Level " +  Teuchos::Utils::toString(coarseLevelID));
+    TimerMonitor m1(*this, this->ShortClassName() + ": " + "Setup");
+    TimerMonitor m2(*this, this->ShortClassName() + "(" + Teuchos::Utils::toString(coarseLevelID) + "): " + "Setup");
 
     TEUCHOS_TEST_FOR_EXCEPTION(coarseLevelManager == Teuchos::null, Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): argument coarseLevelManager cannot be null"); //So, it should not be passed as a pointer but as a reference
 
@@ -188,7 +193,6 @@ namespace MueLu {
     // Build coarse level
     //
 
-    SubMonitor m(*this, "Level " + Teuchos::toString(coarseLevelID), Runtime0, Timings0);
     Level & level = *Levels_[coarseLevelID];
 
     // Build coarse level hierarchy
@@ -223,7 +227,7 @@ namespace MueLu {
     }
 
     // Build coarse level smoother
-    TopSmootherFactory smootherFact (rcpcoarseLevelManager, "Smoother");
+    TopSmootherFactory smootherFact      (rcpcoarseLevelManager, "Smoother");
     TopSmootherFactory coarsestSolverFact(rcpcoarseLevelManager, "CoarseSolver");
 
     if (!isLastLevel) {
@@ -241,13 +245,11 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Teuchos::ParameterList Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(const FactoryManagerBase & manager, const int &startLevel, const int &numDesiredLevels) {
+    PrintMonitor m0(*this, "Setup (" + this->MueLu::BaseClass::description() + ")"); // Use MueLu::BaseClass::description()to avoid printing "{numLevels = 1}" (numLevels is increasing...)
+
     RCP<const FactoryManagerBase> rcpManager = rcpFromRef(manager);
 
     // 2011/12 JG: Requests on the fine level are now posted at the beginning of the subroutine: Setup(fineLevelManager, coarseLevelManager, nextLevelManager)
-
-    // Use PrintMonitor/TimerMonitor instead of Monitor to avoid printing "{numLevels = 1}" (numLevels will increase...)
-    PrintMonitor(*this, "Setup");
-    TimerMonitor(*this, this->ShortClassName() + ": " + "Setup");
 
     //TODO Xpetra::global_size_t sumCoarseNnz = 0;
 
@@ -270,7 +272,7 @@ namespace MueLu {
     Teuchos::Ptr<const FactoryManagerBase> ptrmanager = Teuchos::ptrInArg(manager);
     bool bIsLastLevel = Setup(startLevel, Teuchos::null, ptrmanager, ptrmanager); // setup finest level (=level0)
     if(bIsLastLevel == false) {
-      for(iLevel=startLevel + 1; iLevel < lastLevel; iLevel++) {                    // setup intermediate levels
+      for(iLevel=startLevel + 1; iLevel < lastLevel; iLevel++) {                  // setup intermediate levels
         bIsLastLevel = Setup(iLevel, ptrmanager, ptrmanager, ptrmanager);
         if(bIsLastLevel == true) break;
       }
@@ -381,8 +383,8 @@ namespace MueLu {
   {
 
     RCP<Monitor> h;
-    if (startLevel == 0)
-      h = rcp( new Monitor(*this, "Iterate", (nIts == 1) ? None : Runtime0)); // Do not issue msg if part of an iterative method
+    if (startLevel == 0)                                                               // -> Timing and msg only if startLevel == 0
+      h = rcp(new Monitor(*this, "Iterate", (nIts == 1) ? None : Runtime0, Timings0)); // -> Do not issue msg if part of an iterative method (but always start timer)
 
     //Teuchos::Array<Magnitude> norms(1);
     bool zeroGuess=InitialGuessIsZero;
@@ -546,5 +548,8 @@ namespace MueLu {
 } //namespace MueLu
 
 // TODO: We need a Set/Get function to change the CycleType (for when Iterate() calls are embedded in a Belos Preconditionner for instance).
+
+// TODO: add timer on every function that are not calling Hierarchy::Setup(): SetCoarseLevel SetSmoothers etc. are part of the setup
+//       function that are calling Hierarchy::Setup() should not start a timer again
 
 #endif // MUELU_HIERARCHY_DEF_HPP

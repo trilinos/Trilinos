@@ -65,10 +65,10 @@ namespace MueLu {
     RCP<Operator> A     = fineLevel.  Get< RCP<Operator> >("A", AFact_.get());
     RCP<Operator> Ptent = coarseLevel.Get< RCP<Operator> >("P", initialPFact_.get());
 
-    Monitor m(*this, "Prolongator smoothing");
+    FactoryMonitor m(*this, "Prolongator smoothing", coarseLevel);
 
     if(restrictionMode_) {
-      SubMonitor m2(*this, "Transpose A");
+      SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);
       A = Utils2::Transpose(A,true); // build transpose of A explicitely
     }
 
@@ -87,7 +87,7 @@ namespace MueLu {
 
       RCP<Operator> AP;
       {
-        SubMonitor m2(*this, "MxM: A x Ptentative");
+        SubFactoryMonitor m2(*this, "MxM: A x Ptentative", coarseLevel);
         //JJH -- If I switch doFillComplete to false, the resulting matrix seems weird when printed with describe.
         //JJH -- The final prolongator is wrong, to boot.  So right now, I fillComplete AP, but avoid fillComplete
         //JJH -- in the scaling.  Long story short, we're doing 2 fillCompletes, where ideally we'd do just one.
@@ -97,7 +97,7 @@ namespace MueLu {
       }
 
       {
-        SubMonitor m2(*this, "Scaling (A x Ptentative) by D^{-1}");
+        SubFactoryMonitor m2(*this, "Scaling (A x Ptentative) by D^{-1}", coarseLevel);
         bool doFillComplete=false;
         bool optimizeStorage=false;
         Teuchos::ArrayRCP<SC> diag = Utils::GetMatrixDiagonal(A);
@@ -106,14 +106,14 @@ namespace MueLu {
 
       Scalar lambdaMax;
       {
-        SubMonitor m2(*this, "Eigenvalue estimate");
+        SubFactoryMonitor m2(*this, "Eigenvalue estimate", coarseLevel);
         lambdaMax = Utils::PowerMethod(*A, true, (LO) 10,(Scalar)1e-4);
         //Scalar lambdaMax = Utils::PowerMethod(*A, true, (LO) 50,(Scalar)1e-7, true);
         GetOStream(Statistics1, 0) << "Damping factor = " << dampingFactor_/lambdaMax << " (" << dampingFactor_ << " / " << lambdaMax << ")" << std::endl;
       }
 
       {
-        SubMonitor m2(*this, "M+M: P = (Ptentative) + (D^{-1} x A x Ptentative)");
+        SubFactoryMonitor m2(*this, "M+M: P = (Ptentative) + (D^{-1} x A x Ptentative)", coarseLevel);
         
         bool doTranspose=false; 
         if (AP->isFillComplete())
@@ -125,7 +125,7 @@ namespace MueLu {
       }
 
       {
-        SubMonitor m2(*this, "FillComplete() of P");
+        SubFactoryMonitor m2(*this, "FillComplete() of P", coarseLevel);
         finalP->fillComplete( Ptent->getDomainMap(), Ptent->getRangeMap() );
       }
       

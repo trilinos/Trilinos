@@ -81,11 +81,11 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(L
   RCP<Operator> Ptent = coarseLevel.Get< RCP<Operator> >("P", initialPFact_.get());
   RCP<Operator> A     = fineLevel.  Get< RCP<Operator> >("A", AFact_.get());
 
-  SubMonitor m(*this, "Prolongator smoothing (PG-AMG)");
+  SubFactoryMonitor m(*this, "Prolongator smoothing (PG-AMG)", coarseLevel);
 
   /////////////////// switch from A to A^T in restriction mode (necessary as long as implicit transpose not working for Epetra)
   if(restrictionMode_) {
-    SubMonitor m2(*this, "Transpose A");
+    SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);
     A = Utils2::Transpose(A,true); // build transpose of A explicitely
   }
 

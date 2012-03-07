@@ -49,7 +49,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
-  Monitor m(*this, "CoalesceDropFactory");
+  FactoryMonitor m(*this, "CoalesceDropFactory", currentLevel);
 
   //RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
@@ -90,6 +90,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
   if(fixedBlkSize_ == true  && blockdim > 1)                  bDoAmalgamation = true; // constant block size > 1
 
   if (bDoAmalgamation) {
+    FactoryMonitor m(*this, "Amalgamate", currentLevel);
     Amalgamate(A, blockdim, graph);
   } else {
     graph = rcp(new Graph(A->getCrsGraph(), "Graph of A"));
@@ -197,8 +198,6 @@ GlobalOrdinal, Node, LocalMatOps>::SetupAmalgamationData(const RCP<Operator>& A,
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Amalgamate(const RCP<Operator>& A, const LocalOrdinal blockSize, RCP<Graph>& graph) const {
-  SubMonitor m(*this, "Amalgamate");
-
   if(fixedBlkSize_==true) {
 
     GetOStream(Runtime0, 0) << color_esc << color_purple << "CoalesceDropFactory::Amalgamate()" << color_esc << color_std << " constant blocksize=" << blockSize << std::endl;

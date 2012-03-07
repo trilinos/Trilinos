@@ -68,7 +68,7 @@ namespace MueLu {
 
     //! Build an object with this factory.
     void Build(Level & currentLevel) const {
-      Monitor m(*this, "A filter (segregation)");
+      FactoryMonitor m(*this, "A filter (segregation)");
 
       if (currentLevel.IsAvailable("SegAMapExtractor", MueLu::NoFactory::get())==false) {
         GetOStream(Runtime0, 0) << "Use user provided map extractor with " << mapextractor_->NumMaps() << " submaps for segregation filter for " << varName_ << std::endl;

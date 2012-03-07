@@ -31,7 +31,7 @@ namespace MueLu {
 
     RCP<OOperator> Ain = currentLevel.Get< RCP<OOperator> >(varName_, factory_);
 
-    Monitor m(*this, "A filter (thresholding)");
+    FactoryMonitor m(*this, "A filter (thresholding)", currentLevel);
 
     // create new empty Operator
     RCP<CrsOOperator> Aout = rcp(new CrsOOperator(Ain->getRowMap(),Ain->getGlobalMaxNumRowEntries(),Xpetra::StaticProfile)); //FIXME
