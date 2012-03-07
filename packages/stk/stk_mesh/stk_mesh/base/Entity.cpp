@@ -106,10 +106,10 @@ RelationIterator Entity::find_relation(const Relation& relation) const
                                           internal_end_relation(relation_type),
                                           relation);
 
+  // Should only loop if we are looking at back-relations, otherwise, relations with
+  // matching specifications are not legal.
   while (rel != internal_end_relation(relation_type) &&
-         rel->entity_rank()     == relation.entity_rank() &&
-         rel->getRelationType() == relation.getRelationType() &&
-         rel->getOrdinal()      == relation.getOrdinal() &&
+         same_specification(*rel, relation) &&
          rel->getMeshObj()      != relation.getMeshObj())
     ++rel;
 
