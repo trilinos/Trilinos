@@ -130,18 +130,18 @@ namespace MueLu {
   class FactoryMonitor: public Monitor {
   public:
     FactoryMonitor(const BaseClass& object, const std::string & msg, int levelID, MsgType msgLevel = Runtime0, MsgType timerLevel = Timings0) 
-      : Monitor(object, msg, msgLevel, Timings0)
+      : Monitor(object, msg, msgLevel, timerLevel)
     { 
       if (IsPrint(TimingsByLevel)) {
-        levelTimerMonitor_ = rcp(new TimerMonitor(object, object.ShortClassName() + "(" + Teuchos::Utils::toString(levelID) + "): " + msg, timerLevel));
+        levelTimerMonitor_ = rcp(new TimerMonitor(object, object.ShortClassName() + ": " + msg + " (level=" + Teuchos::Utils::toString(levelID) + ")", timerLevel));
       }
     }
 
     FactoryMonitor(const BaseClass& object, const std::string & msg, const Level & level, MsgType msgLevel = Runtime0, MsgType timerLevel = Timings0) 
-      : Monitor(object, msg, msgLevel, Timings0)
+      : Monitor(object, msg, msgLevel, timerLevel)
     { 
       if (IsPrint(TimingsByLevel)) {
-        levelTimerMonitor_ = rcp(new TimerMonitor(object, object.ShortClassName() + "(" + Teuchos::Utils::toString(level.GetLevelID()) + "): " + msg, timerLevel));
+        levelTimerMonitor_ = rcp(new TimerMonitor(object, object.ShortClassName() + ": " +  msg + " (level=" + Teuchos::Utils::toString(level.GetLevelID()) + ")", timerLevel));
       }
     }
 
@@ -150,22 +150,22 @@ namespace MueLu {
   };
 
   // Factory monitor
-    // Similar to SubMonitor but add a timer level by level
+  // Similar to SubMonitor but add a timer level by level
   class SubFactoryMonitor: public SubMonitor {
   public:
     SubFactoryMonitor(const BaseClass& object, const std::string & msg, int levelID, MsgType msgLevel = Runtime1, MsgType timerLevel = Timings1) 
-      : SubMonitor(object, msg, msgLevel, Timings0)
+      : SubMonitor(object, msg, msgLevel, timerLevel)
     { 
       if (IsPrint(TimingsByLevel)) {
-        levelTimerMonitor_ = rcp(new TimerMonitor(object, object.ShortClassName() + "(" + Teuchos::Utils::toString(levelID) + "): " + msg, timerLevel));
+        levelTimerMonitor_ = rcp(new TimerMonitor(object, object.ShortClassName() + ": " + msg + " (level=" + Teuchos::Utils::toString(levelID) + ")", timerLevel));
       }
     }
 
     SubFactoryMonitor(const BaseClass& object, const std::string & msg, const Level & level, MsgType msgLevel = Runtime1, MsgType timerLevel = Timings1) 
-      : SubMonitor(object, msg, msgLevel, Timings0)
+      : SubMonitor(object, msg, msgLevel, timerLevel)
     { 
       if (IsPrint(TimingsByLevel)) {
-        levelTimerMonitor_ = rcp(new TimerMonitor(object, object.ShortClassName() + "(" + Teuchos::Utils::toString(level.GetLevelID()) + "): " + msg, timerLevel));
+        levelTimerMonitor_ = rcp(new TimerMonitor(object, object.ShortClassName() + ": " +  msg + " (level=" + Teuchos::Utils::toString(level.GetLevelID()) + ")", timerLevel));
       }
     }
   private:
