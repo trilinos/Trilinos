@@ -1169,9 +1169,12 @@ namespace Ioex {
     // Check for results variables.
 
     int num_attr = 0;
-    int ierr = ex_get_attr_param(get_file_pointer(), EX_NODE_BLOCK, 1, &num_attr);
-    if (ierr < 0)
-      exodus_error(get_file_pointer(), __LINE__, myProcessor);
+    {
+      Ioss::SerializeIO	serializeIO__(this);
+      int ierr = ex_get_attr_param(get_file_pointer(), EX_NODE_BLOCK, 1, &num_attr);
+      if (ierr < 0)
+	exodus_error(get_file_pointer(), __LINE__, myProcessor);
+    }
 
     add_attribute_fields(EX_NODE_BLOCK, block, num_attr, "");
     add_results_fields(EX_NODE_BLOCK, block);
@@ -2128,10 +2131,12 @@ namespace Ioex {
 		}
 
 		int num_attr = 0;
-		int ierr = ex_get_attr_param(get_file_pointer(), EX_SIDE_SET, 1, &num_attr);
-		if (ierr < 0)
-		  exodus_error(get_file_pointer(), __LINE__, myProcessor);
-	      
+		{
+		  Ioss::SerializeIO	serializeIO__(this);
+		  int ierr = ex_get_attr_param(get_file_pointer(), EX_SIDE_SET, 1, &num_attr);
+		  if (ierr < 0)
+		    exodus_error(get_file_pointer(), __LINE__, myProcessor);
+		}
 		// Add additional fields 
 		add_attribute_fields(EX_SIDE_SET, side_block, num_attr, "");
 		add_results_fields(EX_SIDE_SET, side_block, iss);
