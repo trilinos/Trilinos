@@ -24,9 +24,6 @@ extern "C" {
 #include "zz_util_const.h"
 #include "params_const.h"
 #include "rcb_const.h"
-#ifdef ZOLTAN_OCT
-#include "octupdate_const.h"
-#endif
 #include "reftree_const.h"
 #include "ha_const.h"
 #include "rib_const.h"
@@ -58,9 +55,6 @@ static ZOLTAN_SET_PARAM_FN * Param_func[] = {
 #endif 
 #if defined(ZOLTAN_SCOTCH) || defined(ZOLTAN_PTSCOTCH)
        Zoltan_Scotch_Set_Param,
-#endif
-#ifdef ZOLTAN_OCT
-       Zoltan_Oct_Set_Param,
 #endif
        Zoltan_Reftree_Set_Param,
        Zoltan_RIB_Set_Param,

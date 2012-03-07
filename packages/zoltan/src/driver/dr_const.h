@@ -96,10 +96,6 @@ extern "C" {
 #define ZOLTAN_PARKWAY
 #endif
 
-#ifdef HAVE_ZOLTAN_OCT
-#define ZOLTAN_OCT
-#endif
-
 #ifdef HAVE_NEMESIS_EXODUS
 #define ZOLTAN_NEMESIS
 #endif

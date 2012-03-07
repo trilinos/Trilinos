@@ -91,11 +91,6 @@ extern "C" {
 #define ZOLTAN_PARKWAY
 #endif
 
-#ifdef HAVE_ZOLTAN_OCT
-#define ZOLTAN_OCT
-#warning "WARNING Zoltan support for Octree Partitioning is deprecated and will not be available in Trilinos v11.  Consider using LB_METHOD=HSFC for similar results."
-#endif
-
 #else /* !AUTOTOOLS_BUILD */
 
   /* With the manual build system we support only Parallel Version of Scotch */

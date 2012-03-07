@@ -707,8 +707,6 @@ USING_PERL_TRUE
 USING_PERL_FALSE
 USING_GNUMAKE_TRUE
 USING_GNUMAKE_FALSE
-BUILD_OCTREEPARTITIONING_TRUE
-BUILD_OCTREEPARTITIONING_FALSE
 BUILD_GZIP_TRUE
 BUILD_GZIP_FALSE
 BUILD_PARMETIS_TRUE
@@ -1354,8 +1352,6 @@ Optional Features:
                           always created and used in the build directory, but
                           will not be installable without this option to
                           change the paths. (default is yes)
-  --enable-octreepartitioning
-                          enable octreepartitioning (default is no)
   --enable-gzip           enable zlib support for driver (default is no)
   --enable-tests          Make tests for all Trilinos packages buildable with
                           'make tests' (default is yes)
@@ -6342,40 +6338,6 @@ echo "${ECHO_T}typedef $zoltan_id_type ZOLTAN_ID_TYPE" >&6; }
 
 
 
-# Check whether --enable-octreepartitioning was given.
-if test "${enable_octreepartitioning+set}" = set; then
-  enableval=$enable_octreepartitioning; ac_cv_use_octreepartitioning=$enableval
-else
-  ac_cv_use_octreepartitioning=no
-fi
-
-
-{ echo "$as_me:$LINENO: checking whether to use octreepartitioning" >&5
-echo $ECHO_N "checking whether to use octreepartitioning... $ECHO_C" >&6; }
-
-if test "X$ac_cv_use_octreepartitioning" != "Xno"; then
-  { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_ZOLTAN_OCT 1
-_ACEOF
-
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
- if test "X$ac_cv_use_octreepartitioning" != "Xno"; then
-  BUILD_OCTREEPARTITIONING_TRUE=
-  BUILD_OCTREEPARTITIONING_FALSE='#'
-else
-  BUILD_OCTREEPARTITIONING_TRUE='#'
-  BUILD_OCTREEPARTITIONING_FALSE=
-fi
-
-
-
 # Check whether --enable-gzip was given.
 if test "${enable_gzip+set}" = set; then
   enableval=$enable_gzip; ac_cv_use_gzip=$enableval
@@ -8768,13 +8730,6 @@ echo "$as_me: error: conditional \"USING_GNUMAKE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${BUILD_OCTREEPARTITIONING_TRUE}" && test -z "${BUILD_OCTREEPARTITIONING_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_OCTREEPARTITIONING\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_OCTREEPARTITIONING\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
 if test -z "${BUILD_GZIP_TRUE}" && test -z "${BUILD_GZIP_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_GZIP\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -9550,8 +9505,6 @@ USING_PERL_TRUE!$USING_PERL_TRUE$ac_delim
 USING_PERL_FALSE!$USING_PERL_FALSE$ac_delim
 USING_GNUMAKE_TRUE!$USING_GNUMAKE_TRUE$ac_delim
 USING_GNUMAKE_FALSE!$USING_GNUMAKE_FALSE$ac_delim
-BUILD_OCTREEPARTITIONING_TRUE!$BUILD_OCTREEPARTITIONING_TRUE$ac_delim
-BUILD_OCTREEPARTITIONING_FALSE!$BUILD_OCTREEPARTITIONING_FALSE$ac_delim
 BUILD_GZIP_TRUE!$BUILD_GZIP_TRUE$ac_delim
 BUILD_GZIP_FALSE!$BUILD_GZIP_FALSE$ac_delim
 BUILD_PARMETIS_TRUE!$BUILD_PARMETIS_TRUE$ac_delim
@@ -9584,7 +9537,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 63; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 61; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

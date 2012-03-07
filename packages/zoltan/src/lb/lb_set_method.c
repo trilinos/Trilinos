@@ -97,20 +97,11 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Box_Assign = Zoltan_RB_Box_Assign;
   }
   else if (strcmp(method_upper, "OCTPART") == 0) {
-#ifdef ZOLTAN_OCT
-    zz->LB.Method = OCTPART;
-    zz->LB.LB_Fn = Zoltan_Octpart;
-    zz->LB.Free_Structure = Zoltan_Oct_Free_Structure;
-    zz->LB.Copy_Structure = NULL;
-    zz->LB.Point_Assign = NULL;
-    zz->LB.Box_Assign = NULL;
-#else
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                     "OCTPART method selected but not compiled into Zoltan; "
-                     "Configure (via CMAKE) with -DZoltan_ENABLE_OCT:BOOL=ON.");
+                     "OCTPART method is no longer supported in Zoltan; "
+                     "Try LB_METHOD=HSFC for similar results.");
     error = ZOLTAN_FATAL;
     goto End;
-#endif
   }
   else if (strcmp(method_upper, "GRAPH") == 0){
     zz->LB.Method = GRAPH;
@@ -121,9 +112,9 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Point_Assign = NULL;
     zz->LB.Box_Assign = NULL;
   }
-  /* PARMETIS and JOSTLE are here for backward compatibility.
+  /* PARMETIS is here for backward compatibility.
    * New way: LB_METHOD = GRAPH
-   *          GRAPH_PACKAGE = PARMETIS or JOSTLE or PHG
+   *          GRAPH_PACKAGE = PARMETIS or SCOTCH or PHG
    */
   else if (strcmp(method_upper, "PARMETIS") == 0){
 #ifdef ZOLTAN_PARMETIS

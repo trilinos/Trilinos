@@ -213,52 +213,6 @@ APPEND_SET(SOURCES
   matrix/matrix_utils.c
   )
 
-
-#
-# src/oct
-#
-
-IF (${PACKAGE_NAME}_ENABLE_OCT)
-
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/oct)
-
-  APPEND_SET(NOINSTALLHEADERS
-    oct/costs_const.h
-    oct/costs.h
-    oct/dfs_const.h
-    oct/dfs.h
-    oct/migoct_const.h
-    oct/migreg_const.h
-    oct/migreg.h
-    oct/migtags_const.h
-    oct/msg_const.h
-    oct/octant_const.h
-    oct/octree_const.h
-    oct/octupdate_const.h
-    oct/octupdate.h
-    oct/oct_util_const.h
-    oct/rootlist_const.h
-    oct/SFC.h
-    )
-
-  APPEND_SET(SOURCES
-    oct/costs.c
-    oct/dfs.c
-    oct/migoct.c
-    oct/migreg.c
-    oct/migtags.c
-    oct/msg.c
-    oct/octant.c
-    oct/oct_plot.c
-    oct/octree.c
-    oct/octupdate.c
-    oct/oct_util.c
-    oct/output.c
-    oct/rootlist.c
-    )
-
-ENDIF()
-
 #
 # src/order
 #

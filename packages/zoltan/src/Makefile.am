@@ -113,53 +113,6 @@ MATRIX = \
 	$(srcdir)/matrix/matrix_sym.c \
 	$(srcdir)/matrix/matrix_utils.c 
 
-EXTRA_OCT_H = \
-	$(srcdir)/oct/costs_const.h \
-	$(srcdir)/oct/costs.h \
-	$(srcdir)/oct/dfs_const.h \
-	$(srcdir)/oct/dfs.h \
-	$(srcdir)/oct/migoct_const.h \
-	$(srcdir)/oct/migreg_const.h \
-	$(srcdir)/oct/migreg.h \
-	$(srcdir)/oct/migtags_const.h \
-	$(srcdir)/oct/msg_const.h \
-	$(srcdir)/oct/octant_const.h \
-	$(srcdir)/oct/octree_const.h \
-	$(srcdir)/oct/octupdate_const.h \
-	$(srcdir)/oct/octupdate.h \
-	$(srcdir)/oct/oct_util_const.h \
-	$(srcdir)/oct/rootlist_const.h \
-	$(srcdir)/oct/SFC.h
-
-EXTRA_OCT = \
-	$(srcdir)/oct/costs.c \
-	$(srcdir)/oct/dfs.c \
-	$(srcdir)/oct/migoct.c \
-	$(srcdir)/oct/migreg.c \
-	$(srcdir)/oct/migtags.c \
-	$(srcdir)/oct/msg.c \
-	$(srcdir)/oct/octant.c \
-	$(srcdir)/oct/oct_plot.c \
-	$(srcdir)/oct/octree.c \
-	$(srcdir)/oct/octupdate.c \
-	$(srcdir)/oct/oct_util.c \
-	$(srcdir)/oct/output.c \
-	$(srcdir)/oct/rootlist.c
-
-if BUILD_OCTREEPARTITIONING
-
-OCT_H = $(EXTRA_OCT_H)
-
-OCT = $(EXTRA_OCT)
-
-else
-
-OCT_H =
-
-OCT =
-
-endif
-
 ORDER_H = \
 	$(srcdir)/order/order_const.h \
 	$(srcdir)/order/hsfcOrder.h 
@@ -576,7 +529,6 @@ ZOLTAN_H = \
 	$(INCLUDE_H) \
 	$(LB_H) \
 	$(MATRIX_H) \
-	$(OCT_H) \
 	$(ORDER_H) \
 	$(PAR_H) \
 	$(PARAMS_H) \
@@ -601,7 +553,6 @@ libzoltan_a_SOURCES = \
 	$(HSFC) \
 	$(LB) \
 	$(MATRIX) \
-	$(OCT) \
 	$(ORDER) \
 	$(PAR) \
 	$(PARAMS) \
@@ -618,8 +569,6 @@ libzoltan_a_SOURCES = \
 	$(FORTRAN)
 
 EXTRA_libzoltan_a_SOURCES = \
-	$(EXTRA_OCT_H) \
-	$(EXTRA_OCT) \
 	$(EXTRA_PARMETIS_INTERFACE_H) \
 	$(EXTRA_PARMETIS_INTERFACE) \
 	$(EXTRA_SCOTCH_INTERFACE_H) \

@@ -53,7 +53,6 @@ set no_chaco = $?ZOLTAN_NO_CHACO
 set no_rcb = $?ZOLTAN_NO_RCB
 set no_rib = $?ZOLTAN_NO_RIB
 set no_hsfc = $?ZOLTAN_NO_HSFC
-set no_oct = $?ZOLTAN_NO_OCT
 set no_parmetis = $?ZOLTAN_NO_PARMETIS
 set no_scotch = $?ZOLTAN_NO_SCOTCH
 set no_order = $?ZOLTAN_NO_ORDER
@@ -99,8 +98,6 @@ while ( $#argv )
      @ no_rib = 1
   else if ( "$1" == "-no_hsfc" ) then
      @ no_hsfc = 1
-  else if ( "$1" == "-no_oct" ) then
-     @ no_oct = 1
   else if ( "$1" == "-no_parmetis" ) then
      @ no_parmetis = 1
   else if ( "$1" == "-no_scotch" ) then
@@ -405,10 +402,6 @@ if ( $yes_fortran ) then
       set ch_methods = ( $ch_methods hsfc-1D hsfc-2D)
     endif
   endif
-  if (! $no_oct) then
-    set ch_methods = ( $ch_methods oct0 oct1 oct2 )
-    set ch_methods = ( $ch_methods oct0-partlocal3 oct1-partlocal3 oct2-partlocal3 )
-  endif
   if ((! $no_hier) && (! $no_parmetis)) then
     if (! $yes_serial) then
       set ch_methods = ( $ch_methods hier-parmetis2-hsfc hier-parmetis2-rcb \
@@ -567,14 +560,6 @@ else
       set nem_methods = ( $nem_methods hsfc-partlocal3 hsfc-partlocal4 )
       set nem_methods = ( $nem_methods hsfc-partlocal6 hsfc-partlocal7 )
     endif
-  endif
-  if (! $no_oct) then
-    set ch_methods = ( $ch_methods oct0 oct1 oct2 )
-    set ch_methods = ( $ch_methods oct0-partlocal3 oct1-partlocal3 oct2-partlocal3 )
-    set ch_methods = ( $ch_methods oct0-partlocal6 oct1-partlocal6 oct2-partlocal6 )
-    set ch_methods = ( $ch_methods oct0-partlocal7 oct1-partlocal7 oct2-partlocal7 )
-    set nem_methods = ( $nem_methods oct0 oct1 oct2 )
-    set nem_methods = ( $nem_methods oct0-partlocal3 oct1-partlocal3 oct2-partlocal3 )
   endif
   if (! $no_reftree) then
     set nem_methods = ( $nem_methods reftree reftree-connected)
@@ -1314,7 +1299,6 @@ usage:
   echo "   -no_rcb"
   echo "   -no_rib"
   echo "   -no_hsfc"
-  echo "   -no_oct"
   echo "   -no_parmetis"
   echo "   -no_scotch"
   echo "   -no_reftree"
