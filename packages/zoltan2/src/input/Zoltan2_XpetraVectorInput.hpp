@@ -59,19 +59,19 @@ public:
   /*! \brief Constructor   
    *
    *  \param invector  the user's Xpetra, Tpetra or Epetra Vector object
-   *  \param numWeights the number of weights per element, which may be zero
-   *                or greater
-   *  \param weights  numWeights pointers to arrays of weights
-   *  \param weightStrides  a list of numWeights strides for the weights
-   *        arrays. The n'th weight for multivector element k is to be found
-   *               at weights[n][k*weightStrides[n]].  If weightStrides
-   *              is NULL, it is assumed all strides are one.
+   *  \param weights  a list of pointers to arrays of weights.
+   *      The number of weights per vector element is assumed to be
+   *      \c weights.size().
+   *  \param weightStrides  a list of strides for the \c weights.
+   *     The weight for weight dimension \c n for element \c k should be
+   *     found at <tt>weights[n][weightStrides[n] * k]</tt>.
+   *     If \c weightStrides.size() is zero, it is assumed all strides are one
    *
    *  The values pointed to the arguments must remain valid for the
    *  lifetime of this InputAdapter.
    */
-  XpetraVectorInput( const RCP<const User> &invector, int numWeights, 
-    const scalar_t * * const weights, int *weightStrides);
+  XpetraVectorInput( const RCP<const User> &invector,
+    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides);
 
   /*! \brief Access to the xpetra-wrapped vector
    */
@@ -149,10 +149,10 @@ private:
   
 template <typename User>
   XpetraVectorInput<User>::XpetraVectorInput(const RCP<const User> &invector, 
-    int numWeights, const scalar_t * * const weights, int *weightStrides):
+    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
       invector_(invector), vector_(), map_(),
       env_(rcp(new Environment)), base_(),
-      numWeights_(numWeights), weights_(numWeights)
+      numWeights_(weights.size()), weights_(weights.size())
 {
   typedef StridedInput<lno_t, scalar_t> input_t;
 
@@ -162,10 +162,10 @@ template <typename User>
 
   size_t length = vector_->getLocalLength();
 
-  if (length > 0 && numWeights > 0){
+  if (length > 0 && numWeights_ > 0){
     int stride = 1;
-    for (int w=0; w < numWeights; w++){
-      if (weightStrides)
+    for (int w=0; w < numWeights_; w++){
+      if (weightStrides.size())
         stride = weightStrides[w];
       weights_[w] = rcp<input_t>(new input_t(
         ArrayView<const scalar_t>(weights[w], stride*length), stride));

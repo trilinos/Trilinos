@@ -1,18 +1,14 @@
 // @HEADER
 // ***********************************************************************
-//
 //         Zoltan2: Sandia Partitioning Ordering & Coloring Library
-//
-//                Copyright message goes here.   TODO
-//
 // ***********************************************************************
-//
-// Basic testing of Zoltan2::XpetraMultiVectorInput 
-//
-// TODO: add test with weights.
+
+/*! \file XpetraMultiVectorInput.cpp
+ *  \brief Test of Zoltan2::XpetraMultiVectorInput
+ *  \todo test with weights
+ */
 
 #include <string>
-
 
 #include <Zoltan2_XpetraMultiVectorInput.hpp>
 #include <Zoltan2_InputTraits.hpp>
@@ -156,6 +152,9 @@ int main(int argc, char *argv[])
 
   solution.setParts(rowGids, solnParts, metric);
 
+  std::vector<const scalar_t *> emptyWeights;
+  std::vector<int> emptyStrides;
+
   /////////////////////////////////////////////////////////////
   // User object is Tpetra::MultiVector, no weights
   if (!gfail){ 
@@ -164,7 +163,8 @@ int main(int argc, char *argv[])
   
     try {
       tVInput = 
-        rcp(new Zoltan2::XpetraMultiVectorInput<tvector_t>(ctV, 0, NULL, NULL));
+        rcp(new Zoltan2::XpetraMultiVectorInput<tvector_t>(ctV, 
+          emptyWeights, emptyStrides));
     }
     catch (std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -197,7 +197,7 @@ int main(int argc, char *argv[])
         RCP<Zoltan2::XpetraMultiVectorInput<tvector_t> > newInput;
         try{
           newInput = rcp(new Zoltan2::XpetraMultiVectorInput<tvector_t>(
-            cnewV, 0, NULL, NULL));
+            cnewV, emptyWeights, emptyStrides));
         }
         catch (std::exception &e){
           TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -227,7 +227,8 @@ int main(int argc, char *argv[])
   
     try {
       xVInput = 
-        rcp(new Zoltan2::XpetraMultiVectorInput<xvector_t>(cxV, 0, NULL, NULL));
+        rcp(new Zoltan2::XpetraMultiVectorInput<xvector_t>(cxV, 
+          emptyWeights, emptyStrides));
     }
     catch (std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -258,7 +259,8 @@ int main(int argc, char *argv[])
         RCP<Zoltan2::XpetraMultiVectorInput<xvector_t> > newInput;
         try{
           newInput = 
-            rcp(new Zoltan2::XpetraMultiVectorInput<xvector_t>(cnewV, 0, NULL, NULL));
+            rcp(new Zoltan2::XpetraMultiVectorInput<xvector_t>(
+              cnewV, emptyWeights, emptyStrides));
         }
         catch (std::exception &e){
           TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -289,7 +291,8 @@ int main(int argc, char *argv[])
   
     try {
       eVInput = 
-        rcp(new Zoltan2::XpetraMultiVectorInput<evector_t>(ceV, 0, NULL, NULL));
+        rcp(new Zoltan2::XpetraMultiVectorInput<evector_t>(ceV,
+              emptyWeights, emptyStrides));
     }
     catch (std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -320,7 +323,8 @@ int main(int argc, char *argv[])
         RCP<Zoltan2::XpetraMultiVectorInput<evector_t> > newInput;
         try{
           newInput = 
-            rcp(new Zoltan2::XpetraMultiVectorInput<evector_t>(cnewV, 0, NULL, NULL));
+            rcp(new Zoltan2::XpetraMultiVectorInput<evector_t>(cnewV, 
+              emptyWeights, emptyStrides));
         }
         catch (std::exception &e){
           TEST_FAIL_AND_EXIT(*comm, 0, 

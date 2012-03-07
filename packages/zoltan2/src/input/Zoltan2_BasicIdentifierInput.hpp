@@ -39,20 +39,22 @@ public:
   typedef User user_t;
 
   /*! \brief Constructor
-      \param numIds is the number of identifiers in the list
-      \param numWeights is the number of weights provided for each
-                        identifier.  Weights are optional.
-      \param ids should point to a list of numIds identifiers.
-      \param weights should point to a list of numWeights pointers.  Each
-          pointer should point to a list of weights for the identifiers.
-          \c weights can be NULL if \c numWeights is zero.
-      \param strides should point to a list of numWeights integers. 
-          strides[i] is the stride for list weights[i].  If strides is
-          NULL, it will be assumed that each stride is one.
+   *  \param numIds is the number of identifiers in the list
+   *  \param ids should point to a list of numIds identifiers.
+   *  \param weights  a list of pointers to arrays of weights.
+   *      The number of weights per identifier is assumed to be
+   *      \c weights.size().
+   *  \param weightStrides  a list of strides for the \c weights.
+   *     The weight for weight dimension \c n for \c ids[k] should be
+   *     found at <tt>weights[n][weightStrides[n] * k]</tt>.
+   *     If \c weightStrides.size() is zero, it is assumed all strides are one.
+   *
+   *  The values pointed to the arguments must remain valid for the
+   *  lifetime of this InputAdapter.
    */
 
-  BasicIdentifierInput( lno_t numIds, int numWeights, const gid_t *idPtr, 
-    const scalar_t * const *wgtPtr, const int *strides); 
+  BasicIdentifierInput( lno_t numIds, const gid_t *idPtr, 
+    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides);
 
   ////////////////////////////////////////////////////////////////
   // The InputAdapter interface.
@@ -103,24 +105,25 @@ private:
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-  BasicIdentifierInput<User>::BasicIdentifierInput( lno_t numIds, 
-    int numWeights, const gid_t *idPtr,
-    const scalar_t * const *wgtPtr, const int *strides):
-      numIds_(numIds), idList_(idPtr), weights_(numWeights)
+  BasicIdentifierInput<User>::BasicIdentifierInput(
+    lno_t numIds, const gid_t *idPtr,
+    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
+      numIds_(numIds), idList_(idPtr), weights_(weights.size())
 {
   env_ = rcp(new Environment);    // for error messages
+  size_t numWeights = weights.size();
 
   if (numWeights){
     typedef StridedInput<lno_t,scalar_t> input_t;
-    if (strides)
+    if (weightStrides.size())
       for (int i=0; i < numWeights; i++)
         weights_[i] = rcp<input_t>(new input_t(
-          ArrayView<const scalar_t>(wgtPtr[i], strides[i]*numIds),
-          strides[i]));
+          ArrayView<const scalar_t>(weights[i], weightStrides[i]*numIds),
+          weightStrides[i]));
     else
       for (int i=0; i < numWeights; i++)
         weights_[i] = rcp<input_t>(new input_t(
-          ArrayView<const scalar_t>(wgtPtr[i], numIds), 1));
+          ArrayView<const scalar_t>(weights[i], numIds), 1));
   }
 }
 

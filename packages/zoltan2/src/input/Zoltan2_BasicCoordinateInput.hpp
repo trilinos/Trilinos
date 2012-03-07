@@ -15,6 +15,7 @@
 
 #include <Zoltan2_CoordinateInput.hpp>
 #include <Zoltan2_StridedInput.hpp>
+#include <vector>
 
 namespace Zoltan2 {
 
@@ -39,8 +40,6 @@ namespace Zoltan2 {
     actual class used by application to represent coordinates, or it may be
     the empty helper class \c BasicUserTypes with which a Zoltan2 user
     can easily supply the data types for the library.
-
-  \todo Add simpler constructors specifically for dimension 1, 2 and 3.
 */
 
 template <typename User>
@@ -84,32 +83,31 @@ public:
 
   /*! \brief Constructor for arbitrary dimension with weights.
    *
-   *  \param dim is the dimension of the  geometric coordinates.
    *  \param numIds   the local number of coordinates.
    *  \param ids     is a pointer to the coordinate global Ids. 
-   *  \param values a list of \c dim pointers to the coordinate values
-   *          corresponding to the \c numIds ids
-   *  \param valueStrides The \c dim strides for the \c values list.  
-   *           The coordinate for dimension \n for \c ids[k] should be
+   *  \param values a list of pointers to the coordinate values
+   *          corresponding to the \c numIds ids.  The coordinate
+   *          dimension is taken to be \c values.size().
+   *  \param valueStrides The strides for the \c values list.  
+   *           The coordinate for dimension \c n for \c ids[k] should be
    *           found at <tt>values[n][valueStrides[n] * k]</tt>.
-   *           If valueStrides is NULL, it is assumed all strides are one.
-   *  \param numWeights the number of weights per coordinate , which may be zero
-   *                or greater
-   *  \param weights  \c numWeights pointers to arrays of weights.  \c weights
-             may be NULL if there are no arrays of weights.
-   *  \param weightStrides  a list of \c numWeights strides for the \c weights
-   *        arrays. 
-   *           The weight for weight dimension \n for \c ids[k] should be
-   *           found at <tt>weights[n][weightStrides[n] * k]</tt>.
-   *           If weightStrides is NULL, it is assumed all strides are one.
+   *           If \c valueStrides.size() is zero, it is assumed 
+   *           all strides are one.
+   *  \param weights  a list of pointers to arrays of weights.  
+   *      The number of weights per coordinate is assumed to be
+   *      \c weights.size(). 
+   *  \param weightStrides  a list of strides for the \c weights.
+   *     The weight for weight dimension \c n for \c ids[k] should be
+   *     found at <tt>weights[n][weightStrides[n] * k]</tt>.
+   *     If \c weightStrides.size() is zero, it is assumed all strides are one.
    *  
    *  The values pointed to the arguments must remain valid for the
    *  lifetime of this InputAdapter.
    */
 
-  BasicCoordinateInput( int dim, lno_t numIds, const gid_t *ids, 
-    const scalar_t * const *values, const int *valueStrides,
-    int numWeights, const scalar_t * const * weights, const int *weightStrides);
+  BasicCoordinateInput(lno_t numIds, const gid_t *ids, 
+    std::vector<const scalar_t *> &values,  std::vector<int> &valueStrides,
+    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides);
 
   /*! Destructor
    */
@@ -166,15 +164,15 @@ public:
   }
 
 private:
-  void initializeData(const scalar_t * const *values, const int *valueStrides,
-    const scalar_t * const *weights, const int *weightStrides);
+  void initializeData(
+    std::vector<const scalar_t *> &values,  std::vector<int> &valueStrides,
+    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides);
 
   // A default Environment for error handling.
   RCP<const Environment> env_;
 
   lno_t numIds_;
   gno_t globalNumIds_;
-
   const gid_t *idList_;
 
   int dimension_;
@@ -198,47 +196,49 @@ template <typename User>
       dimension_(0), coords_(0), 
       numWeights_(0), weights_(0)
 {
-  const scalar_t *values[3]={NULL,NULL,NULL};
-  int valueStrides[3]={0,0,0};
+  std::vector<const scalar_t *> values;
+  std::vector<int> strides;
+  std::vector<const scalar_t *> emptyValues;
+  std::vector<int> emptyStrides;
 
   if (x){
-    values[0] = x;
-    valueStrides[0] = xStride;
+    values.push_back(x);
+    strides.push_back(xStride);
     dimension_++;
     if (y){
-      values[0] = y;
-      valueStrides[0] = yStride;
+      values.push_back(y);
+      strides.push_back(yStride);
       dimension_++;
       if (z){
-        values[0] = z;
-        valueStrides[0] = zStride;
+        values.push_back(z);
+        strides.push_back(zStride);
         dimension_++;
       }
     }
   }
 
-  coords_.resize(dimension_);
+  coords_.resize(values.size());
 
-  initializeData(values, valueStrides, NULL, NULL);
+  initializeData(values, strides, emptyValues, emptyStrides);
 }
 
 template <typename User>
   BasicCoordinateInput<User>::BasicCoordinateInput( 
-    int dim, lno_t numIds, const gid_t *ids, 
-    const scalar_t * const *values, const int *valueStrides,
-    int numWeights, const scalar_t * const * weights, const int *weightStrides):
+    lno_t numIds, const gid_t *ids, 
+    std::vector<const scalar_t *> &values,  std::vector<int> &valueStrides,
+    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
       env_(rcp(new Environment)), 
       numIds_(numIds), globalNumIds_(), idList_(ids), 
-      dimension_(dim), coords_(dim), 
-      numWeights_(numWeights), weights_(numWeights)
+      dimension_(values.size()), coords_(values.size()), 
+      numWeights_(weights.size()), weights_(weights.size())
 {
   initializeData(values, valueStrides, weights, weightStrides);
 }
 
 template <typename User>
   void BasicCoordinateInput<User>::initializeData(
-    const scalar_t * const *values, const int *valueStrides,
-    const scalar_t * const *weights, const int *weightStrides)
+    std::vector<const scalar_t *> &values,  std::vector<int> &valueStrides,
+    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides)
 {
   typedef StridedInput<lno_t,scalar_t> input_t;
 
@@ -252,7 +252,7 @@ template <typename User>
   if (numIds_){
     int stride = 1;
     for (int x=0; x < dimension_; x++){
-      if (valueStrides)
+      if (valueStrides.size())
         stride = valueStrides[x];
       coords_[x] = rcp<input_t>(new input_t(
         ArrayView<const scalar_t>(values[x], stride*numIds_), stride));
@@ -261,7 +261,7 @@ template <typename User>
     if (numWeights_){
       stride = 1;
       for (int w=0; w < numWeights_; w++){
-        if (weightStrides)
+        if (weightStrides.size())
           stride = weightStrides[w];
         weights_[w] = rcp<input_t>(new input_t(
           ArrayView<const scalar_t>(weights[w], stride*numIds_), stride));

@@ -32,7 +32,6 @@
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 
-//#include <Teuchos_ScalarTraits.hpp>    // TODO LRIESEN
 #include <MatrixMarket_Tpetra.hpp>
 #include <MueLu_MatrixFactory.hpp>
 #include <MueLu_GalleryParameters.hpp>
@@ -44,6 +43,8 @@
 #include <Epetra_SerialComm.h>
 #endif
 
+#include <bitset>
+
 using Teuchos::RCP;
 using Teuchos::ArrayRCP;
 using Teuchos::ArrayView;
@@ -51,6 +52,22 @@ using Teuchos::Array;
 using Teuchos::Comm;
 using Teuchos::rcp;
 using Teuchos::rcp_const_cast;
+
+#if 0
+
+enum testOutputType {
+  OBJECT_DATA,
+  OBJECT_COORDINATES,
+  NUM_TEST_OUTPUT_TYPE
+};
+
+typedef std::bitset<NUM_TEST_OUTPUT_TYPE> outputFlag_t;
+outputFlag_t defaultFlags(OBJECT_DATA);
+
+static int readCoordFile(std::string fname, Array<RCP<scalar_t> > &coords)
+{
+}
+#endif
 
 class UserInputForTests
 {

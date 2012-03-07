@@ -54,21 +54,109 @@ public:
    */
   ~XpetraCrsGraphInput() { }
 
-  /*! \brief Constructor
+  /*! \brief Constructor for graph with no weights or coordinates.
    *  \param ingraph the Epetra_CrsGraph, Tpetra::CrsGraph or Xpetra::CrsGraph
-   *  \param vertexWeightDim  the number of weights per vertex 
-            that will be supplied in setVertexWeights()
-   *  \param edgeWeightDim  the number of weights per edge 
-            that will be supplied in setEdgeWeights()
-   *  \param vertexCoordinateDim the number of coordinates per vertex 
-            that will be supplied in setCoordinates()
    *
    * Most input adapters do not have RCPs in their interface.  This
    * one does because the user is obviously a Trilinos user.
    */
 
-  XpetraCrsGraphInput(const RCP<const User> &ingraph, 
-    int vertexWeightDim=0, int edgeWeightDim=0, int vertexCoordinateDim=0);
+  XpetraCrsGraphInput(const RCP<const User> &ingraph);
+
+  /*! \brief Constructor for graph with weights but no coordinates.
+   *  \param ingraph the Epetra_CrsGraph, Tpetra::CrsGraph or Xpetra::CrsGraph
+   *  \param vWeights  a list of pointers to vertex weights.
+   *      The number of weights per graph vertex is assumed to be
+   *      \c vWeights.size().
+   *  \param vWeightStrides  a list of strides for the \c vWeights.
+   *     The weight for weight dimension \c n for vertex \c k should be
+   *     found at <tt>vWeights[n][vWeightStrides[n] * k]</tt>.
+   *     If \c vWeightStrides.size() is zero, it is assumed all strides are one.
+   *  \param eWeights  a list of pointers to edge weights.
+   *      The number of weights per edge is assumed to be
+   *      \c eWeights.size().
+   *  \param eWeightStrides  a list of strides for the \c eWeights.
+   *     The weight for weight dimension \c n for edge \c k should be
+   *     found at <tt>eWeights[n][eWeightStrides[n] * k]</tt>.
+   *     If \c eWeightStrides.size() is zero, it is assumed all strides are one.
+   *
+   *  The order of the vertex weights should match the order that
+   *  vertices appear in the input data structure.
+   *     \code
+   *       TheGraph->getRowMap()->getNodeElementList()
+   *     \endcode
+   *
+   *  The order of the edge weights should follow the order that the
+   *  the vertices and edges appear in the input data structure.
+   *
+   *  By vertex:
+   *     \code
+   *       TheGraph->getRowMap()->getNodeElementList()
+   *     \endcode
+   *
+   *  Then by vertex neighbor:
+   *     \code
+   *       TheGraph->getLocalRowView(vertexNum, neighborList);
+   *     \endcode
+   *
+   * Most input adapters do not have RCPs in their interface.  This
+   * one does because the user is obviously a Trilinos user.
+   */
+
+  XpetraCrsGraphInput(const RCP<const User> &ingraph,
+    std::vector<const scalar_t *> &vWeights,  std::vector<int> &vWeightStrides,
+    std::vector<const scalar_t *> &eWeights,  std::vector<int> &eWeightStrides);
+
+  /*! \brief Constructor for graph with weights and vertex coordinates.
+   *  \param ingraph the Epetra_CrsGraph, Tpetra::CrsGraph or Xpetra::CrsGraph
+   *  \param vWeights  a list of pointers to vertex weights.
+   *      The number of weights per graph vertex is assumed to be
+   *      \c vWeights.size().
+   *  \param vWeightStrides  a list of strides for the \c vWeights.
+   *     The weight for weight dimension \c n for vertex \c k should be
+   *     found at <tt>vWeights[n][vWeightStrides[n] * k]</tt>.
+   *     If \c vWeightStrides.size() is zero, it is assumed all strides are one.
+   *  \param eWeights  a list of pointers to edge weights.
+   *      The number of weights per edge is assumed to be
+   *      \c eWeights.size().
+   *  \param eWeightStrides  a list of strides for the \c eWeights.
+   *     The weight for weight dimension \c n for edge \c k should be
+   *     found at <tt>eWeights[n][eWeightStrides[n] * k]</tt>.
+   *     If \c eWeightStrides.size() is zero, it is assumed all strides are one.
+   *  \param coords  a list of pointers to vertex coordinates.
+   *      The coordinate dimension is assumed to be \c coords.size().
+   *  \param coordStrides  a list of strides for the \c coords.
+   *     The coordinate for dimension \c n for vertex \c k should be
+   *     found at <tt>coords[n][coordStrides[n] * k]</tt>.
+   *     If \c coordStrides.size() is zero, it is assumed all strides are one.
+   *
+   *  The order of the vertex weights and coordinates should coorespond to
+   *  the order that vertices appear in the input data structure.
+   *     \code
+   *       TheGraph->getRowMap()->getNodeElementList()
+   *     \endcode
+   *
+   *  The order of the edge weights should follow the order that the
+   *  the vertices and edges appear in the input data structure.
+   *
+   *  By vertex:
+   *     \code
+   *       TheGraph->getRowMap()->getNodeElementList()
+   *     \endcode
+   *
+   *  Then by vertex neighbor:
+   *     \code
+   *       TheGraph->getLocalRowView(vertexNum, neighborList);
+   *     \endcode
+   *
+   * Most input adapters do not have RCPs in their interface.  This
+   * one does because the user is obviously a Trilinos user.
+   */
+
+  XpetraCrsGraphInput(const RCP<const User> &ingraph,
+    std::vector<const scalar_t *> &vWeights,  std::vector<int> &vWeightStrides,
+    std::vector<const scalar_t *> &eWeights,  std::vector<int> &eWeightStrides,
+    std::vector<const scalar_t *> &coords,  std::vector<int> &coordStrides);
 
   /*! \brief Provide a pointer to one dimension of the vertex weights.
    *    \param dim A number from 0 to one less than 
@@ -243,6 +331,11 @@ public:
 
 private:
 
+  void initializeData(
+    std::vector<const scalar_t *> &vWeights,  std::vector<int> &vWeightStrides,
+    std::vector<const scalar_t *> &eWeights,  std::vector<int> &eWeightStrides,
+    std::vector<const scalar_t *> &coords,  std::vector<int> &coordStrides);
+
   RCP<const User > ingraph_;
   RCP<const xgraph_t > graph_;
   RCP<const Comm<int> > comm_;
@@ -270,39 +363,81 @@ private:
 /////////////////////////////////////////////////////////////////
 
 template <typename User>
- XpetraCrsGraphInput<User>::XpetraCrsGraphInput(
-    const RCP<const User> &ingraph, 
-    int vertexWeightDim, 
-    int edgeWeightDim, 
-    int vertexCoordinateDim):
+  XpetraCrsGraphInput<User>::XpetraCrsGraphInput(
+    const RCP<const User> &ingraph):
       ingraph_(ingraph), graph_(), comm_() , offs_(), eids_(),
-      vertexWeightDim_(vertexWeightDim), vertexWeights_(vertexWeightDim),
-      edgeWeightDim_(edgeWeightDim), edgeWeights_(edgeWeightDim),
-      coordinateDim_(vertexCoordinateDim), coords_(vertexCoordinateDim),
+      vertexWeightDim_(0), vertexWeights_(0),
+      edgeWeightDim_(0), edgeWeights_(0),
+      coordinateDim_(0), coords_(0),
       env_(rcp(new Environment))
 {
+  std::vector<const scalar_t *> emptyValues;
+  std::vector<int> emptyStrides;
+
+  initializeData(emptyValues, emptyStrides, emptyValues, emptyStrides,
+    emptyValues, emptyStrides);
+}
+
+template <typename User>
+  XpetraCrsGraphInput<User>::XpetraCrsGraphInput(const RCP<const User> &ingraph,
+    std::vector<const scalar_t *> &vWeights,  std::vector<int> &vWeightStrides,
+    std::vector<const scalar_t *> &eWeights,  std::vector<int> &eWeightStrides):
+      ingraph_(ingraph), graph_(), comm_() , offs_(), eids_(),
+      vertexWeightDim_(vWeights.size()), vertexWeights_(vWeights.size()),
+      edgeWeightDim_(eWeights.size()), edgeWeights_(eWeights.size()),
+      coordinateDim_(0), coords_(0),
+      env_(rcp(new Environment))
+{
+  std::vector<const scalar_t *> emptyValues;
+  std::vector<int> emptyStrides;
+
+  initializeData(vWeights, vWeightStrides, eWeights, eWeightStrides,
+    emptyValues, emptyStrides);
+}
+
+template <typename User>
+  XpetraCrsGraphInput<User>::XpetraCrsGraphInput(const RCP<const User> &ingraph,
+    std::vector<const scalar_t *> &vWeights,  std::vector<int> &vWeightStrides,
+    std::vector<const scalar_t *> &eWeights,  std::vector<int> &eWeightStrides,
+    std::vector<const scalar_t *> &coords,  std::vector<int> &coordStrides):
+      ingraph_(ingraph), graph_(), comm_() , offs_(), eids_(),
+      vertexWeightDim_(vWeights.size()), vertexWeights_(vWeights.size()),
+      edgeWeightDim_(eWeights.size()), edgeWeights_(eWeights.size()),
+      coordinateDim_(coords.size()), coords_(coords.size()),
+      env_(rcp(new Environment))
+{
+  initializeData(vWeights, vWeightStrides, eWeights, eWeightStrides,
+    coords, coordStrides);
+}
+
+template <typename User>
+  void XpetraCrsGraphInput<User>::initializeData(
+    std::vector<const scalar_t *> &vWeights,  std::vector<int> &vWeightStrides,
+    std::vector<const scalar_t *> &eWeights,  std::vector<int> &eWeightStrides,
+    std::vector<const scalar_t *> &coords,  std::vector<int> &coordStrides)
+{
+  typedef StridedInput<lno_t,scalar_t> input_t;
   env_->localInputAssertion(__FILE__, __LINE__, 
     "invalid number of dimensions", 
-    vertexWeightDim >= 0 && edgeWeightDim >= 0 && vertexCoordinateDim >= 0, 
+    vertexWeightDim_ >= 0 && edgeWeightDim_ >= 0 && coordinateDim_ >= 0, 
     BASIC_ASSERTION);
 
-  graph_ = XpetraTraits<User>::convertToXpetra(ingraph);
+  graph_ = XpetraTraits<User>::convertToXpetra(ingraph_);
   comm_ = graph_->getComm();
   size_t nvtx = graph_->getNodeNumRows();
   size_t nedges = graph_->getNodeNumEntries();
-  Environment env;
 
   // Unfortunately we have to copy the offsets and edge Ids
   // because edge Ids are not usually stored in vertex id order.
 
   size_t n = nvtx + 1;
   lno_t *offs = new lno_t [n];
-  env.localMemoryAssertion(__FILE__, __LINE__, n, offs);
+  env_->localMemoryAssertion(__FILE__, __LINE__, n, offs);
 
   gid_t *eids = NULL;
   if (nedges){
     eids = new gid_t [nedges];
-    env.localMemoryAssertion(__FILE__, __LINE__, nedges, eids);
+    env_->localMemoryAssertion(__FILE__, __LINE__, nedges, eids);
   }
 
   offs[0] = 0;
@@ -316,57 +451,33 @@ template <typename User>
 
   offs_ = arcp(offs, 0, n, true);
   eids_ = arcp(eids, 0, nedges, true);
-}
 
-template <typename User>
-  void XpetraCrsGraphInput<User>::setVertexCoordinates(int dim, 
-    const scalar_t *coordVal, int stride)
-{
-  typedef StridedInput<lno_t,scalar_t> input_t;
+  int stride = 1;
+  for (int dim=0; dim < coordinateDim_; dim++){
+    if (coordStrides.size())
+      stride = coordStrides[dim];
+    coords_[dim] = 
+      rcp<input_t>(
+        new input_t(ArrayView<const scalar_t>(coords[dim], nvtx), stride));
+  }
 
-  env_->localInputAssertion(__FILE__, __LINE__, 
-    "invalid vertex coordinate dimension", 
-    dim >= 0 && dim < coordinateDim_, BASIC_ASSERTION);
+  stride = 1;
+  for (int dim=0; dim < vertexWeightDim_; dim++){
+    if (vWeightStrides.size())
+      stride = vWeightStrides[dim];
+    vertexWeights_[dim] = 
+      rcp<input_t>(
+        new input_t(ArrayView<const scalar_t>(vWeights[dim], nvtx), stride));
+  }
 
-  size_t nvtx = getLocalNumberOfVertices();
-
-  coords_[dim] = 
-    rcp<input_t>(
-      new input_t(ArrayView<const scalar_t>(coordVal, nvtx), stride));
-}
-
-template <typename User>
-  void XpetraCrsGraphInput<User>::setEdgeWeights(int dim, 
-    const scalar_t *val, int stride)
-{
-  typedef StridedInput<lno_t,scalar_t> input_t;
-
-  env_->localInputAssertion(__FILE__, __LINE__, 
-    "invalid edge weight dimension", 
-    dim >= 0 && dim < edgeWeightDim_, BASIC_ASSERTION);
-
-  size_t nedges = getLocalNumberOfEdges();
-
-  edgeWeights_[dim] = 
-    rcp<input_t>(
-      new input_t(ArrayView<const scalar_t>(val, nedges), stride));
-}
-
-template <typename User>
-  void XpetraCrsGraphInput<User>::setVertexWeights(int dim, 
-    const scalar_t *val, int stride)
-{
-  typedef StridedInput<lno_t,scalar_t> input_t;
-
-  env_->localInputAssertion(__FILE__, __LINE__, 
-    "invalid vertex weight dimension", 
-    dim >= 0 && dim < vertexWeightDim_, BASIC_ASSERTION);
-
-  size_t nvtx = getLocalNumberOfVertices();
-
-  vertexWeights_[dim] = 
-    rcp<input_t>(
-      new input_t(ArrayView<const scalar_t>(val, nvtx), stride));
+  stride = 1;
+  for (int dim=0; dim < edgeWeightDim_; dim++){
+    if (eWeightStrides.size())
+      stride = eWeightStrides[dim];
+    edgeWeights_[dim] = 
+      rcp<input_t>(
+        new input_t(ArrayView<const scalar_t>(eWeights[dim], nedges), stride));
+  }
 }
 
 template <typename User>

@@ -145,8 +145,6 @@ int main(int argc, char *argv[])
   std::vector<std::string> mtxFiles;
   
   mtxFiles.push_back("../data/simple.mtx");
-  mtxFiles.push_back("../data/cage10.mtx");
-
   bool wishConsecutiveIds = true;
 
   for (unsigned int fileNum=0; fileNum < mtxFiles.size(); fileNum++){

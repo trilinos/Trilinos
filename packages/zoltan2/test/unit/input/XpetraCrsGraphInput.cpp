@@ -8,6 +8,10 @@
 // ***********************************************************************
 //
 // Basic testing of Zoltan2::XpetraCrsGraphInput
+/*!  \file XpetraCrsGraphInput.cpp
+ *   \brief Test of Zoltan2::XpetraCrsGraphInput class.
+ *  \todo add weights and coordinates
+ */
 
 #include <string>
 

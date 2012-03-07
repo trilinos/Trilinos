@@ -73,8 +73,8 @@ public:
    *  \param numIds  the local length of the vector
    *  \param ids     pointer to the global ids of the local vector elements
    *  \param elements  pointer to the elements corresponding to the ids
-   *  \param elementStrides  the k'th element is at elements[k*elementStride]
-   *                 and elements is of lenth numIds * elementStride
+   *  \param elementStride  the k'th element is at elements[k*elementStride]
+   *         and elements is of lenth at least <tt>numIds * elementStride</tt>.
    *  
    *  The values pointed to the arguments must remain valid for the
    *  lifetime of this InputAdapter.
@@ -82,10 +82,19 @@ public:
 
   BasicVectorInput(lno_t numIds, const gid_t *ids, const scalar_t *elements, 
     int elementStride=1):
-      env_(rcp(new Environment)), numIds_(0), globalNumIds_(0), idList_(NULL),
+      env_(rcp(new Environment)), 
+      numIds_(numIds), globalNumIds_(0), idList_(ids),
       numVectors_(1), elements_(1), numWeights_(0), weights_(0)
   {
-    createBasicVector(&elements, &elementStride, NULL, NULL);
+    std::vector<const scalar_t *> values;
+    std::vector<int> strides;
+    std::vector<const scalar_t *> emptyValues;
+    std::vector<int> emptyStrides;
+
+    values.push_back(elements);
+    strides.push_back(elementStride);
+
+    createBasicVector(values, strides, emptyValues, emptyStrides);
   }
 
   /*! \brief Constructor for one vector.
@@ -95,14 +104,13 @@ public:
    *  \param elements  pointer to the elements corresponding to the ids
    *  \param elementStrides  the k'th element is at elements[k*elementStride]
    *                 and elements is of lenth numIds * elementStride
-   *  \param numWeights the number of weights per element, which may be zero
-   *                or greater
-   *  \param weights  numWeights pointers to arrays of weights.  weights
-                 can be NULL if numWeights is zero.
-   *  \param weightStrides  a list of numWeights strides for the weights
-   *        arrays. The n'th weight for element k is to be found
-   *               at weights[n][k*weightStrides[n]].  If weightStrides
-   *              is NULL, it is assumed all strides are one.
+   *  \param weights  a list of pointers to arrays of weights.
+   *      The number of weights per element is assumed to be
+   *      \c weights.size().
+   *  \param weightStrides  a list of strides for the \c weights.
+   *     The weight for weight dimension \c n for \c ids[k] should be
+   *     found at <tt>weights[n][weightStrides[n] * k]</tt>.
+   *     If \c weightStrides.size() is zero, it is assumed all strides are one
    *  
    *  The values pointed to the arguments must remain valid for the
    *  lifetime of this InputAdapter.
@@ -110,45 +118,52 @@ public:
 
   BasicVectorInput(lno_t numIds, const gid_t *ids, 
     const scalar_t *elements, int elementStride,
-    int numWeights, const scalar_t * const * weights, int *weightStrides):
-      env_(rcp(new Environment)), numIds_(numIds), globalNumIds_(0), 
-      idList_(ids), numVectors_(1), elements_(1), 
-      numWeights_(numWeights), weights_(numWeights)
+    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
+      env_(rcp(new Environment)), 
+      numIds_(numIds), globalNumIds_(0), idList_(ids),
+      numVectors_(1), elements_(1), 
+      numWeights_(weights.size()), weights_(weights.size())
   {
-    createBasicVector(&elements, &elementStride, weights, weightStrides);
+    std::vector<const scalar_t *> values;
+    std::vector<int> strides;
+
+    values.push_back(elements);
+    strides.push_back(elementStride);
+
+    createBasicVector(values, strides, weights, weightStrides);
   }
 
   /*! \brief Constructor for a set of vectors.
    *
-   *  \param numVectors the number of vectors represented by this input adapter.
-   *         All vectors must have the same global ids and the same
-   *         distribution across processes.
    *  \param numIds  the local length of the vectors
    *  \param ids     a pointer to the global ids of the local vector elements
-   *  \param elements  a list of numVectors pointers to the vector elements 
-   *          corresponding to the ids
-   *  \param elementStrides  a list of numVectors strides for the elements 
-   *        arrays. The k'th element of vector n can be found at
-   *                elements[n][k*elementStrides[n]].  If elementStrides
-   *              is NULL, it is assumed all strides are one.
-   *  \param numWeights the number of weights per element, which may be zero
-   *                or greater
-   *  \param weights  numWeights pointers to arrays of weights
-   *  \param weightStrides  a list of numWeights strides for the weights
-   *        arrays. The n'th weight for element k (of any vector) is to be found
-   *               at weights[n][k*weightStrides[n]].  If weightStrides
-   *              is NULL, it is assumed all strides are one.
+   *  \param elements a list of pointers to the vector elements
+   *          corresponding to the \c numIds ids.  The number of vectors
+   *          assumed to be \c elements.size().
+   *  \param elementStrides The strides for the \c elements list.
+   *           The vector element for vector \c n for \c ids[k] should be
+   *           found at <tt>elements[n][elementStrides[n] * k]</tt>.
+   *           If \c elementStrides.size() is zero, it is assumed
+   *           all strides are one.
+   *  \param weights  a list of pointers to arrays of weights.
+   *      The number of weights per vector element is assumed to be
+   *      \c weights.size().
+   *  \param weightStrides  a list of strides for the \c weights.
+   *     The weight for weight dimension \c n for \c ids[k] should be
+   *     found at <tt>weights[n][weightStrides[n] * k]</tt>.
+   *     If \c weightStrides.size() is zero, it is assumed all strides are one.
    *  
    *  The values pointed to the arguments must remain valid for the
    *  lifetime of this InputAdapter.
    */
 
-  BasicVectorInput(int numVectors, lno_t numIds, const gid_t *ids, 
-    const scalar_t * const *elements, int *elementStrides,
-    int numWeights, const scalar_t * const *weights, int *weightStrides):
-      env_(rcp(new Environment)), numIds_(numIds), globalNumIds_(0), 
-      idList_(ids), numVectors_(numVectors), elements_(numVectors), 
-      numWeights_(numWeights), weights_(numWeights)
+  BasicVectorInput(lno_t numIds, const gid_t *ids, 
+    std::vector<const scalar_t *> &elements,  std::vector<int> &elementStrides,
+    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
+      env_(rcp(new Environment)), 
+      numIds_(numIds), globalNumIds_(0), idList_(ids),
+      numVectors_(elements.size()), elements_(elements.size()), 
+      numWeights_(weights.size()), weights_(weights.size())
   {
     createBasicVector(elements, elementStrides, weights, weightStrides);
   }
@@ -210,8 +225,10 @@ private:
   int numWeights_;
   Array<RCP<StridedInput<lno_t, scalar_t> > > weights_;
 
-  void createBasicVector(const scalar_t * const *elements, int *elementStrides,
-    const scalar_t * const *weights, int *weightStrides);
+  void createBasicVector(
+    std::vector<const scalar_t *> &elements,  std::vector<int> &elementStrides,
+    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides);
+
 };
 
 ////////////////////////////////////////////////////////////////
@@ -250,8 +267,8 @@ template <typename User>
 
 template <typename User>
   void BasicVectorInput<User>::createBasicVector(
-    const scalar_t * const *elements, int *elementStrides,
-    const scalar_t * const *weights, int *weightStrides)
+   std::vector<const scalar_t *> &elements,  std::vector<int> &elementStrides,
+   std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides)
 {
   typedef StridedInput<lno_t,scalar_t> input_t;
 
@@ -265,7 +282,7 @@ template <typename User>
   if (numIds_){
     int stride = 1;
     for (int v=0; v < numVectors_; v++){
-      if (elementStrides)
+      if (elementStrides.size())
         stride = elementStrides[v];
       elements_[v] = rcp<input_t>(new input_t(
         ArrayView<const scalar_t>(elements[v], stride*numIds_), stride));
@@ -274,7 +291,7 @@ template <typename User>
     if (numWeights_){
       stride = 1;
       for (int w=0; w < numWeights_; w++){
-        if (weightStrides)
+        if (weightStrides.size())
           stride = weightStrides[w];
         weights_[w] = rcp<input_t>(new input_t(
           ArrayView<const scalar_t>(weights[w], stride*numIds_), stride));

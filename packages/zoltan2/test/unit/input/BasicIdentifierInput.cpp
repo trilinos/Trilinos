@@ -48,11 +48,16 @@ int main(int argc, char *argv[])
   // and verify that it is correct
 
   typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> userTypes_t;
-  scalar_t *weightPtrs[2] = {weights, weights+1};
-  int strides[2] = {2,2};
+  std::vector<const scalar_t *> weightValues;
+  std::vector<int> strides;
 
-  Zoltan2::BasicIdentifierInput<userTypes_t> ia( numLocalIds, weightDim, myIds,
-    &weightPtrs[0], &strides[0]);
+  weightValues.push_back(weights);
+  weightValues.push_back(weights + 1);
+  strides.push_back(2);
+  strides.push_back(2);
+
+  Zoltan2::BasicIdentifierInput<userTypes_t> ia( numLocalIds, myIds,
+    weightValues, strides);
 
   if (rank == 0)
     std::cout << "Testing " << ia.inputAdapterName() << std::endl;

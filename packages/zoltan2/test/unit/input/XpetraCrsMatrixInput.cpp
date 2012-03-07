@@ -9,6 +9,11 @@
 //
 // Basic testing of Zoltan2::XpetraCrsMatrixInput 
 
+/*! \file XpetraCrsMatrixInput.cpp
+ *  \brief Test of Zoltan2::XpetraCrsMatrixInput class.
+ *  \todo test with geometric row coordinates.
+ */
+
 #include <string>
 
 #include <Zoltan2_XpetraCrsMatrixInput.hpp>
