@@ -28,9 +28,6 @@
 #include "zz_id_const.h"
 #include "par_const.h"
 #include "third_library_const.h"
-#ifdef ZOLTAN_DRUM
-#include "ha_drum.h"
-#endif
 #include "zoltan_timer.h"
 
 #ifdef _MSC_VER
@@ -538,9 +535,6 @@ struct Zoltan_Struct {
   struct Zoltan_Order_Struct  Order;   /* Struct with info for ordering       */
   struct Zoltan_TPL_Order_Struct  TPL_Order;   /* Struct with info for ordering       */
   struct Zoltan_Migrate_Struct Migrate;/* Struct with info for migration.     */
-#ifdef ZOLTAN_DRUM
-  struct Zoltan_Drum_Struct Drum;      /* Struct with info for DRUM interface */
-#endif
 };
 
 typedef struct Zoltan_Struct ZZ;

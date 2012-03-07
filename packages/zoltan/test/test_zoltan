@@ -83,7 +83,6 @@ set failure_detail = $?ZOLTAN_FAILURE_DETAIL
 set new_answers = $?ZOLTAN_NEW_ANSWERS
 
 set no_hier = $?ZOLTAN_NO_HIER
-set yes_drum = $?ZOLTAN_YES_DRUM
 
 # Parse command-line options.
 # These options will override the environment variables.
@@ -130,8 +129,6 @@ while ( $#argv )
      @ yes_nemesis = 1
   else if ( "$1" == "-no_hier" ) then
      @ no_hier = 1
-  else if ( "$1" == "-yes_drum" ) then
-     @ yes_drum = 1
   else if ( "$1" == "-old_interface" ) then
      @ old_interface = 1
   else if ( "$1" == "-exit_on_failure" ) then
@@ -652,9 +649,6 @@ else
       set nem_methods = ( $nem_methods hier-parmetis3-hsfc hier-parmetis3-rcb \
 	hier-rcb3-hsfc hier-rcb3-parmetis )
     endif
-  endif
-  if ( $yes_drum ) then
-    set ch_methods = ( $ch_methods hsfc-drum )
   endif
 endif
 
@@ -1333,7 +1327,6 @@ usage:
   echo "   -yes_fortran"
   echo "   -yes_cpp"
   echo "   -yes_jostle"
-  echo "   -yes_drum"
   echo "   -old_interface"
   echo "   -exit_on_failure (exit on any test failure)"
   echo "   -failure_detail (distinguish between crash and wrong answer)"

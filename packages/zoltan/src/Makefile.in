@@ -97,8 +97,7 @@ am__libzoltan_a_SOURCES_DIST = $(srcdir)/all/all_allo.c \
 	$(srcdir)/coloring/bucket.c $(srcdir)/coloring/g2l_hash.c \
 	$(srcdir)/graph/graph.c $(srcdir)/ha/divide_machine.c \
 	$(srcdir)/ha/get_processor_name.c $(srcdir)/ha/ha_ovis.c \
-	$(srcdir)/ha/ha_drum.c $(srcdir)/hier/hier.c \
-	$(srcdir)/hier/hier_free_struct.c \
+	$(srcdir)/hier/hier.c $(srcdir)/hier/hier_free_struct.c \
 	$(srcdir)/hsfc/hsfc_box_assign.c $(srcdir)/hsfc/hsfc.c \
 	$(srcdir)/hsfc/hsfc_hilbert.c \
 	$(srcdir)/hsfc/hsfc_point_assign.c $(srcdir)/lb/lb_balance.c \
@@ -199,7 +198,7 @@ am__objects_2 = coloring.$(OBJEXT) color_test.$(OBJEXT) \
 	bucket.$(OBJEXT) g2l_hash.$(OBJEXT)
 am__objects_3 = graph.$(OBJEXT)
 am__objects_4 = divide_machine.$(OBJEXT) get_processor_name.$(OBJEXT) \
-	ha_ovis.$(OBJEXT) ha_drum.$(OBJEXT)
+	ha_ovis.$(OBJEXT)
 am__objects_5 = hier.$(OBJEXT) hier_free_struct.$(OBJEXT)
 am__objects_6 = hsfc_box_assign.$(OBJEXT) hsfc.$(OBJEXT) \
 	hsfc_hilbert.$(OBJEXT) hsfc_point_assign.$(OBJEXT)
@@ -461,14 +460,12 @@ GRAPH = \
 
 HA_H = \
 	$(srcdir)/ha/ha_const.h \
-	$(srcdir)/ha/ha_ovis.h \
-	$(srcdir)/ha/ha_drum.h
+	$(srcdir)/ha/ha_ovis.h 
 
 HA = \
 	$(srcdir)/ha/divide_machine.c \
 	$(srcdir)/ha/get_processor_name.c \
-	$(srcdir)/ha/ha_ovis.c \
-	$(srcdir)/ha/ha_drum.c
+	$(srcdir)/ha/ha_ovis.c 
 
 HIER_H = \
 	$(srcdir)/hier/hier.h
@@ -1300,7 +1297,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/g2l_hash.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get_processor_name.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/graph.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ha_drum.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ha_ovis.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hier.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hier_free_struct.Po@am__quote@
@@ -1557,20 +1553,6 @@ ha_ovis.obj: $(srcdir)/ha/ha_ovis.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ha/ha_ovis.c' object='ha_ovis.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ha_ovis.obj `if test -f '$(srcdir)/ha/ha_ovis.c'; then $(CYGPATH_W) '$(srcdir)/ha/ha_ovis.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ha/ha_ovis.c'; fi`
-
-ha_drum.o: $(srcdir)/ha/ha_drum.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ha_drum.o -MD -MP -MF $(DEPDIR)/ha_drum.Tpo -c -o ha_drum.o `test -f '$(srcdir)/ha/ha_drum.c' || echo '$(srcdir)/'`$(srcdir)/ha/ha_drum.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/ha_drum.Tpo $(DEPDIR)/ha_drum.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ha/ha_drum.c' object='ha_drum.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ha_drum.o `test -f '$(srcdir)/ha/ha_drum.c' || echo '$(srcdir)/'`$(srcdir)/ha/ha_drum.c
-
-ha_drum.obj: $(srcdir)/ha/ha_drum.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ha_drum.obj -MD -MP -MF $(DEPDIR)/ha_drum.Tpo -c -o ha_drum.obj `if test -f '$(srcdir)/ha/ha_drum.c'; then $(CYGPATH_W) '$(srcdir)/ha/ha_drum.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ha/ha_drum.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/ha_drum.Tpo $(DEPDIR)/ha_drum.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ha/ha_drum.c' object='ha_drum.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ha_drum.obj `if test -f '$(srcdir)/ha/ha_drum.c'; then $(CYGPATH_W) '$(srcdir)/ha/ha_drum.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ha/ha_drum.c'; fi`
 
 hier.o: $(srcdir)/hier/hier.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT hier.o -MD -MP -MF $(DEPDIR)/hier.Tpo -c -o hier.o `test -f '$(srcdir)/hier/hier.c' || echo '$(srcdir)/'`$(srcdir)/hier/hier.c

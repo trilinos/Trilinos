@@ -87,11 +87,6 @@ extern "C" {
 #define ZOLTAN_HUND
 #endif
 
-#ifdef HAVE_DRUM
-#define ZOLTAN_DRUM
-#warning "WARNING Zoltan support for DRUM is deprecated and will not be available in Trilinos v11."
-#endif
-
 #ifdef HAVE_PARKWAY
 #define ZOLTAN_PARKWAY
 #endif

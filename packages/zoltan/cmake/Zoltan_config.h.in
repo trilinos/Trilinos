@@ -24,9 +24,6 @@
 /* ZOLTAN_ID_TYPE is unsigned long long */
 #cmakedefine UNSIGNED_LONG_LONG_GLOBAL_IDS
 
-/* Define if want to build with drum enabled */
-#cmakedefine HAVE_DRUM
-
 /* define if we want to use MPI */
 #cmakedefine HAVE_MPI
 

@@ -41,14 +41,12 @@ GRAPH = \
 
 HA_H = \
 	$(srcdir)/ha/ha_const.h \
-	$(srcdir)/ha/ha_ovis.h \
-	$(srcdir)/ha/ha_drum.h
+	$(srcdir)/ha/ha_ovis.h 
 
 HA = \
 	$(srcdir)/ha/divide_machine.c \
 	$(srcdir)/ha/get_processor_name.c \
-	$(srcdir)/ha/ha_ovis.c \
-	$(srcdir)/ha/ha_drum.c
+	$(srcdir)/ha/ha_ovis.c 
 
 HIER_H = \
 	$(srcdir)/hier/hier.h
