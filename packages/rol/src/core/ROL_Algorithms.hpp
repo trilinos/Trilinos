@@ -43,6 +43,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace ROL{
     template <typename VS>
     class DataStructures{
+    private:
+        // Prevent allocation of this class
+        explicit DataStructures();
+        // No copy constructor required
 
         template<typename T>
         class Alloc : public std::allocator <T> {
@@ -63,6 +67,7 @@ namespace ROL{
 
             Alloc() {}
 
+            // In this case, we can not make the constructor explicit
             template<typename U>
             Alloc(const Alloc<U>&) {}
 
@@ -590,6 +595,8 @@ namespace ROL{
         // A function that has free reign to manipulate or analyze the state.
         // This should be used cautiously.
         class StateManipulator {
+            // No default assignment operator or copy constructor.  The user
+            // can define one, but the optimization does not require it.
         public:
             // Application
             virtual void operator () (State& state) {};
@@ -2188,8 +2195,12 @@ namespace ROL{
     // Utilities for parameter estimation.  
     template <class U,class Y,class Z>
     class parest{
+    private:
+        // Prevent instantiation of this class
+        explicit parest();
+        // No copy constructor required
     public:
-            // Setup some types
+        // Setup some types
         typedef typename U::Vector U_Vector; 
         typedef typename U::Real U_Real; 
         typedef typename Y::Vector Y_Vector; 
