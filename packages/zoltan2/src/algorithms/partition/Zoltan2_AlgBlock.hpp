@@ -149,28 +149,6 @@ void AlgPTBlock(
 #endif
   
   ////////////////////////////////////////////////////////
-  // What is the objective.
-  // TODO: consider the objective in the algorithm
-
-#if 0
-  enum {object_weight,     // balance on first weight
-        object_count,      // ignore weight, balance on object count
-        total_weight,      // balance on total of weights
-        maximum_weight};   // balance on maximum of weights
-
-  int balanceObjective = (wtflag ? object_weight : object_count);
-
-  if (wtflag > 1){
-    if (objective == string("balance_object_count"))
-      balanceObjective = object_count;
-    else if (objective == string("multicriteria_minimize_total_weight"))
-      balanceObjective = total_weight;
-    else if (objective == string("multicriteria_minimize_maximum_weight"))
-      balanceObjective = maximum_weight;
-  }
-#endif
-
-  ////////////////////////////////////////////////////////
   // The algorithm
   //
   // Block partitioning algorithm lifted from zoltan/src/simple/block.c
