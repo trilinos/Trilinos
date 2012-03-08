@@ -66,8 +66,11 @@ namespace MueLu {
       Teuchos::ParameterList hieraList = paramList.sublist("Hierarchy"); // copy because list temporally modified (remove 'id')
       
       // Get hierarchy options
-      this->numDesiredLevel_ = 10; /*should use instead the default provided by Hierarchy*/; 
+      this->numDesiredLevel_ = 10; /* default should be provided by the Hierarchy class */; 
       if(hieraList.isParameter("numDesiredLevel")) { this->numDesiredLevel_ = hieraList.get<int>("numDesiredLevel"); hieraList.remove("numDesiredLevel"); }
+
+      this->maxCoarseSize_ = 50; /* default should be provided by the Hierarchy class */; 
+      if(hieraList.isParameter("maxCoarseSize")) { this->maxCoarseSize_ = hieraList.get<int>("maxCoarseSize"); hieraList.remove("maxCoarseSize"); }
       
       // Get level configuration
       for (Teuchos::ParameterList::ConstIterator param = hieraList.begin(); param != hieraList.end(); ++param) {

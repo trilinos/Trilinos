@@ -197,11 +197,14 @@ namespace MueLu {
 
       TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "TrilinosSmoother", Exceptions::RuntimeError, "");
 
-      std::string type;               if(paramList.isParameter("type"))         type = paramList.get<std::string>("type");
-      // std::string verbose;         if(paramList.isParameter("verbose"))      verbose = paramList.get<std::string>("verbose");
-      Teuchos::ParameterList params; if(paramList.isParameter("ParameterList")) params  = paramList.get<Teuchos::ParameterList>("ParameterList");
+      TEUCHOS_TEST_FOR_EXCEPTION(!paramList.isParameter("type"), Exceptions::RuntimeError, "TrilinosSmoother: parameter 'type' is mandatory");
 
-      return rcp(new SmootherFactory(rcp(new TrilinosSmoother(type, params))));
+      std::string type;               if(paramList.isParameter("type"))          type    = paramList.get<std::string>("type");
+      int         overlap=0;          if(paramList.isParameter("overlap"))       overlap = paramList.get<int>        ("overlap");
+      // std::string verbose;         if(paramList.isParameter("verbose"))       verbose = paramList.get<std::string>("verbose");
+      Teuchos::ParameterList params;  if(paramList.isParameter("ParameterList")) params  = paramList.get<Teuchos::ParameterList>("ParameterList");
+
+      return rcp(new SmootherFactory(rcp(new TrilinosSmoother(type, params, overlap))));
     }
     
     RCP<FactoryBase> BuildDirectSolver(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
@@ -227,3 +230,4 @@ namespace MueLu {
 // TODO: handle factory parameters
 // TODO: parameter validator
 // TODO: static
+// TODO: default parameters should not be duplicated here and on the Factory (ex: default for overlap (=0) is defined both here and on TrilinosSmoother constructors)
