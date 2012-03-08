@@ -63,7 +63,7 @@ public:
 
   GraphModel(const Adapter *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
-    std::bitset<NUM_MODEL_FLAGS> &modelFlags)
+    modelFlag_t &modelFlags)
   {
     throw std::logic_error("in non-specialized GraphModel");
   }
@@ -217,7 +217,7 @@ public:
 
   GraphModel(const MatrixInput<User> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
-    std::bitset<NUM_MODEL_FLAGS> &modelFlags):
+    modelFlag_t &modelFlags):
      input_(ia), env_(env), comm_(comm),
      gids_(), gnos_(), edgeGids_(), edgeGnos_(), procIds_(), 
      offsets_(), gnosConst_(), edgeGnosConst_(), procIdsConst_(), 
@@ -416,7 +416,7 @@ public:
 
 private:
 
-  void initializeData(std::bitset<NUM_MODEL_FLAGS> &);
+  void initializeData(modelFlag_t &);
 
   const MatrixInput<User> *input_;
   const RCP<const Environment > env_;
@@ -452,8 +452,7 @@ private:
 };
 
 template <typename User>
-  void GraphModel<MatrixInput<User> >::initializeData(
-    std::bitset<NUM_MODEL_FLAGS> &modelFlags)
+  void GraphModel<MatrixInput<User> >::initializeData(modelFlag_t &modelFlags)
 {
   // Model creation flags
 
@@ -687,7 +686,7 @@ public:
 
   GraphModel(const CoordinateInput<User> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
-    std::bitset<NUM_MODEL_FLAGS> &flags)
+    modelFlag_t &flags)
   {
     throw std::runtime_error("may not build a graph with identifiers");
   }
@@ -738,7 +737,7 @@ public:
 
   GraphModel(const VectorInput<User> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
-    std::bitset<NUM_MODEL_FLAGS> &flags)
+    modelFlag_t &flags)
   {
     throw std::runtime_error("can not build a graph from a vector");
   }
@@ -789,7 +788,7 @@ public:
 
   GraphModel(const IdentifierInput<User> *ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
-    std::bitset<NUM_MODEL_FLAGS> &flags)
+    modelFlag_t &flags)
   {
     throw std::runtime_error("can not build a graph with identifiers");
   }

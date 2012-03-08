@@ -44,6 +44,8 @@ namespace Zoltan2 {
     \c User may be the actual class or structure used by application to
     represent a vector, or it may be the helper class BasicUserTypes.
     See InputTraits for more information.
+
+   \todo Create BasicCrsGraphInput subclass.
 */
 
 template <typename User>

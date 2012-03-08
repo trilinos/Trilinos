@@ -64,13 +64,12 @@ using Teuchos::rcp;
 using Teuchos::rcp_const_cast;
 
 enum testOutputType {
-  OBJECT_DATA,
   OBJECT_COORDINATES,
   NUM_TEST_OUTPUT_TYPE
 };
 
 typedef std::bitset<NUM_TEST_OUTPUT_TYPE> outputFlag_t;
-outputFlag_t defaultFlags(OBJECT_DATA);
+outputFlag_t defaultFlags;
 
 static int z2Test_read_mtx_coords(
   std::string &fname, ArrayRCP<ArrayRCP<scalar_t> > &xyz);
@@ -113,14 +112,13 @@ private:
 #endif
 
   outputFlag_t flags_;
-  ArrayRCP<ArrayRCP<scalar_t> > xyz_;
+  RCP<tMVector_t> xyz_;
 
   void readMatrixMarketFile()
   {
     using Tpetra::Map;
     using Tpetra::MultiVector;
     using Tpetra::Export;
-    using Tpetra::Import;
  
     try{
       M_ = Tpetra::MatrixMarket::Reader<tcrsMatrix_t>::readSparseFile(fname_, 
@@ -139,21 +137,21 @@ private:
     // Rank 0 reads coordinate file and exports it.
 
     typedef Map<lno_t, gno_t, node_t> map_t;
-    typedef MultiVector<scalar_t, lno_t, gno_t, node_t> multivector_t;
     typedef Export<lno_t, gno_t, node_t> export_t;
 
     gno_t globalNrows = M_->getGlobalNumRows();
     gno_t base = M_->getIndexBase();
     const RCP<const map_t> &toMap = M_->getRowMap();
     int coordDim = 0;
+    ArrayRCP<ArrayRCP<scalar_t> > xyz;
 
     if (tcomm_->getRank() == 0){
-      bool fail = z2Test_read_mtx_coords(fname_, xyz_); // Get coordinates
+      bool fail = z2Test_read_mtx_coords(fname_, xyz); // Get coordinates
 
       if (fail)
         coordDim = 0;
       else
-        coordDim = xyz_.size();
+        coordDim = xyz.size();
     }
 
     // Broadcast coordinate dimension
@@ -165,14 +163,14 @@ private:
 
     // Export coordinates to their owners
 
-    multivector_t myCoords(toMap, coordDim);
+    xyz_ = rcp(new tMVector_t(toMap, coordDim));
 
     ArrayRCP<ArrayView<const scalar_t> > coordLists(coordDim);
 
     if (tcomm_->getRank() == 0){
 
       for (int dim=0; dim < coordDim; dim++)
-        coordLists[dim] = xyz_[dim].view(0, globalNrows);
+        coordLists[dim] = xyz[dim].view(0, globalNrows);
 
       gno_t *tmp = new gno_t [globalNrows];
       if (!tmp)
@@ -186,27 +184,22 @@ private:
       RCP<const map_t> fromMap = rcp(new map_t(globalNrows, 
         rowIds.view(0, globalNrows), base, tcomm_));
 
-      multivector_t allCoords(fromMap, coordLists.view(0, coordDim), coordDim);
+      tMVector_t allCoords(fromMap, coordLists.view(0, coordDim), coordDim);
 
       export_t exporter(fromMap, toMap);
 
-      allCoords.doExport(myCoords, exporter, Tpetra::REPLACE);
+      xyz_->doExport(allCoords, exporter, Tpetra::REPLACE);
     }
     else{
 
       RCP<const map_t> fromMap = rcp(new map_t(globalNrows, 
         ArrayView<gno_t>(), base, tcomm_));
 
-      multivector_t allCoords(fromMap, coordLists.view(0, coordDim), coordDim);
+      tMVector_t allCoords(fromMap, coordLists.view(0, coordDim), coordDim);
 
       export_t exporter(fromMap, toMap);
 
-      allCoords.doExport(myCoords, exporter, Tpetra::REPLACE);
-    }
-
-    xyz_.resize(coordDim);
-    for (int dim=0; dim < coordDim; dim++){
-      xyz_[dim] = myCoords.getDataNonConst(dim);
+      xyz_->doExport(allCoords, exporter, Tpetra::REPLACE);
     }
   }
 
@@ -278,10 +271,6 @@ public:
   {
     if (flags_.test(OBJECT_COORDINATES))
       std::cout << "Coordinates for meshes not supported yet" << std::endl;
-    if (!flags_.test(OBJECT_DATA)){
-      std::cout << "Topology only." << std::endl;
-      throw std::runtime("can't generate coordinates");
-    }
     ecomm_ = Xpetra::toEpetra(c);
   }
 #else
@@ -308,14 +297,10 @@ public:
   {
     if (flags_.test(OBJECT_COORDINATES))
       std::cout << "Coordinates for meshes not supported yet" << std::endl;
-    if (!flags_.test(OBJECT_DATA)){
-      std::cout << "Topology only." << std::endl;
-      throw std::runtime_error("can't generate coordinates");
-    }
   }
 #endif
   
-  ArrayRCP<ArrayRCP<scalar_t> > getCoordinates() 
+  RCP<tMVector_t> getCoordinates()
   { 
     if (flags_.test(OBJECT_COORDINATES)){
       if (M_.is_null())
@@ -482,6 +467,7 @@ public:
 
 static int z2Test_read_mtx_coords(std::string &fname, 
   ArrayRCP<ArrayRCP<scalar_t> > &xyz)
+
 {
   // Open the coordinate file.
   // If fname is "old_name.mtx", the new name is "old_name_coords.mtx".
@@ -534,7 +520,7 @@ static int z2Test_read_mtx_coords(std::string &fname,
 
   // Read in the coordinates.
 
-  xyz.resize(coordDim);
+  xyz = Teuchos::arcp(new ArrayRCP<scalar_t> [coordDim], 0, coordDim);
 
   for (int dim=0; !fail && dim < coordDim; dim++){
     lno_t idx;

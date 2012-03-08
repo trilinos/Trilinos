@@ -51,6 +51,8 @@ enum ModelFlags{
   NUM_MODEL_FLAGS
 };
 
+typedef std::bitset<NUM_MODEL_FLAGS> modelFlag_t;
+
 /*! \brief The base class for all model classes.
 
   The Model is the computational model created by a Problem based on

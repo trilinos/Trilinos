@@ -128,7 +128,7 @@ public:
   
   IdentifierModel( const IdentifierInput<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
-    std::bitset<NUM_MODEL_FLAGS> &modelFlags):
+    modelFlag_t &modelFlags):
       gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), comm_(comm),
       gids_(), weights_(), gnos_(), gnosConst_()
   {
@@ -293,7 +293,7 @@ public:
   
   IdentifierModel( const MatrixInput<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
-    std::bitset<NUM_MODEL_FLAGS> &modelFlags):
+    modelFlag_t &modelFlags):
       gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), 
       comm_(comm), gids_(), weights_(), gnos_(), gnosConst_()
   {

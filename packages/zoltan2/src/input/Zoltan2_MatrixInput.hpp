@@ -44,6 +44,7 @@ namespace Zoltan2 {
     represent a vector, or it may be the helper class BasicUserTypes.
     See InputTraits for more information.
 
+     \todo Create BasicCrsMatrixInput subclass
      \todo Do we want to require input adapters to give us the global
                number of rows, columns etc?  We can figure that out.
      \todo Do we want to add the ability for the user to supply row

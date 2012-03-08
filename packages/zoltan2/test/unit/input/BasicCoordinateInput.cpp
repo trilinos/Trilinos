@@ -21,6 +21,7 @@
 using Teuchos::RCP;
 using Teuchos::Comm;
 using Teuchos::DefaultComm;
+using Teuchos::Array;
 
 typedef Teuchos::SerialDenseVector<lno_t, scalar_t> tvec_t;
 
@@ -96,43 +97,66 @@ int main(int argc, char *argv[])
   int nprocs = comm->getSize();
   int fail = 0;
 
+  // Get some coordinates
+
+  typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> mv_t;
+
+  outputFlag_t flags;
+  flags.set(OBJECT_COORDINATES);
+
+  RCP<UserInputForTests> uinput;
+  std::string fname = testDataFilePath+std::string("/simple.mtx");
+
+  try{
+    uinput = rcp(new UserInputForTests(fname, comm, flags));
+  }
+  catch(std::exception &e){
+    fail=1;
+  }
+
+  TEST_FAIL_AND_EXIT(*comm, !fail, "input constructor", 1);
+
+  RCP<mv_t> coords;
+
+  try{
+    coords = uinput->getCoordinates();
+  }
+  catch(std::exception &e){
+    fail=1;
+  }
+
+  TEST_FAIL_AND_EXIT(*comm, !fail, "getting coordinates", 1);
+
+  int numLocalIds = coords->getLocalLength();
+  int coordDim = coords->getNumVectors();
+  ArrayView<const gno_t> idList = coords->getMap()->getNodeElementList();
+
   // Create global Ids, x-, y- and z-coordinates, and also arrays of weights.
 
-  lno_t numLocalIds = 10;
-  gno_t *myIds = new gno_t [numLocalIds];
+  Array<gno_t> myIds(numLocalIds);
   gno_t base = rank * numLocalIds;
   
   int wdim = 2;
-  scalar_t *weights = new scalar_t [numLocalIds*wdim];
-  const scalar_t **weightPtrs = new const scalar_t * [wdim];
+  Array<scalar_t> weights(numLocalIds*wdim);
 
-  scalar_t *x_values= new scalar_t [numLocalIds];
-  scalar_t *y_values= new scalar_t [numLocalIds];
-  scalar_t *z_values= new scalar_t [numLocalIds];
-  scalar_t *xyz_values = new scalar_t [3*numLocalIds];
+  scalar_t *x_values= coords->getDataNonConst(0).getRawPtr();
+  scalar_t *y_values= x_values;  // fake 3 dimensions if needed
+  scalar_t *z_values= x_values;
+
+  if (coordDim > 1){
+    y_values= coords->getDataNonConst(1).getRawPtr();
+    if (coordDim > 2)
+      z_values= coords->getDataNonConst(2).getRawPtr();
+  }
+
+  Array<scalar_t> xyz_values(3*numLocalIds);
 
   for (lno_t i=0; i < numLocalIds; i++)   // global Ids
     myIds[i] = base+i;
 
-  tvec_t weightVec(Teuchos::View, weights, numLocalIds*wdim); // random weights 
-  weightVec.random(); 
-
-  for (int w=0; w < wdim; w++){
-    weightPtrs[w] = weights + numLocalIds*w;
-  }
-
-  tvec_t xVec(Teuchos::View, x_values, numLocalIds); // random x coordinates
-  xVec.random();
-
-  tvec_t yVec(Teuchos::View, y_values, numLocalIds); // random y coordinates
-  yVec.random();
-
-  tvec_t zVec(Teuchos::View, z_values, numLocalIds); // random z coordinates
-  zVec.random();
-
-  scalar_t *x = xyz_values;                // a stride-3 coordinate array
-  scalar_t *y = xyz_values + 1;
-  scalar_t *z = xyz_values + 2;
+  scalar_t *x = xyz_values.getRawPtr();   // a stride-3 coordinate array
+  scalar_t *y = x+1;
+  scalar_t *z = y+1;
 
   for (int i=0, ii=0; i < numLocalIds; i++, ii += 3){
     x[ii] = x_values[i];
@@ -152,7 +176,7 @@ int main(int argc, char *argv[])
   
     try{
      ia = rcp(new Zoltan2::BasicCoordinateInput<userTypes_t>(
-       numLocalIds, myIds, x_values, y_values, z_values));
+       numLocalIds, myIds.getRawPtr(), x_values, y_values, z_values));
     }
     catch (std::exception &e){
       fail = 1;
@@ -162,7 +186,8 @@ int main(int argc, char *argv[])
   
     fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, 
       numLocalIds*nprocs, 
-      myIds, xyz_values, weights, ncoords, nweights);
+      myIds.getRawPtr(), xyz_values.getRawPtr(), 
+      weights.getRawPtr(), ncoords, nweights);
   
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check adapter 0", fail);
   }
@@ -186,7 +211,8 @@ int main(int argc, char *argv[])
   
     try{
      ia = rcp(new Zoltan2::BasicCoordinateInput<userTypes_t>(
-       numLocalIds, myIds, values, valueStrides, weightValues, weightStrides));
+       numLocalIds, myIds.getRawPtr(), values, valueStrides, 
+       weightValues, weightStrides));
     }
     catch (std::exception &e){
       fail = 1;
@@ -195,7 +221,8 @@ int main(int argc, char *argv[])
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 1", fail);
   
     fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, 
-      numLocalIds*nprocs, myIds, xyz_values, weights, ncoords, nweights);
+      numLocalIds*nprocs, myIds.getRawPtr(), xyz_values.getRawPtr(), 
+      weights.getRawPtr(), ncoords, nweights);
   
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check adapter 1", fail);
   
@@ -205,7 +232,8 @@ int main(int argc, char *argv[])
   
     try{
      ia = rcp(new Zoltan2::BasicCoordinateInput<userTypes_t>(
-       numLocalIds, myIds, values, emptyStrides, weightValues, emptyStrides));
+       numLocalIds, myIds.getRawPtr(), values, emptyStrides, 
+       weightValues, emptyStrides));
     }
     catch (std::exception &e){
       fail = 1;
@@ -214,7 +242,8 @@ int main(int argc, char *argv[])
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 2", fail);
   
     fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, 
-      numLocalIds*nprocs, myIds, xyz_values, weights, ncoords, nweights);
+      numLocalIds*nprocs, myIds.getRawPtr(), xyz_values.getRawPtr(), 
+      weights.getRawPtr(), ncoords, nweights);
   
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check adapter 2", fail);
   }
@@ -229,19 +258,20 @@ int main(int argc, char *argv[])
     std::vector<const scalar_t *> values, weightValues;
     std::vector<int> valueStrides, weightStrides;
   
-    values.push_back(xyz_values);
-    values.push_back(xyz_values + 1);
+    values.push_back(xyz_values.getRawPtr());
+    values.push_back(xyz_values.getRawPtr() + 1);
     valueStrides.push_back(3);
     valueStrides.push_back(3);
   
-    weightValues.push_back(weights);
-    weightValues.push_back(weights + numLocalIds);
+    weightValues.push_back(weights.getRawPtr());
+    weightValues.push_back(weights.getRawPtr() + numLocalIds);
     weightStrides.push_back(1);
     weightStrides.push_back(1);
   
     try{
      ia = rcp(new Zoltan2::BasicCoordinateInput<userTypes_t>(
-       numLocalIds, myIds, values, valueStrides, weightValues, weightStrides));
+       numLocalIds, myIds.getRawPtr(), values, valueStrides, 
+       weightValues, weightStrides));
     }
     catch (std::exception &e){
       fail = 1;
@@ -250,7 +280,8 @@ int main(int argc, char *argv[])
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 3", fail);
   
     fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, 
-      numLocalIds*nprocs, myIds, xyz_values, weights, ncoords, nweights);
+      numLocalIds*nprocs, myIds.getRawPtr(), xyz_values.getRawPtr(), 
+      weights.getRawPtr(), ncoords, nweights);
   
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check adapter 3", fail);
   
@@ -260,7 +291,8 @@ int main(int argc, char *argv[])
   
     try{
      ia = rcp(new Zoltan2::BasicCoordinateInput<userTypes_t>(
-       numLocalIds, myIds, values, valueStrides, weightValues, emptyStrides));
+       numLocalIds, myIds.getRawPtr(), values, valueStrides, 
+       weightValues, emptyStrides));
     }
     catch (std::exception &e){
       fail = 1;
@@ -269,7 +301,8 @@ int main(int argc, char *argv[])
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 4", fail);
   
     fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, 
-      numLocalIds*nprocs, myIds, xyz_values, weights, ncoords, nweights);
+      numLocalIds*nprocs, myIds.getRawPtr(), xyz_values.getRawPtr(), 
+      weights.getRawPtr(), ncoords, nweights);
   
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check adapter 4", fail);
   }
@@ -287,14 +320,15 @@ int main(int argc, char *argv[])
     values.push_back(x_values);
     valueStrides.push_back(1);
   
-    weightValues.push_back(weights);
-    weightValues.push_back(weights + numLocalIds);
+    weightValues.push_back(weights.getRawPtr());
+    weightValues.push_back(weights.getRawPtr() + numLocalIds);
     weightStrides.push_back(1);
     weightStrides.push_back(1);
   
     try{
      ia = rcp(new Zoltan2::BasicCoordinateInput<userTypes_t>(
-       numLocalIds, myIds, values, valueStrides, weightValues, weightStrides));
+       numLocalIds, myIds.getRawPtr(), values, valueStrides, 
+       weightValues, weightStrides));
     }
     catch (std::exception &e){
       fail = 1;
@@ -303,7 +337,8 @@ int main(int argc, char *argv[])
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 4", fail);
   
     fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, 
-      numLocalIds*nprocs, myIds, xyz_values, weights, ncoords, nweights);
+      numLocalIds*nprocs, myIds.getRawPtr(), xyz_values.getRawPtr(), 
+      weights.getRawPtr(), ncoords, nweights);
   
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check adapter 4", fail);
   }
