@@ -1,5 +1,5 @@
-#ifndef PANZER_DOF_GRADIENT_IMPL_HPP
-#define PANZER_DOF_GRADIENT_IMPL_HPP
+#ifndef PANZER_DOF_CURL_IMPL_HPP
+#define PANZER_DOF_CURL_IMPL_HPP
 
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
