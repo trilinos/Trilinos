@@ -130,7 +130,7 @@ namespace MueLu {
                const Teuchos::Ptr<const FactoryManagerBase> nextLevelManager) {
 
     // Use PrintMonitor/TimerMonitor instead of just a FactoryMonitor to print "Level 0" instead of Hierarchy(0)
-    PrintMonitor m0(*this, "Level " +  Teuchos::Utils::toString(coarseLevelID));
+    // Print is done after the requests for next coarse level
     TimerMonitor m1(*this, this->ShortClassName() + ": " + "Setup");
     TimerMonitor m2(*this, this->ShortClassName() + ": " + "Setup" + " (level=" + Teuchos::Utils::toString(coarseLevelID) + ")");
 
@@ -188,6 +188,8 @@ namespace MueLu {
       Levels_[nextLevelID]->Request(TopSmootherFactory(rcpnextLevelManager, "Smoother")); // TODO: skip this line if we know that it is the lastLevel
       Levels_[nextLevelID]->Request(TopSmootherFactory(rcpnextLevelManager, "CoarseSolver"));
     }
+
+    PrintMonitor m0(*this, "Level " +  Teuchos::Utils::toString(coarseLevelID));
 
     //
     // Build coarse level

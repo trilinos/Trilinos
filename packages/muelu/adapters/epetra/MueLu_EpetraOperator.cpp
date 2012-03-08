@@ -69,11 +69,9 @@ bool EpetraOperator::HasNormInf() const { return false; }
 
 const Epetra_Comm & EpetraOperator::Comm() const {
   RCP<Operator> A = Hierarchy_->GetLevel(0)->Get<RCP<Operator> >("A");
-  
+
+  //TODO: This code is not pretty  
   RCP<Xpetra::BlockedCrsOperator<double, int, int> > epbA = Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsOperator<double, int, int> >(A);
-  if (epbA == Teuchos::null) {
-    std::cout << "epbA is Teuchos::null" << std::endl;
-  }
   if(epbA != Teuchos::null) {
     RCP<const Xpetra::EpetraCrsMatrix> tmp_ECrsMtx = rcp_dynamic_cast<Xpetra::EpetraCrsMatrix >(epbA->getMatrix(0,0));
     if (tmp_ECrsMtx == Teuchos::null)
@@ -81,6 +79,7 @@ const Epetra_Comm & EpetraOperator::Comm() const {
     RCP<Epetra_CrsMatrix> epA = tmp_ECrsMtx->getEpetra_CrsMatrixNonConst();
     return epA->Comm();
   }
+  //
   
   RCP<Epetra_CrsMatrix>epA = Utils::Op2NonConstEpetraCrs(A);
   return epA->Comm();
