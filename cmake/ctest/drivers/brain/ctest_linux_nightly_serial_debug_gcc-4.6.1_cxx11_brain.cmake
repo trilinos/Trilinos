@@ -1,5 +1,5 @@
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../../TrilinosVersion.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../../../Version.cmake")
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.brain.gcc-4.6.1.cmake")
 
 #
