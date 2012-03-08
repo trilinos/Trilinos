@@ -86,9 +86,8 @@ namespace MueLu {
       H.SetDefaultVerbLevel(verbLevel_);
       H.SetMaxCoarseSize(maxCoarseSize_);
 
-      // When no configuration, use defaults of the class MueLu::Hierarchy
       if (levelManagers_.size() == 0) {
-        H.Setup(); 
+        H.Setup(FactoryManager(), 0, numDesiredLevel_); // TODO: default value for first param (FactoryManager()) should not be duplicated (code maintainability)
         return;
       }
 
