@@ -4,7 +4,14 @@ INCLUDE(TribitsCopyFilesToBinaryDir)
 IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
    Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND
    Trilinos_ENABLE_Intrepid AND Trilinos_ENABLE_ML AND
-   Trilinos_ENABLE_Pamgen AND Trilinos_ENABLE_Teko)
+   Trilinos_ENABLE_Pamgen)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Example_Poisson_NoFE
+    SOURCES example_Poisson_NoFE.cpp
+    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
+    NUM_MPI_PROCS 1
+    ADD_DIR_TO_NAME
+    )
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Poisson
     SOURCES example_Poisson.cpp
@@ -12,6 +19,12 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
     NUM_MPI_PROCS 1
     ADD_DIR_TO_NAME
     )
+ENDIF()
+
+IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
+   Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND
+   Trilinos_ENABLE_Intrepid AND Trilinos_ENABLE_ML AND
+   Trilinos_ENABLE_Pamgen AND Trilinos_ENABLE_Teko)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Darcy
     SOURCES example_Darcy.cpp
