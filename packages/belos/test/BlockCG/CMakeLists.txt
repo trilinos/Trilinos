@@ -17,6 +17,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       SOURCES test_bl_cg_complex_hb.cpp 
       ARGS
         "--verbose --filename=mhd1280b.cua"
+      XHOST KALLIKRATES
       )
 
     TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestBlockCGComplexFiles
