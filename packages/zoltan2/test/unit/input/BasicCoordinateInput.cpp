@@ -128,6 +128,7 @@ int main(int argc, char *argv[])
   TEST_FAIL_AND_EXIT(*comm, !fail, "getting coordinates", 1);
 
   int numLocalIds = coords->getLocalLength();
+  int numGlobalIds = coords->getGlobalLength();
   int coordDim = coords->getNumVectors();
   ArrayView<const gno_t> idList = coords->getMap()->getNodeElementList();
 
@@ -184,8 +185,7 @@ int main(int argc, char *argv[])
   
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 0", fail);
   
-    fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, 
-      numLocalIds*nprocs, 
+    fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, numGlobalIds,
       myIds.getRawPtr(), xyz_values.getRawPtr(), 
       weights.getRawPtr(), ncoords, nweights);
   
@@ -220,8 +220,8 @@ int main(int argc, char *argv[])
   
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 1", fail);
   
-    fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, 
-      numLocalIds*nprocs, myIds.getRawPtr(), xyz_values.getRawPtr(), 
+    fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, numGlobalIds,
+      myIds.getRawPtr(), xyz_values.getRawPtr(), 
       weights.getRawPtr(), ncoords, nweights);
   
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check adapter 1", fail);
@@ -241,8 +241,8 @@ int main(int argc, char *argv[])
   
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 2", fail);
   
-    fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, 
-      numLocalIds*nprocs, myIds.getRawPtr(), xyz_values.getRawPtr(), 
+    fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, numGlobalIds,
+      myIds.getRawPtr(), xyz_values.getRawPtr(), 
       weights.getRawPtr(), ncoords, nweights);
   
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check adapter 2", fail);
@@ -279,8 +279,8 @@ int main(int argc, char *argv[])
   
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 3", fail);
   
-    fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, 
-      numLocalIds*nprocs, myIds.getRawPtr(), xyz_values.getRawPtr(), 
+    fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, numGlobalIds,
+      myIds.getRawPtr(), xyz_values.getRawPtr(), 
       weights.getRawPtr(), ncoords, nweights);
   
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check adapter 3", fail);
@@ -300,8 +300,8 @@ int main(int argc, char *argv[])
   
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 4", fail);
   
-    fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, 
-      numLocalIds*nprocs, myIds.getRawPtr(), xyz_values.getRawPtr(), 
+    fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, numGlobalIds,
+      myIds.getRawPtr(), xyz_values.getRawPtr(), 
       weights.getRawPtr(), ncoords, nweights);
   
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check adapter 4", fail);
@@ -336,8 +336,8 @@ int main(int argc, char *argv[])
   
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 4", fail);
   
-    fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, 
-      numLocalIds*nprocs, myIds.getRawPtr(), xyz_values.getRawPtr(), 
+    fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, numGlobalIds,
+      myIds.getRawPtr(), xyz_values.getRawPtr(), 
       weights.getRawPtr(), ncoords, nweights);
   
     TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check adapter 4", fail);
