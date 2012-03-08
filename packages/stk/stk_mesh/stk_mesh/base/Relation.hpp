@@ -358,8 +358,8 @@ bool Relation::operator == ( const Relation & rhs ) const
 {
   return m_raw_relation.value == rhs.m_raw_relation.value && m_target_entity == rhs.m_target_entity
 #ifdef SIERRA_MIGRATION
-    // if both sides have fmwk state, compare that too
-    && (  (!has_fmwk_state() || !rhs.has_fmwk_state()) || (getRelationType() == rhs.getRelationType() && getOrientation() == rhs.getOrientation()) )
+    // compared fmwk state too
+    && ( (getRelationType() == rhs.getRelationType() && getOrientation() == rhs.getOrientation()) )
 #endif
     ;
 }

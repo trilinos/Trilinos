@@ -223,6 +223,7 @@ bool EntityImpl::declare_relation( Entity & e_to,
   Relation new_relation( e_to , local_id );
 #ifdef SIERRA_MIGRATION
   new_relation.setRelationType( e_to.entity_rank() > entity_rank() ? Relation::USED_BY : Relation::USES );
+  new_relation.setOrientation(0);
 #endif
 
   const RelationVector::iterator rel_end   = m_relation.end();
