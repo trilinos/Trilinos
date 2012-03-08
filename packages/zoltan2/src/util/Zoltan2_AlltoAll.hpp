@@ -87,7 +87,7 @@ void AlltoAll(const Comm<int> &comm,
       try{
         r  = Teuchos::ireceive<int, char>(comm, recvBufPtr, p);
       }
-      Z2_THROW_OUTSIDE_ERROR(env, e);
+      Z2_THROW_OUTSIDE_ERROR(env);
     
       req.push_back(r);
     }
@@ -108,7 +108,7 @@ void AlltoAll(const Comm<int> &comm,
         Teuchos::readySend<int, char>(comm, 
           sendBufPtr.view(p*packetSize, packetSize), p);
       } 
-      Z2_THROW_OUTSIDE_ERROR(env, e);
+      Z2_THROW_OUTSIDE_ERROR(env);
     }
   }
 
@@ -116,7 +116,7 @@ void AlltoAll(const Comm<int> &comm,
     try {
       Teuchos::waitAll<int>(comm, req);
     }
-    Z2_THROW_OUTSIDE_ERROR(env, e);
+    Z2_THROW_OUTSIDE_ERROR(env);
   }
 #endif
 }
@@ -211,7 +211,7 @@ void AlltoAllv(const Comm<int> &comm,
       try{
         r  = Teuchos::ireceive<int, char>(comm, recvBufPtr, p);
       }
-      Z2_THROW_OUTSIDE_ERROR(env, e);
+      Z2_THROW_OUTSIDE_ERROR(env);
     
       req.push_back(r);
     }
@@ -236,7 +236,7 @@ void AlltoAllv(const Comm<int> &comm,
         Teuchos::readySend<int, char>(comm, 
           sendBufPtr.view(offsetOut, packetSize), p);
       }
-      Z2_THROW_OUTSIDE_ERROR(env, e);
+      Z2_THROW_OUTSIDE_ERROR(env);
     }
     offsetOut += packetSize;
   }
@@ -245,7 +245,7 @@ void AlltoAllv(const Comm<int> &comm,
     try{
       Teuchos::waitAll<int>(comm, req);
     }
-    Z2_THROW_OUTSIDE_ERROR(env, e);
+    Z2_THROW_OUTSIDE_ERROR(env);
   }
 #endif
 }

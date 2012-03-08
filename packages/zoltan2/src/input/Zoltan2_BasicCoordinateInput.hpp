@@ -247,7 +247,7 @@ template <typename User>
     reduceAll<int, gno_t>(*(env_->comm_), Teuchos::REDUCE_SUM, 1, 
        &tmp, &globalNumIds_);
   }
-  Z2_THROW_OUTSIDE_ERROR(*env_, e);
+  Z2_THROW_OUTSIDE_ERROR(*env_);
 
   if (numIds_){
     int stride = 1;

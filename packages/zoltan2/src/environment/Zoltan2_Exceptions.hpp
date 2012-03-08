@@ -22,7 +22,7 @@
  *   by this \c catch block.  The error message if any is printed and the
  *   exception is then thrown.
  */
-#define Z2_THROW_OUTSIDE_ERROR(env, e) \
+#define Z2_THROW_OUTSIDE_ERROR(env) \
   catch (std::exception &e) {          \
     std::cerr<<(env).myRank_<<" "<<__FILE__<<","<<__LINE__<<","<<e.what()<<std::endl; \
     throw e; \

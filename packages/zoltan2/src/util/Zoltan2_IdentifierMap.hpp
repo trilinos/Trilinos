@@ -586,7 +586,7 @@ template< typename User>
         double keyVal = IdentifierTraits<gid_t>::key(gidInBuf[total]);
         gidToIndex.put(keyVal, total);
       }
-      Z2_THROW_OUTSIDE_ERROR(*env_, e);
+      Z2_THROW_OUTSIDE_ERROR(*env_);
     }
   }
 
@@ -870,7 +870,7 @@ template< typename User>
       try{
         p->put(IdentifierTraits<gid_t>::key(gidPtr[i]), i);
       }
-      Z2_THROW_OUTSIDE_ERROR(*env_, e);
+      Z2_THROW_OUTSIDE_ERROR(*env_);
     }
     gidHash_ = RCP<id2index_hash_t>(p);
   }
@@ -913,7 +913,7 @@ template< typename User>
     try{
       gnoDist_.resize(numProcs_ + 1, 0);
     }
-    Z2_THROW_OUTSIDE_ERROR(*env_, e);
+    Z2_THROW_OUTSIDE_ERROR(*env_);
 
     gno_t myNum = static_cast<gno_t>(localNumberOfIds_);
 
@@ -921,7 +921,7 @@ template< typename User>
       gno_t *p = gnoDist_.getRawPtr();
       Teuchos::gatherAll<int, gno_t>(*comm_, 1, &myNum, numProcs_, p+1);
     }
-    Z2_THROW_OUTSIDE_ERROR(*env_, e);
+    Z2_THROW_OUTSIDE_ERROR(*env_);
 
     for (int i=2; i <= numProcs_; i++){
       gnoDist_[i] += gnoDist_[i-1];
