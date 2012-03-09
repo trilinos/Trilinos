@@ -82,6 +82,7 @@ public:
 
    //! Register and build evaluator required by this aggregator and this set of data.
    virtual void registerAndRequireEvaluators(PHX::FieldManager<TraitsT> & fm,const Teuchos::RCP<ResponseData<TraitsT> > & data, 
+                                             const PhysicsBlock & pb,
                                              const Teuchos::ParameterList & p) const;
 
    //! perform global reduction on this set of response data

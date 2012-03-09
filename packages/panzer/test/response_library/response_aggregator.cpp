@@ -79,7 +79,8 @@ TEUCHOS_UNIT_TEST(response_assembly, test)
   TEST_ASSERT(data->contains("Horse"));
   TEST_ASSERT(!data->contains("cat"));
 
-  aggregator->registerAndRequireEvaluators(fm,data,mainParam);
+  PhysicsBlock pb;
+  aggregator->registerAndRequireEvaluators(fm,data,pb,mainParam);
 
   // evaluate on block 0
   {

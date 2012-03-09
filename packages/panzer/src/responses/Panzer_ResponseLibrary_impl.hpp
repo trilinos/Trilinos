@@ -25,6 +25,28 @@ ResponseLibrary<TraitsT>::ResponseLibrary(const ResponseLibrary<TraitsT> & rl)
 }
 
 template <typename TraitsT>
+void ResponseLibrary<TraitsT>::
+initialize(const Teuchos::RCP<WorksetContainer> & wc,
+           const Teuchos::RCP<UniqueGlobalIndexer<int,int> > & ugi,
+           const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof)
+{
+   respAggManager_ .initialize(ugi,lof);
+   wkstContainer_ = wc;
+   globalIndexer_ = ugi;
+   linObjFactory_ = lof;
+}
+
+template <typename TraitsT>
+void ResponseLibrary<TraitsT>::
+initialize(const ResponseLibrary<TraitsT> & rl)
+{
+   respAggManager_ .initialize(rl.globalIndexer_,rl.linObjFactory_);
+   wkstContainer_ = rl.wkstContainer_;
+   globalIndexer_ = rl.globalIndexer_; 
+   linObjFactory_ = rl.linObjFactory_;
+}
+
+template <typename TraitsT>
 template <typename EvalT>
 void ResponseLibrary<TraitsT>::
 reserveVolumeResponse(const ResponseId & rid,const std::string & eBlock)
@@ -237,7 +259,7 @@ buildVolumeFieldManagersFromResponses(
             continue;
 
          // build and register new field manager
-         contVector[i]->registerResponses(*fm,user_data);
+         contVector[i]->registerResponses(*fm,*pb,user_data);
       }
   
       // build the setup data using passed in information

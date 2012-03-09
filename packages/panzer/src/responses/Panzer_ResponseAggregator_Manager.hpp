@@ -15,9 +15,16 @@ public:
    typedef PHX::TemplateManager<typename TraitsT::EvalTypes,ResponseAggregatorBase<TraitsT>,ResponseAggregator<_,TraitsT> >
            AggregatorManager;
 
+   ResponseAggregator_Manager()
+      : globalIndexer_(Teuchos::null), linObjFactory_(Teuchos::null) {}
+
    ResponseAggregator_Manager(const Teuchos::RCP<UniqueGlobalIndexer<int,int> > & ugi,
                               const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof)
       : globalIndexer_(ugi), linObjFactory_(lof) {}
+
+   void initialize(const Teuchos::RCP<UniqueGlobalIndexer<int,int> > & ugi,
+                   const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof)
+   { globalIndexer_ = ugi; linObjFactory_ = lof; }
 
    /** Statically access an aggregator of a particular type
      *
@@ -81,7 +88,6 @@ private:
    Teuchos::RCP<UniqueGlobalIndexer<int,int> > globalIndexer_;
    Teuchos::RCP<LinearObjFactory<TraitsT> > linObjFactory_;
 
-   ResponseAggregator_Manager();
    ResponseAggregator_Manager(const ResponseAggregator_Manager &);
 };
 

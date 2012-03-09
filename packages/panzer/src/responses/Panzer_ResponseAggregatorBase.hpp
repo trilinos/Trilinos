@@ -9,6 +9,7 @@
 #include "Panzer_Response.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_LinearObjFactory.hpp"
+#include "Panzer_PhysicsBlock.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -93,6 +94,7 @@ public:
 
    //! Register and build evaluator required by this aggregator and this set of data.
    virtual void registerAndRequireEvaluators(PHX::FieldManager<TraitsT> & fm,const Teuchos::RCP<ResponseData<TraitsT> > & data,
+                                             const PhysicsBlock & pb,
                                              const Teuchos::ParameterList & p) const = 0;
 
    //! perform global reduction on this set of response data

@@ -84,8 +84,9 @@ TEUCHOS_UNIT_TEST(response_assembly, test)
   // TEST_ASSERT(container->contains(hResp2));
   TEST_ASSERT(!container->contains(cResp));
 
+  PhysicsBlock pb; // need for testing purposes (default constructor does nothing!)
   container->buildResponseDataObjs();
-  container->registerResponses(fm,mainParam);
+  container->registerResponses(fm,pb,mainParam);
   
   // evaluate on block 0
   {

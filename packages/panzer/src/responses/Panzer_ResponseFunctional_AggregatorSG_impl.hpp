@@ -52,6 +52,7 @@ buildResponseData(const std::vector<std::string> & fields) const
 template <typename TraitsT>
 void ResponseFunctional_Aggregator<panzer::Traits::SGResidual,TraitsT>::
 registerAndRequireEvaluators(PHX::FieldManager<TraitsT> & fm,const Teuchos::RCP<ResponseData<TraitsT> > & data,
+                             const PhysicsBlock & pb,
                              const Teuchos::ParameterList & p) const
 {
    typedef ResponseFunctional_Aggregator<panzer::Traits::SGResidual,TraitsT> ThisType;

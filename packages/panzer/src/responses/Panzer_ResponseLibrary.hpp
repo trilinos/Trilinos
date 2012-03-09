@@ -46,11 +46,27 @@ class ResponseLibrary {
 public:
    typedef typename TraitsT::EvalTypes TypeSeq;
 
+   ResponseLibrary() 
+   {
+      // build dynamic dispatch objects
+      dynamicDispatch_.buildObjects(Teuchos::ptrFromRef(*this)); 
+   }
+
    ResponseLibrary(const Teuchos::RCP<WorksetContainer> & wc,
                    const Teuchos::RCP<UniqueGlobalIndexer<int,int> > & ugi,
                    const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof); 
 
    ResponseLibrary(const ResponseLibrary & rl);
+
+   /** Initialize the response library with the appropriate objects.
+     */
+   void initialize(const Teuchos::RCP<WorksetContainer> & wc,
+                   const Teuchos::RCP<UniqueGlobalIndexer<int,int> > & ugi,
+                   const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof); 
+
+   /** Initialize the response library from a previously construct response library.
+     */
+   void initialize(const ResponseLibrary & rl);
 
    /** Asks, does this string correspond to a response type
      * in this library?
@@ -215,8 +231,6 @@ private:
 
    Teuchos::RCP<UniqueGlobalIndexer<int,int> > globalIndexer_;
    Teuchos::RCP<LinearObjFactory<TraitsT> > linObjFactory_;
-
-   ResponseLibrary();  // hide default constructor
 };
 
 }

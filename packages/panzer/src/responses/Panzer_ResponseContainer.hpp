@@ -15,6 +15,7 @@
 #include "Panzer_Response.hpp"
 #include "Panzer_ResponseAggregatorBase.hpp"
 #include "Panzer_ResponseLibrary.hpp"
+#include "Panzer_PhysicsBlock.hpp"
 
 namespace panzer {
 
@@ -120,7 +121,7 @@ public:
      * This essentially builds a ScatterResponse object 
      * and registers it as a required field in the field manager.
      */
-   virtual void registerResponses(PHX::FieldManager<TraitsT> & fm,const Teuchos::ParameterList & pl) = 0;
+   virtual void registerResponses(PHX::FieldManager<TraitsT> & fm,const PhysicsBlock & pb,const Teuchos::ParameterList & pl) = 0;
 
    //! Using reserved data build the response data objects
    virtual void buildResponseDataObjs() = 0;
@@ -180,7 +181,7 @@ public:
      * This essentially builds a ScatterResponse object 
      * and registers it as a required field in the field manager.
      */
-   virtual void registerResponses(PHX::FieldManager<TraitsT> & fm,const Teuchos::ParameterList & pl);
+   virtual void registerResponses(PHX::FieldManager<TraitsT> & fm,const PhysicsBlock & pb,const Teuchos::ParameterList & pl);
 
    //! Using reserved data build the response data objects
    void buildResponseDataObjs();
@@ -194,7 +195,7 @@ private:
 
 template <typename EvalT,typename TraitsT> 
 void ResponseContainer<EvalT,TraitsT>::
-registerResponses(PHX::FieldManager<TraitsT> & fm,const Teuchos::ParameterList & pl)
+registerResponses(PHX::FieldManager<TraitsT> & fm,const PhysicsBlock & pb,const Teuchos::ParameterList & pl)
 {
    using Teuchos::RCP;
 
@@ -217,7 +218,7 @@ registerResponses(PHX::FieldManager<TraitsT> & fm,const Teuchos::ParameterList &
       // use aggregator register required evaluators
       const ResponseAggregatorBase<Traits> & aggregator 
             = rLibrary.template getAggregator<EvalT>(type);
-      aggregator.registerAndRequireEvaluators(fm,dataObj,pl);
+      aggregator.registerAndRequireEvaluators(fm,dataObj,pb,pl);
    }
 }
 

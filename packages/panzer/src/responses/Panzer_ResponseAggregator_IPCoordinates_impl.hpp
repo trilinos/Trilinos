@@ -49,6 +49,7 @@ buildResponseData(const std::vector<std::string> & fields) const
 template <typename TraitsT>
 void ResponseAggregator_IPCoordinates<panzer::Traits::Residual,TraitsT>::
 registerAndRequireEvaluators(PHX::FieldManager<TraitsT> & fm,const Teuchos::RCP<ResponseData<TraitsT> > & data,
+                             const PhysicsBlock & pb,
                              const Teuchos::ParameterList & p) const
 {
    typedef ResponseAggregator_IPCoordinates<panzer::Traits::Residual,TraitsT> ThisType;
