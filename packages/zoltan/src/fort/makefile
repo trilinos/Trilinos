@@ -14,12 +14,11 @@ ZOD = ../$(ZOLTAN_OBJ_DIR)
 ZOM = $(F90_MODULE_PREFIX)$(ZOD) -I../fort
 
 all: 			$(ZOD)/cwrap.o $(ZOD)/ztypes.o \
-			$(ZOD)/zoltan_user_data.o  $(ZOD)/lb_user_const.o \
+			$(ZOD)/zoltan_user_data.o  \
 			$(ZOD)/fwrap.o 
 
 $(ZOD)/fwrap.o: 	$(ZOD)/ztypes.o  \
 			$(ZOD)/zoltan_user_data.o \
-			$(ZOD)/lb_user_const.o  \
 	 	fwrap.f90 \
 		set_numgeom.if			set_numgeom.fn \
 		set_geommulti.if		set_geommulti.fn \
@@ -87,7 +86,6 @@ clean:
 	      $(ZOD)/fwrap.o \
 	      $(ZOD)/ztypes.o \
 	      $(ZOD)/zoltan_user_data.o \
-	      $(ZOD)/lb_user_const.o \
               *.vo *.mod *.dbg \
 	      $(ZOD)/zfdrive 
 	@rm -Rf album
