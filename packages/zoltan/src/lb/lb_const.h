@@ -60,7 +60,6 @@ typedef enum Zoltan_LB_Method {
   CYCLIC, 
   RANDOM, 
   RCB,
-  OCTPART,
   PARMETIS,
   JOSTLE,
   REFTREE,

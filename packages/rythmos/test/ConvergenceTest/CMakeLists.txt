@@ -36,7 +36,7 @@ IF (${PACKAGE_NAME}_ENABLE_Stratimikos  AND ${PACKAGE_NAME}_ENABLE_Belos)
     DEPLIBS rythmos_test_models
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
-    XHOST trilinos-test2.sandia.gov
+    XHOST trilinos-test2.sandia.gov zan.sandia.gov
     )
 ENDIF()
 

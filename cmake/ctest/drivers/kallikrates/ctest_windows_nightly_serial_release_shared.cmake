@@ -53,33 +53,31 @@
 # ************************************************************************
 # @HEADER
 
-
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.s903186.gcc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.kallikrates.msvc.cmake")
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../../../Version.cmake")
 
 #
 # Set the options specific to this build case
 #
-
-SET(COMM_TYPE MPI)
+#SET(CTEST_DO_UPDATES FALSE)
+SET(COMM_TYPE SERIAL)
 SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME "MPI_OPT_SHARED__${Trilinos_VERSION}")
+SET(BUILD_DIR_NAME SERIAL_OPT_RELEASE_${Trilinos_VERSION}_SHARED)
 SET(Trilinos_TRACK ${Trilinos_TESTING_TRACK})
+
 SET(Trilinos_BRANCH ${Trilinos_REPOSITORY_BRANCH})
-#SET(CTEST_TEST_TIMEOUT 900)
-
-SET(EXTRA_EXCLUDE_PACKAGES Zoltan STK Mesquite Claps)
-
-SET( EXTRA_CONFIGURE_OPTIONS
-  "-DBUILD_SHARED_LIBS:BOOL=ON"
-  "-DSWIG_EXECUTABLE:FILEPATH=/Users/jmwille/install/swig-2.0.4/bin/swig"
-  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
-  "-DTPL_ENABLE_Boost:BOOL=ON"
-  "-DNOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK=ON"
-  )
 
 #
 # Set the rest of the system-specific options and run the dashboard build/test
 #
+
+#The dll export macros have only been added for a few  packages so we can really only test those packages
+SET(Trilinos_PACKAGES "Teuchos;Epetra;Anasazi")
+SET(CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES FALSE)
+
+SET( EXTRA_CONFIGURE_OPTIONS
+  "-DBUILD_SHARED_LIBS:BOOL=ON"
+  "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF"
+)
 
 TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()
