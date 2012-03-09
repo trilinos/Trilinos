@@ -1170,7 +1170,7 @@ namespace Ioex {
 
     int num_attr = 0;
     {
-      Ioss::SerializeIO	serializeIO__(this);
+      Ioss::SerializeIO serializeIO__(this);
       int ierr = ex_get_attr_param(get_file_pointer(), EX_NODE_BLOCK, 1, &num_attr);
       if (ierr < 0)
 	exodus_error(get_file_pointer(), __LINE__, myProcessor);
@@ -1184,20 +1184,20 @@ namespace Ioex {
 
   void DatabaseIO::get_elemblocks()
   {
-    get_blocks(EX_ELEM_BLOCK, 0);
+    get_blocks(EX_ELEM_BLOCK, 0, "block");
   }
   
   void DatabaseIO::get_faceblocks()
   {
-    get_blocks(EX_FACE_BLOCK, 1);
+    get_blocks(EX_FACE_BLOCK, 1, "faceblock");
   }
   
   void DatabaseIO::get_edgeblocks()
   {
-    get_blocks(EX_EDGE_BLOCK, 2);
+    get_blocks(EX_EDGE_BLOCK, 2, "edgeblock");
   }
   
-  void DatabaseIO::get_blocks(ex_entity_type entity_type, int rank_offset)
+  void DatabaseIO::get_blocks(ex_entity_type entity_type, int rank_offset, const std::string &basename)
   {
     // Attributes of an X block are:  (X = element, face, or edge)
     // -- id
@@ -1307,13 +1307,13 @@ namespace Ioex {
       int attributes        = counts[index+3];
 
       int id = X_block_ids[iblk];
-      std::string alias = Ioss::Utils::encode_entity_name("block", id);
+      std::string alias = Ioss::Utils::encode_entity_name(basename, id);
       char * const X_type = TOPTR(all_X_type) + iblk * (MAX_STR_LENGTH+1);
 
       std::string block_name;
       {
 	Ioss::SerializeIO	serializeIO__(this);
-	block_name = get_entity_name(get_file_pointer(), entity_type, id, "block", maximumNameLength);
+	block_name = get_entity_name(get_file_pointer(), entity_type, id, basename, maximumNameLength);
       }
 
       std::string save_type = X_type;
@@ -2132,7 +2132,7 @@ namespace Ioex {
 
 		int num_attr = 0;
 		{
-		  Ioss::SerializeIO	serializeIO__(this);
+		  Ioss::SerializeIO serializeIO__(this);
 		  int ierr = ex_get_attr_param(get_file_pointer(), EX_SIDE_SET, 1, &num_attr);
 		  if (ierr < 0)
 		    exodus_error(get_file_pointer(), __LINE__, myProcessor);
