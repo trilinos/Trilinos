@@ -45,6 +45,33 @@ PHX_EVALUATOR_CTOR(ScatterFields,p) :
   this->setName(scatterName+": STK-Scatter Fields");
 }
 
+template <typename EvalT,typename TraitsT>
+ScatterFields<EvalT,TraitsT>::
+ScatterFields(const std::string & scatterName,
+              const Teuchos::RCP<STK_Interface> mesh,
+              const Teuchos::RCP<const panzer::PureBasis> & basis,
+              const std::vector<std::string> & names)
+   : mesh_(mesh)
+{
+  using panzer::Cell;
+  using panzer::NODE;
+
+  // build dependent fields
+  scatterFields_.resize(names.size());
+  stkFields_.resize(names.size());
+  for (std::size_t fd = 0; fd < names.size(); ++fd) {
+    scatterFields_[fd] = 
+      PHX::MDField<ScalarT,Cell,NODE>(names[fd],basis->functional);
+    this->addDependentField(scatterFields_[fd]);
+  }
+
+  // setup a dummy field to evaluate
+  PHX::Tag<ScalarT> scatterHolder(scatterName,Teuchos::rcp(new PHX::MDALayout<panzer::Dummy>(0)));
+  this->addEvaluatedField(scatterHolder);
+
+  this->setName(scatterName+": STK-Scatter Fields");
+}
+
 PHX_POST_REGISTRATION_SETUP(ScatterFields,d,fm)
 {
   for (std::size_t fd = 0; fd < scatterFields_.size(); ++fd) {

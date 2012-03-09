@@ -30,6 +30,13 @@ PHX_EVALUATOR_CLASS(ScatterFields)
   Teuchos::RCP<STK_Interface> mesh_;
 
   std::vector<VariableField*> stkFields_;
+
+public:
+  
+  ScatterFields(const std::string & scatterName,
+                const Teuchos::RCP<STK_Interface> mesh,
+                const Teuchos::RCP<const panzer::PureBasis> & basis,
+                const std::vector<std::string> & names);
  
 PHX_EVALUATOR_CLASS_END
 
