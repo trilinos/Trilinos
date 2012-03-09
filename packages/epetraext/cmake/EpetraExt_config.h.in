@@ -42,9 +42,6 @@
 /* Define to 1 if you have the `parmetis' library (-lparmetis). */
 #cmakedefine HAVE_LIBPARMETIS
 
-/* Define to 1 if you have the `zoltan' library (-lzoltan). */
-#cmakedefine HAVE_LIBZOLTAN
-
 /* Define if want to build epetraext-matlab */
 #cmakedefine HAVE_MATLAB
 
@@ -68,9 +65,6 @@
 
 /* Define if want to build with warning_messages enabled */
 #cmakedefine HAVE_WARNING_MESSAGES
-
-/* Define if want to build epetraext-zoltan */
-#cmakedefine HAVE_ZOLTAN
 
 /* Define if PyTrilinos is enabled */
 #cmakedefine HAVE_PYTRILINOS
