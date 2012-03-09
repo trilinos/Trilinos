@@ -50,6 +50,8 @@
 
 #include <assert.h>
 
+#include <cstdio>
+
 // The following eliminates the use of the "__ FILE __" variable which
 // was causing code bloat on janus.
 static const char *Version = "2009/08/18";

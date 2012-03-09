@@ -47,6 +47,7 @@ class Data;
 class Lookup;
 
 #include <fei_defs.h>
+#include <cstdlib>
 
 /**  
   This is the original internal FEI interface to solver-libraries --
