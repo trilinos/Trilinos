@@ -280,7 +280,7 @@ namespace Ioex {
     void get_edgeblocks();
     void get_faceblocks();
     void get_elemblocks();
-    void get_blocks(ex_entity_type type, int rank_offset);
+    void get_blocks(ex_entity_type entity_type, int rank_offset, const std::string &basename);
 
     void get_sidesets();
 
