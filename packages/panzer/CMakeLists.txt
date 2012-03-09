@@ -19,11 +19,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
   "Build with debug code enabled."
   OFF )
 
-TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
-  PANZER_STK_DEBUG
-  "Build with debug code enabled."
-  OFF )
-
 # optional package specific configurations
 ############################################################
 
