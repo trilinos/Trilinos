@@ -87,7 +87,7 @@ namespace MueLu {
         return factoryMapIn.find(factoryName)->second;
       }
 
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:: unkown factory name : " << factoryName);
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:: unknown factory name : " << factoryName);
 
       return Teuchos::null;
     }
