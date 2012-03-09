@@ -39,10 +39,31 @@ void EntityRepository::internal_expunge_entity( EntityMap::iterator i )
     "Key " << print_entity_key(MetaData::get( *i->second ), i->first) <<
     " != " << print_entity_key(i->second));
 
-  m_entity_alloc.destroy(i->second);
-  m_entity_alloc.deallocate(i->second,1);
-  i->second = NULL ;
+  Entity* deleted_entity = i->second;
+#ifdef SIERRA_MIGRATION
+  m_fmwk_attr_alloc.destroy(deleted_entity->m_fmwk_attrs);
+  m_fmwk_attr_alloc.deallocate(deleted_entity->m_fmwk_attrs, 1);
+#endif
+  m_entity_alloc.destroy(deleted_entity);
+  m_entity_alloc.deallocate(deleted_entity, 1);
+  i->second = NULL;
   m_entities.erase( i );
+}
+
+Entity*
+EntityRepository::internal_allocate_entity(EntityKey entity_key)
+{
+  static Entity tmp_entity;
+  Entity* new_entity = m_entity_alloc.allocate();
+  m_entity_alloc.construct(new_entity, tmp_entity);
+  new_entity->set_key(entity_key);
+#ifdef SIERRA_MIGRATION
+  static fmwk_attributes tmp_attributes;
+  fmwk_attributes* fmwk_attrs = m_fmwk_attr_alloc.allocate();
+  m_fmwk_attr_alloc.construct(fmwk_attrs, tmp_attributes);
+  new_entity->m_fmwk_attrs = fmwk_attrs;
+#endif
+  return new_entity;
 }
 
 std::pair<Entity*,bool>
@@ -59,10 +80,7 @@ EntityRepository::internal_create_entity( const EntityKey & key )
     result( insert_result.first->second , insert_result.second );
 
   if ( insert_result.second )  { // A new entity
-    static Entity tmp_entity;
-    Entity* new_entity = m_entity_alloc.allocate();
-    m_entity_alloc.construct(new_entity, tmp_entity);
-    new_entity->set_key(key);
+    Entity* new_entity = internal_allocate_entity(key);
     insert_result.first->second = result.first = new_entity;
   }
   else if ( EntityLogDeleted == result.first->log_query() ) {
@@ -252,11 +270,7 @@ void EntityRepository::update_entity_key(EntityKey key, Entity & entity)
 
     entity.m_entityImpl.update_key(key);
 
-    static Entity tmp_entity;
-    Entity* new_entity = m_entity_alloc.allocate();
-    m_entity_alloc.construct(new_entity, tmp_entity);
-    new_entity->set_key(old_key);
-    old_itr->second = new_entity;
+    old_itr->second = internal_allocate_entity(old_key);
 
     old_itr->second->m_entityImpl.log_deleted();
   }

@@ -112,8 +112,13 @@ class EntityRepository {
   private:
     void internal_expunge_entity( EntityMap::iterator i);
 
+    Entity* internal_allocate_entity(EntityKey entity_key);
+
     EntityMap m_entities;
     boost::fast_pool_allocator<Entity> m_entity_alloc;
+#ifdef SIERRA_MIGRATION
+    boost::fast_pool_allocator<fmwk_attributes> m_fmwk_attr_alloc;
+#endif
 
     //disabel copy constructor and assignment operator
     EntityRepository(const EntityRepository &);

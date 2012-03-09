@@ -32,13 +32,23 @@ class Entity;
 //fmwk stuff on an entity, just to help us through the sierra migration.
 //Move along folks, there's nothing to see here.
 struct fmwk_attributes {
+  // Each member has an explanation of why it can't be handled by Entity.
+
+  // Relations of this mesh object that can't be managed by STK such as PARENT/CHILD
   RelationVector aux_relations;
+
+  // Not a supported STK_Mesh concept
   const void*           shared_attr;
 
   // Cannot just use the id embedded in the entity-key because of negative global-ids
   // for temporaries.
   int                   global_id;
+
+  // Not a supported STK_Mesh concept
   unsigned              local_id;
+
+  // Can't use STK_Mesh's notion of this entity's owner because STK_Mesh is being used
+  // in serial mode and therefore every process will thinks it owns everything.
   int                   owner;
 
   // Not a supported STK_Mesh concept
@@ -227,18 +237,16 @@ private:
   void init_fmwk(
     const int         id,
     const SharedAttr* attr,
-    stk::mesh::fmwk_attributes* fmwk_attrs,
     const int         owner,
     const int         parallel_rank,
     const int         parallel_size)
   {
-    m_fmwk_attrs = fmwk_attrs;
     ThrowAssertMsg(aux_relations().capacity() == 0, "Leftover memory found in relation vector");
 
     m_fmwk_attrs->global_id     = id;
-    m_fmwk_attrs->local_id = sierra::Fmwk::INVALID_LOCAL_ID;
-    m_fmwk_attrs->shared_attr = attr;
-    m_fmwk_attrs->owner = owner;
+    m_fmwk_attrs->local_id      = sierra::Fmwk::INVALID_LOCAL_ID;
+    m_fmwk_attrs->shared_attr   = attr;
+    m_fmwk_attrs->owner         = owner;
     m_fmwk_attrs->connect_count = 0;
 
     if (attr->locally_owned() && owner_processor_rank() == -1) {
