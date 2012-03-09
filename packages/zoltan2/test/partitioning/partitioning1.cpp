@@ -267,7 +267,9 @@ int main(int narg, char** arg)
 
   if (me == 0) cout << "Redistributing vectors..." << endl;
   Vector *redistribVector;
-  VectorAdapter adapterVector(origVector, 0, NULL, NULL);
+  std::vector<const scalar_t *> weights;
+  std::vector<int> weightStrides;
+  VectorAdapter adapterVector(origVector, weights, weightStrides);
   adapterVector.applyPartitioningSolution(*origVector, redistribVector,
                                           problem.getSolution());
 

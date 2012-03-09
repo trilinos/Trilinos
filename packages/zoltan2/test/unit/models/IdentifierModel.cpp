@@ -106,7 +106,7 @@ void testIdentifierModel(std::string fname, gno_t xdim, gno_t ydim, gno_t zdim,
     printFailureCode(comm, fail);
   
   ArrayView<const gno_t> gids;
-  ArrayView<const input_t> wgts;
+  ArrayView<input_t> wgts;
   
   model->getIdentifierList(gids, wgts);
 
@@ -151,7 +151,6 @@ int main(int argc, char *argv[])
   std::vector<std::string> mtxFiles;
   
   mtxFiles.push_back(testDataFilePath+string("/simple.mtx"));
-  mtxFiles.push_back(testDataFilePath+string("/cage10.mtx"));
 
   bool wishConsecutiveIds = true;
 

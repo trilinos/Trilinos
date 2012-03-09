@@ -25,8 +25,8 @@ typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> userTypes_t;
 
 int checkBasicVector(
   Zoltan2::BasicVectorInput<userTypes_t> *ia, int len, int glen,
-  gno_t *ids, int mvdim, scalar_t **values, int *valueStrides,
-  int wdim, scalar_t **weights, int *weightStrides)
+  gno_t *ids, int mvdim, const scalar_t **values, int *valueStrides,
+  int wdim, const scalar_t **weights, int *weightStrides)
 {
   int fail = 0;
   bool strideOne = false;
@@ -109,13 +109,13 @@ int main(int argc, char *argv[])
   int wdim = 2;
   scalar_t *weights = new scalar_t [numLocalIds*wdim];
   int *weightStrides = new int [wdim];
-  scalar_t **weightPtrs = new scalar_t * [wdim];
+  const scalar_t **weightPtrs = new const scalar_t * [wdim];
 
   int mvdim = 3;
   scalar_t *v_values= new scalar_t [numLocalIds];
   scalar_t *mv_values= new scalar_t [mvdim * numLocalIds];
   int *valueStrides = new int [mvdim];
-  scalar_t **valuePtrs = new scalar_t * [mvdim];
+  const scalar_t **valuePtrs = new const scalar_t * [mvdim];
 
   for (lno_t i=0; i < numLocalIds; i++){
     myIds[i] = base+i;
@@ -141,78 +141,116 @@ int main(int argc, char *argv[])
 
   RCP<Zoltan2::BasicVectorInput<userTypes_t> > ia;
 
-  // A Zoltan2::BasicVectorInput object with one vector and no weights
+  {
+    // A Zoltan2::BasicVectorInput object with one vector and no weights
 
-  try{
-   ia = rcp(new Zoltan2::BasicVectorInput<userTypes_t>(numLocalIds, myIds,
-     v_values, 1, 0, NULL, NULL));
-  }
-  catch (std::exception &e){
-    fail = 1;
-  }
-
-  TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 1", fail);
-
-  fail = checkBasicVector(ia.getRawPtr(), numLocalIds, numLocalIds*nprocs,
-    myIds, 1, valuePtrs, NULL, 0, NULL, NULL);
-
-  TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check vector 1", fail);
-
-  // A Zoltan2::BasicVectorInput object with one vector and weights
-
-  try{
-   ia = rcp(new Zoltan2::BasicVectorInput<userTypes_t>(numLocalIds, myIds,
-     v_values, 1, wdim, weightPtrs, weightStrides));
-  }
-  catch (std::exception &e){
-    fail = 1;
+    std::vector<const scalar_t *> weightValues;
+    std::vector<int> strides;
+  
+    try{
+     ia = rcp(new Zoltan2::BasicVectorInput<userTypes_t>(numLocalIds, myIds,
+       v_values, 1, weightValues, strides));
+    }
+    catch (std::exception &e){
+      fail = 1;
+    }
+  
+    TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 1", fail);
+  
+    fail = checkBasicVector(ia.getRawPtr(), numLocalIds, numLocalIds*nprocs,
+      myIds, 1, valuePtrs, NULL, 0, NULL, NULL);
+  
+    TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check vector 1", fail);
   }
 
-  TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 2", fail);
+  {
+    // A Zoltan2::BasicVectorInput object with one vector and weights
 
-  fail = checkBasicVector(ia.getRawPtr(), numLocalIds, numLocalIds*nprocs,
-    myIds, 1, valuePtrs, NULL, wdim, weightPtrs, weightStrides);
+    std::vector<const scalar_t *> weightValues;
+    std::vector<int> strides;
 
-  TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check vector 2", fail);
-
-  // A Zoltan2::BasicVectorInput object with a multivector and no weights
-
-  try{
-   ia = rcp(new Zoltan2::BasicVectorInput<userTypes_t>(mvdim,
-    numLocalIds, myIds, valuePtrs, valueStrides,
-    0, NULL, NULL));
-    
-  }
-  catch (std::exception &e){
-    fail = 1;
-  }
-
-  TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 3", fail);
-
-  fail = checkBasicVector(ia.getRawPtr(), numLocalIds, numLocalIds*nprocs,
-    myIds, mvdim, valuePtrs, valueStrides, 0, NULL, NULL);
-
-  TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check vector 3", fail);
-
-  // A Zoltan2::BasicVectorInput object with a multivector with weights
-
-  try{
-   ia = rcp(new Zoltan2::BasicVectorInput<userTypes_t>(mvdim,
-    numLocalIds, myIds, valuePtrs, valueStrides,
-    wdim, weightPtrs, weightStrides));
-    
-  }
-  catch (std::exception &e){
-    fail = 1;
+    weightValues.push_back(weightPtrs[0]);
+    weightValues.push_back(weightPtrs[1]);
+    strides.push_back(1);
+    strides.push_back(1);
+  
+    try{
+     ia = rcp(new Zoltan2::BasicVectorInput<userTypes_t>(numLocalIds, myIds,
+       v_values, 1, weightValues, strides));
+    }
+    catch (std::exception &e){
+      fail = 1;
+    }
+  
+    TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 2", fail);
+  
+    fail = checkBasicVector(ia.getRawPtr(), numLocalIds, numLocalIds*nprocs,
+      myIds, 1, valuePtrs, NULL, wdim, weightPtrs, weightStrides);
+  
+    TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check vector 2", fail);
   }
 
-  TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 4", fail);
+  {
+    // A Zoltan2::BasicVectorInput object with a multivector and no weights
 
-  fail = checkBasicVector(ia.getRawPtr(), numLocalIds, numLocalIds*nprocs,
-    myIds, mvdim, valuePtrs, valueStrides,
-    wdim, weightPtrs, weightStrides);
+    std::vector<const scalar_t *> weightValues, values;
+    std::vector<int> wstrides, vstrides;
 
-  TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check vector 4", fail);
+    for (int dim=0; dim < mvdim; dim++){
+      values.push_back(valuePtrs[dim]);
+      vstrides.push_back(mvdim);
+    }
+  
+  
+    try{
+      ia = rcp(new Zoltan2::BasicVectorInput<userTypes_t>(
+        numLocalIds, myIds, values, vstrides, weightValues, wstrides));
+    }
+    catch (std::exception &e){
+      fail = 1;
+    }
+  
+    TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 3", fail);
+  
+    fail = checkBasicVector(ia.getRawPtr(), numLocalIds, numLocalIds*nprocs,
+      myIds, mvdim, valuePtrs, valueStrides, 0, NULL, NULL);
+  
+    TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check vector 3", fail);
+  }
+
+  {
+    // A Zoltan2::BasicVectorInput object with a multivector with weights
+
+    std::vector<const scalar_t *> weightValues, values;
+    std::vector<int> wstrides, vstrides;
+
+    for (int dim=0; dim < wdim; dim++){
+      weightValues.push_back(weightPtrs[dim]);
+      wstrides.push_back(1);
+    }
+
+    for (int dim=0; dim < mvdim; dim++){
+      values.push_back(valuePtrs[dim]);
+      vstrides.push_back(mvdim);
+    }
+  
+    try{
+     ia = rcp(new Zoltan2::BasicVectorInput<userTypes_t>(
+        numLocalIds, myIds, values, vstrides, weightValues, wstrides));
+      
+    }
+    catch (std::exception &e){
+      fail = 1;
+    }
+  
+    TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 4", fail);
+  
+    fail = checkBasicVector(ia.getRawPtr(), numLocalIds, numLocalIds*nprocs,
+      myIds, mvdim, valuePtrs, valueStrides,
+      wdim, weightPtrs, weightStrides);
+  
+    TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check vector 4", fail);
+  }
 
   if (rank == 0)
     std::cout << "PASS" << std::endl;

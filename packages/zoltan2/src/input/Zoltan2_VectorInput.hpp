@@ -1,8 +1,6 @@
 // @HEADER
 // ***********************************************************************
-//
-//                Copyright message goes here.   TODO
-//
+//                Copyright message goes here.   
 // ***********************************************************************
 // @HEADER
 
@@ -48,6 +46,8 @@ namespace Zoltan2 {
     VectorInput may be a single vector or a set of corresponding vectors
     which have with the same global identifiers and the same distribution 
     across processes.
+
+  \todo We can make global Ids optional.  We don't need them.
  
 */
 
@@ -100,7 +100,7 @@ public:
        represents more than one vector, vector zero is implied.
 
       \param ids will on return point to the list of global Ids for 
-        each element on this process.  TODO: make Ids optional.
+        each element on this process.  
       \param elements will on return point to the vector values
         corresponding to the global Ids.
       \param stride the k'th element is located at elements[stride*k]
@@ -115,7 +115,7 @@ public:
       \param i ranges from zero to one less than getNumberOfVector(), and
          represents the vector for which data is being requested.
       \param ids will on return point to the list of global Ids for 
-        each element on this process.  TODO: make Ids optional.
+        each element on this process.  
       \param elements will on return point to the vector values
         corresponding to the global Ids.
       \param stride the k'th element is located at elements[stride*k]
@@ -159,7 +159,7 @@ public:
 
   template <typename User2>
     size_t applyPartitioningSolution(User &in, User *&out,
-         const PartitioningSolution<User2> &solution)
+         const PartitioningSolution<User2> &solution) const
   {
     return 0;
   } 

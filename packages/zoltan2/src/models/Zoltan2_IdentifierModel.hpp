@@ -83,7 +83,7 @@ public:
    */
 
   size_t getIdentifierList(ArrayView<const gno_t>  &Ids,
-    ArrayView<const input_t> &wgts) const {return 0;}
+    ArrayView<input_t> &wgts) const {return 0;}
 
   ////////////////////////////////////////////////////
   // The Model interface.
@@ -128,7 +128,7 @@ public:
   
   IdentifierModel( const IdentifierInput<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
-    std::bitset<NUM_MODEL_FLAGS> &modelFlags):
+    modelFlag_t &modelFlags):
       gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), comm_(comm),
       gids_(), weights_(), gnos_(), gnosConst_()
   {
@@ -224,13 +224,13 @@ public:
    */
 
   size_t getIdentifierList(ArrayView<const gno_t>  &Ids,
-    ArrayView<const input_t> &wgts) const 
+    ArrayView<input_t> &wgts) const 
   {
     size_t n = getLocalNumIdentifiers();
     size_t nweights = n * weights_.size();
 
     Ids =  ArrayView<const gno_t>();
-    wgts = ArrayView<const input_t>();
+    wgts = ArrayView<input_t>();
 
     if (n){
       if (gnosAreGids_)
@@ -261,7 +261,7 @@ public:
 
   void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const 
   { 
-    ArrayView<const input_t> weights;
+    ArrayView<input_t> weights;
     getIdentifierList(gnos, weights);
   }
 
@@ -274,7 +274,7 @@ private:
   const RCP<const Environment> env_;
   const RCP<const Comm<int> > comm_;
   ArrayRCP<const gid_t> gids_;
-  ArrayRCP<const input_t> weights_;
+  ArrayRCP<input_t> weights_;
   ArrayRCP<gno_t> gnos_;
   ArrayRCP<const gno_t> gnosConst_;
 };
@@ -293,7 +293,7 @@ public:
   
   IdentifierModel( const MatrixInput<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
-    std::bitset<NUM_MODEL_FLAGS> &modelFlags):
+    modelFlag_t &modelFlags):
       gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), 
       comm_(comm), gids_(), weights_(), gnos_(), gnosConst_()
   {
@@ -369,13 +369,13 @@ public:
    */
 
   size_t getIdentifierList(ArrayView<const gno_t>  &Ids,
-    ArrayView<const input_t> &wgts) const            
+    ArrayView<input_t> &wgts) const            
   {
     size_t n = getLocalNumIdentifiers();
     size_t nweights = 0;
 
     Ids = ArrayView<const gno_t>(Teuchos::null);
-    wgts = ArrayView<const input_t>(Teuchos::null);
+    wgts = ArrayView<input_t>(Teuchos::null);
 
     if (n){
       if (gnosAreGids_)
@@ -406,7 +406,7 @@ public:
 
   void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const 
   { 
-    ArrayView<const input_t> weights;
+    ArrayView<input_t> weights;
     getIdentifierList(gnos, weights);
   }
 
@@ -419,7 +419,7 @@ private:
   const RCP<const Environment> env_;
   const RCP<const Comm<int> > comm_;
   ArrayRCP<const gid_t> gids_;
-  ArrayRCP<const input_t> weights_;
+  ArrayRCP<input_t> weights_;
   ArrayRCP<gno_t> gnos_;
   ArrayRCP<const gno_t> gnosConst_;
 };

@@ -1,3 +1,18 @@
+// @HEADER
+// ***********************************************************************
+//
+//                Copyright message goes here.   TODO
+//
+// ***********************************************************************
+// @HEADER
+
+/*! \file Zoltan2_AlgAMD.hpp
+    \brief The AMD ordering algorithm.
+
+  \todo  If Zoltan2 is not using int, int, double, we exit with an error.
+           Do we want to copy the data to the right format for AMD?
+*/
+
 #ifndef _ZOLTAN2_ALGAMD_HPP_
 #define _ZOLTAN2_ALGAMD_HPP_
 
@@ -17,6 +32,7 @@ class AMDTraits
 };
 
 #ifdef HAVE_ZOLTAN2_AMD
+#ifdef HAVE_ZOLTAN2_INST_DOUBLE_INT_INT
 template <>
 class AMDTraits<int>
 {
@@ -38,6 +54,7 @@ class AMDTraits<long>
         return (amd_l_order(n, Ap, Ai, perm, control, info));
     }
 };
+#endif
 #endif
 
 ////////////////////////////////////////////////////////////////////////
@@ -78,6 +95,7 @@ int AlgAMD(
 
 
 #ifdef HAVE_ZOLTAN2_AMD
+#ifdef HAVE_ZOLTAN2_INST_DOUBLE_INT_INT
   cout << "AMD is enabled" << endl;
   AMDTraits<lno_t> AMDobj;
   double Control[AMD_CONTROL];
@@ -94,6 +112,11 @@ int AlgAMD(
 
   if (result != AMD_OK && result != AMD_OK_BUT_JUMBLED)
       ierr = -1; // TODO: Change return value to lno_t
+#else
+  cout << "Zoltan2 is not built with AMD's data types (int, int, double)." << endl;
+  ierr = -2; // TODO: Need better error numbers ?
+#endif
+
 #else
   cout << "Zoltan2 is not built with AMD." << endl;
   ierr = -2; // TODO: Need better error numbers ?

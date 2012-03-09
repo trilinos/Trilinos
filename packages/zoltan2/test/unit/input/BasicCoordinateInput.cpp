@@ -21,6 +21,7 @@
 using Teuchos::RCP;
 using Teuchos::Comm;
 using Teuchos::DefaultComm;
+using Teuchos::Array;
 
 typedef Teuchos::SerialDenseVector<lno_t, scalar_t> tvec_t;
 
@@ -29,9 +30,9 @@ typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> userTypes_t;
 int checkBasicCoordinate(
   Zoltan2::BasicCoordinateInput<userTypes_t> *ia, 
   int len, int glen, gno_t *ids,
-  scalar_t *xyz,             // stored x1,y1,z1,x2,y2,z2, ...
-  scalar_t *weights,         // two weights stored by dimension by coord
-  int nCoords, int nWeights) // #coords and #weights supplied to ia
+  scalar_t *xyz,
+  scalar_t *weights,
+  int nCoords, int nWeights)
 {
   int fail = 0;
 
@@ -96,47 +97,67 @@ int main(int argc, char *argv[])
   int nprocs = comm->getSize();
   int fail = 0;
 
+  // Get some coordinates
+
+  typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> mv_t;
+
+  outputFlag_t flags;
+  flags.set(OBJECT_COORDINATES);
+
+  RCP<UserInputForTests> uinput;
+  std::string fname = testDataFilePath+std::string("/simple.mtx");
+
+  try{
+    uinput = rcp(new UserInputForTests(fname, comm, flags));
+  }
+  catch(std::exception &e){
+    fail=1;
+  }
+
+  TEST_FAIL_AND_EXIT(*comm, !fail, "input constructor", 1);
+
+  RCP<mv_t> coords;
+
+  try{
+    coords = uinput->getCoordinates();
+  }
+  catch(std::exception &e){
+    fail=1;
+  }
+
+  TEST_FAIL_AND_EXIT(*comm, !fail, "getting coordinates", 1);
+
+  int numLocalIds = coords->getLocalLength();
+  int numGlobalIds = coords->getGlobalLength();
+  int coordDim = coords->getNumVectors();
+  ArrayView<const gno_t> idList = coords->getMap()->getNodeElementList();
+
   // Create global Ids, x-, y- and z-coordinates, and also arrays of weights.
 
-  lno_t numLocalIds = 10;
-  gno_t *myIds = new gno_t [numLocalIds];
+  Array<gno_t> myIds(numLocalIds);
   gno_t base = rank * numLocalIds;
   
   int wdim = 2;
-  scalar_t *weights = new scalar_t [numLocalIds*wdim];
-  int *weightStrides = new int [wdim];
-  scalar_t **weightPtrs = new scalar_t * [wdim];
+  Array<scalar_t> weights(numLocalIds*wdim);
 
-  scalar_t *x_values= new scalar_t [numLocalIds];
-  scalar_t *y_values= new scalar_t [numLocalIds];
-  scalar_t *z_values= new scalar_t [numLocalIds];
-  scalar_t *xyz_values = new scalar_t [3*numLocalIds];
-  int *valueStrides = new int [3];
-  scalar_t **valuePtrs = new scalar_t * [3];
+  scalar_t *x_values= coords->getDataNonConst(0).getRawPtr();
+  scalar_t *y_values= x_values;  // fake 3 dimensions if needed
+  scalar_t *z_values= x_values;
+
+  if (coordDim > 1){
+    y_values= coords->getDataNonConst(1).getRawPtr();
+    if (coordDim > 2)
+      z_values= coords->getDataNonConst(2).getRawPtr();
+  }
+
+  Array<scalar_t> xyz_values(3*numLocalIds);
 
   for (lno_t i=0; i < numLocalIds; i++)   // global Ids
     myIds[i] = base+i;
 
-  tvec_t weightVec(Teuchos::View, weights, numLocalIds*wdim); // random weights 
-  weightVec.random(); 
-
-  for (int w=0; w < wdim; w++){
-    weightStrides[w] = 1;
-    weightPtrs[w] = weights + numLocalIds*w;
-  }
-
-  tvec_t xVec(Teuchos::View, x_values, numLocalIds); // random x coordinates
-  xVec.random();
-
-  tvec_t yVec(Teuchos::View, y_values, numLocalIds); // random y coordinates
-  yVec.random();
-
-  tvec_t zVec(Teuchos::View, z_values, numLocalIds); // random z coordinates
-  zVec.random();
-
-  scalar_t *x = xyz_values;                // a stride-3 coordinate array
-  scalar_t *y = xyz_values + 1;
-  scalar_t *z = xyz_values + 2;
+  scalar_t *x = xyz_values.getRawPtr();   // a stride-3 coordinate array
+  scalar_t *y = x+1;
+  scalar_t *z = y+1;
 
   for (int i=0, ii=0; i < numLocalIds; i++, ii += 3){
     x[ii] = x_values[i];
@@ -146,122 +167,181 @@ int main(int argc, char *argv[])
 
   RCP<Zoltan2::BasicCoordinateInput<userTypes_t> > ia;
 
-  ////////////////////////////////////////////////////////////////
-  // 3-dimensional coordinates with stride one and no weights
-
-  int ncoords = 3;
-  int nweights = 0;
-
-  valuePtrs[0] = x_values; valueStrides[0] = 1;
-  valuePtrs[1] = y_values; valueStrides[1] = 1;
-  valuePtrs[2] = z_values; valueStrides[2] = 1;
-
-  try{
-   ia = rcp(new Zoltan2::BasicCoordinateInput<userTypes_t>(
-     ncoords, numLocalIds, myIds, valuePtrs, valueStrides,
-     nweights, NULL, NULL));
-  }
-  catch (std::exception &e){
-    fail = 1;
-  }
-
-  TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 1", fail);
-
-  fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, numLocalIds*nprocs, 
-    myIds, xyz_values, weights, ncoords, nweights);
-
-  TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check adapter 1", fail);
-
-  // Try using the default: no strides supplied means strides are one.
-
-  try{
-   ia = rcp(new Zoltan2::BasicCoordinateInput<userTypes_t>(
-     ncoords, numLocalIds, myIds, valuePtrs, NULL,   // strides are NULL
-     nweights, NULL, NULL));
-  }
-  catch (std::exception &e){
-    fail = 1;
+  {
+    ////////////////////////////////////////////////////////////////
+    // 3-dimensional coordinates with stride one and no weights,
+    //   using simpler constructor
+  
+    int ncoords = 3;
+    int nweights = 0;
+  
+    try{
+     ia = rcp(new Zoltan2::BasicCoordinateInput<userTypes_t>(
+       numLocalIds, myIds.getRawPtr(), x_values, y_values, z_values));
+    }
+    catch (std::exception &e){
+      fail = 1;
+    }
+  
+    TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 0", fail);
+  
+    fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, numGlobalIds,
+      myIds.getRawPtr(), xyz_values.getRawPtr(), 
+      weights.getRawPtr(), ncoords, nweights);
+  
+    TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check adapter 0", fail);
   }
 
-  TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 2", fail);
+  {
+    ////////////////////////////////////////////////////////////////
+    // 3-dimensional coordinates with stride one and no weights
+  
+    int ncoords = 3;
+    int nweights = 0;
 
-  fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, numLocalIds*nprocs, 
-    myIds, xyz_values, weights, ncoords, nweights);
+    std::vector<const scalar_t *> values, weightValues;
+    std::vector<int> valueStrides, weightStrides;
+  
+    values.push_back(x_values);
+    values.push_back(y_values);
+    values.push_back(z_values);
+    valueStrides.push_back(1);
+    valueStrides.push_back(1);
+    valueStrides.push_back(1);
+  
+    try{
+     ia = rcp(new Zoltan2::BasicCoordinateInput<userTypes_t>(
+       numLocalIds, myIds.getRawPtr(), values, valueStrides, 
+       weightValues, weightStrides));
+    }
+    catch (std::exception &e){
+      fail = 1;
+    }
+  
+    TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 1", fail);
+  
+    fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, numGlobalIds,
+      myIds.getRawPtr(), xyz_values.getRawPtr(), 
+      weights.getRawPtr(), ncoords, nweights);
+  
+    TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check adapter 1", fail);
+  
+    // Try using the default: no strides supplied means strides are one.
 
-  TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check adapter 2", fail);
-
-  ////////////////////////////////////////////////////////////////
-  // 2-dimensional coordinates with stride three and two weights
-
-  ncoords = 2;
-  nweights = 2;
-
-  valuePtrs[0] = xyz_values;     valueStrides[0] = 3;
-  valuePtrs[1] = xyz_values + 1; valueStrides[1] = 3;
-
-  weightPtrs[0] = weights;                   weightStrides[0] = 1;
-  weightPtrs[1] = weights + numLocalIds;     weightStrides[1] = 1;
-
-  try{
-   ia = rcp(new Zoltan2::BasicCoordinateInput<userTypes_t>(
-     ncoords, numLocalIds, myIds, valuePtrs, valueStrides,
-     nweights, weightPtrs, weightStrides));
-  }
-  catch (std::exception &e){
-    fail = 1;
-  }
-
-  TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 3", fail);
-
-  fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, numLocalIds*nprocs, 
-    myIds, xyz_values, weights, ncoords, nweights);
-
-  TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check adapter 3", fail);
-
-  // Try using default weight strides
-
-  try{
-   ia = rcp(new Zoltan2::BasicCoordinateInput<userTypes_t>(
-     ncoords, numLocalIds, myIds, valuePtrs, valueStrides,
-     nweights, weightPtrs, NULL));    // strides are NULL
-  }
-  catch (std::exception &e){
-    fail = 1;
-  }
-
-  TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 4", fail);
-
-  fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, numLocalIds*nprocs, 
-    myIds, xyz_values, weights, ncoords, nweights);
-
-  TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check adapter 4", fail);
-
-  ////////////////////////////////////////////////////////////////
-  // 1-dimensional coordinates with stride one and two weights
-
-  ncoords = 1;
-  nweights = 2;
-
-  valuePtrs[0] = x_values;     valueStrides[0] = 1;
-
-  weightPtrs[0] = weights;                   weightStrides[0] = 1;
-  weightPtrs[1] = weights + numLocalIds;     weightStrides[1] = 1;
-
-  try{
-   ia = rcp(new Zoltan2::BasicCoordinateInput<userTypes_t>(
-     ncoords, numLocalIds, myIds, valuePtrs, valueStrides,
-     nweights, weightPtrs, weightStrides));
-  }
-  catch (std::exception &e){
-    fail = 1;
+    std::vector<int> emptyStrides;
+  
+    try{
+     ia = rcp(new Zoltan2::BasicCoordinateInput<userTypes_t>(
+       numLocalIds, myIds.getRawPtr(), values, emptyStrides, 
+       weightValues, emptyStrides));
+    }
+    catch (std::exception &e){
+      fail = 1;
+    }
+  
+    TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 2", fail);
+  
+    fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, numGlobalIds,
+      myIds.getRawPtr(), xyz_values.getRawPtr(), 
+      weights.getRawPtr(), ncoords, nweights);
+  
+    TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check adapter 2", fail);
   }
 
-  TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 4", fail);
+  {
+    ////////////////////////////////////////////////////////////////
+    // 2-dimensional coordinates with stride three and two weights
+  
+    int ncoords = 2;
+    int nweights = 2;
 
-  fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, numLocalIds*nprocs, 
-    myIds, xyz_values, weights, ncoords, nweights);
+    std::vector<const scalar_t *> values, weightValues;
+    std::vector<int> valueStrides, weightStrides;
+  
+    values.push_back(xyz_values.getRawPtr());
+    values.push_back(xyz_values.getRawPtr() + 1);
+    valueStrides.push_back(3);
+    valueStrides.push_back(3);
+  
+    weightValues.push_back(weights.getRawPtr());
+    weightValues.push_back(weights.getRawPtr() + numLocalIds);
+    weightStrides.push_back(1);
+    weightStrides.push_back(1);
+  
+    try{
+     ia = rcp(new Zoltan2::BasicCoordinateInput<userTypes_t>(
+       numLocalIds, myIds.getRawPtr(), values, valueStrides, 
+       weightValues, weightStrides));
+    }
+    catch (std::exception &e){
+      fail = 1;
+    }
+  
+    TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 3", fail);
+  
+    fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, numGlobalIds,
+      myIds.getRawPtr(), xyz_values.getRawPtr(), 
+      weights.getRawPtr(), ncoords, nweights);
+  
+    TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check adapter 3", fail);
+  
+    // Try using default weight strides
 
-  TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check adapter 4", fail);
+    std::vector<int> emptyStrides;
+  
+    try{
+     ia = rcp(new Zoltan2::BasicCoordinateInput<userTypes_t>(
+       numLocalIds, myIds.getRawPtr(), values, valueStrides, 
+       weightValues, emptyStrides));
+    }
+    catch (std::exception &e){
+      fail = 1;
+    }
+  
+    TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 4", fail);
+  
+    fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, numGlobalIds,
+      myIds.getRawPtr(), xyz_values.getRawPtr(), 
+      weights.getRawPtr(), ncoords, nweights);
+  
+    TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check adapter 4", fail);
+  }
+
+  {
+    ////////////////////////////////////////////////////////////////
+    // 1-dimensional coordinates with stride one and two weights
+
+    int ncoords = 1;
+    int nweights = 2;
+
+    std::vector<const scalar_t *> values, weightValues;
+    std::vector<int> valueStrides, weightStrides;
+  
+    values.push_back(x_values);
+    valueStrides.push_back(1);
+  
+    weightValues.push_back(weights.getRawPtr());
+    weightValues.push_back(weights.getRawPtr() + numLocalIds);
+    weightStrides.push_back(1);
+    weightStrides.push_back(1);
+  
+    try{
+     ia = rcp(new Zoltan2::BasicCoordinateInput<userTypes_t>(
+       numLocalIds, myIds.getRawPtr(), values, valueStrides, 
+       weightValues, weightStrides));
+    }
+    catch (std::exception &e){
+      fail = 1;
+    }
+  
+    TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "constructor 4", fail);
+  
+    fail = checkBasicCoordinate(ia.getRawPtr(), numLocalIds, numGlobalIds,
+      myIds.getRawPtr(), xyz_values.getRawPtr(), 
+      weights.getRawPtr(), ncoords, nweights);
+  
+    TEST_FAIL_AND_RETURN_VALUE(*comm, fail==0, "check adapter 4", fail);
+  }
 
   if (rank == 0)
     std::cout << "PASS" << std::endl;

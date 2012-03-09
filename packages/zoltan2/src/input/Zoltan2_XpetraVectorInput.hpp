@@ -59,43 +59,21 @@ public:
   /*! \brief Constructor   
    *
    *  \param invector  the user's Xpetra, Tpetra or Epetra Vector object
-   *  \param numWeights the number of weights per element, which may be zero
-   *                or greater
-   *  \param weights  numWeights pointers to arrays of weights
-   *  \param weightStrides  a list of numWeights strides for the weights
-   *        arrays. The n'th weight for multivector element k is to be found
-   *               at weights[n][k*weightStrides[n]].  If weightStrides
-   *              is NULL, it is assumed all strides are one.
+   *  \param weights  a list of pointers to arrays of weights.
+   *      The number of weights per vector element is assumed to be
+   *      \c weights.size().
+   *  \param weightStrides  a list of strides for the \c weights.
+   *     The weight for weight dimension \c n for element \c k should be
+   *     found at <tt>weights[n][weightStrides[n] * k]</tt>.
+   *     If \c weightStrides.size() is zero, it is assumed all strides are one
    *
    *  The values pointed to the arguments must remain valid for the
    *  lifetime of this InputAdapter.
    */
-  XpetraVectorInput( const RCP<const User> &invector, int numWeights, 
-    const scalar_t * * const weights, int *weightStrides):
-      invector_(invector), vector_(), map_(),
-      env_(rcp(new Environment)), base_(),
-      numWeights_(numWeights), weights_(numWeights)
-  {
-    typedef StridedInput<lno_t, scalar_t> input_t;
+  XpetraVectorInput( const RCP<const User> &invector,
+    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides);
 
-    vector_ = XpetraTraits<User>::convertToXpetra(invector);
-    map_ = vector_->getMap();
-    base_ = map_->getIndexBase();
-
-    size_t length = vector_->getLocalLength();
-
-    if (length > 0 && numWeights > 0){
-      int stride = 1;
-      for (int w=0; w < numWeights; w++){
-        if (weightStrides)
-          stride = weightStrides[w];
-        weights_[w] = rcp<input_t>(new input_t(
-          ArrayView<const scalar_t>(weights[w], stride*length), stride));
-      }
-    }
-  };
-
-  /*! \brief Access to xpetra vector
+  /*! \brief Access to the xpetra-wrapped vector
    */
 
   const RCP<const x_vector_t> &getVector() const
@@ -126,42 +104,7 @@ public:
   size_t getGlobalLength() const {return vector_->getGlobalLength();}
 
   size_t getVector(const gid_t *&Ids, const scalar_t *&elements, 
-    int &stride) const
-  {
-    stride = 1;
-    elements = NULL;
-    const x_vector_t *vec =  vector_.get();
-
-    if (map_->lib() == Xpetra::UseTpetra){
-      const xt_vector_t *tvector = dynamic_cast<const xt_vector_t *>(vec);
-
-      if (tvector->getLocalLength() > 0){
-        // getData hangs if vector length is 0
-        ArrayRCP<const scalar_t> data = tvector->getData(0);
-        elements = data.get();
-      }
-    }
-    else if (map_->lib() == Xpetra::UseEpetra){
-      const xe_vector_t *evector = dynamic_cast<const xe_vector_t *>(vec);
-        
-      if (evector->getLocalLength() > 0){
-        // getData hangs if vector length is 0
-        ArrayRCP<const double> data = evector->getData(0);
-
-        // Cast so this will compile when scalar_t is not double,
-        // a case when this code should never execute.
-        elements = reinterpret_cast<const scalar_t *>(data.get());
-      }
-    }
-    else{
-      throw std::logic_error("invalid underlying lib");
-    }
-
-    ArrayView<const gid_t> gids = map_->getNodeElementList();
-    Ids = gids.getRawPtr();
-
-    return getLocalLength();
-  }
+    int &stride) const;
 
   size_t getVector(int vectorNumber, const gid_t *&Ids, 
     const scalar_t *&elements, int &stride) const
@@ -186,39 +129,7 @@ public:
 
   template <typename User2>
     size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<User2> &solution)
-  { 
-    // Get an import list
-
-    size_t len = solution.getNumberOfIds();
-    const gid_t *gids = solution.getGlobalIdList();
-    const size_t *parts = solution.getPartList();
-    ArrayRCP<gid_t> gidList = arcp(const_cast<gid_t *>(gids), 0, len, false);
-    ArrayRCP<size_t> partList = arcp(const_cast<size_t *>(parts), 0, len, false);
-
-    ArrayRCP<lno_t> dummyIn;
-    ArrayRCP<gid_t> importList;
-    ArrayRCP<lno_t> dummyOut;
-    size_t numNewRows;
-
-    const RCP<const Comm<int> > comm = map_->getComm(); 
-
-    try{
-      numNewRows = convertPartListToImportList<gid_t, lno_t, lno_t>(
-        *comm, partList, gidList, dummyIn, importList, dummyOut);
-    }
-    Z2_FORWARD_EXCEPTIONS;
-
-    RCP<const User> inPtr = rcp(&in, false);
-    lno_t localNumElts = numNewRows;
-
-    RCP<const User> outPtr = XpetraTraits<User>::doMigration(
-     inPtr, localNumElts, importList.get());
-
-    out = const_cast<User *>(outPtr.get());
-    outPtr.release();
-    return numNewRows;
-  }
+         const PartitioningSolution<User2> &solution) const;
 
 private:
 
@@ -231,7 +142,114 @@ private:
   int numWeights_;
   Array<RCP<StridedInput<lno_t, scalar_t> > > weights_;
 };
+
+////////////////////////////////////////////////////////////////
+// Definitions
+////////////////////////////////////////////////////////////////
   
+template <typename User>
+  XpetraVectorInput<User>::XpetraVectorInput(const RCP<const User> &invector, 
+    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
+      invector_(invector), vector_(), map_(),
+      env_(rcp(new Environment)), base_(),
+      numWeights_(weights.size()), weights_(weights.size())
+{
+  typedef StridedInput<lno_t, scalar_t> input_t;
+
+  vector_ = XpetraTraits<User>::convertToXpetra(invector);
+  map_ = vector_->getMap();
+  base_ = map_->getIndexBase();
+
+  size_t length = vector_->getLocalLength();
+
+  if (length > 0 && numWeights_ > 0){
+    int stride = 1;
+    for (int w=0; w < numWeights_; w++){
+      if (weightStrides.size())
+        stride = weightStrides[w];
+      weights_[w] = rcp<input_t>(new input_t(
+        ArrayView<const scalar_t>(weights[w], stride*length), stride));
+    }
+  }
+}
+
+template <typename User>
+  size_t XpetraVectorInput<User>::getVector(const gid_t *&Ids, 
+    const scalar_t *&elements, int &stride) const
+{
+  stride = 1;
+  elements = NULL;
+  const x_vector_t *vec =  vector_.get();
+
+  if (map_->lib() == Xpetra::UseTpetra){
+    const xt_vector_t *tvector = dynamic_cast<const xt_vector_t *>(vec);
+
+    if (tvector->getLocalLength() > 0){
+      // getData hangs if vector length is 0
+      ArrayRCP<const scalar_t> data = tvector->getData(0);
+      elements = data.get();
+    }
+  }
+  else if (map_->lib() == Xpetra::UseEpetra){
+    const xe_vector_t *evector = dynamic_cast<const xe_vector_t *>(vec);
+      
+    if (evector->getLocalLength() > 0){
+      // getData hangs if vector length is 0
+      ArrayRCP<const double> data = evector->getData(0);
+
+      // Cast so this will compile when scalar_t is not double,
+      // a case when this code should never execute.
+      elements = reinterpret_cast<const scalar_t *>(data.get());
+    }
+  }
+  else{
+    throw std::logic_error("invalid underlying lib");
+  }
+
+  ArrayView<const gid_t> gids = map_->getNodeElementList();
+  Ids = gids.getRawPtr();
+
+  return getLocalLength();
+}
+
+template <typename User>
+  template <typename User2>
+    size_t XpetraVectorInput<User>::applyPartitioningSolution(
+      const User &in, User *&out, 
+      const PartitioningSolution<User2> &solution) const
+{ 
+  // Get an import list
+
+  size_t len = solution.getNumberOfIds();
+  const gid_t *gids = solution.getGlobalIdList();
+  const size_t *parts = solution.getPartList();
+  ArrayRCP<gid_t> gidList = arcp(const_cast<gid_t *>(gids), 0, len, false);
+  ArrayRCP<size_t> partList = arcp(const_cast<size_t *>(parts), 0, len, false);
+
+  ArrayRCP<lno_t> dummyIn;
+  ArrayRCP<gid_t> importList;
+  ArrayRCP<lno_t> dummyOut;
+  size_t numNewRows;
+
+  const RCP<const Comm<int> > comm = map_->getComm(); 
+
+  try{
+    numNewRows = convertPartListToImportList<gid_t, lno_t, lno_t>(
+      *comm, partList, gidList, dummyIn, importList, dummyOut);
+  }
+  Z2_FORWARD_EXCEPTIONS;
+
+  RCP<const User> inPtr = rcp(&in, false);
+  lno_t localNumElts = numNewRows;
+
+  RCP<const User> outPtr = XpetraTraits<User>::doMigration(
+   inPtr, localNumElts, importList.get());
+
+  out = const_cast<User *>(outPtr.get());
+  outPtr.release();
+  return numNewRows;
+}
+
 }  //namespace Zoltan2
   
 #endif

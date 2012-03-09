@@ -24,25 +24,25 @@ typedef Kokkos::DefaultNode::DefaultNodeType node_t;
 //
 
 
-#ifdef HAVE_ZOLTAN2_INST_FLOAT_INT_LONG
+#if defined HAVE_ZOLTAN2_INST_FLOAT_INT_LONG
 
 typedef int lno_t;
 typedef long gno_t;
 typedef float scalar_t;
 
-#elif HAVE_ZOLTAN2_INST_DOUBLE_INT_LONG
+#elif defined HAVE_ZOLTAN2_INST_DOUBLE_INT_LONG
 
 typedef int lno_t;
 typedef long gno_t;
 typedef double scalar_t;
 
-#elif HAVE_ZOLTAN2_INST_FLOAT_INT_INT
+#elif defined HAVE_ZOLTAN2_INST_FLOAT_INT_INT
 
 typedef int lno_t;
 typedef int gno_t;
 typedef float scalar_t;
 
-#elif HAVE_ZOLTAN2_INST_DOUBLE_INT_INT
+#elif defined HAVE_ZOLTAN2_INST_DOUBLE_INT_INT
 
 typedef int lno_t;
 typedef int gno_t;

@@ -20,16 +20,16 @@ int main(int argc, char **argv)
   int rank = comm->getRank();
   int nprocs = comm->getSize();
 
-  int numGlobalIdentifiers = 100;
-  int numMyIdentifiers = numGlobalIdentifiers / nprocs;
+  gno_t numGlobalIdentifiers = 100;
+  lno_t numMyIdentifiers = numGlobalIdentifiers / nprocs;
   if (rank < numGlobalIdentifiers % nprocs)
     numMyIdentifiers += 1;
 
-  int myBaseId = numGlobalIdentifiers * rank;
+  gno_t myBaseId = numGlobalIdentifiers * rank;
 
   int weightDim = 1;
-  int *myIds = new int [numMyIdentifiers];
-  float *myWeights = new float [numMyIdentifiers*weightDim];
+  gno_t *myIds = new gno_t [numMyIdentifiers];
+  scalar_t *myWeights = new scalar_t [numMyIdentifiers*weightDim];
 
   if (!myIds || !myWeights){
     fail = 1;
@@ -45,18 +45,19 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  for (int i=0; i < numMyIdentifiers; i++){
+  for (lno_t i=0; i < numMyIdentifiers; i++){
     myIds[i] = myBaseId+i;
     myWeights[i] = rank%3 + 1;
   }
 
-  float **weightPointers = new float * [weightDim];
-  weightPointers[0] = myWeights;
+  std::vector<const scalar_t *> weightValues;
+  std::vector<int> weightStrides;   // default is one
+  weightValues.push_back(const_cast<const scalar_t *>(myWeights));
 
-  typedef Zoltan2::BasicUserTypes<float, int, int, int> mydata_t;
+  typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> mydata_t;
   typedef Zoltan2::BasicIdentifierInput<mydata_t> adapter_t;
 
-  adapter_t adapter(numMyIdentifiers, weightDim, myIds, weightPointers, NULL);
+  adapter_t adapter(numMyIdentifiers, myIds, weightValues, weightStrides);
 
   ParameterList params("test parameters");
   ParameterList &partitioningParams = params.sublist("partitioning");
@@ -70,15 +71,15 @@ int main(int argc, char **argv)
 
   Zoltan2::PartitioningSolution<mydata_t> solution = problem.getSolution();
 
-  float *totalWeight = new float [nprocs];
-  float *sumWeight = new float [nprocs];
-  memset(totalWeight, 0, nprocs * sizeof(float));
+  scalar_t *totalWeight = new scalar_t [nprocs];
+  scalar_t *sumWeight = new scalar_t [nprocs];
+  memset(totalWeight, 0, nprocs * sizeof(scalar_t));
 
-  const int *idList = solution.getGlobalIdList();
+  const gno_t *idList = solution.getGlobalIdList();
   const size_t *partList = solution.getPartList();
   const float *metrics = solution.getImbalance();
 
-  for (int i=0; !fail && i < numMyIdentifiers; i++){
+  for (lno_t i=0; !fail && i < numMyIdentifiers; i++){
     if (idList[i] != myIds[i])
       fail = 1;
 
@@ -96,26 +97,26 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  Teuchos::reduceAll<int, float>(*comm, Teuchos::REDUCE_SUM, nprocs, 
+  Teuchos::reduceAll<int, scalar_t>(*comm, Teuchos::REDUCE_SUM, nprocs, 
     totalWeight, sumWeight);
 
   double epsilon = 10e-6;
 
   if (rank == 0){
     std::cout << "Part weights: ";
-    float total = 0;
+    scalar_t total = 0;
     for (int i=0; i < nprocs; i++){
       std::cout << sumWeight[i] << " ";
       total += sumWeight[i];
     }
     std::cout << std::endl;
 
-    float avg = total / float(nprocs);
+    scalar_t avg = total / scalar_t(nprocs);
 
-    float imbalance = -1.0;
+    scalar_t imbalance = -1.0;
 
     for (int i=0; i < nprocs; i++){
-      float imb = 0;
+      scalar_t imb = 0;
       if (sumWeight[i] > avg)
         imb = (sumWeight[i] - avg) / avg;
       else

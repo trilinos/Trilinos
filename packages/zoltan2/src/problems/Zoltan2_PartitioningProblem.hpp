@@ -181,8 +181,8 @@ private:
 
   InputAdapterType inputType_;
   ModelType modelType_;
-  std::bitset<NUM_MODEL_FLAGS> graphFlags_;
-  std::bitset<NUM_MODEL_FLAGS> idFlags_;
+  modelFlag_t graphFlags_;
+  modelFlag_t idFlags_;
   std::string algorithm_;
 
   int numberOfWeights_;
@@ -413,10 +413,8 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   // Save these values in order to determine if we need to create a new model.
 
   ModelType previousModel = modelType_;
-  std::bitset<NUM_MODEL_FLAGS> previousGraphModelFlags = 
-    graphFlags_;
-  std::bitset<NUM_MODEL_FLAGS> previousIdentifierModelFlags 
-    = idFlags_;
+  modelFlag_t previousGraphModelFlags = graphFlags_;
+  modelFlag_t previousIdentifierModelFlags = idFlags_;
 
   modelType_ = InvalidModel;
   graphFlags_.reset();

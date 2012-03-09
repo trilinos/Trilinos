@@ -43,6 +43,15 @@ namespace Zoltan2 {
     \c User may be the actual class or structure used by application to
     represent a vector, or it may be the helper class BasicUserTypes.
     See InputTraits for more information.
+
+     \todo Create BasicCrsMatrixInput subclass
+     \todo Do we want to require input adapters to give us the global
+               number of rows, columns etc?  We can figure that out.
+     \todo Do we want to add the ability for the user to supply row
+             or column weights, or is this something the algorithm
+             will add?
+      \todo  This is a row-oriented matrix.  Do we need a column-oriented
+              matrix?
 */
 
 template <typename User>
@@ -102,6 +111,40 @@ public:
   virtual size_t getRowListView(const gid_t *&rowIds, 
     const lno_t *&offsets, const gid_t *& colIds) const = 0;
 
+  /*! \brief Returns the dimension of the geometry, if any.
+   *
+   *  Some algorithms can use geometric row or column coordinate
+   *    information if it is present.  Given the problem parameters
+   *    supplied by the user, it may make sense to use row coordinates
+   *    or it may make sense to use column coordinates.
+   */
+
+  virtual int getCoordinateDimension() const = 0;
+
+  /*! \brief Provide a pointer to one dimension of row coordinates.
+      \param coordDim  is a value from 0 to one less than
+         getCoordinateDimension() specifying which dimension is
+         being provided in the coords list.
+      \param coords  points to a list of coordinate values for the dimension.
+             The order of \c coords should correspond to the order of \c rowIds
+             in getRowListView().
+      \param stride  describes the layout of the coordinate values in
+              the coords list.  If stride is one, then the ith coordinate
+              value is coords[i], but if stride is two, then the
+              ith coordinate value is coords[2*i].
+
+       \return The length of the \c coords list.  This may be more than
+              getLocalNumberOfVertices() because the \c stride
+              may be more than one.  It may also be zero if column 
+              coordinates but not row coordinates are supplied.
+
+      Zoltan2 does not copy your data.  The data pointed to by coords
+      must remain valid for the lifetime of this InputAdapter.
+   */
+
+  virtual size_t getRowCoordinates(int coordDim,
+    const scalar_t *&coords, int &stride) const = 0;
+
   /*! \brief Apply the solution to a partitioning problem to an input.  
    *
    *  This is not a required part of the MatrixInput interface.  
@@ -120,7 +163,7 @@ public:
 
   template <typename User2>
     size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<User2> &solution)
+         const PartitioningSolution<User2> &solution) const
   {
     return 0;
   }
