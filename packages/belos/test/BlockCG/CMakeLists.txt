@@ -20,11 +20,13 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       XHOST KALLIKRATES
       )
 
-    TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestBlockCGComplexFiles
-      SOURCE_DIR ${Belos_SOURCE_DIR}/test/MVOPTester
-      SOURCE_FILES mhd1280b.cua
-      EXEDEPS bl_cg_complex_hb
-      )
+    IF(NOT ${${PROJECT_NAME}_HOSTNAME} STREQUAL "KALLIKRATES")
+      TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestBlockCGComplexFiles
+        SOURCE_DIR ${Belos_SOURCE_DIR}/test/MVOPTester
+        SOURCE_FILES mhd1280b.cua
+        EXEDEPS bl_cg_complex_hb
+        )
+    ENDIF()
 
   ENDIF(Teuchos_ENABLE_COMPLEX)
 
