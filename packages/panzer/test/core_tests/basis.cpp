@@ -27,7 +27,7 @@ namespace panzer {
 
     TEST_ASSERT(basis.getCardinality() == 9);
     TEST_ASSERT(basis.getNumCells() == 20);
-    TEST_ASSERT(basis.getNumIntPoints() == 4);
+    TEST_ASSERT(basis.getNumPoints() == 4);
     TEST_ASSERT(basis.getDimension() == base_cell_dimension);
     TEST_ASSERT(basis.integrationRuleDegree() == cubature_degree);
     TEST_ASSERT(basis.name() == basis_type);
@@ -75,7 +75,7 @@ namespace panzer {
 
     TEST_ASSERT(basis.getCardinality() == 9);
     TEST_ASSERT(basis.getNumCells() == 20);
-    TEST_ASSERT(basis.getNumIntPoints() == 2);
+    TEST_ASSERT(basis.getNumPoints() == 2);
     TEST_ASSERT(basis.getDimension() == base_cell_dimension);
     TEST_ASSERT(basis.integrationRuleDegree() == cubature_degree);
     TEST_ASSERT(basis.name() == basis_type);

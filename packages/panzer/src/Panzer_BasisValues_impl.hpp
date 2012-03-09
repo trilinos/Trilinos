@@ -29,7 +29,7 @@ namespace panzer {
     Teuchos::RCP<const panzer::PureBasis> basisDesc = b->getBasis();
 
     // for convience pull out basis and quadrature information
-    int num_quad = b->getNumIntPoints();
+    int num_quad = b->getNumPoints();
     int dim      = basisDesc->getDimension();
     int card     = basisDesc->getCardinality();
     int numcells = basisDesc->getNumCells();

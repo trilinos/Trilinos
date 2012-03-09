@@ -95,7 +95,7 @@ int panzer::BasisIRLayout::getNumCells() const
   return num_cells;
 }
 
-int panzer::BasisIRLayout::getNumIntPoints() const
+int panzer::BasisIRLayout::getNumPoints() const
 {
   return num_ip;
 }
@@ -143,5 +143,5 @@ void panzer::BasisIRLayout::print(std::ostream & os) const
       << ", Dimension = " << getDimension()
       << ", Cells = " << getNumCells()
       << ", Quad Degree = " << integrationRuleDegree() 
-      << ", Quad Points = " << getNumIntPoints();
+      << ", Quad Points = " << getNumPoints();
 }

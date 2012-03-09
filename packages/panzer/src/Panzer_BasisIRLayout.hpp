@@ -29,7 +29,7 @@ namespace panzer {
     
     int getNumCells() const;
     
-    int getNumIntPoints() const;
+    int getNumPoints() const;
     
     int getDimension() const;
 
