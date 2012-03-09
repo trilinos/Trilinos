@@ -117,7 +117,6 @@ interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, global_id, &
     local_id, nbor_global_id, nbor_procs, wdim, nbor_ewgts, ierr)
   use zoltan_types
-  use lb_user_const
   use zoltan_user_data
   type(Zoltan_User_Data_1) , intent(in) :: data
   integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
@@ -147,7 +146,6 @@ interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, global_id, &
     local_id, nbor_global_id, nbor_procs, wdim, nbor_ewgts, ierr)
   use zoltan_types
-  use lb_user_const
   use zoltan_user_data
   type(Zoltan_User_Data_2) , intent(in) :: data
   integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
@@ -177,7 +175,6 @@ interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, global_id, &
     local_id, nbor_global_id, nbor_procs, wdim, nbor_ewgts, ierr)
   use zoltan_types
-  use lb_user_const
   use zoltan_user_data
   type(Zoltan_User_Data_3) , intent(in) :: data
   integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
@@ -207,7 +204,6 @@ interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, global_id, &
     local_id, nbor_global_id, nbor_procs, wdim, nbor_ewgts, ierr)
   use zoltan_types
-  use lb_user_const
   use zoltan_user_data
   type(Zoltan_User_Data_4) , intent(in) :: data
   integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries

@@ -345,34 +345,54 @@ namespace Tpetra {
           os << "Import Data Members:" << endl;
         }
         os << "Image ID       : " << myImageID << endl;
-        os << "permuteFromLIDs: {"; av = getPermuteFromLIDs(); std::copy(av.begin(),av.end(),std::ostream_iterator<LocalOrdinal>(os," ")); os << "}" << endl;
-        os << "permuteToLIDs  : {"; av = getPermuteToLIDs();   std::copy(av.begin(),av.end(),std::ostream_iterator<LocalOrdinal>(os," ")); os << "}" << endl;
-        os << "remoteLIDs     : {"; av = getRemoteLIDs();      std::copy(av.begin(),av.end(),std::ostream_iterator<LocalOrdinal>(os," ")); os << "}" << endl;
-        os << "exportLIDs     : {"; av = getExportLIDs();      std::copy(av.begin(),av.end(),std::ostream_iterator<LocalOrdinal>(os," ")); os << "}" << endl;
-        os << "exportImageIDs : {"; avi = getExportImageIDs();  std::copy(avi.begin(),avi.end(),std::ostream_iterator<int>(os," ")); os << "}" << endl;
+
+        os << "permuteFromLIDs: "; os << toString (getPermuteFromLIDs()) << endl;
+	//av = getPermuteFromLIDs(); std::copy(av.begin(),av.end(),std::ostream_iterator<LocalOrdinal>(os," ")); os << "}" << endl;
+
+        os << "permuteToLIDs  : "; 
+	os << toString (getPermuteToLIDs()) << endl;
+	//av = getPermuteToLIDs();   std::copy(av.begin(),av.end(),std::ostream_iterator<LocalOrdinal>(os," ")); os << "}" << endl;
+
+        os << "remoteLIDs     : "; 
+	os << toString (getRemoteLIDs()) << endl;
+	//av = getRemoteLIDs();      std::copy(av.begin(),av.end(),std::ostream_iterator<LocalOrdinal>(os," ")); os << "}" << endl;
+
+        os << "exportLIDs     : "; 
+	os << toString (getExportLIDs()) << endl;
+	//av = getExportLIDs();      std::copy(av.begin(),av.end(),std::ostream_iterator<LocalOrdinal>(os," ")); os << "}" << endl;
+
+        os << "exportImageIDs : "; 
+	os << toString (getExportImageIDs()) << endl;
+	//avi = getExportImageIDs();  std::copy(avi.begin(),avi.end(),std::ostream_iterator<int>(os," ")); os << "}" << endl;
+
         os << "numSameIDs     : " << getNumSameIDs() << endl;
         os << "numPermuteIDs  : " << getNumPermuteIDs() << endl;
         os << "numRemoteIDs   : " << getNumRemoteIDs() << endl;
         os << "numExportIDs   : " << getNumExportIDs() << endl;
       }
-      // Do a few global ops to give I/O a chance to complete
-      comm->barrier();
-      comm->barrier();
-      comm->barrier();
-    }
-    if (myImageID == 0) {
-      os << endl << endl << "Source Map:" << endl << std::flush; 
-    }
-    comm->barrier();
-    os << *getSourceMap();
-    comm->barrier();
 
-    if (myImageID == 0) {
-      os << endl << endl << "Target Map:" << endl << std::flush; 
+      // A few global barriers give I/O a chance to complete.
+      comm->barrier();
+      comm->barrier();
+      comm->barrier();
     }
-    comm->barrier();
-    os << *getTargetMap();
-    comm->barrier();
+
+    const bool printMaps = false;
+    if (printMaps) {
+      if (myImageID == 0) {
+	os << endl << endl << "Source Map:" << endl << std::flush; 
+      }
+      comm->barrier();
+      os << *getSourceMap();
+      comm->barrier();
+
+      if (myImageID == 0) {
+	os << endl << endl << "Target Map:" << endl << std::flush; 
+      }
+      comm->barrier();
+      os << *getTargetMap();
+      comm->barrier();
+    }
 
     // It's also helpful for debugging to print the Distributor
     // object.  Epetra_Import::Print() does this, so we can do a
@@ -507,9 +527,10 @@ namespace Tpetra {
     }
 
     // Sort remoteImageIDs in ascending order.  Apply the resulting
-    // permutation to remoteGIDs_, so that remoteImageIDs[i] and
-    // remoteGIDs_[i] refer to the same thing.
-    sort2(remoteImageIDs.begin(), remoteImageIDs.end(), remoteGIDs.begin());
+    // permutation to remoteGIDs_ and remoteLIDs_, so that
+    // remoteImageIDs[i], remoteGIDs_[i], and remoteLIDs_[i] refer to
+    // the same thing.
+    sort3(remoteImageIDs.begin(), remoteImageIDs.end(), remoteGIDs.begin(), ImportData_->remoteLIDs_.begin());
 
     // Call the Distributor's createFromRecvs() method to turn the
     // remote GIDs and their owning processes into a send-and-receive

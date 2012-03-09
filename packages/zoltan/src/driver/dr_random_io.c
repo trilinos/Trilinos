@@ -473,7 +473,8 @@ int create_a_graph(
    */
 
   ZOLTAN_ID_TYPE    i, j, nvtxs, gnvtxs, num4;
-  ZOLTAN_ID_TYPE    left=0, right=0, gid;
+  ZOLTAN_ID_TYPE    gid;
+  long left=0, right=0;
   int    vwgt_dim=0, ewgt_dim=0;
   int    ndim = 0, next;
 

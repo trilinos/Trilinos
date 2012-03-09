@@ -26,6 +26,7 @@ extern "C" {
 #include <stdio.h>
 #include <math.h>
 #include "rib.h"
+#include "inertial.h"
 #include "zz_const.h"
 
 /* macros for routines */
@@ -33,8 +34,6 @@ extern "C" {
 #define min(a, b) ((a) > (b) ? (b) : (a))
 #define sign(x)   ((x) >= 0 ? 1.0 : -1.0)
 
-static void evals2(double[2][2], double *, double *);
-static void eigenvec2(double[2][2], double, double *, double *);
 
 int Zoltan_RIB_inertial2d(
      int Tflops_Special,        /* Use Tflops_Special communication;
@@ -149,8 +148,8 @@ int Zoltan_RIB_inertial2d(
      tensor[0][0] = xxt;
      tensor[1][1] = yyt;
      tensor[1][0] = tensor[0][1] = xyt;
-     evals2(tensor, &res, &eval);
-     eigenvec2(tensor, eval, evec, &res);
+     Zoltan_evals2(tensor, &res, &eval);
+     Zoltan_eigenvec2(tensor, eval, evec, &res);
 
      /* Calculate value to sort/split on for each cell. */
      /* This is inner product with eigenvector. */
@@ -171,7 +170,7 @@ int Zoltan_RIB_inertial2d(
 
 
 /* Find eigenvalues of 2x2 symmetric system by solving quadratic. */
-static void evals2(
+void Zoltan_evals2(
      double H[2][2],            /* symmetric matrix for eigenvalues */
      double *eval1,             /* smallest eigenvalue */
      double *eval2              /* middle eigenvalue */
@@ -207,7 +206,7 @@ static void evals2(
 
 
 /* Solve for eigenvector of SPD 2x2 matrix, with given eigenvalue. */
-static void eigenvec2(
+void Zoltan_eigenvec2(
      double A[2][2],            /* matrix */
      double eval,               /* eigenvalue */
      double evec[2],            /* eigenvector returned */

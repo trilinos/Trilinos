@@ -76,8 +76,9 @@ Piro::Epetra::NOXSolver::NOXSolver(
   // Stratimikos: This code snippet sets it automatically
   bool inexact = (noxParams->sublist("Direction").sublist("Newton").
                   get("Forcing Term Method", "Constant") != "Constant");
-  noxstratlsParams.sublist("NOX Stratimikos Options").
-                   set("Use Linear Solve Tolerance From NOX", inexact);
+  if (inexact)
+    noxstratlsParams.sublist("NOX Stratimikos Options").
+       set("Use Linear Solve Tolerance From NOX", inexact);
 
 
   if (jacobianSource == "Matrix-Free") {
@@ -780,6 +781,10 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
   }
 
   else if (sensitivity_method == "Adjoint") {
+    
+    // Hold on to original Jacobian operator
+    Teuchos::RCP<NOX::Epetra::LinearSystem> linSys = grp->getLinearSystem();
+    Teuchos::RCP<Epetra_Operator> jac = linSys->getJacobianOperator();
 
     tls_strategy->createJacobianTranspose();
     const NOX::Epetra::Vector& x_nox = 
@@ -913,8 +918,6 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
     }
 
     // Set original operators in linear system
-    Teuchos::RCP<NOX::Epetra::LinearSystem> linSys = grp->getLinearSystem();
-    Teuchos::RCP<Epetra_Operator> jac = linSys->getJacobianOperator();
     jac->SetUseTranspose(false);
     linSys->setJacobianOperatorForSolve(jac);
     linSys->destroyPreconditioner();

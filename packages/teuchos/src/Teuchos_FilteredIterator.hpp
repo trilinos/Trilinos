@@ -236,8 +236,7 @@ inline bool operator!=(const FilteredIterator<IteratorType,Predicate>& itr1,
 template<class IteratorType, class Predicate>
 std::ostream& operator<<(std::ostream &out, const FilteredIterator<IteratorType,Predicate>& itr)
 {
-  out << "FilteredIterator{current="<<itr.current()<<", end="<<itr.end()
-      <<", pred="<<TypeNameTraits<Predicate>::name()<<"}";
+  out << "FilteredIterator{current=???, end=???, pred="<<TypeNameTraits<Predicate>::name()<<"}";
   return out;
 }
 
@@ -270,7 +269,8 @@ void FilteredIterator<IteratorType,Predicate>::advanceBackwardToValid()
 template<class IteratorType, class Predicate>
 void FilteredIterator<IteratorType,Predicate>::assertNotIterateForwardPastEnd()
 {
-  TEUCHOS_TEST_FOR_EXCEPTION( current_ == end_, RangeError,
+  const bool current_is_at_end = (current_ == end_);
+  TEUCHOS_TEST_FOR_EXCEPTION( current_is_at_end, RangeError,
     "Error, trying to iterate " << *this << " forward ++ past end!");
 }
 
@@ -278,7 +278,8 @@ void FilteredIterator<IteratorType,Predicate>::assertNotIterateForwardPastEnd()
 template<class IteratorType, class Predicate>
 void FilteredIterator<IteratorType,Predicate>::assertNotIterateBackwardPastBegin()
 {
-  TEUCHOS_TEST_FOR_EXCEPTION( current_ == begin_, RangeError,
+  const bool current_is_at_begin = (current_ == begin_);
+  TEUCHOS_TEST_FOR_EXCEPTION( current_is_at_begin, RangeError,
     "Error, trying to iterate " << *this << " backward -- past begin!");
 }
 

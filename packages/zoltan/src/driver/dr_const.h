@@ -92,16 +92,8 @@ extern "C" {
 #define ZOLTAN_PATOH
 #endif
 
-#ifdef HAVE_DRUM
-#define ZOLTAN_DRUM
-#endif
-
 #ifdef HAVE_PARKWAY
 #define ZOLTAN_PARKWAY
-#endif
-
-#ifdef HAVE_ZOLTAN_OCT
-#define ZOLTAN_OCT
 #endif
 
 #ifdef HAVE_NEMESIS_EXODUS

@@ -538,20 +538,25 @@ namespace Teuchos {
 
     /// \brief Compute global timer statistics.
     ///
-    /// Currently, this function computes the "Min", "Mean", and "Max"
-    /// timing for each timer.  Along with the min / max timing comes
+    /// Currently, this function computes the "MinOverProcs",
+    /// "MeanOverProcs", "MaxOverProcs", and "MeanOverCallCounts"
+    /// timings for each timer.  Along with the min / max timing comes
     /// the call count of the process who had the min / max.  (If more
     /// than one process had the min / max, then the call count on the
-    /// process with the smallest rank is reported.)  
+    /// process with the smallest rank is reported.)
     ///
-    /// The "Mean" is an arithmetic mean of all timings that accounts
-    /// for call counts.  Each timing is the sum over all calls.
-    /// Thus, this mean equals the sum of the timing over all
+    /// "MeanOverProcs" is the arithmetic mean of the cumulative
+    /// timings over processes.  It ignores the call counts.  It
+    /// includes the mean call count, which may be fractional, and has
+    /// no particular connection to the mean timing.
+    ///
+    /// The "MeanOverCallCounts" is an arithmetic mean of timings that
+    /// accounts for call counts.  Each timing is the sum over all
+    /// calls.  Thus, this mean equals the sum of the timing over all
     /// processes, divided by the sum of the call counts over all
     /// processes for that timing.  (We compute it a bit differently
     /// to help prevent overflow.)  Along with the mean timing comes
-    /// the mean call count.  This may be fractional, and has no
-    /// particular connection to the mean timing.
+    /// the same mean call count as mentioned above.
     ///
     /// \param statData [out] On output: Global timer statistics.  See
     ///   the \c stat_map_type typedef documentation for an explanation
@@ -560,7 +565,8 @@ namespace Teuchos {
     /// \param statNames [out] On output: Each value in the statData
     ///   map is a vector.  That vector v has the same number of
     ///   entries as statNames.  statNames[k] is the name of the
-    ///   statistic (e.g., "Min", "Mean", or "Max") stored as v[k].
+    ///   statistic (e.g., "Min", "MeanOverProcs", "Max", or
+    ///   "MeanOverCallCounts") stored as v[k].
     ///
     /// \param comm [in] Communicator over which to compute statistics.
     ///
@@ -606,16 +612,19 @@ namespace Teuchos {
 		   &timingsAndCallCounts[0], &maxTimingsAndCallCounts[0]);
       }
 
-      // For each timer name, compute the mean timing and the mean
-      // call count.  The mean call count is reported as a double to
-      // allow a fractional value.
+      // For each timer name, compute the mean-over-processes timing,
+      // the mean call count, and the mean-over-call-counts timing.
+      // The mean call count is reported as a double to allow a
+      // fractional value.
       // 
       // Each local timing is really the total timing over all local
       // invocations.  The number of local invocations is the call
-      // count.  Thus, the mean timing is really the sum of all the
-      // timings (over all processes), divided by the sum of all the
-      // call counts (over all processes).
-      Array<double> meanTimings (numTimers);
+      // count.  Thus, the mean-over-call-counts timing is the sum of
+      // all the timings (over all processes), divided by the sum of
+      // all the call counts (over all processes).  We compute it in a
+      // different way to over unnecessary overflow.
+      Array<double> meanOverCallCountsTimings (numTimers);
+      Array<double> meanOverProcsTimings (numTimers);
       Array<double> meanCallCounts (numTimers);
       {
 	// When summing, first scale by the number of processes.  This
@@ -632,13 +641,15 @@ namespace Teuchos {
 	  scaledCallCounts[k] = callCount / P;
 	}
 	if (numTimers > 0) {
-	  reduceAll (*comm, REDUCE_SUM, numTimers, &scaledTimings[0], &meanTimings[0]);
-	  reduceAll (*comm, REDUCE_SUM, numTimers, &scaledCallCounts[0], &meanCallCounts[0]);
+	  reduceAll (*comm, REDUCE_SUM, numTimers, &scaledTimings[0], 
+		     &meanOverProcsTimings[0]);
+	  reduceAll (*comm, REDUCE_SUM, numTimers, &scaledCallCounts[0], 
+		     &meanCallCounts[0]);
 	}
 	// We don't have to undo the scaling for the mean timings;
 	// just divide by the scaled call count.
 	for (int k = 0; k < numTimers; ++k) {
-	  meanTimings[k] = meanTimings[k] / meanCallCounts[k];
+	  meanOverCallCountsTimings[k] = meanOverProcsTimings[k] / meanCallCounts[k];
 	}
       }
 
@@ -646,18 +657,20 @@ namespace Teuchos {
       // each value (the std::vector of (timing, call count) pairs,
       // each entry of which is a different statistic) preserves the
       // order of statNames.
-      statNames.resize (3);
-      statNames[0] = "Min";
-      statNames[1] = "Mean";
-      statNames[2] = "Max";
+      statNames.resize (4);
+      statNames[0] = "MinOverProcs";
+      statNames[1] = "MeanOverProcs";
+      statNames[2] = "MaxOverProcs";
+      statNames[3] = "MeanOverCallCounts";
 
       stat_map_type::iterator statIter = statData.end();
       timer_map_t::const_iterator it = globalTimerData.begin();
       for (int k = 0; it != globalTimerData.end(); ++k, ++it) {
-	std::vector<std::pair<double, double> > curData (3);
+	std::vector<std::pair<double, double> > curData (4);
 	curData[0] = minTimingsAndCallCounts[k];
-	curData[1] = std::make_pair (meanTimings[k], meanCallCounts[k]);
+	curData[1] = std::make_pair (meanOverProcsTimings[k], meanCallCounts[k]);
 	curData[2] = maxTimingsAndCallCounts[k];
+	curData[3] = std::make_pair (meanOverCallCountsTimings[k], meanCallCounts[k]);
 
 	// statIter gives an insertion location hint that makes each
 	// insertion O(1), since we remember the location of the last
@@ -720,8 +733,8 @@ namespace Teuchos {
     timer_map_t localTimerData;
     Array<std::string> localTimerNames;
     const bool writeZeroTimers = false;
-    collectLocalTimerDataAndNames (localTimerData, localTimerNames, counters(), writeZeroTimers);
-
+    collectLocalTimerDataAndNames (localTimerData, localTimerNames, 
+				   counters(), writeZeroTimers);
     // Merge the local timer data and names into global timer data and
     // names.
     timer_map_t globalTimerData;
@@ -871,7 +884,7 @@ namespace Teuchos {
 	  }
 	  // Print the table column.
 	  const std::string& statisticName = statNames[statInd];
-	  const std::string titleString = statisticName + " over procs";
+	  const std::string titleString = statisticName;
 	  titles.append (titleString);
 	  TableColumn timeAndCalls (statTimings, statCallCounts, precision, true);
 	  tableColumns.append (timeAndCalls);
@@ -881,7 +894,7 @@ namespace Teuchos {
     }
 
     // Print the whole table to the given output stream on MPI Rank 0.
-    format ().setColumnWidths (columnWidths);
+    format().setColumnWidths (columnWidths);
     if (myRank == 0) {
       std::ostringstream theTitle;
       theTitle << "TimeMonitor results over " << numProcs << " processor" 

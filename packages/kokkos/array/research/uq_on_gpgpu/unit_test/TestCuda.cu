@@ -44,6 +44,7 @@
 #include <Kokkos_ProductTensor.hpp>
 #include <Kokkos_SymmetricDiagonalSpec.hpp>
 #include <Kokkos_BlockCrsMatrix.hpp>
+#include <Kokkos_CrsMatrix.hpp>
 #include <Kokkos_LegendrePolynomial.hpp>
 #include <Kokkos_StochasticProductTensor.hpp>
 
@@ -73,6 +74,7 @@
 #include <Cuda/Kokkos_Cuda_ProductTensor.hpp>
 #include <Cuda/Kokkos_Cuda_StochasticProductTensor.hpp>
 #include <Cuda/Kokkos_Cuda_BlockCrsMatrix.hpp>
+#include <Cuda/Kokkos_Cuda_CrsMatrix.hpp>
 
 //
 
@@ -101,17 +103,15 @@ int mainCuda()
   unit_test::test_block_crs_matrix<Kokkos::Cuda>( 1 , 2 );
   unit_test::test_block_crs_matrix<Kokkos::Cuda>( 1 , 5 );
   unit_test::test_block_crs_matrix<Kokkos::Cuda>( 2 , 1 );
+  unit_test::test_block_crs_matrix<Kokkos::Cuda>( 2 , 2 );
   unit_test::test_block_crs_matrix<Kokkos::Cuda>( 3 , 1 );
+  unit_test::test_block_crs_matrix<Kokkos::Cuda>( 3 , 2 );
 
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 1 , 2 );
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 1 , 5 );
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 2 , 1 );
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 5 , 1 );
-
-  const bool print_flag = false ;
-
-  unit_test::test_product_tensor_matrix<double,Kokkos::Cuda>( std::vector<int>( 3 , 2 ) , 3 , print_flag );
-  unit_test::test_product_tensor_diagonal_matrix<double,Kokkos::Cuda>( std::vector<int>( 3 , 2 ) , 3 , print_flag );
+  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 5 , 5 );
 
   std::cout << "Stress tests:" << std::endl ;
 
@@ -121,6 +121,9 @@ int mainCuda()
   unit_test::test_block_crs_matrix<Kokkos::Cuda>( 13 , 10 );
 
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 100 , 10 );
+
+  std::cout << std::endl << "\"Cuda Performance\"" << std::endl ;
+  unit_test::performance_test_driver<Kokkos::Cuda>();
 
   Kokkos::Cuda::finalize();
 

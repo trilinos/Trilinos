@@ -437,7 +437,7 @@ namespace Anasazi {
     std::string lapack_name = "hetrd";
     std::string lapack_opts = "u";
     int NB = lapack.ILAENV(1, lapack_name, lapack_opts, size, -1, -1, -1);
-    int lwork = size*(NB+1);
+    int lwork = size*(NB+2);  // For HEEV, lwork should be NB+2, instead of NB+1
     std::vector<ScalarType> work(lwork);
     std::vector<MagnitudeType> rwork(3*size-2);
     // tt contains the eigenvalues from HEGV, which are necessarily real, and

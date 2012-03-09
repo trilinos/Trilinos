@@ -117,7 +117,7 @@
     <Dependency name="Zoltan" type="LR"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="LO"/>
-    <Dependency name="EpetraExt" type="LO"/>
+    <Dependency name="EpetraExt" type="LR"/>
     <EmailAddresses>
       <Email address="isorropia-regression@software.sandia.gov"/>
     </EmailAddresses>
@@ -627,7 +627,7 @@
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
-    <Dependency name="Tpetra" type="ILO"/>
+    <Dependency name="Tpetra" type="TO"/>
     <Dependency name="EpetraExt" type="LR"/>
     <Dependency name="Thyra" type="ILO"/>
     <Dependency name="Isorropia" type="LO"/>
@@ -636,7 +636,8 @@
     <Dependency name="Amesos" type="ILO"/>
     <Dependency name="Ifpack" type="LO"/>
     <Dependency name="ML" type="LO"/>
-    <Dependency name="Belos" type="ILO"/>
+    <Dependency name="Belos" type="TO"/>
+    <Dependency name="Ifpack2" type="TO"/>
     <Dependency name="Stratimikos" type="TO"/>
     <Dependency name="Anasazi" type="LO"/>
     <Dependency name="Teko" type="ILO"/>

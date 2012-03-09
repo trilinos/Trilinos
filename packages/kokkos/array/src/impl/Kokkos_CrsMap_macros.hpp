@@ -94,7 +94,7 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< typename SizeType , template< class , typename > class ColumnType >
+template< template< class , typename > class ColumnType , typename SizeType >
 class CrsMap< KOKKOS_MACRO_DEVICE , ColumnType , SizeType > {
 public:
   typedef KOKKOS_MACRO_DEVICE  device_type ;

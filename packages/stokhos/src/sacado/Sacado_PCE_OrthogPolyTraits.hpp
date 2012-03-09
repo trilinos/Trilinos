@@ -176,6 +176,12 @@ namespace Teuchos {
   struct ScalarTraits< Sacado::PCE::OrthogPoly<T,S> > :
     public Sacado::PCE::ScalarTraitsImp< Sacado::PCE::OrthogPoly<T,S> > {};
 
+  //! Specializtion of %Teuchos::ValueTypeConversionTraits
+  template <typename TypeTo, typename T, typename S>
+  struct ValueTypeConversionTraits< TypeTo, Sacado::PCE::OrthogPoly<T,S> > :
+    public Sacado::PCE::ValueTypeConversionTraitsImp< TypeTo,
+						      Sacado::PCE::OrthogPoly<T,S> > {};
+
   //! Specialization of %Teuchos::SerializationTraits
   template <typename Ordinal, typename T, typename S>
   struct SerializationTraits<Ordinal, Sacado::PCE::OrthogPoly<T,S> > :

@@ -266,12 +266,24 @@ getJacobianOperator()
 Teuchos::RCP<const Epetra_Operator> NOX::Epetra::LinearSystemMPBD::
 getGeneratedPrecOperator() const
 {
+  if (precStrategy == MEAN)
+    return block_solver->getGeneratedPrecOperator();
+  else
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, 
+      "Cannot call getGeneratedPrecOperator() unless prec strategy is Mean");
   return Teuchos::null;
 }
 
 Teuchos::RCP<Epetra_Operator> NOX::Epetra::LinearSystemMPBD::
 getGeneratedPrecOperator()
 {
+ if (precStrategy == MEAN)
+    return block_solver->getGeneratedPrecOperator();
+  else
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, 
+      "Cannot call getGeneratedPrecOperator() unless prec strategy is Mean");
   return Teuchos::null;
 }
 
@@ -289,4 +301,10 @@ setJacobianOperatorForSolve(const
 void NOX::Epetra::LinearSystemMPBD::
 setPrecOperatorForSolve(const Teuchos::RCP<const Epetra_Operator>& solvePrecOp)
 {
+  if (precStrategy == MEAN)
+    block_solver->setPrecOperatorForSolve(solvePrecOp);
+  else
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, 
+      "Cannot call setPrecOperatorForSolve() unless prec strategy is Mean");
 }

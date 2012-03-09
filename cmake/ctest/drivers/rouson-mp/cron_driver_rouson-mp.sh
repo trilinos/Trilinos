@@ -3,16 +3,16 @@
 #get the date for use in log files
 DATE=`date "+%m-%d-%Y"`
 
-#CTEST_EXE=/usr/local/bin/ctest
-CTEST_EXE=/Users/jmwille/install/CMake2.8-1/Contents/bin/ctest
-EG_EXE=/Users/jmwille/bin/eg
-BASEDIR=/Users/jmwille/TrilinosTestHarness
-DRIVER_SCRIPT_DIR=$BASEDIR/Trilinos/cmake/ctest/drivers/s903186
+CTEST_EXE=/usr/bin/ctest
+GIT_EXE=/usr/local/git/bin/git
+BASEDIR=/Users/knmorri/NightlyTestingTrilinos/Trilinos
+DRIVER_SCRIPT_DIR=$BASEDIR/cmake/ctest/drivers/rouson-mp
+BRANCH="master"
 TRILINOS_REPOSITORY_LOCATION="software.sandia.gov:/space/git/Trilinos"
-export PYTHONPATH=/Users/jmwille/install/lib/python2.5/site-packages
+export PYTHONPATH=/usr/bin/python
 
 echo
-echo "Starting nightly Trilinos development testing on s903186: `date`"
+echo "Starting nightly Trilinos development testing on rouson-mp: `date`"
 echo
 
 echo
@@ -35,15 +35,15 @@ echo
 echo "Doing mpi optimized development build: `date`"
 echo
 
-time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_mac_nightly_mpi_opt_s903186.cmake -VV &> "MPI_OPT_DEV_$DATE.log"
+time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_mac_nightly_mpi_opt_nag_rouson-mp.cmake -VV &> "MPI_OPT_DEV_NAG_$DATE.log"
 
 echo
 echo "Doing serial debug development build: `date`"
 echo
 
-time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_mac_nightly_serial_debug_s903186.cmake -VV &> "SERIAL_DEBUG_DEV_$DATE.log"
+time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_mac_nightly_serial_debug_nag_rouson-mp.cmake -VV &> "SERIAL_DEBUG_DEV_NAG_$DATE.log"
 
 echo
-echo "Ending nightly Trilinos development testing on s903186: `date`"
+echo "Ending nightly Trilinos development testing on rouson-mp: `date`"
 echo
 

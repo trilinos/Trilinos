@@ -1264,6 +1264,20 @@ void Epetra_MpiDistributor::Print( ostream & os) const
 
       os << " maxSendLength: " << max_send_length_ << endl;
 
+      os << " startsTo: ";
+      if (starts_to_ == NULL) {
+	os << "(NULL)" << endl;
+      } else {
+	os << "[";
+	for (int i = 0; i < nsends_; ++i) {
+	  os << starts_to_[i];
+	  if (i < nsends_ - 1) {
+	    os << " ";
+	  }
+	}
+	os << "]" << endl;
+      }
+
       os << " indicesTo: ";
       if (indices_to_ == NULL) {
 	os << "(NULL)" << endl;
@@ -1285,6 +1299,15 @@ void Epetra_MpiDistributor::Print( ostream & os) const
       os << " lengthsFrom: [";
       for (int i = 0; i < nrecvs_; ++i) {
 	os << lengths_from_[i];
+	if (i < nrecvs_ - 1) {
+	  os << " ";
+	}
+      }
+      os << "]" << endl;
+
+      os << " startsFrom: [";
+      for (int i = 0; i < nrecvs_; ++i) {
+	os << starts_from_[i];
 	if (i < nrecvs_ - 1) {
 	  os << " ";
 	}

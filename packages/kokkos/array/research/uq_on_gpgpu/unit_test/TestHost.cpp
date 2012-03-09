@@ -46,6 +46,7 @@
 #include <Kokkos_ProductTensor.hpp>
 #include <Kokkos_SymmetricDiagonalSpec.hpp>
 #include <Kokkos_BlockCrsMatrix.hpp>
+#include <Kokkos_CrsMatrix.hpp>
 #include <Kokkos_LegendrePolynomial.hpp>
 #include <Kokkos_StochasticProductTensor.hpp>
 
@@ -65,6 +66,7 @@
 #include <Host/Kokkos_Host_StochasticProductTensor.hpp>
 #include <Host/Kokkos_Host_SymmetricDiagonalSpec.hpp>
 #include <Host/Kokkos_Host_BlockCrsMatrix.hpp>
+#include <Host/Kokkos_Host_CrsMatrix.hpp>
 
 //
 
@@ -74,13 +76,13 @@
 
 int mainHost()
 {
-  Kokkos::Host::initialize( Kokkos::Host::SetThreadCount(4) );
+  const int nthread = Kokkos::Host::detect_core_count() / 2 ;
+
+  Kokkos::Host::initialize( Kokkos::Host::SetThreadCount(nthread) );
 
 //  unit_test::test_dense<Kokkos::Host>();
 //  unit_test::test_diagonal<Kokkos::Host>();
 //  unit_test::test_other<Kokkos::Host>();
-
-
 
   unit_test::test_integration<1>();
   unit_test::test_integration<2>();
@@ -108,11 +110,7 @@ int mainHost()
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 1 , 5 );
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 2 , 1 );
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 5 , 1 );
-
-  const bool print_flag = false ;
-
-  unit_test::test_product_tensor_matrix<double,Kokkos::Host>( std::vector<int>( 3 , 2 ) , 3 , print_flag );
-  unit_test::test_product_tensor_diagonal_matrix<double,Kokkos::Host>( std::vector<int>( 3 , 2 ) , 3 , print_flag );
+  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 5 , 5 );
 
   std::cout << "Stress tests:" << std::endl ;
 
@@ -121,6 +119,10 @@ int mainHost()
   unit_test::test_block_crs_matrix<Kokkos::Host>( 12 , 10 );
   unit_test::test_block_crs_matrix<Kokkos::Host>( 13 , 10 );
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 100 , 10 );
+
+  std::cout << std::endl << "\"Host Performance with "
+            << nthread << " threads\"" << std::endl ;
+  unit_test::performance_test_driver<Kokkos::Host>();
 
   Kokkos::Host::finalize();
 

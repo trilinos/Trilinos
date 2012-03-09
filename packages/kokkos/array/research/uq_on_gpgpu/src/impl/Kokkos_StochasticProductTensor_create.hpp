@@ -215,7 +215,7 @@ private:
     }
   }
 
-  void print() const
+  void print_bases() const
   {
     std::cout.precision(8);
 
@@ -236,8 +236,13 @@ private:
         std::cout << " )" << std::endl ;
       }
     }
+  }
 
+  void print_tensor() const
+  {
+    std::cout.precision(8);
 
+    std::cout << "Kokkos::Impl::CreateProductTensor(" ;
     std::cout << "Tensor (" << m_tensor_map.size() << ") = " << std::endl ;
     for ( typename tensor_map_type::const_iterator
           n =  m_tensor_map.begin() ;
@@ -281,7 +286,8 @@ public:
     // Manufactor all required data
     const CreateSparseProductTensor work( variable_polynomial_degree );
 
-    work.print();
+    // work.print_bases();
+    // work.print_tensor();
 
     type tmp ;
 
