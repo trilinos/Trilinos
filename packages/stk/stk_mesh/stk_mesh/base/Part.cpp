@@ -10,6 +10,7 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <stk_util/util/string_case_compare.hpp>
+#include <ostream>
 
 
 

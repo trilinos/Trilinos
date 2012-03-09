@@ -13,6 +13,7 @@
 #include <iosfwd>
 #include <algorithm>
 #include <stk_mesh/base/Types.hpp>
+#include <string>
 
 namespace stk {
 namespace mesh {

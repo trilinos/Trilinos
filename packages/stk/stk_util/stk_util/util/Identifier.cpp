@@ -8,6 +8,7 @@
 
 #include <stk_util/util/Identifier.hpp>
 #include <cstring>
+#include <iostream>
 
 namespace stk {
 
