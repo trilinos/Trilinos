@@ -33,6 +33,11 @@ namespace panzer {
   class PhysicsBlock {
 
   public:    
+    /** for testing purposes only */
+    explicit PhysicsBlock() 
+       : m_build_transient_support(false), m_global_data(Teuchos::null)
+    { std::cout << "WARNING: Default constructor for panzer::PhysicsBlock is for testing purposes only!" << std::endl; } 
+
     PhysicsBlock(const panzer::InputPhysicsBlock& ipb,
                  const std::string & element_block_id,
 		 const panzer::CellData & cell_data,
@@ -132,7 +137,7 @@ namespace panzer {
     panzer::CellData m_cell_data;
     panzer::InputPhysicsBlock m_initializer;
     const bool m_build_transient_support;
-    const Teuchos::RCP<panzer::GlobalData>& m_global_data;
+    const Teuchos::RCP<panzer::GlobalData> m_global_data;
 
     std::vector<std::string> m_dof_names;
     std::vector<StrPureBasisPair> m_provided_dofs;
