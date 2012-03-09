@@ -69,26 +69,26 @@ if (gval){ \
 #else
 
 #define TEST_FAIL_AND_THROW(comm, ok, s) \
-if (!ok){ \
+if ((!ok)){ \
   throw std::runtime_error(std::string(s)); \
 } 
 
 #define TEST_FAIL_AND_EXIT(comm, ok, s, code) \
-if (!ok){ \
+if ((!ok)){ \
   std::cerr << "Error: " << s << std::endl;\
   std::cout << "FAIL" << std::endl;\
   exit(code);\
 } 
 
 #define TEST_FAIL_AND_RETURN(comm, ok, s) \
-if (!ok){ \
+if ((!ok)){ \
   std::cerr << "Error: " << s << std::endl;\
   std::cout << "FAIL" << std::endl;\
   return;\
 } 
 
 #define TEST_FAIL_AND_RETURN_VALUE(comm, ok, s, rc) \
-if (!ok){ \
+if ((!ok)){ \
   std::cerr << "Error: " << s << std::endl;\
   std::cout << "FAIL" << std::endl;\
   return (rc);\
