@@ -8,7 +8,7 @@
 #include "Shards_Array.hpp"
 
 #include "krp.hpp"
-
+#include "Panzer_PAPI_Counter.hpp"
 #include <string>
 
 namespace panzer {
@@ -44,6 +44,28 @@ namespace panzer {
     panzer::krp_rpt_init_(&iam,comm,&hw_counters,&rcy,&rus,&ucy,&uus,const_cast<char*>(name.c_str()));
 
     panzer::krp_rpt_init_sum_(&iam,comm,&hw_counters,&rcy,&rus,&ucy,&uus,&rt_rus,&rt_ins,&rt_fp,&rt_dcm,const_cast<char*>(name.c_str()));
+
+  }
+
+  TEUCHOS_UNIT_TEST(papi, PAPICounter)
+  {
+    int rank;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm, &rank);
+
+    panzer::PAPICounter counter("Panzer Jacobian",rank,comm);
+
+    counter.start();
+
+    double a = 0;
+    for (int i=0; i < 1000000; ++i)
+      a += static_cast<double>(i);
+
+    counter.stop();
+
+    counter.report(std::cout);
+    
+    
 
   }
 
