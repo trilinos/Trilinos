@@ -193,6 +193,7 @@ namespace panzer_stk {
 			       global_data,
 			       is_transient,
 			       physicsBlocks);
+    m_physics_blocks = physicsBlocks; // hold onto physics blocks for safe keeping
 
     panzer_stk::IOClosureModelFactory_TemplateBuilder<panzer::Traits> io_cm_builder(user_cm_factory,mesh,output_list);
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
@@ -634,6 +635,15 @@ namespace panzer_stk {
 		       "Objects are not built yet!  Please call buildObjects() member function.");
 
     return m_response_library;
+  }
+
+  template<typename ScalarT>
+    const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & ModelEvaluatorFactory_Epetra<ScalarT>::getPhysicsBlocks() const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(m_physics_blocks.size()==0, std::runtime_error,
+		       "Objects are not built yet!  Please call buildObjects() member function.");
+
+    return m_physics_blocks;
   }
 
   template<typename ScalarT>

@@ -66,6 +66,8 @@ namespace panzer_stk {
 
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > getResponseLibrary();
 
+    const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & getPhysicsBlocks() const;
+
   protected:
     void addVolumeResponses(panzer::ResponseLibrary<panzer::Traits> & rLibrary,
                             const panzer_stk::STK_Interface & mesh,const Teuchos::ParameterList & pl) const;
@@ -109,6 +111,7 @@ namespace panzer_stk {
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > m_rome_me;
 
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > m_response_library;
+    std::vector<Teuchos::RCP<panzer::PhysicsBlock> > m_physics_blocks;
   };
 
 }
