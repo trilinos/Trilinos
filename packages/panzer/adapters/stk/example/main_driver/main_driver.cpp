@@ -101,29 +101,56 @@ int main(int argc, char *argv[])
     // A GlobalStatistics closure model requires the comm to be set in the user data.
     input_params->sublist("User Data").set("Comm", comm);
 
+    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary
+       = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>());
+
     // Add in the application specific observer factories
     {
       Teuchos::RCP<const panzer_stk::RythmosObserverFactory> rof = 
-	Teuchos::rcp(new user_app::RythmosObserverFactory_Epetra);
+	Teuchos::rcp(new user_app::RythmosObserverFactory_Epetra(stkIOResponseLibrary));
       input_params->sublist("Solver Factories").set("Rythmos Observer Factory", rof);
       Teuchos::RCP<const panzer_stk::NOXObserverFactory> nof = 
-	Teuchos::rcp(new user_app::NOXObserverFactory_Epetra);
+	Teuchos::rcp(new user_app::NOXObserverFactory_Epetra(stkIOResponseLibrary));
       input_params->sublist("Solver Factories").set("NOX Observer Factory", nof);
     }
 
     Teuchos::RCP<Thyra::ModelEvaluator<double> > physics;
     Teuchos::RCP<Thyra::ModelEvaluator<double> > solver;
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary;
+    std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
     {
       panzer_stk::ModelEvaluatorFactory_Epetra<double> me_factory;
       Teuchos::RCP<user_app::MyResponseAggregatorFactory<panzer::Traits> > ra_factory = 
 	Teuchos::rcp(new user_app::MyResponseAggregatorFactory<panzer::Traits>);
       me_factory.setParameterList(input_params);
       me_factory.buildObjects(comm,global_data,eqset_factory,bc_factory,cm_factory,ra_factory.ptr()); 
+
       physics = me_factory.getPhysicsModelEvaluator();
       solver = me_factory.getResponseOnlyModelEvaluator();
       rLibrary = me_factory.getResponseLibrary();
+      physicsBlocks = me_factory.getPhysicsBlocks();
     }
+    
+    // setup outputs to mesh on the stkIOResponseLibrary
+    ////////////////////////////////////////////////////////////////
+
+    stkIOResponseLibrary->initialize(*rLibrary);
+
+    // 1. Register correct aggregator and reserve response - this was done in the appropriate observer object
+
+    // 2. Build volume field managers
+    {
+      Teuchos::ParameterList user_data(input_params->sublist("User Data"));
+      user_data.set<int>("Workset Size",input_params->sublist("Assembly").get<unsigned long>("Workset Size"));
+  
+      stkIOResponseLibrary->buildVolumeFieldManagersFromResponses(physicsBlocks,
+                                                                  cm_factory,
+                                                                  input_params->sublist("Closure Models"),
+                                                                  user_data);
+    }
+
+    
+    ////////////////////////////////////////////////////////////////
     
     // solve the system
     {
