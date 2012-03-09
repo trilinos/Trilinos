@@ -47,13 +47,14 @@
 namespace Kokkos {
 namespace Impl {
 
-template< typename ValueType , class PolynomialType >
-class Multiply< StochasticProductTensor< ValueType, PolynomialType, Host > , void , void >
+template< typename ValueType , class PolynomialType ,
+          template< unsigned , typename , class > class TensorType >
+class Multiply< StochasticProductTensor< ValueType, PolynomialType, Host , TensorType > , void , void >
 {
 public:
   typedef Host                    device_type ;
   typedef device_type::size_type  size_type ;
-  typedef StochasticProductTensor< ValueType, PolynomialType, device_type > block_type ;
+  typedef StochasticProductTensor< ValueType, PolynomialType, device_type , TensorType > block_type ;
 
   template< typename MatrixValue , typename VectorValue >
   static void apply( const block_type  & block ,
