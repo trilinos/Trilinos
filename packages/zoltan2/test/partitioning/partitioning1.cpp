@@ -220,8 +220,8 @@ int main(int narg, char** arg)
   ////// Not ordinarily done in application code; just doing it for testing here.
   size_t checkNparts = comm->getSize();
   
-  size_t  checkLength = problem.getSolution().getNumberOfIds();
-  const size_t  *checkParts = problem.getSolution().getPartList();
+  size_t  checkLength = problem.getSolution().getLocalNumberOfIds();
+  const zoltan2_partId_t *checkParts = problem.getSolution().getPartList();
 
   // Check for load balance
   size_t *countPerPart = new size_t[checkNparts];

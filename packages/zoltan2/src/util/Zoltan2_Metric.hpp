@@ -76,7 +76,7 @@ template <typename SCALAR>
   void imbalances(const RCP<const Environment> &env, 
     const RCP<const Comm<int> > &comm, 
     size_t numGlobalParts, Array<ArrayView<float> > &partSizes,
-    ArrayView<size_t> partNums, 
+    ArrayView<partId_t> partNums, 
     Array<ArrayView<SCALAR> > &partWeights, 
     ArrayView<float> result)
 {
@@ -223,7 +223,7 @@ template <typename SCALAR>
   void imbalances(const RCP<const Environment> &env, 
     const RCP<const Comm<int> > &comm, 
     size_t numGlobalParts, ArrayView<float> partSizes,
-    ArrayView<size_t> partNums, ArrayView<SCALAR> partWeights, 
+    ArrayView<partId_t> partNums, ArrayView<SCALAR> partWeights, 
     float &result)
 {
   Array<ArrayView<float> > partSizeLists(1, partSizes);

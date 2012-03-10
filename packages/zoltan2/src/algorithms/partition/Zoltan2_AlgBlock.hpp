@@ -14,6 +14,8 @@
  *  \brief The algorithm for block partitioning.
  */
 
+typedef zoltan2_partId_t partId_t;
+
 namespace Zoltan2{
 
 /*! Block partitioning method.
@@ -142,10 +144,6 @@ void AlgPTBlock(
   size_t numGlobalParts = solution->getGlobalNumberOfParts();
 #if 0
   size_t numLocalParts = solution->getLocalNumberOfParts();
-
-  const int *partDist = solution->getPartDistribution();
-  const size_t *procDist = solution->getProcsParts();
-  double *partSizes0 = getCriteriaPartSizes(0);
 #endif
   
   ////////////////////////////////////////////////////////
@@ -197,10 +195,10 @@ void AlgPTBlock(
   }
 
   /* Loop over objects and assign partition. */
-  size_t part = 0;
+  partId_t part = 0;
   wtsum = scansum[rank];
   Array<scalar_t> partTotal(numGlobalParts, 0);
-  ArrayRCP<size_t> gnoPart= arcp(new size_t [numGnos], 0, numGnos);
+  ArrayRCP<partId_t> gnoPart= arcp(new partId_t [numGnos], 0, numGnos);
 
   for (size_t i=0; i<numGnos; i++){
     scalar_t gnoWeight = (wtflag? wgtList[0][i] : 1.0);
@@ -228,8 +226,8 @@ void AlgPTBlock(
 
   // TODO have partNums default to 0 through numGlobalParts-1 in
   //    imbalances() call.
-  Array<size_t> partNums(numGlobalParts);
-  for (size_t i=0; i < numGlobalParts; i++) partNums[i] = i;
+  Array<partId_t> partNums(numGlobalParts);
+  for (partId_t i=0; i < numGlobalParts; i++) partNums[i] = i;
 
   Array<ArrayView<scalar_t> > partWeights(1);
   partWeights[0] = partTotal.view(0, numGlobalParts);

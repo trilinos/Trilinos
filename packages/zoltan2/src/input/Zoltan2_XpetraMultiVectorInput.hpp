@@ -211,11 +211,12 @@ template <typename User>
       const User &in, User *&out, 
       const PartitioningSolution<User2> &solution) const
 {
-  size_t len = solution.getNumberOfIds();
-  const gid_t *gids = solution.getGlobalIdList();
-  const size_t *parts = solution.getPartList();
+  size_t len = solution.getLocalNumberOfIds();
+  const gid_t *gids = solution.getIdList();
+  const partId_t *parts = solution.getPartList();
   ArrayRCP<gid_t> gidList = arcp(const_cast<gid_t *>(gids), 0, len, false);
-  ArrayRCP<size_t> partList = arcp(const_cast<size_t *>(parts), 0, len, false);
+  ArrayRCP<partId_t> partList = arcp(const_cast<partId_t *>(parts), 0, len, 
+    false);
   ArrayRCP<lno_t> dummyIn;
   ArrayRCP<gid_t> importList;
   ArrayRCP<lno_t> dummyOut;
@@ -225,8 +226,8 @@ template <typename User>
 
   try{
     // Get an import list
-    numNewRows = convertPartListToImportList<gid_t, lno_t, lno_t>(
-      *comm, partList, gidList, dummyIn, importList, dummyOut);
+    numNewRows = convertSolutionToImportList<User2, lno_t>(
+      solution, dummyIn, importList, dummyOut);
   }
   Z2_FORWARD_EXCEPTIONS;
 

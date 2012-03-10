@@ -15,6 +15,7 @@
 
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_AlltoAll.hpp>
+#include <Zoltan2_PartitioningSolution.hpp>
 
 #include <Teuchos_OpaqueWrapper.hpp>
 #include <Teuchos_DefaultComm.hpp>
@@ -38,72 +39,98 @@ template <typename Ordinal>
 
 /*! \brief Convert an export part list to an import list.
  *
- * Given a list of global IDs and their assigned parts, return
- * a list of all the global IDs that are mine.  Assumption is that
- * parts are 0 through nprocs-1, and process p gets part p.
+ * Given a PartitioningSolution return a list of all the global IDs 
+ * that are mine.  
  *
  * If there are sizes associated with the IDs (like number of non-zeros)
  * include that in xtraInfo array.  Get back new sizes in newXtraInfo.
  * Otherwise xtraInfo.size() must be zero.
  *
- * return the size of the import list
- *
- *  \todo handle the case where #parts does not equal #procs.
+ * \todo document params and return 
  */
 
-template <typename GID, typename LNO, typename EXTRA>
-  size_t convertPartListToImportList(
-    const Teuchos::Comm<int> &comm,
-    ArrayRCP<size_t> &part,
-    ArrayRCP<GID> &gid,
-    ArrayRCP<EXTRA> &xtraInfo,
-    ArrayRCP<GID> &imports,
-    ArrayRCP<EXTRA> &newXtraInfo)
+template <typename User, typename Extra>
+  size_t convertSolutionToImportList(
+    const PartitioningSolution<User> &solution,
+    ArrayRCP<Extra> &xtraInfo,
+    ArrayRCP<typename InputTraits<User>::gid_t> &imports,
+    ArrayRCP<Extra> &newXtraInfo)
 {
-  size_t numParts = comm.getSize();
-  size_t localNumIds = gid.size();
+  typedef typename InputTraits<User>::lno_t lno_t;
+  typedef typename InputTraits<User>::gid_t gid_t;
+  typedef Teuchos::Comm<int> comm_t;
 
-  int localSend = (xtraInfo.size() == gid.size() ? 1 : 0);
+  const RCP<const comm_t> &comm     = solution.getCommunicator();
+  int numProcs                = comm->getSize();
+  const gid_t *myGids         = solution.getIdList();
+  size_t localNumIds          = solution.getLocalNumberOfIds();
+  const partId_t *partList    = solution.getPartList();
+  size_t numParts             = solution.getGlobalNumberOfParts();
+
+  //
+  // If procList is NULL, then part P goes to process P for all P.
+  //
+  const int *procList         = solution.getProcList();
+
+  int localSend = ((xtraInfo.size() == localNumIds) ? 1 : 0);
   int globalSend =0;
-  reduceAll<int, int>(comm, Teuchos::REDUCE_SUM, 1,
-    &localSend, &globalSend);
+  reduceAll<int, int>(*comm, Teuchos::REDUCE_SUM, 1, &localSend, &globalSend);
 
-  bool sendSizes = (globalSend == comm.getSize());
+  bool sendExtra = (globalSend == numProcs);
 
-  Array<LNO> counts(numParts, 0);
-  for (size_t i=0; i < localNumIds; i++){
-    counts[part[i]]++;
-  }
+  Array<lno_t> counts(numProcs, 0);
+  if (procList)
+    for (size_t i=0; i < localNumIds; i++)
+      counts[procList[i]]++;
+  else
+    for (size_t i=0; i < localNumIds; i++)
+      counts[partList[i]]++;
 
-  Array<LNO> offsets(numParts+1, 0);
-  for (size_t i=1; i <= numParts; i++){
+  Array<lno_t> offsets(numProcs+1, 0);
+  for (size_t i=1; i <= numProcs; i++){
     offsets[i] = offsets[i-1] + counts[i-1];
   }
 
-  Array<GID> gidList(localNumIds);
-  Array<EXTRA> numericInfo(localNumIds);
+  Array<gid_t> gidList(localNumIds);
+  Array<Extra> numericInfo;
 
-  for (size_t i=0; i < localNumIds; i++){
-    LNO idx = offsets[part[i]];
-    gidList[idx] = gid[i];
-    if (sendSizes)
-      numericInfo[idx] = xtraInfo[i];
-    offsets[part[i]] = idx + 1;
+  if (sendExtra)
+    numericInfo.resize(localNumIds);
+
+  if (procList){
+    for (size_t i=0; i < localNumIds; i++){
+      lno_t idx = offsets[procList[i]];
+      gidList[idx] = myGids[i];
+      if (sendExtra)
+        numericInfo[idx] = xtraInfo[i];
+      offsets[procList[i]] = idx + 1;
+    }
+  }
+  else{
+    for (size_t i=0; i < localNumIds; i++){
+      lno_t idx = offsets[partList[i]];
+      gidList[idx] = myGids[i];
+      if (sendExtra)
+        numericInfo[idx] = xtraInfo[i];
+      offsets[partList[i]] = idx + 1;
+    }
   }
 
-  ArrayRCP<LNO> recvCounts;
+  ArrayRCP<lno_t> recvCounts;
   RCP<const Environment> env = rcp(new Environment);
 
   try{
-    AlltoAllv<GID, LNO>(comm, *env, gidList(), counts(), imports, recvCounts);
+    AlltoAllv<gid_t, lno_t>(*comm, *env, gidList.view(0,localNumIds), 
+      counts.view(0, numProcs), imports, recvCounts);
   }
   catch (std::exception &e){
     throw std::runtime_error("alltoallv 1");
   }
 
-  if (sendSizes){
+  if (sendExtra){
     try{
-      AlltoAllv<EXTRA, LNO>(comm, *env, xtraInfo(), counts(), newXtraInfo, recvCounts);
+      AlltoAllv<Extra, lno_t>(*comm, *env, xtraInfo.view(0, localNumIds), 
+        counts.view(0, numProcs), newXtraInfo, recvCounts);
     }
     catch (std::exception &e){
       throw std::runtime_error("alltoallv 2");

@@ -26,10 +26,12 @@ using Teuchos::arcp;
 
 double epsilon = 10e-6;
 
-void makeArrays(int wdim, int *lens, size_t **ids, float **sizes,
-  ArrayRCP<ArrayRCP<size_t> > &idList, ArrayRCP<ArrayRCP<float> > &sizeList)
+typedef zoltan2_partId_t partId_t;
+
+void makeArrays(int wdim, int *lens, partId_t **ids, float **sizes,
+  ArrayRCP<ArrayRCP<partId_t> > &idList, ArrayRCP<ArrayRCP<float> > &sizeList)
 {
-  ArrayRCP<size_t> *idArrays = new ArrayRCP<size_t> [wdim];
+  ArrayRCP<partId_t> *idArrays = new ArrayRCP<partId_t> [wdim];
   ArrayRCP<float> *sizeArrays = new ArrayRCP<float> [wdim];
 
   for (int w=0; w < wdim; w++){
@@ -56,11 +58,11 @@ int main(int argc, char *argv[])
   int maxWeightDim = 3;
   int maxNumPartSizes = nprocs;
   int *lengths = new int [maxWeightDim];
-  size_t **idLists = new size_t * [maxWeightDim];
+  partId_t **idLists = new partId_t * [maxWeightDim];
   float **sizeLists = new float * [maxWeightDim];
 
   for (int w=0; w < maxWeightDim; w++){
-    idLists[w] = new size_t [maxNumPartSizes];
+    idLists[w] = new partId_t [maxNumPartSizes];
     sizeLists[w] = new float [maxNumPartSizes];
   }
 
@@ -89,7 +91,7 @@ int main(int argc, char *argv[])
   int numGlobalParts = nprocs;
   int weightDim = 1;
 
-  ArrayRCP<ArrayRCP<size_t> > ids;
+  ArrayRCP<ArrayRCP<partId_t> > ids;
   ArrayRCP<ArrayRCP<float> > sizes;
 
   memset(lengths, 0, sizeof(int) * maxWeightDim);
@@ -171,11 +173,11 @@ int main(int argc, char *argv[])
 
   // Test the Solution set method that is called by algorithms
 
-  size_t *partAssignments = new size_t [numIdsPerProc];
+  partId_t *partAssignments = new partId_t [numIdsPerProc];
   for (int i=0; i < numIdsPerProc; i++){
     partAssignments[i] = myGids[i] % numGlobalParts;  // round robin
   }
-  ArrayRCP<size_t> partList = arcp(partAssignments, 0, numIdsPerProc);
+  ArrayRCP<partId_t> partList = arcp(partAssignments, 0, numIdsPerProc);
 
   float *imbalances = new float [weightDim];
   for (int i=0; i < weightDim; i++){
@@ -198,11 +200,11 @@ int main(int argc, char *argv[])
   // Test the Solution get methods that may be called by users 
   // or migration functions.
 
-  if (solution->getNumberOfIds() != numIdsPerProc)
+  if (solution->getLocalNumberOfIds() != numIdsPerProc)
     fail = 11;
 
   if (!fail){
-    const gno_t *gids = solution->getGlobalIdList();
+    const gno_t *gids = solution->getIdList();
     for (int i=0; !fail && i < numIdsPerProc; i++){
       if (gids[i] != myGids[i])
         fail = 12;
@@ -210,7 +212,7 @@ int main(int argc, char *argv[])
   }
 
   if (!fail){
-    const size_t *parts = solution->getPartList();
+    const partId_t *parts = solution->getPartList();
     for (int i=0; !fail && i < numIdsPerProc; i++){
       if (parts[i] != myGids[i] % numGlobalParts)
         fail = 13;
