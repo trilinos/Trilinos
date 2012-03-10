@@ -18,6 +18,10 @@
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
 #include "Panzer_PauseToAttach.hpp"
 
+#ifdef Panzer_ENABLE_PAPI
+#include "Panzer_PAPI_Counter.hpp"
+#endif
+
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
@@ -43,6 +47,11 @@ int main(int argc, char *argv[])
     out->setShowProcRank(true);
     out->setOutputToRootOnly(0);
   }
+
+#ifdef Panzer_ENABLE_PAPI
+    panzer::PAPICounter papi_counter("Panzer: Total Execution", mpiSession.getRank(), MPI_COMM_WORLD);
+    papi_counter.start();
+#endif
 
   try {
     
@@ -235,6 +244,11 @@ int main(int argc, char *argv[])
   }
   
   Teuchos::TimeMonitor::summarize(*out,false,true,false);
+
+#ifdef Panzer_ENABLE_PAPI
+    papi_counter.stop();
+    papi_counter.report(std::cout);
+#endif
 
   if (status == 0)
     *out << "panzer::MainDriver run completed." << std::endl;
