@@ -45,7 +45,6 @@ void convertSolutionToImportListTest(RCP<const Comm<int> > &comm)
 
   // Assume a contiguous distribution of gids to procs.
   
-  gno_t globalNumObjects = 100 * numProcs;
   lno_t localNumObjects = 100;
   gno_t myBaseId = localNumObjects * rank;
 

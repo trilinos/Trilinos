@@ -239,7 +239,7 @@ public:
         Ids = gnosConst_(0, n);
 
       if (nweights)
-        wgts = weights_;
+        wgts = weights_.view(0, weights_.size());
     }
     
     return n;
