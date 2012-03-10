@@ -69,4 +69,50 @@ namespace panzer {
 
   }
 
+  /*
+  TEUCHOS_UNIT_TEST(papi, NestedPAPICounter)
+  {
+    int rank;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm, &rank);
+
+    panzer::PAPICounter outer_counter("Outer Counter",rank,comm);
+    panzer::PAPICounter inner_counter_1("Inner Counter 1",rank,comm);
+    panzer::PAPICounter inner_counter_2("Inner Counter 2",rank,comm);
+
+    outer_counter.start();
+    for (int i=0; i < 1000; ++i) {
+
+      {
+	inner_counter_1.start();
+	
+	double a = 0;
+	for (int i=0; i < 1000000; ++i)
+	  a += static_cast<double>(i);
+	
+	inner_counter_1.stop();
+      }
+      
+      {
+	inner_counter_2.start();
+	double a = 0;
+	for (int i=0; i < 1000000; ++i)
+	a += static_cast<double>(i);
+	inner_counter_2.stop();
+      }
+
+    }
+    outer_counter.stop();
+
+    outer_counter.report(std::cout);
+    
+//     panzer::PAPICounter inner_counter_1("Inner Counter 1",rank,comm);
+//     panzer::PAPICounter inner_counter_2("Inner Counter 2",rank,comm);
+    
+    inner_counter_1.report(std::cout);
+    inner_counter_2.report(std::cout);
+
+  }
+  */
+
 }
