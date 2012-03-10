@@ -65,7 +65,6 @@ template <typename User, typename Extra>
   const gid_t *myGids         = solution.getIdList();
   size_t localNumIds          = solution.getLocalNumberOfIds();
   const partId_t *partList    = solution.getPartList();
-  size_t numParts             = solution.getGlobalNumberOfParts();
 
   //
   // If procList is NULL, then part P goes to process P for all P.

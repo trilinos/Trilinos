@@ -474,18 +474,18 @@ template <typename User_t>
     if (entry1){
       haveGlobalNumParts = 1;
       double val = *entry1;
-      nGlobalParts_ = static_cast<size_t>(val);
+      nGlobalParts_ = size_t(val);
     }
   
     if (entry2){
       haveLocalNumParts = 1;
       double val = *entry2;
-      nLocalParts_ = static_cast<size_t>(val);
+      nLocalParts_ = float(val);
     }
   }
 
   size_t vals[4] = {haveGlobalNumParts, haveLocalNumParts, 
-    nGlobalParts_, nLocalParts_};
+    nGlobalParts_, size_t(nLocalParts_)};
   size_t reducevals[4];
 
   try{
@@ -513,7 +513,7 @@ template <typename User_t>
 
   if (sumHaveGlobal == nprocs){
     vals[0] = nGlobalParts_;
-    vals[1] = nLocalParts_;
+    vals[1] = size_t(nLocalParts_);
     try{
       reduceAll<int, size_t>(*comm_, Teuchos::REDUCE_MAX, 2, vals, reducevals);
     }
@@ -584,7 +584,7 @@ template <typename User_t>
     if (fParts < fProcs){
 
       try{
-        partDist_.resize(fParts+1);
+        partDist_.resize(size_t(fParts+1));
       }
       catch (std::exception &e){
         throw(std::bad_alloc());
@@ -609,7 +609,7 @@ template <typename User_t>
     else if (fParts > fProcs){ 
 
       try{
-        procDist_.resize(fProcs+1);
+        procDist_.resize(size_t(fProcs+1));
       }
       catch (std::exception &e){
         throw(std::bad_alloc());
