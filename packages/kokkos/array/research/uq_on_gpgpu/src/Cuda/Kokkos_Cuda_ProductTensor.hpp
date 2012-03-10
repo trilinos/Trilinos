@@ -71,14 +71,13 @@ public:
 
   static dim3 thread_block( const block_type & block )
   {
-    const int n = cuda_internal_maximum_warp_count() * CudaTraits::WarpSize ;
+    const size_type n = cuda_internal_maximum_warp_count() * CudaTraits::WarpSize ;
 
-    if ( n < block.dimension() ) {
+    if ( 3 * ( n / 3 ) < block.dimension() ) {
       throw std::runtime_error( std::string("Kokkos::Impl::Multiply< SparseProductTensor<3,Scalar,Cuda> > ERROR: block too large") );
     }
 
-    const dim3 d( block.dimension() ,
-                  std::min( n / block.dimension() , block.entry_count() ) , 1 );
+    const dim3 d( std::min( block.entry_count() , n / 3 ) , 3 , 1 );
 
     return d ;
   }
@@ -87,17 +86,18 @@ public:
   __host__
   static size_type shmem_size( const block_type & block )
   {
-    const dim3 d = thread_block( block );
+    const dim3 dim = thread_block( block );
 
-    const size_type size_reduce = d.x * d.y * sizeof(VectorValue);
-
-    const size_type size_work =
-      2 * d.x * sizeof(VectorValue) +
-      d.x * d.y * sizeof(TensorScalar) +
-      d.x * d.y * 3 * sizeof(int);
-
-    return std::max( size_reduce , size_work );
+    return 3 * block.dimension() * sizeof(VectorValue) +
+           3 * dim.x * sizeof(int);
   }
+
+  //----------------------------------------
+
+  inline
+  __device__
+  static void swap( int & i , int & j )
+  { const int tmp = i ; i = j ; j = tmp ; }
 
   //----------------------------------------
 
@@ -107,116 +107,74 @@ public:
                             const MatrixValue * const a ,
                             const VectorValue * const x )
   {
-    VectorValue  * const shX = kokkos_impl_cuda_shared_memory<VectorValue>();
-    VectorValue  * const shA = (VectorValue  *)( shX + blockDim.x );
+    const size_type tid = threadIdx.x + CudaTraits::WarpSize * threadIdx.y ;
+    const size_type dimension = block.dimension();
+    VectorValue * const shY = kokkos_impl_cuda_shared_memory<VectorValue>();
+    VectorValue * const shX = (VectorValue *)( shY + dimension );
+    VectorValue * const shA = (VectorValue *)( shX + dimension );
 
-    VectorValue yVal = 0 ;
+#if 0
+    int * const shC = (int *)( shA + blockDim.x );
+#endif
 
-    // Load shared x and A vectors:
+    // Initialize output, load shared input
 
-    if ( threadIdx.y == 0 ) {
-      shX[ threadIdx.x ] = x[ threadIdx.x ];
-    }
-
-    if ( threadIdx.y == blockDim.y - 1 ) {
-      shA[ threadIdx.x ] = a[ threadIdx.x ];
+    if ( tid < dimension ) {
+      shY[ tid ] = 0 ;
+      shX[ tid ] = x[ tid ];
+      shA[ tid ] = a[ tid ];
     }
 
     __syncthreads(); // wait for all data reads
 
-    // Loop through sparse tensor contributions:
+    // Loop through sparse tensor contributions
+    // with batch reads.
+
+    const size_type nEntryLoop = block.entry_count() + threadIdx.x ;
+
+    for ( size_type iEntry = threadIdx.x ;
+                    iEntry < nEntryLoop ; iEntry += blockDim.x ) {
 
 #if 0
 
-    const size_type nThread = blockDim.x * blockDim.y ;
-    const size_type iThread = threadIdx.x + blockDim.x * threadIdx.y ;
+      shC[ tid ] = block.coord( iEntry , threadIdx.y );
 
-    TensorScalar * const shValue = (TensorScalar *)( shA + blockDim.x );
-    int          * const shCoord = (int *)( shValue + nThread );
+      __syncthreads();
 
-    size_type nOuterLoop = ( block.entry_count() + nThread - 1 ) / nThread ;
-
-    for ( size_type iOuterLoop = 0 ;
-                    iOuterLoop < nOuterLoop ; ++iOuterLoop ) {
-
-      const size_type base = iOuterLoop * nThread ;
-      const size_type iThreadBase = iThread + base ;
-
-      shCoord[ iThread ] = -1 ;
-
-      if ( iThreadBase < block.entry_count() ) {
-        shCoord[ iThread               ] = block.coord( iThreadBase , 0 );
-        shCoord[ iThread + nThread     ] = block.coord( iThreadBase , 1 );
-        shCoord[ iThread + nThread * 2 ] = block.coord( iThreadBase , 2 );
-        shValue[ iThread               ] = block.value( iThreadBase );
-      }
-
-      __syncthreads(); // Wait for load of 'nThread' entries.
-
-      size_type endEntry = base + nThread ;
-      if ( block.entry_count() < endEntry ) endEntry = block.entry_count();
-
-      for ( size_type iEntry = threadIdx.y ;
-                      iEntry < endEntry ; iEntry += blockDim.y ) {
-
-        int i = shCoord[ iEntry ];
-        int j = shCoord[ iEntry + nThread ];
-        int k = shCoord[ iEntry + nThread * 2 ];
-
-        if      ( threadIdx.x == i ) { ; }
-        else if ( threadIdx.x == j ) { j = i ; }
-        else if ( threadIdx.x == k ) { k = i ; }
-        else { i = -1 ; }
-
-        if ( i != -1 ) {
-          VectorValue tmp = shX[j] * shA[k];
-          if ( j != k ) { tmp += shX[k] * shA[j]; }
-          yVal += tmp * shValue[ iEntry ];
-        }
-      }
-
-      __syncthreads(); // Wait for use of 'nThread' entries.
-
-    }
+      if ( iEntry < block.entry_count() ) {
+        int i = shC[ threadIdx.x ];
+        int j = shC[ threadIdx.x + blockDim.x ];
+        int k = shC[ threadIdx.x + blockDim.x * 2 ];
 
 #else
 
-    for ( size_type iEntry = threadIdx.y ;
-                    iEntry < block.entry_count() ; iEntry += blockDim.y ) {
+      if ( iEntry < block.entry_count() ) {
 
-      int i = block.coord(iEntry,0);
-      int j = block.coord(iEntry,1);
-      int k = block.coord(iEntry,2);
-
-      if      ( threadIdx.x == i ) { ; }
-      else if ( threadIdx.x == j ) { j = i ; }
-      else if ( threadIdx.x == k ) { k = i ; }
-      else { i = -1 ; }
-
-      if ( i != -1 ) {
-        VectorValue tmp = shX[j] * shA[k];
-        if ( j != k ) { tmp += shX[k] * shA[j]; }
-        yVal += tmp * block.value(iEntry);
-      }
-    }
-
+        int i = block.coord( iEntry , 0 ); // coalesced
+        int j = block.coord( iEntry , 1 ); // coalesced
+        int k = block.coord( iEntry , 2 ); // coalesced
 #endif
 
-    if ( 1 < blockDim.y ) {
-      __syncthreads(); // wait for all data uses
+        if      ( 0 == threadIdx.y ) { }
+        else if ( 1 == threadIdx.y && j != k ) { swap( k , j ); }
+        else if ( 2 == threadIdx.y && i != k && i != j ) { swap( k , i ); }
+        else { k = -1 ; }
 
-      if ( 0 < threadIdx.y ) {
-        shX[ threadIdx.x + blockDim.x * threadIdx.y ] = yVal ;
+        if ( 0 <= k ) {
+          VectorValue tmp = shA[i] * shX[j] ;
+          if ( i != j ) tmp += shA[j] * shX[i] ;
+          cuda_internal_atomic_add( shY[k] , tmp * block.value( iEntry ) );
+        }
       }
 
-      __syncthreads(); // wait for all data loads
-
-      for ( int i = 1 ; i < blockDim.y ; ++i ) {
-        yVal += shX[ threadIdx.x + i * blockDim.x ];
-      }
+#if 0
+      __syncthreads();
+#endif
     }
 
-    return yVal ;
+    __syncthreads();
+
+    return tid < dimension ? shY[ tid ] : 0 ;
   }
 };
 
@@ -480,6 +438,244 @@ public:
 };
 
 #endif
+
+//----------------------------------------------------------------------------
+
+template< typename TensorScalar ,
+          typename MatrixScalar ,
+          typename VectorScalar >
+class Multiply<
+  BlockCrsMatrix< CrsProductTensor< 3 , TensorScalar , Cuda > ,
+                  MatrixScalar , Cuda > ,
+  MultiVector< VectorScalar , Cuda > ,
+  MultiVector< VectorScalar , Cuda > >
+{
+public:
+
+  typedef Cuda                    device_type ;
+  typedef device_type::size_type  size_type ;
+
+  typedef CrsProductTensor< 3 , TensorScalar , device_type >       tensor_type ;
+  typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type > matrix_type ;
+  typedef MultiVector< VectorScalar , device_type>                 vector_type ;
+
+  // m_A.graph.row_count() == gridDim.y
+  // m_A.block.dimension() <= gridDim.x * blockDim.y
+
+  class ProductTensorLoop {
+  public:
+
+    const matrix_type m_A ;
+    const vector_type m_x ;
+    const vector_type m_y ;
+
+    ProductTensorLoop( const matrix_type & A ,
+                       const vector_type & x ,
+                       const vector_type & y )
+      : m_A( A ), m_x( x ), m_y( y ) {}
+
+    __device__
+    void execute_on_device() const
+    {
+      VectorScalar * const sh = kokkos_impl_cuda_shared_memory<VectorScalar>();
+
+      const size_type dim = m_A.block.dimension();
+      const size_type nid = CudaTraits::WarpSize * blockDim.y ;
+      const size_type tid = threadIdx.x + CudaTraits::WarpSize * threadIdx.y ;
+
+      // Value of 'y' for which this thread is responsible
+
+      const size_type iyInner = threadIdx.y + blockDim.y * blockIdx.x ;
+
+      const size_type iBlockEntryEnd = m_A.graph.row_entry_end(   blockIdx.y );
+            size_type iBlockEntry    = m_A.graph.row_entry_begin( blockIdx.y );
+
+      const size_type iBeg = iyInner < dim ? m_A.block.entry_begin( iyInner ) : 0 ;
+      const size_type iEnd = iyInner < dim ? m_A.block.entry_end(   iyInner ) : 0 ;
+
+      VectorScalar y = 0 ;
+
+      for ( ; iBlockEntry < iBlockEntryEnd ; ++iBlockEntry ) {
+
+        const size_type iBlockColumn = m_A.graph.column( iBlockEntry );
+
+        // Coalesced read of X and A into shared memory
+
+        for ( size_type i = tid ; i < dim ; i += nid ) {
+          sh[ i ] = m_x( i , iBlockColumn );
+        }
+
+        for ( size_type i = tid ; i < dim ; i += nid ) {
+          sh[ i + dim ] = m_A.values( i , iBlockEntry );
+        }
+
+        __syncthreads(); // wait for X and A to be read
+
+        // Loop through sparse tensor contributions with coalesced reads.
+
+        for ( size_type i = iBeg + threadIdx.x ;
+                        i < iEnd ; i += CudaTraits::WarpSize ) {
+
+          // Read 'CudaTraits::WarpSize' entries from the tensor
+          const int j = m_A.block.coord( i , 0 ); // coalesced read
+          const int k = m_A.block.coord( i , 1 ); // coalesced read
+
+          VectorScalar tmp = sh[j+dim] * sh[k] ;
+          if ( j != k ) tmp += sh[k+dim] * sh[j] ;
+
+          y += tmp * m_A.block.value(i); // coalesced read
+        }
+
+        __syncthreads(); // wait for X and A to be used.
+      }
+
+      // Reduction of 'y' within 'CudaTraits::WarpSize'
+
+      sh[ tid ] = y ;
+
+      if ( threadIdx.x + 16 < CudaTraits::WarpSize ) sh[tid] += sh[tid + 16];
+      if ( threadIdx.x +  8 < CudaTraits::WarpSize ) sh[tid] += sh[tid +  8];
+      if ( threadIdx.x +  4 < CudaTraits::WarpSize ) sh[tid] += sh[tid +  4];
+      if ( threadIdx.x +  2 < CudaTraits::WarpSize ) sh[tid] += sh[tid +  2];
+      if ( threadIdx.x +  1 < CudaTraits::WarpSize ) sh[tid] += sh[tid +  1];
+
+      if ( iyInner < dim && 0 == threadIdx.x ) {
+        m_y( iyInner , blockIdx.y ) = sh[ tid ];
+      }
+    }
+  };
+
+  //------------------------------------
+  // m_A.graph.row_count() == gridDim.y
+  // m_A.block.dimension() <= gridDim.x * blockDim.y
+
+  class ProductTensorOnce {
+  public:
+
+    const matrix_type m_A ;
+    const vector_type m_x ;
+    const vector_type m_y ;
+
+    ProductTensorOnce( const matrix_type & A ,
+                       const vector_type & x ,
+                       const vector_type & y )
+      : m_A( A ), m_x( x ), m_y( y ) {}
+
+    __device__
+    void execute_on_device() const
+    {
+      VectorScalar * const sh = kokkos_impl_cuda_shared_memory<VectorScalar>();
+
+      const size_type dim = m_A.block.dimension();
+      const size_type tid = threadIdx.x + CudaTraits::WarpSize * threadIdx.y ;
+      const size_type nid = CudaTraits::WarpSize * blockDim.y ;
+
+      // Value of 'y' for which this thread is responsible
+      const size_type iyInner = threadIdx.y + blockDim.y * blockIdx.x ;
+
+      const size_type iBlockEntryEnd = m_A.graph.row_entry_end(   blockIdx.y );
+            size_type iBlockEntry    = m_A.graph.row_entry_begin( blockIdx.y );
+
+      int j = -1 ;
+      int k = -1 ;
+      VectorScalar v = 0 ;
+
+      if ( iyInner < dim ) {
+        const size_type iP = threadIdx.x + m_A.block.entry_begin( iyInner );
+        if ( iP < m_A.block.entry_end( iyInner ) ) {
+          j = m_A.block.coord( iP , 0 );
+          k = m_A.block.coord( iP , 1 );
+          v = m_A.block.value( iP );
+        }
+      }
+
+      VectorScalar y = 0 ;
+
+      for ( ; iBlockEntry < iBlockEntryEnd ; ++iBlockEntry ) {
+
+        // Coalesced read of X and A into shared memory
+
+        for ( size_type i = tid ; i < dim ; i += nid ) {
+          sh[ i ] = m_x( i , m_A.graph.column(iBlockEntry) );
+        }
+
+        for ( size_type i = tid ; i < dim ; i += nid ) {
+          sh[ i + dim ] = m_A.values( i , iBlockEntry );
+        }
+
+        __syncthreads(); // wait for X and A to be read
+
+        if ( 0 <= j ) {
+          VectorScalar tmp = sh[j+dim] * sh[k] ;
+          if ( j != k ) tmp += sh[k+dim] * sh[j] ;
+
+          y += tmp * v ;
+        }
+
+        __syncthreads(); // wait for X and A to be used.
+      }
+
+      // Reduction of 'y' within 'CudaTraits::WarpSize'
+
+      sh[ tid ] = y ;
+
+      if ( threadIdx.x + 16 < CudaTraits::WarpSize ) sh[tid] += sh[tid + 16];
+      if ( threadIdx.x +  8 < CudaTraits::WarpSize ) sh[tid] += sh[tid +  8];
+      if ( threadIdx.x +  4 < CudaTraits::WarpSize ) sh[tid] += sh[tid +  4];
+      if ( threadIdx.x +  2 < CudaTraits::WarpSize ) sh[tid] += sh[tid +  2];
+      if ( threadIdx.x +  1 < CudaTraits::WarpSize ) sh[tid] += sh[tid +  1];
+
+      if ( iyInner < dim && 0 == threadIdx.x ) {
+        m_y( iyInner , blockIdx.y ) = sh[ tid ];
+      }
+    }
+  };
+
+  //------------------------------------
+
+  static void apply( const matrix_type & A ,
+                     const vector_type & x ,
+                     const vector_type & y )
+  {
+    // Have at least nPool blocks working on each tensor-block
+
+    const size_type nPool = 8 ;
+
+    const size_type maxWarp =
+      std::min( (A.block.dimension()+nPool-1) / nPool ,
+      cuda_internal_maximum_warp_count() );
+
+    size_type nWarp = 2 ; // need at least two warps
+
+    for ( ; ( nWarp << 1 ) <= maxWarp ; nWarp <<= 1 );
+
+    const dim3 dBlock( CudaTraits::WarpSize , nWarp , 1 );
+
+    // Fill out block dimension with X
+    // Fill out graph block-row count with Y
+    const dim3 dGrid( ( A.block.dimension() + dBlock.y - 1 ) / dBlock.y ,
+                      A.graph.row_count() ,
+                      1 );
+
+    // Maximum required to:
+    //   Reduce one value of Y per thread
+    //   Read block of A and X into shared memory
+    const size_type shmem =
+      sizeof(VectorScalar) * std::max( dBlock.x * dBlock.y ,
+                                       2 * A.block.dimension() );
+
+    if ( dBlock.x <= A.block.entry_maximum() ) {
+      // Product tensor entries can be read and held by a thread
+      Impl::cuda_parallel_launch_local_memory<<< dGrid , dBlock , shmem >>>
+        ( ProductTensorOnce( A , x , y ) );
+    }
+    else {
+      // Must loop through product tensor entries.
+      Impl::cuda_parallel_launch_local_memory<<< dGrid , dBlock , shmem >>>
+        ( ProductTensorLoop( A , x , y ) );
+    }
+  }
+};
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

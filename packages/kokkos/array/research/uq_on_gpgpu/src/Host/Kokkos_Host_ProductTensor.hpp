@@ -100,6 +100,51 @@ public:
 //----------------------------------------------------------------------------
 
 template< typename ValueType >
+class Multiply< CrsProductTensor< 3 , ValueType , Host > , void , void >
+{
+public:
+
+  typedef Host::size_type size_type ;
+  typedef CrsProductTensor< 3 , ValueType , Host > tensor_type ;
+
+  template< typename MatrixValue , typename VectorValue >
+  static void apply( const tensor_type & tensor ,
+                     const MatrixValue * const a ,
+                     const VectorValue * const x ,
+                           VectorValue * const y )
+  {
+    const size_type nDim = tensor.dimension();
+
+    for ( size_type iy = 0 ; iy < nDim ; ++iy ) {
+
+      const size_type iEntryEnd = tensor.entry_end(iy);
+            size_type iEntry    = tensor.entry_begin(iy);
+
+      VectorValue ytmp = 0 ;
+
+      for ( ; iEntry < iEntryEnd ; ++iEntry ) {
+
+        const size_type j = tensor.coord(iEntry,0);
+        const size_type k = tensor.coord(iEntry,1);
+
+        ytmp += tensor.value(iEntry) *
+                ( j == k ? a[j] * x[j] : a[j] * x[k] + a[k] * x[j] );
+      }
+
+      y[iy] += ytmp ;
+    }
+  }
+
+  static size_type matrix_size( const tensor_type & tensor )
+  { return tensor.dimension(); }
+
+  static size_type vector_size( const tensor_type & tensor )
+  { return tensor.dimension(); }
+};
+
+//----------------------------------------------------------------------------
+
+template< typename ValueType >
 class Multiply< SparseProductTensor< 3 , ValueType , Host > ,
                 SymmetricDiagonalSpec< Host > , void >
 {

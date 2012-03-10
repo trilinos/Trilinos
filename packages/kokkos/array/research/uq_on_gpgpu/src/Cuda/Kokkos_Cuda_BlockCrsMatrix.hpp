@@ -101,7 +101,7 @@ public:
         y += Multiply< BlockSpec >::apply( m_A.block , a , x );
       }
 
-      if ( threadIdx.y == 0 ) {
+      if ( threadIdx.x + blockDim.x * threadIdx.y < m_A.block.dimension() ) {
         m_y(threadIdx.x,iBlock) = y ;
       }
     }

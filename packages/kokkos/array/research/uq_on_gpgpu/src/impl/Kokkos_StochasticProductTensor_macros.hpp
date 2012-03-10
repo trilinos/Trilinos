@@ -54,15 +54,16 @@ namespace Kokkos {
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-template< typename ValueType , class PolynomialType >
-class StochasticProductTensor< ValueType, PolynomialType, KOKKOS_MACRO_DEVICE >
+template< typename ValueType , class PolynomialType ,
+          template< unsigned , typename , class > class TensorType >
+class StochasticProductTensor< ValueType, PolynomialType, KOKKOS_MACRO_DEVICE , TensorType >
 {
 public:
 
   typedef KOKKOS_MACRO_DEVICE     device_type ;
   typedef device_type::size_type  size_type ;
   typedef ValueType               value_type ;
-  typedef SparseProductTensor< 3 , value_type , device_type > tensor_type ;
+  typedef TensorType< 3 , value_type , device_type > tensor_type ;
 
   inline
   ~StochasticProductTensor() {}
@@ -113,23 +114,6 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type bases_degree( const iType & iBasis , const jType & iVariable ) const
     { return m_degree_map( iBasis + 1 , iVariable ); }
-
-  inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type entry_count() const
-  { return m_tensor.entry_count() ; }
-
-  template< typename iType , typename jType >
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  size_type coord( const iType & iEntry , const jType & c ) const
-  { return m_tensor.coord( iEntry , c ); }
-
-  template< typename iType >
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  const value_type & value( const iType & entry ) const
-  { return m_tensor.value( entry ); }
 
 private:
 
