@@ -395,6 +395,7 @@ namespace MueLu {
 
       RCP<Level> Fine = Levels_[startLevel];
 
+/*
       if (startLevel == 0 && IsPrint(Statistics1)) {
         GetOStream(Statistics1, 0) << "iter:    "
                                    << std::setiosflags(std::ios::left)
@@ -403,6 +404,7 @@ namespace MueLu {
                                    << std::setprecision(10) << Utils::ResidualNorm(*(Fine->Get< RCP<Operator> >("A")), X, B)
                                    << std::endl;
       }
+*/
 
       //X.norm2(norms);
       if (Fine->Get< RCP<Operator> >("A")->getDomainMap()->isCompatible(*(X.getMap())) == false) {
