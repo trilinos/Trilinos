@@ -335,7 +335,34 @@ namespace Tpetra {
     /** \brief Return a simple one-line description of this object. */
     std::string description() const;
 
-    /** \brief Print the object with some verbosity level to an FancyOStream object. */
+    /// \brief Print the object with the given verbosity level to a FancyOStream.
+    ///
+    /// \param out [out] Output stream to which to print.  For
+    ///   verbosity levels VERB_LOW and lower, only the process with
+    ///   rank 0 ("Proc 0") in the MultiVector's communicator prints.
+    ///   For verbosity levels strictly higher than VERB_LOW, all
+    ///   processes in the communicator need to be able to print to
+    ///   the output stream.
+    ///
+    /// \param verbLevel [in] Verbosity level.  The default verbosity
+    ///   (verbLevel=VERB_DEFAULT) is VERB_LOW.
+    ///
+    /// The amount and content of what this method prints depends on
+    /// the verbosity level.  In the list below, each higher level
+    /// includes all the content of the previous levels, as well as
+    /// its own content.
+    ///
+    /// - VERB_LOW: Only Proc 0 prints; it prints the same thing as \c
+    ///   description().
+    /// - VERB_MEDIUM: Each process prints its local length (the
+    ///   number of rows that it owns).
+    /// - VERB_HIGH: Each process prints whether the multivector has
+    ///   constant stride (see \c isConstantStride()), and if so, what
+    ///   that stride is.  (Stride may differ on different processes.)
+    /// - VERB_EXTREME: Each process prints the values in its local
+    ///   part of the multivector.  This will print out as many rows
+    ///   of data as the global number of rows in the multivector, so
+    ///   beware.
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
     //@}

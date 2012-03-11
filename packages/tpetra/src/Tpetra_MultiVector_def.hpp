@@ -1774,78 +1774,69 @@ namespace Tpetra {
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
     using std::endl;
     using std::setw;
+    using Teuchos::ArrayRCP;
+    using Teuchos::RCP;
     using Teuchos::VERB_DEFAULT;
     using Teuchos::VERB_NONE;
     using Teuchos::VERB_LOW;
     using Teuchos::VERB_MEDIUM;
     using Teuchos::VERB_HIGH;
     using Teuchos::VERB_EXTREME;
-    Teuchos::EVerbosityLevel vl = verbLevel;
-    if (vl == VERB_DEFAULT) vl = VERB_LOW;
-    Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getMap()->getComm();
-    const int myImageID = comm->getRank(),
-              numImages = comm->getSize();
-    size_t width = 1;
-    for (size_t dec=10; dec<getGlobalLength(); dec *= 10) {
-      ++width;
-    }
-    Teuchos::OSTab tab(out);
+
+    // Set default verbosity if applicable.
+    const Teuchos::EVerbosityLevel vl = 
+      (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
+
+    RCP<const Teuchos::Comm<int> > comm = this->getMap()->getComm();
+    const int myImageID = comm->getRank();
+    const int numImages = comm->getSize();
+
     if (vl != VERB_NONE) {
-      // VERB_LOW and higher prints description()
-      if (myImageID == 0) out << this->description() << std::endl; 
+      // Don't set the tab level unless we're printing something.
+      Teuchos::OSTab tab (out);
+
+      if (myImageID == 0) { // >= VERB_LOW prints description()
+	out << this->description() << endl; 
+      }
       for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
         if (myImageID == imageCtr) {
           if (vl != VERB_LOW) {
-            // VERB_MEDIUM and higher prints getLocalLength()
-            out << "node " << setw(width) << myImageID << ": local length=" << getLocalLength();
+	    // At verbosity > VERB_LOW, each process prints something.
+            out << "Process " << myImageID << ":" << endl;
+
+	    Teuchos::OSTab procTab (out);
+            // >= VERB_MEDIUM: print the local vector length.
+	    out << "local length=" << getLocalLength();
             if (vl != VERB_MEDIUM) {
-              // VERB_HIGH and higher prints isConstantStride() and getStride()
-              if (isConstantStride()) out << ", constant stride=" << getStride() << endl;
-              else out << ", non-constant stride" << endl;
-              if (vl == VERB_EXTREME && getLocalLength() > 0) {
-                Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
-                if (isConstantStride()) {
-                  KOKKOS_NODE_TRACE("MultiVector::describe()")
-                  Teuchos::ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(
-                                          getLocalLength()+getStride()*(getNumVectors()-1), 
-                                          MVT::getValues(lclMV_) );
-                  // VERB_EXTREME prints values
-                  for (size_t i=0; i<getLocalLength(); ++i) {
-                    out << setw(width) << this->getMap()->getGlobalElement(i) << ": ";
-                    for (size_t j=0; j<getNumVectors(); ++j) {
-                      out << myview[j*getStride()] << "  ";
-                    }
-                    ++myview;
-                    out << endl;
-                  }
-                  myview = Teuchos::null;
-                }
-                else {
-                  const size_t stride = MVT::getStride(lclMV_),
-                               rows   = MVT::getNumRows(lclMV_),
-                               cols   = MVT::getNumCols(lclMV_);
-                  KOKKOS_NODE_TRACE("MultiVector::describe()")
-                  Teuchos::ArrayRCP<const Scalar> myview = 
-                    node->template viewBuffer<Scalar>( rows + stride * (cols - 1), MVT::getValues(lclMV_) );
-                  // VERB_EXTREME prints values
-                  for (size_t i=0; i<getLocalLength(); ++i) {
-                    out << setw(width) << this->getMap()->getGlobalElement(i) << ": ";
-                    for (size_t j=0; j<getNumVectors(); ++j) {
-                      out << myview[whichVectors_[j]*stride + i] << "  ";
-                    }
-                    out << endl;
-                  }
-                  myview = Teuchos::null;
-                }
-              }
-            }
-            else {
+              // >= VERB_HIGH: print isConstantStride() and getStride()
+              if (isConstantStride()) {
+		out << ", constant stride=" << getStride() << endl;
+	      }
+              else {
+		out << ", not constant stride" << endl;
+	      }
+              if (vl == VERB_EXTREME) {
+		// VERB_EXTREME: print all the values in the multivector.
+		out << "Values:" << endl;
+		ArrayRCP<ArrayRCP<const Scalar> > X = this->get2dView();
+		for (size_t i = 0; i < getLocalLength(); ++i) {
+		  for (size_t j = 0; j < getNumVectors(); ++j) {
+		    out << X[j][i];
+		    if (j < getNumVectors() - 1) {
+		      out << " ";
+		    }
+		  } // for each column
+		  out << endl;
+		} // for each row
+	      } // if vl == VERB_EXTREME
+            } // if (vl != VERB_MEDIUM)
+            else { // vl == VERB_LOW
               out << endl;
             }
-          }
-        }
-      }
-    }
+          } // if vl != VERB_LOW
+        } // if it is my process' turn to print
+      } // for each process in the communicator
+    } // if vl != VERB_NONE
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
