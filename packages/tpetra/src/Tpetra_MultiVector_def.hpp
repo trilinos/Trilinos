@@ -278,17 +278,28 @@ namespace Tpetra {
     // any other error will be caught by Teuchos
     TEUCHOS_TEST_FOR_EXCEPTION(permuteToLIDs.size() != permuteFromLIDs.size(), std::runtime_error,
         "Tpetra::MultiVector::copyAndPermute(): permuteToLIDs and permuteFromLIDs must have the same size.");
-    // one vector at a time
     Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
     const size_t numCols = getNumVectors();
-    // Get a host view of the local multivector data.
+
+    // Copy the vectors one at a time.  This works whether or not the
+    // multivectors have constant stride.
     for (size_t j = 0; j < numCols; ++j) {
-      // The first numImportIDs GIDs are the same between source and target,
-      // We can just copy them
+      // Get host views of the current source and destination column.
+      //
+      // FIXME (mfh 10 Mar 2012) Copying should really be done on the
+      // device.  There's no need to bring everything back to the
+      // host, copy there, and then copy back.
       ArrayRCP<const Scalar> srcptr = sourceMV.getSubArrayRCP(sourceMV.cview_,j);
       ArrayRCP<      Scalar> dstptr =          getSubArrayRCP(ncview_,j);
+
+      // The first numImportIDs IDs are the same between source and
+      // target, so we can just copy the data.  (This favors faster
+      // contiguous access whenever we can do it.)
       std::copy(srcptr,srcptr+numSameIDs,dstptr);
-      // next, do permutations
+
+      // For the remaining GIDs, execute the permutations.  This may
+      // involve noncontiguous access of both source and destination
+      // vectors, depending on the LID lists.
       for (pTo = permuteToLIDs.begin(), pFrom = permuteFromLIDs.begin();
            pTo != permuteToLIDs.end(); ++pTo, ++pFrom) {
         dstptr[*pTo] = srcptr[*pFrom];
@@ -304,28 +315,35 @@ namespace Tpetra {
           Teuchos::Array<Scalar> &exports,
           const Teuchos::ArrayView<size_t> &numExportPacketsPerLID,
           size_t& constantNumPackets,
-          Distributor & /* distor */ ) {
-    const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &sourceMV = dynamic_cast<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &>(sourceObj);
+          Distributor & /* distor */ ) 
+  {
+    using Teuchos::as;
+    using Teuchos::Array;
     using Teuchos::ArrayView;
     using Teuchos::ArrayRCP;
+
+    const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &sourceMV = dynamic_cast<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &>(sourceObj);
+
     /* The layout in the export for MultiVectors is as follows:
        exports = { all of the data from row exportLIDs.front() ; 
                    ....
                    all of the data from row exportLIDs.back() }
       this doesn't have the best locality, but is necessary because the data for a Packet
       (all data associated with an LID) is required to be contiguous */
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<int>(numExportPacketsPerLID.size()) != exportLIDs.size(), std::runtime_error,
-        "Tpetra::MultiVector::packAndPrepare(): size of numExportPacketsPerLID buffer should be the same as exportLIDs.");
+    TEUCHOS_TEST_FOR_EXCEPTION(as<int>(numExportPacketsPerLID.size()) != exportLIDs.size(), 
+      std::runtime_error, "Tpetra::MultiVector::packAndPrepare(): size of num"
+      "ExportPacketsPerLID buffer should be the same as exportLIDs.  numExport"
+      "PacketsPerLID.size() = " << numExportPacketsPerLID.size() << ", but "
+      "exportLIDs.size() = " << exportLIDs.size() << ".");
     const KMV &srcData = sourceMV.lclMV_;
-    const size_t numCols = sourceMV.getNumVectors(),
-                  stride = MVT::getStride(srcData);
+    const size_t numCols = sourceMV.getNumVectors();
+    const size_t stride = MVT::getStride(srcData);
     constantNumPackets = numCols;
     exports.resize(numCols*exportLIDs.size());
     typename ArrayView<const LocalOrdinal>::iterator idptr;
-    typename Teuchos::Array<Scalar>::iterator expptr;
+    typename Array<Scalar>::iterator expptr;
     expptr = exports.begin();
 
-    Teuchos::RCP<Node> node = MVT::getNode(srcData);
     if (sourceMV.isConstantStride()) {
       size_t i = 0;
       for (idptr = exportLIDs.begin(); idptr != exportLIDs.end(); ++idptr, ++i) {
@@ -351,17 +369,21 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::unpackAndCombine(
-                  const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
-                  const Teuchos::ArrayView<const Scalar> &imports,
-                  const Teuchos::ArrayView<size_t> &numPacketsPerLID,
-                  size_t constantNumPackets,
-                  Distributor & /* distor */,
-                  CombineMode CM) {
-    const std::string tfecfFuncName("unpackAndCombine()");
-    typedef ScalarTraits<Scalar> SCT;
+  void 
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
+		    const Teuchos::ArrayView<const Scalar> &imports,
+		    const Teuchos::ArrayView<size_t> &numPacketsPerLID,
+		    size_t constantNumPackets,
+		    Distributor & /* distor */,
+		    CombineMode CM) 
+  {
+    using Teuchos::as;
     using Teuchos::ArrayView;
     using Teuchos::ArrayRCP;
+    typedef Teuchos::ScalarTraits<Scalar> SCT;
+
+    const std::string tfecfFuncName("unpackAndCombine()");
     /* The layout in the export for MultiVectors is as follows:
        imports = { all of the data from row exportLIDs.front() ; 
                    ....
@@ -369,24 +391,29 @@ namespace Tpetra {
       this doesn't have the best locality, but is necessary because the data for a Packet
       (all data associated with an LID) is required to be contiguous */
 #ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(imports.size()) != getNumVectors()*importLIDs.size(), std::runtime_error,
-        ": sizing of imports buffer should be appropriate for the amount of data to be exported.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(as<size_t>(imports.size()) != getNumVectors()*importLIDs.size(), std::runtime_error,
+        ": Imports buffer size must be consistent with the amount of data to be exported.");
 #endif
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(constantNumPackets) == 0u, std::runtime_error,
-        ": 'constantNumPackets' input argument should be nonzero.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(as<size_t>(constantNumPackets) == as<size_t>(0), std::runtime_error,
+        ": constantNumPackets input argument must be nonzero.");
 
-    const size_t myStride = MVT::getStride(lclMV_),
-                 numVecs  = getNumVectors();
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(numPacketsPerLID.size()) != Teuchos::as<size_t>(importLIDs.size()), std::runtime_error,
-        ": 'numPacketsPerLID' must have same length as importLIDs.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(numVecs) != Teuchos::as<size_t>(constantNumPackets), std::runtime_error,
-        ": 'constantNumPackets' must equal numVecs.");
+    const size_t myStride = MVT::getStride(lclMV_);
+    const size_t numVecs  = getNumVectors();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(as<size_t>(numPacketsPerLID.size()) != as<size_t>(importLIDs.size()), std::runtime_error,
+        ": numPacketsPerLID must have the same length as importLIDs.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(as<size_t>(numVecs) != as<size_t>(constantNumPackets), std::runtime_error,
+        ": constantNumPackets must equal numVecs.");
 
-    Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
     if (numVecs > 0 && importLIDs.size()) {
       typename ArrayView<const       Scalar>::iterator impptr;
       typename ArrayView<const LocalOrdinal>::iterator  idptr;
       impptr = imports.begin();
+      // NOTE (mfh 10 Mar 2012) If you want to implement custom
+      // combine modes, start editing here.  Also, if you trust
+      // inlining, it would be nice to condense this code by using a
+      // binary function object f:
+      //
+      // ncview_[...] = f (ncview_[...], *impptr++);
       if (CM == INSERT || CM == REPLACE) {
         if (isConstantStride()) {
           for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr) {
@@ -449,27 +476,27 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   inline size_t MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNumVectors() const {
-    size_t ret;
     if (isConstantStride()) {
-      ret = MVT::getNumCols(lclMV_);
+      return MVT::getNumCols(lclMV_);
     }
     else {
-      ret = whichVectors_.size();
+      return whichVectors_.size();
     }
-    return ret;
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot(
-      const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, 
-      const Teuchos::ArrayView<Scalar> &dots) const 
+  void 
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, 
+       const Teuchos::ArrayView<Scalar> &dots) const 
   {
-    const std::string tfecfFuncName("dot()");
     using Teuchos::ArrayRCP;
     using Teuchos::arcp_const_cast;
-    const size_t myLen   = getLocalLength(),
-                 numVecs = getNumVectors();
+
+    const std::string tfecfFuncName("dot()");
+    const size_t myLen   = getLocalLength();
+    const size_t numVecs = getNumVectors();
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*A.getMap()), std::runtime_error,
         ": MultiVectors do not have compatible Maps:" << std::endl
@@ -488,11 +515,11 @@ namespace Tpetra {
     }
     else {
       KMV v(MVT::getNode(lclMV_)), a(MVT::getNode(lclMV_));
-      ArrayRCP<Scalar> vptr = arcp_const_cast<Scalar>(MVT::getValues(lclMV_)),
-                      avptr = arcp_const_cast<Scalar>(MVT::getValues(A.lclMV_));
+      ArrayRCP<Scalar> vptr  = arcp_const_cast<Scalar>(MVT::getValues(lclMV_));
+      ArrayRCP<Scalar> avptr = arcp_const_cast<Scalar>(MVT::getValues(A.lclMV_));
       for (size_t j=0; j < numVecs; ++j) {
-        ArrayRCP<Scalar> vj =   getSubArrayRCP( vptr,j),
-                        avj = A.getSubArrayRCP(avptr,j);
+        ArrayRCP<Scalar> vj  =   getSubArrayRCP( vptr,j);
+	ArrayRCP<Scalar> avj = A.getSubArrayRCP(avptr,j);
         MVT::initializeValues(a,myLen, 1, avj, myLen);
         MVT::initializeValues(v,myLen, 1,  vj, myLen);
         dots[j] = MVT::Dot((const KMV&)v,(const KMV &)a);
@@ -723,16 +750,17 @@ namespace Tpetra {
   }
 
 
-  //! Replace the underlying Map with a compatible one.
-  //! This method does not perform a redistribution of data, just an implicit permutation.
-  //! The new map must have the same number of GIDs on each process as the old map, although this method does not explicitly check this property.
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-  replaceMap (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map) {
+  void 
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  replaceMap (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map) 
+  {
+#ifdef HAVE_TEUCHOS_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(!this->getMap()->isCompatible(*map), 
       std::invalid_argument, "Tpetra::MultiVector::replaceMap(): The input map "
       "is not compatible with this multivector's current map.  The replaceMap() "
       "method is not for data redistribution; use Import or Export for that.");
+#endif // HAVE_TEUCHOS_DEBUG
     this->map_ = map;
   }
 

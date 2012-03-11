@@ -137,9 +137,14 @@ namespace Tpetra {
     /// permutation, without actually moving data.  This only works if
     /// the input Map is compatible (in the sense of \c
     /// Map::isCompatible()) with the multivector's current Map, so
-    /// that the number of rows per process does not change.  If the
-    /// input Map is <i>not</i> compatible, then this method throws \c
-    /// std::invalid_argument.
+    /// that the number of rows per process does not change.  
+    ///
+    /// We only check for compatibility in debug mode (when Trilinos
+    /// was built with the Trilinos_ENABLE_DEBUG option set).  In that
+    /// case, if the input Map is <i>not</i> compatible, then this
+    /// method throws \c std::invalid_argument.  We only check in
+    /// debug mode because the check requires communication
+    /// (\f$O(1)\f$ all-reduces).
     ///
     /// \note This method is <i>not</i> for arbitrary data
     ///   redistribution.  If you need to move data around, use \c
@@ -148,11 +153,8 @@ namespace Tpetra {
     /// \note This method must always be called as a collective
     ///   operation on all processes over which the multivector is
     ///   distributed.  This is because the method reserves the right
-    ///   to check for compatibility of the two Maps.  It will do this
-    ///   at least in Tpetra debug mode (Boolean configure-time option
-    ///   Tpetra_ENABLE_DEBUG set), if not always.  That check
-    ///   requires a constant number of reductions over all the
-    ///   processes in the multivector's current Map's communicator.
+    ///   to check for compatibility of the two Maps, at least in
+    ///   debug mode.
     void replaceMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map);
 
     //! Instruct a local (non-distributed) MultiVector to sum values across all nodes.
