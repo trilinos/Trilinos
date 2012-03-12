@@ -90,7 +90,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
   if(fixedBlkSize_ == true  && blockdim > 1)                  bDoAmalgamation = true; // constant block size > 1
 
   if (bDoAmalgamation) {
-    FactoryMonitor m(*this, "Amalgamate", currentLevel);
+    FactoryMonitor m2(*this, "Amalgamate", currentLevel);
     Amalgamate(A, blockdim, graph);
   } else {
     graph = rcp(new Graph(A->getCrsGraph(), "Graph of A"));
