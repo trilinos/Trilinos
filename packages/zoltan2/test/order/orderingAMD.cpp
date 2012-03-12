@@ -195,6 +195,8 @@ int main(int narg, char** arg)
   SparseMatrixAdapter adapter(origMatrix);
 
 #ifdef HAVE_ZOLTAN2_AMD
+#ifdef HAVE_ZOLTAN2_INST_DOUBLE_INT_INT
+
   params.set("order_method", "minimum_degree");
   params.set("order_package", "amd");
 
@@ -229,6 +231,7 @@ int main(int narg, char** arg)
   // Verify that checkPerm is a permutation
   testReturn = validatePerm(checkLength, checkPerm);
 
+#endif // double int int
 #endif // HAVE_ZOLTAN2_AMD
 
   if (me == 0) {
