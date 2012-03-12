@@ -122,8 +122,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 IF(Panzer_ENABLE_PAPI)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    papi
-    SOURCES papi.cpp ${UNIT_TEST_DRIVER}
+    papi_raw
+    SOURCES papi_raw.cpp ${UNIT_TEST_DRIVER}
+    NUM_MPI_PROCS 1
+    )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    papi_decorator
+    SOURCES papi_decorator.cpp ${UNIT_TEST_DRIVER}
     NUM_MPI_PROCS 1
     )
 ENDIF()

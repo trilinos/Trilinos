@@ -19,7 +19,20 @@ namespace panzer {
       long int rt_rus;
       long int rt_ins;
       long int rt_fp;
-      long int rt_dcm; 
+      long int rt_dcm;
+
+      InternalCounter() : 
+	hw_counters(0),
+	rcy(0),
+	rus(0),
+	ucy(0),
+	uus(0),
+	rt_rus(0),
+	rt_ins(0),
+	rt_fp(0),
+	rt_dcm(0)
+      { }
+
     };
     
   public:

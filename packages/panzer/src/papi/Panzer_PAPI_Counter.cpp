@@ -22,15 +22,15 @@ namespace panzer {
   {
     InternalCounter& c = m_counters[m_name];
     
-    panzer::krp_init_sum_(&m_rank,m_comm,&c.hw_counters,&c.rcy,&c.rus,&c.ucy,&c.uus,&c.rt_rus,&c.rt_ins,&c.rt_fp,&c.rt_dcm);
-
+    //panzer::krp_rpt_init_sum_(&m_rank,m_comm,&c.hw_counters,&c.rcy,&c.rus,&c.ucy,&c.uus,&c.rt_rus,&c.rt_ins,&c.rt_fp,&c.rt_dcm,&c.uus);
+    panzer::krp_rpt_init_sum_(&m_rank,m_comm,&c.hw_counters,&c.rcy,&c.rus,&c.ucy,&c.uus,&c.rt_rus,&c.rt_ins,&c.rt_fp,&c.rt_dcm,const_cast<char*>(m_name.c_str()));
   }
 
   void PAPICounter::report(std::ostream& os)
   {
-    InternalCounter& c = m_counters[m_name];
+//     InternalCounter& c = m_counters[m_name];
     
-    panzer::krp_rpt_(&m_rank,m_comm,&c.hw_counters,&c.rcy,&c.rus,&c.ucy,&c.uus,const_cast<char*>(m_name.c_str()));
+//     panzer::krp_rpt_(&m_rank,m_comm,&c.hw_counters,&c.rcy,&c.rus,&c.ucy,&c.uus,const_cast<char*>(m_name.c_str()));
   }
 
 }
