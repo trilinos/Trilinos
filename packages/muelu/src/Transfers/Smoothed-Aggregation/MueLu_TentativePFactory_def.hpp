@@ -20,7 +20,8 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TentativePFactory(RCP<const FactoryBase> aggregatesFact, RCP<const FactoryBase> nullspaceFact, RCP<const FactoryBase> AFact)
     : aggregatesFact_(aggregatesFact), nullspaceFact_(nullspaceFact), AFact_(AFact),
-      QR_(false) {
+      QR_(false),
+      domainGidOffset_(0) {
   }
  
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -63,6 +64,17 @@ namespace MueLu {
     coarseLevel.Set("Nullspace", coarseNullspace, nullspaceFact_.get()); //FIXME !!!!
     //coarseLevel.Set("Nullspace", coarseNullspace, this);
     coarseLevel.Set("P", Ptentative, this);
+  }
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetDomainMapOffset(GlobalOrdinal offset) {
+    TEUCHOS_TEST_FOR_EXCEPTION(offset < 0, Exceptions::RuntimeError, "MueLu::TentativePFactory::SetDomainMapOffset: domain map offset for coarse gids of tentative prolongator must not be smaller than zero. Error.");
+    domainGidOffset_ = offset;
+  }
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  GlobalOrdinal TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetDomainMapOffset() const {
+    return domainGidOffset_;
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -139,12 +151,35 @@ namespace MueLu {
     ArrayRCP<SC> tau(NSDim);                // (out) scalar factors of elementary reflectors, input to DORGQR
     LO           info=0;                      // (out) =0: success; =i, i<0: i-th argument has illegal value
 
+    // build coarse level maps (= domain map of transfer operator)
+    RCP<const Map > coarseMap = Teuchos::null;
+    if (domainGidOffset_ == 0) {
+      // default: no offset for domain gids.
+      // the gids for the domain Dofs are contiguously numbered starting from zero and equally distributed over all procs
+      coarseMap = MapFactory::Build(fineA.getRowMap()->lib(),
+                                                    Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), nCoarseDofs,
+                                                    indexBase, fineA.getRowMap()->getComm()); //JG:Xpetra::global_size_t>?
+    } else {
+      // the number of domain dof gids starts from domainGidOffset_ > 0
+      // first build a tentative coarse Dof map (equally distributed, starting with Gids beginning with 0)
+      RCP<const Map > tentativecoarseMap = MapFactory::Build(fineA.getRowMap()->lib(),
+                                                    Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), nCoarseDofs,
+                                                    indexBase, fineA.getRowMap()->getComm()); //JG:Xpetra::global_size_t>?
+
+      // use same distribution as for tentativecoarseMap. shift Gids by adding domain gid offset
+      std::vector<GO> globalDomainIdsForPtent(tentativecoarseMap->getNodeNumElements());
+      for(GO dolid = 0; dolid < Teuchos::as<GO>(tentativecoarseMap->getNodeNumElements()); dolid++) {
+        globalDomainIdsForPtent[dolid] = tentativecoarseMap->getGlobalElement(dolid) + domainGidOffset_;
+      }
+      Teuchos::ArrayView<GO> domainGidsForPtent(&globalDomainIdsForPtent[0],globalDomainIdsForPtent.size());
+      coarseMap = MapFactory::Build(fineA.getRowMap()->lib(),
+                                                    tentativecoarseMap->getGlobalNumElements(),//Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                                    domainGidsForPtent,
+                                                    indexBase,
+                                                    fineA.getRowMap()->getComm()); //JG:Xpetra::global_size_t>?
+    }
+
     //Allocate storage for the coarse nullspace.
-
-    RCP<const Map > coarseMap = MapFactory::Build(fineA.getRowMap()->lib(),
-                                                  Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), nCoarseDofs,
-                                                  indexBase, fineA.getRowMap()->getComm()); //JG:Xpetra::global_size_t>?
-
     coarseNullspace = MultiVectorFactory::Build(coarseMap,NSDim);
 
     ArrayRCP< ArrayRCP<SC> > coarseNS(NSDim);

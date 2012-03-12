@@ -42,7 +42,9 @@ namespace MueLu {
     //@{
     
     /*! @brief Constructor.
-      \param AggregationFact -- (optional) factory that creates aggregates.
+      \param aggregatesFact -- (optional) factory that creates aggregates.
+      \param nullspaceFact -- (optional) factory that creates (fine level) null space approximation
+      \param AFact -- (optional) factory that creates level matrix A
     */
     TentativePFactory(RCP<const FactoryBase> aggregatesFact = Teuchos::null, RCP<const FactoryBase> nullspaceFact = Teuchos::null, RCP<const FactoryBase> AFact = Teuchos::null);
     
@@ -75,6 +77,20 @@ namespace MueLu {
 
     //@}
 
+    //! @name Get/Set functions
+
+    /*! @brief SetDomainMapOffset
+     sets offset for domain map Gids in tentative prolongation operator.
+     offset must not be smaller than zero. Note: Direct solvers (Amesos/Amesos2) are not properly working with offset > 0.
+     */
+    void SetDomainMapOffset(GlobalOrdinal offset);
+
+    /*! @brief GetDomainMapOffset
+     * returns offset of domain map.
+     */
+    GlobalOrdinal GetDomainMapOffset() const;
+
+    //@}
   private:
     //! @name Static methods.
     //@{
@@ -129,6 +145,8 @@ namespace MueLu {
     RCP<const FactoryBase> AFact_;          //! Define which matrix A is used in this factory
 
     bool QR_; //! use QR decomposition for improving nullspace information per default
+
+    GO domainGidOffset_; //! offset for domain gids (coarse gids) of tentative prolongator  (default = 0). The GIDs for the domain dofs of Ptent start with domainGidOffset, are contiguous and distributed equally over the procs (unless some reordering is done).
 
   }; //class TentativePFactory
 
