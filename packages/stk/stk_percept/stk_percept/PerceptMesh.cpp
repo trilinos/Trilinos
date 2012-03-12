@@ -2139,6 +2139,51 @@ namespace stk {
 
 
 
+    double PerceptMesh::edge_length_ave(const stk::mesh::Entity &entity)
+    {
+      stk::mesh::FieldBase &coord_field = *getCoordinatesField();
+      const CellTopologyData * const cell_topo_data = PerceptMesh::get_cell_topology(entity);
+
+      shards::CellTopology cell_topo(cell_topo_data);
+
+      unsigned spaceDim = cell_topo.getDimension();
+
+      const stk::mesh::Entity & elem = entity;
+      const stk::mesh::PairIterRelation elem_nodes = elem.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+
+      double edge_length_ave=0.0;
+      double min_edge_length = -1.0;
+      double max_edge_length = -1.0;
+      for (unsigned iedgeOrd = 0; iedgeOrd < cell_topo_data->edge_count; iedgeOrd++)
+        {
+          unsigned in0 = cell_topo_data->edge[iedgeOrd].node[0];
+          unsigned in1 = cell_topo_data->edge[iedgeOrd].node[1];
+          double * node_coord_data_0 = (double*)stk::mesh::field_data( coord_field , *elem_nodes[in0].entity());
+          double * node_coord_data_1 = (double*)stk::mesh::field_data( coord_field , *elem_nodes[in1].entity());
+
+          double edge_length = 0.0;
+          for (unsigned iSpaceDimOrd = 0; iSpaceDimOrd < spaceDim; iSpaceDimOrd++)
+            {
+              edge_length +=
+                (node_coord_data_0[iSpaceDimOrd]-node_coord_data_1[iSpaceDimOrd])*
+                (node_coord_data_0[iSpaceDimOrd]-node_coord_data_1[iSpaceDimOrd]);
+            }
+          edge_length = std::sqrt(edge_length);
+          edge_length_ave += edge_length / ((double)cell_topo_data->edge_count);
+          if(iedgeOrd == 0)
+            {
+              min_edge_length = edge_length;
+              max_edge_length = edge_length;
+            }
+          else
+            {
+              min_edge_length = std::min(min_edge_length, edge_length);
+              max_edge_length = std::max(max_edge_length, edge_length);
+            }
+        }
+      return edge_length_ave;
+    }
+
     // static
     void PerceptMesh::
     findMinMaxEdgeLength(const stk::mesh::Bucket &bucket,  stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,

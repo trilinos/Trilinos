@@ -27,9 +27,12 @@ class MeshGeometry
 public:
   typedef std::pair<int, size_t> CacheBucketClassifyValueType;
   typedef boost::unordered_map<const stk::mesh::Bucket *, CacheBucketClassifyValueType > CacheBucketClassifyType;
+  typedef boost::unordered_map<size_t, double> MaxDeltaOnGeometryType;
 
-    MeshGeometry(GeometryKernel* geom, bool cache_bucket_selectors_is_active=false);
+  MeshGeometry(GeometryKernel* geom, double doCheckMovement=0.0, bool cache_bucket_selectors_is_active=false, bool doPrint=false);
     ~MeshGeometry();
+
+  void print_node_movement_summary();
 
     void add_evaluator(GeometryEvaluator* evaluator);
     void add_evaluators(std::vector<GeometryEvaluator*> evaluators);
@@ -61,8 +64,12 @@ protected:
     GeometryKernel* geomKernel;
     CacheBucketClassifyType m_cache_bucket_classify;
 
+  double m_doCheckMovement;
+  MaxDeltaOnGeometryType m_checkMovementMap;
+
 public:
   bool m_cache_classify_bucket_is_active;
+  bool m_doPrint;
 protected:
     void snap_point_to_geometry(stk::mesh::Entity *node);
 
@@ -86,6 +93,7 @@ private:
                     Entity &node,
                     size_t evalautor_idx,
                     std::vector<double>& normal);
+
 };
 
 #endif // MESHGEOMETRY_HPP

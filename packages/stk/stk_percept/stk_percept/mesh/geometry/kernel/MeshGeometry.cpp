@@ -1,13 +1,13 @@
 #include "MeshGeometry.hpp"
 
-MeshGeometry::MeshGeometry(GeometryKernel* geom, bool cache_classify_bucket_is_active)
+MeshGeometry::MeshGeometry(GeometryKernel* geom, double doCheckMovement, bool cache_classify_bucket_is_active, bool doPrint) 
+  : m_doCheckMovement(doCheckMovement),  m_cache_classify_bucket_is_active(cache_classify_bucket_is_active), m_doPrint(doPrint)
 {
   geomKernel = geom;
   mDbgNodeCoords[0] = -0.00477133907617983;
   mDbgNodeCoords[1] = -0.00477133907617983;
   mDbgNodeCoords[2] =  0.260484055257467;
 
-  m_cache_classify_bucket_is_active = cache_classify_bucket_is_active;
 }
 
 MeshGeometry::~MeshGeometry()
@@ -283,6 +283,7 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh, std::vector<stk::
   }
 }
 
+
 void MeshGeometry::snap_node
 (
   PerceptMesh *eMesh,
@@ -302,7 +303,9 @@ void MeshGeometry::snap_node
 
     double * coord = stk::mesh::field_data( *coordField , node );
     double delta[3] = {coord[0], coord[1], coord[2]};
-    bool doPrint = DEBUG_GEOM_SNAP;
+    double coord_0[3] = {coord[0], coord[1], coord[2]};
+    bool doPrint = m_doPrint; //DEBUG_GEOM_SNAP
+    bool doCheckMovement = m_doCheckMovement != 0.0;
     if (doPrint)
     {
       std::string str = geomKernel->get_attribute(evaluator_idx);
@@ -317,24 +320,69 @@ void MeshGeometry::snap_node
 
     geomKernel->snap_to(coord, geomEvaluators[evaluator_idx]->mGeometry);
 
-    if (doPrint)
+    if (doPrint || doCheckMovement)
     {
       std::string str = geomKernel->get_attribute(evaluator_idx);
       delta[0] = coord[0] - delta[0];
       delta[1] = coord[1] - delta[1];
       delta[2] = coord[2] - delta[2];
       double dtot = std::sqrt(delta[0]*delta[0]+delta[1]*delta[1]+delta[2]*delta[2]);
-      std::cout << " coords af= " << coord[0] << " " << coord[1] << " " << coord[2] 
-                << " delta= " << delta[0] << " " << delta[1] << " " << delta[2] 
-                << " deltaTot= " << dtot
-                << " " << str.substr(6,5)
-                << std::endl;
+      if(doPrint)
+        std::cout << " coords af= " << coord[0] << " " << coord[1] << " " << coord[2] 
+                  << " delta= " << delta[0] << " " << delta[1] << " " << delta[2] 
+                  << " deltaTot= " << dtot
+                  << " block= " << str
+                  << std::endl;
+      if (doCheckMovement)
+        {
+          double edge_length_ave=0.0;
+          if (m_doCheckMovement < 0.0)
+            {
+              // get edge lengths
+              stk::mesh::PairIterRelation node_elements = node.relations(eMesh->element_rank());
+              for(unsigned ii=0; ii < node_elements.size(); ii++)
+                {
+                  edge_length_ave += eMesh->edge_length_ave(*node_elements[ii].entity());
+                }
+              edge_length_ave /= ((double)node_elements.size());
+            }
+          else
+            {
+              edge_length_ave = m_doCheckMovement;
+            }
+          double factor = 1.0;
+          if (dtot > edge_length_ave*factor)
+            {
+              m_checkMovementMap[evaluator_idx] = std::max(m_checkMovementMap[evaluator_idx], dtot);
+              const bool print_every = true;
+              if (print_every)
+                {
+                  std::cout << "big delta coords_0 = " << coord_0[0] << " " << coord_0[1] << " " << coord_0[2] 
+                            << " delta= " << delta[0] << " " << delta[1] << " " << delta[2] 
+                            << " coords_1= " << coord[0] << " " << coord[1] << " " << coord[2]
+                            << " deltaMag= " << dtot
+                            << " block= " << str
+                            << std::endl;
+                }
+
+            }
+        }
+
       //if (str.substr(6,5)=="20004") block_20004
       //{
       //  std::cout << "found 20004" << std::endl;
       //}
     }
   }
+}
+
+void MeshGeometry::print_node_movement_summary()
+{
+  //if (m_checkMovementMap.size()) std::cout << "MeshGeometry::print_node_movement_summary, size= " << m_checkMovementMap.size() << std::endl;
+  for (MaxDeltaOnGeometryType::iterator iter = m_checkMovementMap.begin(); iter != m_checkMovementMap.end(); ++iter)
+    {
+      std::cout << "MeshGeometry::print_node_movement_summary, delta= " << iter->second << " on geometry= " << iter->first << " = " << geomKernel->get_attribute(iter->first) << std::endl;
+    }
 }
 
 void MeshGeometry::normal_at
