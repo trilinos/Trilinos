@@ -19,10 +19,6 @@
 
 using namespace std;
 
-// TODO the ordering, coloring and non-graph partitioning parameters
-//    and many documentation strings
-// TODO: show an example of create a string parameter, etc
-
 namespace Zoltan2 {
 
 /*! \brief  Create a list of all parameters.
@@ -67,7 +63,8 @@ namespace Zoltan2 {
  * an error with an explanation if the parameter is invalid.
  *
  *  \todo Should all of our parameter values be strings, in order
-            to support reading in parameters from a file?
+ *          to support reading in parameters from a file?
+ *  \todo Many parameters remain to be added here.
  */
 
 void createAllParameters(Teuchos::ParameterList &pList)
@@ -634,15 +631,14 @@ void createAllParameters(Teuchos::ParameterList &pList)
   ////////// topLevel/partitioning/geometric/bisection_num_test_cuts
   parameterName = string("bisection_num_test_cuts");
 
-  anyNumValidatorP = rcp(new AnyNumberParameterEntryValidator);
+  intValidatorP= rcp(new EnhancedNumberValidator(1,250,1));
 
   docString.str("");
-  anyNumValidatorP->printDoc(
+  intValidatorP->printDoc(
    "Experimental: number of test cuts to do simultaneously (default is 1)\n",
       docString);
 
-  geom.set<string>(parameterName, "0", docString.str(),
-    anyNumValidatorP);
+  geom.set<string>(parameterName, "1", docString.str(), intValidatorP);
 
   ///////////////////////////////////////////////////////////
   // LEVEL: Sub sub list, hypergraph partitioning parameters
