@@ -83,6 +83,7 @@ main (int argc, char *argv[])
   int unknownsPerNode = 20; // number of unknowns per process
   int unknownsPerElt = 3; // number of unknowns per (overlapping) element
   int numCols = 1;
+  bool verbose = false;
 
   Teuchos::CommandLineProcessor cmdp (false, true);
   cmdp.setOption ("unknownsPerNode", &unknownsPerNode, 
@@ -91,6 +92,8 @@ main (int argc, char *argv[])
 		  "Number of unknowns per (overlapping) element.");
   cmdp.setOption ("numCols", &numCols, 
 		  "Number of columns in the multivector.  Must be positive.");
+  cmdp.setOption ("verbose", "quiet", &verbose, 
+		  "Whether to print verbose output.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return EXIT_FAILURE;
   }
@@ -106,9 +109,11 @@ main (int argc, char *argv[])
       global_ordinal_type, 
       node_type> (comm, node, as<size_t> (unknownsPerNode),
 		  as<global_ordinal_type> (unknownsPerElt), 
-		  as<size_t> (numCols));
+		  as<size_t> (numCols), 
+		  verbose);
     succeeded = true;
   } catch (std::exception& e) {
+    out << "MultiVectorFiller test threw an exception:  " << e.what() << endl;
     succeeded = false;
   }
 

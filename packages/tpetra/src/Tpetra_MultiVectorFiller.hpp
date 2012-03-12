@@ -393,7 +393,9 @@ namespace {
     ///
     /// \param map [in] Map over which to distribute the initial fill.
     ///   This need not be the same Map as that of the multivector
-    ///   output of \c globalAssemble().
+    ///   output of \c globalAssemble(), but the Map must have the
+    ///   same communicator as the multivector output of \c
+    ///   globalAssemble().
     ///
     /// \param numColumns [in] The (expected) number of columns in the
     ///   output multivector.  You can always change this later by
@@ -412,6 +414,96 @@ namespace {
       nonlocalIndices_ (numColumns),
       nonlocalValues_ (numColumns)
     {}
+
+    std::string 
+    description() const 
+    {
+      std::ostringstream oss;
+      oss << "Tpetra::MultiVectorFiller";
+      return oss.str();
+    }
+
+    void 
+    describe (Teuchos::FancyOStream& out, 
+	      const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const
+    {
+      using std::endl;
+      using Teuchos::Array;
+      using Teuchos::ArrayRCP;
+      using Teuchos::ArrayView;
+      using Teuchos::RCP;
+      using Teuchos::VERB_DEFAULT;
+      using Teuchos::VERB_NONE;
+      using Teuchos::VERB_LOW;
+      using Teuchos::VERB_MEDIUM;
+      using Teuchos::VERB_HIGH;
+      using Teuchos::VERB_EXTREME;
+
+      // Set default verbosity if applicable.
+      const Teuchos::EVerbosityLevel vl = 
+	(verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
+
+      RCP<const Teuchos::Comm<int> > comm = map_->getComm();
+      const int myImageID = comm->getRank();
+      const int numImages = comm->getSize();
+
+      if (vl != VERB_NONE) {
+	// Don't set the tab level unless we're printing something.
+	Teuchos::OSTab tab (out);
+
+	if (myImageID == 0) { // >= VERB_LOW prints description()
+	  out << this->description() << endl; 
+	}
+	for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
+	  if (myImageID == imageCtr) {
+	    if (vl != VERB_LOW) {
+	      // At verbosity > VERB_LOW, each process prints something.
+	      out << "Process " << myImageID << ":" << endl;
+
+	      Teuchos::OSTab procTab (out);
+	      // >= VERB_MEDIUM: print the local vector length.
+	      out << "local length=" << localVec_->getLocalLength();
+	      if (vl != VERB_MEDIUM) {
+		// >= VERB_HIGH: print isConstantStride() and getStride()
+		if (localVec_->isConstantStride()) {
+		  out << ", constant stride=" << localVec_->getStride() << endl;
+		}
+		else {
+		  out << ", not constant stride" << endl;
+		}
+		if (vl == VERB_EXTREME) {
+		  // VERB_EXTREME: print all the values in the multivector.
+		  out << "Local values:" << endl;
+		  ArrayRCP<ArrayRCP<const scalar_type> > X = localVec_->get2dView();
+		  for (size_t i = 0; i < localVec_->getLocalLength(); ++i) {
+		    for (size_t j = 0; j < localVec_->getNumVectors(); ++j) {
+		      out << X[j][i];
+		      if (j < localVec_->getNumVectors() - 1) {
+			out << " ";
+		      }
+		    } // for each column
+		    out << endl;
+		  } // for each row
+
+		  out << "Nonlocal indices and values:" << endl;
+		  for (size_t j = 0; j < nonlocalIndices_.size(); ++j) {
+		    ArrayView<const global_ordinal_type> inds = nonlocalIndices_[j]();
+		    ArrayView<const scalar_type> vals = nonlocalValues_[j]();
+
+		    for (typename ArrayView<const global_ordinal_type>::size_type k = 0; k < inds.size(); ++k) {
+		      out << "X(" << inds[k] << "," << j << ") = " << vals[k] << endl;
+		    }
+		  }
+		} // if vl == VERB_EXTREME
+	      } // if (vl != VERB_MEDIUM)
+	      else { // vl == VERB_LOW
+		out << endl;
+	      }
+	    } // if vl != VERB_LOW
+	  } // if it is my process' turn to print
+	} // for each process in the communicator
+      } // if vl != VERB_NONE
+    }
 
     //! All source indices (local and nonlocal) of the source Map, sorted and unique.
     Teuchos::Array<global_ordinal_type> 
@@ -605,10 +697,19 @@ namespace {
     {
       using Teuchos::ArrayRCP;
       using Teuchos::ArrayView;
+      using Teuchos::FancyOStream;
+      using Teuchos::getFancyOStream;
       using Teuchos::RCP;
+      using Teuchos::rcpFromRef;
+      using std::endl;
+
       typedef local_ordinal_type LO;
       typedef global_ordinal_type GO;
       typedef scalar_type ST;
+
+      RCP<FancyOStream> out = getFancyOStream (rcpFromRef (std::cout));
+      Teuchos::OSTab tab (out);
+      *out << "locallyAssemble:" << endl;
 
       RCP<const map_type> srcMap = X.getMap();
       ArrayView<const GO> localIndices = map_->getNodeElementList ();
@@ -643,6 +744,9 @@ namespace {
 	  X_j[rowIndX] = f (X_j[rowIndX], *valueIter);
 	}
       }
+
+      *out << "Locally assembled vector:" << endl;
+      X.describe (*out, Teuchos::VERB_EXTREME);
     }
 
     //! \c locallyAssemble() for the usual Tpetra::ADD combine mode.
@@ -821,6 +925,13 @@ namespace Tpetra {
     ///   before, then assume that X_out has the same Map as the
     ///   argument to the constructor of this object.
     void globalAssemble (MV& X_out, const bool forceReuseMap = false);
+
+    void 
+    describe (Teuchos::FancyOStream& out, 
+	      const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const
+    {
+      data_.describe (out, verbLevel);
+    }
 
     /// \brief Sum data into the multivector.
     ///
@@ -1065,7 +1176,7 @@ namespace Tpetra {
     
     // Do the Export.
     const Tpetra::CombineMode combineMode = Tpetra::ADD;
-    X_in->doExport (X_out, *exporter_, combineMode);
+    X_out.doExport (*X_in, *exporter_, combineMode);
   }
 
   namespace Test {
@@ -1095,16 +1206,20 @@ namespace Tpetra {
       static void 
       testSameMap (const Teuchos::RCP<const map_type>& targetMap, 
 		   const global_ordinal_type eltSize, // Must be odd
-		   const size_t numCols)
+		   const size_t numCols,
+		   const bool verbose)
       {
 	using Teuchos::Array;
 	using Teuchos::ArrayRCP;
 	using Teuchos::ArrayView;
 	using Teuchos::as;
 	using Teuchos::Comm;
+	using Teuchos::FancyOStream;
+	using Teuchos::getFancyOStream;
 	using Teuchos::ptr;
 	using Teuchos::RCP;
 	using Teuchos::rcp;
+	using Teuchos::rcpFromRef;
 	using Teuchos::REDUCE_SUM;
 	using Teuchos::reduceAll;
 	using std::cerr;
@@ -1119,9 +1234,11 @@ namespace Tpetra {
 				   "Element size (eltSize) argument must be odd.");
 	TEUCHOS_TEST_FOR_EXCEPTION(numCols == 0, std::invalid_argument,
 				   "Number of columns (numCols) argument must be nonzero.");
+	RCP<FancyOStream> out = getFancyOStream (rcpFromRef (std::cout));
 
 	//RCP<MV> X = rcp (new MV (targetMap, numCols));
 
+	const GO indexBase = targetMap->getIndexBase();
 	Array<GO> rows (eltSize);
 	Array<ST> values (eltSize);
 	std::fill (values.begin(), values.end(), STS::one());
@@ -1153,18 +1270,36 @@ namespace Tpetra {
 	    for (GO k = 0; k < len; ++k) {
 	      rows[k] = start + k;
 	    }
+	    if (verbose) {
+	      *out << "Inserting: " 
+		   << Teuchos::toString (rows.view(0,len)) << ", "
+		   << Teuchos::toString (values.view(0, len)) << std::endl;
+	    }
 	    filler->sumIntoGlobalValues (rows.view(0, len), j, values.view(0, len));
 	  }
+	}
+
+	if (verbose) {
+	  *out << "Filler:" << std::endl;
+	  filler->describe (*out, Teuchos::VERB_EXTREME);
+	  *out << std::endl;
 	}
 
 	MV X_out (targetMap, numCols);
 	filler->globalAssemble (X_out);
 	filler = Teuchos::null;
 
-	const GO indexBase = targetMap->getIndexBase();
-	Array<GO> errorLocations;
+	if (verbose) {
+	  *out << "X_out:" << std::endl;
+	  X_out.describe (*out, Teuchos::VERB_EXTREME);
+	  *out << std::endl;
+	}
+
+	// Create multivector for comparison.
+	MV X_expected (targetMap, numCols);
+	const scalar_type two = STS::one() + STS::one();
 	for (size_t j = 0; j < numCols; ++j) {
-	  ArrayRCP<const ST> X_j = X_out.getData (j);
+	  ArrayRCP<ST> X_j = X_expected.getDataNonConst (j);
 
 	  // Each entry of the column should have the value eltSize,
 	  // except for the first and last few entries in the whole
@@ -1176,19 +1311,41 @@ namespace Tpetra {
 	      "multivector's Map.");
 
 	    if (i <= minAllGlobalIndex + eltSize/2) {
-	      if (X_j[localIndex] != STS::one() + as<ST>(i) - as<ST>(indexBase)) {
-		errorLocations.push_back (i);
-	      }
+	      X_j[localIndex] = two + as<ST>(i) - as<ST>(indexBase);
 	    } 
 	    else if (i >= maxAllGlobalIndex - eltSize/2) {
-	      if (X_j[localIndex] != STS::one() + as<ST>(maxAllGlobalIndex) - as<ST>(i)) {
-		errorLocations.push_back (i);
-	      }
+	      X_j[localIndex] = two + as<ST>(maxAllGlobalIndex) - as<ST>(i);
 	    }
 	    else {
-	      if (X_j[localIndex] != as<ST>(eltSize)) {
-		errorLocations.push_back (i);
-	      }
+	      X_j[localIndex] = as<ST>(eltSize);
+	    }
+	  } // for each global index which my process owns
+	} // for each column of the multivector
+
+	if (verbose) {
+	  *out << "X_expected:" << std::endl;
+	  X_expected.describe (*out, Teuchos::VERB_EXTREME);
+	  *out << std::endl;
+	}
+
+	Array<GO> errorLocations;
+	for (size_t j = 0; j < numCols; ++j) {
+	  ArrayRCP<const ST> X_out_j = X_out.getData (j);
+	  ArrayRCP<const ST> X_expected_j = X_expected.getData (j);
+
+	  // Each entry of the column should have the value eltSize,
+	  // except for the first and last few entries in the whole
+	  // column (globally, not locally).
+	  for (GO i = minGlobalIndex; i <= maxGlobalIndex; ++i) {
+	    const LO localIndex = targetMap->getLocalElement (i);
+	    TEUCHOS_TEST_FOR_EXCEPTION(i == Teuchos::OrdinalTraits<LO>::invalid(),
+	      std::logic_error, "Global index " << i << " is not in the "
+	      "multivector's Map.");
+
+	    // The floating-point additions should be exact in this
+	    // case, except for very large values of eltSize.
+	    if (X_out_j[localIndex] != X_expected_j[localIndex]) {
+	      errorLocations.push_back (i);
 	    }
 	  } // for each global index which my process owns
 
@@ -1234,7 +1391,8 @@ namespace Tpetra {
 			   const Teuchos::RCP<NodeType>& node,
 			   const size_t unknownsPerNode,
 			   const GlobalOrdinalType unknownsPerElt,
-			   const size_t numCols)
+			   const size_t numCols,
+			   const bool verbose)
     {
       using Tpetra::createContigMapWithNode;
       using Teuchos::ParameterList;
@@ -1258,7 +1416,7 @@ namespace Tpetra {
       std::ostringstream os;
       int success = 1;
       try {
-	MultiVectorFillerTester<MV>::testSameMap (targetMap, unknownsPerElt, numCols);
+	MultiVectorFillerTester<MV>::testSameMap (targetMap, unknownsPerElt, numCols, verbose);
 	success = 1;
       } catch (std::exception& e) {
 	success = 0;
