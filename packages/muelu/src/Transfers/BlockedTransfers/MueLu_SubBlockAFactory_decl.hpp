@@ -47,7 +47,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    SubBlockAFactory(Teuchos::RCP<const FactoryBase> Afact, size_t row, size_t col);
+    SubBlockAFactory(Teuchos::RCP<const FactoryBase> Afact, size_t row, size_t col, LocalOrdinal blksize = 1);
 
     //! Destructor.
     virtual ~SubBlockAFactory();
@@ -68,12 +68,23 @@ namespace MueLu {
 
     //@}
 
+    // ----------------------------------------------------------------------------------
+    // "TEMPORARY" VIEW MECHANISM
+    // TODO: the view mechanism should be implemented as in MueMat.
+    void         SetFixedBlockSize(LocalOrdinal blksize);
+    LocalOrdinal GetFixedBlockSize() const;
+    // ----------------------------------------------------------------------------------
   private:
     Teuchos::RCP<const FactoryBase> Afact_;   ///< generating factory of input variable
     const size_t                    row_;     ///< row id
     const size_t                    col_;     ///< column id
 
-
+    // ----------------------------------------------------------------------------------
+    // "TEMPORARY" VIEW MECHANISM
+    // TODO: the view mechanism should be implemented as in MueMat.
+    LocalOrdinal blksize_;
+    // RCP<GOVector> variableBlockSizeInfo_; TODO: should be moved from CoalesceDropFactory to here.
+    // ----------------------------------------------------------------------------------
   }; // class SubBlockAFactory
 
 } // namespace MueLu

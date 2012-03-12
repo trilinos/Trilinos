@@ -21,8 +21,8 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  SubBlockAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SubBlockAFactory(Teuchos::RCP<const FactoryBase> Afact, size_t row, size_t col)
-    : Afact_(Afact), row_(row), col_(col)
+  SubBlockAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SubBlockAFactory(Teuchos::RCP<const FactoryBase> Afact, size_t row, size_t col, LocalOrdinal blksize)
+    : Afact_(Afact), row_(row), col_(col), blksize_(blksize)
   { }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -52,9 +52,20 @@ namespace MueLu {
     Teuchos::RCP<CrsMatrixClass> A = bA->getMatrix(row_, col_);
 
     Teuchos::RCP<CrsOperatorClass> Op = Teuchos::rcp(new CrsOperatorClass(A));
+    Op->SetFixedBlockSize(blksize_); // store block size information in Operator TODO: implement View mechanism as in MueMat
 
     currentLevel.Set("A", Teuchos::rcp_dynamic_cast<OOperator>(Op), this);
   }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void SubBlockAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetFixedBlockSize(LocalOrdinal blksize) {
+    blksize_ = blksize;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  LocalOrdinal SubBlockAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetFixedBlockSize() const {
+    return blksize_;
+  };
 
 } // namespace MueLu
 
