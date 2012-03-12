@@ -1227,7 +1227,8 @@ namespace Tpetra {
       testSameMap (const Teuchos::RCP<const map_type>& targetMap, 
 		   const global_ordinal_type eltSize, // Must be odd
 		   const size_t numCols,
-		   const bool verbose)
+		   const Teuchos::RCP<Teuchos::FancyOStream>& outStream=Teuchos::null,
+		   const Teuchos::EVerbosityLevel verbosityLevel=Teuchos::VERB_DEFAULT)
       {
 	using Teuchos::Array;
 	using Teuchos::ArrayRCP;
@@ -1236,6 +1237,7 @@ namespace Tpetra {
 	using Teuchos::Comm;
 	using Teuchos::FancyOStream;
 	using Teuchos::getFancyOStream;
+	using Teuchos::oblackholestream;
 	using Teuchos::ptr;
 	using Teuchos::RCP;
 	using Teuchos::rcp;
@@ -1251,10 +1253,15 @@ namespace Tpetra {
 	typedef Teuchos::ScalarTraits<ST> STS;
 
 	TEUCHOS_TEST_FOR_EXCEPTION(eltSize % 2 == 0, std::invalid_argument,
-				   "Element size (eltSize) argument must be odd.");
+	  "Element size (eltSize) argument must be odd.");
 	TEUCHOS_TEST_FOR_EXCEPTION(numCols == 0, std::invalid_argument,
-				   "Number of columns (numCols) argument must be nonzero.");
-	RCP<FancyOStream> out = getFancyOStream (rcpFromRef (std::cout));
+          "Number of columns (numCols) argument must be nonzero.");
+	// Default behavior is to print nothing out.
+	RCP<FancyOStream> out = outStream.is_null() ? 
+	  getFancyOStream (rcp (new oblackholestream)) : outStream;
+	const Teuchos::EVerbosityLevel verbLevel = 
+	  (verbosityLevel == Teuchos::VERB_DEFAULT) ? 
+	  Teuchos::VERB_NONE : verbosityLevel;
 
 	//RCP<MV> X = rcp (new MV (targetMap, numCols));
 
@@ -1290,7 +1297,7 @@ namespace Tpetra {
 	    for (GO k = 0; k < len; ++k) {
 	      rows[k] = start + k;
 	    }
-	    if (verbose) {
+	    if (verbLevel == Teuchos::VERB_EXTREME) {
 	      *out << "Inserting: " 
 		   << Teuchos::toString (rows.view(0,len)) << ", "
 		   << Teuchos::toString (values.view(0, len)) << std::endl;
@@ -1299,9 +1306,9 @@ namespace Tpetra {
 	  }
 	}
 
-	if (verbose) {
+	if (verbLevel == Teuchos::VERB_EXTREME) {
 	  *out << "Filler:" << std::endl;
-	  filler->describe (*out, Teuchos::VERB_EXTREME);
+	  filler->describe (*out, verbLevel);
 	  *out << std::endl;
 	}
 
@@ -1309,9 +1316,9 @@ namespace Tpetra {
 	filler->globalAssemble (X_out);
 	filler = Teuchos::null;
 
-	if (verbose) {
+	if (verbLevel == Teuchos::VERB_EXTREME) {
 	  *out << "X_out:" << std::endl;
-	  X_out.describe (*out, Teuchos::VERB_EXTREME);
+	  X_out.describe (*out, verbLevel);
 	  *out << std::endl;
 	}
 
@@ -1342,9 +1349,9 @@ namespace Tpetra {
 	  } // for each global index which my process owns
 	} // for each column of the multivector
 
-	if (verbose) {
+	if (verbLevel == Teuchos::VERB_EXTREME) {
 	  *out << "X_expected:" << std::endl;
-	  X_expected.describe (*out, Teuchos::VERB_EXTREME);
+	  X_expected.describe (*out, verbLevel);
 	  *out << std::endl;
 	}
 
@@ -1412,9 +1419,13 @@ namespace Tpetra {
 			   const size_t unknownsPerNode,
 			   const GlobalOrdinalType unknownsPerElt,
 			   const size_t numCols,
-			   const bool verbose)
+			   const Teuchos::RCP<Teuchos::FancyOStream>& outStream,
+			   const Teuchos::EVerbosityLevel verbLevel)
     {
       using Tpetra::createContigMapWithNode;
+      using Teuchos::FancyOStream;
+      using Teuchos::getFancyOStream;
+      using Teuchos::oblackholestream;
       using Teuchos::ParameterList;
       using Teuchos::RCP;
       using Teuchos::rcp;
@@ -1428,6 +1439,8 @@ namespace Tpetra {
       typedef Tpetra::Map<LO, GO, NT> MT;
       typedef Tpetra::MultiVector<ST, LO, GO, NT> MV;
 
+      RCP<FancyOStream> out = outStream.is_null() ? 
+	getFancyOStream (rcp (new oblackholestream)) : outStream;
       const Tpetra::global_size_t invalid = 
 	Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
       RCP<const MT> targetMap = 
@@ -1436,7 +1449,7 @@ namespace Tpetra {
       std::ostringstream os;
       int success = 1;
       try {
-	MultiVectorFillerTester<MV>::testSameMap (targetMap, unknownsPerElt, numCols, verbose);
+	MultiVectorFillerTester<MV>::testSameMap (targetMap, unknownsPerElt, numCols, out, verbLevel);
 	success = 1;
       } catch (std::exception& e) {
 	success = 0;
@@ -1445,7 +1458,7 @@ namespace Tpetra {
 
       for (int p = 0; p < comm->getSize(); ++p) {
 	if (p == comm->getRank()) {
-	  cerr << "On process " << comm->getRank() << ": " << os.str() << endl;
+	  *out << "On process " << comm->getRank() << ": " << os.str() << endl;
 	}
 	comm->barrier();
 	comm->barrier();
