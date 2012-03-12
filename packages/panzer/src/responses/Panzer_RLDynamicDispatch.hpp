@@ -94,7 +94,7 @@ private:
      */
    struct NameFill {
       //! mutable so that we can modify this and use the for_each in Sacado
-      mutable std::vector<std::string> & vec;
+      std::vector<std::string> & vec;
 
       NameFill(std::vector<std::string> & v) : vec(v) {}
       NameFill(const NameFill & n) : vec(n.vec) {}
