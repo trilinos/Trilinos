@@ -2,7 +2,6 @@
 #include <stdexcept>
 #include <sstream>
 #include <map>
-#include <stdio.h>
 
 #include <stk_percept/Percept.hpp>
 #include <stk_percept/Util.hpp>
@@ -30,6 +29,10 @@
 #include <stk_percept/Intrepid_HGRAD_WEDGE_C2_Serendipity_FEM.hpp>
 #include <stk_percept/Intrepid_HGRAD_QUAD_C2_Serendipity_FEM.hpp>
 #include <stk_percept/Intrepid_HGRAD_HEX_C2_Serendipity_FEM.hpp>
+
+#include <stk_util/diag/Writer.hpp>
+
+//stk::diag::Writer junk(std::cout.rdbuf());
 
 namespace stk {
   namespace percept {
@@ -351,11 +354,6 @@ namespace stk {
                 if (count.size() >= 4) stream << " Elem = " << count[ 3 ] ;
                 if (count.size() >= 5) stream << " FamilyTree = " << count[ 4 ] ;
                 stream << " }" << mendl ;
-
-                if (0)
-                {
-                  dumpElements(part.name());
-                }
               }
             }
         }
@@ -593,20 +591,6 @@ namespace stk {
     }
 
     int PerceptMesh::
-    getNumberNodes()
-    {
-      std::vector<unsigned> count ;
-      stk::mesh::Selector selector(getFEM_meta_data()->universal_part());
-      stk::mesh::count_entities( selector, *getBulkData(), count );
-      if (count.size() < 3)
-        {
-          throw std::logic_error("logic error in PerceptMesh::getNumberElements");
-        }
-
-      return count[ node_rank() ];
-    }
-
-    int PerceptMesh::
     getNumberElementsLocallyOwned()
     {
       std::vector<unsigned> count ;
@@ -819,7 +803,6 @@ namespace stk {
     {
       if (!bulkData)
         throw std::runtime_error("PerceptMesh::PerceptMesh: must pass in non-null bulkData");
-      m_comm = bulkData->parallel();
 
       setCoordinatesField();
     }
@@ -1622,31 +1605,15 @@ namespace stk {
 
     void PerceptMesh::checkForPartsToAvoidWriting()
     {
-      const stk::mesh::PartVector * parts = &getFEM_meta_data()->get_parts();
-      unsigned nparts = parts->size();
+      const stk::mesh::PartVector & parts = getFEM_meta_data()->get_parts();
+      unsigned nparts = parts.size();
 
       for (unsigned ipart=0; ipart < nparts; ipart++)
         {
-          stk::mesh::Part& part = *((*parts)[ipart]);
+          stk::mesh::Part& part = *parts[ipart];
           std::string name = part.name();
           //std::cout << "tmp srk checkForPartsToAvoidWriting found part= " << name << " s_omit_part= " << s_omit_part << std::endl;
           if (name.find(PerceptMesh::s_omit_part) != std::string::npos)
-          {
-            //std::cout << "tmp srk checkForPartsToAvoidWriting found omitted part= " << name << std::endl;
-            const Ioss::GroupingEntity *entity = part.attribute<Ioss::GroupingEntity>();
-            if (entity) 
-              stk::io::remove_io_part_attribute(part);
-          }
-        }
-
-      parts = &get_io_omitted_parts();
-      nparts = parts->size();
-
-      for (unsigned ipart=0; ipart < nparts; ipart++)
-        {
-          stk::mesh::Part& part = *((*parts)[ipart]);
-          //std::string name = part.name();
-          //std::cout << "tmp srk checkForPartsToAvoidWriting found part= " << name << " s_omit_part= " << s_omit_part << std::endl;
           {
             //std::cout << "tmp srk checkForPartsToAvoidWriting found omitted part= " << name << std::endl;
             const Ioss::GroupingEntity *entity = part.attribute<Ioss::GroupingEntity>();
@@ -1836,28 +1803,24 @@ namespace stk {
           if (partName.size() > 0 && part.name() != partName)
             continue;
 
-          for (unsigned irank=1; irank < element_rank(); irank++)
+          std::cout << "tmp UniformRefiner::dumpElements: part = " << part.name() << std::endl;
+          const std::vector<stk::mesh::Bucket*> & buckets = getBulkData()->buckets( element_rank() );
+
+          for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
             {
-              std::cout << "tmp PerceptMesh::dumpElements: part = " << part.name() << " rank= " << irank << std::endl;
+              if (selector(**k))
+              {
+                stk::mesh::Bucket & bucket = **k ;
+                const unsigned num_elements_in_bucket = bucket.size();
 
-              const std::vector<stk::mesh::Bucket*> & buckets = getBulkData()->buckets( irank );
+                for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+                  {
+                    stk::mesh::Entity& element = bucket[iElement];
 
-              for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
-                {
-                  if (selector(**k))
-                    {
-                      stk::mesh::Bucket & bucket = **k ;
-                      const unsigned num_elements_in_bucket = bucket.size();
-
-                      for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
-                        {
-                          stk::mesh::Entity& element = bucket[iElement];
-
-                          std::cout << "tmp element: " << element << std::endl;
-                          printEntity(std::cout, element, getCoordinatesField() );
-                        }
-                    }
-                }
+                    std::cout << "tmp UniformRefiner::dumpElements: newElement: " << element << std::endl;
+                    printEntity(std::cout, element, getCoordinatesField() );
+                  }
+              }
             }
         }
     }
@@ -2138,51 +2101,6 @@ namespace stk {
     }
 
 
-
-    double PerceptMesh::edge_length_ave(const stk::mesh::Entity &entity)
-    {
-      stk::mesh::FieldBase &coord_field = *getCoordinatesField();
-      const CellTopologyData * const cell_topo_data = PerceptMesh::get_cell_topology(entity);
-
-      shards::CellTopology cell_topo(cell_topo_data);
-
-      unsigned spaceDim = cell_topo.getDimension();
-
-      const stk::mesh::Entity & elem = entity;
-      const stk::mesh::PairIterRelation elem_nodes = elem.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
-
-      double edge_length_ave=0.0;
-      double min_edge_length = -1.0;
-      double max_edge_length = -1.0;
-      for (unsigned iedgeOrd = 0; iedgeOrd < cell_topo_data->edge_count; iedgeOrd++)
-        {
-          unsigned in0 = cell_topo_data->edge[iedgeOrd].node[0];
-          unsigned in1 = cell_topo_data->edge[iedgeOrd].node[1];
-          double * node_coord_data_0 = (double*)stk::mesh::field_data( coord_field , *elem_nodes[in0].entity());
-          double * node_coord_data_1 = (double*)stk::mesh::field_data( coord_field , *elem_nodes[in1].entity());
-
-          double edge_length = 0.0;
-          for (unsigned iSpaceDimOrd = 0; iSpaceDimOrd < spaceDim; iSpaceDimOrd++)
-            {
-              edge_length +=
-                (node_coord_data_0[iSpaceDimOrd]-node_coord_data_1[iSpaceDimOrd])*
-                (node_coord_data_0[iSpaceDimOrd]-node_coord_data_1[iSpaceDimOrd]);
-            }
-          edge_length = std::sqrt(edge_length);
-          edge_length_ave += edge_length / ((double)cell_topo_data->edge_count);
-          if(iedgeOrd == 0)
-            {
-              min_edge_length = edge_length;
-              max_edge_length = edge_length;
-            }
-          else
-            {
-              min_edge_length = std::min(min_edge_length, edge_length);
-              max_edge_length = std::max(max_edge_length, edge_length);
-            }
-        }
-      return edge_length_ave;
-    }
 
     // static
     void PerceptMesh::
@@ -2558,7 +2476,7 @@ namespace stk {
                     stk::mesh::BulkData& bulkData_1,
                     stk::mesh::BulkData& bulkData_2,
                     std::string msg,
-                    bool print, bool print_all_field_diffs)
+                    bool print)
     {
       EXCEPTWATCH;
 
@@ -2841,14 +2759,8 @@ namespace stk {
                   }
 
                 bool compare_detailed = true;
-                //int print_field_width = 15;
-                //int print_percent_width = 5;
                 if (compare_detailed && !local_diff)
                   {
-                    bool printed_header=false;
-                    double max_diff = 0.0;
-                    double min_diff = 1.e+30;
-                    
                     stk::mesh::EntityRank rank = field_rank;
                     stk::mesh::Selector on_locally_owned_part_1 =  ( metaData_1.locally_owned_part() );
                     stk::mesh::Selector on_locally_owned_part_2 =  ( metaData_2.locally_owned_part() );
@@ -2882,58 +2794,23 @@ namespace stk {
 
                                 if (fdata_1)
                                   {
-                                    bool is_same=true;
-                                    double tol = 1.e-5;
                                     for (unsigned istride = 0; istride < loc_stride_1; istride++)
                                       {
-                                        double fd1 = fdata_1[istride];
-                                        double fd2 = fdata_2[istride];
-                                        if (!Util::approx_equal_relative(fd1, fd2, tol))
+                                        double tol = 1.e-5;
+                                        if (!Util::approx_equal_relative(fdata_1[istride], fdata_2[istride], tol))
                                           {
-                                            is_same=false;
-                                            break;
-                                          }
-                                      }
-
-                                    if (!is_same)
-                                      {
-                                        if (!printed_header)
-                                          {
-                                            msg += std::string("\n| field data not equal field_1= ") +field_1->name()+" field_2= "+field_2->name()+" |";
-                                            printed_header = true;
-                                          }
-                                        msg += "\n|{";
-                                        for (unsigned istride = 0; istride < loc_stride_1; istride++)
-                                          {
-                                            double fd1 = fdata_1[istride];
-                                            double fd2 = fdata_2[istride];
-                                            //                                             msg += "\n| "+toString(fd1).substr(0,print_field_width)+" - "+toString(fd2).substr(0,print_field_width)+" = "
-                                            //                                               +toString(fd1-fd2).substr(0,print_field_width)+
-                                            //                                               " [ "+toString(100.0*(fd1-fd2)/(std::abs(fd1)+std::abs(fd2)+1.e-20)).substr(0,print_percent_width)+" % ]  |";
-                                            //std::ostringstream ostr;
-                                            //                                             ostr << "\n| " << std::setw(print_field_width) << fd1 << " - " << fd2 << " = "
-                                            //                                                  << (fd1-fd2) 
-                                            //                                                  << std::setw(print_percent_width) << " [ " << (100.0*(fd1-fd2)/(std::abs(fd1)+std::abs(fd2)+1.e-20)) << " % ]  |";
-                                            //msg += ostr.str();
-                                            char buf[1024];
-                                            sprintf(buf, ", | %12.3g - %12.3g = %12.3g [ %10.3g %% ] |", fd1, fd2, (fd1-fd2), (100.0*(fd1-fd2)/(std::abs(fd1)+std::abs(fd2)+1.e-20)));
-                                            //                                                  << (fd1-fd2) 
-                                            //                                                  << std::setw(print_percent_width) << " [ " << (100.0*(fd1-fd2)/(std::abs(fd1)+std::abs(fd2)+1.e-20)) << " % ]  |";
-                                            msg += buf;
+                                            msg += std::string("| field data not equal field_1= ") +field_1->name()+" field_2= "+field_2->name()+
+                                              " coord_1= "+toString(fdata_1[istride])+" coord_2= "+toString(fdata_2[istride])+" |\n";
                                             diff = true;
                                             local_local_diff = true;
-                                            max_diff = std::max(max_diff, std::abs(fd1-fd2));
-                                            min_diff = std::min(min_diff, std::abs(fd1-fd2));
                                           }
-                                        msg += "}|";
                                       }
                                   }
 
-                                if (!print_all_field_diffs && local_local_diff) break;
+                                if (local_local_diff) break;
                               }
                           }
                       }
-                    msg += "\n| for field: "+field_1->name()+", max diff = "+toString(max_diff)+ " | ";
                   }
               }
           }
@@ -2961,13 +2838,13 @@ namespace stk {
     }
 
     bool PerceptMesh::
-    mesh_difference(PerceptMesh& eMesh_1, PerceptMesh& eMesh_2, std::string msg, bool print, bool print_all_field_diffs)
+    mesh_difference(PerceptMesh& eMesh_1, PerceptMesh& eMesh_2, std::string msg, bool print)
     {
       stk::mesh::fem::FEMMetaData& metaData_1 = *eMesh_1.getFEM_meta_data();
       stk::mesh::fem::FEMMetaData& metaData_2 = *eMesh_2.getFEM_meta_data();
       stk::mesh::BulkData& bulkData_1 = *eMesh_1.getBulkData();
       stk::mesh::BulkData& bulkData_2 = *eMesh_2.getBulkData();
-      return mesh_difference(metaData_1, metaData_2, bulkData_1, bulkData_2, msg, print, print_all_field_diffs);
+      return mesh_difference(metaData_1, metaData_2, bulkData_1, bulkData_2, msg, print);
     }
 
     // checks if this entity has a duplicate (ie all nodes are the same)
@@ -3098,93 +2975,6 @@ namespace stk {
       getBulkData()->modification_end();
 
     }
-
-    void PerceptMesh::addParallelInfoFields(bool elemental, bool nodal, 
-                                            std::string elemental_proc_rank_name,
-                                            std::string nodal_fixed_flag, // boundary flag for telling Mesquite these nodes shouldn't be moved
-                                            std::string nodal_global_id_name, 
-                                            std::string nodal_proc_id_name, 
-                                            std::string nodal_local_id_name)
-    {
-      if (elemental)
-        {
-          int scalarDimension = 0; // a scalar
-          addField(elemental_proc_rank_name, element_rank(), scalarDimension);
-        }
-      if (nodal)
-        {
-          int scalarDimension = 0; // a scalar
-          addField(nodal_global_id_name, node_rank(), scalarDimension);
-          addField(nodal_proc_id_name, node_rank(), scalarDimension);
-          addField(nodal_local_id_name, node_rank(), scalarDimension);
-          addField(nodal_fixed_flag, node_rank(), scalarDimension);
-        }
-    }
-
-    void PerceptMesh::populateParallelInfoFields(bool elemental, bool nodal, 
-                                                 stk::mesh::Selector* fixed_node_selector,
-                                                 std::string elemental_proc_rank_name,
-                                                 std::string nodal_fixed_flag,
-                                                 std::string nodal_global_id_name, 
-                                                 std::string nodal_proc_id_name, 
-                                                 std::string nodal_local_id_name)
-    {
-      if (elemental)
-        {
-          stk::mesh::FieldBase * field = getField(elemental_proc_rank_name);
-          const std::vector<stk::mesh::Bucket*> & buckets = getBulkData()->buckets( element_rank() );
-          for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
-            {
-              //if (removePartSelector(**k))
-              {
-                stk::mesh::Bucket & bucket = **k ;
-                const unsigned num_entity_in_bucket = bucket.size();
-                for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
-                  {
-                    stk::mesh::Entity& element = bucket[ientity];
-                    double *fdata = PerceptMesh::field_data( field , element );
-                    if (fdata) fdata[0] = element.owner_rank();
-                  }
-              }
-            }
-        }
-      if (nodal)
-        {
-          stk::mesh::FieldBase * field_gid = getField(nodal_global_id_name);
-          stk::mesh::FieldBase * field_pid = getField(nodal_proc_id_name);
-          stk::mesh::FieldBase * field_lid = getField(nodal_local_id_name);
-          stk::mesh::FieldBase * field_fix = getField(nodal_fixed_flag);
-          unsigned lid=0;
-          const std::vector<stk::mesh::Bucket*> & buckets = getBulkData()->buckets( node_rank() );
-          for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
-            {
-              //if (removePartSelector(**k))
-              {
-                stk::mesh::Bucket & bucket = **k ;
-                const unsigned num_entity_in_bucket = bucket.size();
-                for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
-                  {
-                    stk::mesh::Entity& node = bucket[ientity];
-                    double *fdata_gid = PerceptMesh::field_data( field_gid , node );
-                    double *fdata_pid = PerceptMesh::field_data( field_pid , node );
-                    double *fdata_lid = PerceptMesh::field_data( field_lid , node );
-                    double *fdata_fix = PerceptMesh::field_data( field_fix , node );
-                    if (fdata_gid) fdata_gid[0] = node.identifier();
-                    if (fdata_pid) fdata_pid[0] = node.owner_rank();
-                    if (fdata_lid) fdata_lid[0] = lid++;
-                    if (fdata_fix)
-                      {
-                        if (fixed_node_selector)
-                          fdata_fix[0] = (*fixed_node_selector)(node) ? 1 : 0;
-                        else
-                          fdata_fix[0] = 0;
-                      }
-                  }
-              }
-            }
-        }
-    }
-
 
   } // stk
 } // percept

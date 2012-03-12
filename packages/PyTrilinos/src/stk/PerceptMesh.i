@@ -116,12 +116,15 @@ print 'diffnorm = ', diffnorm
 
 //namespaces used
 using namespace stk;
+using namespace stk::diag;
 using namespace stk::percept;
 using namespace stk::mesh;
 using namespace stk::adapt;
 using namespace Teuchos;
 	
 %}
+
+%apply long long { uint64_t }
 
 #pragma SWIG nowarn=509
 #pragma SWIG nowarn=467
@@ -187,6 +190,7 @@ namespace std
 
 //from stk_util
 %include Parallel.hpp
+%include stk_util/diag/Writer.hpp
 
 //from stk_io
 %ignore get_cell_topology(const mesh::Part &part);
