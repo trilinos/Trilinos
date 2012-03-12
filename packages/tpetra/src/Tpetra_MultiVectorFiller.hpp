@@ -47,6 +47,9 @@
 
 namespace {
 
+  // \fn sortAndMergeIn
+  // \brief Sort and merge newEntries into allEntries, and make unique.
+  //
   // \param allEntries [in/out]: Array in which current entries have
   //   already been stored, and in which the new entries are to be
   //   stored.  Passed by reference in case we need to resize it.
@@ -1271,6 +1274,15 @@ namespace Tpetra {
 	comm->barrier();
       }
     }
+
+    /// \brief Test the \c sortAndMergeIn() utility function.
+    ///
+    /// If any test fails, this function throws std::logic_error with
+    /// an informative message.  If all tests pass, this function
+    /// returns with no externally visible side effects.
+    void
+    testSortAndMergeIn ();
+
   } // namespace Test
 } // namespace Tpetra
 
