@@ -195,8 +195,8 @@ int main(int narg, char** arg)
   SparseMatrixAdapter adapter(origMatrix);
 
 #ifdef HAVE_ZOLTAN2_AMD
-  params.set("ORDER_METHOD", "Minimum_Degree");
-  params.set("ORDER_PACKAGE", "AMD");
+  params.set("order_method", "minimum_degree");
+  params.set("order_package", "amd");
 
   ////// Create and solve ordering problem
   Zoltan2::OrderingProblem<SparseMatrixAdapter> problem(&adapter, &params);

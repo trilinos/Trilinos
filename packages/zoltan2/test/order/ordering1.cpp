@@ -192,7 +192,7 @@ int main(int narg, char** arg)
 
   ////// Specify problem parameters
   Teuchos::ParameterList params;
-  // params.set("ORDER_METHOD", "RCM");
+  // params.set("order_method", "rcm");
 
   ////// Create an input adapter for the Tpetra matrix.
   SparseMatrixAdapter adapter(origMatrix);

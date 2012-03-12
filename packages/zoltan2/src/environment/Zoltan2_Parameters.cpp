@@ -388,7 +388,7 @@ void createAllParameters(Teuchos::ParameterList &pList)
   ////////// topLevel/ordering/order_method
   parameterName = string("order_method");
   strValidatorP = rcp(new StringValidator(
-    tuple<string>("rcm", "method2", "method3")));
+    tuple<string>("rcm", "minimum_degree", "method3")));
 
   docString.str("");
   strValidatorP->printDoc(
