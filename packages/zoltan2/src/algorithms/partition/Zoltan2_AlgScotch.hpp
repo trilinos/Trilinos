@@ -4,6 +4,8 @@
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 
+typedef zoltan2_partId_t partId_t;
+
 #ifndef HAVE_ZOLTAN2_SCOTCH
 
 // Error handling for when Scotch is requested
@@ -267,9 +269,9 @@ void AlgPTScotch(
     !ierr, BASIC_ASSERTION, problemComm);
 
   // Create array for Scotch to return results in.
-  ArrayRCP<size_t> partList(new size_t [nVtx], 0, nVtx,true);
+  ArrayRCP<partId_t> partList(new partId_t [nVtx], 0, nVtx,true);
   SCOTCH_Num *partloctab;
-  if (sizeof(SCOTCH_Num) == sizeof(size_t)) {
+  if (sizeof(SCOTCH_Num) == sizeof(partId_t)) {
     // Can write directly into the solution's memory
     partloctab = (SCOTCH_Num *) partList.getRawPtr();
   }
@@ -285,7 +287,7 @@ void AlgPTScotch(
   env->globalInputAssertion(__FILE__, __LINE__, "SCOTCH_dgraphPart", 
     !ierr, BASIC_ASSERTION, problemComm);
 
-  // TODO - use metric output facility of environment
+  // TODO - metrics
 #ifdef SHOW_ZOLTAN2_SCOTCH_MEMORY
   int me = env->comm_->getRank();
 #else
@@ -308,7 +310,7 @@ void AlgPTScotch(
 
   // Load answer into the solution.
 
-  if (sizeof(SCOTCH_Num) != sizeof(size_t)) {
+  if (sizeof(SCOTCH_Num) != sizeof(partId_t)) {
     for (size_t i = 0; i < nVtx; i++) partList[i] = partloctab[i];
   }
 

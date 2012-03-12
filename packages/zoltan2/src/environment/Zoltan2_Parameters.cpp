@@ -594,10 +594,55 @@ void createAllParameters(Teuchos::ParameterList &pList)
   // LEVEL: Sub sub list, geometric partitioning parameters
   ///////////////////////////////////////////////////////////
 
-#if 0
   ParameterList &geom = partitioning.sublist("geometric", false, 
     string("geometric partitioning problem parameters"));
-#endif
+
+  ////////// topLevel/partitioning/geometric/rectilinear_blocks
+  parameterName = string("rectilinear_blocks");
+
+  str2intValidatorP =
+    rcp(new str2intValidator(yesNoStrings, yesNoIntegrals, parameterName));
+
+  docString.str("");
+  str2intValidatorP->printDoc(
+    "If true, then when a cut is made, all of the dots located on the cut\n"
+    "are moved to the same side of the cut. The resulting regions are then\n"
+    "rectilinear.  The resulting load balance may not be as good as when\n"
+    "the group of dots is split by the cut. Default is false.\n",
+    docString);
+
+  geom.set<string>(parameterName, "no", docString.str(),
+    str2intValidatorP);
+
+  ////////// topLevel/partitioning/geometric/average_cuts
+  parameterName = string("average_cuts");
+
+  str2intValidatorP =
+    rcp(new str2intValidator(yesNoStrings, yesNoIntegrals, parameterName));
+
+  docString.str("");
+  str2intValidatorP->printDoc(
+    "When true, coordinates of RCB cutting planes are computed to be \n"
+    "the average of the coordinates of the closest object on each side \n"
+    "of the cut. Otherwise, coordinates of cutting planes may equal \n"
+    "those of one of the closest objects. Default is false.\n",
+    docString);
+
+  geom.set<string>(parameterName, "no", docString.str(),
+    str2intValidatorP);
+
+  ////////// topLevel/partitioning/geometric/bisection_num_test_cuts
+  parameterName = string("bisection_num_test_cuts");
+
+  anyNumValidatorP = rcp(new AnyNumberParameterEntryValidator);
+
+  docString.str("");
+  anyNumValidatorP->printDoc(
+   "Experimental: number of test cuts to do simultaneously (default is 1)\n",
+      docString);
+
+  geom.set<string>(parameterName, "0", docString.str(),
+    anyNumValidatorP);
 
   ///////////////////////////////////////////////////////////
   // LEVEL: Sub sub list, hypergraph partitioning parameters

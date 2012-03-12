@@ -127,7 +127,7 @@ public:
    * setPartSizesForCritiera.
    */
 
-  void setPartSizes(int len, size_t *partIds, float *partSizes, 
+  void setPartSizes(int len, partId_t *partIds, float *partSizes, 
     bool makeCopy=true) 
   { 
     setPartSizesForCritiera(0, len, partIds, partSizes, makeCopy);
@@ -167,7 +167,7 @@ public:
    * setPartSizesForCritiera.
    */
 
-  void setPartSizesForCritiera(int criteria, int len, size_t *partIds, 
+  void setPartSizesForCritiera(int criteria, int len, partId_t *partIds, 
     float *partSizes, bool makeCopy=true) ;
 
 private:
@@ -187,7 +187,7 @@ private:
 
   int numberOfWeights_;
 
-  // Suppose Array<size_t> partIds = partIds_[w].  If partIds.size() > 0
+  // Suppose Array<partId_t> partIds = partIds_[w].  If partIds.size() > 0
   // then the user supplied part sizes for weight index "w", and the sizes
   // corresponding to the Ids in partIds are partSizes[w].
   //
@@ -196,7 +196,7 @@ private:
   // but they can still specify part sizes. 
   // So numberOfCriteria_ is numberOfWeights_ or one, whichever is greater.
 
-  ArrayRCP<ArrayRCP<size_t> > partIds_;
+  ArrayRCP<ArrayRCP<partId_t> > partIds_;
   ArrayRCP<ArrayRCP<float> > partSizes_;
   int numberOfCriteria_;
 
@@ -251,7 +251,7 @@ template <typename Adapter>
   // The Caller can specify part sizes in setPartSizes().  If he/she
   // does not, the part size arrays are empty.
 
-  ArrayRCP<size_t> *noIds = new ArrayRCP<size_t> [numberOfCriteria_];
+  ArrayRCP<partId_t> *noIds = new ArrayRCP<partId_t> [numberOfCriteria_];
   ArrayRCP<float> *noSizes = new ArrayRCP<float> [numberOfCriteria_];
 
   partIds_ = arcp(noIds, 0, numberOfCriteria_, true);
@@ -261,7 +261,7 @@ template <typename Adapter>
 // TODO - allow unsetting of part sizes by passing in null pointers
 template <typename Adapter>
   void PartitioningProblem<Adapter>::setPartSizesForCritiera(
-    int criteria, int len, size_t *partIds, float *partSizes, bool makeCopy) 
+    int criteria, int len, partId_t *partIds, float *partSizes, bool makeCopy) 
 {
   this->env_->localInputAssertion(__FILE__, __LINE__, "invalid length", 
     len>= 0, BASIC_ASSERTION);
@@ -270,7 +270,7 @@ template <typename Adapter>
     criteria >= 0 && criteria < numberOfWeights_, BASIC_ASSERTION);
 
   if (len == 0){
-    partIds_[criteria] = ArrayRCP<size_t>();
+    partIds_[criteria] = ArrayRCP<partId_t>();
     partSizes_[criteria] = ArrayRCP<float>();
     return;
   }
@@ -282,13 +282,13 @@ template <typename Adapter>
   // by the PartitioningSolution, which computes global part distribution and
   // part sizes.
 
-  size_t *z2_partIds = partIds;
+  partId_t *z2_partIds = partIds;
   float *z2_partSizes = partSizes;
   bool own_memory = false;
 
   if (makeCopy){
     z2_partIds = NULL;
-    z2_partIds = new size_t [len];
+    z2_partIds = new partId_t [len];
     this->env_->localMemoryAssertion(__FILE__, __LINE__, len, z2_partIds);
     z2_partSizes = NULL;
     z2_partSizes = new float [len];

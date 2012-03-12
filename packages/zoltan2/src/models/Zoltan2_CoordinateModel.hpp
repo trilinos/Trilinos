@@ -48,7 +48,7 @@ public:
 
   /*! \brief Returns the dimension of the coordinates.
    */
-  size_t getCoordinateDim() const { return 0; }
+  int getCoordinateDim() const { return 0; }
 
   /*! \brief Returns the number of coordinates on this process.
    */
@@ -138,7 +138,7 @@ public:
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t flags);
 
-  size_t getCoordinateDim() const { return coordinateDim_; }
+  int getCoordinateDim() const { return coordinateDim_; }
 
   size_t getLocalNumCoordinates() const { return gids_.size(); }
 

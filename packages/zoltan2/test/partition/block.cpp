@@ -75,8 +75,8 @@ int main(int argc, char **argv)
   scalar_t *sumWeight = new scalar_t [nprocs];
   memset(totalWeight, 0, nprocs * sizeof(scalar_t));
 
-  const gno_t *idList = solution.getGlobalIdList();
-  const size_t *partList = solution.getPartList();
+  const gno_t *idList = solution.getIdList();
+  const zoltan2_partId_t *partList = solution.getPartList();
   const float *metrics = solution.getImbalance();
 
   for (lno_t i=0; !fail && i < numMyIdentifiers; i++){

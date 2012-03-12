@@ -151,9 +151,9 @@ int main(int argc, char *argv[])
   imbal[0] = 1.0;
   ArrayRCP<float> metric(imbal, 0, 1, true);
 
-  size_t *p = new size_t [nvtx];
-  memset(p, 0, sizeof(size_t) * nvtx);
-  ArrayRCP<size_t> solnParts(p, 0, nvtx, true);
+  zoltan2_partId_t *p = new zoltan2_partId_t [nvtx];
+  memset(p, 0, sizeof(zoltan2_partId_t) * nvtx);
+  ArrayRCP<zoltan2_partId_t> solnParts(p, 0, nvtx, true);
 
   soln_t solution(env, comm, idMap, weightDim);
 

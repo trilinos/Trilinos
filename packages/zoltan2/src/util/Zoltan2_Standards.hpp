@@ -8,6 +8,13 @@
 
 /*! \file Zoltan2_Standards.hpp
     \brief Gathering definitions used in software development.
+
+     \todo Should we allow data types for part ID to be set as
+         cmake configure options?  Part ID lists in the PartitioningSolution
+         are of length "number of objects".  If part ID could be short
+         or int, we save significant memory.  For now - typedef'd to int
+         so it is easy to change.  It seems data type for proc should
+         be int - since it is int in the rest of Trilinos.
 */
 
 #ifndef _ZOLTAN2_STANDARDS_HPP_
@@ -60,6 +67,17 @@ using Teuchos::ParameterList;
 using Teuchos::ParameterEntry;
 using Teuchos::reduceAll;
 using Teuchos::gatherAll;
+}
+
+//////////////////////////////////////////////////////
+// Our data types
+//   Prepend API types with zoltan2_.
+//////////////////////////////////////////////////////
+
+typedef int zoltan2_partId_t;
+
+namespace Zoltan2{
+  typedef zoltan2_partId_t partId_t;
 }
 
 //////////////////////////////////////////////////////
