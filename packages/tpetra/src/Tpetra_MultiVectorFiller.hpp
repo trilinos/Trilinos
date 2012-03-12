@@ -384,9 +384,13 @@ namespace {
     /// to set the number of columns in the output multivector.
     /// Otherwise, the two-argument version of \c
     /// sumIntoGlobalValues() won't actually do anything.
-    MultiVectorFillerData2 (const Teuchos::RCP<const map_type>& map) : 
+    MultiVectorFillerData2 (const Teuchos::RCP<const map_type>& map,
+			    const Teuchos::EVerbosityLevel verbLevel=Teuchos::VERB_DEFAULT,
+			    const Teuchos::RCP<Teuchos::FancyOStream>& out=Teuchos::null) :
       map_ (map),
-      numCols_ (0)
+      numCols_ (0),
+      verbLevel_ (verbLevel),
+      out_ (out)
     {}
 
     /// \brief Constructor.
@@ -407,12 +411,16 @@ namespace {
     ///   Otherwise, the two-argument version of \c
     ///   sumIntoGlobalValues() won't do the right thing.
     MultiVectorFillerData2 (const Teuchos::RCP<const map_type>& map,
-			    const size_t numColumns) : 
+			    const size_t numColumns,
+			    const Teuchos::EVerbosityLevel verbLevel=Teuchos::VERB_DEFAULT,
+			    const Teuchos::RCP<Teuchos::FancyOStream>& out=Teuchos::null) :
       map_ (map),
       numCols_ (numColumns),
       localVec_ (new MV (map, numColumns)),
       nonlocalIndices_ (numColumns),
-      nonlocalValues_ (numColumns)
+      nonlocalValues_ (numColumns),
+      verbLevel_ (verbLevel),
+      out_ (out)
     {}
 
     std::string 
@@ -699,15 +707,21 @@ namespace {
       using Teuchos::ArrayView;
       using Teuchos::FancyOStream;
       using Teuchos::getFancyOStream;
+      using Teuchos::oblackholestream;
       using Teuchos::RCP;
-      using Teuchos::rcpFromRef;
+      using Teuchos::rcp;
       using std::endl;
 
       typedef local_ordinal_type LO;
       typedef global_ordinal_type GO;
       typedef scalar_type ST;
 
-      RCP<FancyOStream> out = getFancyOStream (rcpFromRef (std::cout));
+      // Default output stream prints nothing.
+      RCP<FancyOStream> out = out_.is_null() ? 
+	getFancyOStream (rcp (new oblackholestream)) : out_;
+      Teuchos::EVerbosityLevel verbLevel = 
+	(verbLevel_ == Teuchos::VERB_DEFAULT) ? Teuchos::VERB_NONE : verbLevel_;
+
       Teuchos::OSTab tab (out);
       *out << "locallyAssemble:" << endl;
 
@@ -794,6 +808,12 @@ namespace {
 
     //! Nonlocal global values: one array for each column of the multivector.
     Teuchos::Array<Teuchos::Array<scalar_type> > nonlocalValues_;
+
+    //! Verbosity level of this object (mainly used for debugging output).
+    Teuchos::EVerbosityLevel verbLevel_;
+
+    //! Output stream (mainly used for debugging output).
+    Teuchos::RCP<Teuchos::FancyOStream> out_;
 
     //! The number of columns in the (output) multivector.
     size_t getNumColumns() const { return numCols_; }
