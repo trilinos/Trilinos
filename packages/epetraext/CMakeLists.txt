@@ -152,7 +152,6 @@ TRIBITS_EXCLUDE_FILES(
   src/distdir
   src/transform/EpetraExt_Dirichlet_.*
   src/transform/EpetraExt_StaticCondensation_LinearProblem..*
-  src/transform/EpetraExt_SubCopy_CrsMatrix..*
   test/Copy
   test/Makefile.template
   test/inout/build
