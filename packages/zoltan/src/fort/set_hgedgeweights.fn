@@ -101,7 +101,6 @@ interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, nedges, ew_dim , &
                     edge_GID, edge_LID, edge_weight, ierr)
   use zoltan_types
-  use lb_user_const
   use zoltan_user_data
   type(Zoltan_User_Data_1) , intent(in) :: data
   integer(Zoltan_INT), intent(in)  :: num_gid_entries, num_lid_entries, nedges, ew_dim
@@ -127,7 +126,6 @@ interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, nedges, ew_dim , &
                     edge_GID, edge_LID, edge_weight, ierr)
   use zoltan_types
-  use lb_user_const
   use zoltan_user_data
   type(Zoltan_User_Data_2) , intent(in) :: data
   integer(Zoltan_INT), intent(in)  :: num_gid_entries, num_lid_entries, nedges, ew_dim
@@ -153,7 +151,6 @@ interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, nedges, ew_dim , &
                     edge_GID, edge_LID, edge_weight, ierr)
   use zoltan_types
-  use lb_user_const
   use zoltan_user_data
   type(Zoltan_User_Data_3) , intent(in) :: data
   integer(Zoltan_INT), intent(in)  :: num_gid_entries, num_lid_entries, nedges, ew_dim
@@ -179,7 +176,6 @@ interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, nedges, ew_dim , &
                     edge_GID, edge_LID, edge_weight, ierr)
   use zoltan_types
-  use lb_user_const
   use zoltan_user_data
   type(Zoltan_User_Data_4) , intent(in) :: data
   integer(Zoltan_INT), intent(in)  :: num_gid_entries, num_lid_entries, nedges, ew_dim

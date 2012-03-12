@@ -55,7 +55,7 @@
 
 
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.s909348.gcc.cmake")
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../../TrilinosVersion.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../../../Version.cmake")
 
 #
 # Set the options specific to this build case

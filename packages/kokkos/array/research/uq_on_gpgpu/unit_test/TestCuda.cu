@@ -44,6 +44,7 @@
 #include <Kokkos_ProductTensor.hpp>
 #include <Kokkos_SymmetricDiagonalSpec.hpp>
 #include <Kokkos_BlockCrsMatrix.hpp>
+#include <Kokkos_CrsMatrix.hpp>
 #include <Kokkos_LegendrePolynomial.hpp>
 #include <Kokkos_StochasticProductTensor.hpp>
 
@@ -73,6 +74,7 @@
 #include <Cuda/Kokkos_Cuda_ProductTensor.hpp>
 #include <Cuda/Kokkos_Cuda_StochasticProductTensor.hpp>
 #include <Cuda/Kokkos_Cuda_BlockCrsMatrix.hpp>
+#include <Cuda/Kokkos_Cuda_CrsMatrix.hpp>
 
 //
 
@@ -94,9 +96,9 @@ int mainCuda()
 //  unit_test::test_inner_product_legengre_polynomial<10,Kokkos::Cuda>();
 //  unit_test::test_triple_product_legendre_polynomial<4,Kokkos::Cuda>();
 
-  unit_test::test_product_tensor<Kokkos::Cuda>( std::vector<int>( 2 , 1 ) );
-  unit_test::test_product_tensor<Kokkos::Cuda>( std::vector<int>( 3 , 2 ) );
-  unit_test::test_product_tensor<Kokkos::Cuda>( std::vector<int>( 5 , 1 ) );
+  unit_test::test_product_tensor<Kokkos::Cuda,Kokkos::SparseProductTensor>( std::vector<int>( 2 , 1 ) );
+  unit_test::test_product_tensor<Kokkos::Cuda,Kokkos::SparseProductTensor>( std::vector<int>( 3 , 2 ) );
+  unit_test::test_product_tensor<Kokkos::Cuda,Kokkos::SparseProductTensor>( std::vector<int>( 5 , 1 ) );
 
   unit_test::test_block_crs_matrix<Kokkos::Cuda>( 1 , 2 );
   unit_test::test_block_crs_matrix<Kokkos::Cuda>( 1 , 5 );
@@ -111,7 +113,6 @@ int mainCuda()
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 5 , 1 );
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 5 , 5 );
 
-/*
   std::cout << "Stress tests:" << std::endl ;
 
   unit_test::test_block_crs_matrix<Kokkos::Cuda>( 10 , 8 );
@@ -120,13 +121,9 @@ int mainCuda()
   unit_test::test_block_crs_matrix<Kokkos::Cuda>( 13 , 10 );
 
   unit_test_tensor::test_tensor_crs_matrix<Kokkos::Cuda,IntType>( 100 , 10 );
-*/
-
-  const int pDeg = 3 ;
-  const int nGrid = 5 ;
 
   std::cout << std::endl << "\"Cuda Performance\"" << std::endl ;
-  unit_test::performance_test_driver<Kokkos::Cuda>( pDeg , nGrid );
+  unit_test::performance_test_driver<Kokkos::Cuda>();
 
   Kokkos::Cuda::finalize();
 

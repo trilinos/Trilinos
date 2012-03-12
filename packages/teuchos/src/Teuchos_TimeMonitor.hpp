@@ -144,11 +144,14 @@ typedef std::map<std::string, std::vector<std::pair<double, double> > > stat_map
 /// stopped when the scope is left.
 ///
 /// This class also keeps track of the set of all timers as class (not
-/// instance) data, and has a class method (\c summarize()) for
-/// printing out global statistics (min, mean, and max over all MPI
-/// processes, in an MPI build).  The \c summarize() method works
-/// correctly even if some MPI processes have different timers than
-/// other processes.
+/// instance) data.  It has a class method, \c summarize(), for
+/// printing out global statistics (like the min, mean, and max over
+/// all processes in the communicator).  The \c summarize() method
+/// works correctly even if some processes have different timers than
+/// other processes.  You may also use \c
+/// computeGlobalTimerStatistics() to compute the same global
+/// statistics, if you wish to use them in your program or output them
+/// in a different format than that of \c summarize().
 ///
 /// \warning This class must only be used to time functions that are
 ///   called only within the main program.  It may <i>not</i> be used in
@@ -234,29 +237,34 @@ public:
   /// the critical path (i.e., on the "slowest process" in the
   /// communicator).
   ///
-  /// The "Min" and "Max" timings are cumulative: the reported timing
-  /// is for all calls.  Along with the "Min" resp. "Max" timing comes
-  /// the call count of the process who had the min resp. max.  (If
-  /// more than one process had the min resp. max timing, then the
-  /// call count on the process with the smallest rank is reported.)
+  /// The "MinOverProcs" and "MaxOverProcs" timings are cumulative:
+  /// the reported timing is for all calls.  Along with the min resp.
+  /// max timing comes the call count of the process who had the min
+  /// resp. max.  (If more than one process had the min resp. max
+  /// timing, then the call count on the process with the smallest
+  /// rank is reported.)
   ///
-  /// The "Mean" is an arithmetic mean of all timings.  It is
-  /// <i>not</i> cumulative over call counts; it reports an average
-  /// timing for a single invocation over all calls on all processes,
-  /// not weighting any one process more than the others.  Thus, the
-  /// mean is <i>not</i> comparable with the min or max.  To make it
-  /// comparable, multiply the mean timing by the mean call count, and
-  /// divide by the number of processes in the communicator.  This
-  /// makes the mean cumulative.
+  /// The "MeanOverProcs" equals the sum of the processes' cumulative
+  /// timings, divided by the number of processes.  Thus, it is
+  /// cumulative over all calls, and is comparable with the
+  /// "MinOverProcs" and "MaxOverProcs" timings.  This differs from
+  /// the "MeanOverCallCounts" (see below).  This does <i>not</i>
+  /// weight the mean by call counts.
   ///
-  /// The mean for each timer equals the sum of the cumulative timing
-  /// over all processes, divided by the sum of the call counts over
-  /// all processes for that timing.  (We compute it a bit differently
-  /// to help prevent overflow.)  Along with the mean timing comes the
-  /// aritmetic mean of the call counts.  This may be fractional,
-  /// which is one reason why we report call counts as \c double
-  /// rather than \c int.  It has no particular connection to the mean
-  /// timing.
+  /// The "MeanOverCallCounts" is an arithmetic mean of all timings.
+  /// It is <i>not</i> cumulative.  It reports the mean timing for a
+  /// single invocation over all calls on all processes, not weighting
+  /// any one process more than the others.  For each timer, this is
+  /// the sum of the cumulative timing over all processes, divided by
+  /// the sum of the call counts over all processes for that timing.
+  /// (We compute it a bit differently to help prevent overflow.)  The
+  /// "MeanOverCallCounts" is <i>not</i> comparable with the min, max,
+  /// or "MeanOverProcs".  
+  ///
+  /// We report with both versions of the mean timing the mean call
+  /// count over processes.  This may be fractional, which is one
+  /// reason why we report call counts as \c double rather than \c
+  /// int.  It has no particular connection to the mean timing.
   ///
   /// All output arguments are returned redundantly on all processes
   /// in the communicator.  That makes this method an all-reduce.
@@ -271,9 +279,9 @@ public:
   ///
   /// \param statNames [out] On output: Each value in the statData map
   ///   is a vector.  That vector v has the same number of entries as
-  ///   statNames.  statNames[k] is the name of the statistic (e.g.,
-  ///   "Min", "Mean", or "Max") stored as v[k].  Always refer to
-  ///   statNames for the number and names of statistics.
+  ///   statNames.  statNames[k] is the name of the statistic (see
+  ///   above) stored as v[k].  Always refer to statNames for the
+  ///   number and names of statistics.
   ///
   /// \param comm [in] Communicator whose process(es) will participate
   ///   in the gathering of timer statistics.  This is a \c Ptr and
@@ -371,11 +379,11 @@ public:
   ///   the table of output.
   ///
   /// \param writeGlobalStats [in] If true (the default), compute and
-  ///   display the min, average (arithmetic mean), and max of all
-  ///   timings over all processes in the communicator.  If there is
-  ///   only one MPI process or if this is a non-MPI build of
-  ///   Trilinos, we only show the "global" timings, without the
-  ///   "statistics" that would be all the same anyway.
+  ///   display the statistics that \c computeGlobalTimerStatistics()
+  ///   computes.  If there is only one MPI process or if this is a
+  ///   non-MPI build of Trilinos, only compute and show the "global"
+  ///   timings, without the "statistics" that would be all the same
+  ///   anyway.
   ///
   /// \param writeZeroTimers [in] If false, do not display results for
   ///   timers that have never been called (numCalls() == 0).  If

@@ -17,6 +17,8 @@ IF(Stokhos_ENABLE_Tpetra AND Stokhos_ENABLE_Belos AND Stokhos_ENABLE_Ifpack2)
                twoD_diffusion_problem_tpetra.hpp 
 	       twoD_diffusion_problem_tpetra_def.hpp
                BelosPCETpetraAdapter.hpp
+	       tpetra_pce_instantiations.cpp
+	       ifpack2_pce_instantiations.cpp
        COMM serial mpi
        DEPLIBS stokhos
       )

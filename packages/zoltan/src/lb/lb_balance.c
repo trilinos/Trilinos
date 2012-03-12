@@ -24,9 +24,6 @@ extern "C" {
 #include "key_params.h"
 #include "ha_const.h"
 #include "all_allo_const.h"
-#ifdef ZOLTAN_DRUM
-#include "ha_drum.h"
-#endif
 #ifdef ZOLTAN_OVIS
 #include "ha_ovis.h"
 #endif
@@ -298,14 +295,6 @@ struct OVIS_parameters ovisParameters;
 
   start_time = Zoltan_Time(zz->Timer);
 
-#ifdef ZOLTAN_DRUM
-  /* initialize DRUM if needed */
-  Zoltan_Drum_Create_Model(zz);
-
-  /* stop DRUM monitors */
-  Zoltan_Drum_Stop_Monitors(zz);
-#endif
-
 #ifdef ZOLTAN_OVIS
   Zoltan_OVIS_Setup(zz, &ovisParameters);
   if (zz->Proc == 0)
@@ -390,11 +379,6 @@ struct OVIS_parameters ovisParameters;
    * Generate parts sizes.
    */
 
-#ifdef ZOLTAN_DRUM
-  /* set part sizes computed by DRUM, if requested */
-  Zoltan_Drum_Set_Part_Sizes(zz);
-#endif
-
 #ifdef ZOLTAN_OVIS
   /* set part sizes computed by OVIS, if requested. Processes set only their own value */
   {
@@ -477,12 +461,6 @@ struct OVIS_parameters ovisParameters;
   }
 
   ZOLTAN_TRACE_DETAIL(zz, yo, "Done partitioning");
-
-#ifdef ZOLTAN_DRUM
-  /* restart DRUM monitors -- should happen later but there are a lot
-     of ways out of Zoltan_LB and we want to make sure they do start */
-  Zoltan_Drum_Start_Monitors(zz);
-#endif
 
   if (*num_import_objs >= 0)
     MPI_Allreduce(num_import_objs, &gmax, 1, MPI_INT, MPI_MAX, 

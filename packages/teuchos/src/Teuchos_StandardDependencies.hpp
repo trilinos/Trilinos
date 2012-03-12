@@ -386,7 +386,7 @@ private:
 };
 
 
-/** \brief Speicialized class for retrieving a dummy object of type
+/** \brief Specialized class for retrieving a dummy object of type
  * StringVisualDependency.
  *
  * \relates StringVisualDependency
@@ -488,7 +488,7 @@ protected:
 };
 
 
-/** \brief Speicialized class for retrieving a dummy object of type
+/** \brief Specialized class for retrieving a dummy object of type
  * BoolVisualDependency.
  *
  * \relates BoolVisualDependency
@@ -614,7 +614,7 @@ private:
 };
 
 
-/** \brief Speicialized class for retrieving a dummy object of type
+/** \brief Specialized class for retrieving a dummy object of type
  * ConditionVisualDependency.
  *
  * \relates ConditionVisualDependency
@@ -826,7 +826,7 @@ void NumberVisualDependency<T>::validateDep() const{
 }
   
 
-/** \brief Speicialized class for retrieving a dummy object of type
+/** \brief Specialized class for retrieving a dummy object of type
  * NumberVisualDependency.
  *
  * \relates NumberVisualDependency
@@ -1187,7 +1187,7 @@ NumberArrayLengthDependency<DependeeType, DependentType>::validateDep()
   }
 }
 
-/** \brief Speicialized class for retrieving a dummy object of type
+/** \brief Specialized class for retrieving a dummy object of type
  * NumberArrayLengthDependency.
  *
  * \relates NumberArrayLengthDependency
@@ -1368,7 +1368,7 @@ private:
 };
 
 
-/** \brief Speicialized class for retrieving a dummy object of type
+/** \brief Specialized class for retrieving a dummy object of type
  * StringValidatorDependency.
  *
  * \relates StringValidatorDependency
@@ -1495,7 +1495,7 @@ private:
 
 };
 
-/** \brief Speicialized class for retrieving a dummy object of type
+/** \brief Specialized class for retrieving a dummy object of type
  * BoolValidatorDependency.
  *
  * \relates BoolValidatorDependency
@@ -1784,7 +1784,7 @@ void RangeValidatorDependency<T>::setDependentsToValidator(
   }
 }
 
-/** \brief Speicialized class for retrieving a dummy object of type
+/** \brief Specialized class for retrieving a dummy object of type
  * RangeValidatorDependency.
  *
  * \relates RangeValidatorDependency
@@ -2040,7 +2040,7 @@ TwoDRowDependency<DependeeType, DependentType>::getBadDependentValueErrorMessage
   return os.str();
 }
 
-/** \brief Speicialized class for retrieving a dummy object of type
+/** \brief Specialized class for retrieving a dummy object of type
  * TwoDRowDependency.
  *
  * \relates TwoDRowDependency
@@ -2203,7 +2203,7 @@ TwoDColDependency<DependeeType, DependentType>::getBadDependentValueErrorMessage
   return os.str();
 }
 
-/** \brief Speicialized class for retrieving a dummy object of type
+/** \brief Specialized class for retrieving a dummy object of type
  * TwoDColDependency.
  *
  * \relates TwoDColDependency

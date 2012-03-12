@@ -49,21 +49,9 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_BUILD_INOUT
   "Enable input/output functionality"
   ON )
 
-# Requires the Zoltan package 
-TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_BUILD_Zoltan
-  HAVE_ZOLTAN
-  "Enable zoltan functionality"
-  OFF )
-
+# Deprecated EpetraExt_ENABLE_Zoltan
 IF(${PACKAGE_NAME}_ENABLE_Zoltan)
-  SET(${PACKAGE_NAME}_BUILD_Zoltan ON)
-  SET(HAVE_ZOLTAN ON)
-ENDIF()
-
-IF(${PACKAGE_NAME}_BUILD_Zoltan)
-  IF(NOT ${PACKAGE_NAME}_ENABLE_Zoltan)
-    MESSAGE(FATAL_ERROR "Zoltan support is being built since the flag ${TRIBITS_PACKAGE}_BUILD_Zoltan was enabled, but the Trilinos package Zoltan was not enabled.  Please enable the Zoltan package.")
-   ENDIF()
+  MESSAGE(WARNING "Zoltan functionality in EpetraExt was deprecated in Trilinos v10.8 and is removed in Trilinos v11; use Isorropia or Zoltan2.")
 ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_BUILD_COLORING
@@ -165,10 +153,8 @@ TRIBITS_EXCLUDE_FILES(
   src/transform/EpetraExt_Dirichlet_.*
   src/transform/EpetraExt_StaticCondensation_LinearProblem..*
   src/transform/EpetraExt_SubCopy_CrsMatrix..*
-  src/zoltan/EpetraExt_ZoltanMpi.*
   test/Copy
   test/Makefile.template
-  test/Zoltan/Dummy
   test/inout/build
   test/testAll.*
   )

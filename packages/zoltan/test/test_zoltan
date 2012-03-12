@@ -53,7 +53,6 @@ set no_chaco = $?ZOLTAN_NO_CHACO
 set no_rcb = $?ZOLTAN_NO_RCB
 set no_rib = $?ZOLTAN_NO_RIB
 set no_hsfc = $?ZOLTAN_NO_HSFC
-set no_oct = $?ZOLTAN_NO_OCT
 set no_parmetis = $?ZOLTAN_NO_PARMETIS
 set no_scotch = $?ZOLTAN_NO_SCOTCH
 set no_order = $?ZOLTAN_NO_ORDER
@@ -65,7 +64,6 @@ set yes_jostle = $?ZOLTAN_YES_JOSTLE
 set yes_fortran = $?ZOLTAN_YES_FORTRAN
 set yes_cpp = $?ZOLTAN_YES_CPP
 set yes_serial = $?ZOLTAN_YES_SERIAL
-set old_interface = $?ZOLTAN_OLD_INTERFACE
 #
 # If a test fails, exit
 #
@@ -83,7 +81,6 @@ set failure_detail = $?ZOLTAN_FAILURE_DETAIL
 set new_answers = $?ZOLTAN_NEW_ANSWERS
 
 set no_hier = $?ZOLTAN_NO_HIER
-set yes_drum = $?ZOLTAN_YES_DRUM
 
 # Parse command-line options.
 # These options will override the environment variables.
@@ -100,8 +97,6 @@ while ( $#argv )
      @ no_rib = 1
   else if ( "$1" == "-no_hsfc" ) then
      @ no_hsfc = 1
-  else if ( "$1" == "-no_oct" ) then
-     @ no_oct = 1
   else if ( "$1" == "-no_parmetis" ) then
      @ no_parmetis = 1
   else if ( "$1" == "-no_scotch" ) then
@@ -130,10 +125,6 @@ while ( $#argv )
      @ yes_nemesis = 1
   else if ( "$1" == "-no_hier" ) then
      @ no_hier = 1
-  else if ( "$1" == "-yes_drum" ) then
-     @ yes_drum = 1
-  else if ( "$1" == "-old_interface" ) then
-     @ old_interface = 1
   else if ( "$1" == "-exit_on_failure" ) then
      @ exit_on_failure = 1
   else if ( "$1" == "-failure_detail" ) then
@@ -297,11 +288,6 @@ endif
 #   set out_tag = fout
 #endif
 
-# Old interface?
-if ( $old_interface) then
-   set no_reftree = 1
-endif
-
 # Find the right zdrive to run
 @ found = 0
 if ( $yes_fortran ) then
@@ -372,7 +358,6 @@ if ( $yes_fortran ) then
 # Using F90
   if (! $no_rcb) then
     set ch_methods = ( $ch_methods rcb rcb-ts )
-    if (! $old_interface) then
       set ch_methods = ( $ch_methods rcb-partless rcb-partless-ts )
       set ch_methods = ( $ch_methods rcb-partmore rcb-partmore-ts )
       set ch_methods = ( $ch_methods rcb-partlocal1 rcb-partlocal1-ts )
@@ -383,11 +368,9 @@ if ( $yes_fortran ) then
       set ch_methods = ( $ch_methods rcb-rect-avg rcb-rect-avg-ts )
       set ch_methods = ( $ch_methods rcb-partlocal1-avg rcb-partlocal1-avg-ts )
       set ch_methods = ( $ch_methods rcb-1D rcb-2D)
-    endif
   endif
   if (! $no_rib) then
     set ch_methods = ( $ch_methods rib rib-ts )
-    if (! $old_interface) then
       set ch_methods = ( $ch_methods rib-partless rib-partless-ts )
       set ch_methods = ( $ch_methods rib-partmore rib-partmore-ts )
       set ch_methods = ( $ch_methods rib-partlocal1 rib-partlocal1-ts )
@@ -397,20 +380,13 @@ if ( $yes_fortran ) then
       set ch_methods = ( $ch_methods rib-avg rib-avg-ts )
       set ch_methods = ( $ch_methods rib-partlocal1-avg rib-partlocal1-avg-ts )
       set ch_methods = ( $ch_methods rib-1D rib-2D)
-    endif
   endif
   if (! $no_hsfc) then
     set ch_methods = ( $ch_methods hsfc )
-    if (! $old_interface) then
       set ch_methods = ( $ch_methods hsfc-partless hsfc-partmore )
       set ch_methods = ( $ch_methods hsfc-partlocal1 hsfc-partlocal2 )
       set ch_methods = ( $ch_methods hsfc-partlocal3 hsfc-partlocal4 )
       set ch_methods = ( $ch_methods hsfc-1D hsfc-2D)
-    endif
-  endif
-  if (! $no_oct) then
-    set ch_methods = ( $ch_methods oct0 oct1 oct2 )
-    set ch_methods = ( $ch_methods oct0-partlocal3 oct1-partlocal3 oct2-partlocal3 )
   endif
   if ((! $no_hier) && (! $no_parmetis)) then
     if (! $yes_serial) then
@@ -426,7 +402,6 @@ if ( $yes_fortran ) then
       set ch_methods = ( $ch_methods partkway-v$pmversion \
 	partgeom-v$pmversion \
 	partgeomkway-v$pmversion adaptive-v$pmversion )     #diffusion-v$pmversion
-      if (! $old_interface) then
 	set ch_methods = ( $ch_methods \
 	  partkway-partless-v$pmversion partkway-partmore-v$pmversion \
 	  partkway-partlocal1-v$pmversion partkway-partlocal2-v$pmversion \
@@ -446,13 +421,10 @@ if ( $yes_fortran ) then
 	  set ch_methods = ( $ch_methods order-metis-v$pmversion  \
 	    order-parmetis-v$pmversion partkway-order-metis-v$pmversion )
 	endif
-      endif
     endif
   endif
   if (! $no_hg) then
-    if (! $old_interface) then
       set ch_methods = ( $ch_methods phg phg.addobjwgt)
-    endif
   endif
 else
 # Using C or C++
@@ -470,7 +442,6 @@ else
   # These Chaco problems are run only for C/C++ driver; F90 driver does not
   if (! $no_rcb) then
     set ch_methods = ( $ch_methods rcb rcb-oneproc rcb-ts )
-    if (! $old_interface) then
       set ch_methods = ( $ch_methods rcb-reuse rcb-reuse-ts )
       set ch_methods = ( $ch_methods rcb-rect rcb-rect-ts )
       set ch_methods = ( $ch_methods rcb-lock rcb-lock-ts )
@@ -493,9 +464,7 @@ else
 	set ch_methods = ( $ch_methods rcb-1D rcb-2D)
       endif
 
-    endif
     set nem_methods = ( $nem_methods rcb rcb-ts )
-    if (! $old_interface) then
       set nem_methods = ( $nem_methods rcb-reuse rcb-reuse-ts )
       set nem_methods = ( $nem_methods rcb-rect rcb-rect-ts )
       set nem_methods = ( $nem_methods rcb-lock rcb-lock-ts )
@@ -522,11 +491,9 @@ else
       set nem_methods = ( $nem_methods rcb-avg rcb-avg-ts )
       set nem_methods = ( $nem_methods rcb-rect-avg rcb-rect-avg-ts )
       set nem_methods = ( $nem_methods rcb-partlocal1-avg rcb-partlocal1-avg-ts )
-    endif
   endif
   if (! $no_rib) then
     set ch_methods = ( $ch_methods rib rib-oneproc rib-ts )
-    if (! $old_interface) then
       set ch_methods = ( $ch_methods rib-partless rib-partless-ts )
       set ch_methods = ( $ch_methods rib-partmore rib-partmore-ts )
       set ch_methods = ( $ch_methods rib-partlocal1 rib-partlocal1-ts )
@@ -538,9 +505,7 @@ else
       if (! $yes_serial) then
 	set ch_methods = ( $ch_methods rib-1D rib-2D)
       endif
-    endif
     set nem_methods = ( $nem_methods rib rib-ts )
-    if (! $old_interface) then
       set nem_methods = ( $nem_methods rib-partless rib-partless-ts )
       set nem_methods = ( $nem_methods rib-partmore rib-partmore-ts )
       set nem_methods = ( $nem_methods rib-partlocal1 rib-partlocal1-ts )
@@ -549,11 +514,9 @@ else
       set nem_methods = ( $nem_methods rib-partlocal4 rib-partlocal4-ts )
       set nem_methods = ( $nem_methods rib-avg rib-avg-ts )
       set nem_methods = ( $nem_methods rib-partlocal1-avg rib-partlocal1-avg-ts )
-    endif
   endif
   if (! $no_hsfc) then
     set ch_methods = ( $ch_methods hsfc hsfc-oneproc )
-    if (! $old_interface) then
       set ch_methods = ( $ch_methods hsfc-partless hsfc-partmore )
       set ch_methods = ( $ch_methods hsfc-partlocal1 hsfc-partlocal2 )
       set ch_methods = ( $ch_methods hsfc-partlocal3 hsfc-partlocal4 )
@@ -562,22 +525,11 @@ else
 	# These tests assume six or more processors are used.
 	set ch_methods = ( $ch_methods hsfc-partlocal6 hsfc-partlocal7 )
       endif
-    endif
     set nem_methods = ( $nem_methods hsfc )
-    if (! $old_interface) then
       set nem_methods = ( $nem_methods hsfc-partless hsfc-partmore )
       set nem_methods = ( $nem_methods hsfc-partlocal1 hsfc-partlocal2 )
       set nem_methods = ( $nem_methods hsfc-partlocal3 hsfc-partlocal4 )
       set nem_methods = ( $nem_methods hsfc-partlocal6 hsfc-partlocal7 )
-    endif
-  endif
-  if (! $no_oct) then
-    set ch_methods = ( $ch_methods oct0 oct1 oct2 )
-    set ch_methods = ( $ch_methods oct0-partlocal3 oct1-partlocal3 oct2-partlocal3 )
-    set ch_methods = ( $ch_methods oct0-partlocal6 oct1-partlocal6 oct2-partlocal6 )
-    set ch_methods = ( $ch_methods oct0-partlocal7 oct1-partlocal7 oct2-partlocal7 )
-    set nem_methods = ( $nem_methods oct0 oct1 oct2 )
-    set nem_methods = ( $nem_methods oct0-partlocal3 oct1-partlocal3 oct2-partlocal3 )
   endif
   if (! $no_reftree) then
     set nem_methods = ( $nem_methods reftree reftree-connected)
@@ -593,7 +545,6 @@ else
 	partgeomkway-v$pmversion adaptive-v$pmversion ) #diffusion-v$pmversion
       set nem_methods = ( $nem_methods partkway-v$pmversion \
 	partgeomkway-v$pmversion adaptive-v$pmversion )
-      if (! $old_interface) then
 	set ch_methods = ( $ch_methods \
 	  partkway-partless-v$pmversion partkway-partmore-v$pmversion \
 	  partkway-partlocal1-v$pmversion partkway-partlocal2-v$pmversion \
@@ -622,7 +573,6 @@ else
 	  set ch_methods = ( $ch_methods order-metis-v$pmversion  \
 	    order-parmetis-v$pmversion partkway-order-metis-v$pmversion )
 	endif
-      endif
     endif
   endif
   if (! $no_scotch) then
@@ -632,17 +582,13 @@ else
     endif
   endif
   if (! $no_color) then
-    if (! $old_interface) then
       set ch_methods = ( $ch_methods color color-after-phg color-dist2 )
       set ch_methods = ( $ch_methods color-orderU color-orderB )
-    endif
   endif
   if (! $no_hg) then
-    if (! $old_interface) then
       set ch_methods = ( $ch_methods phg phg-oneproc phg.addobjwgt )
       set ch_methods = ( $ch_methods graph graph-partition \
 				     graph-refine graph-repartition)
-    endif
   endif
   if ( (! $no_hier) && (! $no_parmetis)) then
     if (! $yes_serial) then
@@ -652,9 +598,6 @@ else
       set nem_methods = ( $nem_methods hier-parmetis3-hsfc hier-parmetis3-rcb \
 	hier-rcb3-hsfc hier-rcb3-parmetis )
     endif
-  endif
-  if ( $yes_drum ) then
-    set ch_methods = ( $ch_methods hsfc-drum )
   endif
 endif
 
@@ -668,7 +611,6 @@ echo "C++        = $yes_cpp" >> $logfile
 echo "Run cmd    = $run" >> $logfile
 echo "Run dir    = $cwd" >> $logfile
 echo "Executable = $zdrive" >> $logfile
-echo "Old Interf = $old_interface" >> $logfile
 echo " " >> $logfile
 
 # Loop over Chaco problems
@@ -1320,7 +1262,6 @@ usage:
   echo "   -no_rcb"
   echo "   -no_rib"
   echo "   -no_hsfc"
-  echo "   -no_oct"
   echo "   -no_parmetis"
   echo "   -no_scotch"
   echo "   -no_reftree"
@@ -1333,8 +1274,6 @@ usage:
   echo "   -yes_fortran"
   echo "   -yes_cpp"
   echo "   -yes_jostle"
-  echo "   -yes_drum"
-  echo "   -old_interface"
   echo "   -exit_on_failure (exit on any test failure)"
   echo "   -failure_detail (distinguish between crash and wrong answer)"
   echo "The default is to run all methods (except Jostle) and file formats."
