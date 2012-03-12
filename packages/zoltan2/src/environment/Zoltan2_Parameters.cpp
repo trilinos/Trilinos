@@ -378,6 +378,39 @@ void createAllParameters(Teuchos::ParameterList &pList)
   anyNumValidatorP->printDoc("random seed\n", docString);
 
   pList.set<string>(parameterName, "0.5", docString.str(), anyNumValidatorP);
+  ///////////////////////////////////////////////////////////
+  // LEVEL: Sub list, ordering problem parameters
+  ///////////////////////////////////////////////////////////
+
+  ParameterList &ordering = pList.sublist("ordering", false,
+    string("Ordering problem parameters"));
+
+  ////////// topLevel/ordering/order_method
+  parameterName = string("order_method");
+  strValidatorP = rcp(new StringValidator(
+    tuple<string>("rcm", "method2", "method3")));
+
+  docString.str("");
+  strValidatorP->printDoc(
+    "Document the order_method parameter here\n"
+    "(Default is ?)\n",
+     docString);
+
+  ordering.set<string>(parameterName, "rcm", docString.str(), strValidatorP);
+
+  ////////// topLevel/ordering/order_package
+  parameterName = string("order_package");
+  strValidatorP = rcp(new StringValidator(
+    tuple<string>("amd", "package2", "package3")));
+
+  docString.str("");
+  strValidatorP->printDoc(
+    "Document the order_package parameter here\n"
+    "(Default is ?)\n",
+     docString);
+
+  ordering.set<string>(parameterName, "amd", docString.str(), strValidatorP);
+
 
   ///////////////////////////////////////////////////////////
   // LEVEL: Sub list, partitioning problem parameters
