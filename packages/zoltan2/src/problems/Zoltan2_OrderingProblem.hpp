@@ -125,11 +125,11 @@ void OrderingProblem<Adapter>::solve(bool newData)
   // TODO: Use RCM if graph model is defined, otherwise use Natural.
   // Need some exception handling here, too.
 
-  string method = this->params_->template get<string>("ORDER_METHOD", "RCM");
+  string method = this->params_->template get<string>("order_method", "rcm");
   typedef typename Adapter::base_adapter_t base_adapter_t;
 
   // TODO: Ignore case
-  if (method.compare("RCM") == 0)
+  if (method.compare("rcm") == 0)
   {
       AlgRCM<base_adapter_t>(this->graphModel_, this->solution_, this->params_,
                       this->comm_);
@@ -144,8 +144,8 @@ void OrderingProblem<Adapter>::solve(bool newData)
   }
   else if (method.compare("Minimum_Degree") == 0)
   {
-      string pkg = this->params_->template get<string>("ORDER_PACKAGE", "AMD");
-      if (pkg.compare("AMD") == 0)
+      string pkg = this->params_->template get<string>("order_package", "amd");
+      if (pkg.compare("amd") == 0)
       {
           AlgAMD<base_adapter_t>(this->graphModel_, this->solution_, this->params_,
                           this->comm_);
