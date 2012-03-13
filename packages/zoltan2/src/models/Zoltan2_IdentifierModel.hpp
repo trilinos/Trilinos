@@ -100,8 +100,6 @@ public:
   }
 
   void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const { return ; }
-
-  int getNumWeights() const { return 0; }
 };
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -128,78 +126,7 @@ public:
   
   IdentifierModel( const IdentifierInput<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
-    modelFlag_t &modelFlags):
-      gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), comm_(comm),
-      gids_(), weights_(), gnos_(), gnosConst_()
-  {
-    int weightDim = ia->getNumberOfWeights();
-    size_t nLocalIds = ia->getLocalNumberOfIdentifiers();
-
-    const scalar_t **wgts=NULL;
-    int *wgtStrides = NULL;
-
-    if (nLocalIds && weightDim){
-      wgts = new const scalar_t * [weightDim];
-      wgtStrides = new lno_t [weightDim];
-      env_->localMemoryAssertion(__FILE__, __LINE__, nLocalIds, 
-        wgts && wgtStrides);
-    }
-
-    const gid_t *gids=NULL;
-
-    try{
-      ia->getIdentifierList(gids);
-      for (int dim=0; dim < weightDim; dim++)
-        ia->getIdentifierWeights(dim, wgts[dim], wgtStrides[dim]);
-    }
-    Z2_FORWARD_EXCEPTIONS;
-
-    if (nLocalIds){
-      gids_ = arcp(gids, 0, nLocalIds, false);
-  
-      if (weightDim > 0){
-        input_t *w = new input_t [weightDim];
-        for (int i=0; i < weightDim; i++){
-          ArrayView<const scalar_t> wgtArray(wgts[i], nLocalIds*wgtStrides[i]);
-          w[i] = input_t(wgtArray, wgtStrides[i]);
-        }
-        weights_ = arcp<input_t>(w, 0, weightDim);
-      }
-    }
-
-    RCP<const idmap_t> idMap;
-
-    try{
-      if (modelFlags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE))
-        idMap = rcp(new idmap_t(env_, comm_, gids_, true));
-      else
-        idMap = rcp(new idmap_t(env_, comm_, gids_, false));
-    }
-    Z2_FORWARD_EXCEPTIONS;
-
-    gnosAreGids_ = idMap->gnosAreGids();
-
-    this->setIdentifierMap(idMap);
-
-    gno_t lsum = nLocalIds;
-    reduceAll<int, gno_t>(*comm_, Teuchos::REDUCE_SUM, 1, &lsum,
-      &numGlobalIdentifiers_);
-
-    if (!gnosAreGids_ && nLocalIds>0){
-      gno_t *tmpGno = new gno_t [nLocalIds];
-      env_->localMemoryAssertion(__FILE__, __LINE__, nLocalIds, tmpGno);
-      gnos_ = arcp(tmpGno, 0, nLocalIds);
-
-      try{
-        ArrayRCP<gid_t> gidsNonConst = arcp_const_cast<gid_t>(gids_);
-        idMap->gidTranslate( gidsNonConst(0,nLocalIds),  gnos_(0,nLocalIds), 
-          TRANSLATE_APP_TO_LIB);
-      }
-      Z2_FORWARD_EXCEPTIONS;
-    }
-
-    gnosConst_ = arcp_const_cast<const gno_t>(gnos_);
-  }
+    modelFlag_t &modelFlags);
 
   /*! Returns the number identifiers on this process.
    */
@@ -265,8 +192,6 @@ public:
     getIdentifierList(gnos, weights);
   }
 
-  int getNumWeights() const { return getIdentifierWeightDim(); }
-
 private:
 
   bool gnosAreGids_;
@@ -278,6 +203,86 @@ private:
   ArrayRCP<gno_t> gnos_;
   ArrayRCP<const gno_t> gnosConst_;
 };
+
+template <typename User>
+  IdentifierModel<IdentifierInput<User> >::IdentifierModel( 
+    const IdentifierInput<User> *ia,
+    const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
+    modelFlag_t &modelFlags):
+      gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), comm_(comm),
+      gids_(), weights_(), gnos_(), gnosConst_()
+{
+  int weightDim = ia->getNumberOfWeights();
+  size_t nLocalIds = ia->getLocalNumberOfIdentifiers();
+
+  Array<const scalar_t *> wgts(weightDim, NULL);
+  Array<int> wgtStrides(weightDim, 0);
+  Array<lno_t> weightArrayLengths(weightDim, 0);
+
+  if (weightDim > 0){
+    input_t *w = new input_t [weightDim];
+    weights_ = arcp<input_t>(w, 0, weightDim);
+  }
+
+  const gid_t *gids=NULL;
+
+  try{
+    ia->getIdentifierList(gids);
+    for (int dim=0; dim < weightDim; dim++)
+      ia->getIdentifierWeights(dim, wgts[dim], wgtStrides[dim]);
+  }
+  Z2_FORWARD_EXCEPTIONS;
+
+  if (nLocalIds){
+    gids_ = arcp(gids, 0, nLocalIds, false);
+
+    if (weightDim > 0){
+      for (int i=0; i < weightDim; i++){
+        if (wgts[i] != NULL){
+          ArrayView<const scalar_t> wgtArray(wgts[i], nLocalIds*wgtStrides[i]);
+          weights_[i] = input_t(wgtArray, wgtStrides[i]);
+          weightArrayLengths[i] = nLocalIds;
+        }
+      }
+    }
+  }
+
+  this->setWeightArrayLengths(weightArrayLengths, *comm_);
+
+  RCP<const idmap_t> idMap;
+
+  try{
+    if (modelFlags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE))
+      idMap = rcp(new idmap_t(env_, comm_, gids_, true));
+    else
+      idMap = rcp(new idmap_t(env_, comm_, gids_, false));
+  }
+  Z2_FORWARD_EXCEPTIONS;
+
+  gnosAreGids_ = idMap->gnosAreGids();
+
+  this->setIdentifierMap(idMap);
+
+  gno_t lsum = nLocalIds;
+  reduceAll<int, gno_t>(*comm_, Teuchos::REDUCE_SUM, 1, &lsum,
+    &numGlobalIdentifiers_);
+
+  if (!gnosAreGids_ && nLocalIds>0){
+    gno_t *tmpGno = new gno_t [nLocalIds];
+    env_->localMemoryAssertion(__FILE__, __LINE__, nLocalIds, tmpGno);
+    gnos_ = arcp(tmpGno, 0, nLocalIds);
+
+    try{
+      ArrayRCP<gid_t> gidsNonConst = arcp_const_cast<gid_t>(gids_);
+      idMap->gidTranslate( gidsNonConst(0,nLocalIds),  gnos_(0,nLocalIds),
+        TRANSLATE_APP_TO_LIB);
+    }
+    Z2_FORWARD_EXCEPTIONS;
+  }
+
+  gnosConst_ = arcp_const_cast<const gno_t>(gnos_);
+}
+
 
 template <typename User>
 class IdentifierModel<MatrixInput<User> > : public Model<MatrixInput<User> >
@@ -293,59 +298,9 @@ public:
   
   IdentifierModel( const MatrixInput<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
-    modelFlag_t &modelFlags):
-      gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), 
-      comm_(comm), gids_(), weights_(), gnos_(), gnosConst_()
-  {
-    size_t nLocalIds;
-    const gid_t *gids;
-    const gid_t *colIds;
-    const lno_t *offsets;
+    modelFlag_t &modelFlags);
 
-    try{
-      nLocalIds = ia->getRowListView(gids, offsets, colIds);
-    }
-    Z2_FORWARD_EXCEPTIONS;
-
-    if (nLocalIds){
-      gids_ = arcp(gids, 0, nLocalIds, false);
-    }
-
-    RCP<const idmap_t> idMap;
-
-    try{
-      if (modelFlags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE) )
-        idMap = rcp(new idmap_t(env_, comm_, gids_, true));
-      else
-        idMap = rcp(new idmap_t(env_, comm_, gids_, false));
-    }
-    Z2_FORWARD_EXCEPTIONS;
-
-    gnosAreGids_ = idMap->gnosAreGids();
-
-    this->setIdentifierMap(idMap);   // Base Model method
-
-    gno_t lsum = nLocalIds;
-    reduceAll<int, gno_t>(*comm_, Teuchos::REDUCE_SUM, 1, &lsum,
-      &numGlobalIdentifiers_);
-
-    if (!gnosAreGids_ && nLocalIds>0){
-      gno_t *tmpGno = new gno_t [nLocalIds];
-      env_->localMemoryAssertion(__FILE__, __LINE__, nLocalIds, tmpGno);
-      gnos_ = arcp(tmpGno, 0, gids_.size());
-
-      try{
-        ArrayRCP<gid_t> gidsNonConst = arcp_const_cast<gid_t>(gids_);
-        idMap->gidTranslate(gidsNonConst(0, nLocalIds),  
-          gnos_(0, nLocalIds), TRANSLATE_APP_TO_LIB);
-      }
-      Z2_FORWARD_EXCEPTIONS;
-    }
-   
-    gnosConst_ = arcp_const_cast<const gno_t>(gnos_);
-  }
-
-  /*! Returns the number identifierson this process.
+  /*! Returns the number identifiers on this process.
    */
   size_t getLocalNumIdentifiers() const { return gids_.size(); }
 
@@ -410,8 +365,6 @@ public:
     getIdentifierList(gnos, weights);
   }
 
-  int getNumWeights() const { return getIdentifierWeightDim(); }
-
 private:
 
   bool gnosAreGids_;
@@ -423,6 +376,66 @@ private:
   ArrayRCP<gno_t> gnos_;
   ArrayRCP<const gno_t> gnosConst_;
 };
+
+  
+template <typename User>
+  IdentifierModel<MatrixInput<User> >::IdentifierModel( 
+    const MatrixInput<User> *ia, 
+    const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
+    modelFlag_t &modelFlags):
+      gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), comm_(comm),
+      gids_(), weights_(), gnos_(), gnosConst_()
+{
+  size_t nLocalIds;
+  const gid_t *gids;
+  const gid_t *colIds;
+  const lno_t *offsets;
+
+  try{
+    nLocalIds = ia->getRowListView(gids, offsets, colIds);
+  }
+  Z2_FORWARD_EXCEPTIONS;
+
+  if (nLocalIds){
+    gids_ = arcp(gids, 0, nLocalIds, false);
+  }
+
+  RCP<const idmap_t> idMap;
+
+  try{
+    if (modelFlags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE) )
+      idMap = rcp(new idmap_t(env_, comm_, gids_, true));
+    else
+      idMap = rcp(new idmap_t(env_, comm_, gids_, false));
+  }
+  Z2_FORWARD_EXCEPTIONS;
+
+  gnosAreGids_ = idMap->gnosAreGids();
+
+  this->setIdentifierMap(idMap);   // Base Model methods
+  Array<lno_t> weightListSizes;
+  this->setWeightArrayLengths(weightListSizes, *comm_);
+
+  gno_t lsum = nLocalIds;
+  reduceAll<int, gno_t>(*comm_, Teuchos::REDUCE_SUM, 1, &lsum,
+    &numGlobalIdentifiers_);
+
+  if (!gnosAreGids_ && nLocalIds>0){
+    gno_t *tmpGno = new gno_t [nLocalIds];
+    env_->localMemoryAssertion(__FILE__, __LINE__, nLocalIds, tmpGno);
+    gnos_ = arcp(tmpGno, 0, gids_.size());
+
+    try{
+     ArrayRCP<gid_t> gidsNonConst = arcp_const_cast<gid_t>(gids_);
+      idMap->gidTranslate(gidsNonConst(0, nLocalIds),
+        gnos_(0, nLocalIds), TRANSLATE_APP_TO_LIB);
+    }
+    Z2_FORWARD_EXCEPTIONS;
+  }
+
+  gnosConst_ = arcp_const_cast<const gno_t>(gnos_);
+}
+
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 

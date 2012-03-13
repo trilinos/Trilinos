@@ -88,7 +88,7 @@ public:
 
   /*! Constructor
    */
-  Model() : idMap_() {}
+  Model() : idMap_(), weightDim_(0), uniform_() {}
 
    /*! \brief Return the map from user global identifiers to internal
    *                Zoltan2 global numbers.
@@ -98,6 +98,19 @@ public:
    *  identical to the application's global IDs.
    */
   RCP<const idmap_t > getIdentifierMap() const { return idMap_; }
+
+  /*! \brief Return the number of weights supplied for each object.
+   *   If the user supplied no weights, dimension one is returned, because
+   *   one dimension of uniform weights is implied.
+   */
+  int getNumWeights() const { return weightDim_;}
+
+  /*! \brief Return whether the weights are uniform or not.
+   *  \param weightDim a value from 0 to one less than the number of weights.
+   *  \return 1 if the weights for that dimension are uniform, 0 if there
+   *          is a list of differing weights for that dimension.
+   */
+  bool uniformWeight(int weightDim) const { return uniform_[weightDim];}
 
   /*!  \brief Return the local number of objects.
    *
@@ -123,19 +136,68 @@ public:
    */
   virtual void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const = 0;
 
-  /*! \brief Return the number of weights supplied for each object.
-   */
-  virtual int getNumWeights() const = 0;
-
 protected:
 
-  /*! Set the IdentifierMap used by the model.
+  /*! \brief Set the IdentifierMap used by the model.
+   *
+   *  The Model should set the identifier map with this call
+   *  during the constructor.
    */
   void setIdentifierMap(RCP<const idmap_t> &map) { idMap_ = map; }
+
+  /*! \brief Set the length of each weight array.  
+   * The Model calls this in the constructor so we know which
+   * weights are uniform.  If lengths for a given weight dimension
+   * are zero on all processes, then we know that uniform weights are implied.
+   *
+   * This must be called by all processes.
+   */
+  void setWeightArrayLengths(const Array<lno_t> &len, 
+    const Teuchos::Comm<int> &comm)
+  {
+    weightDim_ = len.size();
+
+    if (weightDim_ < 1)
+      weightDim_ = 1;          // uniform weights are implied
+
+    int *lval = new int [weightDim_];
+    uniform_ = arcp(lval, 0, weightDim_);
+
+    if (len.size() < 1){
+      uniform_[0] = 1;
+      return;
+    }
+
+    for (int i=0; i < weightDim_; i++){
+      if (len[i] > 0)
+        lval[i] = 1;
+      else
+        lval[i] = 0;
+    }
+
+    int *rval = new int [weightDim_];
+
+    try{
+      reduceAll<int, int>(comm, Teuchos::REDUCE_MAX, weightDim_, lval, rval);
+    }
+    Z2_FORWARD_EXCEPTIONS
+
+    for (int i=0; i < weightDim_; i++){
+      if (rval[i] > 0)
+        uniform_[i] = 0;
+      else
+        uniform_[i] = 1;
+    }
+ 
+    delete [] rval;
+  }
 
 private:
 
   RCP<const idmap_t> idMap_;
+
+  int weightDim_;       /*!< Minimum of 1 or number of user-supplied weights */
+  ArrayRCP<int> uniform_;   /*!< weightDim_ flags, 1 if uniform, 0 if not.   */
 };
 
 }   //  namespace Zoltan2

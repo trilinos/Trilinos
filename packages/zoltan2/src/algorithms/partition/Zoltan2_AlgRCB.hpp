@@ -22,7 +22,8 @@
 
 namespace Zoltan2{
 
-// The boolean parameters
+/*! \brief The boolean parameters of interest to the RCB algorithm.
+ */
 enum rcbParams{
   doStatus,
   doTiming,
@@ -33,6 +34,7 @@ enum rcbParams{
   lowMemory,
   lowRunTime,
   balanceMemoryRunTime,
+  weightsAreUniform,
   balanceCount,
   balanceWeight,
   minTotalWeight,
@@ -41,6 +43,14 @@ enum rcbParams{
   averageCuts,
   rectilinearBlocks,
   NUM_RCB_PARAMS
+};
+
+/*! \brief During partitioning flags are stored in unsigned char arrays.
+ */
+
+enum leftRightFlag{
+  leftFlag = 0xfe;
+  rightFlag = 0xff;
 };
 
 /*! \brief Recursive coordinate bisection partitioning.
@@ -57,7 +67,7 @@ enum rcbParams{
  *   \todo write the rcb tree back to the solution
  *   \todo for "repartition", start with the tree in the solution
  *   \todo for now we balance the first weight, so we need to add
- *             the multicriteria options
+ *             the multicriteria options as Zoltan1 does it.
  *   \todo incorporate part sizes
  */
 
@@ -205,18 +215,53 @@ void AlgRCB(
   //    a tree representing the cuts
 
 }
+/*! \brief Find the point in a binary spacial partitioningthat divides 
+ *               the objects evenly.
+ *
+ *   \param env the Environment for the application.
+ *   \param comm the problem communicator.
+ *   \param coordList the list of values to be divided.
+ *   \param weightList the weights, if any, for each value.
+ *   \param coordGlobalMin the global minimum of the coordinate values.
+ *   \param coordGlobalMax the global maximum of the coordinate values.
+ *   \param params a bit map of the boolean rcbParams.
+ *   \param numTestCuts the number of cuts to make in one round when seeking the
+ *                       the cut that divides the coordinates evenly.
+ *   \param imbalanceTolerance the maximum acceptable imbalance.
+ *   \param cutValue  on return this is the computed cut location.
+ *   \param flags on return has the value \c leftFlag or \c rightFlag to
+ *        indicate whether the corresponding coordinate is on the left of
+ *        on the right of the cut.
+ *   \param imbalance the imbalance under the partitioning associated 
+ *                      with each weight dimension.
+ *
+ *   If \c perfectWeight is the weight of each half in perfect balance,
+ *   and \c maxWeight is the weight of the heaviest half, then the
+ *   \c imbalance associated with a partitioning is:
+ \code
+        imbalance = (maxWeight - perfectWeight) / perfectWeight
+ \endcode
+ *
+ *   \c imbalanceTolerance is the maximum acceptable value of this
+ *                           measure.
+ */
+
+ 
 
 template <typename scalar_t, typename lno_t, typename gno_t, typename node_t>
-  static int findCut(
+  void findCutBSP(
     const RCB<const Environment> &env,
     const RCP<const Teuchos::Comm<int> &comm,
-    Vector<scalar_t, lno_t, gno_t, node_t> &coordList,
-    Array<Vector<scalar_t> > &weightList, 
+    RCP<const Vector<scalar_t, lno_t, gno_t, node_t> > &coordList,
+    Array<const RCP<const Vector<scalar_t> > > &weightList, 
     scalar_t coordGlobalMin,
     scalar_t coordGlobalMax,
+    const std::bitset<NUM_RCB_PARAMS> &params,
     int numTestCuts,
     float imbalanceTolerance,
-    std::bitset<NUM_RCB_PARAMS> &params)
+    scalar_t &cutValue,
+    ArrayRCP<unsigned char> &lrflags,
+    ArrayRCP<float> &imbalance)
 {
   int rank = comm->getRank();
   int nprocs = comm->getSize();
@@ -234,7 +279,6 @@ template <typename scalar_t, typename lno_t, typename gno_t, typename node_t>
   int numBoundaries = numTestCuts + 2;
   std::vector<scalar_t> testCuts(numBoundaries);
   std::vector<scalar_t>::iterator foundCut;
-
 
 #if 0
   // Sum weights or counts for each weight dimension
@@ -264,18 +308,21 @@ template <typename scalar_t, typename lno_t, typename gno_t, typename node_t>
   }
 #endif
 
-  // For now we will balance the first weight.
+  // For now we will balance the first weight (balanceWeight).
+
+  size_t weightDim = weightList.size();
+  
 
   scalar_t *wgt = weightList[0].getRawPtr();
   scalar_t *coord = coordList.getRawPtr();
   size_t localNum = coordList.getLocalLength();
   size_t globalNum = coordList.getGlobalLength();
 
-  // Maximum number of regions is 250.  So these flags don't
-  // conflict with use of flags arrays to hold region numbers.
+  unsigned char *flags = lrflags.getRawPtr();
+  memset(flags, 0, localNum);  // 0 signifies unset
 
-  unsigned char leftFlag = 0xfe;
-  unsigned char rightFlag = 0xff;
+  // Maximum number of regions is 250.  So rightFlag and leftFlag
+  // do not conflict with use of flags arrays to hold region numbers.
 
   unsigned char *floatPtr = new char [localNum];
   env->localMemoryAssertion(__FILE__, __LINE__, localNum, flagPtr);

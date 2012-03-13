@@ -102,8 +102,6 @@ public:
   }
 
   void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const { return ; }
-
-  int getNumWeights() const { return 0; }
 };
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -193,8 +191,6 @@ public:
     getCoordinates(gnos, xyz, weights);
   }
 
-  int getNumWeights() const { return weightDim_; }
-
 private:
 
   bool gnosAreGids_;
@@ -240,6 +236,8 @@ template <typename User>
   env_->localMemoryAssertion(__FILE__, __LINE__, weightDim_+coordinateDim_,
     coordArray && (!weightDim_ || weightArray));
 
+  Array<lno_t> arrayLengths(weightDim_, 0);
+
   if (nLocalIds){
     for (int dim=0; dim < coordinateDim_; dim++){
       int stride;
@@ -265,8 +263,11 @@ template <typename User>
       }
       Z2_FORWARD_EXCEPTIONS;
 
-      ArrayView<const scalar_t> wArray(weights, nLocalIds);
-      weightArray[wdim] = input_t(wArray, stride);
+      if (weights){
+        ArrayView<const scalar_t> wArray(weights, nLocalIds);
+        weightArray[wdim] = input_t(wArray, stride);
+        arrayLength[wdim] = nLocalIds;
+      }
     }
   }
 
@@ -274,6 +275,8 @@ template <typename User>
 
   if (weightDim_)
     weights_ = arcp(weightArray, 0, weightDim_);
+
+  this->setWeightArrayLengths(arrayLength, *comm_);
 
   // Create identifier map.
 

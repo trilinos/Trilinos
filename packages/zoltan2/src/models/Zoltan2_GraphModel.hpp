@@ -37,7 +37,8 @@ namespace Zoltan2 {
       \li MatrixInput
 
     \todo instantiations for GraphInput, MeshInput
-    \todo use StridedData objects for coordinates and weights
+    \todo use StridedData objects for coordinates and weights, call
+             base model class setWeightArrayLengths
 */
 template <typename Adapter>
 class GraphModel : public Model<Adapter>
@@ -184,8 +185,6 @@ public:
   }
 
   void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const { return; }
-
-  int getNumWeights() const { return 0; }
 };
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -592,6 +591,8 @@ template <typename User>
   }
   Z2_FORWARD_EXCEPTIONS;
 
+  Array<lno_t> weightArrayLengths;
+  this->setWeightArrayLengths(weightArrayLengths, *comm_);
   this->setIdentifierMap(idMap);   // Zoltan2::Model method
 
   // Check for edges that are not in our list of global Ids.  If
