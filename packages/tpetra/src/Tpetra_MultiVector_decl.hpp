@@ -137,9 +137,14 @@ namespace Tpetra {
     /// permutation, without actually moving data.  This only works if
     /// the input Map is compatible (in the sense of \c
     /// Map::isCompatible()) with the multivector's current Map, so
-    /// that the number of rows per process does not change.  If the
-    /// input Map is <i>not</i> compatible, then this method throws \c
-    /// std::invalid_argument.
+    /// that the number of rows per process does not change.  
+    ///
+    /// We only check for compatibility in debug mode (when Trilinos
+    /// was built with the Trilinos_ENABLE_DEBUG option set).  In that
+    /// case, if the input Map is <i>not</i> compatible, then this
+    /// method throws \c std::invalid_argument.  We only check in
+    /// debug mode because the check requires communication
+    /// (\f$O(1)\f$ all-reduces).
     ///
     /// \note This method is <i>not</i> for arbitrary data
     ///   redistribution.  If you need to move data around, use \c
@@ -148,11 +153,8 @@ namespace Tpetra {
     /// \note This method must always be called as a collective
     ///   operation on all processes over which the multivector is
     ///   distributed.  This is because the method reserves the right
-    ///   to check for compatibility of the two Maps.  It will do this
-    ///   at least in Tpetra debug mode (Boolean configure-time option
-    ///   Tpetra_ENABLE_DEBUG set), if not always.  That check
-    ///   requires a constant number of reductions over all the
-    ///   processes in the multivector's current Map's communicator.
+    ///   to check for compatibility of the two Maps, at least in
+    ///   debug mode.
     void replaceMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map);
 
     //! Instruct a local (non-distributed) MultiVector to sum values across all nodes.
@@ -335,7 +337,34 @@ namespace Tpetra {
     /** \brief Return a simple one-line description of this object. */
     std::string description() const;
 
-    /** \brief Print the object with some verbosity level to an FancyOStream object. */
+    /// \brief Print the object with the given verbosity level to a FancyOStream.
+    ///
+    /// \param out [out] Output stream to which to print.  For
+    ///   verbosity levels VERB_LOW and lower, only the process with
+    ///   rank 0 ("Proc 0") in the MultiVector's communicator prints.
+    ///   For verbosity levels strictly higher than VERB_LOW, all
+    ///   processes in the communicator need to be able to print to
+    ///   the output stream.
+    ///
+    /// \param verbLevel [in] Verbosity level.  The default verbosity
+    ///   (verbLevel=VERB_DEFAULT) is VERB_LOW.
+    ///
+    /// The amount and content of what this method prints depends on
+    /// the verbosity level.  In the list below, each higher level
+    /// includes all the content of the previous levels, as well as
+    /// its own content.
+    ///
+    /// - VERB_LOW: Only Proc 0 prints; it prints the same thing as \c
+    ///   description().
+    /// - VERB_MEDIUM: Each process prints its local length (the
+    ///   number of rows that it owns).
+    /// - VERB_HIGH: Each process prints whether the multivector has
+    ///   constant stride (see \c isConstantStride()), and if so, what
+    ///   that stride is.  (Stride may differ on different processes.)
+    /// - VERB_EXTREME: Each process prints the values in its local
+    ///   part of the multivector.  This will print out as many rows
+    ///   of data as the global number of rows in the multivector, so
+    ///   beware.
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
     //@}

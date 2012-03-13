@@ -126,7 +126,6 @@ interface
     next_global_id, next_local_id, &
     assigned, num_vert, vertices, in_vertex, out_vertex, ierr)
   use zoltan_types
-  use lb_user_const
   use zoltan_user_data
   integer(Zoltan_INT) :: fn_ptr
   type(Zoltan_User_Data_1) , intent(in) :: data
@@ -158,7 +157,6 @@ interface
     next_global_id, next_local_id, &
     assigned, num_vert, vertices, in_vertex, out_vertex, ierr)
   use zoltan_types
-  use lb_user_const
   use zoltan_user_data
   integer(Zoltan_INT) :: fn_ptr
   type(Zoltan_User_Data_2) , intent(in) :: data
@@ -190,7 +188,6 @@ interface
     next_global_id, next_local_id, &
     assigned, num_vert, vertices, in_vertex, out_vertex, ierr)
   use zoltan_types
-  use lb_user_const
   use zoltan_user_data
   integer(Zoltan_INT) :: fn_ptr
   type(Zoltan_User_Data_3) , intent(in) :: data
@@ -222,7 +219,6 @@ interface
     next_global_id, next_local_id, &
     assigned, num_vert, vertices, in_vertex, out_vertex, ierr)
   use zoltan_types
-  use lb_user_const
   use zoltan_user_data
   integer(Zoltan_INT) :: fn_ptr
   type(Zoltan_User_Data_4) , intent(in) :: data

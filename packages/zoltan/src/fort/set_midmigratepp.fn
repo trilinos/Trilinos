@@ -118,7 +118,6 @@ interface
     num_import, imp_gids, imp_lids, imp_procs, imp_to_part, &
     num_export, exp_gids, exp_lids, exp_procs, exp_to_part, ierr)
   use zoltan_types
-  use lb_user_const
   use zoltan_user_data
   type(Zoltan_User_Data_1) , intent(in) :: data
   integer(Zoltan_INT), intent(in)  :: num_gid_entries, num_lid_entries
@@ -148,7 +147,6 @@ interface
     num_import, imp_gids, imp_lids, imp_procs, imp_to_part, &
     num_export, exp_gids, exp_lids, exp_procs, exp_to_part, ierr)
   use zoltan_types
-  use lb_user_const
   use zoltan_user_data
   type(Zoltan_User_Data_2) , intent(in) :: data
   integer(Zoltan_INT), intent(in)  :: num_gid_entries, num_lid_entries
@@ -178,7 +176,6 @@ interface
     num_import, imp_gids, imp_lids, imp_procs, imp_to_part, &
     num_export, exp_gids, exp_lids, exp_procs, exp_to_part, ierr)
   use zoltan_types
-  use lb_user_const
   use zoltan_user_data
   type(Zoltan_User_Data_3) , intent(in) :: data
   integer(Zoltan_INT), intent(in)  :: num_gid_entries, num_lid_entries
@@ -208,7 +205,6 @@ interface
     num_import, imp_gids, imp_lids, imp_procs, imp_to_part, &
     num_export, exp_gids, exp_lids, exp_procs, exp_to_part, ierr)
   use zoltan_types
-  use lb_user_const
   use zoltan_user_data
   type(Zoltan_User_Data_4) , intent(in) :: data
   integer(Zoltan_INT), intent(in)  :: num_gid_entries, num_lid_entries

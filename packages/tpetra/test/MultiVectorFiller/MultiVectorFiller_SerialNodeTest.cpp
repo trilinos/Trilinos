@@ -58,10 +58,13 @@ main (int argc, char *argv[])
 {
   using Teuchos::as;
   using Teuchos::Comm;
+  using Teuchos::FancyOStream;
+  using Teuchos::getFancyOStream;
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::rcpFromRef;
   using std::cerr;
   using std::cout;
   using std::endl;
@@ -75,7 +78,6 @@ main (int argc, char *argv[])
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   const int myRank = comm->getRank();
-  std::ostream& out = (myRank == 0) ? cout : blackHole;
 
   //
   // Read in command line arguments.
@@ -83,6 +85,7 @@ main (int argc, char *argv[])
   int unknownsPerNode = 20; // number of unknowns per process
   int unknownsPerElt = 3; // number of unknowns per (overlapping) element
   int numCols = 1;
+  bool verbose = false;
 
   Teuchos::CommandLineProcessor cmdp (false, true);
   cmdp.setOption ("unknownsPerNode", &unknownsPerNode, 
@@ -91,9 +94,16 @@ main (int argc, char *argv[])
 		  "Number of unknowns per (overlapping) element.");
   cmdp.setOption ("numCols", &numCols, 
 		  "Number of columns in the multivector.  Must be positive.");
+  cmdp.setOption ("verbose", "quiet", &verbose, 
+		  "Whether to print verbose output.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return EXIT_FAILURE;
   }
+
+  const Teuchos::EVerbosityLevel verbLevel = 
+    verbose ? Teuchos::VERB_EXTREME : Teuchos::VERB_DEFAULT;
+  RCP<FancyOStream> out = verbose ? getFancyOStream (rcpFromRef (std::cout)) :
+    getFancyOStream (rcpFromRef (blackHole));
 
   RCP<ParameterList> nodeParams = parameterList ("Kokkos Node");
   RCP<node_type> node = makeSerialNode (nodeParams);
@@ -106,9 +116,10 @@ main (int argc, char *argv[])
       global_ordinal_type, 
       node_type> (comm, node, as<size_t> (unknownsPerNode),
 		  as<global_ordinal_type> (unknownsPerElt), 
-		  as<size_t> (numCols));
+		  as<size_t> (numCols), out, verbLevel);
     succeeded = true;
   } catch (std::exception& e) {
+    *out << "MultiVectorFiller test threw an exception:  " << e.what() << endl;
     succeeded = false;
   }
 
@@ -118,11 +129,11 @@ main (int argc, char *argv[])
 		      Teuchos::ptr (&globalSuccess));
   
   if (globalSuccess) {
-    out << "End Result: TEST PASSED" << endl;
+    std::cout << "End Result: TEST PASSED" << endl;
     return EXIT_SUCCESS;
   }
   else {
-    out << "End Result: TEST FAILED" << endl;
+    std::cout << "End Result: TEST FAILED" << endl;
     return EXIT_FAILURE;
   }
 }

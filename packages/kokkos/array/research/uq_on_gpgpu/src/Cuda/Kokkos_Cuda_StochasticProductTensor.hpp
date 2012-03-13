@@ -59,10 +59,12 @@ namespace Impl {
 template< typename TensorScalar ,
           class PolynomialType ,
           typename MatrixScalar ,
-          typename VectorScalar >
+          typename VectorScalar ,
+          template< unsigned , typename , class > class TensorType >
 class Multiply<
-  BlockCrsMatrix< StochasticProductTensor< TensorScalar, PolynomialType, Cuda >,
-                  MatrixScalar , Cuda > ,
+  BlockCrsMatrix<
+    StochasticProductTensor< TensorScalar, PolynomialType, Cuda , TensorType >,
+    MatrixScalar , Cuda > ,
   MultiVector< VectorScalar , Cuda > ,
   MultiVector< VectorScalar , Cuda > >
 {
@@ -71,7 +73,7 @@ public:
   typedef Cuda                    device_type ;
   typedef device_type::size_type  size_type ;
 
-  typedef StochasticProductTensor< TensorScalar , PolynomialType , Cuda > tensor_type ;
+  typedef StochasticProductTensor< TensorScalar , PolynomialType , Cuda , TensorType > tensor_type ;
   typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type > matrix_type ;
   typedef MultiVector< VectorScalar , device_type>                 vector_type ;
 
@@ -80,7 +82,7 @@ public:
                      const vector_type & x ,
                      const vector_type & y )
   {
-    typedef BlockCrsMatrix< SparseProductTensor< 3 , TensorScalar, Cuda >,
+    typedef BlockCrsMatrix< TensorType< 3 , TensorScalar, Cuda >,
                             MatrixScalar , Cuda > base_matrix_type ;
 
     typedef Multiply< base_matrix_type ,

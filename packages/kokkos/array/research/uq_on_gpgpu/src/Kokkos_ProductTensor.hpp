@@ -139,7 +139,63 @@ private:
 //  y[ Multiply< SparseProductTensor<R,V,> >::vector_size( block ) ]
 //----------------------------------------------------------------------------
 
+/** \brief  Sparse product tensor with replicated entries
+ *          to provide subsets with a given coordinate.
+ *
+ *  This allows product tensor multiplication to be partitioned
+ *  on a given coordinate values.
+ *
+ *  for ( size_type i = 0 ; i < p.dimension() ; ++i ) {
+ *    y[i] = 0 ;
+ *    for ( size_type e = p.entry_begin(i) ; 
+ *                    e < p.entry_end(i) ; ++e ) {
+ *      const size_type j = p.coord(e,0);
+ *      const size_type k = p.coord(e,1);
+ *      Scalar tmp = a[j] * x[k] ; if ( j != k ) tmp += a[k] * x[j] ;
+ *      y[i] += p.value(e) * tmp ;
+ *    }
+ *  }
+ */
+template< unsigned Rank , typename ValueType , class Device >
+class CrsProductTensor {
+public:
+  typedef Device                           device_type ;
+  typedef typename device_type::size_type  size_type ;
+  typedef ValueType                        value_type ;
+
+  ~CrsProductTensor();
+  CrsProductTensor();
+  CrsProductTensor( const CrsProductTensor & );
+  CrsProductTensor & operator = ( const CrsProductTensor & );
+
+  /** \brief  Dimension of the tensor. */
+  size_type dimension() const ;
+
+  /** \brief  Number of sparse entries. */
+  size_type entry_count() const ;
+
+  /** \brief  Maximum sparse entries for any coordinate */
+  size_type entry_maximum() const ;
+
+  /** \brief  Begin entries with a coordinate 'i' */
+  size_type entry_begin( size_type i ) const ;
+
+  /** \brief  End entries with a coordinate 'i' */
+  size_type entry_end( size_type i ) const ;
+
+  /** \brief  Coordinates of an entry */
+  size_type coord( size_type entry , size_type c ) const ;
+
+  /** \brief  Value of an entry */
+  const value_type & value( size_type entry ) const ;
+};
+
+//----------------------------------------------------------------------------
+
 namespace Impl {
+
+template< class Tensor , class Input >
+class CreateProductTensor ;
 
 template< class Tensor , class Input >
 class CreateSparseProductTensor ;

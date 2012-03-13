@@ -217,9 +217,6 @@ TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 
 ZAC_ARG_WITH_ID()
 
-TAC_ARG_ENABLE_OPTION(octreepartitioning, [enable octreepartitioning], ZOLTAN_OCT, no)
-AM_CONDITIONAL(BUILD_OCTREEPARTITIONING, [test "X$ac_cv_use_octreepartitioning" != "Xno"])
-
 TAC_ARG_ENABLE_OPTION(gzip, [enable zlib support for driver], GZIP, no)
 if test "X$ac_cv_use_gzip" != "Xno"; then
    LIBS="-lz ${LIBS}"

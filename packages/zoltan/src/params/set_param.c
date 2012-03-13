@@ -24,9 +24,6 @@ extern "C" {
 #include "zz_util_const.h"
 #include "params_const.h"
 #include "rcb_const.h"
-#ifdef ZOLTAN_OCT
-#include "octupdate_const.h"
-#endif
 #include "reftree_const.h"
 #include "ha_const.h"
 #include "rib_const.h"
@@ -38,9 +35,6 @@ extern "C" {
 #include "graph_const.h"
 #ifdef ZOLTAN_HIER
 #include "hier.h"
-#endif
-#ifdef ZOLTAN_DRUM
-#include "ha_drum.h"
 #endif
 #ifdef ZOLTAN_OVIS
 #include "ha_ovis.h"
@@ -62,9 +56,6 @@ static ZOLTAN_SET_PARAM_FN * Param_func[] = {
 #if defined(ZOLTAN_SCOTCH) || defined(ZOLTAN_PTSCOTCH)
        Zoltan_Scotch_Set_Param,
 #endif
-#ifdef ZOLTAN_OCT
-       Zoltan_Oct_Set_Param,
-#endif
        Zoltan_Reftree_Set_Param,
        Zoltan_RIB_Set_Param,
        Zoltan_HSFC_Set_Param,
@@ -72,9 +63,6 @@ static ZOLTAN_SET_PARAM_FN * Param_func[] = {
        Zoltan_PHG_Set_Param,
 #ifdef ZOLTAN_HIER
        Zoltan_Hier_Set_Param,
-#endif
-#ifdef ZOLTAN_DRUM
-       Zoltan_Drum_Set_Param,
 #endif
 #ifdef ZOLTAN_OVIS
        Zoltan_OVIS_Set_Param,

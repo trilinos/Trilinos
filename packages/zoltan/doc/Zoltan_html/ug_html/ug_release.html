@@ -34,6 +34,7 @@
 releases of Zoltan:
 </a>
 <blockquote>
+  <a href="#Release3.7">Zoltan Release v3.7 in Trilinos v11</a><br>
   <a href="#Release3.6">Zoltan Release v3.6</a><br>
   <a href="#Release3.501">Zoltan Release v3.501</a><br>
   <a href="#Release3.5">Zoltan Release v3.5</a><br>
@@ -45,16 +46,27 @@ releases of Zoltan:
   <a href="#Release2.02">Zoltan Release v2.02</a><br>
   <a href="#Release2.01">Zoltan Release v2.01</a><br>
   <a href="#Release2.0">Zoltan Release v2.0</a><br>
-  <a href="#Release1.54">Zoltan Release v1.54</a>
-  <br>
-  <a href="#Release1.53">Zoltan Release v1.53</a>
-  <br>
-  <a href="#Release1.52">Zoltan Release v1.52</a>
-  <br>
-  <a href="#Release1.5">Zoltan Release v1.5</a>
-  <br>
+  <a href="#Release1.54">Zoltan Release v1.54</a> <br>
+  <a href="#Release1.53">Zoltan Release v1.53</a> <br>
+  <a href="#Release1.52">Zoltan Release v1.52</a> <br>
+  <a href="#Release1.5">Zoltan Release v1.5</a> <br>
   <a href="#Release1.3">Zoltan Release v1.3</a>
 </blockquote>
+<hr>
+<h2><a name="Release3.7">Zoltan Release Notes v3.7: Summer 2012</a></h2>
+<ul>
+<li> The following features (deprecated in Trilinos v10.8) are no longer
+supported in Trilinos v11.
+<ul>
+<li> Zoltan v1.1 interface (as described in Zoltan include file lbi_const.h):
+users should upgrade their Zoltan interface and include file zoltan.h.
+Instructions are at the <a href="../Zoltan_FAQ.html">Zoltan FAQ page</a>.
+<li> Partitioning method OCTPART:  use partitioning method HSFC for similar
+partitions with faster partitioning time.
+<li> Use of DRUM as a Zoltan TPL:  architecture-aware methods will be included
+in Zoltan2.
+</ul>
+</ul>
 <hr>
 <h2><a name="Release3.6">Zoltan Release Notes v3.6: September 13, 2011</a></h2>
 <ul>

@@ -97,9 +97,9 @@ int mainHost()
   unit_test::test_inner_product_legengre_polynomial<10,Kokkos::Host>();
   unit_test::test_triple_product_legendre_polynomial<4,Kokkos::Host>();
 
-  unit_test::test_product_tensor<Kokkos::Host>( std::vector<int>( 2 , 1 ) );
-  unit_test::test_product_tensor<Kokkos::Host>( std::vector<int>( 3 , 2 ) );
-  unit_test::test_product_tensor<Kokkos::Host>( std::vector<int>( 5 , 1 ) );
+  unit_test::test_product_tensor<Kokkos::Host,Kokkos::SparseProductTensor>( std::vector<int>( 2 , 1 ) );
+  unit_test::test_product_tensor<Kokkos::Host,Kokkos::SparseProductTensor>( std::vector<int>( 3 , 2 ) );
+  unit_test::test_product_tensor<Kokkos::Host,Kokkos::SparseProductTensor>( std::vector<int>( 5 , 1 ) );
 
   unit_test::test_block_crs_matrix<Kokkos::Host>( 1 , 2 );
   unit_test::test_block_crs_matrix<Kokkos::Host>( 1 , 5 );
