@@ -70,6 +70,10 @@ void Entity::internal_swap_in_real_entity(const int globalId)
 
   internal_verify_initialization_invariant();
 
+  // Issue: Fmwk-managed relations (also called auxiliary relations, are not
+  // being resorted here, so we have to use a different < operator
+  // when looking for relations
+
 #ifndef NDEBUG
   internal_verify_meshobj_invariant();
 #endif
@@ -90,6 +94,29 @@ void Entity::reserve_relation(const unsigned num)
 
 // ---------------------------------------------------------------------
 
+namespace {
+
+struct IgnoreIdOrder
+{
+  bool operator()(const Relation& lhs, const Relation& rhs)
+  {
+    bool result = false;
+
+    if (lhs.entity_rank() != rhs.entity_rank()) {
+      result = lhs.entity_rank() < rhs.entity_rank();
+    }
+    else if (lhs.getRelationType() != rhs.getRelationType()) {
+      result = lhs.getRelationType() < rhs.getRelationType();
+    }
+    else {
+      result = lhs.identifier() < rhs.identifier();
+    }
+    return result;
+  }
+};
+
+}
+
 RelationIterator Entity::find_relation(const Relation& relation) const
 {
   // Extremely hacky: It would be better to set up the < operator for relations so that lower_bound
@@ -108,7 +135,8 @@ RelationIterator Entity::find_relation(const Relation& relation) const
 
   RelationIterator rel = std::lower_bound(internal_begin_relation(relation_type),
                                           internal_end_relation(relation_type),
-                                          relation);
+                                          relation,
+                                          IgnoreIdOrder());
 
   // Should only loop if we are looking at back-relations, otherwise, relations with
   // matching specifications are not legal.
