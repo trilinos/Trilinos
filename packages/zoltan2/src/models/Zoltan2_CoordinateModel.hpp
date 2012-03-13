@@ -266,7 +266,7 @@ template <typename User>
       if (weights){
         ArrayView<const scalar_t> wArray(weights, nLocalIds);
         weightArray[wdim] = input_t(wArray, stride);
-        arrayLength[wdim] = nLocalIds;
+        arrayLengths[wdim] = nLocalIds;
       }
     }
   }
@@ -276,7 +276,7 @@ template <typename User>
   if (weightDim_)
     weights_ = arcp(weightArray, 0, weightDim_);
 
-  this->setWeightArrayLengths(arrayLength, *comm_);
+  this->setWeightArrayLengths(arrayLengths, *comm_);
 
   // Create identifier map.
 
