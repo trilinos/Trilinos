@@ -174,6 +174,9 @@ namespace stk {
       getNumberElements();
 
       int
+      getNumberNodes();
+
+      int
       getNumberEdges();
 
       int
@@ -181,6 +184,24 @@ namespace stk {
 
       void printEntity(std::ostream& out, const stk::mesh::Entity& entity, stk::mesh::FieldBase* field=0);
       std::string printEntityCompact(const stk::mesh::Entity& entity, stk::mesh::FieldBase* field=0);
+
+      /// add some fields that are useful for debugging or for exporting meshes to Mesquite - must be
+      ///   done before commit()
+      void addParallelInfoFields(bool elemental, bool nodal, 
+                                 std::string elemental_proc_rank_name = "proc_rank",
+                                 std::string nodal_fixed_flag="fixed", // boundary flag for telling Mesquite these nodes shouldn't be moved
+                                 std::string nodal_global_id_name="GLOBAL_ID", 
+                                 std::string nodal_proc_id_name="PROCESSOR_ID", 
+                                 std::string nodal_local_id_name="LOCAL_ID");
+
+      /// fill the fields from addParallelInfoFields with data from stk_mesh database
+      void populateParallelInfoFields(bool elemental, bool nodal, 
+                                      stk::mesh::Selector* fixed_node_selector=0,
+                                      std::string elemental_proc_rank_name = "proc_rank",
+                                      std::string nodal_fixed_flag="fixed", // boundary flag for telling Mesquite these nodes shouldn't be moved
+                                      std::string nodal_global_id_name="GLOBAL_ID", 
+                                      std::string nodal_proc_id_name="PROCESSOR_ID", 
+                                      std::string nodal_local_id_name="LOCAL_ID");
 
       //========================================================================================================================
       /// low-level interfaces
@@ -781,15 +802,12 @@ namespace stk {
                                  mesh::FieldBase* field,
                                  ArrayType& cellNodes, unsigned dataStride=0 );
 
+      double edge_length_ave(const stk::mesh::Entity &entity);
+
       static void findMinMaxEdgeLength(const mesh::Bucket &bucket,  stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
                                        Intrepid::FieldContainer<double>& elem_min_edge_length, Intrepid::FieldContainer<double>& elem_max_edge_length);
 
       VectorFieldType* getCoordinatesField() {
-        // this should have been set by a previous internal call to setCoordinatesField
-        return m_coordinatesField;
-      }
-
-      stk::mesh::FieldBase* getCoordinatesFieldBase() {
         // this should have been set by a previous internal call to setCoordinatesField
         return m_coordinatesField;
       }
@@ -825,17 +843,19 @@ namespace stk {
         return cell_topo_data;
       }
 
+      const stk::mesh::PartVector& get_io_omitted_parts() { return m_io_omitted_parts; }
+      void set_io_omitted_parts(stk::mesh::PartVector& io_omitted_parts) { m_io_omitted_parts = io_omitted_parts; }
 
       static bool mesh_difference(PerceptMesh& mesh1, PerceptMesh& mesh2,
                                   std::string msg,
-                                  bool print=true);
+                                  bool print=true, bool print_all_field_diffs=false);
 
       static bool mesh_difference(stk::mesh::fem::FEMMetaData& metaData_1,
                                   stk::mesh::fem::FEMMetaData& metaData_2,
                                   stk::mesh::BulkData& bulkData_1,
                                   stk::mesh::BulkData& bulkData_2,
                                   std::string msg,
-                                  bool print=true);
+                                  bool print=true, bool print_all_field_diffs=false);
 
 
     private:
@@ -899,6 +919,8 @@ namespace stk {
       static BasisTableMap m_basisTable;
 
       SameRankRelation m_adapt_parent_to_child_relations;
+
+      stk::mesh::PartVector                 m_io_omitted_parts;
 
       void checkStateSpec(const std::string& function, bool cond1=true, bool cond2=true, bool cond3=true);
 
