@@ -631,7 +631,7 @@ void createAllParameters(Teuchos::ParameterList &pList)
   ////////// topLevel/partitioning/geometric/bisection_num_test_cuts
   parameterName = string("bisection_num_test_cuts");
 
-  intValidatorP= rcp(new EnhancedNumberValidator(1,250,1));
+  intValidatorP = rcp(new EnhancedNumberValidator<int>(1,250,1));
 
   docString.str("");
   intValidatorP->printDoc(
