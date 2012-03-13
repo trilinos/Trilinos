@@ -256,12 +256,20 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::checkSizes(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> &sourceObj) 
+  bool 
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  checkSizes(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> &sourceObj) 
   {
-    const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A = dynamic_cast<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(sourceObj);
-    // objects maps have already been checked. simply check the number of vectors.
-    bool compat = (A.getNumVectors() == this->getNumVectors());
-    return compat;
+    typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+    // rcp_dynamic_cast gives us superior cast failure output to dynamic_cast.
+    Teuchos::RCP<const MV> A = Teuchos::rcp_dynamic_cast<const MV> (Teuchos::rcpFromRef (sourceObj), true);
+
+    // This method is called in DistObject::doTransfer().  By that
+    // point, we've already constructed an Import or Export object
+    // using the two multivectors' Maps, which means that (hopefully)
+    // we've already checked other attributes of the multivectors.
+    // Thus, all we need to do here is check the number of columns.
+    return (A->getNumVectors() == this->getNumVectors());
   }
 
 
@@ -1041,24 +1049,26 @@ namespace Tpetra {
     // Check for special case of this=Source, in which case we do nothing
     if (this != &source) {
 #ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*source.getMap()), std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*source.getMap()), std::invalid_argument,
           ": MultiVectors do not have compatible Maps:" << std::endl
           << "this->getMap(): " << std::endl << *this->getMap() 
           << "source.getMap(): " << std::endl << *source.getMap() << std::endl);
 #else
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( getLocalLength() != source.getLocalLength(), std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( getLocalLength() != source.getLocalLength(), std::invalid_argument,
           ": MultiVectors do not have the same local length.");
 #endif
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(source.getNumVectors() != getNumVectors(), std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(source.getNumVectors() != getNumVectors(), std::invalid_argument,
           ": MultiVectors must have the same number of vectors.");
       Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
       const size_t numVecs = getNumVectors();
       if (isConstantStride() && source.isConstantStride() && getLocalLength()==getStride() && source.getLocalLength()==source.getStride()) {
-        // we're both packed, we can copy in one call
+        // Both multivectors' data are stored contiguously, so we can
+        // copy in one call.
         KOKKOS_NODE_TRACE("MultiVector::operator=()")
         node->template copyBuffers<Scalar>(getLocalLength()*numVecs, MVT::getValues(source.lclMV_), MVT::getValuesNonConst(lclMV_) );
       }
       else {
+	// We have to copy the columns one at a time.
         for (size_t j=0; j < numVecs; ++j) {
           KOKKOS_NODE_TRACE("MultiVector::operator=()")
           node->template copyBuffers<Scalar>(getLocalLength(), source.getSubArrayRCP(MVT::getValues(source.lclMV_),j),  
