@@ -24,6 +24,7 @@
  *   \li the coordinates  (matrix market input only)
  *
  *  \todo compute coordinates for the x,y,z problems.
+ *  \todo for very large files, each process reads in part of the file
  */
 
 #include <Zoltan2_XpetraTraits.hpp>
