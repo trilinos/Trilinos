@@ -258,13 +258,6 @@ void createAllParameters(Teuchos::ParameterList &pList)
   // Debug, timing and memory profiling file name parameters
   //////////
 
-  /*! 
-    \todo Add a parameter that says each process should a separate file.
-  
-     For now all processes write to the same file without synchronizing.
-   */
-     
-
   fnameValidatorP = rcp(new FileNameValidator(false));
 
   ////////// topLevel/debug_output_file
@@ -272,7 +265,8 @@ void createAllParameters(Teuchos::ParameterList &pList)
 
   docString.str("");
   fnameValidatorP->printDoc(
-    "name of file to which debug/status messages should be written\n",
+    "name of file to which debug/status messages should be written\n"
+    "(process rank will be included in file name)\n",
      docString);
 
   pList.set<string>(parameterName, "/dev/null", docString.str(), fnameValidatorP);
@@ -282,7 +276,8 @@ void createAllParameters(Teuchos::ParameterList &pList)
 
   docString.str("");
   fnameValidatorP->printDoc(
-    "name of file to which timing information should be written\n",
+    "name of file to which timing information should be written\n"
+    "(process rank will be included in file name)\n",
      docString);
 
   pList.set<string>(parameterName, "/dev/null", docString.str(), fnameValidatorP);
@@ -292,7 +287,8 @@ void createAllParameters(Teuchos::ParameterList &pList)
 
   docString.str("");
   fnameValidatorP->printDoc(
-    "name of file to which memory profiling information should be written\n",
+    "name of file to which memory profiling information should be written\n"
+    "(process rank will be included in file name)\n",
      docString);
 
   pList.set<string>(parameterName, "/dev/null", docString.str(), fnameValidatorP);
@@ -638,7 +634,7 @@ void createAllParameters(Teuchos::ParameterList &pList)
    "Experimental: number of test cuts to do simultaneously (default is 1)\n",
       docString);
 
-  geom.set<string>(parameterName, "1", docString.str(), intValidatorP);
+  geom.set<int>(parameterName, 1, docString.str(), intValidatorP);
 
   ///////////////////////////////////////////////////////////
   // LEVEL: Sub sub list, hypergraph partitioning parameters

@@ -37,8 +37,7 @@ namespace Zoltan2 {
       \li MatrixInput
 
     \todo instantiations for GraphInput, MeshInput
-    \todo why did we need to add a CoordinateInput version in order to
-             compile. Shouldn't it have used the generic Adapter version?
+    \todo use StridedData objects for coordinates and weights
 */
 template <typename Adapter>
 class GraphModel : public Model<Adapter>
@@ -59,6 +58,7 @@ public:
    *  \param  modelFlags    a bit map of Zoltan2::GraphModelFlags
    *
    *  All processes in the communicator must call the constructor.
+   *  \todo document the model flags that might be set
    */
 
   GraphModel(const Adapter *ia,
