@@ -15,7 +15,7 @@
 
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_IdentifierMap.hpp>
-#include <Zoltan2_StridedInput.hpp>
+#include <Zoltan2_StridedData.hpp>
 #include <bitset>
 
 namespace Zoltan2 {
@@ -78,7 +78,7 @@ public:
   typedef typename Adapter::gid_t    gid_t;
   typedef typename Adapter::scalar_t    scalar_t;
   typedef typename Adapter::user_t    user_t;
-  typedef StridedInput<lno_t, scalar_t> input_t;
+  typedef StridedData<lno_t, scalar_t> input_t;
   typedef IdentifierMap<user_t> idmap_t;
 #endif
 

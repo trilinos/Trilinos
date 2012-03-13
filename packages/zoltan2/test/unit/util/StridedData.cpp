@@ -9,32 +9,32 @@
 // This is another test where you need to look at the output to
 // know if it's right.  This should be fixed.
 
-/*! \file StridedInput.cpp
- *  \brief Tests the StridedInput class.
+/*! \file StridedData.cpp
+ *  \brief Tests the StridedData class.
  *
  *   \todo Some of the tests require that you look at the output
  *          to know if they did the right thing.  Enhance this so
  *          the test itself determines correctness.
  */
 
-#include <Zoltan2_StridedInput.hpp>   
+#include <Zoltan2_StridedData.hpp>   
 #include <Zoltan2_TestHelpers.hpp>   
 
-using Zoltan2::StridedInput;
+using Zoltan2::StridedData;
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::ArrayRCP;
 using Teuchos::Array;
 using namespace std;
 
-void StridedInputTest(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
+void StridedDataTest(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
 {
-  // StridedInput template arguments
+  // StridedData template arguments
 
   typedef lno_t     index_t;
   typedef scalar_t  value_t;
 
-  typedef StridedInput<index_t, value_t> stridedInput_t;
+  typedef StridedData<index_t, value_t> stridedInput_t;
 
   /*! \test strided input with stride 1
    */
@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
   if (comm->getRank() > 0)
     return 0;
 
-  StridedInputTest(comm);
+  StridedDataTest(comm);
 
   std::cout << "PASS" << std::endl;
 }

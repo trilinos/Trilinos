@@ -14,7 +14,7 @@
 #define _ZOLTAN2_XPETRACRSGRAPHINPUT_HPP_
 
 #include <Zoltan2_GraphInput.hpp>
-#include <Zoltan2_StridedInput.hpp>
+#include <Zoltan2_StridedData.hpp>
 #include <Zoltan2_XpetraTraits.hpp>
 #include <Zoltan2_Util.hpp>
 
@@ -344,13 +344,13 @@ private:
   ArrayRCP<const gid_t> eids_;
 
   int vertexWeightDim_;
-  Array<RCP<StridedInput<lno_t, scalar_t> > > vertexWeights_;
+  Array<RCP<StridedData<lno_t, scalar_t> > > vertexWeights_;
 
   int edgeWeightDim_;
-  Array<RCP<StridedInput<lno_t, scalar_t> > > edgeWeights_;
+  Array<RCP<StridedData<lno_t, scalar_t> > > edgeWeights_;
 
   int coordinateDim_;
-  Array<RCP<StridedInput<lno_t, scalar_t> > > coords_;
+  Array<RCP<StridedData<lno_t, scalar_t> > > coords_;
 
   // A default Environment for error messages.  User-written
   // InputAdapter classes can use some other error return convention
@@ -416,7 +416,7 @@ template <typename User>
     std::vector<const scalar_t *> &eWeights,  std::vector<int> &eWeightStrides,
     std::vector<const scalar_t *> &coords,  std::vector<int> &coordStrides)
 {
-  typedef StridedInput<lno_t,scalar_t> input_t;
+  typedef StridedData<lno_t,scalar_t> input_t;
   env_->localInputAssertion(__FILE__, __LINE__, 
     "invalid number of dimensions", 
     vertexWeightDim_ >= 0 && edgeWeightDim_ >= 0 && coordinateDim_ >= 0, 

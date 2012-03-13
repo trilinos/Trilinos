@@ -14,7 +14,7 @@
 #define _ZOLTAN2_BASICIDENTIFIERINPUT_HPP_
 
 #include <Zoltan2_IdentifierInput.hpp>
-#include <Zoltan2_StridedInput.hpp>
+#include <Zoltan2_StridedData.hpp>
 
 namespace Zoltan2 {
 
@@ -97,7 +97,7 @@ private:
   RCP<const Environment> env_;
   lno_t numIds_;
   const gid_t *idList_;
-  Array<RCP<StridedInput<lno_t, scalar_t> > > weights_;
+  Array<RCP<StridedData<lno_t, scalar_t> > > weights_;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -114,7 +114,7 @@ template <typename User>
   size_t numWeights = weights.size();
 
   if (numWeights){
-    typedef StridedInput<lno_t,scalar_t> input_t;
+    typedef StridedData<lno_t,scalar_t> input_t;
     if (weightStrides.size())
       for (int i=0; i < numWeights; i++)
         weights_[i] = rcp<input_t>(new input_t(

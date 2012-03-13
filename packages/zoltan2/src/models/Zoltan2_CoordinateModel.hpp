@@ -16,7 +16,7 @@
 #include <Zoltan2_MatrixInput.hpp>
 #include <Zoltan2_GraphInput.hpp>
 #include <Zoltan2_CoordinateInput.hpp>
-#include <Zoltan2_StridedInput.hpp>
+#include <Zoltan2_StridedData.hpp>
 
 namespace Zoltan2 {
 
@@ -35,7 +35,7 @@ public:
   typedef typename Adapter::scalar_t  scalar_t;
   typedef typename Adapter::gno_t     gno_t;
   typedef typename Adapter::lno_t     lno_t;
-  typedef StridedInput<lno_t, scalar_t> input_t;
+  typedef StridedData<lno_t, scalar_t> input_t;
 #endif
   
   CoordinateModel(){
@@ -68,12 +68,12 @@ public:
         each coordinate on this process.
 
       \param xyz on return is a list of getCoordinateDim() 
-          StridedInput objects, each containing the coordinates for 
+          StridedData objects, each containing the coordinates for 
           one dimension. If the coordinate dimension is three, then
           the coordinates for Ids[k] are xyz[0][k], xyz[1][k], xyz[2][k].
 
       \param wgts on return is a list of getCoordinateWeightDim() 
-          StridedInput objects, each containing the weights for 
+          StridedData objects, each containing the weights for 
           one weight dimension.  If there is one weight per coordinate,
           then the weight for Ids[k] is wgts[0][k].
 
@@ -124,7 +124,7 @@ public:
   typedef typename CoordinateInput<User>::lno_t     lno_t;
   typedef typename CoordinateInput<User>::gid_t     gid_t;
   typedef IdentifierMap<User> idmap_t;
-  typedef StridedInput<lno_t, scalar_t> input_t;
+  typedef StridedData<lno_t, scalar_t> input_t;
 
   /*! \brief Constructor
 

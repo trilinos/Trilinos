@@ -67,7 +67,7 @@ void testIdentifierModel(std::string fname, gno_t xdim, gno_t ydim, gno_t zdim,
 
   typedef Zoltan2::XpetraCrsMatrixInput<tcrsMatrix_t> adapter_t;
   typedef Zoltan2::MatrixInput<tcrsMatrix_t> base_adapter_t;
-  typedef Zoltan2::StridedInput<lno_t, scalar_t> input_t;
+  typedef Zoltan2::StridedData<lno_t, scalar_t> input_t;
 
   RCP<const adapter_t> ia = Teuchos::rcp(new adapter_t(M));
   

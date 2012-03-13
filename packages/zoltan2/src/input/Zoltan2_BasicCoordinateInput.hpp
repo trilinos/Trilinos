@@ -14,7 +14,7 @@
 #define _ZOLTAN2_BASICCOORDINATEINPUT_HPP_
 
 #include <Zoltan2_CoordinateInput.hpp>
-#include <Zoltan2_StridedInput.hpp>
+#include <Zoltan2_StridedData.hpp>
 #include <vector>
 
 namespace Zoltan2 {
@@ -176,10 +176,10 @@ private:
   const gid_t *idList_;
 
   int dimension_;
-  Array<RCP<StridedInput<lno_t, scalar_t> > > coords_;
+  Array<RCP<StridedData<lno_t, scalar_t> > > coords_;
 
   int numWeights_;
-  Array<RCP<StridedInput<lno_t, scalar_t> > > weights_;
+  Array<RCP<StridedData<lno_t, scalar_t> > > weights_;
 };
 
 /////////////////////////////////////////////////////////////////
@@ -240,7 +240,7 @@ template <typename User>
     std::vector<const scalar_t *> &values,  std::vector<int> &valueStrides,
     std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides)
 {
-  typedef StridedInput<lno_t,scalar_t> input_t;
+  typedef StridedData<lno_t,scalar_t> input_t;
 
   gno_t tmp = numIds_;
   try{

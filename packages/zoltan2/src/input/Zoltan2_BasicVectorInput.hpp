@@ -14,7 +14,7 @@
 #define _ZOLTAN2_BASICVECTORINPUT_HPP_
 
 #include <Zoltan2_VectorInput.hpp>
-#include <Zoltan2_StridedInput.hpp>
+#include <Zoltan2_StridedData.hpp>
 
 namespace Zoltan2 {
 
@@ -220,10 +220,10 @@ private:
   const gid_t *idList_;
 
   int numVectors_;
-  Array<RCP<StridedInput<lno_t, scalar_t> > > elements_ ;
+  Array<RCP<StridedData<lno_t, scalar_t> > > elements_ ;
 
   int numWeights_;
-  Array<RCP<StridedInput<lno_t, scalar_t> > > weights_;
+  Array<RCP<StridedData<lno_t, scalar_t> > > weights_;
 
   void createBasicVector(
     std::vector<const scalar_t *> &elements,  std::vector<int> &elementStrides,
@@ -270,7 +270,7 @@ template <typename User>
    std::vector<const scalar_t *> &elements,  std::vector<int> &elementStrides,
    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides)
 {
-  typedef StridedInput<lno_t,scalar_t> input_t;
+  typedef StridedData<lno_t,scalar_t> input_t;
 
   gno_t tmp = numIds_;
   try{
