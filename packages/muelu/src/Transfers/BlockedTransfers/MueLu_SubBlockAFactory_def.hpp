@@ -65,7 +65,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   LocalOrdinal SubBlockAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetFixedBlockSize() const {
     return blksize_;
-  };
+  }
 
 } // namespace MueLu
 
