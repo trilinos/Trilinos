@@ -15,7 +15,7 @@
 
 #include <Zoltan2_VectorInput.hpp>
 #include <Zoltan2_XpetraTraits.hpp>
-#include <Zoltan2_StridedInput.hpp>
+#include <Zoltan2_StridedData.hpp>
 #include <Zoltan2_Util.hpp>
 
 #include <Xpetra_EpetraVector.hpp>
@@ -140,7 +140,7 @@ private:
   lno_t base_;
 
   int numWeights_;
-  Array<RCP<StridedInput<lno_t, scalar_t> > > weights_;
+  Array<RCP<StridedData<lno_t, scalar_t> > > weights_;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -154,7 +154,7 @@ template <typename User>
       env_(rcp(new Environment)), base_(),
       numWeights_(weights.size()), weights_(weights.size())
 {
-  typedef StridedInput<lno_t, scalar_t> input_t;
+  typedef StridedData<lno_t, scalar_t> input_t;
 
   vector_ = XpetraTraits<User>::convertToXpetra(invector);
   map_ = vector_->getMap();

@@ -174,7 +174,7 @@ void AlgRCB(
   //    coordinate weights, if any
   //    coordinate global Ids
 
-  typedef StridedInput<lno_t, scalar_t> input_t;
+  typedef StridedData<lno_t, scalar_t> input_t;
 
   int coordDim = coords->getCoordinateDim();
   int weightDim = coords->getCoordinateWeightDim();

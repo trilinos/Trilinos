@@ -180,8 +180,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  StridedInput
-  SOURCES util/StridedInput.cpp
+  StridedData
+  SOURCES util/StridedData.cpp
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"

@@ -14,7 +14,7 @@
 #define _ZOLTAN2_XPETRACRSMATRIXINPUT_HPP_
 
 #include <Zoltan2_MatrixInput.hpp>
-#include <Zoltan2_StridedInput.hpp>
+#include <Zoltan2_StridedData.hpp>
 #include <Zoltan2_XpetraTraits.hpp>
 #include <Zoltan2_Util.hpp>
 
@@ -169,7 +169,7 @@ private:
   ArrayRCP<gno_t> columnIds_;
 
   int coordinateDim_;
-  Array<RCP<StridedInput<lno_t, scalar_t> > > rowCoords_;
+  Array<RCP<StridedData<lno_t, scalar_t> > > rowCoords_;
 
 };
 
@@ -215,7 +215,7 @@ template <typename User>
   void XpetraCrsMatrixInput<User>::setRowCoordinates(int dim,
     const scalar_t *coordVal, int stride)
 {
-  typedef StridedInput<lno_t,scalar_t> input_t;
+  typedef StridedData<lno_t,scalar_t> input_t;
 
   env_->localInputAssertion(__FILE__, __LINE__, 
     "invalid row coordinate dimension",

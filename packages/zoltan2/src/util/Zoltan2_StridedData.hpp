@@ -1,17 +1,17 @@
-#ifndef _ZOLTAN2_STRIDEDINPUT_HPP_
-#define _ZOLTAN2_STRIDEDINPUT_HPP_
+#ifndef _ZOLTAN2_STRIDEDDATA_HPP_
+#define _ZOLTAN2_STRIDEDDATA_HPP_
 
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_Environment.hpp>
 #include <typeinfo>
 
-/*! \file Zoltan2_StridedInput.hpp
- *  \brief This file defines the StridedInput class.
+/*! \file Zoltan2_StridedData.hpp
+ *  \brief This file defines the StridedData class.
  */
 
 namespace Zoltan2{
 
-/*!  \brief The StridedInput class manages lists of weights or coordinates.
+/*!  \brief The StridedData class manages lists of weights or coordinates.
  *
  * A likely representation for multi-dimensional weights or coordinates is
  *  an array ordered by identifier by dimension, or vice versa. The purposes 
@@ -29,7 +29,7 @@ namespace Zoltan2{
  */
 
 template<typename lno_t, typename scalar_t>
-class StridedInput {
+class StridedData {
 private:
   RCP<const Environment> env_;
   ArrayView<const scalar_t> vec_;
@@ -43,12 +43,12 @@ public:
    *               elements are at x[i * \c stride].
    *  \param stride   the stride of the elements in the strided array.
    */
-  StridedInput(ArrayView<const scalar_t> x, lno_t stride) :  
+  StridedData(ArrayView<const scalar_t> x, lno_t stride) :  
     vec_(x), stride_(stride) { }
 
   /*! \brief Default constructor
    */
-  StridedInput(): vec_(), stride_(0) { }
+  StridedData(): vec_(), stride_(0) { }
 
   /*! \brief Access an element of the input array. 
    *
@@ -84,7 +84,7 @@ public:
 
   /*! \brief Assignment operator
    */
-  StridedInput & operator= (const StridedInput &sInput)
+  StridedData & operator= (const StridedData &sInput)
   {
     if (this != &sInput){
       size_t length;
@@ -99,7 +99,7 @@ public:
 
 template<typename lno_t, typename scalar_t>
   template<typename T>
-     void StridedInput<lno_t, scalar_t>::getInputArray(
+     void StridedData<lno_t, scalar_t>::getInputArray(
        ArrayRCP<const T> &array) const
 {
   if (vec_.size() < 1){

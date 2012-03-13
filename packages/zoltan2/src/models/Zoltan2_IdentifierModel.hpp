@@ -16,7 +16,7 @@
 #include <Zoltan2_Model.hpp>
 #include <Zoltan2_MatrixInput.hpp>
 #include <Zoltan2_IdentifierInput.hpp>
-#include <Zoltan2_StridedInput.hpp>
+#include <Zoltan2_StridedData.hpp>
 
 namespace Zoltan2 {
 
@@ -48,7 +48,7 @@ public:
   typedef typename Adapter::scalar_t  scalar_t;
   typedef typename Adapter::gno_t     gno_t;
   typedef typename Adapter::lno_t     lno_t;
-  typedef StridedInput<lno_t, scalar_t> input_t;
+  typedef StridedData<lno_t, scalar_t> input_t;
 #endif
   
   IdentifierModel(){
@@ -77,7 +77,7 @@ public:
         each identifier on this process.
       \param wgts will on return point to a list of the weight or weights
          associated with each identifier in the Ids list. Each weight
-         is represented as a StridedInput object.
+         is represented as a StridedData object.
 
        \return The number of ids in the Ids list.
    */
@@ -116,7 +116,7 @@ public:
   typedef typename IdentifierInput<User>::lno_t     lno_t;
   typedef typename IdentifierInput<User>::gid_t     gid_t;
   typedef IdentifierMap<User> idmap_t;
-  typedef StridedInput<lno_t, scalar_t> input_t;
+  typedef StridedData<lno_t, scalar_t> input_t;
 
   /*! \brief Constructor
 
@@ -218,7 +218,7 @@ public:
         each identifier on this process.
       \param wgts will on return point to a list of the weight or weights
          associated with each identifier in the Ids list. Each weight
-         is represented as a StridedInput object.
+         is represented as a StridedData object.
          
        \return The number of ids in the Ids list.
    */
@@ -289,7 +289,7 @@ public:
   typedef typename MatrixInput<User>::lno_t     lno_t;
   typedef typename MatrixInput<User>::gid_t     gid_t;
   typedef IdentifierMap<User> idmap_t;
-  typedef StridedInput<lno_t, scalar_t> input_t;
+  typedef StridedData<lno_t, scalar_t> input_t;
   
   IdentifierModel( const MatrixInput<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
@@ -363,7 +363,7 @@ public:
         each identifier on this process.
       \param wgts will on return point to a list of the weight or weights
          associated with each identifier in the Ids list. Each weight
-         is represented as a StridedInput object.
+         is represented as a StridedData object.
 
        \return The number of ids in the Ids list.
    */

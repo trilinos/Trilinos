@@ -140,7 +140,7 @@ void testCoordinateModel(std::string &fname, int weightDim,
   // Create an CoordinateModel with this input
   //////////////////////////////////////////////////////////////
 
-  typedef Zoltan2::StridedInput<lno_t, scalar_t> input_t;
+  typedef Zoltan2::StridedData<lno_t, scalar_t> input_t;
   typedef std::bitset<Zoltan2::NUM_MODEL_FLAGS> modelFlags_t;
   typedef Zoltan2::CoordinateModel<base_ia_t> model_t;
   modelFlags_t modelFlags;

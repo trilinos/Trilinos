@@ -22,10 +22,11 @@
 
 namespace Zoltan2{
 
+#ifdef HAVE_ZOLTAN2_MPI
+
 /*! \brief Convert an MPI communicator to a MpiComm object.
  */
 
-#ifdef HAVE_ZOLTAN2_MPI
 template <typename Ordinal>
   RCP<MpiComm<Ordinal> >
     getTeuchosMpiComm(const MPI_Comm &comm)
@@ -42,11 +43,23 @@ template <typename Ordinal>
  * Given a PartitioningSolution return a list of all the global IDs 
  * that are mine.  
  *
- * If there are sizes associated with the IDs (like number of non-zeros)
- * include that in xtraInfo array.  Get back new sizes in newXtraInfo.
- * Otherwise xtraInfo.size() must be zero.
+ * If there are values of interest associated with the IDs (like number of non-zeros
+ * or a global permutation) include that in xtraInfo array.  Get back new 
+ * values in newXtraInfo. Otherwise xtraInfo.size() must be zero.
  *
- * \todo document params and return 
+ * Global Ids appear in the import list in process rank order.  So all ids to be
+ * sent from rank 0 are listed first, then all ids to be sent by rank 1, and so on.
+ *
+ *  \param solution a partitioning solution
+ *  \param xtraInfo an array of data cooresponding to the objects for which parts are
+ *                         supplied the \c solution, or an empty array.
+ *  \param imports on return lists the global Ids assigned to this process by the solution.
+ *  \param newXtraInfo if \c xtraInfo was supplied, this array on return 
+ *         has the extra information associated with the global Ids in the
+ *         \c imports list.  Otherwise it is an empty list.
+ *
+ *  \todo  In the case where processes are not synomomous with parts, do we want to
+ *              return part Id for each global Id as well?
  */
 
 template <typename User, typename Extra>

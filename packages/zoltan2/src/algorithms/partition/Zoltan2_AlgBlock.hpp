@@ -1,4 +1,4 @@
-#ifndef _ZOLTAN2_ALGBLOCK_HPP_
+#ifndef _ZOLTAN2_ALGBLOCK_HPP
 #define _ZOLTAN2_ALGBLOCK_HPP_
 
 #include <Zoltan2_IdentifierModel.hpp>
@@ -131,7 +131,7 @@ void AlgPTBlock(
   int weightDim = (wtflag ? wtflag : 1);
 
   ArrayView<const gno_t> idList;
-  ArrayView<StridedInput<lno_t, scalar_t> > wgtList;
+  ArrayView<StridedData<lno_t, scalar_t> > wgtList;
   
   ids->getIdentifierList(idList, wgtList);
 
