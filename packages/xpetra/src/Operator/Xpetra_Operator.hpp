@@ -343,7 +343,7 @@ namespace Xpetra {
     // RCP<GOVector> variableBlockSizeInfo_; TODO: should be moved from CoalesceDropFactory to here.
 
     void         SetFixedBlockSize(LocalOrdinal blksize) { blksize_ = blksize; }
-    LocalOrdinal GetFixedBlockSize() const               { return blksize_;    };
+    LocalOrdinal GetFixedBlockSize() const               { return blksize_;    }; //TODO: why LocalOrdinal?
     // ----------------------------------------------------------------------------------
 
   }; //class Operator

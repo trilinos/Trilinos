@@ -46,15 +46,22 @@ namespace MueLu {
         
       RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get()); // no request since given by user
 
-      //FIXME this doesn't check for the #dofs per node, or whether we have a blocked system
+      LocalOrdinal numPDEs = A->GetFixedBlockSize();
+      
+      GetOStream(Runtime1, 0) << "Generating canonical nullspace: dimension = " << numPDEs << std::endl;
+      nullspace = MultiVectorFactory::Build(A->getDomainMap(), numPDEs);
 
-      nullspace = MultiVectorFactory::Build(A->getDomainMap(), 1);
-      nullspace->putScalar(1.0);
-      GetOStream(Runtime1, 0) << "Calculate nullspace: nullspace dimension=" << nullspace->getNumVectors() << std::endl;
+      for (int i=0; i<numPDEs; ++i) {
+        ArrayRCP<Scalar> nsValues = nullspace->getDataNonConst(i);
+        int numBlocks = nsValues.size() / numPDEs;
+        for (int j=0; j< numBlocks; ++j) {
+          nsValues[j*numPDEs + i] = 1.0;
+        }
+      }
     }
 
     currentLevel.Set("Nullspace", nullspace, this);
-
+    
   } // Build
 
 } //namespace MueLu
