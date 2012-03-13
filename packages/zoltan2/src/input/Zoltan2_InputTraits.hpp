@@ -73,7 +73,7 @@ class BasicUserTypes{
 /*! \brief The traits required of User input classes or structures.
  *
  *  We use the symbol \em User as an abtraction of the user's input.
- *  If the User's is an instance of a C++ class,
+ *  If the user's data structure is an instance of a C++ class,
  *  or is a C-language struct,
  *  then it should have an InputTraits specialization.  The InputAdapter
  *  is templated on the User object, and Zoltan2 uses the User object
@@ -99,6 +99,8 @@ class BasicUserTypes{
  *  \li Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>
  *  \li Epetra_MultiVector
  *  \li BasicUserTypes
+ *
+ * \todo Tpetra::RowMatrix
  */
 template <typename User>
 struct InputTraits {

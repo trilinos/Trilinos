@@ -66,7 +66,7 @@ public:
    *   an exception is thrown.
    */
 
-  template <typename T> void getInputArray(ArrayRCP<const T> &array);
+  template <typename T> void getInputArray(ArrayRCP<const T> &array) const;
 
   /*! \brief The raw input information.
       \param len on return is the length of storage at \c vec.  This will
@@ -99,7 +99,8 @@ public:
 
 template<typename lno_t, typename scalar_t>
   template<typename T>
-     void StridedInput<lno_t, scalar_t>::getInputArray(ArrayRCP<const T> &array)
+     void StridedInput<lno_t, scalar_t>::getInputArray(
+       ArrayRCP<const T> &array) const
 {
   if (vec_.size() < 1){
     array = ArrayRCP<const T>();

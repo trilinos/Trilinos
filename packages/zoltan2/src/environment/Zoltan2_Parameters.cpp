@@ -19,10 +19,6 @@
 
 using namespace std;
 
-// TODO the ordering, coloring and non-graph partitioning parameters
-//    and many documentation strings
-// TODO: show an example of create a string parameter, etc
-
 namespace Zoltan2 {
 
 /*! \brief  Create a list of all parameters.
@@ -67,7 +63,8 @@ namespace Zoltan2 {
  * an error with an explanation if the parameter is invalid.
  *
  *  \todo Should all of our parameter values be strings, in order
-            to support reading in parameters from a file?
+ *          to support reading in parameters from a file?
+ *  \todo Many parameters remain to be added here.
  */
 
 void createAllParameters(Teuchos::ParameterList &pList)
@@ -378,6 +375,39 @@ void createAllParameters(Teuchos::ParameterList &pList)
   anyNumValidatorP->printDoc("random seed\n", docString);
 
   pList.set<string>(parameterName, "0.5", docString.str(), anyNumValidatorP);
+  ///////////////////////////////////////////////////////////
+  // LEVEL: Sub list, ordering problem parameters
+  ///////////////////////////////////////////////////////////
+
+  ParameterList &ordering = pList.sublist("ordering", false,
+    string("Ordering problem parameters"));
+
+  ////////// topLevel/ordering/order_method
+  parameterName = string("order_method");
+  strValidatorP = rcp(new StringValidator(
+    tuple<string>("rcm", "minimum_degree", "method3")));
+
+  docString.str("");
+  strValidatorP->printDoc(
+    "Document the order_method parameter here\n"
+    "(Default is ?)\n",
+     docString);
+
+  ordering.set<string>(parameterName, "rcm", docString.str(), strValidatorP);
+
+  ////////// topLevel/ordering/order_package
+  parameterName = string("order_package");
+  strValidatorP = rcp(new StringValidator(
+    tuple<string>("amd", "package2", "package3")));
+
+  docString.str("");
+  strValidatorP->printDoc(
+    "Document the order_package parameter here\n"
+    "(Default is ?)\n",
+     docString);
+
+  ordering.set<string>(parameterName, "amd", docString.str(), strValidatorP);
+
 
   ///////////////////////////////////////////////////////////
   // LEVEL: Sub list, partitioning problem parameters
@@ -561,10 +591,54 @@ void createAllParameters(Teuchos::ParameterList &pList)
   // LEVEL: Sub sub list, geometric partitioning parameters
   ///////////////////////////////////////////////////////////
 
-#if 0
   ParameterList &geom = partitioning.sublist("geometric", false, 
     string("geometric partitioning problem parameters"));
-#endif
+
+  ////////// topLevel/partitioning/geometric/rectilinear_blocks
+  parameterName = string("rectilinear_blocks");
+
+  str2intValidatorP =
+    rcp(new str2intValidator(yesNoStrings, yesNoIntegrals, parameterName));
+
+  docString.str("");
+  str2intValidatorP->printDoc(
+    "If true, then when a cut is made, all of the dots located on the cut\n"
+    "are moved to the same side of the cut. The resulting regions are then\n"
+    "rectilinear.  The resulting load balance may not be as good as when\n"
+    "the group of dots is split by the cut. Default is false.\n",
+    docString);
+
+  geom.set<string>(parameterName, "no", docString.str(),
+    str2intValidatorP);
+
+  ////////// topLevel/partitioning/geometric/average_cuts
+  parameterName = string("average_cuts");
+
+  str2intValidatorP =
+    rcp(new str2intValidator(yesNoStrings, yesNoIntegrals, parameterName));
+
+  docString.str("");
+  str2intValidatorP->printDoc(
+    "When true, coordinates of RCB cutting planes are computed to be \n"
+    "the average of the coordinates of the closest object on each side \n"
+    "of the cut. Otherwise, coordinates of cutting planes may equal \n"
+    "those of one of the closest objects. Default is false.\n",
+    docString);
+
+  geom.set<string>(parameterName, "no", docString.str(),
+    str2intValidatorP);
+
+  ////////// topLevel/partitioning/geometric/bisection_num_test_cuts
+  parameterName = string("bisection_num_test_cuts");
+
+  intValidatorP= rcp(new EnhancedNumberValidator(1,250,1));
+
+  docString.str("");
+  intValidatorP->printDoc(
+   "Experimental: number of test cuts to do simultaneously (default is 1)\n",
+      docString);
+
+  geom.set<string>(parameterName, "1", docString.str(), intValidatorP);
 
   ///////////////////////////////////////////////////////////
   // LEVEL: Sub sub list, hypergraph partitioning parameters

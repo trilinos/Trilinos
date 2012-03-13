@@ -9,6 +9,11 @@
 //
 // Basic testing of Zoltan2::XpetraCrsMatrixInput 
 
+/*! \file XpetraCrsMatrixInput.cpp
+ *  \brief Test of Zoltan2::XpetraCrsMatrixInput class.
+ *  \todo test with geometric row coordinates.
+ */
+
 #include <string>
 
 #include <Zoltan2_XpetraCrsMatrixInput.hpp>
@@ -112,11 +117,14 @@ int main(int argc, char *argv[])
   // Create object that can give us test Tpetra, Xpetra
   // and Epetra matrices for testing.
 
+  outputFlag_t flags;
+  flags.set(OBJECT_COORDINATES);
   RCP<uinput_t> uinput;
 
   try{
     uinput = 
-      rcp(new uinput_t(testDataFilePath+std::string("/simple.mtx"), comm));
+      rcp(new uinput_t(
+        testDataFilePath+std::string("/simple.mtx"), comm, flags));
   }
   catch(std::exception &e){
     TEST_FAIL_AND_EXIT(*comm, 0, string("input ")+e.what(), 1);
@@ -147,9 +155,9 @@ int main(int argc, char *argv[])
   imbal[0] = 1.0;
   ArrayRCP<float> metric(imbal, 0, 1, true);
 
-  size_t *p = new size_t [nrows];
-  memset(p, 0, sizeof(size_t) * nrows);
-  ArrayRCP<size_t> solnParts(p, 0, nrows, true);
+  zoltan2_partId_t *p = new zoltan2_partId_t [nrows];
+  memset(p, 0, sizeof(zoltan2_partId_t) * nrows);
+  ArrayRCP<zoltan2_partId_t> solnParts(p, 0, nrows, true);
 
   soln_t solution(env, comm, idMap, weightDim);
 

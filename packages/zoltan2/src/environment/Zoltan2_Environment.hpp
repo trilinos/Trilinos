@@ -36,6 +36,9 @@ namespace Zoltan2 {
   The environment holds the application's default communicator.  Note that 
   this communicator may differ from the problem communicator for any
   given problem.
+
+  \todo The Environment could make it easier for algorithms to get parameter
+    values without having to navigate Teuchos::ParameterLists and sublists.
 */
 
 class Environment{

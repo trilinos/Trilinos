@@ -1,8 +1,6 @@
 // @HEADER
 // ***********************************************************************
-//
-//                Copyright message goes here.   TODO
-//
+//                Copyright message goes here. 
 // ***********************************************************************
 // @HEADER
 
@@ -52,11 +50,14 @@ namespace Zoltan2 {
     adapters are already defined for common data structures, such as
     Tpetra and Epetra objects and C-language pointers to arrays.
 
+    \todo We don't really need global Ids.  They should be optional
+    \todo Do we want to remove getGlobalNumberOfCoordinates?  We
+                 can figure that out.
+    \todo Migration doesn't move weights.  Should it?
 */
 
 template <typename User>
   class CoordinateInput : public InputAdapter {
-private:
 
 public:
 
@@ -84,10 +85,8 @@ public:
   ////////////////////////////////////////////////////
 
   /*! \brief Return dimension of the coordinates.
-   *   \return the number of coordinates (typically one, two or three).
    */
   virtual int getCoordinateDimension() const = 0;
-
 
   /*! \brief Return the number of weights per coordinate.
    *   \return the count of weights, zero or more per coordinate.
@@ -105,7 +104,7 @@ public:
   virtual size_t getGlobalNumberOfCoordinates() const = 0;
 
   /*! \brief Provide a pointer to one dimension of this process' coordinates.
-      \param dim  is a value from 0 to one less than 
+      \param coordDim  is a value from 0 to one less than 
          getLocalNumberOfCoordinates() specifying which dimension is
          being provided in the coords list.
       \param coords  points to a list of coordinate values for the dimension.
@@ -118,20 +117,17 @@ public:
               getLocalNumberOfCoordinates() because the \c stride
               may be more than one.
 
-      TODO make global IDs optional - we'll return them
-        in the solution if they include then in this call.
-
       Zoltan2 does not copy your data.  The data pointed to coords
       must remain valid for the lifetime of this InputAdapter.
    */
 
-  virtual size_t getCoordinates(int dim, const gid_t *&gids, 
+  virtual size_t getCoordinates(int coordDim, const gid_t *&gids, 
     const scalar_t *&coords, int &stride) const = 0;
 
   /*! \brief  Provide a pointer to the weights, if any, corresponding 
        to the coordinates returned in getCoordinates(). 
 
-      \param dimension ranges from zero to one less than getNumberOfWeights()
+      \param weightDim ranges from zero to one less than getNumberOfWeights()
       \param weights is the list of weights of the given dimension for
            the coordinates listed in getCoordinates().
        \param stride The k'th weight is located at weights[stride*k]
@@ -139,7 +135,7 @@ public:
                   as the number of elements listed in getCoordinates().
    */
 
-  virtual size_t getCoordinateWeights(int dimension,
+  virtual size_t getCoordinateWeights(int weightDim,
      const scalar_t *&weights, int &stride) const = 0;
 
   /*! \brief Apply a PartitioningSolution to an input.
@@ -162,10 +158,12 @@ public:
 
   template <typename User2>
     size_t applyPartitioningSolution(User &in, User *&out,
-         const PartitioningSolution<User2> &solution)
+         const PartitioningSolution<User2> &solution) const
   {
     return 0;
   } 
+
+private:
 };
   
   

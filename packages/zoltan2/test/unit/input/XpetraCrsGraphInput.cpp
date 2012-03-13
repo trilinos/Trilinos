@@ -8,6 +8,10 @@
 // ***********************************************************************
 //
 // Basic testing of Zoltan2::XpetraCrsGraphInput
+/*!  \file XpetraCrsGraphInput.cpp
+ *   \brief Test of Zoltan2::XpetraCrsGraphInput class.
+ *  \todo add weights and coordinates
+ */
 
 #include <string>
 
@@ -65,16 +69,16 @@ int verifyInputAdapter(
   RCP<const Comm<int> > comm = graph.getComm();
   int fail = 0, gfail=0;
 
-  if (!fail && ia.getLocalNumVertices() != graph.getNodeNumRows())
+  if (!fail && ia.getLocalNumberOfVertices() != graph.getNodeNumRows())
     fail = 4;
 
-  if (!fail && ia.getGlobalNumVertices() != graph.getGlobalNumRows())
+  if (!fail && ia.getGlobalNumberOfVertices() != graph.getGlobalNumRows())
     fail = 5;
 
-  if (!fail && ia.getLocalNumEdges() != graph.getNodeNumEntries())
+  if (!fail && ia.getLocalNumberOfEdges() != graph.getNodeNumEntries())
       fail = 6;
 
-  if (!fail && ia.getGlobalNumEdges() != graph.getGlobalNumEntries())
+  if (!fail && ia.getGlobalNumberOfEdges() != graph.getGlobalNumEntries())
     fail = 7;
 
   gfail = globalFail(comm, fail);
@@ -147,9 +151,9 @@ int main(int argc, char *argv[])
   imbal[0] = 1.0;
   ArrayRCP<float> metric(imbal, 0, 1, true);
 
-  size_t *p = new size_t [nvtx];
-  memset(p, 0, sizeof(size_t) * nvtx);
-  ArrayRCP<size_t> solnParts(p, 0, nvtx, true);
+  zoltan2_partId_t *p = new zoltan2_partId_t [nvtx];
+  memset(p, 0, sizeof(zoltan2_partId_t) * nvtx);
+  ArrayRCP<zoltan2_partId_t> solnParts(p, 0, nvtx, true);
 
   soln_t solution(env, comm, idMap, weightDim);
 

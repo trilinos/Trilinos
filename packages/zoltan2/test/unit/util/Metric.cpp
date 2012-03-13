@@ -23,8 +23,6 @@ using Zoltan2::imbalances;
 
 int main(int argc, char *argv[])
 {
-  typedef float scalar_t;
-
   Teuchos::GlobalMPISession session(&argc, &argv);
   RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
   int rank = comm->getRank();
@@ -37,7 +35,7 @@ int main(int argc, char *argv[])
   // The PART NUMBERS.  
 
   size_t numGlobalParts = nprocs;
-  Array<size_t> partNums(numGlobalParts);
+  Array<zoltan2_partId_t> partNums(numGlobalParts);
   for (size_t i=0; i < numGlobalParts; i++)
     partNums[i] = i;
 
@@ -129,7 +127,8 @@ int main(int argc, char *argv[])
 
   float result;
 
-  imbalances(env, comm, numGlobalParts, p1, partNums, w1, result);
+  imbalances<scalar_t>(env, comm, numGlobalParts, p1, 
+    partNums.view(0, numGlobalParts), w1, result);
 
   if (rank == 0)
     std::cout << "Test 2: " << result << std::endl;
@@ -194,7 +193,8 @@ int main(int argc, char *argv[])
   // Test: single weight, varying part sizes
   /////////////////////////////////////////////////////////////
 
-  imbalances(env, comm, numGlobalParts, partSizes[0], partNums, w0, result);
+  imbalances<scalar_t>(env, comm, numGlobalParts, partSizes[0], 
+    partNums, w0, result);
 
   if (rank == 0)
     std::cout << "Test 4: " << result << std::endl;

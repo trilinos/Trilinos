@@ -14,6 +14,7 @@
 #define _ZOLTAN2_XPETRACRSMATRIXINPUT_HPP_
 
 #include <Zoltan2_MatrixInput.hpp>
+#include <Zoltan2_StridedInput.hpp>
 #include <Zoltan2_XpetraTraits.hpp>
 #include <Zoltan2_Util.hpp>
 
@@ -28,9 +29,10 @@ namespace Zoltan2 {
                 objects that are not FillCompleted.
     \todo add RowMatrix
 
-    The template parameter is the user's input object - an Epetra
-    matrix or a templated Tpetra::CrsMatrix 
-    or a templated Xpetra::CrsMatrix.
+    The template parameter is the user's input object:
+     \li Tpetra::CrsGraph
+     \li Xpetra::CrsGraph
+     \li Epetra_CrsGraph
 */
 
 template <typename User>
@@ -53,45 +55,31 @@ public:
   ~XpetraCrsMatrixInput() { }
 
   /*! \brief Constructor   
-   *    \param The users Epetra, Tpetra, or Xpetra CrsMatrix object 
+   *    \param inmatrix The users Epetra, Tpetra, or Xpetra CrsMatrix object 
+   *    \param coordDim Some algorithms can use row or column geometric
+   *            information if it is available.  If coordinates will be
+   *            supplied in setRowCoordinates() 
+   *            then provide the dimension of the coordinates here.
    */
-  // Constructor 
-  XpetraCrsMatrixInput(const RCP<const User> &inmatrix):
-    inmatrix_(inmatrix), 
-    matrix_(),
-    rowMap_(),
-    colMap_(),
-    base_(),
-    offset_(),
-    columnIds_()
-  {
-    matrix_ = XpetraTraits<User>::convertToXpetra(inmatrix);
-    rowMap_ = matrix_->getRowMap();
-    colMap_ = matrix_->getColMap();
-    base_ = rowMap_->getIndexBase();
+  XpetraCrsMatrixInput(const RCP<const User> &inmatrix, int coordDim=0);
 
-    size_t nrows = matrix_->getNodeNumRows();
-    size_t nnz = matrix_->getNodeNumEntries();
- 
-    offset_.resize(nrows+1, 0);
-    columnIds_.resize(nnz);
-    ArrayView<const lno_t> indices;
-    ArrayView<const scalar_t> nzs;
-    lno_t next = 0;
-    for (size_t i=0; i < nrows; i++){
-      lno_t row = i + base_;
-      lno_t nnz = matrix_->getNumEntriesInLocalRow(row);
-      matrix_->getLocalRowView(row, indices, nzs);
-      for (lno_t j=0; j < nnz; j++){
-        // TODO - this will be slow
-        //   Is it possible that global columns ids might be stored in order?
-        columnIds_[next++] = colMap_->getGlobalElement(indices[j]);
-      }
-      offset_[i+1] = offset_[i] + nnz;
-    } 
-  };
+  /*! \brief Specify geometric coordinates for matrix rows.
+   *    \param dim  A value between zero and one less that the \c coordDim
+   *                  argument to the constructor.
+   *    \param coordVal  A pointer to the coordinates.
+   *    \stride          A stride to be used in reading the values.  The
+   *        dimension \c dim coordinate for row \k should be found at
+   *        <tt>coordVal[k*stride]</tt>.
+   *
+   * The order of coordinates should correspond to the order of rows
+   * returned by
+   *   \code
+   *       theMatrix->getRowMap()->getNodeElementList();
+   *   \endcode
+   */
+  void setRowCoordinates(int dim, const scalar_t *coordVal, int stride);
 
-  /*! \brief Access to xpetra matrix
+  /*! \brief Access to Xpetra-wrapped user matrix. 
    */
 
   const RCP<const xmatrix_t> &getMatrix() const
@@ -146,48 +134,31 @@ public:
     return nrows;
   }
 
+  int getCoordinateDimension() const {return coordinateDim_;}
+
+  size_t getRowCoordinates(int dim,
+    const scalar_t *&coords, int &stride) const
+  {
+    env_->localInputAssertion(__FILE__, __LINE__,
+      "invalid coordinate dimension",
+      dim >= 0 && dim < coordinateDim_, BASIC_ASSERTION);
+
+    size_t length;
+    rowCoords_[dim]->getStridedList(length, coords, stride);
+    return length;
+  }
+
   ////////////////////////////////////////////////////
   // End of MatrixInput interface.
   ////////////////////////////////////////////////////
 
   template <typename User2>
     size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<User2> &solution)
-  { 
-    // Get an import list
-
-    size_t len = solution.getNumberOfIds();
-    const gid_t *gids = solution.getGlobalIdList();
-    const size_t *parts = solution.getPartList();
-    ArrayRCP<gid_t> gidList = arcp(const_cast<gid_t *>(gids), 0, len, false); 
-    ArrayRCP<size_t> partList = arcp(const_cast<size_t *>(parts), 0, len, false); 
-    ArrayRCP<lno_t> dummyIn;
-    ArrayRCP<gid_t> importList;
-    ArrayRCP<lno_t> dummyOut;
-    size_t numNewRows;
-    const RCP<const Comm<int> > comm = matrix_->getRowMap()->getComm();
-
-    try{
-      numNewRows = convertPartListToImportList<gid_t, lno_t, lno_t>(
-        *comm, partList, gidList, dummyIn, importList, dummyOut);
-    }
-    Z2_FORWARD_EXCEPTIONS;
-
-    gno_t lsum = numNewRows;
-    gno_t gsum = 0;
-    reduceAll<int, gno_t>(*comm, Teuchos::REDUCE_SUM, 1, &lsum, &gsum);
-
-    RCP<const User> inPtr = rcp(&in, false);
-
-    RCP<const User> outPtr = XpetraTraits<User>::doMigration(
-     inPtr, lsum, importList.getRawPtr());
-
-    out = const_cast<User *>(outPtr.get());
-    outPtr.release();
-    return numNewRows;
-  }
+         const PartitioningSolution<User2> &solution) const;
 
 private:
+
+  RCP<Environment> env_;    // for error messages, etc.
 
   RCP<const User> inmatrix_;
   RCP<const xmatrix_t> matrix_;
@@ -196,8 +167,107 @@ private:
   lno_t base_;
   ArrayRCP<lno_t> offset_;
   ArrayRCP<gno_t> columnIds_;
+
+  int coordinateDim_;
+  Array<RCP<StridedInput<lno_t, scalar_t> > > rowCoords_;
+
 };
-  
+
+/////////////////////////////////////////////////////////////////
+// Definitions
+/////////////////////////////////////////////////////////////////
+
+template <typename User>
+  XpetraCrsMatrixInput<User>::XpetraCrsMatrixInput(
+    const RCP<const User> &inmatrix, int coordDim):
+      env_(rcp(new Environment)),
+      inmatrix_(inmatrix), matrix_(), rowMap_(), colMap_(), base_(),
+      offset_(), columnIds_(),
+      coordinateDim_(coordDim), rowCoords_(coordDim)
+{
+  matrix_ = XpetraTraits<User>::convertToXpetra(inmatrix);
+  rowMap_ = matrix_->getRowMap();
+  colMap_ = matrix_->getColMap();
+  base_ = rowMap_->getIndexBase();
+
+  size_t nrows = matrix_->getNodeNumRows();
+  size_t nnz = matrix_->getNodeNumEntries();
+ 
+  offset_.resize(nrows+1, 0);
+  columnIds_.resize(nnz);
+  ArrayView<const lno_t> indices;
+  ArrayView<const scalar_t> nzs;
+  lno_t next = 0;
+  for (size_t i=0; i < nrows; i++){
+    lno_t row = i + base_;
+    lno_t nnz = matrix_->getNumEntriesInLocalRow(row);
+    matrix_->getLocalRowView(row, indices, nzs);
+    for (lno_t j=0; j < nnz; j++){
+      // TODO - this will be slow
+      //   Is it possible that global columns ids might be stored in order?
+      columnIds_[next++] = colMap_->getGlobalElement(indices[j]);
+    }
+    offset_[i+1] = offset_[i] + nnz;
+  } 
+}
+
+template <typename User>
+  void XpetraCrsMatrixInput<User>::setRowCoordinates(int dim,
+    const scalar_t *coordVal, int stride)
+{
+  typedef StridedInput<lno_t,scalar_t> input_t;
+
+  env_->localInputAssertion(__FILE__, __LINE__, 
+    "invalid row coordinate dimension",
+    dim >= 0 && dim < coordinateDim_, BASIC_ASSERTION);
+
+  size_t nvtx = getLocalNumRows();
+
+  rowCoords_[dim] =
+    rcp<input_t>(
+      new input_t(ArrayView<const scalar_t>(coordVal, nvtx), stride));
+}
+
+template <typename User>
+  template <typename User2>
+    size_t XpetraCrsMatrixInput<User>::applyPartitioningSolution(
+      const User &in, User *&out, 
+      const PartitioningSolution<User2> &solution) const
+{ 
+  // Get an import list
+
+  size_t len = solution.getLocalNumberOfIds();
+  const gid_t *gids = solution.getIdList();
+  const partId_t *parts = solution.getPartList();
+  ArrayRCP<gid_t> gidList = arcp(const_cast<gid_t *>(gids), 0, len, false); 
+  ArrayRCP<partId_t> partList = arcp(const_cast<partId_t *>(parts), 0, len, 
+    false); 
+  ArrayRCP<lno_t> dummyIn;
+  ArrayRCP<gid_t> importList;
+  ArrayRCP<lno_t> dummyOut;
+  size_t numNewRows;
+  const RCP<const Comm<int> > comm = matrix_->getRowMap()->getComm();
+
+  try{
+    numNewRows = convertSolutionToImportList<User2, lno_t>(
+      solution, dummyIn, importList, dummyOut);
+  }
+  Z2_FORWARD_EXCEPTIONS;
+
+  gno_t lsum = numNewRows;
+  gno_t gsum = 0;
+  reduceAll<int, gno_t>(*comm, Teuchos::REDUCE_SUM, 1, &lsum, &gsum);
+
+  RCP<const User> inPtr = rcp(&in, false);
+
+  RCP<const User> outPtr = XpetraTraits<User>::doMigration(
+   inPtr, lsum, importList.getRawPtr());
+
+  out = const_cast<User *>(outPtr.get());
+  outPtr.release();
+  return numNewRows;
+}
+
 }  //namespace Zoltan2
   
 #endif

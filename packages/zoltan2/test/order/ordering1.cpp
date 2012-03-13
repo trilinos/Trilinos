@@ -104,6 +104,7 @@ int main(int narg, char** arg)
                  "echoing the input/generated matrix.");
   cmdp.setOption("verbose", "quiet", &verbose,
                  "Print messages and results.");
+  cout << "Starting everything" << endl;
 
   //////////////////////////////////
   // Even with cmdp option "true", I get errors for having these
@@ -146,6 +147,7 @@ int main(int narg, char** arg)
   RCP<UserInputForTests> uinput;
 
   if (inputFile != ""){ // Input file specified; read a matrix
+
     string slash("/");
     string fname(inputFile);
     string pathName(testDataFilePath+slash+fname);
@@ -190,13 +192,10 @@ int main(int narg, char** arg)
 
   ////// Specify problem parameters
   Teuchos::ParameterList params;
+  // params.set("order_method", "rcm");
 
   ////// Create an input adapter for the Tpetra matrix.
   SparseMatrixAdapter adapter(origMatrix);
-
-#ifdef HAVE_ZOLTAN2_AMD
-  params.set("ORDER_METHOD", "Minimum_Degree");
-  params.set("ORDER_PACKAGE", "AMD");
 
   ////// Create and solve ordering problem
   Zoltan2::OrderingProblem<SparseMatrixAdapter> problem(&adapter, &params);
@@ -210,8 +209,9 @@ int main(int narg, char** arg)
       meminfo=NULL;
     }
   }
-#endif // SHOW_ZOLTAN2_LINUX_MEMORY
+#endif
 
+  cout << "Going to solve" << endl;
   problem.solve();
 
   ////// Basic metric checking of the ordering solution
@@ -221,15 +221,15 @@ int main(int narg, char** arg)
   z2TestLO *checkPerm;
   Zoltan2::OrderingSolution<z2TestGO, z2TestLO> *soln = problem.getSolution();
 
+  cout << "Going to get results" << endl;
   // Check that the solution is really a permutation
   checkLength = soln->getPermutationSize();
   checkGIDs = soln->getGids(&dummy);
   checkPerm = soln->getPermutation(&dummy);
 
+  cout << "Going to validate the soln" << endl;
   // Verify that checkPerm is a permutation
   testReturn = validatePerm(checkLength, checkPerm);
-
-#endif // HAVE_ZOLTAN2_AMD
 
   if (me == 0) {
     if (testReturn)

@@ -45,9 +45,7 @@ namespace Zoltan2 {
     represent a vector, or it may be the helper class BasicUserTypes.
     See InputTraits for more information.
 
-\todo add weights
-\todo how do we want to handle graphs that have coordinates for the
-        vertices? 
+   \todo Create BasicCrsGraphInput subclass.
 */
 
 template <typename User>
@@ -73,33 +71,37 @@ public:
 
   /*! \brief Returns the number vertices on this process.
    */
-  virtual size_t getLocalNumVertices() const = 0;
+  virtual size_t getLocalNumberOfVertices() const = 0;
 
   /*! \brief Returns the global number vertices.
+   *   \todo For GraphInput, should a user have to tell us
+   *            global number of vertices and edges?  Zoltan2
+   *            can figure that out.
    */
-  virtual global_size_t getGlobalNumVertices() const = 0;
+  virtual global_size_t getGlobalNumberOfVertices() const = 0;
 
   /*! \brief Returns the number edges on this process.
    */
-  virtual size_t getLocalNumEdges() const = 0;
+  virtual size_t getLocalNumberOfEdges() const = 0;
 
   /*! \brief Returns the global number edges.
    */
-  virtual global_size_t getGlobalNumEdges() const = 0;
+  virtual global_size_t getGlobalNumberOfEdges() const = 0;
 
-#if 0
-  /*! Returns the dimension (0 or greater) of vertex weights.
+  /*! \brief Returns the dimension (0 or greater) of vertex weights.
    */
-  virtual int getVertexWeightDim() const = 0;
+  virtual int getVertexWeightDimension() const = 0;
 
-  /*! Returns the dimension (0 or greater) of edge weights.
+  /*! \brief Returns the dimension (0 or greater) of edge weights.
    */
-  virtual int getEdgeWeightDim() const = 0;
+  virtual int getEdgeWeightDimension() const = 0;
 
-  /*! Returns the dimension (0 to 3) of vertex coordinates.
+  /*! \brief Returns the dimension of the geometry, if any.
+   *
+   *  Some algorithms can use geometric vertex coordinate 
+   *    information if it is present.
    */
-  virtual int getCoordinateDim() const = 0;
-#endif
+  virtual int getCoordinateDimension() const = 0;
 
   /*! \brief Sets pointers to this process' graph entries.
       \param vertexIds will on return a pointer to vertex global Ids
@@ -110,10 +112,70 @@ public:
       \param edgeIds on return will point to the global edge Ids for
          for each vertex.
        \return The number of ids in the vertexIds list.
+
+      Zoltan2 does not copy your data.  The data pointed to by 
+      vertexIds, offsets and edgeIds
+      must remain valid for the lifetime of this InputAdapter.
    */
 
   virtual size_t getVertexListView(const gid_t *&vertexIds, 
     const lno_t *&offsets, const gid_t *& edgeIds) const = 0; 
+
+  /*! \brief  Provide a pointer to the vertex weights, if any.
+
+      \param weightDim ranges from zero to one less than 
+                   getVertexWeightDimension().
+      \param weights is the list of weights of the given dimension for
+           the vertices returned in getVertexListView().
+       \param stride The k'th weight is located at weights[stride*k]
+       \return The number of weights listed, which should be the same
+               as the number of vertices in getVertexListView().
+
+      Zoltan2 does not copy your data.  The data pointed to by weights
+      must remain valid for the lifetime of this InputAdapter.
+   */
+
+  virtual size_t getVertexWeights(int weightDim,
+     const scalar_t *&weights, int &stride) const = 0;
+
+  /*! \brief  Provide a pointer to the edge weights, if any.
+
+      \param weightDim ranges from zero to one less than 
+                   getEdgeWeightDimension().
+      \param weights is the list of weights of the given dimension for
+           the edges returned in getVertexListView().
+       \param stride The k'th weight is located at weights[stride*k]
+       \return The number of weights listed, which should be the same
+               as the number of edges in getVertexListView().
+
+      Zoltan2 does not copy your data.  The data pointed to by weights
+      must remain valid for the lifetime of this InputAdapter.
+   */
+
+  virtual size_t getEdgeWeights(int weightDim,
+     const scalar_t *&weights, int &stride) const = 0;
+
+  /*! \brief Provide a pointer to one dimension of vertex coordinates.
+      \param coordDim  is a value from 0 to one less than
+         getCoordinateDimension() specifying which dimension is
+         being provided in the coords list.
+      \param coords  points to a list of coordinate values for the dimension.
+      \param stride  describes the layout of the coordinate values in
+              the coords list.  If stride is one, then the ith coordinate
+              value is coords[i], but if stride is two, then the
+              ith coordinate value is coords[2*i].
+
+       \return The length of the \c coords list.  This may be more than
+              getLocalNumberOfVertices() because the \c stride
+              may be more than one.
+
+      Zoltan2 does not copy your data.  The data pointed to by coords
+      must remain valid for the lifetime of this InputAdapter.
+   */
+
+  virtual size_t getVertexCoordinates(int coordDim, 
+    const scalar_t *&coords, int &stride) const = 0;
+
 
   /*! \brief Apply a partitioning problem solution to an input.  
    *
@@ -135,7 +197,7 @@ public:
 
   template <typename User2>
     size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<User2> &solution)
+         const PartitioningSolution<User2> &solution) const
   {
     return 0;
   }

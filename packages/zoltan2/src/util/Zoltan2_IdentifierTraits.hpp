@@ -736,7 +736,7 @@ template <typename T>
   try{
     reduceAll<int, size_t>(comm, Teuchos::REDUCE_SUM, 1, &len, &globalLen);
   }
-  Z2_THROW_OUTSIDE_ERROR(env, e);
+  Z2_THROW_OUTSIDE_ERROR(env);
 
   if (!IdentifierTraits<T>::isGlobalOrdinal()){
     return false;
@@ -779,7 +779,7 @@ template <typename T>
     try{
       reduceAll<int, int>(comm, Teuchos::REDUCE_MIN, 1, &lFlag, &gFlag);
     }
-    Z2_THROW_OUTSIDE_ERROR(env, e);
+    Z2_THROW_OUTSIDE_ERROR(env);
 
     if (gFlag == 0)  // not all processes have consecutive values
       return false;

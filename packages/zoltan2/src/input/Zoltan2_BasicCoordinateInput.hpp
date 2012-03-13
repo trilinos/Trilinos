@@ -15,6 +15,7 @@
 
 #include <Zoltan2_CoordinateInput.hpp>
 #include <Zoltan2_StridedInput.hpp>
+#include <vector>
 
 namespace Zoltan2 {
 
@@ -39,13 +40,6 @@ namespace Zoltan2 {
     actual class used by application to represent coordinates, or it may be
     the empty helper class \c BasicUserTypes with which a Zoltan2 user
     can easily supply the data types for the library.
-
-  \todo ensure that there is no limit on dimension
-
-  \todo Global identifiers should be optional.  If the user gives us
-    gids in the input adapter, we will include them in the solution.
-
-  \todo Add simpler constructors specifically for dimension 1, 2 and 3.
 */
 
 template <typename User>
@@ -65,70 +59,55 @@ public:
 
 #endif
 
-  /*! \brief Constructor
+  /*! \brief Constructor for dimension 1, 2 or 3 and no weights.
    *
-   *  \param dim is the dimension, typically one, two or three, of the
-   *                   geometric coordinates.
-   *  \param numIds   the local number of coordinates.
-   *  \param ids     is a pointer to the coordinate global Ids.  TODO: make
-   *                    this optional - if they provide it here, we give it
-   *                    back in the solution
-   *  \param values a list of \c dim pointers to the coordinate values
-   *          corresponding to the \c numIds ids
-   *  \param valueStrides a list of \c dim strides for the \c values 
-   *        arrays. The k'th coordinate of dimension n can be found at
-   *                values[n][k*valueStrides[n]].  If valueStrides
-   *              is NULL, it is assumed all strides are one.
-   *  \param numWeights the number of weights per coordinate , which may be zero
-   *                or greater
-   *  \param weights  \c numWeights pointers to arrays of weights.  \c weights
-             may be NULL if there are no arrays of weights.
-   *  \param weightStrides  a list of \c numWeights strides for the \c weights
-   *        arrays. The n'th weight for coordinate k is to be found
-   *               at weights[n][k*weightStrides[n]].  If weightStrides
-   *              is NULL, it is assumed all strides are one.
+   * \param numIds The number of local coordinates.
+   * \param ids    The global identifiers for the coordinates.
+   * \param x      A pointer to the first dimension of the coordinates.
+   * \param y      A pointer to the second dimension, if any.
+   * \param z      A pointer to the third dimension, if any.
+   * \param xStride  The stride for the \c x list.  The \x coordinate
+   *          for point \c ids[n]  should be found at <tt>x[xStride * n]</tt>.
+   * \param yStride  The stride for the \c y list.  The \y coordinate
+   *          for point \c ids[n]  should be found at <tt>y[yStride * n]</tt>.
+   * \param zStride  The stride for the \c z list.  The \z coordinate
+   *          for point \c ids[n]  should be found at <tt>z[zStride * n]</tt>.
    *  
    *  The values pointed to the arguments must remain valid for the
    *  lifetime of this InputAdapter.
    */
 
-  BasicCoordinateInput( int dim, lno_t numIds, const gid_t *ids, 
-    const scalar_t * const *values, int *valueStrides,
-    int numWeights, const scalar_t * const * weights, const int *weightStrides):
-      env_(rcp(new Environment)), 
-      numIds_(numIds), globalNumIds_(), idList_(ids), 
-      dimension_(dim), coords_(dim), 
-      numWeights_(numWeights), weights_(numWeights)
-  {
-    typedef StridedInput<lno_t,scalar_t> input_t;
+  BasicCoordinateInput(lno_t numIds, const gid_t *ids,
+    const scalar_t *x, const scalar_t *y, const scalar_t *z,
+    int xStride=1, int yStride=1, int zStride=1);
 
-    gno_t tmp = numIds;
-    try{
-      reduceAll<int, gno_t>(*(env_->comm_), Teuchos::REDUCE_SUM, 1, 
-         &tmp, &globalNumIds_);
-    }
-    Z2_THROW_OUTSIDE_ERROR(*env_, e);
+  /*! \brief Constructor for arbitrary dimension with weights.
+   *
+   *  \param numIds   the local number of coordinates.
+   *  \param ids     is a pointer to the coordinate global Ids. 
+   *  \param values a list of pointers to the coordinate values
+   *          corresponding to the \c numIds ids.  The coordinate
+   *          dimension is taken to be \c values.size().
+   *  \param valueStrides The strides for the \c values list.  
+   *           The coordinate for dimension \c n for \c ids[k] should be
+   *           found at <tt>values[n][valueStrides[n] * k]</tt>.
+   *           If \c valueStrides.size() is zero, it is assumed 
+   *           all strides are one.
+   *  \param weights  a list of pointers to arrays of weights.  
+   *      The number of weights per coordinate is assumed to be
+   *      \c weights.size(). 
+   *  \param weightStrides  a list of strides for the \c weights.
+   *     The weight for weight dimension \c n for \c ids[k] should be
+   *     found at <tt>weights[n][weightStrides[n] * k]</tt>.
+   *     If \c weightStrides.size() is zero, it is assumed all strides are one.
+   *  
+   *  The values pointed to the arguments must remain valid for the
+   *  lifetime of this InputAdapter.
+   */
 
-    if (numIds){
-      int stride = 1;
-      for (int x=0; x < dim; x++){
-        if (valueStrides)
-          stride = valueStrides[x];
-        coords_[x] = rcp<input_t>(new input_t(
-          ArrayView<const scalar_t>(values[x], stride*numIds), stride));
-      }
-
-      if (numWeights){
-        stride = 1;
-        for (int w=0; w < numWeights; w++){
-          if (weightStrides)
-            stride = weightStrides[w];
-          weights_[w] = rcp<input_t>(new input_t(
-            ArrayView<const scalar_t>(weights[w], stride*numIds), stride));
-        }
-      }
-    }
-  }
+  BasicCoordinateInput(lno_t numIds, const gid_t *ids, 
+    std::vector<const scalar_t *> &values,  std::vector<int> &valueStrides,
+    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides);
 
   /*! Destructor
    */
@@ -155,8 +134,6 @@ public:
   size_t getLocalNumberOfCoordinates() const { return numIds_; }
 
   size_t getGlobalNumberOfCoordinates() const { return globalNumIds_;}
-
-  // TODO make global IDs optional
 
   size_t getCoordinates(int dim, const gid_t *&gids, const scalar_t *&coords, 
     int &stride) const
@@ -187,16 +164,15 @@ public:
   }
 
 private:
+  void initializeData(
+    std::vector<const scalar_t *> &values,  std::vector<int> &valueStrides,
+    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides);
 
-  // A default environment.  An Environment is an internal Zoltan2
-  // class, so input adapters don't usually have one.  But we create
-  // one here so we can use it for error handling.
-
+  // A default Environment for error handling.
   RCP<const Environment> env_;
 
   lno_t numIds_;
   gno_t globalNumIds_;
-
   const gid_t *idList_;
 
   int dimension_;
@@ -205,7 +181,94 @@ private:
   int numWeights_;
   Array<RCP<StridedInput<lno_t, scalar_t> > > weights_;
 };
-  
+
+/////////////////////////////////////////////////////////////////
+// Definitions
+/////////////////////////////////////////////////////////////////
+
+template <typename User>
+  BasicCoordinateInput<User>::BasicCoordinateInput( 
+    lno_t numIds, const gid_t *ids,
+    const scalar_t *x, const scalar_t *y, const scalar_t *z,
+    int xStride, int yStride, int zStride):
+      env_(rcp(new Environment)), 
+      numIds_(numIds), globalNumIds_(), idList_(ids), 
+      dimension_(0), coords_(0), 
+      numWeights_(0), weights_(0)
+{
+  std::vector<const scalar_t *> values;
+  std::vector<int> strides;
+  std::vector<const scalar_t *> emptyValues;
+  std::vector<int> emptyStrides;
+
+  if (x){
+    values.push_back(x);
+    strides.push_back(xStride);
+    dimension_++;
+    if (y){
+      values.push_back(y);
+      strides.push_back(yStride);
+      dimension_++;
+      if (z){
+        values.push_back(z);
+        strides.push_back(zStride);
+        dimension_++;
+      }
+    }
+  }
+
+  coords_.resize(values.size());
+
+  initializeData(values, strides, emptyValues, emptyStrides);
+}
+
+template <typename User>
+  BasicCoordinateInput<User>::BasicCoordinateInput( 
+    lno_t numIds, const gid_t *ids, 
+    std::vector<const scalar_t *> &values,  std::vector<int> &valueStrides,
+    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
+      env_(rcp(new Environment)), 
+      numIds_(numIds), globalNumIds_(), idList_(ids), 
+      dimension_(values.size()), coords_(values.size()), 
+      numWeights_(weights.size()), weights_(weights.size())
+{
+  initializeData(values, valueStrides, weights, weightStrides);
+}
+
+template <typename User>
+  void BasicCoordinateInput<User>::initializeData(
+    std::vector<const scalar_t *> &values,  std::vector<int> &valueStrides,
+    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides)
+{
+  typedef StridedInput<lno_t,scalar_t> input_t;
+
+  gno_t tmp = numIds_;
+  try{
+    reduceAll<int, gno_t>(*(env_->comm_), Teuchos::REDUCE_SUM, 1, 
+       &tmp, &globalNumIds_);
+  }
+  Z2_THROW_OUTSIDE_ERROR(*env_);
+
+  if (numIds_){
+    int stride = 1;
+    for (int x=0; x < dimension_; x++){
+      if (valueStrides.size())
+        stride = valueStrides[x];
+      coords_[x] = rcp<input_t>(new input_t(
+        ArrayView<const scalar_t>(values[x], stride*numIds_), stride));
+    }
+
+    if (numWeights_){
+      stride = 1;
+      for (int w=0; w < numWeights_; w++){
+        if (weightStrides.size())
+          stride = weightStrides[w];
+        weights_[w] = rcp<input_t>(new input_t(
+          ArrayView<const scalar_t>(weights[w], stride*numIds_), stride));
+      }
+    }
+  }
+}
   
 }  //namespace Zoltan2
   

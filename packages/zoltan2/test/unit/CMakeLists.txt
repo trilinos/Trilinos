@@ -1,15 +1,13 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
-
-
 #
 # Tests for src/algorithms
-#
+#   For now - we test algorithms with system tests.
 
 #
 # Tests for src/environment
 #
-
+#
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DebugManager
   SOURCES environment/DebugManager.cpp
@@ -18,7 +16,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
-
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Environment
@@ -50,7 +47,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #
 # Tests for src/input
 #
-
+#
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   BasicCoordinateInput
   SOURCES input/BasicCoordinateInput.cpp
@@ -126,7 +123,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #
 # Tests for src/models
 #
-
+#
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   GraphModel
   SOURCES models/GraphModel.cpp 
@@ -145,9 +142,20 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CoordinateModel
+  SOURCES models/CoordinateModel.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
 #
 # Tests for src/problems
 #
+#    We test the Problem objects with system tests, and the
+#    Solution objects with unit tests.
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   PartitioningSolution
@@ -161,6 +169,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #
 # Tests for src/util
 #
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Util
+  SOURCES util/Util.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   StridedInput
@@ -206,4 +223,3 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
-

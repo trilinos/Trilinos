@@ -14,6 +14,8 @@
  *  \brief The algorithm for block partitioning.
  */
 
+typedef zoltan2_partId_t partId_t;
+
 namespace Zoltan2{
 
 /*! Block partitioning method.
@@ -129,7 +131,7 @@ void AlgPTBlock(
   int weightDim = (wtflag ? wtflag : 1);
 
   ArrayView<const gno_t> idList;
-  ArrayView<const StridedInput<lno_t, scalar_t> > wgtList;
+  ArrayView<StridedInput<lno_t, scalar_t> > wgtList;
   
   ids->getIdentifierList(idList, wgtList);
 
@@ -142,34 +144,8 @@ void AlgPTBlock(
   size_t numGlobalParts = solution->getGlobalNumberOfParts();
 #if 0
   size_t numLocalParts = solution->getLocalNumberOfParts();
-
-  const int *partDist = solution->getPartDistribution();
-  const size_t *procDist = solution->getProcsParts();
-  double *partSizes0 = getCriteriaPartSizes(0);
 #endif
   
-  ////////////////////////////////////////////////////////
-  // What is the objective.
-  // TODO: consider the objective in the algorithm
-
-#if 0
-  enum {object_weight,     // balance on first weight
-        object_count,      // ignore weight, balance on object count
-        total_weight,      // balance on total of weights
-        maximum_weight};   // balance on maximum of weights
-
-  int balanceObjective = (wtflag ? object_weight : object_count);
-
-  if (wtflag > 1){
-    if (objective == string("balance_object_count"))
-      balanceObjective = object_count;
-    else if (objective == string("multicriteria_minimize_total_weight"))
-      balanceObjective = total_weight;
-    else if (objective == string("multicriteria_minimize_maximum_weight"))
-      balanceObjective = maximum_weight;
-  }
-#endif
-
   ////////////////////////////////////////////////////////
   // The algorithm
   //
@@ -219,10 +195,10 @@ void AlgPTBlock(
   }
 
   /* Loop over objects and assign partition. */
-  size_t part = 0;
+  partId_t part = 0;
   wtsum = scansum[rank];
   Array<scalar_t> partTotal(numGlobalParts, 0);
-  ArrayRCP<size_t> gnoPart= arcp(new size_t [numGnos], 0, numGnos);
+  ArrayRCP<partId_t> gnoPart= arcp(new partId_t [numGnos], 0, numGnos);
 
   for (size_t i=0; i<numGnos; i++){
     scalar_t gnoWeight = (wtflag? wgtList[0][i] : 1.0);
@@ -250,8 +226,8 @@ void AlgPTBlock(
 
   // TODO have partNums default to 0 through numGlobalParts-1 in
   //    imbalances() call.
-  Array<size_t> partNums(numGlobalParts);
-  for (size_t i=0; i < numGlobalParts; i++) partNums[i] = i;
+  Array<partId_t> partNums(numGlobalParts);
+  for (partId_t i=0; i < numGlobalParts; i++) partNums[i] = i;
 
   Array<ArrayView<scalar_t> > partWeights(1);
   partWeights[0] = partTotal.view(0, numGlobalParts);

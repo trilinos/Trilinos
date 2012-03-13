@@ -306,7 +306,6 @@ int main(int argc, char *argv[])
   vector<string> mtxFiles;
   
   mtxFiles.push_back(testDataFilePath+string("/simple.mtx"));
-  mtxFiles.push_back(testDataFilePath+string("/cage10.mtx"));
 
   for (int fileNum=0; fileNum < mtxFiles.size(); fileNum++){
     if (rank==0)
