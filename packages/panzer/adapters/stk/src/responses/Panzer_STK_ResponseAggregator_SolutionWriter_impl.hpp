@@ -73,6 +73,34 @@ bucketByBasisType(const std::vector<panzer::StrPureBasisPair> & providedDofs,
    }
 }
 
+// Specializations for residual evaluation type
+
+template < >
+Teuchos::RCP<panzer::ResponseAggregatorBase<panzer::Traits> > 
+ResponseAggregator_SolutionWriter_Builder::
+build<panzer::Traits::Residual>() const
+{ 
+   Teuchos::RCP<panzer::ResponseAggregatorBase<panzer::Traits> > respAgg =
+      Teuchos::rcp(new ResponseAggregator_SolutionWriter<panzer::Traits::Residual,panzer::Traits>(mesh_)); 
+   respAgg->setLinearObjFactory(getLinearObjFactory());
+   respAgg->setGlobalIndexer(getGlobalIndexer());
+   return respAgg;
+}
+
+#ifdef HAVE_STOKHOS
+template < >
+Teuchos::RCP<panzer::ResponseAggregatorBase<panzer::Traits> > 
+ResponseAggregator_SolutionWriter_Builder::
+build<panzer::Traits::SGResidual>() const
+{ 
+   Teuchos::RCP<panzer::ResponseAggregatorBase<panzer::Traits> > respAgg =
+      Teuchos::rcp(new ResponseAggregator_SolutionWriter<panzer::Traits::SGResidual,panzer::Traits>(mesh_)); 
+   respAgg->setLinearObjFactory(getLinearObjFactory());
+   respAgg->setGlobalIndexer(getGlobalIndexer());
+   return respAgg;
+}
+#endif
+
 }
 
 #endif
