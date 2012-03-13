@@ -47,7 +47,7 @@ void FieldLayoutLibrary::print(std::ostream & os) const
       os << "\"" << fieldName << "\"" << " {" << basis->name() 
          << "(dim=" << basis->getDimension() 
          << ",cells=" << basis->getNumCells() 
-         << ",irdeg=" << basis->integrationRuleDegree() << ")} ";
+         << ",points=" << basis->getNumPoints() << ")} ";
    }
 }
 
@@ -93,7 +93,7 @@ void FieldLibrary::addFieldAndBasis(const std::string & fieldName,
    basisNameToPointer_[basis->name()] = basis;
 }
 
-Teuchos::RCP<const FieldLayoutLibrary> FieldLibrary::buildFieldLayoutLibrary(panzer::IntegrationRule & ir) const
+Teuchos::RCP<const FieldLayoutLibrary> FieldLibrary::buildFieldLayoutLibrary(panzer::PointRule & ir) const
 {
    typedef std::map<std::string,Teuchos::RCP<panzer::PureBasis> > Map;
 

@@ -81,7 +81,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,basis,EvalType)
   quadValues->evaluateValues(coords);
 
   RCP<BasisValues<double,FieldArray> > basisValues = rcp(new BasisValues<double,FieldArray>);
-  basisValues->setupArrays(basisLayout);
+  panzer::IntrepidFieldContainerFactory<double> arrayFactory;
+  basisValues->setupArrays(basisLayout,arrayFactory);
   basisValues->evaluateValues(quadValues->cub_points,
                               quadValues->jac,
                               quadValues->jac_det,
@@ -202,7 +203,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,integration,EvalType)
   quadValues->evaluateValues(coords);
 
   RCP<BasisValues<double,FieldArray> > basisValues = rcp(new BasisValues<double,FieldArray>);
-  basisValues->setupArrays(basisLayout);
+  panzer::IntrepidFieldContainerFactory<double> arrayFactory;
+  basisValues->setupArrays(basisLayout,arrayFactory);
   basisValues->evaluateValues(quadValues->cub_points,
                               quadValues->jac,
                               quadValues->jac_det,

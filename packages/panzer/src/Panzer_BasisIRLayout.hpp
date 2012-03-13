@@ -13,17 +13,17 @@
 
 namespace panzer {
 
-  class IntegrationRule;
+  class PointRule;
 
   class BasisIRLayout { 
 
   public:
     
-    BasisIRLayout(std::string basis_type, const IntegrationRule& int_rule);
-    BasisIRLayout(const Teuchos::RCP<const PureBasis> & b, const IntegrationRule& int_rule);
+    BasisIRLayout(std::string basis_type, const PointRule& int_rule);
+    BasisIRLayout(const Teuchos::RCP<const PureBasis> & b, const PointRule& int_rule);
 
     void setup(const Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > & iBasis,
-               const panzer::IntegrationRule & int_rule);
+               const panzer::PointRule & int_rule);
 
     int getCardinality() const;
     
@@ -33,7 +33,7 @@ namespace panzer {
     
     int getDimension() const;
 
-    int integrationRuleDegree() const;
+    // int integrationRuleDegree() const;
     
     std::string name() const;
     
@@ -83,7 +83,7 @@ namespace panzer {
     int num_cells;
     int num_ip;
     int dimension;
-    int int_rule_degree;
+    // int int_rule_degree;
 
     Teuchos::RCP<const PureBasis> basis_data;
   };

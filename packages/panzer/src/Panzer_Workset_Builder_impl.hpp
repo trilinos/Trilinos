@@ -51,6 +51,8 @@ panzer::buildWorksets(const std::string& block_id,
   using Teuchos::RCP;
   using Teuchos::rcp;
 
+  panzer::IntrepidFieldContainerFactory<double> arrayFactory;
+
   // std::size_t total_num_cells = vertex_coordinates.dimension(0);
   std::size_t total_num_cells = local_cell_ids.size();
 
@@ -113,8 +115,7 @@ panzer::buildWorksets(const std::string& block_id,
     
        i->bases[j] = 
   	  rcp(new panzer::BasisValues<double,Intrepid::FieldContainer<double> >);
-      
-       i->bases[j]->setupArrays(cb);
+       i->bases[j]->setupArrays(cb,arrayFactory);
      }
      
      return worksets_ptr;
@@ -231,7 +232,7 @@ panzer::buildWorksets(const std::string& block_id,
       worksets[wkst].bases[i] = 
 	rcp(new panzer::BasisValues<double,Intrepid::FieldContainer<double> >);
       
-      worksets[wkst].bases[i]->setupArrays(cb);
+      worksets[wkst].bases[i]->setupArrays(cb,arrayFactory);
 
       std::size_t int_degree_index = 
 	std::distance(ir_degrees.begin(), 
@@ -268,6 +269,8 @@ panzer::buildBCWorkset(const panzer::BC& bc,
   using std::string;
   using Teuchos::RCP;
   using Teuchos::rcp;
+
+  panzer::IntrepidFieldContainerFactory<double> arrayFactory;
 
   // key is local face index, value is workset with all elements
   // for that local face
@@ -392,7 +395,7 @@ panzer::buildBCWorkset(const panzer::BC& bc,
       wkst->second.bases[i] = 
 	rcp(new panzer::BasisValues<double,Intrepid::FieldContainer<double> >);
       
-      wkst->second.bases[i]->setupArrays(cb);
+      wkst->second.bases[i]->setupArrays(cb,arrayFactory);
 
       wkst->second.bases[i]->evaluateValues(wkst->second.int_rules[int_degree_index]->cub_points,
 					    wkst->second.int_rules[int_degree_index]->jac,

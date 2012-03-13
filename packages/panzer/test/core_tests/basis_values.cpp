@@ -71,8 +71,9 @@ namespace panzer {
     RCP<panzer::BasisIRLayout> basis = rcp(new panzer::BasisIRLayout(basis_type, *int_rule));
 
     panzer::BasisValues<double,Intrepid::FieldContainer<double> > basis_values;
+    panzer::IntrepidFieldContainerFactory<double> af;
 
-    basis_values.setupArrays(basis);
+    basis_values.setupArrays(basis,af);
     
     basis_values.evaluateValues(int_values.cub_points,
 				int_values.jac,
@@ -170,8 +171,9 @@ namespace panzer {
     RCP<panzer::BasisIRLayout> basis = rcp(new panzer::BasisIRLayout(basis_type, *int_rule));
 
     panzer::BasisValues<double,Intrepid::FieldContainer<double> > basis_values;
+    panzer::IntrepidFieldContainerFactory<double> af;
 
-    basis_values.setupArrays(basis);
+    basis_values.setupArrays(basis,af);
     
     basis_values.evaluateValues(int_values.cub_points,
 				int_values.jac,
@@ -288,8 +290,9 @@ namespace panzer {
     RCP<panzer::BasisIRLayout> basisIRLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
 
     panzer::BasisValues<double,Intrepid::FieldContainer<double> > basis_values;
+    panzer::IntrepidFieldContainerFactory<double> af;
 
-    basis_values.setupArrays(basisIRLayout);
+    basis_values.setupArrays(basisIRLayout,af);
     basis_values.evaluateValues(int_values.cub_points,
 				int_values.jac,
 				int_values.jac_det,
@@ -449,8 +452,9 @@ namespace panzer {
     RCP<panzer::BasisIRLayout> basisIRLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
 
     panzer::BasisValues<double,Intrepid::FieldContainer<double> > basis_values;
+    panzer::IntrepidFieldContainerFactory<double> af;
 
-    basis_values.setupArrays(basisIRLayout);
+    basis_values.setupArrays(basisIRLayout,af);
     basis_values.evaluateValues(int_values.cub_points,
 				int_values.jac,
 				int_values.jac_det,

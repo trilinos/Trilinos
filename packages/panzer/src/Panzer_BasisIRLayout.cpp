@@ -1,16 +1,16 @@
 #include "Panzer_BasisIRLayout.hpp"
-#include "Panzer_IntegrationRule.hpp"
+#include "Panzer_PointRule.hpp"
 #include "Panzer_IntrepidBasisFactory.hpp"
 
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
 panzer::BasisIRLayout::
-BasisIRLayout(std::string basis_type, const panzer::IntegrationRule& int_rule) :
+BasisIRLayout(std::string basis_type, const panzer::PointRule& int_rule) :
   basis_name(basis_type),
-  field_basis_name("Basis: " + basis_type),
-  field_basis_name_D1("Grad Basis: " + basis_type),
-  field_basis_name_D2("D2 Basis: " + basis_type)
+  field_basis_name("Basis: " + basis_name),
+  field_basis_name_D1("Grad Basis: " + basis_name),
+  field_basis_name_D2("D2 Basis: " + basis_name)
 {
   basis_data = Teuchos::rcp(new PureBasis(basis_type,int_rule.workset_size,int_rule.topology));
 
@@ -18,7 +18,7 @@ BasisIRLayout(std::string basis_type, const panzer::IntegrationRule& int_rule) :
 }
 
 panzer::BasisIRLayout::
-BasisIRLayout(const Teuchos::RCP<const panzer::PureBasis> & b, const panzer::IntegrationRule& int_rule) :
+BasisIRLayout(const Teuchos::RCP<const panzer::PureBasis> & b, const panzer::PointRule& int_rule) :
   basis_name(b->name()),
   field_basis_name(b->fieldName()),
   field_basis_name_D1(b->fieldNameD1()),
@@ -31,7 +31,7 @@ BasisIRLayout(const Teuchos::RCP<const panzer::PureBasis> & b, const panzer::Int
 
 void panzer::BasisIRLayout::
 setup(const Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > & iBasis,
-      const panzer::IntegrationRule & int_rule)
+      const panzer::PointRule & int_rule)
 {
   intrepid_basis = iBasis;
 
@@ -39,7 +39,7 @@ setup(const Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double
   num_cells = int_rule.dl_vector->dimension(0);
   num_ip = int_rule.dl_vector->dimension(1);
   dimension = int_rule.dl_vector->dimension(2);
-  int_rule_degree = int_rule.cubature_degree;
+  // int_rule_degree = int_rule.cubature_degree;
 
   using Teuchos::rcp;
   using PHX::MDALayout;
@@ -85,10 +85,10 @@ int panzer::BasisIRLayout::getCardinality() const
   return cardinality;
 }
 
-int panzer::BasisIRLayout::integrationRuleDegree() const
-{
-  return int_rule_degree;
-}
+// int panzer::BasisIRLayout::integrationRuleDegree() const
+// {
+//   return int_rule_degree;
+// }
 
 int panzer::BasisIRLayout::getNumCells() const
 {
@@ -142,6 +142,6 @@ void panzer::BasisIRLayout::print(std::ostream & os) const
    os << "Name = " << name() 
       << ", Dimension = " << getDimension()
       << ", Cells = " << getNumCells()
-      << ", Quad Degree = " << integrationRuleDegree() 
-      << ", Quad Points = " << getNumPoints();
+      // << ", Quad Degree = " << integrationRuleDegree() 
+      << ", Num Points = " << getNumPoints();
 }

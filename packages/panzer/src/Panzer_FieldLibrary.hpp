@@ -1,11 +1,12 @@
-#ifndef __Panzer_DOFLibrary_hpp__
-#define __Panzer_DOFLibrary_hpp__
+#ifndef __Panzer_FieldLibrary_hpp__
+#define __Panzer_FieldLibrary_hpp__
 
 #include "Panzer_config.hpp"
 
 #include "Teuchos_RCP.hpp"
 
 #include "Panzer_BasisIRLayout.hpp"
+#include "Panzer_PointRule.hpp"
 #include "Panzer_PureBasis.hpp"
 
 #include <list>
@@ -83,7 +84,7 @@ public:
      * oversees the marriage of the integration rule and the basis
      * into a BasisIRLayout.
      */
-   Teuchos::RCP<const FieldLayoutLibrary> buildFieldLayoutLibrary(panzer::IntegrationRule & ir) const;
+   Teuchos::RCP<const FieldLayoutLibrary> buildFieldLayoutLibrary(panzer::PointRule & ir) const;
 
    /** Print information about the basis functions and fields contained in
      * the field library.
