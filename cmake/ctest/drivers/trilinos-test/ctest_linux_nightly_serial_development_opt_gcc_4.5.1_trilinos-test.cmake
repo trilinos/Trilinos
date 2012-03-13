@@ -84,8 +84,8 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DCMAKE_Fortran_COMPILER:FILEPATH=/home/trilinos/gcc4.5.1/bin/gfortran"
   "-DTrilinos_ENABLE_Stokhos:BOOL=OFF"
   "-DTPL_ENABLE_HDF5:BOOL=ON"
-  "-DHDF5_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/phdf5-1.8.6/include"
-  "-DHDF5_LIBRARY_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/phdf5-1.8.6/lib"
+  "-DHDF5_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/hdf5-1.8.6/include"
+  "-DHDF5_LIBRARY_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/hdf5-1.8.6/lib"
   )
 
 #
