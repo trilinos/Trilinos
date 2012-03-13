@@ -1400,7 +1400,7 @@ namespace stk {
 #if defined( STK_ADAPT_HAS_GEOMETRY )
     void Refiner::smoothGeometry(MeshGeometry& mesh_geometry)
     {
-      const bool do_mesquite_smoothing = true;
+      bool do_mesquite_smoothing = true;
       if (do_mesquite_smoothing)
         {
           int  msq_debug             = 2; // 1,2,3 for more debug info
