@@ -80,7 +80,6 @@ namespace MueLu {
         if (minNumRows < minRowsPerProcessor_) {
           doRepartition=true; 
         }
-        //std::cout << "minNumRows = " << minNumRows << std::endl;
       }
       //Check whether the number of nonzeros per process is imbalanced
       size_t numMyNnz  = A->getNodeNumEntries();
@@ -91,25 +90,25 @@ namespace MueLu {
       imbalance = ((SC) maxNnz) / minNnz;
       if (imbalance > nnzMaxMinRatio_)
         doRepartition=true;
-      //std::cout << "imbalance = " << imbalance << std::endl;
     } else {
-      if (mypid==0) {
-        std::cout << "No repartitioning necessary:" << std::endl;
-        std::cout << "    current level = " << currentLevel.GetLevelID()
-                  << ", first level where repartitioning can happen is "
-                  << startLevel_ << std::endl;
-      }
-      return;
+        char msgChar[256];
+        sprintf(msgChar,"No repartitioning necessary:\n    current level = %d, first level where repartitioning can happen is %d.", currentLevel.GetLevelID(),startLevel_);
+        std::string msg(msgChar);
+        throw(MueLu::Exceptions::HaltRepartitioning(msg));
+      //return;
     }
 
     if (!doRepartition) {
-      if (mypid==0) {
-        std::cout << "No repartitioning necessary:" << std::endl;
-        std::cout << "    nonzero imbalance = " << imbalance << ", max allowable = " << nnzMaxMinRatio_ << std::endl;
-        std::cout << "    min # rows per proc = " << minNumRows << ", min allowable = " << minRowsPerProcessor_
-                  << std::endl;
-      }
-      return;
+      std::ostringstream buf1; buf1 << imbalance;
+      std::ostringstream buf2; buf2 << nnzMaxMinRatio_;
+      std::string msg = "No repartitioning necessary:\n";
+      msg = msg + "    nonzero imbalance = " + buf1.str();
+      msg = msg + ", max allowable = " + buf2.str() + "\n";
+      std::ostringstream buf3; buf1 << imbalance;
+      std::ostringstream buf4; buf2 << nnzMaxMinRatio_;
+      buf3 << minNumRows; buf4 << minRowsPerProcessor_;
+      msg = msg + "    min # rows per proc = " + buf3.str() + ", min allowable = " + buf4.str() + "\n";
+      throw(MueLu::Exceptions::HaltRepartitioning(msg));
     }
     
     GetOStream(Statistics0,0) << "Repartitioning necessary:" << std::endl;
