@@ -142,21 +142,26 @@ void
 FadLAPACKUnitTests<FadType,ScalarType>::
 testGESV() {
 
-  const int n = 1;
+  const int n = 2;
   const int nrhs = 1;
-  FadType* A;
-  const int lda = 1;
-  int* IPIV;
-  FadType* B;
-  const int ldb = 1;
-  int* info;
+  double A[] = { 1.1, 0.1, .01, 0.9 };
+  const int lda = 2;
+  int IPIV[] = {0, 0};
+  double B[] = { 0.1, 0.2 };
+  const int ldb = 2;
+  int info(0);
 
-  Teuchos::LAPACK<int,FadType> teuchos_lapack;
-  teuchos_lapack.GESV(n, nrhs, &A[0], lda, IPIV, &B[0], ldb, info);
+  const double refX[] = {0.088978766430738, 0.212335692618807};
+
+  Teuchos::LAPACK<int,double> teuchos_lapack;
+  teuchos_lapack.GESV(n, nrhs, &A[0], lda, &IPIV[0], &B[0], ldb, &info);
+
+  COMPARE_VALUES(B[0],refX[0]);
+  COMPARE_VALUES(B[1],refX[1]);
 
   //Teuchos::LAPACK<int,FadType> sacado_lapack(false);
   //sacado_blas.SCAL(m, alpha, &x2[0], 1);
-  COMPARE_VALUES(1,0);
+  //COMPARE_VALUES(1,0);
 }
 
 #undef COMPARE_VALUES
