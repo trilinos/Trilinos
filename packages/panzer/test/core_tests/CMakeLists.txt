@@ -131,4 +131,9 @@ IF(Panzer_ENABLE_PAPI)
     SOURCES papi_decorator.cpp ${UNIT_TEST_DRIVER}
     NUM_MPI_PROCS 1
     )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    papi_improved
+    SOURCES papi_improved.cpp ${UNIT_TEST_DRIVER}
+    NUM_MPI_PROCS 1
+    )
 ENDIF()
