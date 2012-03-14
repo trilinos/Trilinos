@@ -46,7 +46,7 @@
  * semantics for RDMA ops.   in this mode, when the wait returns the
  * the RDMA op is complete and status indicates what data was addressed.
  */
-//#define USE_RDMA_TARGET_ACK
+#define USE_RDMA_TARGET_ACK
 
 
 
