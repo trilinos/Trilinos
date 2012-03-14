@@ -98,6 +98,7 @@ IF (Piro_ENABLE_NOX)
           input_Solve_RythmosMatrixFree_Fails.xml
 	  input_SGSolve.xml 
 	  input_problem1.xml input_problem2.xml input_coupled.xml
+	  input_problem1_sg.xml input_problem2_sg.xml input_coupled_sg.xml
 	  input_SGAnalysis.xml dakota_sg.in dakota_sg_target.txt
     SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
     SOURCE_PREFIX "_"
