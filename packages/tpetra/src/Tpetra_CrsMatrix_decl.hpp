@@ -632,6 +632,20 @@ namespace Tpetra {
       CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>& 
       operator= (const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> &rhs);
 
+      /// \brief Transform CrsMatrix entries by applying a binary function to them.
+      ///
+      /// For every entry \f$A(i,j)\f$ to transform, if \f$v_{ij}\f$ is
+      /// the corresponding entry of the \c values array, then we apply
+      /// the function to \f$A(i,j)\f$ as follows:
+      /// \f[
+      ///   A(i,j) := f(A(i,j), v_{ij}).
+      /// \f]
+      /// For example, BinaryFunction = std::plus<Scalar> implements
+      /// \c sumIntoGlobalValues(), and BinaryFunction =
+      /// secondArg<Scalar,Scalar> implements replaceGlobalValues().
+      ///
+      /// \tparam BinaryFunction The type of binary function to apply.
+      ///   std::binary_function is a model for this.
       template<class BinaryFunction>
       void
       transformGlobalValues (GlobalOrdinal globalRow, 
