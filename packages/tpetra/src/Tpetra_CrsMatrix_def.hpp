@@ -200,20 +200,29 @@ namespace Tpetra {
   }
 
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::CrsMatrix(const RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &graph)
-  : DistObject<char, LocalOrdinal,GlobalOrdinal,Node>(graph->getRowMap())
-  , staticGraph_(graph)
-  , lclMatOps_(graph->getNode())
+  template<class Scalar, 
+	   class LocalOrdinal, 
+	   class GlobalOrdinal, 
+	   class Node, 
+	   class LocalMatOps>
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsMatrix (const RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &graph)
+    : DistObject<char, LocalOrdinal,GlobalOrdinal,Node>(graph->getRowMap()),
+      staticGraph_(graph),
+      lclMatOps_(graph->getNode())
   {
     const std::string tfecfFuncName("CrsMatrix(graph)");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(staticGraph_ == null, std::runtime_error, ": specified pointer is null.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(staticGraph_.is_null(), 
+      std::runtime_error, ": When calling the CrsMatrix constructor that "
+      "accepts a static graph, the pointer to the graph must not be null.");
     // we prohibit the case where the graph is not yet filled
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( staticGraph_->isFillComplete() == false, std::runtime_error, 
-        ": specified graph is not fill-complete. You must fillComplete() the graph before using it to construct a CrsMatrix.");
-    lclMatrix_.setStaticGraph(staticGraph_->getLocalGraph());
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! staticGraph_->isFillComplete(), 
+      std::runtime_error, ": The specified graph is not fill-complete. You "
+      "must invoke fillComplete() on the graph before using it to construct a "
+      "CrsMatrix.  Note that calling resumeFill() makes the graph not fill-"
+      "complete, even if you had previously called fillComplete().  In that "
+      "case, you must call fillComplete() on the graph again.");
+    lclMatrix_.setStaticGraph (staticGraph_->getLocalGraph());
     // it is okay to create this now; this will prevent us from having to check for it on every call to apply()
     // we will use a non-owning rcp to wrap *this; this is safe as long as we do not shared sameScalarMultiplyOp_ with anyone, 
     // which would allow it to persist past the destruction of *this
@@ -222,7 +231,6 @@ namespace Tpetra {
     // first argument doesn't actually matter, because the graph is allocated.
     allocateValues( LocalIndices, GraphAlreadyAllocated );
     resumeFill();
-    //
     checkInternalState();
   }
 
@@ -447,21 +455,42 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::allocateValues(ELocalGlobal lg, GraphAllocationStatus gas) {
-    // allocate values and, optionally, ask graph to allocate indices
 #ifdef HAVE_TPETRA_DEBUG
-    // if the graph is already allocated, then gas should be GraphAlreadyAllocated
-    // otherwise, gas should be GraphNotYetAllocated
-    // this method is for internal use only. debug checks occur outside. only do them here if debugging is enabled.
-    std::string err("::allocateValues(): Internal logic error. Please contact Tpetra team.");
-    TEUCHOS_TEST_FOR_EXCEPTION((gas == GraphAlreadyAllocated) != staticGraph_->indicesAreAllocated(), std::logic_error, typeName(*this) << err);
-    // if the graph is unallocated, then it better be a matrix-owned graph
-    TEUCHOS_TEST_FOR_EXCEPTION(staticGraph_->indicesAreAllocated() == false && myGraph_ == null, std::logic_error, typeName(*this) << err);
-#endif
+    // If the graph indices are already allocated, then gas should be
+    // GraphAlreadyAllocated.  Otherwise, gas should be
+    // GraphNotYetAllocated.
+    if ((gas == GraphAlreadyAllocated) != staticGraph_->indicesAreAllocated()) {
+      std::string err1 = "allocateValues: The caller has asserted that the "
+	"graph is ";
+      std::string err2 = "already allocated, but the static graph says that "
+	"its indices are ";
+      std::string err3 = "already allocated.  Please report this bug to the "
+	"Tpetra developers.";
+      TEUCHOS_TEST_FOR_EXCEPTION(gas == GraphAlreadyAllocated && ! staticGraph_->indicesAreAllocated(), 
+        std::logic_error, err1 << err2 << "not " << err3);
+      TEUCHOS_TEST_FOR_EXCEPTION(gas != GraphAlreadyAllocated && staticGraph_->indicesAreAllocated(), 
+        std::logic_error, err1 << "not " << err2 << err3);
+    }
+
+    // If the graph is unallocated, then it had better be a
+    // matrix-owned graph.
+    //
+    // FIXME (mfh 14 Mar 2012): Is this really a bug?  Perhaps the
+    // CrsMatrix constructor that takes a CrsGraph should check
+    // whether the graph's indices are allocated.
+    TEUCHOS_TEST_FOR_EXCEPTION(! staticGraph_->indicesAreAllocated() && myGraph_.is_null(), 
+      std::logic_error, "allocateValues: The static graph says that its indices "
+      "are not allocated, but the graph is now owned by the matrix.  Please "
+			       "report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+
     if (gas == GraphNotYetAllocated) {
-      myGraph_->allocateIndices(lg);
+      myGraph_->allocateIndices (lg);
     }
     // ask graph to allocate our values, with the same structure
     // this will allocate values2D_ one way or the other
+    //
+    // FIXME (mfh 14 Mar 2012) What does the above comment mean?
     staticGraph_->template allocateValues<Scalar>(values1D_, values2D_);
   }
 

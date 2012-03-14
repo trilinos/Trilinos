@@ -712,8 +712,25 @@ namespace Tpetra {
         GraphAlreadyAllocated,
         GraphNotYetAllocated
       };
-      // Allocation
-      void allocateValues(ELocalGlobal lg, GraphAllocationStatus gas);
+
+      /// \brief Allocate values (and optionally indices) using the Node.
+      ///
+      /// \param gas [in] If GraphNotYetAllocated, allocate the
+      ///   indices of \c myGraph_ via \c allocateIndices(lg) before
+      ///   allocating values.
+      ///
+      /// \param lg [in] Argument passed into \c
+      ///   myGraph_->allocateIndices(), if applicable.
+      ///
+      /// \pre If the graph (that is, staticGraph_) indices are
+      ///   already allocated, then gas must be GraphAlreadyAllocated.
+      ///   Otherwise, gas must be GraphNotYetAllocated.  We only
+      ///   check for this precondition in debug mode.
+      ///
+      /// \pre If the graph indices are not already allocated, then
+      ///   the graph must be owned by the matrix.
+      void allocateValues (ELocalGlobal lg, GraphAllocationStatus gas);
+
       // Sorting and merging
       void sortEntries();
       void mergeRedundantEntries();
