@@ -107,7 +107,7 @@ public:
   //--------------------------------
   // Container-like types and methods:
 
-  typedef boost::indirect_iterator<Entity*const*,Entity&> iterator ;
+  typedef boost::indirect_iterator<Entity*const*> iterator ;
 
   /** \brief Beginning of the bucket */
   inline iterator begin() const { return iterator(m_bucketImpl.begin()); }
