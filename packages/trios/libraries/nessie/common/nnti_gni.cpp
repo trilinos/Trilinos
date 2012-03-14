@@ -279,13 +279,15 @@ typedef struct {
     NNTI_instance_id         peer_instance;
 } gni_work_request;
 
+typedef std::deque<gni_work_request *>           wr_queue_t;
+typedef std::deque<gni_work_request *>::iterator wr_queue_iter_t;
+
 typedef struct {
-    gni_buffer_type                type;
+    gni_buffer_type  type;
 
-    gni_mem_handle_t               mem_hdl;
+    gni_mem_handle_t mem_hdl;
 
-    std::deque<gni_work_request *> wr_queue;
-
+    wr_queue_t       wr_queue;
 } gni_memory_handle;
 
 typedef struct {
@@ -585,8 +587,6 @@ static std::map<uint32_t, gni_work_request *> wr_by_wrhash;
 typedef std::map<uint32_t, gni_work_request *>::iterator wr_by_wrhash_iter_t;
 typedef std::pair<uint32_t, gni_work_request *> wr_by_wrhash_t;
 static nthread_mutex_t nnti_wr_wrhash_lock;
-
-typedef std::deque<gni_work_request *>::iterator work_request_iter_t;
 
 
 /**
@@ -1338,7 +1338,7 @@ NNTI_result_t NNTI_gni_unregister_memory (
     }
 
 
-    if (gni_mem_hdl) free(gni_mem_hdl);
+    if (gni_mem_hdl) delete gni_mem_hdl;
 
     reg_buf->transport_id      = NNTI_TRANSPORT_NULL;
     GNI_SET_MATCH_ANY(&reg_buf->buffer_owner);
@@ -3626,7 +3626,7 @@ static gni_work_request *first_incomplete_wr(
     if (gni_mem_hdl->wr_queue.empty()) {
         log_debug(nnti_ee_debug_level, "work request queue is empty");
     } else {
-        work_request_iter_t i;
+        wr_queue_iter_t i;
         for (i=gni_mem_hdl->wr_queue.begin(); i != gni_mem_hdl->wr_queue.end(); i++) {
             wr=*i;
             assert(wr);
@@ -5404,14 +5404,14 @@ static int request_send(
 
     uint32_t wc_size=sizeof(nnti_gni_work_completion);
 
+    log_debug(nnti_ee_debug_level, "enter");
+
     gni_mem_hdl=(gni_memory_handle *)reg_buf->transport_private;
     assert(gni_mem_hdl);
     wr=(gni_work_request *)calloc(1, sizeof(gni_work_request));
     assert(wr);
 
     wr->reg_buf = reg_buf;
-
-    log_debug(nnti_ee_debug_level, "enter");
 
     log_debug(nnti_debug_level, "calling fetch_add_buffer_offset()");
     trios_start_timer(call_time);
