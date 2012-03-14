@@ -23,6 +23,7 @@ using Teuchos::rcp;
 
 #include "Panzer_DOF.hpp"
 #include "Panzer_DOF_PointField.hpp"
+#include "Panzer_CommonArrayFactories.hpp"
 
 #include "Phalanx_FieldManager.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"

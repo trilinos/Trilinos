@@ -11,6 +11,7 @@
 
 #include "Panzer_Dimension.hpp"
 #include "Panzer_CellData.hpp"
+#include "Panzer_IntrepidBasisFactory.hpp"
 
 namespace panzer {
 
@@ -38,6 +39,11 @@ namespace panzer {
 
     Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > 
     getIntrepidBasis() const;
+
+    template <typename ArrayT>
+    Teuchos::RCP< Intrepid::Basis<double,ArrayT> > 
+    getIntrepidBasis() const
+    { return panzer::createIntrepidBasis<double,ArrayT>(name(), getDimension(), getCellTopology()); }
 
     EElementSpace getElementSpace() const
     { return elementSpace; }

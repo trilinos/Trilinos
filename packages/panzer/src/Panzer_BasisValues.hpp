@@ -13,9 +13,6 @@ namespace panzer {
     static const Array dummyArray;    
  
     //! Sizes/allocates memory for arrays
-    void setupArrays(const Teuchos::RCP<panzer::BasisIRLayout>& basis);
-
-    //! Sizes/allocates memory for arrays
     template <typename ArrayFactory>
     void setupArrays(const Teuchos::RCP<panzer::BasisIRLayout>& basis,
                      const ArrayFactory & af);
@@ -62,20 +59,6 @@ namespace panzer {
     Teuchos::RCP<panzer::BasisIRLayout> basis_layout;
     
     Teuchos::RCP<Intrepid::Basis<double,Array> > intrepid_basis;
-  };
-
-  
-  /** Implementation for intrepid field container factory. This
-    * is intended to be used only with the BasisValues object.
-    */
-  template <typename Scalar>
-  class IntrepidFieldContainerFactory {
-  public:
-     Intrepid::FieldContainer<Scalar> buildArray(const std::string & str,int d0) const;
-     Intrepid::FieldContainer<Scalar> buildArray(const std::string & str,int d0,int d1) const;
-     Intrepid::FieldContainer<Scalar> buildArray(const std::string & str,int d0,int d1,int d2) const;
-     Intrepid::FieldContainer<Scalar> buildArray(const std::string & str,int d0,int d1,int d2,int d3) const;
-     Intrepid::FieldContainer<Scalar> buildArray(const std::string & str,int d0,int d1,int d2,int d3,int d4) const;
   };
 
 } // namespace panzer

@@ -11,6 +11,7 @@
 #include "Panzer_InputPhysicsBlock.hpp"
 #include "Panzer_PhysicsBlock.hpp"
 #include "Panzer_Shards_Utilities.hpp"
+#include "Panzer_CommonArrayFactories.hpp"
 
 #include "Phalanx_DataLayout_MDALayout.hpp"
 

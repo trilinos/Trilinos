@@ -9,6 +9,7 @@
 #include "Panzer_ArrayTraits.hpp"
 #include "Intrepid_FieldContainer.hpp"
 #include "Panzer_BasisValues.hpp"
+#include "Panzer_CommonArrayFactories.hpp"
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -231,7 +232,7 @@ namespace panzer {
     const int num_vertices = int_rule->topology->getNodeCount();
     FieldContainer<double> node_coordinates(num_cells, num_vertices,
 					    base_cell_dimension);
-    const int num_edges = int_rule->topology->getEdgeCount();
+    // const int num_edges = int_rule->topology->getEdgeCount();
     // FieldContainer<double> edge_orientation(num_cells, num_edges);
 
     // Set up node coordinates.  Here we assume the following
@@ -319,7 +320,7 @@ namespace panzer {
 
     double relCellVol = 0.25*0.25; // this is the relative (to the reference cell) volume
     for(int i=0;i<num_qp;i++) {
-       double x = int_values.cub_points(i,0);
+       // double x = int_values.cub_points(i,0);
        double y = int_values.cub_points(i,1);
        double weight = int_values.cub_weights(i);
 
@@ -374,7 +375,7 @@ namespace panzer {
     const int num_vertices = int_rule->topology->getNodeCount();
     FieldContainer<double> node_coordinates(num_cells, num_vertices,
 					    base_cell_dimension);
-    const int num_edges = int_rule->topology->getEdgeCount();
+    // const int num_edges = int_rule->topology->getEdgeCount();
     // FieldContainer<double> edge_orientation(num_cells, num_edges);
 
     // Set up node coordinates.  Here we assume the following
@@ -480,5 +481,84 @@ namespace panzer {
     TEST_EQUALITY(basis_values.weighted_curl_basis.dimension(1),12);
     TEST_EQUALITY(basis_values.weighted_curl_basis.dimension(2),num_qp);
     TEST_EQUALITY(basis_values.weighted_curl_basis.dimension(3),3);
+  }
+
+  TEUCHOS_UNIT_TEST(basis_values, md_field_setup)
+  {
+    Teuchos::RCP<shards::CellTopology> topo = 
+       Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
+
+    const int num_cells = 20;
+    const int base_cell_dimension = 2;
+    const panzer::CellData cell_data(num_cells, base_cell_dimension,topo);
+    const std::string basis_type = "Q2";
+    const int cubature_degree = 2;    
+
+    RCP<IntegrationRule> int_rule = 
+      rcp(new IntegrationRule(cubature_degree, cell_data));
+    const int num_qp = int_rule->num_points;
+  
+    RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,cell_data));
+    RCP<panzer::BasisIRLayout> basisPtLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
+
+    panzer::BasisValues<double,PHX::MDField<double> > basis_values;
+    panzer::MDFieldArrayFactory<double> af("prefix_");
+
+    basis_values.setupArrays(basisPtLayout,af);
+
+    // check to make sure all data layouts and field names are as 
+    // expected. In a simulation environment the field manager will
+    // build these values.
+
+    // check basis
+    TEST_EQUALITY(basis_values.basis_ref.fieldTag().dataLayout().rank(),2);
+    TEST_EQUALITY(basis_values.basis_ref.fieldTag().dataLayout().dimension(0),9);
+    TEST_EQUALITY(basis_values.basis_ref.fieldTag().dataLayout().dimension(1),num_qp);
+    TEST_EQUALITY(basis_values.basis_ref.fieldTag().name(),"prefix_basis_ref");
+
+    TEST_EQUALITY(basis_values.basis.fieldTag().dataLayout().rank(),3);
+    TEST_EQUALITY(basis_values.basis.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.basis.fieldTag().dataLayout().dimension(1),9);
+    TEST_EQUALITY(basis_values.basis.fieldTag().dataLayout().dimension(2),num_qp);
+    TEST_EQUALITY(basis_values.basis.fieldTag().name(),"prefix_basis");
+
+    TEST_EQUALITY(basis_values.weighted_basis.fieldTag().dataLayout().rank(),3);
+    TEST_EQUALITY(basis_values.weighted_basis.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.weighted_basis.fieldTag().dataLayout().dimension(1),9);
+    TEST_EQUALITY(basis_values.weighted_basis.fieldTag().dataLayout().dimension(2),num_qp);
+    TEST_EQUALITY(basis_values.weighted_basis.fieldTag().name(),"prefix_weighted_basis");
+
+    // check gradients
+    TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().dataLayout().rank(),3);
+    TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().dataLayout().dimension(0),9);
+    TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().dataLayout().dimension(1),num_qp);
+    TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().dataLayout().dimension(2),2);
+    TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().name(),"prefix_grad_basis_ref");
+
+    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().rank(),4);
+    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(1),9);
+    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(2),num_qp);
+    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(3),2);
+    TEST_EQUALITY(basis_values.grad_basis.fieldTag().name(),"prefix_grad_basis");
+
+    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().rank(),4);
+    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(1),9);
+    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(2),num_qp);
+    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(3),2);
+    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().name(),"prefix_weighted_grad_basis");
+
+    // check coordinates
+    TEST_EQUALITY(basis_values.basis_coordinates_ref.fieldTag().dataLayout().rank(),2);
+    TEST_EQUALITY(basis_values.basis_coordinates_ref.fieldTag().dataLayout().dimension(0),9);
+    TEST_EQUALITY(basis_values.basis_coordinates_ref.fieldTag().dataLayout().dimension(1),2);
+    TEST_EQUALITY(basis_values.basis_coordinates_ref.fieldTag().name(),"prefix_basis_coordinates_ref");
+
+    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().rank(),3);
+    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().dimension(1),9);
+    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().dimension(2),2);
+    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().name(),"prefix_basis_coordinates");
   }
 }

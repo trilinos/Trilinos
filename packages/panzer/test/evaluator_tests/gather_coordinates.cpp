@@ -17,6 +17,7 @@ using Teuchos::rcp;
 #include "Panzer_CellData.hpp"
 #include "Panzer_Workset.hpp"
 #include "Panzer_Traits.hpp"
+#include "Panzer_CommonArrayFactories.hpp"
 
 #include "Panzer_GatherBasisCoordinates.hpp"
 #include "Panzer_GatherIntegrationCoordinates.hpp"
