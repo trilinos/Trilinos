@@ -2,6 +2,7 @@ SET(${PROJECT_NAME}_PACKAGES
   CTeuchos
   ForTeuchos
   Coupler
+  DataTansferKit
   STARCCM
   DeCART
   Nemesis
