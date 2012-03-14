@@ -170,7 +170,7 @@ namespace {
     // communication.)
     const int numProcs = comm->getSize();
     const int myRank   = comm->getRank();
-    allMinGids = arcp (numProcs);
+    allMinGids = arcp<GO> (as<typename ArrayRCP<GO>::size_type> (numProcs));
     Teuchos::gatherAll (*comm, 1, &myMinGid, numProcs, &allMinGids.front());
 
     // If the min GIDs are nondecreasing, and each process' GIDs are
