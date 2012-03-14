@@ -24,8 +24,8 @@ $THIS_DIR/copy_hooks_scripts.sh
 echo "2) Copy configure file and customize ..."
 cd $GIT_REPO_BASE_DIR
 cp $THIS_DIR/config .
-eg config --add hooks.mailinglist "$DEFAULT_EMAIL"
-eg config --add hooks.emailprefix "[$EMAIL_SUMMARY_PREFIX] "
+git config --add hooks.mailinglist "$DEFAULT_EMAIL"
+git config --add hooks.emailprefix "[$EMAIL_SUMMARY_PREFIX] "
 
 echo "3) Create initial dirs_to_emails file with default email address ..."
 
