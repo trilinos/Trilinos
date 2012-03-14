@@ -34,7 +34,6 @@ enum rcbParams{
   lowMemory,
   lowRunTime,
   balanceMemoryRunTime,
-  weightsAreUniform,
   balanceCount,
   balanceWeight,
   minTotalWeight,
@@ -46,6 +45,9 @@ enum rcbParams{
 };
 
 /*! \brief During partitioning flags are stored in unsigned char arrays.
+ *  Flag is also used to store a region number, but there are at most
+ *  250 regions.  Therefore region number will not conflict with leftFlag
+ *  and rightFlag.
  */
 
 enum leftRightFlag{
@@ -53,7 +55,7 @@ enum leftRightFlag{
   rightFlag = 0xff;
 };
 
-/*! \brief Recursive coordinate bisection partitioning.
+/*! \brief Recursive coordinate bisection algorithm.
  *
  *  \param env   library configuration and problem parameters
  *  \param problemComm  the communicator for the problem
@@ -68,7 +70,7 @@ enum leftRightFlag{
  *   \todo for "repartition", start with the tree in the solution
  *   \todo for now we balance the first weight, so we need to add
  *             the multicriteria options as Zoltan1 does it.
- *   \todo incorporate part sizes
+ *   \todo incorporate part sizes as Zoltan1 does it.
  */
 
 template <typename Adapter>
@@ -215,8 +217,8 @@ void AlgRCB(
   //    a tree representing the cuts
 
 }
-/*! \brief Find the point in a binary spacial partitioningthat divides 
- *               the objects evenly.
+/*! \brief Find the point in space that divides the data evenly with
+ *     respect to the weights, part sizes, and the user's objective.
  *
  *   \param env the Environment for the application.
  *   \param comm the problem communicator.
@@ -225,11 +227,10 @@ void AlgRCB(
  *   \param coordGlobalMin the global minimum of the coordinate values.
  *   \param coordGlobalMax the global maximum of the coordinate values.
  *   \param params a bit map of the boolean rcbParams.
- *   \param numTestCuts the number of cuts to make in one round when seeking the
- *                       the cut that divides the coordinates evenly.
+ *   \param numTestCuts the number of cuts to make in one round.
  *   \param imbalanceTolerance the maximum acceptable imbalance.
  *   \param cutValue  on return this is the computed cut location.
- *   \param flags on return has the value \c leftFlag or \c rightFlag to
+ *   \param flags on return has the value leftFlag or rightFlag to
  *        indicate whether the corresponding coordinate is on the left of
  *        on the right of the cut.
  *   \param imbalance the imbalance under the partitioning associated 
@@ -242,7 +243,7 @@ void AlgRCB(
         imbalance = (maxWeight - perfectWeight) / perfectWeight
  \endcode
  *
- *   \c imbalanceTolerance is the maximum acceptable value of this
+ *   and \c imbalanceTolerance is the maximum acceptable value of this
  *                           measure.
  */
 
@@ -311,23 +312,13 @@ template <typename scalar_t, typename lno_t, typename gno_t, typename node_t>
   // For now we will balance the first weight (balanceWeight).
 
   size_t weightDim = weightList.size();
-  
 
   scalar_t *wgt = weightList[0].getRawPtr();
   scalar_t *coord = coordList.getRawPtr();
   size_t localNum = coordList.getLocalLength();
   size_t globalNum = coordList.getGlobalLength();
 
-  unsigned char *flags = lrflags.getRawPtr();
-  memset(flags, 0, localNum);  // 0 signifies unset
-
-  // Maximum number of regions is 250.  So rightFlag and leftFlag
-  // do not conflict with use of flags arrays to hold region numbers.
-
-  unsigned char *floatPtr = new char [localNum];
-  env->localMemoryAssertion(__FILE__, __LINE__, localNum, flagPtr);
-  memset(floatPtr, 0, localNum);
-  ArrayRCP<char> flags(flag, 0, localNum, true);
+  memset(lrFlags.getRawPtr(), 0, localNum); // 0 at top of loop means unset
 
   Array<scalar_t> weightSums(numRegions);
   Array<scalar_t> globalSums(numRegions);
