@@ -512,12 +512,18 @@ namespace Tpetra {
       //@}
 
     private:
-      // copy constructor disabled
-      CrsGraph(const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> &Source);
-      // operator= disabled
-      CrsGraph<LocalOrdinal,GlobalOrdinal,Node> & operator=(const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> &rhs);
+      // We forbid copy construction by declaring this method private
+      // and not implementing it.
+      CrsGraph (const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> &Source);
+
+      // We forbid assignment (operator=) by declaring this method
+      // private and not implementing it.
+      CrsGraph<LocalOrdinal,GlobalOrdinal,Node>& 
+      operator= (const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> &rhs);
+
     protected:
-      // these structs are conveniences, to cut down on the number of argument to some of the methods below.
+      // these structs are conveniences, to cut down on the number of
+      // arguments to some of the methods below.
       struct SLocalGlobalViews {
         ArrayView<const GlobalOrdinal> ginds;
         ArrayView<const LocalOrdinal>  linds;
@@ -526,24 +532,55 @@ namespace Tpetra {
         ArrayView<GlobalOrdinal>       ginds;
         ArrayView<LocalOrdinal>        linds;
       };
+      //
       // Allocation
-      bool                                     indicesAreAllocated() const;
-      void                                     allocateIndices(ELocalGlobal lg);
-      template <class T>                  void allocateValues(ArrayRCP<T> &values1D, ArrayRCP<ArrayRCP<T> > &values2D) const;
-      template <ELocalGlobal lg>          RowInfo updateAlloc(RowInfo rowinfo, size_t allocSize);
-      template <ELocalGlobal lg, class T> RowInfo updateAllocAndValues(RowInfo rowinfo, size_t allocSize, ArrayRCP<T> &rowVals);
+      //
+      bool indicesAreAllocated() const;
+
+      void allocateIndices (ELocalGlobal lg);
+
+      template<class T>
+      void 
+      allocateValues (ArrayRCP<T> &values1D, ArrayRCP<ArrayRCP<T> > &values2D) const;
+
+      template<ELocalGlobal lg>
+      RowInfo 
+      updateAlloc (RowInfo rowinfo, size_t allocSize);
+      template<ELocalGlobal lg, class T> 
+      RowInfo 
+      updateAllocAndValues (RowInfo rowinfo, size_t allocSize, ArrayRCP<T> &rowVals);
+      //
       // Local versus global indices
+      //
       void computeIndexState();
       void makeColMap();
       void makeIndicesLocal();
       void makeImportExport();
+      //
       // insert/suminto/replace
-      template <ELocalGlobal lg>                           size_t                filterIndices         (const SLocalGlobalNCViews &inds) const;
-      template <ELocalGlobal lg, class T>                  size_t                filterIndicesAndValues(const SLocalGlobalNCViews &inds, const ArrayView<T> &vals) const;
-      template <ELocalGlobal lg, ELocalGlobal I>                           size_t       insertIndices         (RowInfo rowInfo, const SLocalGlobalViews &newInds);
-      template <ELocalGlobal lg, ELocalGlobal I, class IterO, class IterN> void         insertIndicesAndValues(RowInfo rowInfo, const SLocalGlobalViews &newInds, IterO rowVals, IterN newVals);
-      template <ELocalGlobal lg, class IterO, class IterN, class BinaryFunction> void   transformValues(RowInfo rowInfo, const SLocalGlobalViews &inds,    IterO rowVals, IterN newVals, BinaryFunction f) const;
+      //
+      template<ELocalGlobal lg>
+      size_t 
+      filterIndices (const SLocalGlobalNCViews &inds) const;
+
+      template<ELocalGlobal lg, class T>
+      size_t 
+      filterIndicesAndValues (const SLocalGlobalNCViews &inds, const ArrayView<T> &vals) const;
+
+      template<ELocalGlobal lg, ELocalGlobal I> 
+      size_t
+      insertIndices (RowInfo rowInfo, const SLocalGlobalViews &newInds);
+
+      template<ELocalGlobal lg, ELocalGlobal I, class IterO, class IterN> 
+      void
+      insertIndicesAndValues (RowInfo rowInfo, const SLocalGlobalViews &newInds, IterO rowVals, IterN newVals);
+
+      template<ELocalGlobal lg, class IterO, class IterN, class BinaryFunction> 
+      void 
+      transformValues (RowInfo rowInfo, const SLocalGlobalViews &inds, IterO rowVals, IterN newVals, BinaryFunction f) const;
+      //
       // Sorting and merging
+      //
       bool                       isMerged() const;
       void                       setSorted(bool sorted);
       void                       setMerged(bool merged);

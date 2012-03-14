@@ -623,10 +623,67 @@ namespace Tpetra {
       //@}
 
     private:
-      // copy constructor disabled
-      CrsMatrix(const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> &Source);
-      // operator= disabled
-      CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> & operator=(const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> &rhs);
+      // We forbid copy construction by declaring this method private
+      // and not implementing it.
+      CrsMatrix (const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> &rhs);
+
+      // We forbid assignment (operator=) by declaring this method
+      // private and not implementing it.
+      CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>& 
+      operator= (const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> &rhs);
+
+      template<class BinaryFunction>
+      void
+      transformGlobalValues (GlobalOrdinal globalRow, 
+			     const Teuchos::ArrayView<const GlobalOrdinal>& indices,
+			     const Teuchos::ArrayView<const Scalar>        & values,
+			     BinaryFunction f)
+      {
+	typedef Scalar ST;
+	typedef LocalOrdinal LO;
+	typedef GlobalOrdinal GO;
+	typedef Node NT;
+	using Teuchos::Array;
+	using Teuchos::ArrayView;
+
+	TEUCHOS_TEST_FOR_EXCEPTION(values.size() != indices.size(), 
+          std::invalid_argument, "transformGlobalValues: values.size() = " 
+	  << values.size() << " != indices.size() = " << indices.size() << ".");
+
+	const LO lrow = this->getRowMap()->getLocalElement(globalRow);
+
+	TEUCHOS_TEST_FOR_EXCEPTION(lrow == LOT::invalid(), std::invalid_argument, 
+	  "transformGlobalValues: The given global row index " << globalRow 
+	  << " is not owned by the calling process (rank " 
+	  << this->getRowMap()->getComm()->getRank() << ").");
+
+	RowInfo rowInfo = staticGraph_->getRowInfo(lrow);
+	if (indices.size() > 0) {
+	  if (isLocallyIndexed()) {
+	    // Convert global indices to local indices.
+	    const Map<LO, GO, NT> &colMap = *(this->getColMap());
+	    Array<LO> lindices (indices.size());
+	    typename ArrayView<const GO>::iterator gindit = indices.begin();
+	    typename Array<LO>::iterator           lindit = lindices.begin();
+	    while (gindit != indices.end()) {
+	      // No need to filter before asking the column Map to
+	      // convert GID->LID.  If the GID doesn't exist in the
+	      // column Map, the GID will be mapped to invalid(), which
+	      // will not be found in the graph.
+	      *lindit++ = colMap.getLocalElement(*gindit++);
+	    }
+	    typename Graph::SLocalGlobalViews inds_view;
+	    inds_view.linds = lindices();
+	    staticGraph_->template transformValues<LocalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), f);
+	  }
+	  else if (isGloballyIndexed()) {
+	    typename Graph::SLocalGlobalViews inds_view;
+	    inds_view.ginds = indices;
+	    staticGraph_->template transformValues<GlobalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), f);
+	  }
+	}
+      }
+
     protected:
       // useful typedefs
       typedef OrdinalTraits<LocalOrdinal>                     LOT;
