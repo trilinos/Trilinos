@@ -261,7 +261,7 @@ namespace stk
                       stk::mesh::Entity*  node   = eMesh.getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[0]);
 
                       //EXPECT_EQ(nodeIds_onSE.m_entity_id_vector[0], 42u);
-                      EXPECT_EQ(nodeIds_onSE.m_entity_id_vector[0], 40u);
+                      EXPECT_EQ(nodeIds_onSE.m_entity_id_vector[0], 41u);
                       // should be the same node on each proc
                       std::cout << "P[" << p_rank << "] nodeId = " << nodeIds_onSE << " node= " << node << std::endl;
                     }
@@ -471,11 +471,11 @@ namespace stk
 #endif
                           
 
-                          unsigned expectedId_p2= 43u;
+                          unsigned expectedId_p2= 41u;
 #if SDS_ENTITY_TYPE_ID
-                          expectedId_p2= 43u;
+                          expectedId_p2= 41u;
 #else
-                          expectedId_p2= 43u;
+                          expectedId_p2= 41u;
 #endif
 
                           if (p_rank==1) std::cout << "P["<<p_rank<<"] nodeIds_onSE_1[0]= " << nodeIds_onSE_1.m_entity_id_vector[0] << "should be " << expectedId    << std::endl;
