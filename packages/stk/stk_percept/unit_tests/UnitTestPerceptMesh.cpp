@@ -381,6 +381,71 @@ namespace stk
       }
 
 
+      STKUNIT_UNIT_TEST(perceptMesh, create_skewed_mesh)
+      {
+        bool notActive = true;
+        if (notActive) return;
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        const unsigned p_rank = stk::parallel_machine_rank( pm );
+        if (p_size > 1) return;
+
+        // create a 12x12 quad mesh with sidesets
+        const unsigned n = 12;
+        //const unsigned nx = n , ny = n , nz = p_size*n ;
+        const unsigned nx = n , ny = n;
+
+        bool sidesets_on = true;
+        percept::QuadFixture<double> fixture( pm , nx , ny, sidesets_on);
+        fixture.meta_data.commit();
+        fixture.generate_mesh();
+
+        percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data);
+        //stk::mesh::fem::FEMMetaData& metaData = *eMesh.getFEM_meta_data();
+        //const std::vector< stk::mesh::Part * > & parts = metaData.get_parts();
+
+        eMesh.saveAs("2d_duct.e");
+        stk::mesh::BulkData& bulkData = *eMesh.getBulkData();
+        VectorFieldType* coordField = eMesh.getCoordinatesField();
+
+        const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );  
+        double sum = 0.0;
+        // dydx=tan(alp); dxdy=1/tan(alpha)
+        double dxdy = 0.0; 
+        double dydx = 0.866;
+
+        for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+          {
+            //if (in_surface_selector(**k)) 
+            {
+              stk::mesh::Bucket & bucket = **k ;
+
+              const unsigned num_nodes_in_bucket = bucket.size();
+                
+              for (unsigned iNode = 0; iNode < num_nodes_in_bucket; iNode++)
+                {
+                  stk::mesh::Entity& node = bucket[iNode];
+                  //stk::mesh::EntityId nid = node.identifier();
+
+                  double * const coord = stk::mesh::field_data( *coordField , node );
+                  // do something with coord's
+                  sum += coord[0]*coord[0] + coord[1]*coord[1];
+                  
+                  coord[0] += dxdy*coord[1];
+                  coord[1] += dydx*coord[0];
+                }
+            }
+          }
+        if (dydx != 0)
+          eMesh.saveAs("2d_duct_skewed_dydx.e");
+        else
+          eMesh.saveAs("2d_duct_skewed_dxdy.e");
+        std::cout << "P[" << p_rank << ":" << p_size << "] sum = " << sum << std::endl;
+      }
+
     }
   }
 }

@@ -37,7 +37,8 @@ namespace stk
     public:
 
       IntegratedOp(Function& integrand,  TurboOption turboOpt=TURBO_NONE, mesh::FieldBase *field=0) :
-        m_nDOFs(1), m_accumulation_buffer(), m_count_elems(0), m_is_field(false), m_integrand(integrand), m_turboOpt(turboOpt)
+        m_nDOFs(1), m_accumulation_buffer(), m_count_elems(0), m_is_field(false), m_integrand(integrand), m_turboOpt(turboOpt),
+        m_cubDegree(2)
       {
         if (typeid(integrand) == typeid(FieldFunction))
           {
@@ -62,12 +63,15 @@ namespace stk
         m_accumulation_buffer.resize(m_nDOFs);
       }
 
+      void setCubDegree(unsigned cubDegree) { m_cubDegree= cubDegree; }
+      unsigned getCubDegree() { return m_cubDegree; }
+
       void init()
       {
         m_count_elems=0;
         m_accumulation_buffer.assign(m_nDOFs, 0.0);
       }
-
+      
       std::vector<double>& getValue(void) { return m_accumulation_buffer; }
       unsigned getElementCount() { return m_count_elems; }
 
@@ -101,8 +105,15 @@ namespace stk
         m_count_elems += nCells;
 
         typedef IntrepidManager IM;
-        unsigned cubDegree = 2;
+        unsigned cubDegree = m_cubDegree;
         IM im(Elements_Tag(nCells), cell_topo, cubDegree);
+        if (0)
+          {
+            unsigned numCubPoints = im.m_cub->getNumPoints(); 
+            std::cout << "numCubPoints= " << numCubPoints << std::endl;
+          }
+
+
         // FIXME
         im.m_DOFs_Tag.num = m_nDOFs;
         // FIXME
@@ -229,6 +240,7 @@ namespace stk
       bool m_is_field;
       Function& m_integrand;
       TurboOption m_turboOpt;
+      unsigned m_cubDegree;
     };
 
     //template<>

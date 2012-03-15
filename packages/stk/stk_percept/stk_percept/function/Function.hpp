@@ -203,8 +203,11 @@ namespace stk
     std::ostream &operator<<(std::ostream& out,  Function& func);
 
     double eval(double x, double y, double z, double t, Function& func);
+    double eval2(double x, double y, double t, Function& func);
 
     void evalPrint(double x, double y, double z, double t, Function& func);
+
+    void evalPrint2(double x, double y, double t, Function& func);
 
     MDArray evalVec3(double x, double y, double z, double t, Function& func);
 

@@ -122,10 +122,21 @@ namespace stk
     class Norm : public FunctionOperator
     {
       TurboOption m_turboOpt;
+      unsigned m_cubDegree;
     public:
       Norm(mesh::BulkData& bulkData, mesh::Part *part = 0, TurboOption turboOpt=TURBO_NONE) :
-        FunctionOperator(bulkData, part), m_turboOpt(turboOpt)
+        FunctionOperator(bulkData, part), m_turboOpt(turboOpt), m_cubDegree(2)
      {}
+
+      void setCubDegree(unsigned cubDegree) { m_cubDegree= cubDegree; }
+      unsigned getCubDegree() { return m_cubDegree; }
+
+      double evaluate(Function& integrand)
+      {
+        ConstantFunction sfx_res(0.0, "sfx_res");
+        (*this)(integrand, sfx_res);
+        return sfx_res.getValue();
+      }
 
       virtual void operator()(Function& integrand, Function& result)
       {
@@ -152,7 +163,9 @@ namespace stk
             LN_NormOp<Power> LN_op(integrand);
             CompositeFunction LN_of_integrand("LN_of_integrand", integrand, LN_op);
             IntegratedOp integrated_LN_op(LN_of_integrand, m_turboOpt);
-            eMesh.printInfo("Norm");
+            integrated_LN_op.setCubDegree(m_cubDegree);
+
+            //eMesh.printInfo("Norm");
             if (m_turboOpt == TURBO_NONE || m_turboOpt == TURBO_ELEMENT)
               {
                 eMesh.elementOpLoop(integrated_LN_op, 0, &mesh::fem::FEMMetaData::get(m_bulkData).locally_owned_part());

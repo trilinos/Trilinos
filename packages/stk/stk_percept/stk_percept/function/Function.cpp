@@ -163,6 +163,17 @@ namespace stk
       return val(0);
     }
 
+    double eval2(double x, double y, double t, Function& func)
+    {
+      MDArray val(1);
+      MDArray pt(2);
+      pt(0)=x;
+      pt(1)=y;
+
+      func(pt, val, t);
+      return val(0);
+    }
+
     void evalPrint(double x, double y, double z, double t, Function& func)
     {
       MDArray pt(3);
@@ -170,6 +181,15 @@ namespace stk
       pt(1)=y;
       pt(2)=z;
       std::cout << "evalPrint:: pt=\n" << pt << " val= " << eval(x,y,z,t,func) << std::endl;
+    }
+
+    void evalPrint2(double x, double y, double t, Function& func)
+    {
+      MDArray pt(2);
+      pt(0)=x;
+      pt(1)=y;
+      //std::cout << "evalPrint:: pt=\n" << pt << " val= " << eval2(x,y,t,func) << std::endl;
+      std::cout << eval2(x,y,t,func);
     }
 
     MDArray evalVec3(double x, double y, double z, double t, Function& func)
