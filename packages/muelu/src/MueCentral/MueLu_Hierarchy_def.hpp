@@ -395,8 +395,7 @@ namespace MueLu {
 
       RCP<Level> Fine = Levels_[startLevel];
 
-/*
-      if (startLevel == 0 && IsPrint(Statistics1)) {
+      if (startLevel == 0 && IsPrint(Statistics1) && isPreconditioner_) {
         GetOStream(Statistics1, 0) << "iter:    "
                                    << std::setiosflags(std::ios::left)
                                    << std::setprecision(3) << i
@@ -404,7 +403,6 @@ namespace MueLu {
                                    << std::setprecision(10) << Utils::ResidualNorm(*(Fine->Get< RCP<Operator> >("A")), X, B)
                                    << std::endl;
       }
-*/
 
       //X.norm2(norms);
       if (Fine->Get< RCP<Operator> >("A")->getDomainMap()->isCompatible(*(X.getMap())) == false) {
@@ -548,6 +546,11 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Hierarchy(const Hierarchy &h) { }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::IsPreconditioner(const bool flag) {
+    isPreconditioner_ = flag;
+  }
 
 } //namespace MueLu
 

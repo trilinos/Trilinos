@@ -246,6 +246,12 @@ namespace MueLu {
     //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const
     void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
 
+    /*! Indicate whether the multigrid method is a preconditioner or a solver.
+    
+      This is used in conjunction with the verbosity level to determine whether the residuals can be printed.
+    */
+    void IsPreconditioner(const bool flag);
+
     //@}
 
   private:
@@ -257,6 +263,7 @@ namespace MueLu {
 
     Xpetra::global_size_t maxCoarseSize_;
     bool implicitTranspose_;
+    bool isPreconditioner_;
 
   }; //class Hierarchy
 
