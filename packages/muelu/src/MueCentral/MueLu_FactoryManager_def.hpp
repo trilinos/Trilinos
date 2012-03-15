@@ -71,11 +71,13 @@ namespace MueLu {
         return SetAndReturnDefaultFactory(varName, rcp(new RepartitionFactory()));
       }
 #endif //ifdef HAVE_MPI
+      //JJH FIXME is this going to bite me in the backside?
       if (varName == "Coordinates") {
         return SetAndReturnDefaultFactory(varName, rcp(new MueLu::MultiVectorTransferFactory<SC,LO,GO,NO,LMO>(varName,"R")));
       }
 
-      if (varName == "Nullspace")     return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory()));
+      //if (varName == "Nullspace")     return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory()));
+      //if (varName == "Nullspace")     return SetAndReturnDefaultFactory(varName, rcp(new TentativePFactory()));
       if (varName == "Graph")         return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
       if (varName == "Aggregates")    return SetAndReturnDefaultFactory(varName, rcp(new UCAggregationFactory()));
 
