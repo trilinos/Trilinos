@@ -100,9 +100,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/local/gcc-4-7-svn/bin/x86_64-apple-darwin10-g++"
-      "-DCMAKE_C_COMPILER:FILEPATH=/usr/local/gcc-4-7-svn/bin/x86_64-apple-darwin10-gcc"
-      "-DCMAKE_Fortran_COMPILER:FILEPATH=/usr/local/gcc-4-7-svn/bin/x86_64-apple-darwin10-gfortran"
+      "-DCMAKE_CXX_COMPILER:FILEPATH=/opt/local/bin/x86_64-apple-darwin10-g++-mp-4.7"
+      "-DCMAKE_C_COMPILER:FILEPATH=/opt/local/bin/x86_64-apple-darwin10-gcc-mp-4.7"
+      "-DCMAKE_Fortran_COMPILER:FILEPATH=/opt/local/bin/x86_64-apple-darwin10-gfortran-mp-4.7"
       )
   
   ENDIF()

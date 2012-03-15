@@ -1,0 +1,7 @@
+XML parse error at line 7: file ended before closing element 'open3' from line 5
+<open>
+  <open>
+    some
+    chars
+    <open3 somevars="">
+    some more chars

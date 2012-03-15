@@ -86,33 +86,76 @@ namespace std {
 
 namespace Tpetra {
 
-  //! \brief A class for constructing and using sparse compressed matrices with row access.
+  //! \brief Sparse matrix that presents a compressed sparse row interface.
   /*!
-   \tparam Scalar        The scalar field describing the numerical entries of the matrix.
-   \tparam LocalOrdinal  A ordinal type for lists of local indices. This specifies the \c LocalOrdinal type for Map objects used by this matrix.
-   \tparam GlobalOrdinal A ordinal type for lists of global indices. This specifies the \c GlobalOrdinal type for Map objects used by this matrix.
-   \tparam Node          A shared-memory node class, fulfilling the \ref kokkos_node_api "Kokkos Node API"
-   \tparam LocalMatOps   A local sparse matrix operations class, fulfiling the \ref kokkos_crs_ops "Kokkos CRS Ops API".
-   * This class allows the construction of sparse matrices with row-access. 
-   * 
-   * <b>Local vs. Global</b>
-   * 
-   * Matrix entries can be added using either local or global coordinates for the indices. The 
-   * accessors isGloballyIndexed() and isLocallyIndexed() indicate whether the indices are currently
-   * stored as global or local indices. Many of the class methods are divided into global and local 
-   * versions, which differ only in whether they accept/return indices in the global or local coordinate
-   * space. Some of these methods may only be used if the matrix coordinates are in the appropriate coordinates.
-   * For example, getGlobalRowView() returns a View to the indices in global coordinates; if the indices are 
-   * not in global coordinates, then no such View can be created.
-   * 
-   * The global/local distinction does distinguish between operation on the global/local matrix. Almost all methods 
-   * operate on the local matrix, i.e., the rows of the matrix associated with the local node, per the distribution specified
-   * by the row map. Access to non-local rows requires performing an explicit communication via the import/export capabilities of the
-   * CrsMatrix object; see DistObject. However, the method insertGlobalValues() is an exception to this rule, as non-local rows are 
-   * allowed to be added via the local matrix. These rows are stored in the local matrix and communicated to the appropriate node 
-   * on the next call to globalAssemble() or fillComplete() (the latter calls the former).
-   * 
-   */
+   \tparam Scalar The type of the numerical entries of the matrix.
+     (You can use real-valued or complex-valued types here, unlike in
+     Epetra, where the scalar type is always \c double.)
+
+   \tparam LocalOrdinal The type of local indices.  Same as the \c
+     LocalOrdinal template parameter of \c Map objects used by this
+     matrix.  (In Epetra, this is just \c int.)
+
+   \tparam GlobalOrdinal The type of global indices.  Same as the \c
+     GlobalOrdinal template parameter of \c Map objects used by this
+     matrix.  (In Epetra, this is just \c int.  One advantage of
+     Tpetra over Epetra is that you can use a 64-bit integer type here
+     if you want to solve big problems.)
+
+   \tparam Node A class implementing on-node shared-memory parallel
+     operations.  It must implement the \ref kokkos_node_api "Kokkos
+     Node API."  The default \c Node type depends on your build
+     options.
+
+   \tparam LocalMatOps A local sparse matrix operations class.  It
+     must implement the \ref kokkos_crs_ops "Kokkos CRS Ops API."
+
+   This class implements a distributed-memory parallel sparse matrix,
+   and provides sparse matrix-vector multiply (including transpose)
+   and sparse triangular solve operations.  It provides access by rows
+   to the elements of the matrix, as if the local data were stored in
+   compressed sparse row format.  This class has an interface like
+   that of \c Epetra_CrsMatrix, but also allows insertion of data into
+   nonowned rows, much like Epetra_FECrsMatrix.
+
+   <b>Local vs. Global</b>
+
+   The distinction between local and global indices might confuse new
+   Tpetra users.  <it>Global</it> indices represent the rows and
+   columns uniquely over the entire matrix, which may be distributed
+   over multiple processes.  <it>Local</it> indices are local to the
+   process that owns them.  If global index G is owned by process P,
+   then there is a unique local index L on process P corresponding to
+   G.  If the local index L is valid on process P, then there is a
+   unique global index G owned by P corresponding to the pair (L, P).
+   However, multiple processes might own the same global index (an
+   "overlapping Map"), so a global index G might correspond to
+   multiple (L, P) pairs.  In summary, local indices on a process
+   correspond to matrix rows or columns owned by that process.
+
+   We summarize the different between local and global indices because
+   many of CrsMatrix's methods for adding, modifying, or accessing
+   entries come in versions that take either local or global indices.
+   The matrix itself may store indices either as local or global.  You
+   should only use the method version corresponding to the current
+   state of the matrix.  For example, \c getGlobalRowView() returns a
+   view to the indices represented as global; it is incorrect to call
+   this method if the matrix is storing indices as local.  Call the \c
+   isGloballyIndexed() or \c isLocallyIndexed() methods to find out
+   whether the matrix currently stores indices as local or global.
+
+   Method methods that work with global indices only allow operations
+   on indices owned by the calling process.  For example, methods that
+   take a global row index expect that row to be owned by the calling
+   process.  Access to nonlocal (i.e., not owned by the calling
+   process) rows requires performing an explicit communication via the
+   import/export capabilities of the CrsMatrix object; see \c
+   DistObject.  However, the method \c insertGlobalValues() is an
+   exception to this rule.  It allows you to add data to nonlocal
+   rows.  These data are stored locally and communicated to the
+   appropriate node on the next call to \c globalAssemble() or \c
+   fillComplete() (the latter calls the former).
+  */
   template <class Scalar, 
             class LocalOrdinal  = int, 
             class GlobalOrdinal = LocalOrdinal, 
@@ -582,13 +625,22 @@ namespace Tpetra {
                           size_t& constantNumPackets,
                           Distributor &distor);
 
-      void unpackAndCombine(const ArrayView<const LocalOrdinal> &importLIDs,
-                            const ArrayView<const char> &imports,
-                            const ArrayView<size_t> &numPacketsPerLID,
-                            size_t constantNumPackets,
-                            Distributor &distor,
-                            CombineMode CM);
-
+      /// \brief Unpack the imported column indices and values, and combine into matrix.
+      ///
+      /// \warning The allowed \c combineMode depends on whether the
+      ///   matrix's graph is static or dynamic.  ADD, REPLACE, and
+      ///   ABSMAX are valid for a static graph, but INSERT is not.
+      ///   ADD and INSERT are valid for a dynamic graph; ABSMAX and
+      ///   REPLACE have not yet been implemented (and would require
+      ///   serious changes to matrix assembly in order to implement
+      ///   sensibly).
+      void 
+      unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
+			const Teuchos::ArrayView<const char> &imports,
+			const Teuchos::ArrayView<size_t> &numPacketsPerLID,
+			size_t constantNumPackets,
+			Distributor &distor,
+			CombineMode combineMode);
       //@}
 
       //! \name Deprecated routines to be removed at some point in the future.
@@ -623,10 +675,81 @@ namespace Tpetra {
       //@}
 
     private:
-      // copy constructor disabled
-      CrsMatrix(const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> &Source);
-      // operator= disabled
-      CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> & operator=(const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> &rhs);
+      // We forbid copy construction by declaring this method private
+      // and not implementing it.
+      CrsMatrix (const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> &rhs);
+
+      // We forbid assignment (operator=) by declaring this method
+      // private and not implementing it.
+      CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>& 
+      operator= (const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> &rhs);
+
+      /// \brief Transform CrsMatrix entries by applying a binary function to them.
+      ///
+      /// For every entry \f$A(i,j)\f$ to transform, if \f$v_{ij}\f$ is
+      /// the corresponding entry of the \c values array, then we apply
+      /// the function to \f$A(i,j)\f$ as follows:
+      /// \f[
+      ///   A(i,j) := f(A(i,j), v_{ij}).
+      /// \f]
+      /// For example, BinaryFunction = std::plus<Scalar> implements
+      /// \c sumIntoGlobalValues(), and BinaryFunction =
+      /// secondArg<Scalar,Scalar> implements replaceGlobalValues().
+      ///
+      /// \tparam BinaryFunction The type of binary function to apply.
+      ///   std::binary_function is a model for this.
+      template<class BinaryFunction>
+      void
+      transformGlobalValues (GlobalOrdinal globalRow, 
+			     const Teuchos::ArrayView<const GlobalOrdinal>& indices,
+			     const Teuchos::ArrayView<const Scalar>        & values,
+			     BinaryFunction f)
+      {
+	typedef Scalar ST;
+	typedef LocalOrdinal LO;
+	typedef GlobalOrdinal GO;
+	typedef Node NT;
+	using Teuchos::Array;
+	using Teuchos::ArrayView;
+
+	TEUCHOS_TEST_FOR_EXCEPTION(values.size() != indices.size(), 
+          std::invalid_argument, "transformGlobalValues: values.size() = " 
+	  << values.size() << " != indices.size() = " << indices.size() << ".");
+
+	const LO lrow = this->getRowMap()->getLocalElement(globalRow);
+
+	TEUCHOS_TEST_FOR_EXCEPTION(lrow == LOT::invalid(), std::invalid_argument, 
+	  "transformGlobalValues: The given global row index " << globalRow 
+	  << " is not owned by the calling process (rank " 
+	  << this->getRowMap()->getComm()->getRank() << ").");
+
+	RowInfo rowInfo = staticGraph_->getRowInfo(lrow);
+	if (indices.size() > 0) {
+	  if (isLocallyIndexed()) {
+	    // Convert global indices to local indices.
+	    const Map<LO, GO, NT> &colMap = *(this->getColMap());
+	    Array<LO> lindices (indices.size());
+	    typename ArrayView<const GO>::iterator gindit = indices.begin();
+	    typename Array<LO>::iterator           lindit = lindices.begin();
+	    while (gindit != indices.end()) {
+	      // No need to filter before asking the column Map to
+	      // convert GID->LID.  If the GID doesn't exist in the
+	      // column Map, the GID will be mapped to invalid(), which
+	      // will not be found in the graph.
+	      *lindit++ = colMap.getLocalElement(*gindit++);
+	    }
+	    typename Graph::SLocalGlobalViews inds_view;
+	    inds_view.linds = lindices();
+	    staticGraph_->template transformValues<LocalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), f);
+	  }
+	  else if (isGloballyIndexed()) {
+	    typename Graph::SLocalGlobalViews inds_view;
+	    inds_view.ginds = indices;
+	    staticGraph_->template transformValues<GlobalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), f);
+	  }
+	}
+      }
+
     protected:
       // useful typedefs
       typedef OrdinalTraits<LocalOrdinal>                     LOT;
@@ -641,8 +764,25 @@ namespace Tpetra {
         GraphAlreadyAllocated,
         GraphNotYetAllocated
       };
-      // Allocation
-      void allocateValues(ELocalGlobal lg, GraphAllocationStatus gas);
+
+      /// \brief Allocate values (and optionally indices) using the Node.
+      ///
+      /// \param gas [in] If GraphNotYetAllocated, allocate the
+      ///   indices of \c myGraph_ via \c allocateIndices(lg) before
+      ///   allocating values.
+      ///
+      /// \param lg [in] Argument passed into \c
+      ///   myGraph_->allocateIndices(), if applicable.
+      ///
+      /// \pre If the graph (that is, staticGraph_) indices are
+      ///   already allocated, then gas must be GraphAlreadyAllocated.
+      ///   Otherwise, gas must be GraphNotYetAllocated.  We only
+      ///   check for this precondition in debug mode.
+      ///
+      /// \pre If the graph indices are not already allocated, then
+      ///   the graph must be owned by the matrix.
+      void allocateValues (ELocalGlobal lg, GraphAllocationStatus gas);
+
       // Sorting and merging
       void sortEntries();
       void mergeRedundantEntries();

@@ -65,13 +65,16 @@ namespace Tpetra {
       // If map_ is contiguously allocated, we can construct the 
       // directory from the minMyGID value from each image.
       if (map_->isContiguous()) {
-        // make room for the min on each proc, plus one entry at the end for the max cap
+        // Make room for the min GID on each proc, plus one entry at
+        // the end for the max cap.
         allMinGIDs_.resize(comm_->getSize() + 1);
-        // get my min
+        // Get my process' min GID.
         GlobalOrdinal minMyGID = map_->getMinGlobalIndex();
-        // gather all of the mins into the first getSize() entries of allMinDIGs_
+        // Gather all of the min GIDs into the first getSize() entries
+        // of allMinGIDs_.
         Teuchos::gatherAll<int,GlobalOrdinal>(*comm_,1,&minMyGID,comm_->getSize(),&allMinGIDs_.front());
-        // put the max cap at the end
+        // Put the max cap at the end.  Adding one lets us write loops
+        // over GIDs with the traditional strict less-than bound.
         allMinGIDs_.back() = map_->getMaxAllGlobalIndex() + Teuchos::OrdinalTraits<GlobalOrdinal>::one();
       }
       // Otherwise we have to generate the directory using MPI calls.

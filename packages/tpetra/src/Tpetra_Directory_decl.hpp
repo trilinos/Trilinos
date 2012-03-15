@@ -81,8 +81,10 @@ namespace Tpetra {
   ///    have to store a general mapping from global ID to (process
   ///    ID, local ID).  I can't afford to store the whole mapping
   ///    redundantly on all processes, so I distribute it using
-  ///    another Map (the "directory Map").  This is a uniform linear
-  ///    Map whose keys are the global IDs.
+  ///    another Map (the "directory Map").  This is a uniform
+  ///    contiguous Map whose keys are the global IDs.  (Contiguity of
+  ///    the directory Map prevents infinite corecursion between Map's
+  ///    constructor and Directory's constructor.)
   ///
   /// This class is templated on the same \c LocalOrdinal and \c
   /// GlobalOrdinal types on which \c Map is templated.  Just as with
@@ -226,7 +228,11 @@ namespace Tpetra {
     ///
     /// \note This is a potential memory bottleneck if the number of
     ///   processes P is large and the allowed memory usage per
-    ///   process is small.
+    ///   process is small.  However, remember that for reasonable
+    ///   performance, if N is the global number of entries, then your
+    ///   code should have N / P >> 1.  Thus, this array is small
+    ///   compared with your application's data, assuming that you
+    ///   aren't creating a lot of Maps.
     std::vector<GlobalOrdinal> allMinGIDs_; 
 
     /// Array of the same length as the local number of entries in

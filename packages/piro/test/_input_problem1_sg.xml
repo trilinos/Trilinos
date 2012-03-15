@@ -1,23 +1,13 @@
 <ParameterList>
-  <Parameter name="Network Coupling Parameter Indices" type="Array(int)" 
-	     value="{ 0, 0 }"/>
-  <Parameter name="Network Coupling Response Indices" type="Array(int)" 
-	     value="{ 0, 0 }"/>
-  <Parameter name="Stochastic" type="bool" value="0"/>
-  <Parameter name="Reduce Dimension" type="bool" value="0"/>
   <Parameter name="Piro Solver" type="string" value="NOX"/>
   <Parameter name="Compute Sensitivities" type="bool" value="0"/>
   <Parameter name="Print Convergence Stats" type="bool" value="0"/>
   <ParameterList name="NOX">
-    <Parameter name="Reset Initial Guess" type="bool" value="1"/>
     <ParameterList name="Direction">
       <Parameter name="Method" type="string" value="Newton"/>
       <ParameterList name="Newton">
         <Parameter name="Forcing Term Method" type="string" value="Constant"/>
         <Parameter name="Rescue Bad Newton Solve" type="bool" value="1"/>
-	<ParameterList name="Linear Solver">
-	  <Parameter name="Write Linear System" type="bool" value="false"/>
-	</ParameterList>
         <ParameterList name="Stratimikos Linear Solver">
           <ParameterList name="NOX Stratimikos Options">
           </ParameterList>
@@ -35,6 +25,9 @@
                   <Parameter name="Max Iterations" type="int" value="200"/>
                   <Parameter name="Tolerance" type="double" value="1e-5"/>
                 </ParameterList>
+		<ParameterList name="VerboseObject"> 
+		  <Parameter name="Verbosity Level" type="string" value="none"/>
+		</ParameterList>
               </ParameterList>
             </ParameterList>
             <Parameter name="Preconditioner Type" type="string" value="None"/>
@@ -65,13 +58,13 @@
       <Parameter name="Output Processor" type="int" value="0"/>
       <ParameterList name="Output Information">
         <Parameter name="Error" type="bool" value="1"/>
-        <Parameter name="Warning" type="bool" value="1"/>
-        <Parameter name="Outer Iteration" type="bool" value="1"/>
+        <Parameter name="Warning" type="bool" value="0"/>
+        <Parameter name="Outer Iteration" type="bool" value="0"/>
         <Parameter name="Parameters" type="bool" value="0"/>
         <Parameter name="Details" type="bool" value="0"/>
-        <Parameter name="Linear Solver Details" type="bool" value="1"/>
-        <Parameter name="Stepper Iteration" type="bool" value="1"/>
-        <Parameter name="Stepper Details" type="bool" value="1"/>
+        <Parameter name="Linear Solver Details" type="bool" value="0"/>
+        <Parameter name="Stepper Iteration" type="bool" value="0"/>
+        <Parameter name="Stepper Details" type="bool" value="0"/>
         <Parameter name="Stepper Parameters" type="bool" value="0"/>
       </ParameterList>
     </ParameterList>
@@ -93,15 +86,45 @@
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Regression Tests">
-    <!-- At the default parameter values, response 0 = response 1 = -1-sqrt(2),
-      and response 2 is vector of length 2 where each component = 1-sqrt(2) -->
-    <Parameter  name="Response 0 Test Values" type="Array(double)" value="{-2.414213562373095}"/>
-    <Parameter  name="Response 1 Test Values" type="Array(double)" value="{-2.414213562373095}"/>
-    <Parameter  name="Response 2 Test Values" type="Array(double)" value="{-0.414213562373095, -0.414213562373095}"/>
-    <Parameter  name="Relative Tolerance" type="double" value="1.0e-3"/>
-    <Parameter  name="Absolute Tolerance" type="double" value="1.0e-8"/>
+  <ParameterList name="Stochastic Galerkin">
+    <Parameter name="SG Method" type="string" value="Direct"/>
+    <Parameter name="Number of Spatial Processors" type="int" value="1"/>
+    <Parameter name="Triple Product Size" type="string" value="Full"/>
+    <ParameterList name="Basis">
+      <Parameter name="Isotropic" type="bool" value="true"/>
+      <Parameter name="Type" type="string" value="Legendre"/>
+      <Parameter name="Dimension" type="int" value="2"/>
+      <Parameter name="Order" type="int" value="3"/>
+      <Parameter name="Normalize" type="bool" value="false"/>
+      <Parameter name="Cijk Drop Tolerance" type="double" value="1e-12"/>
+    </ParameterList>
+    <ParameterList name="SG Parameters">
+      <Parameter name="Number of SG Parameter Vectors" type="int" value="2"/>
+      <ParameterList name="SG Parameter Vector 0">
+	<Parameter name="Parameter Vector Index" type="int" value="0"/>
+	<Parameter name="Parameter 0 Initial Expansion Coefficients" type="Array(double)" value="{ 2.0, 0.0, 0.0 }"/>
+      </ParameterList>
+      <ParameterList name="SG Parameter Vector 1">
+	<Parameter name="Parameter Vector Index" type="int" value="1"/>
+	<Parameter name="Parameter 0 Initial Expansion Coefficients" type="Array(double)" value="{ 2.0, 0.0, 0.0 }"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Expansion">
+      <Parameter name="Type" type="string" value="Quadrature"/>
+    </ParameterList>
+    <ParameterList name="SG Solver Parameters">
+      <Parameter name="Jacobian Expansion Type" type="string" value="Full"/>
+      <Parameter name="Parameter Expansion Type" type="string" value="Full"/>
+      <Parameter name="SG Solver Algorithm" type="string" value="Krylov"/>
+      <ParameterList name="SG Operator">
+	<Parameter name="Operator Method" type="string" value="Matrix Free"/>
+      </ParameterList>
+      <ParameterList name="SG Preconditioner">
+	<Parameter name="Preconditioner Method" type="string" value="Approximate Gauss-Seidel"/>
+	<Parameter name="Mean Preconditioner Type" type="string" value="Ifpack"/>
+	<ParameterList name="Mean Preconditioner Parameters"/>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
-
-
 </ParameterList>
+
