@@ -36,6 +36,10 @@
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
+#include "MueLu_RepartitionFactory.hpp"
+#include "MueLu_ZoltanInterface.hpp"
+#include "MueLu_PermutedTransferFactory.hpp"
+#include "MueLu_MultiVectorTransferFactory.hpp"
 
 // Belos
 #ifdef HAVE_MUELU_BELOS
@@ -109,23 +113,29 @@ int main(int argc, char *argv[]) {
   int minPerAgg=2; //was 3 in simple
   int maxNbrAlreadySelected=0;
   int writeMatrix=0;
+  int printTimings=0;
+  GO minRowsPerProc=2000;
+  double nonzeroImbalance=1.2;
 
-  clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
-  clp.setOption("its",&its,"number of multigrid cycles");
-  clp.setOption("debug",&pauseForDebugger,"pause to attach debugger");
-  clp.setOption("fixPoint",&amgAsSolver,"apply multigrid as solver");
-  clp.setOption("precond",&amgAsPrecond,"apply multigrid as preconditioner");
-  clp.setOption("saDamping",&SADampingFactor,"prolongator damping factor");
-  clp.setOption("explicitR",&useExplicitR,"restriction will be explicitly stored as transpose of prolongator");
-  clp.setOption("sweeps",&sweeps,"sweeps to be used in SGS (or Chebyshev degree)");
-  clp.setOption("maxCoarseSize",&maxCoarseSize,"maximum #dofs in coarse operator");
-  clp.setOption("tol",&tol,"stopping tolerance for Krylov method");
   clp.setOption("aggOrdering",&aggOrdering,"aggregation ordering strategy (natural,random,graph)");
-  clp.setOption("minPerAgg",&minPerAgg,"minimum #DOFs per aggregate");
-  clp.setOption("maxNbrSel",&maxNbrAlreadySelected,"maximum # of nbrs allowed to be in other aggregates");
-  clp.setOption("smooType",&smooType,"smoother type ('sgs 'or 'cheby')");
+    clp.setOption("debug",&pauseForDebugger,"pause to attach debugger");
   clp.setOption("dump",&writeMatrix,"write matrix to file");
-  
+  clp.setOption("explicitR",&useExplicitR,"restriction will be explicitly stored as transpose of prolongator");
+    clp.setOption("fixPoint",&amgAsSolver,"apply multigrid as solver");
+  clp.setOption("its",&its,"number of multigrid cycles");
+  clp.setOption("maxCoarseSize",&maxCoarseSize,"maximum #dofs in coarse operator");
+  clp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
+  clp.setOption("maxNbrSel",&maxNbrAlreadySelected,"maximum # of nbrs allowed to be in other aggregates");
+  clp.setOption("minPerAgg",&minPerAgg,"minimum #DOFs per aggregate");
+  clp.setOption("minRowsPerProc",&minRowsPerProc,"min #rows allowable per proc before repartitioning occurs");
+  clp.setOption("nnzImbalance",&nonzeroImbalance,"max allowable nonzero imbalance before repartitioning occurs");
+    clp.setOption("precond",&amgAsPrecond,"apply multigrid as preconditioner");
+    clp.setOption("saDamping",&SADampingFactor,"prolongator damping factor");
+  clp.setOption("smooType",&smooType,"smoother type ('sgs 'or 'cheby')");
+    clp.setOption("sweeps",&sweeps,"sweeps to be used in SGS (or Chebyshev degree)");
+  clp.setOption("timings",&printTimings,"print timings to screen");
+    clp.setOption("tol",&tol,"stopping tolerance for Krylov method");
+
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
   case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
@@ -202,7 +212,7 @@ int main(int argc, char *argv[]) {
     Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
     Finest->Set("A",Op);
     Finest->Set("Nullspace",nullSpace);
-    Finest->Set("coordinates",Coordinates);
+    Finest->Set("Coordinates",Coordinates);
 
     RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
     *out << "========================= Aggregate option summary  =========================" << std::endl;
@@ -227,17 +237,41 @@ int main(int argc, char *argv[]) {
     UCAggFact->SetPhase3AggCreation(0.5);
     *out << "=============================================================================" << std::endl;
 
-    RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
+    RCP<TentativePFactory> PtentFact = rcp(new TentativePFactory(UCAggFact));
 
-    RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
-    Pfact->SetDampingFactor(SADampingFactor);
-    RCP<RAPFactory>       Acfact = rcp( new RAPFactory() );
-    RCP<RFactory>         Rfact = rcp( new TransPFactory());
-    if (!useExplicitR) {
-      H->SetImplicitTranspose(true);
-      Acfact->SetImplicitTranspose(true);
-      if (comm->getRank() == 0) std::cout << "\n\n* ***** USING IMPLICIT RESTRICTION OPERATOR ***** *\n" << std::endl;
-    }
+    RCP<SaPFactory>       SaPfact = rcp( new SaPFactory(PtentFact) );
+    SaPfact->SetDampingFactor(SADampingFactor);
+    RCP<RFactory>         Rfact = rcp( new TransPFactory(SaPfact));
+    RCP<RAPFactory>       Acfact = rcp( new RAPFactory(SaPfact,Rfact) );
+    Acfact->setVerbLevel(Teuchos::VERB_HIGH);
+    RCP<RAPFactory>       AcfactFinal;
+
+    RCP<PermutedTransferFactory> permPFactory, permRFactory;
+    RCP<MultiVectorTransferFactory> mvTransFact;
+    if (useExplicitR) {
+      //Operator used to transfer coordinates to coarse grid
+      RCP<RFactory> Rtentfact = rcp( new TransPFactory(PtentFact) ); //for projecting coordinates
+      //Factory that will invoke the coordinate transfer. This factory associates data and operator.
+      mvTransFact = rcp(new MultiVectorTransferFactory("Coordinates","R",Rtentfact));
+      //Register it with the coarse operator factory
+      Acfact->AddTransferFactory(mvTransFact);
+      //Set up repartitioning
+      RCP<ZoltanInterface>      zoltan = rcp(new ZoltanInterface(Acfact,mvTransFact));
+      RCP<RepartitionFactory> RepartitionFact = rcp(new RepartitionFactory(zoltan,Acfact,minRowsPerProc,nonzeroImbalance));
+      permPFactory = rcp( new PermutedTransferFactory(RepartitionFact, Acfact, SaPfact, MueLu::INTERPOLATION) );
+      permRFactory = rcp( new PermutedTransferFactory(RepartitionFact, Acfact, Rfact, MueLu::RESTRICTION, PtentFact, mvTransFact)
+);
+      AcfactFinal = rcp( new RAPFactory(permPFactory,permRFactory) );
+
+
+    } else {
+  
+        H->SetImplicitTranspose(true);
+        Acfact->SetImplicitTranspose(true);
+      AcfactFinal = Acfact;
+        if (comm->getRank() == 0) std::cout << "\n\n* ***** USING IMPLICIT RESTRICTION OPERATOR ***** *\n" << std::endl;
+    } //if (useExplicitR)
+
     H->SetMaxCoarseSize((GO) maxCoarseSize);
 
     RCP<SmootherPrototype> smooProto;
@@ -261,9 +295,30 @@ int main(int argc, char *argv[]) {
     RCP<SmootherFactory> SmooFact;
     if (maxLevels > 1) 
       SmooFact = rcp( new SmootherFactory(smooProto) );
-    Acfact->setVerbLevel(Teuchos::VERB_HIGH);
+    AcfactFinal->setVerbLevel(Teuchos::VERB_HIGH);
 
-    status = H->FullPopulate(*Pfact,*Rfact,*Acfact,*SmooFact,0,maxLevels);
+    for (int i=0; i<comm->getSize(); ++i) {
+      if (comm->getRank() == i) {
+        std::cout << "pid " << i << ": address(Acfact)      = " << Acfact.get() << std::endl;
+        std::cout << "pid " << i << ": address(AcfactFinal) = " << AcfactFinal.get() << std::endl;
+      }
+      comm->barrier();
+    }
+
+    FactoryManager M;
+
+    M.SetFactory("A",AcfactFinal);
+    M.SetFactory("Smoother",SmooFact);
+    if (useExplicitR) {
+      M.SetFactory("P",permPFactory);
+      M.SetFactory("R",permRFactory);
+    } else {
+      M.SetFactory("P",SaPfact);
+      M.SetFactory("R",Rfact);
+    }
+
+    int startLevel=0;
+    H->Setup(M,startLevel,maxLevels);
 
   } // end of Setup TimeMonitor
 
@@ -299,7 +354,9 @@ int main(int argc, char *argv[]) {
 
       TimeMonitor tm(*TimeMonitor::getNewTimer("ScalingTest: 3 - Fixed Point Solve"));
 
+      H->IsPreconditioner(true);
       H->Iterate(*RHS,its,*X);
+      H->IsPreconditioner(false);
   
       //X->norm2(norms);
       //*out << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
@@ -405,7 +462,9 @@ int main(int argc, char *argv[]) {
 
   // Timer final summaries
   globalTimeMonitor = Teuchos::null; // stop this timer before summary
-  TimeMonitor::summarize();
+
+  if (printTimings)
+    TimeMonitor::summarize()
     
   return EXIT_SUCCESS;
 }
