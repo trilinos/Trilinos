@@ -60,12 +60,40 @@ namespace MueLu {
     //                    "MueLu::MultiVectorTransferFactory::Build(): vector '" + vectorName_ + "' is not available.");
 
     //RCP<MultiVector> vector  = fineLevel.Get<RCP<MultiVector> >(vectorName_,MueLu::NoFactory::get());
+
     RCP<MultiVector> vector;
-    if (fineLevel.GetLevelID() == 0)
+    /*
+    //FIXME JJH reenable this once we sort out dependencies of tranferring, permuting vectors
+    if (fineLevel.GetLevelID() == 0) {
       vector  = fineLevel.Get<RCP<MultiVector> >(vectorName_,MueLu::NoFactory::get());
-    else
+      std::cout << "MultiVectorTransferFactory::Build -- requesting " << vectorName_ << " from factory " << MueLu::NoFactory::get() << std::endl;
+    } else {
       vector  = fineLevel.Get<RCP<MultiVector> >(vectorName_,this);
+      std::cout << "MultiVectorTransferFactory::Build -- requesting " << vectorName_ << " from factory " << this << std::endl;
+    }
+    */
+    //FIXME JJH and get rid of this
+      vector  = fineLevel.Get<RCP<MultiVector> >(vectorName_,MueLu::NoFactory::get());
+      std::cout << "MultiVectorTransferFactory::Build -- requesting " << vectorName_ << " from factory " << MueLu::NoFactory::get() << std::endl;
+    //FIXME JJH
+
     RCP<Operator> transferOp = coarseLevel.Get<RCP<Operator> >(restrictionName_,restrictionFact_.get());
+
+    //FIXME debugging output
+
+    RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    RCP<const Teuchos::Comm<int> > comm = transferOp->getRowMap()->getComm();
+    for (int i=0; i<comm->getSize(); ++i) {
+      if (comm->getRank() == i) {
+        fos->setOutputToRootOnly(comm->getRank());
+        *fos << "================== pid " << comm->getRank() << ": fine level in TentativePFactory =================" << std::endl;
+        fineLevel.print(*fos,Teuchos::VERB_EXTREME);
+        *fos << "================= end of level description =========================" << std::endl;
+      }
+      comm->barrier();
+    }
+    fos->setOutputToRootOnly(-1);
+    //FIXME end of debugging output
 
     /*
     //FIXME ThreeLevels unit test  dies
@@ -75,8 +103,20 @@ namespace MueLu {
 
     RCP<MultiVector> result = MultiVectorFactory::Build(transferOp->getRangeMap(),1);
     GetOStream(Runtime0,0) << "Transferring multivector \"" << vectorName_ << "\"" << std::endl;
+    //FIXME DEBUGGING INFO
+    /*
+    if (vectorName_ == "Coordinates") {
+      RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      fos->setOutputToRootOnly(-1);
+      transferOp->describe(*fos,Teuchos::VERB_EXTREME);
+      *fos << "===================================================================" << std::endl;
+      vector->describe(*fos,Teuchos::VERB_EXTREME);
+    }
+    */
+    //FIXME
     transferOp->apply(*vector,*result);
-    coarseLevel.Set<RCP<MultiVector> >(vectorName_,result,this);
+    //coarseLevel.Set<RCP<MultiVector> >(vectorName_,result,this); //FIXME JJH
+    coarseLevel.Set<RCP<MultiVector> >(vectorName_,result,NoFactory::get()); //FIXME JJH
     
   } //Build
 
