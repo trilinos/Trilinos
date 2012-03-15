@@ -22,6 +22,10 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
 
+    // skip DeclareInput if Nullspace is already explicitely given by user
+    if (currentLevel.IsKey("Nullspace",this) == true && currentLevel.IsAvailable("Nullspace",this) == false && currentLevel.GetLevelID() == 0)
+      return;
+
     // only request "A" in DeclareInput if
     // 1)there is not "Nullspace" is available in Level AND
     // 2) it is the finest level (i.e. LevelID == 0)
@@ -34,6 +38,11 @@ namespace MueLu {
     RCP<MultiVector> nullspace;
 
     FactoryMonitor m(*this, "Nullspace factory", currentLevel);
+
+    if (currentLevel.IsKey("Nullspace",this) == true && currentLevel.IsAvailable("Nullspace",this) == true && currentLevel.GetLevelID() == 0) {
+      GetOStream(Runtime1, 0) << "Do nothing. Use user-given nullspace: nullspace dimension=" << nullspace->getNumVectors() << std::endl;
+      return;
+    }
 
     TEUCHOS_TEST_FOR_EXCEPTION(currentLevel.GetLevelID() != 0, Exceptions::RuntimeError, "MueLu::NullspaceFactory::Build(): NullspaceFactory can be used for finest level (LevelID == 0) only.");
 
