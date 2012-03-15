@@ -133,6 +133,25 @@ void get_entities_through_relations(
 }
 
 inline
+void insert_part_and_supersets(OrdinalVector& induced_parts, 
+                               Part& part,
+                               bool include_supersets)
+{
+  insert_ordinal( induced_parts , part.mesh_meta_data_ordinal() );
+
+  // In order to preserve superset/subset consistency we should add supersets of
+  // induced parts to the induced part lists. Unfortunately, this opens up an ambiguity
+  // where, when a relation is removed, we cannot know if an unranked superset
+  // part should be removed.
+  if (include_supersets) {
+    const PartVector & supersets = part.supersets();
+    for (PartVector::const_iterator itr = supersets.begin(), end = supersets.end(); itr != end; ++itr) {
+      insert_ordinal( induced_parts, (*itr)->mesh_meta_data_ordinal() );
+    }
+  }
+}
+
+inline
 void insert_part_and_supersets(PartVector& induced_parts, 
                                Part& part,
                                bool include_supersets)
@@ -212,7 +231,7 @@ void induced_part_membership( Part & part ,
                               unsigned entity_rank_from ,
                               unsigned entity_rank_to ,
                               RelationIdentifier relation_identifier ,
-                              PartVector & induced_parts,
+                              OrdinalVector & induced_parts,
                               bool include_supersets)
 {
   if ( entity_rank_to < entity_rank_from &&
@@ -245,10 +264,10 @@ void induced_part_membership( Part & part ,
 //  accurate if it is owned by the local process.
 
 void induced_part_membership( const Entity           & entity_from ,
-                              const PartVector       & omit ,
+                              const OrdinalVector       & omit ,
                                     unsigned           entity_rank_to ,
                                     RelationIdentifier relation_identifier ,
-                                    PartVector       & induced_parts,
+                                    OrdinalVector       & induced_parts,
                                     bool include_supersets)
 {
   const Bucket   & bucket_from    = entity_from.bucket();
@@ -266,13 +285,16 @@ void induced_part_membership( const Entity           & entity_from ,
     const std::pair<const unsigned *, const unsigned *>
       bucket_superset_ordinals = bucket_from.superset_part_ordinals();
 
+    OrdinalVector::const_iterator omit_begin = omit.begin(),
+                                  omit_end   = omit.end();
+
     // Contributions of the 'from' entity:
     for ( const unsigned * i = bucket_superset_ordinals.first ;
                            i != bucket_superset_ordinals.second ; ++i ) {
       ThrowAssertMsg( *i < all_parts.size(), "Index " << *i << " out of bounds" );
       Part & part = * all_parts[*i] ;
 
-      if ( part.primary_entity_rank() == entity_rank_from && ! contain( omit , part )) {
+      if ( part.primary_entity_rank() == entity_rank_from && ! contains_ordinal( omit_begin, omit_end , *i )) {
         induced_part_membership( part,
                                  entity_rank_from ,
                                  entity_rank_to ,
@@ -287,8 +309,8 @@ void induced_part_membership( const Entity           & entity_from ,
 //----------------------------------------------------------------------
 
 void induced_part_membership( const Entity     & entity ,
-                              const PartVector & omit ,
-                                    PartVector & induced_parts,
+                              const OrdinalVector & omit ,
+                                    OrdinalVector & induced_parts,
                                     bool include_supersets)
 {
   for ( PairIterRelation

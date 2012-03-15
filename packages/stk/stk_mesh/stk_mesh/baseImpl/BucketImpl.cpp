@@ -164,7 +164,7 @@ void BucketImpl::replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_sr
 
     if ( i->m_size ) {
       if ( j->m_size ) {
-        ThrowErrorMsgIf( i->m_size != j->m_size,
+        ThrowAssertMsg( i->m_size == j->m_size,
             "Incompatible field sizes: " << i->m_size << " != " << j->m_size );
 
         memory_copy( d + i->m_base + i->m_size * i_dst ,

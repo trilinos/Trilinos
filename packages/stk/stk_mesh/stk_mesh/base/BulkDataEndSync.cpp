@@ -868,7 +868,7 @@ void pack_induced_memberships( CommAll & comm ,
     if ( in_shared( entity , entity.owner_rank() ) ) {
       // Is shared with owner, send to owner.
 
-      PartVector empty , induced ;
+      OrdinalVector empty , induced ;
 
       induced_part_membership( entity , empty , induced );
 
@@ -878,10 +878,9 @@ void pack_induced_memberships( CommAll & comm ,
 
       buf.pack<unsigned>( tmp );
 
-      for ( PartVector::iterator
+      for ( OrdinalVector::iterator
             j = induced.begin() ; j != induced.end() ; ++j ) {
-        tmp = (*j)->mesh_meta_data_ordinal();
-        buf.pack<unsigned>( tmp );
+        buf.pack<unsigned>( *j );
       }
     }
   }
@@ -1014,7 +1013,7 @@ void BulkData::internal_resolve_shared_membership()
       if ( entity.owner_rank() == p_rank ) {
         // Receiving from all sharing processes
 
-        PartVector empty , induced_parts , current_parts , remove_parts ;
+        OrdinalVector empty , induced_parts , current_parts , remove_parts ;
 
         induced_part_membership( entity , empty , induced_parts );
 
@@ -1026,7 +1025,7 @@ void BulkData::internal_resolve_shared_membership()
           unsigned count = 0 ; buf.unpack<unsigned>( count );
           for ( unsigned j = 0 ; j < count ; ++j ) {
             unsigned part_ord = 0 ; buf.unpack<unsigned>( part_ord );
-            insert( induced_parts , * all_parts[ part_ord ] );
+            insert_ordinal( induced_parts , part_ord );
           }
         }
 
@@ -1035,10 +1034,13 @@ void BulkData::internal_resolve_shared_membership()
 
         entity.bucket().supersets( current_parts );
 
-        for ( PartVector::iterator
+        OrdinalVector::const_iterator induced_parts_begin = induced_parts.begin(),
+                                      induced_parts_end   = induced_parts.end();
+
+        for ( OrdinalVector::iterator
               p = current_parts.begin() ; p != current_parts.end() ; ++p ) {
-          if ( membership_is_induced( **p , entity.entity_rank() ) &&
-               ! contain( induced_parts , **p ) ) {
+          if ( membership_is_induced( *meta.get_parts()[*p] , entity.entity_rank() ) &&
+               ! contains_ordinal( induced_parts_begin, induced_parts_end , *p ) ) {
             remove_parts.push_back( *p );
           }
         }

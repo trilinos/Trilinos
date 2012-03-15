@@ -168,16 +168,19 @@ public:
 
   /** \brief  This bucket is a subset of these \ref stk::mesh::Part "parts" */
   void supersets( PartVector & ) const ;
+  void supersets( OrdinalVector & ) const ;
 
   //--------------------------------
   /** \brief  Bucket is a subset of the given part */
   bool member( const Part & ) const ;
 
   /** \brief  Bucket is a subset of all of the given parts */
-  bool member_all( const std::vector<Part*> & ) const ;
+  bool member_all( const PartVector & ) const ;
+  bool member_all( const OrdinalVector & ) const ;
 
   /** \brief  Bucket is a subset of any of the given parts */
-  bool member_any( const std::vector<Part*> & ) const ;
+  bool member_any( const PartVector & ) const ;
+  bool member_any( const OrdinalVector & ) const ;
 
   //--------------------------------
   /** Query bucket's supersets' ordinals. */
@@ -258,6 +261,24 @@ Bucket::Bucket( BulkData & arg_mesh ,
 {}
 
 /** \} */
+
+inline
+bool Bucket::member_all( const OrdinalVector& parts ) const
+{
+  const unsigned * const i_beg = key() + 1 ;
+  const unsigned * const i_end = key() + key()[0] ;
+
+  const OrdinalVector::const_iterator ip_end = parts.end();
+        OrdinalVector::const_iterator ip     = parts.begin() ;
+
+  bool result_all = true ;
+
+  for ( ; result_all && ip_end != ip ; ++ip ) {
+    const unsigned ord = *ip;
+    result_all = contains_ordinal(i_beg, i_end, ord);
+  }
+  return result_all ;
+}
 
 struct To_Ptr : std::unary_function<Entity&, Entity*>
 {

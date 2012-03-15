@@ -68,13 +68,13 @@ bool Bucket::member( const Part & part ) const
   return i_end != i && ord == *i ;
 }
 
-bool Bucket::member_all( const std::vector<Part*> & parts ) const
+bool Bucket::member_all( const PartVector & parts ) const
 {
   const unsigned * const i_beg = key() + 1 ;
   const unsigned * const i_end = key() + key()[0] ;
 
-  const std::vector<Part*>::const_iterator ip_end = parts.end();
-        std::vector<Part*>::const_iterator ip     = parts.begin() ;
+  const PartVector::const_iterator ip_end = parts.end();
+        PartVector::const_iterator ip     = parts.begin() ;
 
   bool result_all = true ;
 
@@ -86,18 +86,36 @@ bool Bucket::member_all( const std::vector<Part*> & parts ) const
   return result_all ;
 }
 
-bool Bucket::member_any( const std::vector<Part*> & parts ) const
+bool Bucket::member_any( const PartVector & parts ) const
 {
   const unsigned * const i_beg = key() + 1 ;
   const unsigned * const i_end = key() + key()[0] ;
 
-  const std::vector<Part*>::const_iterator ip_end = parts.end();
-        std::vector<Part*>::const_iterator ip     = parts.begin() ;
+  const PartVector::const_iterator ip_end = parts.end();
+        PartVector::const_iterator ip     = parts.begin() ;
 
   bool result_none = true ;
 
   for ( ; result_none && ip_end != ip ; ++ip ) {
     const unsigned ord = (*ip)->mesh_meta_data_ordinal();
+    const unsigned * const i = std::lower_bound( i_beg , i_end , ord );
+    result_none = i_end == i || ord != *i ;
+  }
+  return ! result_none ;
+}
+
+bool Bucket::member_any( const OrdinalVector & parts ) const
+{
+  const unsigned * const i_beg = key() + 1 ;
+  const unsigned * const i_end = key() + key()[0] ;
+
+  const OrdinalVector::const_iterator ip_end = parts.end();
+        OrdinalVector::const_iterator ip     = parts.begin() ;
+
+  bool result_none = true ;
+
+  for ( ; result_none && ip_end != ip ; ++ip ) {
+    const unsigned ord = *ip;
     const unsigned * const i = std::lower_bound( i_beg , i_end , ord );
     result_none = i_end == i || ord != *i ;
   }
@@ -155,6 +173,19 @@ void Bucket::supersets( PartVector & ps ) const
   for ( unsigned i = 0 ;
         part_ord.first < part_ord.second ; ++(part_ord.first) , ++i ) {
     ps[i] = & mesh_meta_data.get_part( * part_ord.first );
+  }
+}
+
+void Bucket::supersets( OrdinalVector & ps ) const
+{
+  std::pair<const unsigned *, const unsigned *>
+    part_ord = superset_part_ordinals();
+
+  ps.resize( part_ord.second - part_ord.first );
+
+  for ( unsigned i = 0 ;
+        part_ord.first < part_ord.second ; ++(part_ord.first) , ++i ) {
+    ps[i] = *part_ord.first;
   }
 }
 

@@ -433,7 +433,12 @@ private:
                                      const PartVector & add_parts ,
                                      const PartVector & remove_parts );
 
+  void internal_change_entity_parts( Entity & ,
+                                     const OrdinalVector & add_parts ,
+                                     const OrdinalVector & remove_parts );
+
   void internal_propagate_part_changes( Entity & entity, const PartVector & removed );
+  void internal_propagate_part_changes( Entity & entity, const OrdinalVector & removed );
 
   void internal_change_ghosting( Ghosting & ghosts,
                                  const std::vector<EntityProc> & add_send ,
@@ -474,6 +479,10 @@ private:
   void internal_verify_change_parts( const MetaData   & meta ,
                                      const Entity     & entity ,
                                      const PartVector & parts ) const;
+
+  void internal_verify_change_parts( const MetaData   & meta ,
+                                     const Entity     & entity ,
+                                     const OrdinalVector & parts ) const;
 
   //------------------------------------
 
@@ -585,21 +594,28 @@ void BulkData::change_entity_parts( Entity & entity,
   // most parts will at least have universal and topology part as supersets
   const unsigned expected_min_num_supersets = 2;
 
-  PartVector a_parts;
+  OrdinalVector a_parts;
   a_parts.reserve( std::distance(begin_add_parts, end_add_parts) * (expected_min_num_supersets + 1) );
-  a_parts.insert( a_parts.begin(), begin_add_parts, end_add_parts );
+  for(AddIterator add_iter=begin_add_parts; add_iter!=end_add_parts; ++add_iter) {
+    a_parts.push_back((*add_iter)->mesh_meta_data_ordinal());
+  }
   bool quick_verify_check = true;
 
   for ( AddIterator ia = begin_add_parts; ia != end_add_parts ; ++ia ) {
     quick_verify_check = quick_verify_check &&
       internal_quick_verify_change_part(*ia, entity_rank, undef_rank);
-    a_parts.insert( a_parts.end(), (*ia)->supersets().begin(),
-                                   (*ia)->supersets().end() );
+    const PartVector& supersets = (*ia)->supersets();
+    for(PartVector::const_iterator s_iter=supersets.begin(), s_end=supersets.end();
+        s_iter!=s_end; ++s_iter) {
+      a_parts.push_back((*s_iter)->mesh_meta_data_ordinal());
+    }
   }
 
-  order( a_parts );
+  order(a_parts);
 
-  PartVector r_parts ;
+  OrdinalVector::const_iterator a_parts_begin = a_parts.begin(),
+                                a_parts_end   = a_parts.end();
+  OrdinalVector r_parts ;
 
   for ( RemoveIterator ir = begin_remove_parts; ir != end_remove_parts ; ++ir ) {
 
@@ -620,17 +636,17 @@ void BulkData::change_entity_parts( Entity & entity,
     quick_verify_check = quick_verify_check &&
       internal_quick_verify_change_part(*ir, entity_rank, undef_rank);
 
-    if ( ! contain( a_parts , **ir ) ) {
-      r_parts.push_back( *ir );
+    if ( ! contains_ordinal( a_parts_begin, a_parts_end , (*ir)->mesh_meta_data_ordinal() ) ) {
+      r_parts.push_back( (*ir)->mesh_meta_data_ordinal() );
       for ( PartVector::const_iterator  cur_part = (*ir)->subsets().begin() ;
             cur_part != (*ir)->subsets().end() ;
             ++cur_part )
         if ( entity.bucket().member ( **cur_part ) )
-          r_parts.push_back ( *cur_part );
+          r_parts.push_back ( (*cur_part)->mesh_meta_data_ordinal() );
     }
   }
 
-  order( r_parts );
+  order(r_parts);
 
   // If it looks like we have a problem, run the full check and we should
   // expect to see an exception thrown; otherwise, only do the full check in

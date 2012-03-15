@@ -73,7 +73,9 @@ public:
       const std::vector< FieldBase * > & field_set
       );
   void copy_fields( Bucket & k_dst , unsigned i_dst ,
-                           Bucket & k_src , unsigned i_src );
+                           Bucket & k_src , unsigned i_src )
+  { k_dst.m_bucketImpl.replace_fields(i_dst,k_src,i_src); }
+
   void initialize_fields( Bucket & k_dst , unsigned i_dst );
 
   void internal_sort_bucket_entities();

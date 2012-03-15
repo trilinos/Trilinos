@@ -149,7 +149,7 @@ void BulkData::declare_relation( Entity & e_from ,
   // Should be an exact match if relation of local_id already exists (e_to should be the same).
   m_entity_repo.declare_relation( e_from, e_to, local_id, m_sync_count);
 
-  PartVector add , empty ;
+  OrdinalVector add , empty ;
 
   // Deduce and set new part memberships:
 
@@ -221,7 +221,7 @@ bool BulkData::destroy_relation( Entity & e_from ,
     // If the entity is shared then wait until modificaton_end_synchronize.
     //------------------------------
 
-    PartVector del, keep, empty;
+    OrdinalVector del, keep, empty;
 
     // For all relations that are *not* being deleted, add induced parts for
     // these relations to the 'keep' vector
@@ -286,7 +286,7 @@ void BulkData::internal_propagate_part_changes(
 
   PairIterRelation rel = entity.relations();
 
-  PartVector to_del , to_add , empty ;
+  OrdinalVector to_del , to_add , empty ;
 
   for ( ; ! rel.empty() ; ++rel ) {
     const unsigned rel_type  = rel->entity_rank();
@@ -325,10 +325,97 @@ void BulkData::internal_propagate_part_changes(
           }
         }
 
+        OrdinalVector::const_iterator to_add_begin = to_add.begin(),
+                                      to_add_end   = to_add.end();
+
         for ( PartVector::const_iterator
               j = removed.begin() ; j != removed.end() ; ++j ) {
-          if ( ! contain( to_add , **j ) ) {
+          if ( ! contains_ordinal( to_add_begin, to_add_end , (*j)->mesh_meta_data_ordinal() ) ) {
             induced_part_membership( **j, etype, rel_type, rel_ident, to_del );
+          }
+        }
+      }
+
+      if ( parallel_size() < 2 || e_to.sharing().empty() ) {
+        // Entirely local, ok to remove memberships now
+        internal_change_entity_parts( e_to , to_add , to_del );
+      }
+      else {
+        // Shared, do not remove memberships now.
+        // Wait until modification_end.
+        internal_change_entity_parts( e_to , to_add , empty );
+      }
+
+      set_field_relations( entity, e_to, rel_ident );
+    }
+    else if ( etype < rel_type ) { // a 'from' entity
+      Entity & e_from = * rel->entity();
+
+      set_field_relations( e_from, entity, rel_ident );
+    }
+  }
+}
+
+void BulkData::internal_propagate_part_changes(
+  Entity           & entity ,
+  const OrdinalVector & removed )
+{
+  TraceIfWatching("stk::mesh::BulkData::internal_propagate_part_changes",
+                  LOG_ENTITY,
+                  entity.key());
+  DiagIfWatching(LOG_ENTITY, entity.key(), "entity state: " << entity);
+  DiagIfWatching(LOG_ENTITY, entity.key(), "Removed: " << removed);
+
+  const unsigned etype = entity.entity_rank();
+
+  PairIterRelation rel = entity.relations();
+
+  OrdinalVector to_del , to_add , empty ;
+
+  for ( ; ! rel.empty() ; ++rel ) {
+    const unsigned rel_type  = rel->entity_rank();
+    const unsigned rel_ident = rel->identifier();
+
+    if ( rel_type < etype ) { // a 'to' entity
+
+      Entity & e_to = * rel->entity();
+
+      to_del.clear();
+      to_add.clear();
+      empty.clear();
+
+      // Induce part membership from this relationship to
+      // pick up any additions.
+      induced_part_membership( entity, empty,
+                               rel_type, rel_ident, to_add );
+
+      if ( ! removed.empty() ) {
+        // Something was removed from the 'from' entity,
+        // deduce what may have to be removed from the 'to' entity.
+
+        // Deduce parts for 'e_to' from all upward relations.
+        // Any non-parallel part that I removed that is not deduced for
+        // 'e_to' must be removed from 'e_to'
+
+        for ( PairIterRelation
+              to_rel = e_to.relations(); ! to_rel.empty() ; ++to_rel ) {
+          if ( e_to.entity_rank() < to_rel->entity_rank() &&
+               & entity != to_rel->entity() /* Already did this entity */ ) {
+            // Relation from to_rel->entity() to e_to
+            induced_part_membership( * to_rel->entity(), empty,
+                                     e_to.entity_rank(),
+                                     to_rel->identifier(),
+                                     to_add );
+          }
+        }
+
+        OrdinalVector::const_iterator to_add_begin = to_add.begin(),
+                                      to_add_end   = to_add.end();
+
+        for ( OrdinalVector::const_iterator
+              j = removed.begin() ; j != removed.end() ; ++j ) {
+          if ( ! contains_ordinal( to_add_begin, to_add_end , *j ) ) {
+            induced_part_membership( *m_mesh_meta_data.get_parts()[*j], etype, rel_type, rel_ident, to_del );
           }
         }
       }

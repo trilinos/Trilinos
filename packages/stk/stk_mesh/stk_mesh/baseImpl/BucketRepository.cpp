@@ -280,13 +280,6 @@ void BucketRepository::initialize_fields( Bucket & k_dst , unsigned i_dst )
   k_dst.m_bucketImpl.initialize_fields(i_dst);
 }
 
-void BucketRepository::copy_fields( Bucket & k_dst , unsigned i_dst ,
-                                    Bucket & k_src , unsigned i_src )
-{
-  TraceIfWatching("stk::mesh::impl::BucketRepository::copy_fields", LOG_BUCKET, &k_dst);
-  k_dst.m_bucketImpl.replace_fields(i_dst,k_src,i_src);
-}
-
 //----------------------------------------------------------------------
 
 void BucketRepository::update_field_data_states() const

@@ -34,6 +34,7 @@ class Part ;      // Defined subset of the mesh
  *          maintained as a vector of Part pointers.
  */
 typedef std::vector< Part * > PartVector ;
+typedef std::vector< unsigned > OrdinalVector ;
 
 class FieldBase;
 
