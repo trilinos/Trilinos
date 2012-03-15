@@ -70,7 +70,9 @@ namespace MueLu {
     int mypid = comm->getRank();
     Scalar imbalance;
     GO minNumRows;
+    GO numActiveProcesses=0;
     if (currentLevel.GetLevelID() >= startLevel_) {
+
       if (minRowsPerProcessor_ > 0) {
         //Check whether any row has too few rows
         size_t numMyRows = A->getNodeNumRows();
@@ -81,6 +83,7 @@ namespace MueLu {
           doRepartition=true; 
         }
       }
+
       //Check whether the number of nonzeros per process is imbalanced
       size_t numMyNnz  = A->getNodeNumEntries();
       GO maxNnz, minNnz;
@@ -90,6 +93,12 @@ namespace MueLu {
       imbalance = ((SC) maxNnz) / minNnz;
       if (imbalance > nnzMaxMinRatio_)
         doRepartition=true;
+
+      //Check whether A is spread over more than one process.
+      sumAll(comm, (GO)((A->getNodeNumRows() > 0) ? 1 : 0), numActiveProcesses);
+      if (numActiveProcesses == 1)
+        doRepartition=false;
+
     } else {
         char msgChar[256];
         sprintf(msgChar,"No repartitioning necessary:\n    current level = %d, first level where repartitioning can happen is %d.", currentLevel.GetLevelID(),startLevel_);
@@ -104,10 +113,11 @@ namespace MueLu {
       std::string msg = "No repartitioning necessary:\n";
       msg = msg + "    nonzero imbalance = " + buf1.str();
       msg = msg + ", max allowable = " + buf2.str() + "\n";
-      std::ostringstream buf3; buf1 << imbalance;
-      std::ostringstream buf4; buf2 << nnzMaxMinRatio_;
-      buf3 << minNumRows; buf4 << minRowsPerProcessor_;
+      std::ostringstream buf3; buf3 << minNumRows;
+      std::ostringstream buf4; buf4 << minRowsPerProcessor_;
       msg = msg + "    min # rows per proc = " + buf3.str() + ", min allowable = " + buf4.str() + "\n";
+      std::ostringstream buf5; buf5 << numActiveProcesses;
+      msg = msg + "    # processes with rows = " + buf5.str() + "\n";
       throw(MueLu::Exceptions::HaltRepartitioning(msg));
     }
     
@@ -127,7 +137,9 @@ namespace MueLu {
 
       GetOStream(Runtime0, 0) << "Did not find \"number of partitions\" in Level, calculating it now!" << std::endl;
       if ((GO)A->getGlobalNumRows() < minRowsPerProcessor_) numPartitions = 1;
-      else                                              numPartitions = A->getGlobalNumRows() / minRowsPerProcessor_;
+      else                                                  numPartitions = A->getGlobalNumRows() / minRowsPerProcessor_;
+      if (numPartitions > comm->getSize())
+        numPartitions = comm->getSize();
       GetOStream(Statistics0,0) << "Number of partitions to use = " << numPartitions << std::endl;
       currentLevel.Set<GO>("number of partitions",numPartitions);
     }
