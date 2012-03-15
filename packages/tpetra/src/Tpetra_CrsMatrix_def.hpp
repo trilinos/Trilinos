@@ -2022,77 +2022,162 @@ namespace Tpetra {
       (void)A;
     }
     catch (...) {
+      // If the input isn't even a CrsMatrix, then certainly the sizes
+      // don't match.
       return false;
     }
     return true;
   }
 
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::copyAndPermute(
-                          const DistObject<char, LocalOrdinal,GlobalOrdinal,Node> & source,
-                          size_t numSameIDs,
-                          const ArrayView<const LocalOrdinal> &permuteToLIDs,
-                          const ArrayView<const LocalOrdinal> &permuteFromLIDs)
+  template<class Scalar, 
+	   class LocalOrdinal, 
+	   class GlobalOrdinal, 
+	   class Node, 
+	   class LocalMatOps>
+  void 
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  copyAndPermute (const DistObject<char, LocalOrdinal,GlobalOrdinal,Node> & source,
+		  size_t numSameIDs,
+		  const ArrayView<const LocalOrdinal> &permuteToLIDs,
+		  const ArrayView<const LocalOrdinal> &permuteFromLIDs)
   {
-    // this should succeed, because we already tested compatibility in checkSizes()
+    typedef Scalar ST;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef Node NT;
+
+    // Method name string for TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC.
     const std::string tfecfFuncName("copyAndPermute()");
-    const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> & src_mat = dynamic_cast<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> &>(source);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(permuteToLIDs.size() != permuteFromLIDs.size(), std::runtime_error,
-        ": permuteToLIDs and permuteFromLIDs must have the same size.");
-    const bool src_is_locally_indexed = src_mat.isLocallyIndexed();
 
-    // do numSame: copy the first numSame row from the source to *this
-    // specifically, copy rows corresponding to Local Elements 0,numSame-1
-    Array<GlobalOrdinal> row_indices;
-    Array<Scalar>        row_values;
-    LocalOrdinal mylid = 0;
-    for (size_t i=0; i<numSameIDs; ++i, ++mylid) {
-      // get Global ID for this row
-      GlobalOrdinal gid = src_mat.getMap()->getGlobalElement(mylid);
-      if (src_is_locally_indexed) {
-        const size_t row_length = src_mat.getNumEntriesInGlobalRow(gid);
-        row_indices.resize( row_length );
-        row_values.resize( row_length );
-        size_t check_row_length = 0;
-        src_mat.getGlobalRowCopy(gid, row_indices(), row_values(), check_row_length);
+    // This dynamic cast should succeed, because we've already tested
+    // it in checkSizes().
+    typedef CrsMatrix<ST, LO, GO, NT, LocalMatOps> this_type;
+    const this_type& sourceMatrix = dynamic_cast<const this_type&> (source);
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(permuteToLIDs.size() != permuteFromLIDs.size(), 
+      std::invalid_argument, "permuteToLIDs.size() = " << permuteToLIDs.size() 
+      << "!= permuteFromLIDs.size() = " << permuteFromLIDs.size() << ".");
+
+    const bool sourceIsLocallyIndexed = sourceMatrix.isLocallyIndexed();
+    //
+    // Copy the first numSame row from source to target (this matrix).
+    // This involves copying rows corresponding to LIDs [0, numSame-1].
+    //
+    Array<GO> rowInds;
+    Array<ST> rowVals;
+    LO sourceLID = 0;
+    for (size_t i = 0; i < numSameIDs; ++i, ++sourceLID) {
+      // Global ID for the current row index in the source matrix.
+      // The first numSameIDs GIDs in the two input lists are the
+      // same, so sourceGID == targetGID in this case.
+      const GO sourceGID = sourceMatrix.getMap()->getGlobalElement (sourceLID);
+      const GO targetGID = sourceGID;
+
+      // Input views for the combineGlobalValues() call below.
+      ArrayView<const GO> rowIndsConstView;
+      ArrayView<const ST> rowValsConstView;
+
+      if (sourceIsLocallyIndexed) {
+        const size_t rowLength = sourceMatrix.getNumEntriesInGlobalRow (sourceGID);
+	if (rowLength > rowInds.size()) {
+	  rowInds.resize (rowLength);
+	  rowVals.resize (rowLength);
+	}
+	// Resizing invalidates an Array's views, so we must make new
+	// ones, even if rowLength hasn't changed.
+	ArrayView<GO> rowIndsView = rowInds.view (0, rowLength);
+	ArrayView<ST> rowValsView = rowVals.view (0, rowLength);
+
+	// The source matrix is locally indexed, so we have to get a
+	// copy.  Really it's the GIDs that have to be copied (because
+	// they have to be converted from LIDs).
+        size_t checkRowLength = 0;
+        sourceMatrix.getGlobalRowCopy (sourceGID, rowIndsView, rowValsView, checkRowLength);
+
 #ifdef HAVE_TPETRA_DEBUG
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(row_length != check_row_length, std::logic_error, ": Internal logic error. Please contact Tpetra team.");
-#endif
-        insertGlobalValues( gid, row_indices(), row_values() );
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(rowLength != checkRowLength, 
+          std::logic_error, ": For global row index " << sourceGID << ", the source"
+          " matrix's getNumEntriesInGlobalRow() method returns a row length of " 
+          << rowLength << ", but the getGlobalRowCopy() method reports that "
+          "the row length is " << checkRowLength << ".  Please report this bug "
+          "to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+
+	rowIndsConstView = rowIndsView.view (0, rowLength);
+	rowValsConstView = rowValsView.view (0, rowLength);
+      }
+      else { // source matrix is globally indexed.
+        sourceMatrix.getGlobalRowView (sourceGID, rowIndsConstView, rowValsConstView);
+      }
+
+      // Combine the data into the target matrix.
+      if (isStaticGraph()) {
+	// Applying a permutation to a matrix with a static graph
+	// means REPLACE-ing entries.
+	combineGlobalValues (targetGID, rowIndsConstView, rowValsConstView, REPLACE);
+      } 
+      else {
+	// Applying a permutation to a matrix with a dynamic graph
+	// means INSERT-ing entries.  This has the same effect as
+	// ADD, if the target graph already has an entry there.
+	combineGlobalValues (targetGID, rowIndsConstView, rowValsConstView, INSERT);
+      }
+    } // For each of the consecutive source and target IDs that are the same
+
+    //
+    // Permute the remaining rows.
+    //
+    for (size_t p = 0; p < (size_t)permuteToLIDs.size(); ++p) {
+      const GO sourceGID = sourceMatrix.getMap()->getGlobalElement (permuteFromLIDs[p]);
+      const GO targetGID = this->getMap()->getGlobalElement (permuteToLIDs[p]);
+
+      // Input views for the combineGlobalValues() call below.
+      ArrayView<const GO> rowIndsConstView;
+      ArrayView<const ST> rowValsConstView;
+
+      if (sourceIsLocallyIndexed) {
+        const size_t rowLength = sourceMatrix.getNumEntriesInGlobalRow (sourceGID);
+	if (rowLength > rowInds.size()) {
+	  rowInds.resize (rowLength);
+	  rowVals.resize (rowLength);
+	}
+	// Resizing invalidates an Array's views, so we must make new
+	// ones, even if rowLength hasn't changed.
+	ArrayView<GO> rowIndsView = rowInds.view (0, rowLength);
+	ArrayView<ST> rowValsView = rowVals.view (0, rowLength);
+
+	// The source matrix is locally indexed, so we have to get a
+	// copy.  Really it's the GIDs that have to be copied (because
+	// they have to be converted from LIDs).
+        size_t checkRowLength = 0;
+        sourceMatrix.getGlobalRowCopy (sourceGID, rowIndsView, rowValsView, checkRowLength);
+
+#ifdef HAVE_TPETRA_DEBUG
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(rowLength != checkRowLength, 
+          std::logic_error, ": For the source matrix's global row index " 
+          << sourceGID << ", the source matrix's getNumEntriesInGlobalRow() method "
+          "returns a row length of " << rowLength << ", but the "
+          "getGlobalRowCopy() method reports that the row length is " 
+	  << checkRowLength << ".  Please report this bug to the Tpetra "
+          "developers.");
+#endif // HAVE_TPETRA_DEBUG
+
+	rowIndsConstView = rowIndsView.view (0, rowLength);
+	rowValsConstView = rowValsView.view (0, rowLength);
       }
       else {
-        ArrayView<const GlobalOrdinal> row_inds; 
-        ArrayView<const Scalar>        row_vals; 
-        src_mat.getGlobalRowView(gid, row_inds, row_vals);
-        insertGlobalValues( gid, row_inds(), row_vals() );
+        sourceMatrix.getGlobalRowView (sourceGID, rowIndsConstView, rowValsConstView);
       }
-    }
 
-    // handle the permuted rows.
-    for (size_t p=0; p<(size_t)permuteToLIDs.size(); ++p) {
-      const GlobalOrdinal  mygid =   this->getMap()->getGlobalElement(permuteToLIDs[p]);
-      const GlobalOrdinal srcgid = src_mat.getMap()->getGlobalElement(permuteFromLIDs[p]);
-      if (src_is_locally_indexed) {
-        const size_t row_length = src_mat.getNumEntriesInGlobalRow(srcgid);
-        row_indices.resize( row_length );
-        row_values.resize( row_length );
-        size_t check_row_length = 0;
-        src_mat.getGlobalRowCopy(srcgid, row_indices(), row_values(), check_row_length);
-#ifdef HAVE_TPETRA_DEBUG
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(row_length != check_row_length, std::logic_error, ": Internal logic error. Please contact Tpetra team.");
-#endif
-        insertGlobalValues( mygid, row_indices(), row_values() );
-      }
+      // Combine the data into the target matrix.
+      if (isStaticGraph()) {
+	combineGlobalValues (targetGID, rowIndsConstView, rowValsConstView, REPLACE);
+      } 
       else {
-        ArrayView<const GlobalOrdinal> row_inds;
-        ArrayView<const Scalar>        row_vals;
-        src_mat.getGlobalRowView( srcgid, row_inds, row_vals);
-        insertGlobalValues( mygid, row_inds(), row_vals());
+	combineGlobalValues (targetGID, rowIndsConstView, rowValsConstView, INSERT);
       }
-    }
+    } // For each ID to permute
   }
 
 
@@ -2221,11 +2306,93 @@ namespace Tpetra {
         }
       }
 #ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(curOffsetInBytes != totalNumBytes, std::logic_error,
-          ": Internal logic error. Please contact Tpetra team.");
-#endif
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(curOffsetInBytes != totalNumBytes, 
+        std::logic_error, "packAndPrepare: At end of method, the final offset "
+        "bytes curOffsetInBytes=" << curOffsetInBytes << " != total number of "
+        "bytes totalNumBytes=" << totalNumBytes << ".  Please report this bug "
+        "to the Tpetra developers.");
+#endif //  HAVE_TPETRA_DEBUG
     }
   }
+
+  template<class Scalar, 
+	   class LocalOrdinal, 
+	   class GlobalOrdinal, 
+	   class Node, 
+	   class LocalMatOps>
+  void 
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  combineGlobalValues (const GlobalOrdinal globalRowIndex, 
+		       const Teuchos::ArrayView<const GlobalOrdinal> columnIndices,
+		       const Teuchos::ArrayView<const Scalar> values,
+		       const Tpetra::CombineMode combineMode)
+  {
+    if (isStaticGraph()) {
+      // INSERT doesn't make sense for a static graph, since you
+      // aren't allowed to change the structure of the graph.
+      // However, all the other combine modes work.
+      if (combineMode == ADD) {
+	sumIntoGlobalValues (globalRowIndex, columnIndices(), values());
+      }
+      else if (combineMode == REPLACE) {
+	replaceGlobalValues (globalRowIndex, columnIndices(), values());
+      }
+      else if (combineMode == ABSMAX) {
+	AbsMax<Scalar> f;
+	this->template transformGlobalValues<AbsMax<Scalar> > (globalRowIndex, 
+							       columnIndices(), 
+							       values(), f);
+      }
+      else if (combineMode == INSERT) {
+	TEUCHOS_TEST_FOR_EXCEPTION(isStaticGraph() && combineMode == INSERT, 
+          std::invalid_argument, "combineGlobalValues: INSERT combine mode "
+          "is not allowed if the matrix has a static graph (i.e., was "
+          "constructed with the CrsMatrix constructor that takes a const "
+	  "CrsGraph pointer).");
+      }
+      else {
+	TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
+          "combineGlobalValues: Should never get here!  Please report this bug"
+	  "to the Tpetra developers.");
+      }
+    }
+    else { // The matrix has a dynamic graph.
+      if (combineMode == ADD || combineMode == INSERT) {
+	// For a dynamic graph, all incoming column indices are
+	// inserted into the target graph.  Duplicate indices will
+	// have their values summed.  In this context, ADD and INSERT
+	// are equivalent.  We need to call insertGlobalValues()
+	// anyway if the column indices don't yet exist in this row,
+	// so we just call insertGlobalValues() for both cases.
+	insertGlobalValues (globalRowIndex, columnIndices(), values());
+      }
+      // FIXME (mfh 14 Mar 2012):
+      //
+      // Implementing ABSMAX or REPLACE for a dynamic graph would
+      // require modifying assembly to attach a possibly different
+      // combine mode to each inserted (i, j, A_ij) entry.  For
+      // example, consider two different Export operations to the same
+      // target CrsMatrix, the first with ABSMAX combine mode and the
+      // second with REPLACE.  This isn't a common use case, so we
+      // won't mess with it for now.
+      else if (combineMode == ABSMAX) {
+	TEUCHOS_TEST_FOR_EXCEPTION(! isStaticGraph() && combineMode == ABSMAX,
+          std::logic_error, "combineGlobalValues: ABSMAX combine mode when "
+	  "the matrix has a dynamic graph is not yet implemented.");
+      }
+      else if (combineMode == REPLACE) {
+	TEUCHOS_TEST_FOR_EXCEPTION(! isStaticGraph() && combineMode == REPLACE,
+	  std::logic_error, "combineGlobalValues: REPLACE combine mode when "
+	  "the matrix has a dynamic graph is not yet implemented.");
+      }
+      else {
+	TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
+          "combineGlobalValues: Should never get here!  Please report this bug"
+	  "to the Tpetra developers.");
+      }
+    }
+  }
+
 
 
   template<class Scalar, 
@@ -2249,7 +2416,8 @@ namespace Tpetra {
     const char* validModeNames[4] = {"ADD", "REPLACE", "ABSMAX", "INSERT"};
     const int numValidModes = 4;
 
-    if (std::find (validModes, validModes+numValidModes, combineMode) == validModes+numValidModes) {
+    if (std::find (validModes, validModes+numValidModes, combineMode) == 
+	validModes+numValidModes) {
       std::ostringstream os; 
       os << "unpackAndCombine: Invalid combine mode.  Valid modes are {";
       for (int k = 0; k < numValidModes; ++k) {
@@ -2296,69 +2464,7 @@ namespace Tpetra {
         avInds = av_reinterpret_cast<const GlobalOrdinal> (avIndsC);
         avVals = av_reinterpret_cast<const Scalar       > (avValsC);
 
-	if (isStaticGraph()) {
-	  // INSERT doesn't make sense for a static graph, since you
-	  // aren't allowed to change the structure of the graph.
-	  // However, all the other combine modes work.
-	  if (combineMode == ADD) {
-	    sumIntoGlobalValues (myGID, avInds(), avVals());
-	  }
-	  else if (combineMode == REPLACE) {
-	    replaceGlobalValues (myGID, avInds(), avVals());
-	  }
-	  else if (combineMode == ABSMAX) {
-	    AbsMax<Scalar> f;
-	    this->template transformGlobalValues<AbsMax<Scalar> > (myGID, avInds(), 
-								   avVals(), f);
-	  }
-	  else if (combineMode == INSERT) {
-	    TEUCHOS_TEST_FOR_EXCEPTION(isStaticGraph() && combineMode == INSERT, 
-              std::invalid_argument, "unpackAndCombine: INSERT combine mode "
-              "is not allowed if the matrix has a static graph (i.e., was "
-              "constructed with the CrsMatrix constructor that takes a const "
-              "CrsGraph pointer).");
-	  }
-	  else {
-	    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never "
-              "get here!  Please report this bug to the Tpetra developers.");
-	  }
-	}
-	else { // The matrix has a dynamic graph.
-	  if (combineMode == ADD || combineMode == INSERT) {
-	    // For a dynamic graph, all incoming column indices are
-	    // inserted into the target graph.  Duplicate indices will
-	    // have their values summed.  In this context, ADD and
-	    // INSERT are equivalent.  We need to call
-	    // insertGlobalValues() anyway if the column indices don't
-	    // yet exist in this row, so we just call
-	    // insertGlobalValues() for both cases.
-	    insertGlobalValues (myGID, avInds(), avVals());
-	  }
-	  // FIXME (mfh 14 Mar 2012):
-	  //
-	  // Implementing ABSMAX or REPLACE for a dynamic graph would
-	  // require modifying assembly to attach a possibly different
-	  // combine mode to each inserted (i, j, A_ij) entry.  For
-	  // example, consider two different Export operations to the
-	  // same target CrsMatrix, the first with ABSMAX combine mode
-	  // and the second with REPLACE.  This isn't a common use
-	  // case, so we won't mess with it for now.
-	  else if (combineMode == ABSMAX) {
-	    TEUCHOS_TEST_FOR_EXCEPTION(! isStaticGraph() && combineMode == ABSMAX,
-              std::logic_error, "unpackAndCombine: ABSMAX combine mode when the "
-              "matrix has a dynamic graph is not yet implemented.");
-	  }
-	  else if (combineMode == REPLACE) {
-	    TEUCHOS_TEST_FOR_EXCEPTION(! isStaticGraph() && combineMode == REPLACE,
-              std::logic_error, "unpackAndCombine: REPLACE combine mode when the "
-              "matrix has a dynamic graph is not yet implemented.");
-	  }
-	  else {
-	    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never "
-              "get here!  Please report this bug to the Tpetra developers.");
-	  }
-	}
-
+	combineGlobalValues (myGID, avInds(), avVals(), combineMode);
         curOffsetInBytes += rowSize * SizeOfOrdValPair;
       }
 #ifdef HAVE_TPETRA_DEBUG

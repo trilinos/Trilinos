@@ -684,6 +684,19 @@ namespace Tpetra {
       CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>& 
       operator= (const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> &rhs);
 
+      /// \brief Combine in the data using the given combine mode.
+      ///
+      /// The \c copyAndPermute() and \c unpackAndCombine() methods
+      /// use this function to combine incoming entries from the
+      /// source matrix with the target matrix's current data.  This
+      /// method's behavior depends on whether the target matrix (that
+      /// is, this matrix) has a static graph.
+      void 
+      combineGlobalValues (const GlobalOrdinal globalRowIndex, 
+			   const Teuchos::ArrayView<const GlobalOrdinal> columnIndices,
+			   const Teuchos::ArrayView<const Scalar> values,
+			   const Tpetra::CombineMode combineMode);
+
       /// \brief Transform CrsMatrix entries by applying a binary function to them.
       ///
       /// For every entry \f$A(i,j)\f$ to transform, if \f$v_{ij}\f$ is
