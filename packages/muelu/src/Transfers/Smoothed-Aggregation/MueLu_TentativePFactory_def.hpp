@@ -32,7 +32,8 @@ namespace MueLu {
 
     fineLevel.DeclareInput("A", AFact_.get(), this);
     fineLevel.DeclareInput("Aggregates", aggregatesFact_.get(), this);
-    fineLevel.DeclareInput("Nullspace",  nullspaceFact_.get(), this);
+    //fineLevel.DeclareInput("Nullspace",  nullspaceFact_.get(), this);
+    fineLevel.Request("Nullspace");
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -49,8 +50,44 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildP(Level & fineLevel, Level & coarseLevel) const {
 
+RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+fos->setOutputToRootOnly(-1);
+
+
+    RCP<MultiVector> nstmp  = fineLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
+    RCP<const Teuchos::Comm<int> > comm = nstmp->getMap()->getComm();
+//fos->setProcRankAndSize(comm->getRank(),comm->getSize());
+    nstmp = Teuchos::null;
+    //sleep(1); comm->barrier();
     // get data from fine level
     RCP<Operator>    A          = fineLevel.Get< RCP<Operator> >("A", AFact_.get());
+    /*
+    RCP<Operator>    A;
+    for (int i=0; i<comm->getSize(); ++i) {
+      if (comm->getRank() == i) {
+        std::cout << "------------------ pid " << comm->getRank() << ": Getting A inside TentativePFactory() ----------------" << std::endl;
+        A = fineLevel.Get< RCP<Operator> >("A", AFact_.get());
+        std::cout << "------------------ pid " << comm->getRank() << ": done with get -------------------------------" << std::endl;
+      }
+      sleep(1); comm->barrier();
+    }
+    */
+
+    /*
+    //FIXME debugging output
+    for (int i=0; i<comm->getSize(); ++i) {
+      if (comm->getRank() == i) {
+        fos->setOutputToRootOnly(comm->getRank());
+        *fos << "================== pid " << comm->getRank() << ": fine level in TentativePFactory =================" << std::endl;
+        fineLevel.print(*fos,Teuchos::VERB_EXTREME);
+        *fos << "================= end of level description =========================" << std::endl;
+      }
+      sleep(1);comm->barrier();
+    }
+    fos->setOutputToRootOnly(-1);
+    //FIXME end of debugging output
+    */
+
     RCP<Aggregates>  aggregates = fineLevel.Get< RCP<Aggregates> >("Aggregates", aggregatesFact_.get());
     RCP<MultiVector> nullspace  = fineLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
 
@@ -66,8 +103,9 @@ namespace MueLu {
 #endif
 
     // Level Set
-    coarseLevel.Set("Nullspace", coarseNullspace, nullspaceFact_.get()); //FIXME !!!!
+    //coarseLevel.Set("Nullspace", coarseNullspace, nullspaceFact_.get()); //FIXME !!!!
     //coarseLevel.Set("Nullspace", coarseNullspace, this);
+    coarseLevel.Set("Nullspace", coarseNullspace);
     coarseLevel.Set("P", Ptentative, this);
   }
 
@@ -208,7 +246,38 @@ namespace MueLu {
     GO nFineDofs = nonUniqueMap->getNodeNumElements();
     const RCP<const Map> uniqueMap    = fineA.getDomainMap(); //FIXME won't work for systems
     RCP<const Import> importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
+
+RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+fos->setOutputToRootOnly(-1);
+
+
     RCP<MultiVector> fineNullspaceWithOverlap = MultiVectorFactory::Build(nonUniqueMap,NSDim);
+
+/*
+    sleep(1); comm->barrier();
+    if (comm->getRank() == 0)
+      std::cout << "========================\nfineA\n============================" << std::endl; 
+    fineA.describe(*fos,Teuchos::VERB_EXTREME);
+    if (comm->getRank() == 0)
+      std::cout << "=============================================================" << std::endl; 
+    sleep(1); comm->barrier();
+    if (comm->getRank() == 0)
+      std::cout << "========================\nuniqueMap\n============================" << std::endl; 
+    uniqueMap->describe(*fos,Teuchos::VERB_EXTREME);
+    sleep(1); comm->barrier();
+    if (comm->getRank() == 0)
+      std::cout << "========================\nnon-uniqueMap\n============================" << std::endl; 
+    nonUniqueMap->describe(*fos,Teuchos::VERB_EXTREME);
+    sleep(1); comm->barrier();
+    if (comm->getRank() == 0)
+      std::cout << "========================\nfine NS\n============================" << std::endl; 
+    fineNullspace.describe(*fos,Teuchos::VERB_EXTREME);
+    sleep(1); comm->barrier();
+    if (comm->getRank() == 0)
+      std::cout << "========================\nfine NS with overlap\n============================" << std::endl; 
+    fineNullspaceWithOverlap->describe(*fos,Teuchos::VERB_EXTREME);
+*/
+
     fineNullspaceWithOverlap->doImport(fineNullspace,*importer,Xpetra::INSERT);
 
     // Pull out the nullspace vectors so that we can have random access.
