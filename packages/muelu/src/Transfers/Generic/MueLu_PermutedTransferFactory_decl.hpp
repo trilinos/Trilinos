@@ -2,6 +2,8 @@
 #define MUELU_PERMUTEDTRANSFER_FACTORY_DECL_HPP
 
 #include <Xpetra_Operator_fwd.hpp>
+#include "Xpetra_MultiVector_fwd.hpp"
+#include "Xpetra_MultiVectorFactory_fwd.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
@@ -30,7 +32,9 @@ namespace MueLu {
     PermutedTransferFactory(RCP<FactoryBase> repartitionFact=Teuchos::null,
                              RCP<FactoryBase> initialAFact=Teuchos::null,
                              RCP<FactoryBase> initialTransferFact=Teuchos::null,
-                             TransferType PorR = MueLu::INTERPOLATION);
+                             TransferType PorR = MueLu::INTERPOLATION,
+                             RCP<FactoryBase> nullspaceFact=Teuchos::null,
+                             RCP<FactoryBase> coordinateFact=Teuchos::null);
 
     //! Destructor.
     virtual ~PermutedTransferFactory();
@@ -66,6 +70,10 @@ namespace MueLu {
     RCP<FactoryBase> initialTransferFact_;
     //! Indicate that the transfer factory is for interpolation or restriction.
     TransferType     PorR_;
+    //! Factory that builds the unpermuted nullspace.
+    RCP<FactoryBase> nullspaceFact_;
+    //! Factory that builds the unpermuted coordinates.
+    RCP<FactoryBase> coordinateFact_;
 
   }; // class PermutedTransferFactory
 
