@@ -91,7 +91,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_DEVELOPMENT_MODE:BOOL=OFF"
   "-DTPL_ENABLE_Pthread:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
-  "-DBoost_INCLUDE_DIRS:FILEPATH=/home/trilinos/include"
+  "-DBoost_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/boost-1.46.1/include"
   "-DTrilinos_ENABLE_RBGen=OFF"
   )
 
