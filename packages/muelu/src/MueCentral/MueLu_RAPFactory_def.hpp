@@ -38,6 +38,8 @@ namespace MueLu {
       int levelID = coarseLevel.GetLevelID();
       FactoryMonitor m(*this, "Computing Ac = RAP", coarseLevel);
 
+      GetOStream(Runtime0, 0) << "Ac: building coarse operator" << std::endl;
+
       //
       // Inputs: A, P
       //
@@ -61,6 +63,35 @@ namespace MueLu {
           // explicit version
           RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", RFact_.get());
           Ac = BuildRAPExplicit(R, A, P, levelID);
+
+/*
+          //JJH FIXME DEBUGGING PRINTS
+          RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+          fos->setOutputToRootOnly(-1);
+          RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+          if (comm->getRank() == 0)
+            *fos << "=======================\n In RAP:  printing Acoarse\n===========================" << std::endl;
+          comm->barrier();
+          Ac->describe(*fos,Teuchos::VERB_EXTREME);
+          comm->barrier();
+          //JJH FIXME END OF DEBUGGING PRINTS
+*/
+
+   /*
+   static int counter=0; counter++;
+
+      std::string filename="RAP-Level-" + Teuchos::toString(coarseLevel.GetLevelID()) + "-Afine-id" + Teuchos::toString(counter) +
+".dat";
+      Utils::Write(filename, *A);
+
+      std::string filename2="RAP-Level-" + Teuchos::toString(coarseLevel.GetLevelID()) + "-P-id" + Teuchos::toString(counter) +
+".dat";
+      Utils::Write(filename2, *P);
+
+      std::string filename3="RAP-Level-" + Teuchos::toString(coarseLevel.GetLevelID()) + "-Acoarse-id" +
+Teuchos::toString(counter) + ".dat";
+      Utils::Write(filename3, *Ac); 
+      */
         }
       }
 
@@ -105,6 +136,7 @@ namespace MueLu {
     }
 
     GetOStream(Statistics0, 0) << "Ac (explicit): # global rows = " << RAP->getGlobalNumRows() << ", estim. global nnz = " << RAP->getGlobalNumEntries() << std::endl;
+
     return RAP;
   }
 
