@@ -464,7 +464,7 @@ int main(int argc, char *argv[]) {
   globalTimeMonitor = Teuchos::null; // stop this timer before summary
 
   if (printTimings)
-    TimeMonitor::summarize()
+    TimeMonitor::summarize();
     
   return EXIT_SUCCESS;
 }
