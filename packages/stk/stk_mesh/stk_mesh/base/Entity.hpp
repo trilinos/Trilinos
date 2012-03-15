@@ -182,9 +182,9 @@ public:
   /** \brief  Subset communicaiton list for this entity */
   PairIterEntityComm comm( const Ghosting & sub ) const { return m_entityImpl.comm( sub ); }
 
-  void set_key(const EntityKey& arg_key) { m_entityImpl.set_key(arg_key); }
-
 private:
+
+  void set_key(const EntityKey& arg_key) { m_entityImpl.set_key(arg_key); }
 
   impl::EntityImpl m_entityImpl;
 
