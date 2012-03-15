@@ -7,10 +7,10 @@
 #include "MueLu_PermutedTransferFactory_decl.hpp"
 #include "MueLu_Utilities.hpp"
 
-// #include <Xpetra_Operator.hpp>
+#include <Xpetra_Operator.hpp>
 
 #include "MueLu_Level.hpp"
-// #include "MueLu_Monitor.hpp"
+#include "MueLu_Monitor.hpp"
 
 namespace MueLu {
 
