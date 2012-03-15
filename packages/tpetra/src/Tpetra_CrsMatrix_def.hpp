@@ -2042,6 +2042,7 @@ namespace Tpetra {
 		  const ArrayView<const LocalOrdinal> &permuteToLIDs,
 		  const ArrayView<const LocalOrdinal> &permuteFromLIDs)
   {
+    using Teuchos::as;
     typedef Scalar ST;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
@@ -2080,7 +2081,7 @@ namespace Tpetra {
 
       if (sourceIsLocallyIndexed) {
         const size_t rowLength = sourceMatrix.getNumEntriesInGlobalRow (sourceGID);
-	if (rowLength > rowInds.size()) {
+	if (rowLength > as<size_t> (rowInds.size())) {
 	  rowInds.resize (rowLength);
 	  rowVals.resize (rowLength);
 	}
@@ -2138,7 +2139,7 @@ namespace Tpetra {
 
       if (sourceIsLocallyIndexed) {
         const size_t rowLength = sourceMatrix.getNumEntriesInGlobalRow (sourceGID);
-	if (rowLength > rowInds.size()) {
+	if (rowLength > as<size_t> (rowInds.size())) {
 	  rowInds.resize (rowLength);
 	  rowVals.resize (rowLength);
 	}
