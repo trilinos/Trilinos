@@ -81,6 +81,7 @@ namespace MueLu {
 
     //FIXME debugging output
 
+/*
     RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     RCP<const Teuchos::Comm<int> > comm = transferOp->getRowMap()->getComm();
     for (int i=0; i<comm->getSize(); ++i) {
@@ -93,6 +94,7 @@ namespace MueLu {
       comm->barrier();
     }
     fos->setOutputToRootOnly(-1);
+*/
     //FIXME end of debugging output
 
     /*
