@@ -27,7 +27,8 @@ namespace MueLu {
   DeclareInput(Level & level) const
   {
     level.DeclareInput("A", AFact_.get());
-    level.DeclareInput("Coordinates", TransferFact_.get());
+    level.DeclareInput("Coordinates", NoFactory::get()); //FIXME JJH
+    //level.DeclareInput("Coordinates", TransferFact_.get()); //FIXME JJH
   } //DeclareInput()
 
   //-------------------------------------------------------------------------------------------------------------
@@ -62,9 +63,11 @@ namespace MueLu {
     ss << numPartitions_;
     zoltanObj_->Set_Param("num_global_partitions",ss.str());
 
-    if (level.IsAvailable("Coordinates",TransferFact_.get()) == false)
+    //if (level.IsAvailable("Coordinates",TransferFact_.get()) == false) //FIXME JJH
+    if (level.IsAvailable("Coordinates",NoFactory::get()) == false) //FIXME JJH
       throw(Exceptions::HaltRepartitioning("MueLu::ZoltanInterface : no coordinates available"));
-    RCP<MultiVector> XYZ = level.Get< RCP<MultiVector> >("Coordinates",TransferFact_.get());
+    //RCP<MultiVector> XYZ = level.Get< RCP<MultiVector> >("Coordinates",TransferFact_.get()); //FIXME JJH
+    RCP<MultiVector> XYZ = level.Get< RCP<MultiVector> >("Coordinates");
     size_t problemDimension_ = XYZ->getNumVectors();
 
     zoltanObj_->Set_Num_Obj_Fn(GetLocalNumberOfRows,(void *) &*A);
