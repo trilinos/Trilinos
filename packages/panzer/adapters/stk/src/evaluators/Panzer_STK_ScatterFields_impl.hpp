@@ -10,6 +10,7 @@
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
 #include "Panzer_BasisIRLayout.hpp"
+#include "Panzer_Traits.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -85,6 +86,13 @@ PHX_POST_REGISTRATION_SETUP(ScatterFields,d,fm)
 }
 
 PHX_EVALUATE_FIELDS(ScatterFields,workset)
+{
+   TEUCHOS_ASSERT(false);
+}
+
+template < >
+void ScatterFields<panzer::Traits::Residual,panzer::Traits>::
+evaluateFields(panzer::Traits::EvalData workset)
 {
    // for convenience pull out some objects from workset
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
