@@ -255,7 +255,7 @@ namespace MueLu {
 
     //TODO Xpetra::global_size_t sumCoarseNnz = 0;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(numDesiredLevels < 2, Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): numDesiredLevels < 2");
+    TEUCHOS_TEST_FOR_EXCEPTION(numDesiredLevels < 2, Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): numDesiredLevels < 2"); //FIXME: it has to work for one level method (numDesiredLevels==1)!!
 
     //TODO: check Levels_[startLevel] exists.
 

@@ -86,11 +86,6 @@ namespace MueLu {
       H.SetDefaultVerbLevel(verbLevel_);
       H.SetMaxCoarseSize(maxCoarseSize_);
 
-      if (levelManagers_.size() == 0) {
-        H.Setup(FactoryManager(), 0, numDesiredLevel_); // TODO: default value for first param (FactoryManager()) should not be duplicated (code maintainability)
-        return;
-      }
-
       // TODO: coarsestLevelManager
 
       int  levelID     = 0;
@@ -130,11 +125,17 @@ namespace MueLu {
     // Used in SetupHierarchy() to access levelManagers_
     // Inputs i=-1 and i=size() are allowed to simplify calls to hierarchy->Setup()
     Teuchos::Ptr<FactoryManagerBase> LvlMngr(int levelID, int lastLevelID) const { 
-      TEUCHOS_TEST_FOR_EXCEPT(levelManagers_.size() == 0);
+
+      // Please not that the order of the 'if' statements is important. 
 
       if (levelID == -1)                    return Teuchos::null; // when this routine is called with levelID == '-1', it means that we are processing the finest Level (there is no finer level)
       if (levelID == lastLevelID+1)         return Teuchos::null; // when this routine is called with levelID == 'lastLevelID+1', it means that we are processing the last level (ie: there is no nextLevel...)
 
+      if (0       == levelManagers_.size()) {                     // default factory manager.
+        // the default manager is shared across levels, initialized only if needed and deleted with the HierarchyManager.
+        static RCP<FactoryManagerBase> defaultMngr = rcp(new FactoryManager());
+        return defaultMngr();
+      }
       if (levelID >= levelManagers_.size()) return levelManagers_[levelManagers_.size()-1](); // last levelManager is used for all the remaining levels.
       
       return levelManagers_[levelID](); // throw exception if out of bound.
@@ -148,3 +149,4 @@ namespace MueLu {
 #endif // MUELU_HIERARCHYMANAGER_HPP
 
 //TODO: split into _decl/_def
+// TODO: default value for first param (FactoryManager()) should not be duplicated (code maintainability)
