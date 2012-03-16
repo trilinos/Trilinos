@@ -14,38 +14,33 @@
 
     <ParameterList name="myTentativeRFact">
       <Parameter name="factory" type="string" value="TransPFactory"/>
-      <Parameter name="PFactory" type="string" value="myTentativePFactory"/>
+      <Parameter name="P" type="string" value="myTentativePFactory"/>
     </ParameterList>
 
     <ParameterList name="myProlongatorFact">
-      <Parameter name="factory" type="string" value="SaPFactory"/>
-      <ParameterList name="ParameterList">
-        <Parameter name="TentativeFactory" type="string" value="myTentativePFactory"/>
-<!--    <Parameter name="DampingFactor" type="double" value="4./3"/> -->
-      </ParameterList>
+      <Parameter name="factory"  type="string" value="SaPFactory"/>
+      <Parameter name="InitialP" type="string" value="myTentativePFactory"/>
+      <!--    <Parameter name="DampingFactor" type="double" value="4./3"/> -->
     </ParameterList>
 
     <ParameterList name="myRestrictorFact">
       <Parameter name="factory" type="string" value="TransPFactory"/>
+      <Parameter name="P" type="string" value="myProlongatorFact"/>
     </ParameterList>
 
     <ParameterList name="myCoordinateTransfertFact">
-      <Parameter name="factory" type="string" value="MultiVectorTransferFactory"/>
-      <ParameterList name="ParameterList">
-        <Parameter name="vectorName"      type="string" value="Coordinates"/>
-        <Parameter name="restrictionName" type="string" value="R"/>
-        <Parameter name="factory"         type="string" value="myTentativeRFact"/>
-      </ParameterList>
+      <Parameter name="factory"         type="string" value="MultiVectorTransferFactory"/>
+      <Parameter name="vectorName"      type="string" value="Coordinates"/>
+      <Parameter name="restrictionName" type="string" value="R"/>
+      <Parameter name="R"               type="string" value="myTentativeRFact"/>
     </ParameterList>
     
     <ParameterList name="myRAPFactory">
       <Parameter name="factory" type="string" value="RAPFactory"/>
-      <ParameterList name="ParameterList">
-        <Parameter name="PFactory" type="string" value="myProlongatorFact"/>
-        <Parameter name="RFactory" type="string" value="myRestrictorFact"/>
-        <ParameterList name="TransferFactories">
-          <Parameter name="For Coordinates" type="string" value="myCoordinateTransfertFact"/>
-        </ParameterList>
+      <Parameter name="P" type="string" value="myProlongatorFact"/>
+      <Parameter name="R" type="string" value="myRestrictorFact"/>
+      <ParameterList name="TransferFactories">
+        <Parameter name="For Coordinates" type="string" value="myCoordinateTransfertFact"/>
       </ParameterList>
     </ParameterList>
 
@@ -57,52 +52,39 @@
 
     <ParameterList name="myZoltanInterface">
       <Parameter name="factory" type="string" value="ZoltanInterface"/>
-      <ParameterList name="ParameterList">
-        <Parameter name="AFactory"        type="string" value="myRAPFactory"/>
-        <Parameter name="TransferFactory" type="string" value="myCoordinateTransfertFact"/>
-        <ParameterList name="TransferFactories">
-          <Parameter name="For Coordinates" type="string" value="myCoordinateTransfertFact"/>
-        </ParameterList>
-      </ParameterList>
+      <Parameter name="A"        type="string" value="myRAPFactory"/>
+      <Parameter name="TransferFactory" type="string" value="myCoordinateTransfertFact"/>
     </ParameterList>
 
     <ParameterList name="myRepartitionFact">
       <Parameter name="factory" type="string" value="RepartitionFactory"/>
-      <ParameterList name="ParameterList">
-        <Parameter name="Factory"        type="string" value="myZoltanInterface"/>
-        <Parameter name="AFactory" type="string" value="myRAPFactory"/>
-        <Parameter name="minRowsPerProc" type="string" value="2000"/>
-        <Parameter name="nonzeroImbalance" type="string" value="1.2"/>
-      </ParameterList>
+      <Parameter name="Factory"          type="string" value="myZoltanInterface"/>
+      <Parameter name="A"                type="string" value="myRAPFactory"/>
+      <Parameter name="minRowsPerProc"   type="int"    value="2000"/>
+      <Parameter name="nonzeroImbalance" type="double" value="1.2"/>
     </ParameterList>
 
     <ParameterList name="myPermutedProlongatorFact">
       <Parameter name="factory" type="string" value="PermutedTransferFactory"/>
-      <ParameterList name="ParameterList">
-        <Parameter name="RepartitionFactory" type="string" value="myRepartitionFact"/>
-        <Parameter name="AFactory" type="string" value="myRAPFactory"/>
-        <Parameter name="PFactory" type="string" value="myProlongatorFact"/>
-        <Parameter name="type"     type="string" value="Interpolation"/>
-      </ParameterList>
+      <Parameter name="RepartitionFactory" type="string" value="myRepartitionFact"/>
+      <Parameter name="A"                  type="string" value="myRAPFactory"/>
+      <Parameter name="P"                  type="string" value="myProlongatorFact"/>
+      <Parameter name="type"     type="string" value="Interpolation"/>
     </ParameterList>
 
     <ParameterList name="myPermutedRestrictionFact">
       <Parameter name="factory" type="string" value="PermutedTransferFactory"/>
-      <ParameterList name="ParameterList">
-        <Parameter name="RepartitionFactory" type="string" value="myRepartitionFact"/>
-        <Parameter name="RFactory" type="string" value="myRestrictorFact"/>
-        <Parameter name="type"     type="string" value="Restriction"/>
-        <Parameter name="PFactory" type="string" value="myTentativePFactory"/>
-        <Parameter name="TransferFactory" type="string" value="myCoordinateTransfertFact"/>
-      </ParameterList>
+      <Parameter name="RepartitionFactory" type="string" value="myRepartitionFact"/>
+      <Parameter name="R"                  type="string" value="myRestrictorFact"/>
+      <Parameter name="type"               type="string" value="Restriction"/>
+      <Parameter name="P"                  type="string" value="myTentativePFactory"/>
+      <Parameter name="TransferFactory"    type="string" value="myCoordinateTransfertFact"/>
     </ParameterList>
     
     <ParameterList name="myPermutedRAPFactory">
       <Parameter name="factory" type="string" value="RAPFactory"/>
-      <ParameterList name="ParameterList">
-        <Parameter name="PFactory" type="string" value="myPermutedProlongatorFact"/>
-        <Parameter name="RFactory" type="string" value="myPermutedRestrictionFact"/>
-      </ParameterList>
+      <Parameter name="P" type="string" value="myPermutedProlongatorFact"/>
+      <Parameter name="R" type="string" value="myPermutedRestrictionFact"/>
     </ParameterList>
     
 <!-- -->
@@ -113,12 +95,10 @@
 
     <ParameterList name="myAggregationFact">
       <Parameter name="factory" type="string" value="UCAggregationFactory"/>
-      <ParameterList name="ParameterList">
-        <Parameter name="Ordering"                type="string" value="Natural"/> <!-- Natural, Random, Graph -->
-        <Parameter name="MaxNeighAlreadySelected" type="int"    value="0"/>
-        <Parameter name="Phase3AggCreation"       type="double" value="0.5"/>
-        <Parameter name="MinNodesPerAggregate"    type="int"    value="2"/>
-       </ParameterList>
+      <Parameter name="Ordering"                type="string" value="Natural"/> <!-- Natural, Random, Graph -->
+      <Parameter name="MaxNeighAlreadySelected" type="int"    value="0"/>
+      <Parameter name="Phase3AggCreation"       type="double" value="0.5"/>
+      <Parameter name="MinNodesPerAggregate"    type="int"    value="2"/>
     </ParameterList>
 
     <ParameterList name="SymGaussSeidel">
