@@ -124,7 +124,7 @@ namespace MueLu {
       MUELU_FACTORY_PARAM("A", AFact);
 
       RCP<SaPFactory> f = rcp(new SaPFactory(InitialPFact, AFact));
-      if (paramList.isParameter("DampingFactory")) f->SetDampingFactor(paramList.get<Scalar>("DampingFactory"));
+      if (paramList.isParameter("DampingFactor")) f->SetDampingFactor(paramList.get<Scalar>("DampingFactor"));
 
       return f;
     }

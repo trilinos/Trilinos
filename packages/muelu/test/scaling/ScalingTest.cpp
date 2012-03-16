@@ -259,8 +259,7 @@ int main(int argc, char *argv[]) {
       RCP<ZoltanInterface>      zoltan = rcp(new ZoltanInterface(Acfact,mvTransFact));
       RCP<RepartitionFactory> RepartitionFact = rcp(new RepartitionFactory(zoltan,Acfact,minRowsPerProc,nonzeroImbalance));
       permPFactory = rcp( new PermutedTransferFactory(RepartitionFact, Acfact, SaPfact, MueLu::INTERPOLATION) );
-      permRFactory = rcp( new PermutedTransferFactory(RepartitionFact, Acfact, Rfact, MueLu::RESTRICTION, PtentFact, mvTransFact)
-);
+      permRFactory = rcp( new PermutedTransferFactory(RepartitionFact, Acfact, Rfact, MueLu::RESTRICTION, PtentFact, mvTransFact));
       AcfactFinal = rcp( new RAPFactory(permPFactory,permRFactory) );
 
 
