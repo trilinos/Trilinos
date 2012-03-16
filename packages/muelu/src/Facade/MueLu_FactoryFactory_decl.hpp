@@ -80,6 +80,9 @@ namespace MueLu {
       if (factoryName == "DirectSolver") {
         return BuildDirectSolver(paramList, factoryMapIn);
       }
+      if (factoryName == "TMP_RepartitionP") {
+        return BuildTMP_RepartitionP(paramList, factoryMapIn);
+      }
 
       // Use a user defined factories (in <Factories> node)
       if (factoryMapIn.find(factoryName) != factoryMapIn.end()) {
@@ -219,6 +222,11 @@ namespace MueLu {
       Teuchos::ParameterList params; if(paramList.isParameter("ParameterList")) params  = paramList.get<Teuchos::ParameterList>("ParameterList");
       
       return rcp(new SmootherFactory(rcp(new DirectSolver(type, params))));
+    }
+
+    RCP<FactoryBase> BuildTMP_RepartitionP(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
+      
+
     }
 
   }; // class
