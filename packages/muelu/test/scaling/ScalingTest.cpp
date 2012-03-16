@@ -326,13 +326,15 @@ int main(int argc, char *argv[]) {
   *out  << "======================\n Multigrid statistics \n======================" << std::endl;
   status.print(*out,Teuchos::ParameterList::PrintOptions().indent(2));
 
-  Teuchos::ParameterList amesosList;
-  amesosList.set("PrintTiming", true);
-  RCP<DirectSolver> coarseProto = rcp( new DirectSolver("", amesosList) );
-  SmootherFactory coarseSolveFact(coarseProto);
-
-  //SmootherFactory coarseSolveFact(smooProto);    //JJH lazy man's way to have a one-level method with smoother
-  H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
+  /* JG: COMMENTED OUT. Otherwise, LU factorization is done twice!!
+     Teuchos::ParameterList amesosList;
+     amesosList.set("PrintTiming", true);
+     RCP<DirectSolver> coarseProto = rcp( new DirectSolver("", amesosList) );
+     SmootherFactory coarseSolveFact(coarseProto);
+     
+     //SmootherFactory coarseSolveFact(smooProto);    //JJH lazy man's way to have a one-level method with smoother
+     H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
+  */
 
   // Define RHS
   RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
