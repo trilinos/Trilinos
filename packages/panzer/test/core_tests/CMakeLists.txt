@@ -145,6 +145,6 @@ IF(Panzer_ENABLE_PAPI)
 ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(core_tests
-  SOURCE_FILES parameter_list_acceptance_test.xml
+  SOURCE_FILES parameter_list_acceptance_test.xml parameter_list_acceptance_test2.xml
   EXEDEPS parameter_list_acceptance_test
   )

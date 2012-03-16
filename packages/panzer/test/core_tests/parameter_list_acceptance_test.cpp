@@ -32,4 +32,13 @@ namespace panzer {
     out << p << std::endl;
   }
 
+  TEUCHOS_UNIT_TEST(parameter_list_acceptance_test,repeated_sublist_name)
+  {
+    using namespace Teuchos;
+
+    ParameterList p;
+    updateParametersFromXmlFile("parameter_list_acceptance_test2.xml", ptrFromRef(p));
+
+    out << p << std::endl;
+  }
 }
