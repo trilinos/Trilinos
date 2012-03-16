@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
   int pauseForDebugger=0;
   int amgAsSolver=1;
   int amgAsPrecond=1;
-  int useExplicitR=0;
+  int useExplicitR=1;
   int sweeps=1;
   int maxCoarseSize=50;  //FIXME clp doesn't like long long int
   Scalar SADampingFactor=4./3;
@@ -297,6 +297,7 @@ int main(int argc, char *argv[]) {
       SmooFact = rcp( new SmootherFactory(smooProto) );
     AcfactFinal->setVerbLevel(Teuchos::VERB_HIGH);
 
+    /*
     for (int i=0; i<comm->getSize(); ++i) {
       if (comm->getRank() == i) {
         std::cout << "pid " << i << ": address(Acfact)      = " << Acfact.get() << std::endl;
@@ -304,6 +305,7 @@ int main(int argc, char *argv[]) {
       }
       comm->barrier();
     }
+    */
 
     FactoryManager M;
 
