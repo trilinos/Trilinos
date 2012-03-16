@@ -168,7 +168,7 @@ Stokhos::MatrixFreeOperator::
 Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 {
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
-  TEUCHOS_FUNC_TIME_MONITOR("Stokhos: Matrix Free Operator Apply()");
+  TEUCHOS_FUNC_TIME_MONITOR("Stokhos: SG Operator Apply()");
 #endif
 
   // Note for transpose:
