@@ -16,12 +16,12 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   PermutedTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PermutedTransferFactory(
-    RCP<FactoryBase> repartitionFact,
-    RCP<FactoryBase> initialAFact,
-    RCP<FactoryBase> initialTransferFact,
+    RCP<const FactoryBase> repartitionFact,
+    RCP<const FactoryBase> initialAFact,
+    RCP<const FactoryBase> initialTransferFact,
     TransferType     PorR,
-    RCP<FactoryBase> nullspaceFact,
-    RCP<FactoryBase> coordinateFact )
+    RCP<const FactoryBase> nullspaceFact,
+    RCP<const FactoryBase> coordinateFact )
     : repartitionFact_(repartitionFact),
       initialAFact_(initialAFact),
       initialTransferFact_(initialTransferFact),

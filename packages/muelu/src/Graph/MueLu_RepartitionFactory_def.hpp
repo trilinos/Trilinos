@@ -28,7 +28,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RepartitionFactory(
-                RCP<SingleLevelFactoryBase> loadBalancer, RCP<const FactoryBase> AFact,
+                RCP<const FactoryBase> loadBalancer, RCP<const FactoryBase> AFact,
                 GO minRowsPerProcessor, SC nnzMaxMinRatio, GO startLevel, GO minNnzPerProcessor) :
     loadBalancer_(loadBalancer),
     AFact_(AFact),

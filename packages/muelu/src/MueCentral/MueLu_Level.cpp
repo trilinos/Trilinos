@@ -22,7 +22,7 @@ namespace MueLu {
     std::vector<const MueLu::FactoryBase*> ehandles = needs_.RequestedFactories();
     for (std::vector<const MueLu::FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++) {
       std::vector<std::string> enames = needs_.RequestedKeys(*kt);
-      for (std::vector<std::string>::iterator it = enames.begin(); it != enames.end(); it++) {
+      for (std::vector<std::string>::iterator it = enames.begin(); it != enames.end(); ++it) {
         const std::string & ename = *it;
         const MueLu::FactoryBase* fac = *kt;
         if (IsKept(ename, fac, MueLu::Keep)) { // MueLu::Keep is the only flag propagated
@@ -212,7 +212,7 @@ namespace MueLu {
     std::vector<const MueLu::FactoryBase*> ehandles = needs_.RequestedFactories();
     for (std::vector<const MueLu::FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++) {
       std::vector<std::string> enames = needs_.RequestedKeys(*kt);
-      for (std::vector<std::string>::iterator it = enames.begin(); it != enames.end(); it++) {
+      for (std::vector<std::string>::iterator it = enames.begin(); it != enames.end(); ++it) {
         outputter.outputField(*it);   // variable name
 
         // factory name

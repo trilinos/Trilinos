@@ -37,9 +37,9 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    RepartitionFactory(RCP<SingleLevelFactoryBase> loadBalancer=Teuchos::null,
-                RCP<const FactoryBase> AFact=Teuchos::null,
-                GO minRowsPerProcessor=1000, SC nnzMaxMinRatio=1.2, GO startLevel=1, GO minNnzPerProcessor=-1);
+    RepartitionFactory(RCP<const FactoryBase> loadBalancer=Teuchos::null,
+                       RCP<const FactoryBase> AFact=Teuchos::null,
+                       GO minRowsPerProcessor=1000, SC nnzMaxMinRatio=1.2, GO startLevel=1, GO minNnzPerProcessor=-1);
 
     //! Destructor.
     virtual ~RepartitionFactory();
@@ -114,7 +114,7 @@ namespace MueLu {
 
   private:
     //! Load-balancing factory.
-    RCP<SingleLevelFactoryBase> loadBalancer_;
+    RCP<const FactoryBase> loadBalancer_;
     RCP<const FactoryBase> AFact_;
     //! Minimum number of rows over all processes.  If any process falls below this, repartitioning is initiated.
     GO     minRowsPerProcessor_;

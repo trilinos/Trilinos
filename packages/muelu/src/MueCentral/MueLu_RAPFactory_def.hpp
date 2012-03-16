@@ -24,8 +24,7 @@ namespace MueLu {
     coarseLevel.DeclareInput("R", RFact_.get(), this); //TODO: must be request according to (implicitTranspose flag!!!!!
 
     // call DeclareInput of all user-given transfer factories
-    std::vector<RCP<FactoryBase> >::const_iterator it;
-    for(it=TransferFacts_.begin(); it!=TransferFacts_.end(); it++) {
+    for(std::vector<RCP<const FactoryBase> >::const_iterator it = TransferFacts_.begin(); it!=TransferFacts_.end(); ++it) {
       (*it)->CallDeclareInput(coarseLevel);
     }
   }
@@ -109,8 +108,7 @@ Teuchos::toString(counter) + ".dat";
       FactoryMonitor m(*this, "Projections", coarseLevel);
 
       // call Build of all user-given transfer factories
-      std::vector<RCP<FactoryBase> >::const_iterator it;
-      for(it = TransferFacts_.begin(); it != TransferFacts_.end(); it++) {
+      for(std::vector<RCP<const FactoryBase> >::const_iterator it = TransferFacts_.begin(); it != TransferFacts_.end(); ++it) {
         GetOStream(Runtime0, 0) << "Ac: call transfer factory " << (*it).get() << ": " << (*it)->description() << std::endl;
         (*it)->CallBuild(coarseLevel);
       }
@@ -180,9 +178,9 @@ Teuchos::toString(counter) + ".dat";
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddTransferFactory(const RCP<FactoryBase>& factory) {
+  void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::AddTransferFactory(const RCP<const FactoryBase>& factory) {
     // check if it's a TwoLevelFactoryBase based transfer factory
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<TwoLevelFactoryBase>(factory) == Teuchos::null, Exceptions::BadCast, "Transfer factory is not derived from TwoLevelFactoryBase. This is very strange. (Note: you can remove this exception if there's a good reason for)");
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const TwoLevelFactoryBase>(factory) == Teuchos::null, Exceptions::BadCast, "Transfer factory is not derived from TwoLevelFactoryBase. This is very strange. (Note: you can remove this exception if there's a good reason for)");
     TransferFacts_.push_back(factory);
   }
 

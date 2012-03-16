@@ -13,7 +13,7 @@
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TransPFactory(RCP<FactoryBase> PFact)
+  TransPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TransPFactory(RCP<const FactoryBase> PFact)
     : PFact_(PFact)
   { }
 

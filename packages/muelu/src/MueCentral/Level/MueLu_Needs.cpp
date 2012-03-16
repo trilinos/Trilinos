@@ -98,7 +98,7 @@ namespace MueLu {
     if(dataTable_.IsKey(factory) == false) return false;
 
     std::vector<std::string> ekeys = RequestedKeys(factory);
-    for (std::vector<std::string>::iterator it = ekeys.begin(); it != ekeys.end(); it++) {
+    for (std::vector<std::string>::iterator it = ekeys.begin(); it != ekeys.end(); ++it) {
       if(IsRequested(*it,factory)) return true;
     }
     return false;
@@ -108,7 +108,7 @@ namespace MueLu {
     int cnt = 0;
     if(dataTable_.IsKey(factory) == false) return cnt;
     std::vector<std::string> ekeys = RequestedKeys(factory);
-    for (std::vector<std::string>::iterator it = ekeys.begin(); it != ekeys.end(); it++) {
+    for (std::vector<std::string>::iterator it = ekeys.begin(); it != ekeys.end(); ++it) {
       cnt += NumRequests(*it, factory);
     }
     return cnt;
@@ -117,7 +117,7 @@ namespace MueLu {
   bool Needs::IsAvailableFactory(const FactoryBase* factory) {
     if(dataTable_.IsKey(factory) == false) return false;
     std::vector<std::string> ekeys = RequestedKeys(factory);
-    for (std::vector<std::string>::iterator it = ekeys.begin(); it != ekeys.end(); it++) {
+    for (std::vector<std::string>::iterator it = ekeys.begin(); it != ekeys.end(); ++it) {
       if(IsAvailable(*it, factory))
         return true;
     }
@@ -166,7 +166,7 @@ namespace MueLu {
     std::vector<const MueLu::FactoryBase*> ehandles = RequestedFactories();
     for (std::vector<const MueLu::FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++) {
       std::vector<std::string> enames = RequestedKeys(*kt);
-      for (std::vector<std::string>::iterator it = enames.begin(); it != enames.end(); it++) {
+      for (std::vector<std::string>::iterator it = enames.begin(); it != enames.end(); ++it) {
         outputter.outputField(*it);                    // variable name
         outputter.outputField(*kt);                    // factory ptr          
         int reqcount = NumRequests(*it, *kt);          // request counter

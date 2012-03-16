@@ -167,14 +167,14 @@ GlobalOrdinal, Node, LocalMatOps>::SetupAmalgamationData(const RCP<Operator>& A,
   // clean up DofVectors (remove duplicate entries)
   typename std::map<GlobalOrdinal,std::vector<LocalOrdinal> >::iterator lit;
   typename std::map<GlobalOrdinal,std::vector<GlobalOrdinal> >::iterator git;
-  for (lit=globalamalblockid2myrowid_->begin(); lit!=globalamalblockid2myrowid_->end(); lit++) {
+  for (lit=globalamalblockid2myrowid_->begin(); lit!=globalamalblockid2myrowid_->end(); ++lit) {
     std::vector<LocalOrdinal> lrowids = lit->second;
     sort(lrowids.begin(), lrowids.end());
     typename std::vector<LocalOrdinal>::iterator lendLocation;
     lendLocation = std::unique(lrowids.begin(), lrowids.end());
     lrowids.erase(lendLocation,lrowids.end());
   }
-  for (git=globalamalblockid2globalrowid_->begin(); git!=globalamalblockid2globalrowid_->end(); git++) {
+  for (git=globalamalblockid2globalrowid_->begin(); git!=globalamalblockid2globalrowid_->end(); ++git) {
     std::vector<GlobalOrdinal> growids = git->second;
     sort(growids.begin(), growids.end());
     typename std::vector<GlobalOrdinal>::iterator gendLocation;
