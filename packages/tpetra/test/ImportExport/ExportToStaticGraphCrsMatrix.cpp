@@ -114,6 +114,18 @@ namespace {
     }
 
     Teuchos::RCP<const map_type> 
+    makeDomainMap (const Teuchos::RCP<const map_type>& nonoverlapRowMap) const
+    {
+      return nonoverlapRowMap;
+    }
+
+    Teuchos::RCP<const map_type> 
+    makeRangeMap (const Teuchos::RCP<const map_type>& nonoverlapRowMap) const
+    {
+      return nonoverlapRowMap;
+    }
+
+    Teuchos::RCP<const map_type> 
     makeOverlappingRowMap (const Teuchos::RCP<const map_type>& nonoverlapRowMap) const
     {
       using Tpetra::createNonContigMapWithNode;
@@ -174,13 +186,15 @@ namespace {
 	graph->insertGlobalIndices (globalRow, curIndView);
       }
       
-      graph->fillComplete();
+      graph->fillComplete ();
       return graph;
     }
 
 
     Teuchos::RCP<const matrix_type>
-    makeOverlappingSourceMatrix (const Teuchos::RCP<const map_type>& overlapRowMap) const
+    makeOverlappingSourceMatrix (const Teuchos::RCP<const map_type>& overlapRowMap,
+				 const Teuchos::RCP<const map_type>& domainMap,
+				 const Teuchos::RCP<const map_type>& rangeMap) const
     {
       using Teuchos::Array;
       using Teuchos::ArrayView;
@@ -244,7 +258,7 @@ namespace {
 	A_src->insertGlobalValues (globalRow, curIndView, curValView);
       }
       
-      A_src->fillComplete();
+      A_src->fillComplete (domainMap, rangeMap);
       return A_src;
     }
     
@@ -383,16 +397,20 @@ namespace {
 	makeNonoverlappingRowMap (comm, node, localNumElts);
       RCP<const map_type> overlapRowMap = 
 	makeOverlappingRowMap (nonoverlapRowMap);
+      RCP<const map_type> domainMap = makeDomainMap (nonoverlapRowMap);
+      RCP<const map_type> rangeMap = makeRangeMap (nonoverlapRowMap);
 
       if (includesVerbLevel (verbLevel, Teuchos::VERB_LOW)) {
 	*out << "Making source matrix" << endl;
       }
-      RCP<const matrix_type> A_src = makeOverlappingSourceMatrix (overlapRowMap);
+      RCP<const matrix_type> A_src = 
+	makeOverlappingSourceMatrix (overlapRowMap, domainMap, rangeMap);
 
       if (includesVerbLevel (verbLevel, Teuchos::VERB_LOW)) {
 	*out << "Making target graph and matrix" << endl;
       }
-      RCP<const graph_type> graph_tgt = makeNonoverlappingTestGraph (nonoverlapRowMap);
+      RCP<const graph_type> graph_tgt = 
+	makeNonoverlappingTestGraph (nonoverlapRowMap);
       RCP<matrix_type> A_tgt = rcp (new matrix_type (graph_tgt));
 
       if (includesVerbLevel (verbLevel, Teuchos::VERB_LOW)) {
