@@ -4,6 +4,7 @@
 #include "Panzer_InputPhysicsBlock.hpp"
 #include "Panzer_PhysicsBlock.hpp"
 #include "Panzer_EquationSet_Factory.hpp"
+#include "Teuchos_TestForException.hpp"
 #include <sstream>
 
 namespace panzer {
@@ -53,14 +54,23 @@ namespace panzer {
   {
     using Teuchos::ParameterList;
 
-    int num_bcs = p.get<int>("Number of Boundary Conditions");
-    for (int bc_id=0; bc_id < num_bcs; ++bc_id) {
-      std::ostringstream bc_name;
-      bc_name << "BC " << bc_id;
-      const ParameterList& bc_list = p.sublist(bc_name.str());
-      panzer::BC bc(bc_list);
+    bcs.clear();
+
+    // Check for non-backward compatible change
+    TEUCHOS_TEST_FOR_EXCEPTION(p.isParameter("Number of Boundary Conditions"),
+			       std::logic_error,
+			       "Error - the parameter \"Number of Boundary Conditions\" is no longer valid for the boundary condition sublist.  Please remove this from your input file!");
+     
+    std::size_t bc_index = 0;
+    for (ParameterList::ConstIterator bc_pl=p.begin(); bc_pl != p.end(); ++bc_pl,++bc_index) {
+      TEUCHOS_TEST_FOR_EXCEPTION( !(bc_pl->second.isList()), std::logic_error,
+				  "Error - All objects in the boundary condition sublist must be BC sublists!" );
+      ParameterList& sublist = bc_pl->second.getValue(&sublist);
+
+      panzer::BC bc(bc_index,sublist);
       bcs.push_back(bc);
     }
+
   }
 
   void buildBlockIdToPhysicsIdMap(std::map<std::string,std::string>& b_to_p,

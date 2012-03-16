@@ -43,7 +43,8 @@ namespace panzer {
        const Teuchos::ParameterList& p);
 
     //! \brief Ctor based on ParameterList
-    BC(const Teuchos::ParameterList& p);
+    BC(std::size_t bc_id,
+       const Teuchos::ParameterList& p);
 
     //! Dtor.
     ~BC();

@@ -41,11 +41,12 @@ panzer::BC::BC(std::size_t bc_id,
 
 //=======================================================================
 //=======================================================================
-panzer::BC::BC(const Teuchos::ParameterList& p)
+panzer::BC::BC(std::size_t bc_id,
+	       const Teuchos::ParameterList& p)
 {
   this->validateParameters(p);
 
-  m_bc_id = p.get<std::size_t>("ID");
+  m_bc_id = bc_id;
   std::string type = p.get<std::string>("Type");
   if (type == "Dirichlet")
     m_bc_type = BCT_Dirichlet;
@@ -157,7 +158,6 @@ void panzer::BC::validateParameters(const Teuchos::ParameterList& p) const
 {
   Teuchos::ParameterList valid_params;
   
-  valid_params.set<std::size_t>("ID", 0);
   valid_params.set<std::string>("Type", "Dirichlet");
   valid_params.set<std::string>("Sideset ID", "???");
   valid_params.set<std::string>("Element Block ID", "???");

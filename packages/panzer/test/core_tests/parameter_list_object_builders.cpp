@@ -63,9 +63,7 @@ namespace panzer {
     Teuchos::ParameterList bc_params;
 
     std::vector<panzer::BC> bcs;
-    bc_params.set<int>("Number of Boundary Conditions", 2);
     Teuchos::ParameterList& bc_0 = bc_params.sublist("BC 0");
-    bc_0.set<std::size_t>("ID", 0);
     bc_0.set("Type", "Dirichlet");
     bc_0.set("Sideset ID", "4");
     bc_0.set("Element Block ID", "fluid");
@@ -73,7 +71,6 @@ namespace panzer {
     bc_0.set("Strategy", "Constant");
     bc_0.sublist("Data").set("Value",1.0);
     Teuchos::ParameterList& bc_1 = bc_params.sublist("BC 1");
-    bc_1.set<std::size_t>("ID", 1);
     bc_1.set("Type", "Neumann");
     bc_1.set("Sideset ID", "4");
     bc_1.set("Element Block ID", "fluid");
