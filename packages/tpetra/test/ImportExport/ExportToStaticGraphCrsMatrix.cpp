@@ -49,9 +49,11 @@
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
+#include <Teuchos_VerboseObject.hpp>
 
 // Tpetra includes
 #include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_DefaultPlatform.hpp>
 
 
 namespace {
@@ -64,23 +66,29 @@ namespace {
     typedef typename CrsMatrixType::local_ordinal_type local_ordinal_type;
     typedef typename CrsMatrixType::global_ordinal_type global_ordinal_type;
     typedef typename CrsMatrixType::node_type node_type;
-    typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_tpe> map_type;
-    typedef Tpetra::CrsGraph<local_ordinal_type, global_ordinal_type, node_tpe> graph_type;
+    typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+    typedef Tpetra::CrsGraph<local_ordinal_type, global_ordinal_type, node_type> graph_type;
 
     Tester (const Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_DEFAULT,
 	    const Teuchos::RCP<Teuchos::FancyOStream>& outStream = Teuchos::null) :
       Teuchos::VerboseObject<Tester<CrsMatrixType> > (verbLevel, outStream)
     {
-      Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+      using Teuchos::FancyOStream;
+      using Teuchos::getFancyOStream;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      using Teuchos::rcpFromRef;
+
+      RCP<FancyOStream> out = this->getOStream();
       if (this->getVerbLevel() == Teuchos::VERB_DEFAULT) {
 	this->setVerbLevel (Teuchos::VERB_NONE); // run silently by default
       }
       if (out.is_null()) {
 	if (this->getVerbLevel() == Teuchos::VERB_NONE) {
-	  this->setOStream (Teuchos::rcp (new Teuchos::oblackholestream));
+	  this->setOStream (getFancyOStream (rcp (new Teuchos::oblackholestream)));
 	} 
 	else {
-	  this->setOStream (Teuchos::rcpFromRef (std::cout));
+	  this->setOStream (getFancyOStream (rcpFromRef (std::cout)));
 	}
       }
     }
@@ -96,7 +104,7 @@ namespace {
 			      const Teuchos::RCP<node_type>& node,
 			      const size_t localNumElts) const
     {
-      using Teuchos::createContigMapWithNode;
+      using Tpetra::createContigMapWithNode;
       using Teuchos::RCP;
       using Teuchos::rcp;
       
@@ -106,22 +114,22 @@ namespace {
     }
 
     Teuchos::RCP<const map_type> 
-    makeOverlappingRowMap (const Teuchos::RCP<const map_type>& nonoverlappingRowMap) const
+    makeOverlappingRowMap (const Teuchos::RCP<const map_type>& nonoverlapRowMap) const
     {
+      using Tpetra::createNonContigMapWithNode;
       using Teuchos::Array;
-      using Teuchos::Comm;
-      using Teuchos::createNonContigMapWithNode;
+      using Teuchos::as;
       using Teuchos::RCP;
       using Teuchos::rcp;
       typedef typename Array<GO>::size_type size_type;
 
-      RCP<Comm<int> > comm = nonoverlappingRowMap->getComm ();
-      RCP<NT> node = nonoverlappingRowMap->getNode ();
+      RCP<const Teuchos::Comm<int> > comm = nonoverlapRowMap->getComm ();
+      RCP<NT> node = nonoverlapRowMap->getNode ();
 
-      GO myMinGID = overlapMap->getMaxGlobalIndex();
-      GO myMaxGID = overlapMap->getMaxGlobalIndex();
+      GO myMinGID = nonoverlapRowMap->getMaxGlobalIndex();
+      GO myMaxGID = nonoverlapRowMap->getMaxGlobalIndex();
 
-      if (myMaxGID != overlapMap->getMaxAllGlobalIndex()) {
+      if (myMaxGID != nonoverlapRowMap->getMaxAllGlobalIndex()) {
 	++myMaxGID; // My process gets an extra row.
       }
 
@@ -152,11 +160,11 @@ namespace {
 
 	size_type numEntriesInCurRow = 3;
 	GO startOffset = as<GO> (-1);
-	if (globalRow == nonoverlapMap->getMinAllGlobalIndex()) {
+	if (globalRow == nonoverlapRowMap->getMinAllGlobalIndex()) {
 	  numEntriesInCurRow = 2;
 	  startOffset = as<GO> (0);
 	} 
-	else if (globalRow == nonoverlapMap->getMaxAllGlobalIndex()) {
+	else if (globalRow == nonoverlapRowMap->getMaxAllGlobalIndex()) {
 	  numEntriesInCurRow = 2;
 	}
 	ArrayView<GO> curIndView = curIndices.view (0, numEntriesInCurRow);
@@ -188,7 +196,7 @@ namespace {
       const size_t maxIndicesPerRow = 3;
       RCP<matrix_type> A_src = rcp (new matrix_type (overlapRowMap, maxIndicesPerRow));
       Array<GO> curIndices (maxIndicesPerRow);
-      Array<GO> curValues (maxIndicesPerRow);
+      Array<ST> curValues (maxIndicesPerRow);
 
       curValues[0] = leftVal;
       curValues[1] = diagVal;
@@ -207,19 +215,19 @@ namespace {
 	// assume that the overlap map is contiguous and overlaps by
 	// one global index, so we resolve the ambiguity by lettng
 	// the last owning process insert.
-	if (globalRow != overlapMap->getMaxAllGlobalIndex() &&
-	    globalRow == overlapMap->getMaxGlobalIndex()) {
+	if (globalRow != overlapRowMap->getMaxAllGlobalIndex() &&
+	    globalRow == overlapRowMap->getMaxGlobalIndex()) {
 	  continue;
 	}
 	// Insert entries in the current row.  Choose the column
 	// indices and values to insert based on the current global
 	// row index.
-	if (globalRow == overlapMap->getMinAllGlobalIndex()) {
+	if (globalRow == overlapRowMap->getMinAllGlobalIndex()) {
 	  numEntriesInCurRow = 2;
 	  startOffset = as<GO> (0);
 	  curValView = curValues.view (1, numEntriesInCurRow);
 	} 
-	else if (globalRow == overlapMap->getMaxAllGlobalIndex()) {
+	else if (globalRow == overlapRowMap->getMaxAllGlobalIndex()) {
 	  numEntriesInCurRow = 2;
 	  startOffset = as<GO> (-1);
 	  curValView = curValues.view (0, numEntriesInCurRow);
@@ -273,6 +281,7 @@ namespace {
       // row Map of A_tgt does not.  This means we can iterate on each
       // process through the rows owned by this process in A_tgt's row
       // Map.
+      RCP<const map_type> srcRowMap = A_src->getRowMap();
       RCP<const map_type> tgtRowMap = A_tgt->getRowMap();
       for (LO tgtLocalRow = tgtRowMap->getMinLocalIndex(); 
 	   tgtLocalRow <= tgtRowMap->getMaxLocalIndex(); ++tgtLocalRow) {
@@ -290,21 +299,23 @@ namespace {
 	const size_t srcNumEntries = A_src->getNumEntriesInLocalRow (srcLocalRow);
 	const size_t tgtNumEntries = A_tgt->getNumEntriesInLocalRow (tgtLocalRow);
 	if (srcNumEntries != tgtNumEntries) {
-	  return false;
+	  return std::make_pair (false, globalRow);
 	}
 	A_src->getLocalRowView (srcLocalRow, srcIndView, srcValView);
 	A_tgt->getLocalRowView (tgtLocalRow, tgtIndView, tgtValView);
 
 	// Assume for now that the entries are sorted by column index.
 	if (! std::equal (srcIndView.begin(), srcIndView.end(), tgtIndView.begin())) {
-	  return false;
+	  return std::make_pair (false, globalRow);
 	}
 	// FIXME (mfh 15 Mar 2012) Should we include a small error
 	// tolerance here for roundoff?
 	if (! std::equal (srcValView.begin(), srcValView.end(), tgtValView.begin())) {
-	  return false;
+	  return std::make_pair (false, globalRow);
 	}
-      }
+      } // for each local row index of the target matrix on my process
+      
+      return std::make_pair (true, as<global_ordinal_type> (0));
     }
 
     /// \brief Whether A_src == A_tgt, globally.
@@ -327,7 +338,7 @@ namespace {
       using Teuchos::RCP;
       using Teuchos::reduceAll;
 
-      RCP<Comm<int> > comm = A_src->getComm();
+      RCP<const Comm<int> > comm = A_src->getComm();
       
       std::pair<bool, GO> localResult = locallyEqual (A_src, A_tgt);
       // reduceAll doesn't work for bool, so convert to int first.
@@ -335,7 +346,7 @@ namespace {
       GO firstNonequalIndex = as<GO> (0);
 
       int equalGlobally = 1;
-      reduceAll (*comm, Teuchos::REDUCE_MIN, localResult.first, ptr (&equalGlobally));
+      reduceAll (*comm, Teuchos::REDUCE_MIN, equalLocally, ptr (&equalGlobally));
 
       if (equalGlobally == 0) {
 	reduceAll (*comm, Teuchos::REDUCE_MIN, localResult.second, ptr (&firstNonequalIndex));
@@ -371,7 +382,7 @@ namespace {
       RCP<const map_type> nonoverlapRowMap = 
 	makeNonoverlappingRowMap (comm, node, localNumElts);
       RCP<const map_type> overlapRowMap = 
-	makeOverlappingRowMap (nonoverlappingRowMap);
+	makeOverlappingRowMap (nonoverlapRowMap);
 
       if (includesVerbLevel (verbLevel, Teuchos::VERB_LOW)) {
 	*out << "Making source matrix" << endl;
@@ -427,7 +438,7 @@ main (int argc, char *argv[])
   using Teuchos::EVerbosityLevel;
   using Teuchos::FancyOStream;
   using Teuchos::getFancyOStream;
-  using Teuchos::includeVerbLevel;
+  using Teuchos::includesVerbLevel;
   using Teuchos::OSTab;
   using Teuchos::ptr;
   using Teuchos::RCP;
@@ -439,27 +450,28 @@ main (int argc, char *argv[])
   typedef double ST;
   typedef int LO;
   typedef long GO;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::DefaultNodeType NT;
+  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType NT;
   typedef Tpetra::CrsMatrix<ST, LO, GO, NT> matrix_type;
 
   bool success = true; // May be changed by tests
 
-  Teuchos::oblackholestream blackHole;
-  Teuchos::GlobalMPISession (&argc, &argv, &blackHole);
+  RCP<Teuchos::oblackholestream> blackHole = rcp (new Teuchos::oblackholestream);
+  Teuchos::GlobalMPISession mpiSession (&argc, &argv, blackHole.getRawPtr());
   RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
   RCP<NT> node = Tpetra::DefaultPlatform::getDefaultPlatform().getNode();
   const int numProcs = comm->getSize();
   const int myRank = comm->getRank();
 
-  RCP<FancyOStream> out = getFancyOStream (std::cout);
+  RCP<FancyOStream> out = getFancyOStream (rcpFromRef (std::cout));
+  RCP<FancyOStream> procZeroOut = (myRank == 0) ? 
+    getFancyOStream (rcpFromRef (std::cout)) : 
+    getFancyOStream (blackHole);
 
   //
   // Default values of command-line options.
   //
   bool verbose = false;
-  bool printEpetra = false;
-  bool printTpetra = false;
-  CommandLineProcessor cmdp (false,true);
+  CommandLineProcessor cmdp (false, true);
 
   //
   // Set command-line options.
@@ -467,7 +479,7 @@ main (int argc, char *argv[])
   cmdp.setOption ("verbose", "quiet", &verbose, "Print verbose output.");
   // Parse command-line options.
   if (cmdp.parse (argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-    *out << "End Result: TEST FAILED" << endl;
+    *procZeroOut << "End Result: TEST FAILED" << endl;
     return EXIT_FAILURE;
   }
 
@@ -481,7 +493,8 @@ main (int argc, char *argv[])
 
   typedef Tpetra::CrsMatrix<ST, LO, GO, NT> matrix_type;
   Tester<matrix_type> tester (verbLevel, out);
+  tester.testExportToCrsMatrixWithStaticGraph (comm, node, 10);
 
-  *out << "End Result: TEST " << (success ? "PASSED" : "FAILED") << endl;
+  *procZeroOut << "End Result: TEST " << (success ? "PASSED" : "FAILED") << endl;
   return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
