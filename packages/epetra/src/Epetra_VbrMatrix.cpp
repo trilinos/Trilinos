@@ -50,6 +50,8 @@
 #include "Epetra_Distributor.h"
 #include "Epetra_SerialDenseMatrix.h"
 
+  // TODO this file needs to be changed for long long
+
 //==============================================================================
 Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& rowMap, int *NumBlockEntriesPerRow) 
   : Epetra_DistObject(rowMap, "Epetra::VbrMatrix"),

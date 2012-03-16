@@ -175,6 +175,8 @@ Epetra_Map
 Epetra_Util::Create_OneToOne_Map(const Epetra_Map& usermap,
 				 bool high_rank_proc_owns_shared)
 {
+  // TODO this needs to be changed for long long
+
   //if usermap is already 1-to-1 then we'll just return a copy of it.
   if (usermap.IsOneToOne()) {
     Epetra_Map newmap(usermap);
@@ -221,6 +223,8 @@ Epetra_Map
 Epetra_Util::Create_Root_Map(const Epetra_Map& usermap,
 				 int root)
 {
+
+  // TODO this needs to be changed for long long
 
   int numProc = usermap.Comm().NumProc();
   if (numProc==1) {

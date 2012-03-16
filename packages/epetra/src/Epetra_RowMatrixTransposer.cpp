@@ -129,6 +129,8 @@ int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous,
 						 Epetra_CrsMatrix *& TransposeMatrix, 
 						 Epetra_Map * TransposeRowMap_in) {
 
+// TODO this needs to be changed for long long, probably by using templates.
+
   int i, j;
 
   if (TransposeCreated_) DeleteData(); // Get rid of existing data first

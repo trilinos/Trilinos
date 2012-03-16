@@ -53,6 +53,8 @@
 
 #include <algorithm>
 
+  // TODO this file needs to be changed for long long
+
 //----------------------------------------------------------------------------
 Epetra_FEVector::Epetra_FEVector(const Epetra_BlockMap& map,
                                  int numVectors,

@@ -45,6 +45,9 @@
 #include "Epetra_Map.h"
 #include "Epetra_MapColoring.h"
 #include "Epetra_Util.h"
+
+  // TODO this file needs to be changed for long long
+
 //=============================================================================
 Epetra_MapColoring::Epetra_MapColoring(const Epetra_BlockMap& map, int * elementColors, 
 				       const int defaultColor)

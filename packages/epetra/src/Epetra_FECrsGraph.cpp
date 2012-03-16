@@ -54,6 +54,8 @@
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_OffsetIndex.h"
 
+  // TODO this file needs to be changed for long long
+
 //-------------------------------------------------------------------------------
 Epetra_FECrsGraph::Epetra_FECrsGraph(Epetra_DataAccess CV,
 				     const Epetra_BlockMap& rowMap,

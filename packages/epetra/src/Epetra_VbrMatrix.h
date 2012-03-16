@@ -44,6 +44,8 @@
 #ifndef EPETRA_VBRMATRIX_H
 #define EPETRA_VBRMATRIX_H
 
+  // TODO this file needs to be changed for long long
+
 #include <Epetra_ConfigDefs.h>
 #include <Epetra_DistObject.h> 
 #include <Epetra_CompObject.h> 
@@ -951,16 +953,16 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     int NumMyDiagonals() const {return(Graph_->NumMyDiagonals());};
     
     //! Returns the number of global Block matrix rows.
-    int NumGlobalBlockRows() const {return(Graph_->NumGlobalBlockRows());};
+    long long NumGlobalBlockRows() const {return(Graph_->NumGlobalBlockRows());};
     
     //! Returns the number of global Block matrix columns.
-    int NumGlobalBlockCols() const {return(Graph_->NumGlobalBlockCols());};
+    long long NumGlobalBlockCols() const {return(Graph_->NumGlobalBlockCols());};
     
     //! Returns the number of nonzero block entries in the global matrix.
-    int NumGlobalBlockEntries() const {return(Graph_->NumGlobalEntries());};
+    long long NumGlobalBlockEntries() const {return(Graph_->NumGlobalEntries());};
     
     //! Returns the number of global nonzero block diagonal entries, based on global row/column index comparisions.
-    int NumGlobalBlockDiagonals() const {return(Graph_->NumGlobalBlockDiagonals());};
+    long long NumGlobalBlockDiagonals() const {return(Graph_->NumGlobalBlockDiagonals());};
     
     //! Returns the number of global nonzero diagonal entries, based on global row/column index comparisions.
     long long NumGlobalDiagonals() const {return(Graph_->NumGlobalDiagonals());};

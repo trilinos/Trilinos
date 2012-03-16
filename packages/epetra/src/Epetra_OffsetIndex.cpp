@@ -46,6 +46,8 @@
 #include "Epetra_Distributor.h"
 #include "Epetra_Comm.h"
 
+  // TODO this file needs to be changed for long long
+
 //==============================================================================
 // Epetra_OffsetIndex constructor from Importer
 Epetra_OffsetIndex::Epetra_OffsetIndex( const Epetra_CrsGraph & SourceGraph,

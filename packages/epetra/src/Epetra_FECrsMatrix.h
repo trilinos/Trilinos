@@ -49,6 +49,8 @@
 
 #include <vector>
 
+  // TODO this file needs to be changed for long long
+
 class Epetra_Map;
 class Epetra_IntSerialDenseVector;
 class Epetra_SerialDenseMatrix;
@@ -608,7 +610,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
 			  int col, double value,
 			  int mode);
 
-   int myFirstRow_;
+   long long myFirstRow_;
    int myNumRows_;
 
    bool ignoreNonLocalEntries_;

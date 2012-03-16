@@ -53,6 +53,9 @@
 class Epetra_IntSerialDenseVector;
 class Epetra_SerialDenseVector;
 
+  // TODO this file needs to be changed for long long
+
+
 /** Epetra Finite-Element Vector. This class inherits Epetra_MultiVector
   and thus provides all Epetra_MultiVector functionality.
 
@@ -250,7 +253,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
   /// deallocates.
   void destroyNonlocalData();
 
-  int myFirstID_;
+  long long myFirstID_;
   int myNumIDs_;
 
   std::vector<int> nonlocalIDs_;

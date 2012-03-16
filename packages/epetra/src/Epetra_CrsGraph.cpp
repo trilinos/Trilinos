@@ -2071,6 +2071,8 @@ int Epetra_CrsGraph::CheckSizes(const Epetra_SrcDistObject& Source) {
   return(0);
 }
 
+  // TODO the functions below need to be changed for long long
+
 // private =====================================================================
 int Epetra_CrsGraph::CopyAndPermute(const Epetra_SrcDistObject& Source,
 				    int NumSameIDs, 
