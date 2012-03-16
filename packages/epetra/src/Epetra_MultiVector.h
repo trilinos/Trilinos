@@ -317,7 +317,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
     \return Integer error code, set to 0 if successful, set to 1 if GlobalRow not associated with calling processor
     set to -1 if VectorIndex >= NumVectors().
   */
-  int ReplaceGlobalValue(int GlobalRow, int VectorIndex, double ScalarValue);
+  int ReplaceGlobalValue(long long GlobalRow, int VectorIndex, double ScalarValue);
 
 
   //! Replace current value at the specified (GlobalBlockRow, BlockRowOffset, VectorIndex) location with ScalarValue.
@@ -339,7 +339,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
     \return Integer error code, set to 0 if successful, set to 1 if GlobalRow not associated with calling processor
     set to -1 if VectorIndex >= NumVectors(), set to -2 if BlockRowOffset is out-of-range.
   */
-  int ReplaceGlobalValue(int GlobalBlockRow, int BlockRowOffset, int VectorIndex, double ScalarValue);
+  int ReplaceGlobalValue(long long GlobalBlockRow, int BlockRowOffset, int VectorIndex, double ScalarValue);
 
 
   //! Adds ScalarValue to existing value at the specified (GlobalRow, VectorIndex) location.
@@ -362,7 +362,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
     \return Integer error code, set to 0 if successful, set to 1 if GlobalRow not associated with calling processor
     set to -1 if VectorIndex >= NumVectors().
   */
-  int SumIntoGlobalValue(int GlobalRow, int VectorIndex, double ScalarValue);
+  int SumIntoGlobalValue(long long GlobalRow, int VectorIndex, double ScalarValue);
 
 
   //! Adds ScalarValue to existing value at the specified (GlobalBlockRow, BlockRowOffset, VectorIndex) location.
@@ -908,7 +908,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
   int MyLength() const {return(MyLength_);};
 
   //! Returns the global vector length of vectors in the multi-vector.
-  int GlobalLength() const {return(GlobalLength_);};
+  long long GlobalLength() const {return(GlobalLength_);};
 
   //! Returns the stride between  vectors in the multi-vector (only meaningful if ConstantStride() is true).
   int Stride() const {return(Stride_);};
@@ -990,7 +990,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
 
   int AllocateForView(void);
   int DoView(void);
-  int ChangeGlobalValue(int GlobalBlockRow,
+  int ChangeGlobalValue(long long GlobalBlockRow,
                         int BlockRowOffset, 
                         int VectorIndex,
                         double ScalarValue,
@@ -1033,7 +1033,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
   double **Pointers_;        // Pointers to each vector;
   
   int MyLength_;
-  int GlobalLength_;
+  long long GlobalLength_;
   int NumVectors_;
   bool UserAllocated_;
   bool ConstantStride_;

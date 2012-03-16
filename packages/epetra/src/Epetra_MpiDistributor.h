@@ -131,6 +131,14 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
                        int & NumExportIDs,
                        int *& ExportGIDs,
                        int *& ExportPIDs);
+
+  int CreateFromRecvs( const int & NumRemoteIDs,
+                       const long long * RemoteGIDs,
+                       const int * RemotePIDs,
+		       bool Deterministic,
+                       int & NumExportIDs,
+                       long long *& ExportGIDs,
+                       int *& ExportPIDs);
   //@}
 
   //! @name Execute Gather/Scatter Operations
@@ -238,11 +246,12 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
     int ComputeRecvs_( int my_proc,
 	               int nprocs );
 
+	template<typename id_type>
     int ComputeSends_( int num_imports,
-		       const int *& import_ids,
+		       const id_type *& import_ids,
 		       const int *& import_procs,
 		       int & num_exports,
-		       int *& export_ids,
+		       id_type *& export_ids,
 		       int *& export_procs,
 		       int my_proc );
 

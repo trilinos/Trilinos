@@ -921,10 +921,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     int NumMyNonzeros() const {return(Graph_->NumMyNonzeros());};
 
     //! Returns the number of global matrix rows.
-    int NumGlobalRows() const {return(Graph_->NumGlobalRows());};
+    long long NumGlobalRows() const {return(Graph_->NumGlobalRows());};
 
     //! Returns the number of global matrix columns.
-    int NumGlobalCols() const {return(Graph_->NumGlobalCols());};
+    long long NumGlobalCols() const {return(Graph_->NumGlobalCols());};
 
     //! Returns the number of nonzero entries in the global matrix.
     /*
@@ -933,7 +933,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
      times. If the user wishes to assemble a matrix from overlapping
      submatrices, they can use Epetra_FEVbrMatrix.
     */
-    int NumGlobalNonzeros() const {return(Graph_->NumGlobalNonzeros());};
+    long long NumGlobalNonzeros() const {return(Graph_->NumGlobalNonzeros());};
 
     //! Returns the number of Block matrix rows owned by the calling processor.
     int NumMyBlockRows() const {return(Graph_->NumMyBlockRows());};
@@ -963,7 +963,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
     int NumGlobalBlockDiagonals() const {return(Graph_->NumGlobalBlockDiagonals());};
     
     //! Returns the number of global nonzero diagonal entries, based on global row/column index comparisions.
-    int NumGlobalDiagonals() const {return(Graph_->NumGlobalDiagonals());};
+    long long NumGlobalDiagonals() const {return(Graph_->NumGlobalDiagonals());};
 
     //! Returns the current number of nonzero Block entries in specified global row on this processor.
     int NumGlobalBlockEntries(int Row) const {return(Graph_->NumGlobalIndices(Row));};
@@ -1029,31 +1029,31 @@ class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
   //! @name Local/Global ID methods
   //@{ 
     //! Returns the local row index for given global row index, returns -1 if no local row for this global row.
-    int LRID( int GRID_in) const {return(Graph_->LRID(GRID_in));};
+    int LRID( long long GRID_in) const {return(Graph_->LRID(GRID_in));};
 
     //! Returns the global row index for give local row index, returns IndexBase-1 if we don't have this local row.
-    int GRID( int LRID_in) const {return(Graph_->GRID(LRID_in));};
+    long long GRID( int LRID_in) const {return(Graph_->GRID(LRID_in));};
 
     //! Returns the local column index for given global column index, returns -1 if no local column for this global column.
-    int LCID( int GCID_in) const {return(Graph_->LCID(GCID_in));};
+    int LCID( long long GCID_in) const {return(Graph_->LCID(GCID_in));};
 
     //! Returns the global column index for give local column index, returns IndexBase-1 if we don't have this local column.
-    int GCID( int LCID_in) const {return(Graph_->GCID(LCID_in));};
+    long long GCID( int LCID_in) const {return(Graph_->GCID(LCID_in));};
  
     //! Returns true if the GRID passed in belongs to the calling processor in this map, otherwise returns false.
-    bool  MyGRID(int GRID_in) const {return(Graph_->MyGRID(GRID_in));};
+    bool  MyGRID(long long GRID_in) const {return(Graph_->MyGRID(GRID_in));};
    
     //! Returns true if the LRID passed in belongs to the calling processor in this map, otherwise returns false.
     bool  MyLRID(int LRID_in) const {return(Graph_->MyLRID(LRID_in));};
 
     //! Returns true if the GCID passed in belongs to the calling processor in this map, otherwise returns false.
-    bool  MyGCID(int GCID_in) const {return(Graph_->MyGCID(GCID_in));};
+    bool  MyGCID(long long GCID_in) const {return(Graph_->MyGCID(GCID_in));};
    
     //! Returns true if the LRID passed in belongs to the calling processor in this map, otherwise returns false.
     bool  MyLCID(int LCID_in) const {return(Graph_->MyLCID(LCID_in));};
 
     //! Returns true of GID is owned by the calling processor, otherwise it returns false.
-    bool MyGlobalBlockRow(int GID) const {return(Graph_->MyGlobalRow(GID));};
+    bool MyGlobalBlockRow(long long GID) const {return(Graph_->MyGlobalRow(GID));};
   //@}
   
   //! @name I/O Methods

@@ -136,7 +136,7 @@ void Epetra_JadMatrix::Allocate(const Epetra_RowMatrix & Matrix) {
 
   Epetra_Util sorter;
   int * RowPerm = RowPerm_.Values();
-  sorter.Sort(false, numMyRows, Profile_.Values(), 0, 0, 1, &RowPerm);
+  sorter.Sort(false, numMyRows, Profile_.Values(), 0, 0, 1, &RowPerm, 0, 0);
   //cout << "Profile = " << Profile_ << endl;
   //cout << "RowPerm = " << RowPerm_ << endl;
   for (int i=0; i<numMyRows; i++) InvRowPerm_[RowPerm[i]] = i; // Compute inverse row permutation

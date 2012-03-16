@@ -304,6 +304,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsMatrix: public Epetra_DistObject, public E
     \pre IndicesAreLocal()==false && IndicesAreContiguous()==false
   */
   virtual int InsertGlobalValues(int GlobalRow, int NumEntries, const double* Values, const int* Indices);
+  virtual int InsertGlobalValues(long long GlobalRow, int NumEntries, const double* Values, const long long* Indices);
 	
   //! Insert a list of elements in a given global row of the matrix.
   /*!
@@ -333,6 +334,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsMatrix: public Epetra_DistObject, public E
     \pre IndicesAreLocal()==false && IndicesAreContiguous()==false
   */
   virtual int InsertGlobalValues(int GlobalRow, int NumEntries, double* Values, int* Indices);
+  virtual int InsertGlobalValues(long long GlobalRow, int NumEntries, double* Values, long long* Indices);
 
   //! Replace specified existing values with this list of entries for a given global row of the matrix.
   /*!
@@ -348,6 +350,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsMatrix: public Epetra_DistObject, public E
     \pre IndicesAreLocal()==false && IndicesAreContiguous()==false
   */
   virtual int ReplaceGlobalValues(int GlobalRow, int NumEntries, const double* Values, const int* Indices);
+  virtual int ReplaceGlobalValues(long long GlobalRow, int NumEntries, const double* Values, const long long* Indices);
 	
   //! Add this list of entries to existing values for a given global row of the matrix.
   /*!
@@ -363,6 +366,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsMatrix: public Epetra_DistObject, public E
     \pre IndicesAreLocal()==false && IndicesAreContiguous()==false
   */
   virtual int SumIntoGlobalValues(int GlobalRow, int NumEntries, const double* Values, const int* Indices);
+  virtual int SumIntoGlobalValues(long long GlobalRow, int NumEntries, const double* Values, const long long* Indices);
 
   //! Insert a list of elements in a given local row of the matrix.
   /*!
@@ -543,6 +547,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsMatrix: public Epetra_DistObject, public E
 or if the number of entries in this row exceed the Length parameter.
   */
   int ExtractGlobalRowCopy(int GlobalRow, int Length, int& NumEntries, double* Values, int* Indices) const;
+  int ExtractGlobalRowCopy(long long GlobalRow, int Length, int& NumEntries, double* Values, long long* Indices) const;
 
   //! Returns a copy of the specified local row in user-provided arrays.
   /*! 
@@ -603,6 +608,7 @@ or if the number of entries in this row exceed the Length parameter.
     \pre IndicesAreGlobal()==true
   */
   int ExtractGlobalRowView(int GlobalRow, int& NumEntries, double*& Values, int*& Indices) const;
+  int ExtractGlobalRowView(long long GlobalRow, int& NumEntries, double*& Values, long long*& Indices) const;
 	
   //! Returns a view of the specified local row values via pointers to internal data.
   /*! 
@@ -627,6 +633,7 @@ or if the number of entries in this row exceed the Length parameter.
     \return Integer error code, set to 0 if successful.
   */
   int ExtractGlobalRowView(int GlobalRow, int& NumEntries, double*& Values) const;
+  int ExtractGlobalRowView(long long GlobalRow, int& NumEntries, double*& Values) const;
 
   //! Returns a view of the specified local row values via pointers to internal data.
   /*! 
@@ -852,16 +859,16 @@ or if the number of entries in this row exceed the Length parameter.
     If the user wishes to assemble a matrix from overlapping submatrices,
     they can use Epetra_FECrsMatrix.
   */
-  int NumGlobalNonzeros() const {return(Graph_.NumGlobalNonzeros());}
+  long long NumGlobalNonzeros() const {return(Graph_.NumGlobalNonzeros());}
 	
   //! Returns the number of global matrix rows.
-  int NumGlobalRows() const {return(Graph_.NumGlobalRows());}
+  long long NumGlobalRows() const {return(Graph_.NumGlobalRows());}
 	
   //! Returns the number of global matrix columns.
-  int NumGlobalCols() const {return(Graph_.NumGlobalCols());}
+  long long NumGlobalCols() const {return(Graph_.NumGlobalCols());}
 	
   //! Returns the number of global nonzero diagonal entries, based on global row/column index comparisons.
-  int NumGlobalDiagonals() const {return(Graph_.NumGlobalDiagonals());}
+  long long NumGlobalDiagonals() const {return(Graph_.NumGlobalDiagonals());}
 	
   //! Returns the number of nonzero entries in the calling processor's portion of the matrix.
   int NumMyNonzeros() const {return(Graph_.NumMyNonzeros());}
@@ -982,25 +989,25 @@ or if the number of entries in this row exceed the Length parameter.
   //! @name Local/Global ID methods
   //@{ 
 	//! Returns the local row index for given global row index, returns -1 if no local row for this global row.
-	int LRID( int GRID_in) const {return(Graph_.LRID(GRID_in));}
+	int LRID( long long GRID_in) const {return(Graph_.LRID(GRID_in));}
 	
 	//! Returns the global row index for give local row index, returns IndexBase-1 if we don't have this local row.
-	int GRID( int LRID_in) const {return(Graph_.GRID(LRID_in));}
+	long long GRID( int LRID_in) const {return(Graph_.GRID(LRID_in));}
 	
 	//! Returns the local column index for given global column index, returns -1 if no local column for this global column.
 	/*!
 	  \pre HaveColMap()==true (If HaveColMap()==false, returns -1)
 	 */
-	int LCID( int GCID_in) const {return(Graph_.LCID(GCID_in));}
+	int LCID( long long GCID_in) const {return(Graph_.LCID(GCID_in));}
 	
 	//! Returns the global column index for give local column index, returns IndexBase-1 if we don't have this local column.
 	/*!
 	  \pre HaveColMap()==true (If HaveColMap()==false, returns -1)
 	 */
-	int GCID( int LCID_in) const {return(Graph_.GCID(LCID_in));}
+	long long GCID( int LCID_in) const {return(Graph_.GCID(LCID_in));}
 	
 	//! Returns true if the GRID passed in belongs to the calling processor in this map, otherwise returns false.
-	bool MyGRID(int GRID_in) const {return(Graph_.MyGRID(GRID_in));}
+	bool MyGRID(long long GRID_in) const {return(Graph_.MyGRID(GRID_in));}
 	
 	//! Returns true if the LRID passed in belongs to the calling processor in this map, otherwise returns false.
 	bool MyLRID(int LRID_in) const {return(Graph_.MyLRID(LRID_in));}
@@ -1009,7 +1016,7 @@ or if the number of entries in this row exceed the Length parameter.
 	/*!
 	  \pre HaveColMap()==true (If HaveColMap()==false, returns -1)
 	 */
-	bool MyGCID(int GCID_in) const {return(Graph_.MyGCID(GCID_in));}
+	bool MyGCID(long long GCID_in) const {return(Graph_.MyGCID(GCID_in));}
    
 	//! Returns true if the LRID passed in belongs to the calling processor in this map, otherwise returns false.
 	/*!
@@ -1018,7 +1025,7 @@ or if the number of entries in this row exceed the Length parameter.
 	bool MyLCID(int LCID_in) const {return(Graph_.MyLCID(LCID_in));}
 
 	//! Returns true of GID is owned by the calling processor, otherwise it returns false.
-	bool MyGlobalRow(int GID) const {return(Graph_.MyGlobalRow(GID));}
+	bool MyGlobalRow(long long GID) const {return(Graph_.MyGlobalRow(GID));}
   //@}
   
   
@@ -1218,10 +1225,10 @@ or if the number of entries in this row exceed the Length parameter.
   int InsertValues(int LocalRow, int NumEntries, double* Values, int* Indices);
   int InsertValues(int LocalRow, int NumEntries, const double* Values, const int* Indices);
 
-  int InsertOffsetValues(int GlobalRow, int NumEntries, double *Values, int *Indices);
-  int InsertOffsetValues(int GlobalRow, int NumEntries, const double *Values, const int *Indices);
-  int ReplaceOffsetValues(int GlobalRow, int NumEntries, const double *Values, const int *Indices);
-  int SumIntoOffsetValues(int GlobalRow, int NumEntries, const double *Values, const int *Indices);
+  int InsertOffsetValues(long long GlobalRow, int NumEntries, double *Values, int *Indices);
+  int InsertOffsetValues(long long GlobalRow, int NumEntries, const double *Values, const int *Indices);
+  int ReplaceOffsetValues(long long GlobalRow, int NumEntries, const double *Values, const int *Indices);
+  int SumIntoOffsetValues(long long GlobalRow, int NumEntries, const double *Values, const int *Indices);
   void UpdateImportVector(int NumVectors) const;
   void UpdateExportVector(int NumVectors) const;
   void GeneralMV(double * x, double * y) const;

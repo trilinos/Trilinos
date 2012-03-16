@@ -306,6 +306,8 @@ and entries 5 and 6 on PEs 1 and 2.
 
   Epetra_Distributor * Distor_;
   
+  template<typename int_type>
+  void Construct(const Epetra_BlockMap & SourceMap, const Epetra_BlockMap & TargetMap);
 
 };
 

@@ -101,6 +101,14 @@ class Epetra_Directory {
 				   int * EntrySizes,
 				   bool high_rank_sharing_procs=false) const = 0;
 
+  virtual int GetDirectoryEntries( const Epetra_BlockMap& Map,
+				   const int NumEntries,
+				   const long long * GlobalEntries,
+				   int * Procs,
+				   int * LocalEntries,
+				   int * EntrySizes,
+				   bool high_rank_sharing_procs=false) const = 0;
+
   //!GIDsAllUniquelyOwned: returns true if all GIDs appear on just one processor.
   /*! If any GIDs are owned by multiple processors, returns false.
    */

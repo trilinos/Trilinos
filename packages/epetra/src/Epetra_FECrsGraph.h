@@ -181,7 +181,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsGraph : public Epetra_CrsGraph {
   int InputNonlocalIndex(int rowoffset,
 			 int col);
 
-  int myFirstRow_;
+  long long myFirstRow_;
   int myNumRows_;
   bool ignoreNonLocalEntries_;
 
@@ -189,7 +189,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsGraph : public Epetra_CrsGraph {
    * This STL map holds all non-local data in format of Entries in the
    * individual rows together with the row number.
    */
-  std::map<int,Epetra_CrsGraphData::EntriesInOneRow> nonlocalRowData_;
+//TODO FIXME std::map<int,Epetra_CrsGraphData::EntriesInOneRow> nonlocalRowData_;
 
   /**
    * A CrsGraph holding non-local data in case the respective flag is set in

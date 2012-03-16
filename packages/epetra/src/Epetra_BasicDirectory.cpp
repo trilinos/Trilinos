@@ -76,17 +76,22 @@ Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BlockMap & Map)
     // and can be found using the MinGIDs.
 
     int NumProc = Map.Comm().NumProc();
-    AllMinGIDs_ = new int[NumProc+1];
-    int MinMyGID = Map.MinMyGID();
+    AllMinGIDs_ = new long long[NumProc+1];
+    long long MinMyGID = Map.MinMyGID();
     Map.Comm().GatherAll(&MinMyGID, AllMinGIDs_, 1);
     AllMinGIDs_[NumProc] = 1 + Map.MaxAllGID(); // Set max cap
   }
 
   // General case.  Need to build a directory via calls to communication functions
   else {
-    
-    int flag = Generate(Map);
-    assert(flag==0);
+
+	int flag = -1;
+	if(Map.GlobalIndicesLongLong())
+		flag = Generate<long long>(Map);
+	else if(Map.GlobalIndicesInt())
+		flag = Generate<int>(Map);
+
+	assert(flag==0);
   }
 }
 
@@ -122,7 +127,7 @@ Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BasicDirectory & Direc
     }
   if (Directory.AllMinGIDs_!=0) {
     int NumProc = DirectoryMap_->Comm().NumProc();
-    AllMinGIDs_ = new int[NumProc+1];
+    AllMinGIDs_ = new long long[NumProc+1];
     for (int i=0; i<NumProc+1; i++) AllMinGIDs_[i] = Directory.AllMinGIDs_[i];
     }
 
@@ -204,18 +209,19 @@ void Epetra_BasicDirectory::addProcToList(int proc, int LID)
 
 //==============================================================================
 // Generate: Generates Directory Tables
+template<typename int_type>
 int Epetra_BasicDirectory::Generate(const Epetra_BlockMap& Map)
 {
   int i;
   SizeIsConst_ = Map.ConstantElementSize();
-  int MinAllGID = Map.MinAllGID();
-  int MaxAllGID = Map.MaxAllGID();
+  int_type MinAllGID = (int_type) Map.MinAllGID();
+  int_type MaxAllGID = (int_type) Map.MaxAllGID();
   // DirectoryMap will have a range of elements from the minimum to the maximum
   // GID of the user map, and an IndexBase of MinAllGID from the user map
-  int Dir_NumGlobalElements = MaxAllGID - MinAllGID + 1;
+  int_type Dir_NumGlobalElements = MaxAllGID - MinAllGID + 1;
 
   // Create a uniform linear map to contain the directory
-  DirectoryMap_ = new Epetra_Map( Dir_NumGlobalElements, MinAllGID, Map.Comm() );
+  DirectoryMap_ = new Epetra_Map( Dir_NumGlobalElements, (int) MinAllGID, Map.Comm() );
 
   int Dir_NumMyElements = DirectoryMap_->NumMyElements(); // Get NumMyElements
 
@@ -245,7 +251,8 @@ int Epetra_BasicDirectory::Generate(const Epetra_BlockMap& Map)
   int Map_NumMyElements = Map.NumMyElements();
   int * send_procs = 0;
   if (Map_NumMyElements>0) send_procs = new int[Map_NumMyElements];
-  int * Map_MyGlobalElements = Map.MyGlobalElements();
+  int_type * Map_MyGlobalElements = 0;
+  Map.MyGlobalElementsPtr(Map_MyGlobalElements);
 
   EPETRA_CHK_ERR(DirectoryMap_->RemoteIDList(Map_NumMyElements,
 					     Map_MyGlobalElements, 
@@ -267,7 +274,7 @@ int Epetra_BasicDirectory::Generate(const Epetra_BlockMap& Map)
   int len_import_elements = 0;
   int * ElementSizeList = 0;
 
-  int packetSize = 3; // Assume we will send GIDs, PIDs and LIDs (will increase to 4 if also sending sizes)
+  int packetSize = (int) (sizeof(int_type) + 2*sizeof(int))/sizeof(int); // Assume we will send GIDs, PIDs and LIDs (will increase to 4 if also sending sizes)
   if (!SizeIsConst_) packetSize++; // Must send element size info also
  
   if (Map_NumMyElements>0) {
@@ -276,7 +283,8 @@ int Epetra_BasicDirectory::Generate(const Epetra_BlockMap& Map)
     int * ptr = export_elements;
     for( i = 0; i < Map_NumMyElements; i++ )
       {
-	*ptr++ = Map_MyGlobalElements[i];
+	*(int_type*)ptr = Map_MyGlobalElements[i];
+	ptr += sizeof(int_type)/sizeof(int);
 	*ptr++ = MyPID;
 	*ptr++ = i;
 	if (!SizeIsConst_) *ptr++ = ElementSizeList[i];
@@ -299,7 +307,8 @@ int Epetra_BasicDirectory::Generate(const Epetra_BlockMap& Map)
   int * ptr = import_elements;
   for( i = 0; i < num_recvs; i++ )
   {
-    curr_LID = DirectoryMap_->LID(*ptr++); // Convert incoming GID to Directory LID
+    curr_LID = DirectoryMap_->LID(*(int_type*)ptr); // Convert incoming GID to Directory LID
+	ptr += sizeof(int_type)/sizeof(int);
     //if (MYPID) cout << " Receive ID = " << i << "  GID = " << import_elements[3*i] << "  LID = " << curr_LID << endl << flush;
     assert(curr_LID !=-1); // Internal error
     int proc = *ptr++;
@@ -345,9 +354,10 @@ bool Epetra_BasicDirectory::GIDsAllUniquelyOwned() const
 // GetDirectoryEntries: Get non-local GID references ( procID and localID )
 // 			Space should already be allocated for Procs and
 //     			LocalEntries.
+template<typename int_type>
 int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
 						const int NumEntries,
-						const int * GlobalEntries,
+						const int_type * GlobalEntries,
 						int * Procs,
 						int * LocalEntries,
 						int * EntrySizes,
@@ -358,7 +368,7 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
   int i;
   int MyPID = Map.Comm().MyPID();
   int NumProc = Map.Comm().NumProc();
-  int n_over_p = Map.NumGlobalElements() / NumProc;
+  int_type n_over_p = (int_type) (Map.NumGlobalElements() / NumProc);
 
   // Test for simple cases
 
@@ -401,17 +411,17 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
   // Linear Map case
   if (Map.LinearMap()) {
     
-    int MinAllGID = Map.MinAllGID(); // Get Min of all GID
-    int MaxAllGID = Map.MaxAllGID(); // Get Max of all GID
+    int_type MinAllGID = (int_type) Map.MinAllGID(); // Get Min of all GID
+    int_type MaxAllGID = (int_type) Map.MaxAllGID(); // Get Max of all GID
     for (i=0; i<NumEntries; i++) {
       int LID = -1; // Assume not found
       int Proc = -1;
-      int GID = GlobalEntries[i];
+      int_type GID = GlobalEntries[i];
       if (GID<MinAllGID) ierr = 1;
       else if (GID>MaxAllGID) ierr = 1;
       else {
 	// Guess uniform distribution and start a little above it
-	int Proc1 = EPETRA_MIN(GID/EPETRA_MAX(n_over_p,1) + 2, NumProc-1);
+	int Proc1 = (int) EPETRA_MIN(GID/EPETRA_MAX(n_over_p,(int_type)1) + 2, (int_type) NumProc-1);
 	bool found = false;
 	while (Proc1 >= 0 && Proc1< NumProc) {
 	  if (AllMinGIDs_[Proc1]<=GID) {
@@ -425,7 +435,7 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
 	}
 	if (found) {
 	  Proc = Proc1;
-	  LID = GID - AllMinGIDs_[Proc];
+	  LID = (int) (GID - AllMinGIDs_[Proc]);
 	}
       }
       Procs[i] = Proc;
@@ -443,7 +453,7 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
 	Epetra_Distributor * Size_Distor = Map.Comm().CreateDistributor();
 	
 	int Size_num_sends;
-	int * Size_send_gids = 0;
+	int_type * Size_send_gids = 0;
 	int * Size_send_procs = 0;
 
 	
@@ -453,22 +463,23 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
 	int * Size_exports = 0;
 	char * c_Size_imports = 0;
 	int * Size_imports = 0;
+    int packetSize = (int) (sizeof(int_type) + sizeof(int))/sizeof(int);
 	if (Size_num_sends>0) {
-	  Size_exports = new int[ 2 * Size_num_sends ];
+	  Size_exports = new int[ packetSize * Size_num_sends ];
 	  for( i = 0; i < Size_num_sends; i++ )
 	    {
-	      int Size_curr_GID = Size_send_gids[i];
+	      int_type Size_curr_GID = Size_send_gids[i];
 	      int Size_curr_LID = Map.LID(Size_curr_GID);
 	      assert(Size_curr_LID!=-1); // Internal error 
-	      Size_exports[2*i] = Size_curr_GID;
+	      *(int_type*)(Size_exports + packetSize*i) = Size_curr_GID;
 	      int Size_curr_size = ElementSizeList[Size_curr_LID];
-	      Size_exports[2*i+1] = Size_curr_size;
+	      *(Size_exports + packetSize*i + (packetSize - 1)) = Size_curr_size;
 	    }
 	}
 	
         int len_Size_imports = 0;
 	EPETRA_CHK_ERR(Size_Distor->Do( reinterpret_cast<char*> (Size_exports),
-                                        2 * (int)sizeof( int ),
+                                        packetSize * (int)sizeof( int ),
                                         len_Size_imports,
                                         c_Size_imports));
 	Size_imports = reinterpret_cast<int*>(c_Size_imports);
@@ -478,11 +489,11 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
 
 	    // Need to change !!!!
 	    //bool found = false;
-	    int Size_curr_LID = Size_imports[2*i];
+	    int_type Size_curr_GID = *(int_type*)(Size_imports + packetSize*i);
 	    for( j = 0; j < NumEntries; j++ )
-	      if( Size_curr_LID == GlobalEntries[j] )
+	      if( Size_curr_GID == GlobalEntries[j] )
 		{
-		  EntrySizes[j] = Size_imports[2*i+1];
+		  EntrySizes[j] = *(Size_imports + packetSize*i + (packetSize - 1));
 		  // found = true;
 		  break;
 		}
@@ -505,7 +516,7 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
 
   // General case (need to set up an actual directory structure)
   
-  int PacketSize = 2; // We will send at least the GID and PID.  Might also send LID and Size info
+  int PacketSize = (int) (sizeof(int_type) + sizeof(int))/sizeof(int); // We will send at least the GID and PID.  Might also send LID and Size info
   bool DoSizes = false;
   if (EntrySizes!=0) {
     if (Map.ConstantElementSize()) {
@@ -542,7 +553,7 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
   }}
 
   int num_sends;
-  int * send_gids = 0;
+  int_type * send_gids = 0;
   int * send_procs = 0;
   
   EPETRA_CHK_ERR(Distor->CreateFromRecvs( NumEntries, GlobalEntries, dir_procs, true,
@@ -561,8 +572,9 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
     int * ptr = exports;
     for( i = 0; i < num_sends; i++ )
       {
-	int curr_GID = send_gids[i];
-	*ptr++ = curr_GID;
+	int_type curr_GID = send_gids[i];
+	*(int_type*)ptr = curr_GID;
+	ptr += sizeof(int_type)/sizeof(int);
 	curr_LID = DirectoryMap_->LID(curr_GID);
 	assert(curr_LID!=-1); // Internal error 
 	if (high_rank_sharing_procs==false) {
@@ -601,21 +613,24 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
   //create a sorted copy of the GlobalEntries array, along with a companion
   //array that will allow us to put result arrays (Procs, LocalEntries &
   //EntrySizes) in the same order as the unsorted GlobalEntries array
-  int* sortedGE = new int[NumEntries*2];
-  int* offsets = sortedGE+NumEntries;
+  int* sortedGE_int = new int[NumEntries*(1 + sizeof(int_type)/sizeof(int))];
+  int* offsets = sortedGE_int+NumEntries*sizeof(int_type)/sizeof(int);
+  int_type* sortedGE = reinterpret_cast<int_type*>(sortedGE_int);
+
   for(i=0; i<NumEntries; ++i) {
     offsets[i] = i;
   }
 
-  std::memcpy(sortedGE, GlobalEntries, NumEntries*sizeof(int));
+  std::memcpy(sortedGE, GlobalEntries, NumEntries*sizeof(int_type));
   Epetra_Util Utils;
-  Utils.Sort(true, NumEntries, sortedGE, 0, 0, 1, &offsets);
+  Utils.Sort(true, NumEntries, sortedGE, 0, 0, 1, &offsets, 0, 0);
 
   int * ptr = imports;
   int insertPoint; //insertPoint won't be used, but is argument to binary_search
 
   for( i = 0; i < NumRecv; i++ ) {
-    curr_LID = *ptr++;
+    int_type curr_LID = *(int_type*)ptr;
+	ptr += sizeof(int_type)/sizeof(int);
     j = Epetra_Util_binary_search(curr_LID, sortedGE, NumEntries, insertPoint);
     if (j > -1) {
       Procs[offsets[j]] = *ptr++;
@@ -624,7 +639,7 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
     }
   }
 
-  delete [] sortedGE;
+  delete [] sortedGE_int;
 
   if( send_gids ) delete [] send_gids;
   if( send_procs ) delete [] send_procs;
@@ -634,6 +649,40 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
 
   delete Distor;
   return(0);
+}
+
+//==============================================================================
+int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
+						const int NumEntries,
+						const int * GlobalEntries,
+						int * Procs,
+						int * LocalEntries,
+						int * EntrySizes,
+						bool high_rank_sharing_procs) const
+{
+	if(!Map.GlobalIndicesInt())
+		throw "Epetra_BasicDirectory::GetDirectoryEntries: int version can't be called for non int map";
+
+	return GetDirectoryEntries<int>(Map, NumEntries, GlobalEntries, Procs,
+		LocalEntries, EntrySizes, high_rank_sharing_procs);
+}
+
+// GetDirectoryEntries: Get non-local GID references ( procID and localID )
+// 			Space should already be allocated for Procs and
+//     			LocalEntries.
+int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
+						const int NumEntries,
+						const long long * GlobalEntries,
+						int * Procs,
+						int * LocalEntries,
+						int * EntrySizes,
+						bool high_rank_sharing_procs) const
+{
+	if(!Map.GlobalIndicesLongLong())
+		throw "Epetra_BasicDirectory::GetDirectoryEntries: long long version can't be called for non long long map";
+
+	return GetDirectoryEntries<long long>(Map, NumEntries, GlobalEntries, Procs,
+		LocalEntries, EntrySizes, high_rank_sharing_procs);
 }
 
 //==============================================================================

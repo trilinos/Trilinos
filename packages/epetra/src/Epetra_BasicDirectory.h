@@ -116,6 +116,14 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
 			   int * EntrySizes,
 			   bool high_rank_sharing_procs=false) const;
 
+  int GetDirectoryEntries( const Epetra_BlockMap& Map,
+			   const int NumEntries,
+			   const long long * GlobalEntries,
+			   int * Procs,
+			   int * LocalEntries,
+			   int * EntrySizes,
+			   bool high_rank_sharing_procs=false) const;
+
   //!GIDsAllUniquelyOwned: returns true if all GIDs appear on just one processor.
   /*! If any GIDs are owned by multiple processors, returns false.
    */
@@ -136,6 +144,7 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
   void addProcToList(int proc, int LID);
 
   //! Generate: Sets up Directory tables.
+  template<typename int_type>
   int Generate(const Epetra_BlockMap& Map);
 
   //! Returns the Epetra_Map containing the directory
@@ -180,8 +189,16 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
   int * SizeList_;
   bool SizeIsConst_;
 
-  int * AllMinGIDs_;
+  long long * AllMinGIDs_;
   
+	template<typename int_type>
+	int	GetDirectoryEntries( const Epetra_BlockMap& Map,
+						const int NumEntries,
+						const int_type * GlobalEntries,
+						int * Procs,
+						int * LocalEntries,
+						int * EntrySizes,
+						bool high_rank_sharing_procs) const;
 
 };
 

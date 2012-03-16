@@ -103,14 +103,16 @@ int Epetra_Util::SetSeed(unsigned int Seed_in) {
 }
 
 //=============================================================================
-void Epetra_Util::Sort(bool SortAscending, int NumKeys, int * Keys, 
+template<typename T>
+void Epetra_Util::Sort(bool SortAscending, int NumKeys, T * Keys, 
 		       int NumDoubleCompanions,double ** DoubleCompanions, 
-		       int NumIntCompanions, int ** IntCompanions)
+		       int NumIntCompanions, int ** IntCompanions,
+		       int NumLongLongCompanions, long long ** LongLongCompanions)
 {
   int i;
 
   int n = NumKeys;
-  int * const list = Keys;
+  T * const list = Keys;
   int m = n/2;
   
   while (m > 0) {
@@ -122,7 +124,7 @@ void Epetra_Util::Sort(bool SortAscending, int NumKeys, int * Keys,
 	    if ((SortAscending && list[k+m] >= list[k]) || 
 		( !SortAscending && list[k+m] <= list[k]))
 	      break;
-	    int temp = list[k+m];
+	    T temp = list[k+m];
 	    list[k+m] = list[k];
 	    list[k] = temp;
 	    for (i=0; i<NumDoubleCompanions; i++) {
@@ -135,10 +137,37 @@ void Epetra_Util::Sort(bool SortAscending, int NumKeys, int * Keys,
 	    IntCompanions[i][k+m] = IntCompanions[i][k];
 	    IntCompanions[i][k] = itemp;
 	    }
+	    for (i=0; i<NumLongLongCompanions; i++) {
+	      long long LLtemp = LongLongCompanions[i][k+m];
+	    LongLongCompanions[i][k+m] = LongLongCompanions[i][k];
+	    LongLongCompanions[i][k] = LLtemp;
+	    }
 	  }
       }
     m = m/2;
   }
+}
+
+void Epetra_Util::Sort(bool SortAscending, int NumKeys, int * Keys, 
+		       int NumDoubleCompanions,double ** DoubleCompanions, 
+		       int NumIntCompanions, int ** IntCompanions,
+		       int NumLongLongCompanions, long long ** LongLongCompanions)
+{
+	return Sort<int>(SortAscending, NumKeys, Keys, 
+		       NumDoubleCompanions, DoubleCompanions, 
+		       NumIntCompanions, IntCompanions,
+		       NumLongLongCompanions, LongLongCompanions);
+}
+
+void Epetra_Util::Sort(bool SortAscending, int NumKeys, long long * Keys, 
+		       int NumDoubleCompanions,double ** DoubleCompanions, 
+		       int NumIntCompanions, int ** IntCompanions,
+		       int NumLongLongCompanions, long long ** LongLongCompanions)
+{
+	return Sort<long long>(SortAscending, NumKeys, Keys, 
+		       NumDoubleCompanions, DoubleCompanions, 
+		       NumIntCompanions, IntCompanions,
+		       NumLongLongCompanions, LongLongCompanions);
 }
 
 //----------------------------------------------------------------------------
@@ -312,8 +341,9 @@ Epetra_Util::Create_OneToOne_BlockMap(const Epetra_BlockMap& usermap,
 }
 
 //----------------------------------------------------------------------------
-int Epetra_Util_binary_search(int item,
-                              const int* list,
+template<typename T>
+int Epetra_Util_binary_search(T item,
+                              const T* list,
                               int len,
                               int& insertPoint)
 {
@@ -342,6 +372,23 @@ int Epetra_Util_binary_search(int item,
   else insertPoint = start;
 
   return(-1);
+}
+
+int Epetra_Util_binary_search(int item,
+                              const int* list,
+                              int len,
+                              int& insertPoint)
+{
+	return Epetra_Util_binary_search<int>(item, list, len, insertPoint);
+}
+
+//----------------------------------------------------------------------------
+int Epetra_Util_binary_search(long long item,
+                              const long long* list,
+                              int len,
+                              int& insertPoint)
+{
+	return Epetra_Util_binary_search<long long>(item, list, len, insertPoint);
 }
 
 //=========================================================================

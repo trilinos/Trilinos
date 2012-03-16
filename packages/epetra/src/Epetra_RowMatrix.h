@@ -227,16 +227,16 @@ class EPETRA_LIB_DLL_EXPORT Epetra_RowMatrix: public virtual Epetra_Operator, pu
       In that case, those nonzeros may be counted multiple times (also
       depending on the matrix implementation).
     */
-    virtual int NumGlobalNonzeros() const = 0;
+    virtual long long NumGlobalNonzeros() const = 0;
 
     //! Returns the number of global matrix rows.
-    virtual int NumGlobalRows() const = 0;
+    virtual long long NumGlobalRows() const = 0;
 
     //! Returns the number of global matrix columns.
-    virtual int NumGlobalCols() const= 0;
+    virtual long long NumGlobalCols() const= 0;
 
     //! Returns the number of global nonzero diagonal entries, based on global row/column index comparisons.
-    virtual int NumGlobalDiagonals() const = 0;
+    virtual long long NumGlobalDiagonals() const = 0;
     
     //! Returns the number of nonzero entries in the calling processor's portion of the matrix.
     virtual int NumMyNonzeros() const = 0;

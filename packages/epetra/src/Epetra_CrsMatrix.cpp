@@ -482,6 +482,8 @@ int Epetra_CrsMatrix::Scale(double ScalarConstant)
   return(0);
 }
 
+#if 0 == 1234 // These sections have to be fixed.
+
 //==========================================================================
 int Epetra_CrsMatrix::InsertGlobalValues(int Row, int NumEntries,
 					 const double* values,
@@ -3986,3 +3988,4 @@ int Epetra_CrsMatrix::Solve1(bool Upper, bool Trans, bool UnitDiagonal, const Ep
   return(0);
 }
 
+#endif // 0 == 1234 // These sections have to be fixed.

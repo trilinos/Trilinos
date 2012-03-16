@@ -137,6 +137,8 @@ void Epetra_FECrsGraph::DeleteMemory()
   // destructor
 }
 
+#if 0 == 1234 // These sections have to be fixed.
+
 //----------------------------------------------------------------------------
 int Epetra_FECrsGraph::InsertGlobalIndices(int numRows, const int* rows,
 					   int numCols, const int* cols)
@@ -294,3 +296,4 @@ int Epetra_FECrsGraph::GlobalAssemble(const Epetra_Map& domain_map,
   return(0);
 }
 
+#endif // 0 == 1234 // These sections have to be fixed.

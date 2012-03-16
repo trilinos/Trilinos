@@ -143,7 +143,8 @@ void Epetra_BasicRowMatrix::ComputeStructureConstants() const {
     if (NumEntries>MaxNumEntries_) MaxNumEntries_ = NumEntries;
   }
 
-  RowMatrixRowMap().Comm().SumAll(&NumMyNonzeros_, &NumGlobalNonzeros_, 1);
+  long long tmp_NumMyNonzeros = NumMyNonzeros_;
+  RowMatrixRowMap().Comm().SumAll(&tmp_NumMyNonzeros, &NumGlobalNonzeros_, 1);
   HaveStructureConstants_ = true;
 }
 //=============================================================================
@@ -198,7 +199,7 @@ int Epetra_BasicRowMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const {
 
   for(int i = 0; i < NumMyRows_; i++) {
     EPETRA_CHK_ERR(ExtractMyRowCopy(i, MaxNumEntries(), NumEntries, Values.Values(), Indices.Values()));
-    int ii = RowMatrixRowMap().GID(i);
+    long long ii = RowMatrixRowMap().GID(i);
     
     Diagonal[i] = 0.0;
     for(int j = 0; j < NumEntries; j++) {
@@ -525,10 +526,10 @@ void Epetra_BasicRowMatrix::Print(ostream& os) const {
       
       for(int i = 0; i < NumMyRows_; i++) {
 	ExtractMyRowCopy(i, MaxNumEntries(), NumEntries, Values.Values(), Indices.Values());
-	int Row = RowMatrixRowMap().GID(i);; // Get global row number
+	long long Row = RowMatrixRowMap().GID(i);; // Get global row number
 	
 	for (int j = 0; j < NumEntries ; j++) {   
-	  int Index = RowMatrixColMap().GID(Indices[j]);
+	  long long Index = RowMatrixColMap().GID(Indices[j]);
 	  os.width(8);
 	  os <<  MyPID ; os << "    ";	
 	  os.width(10);

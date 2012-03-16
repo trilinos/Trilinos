@@ -124,6 +124,30 @@ int Epetra_SerialDistributor::CreateFromRecvs( const int & NumRemoteIDs,
 }
 
 //==============================================================================
+//---------------------------------------------------------------------------
+//CreateFromRecvs Method
+// - create communication plan given a known list of procs to recv from
+//---------------------------------------------------------------------------
+int Epetra_SerialDistributor::CreateFromRecvs( const int & NumRemoteIDs,
+				   const long long * RemoteGIDs,
+			           const int * RemotePIDs,
+				   bool Deterministic,
+			           int & NumExportIDs,
+				   long long *& ExportGIDs,
+				   int *& ExportPIDs )
+{
+  (void)NumRemoteIDs;
+  (void)RemoteGIDs;
+  (void)RemotePIDs;
+  (void)Deterministic;
+  (void)NumExportIDs;
+  (void)ExportGIDs;
+  (void)ExportPIDs;
+  EPETRA_CHK_ERR(-1); // This method should never be called 
+  return(-1);
+}
+
+//==============================================================================
 // GSComm_Comm Do method
 int Epetra_SerialDistributor::Do(char * export_objs,
                                  int obj_size,

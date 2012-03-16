@@ -356,21 +356,21 @@ int Epetra_MultiVector::DoView(void)
   return(0);
 }
 //=========================================================================
-int Epetra_MultiVector::ReplaceGlobalValue(int GlobalRow, int VectorIndex, double ScalarValue) {
+int Epetra_MultiVector::ReplaceGlobalValue(long long GlobalRow, int VectorIndex, double ScalarValue) {
 
  // Use the more general method below
   EPETRA_CHK_ERR(ChangeGlobalValue(GlobalRow, 0, VectorIndex, ScalarValue, false));
   return(0);
 }
 //=========================================================================
-int Epetra_MultiVector::ReplaceGlobalValue(int GlobalBlockRow, int BlockRowOffset, 
+int Epetra_MultiVector::ReplaceGlobalValue(long long GlobalBlockRow, int BlockRowOffset, 
 					   int VectorIndex, double ScalarValue) {
   // Use the more general method below
   EPETRA_CHK_ERR(ChangeGlobalValue(GlobalBlockRow, BlockRowOffset, VectorIndex, ScalarValue, false)); 
   return(0);
 }
 //=========================================================================
-int Epetra_MultiVector::SumIntoGlobalValue(int GlobalRow, int VectorIndex, double ScalarValue) {
+int Epetra_MultiVector::SumIntoGlobalValue(long long GlobalRow, int VectorIndex, double ScalarValue) {
 
   // Use the more general method below
   EPETRA_CHK_ERR(ChangeGlobalValue(GlobalRow, 0, VectorIndex, ScalarValue, true)); 
@@ -411,7 +411,7 @@ int Epetra_MultiVector::SumIntoMyValue(int MyBlockRow, int BlockRowOffset,
   return(0);
 }
 //=========================================================================
-int Epetra_MultiVector::ChangeGlobalValue(int GlobalBlockRow, int BlockRowOffset, 
+int Epetra_MultiVector::ChangeGlobalValue(long long GlobalBlockRow, int BlockRowOffset, 
 				     int VectorIndex, double ScalarValue, bool SumInto) {
 
   // Convert GID to LID and call LID version
@@ -2395,7 +2395,6 @@ void Epetra_MultiVector::Print(ostream& os) const {
       int NumVectors1 = NumVectors();
       int NumMyElements1 =Map(). NumMyElements();
       int MaxElementSize1 = Map().MaxElementSize();
-      int * MyGlobalElements1 = Map().MyGlobalElements();
       int * FirstPointInElementList1 = NULL;
       if (MaxElementSize1!=1) FirstPointInElementList1 = Map().FirstPointInElementList();
       double ** A_Pointers = Pointers();
@@ -2422,11 +2421,35 @@ void Epetra_MultiVector::Print(ostream& os) const {
 	  os <<  MyPID; os << "    ";
 	  os.width(10);
 	  if (MaxElementSize1==1) {
-	    os << MyGlobalElements1[i] << "    ";
+		  if(Map().GlobalIndicesInt())
+		  {
+			int * MyGlobalElements1 = Map().MyGlobalElements();
+			os << MyGlobalElements1[i] << "    ";
+		  }
+		  else if(Map().GlobalIndicesLongLong())
+		  {
+			long long * MyGlobalElements1 = Map().MyGlobalElements_LL();
+			os << MyGlobalElements1[i] << "    ";
+		  }
+		  else
+		    throw ReportError("Epetra_MultiVector::Print ERROR, Don't know map global index type.",-1);
+
        iii = i;
        }
 	  else {
-	    os <<  MyGlobalElements1[i]<< "/" << ii << "    ";
+		  if(Map().GlobalIndicesInt())
+		  {
+			int * MyGlobalElements1 = Map().MyGlobalElements();
+			os <<  MyGlobalElements1[i]<< "/" << ii << "    ";
+		  }
+		  else if(Map().GlobalIndicesLongLong())
+		  {
+			long long * MyGlobalElements1 = Map().MyGlobalElements_LL();
+			os <<  MyGlobalElements1[i]<< "/" << ii << "    ";
+		  }
+		  else
+		    throw ReportError("Epetra_MultiVector::Print ERROR, Don't know map global index type.",-1);
+
          iii = FirstPointInElementList1[i]+ii;
        }
 	  for (int j = 0; j < NumVectors1 ; j++)

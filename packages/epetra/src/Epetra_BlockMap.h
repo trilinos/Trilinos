@@ -222,6 +222,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
 
   */ 
   Epetra_BlockMap(int NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm& Comm);
+  Epetra_BlockMap(long long NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm& Comm);
 
   //! Epetra_BlockMap constructor for a user-defined linear distribution of constant size elements.
   /*! Creates a map that puts NumMyElements on the calling processor.  If 
@@ -254,6 +255,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
 
   */ 
   Epetra_BlockMap(int NumGlobalElements, int NumMyElements, 
+		int ElementSize, int IndexBase, const Epetra_Comm& Comm);
+  Epetra_BlockMap(long long NumGlobalElements, int NumMyElements, 
 		int ElementSize, int IndexBase, const Epetra_Comm& Comm);
 
   //! Epetra_BlockMap constructor for a user-defined arbitrary distribution of constant size elements.
@@ -295,6 +298,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   */ 
   Epetra_BlockMap(int NumGlobalElements, int NumMyElements,
                   const int *MyGlobalElements,  
+		  int ElementSize, int IndexBase, const Epetra_Comm& Comm);
+  Epetra_BlockMap(long long NumGlobalElements, int NumMyElements,
+                  const long long *MyGlobalElements,  
 		  int ElementSize, int IndexBase, const Epetra_Comm& Comm);
 
   //! Epetra_BlockMap constructor for a user-defined arbitrary distribution of variable size elements.
@@ -339,6 +345,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
                   const int *MyGlobalElements,
 		  const int *ElementSizeList, int IndexBase,
                   const Epetra_Comm& Comm);
+  Epetra_BlockMap(long long NumGlobalElements, int NumMyElements,
+                  const long long *MyGlobalElements,
+		  const int *ElementSizeList, int IndexBase,
+                  const Epetra_Comm& Comm);
   
   //! Epetra_BlockMap copy constructor.
   Epetra_BlockMap(const Epetra_BlockMap& map);
@@ -360,6 +370,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   int RemoteIDList(int NumIDs, const int * GIDList, int * PIDList, int * LIDList) const {
     return(RemoteIDList(NumIDs, GIDList, PIDList, LIDList, 0));
   };
+  int RemoteIDList(int NumIDs, const long long * GIDList, int * PIDList, int * LIDList) const {
+    return(RemoteIDList(NumIDs, GIDList, PIDList, LIDList, 0));
+  };
 
   //! Returns the processor IDs, corresponding local index value, and element size for a given list of global indices
   /*! For each element (GID) of a given a list of global element numbers (stored in GIDList) of length NumIDs,
@@ -368,33 +381,34 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
       SizeList.
   */
   int RemoteIDList(int NumIDs, const int * GIDList, int * PIDList, int * LIDList, int * SizeList) const;
+  int RemoteIDList(int NumIDs, const long long * GIDList, int * PIDList, int * LIDList, int * SizeList) const;
 
   //! Returns local ID of global ID, return -1 if not found on this processor.
-  int  LID(int GID) const;
+  int  LID(long long GID) const;
   
   //! Returns global ID of local ID, return IndexBase-1 if not found on this processor.
-  int  GID(int LID) const; 
+  long long  GID(int LID) const; 
   
   //! Returns the LID of the element that contains the given local PointID, and the Offset of the point in that element.
   int FindLocalElementID(int PointID, int & ElementID, int & ElementOffset)  const;
 
   //! Returns true if the GID passed in belongs to the calling processor in this map, otherwise returns false.
-  bool  MyGID(int GID_in) const {return(LID(GID_in)!=-1);};
+  bool  MyGID(long long GID_in) const {return(LID(GID_in)!=-1);};
    
   //! Returns true if the LID passed in belongs to the calling processor in this map, otherwise returns false.
   bool  MyLID(int LID_in) const {return(GID(LID_in)!=BlockMapData_->IndexBase_-1);};
   
   //!Returns the minimum global ID across the entire map.
-  int  MinAllGID() const {return(BlockMapData_->MinAllGID_);};
+  long long  MinAllGID() const {return(BlockMapData_->MinAllGID_);};
   
   //! Returns the maximum global ID across the entire map.
-  int  MaxAllGID() const {return(BlockMapData_->MaxAllGID_);};
+  long long  MaxAllGID() const {return(BlockMapData_->MaxAllGID_);};
   
   //! Returns the maximum global ID owned by this processor.
-  int  MinMyGID() const {return(BlockMapData_->MinMyGID_);};
+  long long  MinMyGID() const {return(BlockMapData_->MinMyGID_);};
   
   //! Returns the maximum global ID owned by this processor.
-  int  MaxMyGID() const {return(BlockMapData_->MaxMyGID_);};
+  long long  MaxMyGID() const {return(BlockMapData_->MaxMyGID_);};
   
   //!  The minimum local index value on the calling processor.
   int  MinLID() const {return(BlockMapData_->MinLID_);};
@@ -406,14 +420,18 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   //! @name Size and dimension accessor functions
   //@{ 
   //! Number of elements across all processors.
-  int  NumGlobalElements() const {return(BlockMapData_->NumGlobalElements_);};
+  long long  NumGlobalElements() const {return(BlockMapData_->NumGlobalElements_);};
   
   //! Number of elements on the calling processor.
   int  NumMyElements() const {return(BlockMapData_->NumMyElements_);};
   
   //! Puts list of global elements on this processor into the user-provided array.
+  int MyGlobalElements(long long * MyGlobalElementList) const;
   int MyGlobalElements(int * MyGlobalElementList) const;
-  
+
+  int MyGlobalElementsPtr(long long *& MyGlobalElementList) const;
+  int MyGlobalElementsPtr(int *& MyGlobalElementList) const;
+
   //! Returns the size of elements in the map; only valid if map has constant element size.
   int  ElementSize() const {return(BlockMapData_->ElementSize_);};
     
@@ -430,7 +448,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   int  IndexBase() const {return(BlockMapData_->IndexBase_);};
   
   //! Number of global points for this map; equals the sum of all element sizes across all processors.
-  int  NumGlobalPoints() const {return(BlockMapData_->NumGlobalPoints_);};
+  long long  NumGlobalPoints() const {return(BlockMapData_->NumGlobalPoints_);};
   
   //! Number of local points for this map; equals the sum of all element sizes on the calling processor.
   int  NumMyPoints() const {return(BlockMapData_->NumMyPoints_);};
@@ -458,6 +476,20 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   */
   bool  UniqueGIDs() const {return(IsOneToOne());};
 
+  //! Returns true if map create with int NumGlobalElements
+  bool  GlobalIndicesInt()      const { return BlockMapData_->GlobalIndicesInt_; }
+  //! Returns true if map create with long long NumGlobalElements
+  bool  GlobalIndicesLongLong() const { return BlockMapData_->GlobalIndicesLongLong_; }
+
+  bool  GlobalIndicesTypeValid() const { return BlockMapData_->GlobalIndicesInt_ || BlockMapData_->GlobalIndicesLongLong_; }
+
+  bool GlobalIndicesMatch(const Epetra_BlockMap& other) const
+  {
+	  return
+		  GlobalIndicesInt() == other.GlobalIndicesInt() &&
+		  GlobalIndicesLongLong() == other.GlobalIndicesLongLong();
+  }
+
   //! Returns true if map has constant element size.
   bool  ConstantElementSize() const {return(BlockMapData_->ConstantElementSize_);};
 
@@ -482,6 +514,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
 
   //! Pointer to internal array containing list of global IDs assigned to the calling processor.
   int * MyGlobalElements() const;
+  long long * MyGlobalElements_LL() const;
 
   //! Pointer to internal array containing a mapping between the local elements and the first local point number in each element.
   /*! This array is a scan sum of the ElementSizeList such that the ith entry in FirstPointInElementList is the sum of the first
@@ -538,14 +571,54 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
  private: // These need to be accessible to derived map classes.
   
   void GlobalToLocalSetup();
-  bool DetermineIsOneToOne() const;
-  bool IsDistributedGlobal(int NumGlobalElements, int NumMyElements) const;
-  void CheckValidNGE(int NumGlobalElements);
+  bool DetermineIsOneToOne();
+  bool IsDistributedGlobal(long long NumGlobalElements, int NumMyElements) const;
+  void CheckValidNGE(long long NumGlobalElements);
   void EndOfConstructorOps();
 	void CleanupData();
   
   Epetra_BlockMapData * BlockMapData_;
 
+private:
+
+	void ConstructAutoUniform(long long NumGlobal_Elements, int Element_Size,
+			int Index_Base, const Epetra_Comm& comm);
+
+	void ConstructUserLinear(long long NumGlobal_Elements, int NumMy_Elements, 
+			int Element_Size, int Index_Base, const Epetra_Comm& comm);
+
+	template<typename int_type>
+	void ConstructUserConstant(int_type NumGlobal_Elements, int NumMy_Elements,
+			const int_type * myGlobalElements,
+			int Element_Size, int indexBase,
+			const Epetra_Comm& comm);
+
+	template<typename int_type>
+	void ConstructUserVariable(int_type NumGlobal_Elements, int NumMy_Elements,
+			const int_type * myGlobalElements,
+			const int *elementSizeList, int indexBase,
+			const Epetra_Comm& comm);
+
+	template<typename int_type>
+	int_type& MyGlobalElementVal(int i);
+
+	template<> int&       MyGlobalElementVal<int>      (int i) { return BlockMapData_->MyGlobalElements_int_[i]; }
+	template<> long long& MyGlobalElementVal<long long>(int i) { return BlockMapData_->MyGlobalElements_LL_[i]; }
+
+	template<typename int_type>
+	int_type MyGlobalElementValGet(int i);
+
+	template<> int       MyGlobalElementValGet<int>      (int i) { return BlockMapData_->MyGlobalElements_int_[i]; }
+	template<> long long MyGlobalElementValGet<long long>(int i) { return BlockMapData_->MyGlobalElements_LL_[i]; }
+
+	template<typename int_type>
+	int SizeMyGlobalElement(int n);
+
+	template<> int SizeMyGlobalElement<int>      (int n) { return BlockMapData_->MyGlobalElements_int_.Size(n); }
+	template<> int SizeMyGlobalElement<long long>(int n) { return BlockMapData_->MyGlobalElements_LL_.Size(n); }
+
+	template<typename int_type>
+	void TGlobalToLocalSetup();
 };
 
 #endif /* EPETRA_BLOCKMAP_H */

@@ -165,7 +165,7 @@ int Epetra_MapColoring::GenerateLists() const {
     CurItem = CurItem->NextItem;
   }}
   Epetra_Util util;
-  util.Sort(true, NumColors_, ListOfColors_, 0, 0, 0, 0); // Sort List of colors in ascending order
+  util.Sort(true, NumColors_, ListOfColors_, 0, 0, 0, 0, 0, 0); // Sort List of colors in ascending order
   // Count the number of IDs of each color
   ColorCount_ = new int[NumColors_];
   {for (int i=0; i<NumColors_; i++) ColorCount_[i] = 0;}
@@ -284,7 +284,6 @@ void Epetra_MapColoring::Print(ostream& os) const {
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
       int NumMyElements1 =Map(). NumMyElements();
-      int * MyGlobalElements1 = Map().MyGlobalElements();
 
       if (MyPID==0) {
 	os.width(8);
@@ -299,7 +298,20 @@ void Epetra_MapColoring::Print(ostream& os) const {
 	os.width(10);
 	os <<  MyPID; os << "    ";
 	os.width(10);
-	os << MyGlobalElements1[i] << "    ";
+
+	  if(Map().GlobalIndicesInt())
+	  {
+		int * MyGlobalElements1 = Map().MyGlobalElements();
+		os << MyGlobalElements1[i] << "    ";
+	  }
+	  else if(Map().GlobalIndicesLongLong())
+	  {
+		long long * MyGlobalElements1 = Map().MyGlobalElements_LL();
+		os << MyGlobalElements1[i] << "    ";
+	  }
+	  else
+		throw ReportError("Epetra_MapColoring::Print ERROR, Don't know map global index type.",-1);
+
 	os.width(20);
 	os <<  ElementColors_[i];
 	os << endl;
@@ -486,4 +498,3 @@ int Epetra_MapColoring::UnpackAndCombine(const Epetra_SrcDistObject & Source,
   
   return(0);
 }
-

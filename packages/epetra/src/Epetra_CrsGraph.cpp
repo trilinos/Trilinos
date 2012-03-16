@@ -52,6 +52,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_IntSerialDenseVector.h"
+#include "Epetra_LongLongSerialDenseVector.h"
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_OffsetIndex.h"
 
@@ -83,6 +84,9 @@ Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV,
   : Epetra_DistObject(rowMap, "Epetra::CrsGraph"),
     CrsGraphData_(new Epetra_CrsGraphData(CV, rowMap, colMap, staticProfile))
 {
+	if(!rowMap.GlobalIndicesMatch(colMap))
+	   throw ReportError("Epetra_CrsGraph::Epetra_CrsGraph: cannot be called with different indices types for rowMap and colMap", -1);
+
   Allocate(numIndicesPerRow, 1, staticProfile);
 }
 
@@ -94,6 +98,9 @@ Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV,
   : Epetra_DistObject(rowMap, "Epetra::CrsGraph"),
     CrsGraphData_(new Epetra_CrsGraphData(CV, rowMap, colMap, staticProfile))
 {
+	if(!rowMap.GlobalIndicesMatch(colMap))
+	   throw ReportError("Epetra_CrsGraph::Epetra_CrsGraph: cannot be called with different indices types for rowMap and colMap", -1);
+
   Allocate(&numIndicesPerRow, 0, staticProfile);
 }
 
@@ -106,7 +113,8 @@ Epetra_CrsGraph::Epetra_CrsGraph(const Epetra_CrsGraph& Graph)
 }
 
 // private =====================================================================
-int Epetra_CrsGraph::Allocate(const int* numIndicesPerRow, int Inc, bool staticProfile) {
+template<typename int_type>
+int Epetra_CrsGraph::TAllocate(const int* numIndicesPerRow, int Inc, bool staticProfile) {
   int i;
   const int numMyBlockRows = CrsGraphData_->NumMyBlockRows_;
   
@@ -137,20 +145,22 @@ int Epetra_CrsGraph::Allocate(const int* numIndicesPerRow, int Inc, bool staticP
   //***
 
   CrsGraphData_->MaxNumIndices_ = 0;
+
+  Epetra_CrsGraphData::IndexData<int_type>& Data = CrsGraphData_->Data<int_type>();
   
   // Allocate and initialize entries if we are copying data
   if(CrsGraphData_->CV_ == Copy) {
-    if (staticProfile) CrsGraphData_->All_Indices_.Size(nnz);
-    int * all_indices = CrsGraphData_->All_Indices_.Values(); // First address of contiguous buffer
+    if (staticProfile) Data.All_Indices_.Size(nnz);
+    int_type * all_indices = Data.All_Indices_.Values(); // First address of contiguous buffer
     for(i = 0; i < numMyBlockRows; i++) {
       const int NumIndices = numIndicesPerRow==0 ? 0 :numIndicesPerRow[i*Inc];
       const int indexBaseMinusOne = IndexBase() - 1;
 
       if(NumIndices > 0) {
 	if (staticProfile) {
-	  CrsGraphData_->Indices_[i] = all_indices;
+	  Data.Indices_[i] = all_indices;
 	  all_indices += NumIndices;
-    int* ColIndices = CrsGraphData_->Indices_[i];
+    int_type* ColIndices = Data.Indices_[i];
     for(int j = 0; j < NumIndices; j++) 
       ColIndices[j] = indexBaseMinusOne; // Fill column indices with out-of-range values
 	}
@@ -158,23 +168,23 @@ int Epetra_CrsGraph::Allocate(const int* numIndicesPerRow, int Inc, bool staticP
     // reserve memory in the STL vector, and then resize it to zero
     // again in order to signal the program that no data is in there
     // yet.
-    CrsGraphData_->SortedEntries_[i].entries_.resize(NumIndices,
+    Data.SortedEntries_[i].entries_.resize(NumIndices,
                  indexBaseMinusOne);
-    CrsGraphData_->Indices_[i] = NumIndices > 0 ? &CrsGraphData_->SortedEntries_[i].entries_[0]: NULL;
-    CrsGraphData_->SortedEntries_[i].entries_.resize(0);
+    Data.Indices_[i] = NumIndices > 0 ? &Data.SortedEntries_[i].entries_[0]: NULL;
+    Data.SortedEntries_[i].entries_.resize(0);
 	}
       }
       else {
-	CrsGraphData_->Indices_[i] = 0;
+	Data.Indices_[i] = 0;
       }
 
       CrsGraphData_->NumAllocatedIndicesPerRow_[i] = NumIndices;
     }
-    if (staticProfile) assert(CrsGraphData_->All_Indices_.Values()+nnz==all_indices); // Sanity check
+    if (staticProfile) assert(Data.All_Indices_.Values()+nnz==all_indices); // Sanity check
   }	 
   else { // CV_ == View
     for(i = 0; i < numMyBlockRows; i++) {
-      CrsGraphData_->Indices_[i] = 0;
+      Data.Indices_[i] = 0;
     }
   }
 
@@ -182,6 +192,24 @@ int Epetra_CrsGraph::Allocate(const int* numIndicesPerRow, int Inc, bool staticP
 
   return(0);
 }
+
+int Epetra_CrsGraph::Allocate(const int* numIndicesPerRow, int Inc, bool staticProfile)
+{
+	if(RowMap().GlobalIndicesInt())
+	{
+		return TAllocate<int>(numIndicesPerRow, Inc, staticProfile);
+	}
+
+	if(RowMap().GlobalIndicesLongLong())
+	{
+		return
+			TAllocate<int>(numIndicesPerRow, Inc, staticProfile) &&
+			TAllocate<long long>(numIndicesPerRow, Inc, staticProfile);
+	}
+
+	throw ReportError("Epetra_CrsGraph::Allocate: Internal error.", -1);
+}
+
 
 // private =====================================================================
 /*
@@ -214,20 +242,37 @@ void Epetra_CrsGraph::CleanupData() {
 }
 
 //==============================================================================
-int Epetra_CrsGraph::InsertGlobalIndices(int Row, int NumIndices, int* indices) {
+template<typename int_type>
+int Epetra_CrsGraph::InsertGlobalIndices(int_type Row, int NumIndices, int_type* indices) {
   if(IndicesAreLocal()) 
     EPETRA_CHK_ERR(-2); // Cannot insert global values into local graph
   if(IndicesAreContiguous()) 
     EPETRA_CHK_ERR(-3); // Indices cannot be individually deleted and newed
   SetIndicesAreGlobal(true);
-  Row = LRID(Row); // Find local row number for this global row index
+  int locRow = LRID(Row); // Find local row number for this global row index
 
-  EPETRA_CHK_ERR(InsertIndicesIntoSorted(Row, NumIndices, indices));
+  EPETRA_CHK_ERR(InsertIndicesIntoSorted(locRow, NumIndices, indices));
 
   if(CrsGraphData_->ReferenceCount() > 1)
     return(1);
   else
     return(0);
+}
+
+//==============================================================================
+int Epetra_CrsGraph::InsertGlobalIndices(int Row, int NumIndices, int* indices) {
+  if(RowMap().GlobalIndicesInt())
+    return InsertGlobalIndices<int>(Row, NumIndices, indices);
+  else
+	throw ReportError("Epetra_CrsGraph::InsertGlobalIndices int version called for a graph that is not int.", -1);
+}
+
+//==============================================================================
+int Epetra_CrsGraph::InsertGlobalIndices(long long Row, int NumIndices, long long* indices) {
+  if(RowMap().GlobalIndicesLongLong())
+    return InsertGlobalIndices<long long>(Row, NumIndices, indices);
+  else
+	throw ReportError("Epetra_CrsGraph::InsertGlobalIndices long long version called for a graph that is not long long.", -1);
 }
 
 //==============================================================================
@@ -257,9 +302,10 @@ int Epetra_CrsGraph::InsertMyIndices(int Row, int NumIndices, int* indices) {
 }
 
 // protected ===================================================================
+template<typename int_type>
 int Epetra_CrsGraph::InsertIndices(int Row,
 				   int NumIndices,
-				   int* UserIndices)
+				   int_type* UserIndices)
 {
   if (StorageOptimized()) EPETRA_CHK_ERR(-1); // Cannot insert into an optimized graph
 
@@ -276,10 +322,12 @@ int Epetra_CrsGraph::InsertIndices(int Row,
   int& current_numAllocIndices = CrsGraphData_->NumAllocatedIndicesPerRow_[Row];
   int& current_numIndices = CrsGraphData_->NumIndicesPerRow_[Row];
 
+  Epetra_CrsGraphData::IndexData<int_type>& Data = CrsGraphData_->Data<int_type>();
+
   if(CrsGraphData_->CV_ == View) {
-    if(CrsGraphData_->Indices_[Row] != 0) 
+    if(Data.Indices_[Row] != 0) 
       ierr = 2; // This row has been defined already.  Issue warning.
-    CrsGraphData_->Indices_[Row] = UserIndices;
+    Data.Indices_[Row] = UserIndices;
     current_numAllocIndices = NumIndices;
     current_numIndices = NumIndices;
   }
@@ -291,15 +339,15 @@ int Epetra_CrsGraph::InsertIndices(int Row,
     // changes were made.
     if(CrsGraphData_->HaveColMap_) { //only insert indices in col map if defined
       if (CrsGraphData_->NumTempColIndices_ < NumIndices) {
-        delete [] CrsGraphData_->TempColIndices_;
-        CrsGraphData_->TempColIndices_ = new int[NumIndices];
+        delete [] Data.TempColIndices_;
+        Data.TempColIndices_ = new int_type[NumIndices];
         CrsGraphData_->NumTempColIndices_ = NumIndices;
       }
-      int * tempIndices = CrsGraphData_->TempColIndices_;
+      int_type * tempIndices = Data.TempColIndices_;
       int loc = 0;
       if(IndicesAreLocal()) {
         for(j = 0; j < NumIndices; ++j)
-          if(CrsGraphData_->ColMap_.MyLID(UserIndices[j])) 
+          if(CrsGraphData_->ColMap_.MyLID(static_cast<int>(UserIndices[j]))) 
             tempIndices[loc++] = UserIndices[j];
       }
       else {
@@ -325,14 +373,14 @@ int Epetra_CrsGraph::InsertIndices(int Row,
     else {
       if (current_numAllocIndices > 0 && stop > current_numAllocIndices)
         ierr = 3;
-      CrsGraphData_->SortedEntries_[Row].entries_.resize(stop, IndexBase() - 1);
-      CrsGraphData_->Indices_[Row] = stop>0 ? &CrsGraphData_->SortedEntries_[Row].entries_[0] : NULL;
+      Data.SortedEntries_[Row].entries_.resize(stop, IndexBase() - 1);
+      Data.Indices_[Row] = stop>0 ? &Data.SortedEntries_[Row].entries_[0] : NULL;
 
-      current_numAllocIndices =  CrsGraphData_->SortedEntries_[Row].entries_.capacity();    
+      current_numAllocIndices =  (int) Data.SortedEntries_[Row].entries_.capacity();    
     }
 
     current_numIndices = stop;
-    int* RowIndices = CrsGraphData_->Indices_[Row]+start;
+    int_type* RowIndices = Data.Indices_[Row]+start;
     for(j = 0; j < NumIndices; j++) {
       RowIndices[j] = UserIndices[j];
     }
@@ -350,10 +398,31 @@ int Epetra_CrsGraph::InsertIndices(int Row,
     return(0);
 }
 
+int Epetra_CrsGraph::InsertIndices(int Row,
+				   int NumIndices,
+				   int* UserIndices)
+{
+  if(RowMap().GlobalIndicesTypeValid())
+	return InsertIndices<int>(Row, NumIndices, UserIndices);
+  else
+	throw ReportError("Epetra_CrsGraph::InsertIndices global index type unknown.", -1);
+}
+
+int Epetra_CrsGraph::InsertIndices(int Row,
+				   int NumIndices,
+				   long long* UserIndices)
+{
+  if(RowMap().GlobalIndicesLongLong())
+    return InsertIndices<long long>(Row, NumIndices, UserIndices);
+  else
+	throw ReportError("Epetra_CrsGraph::InsertIndices long long version called for a graph that is not long long.", -1);
+}
+
 // =========================================================================
+template<typename int_type>
 int Epetra_CrsGraph::InsertIndicesIntoSorted(int Row,
               int NumIndices,
-              int* UserIndices)
+              int_type* UserIndices)
 {
   // This function is only valid for COPY mode with non-static profile and
   // sorted entries. Otherwise, go to the other function.
@@ -373,6 +442,8 @@ int Epetra_CrsGraph::InsertIndicesIntoSorted(int Row,
   int& current_numAllocIndices = CrsGraphData_->NumAllocatedIndicesPerRow_[Row];
   int& current_numIndices = CrsGraphData_->NumIndicesPerRow_[Row];
 
+  Epetra_CrsGraphData::IndexData<int_type>& Data = CrsGraphData_->Data<int_type>();
+
   // if HaveColMap_ is true, UserIndices filters out excluded indices,
   // and then modified. The UserIndices pointer is updated to point to this 
   // new array. If HaveColMap_ is false, nothing is done. This way,
@@ -380,15 +451,15 @@ int Epetra_CrsGraph::InsertIndicesIntoSorted(int Row,
   // changes were made.
   if(CrsGraphData_->HaveColMap_) { //only insert indices in col map if defined
     if (CrsGraphData_->NumTempColIndices_ < NumIndices) {
-      delete [] CrsGraphData_->TempColIndices_;
-      CrsGraphData_->TempColIndices_ = new int[NumIndices];
+      delete [] Data.TempColIndices_;
+      Data.TempColIndices_ = new int_type[NumIndices];
       CrsGraphData_->NumTempColIndices_ = NumIndices;
     }
-    int * tempIndices = CrsGraphData_->TempColIndices_;
+    int_type * tempIndices = Data.TempColIndices_;
     int loc = 0;
     if(IndicesAreLocal()) {
       for(int j = 0; j < NumIndices; ++j)
-        if(CrsGraphData_->ColMap_.MyLID(UserIndices[j]))
+        if(CrsGraphData_->ColMap_.MyLID(static_cast<int>(UserIndices[j])))
           tempIndices[loc++] = UserIndices[j];
     }
     else {
@@ -406,11 +477,11 @@ int Epetra_CrsGraph::InsertIndicesIntoSorted(int Row,
 
   // for non-static profile, directly insert into a list that we always
   // keep sorted.
-  CrsGraphData_->SortedEntries_[Row].AddEntries(NumIndices, UserIndices);
-  current_numIndices = CrsGraphData_->SortedEntries_[Row].entries_.size();
-  current_numAllocIndices = CrsGraphData_->SortedEntries_[Row].entries_.capacity();
+  Data.SortedEntries_[Row].AddEntries(NumIndices, UserIndices);
+  current_numIndices = (int) Data.SortedEntries_[Row].entries_.size();
+  current_numAllocIndices = (int) Data.SortedEntries_[Row].entries_.capacity();
   // reset the pointer to the respective data
-  CrsGraphData_->Indices_[Row] = current_numIndices > 0 ? &CrsGraphData_->SortedEntries_[Row].entries_[0] : NULL;
+  Data.Indices_[Row] = current_numIndices > 0 ? &Data.SortedEntries_[Row].entries_[0] : NULL;
 
   if (CrsGraphData_->MaxNumIndices_ < current_numIndices) {
     CrsGraphData_->MaxNumIndices_ = current_numIndices;
@@ -423,8 +494,29 @@ int Epetra_CrsGraph::InsertIndicesIntoSorted(int Row,
     return(0);
 }
 
+int Epetra_CrsGraph::InsertIndicesIntoSorted(int Row,
+              int NumIndices,
+              int* UserIndices)
+{
+  if(RowMap().GlobalIndicesTypeValid())
+	return InsertIndicesIntoSorted<int>(Row, NumIndices, UserIndices);
+  else
+	throw ReportError("Epetra_CrsGraph::InsertIndicesIntoSorted global index type unknown.", -1);
+}
+
+int Epetra_CrsGraph::InsertIndicesIntoSorted(int Row,
+              int NumIndices,
+              long long* UserIndices)
+{
+  if(RowMap().GlobalIndicesLongLong())
+	return InsertIndicesIntoSorted<long long>(Row, NumIndices, UserIndices);
+  else
+	throw ReportError("Epetra_CrsGraph::InsertIndicesIntoSorted long long version called for a graph that is not long long.", -1);
+}
+
 //==============================================================================
-int Epetra_CrsGraph::RemoveGlobalIndices(int Row, int NumIndices, int* indices) {
+template<typename int_type>
+int Epetra_CrsGraph::RemoveGlobalIndices(int_type Row, int NumIndices, int_type* indices) {
   int j;
   int k;
   int ierr = 0;
@@ -439,24 +531,26 @@ int Epetra_CrsGraph::RemoveGlobalIndices(int Row, int NumIndices, int* indices) 
   if(CrsGraphData_->CV_ == View) 
     EPETRA_CHK_ERR(-3); // This is a view only.  Cannot remove entries.
 
-  Row = LRID(Row); // Normalize row range
+  int locRow = LRID(Row); // Normalize row range
     
-  if(Row < 0 || Row >= NumMyBlockRows()) 
+  if(locRow < 0 || locRow >= NumMyBlockRows()) 
     EPETRA_CHK_ERR(-1); // Not in Row range
     
-  int NumCurrentIndices = CrsGraphData_->NumIndicesPerRow_[Row];
-  
+  int NumCurrentIndices = CrsGraphData_->NumIndicesPerRow_[locRow];
+
+  Epetra_CrsGraphData::IndexData<int_type>& Data = CrsGraphData_->Data<int_type>();
+
   for(j = 0; j < NumIndices; j++) {
-    int Index = indices[j];
-    if(FindGlobalIndexLoc(Row,Index,j,Loc)) {
+    int_type Index = indices[j];
+    if(FindGlobalIndexLoc(locRow,Index,j,Loc)) {
       for(k = Loc+1; k < NumCurrentIndices; k++) 
-        CrsGraphData_->Indices_[Row][k-1] = CrsGraphData_->Indices_[Row][k];
+        Data.Indices_[locRow][k-1] = Data.Indices_[locRow][k];
       NumCurrentIndices--;
-      CrsGraphData_->NumIndicesPerRow_[Row]--;
+      CrsGraphData_->NumIndicesPerRow_[locRow]--;
       if (!CrsGraphData_->StaticProfile_)
-        CrsGraphData_->SortedEntries_[Row].entries_.pop_back();
+        Data.SortedEntries_[locRow].entries_.pop_back();
       else
-        CrsGraphData_->Indices_[Row][NumCurrentIndices-1] = IndexBase() - 1;
+        Data.Indices_[locRow][NumCurrentIndices-1] = IndexBase() - 1;
     }
   }
   SetGlobalConstantsComputed(false); // No longer have valid global constants.
@@ -467,6 +561,22 @@ int Epetra_CrsGraph::RemoveGlobalIndices(int Row, int NumIndices, int* indices) 
     return(1);
   else
     return(0);
+}
+
+int Epetra_CrsGraph::RemoveGlobalIndices(int Row, int NumIndices, int* indices)
+{
+  if(RowMap().GlobalIndicesInt())
+    return RemoveGlobalIndices<int>(Row, NumIndices, indices);
+  else
+	throw ReportError("Epetra_CrsGraph::RemoveGlobalIndices int version called for a graph that is not int.", -1);
+}
+
+int Epetra_CrsGraph::RemoveGlobalIndices(long long Row, int NumIndices, long long* indices)
+{
+  if(RowMap().GlobalIndicesLongLong())
+  return RemoveGlobalIndices<long long>(Row, NumIndices, indices);
+  else
+	throw ReportError("Epetra_CrsGraph::RemoveGlobalIndices long long version called for a graph that is not long long.", -1);
 }
 
 //==============================================================================
@@ -491,17 +601,19 @@ int Epetra_CrsGraph::RemoveMyIndices(int Row, int NumIndices, int* indices) {
     
   int NumCurrentIndices = CrsGraphData_->NumIndicesPerRow_[Row];
 
+  Epetra_CrsGraphData::IndexData<int>& Data = CrsGraphData_->Data<int>();
+
   for(j = 0; j < NumIndices; j++) {
     int Index = indices[j];
     if(FindMyIndexLoc(Row,Index,j,Loc)) {
       for(k = Loc + 1; k < NumCurrentIndices; k++) 
-        CrsGraphData_->Indices_[Row][k-1] = CrsGraphData_->Indices_[Row][k];
+        Data.Indices_[Row][k-1] = Data.Indices_[Row][k];
       NumCurrentIndices--;
       CrsGraphData_->NumIndicesPerRow_[Row]--;
       if (!CrsGraphData_->StaticProfile_)
-        CrsGraphData_->SortedEntries_[Row].entries_.pop_back();
+        Data.SortedEntries_[Row].entries_.pop_back();
       else
-        CrsGraphData_->Indices_[Row][NumCurrentIndices-1] = IndexBase() - 1;
+        Data.Indices_[Row][NumCurrentIndices-1] = IndexBase() - 1;
     }
   }
   SetGlobalConstantsComputed(false); // No longer have valid global constants.
@@ -515,7 +627,8 @@ int Epetra_CrsGraph::RemoveMyIndices(int Row, int NumIndices, int* indices) {
 }
 
 //==============================================================================
-int Epetra_CrsGraph::RemoveGlobalIndices(int Row) {
+template<typename int_type>
+int Epetra_CrsGraph::TRemoveGlobalIndices(long long Row) {
   int j;
   int ierr = 0;
 
@@ -527,22 +640,24 @@ int Epetra_CrsGraph::RemoveGlobalIndices(int Row) {
   if(CrsGraphData_->CV_ == View) 
     EPETRA_CHK_ERR(-3); // This is a view only.  Cannot remove entries.
 
-  Row = LRID(Row); // Normalize row range
+  int locRow = LRID(Row); // Normalize row range
     
-  if(Row < 0 || Row >= NumMyBlockRows()) 
+  if(locRow < 0 || locRow >= NumMyBlockRows()) 
     EPETRA_CHK_ERR(-1); // Not in Row range
 
+  Epetra_CrsGraphData::IndexData<int_type>& Data = CrsGraphData_->Data<int_type>();
+
   if (CrsGraphData_->StaticProfile_) {
-    int NumIndices = CrsGraphData_->NumIndicesPerRow_[Row];
+    int NumIndices = CrsGraphData_->NumIndicesPerRow_[locRow];
   
     const int indexBaseMinusOne = IndexBase() - 1;
     for(j = 0; j < NumIndices; j++) 
-      CrsGraphData_->Indices_[Row][j] = indexBaseMinusOne; // Set to invalid 
+      Data.Indices_[locRow][j] = indexBaseMinusOne; // Set to invalid 
   }
   else
-    CrsGraphData_->SortedEntries_[Row].entries_.resize(0);
+    Data.SortedEntries_[locRow].entries_.resize(0);
  
-  CrsGraphData_->NumIndicesPerRow_[Row] = 0;
+  CrsGraphData_->NumIndicesPerRow_[locRow] = 0;
 
 
   SetGlobalConstantsComputed(false); // No longer have valid global constants.
@@ -552,6 +667,17 @@ int Epetra_CrsGraph::RemoveGlobalIndices(int Row) {
     return(1);
   else
     return(0);
+}
+
+int Epetra_CrsGraph::RemoveGlobalIndices(long long Row)
+{
+	if(RowMap().GlobalIndicesLongLong())
+		return TRemoveGlobalIndices<long long>(Row);
+
+	if(RowMap().GlobalIndicesInt())
+		return TRemoveGlobalIndices<int>(Row);
+
+	throw ReportError("Epetra_CrsGraph::RemoveGlobalIndices: Internal error.", -1);
 }
 
 //==============================================================================
@@ -571,13 +697,15 @@ int Epetra_CrsGraph::RemoveMyIndices(int Row)
   if(Row < 0 || Row >= NumMyBlockRows()) 
     EPETRA_CHK_ERR(-1); // Not in Row range
     
+  Epetra_CrsGraphData::IndexData<int>& Data = CrsGraphData_->Data<int>();
+
   if (CrsGraphData_->StaticProfile_) {
     int NumIndices = CrsGraphData_->NumIndicesPerRow_[Row];
     for(int j = 0; j < NumIndices; j++) 
-      CrsGraphData_->Indices_[Row][j] = -1; // Set to invalid 
+      Data.Indices_[Row][j] = -1; // Set to invalid 
   }
   else
-    CrsGraphData_->SortedEntries_[Row].entries_.resize(0);
+    Data.SortedEntries_[Row].entries_.resize(0);
 
   CrsGraphData_->NumIndicesPerRow_[Row] = 0;
 
@@ -591,13 +719,14 @@ int Epetra_CrsGraph::RemoveMyIndices(int Row)
 }
 
 // protected ===================================================================
+template<typename int_type>
 bool Epetra_CrsGraph::FindGlobalIndexLoc(int LocalRow,
-					 int Index,
+					 int_type Index,
 					 int Start,
 					 int& Loc) const
 {
   int NumIndices = NumMyIndices(LocalRow);
-  int* locIndices = Indices(LocalRow);
+  int_type* locIndices = TIndices<int_type>(LocalRow);
 
   // If we have transformed the column indices, we must map this global Index to local
   if(CrsGraphData_->IndicesAreLocal_) {
@@ -624,10 +753,33 @@ bool Epetra_CrsGraph::FindGlobalIndexLoc(int LocalRow,
   return(false);
 }
 
-// protected ===================================================================
-bool Epetra_CrsGraph::FindGlobalIndexLoc(int NumIndices,
-					 const int* indices,
+bool Epetra_CrsGraph::FindGlobalIndexLoc(int LocalRow,
 					 int Index,
+					 int Start,
+					 int& Loc) const
+{
+  if(RowMap().GlobalIndicesInt())
+	return FindGlobalIndexLoc<int>(LocalRow, Index, Start, Loc);
+  else
+	throw ReportError("Epetra_CrsGraph::FindGlobalIndexLoc int version called for a graph that is not int.", -1);
+}
+
+bool Epetra_CrsGraph::FindGlobalIndexLoc(int LocalRow,
+					 long long Index,
+					 int Start,
+					 int& Loc) const
+{
+  if(RowMap().GlobalIndicesLongLong())
+	return FindGlobalIndexLoc<long long>(LocalRow, Index, Start, Loc);
+  else
+	throw ReportError("Epetra_CrsGraph::FindGlobalIndexLoc long long version called for a graph that is not long long.", -1);
+}
+
+// protected ===================================================================
+template<typename int_type>
+bool Epetra_CrsGraph::FindGlobalIndexLoc(int NumIndices,
+					 const int_type* indices,
+					 int_type Index,
 					 int Start,
 					 int& Loc) const
 {
@@ -654,6 +806,30 @@ bool Epetra_CrsGraph::FindGlobalIndexLoc(int NumIndices,
     }
   }
   return(false);
+}
+
+bool Epetra_CrsGraph::FindGlobalIndexLoc(int NumIndices,
+					 const int* indices,
+					 int Index,
+					 int Start,
+					 int& Loc) const
+{
+  if(RowMap().GlobalIndicesInt())
+	return FindGlobalIndexLoc<int>(NumIndices, indices, Index, Start, Loc);
+  else
+	throw ReportError("Epetra_CrsGraph::FindGlobalIndexLoc int version called for a graph that is not int.", -1);
+}
+
+bool Epetra_CrsGraph::FindGlobalIndexLoc(int NumIndices,
+					 const long long* indices,
+					 long long Index,
+					 int Start,
+					 int& Loc) const
+{
+  if(RowMap().GlobalIndicesLongLong())
+	return FindGlobalIndexLoc<long long>(NumIndices, indices, Index, Start, Loc);
+  else
+	throw ReportError("Epetra_CrsGraph::FindGlobalIndexLoc long long version called for a graph that is not long long.", -1);
 }
 
 // protected ===================================================================
@@ -761,7 +937,7 @@ int Epetra_CrsGraph::ComputeGlobalConstants()
   if(GlobalConstantsComputed()) 
     return(0);
 
-  Epetra_IntSerialDenseVector tempvec(8); // Temp space
+  Epetra_LongLongSerialDenseVector tempvec(8); // Temp space
 
   const int numMyBlockRows = NumMyBlockRows();
 
@@ -778,7 +954,8 @@ int Epetra_CrsGraph::ComputeGlobalConstants()
     tempvec[1] = CrsGraphData_->NumMyBlockDiagonals_;
 
     Comm().SumAll(&tempvec[0], &tempvec[2], 2);
-    Comm().MaxAll(&CrsGraphData_->MaxNumIndices_, &CrsGraphData_->GlobalMaxNumIndices_, 1);
+    int tmp_MaxNumIndices = CrsGraphData_->MaxNumIndices_;
+    Comm().MaxAll(&tmp_MaxNumIndices, &CrsGraphData_->GlobalMaxNumIndices_, 1);
     
     CrsGraphData_->NumGlobalEntries_ = tempvec[2];
     CrsGraphData_->NumGlobalBlockDiagonals_ = tempvec[3];
@@ -802,7 +979,7 @@ int Epetra_CrsGraph::ComputeGlobalConstants()
       ColElementSizeList = ColMap().ElementSizeList();
     for(int i = 0; i < numMyBlockRows; i++){
       int NumEntries = CrsGraphData_->NumIndicesPerRow_[i];
-      int* indices = CrsGraphData_->Indices_[i];
+      int* indices = CrsGraphData_->Data<int>().Indices_[i];
       if(NumEntries > 0) {
 	int CurNumNonzeros = 0;
 	int RowDim = RowElementSizeList[i];
@@ -835,8 +1012,8 @@ int Epetra_CrsGraph::ComputeGlobalConstants()
 
     Comm().MaxAll(&tempvec[0], &tempvec[2], 2);
 
-    CrsGraphData_->GlobalMaxNumIndices_ = tempvec[2];
-    CrsGraphData_->GlobalMaxNumNonzeros_ = tempvec[3];
+    CrsGraphData_->GlobalMaxNumIndices_ = (int) tempvec[2];
+    CrsGraphData_->GlobalMaxNumNonzeros_ = (int) tempvec[3];
   }
   
   CrsGraphData_->NumGlobalRows_ = CrsGraphData_->RangeMap_.NumGlobalPoints();
@@ -892,7 +1069,7 @@ int Epetra_CrsGraph::SortIndices() {
   const int numMyBlockRows = NumMyBlockRows();
   for(int i = 0; i < numMyBlockRows; i++){
     int n = CrsGraphData_->NumIndicesPerRow_[i];
-    int* const list = CrsGraphData_->Indices_[i];
+    int* const list = CrsGraphData_->Data<int>().Indices_[i];
 
     epetra_shellsort(list, n);
 //    int m = n/2;
@@ -1007,12 +1184,12 @@ int Epetra_CrsGraph::RemoveRedundantIndices()
       }
       // update vector size and address in memory
       if (!CrsGraphData_->StaticProfile_) {
-        CrsGraphData_->SortedEntries_[i].entries_.assign(col_indices, col_indices+numIndicesPerRow[i]);
+        CrsGraphData_->Data<int>().SortedEntries_[i].entries_.assign(col_indices, col_indices+numIndicesPerRow[i]);
         if (numIndicesPerRow[i] > 0) {
-          CrsGraphData_->Indices_[i] = &(CrsGraphData_->SortedEntries_[i].entries_[0]);
+          CrsGraphData_->Data<int>().Indices_[i] = &(CrsGraphData_->Data<int>().SortedEntries_[i].entries_[0]);
         }
         else {
-          CrsGraphData_->Indices_[i] = NULL;
+          CrsGraphData_->Data<int>().Indices_[i] = NULL;
         }
       }
     }
@@ -1042,7 +1219,7 @@ int Epetra_CrsGraph::DetermineTriangular()
   for(int i = 0; i < numMyBlockRows; i++) {
     int NumIndices = NumMyIndices(i);
     if(NumIndices > 0) {
-      int ig = rowMap.GID(i);
+      long long ig = rowMap.GID(i);
       int* col_indices = this->Indices(i);
 
       int jl_0 = col_indices[0];
@@ -1072,7 +1249,7 @@ int Epetra_CrsGraph::DetermineTriangular()
 }
 
 // private =====================================================================
-int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap& domainMap,
+int Epetra_CrsGraph::MakeColMap_int(const Epetra_BlockMap& domainMap,
 				const Epetra_BlockMap& rangeMap)
 {
   (void)rangeMap;
@@ -1107,7 +1284,7 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap& domainMap,
   int NumRemoteColGIDs = 0;
   for(i = 0; i < numMyBlockRows; i++) {
     const int NumIndices = CrsGraphData_->NumIndicesPerRow_[i];
-    int* ColIndices = CrsGraphData_->Indices_[i];
+    int* ColIndices = CrsGraphData_->Data<int>().Indices_[i];
     for(j = 0; j < NumIndices; j++) {
       int GID = ColIndices[j];
       // Check if GID matches a row GID
@@ -1177,7 +1354,7 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap& domainMap,
   int* SortLists[2]; // this array is allocated on the stack, and so we won't need to delete it.bb
   SortLists[0] = RemoteColIndices;
   SortLists[1] = RemoteSizeList;
-  Util.Sort(true, NumRemoteColGIDs, PIDList.Values(), 0, 0, NLists, SortLists);
+  Util.Sort(true, NumRemoteColGIDs, PIDList.Values(), 0, 0, NLists, SortLists, 0, 0);
   if (CrsGraphData_->SortGhostsAssociatedWithEachProcessor_) {
     // Sort external column indices so that columns from a given remote processor are not only contiguous
     // but also in ascending order. NOTE: I don't know if the number of externals associated
@@ -1190,12 +1367,12 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap& domainMap,
       if ((PIDList.Values())[StartNext]==(PIDList.Values())[StartNext-1]) StartNext++;
       else {
         if(DoSizes) SortLists[0] = &(RemoteSizeList[StartCurrent]);
-        Util.Sort(true,StartNext-StartCurrent, &(RemoteColIndices[StartCurrent]),0,0,NLists,SortLists);
+        Util.Sort(true,StartNext-StartCurrent, &(RemoteColIndices[StartCurrent]),0,0,NLists,SortLists, 0, 0);
         StartCurrent = StartNext; StartNext++;
       }
     }
     if(DoSizes) SortLists[0] = &(RemoteSizeList[StartCurrent]);
-    Util.Sort(true, StartNext-StartCurrent, &(RemoteColIndices[StartCurrent]), 0, 0, NLists, SortLists);
+    Util.Sort(true, StartNext-StartCurrent, &(RemoteColIndices[StartCurrent]), 0, 0, NLists, SortLists, 0, 0);
   }
 
   // Now fill front end. Two cases:
@@ -1233,20 +1410,250 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap& domainMap,
   // Make Column map with same element sizes as Domain map
 
   if(domainMap.MaxElementSize() == 1) { // Simple map
-    Epetra_Map temp(-1, numMyBlockCols, ColIndices.Values(), domainMap.IndexBase(), domainMap.Comm());
+    Epetra_Map temp((int) -1, numMyBlockCols, ColIndices.Values(), domainMap.IndexBase(), domainMap.Comm());
     CrsGraphData_->ColMap_ = temp;
   }
   else if(domainMap.ConstantElementSize()) { // Constant Block size map
-    Epetra_BlockMap temp(-1, numMyBlockCols, ColIndices.Values(), domainMap.MaxElementSize(),domainMap.IndexBase(), domainMap.Comm());
+    Epetra_BlockMap temp((int) -1, numMyBlockCols, ColIndices.Values(), domainMap.MaxElementSize(),domainMap.IndexBase(), domainMap.Comm());
     CrsGraphData_->ColMap_ = temp;
   }
   else { // Most general case where block size is variable.
-    Epetra_BlockMap temp(-1, numMyBlockCols, ColIndices.Values(), SizeList.Values(), domainMap.IndexBase(), domainMap.Comm());
+    Epetra_BlockMap temp((int) -1, numMyBlockCols, ColIndices.Values(), SizeList.Values(), domainMap.IndexBase(), domainMap.Comm());
     CrsGraphData_->ColMap_ = temp;
   }
   CrsGraphData_->HaveColMap_ = true;
 
   return(0);
+}
+
+int Epetra_CrsGraph::MakeColMap_LL(const Epetra_BlockMap& domainMap,
+				const Epetra_BlockMap& rangeMap)
+{
+  (void)rangeMap;
+  int i;
+  int j;
+
+  if(CrsGraphData_->HaveColMap_) 
+    return(0); // Already have a Column Map
+
+  ComputeIndexState(); // Update index state by checking IndicesAreLocal/Global on all PEs
+  if(IndicesAreLocal()) 
+    EPETRA_CHK_ERR(-1); // Return error: Indices must be global
+  
+  // Scan all column indices and sort into two groups: 
+  // Local:  those whose GID matches a GID of the domain map on this processor and
+  // Remote: All others.
+  int numDomainElements = domainMap.NumMyElements();
+  bool * LocalGIDs  = 0;
+  if (numDomainElements>0) LocalGIDs  = new bool[numDomainElements];
+  for (i=0; i<numDomainElements; i++) LocalGIDs[i] = false; // Assume domain GIDs are not local
+
+  // In principle it is good to have RemoteGIDs and RemotGIDList be as long as the number of remote GIDs
+  // on this processor, but this would require two passes through the column IDs, so we make it the max of 100
+  // and the number of block rows.
+  const int numMyBlockRows = NumMyBlockRows();
+  int  hashsize = numMyBlockRows; if (hashsize < 100) hashsize = 100;
+  //cout << "numMyBlockRows = " << numMyBlockRows << " hashsize = " << hashsize << endl;
+  Epetra_HashTable RemoteGIDs(hashsize); 
+  Epetra_HashTable RemoteGIDList(hashsize);
+
+  int NumLocalColGIDs = 0;
+  int NumRemoteColGIDs = 0;
+
+  if(IndicesAreLocal())
+  {
+	  Epetra_CrsGraphData::IndexData<int>& intData = CrsGraphData_->Data<int>();
+
+	  for(i = 0; i < numMyBlockRows; i++) {
+		const int NumIndices = CrsGraphData_->NumIndicesPerRow_[i];
+		int* ColIndices = intData.Indices_[i];
+		for(j = 0; j < NumIndices; j++) {
+		  int GID = ColIndices[j];
+		  // Check if GID matches a row GID
+		  int LID = domainMap.LID(GID);
+		  if(LID != -1) {
+		bool alreadyFound = LocalGIDs[LID];
+		if (!alreadyFound) {
+			  LocalGIDs[LID] = true; // There is a column in the graph associated with this domain map GID
+			  NumLocalColGIDs++;
+		}
+		  }
+		  else {
+		if(RemoteGIDs.Get(GID) == -1) { // This means its a new remote GID
+		  RemoteGIDs.Add(GID, NumRemoteColGIDs);
+		  RemoteGIDList.Add(NumRemoteColGIDs++, GID);
+		}
+		  }
+		}
+	  }
+  }
+  else if(IndicesAreGlobal())
+  {
+	  Epetra_CrsGraphData::IndexData<long long>& LLData = CrsGraphData_->Data<long long>();
+
+	  for(i = 0; i < numMyBlockRows; i++) {
+		const int NumIndices = CrsGraphData_->NumIndicesPerRow_[i];
+		long long* ColIndices = LLData.Indices_[i];
+		for(j = 0; j < NumIndices; j++) {
+		  long long GID = ColIndices[j];
+		  // Check if GID matches a row GID
+		  int LID = domainMap.LID(GID);
+		  if(LID != -1) {
+		bool alreadyFound = LocalGIDs[LID];
+		if (!alreadyFound) {
+			  LocalGIDs[LID] = true; // There is a column in the graph associated with this domain map GID
+			  NumLocalColGIDs++;
+		}
+		  }
+		  else {
+		if(RemoteGIDs.Get(GID) == -1) { // This means its a new remote GID
+		  RemoteGIDs.Add(GID, NumRemoteColGIDs);
+		  RemoteGIDList.Add(NumRemoteColGIDs++, GID);
+		}
+		  }
+		}
+	  }
+  }
+
+  // Possible short-circuit:  If all domain map GIDs are present as column indices, then set ColMap=domainMap and quit
+  if (domainMap.Comm().NumProc()==1) { 
+    
+    if (NumRemoteColGIDs!=0) {
+      throw ReportError("Some column IDs are not in domainMap.  If matrix is rectangular, you must pass in domainMap to FillComplete",-1); // Sanity test: When one processor,there can be no remoteGIDs
+    }
+    if (NumLocalColGIDs==numDomainElements) {
+      CrsGraphData_->ColMap_ = domainMap;
+      CrsGraphData_->HaveColMap_ = true;
+      if (LocalGIDs!=0) delete [] LocalGIDs; 
+      return(0); 
+    }
+  }
+      
+  // Now build integer array containing column GIDs
+  // Build back end, containing remote GIDs, first
+  int numMyBlockCols = NumLocalColGIDs + NumRemoteColGIDs;
+  Epetra_LongLongSerialDenseVector ColIndices;
+  if(numMyBlockCols > 0) 
+    ColIndices.Size(numMyBlockCols);
+
+  long long* RemoteColIndices = ColIndices.Values() + NumLocalColGIDs; // Points to back end of ColIndices
+
+  for(i = 0; i < NumRemoteColGIDs; i++) 
+    RemoteColIndices[i] = RemoteGIDList.Get(i); 
+
+  int NLists = 1;
+  Epetra_IntSerialDenseVector PIDList;
+  Epetra_IntSerialDenseVector SizeList;
+  int* RemoteSizeList = 0;
+  bool DoSizes = !domainMap.ConstantElementSize(); // If not constant element size, then we must exchange
+      
+  if(NumRemoteColGIDs > 0) 
+    PIDList.Size(NumRemoteColGIDs);
+
+  if(DoSizes) {
+    if(numMyBlockCols > 0) 
+      SizeList.Size(numMyBlockCols);
+    RemoteSizeList = SizeList.Values() + NumLocalColGIDs;
+    NLists++;
+  }
+  EPETRA_CHK_ERR(domainMap.RemoteIDList(NumRemoteColGIDs, RemoteColIndices, PIDList.Values(), 0, RemoteSizeList));
+      
+  // Sort External column indices so that all columns coming from a given remote processor are contiguous
+
+  Epetra_Util Util;
+  //int* SortLists[2]; // this array is allocated on the stack, and so we won't need to delete it.bb
+  //SortLists[0] = RemoteColIndices;
+  //SortLists[1] = RemoteSizeList;
+  Util.Sort(true, NumRemoteColGIDs, PIDList.Values(), 0, 0, 1, &RemoteSizeList, 1, &RemoteColIndices);
+  if (CrsGraphData_->SortGhostsAssociatedWithEachProcessor_) {
+    // Sort external column indices so that columns from a given remote processor are not only contiguous
+    // but also in ascending order. NOTE: I don't know if the number of externals associated
+    // with a given remote processor is known at this point ... so I count them here.
+
+	int* SortLists[1];
+
+    NLists--;
+    int StartCurrent, StartNext;
+    StartCurrent = 0; StartNext = 1;
+    while ( StartNext < NumRemoteColGIDs ) {
+      if ((PIDList.Values())[StartNext]==(PIDList.Values())[StartNext-1]) StartNext++;
+      else {
+        if(DoSizes) SortLists[0] = &(RemoteSizeList[StartCurrent]);
+        Util.Sort(true,StartNext-StartCurrent, &(RemoteColIndices[StartCurrent]),0,0,NLists,SortLists, 0, 0);
+        StartCurrent = StartNext; StartNext++;
+      }
+    }
+    if(DoSizes) SortLists[0] = &(RemoteSizeList[StartCurrent]);
+    Util.Sort(true, StartNext-StartCurrent, &(RemoteColIndices[StartCurrent]), 0, 0, NLists, SortLists, 0, 0);
+  }
+
+  // Now fill front end. Two cases:
+  // (1) If the number of Local column GIDs is the same as the number of Local domain GIDs, we
+  //     can simply read the domain GIDs into the front part of ColIndices, otherwise 
+  // (2) We step through the GIDs of the domainMap, checking to see if each domain GID is a column GID.
+  //     we want to do this to maintain a consistent ordering of GIDs between the columns and the domain.
+
+  if(NumLocalColGIDs == domainMap.NumMyElements()) {
+    domainMap.MyGlobalElements(ColIndices.Values()); // Load Global Indices into first numMyBlockCols elements column GID list
+    if(DoSizes) 
+      domainMap.ElementSizeList(SizeList.Values()); // Load ElementSizeList too
+  }
+  else {
+    int NumMyElements = domainMap.NumMyElements();
+    long long* MyGlobalElements = domainMap.MyGlobalElements_LL();
+    int* ElementSizeList = 0;
+    if(DoSizes) 
+      ElementSizeList = domainMap.ElementSizeList();
+    int NumLocalAgain = 0;
+    for(i = 0; i < NumMyElements; i++) {
+      if(LocalGIDs[i]) {
+	if(DoSizes) 
+	  SizeList[NumLocalAgain] = ElementSizeList[i];
+	ColIndices[NumLocalAgain++] = MyGlobalElements[i];
+      }
+    }
+    assert(NumLocalAgain==NumLocalColGIDs); // Sanity test
+  }
+
+  // Done with this array
+  if (LocalGIDs!=0) delete [] LocalGIDs; 
+
+
+  // Make Column map with same element sizes as Domain map
+
+  if(domainMap.MaxElementSize() == 1) { // Simple map
+	Epetra_Map temp((long long) -1, numMyBlockCols, ColIndices.Values(), domainMap.IndexBase(), domainMap.Comm());
+	CrsGraphData_->ColMap_ = temp;
+  }
+  else if(domainMap.ConstantElementSize()) { // Constant Block size map
+	Epetra_BlockMap temp((long long) -1, numMyBlockCols, ColIndices.Values(), domainMap.MaxElementSize(),domainMap.IndexBase(), domainMap.Comm());
+	CrsGraphData_->ColMap_ = temp;
+  }
+  else { // Most general case where block size is variable.
+	Epetra_BlockMap temp((long long) -1, numMyBlockCols, ColIndices.Values(), SizeList.Values(), domainMap.IndexBase(), domainMap.Comm());
+	CrsGraphData_->ColMap_ = temp;
+  }
+  CrsGraphData_->HaveColMap_ = true;
+
+  return(0);
+}
+
+int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap& domainMap,
+				const Epetra_BlockMap& rangeMap)
+{
+	if(!domainMap.GlobalIndicesMatch(rangeMap))
+	   throw ReportError("Epetra_CrsGraph::MakeColMap: cannot be called with different indices types for domainMap and rangeMap", -1);
+
+	if(!RowMap().GlobalIndicesMatch(domainMap))
+	   throw ReportError("Epetra_CrsGraph::MakeColMap: cannot be called with different indices types for row map and incoming rangeMap", -1);
+
+	if(RowMap().GlobalIndicesInt())
+		return MakeColMap_int(domainMap, rangeMap);
+
+	if(RowMap().GlobalIndicesLongLong())
+		return MakeColMap_LL(domainMap, rangeMap);
+
+	throw ReportError("Epetra_CrsGraph::MakeColMap: Internal error, unable to determine global index type of maps", -1);
 }
 
 // protected ===================================================================
@@ -1269,7 +1676,7 @@ int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap& domainMap, const Ep
     // Check if ColMap is monotone. If not, the list will get unsorted.
     bool mapMonotone = true;
     {
-      int oldGID = colmap.GID(0);
+      long long oldGID = colmap.GID(0);
       for (int i=1; i<colmap.NumMyElements(); ++i) {
         if (oldGID > colmap.GID(i)) {
           mapMonotone = false;
@@ -1281,19 +1688,46 @@ int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap& domainMap, const Ep
     if (Sorted())
       SetSorted(mapMonotone);
 
-    // now comes the actual transformation
-    for(int i = 0; i < numMyBlockRows; i++) {
-      const int NumIndices = CrsGraphData_->NumIndicesPerRow_[i];
-      int* ColIndices = CrsGraphData_->Indices_[i];
-      for(int j = 0; j < NumIndices; j++) {
-        int GID = ColIndices[j];
-        int LID = colmap.LID(GID);
-        if(LID != -1) 
-          ColIndices[j] = LID;
-        else 
-          throw ReportError("Internal error in FillComplete ",-1); 
-      }
-    }
+	Epetra_CrsGraphData::IndexData<int>& intData = CrsGraphData_->Data<int>();
+
+	if(RowMap().GlobalIndicesInt())
+	{
+		// now comes the actual transformation
+		for(int i = 0; i < numMyBlockRows; i++) {
+		  const int NumIndices = CrsGraphData_->NumIndicesPerRow_[i];
+		  int* ColIndices = intData.Indices_[i];
+		  for(int j = 0; j < NumIndices; j++) {
+			int GID = ColIndices[j];
+			int LID = colmap.LID(GID);
+			if(LID != -1) 
+			  ColIndices[j] = LID;
+			else 
+			  throw ReportError("Internal error in FillComplete ",-1); 
+		  }
+		}
+	}
+	else if(RowMap().GlobalIndicesLongLong())
+	{
+		Epetra_CrsGraphData::IndexData<long long>& LL_Data = CrsGraphData_->Data<long long>();
+
+		// now comes the actual transformation
+		for(int i = 0; i < numMyBlockRows; i++) {
+		  const int NumIndices = CrsGraphData_->NumIndicesPerRow_[i];
+		  long long* ColIndices = LL_Data.Indices_[i];
+		  int* intColIndices = intData.Indices_[i];
+		  for(int j = 0; j < NumIndices; j++) {
+			long long GID = ColIndices[j];
+			int LID = colmap.LID(GID);
+			if(LID != -1) 
+			  intColIndices[j] = LID;
+			else 
+			  throw ReportError("Internal error in FillComplete ",-1); 
+		  }
+		}
+
+		LL_Data.Deallocate(); // deallocate long long data since indices are local now.
+	}
+
   }
 	
   SetIndicesAreLocal(true);
@@ -1310,6 +1744,8 @@ int Epetra_CrsGraph::OptimizeStorage() {
   int NumIndices;
   const int numMyBlockRows = NumMyBlockRows();
 
+  Epetra_CrsGraphData::IndexData<int>& Data = CrsGraphData_->Data<int>();
+
   if(StorageOptimized()) 
     return(0); // Have we been here before?
   if (!Filled()) EPETRA_CHK_ERR(-1); // Cannot optimize storage before calling FillComplete()
@@ -1322,7 +1758,7 @@ int Epetra_CrsGraph::OptimizeStorage() {
     // Check if NumIndices is same as NumAllocatedIndices and 
     // check if end of beginning of current row starts immediately after end of previous row.
     if((NumIndices != NumAllocateIndices) || 
-       (CrsGraphData_->Indices_[i] != CrsGraphData_->Indices_[i-1] + NumIndices)) {
+       (Data.Indices_[i] != Data.Indices_[i-1] + NumIndices)) {
       Contiguous = false;
       break;
     }
@@ -1358,14 +1794,14 @@ int Epetra_CrsGraph::OptimizeStorage() {
 
     // Allocate one big integer array for all index values
     if (!(StaticProfile())) { // If static profile, All_Indices_ is already allocated, only need to pack data
-      int errorcode = CrsGraphData_->All_Indices_.Size(CrsGraphData_->NumMyNonzeros_);
+      int errorcode = Data.All_Indices_.Size(CrsGraphData_->NumMyNonzeros_);
       if(errorcode != 0) throw ReportError("Error with All_Indices_ allocation.", -99);
     }
       // Pack indices into All_Indices_
 
-    int* all_indices = CrsGraphData_->All_Indices_.Values();
+    int* all_indices = Data.All_Indices_.Values();
     int * indexOffset = CrsGraphData_->IndexOffset_.Values();
-    int ** indices = CrsGraphData_->Indices_;
+    int ** indices = Data.Indices_;
 		
     if (!(StaticProfile())) {
 #ifdef EPETRA_HAVE_OMP
@@ -1379,7 +1815,7 @@ int Epetra_CrsGraph::OptimizeStorage() {
       }
       for(int i = 0; i < numMyBlockRows; i++) {
         if (indices[i]!=0) {
-          CrsGraphData_->SortedEntries_[i].entries_.clear();
+          Data.SortedEntries_[i].entries_.clear();
           indices[i] = 0;
         }
      }
@@ -1402,10 +1838,10 @@ int Epetra_CrsGraph::OptimizeStorage() {
     // in order to improve page placement
     if (numMyBlockRows > 0 && !(StaticProfile())) {
       const int numMyNonzeros = NumMyNonzeros();
-      int errorcode = CrsGraphData_->All_Indices_.Size(numMyNonzeros);
+      int errorcode = Data.All_Indices_.Size(numMyNonzeros);
       if(errorcode != 0)  throw ReportError("Error with All_Indices_ allocation.", -99);
-      int* new_all_indices = CrsGraphData_->All_Indices_.Values();
-      int* old_all_indices = CrsGraphData_->Indices_[0];
+      int* new_all_indices = Data.All_Indices_.Values();
+      int* old_all_indices = Data.Indices_[0];
       int * indexOffset = CrsGraphData_->IndexOffset_.Values();
 
 #ifdef EPETRA_HAVE_OMP
@@ -1429,8 +1865,8 @@ int Epetra_CrsGraph::OptimizeStorage() {
 
   // Delete unneeded storage
   CrsGraphData_->NumAllocatedIndicesPerRow_.Resize(0);
-  delete [] CrsGraphData_->Indices_; CrsGraphData_->Indices_=0;
-  CrsGraphData_->SortedEntries_.clear();
+  delete [] Data.Indices_; Data.Indices_=0;
+  Data.SortedEntries_.clear();
 
   SetIndicesAreContiguous(true); // Can no longer dynamically add or remove indices
   CrsGraphData_->StorageOptimized_ = true;
@@ -1439,32 +1875,56 @@ int Epetra_CrsGraph::OptimizeStorage() {
 }
 
 //==============================================================================
-int Epetra_CrsGraph::ExtractGlobalRowCopy(int Row, int LenOfIndices, int& NumIndices, int* targIndices) const 
+template<typename int_type>
+int Epetra_CrsGraph::ExtractGlobalRowCopy(int_type Row, int LenOfIndices, int& NumIndices, int_type* targIndices) const 
 {
   int j;
 
-  Row = LRID(Row); // Normalize row range
+  int locRow = LRID(Row); // Normalize row range
 
-  if(Row < 0 || Row >= NumMyBlockRows()) 
+  if(locRow < 0 || locRow >= NumMyBlockRows())
     EPETRA_CHK_ERR(-1); // Not in Row range
 
-  NumIndices = NumMyIndices(Row);
-  if(LenOfIndices < NumIndices) 
+  NumIndices = NumMyIndices(locRow);
+  if(LenOfIndices < NumIndices)
     EPETRA_CHK_ERR(-2); // Not enough space for copy. Needed size is passed back in NumIndices
 
-  int * srcIndices = Indices(Row);
-  if(IndicesAreLocal())  
-    for(j = 0; j < NumIndices; j++) 
-      targIndices[j] = GCID(srcIndices[j]);
-  else 
+  if(IndicesAreLocal())
+  {
+    int * srcIndices = TIndices<int>(locRow);
+    // static_cast is ok because global indices were created from int values and hence must fit ints
+    for(j = 0; j < NumIndices; j++)
+      targIndices[j] = static_cast<int_type>(GCID(srcIndices[j]));
+  }
+  else
+  {
+    int_type * srcIndices = TIndices<int_type>(locRow);
     for(j = 0; j < NumIndices; j++)
       targIndices[j] = srcIndices[j];
+  }
   
   return(0);
 }
 
+int Epetra_CrsGraph::ExtractGlobalRowCopy(int Row, int LenOfIndices, int& NumIndices, int* targIndices) const 
+{
+  if(RowMap().GlobalIndicesInt())
+    return ExtractGlobalRowCopy<int>(Row, LenOfIndices, NumIndices, targIndices);
+  else
+	throw ReportError("Epetra_CrsGraph::ExtractGlobalRowCopy int version called for a graph that is not int.", -1);
+}
+
+int Epetra_CrsGraph::ExtractGlobalRowCopy(long long Row, int LenOfIndices, int& NumIndices, long long* targIndices) const 
+{
+  if(RowMap().GlobalIndicesLongLong())
+    return ExtractGlobalRowCopy<long long>(Row, LenOfIndices, NumIndices, targIndices);
+  else
+	throw ReportError("Epetra_CrsGraph::ExtractGlobalRowCopy long long version called for a graph that is not long long.", -1);
+}
+
 //==============================================================================
-int Epetra_CrsGraph::ExtractMyRowCopy(int Row, int LenOfIndices, int& NumIndices, int* targIndices) const 
+template<typename int_type>
+int Epetra_CrsGraph::ExtractMyRowCopy(int Row, int LenOfIndices, int& NumIndices, int_type* targIndices) const
 {
   int j;
 
@@ -1478,7 +1938,7 @@ int Epetra_CrsGraph::ExtractMyRowCopy(int Row, int LenOfIndices, int& NumIndices
   if(IndicesAreGlobal()) 
     EPETRA_CHK_ERR(-3); // There are no local indices yet
 
-  int * srcIndices = Indices(Row);
+  int * srcIndices = TIndices<int>(Row);
   for(j = 0; j < NumIndices; j++)
     targIndices[j] = srcIndices[j];
   
@@ -1488,17 +1948,41 @@ int Epetra_CrsGraph::ExtractMyRowCopy(int Row, int LenOfIndices, int& NumIndices
 //==============================================================================
 int Epetra_CrsGraph::ExtractGlobalRowView(int Row, int& NumIndices, int*& targIndices) const 
 {
-  Row = LRID(Row); // Normalize row range
+  if(!RowMap().GlobalIndicesInt())
+    throw ReportError("Epetra_CrsGraph::ExtractGlobalRowView int version called for a graph that is not int.", -1);
 
-  if(Row < 0 || Row >= NumMyBlockRows()) 
+  int locRow = LRID(Row); // Normalize row range
+
+  if(locRow < 0 || locRow >= NumMyBlockRows()) 
     EPETRA_CHK_ERR(-1); // Not in Row range
 
   if(IndicesAreLocal()) 
     EPETRA_CHK_ERR(-2); // There are no global indices
 
-  NumIndices = NumMyIndices(Row);
+  NumIndices = NumMyIndices(locRow);
 
-  targIndices = Indices(Row);
+  targIndices = TIndices<int>(locRow);
+  
+  return(0);
+}
+
+//==============================================================================
+int Epetra_CrsGraph::ExtractGlobalRowView(long long Row, int& NumIndices, long long*& targIndices) const 
+{
+  if(!RowMap().GlobalIndicesLongLong())
+    throw ReportError("Epetra_CrsGraph::ExtractGlobalRowView long long version called for a graph that is not long long.", -1);
+
+  int locRow = LRID(Row); // Normalize row range
+
+  if(locRow < 0 || locRow >= NumMyBlockRows()) 
+    EPETRA_CHK_ERR(-1); // Not in Row range
+
+  if(IndicesAreLocal()) 
+    EPETRA_CHK_ERR(-2); // There are no global indices
+
+  NumIndices = NumMyIndices(locRow);
+
+  targIndices = TIndices<long long>(locRow);
   
   return(0);
 }
@@ -1514,25 +1998,25 @@ int Epetra_CrsGraph::ExtractMyRowView(int Row, int& NumIndices, int*& targIndice
 
   NumIndices = NumMyIndices(Row);
 
-  targIndices = Indices(Row);
+  targIndices = TIndices<int>(Row);
 	
   return(0);
 }
 
 //==============================================================================
-int Epetra_CrsGraph::NumGlobalIndices(int Row) const {
-  Row = LRID(Row);
-  if(Row != -1) 
-    return(NumMyIndices(Row));
+int Epetra_CrsGraph::NumGlobalIndices(long long Row) const {
+  int locRow = LRID(Row);
+  if(locRow != -1) 
+    return(NumMyIndices(locRow));
   else 
     return(0); // No indices for this row on this processor
 }
 
 //==============================================================================
-int Epetra_CrsGraph::NumAllocatedGlobalIndices(int Row) const {
-  Row = LRID(Row);
-  if(Row != -1) 
-    return(NumAllocatedMyIndices(Row));
+int Epetra_CrsGraph::NumAllocatedGlobalIndices(long long Row) const {
+  int locRow = LRID(Row);
+  if(locRow != -1) 
+    return(NumAllocatedMyIndices(locRow));
   else 
     return(0); // No indices allocated for this row on this processor
 }
@@ -1553,7 +2037,7 @@ int Epetra_CrsGraph::ReplaceRowMap(const Epetra_BlockMap& newmap)
 //==============================================================================
 int Epetra_CrsGraph::ReplaceColMap(const Epetra_BlockMap& newmap)
 {
-  if (!HaveColMap() && !IndicesAreLocal() && !IndicesAreGlobal()) {
+  if (!HaveColMap() && !IndicesAreLocal() && !IndicesAreGlobal() && newmap.GlobalIndicesMatch(RowMap())) {
     CrsGraphData_->ColMap_            = newmap;
     CrsGraphData_->NumGlobalBlockCols_= newmap.NumGlobalElements();
     CrsGraphData_->NumMyBlockCols_    = newmap.NumMyElements();
@@ -1627,7 +2111,7 @@ int Epetra_CrsGraph::CopyAndPermuteRowMatrix(const Epetra_RowMatrix& A,
   int j;
   int NumIndices;
   int FromRow;
-  int ToRow;
+  long long ToRow;
   int maxNumIndices = A.MaxNumEntries();
   Epetra_IntSerialDenseVector indices;
   Epetra_SerialDenseVector Values;
@@ -1675,10 +2159,10 @@ int Epetra_CrsGraph::CopyAndPermuteCrsGraph(const Epetra_CrsGraph& A,
 {
   (void)Indexor;
   int i;
-  int Row;
+  long long Row;
   int NumIndices;
   int* indices = 0;
-  int FromRow, ToRow;
+  long long FromRow, ToRow;
   int maxNumIndices = A.MaxNumIndices();
   Epetra_IntSerialDenseVector IndicesVector;
 
@@ -1864,7 +2348,7 @@ int Epetra_CrsGraph::PackAndPrepareRowMatrix(const Epetra_RowMatrix& A,
   int j;
   int NumIndices;
   int* indices = 0;
-  int FromRow;
+  long long FromRow;
   int* intptr;
   Epetra_SerialDenseVector Values;
   
@@ -2037,7 +2521,7 @@ void Epetra_CrsGraph::Print (ostream& os) const {
       }
       os << endl;
       for(i = 0; i < NumMyBlockRows1; i++) {
-	int Row = GRID(i); // Get global row number
+	long long Row = GRID(i); // Get global row number
 	ExtractGlobalRowCopy(Row, MaxNumIndices1, NumIndices1, Indices1.Values());
 				
 	os.width(14);

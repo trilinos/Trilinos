@@ -46,8 +46,9 @@
 
 #ifdef EPETRA_FORTRAN
 
-typedef double * EPETRA_DOUBLE;
-typedef int    * EPETRA_INT;
+typedef double     * EPETRA_DOUBLE;
+typedef int        * EPETRA_INT;
+typedef long long  * EPETRA_LONG_LONG;
 #define EPETRA_DEREF(a) *a
 
 #ifdef EPETRA_ADDRESS64BIT
@@ -65,8 +66,9 @@ typedef int & EPETRA_OBJECT_REF;
 
 /* These typedefs act as new types for the Epetra C interface */
 
-typedef double EPETRA_DOUBLE;
-typedef int    EPETRA_INT;
+typedef double    EPETRA_DOUBLE;
+typedef int       EPETRA_INT;
+typedef long long EPETRA_LONG_LONG;
 #define EPETRA_DEREF(a) a
 
 typedef void * EPETRA_OBJECT_PTR;
@@ -113,25 +115,26 @@ extern "C" {
   /**                  Epetra_Map                     **/
   /***************************************************/
 
-  EPETRA_OBJECT_PTR MANGLE(epetra_map_create1)(EPETRA_INT numGlobalEquations, 
+  EPETRA_OBJECT_PTR MANGLE(epetra_map_create1)(EPETRA_LONG_LONG numGlobalEquations, 
 					       EPETRA_INT indexBase,
 					       EPETRA_OBJECT_REF comm);
 
-  EPETRA_OBJECT_PTR MANGLE(epetra_map_create2)(EPETRA_INT numGlobalEquations, 
+  EPETRA_OBJECT_PTR MANGLE(epetra_map_create2)(EPETRA_LONG_LONG numGlobalEquations, 
 					       EPETRA_INT numMyElements,
 					       EPETRA_INT indexBase,
 					       EPETRA_OBJECT_REF comm);
 
-  EPETRA_OBJECT_PTR MANGLE(epetra_map_create3)(EPETRA_INT numGlobalEquations, 
+  EPETRA_OBJECT_PTR MANGLE(epetra_map_create3)(EPETRA_LONG_LONG numGlobalEquations, 
 					       EPETRA_INT numlocalEquations,
-					       int *updateList, EPETRA_INT indexBase,
+					       long long *updateList, EPETRA_INT indexBase,
 					       EPETRA_OBJECT_REF comm);
   int MANGLE(epetra_map_nummyelements)(EPETRA_OBJECT_REF map);
-  int MANGLE(epetra_map_numglobalelements)(EPETRA_OBJECT_REF map);
+  long long MANGLE(epetra_map_numglobalelements)(EPETRA_OBJECT_REF map);
 
 #ifndef EPETRA_FORTRAN  /* Fortran cannot receive a pointer to int */
   int * MANGLE(epetra_map_myglobalelements)(EPETRA_OBJECT_REF map);
 #endif
+  long long * MANGLE(epetra_map_myglobalelements_ll)(EPETRA_OBJECT_REF map);
 
   EPETRA_OBJECT_PTR MANGLE(epetra_map_comm)(EPETRA_OBJECT_REF map);
 

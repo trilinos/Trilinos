@@ -41,17 +41,17 @@
 //@HEADER
 */
 
-#ifndef EPETRA_INTVECTOR_H
-#define EPETRA_INTVECTOR_H
+#ifndef EPETRA_LONGLONGVECTOR_H
+#define EPETRA_LONGLONGVECTOR_H
 
 #include "Epetra_DistObject.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_Distributor.h"
 class Epetra_Map;
 
-//! Epetra_IntVector: A class for constructing and using dense integer vectors on a parallel computer.
+//! Epetra_LongLongVector: A class for constructing and using dense integer vectors on a parallel computer.
 
-/*! The Epetra_IntVector class enables the construction and use of integer
+/*! The Epetra_LongLongVector class enables the construction and use of integer
      dense vectors in a distributed memory environment.  The distribution of the dense
     vector is determined in part by a Epetra_Comm object and a Epetra_Map (or Epetra_LocalMap
     or Epetra_BlockMap).
@@ -68,9 +68,9 @@ class Epetra_Map;
        these types of situation.
 </ul>
 
-<b>Constructing Epetra_IntVectors</b>
+<b>Constructing Epetra_LongLongVectors</b>
 
-There are four Epetra_IntVector constructors.  The first is a basic constructor that allocates
+There are four Epetra_LongLongVector constructors.  The first is a basic constructor that allocates
 space and sets all values to zero, the second is a 
 copy constructor. The third and fourth constructors work with user data.  These constructors have
 two data access modes:
@@ -85,21 +85,21 @@ two data access modes:
 Therefore, we strongly encourage users to develop code using Copy mode first and 
 only use the View mode in a secondary optimization phase.
 
-All Epetra_IntVector constructors require a map argument that describes the layout of elements
+All Epetra_LongLongVector constructors require a map argument that describes the layout of elements
 on the parallel machine.  Specifically, 
 \c map is a Epetra_Map, Epetra_LocalMap or Epetra_BlockMap object describing the desired
 memory layout for the vector.
 
-There are four different Epetra_IntVector constructors:
+There are four different Epetra_LongLongVector constructors:
 <ul>
   <li> Basic - All values are zero.
   <li> Copy - Copy an existing vector.
   <li> Copy from or make view of user int array.
 </ul>
 
-<b>Extracting Data from Epetra_IntVectors</b>
+<b>Extracting Data from Epetra_LongLongVectors</b>
 
-Once a Epetra_IntVector is constructed, it is possible to extract a copy of the values or create
+Once a Epetra_LongLongVector is constructed, it is possible to extract a copy of the values or create
 a view of them.
 
 \warning ExtractView functions are \e extremely dangerous from a data hiding perspective.
@@ -110,24 +110,24 @@ only use the ExtractView functions in a secondary optimization phase.
 There are two Extract functions:
 <ul>
   <li> ExtractCopy - Copy values into a user-provided array.
-  <li> ExtractView - Set user-provided array to point to Epetra_IntVector data.
+  <li> ExtractView - Set user-provided array to point to Epetra_LongLongVector data.
 </ul>
 
 
 \warning A Epetra_Map, Epetra_LocalMap or Epetra_BlockMap object is required for all 
-  Epetra_IntVector constructors.
+  Epetra_LongLongVector constructors.
 
 */
 
 //=========================================================================
-class EPETRA_LIB_DLL_EXPORT Epetra_IntVector : public Epetra_DistObject {
+class EPETRA_LIB_DLL_EXPORT Epetra_LongLongVector : public Epetra_DistObject {
 
   public:
 
     //! @name Constructors/destructors
   //@{ 
-  //! Basic Epetra_IntVector constuctor.
-  /*! Creates a Epetra_IntVector object and, by default, fills with zero values.  
+  //! Basic Epetra_LongLongVector constuctor.
+  /*! Creates a Epetra_LongLongVector object and, by default, fills with zero values.  
 
     \param In 
            Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
@@ -140,14 +140,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_IntVector : public Epetra_DistObject {
             out initialy.  If <tt>false</tt> then this memory will not
             be touched which can be significantly faster.
 
-    \return Pointer to a Epetra_IntVector.
+    \return Pointer to a Epetra_LongLongVector.
 
   */
-  Epetra_IntVector(const Epetra_BlockMap& Map, bool zeroOut = true);
+  Epetra_LongLongVector(const Epetra_BlockMap& Map, bool zeroOut = true);
 
-  //! Epetra_IntVector copy constructor.
+  //! Epetra_LongLongVector copy constructor.
   
-  Epetra_IntVector(const Epetra_IntVector& Source);
+  Epetra_LongLongVector(const Epetra_LongLongVector& Source);
   
   //! Set vector values from user array.
   /*!
@@ -156,23 +156,23 @@ class EPETRA_LIB_DLL_EXPORT Epetra_IntVector : public Epetra_DistObject {
     \param In 
            Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
     \param In
-           V - Pointer to an array of integer numbers..
+           V - Pointer to an array of long long numbers..
 
     \return Integer error code, set to 0 if successful.
 
 	   See Detailed Description section for further discussion.
   */
-  Epetra_IntVector(Epetra_DataAccess CV, const Epetra_BlockMap& Map, int *V);
+  Epetra_LongLongVector(Epetra_DataAccess CV, const Epetra_BlockMap& Map, long long *V);
 
-  //! Epetra_IntVector destructor.  
-  virtual ~Epetra_IntVector ();
+  //! Epetra_LongLongVector destructor.  
+  virtual ~Epetra_LongLongVector ();
   //@}
   
 
   //! @name Post-construction modification methods
   //@{ 
   //! Set all elements of the vector to Value
-  int PutValue(int Value);
+  int PutValue(long long Value);
   //@}
   
 
@@ -187,7 +187,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_IntVector : public Epetra_DistObject {
 
     \return Integer error code, set to 0 if successful.
   */
-  int ExtractCopy(int *V) const;
+  int ExtractCopy(long long *V) const;
   
   //! Set user-provided address of V.
   /*!
@@ -196,7 +196,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_IntVector : public Epetra_DistObject {
 
     \return Integer error code, set to 0 if successful.
   */
-  int ExtractView(int **V) const;
+  int ExtractView(long long **V) const;
   //@}
 
   //! @name Mathematical methods
@@ -205,13 +205,13 @@ class EPETRA_LIB_DLL_EXPORT Epetra_IntVector : public Epetra_DistObject {
   /*!
     \return Maximum value across all processors.
   */
-  int MaxValue();
+  long long MaxValue();
  
   //! Find minimum value
   /*!
     \return Minimum value across all processors.
   */
-  int MinValue();
+  long long MinValue();
 
   //@}
   
@@ -221,29 +221,29 @@ class EPETRA_LIB_DLL_EXPORT Epetra_IntVector : public Epetra_DistObject {
   //! = Operator.
   /*!
     \param In
-           A - Epetra_IntVector to copy.
+           A - Epetra_LongLongVector to copy.
 
-    \return Epetra_IntVector.
+    \return Epetra_LongLongVector.
   */
-  Epetra_IntVector& operator = (const Epetra_IntVector& Source);
+  Epetra_LongLongVector& operator = (const Epetra_LongLongVector& Source);
   
   //! Element access function.
   /*!
     \return V[Index].
   */
-    int& operator [] (int index) { return Values_[index]; }
+    long long& operator [] (int index) { return Values_[index]; }
   //! Element access function.
   /*!
     \return V[Index].
   */
-    const int& operator [] (int index) const { return Values_[index]; }
+    const long long& operator [] (int index) const { return Values_[index]; }
     //@}
     
     //! @name Attribute access functions
   //@{ 
 
   //! Returns a pointer to an array containing the values of this vector.
-  int * Values() const {return(Values_);};
+  long long * Values() const {return(Values_);};
 
   //! Returns the local vector length on the calling processor of vectors in the multi-vector.
   int MyLength() const {return(Map().NumMyPoints());};
@@ -261,9 +261,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_IntVector : public Epetra_DistObject {
  private:
 
   int AllocateForCopy();
-  int DoCopy(int * V);
+  int DoCopy(long long * V);
   int AllocateForView();
-  int DoView(int * V);
+  int DoView(long long * V);
 
    // Routines to implement Epetra_DistObject virtual methods
   int CheckSizes(const Epetra_SrcDistObject& A);
@@ -295,9 +295,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_IntVector : public Epetra_DistObject {
                        Epetra_CombineMode CombineMode,
                        const Epetra_OffsetIndex * Indexor);
 
-  int * Values_;
+  long long * Values_;
   bool UserAllocated_;
   bool Allocated_;
 };
 
-#endif /* EPETRA_INTVECTOR_H */
+#endif /* EPETRA_LONGLONGVECTOR_H */

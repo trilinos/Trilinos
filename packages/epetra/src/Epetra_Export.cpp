@@ -47,23 +47,9 @@
 #include <vector>
 
 //==============================================================================
-// Epetra_Export constructor for a Epetra_BlockMap object
-Epetra_Export::Epetra_Export( const Epetra_BlockMap &  sourceMap, const Epetra_BlockMap & targetMap)
-  : Epetra_Object("Epetra::Export"), 
-    TargetMap_(targetMap),
-    SourceMap_(sourceMap),
-    NumSameIDs_(0),
-    NumPermuteIDs_(0),
-    PermuteToLIDs_(0),
-    PermuteFromLIDs_(0),
-    NumRemoteIDs_(0),
-    RemoteLIDs_(0),
-    NumExportIDs_(0),
-    ExportLIDs_(0),
-    ExportPIDs_(0),
-    NumSend_(0),
-    NumRecv_(0),
-    Distor_(0)
+// Epetra_Export constructor function for a Epetra_BlockMap object
+template<typename int_type>
+void Epetra_Export::Construct( const Epetra_BlockMap &  sourceMap, const Epetra_BlockMap & targetMap)
 {
 
   int i;
@@ -77,15 +63,15 @@ Epetra_Export::Epetra_Export( const Epetra_BlockMap &  sourceMap, const Epetra_B
   int NumSourceIDs = sourceMap.NumMyElements();
   int NumTargetIDs = targetMap.NumMyElements();
 
-  int *TargetGIDs = 0;
+  int_type *TargetGIDs = 0;
   if (NumTargetIDs>0) {
-    TargetGIDs = new int[NumTargetIDs];
+    TargetGIDs = new int_type[NumTargetIDs];
     targetMap.MyGlobalElements(TargetGIDs);
   }
 
-  int * SourceGIDs = 0;
+  int_type * SourceGIDs = 0;
   if (NumSourceIDs>0) {
-    SourceGIDs = new int[NumSourceIDs];
+    SourceGIDs = new int_type[NumSourceIDs];
     sourceMap.MyGlobalElements(SourceGIDs);
   }
 
@@ -104,10 +90,10 @@ Epetra_Export::Epetra_Export( const Epetra_BlockMap &  sourceMap, const Epetra_B
 
   // Define remote and permutation lists
 
-  int * ExportGIDs = 0;
+  int_type * ExportGIDs = 0;
   if (NumExportIDs_>0) {
     ExportLIDs_ = new int[NumExportIDs_];
-    ExportGIDs = new int[NumExportIDs_];
+    ExportGIDs = new int_type[NumExportIDs_];
   }
   if (NumPermuteIDs_>0)  {
     PermuteToLIDs_ = new int[NumPermuteIDs_];
@@ -147,12 +133,12 @@ Epetra_Export::Epetra_Export( const Epetra_BlockMap &  sourceMap, const Epetra_B
       for( i = 0; i < NumExportIDs_; ++i )
 	if( ExportPIDs_[i] == -1 ) ++cnt;
       if( cnt ) {
-	int * NewExportGIDs = 0;
+	int_type * NewExportGIDs = 0;
 	int * NewExportPIDs = 0;
 	int * NewExportLIDs = 0;
 	int cnt1 = NumExportIDs_-cnt;
 	if (cnt1) {
-	  NewExportGIDs = new int[cnt1];
+	  NewExportGIDs = new int_type[cnt1];
 	  NewExportPIDs = new int[cnt1];
 	  NewExportLIDs = new int[cnt1];
 	}
@@ -178,9 +164,27 @@ Epetra_Export::Epetra_Export( const Epetra_BlockMap &  sourceMap, const Epetra_B
     
     //Make sure Export IDs are ordered by processor
     Epetra_Util util;
-    int * tmpPtr[2];
-    tmpPtr[0] = ExportLIDs_, tmpPtr[1] = ExportGIDs;
-    util.Sort(true,NumExportIDs_,ExportPIDs_,0,0,2,tmpPtr);
+
+	if(targetMap.GlobalIndicesLongLong())
+	{
+		util.Sort(true,NumExportIDs_,ExportPIDs_,0,0,1,&ExportLIDs_, 1, (long long **)&ExportGIDs);
+	}
+	else if(targetMap.GlobalIndicesInt())
+	{
+		int* ptrs[2] = {ExportLIDs_, (int*) ExportGIDs};
+		util.Sort(true,NumExportIDs_,ExportPIDs_,0,0, 2,&ptrs[0], 0, 0);
+	}
+	else
+	{
+		throw ReportError("Epetra_Import::Epetra_Import: GlobalIndices Internal Error", -1);
+	}
+
+	if(targetMap.GlobalIndicesLongLong())
+	{
+	}
+	else if(targetMap.GlobalIndicesInt())
+	{
+	}
 
     Distor_ = sourceMap.Comm().CreateDistributor();
     
@@ -199,7 +203,7 @@ Epetra_Export::Epetra_Export( const Epetra_BlockMap &  sourceMap, const Epetra_B
     char * cRemoteGIDs = 0; //Do will alloc memory for this object
     int LenCRemoteGIDs = 0;
     ierr = Distor_->Do(reinterpret_cast<char *> (ExportGIDs), 
-		sizeof( int ),
+		sizeof( int_type ),
 		LenCRemoteGIDs,
 		cRemoteGIDs);
     if (ierr) throw ReportError("Error in Epetra_Distributor.Do()", ierr);
@@ -219,6 +223,35 @@ Epetra_Export::Epetra_Export( const Epetra_BlockMap &  sourceMap, const Epetra_B
   if (NumSourceIDs>0) delete [] SourceGIDs;
   
   return;
+}
+
+// Epetra_Export constructor for a Epetra_BlockMap object
+Epetra_Export::Epetra_Export( const Epetra_BlockMap &  sourceMap, const Epetra_BlockMap & targetMap)
+  : Epetra_Object("Epetra::Export"), 
+    TargetMap_(targetMap),
+    SourceMap_(sourceMap),
+    NumSameIDs_(0),
+    NumPermuteIDs_(0),
+    PermuteToLIDs_(0),
+    PermuteFromLIDs_(0),
+    NumRemoteIDs_(0),
+    RemoteLIDs_(0),
+    NumExportIDs_(0),
+    ExportLIDs_(0),
+    ExportPIDs_(0),
+    NumSend_(0),
+    NumRecv_(0),
+    Distor_(0)
+{
+	if(!targetMap.GlobalIndicesMatch(sourceMap))
+		throw ReportError("Epetra_Export::Epetra_Export: GlobalIndicesMatch failed", -1);
+
+	if(targetMap.GlobalIndicesLongLong())
+		Construct<long long>(sourceMap, targetMap);
+	else if(targetMap.GlobalIndicesInt())
+		Construct<int>(sourceMap, targetMap);
+	else
+		throw ReportError("Epetra_Export::Epetra_Export: Bad global indices type", -1);
 }
 
 //==============================================================================
@@ -390,7 +423,7 @@ void Epetra_Export::Print(ostream & os) const
 	  int* intCompanions[1]; // Input for Epetra_Util::Sort().
 	  intCompanions[0] = &exportLIDs[0];
 	  Epetra_Util::Sort (true, NumExportIDs_, &exportPIDs[0], 
-			     0, (double**) NULL, 1, intCompanions);
+			     0, (double**) NULL, 1, intCompanions, 0, 0);
 	}
       }
 

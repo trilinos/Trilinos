@@ -41,6 +41,8 @@
 //@HEADER
 */
 
+#if 0 == 1234 // These sections have to be fixed.
+
 #include "Epetra_Map.h"
 #include "Epetra_Util.h"
 #include "Epetra_Export.h"
@@ -714,7 +716,9 @@ int Epetra_CrsSingletonFilter::CreatePostSolveArrays(const Epetra_IntVector & Ro
 
   assert(NumMyColSingletonstmp==NumMyColSingletons_); //Sanity check
   Epetra_Util sorter;
-  sorter.Sort(true, NumMyColSingletons_, ColSingletonRowLIDs_, 0, 0, 1, &ColSingletonColLIDs_);
+  sorter.Sort(true, NumMyColSingletons_, ColSingletonRowLIDs_, 0, 0, 1, &ColSingletonColLIDs_, 0, 0);
     
   return(0);
 }
+
+#endif // 0 == 1234 // These sections have to be fixed.

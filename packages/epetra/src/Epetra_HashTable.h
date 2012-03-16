@@ -46,6 +46,9 @@
 
 #include "Epetra_Object.h"
 
+// TODO the code needs to be changed for long long keys, only
+// the types have been changed right now.
+
 class Epetra_HashTable : public Epetra_Object
 {
   struct Node

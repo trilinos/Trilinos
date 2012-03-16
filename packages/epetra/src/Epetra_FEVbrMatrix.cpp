@@ -40,6 +40,8 @@
 // ************************************************************************
 //@HEADER
 
+#if 0 == 1234 // These sections have to be fixed.
+
 #include <Epetra_FEVbrMatrix.h>
 #include <Epetra_BlockMap.h>
 #include <Epetra_Map.h>
@@ -662,3 +664,4 @@ int Epetra_FEVbrMatrix::EndSubmitEntries()
   return(0);
 }
 
+#endif // 0 == 1234 // These sections have to be fixed.

@@ -141,9 +141,21 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Util {
            IntCompanions - IntCompanions[i] is a pointer to the ith list of integers to be sorted with key.
 	   
   */
+  template<typename T>
+  static void Sort(bool SortAscending, int NumKeys, T * Keys, 
+		   int NumDoubleCompanions,double ** DoubleCompanions, 
+		   int NumIntCompanions, int ** IntCompanions,
+		   int NumLongLongCompanions, long long ** LongLongCompanions);
+
   static void Sort(bool SortAscending, int NumKeys, int * Keys, 
 		   int NumDoubleCompanions,double ** DoubleCompanions, 
-		   int NumIntCompanions, int ** IntCompanions);
+		   int NumIntCompanions, int ** IntCompanions,
+		   int NumLongLongCompanions, long long ** LongLongCompanions);
+
+  static void Sort(bool SortAscending, int NumKeys, long long * Keys, 
+		   int NumDoubleCompanions,double ** DoubleCompanions, 
+		   int NumIntCompanions, int ** IntCompanions,
+		   int NumLongLongCompanions, long long ** LongLongCompanions);
 
   //! Epetra_Util Create_Root_Map function
   /*! Function to create a new Epetra_Map object with all GIDs sent to the root processor
@@ -204,8 +216,19 @@ inline Epetra_Util::~Epetra_Util(){}
     maintained.
     @return offset Location in list at which item was found. -1 if not found.
 */
+template<typename T>
+int Epetra_Util_binary_search(T item,
+                              const T* list,
+                              int len,
+                              int& insertPoint);
+
 EPETRA_LIB_DLL_EXPORT int Epetra_Util_binary_search(int item,
                               const int* list,
+                              int len,
+                              int& insertPoint);
+
+EPETRA_LIB_DLL_EXPORT int Epetra_Util_binary_search(long long item,
+                              const long long* list,
                               int len,
                               int& insertPoint);
 

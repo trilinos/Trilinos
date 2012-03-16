@@ -331,16 +331,16 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
        appear on multiple processors, then those nonzeros will be counted
        multiple times.
     */
-    virtual int NumGlobalNonzeros() const{if (!HaveStructureConstants_) ComputeStructureConstants(); return(NumGlobalNonzeros_);}
+    virtual long long NumGlobalNonzeros() const{if (!HaveStructureConstants_) ComputeStructureConstants(); return(NumGlobalNonzeros_);}
 
     //! Returns the number of global matrix rows.
-    virtual int NumGlobalRows() const {return(OperatorRangeMap().NumGlobalPoints());}
+    virtual long long NumGlobalRows() const {return(OperatorRangeMap().NumGlobalPoints());}
 
     //! Returns the number of global matrix columns.
-    virtual int NumGlobalCols() const {return(OperatorDomainMap().NumGlobalPoints());}
+    virtual long long NumGlobalCols() const {return(OperatorDomainMap().NumGlobalPoints());}
 
     //! Returns the number of global nonzero diagonal entries.
-    virtual int NumGlobalDiagonals() const{return(OperatorDomainMap().NumGlobalPoints());}
+    virtual long long NumGlobalDiagonals() const{return(OperatorDomainMap().NumGlobalPoints());}
     
     //! Returns the number of nonzero entries in the calling processor's portion of the matrix.
     virtual int NumMyNonzeros() const{if (!HaveStructureConstants_) ComputeStructureConstants(); return(NumMyNonzeros_);}
@@ -495,7 +495,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, pub
   Epetra_Map RowMatrixColMap_;
   
   mutable int NumMyNonzeros_;
-  mutable int NumGlobalNonzeros_;
+  mutable long long NumGlobalNonzeros_;
   mutable int MaxNumEntries_;
   mutable double NormInf_;
   mutable double NormOne_;
