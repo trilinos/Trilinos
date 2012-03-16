@@ -19,6 +19,7 @@
 #include "MueLu_FactoryBase_fwd.hpp"
 
 #include "MueLu_RAPFactory.hpp" //TMP
+#include "MueLu_TransPFactory.hpp" //TMP
 #include "MueLu_SaPFactory.hpp" //TMP
 #include "MueLu_TrilinosSmoother.hpp" //TMP
 #include "MueLu_SmootherFactory.hpp" //TMP
@@ -26,6 +27,10 @@
 #include "MueLu_UCAggregationFactory.hpp" //TMP
 #include "MueLu_DirectSolver.hpp" //TMP
 #include "MueLu_Exceptions.hpp" //TMP
+#include "MueLu_MultiVectorTransferFactory.hpp"
+#include "MueLu_PermutedTransferFactory.hpp"
+#include "MueLu_ZoltanInterface.hpp"
+#include "MueLu_RepartitionFactory.hpp"
 
 namespace MueLu {
 
@@ -146,8 +151,8 @@ namespace MueLu {
 
     //! TransPFactory
     RCP<FactoryBase> BuildTransPFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
-      if (paramList.begin() == paramList.end()) // short-circuit. Use default parameters of constructor
-        return rcp(new TransPFactory());
+//       if (paramList.begin() == paramList.end()) // short-circuit. Use default parameters of constructor
+//         return rcp(new TransPFactory());
 
       TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "TransPFactory", Exceptions::RuntimeError, "");      
       MUELU_FACTORY_PARAM("P", PFact);
@@ -165,12 +170,12 @@ namespace MueLu {
       MUELU_FACTORY_PARAM("R", RFact);
       MUELU_FACTORY_PARAM("A", AFact);
 
-      RCP<FactoryBase> r = rcp(new RAPFactory(PFact, RFact, AFact));
+      RCP<RAPFactory> r = rcp(new RAPFactory(PFact, RFact, AFact));
 
       if (paramList.isSublist("TransferFactories")) {
         Teuchos::ParameterList transferList = paramList.sublist("TransferFactories");
         for (Teuchos::ParameterList::ConstIterator param = transferList.begin(); param != transferList.end(); ++param) {
-          RCP<FactoryBase> p = BuildFactory(transferList.entry(param), factoryMapIn);
+          RCP<const FactoryBase> p = BuildFactory(transferList.entry(param), factoryMapIn);
           r->AddTransferFactory(p);
         }
       }
