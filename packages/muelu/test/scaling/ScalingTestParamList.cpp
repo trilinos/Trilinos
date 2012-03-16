@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::CommandLineProcessor clp(false); // Note: 
 
-  MueLu::Gallery::Parameters<GO> matrixParameters(clp, 256); // manage parameters of the test case
+  MueLu::Gallery::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);      // manage parameters of xpetra
 
   std::string xmlFileName = "scalingTest.xml"; clp.setOption("xml",   &xmlFileName, "read parameters from a file. Otherwise, this example uses by default 'muelu_ParameterList.xml'");
@@ -59,6 +59,9 @@ int main(int argc, char *argv[]) {
   // Multigrid Hierarchy
   ParameterListInterpreter mueLuFactory(xmlFileName);
   RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
+
+  H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+
   H->GetLevel(0)->Set("A", A);
 
   {
@@ -93,18 +96,22 @@ int main(int argc, char *argv[]) {
   RCP<Vector> X = VectorFactory::Build(map);
   RCP<Vector> B = VectorFactory::Build(map);
   
-  X->putScalar((Scalar) 0.0);
-  B->setSeed(846930886); B->randomize();
+  {
+    X->setSeed(846930886);
+    X->randomize();
+    A->apply(*X,*B,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
+    Teuchos::Array<ST::magnitudeType> norms(1);
+    B->norm2(norms);
+    B->scale(1.0/norms[0]);
+    X->putScalar( (SC) 0.0);
+  }
 
   // Use AMG directly as an iterative solver (not as a preconditionner)
-  int nIts = 9;
+  int nIts = 10;
 
-  H->Iterate(*B, nIts, *X);
-
-  // Print relative residual norm
-  ST::magnitudeType residualNorms = Utils::ResidualNorm(*A, *X, *B)[0];
-  if (comm->getRank() == 0)
-    std::cout << "||Residual|| = " << residualNorms << std::endl;
-
+  H->IsPreconditioner(true);
+  H->Iterate(*B,nIts,*X);
+  H->IsPreconditioner(false);
+  
   return EXIT_SUCCESS;
 }

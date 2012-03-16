@@ -2,7 +2,7 @@
   
   <!-- Configuration of the Xpetra operator (fine level) -->
   <ParameterList name="Operator">
-    <Parameter name="PDE equations" type="int" value="2"/> <!-- Number of PDE equations at each grid node.-->
+    <Parameter name="PDE equations" type="int" value="1"/> <!-- Number of PDE equations at each grid node.-->
   </ParameterList>
 
   <!-- Factory collection -->
@@ -60,8 +60,8 @@
       <Parameter name="factory" type="string" value="RepartitionFactory"/>
       <Parameter name="Factory"          type="string" value="myZoltanInterface"/>
       <Parameter name="A"                type="string" value="myRAPFact"/>
-      <Parameter name="minRowsPerProc"   type="int"    value="2000"/>
-      <Parameter name="nonzeroImbalance" type="double" value="1.2"/>
+      <Parameter name="minRowsPerProc"   type="int"    value="800"/> <!-- default = 2000 -->
+      <Parameter name="nonzeroImbalance" type="double" value="1.1"/> <!-- default = 1.2 -->
     </ParameterList>
 
     <ParameterList name="myPermutedProlongatorFact">
@@ -135,6 +135,7 @@
     <ParameterList name="FineLevel">
       <Parameter name="startLevel" type="int" value="0"/>
       <Parameter name="Smoother"   type="string" value="SymGaussSeidel"/>
+      <Parameter name="Aggregates" type="string" value="myAggregationFact"/>
     </ParameterList>
 
     <ParameterList name="OtherLevels">
@@ -143,11 +144,14 @@
       <Parameter name="P"          type="string" value="myPermutedProlongatorFact"/> <!-- TODO: should not be needed -->
       <Parameter name="R"          type="string" value="myPermutedRestrictionFact"/> <!-- TODO: should not be needed -->
       <Parameter name="Smoother"   type="string" value="SymGaussSeidel"/>
+      <Parameter name="Aggregates" type="string" value="myAggregationFact"/>
     </ParameterList>
     
     <ParameterList name="CoarsestLevel">
       <Parameter name="startLevel"   type="int" value="-1"/>
       <Parameter name="CoarseSolver" type="string" value="DirectSolver"/>
+
+      <!-- TODO: check how last level is built (A,P,R) fact -->
     </ParameterList>
     
   </ParameterList>
