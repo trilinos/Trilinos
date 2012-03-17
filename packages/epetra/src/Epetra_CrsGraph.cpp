@@ -202,9 +202,9 @@ int Epetra_CrsGraph::Allocate(const int* numIndicesPerRow, int Inc, bool staticP
 
 	if(RowMap().GlobalIndicesLongLong())
 	{
-		return
-			TAllocate<int>(numIndicesPerRow, Inc, staticProfile) &&
-			TAllocate<long long>(numIndicesPerRow, Inc, staticProfile);
+		TAllocate<int>(numIndicesPerRow, Inc, staticProfile);
+		TAllocate<long long>(numIndicesPerRow, Inc, staticProfile);
+		return 0;
 	}
 
 	throw ReportError("Epetra_CrsGraph::Allocate: Internal error.", -1);
@@ -1943,6 +1943,14 @@ int Epetra_CrsGraph::ExtractMyRowCopy(int Row, int LenOfIndices, int& NumIndices
     targIndices[j] = srcIndices[j];
   
   return(0);
+}
+
+int Epetra_CrsGraph::ExtractMyRowCopy(int Row, int LenOfIndices, int& NumIndices, int* targIndices) const
+{
+	if(RowMap().GlobalIndicesTypeValid())
+		return ExtractMyRowCopy<int>(Row, LenOfIndices, NumIndices, targIndices);
+	else
+		throw ReportError("Epetra_CrsGraph::ExtractMyRowCopy graph global index type unknown.", -1);
 }
 
 //==============================================================================
