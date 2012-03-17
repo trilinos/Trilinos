@@ -472,6 +472,83 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
 
     // end_demo
 
+#if STK_ADAPT_HAVE_YAML_CPP
+    if (p_size == 1)
+      {
+        if (1) {
+          YAML::Emitter out;
+          out << YAML::Anchor("NodeRegistry::map");
+          out << YAML::BeginMap;
+          out << YAML::Key << YAML::BeginSeq << 1 << 2 << YAML::EndSeq << YAML::Value << YAML::BeginSeq << -1 << -2 << YAML::EndSeq;
+          out << YAML::Key << 1;
+          out << YAML::Value << 2;
+          out << YAML::Key << 3;
+          out << YAML::Value << 4;
+          out << YAML::EndMap;
+          //std::cout << "out=\n" << out.c_str() << "\n=out" << std::endl;
+          std::string expected_result = "&NodeRegistry::map\n?\n  - 1\n  - 2\n:\n  - -1\n  - -2\n1: 2\n3: 4";
+          //std::cout << "out2=\n" << expected_result << std::endl;
+          STKUNIT_EXPECT_TRUE(expected_result == std::string(out.c_str()));
+        }
+
+        YAML::Emitter yaml;
+        std::cout << "\nnodeRegistry.serialize_write(yaml)" << std::endl;
+        nodeRegistry.serialize_write(yaml);
+        //std::cout << yaml.c_str() << std::endl;
+        if (!yaml.good())
+          {
+            std::cout << "Emitter error: " << yaml.good() << " " <<yaml.GetLastError() << "\n";
+            STKUNIT_EXPECT_TRUE(false);
+          }
+        std::ofstream file1("out.yaml");
+        file1 << yaml.c_str();
+        file1.close();
+        std::ifstream file2("out.yaml");
+        YAML::Parser parser(file2);
+        YAML::Node doc;
+
+        try {
+          while(parser.GetNextDocument(doc)) {
+            std::cout << "\n read doc.Type() = " << doc.Type() << " doc.Tag()= " << doc.Tag() << " doc.size= " << doc.size() << std::endl;
+            if (doc.Type() == YAML::NodeType::Map)
+              {
+                for(YAML::Iterator it=doc.begin();it!=doc.end();++it) {
+                  int key, value;
+                  std::cout << "read it.first().Type() = " << it.first().Type() << " it.first().Tag()= " << it.first().Tag() << std::endl;
+                  std::cout << "read it.second().Type() = " << it.second().Type() << " it.second().Tag()= " << it.second().Tag() << std::endl;
+                  const YAML::Node& keySeq = it.first();
+                  for(YAML::Iterator itk=keySeq.begin();itk!=keySeq.end();++itk) {
+                    *itk >> key;
+                    std::cout << "read key= " << key << std::endl;
+                  }
+              
+                  const YAML::Node& valSeq = it.second();
+                  for(YAML::Iterator itv=valSeq.begin();itv!=valSeq.end();++itv) {
+                    *itv >> value;
+                    std::cout << "read value= " << value << std::endl;
+                  }
+              
+                }
+              }
+          }
+        }
+        catch(YAML::ParserException& e) {
+          std::cout << e.what() << "\n";
+          STKUNIT_EXPECT_TRUE(false);
+        }
+
+        file2.close();
+        std::ifstream file3("out.yaml");
+        NodeRegistry nrNew(eMesh);
+        nrNew.serialize_read(file3);
+        YAML::Emitter yaml3;
+        std::cout << "\nnrNew.serialize_write(yaml3)" << std::endl;
+        nrNew.serialize_write(yaml3);
+        std::cout << yaml3.c_str() << std::endl;
+        
+        //exit(1);
+      }
+#endif
     // start_demo_nodeRegistry_test_parallel_1_quadratic_elem
 
     // change element to be a serendipity quadratic element

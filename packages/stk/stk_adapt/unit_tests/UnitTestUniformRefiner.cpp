@@ -70,6 +70,7 @@ namespace stk {
   namespace adapt {
     namespace unit_tests {
 
+#if 0
       static int printInfoLevel = 0;
 
       /// configuration: you can choose where to put the generated Exodus files (see variables input_files_loc, output_files_loc)
@@ -3029,7 +3030,7 @@ namespace stk {
       }
 
 
-
+#endif
 
     } // namespace unit_tests
   } // namespace adapt

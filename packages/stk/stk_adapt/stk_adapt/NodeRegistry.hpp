@@ -55,6 +55,11 @@
 
 #include <stk_percept/PerceptBoostArray.hpp>
 
+#define STK_ADAPT_HAVE_YAML_CPP (1 && STK_BUILT_IN_SIERRA)
+#if STK_ADAPT_HAVE_YAML_CPP
+#include <yaml-cpp/yaml.h>
+#endif
+
 #include <boost/tuple/tuple_io.hpp>
 #include <boost/tuple/tuple_comparison.hpp>
 
@@ -2471,6 +2476,11 @@ namespace stk {
               }
           }
       }
+
+#if STK_ADAPT_HAVE_YAML_CPP
+      void serialize_write(YAML::Emitter& emitter, std::string msg="");
+      void serialize_read(std::ifstream& file_in, std::string msg="");
+#endif
 
       // estimate of memory used by this object
       unsigned get_memory_usage()
