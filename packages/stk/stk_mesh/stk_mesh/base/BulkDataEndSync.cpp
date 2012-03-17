@@ -838,8 +838,12 @@ bool BulkData::internal_modification_end( bool regenerate_aura )
   // However, it insures that the ordering of entities and buckets
   // is independent of the order in which a set of changes were
   // performed.
+  //
+  //optimize_buckets combines multiple buckets in a bucket-family into
+  //a single larger bucket, and also does a sort.
+  //If optimize_buckets has not been requested, still do the sort.
   if (m_optimize_buckets) m_bucket_repository.optimize_buckets();
-  m_bucket_repository.internal_sort_bucket_entities();
+  else m_bucket_repository.internal_sort_bucket_entities();
 
   // ------------------------------
 

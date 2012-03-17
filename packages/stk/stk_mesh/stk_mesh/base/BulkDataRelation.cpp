@@ -372,6 +372,8 @@ void BulkData::internal_propagate_part_changes(
 
   OrdinalVector to_del , to_add , empty ;
 
+  const PartVector& all_parts = m_mesh_meta_data.get_parts();
+
   for ( ; ! rel.empty() ; ++rel ) {
     const unsigned rel_type  = rel->entity_rank();
     const unsigned rel_ident = rel->identifier();
@@ -415,7 +417,7 @@ void BulkData::internal_propagate_part_changes(
         for ( OrdinalVector::const_iterator
               j = removed.begin() ; j != removed.end() ; ++j ) {
           if ( ! contains_ordinal( to_add_begin, to_add_end , *j ) ) {
-            induced_part_membership( *m_mesh_meta_data.get_parts()[*j], etype, rel_type, rel_ident, to_del );
+            induced_part_membership( *all_parts[*j], etype, rel_type, rel_ident, to_del );
           }
         }
       }

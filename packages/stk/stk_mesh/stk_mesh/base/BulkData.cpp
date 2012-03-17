@@ -662,8 +662,21 @@ void BulkData::internal_change_entity_parts(
   m_entity_repo.set_entity_sync_count( entity, m_sync_count );
 
   // Propagate part changes through the entity's relations.
+  //(Only propagate part changes for parts which have a primary-entity-rank that matches
+  // the entity's rank. Other parts don't get induced...)
 
-  internal_propagate_part_changes( entity , parts_removed );
+  const PartVector& all_parts = m_mesh_meta_data.get_parts();
+
+  OrdinalVector rank_parts_removed;
+  for(OrdinalVector::const_iterator pr=parts_removed.begin(), prend=parts_removed.end(); pr!=prend; ++pr) {
+    if (all_parts[*pr]->primary_entity_rank() == entity.entity_rank()) {
+      rank_parts_removed.push_back(*pr);
+    }
+  }
+
+  if (!rank_parts_removed.empty()) {
+    internal_propagate_part_changes( entity , rank_parts_removed );
+  }
 
 #ifndef NDEBUG
   //ensure_part_superset_consistency( entity );

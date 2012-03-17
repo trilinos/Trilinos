@@ -279,8 +279,7 @@ void induced_part_membership( const Entity           & entity_from ,
   // 'entity_from' to be accurate if it is owned by the local process.
   if ( entity_rank_to < entity_rank_from &&
        local_proc_rank == entity_from.owner_rank() ) {
-    const MetaData   & meta        = MetaData::get(mesh);
-    const PartVector & all_parts   = meta.get_parts();
+    const PartVector & all_parts   = mesh.mesh_meta_data().get_parts();
 
     const std::pair<const unsigned *, const unsigned *>
       bucket_superset_ordinals = bucket_from.superset_part_ordinals();

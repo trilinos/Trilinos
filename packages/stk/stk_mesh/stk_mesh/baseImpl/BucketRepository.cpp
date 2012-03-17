@@ -439,7 +439,7 @@ void BucketRepository::optimize_buckets()
 
       // Determine offset to the end bucket in this family:
       while ( end_family < buckets.size() && last_bucket_in_family != buckets[end_family] ) { ++end_family ; }
-      if (end_family < buckets.size())  ++end_family ; //increment pass the end
+      if (end_family < buckets.size())  ++end_family ; //increment past the end
 
       //only one bucket in the family
       //go to the next family
@@ -456,7 +456,18 @@ void BucketRepository::optimize_buckets()
       for ( size_t i = begin_family ; i != end_family ; ++i ) {
         new_capacity += buckets[i]->m_bucketImpl.capacity();
       }
-      //new_capacity += m_bucket_capacity;
+
+      std::vector<Entity*> entities;
+      entities.reserve(new_capacity);
+
+      for ( size_t i = begin_family ; i != end_family ; ++i ) {
+        Bucket& b = *buckets[i];
+        for(size_t j=0; j<b.size(); ++j) {
+          entities.push_back(&b[j]);
+        }
+      }
+
+      std::sort( entities.begin(), entities.end(), EntityLess() );
 
       Bucket * new_bucket = new Bucket( m_mesh,
           entity_rank,
@@ -469,22 +480,19 @@ void BucketRepository::optimize_buckets()
 
       tmp_buckets.push_back(new_bucket);
 
-      unsigned new_ordinal = 0;
-      for (size_t ik = begin_family; ik != end_family; ++ik) {
-        Bucket & old_bucket = * buckets[ik];
-        for (unsigned old_ordinal=0; old_ordinal < old_bucket.size(); ++old_ordinal) {
-          //increase size of the new_bucket
-          new_bucket->m_bucketImpl.increment_size();
+      for(size_t new_ordinal=0; new_ordinal<entities.size(); ++new_ordinal) {
+        //increase size of the new_bucket
+        new_bucket->m_bucketImpl.increment_size();
 
-          Entity & entity = old_bucket[old_ordinal];
+        Entity & entity = *entities[new_ordinal];
+        Bucket& old_bucket = entity.bucket();
+        unsigned old_ordinal = entity.bucket_ordinal();
 
-          //copy field data from old to new
-          copy_fields( *new_bucket, new_ordinal, old_bucket, old_ordinal);
-          m_entity_repo.change_entity_bucket( *new_bucket, entity, new_ordinal);
-          new_bucket->m_bucketImpl.replace_entity( new_ordinal , &entity ) ;
-          internal_propagate_relocation(entity);
-          ++new_ordinal;
-        }
+        //copy field data from old to new
+        copy_fields( *new_bucket, new_ordinal, old_bucket, old_ordinal);
+        m_entity_repo.change_entity_bucket( *new_bucket, entity, new_ordinal);
+        new_bucket->m_bucketImpl.replace_entity( new_ordinal , &entity ) ;
+        internal_propagate_relocation(entity);
       }
 
       for (size_t ik = begin_family; ik != end_family; ++ik) {

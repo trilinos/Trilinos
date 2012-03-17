@@ -123,7 +123,7 @@ class BucketImpl {
   Entity*const* begin() const { return &m_entities[0]; }
   Entity*const* end() const { return &m_entities[0] + m_size; }
 
-  ~BucketImpl() { delete m_field_data; }
+  ~BucketImpl() { delete [] m_field_data; }
 
   private:
   BucketImpl();
