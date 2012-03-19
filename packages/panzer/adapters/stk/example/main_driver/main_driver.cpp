@@ -18,7 +18,7 @@
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
 #include "Panzer_PauseToAttach.hpp"
 
-#ifdef Panzer_ENABLE_PAPI
+#ifdef Panzer_BUILD_PAPI_SUPPORT
 #include "Panzer_PAPI_Counter.hpp"
 #endif
 
@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
     out->setOutputToRootOnly(0);
   }
 
-#ifdef Panzer_ENABLE_PAPI
+#ifdef Panzer_BUILD_PAPI_SUPPORT
     panzer::PAPICounter papi_counter("Panzer: Total Execution", mpiSession.getRank(), MPI_COMM_WORLD);
     papi_counter.start();
 #endif
@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
   
   Teuchos::TimeMonitor::summarize(*out,false,true,false);
 
-#ifdef Panzer_ENABLE_PAPI
+#ifdef Panzer_BUILD_PAPI_SUPPORT
     papi_counter.stop();
     papi_counter.report(std::cout);
 #endif

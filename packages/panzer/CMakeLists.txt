@@ -62,6 +62,13 @@ COMBINED_OPTION( ${PACKAGE_NAME}_BUILD_STK_AND_SEACAS_SUPPORT
     " enabled, otherwise defaults to OFF."
   )
 
+COMBINED_OPTION( ${PACKAGE_NAME}_BUILD_PAPI_SUPPORT
+  DEP_OPTIONS_NAMES ${PACKAGE_NAME}_ENABLE_PAPI Teuchos_ENABLE_LONG_LONG_INT
+  DOCSTR "Enables support for the PAPI performance counters."
+    " Defaults to ON if both the PAPI TPL is enabled and long long int "
+    " support is enabled in Teuchos, otherwise defaults to OFF."
+  )
+
 # Explicit Template Instantiation
 TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 SET(${PARENT_PACKAGE_NAME}_TEMPLATE_DECL_EXT "_decl.hpp")
