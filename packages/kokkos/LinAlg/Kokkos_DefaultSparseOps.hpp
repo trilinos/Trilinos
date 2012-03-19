@@ -70,17 +70,23 @@ namespace Kokkos {
     //@{ 
     //! @name Typedefs and structs
 
-    //!
+    //! The type of the individual entries of the sparse matrix.
     typedef Scalar  ScalarType;
-    //!
+    //! The type of the (local) indices describing the structure of the sparse matrix.
     typedef Ordinal OrdinalType;
-    //!
+    //! The Kokkos Node type.
     typedef Node    NodeType;
 
-    /** \brief Rebind struct, for specifying type information for a different scalar.
-          
-        This specifies a DefaultHostSparseOps object, regardless of scalar type.
-      */
+    /// \brief Sparse operations type for a different scalar type.
+    ///
+    /// The "rebind" struct defines the type responsible for sparse
+    /// operations for a scalar type S2, which may be different from
+    /// \c Scalar.
+    ///
+    /// This always specifies a specialization of \c
+    /// DefaultHostSparseOps, regardless of scalar type S2.
+    ///
+    /// \tparam S2 A scalar type possibly different from \c Scalar.
     template <class S2>
     struct rebind {
       typedef DefaultHostSparseOps<S2,Ordinal,Node> other;
@@ -90,17 +96,17 @@ namespace Kokkos {
     //! @name Constructors/Destructor
     //@{
 
-    //! \brief Constructor accepting and retaining a node object.
+    //! Constructor accepting and retaining a node object.
     DefaultHostSparseOps(const RCP<Node> &node);
 
-    //! DefaultHostSparseOps Destructor
+    //! Destructor
     ~DefaultHostSparseOps();
 
     //@}
     //! @name Accessor routines.
     //@{ 
     
-    //! Node accessor.
+    //! The Kokkos Node with which this object was instantiated.
     RCP<Node> getNode() const;
 
     //@}
@@ -120,16 +126,54 @@ namespace Kokkos {
     //! @name Computational methods
     //@{
 
-    //! Applies the matrix to a MultiVector, overwriting Y.
+    /// \brief Y := alpha * Op(A) * X.
+    /// 
+    /// Apply the local sparse matrix A (or its transpose or conjugate
+    /// transpose) to a multivector X, overwriting Y with the result.
+    /// Op(A) means A, the transpose of A, or the conjugate transpose
+    /// of A, depending on the \c trans argument.
+    ///
+    /// \tparam DomainScalar The type of entries in the input
+    ///   multivector X.  This may differ from the type of entries in
+    ///   A or in Y.
+    ///
+    /// \tparam RangeScalar The type of entries in the output
+    ///   multivector Y.  This may differ from the type of entries in
+    ///   A or in X.
     template <class DomainScalar, class RangeScalar>
     void multiply(Teuchos::ETransp trans, RangeScalar alpha, const MultiVector<DomainScalar,Node> &X, MultiVector<RangeScalar,Node> &Y) const;
 
-    //! Applies the matrix to a MultiVector, accumulating into Y.
+    /// \brief Y := Y + alpha * Op(A) * X.
+    ///
+    /// Apply the local sparse matrix A (or its transpose or conjugate
+    /// transpose) to a multivector X, accumulating the result into Y.
+    /// Op(A) means A, the transpose of A, or the conjugate transpose
+    /// of A, depending on the \c trans argument.
+    ///
+    /// \tparam DomainScalar The type of entries in the input
+    ///   multivector X.  This may differ from the type of entries in
+    ///   A or in Y.
+    ///
+    /// \tparam RangeScalar The type of entries in the output
+    ///   multivector Y.  This may differ from the type of entries in
+    ///   A or in X.
     template <class DomainScalar, class RangeScalar>
     void multiply(Teuchos::ETransp trans, 
                   RangeScalar alpha, const MultiVector<DomainScalar,Node> &X, RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const;
 
-    //! Solves the matrix for a given set of right-hand-sides.
+    /// \brief Solve Y = Op(A) X, where we assume A is triangular.
+    ///
+    /// Solve the (upper or lower) triangular system Y = Op(A) X.
+    /// Op(A) means A, the transpose of A, or the conjugate transpose
+    /// of A, depending on the \c trans argument.
+    ///
+    /// \tparam DomainScalar The type of entries in the input
+    ///   multivector X.  This may differ from the type of entries in
+    ///   A or in Y.
+    ///
+    /// \tparam RangeScalar The type of entries in the output
+    ///   multivector Y.  This may differ from the type of entries in
+    ///   A or in X.
     template <class DomainScalar, class RangeScalar>
     void solve(Teuchos::ETransp trans, Teuchos::EUplo uplo, Teuchos::EDiag diag, 
                const MultiVector<DomainScalar,Node> &Y, MultiVector<RangeScalar,Node> &X) const;
@@ -144,6 +188,7 @@ namespace Kokkos {
     //! Copy constructor (protected and unimplemented)
     DefaultHostSparseOps(const DefaultHostSparseOps& source);
 
+    //! The Kokkos Node with which this object was instantiated.
     RCP<Node> node_;
 
     // we do this one of two ways: 
@@ -166,6 +211,9 @@ namespace Kokkos {
   DefaultHostSparseOps<Scalar,Ordinal,Node>::DefaultHostSparseOps(const RCP<Node> &node)
   : node_(node) 
   {
+    // Make sure that users only specialize DefaultHostSparseOps for
+    // Kokkos Node types that are host Nodes (vs. device Nodes, such
+    // as GPU Nodes).
     Teuchos::CompileTimeAssert<Node::isHostNode == false> cta; (void)cta;
     clear();
   }
@@ -619,37 +667,47 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   class DefaultDeviceSparseOps {
   public:
+    //@{ 
+    //! @name Typedefs and structs
+
+    //! The type of the individual entries of the sparse matrix.
     typedef Scalar  ScalarType;
+    //! The type of the (local) indices describing the structure of the sparse matrix.
     typedef Ordinal OrdinalType;
+    //! The Kokkos Node type.
     typedef Node    NodeType;
 
+    /// \brief Sparse operations type for a different scalar type.
+    ///
+    /// The "rebind" struct defines the type responsible for sparse
+    /// operations for a scalar type S2, which may be different from
+    /// \c Scalar.
+    ///
+    /// \tparam S2 A scalar type possibly different from \c Scalar.
     template <class S2>
     struct rebind {
       typedef DefaultDeviceSparseOps<S2,Ordinal,Node> other;
     };
 
+    //@}
     //! @name Constructors/Destructor
-
     //@{
 
-    //! DefaultDeviceSparseOps constuctor with variable number of indices per row.
+    //! Constructor accepting and retaining a node object.
     DefaultDeviceSparseOps(const RCP<Node> &node);
 
-    //! DefaultDeviceSparseOps Destructor
+    //! Destructor
     ~DefaultDeviceSparseOps();
 
     //@}
-
     //! @name Accessor routines.
     //@{ 
     
-    //! Node accessor.
+    //! The Kokkos Node with which this object was instantiated.
     RCP<Node> getNode() const;
 
     //@}
-
     //! @name Initialization of structure
-
     //@{
 
     //! Initialize structure of matrix, using CrsGraphDeviceCompute
@@ -662,21 +720,57 @@ namespace Kokkos {
     void clear();
 
     //@}
-
     //! @name Computational methods
-
     //@{
 
-    //! Applies the matrix to a MultiVector, overwriting Y.
+    /// \brief Y := alpha * Op(A) * X.
+    /// 
+    /// Apply the local sparse matrix A (or its transpose or conjugate
+    /// transpose) to a multivector X, overwriting Y with the result.
+    /// Op(A) means A, the transpose of A, or the conjugate transpose
+    /// of A, depending on the \c trans argument.
+    ///
+    /// \tparam DomainScalar The type of entries in the input
+    ///   multivector X.  This may differ from the type of entries in
+    ///   A or in Y.
+    ///
+    /// \tparam RangeScalar The type of entries in the output
+    ///   multivector Y.  This may differ from the type of entries in
+    ///   A or in X.
     template <class DomainScalar, class RangeScalar>
     void multiply(Teuchos::ETransp trans, RangeScalar alpha, const MultiVector<DomainScalar,Node> &X, MultiVector<RangeScalar,Node> &Y) const;
 
-    //! Applies the matrix to a MultiVector, accumulating into Y.
+    /// \brief Y := Y + alpha * Op(A) * X.
+    ///
+    /// Apply the local sparse matrix A (or its transpose or conjugate
+    /// transpose) to a multivector X, accumulating the result into Y.
+    /// Op(A) means A, the transpose of A, or the conjugate transpose
+    /// of A, depending on the \c trans argument.
+    ///
+    /// \tparam DomainScalar The type of entries in the input
+    ///   multivector X.  This may differ from the type of entries in
+    ///   A or in Y.
+    ///
+    /// \tparam RangeScalar The type of entries in the output
+    ///   multivector Y.  This may differ from the type of entries in
+    ///   A or in X.
     template <class DomainScalar, class RangeScalar>
     void multiply(Teuchos::ETransp trans, 
                   RangeScalar alpha, const MultiVector<DomainScalar,Node> &X, RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const;
 
-    //! Solves the matrix for a given set of right-hand-sides.
+    /// \brief Solve Y = Op(A) X, where we assume A is triangular.
+    ///
+    /// Solve the (upper or lower) triangular system Y = Op(A) X.
+    /// Op(A) means A, the transpose of A, or the conjugate transpose
+    /// of A, depending on the \c trans argument.
+    ///
+    /// \tparam DomainScalar The type of entries in the input
+    ///   multivector X.  This may differ from the type of entries in
+    ///   A or in Y.
+    ///
+    /// \tparam RangeScalar The type of entries in the output
+    ///   multivector Y.  This may differ from the type of entries in
+    ///   A or in X.
     template <class DomainScalar, class RangeScalar>
     void solve(Teuchos::ETransp trans, Teuchos::EUplo uplo, Teuchos::EDiag diag, 
                const MultiVector<DomainScalar,Node> &Y, MultiVector<RangeScalar,Node> &X) const;
@@ -692,6 +786,7 @@ namespace Kokkos {
     //! Copy constructor (protected and unimplemented)
     DefaultDeviceSparseOps(const DefaultDeviceSparseOps& source);
 
+    //! The Kokkos Node with which this object was instantiated.
     RCP<Node> node_;
 
     // we do this one of two ways: 
