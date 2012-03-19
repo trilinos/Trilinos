@@ -114,10 +114,13 @@ void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Bu
   for(it = FactManager_.begin(); it!=FactManager_.end(); it++) {
     SetFactoryManager fineSFM  (rcpFromRef(fineLevel),   *it);
     SetFactoryManager coarseSFM(rcpFromRef(coarseLevel), *it);
-    if(!restrictionMode_)
+    if(!restrictionMode_) {
       subBlockP.push_back(coarseLevel.Get<RCP<Operator> >("P", (*it)->GetFactory("P").get())); // create and return block P operator
-    else
+    }
+    else {
       subBlockP.push_back(coarseLevel.Get<RCP<Operator> >("R", (*it)->GetFactory("R").get())); // create and return block R operator
+    }
+
     subBlockPRangeMaps.push_back(subBlockP.back()->getRangeMap());
     Teuchos::ArrayView< const GlobalOrdinal > nodeRangeMap = subBlockPRangeMaps.back()->getNodeElementList();
     fullRangeMapVector.insert(fullRangeMapVector.end(), nodeRangeMap.begin(), nodeRangeMap.end());

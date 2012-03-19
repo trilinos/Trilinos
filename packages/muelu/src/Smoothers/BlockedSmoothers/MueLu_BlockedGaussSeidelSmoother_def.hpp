@@ -118,16 +118,22 @@ namespace MueLu {
     RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tempres = MultiVectorFactory::Build(B.getMap(), B.getNumVectors());
     RCP<MultiVector> rcpX = Teuchos::rcpFromRef(X);
 
+    //Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
+
+
     // outer Richardson loop
     for (LocalOrdinal run = 0; run < nSweeps_; ++run) {
 
       // one BGS sweep
+
+      //*fos << "BGS sweep: " << run << std::endl;
 
       // loop over all block rows
       for(size_t i = 0; i<Inverse_.size(); i++) {
 
         // calculate block residual r = B-A*X
         // note: A_ is the full blocked operator
+        //*fos << "BGS sweep: " << run << ", r = B - A*X with i=" << i << std::endl;
         residual->update(1.0,B,0.0); // r = B
         A_->apply(X, *residual, Teuchos::NO_TRANS, -1.0, 1.0);
 
@@ -138,17 +144,22 @@ namespace MueLu {
         Teuchos::RCP<MultiVector> tXi = domainMapExtractor_->getVector(bgsOrderingIndex2blockRowIndex_.at(i), X.getNumVectors());
 
         // apply solver/smoother
+        //*fos << "BGS sweep: " << run << ", x = A_ii^{-1} r with i = " << i << std::endl;
         Inverse_.at(i)->Apply(*tXi, *ri, false);
 
         // update vector
+        //*fos << "BGS sweep: " << run << ", update x_" << i << std::endl;
         Xi->update(omega_,*tXi,1.0);  // X_{i+1} = X_i + omega \Delta X_i
 
         // update corresponding part of rhs and lhs
+        //*fos << "BGS sweep: " << run << ", finish substep i=" << i << std::endl;
         domainMapExtractor_->InsertVector(Xi, bgsOrderingIndex2blockRowIndex_.at(i), rcpX); // TODO wrong! fix me
       }
 
+      //*fos << "BGS sweep: " << run << " finished " << std::endl;
     }
 
+    //*fos << "BGS finished " << std::endl;
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
