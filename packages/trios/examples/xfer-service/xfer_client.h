@@ -26,6 +26,15 @@ enum IO_METHODS {
     XFER_READ_RDMA_ASYNC
 };
 
+enum MPI_IO_METHODS {
+    XFER_MPI_SEND=0,
+    XFER_MPI_ISEND,
+    XFER_MPI_RECV,
+    XFER_MPI_IRECV,
+    XFER_MPI_PUT,
+    XFER_MPI_GET
+};
+
 
 /**
  * Options and arguments passed to the client driver.

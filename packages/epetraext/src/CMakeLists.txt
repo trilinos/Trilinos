@@ -73,6 +73,7 @@ IF (${PACKAGE_NAME}_BUILD_TRANSFORM)
     transform/EpetraExt_SolverMap_CrsMatrix.h
     transform/EpetraExt_SolverMap_LinearProblem.h
     transform/EpetraExt_BlockAdjacencyGraph.h 
+    transform/EpetraExt_SubCopy_CrsMatrix.h
     )
   
   SET(SOURCES ${SOURCES}
@@ -93,6 +94,7 @@ IF (${PACKAGE_NAME}_BUILD_TRANSFORM)
     transform/EpetraExt_SolverMap_CrsMatrix.cpp
     transform/EpetraExt_SolverMap_LinearProblem.cpp
     transform/EpetraExt_BlockAdjacencyGraph.cpp
+    transform/EpetraExt_SubCopy_CrsMatrix.cpp
     )
   
   IF (${PACKAGE_NAME}_BUILD_GRAPH_REORDERINGS AND ${PACKAGE_NAME}_BUILD_EXPERIMENTAL)

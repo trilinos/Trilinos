@@ -97,6 +97,38 @@ enum xfer_op {
 };
 
 /**
+ * @brief Opcodes for the MPI transfer tests
+ */
+enum xfer_mpi_tag {
+    /** Opcode for blocking send request */
+    XFER_MPI_SEND_REQ_TAG = 1001,
+    XFER_MPI_SEND_ACK_TAG,
+    XFER_MPI_SEND_DATA_TAG,
+    /** Opcode for non-blocking send request */
+    XFER_MPI_ISEND_REQ_TAG,
+    XFER_MPI_ISEND_ACK_TAG,
+    XFER_MPI_ISEND_DATA_TAG,
+    /** Opcode for blocking recv request */
+    XFER_MPI_RECV_REQ_TAG,
+    XFER_MPI_RECV_ACK_TAG,
+    XFER_MPI_RECV_DATA_TAG,
+    /** Opcode for non-blocking recv request */
+    XFER_MPI_IRECV_REQ_TAG,
+    XFER_MPI_IRECV_ACK_TAG,
+    XFER_MPI_IRECV_DATA_TAG,
+    /** Opcode for one-sided put request */
+    XFER_MPI_PUT_REQ_TAG,
+    XFER_MPI_PUT_ACK_TAG,
+    XFER_MPI_PUT_DATA_TAG,
+    /** Opcode for one-sided get request */
+    XFER_MPI_GET_REQ_TAG,
+    XFER_MPI_GET_ACK_TAG,
+    XFER_MPI_GET_DATA_TAG,
+    /** Opcode to quit the server */
+    XFER_MPI_FINI_REQ
+};
+
+/**
  * @brief A 16-byte structure that contains an int, float, and double.
  *
  * This structure contains an int, float, and double as an example

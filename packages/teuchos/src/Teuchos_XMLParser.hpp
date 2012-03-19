@@ -63,7 +63,7 @@ namespace Teuchos
     public:
      
       /** \brief Constructor */
-      XMLParser(RCP<XMLInputStream> is) : _is(is) {;}
+      XMLParser(RCP<XMLInputStream> is) : _is(is), _lineNo(1) {;}
       
       /** \brief Destructor */
       ~XMLParser(){;}
@@ -78,6 +78,7 @@ namespace Teuchos
 #endif
       RCP<XMLInputStream> _is;
       Teuchos::map<std::string,string> _entities;
+      long _lineNo;
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
@@ -120,7 +121,7 @@ namespace Teuchos
       /** \brief Consume a <tt>Comment</tt> production according to the XML specification.
        *  <tt>getComment</tt> throws an std::exception if the input does not match the production rule.
        */
-      void getComment();
+      void getComment(long startLine);
 
       /** \brief Consumes a <tt>Space</tt> (block of whitepace) production according to the XML specification.
        *

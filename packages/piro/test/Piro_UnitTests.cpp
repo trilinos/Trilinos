@@ -65,6 +65,7 @@
 #include "Thyra_DetachedVectorView.hpp"
 #endif
 #endif
+#include "Piro_Epetra_Factory.hpp"
 
 
 namespace {
@@ -371,7 +372,7 @@ TEUCHOS_UNIT_TEST( Piro, SGResponseStatisticsSensitivity )
   Teuchos::VerboseObjectBase::setDefaultOStream(default_out);
 }
 
-TEUCHOS_UNIT_TEST( Piro, SGCoupled )
+TEUCHOS_UNIT_TEST( Piro, Coupled )
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -392,6 +393,105 @@ TEUCHOS_UNIT_TEST( Piro, SGCoupled )
   std::string problem1_filename = "input_problem1.xml";
   std::string problem2_filename = "input_problem2.xml";
   std::string coupled_filename = "input_coupled.xml";
+
+  // Setup problem 1
+  RCP<ParameterList> piroParams1 = 
+    Teuchos::getParametersFromXmlFile(problem1_filename);
+  setOStream(rcp(&out,false), *piroParams1);
+  RCP<EpetraExt::ModelEvaluator> model1 = rcp(new MockModelEval_D(globalComm));
+  
+  // Setup problem 2
+  RCP<ParameterList> piroParams2 = 
+    Teuchos::getParametersFromXmlFile(problem2_filename);
+  setOStream(rcp(&out,false), *piroParams2);
+  RCP<EpetraExt::ModelEvaluator> model2 = rcp(new MockModelEval_D(globalComm));
+  
+  // Setup coupled model
+  RCP<ParameterList> coupledParams = 
+    Teuchos::getParametersFromXmlFile(coupled_filename);
+  setOStream(rcp(&out,false), *coupledParams);
+  Teuchos::Array< RCP<EpetraExt::ModelEvaluator> > models(2);
+  models[0] = model1; models[1] = model2;
+  Teuchos::Array< RCP<ParameterList> > piroParams(2);
+  piroParams[0] = piroParams1; piroParams[1] = piroParams2;
+  RCP<Piro::Epetra::AbstractNetworkModel> network_model =
+    rcp(new Piro::Epetra::ParamToResponseNetworkModel);
+  RCP<Piro::Epetra::NECoupledModelEvaluator> coupledModel =
+    rcp(new Piro::Epetra::NECoupledModelEvaluator(models, piroParams,
+						  network_model,
+						  coupledParams, globalComm));
+  coupledModel->setOStream(rcp(&out,false));
+
+  // Setup solver
+  RCP<EpetraExt::ModelEvaluator> coupledSolver =
+    Piro::Epetra::Factory::createSolver(coupledParams, coupledModel);
+    
+  // Solve coupled system
+  EpetraExt::ModelEvaluator::InArgs inArgs = coupledSolver->createInArgs();
+  EpetraExt::ModelEvaluator::OutArgs outArgs = coupledSolver->createOutArgs();
+  for (int i=0; i<inArgs.Np(); i++)
+    inArgs.set_p(i, coupledSolver->get_p_init(i));
+  for (int i=0; i<outArgs.Ng(); i++) {
+    RCP<Epetra_Vector> g = 
+      rcp(new Epetra_Vector(*(coupledSolver->get_g_map(i))));
+    outArgs.set_g(i, g);
+  }
+  coupledSolver->evalModel(inArgs, outArgs);
+
+  // Regression tests
+  int failures = 0;
+  Teuchos::ParameterList& testParams = 
+    coupledParams->sublist("Regression Tests");
+  double relTol = testParams.get("Relative Tolerance", 1.0e-3);
+  double absTol = testParams.get("Absolute Tolerance", 1.0e-8);
+  
+  // Print results
+  for (int i=0; i<outArgs.Ng(); i++) {
+    RCP<Epetra_Vector> g = outArgs.get_g(i);
+    if (g != Teuchos::null) {
+      out << "Response vector " << i << ":" << std::endl;
+      g->Print(out);
+      
+      // Test response
+      std::stringstream ss1;
+      ss1 << "Response " << i << " Test Values";
+      bool testResponse = 
+	testParams.isType< Teuchos::Array<double> >(ss1.str());
+      if (testResponse) { 
+	Teuchos::Array<double> testValues =
+	  testParams.get<Teuchos::Array<double> >(ss1.str());
+	failures += testResponses(*g, testValues, absTol, relTol, "Response", 
+				  out);
+      }
+
+    }
+  }
+
+  success = failures == 0;
+  Teuchos::VerboseObjectBase::setDefaultOStream(default_out);
+}
+
+TEUCHOS_UNIT_TEST( Piro, SGCoupled )
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::ParameterList;
+
+  RCP<Teuchos::FancyOStream> default_out =
+    Teuchos::VerboseObjectBase::getDefaultOStream();
+  Teuchos::VerboseObjectBase::setDefaultOStream(rcp(&out,false));
+
+  // Create a communicator for Epetra objects
+  RCP<const Epetra_Comm> globalComm;
+#ifdef HAVE_MPI
+  globalComm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+#else
+  globalComm = rcp(new Epetra_SerialComm);
+#endif
+
+  std::string problem1_filename = "input_problem1_sg.xml";
+  std::string problem2_filename = "input_problem2_sg.xml";
+  std::string coupled_filename = "input_coupled_sg.xml";
 
   // Setup stochastic coupled problem to get spatial comm's
   RCP<ParameterList> coupledParams = 
@@ -414,9 +514,15 @@ TEUCHOS_UNIT_TEST( Piro, SGCoupled )
   RCP<EpetraExt::ModelEvaluator> model2 = rcp(new MockModelEval_D(app_comm));
   
   // Setup coupled model
+  Teuchos::Array< RCP<EpetraExt::ModelEvaluator> > models(2);
+  models[0] = model1; models[1] = model2;
+  Teuchos::Array< RCP<ParameterList> > piroParams(2);
+  piroParams[0] = piroParams1; piroParams[1] = piroParams2;
+  RCP<Piro::Epetra::AbstractNetworkModel> network_model =
+    rcp(new Piro::Epetra::ParamToResponseNetworkModel);
   RCP<Piro::Epetra::NECoupledModelEvaluator> coupledModel =
-    rcp(new Piro::Epetra::NECoupledModelEvaluator(model1, model2,
-						  piroParams1, piroParams2,
+    rcp(new Piro::Epetra::NECoupledModelEvaluator(models, piroParams,
+						  network_model,
 						  coupledParams, globalComm));
   coupledModel->setOStream(rcp(&out,false));
 

@@ -496,6 +496,11 @@ namespace Tpetra {
 #endif
 
     // allocate space in requests
+    //
+    // NOTE (mfh 19 Mar 2012): Epetra_MpiDistributor::DoPosts()
+    // doesn't (re)allocate its array of requests.  That happens in
+    // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
+    // demand), or Resize_().
     requests_.resize(0);
     requests_.reserve(numReceives_);
 
@@ -606,25 +611,36 @@ namespace Tpetra {
   void Distributor::doPosts(const ArrayView<const Packet>& exports,
                             const ArrayView<size_t>& numExportPacketsPerLID,
                             const ArrayRCP<Packet>& imports,
-                            const ArrayView<size_t>& numImportPacketsPerLID) {
-    // start of actual doPosts function
+                            const ArrayView<size_t>& numImportPacketsPerLID) 
+  {
+    using Teuchos::as;
+    using Teuchos::ireceive;
+
     const int myImageID = comm_->getRank();
     size_t selfReceiveOffset = 0;
 
 #ifdef HAVE_TEUCHOS_DEBUG
     size_t totalNumPackets = 0;
-    for(int ii=0; ii<numImportPacketsPerLID.size(); ++ii) {
+    for (int ii = 0; ii < numImportPacketsPerLID.size(); ++ii) {
       totalNumPackets += numImportPacketsPerLID[ii];
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(imports.size()) != totalNumPackets, std::runtime_error,
-        Teuchos::typeName(*this) << "::doPosts(): imports must be large enough to store the imported data.");
-#endif
+    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t>(imports.size()) != totalNumPackets, 
+      std::runtime_error, Teuchos::typeName(*this) << "::doPosts(): The imports "
+      "array argument must be large enough to store the imported data.  imports."
+      "size() = " << imports.size() << ", but the total number of packets is " 
+      << totalNumPackets << ".");
+#endif // HAVE_TEUCHOS_DEBUG
 
     // allocate space in requests
+    //
+    // NOTE (mfh 19 Mar 2012): Epetra_MpiDistributor::DoPosts()
+    // doesn't (re)allocate its array of requests.  That happens in
+    // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
+    // demand), or Resize_().
     requests_.resize(0);
     requests_.reserve(numReceives_);
 
-    // start up the Irecv's
+    // Post the nonblocking receives (Irecv).
     {
       size_t curBufferOffset = 0;
       size_t curLIDoffset = 0;
@@ -635,22 +651,37 @@ namespace Tpetra {
         }
         curLIDoffset += lengthsFrom_[i];
         if (imagesFrom_[i] != myImageID && totalPacketsFrom_i) { 
-          // receiving this one from another image
-          // setup reference into imports of the appropriate size and at the appropriate place
-          ArrayRCP<Packet> impptr = imports.persistingView(curBufferOffset,totalPacketsFrom_i);
-          requests_.push_back( Teuchos::ireceive<int,Packet>(*comm_,impptr,imagesFrom_[i]) );
+	  // If my process is receiving these packet(s) from another
+	  // process (not a self-receive), and if there is at least
+	  // one packet to receive: 
+	  //
+	  // 1. Set up the reference (impptr) into the imports array,
+	  //    given the offset and size (total number of packets
+	  //    from process imagesFrom_[i]).
+	  // 2. Start the Irecv and save the resulting request.
+          ArrayRCP<Packet> impptr = 
+	    imports.persistingView (curBufferOffset, totalPacketsFrom_i);
+          requests_.push_back (ireceive<int, Packet> (*comm_, impptr, imagesFrom_[i]));
         }
-        else {
-          // receiving this one from myself 
-          // note that offset
-          selfReceiveOffset = curBufferOffset;
+        else { // Receiving these packet(s) from myself
+          selfReceiveOffset = curBufferOffset; // Remember the offset
         }
         curBufferOffset += totalPacketsFrom_i;
       }
     }
 
-    // wait for everyone else before posting ready-sends below to ensure that 
-    // all non-blocking receives above have been posted
+    // NOTE (mfh 19 Mar 2012):
+    //
+    // The ready-sends below require that each ready-send's matching
+    // receive (see above) has already been posted.  We ensure this
+    // with a barrier.  (Otherwise, some process that doesn't need to
+    // post receives might post its ready-send before the receiving
+    // process gets to post its receive.)  If you want to remove the
+    // barrier, you'll have to replace the ready-sends below with
+    // standard sends or Isends.
+    //
+    // Epetra_MpiDistributor::DoPosts() uses the same approach
+    // (Irecvs, barrier, Rsends).
     Teuchos::barrier(*comm_);
 
     // setup arrays containing starting-offsets into exports for each send,

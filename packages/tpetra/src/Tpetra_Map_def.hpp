@@ -53,6 +53,142 @@
   #includee "Tpetra_Map_decl.hpp"
 #endif
 
+namespace {
+  // \fn areMyGidsLocallyContiguous
+  // \brief Are my global IDs (GIDs) contiguous, and if so, what is my process' minimum GID?
+  //
+  // If the first return value is true, then the second return value
+  // is my process' minimum GID.  Otherwise, the second return value
+  // is invalid.
+  //
+  // We merge the min GID computation into the contiguous computation
+  // to avoid extra passes over all the GIDs.  This makes computing
+  // the min "free" if myGids.size() is sufficiently large.
+  template<class Map>
+  std::pair<bool, typename Map::global_ordinal_type>
+  areMyGidsLocallyContiguous (const Teuchos::ArrayView<const typename Map::global_ordinal_type>& myGids,
+			      const Teuchos::Ptr<typename Map::node_type>& /* node */)
+  {
+    using Teuchos::Array;
+    using Teuchos::ArrayView;
+    using Teuchos::as;
+    typedef typename Map::global_ordinal_type GO;
+    typedef typename ArrayView<const GO>::size_type size_type;
+
+    bool locallyContiguous = true; 
+    GO minGid = as<GO> (0); // not meaningful if there are no GIDs
+    if (myGids.size() > 0) { // trivially true if size is zero
+      GO prevGid = myGids[0];
+      minGid = prevGid;
+      for (size_type k = 1; k < myGids.size(); ++k) {
+	const GO curGid = myGids[k];
+	// Allow GO to be unsigned.  Remember that GIDs need not be
+	// sorted, and may have repeated entries (which are still
+	// counted as contiguous).
+	if (curGid != prevGid && curGid != prevGid + as<GO>(1)) {
+	  locallyContiguous = false;
+	  break;
+	}
+	prevGid = curGid;
+	if (curGid > prevGid) {
+	  minGid = curGid;
+	}
+      }
+    }
+    return std::make_pair (locallyContiguous, minGid);
+  }
+
+  // \fn areGidsGloballyContiguous
+  // \brief Are all processes' global IDs (GIDs) contiguous? and if so, tell me the min GID on each process.
+  //
+  // Contiguous Maps are much faster and take much less memory than
+  // noncontiguous Maps, so it's worthwhile to check for contiguity,
+  // even when using the most general Map constructor (that accepts a
+  // list on each process of the GIDs that process owns).  One way to
+  // check global contiguity is to compute each process' minimum GID.
+  // If the GIDs do turn out to be contiguous, the list of min GIDs on
+  // each process is useful for constructing the Map's Directory, so
+  // we return that so the Directory doesn't need to compute it again.
+  //
+  // First return value: whether all processes' GIDs are contiguous.
+  // If false, then the second return value is invalid (null).  If
+  // true, then the second return value is a globally replicated array
+  // of size comm->getSize(), for which the p-th entry is the min GID
+  // on process p.  In the globally contiguous case, this globally
+  // replicated array functions as the "directory" that maps any GID
+  // to its owning process without communication.
+  //
+  // Implementation note: We could just check for global contiguity on
+  // Proc 0, with a gather instead of an all-gather.  However, the
+  // Directory uses the globally replicated array of min GIDs and
+  // would need to compute it anyway in the contiguous Map case, so we
+  // just compute it here.
+  template<class Map>
+  std::pair<bool, Teuchos::ArrayRCP<typename Map::global_ordinal_type> >
+  areGidsGloballyContiguous (const Teuchos::ArrayView<const typename Map::global_ordinal_type>& myGids,
+			     const Teuchos::Ptr<const Teuchos::Comm<int> >& comm,
+			     const Teuchos::Ptr<typename Map::node_type>& node)
+  {
+    using Teuchos::arcp;
+    using Teuchos::Array;
+    using Teuchos::ArrayRCP;
+    using Teuchos::ArrayView;
+    using Teuchos::as;
+    using Teuchos::ptr;
+    using Teuchos::REDUCE_MAX;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+    typedef typename Map::global_ordinal_type GO;
+    typedef typename ArrayView<const GO>::size_type size_type;
+
+    ArrayRCP<GO> allMinGids;
+
+    // Are my GIDs (locally) contiguous?  Also get my min GID, which
+    // is useful for checking for global contiguity.
+    std::pair<bool, GO> localResult = areMyGidsLocallyContiguous (myGids, node);
+    const bool locallyContiguous = localResult.first;
+    const GO myMinGid = localResult.second; 
+
+    // Are all processes' GIDs locally contiguous?  That is a
+    // necessary but not sufficient condition for them to be globally
+    // contiguous.
+    bool allLocallyContiguous = false;
+    { // reduceAll not yet implemented for bool.
+      int locallyContig = locallyContiguous ? 1 : 0;
+      int allLocallyContig = 1;
+      reduceAll (*comm, REDUCE_MIN, locallyContig, ptr (&allLocallyContig));
+      allLocallyContiguous = (allLocallyContig == 1);
+    }
+    if (! allLocallyContiguous) {
+      return std::make_pair (false, allMinGids);
+    }
+
+    // Compute each process' min GID.  This is useful if the GIDs are
+    // globally contiguous, so we return it as well.  (In the globally
+    // contiguous case, this globally replicated array functions as
+    // the "directory" that maps any GID to its owning process without
+    // communication.)
+    const int numProcs = comm->getSize();
+    const int myRank   = comm->getRank();
+    allMinGids = arcp<GO> (as<typename ArrayRCP<GO>::size_type> (numProcs));
+    Teuchos::gatherAll (*comm, 1, &myMinGid, numProcs, &allMinGids.front());
+
+    // If the min GIDs are nondecreasing, and each process' GIDs are
+    // contiguous, then the GIDs are globally contiguous.  We know
+    // there is at least one process in the communicator.
+    bool globallyContiguous = true; // trivially, if numProcs == 1.
+    GO prevMinGid = allMinGids[0];
+    for (typename ArrayRCP<GO>::size_type k = 1; k < allMinGids.size(); ++k) {
+      const GO curMinGid = allMinGids[k];
+      if (curMinGid < prevMinGid) {
+	globallyContiguous = false;
+	break;
+      }
+    }
+    return std::make_pair (globallyContiguous, allMinGids);
+  }
+} // namespace (anonymous)
+
 /** \file Tpetra_Map_def.hpp 
 
     The implementations for the members of Tpetra::Map and related non-member constructors.
