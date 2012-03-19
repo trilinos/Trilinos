@@ -24,6 +24,7 @@
 
 int main(int argc, char *argv[]) {
   using Teuchos::RCP; // reference count pointers
+  using Teuchos::TimeMonitor;
 
   //
   // MPI initialization using Teuchos
@@ -44,6 +45,7 @@ int main(int argc, char *argv[]) {
   std::string xmlFileName = "scalingTest.xml"; clp.setOption("xml",   &xmlFileName, "read parameters from a file. Otherwise, this example uses by default 'scalingTest.xml'");
   int amgAsPrecond=1; clp.setOption("precond",&amgAsPrecond,"apply multigrid as preconditioner");
   int amgAsSolver=0; clp.setOption("fixPoint",&amgAsSolver,"apply multigrid as solver");
+  int printTimings=1; clp.setOption("timings",&printTimings,"print timings to screen");
 
   switch (clp.parse(argc,argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -57,13 +59,30 @@ int main(int argc, char *argv[]) {
   // Construct the problem
   //
 
+  RCP<TimeMonitor> globalTimeMonitor = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time")));
+  RCP<TimeMonitor> tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build")));
+
   RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
-  RCP<Operator>  A   = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+  RCP<Operator> A   = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Map, CrsOperator>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+    
+  RCP<MultiVector> coordinates;
+  if (matrixParameters.GetMatrixType() == "Laplace1D") {
+    coordinates = MueLu::GalleryUtils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D",map,matrixParameters.GetParameterList());
+  }
+  else if (matrixParameters.GetMatrixType() == "Laplace2D") {
+    coordinates = MueLu::GalleryUtils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D",map,matrixParameters.GetParameterList());
+  }
+  else if (matrixParameters.GetMatrixType() == "Laplace3D") {
+    coordinates = MueLu::GalleryUtils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D",map,matrixParameters.GetParameterList());
+  }
+
+  tm = Teuchos::null;
 
   //
   // Construct a multigrid preconditioner
   //
 
+  tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
   // Multigrid Hierarchy
   ParameterListInterpreter mueLuFactory(xmlFileName);
   RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
@@ -72,35 +91,22 @@ int main(int argc, char *argv[]) {
 
   H->GetLevel(0)->Set("A", A);
 
-  {
-    RCP<MultiVector> nullspace = MultiVectorFactory::Build(map,1);
-    nullspace->putScalar( (SC) 1.0);
-    Teuchos::Array<ST::magnitudeType> norms(1);
-    H->GetLevel(0)->Set("Nullspace", nullspace);
-  }
+  RCP<MultiVector> nullspace = MultiVectorFactory::Build(map,1);
+  nullspace->putScalar( (SC) 1.0);
+  H->GetLevel(0)->Set("Nullspace", nullspace);
+  nullspace=Teuchos::null;
   
-  {
-    RCP<MultiVector> coordinates;
-    
-    if (matrixParameters.GetMatrixType() == "Laplace1D") {
-      coordinates = MueLu::GalleryUtils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D",map,matrixParameters.GetParameterList());
-    }
-    else if (matrixParameters.GetMatrixType() == "Laplace2D") {
-      coordinates = MueLu::GalleryUtils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D",map,matrixParameters.GetParameterList());
-    }
-    else if (matrixParameters.GetMatrixType() == "Laplace3D") {
-      coordinates = MueLu::GalleryUtils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D",map,matrixParameters.GetParameterList());
-    }
-
-    H->GetLevel(0)->Set("Coordinates", coordinates);
-  }
+  H->GetLevel(0)->Set("Coordinates", coordinates);
+  coordinates=Teuchos::null;
 
   mueLuFactory.SetupHierarchy(*H);
 
+  tm = Teuchos::null;
   //
   // Solve Ax = b
   //
 
+  tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 3 - LHS and RHS initialization")));
   RCP<Vector> X = VectorFactory::Build(map);
   RCP<Vector> B = VectorFactory::Build(map);
   
@@ -113,14 +119,20 @@ int main(int argc, char *argv[]) {
     B->scale(1.0/norms[0]);
     X->putScalar( (SC) 0.0);
   }
+  tm = Teuchos::null;
 
   if (amgAsSolver) {
+    tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - Fixed Point Solve")));
+
     H->IsPreconditioner(true);
     H->Iterate(*B,25,*X);
     H->IsPreconditioner(false);
+
+    tm = Teuchos::null;
   }
 
   if (amgAsPrecond) {
+    tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 5 - Belos Solve")));
     // Operator and Multivector type that will be used with Belos
     typedef MultiVector          MV;
     typedef Belos::OperatorT<MV> OP;
@@ -146,7 +158,8 @@ int main(int argc, char *argv[]) {
     Teuchos::ParameterList belosList;
     belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
     belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
-    belosList.set("Verbosity", Belos::Errors + Belos::Warnings + Belos::TimingDetails + Belos::StatusTestDetails);
+    //belosList.set("Verbosity", Belos::Errors + Belos::Warnings + Belos::TimingDetails + Belos::StatusTestDetails);
+    belosList.set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
     belosList.set("Output Frequency",1);
     belosList.set("Output Style",Belos::Brief);
 
@@ -174,6 +187,12 @@ int main(int argc, char *argv[]) {
     } else {
       if (comm->getRank() == 0) std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
     }
+    tm = Teuchos::null;
   } //if (amgAsPrecond)
+
+  globalTimeMonitor = Teuchos::null;
+
+  if (printTimings)
+    TimeMonitor::summarize();
 
 } //main
