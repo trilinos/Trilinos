@@ -13,6 +13,7 @@
 
 #include "MueLu_TentativePFactory_decl.hpp"
 #include "MueLu_Aggregates.hpp"
+#include "MueLu_NullspaceFactory.hpp" //FIXME
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {
@@ -53,8 +54,14 @@ namespace MueLu {
 RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 fos->setOutputToRootOnly(-1);
 
+//FIXME
+ if ((fineLevel.GetLevelID() == 0) && (!fineLevel.IsAvailable("Nullspace"))) {
+   NullspaceFactory nsFac;
+   nsFac.Build(fineLevel);
+ }
 
-    RCP<MultiVector> nstmp  = fineLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
+ RCP<MultiVector> nstmp  = fineLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
+
     RCP<const Teuchos::Comm<int> > comm = nstmp->getMap()->getComm();
 //fos->setProcRankAndSize(comm->getRank(),comm->getSize());
     nstmp = Teuchos::null;

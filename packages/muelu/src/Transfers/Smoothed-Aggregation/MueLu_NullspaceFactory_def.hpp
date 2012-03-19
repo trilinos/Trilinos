@@ -70,6 +70,7 @@ namespace MueLu {
     }
 
     currentLevel.Set("Nullspace", nullspace, this);
+    currentLevel.Set("Nullspace", nullspace); //FIXME
     
   } // Build
 
