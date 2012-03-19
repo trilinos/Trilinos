@@ -470,13 +470,57 @@ namespace panzer_stk {
     #endif
 
     #ifdef HAVE_MUELU
-    Thyra::addMueLuToStratimikosBuilder(linearSolverBuilder);     // Register MueLu as a Stratimikos preconditioner strategy.
-    #endif
+    {
+
+     #ifdef HAVE_TEKO // needed by panzer_stk::ParameterListCallback
+      std::string fieldName;
+
+      Teuchos::RCP<const panzer::DOFManager<int,int> > dofs =
+        Teuchos::rcp_dynamic_cast<const panzer::DOFManager<int,int> >(dofManager);
+       
+      if(determineCoordinateField(*dofs,fieldName)) {
+        std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > fieldPatterns;
+        fillFieldPatternMap(*dofs,fieldName,fieldPatterns);
+        
+        Teuchos::RCP<panzer_stk::ParameterListCallback<int,int> > callback = Teuchos::rcp(new 
+          panzer_stk::ParameterListCallback<int,int>(fieldName,fieldPatterns,stkConn_manager,dofManager));
+
+        // force parameterlistcallback to build coordinates
+        callback->preRequest(Teko::RequestMesg(Teuchos::rcp(new Teuchos::ParameterList())));
+        
+        // extract coordinate vectors and conditionally modify strat_params
+        Teuchos::ParameterList & muelu_params = strat_params->sublist("Preconditioner Types").sublist("MueLu").sublist("Operator");
+        switch(mesh->getDimension()) {
+        case 3:{
+          const Teuchos::Array<double> zcoords(callback->getZCoordsVector());
+          muelu_params.set("zcoords", zcoords);
+        }
+        case 2:{
+          const Teuchos::Array<double> ycoords(callback->getYCoordsVector());
+          muelu_params.set("ycoords", ycoords);
+        }
+        case 1:{
+          const Teuchos::Array<double> xcoords(callback->getXCoordsVector());
+          muelu_params.set("xcoords", xcoords);
+        }
+          break;
+        default:
+          TEUCHOS_ASSERT(false);
+        }
+
+      }
+
+      #endif // TEKO
+
+      Thyra::addMueLuToStratimikosBuilder(linearSolverBuilder); // Register MueLu as a Stratimikos preconditioner strategy.
+
+    }
+    #endif // MUELU
 
     linearSolverBuilder.setParameterList(strat_params);
     Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = createLinearSolveStrategy(linearSolverBuilder);
 
-    // Build Thyra Model Evluator
+    // Build Thyra Model Evaluator
     Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me = 
       Thyra::epetraModelEvaluator(ep_me,lowsFactory);
     
