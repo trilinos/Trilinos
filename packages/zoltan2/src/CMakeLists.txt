@@ -15,6 +15,8 @@ SET(SOURCES "")
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
+APPEND_GLOB(HEADERS ${DIR}/include/*.hpp)
+
 APPEND_GLOB(HEADERS ${DIR}/algorithms/order/*.hpp)
 APPEND_GLOB(HEADERS ${DIR}/algorithms/partition/*.hpp)
 
