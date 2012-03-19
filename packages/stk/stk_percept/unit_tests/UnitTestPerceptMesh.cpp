@@ -305,22 +305,22 @@ namespace stk
             eMesh_2.openReadOnly(input_files_loc+"quad_fixture.e");
 
             if (p_size == 1)
-            {
-              std::ostringstream serialized_mesh_1;
-              std::ostringstream serialized_mesh_2;
-              bool add_newlines = false;
-              eMesh_1.printInfo(serialized_mesh_1, "quad fixture", 2, add_newlines);
-              eMesh_2.printInfo(serialized_mesh_2, "quad fixture", 2, add_newlines);
-              std::string serialized_mesh_string_1 = serialized_mesh_1.str();
-              std::string serialized_mesh_string_2 = serialized_mesh_2.str();
-              std::cout << "expected_serialized_mesh_string.size()= " << expected_serialized_mesh_string.size() << std::endl;
-              std::cout << "serialized_mesh_1.size()= " << serialized_mesh_string_1.size() << std::endl;
-              std::cout << "serialized_mesh_1=\n" << serialized_mesh_string_1 << std::endl;
-              std::cout << "...serialized_mesh_1" << std::endl;
-              //std::cout << "serialized_mesh_2= " << serialized_mesh_string_2 << std::endl;
-              STKUNIT_EXPECT_TRUE(expected_serialized_mesh_string == serialized_mesh_string_2);
-              STKUNIT_EXPECT_TRUE(serialized_mesh_string_1 == serialized_mesh_string_2);
-            }
+              {
+                std::ostringstream serialized_mesh_1;
+                std::ostringstream serialized_mesh_2;
+                bool add_newlines = false;
+                eMesh_1.printInfo(serialized_mesh_1, "quad fixture", 2, add_newlines);
+                eMesh_2.printInfo(serialized_mesh_2, "quad fixture", 2, add_newlines);
+                std::string serialized_mesh_string_1 = serialized_mesh_1.str();
+                std::string serialized_mesh_string_2 = serialized_mesh_2.str();
+                std::cout << "expected_serialized_mesh_string.size()= " << expected_serialized_mesh_string.size() << std::endl;
+                std::cout << "serialized_mesh_1.size()= " << serialized_mesh_string_1.size() << std::endl;
+                std::cout << "serialized_mesh_1=\n" << serialized_mesh_string_1 << std::endl;
+                std::cout << "...serialized_mesh_1" << std::endl;
+                //std::cout << "serialized_mesh_2= " << serialized_mesh_string_2 << std::endl;
+                STKUNIT_EXPECT_TRUE(expected_serialized_mesh_string == serialized_mesh_string_2);
+                STKUNIT_EXPECT_TRUE(serialized_mesh_string_1 == serialized_mesh_string_2);
+              }
 
             MPI_Barrier( MPI_COMM_WORLD );
 
@@ -351,20 +351,20 @@ namespace stk
             for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
               {
                 //if (in_surface_selector(**k)) 
-                  {
-                    stk::mesh::Bucket & bucket = **k ;
+                {
+                  stk::mesh::Bucket & bucket = **k ;
 
-                    const unsigned num_elements_in_bucket = bucket.size();
+                  const unsigned num_elements_in_bucket = bucket.size();
                 
-                    for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
-                      {
-                        stk::mesh::Entity& entity = bucket[iEntity];
+                  for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
+                    {
+                      stk::mesh::Entity& entity = bucket[iEntity];
 
-                        double * const coord = stk::mesh::field_data( *coordField_1 , entity );
+                      double * const coord = stk::mesh::field_data( *coordField_1 , entity );
 
-                        coord[0] += 0.01;
-                      }
-                  }
+                      coord[0] += 0.01;
+                    }
+                }
               }
             MPI_Barrier( MPI_COMM_WORLD );
 
@@ -383,67 +383,73 @@ namespace stk
 
       STKUNIT_UNIT_TEST(perceptMesh, create_skewed_mesh)
       {
-        bool notActive = true;
+        bool notActive = false;
         if (notActive) return;
 
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
         MPI_Barrier( MPI_COMM_WORLD );
 
         const unsigned p_size = stk::parallel_machine_size( pm );
-        const unsigned p_rank = stk::parallel_machine_rank( pm );
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
         if (p_size > 1) return;
 
-        // create a 12x12 quad mesh with sidesets
-        const unsigned n = 12;
-        //const unsigned nx = n , ny = n , nz = p_size*n ;
-        const unsigned nx = n , ny = n;
-
-        bool sidesets_on = true;
-        percept::QuadFixture<double> fixture( pm , nx , ny, sidesets_on);
-        fixture.meta_data.commit();
-        fixture.generate_mesh();
-
-        percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data);
-        //stk::mesh::fem::FEMMetaData& metaData = *eMesh.getFEM_meta_data();
-        //const std::vector< stk::mesh::Part * > & parts = metaData.get_parts();
-
-        eMesh.saveAs("2d_duct.e");
-        stk::mesh::BulkData& bulkData = *eMesh.getBulkData();
-        VectorFieldType* coordField = eMesh.getCoordinatesField();
-
-        const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );  
-        double sum = 0.0;
-        // dydx=tan(alp); dxdy=1/tan(alpha)
-        double dxdy = 0.0; 
-        double dydx = 0.866;
-
-        for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+        int thetas[] = {0,10,20,30,40,45,50,60,70,80};
+        for (unsigned itheta=0; itheta < sizeof(thetas)/sizeof(thetas[0]); itheta++)
           {
-            //if (in_surface_selector(**k)) 
-            {
-              stk::mesh::Bucket & bucket = **k ;
+            double theta = thetas[itheta];
+            theta *= M_PI/180.0;
+            // create a nxn quad mesh with sidesets
+            const unsigned n = 40;
+            //const unsigned nx = n , ny = n , nz = p_size*n ;
+            const unsigned nx = n , ny = n;
 
-              const unsigned num_nodes_in_bucket = bucket.size();
-                
-              for (unsigned iNode = 0; iNode < num_nodes_in_bucket; iNode++)
+            bool sidesets_on = true;
+            percept::QuadFixture<double> fixture( pm , nx , ny, sidesets_on);
+            fixture.set_bounding_box(0,1,0,1);
+            fixture.meta_data.commit();
+            fixture.generate_mesh();
+
+            percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data);
+            //stk::mesh::fem::FEMMetaData& metaData = *eMesh.getFEM_meta_data();
+            //const std::vector< stk::mesh::Part * > & parts = metaData.get_parts();
+
+            if (0 == itheta) eMesh.saveAs("2d_duct.e");
+            stk::mesh::BulkData& bulkData = *eMesh.getBulkData();
+            VectorFieldType* coordField = eMesh.getCoordinatesField();
+
+            const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );  
+            // right-shear, theta=angle from vertical, dxdy=tan(theta)
+            // up-shear, theta=angle from horizontal, dydx=tan(theta)
+            // choose one or other, set other to 0.0
+            double dxdy = std::tan(theta);
+            double dydx = 0.0;
+
+            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+              {
+                //if (in_surface_selector(**k)) 
                 {
-                  stk::mesh::Entity& node = bucket[iNode];
-                  //stk::mesh::EntityId nid = node.identifier();
+                  stk::mesh::Bucket & bucket = **k ;
 
-                  double * const coord = stk::mesh::field_data( *coordField , node );
-                  // do something with coord's
-                  sum += coord[0]*coord[0] + coord[1]*coord[1];
+                  const unsigned num_nodes_in_bucket = bucket.size();
+                
+                  for (unsigned iNode = 0; iNode < num_nodes_in_bucket; iNode++)
+                    {
+                      stk::mesh::Entity& node = bucket[iNode];
+                      //stk::mesh::EntityId nid = node.identifier();
+
+                      double * const coord = stk::mesh::field_data( *coordField , node );
                   
-                  coord[0] += dxdy*coord[1];
-                  coord[1] += dydx*coord[0];
+                      coord[0] += dxdy*coord[1];
+                      coord[1] += dydx*coord[0];
+                    }
                 }
-            }
+              }
+            if (dydx != 0)
+              eMesh.saveAs(std::string("slantThetaDYDX")+boost::lexical_cast<std::string>(thetas[itheta])+".g");
+            else
+              eMesh.saveAs(std::string("slantTheta")+boost::lexical_cast<std::string>(thetas[itheta])+".g");
+
           }
-        if (dydx != 0)
-          eMesh.saveAs("2d_duct_skewed_dydx.e");
-        else
-          eMesh.saveAs("2d_duct_skewed_dxdy.e");
-        std::cout << "P[" << p_rank << ":" << p_size << "] sum = " << sum << std::endl;
       }
 
     }

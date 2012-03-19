@@ -76,6 +76,7 @@ protected:
 private:
 
     double mDbgNodeCoords[3];
+    int m_type;
 
     bool contains_dbg_node( PerceptMesh *mesh_data,
                             Bucket &bucket );

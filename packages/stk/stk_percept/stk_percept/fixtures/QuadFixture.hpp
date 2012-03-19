@@ -86,6 +86,8 @@ namespace stk {
         {
           enum { SpatialDim = 2 };
           
+          set_bounding_box(0,(double)NX,0,(double)NY);
+
           // Set topology of the element block part
           //stk::mesh::fem::set_cell_topology(meta_data, quad_part,  fem::CellTopology(shards::getCellTopologyData<QuadOrTriTopo>()) );
           stk::mesh::fem::set_cell_topology<QuadOrTriTopo>(quad_part);
@@ -116,6 +118,13 @@ namespace stk {
           if (generate_sidesets)
             generate_sides_meta( );
 
+        }
+        void set_bounding_box(double xmin, double xmax, double ymin, double ymax)
+        {
+          m_xmin=xmin;
+          m_xmax=xmax;
+          m_ymin=ymin;
+          m_ymax=ymax;
         }
 
         void generate_mesh() {
@@ -209,11 +218,11 @@ namespace stk {
 
                   Scalar * data = stk::mesh::field_data( coord_field , *node );
 
-                   data[0] = nx ;
-                   data[1] = ny ;
-//                  data[0] = -1 + 2.0*((double)nx) / ((double)NX) ;
-//                  data[1] = -1 + 2.0*((double)ny) / ((double)NY) ;
-
+                  //data[0] = nx ;
+                  // data[1] = ny ;
+                  data[0] = m_xmin + (m_xmax-m_xmin)*((double)nx) / ((double)NX) ;
+                  data[1] = m_ymin + (m_ymax-m_ymin)*((double)ny) / ((double)NY) ;
+                   
                 }
               }
             }
@@ -433,6 +442,12 @@ namespace stk {
         QuadFixture();
         QuadFixture( const QuadFixture & );
         QuadFixture & operator = ( const QuadFixture & );
+        
+        double m_xmin;
+        double m_xmax;
+        double m_ymin;
+        double m_ymax;
+        
       };
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -1,12 +1,17 @@
 #include "MeshGeometry.hpp"
 
 MeshGeometry::MeshGeometry(GeometryKernel* geom, double doCheckMovement, bool cache_classify_bucket_is_active, bool doPrint) 
-  : m_doCheckMovement(doCheckMovement),  m_cache_classify_bucket_is_active(cache_classify_bucket_is_active), m_doPrint(doPrint)
+  : m_doCheckMovement(doCheckMovement),  m_cache_classify_bucket_is_active(cache_classify_bucket_is_active), m_doPrint(doPrint),
+    m_type(-1)
 {
   geomKernel = geom;
   mDbgNodeCoords[0] = -0.00477133907617983;
   mDbgNodeCoords[1] = -0.00477133907617983;
   mDbgNodeCoords[2] =  0.260484055257467;
+
+  mDbgNodeCoords[0] = 183.049;
+  mDbgNodeCoords[1] = 174.609;
+  mDbgNodeCoords[2] = 27.2434;
 
 }
 
@@ -78,6 +83,7 @@ int MeshGeometry::classify_bucket(const stk::mesh::Bucket& bucket, size_t& curve
     {
       classify_value = classify_bucket_internal(bucket, curveOrSurfaceEvaluator);
     }
+   m_type = classify_value;
    return classify_value;
 }
 
@@ -155,7 +161,8 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh)
   for ( std::vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
   {
     Bucket& bucket = **k;
-#if CONTAINS_DEBGU_NODE
+#define CONTAINS_DEBUG_NODE 0
+#if CONTAINS_DEBUG_NODE
     if ( contains_dbg_node( eMesh, bucket ) )
     {
       std::cout << "     DBG Node FOUND" << std::endl;
@@ -239,7 +246,7 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh, std::vector<stk::
   {
     Bucket& bucket = nodes[inode]->bucket();
 
-#if CONTAINS_DEBGU_NODE
+#if CONTAINS_DEBUG_NODE
     if ( contains_dbg_node( eMesh, bucket ) )
     {
       std::cout << "     DBG Node FOUND" << std::endl;
@@ -306,16 +313,18 @@ void MeshGeometry::snap_node
     double coord_0[3] = {coord[0], coord[1], coord[2]};
     bool doPrint = m_doPrint; //DEBUG_GEOM_SNAP
     bool doCheckMovement = m_doCheckMovement != 0.0;
-    if (doPrint)
-    {
-      std::string str = geomKernel->get_attribute(evaluator_idx);
-      std::cout << "tmp geom snap_points_to_geometry eval name= " << str << " node id= " << node.identifier() 
-                << " coords b4= " << coord[0] << " " << coord[1] << " " << coord[2];
-    }
 
     if ( is_dbg_node( coord ) )
     {
       std::cout << "Node in question being projected" << std::endl;
+      doPrint=true;
+    }
+
+    if (doPrint)
+    {
+      std::string str = geomKernel->get_attribute(evaluator_idx);
+      std::cout << "tmp geom snap_points_to_geometry eval name= " << str << " node id= " << node.identifier() 
+                << " coords b4= " << coord[0] << " " << coord[1] << " " << coord[2] << " type= " << m_type;
     }
 
     geomKernel->snap_to(coord, geomEvaluators[evaluator_idx]->mGeometry);
@@ -472,7 +481,7 @@ bool MeshGeometry::is_dbg_node( double node_coord[3] )
   double dy = node_coord[1] - mDbgNodeCoords[1];
   double dz = node_coord[2] - mDbgNodeCoords[2];
   double dist = sqrt( (dx*dx) + (dy*dy) + (dz*dz) );
-  if ( dist < 0.0001 )
+  if ( dist < 0.001 )
   {
     return true;
   }
