@@ -195,19 +195,17 @@ int Epetra_CrsGraph::TAllocate(const int* numIndicesPerRow, int Inc, bool static
 
 int Epetra_CrsGraph::Allocate(const int* numIndicesPerRow, int Inc, bool staticProfile)
 {
-	if(RowMap().GlobalIndicesInt())
-	{
-		return TAllocate<int>(numIndicesPerRow, Inc, staticProfile);
-	}
+  if(RowMap().GlobalIndicesInt()) {
+    return TAllocate<int>(numIndicesPerRow, Inc, staticProfile);
+  }
 
-	if(RowMap().GlobalIndicesLongLong())
-	{
-		TAllocate<int>(numIndicesPerRow, Inc, staticProfile);
-		TAllocate<long long>(numIndicesPerRow, Inc, staticProfile);
-		return 0;
-	}
-
-	throw ReportError("Epetra_CrsGraph::Allocate: Internal error.", -1);
+  if(RowMap().GlobalIndicesLongLong()) {
+    TAllocate<int>(numIndicesPerRow, Inc, staticProfile);
+    TAllocate<long long>(numIndicesPerRow, Inc, staticProfile);
+    return 0;
+  }
+  
+  throw ReportError("Epetra_CrsGraph::Allocate: Internal error.", -1);
 }
 
 
@@ -261,18 +259,20 @@ int Epetra_CrsGraph::InsertGlobalIndices(int_type Row, int NumIndices, int_type*
 
 //==============================================================================
 int Epetra_CrsGraph::InsertGlobalIndices(int Row, int NumIndices, int* indices) {
+
   if(RowMap().GlobalIndicesInt())
     return InsertGlobalIndices<int>(Row, NumIndices, indices);
   else
-	throw ReportError("Epetra_CrsGraph::InsertGlobalIndices int version called for a graph that is not int.", -1);
+    throw ReportError("Epetra_CrsGraph::InsertGlobalIndices int version called for a graph that is not int.", -1);
 }
 
 //==============================================================================
 int Epetra_CrsGraph::InsertGlobalIndices(long long Row, int NumIndices, long long* indices) {
+
   if(RowMap().GlobalIndicesLongLong())
     return InsertGlobalIndices<long long>(Row, NumIndices, indices);
   else
-	throw ReportError("Epetra_CrsGraph::InsertGlobalIndices long long version called for a graph that is not long long.", -1);
+    throw ReportError("Epetra_CrsGraph::InsertGlobalIndices long long version called for a graph that is not long long.", -1);
 }
 
 //==============================================================================
@@ -398,16 +398,18 @@ int Epetra_CrsGraph::InsertIndices(int Row,
     return(0);
 }
 
+// =========================================================================
 int Epetra_CrsGraph::InsertIndices(int Row,
 				   int NumIndices,
 				   int* UserIndices)
 {
   if(RowMap().GlobalIndicesTypeValid())
-	return InsertIndices<int>(Row, NumIndices, UserIndices);
+    return InsertIndices<int>(Row, NumIndices, UserIndices);
   else
-	throw ReportError("Epetra_CrsGraph::InsertIndices global index type unknown.", -1);
+    throw ReportError("Epetra_CrsGraph::InsertIndices global index type unknown.", -1);
 }
 
+// =========================================================================
 int Epetra_CrsGraph::InsertIndices(int Row,
 				   int NumIndices,
 				   long long* UserIndices)
@@ -415,7 +417,7 @@ int Epetra_CrsGraph::InsertIndices(int Row,
   if(RowMap().GlobalIndicesLongLong())
     return InsertIndices<long long>(Row, NumIndices, UserIndices);
   else
-	throw ReportError("Epetra_CrsGraph::InsertIndices long long version called for a graph that is not long long.", -1);
+    throw ReportError("Epetra_CrsGraph::InsertIndices long long version called for a graph that is not long long.", -1);
 }
 
 // =========================================================================
@@ -494,24 +496,26 @@ int Epetra_CrsGraph::InsertIndicesIntoSorted(int Row,
     return(0);
 }
 
+//==============================================================================
 int Epetra_CrsGraph::InsertIndicesIntoSorted(int Row,
               int NumIndices,
               int* UserIndices)
 {
   if(RowMap().GlobalIndicesTypeValid())
-	return InsertIndicesIntoSorted<int>(Row, NumIndices, UserIndices);
+    return InsertIndicesIntoSorted<int>(Row, NumIndices, UserIndices);
   else
-	throw ReportError("Epetra_CrsGraph::InsertIndicesIntoSorted global index type unknown.", -1);
+    throw ReportError("Epetra_CrsGraph::InsertIndicesIntoSorted global index type unknown.", -1);
 }
 
+//==============================================================================
 int Epetra_CrsGraph::InsertIndicesIntoSorted(int Row,
               int NumIndices,
               long long* UserIndices)
 {
   if(RowMap().GlobalIndicesLongLong())
-	return InsertIndicesIntoSorted<long long>(Row, NumIndices, UserIndices);
+    return InsertIndicesIntoSorted<long long>(Row, NumIndices, UserIndices);
   else
-	throw ReportError("Epetra_CrsGraph::InsertIndicesIntoSorted long long version called for a graph that is not long long.", -1);
+    throw ReportError("Epetra_CrsGraph::InsertIndicesIntoSorted long long version called for a graph that is not long long.", -1);
 }
 
 //==============================================================================
@@ -563,20 +567,22 @@ int Epetra_CrsGraph::RemoveGlobalIndices(int_type Row, int NumIndices, int_type*
     return(0);
 }
 
+//==============================================================================
 int Epetra_CrsGraph::RemoveGlobalIndices(int Row, int NumIndices, int* indices)
 {
   if(RowMap().GlobalIndicesInt())
     return RemoveGlobalIndices<int>(Row, NumIndices, indices);
   else
-	throw ReportError("Epetra_CrsGraph::RemoveGlobalIndices int version called for a graph that is not int.", -1);
+    throw ReportError("Epetra_CrsGraph::RemoveGlobalIndices int version called for a graph that is not int.", -1);
 }
 
+//==============================================================================
 int Epetra_CrsGraph::RemoveGlobalIndices(long long Row, int NumIndices, long long* indices)
 {
   if(RowMap().GlobalIndicesLongLong())
-  return RemoveGlobalIndices<long long>(Row, NumIndices, indices);
+    return RemoveGlobalIndices<long long>(Row, NumIndices, indices);
   else
-	throw ReportError("Epetra_CrsGraph::RemoveGlobalIndices long long version called for a graph that is not long long.", -1);
+    throw ReportError("Epetra_CrsGraph::RemoveGlobalIndices long long version called for a graph that is not long long.", -1);
 }
 
 //==============================================================================
@@ -1199,6 +1205,7 @@ int Epetra_CrsGraph::RemoveRedundantIndices()
   return 0;
 }
 
+//==============================================================================
 int Epetra_CrsGraph::DetermineTriangular()
 {
   // determine if graph is upper or lower triangular or has no diagonal
@@ -1426,6 +1433,7 @@ int Epetra_CrsGraph::MakeColMap_int(const Epetra_BlockMap& domainMap,
   return(0);
 }
 
+//==============================================================================
 int Epetra_CrsGraph::MakeColMap_LL(const Epetra_BlockMap& domainMap,
 				const Epetra_BlockMap& rangeMap)
 {
@@ -1641,19 +1649,19 @@ int Epetra_CrsGraph::MakeColMap_LL(const Epetra_BlockMap& domainMap,
 int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap& domainMap,
 				const Epetra_BlockMap& rangeMap)
 {
-	if(!domainMap.GlobalIndicesMatch(rangeMap))
-	   throw ReportError("Epetra_CrsGraph::MakeColMap: cannot be called with different indices types for domainMap and rangeMap", -1);
+  if(!domainMap.GlobalIndicesMatch(rangeMap))
+    throw ReportError("Epetra_CrsGraph::MakeColMap: cannot be called with different indices types for domainMap and rangeMap", -1);
+  
+  if(!RowMap().GlobalIndicesMatch(domainMap))
+    throw ReportError("Epetra_CrsGraph::MakeColMap: cannot be called with different indices types for row map and incoming rangeMap", -1);
+  
+  if(RowMap().GlobalIndicesInt())
+    return MakeColMap_int(domainMap, rangeMap);
+  
+  if(RowMap().GlobalIndicesLongLong())
+    return MakeColMap_LL(domainMap, rangeMap);
 
-	if(!RowMap().GlobalIndicesMatch(domainMap))
-	   throw ReportError("Epetra_CrsGraph::MakeColMap: cannot be called with different indices types for row map and incoming rangeMap", -1);
-
-	if(RowMap().GlobalIndicesInt())
-		return MakeColMap_int(domainMap, rangeMap);
-
-	if(RowMap().GlobalIndicesLongLong())
-		return MakeColMap_LL(domainMap, rangeMap);
-
-	throw ReportError("Epetra_CrsGraph::MakeColMap: Internal error, unable to determine global index type of maps", -1);
+  throw ReportError("Epetra_CrsGraph::MakeColMap: Internal error, unable to determine global index type of maps", -1);
 }
 
 // protected ===================================================================
