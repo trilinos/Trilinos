@@ -61,6 +61,7 @@ MatrixFreeOperator(
   include_mean(true),
   only_use_linear(false),
   useTranspose(false),
+  use_block_apply(true),
   expansion_size(sg_basis->size()),
   num_blocks(0),
   input_col(),
@@ -75,6 +76,8 @@ MatrixFreeOperator(
   scale_op = params->get("Scale Operator by Inverse Basis Norms", true);
   include_mean = params->get("Include Mean", true);
   only_use_linear = params->get("Only Use Linear Terms", false);
+  use_block_apply = params->get("Use Block Apply", true);
+  std::cout << "use block apply = " << use_block_apply << std::endl;
 
   // Compute maximum number of mat-vec's needed
   if (!include_mean && index(k_begin) == 0)
@@ -261,8 +264,8 @@ Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
       Teuchos::Array<int> mj_indices(nj*m);
       int l = 0;
       for (Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
-	int j = index(j_it);
-	for (int mm=0; mm<m; mm++) {
+        int j = index(j_it);
+        for (int mm=0; mm<m; mm++) {
 	  j_ptr[l*m+mm] = (*input_block[j])[mm];
 	  mj_indices[l*m+mm] = l*m+mm;
 	}
@@ -270,7 +273,13 @@ Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
       }
       Epetra_MultiVector input_tmp(View, *input_base_map, &j_ptr[0], nj*m);
       Epetra_MultiVector result_tmp(View, *tmp_result, &mj_indices[0], nj*m);
-      (*block_ops)[k].Apply(input_tmp, result_tmp);
+      if (use_block_apply) {
+        (*block_ops)[k].Apply(input_tmp, result_tmp);
+      }
+      else {
+        for (int jj=0; jj<nj*m; jj++)
+          (*block_ops)[k].Apply(*(input_tmp(jj)), *(result_tmp(jj)));
+      }
       l = 0;
       for (Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
 	int j = index(j_it);
