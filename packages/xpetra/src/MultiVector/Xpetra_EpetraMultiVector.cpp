@@ -6,6 +6,18 @@
 
 namespace Xpetra {
 
+  EpetraMultiVector::EpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors) {
+
+    // Convert Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > to double**
+    Array<const double*> arrayOfRawPtrs(ArrayOfPtrs.size());
+    for(int i=0; i<ArrayOfPtrs.size(); i++) {
+      arrayOfRawPtrs[i] = ArrayOfPtrs[i].getRawPtr();
+    }
+    double** rawArrayOfRawPtrs = const_cast<double**>(arrayOfRawPtrs.getRawPtr()); // This const_cast should be fine, because Epetra_DataAccess=Copy.
+
+    vec_ = Teuchos::rcp(new Epetra_MultiVector(Copy, toEpetra(map), rawArrayOfRawPtrs, NumVectors));
+  }
+
   Teuchos::ArrayRCP<const double> EpetraMultiVector::getData(size_t j) const { 
     double ** arrayOfPointers;
       
