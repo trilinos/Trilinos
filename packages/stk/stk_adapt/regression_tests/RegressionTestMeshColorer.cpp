@@ -45,6 +45,8 @@ namespace stk
     namespace unit_tests
     {
 
+#include "RegressionTestFileLoc.hpp"
+
       static stk::diag::Writer &
       dw()
       {
@@ -90,7 +92,7 @@ namespace stk
             Colorer meshColorer(mer);
             unsigned elementType = 0u;
             meshColorer.color(eMesh, &elementType, 0, element_color_field);
-            eMesh.saveAs("./output_files/cube_colored.e");
+            eMesh.saveAs(output_files_loc+"cube_colored.e");
             //std::cout << "Mesh coloring info: " << meshColorer.getElementColors() << std::endl;
           }
       }
@@ -108,7 +110,7 @@ namespace stk
         percept::PerceptMesh eMesh(2u);
         if (eMesh.getParallelSize() == 1 || eMesh.getParallelSize() == 3)
           {
-            eMesh.open("./input_files/break_test/quad/square/square_quad4.e");
+            eMesh.open(input_files_loc+"break_test._.quad._.square._.square_quad4.e");
             int vectorDimension = 0;
             stk::mesh::FieldBase *element_color_field = eMesh.addField("element_colors", eMesh.element_rank(), vectorDimension);
             eMesh.commit();
@@ -120,7 +122,7 @@ namespace stk
             //std::cout << "Mesh coloring info: " << meshColorer.getElementColors() << std::endl;
             eMesh.printInfo();
             eMesh.dump();
-            eMesh.saveAs("./output_files/square_quad4_colored.e");
+            eMesh.saveAs(output_files_loc+"square_quad4_colored.e");
           }
       }
 

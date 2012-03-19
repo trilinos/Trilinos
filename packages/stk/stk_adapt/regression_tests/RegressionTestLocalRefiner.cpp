@@ -75,8 +75,10 @@ namespace stk
 
       bool LARGE_TEST_ONLY=false;
 
-      const std::string input_files_loc="./input_files/";
-      const std::string output_files_loc="./output_files/";
+#include "RegressionTestFileLoc.hpp"
+
+//       const std::string input_files_loc="./input_files/";
+//       const std::string output_files_loc="./output_files/";
 
       static std::string post_fix[9] = {"np0", "np1", "np2", "np3", "np4", "np5", "np6", "np7", "np8"};
 

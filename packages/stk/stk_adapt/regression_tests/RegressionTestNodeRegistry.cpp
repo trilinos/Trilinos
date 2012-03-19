@@ -41,6 +41,9 @@ namespace stk
     namespace regression_tests
     {
 
+#include "RegressionTestFileLoc.hpp"
+
+
 #define EXTRA_PRINT 0
 
       //======================================================================================================================      
@@ -130,7 +133,7 @@ namespace stk
           {
 
             percept::PerceptMesh eMesh(2u);
-            eMesh.open("./input_files/break_test/quad/square/square_quad4.e");
+            eMesh.open(input_files_loc+"break_test._.quad._.square._.square_quad4.e");
             eMesh.commit();
 
             //eMesh.printInfo("square_quad4 before dist");
@@ -303,7 +306,7 @@ namespace stk
           {
 
             percept::PerceptMesh eMesh(2u);
-            eMesh.open("./input_files/break_test/quad/square/square_quad4.e");
+            eMesh.open(input_files_loc+"break_test._.quad._.square._.square_quad4.e");
 
             eMesh.commit();
 
