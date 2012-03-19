@@ -46,7 +46,7 @@ namespace ROL{
     private:
         // Prevent allocation of this class
         explicit DataStructures();
-        // No copy constructor required
+        // No assignment operator required
 
         template<typename T>
         class Alloc : public std::allocator <T> {
@@ -2198,7 +2198,7 @@ namespace ROL{
     private:
         // Prevent instantiation of this class
         explicit parest();
-        // No copy constructor required
+        // No assignment operator required
     public:
         // Setup some types
         typedef typename U::Vector U_Vector; 
