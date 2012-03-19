@@ -112,7 +112,7 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="Chevyshev"> <!-- interpreter not tested yet -->
+    <ParameterList name="Chebyshev"> <!-- interpreter not tested yet -->
       <Parameter name="factory" type="string" value="TrilinosSmoother"/>
       
       <Parameter name="type" type="string" value="CHEBYSHEV"/>
