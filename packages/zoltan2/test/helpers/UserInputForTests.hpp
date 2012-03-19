@@ -65,12 +65,13 @@ using Teuchos::rcp;
 using Teuchos::rcp_const_cast;
 
 enum testOutputType {
+  OBJECT_DATA,
   OBJECT_COORDINATES,
   NUM_TEST_OUTPUT_TYPE
 };
 
 typedef std::bitset<NUM_TEST_OUTPUT_TYPE> outputFlag_t;
-outputFlag_t defaultFlags;
+outputFlag_t defaultFlags(OBJECT_DATA);
 
 static int z2Test_read_mtx_coords(
   std::string &fname, ArrayRCP<ArrayRCP<scalar_t> > &xyz);
@@ -121,16 +122,18 @@ private:
     using Tpetra::MultiVector;
     using Tpetra::Export;
  
-    try{
-      M_ = Tpetra::MatrixMarket::Reader<tcrsMatrix_t>::readSparseFile(fname_, 
-        tcomm_, node_);
+    if (flags_.test(OBJECT_DATA)){
+      try{
+        M_ = Tpetra::MatrixMarket::Reader<tcrsMatrix_t>::readSparseFile(fname_, 
+          tcomm_, node_);
+      }
+      catch (std::exception &e) {
+        TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());
+      }
+      RCP<const xcrsMatrix_t> xm = 
+        Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
+      xM_ = rcp_const_cast<xcrsMatrix_t>(xm);
     }
-    catch (std::exception &e) {
-      TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());
-    }
-    RCP<const xcrsMatrix_t> xm = 
-      Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
-    xM_ = rcp_const_cast<xcrsMatrix_t>(xm);
 
     if (!flags_.test(OBJECT_COORDINATES))
       return;
@@ -312,6 +315,7 @@ public:
 
   RCP<tcrsMatrix_t> getTpetraCrsMatrix() 
   { 
+    if (!flags_.test(OBJECT_DATA)) return M_;
     if (M_.is_null())
      createMatrix();
     return M_;
@@ -319,6 +323,7 @@ public:
 
   RCP<tcrsGraph_t> getTpetraCrsGraph() 
   { 
+    if (!flags_.test(OBJECT_DATA)) return rcp(tcrsGraph_t);
     if (M_.is_null())
      createMatrix();
     return rcp_const_cast<tcrsGraph_t>(M_->getCrsGraph());
@@ -326,6 +331,7 @@ public:
 
   RCP<tVector_t> getTpetraVector() 
   { 
+    if (!flags_.test(OBJECT_DATA)) return rcp(tVector_t);
     if (M_.is_null())
      createMatrix();
     RCP<tVector_t> V = rcp(new tVector_t(M_->getRowMap(),  1));
@@ -336,6 +342,7 @@ public:
 
   RCP<tMVector_t> getTpetraMultiVector(int nvec) 
   { 
+    if (!flags_.test(OBJECT_DATA)) return rcp(tMVector_t);
     if (M_.is_null())
      createMatrix();
     RCP<tMVector_t> mV = rcp(new tMVector_t(M_->getRowMap(), nvec));
@@ -346,6 +353,7 @@ public:
 
   RCP<xcrsMatrix_t> getXpetraCrsMatrix() 
   { 
+    if (!flags_.test(OBJECT_DATA)) return rcp(xcrsMatrix_t);
     if (xM_.is_null())
      createMatrix();
     return xM_;
@@ -353,6 +361,7 @@ public:
 
   RCP<xcrsGraph_t> getXpetraCrsGraph() 
   { 
+    if (!flags_.test(OBJECT_DATA)) return rcp(xcrsGraph_t);
     if (xM_.is_null())
      createMatrix();
     return rcp_const_cast<xcrsGraph_t>(xM_->getCrsGraph());
@@ -360,6 +369,7 @@ public:
 
   RCP<xVector_t> getXpetraVector() 
   { 
+    if (!flags_.test(OBJECT_DATA)) return rcp(xVector_t);
     RCP<const tVector_t> tV = getTpetraVector();
     RCP<const xVector_t> xV =
       Zoltan2::XpetraTraits<tVector_t>::convertToXpetra(tV);
@@ -368,6 +378,7 @@ public:
 
   RCP<xMVector_t> getXpetraMultiVector(int nvec) 
   { 
+    if (!flags_.test(OBJECT_DATA)) return rcp(xMVector_t);
     RCP<const tMVector_t> tMV = getTpetraMultiVector(nvec);
     RCP<const xMVector_t> xMV =
       Zoltan2::XpetraTraits<tMVector_t>::convertToXpetra(tMV);
@@ -377,6 +388,7 @@ public:
 #ifdef HAVE_EPETRA_DATA_TYPES
   RCP<Epetra_CrsGraph> getEpetraCrsGraph()
   {
+    if (!flags_.test(OBJECT_DATA)) return rcp(Epetra_CrsGraph);
     if (eG_.is_null()){
       if (M_.is_null())
         createMatrix();
@@ -418,6 +430,7 @@ public:
 
   RCP<Epetra_CrsMatrix> getEpetraCrsMatrix()
   {
+    if (!flags_.test(OBJECT_DATA)) return rcp(Epetra_CrsMatrix);
     if (eM_.is_null()){
       RCP<Epetra_CrsGraph> egraph = getEpetraCrsGraph();
       eM_ = rcp(new Epetra_CrsMatrix(Copy, *egraph));
@@ -448,6 +461,7 @@ public:
 
   RCP<Epetra_Vector> getEpetraVector() 
   { 
+    if (!flags_.test(OBJECT_DATA)) return rcp(Epetra_Vector);
     RCP<Epetra_CrsGraph> egraph = getEpetraCrsGraph();
     RCP<Epetra_Vector> V = 
       rcp(new Epetra_Vector(egraph->RowMap()));
@@ -457,6 +471,7 @@ public:
 
   RCP<Epetra_MultiVector> getEpetraMultiVector(int nvec) 
   { 
+    if (!flags_.test(OBJECT_DATA)) return rcp(Epetra_MultiVector);
     RCP<Epetra_CrsGraph> egraph = getEpetraCrsGraph();
     RCP<Epetra_MultiVector> mV = 
       rcp(new Epetra_MultiVector(egraph->RowMap(), nvec));
