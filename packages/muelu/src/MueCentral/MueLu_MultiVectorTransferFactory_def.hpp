@@ -7,7 +7,7 @@
 // #include <Xpetra_Operator.hpp>
 
 #include "MueLu_Level.hpp"
-// #include "MueLu_Monitor.hpp"
+#include "MueLu_Monitor.hpp"
 
 namespace MueLu {
 
