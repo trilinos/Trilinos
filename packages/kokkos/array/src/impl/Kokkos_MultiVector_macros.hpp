@@ -231,6 +231,42 @@ private:
   template < class , class > friend class Impl::Factory ;
 };
 
+namespace Impl{
+template < typename ValueType >
+class Update< MultiVector< ValueType, KOKKOS_MACRO_DEVICE > > {
+public:
+
+  typedef MultiVector< ValueType, KOKKOS_MACRO_DEVICE > multivec_type;
+  typedef typename multivec_type::value_type value_type;
+  typedef typename multivec_type::device_type device_type;
+  typedef typename multivec_type::size_type size_type;
+
+  Update( const value_type & arg_alpha , const multivec_type & arg_x , 
+          const value_type & arg_beta  , const multivec_type & arg_y )
+    : x( arg_x ), y( arg_y ), alpha( arg_alpha ), beta( arg_beta ) {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const size_type row ) const 
+  {
+    for ( size_type col = 0 ; col < x.count() ; ++col )
+      x(row,col) = alpha * x(row,col) + beta * y(row,col);
+  }
+
+  static void run( const value_type & arg_alpha , const multivec_type & arg_x , 
+                   const value_type & arg_beta  , const multivec_type & arg_y )
+  {
+    parallel_for( arg_x.length(), Update(arg_alpha, arg_x, arg_beta, arg_y) );
+  }
+private:
+
+  multivec_type x ;
+  multivec_type y ;
+  value_type alpha ;
+  value_type beta ;  
+};
+}
+
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
