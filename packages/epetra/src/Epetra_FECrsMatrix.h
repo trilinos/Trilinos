@@ -678,7 +678,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
 					  const double* values,
 					  int mode);
 
-   int InsertNonlocalRow(int row, std::vector<int>::iterator offset); //TODO long long version?
+   template<typename int_type>
+   int InsertNonlocalRow(int_type row, typename std::vector<int_type>::iterator offset);
 
    template<typename int_type>
    int InputNonlocalValue(int rowoffset,
@@ -690,8 +691,19 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
 
    bool ignoreNonLocalEntries_;
 
-   std::vector<int> nonlocalRows_;//TODO long long version?
-   std::vector<std::vector<int> > nonlocalCols_;//TODO long long version?
+   std::vector<int> nonlocalRows_int_;
+   std::vector<std::vector<int> > nonlocalCols_int_;
+   std::vector<long long> nonlocalRows_LL_;
+   std::vector<std::vector<long long> > nonlocalCols_LL_;
+
+   template<typename int_type> std::vector<int_type>& nonlocalRows();
+   template<> std::vector<int>& nonlocalRows<int>() { return nonlocalRows_int_; }
+   template<> std::vector<long long>& nonlocalRows<long long>() { return nonlocalRows_LL_; }
+
+   template<typename int_type> std::vector<std::vector<int_type> >& nonlocalCols();
+   template<> std::vector<std::vector<int> >& nonlocalCols<int>() { return nonlocalCols_int_; }
+   template<> std::vector<std::vector<long long> >& nonlocalCols<long long>() { return nonlocalCols_LL_; }
+
    std::vector<std::vector<double> > nonlocalCoefs_;
 
    //IMPORTANT NOTE: The use of class-member work-data arrays is
@@ -709,6 +721,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
 
    template<typename int_type>
    int SumIntoGlobalValues(int_type GlobalRow, int NumEntries, const double* values, const int_type* Indices);
+
+   template<typename int_type>
+   int GlobalAssemble(const Epetra_Map& domain_map,
+                      const Epetra_Map& range_map,
+                      bool callFillComplete=true,
+                      Epetra_CombineMode combineMode=Add);
 };//class Epetra_FECrsMatrix
 
 #endif /* EPETRA_FECRSMATRIX_H */

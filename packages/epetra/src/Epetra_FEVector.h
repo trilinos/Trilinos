@@ -51,6 +51,7 @@
 #include <vector>
 
 class Epetra_IntSerialDenseVector;
+class Epetra_LongLongSerialDenseVector;
 class Epetra_SerialDenseVector;
 
   // TODO this file needs to be changed for long long
@@ -148,6 +149,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
    int SumIntoGlobalValues(int numIDs,
                            const int* GIDs, const double* values,
                            int vectorIndex=0);
+   int SumIntoGlobalValues(int numIDs,
+                           const long long* GIDs, const double* values,
+                           int vectorIndex=0);
 
    /** Accumulate values into the vector, adding them to any values that
        already exist for the specified GIDs.
@@ -161,11 +165,16 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
    int SumIntoGlobalValues(const Epetra_IntSerialDenseVector& GIDs,
 			   const Epetra_SerialDenseVector& values,
                            int vectorIndex=0);
+   int SumIntoGlobalValues(const Epetra_LongLongSerialDenseVector& GIDs,
+			   const Epetra_SerialDenseVector& values,
+                           int vectorIndex=0);
 
    /** Copy values into the vector overwriting any values that already exist
         for the specified indices.
     */
    int ReplaceGlobalValues(int numIDs, const int* GIDs, const double* values,
+                           int vectorIndex=0);
+   int ReplaceGlobalValues(int numIDs, const long long* GIDs, const double* values,
                            int vectorIndex=0);
 
    /** Copy values into the vector, replacing any values that
@@ -180,14 +189,26 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
    int ReplaceGlobalValues(const Epetra_IntSerialDenseVector& GIDs,
 			   const Epetra_SerialDenseVector& values,
                            int vectorIndex=0);
+   int ReplaceGlobalValues(const Epetra_LongLongSerialDenseVector& GIDs,
+			   const Epetra_SerialDenseVector& values,
+                           int vectorIndex=0);
 
    int SumIntoGlobalValues(int numIDs,
                            const int* GIDs,
 			   const int* numValuesPerID,
 			   const double* values,
                            int vectorIndex=0);
+   int SumIntoGlobalValues(int numIDs,
+                           const long long* GIDs,
+			   const int* numValuesPerID,
+			   const double* values,
+                           int vectorIndex=0);
 
    int ReplaceGlobalValues(int numIDs, const int* GIDs,
+			   const int* numValuesPerID,
+			   const double* values,
+                           int vectorIndex=0);
+   int ReplaceGlobalValues(int numIDs, const long long* GIDs,
 			   const int* numValuesPerID,
 			   const double* values,
                            int vectorIndex=0);

@@ -40,7 +40,7 @@
 // ************************************************************************
 //@HEADER
 
-#if 0 == 1234 // These sections have to be fixed.
+  // TODO this file needs to be changed for long long
 
 #include <Epetra_FEVbrMatrix.h>
 #include <Epetra_BlockMap.h>
@@ -663,5 +663,3 @@ int Epetra_FEVbrMatrix::EndSubmitEntries()
 
   return(0);
 }
-
-#endif // 0 == 1234 // These sections have to be fixed.

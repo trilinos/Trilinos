@@ -58,8 +58,10 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
-    nonlocalRows_(),
-    nonlocalCols_(),
+    nonlocalRows_int_(),
+    nonlocalCols_int_(),
+    nonlocalRows_LL_(),
+    nonlocalCols_LL_(),
     nonlocalCoefs_(),
     workData_(128),
     useNonlocalMatrix_ (false),
@@ -81,8 +83,10 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
-    nonlocalRows_(),
-    nonlocalCols_(),
+    nonlocalRows_int_(),
+    nonlocalCols_int_(),
+    nonlocalRows_LL_(),
+    nonlocalCols_LL_(),
     nonlocalCoefs_(),
     workData_(128),
     useNonlocalMatrix_ (false),
@@ -105,8 +109,10 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
-    nonlocalRows_(),
-    nonlocalCols_(),
+    nonlocalRows_int_(),
+    nonlocalCols_int_(),
+    nonlocalRows_LL_(),
+    nonlocalCols_LL_(),
     nonlocalCoefs_(),
     workData_(128),
     useNonlocalMatrix_ (false),
@@ -129,8 +135,10 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
-    nonlocalRows_(),
-    nonlocalCols_(),
+    nonlocalRows_int_(),
+    nonlocalCols_int_(),
+    nonlocalRows_LL_(),
+    nonlocalCols_LL_(),
     nonlocalCoefs_(),
     workData_(128),
     useNonlocalMatrix_ (false),
@@ -151,8 +159,10 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
-    nonlocalRows_(),
-    nonlocalCols_(),
+    nonlocalRows_int_(),
+    nonlocalCols_int_(),
+    nonlocalRows_LL_(),
+    nonlocalCols_LL_(),
     nonlocalCoefs_(),
     workData_(128),
     useNonlocalMatrix_ (false),
@@ -173,8 +183,10 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
-    nonlocalRows_(),
-    nonlocalCols_(),
+    nonlocalRows_int_(),
+    nonlocalCols_int_(),
+    nonlocalRows_LL_(),
+    nonlocalCols_LL_(),
     nonlocalCoefs_(),
     workData_(128),
     useNonlocalMatrix_ (graph.UseNonlocalGraph() && graph.nonlocalGraph_ != 0),
@@ -194,8 +206,10 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(const Epetra_FECrsMatrix& src)
    myFirstRow_(0),
    myNumRows_(0),
    ignoreNonLocalEntries_(false),
-   nonlocalRows_(),
-   nonlocalCols_(),
+   nonlocalRows_int_(),
+   nonlocalCols_int_(),
+   nonlocalRows_LL_(),
+   nonlocalCols_LL_(),
    nonlocalCoefs_(),
    workData_(128),
    nonlocalMatrix_ (NULL),
@@ -223,7 +237,11 @@ Epetra_FECrsMatrix& Epetra_FECrsMatrix::operator=(const Epetra_FECrsMatrix& src)
   myNumRows_ = src.myNumRows_;
   ignoreNonLocalEntries_ = src.ignoreNonLocalEntries_;
 
-  if (nonlocalRows_.size() < 1) {
+  if (src.RowMap().GlobalIndicesInt() && nonlocalRows_int_.size() < 1) {
+    return( *this );
+  }
+
+  if (src.RowMap().GlobalIndicesLongLong() && nonlocalRows_LL_.size() < 1) {
     return( *this );
   }
 
@@ -232,8 +250,16 @@ Epetra_FECrsMatrix& Epetra_FECrsMatrix::operator=(const Epetra_FECrsMatrix& src)
     return( *this );
   }
 
-  nonlocalRows_ = src.nonlocalRows_;
-  nonlocalCols_ = src.nonlocalCols_;
+  if (src.RowMap().GlobalIndicesInt()) {
+    nonlocalRows_int_ = src.nonlocalRows_int_;
+    nonlocalCols_int_ = src.nonlocalCols_int_;
+  }
+
+  if (src.RowMap().GlobalIndicesLongLong()) {
+    nonlocalRows_LL_ = src.nonlocalRows_LL_;
+    nonlocalCols_LL_ = src.nonlocalCols_LL_;
+  }
+
   nonlocalCoefs_= src.nonlocalCoefs_;
 
   return( *this );
@@ -248,8 +274,16 @@ Epetra_FECrsMatrix::~Epetra_FECrsMatrix()
 //----------------------------------------------------------------------------
 void Epetra_FECrsMatrix::DeleteMemory()
 {
-  nonlocalRows_.clear();
-  nonlocalCols_.clear();
+  if (RowMap().GlobalIndicesInt()) {
+    nonlocalRows_int_.clear();
+    nonlocalCols_int_.clear();
+  }
+
+  if (RowMap().GlobalIndicesLongLong()) {
+    nonlocalRows_LL_.clear();
+    nonlocalCols_LL_.clear();
+  }
+
   nonlocalCoefs_.clear();
 
   if (nonlocalMatrix_ != 0)
@@ -736,24 +770,22 @@ int Epetra_FECrsMatrix::GlobalAssemble(bool callFillComplete, Epetra_CombineMode
 }
 
 //----------------------------------------------------------------------------
+template<typename int_type>
 int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
                                        const Epetra_Map& range_map,
                                        bool callFillComplete,
                                        Epetra_CombineMode combineMode,
                                        bool save_off_and_reuse_map_exporter)
 {
-  if(!domain_map.GlobalIndicesMatch(range_map))
-     throw ReportError("Epetra_FECrsMatrix::GlobalAssemble: cannot be called with different indices types for domainMap and rangeMap", -1);
-
-  if(!RowMap().GlobalIndicesMatch(domain_map))
-    throw ReportError("Epetra_FECrsMatrix::GlobalAssemble: cannot be called with different indices types for row map and incoming rangeMap", -1);
-
   if (Map().Comm().NumProc() < 2 || ignoreNonLocalEntries_) {
     if (callFillComplete) {
       EPETRA_CHK_ERR( FillComplete(domain_map, range_map) );
     }
     return(0);
   }
+
+  std::vector<int_type>& nonlocalRows_var = nonlocalRows<int_type>();
+  std::vector<std::vector<int_type> >& nonlocalCols_var = nonlocalCols<int_type>();
 
   Epetra_CrsMatrix* tempMat;
   if (useNonlocalMatrix_) {
@@ -768,9 +800,9 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
     //First build a map that describes our nonlocal data.
     //We'll use the arbitrary distribution constructor of Map.
 
-    int* nlr_ptr = nonlocalRows_.size() > 0 ? &nonlocalRows_[0] : 0;
+    int_type* nlr_ptr = nonlocalRows_.size() > 0 ? &nonlocalRows_[0] : 0;
     if (sourceMap_ == NULL)
-      sourceMap_ = new Epetra_Map(-1, nonlocalRows_.size(), nlr_ptr,
+      sourceMap_ = new Epetra_Map((int_type) -1, int) nonlocalRows_.size(), nlr_ptr,
             Map().IndexBase(), Map().Comm());
 
     //If sourceMap has global size 0, then no nonlocal data exists and we can
@@ -791,43 +823,43 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
     //occur in our nonlocal rows.
 
     if ( colMap_ == NULL ) {
-      std::vector<int> cols;
+      std::vector<int_type> cols;
 
 
-      for(size_t i=0; i<nonlocalRows_.size(); ++i) {
-        for(size_t j=0; j<nonlocalCols_[i].size(); ++j) {
-          int col = nonlocalCols_[i][j];
-          std::vector<int>::iterator it =
-              std::lower_bound(cols.begin(), cols.end(), col);
+      for(size_t i=0; i<nonlocalRows_var.size(); ++i) {
+        for(size_t j=0; j<nonlocalCols_var[i].size(); ++j) {
+          int_type col = nonlocalCols_var[i][j];
+          std::vector<int_type>::iterator it =
+             std::lower_bound(cols.begin(), cols.end(), col);
           if (it == cols.end() || *it != col) {
             cols.insert(it, col);
           }
         }
       }
 
-      int* cols_ptr = cols.size() > 0 ? &cols[0] : 0;
+      int_type* cols_ptr = cols.size() > 0 ? &cols[0] : 0;
 
-      colMap_ = new Epetra_Map(-1, cols.size(), cols_ptr,
+      colMap_ = new Epetra_Map((int_type) -1, (int) cols.size(), cols_ptr,
           Map().IndexBase(), Map().Comm());
     }
 
     //now we need to create a matrix with sourceMap and colMap, and fill it with
     //our nonlocal data so we can then export it to the correct owning processors.
 
-    std::vector<int> nonlocalRowLengths(nonlocalRows_.size());
-    for(size_t i=0; i<nonlocalRows_.size(); ++i) {
-      nonlocalRowLengths[i] = (int) nonlocalCols_[i].size();
+    std::vector<int> nonlocalRowLengths(nonlocalRows_var.size());
+    for(size_t i=0; i<nonlocalRows_var.size(); ++i) {
+      nonlocalRowLengths[i] = (int) nonlocalCols_var[i].size();
     }
 
     int* nlRLptr = nonlocalRowLengths.size()>0 ? &nonlocalRowLengths[0] : NULL;
     tempMat = new Epetra_CrsMatrix(Copy, *sourceMap_, *colMap_, nlRLptr);
 
 
-    for(size_t i=0; i<nonlocalRows_.size(); ++i) {
-      EPETRA_CHK_ERR( tempMat->InsertGlobalValues(nonlocalRows_[i],
-             (int) nonlocalCols_[i].size(),
+    for(size_t i=0; i<nonlocalRows_var.size(); ++i) {
+      EPETRA_CHK_ERR( tempMat->InsertGlobalValues(nonlocalRows_var[i],
+             (int) nonlocalCols_var[i].size(),
              &nonlocalCoefs_[i][0],
-             &nonlocalCols_[i][0]) );
+             &nonlocalCols_var[i][0]) );
     }
 
     if (!save_off_and_reuse_map_exporter) {
@@ -861,9 +893,10 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
 
   //now reset the values in our nonlocal data
   if (!useNonlocalMatrix_) {
-    for(size_t i=0; i<nonlocalRows_.size(); ++i) {
-      nonlocalCols_[i].resize(0);
-      nonlocalCoefs_[i].resize(0);
+    for(size_t i=0; i<nonlocalRows_var.size(); ++i) {
+        nonlocalCols_var[i].resize(0); 
+        nonlocalCoefs_[i].resize(0);
+      }
     }
 
     delete tempMat;
@@ -876,6 +909,26 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
   return(0);
 }
 
+int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
+                                       const Epetra_Map& range_map,
+                                       bool callFillComplete,
+                                       Epetra_CombineMode combineMode)
+{
+  if(!domain_map.GlobalIndicesMatch(range_map))
+     throw ReportError("Epetra_FECrsMatrix::GlobalAssemble: cannot be called with different indices types for domainMap and rangeMap", -1);
+
+  if(!RowMap().GlobalIndicesMatch(domain_map))
+    throw ReportError("Epetra_FECrsMatrix::GlobalAssemble: cannot be called with different indices types for row map and incoming rangeMap", -1);
+
+  if(RowMap().GlobalIndicesInt())
+    return GlobalAssemble<int>(domain_map, range_map, callFillComplete, combineMode);
+  
+  if(RowMap().GlobalIndicesLongLong())
+    return GlobalAssemble<long long>(domain_map, range_map, callFillComplete, combineMode);
+
+  throw ReportError("Epetra_FECrsMatrix::GlobalAssemble: Internal error, unable to determine global index type of maps", -1);
+}
+
 //----------------------------------------------------------------------------
 template<typename int_type>
 int Epetra_FECrsMatrix::InputGlobalValues_RowMajor(
@@ -884,6 +937,9 @@ int Epetra_FECrsMatrix::InputGlobalValues_RowMajor(
 					  const double* values,
 					  int mode)
 {
+  if(RowMap().GlobalIndicesIsType<int_type>())
+	throw ReportError("Epetra_FECrsMatrix::InputGlobalValues_RowMajor mismatch between argument types (int/long long) and map type.", -1);
+
   int returncode = 0;
   int err = 0;
 
@@ -934,7 +990,8 @@ int Epetra_FECrsMatrix::InputGlobalValues(int numRows, const int_type* rows,
 					  const double*const* values,
 					  int format, int mode)
 {
-	//TODO long long
+  if(RowMap().GlobalIndicesIsType<int_type>())
+	throw ReportError("Epetra_FECrsMatrix::InputGlobalValues mismatch between argument types (int/long long) and map type.", -1);
 
   if (format != Epetra_FECrsMatrix::ROW_MAJOR &&
       format != Epetra_FECrsMatrix::COLUMN_MAJOR) {
@@ -983,7 +1040,9 @@ int Epetra_FECrsMatrix::InputGlobalValues(int numRows, const int_type* rows,
 					  const double* values,
 					  int format, int mode)
 {
-	//TODO long long
+  if(RowMap().GlobalIndicesIsType<int_type>())
+	throw ReportError("Epetra_FECrsMatrix::InputGlobalValues mismatch between argument types (int/long long) and map type.", -1);
+
   if (format == Epetra_FECrsMatrix::ROW_MAJOR) {
     return InputGlobalValues_RowMajor(numRows, rows, numCols, cols, values, mode);
   }
@@ -1012,7 +1071,9 @@ int Epetra_FECrsMatrix::InputNonlocalGlobalValues(int_type row,
 						  const double* values,
 						  int mode)
 {
-	//TODO
+  if(RowMap().GlobalIndicesIsType<int_type>())
+	throw ReportError("Epetra_FECrsMatrix::InputNonlocalGlobalValues mismatch between argument types (int/long long) and map type.", -1);
+
   // if we already have a nonlocal matrix object, this is easier...
   if (useNonlocalMatrix_) {
     int err, returncode = 0;
@@ -1043,12 +1104,14 @@ int Epetra_FECrsMatrix::InputNonlocalGlobalValues(int_type row,
     return (returncode);
   }
 
-  //find offset of this row in our list of nonlocal rows.
-  std::vector<int>::iterator it =
-      std::lower_bound(nonlocalRows_.begin(), nonlocalRows_.end(), row);
+  std::vector<int_type>& nonlocalRows_var = nonlocalRows<int_type>();
 
-  int rowoffset = it - nonlocalRows_.begin();
-  if (it == nonlocalRows_.end() || *it != row) {
+  //find offset of this row in our list of nonlocal rows.
+  std::vector<int_type>::iterator it =
+      std::lower_bound(nonlocalRows_var.begin(), nonlocalRows_var.end(), row);
+
+  int rowoffset = (int) (it - nonlocalRows_var.begin());
+  if (it == nonlocalRows_var.end() || *it != row) {
     EPETRA_CHK_ERR( InsertNonlocalRow(row, it) );
   }
 
@@ -1060,13 +1123,19 @@ int Epetra_FECrsMatrix::InputNonlocalGlobalValues(int_type row,
 }
 
 //----------------------------------------------------------------------------
-int Epetra_FECrsMatrix::InsertNonlocalRow(int row, std::vector<int>::iterator iter)
+template<typename int_type>
+int Epetra_FECrsMatrix::InsertNonlocalRow(int_type row, typename std::vector<int_type>::iterator iter)
 {
-	//TODO
-  int offset = iter - nonlocalRows_.begin();
-  nonlocalRows_.insert(iter, row);
-  std::vector<std::vector<int> >::iterator cols_iter = nonlocalCols_.begin() + offset;
-  nonlocalCols_.insert(cols_iter, std::vector<int>());
+  if(RowMap().GlobalIndicesIsType<int_type>())
+	throw ReportError("Epetra_FECrsMatrix::InsertNonlocalRow mismatch between argument types (int/long long) and map type.", -1);
+
+  std::vector<int_type>& nonlocalRows_var = nonlocalRows<int_type>();
+  std::vector<std::vector<int_type> >& nonlocalCols_var = nonlocalCols<int_type>();
+
+  int offset = (int) (iter - nonlocalRows_var.begin());
+  nonlocalRows_var.insert(iter, row);
+  std::vector<std::vector<int_type> >::iterator cols_iter = nonlocalCols_var.begin() + offset;
+  nonlocalCols_var.insert(cols_iter, std::vector<int_type>());
   std::vector<std::vector<double> >::iterator coefs_iter = nonlocalCoefs_.begin() + offset;
   nonlocalCoefs_.insert(coefs_iter, std::vector<double>());
 
@@ -1079,22 +1148,24 @@ int Epetra_FECrsMatrix::InputNonlocalValue(int rowoffset,
 					   int_type col, double value,
 					   int mode)
 {
-	//TODO
-  std::vector<int>& colIndices = nonlocalCols_[rowoffset];
+  if(RowMap().GlobalIndicesIsType<int_type>())
+	throw ReportError("Epetra_FECrsMatrix::InputNonlocalValue mismatch between argument types (int/long long) and map type.", -1);
+
+  std::vector<int_type>& colIndices = nonlocalCols<int_type>()[rowoffset];
   std::vector<double>& coefs = nonlocalCoefs_[rowoffset];
 
-  std::vector<int>::iterator it =
+  std::vector<int_type>::iterator it =
      std::lower_bound(colIndices.begin(), colIndices.end(), col);
 
   if (it == colIndices.end() || *it != col) {
-    int offset = it - colIndices.begin();
+    int offset = (int) (it - colIndices.begin());
     colIndices.insert(it, col);
     std::vector<double>::iterator dit = coefs.begin()+offset;
     coefs.insert(dit, value);
     return 0;
   }
 
-  int coloffset = it - colIndices.begin();
+  int coloffset = (int) (it - colIndices.begin());
   if (mode == SUMINTO || mode == INSERT) {
     coefs[coloffset] += value;
   }

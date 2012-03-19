@@ -481,6 +481,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   //! Returns true if map create with long long NumGlobalElements
   bool  GlobalIndicesLongLong() const { return BlockMapData_->GlobalIndicesLongLong_; }
 
+  template<typename int_type>
+  bool  GlobalIndicesIsType() const;
+
+  template<> bool GlobalIndicesIsType<int>()       const { return BlockMapData_->GlobalIndicesInt_; }
+  template<> bool GlobalIndicesIsType<long long>() const { return BlockMapData_->GlobalIndicesLongLong_; }
+
   bool  GlobalIndicesTypeValid() const { return BlockMapData_->GlobalIndicesInt_ || BlockMapData_->GlobalIndicesLongLong_; }
 
   bool GlobalIndicesMatch(const Epetra_BlockMap& other) const
