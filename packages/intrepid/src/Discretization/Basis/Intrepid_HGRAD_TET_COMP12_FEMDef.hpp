@@ -461,7 +461,7 @@ Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getWeights(const ArrayScalar & 
     pt_tets.push_back(getLocalSubTetrahedra(inPts(pt,0), inPts(pt,1), inPts(pt,2)));
 
   Teuchos::Array<int> flat;
-  FieldContainer<Scalar> count(12);
+  FieldContainer<int> count(12);
 
   for (int pt = 0; pt < numPoints; ++pt)
     for (int i = 0; i < pt_tets[pt].size(); ++i)
