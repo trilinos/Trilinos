@@ -8,6 +8,7 @@
 
 #include "MueLu_Level.hpp"
 #include "MueLu_Exceptions.hpp"
+#include "MueLu_Monitor.hpp"
 
 namespace MueLu {
 
@@ -39,6 +40,9 @@ namespace MueLu {
   void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
   Build(Level &level) const
   {
+
+    FactoryMonitor m(*this, "ZoltanInterface", level);
+
     RCP<Operator> A = level.Get< RCP<Operator> >("A",AFact_.get());
     // Tell Zoltan what kind of local/global IDs we will use.
     // In our case, each GID is two ints and there are no local ids.

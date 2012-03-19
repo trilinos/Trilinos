@@ -40,8 +40,6 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void PermutedTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
 
-    FactoryMonitor m(*this, "PermutedTransferFactory", coarseLevel);
-
     RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     fos->setOutputToRootOnly(-1);
     GetOStream(Warnings0, 0) <<  "** In PermutedTransferFactory::DeclareInput **" << std::endl;
@@ -69,6 +67,9 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void PermutedTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {
+
+    FactoryMonitor m(*this, "PermutedTransferFactory", coarseLevel);
+
     RCP<Operator> permMatrix;
     try {
       permMatrix = coarseLevel.Get< RCP<Operator> >("Permutation",repartitionFact_.get());
