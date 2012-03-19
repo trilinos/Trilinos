@@ -971,6 +971,15 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
                                     int* PermuteToLIDs,
                                     int* PermuteFromLIDs,
                                     const Epetra_OffsetIndex * Indexor);
+
+	template<typename int_type>
+	int CopyAndPermuteRowMatrix(const Epetra_RowMatrix& A,
+                                    int NumSameIDs, 
+                                    int NumPermuteIDs,
+                                    int* PermuteToLIDs,
+                                    int* PermuteFromLIDs,
+                                    const Epetra_OffsetIndex * Indexor);
+
 	int CopyAndPermuteCrsGraph(const Epetra_CrsGraph& A,
                                    int NumSameIDs, 
                                    int NumPermuteIDs,
@@ -978,6 +987,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
                                    int* PermuteFromLIDs,
                                    const Epetra_OffsetIndex * Indexor);
   
+	template<typename int_type>
+	int CopyAndPermuteCrsGraph(const Epetra_CrsGraph& A,
+                                   int NumSameIDs, 
+                                   int NumPermuteIDs,
+                                   int* PermuteToLIDs,
+                                   int* PermuteFromLIDs,
+                                   const Epetra_OffsetIndex * Indexor);
+
         int PackAndPrepare(const Epetra_SrcDistObject& Source,
                            int NumExportIDs,
                            int* ExportLIDs,

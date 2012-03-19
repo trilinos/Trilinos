@@ -47,8 +47,6 @@
 #include "Epetra_Map.h"
 #include "Epetra_CrsGraph.h"
 
-  // TODO this file needs to be changed for long long
-
 #include <map>
 
 /**
@@ -119,6 +117,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsGraph : public Epetra_CrsGraph {
   */
   int InsertGlobalIndices(int numRows, const int* rows,
 			  int numCols, const int* cols);
+  int InsertGlobalIndices(int numRows, const long long* rows,
+			  int numCols, const long long* cols);
 
    /** Gather any overlapping/shared data into the non-overlapping partitioning
       defined by the Map that was passed to this matrix at construction time.
@@ -191,7 +191,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsGraph : public Epetra_CrsGraph {
    * This STL map holds all non-local data in format of Entries in the
    * individual rows together with the row number.
    */
-//TODO FIXME std::map<int,Epetra_CrsGraphData::EntriesInOneRow> nonlocalRowData_;
+  std::map<int,Epetra_CrsGraphData::EntriesInOneRow<int> > nonlocalRowData_int_;
+  std::map<long long,Epetra_CrsGraphData::EntriesInOneRow<long long> > nonlocalRowData_LL_;
+
+  template<typename int_type>
+  std::map<int_type,Epetra_CrsGraphData::EntriesInOneRow<int_type> >& nonlocalRowData();
+
+  template<> std::map<int,Epetra_CrsGraphData::EntriesInOneRow<int> >& nonlocalRowData() { return nonlocalRowData_int_; }
+  template<> std::map<long long,Epetra_CrsGraphData::EntriesInOneRow<long long> >& nonlocalRowData() { return nonlocalRowData_LL_; }
 
   /**
    * A CrsGraph holding non-local data in case the respective flag is set in
@@ -202,6 +209,11 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsGraph : public Epetra_CrsGraph {
 
   Epetra_FECrsGraph & operator=(const Epetra_FECrsGraph& Graph);
      
+  template<typename int_type>
+  int InsertGlobalIndices(int numRows, const int_type* rows, int numCols, const int_type* cols);
+
+  template<typename int_type>
+  int GlobalAssemble(const Epetra_Map& domain_map, const Epetra_Map& range_map, bool callFillComplete);
 
 };//class Epetra_FECrsGraph
 

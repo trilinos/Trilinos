@@ -59,7 +59,8 @@ Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BlockMap & Map)
     LocalIndexList_(0),
     SizeList_(0),
     SizeIsConst_(true),
-    AllMinGIDs_(0)
+    AllMinGIDs_int_(0),
+    AllMinGIDs_LL_(0)
 {
   // Test for simple cases
 
@@ -76,10 +77,23 @@ Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BlockMap & Map)
     // and can be found using the MinGIDs.
 
     int NumProc = Map.Comm().NumProc();
-    AllMinGIDs_ = new long long[NumProc+1];
-    long long MinMyGID = Map.MinMyGID();
-    Map.Comm().GatherAll(&MinMyGID, AllMinGIDs_, 1);
-    AllMinGIDs_[NumProc] = 1 + Map.MaxAllGID(); // Set max cap
+
+	if(Map.GlobalIndicesInt())
+	{
+       AllMinGIDs_int_ = new int[NumProc+1];
+       int MinMyGID = (int) Map.MinMyGID();
+       Map.Comm().GatherAll(&MinMyGID, AllMinGIDs_int_, 1);
+       AllMinGIDs_int_[NumProc] = (int) (1 + Map.MaxAllGID()); // Set max cap
+	}
+	else if(Map.GlobalIndicesLongLong())
+	{
+       AllMinGIDs_LL_ = new long long[NumProc+1];
+       long long MinMyGID = Map.MinMyGID();
+       Map.Comm().GatherAll(&MinMyGID, AllMinGIDs_LL_, 1);
+       AllMinGIDs_LL_[NumProc] = 1 + Map.MaxAllGID(); // Set max cap
+	}
+	else
+		throw "Epetra_BasicDirectory::Epetra_BasicDirectory: Unknown map index type";
   }
 
   // General case.  Need to build a directory via calls to communication functions
@@ -107,7 +121,8 @@ Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BasicDirectory & Direc
     LocalIndexList_(0),
     SizeList_(0),
     SizeIsConst_(Directory.SizeIsConst_),
-    AllMinGIDs_(0)
+    AllMinGIDs_int_(0),
+    AllMinGIDs_LL_(0)
 {
   if (Directory.DirectoryMap_!=0) DirectoryMap_ = new Epetra_Map(Directory.DirectoryMap());
 
@@ -125,11 +140,16 @@ Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BasicDirectory & Direc
     SizeList_ = new int[Dir_NumMyElements];
     for (int i=0; i<Dir_NumMyElements; i++) SizeList_[i] = Directory.SizeList_[i];
     }
-  if (Directory.AllMinGIDs_!=0) {
-    int NumProc = DirectoryMap_->Comm().NumProc();
-    AllMinGIDs_ = new long long[NumProc+1];
-    for (int i=0; i<NumProc+1; i++) AllMinGIDs_[i] = Directory.AllMinGIDs_[i];
-    }
+  if (Directory.AllMinGIDs_int_!=0) {
+       int NumProc = DirectoryMap_->Comm().NumProc();
+       AllMinGIDs_int_ = new int[NumProc+1];
+       for (int i=0; i<NumProc+1; i++) AllMinGIDs_int_[i] = Directory.AllMinGIDs_int_[i];
+	}
+  if (Directory.AllMinGIDs_LL_!=0) {
+       int NumProc = DirectoryMap_->Comm().NumProc();
+       AllMinGIDs_LL_ = new long long[NumProc+1];
+       for (int i=0; i<NumProc+1; i++) AllMinGIDs_LL_[i] = Directory.AllMinGIDs_LL_[i];
+	}
 
   if (Directory.numProcLists_ > 0) {
     int num = Directory.numProcLists_;
@@ -172,13 +192,15 @@ Epetra_BasicDirectory::~Epetra_BasicDirectory()
   if( ProcList_ != 0 ) delete [] ProcList_;
   if( LocalIndexList_ != 0 ) delete [] LocalIndexList_;
   if( SizeList_ != 0 ) delete [] SizeList_;
-  if( AllMinGIDs_ != 0 ) delete [] AllMinGIDs_;
+  if( AllMinGIDs_int_ != 0 ) delete [] AllMinGIDs_int_;
+  if( AllMinGIDs_LL_ != 0 ) delete [] AllMinGIDs_LL_;
 
   DirectoryMap_ = 0;
   ProcList_ = 0 ;
   LocalIndexList_ = 0;
   SizeList_ = 0;
-  AllMinGIDs_ = 0;
+  AllMinGIDs_int_ = 0;
+  AllMinGIDs_LL_ = 0;
 }
 
 //==============================================================================
@@ -423,9 +445,11 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
 	// Guess uniform distribution and start a little above it
 	int Proc1 = (int) EPETRA_MIN(GID/EPETRA_MAX(n_over_p,(int_type)1) + 2, (int_type) NumProc-1);
 	bool found = false;
+	const int_type* AllMinGIDs_ptr = AllMinGIDs<int_type>();
+
 	while (Proc1 >= 0 && Proc1< NumProc) {
-	  if (AllMinGIDs_[Proc1]<=GID) {
-	    if (GID <AllMinGIDs_[Proc1+1]) {
+	  if (AllMinGIDs_ptr[Proc1]<=GID) {
+	    if (GID <AllMinGIDs_ptr[Proc1+1]) {
 	    found = true;
 	    break;
 	    }
@@ -435,7 +459,7 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
 	}
 	if (found) {
 	  Proc = Proc1;
-	  LID = (int) (GID - AllMinGIDs_[Proc]);
+	  LID = (int) (GID - AllMinGIDs_ptr[Proc]);
 	}
       }
       Procs[i] = Proc;

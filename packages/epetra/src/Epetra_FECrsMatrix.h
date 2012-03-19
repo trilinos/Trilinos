@@ -49,10 +49,9 @@
 
 #include <vector>
 
-  // TODO this file needs to be changed for long long
-
 class Epetra_Map;
 class Epetra_IntSerialDenseVector;
+class Epetra_LongLongSerialDenseVector;
 class Epetra_SerialDenseMatrix;
 class Epetra_FECrsGraph;
 
@@ -169,18 +168,26 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
    /** override base-class Epetra_CrsMatrix::SumIntoGlobalValues method */
    int SumIntoGlobalValues(int GlobalRow, int NumEntries,
                            const double* Values, const int* Indices);
+   int SumIntoGlobalValues(long long GlobalRow, int NumEntries,
+                           const double* Values, const long long* Indices);
 
    /** override base-class Epetra_CrsMatrix::InsertGlobalValues method */
    int InsertGlobalValues(int GlobalRow, int NumEntries,
                            const double* Values, const int* Indices);
+   int InsertGlobalValues(long long GlobalRow, int NumEntries,
+                           const double* Values, const long long* Indices);
 
    /** override base-class Epetra_CrsMatrix::InsertGlobalValues method */
    int InsertGlobalValues(int GlobalRow, int NumEntries,
                            double* Values, int* Indices);
+   int InsertGlobalValues(long long GlobalRow, int NumEntries,
+                           double* Values, long long* Indices);
 
    /** override base-class Epetra_CrsMatrix::ReplaceGlobalValues method */
    int ReplaceGlobalValues(int GlobalRow, int NumEntries,
                            const double* Values, const int* Indices);
+   int ReplaceGlobalValues(long long GlobalRow, int NumEntries,
+                           const double* Values, const long long* Indices);
 
    /** Sum a Fortran-style table (single-dimensional packed-list) of
        coefficients into the matrix, adding them to any coefficients that
@@ -198,6 +205,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
        is an optional parameter, default value is COLUMN_MAJOR.
    */
    int SumIntoGlobalValues(int numIndices, const int* indices,
+                           const double* values,
+                           int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
+   int SumIntoGlobalValues(int numIndices, const long long* indices,
                            const double* values,
                            int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
 
@@ -221,6 +231,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
                            int numCols, const int* cols,
                            const double* values,
                            int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
+   int SumIntoGlobalValues(int numRows, const long long* rows,
+                           int numCols, const long long* cols,
+                           const double* values,
+                           int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
 
    /** Sum C-style table (double-pointer, or list of lists) of coefficients
        into the matrix, adding them to any coefficients that
@@ -237,6 +251,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
        is an optional parameter, default value is ROW_MAJOR.
    */
    int SumIntoGlobalValues(int numIndices, const int* indices,
+                           const double* const* values,
+                           int format=Epetra_FECrsMatrix::ROW_MAJOR);
+   int SumIntoGlobalValues(int numIndices, const long long* indices,
                            const double* const* values,
                            int format=Epetra_FECrsMatrix::ROW_MAJOR);
 
@@ -259,6 +276,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
 	                   int numCols, const int* cols,
                            const double* const* values,
                            int format=Epetra_FECrsMatrix::ROW_MAJOR);
+   int SumIntoGlobalValues(int numRows, const long long* rows,
+	                   int numCols, const long long* cols,
+                           const double* const* values,
+                           int format=Epetra_FECrsMatrix::ROW_MAJOR);
 
    /** Insert a Fortran-style table (single-dimensional packed-list) of
        coefficients into the matrix.
@@ -275,6 +296,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
        is an optional parameter, default value is COLUMN_MAJOR.
    */
    int InsertGlobalValues(int numIndices, const int* indices,
+                           const double* values,
+                           int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
+   int InsertGlobalValues(int numIndices, const long long* indices,
                            const double* values,
                            int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
 
@@ -297,6 +321,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
                            int numCols, const int* cols,
                            const double* values,
                            int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
+   int InsertGlobalValues(int numRows, const long long* rows,
+                           int numCols, const long long* cols,
+                           const double* values,
+                           int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
 
    /** Insert a C-style table (double-pointer, or list of lists) of coefficients
        into the matrix.
@@ -312,6 +340,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
        is an optional parameter, default value is ROW_MAJOR.
    */
    int InsertGlobalValues(int numIndices, const int* indices,
+                           const double* const* values,
+                           int format=Epetra_FECrsMatrix::ROW_MAJOR);
+   int InsertGlobalValues(int numIndices, const long long* indices,
                            const double* const* values,
                            int format=Epetra_FECrsMatrix::ROW_MAJOR);
 
@@ -331,6 +362,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
    */
    int InsertGlobalValues(int numRows, const int* rows,
 	                   int numCols, const int* cols,
+                           const double* const* values,
+                           int format=Epetra_FECrsMatrix::ROW_MAJOR);
+   int InsertGlobalValues(int numRows, const long long* rows,
+	                   int numCols, const long long* cols,
                            const double* const* values,
                            int format=Epetra_FECrsMatrix::ROW_MAJOR);
 
@@ -350,6 +385,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
        is an optional parameter, default value is COLUMN_MAJOR.
    */
    int ReplaceGlobalValues(int numIndices, const int* indices,
+                           const double* values,
+                           int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
+   int ReplaceGlobalValues(int numIndices, const long long* indices,
                            const double* values,
                            int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
 
@@ -374,6 +412,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
                            int numCols, const int* cols,
                            const double* values,
                            int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
+   int ReplaceGlobalValues(int numRows, const long long* rows,
+                           int numCols, const long long* cols,
+                           const double* values,
+                           int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
 
    /** Copy C-style table (double-pointer, or list of lists) of coefficients
        into the matrix, replacing any coefficients that
@@ -390,6 +432,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
        is an optional parameter, default value is ROW_MAJOR.
    */
    int ReplaceGlobalValues(int numIndices, const int* indices,
+                           const double* const* values,
+                           int format=Epetra_FECrsMatrix::ROW_MAJOR);
+   int ReplaceGlobalValues(int numIndices, const long long* indices,
                            const double* const* values,
                            int format=Epetra_FECrsMatrix::ROW_MAJOR);
 
@@ -412,6 +457,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
                            int numCols, const int* cols,
                            const double* const* values,
                            int format=Epetra_FECrsMatrix::ROW_MAJOR);
+   int ReplaceGlobalValues(int numRows, const long long* rows,
+                           int numCols, const long long* cols,
+                           const double* const* values,
+                           int format=Epetra_FECrsMatrix::ROW_MAJOR);
 
    /** Sum a square structurally-symmetric sub-matrix into the global matrix.
        For non-square sub-matrices, see the other overloading of this method.
@@ -424,6 +473,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
        @param format Optional format specifier, defaults to COLUMN_MAJOR.
    */
    int SumIntoGlobalValues(const Epetra_IntSerialDenseVector& indices,
+			   const Epetra_SerialDenseMatrix& values,
+			   int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
+   int SumIntoGlobalValues(const Epetra_LongLongSerialDenseVector& indices,
 			   const Epetra_SerialDenseMatrix& values,
 			   int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
 
@@ -445,6 +497,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
 			   const Epetra_IntSerialDenseVector& cols,
 			   const Epetra_SerialDenseMatrix& values,
 			   int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
+   int SumIntoGlobalValues(const Epetra_LongLongSerialDenseVector& rows,
+			   const Epetra_LongLongSerialDenseVector& cols,
+			   const Epetra_SerialDenseMatrix& values,
+			   int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
 
    /** Insert a square structurally-symmetric sub-matrix into the global matrix.
        For non-square sub-matrices, see the other overloading of this method.
@@ -457,6 +513,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
        @param format Optional format specifier, defaults to COLUMN_MAJOR.
    */
    int InsertGlobalValues(const Epetra_IntSerialDenseVector& indices,
+			   const Epetra_SerialDenseMatrix& values,
+			   int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
+   int InsertGlobalValues(const Epetra_LongLongSerialDenseVector& indices,
 			   const Epetra_SerialDenseMatrix& values,
 			   int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
 
@@ -478,6 +537,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
 			   const Epetra_IntSerialDenseVector& cols,
 			   const Epetra_SerialDenseMatrix& values,
 			   int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
+   int InsertGlobalValues(const Epetra_LongLongSerialDenseVector& rows,
+			   const Epetra_LongLongSerialDenseVector& cols,
+			   const Epetra_SerialDenseMatrix& values,
+			   int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
 
    /** Use a square structurally-symmetric sub-matrix to replace existing
        values in the global matrix.
@@ -491,6 +554,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
        @param format Optional format specifier, defaults to COLUMN_MAJOR.
    */
    int ReplaceGlobalValues(const Epetra_IntSerialDenseVector& indices,
+			   const Epetra_SerialDenseMatrix& values,
+			   int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
+   int ReplaceGlobalValues(const Epetra_LongLongSerialDenseVector& indices,
 			   const Epetra_SerialDenseMatrix& values,
 			   int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
 
@@ -510,6 +576,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
    */
    int ReplaceGlobalValues(const Epetra_IntSerialDenseVector& rows,
 			   const Epetra_IntSerialDenseVector& cols,
+			   const Epetra_SerialDenseMatrix& values,
+			   int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
+   int ReplaceGlobalValues(const Epetra_LongLongSerialDenseVector& rows,
+			   const Epetra_LongLongSerialDenseVector& cols,
 			   const Epetra_SerialDenseMatrix& values,
 			   int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
 
@@ -581,33 +651,38 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
 
    enum {SUMINTO = 0, REPLACE = 1, INSERT = 2};
 
-   int InputGlobalValues(int numRows, const int* rows,
-                         int numCols, const int* cols,
+   template<typename int_type>
+   int InputGlobalValues(int numRows, const int_type* rows,
+                         int numCols, const int_type* cols,
                          const double* const* values,
                          int format,
                          int mode);
 
-   int InputGlobalValues(int numRows, const int* rows,
-                         int numCols, const int* cols,
+   template<typename int_type>
+   int InputGlobalValues(int numRows, const int_type* rows,
+                         int numCols, const int_type* cols,
                          const double* values,
                          int format,
                          int mode);
 
-   int InputNonlocalGlobalValues(int row,
-				 int numCols, const int* cols,
+   template<typename int_type>
+   int InputNonlocalGlobalValues(int_type row,
+				 int numCols, const int_type* cols,
 				 const double* values,
 				 int mode);
 
+  template<typename int_type>
   int InputGlobalValues_RowMajor(
-            int numRows, const int* rows,
-					  int numCols, const int* cols,
+            int numRows, const int_type* rows,
+					  int numCols, const int_type* cols,
 					  const double* values,
 					  int mode);
 
-   int InsertNonlocalRow(int row, std::vector<int>::iterator offset);
+   int InsertNonlocalRow(int row, std::vector<int>::iterator offset); //TODO long long version?
 
+   template<typename int_type>
    int InputNonlocalValue(int rowoffset,
-			  int col, double value,
+			  int_type col, double value,
 			  int mode);
 
    long long myFirstRow_;
@@ -615,8 +690,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
 
    bool ignoreNonLocalEntries_;
 
-   std::vector<int> nonlocalRows_;
-   std::vector<std::vector<int> > nonlocalCols_;
+   std::vector<int> nonlocalRows_;//TODO long long version?
+   std::vector<std::vector<int> > nonlocalCols_;//TODO long long version?
    std::vector<std::vector<double> > nonlocalCoefs_;
 
    //IMPORTANT NOTE: The use of class-member work-data arrays is
@@ -631,6 +706,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
    Epetra_Map* sourceMap_;
    Epetra_Map* colMap_;
    Epetra_Export* exporter_;
+
+   template<typename int_type>
+   int SumIntoGlobalValues(int_type GlobalRow, int NumEntries, const double* values, const int_type* Indices);
 };//class Epetra_FECrsMatrix
 
 #endif /* EPETRA_FECRSMATRIX_H */

@@ -107,7 +107,7 @@
   //                  Epetra_Map                     //
   ///////////////////////////////////////////////////
 
-  EPETRA_OBJECT_PTR MANGLE(epetra_map_create1)(EPETRA_LONG_LONG numGlobalElements,
+  EPETRA_OBJECT_PTR MANGLE(epetra_map_create1)(EPETRA_INT numGlobalElements,
 					       EPETRA_INT indexBase,
 					       EPETRA_OBJECT_REF comm) {
     Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
@@ -115,7 +115,7 @@
     return((EPETRA_OBJECT_PTR ) map);
   }
 
-  EPETRA_OBJECT_PTR MANGLE(epetra_map_create2)(EPETRA_LONG_LONG numGlobalElements,
+  EPETRA_OBJECT_PTR MANGLE(epetra_map_create2)(EPETRA_INT numGlobalElements,
 					       EPETRA_INT numMyElements,
 					       EPETRA_INT indexBase,
 					       EPETRA_OBJECT_REF comm) {
@@ -125,7 +125,36 @@
     return((EPETRA_OBJECT_PTR ) map);
   }
 
-  EPETRA_OBJECT_PTR MANGLE(epetra_map_create3)(EPETRA_LONG_LONG numGlobalElements,
+  EPETRA_OBJECT_PTR MANGLE(epetra_map_create3)(EPETRA_INT numGlobalElements,
+					       EPETRA_INT numLocalElements,
+					       int *updateList, 
+					       EPETRA_INT indexBase,
+					       EPETRA_OBJECT_REF comm) {
+    Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
+    Epetra_Map *map = new Epetra_Map(EPETRA_DEREF(numGlobalElements), EPETRA_DEREF(numLocalElements),
+				     updateList, EPETRA_DEREF(indexBase), comm_);
+    return((EPETRA_OBJECT_PTR ) map);
+  }
+
+  EPETRA_OBJECT_PTR MANGLE(epetra_map_create1_LL)(EPETRA_LONG_LONG numGlobalElements,
+					       EPETRA_INT indexBase,
+					       EPETRA_OBJECT_REF comm) {
+    Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
+    Epetra_Map *map = new Epetra_Map(EPETRA_DEREF(numGlobalElements), EPETRA_DEREF(indexBase), comm_);
+    return((EPETRA_OBJECT_PTR ) map);
+  }
+
+  EPETRA_OBJECT_PTR MANGLE(epetra_map_create2_LL)(EPETRA_LONG_LONG numGlobalElements,
+					       EPETRA_INT numMyElements,
+					       EPETRA_INT indexBase,
+					       EPETRA_OBJECT_REF comm) {
+    Epetra_Comm& comm_ = *(Epetra_Comm *) comm;
+    Epetra_Map *map = new Epetra_Map(EPETRA_DEREF(numGlobalElements), EPETRA_DEREF(numMyElements), 
+				     EPETRA_DEREF(indexBase), comm_);
+    return((EPETRA_OBJECT_PTR ) map);
+  }
+
+  EPETRA_OBJECT_PTR MANGLE(epetra_map_create3_LL)(EPETRA_LONG_LONG numGlobalElements,
 					       EPETRA_INT numLocalElements,
 					       long long *updateList, 
 					       EPETRA_INT indexBase,
@@ -151,7 +180,7 @@
     return(map_->MyGlobalElements());
   }
 #endif
-  long long * MANGLE(epetra_map_myglobalelements_ll)(EPETRA_OBJECT_REF map) {
+  long long * MANGLE(epetra_map_myglobalelements_LL)(EPETRA_OBJECT_REF map) {
     Epetra_Map * map_ = (Epetra_Map *) map;
     return(map_->MyGlobalElements_LL());
   }

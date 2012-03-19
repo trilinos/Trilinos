@@ -54,8 +54,6 @@
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_OffsetIndex.h"
 
-  // TODO this file needs to be changed for long long
-
 //-------------------------------------------------------------------------------
 Epetra_FECrsGraph::Epetra_FECrsGraph(Epetra_DataAccess CV,
 				     const Epetra_BlockMap& rowMap,
@@ -139,11 +137,10 @@ void Epetra_FECrsGraph::DeleteMemory()
   // destructor
 }
 
-#if 0 == 1234 // These sections have to be fixed.
-
 //----------------------------------------------------------------------------
-int Epetra_FECrsGraph::InsertGlobalIndices(int numRows, const int* rows,
-					   int numCols, const int* cols)
+template<typename int_type>
+int Epetra_FECrsGraph::InsertGlobalIndices(int numRows, const int_type* rows,
+					   int numCols, const int_type* cols)
 {
   int returncode = 0;
   int err = 0;
@@ -155,10 +152,10 @@ int Epetra_FECrsGraph::InsertGlobalIndices(int numRows, const int* rows,
     if (LID > -1) {
       thisgraph->SetIndicesAreGlobal(true);
       err = thisgraph->InsertIndicesIntoSorted(LID, numCols,
-          const_cast<int*>(cols));
+          const_cast<int_type*>(cols));
     }
     else {
-      nonlocalRowData_[rows[i]].AddEntries(numCols,cols);
+       nonlocalRowData<int_type>()[rows[i]].AddEntries(numCols,cols);
     }
 
     if (err < 0) return (err);
@@ -166,6 +163,22 @@ int Epetra_FECrsGraph::InsertGlobalIndices(int numRows, const int* rows,
   }
 
   return(returncode);
+}
+
+int Epetra_FECrsGraph::InsertGlobalIndices(int numRows, const int* rows, int numCols, const int* cols)
+{
+  if(RowMap().GlobalIndicesInt())
+	return InsertGlobalIndices<int>(numRows, rows, numCols, cols);
+  else
+	throw ReportError("Epetra_FECrsGraph::InsertGlobalIndices int version called for a matrix that is not int.", -1);
+}
+
+int Epetra_FECrsGraph::InsertGlobalIndices(int numRows, const long long* rows, int numCols, const long long* cols)
+{
+  if(RowMap().GlobalIndicesLongLong())
+	return InsertGlobalIndices<long long>(numRows, rows, numCols, cols);
+  else
+	throw ReportError("Epetra_FECrsGraph::InsertGlobalIndices long long version called for a matrix that is not long long.", -1);
 }
 
 //----------------------------------------------------------------------------
@@ -177,6 +190,7 @@ int Epetra_FECrsGraph::GlobalAssemble(bool callFillComplete)
 }
 
 //----------------------------------------------------------------------------
+template<typename int_type>
 int Epetra_FECrsGraph::GlobalAssemble(const Epetra_Map& domain_map,
                                       const Epetra_Map& range_map,
                                       bool callFillComplete)
@@ -197,14 +211,16 @@ int Epetra_FECrsGraph::GlobalAssemble(const Epetra_Map& domain_map,
   // We'll use the arbitrary distribution constructor of Map.
   // Start by extracting the column numbers from the STL map.
 
-  const int numRows = nonlocalRowData_.size();
-  int * presentRowIndices = new int[numRows];
-  std::map<int,Epetra_CrsGraphData::EntriesInOneRow>::iterator nonlocalRows 
-    = nonlocalRowData_.begin();
-  for (int i=0 ; nonlocalRows != nonlocalRowData_.end(); ++nonlocalRows, ++i)
-    presentRowIndices[i] = nonlocalRows->first;
+  std::map<int_type,Epetra_CrsGraphData::EntriesInOneRow<int_type> >& nonlocalRowData_var = nonlocalRowData<int_type>();
 
-  Epetra_Map* sourceMap = new Epetra_Map(-1, nonlocalRowData_.size(),
+  const int numRows = (int) nonlocalRowData_var.size();
+  int * presentRowIndices = new int[numRows];
+  std::map<int_type,Epetra_CrsGraphData::EntriesInOneRow<int_type> >::iterator nonlocalRows 
+    = nonlocalRowData<int_type>().begin();
+  for (int i=0 ; nonlocalRows != nonlocalRowData_var.end(); ++nonlocalRows, ++i)
+    presentRowIndices[i] = (int) nonlocalRows->first;
+
+  Epetra_Map* sourceMap = new Epetra_Map((int_type) -1, (int) nonlocalRowData<int_type>().size(),
           presentRowIndices,
                                          Map().IndexBase(), Map().Comm());
 
@@ -223,13 +239,13 @@ int Epetra_FECrsGraph::GlobalAssemble(const Epetra_Map& domain_map,
   //nonlocal data. To do that, create a list of all column-indices that
   //occur in our nonlocal rows. This is most easily done using the
   //EntriesInOneRow struct, since that is sorted.
-  Epetra_CrsGraphData::EntriesInOneRow allColumns;
-  for (nonlocalRows = nonlocalRowData_.begin(); 
-       nonlocalRows != nonlocalRowData_.end(); ++nonlocalRows)
-    allColumns.AddEntries(nonlocalRows->second.entries_.size(),
+  Epetra_CrsGraphData::EntriesInOneRow<int_type> allColumns;
+  for (nonlocalRows = nonlocalRowData_var.begin(); 
+       nonlocalRows != nonlocalRowData_var.end(); ++nonlocalRows)
+    allColumns.AddEntries((int) nonlocalRows->second.entries_.size(),
        &nonlocalRows->second.entries_[0]);
 
-  Epetra_Map* colMap = new Epetra_Map(-1, allColumns.entries_.size(),
+  Epetra_Map* colMap = new Epetra_Map((int_type) -1, (int) allColumns.entries_.size(),
              &allColumns.entries_[0],
                                       Map().IndexBase(), Map().Comm());
 
@@ -239,9 +255,9 @@ int Epetra_FECrsGraph::GlobalAssemble(const Epetra_Map& domain_map,
   int * rowLengths = new int[numRows];
   {
     int i = 0;
-    for (nonlocalRows = nonlocalRowData_.begin(); 
-  nonlocalRows != nonlocalRowData_.end() ; ++nonlocalRows, ++i)
-      rowLengths[i] = nonlocalRows->second.entries_.size();
+    for (nonlocalRows = nonlocalRowData_var.begin(); 
+  nonlocalRows != nonlocalRowData_var.end() ; ++nonlocalRows, ++i)
+      rowLengths[i] = (int) nonlocalRows->second.entries_.size();
   }
 
   Epetra_CrsGraph* tempGrph = NULL;
@@ -258,10 +274,10 @@ int Epetra_FECrsGraph::GlobalAssemble(const Epetra_Map& domain_map,
 
   tempGrph->SetIndicesAreGlobal(true);
 
-  for (nonlocalRows = nonlocalRowData_.begin(); 
-       nonlocalRows != nonlocalRowData_.end(); ++nonlocalRows)
+  for (nonlocalRows = nonlocalRowData_var.begin(); 
+       nonlocalRows != nonlocalRowData_var.end(); ++nonlocalRows)
     EPETRA_CHK_ERR( tempGrph->InsertGlobalIndices(nonlocalRows->first,
-             nonlocalRows->second.entries_.size(),
+             (int) nonlocalRows->second.entries_.size(),
              &nonlocalRows->second.entries_[0]) );
 
 
@@ -282,10 +298,10 @@ int Epetra_FECrsGraph::GlobalAssemble(const Epetra_Map& domain_map,
   }
 
   //now reset the values in our nonlocal data
-  for (nonlocalRows = nonlocalRowData_.begin(); 
-       nonlocalRows != nonlocalRowData_.end(); ++nonlocalRows)
+  for (nonlocalRows = nonlocalRowData_var.begin(); 
+       nonlocalRows != nonlocalRowData_var.end(); ++nonlocalRows)
     nonlocalRows->second.entries_.clear();
-  nonlocalRowData_.clear();
+  nonlocalRowData_var.clear();
 
   delete [] rowLengths;
   delete [] presentRowIndices;
@@ -298,4 +314,20 @@ int Epetra_FECrsGraph::GlobalAssemble(const Epetra_Map& domain_map,
   return(0);
 }
 
-#endif // 0 == 1234 // These sections have to be fixed.
+int Epetra_FECrsGraph::GlobalAssemble(const Epetra_Map& domain_map,
+                                      const Epetra_Map& range_map,
+                                      bool callFillComplete)
+{
+  if(!domain_map.GlobalIndicesMatch(range_map))
+     throw ReportError("Epetra_FECrsGraph::GlobalAssemble: cannot be called with different indices types for domainMap and rangeMap", -1);
+
+  if(!RowMap().GlobalIndicesMatch(domain_map))
+    throw ReportError("Epetra_FECrsGraph::GlobalAssemble: cannot be called with different indices types for row map and incoming rangeMap", -1);
+
+  if(RowMap().GlobalIndicesInt())
+	  return GlobalAssemble<int>(domain_map, range_map, callFillComplete);
+  else if(RowMap().GlobalIndicesLongLong())
+	  return GlobalAssemble<long long>(domain_map, range_map, callFillComplete);
+
+  throw ReportError("Epetra_FECrsGraph::GlobalAssemble: cannot determine global index type", -1);
+}

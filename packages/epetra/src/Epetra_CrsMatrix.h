@@ -573,6 +573,7 @@ or if the number of entries in this row exceed the Length parameter.
     \return Integer error code, set to 0 if successful.
   */
   int ExtractGlobalRowCopy(int GlobalRow, int Length, int& NumEntries, double* Values) const;
+  int ExtractGlobalRowCopy(long long GlobalRow, int Length, int& NumEntries, double* Values) const;
 
 	//! Returns a copy of the specified local row values in user-provided array.
 	/*! 
@@ -1225,6 +1226,9 @@ or if the number of entries in this row exceed the Length parameter.
   int InsertValues(int LocalRow, int NumEntries, double* Values, int* Indices);
   int InsertValues(int LocalRow, int NumEntries, const double* Values, const int* Indices);
 
+  int InsertValues(int LocalRow, int NumEntries, double* Values, long long* Indices);
+  int InsertValues(int LocalRow, int NumEntries, const double* Values, const long long* Indices);
+
   int InsertOffsetValues(long long GlobalRow, int NumEntries, double *Values, int *Indices);
   int InsertOffsetValues(long long GlobalRow, int NumEntries, const double *Values, const int *Indices);
   int ReplaceOffsetValues(long long GlobalRow, int NumEntries, const double *Values, const int *Indices);
@@ -1326,5 +1330,36 @@ or if the number of entries in this row exceed the Length parameter.
   int Solve1(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_Vector& x, Epetra_Vector& y) const;
   int Solve1(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
+private:
+
+	template<typename int_type>
+	int TInsertGlobalValues(int_type Row, int NumEntries, const double* values, const int_type* Indices);
+
+	template<typename int_type>
+	int TInsertGlobalValues(int_type Row, int NumEntries, double* values, int_type* Indices);
+
+	template<typename int_type>
+	int InsertValues(int Row, int NumEntries, const double* values, const int_type* Indices);
+
+	template<typename int_type>
+	int InsertValues(int Row, int NumEntries, double* values, int_type* Indices);
+
+	template<typename int_type>
+	int TReplaceGlobalValues(int_type Row, int NumEntries, const double * srcValues, const int_type *Indices);
+
+	template<typename int_type>
+	int TSumIntoGlobalValues(int_type Row, int NumEntries, const double * srcValues, const int_type *Indices);
+
+	template<typename int_type>
+	int ExtractGlobalRowCopy(int_type Row, int Length, int & NumEntries, double * values, int_type * Indices) const;
+
+	template<typename int_type>
+	int ExtractGlobalRowCopy(int_type Row, int Length, int & NumEntries, double * values) const;
+
+	template<typename int_type>
+	int ExtractGlobalRowView(int_type Row, int & NumEntries, double *& values, int_type *& Indices) const;
+
+	template<typename int_type>
+	int ExtractGlobalRowView(int_type Row, int & NumEntries, double *& values) const;
 };
 #endif /* EPETRA_CRSMATRIX_H */

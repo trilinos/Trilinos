@@ -526,7 +526,7 @@ void Epetra_BasicRowMatrix::Print(ostream& os) const {
       
       for(int i = 0; i < NumMyRows_; i++) {
 	ExtractMyRowCopy(i, MaxNumEntries(), NumEntries, Values.Values(), Indices.Values());
-	long long Row = RowMatrixRowMap().GID(i);; // Get global row number
+	long long Row = RowMatrixRowMap().GID(i); // Get global row number
 	
 	for (int j = 0; j < NumEntries ; j++) {   
 	  long long Index = RowMatrixColMap().GID(Indices[j]);

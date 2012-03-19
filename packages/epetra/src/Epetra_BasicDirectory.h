@@ -189,8 +189,15 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
   int * SizeList_;
   bool SizeIsConst_;
 
-  long long * AllMinGIDs_;
+  int * AllMinGIDs_int_;
+  long long * AllMinGIDs_LL_;
   
+  template<typename int_type>
+  const int_type * AllMinGIDs() const;
+
+  template<> const int * AllMinGIDs() const { return AllMinGIDs_int_; }
+  template<> const long long * AllMinGIDs() const { return AllMinGIDs_LL_; }
+
 	template<typename int_type>
 	int	GetDirectoryEntries( const Epetra_BlockMap& Map,
 						const int NumEntries,

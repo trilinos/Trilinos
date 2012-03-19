@@ -571,7 +571,7 @@ int Epetra_CrsSingletonFilter::ConstructRedistributeExporter(Epetra_Map * Source
 
   // Create a new map that describes how the Source MultiVector should be laid out so that it has
   // the same number of elements on each processor as the TargetMap
-  RedistributeMap = new Epetra_Map(-1, TargetNumMyElements, TargetIndices.Values(), IndexBase, Comm);
+  RedistributeMap = new Epetra_Map(-1, TargetNumMyElements, TargetIndices.Values(), IndexBase, Comm);//TODO long long
 
   // This exporter will finally redistribute the Source MultiVector to the same layout as the TargetMap
   RedistributeExporter = new Epetra_Export(*SourceMap, *RedistributeMap);

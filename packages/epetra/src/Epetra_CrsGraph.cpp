@@ -910,6 +910,12 @@ int Epetra_CrsGraph::FillComplete() {
 
 //==============================================================================
 int Epetra_CrsGraph::FillComplete(const Epetra_BlockMap& domainMap, const Epetra_BlockMap& rangeMap) {
+  if(!domainMap.GlobalIndicesMatch(rangeMap))
+     throw ReportError("Epetra_CrsGraph::FillComplete: cannot be called with different indices types for domainMap and rangeMap", -1);
+
+  if(!RowMap().GlobalIndicesMatch(domainMap))
+    throw ReportError("Epetra_CrsGraph::FillComplete: cannot be called with different indices types for row map and incoming rangeMap", -1);
+
   CrsGraphData_->DomainMap_ = domainMap;
   CrsGraphData_->RangeMap_ = rangeMap;
 
@@ -1666,6 +1672,12 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap& domainMap,
 
 // protected ===================================================================
 int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap& domainMap, const Epetra_BlockMap& rangeMap) {
+  if(!domainMap.GlobalIndicesMatch(rangeMap))
+     throw ReportError("Epetra_CrsGraph::MakeIndicesLocal: cannot be called with different indices types for domainMap and rangeMap", -1);
+
+  if(!RowMap().GlobalIndicesMatch(domainMap))
+    throw ReportError("Epetra_CrsGraph::MakeIndicesLocal: cannot be called with different indices types for row map and incoming rangeMap", -1);
+
   ComputeIndexState(); // Update index state by checking IndicesAreLocal/Global on all PEs
   if(IndicesAreLocal() && IndicesAreGlobal()) 
     EPETRA_CHK_ERR(-1); // Return error: Indices must not be both local and global
@@ -2117,6 +2129,7 @@ int Epetra_CrsGraph::CopyAndPermute(const Epetra_SrcDistObject& Source,
 }
 
 // private =====================================================================
+template<typename int_type>
 int Epetra_CrsGraph::CopyAndPermuteRowMatrix(const Epetra_RowMatrix& A,
 					     int NumSameIDs, 
 					     int NumPermuteIDs, 
@@ -2129,13 +2142,29 @@ int Epetra_CrsGraph::CopyAndPermuteRowMatrix(const Epetra_RowMatrix& A,
   int j;
   int NumIndices;
   int FromRow;
-  long long ToRow;
+  int_type ToRow;
   int maxNumIndices = A.MaxNumEntries();
-  Epetra_IntSerialDenseVector indices;
+  Epetra_IntSerialDenseVector local_indices_vec;
+  Epetra_LongLongSerialDenseVector global_indices_vec;
   Epetra_SerialDenseVector Values;
 
+  int* local_indices = 0;
+  int_type* global_indices = 0;
+
   if(maxNumIndices > 0) {
-    indices.Size(maxNumIndices);
+    local_indices_vec.Size(maxNumIndices);
+	local_indices = local_indices_vec.Values();
+
+	if(A.RowMatrixRowMap().GlobalIndicesLongLong())
+	{
+		global_indices_vec.Size(maxNumIndices);
+		global_indices = reinterpret_cast<int_type*>(global_indices_vec.Values());
+	}
+	else
+	{
+		global_indices = reinterpret_cast<int_type*>(local_indices);
+	}
+
     Values.Size(maxNumIndices); // Must extract values even though we discard them
   }
 
@@ -2144,30 +2173,47 @@ int Epetra_CrsGraph::CopyAndPermuteRowMatrix(const Epetra_RowMatrix& A,
   
   // Do copy first
   for(i = 0; i < NumSameIDs; i++) {
-    ToRow = rowMap.GID(i);
-    EPETRA_CHK_ERR(A.ExtractMyRowCopy(i, maxNumIndices, NumIndices, Values.Values(), indices.Values()));
+    ToRow = (int) rowMap.GID(i);
+    EPETRA_CHK_ERR(A.ExtractMyRowCopy(i, maxNumIndices, NumIndices, Values.Values(), local_indices));
     for(j = 0; j < NumIndices; j++) 
-      indices[j] = colMap.GID(indices[j]); // convert to GIDs
+      global_indices[j] = (int_type) colMap.GID(local_indices[j]); // convert to GIDs
     // Place into target graph.  
-    int ierr = InsertGlobalIndices(ToRow, NumIndices, indices.Values());
+    int ierr = InsertGlobalIndices(ToRow, NumIndices, global_indices);
     if(ierr < 0) EPETRA_CHK_ERR(ierr);
   }
   
   // Do local permutation next
   for(i = 0; i < NumPermuteIDs; i++) {
     FromRow = PermuteFromLIDs[i];
-    ToRow = GRID(PermuteToLIDs[i]);
-    EPETRA_CHK_ERR(A.ExtractMyRowCopy(FromRow, maxNumIndices, NumIndices, Values.Values(), indices.Values()));
+    ToRow = (int_type) GRID(PermuteToLIDs[i]);
+    EPETRA_CHK_ERR(A.ExtractMyRowCopy(FromRow, maxNumIndices, NumIndices, Values.Values(), local_indices));
     for(j = 0; j < NumIndices; j++) 
-      indices[j] = colMap.GID(indices[j]); // convert to GIDs
-    int ierr = InsertGlobalIndices(ToRow, NumIndices, indices.Values()); // Place into target graph.
+      global_indices[j] = (int_type) colMap.GID(local_indices[j]); // convert to GIDs
+    int ierr = InsertGlobalIndices(ToRow, NumIndices, global_indices); // Place into target graph.
     if(ierr < 0) EPETRA_CHK_ERR(ierr);
   }
   
   return(0);
 }
 
+int Epetra_CrsGraph::CopyAndPermuteRowMatrix(const Epetra_RowMatrix& A,
+					     int NumSameIDs, 
+					     int NumPermuteIDs, 
+					     int* PermuteToLIDs,
+					     int* PermuteFromLIDs,
+                                             const Epetra_OffsetIndex * Indexor)
+{
+	if(A.RowMatrixRowMap().GlobalIndicesInt())
+		return CopyAndPermuteRowMatrix<int>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
+
+	if(A.RowMatrixRowMap().GlobalIndicesLongLong())
+		return CopyAndPermuteRowMatrix<long long>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
+
+	throw ReportError("Epetra_CrsGraph::CopyAndPermuteRowMatrix: Unable to determine global index type of map", -1);
+}
+
 // private =====================================================================
+template<typename int_type>
 int Epetra_CrsGraph::CopyAndPermuteCrsGraph(const Epetra_CrsGraph& A,
 					    int NumSameIDs, 
 					    int NumPermuteIDs, 
@@ -2177,23 +2223,32 @@ int Epetra_CrsGraph::CopyAndPermuteCrsGraph(const Epetra_CrsGraph& A,
 {
   (void)Indexor;
   int i;
-  long long Row;
+  int_type Row;
   int NumIndices;
-  int* indices = 0;
-  long long FromRow, ToRow;
+  int_type* indices = 0;
+  int_type FromRow, ToRow;
   int maxNumIndices = A.MaxNumIndices();
-  Epetra_IntSerialDenseVector IndicesVector;
+  Epetra_IntSerialDenseVector int_IndicesVector;
+  Epetra_LongLongSerialDenseVector LL_IndicesVector;
 
   if(maxNumIndices > 0 && A.IndicesAreLocal()) {
-    IndicesVector.Size(maxNumIndices);
-    indices = IndicesVector.Values();
+	  if(A.RowMap().GlobalIndicesInt())
+	  {
+        int_IndicesVector.Size(maxNumIndices);
+        indices = reinterpret_cast<int_type*>(int_IndicesVector.Values());
+	  }
+	  else if(A.RowMap().GlobalIndicesLongLong())
+	  {
+		LL_IndicesVector.Size(maxNumIndices);
+	    indices = reinterpret_cast<int_type*>(LL_IndicesVector.Values());
+	  }
   }
-  
+
   // Do copy first
   if(NumSameIDs > 0) {
     if(A.IndicesAreLocal()) {
       for(i = 0; i < NumSameIDs; i++) {
-        Row = GRID(i);
+        Row = (int_type) GRID(i);
         EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(Row, maxNumIndices, NumIndices, indices));
         // Place into target graph.  
         int ierr = InsertGlobalIndices(Row, NumIndices, indices); 
@@ -2202,7 +2257,7 @@ int Epetra_CrsGraph::CopyAndPermuteCrsGraph(const Epetra_CrsGraph& A,
     }
     else { // A.IndiceAreGlobal()
       for(i = 0; i < NumSameIDs; i++) {
-        Row = GRID(i);
+        Row = (int_type) GRID(i);
         EPETRA_CHK_ERR(A.ExtractGlobalRowView(Row, NumIndices, indices));
         // Place into target graph.  
         int ierr = InsertGlobalIndices(Row, NumIndices, indices); 
@@ -2215,8 +2270,8 @@ int Epetra_CrsGraph::CopyAndPermuteCrsGraph(const Epetra_CrsGraph& A,
   if(NumPermuteIDs > 0) {
     if(A.IndicesAreLocal()) {
       for(i = 0; i < NumPermuteIDs; i++) {
-        FromRow = A.GRID(PermuteFromLIDs[i]);
-        ToRow = GRID(PermuteToLIDs[i]);
+        FromRow = (int_type) A.GRID(PermuteFromLIDs[i]);
+        ToRow = (int_type) GRID(PermuteToLIDs[i]);
         EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(FromRow, maxNumIndices, NumIndices, indices));
         // Place into target graph.
         int ierr = InsertGlobalIndices(ToRow, NumIndices, indices); 
@@ -2225,8 +2280,8 @@ int Epetra_CrsGraph::CopyAndPermuteCrsGraph(const Epetra_CrsGraph& A,
     }
     else { // A.IndiceAreGlobal()
       for(i = 0; i < NumPermuteIDs; i++) {
-        FromRow = A.GRID(PermuteFromLIDs[i]);
-        ToRow = GRID(PermuteToLIDs[i]);
+        FromRow = (int_type) A.GRID(PermuteFromLIDs[i]);
+        ToRow = (int_type) GRID(PermuteToLIDs[i]);
         EPETRA_CHK_ERR(A.ExtractGlobalRowView(FromRow, NumIndices, indices));
         // Place into target graph.
         int ierr = InsertGlobalIndices(ToRow, NumIndices, indices); 
@@ -2236,6 +2291,22 @@ int Epetra_CrsGraph::CopyAndPermuteCrsGraph(const Epetra_CrsGraph& A,
   }	
 	
   return(0);
+}
+
+int Epetra_CrsGraph::CopyAndPermuteCrsGraph(const Epetra_CrsGraph& A,
+					    int NumSameIDs, 
+					    int NumPermuteIDs, 
+					    int* PermuteToLIDs,
+					    int* PermuteFromLIDs,
+                                            const Epetra_OffsetIndex * Indexor)
+{
+	if(A.RowMap().GlobalIndicesInt())
+		return CopyAndPermuteCrsGraph<int>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
+
+	if(A.RowMap().GlobalIndicesLongLong())
+		return CopyAndPermuteCrsGraph<long long>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
+
+	throw ReportError("Epetra_CrsGraph::CopyAndPermuteCrsGraph: Unable to determine global index type of map", -1);
 }
 
 // private =====================================================================

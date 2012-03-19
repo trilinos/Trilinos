@@ -178,6 +178,9 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& rowMa
     CV_(CV),
     squareFillCompleteCalled_(false)
 {
+  if(!rowMap.GlobalIndicesMatch(colMap))
+    throw ReportError("Epetra_CrsMatrix::Epetra_CrsMatrix: cannot be called with different indices types for rowMap and colMap", -1);
+
   InitializeDefaults();
   Allocate();
 }
@@ -482,42 +485,81 @@ int Epetra_CrsMatrix::Scale(double ScalarConstant)
   return(0);
 }
 
-#if 0 == 1234 // These sections have to be fixed.
-
 //==========================================================================
+template<typename int_type>
+int Epetra_CrsMatrix::TInsertGlobalValues(int_type Row, int NumEntries,
+					 const double* values,
+					 const int_type* Indices)
+{
+  if(IndicesAreLocal()) 
+    EPETRA_CHK_ERR(-2); // Cannot insert global values into local graph
+  if(IndicesAreContiguous()) 
+    EPETRA_CHK_ERR(-3); // Indices cannot be individually deleted and newed
+  Graph_.SetIndicesAreGlobal(true);
+  int locRow = Graph_.LRID(Row); // Find local row number for this global row index
+
+  EPETRA_CHK_ERR( InsertValues(locRow, NumEntries, values, Indices) );
+
+  return(0);
+}
+
 int Epetra_CrsMatrix::InsertGlobalValues(int Row, int NumEntries,
 					 const double* values,
 					 const int* Indices)
 {
-  if(IndicesAreLocal()) 
-    EPETRA_CHK_ERR(-2); // Cannot insert global values into local graph
-  if(IndicesAreContiguous()) 
-    EPETRA_CHK_ERR(-3); // Indices cannot be individually deleted and newed
-  Graph_.SetIndicesAreGlobal(true);
-  Row = Graph_.LRID(Row); // Find local row number for this global row index
+  if(RowMap().GlobalIndicesInt())
+	return TInsertGlobalValues<int>(Row, NumEntries, values, Indices);
+  else
+	throw ReportError("Epetra_CrsMatrix::InsertGlobalValues int version called for a matrix that is not int.", -1);
+}
 
-  EPETRA_CHK_ERR( InsertValues(Row, NumEntries, values, Indices) );
-
-  return(0);
+int Epetra_CrsMatrix::InsertGlobalValues(long long Row, int NumEntries,
+					 const double* values,
+					 const long long* Indices)
+{
+  if(RowMap().GlobalIndicesLongLong())
+	return TInsertGlobalValues<long long>(Row, NumEntries, values, Indices);
+  else
+	throw ReportError("Epetra_CrsMatrix::InsertGlobalValues long long version called for a matrix that is not long long.", -1);
 }
 
 //==========================================================================
-int Epetra_CrsMatrix::InsertGlobalValues(int Row, int NumEntries,
+template<typename int_type>
+int Epetra_CrsMatrix::TInsertGlobalValues(int_type Row, int NumEntries,
 					 double* values,
-					 int* Indices)
+					 int_type* Indices)
 {
   if(IndicesAreLocal()) 
     EPETRA_CHK_ERR(-2); // Cannot insert global values into local graph
   if(IndicesAreContiguous()) 
     EPETRA_CHK_ERR(-3); // Indices cannot be individually deleted and newed
   Graph_.SetIndicesAreGlobal(true);
-  Row = Graph_.LRID(Row); // Find local row number for this global row index
+  int locRow = Graph_.LRID(Row); // Find local row number for this global row index
 
-  EPETRA_CHK_ERR( InsertValues(Row, NumEntries, values, Indices) );
+  EPETRA_CHK_ERR( InsertValues(locRow, NumEntries, values, Indices) );
 
   return(0);
 }
 
+int Epetra_CrsMatrix::InsertGlobalValues(int Row, int NumEntries,
+					 double* values,
+					 int* Indices)
+{
+  if(RowMap().GlobalIndicesInt())
+	return TInsertGlobalValues<int>(Row, NumEntries, values, Indices);
+  else
+	throw ReportError("Epetra_CrsMatrix::InsertGlobalValues int version called for a matrix that is not int.", -1);
+}
+
+int Epetra_CrsMatrix::InsertGlobalValues(long long Row, int NumEntries,
+					 double* values,
+					 long long* Indices)
+{
+  if(RowMap().GlobalIndicesLongLong())
+	return TInsertGlobalValues<long long>(Row, NumEntries, values, Indices);
+  else
+	throw ReportError("Epetra_CrsMatrix::InsertGlobalValues long long version called for a matrix that is not long long.", -1);
+}
 //==========================================================================
 int Epetra_CrsMatrix::InsertMyValues(int Row, int NumEntries,
 				     const double* values,
@@ -553,9 +595,10 @@ int Epetra_CrsMatrix::InsertMyValues(int Row, int NumEntries,
 }
 
 //==========================================================================
+template<typename int_type>
 int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
 				   const double* values,
-				   const int* Indices)
+				   const int_type* Indices)
 {
   if(CV_ == View){
     //cannot allow View mode with const pointers
@@ -565,15 +608,36 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
     //to avoid code duplication I am using a cheap tactic of removing the constness of
     //values and Indices. Since this is only called in copy mode the passed in variables
     //will not be modified.
-    return(InsertValues(Row, NumEntries, const_cast<double*>(values), const_cast<int*>(Indices)));
+    return(InsertValues(Row, NumEntries, const_cast<double*>(values), const_cast<int_type*>(Indices)));
   }
   return 0;
 }
 
+int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
+				   const double* values,
+				   const int* Indices)
+{
+  if(RowMap().GlobalIndicesInt())
+	return InsertValues<int>(Row, NumEntries, values, Indices);
+  else
+	throw ReportError("Epetra_CrsMatrix::InsertValues int version called for a matrix that is not int.", -1);
+}
+
+int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
+				   const double* values,
+				   const long long* Indices)
+{
+  if(RowMap().GlobalIndicesLongLong())
+	return InsertValues<long long>(Row, NumEntries, values, Indices);
+  else
+	throw ReportError("Epetra_CrsMatrix::InsertValues long long version called for a matrix that is not long long.", -1);
+}
+
 //==========================================================================
+template<typename int_type>
 int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
 				   double* values,
-				   int* Indices)
+				   int_type* Indices)
 {
   int j;
   int ierr = 0;
@@ -617,7 +681,7 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
       int loc = 0;
       if(IndicesAreLocal()) {
         for(int i = 0; i < NumEntries; ++i)
-          if(Graph_.ColMap().MyLID(Indices[i])) 
+          if(Graph_.ColMap().MyLID(static_cast<int>(Indices[i])))
             values[loc++] = tmpValues[i];
       }
       else {
@@ -673,8 +737,28 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
   return(0);
 }
 
+int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
+				   double* values,
+				   int* Indices)
+{
+  if(RowMap().GlobalIndicesInt())
+	return InsertValues<int>(Row, NumEntries, values, Indices);
+  else
+	throw ReportError("Epetra_CrsMatrix::InsertValues int version called for a matrix that is not int.", -1);
+}
+
+int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
+				   double* values,
+				   long long* Indices)
+{
+  if(RowMap().GlobalIndicesLongLong())
+	return InsertValues<long long>(Row, NumEntries, values, Indices);
+  else
+	throw ReportError("Epetra_CrsMatrix::InsertValues long long version called for a matrix that is not long long.", -1);
+}
+
 //==========================================================================
-int Epetra_CrsMatrix::InsertOffsetValues(int Row, int NumEntries,
+int Epetra_CrsMatrix::InsertOffsetValues(long long Row, int NumEntries,
 					 double* values,
 					 int* Indices)
 {
@@ -682,21 +766,22 @@ int Epetra_CrsMatrix::InsertOffsetValues(int Row, int NumEntries,
 }
 
 //==========================================================================
-int Epetra_CrsMatrix::ReplaceGlobalValues(int Row, int NumEntries, const double * srcValues, const int *Indices) {
+template<typename int_type>
+int Epetra_CrsMatrix::TReplaceGlobalValues(int_type Row, int NumEntries, const double * srcValues, const int_type *Indices) {
 
   int j;
   int ierr = 0;
   int Loc;
 
-  Row = Graph_.LRID(Row); // Normalize row range
+  int locRow = Graph_.LRID(Row); // Normalize row range
     
   if (Row < 0 || Row >= NumMyRows_) {
     EPETRA_CHK_ERR(-1); // Not in Row range
   }
-  double * targValues = Values(Row);
+  double * targValues = Values(locRow);
   for (j=0; j<NumEntries; j++) {
-    int Index = Indices[j];
-    if (Graph_.FindGlobalIndexLoc(Row,Index,j,Loc)) 
+    int_type Index = Indices[j];
+    if (Graph_.FindGlobalIndexLoc(locRow,Index,j,Loc)) 
       targValues[Loc] = srcValues[j];
     else 
       ierr = 2; // Value Excluded
@@ -708,6 +793,20 @@ int Epetra_CrsMatrix::ReplaceGlobalValues(int Row, int NumEntries, const double 
 
   EPETRA_CHK_ERR(ierr);
   return(0);
+}
+
+int Epetra_CrsMatrix::ReplaceGlobalValues(int Row, int NumEntries, const double * srcValues, const int *Indices) {
+  if(RowMap().GlobalIndicesInt())
+	return TReplaceGlobalValues<int>(Row, NumEntries, srcValues, Indices);
+  else
+	throw ReportError("Epetra_CrsMatrix::ReplaceGlobalValues int version called for a matrix that is not int.", -1);
+}
+
+int Epetra_CrsMatrix::ReplaceGlobalValues(long long Row, int NumEntries, const double * srcValues, const long long *Indices) {
+  if(RowMap().GlobalIndicesLongLong())
+	return TReplaceGlobalValues<long long>(Row, NumEntries, srcValues, Indices);
+  else
+	throw ReportError("Epetra_CrsMatrix::ReplaceGlobalValues long long version called for a matrix that is not long long.", -1);
 }
 
 //==========================================================================
@@ -742,19 +841,19 @@ int Epetra_CrsMatrix::ReplaceMyValues(int Row, int NumEntries, const double * sr
 }
 
 //==========================================================================
-int Epetra_CrsMatrix::ReplaceOffsetValues(int Row, int NumEntries,
+int Epetra_CrsMatrix::ReplaceOffsetValues(long long Row, int NumEntries,
 					  const double * srcValues, const int *Offsets)
 {
   int j;
   int ierr = 0;
 
-  Row = Graph_.LRID(Row); // Normalize row range
+  int locRow = Graph_.LRID(Row); // Normalize row range
     
-  if (Row < 0 || Row >= NumMyRows_) {
+  if (locRow < 0 || locRow >= NumMyRows_) {
     EPETRA_CHK_ERR(-1); // Not in Row range
   }
 
-  double* RowValues = Values(Row); 
+  double* RowValues = Values(locRow); 
   for(j=0; j<NumEntries; j++) {
     if( Offsets[j] != -1 )
       RowValues[Offsets[j]] = srcValues[j];
@@ -769,18 +868,19 @@ int Epetra_CrsMatrix::ReplaceOffsetValues(int Row, int NumEntries,
 }
 
 //==========================================================================
-int Epetra_CrsMatrix::SumIntoGlobalValues(int Row,
+template<typename int_type>
+int Epetra_CrsMatrix::TSumIntoGlobalValues(int_type Row,
 					  int NumEntries,
 					  const double * srcValues,
-					  const int *Indices)
+					  const int_type *Indices)
 {
   int j;
   int ierr = 0;
   int Loc = 0;
 
-  Row = Graph_.LRID(Row); // Normalize row range
+  int locRow = Graph_.LRID(Row); // Normalize row range
     
-  if (Row < 0 || Row >= NumMyRows_) {
+  if (locRow < 0 || locRow >= NumMyRows_) {
     EPETRA_CHK_ERR(-1); // Not in Row range
   }
 
@@ -788,12 +888,12 @@ int Epetra_CrsMatrix::SumIntoGlobalValues(int Row,
     EPETRA_CHK_ERR(-1);
   }
 
-  double * RowValues = Values(Row);
+  double * RowValues = Values(locRow);
 
   if (!StaticGraph()) {
     for (j=0; j<NumEntries; j++) {
-      int Index = Indices[j];
-      if (Graph_.FindGlobalIndexLoc(Row,Index,j,Loc))
+      int_type Index = Indices[j];
+      if (Graph_.FindGlobalIndexLoc(locRow,Index,j,Loc))
         RowValues[Loc] += srcValues[j];
       else
         ierr = 2; // Value Excluded
@@ -801,8 +901,8 @@ int Epetra_CrsMatrix::SumIntoGlobalValues(int Row,
   }
   else {
     const Epetra_BlockMap& colmap = Graph_.ColMap();
-    int NumColIndices = Graph_.NumMyIndices(Row);
-    const int* ColIndices = Graph_.Indices(Row);
+    int NumColIndices = Graph_.NumMyIndices(locRow);
+    const int* ColIndices = Graph_.Indices(locRow);
 
     if (Graph_.Sorted()) {
       int insertPoint;
@@ -840,6 +940,28 @@ int Epetra_CrsMatrix::SumIntoGlobalValues(int Row,
   EPETRA_CHK_ERR(ierr);
 
   return(0);
+}
+
+int Epetra_CrsMatrix::SumIntoGlobalValues(int Row,
+					  int NumEntries,
+					  const double * srcValues,
+					  const int *Indices)
+{
+  if(RowMap().GlobalIndicesInt())
+	return TSumIntoGlobalValues<int>(Row, NumEntries, srcValues, Indices);
+  else
+	throw ReportError("Epetra_CrsMatrix::SumIntoGlobalValues int version called for a matrix that is not int.", -1);
+}
+
+int Epetra_CrsMatrix::SumIntoGlobalValues(long long Row,
+					  int NumEntries,
+					  const double * srcValues,
+					  const long long *Indices)
+{
+  if(RowMap().GlobalIndicesLongLong())
+	return TSumIntoGlobalValues<long long>(Row, NumEntries, srcValues, Indices);
+  else
+	throw ReportError("Epetra_CrsMatrix::SumIntoGlobalValues long long version called for a matrix that is not long long.", -1);
 }
 
 //==========================================================================
@@ -898,18 +1020,18 @@ int Epetra_CrsMatrix::SumIntoMyValues(int Row, int NumEntries, const double * sr
 }
 
 //==========================================================================
-int Epetra_CrsMatrix::SumIntoOffsetValues(int Row, int NumEntries, const double * srcValues, const int *Offsets) {
+int Epetra_CrsMatrix::SumIntoOffsetValues(long long Row, int NumEntries, const double * srcValues, const int *Offsets) {
 
   int j;
   int ierr = 0;
 
-  Row = Graph_.LRID(Row); // Normalize row range
+  int locRow = Graph_.LRID(Row); // Normalize row range
     
-  if (Row < 0 || Row >= NumMyRows_) {
+  if (locRow < 0 || locRow >= NumMyRows_) {
     EPETRA_CHK_ERR(-1); // Not in Row range
   }
 
-  double* RowValues = Values(Row);
+  double* RowValues = Values(locRow);
   for (j=0; j<NumEntries; j++) {
     if( Offsets[j] != -1 )
       RowValues[Offsets[j]] += srcValues[j];
@@ -1163,9 +1285,11 @@ int Epetra_CrsMatrix::OptimizeStorage() {
   
   return(0);
 }
+
 //==========================================================================
-int Epetra_CrsMatrix::ExtractGlobalRowCopy(int Row, int Length, int & NumEntries, double * values,
-					   int * Indices) const 
+template<typename int_type>
+int Epetra_CrsMatrix::ExtractGlobalRowCopy(int_type Row, int Length, int & NumEntries, double * values,
+					   int_type * Indices) const 
 {
 
   int ierr = Graph_.ExtractGlobalRowCopy(Row, Length, NumEntries, Indices);
@@ -1175,6 +1299,25 @@ int Epetra_CrsMatrix::ExtractGlobalRowCopy(int Row, int Length, int & NumEntries
   EPETRA_CHK_ERR(ExtractGlobalRowCopy(Row, Length, NumEntries, values));
   return(0);
 }
+
+int Epetra_CrsMatrix::ExtractGlobalRowCopy(int Row, int Length, int & NumEntries, double * values,
+					   int * Indices) const 
+{
+  if(RowMap().GlobalIndicesInt())
+	return ExtractGlobalRowCopy<int>(Row, Length, NumEntries, values, Indices);
+  else
+	throw ReportError("Epetra_CrsMatrix::ExtractGlobalRowCopy int version called for a matrix that is not int.", -1);
+}
+
+int Epetra_CrsMatrix::ExtractGlobalRowCopy(long long Row, int Length, int & NumEntries, double * values,
+					   long long * Indices) const 
+{
+  if(RowMap().GlobalIndicesLongLong())
+	return ExtractGlobalRowCopy<long long>(Row, Length, NumEntries, values, Indices);
+  else
+	throw ReportError("Epetra_CrsMatrix::ExtractGlobalRowCopy long long version called for a matrix that is not long long.", -1);
+}
+
 //==========================================================================
 int Epetra_CrsMatrix::ExtractMyRowCopy(int Row, int Length, int & NumEntries, double * values,
 				       int * Indices) const 
@@ -1196,16 +1339,32 @@ int Epetra_CrsMatrix::NumMyRowEntries(int Row, int & NumEntries) const
   NumEntries = NumMyEntries(Row);
   return(0);
 }
-//==========================================================================
-int Epetra_CrsMatrix::ExtractGlobalRowCopy(int Row, int Length, int & NumEntries, double * values) const 
-{
 
+//==========================================================================
+template<typename int_type>
+int Epetra_CrsMatrix::ExtractGlobalRowCopy(int_type Row, int Length, int & NumEntries, double * values) const 
+{
   int Row0 = Graph_.RowMap().LID(Row); // Normalize row range
 
   EPETRA_CHK_ERR(ExtractMyRowCopy(Row0, Length, NumEntries, values));
   return(0);
 }
 
+int Epetra_CrsMatrix::ExtractGlobalRowCopy(int Row, int Length, int & NumEntries, double * values) const
+{
+  if(RowMap().GlobalIndicesInt())
+	return ExtractGlobalRowCopy<int>(Row, Length, NumEntries, values);
+  else
+	throw ReportError("Epetra_CrsMatrix::ExtractGlobalRowCopy int version called for a matrix that is not int.", -1);
+}
+
+int Epetra_CrsMatrix::ExtractGlobalRowCopy(long long Row, int Length, int & NumEntries, double * values) const
+{
+  if(RowMap().GlobalIndicesLongLong())
+	return ExtractGlobalRowCopy<long long>(Row, Length, NumEntries, values);
+  else
+	throw ReportError("Epetra_CrsMatrix::ExtractGlobalRowCopy long long version called for a matrix that is not long long.", -1);
+}
 
 //==========================================================================
 int Epetra_CrsMatrix::ExtractMyRowCopy(int Row, int Length, int & NumEntries, double * targValues) const 
@@ -1227,7 +1386,6 @@ int Epetra_CrsMatrix::ExtractMyRowCopy(int Row, int Length, int & NumEntries, do
   return(0);
 }
 
-
 //==============================================================================
 int Epetra_CrsMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const {
 	
@@ -1237,7 +1395,7 @@ int Epetra_CrsMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const {
     EPETRA_CHK_ERR(-2); // Maps must be the same
 
   for(int i = 0; i < NumMyRows_; i++) {
-    int ii = GRID(i);
+    long long ii = GRID(i);
     int NumEntries = Graph().NumMyIndices(i);
     int* Indices = Graph().Indices(i);
     double * srcValues = Values(i);
@@ -1262,7 +1420,7 @@ int Epetra_CrsMatrix::ReplaceDiagonalValues(const Epetra_Vector & Diagonal) {
 
   int ierr = 0;
   for(int i = 0; i < NumMyRows_; i++) {
-    int ii = GRID(i);
+    long long ii = GRID(i);
     int NumEntries = Graph().NumMyIndices(i);
     int* Indices = Graph().Indices(i);
     double * targValues = Values(i);
@@ -1286,10 +1444,11 @@ int Epetra_CrsMatrix::ReplaceDiagonalValues(const Epetra_Vector & Diagonal) {
 
   return(0);
 }
-//==========================================================================
-int Epetra_CrsMatrix::ExtractGlobalRowView(int Row, int & NumEntries, double *& values, int *& Indices) const 
-{
 
+//==========================================================================
+template<typename int_type>
+int Epetra_CrsMatrix::ExtractGlobalRowView(int_type Row, int & NumEntries, double *& values, int_type *& Indices) const 
+{
   int ierr = Graph_.ExtractGlobalRowView(Row, NumEntries, Indices);
   if (ierr) 
     EPETRA_CHK_ERR(ierr);
@@ -1297,6 +1456,23 @@ int Epetra_CrsMatrix::ExtractGlobalRowView(int Row, int & NumEntries, double *& 
   EPETRA_CHK_ERR(ExtractGlobalRowView(Row, NumEntries, values));
   return(0);
 }
+
+int Epetra_CrsMatrix::ExtractGlobalRowView(int Row, int & NumEntries, double *& values, int *& Indices) const 
+{
+  if(RowMap().GlobalIndicesInt())
+	return ExtractGlobalRowView<int>(Row, NumEntries, values, Indices);
+  else
+	throw ReportError("Epetra_CrsMatrix::ExtractGlobalRowView int version called for a matrix that is not int.", -1);
+}
+
+int Epetra_CrsMatrix::ExtractGlobalRowView(long long Row, int & NumEntries, double *& values, long long *& Indices) const 
+{
+  if(RowMap().GlobalIndicesLongLong())
+	return ExtractGlobalRowView<long long>(Row, NumEntries, values, Indices);
+  else
+	throw ReportError("Epetra_CrsMatrix::ExtractGlobalRowView long long version called for a matrix that is not long long.", -1);
+}
+
 //==========================================================================
 int Epetra_CrsMatrix::ExtractMyRowView(int Row, int & NumEntries, double *& values, int *& Indices) const 
 {
@@ -1308,19 +1484,34 @@ int Epetra_CrsMatrix::ExtractMyRowView(int Row, int & NumEntries, double *& valu
   return(0);
 }
 //==========================================================================
-int Epetra_CrsMatrix::ExtractGlobalRowView(int Row, int & NumEntries, double *& values) const 
+template<typename int_type>
+int Epetra_CrsMatrix::ExtractGlobalRowView(int_type Row, int & NumEntries, double *& values) const 
 {
-
   int Row0 = Graph_.RowMap().LID(Row); // Normalize row range
 
   EPETRA_CHK_ERR(ExtractMyRowView(Row0, NumEntries, values));
   return(0);
 }
 
+int Epetra_CrsMatrix::ExtractGlobalRowView(int Row, int & NumEntries, double *& values) const 
+{
+  if(RowMap().GlobalIndicesInt())
+	return ExtractGlobalRowView<int>(Row, NumEntries, values);
+  else
+	throw ReportError("Epetra_CrsMatrix::ExtractGlobalRowView int version called for a matrix that is not int.", -1);
+}
+
+int Epetra_CrsMatrix::ExtractGlobalRowView(long long Row, int & NumEntries, double *& values) const 
+{
+  if(RowMap().GlobalIndicesLongLong())
+	return ExtractGlobalRowView<long long>(Row, NumEntries, values);
+  else
+	throw ReportError("Epetra_CrsMatrix::ExtractGlobalRowView long long version called for a matrix that is not long long.", -1);
+}
+
 //==========================================================================
 int Epetra_CrsMatrix::ExtractMyRowView(int Row, int & NumEntries, double *& targValues) const 
 {
-
   if (Row < 0 || Row >= NumMyRows_) 
     EPETRA_CHK_ERR(-1); // Not in Row range
 
@@ -1864,6 +2055,7 @@ int Epetra_CrsMatrix::CheckSizes(const Epetra_SrcDistObject & Source) {
   }
   return(0);
 }
+
 //=========================================================================
 int Epetra_CrsMatrix::CopyAndPermute(const Epetra_SrcDistObject & Source,
 				     int NumSameIDs, 
@@ -1899,6 +2091,8 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
 					      int *PermuteFromLIDs,
                                               const Epetra_OffsetIndex * Indexor) {
   
+// TODO change for long long
+
   int i, ierr;
   
   int Row, NumEntries;
@@ -2096,6 +2290,7 @@ int Epetra_CrsMatrix::CopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
 					      int *PermuteFromLIDs,
                                               const Epetra_OffsetIndex * Indexor ) {
   
+// TODO change for long long
   int i, j, ierr;
   
   int Row, NumEntries;
@@ -2225,6 +2420,7 @@ int Epetra_CrsMatrix::PackAndPrepare(const Epetra_SrcDistObject & Source,
                                      bool & VarSizes,
                                      Epetra_Distributor & Distor)
 {
+// TODO change for long long
   (void)Distor;	
   // Rest of work can be done using RowMatrix only  
   const Epetra_RowMatrix & A = dynamic_cast<const Epetra_RowMatrix &>(Source);
@@ -2316,6 +2512,7 @@ int Epetra_CrsMatrix::UnpackAndCombine(const Epetra_SrcDistObject & Source,
 				       Epetra_CombineMode CombineMode,
                                        const Epetra_OffsetIndex * Indexor )
 {
+// TODO change for long long
   (void)Source;
   (void)LenImports;
   (void)SizeOfPacket;
@@ -2445,7 +2642,7 @@ void Epetra_CrsMatrix::Print(ostream& os) const {
     if (MyPID==iproc) {
       int NumMyRows1 = NumMyRows();
       int MaxNumIndices = MaxNumEntries();
-      int * Indices  = new int[MaxNumIndices];
+      int * Indices  = new int[MaxNumIndices]; //TODO long long
       double * values  = new double[MaxNumIndices];
       int NumIndices;
       int i, j;
@@ -2463,7 +2660,7 @@ void Epetra_CrsMatrix::Print(ostream& os) const {
       }
       for (i=0; i<NumMyRows1; i++) {
 	int Row = GRID(i); // Get global row number
-	ExtractGlobalRowCopy(Row, MaxNumIndices, NumIndices, values, Indices);
+	ExtractGlobalRowCopy(Row, MaxNumIndices, NumIndices, values, Indices);//TODO long long
 				
 	for (j = 0; j < NumIndices ; j++) {   
 	  os.width(8);
@@ -3988,4 +4185,3 @@ int Epetra_CrsMatrix::Solve1(bool Upper, bool Trans, bool UnitDiagonal, const Ep
   return(0);
 }
 
-#endif // 0 == 1234 // These sections have to be fixed.

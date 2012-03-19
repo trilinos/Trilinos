@@ -236,7 +236,7 @@ Epetra_Map * Epetra_MapColoring::GenerateMap(int Color) const {
     ColorElementGIDs = new int[NumElements];
     for (int i=0; i<NumElements; i++) ColorElementGIDs[i] = Map().GID(ColorElementLIDs[i]);
   }
-  Epetra_Map * map = new Epetra_Map(-1, NumElements, ColorElementGIDs, 
+  Epetra_Map * map = new Epetra_Map(-1, NumElements, ColorElementGIDs, //TODO long long
 				    Map().IndexBase(), Map().Comm());
   if (ColorElementGIDs!=0) delete [] ColorElementGIDs;
   return(map);

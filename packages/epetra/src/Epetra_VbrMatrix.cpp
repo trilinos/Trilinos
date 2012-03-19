@@ -3202,7 +3202,7 @@ int Epetra_VbrMatrix::BlockMap2PointMap(const Epetra_BlockMap & BlockMap,
   }
   assert(curID==PtNumMyElements); // Sanity test
 
-  PointMap = new Epetra_Map(-1, PtNumMyElements, PtMyGlobalElements, BlockMap.IndexBase(), BlockMap.Comm());
+  PointMap = new Epetra_Map(-1, PtNumMyElements, PtMyGlobalElements, BlockMap.IndexBase(), BlockMap.Comm());//TODO long long
 
   if (PtNumMyElements>0) delete [] PtMyGlobalElements;
 
