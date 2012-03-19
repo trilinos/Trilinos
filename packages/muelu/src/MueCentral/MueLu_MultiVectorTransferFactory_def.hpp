@@ -103,10 +103,10 @@ namespace MueLu {
     RCP<Operator> transferOp = coarseLevel.Get<RCP<Operator> >(restrictionName_,restrictionFact_.get());
     */
 
-    RCP<MultiVector> result = MultiVectorFactory::Build(transferOp->getRangeMap(),1);
+    RCP<MultiVector> result = MultiVectorFactory::Build(transferOp->getRangeMap(),vector->getNumVectors());
     GetOStream(Runtime0,0) << "Transferring multivector \"" << vectorName_ << "\"" << std::endl;
-    //FIXME DEBUGGING INFO
     /*
+    //FIXME DEBUGGING INFO
     if (vectorName_ == "Coordinates") {
       RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
       fos->setOutputToRootOnly(-1);

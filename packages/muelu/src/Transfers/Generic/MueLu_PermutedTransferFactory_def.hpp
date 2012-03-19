@@ -110,7 +110,7 @@ namespace MueLu {
               GetOStream(Runtime0, 0) <<  "Permuting coordinates." << std::endl;
               //RCP<MultiVector> coords  = coarseLevel.Get< RCP<MultiVector> >("Coordinates",coordinateFact_.get()); //FIXME JJH
               RCP<MultiVector> coords  = coarseLevel.Get< RCP<MultiVector> >("Coordinates"); //FIXME JJH
-              RCP<MultiVector> permutedCoords  = MultiVectorFactory::Build(permMatrix->getRangeMap(),1);
+              RCP<MultiVector> permutedCoords  = MultiVectorFactory::Build(permMatrix->getRangeMap(),coords->getNumVectors());
               permMatrix->apply(*coords,*permutedCoords,Teuchos::NO_TRANS,1,0);
               coarseLevel.Set< RCP<MultiVector> >("Coordinates",permutedCoords); //FIXME JJH no generating factory specified
             }
