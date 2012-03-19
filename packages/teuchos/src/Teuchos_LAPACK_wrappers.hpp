@@ -116,6 +116,7 @@
 
 #define ZGEQRF_F77  F77_BLAS_MANGLE(cgeqrf,CGEQRF)
 #define ZUNGQR_F77  F77_BLAS_MANGLE(cungqr,CUNGQR)
+#define ZUNMQR_F77  F77_BLAS_MANGLE(cunmqr,CUNMQR)
 #define ZGETRF_F77  F77_BLAS_MANGLE(cgetrf,CGETRF)
 #define ZGETRS_F77  F77_BLAS_MANGLE(cgetrs,CGETRS)
 #define ZGTTRF_F77  F77_BLAS_MANGLE(cgttrf,CGTTRF)
@@ -225,6 +226,7 @@
 
 #define ZGEQRF_F77  F77_BLAS_MANGLE(zgeqrf,ZGEQRF)
 #define ZUNGQR_F77  F77_BLAS_MANGLE(zungqr,ZUNGQR)
+#define ZUNMQR_F77  F77_BLAS_MANGLE(zunmqr,ZUNMQR)
 #define ZGETRF_F77  F77_BLAS_MANGLE(zgetrf,ZGETRF)
 #define ZGETRS_F77  F77_BLAS_MANGLE(zgetrs,ZGETRS)
 #define ZGTTRF_F77  F77_BLAS_MANGLE(zgttrf,ZGTTRF)
@@ -334,6 +336,7 @@
 
 #define ZGEQRF_F77  F77_BLAS_MANGLE(zgeqrf,ZGEQRF)
 #define ZUNGQR_F77  F77_BLAS_MANGLE(zungqr,ZUNGQR)
+#define ZUNMQR_F77  F77_BLAS_MANGLE(zunmqr,ZUNMQR)
 #define ZGTTRF_F77  F77_BLAS_MANGLE(zgttrf,ZGTTRF)
 #define ZGTTRS_F77  F77_BLAS_MANGLE(zgttrs,ZGTTRS)
 #define ZPTTRF_F77  F77_BLAS_MANGLE(zpttrf,ZPTTRF)
@@ -482,6 +485,7 @@
 
 #define ZGEQRF_F77  F77_BLAS_MANGLE(zgeqrf,ZGEQRF)
 #define ZUNGQR_F77  F77_BLAS_MANGLE(zungqr,ZUNGQR)
+#define ZUNMQR_F77  F77_BLAS_MANGLE(zunmqr,ZUNMQR)
 #define ZGETRF_F77  F77_BLAS_MANGLE(zgetrf,ZGETRF)
 #define ZGETRS_F77  F77_BLAS_MANGLE(zgetrs,ZGETRS)
 #define ZGTTRF_F77  F77_BLAS_MANGLE(zgttrf,ZGTTRF)
@@ -589,6 +593,7 @@
 
 #define CGEQRF_F77  F77_BLAS_MANGLE(cgeqrf,CGEQRF)
 #define CUNGQR_F77  F77_BLAS_MANGLE(cungqr,CUNGQR)
+#define CUNMQR_F77  F77_BLAS_MANGLE(cunmqr,CUNMQR)
 #define CGETRF_F77  F77_BLAS_MANGLE(cgetrf,CGETRF)
 #define CGETRS_F77  F77_BLAS_MANGLE(cgetrs,CGETRS)
 #define CGTTRF_F77  F77_BLAS_MANGLE(cgttrf,CGTTRF)
@@ -780,6 +785,7 @@ void PREFIX ZGELS_F77(Teuchos_fcd ch, const int* m, const int* n, const int* nrh
 void PREFIX ZGELSS_F77(const int* m, const int* n, const int* nrhs, std::complex<double>* a, const int* lda, std::complex<double>* b, const int* ldb, double* s, const double* rcond, int* rank, std::complex<double>* work, const int* lwork, double* rwork, int* info);
 void PREFIX ZGEQRF_F77(const int* m, const int* n, std::complex<double>* a, const int* lda, std::complex<double>* tau, std::complex<double>* work, const int* lwork, int* info);
 void PREFIX ZUNGQR_F77(const int* m, const int* n, const int* k, std::complex<double>* a, const int* lda, const std::complex<double>* tau, std::complex<double>* work, const int* lwork, int* info);
+void PREFIX ZUNMQR_F77(Teuchos_fcd SIDE, Teuchos_fcd TRANS, const int* m, const int* n, const int* k, std::complex<double>* A, const int* lda, const std::complex<double>* tau, std::complex<double>* C, const int* ldc, std::complex<double>* work, const int* lwork, int* info);
 void PREFIX ZGETRF_F77(const int* m, const int* n, std::complex<double>* a, const int* lda, int* ipiv, int* info); 
 void PREFIX ZGETRS_F77(Teuchos_fcd, const int* n, const int* nrhs, const std::complex<double>* a, const int* lda,const int* ipiv, std::complex<double>* x , const int* ldx, int* info);
 void PREFIX ZGTTRF_F77(const int* n, std::complex<double>* dl, std::complex<double>* d, std::complex<double>* du, std::complex<double>* du2, int* ipiv, int* info); 
@@ -810,6 +816,7 @@ void PREFIX CGELS_F77(Teuchos_fcd ch, const int* m, const int* n, const int* nrh
 void PREFIX CGELSS_F77(const int* m, const int* n, const int* nrhs, std::complex<float>* a, const int* lda, std::complex<float>* b, const int* ldb, float* s, const float* rcond, int* rank, std::complex<float>* work, const int* lwork, float* rwork, int* info);
 void PREFIX CGEQRF_F77(const int* m, const int* n, std::complex<float>* a, const int* lda, std::complex<float>* tau, std::complex<float>* work, const int* lwork, int* info);
 void PREFIX CUNGQR_F77(const int* m, const int* n, const int* k, std::complex<float>* a, const int* lda, const std::complex<float>* tau, std::complex<float>* work, const int* lwork, int* info);
+void PREFIX CUNMQR_F77(Teuchos_fcd SIDE, Teuchos_fcd TRANS, const int* m, const int* n, const int* k, std::complex<float>* A, const int* lda, const std::complex<float>* tau, std::complex<float>* C, const int* ldc, std::complex<float>* work, const int* lwork, int* info);
 void PREFIX CGETRF_F77(const int* m, const int* n, std::complex<float>* a, const int* lda, int* ipiv, int* info);
 void PREFIX CGETRS_F77(Teuchos_fcd, const int* n, const int* nrhs, const std::complex<float>* a, const int* lda,const int* ipiv, std::complex<float>* x , const int* ldx, int* info);
 void PREFIX CGTTRF_F77(const int* n, std::complex<float>* dl, std::complex<float>* d, std::complex<float>* du, std::complex<float>* du2, int* ipiv, int* info); 

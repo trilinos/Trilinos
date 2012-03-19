@@ -276,6 +276,13 @@ namespace Teuchos
   void LAPACK<int, float>::ORMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, float* A, const int lda, const float* TAU, float* C, const int ldc, float* WORK, const int lwork, int* info) const
   { SORMQR_F77(CHAR_MACRO(SIDE), CHAR_MACRO(TRANS), &m, &n, &k, A, &lda, TAU, C, &ldc, WORK, &lwork, info); }
 
+  void LAPACK<int, float>::UNMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, float* A, const int lda, const float* TAU, float* C, const int ldc, float* WORK, const int lwork, int* info) const
+  {
+    // LAPACK only defines UNMQR for Z and C (complex*8
+    // resp. complex*16), but logically, UNMQR means the same thing as
+    // ORMQR for real arithmetic.
+    ORMQR (SIDE, TRANS, m, n, k, A, lda, TAU, C, ldc, WORK, lwork, info);
+  }
   
   void LAPACK<int, float>::ORGQR(const int m, const int n, const int k, float* A, const int lda, const float* TAU, float* WORK, const int lwork, int* info) const
   { SORGQR_F77( &m, &n, &k, A, &lda, TAU, WORK, &lwork, info); }
@@ -605,6 +612,13 @@ namespace Teuchos
     DORMQR_F77(CHAR_MACRO(SIDE), CHAR_MACRO(TRANS), &m, &n, &k, A, &lda, TAU, C, &ldc, WORK, &lwork, info);
   }
 
+  void LAPACK<int, double>::UNMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, double* A, const int lda, const double* TAU, double* C, const int ldc, double* WORK, const int lwork, int* info) const
+  {
+    // LAPACK only defines UNMQR for Z and C (complex*8
+    // resp. complex*16), but logically, UNMQR means the same thing as
+    // ORMQR for real arithmetic.
+    ORMQR (SIDE, TRANS, m, n, k, A, lda, TAU, C, ldc, WORK, lwork, info);
+  }
   
   void LAPACK<int, double>::ORGQR(const int m, const int n, const int k, double* A, const int lda, const double* TAU, double* WORK, const int lwork, int* info) const
   {
@@ -803,6 +817,12 @@ namespace Teuchos
   void LAPACK<int,std::complex<float> >::UNGQR(const int m, const int n, const int k, std::complex<float>* A, const int lda, const std::complex<float>* TAU, std::complex<float>* WORK, const int lwork, int* info) const
   {
     CUNGQR_F77( &m, &n, &k, A, &lda, TAU, WORK, &lwork, info);
+  }
+
+
+  void LAPACK<int,std::complex<float> >::UNMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, std::complex<float>* A, const int lda, const std::complex<float>* TAU, std::complex<float>* C, const int ldc, std::complex<float>* WORK, const int lwork, int* info) const
+  {
+    CUNMQR_F77(CHAR_MACRO(SIDE), CHAR_MACRO(TRANS), &m, &n, &k, A, &lda, TAU, C, &ldc, WORK, &lwork, info);
   }
   
   
@@ -1132,6 +1152,12 @@ namespace Teuchos
   void LAPACK<int,std::complex<double> >::UNGQR(const int m, const int n, const int k, std::complex<double>* A, const int lda, const std::complex<double>* TAU, std::complex<double>* WORK, const int lwork, int* info) const
   {
     ZUNGQR_F77( &m, &n, &k, A, &lda, TAU, WORK, &lwork, info);
+  }
+
+
+  void LAPACK<int,std::complex<double> >::UNMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, std::complex<double>* A, const int lda, const std::complex<double>* TAU, std::complex<double>* C, const int ldc, std::complex<double>* WORK, const int lwork, int* info) const
+  {
+    ZUNMQR_F77(CHAR_MACRO(SIDE), CHAR_MACRO(TRANS), &m, &n, &k, A, &lda, TAU, C, &ldc, WORK, &lwork, info);
   }
   
   
