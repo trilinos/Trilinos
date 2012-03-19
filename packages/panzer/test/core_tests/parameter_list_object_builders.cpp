@@ -12,9 +12,7 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(object_builders, input_physics_block)
   {
     Teuchos::ParameterList p("Test");
-    p.set("Physics Blocks", "fluid,solid");
     Teuchos::ParameterList& fluid = p.sublist("fluid");
-    fluid.set("Number of Equation Sets", 2);
     Teuchos::ParameterList& fluid_eqs0 = fluid.sublist("EQ 0");
     fluid_eqs0.set("Name", "Continuity");
     fluid_eqs0.set("Basis", "Q1");
@@ -31,7 +29,6 @@ namespace panzer {
     fluid_eqs1.sublist("Options").set("Tau_M", "Codina");
     
     Teuchos::ParameterList& solid = p.sublist("solid");
-    solid.set("Number of Equation Sets", 1);
     Teuchos::ParameterList& solid_eqs0 = solid.sublist("EQ 0");
     solid_eqs0.set("Name", "Energy");
     solid_eqs0.set("Basis", "Q1");

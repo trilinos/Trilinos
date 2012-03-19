@@ -16,35 +16,41 @@ namespace panzer {
     using std::vector;
     using Teuchos::ParameterList;
 
-    string block_names = p.get<string>("Physics Blocks");
-    
-    vector<string> block_names_vec;
-    panzer::StringTokenizer(block_names_vec, block_names);
-    
-    // Validate that the sublists are physics block names
-    ParameterList valid_params;
-    valid_params.set("Physics Blocks", block_names);
-    for (vector<string>::const_iterator block = block_names_vec.begin();
-	 block != block_names_vec.end(); ++block)
-      valid_params.sublist(*block);
-    
-    p.validateParameters(valid_params,0);
-    
-    
-    for (vector<string>::const_iterator block = block_names_vec.begin();
-	 block != block_names_vec.end(); ++block) {
-      
-      const ParameterList& block_list = p.sublist(*block); 
-      int num_eqsets = block_list.get<int>("Number of Equation Sets");
-      ipb[*block].physics_block_id = *block;
+    // check for deprecated input file item
+    TEUCHOS_TEST_FOR_EXCEPTION(p.isParameter("Physics Blocks"),std::logic_error,
+					     "Error - the use of the \"Physics Blocks\" parameter has been deprecated.  Please remove this from your xml input file.");
 
-      for (int set=0; set < num_eqsets; ++set) {
-	std::ostringstream set_name;
-	set_name << "EQ " << set;
-	const ParameterList& set_list = block_list.sublist(set_name.str());
-	panzer::InputEquationSet ies(set_list);
-	ipb[*block].eq_sets.push_back(ies);
+    // Loop over physics block sublists
+    typedef ParameterList::ConstIterator pl_it;
+    for (pl_it pb = p.begin(); pb != p.end(); ++pb) {
+
+      std::string physics_block_id = pb->first;
+
+      TEUCHOS_TEST_FOR_EXCEPTION( !(pb->second.isList()), std::logic_error,
+				  "Error - All entries in the \"Physics Block\" sublist must be sublists!" );
+
+      ParameterList& pb_sublist = pb->second.getValue(&pb_sublist);
+
+      // check for deprecated input file item
+      TEUCHOS_TEST_FOR_EXCEPTION(pb_sublist.isParameter("Number of Equation Sets"),std::logic_error,
+				 "Error - the use of the \"Number of Equation Sets\"  parameter in the physics block named \"" << physics_block_id << "\" has been deprecated.  Please remove this from your physics block sublists in you xml input file.");
+
+      // set the physics block id in the physics block
+      ipb[physics_block_id].physics_block_id = physics_block_id;
+
+      // Loop over each equation set in the physics block
+      for (pl_it eq_set = pb_sublist.begin(); eq_set != pb_sublist.end(); ++eq_set) {
+
+	TEUCHOS_TEST_FOR_EXCEPTION( !(eq_set->second.isList()), std::logic_error,
+				    "Error - All entries in the physics block sublist \"" << physics_block_id 
+				    << "\" sublist must be equaiton set sublists!" );
+
+	ParameterList& eq_set_sublist = eq_set->second.getValue(&eq_set_sublist);
+	panzer::InputEquationSet ies(eq_set_sublist);
+
+	ipb[physics_block_id].eq_sets.push_back(ies);
       }
+
     }
 
   }
