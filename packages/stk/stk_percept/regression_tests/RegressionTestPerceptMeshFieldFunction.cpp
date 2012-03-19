@@ -47,8 +47,8 @@ namespace stk
       /// The following defines where to put the input and output files created by this set of functions
 
 #if 1
-      const std::string input_files_loc="./input_files_";
-      const std::string output_files_loc="./output_files_";
+      const std::string input_files_loc="./input_files._.";
+      const std::string output_files_loc="./output_files._.";
 #else
       const std::string input_files_loc="./input_files/";
       const std::string output_files_loc="./output_files/";
