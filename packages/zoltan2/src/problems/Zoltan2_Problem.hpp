@@ -52,6 +52,13 @@ public:
   virtual void solve(bool updateInputData) = 0;
 
 protected:
+
+  // The Problem is templated on the input adapter.  We interact
+  // with the input adapter through the base class interface.  
+  // The Model objects are also templated on the input adapter and 
+  // are explicitly instantiated for each base input type (vector, 
+  // graph, matrix, mesh, identifier list, and coordinate list).
+
   typedef typename Adapter::base_adapter_t base_adapter_t;
 
   Adapter* inputAdapter_;
@@ -59,8 +66,13 @@ protected:
 
   RCP<GraphModel<base_adapter_t> > graphModel_;  
   RCP<IdentifierModel<base_adapter_t> > identifierModel_;  
+  RCP<CoordinateModel<base_adapter_t> > coordinateModel_;  
 
-  RCP<const Model<base_adapter_t> > generalModel_;  
+  // Algorithms are passed a base model class, and query
+  // the model through the base class interface (graph, hypergraph,
+  // identifiers, or coordinates).
+
+  RCP<const Model<base_adapter_t> > baseModel_;  
 
   RCP<ParameterList> params_;
   RCP<const Comm<int> > comm_;

@@ -46,8 +46,8 @@ enum rcbParams{
 
 /*! \brief During partitioning flags are stored in unsigned char arrays.
  *  Flag is also used to store a region number, but there are at most
- *  250 regions.  Therefore region number will not conflict with leftFlag
- *  and rightFlag.
+ *  251 regions.  Therefore region number will not conflict with leftFlag
+ *  and rightFlag. (Number of regions is number of test cuts plus one.)
  */
 
 enum leftRightFlag{

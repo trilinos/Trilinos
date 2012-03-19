@@ -26,7 +26,7 @@ enum ModelType {
   InvalidModel = 0,
   HypergraphModelType,
   GraphModelType,
-  GeometryModelType,
+  CoordinateModelType,
   IdentifierModelType
 } ;
 
