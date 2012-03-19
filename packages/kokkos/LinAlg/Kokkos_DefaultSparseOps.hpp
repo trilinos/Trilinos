@@ -84,7 +84,7 @@ namespace Kokkos {
     /// \c Scalar.
     ///
     /// This always specifies a specialization of \c
-    /// DefaultHostSparseOps, regardless of scalar type S2.
+    /// DefaultHostSparseOps, regardless of the scalar type S2.
     ///
     /// \tparam S2 A scalar type possibly different from \c Scalar.
     template <class S2>
@@ -161,7 +161,7 @@ namespace Kokkos {
     void multiply(Teuchos::ETransp trans, 
                   RangeScalar alpha, const MultiVector<DomainScalar,Node> &X, RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const;
 
-    /// \brief Solve Y = Op(A) X, where we assume A is triangular.
+    /// \brief Solve Y = Op(A) X for X, where we assume A is triangular.
     ///
     /// Solve the (upper or lower) triangular system Y = Op(A) X.
     /// Op(A) means A, the transpose of A, or the conjugate transpose
@@ -758,7 +758,7 @@ namespace Kokkos {
     void multiply(Teuchos::ETransp trans, 
                   RangeScalar alpha, const MultiVector<DomainScalar,Node> &X, RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const;
 
-    /// \brief Solve Y = Op(A) X, where we assume A is triangular.
+    /// \brief Solve Y = Op(A) X for X, where we assume A is triangular.
     ///
     /// Solve the (upper or lower) triangular system Y = Op(A) X.
     /// Op(A) means A, the transpose of A, or the conjugate transpose
