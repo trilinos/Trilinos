@@ -44,7 +44,6 @@
 
 
 //==============================================================================
-// Epetra_MpiDistributor constructor
 Epetra_MpiDistributor::Epetra_MpiDistributor(const Epetra_MpiComm & Comm): 
   Epetra_Object("Epetra::MpiDistributor"),
   lengths_to_(0),
@@ -155,7 +154,6 @@ Epetra_MpiDistributor::Epetra_MpiDistributor(const Epetra_MpiDistributor & Distr
 }
 
 //==============================================================================
-// Epetra_MpiDistributor destructor
 Epetra_MpiDistributor::~Epetra_MpiDistributor()
 {
   if( !no_delete_ )
@@ -188,16 +186,12 @@ Epetra_MpiDistributor::~Epetra_MpiDistributor()
 
 
 //==============================================================================
-//---------------------------------------------------------------------------
-//CreateFromSends Method
-// - create communication plan given a known list of procs to send to
-//---------------------------------------------------------------------------
 int Epetra_MpiDistributor::CreateFromSends( const int & NumExportIDs,
                                             const int * ExportPIDs,
                                             bool Deterministic,
                                             int & NumRemoteIDs )
 {
-  (void)Deterministic;
+  (void)Deterministic; // Prevent compiler warnings for unused argument.
   nexports_ = NumExportIDs;
 
   int i;
@@ -346,10 +340,6 @@ int Epetra_MpiDistributor::CreateFromSends( const int & NumExportIDs,
 }
 
 //==============================================================================
-//---------------------------------------------------------------------------
-//CreateFromRecvs Method
-// - create communication plan given a known list of procs to recv from
-//---------------------------------------------------------------------------
 int Epetra_MpiDistributor::CreateFromRecvs( const int & NumRemoteIDs,
 				   const int * RemoteGIDs,
 			           const int * RemotePIDs,
@@ -567,7 +557,6 @@ int Epetra_MpiDistributor::ComputeSends_( int num_imports,
 }
 
 //==============================================================================
-// Do method
 int Epetra_MpiDistributor::Do( char * export_objs,
                                int obj_size,
                                int & len_import_objs,
@@ -579,7 +568,6 @@ int Epetra_MpiDistributor::Do( char * export_objs,
 }
 
 //==============================================================================
-// DoReverse method
 int Epetra_MpiDistributor::DoReverse( char * export_objs,
                                       int obj_size,
                                       int & len_import_objs,
@@ -590,10 +578,8 @@ int Epetra_MpiDistributor::DoReverse( char * export_objs,
   EPETRA_CHK_ERR( DoReverseWaits() );
   return(0);
 }
+
 //==============================================================================
-//---------------------------------------------------------------------------
-//Do_Posts Method
-//---------------------------------------------------------------------------
 int Epetra_MpiDistributor::DoPosts( char * export_objs,
 				    int obj_size,
                                     int & len_import_objs,
@@ -722,10 +708,8 @@ int Epetra_MpiDistributor::DoPosts( char * export_objs,
 
   return(0);
 }
+
 //==============================================================================
-//---------------------------------------------------------------------------
-//Do_Waits Method
-//---------------------------------------------------------------------------
 int Epetra_MpiDistributor::DoWaits()
 {
   if( nrecvs_ > 0 ) MPI_Waitall( nrecvs_, request_, status_ );
@@ -734,9 +718,6 @@ int Epetra_MpiDistributor::DoWaits()
 }
 
 //==============================================================================
-//---------------------------------------------------------------------------
-//DoReverse_Posts Method
-//---------------------------------------------------------------------------
 int Epetra_MpiDistributor::DoReversePosts( char * export_objs,
                                            int obj_size,
                                            int & len_import_objs,
@@ -793,9 +774,6 @@ int Epetra_MpiDistributor::DoReversePosts( char * export_objs,
 }
 
 //==============================================================================
-//---------------------------------------------------------------------------
-//DoReverse_Waits Method
-//---------------------------------------------------------------------------
 int Epetra_MpiDistributor::DoReverseWaits()
 {
   if( comm_plan_reverse_ == 0 ) return (-1);
@@ -995,7 +973,6 @@ int Epetra_MpiDistributor::Resize_( int * sizes )
 }
 
 //==============================================================================
-// GSComm_Comm Do method
 int Epetra_MpiDistributor::Do( char * export_objs,
                                int obj_size,
                                int *& sizes,
@@ -1010,7 +987,6 @@ int Epetra_MpiDistributor::Do( char * export_objs,
 }
 
 //==============================================================================
-// GSComm_Comm DoReverse method
 int Epetra_MpiDistributor::DoReverse( char * export_objs,
                                       int obj_size,
                                       int *& sizes,
@@ -1023,10 +999,8 @@ int Epetra_MpiDistributor::DoReverse( char * export_objs,
 
   return(0);
 }
+
 //==============================================================================
-//---------------------------------------------------------------------------
-//Do_Posts Method (Variable Block Size)
-//---------------------------------------------------------------------------
 int Epetra_MpiDistributor::DoPosts( char * export_objs,
                                     int obj_size,
                                     int *& sizes,
@@ -1163,9 +1137,6 @@ int Epetra_MpiDistributor::DoPosts( char * export_objs,
 }
 
 //==============================================================================
-//---------------------------------------------------------------------------
-//DoReverse_Posts Method
-//---------------------------------------------------------------------------
 int Epetra_MpiDistributor::DoReversePosts( char * export_objs,
 				           int obj_size,
                                            int *& sizes,
