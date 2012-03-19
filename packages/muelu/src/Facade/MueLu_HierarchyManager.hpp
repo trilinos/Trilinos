@@ -81,6 +81,7 @@ namespace MueLu {
       RCP<Level> l = H.GetLevel(0);
       RCP<Operator> Op = l->Get<RCP<Operator> >("A");
       SetupOperator(*Op);
+      SetupExtra(H);
 
       // Setup Hierarchy
       H.SetDefaultVerbLevel(verbLevel_);
@@ -111,7 +112,11 @@ namespace MueLu {
 
     //! Setup Operator object
     virtual void SetupOperator(Operator & Op) const { }
-    
+
+    //! Setup extra data
+    // TODO: merge with SetupOperator ?
+    virtual void SetupExtra(Hierarchy & H) const { }
+   
     // Hierarchy parameters
     VerbLevel             verbLevel_;
     int                   numDesiredLevel_; 

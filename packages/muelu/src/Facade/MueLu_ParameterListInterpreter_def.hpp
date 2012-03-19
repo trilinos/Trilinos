@@ -3,8 +3,9 @@
 
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
-#include "MueLu_ParameterListInterpreter_decl.hpp"
+#include <Xpetra_MultiVectorFactory.hpp>
 
+#include "MueLu_ParameterListInterpreter_decl.hpp"
 #include "MueLu_FactoryFactory.hpp"
 
 namespace MueLu {
@@ -139,6 +140,36 @@ namespace MueLu {
     if(operatorList_.isParameter("PDE equations")) {
       int nPDE = operatorList_.get<int>("PDE equations");
       Op.SetFixedBlockSize(nPDE);
+    }
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetupExtra(Hierarchy & H) const {
+    Array< ArrayView<const double> > arrayOfPtrs;
+
+    if(operatorList_.isParameter("xcoords")) {
+      const Array<double> & coords = operatorList_.get<Array<double> >("xcoords");
+      arrayOfPtrs.push_back(coords());
+      // std::cout << coords << std::endl;
+    }
+    if(operatorList_.isParameter("ycoords")) {
+      TEUCHOS_TEST_FOR_EXCEPTION(!operatorList_.isParameter("xcoords"), Exceptions::RuntimeError, "ycoords specified but no xcoords");
+      const Array<double> & coords = operatorList_.get<Array<double> >("ycoords");
+      arrayOfPtrs.push_back(coords());
+    }
+    if(operatorList_.isParameter("zcoords")) {
+      TEUCHOS_TEST_FOR_EXCEPTION(!operatorList_.isParameter("ycoords"), Exceptions::RuntimeError, "zcoords specified but no ycoords");
+      const Array<double> & coords = operatorList_.get<Array<double> >("zcoords");
+      arrayOfPtrs.push_back(coords());
+    }
+
+    if (arrayOfPtrs.size() != 0) {
+      std::cout << "ParameterListInterpreter:: Coordinates found! (dim=" << arrayOfPtrs.size() << ")" << std::endl;
+      RCP<Level>     lvl0 = H.GetLevel(0);
+      RCP<const Map> map  = lvl0->Get<RCP<Operator> >("A")->getRowMap();
+      RCP<MultiVector> coordinates = MultiVectorFactory::Build(map, arrayOfPtrs, arrayOfPtrs.size());
+      
+      lvl0->Set("Coordinates", coordinates);
     }
   }
 

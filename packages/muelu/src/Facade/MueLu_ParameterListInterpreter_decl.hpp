@@ -6,6 +6,8 @@
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ParameterList.hpp>
 
+#include <Xpetra_MultiVectorFactory_fwd.hpp>
+
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_HierarchyFactory_fwd.hpp"
 #include "MueLu_HierarchyManager.hpp"
@@ -50,6 +52,9 @@ namespace MueLu {
 
     //! Setup Operator object
     virtual void SetupOperator(Operator & Op) const;
+
+    //! Setup extra data
+    virtual void SetupExtra(Hierarchy & H) const;
 
     // Operator configuration storage
     Teuchos::ParameterList operatorList_; //TODO: should it be stored in another format to avoid xml parsing in SetupOperator()?
