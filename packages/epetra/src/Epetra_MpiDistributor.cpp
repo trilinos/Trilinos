@@ -620,6 +620,15 @@ int Epetra_MpiDistributor::DoPosts( char * export_objs,
     j += lengths_from_[i] * obj_size;
   }
 
+  // NOTE (mfh 19 Mar 2012):
+  //
+  // The ready-sends below require that each ready-send's matching
+  // receive (see above) has already been posted.  We ensure this with
+  // a barrier.  (Otherwise, some process that doesn't need to post
+  // receives might post its ready-send before the receiving process
+  // gets to post its receive.)  If you want to remove the barrier,
+  // you'll have to replace the ready-sends below with standard sends
+  // or Isends.
   MPI_Barrier( comm_ );
 
   //setup scan through procs_to list starting w/ higher numbered procs 
