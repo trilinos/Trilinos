@@ -43,6 +43,17 @@ namespace stk
 
 #define EXTRA_PRINT 0
 
+      /// configuration: you can choose where to put the generated Exodus files (see variables input_files_loc, output_files_loc)
+      /// The following defines where to put the input and output files created by this set of functions
+
+#if 1
+      const std::string input_files_loc="./input_files_";
+      const std::string output_files_loc="./output_files_";
+#else
+      const std::string input_files_loc="./input_files/";
+      const std::string output_files_loc="./output_files/";
+#endif
+
       static double pressure_value = 123.4;
 
 #if 1
@@ -85,14 +96,14 @@ namespace stk
         double pval = eval(x, y, z, time, ff_pressure);
         EXPECT_DOUBLE_EQ(pval, pressure_value);
 
-        eMesh.saveAs("./output_files/cube_with_pressure.e");
+        eMesh.saveAs(output_files_loc+"cube_with_pressure.e");
         eMesh.close();
 
         // end_demo
 
         // start_demo_open_new_close_PerceptMesh_1
         // open the file we previously saved with the new fields
-        eMesh.openReadOnly("./input_files/cube_with_pressure.e");
+        eMesh.openReadOnly(input_files_loc+"cube_with_pressure.e");
 
         // get the pressure field
         pressure_field = eMesh.getField("pressure");
@@ -142,7 +153,7 @@ namespace stk
         // start_demo_open_new_close_PerceptMesh_2
         PerceptMesh eMesh(3u);
         // open the file we previously saved with the new fields
-        eMesh.openReadOnly("./input_files/cube_with_pressure.e");
+        eMesh.openReadOnly(input_files_loc+"cube_with_pressure.e");
 
         eMesh.printInfo("Info after reading mesh");
 
@@ -231,7 +242,7 @@ namespace stk
         ff_pressure.interpolateFrom(initPressureValues);
 
         // save
-        eMesh.saveAs("./output_files/cube_with_pressure_3.e");
+        eMesh.saveAs(output_files_loc+"cube_with_pressure_3.e");
         eMesh.close();
 
         EXPECT_CATCH( eMesh.printInfo("bad", 1) , mesh_closed_try_print);
@@ -261,7 +272,7 @@ namespace stk
         eMesh.commit();
 
         /// reopen the mesh to allow for more fields to be added - note that this involves a db write/read operation
-        eMesh.reopen("./output_files/optional_temp_filename.e");
+        eMesh.reopen(output_files_loc+"optional_temp_filename.e");
         mesh::FieldBase* momentum_field = eMesh.addField("momentum", stk::mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
         eMesh.commit();
 
@@ -285,7 +296,7 @@ namespace stk
         ff_momentum.interpolateFrom(initMomentumValues);
 
         // save
-        eMesh.saveAs("./output_files/cube_with_pressure_and_momentum.e");
+        eMesh.saveAs(output_files_loc+"cube_with_pressure_and_momentum.e");
         eMesh.close();
 
 
