@@ -1573,16 +1573,21 @@ namespace Tpetra {
                                             OptimizeOption os) 
   {
     const std::string tfecfFuncName("fillComplete()");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isFillActive() == false || isFillComplete() == true, std::runtime_error, ": Matrix fill state must be active.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive() || isFillComplete(), 
+      std::runtime_error, ": Matrix fill state must be active (isFillActive() "
+      "must be true) before calling fillComplete().");
 #ifdef HAVE_TPETRA_DEBUG
     Teuchos::barrier( *getRowMap()->getComm() );
-#endif
+#endif // HAVE_TPETRA_DEBUG
+
     // allocate if unallocated
-    if (getCrsGraph()->indicesAreAllocated() == false) {
+    if (! getCrsGraph()->indicesAreAllocated()) {
       // allocate global, in case we do not have a column map
       allocateValues( GlobalIndices, GraphNotYetAllocated );
     }
-    // global assemble
+    // Global assemble, if we need to (we certainly don't need to if
+    // there's only one process).  This call only costs a single
+    // all-reduce if we don't need global assembly.
     if (getComm()->getSize() > 1) {
       globalAssemble();
     }
@@ -1600,28 +1605,31 @@ namespace Tpetra {
       os = DoNotOptimizeStorage;
     }
     //
-    if (isStaticGraph() == true) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC((staticGraph_->getDomainMap() != getDomainMap()) || (staticGraph_->getRangeMap() != getRangeMap()), std::runtime_error,
-          ": domain map and range map do not match maps in existing graph, and the graph cannot be changed because it was specified during matrix construction.");
+    if (isStaticGraph()) {
+      const bool domainMapsMatch = staticGraph_->getDomainMap() != getDomainMap();
+      const bool rangeMapsMatch = staticGraph_->getRangeMap() != getRangeMap();
+      // FIXME (mfh 19 Mar 2012) Why can't we allow the Maps to be
+      // different objects, but semantically the same (in the sense of
+      // isSameAs())?
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! domainMapsMatch || ! rangeMapsMatch, 
+        std::runtime_error, ": domain map and range map do not match maps in "
+        "existing graph, and the graph cannot be changed because it was given "
+        "to the CrsMatrix constructor as const.");
     }
     else {
       // set domain/range map: may clear the import/export objects
       myGraph_->setDomainRangeMaps(domainMap, rangeMap);
       // make column map
-      if (myGraph_->hasColMap() == false) {
+      if (! myGraph_->hasColMap()) {
         myGraph_->makeColMap();
       }
       // make indices local
-      if (myGraph_->isGloballyIndexed() == true) {
+      if (myGraph_->isGloballyIndexed()) {
         myGraph_->makeIndicesLocal();
       }
-      // sort entries
       sortEntries();
-      // merge entries
       mergeRedundantEntries();
-      // make import/export objects
-      myGraph_->makeImportExport();
-      // compute global constants
+      myGraph_->makeImportExport(); // Make Import and Export objects
       myGraph_->computeGlobalConstants();
       myGraph_->fillComplete_ = true;
       myGraph_->checkInternalState();

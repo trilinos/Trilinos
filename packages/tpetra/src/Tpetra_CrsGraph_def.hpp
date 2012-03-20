@@ -1884,16 +1884,21 @@ namespace Tpetra {
   {
 #ifdef HAVE_TPETRA_DEBUG
     Teuchos::barrier( *rowMap_->getComm() );
-#endif
+#endif // HAVE_TPETRA_DEBUG
     std::string tfecfFuncName("fillComplete()");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isFillActive() == false || isFillComplete() == true, std::runtime_error, ": Graph fill state must be active.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive() || isFillComplete(), 
+      std::runtime_error, ": Graph fill state must be active (isFillActive() "
+      "must be true) before calling fillComplete().");
+
     // allocate if unallocated
-    if (indicesAreAllocated() == false) {
+    if (! indicesAreAllocated()) {
       // allocate global, in case we do not have a column map
       allocateIndices( GlobalIndices );
     }
-    // global assemble
-    if (Teuchos::size(*getComm()) > 1) {
+    // Global assemble, if we need to (we certainly don't need to if
+    // there's only one process).  This call only costs a single
+    // all-reduce if we don't need global assembly.
+    if (getComm()->getSize() > 1) {
       globalAssemble();
     }
     else {
@@ -1902,24 +1907,19 @@ namespace Tpetra {
     // set domain/range map: may clear the import/export objects
     setDomainRangeMaps(domainMap,rangeMap);
     // make column map
-    if (hasColMap() == false) {
+    if (! hasColMap()) {
       makeColMap();
     }
-    // make indices local
-    if (isGloballyIndexed() == true) {
+    if (isGloballyIndexed()) {
       makeIndicesLocal();
     }
-    // sort entries
-    if (isSorted() == false) {
+    if (! isSorted()) {
       sortAllIndices();
     }
-    // merge entries
-    if (isMerged() == false) {
+    if (! isMerged()) {
       mergeAllIndices();
     }
-    // make import/export objects
-    makeImportExport();
-    // compute global constants
+    makeImportExport(); // Make Import and Export objects
     computeGlobalConstants();
     // fill local objects
     fillLocalGraph(os);

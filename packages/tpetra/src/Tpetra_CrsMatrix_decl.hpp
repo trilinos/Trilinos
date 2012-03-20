@@ -278,7 +278,12 @@ namespace Tpetra {
       //! @name Transformational Methods
       //@{ 
 
-      //! \brief Communicate non-local contributions to other nodes.
+      /// \brief Communicate non-local contributions to other nodes.
+      ///
+      /// This method only does global assembly if there are nonlocal
+      /// entries on at least one process.  It does an all-reduce to
+      /// find that out.  If not, it returns early, without doing any
+      /// more communication or work.
       void globalAssemble();
 
       /*! Resume fill operations.
