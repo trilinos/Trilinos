@@ -106,3 +106,35 @@ IF(Trilinos_ENABLE_Tpetra AND
     ADD_DIR_TO_NAME
     )
 ENDIF()
+
+
+## ik 20 Mar 2012
+#IF(Trilinos_ENABLE_Tpetra AND
+#   Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
+#   Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND
+#   Trilinos_ENABLE_Intrepid AND Trilinos_ENABLE_ML AND
+#   Trilinos_ENABLE_Pamgen AND Trilinos_ENABLE_Teko)
+#  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#    Example_Poisson_NoFE_Tpetra
+#    SOURCES example_Poisson_NoFE_Tpetra.cpp
+#    DEPLIBS tpetra epetra epetraext pamgen aztecoo amesos ml
+#    NUM_MPI_PROCS 1
+#    ADD_DIR_TO_NAME
+#    )
+#ENDIF()
+
+
+## ik 20 Mar 2012
+#IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
+#   Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND
+#   Trilinos_ENABLE_Intrepid AND Trilinos_ENABLE_ML AND
+#   Trilinos_ENABLE_Pamgen AND Trilinos_ENABLE_Teko)
+#  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#    Example_Poisson_NoFE_Epetra
+#    SOURCES example_Poisson_NoFE_Epetra.cpp
+#    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
+#    NUM_MPI_PROCS 1
+#    ADD_DIR_TO_NAME
+#    )
+#ENDIF()
+
