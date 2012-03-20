@@ -1733,7 +1733,7 @@ static portals_work_request *decode_work_request(
             switch(ptls_mem_hdl->type) {
                 case REQUEST_BUFFER:
                     if (((*i)->src_offset == event->offset) &&
-                        ((*i)->length == event->rlength)) {
+                        ((*i)->length == event->mlength)) {
 
                         wr=*i;
                     } else {
@@ -1743,7 +1743,7 @@ static portals_work_request *decode_work_request(
                 case SEND_BUFFER:
                 case PUT_SRC_BUFFER:
                     if (((*i)->src_offset == event->offset) &&
-                        ((*i)->length == event->rlength)) {
+                        ((*i)->length == event->mlength)) {
 
                         wr=*i;
                     } else {
@@ -1752,7 +1752,7 @@ static portals_work_request *decode_work_request(
                     break;
                 case GET_DST_BUFFER:
                     if (((*i)->dst_offset == event->offset) &&
-                        ((*i)->length == event->rlength)) {
+                        ((*i)->length == event->mlength)) {
 
                         wr=*i;
                     } else {
@@ -1780,8 +1780,8 @@ static portals_work_request *decode_work_request(
     if (!wr) {
         for (i=ptls_mem_hdl->wr_queue.begin(); i != ptls_mem_hdl->wr_queue.end(); i++) {
             debug_wr=*i;
-            log_debug(LOG_ALL, "e.offset=%llu, e.rlength=%llu, wr=%p, wr.length=%llu, wr.src_offset=%llu, wr.dst_offset=%llu, wr.is_complete=%d",
-                    (uint64_t)event->offset, (uint64_t)event->rlength,
+            log_debug(LOG_ALL, "e.offset=%llu, e.rlength=%llu, e.mlength=%llu, wr=%p, wr.length=%llu, wr.src_offset=%llu, wr.dst_offset=%llu, wr.is_complete=%d",
+                    (uint64_t)event->offset, (uint64_t)event->rlength, (uint64_t)event->mlength,
                     debug_wr,
                     (uint64_t)debug_wr->length, (uint64_t)debug_wr->src_offset, (uint64_t)debug_wr->dst_offset,
                     (is_wr_complete(debug_wr)==TRUE));
