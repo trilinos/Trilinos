@@ -19,6 +19,11 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
     NUM_MPI_PROCS 1
     ADD_DIR_TO_NAME
     )
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyPoissonFiles
+  SOURCE_FILES Poisson.xml
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+  ) 
 ENDIF()
 
 IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
@@ -54,8 +59,7 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
     ADD_DIR_TO_NAME
     )
   TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyFiles
-  SOURCE_FILES Poisson.xml
-               ADR.xml
+  SOURCE_FILES ADR.xml
   	       Darcy.xml
                CurlLSFEMin.xml
                CurlLSFEMblock_in_block.xml
