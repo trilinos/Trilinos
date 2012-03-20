@@ -24,6 +24,23 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)
     PASS_REGULAR_EXPRESSION "All tests passed"
     )
 
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    LOCA_Brusselator_ShiftInvert2Matrix
+    SOURCES 
+    Basis.H
+    Basis.C
+    Brusselator.H
+    Brusselator.C
+    Problem_Interface.H
+    Problem_Interface.C
+    brussCont_ShiftInvert2Matrix.C
+    COMM serial mpi
+    DEPLIBS noxtestutils
+    NUM_MPI_PROCS 2
+    ARGS -v
+    PASS_REGULAR_EXPRESSION "All tests passed"
+    )
+
   IF(NOX_ENABLE_EpetraExt)
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(

@@ -130,6 +130,36 @@ LOCA::Abstract::Group::applyShiftedMatrixInverseMultiVector(
   return NOX::Abstract::Group::NotDefined;
 }
 
+NOX::Abstract::Group::ReturnType
+LOCA::Abstract::Group::computeSecondShiftedMatrix(double alpha, double beta)
+{
+  globalData->locaErrorCheck->throwError(
+			   "LOCA::Abstract::Group::computeSecondShiftedMatrix",
+			   "Not implemented for group");
+  return NOX::Abstract::Group::NotDefined;
+} 
+
+NOX::Abstract::Group::ReturnType
+LOCA::Abstract::Group::applySecondShiftedMatrix(const NOX::Abstract::Vector& input,
+					  NOX::Abstract::Vector& result) const
+{
+  globalData->locaErrorCheck->throwError(
+			   "LOCA::Abstract::Group::applySecondShiftedMatrix",
+			   "Not implemented for group");
+  return NOX::Abstract::Group::NotDefined;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Abstract::Group::applySecondShiftedMatrixMultiVector(
+				const NOX::Abstract::MultiVector& input,
+				NOX::Abstract::MultiVector& result) const
+{
+  globalData->locaErrorCheck->throwError(
+			"LOCA::Abstract::Group::applySecondShiftedMatrixMultiVector",
+			"Not implemented for group");
+  return NOX::Abstract::Group::NotDefined;
+}
+
 bool
 LOCA::Abstract::Group::isComplex() const
 {

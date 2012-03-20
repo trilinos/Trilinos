@@ -125,6 +125,13 @@ namespace LOCA {
       preProcessSeedVector(NOX::Abstract::MultiVector& ivec) {};
 
       /*! 
+       * \brief Hook to precompute info for subsequent repeated calls to 
+       * tranformEigenvalue and rayleighQuotient
+       */
+      virtual void
+      beginPostProcessing() {};
+
+      /*! 
        * \brief Transform eigenvalue in place
        */
       virtual void

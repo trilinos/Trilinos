@@ -70,6 +70,12 @@
  * with d representing partial differentiation.
  */
 
+/* This version tests the "Shift-Invert 2 Matrix" eigensolver, which
+ * requires a second matrix A2 passed to the shiftedLinSys and the 
+ * declareSeparateMatricMemory() call to the LOCA::Epetra::Group.
+ *
+ */
+
 // NOX Objects
 #include "LOCA.H"
 #include "LOCA_Epetra.H"
@@ -194,10 +200,8 @@ int main(int argc, char *argv[])
     aList.set("Convergence Tolerance", 1.0e-7);          // Tolerance
     aList.set("Step Size", 1);         // How often to check convergence
     aList.set("Maximum Restarts",1);   // Maximum number of restarts
-    aList.set("Operator", "Cayley");
-    aList.set("Cayley Pole", 0.4);
-    aList.set("Cayley Zero", -0.4);
-    aList.set("Sorting Order", "CA");
+    aList.set("Operator", "Shift-Invert 2 Matrix");
+    aList.set("Shift", 0.1);
 #else
     stepperList.set("Compute Eigenvalues",false);
 #endif
@@ -254,7 +258,9 @@ int main(int argc, char *argv[])
     // Create the Epetra_RowMatrixfor the Jacobian/Preconditioner
     Teuchos::RCP<Epetra_RowMatrix> A = 
       Teuchos::rcp(&Problem.getJacobian(),false);
-
+    // Clone matrix for separate memory -- used in 2 Matrix eigensolver
+    Teuchos::RCP<Epetra_RowMatrix> A2 = 
+      Teuchos::rcp(new Epetra_CrsMatrix(Problem.getJacobian()));
 
     // Use an Epetra Scaling object if desired
     Teuchos::RCP<Epetra_Vector> scaleVec = 
@@ -272,7 +278,7 @@ int main(int argc, char *argv[])
                                                         //&scaling);
     Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> shiftedLinSys = 
       Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
-							iReq, iJac, A, soln));
+							iReq, iJac, A2, soln));
 
     // Create initial guess
     NOX::Epetra::Vector initialGuess(Teuchos::rcp(&soln,false), 
@@ -300,6 +306,12 @@ int main(int argc, char *argv[])
       Teuchos::rcp(new LOCA::Epetra::Group(globalData, printParams,
 					   iTime, initialGuess, linSys, 
 					   shiftedLinSys, pVector));
+
+    // Set flag in group to indicate that linSys and shiftedLinSys in Group constructor
+    // (line above) use separate memory for the matrix. This allows algorithms to 
+    // compute and store 2 different matrices. Currently used by Shift-Invert 2 Matrix
+    // eigensolver.
+    grp->declareSeparateMatrixMemory();
 
     grp->computeF();
 
