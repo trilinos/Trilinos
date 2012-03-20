@@ -357,10 +357,9 @@ int main(int argc, char *argv[]) {
 
       TimeMonitor tm(*TimeMonitor::getNewTimer("ScalingTest: 3 - Fixed Point Solve"));
 
-      H->IsPreconditioner(true);
-      H->Iterate(*RHS,its,*X);
       H->IsPreconditioner(false);
-  
+      H->Iterate(*RHS,its,*X);
+
       //X->norm2(norms);
       //*out << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
     }
@@ -370,11 +369,13 @@ int main(int argc, char *argv[]) {
   // Use AMG as a preconditioner in Belos
   if (amgAsPrecond && lib == Xpetra::UseTpetra)
     {
+
 #if defined(HAVE_MUELU_BELOS) && defined(HAVE_MUELU_TPETRA)
 #define BELOS_SOLVER
 #endif
 
 #ifdef BELOS_SOLVER
+      H->IsPreconditioner(true);
 
       X->putScalar( (SC) 0.0);
 

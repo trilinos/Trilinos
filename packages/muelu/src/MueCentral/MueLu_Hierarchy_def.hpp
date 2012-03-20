@@ -19,14 +19,14 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Hierarchy()
-    : maxCoarseSize_(50), implicitTranspose_(false)
+    : maxCoarseSize_(50), implicitTranspose_(false), isPreconditioner_(true)
   {
     AddLevel(rcp( new Level() ));
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Hierarchy(const RCP<Operator> & A)
-    :  maxCoarseSize_(50), implicitTranspose_(false)
+    :  maxCoarseSize_(50), implicitTranspose_(false), isPreconditioner_(true)
   {
     RCP<Level> Finest = rcp( new Level() );
     AddLevel(Finest);
