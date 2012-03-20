@@ -11,7 +11,7 @@ namespace panzer {
     
     //! Sizes/allocates memory for arrays
     template <typename ArrayFactory>
-    void setupArrays(const Teuchos::RCP<panzer::PointRule>& pr,const ArrayFactory & af);
+    void setupArrays(const Teuchos::RCP<const panzer::PointRule>& pr,const ArrayFactory & af);
 
     template <typename NodeCoordinateArray,typename PointCoordinateArray>
     void evaluateValues(const NodeCoordinateArray & node_coordinates,const PointCoordinateArray & point_coordinates);
@@ -25,7 +25,7 @@ namespace panzer {
     // cell points
     Array point_coords;      // <Cell,Point,Dim>
 
-    Teuchos::RCP<panzer::PointRule> point_rule;
+    Teuchos::RCP<const panzer::PointRule> point_rule;
   };
 
 } // namespace panzer

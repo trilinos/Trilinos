@@ -72,7 +72,7 @@ const std::string & panzer::PointRule::getName() const
    return point_name;
 }
 
-bool panzer::PointRule::isSide()
+bool panzer::PointRule::isSide() const
 {
   return (!Teuchos::is_null(side_topology));
 }

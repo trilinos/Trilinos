@@ -3,6 +3,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
+#include "Panzer_Traits.hpp"
 #include "Panzer_CellData.hpp"
 #include "Panzer_ArrayTraits.hpp"
 #include "Panzer_PointRule.hpp"
@@ -99,6 +100,75 @@ namespace panzer {
        }
     }
 
+  }
+
+  TEUCHOS_UNIT_TEST(point_values, intrepid_container_dfad)
+  {
+    Teuchos::RCP<shards::CellTopology> topo = 
+       Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
+
+    const int num_cells = 4;
+    const int base_cell_dimension = 2;
+    const panzer::CellData cell_data(num_cells, base_cell_dimension,topo);
+    int num_points = 3;
+
+    RCP<PointRule> point_rule = rcp(new PointRule("RandomPoints",num_points, cell_data));
+
+    TEST_EQUALITY(point_rule->num_points,num_points);
+  
+    typedef panzer::Traits::FadType ScalarType;
+    panzer::PointValues<ScalarType,Intrepid::FieldContainer<ScalarType> > point_values;
+    panzer::IntrepidFieldContainerFactory<ScalarType> af;
+
+    point_values.setupArrays(point_rule,af);
+
+    // Set up node coordinates.  Here we assume the following
+    // ordering.  This needs to be consistent with shards topology,
+    // otherwise we will get negative determinates
+
+    // 3(0,1)---2(1,1)
+    //   |    0  |
+    //   |       |
+    // 0(0,0)---1(1,0)
+
+    const int num_vertices = point_rule->topology->getNodeCount();
+    Intrepid::FieldContainer<ScalarType> node_coordinates(num_cells, num_vertices,
+	 				              base_cell_dimension);
+
+    typedef panzer::ArrayTraits<ScalarType,FieldContainer<ScalarType> >::size_type size_type;
+    const size_type x = 0;
+    const size_type y = 1;
+    for (size_type cell = 0; cell < node_coordinates.dimension(0); ++cell) {
+      int xleft = cell % 2;
+      int yleft = int(cell/2);
+
+      node_coordinates(cell,0,x) = xleft*0.5;
+      node_coordinates(cell,0,y) = yleft*0.5;
+
+      node_coordinates(cell,1,x) = (xleft+1)*0.5;
+      node_coordinates(cell,1,y) = yleft*0.5; 
+
+      node_coordinates(cell,2,x) = (xleft+1)*0.5;
+      node_coordinates(cell,2,y) = (yleft+1)*0.5;
+
+      node_coordinates(cell,3,x) = xleft*0.5;
+      node_coordinates(cell,3,y) = (yleft+1)*0.5;
+
+      out << "Cell " << cell << " = ";
+      for(int i=0;i<4;i++)
+         out << "(" << node_coordinates(cell,i,x) << ", "
+                    << node_coordinates(cell,i,y) << ") ";
+      out << std::endl;
+    }
+
+    // Build the evaluation points
+
+    Intrepid::FieldContainer<ScalarType> point_coordinates(num_points, base_cell_dimension);
+    point_coordinates(0,0) =  0.0; point_coordinates(0,1) = 0.0; // mid point
+    point_coordinates(1,0) =  0.5; point_coordinates(1,1) = 0.5; // mid point of upper left quadrant
+    point_coordinates(2,0) = -0.5; point_coordinates(2,1) = 0.0; // mid point of line from center to left side
+    
+    point_values.evaluateValues(node_coordinates,point_coordinates);
   }
 
   TEUCHOS_UNIT_TEST(point_values, md_field_setup)

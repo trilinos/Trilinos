@@ -2,15 +2,17 @@
 #define PANZER_POINT_VALUES_IMPL_HPP
 
 #include "Shards_CellTopology.hpp"
+
 #include "Intrepid_FieldContainer.hpp"
 #include "Intrepid_FunctionSpaceTools.hpp"
 #include "Intrepid_RealSpaceTools.hpp"
 #include "Intrepid_CellTools.hpp"
+
 #include "Panzer_ArrayTraits.hpp"
 #include "Panzer_Dimension.hpp"
 
 // ***********************************************************
-// * Specializations of setupArrays() for different array types
+// * Evaluation and SetupArrays are NOT specialized
 // ***********************************************************
 
 namespace panzer {
@@ -18,7 +20,7 @@ namespace panzer {
   template <typename Scalar,typename Array>
   template <typename ArrayFactory>
   void PointValues<Scalar,Array>::
-  setupArrays(const Teuchos::RCP<PointRule> & pr, const ArrayFactory & af)
+  setupArrays(const Teuchos::RCP<const PointRule> & pr, const ArrayFactory & af)
   {
     point_rule = pr;
     
@@ -43,9 +45,6 @@ namespace panzer {
     point_coords = af.template buildArray<Cell,Point,Dim>("point_coords",num_cells, num_points, num_space_dim);
   }
 
-// ***********************************************************
-// * Evaluation of values - NOT specialized
-// ***********************************************************
 
   template <typename Scalar, typename Array>
   template <typename NodeCoordinateArray,typename PointCoordinateArray>
@@ -62,7 +61,7 @@ namespace panzer {
     // copy reference point values
     {
       typedef typename 
-	ArrayTraits<Scalar,PointCoordinateArray>::size_type size_type;
+	ArrayTraits<Scalar,Array>::size_type size_type;
 
       size_type num_points = in_point_coords.dimension(0);
       size_type num_dims = in_point_coords.dimension(1);
@@ -75,7 +74,7 @@ namespace panzer {
     // copy cell node coordinates
     {
       typedef typename 
-	ArrayTraits<Scalar,NodeCoordinateArray>::size_type size_type;
+	ArrayTraits<Scalar,Array>::size_type size_type;
 
       size_type num_cells = in_node_coords.dimension(0);
       size_type num_nodes = in_node_coords.dimension(1);
@@ -87,8 +86,7 @@ namespace panzer {
 	    node_coordinates(cell,node,dim) = in_node_coords(cell,node,dim);
     }
 
-    cell_tools.setJacobian(jac, coords_ref, node_coordinates, 
-			   *(point_rule->topology));
+    cell_tools.setJacobian(jac, coords_ref, node_coordinates,*(point_rule->topology));
     cell_tools.setJacobianInv(jac_inv, jac);
     cell_tools.setJacobianDet(jac_det, jac);
     

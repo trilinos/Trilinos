@@ -28,7 +28,7 @@ namespace panzer {
     void setup(const std::string & ptName,int np, const panzer::CellData& cell_data);
   
     // Returns true if this point rule is for a sideset
-    bool isSide();
+    bool isSide() const;
 
     /** Get the name of this point rule.
       */
