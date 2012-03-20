@@ -825,15 +825,13 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
     if ( colMap_ == NULL ) {
       std::vector<int_type> cols;
 
-
-      for(size_t i=0; i<nonlocalRows_var.size(); ++i) {
-        for(size_t j=0; j<nonlocalCols_var[i].size(); ++j) {
-          int_type col = nonlocalCols_var[i][j];
-          std::vector<int_type>::iterator it =
-             std::lower_bound(cols.begin(), cols.end(), col);
-          if (it == cols.end() || *it != col) {
-            cols.insert(it, col);
-          }
+    for(size_t i=0; i<nonlocalRows_var.size(); ++i) {
+      for(size_t j=0; j<nonlocalCols_var[i].size(); ++j) {
+        int_type col = nonlocalCols_var[i][j];
+        typename std::vector<int_type>::iterator it =
+           std::lower_bound(cols.begin(), cols.end(), col);
+        if (it == cols.end() || *it != col) {
+          cols.insert(it, col);
         }
       }
 
@@ -937,7 +935,7 @@ int Epetra_FECrsMatrix::InputGlobalValues_RowMajor(
 					  const double* values,
 					  int mode)
 {
-  if(RowMap().GlobalIndicesIsType<int_type>())
+  if(!RowMap().GlobalIndicesIsType<int_type>())
 	throw ReportError("Epetra_FECrsMatrix::InputGlobalValues_RowMajor mismatch between argument types (int/long long) and map type.", -1);
 
   int returncode = 0;
@@ -990,7 +988,7 @@ int Epetra_FECrsMatrix::InputGlobalValues(int numRows, const int_type* rows,
 					  const double*const* values,
 					  int format, int mode)
 {
-  if(RowMap().GlobalIndicesIsType<int_type>())
+  if(!RowMap().GlobalIndicesIsType<int_type>())
 	throw ReportError("Epetra_FECrsMatrix::InputGlobalValues mismatch between argument types (int/long long) and map type.", -1);
 
   if (format != Epetra_FECrsMatrix::ROW_MAJOR &&
@@ -1040,7 +1038,7 @@ int Epetra_FECrsMatrix::InputGlobalValues(int numRows, const int_type* rows,
 					  const double* values,
 					  int format, int mode)
 {
-  if(RowMap().GlobalIndicesIsType<int_type>())
+  if(!RowMap().GlobalIndicesIsType<int_type>())
 	throw ReportError("Epetra_FECrsMatrix::InputGlobalValues mismatch between argument types (int/long long) and map type.", -1);
 
   if (format == Epetra_FECrsMatrix::ROW_MAJOR) {
@@ -1071,7 +1069,7 @@ int Epetra_FECrsMatrix::InputNonlocalGlobalValues(int_type row,
 						  const double* values,
 						  int mode)
 {
-  if(RowMap().GlobalIndicesIsType<int_type>())
+  if(!RowMap().GlobalIndicesIsType<int_type>())
 	throw ReportError("Epetra_FECrsMatrix::InputNonlocalGlobalValues mismatch between argument types (int/long long) and map type.", -1);
 
   // if we already have a nonlocal matrix object, this is easier...
@@ -1107,7 +1105,7 @@ int Epetra_FECrsMatrix::InputNonlocalGlobalValues(int_type row,
   std::vector<int_type>& nonlocalRows_var = nonlocalRows<int_type>();
 
   //find offset of this row in our list of nonlocal rows.
-  std::vector<int_type>::iterator it =
+  typename std::vector<int_type>::iterator it =
       std::lower_bound(nonlocalRows_var.begin(), nonlocalRows_var.end(), row);
 
   int rowoffset = (int) (it - nonlocalRows_var.begin());
@@ -1126,7 +1124,7 @@ int Epetra_FECrsMatrix::InputNonlocalGlobalValues(int_type row,
 template<typename int_type>
 int Epetra_FECrsMatrix::InsertNonlocalRow(int_type row, typename std::vector<int_type>::iterator iter)
 {
-  if(RowMap().GlobalIndicesIsType<int_type>())
+  if(!RowMap().GlobalIndicesIsType<int_type>())
 	throw ReportError("Epetra_FECrsMatrix::InsertNonlocalRow mismatch between argument types (int/long long) and map type.", -1);
 
   std::vector<int_type>& nonlocalRows_var = nonlocalRows<int_type>();
@@ -1148,13 +1146,13 @@ int Epetra_FECrsMatrix::InputNonlocalValue(int rowoffset,
 					   int_type col, double value,
 					   int mode)
 {
-  if(RowMap().GlobalIndicesIsType<int_type>())
+  if(!RowMap().GlobalIndicesIsType<int_type>())
 	throw ReportError("Epetra_FECrsMatrix::InputNonlocalValue mismatch between argument types (int/long long) and map type.", -1);
 
   std::vector<int_type>& colIndices = nonlocalCols<int_type>()[rowoffset];
   std::vector<double>& coefs = nonlocalCoefs_[rowoffset];
 
-  std::vector<int_type>::iterator it =
+  typename std::vector<int_type>::iterator it =
      std::lower_bound(colIndices.begin(), colIndices.end(), col);
 
   if (it == colIndices.end() || *it != col) {

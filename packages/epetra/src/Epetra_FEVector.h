@@ -54,8 +54,6 @@ class Epetra_IntSerialDenseVector;
 class Epetra_LongLongSerialDenseVector;
 class Epetra_SerialDenseVector;
 
-  // TODO this file needs to be changed for long long
-
 
 /** Epetra Finite-Element Vector. This class inherits Epetra_MultiVector
   and thus provides all Epetra_MultiVector functionality.
@@ -242,30 +240,36 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
    Epetra_FEVector& operator=(const Epetra_FEVector& source);
 
  protected:
+  template<typename int_type>
   int inputValues(int numIDs,
-                  const int* GIDs, const double* values,
+                  const int_type* GIDs, const double* values,
                   bool suminto,
                   int vectorIndex);
 
+  template<typename int_type>
   int inputValues(int numIDs,
-                  const int* GIDs, const int* numValuesPerID,
+                  const int_type* GIDs, const int* numValuesPerID,
 		  const double* values,
                   bool suminto,
                   int vectorIndex);
 
-  int inputNonlocalValue(int GID, double value, bool suminto,
+  template<typename int_type>
+  int inputNonlocalValue(int_type GID, double value, bool suminto,
                          int vectorIndex);
 
-  int inputNonlocalValues(int GID, int numValues, const double* values,
+  template<typename int_type>
+  int inputNonlocalValues(int_type GID, int numValues, const double* values,
 			  bool suminto, int vectorIndex);
 
   //! Allocate the Map, Export object, and MultiVector for nonlocal data.
+  template<typename int_type>
   void createNonlocalMapAndExporter();
 
   //! Deallocate the Map, Export object, and MultiVector for nonlocal data.
   void destroyNonlocalMapAndExporter();
 
   //! Make all the nonlocal multivector entries zero.
+  template<typename int_type>
   void zeroNonlocalData();
 
   /// \brief Deallocate storage for nonlocal data.
@@ -277,7 +281,13 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
   long long myFirstID_;
   int myNumIDs_;
 
-  std::vector<int> nonlocalIDs_;
+  std::vector<int> nonlocalIDs_int_;
+  std::vector<long long> nonlocalIDs_LL_;
+
+  template<typename int_type> std::vector<int_type>& nonlocalIDs();
+  template<> std::vector<int>& nonlocalIDs<int>() { return nonlocalIDs_int_; }
+  template<> std::vector<long long>& nonlocalIDs<long long>() { return nonlocalIDs_LL_; }
+
   std::vector<int> nonlocalElementSize_;
 
   /// \brief Array of arrays (one per column) of nonlocal coefficients.
@@ -303,6 +313,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
   Epetra_MultiVector* nonlocalVector_;
 
   bool ignoreNonLocalEntries_;
+
+private:
+  template<typename int_type>
+  int GlobalAssemble(Epetra_CombineMode mode, bool reuse_map_and_exporter);
 };
 
 #endif

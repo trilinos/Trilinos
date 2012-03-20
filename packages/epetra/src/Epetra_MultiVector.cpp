@@ -356,31 +356,59 @@ int Epetra_MultiVector::DoView(void)
   return(0);
 }
 //=========================================================================
+int Epetra_MultiVector::ReplaceGlobalValue(int GlobalRow, int VectorIndex, double ScalarValue) {
+
+ // Use the more general method below
+  EPETRA_CHK_ERR(ChangeGlobalValue<int>(GlobalRow, 0, VectorIndex, ScalarValue, false));
+  return(0);
+}
+//=========================================================================
 int Epetra_MultiVector::ReplaceGlobalValue(long long GlobalRow, int VectorIndex, double ScalarValue) {
 
  // Use the more general method below
-  EPETRA_CHK_ERR(ChangeGlobalValue(GlobalRow, 0, VectorIndex, ScalarValue, false));
+  EPETRA_CHK_ERR(ChangeGlobalValue<long long>(GlobalRow, 0, VectorIndex, ScalarValue, false));
+  return(0);
+}
+//=========================================================================
+int Epetra_MultiVector::ReplaceGlobalValue(int GlobalBlockRow, int BlockRowOffset, 
+					   int VectorIndex, double ScalarValue) {
+  // Use the more general method below
+  EPETRA_CHK_ERR(ChangeGlobalValue<int>(GlobalBlockRow, BlockRowOffset, VectorIndex, ScalarValue, false)); 
   return(0);
 }
 //=========================================================================
 int Epetra_MultiVector::ReplaceGlobalValue(long long GlobalBlockRow, int BlockRowOffset, 
 					   int VectorIndex, double ScalarValue) {
   // Use the more general method below
-  EPETRA_CHK_ERR(ChangeGlobalValue(GlobalBlockRow, BlockRowOffset, VectorIndex, ScalarValue, false)); 
+  EPETRA_CHK_ERR(ChangeGlobalValue<long long>(GlobalBlockRow, BlockRowOffset, VectorIndex, ScalarValue, false)); 
+  return(0);
+}
+//=========================================================================
+int Epetra_MultiVector::SumIntoGlobalValue(int GlobalRow, int VectorIndex, double ScalarValue) {
+
+  // Use the more general method below
+  EPETRA_CHK_ERR(ChangeGlobalValue<int>(GlobalRow, 0, VectorIndex, ScalarValue, true)); 
   return(0);
 }
 //=========================================================================
 int Epetra_MultiVector::SumIntoGlobalValue(long long GlobalRow, int VectorIndex, double ScalarValue) {
 
   // Use the more general method below
-  EPETRA_CHK_ERR(ChangeGlobalValue(GlobalRow, 0, VectorIndex, ScalarValue, true)); 
+  EPETRA_CHK_ERR(ChangeGlobalValue<long long>(GlobalRow, 0, VectorIndex, ScalarValue, true)); 
   return(0);
 }
 //=========================================================================
 int Epetra_MultiVector::SumIntoGlobalValue(int GlobalBlockRow, int BlockRowOffset, 
 					   int VectorIndex, double ScalarValue) {
   // Use the more general method below
-  EPETRA_CHK_ERR(ChangeGlobalValue(GlobalBlockRow, BlockRowOffset, VectorIndex, ScalarValue, true));
+  EPETRA_CHK_ERR(ChangeGlobalValue<int>(GlobalBlockRow, BlockRowOffset, VectorIndex, ScalarValue, true));
+  return(0);
+}
+//=========================================================================
+int Epetra_MultiVector::SumIntoGlobalValue(long long GlobalBlockRow, int BlockRowOffset, 
+					   int VectorIndex, double ScalarValue) {
+  // Use the more general method below
+  EPETRA_CHK_ERR(ChangeGlobalValue<long long>(GlobalBlockRow, BlockRowOffset, VectorIndex, ScalarValue, true));
   return(0);
 }
 //=========================================================================
@@ -411,8 +439,12 @@ int Epetra_MultiVector::SumIntoMyValue(int MyBlockRow, int BlockRowOffset,
   return(0);
 }
 //=========================================================================
-int Epetra_MultiVector::ChangeGlobalValue(long long GlobalBlockRow, int BlockRowOffset, 
+template<typename int_type>
+int Epetra_MultiVector::ChangeGlobalValue(int_type GlobalBlockRow, int BlockRowOffset, 
 				     int VectorIndex, double ScalarValue, bool SumInto) {
+
+  if(!Map().GlobalIndicesIsType<int_type>())
+	throw ReportError("Epetra_MultiVector::ChangeGlobalValues mismatch between argument types (int/long long) and map type.", -1);
 
   // Convert GID to LID and call LID version
   EPETRA_CHK_ERR(ChangeMyValue(Map().LID(GlobalBlockRow), BlockRowOffset, VectorIndex, ScalarValue, SumInto));

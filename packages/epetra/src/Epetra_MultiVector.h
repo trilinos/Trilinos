@@ -317,6 +317,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
     \return Integer error code, set to 0 if successful, set to 1 if GlobalRow not associated with calling processor
     set to -1 if VectorIndex >= NumVectors().
   */
+  int ReplaceGlobalValue(int GlobalRow, int VectorIndex, double ScalarValue);
   int ReplaceGlobalValue(long long GlobalRow, int VectorIndex, double ScalarValue);
 
 
@@ -339,6 +340,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
     \return Integer error code, set to 0 if successful, set to 1 if GlobalRow not associated with calling processor
     set to -1 if VectorIndex >= NumVectors(), set to -2 if BlockRowOffset is out-of-range.
   */
+  int ReplaceGlobalValue(int GlobalBlockRow, int BlockRowOffset, int VectorIndex, double ScalarValue);
   int ReplaceGlobalValue(long long GlobalBlockRow, int BlockRowOffset, int VectorIndex, double ScalarValue);
 
 
@@ -362,6 +364,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
     \return Integer error code, set to 0 if successful, set to 1 if GlobalRow not associated with calling processor
     set to -1 if VectorIndex >= NumVectors().
   */
+  int SumIntoGlobalValue(int GlobalRow, int VectorIndex, double ScalarValue);
   int SumIntoGlobalValue(long long GlobalRow, int VectorIndex, double ScalarValue);
 
 
@@ -385,6 +388,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
     set to -1 if VectorIndex >= NumVectors(), set to -2 if BlockRowOffset is out-of-range.
   */
   int SumIntoGlobalValue(int GlobalBlockRow, int BlockRowOffset, int VectorIndex, double ScalarValue);
+  int SumIntoGlobalValue(long long GlobalBlockRow, int BlockRowOffset, int VectorIndex, double ScalarValue);
 
   //! Replace current value  at the specified (MyRow, VectorIndex) location with ScalarValue.
   /*!
@@ -990,7 +994,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
 
   int AllocateForView(void);
   int DoView(void);
-  int ChangeGlobalValue(long long GlobalBlockRow,
+  template<typename int_type>
+  int ChangeGlobalValue(int_type GlobalBlockRow,
                         int BlockRowOffset, 
                         int VectorIndex,
                         double ScalarValue,

@@ -264,7 +264,7 @@ Epetra_BlockMap * Epetra_MapColoring::GenerateBlockMap(int Color) const {
   {for (int i=0; i<NumElements; i++) 
     ColorElementSizes[i] = MapElementSizes[ColorElementLIDs[i]];}
 
-  Epetra_BlockMap * map = new Epetra_BlockMap(-1, NumElements, ColorElementGIDs, 
+  Epetra_BlockMap * map = new Epetra_BlockMap(-1, NumElements, ColorElementGIDs, //TODO long long
 					      ColorElementSizes,
 					      Map().IndexBase(), Map().Comm());
 
