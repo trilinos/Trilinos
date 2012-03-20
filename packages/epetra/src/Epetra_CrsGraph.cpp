@@ -84,7 +84,7 @@ Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV,
   : Epetra_DistObject(rowMap, "Epetra::CrsGraph"),
     CrsGraphData_(new Epetra_CrsGraphData(CV, rowMap, colMap, staticProfile))
 {
-	if(!rowMap.GlobalIndicesMatch(colMap))
+	if(!rowMap.GlobalIndicesTypeMatch(colMap))
 	   throw ReportError("Epetra_CrsGraph::Epetra_CrsGraph: cannot be called with different indices types for rowMap and colMap", -1);
 
   Allocate(numIndicesPerRow, 1, staticProfile);
@@ -98,7 +98,7 @@ Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV,
   : Epetra_DistObject(rowMap, "Epetra::CrsGraph"),
     CrsGraphData_(new Epetra_CrsGraphData(CV, rowMap, colMap, staticProfile))
 {
-	if(!rowMap.GlobalIndicesMatch(colMap))
+	if(!rowMap.GlobalIndicesTypeMatch(colMap))
 	   throw ReportError("Epetra_CrsGraph::Epetra_CrsGraph: cannot be called with different indices types for rowMap and colMap", -1);
 
   Allocate(&numIndicesPerRow, 0, staticProfile);
@@ -910,10 +910,10 @@ int Epetra_CrsGraph::FillComplete() {
 
 //==============================================================================
 int Epetra_CrsGraph::FillComplete(const Epetra_BlockMap& domainMap, const Epetra_BlockMap& rangeMap) {
-  if(!domainMap.GlobalIndicesMatch(rangeMap))
+  if(!domainMap.GlobalIndicesTypeMatch(rangeMap))
      throw ReportError("Epetra_CrsGraph::FillComplete: cannot be called with different indices types for domainMap and rangeMap", -1);
 
-  if(!RowMap().GlobalIndicesMatch(domainMap))
+  if(!RowMap().GlobalIndicesTypeMatch(domainMap))
     throw ReportError("Epetra_CrsGraph::FillComplete: cannot be called with different indices types for row map and incoming rangeMap", -1);
 
   CrsGraphData_->DomainMap_ = domainMap;
@@ -1672,10 +1672,10 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap& domainMap,
 
 // protected ===================================================================
 int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap& domainMap, const Epetra_BlockMap& rangeMap) {
-  if(!domainMap.GlobalIndicesMatch(rangeMap))
+  if(!domainMap.GlobalIndicesTypeMatch(rangeMap))
      throw ReportError("Epetra_CrsGraph::MakeIndicesLocal: cannot be called with different indices types for domainMap and rangeMap", -1);
 
-  if(!RowMap().GlobalIndicesMatch(domainMap))
+  if(!RowMap().GlobalIndicesTypeMatch(domainMap))
     throw ReportError("Epetra_CrsGraph::MakeIndicesLocal: cannot be called with different indices types for row map and incoming rangeMap", -1);
 
   ComputeIndexState(); // Update index state by checking IndicesAreLocal/Global on all PEs
@@ -2065,7 +2065,7 @@ int Epetra_CrsGraph::ReplaceRowMap(const Epetra_BlockMap& newmap)
 //==============================================================================
 int Epetra_CrsGraph::ReplaceColMap(const Epetra_BlockMap& newmap)
 {
-  if (!HaveColMap() && !IndicesAreLocal() && !IndicesAreGlobal() && newmap.GlobalIndicesMatch(RowMap())) {
+  if (!HaveColMap() && !IndicesAreLocal() && !IndicesAreGlobal() && newmap.GlobalIndicesTypeMatch(RowMap())) {
     CrsGraphData_->ColMap_            = newmap;
     CrsGraphData_->NumGlobalBlockCols_= newmap.NumGlobalElements();
     CrsGraphData_->NumMyBlockCols_    = newmap.NumMyElements();
@@ -2099,8 +2099,6 @@ int Epetra_CrsGraph::CheckSizes(const Epetra_SrcDistObject& Source) {
   return(0);
 }
 
-  // TODO the functions below need to be changed for long long
-
 // private =====================================================================
 int Epetra_CrsGraph::CopyAndPermute(const Epetra_SrcDistObject& Source,
 				    int NumSameIDs, 
@@ -2108,7 +2106,10 @@ int Epetra_CrsGraph::CopyAndPermute(const Epetra_SrcDistObject& Source,
 				    int* PermuteToLIDs,
 				    int* PermuteFromLIDs,
                                     const Epetra_OffsetIndex * Indexor)
-{ 
+{
+  if(!Source.Map().GlobalIndicesTypeMatch(RowMap()))
+    throw ReportError("Epetra_CrsGraph::CopyAndPermute: Incoming global index type does not match the one for *this",-1);
+
   try {
     const Epetra_CrsGraph& A = dynamic_cast<const Epetra_CrsGraph&>(Source);
     EPETRA_CHK_ERR(CopyAndPermuteCrsGraph(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs,
@@ -2203,13 +2204,16 @@ int Epetra_CrsGraph::CopyAndPermuteRowMatrix(const Epetra_RowMatrix& A,
 					     int* PermuteFromLIDs,
                                              const Epetra_OffsetIndex * Indexor)
 {
-	if(A.RowMatrixRowMap().GlobalIndicesInt())
-		return CopyAndPermuteRowMatrix<int>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
+  if(!A.RowMatrixRowMap().GlobalIndicesTypeMatch(RowMap()))
+    throw ReportError("Epetra_CrsGraph::CopyAndPermuteRowMatrix: Incoming global index type does not match the one for *this",-1);
 
-	if(A.RowMatrixRowMap().GlobalIndicesLongLong())
-		return CopyAndPermuteRowMatrix<long long>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
+  if(A.RowMatrixRowMap().GlobalIndicesInt())
+    return CopyAndPermuteRowMatrix<int>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
 
-	throw ReportError("Epetra_CrsGraph::CopyAndPermuteRowMatrix: Unable to determine global index type of map", -1);
+  if(A.RowMatrixRowMap().GlobalIndicesLongLong())
+    return CopyAndPermuteRowMatrix<long long>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
+
+  throw ReportError("Epetra_CrsGraph::CopyAndPermuteRowMatrix: Unable to determine global index type of map", -1);
 }
 
 // private =====================================================================
@@ -2300,13 +2304,16 @@ int Epetra_CrsGraph::CopyAndPermuteCrsGraph(const Epetra_CrsGraph& A,
 					    int* PermuteFromLIDs,
                                             const Epetra_OffsetIndex * Indexor)
 {
-	if(A.RowMap().GlobalIndicesInt())
-		return CopyAndPermuteCrsGraph<int>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
+  if(!A.RowMap().GlobalIndicesTypeMatch(RowMap()))
+    throw ReportError("Epetra_CrsGraph::CopyAndPermuteCrsGraph: Incoming global index type does not match the one for *this",-1);
 
-	if(A.RowMap().GlobalIndicesLongLong())
-		return CopyAndPermuteCrsGraph<long long>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
+  if(A.RowMap().GlobalIndicesInt())
+    return CopyAndPermuteCrsGraph<int>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
 
-	throw ReportError("Epetra_CrsGraph::CopyAndPermuteCrsGraph: Unable to determine global index type of map", -1);
+  if(A.RowMap().GlobalIndicesLongLong())
+    return CopyAndPermuteCrsGraph<long long>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
+
+  throw ReportError("Epetra_CrsGraph::CopyAndPermuteCrsGraph: Unable to determine global index type of map", -1);
 }
 
 // private =====================================================================
@@ -2320,12 +2327,20 @@ int Epetra_CrsGraph::PackAndPrepare(const Epetra_SrcDistObject& Source,
                                     bool& VarSizes,
 				    Epetra_Distributor& Distor) 
 {
+  if(!Source.Map().GlobalIndicesTypeMatch(RowMap()))
+    throw ReportError("Epetra_CrsGraph::PackAndPrepare: Incoming global index type does not match the one for *this",-1);
+
   int globalMaxNumIndices = 0;
   int TotalSendSize = 0;
 
   VarSizes = true;
 
-  SizeOfPacket = (int)sizeof(int); 
+  if(Source.Map().GlobalIndicesInt())
+    SizeOfPacket = (int)sizeof(int); 
+  else if(Source.Map().GlobalIndicesLongLong())
+    SizeOfPacket = (int)sizeof(long long); 
+  else
+    throw ReportError("Epetra_CrsGraph::PackAndPrepare: Unable to determine source global index type",-1);
 
   if(NumExportIDs <= 0) return(0);
 
@@ -2382,6 +2397,9 @@ int Epetra_CrsGraph::PackAndPrepareCrsGraph(const Epetra_CrsGraph& A,
                                             bool& VarSizes,
 					    Epetra_Distributor& Distor)
 {
+  if(!A.RowMap().GlobalIndicesTypeMatch(RowMap()))
+    throw ReportError("Epetra_CrsGraph::PackAndPrepareCrsGraph: Incoming global index type does not match the one for *this",-1);
+
   (void)LenExports;
   (void)SizeOfPacket;
   (void)Sizes;
@@ -2389,9 +2407,6 @@ int Epetra_CrsGraph::PackAndPrepareCrsGraph(const Epetra_CrsGraph& A,
   (void)Distor;
   int i;
   int NumIndices;
-  int* indices = 0;
-  int FromRow;
-  int* intptr;
   
   // Each segment of Exports will be filled by a packed row of information for each row as follows:
   // 1st int: GRID of row where GRID is the global row ID for the source graph
@@ -2402,15 +2417,34 @@ int Epetra_CrsGraph::PackAndPrepareCrsGraph(const Epetra_CrsGraph& A,
   int maxNumIndices = A.MaxNumIndices();
   //if( maxNumIndices ) indices = new int[maxNumIndices];
 
-  intptr = (int*) Exports;
-  for(i = 0; i < NumExportIDs; i++) {
-    FromRow = A.GRID(ExportLIDs[i]);
-    *intptr = FromRow;
-    indices = intptr + 2;
-    EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(FromRow, maxNumIndices, NumIndices, indices));
-    intptr[1] = NumIndices; // Load second slot of segment
-    intptr += (NumIndices+2); // Point to next segment
+  if(A.RowMap().GlobalIndicesInt()) {
+    int* indices = 0;
+    int* intptr = (int*) Exports;
+    int FromRow;
+    for(i = 0; i < NumExportIDs; i++) {
+      FromRow = (int) A.GRID(ExportLIDs[i]);
+      *intptr = FromRow;
+      indices = intptr + 2;
+      EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(FromRow, maxNumIndices, NumIndices, indices));
+      intptr[1] = NumIndices; // Load second slot of segment
+      intptr += (NumIndices+2); // Point to next segment
+    }
   }
+  else if(A.RowMap().GlobalIndicesLongLong()) {
+    long long* indices = 0;
+    long long* LLptr = (long long*) Exports;
+    long long FromRow;
+    for(i = 0; i < NumExportIDs; i++) {
+      FromRow = A.GRID(ExportLIDs[i]);
+      *LLptr = FromRow;
+      indices = LLptr + 2;
+      EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(FromRow, maxNumIndices, NumIndices, indices));
+      LLptr[1] = NumIndices; // Load second slot of segment
+      LLptr += (NumIndices+2); // Point to next segment
+    }
+  }
+  else
+    throw ReportError("Epetra_CrsGraph::PackAndPrepareCrsGraph: Unable to determine source global index type",-1);
 
   //if( indices ) delete [] indices;
     
@@ -2428,6 +2462,9 @@ int Epetra_CrsGraph::PackAndPrepareRowMatrix(const Epetra_RowMatrix& A,
                                              bool& VarSizes,
 					     Epetra_Distributor& Distor)
 {
+  if(!A.Map().GlobalIndicesTypeMatch(RowMap()))
+    throw ReportError("Epetra_CrsGraph::PackAndPrepareRowMatrix: Incoming global index type does not match the one for *this",-1);
+
   (void)LenExports;
   (void)SizeOfPacket;
   (void)Sizes;
@@ -2436,9 +2473,6 @@ int Epetra_CrsGraph::PackAndPrepareRowMatrix(const Epetra_RowMatrix& A,
   int i;
   int j;
   int NumIndices;
-  int* indices = 0;
-  long long FromRow;
-  int* intptr;
   Epetra_SerialDenseVector Values;
   
   // Each segment of Exports will be filled by a packed row of information for each row as follows:
@@ -2455,16 +2489,49 @@ int Epetra_CrsGraph::PackAndPrepareRowMatrix(const Epetra_RowMatrix& A,
   const Epetra_Map& rowMap = A.RowMatrixRowMap();
   const Epetra_Map& colMap = A.RowMatrixColMap();
 
-  intptr = (int*) Exports;
-  for(i = 0; i < NumExportIDs; i++) {
-    FromRow = rowMap.GID(ExportLIDs[i]);
-    *intptr = FromRow;
-    indices = intptr + 2;
-    EPETRA_CHK_ERR(A.ExtractMyRowCopy(ExportLIDs[i], maxNumIndices, NumIndices, Values.Values(), indices));
-    for(j = 0; j < NumIndices; j++) indices[j] = colMap.GID(indices[j]); // convert to GIDs
-    intptr[1] = NumIndices; // Load second slot of segment
-    intptr += (NumIndices+2); // Point to next segment
+  if(rowMap.GlobalIndicesInt() && colMap.GlobalIndicesInt()) {
+    int* indices = 0;
+    int FromRow;
+    int* intptr = (int*) Exports;
+    for(i = 0; i < NumExportIDs; i++) {
+      FromRow = (int) rowMap.GID(ExportLIDs[i]);
+      *intptr = FromRow;
+      indices = intptr + 2;
+      EPETRA_CHK_ERR(A.ExtractMyRowCopy(ExportLIDs[i], maxNumIndices, NumIndices, Values.Values(), indices));
+      for(j = 0; j < NumIndices; j++) indices[j] = (int) colMap.GID(indices[j]); // convert to GIDs
+      intptr[1] = NumIndices; // Load second slot of segment
+      intptr += (NumIndices+2); // Point to next segment
+    }
   }
+  else if(rowMap.GlobalIndicesLongLong() && colMap.GlobalIndicesLongLong()) {
+	  // Bytes of Exports:
+	  // 12345678.12345678....12345678.12345678 ("." means no spaces)
+	  // FromRow  NumIndices  id1 id2  id3 id4  <-- before converting to GIDs
+	  // FromRow  NumIndices  | gid1 | | gid2 | <-- after converting to GIDs
+
+    long long* LL_indices = 0;
+    long long FromRow;
+    long long* LLptr = (long long*) Exports;
+    for(i = 0; i < NumExportIDs; i++) {
+      FromRow = rowMap.GID(ExportLIDs[i]);
+      *LLptr = FromRow;
+      LL_indices = LLptr + 2;
+      int* int_indices = reinterpret_cast<int*>(LL_indices);
+      EPETRA_CHK_ERR(A.ExtractMyRowCopy(ExportLIDs[i], maxNumIndices, NumIndices, Values.Values(), int_indices));
+
+      // convert to GIDs, start from right.
+      for(j = NumIndices; j > 0;) {
+       --j;
+       LL_indices[j] = colMap.GID(int_indices[j]);
+      }
+
+      LLptr[1] = NumIndices; // Load second slot of segment
+      LLptr += (NumIndices+2); // Point to next segment
+    }
+  }
+  else
+    throw ReportError("Epetra_CrsGraph::PackAndPrepareRowMatrix: Unable to determine source global index type",-1);
+
 
 //  if( indices ) delete [] indices;
  
@@ -2482,6 +2549,9 @@ int Epetra_CrsGraph::UnpackAndCombine(const Epetra_SrcDistObject& Source,
                                       Epetra_CombineMode CombineMode,
                                       const Epetra_OffsetIndex * Indexor) 
 {
+  if(!Source.Map().GlobalIndicesTypeMatch(RowMap()))
+    throw ReportError("Epetra_CrsGraph::UnpackAndCombine: Incoming global index type does not match the one for *this",-1);
+
   (void)Source;
   (void)LenImports;
   (void)SizeOfPacket;
@@ -2492,11 +2562,8 @@ int Epetra_CrsGraph::UnpackAndCombine(const Epetra_SrcDistObject& Source,
     return(0);
 
   int NumIndices;
-  int* indices;
-  int ToRow;
   int i;
   
-  int* intptr;
   // Unpack it...
 
   // Each segment of Sends will be filled by a packed row of information for each row as follows:
@@ -2504,19 +2571,40 @@ int Epetra_CrsGraph::UnpackAndCombine(const Epetra_SrcDistObject& Source,
   // next int:  NumIndices, Number of indices in row.
   // next NumIndices: The actual indices for the row.
 
-  intptr = (int*) Imports;
-    
-  for(i = 0; i < NumImportIDs; i++) {
-    ToRow = GRID(ImportLIDs[i]);
-    assert((intptr[0])==ToRow); // Sanity check
-    NumIndices = intptr[1];
-    indices = intptr + 2; 
-    // Insert indices
-    int ierr = InsertGlobalIndices(ToRow, NumIndices, indices);
-    if(ierr < 0) 
-      EPETRA_CHK_ERR(ierr);
-    intptr += (NumIndices+2); // Point to next segment
+  if(Source.Map().GlobalIndicesInt()) {
+    int* indices;
+    int ToRow;
+    int* intptr = (int*) Imports;
+    for(i = 0; i < NumImportIDs; i++) {
+      ToRow = (int) GRID(ImportLIDs[i]);
+      assert((intptr[0])==ToRow); // Sanity check
+      NumIndices = intptr[1];
+      indices = intptr + 2; 
+      // Insert indices
+      int ierr = InsertGlobalIndices(ToRow, NumIndices, indices);
+      if(ierr < 0) 
+        EPETRA_CHK_ERR(ierr);
+      intptr += (NumIndices+2); // Point to next segment
+    }
   }
+  else if(Source.Map().GlobalIndicesLongLong()) {
+    long long* indices;
+    long long ToRow;
+    long long* LLptr = (long long*) Imports;
+    for(i = 0; i < NumImportIDs; i++) {
+      ToRow = GRID(ImportLIDs[i]);
+      assert((LLptr[0])==ToRow); // Sanity check
+      NumIndices = (int) LLptr[1];
+      indices = LLptr + 2; 
+      // Insert indices
+      int ierr = InsertGlobalIndices(ToRow, NumIndices, indices);
+      if(ierr < 0) 
+        EPETRA_CHK_ERR(ierr);
+      LLptr += (NumIndices+2); // Point to next segment
+    }
+  }
+  else
+    throw ReportError("Epetra_CrsGraph::UnpackAndCombine: Unable to determine source global index type",-1);
 
   //destroy buffers since this operation is usually only done once
   if( LenExports_ ) {
@@ -2597,8 +2685,19 @@ void Epetra_CrsGraph::Print (ostream& os) const {
 
       int NumMyBlockRows1 = NumMyBlockRows();
       int MaxNumIndices1 = MaxNumIndices();
-      Epetra_IntSerialDenseVector Indices1(MaxNumIndices1);
-      int NumIndices1;
+      Epetra_IntSerialDenseVector Indices1_int(MaxNumIndices1);
+      Epetra_LongLongSerialDenseVector Indices1_LL(MaxNumIndices1);
+
+      if(RowMap().GlobalIndicesInt()) {
+		 Indices1_int.Resize(MaxNumIndices1);
+      }
+      else if(RowMap().GlobalIndicesLongLong()) {
+		 Indices1_LL.Resize(MaxNumIndices1);
+      }
+      else
+         throw ReportError("Epetra_CrsGraph::Print: Unable to determine source global index type",-1);
+
+	  int NumIndices1;
       int i;
       int j;
       
@@ -2610,16 +2709,28 @@ void Epetra_CrsGraph::Print (ostream& os) const {
       }
       os << endl;
       for(i = 0; i < NumMyBlockRows1; i++) {
-	long long Row = GRID(i); // Get global row number
-	ExtractGlobalRowCopy(Row, MaxNumIndices1, NumIndices1, Indices1.Values());
-				
-	os.width(14);
-	os <<  Row ; os << "    ";	
-	for(j = 0; j < NumIndices1 ; j++) {   
-	  os.width(12);
-	  os <<  Indices1[j]; os << "    ";
-	}
-	os << endl;
+       if(RowMap().GlobalIndicesInt()) {
+         int Row = (int) GRID(i); // Get global row number
+         ExtractGlobalRowCopy(Row, MaxNumIndices1, NumIndices1, Indices1_int.Values());
+         os.width(14);
+         os <<  Row ; os << "    ";
+         for(j = 0; j < NumIndices1 ; j++) {   
+           os.width(12);
+           os <<  Indices1_int[j]; os << "    ";
+         }
+         os << endl;
+       }
+       else if(RowMap().GlobalIndicesLongLong()) {
+         long long Row = GRID(i); // Get global row number
+         ExtractGlobalRowCopy(Row, MaxNumIndices1, NumIndices1, Indices1_LL.Values());
+         os.width(14);
+         os <<  Row ; os << "    ";
+         for(j = 0; j < NumIndices1 ; j++) {   
+           os.width(12);
+           os <<  Indices1_LL[j]; os << "    ";
+         }
+         os << endl;
+       }
       }      
       os << flush;
     }

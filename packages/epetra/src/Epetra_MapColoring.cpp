@@ -234,7 +234,7 @@ Epetra_Map * Epetra_MapColoring::GenerateMap(int Color) const {
   if (NumElements>0) {
     ColorElementLIDs = ColorLIDList(Color);
     ColorElementGIDs = new int[NumElements];
-    for (int i=0; i<NumElements; i++) ColorElementGIDs[i] = Map().GID(ColorElementLIDs[i]);
+    for (int i=0; i<NumElements; i++) ColorElementGIDs[i] = Map().GID(ColorElementLIDs[i]); // TODO long long
   }
   Epetra_Map * map = new Epetra_Map(-1, NumElements, ColorElementGIDs, //TODO long long
 				    Map().IndexBase(), Map().Comm());
@@ -257,7 +257,7 @@ Epetra_BlockMap * Epetra_MapColoring::GenerateBlockMap(int Color) const {
     ColorElementLIDs = ColorLIDList(Color);
     ColorElementSizes = new int[NumElements];
     ColorElementGIDs = new int[NumElements];
-    for (int i=0; i<NumElements; i++) ColorElementGIDs[i] = Map().GID(ColorElementLIDs[i]);
+    for (int i=0; i<NumElements; i++) ColorElementGIDs[i] = Map().GID(ColorElementLIDs[i]);// TODO long long
   }
   int * MapElementSizes = Map().ElementSizeList();
 

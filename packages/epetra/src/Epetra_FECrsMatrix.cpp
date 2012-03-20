@@ -912,10 +912,10 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
                                        bool callFillComplete,
                                        Epetra_CombineMode combineMode)
 {
-  if(!domain_map.GlobalIndicesMatch(range_map))
+  if(!domain_map.GlobalIndicesTypeMatch(range_map))
      throw ReportError("Epetra_FECrsMatrix::GlobalAssemble: cannot be called with different indices types for domainMap and rangeMap", -1);
 
-  if(!RowMap().GlobalIndicesMatch(domain_map))
+  if(!RowMap().GlobalIndicesTypeMatch(domain_map))
     throw ReportError("Epetra_FECrsMatrix::GlobalAssemble: cannot be called with different indices types for row map and incoming rangeMap", -1);
 
   if(RowMap().GlobalIndicesInt())

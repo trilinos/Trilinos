@@ -180,7 +180,7 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV,
      if(RowMap.GlobalIndicesInt() == false && RowMap.GlobalIndicesLongLong() == false)
        throw "Epetra_CrsGraphData::Epetra_CrsGraphData: cannot be called without any index type for RowMap";
 
-	if(!RowMap.GlobalIndicesMatch(ColMap))
+	if(!RowMap.GlobalIndicesTypeMatch(ColMap))
        throw "Epetra_CrsGraphData::Epetra_CrsGraphData: cannot be called with different indices types for RowMap and ColMap";
   //cout << "--CRSGD created(rowmap&colmap ctr), addr: " << this << endl; //DATA_DEBUG
 }

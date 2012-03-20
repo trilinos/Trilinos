@@ -178,7 +178,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& rowMa
     CV_(CV),
     squareFillCompleteCalled_(false)
 {
-  if(!rowMap.GlobalIndicesMatch(colMap))
+  if(!rowMap.GlobalIndicesTypeMatch(colMap))
     throw ReportError("Epetra_CrsMatrix::Epetra_CrsMatrix: cannot be called with different indices types for rowMap and colMap", -1);
 
   InitializeDefaults();
@@ -2064,6 +2064,9 @@ int Epetra_CrsMatrix::CopyAndPermute(const Epetra_SrcDistObject & Source,
 				     int *PermuteFromLIDs,
                                      const Epetra_OffsetIndex * Indexor ) {
  
+  if(!Source.Map().GlobalIndicesTypeMatch(RowMap()))
+    throw ReportError("Epetra_CrsMatrix::CopyAndPermute: Incoming global index type does not match the one for *this",-1);
+
   try {
     const Epetra_CrsMatrix & A = dynamic_cast<const Epetra_CrsMatrix &>(Source);
     EPETRA_CHK_ERR(CopyAndPermuteCrsMatrix(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs,
@@ -2084,15 +2087,15 @@ int Epetra_CrsMatrix::CopyAndPermute(const Epetra_SrcDistObject & Source,
 }
 
 //=========================================================================
-int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
+template<typename int_type>
+int Epetra_CrsMatrix::TCopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
                                               int NumSameIDs, 
 					      int NumPermuteIDs,
                                               int * PermuteToLIDs,
 					      int *PermuteFromLIDs,
                                               const Epetra_OffsetIndex * Indexor) {
   
-// TODO change for long long
-
+// TODO long long
   int i, ierr;
   
   int Row, NumEntries;
@@ -2282,25 +2285,51 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
   return(0);
 }
 
+int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
+                                              int NumSameIDs, 
+					      int NumPermuteIDs,
+                                              int * PermuteToLIDs,
+					      int *PermuteFromLIDs,
+                                              const Epetra_OffsetIndex * Indexor)
+{
+  if(!A.RowMap().GlobalIndicesTypeMatch(RowMap()))
+    throw ReportError("Epetra_CrsMatrix::CopyAndPermuteCrsMatrix: Incoming global index type does not match the one for *this",-1);
+
+  if(A.RowMap().GlobalIndicesInt())
+    return TCopyAndPermuteCrsMatrix<int>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
+  if(A.RowMap().GlobalIndicesLongLong())
+    return TCopyAndPermuteCrsMatrix<long long>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
+
+  throw ReportError("Epetra_CrsMatrix::CopyAndPermuteCrsMatrix: Internal error, unable to determine global index type of maps", -1);
+}
+
 //=========================================================================
-int Epetra_CrsMatrix::CopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
+template<typename int_type>
+int Epetra_CrsMatrix::TCopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
                                               int NumSameIDs, 
 					      int NumPermuteIDs,
                                               int * PermuteToLIDs,
 					      int *PermuteFromLIDs,
                                               const Epetra_OffsetIndex * Indexor ) {
-  
-// TODO change for long long
   int i, j, ierr;
   
-  int Row, NumEntries;
-  int FromRow, ToRow;
+  int_type Row, ToRow;
+  int NumEntries;
+  int FromRow;
   int maxNumEntries = A.MaxNumEntries();
-  int * Indices = 0;
+  int_type * gen_Indices = 0; // gen = general (int or long long)
+  int * int_Indices = 0;
   double * values = 0;
 
   if (maxNumEntries>0) {
-    Indices = new int[maxNumEntries];
+    if(StaticGraph() || IndicesAreLocal() || Indexor) {
+      int_Indices = new int[maxNumEntries];
+    }
+    else {
+      gen_Indices = new int_type[maxNumEntries];
+      int_Indices = reinterpret_cast<int*>(gen_Indices);
+    }
+
     values = new double[maxNumEntries]; // Must extract values even though we discard them
   }
   
@@ -2312,22 +2341,22 @@ int Epetra_CrsMatrix::CopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
     if (StaticGraph() || IndicesAreLocal()) {
       if( Indexor ) {
         for (i=0; i<NumSameIDs; i++) {
-          Row = GRID(i);
+          Row = (int_type) GRID(i);
           int AlocalRow = rowMap.LID(Row);
-          EPETRA_CHK_ERR(A.ExtractMyRowCopy(AlocalRow, maxNumEntries, NumEntries, values, Indices));
+          EPETRA_CHK_ERR(A.ExtractMyRowCopy(AlocalRow, maxNumEntries, NumEntries, values, int_Indices));
 	  ierr = ReplaceOffsetValues(Row, NumEntries, values, Indexor->SameOffsets()[i]);
           if (ierr<0) EPETRA_CHK_ERR(ierr);
         }
       }
       else {
         for (i=0; i<NumSameIDs; i++) {
-          Row = GRID(i);
+          Row = (int_type) GRID(i);
           int AlocalRow = rowMap.LID(Row);
-          EPETRA_CHK_ERR(A.ExtractMyRowCopy(AlocalRow, maxNumEntries, NumEntries, values, Indices));
+          EPETRA_CHK_ERR(A.ExtractMyRowCopy(AlocalRow, maxNumEntries, NumEntries, values, int_Indices));
           for(j=0; j<NumEntries; ++j) {
-            Indices[j] = LCID(colMap.GID(Indices[j]));
+            int_Indices[j] = LCID(colMap.GID(int_Indices[j]));
           }
-	  ierr = ReplaceMyValues(i, NumEntries, values, Indices);
+	  ierr = ReplaceMyValues(i, NumEntries, values, int_Indices);
           if (ierr<0) EPETRA_CHK_ERR(ierr);
         }
       }
@@ -2335,18 +2364,23 @@ int Epetra_CrsMatrix::CopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
     else {
       if( Indexor ) {
         for (i=0; i<NumSameIDs; i++) {
-          EPETRA_CHK_ERR(A.ExtractMyRowCopy(i, maxNumEntries, NumEntries, values, Indices));
-          Row = GRID(i);
+          EPETRA_CHK_ERR(A.ExtractMyRowCopy(i, maxNumEntries, NumEntries, values, int_Indices));
+          Row = (int_type) GRID(i);
 	  ierr = InsertOffsetValues(Row, NumEntries, values, Indexor->SameOffsets()[i]); 
           if (ierr<0) EPETRA_CHK_ERR(ierr);
         }
       }
       else {
         for (i=0; i<NumSameIDs; i++) {
-          EPETRA_CHK_ERR(A.ExtractMyRowCopy(i, maxNumEntries, NumEntries, values, Indices));
-          Row = GRID(i);
-          for( j=0; j<NumEntries; ++j ) Indices[j] = colMap.GID(Indices[j]); //convert to GIDs
-	  ierr = InsertGlobalValues(Row, NumEntries, values, Indices); 
+          EPETRA_CHK_ERR(A.ExtractMyRowCopy(i, maxNumEntries, NumEntries, values, int_Indices));
+          Row = (int_type) GRID(i);
+
+          // convert to GIDs, start from right.
+          for(j = NumEntries; j > 0;) {
+            --j;
+           gen_Indices[j] = (int_type) colMap.GID(int_Indices[j]);
+          }
+	  ierr = InsertGlobalValues(Row, NumEntries, values, gen_Indices); 
           if (ierr<0) EPETRA_CHK_ERR(ierr);
         }
       }
@@ -2359,8 +2393,8 @@ int Epetra_CrsMatrix::CopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
       if( Indexor ) {
         for (i=0; i<NumPermuteIDs; i++) {
           FromRow = PermuteFromLIDs[i];
-          EPETRA_CHK_ERR(A.ExtractMyRowCopy(FromRow, maxNumEntries, NumEntries, values, Indices));
-          ToRow = GRID(PermuteToLIDs[i]);
+          EPETRA_CHK_ERR(A.ExtractMyRowCopy(FromRow, maxNumEntries, NumEntries, values, int_Indices));
+          ToRow = (int_type) GRID(PermuteToLIDs[i]);
 	  ierr = ReplaceOffsetValues(ToRow, NumEntries, values, Indexor->PermuteOffsets()[i]);
           if (ierr<0) EPETRA_CHK_ERR(ierr);
         }
@@ -2368,12 +2402,12 @@ int Epetra_CrsMatrix::CopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
       else {
         for (i=0; i<NumPermuteIDs; i++) {
           FromRow = PermuteFromLIDs[i];
-          EPETRA_CHK_ERR(A.ExtractMyRowCopy(FromRow, maxNumEntries, NumEntries, values, Indices));
-          ToRow = GRID(PermuteToLIDs[i]);
+          EPETRA_CHK_ERR(A.ExtractMyRowCopy(FromRow, maxNumEntries, NumEntries, values, int_Indices));
+          ToRow = (int_type) GRID(PermuteToLIDs[i]);
           for(j=0; j<NumEntries; ++j) {
-            Indices[j] = LCID(colMap.GID(Indices[j]));
+            int_Indices[j] = LCID(colMap.GID(int_Indices[j]));
           }
-	  ierr = ReplaceMyValues(ToRow, NumEntries, values, Indices);
+	  ierr = ReplaceMyValues((int) ToRow, NumEntries, values, int_Indices);
           if (ierr<0) EPETRA_CHK_ERR(ierr);
         }
       }
@@ -2382,8 +2416,8 @@ int Epetra_CrsMatrix::CopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
       if( Indexor ) {
         for (i=0; i<NumPermuteIDs; i++) {
           FromRow = PermuteFromLIDs[i];
-          EPETRA_CHK_ERR(A.ExtractMyRowCopy(FromRow, maxNumEntries, NumEntries, values, Indices));
-          ToRow = GRID(PermuteToLIDs[i]);
+          EPETRA_CHK_ERR(A.ExtractMyRowCopy(FromRow, maxNumEntries, NumEntries, values, int_Indices));
+          ToRow = (int_type) GRID(PermuteToLIDs[i]);
 	  ierr = InsertOffsetValues(ToRow, NumEntries, values, Indexor->PermuteOffsets()[i]); 
           if (ierr<0) EPETRA_CHK_ERR(ierr);
         }
@@ -2391,10 +2425,16 @@ int Epetra_CrsMatrix::CopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
       else {
         for (i=0; i<NumPermuteIDs; i++) {
           FromRow = PermuteFromLIDs[i];
-          EPETRA_CHK_ERR(A.ExtractMyRowCopy(FromRow, maxNumEntries, NumEntries, values, Indices));
-	  for (j=0; j<NumEntries; j++) Indices[j] = colMap.GID(Indices[j]); // convert to GIDs
-          ToRow = GRID(PermuteToLIDs[i]);
-	  ierr = InsertGlobalValues(ToRow, NumEntries, values, Indices); 
+          EPETRA_CHK_ERR(A.ExtractMyRowCopy(FromRow, maxNumEntries, NumEntries, values, int_Indices));
+
+          // convert to GIDs, start from right.
+          for(j = NumEntries; j > 0;) {
+            --j;
+           gen_Indices[j] = (int_type) colMap.GID(int_Indices[j]);
+          }
+
+          ToRow = (int_type) GRID(PermuteToLIDs[i]);
+	  ierr = InsertGlobalValues(ToRow, NumEntries, values, gen_Indices); 
           if (ierr<0) EPETRA_CHK_ERR(ierr);
         }
       }
@@ -2403,10 +2443,32 @@ int Epetra_CrsMatrix::CopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
 
   if (maxNumEntries>0) {
     delete [] values;
-    delete [] Indices;
+    if(StaticGraph() || IndicesAreLocal() || Indexor) {
+      delete [] int_Indices;
+    }
+    else {
+      delete [] gen_Indices;
+    }
   }
-  
   return(0);
+}
+
+int Epetra_CrsMatrix::CopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
+                                              int NumSameIDs, 
+					      int NumPermuteIDs,
+                                              int * PermuteToLIDs,
+					      int *PermuteFromLIDs,
+                                              const Epetra_OffsetIndex * Indexor )
+{
+  if(!A.Map().GlobalIndicesTypeMatch(RowMap()))
+    throw ReportError("Epetra_CrsMatrix::CopyAndPermuteRowMatrix: Incoming global index type does not match the one for *this",-1);
+
+  if(A.RowMatrixRowMap().GlobalIndicesInt())
+    return TCopyAndPermuteRowMatrix<int>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
+  if(A.RowMatrixRowMap().GlobalIndicesLongLong())
+    return TCopyAndPermuteRowMatrix<long long>(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs, Indexor);
+
+  throw ReportError("Epetra_CrsMatrix::CopyAndPermuteRowMatrix: Internal error, unable to determine global index type of maps", -1);
 }
 
 //=========================================================================
@@ -2420,7 +2482,9 @@ int Epetra_CrsMatrix::PackAndPrepare(const Epetra_SrcDistObject & Source,
                                      bool & VarSizes,
                                      Epetra_Distributor & Distor)
 {
-// TODO change for long long
+  if(!Source.Map().GlobalIndicesTypeMatch(RowMap()))
+    throw ReportError("Epetra_CrsMatrix::PackAndPrepare: Incoming global index type does not match the one for *this",-1);
+
   (void)Distor;	
   // Rest of work can be done using RowMatrix only  
   const Epetra_RowMatrix & A = dynamic_cast<const Epetra_RowMatrix &>(Source);
@@ -2431,13 +2495,21 @@ int Epetra_CrsMatrix::PackAndPrepare(const Epetra_SrcDistObject & Source,
   int * IntSizes = 0; 
   if( NumExportIDs>0 ) IntSizes = new int[NumExportIDs];
 
+  int SizeofIntType = -1;
+  if(Source.Map().GlobalIndicesInt())
+    SizeofIntType = (int)sizeof(int); 
+  else if(Source.Map().GlobalIndicesLongLong())
+    SizeofIntType = (int)sizeof(long long); 
+  else
+    throw ReportError("Epetra_CrsMatrix::PackAndPrepare: Unable to determine source global index type",-1);
+
   for( int i = 0; i < NumExportIDs; ++i )
   {    
     int NumEntries;
     A.NumMyRowEntries( ExportLIDs[i], NumEntries );
     // Will have NumEntries doubles, NumEntries +2 ints, pack them interleaved     Sizes[i] = NumEntries;
     Sizes[i] = NumEntries;
-    IntSizes[i] = 1 + (((NumEntries+2)*(int)sizeof(int))/(int)sizeof(double));
+    IntSizes[i] = 1 + (((NumEntries+2)*SizeofIntType)/(int)sizeof(double));
     TotalSendLength += (Sizes[i]+IntSizes[i]);
   }    
          
@@ -2455,11 +2527,8 @@ int Epetra_CrsMatrix::PackAndPrepare(const Epetra_SrcDistObject & Source,
   } 
  
   int NumEntries;
-  int * Indices;
   double * values;
-  int FromRow; 
   double * valptr, * dintptr; 
-  int * intptr;                         
  
   // Each segment of Exports will be filled by a packed row of information for each row as follows:
   // 1st int: GRID of row where GRID is the global row ID for the source matrix
@@ -2471,27 +2540,66 @@ int Epetra_CrsMatrix::PackAndPrepare(const Epetra_SrcDistObject & Source,
  
   if( NumExportIDs > 0 )
   {
-    int maxNumEntries = A.MaxNumEntries();
-    dintptr = (double *) Exports;
-    valptr = dintptr + IntSizes[0];
-    intptr = (int *) dintptr;
-    for (int i=0; i<NumExportIDs; i++)
-    {
-      FromRow = rowMap.GID(ExportLIDs[i]);
-      intptr[0] = FromRow;
-      values = valptr;
-      Indices = intptr + 2;
-      EPETRA_CHK_ERR(A.ExtractMyRowCopy(ExportLIDs[i], maxNumEntries, NumEntries, values, Indices));
-      for (int j=0; j<NumEntries; j++) Indices[j] = colMap.GID(Indices[j]); // convert to GIDs
-      intptr[1] = NumEntries; // Load second slot of segment
-      if( i < (NumExportIDs-1) )
+    if(Source.Map().GlobalIndicesInt()) {
+      int * Indices;
+      int FromRow;
+      int * intptr;
+
+      int maxNumEntries = A.MaxNumEntries();
+      dintptr = (double *) Exports;
+      valptr = dintptr + IntSizes[0];
+      intptr = (int *) dintptr;
+      for (int i=0; i<NumExportIDs; i++)
       {
-        dintptr += (IntSizes[i]+Sizes[i]);
-        valptr = dintptr + IntSizes[i+1];
-        intptr = (int *) dintptr;
+        FromRow = (int) rowMap.GID(ExportLIDs[i]);
+        intptr[0] = FromRow;
+        values = valptr;
+        Indices = intptr + 2;
+        EPETRA_CHK_ERR(A.ExtractMyRowCopy(ExportLIDs[i], maxNumEntries, NumEntries, values, Indices));
+        for (int j=0; j<NumEntries; j++) Indices[j] = (int) colMap.GID(Indices[j]); // convert to GIDs
+        intptr[1] = NumEntries; // Load second slot of segment
+        if( i < (NumExportIDs-1) )
+        {
+          dintptr += (IntSizes[i]+Sizes[i]);
+          valptr = dintptr + IntSizes[i+1];
+          intptr = (int *) dintptr;
+        }
       }
     }
- 
+    else if(Source.Map().GlobalIndicesLongLong()) {
+      long long * LL_Indices;
+      long long FromRow;
+      long long * LLptr;
+
+      int maxNumEntries = A.MaxNumEntries();
+      dintptr = (double *) Exports;
+      valptr = dintptr + IntSizes[0];
+      LLptr = (long long *) dintptr;
+      for (int i=0; i<NumExportIDs; i++)
+      {
+        FromRow = rowMap.GID(ExportLIDs[i]);
+        LLptr[0] = FromRow;
+        values = valptr;
+        LL_Indices = LLptr + 2;
+        int * int_indices = reinterpret_cast<int*>(LL_Indices);
+        EPETRA_CHK_ERR(A.ExtractMyRowCopy(ExportLIDs[i], maxNumEntries, NumEntries, values, int_indices));
+
+        // convert to GIDs, start from right.
+        for(int j = NumEntries; j > 0;) {
+           --j;
+           LL_Indices[j] = colMap.GID(int_indices[j]);
+        }
+
+        LLptr[1] = NumEntries; // Load second slot of segment
+        if( i < (NumExportIDs-1) )
+        {
+          dintptr += (IntSizes[i]+Sizes[i]);
+          valptr = dintptr + IntSizes[i+1];
+          LLptr = (long long *) dintptr;
+        }
+      }
+    }
+
     for( int i = 0; i < NumExportIDs; ++i )
       Sizes[i] += IntSizes[i];
   }
@@ -2502,7 +2610,8 @@ int Epetra_CrsMatrix::PackAndPrepare(const Epetra_SrcDistObject & Source,
 }
 
 //=========================================================================
-int Epetra_CrsMatrix::UnpackAndCombine(const Epetra_SrcDistObject & Source, 
+template<typename int_type>
+int Epetra_CrsMatrix::TUnpackAndCombine(const Epetra_SrcDistObject & Source, 
 				       int NumImportIDs,
                                        int * ImportLIDs, 
                                        int LenImports,
@@ -2512,7 +2621,6 @@ int Epetra_CrsMatrix::UnpackAndCombine(const Epetra_SrcDistObject & Source,
 				       Epetra_CombineMode CombineMode,
                                        const Epetra_OffsetIndex * Indexor )
 {
-// TODO change for long long
   (void)Source;
   (void)LenImports;
   (void)SizeOfPacket;
@@ -2525,14 +2633,14 @@ int Epetra_CrsMatrix::UnpackAndCombine(const Epetra_SrcDistObject & Source,
     EPETRA_CHK_ERR(-1); //Unsupported CombineMode, defaults to Zero
 
   int NumEntries;
-  int * Indices;
+  int_type * Indices;
   double * values;
-  int ToRow;
+  int_type ToRow;
   int i, ierr;
   int IntSize;
   
   double * valptr, *dintptr;
-  int * intptr;
+  int_type * intptr;
 
   // Each segment of Exports will be filled by a packed row of information for each row as follows:
   // 1st int: GRID of row where GRID is the global row ID for the source matrix
@@ -2540,14 +2648,14 @@ int Epetra_CrsMatrix::UnpackAndCombine(const Epetra_SrcDistObject & Source,
   // next NumEntries: The actual indices for the row.
 
   dintptr = (double *) Imports;
-  intptr = (int *) dintptr;
-  NumEntries = intptr[1];
-  IntSize = 1 + (((NumEntries+2)*(int)sizeof(int))/(int)sizeof(double));
+  intptr = (int_type *) dintptr;
+  NumEntries = (int) intptr[1];
+  IntSize = 1 + (((NumEntries+2)*(int)sizeof(int_type))/(int)sizeof(double));
   valptr = dintptr + IntSize;
  
   for (i=0; i<NumImportIDs; i++)
   {
-    ToRow = GRID(ImportLIDs[i]);
+    ToRow = (int_type) GRID(ImportLIDs[i]);
     assert((intptr[0])==ToRow); // Sanity check
     values = valptr;
     Indices = intptr + 2;
@@ -2586,14 +2694,37 @@ int Epetra_CrsMatrix::UnpackAndCombine(const Epetra_SrcDistObject & Source,
     if( i < (NumImportIDs-1) )
     {
       dintptr += IntSize + NumEntries;
-      intptr = (int *) dintptr;
-      NumEntries = intptr[1];
-      IntSize = 1 + (((NumEntries+2)*(int)sizeof(int))/(int)sizeof(double));
+      intptr = (int_type *) dintptr;
+      NumEntries = (int) intptr[1];
+      IntSize = 1 + (((NumEntries+2)*(int)sizeof(int_type))/(int)sizeof(double));
       valptr = dintptr + IntSize;
     }
   }
 
   return(0);
+}
+
+int Epetra_CrsMatrix::UnpackAndCombine(const Epetra_SrcDistObject & Source, 
+				       int NumImportIDs,
+                                       int * ImportLIDs, 
+                                       int LenImports,
+				       char * Imports,
+                                       int & SizeOfPacket, 
+				       Epetra_Distributor & Distor, 
+				       Epetra_CombineMode CombineMode,
+                                       const Epetra_OffsetIndex * Indexor )
+{
+  if(!Source.Map().GlobalIndicesTypeMatch(RowMap()))
+    throw ReportError("Epetra_CrsMatrix::UnpackAndCombine: Incoming global index type does not match the one for *this",-1);
+
+  if(Source.Map().GlobalIndicesInt())
+    return TUnpackAndCombine<int>(Source, NumImportIDs, ImportLIDs, LenImports,
+				       Imports, SizeOfPacket, Distor, CombineMode, Indexor);
+  if(Source.Map().GlobalIndicesLongLong())
+    return TUnpackAndCombine<long long>(Source, NumImportIDs, ImportLIDs, LenImports,
+				       Imports, SizeOfPacket, Distor, CombineMode, Indexor);
+
+  throw ReportError("Epetra_CrsMatrix::UnpackAndCombine: Internal error, unable to determine global index type of maps", -1);
 }
 
 //=========================================================================
@@ -2642,7 +2773,18 @@ void Epetra_CrsMatrix::Print(ostream& os) const {
     if (MyPID==iproc) {
       int NumMyRows1 = NumMyRows();
       int MaxNumIndices = MaxNumEntries();
-      int * Indices  = new int[MaxNumIndices]; //TODO long long
+
+      int * Indices_int;
+      long long * Indices_LL;
+      if(RowMap().GlobalIndicesInt()) {
+         Indices_int = new int[MaxNumIndices];
+      }
+      else if(RowMap().GlobalIndicesLongLong()) {
+         Indices_LL = new long long[MaxNumIndices];
+      }
+      else
+         throw ReportError("Epetra_CrsGraph::Print: Unable to determine source global index type",-1);
+
       double * values  = new double[MaxNumIndices];
       int NumIndices;
       int i, j;
@@ -2659,23 +2801,48 @@ void Epetra_CrsMatrix::Print(ostream& os) const {
 	os << endl;
       }
       for (i=0; i<NumMyRows1; i++) {
-	int Row = GRID(i); // Get global row number
-	ExtractGlobalRowCopy(Row, MaxNumIndices, NumIndices, values, Indices);//TODO long long
-				
-	for (j = 0; j < NumIndices ; j++) {   
-	  os.width(8);
-	  os <<  MyPID ; os << "    ";	
-	  os.width(10);
-	  os <<  Row ; os << "    ";	
-	  os.width(10);
-	  os <<  Indices[j]; os << "    ";
-	  os.width(20);
-	  os <<  values[j]; os << "    ";
-	  os << endl;
-	}
+
+        if(RowMap().GlobalIndicesInt()) {
+           int Row = (int) GRID(i); // Get global row number
+           ExtractGlobalRowCopy(Row, MaxNumIndices, NumIndices, values, Indices_int);
+
+           for (j = 0; j < NumIndices ; j++) {   
+              os.width(8);
+              os <<  MyPID ; os << "    ";	
+              os.width(10);
+              os <<  Row ; os << "    ";	
+              os.width(10);
+              os <<  Indices_int[j]; os << "    ";
+              os.width(20);
+              os <<  values[j]; os << "    ";
+              os << endl;
+           }
+        }
+        else if(RowMap().GlobalIndicesLongLong()) {
+           long long Row = GRID(i); // Get global row number
+           ExtractGlobalRowCopy(Row, MaxNumIndices, NumIndices, values, Indices_LL);
+
+           for (j = 0; j < NumIndices ; j++) {   
+              os.width(8);
+              os <<  MyPID ; os << "    ";	
+              os.width(10);
+              os <<  Row ; os << "    ";	
+              os.width(10);
+              os <<  Indices_LL[j]; os << "    ";
+              os.width(20);
+              os <<  values[j]; os << "    ";
+              os << endl;
+           }
+        }
       }
-			
-      delete [] Indices;
+
+      if(RowMap().GlobalIndicesInt()) {
+         delete [] Indices_int;
+      }
+      else if(RowMap().GlobalIndicesLongLong()) {
+         delete [] Indices_LL;
+      }
+
       delete [] values;
       
       os << flush;

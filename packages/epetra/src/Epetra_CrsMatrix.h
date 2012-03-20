@@ -1361,5 +1361,32 @@ private:
 
 	template<typename int_type>
 	int ExtractGlobalRowView(int_type Row, int & NumEntries, double *& values) const;
+
+	template<typename int_type>
+    int TCopyAndPermuteCrsMatrix(const Epetra_CrsMatrix& A,
+                              int NumSameIDs, 
+                              int NumPermuteIDs,
+                              int* PermuteToLIDs,
+                              int* PermuteFromLIDs,
+                              const Epetra_OffsetIndex * Indexor);
+
+	template<typename int_type>
+    int TCopyAndPermuteRowMatrix(const Epetra_RowMatrix& A,
+                              int NumSameIDs, 
+                              int NumPermuteIDs,
+                              int* PermuteToLIDs,
+                              int* PermuteFromLIDs,
+                              const Epetra_OffsetIndex * Indexor);
+
+	template<typename int_type>
+    int TUnpackAndCombine(const Epetra_SrcDistObject& Source, 
+                       int NumImportIDs,
+                       int* ImportLIDs, 
+                       int LenImports,
+                       char* Imports,
+                       int& SizeOfPacket, 
+                       Epetra_Distributor& Distor,
+                       Epetra_CombineMode CombineMode,
+                       const Epetra_OffsetIndex * Indexor);
 };
 #endif /* EPETRA_CRSMATRIX_H */

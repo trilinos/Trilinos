@@ -500,7 +500,7 @@ bool Epetra_BlockMap::SameAs(const Epetra_BlockMap & Map) const {
   if (this->BlockMapData_ == Map.BlockMapData_) 
     return(true);
 
-  if(!GlobalIndicesMatch(Map))
+  if(!GlobalIndicesTypeMatch(Map))
     return(false);
 
   // Next check other global properties that are easy global attributes
@@ -564,7 +564,7 @@ bool Epetra_BlockMap::PointSameAs(const Epetra_BlockMap & Map) const
   if (this->BlockMapData_ == Map.BlockMapData_) 
     return(true);
   
-  if(!GlobalIndicesMatch(Map))
+  if(!GlobalIndicesTypeMatch(Map))
     return(false);
 
   if (BlockMapData_->NumGlobalPoints_ != Map.NumGlobalPoints() ) 

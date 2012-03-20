@@ -243,8 +243,8 @@ Epetra_Export::Epetra_Export( const Epetra_BlockMap &  sourceMap, const Epetra_B
     NumRecv_(0),
     Distor_(0)
 {
-	if(!targetMap.GlobalIndicesMatch(sourceMap))
-		throw ReportError("Epetra_Export::Epetra_Export: GlobalIndicesMatch failed", -1);
+	if(!targetMap.GlobalIndicesTypeMatch(sourceMap))
+		throw ReportError("Epetra_Export::Epetra_Export: GlobalIndicesTypeMatch failed", -1);
 
 	if(targetMap.GlobalIndicesLongLong())
 		Construct<long long>(sourceMap, targetMap);

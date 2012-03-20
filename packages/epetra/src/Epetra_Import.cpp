@@ -256,8 +256,8 @@ Epetra_Import::Epetra_Import( const Epetra_BlockMap &  targetMap, const Epetra_B
     NumRecv_(0),
     Distor_(0)
 {
-	if(!targetMap.GlobalIndicesMatch(sourceMap))
-		throw ReportError("Epetra_Import::Epetra_Import: GlobalIndicesMatch failed", -1);
+	if(!targetMap.GlobalIndicesTypeMatch(sourceMap))
+		throw ReportError("Epetra_Import::Epetra_Import: GlobalIndicesTypeMatch failed", -1);
 
 	if(targetMap.GlobalIndicesLongLong())
 		Construct<long long>(targetMap, sourceMap);

@@ -489,7 +489,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
 
   bool  GlobalIndicesTypeValid() const { return BlockMapData_->GlobalIndicesInt_ || BlockMapData_->GlobalIndicesLongLong_; }
 
-  bool GlobalIndicesMatch(const Epetra_BlockMap& other) const
+  bool GlobalIndicesTypeMatch(const Epetra_BlockMap& other) const
   {
 	  return
 		  GlobalIndicesInt() == other.GlobalIndicesInt() &&

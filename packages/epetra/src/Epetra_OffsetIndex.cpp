@@ -72,7 +72,7 @@ Epetra_OffsetIndex::Epetra_OffsetIndex( const Epetra_CrsGraph & SourceGraph,
   NumRemote_ = Importer.NumRemoteIDs();
   int * RemoteLIDs = Importer.RemoteLIDs();
 
-  if(!SourceGraph.RowMap().GlobalIndicesMatch(TargetGraph.RowMap()))
+  if(!SourceGraph.RowMap().GlobalIndicesTypeMatch(TargetGraph.RowMap()))
      throw ReportError("Epetra_OffsetIndex::Epetra_OffsetIndex: SourceGraph and TargetGraph global indices type mismatch", -1);
 
   if(SourceGraph.RowMap().GlobalIndicesInt()) {
@@ -121,7 +121,7 @@ Epetra_OffsetIndex::Epetra_OffsetIndex( const Epetra_CrsGraph & SourceGraph,
   NumRemote_ = Exporter.NumRemoteIDs();
   int * RemoteLIDs = Exporter.RemoteLIDs();
 
-  if(!SourceGraph.RowMap().GlobalIndicesMatch(TargetGraph.RowMap()))
+  if(!SourceGraph.RowMap().GlobalIndicesTypeMatch(TargetGraph.RowMap()))
      throw ReportError("Epetra_OffsetIndex::Epetra_OffsetIndex: SourceGraph and TargetGraph global indices type mismatch", -1);
 
   if(SourceGraph.RowMap().GlobalIndicesInt()) {
