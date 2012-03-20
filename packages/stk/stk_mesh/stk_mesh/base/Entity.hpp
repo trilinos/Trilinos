@@ -44,9 +44,6 @@ struct fmwk_attributes {
   // for temporaries.
   int                   global_id;
 
-  // Not a supported STK_Mesh concept
-  unsigned              local_id;
-
   // Can't use STK_Mesh's notion of this entity's owner because STK_Mesh is being used
   // in serial mode and therefore every process will thinks it owns everything.
   int                   owner;
@@ -244,10 +241,10 @@ private:
     ThrowAssertMsg(aux_relations().capacity() == 0, "Leftover memory found in relation vector");
 
     m_fmwk_attrs->global_id     = id;
-    m_fmwk_attrs->local_id      = sierra::Fmwk::INVALID_LOCAL_ID;
     m_fmwk_attrs->shared_attr   = attr;
     m_fmwk_attrs->owner         = owner;
     m_fmwk_attrs->connect_count = 0;
+    m_local_id                  = sierra::Fmwk::INVALID_LOCAL_ID;
 
     if (attr->locally_owned() && owner_processor_rank() == -1) {
       m_fmwk_attrs->owner = parallel_rank;
@@ -277,7 +274,8 @@ private:
      then meshobjA.global_id() < meshobjB.global_id() if meshobjA and meshobjB have
      the same derived-type.
   */
-  unsigned local_id() const { return m_fmwk_attrs->local_id; }
+  inline unsigned local_id() const { return m_local_id; }
+  void set_local_id(unsigned int l_id) { m_local_id = l_id; }
 
   int owner_processor_rank() const { return m_fmwk_attrs->owner; }
   void set_owner_processor_rank(int owner) { m_fmwk_attrs->owner = owner; }
@@ -341,8 +339,6 @@ private:
     }
   }
 
-  void set_local_id(unsigned int l_id) { m_fmwk_attrs->local_id = l_id; }
-
   void set_shared_attr(const void* attr) { m_fmwk_attrs->shared_attr = attr; }
   const void* get_shared_attr() const { return m_fmwk_attrs->shared_attr; }
 
@@ -398,6 +394,7 @@ private:
   //
 
   fmwk_attributes* m_fmwk_attrs;
+  unsigned m_local_id;    
 #endif
 };
 
