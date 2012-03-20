@@ -10,6 +10,7 @@
 #include "Intrepid_FieldContainer.hpp"
 #include "Panzer_BasisValues.hpp"
 #include "Panzer_CommonArrayFactories.hpp"
+#include "Panzer_Traits.hpp"
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -72,7 +73,7 @@ namespace panzer {
     RCP<panzer::BasisIRLayout> basis = rcp(new panzer::BasisIRLayout(basis_type, *int_rule));
 
     panzer::BasisValues<double,Intrepid::FieldContainer<double> > basis_values;
-    panzer::IntrepidFieldContainerFactory<double> af;
+    panzer::IntrepidFieldContainerFactory af;
 
     basis_values.setupArrays(basis,af);
     
@@ -172,7 +173,7 @@ namespace panzer {
     RCP<panzer::BasisIRLayout> basis = rcp(new panzer::BasisIRLayout(basis_type, *int_rule));
 
     panzer::BasisValues<double,Intrepid::FieldContainer<double> > basis_values;
-    panzer::IntrepidFieldContainerFactory<double> af;
+    panzer::IntrepidFieldContainerFactory af;
 
     basis_values.setupArrays(basis,af);
     
@@ -291,7 +292,7 @@ namespace panzer {
     RCP<panzer::BasisIRLayout> basisIRLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
 
     panzer::BasisValues<double,Intrepid::FieldContainer<double> > basis_values;
-    panzer::IntrepidFieldContainerFactory<double> af;
+    panzer::IntrepidFieldContainerFactory af;
 
     basis_values.setupArrays(basisIRLayout,af);
     basis_values.evaluateValues(int_values.cub_points,
@@ -453,7 +454,7 @@ namespace panzer {
     RCP<panzer::BasisIRLayout> basisIRLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
 
     panzer::BasisValues<double,Intrepid::FieldContainer<double> > basis_values;
-    panzer::IntrepidFieldContainerFactory<double> af;
+    panzer::IntrepidFieldContainerFactory af;
 
     basis_values.setupArrays(basisIRLayout,af);
     basis_values.evaluateValues(int_values.cub_points,
@@ -502,7 +503,88 @@ namespace panzer {
     RCP<panzer::BasisIRLayout> basisPtLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
 
     panzer::BasisValues<double,PHX::MDField<double> > basis_values;
-    panzer::MDFieldArrayFactory<double> af("prefix_");
+    panzer::MDFieldArrayFactory af("prefix_");
+
+    basis_values.setupArrays(basisPtLayout,af);
+
+    // check to make sure all data layouts and field names are as 
+    // expected. In a simulation environment the field manager will
+    // build these values.
+
+    // check basis
+    TEST_EQUALITY(basis_values.basis_ref.fieldTag().dataLayout().rank(),2);
+    TEST_EQUALITY(basis_values.basis_ref.fieldTag().dataLayout().dimension(0),9);
+    TEST_EQUALITY(basis_values.basis_ref.fieldTag().dataLayout().dimension(1),num_qp);
+    TEST_EQUALITY(basis_values.basis_ref.fieldTag().name(),"prefix_basis_ref");
+
+    TEST_EQUALITY(basis_values.basis.fieldTag().dataLayout().rank(),3);
+    TEST_EQUALITY(basis_values.basis.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.basis.fieldTag().dataLayout().dimension(1),9);
+    TEST_EQUALITY(basis_values.basis.fieldTag().dataLayout().dimension(2),num_qp);
+    TEST_EQUALITY(basis_values.basis.fieldTag().name(),"prefix_basis");
+
+    TEST_EQUALITY(basis_values.weighted_basis.fieldTag().dataLayout().rank(),3);
+    TEST_EQUALITY(basis_values.weighted_basis.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.weighted_basis.fieldTag().dataLayout().dimension(1),9);
+    TEST_EQUALITY(basis_values.weighted_basis.fieldTag().dataLayout().dimension(2),num_qp);
+    TEST_EQUALITY(basis_values.weighted_basis.fieldTag().name(),"prefix_weighted_basis");
+
+    // check gradients
+    TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().dataLayout().rank(),3);
+    TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().dataLayout().dimension(0),9);
+    TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().dataLayout().dimension(1),num_qp);
+    TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().dataLayout().dimension(2),2);
+    TEST_EQUALITY(basis_values.grad_basis_ref.fieldTag().name(),"prefix_grad_basis_ref");
+
+    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().rank(),4);
+    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(1),9);
+    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(2),num_qp);
+    TEST_EQUALITY(basis_values.grad_basis.fieldTag().dataLayout().dimension(3),2);
+    TEST_EQUALITY(basis_values.grad_basis.fieldTag().name(),"prefix_grad_basis");
+
+    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().rank(),4);
+    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(1),9);
+    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(2),num_qp);
+    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().dataLayout().dimension(3),2);
+    TEST_EQUALITY(basis_values.weighted_grad_basis.fieldTag().name(),"prefix_weighted_grad_basis");
+
+    // check coordinates
+    TEST_EQUALITY(basis_values.basis_coordinates_ref.fieldTag().dataLayout().rank(),2);
+    TEST_EQUALITY(basis_values.basis_coordinates_ref.fieldTag().dataLayout().dimension(0),9);
+    TEST_EQUALITY(basis_values.basis_coordinates_ref.fieldTag().dataLayout().dimension(1),2);
+    TEST_EQUALITY(basis_values.basis_coordinates_ref.fieldTag().name(),"prefix_basis_coordinates_ref");
+
+    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().rank(),3);
+    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().dimension(0),num_cells);
+    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().dimension(1),9);
+    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().dataLayout().dimension(2),2);
+    TEST_EQUALITY(basis_values.basis_coordinates.fieldTag().name(),"prefix_basis_coordinates");
+  }
+
+  TEUCHOS_UNIT_TEST(basis_values, md_field_setup_fad)
+  {
+    typedef panzer::Traits::FadType ScalarType;
+
+    Teuchos::RCP<shards::CellTopology> topo = 
+       Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
+
+    const int num_cells = 20;
+    const int base_cell_dimension = 2;
+    const panzer::CellData cell_data(num_cells, base_cell_dimension,topo);
+    const std::string basis_type = "Q2";
+    const int cubature_degree = 2;    
+
+    RCP<IntegrationRule> int_rule = 
+      rcp(new IntegrationRule(cubature_degree, cell_data));
+    const int num_qp = int_rule->num_points;
+  
+    RCP<PureBasis> basis = Teuchos::rcp(new PureBasis(basis_type,cell_data));
+    RCP<panzer::BasisIRLayout> basisPtLayout = rcp(new panzer::BasisIRLayout(basis, *int_rule));
+
+    panzer::BasisValues<ScalarType,PHX::MDField<ScalarType> > basis_values;
+    panzer::MDFieldArrayFactory af("prefix_");
 
     basis_values.setupArrays(basisPtLayout,af);
 

@@ -10,6 +10,55 @@
 namespace panzer {
 
 //**********************************************************************
+
+// This hides the evaluateDOF function outside of this file (if ETI is on)
+namespace {
+
+// A function for evaluating the DOFs. This is useful because 
+// this code is needed twice, once for a DOF evaluator pulling from
+// the workset and once for a DOF evaluator pulling from the field
+// manager.
+template <typename ScalarT,typename ArrayScalarT, typename ArrayT>
+inline void evaluateDOF(PHX::MDField<ScalarT,Cell,Point> & dof_basis,PHX::MDField<ScalarT> & dof_ip,
+                        PHX::MDField<ScalarT,Cell,BASIS> & dof_orientation,bool requires_orientation,
+                        int num_cells,
+                        panzer::BasisValues<ArrayScalarT,ArrayT> & basisValues)
+{ 
+  // Zero out arrays (intrepid does a sum! 1/17/2012)
+  for (int i = 0; i < dof_ip.size(); ++i)
+    dof_ip[i] = 0.0;
+
+  if(num_cells>0) {
+    if(requires_orientation) {
+       Intrepid::FieldContainer<double> bases = basisValues.basis;
+
+       // assign ScalarT "dof_orientation" to double "orientation"
+       Intrepid::FieldContainer<double> orientation(dof_orientation.dimension(0),
+                                                    dof_orientation.dimension(1));
+       for(int i=0;i<dof_orientation.dimension(0);i++)
+          for(int j=0;j<dof_orientation.dimension(1);j++)
+             orientation(i,j) = Sacado::ScalarValue<ScalarT>::eval(dof_orientation(i,j));
+
+
+       // make sure things are orientated correctly
+       Intrepid::FunctionSpaceTools::
+          applyFieldSigns<ScalarT>(bases,orientation);
+
+       // evaluate at quadrature points
+       Intrepid::FunctionSpaceTools::
+         evaluate<ScalarT>(dof_ip,dof_basis,bases);
+    }
+    else // no orientation needed
+       Intrepid::FunctionSpaceTools::
+         evaluate<ScalarT>(dof_ip,dof_basis,basisValues.basis);
+  }
+}
+
+}
+
+//**********************************************************************
+//* DOF evaluator
+//**********************************************************************
 PHX_EVALUATOR_CTOR(DOF,p) :
   dof_basis( p.get<std::string>("Name"), 
 	     p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
@@ -60,34 +109,9 @@ PHX_POST_REGISTRATION_SETUP(DOF,sd,fm)
 //**********************************************************************
 PHX_EVALUATE_FIELDS(DOF,workset)
 { 
-  // Zero out arrays (intrepid does a sum! 1/17/2012)
-  for (int i = 0; i < dof_ip.size(); ++i)
-    dof_ip[i] = 0.0;
+  panzer::BasisValues<double,Intrepid::FieldContainer<double> > & basisValues = *workset.bases[basis_index];
 
-  if(workset.num_cells>0) {
-    if(requires_orientation) {
-       Intrepid::FieldContainer<double> bases = (workset.bases[basis_index])->basis;
-
-       // assign ScalarT "dof_orientation" to double "orientation"
-       Intrepid::FieldContainer<double> orientation(dof_orientation.dimension(0),
-                                                    dof_orientation.dimension(1));
-       for(int i=0;i<dof_orientation.dimension(0);i++)
-          for(int j=0;j<dof_orientation.dimension(1);j++)
-             orientation(i,j) = Sacado::ScalarValue<ScalarT>::eval(dof_orientation(i,j));
-
-
-       // make sure things are orientated correctly
-       Intrepid::FunctionSpaceTools::
-          applyFieldSigns<ScalarT>(bases,orientation);
-
-       // evaluate at quadrature points
-       Intrepid::FunctionSpaceTools::
-         evaluate<ScalarT>(dof_ip,dof_basis,bases);
-    }
-    else // no orientation needed
-       Intrepid::FunctionSpaceTools::
-         evaluate<ScalarT>(dof_ip,dof_basis,(workset.bases[basis_index])->basis);
-  }
+  evaluateDOF(dof_basis,dof_ip,dof_orientation,requires_orientation,workset.num_cells,basisValues);
 }
 
 //**********************************************************************

@@ -23,18 +23,17 @@ namespace panzer {
     * IntegrationValues objects. Notice in this case the string
     * argument is not used.
     */
-  template <typename Scalar>
   class IntrepidFieldContainerFactory {
   public:
-     template <typename T0>
+     template <typename Scalar,typename T0>
      Intrepid::FieldContainer<Scalar> buildArray(const std::string & str,int d0) const;
-     template <typename T0,typename T1>
+     template <typename Scalar,typename T0,typename T1>
      Intrepid::FieldContainer<Scalar> buildArray(const std::string & str,int d0,int d1) const;
-     template <typename T0,typename T1,typename T2>
+     template <typename Scalar,typename T0,typename T1,typename T2>
      Intrepid::FieldContainer<Scalar> buildArray(const std::string & str,int d0,int d1,int d2) const;
-     template <typename T0,typename T1,typename T2,typename T3>
+     template <typename Scalar,typename T0,typename T1,typename T2,typename T3>
      Intrepid::FieldContainer<Scalar> buildArray(const std::string & str,int d0,int d1,int d2,int d3) const;
-     template <typename T0,typename T1,typename T2,typename T3,typename T4>
+     template <typename Scalar,typename T0,typename T1,typename T2,typename T3,typename T4>
      Intrepid::FieldContainer<Scalar> buildArray(const std::string & str,int d0,int d1,int d2,int d3,int d4) const;
   };
 
@@ -42,30 +41,29 @@ namespace panzer {
     * is intended to be used only with the BasisValues and
     * IntegrationValues objects.
     */
-  template <typename Scalar>
   class MDFieldArrayFactory {
   public:
      /** Build fields with no prefix, will simply use the string
        * passed into <code>buildArray</code> to name the fields.
        */
-     MDFieldArrayFactory();
+     MDFieldArrayFactory() : prefix_("") {}
 
      /** Build fields with a prefix, will use the string
        * passed into <code>buildArray</code> prefixed with the
        * argument to this constructor to name the fields.
        */
-     MDFieldArrayFactory(const std::string & prefix);
+     MDFieldArrayFactory(const std::string & prefix) : prefix_(prefix) {}
 
  
-     template <typename T0>
+     template <typename Scalar,typename T0>
      PHX::MDField<Scalar> buildArray(const std::string & str,int d0) const;
-     template <typename T0,typename T1>
+     template <typename Scalar,typename T0,typename T1>
      PHX::MDField<Scalar> buildArray(const std::string & str,int d0,int d1) const;
-     template <typename T0,typename T1,typename T2>
+     template <typename Scalar,typename T0,typename T1,typename T2>
      PHX::MDField<Scalar> buildArray(const std::string & str,int d0,int d1,int d2) const;
-     template <typename T0,typename T1,typename T2,typename T3>
+     template <typename Scalar,typename T0,typename T1,typename T2,typename T3>
      PHX::MDField<Scalar> buildArray(const std::string & str,int d0,int d1,int d2,int d3) const;
-     template <typename T0,typename T1,typename T2,typename T3,typename T4>
+     template <typename Scalar,typename T0,typename T1,typename T2,typename T3,typename T4>
      PHX::MDField<Scalar> buildArray(const std::string & str,int d0,int d1,int d2,int d3,int d4) const;
 
   private:

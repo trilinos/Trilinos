@@ -52,7 +52,7 @@ panzer::buildWorksets(const std::string& block_id,
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  panzer::IntrepidFieldContainerFactory<double> arrayFactory;
+  panzer::IntrepidFieldContainerFactory arrayFactory;
 
   // std::size_t total_num_cells = vertex_coordinates.dimension(0);
   std::size_t total_num_cells = local_cell_ids.size();
@@ -271,7 +271,7 @@ panzer::buildBCWorkset(const panzer::BC& bc,
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  panzer::IntrepidFieldContainerFactory<double> arrayFactory;
+  panzer::IntrepidFieldContainerFactory arrayFactory;
 
   // key is local face index, value is workset with all elements
   // for that local face

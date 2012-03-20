@@ -35,10 +35,10 @@ void PointValues_Evaluator<EvalT,TraitsT>::initialize(const Teuchos::RCP<const p
 {
   TEUCHOS_ASSERT(userArray->rank()==2);
 
-  panzer::MDFieldArrayFactory<ScalarT> af(pointRule->getName()+"_");
+  panzer::MDFieldArrayFactory af(pointRule->getName()+"_");
        
   // copy user array data
-  refPointArray = Intrepid::FieldContainer<ScalarT>(userArray->dimension(0),userArray->dimension(1));
+  refPointArray = Intrepid::FieldContainer<double>(userArray->dimension(0),userArray->dimension(1));
   TEUCHOS_ASSERT(refPointArray.size()==userArray->size());
   for(int i=0;i<userArray->size();i++)
      refPointArray[i] = (*userArray)[i]; 

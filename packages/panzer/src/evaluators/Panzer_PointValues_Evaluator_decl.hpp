@@ -11,11 +11,11 @@ namespace panzer {
     
 //! Interpolates basis DOF values to IP DOF values
 PHX_EVALUATOR_CLASS(PointValues_Evaluator)
-  
+
   // is anything other than ScalarT really needed here?
   PointValues<ScalarT,PHX::MDField<ScalarT> > pointValues;
  
-  Intrepid::FieldContainer<ScalarT> refPointArray;
+  Intrepid::FieldContainer<double> refPointArray;
 
   //! Initialization method to unify the constructors.
   void initialize(const Teuchos::RCP<const panzer::PointRule> & pointRule,

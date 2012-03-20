@@ -40,10 +40,10 @@ namespace panzer {
     Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > 
     getIntrepidBasis() const;
 
-    template <typename ArrayT>
-    Teuchos::RCP< Intrepid::Basis<double,ArrayT> > 
+    template <typename ScalarT,typename ArrayT>
+    Teuchos::RCP< Intrepid::Basis<ScalarT,ArrayT> > 
     getIntrepidBasis() const
-    { return panzer::createIntrepidBasis<double,ArrayT>(name(), getDimension(), getCellTopology()); }
+    { return panzer::createIntrepidBasis<ScalarT,ArrayT>(name(), getDimension(), getCellTopology()); }
 
     EElementSpace getElementSpace() const
     { return elementSpace; }

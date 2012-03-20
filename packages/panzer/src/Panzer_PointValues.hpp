@@ -3,11 +3,14 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Panzer_PointRule.hpp"
+#include "Panzer_ArrayTraits.hpp"
 
 namespace panzer {
 
   template <typename Scalar,typename Array>
   struct PointValues {
+    //! Get a double array
+    typedef typename ArrayTraits<Scalar,Array>::template mod_scalar<double>::array_type DoubleArray;
     
     //! Sizes/allocates memory for arrays
     template <typename ArrayFactory>

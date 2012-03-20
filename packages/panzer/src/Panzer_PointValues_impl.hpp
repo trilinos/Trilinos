@@ -34,19 +34,19 @@ namespace panzer {
 
     int num_points = point_rule->num_points;
 
-    coords_ref = af.template buildArray<IP,Dim>("coords_ref",num_points, num_space_dim);
+    coords_ref = af.template buildArray<Scalar,IP,Dim>("coords_ref",num_points, num_space_dim);
 
-    node_coordinates = af.template buildArray<Cell,NODE,Dim>("node_coordinates",num_cells, num_nodes, num_space_dim);
+    node_coordinates = af.template buildArray<Scalar,Cell,NODE,Dim>("node_coordinates",num_cells, num_nodes, num_space_dim);
     
-    jac = af.template buildArray<Cell,IP,Dim,Dim>("jac",num_cells, num_points, num_space_dim,num_space_dim);
-    jac_inv = af.template buildArray<Cell,IP,Dim,Dim>("jac_inv",num_cells, num_points, num_space_dim,num_space_dim);
-    jac_det = af.template buildArray<Cell,IP>("jac_det",num_cells, num_points);
+    jac = af.template buildArray<Scalar,Cell,IP,Dim,Dim>("jac",num_cells, num_points, num_space_dim,num_space_dim);
+    jac_inv = af.template buildArray<Scalar,Cell,IP,Dim,Dim>("jac_inv",num_cells, num_points, num_space_dim,num_space_dim);
+    jac_det = af.template buildArray<Scalar,Cell,IP>("jac_det",num_cells, num_points);
     
-    point_coords = af.template buildArray<Cell,IP,Dim>("point_coords",num_cells, num_points, num_space_dim);
+    point_coords = af.template buildArray<Scalar,Cell,IP,Dim>("point_coords",num_cells, num_points, num_space_dim);
   }
 
 
-  template <typename Scalar, typename Array>
+  template <typename Scalar,typename Array>
   template <typename NodeCoordinateArray,typename PointCoordinateArray>
   void PointValues<Scalar,Array>::
   evaluateValues(const NodeCoordinateArray& in_node_coords,

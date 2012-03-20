@@ -32,7 +32,7 @@ namespace panzer {
     TEST_EQUALITY(point_rule->num_points,num_points);
   
     panzer::PointValues<double,Intrepid::FieldContainer<double> > point_values;
-    panzer::IntrepidFieldContainerFactory<double> af;
+    panzer::IntrepidFieldContainerFactory af;
 
     point_values.setupArrays(point_rule,af);
 
@@ -118,7 +118,7 @@ namespace panzer {
   
     typedef panzer::Traits::FadType ScalarType;
     panzer::PointValues<ScalarType,Intrepid::FieldContainer<ScalarType> > point_values;
-    panzer::IntrepidFieldContainerFactory<ScalarType> af;
+    panzer::IntrepidFieldContainerFactory af;
 
     point_values.setupArrays(point_rule,af);
 
@@ -186,7 +186,7 @@ namespace panzer {
     TEST_EQUALITY(point_rule->num_points,num_points);
   
     panzer::PointValues<double,PHX::MDField<double> > point_values;
-    panzer::MDFieldArrayFactory<double> af("prefix_");
+    panzer::MDFieldArrayFactory af("prefix_");
 
     point_values.setupArrays(point_rule,af);
 

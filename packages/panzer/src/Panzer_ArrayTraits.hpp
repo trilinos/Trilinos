@@ -14,6 +14,10 @@ namespace panzer {
   struct ArrayTraits<Scalar,Intrepid::FieldContainer<Scalar> >
   {
     typedef int size_type;
+
+    template <typename SubType>
+    struct mod_scalar { typedef Intrepid::FieldContainer<SubType> array_type; };
+    
   };
 
   // Specialization for Intrepid::FieldContainer
@@ -21,6 +25,9 @@ namespace panzer {
   struct ArrayTraits<Scalar,PHX::MDField<Scalar> >
   {
     typedef typename PHX::MDField<Scalar>::size_type size_type;
+
+    template <typename SubType>
+    struct mod_scalar { typedef PHX::MDField<SubType> array_type; };
   };
 
 }

@@ -13,9 +13,6 @@
 // * Specializations of setupArrays() for different array types
 // ***********************************************************
 
-
-// * Specialization for Intrepid::FieldContainer<double>
-
 namespace panzer {
 
   //! Used for default parameters
@@ -39,7 +36,7 @@ namespace panzer {
     panzer::PureBasis::EElementSpace elmtspace = basisDesc->getElementSpace();
     Teuchos::RCP<const shards::CellTopology> cellTopo = basisDesc->getCellTopology();
     
-    intrepid_basis = basisDesc->getIntrepidBasis<Array>();
+    intrepid_basis = basisDesc->getIntrepidBasis<Scalar,Array>();
     
     // allocate field containers
     // field sizes defined by http://trilinos.sandia.gov/packages/docs/dev/packages/intrepid/doc/html/basis_page.html#basis_md_array_sec
@@ -51,18 +48,18 @@ namespace panzer {
        // build values
        ///////////////////////////////////////////////
 
-       basis_ref = af.template buildArray<BASIS,Point>("basis_ref",card,num_quad); // F, P
-       basis = af.template buildArray<Cell,BASIS,Point>("basis",numcells,card,num_quad);
+       basis_ref = af.template buildArray<Scalar,BASIS,Point>("basis_ref",card,num_quad); // F, P
+       basis = af.template buildArray<Scalar,Cell,BASIS,Point>("basis",numcells,card,num_quad);
 
-       weighted_basis = af.template buildArray<Cell,BASIS,Point>("weighted_basis",numcells,card,num_quad);
+       weighted_basis = af.template buildArray<Scalar,Cell,BASIS,Point>("weighted_basis",numcells,card,num_quad);
 
        // build gradients
        ///////////////////////////////////////////////
 
-       grad_basis_ref = af.template buildArray<BASIS,Point,Dim>("grad_basis_ref",card,num_quad,dim); // F, P, D
-       grad_basis = af.template buildArray<Cell,BASIS,Point,Dim>("grad_basis",numcells,card,num_quad,dim);
+       grad_basis_ref = af.template buildArray<Scalar,BASIS,Point,Dim>("grad_basis_ref",card,num_quad,dim); // F, P, D
+       grad_basis = af.template buildArray<Scalar,Cell,BASIS,Point,Dim>("grad_basis",numcells,card,num_quad,dim);
 
-       weighted_grad_basis = af.template buildArray<Cell,BASIS,Point,Dim>("weighted_grad_basis",numcells,card,num_quad,dim);
+       weighted_grad_basis = af.template buildArray<Scalar,Cell,BASIS,Point,Dim>("weighted_grad_basis",numcells,card,num_quad,dim);
 
        // build curl
        ///////////////////////////////////////////////
@@ -75,10 +72,10 @@ namespace panzer {
        // build values
        ///////////////////////////////////////////////
 
-       basis_ref = af.template buildArray<BASIS,Point,Dim>("basis_ref",card,num_quad,dim); // F, P, D
-       basis = af.template buildArray<Cell,BASIS,Point,Dim>("basis",numcells,card,num_quad,dim);
+       basis_ref = af.template buildArray<Scalar,BASIS,Point,Dim>("basis_ref",card,num_quad,dim); // F, P, D
+       basis = af.template buildArray<Scalar,Cell,BASIS,Point,Dim>("basis",numcells,card,num_quad,dim);
 
-       weighted_basis = af.template buildArray<Cell,BASIS,Point,Dim>("weighted_basis",numcells,card,num_quad,dim);
+       weighted_basis = af.template buildArray<Scalar,Cell,BASIS,Point,Dim>("weighted_basis",numcells,card,num_quad,dim);
 
        // build gradients
        ///////////////////////////////////////////////
@@ -90,28 +87,41 @@ namespace panzer {
 
        if(dim==2) {
           // curl of HCURL basis is not dimension dependent
-          curl_basis_ref = af.template buildArray<BASIS,Point>("curl_basis_ref",card,num_quad); // F, P
-          curl_basis = af.template buildArray<Cell,BASIS,Point>("curl_basis",numcells,card,num_quad);
+          curl_basis_ref = af.template buildArray<Scalar,BASIS,Point>("curl_basis_ref",card,num_quad); // F, P
+          curl_basis = af.template buildArray<Scalar,Cell,BASIS,Point>("curl_basis",numcells,card,num_quad);
 
-          weighted_curl_basis = af.template buildArray<Cell,BASIS,Point>("weighted_curl_basis",numcells,card,num_quad);
+          weighted_curl_basis = af.template buildArray<Scalar,Cell,BASIS,Point>("weighted_curl_basis",numcells,card,num_quad);
        }
        else if(dim==3){
-          curl_basis_ref = af.template buildArray<BASIS,Point,Dim>("curl_basis_ref",card,num_quad,dim); // F, P, D
-          curl_basis = af.template buildArray<Cell,BASIS,Point,Dim>("curl_basis",numcells,card,num_quad,dim);
+          curl_basis_ref = af.template buildArray<Scalar,BASIS,Point,Dim>("curl_basis_ref",card,num_quad,dim); // F, P, D
+          curl_basis = af.template buildArray<Scalar,Cell,BASIS,Point,Dim>("curl_basis",numcells,card,num_quad,dim);
 
-          weighted_curl_basis = af.template buildArray<Cell,BASIS,Point,Dim>("weighted_curl_basis",numcells,card,num_quad,dim);
+          weighted_curl_basis = af.template buildArray<Scalar,Cell,BASIS,Point,Dim>("weighted_curl_basis",numcells,card,num_quad,dim);
        }
        else { TEUCHOS_ASSERT(false); } // what do I do with 1D?
     }
     else { TEUCHOS_ASSERT(false); }
 
-    basis_coordinates_ref = af.template buildArray<BASIS,Dim>("basis_coordinates_ref",card,dim);
-    basis_coordinates = af.template buildArray<Cell,BASIS,Dim>("basis_coordinates",numcells,card,dim);
+    basis_coordinates_ref = af.template buildArray<Scalar,BASIS,Dim>("basis_coordinates_ref",card,dim);
+    basis_coordinates = af.template buildArray<Scalar,Cell,BASIS,Dim>("basis_coordinates",numcells,card,dim);
   }
   
   // ***********************************************************
   // * Evaluation of values without weithed measure - NOT specialized
   // ***********************************************************
+
+  template<typename Scalar, typename Array>
+  inline
+  void panzer::BasisValues<Scalar,Array>::
+  evaluateValues(const Array& cub_points,
+		 const Array& jac,
+ 	 	 const Array& jac_det,
+		 const Array& jac_inv)
+  { 
+     // substitute dummy array for weighted measure
+     evaluateValues(cub_points,jac,jac_det,jac_inv,dummyArray,dummyArray);
+  }
+
   template<typename Scalar, typename Array>
   inline
   void panzer::BasisValues<Scalar,Array>::
@@ -139,6 +149,7 @@ namespace panzer {
 		 const Array& node_coordinates)
   {    
     bool buildWeighted = ((&weighted_measure)!= &dummyArray);
+    bool buildBasisPoints = ((&node_coordinates)!= &dummyArray);
 
     // first grab basis descriptor
     PureBasis::EElementSpace elmtspace = getElementSpace();
@@ -152,22 +163,22 @@ namespace panzer {
    			         Intrepid::OPERATOR_GRAD);
     
        Intrepid::FunctionSpaceTools::
-         HGRADtransformVALUE<double>(basis,
+         HGRADtransformVALUE<Scalar>(basis,
    				  basis_ref);
        
        Intrepid::FunctionSpaceTools::
-         HGRADtransformGRAD<double>(grad_basis,
+         HGRADtransformGRAD<Scalar>(grad_basis,
    				 jac_inv,
    				 grad_basis_ref);
 
        if(buildWeighted) {
           Intrepid::FunctionSpaceTools::
-            multiplyMeasure<double>(weighted_basis, 
+            multiplyMeasure<Scalar>(weighted_basis, 
       			         weighted_measure, 
    			         basis);
        
           Intrepid::FunctionSpaceTools::
-            multiplyMeasure<double>(weighted_grad_basis, 
+            multiplyMeasure<Scalar>(weighted_grad_basis, 
    	   		         weighted_measure, 
    			         grad_basis);
        }
@@ -177,12 +188,9 @@ namespace panzer {
    			         Intrepid::OPERATOR_CURL);
 
        Intrepid::FunctionSpaceTools::
-         HCURLtransformVALUE<double>(basis,
+         HCURLtransformVALUE<Scalar>(basis,
                                      jac_inv,
    		  		     basis_ref);
-
-       // Intrepid::FunctionSpaceTools::
-       //   applyFieldSigns<double>(basis,basis_orientation);
 
        // the CURL transform differs depending on spactial dimension
        // "In 2D the de Rham complex collapses." But I look at it like this:
@@ -192,31 +200,28 @@ namespace panzer {
        // is the same.
        if(spaceDim==2) 
           Intrepid::FunctionSpaceTools::
-            HDIVtransformDIV<double>(curl_basis,
+            HDIVtransformDIV<Scalar>(curl_basis,
    			             jac_det,   // note only volume deformation is needed!
                                                 // this relates directly to this being in
                                                 // the divergence space in 2D!
    			             curl_basis_ref);
        else if(spaceDim==3)
           Intrepid::FunctionSpaceTools::
-            HCURLtransformCURL<double>(curl_basis,
+            HCURLtransformCURL<Scalar>(curl_basis,
    	                               jac,
    				       jac_det,
    				       curl_basis_ref);
        else
           TEUCHOS_ASSERT(false); // what you doin?
 
-       // Intrepid::FunctionSpaceTools::
-       //   applyFieldSigns<double>(curl_basis,basis_orientation);
-
        if(buildWeighted) {
           Intrepid::FunctionSpaceTools::
-            multiplyMeasure<double>(weighted_basis, 
+            multiplyMeasure<Scalar>(weighted_basis, 
    	   		         weighted_measure, 
    			         basis);
    
           Intrepid::FunctionSpaceTools::
-            multiplyMeasure<double>(weighted_curl_basis, 
+            multiplyMeasure<Scalar>(weighted_curl_basis, 
    	   		         weighted_measure, 
    			         curl_basis);
        }
@@ -225,7 +230,7 @@ namespace panzer {
 
     // If basis supports coordinate values at basis points, then
     // compute these values
-    {
+    if(buildBasisPoints) {
       Teuchos::RCP<Intrepid::DofCoordsInterface<Array> > coords;
       coords = Teuchos::rcp_dynamic_cast<Intrepid::DofCoordsInterface<Array> >(intrepid_basis);
       if (!Teuchos::is_null(coords)) {

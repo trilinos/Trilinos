@@ -20,6 +20,11 @@ namespace panzer {
     void evaluateValues(const Array& cub_points,
 			const Array& jac,
 			const Array& jac_det,
+			const Array& jac_inv);
+
+    void evaluateValues(const Array& cub_points,
+			const Array& jac,
+			const Array& jac_det,
 			const Array& jac_inv,
 			const Array& node_coordinates);
 
@@ -58,7 +63,7 @@ namespace panzer {
 
     Teuchos::RCP<panzer::BasisIRLayout> basis_layout;
     
-    Teuchos::RCP<Intrepid::Basis<double,Array> > intrepid_basis;
+    Teuchos::RCP<Intrepid::Basis<Scalar,Array> > intrepid_basis;
   };
 
 } // namespace panzer
