@@ -211,6 +211,7 @@ template <typename User>
   } 
 }
 
+// TODO (from 3/21/12 mtg):  Consider changing interface to take an XpetraMultivector
 template <typename User>
   void XpetraCrsMatrixInput<User>::setRowCoordinates(int dim,
     const scalar_t *coordVal, int stride)

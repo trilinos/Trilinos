@@ -122,13 +122,13 @@ public:
   virtual int getCoordinateDimension() const = 0;
 
   /*! \brief Provide a pointer to one dimension of row coordinates.
-      \param coordDim  is a value from 0 to one less than
+      \param coordDim [input] is a value from 0 to one less than
          getCoordinateDimension() specifying which dimension is
          being provided in the coords list.
-      \param coords  points to a list of coordinate values for the dimension.
+      \param coords  [output] points to a list of coordinate values for the dimension.
              The order of \c coords should correspond to the order of \c rowIds
              in getRowListView().
-      \param stride  describes the layout of the coordinate values in
+      \param stride  [output] describes the layout of the coordinate values in
               the coords list.  If stride is one, then the ith coordinate
               value is coords[i], but if stride is two, then the
               ith coordinate value is coords[2*i].

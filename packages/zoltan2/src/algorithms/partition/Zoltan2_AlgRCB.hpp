@@ -51,8 +51,8 @@ enum rcbParams{
  */
 
 enum leftRightFlag{
-  leftFlag = 0xfe;
-  rightFlag = 0xff;
+  leftFlag = 0xfe;    // 254
+  rightFlag = 0xff;   // 255
 };
 
 /*! \brief Recursive coordinate bisection algorithm.
@@ -75,10 +75,10 @@ enum leftRightFlag{
 
 template <typename Adapter>
 void AlgRCB(
-  const RCB<const Environment> &env,
-  const RCB<const Comm<int> > &problemComm,
-  const RCB<const CoordinateModel<Adapter> > &coords, 
-  RCB<PartitioningSolution<typename Adapter::user_t> > &solution
+  const RCP<const Environment> &env,
+  const RCP<const Comm<int> > &problemComm,
+  const RCP<const CoordinateModel<Adapter> > &coords, 
+  RCP<PartitioningSolution<typename Adapter::user_t> > &solution
 ) 
 {
   using std::string;
@@ -184,7 +184,7 @@ void AlgRCB(
   // From the CoordinateModel we need:
   //    coordinate values
   //    coordinate weights, if any
-  //    coordinate global Ids
+  //    coordinate global numbers
 
   typedef StridedData<lno_t, scalar_t> input_t;
 
@@ -251,10 +251,10 @@ void AlgRCB(
 
 template <typename scalar_t, typename lno_t, typename gno_t, typename node_t>
   void findCutBSP(
-    const RCB<const Environment> &env,
-    const RCP<const Teuchos::Comm<int> &comm,
-    RCP<const Vector<scalar_t, lno_t, gno_t, node_t> > &coordList,
-    Array<const RCP<const Vector<scalar_t> > > &weightList, 
+    const RCP<const Environment> &env,
+    const RCP<const Teuchos::Comm<int> &subcomm,
+    RCP<const Tpetra::Vector<scalar_t, lno_t, gno_t, node_t> > &coordList,
+    Array<const RCP<const Tpetra::Vector<scalar_t> > > &weightList, 
     scalar_t coordGlobalMin,
     scalar_t coordGlobalMax,
     const std::bitset<NUM_RCB_PARAMS> &params,
