@@ -124,9 +124,8 @@ int main(int argc, char *argv[]) {
   if (amgAsSolver) {
     tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - Fixed Point Solve")));
 
-    H->IsPreconditioner(true);
-    H->Iterate(*B,25,*X);
     H->IsPreconditioner(false);
+    H->Iterate(*B,25,*X);
 
     tm = Teuchos::null;
   }
@@ -136,6 +135,7 @@ int main(int argc, char *argv[]) {
     // Operator and Multivector type that will be used with Belos
     typedef MultiVector          MV;
     typedef Belos::OperatorT<MV> OP;
+    H->IsPreconditioner(true);
 
     // Define Operator and Preconditioner
     RCP<OP> belosOp   = rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(A)); // Turns a Xpetra::Operator object into a Belos operator
