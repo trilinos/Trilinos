@@ -689,6 +689,9 @@ void Epetra_BlockMap::GlobalToLocalSetup()
   // more efficient way.  This supports a common use case for
   // overlapping Maps, in which owned entries of a vector are ordered
   // before halo entries.
+  //
+  // Epetra defines EPETRA_BLOCKMAP_NEW_LID by default (see the top of
+  // this file).
 
   //check for initial contiguous block
   int val = BlockMapData_->MyGlobalElements_[0];
