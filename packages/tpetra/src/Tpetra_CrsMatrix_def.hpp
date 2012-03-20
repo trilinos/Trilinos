@@ -1606,8 +1606,8 @@ namespace Tpetra {
     }
     //
     if (isStaticGraph()) {
-      const bool domainMapsMatch = staticGraph_->getDomainMap() != getDomainMap();
-      const bool rangeMapsMatch = staticGraph_->getRangeMap() != getRangeMap();
+      const bool domainMapsMatch = staticGraph_->getDomainMap() == getDomainMap();
+      const bool rangeMapsMatch = staticGraph_->getRangeMap() == getRangeMap();
       // FIXME (mfh 19 Mar 2012) Why can't we allow the Maps to be
       // different objects, but semantically the same (in the sense of
       // isSameAs())?
