@@ -233,7 +233,7 @@ namespace MueLu {
     // Note: "numPartitionsISendTo" does not include this PID
     GO numPartitionsISendTo = hashTable->size();
     // I'm a partition owner, so don't count my own.
-    if (myPartitionNumber >= 0 && numPartitionsISendTo>0) numPartitionsISendTo--;
+    if (myPartitionNumber >= 0 && numPartitionsISendTo>0 && numDofsThatStayWithMe>0) numPartitionsISendTo--;
     assert(numPartitionsISendTo == partitionsIContributeTo.size());
    
     Array<int> partitionOwnersISendTo;
