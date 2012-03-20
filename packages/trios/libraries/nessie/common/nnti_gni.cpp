@@ -1252,7 +1252,7 @@ NNTI_result_t NNTI_gni_register_memory (
     if ((gni_mem_hdl->type == RDMA_TARGET_BUFFER) ||
         (gni_mem_hdl->type == GET_SRC_BUFFER) ||
         (gni_mem_hdl->type == PUT_DST_BUFFER)) {
-        post_recv_work_request((NNTI_buffer_t *)reg_buf);
+        post_recv_work_request(reg_buf);
     }
 #endif
 
