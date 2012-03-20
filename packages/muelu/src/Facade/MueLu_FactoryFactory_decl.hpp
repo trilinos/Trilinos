@@ -56,6 +56,8 @@ namespace MueLu {
     //
     RCP<const FactoryBase> BuildFactory(const Teuchos::ParameterEntry & param, const FactoryMap & factoryMapIn) const {
 
+      //TODO: add test restricted keyword
+
       // Find factory
       std::string factoryName;
       Teuchos::ParameterList paramList;
@@ -103,11 +105,20 @@ namespace MueLu {
 
       // Use a user defined factories (in <Factories> node)
       if (factoryMapIn.find(factoryName) != factoryMapIn.end()) {
-        TEUCHOS_TEST_FOR_EXCEPTION(paramList.begin() != paramList.end(), Exceptions::RuntimeError, "MueLu::FactoryFactory:: parameters of factories defined in <Factories> node cannot be redefined.");
+        TEUCHOS_TEST_FOR_EXCEPTION((param.isList() && (++paramList.begin() != paramList.end())), Exceptions::RuntimeError, 
+                                   "MueLu::FactoryFactory: Error during the parsing of: " << std::endl << paramList << std::endl
+                                   << "'" << factoryName << "' is not a factory name but an existing instance of a factory." << std::endl
+                                   << "Extra parameters cannot be specified after the creation of the object." << std::endl << std::endl
+                                   << "Correct syntaxes includes:" << std::endl
+                                   << " <Parameter name=\"...\" type=\"string\" value=\"" << factoryName << "\"/>" << std::endl
+                                   << "or" << std::endl
+                                   << " <ParameterList name=\"...\"><Parameter name=\"factory\" type=\"string\" value=\"" << factoryName << "\"/></ParameterList>" << std::endl
+                                   );
+
         return factoryMapIn.find(factoryName)->second;
       }
 
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:: unknown factory name : " << factoryName);
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory: unknown factory name : " << factoryName);
 
       return Teuchos::null;
     }
