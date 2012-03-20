@@ -24,9 +24,11 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetParameterList(const Teuchos::ParameterList & paramList) {
 
+    /*
     std::cout << "Parameter List:" << std::endl
               << paramList
               << std::endl;
+    */
     
     // Parameter List Parsing:
     // ---------
