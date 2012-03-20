@@ -1290,8 +1290,8 @@ int Epetra_CrsGraph::MakeColMap_int(const Epetra_BlockMap& domainMap,
   const int numMyBlockRows = NumMyBlockRows();
   int  hashsize = numMyBlockRows; if (hashsize < 100) hashsize = 100;
   //cout << "numMyBlockRows = " << numMyBlockRows << " hashsize = " << hashsize << endl;
-  Epetra_HashTable RemoteGIDs(hashsize); 
-  Epetra_HashTable RemoteGIDList(hashsize);
+  Epetra_HashTable<int> RemoteGIDs(hashsize); 
+  Epetra_HashTable<int> RemoteGIDList(hashsize);
 
   int NumLocalColGIDs = 0;
   int NumRemoteColGIDs = 0;
@@ -1468,8 +1468,8 @@ int Epetra_CrsGraph::MakeColMap_LL(const Epetra_BlockMap& domainMap,
   const int numMyBlockRows = NumMyBlockRows();
   int  hashsize = numMyBlockRows; if (hashsize < 100) hashsize = 100;
   //cout << "numMyBlockRows = " << numMyBlockRows << " hashsize = " << hashsize << endl;
-  Epetra_HashTable RemoteGIDs(hashsize); 
-  Epetra_HashTable RemoteGIDList(hashsize);
+  Epetra_HashTable<int> RemoteGIDs(hashsize); 
+  Epetra_HashTable<long long> RemoteGIDList(hashsize);
 
   int NumLocalColGIDs = 0;
   int NumRemoteColGIDs = 0;

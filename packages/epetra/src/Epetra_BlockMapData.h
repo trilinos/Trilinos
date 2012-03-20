@@ -50,7 +50,7 @@
 
 class Epetra_Comm;
 class Epetra_Directory;
-class Epetra_HashTable;
+template<typename value_type> class Epetra_HashTable;
 
 //! Epetra_BlockMapData:  The Epetra BlockMap Data Class.
 /*! The Epetra_BlockMapData class is an implementation detail of Epetra_BlockMap.
@@ -112,7 +112,7 @@ class Epetra_BlockMapData : public Epetra_Data {
 
   long long LastContiguousGID_;
   int LastContiguousGIDLoc_;
-  Epetra_HashTable * LIDHash_;
+  Epetra_HashTable<int> * LIDHash_;
 
 	// these are intentionally declared but not defined. See Epetra Developer's Guide for details.
   Epetra_BlockMapData(const Epetra_BlockMapData & BlockMapData);

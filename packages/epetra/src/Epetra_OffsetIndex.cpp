@@ -248,8 +248,6 @@ void Epetra_OffsetIndex::GenerateRemoteOffsets_( const Epetra_CrsGraph & SourceG
                                                  const int * RemoteLIDs,
                                                  Epetra_Distributor & Distor )
 {
-  // TODO this needs to be changed for long long
-
   int numProcs = SourceGraph.RowMap().Comm().NumProc();
   if (numProcs < 2) {
     return;
@@ -258,8 +256,10 @@ void Epetra_OffsetIndex::GenerateRemoteOffsets_( const Epetra_CrsGraph & SourceG
   const int GlobalMaxNumIndices = SourceGraph.GlobalMaxNumIndices();
 
   int NumIndices;
+  /* "Indices" appears to be unused -- jhurani@txcorp.com
   int * Indices = 0;
   if( GlobalMaxNumIndices>0 ) Indices = new int[GlobalMaxNumIndices];
+  */
 
   //Pack Source Rows
   int * Sizes = 0;
@@ -270,7 +270,7 @@ void Epetra_OffsetIndex::GenerateRemoteOffsets_( const Epetra_CrsGraph & SourceG
     TotalSize += Sizes[i];
   }
 
-  int * SourceArray = new int[TotalSize+1];
+  int_type * SourceArray = new int_type[TotalSize+1];
   int Loc = 0;
   for( int i = 0; i < NumExport_; ++i ) {
     int_type GID = (int_type) SourceGraph.GRID(ExportLIDs[i]);
@@ -284,14 +284,15 @@ void Epetra_OffsetIndex::GenerateRemoteOffsets_( const Epetra_CrsGraph & SourceG
 
   //Push to Target
   char * cRecvArray = 0;
-  int * RecvArray = 0;
+  int_type * RecvArray = 0;
   int RecvArraySize = 0;
+
   Distor.Do( reinterpret_cast<char *>(SourceArray),
-             (int)sizeof(int),
+             (int)sizeof(int_type),
              Sizes,
              RecvArraySize,
              cRecvArray );
-  RecvArray = reinterpret_cast<int*>(cRecvArray);
+  RecvArray = reinterpret_cast<int_type*>(cRecvArray);
 
   //Construct RemoteOffsets
   if( NumRemote_ > 0 ) RemoteOffsets_ = new int*[NumRemote_];
@@ -299,7 +300,7 @@ void Epetra_OffsetIndex::GenerateRemoteOffsets_( const Epetra_CrsGraph & SourceG
 
   Loc = 0;
   for( int i = 0; i < NumRemote_; ++i ) {
-    NumIndices = RecvArray[Loc];
+    NumIndices = (int) RecvArray[Loc];
     RemoteOffsets_[i] = new int[NumIndices];
     ++Loc;
     int FLoc = 0;
@@ -314,7 +315,10 @@ void Epetra_OffsetIndex::GenerateRemoteOffsets_( const Epetra_CrsGraph & SourceG
     }
   }
 
+  /* "Indices" appears to be unused -- jhurani@txcorp.com
   if( GlobalMaxNumIndices>0 ) delete [] Indices;
+  */
+
   if( Sizes ) delete [] Sizes;
   if( SourceArray ) delete [] SourceArray;
   if( RecvArraySize ) delete [] cRecvArray;

@@ -891,7 +891,7 @@ or if the number of entries in this row exceed the Length parameter.
   int NumMyDiagonals() const {return(Graph_.NumMyDiagonals());}
 	
   //! Returns the current number of nonzero entries in specified global row on this processor.
-  int NumGlobalEntries(int Row) const {return(Graph_.NumGlobalIndices(Row));}
+  int NumGlobalEntries(long long Row) const {return(Graph_.NumGlobalIndices(Row));}
 	
   //! Returns the allocated number of nonzero entries in specified global row on this processor.
   int NumAllocatedGlobalEntries(int Row) const{return(Graph_.NumAllocatedGlobalIndices(Row));}

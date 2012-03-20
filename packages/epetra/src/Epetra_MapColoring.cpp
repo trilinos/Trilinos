@@ -159,7 +159,7 @@ int Epetra_MapColoring::GenerateLists() const {
   for (int i=1; i<NumMyElements; i++) if (!InItemList(ElementColors_[i])) NumColors_++;
 
   // Create hash table that maps color IDs to the integers 0,...NumColors_
-  ColorIDs_ = new Epetra_HashTable(NumColors_);
+  ColorIDs_ = new Epetra_HashTable<int>(NumColors_);
   ListOfColors_ = new int[NumColors_];
   ListItem * CurItem = FirstColor_;
   {for (int i=0; i<NumColors_; i++) {

@@ -487,13 +487,25 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   template<> bool GlobalIndicesIsType<int>()       const { return BlockMapData_->GlobalIndicesInt_; }
   template<> bool GlobalIndicesIsType<long long>() const { return BlockMapData_->GlobalIndicesLongLong_; }
 
-  bool  GlobalIndicesTypeValid() const { return BlockMapData_->GlobalIndicesInt_ || BlockMapData_->GlobalIndicesLongLong_; }
+  bool GlobalIndicesTypeValid() const { return BlockMapData_->GlobalIndicesInt_ || BlockMapData_->GlobalIndicesLongLong_; }
 
   bool GlobalIndicesTypeMatch(const Epetra_BlockMap& other) const
   {
 	  return
 		  GlobalIndicesInt() == other.GlobalIndicesInt() &&
 		  GlobalIndicesLongLong() == other.GlobalIndicesLongLong();
+  }
+
+  void SetGlobalIndicesType(bool IsLongLong)
+  {
+    if(IsLongLong)  {
+      BlockMapData_->GlobalIndicesInt_ = false;
+      BlockMapData_->GlobalIndicesLongLong_ = true;
+    }
+    else {
+      BlockMapData_->GlobalIndicesInt_ = true;
+      BlockMapData_->GlobalIndicesLongLong_ = false;
+    }
   }
 
   //! Returns true if map has constant element size.
@@ -588,22 +600,22 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
 private:
 
 	void ConstructAutoUniform(long long NumGlobal_Elements, int Element_Size,
-			int Index_Base, const Epetra_Comm& comm);
+			int Index_Base, const Epetra_Comm& comm, bool IsLongLong);
 
 	void ConstructUserLinear(long long NumGlobal_Elements, int NumMy_Elements, 
-			int Element_Size, int Index_Base, const Epetra_Comm& comm);
+			int Element_Size, int Index_Base, const Epetra_Comm& comm, bool IsLongLong);
 
 	template<typename int_type>
 	void ConstructUserConstant(int_type NumGlobal_Elements, int NumMy_Elements,
 			const int_type * myGlobalElements,
 			int Element_Size, int indexBase,
-			const Epetra_Comm& comm);
+			const Epetra_Comm& comm, bool IsLongLong);
 
 	template<typename int_type>
 	void ConstructUserVariable(int_type NumGlobal_Elements, int NumMy_Elements,
 			const int_type * myGlobalElements,
 			const int *elementSizeList, int indexBase,
-			const Epetra_Comm& comm);
+			const Epetra_Comm& comm, bool IsLongLong);
 
 	template<typename int_type>
 	int_type& MyGlobalElementVal(int i);

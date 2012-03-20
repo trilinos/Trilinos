@@ -49,15 +49,16 @@
 // TODO the code needs to be changed for long long keys, only
 // the types have been changed right now.
 
+template<typename value_type>
 class Epetra_HashTable : public Epetra_Object
 {
   struct Node
   {
      long long Key;
-     int Value;
+     value_type Value;
      Node * Ptr;
 
-     Node( const long long key = 0, const int value = 0, Node * ptr = 0 )
+     Node( const long long key = 0, const value_type value = 0, Node * ptr = 0 )
      : Key(key), Value(value), Ptr(ptr) {}
 
     private:
@@ -115,14 +116,14 @@ class Epetra_HashTable : public Epetra_Object
     delete [] Container_;
   }
 
-  void Add( const long long key, const int value )
+  void Add( const long long key, const value_type value )
   {
     int v = Func(key);
     Node * n1 = Container_[v];
     Container_[v] = new Node(key,value,n1);
   }
 
-  int Get( const long long key )
+  value_type Get( const long long key )
   {
     Node * n = Container_[ Func(key) ];
     while( n && (n->Key != key) ) n = n->Ptr;
