@@ -653,13 +653,17 @@ namespace Tpetra {
     typename Graph::SLocalGlobalViews         inds_view;
     ArrayView<const Scalar> vals_view;
     if (lrow != LOT::invalid()) {
-      // if we have a column map, use it to filter the entries.
+      // We have to declare these Arrays here rather than in the
+      // hasColMap() if branch, so that views to them will remain
+      // valid for the whole scope.
       Array<GlobalOrdinal> filtered_indices;
       Array<Scalar>        filtered_values;
       if (hasColMap()) {
+	// If we have a column map, use it to filter the indices and
+	// corresponding values, so that we only insert entries into
+	// the columns we own.
         typename Graph::SLocalGlobalNCViews inds_ncview;
         ArrayView<Scalar> vals_ncview;
-        // filter indices and values through the column map
         filtered_indices.assign(indices.begin(), indices.end());
         filtered_values.assign(values.begin(), values.end());
         inds_ncview.ginds = filtered_indices();
@@ -667,7 +671,7 @@ namespace Tpetra {
         inds_view.ginds = filtered_indices(0,numFilteredEntries);
         vals_view       = filtered_values(0,numFilteredEntries);
       }
-      else {
+      else { // we don't have a column Map.
         inds_view.ginds = indices;
         vals_view       = values;
       }
@@ -679,26 +683,38 @@ namespace Tpetra {
         const size_t newNumEntries = curNumEntries + numFilteredEntries;
         if (newNumEntries > rowInfo.allocSize) {
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(getProfileType() == StaticProfile, std::runtime_error, ": new indices exceed statically allocated graph structure.");
-          TPETRA_EFFICIENCY_WARNING(true,std::runtime_error,
-              "::insertGlobalValues(): Pre-allocated space has been exceeded, requiring new allocation. To improve efficiency, suggest larger allocation.");
-          // update allocation only as much as necessary
+          TPETRA_EFFICIENCY_WARNING(true, std::runtime_error, "::insertGlobal"
+           "Values(): Preallocated space has been exceeded, requiring new "
+           "allocation. To improve efficiency, suggest a larger per-row "
+           "allocation in CrsMatrix's constructor.");
+          // Update allocation only as much as necessary
           rowInfo = myGraph_->template updateAllocAndValues<GlobalIndices,Scalar>(rowInfo, newNumEntries, values2D_[lrow]);
         }
         if (isGloballyIndexed()) {
+	  // <GlobalIndices, GlobalIndices> template parameters
+	  // involve getGlobalViewNonConst() and direct copying, which
+	  // should be reasonably fast.
           myGraph_->template insertIndicesAndValues<GlobalIndices,GlobalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), vals_view.begin());
         }
         else {
+	  // <GlobalIndices, LocalIndices> template parameters involve
+	  // calling the Map's getLocalElement() once per entry to
+	  // insert.  This may be slow.
           myGraph_->template insertIndicesAndValues<GlobalIndices,LocalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), vals_view.begin());
         }
 #ifdef HAVE_TPETRA_DEBUG
         {
           const size_t chkNewNumEntries = myGraph_->getNumEntriesInLocalRow(lrow);
-          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(chkNewNumEntries != newNumEntries, std::logic_error, ": Internal logic error. Please contact Tpetra team.");
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(chkNewNumEntries != newNumEntries, 
+            std::logic_error, ": There should be a total of " << newNumEntries 
+            << " entries in the row, but the graph now reports " << chkNewNumEntries
+            << " entries.  Please report this bug to the Tpetra developers.");
         }
-#endif
+#endif // HAVE_TPETRA_DEBUG
       }
     }
-    else {
+    else { // The calling process doesn't own the given row, so add
+	   // the new data to the list of nonlocals.
       typename ArrayView<const GlobalOrdinal>::iterator ind = indices.begin();
       typename ArrayView<const Scalar       >::iterator val =  values.begin();
       nonlocals_[globalRow].reserve( nonlocals_[globalRow].size() + indices.size() );
