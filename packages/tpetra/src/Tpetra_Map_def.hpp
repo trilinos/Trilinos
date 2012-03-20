@@ -504,11 +504,19 @@ namespace Tpetra {
   : comm_(comm_in)
   , node_(node_in) 
   {
+    using Teuchos::as;
+    using Teuchos::broadcast;
+    using Teuchos::outArg;
+    using Teuchos::ptr;
+    using Teuchos::REDUCE_MAX;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::REDUCE_SUM;
+    using Teuchos::reduceAll;
+
     // The user has specified the distribution of elements over the
     // nodes, via entryList.  The distribution is not necessarily
     // contiguous or equally shared over the nodes.
-    using Teuchos::as;
-    using Teuchos::outArg;
+
     const size_t  L0 = Teuchos::OrdinalTraits<size_t>::zero();
     const global_size_t GST0 = Teuchos::OrdinalTraits<global_size_t>::zero();
     const global_size_t GST1 = Teuchos::OrdinalTraits<global_size_t>::one();
@@ -520,25 +528,25 @@ namespace Tpetra {
     // stored in a LocalOrdinal.
     LocalOrdinal numLocalElements_in = Teuchos::as<LocalOrdinal>(entryList.size());
 
-    std::string errPrefix = Teuchos::typeName(*this) + 
-      "::constructor(numGlobal,entryList,indexBase,platform): ";
+    const std::string errPrefix = Teuchos::typeName (*this) + 
+      "::Map(numGlobal,entryList,indexBase,comm,node): ";
 
     const int myImageID = comm_->getRank();
-    { // begin scoping block
-      // for communicating failures 
+    { // Begin scoping block for communicating failures.
       int localChecks[2], globalChecks[2];
 
       /* Compute the global number of elements.
 	 We are doing this because exactly ONE of the following is true:
-         - the user didn't specify it, and we need it
-         - the user did specify it, but we need to 
-           + validate it against the sum of the local sizes, and
-           + ensure that it is the same on all nodes
+         * the user didn't specify it, and we need it
+         * the user _did_ specify it, but we need to 
+         ** validate it against the sum of the local sizes, and
+         ** ensure that it is the same on all nodes
        */
       global_size_t global_sum; // Global number of elements
-      Teuchos::reduceAll<int,global_size_t>(*comm_, Teuchos::REDUCE_SUM,
-        as<global_size_t>(numLocalElements_in), outArg(global_sum));
-      localChecks[0] = -1;
+      reduceAll (*comm_, REDUCE_SUM, as<global_size_t>(numLocalElements_in), outArg (global_sum));
+      // localChecks[0] == -1 means "no error detected."  If it's not
+      // -1, then it's the rank of an offending process.
+      localChecks[0] = -1; 
       localChecks[1] = 0;
       // If the user supplied the number of global elements (i.e., if
       // it's not invalid (== GSTI)), then make sure that there is at
@@ -557,40 +565,44 @@ namespace Tpetra {
         localChecks[0] = myImageID;
         localChecks[1] = 2;
       }
-      //
-      // Now check that all nodes have the same indexBase value.
-      //
-      GlobalOrdinal rootIB = indexBase_in;
-      Teuchos::broadcast<int,GlobalOrdinal>(*comm_,0,&rootIB);   // broadcast one ordinal from node 0
-      if (indexBase_in != rootIB) {
+      // Check that all nodes have the same indexBase value.  We do so
+      // by broadcasting the indexBase value from Proc 0 to all the
+      // processes, and then checking locally on each process whether
+      // it's the same as indexBase_in.  (This does about half as much
+      // communication as an all-reduce.)
+      GlobalOrdinal rootIndexBase = indexBase_in;
+      const int rootRank = 0;
+      broadcast (*comm_, rootRank, ptr (rootIndexBase));  
+
+      if (indexBase_in != rootIndexBase) {
         localChecks[0] = myImageID;
         localChecks[1] = 3;
       }
       // REDUCE_MAX will give us the rank ("image ID") of the
       // highest-rank process that DID NOT pass.  This will be -1 if
       // all processes passed.
-      Teuchos::reduceAll<int,int>(*comm_,Teuchos::REDUCE_MAX,2,localChecks,globalChecks);
+      reduceAll (*comm_, REDUCE_MAX, 2, localChecks, globalChecks);
       if (globalChecks[0] != -1) {
         if (globalChecks[1] == 1) {
-          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
-              errPrefix << "numGlobal is not valid on at least one node (possibly node "
-              << globalChecks[0] << ").");
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+            errPrefix << "numGlobal is not valid on at least one process "
+            "(including process " << globalChecks[0] << ").");
         }
         else if (globalChecks[1] == 2) {
-          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
-              errPrefix << "numGlobal doesn't match sum of numLocal (" 
-              << global_sum << ") on at least one node (possibly node "
-              << globalChecks[0] << ").");
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+            errPrefix << "numGlobal doesn't match sum of numLocal (" 
+            << global_sum << ") on at least one process (including process "
+            << globalChecks[0] << ").");
         }
         else if (globalChecks[1] == 3) {
-          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
-              errPrefix << "indexBase is not the same on all nodes (possibly node "
-              << globalChecks[0] << ").");
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+              errPrefix << "indexBase is not the same on all processes "
+              "(including process " << globalChecks[0] << ").");
         }
         else {
-          // logic error on my part
-          TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-              errPrefix << "logic error. Please contact the Tpetra team.");
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+            errPrefix << "Should never get here!  Please report this bug to the "
+            "Tpetra developers.");
         }
       }
       //
@@ -615,6 +627,11 @@ namespace Tpetra {
     // entryList are distinct.  In the case that a GID is duplicated,
     // use the same LID for all duplicates.  This is necessary so that
     // the LIDs are in [0,numLocal).
+    //
+    // FIXME (mfh 20 Mar 2012) This code doesn't do what it claims to
+    // do: it uses a different LID for local duplicates.  The
+    // numUniqueGIDs counter is a red herring; it just increases by
+    // one each iteration.
     size_t numUniqueGIDs = 0;
     if (numLocalElements_ > L0) {
       lgMap_ = Teuchos::arcp<GlobalOrdinal>(numLocalElements_);
@@ -634,8 +651,8 @@ namespace Tpetra {
     }
 
     // Compute the min and max of all processes' global IDs.
-    Teuchos::reduceAll<int,GlobalOrdinal>(*comm_,Teuchos::REDUCE_MIN,minMyGID_,Teuchos::outArg(minAllGID_));
-    Teuchos::reduceAll<int,GlobalOrdinal>(*comm_,Teuchos::REDUCE_MAX,maxMyGID_,Teuchos::outArg(maxAllGID_));
+    reduceAll (*comm_, REDUCE_MIN, minMyGID_, outArg (minAllGID_));
+    reduceAll (*comm_, REDUCE_MAX, maxMyGID_, outArg (maxAllGID_));
     contiguous_  = false;
     distributed_ = checkIsDist();
     TEUCHOS_TEST_FOR_EXCEPTION(minAllGID_ < indexBase_, std::invalid_argument,
@@ -659,8 +676,8 @@ namespace Tpetra {
       return Teuchos::as<LocalOrdinal>(globalIndex - getMinGlobalIndex());
     }
     else {
-      typename std::map<GlobalOrdinal,LocalOrdinal>::const_iterator i;
-      i = glMap_.find(globalIndex);
+      typedef typename global_to_local_table_type::const_iterator iter_type;
+      iter_type i = glMap_.find(globalIndex);
       if (i == glMap_.end()) {
         return Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
       }
@@ -695,8 +712,8 @@ namespace Tpetra {
       return (getMinGlobalIndex() <= globalIndex) && (globalIndex <= getMaxGlobalIndex());
     }
     else {
-      typename std::map<GlobalOrdinal,LocalOrdinal>::const_iterator i;
-      i = glMap_.find(globalIndex);
+      typedef typename global_to_local_table_type::const_iterator iter_type;
+      iter_type i = glMap_.find(globalIndex);
       return (i != glMap_.end());
     }
   }
