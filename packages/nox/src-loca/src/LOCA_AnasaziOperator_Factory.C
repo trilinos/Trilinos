@@ -58,6 +58,7 @@
 #include "LOCA_AnasaziOperator_ShiftInvert.H"
 #include "LOCA_AnasaziOperator_ShiftInvert2Matrix.H"
 #include "LOCA_AnasaziOperator_Cayley.H"
+#include "LOCA_AnasaziOperator_Cayley2Matrix.H"
 
 LOCA::AnasaziOperator::Factory::Factory(
 	        const Teuchos::RCP<LOCA::GlobalData>& global_data) : 
@@ -110,7 +111,7 @@ LOCA::AnasaziOperator::Factory::create(
     if (tdGrp == Teuchos::null)
       globalData->locaErrorCheck->throwError(
 	methodName, 
-	std::string("Group argument for Shift-Invert Anasazi operator ") + 
+	std::string("Group argument for Shift-Invert 2 Matrix Anasazi operator ") + 
 	std::string("strategy must be a LOCA::TimeDependent::AbstractGroup."));
     strategy = 
       Teuchos::rcp(new LOCA::AnasaziOperator::ShiftInvert2Matrix(globalData,
@@ -125,10 +126,25 @@ LOCA::AnasaziOperator::Factory::create(
     if (tdGrp == Teuchos::null)
       globalData->locaErrorCheck->throwError(
 	methodName, 
-	std::string("Group argument for Shift-Invert Anasazi operator ") + 
+	std::string("Group argument for Cayley Anasazi operator ") + 
 	std::string("strategy must be a LOCA::TimeDependent::AbstractGroup."));
     strategy = 
       Teuchos::rcp(new LOCA::AnasaziOperator::Cayley(globalData,
+						     topParams,
+						     eigenParams,
+						     solverParams,
+						     tdGrp));
+  }
+  else if (name == "Cayley 2 Matrix") {
+    Teuchos::RCP<LOCA::TimeDependent::AbstractGroup> tdGrp = 
+      Teuchos::rcp_dynamic_cast<LOCA::TimeDependent::AbstractGroup>(grp);
+    if (tdGrp == Teuchos::null)
+      globalData->locaErrorCheck->throwError(
+	methodName, 
+	std::string("Group argument for Cayley 2 Matrix Anasazi operator ") + 
+	std::string("strategy must be a LOCA::TimeDependent::AbstractGroup."));
+    strategy = 
+      Teuchos::rcp(new LOCA::AnasaziOperator::Cayley2Matrix(globalData,
 						     topParams,
 						     eigenParams,
 						     solverParams,

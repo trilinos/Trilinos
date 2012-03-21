@@ -142,7 +142,9 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> piroPa
   bool separateMatrixMem = piroParams->get("LOCASolver: Create Second Matrix",false);
   if (separateMatrixMem) {
     Teuchos::RCP<Epetra_CrsMatrix> Acrs = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(A); 
-    if (Acrs != Teuchos::null) Ashift = Teuchos::rcp(new Epetra_CrsMatrix(*Acrs));
+    if (Acrs != Teuchos::null)
+     // Ashift = Teuchos::rcp(new Epetra_CrsMatrix(*Acrs));
+     Ashift = model->create_W();
     else TEUCHOS_TEST_FOR_EXCEPTION(Acrs == Teuchos::null, Teuchos::Exceptions::InvalidParameter,
                  "Error in Piro::Epetra::LOCASolver " <<
                  "LOCASolver: Create Second Matrix was requested, but only implemented for CrsMatrix\n");
