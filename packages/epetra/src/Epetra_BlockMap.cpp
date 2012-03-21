@@ -45,6 +45,7 @@
 #include "Epetra_Directory.h"
 #include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_HashTable.h"
+#include <limits.h> // INT_MAX
 
 // Use the new LID hash table approach by default
 #define EPETRA_BLOCKMAP_NEW_LID

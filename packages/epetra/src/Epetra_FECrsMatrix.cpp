@@ -1132,7 +1132,7 @@ int Epetra_FECrsMatrix::InsertNonlocalRow(int_type row, typename std::vector<int
 
   int offset = (int) (iter - nonlocalRows_var.begin());
   nonlocalRows_var.insert(iter, row);
-  std::vector<std::vector<int_type> >::iterator cols_iter = nonlocalCols_var.begin() + offset;
+  typename std::vector<std::vector<int_type> >::iterator cols_iter = nonlocalCols_var.begin() + offset;
   nonlocalCols_var.insert(cols_iter, std::vector<int_type>());
   std::vector<std::vector<double> >::iterator coefs_iter = nonlocalCoefs_.begin() + offset;
   nonlocalCoefs_.insert(coefs_iter, std::vector<double>());

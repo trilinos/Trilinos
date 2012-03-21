@@ -205,114 +205,117 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraphData : public Epetra_Data {
   template<typename int_type>
   struct IndexData;
 
-  template<>
-  struct Epetra_CrsGraphData::IndexData<long long>
-  {
-    long long** Indices_;
-    std::vector< EntriesInOneRow<long long> > SortedEntries_;
-    long long* TempColIndices_;
-    Epetra_LongLongSerialDenseVector All_Indices_;
-  
-    IndexData(int NumMyBlockRows, bool AllocSorted)
-  	  :
-      Indices_(NULL),
-      SortedEntries_(),
-      TempColIndices_(NULL),
-      All_Indices_(0)
-    {
-		Allocate(NumMyBlockRows, AllocSorted);
-    }
-
-	void Allocate(int NumMyBlockRows, bool AllocSorted)
-	{
-		Deallocate();
-
-		if(AllocSorted)
-			SortedEntries_.resize(NumMyBlockRows);
-		if(NumMyBlockRows > 0)
-			Indices_ = new long long *[NumMyBlockRows];
-	}
-
-	void Deallocate()
-	{
-		delete[] Indices_;
-		Indices_ = 0;
-
-		SortedEntries_.swap(std::vector< EntriesInOneRow<long long> >());
-
-		delete [] TempColIndices_;
-		TempColIndices_ = 0;
-
-		All_Indices_.Resize(0);
-	}
-  };
-  
-  template<>
-  struct Epetra_CrsGraphData::IndexData<int>
-  {
-    int** Indices_;
-    std::vector< EntriesInOneRow<int> > SortedEntries_;
-    int* TempColIndices_;
-    Epetra_IntSerialDenseVector All_Indices_;
-  
-    IndexData(int NumMyBlockRows, bool AllocSorted)
-  	  :
-      Indices_(NULL),
-      SortedEntries_(),
-      TempColIndices_(NULL),
-      All_Indices_(0)
-    {
-		Allocate(NumMyBlockRows, AllocSorted);
-    }
-
-	void Allocate(int NumMyBlockRows, bool AllocSorted)
-	{
-		Deallocate();
-
-		if(AllocSorted)
-			SortedEntries_.resize(NumMyBlockRows);
-
-		if(NumMyBlockRows > 0)
-			Indices_ = new int *[NumMyBlockRows];
-	}
-
-	void Deallocate()
-	{
-		delete[] Indices_;
-		Indices_ = 0;
-
-		SortedEntries_.swap(std::vector< EntriesInOneRow<int> >());
-
-		delete [] TempColIndices_;
-		TempColIndices_ = 0;
-
-		All_Indices_.Resize(0);
-	}
-  };
-  
   IndexData<int> data;
   IndexData<long long> LL_data;
 
   template<typename int_type>
   IndexData<int_type>& Data();
+};
 
-  template<>
-  IndexData<long long>& Data()
+template<>
+struct Epetra_CrsGraphData::IndexData<long long>
+{
+  long long** Indices_;
+  std::vector< EntriesInOneRow<long long> > SortedEntries_;
+  long long* TempColIndices_;
+  Epetra_LongLongSerialDenseVector All_Indices_;
+
+  IndexData(int NumMyBlockRows, bool AllocSorted)
+	  :
+    Indices_(NULL),
+    SortedEntries_(),
+    TempColIndices_(NULL),
+    All_Indices_(0)
   {
-	if(RowMap_.GlobalIndicesLongLong() && IndicesAreGlobal_)
-		return LL_data;
-	else
-		throw "Epetra_CrsGraphData::IndexData<long long>: Map indices not long long or not global";
+  	Allocate(NumMyBlockRows, AllocSorted);
   }
 
-  template<>
-  IndexData<int>& Data()
+  void Allocate(int NumMyBlockRows, bool AllocSorted)
   {
-	if(RowMap_.GlobalIndicesInt() || (RowMap_.GlobalIndicesLongLong() && IndicesAreLocal_))
-		return data;
-	else
-		throw "Epetra_CrsGraphData::IndexData<int>: Map indices not int or (long long but not local)";
+  	Deallocate();
+
+  	if(AllocSorted)
+  		SortedEntries_.resize(NumMyBlockRows);
+  	if(NumMyBlockRows > 0)
+  		Indices_ = new long long *[NumMyBlockRows];
+  }
+
+  void Deallocate()
+  {
+  	delete[] Indices_;
+  	Indices_ = 0;
+
+    std::vector< EntriesInOneRow<long long> > empty;
+  	SortedEntries_.swap(empty);
+
+  	delete [] TempColIndices_;
+  	TempColIndices_ = 0;
+
+  	All_Indices_.Resize(0);
   }
 };
+
+template<>
+struct Epetra_CrsGraphData::IndexData<int>
+{
+  int** Indices_;
+  std::vector< EntriesInOneRow<int> > SortedEntries_;
+  int* TempColIndices_;
+  Epetra_IntSerialDenseVector All_Indices_;
+
+  IndexData(int NumMyBlockRows, bool AllocSorted)
+	  :
+    Indices_(NULL),
+    SortedEntries_(),
+    TempColIndices_(NULL),
+    All_Indices_(0)
+  {
+  	Allocate(NumMyBlockRows, AllocSorted);
+  }
+
+  void Allocate(int NumMyBlockRows, bool AllocSorted)
+  {
+  	Deallocate();
+
+  	if(AllocSorted)
+  		SortedEntries_.resize(NumMyBlockRows);
+
+  	if(NumMyBlockRows > 0)
+  		Indices_ = new int *[NumMyBlockRows];
+  }
+
+  void Deallocate()
+  {
+  	delete[] Indices_;
+  	Indices_ = 0;
+
+    std::vector< EntriesInOneRow<int> > empty;
+  	SortedEntries_.swap(empty);
+
+  	delete [] TempColIndices_;
+  	TempColIndices_ = 0;
+
+  	All_Indices_.Resize(0);
+  }
+};
+  
+template<>
+Epetra_CrsGraphData::IndexData<long long>& Data()
+{
+  if(RowMap_.GlobalIndicesLongLong() && IndicesAreGlobal_)
+  	return LL_data;
+  else
+  	throw "Epetra_CrsGraphData::IndexData<long long>: Map indices not long long or not global";
+}
+
+template<>
+Epetra_CrsGraphData::IndexData<int>& Data()
+{
+  if(RowMap_.GlobalIndicesInt() || (RowMap_.GlobalIndicesLongLong() && IndicesAreLocal_))
+  	return data;
+  else
+  	throw "Epetra_CrsGraphData::IndexData<int>: Map indices not int or (long long but not local)";
+}
+
 
 #endif /* EPETRA_CRSGRAPHDATA_H */

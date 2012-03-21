@@ -195,9 +195,6 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
   template<typename int_type>
   const int_type * AllMinGIDs() const;
 
-  template<> const int * AllMinGIDs() const { return AllMinGIDs_int_; }
-  template<> const long long * AllMinGIDs() const { return AllMinGIDs_LL_; }
-
 	template<typename int_type>
 	int	GetDirectoryEntries( const Epetra_BlockMap& Map,
 						const int NumEntries,
@@ -208,5 +205,15 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
 						bool high_rank_sharing_procs) const;
 
 };
+
+template<> const int * Epetra_BasicDirectory::AllMinGIDs() const
+{
+  return AllMinGIDs_int_;
+}
+
+template<> const long long * Epetra_BasicDirectory::AllMinGIDs() const
+{
+  return AllMinGIDs_LL_;
+}
 
 #endif /* EPETRA_BASICDIRECTORY_H */

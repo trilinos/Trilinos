@@ -697,12 +697,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
    std::vector<std::vector<long long> > nonlocalCols_LL_;
 
    template<typename int_type> std::vector<int_type>& nonlocalRows();
-   template<> std::vector<int>& nonlocalRows<int>() { return nonlocalRows_int_; }
-   template<> std::vector<long long>& nonlocalRows<long long>() { return nonlocalRows_LL_; }
-
    template<typename int_type> std::vector<std::vector<int_type> >& nonlocalCols();
-   template<> std::vector<std::vector<int> >& nonlocalCols<int>() { return nonlocalCols_int_; }
-   template<> std::vector<std::vector<long long> >& nonlocalCols<long long>() { return nonlocalCols_LL_; }
 
    std::vector<std::vector<double> > nonlocalCoefs_;
 
@@ -728,5 +723,26 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
                       bool callFillComplete=true,
                       Epetra_CombineMode combineMode=Add);
 };//class Epetra_FECrsMatrix
+
+template<> std::vector<int>& Epetra_FECrsMatrix::nonlocalRows<int>()
+{
+  return nonlocalRows_int_;
+}
+
+template<> std::vector<long long>& Epetra_FECrsMatrix::nonlocalRows<long long>()
+{
+  return nonlocalRows_LL_;
+}
+
+template<> std::vector<std::vector<int> >& Epetra_FECrsMatrix::nonlocalCols<int>()
+{
+  return nonlocalCols_int_;
+}
+
+template<> std::vector<std::vector<long long> >& Epetra_FECrsMatrix::nonlocalCols<long long>()
+{
+  return nonlocalCols_LL_;
+}
+
 
 #endif /* EPETRA_FECRSMATRIX_H */

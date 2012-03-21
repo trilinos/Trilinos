@@ -197,9 +197,6 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsGraph : public Epetra_CrsGraph {
   template<typename int_type>
   std::map<int_type,Epetra_CrsGraphData::EntriesInOneRow<int_type> >& nonlocalRowData();
 
-  template<> std::map<int,Epetra_CrsGraphData::EntriesInOneRow<int> >& nonlocalRowData() { return nonlocalRowData_int_; }
-  template<> std::map<long long,Epetra_CrsGraphData::EntriesInOneRow<long long> >& nonlocalRowData() { return nonlocalRowData_LL_; }
-
   /**
    * A CrsGraph holding non-local data in case the respective flag is set in
    * the constructor.
@@ -216,5 +213,15 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsGraph : public Epetra_CrsGraph {
   int GlobalAssemble(const Epetra_Map& domain_map, const Epetra_Map& range_map, bool callFillComplete);
 
 };//class Epetra_FECrsGraph
+
+template<> std::map<int,Epetra_CrsGraphData::EntriesInOneRow<int> >& Epetra_FECrsGraph::nonlocalRowData()
+{
+  return nonlocalRowData_int_;
+}
+
+template<> std::map<long long,Epetra_CrsGraphData::EntriesInOneRow<long long> >& Epetra_FECrsGraph::nonlocalRowData()
+{
+  return nonlocalRowData_LL_;
+}
 
 #endif
