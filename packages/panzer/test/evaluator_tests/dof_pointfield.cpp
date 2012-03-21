@@ -148,7 +148,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   Teuchos::RCP<panzer::BasisIRLayout> basisLayout = Teuchos::rcp(new panzer::BasisIRLayout(pureBasis,*quadRule));
   Teuchos::RCP<panzer::BasisValues<double,Intrepid::FieldContainer<double> > > basisValues 
      = Teuchos::rcp(new panzer::BasisValues<double,Intrepid::FieldContainer<double> >());
-  panzer::IntrepidFieldContainerFactory<double> af;
+  panzer::IntrepidFieldContainerFactory af;
   basisValues->setupArrays(basisLayout,af);
   basisValues->evaluateValues(quadValues->cub_points,quadValues->jac,quadValues->jac_det,quadValues->jac_inv,quadValues->weighted_measure,coords);
 
