@@ -74,6 +74,40 @@ namespace MueLu {
       std::cout << "MultiVectorTransferFactory::Build -- requesting " << vectorName_ << " from factory " << this << std::endl;
     }
     */
+
+    if (vectorName_ == "Coordinates") { // very elegant!
+
+      // Convert format to Xpetra::MultiVector
+      if (fineLevel.IsAvailable("XCoordinates") && !fineLevel.IsAvailable("Coordinates")) {
+        std::cout << "Converting coordinates from 3xArrayRCP to MultiVector" << std::endl;
+        
+        TEUCHOS_TEST_FOR_EXCEPTION(fineLevel.GetLevelID() != 0, Exceptions::RuntimeError, "??" << fineLevel.GetLevelID());
+
+        Array< ArrayView<const double> > arrayOfPtrs;
+        
+        {
+          ArrayRCP<SC> & coords = fineLevel.Get<ArrayRCP<SC> >("XCoordinates");
+          arrayOfPtrs.push_back(coords());
+        }
+        
+        if(fineLevel.IsAvailable("YCoordinates")) {
+          ArrayRCP<SC> & coords = fineLevel.Get<ArrayRCP<SC> >("YCoordinates");
+          arrayOfPtrs.push_back(coords());
+        }
+        
+        if(fineLevel.IsAvailable("ZCoordinates")) {
+          TEUCHOS_TEST_FOR_EXCEPTION(!fineLevel.IsAvailable("YCoordinates"), Exceptions::RuntimeError, "ZCoordinates specified but no YCoordinates");
+          ArrayRCP<SC> & coords = fineLevel.Get<ArrayRCP<SC> >("ZCoordinates");
+          arrayOfPtrs.push_back(coords());
+        }
+        
+        RCP<const Map> map  = fineLevel.Get<RCP<Operator> >("A", NULL/*default A*/)->getRowMap(); //FIXME for multiple DOF per node!! I need the map of the coalesce graph
+        RCP<MultiVector> coordinates = MultiVectorFactory::Build(map, arrayOfPtrs, arrayOfPtrs.size());
+        
+        fineLevel.Set("Coordinates", coordinates);
+      }
+    }
+
     //FIXME JJH and get rid of this
       vector  = fineLevel.Get<RCP<MultiVector> >(vectorName_,MueLu::NoFactory::get());
       //std::cout << "MultiVectorTransferFactory::Build -- requesting " << vectorName_ << " from factory " << MueLu::NoFactory::get() << std::endl;

@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
   H->GetLevel(0)->Set("Nullspace", nullspace);
   nullspace=Teuchos::null;
   
-  H->GetLevel(0)->Set("Coordinates", coordinates);
+  //  H->GetLevel(0)->Set("Coordinates", coordinates);
 
   {
     // coordinates->getVector(0)->get1dCopy(xcoords); TODO: this method is not available in Xpetra
