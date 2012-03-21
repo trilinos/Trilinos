@@ -89,6 +89,7 @@ namespace MueLu {
       }
       
       if (level.IsAvailable("ZCoordinates")) {
+        TEUCHOS_TEST_FOR_EXCEPTION(!level.IsAvailable("YCoordinates"), Exceptions::RuntimeError, "ZCoordinates specified but no YCoordinates");
         XYZ.push_back(level.Get< ArrayRCP<SC> >("ZCoordinates"));
       }
 

@@ -125,7 +125,7 @@ namespace MueLu {
   }
 
   int Needs::NumRequests(const std::string & ename, const FactoryBase* factory) const {
-    TEUCHOS_TEST_FOR_EXCEPTION(!dataTable_.IsKey(factory,ename), Exceptions::RuntimeError, "MueLu::Needs::NumRequests(): " + ename + " not found. Do a request first.");
+    TEUCHOS_TEST_FOR_EXCEPTION(!dataTable_.IsKey(factory,ename), Exceptions::RuntimeError, "MueLu::Needs::NumRequests(): " + ename + " not found. Do a request first."); //TODO: fix message when factory==NoFactory() (no request needed)?
     const Teuchos::RCP<MueLu::VariableContainer> & var = dataTable_.Get(factory,ename);
     TEUCHOS_TEST_FOR_EXCEPTION(var->NumAllRequests() == 0 && var->GetKeepFlag() == 0, Exceptions::RuntimeError, "MueLu::Needs::NumRequests(): Internal logic error: if counter == 0, the entry in countTable_ should have been deleted");
     return var->NumAllRequests();
