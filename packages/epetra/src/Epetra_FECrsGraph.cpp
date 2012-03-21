@@ -215,7 +215,7 @@ int Epetra_FECrsGraph::GlobalAssemble(const Epetra_Map& domain_map,
 
   const int numRows = (int) nonlocalRowData_var.size();
   int * presentRowIndices = new int[numRows];
-  std::map<int_type,Epetra_CrsGraphData::EntriesInOneRow<int_type> >::iterator nonlocalRows 
+  typename std::map<int_type,Epetra_CrsGraphData::EntriesInOneRow<int_type> >::iterator nonlocalRows 
     = nonlocalRowData<int_type>().begin();
   for (int i=0 ; nonlocalRows != nonlocalRowData_var.end(); ++nonlocalRows, ++i)
     presentRowIndices[i] = (int) nonlocalRows->first;

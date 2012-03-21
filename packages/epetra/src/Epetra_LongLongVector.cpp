@@ -43,6 +43,7 @@
 #include "Epetra_LongLongVector.h"
 #include "Epetra_Map.h"
 #include "Epetra_Comm.h"
+#include <limits.h> // LLONG_MIN, LLONG_MAX
 //=============================================================================
 Epetra_LongLongVector::Epetra_LongLongVector(const Epetra_BlockMap& map, bool zeroOut)
   : Epetra_DistObject(map, "Epetra::LongLongVector"),
