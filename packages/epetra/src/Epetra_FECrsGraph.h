@@ -214,12 +214,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsGraph : public Epetra_CrsGraph {
 
 };//class Epetra_FECrsGraph
 
-template<> std::map<int,Epetra_CrsGraphData::EntriesInOneRow<int> >& Epetra_FECrsGraph::nonlocalRowData()
+template<> inline std::map<int,Epetra_CrsGraphData::EntriesInOneRow<int> >& Epetra_FECrsGraph::nonlocalRowData()
 {
   return nonlocalRowData_int_;
 }
 
-template<> std::map<long long,Epetra_CrsGraphData::EntriesInOneRow<long long> >& Epetra_FECrsGraph::nonlocalRowData()
+template<> inline std::map<long long,Epetra_CrsGraphData::EntriesInOneRow<long long> >& Epetra_FECrsGraph::nonlocalRowData()
 {
   return nonlocalRowData_LL_;
 }

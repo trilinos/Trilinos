@@ -796,12 +796,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
   */
 
 	inline int*  operator[]( int Loc ) { 
-	  if (StorageOptimized()){ return(CrsGraphData_->data.All_Indices_.Values() + CrsGraphData_->IndexOffset_[Loc]);}
-	  else return(CrsGraphData_->data.Indices_[Loc]); }
+	  if (StorageOptimized()){ return(CrsGraphData_->data->All_Indices_.Values() + CrsGraphData_->IndexOffset_[Loc]);}
+	  else return(CrsGraphData_->data->Indices_[Loc]); }
 
 	inline int* operator[]( int Loc ) const { 
-	  if (StorageOptimized()) { return(CrsGraphData_->data.All_Indices_.Values() +CrsGraphData_->IndexOffset_[Loc]);}
-	  else return(CrsGraphData_->data.Indices_[Loc]); }
+	  if (StorageOptimized()) { return(CrsGraphData_->data->All_Indices_.Values() +CrsGraphData_->IndexOffset_[Loc]);}
+	  else return(CrsGraphData_->data->Indices_[Loc]); }
 
   //@}
 
@@ -873,7 +873,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
  protected:
 	int *All_Indices() const {
 	  if (!StorageOptimized()) throw ReportError("This method: int *All_Indices() cannot be called when StorageOptimized()==false", -1);
-	  else return(CrsGraphData_->data.All_Indices_.Values());}
+	  else return(CrsGraphData_->data->All_Indices_.Values());}
 	int *IndexOffset() const {
 	  if (!StorageOptimized()) throw ReportError("This method: int *IndexOffset()  cannot be called when StorageOptimized()==false", -1);
 	  else return(CrsGraphData_->IndexOffset_.Values());}
@@ -885,10 +885,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
 	  else return(CrsGraphData_->NumAllocatedIndicesPerRow_.Values());}
 	int** Indices() const {
 	  if (StorageOptimized()) throw ReportError("This method: int** Indices() cannot be called when StorageOptimized()==true", -1);
-	  else return(CrsGraphData_->data.Indices_);}
+	  else return(CrsGraphData_->data->Indices_);}
 	int* Indices(int LocalRow) const {
-	  if (StorageOptimized()) return(CrsGraphData_->data.All_Indices_.Values()+CrsGraphData_->IndexOffset_[LocalRow]);
-	  else return(CrsGraphData_->data.Indices_[LocalRow]);}
+	  if (StorageOptimized()) return(CrsGraphData_->data->All_Indices_.Values()+CrsGraphData_->IndexOffset_[LocalRow]);
+	  else return(CrsGraphData_->data->Indices_[LocalRow]);}
 
 	template<typename int_type>
 	int_type** TIndices() const {

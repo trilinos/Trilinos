@@ -628,17 +628,17 @@ private:
 };
 
 
-template<> bool Epetra_BlockMap::GlobalIndicesIsType<int>()       const { return BlockMapData_->GlobalIndicesInt_; }
-template<> bool Epetra_BlockMap::GlobalIndicesIsType<long long>() const { return BlockMapData_->GlobalIndicesLongLong_; }
+template<> inline bool Epetra_BlockMap::GlobalIndicesIsType<int>()       const { return BlockMapData_->GlobalIndicesInt_; }
+template<> inline bool Epetra_BlockMap::GlobalIndicesIsType<long long>() const { return BlockMapData_->GlobalIndicesLongLong_; }
 
-template<> int&       Epetra_BlockMap::MyGlobalElementVal<int>      (int i) { return BlockMapData_->MyGlobalElements_int_[i]; }
-template<> long long& Epetra_BlockMap::MyGlobalElementVal<long long>(int i) { return BlockMapData_->MyGlobalElements_LL_[i]; }
+template<> inline int&       Epetra_BlockMap::MyGlobalElementVal<int>      (int i) { return BlockMapData_->MyGlobalElements_int_[i]; }
+template<> inline long long& Epetra_BlockMap::MyGlobalElementVal<long long>(int i) { return BlockMapData_->MyGlobalElements_LL_[i]; }
 
-template<> int       Epetra_BlockMap::MyGlobalElementValGet<int>      (int i) { return BlockMapData_->MyGlobalElements_int_[i]; }
-template<> long long Epetra_BlockMap::MyGlobalElementValGet<long long>(int i) { return BlockMapData_->MyGlobalElements_LL_[i]; }
+template<> inline int       Epetra_BlockMap::MyGlobalElementValGet<int>      (int i) { return BlockMapData_->MyGlobalElements_int_[i]; }
+template<> inline long long Epetra_BlockMap::MyGlobalElementValGet<long long>(int i) { return BlockMapData_->MyGlobalElements_LL_[i]; }
 
-template<> int Epetra_BlockMap::SizeMyGlobalElement<int>      (int n) { return BlockMapData_->MyGlobalElements_int_.Size(n); }
-template<> int Epetra_BlockMap::SizeMyGlobalElement<long long>(int n) { return BlockMapData_->MyGlobalElements_LL_.Size(n); }
+template<> inline int Epetra_BlockMap::SizeMyGlobalElement<int>      (int n) { return BlockMapData_->MyGlobalElements_int_.Size(n); }
+template<> inline int Epetra_BlockMap::SizeMyGlobalElement<long long>(int n) { return BlockMapData_->MyGlobalElements_LL_.Size(n); }
 
 
 #endif /* EPETRA_BLOCKMAP_H */

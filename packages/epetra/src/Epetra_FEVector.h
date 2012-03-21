@@ -285,8 +285,6 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
   std::vector<long long> nonlocalIDs_LL_;
 
   template<typename int_type> std::vector<int_type>& nonlocalIDs();
-  template<> std::vector<int>& nonlocalIDs<int>() { return nonlocalIDs_int_; }
-  template<> std::vector<long long>& nonlocalIDs<long long>() { return nonlocalIDs_LL_; }
 
   std::vector<int> nonlocalElementSize_;
 
@@ -318,6 +316,16 @@ private:
   template<typename int_type>
   int GlobalAssemble(Epetra_CombineMode mode, bool reuse_map_and_exporter);
 };
+
+template<> inline std::vector<int>& Epetra_FEVector::nonlocalIDs<int>()
+{
+   return nonlocalIDs_int_;
+}
+
+template<> inline std::vector<long long>& Epetra_FEVector::nonlocalIDs<long long>()
+{
+  return nonlocalIDs_LL_;
+}
 
 #endif
 

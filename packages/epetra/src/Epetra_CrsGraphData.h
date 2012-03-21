@@ -205,8 +205,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraphData : public Epetra_Data {
   template<typename int_type>
   struct IndexData;
 
-  IndexData<int> data;
-  IndexData<long long> LL_data;
+  IndexData<int>* data;
+  IndexData<long long>* LL_data;
 
   template<typename int_type>
   IndexData<int_type>& Data();
@@ -300,21 +300,21 @@ struct Epetra_CrsGraphData::IndexData<int>
 };
   
 template<>
-Epetra_CrsGraphData::IndexData<long long>& Data()
+inline Epetra_CrsGraphData::IndexData<long long>& Epetra_CrsGraphData::Data<long long>()
 {
   if(RowMap_.GlobalIndicesLongLong() && IndicesAreGlobal_)
-  	return LL_data;
+  	return *LL_data;
   else
-  	throw "Epetra_CrsGraphData::IndexData<long long>: Map indices not long long or not global";
+  	throw "Epetra_CrsGraphData::Data<long long>: Map indices not long long or not global";
 }
 
 template<>
-Epetra_CrsGraphData::IndexData<int>& Data()
+inline Epetra_CrsGraphData::IndexData<int>& Epetra_CrsGraphData::Data<int>()
 {
   if(RowMap_.GlobalIndicesInt() || (RowMap_.GlobalIndicesLongLong() && IndicesAreLocal_))
-  	return data;
+  	return *data;
   else
-  	throw "Epetra_CrsGraphData::IndexData<int>: Map indices not int or (long long but not local)";
+  	throw "Epetra_CrsGraphData::Data<int>: Map indices not int or (long long but not local)";
 }
 
 

@@ -724,22 +724,22 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
                       Epetra_CombineMode combineMode=Add);
 };//class Epetra_FECrsMatrix
 
-template<> std::vector<int>& Epetra_FECrsMatrix::nonlocalRows<int>()
+template<> inline std::vector<int>& Epetra_FECrsMatrix::nonlocalRows<int>()
 {
   return nonlocalRows_int_;
 }
 
-template<> std::vector<long long>& Epetra_FECrsMatrix::nonlocalRows<long long>()
+template<> inline std::vector<long long>& Epetra_FECrsMatrix::nonlocalRows<long long>()
 {
   return nonlocalRows_LL_;
 }
 
-template<> std::vector<std::vector<int> >& Epetra_FECrsMatrix::nonlocalCols<int>()
+template<> inline std::vector<std::vector<int> >& Epetra_FECrsMatrix::nonlocalCols<int>()
 {
   return nonlocalCols_int_;
 }
 
-template<> std::vector<std::vector<long long> >& Epetra_FECrsMatrix::nonlocalCols<long long>()
+template<> inline std::vector<std::vector<long long> >& Epetra_FECrsMatrix::nonlocalCols<long long>()
 {
   return nonlocalCols_LL_;
 }

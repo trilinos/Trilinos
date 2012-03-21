@@ -206,12 +206,12 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
 
 };
 
-template<> const int * Epetra_BasicDirectory::AllMinGIDs() const
+template<> inline const int * Epetra_BasicDirectory::AllMinGIDs() const
 {
   return AllMinGIDs_int_;
 }
 
-template<> const long long * Epetra_BasicDirectory::AllMinGIDs() const
+template<> inline const long long * Epetra_BasicDirectory::AllMinGIDs() const
 {
   return AllMinGIDs_LL_;
 }
