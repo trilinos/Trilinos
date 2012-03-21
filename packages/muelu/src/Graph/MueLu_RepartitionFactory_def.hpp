@@ -560,7 +560,7 @@ namespace MueLu {
 
     MueLu::UCAggregationCommHelper<LO,GO,NO,LMO> commHelper(uniqueMap,targetMap);
     myPartitionNumber = -1;
-    GO doArbitrate = 1;
+    int doArbitrate = 1;
 
     /*
        Use ArbitrateAndCommunicate to determine which process should own each partition.
