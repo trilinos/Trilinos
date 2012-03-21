@@ -21,8 +21,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  tPointValuesEvaluator
-  SOURCES point_values_evaluator.cpp ${UNIT_TEST_DRIVER}
+  tPointBasisValuesEvaluator
+  SOURCES point_basis_values_evaluator.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
   NUM_MPI_PROCS 1
   )

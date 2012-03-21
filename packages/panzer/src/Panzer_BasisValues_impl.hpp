@@ -48,18 +48,18 @@ namespace panzer {
        // build values
        ///////////////////////////////////////////////
 
-       basis_ref = af.template buildArray<Scalar,BASIS,Point>("basis_ref",card,num_quad); // F, P
-       basis = af.template buildArray<Scalar,Cell,BASIS,Point>("basis",numcells,card,num_quad);
+       basis_ref = af.template buildArray<Scalar,BASIS,IP>("basis_ref",card,num_quad); // F, P
+       basis = af.template buildArray<Scalar,Cell,BASIS,IP>("basis",numcells,card,num_quad);
 
-       weighted_basis = af.template buildArray<Scalar,Cell,BASIS,Point>("weighted_basis",numcells,card,num_quad);
+       weighted_basis = af.template buildArray<Scalar,Cell,BASIS,IP>("weighted_basis",numcells,card,num_quad);
 
        // build gradients
        ///////////////////////////////////////////////
 
-       grad_basis_ref = af.template buildArray<Scalar,BASIS,Point,Dim>("grad_basis_ref",card,num_quad,dim); // F, P, D
-       grad_basis = af.template buildArray<Scalar,Cell,BASIS,Point,Dim>("grad_basis",numcells,card,num_quad,dim);
+       grad_basis_ref = af.template buildArray<Scalar,BASIS,IP,Dim>("grad_basis_ref",card,num_quad,dim); // F, P, D
+       grad_basis = af.template buildArray<Scalar,Cell,BASIS,IP,Dim>("grad_basis",numcells,card,num_quad,dim);
 
-       weighted_grad_basis = af.template buildArray<Scalar,Cell,BASIS,Point,Dim>("weighted_grad_basis",numcells,card,num_quad,dim);
+       weighted_grad_basis = af.template buildArray<Scalar,Cell,BASIS,IP,Dim>("weighted_grad_basis",numcells,card,num_quad,dim);
 
        // build curl
        ///////////////////////////////////////////////
@@ -72,10 +72,10 @@ namespace panzer {
        // build values
        ///////////////////////////////////////////////
 
-       basis_ref = af.template buildArray<Scalar,BASIS,Point,Dim>("basis_ref",card,num_quad,dim); // F, P, D
-       basis = af.template buildArray<Scalar,Cell,BASIS,Point,Dim>("basis",numcells,card,num_quad,dim);
+       basis_ref = af.template buildArray<Scalar,BASIS,IP,Dim>("basis_ref",card,num_quad,dim); // F, P, D
+       basis = af.template buildArray<Scalar,Cell,BASIS,IP,Dim>("basis",numcells,card,num_quad,dim);
 
-       weighted_basis = af.template buildArray<Scalar,Cell,BASIS,Point,Dim>("weighted_basis",numcells,card,num_quad,dim);
+       weighted_basis = af.template buildArray<Scalar,Cell,BASIS,IP,Dim>("weighted_basis",numcells,card,num_quad,dim);
 
        // build gradients
        ///////////////////////////////////////////////
@@ -87,16 +87,16 @@ namespace panzer {
 
        if(dim==2) {
           // curl of HCURL basis is not dimension dependent
-          curl_basis_ref = af.template buildArray<Scalar,BASIS,Point>("curl_basis_ref",card,num_quad); // F, P
-          curl_basis = af.template buildArray<Scalar,Cell,BASIS,Point>("curl_basis",numcells,card,num_quad);
+          curl_basis_ref = af.template buildArray<Scalar,BASIS,IP>("curl_basis_ref",card,num_quad); // F, P
+          curl_basis = af.template buildArray<Scalar,Cell,BASIS,IP>("curl_basis",numcells,card,num_quad);
 
-          weighted_curl_basis = af.template buildArray<Scalar,Cell,BASIS,Point>("weighted_curl_basis",numcells,card,num_quad);
+          weighted_curl_basis = af.template buildArray<Scalar,Cell,BASIS,IP>("weighted_curl_basis",numcells,card,num_quad);
        }
        else if(dim==3){
-          curl_basis_ref = af.template buildArray<Scalar,BASIS,Point,Dim>("curl_basis_ref",card,num_quad,dim); // F, P, D
-          curl_basis = af.template buildArray<Scalar,Cell,BASIS,Point,Dim>("curl_basis",numcells,card,num_quad,dim);
+          curl_basis_ref = af.template buildArray<Scalar,BASIS,IP,Dim>("curl_basis_ref",card,num_quad,dim); // F, P, D
+          curl_basis = af.template buildArray<Scalar,Cell,BASIS,IP,Dim>("curl_basis",numcells,card,num_quad,dim);
 
-          weighted_curl_basis = af.template buildArray<Scalar,Cell,BASIS,Point,Dim>("weighted_curl_basis",numcells,card,num_quad,dim);
+          weighted_curl_basis = af.template buildArray<Scalar,Cell,BASIS,IP,Dim>("weighted_curl_basis",numcells,card,num_quad,dim);
        }
        else { TEUCHOS_ASSERT(false); } // what do I do with 1D?
     }

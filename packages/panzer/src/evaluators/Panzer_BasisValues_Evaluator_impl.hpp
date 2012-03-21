@@ -50,7 +50,7 @@ void BasisValues_Evaluator<EvalT,TraitsT>::initialize(const Teuchos::RCP<const p
 
   // setup all fields to be evaluated and constructed
   Teuchos::RCP<panzer::BasisIRLayout> layout = Teuchos::rcp(new panzer::BasisIRLayout(basis,*pointRule));
-  // basisValues.setupArrays(layout,af_bv);
+  basisValues.setupArrays(layout,af_bv);
 
   // the field manager will allocate all of these field
 
@@ -66,9 +66,6 @@ void BasisValues_Evaluator<EvalT,TraitsT>::initialize(const Teuchos::RCP<const p
     this->addEvaluatedField(basisValues.curl_basis_ref);     
     this->addEvaluatedField(basisValues.curl_basis);          
   }
-
-  this->addEvaluatedField(basisValues.basis_coordinates_ref); 
-  this->addEvaluatedField(basisValues.basis_coordinates);    
 
   std::string n = "BasisValues_Evaluator: " +basis->name() + "_" + pointRule->getName();
   this->setName(n);
@@ -98,9 +95,6 @@ PHX_POST_REGISTRATION_SETUP(BasisValues_Evaluator,sd,fm)
     this->utils.setFieldData(basisValues.curl_basis_ref,fm);     
     this->utils.setFieldData(basisValues.curl_basis,fm);          
   }
-
-  this->utils.setFieldData(basisValues.basis_coordinates_ref,fm); 
-  this->utils.setFieldData(basisValues.basis_coordinates,fm);    
 }
 
 //**********************************************************************
