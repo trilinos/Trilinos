@@ -1,3 +1,4 @@
+#cmakedefine HAVE_XPETRA_DEBUG
 
 #cmakedefine HAVE_XPETRA_TPETRA
 
