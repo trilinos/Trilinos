@@ -58,6 +58,8 @@ namespace MueLu {
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
 
+    FactoryMonitor m(*this, "Build", currentLevel);
+
     //typedef Xpetra::Vector<GO,LO,GO,NO> GOVector; //TODO clean up the code below with this typedef
 
     // ======================================================================================================
@@ -484,6 +486,8 @@ namespace MueLu {
   void RepartitionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::DeterminePartitionPlacement(Level & currentLevel, GO &myPartitionNumber,
   Array<int> &partitionOwners) const
   {
+    FactoryMonitor m(*this, "DeterminePartitionPlacement", currentLevel);
+
     RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A",AFact_.get());
     RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
     GO numPartitions = currentLevel.Get<GO>("number of partitions");
