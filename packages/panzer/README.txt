@@ -1,1 +1,1 @@
- Panzer: A partial differential equation assembly engine for complex multiphysics systems
+ Panzer: A partial differential equation assembly engine for strongly coupled complex multiphysics systems
