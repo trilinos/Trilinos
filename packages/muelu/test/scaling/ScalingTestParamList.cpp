@@ -97,6 +97,42 @@ int main(int argc, char *argv[]) {
   nullspace=Teuchos::null;
   
   H->GetLevel(0)->Set("Coordinates", coordinates);
+
+  {
+    //Teuchos::Array<SC> xcoords;
+    // coordinates->getVector(0)->get1dCopy(xcoords); TODO: this method is not available in Xpetra
+    // H->GetLevel(0)->Set("XCoordinates", xcoords);
+
+    if (coordinates->getNumVectors() >= 1) {
+      Teuchos::ArrayRCP<const SC> coord = coordinates->getData(0);
+      Teuchos::Array<SC> coordArray(coord.size());
+      for(int i=0; i<coord.size(); i++) {
+        coordArray[i] = coord[i];
+      }
+      H->GetLevel(0)->Set("XCoordinates", coordArray);
+      //std::cout << coordArray << std::endl;
+    }
+    
+    if (coordinates->getNumVectors() >= 2) {
+      Teuchos::ArrayRCP<const SC> coord = coordinates->getData(1);
+      Teuchos::Array<SC> coordArray(coord.size());
+      for(int i=0; i<coord.size(); i++) {
+        coordArray[i] = coord[i];
+      }
+      H->GetLevel(0)->Set("YCoordinates", coordArray);
+    }
+
+    if (coordinates->getNumVectors() >= 3) {
+      Teuchos::ArrayRCP<const SC> coord = coordinates->getData(2);
+      Teuchos::Array<SC> coordArray(coord.size());
+      for(int i=0; i<coord.size(); i++) {
+        coordArray[i] = coord[i];
+      }
+      H->GetLevel(0)->Set("ZCoordinates", coordArray);
+    }
+
+  }
+
   coordinates=Teuchos::null;
 
   mueLuFactory.SetupHierarchy(*H);
