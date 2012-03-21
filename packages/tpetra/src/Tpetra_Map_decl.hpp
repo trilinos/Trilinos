@@ -45,9 +45,9 @@
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
 
-#ifdef __cplusplus && __cplusplus >= 201103L
+#ifdef HAVE_TPETRA_UNORDERED_MAP
 #  include <unordered_map>
-#endif // your compiler supports C++11
+#endif // HAVE_TPETRA_UNORDERED_MAP
 
 // enums and defines
 #include "Tpetra_ConfigDefs.hpp"
