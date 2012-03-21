@@ -233,6 +233,8 @@ namespace MueLu {
       return;
     }
 
+    assert(numObjectIDs == XYZ->getLocalLength());
+
     ArrayRCP<ArrayRCP<const SC> > XYZdata(dim);
     for (int i=0; i<dim; ++i) XYZdata[i] = XYZ->getData(i);
     for (size_t i=0; i<XYZ->getLocalLength(); ++i) {
