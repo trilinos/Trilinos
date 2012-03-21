@@ -5,6 +5,7 @@
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset_Utilities.hpp"
+#include "Panzer_CommonArrayFactories.hpp"
 #include "Intrepid_FunctionSpaceTools.hpp"
 
 namespace panzer {
@@ -30,7 +31,14 @@ inline void evaluateDOF(PHX::MDField<ScalarT,Cell,Point> & dof_basis,PHX::MDFiel
 
   if(num_cells>0) {
     if(requires_orientation) {
-       Intrepid::FieldContainer<double> bases = basisValues.basis;
+       // copy basis values, this will be modified by the orientation, so we don't
+       // necessarily want to wipe them out
+       Teuchos::Array<int> dimension; 
+       for(int i=0;i<basisValues.basis.rank();i++)
+          dimension.push_back(basisValues.basis.dimension(i));
+       Intrepid::FieldContainer<ScalarT> bases(dimension);
+       for(int i=0;i<bases.size();i++)
+          bases[i] = basisValues.basis[i];
 
        // assign ScalarT "dof_orientation" to double "orientation"
        Intrepid::FieldContainer<double> orientation(dof_orientation.dimension(0),
@@ -61,8 +69,8 @@ inline void evaluateDOF(PHX::MDField<ScalarT,Cell,Point> & dof_basis,PHX::MDFiel
 //**********************************************************************
 PHX_EVALUATOR_CTOR(DOF,p) :
   dof_basis( p.get<std::string>("Name"), 
-	     p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
-  basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
+	     p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->functional),
+  basis_name(p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->name())
 {
   Teuchos::RCP<const PureBasis> basis 
      = p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->getBasis();
@@ -115,6 +123,96 @@ PHX_EVALUATE_FIELDS(DOF,workset)
 }
 
 //**********************************************************************
+
+//**********************************************************************
+//* DOF_PointValues evaluator
+//**********************************************************************
+PHX_EVALUATOR_CTOR(DOF_PointValues,p)
+{
+  const std::string fieldName = p.get<std::string>("Name");
+  basis = p.get< Teuchos::RCP<const PureBasis> >("Basis");
+  Teuchos::RCP<const PointRule> pointRule = p.get< Teuchos::RCP<const PointRule> >("Point Rule");
+  requires_orientation = basis->requiresOrientations();
+
+  const std::string evalName = fieldName+"_"+pointRule->getName();
+
+  dof_basis = PHX::MDField<ScalarT,Cell,Point>(fieldName, basis->functional);
+
+  // swap between scalar basis value, or vector basis value
+  if(basis->isScalarBasis())
+     dof_ip = PHX::MDField<ScalarT>(
+                evalName,
+     	        pointRule->dl_scalar);
+  else if(basis->isVectorBasis())
+     dof_ip = PHX::MDField<ScalarT>(
+                evalName,
+     	        pointRule->dl_vector);
+  else
+  { TEUCHOS_ASSERT(false); }
+
+  this->addEvaluatedField(dof_ip);
+  this->addDependentField(dof_basis);
+
+  if(requires_orientation) {
+     dof_orientation = PHX::MDField<ScalarT,Cell,BASIS>(fieldName+" Orientation", 
+	                                                basis->functional);
+     
+     this->addDependentField(dof_orientation);
+  }
+
+  // setup all basis fields that are required
+  Teuchos::RCP<BasisIRLayout> layout = Teuchos::rcp(new BasisIRLayout(basis,*pointRule));
+  MDFieldArrayFactory af_bv(basis->name()+"_"+pointRule->getName()+"_");
+  basisValues.setupArrays(layout,af_bv);
+
+  // the field manager will allocate all of these field
+
+  this->addDependentField(basisValues.basis_ref);      
+  this->addDependentField(basisValues.basis);           
+
+  if(basis->getElementSpace()==PureBasis::HGRAD) {
+    this->addDependentField(basisValues.grad_basis_ref);   
+    this->addDependentField(basisValues.grad_basis);        
+  }
+
+  if(basis->getElementSpace()==PureBasis::HCURL) {
+    this->addDependentField(basisValues.curl_basis_ref);     
+    this->addDependentField(basisValues.curl_basis);          
+  }
+  
+  std::string n = "DOF_PointValues: " + dof_basis.fieldTag().name();
+  this->setName(n);
+}
+
+//**********************************************************************
+PHX_POST_REGISTRATION_SETUP(DOF_PointValues,sd,fm)
+{
+  this->utils.setFieldData(dof_basis,fm);
+  this->utils.setFieldData(dof_ip,fm);
+
+  if(requires_orientation)
+     this->utils.setFieldData(dof_orientation,fm);
+
+  // setup the pointers for the basis values data structure
+  this->utils.setFieldData(basisValues.basis_ref,fm);      
+  this->utils.setFieldData(basisValues.basis,fm);           
+
+  if(basis->getElementSpace()==PureBasis::HGRAD) {
+    this->utils.setFieldData(basisValues.grad_basis_ref,fm);   
+    this->utils.setFieldData(basisValues.grad_basis,fm);        
+  }
+
+  if(basis->getElementSpace()==PureBasis::HCURL) {
+    this->utils.setFieldData(basisValues.curl_basis_ref,fm);     
+    this->utils.setFieldData(basisValues.curl_basis,fm);          
+  }
+}
+
+//**********************************************************************
+PHX_EVALUATE_FIELDS(DOF_PointValues,workset)
+{ 
+  evaluateDOF(dof_basis,dof_ip,dof_orientation,requires_orientation,workset.num_cells,basisValues);
+}
 
 }
 

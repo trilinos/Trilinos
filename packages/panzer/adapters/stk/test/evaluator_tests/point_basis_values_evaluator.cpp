@@ -18,6 +18,7 @@ using Teuchos::rcp;
 #include "Panzer_Workset_Utilities.hpp"
 #include "Panzer_PointValues_Evaluator.hpp"
 #include "Panzer_BasisValues_Evaluator.hpp"
+#include "Panzer_DOF.hpp"
 
 #include "Panzer_STK_Version.hpp"
 #include "Panzer_STK_config.hpp"
@@ -25,6 +26,8 @@ using Teuchos::rcp;
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STKConnManager.hpp"
+
+#include "RandomFieldEvaluator.hpp"
 
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
@@ -213,6 +216,103 @@ namespace panzer {
     for(int i=0;i<basis.size();i++) {
        panzer::Traits::Jacobian::ScalarT truth = bases->basis[i];
        TEST_FLOATING_EQUALITY(truth,basis[i],1e-10);
+    }
+  }
+
+  TEUCHOS_UNIT_TEST(dof_point_values_evaluator, eval)
+  {
+    const std::size_t workset_size = 4;
+    const std::string fieldName_q1 = "U";
+    const std::string fieldName_qedge1 = "V";
+
+    Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(2,2);
+
+    // build input physics block
+    Teuchos::RCP<panzer::PureBasis> basis_q1 = buildBasis(workset_size,"Q1");
+    panzer::CellData cell_data(basis_q1->getNumCells(), 2,basis_q1->getCellTopology());
+
+    int integration_order = 4;
+    panzer::InputPhysicsBlock ipb;
+    testInitialization(ipb,integration_order);
+    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,"eblock-0_0",ipb,workset_size); 
+    panzer::Workset & workset = (*work_sets)[0];
+    TEST_EQUALITY(work_sets->size(),1);
+
+    Teuchos::RCP<panzer::IntegrationRule> point_rule = buildIR(workset_size,integration_order);
+    panzer::IntegrationValues<double,Intrepid::FieldContainer<double> > int_values;
+    int_values.setupArrays(point_rule);
+    int_values.evaluateValues(workset.cell_vertex_coordinates);
+
+    Teuchos::RCP<Intrepid::FieldContainer<double> > userArray = Teuchos::rcpFromRef(int_values.cub_points);
+
+    Teuchos::RCP<panzer::BasisIRLayout> layout = Teuchos::rcp(new panzer::BasisIRLayout(basis_q1,*point_rule));
+
+    // setup field manager, add evaluator under test
+    /////////////////////////////////////////////////////////////
+ 
+    PHX::FieldManager<panzer::Traits> fm;
+    {
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
+          = Teuchos::rcp(new RandomFieldEvaluator<panzer::Traits::Jacobian,panzer::Traits>("TEMPERATURE",basis_q1->functional));
+       fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
+    }
+    {
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
+          = Teuchos::rcp(new panzer::PointValues_Evaluator<panzer::Traits::Jacobian,panzer::Traits>(point_rule,userArray));
+       fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
+    }
+    {
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
+          = Teuchos::rcp(new panzer::BasisValues_Evaluator<panzer::Traits::Jacobian,panzer::Traits>(point_rule,basis_q1));
+       fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
+    }
+    {
+       Teuchos::ParameterList p;
+       p.set("Name","TEMPERATURE");
+       p.set("Basis",layout);
+       p.set("IR",point_rule);
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
+          = Teuchos::rcp(new panzer::DOF<panzer::Traits::Jacobian,panzer::Traits>(p));
+       fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
+       fm.requireField<panzer::Traits::Jacobian>(*evaluator->evaluatedFields()[0]); // require DOF
+    }
+    {
+       Teuchos::ParameterList p;
+       p.set("Name","TEMPERATURE");
+       p.set("Basis",layout->getBasis().getConst());
+       p.set("Point Rule",Teuchos::rcp_static_cast<panzer::PointRule>(point_rule).getConst()); 
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
+          = Teuchos::rcp(new panzer::DOF_PointValues<panzer::Traits::Jacobian,panzer::Traits>(p));
+
+       fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
+       fm.requireField<panzer::Traits::Jacobian>(*evaluator->evaluatedFields()[0]); // require DOF_PointValues
+    }
+
+    panzer::Traits::SetupData sd;
+    sd.worksets_ = work_sets;
+    fm.postRegistrationSetup(sd);
+    fm.print(out);
+
+    // run tests
+    /////////////////////////////////////////////////////////////
+
+    workset.ghostedLinContainer = Teuchos::null;
+    workset.linContainer = Teuchos::null;
+    workset.alpha = 0.0;
+    workset.beta = 0.0;
+    workset.time = 0.0;
+    workset.evaluate_transient_terms = false;
+
+    fm.evaluateFields<panzer::Traits::Jacobian>(workset);
+
+    PHX::MDField<panzer::Traits::Jacobian::ScalarT> ref_field("TEMPERATURE",point_rule->dl_scalar);
+    PHX::MDField<panzer::Traits::Jacobian::ScalarT> fut_field("TEMPERATURE_"+point_rule->getName(),point_rule->dl_scalar); // "field under test"
+    fm.getFieldData<panzer::Traits::Jacobian::ScalarT,panzer::Traits::Jacobian>(ref_field);
+    fm.getFieldData<panzer::Traits::Jacobian::ScalarT,panzer::Traits::Jacobian>(fut_field);
+
+    TEST_EQUALITY(ref_field.size(),fut_field.size());
+    for(int i=0;i<ref_field.size();i++) {
+       TEST_FLOATING_EQUALITY(fut_field[i],ref_field[i],1e-10);
     }
   }
 
