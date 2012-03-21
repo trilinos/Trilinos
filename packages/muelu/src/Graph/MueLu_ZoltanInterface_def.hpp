@@ -68,16 +68,49 @@ namespace MueLu {
     zoltanObj_->Set_Param("num_global_partitions",ss.str());
 
     //if (level.IsAvailable("Coordinates",TransferFact_.get()) == false) //FIXME JJH
-    if (level.IsAvailable("Coordinates",NoFactory::get()) == false) //FIXME JJH
-      throw(Exceptions::HaltRepartitioning("MueLu::ZoltanInterface : no coordinates available"));
+    //~~ if (level.IsAvailable("Coordinates",NoFactory::get()) == false) //FIXME JJH
+    //~~  throw(Exceptions::HaltRepartitioning("MueLu::ZoltanInterface : no coordinates available"));
     //RCP<MultiVector> XYZ = level.Get< RCP<MultiVector> >("Coordinates",TransferFact_.get()); //FIXME JJH
-    RCP<MultiVector> XYZ = level.Get< RCP<MultiVector> >("Coordinates");
-    size_t problemDimension_ = XYZ->getNumVectors();
+    //~~    RCP<MultiVector> XYZ = level.Get< RCP<MultiVector> >("Coordinates");
+
+    //TODO: coordinates should be const
+
+    Array<ArrayRCP<SC> > XYZ; // Using this format because no communications needed here. No need for a map and a Xpetra::MultiVector
+
+    // Build XYZ from XCoordinates, YCoordinates and ZoltanInterface
+    if (level.IsAvailable("XCoordinates")) {
+      
+      { 
+        XYZ.push_back(level.Get< ArrayRCP<SC> >("XCoordinates"));
+      }
+      
+      if (level.IsAvailable("YCoordinates")) {
+        XYZ.push_back(level.Get< ArrayRCP<SC> >("YCoordinates"));
+      }
+      
+      if (level.IsAvailable("ZCoordinates")) {
+        XYZ.push_back(level.Get< ArrayRCP<SC> >("ZCoordinates"));
+      }
+
+    } else if (level.IsAvailable("Coordinates")) {
+
+      RCP<MultiVector> multiVectorXYZ = level.Get< RCP<MultiVector> >("Coordinates");
+      for (int i=0; i< (int)multiVectorXYZ->getNumVectors(); i++) { //FIXME cast
+        XYZ.push_back(multiVectorXYZ->getDataNonConst(i)); // It's OK to leave 'open' the MultiVector until the destruction of XYZ because no communications using Xpetra
+      }
+
+    } else {
+      throw(Exceptions::HaltRepartitioning("MueLu::ZoltanInterface : no coordinates available"));
+    }
+
+    //~~ size_t problemDimension_ = XYZ->getNumVectors();
+    size_t problemDimension_ = XYZ.size();
 
     zoltanObj_->Set_Num_Obj_Fn(GetLocalNumberOfRows,(void *) &*A);
     zoltanObj_->Set_Obj_List_Fn(GetLocalNumberOfNonzeros,(void *) &*A);
     zoltanObj_->Set_Num_Geom_Fn(GetProblemDimension, (void *) &problemDimension_);
-    zoltanObj_->Set_Geom_Multi_Fn(GetProblemGeometry, (void *) &*XYZ);
+    //~~ zoltanObj_->Set_Geom_Multi_Fn(GetProblemGeometry, (void *) &*XYZ);
+    zoltanObj_->Set_Geom_Multi_Fn(GetProblemGeometry, (void *) &XYZ);
 
     // Data pointers that Zoltan requires.
     ZOLTAN_ID_PTR import_gids = NULL;  // Global nums of objs to be imported   
@@ -226,20 +259,35 @@ namespace MueLu {
     }
 
     //TODO is there a safer way to cast?
-    MultiVector *XYZ = (MultiVector*) data;
-    if (dim != (int) XYZ->getNumVectors()) {
+    //~~ MultiVector *XYZ = (MultiVector*) data;
+    Array<ArrayRCP<SC> > * XYZpt = (Array<ArrayRCP<SC> > *)data;
+    Array<ArrayRCP<SC> > & XYZ   = *XYZpt;
+
+    //~~ if (dim != (int) XYZ->getNumVectors()) {
+    if (dim != (int) XYZ.size()) { //FIXME: cast to size_t instead?
       //FIXME I'm assuming dim should be 1,2,or 3 coming in?!
       *ierr = ZOLTAN_FATAL;
       return;
     }
 
-    assert(numObjectIDs == XYZ->getLocalLength());
+    //~ assert(numObjectIDs == XYZ->getLocalLength());
+    for(int j=0; j<dim; j++) {
+      assert(numObjectIDs == XYZ[j].size()); //FIXME: TEST_FOR_EXCEPTION instead?      
+    }
 
+    /*~~
     ArrayRCP<ArrayRCP<const SC> > XYZdata(dim);
-    for (int i=0; i<dim; ++i) XYZdata[i] = XYZ->getData(i);
+    for (int j=0; j<dim; ++j) XYZdata[j] = XYZ->getData(j);
     for (size_t i=0; i<XYZ->getLocalLength(); ++i) {
       for (int j=0; j<dim; ++j) {
         coordinates[i*dim+j] = (double) XYZdata[j][i];
+      }
+    }
+    */
+
+    for (size_t i=0; i<(size_t)XYZ[0].size(); ++i) { //FIXME cast OK?
+      for (int j=0; j<dim; ++j) {
+        coordinates[i*dim+j] = (double) XYZ[j][i];
       }
     }
 

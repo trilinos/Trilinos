@@ -99,36 +99,35 @@ int main(int argc, char *argv[]) {
   H->GetLevel(0)->Set("Coordinates", coordinates);
 
   {
-    //Teuchos::Array<SC> xcoords;
     // coordinates->getVector(0)->get1dCopy(xcoords); TODO: this method is not available in Xpetra
-    // H->GetLevel(0)->Set("XCoordinates", xcoords);
 
+    // making a copy because I don't want to keep 'open' the Xpetra_MultiVector
     if (coordinates->getNumVectors() >= 1) {
       Teuchos::ArrayRCP<const SC> coord = coordinates->getData(0);
-      Teuchos::Array<SC> coordArray(coord.size());
+      Teuchos::ArrayRCP<SC> coordCpy(coord.size());
       for(int i=0; i<coord.size(); i++) {
-        coordArray[i] = coord[i];
+        coordCpy[i] = coord[i];
       }
-      H->GetLevel(0)->Set("XCoordinates", coordArray);
-      //std::cout << coordArray << std::endl;
+      H->GetLevel(0)->Set("XCoordinates", coordCpy);
+      //std::cout << coordCpy << std::endl;
     }
     
     if (coordinates->getNumVectors() >= 2) {
       Teuchos::ArrayRCP<const SC> coord = coordinates->getData(1);
-      Teuchos::Array<SC> coordArray(coord.size());
+      Teuchos::Array<SC> coordCpy(coord.size());
       for(int i=0; i<coord.size(); i++) {
-        coordArray[i] = coord[i];
+        coordCpy[i] = coord[i];
       }
-      H->GetLevel(0)->Set("YCoordinates", coordArray);
+      H->GetLevel(0)->Set("YCoordinates", coordCpy);
     }
 
     if (coordinates->getNumVectors() >= 3) {
       Teuchos::ArrayRCP<const SC> coord = coordinates->getData(2);
-      Teuchos::Array<SC> coordArray(coord.size());
+      Teuchos::Array<SC> coordCpy(coord.size());
       for(int i=0; i<coord.size(); i++) {
-        coordArray[i] = coord[i];
+        coordCpy[i] = coord[i];
       }
-      H->GetLevel(0)->Set("ZCoordinates", coordArray);
+      H->GetLevel(0)->Set("ZCoordinates", coordCpy);
     }
 
   }
