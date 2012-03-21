@@ -21,6 +21,7 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
+
 PairIterRelation EntityImpl::relations( unsigned rank ) const
 {
   RelationVector::const_iterator i = m_relation.begin();
@@ -36,105 +37,6 @@ PairIterRelation EntityImpl::relations( unsigned rank ) const
   e = std::lower_bound( i , e , hi_attr , LessRelation() );
 
   return PairIterRelation( i , e );
-}
-
-PairIterEntityComm EntityImpl::sharing() const
-{
-  EntityCommInfoVector::const_iterator i = m_comm.begin();
-  EntityCommInfoVector::const_iterator e = m_comm.end();
-
-  e = std::lower_bound( i , e , EntityCommInfo(1,     // ghost id, 1->aura
-                                               0 ) ); // proc
-
-  // Contains everything up the first aura comm (IE, only contains shared comms)
-  return PairIterEntityComm( i , e );
-}
-
-PairIterEntityComm EntityImpl::comm( const Ghosting & sub ) const
-{
-  typedef std::vector< EntityCommInfo > EntityComm ;
-
-  const EntityCommInfo s_begin( sub.ordinal() ,     0 );
-  const EntityCommInfo s_end(   sub.ordinal() + 1 , 0 );
-
-  EntityComm::const_iterator i = m_comm.begin();
-  EntityComm::const_iterator e = m_comm.end();
-
-  i = std::lower_bound( i , e , s_begin );
-  e = std::lower_bound( i , e , s_end );
-
-  return PairIterEntityComm( i , e );
-}
-
-bool EntityImpl::insert( const EntityCommInfo & val )
-{
-  TraceIfWatching("stk::mesh::impl::EntityImpl::insert", LOG_ENTITY, key());
-
-  std::vector< EntityCommInfo >::iterator i =
-    std::lower_bound( m_comm.begin() , m_comm.end() , val );
-
-  const bool result = i == m_comm.end() || val != *i ;
-
-  if ( result ) {
-    m_comm.insert( i , val );
-  }
-
-  return result ;
-}
-
-bool EntityImpl::erase( const EntityCommInfo & val )
-{
-  TraceIfWatching("stk::mesh::impl::EntityImpl::erase(comm)", LOG_ENTITY, key());
-
-  std::vector< EntityCommInfo >::iterator i =
-    std::lower_bound( m_comm.begin() , m_comm.end() , val );
-
-  const bool result = i != m_comm.end() && val == *i ;
-
-  if ( result ) {
-    m_comm.erase( i );
-  }
-
-  return result ;
-}
-
-bool EntityImpl::erase( const Ghosting & ghost )
-{
-  TraceIfWatching("stk::mesh::impl::EntityImpl::erase(ghost)", LOG_ENTITY, key());
-
-  typedef std::vector< EntityCommInfo > EntityComm ;
-
-  const EntityCommInfo s_begin( ghost.ordinal() ,     0 );
-  const EntityCommInfo s_end(   ghost.ordinal() + 1 , 0 );
-
-  EntityComm::iterator i = m_comm.begin();
-  EntityComm::iterator e = m_comm.end();
-
-  i = std::lower_bound( i , e , s_begin );
-  e = std::lower_bound( i , e , s_end );
-
-  const bool result = i != e ;
-
-  if ( result ) {
-    m_comm.erase( i , e );
-  }
-
-  return result ;
-}
-
-void EntityImpl::comm_clear_ghosting()
-{
-  TraceIfWatching("stk::mesh::impl::EntityImpl::comm_clear_ghosting", LOG_ENTITY, key());
-
-  std::vector< EntityCommInfo >::iterator j = m_comm.begin();
-  while ( j != m_comm.end() && j->ghost_id == 0 ) { ++j ; }
-  m_comm.erase( j , m_comm.end() );
-}
-
-void EntityImpl::comm_clear()
-{
-  TraceIfWatching("stk::mesh::impl::EntityImpl::comm_clear", LOG_ENTITY, key());
-  m_comm.clear();
 }
 
 
@@ -310,6 +212,46 @@ void EntityImpl::update_key(EntityKey key)
     entity.log_modified_and_propagate();
   }
 
+}
+
+PairIterEntityComm EntityImpl::comm() const 
+{ 
+  return BulkData::get(bucket()).entity_comm(m_key); 
+}
+
+PairIterEntityComm EntityImpl::sharing() const 
+{ 
+  return BulkData::get(bucket()).entity_comm_sharing(m_key); 
+}
+
+PairIterEntityComm EntityImpl::comm( const Ghosting & sub ) const 
+{ 
+  return BulkData::get(bucket()).entity_comm(m_key,sub); 
+}
+
+bool EntityImpl::insert( const EntityCommInfo & val ) 
+{ 
+  return BulkData::get(bucket()).entity_comm_insert(m_key,val); 
+}
+
+bool EntityImpl::erase( const EntityCommInfo & val ) 
+{ 
+  return BulkData::get(bucket()).entity_comm_erase(m_key,val); 
+} 
+
+bool EntityImpl::erase( const Ghosting & ghost ) 
+{ 
+  return BulkData::get(bucket()).entity_comm_erase(m_key,ghost); 
+}
+
+void EntityImpl::comm_clear_ghosting()
+{
+  return BulkData::get(bucket()).entity_comm_clear_ghosting(m_key); 
+}
+
+void EntityImpl::comm_clear()
+{
+  return BulkData::get(bucket()).entity_comm_clear(m_key); 
 }
 
 } // namespace impl

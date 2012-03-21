@@ -689,12 +689,11 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyBoxGhosting )
   for ( size_t ix = 0 ; ix < 3 ; ++ix ) {
     stk::mesh::Entity * const node = fixture.node(ix,iy,iz);
     STKUNIT_ASSERT( NULL != node );
-    if ( NULL != node ) {
-      STKUNIT_ASSERT( fixture.node_id(ix,iy,iz) == node->identifier() );
-      stk::mesh::fixtures::HexFixture::Scalar * const node_coord =
-        stk::mesh::field_data( fixture.m_coord_field , *node );
-      STKUNIT_ASSERT( node_coord != NULL );
-    }
+
+    STKUNIT_ASSERT( fixture.node_id(ix,iy,iz) == node->identifier() );
+    stk::mesh::fixtures::HexFixture::Scalar * const node_coord =
+      stk::mesh::field_data( fixture.m_coord_field , *node );
+    STKUNIT_ASSERT( node_coord != NULL );
   }
   }
   }
@@ -704,28 +703,28 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyBoxGhosting )
   for ( size_t ix = 0 ; ix < 2 ; ++ix ) {
     stk::mesh::Entity * const elem = fixture.elem(ix,iy,iz);
     STKUNIT_ASSERT( NULL != elem );
-    if ( NULL != elem ) {
-      stk::mesh::PairIterRelation elem_nodes = elem->relations();
-      STKUNIT_ASSERT_EQUAL( 8u , elem_nodes.size() );
-      stk::mesh::fixtures::HexFixture::Scalar ** const elem_node_coord =
-        stk::mesh::field_data( fixture.m_coord_gather_field , *elem );
-      for ( size_t j = 0 ; j < elem_nodes.size() ; ++j ) {
-        STKUNIT_ASSERT_EQUAL( j , elem_nodes[j].identifier() );
-        stk::mesh::fixtures::HexFixture::Scalar * const node_coord =
-          stk::mesh::field_data( fixture.m_coord_field , *elem_nodes[j].entity() );
-        STKUNIT_ASSERT( node_coord == elem_node_coord[ elem_nodes[j].identifier() ] );
-      }
-      if ( 8u == elem_nodes.size() ) {
-        STKUNIT_ASSERT( elem_nodes[0].entity() == fixture.node(ix,iy,iz));
-        STKUNIT_ASSERT( elem_nodes[1].entity() == fixture.node(ix+1,iy,iz));
-        STKUNIT_ASSERT( elem_nodes[2].entity() == fixture.node(ix+1,iy,iz+1));
-        STKUNIT_ASSERT( elem_nodes[3].entity() == fixture.node(ix,iy,iz+1));
-        STKUNIT_ASSERT( elem_nodes[4].entity() == fixture.node(ix,iy+1,iz));
-        STKUNIT_ASSERT( elem_nodes[5].entity() == fixture.node(ix+1,iy+1,iz));
-        STKUNIT_ASSERT( elem_nodes[6].entity() == fixture.node(ix+1,iy+1,iz+1));
-        STKUNIT_ASSERT( elem_nodes[7].entity() == fixture.node(ix,iy+1,iz+1));
-      }
+
+    stk::mesh::PairIterRelation elem_nodes = elem->relations();
+    STKUNIT_ASSERT_EQUAL( 8u , elem_nodes.size() );
+    stk::mesh::fixtures::HexFixture::Scalar ** const elem_node_coord =
+      stk::mesh::field_data( fixture.m_coord_gather_field , *elem );
+    for ( size_t j = 0 ; j < elem_nodes.size() ; ++j ) {
+      STKUNIT_ASSERT_EQUAL( j , elem_nodes[j].identifier() );
+      stk::mesh::fixtures::HexFixture::Scalar * const node_coord =
+        stk::mesh::field_data( fixture.m_coord_field , *elem_nodes[j].entity() );
+      STKUNIT_ASSERT( node_coord == elem_node_coord[ elem_nodes[j].identifier() ] );
     }
+    if ( 8u == elem_nodes.size() ) {
+      STKUNIT_ASSERT( elem_nodes[0].entity() == fixture.node(ix,iy,iz));
+      STKUNIT_ASSERT( elem_nodes[1].entity() == fixture.node(ix+1,iy,iz));
+      STKUNIT_ASSERT( elem_nodes[2].entity() == fixture.node(ix+1,iy,iz+1));
+      STKUNIT_ASSERT( elem_nodes[3].entity() == fixture.node(ix,iy,iz+1));
+      STKUNIT_ASSERT( elem_nodes[4].entity() == fixture.node(ix,iy+1,iz));
+      STKUNIT_ASSERT( elem_nodes[5].entity() == fixture.node(ix+1,iy+1,iz));
+      STKUNIT_ASSERT( elem_nodes[6].entity() == fixture.node(ix+1,iy+1,iz+1));
+      STKUNIT_ASSERT( elem_nodes[7].entity() == fixture.node(ix,iy+1,iz+1));
+    }
+
   }
   }
   }

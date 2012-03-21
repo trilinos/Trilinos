@@ -11,6 +11,7 @@
 
 #include <stdint.h>
 #include <limits>
+#include <boost/functional/hash.hpp>
 
 #include <stk_mesh/base/Types.hpp>
 
@@ -177,6 +178,13 @@ inline
 bool entity_id_valid( EntityKey::raw_key_type id ) {
   return 0 < id && id <= EntityKey().id();
 }
+
+inline
+size_t hash_value( EntityKey key) {
+  return boost::hash_value(key.raw_key());
+}
+
+
 
 } // namespace mesh
 } // namespace stk

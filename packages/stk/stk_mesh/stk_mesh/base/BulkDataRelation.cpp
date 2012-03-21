@@ -211,7 +211,7 @@ bool BulkData::destroy_relation( Entity & e_from ,
   // When removing a relationship may need to
   // remove part membership and set field relation pointer to NULL
 
-  if ( parallel_size() < 2 || e_to.sharing().empty() ) {
+  if ( parallel_size() < 2 || m_entity_comm_map.sharing(e_to.key()).empty() ) {
 
     //------------------------------
     // 'keep' contains the parts deduced from kept relations
@@ -336,7 +336,7 @@ void BulkData::internal_propagate_part_changes(
         }
       }
 
-      if ( parallel_size() < 2 || e_to.sharing().empty() ) {
+      if ( parallel_size() < 2 || m_entity_comm_map.sharing(e_to.key()).empty() ) {
         // Entirely local, ok to remove memberships now
         internal_change_entity_parts( e_to , to_add , to_del );
       }
@@ -422,7 +422,7 @@ void BulkData::internal_propagate_part_changes(
         }
       }
 
-      if ( parallel_size() < 2 || e_to.sharing().empty() ) {
+      if ( parallel_size() < 2 || m_entity_comm_map.sharing(e_to.key()).empty() ) {
         // Entirely local, ok to remove memberships now
         internal_change_entity_parts( e_to , to_add , to_del );
       }

@@ -20,6 +20,7 @@
 #include <stk_mesh/base/Ghosting.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/Trace.hpp>
+#include <stk_mesh/base/EntityComm.hpp>
 
 #include <stk_mesh/baseImpl/EntityRepository.hpp>
 #include <stk_mesh/baseImpl/BucketRepository.hpp>
@@ -390,6 +391,19 @@ public:
   /** \brief  Query all ghostings */
   const std::vector<Ghosting*> & ghostings() const { return m_ghosting ; }
 
+  /** \brief  Entity Comm functions that are now moved to BulkData 
+   * These functions are only here for backwards compatibility.  
+   * We plan to remove all comm accessors from the Entity in the future.
+   */
+  PairIterEntityComm entity_comm(const EntityKey & key) const { return m_entity_comm_map.comm(key); }
+  PairIterEntityComm entity_comm_sharing(const EntityKey & key) const { return m_entity_comm_map.sharing(key); }
+  PairIterEntityComm entity_comm(const EntityKey & key, const Ghosting & sub ) const { return m_entity_comm_map.comm(key,sub); }
+  bool entity_comm_insert( const EntityKey & key, const EntityCommInfo & val) { return m_entity_comm_map.insert(key,val); }
+  bool entity_comm_erase(  const EntityKey & key, const EntityCommInfo & val) { return m_entity_comm_map.erase(key,val); }
+  bool entity_comm_erase(  const EntityKey & key, const Ghosting & ghost) { return m_entity_comm_map.erase(key,ghost); }
+  void entity_comm_clear_ghosting(const EntityKey & key ) { m_entity_comm_map.comm_clear_ghosting(key); }
+  void entity_comm_clear(const EntityKey & key) { m_entity_comm_map.comm_clear(key); }
+
 private:
 
   /** \brief  The meta data manager for this bulk data manager. */
@@ -417,6 +431,7 @@ private:
   BulkDataSyncState  m_sync_state ;
   bool               m_meta_data_verified ;
   bool               m_optimize_buckets;
+  EntityComm         m_entity_comm_map;
 
   /**
    * For all processors sharing an entity, find one to be the new

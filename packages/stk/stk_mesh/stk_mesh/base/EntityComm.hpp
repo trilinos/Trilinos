@@ -16,11 +16,169 @@
 
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/Ghosting.hpp>
+
+#include <boost/unordered_map.hpp>
 
 //----------------------------------------------------------------------
 
 namespace stk {
 namespace mesh {
+
+
+class EntityComm
+{
+public:
+  typedef boost::unordered_map<EntityKey, EntityCommInfoVector> map_type;
+
+  inline PairIterEntityComm sharing( const EntityKey & key ) const;
+  inline PairIterEntityComm comm( const EntityKey & key ) const; 
+  inline PairIterEntityComm comm( const EntityKey & key, const Ghosting & sub ) const;
+
+  inline bool insert( const EntityKey & key, const EntityCommInfo & val );
+  inline bool erase( const EntityKey & key, const EntityCommInfo & val );
+  inline bool erase( const EntityKey & key, const Ghosting & ghost );
+  inline void comm_clear_ghosting(const EntityKey & key );
+  inline void comm_clear(const EntityKey & key );
+
+private:
+  map_type m_comm_map;
+};
+
+inline PairIterEntityComm EntityComm::sharing( const EntityKey & key ) const
+{
+  map_type::const_iterator it = m_comm_map.find(key);
+  if (it == m_comm_map.cend()) {
+    return PairIterEntityComm();
+  }
+  const EntityCommInfoVector & m_comm = it->second;
+
+  EntityCommInfoVector::const_iterator i = m_comm.begin();
+  EntityCommInfoVector::const_iterator e = m_comm.end();
+
+  e = std::lower_bound( i , e , EntityCommInfo(1,     // ghost id, 1->aura
+                                               0 ) ); // proc
+
+  // Contains everything up the first aura comm (IE, only contains shared comms)
+  return PairIterEntityComm( i , e );
+}
+
+inline PairIterEntityComm EntityComm::comm( const EntityKey & key ) const  
+{ 
+  map_type::const_iterator it = m_comm_map.find(key);
+  if (it == m_comm_map.cend()) {
+    return PairIterEntityComm();
+  }
+  const EntityCommInfoVector & m_comm = it->second;
+  return PairIterEntityComm(m_comm);
+}
+
+inline PairIterEntityComm EntityComm::comm( const EntityKey & key, const Ghosting & sub ) const
+{
+  map_type::const_iterator it = m_comm_map.find(key);
+  if (it == m_comm_map.cend()) {
+    return PairIterEntityComm();
+  }
+  const EntityCommInfoVector & m_comm = it->second;
+
+  const EntityCommInfo s_begin( sub.ordinal() ,     0 );
+  const EntityCommInfo s_end(   sub.ordinal() + 1 , 0 );
+
+  EntityCommInfoVector::const_iterator i = m_comm.begin();
+  EntityCommInfoVector::const_iterator e = m_comm.end();
+
+  i = std::lower_bound( i , e , s_begin );
+  e = std::lower_bound( i , e , s_end );
+
+  return PairIterEntityComm( i , e );
+}
+
+inline bool EntityComm::insert( const EntityKey & key, const EntityCommInfo & val )
+{
+  TraceIfWatching("stk::mesh::EntityComm::insert", LOG_ENTITY, key());
+  EntityCommInfoVector & m_comm = m_comm_map[key];
+
+  std::vector< EntityCommInfo >::iterator i =
+    std::lower_bound( m_comm.begin() , m_comm.end() , val );
+
+  const bool result = ( (i == m_comm.end()) || (val != *i) );
+
+  if ( result ) {
+    m_comm.insert( i , val );
+  }
+
+  return result ;
+}
+
+inline bool EntityComm::erase( const EntityKey & key, const EntityCommInfo & val )
+{
+  TraceIfWatching("stk::mesh::EntityComm::erase(comm)", LOG_ENTITY, key());
+  EntityCommInfoVector & m_comm = m_comm_map[key];
+
+  std::vector< EntityCommInfo >::iterator i =
+    std::lower_bound( m_comm.begin() , m_comm.end() , val );
+
+  const bool result = ( (i != m_comm.end()) && (val == *i) ) ;
+
+  if ( result ) {
+    m_comm.erase( i );
+  }
+
+  if (m_comm.empty()) {
+    m_comm_map.erase(key);
+  }
+
+  return result ;
+}
+
+inline bool EntityComm::erase( const EntityKey & key, const Ghosting & ghost )
+{
+  TraceIfWatching("stk::mesh::EntityComm::erase(ghost)", LOG_ENTITY, key());
+  EntityCommInfoVector & m_comm = m_comm_map[key];
+
+  const EntityCommInfo s_begin( ghost.ordinal() ,     0 );
+  const EntityCommInfo s_end(   ghost.ordinal() + 1 , 0 );
+
+  EntityCommInfoVector::iterator i = m_comm.begin();
+  EntityCommInfoVector::iterator e = m_comm.end();
+
+  i = std::lower_bound( i , e , s_begin );
+  e = std::lower_bound( i , e , s_end );
+
+  const bool result = i != e ;
+
+  if ( result ) {
+    m_comm.erase( i , e );
+  }
+
+  if (m_comm.empty()) {
+    m_comm_map.erase(key);
+  }
+
+  return result ;
+}
+
+inline void EntityComm::comm_clear_ghosting(const EntityKey & key)
+{
+  TraceIfWatching("stk::mesh::EntityComm::comm_clear_ghosting", LOG_ENTITY, key());
+  EntityCommInfoVector & m_comm = m_comm_map[key];
+
+  std::vector< EntityCommInfo >::iterator j = m_comm.begin();
+  while ( j != m_comm.end() && j->ghost_id == 0 ) { ++j ; }
+  m_comm.erase( j , m_comm.end() );
+
+  if (m_comm.empty()) {
+    m_comm_map.erase(key);
+  }
+}
+
+inline void EntityComm::comm_clear(const EntityKey & key)
+{
+  TraceIfWatching("stk::mesh::EntityComm::comm_clear", LOG_ENTITY, key());
+  m_comm_map.erase(key);
+}
+
+
 
 /** \brief  Is shared with any other process */
 bool in_shared( const Entity & entity );

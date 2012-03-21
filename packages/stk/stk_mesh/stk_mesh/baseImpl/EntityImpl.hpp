@@ -53,9 +53,9 @@ public:
   RelationVector::const_iterator node_relation(unsigned ordinal) const
   { return m_relation.begin() + ordinal; }
 
-  PairIterEntityComm comm() const { return PairIterEntityComm( m_comm ); }
-  PairIterEntityComm sharing() const ;
-  PairIterEntityComm comm( const Ghosting & sub ) const ;
+  PairIterEntityComm comm() const; 
+  PairIterEntityComm sharing() const; 
+  PairIterEntityComm comm( const Ghosting & sub ) const; 
 
   Bucket & bucket() const
   {
@@ -83,11 +83,11 @@ public:
                          bool is_back_relation = false);
 
   // Communication info access:
-  bool insert( const EntityCommInfo & );
-  bool erase(  const EntityCommInfo & ); ///< Erase this entry
-  bool erase(  const Ghosting & );       ///< Erase this ghosting info.
-  void comm_clear_ghosting(); ///< Clear ghosting
-  void comm_clear(); ///< Clear everything
+  bool insert( const EntityCommInfo & val ); 
+  bool erase( const EntityCommInfo & val ); 
+  bool erase( const Ghosting & ghost );
+  void comm_clear_ghosting();
+  void comm_clear();
 
   void set_bucket_and_ordinal( Bucket * in_bucket, unsigned ordinal )
   {
@@ -178,7 +178,6 @@ public:
 
   EntityKey               m_key ;        ///< Globally unique key
   RelationVector          m_relation ;   ///< This entity's relationships
-  EntityCommInfoVector    m_comm ;       ///< This entity's communications
   Bucket                * m_bucket ;     ///< Bucket for the entity's field data
   unsigned                m_bucket_ord ; ///< Ordinal within the bucket
   unsigned                m_owner_rank ; ///< Owner processors' rank
@@ -193,7 +192,6 @@ inline
 EntityImpl::EntityImpl( const EntityKey & arg_key )
   : m_key(arg_key),
     m_relation(),
-    m_comm(),
     m_bucket( NULL ),
     m_bucket_ord(0),
     m_owner_rank(0),
@@ -207,7 +205,6 @@ inline
 EntityImpl::EntityImpl()
   : m_key(),
     m_relation(),
-    m_comm(),
     m_bucket( NULL ),
     m_bucket_ord(0),
     m_owner_rank(0),
