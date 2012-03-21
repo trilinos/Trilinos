@@ -110,12 +110,18 @@ namespace MueLu {
       ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
       for (typename ArrayRCP<GO>::iterator i = decompEntries.begin(); i != decompEntries.end(); ++i)
         *i = mypid;
-      for (int i=0; i< num_exported; ++i)
-        decompEntries[ rowMap->getLocalElement(export_gids[i]) ] = export_to_part[i];
+      LocalOrdinal blockSize = A->GetFixedBlockSize();
+      for (int i=0; i< num_exported; ++i) {
+        LO localEl = rowMap->getLocalElement(export_gids[i]);
+        int partNum = export_to_part[i];
+        for (LO j=0; j<blockSize; ++j)
+          decompEntries[ localEl + j ] = partNum;
+          //decompEntries[ rowMap->getLocalElement(export_gids[i]) + j ] = export_to_part[i];
+      }
     } else {
       //Running on one processor, so decomposition is the trivial one, all zeros.
       decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(rowMap,true);
-    }
+    } // if (newDecomp) ... else
     level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition",decomposition,this);
 
     zoltanObj_->LB_Free_Part(&import_gids, &import_lids, &import_procs, &import_to_part);
@@ -139,7 +145,9 @@ namespace MueLu {
     //TODO is there a safer way to cast?
     //Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> *A = (Operator*) data;
     Operator *A = (Operator*) data;
-    return A->getRowMap()->getNodeNumElements();
+    LocalOrdinal blockSize = A->GetFixedBlockSize(); //FIXME
+    if (blockSize==0) throw(Exceptions::RuntimeError("MueLu::Zoltan : Operator has block size 0."));
+    return (A->getRowMap()->getNodeNumElements() / blockSize); //FIXME
   } //GetLocalNumberOfRows()
 
   //-------------------------------------------------------------------------------------------------------------
@@ -163,10 +171,28 @@ namespace MueLu {
     RCP<const Map> map = A->getRowMap();
     Teuchos::ArrayView<const LO> cols;
     Teuchos::ArrayView<const SC> vals;
-    for (size_t i=0; i<map->getNodeNumElements(); ++i) {
-      gids[i] = (ZOLTAN_ID_TYPE) map->getGlobalElement(i);
-      A->getLocalRowView(i,cols,vals);
-      weights[i] = cols.size();
+    LocalOrdinal blockSize = A->GetFixedBlockSize(); //FIXME
+    if (blockSize==0) throw(Exceptions::RuntimeError("MueLu::Zoltan : Operator has block size 0."));
+    if (blockSize == 1) {
+      for (size_t i=0; i<map->getNodeNumElements(); ++i) {
+        gids[i] = (ZOLTAN_ID_TYPE) map->getGlobalElement(i);
+        A->getLocalRowView(i,cols,vals);
+        weights[i] = cols.size();
+      }
+    } else {
+      LocalOrdinal numBlocks = A->getRowMap()->getNodeNumElements() / blockSize;
+      std::set<LocalOrdinal> uniqueColsInBlockRow;
+      Teuchos::ArrayView<LO> nonconstCols =Teuchos::av_const_cast<LO>(cols);
+      for (LocalOrdinal i=0; i<numBlocks; ++i) {
+        gids[i] = (ZOLTAN_ID_TYPE) map->getGlobalElement(i*blockSize);
+        for (LocalOrdinal j=i*blockSize; j<(i+1)*blockSize; ++j) {
+          A->getLocalRowView(j,cols,vals);
+          LO *tt = nonconstCols.getRawPtr();
+          uniqueColsInBlockRow.insert(tt,tt+nonconstCols.size());  //yes, cols.size() is correct, one past last entry
+        }
+        weights[i] = uniqueColsInBlockRow.size();
+        uniqueColsInBlockRow.clear();
+      } //for (size_t i=0; i<numBlocks; ++i)
     }
 
   } //GetLocalNumberOfNonzeros()
