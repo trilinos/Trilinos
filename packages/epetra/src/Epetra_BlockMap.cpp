@@ -65,7 +65,7 @@ void Epetra_BlockMap::ConstructAutoUniform(long long NumGlobal_Elements, int Ele
   if (Element_Size <= 0) 
     throw ReportError("ElementSize = " + toString(Element_Size) + ".  Should be > 0.", -2);
   
-  BlockMapData_ = new Epetra_BlockMapData(NumGlobal_Elements, Element_Size, Index_Base, comm);
+  BlockMapData_ = new Epetra_BlockMapData(NumGlobal_Elements, Element_Size, Index_Base, comm, IsLongLong);
   int NumProc = comm.NumProc();
   BlockMapData_->ConstantElementSize_ = true;
   BlockMapData_->LinearMap_ = true;
@@ -97,8 +97,6 @@ void Epetra_BlockMap::ConstructAutoUniform(long long NumGlobal_Elements, int Ele
   BlockMapData_->MinMyGID_ = start_index + BlockMapData_->IndexBase_;
   BlockMapData_->MaxMyGID_ = BlockMapData_->MinMyGID_ + BlockMapData_->NumMyElements_ - 1;
   BlockMapData_->DistributedGlobal_ = IsDistributedGlobal(BlockMapData_->NumGlobalElements_, BlockMapData_->NumMyElements_);
-
-  SetGlobalIndicesType(IsLongLong);
 
   EndOfConstructorOps();
 }
@@ -134,7 +132,7 @@ void Epetra_BlockMap::ConstructUserLinear(
   if (Element_Size <= 0) 
     throw ReportError("ElementSize = " + toString(Element_Size) + ". Should be > 0.", -3);
 
-  BlockMapData_ = new Epetra_BlockMapData(NumGlobal_Elements, Element_Size, Index_Base, comm);
+  BlockMapData_ = new Epetra_BlockMapData(NumGlobal_Elements, Element_Size, Index_Base, comm, IsLongLong);
   BlockMapData_->NumMyElements_ = NumMy_Elements;
   BlockMapData_->MinMyElementSize_ = BlockMapData_->ElementSize_;
   BlockMapData_->MaxMyElementSize_ = BlockMapData_->ElementSize_;
@@ -190,7 +188,6 @@ void Epetra_BlockMap::ConstructUserLinear(
     throw ReportError("Internal Error.  Report to Epetra developer", -99);
   
 
-  SetGlobalIndicesType(IsLongLong);
   EndOfConstructorOps();
 }
 
@@ -233,7 +230,7 @@ void Epetra_BlockMap::ConstructUserConstant(int_type NumGlobal_Elements, int Num
 
   // Allocate storage for global index list information
 
-  BlockMapData_ = new Epetra_BlockMapData(NumGlobal_Elements, Element_Size, indexBase, comm);
+  BlockMapData_ = new Epetra_BlockMapData(NumGlobal_Elements, Element_Size, indexBase, comm, IsLongLong);
   if (NumMy_Elements > 0) {
     int errorcode = SizeMyGlobalElement<int_type>(NumMy_Elements);
     if(errorcode != 0)
@@ -304,7 +301,6 @@ void Epetra_BlockMap::ConstructUserConstant(int_type NumGlobal_Elements, int Num
     throw ReportError("Internal Error.  Report to Epetra developer", -99);
   
 
-  SetGlobalIndicesType(IsLongLong);
   EndOfConstructorOps();
 }
 
@@ -352,7 +348,7 @@ void Epetra_BlockMap::ConstructUserVariable(int_type NumGlobal_Elements, int Num
     if (elementSizeList[i] <= 0) 
       throw ReportError("elementSizeList["+toString(i)+"] = " + toString(elementSizeList[i]) + ". Should be > 0.", -3);
   
-  BlockMapData_ = new Epetra_BlockMapData(NumGlobal_Elements, 0, indexBase, comm);
+  BlockMapData_ = new Epetra_BlockMapData(NumGlobal_Elements, 0, indexBase, comm, IsLongLong);
   BlockMapData_->NumMyElements_ = NumMy_Elements;
   BlockMapData_->ConstantElementSize_ = false;
   BlockMapData_->LinearMap_ = false;
@@ -452,7 +448,6 @@ void Epetra_BlockMap::ConstructUserVariable(int_type NumGlobal_Elements, int Num
     throw ReportError("Internal Error.  Report to Epetra developer", -99);
   
 
-  SetGlobalIndicesType(IsLongLong);
   EndOfConstructorOps();
 }
 

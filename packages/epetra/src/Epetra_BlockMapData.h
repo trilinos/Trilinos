@@ -67,7 +67,7 @@ class Epetra_BlockMapData : public Epetra_Data {
   //@{ 
 
   //! Epetra_BlockMapData Default Constructor.
-  Epetra_BlockMapData(long long NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm & Comm);
+  Epetra_BlockMapData(long long NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm & Comm, bool IsLongLong);
 
   //! Epetra_BlockMapData Destructor.
   ~Epetra_BlockMapData();

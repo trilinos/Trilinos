@@ -493,18 +493,6 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
 		  GlobalIndicesLongLong() == other.GlobalIndicesLongLong();
   }
 
-  void SetGlobalIndicesType(bool IsLongLong)
-  {
-    if(IsLongLong)  {
-      BlockMapData_->GlobalIndicesInt_ = false;
-      BlockMapData_->GlobalIndicesLongLong_ = true;
-    }
-    else {
-      BlockMapData_->GlobalIndicesInt_ = true;
-      BlockMapData_->GlobalIndicesLongLong_ = false;
-    }
-  }
-
   //! Returns true if map has constant element size.
   bool  ConstantElementSize() const {return(BlockMapData_->ConstantElementSize_);};
 

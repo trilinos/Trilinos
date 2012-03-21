@@ -775,7 +775,7 @@ int Epetra_CrsMatrix::TReplaceGlobalValues(int_type Row, int NumEntries, const d
 
   int locRow = Graph_.LRID(Row); // Normalize row range
     
-  if (Row < 0 || Row >= NumMyRows_) {
+  if (locRow < 0 || locRow >= NumMyRows_) {
     EPETRA_CHK_ERR(-1); // Not in Row range
   }
   double * targValues = Values(locRow);

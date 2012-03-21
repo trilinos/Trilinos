@@ -1730,6 +1730,15 @@ int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap& domainMap, const Ep
 	{
 		Epetra_CrsGraphData::IndexData<long long>& LL_Data = CrsGraphData_->Data<long long>();
 
+		// Use the resize trick used in TAllocate.
+		const int indexBaseMinusOne = IndexBase() - 1;
+		for(int i = 0; i < numMyBlockRows; i++) {
+		  const int NumIndices = CrsGraphData_->NumIndicesPerRow_[i];
+		  intData.SortedEntries_[i].entries_.resize(NumIndices, indexBaseMinusOne);
+		  intData.Indices_[i] = NumIndices > 0 ? &intData.SortedEntries_[i].entries_[0]: NULL;
+		  intData.SortedEntries_[i].entries_.resize(0);
+		}
+
 		// now comes the actual transformation
 		for(int i = 0; i < numMyBlockRows; i++) {
 		  const int NumIndices = CrsGraphData_->NumIndicesPerRow_[i];
