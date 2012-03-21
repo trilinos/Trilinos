@@ -325,6 +325,8 @@ namespace MueLu {
     for (int i=0; i<pidsIReceiveFrom.size(); ++i)
       pidsIReceiveFrom[i] = status[i].MPI_SOURCE;
 
+    comm->barrier();
+
     // =================================================================================================
     // Calculate partial offsets for permutation row map, via MPI_Scan based on global partition sizes.
     // Communicate those offsets back to respective PIDS of unpermuted matrix using ireceive/send/wait cycle.
@@ -367,6 +369,8 @@ namespace MueLu {
     status.resize(numPartitionsISendTo);
     for (int i=0; i<numPartitionsISendTo; ++i)
       MPI_Wait(&requests[i],&status[i]);
+
+    comm->barrier();
 
     // =================================================================================================
     // Set up a synthetic GID scheme that is the same for both the original unpermuted system and the permuted system.
