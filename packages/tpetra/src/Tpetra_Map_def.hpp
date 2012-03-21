@@ -572,7 +572,7 @@ namespace Tpetra {
       // communication as an all-reduce.)
       GlobalOrdinal rootIndexBase = indexBase_in;
       const int rootRank = 0;
-      broadcast (*comm_, rootRank, ptr (rootIndexBase));  
+      broadcast (*comm_, rootRank, ptr (&rootIndexBase));  
 
       if (indexBase_in != rootIndexBase) {
         localChecks[0] = myImageID;
