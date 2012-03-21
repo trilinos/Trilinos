@@ -7,6 +7,24 @@
 namespace Xpetra {
 
   EpetraMultiVector::EpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors) {
+    //TODO: input argument 'NumVectors' is not necessary in both Xpetra and Tpetra interface. Should it be removed?
+
+    const std::string tfecfFuncName("MultiVector(ArrayOfPtrs)");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(NumVectors < 1 || NumVectors != Teuchos::as<size_t>(ArrayOfPtrs.size()), std::runtime_error,
+                                          ": ArrayOfPtrs.size() must be strictly positive and as large as ArrayOfPtrs.");
+    
+#ifdef HAVE_XPETRA_DEBUG
+    // This cannot be tested by Epetra itself
+    {
+      size_t localLength = map->getNodeNumElements();
+      for(int j=0; j<ArrayOfPtrs.size(); j++) {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(ArrayOfPtrs[j].size()) != localLength, std::runtime_error,
+                                              ": ArrayOfPtrs[" << j << "].size() (== " << ArrayOfPtrs[j].size() << 
+                                              ") is not equal to getLocalLength() (== " << localLength);
+        
+      }
+    }
+#endif
 
     // Convert Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > to double**
     Array<const double*> arrayOfRawPtrs(ArrayOfPtrs.size());
