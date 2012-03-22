@@ -203,7 +203,7 @@ namespace MueLu {
       dim=3;
     }
 
-    GetOStream(Runtime1, 0) << "MueLu::ParameterListInterpreter: Coordinates found! (dim=" << dim << ")" << std::endl;
+    //    GetOStream(Runtime1, 0) << "MueLu::ParameterListInterpreter: Coordinates found! (dim=" << dim << ")" << std::endl;
   }
 
 } // namespace MueLu

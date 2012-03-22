@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
     
     if (coordinates->getNumVectors() >= 2) {
       Teuchos::ArrayRCP<const SC> coord = coordinates->getData(1);
-      Teuchos::Array<SC> coordCpy(coord.size());
+      Teuchos::ArrayRCP<SC> coordCpy(coord.size());
       for(int i=0; i<coord.size(); i++) {
         coordCpy[i] = coord[i];
       }
@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
 
     if (coordinates->getNumVectors() >= 3) {
       Teuchos::ArrayRCP<const SC> coord = coordinates->getData(2);
-      Teuchos::Array<SC> coordCpy(coord.size());
+      Teuchos::ArrayRCP<SC> coordCpy(coord.size());
       for(int i=0; i<coord.size(); i++) {
         coordCpy[i] = coord[i];
       }

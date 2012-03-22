@@ -22,7 +22,7 @@
 #include "MueLu_Utilities.hpp" // TMP JG NOTE: only for maxAll, so no _fwd in _decl
 
 #include "MueLu_Level.hpp"
-// #include "MueLu_Monitor.hpp"
+#include "MueLu_Monitor.hpp"
 
 namespace MueLu {
 
