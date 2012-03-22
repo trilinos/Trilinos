@@ -495,14 +495,13 @@ namespace Tpetra {
         Teuchos::typeName(*this) << "::doPosts(): imports must be large enough to store the imported data.");
 #endif
 
-    // allocate space in requests
+    // Make space in requests, if the space isn't already there.
     //
     // NOTE (mfh 19 Mar 2012): Epetra_MpiDistributor::DoPosts()
     // doesn't (re)allocate its array of requests.  That happens in
     // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
     // demand), or Resize_().
-    requests_.resize(0);
-    requests_.reserve(numReceives_);
+    requests_.resize (numReceives_);
 
     // start up the Irecv's
     {
@@ -512,7 +511,7 @@ namespace Tpetra {
           // receiving this one from another image
           // setup reference into imports of the appropriate size and at the appropriate place
           ArrayRCP<Packet> impptr = imports.persistingView(curBufferOffset,lengthsFrom_[i]*numPackets);
-          requests_.push_back( Teuchos::ireceive<int,Packet>(*comm_,impptr,imagesFrom_[i]) );
+          requests_[i] = Teuchos::ireceive<int,Packet> (*comm_, impptr, imagesFrom_[i]));
         }
         else {
           // receiving this one from myself 
@@ -523,8 +522,9 @@ namespace Tpetra {
       }
     }
 
-    // wait for everyone else before posting ready-sends below to ensure that 
-    // all non-blocking receives above have been posted
+    // The ready-sends below require that their matching receive has
+    // been posted, so do a barrier to ensure that all the nonblocking
+    // receives have posted first.
     Teuchos::barrier(*comm_);
 
     // setup scan through imagesTo_ list starting with higher numbered images
@@ -549,24 +549,23 @@ namespace Tpetra {
         }
 
         if (imagesTo_[p] != myImageID) {
-          // sending it to another image
-          ArrayView<const Packet> tmpSend(&exports[startsTo_[p]*numPackets],lengthsTo_[p]*numPackets);
-          Teuchos::readySend<int,Packet>(*comm_,tmpSend,imagesTo_[p]);
+          ArrayView<const Packet> tmpSend (&exports[startsTo_[p]*numPackets], lengthsTo_[p]*numPackets);
+          Teuchos::readySend<int,Packet>(*comm_, tmpSend, imagesTo_[p]);
         }
-        else {
-          // sending it to ourself
+        else { // "Sending" the message to myself
           selfNum = p;
         }
       }
 
       if (selfMessage_) {
-        std::copy(exports.begin()+startsTo_[selfNum]*numPackets, exports.begin()+startsTo_[selfNum]*numPackets+lengthsTo_[selfNum]*numPackets, 
-                  imports.begin()+selfReceiveOffset);
+        std::copy (exports.begin()+startsTo_[selfNum]*numPackets, 
+		   exports.begin()+startsTo_[selfNum]*numPackets+lengthsTo_[selfNum]*numPackets, 
+		   imports.begin()+selfReceiveOffset);
       }
     }
     else { // data is not blocked by image, use send buffer
       // allocate sendArray buffer
-      Array<Packet> sendArray(maxSendLength_*numPackets); 
+      Array<Packet> sendArray (maxSendLength_ * numPackets); 
 
       for (size_t i = 0; i < numBlocks; ++i) {
         size_t p = i + imageIndex;
@@ -575,21 +574,19 @@ namespace Tpetra {
         }
 
         if (imagesTo_[p] != myImageID) { 
-          // sending it to another image
           typename ArrayView<const Packet>::iterator srcBegin, srcEnd;
           size_t sendArrayOffset = 0;
           size_t j = startsTo_[p];
           for (size_t k = 0; k < lengthsTo_[p]; ++k, ++j) {
             srcBegin = exports.begin() + indicesTo_[j]*numPackets;
             srcEnd   = srcBegin + numPackets;
-            std::copy( srcBegin, srcEnd, sendArray.begin()+sendArrayOffset );
+            std::copy (srcBegin, srcEnd, sendArray.begin()+sendArrayOffset);
             sendArrayOffset += numPackets;
           }
-          ArrayView<const Packet> tmpSend = sendArray(0,lengthsTo_[p]*numPackets);
-          Teuchos::readySend<int,Packet>(*comm_,tmpSend,imagesTo_[p]);
+          ArrayView<const Packet> tmpSend = sendArray (0, lengthsTo_[p]*numPackets);
+          Teuchos::readySend<int,Packet> (*comm_, tmpSend, imagesTo_[p]);
         }
-        else { 
-          // sending it to myself
+        else { // "Sending" the message to myself
           selfNum = p;
           selfIndex = startsTo_[p];
         }
@@ -597,9 +594,9 @@ namespace Tpetra {
 
       if (selfMessage_) {
         for (size_t k = 0; k < lengthsTo_[selfNum]; ++k) {
-          std::copy( exports.begin()+indicesTo_[selfIndex]*numPackets,
+          std::copy (exports.begin()+indicesTo_[selfIndex]*numPackets,
                      exports.begin()+indicesTo_[selfIndex]*numPackets + numPackets,
-                     imports.begin() + selfReceiveOffset );
+                     imports.begin() + selfReceiveOffset);
           ++selfIndex;
           selfReceiveOffset += numPackets;
         }
