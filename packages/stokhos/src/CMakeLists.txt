@@ -70,6 +70,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_CompletePolynomialBasisImp.hpp
   Stokhos_GramSchmidtBasis.hpp
   Stokhos_GramSchmidtBasisImp.hpp
+  Stokhos_MonomialGramSchmidtSimplexPCEBasis.hpp
+  Stokhos_MonomialGramSchmidtSimplexPCEBasisImp.hpp
   Stokhos_BasisFactory.hpp
   Stokhos_BasisFactoryImp.hpp
   Stokhos_SparseArray.hpp
