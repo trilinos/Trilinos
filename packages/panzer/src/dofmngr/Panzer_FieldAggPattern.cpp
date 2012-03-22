@@ -11,9 +11,10 @@ FieldAggPattern::FieldAggPattern()
 {
 }
 
-FieldAggPattern::FieldAggPattern(std::vector<std::pair<int,Teuchos::RCP<const FieldPattern> > > & patterns)
+FieldAggPattern::FieldAggPattern(std::vector<std::pair<int,Teuchos::RCP<const FieldPattern> > > & patterns,
+                                 const Teuchos::RCP<const FieldPattern> & geomAggPattern)
 {
-   buildPattern(patterns);
+   buildPattern(patterns,geomAggPattern);
 }
 
 Teuchos::RCP<const FieldPattern> FieldAggPattern::getGeometricAggFieldPattern() const
@@ -21,12 +22,13 @@ Teuchos::RCP<const FieldPattern> FieldAggPattern::getGeometricAggFieldPattern() 
    return geomAggPattern_;
 }
 
-void FieldAggPattern::buildPattern(const std::vector<std::pair<int,Teuchos::RCP<const FieldPattern> > > & patterns)
+void FieldAggPattern::buildPattern(const std::vector<std::pair<int,Teuchos::RCP<const FieldPattern> > > & patterns,
+                                   const Teuchos::RCP<const FieldPattern> & geomAggPattern)
 {
    TEUCHOS_ASSERT(patterns.size()>0);
 
    // build geometric information
-   {
+   if(geomAggPattern==Teuchos::null) {
       std::vector<FPPtr> patternVec;
 
       // convert map into vector
@@ -37,6 +39,8 @@ void FieldAggPattern::buildPattern(const std::vector<std::pair<int,Teuchos::RCP<
       // build geometric aggregate field pattern
       geomAggPattern_ = rcp(new GeometricAggFieldPattern(patternVec));
    }
+   else
+      geomAggPattern_ = geomAggPattern;
 
    patterns_ = patterns;
 
@@ -167,7 +171,7 @@ void FieldAggPattern::mergeFieldPatterns(int dim,int subcell)
          }
       }
 
-      TEUCHOS_ASSERT(numFields_[geomIndices[i]]>0);
+      TEUCHOS_ASSERT(numFields_[geomIndices[i]]>=0);
    }
 
 }

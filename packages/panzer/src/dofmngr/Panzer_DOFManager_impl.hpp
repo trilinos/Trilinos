@@ -457,7 +457,7 @@ bool DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildPattern(const std::vector<st
    }
    
    // smash together all fields...do interlacing
-   fieldAggPattern_[blockId] = rcp(new FieldAggPattern(blockPatterns));
+   fieldAggPattern_[blockId] = rcp(new FieldAggPattern(blockPatterns,geomPattern_));
 
    // build FEI pattern
    const std::vector<int> & fields = fieldAggPattern_[blockId]->fieldIds();

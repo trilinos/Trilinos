@@ -27,7 +27,8 @@ public:
 
    /** Automatically calls <code>buildPattern</code>
      */
-   FieldAggPattern(std::vector<std::pair<int,Teuchos::RCP<const FieldPattern> > > & patterns);
+   FieldAggPattern(std::vector<std::pair<int,Teuchos::RCP<const FieldPattern> > > & patterns,
+                   const Teuchos::RCP<const FieldPattern> & geomAggPattern=Teuchos::null);
 
    virtual ~FieldAggPattern() {}
 
@@ -39,7 +40,8 @@ public:
      * Patterns must be on the same geometry, otherwise this function throws a
      * std::logic_error
      */
-   virtual void buildPattern(const std::vector<std::pair<int,Teuchos::RCP<const FieldPattern> > > & patterns);
+   virtual void buildPattern(const std::vector<std::pair<int,Teuchos::RCP<const FieldPattern> > > & patterns,
+                             const Teuchos::RCP<const FieldPattern> & geomAggPattern=Teuchos::null);
 
    // functions from the abstract FieldPattern
    virtual int getDimension() const;

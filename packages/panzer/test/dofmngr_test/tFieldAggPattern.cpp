@@ -9,6 +9,7 @@
 #include "dofmngr/Panzer_FieldAggPattern.hpp"
 #include "dofmngr/Panzer_IntrepidFieldPattern.hpp"
 #include "dofmngr/Panzer_GeometricAggFieldPattern.hpp"
+#include "dofmngr/Panzer_NodalFieldPattern.hpp"
 
 // include some intrepid basis functions
 // 2D basis 
@@ -16,6 +17,7 @@
 #include "Intrepid_HGRAD_TRI_C2_FEM.hpp"
 #include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
+#include "Intrepid_HCURL_QUAD_I1_FEM.hpp"
 
 // 3D basis 
 #include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
@@ -630,6 +632,44 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testD)
          TEST_EQUALITY(v.size(),v_true.size());
          TEST_EQUALITY(v[0],v_true[0]);
       }
+   }
+}
+
+// Tests the HCURL case where the geometry includes the nodes, but the pattern does not
+TEUCHOS_UNIT_TEST(tFieldAggPattern, testE)
+{
+   out << note << std::endl;
+
+   // basis to build patterns from
+   RCP<Intrepid::Basis<double,FieldContainer> > basisA = rcp(new Intrepid::Basis_HCURL_QUAD_I1_FEM<double,FieldContainer>);
+
+   RCP<const FieldPattern> patternA = rcp(new IntrepidFieldPattern(basisA));
+   RCP<const FieldPattern> patternNode = rcp(new NodalFieldPattern(basisA->getBaseCellTopology()));
+
+   std::vector<int> closureIndices;
+   std::vector<RCP<const FieldPattern> > patternV;
+   std::vector<std::pair<int,RCP<const FieldPattern> > > patternM;
+
+   patternV.push_back(patternA);
+   patternV.push_back(patternNode);
+
+   GeometricAggFieldPattern geom(patternV);
+
+   patternM.push_back(std::make_pair(7,patternA));
+
+   // test build of geometric field pattern
+   {
+      FieldAggPattern agg; 
+   
+      agg.buildPattern(patternM,Teuchos::rcpFromRef(geom));
+
+      bool equality = false;
+      TEST_NOTHROW(equality = geom.equals(*agg.getGeometricAggFieldPattern()));
+      TEST_ASSERT(equality);
+
+      TEST_EQUALITY(geom.getDimension(),agg.getGeometricAggFieldPattern()->getDimension());
+
+      out << agg << std::endl;
    }
 }
 
