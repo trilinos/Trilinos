@@ -511,7 +511,7 @@ namespace Tpetra {
           // receiving this one from another image
           // setup reference into imports of the appropriate size and at the appropriate place
           ArrayRCP<Packet> impptr = imports.persistingView(curBufferOffset,lengthsFrom_[i]*numPackets);
-          requests_[i] = Teuchos::ireceive<int,Packet> (*comm_, impptr, imagesFrom_[i]));
+          requests_[i] = Teuchos::ireceive<int,Packet> (*comm_, impptr, imagesFrom_[i]);
         }
         else {
           // receiving this one from myself 
