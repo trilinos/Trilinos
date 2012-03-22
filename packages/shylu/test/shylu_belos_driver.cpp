@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
     else
     {
         b1 = new Epetra_MultiVector(vecMap, 1, false);
-        b1->PutScalar(1.0);
+        b1->Random();
         allOneRHS = true;
     }
 

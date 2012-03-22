@@ -688,6 +688,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
     //config->dm.print(3, "In Numeric Factorization");
     Solver->NumericFactorization();
     //config->dm.print(3, "Numeric Factorization done");
+    cout << "Numeric Factorization done" << endl;
 
 #ifdef TIMING_OUTPUT
     ftime.stop();
