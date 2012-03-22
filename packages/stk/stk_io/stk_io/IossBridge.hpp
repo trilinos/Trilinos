@@ -293,6 +293,8 @@ void remove_io_part_attribute(mesh::Part &part);
 
 const Ioss::GroupingEntity *get_associated_ioss_entity(const mesh::Part &part);
 
+size_t db_api_int_size(const Ioss::GroupingEntity *entity);
+
 // To minimize ifdefs for the deprecated code:
 bool invalid_rank(mesh::EntityRank rank);
 mesh::EntityRank part_primary_entity_rank(const mesh::Part &part);

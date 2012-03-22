@@ -205,8 +205,9 @@ namespace stk {
      * Method to query a MeshData for the number of element blocks and the
      * number of elements in each. MeshData is input, std:vector is output
      */
+    template <typename INT>
     void get_element_block_sizes(MeshData &mesh_data,
-                                 std::vector<int>& el_blocks);
+                                 std::vector<INT>& el_blocks);
   }
 }
 #endif

@@ -45,6 +45,14 @@ void IO_Fixture::create_output_mesh(
       "ERROR: Could not open results database '" << base_exodus_filename <<
       "' of type 'exodusII'");
 
+  // If the m_ioss_input_region exists for this fixture,
+  // check the integer size it is using and replicate that
+  // on the output mesh...
+  if (!Teuchos::is_null(m_ioss_input_region)) {
+    if (m_ioss_input_region->get_database()->int_byte_size_api() == 8)
+      dbo->set_int_byte_size_api(Ioss::USE_INT64_API);
+  }
+
   // NOTE: 'm_ioss_output_region' owns 'dbo' pointer at this time
   m_ioss_output_region = Teuchos::rcp(new Ioss::Region(dbo, "results_output"));
   m_mesh_data.m_output_region = m_ioss_output_region.get();

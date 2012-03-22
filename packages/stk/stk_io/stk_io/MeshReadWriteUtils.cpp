@@ -72,7 +72,8 @@ namespace {
   }
 
   // ========================================================================
-  void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bulk)
+  template <typename INT>
+  void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bulk, INT /*dummy*/)
   {
     assert(sset->type() == Ioss::SIDESET);
 
@@ -82,8 +83,8 @@ namespace {
     for (size_t i=0; i < block_count; i++) {
       Ioss::SideBlock *block = sset->get_block(i);
       if (stk::io::include_entity(block)) {
-	std::vector<int> side_ids ;
-	std::vector<int> elem_side ;
+	std::vector<INT> side_ids ;
+	std::vector<INT> elem_side ;
 
 	stk::mesh::Part * const sb_part = fem_meta.get_part(block->name());
 	stk::mesh::EntityRank elem_rank = fem_meta.element_rank();
@@ -127,6 +128,14 @@ namespace {
     }
   }
 
+  void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bulk)
+  {
+    if (stk::io::db_api_int_size(sset) == 4)
+      process_surface_entity(sset, bulk, (int)0);
+    else
+      process_surface_entity(sset, bulk, (int64_t)0);
+  }
+
   void process_nodeblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta)
   {
     const Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
@@ -165,7 +174,6 @@ namespace {
       fem_meta.get_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
 
     stk::io::field_data_from_ioss(coord_field, nodes, nb, "mesh_model_coordinates");
-
   }
 
   // ========================================================================
@@ -175,7 +183,8 @@ namespace {
     stk::io::default_part_processing(elem_blocks, fem_meta);
   }
 
-  void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
+  template <typename INT>
+  void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*dummy*/)
   {
     const stk::mesh::fem::FEMMetaData& fem_meta = stk::mesh::fem::FEMMetaData::get(bulk);
 
@@ -196,8 +205,8 @@ namespace {
 	  throw std::runtime_error( msg.str() );
 	}
 
-	std::vector<int> elem_ids ;
-	std::vector<int> connectivity ;
+	std::vector<INT> elem_ids ;
+	std::vector<INT> connectivity ;
 
 	entity->get_field_data("ids", elem_ids);
 	entity->get_field_data("connectivity", connectivity);
@@ -209,7 +218,7 @@ namespace {
 	std::vector<stk::mesh::Entity*> elements(element_count);
 
 	for(size_t i=0; i<element_count; ++i) {
-	  int *conn = &connectivity[i*nodes_per_elem];
+	  INT *conn = &connectivity[i*nodes_per_elem];
 	  std::copy(&conn[0], &conn[0+nodes_per_elem], id_vec.begin());
 	  elements[i] = &stk::mesh::fem::declare_element(bulk, *part, elem_ids[i], &id_vec[0]);
 	}
@@ -278,7 +287,8 @@ namespace {
   }
 
   // ========================================================================
-  void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
+  template <typename INT>
+  void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*dummy*/)
   {
     // Should only process nodes that have already been defined via the element
     // blocks connectivity lists.
@@ -295,12 +305,12 @@ namespace {
 	assert(part != NULL);
 	stk::mesh::PartVector add_parts( 1 , part );
 
-	std::vector<int> node_ids ;
-	int node_count = entity->get_field_data("ids", node_ids);
+	std::vector<INT> node_ids ;
+	size_t node_count = entity->get_field_data("ids", node_ids);
 
 	std::vector<stk::mesh::Entity*> nodes(node_count);
 	stk::mesh::EntityRank n_rank = fem_meta.node_rank();
-	for(int i=0; i<node_count; ++i) {
+	for(size_t i=0; i<node_count; ++i) {
 	  nodes[i] = bulk.get_entity(n_rank, node_ids[i] );
 	  if (nodes[i] != NULL)
 	    bulk.declare_entity(n_rank, node_ids[i], add_parts );
@@ -594,10 +604,20 @@ namespace stk {
       if (region) {
 	bulk_data.modification_begin();
 
-	process_elementblocks(*region, bulk_data);
+      bool ints64bit = db_api_int_size(region) == 8;
+      if (ints64bit) {
+	int64_t zero = 0;
+	process_elementblocks(*region, bulk_data, zero);
 	process_nodeblocks(*region,    bulk_data);
-	process_nodesets(*region,      bulk_data);
+	process_nodesets(*region,      bulk_data, zero);
 	process_sidesets(*region,      bulk_data);
+      } else {
+	int zero = 0;
+	process_elementblocks(*region, bulk_data, zero);
+	process_nodeblocks(*region,    bulk_data);
+	process_nodesets(*region,      bulk_data, zero);
+	process_sidesets(*region,      bulk_data);
+      }
 
 	bulk_data.modification_end();
       } else {
@@ -866,8 +886,9 @@ namespace stk {
       }
     }
     // ========================================================================
+    template <typename INT>
     void get_element_block_sizes(MeshData &mesh_data,
-                                 std::vector<int>& el_blocks) 
+                                 std::vector<INT>& el_blocks) 
     {
       Ioss::Region *io = mesh_data.m_input_region;
       const Ioss::ElementBlockContainer& elem_blocks = io->get_element_blocks();
@@ -878,5 +899,7 @@ namespace stk {
         }
       }
     }
+    template void get_element_block_sizes(MeshData &mesh_data, std::vector<int>& el_blocks);
+    template void get_element_block_sizes(MeshData &mesh_data, std::vector<int64_t>& el_blocks);
   } // namespace io
 } // namespace stk

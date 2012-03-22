@@ -242,7 +242,7 @@ namespace {
     stk::mesh::FieldBase *field_ptr = NULL;
     std::string field_type = io_field.transformed_storage()->name();
     std::string name = io_field.get_name();
-    int num_components = io_field.transformed_storage()->component_count();
+    size_t num_components = io_field.transformed_storage()->component_count();
 
     if (field_type == "scalar" || num_components == 1) {
       if (!use_cartesian_for_scalar) {
@@ -326,7 +326,7 @@ namespace {
 				     Ioss::GroupingEntity *io_entity,
 				     T /*dummy */)
   {
-    int field_component_count = io_field.transformed_storage()->component_count();
+    size_t field_component_count = io_field.transformed_storage()->component_count();
 
     std::vector<T> io_field_data;
     size_t io_entity_count = io_entity->get_field_data(io_field.get_name(), io_field_data);
@@ -349,7 +349,7 @@ namespace {
       if (entities[i] != NULL) {
 	T *fld_data = (T*)stk::mesh::field_data(*field, *entities[i]);
 	assert(fld_data != NULL);
-	for(int j=0; j<field_component_count; ++j) {
+	for(size_t j=0; j<field_component_count; ++j) {
 	  fld_data[j] = io_field_data[i*field_component_count+j];
 	}
       }
@@ -363,7 +363,7 @@ namespace {
 				   Ioss::GroupingEntity *io_entity,
 				   T /*dummy */)
   {
-    int field_component_count = io_field.transformed_storage()->component_count();
+    size_t field_component_count = io_field.transformed_storage()->component_count();
     size_t entity_count = entities.size();
 
     std::vector<T> io_field_data(entity_count*field_component_count);
@@ -374,11 +374,11 @@ namespace {
       if (entities[i] != NULL) {
 	T *fld_data = (T*)stk::mesh::field_data(*field, *entities[i]);
 	assert(fld_data != NULL);
-	for(int j=0; j<field_component_count; ++j) {
+	for(size_t j=0; j<field_component_count; ++j) {
 	  io_field_data[i*field_component_count+j] = fld_data[j];
 	}
       } else {
-	for(int j=0; j<field_component_count; ++j) {
+	for(size_t j=0; j<field_component_count; ++j) {
 	  io_field_data[i*field_component_count+j] = 0;
 	}
       }
@@ -401,6 +401,11 @@ namespace {
 
 namespace stk {
   namespace io {
+
+    size_t db_api_int_size(const Ioss::GroupingEntity *entity)
+    {
+      return entity->get_database()->int_byte_size_api();
+    }
 
     bool invalid_rank(stk::mesh::EntityRank rank)
     {
@@ -882,7 +887,7 @@ namespace stk {
 	  std::pair<std::string, Ioss::Field::BasicType> field_type;
 	  get_io_field_type(f, res, &field_type);
 	  if (field_type.second != Ioss::Field::INVALID) {
-	    int entity_size = entity->get_property("entity_count").get_int();
+	    size_t entity_size = entity->get_property("entity_count").get_int();
 	    const std::string& name = f->name();
 	    entity->field_add(Ioss::Field(name, field_type.second, field_type.first,
 					  filter_role, entity_size));
@@ -930,19 +935,32 @@ namespace stk {
       }
     }
 
+    template <typename INT>
+    void get_entity_list(Ioss::GroupingEntity *io_entity,
+			 stk::mesh::EntityRank part_type,
+			 const stk::mesh::BulkData &bulk,
+			 std::vector<stk::mesh::Entity*> &entities, INT /*dummy*/)
+    {
+      std::vector<INT> ids ;
+      io_entity->get_field_data("ids", ids);
+
+      size_t count = ids.size();
+      entities.reserve(count);
+
+      for(size_t i=0; i<count; ++i) {
+	entities.push_back(bulk.get_entity( part_type, ids[i] ));
+      }
+    }
+    
     void get_entity_list(Ioss::GroupingEntity *io_entity,
 			 stk::mesh::EntityRank part_type,
 			 const stk::mesh::BulkData &bulk,
 			 std::vector<stk::mesh::Entity*> &entities)
     {
-      std::vector<int> ids ;
-      io_entity->get_field_data("ids", ids);
-
-      size_t count = ids.size();
-      entities.resize(count);
-
-      for(size_t i=0; i<count; ++i) {
-	entities[i] = bulk.get_entity( part_type, ids[i] );
+      if (db_api_int_size(io_entity) == 4) {
+	get_entity_list(io_entity, part_type, bulk, entities, (int)0);
+      } else {
+	get_entity_list(io_entity, part_type, bulk, entities, (int64_t)0);
       }
     }
 
@@ -962,12 +980,21 @@ namespace stk {
 	} else if (field->type_is<int>()) {
 	  // Make sure the IO field type matches the STK field type.
 	  // By default, all IO fields are created of type 'double'
-	  if (io_field.get_type() != Ioss::Field::INTEGER) {
-	    Ioss::Field &tmp = const_cast<Ioss::Field&>(io_field);
-	    tmp.reset_type(Ioss::Field::INTEGER);
+	  if (db_api_int_size(io_entity) == 4) {
+	    if (io_field.get_type() != Ioss::Field::INTEGER) {
+	      Ioss::Field &tmp = const_cast<Ioss::Field&>(io_field);
+	      tmp.reset_type(Ioss::Field::INTEGER);
+	    }
+	    internal_field_data_from_ioss(io_field, field, entities, io_entity,
+					  static_cast<int>(1));
+	  } else {
+	    if (io_field.get_type() != Ioss::Field::INT64) {
+	      Ioss::Field &tmp = const_cast<Ioss::Field&>(io_field);
+	      tmp.reset_type(Ioss::Field::INT64);
+	    }
+	    internal_field_data_from_ioss(io_field, field, entities, io_entity,
+					  static_cast<int64_t>(1));
 	  }
-	  internal_field_data_from_ioss(io_field, field, entities, io_entity,
-					static_cast<int>(1));
 	}
       }
     }
@@ -992,6 +1019,7 @@ namespace stk {
 	      Ioss::Field &tmp = const_cast<Ioss::Field&>(io_field);
 	      tmp.reset_type(Ioss::Field::INTEGER);
 	    }
+	    // FIX 64?
 	    internal_field_data_to_ioss(io_field, field, entities, io_entity,
 					static_cast<int>(1));
 	  }
@@ -1304,10 +1332,12 @@ namespace stk {
 	return entities.size();
       }
 
+      
+      template <typename INT>
       void write_side_data_to_ioss( Ioss::GroupingEntity & io ,
 				    mesh::Part * const part ,
 				    const mesh::BulkData & bulk_data,
-				    const stk::mesh::Selector *anded_selector )
+				    const stk::mesh::Selector *anded_selector, INT /*dummy*/ )
       {
         //std::cout << "tmp write_side_data_to_ioss part= " << part->name() << std::endl;
 	const mesh::MetaData & meta_data = mesh::MetaData::get(*part);
@@ -1315,8 +1345,8 @@ namespace stk {
 	std::vector<mesh::Entity *> sides ;
 	size_t num_sides = get_entities(*part, bulk_data, sides, false, anded_selector);
 
-	std::vector<int> side_ids(num_sides);
-	std::vector<int> elem_side_ids(num_sides*2);
+	std::vector<INT> side_ids; side_ids.reserve(num_sides);
+	std::vector<INT> elem_side_ids; elem_side_ids.reserve(num_sides*2);
 
 	stk::mesh::EntityRank elem_rank = element_rank(meta_data);
 	for(size_t i=0; i<num_sides; ++i) {
@@ -1346,10 +1376,9 @@ namespace stk {
 	    throw std::runtime_error(oss.str());
 	  }
 
-	  side_ids[i] = side.identifier();
-
-	  elem_side_ids[i*2]   = rel->entity()->identifier();
-	  elem_side_ids[i*2+1] = rel->identifier() + 1; // Ioss is 1-based, mesh is 0-based.
+	  side_ids.push_back(side.identifier());
+	  elem_side_ids.push_back(rel->entity()->identifier());
+	  elem_side_ids.push_back(rel->identifier() + 1) ; // Ioss is 1-based, mesh is 0-based.
 	}
 
 	const size_t num_ids_written = io.put_field_data("ids", side_ids);
@@ -1373,12 +1402,12 @@ namespace stk {
 	}
       }
 
-
       //----------------------------------------------------------------------
+      template <typename INT>
       void output_node_block(Ioss::NodeBlock &nb,
 			     stk::mesh::Part &part,
 			     const stk::mesh::BulkData &bulk,
-			     const stk::mesh::Selector *anded_selector)
+			     const stk::mesh::Selector *anded_selector, INT /*dummy*/)
       {
 	//----------------------------------
 	// Exactly one node block to obtain the nodal coordinates and ids:
@@ -1390,10 +1419,10 @@ namespace stk {
 	std::vector<mesh::Entity *> nodes ;
 	size_t num_nodes = get_entities(part, bulk, nodes, true, anded_selector);
 
-	std::vector<int> node_ids(num_nodes);
+	std::vector<INT> node_ids; node_ids.reserve(num_nodes);
 	for(size_t i=0; i<num_nodes; ++i) {
 	  const mesh::Entity & node = * nodes[i] ;
-	  node_ids[i] = node.identifier();
+	  node_ids.push_back(node.identifier());
 	}
 
 	size_t num_ids_written = nb.put_field_data("ids", node_ids);
@@ -1416,9 +1445,10 @@ namespace stk {
 	  field_data_to_ioss(coord_field, nodes, &nb, "mesh_model_coordinates", Ioss::Field::MESH);
       }
 
+      template <typename INT>
       void output_element_block(Ioss::ElementBlock *block,
 				const stk::mesh::BulkData &bulk,
-				const stk::mesh::Selector *anded_selector)
+				const stk::mesh::Selector *anded_selector, INT /*dummy*/)
       {
 	const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
 	const std::string& name = block->name();
@@ -1437,20 +1467,20 @@ namespace stk {
 	  msg << " INTERNAL_ERROR: Part " << part->name() << " returned NULL from get_cell_topology()";
 	  throw std::runtime_error( msg.str() );
 	}
-	int nodes_per_elem = cell_topo->node_count;
+	size_t nodes_per_elem = cell_topo->node_count;
 
-	std::vector<int> elem_ids(num_elems);
-	std::vector<int> connectivity(num_elems*nodes_per_elem);
+	std::vector<INT> elem_ids; elem_ids.reserve(num_elems);
+	std::vector<INT> connectivity; connectivity.reserve(num_elems*nodes_per_elem);
 
 	stk::mesh::EntityRank no_rank = node_rank(meta_data);
 	for (size_t i = 0; i < num_elems; ++i) {
 
-	  elem_ids[i] = elements[i]->identifier();
+	  elem_ids.push_back(elements[i]->identifier());
 
 	  const mesh::PairIterRelation elem_nodes = elements[i]->relations(no_rank);
 
-	  for (int j = 0; j < nodes_per_elem; ++j) {
-	    connectivity[i * nodes_per_elem+j] = elem_nodes[j].entity()->identifier();
+	  for (size_t j = 0; j < nodes_per_elem; ++j) {
+	    connectivity.push_back(elem_nodes[j].entity()->identifier());
 	  }
 	}
 
@@ -1481,8 +1511,9 @@ namespace stk {
 	}
       }
 
+      template <typename INT>
       void output_node_set(Ioss::NodeSet *ns, const stk::mesh::BulkData &bulk,
-			   const stk::mesh::Selector *anded_selector)
+			   const stk::mesh::Selector *anded_selector, INT /*dummy*/)
       {
 	const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
 	const std::string& name = ns->name();
@@ -1492,12 +1523,12 @@ namespace stk {
 	std::vector<stk::mesh::Entity *> nodes ;
 	size_t num_nodes = get_entities(*part, bulk, nodes, true, anded_selector);
 
-	std::vector<int> node_ids(num_nodes);
-
+	std::vector<INT> node_ids; node_ids.reserve(num_nodes);
 	for(size_t i=0; i<num_nodes; ++i) {
 	  const stk::mesh::Entity & node = * nodes[i] ;
-	  node_ids[i] = node.identifier();
+	  node_ids.push_back(node.identifier());
 	}
+	
 	size_t num_ids_written = ns->put_field_data("ids", node_ids);
 	if ( num_nodes != num_ids_written ) {
 	  std::ostringstream msg ;
@@ -1514,9 +1545,10 @@ namespace stk {
 	}
       }
 
+      template <typename INT>
       void output_side_set(Ioss::SideSet *ss,
 			   const stk::mesh::BulkData &bulk,
-			   const stk::mesh::Selector *anded_selector)
+			   const stk::mesh::Selector *anded_selector, INT dummy)
       {
 	const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
 	size_t block_count = ss->block_count();
@@ -1524,7 +1556,7 @@ namespace stk {
 	  Ioss::SideBlock *block = ss->get_block(i);
 	  if (stk::io::include_entity(block)) {
 	    stk::mesh::Part * const part = meta_data.get_part(block->name());
-	    stk::io::write_side_data_to_ioss(*block, part, bulk, anded_selector);
+	    stk::io::write_side_data_to_ioss(*block, part, bulk, anded_selector, dummy);
 	  }
 	}
       }
@@ -1535,32 +1567,49 @@ namespace stk {
 			 const stk::mesh::BulkData& bulk,
 			 const stk::mesh::Selector *anded_selector)
     {
-	    const stk::mesh::MetaData & meta = mesh::MetaData::get(bulk);
+      const stk::mesh::MetaData & meta = mesh::MetaData::get(bulk);
 
+      bool ints64bit = db_api_int_size(&io_region) == 8;
+      
       io_region.begin_mode( Ioss::STATE_MODEL );
 
+      int64_t z64 = 0;
+      int     z32 = 0;
+      
       Ioss::NodeBlock & nb = *io_region.get_node_blocks()[0];
-      output_node_block(nb, meta.universal_part(), bulk, anded_selector);
+      if (ints64bit)      
+	output_node_block(nb, meta.universal_part(), bulk, anded_selector, z64);
+      else
+	output_node_block(nb, meta.universal_part(), bulk, anded_selector, z32);
 
       //----------------------------------
       const Ioss::ElementBlockContainer& elem_blocks = io_region.get_element_blocks();
       for(Ioss::ElementBlockContainer::const_iterator it = elem_blocks.begin();
 	  it != elem_blocks.end(); ++it) {
-	output_element_block(*it, bulk, anded_selector);
+	if (ints64bit)
+	  output_element_block(*it, bulk, anded_selector, z64);
+	else
+	  output_element_block(*it, bulk, anded_selector, z32);
       }
 
       //----------------------------------
       const Ioss::NodeSetContainer& node_sets = io_region.get_nodesets();
       for(Ioss::NodeSetContainer::const_iterator it = node_sets.begin();
 	  it != node_sets.end(); ++it) {
-	output_node_set(*it, bulk, anded_selector);
+	if (ints64bit)
+	  output_node_set(*it, bulk, anded_selector, z64);
+	else
+	  output_node_set(*it, bulk, anded_selector, z32);
       }
 
       //----------------------------------
       const Ioss::SideSetContainer& side_sets = io_region.get_sidesets();
       for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
 	  it != side_sets.end(); ++it) {
-	output_side_set(*it, bulk, anded_selector);
+	if (ints64bit)
+	  output_side_set(*it, bulk, anded_selector, z64);
+	else
+	  output_side_set(*it, bulk, anded_selector, z32);
       }
 
       io_region.end_mode( Ioss::STATE_MODEL );
