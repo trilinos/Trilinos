@@ -42,7 +42,5 @@ PHX_EVALUATOR_CLASS_END
 
 }
 
-#include "Panzer_STK_ScatterFields_impl.hpp"
-
 // **************************************************************
 #endif
