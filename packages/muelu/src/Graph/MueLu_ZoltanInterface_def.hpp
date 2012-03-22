@@ -95,8 +95,8 @@ namespace MueLu {
 
     } else if (level.IsAvailable("Coordinates")) {
 
-      RCP<Operator> A = level.Get<RCP<Operator> >("A", AFact_.get());
-      LocalOrdinal blksize = A->GetFixedBlockSize();
+      RCP<Operator> Aloc = level.Get<RCP<Operator> >("A", AFact_.get());
+      LocalOrdinal blksize = Aloc->GetFixedBlockSize();
 
       RCP<MultiVector> multiVectorXYZ = level.Get< RCP<MultiVector> >("Coordinates");
       for (int i=0; i< (int)multiVectorXYZ->getNumVectors(); i++) { //FIXME cast
