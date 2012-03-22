@@ -86,7 +86,9 @@ namespace MueLu {
           RCP<Operator> originalP = coarseLevel.Get< RCP<Operator> >("P",initialTransferFact_.get());
           if (permMatrix != Teuchos::null) {
             SubFactoryMonitor m1(*this, "Permuting prolongator", coarseLevel.GetLevelID());
-            RCP<Operator> permutedP = Utils::TwoMatrixMultiply(originalP,false,permMatrix,true); //P*transpose(perm)
+            RCP<Operator> transposedPerm = Utils2::Transpose(permMatrix,true);
+            //RCP<Operator> permutedP = Utils::TwoMatrixMultiply(originalP,false,permMatrix,true); //P*transpose(perm)
+            RCP<Operator> permutedP = Utils::TwoMatrixMultiply(originalP,false,transposedPerm,false); //P*transpose(perm)
             coarseLevel.Set< RCP<Operator> >("P",permutedP,this);
           } else {
             coarseLevel.Set< RCP<Operator> >("P",originalP,this);
