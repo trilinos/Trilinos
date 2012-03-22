@@ -57,6 +57,10 @@ public:
 
 
 private:
+   void computeReferenceCentroid(const std::map<std::string,Teuchos::RCP<panzer::PureBasis> > & bases,
+                                 int baseDimension,
+                                 Intrepid::FieldContainer<double> & centroid) const;
+
    Teuchos::RCP<STK_Interface> mesh_;
 };
 

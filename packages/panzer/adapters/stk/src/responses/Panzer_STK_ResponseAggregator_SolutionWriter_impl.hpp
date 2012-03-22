@@ -5,6 +5,10 @@
 
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_ScatterFields.hpp"
+#include "Panzer_STK_ScatterVectorFields.hpp"
+#include "Panzer_PointValues_Evaluator.hpp"
+#include "Panzer_BasisValues_Evaluator.hpp"
+#include "Panzer_DOF.hpp"
 
 #include <string>
 #include <vector>
@@ -29,11 +33,32 @@ registerAndRequireEvaluators(PHX::FieldManager<TraitsT> & fm,const Teuchos::RCP<
                              const panzer::PhysicsBlock & pb,
                              const Teuchos::ParameterList & p) const
 {
+   using Teuchos::RCP;
+   using Teuchos::rcp;
+
    typedef ResponseAggregator_SolutionWriter<EvalT,TraitsT> ThisType;
 
    const std::map<std::string,Teuchos::RCP<panzer::PureBasis> > & bases = pb.getBases();
    std::map<std::string,std::vector<std::string> > basisBucket;
    bucketByBasisType(pb.getProvidedDOFs(),basisBucket);
+
+   // add this for HCURL and HDIV basis, only want to add them once: evaluate vector fields at centroid
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   RCP<panzer::PointRule> centroidRule = rcp(new panzer::PointRule("Centroid",1,pb.cellData()));
+   {
+
+     // compute centroid
+     Intrepid::FieldContainer<double> centroid;
+     computeReferenceCentroid(bases,pb.cellData().baseCellDimension(),centroid);
+
+     // build pointe values evaluator
+     RCP<PHX::Evaluator<panzer::Traits> > evaluator  = 
+        rcp(new panzer::PointValues_Evaluator<EvalT,TraitsT>(centroidRule,centroid));
+     fm.template registerEvaluator<EvalT>(evaluator);
+   }
+
+   // add evaluators for each field
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
    for(std::map<std::string,std::vector<std::string> >::const_iterator itr=basisBucket.begin();
        itr!=basisBucket.end();++itr) {
@@ -56,6 +81,39 @@ registerAndRequireEvaluators(PHX::FieldManager<TraitsT> & fm,const Teuchos::RCP<
          fm.template registerEvaluator<EvalT>(eval);
          fm.template requireField<EvalT>(*eval->evaluatedFields()[0]);
       }
+      else if(basis->getElementSpace()==panzer::PureBasis::HCURL) {
+         // register basis values evaluator
+         {
+           Teuchos::RCP<PHX::Evaluator<TraitsT> > evaluator  
+              = Teuchos::rcp(new panzer::BasisValues_Evaluator<EvalT,TraitsT>(centroidRule,basis));
+           fm.template registerEvaluator<EvalT>(evaluator);
+         }
+
+         // add a DOF_PointValues for each field
+         std::vector<std::string> pointFields;
+         for(std::size_t f=0;f<fields.size();f++) {
+            Teuchos::ParameterList p;
+            p.set("Name",fields[f]);
+            p.set("Basis",basis);
+            p.set("Point Rule",centroidRule.getConst());
+            Teuchos::RCP<PHX::Evaluator<TraitsT> > evaluator  
+               = Teuchos::rcp(new panzer::DOF_PointValues<EvalT,TraitsT>(p));
+
+            fm.template registerEvaluator<EvalT>(evaluator);
+
+            pointFields.push_back(fields[f]+"_"+centroidRule->getName());
+         }
+
+         // add the scatter field evaluator for this basis
+         {
+            Teuchos::RCP<PHX::Evaluator<TraitsT> > evaluator  
+               = Teuchos::rcp(new panzer_stk::ScatterVectorFields<EvalT,TraitsT>("STK HCURL Scatter Basis " +basis->name(),
+                                                                                 mesh_,centroidRule,fields));
+
+            fm.template registerEvaluator<EvalT>(evaluator);
+            fm.template requireField<EvalT>(*evaluator->evaluatedFields()[0]); // require the dummy evaluator
+         }
+      }
    }
 }
 
@@ -71,6 +129,51 @@ bucketByBasisType(const std::vector<panzer::StrPureBasisPair> & providedDofs,
 
       basisBucket[basis->name()].push_back(fieldName);
    }
+}
+
+template <typename EvalT,typename TraitsT>
+void ResponseAggregator_SolutionWriter<EvalT,TraitsT>::
+computeReferenceCentroid(const std::map<std::string,Teuchos::RCP<panzer::PureBasis> > & bases,
+                         int baseDimension,
+                         Intrepid::FieldContainer<double> & centroid) const
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp_dynamic_cast;
+
+   centroid.resize(1,baseDimension);
+
+   // loop over each possible basis
+   for(std::map<std::string,RCP<panzer::PureBasis> >::const_iterator itr=bases.begin();
+       itr!=bases.end();++itr) {
+
+      // see if this basis has coordinates
+      RCP<Intrepid::Basis<double,Intrepid::FieldContainer<double> > > intrepidBasis = itr->second->getIntrepidBasis();
+      RCP<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<double> > > basisCoords 
+         = rcp_dynamic_cast<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<double> > >(intrepidBasis);
+
+      if(basisCoords==Teuchos::null) // no coordinates...move on
+         continue;
+
+      // we've got coordinates, lets commpute the "centroid"
+      Intrepid::FieldContainer<double> coords(intrepidBasis->getCardinality(),
+                                              intrepidBasis->getBaseCellTopology().getDimension());
+      basisCoords->getDofCoords(coords);
+      TEUCHOS_ASSERT(coords.rank()==2);
+      TEUCHOS_ASSERT(coords.dimension(1)==baseDimension);
+
+      for(int i=0;i<coords.dimension(0);i++)
+         for(int d=0;d<coords.dimension(1);d++)
+            centroid(0,d) += coords(i,d);
+
+      // take the average
+      for(int d=0;d<coords.dimension(1);d++)
+         centroid(0,d) /= coords.dimension(0);
+
+      return;
+   }
+
+   // no centroid was found...die
+   TEUCHOS_ASSERT(false);
 }
 
 // Specializations for residual evaluation type

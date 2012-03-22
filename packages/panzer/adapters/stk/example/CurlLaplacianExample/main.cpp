@@ -22,6 +22,7 @@
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_GlobalData.hpp"
+#include "Panzer_ResponseLibrary.hpp"
 
 #include "Panzer_STK_config.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
@@ -31,6 +32,7 @@
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STK_Utilities.hpp"
+#include "Panzer_STK_ResponseAggregator_SolutionWriter.hpp"
 
 #include "Epetra_MpiComm.h"
 
@@ -101,6 +103,7 @@ int main(int argc,char * argv[])
 
    Teuchos::GlobalMPISession mpiSession(&argc,&argv);
    RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+   Teuchos::MpiComm<int> comm(Teuchos::opaqueWrapper(MPI_COMM_WORLD));
    Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
    out.setOutputToRootOnly(0);
    out.setShowProcRank(true);
@@ -115,7 +118,7 @@ int main(int argc,char * argv[])
    panzer_stk::SquareQuadMeshFactory mesh_factory;
 
    // other declarations
-   const std::size_t workset_size = 20;
+   const std::size_t workset_size = 2*2;
 
    // construction of uncommitted (no elements) mesh 
    ////////////////////////////////////////////////////////
@@ -124,8 +127,8 @@ int main(int argc,char * argv[])
    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
    pl->set("X Blocks",1);
    pl->set("Y Blocks",1);
-   pl->set("X Elements",10);
-   pl->set("Y Elements",10);
+   pl->set("X Elements",2);
+   pl->set("Y Elements",2);
    mesh_factory.setParameterList(pl);
 
    RCP<panzer_stk::STK_Interface> mesh = mesh_factory.buildUncommitedMesh(MPI_COMM_WORLD);
@@ -167,10 +170,21 @@ int main(int argc,char * argv[])
       std::set<StrPureBasisPair,StrPureBasisComp> fieldNames;
       fieldNames.insert(blockFields.begin(),blockFields.end());
 
+      // build string for modifiying vectors
+      std::vector<std::string> dimenStr(3);
+      dimenStr[0] = "X"; dimenStr[1] = "Y"; dimenStr[2] = "Z";
+
       // add basis to DOF manager: block specific
       std::set<StrPureBasisPair,StrPureBasisComp>::const_iterator fieldItr;
-      for (fieldItr=fieldNames.begin();fieldItr!=fieldNames.end();++fieldItr)
-         mesh->addSolutionField(fieldItr->first,pb->elementBlockID());
+      for (fieldItr=fieldNames.begin();fieldItr!=fieldNames.end();++fieldItr) {
+         Teuchos::RCP<const panzer::PureBasis> basis = fieldItr->second;
+         if(basis->getElementSpace()==panzer::PureBasis::HGRAD)
+            mesh->addSolutionField(fieldItr->first,pb->elementBlockID());
+         else if(basis->getElementSpace()==panzer::PureBasis::HCURL) {
+            for(int i=0;i<basis->getDimension();i++) 
+               mesh->addCellField(fieldItr->first+dimenStr[i],pb->elementBlockID());
+         }
+      }
 
       mesh_factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
    }
@@ -198,6 +212,39 @@ int main(int argc,char * argv[])
    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),dofManager));
 
+   // Setup STK response library for writing out the solution fields
+   ////////////////////////////////////////////////////////////////////////
+   Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary 
+      = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory));
+
+   {
+      // register solution writer response aggregator with this library
+      // this is an "Action" only response aggregator
+      panzer::ResponseAggregator_Manager<panzer::Traits> & aggMngr = stkIOResponseLibrary->getAggregatorManager();
+      panzer_stk::ResponseAggregator_SolutionWriter_Builder builder(mesh);
+      builder.setLinearObjFactory(aggMngr.getLinearObjFactory());
+      builder.setGlobalIndexer(aggMngr.getGlobalIndexer());
+      aggMngr.defineAggregatorTypeFromBuilder("Solution Writer",builder);
+   
+      // require a particular "Solution Writer" response
+      panzer::ResponseId rid("Main Field Output","Solution Writer");
+      std::list<std::string> eTypes;
+      eTypes.push_back("Residual");
+   
+      // get a vector of all the element blocks : for some reason a list is used?
+      std::list<std::string> eBlocks;
+      {
+         // get all element blocks and add them to the list
+         std::vector<std::string> eBlockNames;
+         mesh->getElementBlockNames(eBlockNames);
+         for(std::size_t i=0;i<eBlockNames.size();i++)
+            eBlocks.push_back(eBlockNames[i]);
+      }
+   
+      // reserve response guranteeing that we can evaluate it (assuming things are done correctly elsewhere)
+      stkIOResponseLibrary->reserveLabeledBlockAggregatedVolumeResponse("Main Field Output",rid,eBlocks,eTypes);
+   }
+
    // setup closure model
    /////////////////////////////////////////////////////////////
  
@@ -207,9 +254,6 @@ int main(int argc,char * argv[])
    cm_factory.buildObjects(cm_builder);
 
    Teuchos::ParameterList closure_models("Closure Models");
-   // closure_models.sublist("solid").sublist("SOURCE_EFIELD_X").set<double>("Value",1.0); // a constant source
-   // closure_models.sublist("solid").sublist("SOURCE_EFIELD_Y").set<double>("Value",2.0); // a constant source
-   // closure_models.sublist("solid").sublist("SOURCE_EFIELD").set<std::string>("Scalar Names","SOURCE_EFIELD_X, SOURCE_EFIELD_Y"); // a constant source
    closure_models.sublist("solid").sublist("SOURCE_EFIELD").set<std::string>("Type","SIMPLE SOURCE"); // a constant source
       // SOURCE_EFIELD field is required by the CurlLaplacianEquationSet
 
@@ -234,6 +278,16 @@ int main(int argc,char * argv[])
    panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb,linObjFactory);
    ae_tm.buildObjects(builder);
 
+   // Finalize construcition of STK writer response library
+   /////////////////////////////////////////////////////////////
+   {
+      user_data.set<int>("Workset Size",workset_size);
+      stkIOResponseLibrary->buildVolumeFieldManagersFromResponses(physicsBlocks,
+                                                                  cm_factory,
+                                                                  closure_models,
+                                                                  user_data);
+   }
+
    // assemble linear system
    /////////////////////////////////////////////////////////////
 
@@ -252,6 +306,9 @@ int main(int argc,char * argv[])
                                       panzer::LinearObjContainer::Mat,*container);
    ghostCont->initialize();
    container->initialize();
+
+   // Actually evaluate
+   /////////////////////////////////////////////////////////////
 
    panzer::AssemblyEngineInArgs input(ghostCont,container);
    input.alpha = 0;
@@ -292,7 +349,7 @@ int main(int argc,char * argv[])
    /////////////////////////////////////////////////////////////
 
    // write out linear system
-   if(false) {
+   if(true) {
       EpetraExt::RowMatrixToMatrixMarketFile("a_op.mm",*ep_container->A);
       EpetraExt::VectorToMatrixMarketFile("x_vec.mm",*ep_container->x);
       EpetraExt::VectorToMatrixMarketFile("b_vec.mm",*ep_container->f);
@@ -304,9 +361,12 @@ int main(int argc,char * argv[])
       linObjFactory->globalToGhostContainer(*container,*ghostCont, panzer::EpetraLinearObjContainer::X 
                                                                  | panzer::EpetraLinearObjContainer::DxDt); 
 
-      // get X Epetra_Vector from ghosted container
-      RCP<panzer::EpetraLinearObjContainer> ep_ghostCont = rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ghostCont);
-      panzer_stk::write_solution_data(*rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,*ep_ghostCont->x);
+      // fill STK mesh objects
+      stkIOResponseLibrary->evaluateVolumeFieldManagers<panzer::Traits::Residual>(input,comm);
+
+      // // get X Epetra_Vector from ghosted container
+      // RCP<panzer::EpetraLinearObjContainer> ep_ghostCont = rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ghostCont);
+      // panzer_stk::write_solution_data(*rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,*ep_ghostCont->x);
       mesh->writeToExodus("output.exo");
    }
 
