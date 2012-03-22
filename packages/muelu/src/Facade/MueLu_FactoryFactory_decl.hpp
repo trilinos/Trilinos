@@ -297,9 +297,9 @@ namespace MueLu {
       
       MUELU_FACTORY_PARAM("Factory", Factory);
       MUELU_FACTORY_PARAM("A", AFact);
-      int minRowsPerProc=2000; minRowsPerProc = paramList.get<int>("minRowsPerProc");
-      double nonzeroImbalance=1.2; nonzeroImbalance = paramList.get<double>("nonzeroImbalance");
-      int startLevel=1; startLevel = paramList.get<int>("startLevel");
+      int minRowsPerProc=2000;     if(paramList.isParameter("minRowsPerProc")   minRowsPerProc = paramList.get<int>("minRowsPerProc");
+      double nonzeroImbalance=1.2; if(paramList.isParameter("nonzeroImbalance") nonzeroImbalance = paramList.get<double>("nonzeroImbalance");
+      int startLevel=1;            if(paramList.isParameter("startLevel"))      startLevel = paramList.get<int>("startLevel");
       
       return rcp(new RepartitionFactory(Factory, AFact, minRowsPerProc, nonzeroImbalance, startLevel));
     }
@@ -311,7 +311,7 @@ namespace MueLu {
       MUELU_FACTORY_PARAM("A", AFact);
       MUELU_FACTORY_PARAM("P", PFact);
       
-      std::string type="Interpolation"; type = paramList.get<std::string>("type");
+      std::string type; type = paramList.get<std::string>("type");
       if (type == "Interpolation") {
         return rcp(new PermutedTransferFactory(RepartitionFact, AFact, PFact, MueLu::INTERPOLATION));
       } else if (type == "Restriction") {
