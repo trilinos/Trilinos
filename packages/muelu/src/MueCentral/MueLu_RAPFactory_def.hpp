@@ -22,6 +22,7 @@ namespace MueLu {
     fineLevel.DeclareInput("A", AFact_.get(), this);  // AFact per default Teuchos::null -> default factory for this
     coarseLevel.DeclareInput("P", PFact_.get(), this); // transfer operators (from PRFactory, not from PFactory and RFactory!)
     coarseLevel.DeclareInput("R", RFact_.get(), this); //TODO: must be request according to (implicitTranspose flag!!!!!
+    coarseLevel.DeclareInput("A", PFact_.get(), this); //FIXME hack
 
     // call DeclareInput of all user-given transfer factories
     for(std::vector<RCP<const FactoryBase> >::const_iterator it = TransferFacts_.begin(); it!=TransferFacts_.end(); ++it) {
@@ -60,8 +61,12 @@ namespace MueLu {
           Ac = BuildRAPImplicit(A, P, levelID);
         } else {
           // explicit version
-          RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", RFact_.get());
-          Ac = BuildRAPExplicit(R, A, P, levelID);
+          if (coarseLevel.IsAvailable("A",PFact_.get())) {
+            Ac = coarseLevel.Get< RCP<Operator> >("A", PFact_.get());
+          } else {
+            RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", RFact_.get());
+            Ac = BuildRAPExplicit(R, A, P, levelID);
+          }
 
 /*
           //JJH FIXME DEBUGGING PRINTS

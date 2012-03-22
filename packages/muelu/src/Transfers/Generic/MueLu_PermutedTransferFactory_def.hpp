@@ -39,13 +39,6 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void PermutedTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
-
-    RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    fos->setOutputToRootOnly(-1);
-    GetOStream(Warnings0, 0) <<  "** In PermutedTransferFactory::DeclareInput **" << std::endl;
-    //coarseLevel.print(*fos,Teuchos::VERB_EXTREME);
-
-
     coarseLevel.DeclareInput("A", initialAFact_.get(),this);
     if (PorR_ == MueLu::INTERPOLATION)
       coarseLevel.DeclareInput("P",initialTransferFact_.get(),this);
@@ -68,7 +61,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void PermutedTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {
 
-    FactoryMonitor m(*this, "PermutedTransferFactory", coarseLevel);
+    FactoryMonitor m(*this, "Build", coarseLevel);
 
     RCP<Operator> permMatrix;
     try {
@@ -80,15 +73,19 @@ namespace MueLu {
                                << ((PorR_ == MueLu::INTERPOLATION) ? "prolongator" : "restriction")
                                << ".  No permutation is available for the following reason:"
       << std::endl << e.what() << std::endl;
+
+      RCP<Operator> A = coarseLevel.Get< RCP<Operator> >("A",initialAFact_.get());
+      coarseLevel.Set< RCP<Operator> >("A",A,this);
     }
 
     switch (PorR_) {
 
       case MueLu::INTERPOLATION:
         {
+          GetOStream(Runtime0, 0) <<  "Prolongator case" << std::endl;
           RCP<Operator> originalP = coarseLevel.Get< RCP<Operator> >("P",initialTransferFact_.get());
           if (permMatrix != Teuchos::null) {
-            GetOStream(Runtime0, 0) <<  "Permuting prolongator." << std::endl;
+            SubFactoryMonitor m1(*this, "Permuting prolongator", coarseLevel.GetLevelID());
             RCP<Operator> permutedP = Utils::TwoMatrixMultiply(originalP,false,permMatrix,true); //P*transpose(perm)
             coarseLevel.Set< RCP<Operator> >("P",permutedP,this);
           } else {
@@ -100,15 +97,16 @@ namespace MueLu {
       case MueLu::RESTRICTION:
         {
           //TODO how do we handle implicitly transposed restriction operators?
+          GetOStream(Runtime0, 0) <<  "Restriction case" << std::endl;
           RCP<Operator> originalR = coarseLevel.Get< RCP<Operator> >("R",initialTransferFact_.get());
           if (permMatrix != Teuchos::null) {
-            GetOStream(Runtime0, 0) <<  "Permuting restriction." << std::endl;
+            SubFactoryMonitor m1(*this, "Permuting restriction", coarseLevel.GetLevelID());
             RCP<Operator> permutedR = Utils::TwoMatrixMultiply(permMatrix,false,originalR,false); //perm * R
             coarseLevel.Set< RCP<Operator> >("R",permutedR,this);
             //if (coarseLevel.IsAvailable("Coordinates",coordinateFact_.get()))  //FIXME JJH
             if (coarseLevel.IsAvailable("Coordinates")) //FIXME JJH
             {
-              GetOStream(Runtime0, 0) <<  "Permuting coordinates." << std::endl;
+              SubFactoryMonitor m2(*this, "Permuting coordinates", coarseLevel.GetLevelID());
               //RCP<MultiVector> coords  = coarseLevel.Get< RCP<MultiVector> >("Coordinates",coordinateFact_.get()); //FIXME JJH
               RCP<MultiVector> coords  = coarseLevel.Get< RCP<MultiVector> >("Coordinates"); //FIXME JJH
               RCP<MultiVector> permutedCoords  = MultiVectorFactory::Build(permMatrix->getRangeMap(),coords->getNumVectors());
@@ -116,7 +114,7 @@ namespace MueLu {
               coarseLevel.Set< RCP<MultiVector> >("Coordinates",permutedCoords); //FIXME JJH no generating factory specified
             }
             if (coarseLevel.IsAvailable("Nullspace")) {
-              GetOStream(Runtime0, 0) <<  "Permuting nullspace." << std::endl;
+              SubFactoryMonitor m2(*this, "Permuting nullspace", coarseLevel.GetLevelID());
               //RCP<MultiVector> nullspace  = coarseLevel.Get< RCP<MultiVector> >("Nullspace",nullspaceFact_.get());
               RCP<MultiVector> nullspace  = coarseLevel.Get< RCP<MultiVector> >("Nullspace");
               RCP<MultiVector> permutedNullspace  = MultiVectorFactory::Build(permMatrix->getRangeMap(),nullspace->getNumVectors());
