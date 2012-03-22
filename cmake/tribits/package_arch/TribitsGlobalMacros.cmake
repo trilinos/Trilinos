@@ -145,8 +145,12 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
   ADVANCED_OPTION(${PROJECT_NAME}_ENABLE_CXX
     "Enable the C++ compiler and related code"
     ON )
-  
+
   IF(WIN32 AND NOT CYGWIN)
+    IF ("${${PROJECT_NAME}_ENABLE_Fortran}" STREQUAL "")
+      MESSAGE(STATUS "Warning: Setting ${PROJECT_NAME}_ENABLE_Fortran=OFF by default"
+        " because this is Windows (not cygwin) and we assume to not have Fortran!")
+    ENDIF()
     SET(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT OFF)
   ELSE()
     SET(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT ON)
