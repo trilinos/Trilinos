@@ -531,19 +531,22 @@ namespace panzer_stk {
         callback->preRequest(Teko::RequestMesg(Teuchos::rcp(new Teuchos::ParameterList())));
         
         // extract coordinate vectors and conditionally modify strat_params
+        //  coordinate vectors are copied and wrapped as ArrayRCP objects
+        //  the copy is certainly avoidable
+
         Teuchos::ParameterList & muelu_params = strat_params->sublist("Preconditioner Types").sublist("MueLu").sublist("Operator");
         switch(mesh->getDimension()) {
         case 3:{
-          const Teuchos::Array<double> zcoords(callback->getZCoordsVector());
-          muelu_params.set("zcoords", zcoords);
+          Teuchos::ArrayRCP<double> coords = arcp(rcp(new std::vector<double>(callback->getZCoordsVector())));
+          muelu_params.set("ZCoordinates", coords);
         }
         case 2:{
-          const Teuchos::Array<double> ycoords(callback->getYCoordsVector());
-          muelu_params.set("ycoords", ycoords);
+          Teuchos::ArrayRCP<double> coords = arcp(rcp(new std::vector<double>(callback->getYCoordsVector())));
+          muelu_params.set("YCoordinates", coords);
         }
         case 1:{
-          const Teuchos::Array<double> xcoords(callback->getXCoordsVector());
-          muelu_params.set("xcoords", xcoords);
+          Teuchos::ArrayRCP<double> coords = arcp(rcp(new std::vector<double>(callback->getXCoordsVector())));
+          muelu_params.set("XCoordinates", coords);
         }
           break;
         default:
