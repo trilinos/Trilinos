@@ -5,7 +5,7 @@ INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/t
 IF (WIN32 AND BUILD_SHARED_LIBS)
 ELSE()
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    FECrsMatrix_test
+    FECrsMatrix_test_LL
     SOURCES cxx_main.cpp ExecuteTestProblems.cpp
     DEPLIBS epetratest
     ARGS -v
@@ -14,7 +14,7 @@ ELSE()
     FAIL_REGULAR_EXPRESSION "tests FAILED"
     )
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    FEmatrix2
+    FEmatrix2_LL
     SOURCES fematrix2.cpp
     DEPLIBS epetratest
     ARGS -v

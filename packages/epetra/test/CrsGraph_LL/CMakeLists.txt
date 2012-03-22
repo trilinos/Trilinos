@@ -1,7 +1,7 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CrsGraph_test 
+  CrsGraph_test_LL
   NAME_POSTFIX unit
   SOURCES cxx_main.cpp 
   ARGS -v
