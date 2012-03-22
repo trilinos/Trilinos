@@ -131,6 +131,9 @@ namespace Xpetra {
     //! Returns true if fillComplete() has been called and the matrix is in compute mode.
     bool isFillComplete() const { return mtx_->Filled(); }
 
+    //! Returns the Frobenius norm of the matrix.
+    ScalarTraits< Scalar >::magnitudeType getFrobeniusNorm() const { return mtx_->NormFrobenius(); }
+
     //! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
     void getLocalRowCopy(LocalOrdinal LocalRow, const ArrayView< LocalOrdinal > &Indices, const ArrayView< Scalar > &Values, size_t &NumEntries) const;
 
@@ -142,9 +145,6 @@ namespace Xpetra {
 
     //! Get a copy of the diagonal entries owned by this node, with local row indices.
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const { mtx_->ExtractDiagonalCopy(toEpetra(diag)); }
-
-    //! Get Frobenius norm of the matrix
-    ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const { return mtx_->NormFrobenius(); }
 
     //@}
 
