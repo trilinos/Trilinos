@@ -1881,7 +1881,7 @@ template<typename Ordinal>
 void 
 Teuchos::waitAll (const Comm<Ordinal>& comm,
 		  const ArrayView<RCP<CommRequest> >& requests,
-		  const ArrayView<RCP<CommStatus<int> > >& statuses)
+		  const ArrayView<RCP<CommStatus<Ordinal> > >& statuses)
 {
   comm.waitAll (requests, statuses);
 }

@@ -388,7 +388,7 @@ namespace Tpetra {
     // status.
     //
     Array<RCP<CommStatus<int> > > statuses (actualNumReceives); 
-    Teuchos::waitAll<int> (requests(), statuses());
+    Teuchos::waitAll<int> (*comm_, requests(), statuses());
     for (size_t i = 0; i < actualNumReceives; ++i) {
       lengthsFrom_[i] = *lengthsFromBuffers[i];
       imagesFrom_[i] = statuses[i]->getSourceRank(); 
