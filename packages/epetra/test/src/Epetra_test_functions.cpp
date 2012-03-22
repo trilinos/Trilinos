@@ -120,8 +120,8 @@ bool compare_matrices(const Epetra_CrsMatrix& A, const Epetra_CrsMatrix& B)
     A.ExtractGlobalRowCopy(row, rowLen, rowLen, values, indices);
     B.ExtractGlobalRowCopy(row, rowLen, rowLen, Bvalues, Bindices);
 
-    util.Sort(true, rowLen, indices, 1, &values, 0, 0);
-    util.Sort(true, rowLen, Bindices, 1, &Bvalues, 0, 0);
+    util.Sort(true, rowLen, indices, 1, &values, 0, 0, 0, 0);
+    util.Sort(true, rowLen, Bindices, 1, &Bvalues, 0, 0, 0, 0);
 
     bool same = true;
     for(int j=0; j<rowLen; ++j) {

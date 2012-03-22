@@ -283,7 +283,7 @@ bool matrix_data::compare_local_data(const Epetra_CrsMatrix& A)
     double* values = new double[rowLen];
     A.ExtractGlobalRowCopy(row, rowLen, rowLen, values, indices);
 
-    util.Sort(true, rowLen, indices, 1, &values, 0, 0);
+    util.Sort(true, rowLen, indices, 1, &values, 0, 0, 0, 0);
 
     bool same = true;
     int* this_indices = colindices_[row];
