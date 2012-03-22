@@ -299,8 +299,9 @@ namespace MueLu {
       MUELU_FACTORY_PARAM("A", AFact);
       int minRowsPerProc=2000; minRowsPerProc = paramList.get<int>("minRowsPerProc");
       double nonzeroImbalance=1.2; nonzeroImbalance = paramList.get<double>("nonzeroImbalance");
+      int startLevel=1; startLevel = paramList.get<int>("startLevel");
       
-      return rcp(new RepartitionFactory(Factory, AFact, minRowsPerProc, nonzeroImbalance));
+      return rcp(new RepartitionFactory(Factory, AFact, minRowsPerProc, nonzeroImbalance, startLevel));
     }
 
     RCP<FactoryBase> BuildPermutedTransferFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
