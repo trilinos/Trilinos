@@ -677,6 +677,25 @@ void BulkData::internal_change_entity_parts(
   if (!rank_parts_removed.empty()) {
     internal_propagate_part_changes( entity , rank_parts_removed );
   }
+  else if (!m_mesh_meta_data.get_field_relations().empty()) {
+    const unsigned erank = entity.entity_rank();
+    PairIterRelation rel = entity.relations();
+    for ( ; ! rel.empty() ; ++rel ) {
+      const unsigned rel_rank  = rel->entity_rank();
+      const unsigned rel_ident = rel->identifier();
+      if ( rel_rank < erank ) { // a 'to' entity
+
+        Entity & e_to = * rel->entity();
+
+        set_field_relations( entity, e_to, rel_ident );
+      }
+      else if ( erank < rel_rank ) { // a 'from' entity
+        Entity & e_from = * rel->entity();
+  
+        set_field_relations( e_from, entity, rel_ident );
+      }
+    }
+  }
 
 #ifndef NDEBUG
   //ensure_part_superset_consistency( entity );
