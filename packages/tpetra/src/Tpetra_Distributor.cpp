@@ -275,9 +275,9 @@ namespace Tpetra {
     const int myRank = comm_->getRank();
     const int numProcs = comm_->getSize();
 
-    // toNodesFromMe[i] == the number of messages sent by this node
-    // to node i.  The data in numSends_, imagesTo_, lengthsTo_
-    // concern the contiguous sends.  Therefore, each node will be
+    // toNodesFromMe[i] == the number of messages sent by this process
+    // to process i.  The data in numSends_, imagesTo_, lengthsTo_
+    // concern the contiguous sends.  Therefore, each process will be
     // listed in imagesTo_ at most once.
     {
       Array<size_t> toNodesFromMe (numProcs,0);
@@ -295,8 +295,8 @@ namespace Tpetra {
 #ifdef HAVE_TEUCHOS_DEBUG
       SHARED_TEST_FOR_EXCEPTION(counting_error, std::logic_error,
         "Tpetra::Distributor::computeReceives: There was an error on at least "
-        "one node in counting the number of messages send by that node to the "
-        "other nodes.  Please report this bug to the Tpetra developers.", 
+        "one process in counting the number of messages send by that process to "
+        "the other processs.  Please report this bug to the Tpetra developers.", 
         *comm_);
 #endif // HAVE_TEUCHOS_DEBUG
 
@@ -336,8 +336,9 @@ namespace Tpetra {
     // didn't send to itself (see the send loop).
     const size_t actualNumReceives = numReceives_ - (selfMessage_ ? 1 : 0);
 
-    // Teuchos' wrapper for nonblocking receives requires storage that
-    // it knows won't go away, hence RCPs.
+    // Teuchos' wrapper for nonblocking receives requires receive
+    // buffers that it knows won't go away.  This is why we use RCPs.
+    // They get allocated in the loop below.
     Array<RCP<CommRequest> > requests (actualNumReceives);
     Array<RCP<size_t> > lengthsFromBuffers (actualNumReceives);
 
@@ -346,19 +347,13 @@ namespace Tpetra {
     const int anySourceProc = -1;
 
     for (size_t i = 0; i < actualNumReceives; ++i) {
-      requestBuffers[i] = rcp (new size_t (0));
+      lengthsFromBuffers[i] = rcp (new size_t (0));
       // Once the receive completes, we can ask the corresponding
-      // MPI_Status object (output by wait()) for the sending process'
+      // CommStatus object (output by wait()) for the sending process'
       // ID (which we'll assign to imagesFrom_[i] -- don't forget to
       // do that!).
       requests[i] = ireceive (*comm_, lengthsFromBuffers[i], anySourceProc);
     }
-
-//     for (size_t i=0; i < numReceives_ - (selfMessage_ ? 1 : 0); ++i) {
-//       // receive one variable from any sender.
-//       // store the value in lengthsFrom_[i], and store the sender's ImageID in imagesFrom_[i]
-//       imagesFrom_[i] = receive (*comm_, -1, &lengthsFrom_[i]);
-//     }
 
     // Tell each process to which we are sending how many packets it
     // should expect from us in the communication pattern.
@@ -375,10 +370,11 @@ namespace Tpetra {
       }
       else {
 	// We don't need a send in the self-message case.  If this
-	// process is sending a message to itself, then the last
-	// element of lengthsFrom_ and imagesFrom_ corresponds to the
-	// self-message.  Of course this process knows how long the
-	// message is, and the process ID is its own process ID.
+	// process will send a message to itself in the communication
+	// pattern, then the last element of lengthsFrom_ and
+	// imagesFrom_ corresponds to the self-message.  Of course
+	// this process knows how long the message is, and the process
+	// ID is its own process ID.
         lengthsFrom_[numReceives_-1] = lengthsTo_[i];
         imagesFrom_[numReceives_-1] = myRank;
       }
