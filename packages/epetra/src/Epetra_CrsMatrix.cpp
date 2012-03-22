@@ -2774,8 +2774,8 @@ void Epetra_CrsMatrix::Print(ostream& os) const {
       int NumMyRows1 = NumMyRows();
       int MaxNumIndices = MaxNumEntries();
 
-      int * Indices_int;
-      long long * Indices_LL;
+      int * Indices_int = 0;
+      long long * Indices_LL = 0;
       if(RowMap().GlobalIndicesInt()) {
          Indices_int = new int[MaxNumIndices];
       }
