@@ -2,6 +2,7 @@
 
 #ifdef HAVE_MUELU_IFPACK
 #include <Ifpack.h>
+#include "Xpetra_MultiVectorFactory.hpp"
 
 #include "MueLu_IfpackSmoother.hpp"
 
@@ -71,6 +72,8 @@ namespace MueLu {
     } else if (type_ == "point relaxation stand-alone") {
       paramList.set("relaxation: zero starting solution", InitialGuessIsZero);
     } else if  (type_ == "ILU") {
+      ;
+      /*
       if (InitialGuessIsZero == false) {
         if (IsPrint(Warnings0, 0)) {
           static int warning_only_once=0;
@@ -78,6 +81,7 @@ namespace MueLu {
             this->GetOStream(Warnings0, 0) << "Warning: MueLu::Ifpack2Smoother::Apply(): ILUT has no provision for a nonzero initial guess." << std::endl;
         }
       }
+      */
     } else {
       // TODO: When https://software.sandia.gov/bugzilla/show_bug.cgi?id=5283#c2 is done
       // we should remove the if/else/elseif and just test if this
@@ -85,12 +89,21 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,"IfpackSmoother::Apply(): Ifpack preconditioner '"+type_+"' not supported");
     }
     prec_->SetParameters(paramList);
-      
+
     // Apply
-    Epetra_MultiVector &epX = Utils::MV2NonConstEpetraMV(X);
-    Epetra_MultiVector const &epB = Utils::MV2EpetraMV(B);
-    prec_->ApplyInverse(epB, epX);
-  }
+    if (InitialGuessIsZero) {
+      Epetra_MultiVector &epX = Utils::MV2NonConstEpetraMV(X);
+      Epetra_MultiVector const &epB = Utils::MV2EpetraMV(B);
+      prec_->ApplyInverse(epB, epX);
+    } else {
+      RCP<MultiVector> Residual = Utils::Residual(*A_,X,B);
+      RCP<MultiVector> Correction = MultiVectorFactory::Build(A_->getDomainMap(), X.getNumVectors());
+      Epetra_MultiVector &epX = Utils::MV2NonConstEpetraMV(*Correction);
+      Epetra_MultiVector const &epB = Utils::MV2EpetraMV(*Residual);
+      prec_->ApplyInverse(epB, epX);
+      X.update(1.0, *Correction, 1.0);
+    }
+  } //Apply
 
   RCP<MueLu::SmootherPrototype<double, int, int> > IfpackSmoother::Copy() const {
     return rcp(new IfpackSmoother(*this) );
