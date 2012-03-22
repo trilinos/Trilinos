@@ -305,7 +305,7 @@ inline Epetra_CrsGraphData::IndexData<long long>& Epetra_CrsGraphData::Data<long
   if(RowMap_.GlobalIndicesLongLong() && !IndicesAreLocal_)
   	return *LL_data;
   else
-  	throw "Epetra_CrsGraphData::Data<long long>: Map indices not long long or not global";
+  	throw "Epetra_CrsGraphData::Data<long long>: Map indices not long long or are local";
 }
 
 template<>
@@ -314,7 +314,7 @@ inline Epetra_CrsGraphData::IndexData<int>& Epetra_CrsGraphData::Data<int>()
   if(RowMap_.GlobalIndicesInt() || (RowMap_.GlobalIndicesLongLong() && !IndicesAreGlobal_))
   	return *data;
   else
-  	throw "Epetra_CrsGraphData::Data<int>: Map indices not int or (long long but not local)";
+  	throw "Epetra_CrsGraphData::Data<int>: Map indices not int or are global long long";
 }
 
 
