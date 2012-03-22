@@ -732,30 +732,50 @@ bool Epetra_CrsGraph::FindGlobalIndexLoc(int LocalRow,
 					 int& Loc) const
 {
   int NumIndices = NumMyIndices(LocalRow);
-  int_type* locIndices = TIndices<int_type>(LocalRow);
 
   // If we have transformed the column indices, we must map this global Index to local
   if(CrsGraphData_->IndicesAreLocal_) {
-    Index = LCID(Index);
-  }
-
-  if (CrsGraphData_->Sorted_) {
-    int insertPoint;
-    Loc = Epetra_Util_binary_search(Index, locIndices, NumIndices, insertPoint);
-    return( Loc > -1 );
-  }
-  else {
-    int j, j0 = Start; // Start search at index Start (must be >= 0 and < NumIndices)
-    for(j = 0; j < NumIndices; j++) {
-      if(j0 >= NumIndices) 
-	j0 = 0; // wrap around
-      if(locIndices[j0] == Index) {
-	Loc = j0;
-	return(true);
+    int* locIndices = Indices(LocalRow);
+    int locIndex = LCID(Index);
+    if (CrsGraphData_->Sorted_) {
+      int insertPoint;
+      Loc = Epetra_Util_binary_search(locIndex, locIndices, NumIndices, insertPoint);
+      return( Loc > -1 );
+    }
+    else {
+      int j, j0 = Start; // Start search at index Start (must be >= 0 and < NumIndices)
+      for(j = 0; j < NumIndices; j++) {
+        if(j0 >= NumIndices) 
+          j0 = 0; // wrap around
+      if(locIndices[j0] == locIndex) {
+          Loc = j0;
+          return(true);
       }
       j0++;
+     }
     }
   }
+  else {
+    int_type* locIndices = TIndices<int_type>(LocalRow);
+    if (CrsGraphData_->Sorted_) {
+      int insertPoint;
+      Loc = Epetra_Util_binary_search(Index, locIndices, NumIndices, insertPoint);
+      return( Loc > -1 );
+    }
+    else {
+      int j, j0 = Start; // Start search at index Start (must be >= 0 and < NumIndices)
+      for(j = 0; j < NumIndices; j++) {
+        if(j0 >= NumIndices) 
+          j0 = 0; // wrap around
+      if(locIndices[j0] == Index) {
+          Loc = j0;
+          return(true);
+      }
+      j0++;
+     }
+    }
+  }
+
   return(false);
 }
 
@@ -1708,7 +1728,12 @@ int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap& domainMap, const Ep
     if (Sorted())
       SetSorted(mapMonotone);
 
-	Epetra_CrsGraphData::IndexData<int>& intData = CrsGraphData_->Data<int>();
+	// We don't call Data<int>() here because that would not work (it will throw)
+	// if GlobalIndicesLongLong() and IndicesAreGlobal().  This is because
+	// the local flag is not set yet.  We are in the middle of the transaction here.
+	// In all other cases, one should call the function Data<int> or Data<long long>
+	// instead of obtaining the pointer directly.
+	Epetra_CrsGraphData::IndexData<int>& intData = *(CrsGraphData_->data);
 
 	if(RowMap().GlobalIndicesInt())
 	{

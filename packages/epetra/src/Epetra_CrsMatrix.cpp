@@ -741,7 +741,7 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
 				   double* values,
 				   int* Indices)
 {
-  if(RowMap().GlobalIndicesInt())
+  if(RowMap().GlobalIndicesInt() || (RowMap().GlobalIndicesLongLong() && IndicesAreLocal()))
 	return InsertValues<int>(Row, NumEntries, values, Indices);
   else
 	throw ReportError("Epetra_CrsMatrix::InsertValues int version called for a matrix that is not int.", -1);
