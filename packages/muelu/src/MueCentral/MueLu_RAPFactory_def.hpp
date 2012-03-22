@@ -140,6 +140,29 @@ Teuchos::toString(counter) + ".dat";
 
     GetOStream(Statistics0, 0) << "Ac (explicit): # global rows = " << RAP->getGlobalNumRows() << ", estim. global nnz = " << RAP->getGlobalNumEntries() << std::endl;
 
+    //nonzero imbalance
+    size_t numMyNnz  = RAP->getNodeNumEntries();
+    GO maxNnz, minNnz;
+    RCP<const Teuchos::Comm<int> > comm = RAP->getRowMap()->getComm();
+    maxAll(comm,(GO)numMyNnz,maxNnz);
+    //min nnz over all proc (disallow any processors with 0 nnz)
+    minAll(comm, (GO)((numMyNnz > 0) ? numMyNnz : maxNnz), minNnz);
+    Scalar imbalance = ((SC) maxNnz) / minNnz;
+
+    //min and max # rows per proc
+    size_t numMyRows = RAP->getNodeNumRows();
+    GO minNumRows, maxNumRows;
+    maxAll(comm, (GO)numMyRows, maxNumRows);
+    minAll(comm, (GO)((numMyRows > 0) ? numMyRows : maxNumRows), minNumRows);
+
+    //Check whether RAP is spread over more than one process.
+    GO numActiveProcesses=0;
+    sumAll(comm, (GO)((RAP->getNodeNumRows() > 0) ? 1 : 0), numActiveProcesses);
+
+    GetOStream(Statistics1,0) << "Ac (explicit) # processes with rows = " << numActiveProcesses << std::endl;
+    GetOStream(Statistics1,0) << "Ac (explicit) min # rows per proc = " << minNumRows << ", max # rows per proc = " << maxNumRows << std::endl;
+    GetOStream(Statistics1,0) << "Ac (explicit) nonzero imbalance = " << imbalance << std::endl;
+
     return RAP;
   }
 
