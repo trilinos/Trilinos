@@ -108,7 +108,11 @@ int main(int argc, char* argv[])
   if ( dlapy == flapy ) {
     if (verbose) std::cout << "passed!" << std::endl;
   } else {
-    if (verbose) std::cout << "FAILED" << std::endl;
+    if (verbose) {
+      std::cout << "FAILED" << std::endl
+		<< "SLAPY2(3,4) = " << flapy << ", "
+		<< "DLAPY2(3,4) = " << dlapy << std::endl;
+    }
     numberFailedTests++;
   }  
 
