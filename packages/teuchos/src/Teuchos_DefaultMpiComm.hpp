@@ -783,11 +783,9 @@ waitAll (const ArrayView<RCP<CommRequest> >& requests,
   if (count == 0) {
     return;
   }
-#ifdef TEUCHOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(count != statuses.size(), 
     std::invalid_argument, "Teuchos::MpiComm::waitAll: requests.size() = " 
     << requests.size() << " != statuses.size() = " << statuses.size() << ".");
-#endif // TEUCHOS_DEBUG
 
   // MpiComm wraps MPI and can't expose any MPI structs or opaque
   // objects.  Thus, we have to unpack both requests and statuses into

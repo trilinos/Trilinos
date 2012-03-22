@@ -574,9 +574,9 @@ namespace Tpetra {
         }
         else if (globalChecks[1] == 3) {
           TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
-              errPrefix << "numGlobal doesn't match sum of numLocal (== " 
-              << global_sum << ") on at least one node (possibly node " 
-              << globalChecks[0] << ").");
+            errPrefix << "Input global number of elements = " << numGlobalElements_in 
+            << " doesn't match sum of numLocal (== " << global_sum << ") on at least "
+            "one node (possibly node " << globalChecks[0] << ").");
         }
         else if (globalChecks[1] == 4) {
           TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
