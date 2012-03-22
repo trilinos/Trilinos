@@ -306,7 +306,7 @@ int main(int argc, char *argv[]) {
     
     int NumMyElements1 = 4;
     int NumMyEquations1 = NumMyElements1;
-    int NumGlobalEquations1 = NumMyEquations1*NumProc;
+    long long NumGlobalEquations1 = NumMyEquations1*NumProc;
 
     Epetra_Map& Map1 = *new Epetra_Map(NumGlobalEquations1, NumMyElements1, 1, Comm);
     
