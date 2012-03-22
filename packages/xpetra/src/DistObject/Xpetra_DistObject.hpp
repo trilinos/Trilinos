@@ -47,7 +47,7 @@ namespace Xpetra {
     //! @name Attribute Accessor Methods
     //@{
 
-    //! Access function for the Tpetra::Map this DistObject was constructed with.
+    //! The Map with which this DistObject was constructed.
     virtual const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getMap() const = 0;
 
     //@}
