@@ -130,6 +130,10 @@ public:
     const ArrayView<RCP<CommRequest> > &requests
     ) const;
   /** \brief . */
+  virtual void 
+  waitAll (const ArrayView<RCP<CommRequest> >& requests,
+	   const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const;
+  /** \brief . */
   virtual void wait(
     const Ptr<RCP<CommRequest> > &request
     ) const;
@@ -350,9 +354,11 @@ void SerialComm<Ordinal>::waitAll(
 template<typename Ordinal>
 void 
 SerialComm<Ordinal>::
-waitAll (const ArrayView<RCP<CommRequest> > & /*requests*/,
-	 const ArrayView<RCP<CommStatus> > & /*statuses*/) const
+waitAll (const ArrayView<RCP<CommRequest> >& requests,
+	 const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const
 {
+  (void) requests;
+  (void) statuses;
   TEUCHOS_TEST_FOR_EXCEPT(true);
 }
 

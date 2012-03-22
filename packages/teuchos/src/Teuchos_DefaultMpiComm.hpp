@@ -278,7 +278,7 @@ public:
   /** \brief . */
   virtual void 
   waitAll (const ArrayView<RCP<CommRequest> >& requests,
-	   const ArrayView<RCP<CommStatus> >& statuses) const;
+	   const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const;
   /** \brief . */
   virtual void wait(
     const Ptr<RCP<CommRequest> > &request
@@ -735,24 +735,24 @@ template<typename Ordinal>
 void 
 MpiComm<Ordinal>::
 waitAll (const ArrayView<RCP<CommRequest> >& requests,
-	 const ArrayView<RCP<CommStatus> >& statuses) const
+	 const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const
 {
-  TEUCHOS_COMM_TIME_MONITOR(
-    "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::waitAll(...)"
-    );
+  TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::waitAll(requests, statuses)" );
+
   const int count = requests.size();
   if (count == 0) {
     return;
   }
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(count != statuses.size(), 
-    std::invalid_argument, "waitAll: requests.size() = " << requests.size() 
-    << " != statuses.size() = " << statuses.size() << ".");
+    std::invalid_argument, "Teuchos::MpiComm::waitAll: requests.size() = " 
+    << requests.size() << " != statuses.size() = " << statuses.size() << ".");
 #endif // TEUCHOS_DEBUG
 
-
-  // We have to go through this silly routine because we insist on
-  // wrapping MPI.  Please bear with us.
+  // MpiComm wraps MPI and can't expose any MPI structs or opaque
+  // objects.  Thus, we have to unpack both requests and statuses into
+  // separate arrays.  If that's too slow, then your code should just
+  // call into MPI directly.
   Array<MPI_Request> rawMpiRequests (count, MPI_REQUEST_NULL);
   for (int i = 0; i < count; ++i) {
     if (! requests[i].is_null()) {

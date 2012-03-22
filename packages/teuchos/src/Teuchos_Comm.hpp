@@ -401,7 +401,7 @@ public:
   ///   requests.
   virtual void 
   waitAll (const ArrayView<RCP<CommRequest> >& requests,
-	   const ArrayView<RCP<CommStatus> >& statuses) const = 0;
+	   const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const = 0;
 
   /** \brief Wait on a single communication request.
    *
