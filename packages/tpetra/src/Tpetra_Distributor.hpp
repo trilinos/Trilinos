@@ -860,66 +860,71 @@ namespace Tpetra {
 
   // note: assumes that size_t >= Ordinal
   //////////////////////////////////////////////////////////////////////////////////////////
-  template <class Ordinal>
+  template <class OrdinalType>
   void Distributor::computeSends(
-      const ArrayView<const Ordinal> & importIDs,
+      const ArrayView<const OrdinalType> & importIDs,
       const ArrayView<const int> & importNodeIDs,
-            ArrayRCP<Ordinal> & exportIDs,
+            ArrayRCP<OrdinalType> & exportIDs,
             ArrayRCP<int> & exportNodeIDs)
   {
+    using Teuchos::as;
+
     int myImageID = comm_->getRank();
 
     const size_t numImports = importNodeIDs.size();
-    TEUCHOS_TEST_FOR_EXCEPTION(importIDs.size() < numImports, 
+    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t> (importIDs.size()) < numImports, 
       std::invalid_argument, "Tpetra::Distributor::computeSends: importNodeIDs."
       "size() = " << importNodeIDs.size() << " != importIDs.size() = " 
       << importIDs.size() << ".");
 
-    Array<size_t> importObjs(2*numImports);
-    for (size_t i = 0; i < numImports; ++i ) {  
-      importObjs[2*i]   = Teuchos::as<size_t>(importIDs[i]);
-      importObjs[2*i+1] = Teuchos::as<size_t>(myImageID);
+    Array<size_t> importObjs (2*numImports);
+    // Pack pairs (importIDs[i], my process ID) into importObjs.
+    for (size_t i = 0; i < numImports; ++i ) {
+      importObjs[2*i]   = as<size_t>(importIDs[i]);
+      importObjs[2*i+1] = as<size_t>(myImageID);
     }
 
     size_t numExports;
     Distributor tempPlan(comm_);
     numExports = tempPlan.createFromSends(importNodeIDs);
     if (numExports > 0) {
-      exportIDs = arcp<Ordinal>(numExports);
+      exportIDs = arcp<OrdinalType>(numExports);
       exportNodeIDs = arcp<int>(numExports);
     }
 
     Array<size_t> exportObjs(tempPlan.getTotalReceiveLength()*2);
     tempPlan.doPostsAndWaits<size_t>(importObjs(),2,exportObjs());
 
+    // Unpack received (GID, PID) pairs into exportIDs resp. exportNodeIDs.
     for (size_t i = 0; i < numExports; ++i) {
-      exportIDs[i]     = Teuchos::as<Ordinal>(exportObjs[2*i]);
+      exportIDs[i]     = as<OrdinalType>(exportObjs[2*i]);
       exportNodeIDs[i] = exportObjs[2*i+1];
     }
   }
 
 
   //////////////////////////////////////////////////////////////////////////////////////////
-  template <class Ordinal>
+  template <class OrdinalType>
   void Distributor::createFromRecvs(
-      const ArrayView<const Ordinal> &remoteIDs, 
+      const ArrayView<const OrdinalType> &remoteIDs, 
       const ArrayView<const int> &remoteImageIDs, 
-            ArrayRCP<Ordinal> &exportGIDs, 
+            ArrayRCP<OrdinalType> &exportGIDs, 
             ArrayRCP<int> &exportNodeIDs)
   {
     using Teuchos::outArg;
+    using Teuchos::reduceAll;
     {
       const int myImageID = comm_->getRank();
       int err_node = (remoteIDs.size() != remoteImageIDs.size()) ? myImageID : -1;
       int gbl_err;
-      Teuchos::reduceAll(*comm_,Teuchos::REDUCE_MAX,err_node,outArg(gbl_err));
+      reduceAll (*comm_, Teuchos::REDUCE_MAX, err_node, outArg (gbl_err));
       TEUCHOS_TEST_FOR_EXCEPTION(gbl_err != -1, std::runtime_error,
-          Teuchos::typeName(*this) 
-          << "::createFromRecvs(): lists of remote IDs and remote node IDs must have the same size (error on node " 
+          Teuchos::typeName(*this) << "::createFromRecvs(): lists of remote IDs "
+          "and remote process IDs must have the same size (error on process " 
           << gbl_err << ").");
     }
-    computeSends(remoteIDs, remoteImageIDs, exportGIDs, exportNodeIDs);
-    (void)createFromSends(exportNodeIDs());
+    computeSends (remoteIDs, remoteImageIDs, exportGIDs, exportNodeIDs);
+    (void) createFromSends (exportNodeIDs());
   }
 
 } // namespace Tpetra
