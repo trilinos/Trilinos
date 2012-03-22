@@ -62,6 +62,7 @@
       <Parameter name="A"                type="string" value="myRAPFact"/>
       <Parameter name="minRowsPerProc"   type="int"    value="800"/> <!-- default = 2000 -->
       <Parameter name="nonzeroImbalance" type="double" value="1.1"/> <!-- default = 1.2 -->
+      <Parameter name="startLevel"       type="int"    value="2"/>   <!-- default = 1 -->
     </ParameterList>
 
     <ParameterList name="myPermutedProlongatorFact">
