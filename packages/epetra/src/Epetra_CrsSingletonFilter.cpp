@@ -560,18 +560,33 @@ int Epetra_CrsSingletonFilter::ConstructRedistributeExporter(Epetra_Map * Source
   assert(ContiguousSourceMap.NumGlobalElements()==ContiguousTargetMap.NumGlobalElements());
 
   // Now create a vector that contains the global indices of the Source Epetra_MultiVector
-  Epetra_IntVector SourceIndices(View, ContiguousSourceMap, SourceMap->MyGlobalElements());
+  Epetra_IntVector *SourceIndices;
+  Epetra_LongLongVector *SourceIndices_LL;
+  if(SourceMap->GlobalIndicesInt()) 
+    SourceIndices = new Epetra_IntVector(View, ContiguousSourceMap, SourceMap->MyGlobalElements());
+  else
+    SourceIndices_LL = new Epetra_LongLongVector(View, ContiguousSourceMap, SourceMap->MyGlobalElements());
 
   // Create an exporter to send the SourceMap global IDs to the target distribution
   Epetra_Export Exporter(ContiguousSourceMap, ContiguousTargetMap);
   
   // Create a vector to catch the global IDs in the target distribution
-  Epetra_IntVector TargetIndices(ContiguousTargetMap);
-  TargetIndices.Export(SourceIndices, Exporter, Insert);
+  Epetra_IntVector *TargetIndices;
+  Epetra_LongLongVector *TargetIndices_LL;  
+  if(TargetMap->GlobalIndicesInt()) {
+    TargetIndices = new Epetra_IntVector(ContiguousTargetMap);
+    TargetIndices->Export(*SourceIndices, Exporter, Insert);
+  } else {
+    TargetIndices_LL = new Epetra_IntVector(ContiguousTargetMap);
+    TargetIndices_LL->Export(*SourceIndices_LL, Exporter, Insert);
+  }
 
   // Create a new map that describes how the Source MultiVector should be laid out so that it has
   // the same number of elements on each processor as the TargetMap
-  RedistributeMap = new Epetra_Map(-1, TargetNumMyElements, TargetIndices.Values(), IndexBase, Comm);//TODO long long
+  if(TargetMap->GlobalIndicesInt()) 
+    RedistributeMap = new Epetra_Map(-1, TargetNumMyElements, TargetIndices->Values(), IndexBase, Comm);
+  else
+    RedistributeMap = new Epetra_Map(-1, TargetNumMyElements, TargetIndices_LL->Values(), IndexBase, Comm);
 
   // This exporter will finally redistribute the Source MultiVector to the same layout as the TargetMap
   RedistributeExporter = new Epetra_Export(*SourceMap, *RedistributeMap);
