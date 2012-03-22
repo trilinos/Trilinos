@@ -264,6 +264,7 @@ namespace Tpetra {
   Distributor::computeReceives()
   {
     using Teuchos::Array;
+    using Teuchos::CommStatus;
     using Teuchos::CommRequest;
     using Teuchos::ireceive;
     using Teuchos::RCP;
@@ -386,8 +387,8 @@ namespace Tpetra {
     // request buffers into lengthsFrom_, and set imagesFrom_ from the
     // status.
     //
-    Array<RCP<CommStatus> > statuses (actualNumReceives); 
-    Teuchos::waitAll (requests(), statuses());
+    Array<RCP<CommStatus<int> > > statuses (actualNumReceives); 
+    Teuchos::waitAll<int> (requests(), statuses());
     for (size_t i = 0; i < actualNumReceives; ++i) {
       lengthsFrom_[i] = *lengthsFromBuffers[i];
       imagesFrom_[i] = statuses[i]->getSourceRank(); 

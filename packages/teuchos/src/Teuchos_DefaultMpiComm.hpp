@@ -773,7 +773,7 @@ waitAll (const ArrayView<RCP<CommRequest> >& requests,
 
   // Now we have to wrap everything up again.
   for (int i = 0; i < count; ++i) {
-    statuses[i] = mpiCommStatus (rawMpiStatuses[i]);
+    statuses[i] = mpiCommStatus<Ordinal> (rawMpiStatuses[i]);
   }
 }
 
