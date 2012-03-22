@@ -29,12 +29,13 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RepartitionFactory(
                 RCP<const FactoryBase> loadBalancer, RCP<const FactoryBase> AFact,
-                GO minRowsPerProcessor, SC nnzMaxMinRatio, GO startLevel, GO minNnzPerProcessor) :
+                GO minRowsPerProcessor, SC nnzMaxMinRatio, GO startLevel, GO useDiffusiveHeuristic, GO minNnzPerProcessor) :
     loadBalancer_(loadBalancer),
     AFact_(AFact),
     minRowsPerProcessor_(minRowsPerProcessor),
     nnzMaxMinRatio_(nnzMaxMinRatio),
     startLevel_(startLevel),
+    useDiffusiveHeuristic_(useDiffusiveHeuristic),
     minNnzPerProcessor_(minNnzPerProcessor)
   { }
 
@@ -488,9 +489,19 @@ namespace MueLu {
   {
     FactoryMonitor m(*this, "DeterminePartitionPlacement", currentLevel);
 
+    GO numPartitions = currentLevel.Get<GO>("number of partitions");
+
+    if (!useDiffusiveHeuristic_) {
+      GetOStream(Runtime0,0) << "Placing partitions on proc. 0-" << numPartitions << "." << std::endl;
+      for (GO i=0; i<numPartitions; ++i)
+        partitionOwners.push_back(i);
+      return;
+    }
+
+    GetOStream(Runtime0,0) << "Using diffusive heuristic for partition placement." << std::endl;
+
     RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A",AFact_.get());
     RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
-    GO numPartitions = currentLevel.Get<GO>("number of partitions");
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = currentLevel.Get<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition", loadBalancer_.get());
     // Figure out how many nnz there are per row.
     RCP<Xpetra::Vector<GO,LO,GO,NO> > nnzPerRowVector = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(A->getRowMap(),false);
