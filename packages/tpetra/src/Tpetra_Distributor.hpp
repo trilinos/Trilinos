@@ -511,7 +511,7 @@ namespace Tpetra {
     // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
     // demand), or Resize_().
     const size_t actualNumReceives = numReceives_ + (selfMessage_ ? 1 : 0);
-    if (requests_.size() != actualNumReceives) {
+    if (as<size_t> (requests_.size()) != actualNumReceives) {
       requests_.resize (actualNumReceives);
     }
 
