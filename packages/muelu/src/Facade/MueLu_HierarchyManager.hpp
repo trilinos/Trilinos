@@ -116,7 +116,7 @@ namespace MueLu {
     //! Setup extra data
     // TODO: merge with SetupOperator ?
     virtual void SetupExtra(Hierarchy & H) const { }
-   
+
     // Hierarchy parameters
     VerbLevel             verbLevel_;
     int                   numDesiredLevel_; 
