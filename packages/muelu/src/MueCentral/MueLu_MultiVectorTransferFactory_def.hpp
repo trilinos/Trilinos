@@ -86,22 +86,26 @@ namespace MueLu {
         RCP<Operator> A = fineLevel.Get<RCP<Operator> >("A", NULL/*default A*/);
         LocalOrdinal blksize = A->GetFixedBlockSize();
 
-        Array< ArrayView<const double> > arrayOfPtrs; /* This is the data format needed to call the MultiVector constructor */
-        
+        Array< ArrayView<const SC> > arrayOfPtrs; /* This is the data format needed to call the MultiVector constructor */
+        ArrayRCP<SC> xcoords, ycoords, zcoords;   /* Previous data structure is using ArrayView but the ArrayRCP have to be kept. */
+
         {
           ArrayRCP<SC> & coords = fineLevel.Get<ArrayRCP<SC> >("XCoordinates");
-          arrayOfPtrs.push_back(expandCoordinates(coords, blksize)());
+          xcoords = expandCoordinates(coords, blksize);
+          arrayOfPtrs.push_back(xcoords());
         }
         
         if(fineLevel.IsAvailable("YCoordinates")) {
           ArrayRCP<SC> & coords = fineLevel.Get<ArrayRCP<SC> >("YCoordinates");
-          arrayOfPtrs.push_back(expandCoordinates(coords, blksize)());
+          ycoords = expandCoordinates(coords, blksize);
+          arrayOfPtrs.push_back(ycoords());
         }
         
         if(fineLevel.IsAvailable("ZCoordinates")) {
           TEUCHOS_TEST_FOR_EXCEPTION(!fineLevel.IsAvailable("YCoordinates"), Exceptions::RuntimeError, "ZCoordinates specified but no YCoordinates");
           ArrayRCP<SC> & coords = fineLevel.Get<ArrayRCP<SC> >("ZCoordinates");
-          arrayOfPtrs.push_back(expandCoordinates(coords, blksize)());
+          zcoords = expandCoordinates(coords, blksize);
+          arrayOfPtrs.push_back(zcoords());
         }
         
         RCP<MultiVector> coordinates = MultiVectorFactory::Build(A->getRowMap(), arrayOfPtrs, arrayOfPtrs.size());
