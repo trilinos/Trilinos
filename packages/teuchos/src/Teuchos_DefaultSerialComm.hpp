@@ -348,6 +348,16 @@ void SerialComm<Ordinal>::waitAll(
 
 
 template<typename Ordinal>
+void 
+SerialComm<Ordinal>::
+waitAll (const ArrayView<RCP<CommRequest> > & /*requests*/,
+	 const ArrayView<RCP<CommStatus> > & /*statuses*/) const
+{
+  TEUCHOS_TEST_FOR_EXCEPT(true);
+}
+
+
+template<typename Ordinal>
 void SerialComm<Ordinal>::wait(
   const Ptr<RCP<CommRequest> > &/*request*/
   ) const

@@ -108,18 +108,60 @@ private:
   MpiCommRequest(); // Not defined
 };
 
-
-/** \brief Nonmember constructor .
- *
- * \relates MpiCommRequest
- */
-inline
-const RCP<MpiCommRequest>
-mpiCommRequest( MPI_Request rawMpiRequest  )
+/// \fn mpiCommRequest
+/// \brief Nonmember constructor for \c MpiCommRequest.
+/// \relates MpiCommRequest
+inline RCP<MpiCommRequest>
+mpiCommRequest (MPI_Request rawMpiRequest)
 {
-  return Teuchos::rcp(new MpiCommRequest(rawMpiRequest));
+  return rcp (new MpiCommRequest (rawMpiRequest));
 }
 
+/// \class MpiCommStatus
+/// \brief MPI-specific implementation of \c CommStatus.
+///
+/// Users would not normally create an instance of this class.  The
+/// only time they might wish to do so is to encapsulate an MPI_Status
+/// returned by an external library or by their own code, and pass it
+/// into one of our functions like \c wait() or \c waitall().
+///
+/// \tparam OrdinalType The same template parameter as \c Comm.  Only
+///   use \c int here.  We only make this a template class for
+///   compatibility with \c Comm.
+template<class OrdinalType>
+class MpiCommStatus : public CommStatus<OrdinalType> {
+public:
+  MpiCommStatus (MPI_Status status) : status_ (status) {}
+
+  //! Destructor (declared virtual for memory safety)
+  virtual ~MpiCommStatus() {}
+
+  //! The source rank that sent the message.
+  OrdinalType getSourceRank () { return status_.MPI_SOURCE; }
+
+  //! The tag of the received message.
+  OrdinalType getTag () { return status_.MPI_TAG; }
+
+  //! The error code of the received message.
+  OrdinalType getError () { return status_.MPI_ERROR; }
+
+private:
+  //! We forbid default construction syntactically.
+  MpiCommStatus ();
+
+  //! The raw MPI_Status struct that this class encapsulates.
+  MPI_Status status_;
+};
+
+/// \fn mpiCommStatus
+/// \brief Nonmember constructor for \c MpiCommStatus.
+/// \relates MpiCommStatus
+template<class OrdinalType>
+inline RCP<MpiCommStatus<OrdinalType> >
+mpiCommStatus (MPI_Status rawMpiStatus)
+{
+  return rcp (new MpiCommStatus<OrdinalType> (rawMpiStatus));
+}
 
 /** \brief Concrete communicator subclass based on MPI.
  *
@@ -233,6 +275,10 @@ public:
   virtual void waitAll(
     const ArrayView<RCP<CommRequest> > &requests
     ) const;
+  /** \brief . */
+  virtual void 
+  waitAll (const ArrayView<RCP<CommRequest> >& requests,
+	   const ArrayView<RCP<CommStatus> >& statuses) const;
   /** \brief . */
   virtual void wait(
     const Ptr<RCP<CommRequest> > &request
@@ -683,6 +729,54 @@ void MpiComm<Ordinal>::waitAll(
   // ToDo: We really should check the status?
 
 }
+
+
+template<typename Ordinal>
+void 
+MpiComm<Ordinal>::
+waitAll (const ArrayView<RCP<CommRequest> >& requests,
+	 const ArrayView<RCP<CommStatus> >& statuses) const
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::waitAll(...)"
+    );
+  const int count = requests.size();
+  if (count == 0) {
+    return;
+  }
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION(count != statuses.size(), 
+    std::invalid_argument, "waitAll: requests.size() = " << requests.size() 
+    << " != statuses.size() = " << statuses.size() << ".");
+#endif // TEUCHOS_DEBUG
+
+
+  // We have to go through this silly routine because we insist on
+  // wrapping MPI.  Please bear with us.
+  Array<MPI_Request> rawMpiRequests (count, MPI_REQUEST_NULL);
+  for (int i = 0; i < count; ++i) {
+    if (! requests[i].is_null()) {
+      RCP<MpiCommRequest> mpiRequest = 
+	rcp_dynamic_cast<MpiCommRequest> (requests[i]);
+      // This convinces the CommRequest to set its own raw MPI_Request
+      // to MPI_REQUEST_NULL, so we won't have any hanging raw request
+      // handles floating around afterwards.
+      rawMpiRequests[i] = mpiRequest->releaseRawMpiRequest ();
+      requests[i] = null;
+    }
+  }
+
+  Array<MPI_Status> rawMpiStatuses (count);
+  // This is the part where we've finally peeled off the wrapper and
+  // we can now interact with MPI directly, like a normal human being.
+  MPI_Waitall (count, rawMpiRequests.getRawPtr(), rawMpiStatuses.getRawPtr());
+
+  // Now we have to wrap everything up again.
+  for (int i = 0; i < count; ++i) {
+    statuses[i] = mpiCommStatus (rawMpiStatuses[i]);
+  }
+}
+
 
 
 template<typename Ordinal>
