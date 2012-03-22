@@ -100,47 +100,110 @@ bool compare_matrices(const Epetra_CrsMatrix& A, const Epetra_CrsMatrix& B)
   }
 
   int numRows = Amap.NumMyElements();
-  int* rows = Amap.MyGlobalElements();
 
-  Epetra_Util util;
-
-  for(int i=0; i<numRows; ++i) {
-    int row = rows[i];
-    int rowLen = A.NumGlobalEntries(row);
-    if (rowLen != B.NumGlobalEntries(row)) {
-      return(false);
-    }
-
-    int* indices = new int[rowLen*2];
-    int* Bindices = indices+rowLen;
-
-    double* values = new double[rowLen*2];
-    double* Bvalues = values+rowLen;
-
-    A.ExtractGlobalRowCopy(row, rowLen, rowLen, values, indices);
-    B.ExtractGlobalRowCopy(row, rowLen, rowLen, Bvalues, Bindices);
-
-    util.Sort(true, rowLen, indices, 1, &values, 0, 0, 0, 0);
-    util.Sort(true, rowLen, Bindices, 1, &Bvalues, 0, 0, 0, 0);
-
-    bool same = true;
-    for(int j=0; j<rowLen; ++j) {
-      if (indices[j] != Bindices[j]) {
-        same = false; break;
+  if(Amap.GlobalIndicesInt())
+  {
+    int* rows = Amap.MyGlobalElements();
+ 
+    Epetra_Util util;
+ 
+    for(int i=0; i<numRows; ++i) {
+      int row = rows[i];
+      int rowLen = A.NumGlobalEntries(row);
+      if (rowLen != B.NumGlobalEntries(row)) {
+        return(false);
       }
-      if (values[j] != Bvalues[j]) {
-        same = false; break;
+ 
+      int* indices = new int[rowLen*2];
+      int* Bindices = indices+rowLen;
+ 
+      double* values = new double[rowLen*2];
+      double* Bvalues = values+rowLen;
+ 
+      A.ExtractGlobalRowCopy(row, rowLen, rowLen, values, indices);
+      B.ExtractGlobalRowCopy(row, rowLen, rowLen, Bvalues, Bindices);
+ 
+      util.Sort(true, rowLen, indices, 1, &values, 0, 0, 0, 0);
+      util.Sort(true, rowLen, Bindices, 1, &Bvalues, 0, 0, 0, 0);
+ 
+      bool same = true;
+      for(int j=0; j<rowLen; ++j) {
+        if (indices[j] != Bindices[j]) {
+          same = false; break;
+        }
+        if (values[j] != Bvalues[j]) {
+          same = false; break;
+        }
       }
-    }
-
-    delete [] indices;
-    delete [] values;
-
-    if (!same) {
-      return(false);
+ 
+      delete [] indices;
+      delete [] values;
+ 
+      if (!same) {
+        return(false);
+      }
     }
   }
+  else if(Amap.GlobalIndicesLongLong()) {
+    long long* rows = Amap.MyGlobalElements_LL();
+ 
+    Epetra_Util util;
+ 
+    for(int i=0; i<numRows; ++i) {
+      long long row = rows[i];
+      int rowLen = A.NumGlobalEntries(row);
+      if (rowLen != B.NumGlobalEntries(row)) {
+        return(false);
+      }
+ 
+      long long* indices = new long long[rowLen*2];
+      long long* Bindices = indices+rowLen;
+ 
+      double* values = new double[rowLen*2];
+      double* Bvalues = values+rowLen;
+ 
+      A.ExtractGlobalRowCopy(row, rowLen, rowLen, values, indices);
+      B.ExtractGlobalRowCopy(row, rowLen, rowLen, Bvalues, Bindices);
+ 
+      util.Sort(true, rowLen, indices, 1, &values, 0, 0, 0, 0);
+      util.Sort(true, rowLen, Bindices, 1, &Bvalues, 0, 0, 0, 0);
+ 
+      bool same = true;
+      for(int j=0; j<rowLen; ++j) {
+        if (indices[j] != Bindices[j]) {
+          same = false; break;
+        }
+        if (values[j] != Bvalues[j]) {
+          same = false; break;
+        }
+      }
+ 
+      delete [] indices;
+      delete [] values;
+ 
+      if (!same) {
+        return(false);
+      }
+    }
+  }
+  else {
+    return(false);
+  }
+  
 
+  return(true);
+}
+
+bool compare_matrices_LL(const Epetra_CrsMatrix& A, const Epetra_CrsMatrix& B)
+{
+  const Epetra_Map& Amap = A.RowMap();
+  const Epetra_Map& Bmap = B.RowMap();
+
+  if (!Amap.PointSameAs(Bmap)) {
+    return(false);
+  }
+
+  int numRows = Amap.NumMyElements();
   return(true);
 }
 

@@ -13,6 +13,10 @@ ADD_SUBDIRECTORY(UG_Ex1)
 ADD_SUBDIRECTORY(UG_ExMaps)
 ADD_SUBDIRECTORY(my_example)
 
+ADD_SUBDIRECTORY(my_example_LL)
+ADD_SUBDIRECTORY(petra_power_method_LL)
+ADD_SUBDIRECTORY(verySimple_LL)
+
 # Below this line are subdirectories in epetra/example that are not exposed using autotools
 
 # Linking error
