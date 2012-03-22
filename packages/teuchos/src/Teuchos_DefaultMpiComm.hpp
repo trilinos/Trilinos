@@ -67,6 +67,46 @@
 
 namespace Teuchos {
 
+  namespace {
+    std::string
+    mpiErrorCodeToString (const int err) 
+    {
+      if (err == MPI_SUCCESS) {
+	return "MPI_SUCCESS";
+      }
+      else if (err == MPI_ERR_COMM) {
+	return "MPI_ERR_COMM";
+      }
+      else if (err == MPI_ERR_COUNT) {
+	return "MPI_ERR_COUNT";
+      }
+      else if (err == MPI_ERR_TYPE) {
+	return "MPI_ERR_TYPE";
+      }
+      else if (err == MPI_ERR_TAG) {
+	return "MPI_ERR_TAG";
+      }
+      else if (err == MPI_ERR_RANK) {
+	return "MPI_ERR_RANK";
+      }
+      else if (err == MPI_ERR_INTERN) {
+	return "MPI_ERR_INTERN";
+      }
+      else if (err == MPI_ERR_REQUEST) {
+	return "MPI_ERR_REQUEST";
+      }
+      else if (err == MPI_ERR_ARG) {
+	return "MPI_ERR_ARG";
+      }
+      else if (err == MPI_ERR_IN_STATUS) {
+	return "MPI_ERR_IN_STATUS";
+      }
+      else {
+	return "Unknown MPI error";
+      }
+    }
+  } // namespace (anonymous)
+
 
 #ifdef TEUCHOS_MPI_COMM_DUMP
 template<typename Ordinal, typename T>
@@ -623,37 +663,34 @@ void MpiComm<Ordinal>::readySend(
 
 
 template<typename Ordinal>
-int MpiComm<Ordinal>::receive(
-    const int sourceRank, const Ordinal bytes, char recvBuffer[]
-  ) const
+int 
+MpiComm<Ordinal>::receive (const int sourceRank, 
+			   const Ordinal bytes, 
+			   char recvBuffer[]) const
 {
-  TEUCHOS_COMM_TIME_MONITOR(
-    "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::receive(...)"
-    );
-#ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    sourceRank >=0 && !(sourceRank < size_), std::logic_error
-    ,"Error, sourceRank = " << sourceRank << " is not < 0 or is not"
-    " in the range [0,"<<(size_-1)<<"]!"
-    );
-#endif // TEUCHOS_DEBUG
+  TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::receive(...)" );
+
+  // A negative source rank indicates MPI_ANY_SOURCE, namely that we
+  // will take an incoming message from any process, as long as the
+  // tag matches.
+  const int theSrcRank = (sourceRank < 0) ? MPI_ANY_SOURCE : sourceRank;
+
   MPI_Status status;
-  MPI_Recv(
-    recvBuffer,bytes,MPI_CHAR
-    ,sourceRank >= 0 ? sourceRank : MPI_ANY_SOURCE
-    ,tag_,*rawMpiComm_
-    ,&status
-    );
+  const int err = MPI_Recv (recvBuffer, bytes, MPI_CHAR, theSrcRank, tag_, 
+			    *rawMpiComm_, &status);
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+    "Teuchos::MpiComm::receive: MPI_Recv() failed with error code \"" 
+    << mpiErrorCodeToString (err) << "\".");
+
 #ifdef TEUCHOS_MPI_COMM_DUMP
-  if(show_dump) {
-    dumpBuffer<Ordinal,char>(
-      "Teuchos::MpiComm<Ordinal>::receive(...)"
-      ,"recvBuffer", bytes, recvBuffer
-      );
+  if (show_dump) {
+    dumpBuffer<Ordinal,char> ("Teuchos::MpiComm<Ordinal>::receive(...)", 
+			      "recvBuffer", bytes, recvBuffer);
   }
 #endif // TEUCHOS_MPI_COMM_DUMP
+
+  // Returning the source rank is useful in the MPI_ANY_SOURCE case.
   return status.MPI_SOURCE;
-  // ToDo: What about error handling???
 }
 
 
@@ -679,23 +716,26 @@ RCP<CommRequest> MpiComm<Ordinal>::isend(
 
 
 template<typename Ordinal>
-RCP<CommRequest> MpiComm<Ordinal>::ireceive(
-  const ArrayView<char> &recvBuffer,
-  const int sourceRank
-  ) const
+RCP<CommRequest> 
+MpiComm<Ordinal>::ireceive (const ArrayView<char> &recvBuffer,
+			    const int sourceRank) const
 {
-  TEUCHOS_COMM_TIME_MONITOR(
-    "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::ireceive(...)"
-    );
-#ifdef TEUCHOS_DEBUG
-  assertRank(sourceRank, "sourceRank");
-#endif // TEUCHOS_DEBUG
+  TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::ireceive(...)" );
+
+  // A negative source rank indicates MPI_ANY_SOURCE, namely that we
+  // will take an incoming message from any process, as long as the
+  // tag matches.
+  const int theSrcRank = (sourceRank < 0) ? MPI_ANY_SOURCE : sourceRank;
+
   MPI_Request rawMpiRequest = MPI_REQUEST_NULL;
-  MPI_Irecv(
-    const_cast<char*>(recvBuffer.getRawPtr()), recvBuffer.size(), MPI_CHAR, sourceRank,
-    tag_, *rawMpiComm_, &rawMpiRequest );
-  return mpiCommRequest(rawMpiRequest);
-  // ToDo: What about MPI error handling???
+  const int err = 
+    MPI_Irecv (const_cast<char*>(recvBuffer.getRawPtr()), recvBuffer.size(), 
+	       MPI_CHAR, theSrcRank, tag_, *rawMpiComm_, &rawMpiRequest);
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+    "Teuchos::MpiComm::ireceive: MPI_Irecv() failed with error code \"" 
+    << mpiErrorCodeToString (err) << "\".");
+
+  return mpiCommRequest (rawMpiRequest);
 }
 
 
@@ -768,10 +808,41 @@ waitAll (const ArrayView<RCP<CommRequest> >& requests,
 
   Array<MPI_Status> rawMpiStatuses (count);
   // This is the part where we've finally peeled off the wrapper and
-  // we can now interact with MPI directly, like a normal human being.
-  MPI_Waitall (count, rawMpiRequests.getRawPtr(), rawMpiStatuses.getRawPtr());
+  // we can now interact with MPI directly.
+  const int err = MPI_Waitall (count, rawMpiRequests.getRawPtr(), 
+			       rawMpiStatuses.getRawPtr());
 
-  // Now we have to wrap everything up again.
+  // The MPI standard doesn't say what happens to the rest of the
+  // requests if one of them failed, in a multiple completion routine
+  // like MPI_Waitall().  We conservatively abort in that case.  If
+  // err == MPI_ERR_IN_STATUS, then we need to check each status'
+  // MPI_ERROR field to find the error.
+  if (err != MPI_SUCCESS) {
+    if (err == MPI_ERR_IN_STATUS) {
+      int firstErr = MPI_SUCCESS;
+      int firstIndexFailed = 0;
+      for (int i = 0; i < count; ++i) {
+	if (rawMpiStatuses[i].MPI_ERROR != MPI_SUCCESS) {
+	  firstErr = rawMpiStatuses[i].MPI_ERROR;
+	  firstIndexFailed = i;
+	  break;
+	}
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error, 
+        "Teuchos::MpiComm::waitall: MPI_Waitall() failed with error code "
+        "\"MPI_ERR_IN_STATUS\".  Of the " << count << " request" 
+        << (count != 1 ? "s" : "") << " given to MPI_Waitall(), the smallest "
+        "0-based index that failed is " << firstIndexFailed << " and its error "
+        "code is \"" << mpiErrorCodeToString (err) << "\".");
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error, 
+        "Teuchos::MpiComm::waitall: MPI_Waitall() failed with error code "
+	<< mpiErrorCodeToString (err) << "\".");
+    }
+  }
+
+  // Repackage the raw MPI_Status structs into the CommStatus wrappers.
   for (int i = 0; i < count; ++i) {
     statuses[i] = mpiCommStatus<Ordinal> (rawMpiStatuses[i]);
   }
