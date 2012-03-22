@@ -620,6 +620,7 @@ int Epetra_MpiDistributor::DoPosts( char * export_objs,
     j += lengths_from_[i] * obj_size;
   }
 
+#ifndef EPETRA_NO_READY_SEND_IN_DO_POSTS
   // NOTE (mfh 19 Mar 2012):
   //
   // The ready-sends below require that each ready-send's matching
@@ -630,6 +631,7 @@ int Epetra_MpiDistributor::DoPosts( char * export_objs,
   // you'll have to replace the ready-sends below with standard sends
   // or Isends.
   MPI_Barrier( comm_ );
+#endif // EPETRA_NO_READY_SEND_IN_DO_POSTS
 
   //setup scan through procs_to list starting w/ higher numbered procs 
   //Should help balance msg traffic
@@ -649,15 +651,26 @@ int Epetra_MpiDistributor::DoPosts( char * export_objs,
       p = i + proc_index;
       if( p > (nblocks-1) ) p -= nblocks;
 
-      if( procs_to_[p] != my_proc )
+      if( procs_to_[p] != my_proc ) {
+#ifndef EPETRA_NO_READY_SEND_IN_DO_POSTS
         MPI_Rsend( &export_objs[starts_to_[p]*obj_size],
                    lengths_to_[p]*obj_size,
                    MPI_CHAR,
                    procs_to_[p],
                    tag_,
                    comm_ );
-      else
+#else
+        MPI_Send( &export_objs[starts_to_[p]*obj_size],
+                   lengths_to_[p]*obj_size,
+                   MPI_CHAR,
+                   procs_to_[p],
+                   tag_,
+                   comm_ );
+#endif // EPETRA_NO_READY_SEND_IN_DO_POSTS
+      }
+      else {
        self_num = p;
+      }
     }
 
     if( self_msg_ )
@@ -691,11 +704,19 @@ int Epetra_MpiDistributor::DoPosts( char * export_objs,
           ++j;
           offset += obj_size;
         }
+#ifndef EPETRA_NO_READY_SEND_IN_DO_POSTS
         MPI_Rsend( send_array_,
                    lengths_to_[p] * obj_size,
                    MPI_CHAR,
                    procs_to_[p],
                    tag_, comm_ );
+#else
+        MPI_Send( send_array_,
+		  lengths_to_[p] * obj_size,
+		  MPI_CHAR,
+		  procs_to_[p],
+		  tag_, comm_ );
+#endif // EPETRA_NO_READY_SEND_IN_DO_POSTS
       }
       else
       {
