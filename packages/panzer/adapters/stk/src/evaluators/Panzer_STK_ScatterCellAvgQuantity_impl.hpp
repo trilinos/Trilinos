@@ -32,16 +32,11 @@ PHX_EVALUATOR_CTOR(ScatterCellAvgQuantity,p) :
 
   // build dependent fields
   scatterFields_.resize(names.size());
-  scatterFields_dbl_.resize(names.size());
   stkFields_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) {
     scatterFields_[fd] = 
       PHX::MDField<ScalarT,Cell,Point>(names[fd],intRule->dl_scalar);
     this->addDependentField(scatterFields_[fd]);
-
-    scatterFields_dbl_[fd] =
-      PHX::MDField<double,Cell,Point>(names[fd],intRule->dl_scalar);
-    scatterFields_dbl_[fd].setFieldData(Teuchos::arcp<double>(intRule->dl_scalar->size()));
   }
 
   // setup a dummy field to evaluate
@@ -76,7 +71,7 @@ PHX_EVALUATE_FIELDS(ScatterCellAvgQuantity,workset)
       for(int i=0; i<field.dimension(0);i++) {
          for(int j=0; j<field.dimension(1);j++) 
             average[i] += Sacado::ScalarValue<ScalarT>::eval(field(i,j));
-         average[i] /= field.dimension(0);
+         average[i] /= field.dimension(1);
       }
 
       mesh_->setCellFieldData(field.fieldTag().name(),blockId,localCellIds,average);

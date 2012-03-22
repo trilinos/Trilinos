@@ -32,7 +32,6 @@ PHX_EVALUATOR_CLASS(ScatterCellAvgQuantity)
   std::size_t numValues_;
  
   std::vector< PHX::MDField<ScalarT,panzer::Cell,panzer::Point> > scatterFields_;
-  std::vector< PHX::MDField<double,panzer::Cell,panzer::Point> > scatterFields_dbl_;
   Teuchos::RCP<STK_Interface> mesh_;
 
   std::vector<VariableField*> stkFields_;
