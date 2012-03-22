@@ -82,7 +82,7 @@ namespace panzer {
     Teuchos::RCP<const std::vector<Teuchos::RCP<PHX::FieldTag > > > evalJacFields;
     {
        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-          = Teuchos::rcp(new panzer::PointValues_Evaluator<panzer::Traits::Residual,panzer::Traits>(point_rule,userArray));
+          = Teuchos::rcp(new panzer::PointValues_Evaluator<panzer::Traits::Residual,panzer::Traits>(point_rule,*userArray));
 
        TEST_EQUALITY(evaluator->evaluatedFields().size(),6);
        evalResFields = Teuchos::rcpFromRef(evaluator->evaluatedFields());
@@ -93,7 +93,7 @@ namespace panzer {
 
     {
        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-          = Teuchos::rcp(new panzer::PointValues_Evaluator<panzer::Traits::Jacobian,panzer::Traits>(point_rule,userArray));
+          = Teuchos::rcp(new panzer::PointValues_Evaluator<panzer::Traits::Jacobian,panzer::Traits>(point_rule,*userArray));
 
        TEST_EQUALITY(evaluator->evaluatedFields().size(),6);
        evalJacFields = Teuchos::rcpFromRef(evaluator->evaluatedFields());
@@ -174,7 +174,7 @@ namespace panzer {
     Teuchos::RCP<const std::vector<Teuchos::RCP<PHX::FieldTag > > > evalJacFields;
     {
        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-          = Teuchos::rcp(new panzer::PointValues_Evaluator<panzer::Traits::Jacobian,panzer::Traits>(point_rule,userArray));
+          = Teuchos::rcp(new panzer::PointValues_Evaluator<panzer::Traits::Jacobian,panzer::Traits>(point_rule,*userArray));
        fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
     }
     {
@@ -258,7 +258,7 @@ namespace panzer {
     }
     {
        Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-          = Teuchos::rcp(new panzer::PointValues_Evaluator<panzer::Traits::Jacobian,panzer::Traits>(point_rule,userArray));
+          = Teuchos::rcp(new panzer::PointValues_Evaluator<panzer::Traits::Jacobian,panzer::Traits>(point_rule,*userArray));
        fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
     }
     {

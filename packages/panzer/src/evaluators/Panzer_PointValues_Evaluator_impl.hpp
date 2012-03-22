@@ -17,13 +17,13 @@ PHX_EVALUATOR_CTOR(PointValues_Evaluator,p)
   Teuchos::RCP<const Intrepid::FieldContainer<double> > userArray
      = p.get<Teuchos::RCP<const Intrepid::FieldContainer<double> > >("Point Array");
 
-  initialize(pointRule,userArray);
+  initialize(pointRule,*userArray);
 }
 
 //**********************************************************************
 template <typename EvalT, typename TraitsT>
 PointValues_Evaluator<EvalT,TraitsT>::PointValues_Evaluator(const Teuchos::RCP<const panzer::PointRule> & pointRule,
-                                                            const Teuchos::RCP<const Intrepid::FieldContainer<double> > & userArray)
+                                                            const Intrepid::FieldContainer<double> & userArray)
 {
   initialize(pointRule,userArray);
 }
@@ -31,17 +31,17 @@ PointValues_Evaluator<EvalT,TraitsT>::PointValues_Evaluator(const Teuchos::RCP<c
 //**********************************************************************
 template <typename EvalT, typename TraitsT>
 void PointValues_Evaluator<EvalT,TraitsT>::initialize(const Teuchos::RCP<const panzer::PointRule> & pointRule,
-                                                      const Teuchos::RCP<const Intrepid::FieldContainer<double> > & userArray)
+                                                      const Intrepid::FieldContainer<double> & userArray)
 {
-  TEUCHOS_ASSERT(userArray->rank()==2);
+  TEUCHOS_ASSERT(userArray.rank()==2);
 
   panzer::MDFieldArrayFactory af(pointRule->getName()+"_");
        
   // copy user array data
-  refPointArray = Intrepid::FieldContainer<double>(userArray->dimension(0),userArray->dimension(1));
-  TEUCHOS_ASSERT(refPointArray.size()==userArray->size());
-  for(int i=0;i<userArray->size();i++)
-     refPointArray[i] = (*userArray)[i]; 
+  refPointArray = Intrepid::FieldContainer<double>(userArray.dimension(0),userArray.dimension(1));
+  TEUCHOS_ASSERT(refPointArray.size()==userArray.size());
+  for(int i=0;i<userArray.size();i++)
+     refPointArray[i] = userArray[i]; 
 
   // setup all fields to be evaluated and constructed
   pointValues.setupArrays(pointRule,af);

@@ -19,11 +19,11 @@ PHX_EVALUATOR_CLASS(PointValues_Evaluator)
 
   //! Initialization method to unify the constructors.
   void initialize(const Teuchos::RCP<const panzer::PointRule> & pointRule,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<double> > & userArray);
+                  const Intrepid::FieldContainer<double> & userArray);
 
 public:
   PointValues_Evaluator(const Teuchos::RCP<const panzer::PointRule> & pointRule,
-                        const Teuchos::RCP<const Intrepid::FieldContainer<double> > & userArray);
+                        const Intrepid::FieldContainer<double> & userArray);
 
 PHX_EVALUATOR_CLASS_END
 
