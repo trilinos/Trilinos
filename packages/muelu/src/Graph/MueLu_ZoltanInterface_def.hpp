@@ -77,7 +77,7 @@ namespace MueLu {
 
     Array<ArrayRCP<SC> > XYZ; // Using this format because no communications needed here. No need for a map and a Xpetra::MultiVector
 
-    // Build XYZ from XCoordinates, YCoordinates and ZoltanInterface
+    // Build XYZ from XCoordinates, YCoordinates and ZCoordinates
     if (level.IsAvailable("XCoordinates")) {
       
       { 
@@ -95,10 +95,15 @@ namespace MueLu {
 
     } else if (level.IsAvailable("Coordinates")) {
 
+      RCP<Operator> A = level.Get<RCP<Operator> >("A", AFact_.get());
+      LocalOrdinal blksize = A->GetFixedBlockSize();
+
       RCP<MultiVector> multiVectorXYZ = level.Get< RCP<MultiVector> >("Coordinates");
       for (int i=0; i< (int)multiVectorXYZ->getNumVectors(); i++) { //FIXME cast
-        XYZ.push_back(multiVectorXYZ->getDataNonConst(i)); // It's OK to leave 'open' the MultiVector until the destruction of XYZ because no communications using Xpetra
+        XYZ.push_back(coalesceCoordinates(multiVectorXYZ->getDataNonConst(i), blksize)); // If blksize == 1, not copy but it's OK to leave 'open' the MultiVector until the destruction of XYZ because no communications using Xpetra
       }
+
+      // TODO: level.Set(XCoordinates / YCoordinates / ZCoordinates as it is computed and might be needed somewhere else. But can wait for now. This code have to be moved anyway.
 
     } else {
       throw(Exceptions::HaltRepartitioning("MueLu::ZoltanInterface : no coordinates available"));
@@ -295,6 +300,30 @@ namespace MueLu {
     *ierr = ZOLTAN_OK;
 
   } //GetProblemGeometry
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  ArrayRCP<double> ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::coalesceCoordinates(ArrayRCP<double> coord, LocalOrdinal blksize) {
+    if (blksize == 1)
+      return coord;
+    
+    ArrayRCP<double> coalesceCoord(coord.size()/blksize); //TODO: how to avoid automatic initialization of the vector? using arcp()?
+
+    for(int i=0; i<coord.size(); i++) {
+#define myDEBUG
+#ifdef myDEBUG //FIXME-> HAVE_MUELU_DEBUG
+      for(int j=1; j < blksize; j++) {
+        TEUCHOS_TEST_FOR_EXCEPTION(coord[i*blksize + j] != coord[i*blksize], Exceptions::RuntimeError, "MueLu::ZoltanInterface: coalesceCoord problem");
+      }
+#endif
+      coalesceCoord[i] = coalesceCoord[i*blksize];
+    }
+    
+    //std::cout << coord << std::endl;
+    //std::cout << coalesceCoord << std::endl;
+
+    return coalesceCoord;
+  }
 
 } //namespace MueLu
 

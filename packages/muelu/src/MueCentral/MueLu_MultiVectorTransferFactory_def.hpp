@@ -77,34 +77,36 @@ namespace MueLu {
 
     if (vectorName_ == "Coordinates") { // very elegant!
 
-      // Convert format to Xpetra::MultiVector
+      // Convert format to Xpetra::MultiVector + Expand coordinates (both are needed for projection because projection operator is not coalesce and is an Xpetra::Operator)
       if (fineLevel.IsAvailable("XCoordinates") && !fineLevel.IsAvailable("Coordinates")) {
         std::cout << "Converting coordinates from 3xArrayRCP to MultiVector" << std::endl;
         
         TEUCHOS_TEST_FOR_EXCEPTION(fineLevel.GetLevelID() != 0, Exceptions::RuntimeError, "??" << fineLevel.GetLevelID());
 
-        Array< ArrayView<const double> > arrayOfPtrs;
+        RCP<Operator> A = fineLevel.Get<RCP<Operator> >("A", NULL/*default A*/);
+        LocalOrdinal blksize = A->GetFixedBlockSize();
+
+        Array< ArrayView<const double> > arrayOfPtrs; /* This is the data format needed to call the MultiVector constructor */
         
         {
           ArrayRCP<SC> & coords = fineLevel.Get<ArrayRCP<SC> >("XCoordinates");
-          arrayOfPtrs.push_back(coords());
+          arrayOfPtrs.push_back(expandCoordinates(coords, blksize)());
         }
         
         if(fineLevel.IsAvailable("YCoordinates")) {
           ArrayRCP<SC> & coords = fineLevel.Get<ArrayRCP<SC> >("YCoordinates");
-          arrayOfPtrs.push_back(coords());
+          arrayOfPtrs.push_back(expandCoordinates(coords, blksize)());
         }
         
         if(fineLevel.IsAvailable("ZCoordinates")) {
           TEUCHOS_TEST_FOR_EXCEPTION(!fineLevel.IsAvailable("YCoordinates"), Exceptions::RuntimeError, "ZCoordinates specified but no YCoordinates");
           ArrayRCP<SC> & coords = fineLevel.Get<ArrayRCP<SC> >("ZCoordinates");
-          arrayOfPtrs.push_back(coords());
+          arrayOfPtrs.push_back(expandCoordinates(coords, blksize)());
         }
         
-        RCP<const Map> map  = fineLevel.Get<RCP<Operator> >("A", NULL/*default A*/)->getRowMap(); //FIXME for multiple DOF per node!! I need the map of the coalesce graph
-        RCP<MultiVector> coordinates = MultiVectorFactory::Build(map, arrayOfPtrs, arrayOfPtrs.size());
-        
+        RCP<MultiVector> coordinates = MultiVectorFactory::Build(A->getRowMap(), arrayOfPtrs, arrayOfPtrs.size());
         fineLevel.Set("Coordinates", coordinates);
+        
       }
     }
 
@@ -157,6 +159,25 @@ namespace MueLu {
     coarseLevel.Set<RCP<MultiVector> >(vectorName_,result,NoFactory::get()); //FIXME JJH
     
   } //Build
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  ArrayRCP<Scalar> MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::expandCoordinates(ArrayRCP<SC> coord, LocalOrdinal blksize) {
+    if (blksize == 1)
+      return coord;
+    
+    ArrayRCP<SC> expandCoord(coord.size()*blksize); //TODO: how to avoid automatic initialization of the vector? using arcp()?
+
+    for(int i=0; i<coord.size(); i++) {
+      for(int j=0; j< blksize; j++) {
+        expandCoord[i*blksize + j] = coord[i];
+      }
+    }
+    
+    //std::cout << coord << std::endl;
+    //std::cout << expandCoord << std::endl;
+
+    return expandCoord;
+  }
 
   //TODO do we need methods to get name of MultiVector and or Transfer Operator?
 
