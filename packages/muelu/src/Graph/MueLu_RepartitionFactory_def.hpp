@@ -495,7 +495,7 @@ namespace MueLu {
     int mypid = comm->getRank();
 
     if (!useDiffusiveHeuristic_) {
-      if (numPartitions==0)
+      if (numPartitions==1)
         GetOStream(Runtime0,0) << "Placing partitions on proc. 0." << std::endl;
       else
         GetOStream(Runtime0,0) << "Placing partitions on proc. 0-" << numPartitions-1 << "." << std::endl;
