@@ -79,7 +79,7 @@ namespace MueLu {
 
       // Convert format to Xpetra::MultiVector + Expand coordinates (both are needed for projection because projection operator is not coalesce and is an Xpetra::Operator)
       if (fineLevel.IsAvailable("XCoordinates") && !fineLevel.IsAvailable("Coordinates")) {
-        std::cout << "Converting coordinates from 3xArrayRCP to MultiVector" << std::endl;
+        GetOStream(Runtime0,0) << "Converting coordinates from 3xArrayRCP to MultiVector" << std::endl;
         
         TEUCHOS_TEST_FOR_EXCEPTION(fineLevel.GetLevelID() != 0, Exceptions::RuntimeError, "??" << fineLevel.GetLevelID());
 

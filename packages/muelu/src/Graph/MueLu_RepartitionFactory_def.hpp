@@ -29,7 +29,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RepartitionFactory(
                 RCP<const FactoryBase> loadBalancer, RCP<const FactoryBase> AFact,
-                GO minRowsPerProcessor, SC nnzMaxMinRatio, GO startLevel, GO useDiffusiveHeuristic, GO minNnzPerProcessor) :
+                GO minRowsPerProcessor, SC nnzMaxMinRatio, GO startLevel, LO useDiffusiveHeuristic, GO minNnzPerProcessor) :
     loadBalancer_(loadBalancer),
     AFact_(AFact),
     minRowsPerProcessor_(minRowsPerProcessor),
@@ -490,18 +490,25 @@ namespace MueLu {
     FactoryMonitor m(*this, "DeterminePartitionPlacement", currentLevel);
 
     GO numPartitions = currentLevel.Get<GO>("number of partitions");
+    RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A",AFact_.get());
+    RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+    int mypid = comm->getRank();
 
     if (!useDiffusiveHeuristic_) {
-      GetOStream(Runtime0,0) << "Placing partitions on proc. 0-" << numPartitions << "." << std::endl;
-      for (GO i=0; i<numPartitions; ++i)
+      if (numPartitions==0)
+        GetOStream(Runtime0,0) << "Placing partitions on proc. 0." << std::endl;
+      else
+        GetOStream(Runtime0,0) << "Placing partitions on proc. 0-" << numPartitions-1 << "." << std::endl;
+      myPartitionNumber = -1;
+      for (int i=0; i<(int)numPartitions; ++i) {
         partitionOwners.push_back(i);
+        if (i==mypid) myPartitionNumber = i;
+      }
       return;
     }
 
     GetOStream(Runtime0,0) << "Using diffusive heuristic for partition placement." << std::endl;
 
-    RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A",AFact_.get());
-    RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = currentLevel.Get<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition", loadBalancer_.get());
     // Figure out how many nnz there are per row.
     RCP<Xpetra::Vector<GO,LO,GO,NO> > nnzPerRowVector = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(A->getRowMap(),false);
@@ -510,8 +517,6 @@ namespace MueLu {
       nnzPerRow = nnzPerRowVector->getDataNonConst(0);
     for (int i=0; i<nnzPerRow.size(); ++i)
       nnzPerRow[i] = A->getNumEntriesInLocalRow(i);
-
-    int mypid = comm->getRank();
 
     // Use a hashtable to record how many nonzeros in the local matrix belong to each partition.
     RCP<Teuchos::Hashtable<GO,GO> > hashTable;
