@@ -298,7 +298,7 @@ int main(int argc, char *argv[]) {
     Epetra_Map& Map1 = *new Epetra_Map(NumGlobalEquations1, NumMyElements1, 1, Comm);
     
     // Get update list and number of local equations from newly created Map
-    int* MyGlobalElements1 = new int[Map1.NumMyElements()];
+    long long* MyGlobalElements1 = new long long[Map1.NumMyElements()];
     Map1.MyGlobalElements(MyGlobalElements1);
     
     // Create an integer vector NumNz that is used to build the Petra Matrix.
