@@ -343,11 +343,10 @@ RCP<CommRequest> SerialComm<Ordinal>::ireceive(
 
 
 template<typename Ordinal>
-void SerialComm<Ordinal>::waitAll(
-  const ArrayView<RCP<CommRequest> > &/*requests*/
-  ) const
+void SerialComm<Ordinal>::waitAll (const ArrayView<RCP<CommRequest> >& requests) const
 {
-  TEUCHOS_TEST_FOR_EXCEPT(true);
+  (void) requests;
+  // There's nothing to wait on!
 }
 
 
@@ -359,16 +358,15 @@ waitAll (const ArrayView<RCP<CommRequest> >& requests,
 {
   (void) requests;
   (void) statuses;
-  TEUCHOS_TEST_FOR_EXCEPT(true);
+  // There's nothing to wait on!
 }
 
 
 template<typename Ordinal>
-void SerialComm<Ordinal>::wait(
-  const Ptr<RCP<CommRequest> > &/*request*/
-  ) const
+void SerialComm<Ordinal>::wait (const Ptr<RCP<CommRequest> > & request) const
 {
-  TEUCHOS_TEST_FOR_EXCEPT(true);
+  (void) request;
+  // There's nothing to wait on!
 }
 
 template< typename Ordinal>
