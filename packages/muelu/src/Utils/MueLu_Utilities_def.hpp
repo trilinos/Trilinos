@@ -238,20 +238,20 @@ namespace MueLu {
         switch (canUseML) {
 
         case true:
-#if 0 // Jonathan's ML-MULTIPLY
           //if ML is not enabled, this case falls through to the EpetraExt multiply.
-#           if defined(HAVE_MUELU_ML)
+#if defined(HAVE_MUELU_ML)
           {
+#if 0 // Jonathan's ML-MULTIPLY
             //ML matrix multiply wrap that uses ML_Operator_WrapEpetraCrsMatrix
             ML_Comm* comm;
             ML_Comm_Create(&comm);
             if (comm->ML_mypid == 0)
               std::cout << "****** USING ML's MATRIX MATRIX MULTIPLY ******" << std::endl;
-#           ifdef HAVE_MPI
+#ifdef HAVE_MPI
             // ML_Comm uses MPI_COMM_WORLD, so try to use the same communicator as epA.
             const Epetra_MpiComm * Mcomm=dynamic_cast<const Epetra_MpiComm*>(&(epA->Comm()));
             if(Mcomm) ML_Comm_Set_UsrComm(comm,Mcomm->GetMpiComm());
-#           endif
+#endif
             //in order to use ML, there must be no indices missing from the matrix column maps.
             EpetraExt::CrsMatrix_SolverMap AcolMapTransform;
             Epetra_CrsMatrix *transA = &(AcolMapTransform(*epA));
@@ -279,18 +279,13 @@ namespace MueLu {
 
             RCP<Epetra_CrsMatrix> epAB(result);
 #else // Michael's MLMULTIPLY
-            if (comm->ML_mypid == 0)
-              std::cout << "****** USING ML's MATRIX MATRIX MULTIPLY (LNM)******" << std::endl;
 
-            RCP<Epetra_CrsMatrix> epAB = MLTwoMatrixMultiply(
-                                                             RCP<Epetra_CrsMatrix> epA,
-                                                             RCP<Epetra_CrsMatrix> epB);
+            RCP<Epetra_CrsMatrix> epAB = MLTwoMatrixMultiply(epA, epB);
 #endif
-            RCP<CrsOperator> tmpC3 = Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(epAB);
-            C = tmpC3;
+            C = Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(epAB);
           }
           break;
-#           endif //if HAVE_MUELU_ML
+#endif
 
         case false:
           {
@@ -306,7 +301,7 @@ namespace MueLu {
 
         } //switch (canUseML)
 
-#       endif //ifdef HAVE_MUELU_EPETRAEXT
+#endif //ifdef HAVE_MUELU_EPETRAEXT
 
       } else if(C->getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
