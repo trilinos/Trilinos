@@ -677,6 +677,28 @@ namespace MueLu {
                                "Number of partition owners (" + buf.str() + ") is not equal to number of partitions");
     partitionOwners = procWinnerConst(); //only works if procWinner is const ...
 
+    // print the grid of processors, showing partition owners with a '+'
+    GetOStream(Runtime0,0) << "Partition distribution over cores, + indicates partition ownership" << std::endl;
+    int numProc = comm->getSize();
+    ArrayRCP<char> grid(numProc,'.');
+    for (int i=0; i<partitionOwners.size(); ++i) grid[ partitionOwners[i] ] = '+';
+    int sizeOfARow = (int) sqrt(numProc);
+    int numRows = numProc / sizeOfARow;
+    int leftOvers = numProc  - (numProc/numRows)*sizeOfARow;
+    int ctr=0;
+    int pidCtr=0;
+    for (int i=0; i<numRows; ++i) {
+      for (int j=0; j<sizeOfARow; ++j)
+        GetOStream(Runtime0,0) << grid[ctr++];
+      GetOStream(Runtime0,0) << "      " << pidCtr << ":" << pidCtr+sizeOfARow-1 << std::endl;;
+      pidCtr += sizeOfARow;
+    }
+    if (leftOvers > 0) {
+      for (int i=0; i<leftOvers; ++i)
+        GetOStream(Runtime0,0) << grid[ctr++];
+      GetOStream(Runtime0,0) << "      " << pidCtr << ":" << pidCtr+leftOvers-1 << std::endl;;
+    }
+
   } //DeterminePartitionPlacement
 
   //----------------------------------------------------------------------
