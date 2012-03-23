@@ -504,6 +504,36 @@ namespace panzer_stk {
                 TEUCHOS_ASSERT(false);
              }
           }
+
+          #ifdef HAVE_MUELU
+          {
+             if(!writeCoordinates)
+                callback->preRequest(Teko::RequestMesg(Teuchos::rcp(new Teuchos::ParameterList())));
+
+             // extract coordinate vectors and conditionally modify strat_params
+             //  coordinate vectors are copied and wrapped as ArrayRCP objects
+             //  the copy is certainly avoidable
+   
+             Teuchos::ParameterList & muelu_params = strat_params->sublist("Preconditioner Types").sublist("MueLu").sublist("Operator");
+             switch(mesh->getDimension()) {
+             case 3:{
+               Teuchos::ArrayRCP<double> coords = arcp(rcp(new std::vector<double>(callback->getZCoordsVector())));
+               muelu_params.set("ZCoordinates", coords);
+             }
+             case 2:{
+               Teuchos::ArrayRCP<double> coords = arcp(rcp(new std::vector<double>(callback->getYCoordsVector())));
+               muelu_params.set("YCoordinates", coords);
+             }
+             case 1:{
+               Teuchos::ArrayRCP<double> coords = arcp(rcp(new std::vector<double>(callback->getXCoordsVector())));
+               muelu_params.set("XCoordinates", coords);
+             }
+               break;
+             default:
+               TEUCHOS_ASSERT(false);
+             }
+          }
+          #endif
        }
        // else write_out_the_mesg("Warning: No unique field determines the coordinates, coordinates unavailable!")   
 
@@ -513,52 +543,7 @@ namespace panzer_stk {
 
     #ifdef HAVE_MUELU
     {
-
-     #ifdef HAVE_TEKO // needed by panzer_stk::ParameterListCallback
-      std::string fieldName;
-
-      Teuchos::RCP<const panzer::DOFManager<int,int> > dofs =
-        Teuchos::rcp_dynamic_cast<const panzer::DOFManager<int,int> >(dofManager);
-       
-      if(determineCoordinateField(*dofs,fieldName)) {
-        std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > fieldPatterns;
-        fillFieldPatternMap(*dofs,fieldName,fieldPatterns);
-        
-        Teuchos::RCP<panzer_stk::ParameterListCallback<int,int> > callback = Teuchos::rcp(new 
-          panzer_stk::ParameterListCallback<int,int>(fieldName,fieldPatterns,stkConn_manager,dofManager));
-
-        // force parameterlistcallback to build coordinates
-        callback->preRequest(Teko::RequestMesg(Teuchos::rcp(new Teuchos::ParameterList())));
-        
-        // extract coordinate vectors and conditionally modify strat_params
-        //  coordinate vectors are copied and wrapped as ArrayRCP objects
-        //  the copy is certainly avoidable
-
-        Teuchos::ParameterList & muelu_params = strat_params->sublist("Preconditioner Types").sublist("MueLu").sublist("Operator");
-        switch(mesh->getDimension()) {
-        case 3:{
-          Teuchos::ArrayRCP<double> coords = arcp(rcp(new std::vector<double>(callback->getZCoordsVector())));
-          muelu_params.set("ZCoordinates", coords);
-        }
-        case 2:{
-          Teuchos::ArrayRCP<double> coords = arcp(rcp(new std::vector<double>(callback->getYCoordsVector())));
-          muelu_params.set("YCoordinates", coords);
-        }
-        case 1:{
-          Teuchos::ArrayRCP<double> coords = arcp(rcp(new std::vector<double>(callback->getXCoordsVector())));
-          muelu_params.set("XCoordinates", coords);
-        }
-          break;
-        default:
-          TEUCHOS_ASSERT(false);
-        }
-
-      }
-
-      #endif // TEKO
-
       Thyra::addMueLuToStratimikosBuilder(linearSolverBuilder); // Register MueLu as a Stratimikos preconditioner strategy.
-
     }
     #endif // MUELU
 
@@ -749,7 +734,7 @@ namespace panzer_stk {
      for(std::size_t b=1;b<elementBlocks.size();b++) {
         std::string blockId = elementBlocks[b];
 
-        const std::set<int> & fields = dofManager.getFields(blockId);
+        std::set<int> fields = dofManager.getFields(blockId);
 
         std::set<int> currentFields(runningFields);
         runningFields.clear();

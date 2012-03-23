@@ -86,17 +86,24 @@ registerAndRequireEvaluators(PHX::FieldManager<TraitsT> & fm,const Teuchos::RCP<
 
    // add this for HCURL and HDIV basis, only want to add them once: evaluate vector fields at centroid
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-   RCP<panzer::PointRule> centroidRule = rcp(new panzer::PointRule("Centroid",1,pb.cellData()));
-   {
+   RCP<panzer::PointRule> centroidRule;
+   for(std::map<std::string,Teuchos::RCP<panzer::PureBasis> >::const_iterator itr=bases.begin();
+       itr!=bases.end();++itr) {
 
-     // compute centroid
-     Intrepid::FieldContainer<double> centroid;
-     computeReferenceCentroid(bases,pb.cellData().baseCellDimension(),centroid);
+     if(itr->second->isVectorBasis()) {
+        centroidRule = rcp(new panzer::PointRule("Centroid",1,pb.cellData()));
 
-     // build pointe values evaluator
-     RCP<PHX::Evaluator<panzer::Traits> > evaluator  = 
-        rcp(new panzer::PointValues_Evaluator<EvalT,TraitsT>(centroidRule,centroid));
-     fm.template registerEvaluator<EvalT>(evaluator);
+        // compute centroid
+        Intrepid::FieldContainer<double> centroid;
+        computeReferenceCentroid(bases,pb.cellData().baseCellDimension(),centroid);
+
+        // build pointe values evaluator
+        RCP<PHX::Evaluator<panzer::Traits> > evaluator  = 
+           rcp(new panzer::PointValues_Evaluator<EvalT,TraitsT>(centroidRule,centroid));
+        fm.template registerEvaluator<EvalT>(evaluator);
+
+        break; // get out of the loop, only need one evaluator
+     }
    }
 
    // add evaluators for each field
@@ -124,6 +131,8 @@ registerAndRequireEvaluators(PHX::FieldManager<TraitsT> & fm,const Teuchos::RCP<
          fm.template requireField<EvalT>(*eval->evaluatedFields()[0]);
       }
       else if(basis->getElementSpace()==panzer::PureBasis::HCURL) {
+         TEUCHOS_ASSERT(centroidRule!=Teuchos::null);
+
          // register basis values evaluator
          {
            Teuchos::RCP<PHX::Evaluator<TraitsT> > evaluator  
