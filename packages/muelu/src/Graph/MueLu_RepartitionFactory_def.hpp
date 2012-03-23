@@ -509,6 +509,8 @@ namespace MueLu {
 
     GetOStream(Runtime0,0) << "Using diffusive heuristic for partition placement." << std::endl;
 
+    RCP<SubFactoryMonitor> m1 = rcp(new SubFactoryMonitor(*this, "Setup", currentLevel));
+
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = currentLevel.Get<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition", loadBalancer_.get());
     // Figure out how many nnz there are per row.
     RCP<Xpetra::Vector<GO,LO,GO,NO> > nnzPerRowVector = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(A->getRowMap(),false);
@@ -592,8 +594,13 @@ namespace MueLu {
        continues until all partitions have been uniquely assigned.
     */
 
+    m1 = Teuchos::null;
+
+    int numRounds=0;
+    RCP<SubFactoryMonitor> m2 = rcp(new SubFactoryMonitor(*this, "Arbitration phase", currentLevel));
     while (doArbitrate)
     {
+      ++numRounds;
       ArrayRCP<SC> globalWeightVecData = globalWeightVec->getDataNonConst(0);
 
       //If this process doesn't yet own a partition, record all its nonzeros per partition as weights
@@ -664,6 +671,9 @@ namespace MueLu {
       sumAll(comm, arbitrateAgain, doArbitrate);
 
     } //while (doArbitrate)
+    m2 = Teuchos::null;
+
+    GetOStream(Statistics0,0) << "Number of arbitration rounds = " << numRounds << std::endl;
 
     ArrayRCP<const LO> procWinnerConst;
     if (procWinnerVec->getLocalLength() > 0)
@@ -678,7 +688,7 @@ namespace MueLu {
     partitionOwners = procWinnerConst(); //only works if procWinner is const ...
 
     // print the grid of processors, showing partition owners with a '+'
-    GetOStream(Runtime0,0) << "Partition distribution over cores, + indicates partition ownership" << std::endl;
+    GetOStream(Statistics0,0) << "Partition distribution over cores, + indicates partition ownership" << std::endl;
     int numProc = comm->getSize();
     ArrayRCP<char> grid(numProc,'.');
     for (int i=0; i<partitionOwners.size(); ++i) grid[ partitionOwners[i] ] = '+';
@@ -689,14 +699,14 @@ namespace MueLu {
     int pidCtr=0;
     for (int i=0; i<numRows; ++i) {
       for (int j=0; j<sizeOfARow; ++j)
-        GetOStream(Runtime0,0) << grid[ctr++];
-      GetOStream(Runtime0,0) << "      " << pidCtr << ":" << pidCtr+sizeOfARow-1 << std::endl;;
+        GetOStream(Statistics0,0) << grid[ctr++];
+      GetOStream(Statistics0,0) << "      " << pidCtr << ":" << pidCtr+sizeOfARow-1 << std::endl;;
       pidCtr += sizeOfARow;
     }
     if (leftOvers > 0) {
       for (int i=0; i<leftOvers; ++i)
-        GetOStream(Runtime0,0) << grid[ctr++];
-      GetOStream(Runtime0,0) << "      " << pidCtr << ":" << pidCtr+leftOvers-1 << std::endl;;
+        GetOStream(Statistics0,0) << grid[ctr++];
+      GetOStream(Statistics0,0) << "      " << pidCtr << ":" << pidCtr+leftOvers-1 << std::endl;;
     }
 
   } //DeterminePartitionPlacement
