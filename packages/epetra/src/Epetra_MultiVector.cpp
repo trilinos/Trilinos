@@ -280,7 +280,7 @@ int Epetra_MultiVector::DoCopy(void)
   // pointers are the only unique piece of information for each of the 
   // constructors.
 
-  // \interal { Optimization of this function can impact performance since it 
+  // \internal { Optimization of this function can impact performance since it 
   //           involves a fair amount of memory traffic.}
 
   // On exit, Pointers_ is redefined to point to its own MultiVector vectors.
