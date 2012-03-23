@@ -364,7 +364,7 @@ int main(int argc, char *argv[]) {
 
   try{
     Teuchos::RCP<Basis<double, FieldContainer<double> > > basis =
-      Teuchos::rcp(new Basis_HCURL_QUAD_I1<double, FieldContainer<double> >);
+      Teuchos::rcp(new Basis_HCURL_QUAD_I1_FEM<double, FieldContainer<double> >);
     Teuchos::RCP<DofCoordsInterface<FieldContainer<double> > > coord_iface =
       Teuchos::rcp_dynamic_cast<DofCoordsInterface<FieldContainer<double> > >(basis);
 
@@ -391,10 +391,10 @@ int main(int argc, char *argv[]) {
 
     // Check mathematical correctness
     FieldContainer<double> tangents(basis->getCardinality(),spaceDim); // tangents at each point basis point
-    tangents(0,0) =  0.5; tangents(0,1) =  0.0;
-    tangents(1,0) =  0.0; tangents(1,1) =  0.5;
-    tangents(2,0) = -0.5; tangents(2,1) =  0.0;
-    tangents(3,0) =  0.0; tangents(3,1) = -0.5;
+    tangents(0,0) =  2.0; tangents(0,1) =  0.0;
+    tangents(1,0) =  0.0; tangents(1,1) =  2.0;
+    tangents(2,0) = -2.0; tangents(2,1) =  0.0;
+    tangents(3,0) =  0.0; tangents(3,1) = -2.0;
 
     basis->getValues(bvals, cvals, OPERATOR_VALUE);
     char buffer[120];
@@ -403,7 +403,7 @@ int main(int argc, char *argv[]) {
 
         double tangent = 0.0;
         for(int d=0;d<spaceDim;d++) 
-           tangent = bvals(i,j,d)*tangents(j,d) 
+           tangent += bvals(i,j,d)*tangents(j,d);
 
         if ((i != j) && (std::abs(tangent - 0.0) > INTREPID_TOL)) {
           errorFlag++;
