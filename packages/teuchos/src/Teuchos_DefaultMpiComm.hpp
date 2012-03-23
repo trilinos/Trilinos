@@ -101,6 +101,9 @@ namespace Teuchos {
       else if (err == MPI_ERR_IN_STATUS) {
 	return "MPI_ERR_IN_STATUS";
       }
+      else if (err == MPI_ERR_BUFFER) {
+	return "MPI_ERR_BUFFER";
+      }
       else {
 	return "Unknown MPI error";
       }
@@ -590,32 +593,26 @@ void MpiComm<Ordinal>::scan(
   ,const Ordinal bytes, const char sendBuffer[], char scanReducts[]
   ) const
 {
-  TEUCHOS_COMM_TIME_MONITOR(
-    "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::scan(...)"
-    );
+  TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::scan(...)" );
+
   MpiReductionOpSetter op(mpiReductionOp(rcp(&reductOp,false)));
-  MPI_Scan(
-    const_cast<char*>(sendBuffer),scanReducts,bytes,MPI_CHAR,op.mpi_op()
-    ,*rawMpiComm_
-    );
+  const int err = 
+    MPI_Scan (const_cast<char*>(sendBuffer), scanReducts, bytes, MPI_CHAR, 
+	      op.mpi_op(), *rawMpiComm_);
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+    "Teuchos::MpiComm::scan: MPI_Scan() failed with error code \"" 
+    << mpiErrorCodeToString (err) << "\".");
 }
 
 
 template<typename Ordinal>
-void MpiComm<Ordinal>::send(
-  const Ordinal bytes, const char sendBuffer[], const int destRank
-  ) const
+void 
+MpiComm<Ordinal>::send (const Ordinal bytes, 
+			const char sendBuffer[], 
+			const int destRank) const
 {
-  TEUCHOS_COMM_TIME_MONITOR(
-    "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::send(...)"
-    );
-#ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    ! ( 0 <= destRank && destRank < size_ ), std::logic_error
-    ,"Error, destRank = " << destRank << " is not < 0 or is not"
-    " in the range [0,"<<size_-1<<"]!"
-    );
-#endif // TEUCHOS_DEBUG
+  TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::send(...)" );
+
 #ifdef TEUCHOS_MPI_COMM_DUMP
   if(show_dump) {
     dumpBuffer<Ordinal,char>(
@@ -624,10 +621,12 @@ void MpiComm<Ordinal>::send(
       );
   }
 #endif // TEUCHOS_MPI_COMM_DUMP
-  MPI_Send(
-    const_cast<char*>(sendBuffer),bytes,MPI_CHAR,destRank,tag_,*rawMpiComm_
-    );
-  // ToDo: What about error handling???
+
+  const int err = MPI_Send (const_cast<char*>(sendBuffer), bytes, MPI_CHAR,
+			    destRank, tag_, *rawMpiComm_);
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+    "Teuchos::MpiComm::send: MPI_Send() failed with error code \"" 
+    << mpiErrorCodeToString (err) << "\".");
 }
 
 
@@ -637,16 +636,8 @@ void MpiComm<Ordinal>::readySend(
   const int destRank
   ) const
 {
-  TEUCHOS_COMM_TIME_MONITOR(
-    "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::readySend(...)"
-    );
-#ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    ! ( 0 <= destRank && destRank < size_ ), std::logic_error
-    ,"Error, destRank = " << destRank << " is not < 0 or is not"
-    " in the range [0,"<<size_-1<<"]!"
-    );
-#endif // TEUCHOS_DEBUG
+  TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::readySend" );
+
 #ifdef TEUCHOS_MPI_COMM_DUMP
   if(show_dump) {
     dumpBuffer<Ordinal,char>(
@@ -655,10 +646,13 @@ void MpiComm<Ordinal>::readySend(
       );
   }
 #endif // TEUCHOS_MPI_COMM_DUMP
-  MPI_Rsend(
-    const_cast<char*>(sendBuffer.getRawPtr()),sendBuffer.size(),MPI_CHAR,destRank,tag_,*rawMpiComm_
-    );
-  // ToDo: What about error handling???
+
+  const int err = 
+    MPI_Rsend (const_cast<char*>(sendBuffer.getRawPtr()), sendBuffer.size(),
+	       MPI_CHAR, destRank, tag_, *rawMpiComm_);
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+    "Teuchos::MpiComm::readySend: MPI_Rsend() failed with error code \"" 
+    << mpiErrorCodeToString (err) << "\".");
 }
 
 
@@ -695,23 +689,21 @@ MpiComm<Ordinal>::receive (const int sourceRank,
 
 
 template<typename Ordinal>
-RCP<CommRequest> MpiComm<Ordinal>::isend(
-  const ArrayView<const char> &sendBuffer,
-  const int destRank
-  ) const
+RCP<CommRequest> 
+MpiComm<Ordinal>::isend (const ArrayView<const char> &sendBuffer,
+			 const int destRank) const
 {
-  TEUCHOS_COMM_TIME_MONITOR(
-    "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::isend(...)"
-    );
-#ifdef TEUCHOS_DEBUG
-  assertRank(destRank, "destRank");
-#endif // TEUCHOS_DEBUG
+  TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::isend(...)" );
+
   MPI_Request rawMpiRequest = MPI_REQUEST_NULL;
-  MPI_Isend(
-    const_cast<char*>(sendBuffer.getRawPtr()), sendBuffer.size(), MPI_CHAR, destRank,
-    tag_, *rawMpiComm_, &rawMpiRequest );
-  return mpiCommRequest(rawMpiRequest);
-  // ToDo: What about MPI error handling???
+  const int err = 
+    MPI_Isend (const_cast<char*>(sendBuffer.getRawPtr()), sendBuffer.size(), 
+	       MPI_CHAR, destRank, tag_, *rawMpiComm_, &rawMpiRequest);
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+    "Teuchos::MpiComm::isend: MPI_Isend() failed with error code \"" 
+    << mpiErrorCodeToString (err) << "\".");
+
+  return mpiCommRequest (rawMpiRequest);
 }
 
 
@@ -765,9 +757,37 @@ void MpiComm<Ordinal>::waitAll(
   }
 
   Array<MPI_Status> rawMpiStatuses(count);
-  MPI_Waitall( count, rawMpiRequests.getRawPtr(), rawMpiStatuses.getRawPtr() );
-  // ToDo: We really should check the status?
-
+  const int err = MPI_Waitall (count, rawMpiRequests.getRawPtr(), 
+			       rawMpiStatuses.getRawPtr());
+  // The MPI standard doesn't say what happens to the rest of the
+  // requests if one of them failed, in a multiple completion routine
+  // like MPI_Waitall().  We conservatively abort in that case.  If
+  // err == MPI_ERR_IN_STATUS, then we need to check each status'
+  // MPI_ERROR field to find the error.
+  if (err != MPI_SUCCESS) {
+    if (err == MPI_ERR_IN_STATUS) {
+      int firstErr = MPI_SUCCESS;
+      int firstIndexFailed = 0;
+      for (int i = 0; i < count; ++i) {
+	if (rawMpiStatuses[i].MPI_ERROR != MPI_SUCCESS) {
+	  firstErr = rawMpiStatuses[i].MPI_ERROR;
+	  firstIndexFailed = i;
+	  break;
+	}
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(firstErr != MPI_SUCCESS, std::runtime_error, 
+        "Teuchos::MpiComm::waitall: MPI_Waitall() failed with error code "
+        "\"MPI_ERR_IN_STATUS\".  Of the " << count << " request" 
+        << (count != 1 ? "s" : "") << " given to MPI_Waitall(), the smallest "
+        "0-based index that failed is " << firstIndexFailed << " and its error "
+        "code is \"" << mpiErrorCodeToString (firstErr) << "\".");
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error, 
+        "Teuchos::MpiComm::waitall: MPI_Waitall() failed with error code "
+	<< mpiErrorCodeToString (err) << "\".");
+    }
+  }
 }
 
 
@@ -826,12 +846,12 @@ waitAll (const ArrayView<RCP<CommRequest> >& requests,
 	  break;
 	}
       }
-      TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(firstErr != MPI_SUCCESS, std::runtime_error, 
         "Teuchos::MpiComm::waitall: MPI_Waitall() failed with error code "
         "\"MPI_ERR_IN_STATUS\".  Of the " << count << " request" 
         << (count != 1 ? "s" : "") << " given to MPI_Waitall(), the smallest "
         "0-based index that failed is " << firstIndexFailed << " and its error "
-        "code is \"" << mpiErrorCodeToString (err) << "\".");
+        "code is \"" << mpiErrorCodeToString (firstErr) << "\".");
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error, 
