@@ -130,6 +130,10 @@ public:
     const ArrayView<RCP<CommRequest> > &requests
     ) const;
   /** \brief . */
+  virtual void 
+  waitAll (const ArrayView<RCP<CommRequest> >& requests,
+	   const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const;
+  /** \brief . */
   virtual void wait(
     const Ptr<RCP<CommRequest> > &request
     ) const;
@@ -339,20 +343,30 @@ RCP<CommRequest> SerialComm<Ordinal>::ireceive(
 
 
 template<typename Ordinal>
-void SerialComm<Ordinal>::waitAll(
-  const ArrayView<RCP<CommRequest> > &/*requests*/
-  ) const
+void SerialComm<Ordinal>::waitAll (const ArrayView<RCP<CommRequest> >& requests) const
 {
-  TEUCHOS_TEST_FOR_EXCEPT(true);
+  (void) requests;
+  // There's nothing to wait on!
 }
 
 
 template<typename Ordinal>
-void SerialComm<Ordinal>::wait(
-  const Ptr<RCP<CommRequest> > &/*request*/
-  ) const
+void 
+SerialComm<Ordinal>::
+waitAll (const ArrayView<RCP<CommRequest> >& requests,
+	 const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const
 {
-  TEUCHOS_TEST_FOR_EXCEPT(true);
+  (void) requests;
+  (void) statuses;
+  // There's nothing to wait on!
+}
+
+
+template<typename Ordinal>
+void SerialComm<Ordinal>::wait (const Ptr<RCP<CommRequest> > & request) const
+{
+  (void) request;
+  // There's nothing to wait on!
 }
 
 template< typename Ordinal>

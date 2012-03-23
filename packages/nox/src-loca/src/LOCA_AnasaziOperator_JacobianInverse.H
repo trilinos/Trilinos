@@ -102,6 +102,15 @@ namespace LOCA {
 	    NOX::Abstract::MultiVector& output) const;
 
       /*! 
+       * \brief  Begin PostProcessing of eigenvalues
+       *
+       * Compute Jacobian matrix once, for use in subsequent 
+       * repeated calls to rayleighQuotient
+       */
+      virtual void
+      beginPostProcessing();
+
+      /*! 
        * \brief Transform eigenvalue.
        *
        * Transforms the given eigenvalue to the eigenvalue of the Jacobian

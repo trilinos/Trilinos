@@ -98,7 +98,8 @@ LOCA::Epetra::Group::Group(
   complexMatrix(),
   complexVec(),
   isValidComplex(false),
-  isValidComplexPrec(false)
+  isValidComplexPrec(false),
+  separateMatrixMemoryDeclared(false)
 {
 }
 
@@ -129,7 +130,8 @@ LOCA::Epetra::Group::Group(
   complexMatrix(),
   complexVec(),
   isValidComplex(false),
-  isValidComplexPrec(false)
+  isValidComplexPrec(false),
+  separateMatrixMemoryDeclared(false)
 {
 }
 
@@ -161,7 +163,8 @@ LOCA::Epetra::Group::Group(
   complexMatrix(),
   complexVec(),
   isValidComplex(false),
-  isValidComplexPrec(false)
+  isValidComplexPrec(false),
+  separateMatrixMemoryDeclared(false)
 {
   shiftedSharedLinearSystem = 
     Teuchos::rcp(new NOX::SharedObject<NOX::Epetra::LinearSystem, 
@@ -196,7 +199,8 @@ LOCA::Epetra::Group::Group(
   complexMatrix(),
   complexVec(),
   isValidComplex(false),
-  isValidComplexPrec(false)
+  isValidComplexPrec(false),
+  separateMatrixMemoryDeclared(false)
 {
  shiftedSharedLinearSystem = 
     Teuchos::rcp(new NOX::SharedObject<NOX::Epetra::LinearSystem, 
@@ -225,7 +229,8 @@ LOCA::Epetra::Group::Group(const LOCA::Epetra::Group& source,
   complexMatrix(source.complexMatrix),
   complexVec(source.complexVec),
   isValidComplex(source.isValidComplex),
-  isValidComplexPrec(source.isValidComplexPrec)
+  isValidComplexPrec(source.isValidComplexPrec),
+  separateMatrixMemoryDeclared(source.separateMatrixMemoryDeclared)
 {
   if (source.scaleVecPtr != Teuchos::null)
     scaleVecPtr = source.scaleVecPtr->clone(NOX::DeepCopy);
@@ -269,6 +274,7 @@ LOCA::Epetra::Group::operator=(const LOCA::Epetra::Group& source)
       complexSharedLinearSystem->getObject(this);
     isValidComplex = source.isValidComplex;
     isValidComplexPrec = source.isValidComplexPrec;
+    separateMatrixMemoryDeclared = source.separateMatrixMemoryDeclared;
   }
   return *this;
 }
@@ -710,7 +716,6 @@ LOCA::Epetra::Group::applyShiftedMatrixInverseMultiVector(
 
     }
 
-    
 
     const NOX::Epetra::Vector* epetra_input;
     NOX::Epetra::Vector* epetra_result; 
@@ -736,6 +741,89 @@ LOCA::Epetra::Group::applyShiftedMatrixInverseMultiVector(
 
   else 
     return NOX::Abstract::Group::BadDependency;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Epetra::Group::computeSecondShiftedMatrix(double alpha, double beta)
+{
+  // Use memory from regular "jacobian" linear system for secondShiftedMatrix,
+  // which is only valid if user declareSeparateMatrixMemory
+  if (!separateMatrixMemoryDeclared) {
+    globalData->locaErrorCheck->throwError(
+       "LOCA::Epetra::Group::computeSecondShiftedMatrix()",
+       "Group must be called with declareSeparateMatrixMemory() for use of second shifted matrix.");
+    return NOX::Abstract::Group::BadDependency;
+  }
+
+  // We store a real shifted matrix
+  if (userInterfaceTime != Teuchos::null) {
+    Teuchos::RCP<Epetra_Operator> shift2 = 
+      sharedLinearSystem.getObject(this)->getJacobianOperator();
+
+    bool res = 
+      userInterfaceTime->computeShiftedMatrix(alpha, beta, 
+					      xVector.getEpetraVector(), 
+					      *shift2);
+    
+    // Check if Jacobian and mass matrices are the same, in which case
+    // the Jacobian is no longer valid
+    isValidJacobian = false;
+
+    if (res)
+      return NOX::Abstract::Group::Ok;
+    else
+      return NOX::Abstract::Group::Failed;
+  }
+
+  // Failure
+  else
+    return NOX::Abstract::Group::BadDependency;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Epetra::Group::applySecondShiftedMatrix(const NOX::Abstract::Vector& input,
+                                        NOX::Abstract::Vector& result) const
+{
+  const NOX::Epetra::Vector& epetra_input = 
+    dynamic_cast<const NOX::Epetra::Vector&>(input);
+  NOX::Epetra::Vector& epetra_result = 
+    dynamic_cast<NOX::Epetra::Vector&>(result);
+
+  // We store a real shifted matrix
+  if (userInterfaceTime != Teuchos::null) {
+    bool res =
+      sharedLinearSystem.getObject()->applyJacobian(epetra_input, 
+						     epetra_result);
+    if (res)
+      return NOX::Abstract::Group::Ok;
+    else
+      return NOX::Abstract::Group::Failed;
+  }
+
+  // Failure
+  else
+    return NOX::Abstract::Group::BadDependency;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Epetra::Group::applySecondShiftedMatrixMultiVector(
+				     const NOX::Abstract::MultiVector& input,
+				     NOX::Abstract::MultiVector& result) const
+{
+  string callingFunction = 
+    "LOCA::Epetra::Group::applySecondShiftedMatrixMultiVector()";
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  NOX::Abstract::Group::ReturnType status;
+
+  for (int i=0; i<input.numVectors(); i++) {
+    status = applySecondShiftedMatrix(input[i], result[i]);
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
+  }
+
+  return finalStatus;
 }
 
 bool
@@ -1335,6 +1423,26 @@ LOCA::Epetra::Group::setFreeEnergyInterface(
               const Teuchos::RCP<LOCA::Epetra::Interface::FreeEnergy>& iFE)
 {
   userInterfaceFreeEnergy = iFE;
+}
+
+void
+LOCA::Epetra::Group::declareSeparateMatrixMemory(bool separateMem)
+{
+  separateMatrixMemoryDeclared = separateMem;
+
+  // Error check
+  if ( separateMem) {
+    Teuchos::RCP<Epetra_Operator> linsysjac = 
+      sharedLinearSystem.getObject(this)->getJacobianOperator();
+    Teuchos::RCP<Epetra_Operator> shiftedlinsysjac = 
+      shiftedSharedLinearSystem->getObject(this)->getJacobianOperator();
+  
+    if (shiftedlinsysjac.get() == linsysjac.get())
+      globalData->locaErrorCheck->throwError("LOCA::Epetra::Group::declareSeparateMatrixMemory", 
+  	   "User code has called declareSeparateMatrixMemory(), but the pointers to "
+           "the matrices in both\nlinear systems are the same! Need to allocate separate memory "
+           "in linSys and shiftedlinSys.");
+  }
 }
 
 double

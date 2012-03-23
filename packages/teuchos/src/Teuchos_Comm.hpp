@@ -48,10 +48,58 @@
 
 namespace Teuchos {
 
-
-/** \brief . */
+/// \class CommRequest
+/// \brief Encapsulation of MPI_Request.
+///
+/// An MPI_Request encapsulates the result of a nonblocking MPI send
+/// or receive (which we in turn encapsulate by \c isend() resp. \c
+/// ireceive()).  This class in turn wraps MPI_Request.
+///
+/// This is an opaque object which is meant to be given to \c wait()
+/// or \c waitall().
 class CommRequest : public Teuchos::Describable {};
- 
+
+/// \class CommStatus
+/// \brief Encapsulation of MPI_Status.
+///
+/// This interface encapsulates the result of a receive (the \c
+/// MPI_Status struct).  Its main use is to figure out which process
+/// sent you a message, if you received it using \c MPI_ANY_SOURCE.
+///
+/// \tparam OrdinalType The same template parameter as \c Comm.  Only
+///   use \c int here.  We only make this a template class for
+///   compatibility with \c Comm.
+///
+/// \note For now, this class only exposes the rank of the process
+///   that sent the message (the "source rank").  Later, we might
+///   expose other fields of \c MPI_Status in this interface.  For
+///   now, you can attempt a dynamic cast to \c MpiCommStatus to
+///   access all three fields (MPI_SOURCE, MPI_TAG, and MPI_ERROR).
+template<class OrdinalType>
+class CommStatus {
+public:
+  //! Destructor (declared virtual for memory safety)
+  virtual ~CommStatus() {}
+
+  //! The source rank that sent the message.
+  virtual OrdinalType getSourceRank () = 0;
+};
+
+/// \class SerialCommStatus
+/// \brief Implementation of \c CommStatus for a serial communicator.
+///
+/// \tparam OrdinalType The same template parameter as \c Comm.  Only
+///   use \c int here.  We only make this a template class for
+///   compatibility with \c Comm.
+template<class OrdinalType>
+class SerialCommStatus : public CommStatus<OrdinalType> {
+public:
+  //! Default constructor.
+  SerialCommStatus () {}
+
+  //! The source rank that sent the message (must be zero).
+  OrdinalType getSourceRank () { return 0; }
+};
 
 /** \brief Abstract interface class for a basic communication channel between
  * one or more processes.
@@ -321,7 +369,7 @@ public:
     ) const = 0;
 
 
-  /** \brief Wait on a set of communication request.
+  /** \brief Wait on a set of communication requests.
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>requests.size() > 0</tt>
@@ -335,6 +383,25 @@ public:
     const ArrayView<RCP<CommRequest> > &requests
     ) const = 0;
 
+  /// \brief Wait on communication requests, and return their statuses.
+  /// 
+  /// \pre requests.size() == statuses.size()
+  ///
+  /// \pre For i in 0, 1, ..., requests.size()-1, requests[i] is
+  ///   either null or requests[i] was returned by an ireceive() or
+  ///   isend().
+  ///
+  /// \post For i in 0, 1, ..., requests.size()-1,
+  ///   requests[i].is_null() is true.
+  ///
+  /// \param requests [in/out] On input: the requests on which to
+  ///   wait.  On output: all set to null.
+  ///
+  /// \param statuses [out] The status results of waiting on the
+  ///   requests.
+  virtual void 
+  waitAll (const ArrayView<RCP<CommRequest> >& requests,
+	   const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const = 0;
 
   /** \brief Wait on a single communication request.
    *

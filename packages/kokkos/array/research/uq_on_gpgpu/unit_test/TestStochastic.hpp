@@ -355,7 +355,11 @@ test_product_flat_commuted_matrix(
   typedef ScalarType value_type ;
 
   typedef Kokkos::NormalizedLegendrePolynomialBases<4,Kokkos::Host> polynomial ;
-  typedef Kokkos::StochasticProductTensor< value_type , polynomial , Kokkos::Host , Kokkos::SparseProductTensor > tensor_type ;
+
+  typedef Kokkos::StochasticProductTensor<
+     value_type , polynomial ,
+     Kokkos::Host ,
+     Kokkos::CrsProductTensor > tensor_type ;
 
   //------------------------------
 
@@ -365,10 +369,10 @@ test_product_flat_commuted_matrix(
   //------------------------------
   // Generate FEM graph:
 
-  std::vector< std::vector<size_t> > graph ;
+  std::vector< std::vector<size_t> > fem_graph ;
 
   const size_t outer_length = nGrid * nGrid * nGrid ;
-  unit_test::generate_fem_graph( nGrid , graph );
+  unit_test::generate_fem_graph( nGrid , fem_graph );
 
   //------------------------------
   // Generate product tensor from variables' degrees
@@ -377,37 +381,58 @@ test_product_flat_commuted_matrix(
     Kokkos::create_product_tensor< tensor_type >( var_degree );
 
   const size_t inner_length = tensor.dimension();
-  const size_t flat_length  = inner_length * outer_length ;
+
+  std::vector< std::vector<size_t> > tensor_graph( inner_length );
+
+  for ( size_t iInnerRow = 0 ; iInnerRow < inner_length ; ++iInnerRow ) {
+  for ( size_t iInnerCol = 0 ; iInnerCol < inner_length ; ++iInnerCol ) {
+
+    for ( Kokkos::Host::size_type
+            n = tensor.tensor().entry_begin( iInnerRow ) ;
+            n < tensor.tensor().entry_end(   iInnerRow ) ; ++n ) {
+
+      if ( iInnerCol == tensor.tensor().coord( n , 0 ) ||
+           iInnerCol == tensor.tensor().coord( n , 1 ) ) {
+        tensor_graph[iInnerRow].push_back( iInnerCol );
+        break ;
+      }
+    }
+  }
+  }
 
   //------------------------------
   // Generate flattened graph:
   //
   // dof(i,j) -> dof(i+j*inner_length)
 
+  const size_t flat_length  = inner_length * outer_length ;
+
   std::vector< std::vector<size_t> > flat_graph( flat_length );
 
-  for ( size_t iOuterRow = 0 ; iOuterRow < graph.size() ; ++iOuterRow ) {
+  for ( size_t iOuterRow = 0 ; iOuterRow < outer_length ; ++iOuterRow ) {
+  for ( size_t iInnerRow = 0 ; iInnerRow < inner_length ; ++iInnerRow ) {
 
-    const size_t iOuterNZ = graph[iOuterRow].size();
-    const size_t iFlatNZ  = iOuterNZ * inner_length ;
+    const size_t iFlatRow = iInnerRow + iOuterRow * inner_length ;
 
-    for ( size_t iInnerRow = 0 ; iInnerRow < inner_length ; ++iInnerRow ) {
+    const size_t iOuterNZ = fem_graph[iOuterRow].size();
+    const size_t iInnerNZ = tensor_graph[iInnerRow].size();
+    const size_t iFlatNZ  = iOuterNZ * iInnerNZ ;
 
-      const size_t iFlatRow = iInnerRow + iOuterRow * inner_length ;
+    flat_graph[iFlatRow].resize( iFlatNZ );
 
-      flat_graph[iFlatRow].resize( iFlatNZ );
+    for ( size_t iOuterEntry = 0 ; iOuterEntry < iOuterNZ ; ++iOuterEntry ) {
+    for ( size_t iInnerEntry = 0 ; iInnerEntry < iInnerNZ ; ++iInnerEntry ) {
 
-      for ( size_t iOuterEntry = 0 ; iOuterEntry < iOuterNZ ; ++iOuterEntry ) {
-        const size_t iFlatColumnBegin =
-          graph[iOuterRow][iOuterEntry] * inner_length ;
+      const size_t iOuterCol = fem_graph[   iOuterRow][iOuterEntry];
+      const size_t iInnerCol = tensor_graph[iInnerRow][iInnerEntry];
 
-        for ( size_t iInnerEntry = 0 ; iInnerEntry < inner_length ; ++iInnerEntry ) {
-          const size_t iFlatEntry = iInnerEntry + iOuterEntry * inner_length ;
+      const size_t iFlatColumn = iInnerCol +   iOuterCol   * inner_length ;
+      const size_t iFlatEntry  = iInnerEntry + iOuterEntry * iInnerNZ ;
 
-          flat_graph[iFlatRow][iFlatEntry] = iFlatColumnBegin + iInnerEntry ;
-        }
-      }
+      flat_graph[iFlatRow][iFlatEntry] = iFlatColumn ;
     }
+    }
+  }
   }
 
   //------------------------------
@@ -494,7 +519,11 @@ test_product_flat_original_matrix(
   typedef ScalarType value_type ;
 
   typedef Kokkos::NormalizedLegendrePolynomialBases<4,Kokkos::Host> polynomial ;
-  typedef Kokkos::StochasticProductTensor< value_type , polynomial , Kokkos::Host , Kokkos::SparseProductTensor > tensor_type ;
+
+  typedef Kokkos::StochasticProductTensor<
+    value_type , polynomial ,
+    Kokkos::Host ,
+    Kokkos::CrsProductTensor > tensor_type ;
 
   //------------------------------
 
@@ -504,10 +533,10 @@ test_product_flat_original_matrix(
   //------------------------------
   // Generate FEM graph:
 
-  std::vector< std::vector<size_t> > graph ;
+  std::vector< std::vector<size_t> > fem_graph ;
 
   const size_t outer_length = nGrid * nGrid * nGrid ;
-  unit_test::generate_fem_graph( nGrid , graph );
+  unit_test::generate_fem_graph( nGrid , fem_graph );
 
   //------------------------------
   // Generate product tensor from variables' degrees
@@ -516,30 +545,53 @@ test_product_flat_original_matrix(
     Kokkos::create_product_tensor< tensor_type >( var_degree );
 
   const size_t inner_length = tensor.dimension();
-  const size_t flat_length  = inner_length * outer_length ;
+
+  std::vector< std::vector<size_t> > tensor_graph( inner_length );
+
+  for ( size_t iInnerRow = 0 ; iInnerRow < inner_length ; ++iInnerRow ) {
+  for ( size_t iInnerCol = 0 ; iInnerCol < inner_length ; ++iInnerCol ) {
+
+    for ( Kokkos::Host::size_type
+            n = tensor.tensor().entry_begin( iInnerRow ) ;
+            n < tensor.tensor().entry_end(   iInnerRow ) ; ++n ) {
+
+      if ( iInnerCol == tensor.tensor().coord( n , 0 ) ||
+           iInnerCol == tensor.tensor().coord( n , 1 ) ) {
+        tensor_graph[iInnerRow].push_back( iInnerCol );
+        break ;
+      }
+    }
+  }
+  }
 
   //------------------------------
   // Generate flattened graph:
   //
   // dof(i,j) -> dof(i+j*inner_length)
 
+  const size_t flat_length  = inner_length * outer_length ;
+
   std::vector< std::vector<size_t> > flat_graph( flat_length );
 
   for ( size_t iInnerRow = 0 ; iInnerRow < inner_length ; ++iInnerRow ) {
   for ( size_t iOuterRow = 0 ; iOuterRow < outer_length ; ++iOuterRow ) {
 
-    const size_t iOuterNZ = graph[iOuterRow].size();
-    const size_t iFlatNZ  = iOuterNZ * inner_length ;
     const size_t iFlatRow = iOuterRow + iInnerRow * outer_length ;
+
+    const size_t iOuterNZ = fem_graph[iOuterRow].size();
+    const size_t iInnerNZ = tensor_graph[iInnerRow].size();
+    const size_t iFlatNZ  = iOuterNZ * iInnerNZ ;
 
     flat_graph[iFlatRow].resize( iFlatNZ );
 
-    for ( size_t iInnerEntry = 0 ; iInnerEntry < inner_length ; ++iInnerEntry ) {
+    for ( size_t iInnerEntry = 0 ; iInnerEntry < iInnerNZ ; ++iInnerEntry ) {
     for ( size_t iOuterEntry = 0 ; iOuterEntry < iOuterNZ ; ++iOuterEntry ) {
-      const size_t iFlatColumn = graph[iOuterRow][iOuterEntry] +
-                                 iInnerEntry * outer_length ;
 
-      const size_t iFlatEntry = iOuterEntry + iInnerEntry * iOuterNZ ;
+      const size_t iOuterCol = fem_graph[   iOuterRow][iOuterEntry];
+      const size_t iInnerCol = tensor_graph[iInnerRow][iInnerEntry];
+
+      const size_t iFlatColumn = iOuterCol   + iInnerCol   * outer_length ;
+      const size_t iFlatEntry  = iOuterEntry + iInnerEntry * iOuterNZ ;
 
       flat_graph[iFlatRow][iFlatEntry] = iFlatColumn ;
     }
@@ -637,17 +689,17 @@ test_flat_matrix(
   //------------------------------
   // Generate FEM graph:
 
-  std::vector< std::vector<size_t> > graph ;
+  std::vector< std::vector<size_t> > fem_graph ;
 
   const size_t length = nGrid * nGrid * nGrid ;
   const size_t graph_length =
-    unit_test::generate_fem_graph( nGrid , graph );
+    unit_test::generate_fem_graph( nGrid , fem_graph );
 
   //------------------------------
 
   matrix_type matrix ;
 
-  matrix.graph = Kokkos::create_labeled_crsmap<crsmap_type>( std::string("testing") , graph );
+  matrix.graph = Kokkos::create_labeled_crsmap<crsmap_type>( std::string("testing") , fem_graph );
 
   matrix.values =
     Kokkos::create_multivector<value_type,Device>( graph_length );

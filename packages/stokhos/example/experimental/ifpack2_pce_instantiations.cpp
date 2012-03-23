@@ -41,6 +41,7 @@
 #include "Ifpack2_Diagonal_def.hpp"
 #include "Ifpack2_Relaxation_def.hpp"
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#include "Tpetra_CrsGraph_def.hpp"
 #include "Tpetra_CrsMatrix_def.hpp"
 #endif
 

@@ -54,7 +54,18 @@ namespace Tpetra {
   ///
   /// This class is an implementation detail of \c Map.  It is mainly
   /// of interest to Tpetra developers and does not normally appear in
-  /// users' code.
+  /// users' code.  If using this with a Map, the template parameters
+  /// of Directory should always be the same as the template
+  /// parameters of Map.
+  ///
+  /// \tparam LocalOrdinal Same as Map's \c LocalOrdinal template
+  ///   parameter.
+  ///
+  /// \tparam GlobalOrdinal Same as Map's \c GlobalOrdinal template
+  ///   parameter.  Defaults to the same type as LocalOrdinal.
+  ///
+  /// \tparam Node Same as Map's \c Node template parameter.  Defaults
+  ///   to the default Kokkos Node type.
   ///
   /// Directory implements looking up the process IDs and local IDs
   /// corresponding to a given list of global IDs.  Each Map owns a
@@ -72,10 +83,10 @@ namespace Tpetra {
   /// 2. If the user's Map is distributed but contiguous, then I build
   ///    an array (replicated on all processes) that maps from each
   ///    process ID to the minimum global ID that it owns.  This
-  ///    trades time and communication for space (\f$P + O(1)\f$
-  ///    entries if there are P processes in the communicator), in
-  ///    that it allows lookups without communication (once the array
-  ///    has been built).
+  ///    trades time and communication for space (\f$P + 1\f$ entries
+  ///    in the array if there are P processes in the communicator),
+  ///    in that it allows lookups without communication (once the
+  ///    array has been built).
   ///
   /// 3. If the user's Map is distributed and noncontiguous, then I
   ///    have to store a general mapping from global ID to (process

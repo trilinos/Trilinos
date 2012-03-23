@@ -164,6 +164,33 @@ namespace LOCA {
 				const NOX::Abstract::MultiVector& input,
 				NOX::Abstract::MultiVector& result) const;
 
+      //! Compute the second shifted matrix. Can avoid recomputing if two are stored.
+      /*!
+       * Implementation here prints an error message and returns 
+       * NOX::Abstract::Group::NotDefined.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      computeSecondShiftedMatrix(double alpha, double beta);
+
+      //! Multiply the shifted matrix by a vector.
+      /*!
+       * Implementation here prints an error message and returns 
+       * NOX::Abstract::Group::NotDefined.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      applySecondShiftedMatrix(const NOX::Abstract::Vector& input,
+			 NOX::Abstract::Vector& result) const;
+
+      //! Multiply the shifted matrix by a multi-vector.
+      /*!
+       * Implementation here prints an error message and returns 
+       * NOX::Abstract::Group::NotDefined.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      applySecondShiftedMatrixMultiVector(
+				const NOX::Abstract::MultiVector& input,
+				NOX::Abstract::MultiVector& result) const;
+      
       //@}
 
       /*! 

@@ -46,3 +46,16 @@ IF (${PROJECT_NAME}_ENABLE_Epetra)
     NUM_MPI_PROCS 4
     )
 ENDIF ()
+
+# Test whether Export to a CrsMatrix with a static graph works.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ExportToStaticGraphCrsMatrix
+  SOURCES ExportToStaticGraphCrsMatrix.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 4
+  )
+
+
+
+

@@ -263,33 +263,44 @@ namespace Tpetra {
   void 
   Distributor::computeReceives()
   {
-    int myImageID = comm_->getRank();
-    int numImages = comm_->getSize();
+    using Teuchos::Array;
+    using Teuchos::CommStatus;
+    using Teuchos::CommRequest;
+    using Teuchos::ireceive;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::REDUCE_SUM;
+    using Teuchos::receive;
+    using Teuchos::send;
 
-    // to_nodes_from_me[i] == the number of messages sent by this node
-    // to node i.  The data in numSends_, imagesTo_, lengthsTo_
-    // concern the contiguous sends.  Therefore, each node will be
+    const int myRank = comm_->getRank();
+    const int numProcs = comm_->getSize();
+
+    // toNodesFromMe[i] == the number of messages sent by this process
+    // to process i.  The data in numSends_, imagesTo_, lengthsTo_
+    // concern the contiguous sends.  Therefore, each process will be
     // listed in imagesTo_ at most once.
     {
-      Teuchos::Array<size_t> to_nodes_from_me(numImages,0);
-#     ifdef HAVE_TEUCHOS_DEBUG 
+      Array<size_t> toNodesFromMe (numProcs,0);
+#ifdef HAVE_TEUCHOS_DEBUG 
       bool counting_error = false;
-#     endif
+#endif // HAVE_TEUCHOS_DEBUG
       for (size_t i=0; i < (numSends_ + (selfMessage_ ? 1 : 0)); ++i) {
-#       ifdef HAVE_TEUCHOS_DEBUG
-	if (to_nodes_from_me[imagesTo_[i]] != 0) {
+#ifdef HAVE_TEUCHOS_DEBUG 
+	if (toNodesFromMe[imagesTo_[i]] != 0) {
 	  counting_error = true;
 	}
-#       endif
-        to_nodes_from_me[imagesTo_[i]] = 1;
+#endif // HAVE_TEUCHOS_DEBUG
+        toNodesFromMe[imagesTo_[i]] = 1;
       }
-#     ifdef HAVE_TEUCHOS_DEBUG
+#ifdef HAVE_TEUCHOS_DEBUG
       SHARED_TEST_FOR_EXCEPTION(counting_error, std::logic_error,
         "Tpetra::Distributor::computeReceives: There was an error on at least "
-        "one node in counting the number of messages send by that node to the "
-        "other nodes.  Please report this bug to the Tpetra developers.", 
+        "one process in counting the number of messages send by that process to "
+        "the other processs.  Please report this bug to the Tpetra developers.", 
         *comm_);
-#     endif
+#endif // HAVE_TEUCHOS_DEBUG
+
       // Each process will get back only one item (hence, counts =
       // ones) from the array of global sums, namely that entry
       // corresponding to the process, and detailing how many receives
@@ -297,47 +308,95 @@ namespace Tpetra {
       //
       // mfh 09 Jan 2012: The reduceAllAndScatter really isn't
       // necessary here.  Since counts is just all ones, we could
-      // replace this with an all-reduce on to_nodes_from_me, and let
-      // my process (with rank myRank) get numReceives_ from
-      // to_nodes_from_me[myRank].  The HPCCG miniapp uses the
-      // all-reduce method.  It could be possible that
-      // reduceAllAndScatter is faster, but it also makes the code
-      // more complicated, and it can't be _asymptotically_ faster
-      // (MPI_Allreduce has twice the critical path length of
-      // MPI_Reduce, so reduceAllAndScatter can't be more than twice
-      // as fast as the all-reduce, even if the scatter is free).
-      Teuchos::Array<int> counts (numImages, 1);
-      Teuchos::reduceAllAndScatter<int,size_t> (*comm_, Teuchos::REDUCE_SUM, numImages, &to_nodes_from_me[0], &counts[0], &numReceives_);
+      // replace this with an all-reduce on toNodesFromMe, and let my
+      // process (with rank myRank) get numReceives_ from
+      // toNodesFromMe[myRank].  The HPCCG miniapp uses the all-reduce
+      // method.  It could be possible that reduceAllAndScatter is
+      // faster, but it also makes the code more complicated, and it
+      // can't be _asymptotically_ faster (MPI_Allreduce has twice the
+      // critical path length of MPI_Reduce, so reduceAllAndScatter
+      // can't be more than twice as fast as the all-reduce, even if
+      // the scatter is free).
+      Array<int> counts (numProcs, 1);
+      Teuchos::reduceAllAndScatter<int,size_t> (*comm_, REDUCE_SUM, numProcs, &toNodesFromMe[0], &counts[0], &numReceives_);
     }
 
-    // assign these to length numReceives, with zero entries
+    // Now we know numReceives_, which is this process' number of
+    // receives.  Allocate the lengthsFrom_ and imagesFrom_ arrays
+    // with this number of entries.
     lengthsFrom_.assign(numReceives_, 0);
     imagesFrom_.assign(numReceives_, 0);
 
-    // FINISH: why do these work? they are blocking sends, and should block until completion, which happens below
-    // FINISH: consider switching them to non-blocking
-    // NOTE: epetra has both, old (non-blocking) and new (mysterious)
+    //
+    // Ask (via nonblocking receive) each process from which we are
+    // receiving how many packets we should expect from it in the
+    // communication pattern.  
+    //
 
+    // This process doesn't need to receive from itself, since it
+    // didn't send to itself (see the send loop).
+    const size_t actualNumReceives = numReceives_ - (selfMessage_ ? 1 : 0);
+
+    // Teuchos' wrapper for nonblocking receives requires receive
+    // buffers that it knows won't go away.  This is why we use RCPs.
+    // They get allocated in the loop below.
+    Array<RCP<CommRequest> > requests (actualNumReceives);
+    Array<RCP<size_t> > lengthsFromBuffers (actualNumReceives);
+
+    // Teuchos::COMM treats a negative process ID as MPI_ANY_SOURCE
+    // (receive data from any process).
+    const int anySourceProc = -1;
+
+    for (size_t i = 0; i < actualNumReceives; ++i) {
+      lengthsFromBuffers[i] = rcp (new size_t (0));
+      // Once the receive completes, we can ask the corresponding
+      // CommStatus object (output by wait()) for the sending process'
+      // ID (which we'll assign to imagesFrom_[i] -- don't forget to
+      // do that!).
+      requests[i] = ireceive (*comm_, lengthsFromBuffers[i], anySourceProc);
+    }
+
+    // Tell each process to which we are sending how many packets it
+    // should expect from us in the communication pattern.
+    //
+    // We assume that numSends_ and selfMessage_ have already been
+    // set.  The value of numSends_ (my process' number of sends) does
+    // not include any message that it might send to itself.  
     for (size_t i=0; i < numSends_ + (selfMessage_ ? 1 : 0); ++i) {
-      if (imagesTo_[i] != myImageID ) {
-        // send a message to imagesTo_[i], telling him that our pattern sends him lengthsTo_[i] blocks of packets
-        Teuchos::send(*comm_,lengthsTo_[i],imagesTo_[i]);
+      if (imagesTo_[i] != myRank ) {
+        // Send a message to imagesTo_[i], telling that process that
+        // this communication pattern will send that process
+        // lengthsTo_[i] blocks of packets.
+        send (*comm_, lengthsTo_[i], imagesTo_[i]);
       }
       else {
-        // set selfMessage_ to end block of recv arrays
+	// We don't need a send in the self-message case.  If this
+	// process will send a message to itself in the communication
+	// pattern, then the last element of lengthsFrom_ and
+	// imagesFrom_ corresponds to the self-message.  Of course
+	// this process knows how long the message is, and the process
+	// ID is its own process ID.
         lengthsFrom_[numReceives_-1] = lengthsTo_[i];
-        imagesFrom_[numReceives_-1] = myImageID;
+        imagesFrom_[numReceives_-1] = myRank;
       }
     }
 
     //
-    for (size_t i=0; i < numReceives_ - (selfMessage_ ? 1 : 0); ++i) {
-      // receive one variable from any sender.
-      // store the value in lengthsFrom_[i], and store the sender's ImageID in imagesFrom_[i]
-      // imagesFrom_[i] = comm_->receive(&lengthsFrom_[i], 1, -1);
-      imagesFrom_[i] = Teuchos::receive(*comm_,-1,&lengthsFrom_[i]);
+    // Wait on all the receives.  When they arrive, check the status
+    // output of wait() for the receiving process ID, unpack the
+    // request buffers into lengthsFrom_, and set imagesFrom_ from the
+    // status.
+    //
+    Array<RCP<CommStatus<int> > > statuses (actualNumReceives); 
+    Teuchos::waitAll<int> (*comm_, requests(), statuses());
+    for (size_t i = 0; i < actualNumReceives; ++i) {
+      lengthsFrom_[i] = *lengthsFromBuffers[i];
+      imagesFrom_[i] = statuses[i]->getSourceRank(); 
     }
+
+#ifdef HAVE_TEUCHOS_DEBUG
     comm_->barrier();
+#endif // HAVE_TEUCHOS_DEBUG
 
     // Sort the imagesFrom_ array, and apply the same permutation to
     // lengthsFrom_.  This ensures that imagesFrom_[i] and
@@ -345,7 +404,7 @@ namespace Tpetra {
     sort2 (imagesFrom_.begin(), imagesFrom_.end(), lengthsFrom_.begin());
 
     // Compute indicesFrom_
-    totalReceiveLength_ = std::accumulate(lengthsFrom_.begin(), lengthsFrom_.end(), 0);
+    totalReceiveLength_ = std::accumulate (lengthsFrom_.begin(), lengthsFrom_.end(), 0);
     indicesFrom_.clear();
     indicesFrom_.reserve(totalReceiveLength_);
     for (size_t i=0; i < totalReceiveLength_; ++i) {
@@ -361,7 +420,9 @@ namespace Tpetra {
 
     if (selfMessage_) --numReceives_;
 
+#ifdef HAVE_TEUCHOS_DEBUG
     comm_->barrier();
+#endif // HAVE_TEUCHOS_DEBUG
   }
 
   size_t 

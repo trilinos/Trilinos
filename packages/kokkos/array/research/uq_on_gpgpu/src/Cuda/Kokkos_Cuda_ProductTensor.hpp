@@ -564,7 +564,8 @@ public:
     __device__
     void execute_on_device() const
     {
-      VectorScalar * const sh = kokkos_impl_cuda_shared_memory<VectorScalar>();
+      volatile VectorScalar * const sh =
+        kokkos_impl_cuda_shared_memory<VectorScalar>();
 
       const size_type dim = m_A.block.dimension();
       const size_type tid = threadIdx.x + CudaTraits::WarpSize * threadIdx.y ;
@@ -637,7 +638,7 @@ public:
                      const vector_type & x ,
                      const vector_type & y )
   {
-    // Have at least nPool blocks working on each tensor-block
+    // Have at least nPool warps working on each tensor-block
 
     const size_type nPool = 8 ;
 

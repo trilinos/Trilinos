@@ -230,6 +230,10 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
   // Real & imaginary components of Rayleigh quotient
   double rq_r, rq_i;
 
+  // Hook for strategy to precompute info before numVecs loop below
+  // Used in 2 Matrix to compute Jac and Mass matrices just once
+  anasaziOp->beginPostProcessing();
+
   for (int i=0; i<numVecs; i++) {
 
     // Un-transform eigenvalues

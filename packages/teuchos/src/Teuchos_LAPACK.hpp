@@ -332,29 +332,57 @@ namespace Teuchos
 
 
     //! @name Orthogonal matrix routines
-    //@{ 
-    /*! \brief Overwrites the general real matrix \c m by \c n matrix \c C with the product of \c C and \c Q, which is the product of \c k elementary reflectors, as returned by GEQRF.
-    \note This method is not defined when the ScalarType is \c std::complex<float> or \c std::complex<double>.
-    */
+    //@{
+
+    /// Apply Householder reflectors (real case).
+    ///
+    /// Overwrite the general real \c m by \c n matrix \c C with the
+    /// product of \c Q and \c C, whiere Q is the product of \c k
+    /// elementary (Householder) reflectors as returned by \c GEQRF.
+    ///
+    /// \note This method is not defined when ScalarType is complex.
+    /// Call \c UNMQR in that case.  ("OR" stands for "orthogonal";
+    /// "UN" stands for "unitary.")
     void ORMQR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType k, ScalarType* A, const OrdinalType lda, const ScalarType* TAU, ScalarType* C, const OrdinalType ldc, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
 
-    /*! \brief Generates an \c m by \c n matrix Q with orthonormal columns which is defined as the first \n columns of a product of \c k elementary reflectors of order \c m, as returned by GEQRF.
-    \note This method is not defined when the ScalarType is \c std::complex<float> or \c std::complex<double>.
-    */
+    /// \brief Apply Householder reflectors (complex case).
+    ///
+    /// Overwrite the general complex \c m by \c n matrix \c C with
+    /// the product of \c Q and \c C, where Q is the product of \c k
+    /// elementary (Householder) reflectors as returned by \c GEQRF.
+    ///
+    /// \note This method will call \c ORMQR when ScalarType is real.
+    /// (Unitary real matrices are orthogonal.)
+    void UNMQR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType k, ScalarType* A, const OrdinalType lda, const ScalarType* TAU, ScalarType* C, const OrdinalType ldc, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
+
+    /// \brief Compute explicit Q factor from QR factorization (GEQRF) (real case).
+    ///
+    /// Generate the \c m by \c n matrix Q with orthonormal columns
+    /// corresponding to the first \c n columns of a product of \c k
+    /// elementary reflectors of order \c m, as returned by \c GEQRF.
+    ///
+    /// \note This method is not defined when ScalarType is complex.
+    /// Call \c UNGQR in that case.  ("OR" stands for "orthogonal";
+    /// "UN" stands for "unitary.")
     void ORGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, ScalarType* A, const OrdinalType lda, const ScalarType* TAU, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
 
-    /*! \brief Generates an \c m by \c n matrix Q with orthonormal columns which is defined as the first \n columns of a product of \c k elementary reflectors of order \c m, as returned by GEQRF.
-    \note This method will call ORGQR when the ScalarType is \c float or \c double.
-    */
+    /// \brief Compute explicit QR factor from QR factorization (GEQRF) (complex case).
+    ///
+    /// Generate the \c m by \c n matrix Q with orthonormal columns
+    /// corresponding tothe first \c n columns of a product of \c k
+    /// elementary reflectors of order \c m, as returned by \c GEQRF.
+    ///
+    /// \note This method will call \c ORGQR when ScalarType is real.
+    /// (Unitary real matrices are orthogonal.)
     void UNGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, ScalarType* A, const OrdinalType lda, const ScalarType* TAU, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
 
     /*! \brief Generates a real orthogonal matrix \c Q which is the product of \c ihi-ilo elementary reflectors of order \c n, as returned by GEHRD.  On return \c Q is stored in \c A.
-    \note This method is not defined when the ScalarType is \c std::complex<float> or \c std::complex<double>.
+    \note This method is not defined when ScalarType is complex.
     */
     void ORGHR(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, ScalarType* A, const OrdinalType lda, const ScalarType* TAU, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
 
     /*! \brief Overwrites the general real \c m by \c n matrix \c C with the product of \c C and \c Q, which is a product of \c ihi-ilo elementary reflectors, as returned by GEHRD.
-    \note This method is not defined when the ScalarType is \c std::complex<float> or \c std::complex<double>. 
+    \note This method is not defined when ScalarType is complex.
     */
     void ORMHR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const ScalarType* A, const OrdinalType lda, const ScalarType* TAU, ScalarType* C, const OrdinalType ldc, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
     //@}
@@ -720,6 +748,12 @@ namespace Teuchos
   }
 
   template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType, ScalarType>::UNMQR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType k, ScalarType* A, const OrdinalType lda, const ScalarType* TAU, ScalarType* C, const OrdinalType ldc, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+
+  template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::ORGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, ScalarType* A, const OrdinalType lda, const ScalarType* TAU, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
@@ -887,6 +921,8 @@ namespace Teuchos
 
     // Orthogonal matrix routines.
     void ORMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, float* A, const int lda, const float* TAU, float* C, const int ldc, float* WORK, const int lwork, int* info) const;
+    void UNMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, float* A, const int lda, const float* TAU, float* C, const int ldc, float* WORK, const int lwork, int* info) const;
+
     void ORGQR(const int m, const int n, const int k, float* A, const int lda, const float* TAU, float* WORK, const int lwork, int* info) const;
     void UNGQR(const int m, const int n, const int k, float* A, const int lda, const float* TAU, float* WORK, const int lwork, int* info) const;
     void ORGHR(const int n, const int ilo, const int ihi, float* A, const int lda, const float* TAU, float* WORK, const int lwork, int* info) const;
@@ -986,6 +1022,7 @@ namespace Teuchos
 
     // Orthogonal matrix routines.
     void ORMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, double* A, const int lda, const double* TAU, double* C, const int ldc, double* WORK, const int lwork, int* info) const;
+    void UNMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, double* A, const int lda, const double* TAU, double* C, const int ldc, double* WORK, const int lwork, int* info) const;
     void ORGQR(const int m, const int n, const int k, double* A, const int lda, const double* TAU, double* WORK, const int lwork, int* info) const;
     void UNGQR(const int m, const int n, const int k, double* A, const int lda, const double* TAU, double* WORK, const int lwork, int* info) const;
     void ORGHR(const int n, const int ilo, const int ihi, double* A, const int lda, const double* TAU, double* WORK, const int lwork, int* info) const;
@@ -1048,6 +1085,7 @@ namespace Teuchos
     void GELSS(const int m, const int n, const int nrhs, std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb, float* S, const float rcond, int* rank, std::complex<float>* WORK, const int lwork, float* RWORK, int* info) const;
     void GEQRF( const int m, const int n, std::complex<float>* A, const int lda, std::complex<float>* TAU, std::complex<float>* WORK, const int lwork, int* info) const;
     void UNGQR(const int m, const int n, const int k, std::complex<float>* A, const int lda, const std::complex<float>* TAU, std::complex<float>* WORK, const int lwork, int* info) const;
+    void UNMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, std::complex<float>* A, const int lda, const std::complex<float>* TAU, std::complex<float>* C, const int ldc, std::complex<float>* WORK, const int lwork, int* info) const;
     void GETRF(const int m, const int n, std::complex<float>* A, const int lda, int* IPIV, int* info) const;
     void GETRS(const char TRANS, const int n, const int nrhs, const std::complex<float>* A, const int lda, const int* IPIV, std::complex<float>* B, const int ldb, int* info) const;
     void GTTRF(const int n, std::complex<float>* dl, std::complex<float>* d, std::complex<float>* du, std::complex<float>* du2, int* IPIV, int* info) const;
@@ -1129,6 +1167,7 @@ namespace Teuchos
     void GELSS(const int m, const int n, const int nrhs, std::complex<double>* A, const int lda, std::complex<double>* B, const int ldb, double* S, const double rcond, int* rank, std::complex<double>* WORK, const int lwork, double* RWORK, int* info) const;
     void GEQRF( const int m, const int n, std::complex<double>* A, const int lda, std::complex<double>* TAU, std::complex<double>* WORK, const int lwork, int* info) const;
     void UNGQR(const int m, const int n, const int k, std::complex<double>* A, const int lda, const std::complex<double>* TAU, std::complex<double>* WORK, const int lwork, int* info) const;
+    void UNMQR(const char SIDE, const char TRANS, const int m, const int n, const int k, std::complex<double>* A, const int lda, const std::complex<double>* TAU, std::complex<double>* C, const int ldc, std::complex<double>* WORK, const int lwork, int* info) const;
     void GETRF(const int m, const int n, std::complex<double>* A, const int lda, int* IPIV, int* info) const;
     void GETRS(const char TRANS, const int n, const int nrhs, const std::complex<double>* A, const int lda, const int* IPIV, std::complex<double>* B, const int ldb, int* info) const;
     void GTTRF(const int n, std::complex<double>* dl, std::complex<double>* d, std::complex<double>* du, std::complex<double>* du2, int* IPIV, int* info) const;

@@ -66,6 +66,7 @@ SET(BUILD_TYPE RELEASE)
 SET(BUILD_DIR_NAME "SERIAL_DEBUG_NAG${Trilinos_VERSION}")
 SET(Trilinos_TRACK ${Trilinos_TESTING_TRACK})
 SET(Trilinos_BRANCH ${Trilinos_REPOSITORY_BRANCH})
+SET(CTEST_TEST_TYPE Experimental)
 #SET(CTEST_TEST_TIMEOUT 900)
 
 # Exclude Sundance because of strange segfault (see bug 4382)

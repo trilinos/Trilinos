@@ -112,6 +112,36 @@ namespace LOCA {
 
       //@}
 
+      //! Compute the second shifted matrix. Can avoid recomputing if two are stored.
+      /*!
+       * Implementation here prints an error message and returns 
+       * NOX::Abstract::Group::NotDefined.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      computeSecondShiftedMatrix(double alpha, double beta) = 0;
+
+      //! Multiply the shifted matrix by a vector.
+      /*!
+       * Implementation here prints an error message and returns 
+       * NOX::Abstract::Group::NotDefined.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      applySecondShiftedMatrix(const NOX::Abstract::Vector& input,
+                         NOX::Abstract::Vector& result) const = 0;
+
+      //! Multiply the shifted matrix by a multi-vector.
+      /*!
+       * Implementation here prints an error message and returns 
+       * NOX::Abstract::Group::NotDefined.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      applySecondShiftedMatrixMultiVector(
+                                const NOX::Abstract::MultiVector& input,
+                                NOX::Abstract::MultiVector& result) const = 0;
+
+      //@}
+
+
       //! Bring NOX::Abstract::Group::operator=() into scope
       using NOX::Abstract::Group::operator=;
 

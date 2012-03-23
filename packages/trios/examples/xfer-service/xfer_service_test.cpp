@@ -455,6 +455,9 @@ int main(int argc, char *argv[])
             }
         }
 
+        // wait for all the clients to connect
+        MPI_Barrier(comm);
+
         //MPI_Bcast(&rc, 1, MPI_INT, 0, comm);
 
         if (rc == NSSI_OK) {

@@ -104,6 +104,22 @@ IF (${PACKAGE_NAME}_ENABLE_PARDISO OR ${PACKAGE_NAME}_ENABLE_PARDISO_MKL)
 ENDIF()
 
 #
+# CSparse files
+#
+
+IF (${PACKAGE_NAME}_ENABLE_CSparse OR ${PACKAGE_NAME}_ENABLE_CSparse)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+  SET(HEADERS ${HEADERS}
+    Amesos_CSparse.h
+    )
+
+  SET(SOURCES ${SOURCES}
+    Amesos_CSparse.cpp
+    )
+ENDIF()
+
+#
 # TAUCS files
 #
 
