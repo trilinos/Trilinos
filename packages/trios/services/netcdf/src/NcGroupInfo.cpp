@@ -10,7 +10,7 @@
 #include <string.h>
 #include <iostream>
 
-#include <netcdf.h>
+#include <pnetcdf.h>
 #include <map>
 #include <string>
 #include <algorithm>
