@@ -461,6 +461,18 @@ void send(
   const Ordinal count, const Packet sendBuffer[], const int destRank
   );
 
+
+/** \brief Send objects that use values semantics to another process.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet>
+void 
+send (const Comm<Ordinal>& comm,
+      const Ordinal count, 
+      const ArrayView<const Packet>& sendBuffer, 
+      const int destRank);
+
 /** \brief Send a single object that use values semantics to another process.
  *
  * \relates Comm
@@ -1619,6 +1631,17 @@ void Teuchos::send(
     charSendBuffer.getBytes(),charSendBuffer.getCharBuffer()
     ,destRank
     );
+}
+
+
+template<typename Ordinal, typename Packet>
+void 
+Teuchos::send (const Comm<Ordinal>& comm,
+	       const Ordinal count, 
+	       const ArrayView<const Packet>& sendBuffer, 
+	       const int destRank)
+{
+  send<Ordinal, Packet> (comm, count, sendBuffer.getRawPtr(), destRank);
 }
 
 
