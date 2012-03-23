@@ -509,7 +509,7 @@ namespace MueLu {
 
     GetOStream(Runtime0,0) << "Using diffusive heuristic for partition placement." << std::endl;
 
-    RCP<SubFactoryMonitor> m1 = rcp(new SubFactoryMonitor(*this, "Setup", currentLevel));
+    RCP<SubFactoryMonitor> m1 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: Setup", currentLevel));
 
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = currentLevel.Get<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition", loadBalancer_.get());
     // Figure out how many nnz there are per row.
@@ -597,7 +597,7 @@ namespace MueLu {
     m1 = Teuchos::null;
 
     int numRounds=0;
-    RCP<SubFactoryMonitor> m2 = rcp(new SubFactoryMonitor(*this, "Arbitration phase", currentLevel));
+    RCP<SubFactoryMonitor> m2 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: Arbitration phase", currentLevel));
     while (doArbitrate)
     {
       ++numRounds;
