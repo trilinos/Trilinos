@@ -1,3 +1,45 @@
+// @HEADER
+// ***********************************************************************
+//
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//                 Copyright (2011) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
+// Eric C. Cyr (eccyr@sandia.gov)
+// ***********************************************************************
+// @HEADER
+
 #include <Teuchos_ConfigDefs.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_RCP.hpp>
@@ -12,9 +54,7 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(object_builders, input_physics_block)
   {
     Teuchos::ParameterList p("Test");
-    p.set("Physics Blocks", "fluid,solid");
     Teuchos::ParameterList& fluid = p.sublist("fluid");
-    fluid.set("Number of Equation Sets", 2);
     Teuchos::ParameterList& fluid_eqs0 = fluid.sublist("EQ 0");
     fluid_eqs0.set("Name", "Continuity");
     fluid_eqs0.set("Basis", "Q1");
@@ -31,7 +71,6 @@ namespace panzer {
     fluid_eqs1.sublist("Options").set("Tau_M", "Codina");
     
     Teuchos::ParameterList& solid = p.sublist("solid");
-    solid.set("Number of Equation Sets", 1);
     Teuchos::ParameterList& solid_eqs0 = solid.sublist("EQ 0");
     solid_eqs0.set("Name", "Energy");
     solid_eqs0.set("Basis", "Q1");
@@ -63,9 +102,7 @@ namespace panzer {
     Teuchos::ParameterList bc_params;
 
     std::vector<panzer::BC> bcs;
-    bc_params.set<int>("Number of Boundary Conditions", 2);
     Teuchos::ParameterList& bc_0 = bc_params.sublist("BC 0");
-    bc_0.set<std::size_t>("ID", 0);
     bc_0.set("Type", "Dirichlet");
     bc_0.set("Sideset ID", "4");
     bc_0.set("Element Block ID", "fluid");
@@ -73,7 +110,6 @@ namespace panzer {
     bc_0.set("Strategy", "Constant");
     bc_0.sublist("Data").set("Value",1.0);
     Teuchos::ParameterList& bc_1 = bc_params.sublist("BC 1");
-    bc_1.set<std::size_t>("ID", 1);
     bc_1.set("Type", "Neumann");
     bc_1.set("Sideset ID", "4");
     bc_1.set("Element Block ID", "fluid");

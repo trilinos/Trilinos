@@ -1,5 +1,5 @@
-
 INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -126,7 +126,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-IF(Panzer_ENABLE_PAPI)
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  parameter_list_acceptance_test
+  SOURCES parameter_list_acceptance_test.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 1
+  )
+
+IF(Panzer_BUILD_PAPI_SUPPORT)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     papi_raw
     SOURCES papi_raw.cpp ${UNIT_TEST_DRIVER}
@@ -137,4 +143,14 @@ IF(Panzer_ENABLE_PAPI)
     SOURCES papi_decorator.cpp ${UNIT_TEST_DRIVER}
     NUM_MPI_PROCS 1
     )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    papi_improved
+    SOURCES papi_improved.cpp ${UNIT_TEST_DRIVER}
+    NUM_MPI_PROCS 1
+    )
 ENDIF()
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(core_tests
+  SOURCE_FILES parameter_list_acceptance_test.xml parameter_list_acceptance_test2.xml
+  EXEDEPS parameter_list_acceptance_test
+  )

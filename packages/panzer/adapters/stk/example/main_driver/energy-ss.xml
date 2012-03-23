@@ -63,11 +63,8 @@
 
     <ParameterList name="Physics Blocks">
 
-        <Parameter name="Physics Blocks" type="string" value="solid" />
-
         <ParameterList name="solid">
 
-            <Parameter name="Number of Equation Sets" type="int" value="1"/>
             <ParameterList name="EQ 0">
                 <Parameter name="Name" type="string" value="Energy"/> 
                 <Parameter name="Basis" type="string" value="Q1"/> 
@@ -132,10 +129,7 @@
 
     <ParameterList name="Boundary Conditions">
 
-        <Parameter name="Number of Boundary Conditions" type="int" value="2"/>
-
-        <ParameterList name="BC 0">
-            <Parameter name="ID" type="unsigned long" value="0"/> 
+        <ParameterList>
             <Parameter name="Type" type="string" value="Dirichlet"/> 
             <Parameter name="Sideset ID" type="string" value="left"/> 
             <Parameter name="Element Block ID" type="string" value="eblock-0_0"/> 
@@ -146,8 +140,7 @@
             </ParameterList>
         </ParameterList>
 
-        <ParameterList name="BC 1">
-            <Parameter name="ID" type="unsigned long" value="1"/> 
+        <ParameterList>
             <Parameter name="Type" type="string" value="Dirichlet"/> 
             <Parameter name="Sideset ID" type="string" value="right"/> 
             <Parameter name="Element Block ID" type="string" value="eblock-0_0"/> 
