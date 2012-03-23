@@ -81,8 +81,8 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Zoltan AND TPL_ENABLE_MPI)
   APPEND_SET(SOURCES Zoltan.cpp
-             Repartition.cpp
-             PermutedTransferFactory.cpp
+              Repartition.cpp
+              #PermutedTransferFactory.cpp  # TODO CHECK ME!
   )
 ENDIF()
 
