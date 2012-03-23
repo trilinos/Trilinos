@@ -511,8 +511,10 @@ namespace MueLu {
 
     RCP<SubFactoryMonitor> m1 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: Setup", currentLevel));
 
+RCP<SubFactoryMonitor> m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: getting 'Partition'", currentLevel));
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = currentLevel.Get<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition", loadBalancer_.get());
     // Figure out how many nnz there are per row.
+m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: figuring out nnz per row", currentLevel));
     RCP<Xpetra::Vector<GO,LO,GO,NO> > nnzPerRowVector = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(A->getRowMap(),false);
     ArrayRCP<GO> nnzPerRow;
     if (nnzPerRowVector->getLocalLength() > 0)
@@ -521,6 +523,7 @@ namespace MueLu {
       nnzPerRow[i] = A->getNumEntriesInLocalRow(i);
 
     // Use a hashtable to record how many nonzeros in the local matrix belong to each partition.
+m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: hashing", currentLevel));
     RCP<Teuchos::Hashtable<GO,GO> > hashTable;
     hashTable = rcp(new Teuchos::Hashtable<GO,GO>(numPartitions + numPartitions/2));
     ArrayRCP<const GO> decompEntries;
@@ -538,6 +541,8 @@ namespace MueLu {
         hashTable->put(decompEntries[i],nnzPerRow[i]);
       }
     }
+
+m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: arrayify", currentLevel));
     int problemPid;
     maxAll(comm, (flag ? mypid : -1), problemPid);
     std::ostringstream buf; buf << problemPid;
@@ -547,7 +552,7 @@ namespace MueLu {
     Teuchos::Array<GO> allPartitionsIContributeTo;
     Teuchos::Array<GO> localNnzPerPartition;
     hashTable->arrayify(allPartitionsIContributeTo,localNnzPerPartition);
-
+m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: build target map", currentLevel));
     //map in which all pids have all partition numbers as GIDs.
     Array<GO> allPartitions;
     for (int i=0; i<numPartitions; ++i) allPartitions.push_back(i);
@@ -557,6 +562,7 @@ namespace MueLu {
                                            decomposition->getMap()->getIndexBase(),
                                            comm);
 
+m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: build vectors", currentLevel));
     RCP<Xpetra::Vector<SC,LO,GO,NO> > globalWeightVec = Xpetra::VectorFactory<SC,LO,GO,NO>::Build(targetMap);  //TODO why does the compiler grumble about this when I omit template arguments?
     RCP<Xpetra::Vector<LO,LO,GO,NO> > procWinnerVec = Xpetra::VectorFactory<LO,LO,GO,NO>::Build(targetMap);
     ArrayRCP<LO> procWinner;
@@ -566,6 +572,7 @@ namespace MueLu {
     procWinner = Teuchos::null;
     RCP<Xpetra::Vector<SC,LO,GO,NO> > scalarProcWinnerVec = Xpetra::VectorFactory<SC,LO,GO,NO>::Build(targetMap);
 
+m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: build unique map", currentLevel));
     Array<GO> myPidArray; 
     myPidArray.push_back(mypid);
 
@@ -575,10 +582,11 @@ namespace MueLu {
                                            myPidArray(),
                                            decomposition->getMap()->getIndexBase(),
                                            comm);
-
+m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: build comm helper", currentLevel));
     MueLu::UCAggregationCommHelper<LO,GO,NO,LMO> commHelper(uniqueMap,targetMap);
     myPartitionNumber = -1;
     int doArbitrate = 1;
+m3 = Teuchos::null;
 
     /*
        Use ArbitrateAndCommunicate to determine which process should own each partition.
