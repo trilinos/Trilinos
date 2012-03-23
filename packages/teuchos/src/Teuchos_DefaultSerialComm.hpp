@@ -48,6 +48,22 @@
 
 namespace Teuchos {
 
+/// \class SerialCommStatus
+/// \brief Implementation of \c CommStatus for a serial communicator.
+///
+/// \tparam OrdinalType The same template parameter as \c Comm.  Only
+///   use \c int here.  We only make this a template class for
+///   compatibility with \c Comm.
+template<class OrdinalType>
+class SerialCommStatus : public CommStatus<OrdinalType> {
+public:
+  //! Default constructor.
+  SerialCommStatus () {}
+
+  //! The source rank that sent the message (must be zero).
+  OrdinalType getSourceRank () { return 0; }
+};
+
 
 /** \brief Concrete serial communicator subclass.
  *
@@ -134,9 +150,8 @@ public:
   waitAll (const ArrayView<RCP<CommRequest> >& requests,
 	   const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const;
   /** \brief . */
-  virtual void wait(
-    const Ptr<RCP<CommRequest> > &request
-    ) const;
+  virtual RCP<CommStatus<Ordinal> > 
+  wait (const Ptr<RCP<CommRequest> >& request) const;
   /** \brief . */
   virtual RCP< Comm<Ordinal> > duplicate() const;
   /** \brief . */
@@ -356,17 +371,31 @@ SerialComm<Ordinal>::
 waitAll (const ArrayView<RCP<CommRequest> >& requests,
 	 const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const
 {
-  (void) requests;
-  (void) statuses;
-  // There's nothing to wait on!
+  TEUCHOS_TEST_FOR_EXCEPTION(statuses.size() < requests.size(), 
+    std::invalid_argument, "Teuchos::SerialComm::waitAll: There are not enough "
+    "entries in the statuses array to hold all the results of the communication"
+    " requests.  requests.size() = " << requests.size() << " > statuses.size() "
+    "= " << statuses.size() << ".");
+
+  for (ArrayView<RCP<CommRequest> >::iterator it = requests.begin(); 
+       it != requests.end(); ++it) {
+    *it = null; // A postcondition of the Teuchos::Comm interface.
+  }
 }
 
-
 template<typename Ordinal>
-void SerialComm<Ordinal>::wait (const Ptr<RCP<CommRequest> > & request) const
+RCP<CommStatus<Ordinal> > 
+SerialComm<Ordinal>::wait (const Ptr<RCP<CommRequest> > & request) const
 {
   (void) request;
-  // There's nothing to wait on!
+  TEUCHOS_TEST_FOR_EXCEPTION(request.is_null(), std::invalid_argument,
+    "Teuchos::SerialComm::wait: On input, the request pointer is null.");
+
+  if (is_null (*request)) {
+    return; // Nothing to wait on...
+  }
+  *request = null;
+  return rcp (new SerialCommStatus<Ordinal>);
 }
 
 template< typename Ordinal>

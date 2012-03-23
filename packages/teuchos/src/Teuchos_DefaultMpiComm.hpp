@@ -67,49 +67,9 @@
 
 namespace Teuchos {
 
-  namespace {
-    std::string
-    mpiErrorCodeToString (const int err) 
-    {
-      if (err == MPI_SUCCESS) {
-	return "MPI_SUCCESS";
-      }
-      else if (err == MPI_ERR_COMM) {
-	return "MPI_ERR_COMM";
-      }
-      else if (err == MPI_ERR_COUNT) {
-	return "MPI_ERR_COUNT";
-      }
-      else if (err == MPI_ERR_TYPE) {
-	return "MPI_ERR_TYPE";
-      }
-      else if (err == MPI_ERR_TAG) {
-	return "MPI_ERR_TAG";
-      }
-      else if (err == MPI_ERR_RANK) {
-	return "MPI_ERR_RANK";
-      }
-      else if (err == MPI_ERR_INTERN) {
-	return "MPI_ERR_INTERN";
-      }
-      else if (err == MPI_ERR_REQUEST) {
-	return "MPI_ERR_REQUEST";
-      }
-      else if (err == MPI_ERR_ARG) {
-	return "MPI_ERR_ARG";
-      }
-      else if (err == MPI_ERR_IN_STATUS) {
-	return "MPI_ERR_IN_STATUS";
-      }
-      else if (err == MPI_ERR_BUFFER) {
-	return "MPI_ERR_BUFFER";
-      }
-      else {
-	return "Unknown MPI error";
-      }
-    }
-  } // namespace (anonymous)
-
+//! Human-readable string version of the given MPI error code.
+std::string
+mpiErrorCodeToString (const int err);
 
 #ifdef TEUCHOS_MPI_COMM_DUMP
 template<typename Ordinal, typename T>
@@ -132,21 +92,36 @@ void dumpBuffer(
 #endif // TEUCHOS_MPI_COMM_DUMP
 
 
-/** \brief . */
+/// \class MpiCommRequest
+/// \brief MPI-specific implementation of \c CommRequest.
+///
+/// Users would not normally create an instance of this class.  Calls
+/// to \c ireceive() and \c isend() return a CommRequest, which for an
+/// MPI implementation of \c Comm is an MpiCommRequest.  Users might
+/// wish to create an MpiCommRequest directly if they want to
+/// encapsulate an MPI_Request returned by an external library or by
+/// their own code, and pass it into one of our wrapper functions like
+/// \c wait() or \c waitAll().
 class MpiCommRequest : public CommRequest {
 public:
-  /** \brief . */
-  MpiCommRequest( MPI_Request rawMpiRequest )
-    :rawMpiRequest_(rawMpiRequest)
-    {}
-  /** \brief . */
+  //! Constructor (from a raw MPI_Request).
+  MpiCommRequest (MPI_Request rawMpiRequest) : 
+    rawMpiRequest_ (rawMpiRequest) {}
+
+  /// \brief Return and relinquish ownership of the raw MPI_Request.
+  ///
+  /// "Relinquish ownership" means that this object sets its raw
+  /// MPI_Request to MPI_REQUEST_NULL, but returns the original
+  /// MPI_Request.  This effectively gives the caller ownership of the
+  /// raw MPI_Request.  This prevents hanging requests.
   MPI_Request releaseRawMpiRequest()
-    {
-      MPI_Request tmp_rawMpiRequest = rawMpiRequest_;
-      rawMpiRequest_ = MPI_REQUEST_NULL;
-      return tmp_rawMpiRequest;
-    }
+  {
+    MPI_Request tmp_rawMpiRequest = rawMpiRequest_;
+    rawMpiRequest_ = MPI_REQUEST_NULL;
+    return tmp_rawMpiRequest;
+  }
 private:
+  //! The raw request (an opaque object).
   MPI_Request rawMpiRequest_;
   MpiCommRequest(); // Not defined
 };
@@ -166,7 +141,7 @@ mpiCommRequest (MPI_Request rawMpiRequest)
 /// Users would not normally create an instance of this class.  The
 /// only time they might wish to do so is to encapsulate an MPI_Status
 /// returned by an external library or by their own code, and pass it
-/// into one of our functions like \c wait() or \c waitall().
+/// into one of our functions like \c wait() or \c waitAll().
 ///
 /// \tparam OrdinalType The same template parameter as \c Comm.  Only
 ///   use \c int here.  We only make this a template class for
@@ -323,9 +298,8 @@ public:
   waitAll (const ArrayView<RCP<CommRequest> >& requests,
 	   const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const;
   /** \brief . */
-  virtual void wait(
-    const Ptr<RCP<CommRequest> > &request
-    ) const;
+  virtual RCP<CommStatus<Ordinal> > 
+  wait (const Ptr<RCP<CommRequest> >& request) const;
   /** \brief . */
   virtual RCP< Comm<Ordinal> > duplicate() const;
   /** \brief . */
@@ -736,20 +710,22 @@ void MpiComm<Ordinal>::waitAll(
   const ArrayView<RCP<CommRequest> > &requests
   ) const
 {
-  TEUCHOS_COMM_TIME_MONITOR(
-    "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::waitAll(...)"
-    );
+  TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::waitAll(...)" );
+
   const int count = requests.size();
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPT( requests.size() == 0 );
 #endif
   
-  Array<MPI_Request> rawMpiRequests(count, MPI_REQUEST_NULL);
+  Array<MPI_Request> rawMpiRequests (count, MPI_REQUEST_NULL);
   for (int i = 0; i < count; ++i) {
-    RCP<CommRequest> &request = requests[i];
-    if (!is_null(request)) {
+    RCP<CommRequest>& request = requests[i];
+    if (! is_null (request)) {
       const RCP<MpiCommRequest> mpiCommRequest =
         rcp_dynamic_cast<MpiCommRequest>(request);
+      // This call makes this function wait() not satisfy the strong
+      // exception guarantee, because releaseRawMpiRequest() modifies
+      // MpiCommRequest.
       rawMpiRequests[i] = mpiCommRequest->releaseRawMpiRequest();
     }
     // else already null
@@ -776,7 +752,7 @@ void MpiComm<Ordinal>::waitAll(
 	}
       }
       TEUCHOS_TEST_FOR_EXCEPTION(firstErr != MPI_SUCCESS, std::runtime_error, 
-        "Teuchos::MpiComm::waitall: MPI_Waitall() failed with error code "
+        "Teuchos::MpiComm::waitAll: MPI_Waitall() failed with error code "
         "\"MPI_ERR_IN_STATUS\".  Of the " << count << " request" 
         << (count != 1 ? "s" : "") << " given to MPI_Waitall(), the smallest "
         "0-based index that failed is " << firstIndexFailed << " and its error "
@@ -784,7 +760,7 @@ void MpiComm<Ordinal>::waitAll(
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error, 
-        "Teuchos::MpiComm::waitall: MPI_Waitall() failed with error code "
+        "Teuchos::MpiComm::waitAll: MPI_Waitall() failed with error code "
 	<< mpiErrorCodeToString (err) << "\".");
     }
   }
@@ -819,6 +795,10 @@ waitAll (const ArrayView<RCP<CommRequest> >& requests,
       // This convinces the CommRequest to set its own raw MPI_Request
       // to MPI_REQUEST_NULL, so we won't have any hanging raw request
       // handles floating around afterwards.
+      //
+      // This call makes this function wait() not satisfy the strong
+      // exception guarantee, because releaseRawMpiRequest() modifies
+      // MpiCommRequest.
       rawMpiRequests[i] = mpiRequest->releaseRawMpiRequest ();
       requests[i] = null;
     }
@@ -847,7 +827,7 @@ waitAll (const ArrayView<RCP<CommRequest> >& requests,
 	}
       }
       TEUCHOS_TEST_FOR_EXCEPTION(firstErr != MPI_SUCCESS, std::runtime_error, 
-        "Teuchos::MpiComm::waitall: MPI_Waitall() failed with error code "
+        "Teuchos::MpiComm::waitAll: MPI_Waitall() failed with error code "
         "\"MPI_ERR_IN_STATUS\".  Of the " << count << " request" 
         << (count != 1 ? "s" : "") << " given to MPI_Waitall(), the smallest "
         "0-based index that failed is " << firstIndexFailed << " and its error "
@@ -855,7 +835,7 @@ waitAll (const ArrayView<RCP<CommRequest> >& requests,
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error, 
-        "Teuchos::MpiComm::waitall: MPI_Waitall() failed with error code "
+        "Teuchos::MpiComm::waitAll: MPI_Waitall() failed with error code "
 	<< mpiErrorCodeToString (err) << "\".");
     }
   }
@@ -867,25 +847,30 @@ waitAll (const ArrayView<RCP<CommRequest> >& requests,
 }
 
 
-
 template<typename Ordinal>
-void MpiComm<Ordinal>::wait(
-  const Ptr<RCP<CommRequest> > &request
-  ) const
+RCP<CommStatus<Ordinal> > 
+MpiComm<Ordinal>::wait (const Ptr<RCP<CommRequest> >& request) const
 {
-  TEUCHOS_COMM_TIME_MONITOR(
-    "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::wait(...)"
-    );
+  TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::wait(...)" );
+
+  TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::wait(...)" );
+
   if (is_null(*request)) {
     return; // Nothing to wait on ...
   }
   const RCP<MpiCommRequest> mpiCommRequest =
     rcp_dynamic_cast<MpiCommRequest>(*request);
+  // This function doesn't satisfy the strong exception guarantee,
+  // because releaseRawMpiRequest() modifies the MpiCommRequest.
   MPI_Request rawMpiRequest = mpiCommRequest->releaseRawMpiRequest();
   MPI_Status status;
-  MPI_Wait( &rawMpiRequest, &status );
-  // ToDo: We really should check the status?
+  const int err = MPI_Wait (&rawMpiRequest, &status);
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error, 
+    "Teuchos::MpiComm::wait: MPI_Wait() failed with error code "
+    << mpiErrorCodeToString (err) << "\".");
+
   *request = null;
+  return rcp (MpiCommStatus<Ordinal> (status));
 }
 
 
