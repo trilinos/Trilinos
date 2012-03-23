@@ -139,26 +139,28 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< class Device , typename SizeType >
-class CreateCrsMap< Device , std::vector< SizeType > > {
+template< class Device , typename MapSizeType , typename InputSizeType >
+class CreateCrsMap<
+        CrsMap< Device , CrsColumnIdentity , MapSizeType > ,
+        std::vector< InputSizeType > >
+{
 public:
 
-  typedef CrsMap< Device , CrsColumnIdentity > type ;
+  typedef CrsMap< Device, CrsColumnIdentity, MapSizeType > type ;
+  typedef std::vector< InputSizeType > input_type ;
 
   static
-  type create( const std::string & label ,
-               const std::vector< SizeType > & counts )
+  type create( const std::string & label , const input_type & input )
   {
-    typedef typename Device::size_type                       size_type ;
-    typedef typename Device::memory_space                    memory_space ;
-    typedef          MemoryView< size_type , memory_space >  memory_type ;
-    typedef typename memory_type::HostMirror                 mirror_type ;
+    typedef typename Device::memory_space                      memory_space ;
+    typedef          MemoryView< MapSizeType , memory_space >  memory_type ;
+    typedef typename memory_type::HostMirror                   mirror_type ;
 
     enum { is_host_memory = SameType< memory_space , Host >::value };
 
     typedef CreateMirror< memory_type , is_host_memory > create_mirror ;
 
-    const size_t row_count = counts.size();
+    const size_t row_count = input.size();
 
     type crs ;
 
@@ -171,7 +173,7 @@ public:
 
     tmp[0] = 0 ;
     for ( size_t i = 0 ; i < row_count ; ++i ) {
-      tmp[i+1] = crs.m_entry_count += counts[i] ;
+      tmp[i+1] = crs.m_entry_count += input[i] ;
     }
 
     DeepCopy< memory_type , mirror_type >::run( crs.m_memory , tmp , row_count + 1 );
@@ -182,32 +184,33 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< class Device , typename SizeType >
-class CreateCrsMap< Device , std::vector< std::vector< SizeType > > > {
+template< class Device , typename MapSizeType , typename InputSizeType >
+class CreateCrsMap< CrsMap< Device , CrsColumnMap , MapSizeType > ,
+                    std::vector< std::vector< InputSizeType > > >
+{
 public:
 
-  typedef CrsMap< Device , CrsColumnMap > type ;
+  typedef CrsMap< Device , CrsColumnMap , MapSizeType > type ;
+  typedef std::vector< std::vector< InputSizeType > > input_type ;
 
   static
-  type create( const std::string & label ,
-               const std::vector< std::vector< SizeType > > & input )
+  type create( const std::string & label , const input_type & input )
   {
-    typedef typename Device::size_type                       size_type ;
-    typedef typename Device::memory_space                    memory_space ;
-    typedef          MemoryView< size_type , memory_space >  memory_type ;
-    typedef typename memory_type::HostMirror                 mirror_type ;
+    typedef typename Device::memory_space                      memory_space ;
+    typedef          MemoryView< MapSizeType , memory_space >  memory_type ;
+    typedef typename memory_type::HostMirror                   mirror_type ;
 
     enum { is_host_memory = SameType< memory_space , Host >::value };
 
     typedef CreateMirror< memory_type , is_host_memory > create_mirror ;
 
     const size_t row_count = input.size();
-    size_type total_count = 0 ;
+    size_t total_count = 0 ;
     for ( size_t i = 0 ; i < row_count ; ++i ) {
       total_count += input[i].size();
     }
     // Total number of members required:
-    size_type offset_count = total_count + row_count + 1 ;
+    size_t offset_count = total_count + row_count + 1 ;
 
     type crs ;
 
@@ -223,7 +226,7 @@ public:
     total_count = 0 ;
     offset_count = row_count + 1 ;
     for ( size_t i = 0 ; i < row_count ; ++i ) {
-      const std::vector< SizeType > & column = input[i] ;
+      const std::vector< InputSizeType > & column = input[i] ;
       for ( size_t j = 0 ; j < column.size() ; ++j , ++offset_count ) {
         tmp[offset_count] = column[j] ;
       }

@@ -153,7 +153,7 @@ TEUCHOS_UNIT_TEST( StackBuilder, DBBuilder ) {
     " </ParameterList>                  \n"
   );
   ParameterList stackPL;
-  Teuchos::updateParametersFromXmlString(xmlString,&stackPL);
+  Teuchos::updateParametersFromXmlString (xmlString, Teuchos::ptr (&stackPL));
 
   TPETRAEXT_TYPESTACK3( TestStack, double, float, int );
   TestDBInit testInit;

@@ -83,7 +83,7 @@ create(Teuchos::ParameterList& sgParams)
   std::string exp_type = expParams.get("Type", "Algebraic");
   if (exp_type == "Algebraic")
     expansion = 
-      Teuchos::rcp(new Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type,value_type>(basis, Cijk));
+      Teuchos::rcp(new Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type,value_type>(basis, Cijk, Teuchos::rcp(&expParams,false)));
   else if (exp_type == "Quadrature") {
     Teuchos::ParameterList& quadParams = sgParams.sublist("Quadrature");
     Teuchos::RCP<const Stokhos::Quadrature<ordinal_type,value_type> > quad;
@@ -95,7 +95,7 @@ create(Teuchos::ParameterList& sgParams)
       quadParams.set("Stochastic Galerkin Quadrature", quad);
     }
     expansion = 
-      Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<ordinal_type,value_type>(basis, Cijk, quad));
+      Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<ordinal_type,value_type>(basis, Cijk, quad, Teuchos::rcp(&expParams,false)));
   }
   else if (exp_type == "For UQTK") {
 #ifdef HAVE_STOKHOS_FORUQTK

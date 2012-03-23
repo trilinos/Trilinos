@@ -384,7 +384,6 @@ void fprint_NNTI_buffer(
         fprint_NNTI_peer(fp, "buffer_owner", subprefix, &addr->buffer_owner);
         fprint_NNTI_remote_addr(fp, "buffer_addr", subprefix, &addr->buffer_addr);
         fprintf(fp, "%s    ops = %ld,\n", subprefix, (long)addr->ops);
-        fprint_NNTI_peer(fp, "peer", subprefix, &addr->peer);
 
         fprintf(fp, "%s    payload_size = %llu,\n", subprefix, (unsigned long long)addr->payload_size);
         fprintf(fp, "%s    payload = %p,\n", subprefix, addr->payload);

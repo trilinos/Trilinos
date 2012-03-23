@@ -51,6 +51,9 @@ namespace Stokhos {
     //! Destructor
     virtual ~SGPreconditionerFactory() {}
 
+    //! Return whether a preconditioner will be supported
+    virtual bool isPrecSupported() const;
+
     //! Build preconditioner operator
     virtual Teuchos::RCP<Stokhos::SGPreconditioner> 
     build(
@@ -78,6 +81,9 @@ namespace Stokhos {
 
     //! Preconditioner parameters
     Teuchos::RCP<Teuchos::ParameterList> params;
+
+    //! Preconditioner method
+    std::string prec_method;
 
   }; // class SGPreconditionerFactory
 

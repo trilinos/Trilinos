@@ -483,31 +483,47 @@ namespace Tpetra {
 
 
   template <class Packet>
-  void Distributor::doPosts(const ArrayView<const Packet>& exports,
-                            size_t numPackets,
-                            const ArrayRCP<Packet>& imports) {
-    // start of actual doPosts function
+  void 
+  Distributor::doPosts (const ArrayView<const Packet>& exports,
+			size_t numPackets,
+			const ArrayRCP<Packet>& imports) 
+  {
+    using Teuchos::as;
+    using Teuchos::typeName;
+
     const int myImageID = comm_->getRank();
     size_t selfReceiveOffset = 0;
 
 #ifdef HAVE_TEUCHOS_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(imports.size()) != totalReceiveLength_ * numPackets, std::runtime_error,
-        Teuchos::typeName(*this) << "::doPosts(): imports must be large enough to store the imported data.");
-#endif
+    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t>(imports.size()) != totalReceiveLength_ * numPackets, 
+      std::runtime_error, typeName(*this) << "::doPosts(): imports must be "
+      "large enough to store the imported data.  imports.size() = " 
+      << imports.size() << ", but totalReceiveLength_ * numPackets = " 
+      << totalReceiveLength_ * numPackets << ".");
+#endif // HAVE_TEUCHOS_DEBUG
 
-    // allocate space in requests
-    requests_.resize(0);
-    requests_.reserve(numReceives_);
+    // Make space in requests, if the space isn't already there.
+    // requests_ needs to leave additional space for the "self
+    // message," if there is one.
+    //
+    // NOTE (mfh 19 Mar 2012): Epetra_MpiDistributor::DoPosts()
+    // doesn't (re)allocate its array of requests.  That happens in
+    // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
+    // demand), or Resize_().
+    const size_t actualNumReceives = numReceives_ + (selfMessage_ ? 1 : 0);
+    if (as<size_t> (requests_.size()) != actualNumReceives) {
+      requests_.resize (actualNumReceives);
+    }
 
     // start up the Irecv's
     {
       size_t curBufferOffset = 0;
-      for (size_t i = 0; i < numReceives_ + (selfMessage_ ? 1 : 0); ++i) {
+      for (size_t i = 0; i < actualNumReceives; ++i) {
         if (imagesFrom_[i] != myImageID) { 
-          // receiving this one from another image
-          // setup reference into imports of the appropriate size and at the appropriate place
-          ArrayRCP<Packet> impptr = imports.persistingView(curBufferOffset,lengthsFrom_[i]*numPackets);
-          requests_.push_back( Teuchos::ireceive<int,Packet>(*comm_,impptr,imagesFrom_[i]) );
+	  // Make the receive buffer a persisting view of the
+	  // appropriate part of lengthsFrom_.
+          ArrayRCP<Packet> recvBuf = imports.persistingView (curBufferOffset, lengthsFrom_[i]*numPackets);
+          requests_[i] = Teuchos::ireceive<int,Packet> (*comm_, recvBuf, imagesFrom_[i]);
         }
         else {
           // receiving this one from myself 
@@ -518,8 +534,9 @@ namespace Tpetra {
       }
     }
 
-    // wait for everyone else before posting ready-sends below to ensure that 
-    // all non-blocking receives above have been posted
+    // The ready-sends below require that their matching receive has
+    // been posted, so do a barrier to ensure that all the nonblocking
+    // receives have posted first.
     Teuchos::barrier(*comm_);
 
     // setup scan through imagesTo_ list starting with higher numbered images
@@ -544,24 +561,23 @@ namespace Tpetra {
         }
 
         if (imagesTo_[p] != myImageID) {
-          // sending it to another image
-          ArrayView<const Packet> tmpSend(&exports[startsTo_[p]*numPackets],lengthsTo_[p]*numPackets);
-          Teuchos::readySend<int,Packet>(*comm_,tmpSend,imagesTo_[p]);
+          ArrayView<const Packet> tmpSend (&exports[startsTo_[p]*numPackets], lengthsTo_[p]*numPackets);
+          Teuchos::readySend<int,Packet>(*comm_, tmpSend, imagesTo_[p]);
         }
-        else {
-          // sending it to ourself
+        else { // "Sending" the message to myself
           selfNum = p;
         }
       }
 
       if (selfMessage_) {
-        std::copy(exports.begin()+startsTo_[selfNum]*numPackets, exports.begin()+startsTo_[selfNum]*numPackets+lengthsTo_[selfNum]*numPackets, 
-                  imports.begin()+selfReceiveOffset);
+        std::copy (exports.begin()+startsTo_[selfNum]*numPackets, 
+		   exports.begin()+startsTo_[selfNum]*numPackets+lengthsTo_[selfNum]*numPackets, 
+		   imports.begin()+selfReceiveOffset);
       }
     }
     else { // data is not blocked by image, use send buffer
       // allocate sendArray buffer
-      Array<Packet> sendArray(maxSendLength_*numPackets); 
+      Array<Packet> sendArray (maxSendLength_ * numPackets); 
 
       for (size_t i = 0; i < numBlocks; ++i) {
         size_t p = i + imageIndex;
@@ -570,21 +586,19 @@ namespace Tpetra {
         }
 
         if (imagesTo_[p] != myImageID) { 
-          // sending it to another image
           typename ArrayView<const Packet>::iterator srcBegin, srcEnd;
           size_t sendArrayOffset = 0;
           size_t j = startsTo_[p];
           for (size_t k = 0; k < lengthsTo_[p]; ++k, ++j) {
             srcBegin = exports.begin() + indicesTo_[j]*numPackets;
             srcEnd   = srcBegin + numPackets;
-            std::copy( srcBegin, srcEnd, sendArray.begin()+sendArrayOffset );
+            std::copy (srcBegin, srcEnd, sendArray.begin()+sendArrayOffset);
             sendArrayOffset += numPackets;
           }
-          ArrayView<const Packet> tmpSend = sendArray(0,lengthsTo_[p]*numPackets);
-          Teuchos::readySend<int,Packet>(*comm_,tmpSend,imagesTo_[p]);
+          ArrayView<const Packet> tmpSend = sendArray (0, lengthsTo_[p]*numPackets);
+          Teuchos::readySend<int,Packet> (*comm_, tmpSend, imagesTo_[p]);
         }
-        else { 
-          // sending it to myself
+        else { // "Sending" the message to myself
           selfNum = p;
           selfIndex = startsTo_[p];
         }
@@ -592,9 +606,9 @@ namespace Tpetra {
 
       if (selfMessage_) {
         for (size_t k = 0; k < lengthsTo_[selfNum]; ++k) {
-          std::copy( exports.begin()+indicesTo_[selfIndex]*numPackets,
+          std::copy (exports.begin()+indicesTo_[selfIndex]*numPackets,
                      exports.begin()+indicesTo_[selfIndex]*numPackets + numPackets,
-                     imports.begin() + selfReceiveOffset );
+                     imports.begin() + selfReceiveOffset);
           ++selfIndex;
           selfReceiveOffset += numPackets;
         }
@@ -606,25 +620,36 @@ namespace Tpetra {
   void Distributor::doPosts(const ArrayView<const Packet>& exports,
                             const ArrayView<size_t>& numExportPacketsPerLID,
                             const ArrayRCP<Packet>& imports,
-                            const ArrayView<size_t>& numImportPacketsPerLID) {
-    // start of actual doPosts function
+                            const ArrayView<size_t>& numImportPacketsPerLID) 
+  {
+    using Teuchos::as;
+    using Teuchos::ireceive;
+
     const int myImageID = comm_->getRank();
     size_t selfReceiveOffset = 0;
 
 #ifdef HAVE_TEUCHOS_DEBUG
     size_t totalNumPackets = 0;
-    for(int ii=0; ii<numImportPacketsPerLID.size(); ++ii) {
+    for (int ii = 0; ii < numImportPacketsPerLID.size(); ++ii) {
       totalNumPackets += numImportPacketsPerLID[ii];
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(imports.size()) != totalNumPackets, std::runtime_error,
-        Teuchos::typeName(*this) << "::doPosts(): imports must be large enough to store the imported data.");
-#endif
+    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t>(imports.size()) != totalNumPackets, 
+      std::runtime_error, Teuchos::typeName(*this) << "::doPosts(): The imports "
+      "array argument must be large enough to store the imported data.  imports."
+      "size() = " << imports.size() << ", but the total number of packets is " 
+      << totalNumPackets << ".");
+#endif // HAVE_TEUCHOS_DEBUG
 
     // allocate space in requests
+    //
+    // NOTE (mfh 19 Mar 2012): Epetra_MpiDistributor::DoPosts()
+    // doesn't (re)allocate its array of requests.  That happens in
+    // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
+    // demand), or Resize_().
     requests_.resize(0);
     requests_.reserve(numReceives_);
 
-    // start up the Irecv's
+    // Post the nonblocking receives (Irecv).
     {
       size_t curBufferOffset = 0;
       size_t curLIDoffset = 0;
@@ -635,22 +660,37 @@ namespace Tpetra {
         }
         curLIDoffset += lengthsFrom_[i];
         if (imagesFrom_[i] != myImageID && totalPacketsFrom_i) { 
-          // receiving this one from another image
-          // setup reference into imports of the appropriate size and at the appropriate place
-          ArrayRCP<Packet> impptr = imports.persistingView(curBufferOffset,totalPacketsFrom_i);
-          requests_.push_back( Teuchos::ireceive<int,Packet>(*comm_,impptr,imagesFrom_[i]) );
+	  // If my process is receiving these packet(s) from another
+	  // process (not a self-receive), and if there is at least
+	  // one packet to receive: 
+	  //
+	  // 1. Set up the reference (impptr) into the imports array,
+	  //    given the offset and size (total number of packets
+	  //    from process imagesFrom_[i]).
+	  // 2. Start the Irecv and save the resulting request.
+          ArrayRCP<Packet> impptr = 
+	    imports.persistingView (curBufferOffset, totalPacketsFrom_i);
+          requests_.push_back (ireceive<int, Packet> (*comm_, impptr, imagesFrom_[i]));
         }
-        else {
-          // receiving this one from myself 
-          // note that offset
-          selfReceiveOffset = curBufferOffset;
+        else { // Receiving these packet(s) from myself
+          selfReceiveOffset = curBufferOffset; // Remember the offset
         }
         curBufferOffset += totalPacketsFrom_i;
       }
     }
 
-    // wait for everyone else before posting ready-sends below to ensure that 
-    // all non-blocking receives above have been posted
+    // NOTE (mfh 19 Mar 2012):
+    //
+    // The ready-sends below require that each ready-send's matching
+    // receive (see above) has already been posted.  We ensure this
+    // with a barrier.  (Otherwise, some process that doesn't need to
+    // post receives might post its ready-send before the receiving
+    // process gets to post its receive.)  If you want to remove the
+    // barrier, you'll have to replace the ready-sends below with
+    // standard sends or Isends.
+    //
+    // Epetra_MpiDistributor::DoPosts() uses the same approach
+    // (Irecvs, barrier, Rsends).
     Teuchos::barrier(*comm_);
 
     // setup arrays containing starting-offsets into exports for each send,
@@ -820,61 +860,71 @@ namespace Tpetra {
 
   // note: assumes that size_t >= Ordinal
   //////////////////////////////////////////////////////////////////////////////////////////
-  template <class Ordinal>
+  template <class OrdinalType>
   void Distributor::computeSends(
-      const ArrayView<const Ordinal> & importIDs,
+      const ArrayView<const OrdinalType> & importIDs,
       const ArrayView<const int> & importNodeIDs,
-            ArrayRCP<Ordinal> & exportIDs,
+            ArrayRCP<OrdinalType> & exportIDs,
             ArrayRCP<int> & exportNodeIDs)
   {
+    using Teuchos::as;
+
     int myImageID = comm_->getRank();
 
-    size_t numImports = importNodeIDs.size();
-    Array<size_t> importObjs(2*numImports);
-    for (size_t i = 0; i < numImports; ++i ) {  
-      importObjs[2*i]   = Teuchos::as<size_t>(importIDs[i]);
-      importObjs[2*i+1] = Teuchos::as<size_t>(myImageID);
+    const size_t numImports = importNodeIDs.size();
+    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t> (importIDs.size()) < numImports, 
+      std::invalid_argument, "Tpetra::Distributor::computeSends: importNodeIDs."
+      "size() = " << importNodeIDs.size() << " != importIDs.size() = " 
+      << importIDs.size() << ".");
+
+    Array<size_t> importObjs (2*numImports);
+    // Pack pairs (importIDs[i], my process ID) into importObjs.
+    for (size_t i = 0; i < numImports; ++i ) {
+      importObjs[2*i]   = as<size_t>(importIDs[i]);
+      importObjs[2*i+1] = as<size_t>(myImageID);
     }
 
     size_t numExports;
     Distributor tempPlan(comm_);
     numExports = tempPlan.createFromSends(importNodeIDs);
     if (numExports > 0) {
-      exportIDs = arcp<Ordinal>(numExports);
+      exportIDs = arcp<OrdinalType>(numExports);
       exportNodeIDs = arcp<int>(numExports);
     }
 
     Array<size_t> exportObjs(tempPlan.getTotalReceiveLength()*2);
     tempPlan.doPostsAndWaits<size_t>(importObjs(),2,exportObjs());
 
+    // Unpack received (GID, PID) pairs into exportIDs resp. exportNodeIDs.
     for (size_t i = 0; i < numExports; ++i) {
-      exportIDs[i]     = Teuchos::as<Ordinal>(exportObjs[2*i]);
+      exportIDs[i]     = as<OrdinalType>(exportObjs[2*i]);
       exportNodeIDs[i] = exportObjs[2*i+1];
     }
   }
 
 
   //////////////////////////////////////////////////////////////////////////////////////////
-  template <class Ordinal>
+  template <class OrdinalType>
   void Distributor::createFromRecvs(
-      const ArrayView<const Ordinal> &remoteIDs, 
+      const ArrayView<const OrdinalType> &remoteIDs, 
       const ArrayView<const int> &remoteImageIDs, 
-            ArrayRCP<Ordinal> &exportGIDs, 
+            ArrayRCP<OrdinalType> &exportGIDs, 
             ArrayRCP<int> &exportNodeIDs)
   {
     using Teuchos::outArg;
+    using Teuchos::reduceAll;
     {
       const int myImageID = comm_->getRank();
       int err_node = (remoteIDs.size() != remoteImageIDs.size()) ? myImageID : -1;
       int gbl_err;
-      Teuchos::reduceAll(*comm_,Teuchos::REDUCE_MAX,err_node,outArg(gbl_err));
+      reduceAll (*comm_, Teuchos::REDUCE_MAX, err_node, outArg (gbl_err));
       TEUCHOS_TEST_FOR_EXCEPTION(gbl_err != -1, std::runtime_error,
-          Teuchos::typeName(*this) 
-          << "::createFromRecvs(): lists of remote IDs and remote node IDs must have the same size (error on node " 
+          Teuchos::typeName(*this) << "::createFromRecvs(): lists of remote IDs "
+          "and remote process IDs must have the same size (error on process " 
           << gbl_err << ").");
     }
-    computeSends(remoteIDs, remoteImageIDs, exportGIDs, exportNodeIDs);
-    (void)createFromSends(exportNodeIDs());
+    computeSends (remoteIDs, remoteImageIDs, exportGIDs, exportNodeIDs);
+    (void) createFromSends (exportNodeIDs());
   }
 
 } // namespace Tpetra

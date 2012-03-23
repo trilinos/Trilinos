@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_LEGENDREPOLYNOMIALSCREATE_HPP
-#define KOKKOS_LEGENDREPOLYNOMIALSCREATE_HPP
+#ifndef KOKKOS_STOCHASTICPRODUCTTENSORCREATE_HPP
+#define KOKKOS_STOCHASTICPRODUCTTENSORCREATE_HPP
 
 #include <iostream>
 #include <cmath>
@@ -52,9 +52,11 @@ namespace Impl {
 
 //----------------------------------------------------------------------------
 
-template< typename ValueType , class PolynomialType , class Device , typename IntType >
+template< typename ValueType , class PolynomialType ,
+          class Device , typename IntType ,
+          template< unsigned , typename , class > class TensorType >
 class CreateSparseProductTensor<
-  StochasticProductTensor< ValueType , PolynomialType , Device > ,
+  StochasticProductTensor< ValueType , PolynomialType , Device , TensorType > ,
   std::vector< IntType > >
 {
 public:
@@ -62,8 +64,9 @@ public:
   typedef Device device_type ;
   typedef typename device_type::size_type size_type ;
   typedef StochasticProductTensor< ValueType ,
-                                  PolynomialType ,
-                                  device_type > type ;
+                                   PolynomialType ,
+                                   device_type ,
+                                   TensorType > type ;
 
   typedef std::vector< IntType > input_type ;
 
@@ -215,7 +218,7 @@ private:
     }
   }
 
-  void print() const
+  void print_bases() const
   {
     std::cout.precision(8);
 
@@ -236,8 +239,13 @@ private:
         std::cout << " )" << std::endl ;
       }
     }
+  }
 
+  void print_tensor() const
+  {
+    std::cout.precision(8);
 
+    std::cout << "Kokkos::Impl::CreateProductTensor(" ;
     std::cout << "Tensor (" << m_tensor_map.size() << ") = " << std::endl ;
     for ( typename tensor_map_type::const_iterator
           n =  m_tensor_map.begin() ;
@@ -281,7 +289,8 @@ public:
     // Manufactor all required data
     const CreateSparseProductTensor work( variable_polynomial_degree );
 
-    // work.print();
+    // work.print_bases();
+    // work.print_tensor();
 
     type tmp ;
 
@@ -331,10 +340,13 @@ public:
   }
 };
 
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
 
 } // namespace Impl
 } // namespace Kokkos
 
-#endif /* #ifndef KOKKOS_LEGENDREPOLYNOMIALSCREATE_HPP */
+#endif /* #ifndef KOKKOS_STOCHASTICPRODUCTTENSORCREATE_HPP */
 
 

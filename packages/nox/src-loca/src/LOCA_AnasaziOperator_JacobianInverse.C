@@ -102,6 +102,14 @@ LOCA::AnasaziOperator::JacobianInverse::apply(
 }
 
 void
+LOCA::AnasaziOperator::JacobianInverse::beginPostProcessing()
+{
+  // Make sure Jacobian is up-to-date
+  NOX::Abstract::Group::ReturnType status;
+  status = grp->computeJacobian();
+}
+
+void
 LOCA::AnasaziOperator::JacobianInverse::transformEigenvalue(double& ev_r, 
 							    double& ev_i) const
 {
@@ -128,12 +136,6 @@ LOCA::AnasaziOperator::JacobianInverse::rayleighQuotient(
 
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
-
-  // Make sure Jacobian is up-to-date
-  status = grp->computeJacobian();
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-							   callingFunction);
 
   status = grp->applyJacobian(evec_r, *tmp_r);
   finalStatus = 

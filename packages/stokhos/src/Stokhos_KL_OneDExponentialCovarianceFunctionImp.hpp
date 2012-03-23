@@ -138,8 +138,9 @@ bisection(const Func& func, const value_type& a, const value_type& b,
   value_type low, hi;
   value_type fa = func.eval(a);
   value_type fb = func.eval(b);
-  TEUCHOS_TEST_FOR_EXCEPTION(fa*fb > 0, std::logic_error,
-		     "Bounds must bracket the root!" << std::endl)
+  TEUCHOS_TEST_FOR_EXCEPTION(fa*fb > value_type(0.0), std::logic_error,
+    "Bounds [" << a << "," << b << "] must bracket the root!" << std::endl <<
+    "f(a) = " << fa << ", f(b) = " << fb << std::endl)
 
   if (fa <= 0.0) {
     low = a;

@@ -74,6 +74,9 @@ struct ListPlusValidList {
 namespace Teuchos {
 
 
+// Constructors/Destructor/Info
+
+
 ParameterList::ParameterList()
   :name_("ANONYMOUS"), disableRecursiveValidation_(false)
 {}
@@ -92,6 +95,16 @@ ParameterList::ParameterList(const ParameterList& source)
 }
 
 
+ParameterList::~ParameterList() 
+{}
+
+
+Ordinal ParameterList::numParams() const
+{
+  return params_.numObjects();
+}
+
+
 ParameterList& ParameterList::operator=(const ParameterList& source) 
 {
   if (&source == this)
@@ -106,8 +119,8 @@ ParameterList& ParameterList::operator=(const ParameterList& source)
 ParameterList& ParameterList::setParameters(const ParameterList& source)
 {
   for( ConstIterator i = source.begin(); i != source.end(); ++i ) {
-    const std::string     &name_i  = this->name(i);
-    const ParameterEntry  &entry_i = this->entry(i);
+    const std::string &name_i = this->name(i);
+    const ParameterEntry &entry_i = this->entry(i);
     if(entry_i.isList()) {
       this->sublist(name_i,false,entry_i.docString()).setParameters(
         getValue<ParameterList>(entry_i) );
@@ -126,8 +139,8 @@ ParameterList& ParameterList::setParametersNotAlreadySet(
   ) 
 {
   for( ConstIterator i = source.begin(); i != source.end(); ++i ) {
-    const std::string     &name_i  = this->name(i);
-    const ParameterEntry  &entry_i = this->entry(i);
+    const std::string &name_i = this->name(i);
+    const ParameterEntry &entry_i = this->entry(i);
     if(entry_i.isList()) {
       this->sublist(name_i,false,entry_i.docString()).setParametersNotAlreadySet(
         getValue<ParameterList>(entry_i) );
@@ -153,10 +166,6 @@ ParameterList& ParameterList::disableRecursiveValidation()
 }
 
 
-ParameterList::~ParameterList() 
-{}
-
-
 void ParameterList::unused(std::ostream& os) const
 {
   for (ConstIterator i = this->begin(); i != this->end(); ++i) {
@@ -175,8 +184,8 @@ std::string ParameterList::currentParametersString() const
   ParameterList::ConstIterator itr;
   int i;
   for( itr = this->begin(), i = 0; itr != this->end(); ++itr, ++i ) {
-    const std::string     &entryName = this->name(itr);
-    const ParameterEntry  &theEntry = this->entry(itr);
+    const std::string &entryName = this->name(itr);
+    const ParameterEntry &theEntry = this->entry(itr);
     oss
       << "    \""<<entryName<<"\" : "<<theEntry.getAny().typeName()
       <<" = "<<filterValueToString(theEntry) << "\n";
@@ -188,16 +197,23 @@ std::string ParameterList::currentParametersString() const
 
 bool ParameterList::isSublist(const std::string& name_in) const
 {
-  ConstIterator i = this->find(name_in);
-  if (i != this->end())
-    return (entry(i).isList());
+  typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
+  const Ordinal param_idx = params_.getObjOrdinalIndex(name_in);
+  if (param_idx != SIOVOCB::getInvalidOrdinal()) {
+    return params_.getObjPtr(param_idx)->isList();
+  }
   return false;
 }
 
 
 bool ParameterList::isParameter(const std::string& name_in) const
 {
-  return (this->find(name_in) != this->end());
+  typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
+  const Ordinal param_idx = params_.getObjOrdinalIndex(name_in);
+  if (param_idx != SIOVOCB::getInvalidOrdinal()) {
+    return true;
+  }
+  return false;
 }
 
 
@@ -205,95 +221,70 @@ bool ParameterList::remove(
   std::string const& name_in, bool throwIfNotExists
   )
 {
-  Iterator i = this->nonconstFind(name_in);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    throwIfNotExists && i == this->nonconstEnd(), Exceptions::InvalidParameterName
-    ,"Teuchos::ParameterList::remove(name,throwIfNotExists):"
-    "\n\nError, the parameter \"" << name_in << "\" does not exist!"
-    );
-  if( i != this->nonconstEnd() ) {
-    params_.erase(i);
+  typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
+  const Ordinal param_idx = params_.getObjOrdinalIndex(name_in);
+  if (param_idx != SIOVOCB::getInvalidOrdinal()) {
+    // Parameter exists
+    params_.removeObj(param_idx);
+    return true;
   }
-  return false;
+  // Parameter does not exist
+  if (throwIfNotExists) {
+    validateEntryExists("get", name_in, 0); // Will throw
+  }
+  return false; // Param does not exist but that is okay
 }
 
 
 ParameterList& ParameterList::sublist(
-  const std::string& name_in, bool mustAlreadyExist
-  ,const std::string& docString
+  const std::string& name_in, bool mustAlreadyExist,
+  const std::string& docString
   )
 {
-  // Find name in list, if it exists.
-  Iterator i = this->nonconstFind(name_in);
+  typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
 
-  // If it does exist and is a list, return the list value.
-  // Otherwise, throw an error.
-  if (i != this->nonconstEnd()) {
-#ifdef TEUCHOS_DEBUG
-    const std::string actualName = this->name(i);
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      name_in != actualName, std::logic_error,
-      "Error, the sublist named \"" << name_in << "\" was said to be found\n"
-      "but the actual parameter name is \"" << actualName << "\".\n"
-      "This suggests some type of memory corruption in the list (try running a\n"
-      "memory checking tool loke purify or valgrind)."
-      );
-#endif
+  const Ordinal param_idx = params_.getObjOrdinalIndex(name_in);
 
-    TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
-      !entry(i).isList(), Exceptions::InvalidParameterType
-      ,"Error, the parameter \"" << name_in << "\" is not a list, it is of type \""
-      <<entry(i).getAny(false).typeName()<<"\"!" );
-    return getValue<ParameterList>(entry(i));
+  Ptr<ParameterEntry> sublist_entry_ptr;
+
+  if (param_idx != SIOVOCB::getInvalidOrdinal()) {
+    // Sublist parameter exists
+    sublist_entry_ptr = params_.getNonconstObjPtr(param_idx);
+    validateEntryIsList(name_in, *sublist_entry_ptr);
   }
-
-  // The list does not exist so create a new empty list and return its reference
-  TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
-    mustAlreadyExist, Exceptions::InvalidParameterName
-    ,"The sublist "<<this->name()<<"->\""<<name_in<<"\" does not exist!"
-    );
-  const ParameterList newSubList(this->name()+std::string("->")+name_in);
-  ParameterEntry &newParamEntry = params_.insert(
-    Map::value_type(name_in,ParameterEntry(newSubList,false,true,docString))
-    ).first->second;
-  // Make sure we set the documentation std::string!
-#ifdef TEUCHOS_DEBUG
-  {
-    ParameterEntry *newNewParamEntry = this->getEntryPtr(name_in);
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      0 == newNewParamEntry, std::logic_error,
-      "Error, the parameter was not set for sublist \"" << name_in << "\"!"
-      );
-    const std::string newDocString = newNewParamEntry->docString();
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    newDocString != docString, std::logic_error,
-    "Error, the set documentation std::string is not equal to the pass in std::string for\n"
-    "the sublist \"" << name_in << "\"."
-    );
+  else {
+    // Sublist does not exist so we need to create a new one
+    validateMissingSublistMustExist(this->name(), name_in, mustAlreadyExist);
+    const Ordinal new_param_idx =
+      params_.setObj(
+        name_in,
+        ParameterEntry(
+          ParameterList(this->name()+std::string("->")+name_in),
+          false,
+          true,
+          docString
+          )
+        );
+    sublist_entry_ptr = params_.getNonconstObjPtr(new_param_idx);
   }
-#endif
-  return any_cast<ParameterList>(newParamEntry.getAny(false));
+  
+  return any_cast<ParameterList>(sublist_entry_ptr->getAny(false));
 }
 
 
 const ParameterList& ParameterList::sublist(const std::string& name_in) const
 {
-  // Find name in list, if it exists.
-  ConstIterator i = this->find(name_in);
+  typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
 
-  // If it does not exist, throw an error
-  TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
-    i == this->end(), Exceptions::InvalidParameterName
-    ,"Error, the sublist "<<this->name()<<"->\""<<name_in<<"\" does not exist!"
-    );
+  const Ordinal param_idx = params_.getObjOrdinalIndex(name_in);
+  if (param_idx == SIOVOCB::getInvalidOrdinal()) {
+    validateMissingSublistMustExist(this->name(), name_in, true);
+  }
 
-  // If it does exist and is a list, return the list value.
-  TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
-    !entry(i).isList(), Exceptions::InvalidParameterType
-    ,"Error, the parameter \""<<name_in<<"\" is not a list!  Instead it is of type"
-    " \""<<entry(i).getAny(false).typeName()<<"\"!"
-    );
-  return getValue<ParameterList>(entry(i));
+  Ptr<const ParameterEntry>  sublist_entry_ptr = params_.getObjPtr(param_idx);
+  validateEntryIsList(name_in, *sublist_entry_ptr);
+  
+  return any_cast<ParameterList>(sublist_entry_ptr->getAny(false));
 }
 
   
@@ -331,11 +322,11 @@ std::ostream& ParameterList::print(std::ostream& os, const PrintOptions &printOp
       if(showTypes)
         *out << " : " << entry_i.getAny(false).typeName();
       *out << " = "; entry_i.leftshift(os,showFlags); *out << std::endl;
-      if(showDoc) {
-        if(validator.get()) {
+      if (showDoc) {
+        if (nonnull(validator)) {
           validator->printDoc(docString,OSTab(os).o());
         }
-        else if( docString.length() ) {
+        else if (docString.length()) {
           StrUtils::printLines(OSTab(out).o(),"# ",docString);
         }
       }
@@ -386,7 +377,7 @@ void ParameterList::validateParameters(
   //
   sublist_list_t sublist_list;
   ConstIterator itr;
-  for( itr = this->begin(); itr != this->end(); ++itr ) {
+  for (itr = this->begin(); itr != this->end(); ++itr) {
     const std::string    &entryName   = this->name(itr);
     const ParameterEntry &theEntry       = this->entry(itr);
 #ifdef TEUCHOS_PARAMETER_LIST_SHOW_TRACE
@@ -413,8 +404,8 @@ void ParameterList::validateParameters(
       <<validParamList.currentParametersString()
       );
     RCP<const ParameterEntryValidator> validator;
-    if( (validator=validEntry->validator()).get() ) {
-      validator->validate( theEntry, entryName, this->name() ); 
+    if (nonnull(validator=validEntry->validator())) {
+      validator->validate(theEntry, entryName, this->name()); 
     }
     else {
       const bool validType =
@@ -479,16 +470,16 @@ void ParameterList::validateParametersAndSetDefaults(
     "for this->name()=\""<<this->name()<<"\"...\n";
 #endif
   //
-  // First loop through and validate the parameters at this level.
+  // A) loop through and validate the parameters at this level.
   //
   // Here we generate a list of sublists that we will search next
   //
   sublist_list_t sublist_list;
   {
     Iterator itr;
-    for( itr = this->nonconstBegin(); itr != this->nonconstEnd(); ++itr ) {
-      const std::string  &entryName = this->name(itr);
-      ParameterEntry &theEntry = this->entry(itr);
+    for (itr = this->nonconstBegin(); itr != this->nonconstEnd(); ++itr) {
+      const std::string &entryName = this->name(itr);
+      ParameterEntry &theEntry = this->nonconstEntry(itr);
 #ifdef TEUCHOS_PARAMETER_LIST_SHOW_TRACE
       OSTab tab(out);
       *out << "\nentryName=\""<<entryName<<"\"\n";
@@ -505,8 +496,8 @@ void ParameterList::validateParametersAndSetDefaults(
         <<validParamList.currentParametersString()
         );
       RCP<const ParameterEntryValidator> validator;
-      if( (validator=validEntry->validator()).get() ) {
-        validator->validateAndModify( entryName, this->name(), &theEntry );
+      if (nonnull(validator=validEntry->validator())) {
+        validator->validateAndModify(entryName, this->name(), &theEntry);
         theEntry.setValidator(validator);
       }
       else {
@@ -539,16 +530,16 @@ void ParameterList::validateParametersAndSetDefaults(
     }
   }
   //
-  // Second, loop through the valid parameters at this level that are not set
-  // in *this, and set their defaults.
+  // B) Loop through the valid parameters at this level that are not set in
+  // *this, and set their defaults.
   //
   {
     ConstIterator itr;
-    for( itr = validParamList.begin(); itr != validParamList.end(); ++itr ) {
-      const std::string  &validEntryName = validParamList.name(itr);
+    for (itr = validParamList.begin(); itr != validParamList.end(); ++itr) {
+      const std::string &validEntryName = validParamList.name(itr);
       const ParameterEntry &validEntry = validParamList.entry(itr);
       const ParameterEntry *theEntry = this->getEntryPtr(validEntryName);
-      if(!theEntry) {
+      if (!theEntry) {
         // This entry does not exist, so add it.  Here we will only set the
         // value of the entry and its validator and and leave off the
         // documentation.  The reason that the validator is set is so that it
@@ -565,10 +556,10 @@ void ParameterList::validateParametersAndSetDefaults(
     }
   }
   //
-  // Now loop through the sublists and validate their parameters and set their
+  // C) Loop through the sublists and validate their parameters and set their
   // defaults!
   //
-  for(
+  for (
     sublist_list_t::iterator sl_itr = sublist_list.begin();
     sl_itr != sublist_list.end();
     ++sl_itr
@@ -591,7 +582,7 @@ void ParameterList::validateParametersAndSetDefaults(
 void ParameterList::updateSubListNames(int depth)
 {
   const std::string this_name = this->name();
-  Map::iterator itr;
+  Iterator itr;
   for( itr = this->nonconstBegin(); itr != this->nonconstEnd(); ++itr ) {
     const std::string &entryName = this->name(itr);
     const ParameterEntry &theEntry = this->entry(itr);
@@ -618,6 +609,28 @@ void ParameterList::validateEntryExists(
     << this->currentParametersString()
     );
 }
+
+
+void ParameterList::validateEntryIsList(
+  const std::string &name_in, const ParameterEntry &entry_in
+  ) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
+    !entry_in.isList(), Exceptions::InvalidParameterType
+    ,"Error, the parameter \"" << name_in << "\" is not a list, it is of type \""
+    <<entry_in.getAny(false).typeName()<<"\"!" );
+}
+
+
+void ParameterList::validateMissingSublistMustExist(const std::string &baselist_name,
+  const std::string &sublist_name, const bool mustAlreadyExist) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
+    mustAlreadyExist, Exceptions::InvalidParameterName
+    ,"The sublist "<<baselist_name<<"->\""<<sublist_name<<"\" does not exist!"
+    );
+}
+
 
 
 } // namespace Teuchos

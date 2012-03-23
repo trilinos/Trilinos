@@ -41,6 +41,14 @@ Stokhos::SGPreconditionerFactory::
 SGPreconditionerFactory(const Teuchos::RCP<Teuchos::ParameterList>& params_) :
   params(params_)
 {
+  prec_method = params->get("Preconditioner Method", "Mean-based");
+}
+
+bool
+Stokhos::SGPreconditionerFactory::
+isPrecSupported() const
+{
+  return prec_method != "None";
 }
 
 Teuchos::RCP<Stokhos::SGPreconditioner> 
@@ -52,7 +60,7 @@ build(const Teuchos::RCP<const EpetraExt::MultiComm>& sg_comm,
       const Teuchos::RCP<const Epetra_Map>& sg_map)
 {
   Teuchos::RCP<Stokhos::SGPreconditioner> sg_prec;
-  std::string prec_method = params->get("Preconditioner Method", "Mean-based");
+  
   if (prec_method == "Mean-based") {
     Teuchos::RCP<Stokhos::AbstractPreconditionerFactory> prec_factory = 
       buildMeanPreconditionerFactory();

@@ -29,6 +29,7 @@
 #include "Stokhos_MatrixFreeOperator.hpp"
 #include "EpetraExt_BlockMultiVector.h"
 #include "EpetraExt_BlockUtility.h"
+#include "Teuchos_TimeMonitor.hpp"
 
 Stokhos::MatrixFreeOperator::
 MatrixFreeOperator(
@@ -166,6 +167,10 @@ int
 Stokhos::MatrixFreeOperator::
 Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
+  TEUCHOS_FUNC_TIME_MONITOR("Stokhos: SG Operator Apply()");
+#endif
+
   // Note for transpose:
   // The stochastic matrix is symmetric, however the matrix blocks may not
   // be.  So the algorithm here is the same whether we are using the transpose

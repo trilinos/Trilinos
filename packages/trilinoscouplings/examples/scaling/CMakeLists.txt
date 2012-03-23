@@ -4,7 +4,14 @@ INCLUDE(TribitsCopyFilesToBinaryDir)
 IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
    Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND
    Trilinos_ENABLE_Intrepid AND Trilinos_ENABLE_ML AND
-   Trilinos_ENABLE_Pamgen AND Trilinos_ENABLE_Teko)
+   Trilinos_ENABLE_Pamgen)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Example_Poisson_NoFE
+    SOURCES example_Poisson_NoFE.cpp
+    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
+    NUM_MPI_PROCS 1
+    ADD_DIR_TO_NAME
+    )
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Poisson
     SOURCES example_Poisson.cpp
@@ -12,6 +19,17 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
     NUM_MPI_PROCS 1
     ADD_DIR_TO_NAME
     )
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyPoissonFiles
+  SOURCE_FILES Poisson.xml
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+  ) 
+ENDIF()
+
+IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
+   Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND
+   Trilinos_ENABLE_Intrepid AND Trilinos_ENABLE_ML AND
+   Trilinos_ENABLE_Pamgen AND Trilinos_ENABLE_Teko)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Darcy
     SOURCES example_Darcy.cpp
@@ -41,8 +59,7 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
     ADD_DIR_TO_NAME
     )
   TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyFiles
-  SOURCE_FILES Poisson.xml
-               ADR.xml
+  SOURCE_FILES ADR.xml
   	       Darcy.xml
                CurlLSFEMin.xml
                CurlLSFEMblock_in_block.xml
@@ -71,3 +88,53 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
   ) 
 ENDIF()
+
+
+## TODO (mfh 13 Feb 2012) Change to Tpetra and Belos and Amesos2 (and
+## the multigrid package which I shall not name that hasn't gone
+## through copyright yet, once it finally makes it through copyright).
+IF(Trilinos_ENABLE_Tpetra AND
+   Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
+   Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND
+   Trilinos_ENABLE_Intrepid AND Trilinos_ENABLE_ML AND
+   Trilinos_ENABLE_Pamgen AND Trilinos_ENABLE_Teko)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Example_Poisson_Tpetra
+    SOURCES example_Poisson_Tpetra.cpp
+    DEPLIBS tpetra epetra epetraext pamgen aztecoo amesos ml
+    NUM_MPI_PROCS 1
+    ADD_DIR_TO_NAME
+    )
+ENDIF()
+
+
+## ik 20 Mar 2012
+#IF(Trilinos_ENABLE_Tpetra AND
+#   Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
+#   Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND
+#   Trilinos_ENABLE_Intrepid AND Trilinos_ENABLE_ML AND
+#   Trilinos_ENABLE_Pamgen AND Trilinos_ENABLE_Teko)
+#  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#    Example_Poisson_NoFE_Tpetra
+#    SOURCES example_Poisson_NoFE_Tpetra.cpp
+#    DEPLIBS tpetra epetra epetraext pamgen aztecoo amesos ml
+#    NUM_MPI_PROCS 1
+#    ADD_DIR_TO_NAME
+#    )
+#ENDIF()
+
+
+## ik 20 Mar 2012
+#IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
+#   Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND
+#   Trilinos_ENABLE_Intrepid AND Trilinos_ENABLE_ML AND
+#   Trilinos_ENABLE_Pamgen AND Trilinos_ENABLE_Teko)
+#  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#    Example_Poisson_NoFE_Epetra
+#    SOURCES example_Poisson_NoFE_Epetra.cpp
+#    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
+#    NUM_MPI_PROCS 1
+#    ADD_DIR_TO_NAME
+#    )
+#ENDIF()
+

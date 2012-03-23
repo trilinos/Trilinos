@@ -80,7 +80,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DMPI_BASE_DIR:PATH=/home/trilinos"
   "-DTPL_ENABLE_Pthread:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
-  "-DBoost_INCLUDE_DIRS:FILEPATH=/home/trilinos/include"
+  "-DBoost_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/boost-1.46.1/include"
   "-DTPL_ENABLE_Expat:BOOL=ON"
   "-DTPL_ENABLE_LAMMPS:BOOL=ON"
   "-DTPL_ENABLE_couple:BOOL=ON"

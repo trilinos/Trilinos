@@ -32,75 +32,10 @@ template <typename ordinal_type, typename value_type>
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 AlgebraicOrthogPolyExpansion(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis_,
-  const Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk_) :
-  OrthogPolyExpansionBase<ordinal_type, value_type, node_type>(basis_, Cijk_)
+  const Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk_,
+  const Teuchos::RCP<Teuchos::ParameterList>& params_) :
+  OrthogPolyExpansionBase<ordinal_type, value_type, node_type>(basis_, Cijk_, params_)
 {
-}
-
-template <typename ordinal_type, typename value_type> 
-void
-Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-divideEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-            const value_type & x)
-{
-  OrthogPolyExpansionBase<ordinal_type, value_type, node_type>::divideEqual(c,x);
-}
-
-template <typename ordinal_type, typename value_type> 
-void
-Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-divideEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-            const Stokhos::OrthogPolyApprox<ordinal_type, value_type >& x)
-{
-  if (x.size() == 1)
-    divideEqual(c, x[0]);
-  else
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Stokhos::AlgebraicOrthogPolyExpansion::divideEqual()" 
-		       << ":  Method not implemented!");
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-       const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
-       const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
-{
-  if (b.size() == 1)
-    divide(c, a, b[0]);
-  else
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Stokhos::AlgebraicOrthogPolyExpansion::divide()" 
-		       << ":  Method not implemented!");
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-       const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
-       const value_type& b)
-{
-  OrthogPolyExpansionBase<ordinal_type, value_type, node_type>::divide(c,a,b);
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-       const value_type& a, 
-       const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
-{
-  if (b.size() == 1) {
-    if (c.size() != 1)
-      c.resize(1);
-    c[0] = a / b[0];
-  }
-  else
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Stokhos::AlgebraicOrthogPolyExpansion::divide()" 
-		       << ":  Method not implemented!");
 }
 
 template <typename ordinal_type, typename value_type>

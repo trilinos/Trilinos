@@ -607,11 +607,11 @@ namespace Tpetra {
   RowInfo CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::updateAllocAndValues(RowInfo rowinfo, size_t newAllocSize, ArrayRCP<T> &rowVals) 
   {
 #ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPT( rowMap_->isNodeLocalElement(rowinfo.localRow) == false );
+    TEUCHOS_TEST_FOR_EXCEPT( ! rowMap_->isNodeLocalElement(rowinfo.localRow) );
     TEUCHOS_TEST_FOR_EXCEPT( newAllocSize < rowinfo.allocSize );
-    TEUCHOS_TEST_FOR_EXCEPT( (lg == LocalIndices && isLocallyIndexed() == false) || (lg == GlobalIndices && isGloballyIndexed() == false) );
+    TEUCHOS_TEST_FOR_EXCEPT( (lg == LocalIndices && ! isLocallyIndexed()) || (lg == GlobalIndices && ! isGloballyIndexed()) );
     TEUCHOS_TEST_FOR_EXCEPT( newAllocSize == 0 );
-    TEUCHOS_TEST_FOR_EXCEPT( indicesAreAllocated() == false );
+    TEUCHOS_TEST_FOR_EXCEPT( ! indicesAreAllocated() );
 #endif
     // allocate a larger space for row "lrow"
     // copy any existing data from previous allocation to new allocation
@@ -914,7 +914,7 @@ namespace Tpetra {
         const typename ArrayView<const GlobalOrdinal>::iterator stop = new_ginds.end();
         typename ArrayView<LocalOrdinal>::iterator out = lind_view.begin()+rowinfo.numEntries;
         while (in != stop) {
-          (*out++) = colMap_->getLocalElement(*in++);
+          *out++ = colMap_->getLocalElement (*in++);
         }
       }
     }
@@ -927,7 +927,10 @@ namespace Tpetra {
       }
       else if (I == GlobalIndices) {
         // not needed yet
-        TEUCHOS_TEST_FOR_EXCEPT(true);
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Tpetra::CrsGraph::"
+          "insertIndices: the case where the input indices are local and the "
+          "indices to write are global (lg=LocalIndices, I=GlobalIndices) has "
+          "not yet been implemented.");
       }
     }
     if (getProfileType() == StaticProfile) {
@@ -1884,16 +1887,21 @@ namespace Tpetra {
   {
 #ifdef HAVE_TPETRA_DEBUG
     Teuchos::barrier( *rowMap_->getComm() );
-#endif
+#endif // HAVE_TPETRA_DEBUG
     std::string tfecfFuncName("fillComplete()");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isFillActive() == false || isFillComplete() == true, std::runtime_error, ": Graph fill state must be active.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive() || isFillComplete(), 
+      std::runtime_error, ": Graph fill state must be active (isFillActive() "
+      "must be true) before calling fillComplete().");
+
     // allocate if unallocated
-    if (indicesAreAllocated() == false) {
+    if (! indicesAreAllocated()) {
       // allocate global, in case we do not have a column map
       allocateIndices( GlobalIndices );
     }
-    // global assemble
-    if (Teuchos::size(*getComm()) > 1) {
+    // Global assemble, if we need to (we certainly don't need to if
+    // there's only one process).  This call only costs a single
+    // all-reduce if we don't need global assembly.
+    if (getComm()->getSize() > 1) {
       globalAssemble();
     }
     else {
@@ -1902,24 +1910,19 @@ namespace Tpetra {
     // set domain/range map: may clear the import/export objects
     setDomainRangeMaps(domainMap,rangeMap);
     // make column map
-    if (hasColMap() == false) {
+    if (! hasColMap()) {
       makeColMap();
     }
-    // make indices local
-    if (isGloballyIndexed() == true) {
+    if (isGloballyIndexed()) {
       makeIndicesLocal();
     }
-    // sort entries
-    if (isSorted() == false) {
+    if (! isSorted()) {
       sortAllIndices();
     }
-    // merge entries
-    if (isMerged() == false) {
+    if (! isMerged()) {
       mergeAllIndices();
     }
-    // make import/export objects
-    makeImportExport();
-    // compute global constants
+    makeImportExport(); // Make Import and Export objects
     computeGlobalConstants();
     // fill local objects
     fillLocalGraph(os);

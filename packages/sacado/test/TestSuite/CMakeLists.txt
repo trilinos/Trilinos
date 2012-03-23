@@ -22,6 +22,8 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
     RealDVFadBLASUnitTests.cpp
     ComplexDFadBLASUnitTests.cpp
     ComplexDVFadBLASUnitTests.cpp
+    FadLAPACKUnitTests.hpp
+    RealDFadLAPACKUnitTests.cpp
     )
 
 ENDIF()

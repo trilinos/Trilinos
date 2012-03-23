@@ -197,20 +197,28 @@ XMLParameterListReader::convertParameterList(const XMLObject& xml,
         child.getTag() == ParameterEntry::getTagName()
         )
       {
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          !child.hasAttribute(XMLParameterListWriter::getNameAttributeName()),
-          NoNameAttributeExecption,
-          "All child nodes of a ParameterList must have a name attribute!" <<
-          std::endl << std::endl);
-
-        const std::string& name =
-          child.getRequired(XMLParameterListWriter::getNameAttributeName());
         
+        std::string name;
         if (child.getTag()==XMLParameterListWriter::getParameterListTagName()) {
+          if ( child.hasAttribute(XMLParameterListWriter::getNameAttributeName()) ) {
+            name = child.getRequired(XMLParameterListWriter::getNameAttributeName());
+          }
+          else {
+            // the name needs to be unique: generate one
+            std::ostringstream ss;
+            ss << "child" << i;
+            name = ss.str();
+          }
           RCP<ParameterList> newList = sublist(parentList, name);
             convertParameterList(child, newList, entryIDsMap, validatorIDsMap);
         }
         else if (child.getTag() == ParameterEntry::getTagName()) {
+          TEUCHOS_TEST_FOR_EXCEPTION(
+              !child.hasAttribute(XMLParameterListWriter::getNameAttributeName()),
+              NoNameAttributeExecption,
+              "All child nodes of a ParameterList must have a name attribute!" <<
+              std::endl << std::endl);
+          name = child.getRequired(XMLParameterListWriter::getNameAttributeName());
           parentList->setEntry(
             name, ParameterEntryXMLConverterDB::convertXML(child));
           if(child.hasAttribute(ValidatorXMLConverter::getIdAttributeName())){

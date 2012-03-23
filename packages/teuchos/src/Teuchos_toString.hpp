@@ -50,7 +50,7 @@ namespace Teuchos {
 
 /** \brief Default traits class for converting objects into strings.
  *
- * NOTE: This default implementation relies on opeator<<(std::ostream&, ...) 
+ * NOTE: This default implementation relies on operator<<(std::ostream&, ...) 
  * being defined for the data type T.
  *
  * \ingroup teuchos_language_support_grp
@@ -106,6 +106,41 @@ public:
       return t;
     }
 };
+
+/** \brief Specialization for double. */
+template<>
+class ToStringTraits<double> {
+public:
+  static std::string toString (const double& t) {
+    std::ostringstream os;
+    os.setf (std::ios::scientific);
+    // 17 = round(52 * log10(2)) + 1.  That's one decimal digit more
+    // than the binary precision justifies, which should be plenty.
+    // Guy Steele et al. have a better algorithm for floating-point
+    // I/O, but using a lot of digits is the lazy approach.
+    os.precision (17);
+    os << t;
+    return os.str();
+  }
+};
+
+/** \brief Specialization for float. */
+template<>
+class ToStringTraits<float> {
+public:
+  static std::string toString (const float& t) {
+    std::ostringstream os;
+    os.setf (std::ios::scientific);
+    // 8 = round(23 * log10(2)) + 1.  That's one decimal digit more
+    // than the binary precision justifies, which should be plenty.
+    // Guy Steele et al. have a better algorithm for floating-point
+    // I/O, but using a lot of digits is the lazy approach.
+    os.precision (8);
+    os << t;
+    return os.str();
+  }
+};
+
 
 
 } // end namespace Teuchos

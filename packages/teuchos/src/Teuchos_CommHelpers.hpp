@@ -666,6 +666,28 @@ void waitAll(
   const ArrayView<RCP<CommRequest> > &requests
   );
 
+/// \brief Wait on communication requests, and return their statuses.
+///
+/// \pre requests.size() == statuses.size()
+///
+/// \pre For i in 0, 1, ..., requests.size()-1, requests[i] is
+///   either null or requests[i] was returned by an ireceive() or
+///   isend().
+///
+/// \post For i in 0, 1, ..., requests.size()-1,
+///   requests[i].is_null() is true.
+///
+/// \param requests [in/out] On input: the requests on which to
+///   wait.  On output: all set to null.
+///
+/// \param statuses [out] The status results of waiting on the
+///   requests.
+template<typename Ordinal>
+void 
+waitAll (const Comm<Ordinal>& comm,
+	 const ArrayView<RCP<CommRequest> >& requests,
+	 const ArrayView<RCP<CommStatus<Ordinal> > >& statuses);
+
 /** \brief Wait on on a single request
  *
  * Blocks until the communication operation associated with the CommRequest
@@ -1856,13 +1878,22 @@ void Teuchos::waitAll(
 
 
 template<typename Ordinal>
+void 
+Teuchos::waitAll (const Comm<Ordinal>& comm,
+		  const ArrayView<RCP<CommRequest> >& requests,
+		  const ArrayView<RCP<CommStatus<Ordinal> > >& statuses)
+{
+  comm.waitAll (requests, statuses);
+}
+
+
+template<typename Ordinal>
 void Teuchos::wait(
   const Comm<Ordinal>& comm,
   const Ptr<RCP<CommRequest> > &request
   )
 {
   comm.wait(request);
-  // NOTE: This will release the ArrayRCP to the buffer of data!
 }
 
 

@@ -33,7 +33,6 @@
 #include "EpetraExt_BlockUtility.h"
 #include "EpetraExt_BlockMultiVector.h"
 #include "Stokhos_SGOperatorFactory.hpp"
-#include "Stokhos_SGPreconditionerFactory.hpp"
 #include "Stokhos_MatrixFreeOperator.hpp"
 #include "Stokhos_EpetraMultiVectorOperator.hpp"
 #include "Stokhos_EpetraMultiVectorOperatorOrthogPoly.hpp"
@@ -152,6 +151,11 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
       W_sg_blocks->setCoeffPtr(i, me->create_W());
 
     eval_W_with_f = params->get("Evaluate W with F", false);
+
+    Teuchos::RCP<Teuchos::ParameterList> sgPrecParams =
+      Teuchos::rcp(&(params->sublist("SG Preconditioner")), false);
+    sg_prec_factory = 
+      Teuchos::rcp(new Stokhos::SGPreconditionerFactory (sgPrecParams));
   }
     
   // Parameters -- The idea here is to add new parameter vectors
@@ -338,11 +342,9 @@ Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
 Stokhos::SGModelEvaluator::create_WPrec() const
 {
   if (supports_x) {
-    Teuchos::RCP<Teuchos::ParameterList> sgPrecParams =
-      Teuchos::rcp(&(params->sublist("SG Preconditioner")), false);
-    Stokhos::SGPreconditionerFactory sg_prec_factory(sgPrecParams);
+    
     Teuchos::RCP<Epetra_Operator> precOp = 
-      sg_prec_factory.build(sg_comm, sg_basis, epetraCijk, x_map, sg_x_map);
+      sg_prec_factory->build(sg_comm, sg_basis, epetraCijk, x_map, sg_x_map);
     return Teuchos::rcp(new EpetraExt::ModelEvaluator::Preconditioner(precOp,
 								      true));
   }
@@ -641,7 +643,9 @@ Stokhos::SGModelEvaluator::createOutArgs() const
   outArgs.set_Np_Ng(num_p+num_p_sg, num_g_sg);
   outArgs.setSupports(OUT_ARG_f, me_outargs.supports(OUT_ARG_f_sg));
   outArgs.setSupports(OUT_ARG_W, me_outargs.supports(OUT_ARG_W_sg));
-  outArgs.setSupports(OUT_ARG_WPrec, me_outargs.supports(OUT_ARG_W_sg));
+  outArgs.setSupports(
+    OUT_ARG_WPrec, 
+    me_outargs.supports(OUT_ARG_W_sg) && sg_prec_factory->isPrecSupported());
   for (int j=0; j<num_p; j++)
     outArgs.setSupports(OUT_ARG_DfDp, j, 
 			me_outargs.supports(OUT_ARG_DfDp_sg, j));

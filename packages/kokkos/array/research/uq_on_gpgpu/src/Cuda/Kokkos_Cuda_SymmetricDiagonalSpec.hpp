@@ -62,13 +62,15 @@ public:
   __host__
   static dim3 thread_block( const block_type & block )
   {
-    const int y = ( cuda_internal_maximum_warp_count() * CudaTraits::WarpSize )
-                / block.dimension();
+    const int d = block.dimension();
+    const int y = ( cuda_internal_maximum_warp_count() * CudaTraits::WarpSize ) / d ;
 
-    if ( y < 2 ) {
+    if ( 0 == y ) {
       throw std::runtime_error( std::string("Kokkos::Impl::Multiply< SymmetricDiagonalSpec<Cuda> > ERROR: block too large") );
     }
-    return dim3( block.dimension() , y , 1 );
+
+    // dimension X #diagonals to concurrently process
+    return dim3( d , std::min( y , ( 1 + d ) / 2 ) , 1 );
   }
 
   template< typename VectorValue >
@@ -86,6 +88,7 @@ public:
 
   // Required: blockDim.x == block.dimension()
   // Required: blockDim.y > 1
+  // Computing: Y[ threadIdx.x ]
   template< typename MatrixValue , typename VectorValue >
   __device__
   static VectorValue apply( const block_type  & block ,
@@ -100,14 +103,23 @@ public:
     int ia = -1 ;
     int ix = -1 ;
 
+    VectorValue y = 0 ;
+
     if ( 0 == threadIdx.y ) {
-      // Multiply the main diagonal (first diagonal)
-      ix = threadIdx.x ;
-      ia = threadIdx.x ;
+      // Load vector and multiply the main diagonal (first diagonal)
+
       shX[ threadIdx.x ] = x[ threadIdx.x ]; // Load 'x'
+
+      y = shX[ threadIdx.x ] * a[ threadIdx.x ];
     }
-    else if ( blockDim.y == 1 + threadIdx.y && ! ( dimension & 01 ) ) {
+
+    __syncthreads(); // Wait for load of 'x'
+
+    if ( 0 == threadIdx.y && ! ( dimension & 01 ) ) {
+
       // If even number of diagonals then the last diagonal is half-length
+      // and only used once.
+
       ix = threadIdx.x ;
       ia = threadIdx.x + dim_half * dimension ;
 
@@ -118,18 +130,21 @@ public:
         ix -= dim_half ;
         ia -= dim_half ;
       }
+      y += shX[ ix ] * a[ ia ];
     }
 
-    __syncthreads(); // Wait for load of 'x'
+    //------------------------------------
 
-    VectorValue y = ( ia < 0 ) ? 0 : shX[ ix ] * a[ ia ];
+    const int A_stride = blockDim.y * dimension ;
 
-    for ( int d = 1 + threadIdx.y ; d < dim_half ; d += blockDim.y ) {
+    int d = 1 + threadIdx.y ;
+
+    const MatrixValue * A = a + d * dimension ;
+
+    for ( ; d < dim_half ; d += blockDim.y , A += A_stride ) {
 
       ix = threadIdx.x + d ; if ( dimension <= ix ) ix -= dimension ;
       ia = threadIdx.x - d ; if ( ia < 0 ) ia += dimension ;
-
-      const MatrixValue * const A = a + d * dimension ;
 
       // A 'threadIdx.y' group accesses the matrix diagonal
       // A[ 0 .. dimension - 1 ] twice in the following statement.

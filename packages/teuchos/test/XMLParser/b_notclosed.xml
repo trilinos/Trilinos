@@ -1,0 +1,9 @@
+XML parse error at line 9: file ended before closing element 'open' from line 1
+<open>
+  <open>
+    some
+    chars
+    <open somevars="">
+    </open>
+  </open>
+  some more chars

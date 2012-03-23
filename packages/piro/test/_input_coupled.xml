@@ -1,5 +1,9 @@
 <ParameterList>
-  <Parameter name="Stochastic" type="bool" value="1"/>
+  <Parameter name="Network Coupling Parameter Indices" type="Array(int)" 
+	     value="{ 0, 0 }"/>
+  <Parameter name="Network Coupling Response Indices" type="Array(int)" 
+	     value="{ 0, 0 }"/>
+  <Parameter name="Stochastic" type="bool" value="0"/>
   <Parameter name="Reduce Dimension" type="bool" value="0"/>
   <Parameter name="Piro Solver" type="string" value="NOX"/>
   <Parameter name="Compute Sensitivities" type="bool" value="0"/>
@@ -89,54 +93,12 @@
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Stochastic Galerkin">
-    <Parameter name="SG Method" type="string" value="Direct"/>
-    <Parameter name="Number of Spatial Processors" type="int" value="1"/>
-    <Parameter name="Triple Product Size" type="string" value="Full"/>
-    <ParameterList name="Basis">
-      <Parameter name="Isotropic" type="bool" value="true"/>
-      <Parameter name="Type" type="string" value="Legendre"/>
-      <Parameter name="Dimension" type="int" value="2"/>
-      <Parameter name="Order" type="int" value="3"/>
-      <Parameter name="Normalize" type="bool" value="false"/>
-      <Parameter name="Cijk Drop Tolerance" type="double" value="1e-12"/>
-    </ParameterList>
-    <ParameterList name="SG Parameters">
-      <Parameter name="Number of SG Parameter Vectors" type="int" value="2"/>
-      <ParameterList name="SG Parameter Vector 0">
-	<Parameter name="Parameter Vector Index" type="int" value="0"/>
-	<Parameter name="Parameter 0 Initial Expansion Coefficients" type="Array(double)" value="{ 2.0, 0.1, 0.0 }"/>
-      </ParameterList>
-      <ParameterList name="SG Parameter Vector 1">
-	<Parameter name="Parameter Vector Index" type="int" value="1"/>
-	<Parameter name="Parameter 0 Initial Expansion Coefficients" type="Array(double)" value="{ 2.0, 0.0, 0.1 }"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Expansion">
-      <Parameter name="Type" type="string" value="Quadrature"/>
-    </ParameterList>
-    <ParameterList name="SG Solver Parameters">
-      <Parameter name="Jacobian Expansion Type" type="string" value="Full"/>
-      <Parameter name="Parameter Expansion Type" type="string" value="Full"/>
-      <Parameter name="SG Solver Algorithm" type="string" value="Krylov"/>
-      <ParameterList name="SG Operator">
-	<Parameter name="Operator Method" type="string" value="Matrix Free"/>
-      </ParameterList>
-      <ParameterList name="SG Preconditioner">
-	<Parameter name="Preconditioner Method" type="string" value="Approximate Gauss-Seidel"/>
-	<Parameter name="Mean Preconditioner Type" type="string" value="Ifpack"/>
-	<ParameterList name="Mean Preconditioner Parameters"/>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-
   <ParameterList name="Regression Tests">
-    <Parameter  name="Response 0 Mean Test Values" type="Array(double)" value="{-2.41443477761}"/>
-    <Parameter  name="Response 0 Standard Deviation Test Values" type="Array(double)" value="{0.0603614149637}"/>
-    <Parameter  name="Response 1 Mean Test Values" type="Array(double)" value="{-2.41443477761}"/>
-    <Parameter  name="Response 1 Standard Deviation Test Values" type="Array(double)" value="{0.0603614149637}"/>
-    <Parameter  name="Response 2 Mean Test Values" type="Array(double)" value="{-0.414434777609, -0.414434777609}"/>
-    <Parameter  name="Response 2 Standard Deviation Test Values" type="Array(double)" value="{0.0103693702038, 0.0103693702038}"/>
+    <!-- At the default parameter values, response 0 = response 1 = -1-sqrt(2),
+      and response 2 is vector of length 2 where each component = 1-sqrt(2) -->
+    <Parameter  name="Response 0 Test Values" type="Array(double)" value="{-2.414213562373095}"/>
+    <Parameter  name="Response 1 Test Values" type="Array(double)" value="{-2.414213562373095}"/>
+    <Parameter  name="Response 2 Test Values" type="Array(double)" value="{-0.414213562373095, -0.414213562373095}"/>
     <Parameter  name="Relative Tolerance" type="double" value="1.0e-3"/>
     <Parameter  name="Absolute Tolerance" type="double" value="1.0e-8"/>
   </ParameterList>
