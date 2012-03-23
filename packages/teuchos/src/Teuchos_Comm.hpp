@@ -406,6 +406,9 @@ public:
   /// 
   /// \pre !is_null(request) (that is, the Ptr is not null).
   /// \post is_null(*request) (that is, the RCP is null).
+  ///
+  /// This function blocks until the communication operation
+  /// associated with the CommRequest object has completed.
   virtual RCP<CommStatus<Ordinal> > 
   wait (const Ptr<RCP<CommRequest> >& request) const = 0;
 

@@ -682,25 +682,44 @@ void waitAll(
 ///
 /// \param statuses [out] The status results of waiting on the
 ///   requests.
+///
+/// This function blocks until all communication operations associated
+/// with the CommRequest objects have completed.
+///
+/// \relates Comm
 template<typename Ordinal>
 void 
 waitAll (const Comm<Ordinal>& comm,
 	 const ArrayView<RCP<CommRequest> >& requests,
 	 const ArrayView<RCP<CommStatus<Ordinal> > >& statuses);
 
-/** \brief Wait on on a single request
- *
- * Blocks until the communication operation associated with the CommRequest
- * object has completed.
- *
- * \relates Comm
- */
+/// \brief Wait on a single communication request, and return its status.
+///
+/// \param request [in/out] On input: request is not null, and
+/// *request is either null (in which case this function does
+/// nothing) or an RCP of a valid CommRequest instance representing
+/// an outstanding communication request.  On output: If the
+/// communication request completed successfully, we set *request to
+/// null, indicating that the request has completed.  (This helps
+/// prevent common bugs like trying to complete the same request
+/// twice.)
+///
+/// \return A CommStatus instance representing the result of
+/// completing the request.  In the case of a nonblocking receive
+/// request, you can query the CommStatus instance for the process
+/// ID of the sending process.  (This is useful for receiving from
+/// any process via MPI_ANY_SOURCE.)
+/// 
+/// \pre !is_null(request) (that is, the Ptr is not null).
+/// \post is_null(*request) (that is, the RCP is null).
+///
+/// This function blocks until the communication operation associated
+/// with the CommRequest object has completed.
+///
+/// \relates Comm
 template<typename Ordinal>
-void wait(
-  const Comm<Ordinal>& comm,
-  const Ptr<RCP<CommRequest> > &request
-  );
-
+RCP<CommStatus<Ordinal> >
+wait (const Comm<Ordinal>& comm, const Ptr<RCP<CommRequest> >& request);
 
 //
 // Standard reduction subclasses for objects that use value semantics
