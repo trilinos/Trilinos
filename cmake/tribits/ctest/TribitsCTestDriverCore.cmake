@@ -756,7 +756,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
     "\n***\n")
   
   # The type of test (e.g. Nightly, Experimental, Continuous)
-  SET_DEFAULT_AND_FROM_ENV( CTEST_TEST_TYPE Nightly )
+  SET_DEFAULT_AND_FROM_ENV( CTEST_TEST_TYPE Experimental )
   
   # The default track to send the build to. This can be changed to send
   # the data to a different nightly grouping on the dashboard.
