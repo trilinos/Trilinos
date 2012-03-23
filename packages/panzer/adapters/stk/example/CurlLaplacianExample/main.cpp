@@ -127,8 +127,8 @@ int main(int argc,char * argv[])
    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
    pl->set("X Blocks",1);
    pl->set("Y Blocks",1);
-   pl->set("X Elements",2);
-   pl->set("Y Elements",2);
+   pl->set("X Elements",20);
+   pl->set("Y Elements",20);
    mesh_factory.setParameterList(pl);
 
    RCP<panzer_stk::STK_Interface> mesh = mesh_factory.buildUncommitedMesh(MPI_COMM_WORLD);

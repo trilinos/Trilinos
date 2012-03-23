@@ -40,3 +40,10 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 2
   COMM serial mpi
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tSquareQuadMeshDOFManager_edgetests
+  SOURCES tSquareQuadMeshDOFManager_edgetests.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 1
+  COMM serial mpi
+  )

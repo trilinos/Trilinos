@@ -80,6 +80,7 @@ evaluateFields(panzer::Traits::EvalData workset)
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
    std::string blockId = workset.block_id;
 
+/*
    std::cout << "Point Field " << std::endl;
    for(int i=0; i<pointField_.dimension(0);i++) { // cell
       std::cout << "   ";
@@ -98,6 +99,7 @@ evaluateFields(panzer::Traits::EvalData workset)
          }
       }    
    }
+*/
 
    for(int d=0;d<spatialDimension_;d++) {
       for(std::size_t fieldIndex=0; fieldIndex<scatterFields_.size();fieldIndex++) {
