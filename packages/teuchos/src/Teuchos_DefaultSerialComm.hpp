@@ -388,11 +388,11 @@ RCP<CommStatus<Ordinal> >
 SerialComm<Ordinal>::wait (const Ptr<RCP<CommRequest> > & request) const
 {
   (void) request;
-  TEUCHOS_TEST_FOR_EXCEPTION(request.is_null(), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION(request.getRawPtr() == NULL, std::invalid_argument,
     "Teuchos::SerialComm::wait: On input, the request pointer is null.");
 
   if (is_null (*request)) {
-    return; // Nothing to wait on...
+    return null; // Nothing to wait on...
   }
   *request = null;
   return rcp (new SerialCommStatus<Ordinal>);

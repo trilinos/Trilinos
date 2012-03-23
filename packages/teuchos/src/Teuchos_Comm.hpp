@@ -391,18 +391,20 @@ public:
   ///
   /// \param request [in/out] On input: request is not null, and
   /// *request is either null (in which case this function does
-  /// nothing) or an RCP of a valid CommRequest instance representing
-  /// an outstanding communication request.  On output: If the
-  /// communication request completed successfully, we set *request to
-  /// null, indicating that the request has completed.  (This helps
-  /// prevent common bugs like trying to complete the same request
-  /// twice.)
+  /// nothing and returns null) or an RCP of a valid CommRequest
+  /// instance representing an outstanding communication request.  On
+  /// output: If the communication request completed successfully, we
+  /// set *request to null, indicating that the request has completed.
+  /// (This helps prevent common bugs like trying to complete the same
+  /// request twice.)
   ///
-  /// \return A CommStatus instance representing the result of
-  /// completing the request.  In the case of a nonblocking receive
-  /// request, you can query the CommStatus instance for the process
-  /// ID of the sending process.  (This is useful for receiving from
-  /// any process via MPI_ANY_SOURCE.)
+  /// \return If *request is null, this method returns null.
+  /// Otherwise this method returns a \c CommStatus instance
+  /// representing the result of completing the request.  In the case
+  /// of a nonblocking receive request, you can query the \c
+  /// CommStatus instance for the process ID of the sending process.
+  /// (This is useful for receiving from any process via \c
+  /// MPI_ANY_SOURCE.)
   /// 
   /// \pre !is_null(request) (that is, the Ptr is not null).
   /// \post is_null(*request) (that is, the RCP is null).

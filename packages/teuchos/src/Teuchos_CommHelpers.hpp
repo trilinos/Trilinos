@@ -1907,12 +1907,11 @@ Teuchos::waitAll (const Comm<Ordinal>& comm,
 
 
 template<typename Ordinal>
-void Teuchos::wait(
-  const Comm<Ordinal>& comm,
-  const Ptr<RCP<CommRequest> > &request
-  )
+Teuchos::RCP<Teuchos::CommStatus<Ordinal> >
+Teuchos::wait (const Comm<Ordinal>& comm,
+	       const Ptr<RCP<CommRequest> > &request)
 {
-  comm.wait(request);
+  return comm.wait (request);
 }
 
 

@@ -856,7 +856,7 @@ MpiComm<Ordinal>::wait (const Ptr<RCP<CommRequest> >& request) const
   TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::wait(...)" );
 
   if (is_null(*request)) {
-    return; // Nothing to wait on ...
+    return null; // Nothing to wait on ...
   }
   const RCP<MpiCommRequest> mpiCommRequest =
     rcp_dynamic_cast<MpiCommRequest>(*request);
@@ -870,7 +870,7 @@ MpiComm<Ordinal>::wait (const Ptr<RCP<CommRequest> >& request) const
     << mpiErrorCodeToString (err) << "\".");
 
   *request = null;
-  return rcp (MpiCommStatus<Ordinal> (status));
+  return rcp (new MpiCommStatus<Ordinal> (status));
 }
 
 
@@ -878,7 +878,7 @@ template<typename Ordinal>
 RCP< Comm<Ordinal> >
 MpiComm<Ordinal>::duplicate() const
 {
-  return rcp(new MpiComm<Ordinal>(*this));
+  return rcp (new MpiComm<Ordinal> (*this));
 }
 
 
