@@ -418,8 +418,8 @@ collect_timers(
   
       if (parallel_rank == parallel_root) {
         for (int j = 0; j < parallel_size; ++j) {
-          int recv_count = recv_displ[j+1] - recv_displ[j];
-          if (recv_count > 0) {
+          int received_count = recv_displ[j+1] - recv_displ[j];
+          if (received_count > 0) {
             //grow parallel_timer_vector by 1:
             parallel_timer_vector.resize(parallel_timer_vector.size()+1);
             Marshal min(std::string(recv_ptr + recv_displ[j], recv_ptr + recv_displ[j + 1]));
