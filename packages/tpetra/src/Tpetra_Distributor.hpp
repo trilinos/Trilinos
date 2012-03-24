@@ -571,7 +571,10 @@ namespace Tpetra {
 	    readySend<int,Packet>(*comm_, tmpSend, imagesTo_[p]);
 	  }
 	  else {
-	    send<int,Packet>(*comm_, tmpSend, imagesTo_[p]);
+	    // FIXME (mfh 23 Mar 2012) Implement a three-argument
+	    // version of send() that takes an ArrayView instead of a
+	    // raw array.
+	    send<int,Packet>(*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
 	  }
         }
         else { // "Sending" the message to myself
@@ -611,7 +614,7 @@ namespace Tpetra {
 	    readySend<int,Packet> (*comm_, tmpSend, imagesTo_[p]);
 	  }
 	  else {
-	    send<int,Packet> (*comm_, tmpSend, imagesTo_[p]);
+	    send<int,Packet> (*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
 	  }
         }
         else { // "Sending" the message to myself
@@ -754,7 +757,7 @@ namespace Tpetra {
 	    readySend<int,Packet>(*comm_,tmpSend,imagesTo_[p]);
 	  }
 	  else {
-	    send<int,Packet>(*comm_,tmpSend,imagesTo_[p]);
+	    send<int,Packet>(*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
 	  }
         }
         else { // "Sending" the message to myself
@@ -805,7 +808,7 @@ namespace Tpetra {
 	      readySend<int,Packet>(*comm_,tmpSend,imagesTo_[p]);
 	    } 
 	    else {
-	      send<int,Packet>(*comm_,tmpSend,imagesTo_[p]);
+	      send<int,Packet> (*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
 	    }
           }
         }
