@@ -1,0 +1,11 @@
+<!-- here, two sublists have the same name; the latter will augment/overwrite the former under previous behavior. 
+     now, a new argument to updateParametersFromXmlFile() will allow this situation to be met with an exception. 
+     this is the file for that test. -->
+<ParameterList>
+  <ParameterList name="DuplicatedSublistIsDuplicated">
+    <Parameter name="param1" value="3" type="int"/>
+  </ParameterList>
+  <ParameterList name="DuplicatedSublistIsDuplicated">
+    <Parameter name="param2" value="5" type="int"/>
+  </ParameterList>
+</ParameterList>

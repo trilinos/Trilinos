@@ -54,6 +54,7 @@ void Teuchos::updateParametersFromXmlFile(
   )
 {
   XMLParameterListReader xmlPLReader;
+  xmlPLReader.setAllowsDuplicateSublists( false );
   FileInputSource xmlFile(xmlFileName);
   XMLObject xmlParams = xmlFile.getObject();
   paramList->setParameters(xmlPLReader.toParameterList(xmlParams));
@@ -71,6 +72,7 @@ void Teuchos::updateParametersFromXmlFileAndBroadcast(
   else {
     if (comm.getRank()==0) {
       XMLParameterListReader xmlPLReader;
+      xmlPLReader.setAllowsDuplicateSublists( false );
       FileInputSource xmlFile(xmlFileName);
       XMLObject xmlParams = xmlFile.getObject();
       std::string xmlString = toString(xmlParams);
@@ -106,6 +108,7 @@ Teuchos::getParametersFromXmlFile(
   RCP<DependencySheet> depSheet)
 {
   XMLParameterListReader xmlPLReader;
+  xmlPLReader.setAllowsDuplicateSublists( false );
   FileInputSource xmlFile(xmlFileName);
   XMLObject xmlParams = xmlFile.getObject();
   return xmlPLReader.toParameterList(xmlParams, depSheet);
@@ -118,6 +121,7 @@ void Teuchos::updateParametersFromXmlString(
   )
 {
   XMLParameterListReader xmlPLReader;
+  xmlPLReader.setAllowsDuplicateSublists( false );
   StringInputSource xmlStrSrc(xmlStr);
   XMLObject xmlParams = xmlStrSrc.getObject();
   paramList->setParameters(xmlPLReader.toParameterList(xmlParams));
@@ -138,6 +142,7 @@ Teuchos::getParametersFromXmlString(const std::string &xmlStr,
   RCP<DependencySheet> depSheet)
 {
   XMLParameterListReader xmlPLReader;
+  xmlPLReader.setAllowsDuplicateSublists( false );
   StringInputSource xmlStrSrc(xmlStr);
   XMLObject xmlParams = xmlStrSrc.getObject();
   return xmlPLReader.toParameterList(xmlParams, depSheet);
