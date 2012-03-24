@@ -363,7 +363,7 @@ namespace Teuchos
   
   float LAPACK<int, float>::LAPY2(const float x, const float y) const
   {
-#ifdef HAVE_TEUCHOS_BLASFLOAT
+#if defined(HAVE_TEUCHOS_BLASFLOAT)
     return SLAPY2_F77(&x, &y);
 #else
     typedef ScalarTraits<float> ST;
