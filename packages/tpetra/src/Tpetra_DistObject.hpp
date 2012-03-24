@@ -400,6 +400,8 @@ namespace Tpetra {
       const Teuchos::ArrayView<const LocalOrdinal> &exportLIDs,
       Distributor &distor, ReverseOption revOp) 
   {
+    using Teuchos::as;
+
     TEUCHOS_TEST_FOR_EXCEPTION( checkSizes(source) == false, std::invalid_argument, 
       "Tpetra::DistObject::doTransfer(): checkSizes() indicates that the target "
       "DistObject is not a legal target for redistribution from the source "
@@ -459,7 +461,7 @@ namespace Tpetra {
       // elements) how many incoming elements we expect, so we can
       // resize the buffer accordingly.
       const size_t rbufLen = remoteLIDs.size() * constantNumPackets;
-      if (imports_.size() != rbufLen) {
+      if (as<size_t> (imports_.size()) != rbufLen) {
 	imports_.resize (rbufLen);
       }
     }
