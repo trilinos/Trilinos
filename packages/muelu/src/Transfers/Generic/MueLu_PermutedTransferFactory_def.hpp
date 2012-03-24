@@ -63,6 +63,13 @@ namespace MueLu {
 
     FactoryMonitor m(*this, "Build", coarseLevel);
 
+    if (PorR_ == MueLu::INTERPOLATION) {
+      GetOStream(Warnings0, 0) <<  "Jamming A into Level " << coarseLevel.GetLevelID() << " w/ generating factory "
+                               << this << std::endl;
+      RCP<Operator> A = coarseLevel.Get< RCP<Operator> >("A",initialAFact_.get());
+      coarseLevel.Set< RCP<Operator> >("A",A,this);
+    }
+
     RCP<Operator> permMatrix;
     try {
       permMatrix = coarseLevel.Get< RCP<Operator> >("Permutation",repartitionFact_.get());
@@ -73,9 +80,6 @@ namespace MueLu {
                                << ((PorR_ == MueLu::INTERPOLATION) ? "prolongator" : "restriction")
                                << ".  No permutation is available for the following reason:"
       << std::endl << e.what() << std::endl;
-
-      RCP<Operator> A = coarseLevel.Get< RCP<Operator> >("A",initialAFact_.get());
-      coarseLevel.Set< RCP<Operator> >("A",A,this);
     }
 
     switch (PorR_) {
@@ -87,6 +91,16 @@ namespace MueLu {
           if (permMatrix != Teuchos::null) {
             SubFactoryMonitor m1(*this, "Permuting prolongator", coarseLevel.GetLevelID());
             RCP<Operator> transposedPerm = Utils2::Transpose(permMatrix,true);
+
+            GetOStream(Runtime0, 0) <<  "Stashing 'PermutationTrans' into Level " << coarseLevel.GetLevelID() << " w/ generating factory "
+                                     << this << std::endl;
+            coarseLevel.Set< RCP<Operator> >("PermutationTrans",transposedPerm,this);
+
+            //GetOStream(Runtime0, 0) <<  "Stashing unpermuted A into Level " << coarseLevel.GetLevelID() << " w/ generating factory "
+            //                         << this << std::endl;
+            //RCP<Operator> A = coarseLevel.Get< RCP<Operator> >("A",initialAFact_.get());
+            //coarseLevel.Set< RCP<Operator> >("A",A,this);
+
             //RCP<Operator> permutedP = Utils::TwoMatrixMultiply(originalP,false,permMatrix,true); //P*transpose(perm)
             RCP<Operator> permutedP = Utils::TwoMatrixMultiply(originalP,false,transposedPerm,false); //P*transpose(perm)
             coarseLevel.Set< RCP<Operator> >("P",permutedP,this);
@@ -106,6 +120,11 @@ namespace MueLu {
             RCP<Operator> permutedR = Utils::TwoMatrixMultiply(permMatrix,false,originalR,false); //perm * R
             coarseLevel.Set< RCP<Operator> >("R",permutedR,this);
             //if (coarseLevel.IsAvailable("Coordinates",coordinateFact_.get()))  //FIXME JJH
+
+            GetOStream(Runtime0, 0) <<  "Stashing 'Permutation' into Level " << coarseLevel.GetLevelID() << " w/ generating factory "
+                                     << this << std::endl;
+            coarseLevel.Set< RCP<Operator> >("Permutation",permMatrix,this);
+
             if (coarseLevel.IsAvailable("Coordinates")) //FIXME JJH
             {
               SubFactoryMonitor m2(*this, "Permuting coordinates", coarseLevel.GetLevelID());
