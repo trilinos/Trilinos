@@ -124,6 +124,10 @@ namespace stk {
       void
       open(const std::string& in_filename);
 
+      /// opens an empty mesh, with a commit
+      void
+      openEmpty();
+
       /// creates a new mesh using the GeneratedMesh fixture with spec @param gmesh_spec, Read Only mode, no edits allowed
       void
       newMeshReadOnly(const GMeshSpec gmesh_spec);

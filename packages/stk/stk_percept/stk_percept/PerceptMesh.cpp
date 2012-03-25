@@ -99,6 +99,35 @@ namespace stk {
       commit();
     }
 
+    /// opens an empty mesh, with a commit
+    void PerceptMesh::
+    openEmpty()
+    {
+      if (m_isOpen)
+        {
+          throw std::runtime_error("stk::percept::Mesh::openEmpty: mesh is already opened.  Please close() before trying open, or use reopen().");
+        }
+      if (m_isCommitted)
+        {
+          throw std::runtime_error("stk::percept::Mesh::openEmpty: mesh is already committed. Internal code error");
+        }
+      if (!m_isInitialized)
+        {
+          init( m_comm);
+        }
+
+      //const unsigned p_rank = parallel_machine_rank( getBulkData()->parallel() );
+      const unsigned p_rank = parallel_machine_rank( m_comm );
+
+      if (p_rank == 0)  std::cout << "PerceptMesh:: opening empty mesh" << std::endl;
+      //read_metaDataNoCommit(in_filename);
+      m_metaData->commit();
+      m_isCommitted = true;
+      m_isAdopted = false;
+      m_isOpen = true;
+      m_filename = "";
+    }
+
     /// reads but doesn't commit mesh, enabling edit
     void PerceptMesh::
     open(const std::string& in_filename)

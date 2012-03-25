@@ -452,6 +452,33 @@ namespace stk
           }
       }
 
+      STKUNIT_UNIT_TEST(perceptMesh, create_quad_streaming_mesh)
+      {
+        bool notActive = false;
+        if (notActive) return;
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        if (p_size != 2) return;
+
+        const unsigned n = 2;
+        //const unsigned nx = n , ny = n , nz = p_size*n ;
+        const unsigned nx = n , ny = n;
+
+        bool sidesets_on = false;
+        percept::QuadFixture<double> fixture( pm , nx , ny, sidesets_on);
+        fixture.set_bounding_box(0,1,0,1);
+        fixture.meta_data.commit();
+        fixture.generate_mesh();
+
+        percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data);
+
+        eMesh.saveAs("quad_streaming.e");
+      }
+
     }
   }
 }

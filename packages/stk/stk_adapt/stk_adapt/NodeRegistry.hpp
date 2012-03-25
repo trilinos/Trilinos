@@ -55,9 +55,14 @@
 
 #include <stk_percept/PerceptBoostArray.hpp>
 
-#define STK_ADAPT_HAVE_YAML_CPP (1 && STK_BUILT_IN_SIERRA)
+#define STK_ADAPT_USE_YAML_CPP 1
+#define STK_ADAPT_HAVE_YAML_CPP (STK_ADAPT_USE_YAML_CPP && STK_BUILT_IN_SIERRA)
 #if STK_ADAPT_HAVE_YAML_CPP
 #include <yaml-cpp/yaml.h>
+
+#define YAML_ERRCHECK do { if (DEBUG_YAML && !emitter.good()) { std::cout << "Emitter error: " << __FILE__ << ":" << __LINE__ << " emitter.good()= " \
+                                                                          << emitter.good() << " Error Message: " << emitter.GetLastError() << std::endl; return;} } while(0)
+
 #endif
 
 #include <boost/tuple/tuple_io.hpp>
@@ -1729,6 +1734,8 @@ namespace stk {
           } // ineed_ent
       }
 
+      void //NodeRegistry::
+      noInline_getSubDimEntity(SubDimCell_SDSEntityType& subDimEntity, const stk::mesh::Entity& element, stk::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd);
 
       /// fill
       ///    @param subDimEntity with the stk::mesh::EntityId's of
@@ -2479,7 +2486,7 @@ namespace stk {
 
 #if STK_ADAPT_HAVE_YAML_CPP
       void serialize_write(YAML::Emitter& emitter, std::string msg="");
-      void serialize_read(std::ifstream& file_in, std::string msg="");
+      void serialize_read(std::ifstream& file_in, std::string msg="", bool force_have_node=false);
 #endif
 
       // estimate of memory used by this object

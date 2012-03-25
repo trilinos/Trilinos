@@ -32,10 +32,84 @@ namespace stk {
     }
 #endif
 
+      /// fill
+      ///    @param subDimEntity with the stk::mesh::EntityId's of
+      ///    the ordinal @param iSubDimOrd sub-dimensional entity of
+      ///    @param element of rank
+      ///    @param needed_entity_rank
+      ///
+    void NodeRegistry::
+      noInline_getSubDimEntity(SubDimCell_SDSEntityType& subDimEntity, const stk::mesh::Entity& element, stk::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd)
+      {
+        subDimEntity.clear();
+        // in the case of elements, we don't share any nodes so we just make a map of element id to node
+        if (needed_entity_rank == m_eMesh.element_rank())
+          {
+            subDimEntity.insert( const_cast<stk::mesh::Entity*>(&element) );
+            //!!subDimEntity.insert(element.identifier());
+            return;
+          }
+
+        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+
+        //CellTopology cell_topo(cell_topo_data);
+        const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
+
+        const unsigned *  inodes = 0;
+        unsigned nSubDimNodes = 0;
+        static const unsigned edge_nodes_2[2] = {0,1};
+        static const unsigned face_nodes_3[3] = {0,1,2};
+        static const unsigned face_nodes_4[4] = {0,1,2,3};
+
+        // special case for faces in 3D
+        if (needed_entity_rank == m_eMesh.face_rank() && needed_entity_rank == element.entity_rank())
+          {
+            nSubDimNodes = cell_topo_data->vertex_count;
+
+            // note, some cells have sides with both 3 and 4 nodes (pyramid, prism)
+            if (nSubDimNodes ==3 )
+              inodes = face_nodes_3;
+            else
+              inodes = face_nodes_4;
+
+          }
+        // special case for edges in 2D
+        else if (needed_entity_rank == m_eMesh.edge_rank() && needed_entity_rank == element.entity_rank())
+          {
+            nSubDimNodes = cell_topo_data->vertex_count;
+
+            if (nSubDimNodes == 2 )
+              {
+                inodes = edge_nodes_2;
+              }
+            else
+              {
+                throw std::runtime_error("NodeRegistry bad for edges");
+              }
+          }
+        else if (needed_entity_rank == m_eMesh.edge_rank())
+          {
+            inodes = cell_topo_data->edge[iSubDimOrd].node;
+            nSubDimNodes = 2;
+          }
+        else if (needed_entity_rank == m_eMesh.face_rank())
+          {
+            nSubDimNodes = cell_topo_data->side[iSubDimOrd].topology->vertex_count;
+            // note, some cells have sides with both 3 and 4 nodes (pyramid, prism)
+            inodes = cell_topo_data->side[iSubDimOrd].node;
+          }
+
+        //subDimEntity.reserve(nSubDimNodes);
+        for (unsigned jnode = 0; jnode < nSubDimNodes; jnode++)
+          {
+            subDimEntity.insert( elem_nodes[inodes[jnode]].entity() );
+            //!!subDimEntity.insert(elem_nodes[inodes[jnode]].entity()->identifier());
+          }
+
+      }
+
 #if STK_ADAPT_HAVE_YAML_CPP
 #define DEBUG_YAML 1
-#define YAML_ERRCHECK do { if (DEBUG_YAML && !emitter.good()) { std::cout << "Emitter error: " << __FILE__ << ":" << __LINE__ << " emitter.good()= " \
-                                                                          << emitter.good() << " Error Message: " << emitter.GetLastError() << std::endl; return;} } while(0)
 
     void NodeRegistry::serialize_write(YAML::Emitter& emitter, std::string msg)
     {
@@ -44,6 +118,7 @@ namespace stk {
       std::cout << msg << " tmp serialize_write map size: " << map.size() << std::endl;
 
       if (0) emitter << YAML::Anchor("NodeRegistry::map");   YAML_ERRCHECK;
+      //emitter << YAML::Flow;      YAML_ERRCHECK;
       emitter << YAML::BeginMap;      YAML_ERRCHECK;
 
       // key.serialized = { nodeid_0,... : set<EntityId> }
@@ -57,6 +132,7 @@ namespace stk {
             
           //emitter << YAML::Key << subDimEntity;
           emitter << YAML::Key;       YAML_ERRCHECK;
+          emitter << YAML::Flow;      YAML_ERRCHECK;
           emitter << YAML::BeginSeq;  YAML_ERRCHECK;
           if (0) emitter << YAML::Anchor(std::string("seq")+boost::lexical_cast<std::string>(jj++));   YAML_ERRCHECK;
           for (unsigned k=0; k < subDimEntity.size(); k++)
@@ -66,11 +142,12 @@ namespace stk {
             }
           emitter << YAML::EndSeq;      YAML_ERRCHECK;
 
-          emitter << YAML::Value;          YAML_ERRCHECK;
           NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
           stk::mesh::EntityKey& value_entity_key = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>();
 
           //emitter << YAML::Scalar << nodeIds_onSE.size()
+          emitter << YAML::Value;          YAML_ERRCHECK;
+          emitter << YAML::Flow;           YAML_ERRCHECK;
           emitter << YAML::BeginSeq;       YAML_ERRCHECK;
           emitter << stk::mesh::entity_rank(value_entity_key);
           emitter << stk::mesh::entity_id(value_entity_key);
@@ -85,8 +162,10 @@ namespace stk {
 
     }
 
-    void NodeRegistry::serialize_read(std::ifstream& file_in, std::string msg)
+    void NodeRegistry::serialize_read(std::ifstream& file_in,  std::string msg, bool force_have_node)
     {
+      m_eMesh.getBulkData()->modification_begin();
+
       YAML::Parser parser(file_in);
       YAML::Node doc;
       if (DEBUG_YAML)
@@ -140,8 +219,19 @@ namespace stk {
                   if (DEBUG_YAML) std::cout << "s_r key_quantum= " << key_quantum << std::endl;
                   SDSEntityType node = m_eMesh.getBulkData()->get_entity(0, key_quantum);
                   //key.insert(const_cast<stk::mesh::Entity*>(&element) );
-                  if (!node) throw std::runtime_error("null node");
+                  if (!node)
+                    {
+                      if (force_have_node)
+                        throw std::runtime_error("NodeRegistry::serialize_read: null node returned from get_entity");
+                      else
+                        {
+                          stk::mesh::PartVector parts(1, &m_eMesh.getFEM_meta_data()->universal_part());
+                          node = &m_eMesh.getBulkData()->declare_entity(0, static_cast<stk::mesh::EntityId>(key_quantum), parts);
+                        }
+                    }
+                  
                   key.insert( node );
+
                 }
               
                 int iseq=0;
@@ -170,7 +260,20 @@ namespace stk {
                       //stk::mesh::EntityId owning_elementId = stk::mesh::entity_id(data.get<SDC_DATA_OWNING_ELEMENT_KEY>());
                       nodeIds_onSE.m_entity_id_vector.push_back(value_tuple_0_quantum);
                       stk::mesh::Entity *entity = m_eMesh.getBulkData()->get_entity(0, value_tuple_0_quantum);
+                      if (!entity)
+                        {
+                          if (force_have_node)
+                            throw std::runtime_error("NodeRegistry::serialize_read: null node returned from get_entity 2");
+                          else
+                            {
+                              stk::mesh::PartVector parts(1, &m_eMesh.getFEM_meta_data()->universal_part());
+                              entity = &m_eMesh.getBulkData()->declare_entity(0, static_cast<stk::mesh::EntityId>(value_tuple_0_quantum), 
+                                                                              parts);
+                            }
+                        }
+
                       nodeIds_onSE.push_back(entity);
+
                       if (DEBUG_YAML) std::cout << "s_r value_tuple_0_quantum= " << value_tuple_0_quantum << " entity= " << entity 
                                                 <<  " len0= " << nodeIds_onSE.size() << " len1= " << nodeIds_onSE.m_entity_id_vector.size() << std::endl;
                     }
@@ -202,6 +305,7 @@ namespace stk {
         throw std::runtime_error(std::string("yaml parsing error: ")+e.what());
       }
 
+      m_eMesh.getBulkData()->modification_end();
     }
 
 #endif

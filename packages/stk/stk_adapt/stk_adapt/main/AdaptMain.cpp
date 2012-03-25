@@ -47,6 +47,8 @@ namespace stk {
 
   namespace adapt {
 
+    static int s_spatialDim=0;
+
     typedef uint64_t MemorySizeType;
 
     BOOST_STATIC_ASSERT(sizeof(uint64_t) == sizeof(size_t));
@@ -307,6 +309,443 @@ namespace stk {
 
     }
 
+#if STK_ADAPT_HAVE_YAML_CPP
+
+    /**  in the following, we are looking at one partition, iM, of M-partitioned mesh
+     *
+     */
+
+    class SerializeNR {
+      PerceptMesh& m_eMesh;
+      NodeRegistry* m_nodeRegistry;
+      std::string m_input_mesh_name;
+      std::string m_output_mesh_name;
+      std::string m_filePrefix;
+      int M, iM, P, iP;
+      const std::vector<std::string> & m_entity_rank_names;
+      std::vector<stk::mesh::EntityId> m_id_max;
+      std::string m_globalIdFile;
+      std::string m_nodeRegistryFile;
+      std::string m_globalNodeRegistryFile;
+      const unsigned FAMILY_TREE_RANK;
+
+    public:
+      enum { MaxPass = 3 };
+
+      SerializeNR(PerceptMesh& eMesh, NodeRegistry* nodeRegistry, std::string input_mesh_name, std::string output_mesh_name, int M, int iM, int P=1, int iP=0) : 
+        m_eMesh(eMesh), m_nodeRegistry(nodeRegistry), m_input_mesh_name(input_mesh_name), m_output_mesh_name(output_mesh_name), m_filePrefix(input_mesh_name), 
+        M(M), iM(iM), P(P), iP(iP),
+        m_entity_rank_names(eMesh.getFEM_meta_data()->entity_rank_names()),
+        m_id_max(m_entity_rank_names.size(), 0u),  FAMILY_TREE_RANK(eMesh.element_rank() + 1u)
+      {
+        size_t pos = m_filePrefix.find(".");
+        if (pos != std::string::npos)
+          m_filePrefix = m_filePrefix.substr(0, pos);
+        m_globalIdFile = "streaming-refine-global-data."+m_filePrefix+".yaml";
+        m_nodeRegistryFile = std::string("streaming-refine-nodeRegistry."+m_filePrefix+".yaml.")+boost::lexical_cast<std::string>(M)+"."+boost::lexical_cast<std::string>(iM);
+        m_globalNodeRegistryFile = std::string("streaming-refine-nodeRegistry."+m_filePrefix+".yaml");
+      }
+
+      void pass(int streaming_pass)
+      {
+        std::cout << "\n\n ------ SerializeNR ----- pass number " << streaming_pass << "\n\n" << std::endl;
+        if ( streaming_pass== 0)
+          {
+            pass0();
+          }
+        else if (streaming_pass == 1)
+          {
+            pass1();
+          }
+        else if (streaming_pass == 2)
+          {
+            pass2();
+          }
+        else if (streaming_pass == 3)
+          {
+            pass3();
+          }
+      }
+
+      /**
+       *   pass0: open unrefined mesh, refine it, find max id
+       *   (iM = 0...M)
+       *   1. if iM==0, setCurrentGlobalMaxId to [0,0,0,0]
+       *   2. getCurrentGlobalMaxId()
+       *   3. find new max id from current mesh
+       *   4. setCurrentGlobalMaxId()
+       */
+      void pass0()
+      {
+        if (0 == iM)
+          {
+            // create initial file, write 0's in it  for m_id_max (it should be initialized to 0, but just to be sure, we reset it here)
+            for (unsigned irank=0; irank < m_id_max.size(); irank++)
+              m_id_max[irank]=0u;
+            setCurrentGlobalMaxId();
+          }
+
+        getCurrentGlobalMaxId();
+        findCurrentMaxId(m_eMesh);
+        setCurrentGlobalMaxId();
+        printCurrentGlobalMaxId();
+      }
+
+      void printCurrentGlobalMaxId()
+      {
+        std::cout << "SerializeNR["<<M<<", "<<iM<<"]::printCurrentGlobalMaxId: = " << m_id_max << std::endl;
+      }
+
+      /**
+       *   pass1: refine mesh, write local NodeRegistry, set new max id from refined mesh
+       *   (iM = 0...M)
+       *   1. open file.e.M.iM, refine mesh, save it
+       *   2. write NodeRegistry in name.yaml.M.iM
+       *   3. if iM==0, setCurrentGlobalMaxId to [0,0,0,0]
+       *   4. getCurrentGlobalMaxId()
+       *   5. resetNewElementIds
+       *   6. setCurrentGlobalMaxId()
+       */
+      void pass1()
+      {
+        NodeRegistry& nodeRegistry = *m_nodeRegistry;
+        writeNodeRegistry(nodeRegistry, m_nodeRegistryFile);
+
+        /*
+        if (0 == iM)
+          {
+            // create initial file, write 0's in it  for m_id_max (it should be initialized to 0, but just to be sure, we reset it here)
+            for (unsigned irank=0; irank < m_id_max.size(); irank++)
+              m_id_max[irank]=0u;
+            setCurrentGlobalMaxId();
+          }
+        */
+
+        getCurrentGlobalMaxId();
+        resetNewElementIds(m_eMesh);
+        setCurrentGlobalMaxId();
+        printCurrentGlobalMaxId();
+      }
+
+      /**
+       *   pass2 - create global NodeRegistry from each local one by "last one wins"
+       *   (single call, no loop over iM)
+       *   1. create new (global) NodeRegistry
+       *   2. getCurrentGlobalMaxId
+       *   3. loop iM
+       *      a. read NodeRegistry from name.yaml.M.iM -> input values into new NodeRegistry
+       *   4. for each key/value pair, increment idserver, save new id in value
+       *   5. write new global NodeRegistry
+       *
+       */
+      void pass2()
+      {
+        if (iM != 0) throw std::logic_error("SerializeNR::pass2 logic error");
+
+        PerceptMesh eMeshNew(s_spatialDim);
+        eMeshNew.openEmpty();
+        NodeRegistry globalNR(eMeshNew);
+
+        PerceptMesh eMeshLocal(s_spatialDim);
+        eMeshLocal.openEmpty();
+
+        for (iM = 0; iM < M; iM++)
+          {
+            NodeRegistry newLocalNR(eMeshLocal);
+            m_nodeRegistryFile = std::string("streaming-refine-nodeRegistry."+m_filePrefix+".yaml.")+boost::lexical_cast<std::string>(M)+"."+boost::lexical_cast<std::string>(iM);
+            readNodeRegistry(newLocalNR, m_nodeRegistryFile);
+            processNodeRegistry(newLocalNR, globalNR);
+          }
+        resetIds(globalNR);  // on the in-memory global NodeRegistry
+        writeNodeRegistry(globalNR, m_globalNodeRegistryFile);
+        //exit(1);
+      }
+
+      /**
+       *   pass 3: 
+       *   1. read global NodeRegistry
+       *   2. read each refined file-ref.M.iM
+       *   3. lookup edge/face/elem in global NodeRegistry, reset id to that found in NR
+       *   4. write refined file-ref-id.M.iM
+       */
+      void pass3()
+      {
+        PerceptMesh eMeshGlobal(s_spatialDim);
+        eMeshGlobal.openEmpty();
+        // here we use the same eMesh to use the same BulkData - this could be changed if we didn't use pointers
+        // but always used id's in the maps' keys
+        //PerceptMesh eMeshLocal(s_spatialDim);
+        //eMeshLocal.openEmpty();
+        NodeRegistry globalNR(eMeshGlobal);
+        //NodeRegistry localNR(eMeshLocal);
+        NodeRegistry localNR(eMeshGlobal);
+        readNodeRegistry(localNR, m_nodeRegistryFile);
+        readNodeRegistry(globalNR, m_globalNodeRegistryFile);
+        lookupAndSetNewNodeIds(localNR, globalNR);
+      }
+
+      void lookupAndSetNewNodeIds(NodeRegistry& localNR, NodeRegistry& globalNR)
+      {
+        m_eMesh.getBulkData()->modification_begin();
+        SubDimCellToDataMap& map = localNR.getMap();
+        //SubDimCellToDataMap& globalMap = globalNR.getMap();
+        std::cout << " tmp SerializeNR::lookupAndSetNewNodeIds map size: " << map.size() << std::endl;
+
+        SubDimCellToDataMap::iterator iter;
+        for (iter = map.begin(); iter != map.end(); ++iter)
+          {
+            const SubDimCell_SDSEntityType& subDimEntity = iter->first;
+            SubDimCellData& nodeId_elementOwnderId = iter->second;
+            SubDimCellData* global_nodeId_elementOwnderId_ptr = globalNR.getFromMapPtr(subDimEntity);
+            if (!global_nodeId_elementOwnderId_ptr)
+              {
+                std::cout << "SerializeNR::lookupAndSetNewNodeIds couldn't find subDimEntity= " << subDimEntity;
+                for (unsigned kk=0; kk < subDimEntity.size(); kk++)
+                  {
+                    std::cout << " [" << subDimEntity[kk]->identifier() << "] ";
+                  }
+                std::cout << std::endl;
+              }
+            else
+              {
+                std::cout << "found it" << std::endl;
+              }
+            VERIFY_OP_ON(global_nodeId_elementOwnderId_ptr, !=, 0, "SerializeNR::lookupAndSetNewNodeIds couldn't find subDimEntity");
+
+            NodeIdsOnSubDimEntityType& global_nodeIds_onSE = global_nodeId_elementOwnderId_ptr->get<SDC_DATA_GLOBAL_NODE_IDS>();
+            NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+            unsigned global_nnodes = global_nodeIds_onSE.size();
+            unsigned nnodes = nodeIds_onSE.size();
+            VERIFY_OP_ON(global_nnodes, ==, nnodes, "SerializeNR::lookupAndSetNewNodeIds: mismatch in nnodes");
+
+            for (unsigned inode=0; inode < nnodes; inode++)
+              {
+                stk::mesh::EntityId id_new = global_nodeIds_onSE.m_entity_id_vector[inode];
+                stk::mesh::EntityId id_old = nodeIds_onSE.m_entity_id_vector[inode];
+                stk::mesh::Entity* node = m_eMesh.getBulkData()->get_entity(0, id_old);
+                stk::mesh::Entity* new_node = m_eMesh.getBulkData()->get_entity(0, id_new);
+                std::cout << "iM= " << iM << " id_new= " << id_new << " id_old= " << id_old << std::endl;
+                VERIFY_OP_ON(node, !=, 0, "SerializeNR::lookupAndSetNewNodeIds null old node");
+                VERIFY_OP_ON(new_node, !=, 0, "SerializeNR::lookupAndSetNewNodeIds null new node");
+                //VERIFY_OP_ON(node, ==, nodeIds_onSE[inode], "SerializeNR::lookupAndSetNewNodeIds old node mistmatch");
+                //VERIFY_OP_ON(new_node, ==, global_nodeIds_onSE[inode], "SerializeNR::lookupAndSetNewNodeIds new node mistmatch");
+                nodeIds_onSE[inode] = global_nodeIds_onSE[inode];
+                if (id_new != id_old)
+                  {
+                    //bool did_destroy = m_eMesh.getBulkData()->destroy_entity(new_node);
+                    //VERIFY_OP_ON(did_destroy, !=, false, "SerializeNR::lookupAndSetNewNodeIds couldn't destroy global node");
+                    //m_eMesh.getBulkData()->change_entity_id(id_new, *node);
+                  }
+              }
+          }
+        m_eMesh.getBulkData()->modification_end();
+      }
+
+      void writeNodeRegistry(NodeRegistry& nodeRegistry, std::string filename)
+      {
+        YAML::Emitter yaml;
+        std::cout << "\nnodeRegistry.serialize_write(yaml) to file= " << filename << std::endl;
+        nodeRegistry.serialize_write(yaml);
+        if (!yaml.good())
+          {
+            std::cout << "Emitter error: " << yaml.good() << " " <<yaml.GetLastError() << "\n";
+            throw std::runtime_error("Emitter error");
+          }
+        std::ofstream file(filename.c_str());
+        if (!file.is_open() || !file.good())
+          {
+            throw std::runtime_error(std::string("SerializeNR::writeNodeRegistry couldn't open file ")+filename);
+          }
+        file << yaml.c_str();
+        file.close();
+      }
+
+      void readNodeRegistry(NodeRegistry& nodeRegistry, std::string filename)
+      {
+        std::cout << "\nnodeRegistry.serialize_read() from file= " << filename << std::endl;
+        std::ifstream file(filename.c_str());
+        if (!file.is_open() || !file.good())
+          {
+            throw std::runtime_error(std::string("SerializeNR::readNodeRegistry couldn't open file ")+filename);
+          }
+        
+        nodeRegistry.serialize_read(file);
+      }
+
+      void processNodeRegistry(NodeRegistry& newLocalNR, NodeRegistry& globalNR)
+      {
+        SubDimCellToDataMap::iterator iter;
+        SubDimCellToDataMap& map = newLocalNR.getMap();
+        SubDimCellToDataMap& globalMap = globalNR.getMap();
+        std::cout << " tmp SerializeNR::processNodeRegistry map size: " << map.size() << std::endl;
+
+        // key.serialized = { nodeid_0,... : set<EntityId> }
+        // value.serialized = { {new_nid0, new_nid1,...}:vector<EntityId>, {elem_own[rank, ele_id]:EntityKey} }
+
+        for (iter = map.begin(); iter != map.end(); ++iter)
+          {
+            const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+            SubDimCellData& nodeId_elementOwnderId = (*iter).second;
+            std::cout << "SerializeNR::processNodeRegistry inserting map entry = " << subDimEntity ;
+            for (unsigned kk=0; kk < subDimEntity.size(); kk++)
+              {
+                std::cout << " [" << subDimEntity[kk]->identifier() << "] ";
+              }
+            std::cout << " data= " << nodeId_elementOwnderId << " nid=" <<  nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>().m_entity_id_vector[0] << std::endl;
+            /// clone subDimEntity...
+            globalMap[subDimEntity] = nodeId_elementOwnderId;
+          }        
+        std::cout << "SerializeNR::processNodeRegistry globalMap size= " << globalMap.size() << std::endl;
+      }
+
+      /// Using the current global max id, in a simple id-server manner, generate new id's and assign to 
+      ///   the shared nodes.
+      void resetIds(NodeRegistry& nodeRegistry) 
+      {
+        SubDimCellToDataMap::iterator iter;
+        SubDimCellToDataMap& map = nodeRegistry.getMap();
+        std::cout << " tmp SerializeNR::resetIds map size: " << map.size() << std::endl;
+
+        // key.serialized = { nodeid_0,... : set<EntityId> }
+        // value.serialized = { {new_nid0, new_nid1,...}:vector<EntityId>, {elem_own[rank, ele_id]:EntityKey} }
+
+        for (iter = map.begin(); iter != map.end(); ++iter)
+          {
+            //const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+            SubDimCellData& nodeId_elementOwnderId = (*iter).second;
+            NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+            unsigned nnodes = nodeIds_onSE.size();
+            for (unsigned inode=0; inode < nnodes; inode++)
+              {
+                stk::mesh::EntityId id_new = m_id_max[0]+1;
+                m_id_max[0] = id_new;
+                nodeIds_onSE.m_entity_id_vector[inode] = id_new;
+              }
+          }
+      }
+
+      ///Note: we read and write to a file instead of storing in memory to allow stk_adapt_exe to be called on a 
+      //   single piece of the partition - useful for testing and for potentially parallelizing the global outer loop
+      void getCurrentGlobalMaxId()
+      {
+        // get max node, element id, dump to global file, if global file exists, read from it, use those as start values
+        std::fstream file;
+        file.open(m_globalIdFile.c_str(), std::ios_base::in);  
+        if (!file.is_open())
+          {
+            throw std::runtime_error(std::string("SerializeNR::getCurrentGlobalMaxId couldn't open file ")+m_globalIdFile);
+          }
+            
+        YAML::Parser parser(file);
+        YAML::Node doc;
+
+        try {
+          while(parser.GetNextDocument(doc)) {
+            std::cout << "\n read doc.Type() = " << doc.Type() << " doc.Tag()= " << doc.Tag() << " doc.size= " << doc.size() << std::endl;
+            if (doc.Type() == YAML::NodeType::Map)
+              {
+                for (unsigned irank=0; irank < m_id_max.size(); irank++)
+                  {
+                    doc[m_entity_rank_names[irank]] >> m_id_max[irank];
+                  }
+              }
+            else
+              {
+                throw std::runtime_error("bad streaming-refine-global-data file");
+              }
+          }
+        }
+        catch(YAML::ParserException& e) {
+          std::cout << e.what() << "\n";
+          throw std::runtime_error( e.what());
+        }
+        file.close();
+      }
+
+      void setCurrentGlobalMaxId()
+      {
+        std::fstream file;
+        file.open(m_globalIdFile.c_str(), std::ios_base::out | std::ios_base::trunc);
+        if (!file.is_open())
+          {
+            throw std::runtime_error(std::string("SerializeNR::setCurrentGlobalMaxId couldn't open file ")+m_globalIdFile);
+          }
+
+        YAML::Emitter out;
+        out << YAML::BeginMap;
+        for (unsigned irank=0; irank < m_id_max.size(); irank++)
+          {
+            out << YAML::Key << m_entity_rank_names[irank] << YAML::Value << m_id_max[irank];
+          }
+        out << YAML::EndMap;
+        file << out.c_str();
+        file.close();
+      }
+
+      void findCurrentMaxId(PerceptMesh& eMesh)
+      {
+        for (unsigned irank=0; irank < m_id_max.size(); irank++)
+          {
+            // bucket loop
+            const std::vector<stk::mesh::Bucket*> & buckets = eMesh.getBulkData()->buckets( irank );
+
+            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+              {
+                //if (selector(**k))
+                {
+                  stk::mesh::Bucket & bucket = **k ;
+                  const unsigned num_entities_in_bucket = bucket.size();
+
+                  for (unsigned iEntity = 0; iEntity < num_entities_in_bucket; iEntity++)
+                    {
+                      stk::mesh::Entity& entity = bucket[iEntity];
+                      stk::mesh::EntityId id = entity.identifier();
+                      m_id_max[irank] = std::max(m_id_max[irank], id);
+                    }
+                }
+              }
+          }
+      }
+
+      // use id_max values as a simple id server to reset new element ids
+      void resetNewElementIds(PerceptMesh& eMesh)
+      {
+        eMesh.getBulkData()->modification_begin();
+        // skip nodes rank
+        for (unsigned irank=1; irank < m_id_max.size(); irank++)
+          {
+            if (irank == FAMILY_TREE_RANK) continue;
+            // bucket loop
+            const std::vector<stk::mesh::Bucket*> & buckets = eMesh.getBulkData()->buckets( irank );
+
+            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+              {
+                //if (selector(**k))
+                {
+                  stk::mesh::Bucket & bucket = **k ;
+                  const unsigned num_entities_in_bucket = bucket.size();
+
+                  for (unsigned iEntity = 0; iEntity < num_entities_in_bucket; iEntity++)
+                    {
+                      stk::mesh::Entity& entity = bucket[iEntity];
+                      if (eMesh.isChildElement(entity))
+                        {
+                          stk::mesh::EntityId id = m_id_max[irank] + 1;
+                          m_id_max[irank] = id;
+                          std::cout << "old id= " << entity.identifier() << " new id= " << id << std::endl;
+                          eMesh.getBulkData()->change_entity_id(id, entity);
+                        }
+                    }
+                }
+              }
+          }
+        eMesh.getBulkData()->modification_begin();
+      }
+
+    };
+
+#endif
+
     static void checkInput(std::string option, std::string value, std::string allowed_values, RunEnvironment& run_environment)
     {
       //if (value.length() == 0) return;
@@ -508,6 +947,9 @@ namespace stk {
       // a list of comma-separated names like Entity, Relation, Field, etc.
       std::string memory_multipliers_file="";
       int estimate_memory_usage=0;
+      int streaming_size=0;
+      int streaming_rank=0;
+      int streaming_pass= -1;
 
       //  Hex8_Tet4_24 (default), Quad4_Quad4_4, Qu
       std::string block_name_desc = 
@@ -573,7 +1015,16 @@ namespace stk {
       run_environment.clp.setOption("proc_rank_field"          , &proc_rank_field          , " add an element field to show processor rank");
       run_environment.clp.setOption("remove_original_elements" , &remove_original_elements , " remove original (converted) elements (default=true)");
       run_environment.clp.setOption("input_geometry"           , &input_geometry           , "input geometry name");
-      run_environment.clp.setOption("print_memory_usage"       , &print_memory_usage        , "print memory usage");
+      run_environment.clp.setOption("streaming_size"           , &streaming_size      , 
+                                    "INTERNAL use only by python script streaming refinement interface:\n"
+                                    "  run in streaming mode - this number specifies how many virtual procs the mesh is split into\n"
+                                    "    i.e. we expect to see files like file.e.N.iN where N = streaming_size iN=0..N");
+      run_environment.clp.setOption("streaming_rank"           , &streaming_rank     , 
+                                    "INTERNAL use only by python script streaming refinement interface:\n"
+                                    "  run in streaming mode - this number specifies which virtual proc this is.");
+      run_environment.clp.setOption("streaming_pass"           , &streaming_pass           , 
+                                    "INTERNAL use only by python script streaming refinement interface:\n");
+      run_environment.clp.setOption("print_memory_usage"       , &print_memory_usage       , "print memory usage");
 
       run_environment.processCommandLine();
 
@@ -585,294 +1036,372 @@ namespace stk {
       double cpu0 = 0.0;
       double cpu1 = 0.0;
 
-      try {
+      if (convert.length())
+        checkInput("convert", convert, convert_options, run_environment);
 
-        if (convert.length())
-          checkInput("convert", convert, convert_options, run_environment);
+      if (enrich.length())
+        checkInput("enrich", enrich, enrich_options, run_environment);
 
-        if (enrich.length())
-          checkInput("enrich", enrich, enrich_options, run_environment);
+      if (refine.length())
+        checkInput("refine", refine, refine_options, run_environment);
 
-        if (refine.length())
-          checkInput("refine", refine, refine_options, run_environment);
-
-        if (print_info)
-          {
-            doRefineMesh = false;
-          }
-
-        if (help
-            || input_mesh.length() == 0 
-            || output_mesh.length() == 0
-            || (convert.length() == 0 && refine.length()==0 && enrich.length()==0)
-            //||  not (convert == "Hex8_Tet4_24" || convert == "Quad4_Quad4_4" || convert == "Quad4_Tri3_6")
-            )
-          {
-            run_environment.printHelp();
-            exit(1);
-          }
-
-#if defined( STK_HAS_MPI )
-        MPI_Barrier( MPI_COMM_WORLD );
-#endif
-
-        if (load_balance)
-          {
-            RunEnvironment::doLoadBalance(run_environment.m_comm, input_mesh);
-          }
-
-        percept::PerceptMesh eMesh(0);  // FIXME
-        //percept::PerceptMesh eMesh;  // FIXME
-
-        //unsigned p_size = eMesh.getParallelSize();
-        
-        eMesh.open(input_mesh);
-
-        Util::setRank(eMesh.getRank());
-
-        Teuchos::RCP<UniformRefinerPatternBase> pattern;
-
-        if (doRefineMesh)
-          {
-            // FIXME move this next block of code to a method on UniformRefiner
-            BlockNamesType block_names(stk::percept::EntityRankEnd+1u);
-            if (block_name_inc.length())
-              {
-                block_names = RefinerUtil::getBlockNames(block_name_inc, eMesh.getRank(), eMesh);
-                if (1)
-                  {
-                    eMesh.commit();
-                    block_names = RefinerUtil::correctBlockNamesForPartPartConsistency(eMesh, block_names);
-
-                    eMesh.close();
-                    eMesh.open(input_mesh);
-                  }
-              }
-            
-            pattern = UniformRefinerPatternBase::createPattern(refine, enrich, convert, eMesh, block_names);
-
-            if (0)
-              {
-                run_environment.printHelp();
-                exit(1);
-              }
-          }
-
-        if (0)
-          {
-            std::cout << "tmp convert = " << convert << std::endl;
-            std::cout << "tmp refine = " << refine << std::endl;
-            std::cout << "tmp enrich = " << enrich << std::endl;
-          }
-
-        int scalarDimension = 0; // a scalar
-
-        stk::mesh::FieldBase* proc_rank_field_ptr = 0;
-        if (proc_rank_field)
-          {
-            proc_rank_field_ptr = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
-          }
-
-        eMesh.commit();
-
-        if (print_memory_usage)
-          memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.getBulkData(), 0, "after file open");
-
-        if (test_memory_nodes && test_memory_elements)
-          {
-            std::cout << "test_memory_elements and nodes are nonzero, will not refine exodus files." << std::endl;
-
-            test_memory(eMesh, test_memory_elements, test_memory_nodes);
-
-            if (print_memory_usage)
-              memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.getBulkData(), 0, "after test memory");
-
-            if (estimate_memory_usage && !query_only)
-              {
-                MemorySizeType tot_mem = memory_dump(false, run_environment.m_comm, *eMesh.getBulkData(), 0, "after test memory");
-
-                //std::cout << "MemEst: num_nodes= " << test_memory_nodes << " num_tet4=0 hum_hex8= " << test_memory_elements << " memory= " << MegaByte(tot_mem) << std::endl;
-                //MemoryMultipliers::process_estimate(tot_mem, eMesh, breaker.getRefinementInfoByType(), memory_multipliers_file);
-                MemoryMultipliers memMults;
-                if (memory_multipliers_file.size())
-                  memMults.read_simple(memory_multipliers_file);
-                memMults.num_hex8=test_memory_elements;
-                memMults.num_nodes=test_memory_nodes;
-                MemorySizeType estMem = memMults.estimate_memory();
-                //                 std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 << " memory= " << MegaByte(tot_mem) 
-                //                           << " estMem= " << MegaByte(estMem) << std::endl;
-                std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 << " memory[MB]= " << MegaByte(tot_mem) 
-                          << " estMem[MB]= " << MegaByte(estMem) 
-                          << " mult_hex8= " << memMults.mult_hex8 << " mult_tet4= " << memMults.mult_tet4 << " mult_nodes=" << memMults.mult_nodes << std::endl;
-                std::cout << "(*MemEstMM: " << input_mesh << " *) ,{" << memMults.num_nodes << ", " << memMults.num_tet4 << "," << memMults.num_hex8 << "," << MegaByte(tot_mem) 
-                          << ", " << MegaByte(estMem) << "}" << std::endl;
-
-              }
-            if (estimate_memory_usage && query_only)
-              {
-                //MemoryMultipliers::process_estimate(0, eMesh, breaker.getRefinementInfoByType(), memory_multipliers_file, input_mesh);
-              }
-
-            return 0;
-          }
-
-        // FIXME
-        if (0)
-          {
-            eMesh.saveAs("outtmp.e");
-            exit(1);
-          }
-        
-        if (print_info)
-          {
-            eMesh.printInfo("convert", print_info);
-          }
-
-        // FIXME
-        if (0)
-          {
-            eMesh.printInfo("before convert", 2);
-            exit(1);
-          }
-
-
-        if (doRefineMesh)
-          {
-            
-            t0 =  stk::wall_time(); 
-            cpu0 = stk::cpu_time();
-
-
-            UniformRefiner breaker(eMesh, *pattern, proc_rank_field_ptr);
-
-            ProgressMeter pm(breaker);
-            //pm.setActive(true);
-
-            //std::cout << "P[" << p_rank << ", " << p_size << "] input_geometry = " << input_geometry << std::endl; 
-
-            if (input_geometry != "")
-              {
-                breaker.setGeometryFile(input_geometry);
-                breaker.setSmoothGeometry(smooth_geometry == 1);
-              }
-            breaker.setRemoveOldElements(remove_original_elements);
-            breaker.setQueryPassOnly(query_only == 1);
-            breaker.setDoProgressMeter(progress_meter == 1 && 0 == p_rank);
-            //breaker.setIgnoreSideSets(true);
-
-            for (int iBreak = 0; iBreak < number_refines; iBreak++)
-              {
-                if (!eMesh.getRank())
-                  {
-                    std::cout << "Refinement pass # " << (iBreak+1) << " start..." << std::endl;
-                  }
-                //breaker.setPassNumber(iBreak);
-                breaker.doBreak();
-                //RefinementInfoByType::countCurrentNodes(eMesh, breaker.getRefinementInfoByType());
-                if (!eMesh.getRank())
-                  {
-                    std::cout << std::endl;
-                    int ib = iBreak;
-                    if (!query_only) ib = 0;
-                    RefinementInfoByType::printTable(std::cout, breaker.getRefinementInfoByType(), ib , true);
-                    std::cout << std::endl;
-                  }
-                if (print_memory_usage)
-                  {
-                    memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.getBulkData(), &breaker.getNodeRegistry(),
-                                std::string("after refine pass: ")+toString(iBreak));
-                  }
-
-                if (estimate_memory_usage && !query_only)
-                  {
-                    MemorySizeType tot_mem = memory_dump(false, run_environment.m_comm, *eMesh.getBulkData(), &breaker.getNodeRegistry(),
-                                                 std::string("after refine pass: ")+toString(iBreak));
-                    std::cout << "P[" << p_rank << "] tmp srk tot_mem= " << MegaByte(tot_mem) << std::endl;
-                    MemoryMultipliers::process_estimate(tot_mem, eMesh, breaker.getRefinementInfoByType(), memory_multipliers_file, input_mesh);
-                  }
-                if (estimate_memory_usage && query_only)
-                  {
-                    RefinementInfoByType::estimateNew(breaker.getRefinementInfoByType(), iBreak);
-                    MemoryMultipliers::process_estimate(0, eMesh, breaker.getRefinementInfoByType(), memory_multipliers_file, input_mesh);
-                  }
-
-              }
-            if (delete_parents)
-              breaker.deleteParentElements();
-
-            t1 =  stk::wall_time(); 
-            cpu1 = stk::cpu_time();
-
-#if 0
-            // This is a vagary of not being able to delete parts on the fly, or change their attributes..., so we reopen
-            // the mesh which deletes the old part on reading.
-            if (convert.length() || enrich.length())
-              {
-                eMesh.reopen();
-              }
-#endif
-
-            stk::percept::pout() << "P[" << p_rank << "] AdaptMain::  saving mesh... \n";
-            std::cout << "P[" << p_rank << "]  AdaptMain:: saving mesh... " << std::endl;
-            eMesh.saveAs(output_mesh);
-            stk::percept::pout() << "P[" << p_rank << "] AdaptMain:: ... mesh saved\n";
-            std::cout << "P[" << p_rank << "]  AdaptMain:: mesh saved" << std::endl;
-
-            if (print_memory_usage)
-              memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.getBulkData(), &breaker.getNodeRegistry(), "after final save mesh");
-
-          }
-
-#if 0
-        for (int itime=0; itime < 10; itime++)
-          {
-            std::cout << "tmp timer[" << itime << "]= " << s_timers[itime] << " " << s_timers[itime]/s_timers[3]*100 << " %" << std::endl;
-          }
-#endif
-        
-      }
-      catch ( const std::exception * X ) {
-        std::cout << "AdaptMain::  unexpected exception POINTER: " << X->what() << std::endl;
-        failed_proc_rank = p_rank+1u;
-      }
-      catch ( const std::exception & X ) {
-        std::cout << "AdaptMain:: unexpected exception: " << X.what() << std::endl;
-        failed_proc_rank = p_rank+1u;
-      }
-      catch( ... ) {
-        std::cout << "AdaptMain::  ... exception" << std::endl;
-        failed_proc_rank = p_rank+1u;
-      }
-
-      stk::all_reduce( run_environment.m_comm, stk::ReduceSum<1>( &failed_proc_rank ) );
-      if (failed_proc_rank)
+      if (print_info)
         {
-          stk::percept::pout() << "P[" << p_rank << "]  exception found on processor " << (failed_proc_rank-1) << "\n";
+          doRefineMesh = false;
+        }
+
+      if (help
+          || input_mesh.length() == 0 
+          || output_mesh.length() == 0
+          || (convert.length() == 0 && refine.length()==0 && enrich.length()==0)
+          //||  not (convert == "Hex8_Tet4_24" || convert == "Quad4_Quad4_4" || convert == "Quad4_Tri3_6")
+          )
+        {
+          run_environment.printHelp();
           exit(1);
         }
 
-      stk::percept::pout() << "P[" << p_rank << ", " << p_size << "]  wall clock time on processor [" << p_rank << ", " << p_size << "]= " << (t1-t0) << " (sec) "
-                           << " cpu time= " << (cpu1 - cpu0) << " (sec)\n";
-      std::cout << "P[" << p_rank << ", " << p_size << "]  wall clock time on processor [" << p_rank << ", " << p_size << "]= " << (t1-t0) << " (sec) "
-                << " cpu time= " << (cpu1 - cpu0) << " (sec) " << std::endl;
+#if defined( STK_HAS_MPI )
+      MPI_Barrier( MPI_COMM_WORLD );
+#endif
 
-      double cpuMax = (cpu1-cpu0);
-      double wallMax = (t1-t0);
-      double cpuSum = (cpu1-cpu0);
+      std::string input_mesh_save = input_mesh;
+      std::string output_mesh_save = output_mesh;
 
-      stk::all_reduce( run_environment.m_comm, stk::ReduceSum<1>( &cpuSum ) );
-      stk::all_reduce( run_environment.m_comm, stk::ReduceMax<1>( &cpuMax ) );
-      stk::all_reduce( run_environment.m_comm, stk::ReduceMax<1>( &wallMax ) );
-
-      if (0 == p_rank)
+      // streaming
+      int M = streaming_size ? streaming_size : 1;
+      int streaming_pass_start = 0;
+      int streaming_pass_end = streaming_size ? SerializeNR::MaxPass : 0;
+      // allow for driving this from a script
+      if (streaming_pass >= 0)
         {
-          stk::percept::pout() << "P[" << p_rank << ", " << p_size << "]  max wall clock time = " << wallMax << " (sec)\n";
-          stk::percept::pout() << "P[" << p_rank << ", " << p_size << "]  max cpu  clock time = " << cpuMax << " (sec)\n";
-          stk::percept::pout() << "P[" << p_rank << ", " << p_size << "]  sum cpu  clock time = " << cpuSum << " (sec)\n";
-          std::cout << "P[" << p_rank << ", " << p_size << "]  max wall clock time = " << wallMax << " (sec)" << std::endl;
-          std::cout << "P[" << p_rank << ", " << p_size << "]  max cpu  clock time = " << cpuMax << " (sec)" << std::endl;
-          std::cout << "P[" << p_rank << ", " << p_size << "]  sum cpu  clock time = " << cpuSum << " (sec)" << std::endl;
+          streaming_pass_start = streaming_pass;
+          streaming_pass_end = streaming_pass;
         }
+
+      for (int ipass=streaming_pass_start; ipass <= streaming_pass_end; ipass++)
+        {
+          if (1 && streaming_size)
+            {
+              // special case, no exodus files i/o
+              if (ipass == 2)
+                {
+#if STK_ADAPT_HAVE_YAML_CPP
+                  PerceptMesh eMesh(s_spatialDim);
+                  eMesh.openEmpty();
+                  SerializeNR snr(eMesh, 0, input_mesh, output_mesh, M, 0);
+                  snr.pass(ipass);
+#else
+                  throw std::runtime_error("must have YAML for streaming refine");
+#endif
+                  continue;
+                }
+            }
+
+          for (int iM=0; iM < M; iM++)
+            {
+              if (streaming_size)
+                {
+                  input_mesh = input_mesh_save+"."+toString(M)+"."+toString(iM);
+                  output_mesh = output_mesh_save+"."+toString(M)+"."+toString(iM);
+                }
+
+              try {
+
+                if (load_balance)
+                  {
+                    if (streaming_size) throw std::runtime_error("can't load balance and stream");
+                    RunEnvironment::doLoadBalance(run_environment.m_comm, input_mesh);
+                  }
+
+                percept::PerceptMesh eMesh(0);  // FIXME
+                //percept::PerceptMesh eMesh;  // FIXME
+
+                //unsigned p_size = eMesh.getParallelSize();
+        
+                eMesh.open(input_mesh);
+                if (!s_spatialDim) s_spatialDim = eMesh.getSpatialDim();
+
+                Util::setRank(eMesh.getRank());
+
+                Teuchos::RCP<UniformRefinerPatternBase> pattern;
+
+                if (doRefineMesh)
+                  {
+                    // FIXME move this next block of code to a method on UniformRefiner
+                    BlockNamesType block_names(stk::percept::EntityRankEnd+1u);
+                    if (block_name_inc.length())
+                      {
+                        block_names = RefinerUtil::getBlockNames(block_name_inc, eMesh.getRank(), eMesh);
+                        if (1)
+                          {
+                            eMesh.commit();
+                            block_names = RefinerUtil::correctBlockNamesForPartPartConsistency(eMesh, block_names);
+
+                            eMesh.close();
+                            eMesh.open(input_mesh);
+                          }
+                      }
+            
+                    pattern = UniformRefinerPatternBase::createPattern(refine, enrich, convert, eMesh, block_names);
+
+                    if (0)
+                      {
+                        run_environment.printHelp();
+                        exit(1);
+                      }
+                  }
+
+                if (0)
+                  {
+                    std::cout << "tmp convert = " << convert << std::endl;
+                    std::cout << "tmp refine = " << refine << std::endl;
+                    std::cout << "tmp enrich = " << enrich << std::endl;
+                  }
+
+                int scalarDimension = 0; // a scalar
+
+                stk::mesh::FieldBase* proc_rank_field_ptr = 0;
+                if (proc_rank_field)
+                  {
+                    proc_rank_field_ptr = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
+                  }
+
+                eMesh.commit();
+
+                if (0 && streaming_size)
+                  {
+                    // special case
+                    if (ipass == 2)
+                      {
+#if STK_ADAPT_HAVE_YAML_CPP
+                        SerializeNR snr(eMesh, 0, input_mesh, output_mesh, M, 0);
+                        snr.pass(ipass);
+#else
+                        throw std::runtime_error("must have YAML for streaming refine");
+#endif
+                        continue;
+                      }
+                  }
+
+#if 0 && STK_ADAPT_HAVE_YAML_CPP
+                if (streaming_size && ipass == 0)
+                  {
+                    SerializeNR snr(eMesh, 0, input_mesh, output_mesh, M, iM);
+                    snr.pass(ipass);
+                    eMesh.close();
+                    continue;
+                  }
+#endif
+
+                if (print_memory_usage)
+                  memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.getBulkData(), 0, "after file open");
+
+                if (test_memory_nodes && test_memory_elements)
+                  {
+                    std::cout << "test_memory_elements and nodes are nonzero, will not refine exodus files." << std::endl;
+
+                    test_memory(eMesh, test_memory_elements, test_memory_nodes);
+
+                    if (print_memory_usage)
+                      memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.getBulkData(), 0, "after test memory");
+
+                    if (estimate_memory_usage && !query_only)
+                      {
+                        MemorySizeType tot_mem = memory_dump(false, run_environment.m_comm, *eMesh.getBulkData(), 0, "after test memory");
+
+                        //std::cout << "MemEst: num_nodes= " << test_memory_nodes << " num_tet4=0 hum_hex8= " << test_memory_elements << " memory= " << MegaByte(tot_mem) << std::endl;
+                        //MemoryMultipliers::process_estimate(tot_mem, eMesh, breaker.getRefinementInfoByType(), memory_multipliers_file);
+                        MemoryMultipliers memMults;
+                        if (memory_multipliers_file.size())
+                          memMults.read_simple(memory_multipliers_file);
+                        memMults.num_hex8=test_memory_elements;
+                        memMults.num_nodes=test_memory_nodes;
+                        MemorySizeType estMem = memMults.estimate_memory();
+                        //                 std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 << " memory= " << MegaByte(tot_mem) 
+                        //                           << " estMem= " << MegaByte(estMem) << std::endl;
+                        std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 << " memory[MB]= " << MegaByte(tot_mem) 
+                                  << " estMem[MB]= " << MegaByte(estMem) 
+                                  << " mult_hex8= " << memMults.mult_hex8 << " mult_tet4= " << memMults.mult_tet4 << " mult_nodes=" << memMults.mult_nodes << std::endl;
+                        std::cout << "(*MemEstMM: " << input_mesh << " *) ,{" << memMults.num_nodes << ", " << memMults.num_tet4 << "," << memMults.num_hex8 << "," << MegaByte(tot_mem) 
+                                  << ", " << MegaByte(estMem) << "}" << std::endl;
+
+                      }
+                    if (estimate_memory_usage && query_only)
+                      {
+                        //MemoryMultipliers::process_estimate(0, eMesh, breaker.getRefinementInfoByType(), memory_multipliers_file, input_mesh);
+                      }
+
+                    return 0;
+                  }
+
+                // FIXME
+                if (0)
+                  {
+                    eMesh.saveAs("outtmp.e");
+                    exit(1);
+                  }
+        
+                if (print_info)
+                  {
+                    eMesh.printInfo("convert", print_info);
+                  }
+
+                // FIXME
+                if (0)
+                  {
+                    eMesh.printInfo("before convert", 2);
+                    exit(1);
+                  }
+
+                if (doRefineMesh)
+                  {
+                    t0 =  stk::wall_time(); 
+                    cpu0 = stk::cpu_time();
+
+                    UniformRefiner breaker(eMesh, *pattern, proc_rank_field_ptr);
+
+                    ProgressMeter pm(breaker);
+                    //pm.setActive(true);
+
+                    //std::cout << "P[" << p_rank << ", " << p_size << "] input_geometry = " << input_geometry << std::endl; 
+
+                    if (input_geometry != "")
+                      {
+                        breaker.setGeometryFile(input_geometry);
+                        breaker.setSmoothGeometry(smooth_geometry == 1);
+                      }
+                    breaker.setRemoveOldElements(remove_original_elements);
+                    breaker.setQueryPassOnly(query_only == 1);
+                    breaker.setDoProgressMeter(progress_meter == 1 && 0 == p_rank);
+                    //breaker.setIgnoreSideSets(true);
+
+                    for (int iBreak = 0; iBreak < number_refines; iBreak++)
+                      {
+                        if (!eMesh.getRank())
+                          {
+                            std::cout << "Refinement pass # " << (iBreak+1) << " start..." << std::endl;
+                          }
+                        //breaker.setPassNumber(iBreak);
+                        breaker.doBreak();
+                        //RefinementInfoByType::countCurrentNodes(eMesh, breaker.getRefinementInfoByType());
+                        if (!eMesh.getRank())
+                          {
+                            std::cout << std::endl;
+                            int ib = iBreak;
+                            if (!query_only) ib = 0;
+                            RefinementInfoByType::printTable(std::cout, breaker.getRefinementInfoByType(), ib , true);
+                            std::cout << std::endl;
+                          }
+                        if (print_memory_usage)
+                          {
+                            memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.getBulkData(), &breaker.getNodeRegistry(),
+                                        std::string("after refine pass: ")+toString(iBreak));
+                          }
+
+                        if (estimate_memory_usage && !query_only)
+                          {
+                            MemorySizeType tot_mem = memory_dump(false, run_environment.m_comm, *eMesh.getBulkData(), &breaker.getNodeRegistry(),
+                                                                 std::string("after refine pass: ")+toString(iBreak));
+                            std::cout << "P[" << p_rank << "] tmp srk tot_mem= " << MegaByte(tot_mem) << std::endl;
+                            MemoryMultipliers::process_estimate(tot_mem, eMesh, breaker.getRefinementInfoByType(), memory_multipliers_file, input_mesh);
+                          }
+                        if (estimate_memory_usage && query_only)
+                          {
+                            RefinementInfoByType::estimateNew(breaker.getRefinementInfoByType(), iBreak);
+                            MemoryMultipliers::process_estimate(0, eMesh, breaker.getRefinementInfoByType(), memory_multipliers_file, input_mesh);
+                          }
+
+                      } // iBreak
+
+                    if (streaming_size)
+                      {
+#if STK_ADAPT_HAVE_YAML_CPP
+                        SerializeNR snr(eMesh, &breaker.getNodeRegistry(), input_mesh, output_mesh, M, iM);
+                        snr.pass(ipass);
+#else
+                        throw std::runtime_error("must have YAML for streaming refine");
+#endif
+                      }
+
+                    if (delete_parents)
+                      breaker.deleteParentElements();
+
+                    t1 =  stk::wall_time(); 
+                    cpu1 = stk::cpu_time();
+
+#if 0
+                    // This is a vagary of not being able to delete parts on the fly, or change their attributes..., so we reopen
+                    // the mesh which deletes the old part on reading.
+                    if (convert.length() || enrich.length())
+                      {
+                        eMesh.reopen();
+                      }
+#endif
+
+                    stk::percept::pout() << "P[" << p_rank << "] AdaptMain::  saving mesh... \n";
+                    std::cout << "P[" << p_rank << "]  AdaptMain:: saving mesh... " << std::endl;
+                    eMesh.saveAs(output_mesh);
+                    stk::percept::pout() << "P[" << p_rank << "] AdaptMain:: ... mesh saved\n";
+                    std::cout << "P[" << p_rank << "]  AdaptMain:: mesh saved" << std::endl;
+
+                    if (print_memory_usage)
+                      memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.getBulkData(), &breaker.getNodeRegistry(), "after final save mesh");
+
+                  }
+
+#if 0
+                for (int itime=0; itime < 10; itime++)
+                  {
+                    std::cout << "tmp timer[" << itime << "]= " << s_timers[itime] << " " << s_timers[itime]/s_timers[3]*100 << " %" << std::endl;
+                  }
+#endif
+        
+              }
+              catch ( const std::exception * X ) {
+                std::cout << "AdaptMain::  unexpected exception POINTER: " << X->what() << std::endl;
+                failed_proc_rank = p_rank+1u;
+              }
+              catch ( const std::exception & X ) {
+                std::cout << "AdaptMain:: unexpected exception: " << X.what() << std::endl;
+                failed_proc_rank = p_rank+1u;
+              }
+              catch( ... ) {
+                std::cout << "AdaptMain::  ... exception" << std::endl;
+                failed_proc_rank = p_rank+1u;
+              }
+
+              stk::all_reduce( run_environment.m_comm, stk::ReduceSum<1>( &failed_proc_rank ) );
+              if (failed_proc_rank)
+                {
+                  stk::percept::pout() << "P[" << p_rank << "]  exception found on processor " << (failed_proc_rank-1) << "\n";
+                  exit(1);
+                }
+
+              stk::percept::pout() << "P[" << p_rank << ", " << p_size << "]  wall clock time on processor [" << p_rank << ", " << p_size << "]= " << (t1-t0) << " (sec) "
+                                   << " cpu time= " << (cpu1 - cpu0) << " (sec)\n";
+              std::cout << "P[" << p_rank << ", " << p_size << "]  wall clock time on processor [" << p_rank << ", " << p_size << "]= " << (t1-t0) << " (sec) "
+                        << " cpu time= " << (cpu1 - cpu0) << " (sec) " << std::endl;
+
+              double cpuMax = (cpu1-cpu0);
+              double wallMax = (t1-t0);
+              double cpuSum = (cpu1-cpu0);
+
+              stk::all_reduce( run_environment.m_comm, stk::ReduceSum<1>( &cpuSum ) );
+              stk::all_reduce( run_environment.m_comm, stk::ReduceMax<1>( &cpuMax ) );
+              stk::all_reduce( run_environment.m_comm, stk::ReduceMax<1>( &wallMax ) );
+
+              if (0 == p_rank)
+                {
+                  stk::percept::pout() << "P[" << p_rank << ", " << p_size << "]  max wall clock time = " << wallMax << " (sec)\n";
+                  stk::percept::pout() << "P[" << p_rank << ", " << p_size << "]  max cpu  clock time = " << cpuMax << " (sec)\n";
+                  stk::percept::pout() << "P[" << p_rank << ", " << p_size << "]  sum cpu  clock time = " << cpuSum << " (sec)\n";
+                  std::cout << "P[" << p_rank << ", " << p_size << "]  max wall clock time = " << wallMax << " (sec)" << std::endl;
+                  std::cout << "P[" << p_rank << ", " << p_size << "]  max cpu  clock time = " << cpuMax << " (sec)" << std::endl;
+                  std::cout << "P[" << p_rank << ", " << p_size << "]  sum cpu  clock time = " << cpuSum << " (sec)" << std::endl;
+                }
+            } // iM
+        } // ipass
 
       return result;
     }
