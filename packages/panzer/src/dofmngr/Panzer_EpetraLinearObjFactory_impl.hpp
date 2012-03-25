@@ -156,7 +156,7 @@ void EpetraLinearObjFactory<Traits,LocalOrdinalT>::ghostToGlobalContainer(const 
 }
 
 template <typename Traits,typename LocalOrdinalT>
-void EpetraLinearObjFactory<Traits,LocalOrdinalT>::ghostToGlobalEpetraVector(const Epetra_Vector in,Epetra_Vector & out) const
+void EpetraLinearObjFactory<Traits,LocalOrdinalT>::ghostToGlobalEpetraVector(const Epetra_Vector & in,Epetra_Vector & out) const
 {
    using Teuchos::RCP;
 
@@ -167,7 +167,7 @@ void EpetraLinearObjFactory<Traits,LocalOrdinalT>::ghostToGlobalEpetraVector(con
 }
 
 template <typename Traits,typename LocalOrdinalT>
-void EpetraLinearObjFactory<Traits,LocalOrdinalT>::ghostToGlobalEpetraMatrix(const Epetra_CrsMatrix in,Epetra_CrsMatrix & out) const
+void EpetraLinearObjFactory<Traits,LocalOrdinalT>::ghostToGlobalEpetraMatrix(const Epetra_CrsMatrix & in,Epetra_CrsMatrix & out) const
 {
    using Teuchos::RCP;
 
@@ -178,7 +178,7 @@ void EpetraLinearObjFactory<Traits,LocalOrdinalT>::ghostToGlobalEpetraMatrix(con
 }
 
 template <typename Traits,typename LocalOrdinalT>
-void EpetraLinearObjFactory<Traits,LocalOrdinalT>::globalToGhostEpetraVector(const Epetra_Vector in,Epetra_Vector & out) const
+void EpetraLinearObjFactory<Traits,LocalOrdinalT>::globalToGhostEpetraVector(const Epetra_Vector & in,Epetra_Vector & out) const
 {
    using Teuchos::RCP;
 

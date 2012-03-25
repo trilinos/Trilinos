@@ -189,9 +189,9 @@ protected:
    Teuchos::RCP<Epetra_CrsMatrix> getEpetraMatrix() const;
    Teuchos::RCP<Epetra_CrsMatrix> getGhostedEpetraMatrix() const;
 
-   void ghostToGlobalEpetraVector(const Epetra_Vector in,Epetra_Vector & out) const;
-   void ghostToGlobalEpetraMatrix(const Epetra_CrsMatrix in,Epetra_CrsMatrix & out) const;
-   void globalToGhostEpetraVector(const Epetra_Vector in,Epetra_Vector & out) const;
+   void ghostToGlobalEpetraVector(const Epetra_Vector & in,Epetra_Vector & out) const;
+   void ghostToGlobalEpetraMatrix(const Epetra_CrsMatrix & in,Epetra_CrsMatrix & out) const;
+   void globalToGhostEpetraVector(const Epetra_Vector & in,Epetra_Vector & out) const;
 
    // get the map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> buildMap() const;
