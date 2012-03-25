@@ -136,8 +136,9 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
 
 #ifdef HAVE_MUELU_EPETRAEXT
    // Michael Gee's MLMultiply
-   static RCP<Epetra_CrsMatrix> MLTwoMatrixMultiply(RCP<Epetra_CrsMatrix> epA,
-            RCP<Epetra_CrsMatrix> epB);
+   static RCP<Epetra_CrsMatrix> MLTwoMatrixMultiply(const Epetra_CrsMatrix& epA,
+            const Epetra_CrsMatrix& epB);
+
 #endif //ifdef HAVE_MUELU_EPETRAEXT
 
    /*! @brief Helper function to do matrix-matrix multiply "in-place"

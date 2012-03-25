@@ -280,7 +280,7 @@ namespace MueLu {
             RCP<Epetra_CrsMatrix> epAB(result);
 #else // Michael's MLMULTIPLY
 
-            RCP<Epetra_CrsMatrix> epAB = MLTwoMatrixMultiply(epA, epB);
+            RCP<Epetra_CrsMatrix> epAB = MLTwoMatrixMultiply(*epA, *epB);
 #endif
             C = Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(epAB);
           }
@@ -331,8 +331,8 @@ namespace MueLu {
 #ifdef HAVE_MUELU_EPETRAEXT
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP<Epetra_CrsMatrix> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLTwoMatrixMultiply(RCP<Epetra_CrsMatrix> epA,
-                                                   RCP<Epetra_CrsMatrix> epB)
+  RCP<Epetra_CrsMatrix> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MLTwoMatrixMultiply(const Epetra_CrsMatrix& epA,
+      const Epetra_CrsMatrix& epB)
   {
 #if defined(HAVE_MUELU_ML)
     ML_Comm* comm;
@@ -341,14 +341,14 @@ namespace MueLu {
       std::cout << "****** USING ML's MATRIX MATRIX MULTIPLY (LNM version) ******" << std::endl;
 #           ifdef HAVE_MPI
     // ML_Comm uses MPI_COMM_WORLD, so try to use the same communicator as epA.
-    const Epetra_MpiComm * Mcomm=dynamic_cast<const Epetra_MpiComm*>(&(epA->Comm()));
+    const Epetra_MpiComm * Mcomm=dynamic_cast<const Epetra_MpiComm*>(&(epA.Comm()));
     if(Mcomm) ML_Comm_Set_UsrComm(comm,Mcomm->GetMpiComm());
 #           endif
     //in order to use ML, there must be no indices missing from the matrix column maps.
     EpetraExt::CrsMatrix_SolverMap Atransform;
     EpetraExt::CrsMatrix_SolverMap Btransform;
-    const Epetra_CrsMatrix& A = Atransform(*epA);
-    const Epetra_CrsMatrix& B = Btransform(*epB);
+    const Epetra_CrsMatrix& A = Atransform(const_cast<Epetra_CrsMatrix&>(epA));
+    const Epetra_CrsMatrix& B = Btransform(const_cast<Epetra_CrsMatrix&>(epB));
 
     if (!A.Filled())    throw(Exceptions::RuntimeError("A has to be FillCompeleted"));
     if (!B.Filled())    throw(Exceptions::RuntimeError("B has to be FillCompeleted"));
