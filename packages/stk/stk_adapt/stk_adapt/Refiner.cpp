@@ -1124,8 +1124,8 @@ namespace stk {
 
             GeometryKernelOpenNURBS gk;
             // set to 0.0 for no checks, > 0.0 for a fixed check delta, < 0.0 (e.g. -0.5) to check against local edge length average times this |value|
-            //double doCheckMovement = -1.0; 
-            double doCheckMovement = 0.0; 
+            double doCheckMovement = -1.0; 
+            //double doCheckMovement = 0.0; 
             MeshGeometry mesh_geometry(&gk, doCheckMovement);
             GeometryFactory factory(&gk, &mesh_geometry);
             factory.read_file(m_geomFile, &m_eMesh);
