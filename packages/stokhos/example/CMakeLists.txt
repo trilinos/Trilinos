@@ -69,6 +69,13 @@ TRIBITS_ADD_EXECUTABLE(
   )
 
 TRIBITS_ADD_EXECUTABLE(
+  gram_schmidt_example2
+  SOURCES gram_schmidt_example2.cpp
+  COMM serial mpi
+  DEPLIBS stokhos
+  )
+
+TRIBITS_ADD_EXECUTABLE(
   recurrence_example
   SOURCES recurrence_example.cpp
   COMM serial mpi

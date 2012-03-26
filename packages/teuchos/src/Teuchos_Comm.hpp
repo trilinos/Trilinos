@@ -85,22 +85,6 @@ public:
   virtual OrdinalType getSourceRank () = 0;
 };
 
-/// \class SerialCommStatus
-/// \brief Implementation of \c CommStatus for a serial communicator.
-///
-/// \tparam OrdinalType The same template parameter as \c Comm.  Only
-///   use \c int here.  We only make this a template class for
-///   compatibility with \c Comm.
-template<class OrdinalType>
-class SerialCommStatus : public CommStatus<OrdinalType> {
-public:
-  //! Default constructor.
-  SerialCommStatus () {}
-
-  //! The source rank that sent the message (must be zero).
-  OrdinalType getSourceRank () { return 0; }
-};
-
 /** \brief Abstract interface class for a basic communication channel between
  * one or more processes.
  *
@@ -403,20 +387,32 @@ public:
   waitAll (const ArrayView<RCP<CommRequest> >& requests,
 	   const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const = 0;
 
-  /** \brief Wait on a single communication request.
-   *
-   * <b>Preconditions:</b><ul>
-   * <li> <tt>!is_null(request))</tt>
-   * </ul>
-   *
-   * <b>Postconditions:</b><ul>
-   * <li> <tt>is_null(*request))</tt>
-   * </ul>
-   */
-  virtual void wait(
-    const Ptr<RCP<CommRequest> > &request
-    ) const = 0;
-
+  /// \brief Wait on a single communication request, and return its status.
+  ///
+  /// \param request [in/out] On input: request is not null, and
+  /// *request is either null (in which case this function does
+  /// nothing and returns null) or an RCP of a valid CommRequest
+  /// instance representing an outstanding communication request.  On
+  /// output: If the communication request completed successfully, we
+  /// set *request to null, indicating that the request has completed.
+  /// (This helps prevent common bugs like trying to complete the same
+  /// request twice.)
+  ///
+  /// \return If *request is null, this method returns null.
+  /// Otherwise this method returns a \c CommStatus instance
+  /// representing the result of completing the request.  In the case
+  /// of a nonblocking receive request, you can query the \c
+  /// CommStatus instance for the process ID of the sending process.
+  /// (This is useful for receiving from any process via \c
+  /// MPI_ANY_SOURCE.)
+  /// 
+  /// \pre !is_null(request) (that is, the Ptr is not null).
+  /// \post is_null(*request) (that is, the RCP is null).
+  ///
+  /// This function blocks until the communication operation
+  /// associated with the CommRequest object has completed.
+  virtual RCP<CommStatus<Ordinal> > 
+  wait (const Ptr<RCP<CommRequest> >& request) const = 0;
 
   //@}
 

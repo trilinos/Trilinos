@@ -170,6 +170,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   InfiniBand      "cmake/TPLs/"    SS
   Pablo           "cmake/TPLs/"    SS
   Pnetcdf         "cmake/TPLs/"    SS
+  Clp             "cmake/TPLs/"    EX
   )
 
 # NOTES:
