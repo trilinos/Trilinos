@@ -159,8 +159,11 @@ namespace Tpetra {
 
 
   void Distributor::doWaits() {
+    using Teuchos::is_null;
+    using Teuchos::waitAll;
+
     if (requests_.size() > 0) {
-      Teuchos::waitAll(*comm_,requests_());
+      waitAll (*comm_, requests_());
       // Requests should all be null, clear them
 #ifdef HAVE_TEUCHOS_DEBUG
       using Teuchos::Array;
@@ -169,7 +172,7 @@ namespace Tpetra {
       for (Array<RCP<CommRequest> >::const_iterator i = requests_.begin();
            i != requests_.end(); ++i) 
       {
-        TEUCHOS_TEST_FOR_EXCEPTION(*i != Teuchos::null, std::runtime_error,
+        TEUCHOS_TEST_FOR_EXCEPTION( ! is_null (*i), std::runtime_error,
           Teuchos::typeName(*this) << "::doWaits(): Communication requests "
           "should all be null aftr calling Teuchos::waitAll() on them, but "
           "at least one request is not null.");
@@ -271,7 +274,9 @@ namespace Tpetra {
     using Teuchos::rcp;
     using Teuchos::REDUCE_SUM;
     using Teuchos::receive;
+    using Teuchos::reduceAllAndScatter;
     using Teuchos::send;
+    using Teuchos::waitAll;
 
     const int myRank = comm_->getRank();
     const int numProcs = comm_->getSize();
@@ -318,7 +323,8 @@ namespace Tpetra {
       // can't be more than twice as fast as the all-reduce, even if
       // the scatter is free).
       Array<int> counts (numProcs, 1);
-      Teuchos::reduceAllAndScatter<int,size_t> (*comm_, REDUCE_SUM, numProcs, &toNodesFromMe[0], &counts[0], &numReceives_);
+      reduceAllAndScatter (*comm_, REDUCE_SUM, numProcs, &toNodesFromMe[0], 
+			   &counts[0], &numReceives_);
     }
 
     // Now we know numReceives_, which is this process' number of
@@ -342,6 +348,7 @@ namespace Tpetra {
     // They get allocated in the loop below.
     Array<RCP<CommRequest> > requests (actualNumReceives);
     Array<RCP<size_t> > lengthsFromBuffers (actualNumReceives);
+    Array<RCP<CommStatus<int> > > statuses (actualNumReceives); 
 
     // Teuchos::COMM treats a negative process ID as MPI_ANY_SOURCE
     // (receive data from any process).
@@ -387,8 +394,7 @@ namespace Tpetra {
     // request buffers into lengthsFrom_, and set imagesFrom_ from the
     // status.
     //
-    Array<RCP<CommStatus<int> > > statuses (actualNumReceives); 
-    Teuchos::waitAll<int> (*comm_, requests(), statuses());
+    waitAll (*comm_, requests(), statuses());
     for (size_t i = 0; i < actualNumReceives; ++i) {
       lengthsFrom_[i] = *lengthsFromBuffers[i];
       imagesFrom_[i] = statuses[i]->getSourceRank(); 

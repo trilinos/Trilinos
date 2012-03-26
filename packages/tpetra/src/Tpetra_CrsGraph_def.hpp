@@ -1627,23 +1627,39 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::globalAssemble() 
   {
+    using Teuchos::as;
+    using Teuchos::gatherAll;
+    using Teuchos::ireceive;
+    using Teuchos::isend;
+    using Teuchos::outarg;
+    using Teuchos::RCP;
+    using Teuchos::REDUCE_MAX;
+    using Teuchos::reduceAll;
+    using Teuchos::waitAll;
     using std::deque;
     using std::pair;
     using std::make_pair;
-    typedef typename std::map<GlobalOrdinal,std::deque<GlobalOrdinal> >::const_iterator NLITER;
-    int numImages = Teuchos::size(*getComm());
-    int myImageID = Teuchos::rank(*getComm());
+    typedef GlobalOrdinal GO;
+    typedef typename std::map<GO, std::deque<GO> >::const_iterator NLITER;
+
+    std::string tfecfFuncName("globalAssemble()"); // for exception macro
+    RCP<const Teuchos::Comm<int> > comm = getComm();
+
+    const int numImages = comm->getSize();
+    const int myImageID = comm->getRank();
 #ifdef HAVE_TPETRA_DEBUG
-    Teuchos::barrier( *rowMap_->getComm() );
-#endif
-    std::string tfecfFuncName("globalAssemble()");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isFillActive() == false, std::runtime_error, ": requires that fill is active.");
+    Teuchos::barrier (*comm);
+#endif // HAVE_TPETRA_DEBUG
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive(), std::runtime_error,
+      ": requires that fill is active.");
     // Determine if any nodes have global entries to share
     {
       size_t MyNonlocals = nonlocals_.size(), MaxGlobalNonlocals;
-      Teuchos::reduceAll<int,size_t>(*getComm(),Teuchos::REDUCE_MAX,MyNonlocals,
-        outArg(MaxGlobalNonlocals));
-      if (MaxGlobalNonlocals == 0) return;  // no entries to share
+      reduceAll (*comm, REDUCE_MAX, MyNonlocals, outArg (MaxGlobalNonlocals));
+      if (MaxGlobalNonlocals == 0) {
+	return;  // no entries to share
+      }
     }
 
     // compute a list of NLRs from nonlocals_ and use it to compute:
@@ -1652,15 +1668,15 @@ namespace Tpetra {
     // globalNeighbors: a global graph of connectivity between images: globalNeighbors(i,j) indicates that j sends to i
     //         sendIDs: a list of all images I send to
     //         recvIDs: a list of all images I receive from (constructed later)
-    Array<pair<int,GlobalOrdinal> > IdsAndRows;
-    std::map<GlobalOrdinal,int> NLR2Id;
-    Teuchos::SerialDenseMatrix<int,char> globalNeighbors;
+    Array<pair<int, GO> > IdsAndRows;
+    std::map<GO, int> NLR2Id;
+    Teuchos::SerialDenseMatrix<int, char> globalNeighbors;
     Array<int> sendIDs, recvIDs;
     {
       // nonlocals_ contains the entries we are holding for all non-local rows
       // we want a list of the rows for which we have data
-      Array<GlobalOrdinal> NLRs;
-      std::set<GlobalOrdinal> setOfRows;
+      Array<GO> NLRs;
+      std::set<GO> setOfRows;
       for (NLITER iter = nonlocals_.begin(); iter != nonlocals_.end(); ++iter) {
         setOfRows.insert(iter->first);
       }
@@ -1674,21 +1690,17 @@ namespace Tpetra {
         LookupStatus stat = rowMap_->getRemoteIndexList(NLRs(),NLRIds());
         char lclerror = ( stat == IDNotPresent ? 1 : 0 );
         char gblerror;
-        Teuchos::reduceAll(*getComm(),Teuchos::REDUCE_MAX,lclerror,outArg(gblerror));
-	// This string was defined with the same value above; we don't
-	// need to redefine here and trigger annoying compiler
-	// warnings about shadowing declarations.
-	//
-        //std::string tfecfFuncName("globalAssemble()");
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(gblerror != 0, std::runtime_error, ": non-local entries correspond to invalid rows.");
+        reduceAll (*getComm(), REDUCE_MAX, lclerror, outArg (gblerror));
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(gblerror != 0, std::runtime_error,
+          ": nonlocal entries correspond to invalid rows.");
       }
 
       // build up a list of neighbors, as well as a map between NLRs and Ids
       // localNeighbors[i] != 0 iff I have data to send to image i
       // put NLRs,Ids into an array of pairs
       IdsAndRows.reserve(NLRs.size());
-      Array<char> localNeighbors(numImages,0);
-      typename Array<GlobalOrdinal>::const_iterator nlr;
+      Array<char> localNeighbors(numImages, 0);
+      typename Array<GO>::const_iterator nlr;
       typename Array<int>::const_iterator id;
       for (nlr = NLRs.begin(), id = NLRIds.begin();
            nlr != NLRs.end(); ++nlr, ++id) {
@@ -1706,7 +1718,8 @@ namespace Tpetra {
       std::sort(IdsAndRows.begin(),IdsAndRows.end());
       // gather from other nodes to form the full graph
       globalNeighbors.shapeUninitialized(numImages,numImages);
-      Teuchos::gatherAll(*getComm(),numImages,localNeighbors.getRawPtr(),numImages*numImages,globalNeighbors.values());
+      gatherAll (*getComm(), numImages, localNeighbors.getRawPtr(), 
+		 numImages * numImages, globalNeighbors.values());
       // globalNeighbors at this point contains (on all images) the
       // connectivity between the images.
       // globalNeighbors(i,j) != 0 means that j sends to i/that i receives from j
@@ -1728,20 +1741,21 @@ namespace Tpetra {
     // we know how many we're sending to already
     // form a contiguous list of all data to be sent
     // track the number of entries for each ID
-    Array<pair<GlobalOrdinal,GlobalOrdinal> > IJSendBuffer;
+    Array<pair<GO, GO> > IJSendBuffer;
     Array<size_t> sendSizes(sendIDs.size(), 0);
     size_t numSends = 0;
-    for (typename Array<pair<int,GlobalOrdinal> >::const_iterator IdAndRow = IdsAndRows.begin();
+    for (typename Array<pair<int, GO> >::const_iterator IdAndRow = IdsAndRows.begin();
          IdAndRow != IdsAndRows.end(); ++IdAndRow) {
-      int            id = IdAndRow->first;
-      GlobalOrdinal row = IdAndRow->second;
+      int id = IdAndRow->first;
+      GO row = IdAndRow->second;
       // have we advanced to a new send?
       if (sendIDs[numSends] != id) {
         numSends++;
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(sendIDs[numSends] != id, std::logic_error, ": internal logic error. Contact Tpetra team.");
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(sendIDs[numSends] != id, 
+          std::logic_error, ": internal logic error. Contact Tpetra team.");
       }
       // copy data for row into contiguous storage
-      for (typename deque<GlobalOrdinal>::const_iterator j = nonlocals_[row].begin(); j != nonlocals_[row].end(); ++j)
+      for (typename deque<GO>::const_iterator j = nonlocals_[row].begin(); j != nonlocals_[row].end(); ++j)
       {
         IJSendBuffer.push_back( pair<GlobalOrdinal,GlobalOrdinal>(row,*j) );
         sendSizes[numSends]++;
@@ -1750,7 +1764,7 @@ namespace Tpetra {
     if (IdsAndRows.size() > 0) {
       numSends++; // one last increment, to make it a count instead of an index
     }
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<typename Array<int>::size_type>(numSends) != sendIDs.size(), std::logic_error, ": internal logic error. Contact Tpetra team.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(as<typename Array<int>::size_type>(numSends) != sendIDs.size(), std::logic_error, ": internal logic error. Contact Tpetra team.");
 
     // don't need this data anymore
     nonlocals_.clear();
@@ -1758,35 +1772,41 @@ namespace Tpetra {
     //////////////////////////////////////////////////////////////////////////////////////
     // TRANSMIT SIZE INFO BETWEEN SENDERS AND RECEIVERS
     //////////////////////////////////////////////////////////////////////////////////////
+
+    // Array of pending nonblocking communication requests.  It's OK
+    // to mix nonblocking send and receive requests in the same
+    // waitAll() call.
+    Array<RCP<Teuchos::CommRequest> > requests;
+
     // perform non-blocking sends: send sizes to our recipients
-    Array<RCP<Teuchos::CommRequest> > sendRequests;
-    for (size_t s=0; s < numSends ; ++s) {
-      // we'll fake the memory management, because all communication will be local to this method and the scope of our data
-      sendRequests.push_back( Teuchos::isend<int,size_t>(*getComm(),rcp<size_t>(&sendSizes[s],false),sendIDs[s]) );
+    for (size_t s = 0; s < numSends ; ++s) {
+      // We're using a nonowning RCP because all communication
+      // will be local to this method and the scope of our data
+      requests.push_back (isend (*comm, rcp (&sendSizes[s], false), sendIDs[s]));
     }
     // perform non-blocking receives: receive sizes from our senders
-    Array<RCP<Teuchos::CommRequest> > recvRequests;
-    Array<size_t> recvSizes(numRecvs);
-    for (size_t r=0; r < numRecvs; ++r) {
-      // we'll fake the memory management, because all communication will be local to this method and the scope of our data
-      recvRequests.push_back( Teuchos::ireceive(*getComm(),rcp(&recvSizes[r],false),recvIDs[r]) );
+    Array<size_t> recvSizes (numRecvs);
+    for (size_t r = 0; r < numRecvs; ++r) {
+      // We're using a nonowning RCP because all communication
+      // will be local to this method and the scope of our data
+      requests.push_back (ireceive (*comm, rcp (&recvSizes[r], false), recvIDs[r]));
     }
-    // wait on all
-    if (!sendRequests.empty()) {
-      Teuchos::waitAll(*getComm(),sendRequests());
+    // Wait on all the nonblocking sends and receives.
+    if (! requests.empty()) {
+      waitAll (*comm, requests());
     }
-    if (!recvRequests.empty()) {
-      Teuchos::waitAll(*getComm(),recvRequests());
-    }
-    Teuchos::barrier(*getComm());
-    sendRequests.clear();
-    recvRequests.clear();
+#ifdef HAVE_TPETRA_DEBUG
+    Teuchos::barrier (*comm);
+#endif // HAVE_TPETRA_DEBUG
+
+    // This doesn't necessarily deallocate the array.
+    requests.resize (0);
 
     ////////////////////////////////////////////////////////////////////////////////////
     // NOW SEND/RECEIVE ALL ROW DATA
     ////////////////////////////////////////////////////////////////////////////////////
     // from the size info, build the ArrayViews into IJSendBuffer
-    Array<ArrayView<pair<GlobalOrdinal,GlobalOrdinal> > > sendBuffers(numSends,null);
+    Array<ArrayView<pair<GO,GO> > > sendBuffers(numSends,null);
     {
       size_t cur = 0;
       for (size_t s=0; s<numSends; ++s) {
@@ -1797,16 +1817,18 @@ namespace Tpetra {
     // perform non-blocking sends
     for (size_t s=0; s < numSends ; ++s)
     {
-      // we'll fake the memory management, because all communication will be local to this method and the scope of our data
-      ArrayRCP<pair<GlobalOrdinal,GlobalOrdinal> > tmparcp = arcp(sendBuffers[s].getRawPtr(),0,sendBuffers[s].size(),false);
-      sendRequests.push_back( Teuchos::isend<int,pair<GlobalOrdinal,GlobalOrdinal> >(*getComm(),tmparcp,sendIDs[s]) );
+      // We're using a nonowning RCP because all communication
+      // will be local to this method and the scope of our data
+      ArrayRCP<pair<GO,GO> > tmpSendBuf = 
+	arcp (sendBuffers[s].getRawPtr(), 0, sendBuffers[s].size(), false);
+      requests.push_back (isend (*comm, tmpSendBuf, sendIDs[s]));
     }
     // calculate amount of storage needed for receives
     // setup pointers for the receives as well
-    size_t totalRecvSize = std::accumulate(recvSizes.begin(),recvSizes.end(),0);
-    Array<pair<GlobalOrdinal,GlobalOrdinal> > IJRecvBuffer(totalRecvSize);
+    size_t totalRecvSize = std::accumulate (recvSizes.begin(), recvSizes.end(), 0);
+    Array<pair<GO,GO> > IJRecvBuffer (totalRecvSize);
     // from the size info, build the ArrayViews into IJRecvBuffer
-    Array<ArrayView<pair<GlobalOrdinal,GlobalOrdinal> > > recvBuffers(numRecvs,null);
+    Array<ArrayView<pair<GO,GO> > > recvBuffers (numRecvs, null);
     {
       size_t cur = 0;
       for (size_t r=0; r<numRecvs; ++r) {
@@ -1815,21 +1837,20 @@ namespace Tpetra {
       }
     }
     // perform non-blocking recvs
-    for (size_t r=0; r < numRecvs ; ++r) {
-      // we'll fake the memory management, because all communication will be local to this method and the scope of our data
-      ArrayRCP<pair<GlobalOrdinal,GlobalOrdinal> > tmparcp = arcp(recvBuffers[r].getRawPtr(),0,recvBuffers[r].size(),false);
-      recvRequests.push_back( Teuchos::ireceive(*getComm(),tmparcp,recvIDs[r]) );
+    for (size_t r = 0; r < numRecvs; ++r) {
+      // We're using a nonowning RCP because all communication
+      // will be local to this method and the scope of our data
+      ArrayRCP<pair<GO,GO> > tmpRecvBuf = 
+	arcp (recvBuffers[r].getRawPtr(), 0, recvBuffers[r].size(), false);
+      requests.push_back (ireceive (*comm, tmpRecvBuf, recvIDs[r]));
     }
     // perform waits
-    if (!sendRequests.empty()) {
-      Teuchos::waitAll(*getComm(),sendRequests());
+    if (! requests.empty()) {
+      waitAll (*comm, requests());
     }
-    if (!recvRequests.empty()) {
-      Teuchos::waitAll(*getComm(),recvRequests());
-    }
-    Teuchos::barrier(*getComm());
-    sendRequests.clear();
-    recvRequests.clear();
+#ifdef HAVE_TPETRA_DEBUG
+    Teuchos::barrier (*comm);
+#endif // HAVE_TPETRA_DEBUG
 
     ////////////////////////////////////////////////////////////////////////////////////
     // NOW PROCESS THE RECEIVED ROW DATA
@@ -1838,9 +1859,10 @@ namespace Tpetra {
     //       this requires resorting; they arrived sorted by sending node, so that entries could be non-contiguous if we received
     //       multiple entries for a particular row from different processors.
     //       it also requires restoring the data, which may make it not worth the trouble.
-    for (typename Array<pair<GlobalOrdinal,GlobalOrdinal> >::const_iterator ij = IJRecvBuffer.begin(); ij != IJRecvBuffer.end(); ++ij) 
+    for (typename Array<pair<GO,GO> >::const_iterator ij = IJRecvBuffer.begin(); 
+	 ij != IJRecvBuffer.end(); ++ij) 
     {
-      insertGlobalIndices(ij->first, tuple<GlobalOrdinal>(ij->second));
+      insertGlobalIndices(ij->first, tuple<GO> (ij->second));
     }
     checkInternalState();
   }
