@@ -75,7 +75,7 @@ namespace Teuchos {
     TEST_THROW( getParametersFromXmlFile(filename), DuplicateParameterSublist );
     TEST_THROW( getParametersFromXmlFile(filename,null), DuplicateParameterSublist );
     //
-    std::ifstream fin(filename);
+    std::ifstream fin(filename.c_str());
     std::string xmlstring( (std::istreambuf_iterator<char>(fin)), 
                             std::istreambuf_iterator<char>()      );
     TEST_THROW( updateParametersFromXmlString(xmlstring,inOutArg(pl) ), DuplicateParameterSublist );
