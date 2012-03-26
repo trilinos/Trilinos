@@ -58,25 +58,26 @@ namespace Teuchos {
 
 /** \brief Base class for wrapped opaque objects.
  *
- * This base class allows opaque objects to be wrapped by a real object that
- * you can then take an address off.  This is needed in order to wrap an
- * opaque object in a RCP for example.
+ * This base class allows opaque objects to be wrapped by a real
+ * object, whose address you can take.  This is needed in order to
+ * wrap an opaque object in a RCP for example.
  *
- * For example, MPI uses the opaque object idiom for handling things like
- * MPI_Comm, and MPI_Op.  Some implementations implement these opaque object
- * handles and just integers.  This causes many problems with used with the
- * RCP (just try wrapping an MPI_Comm object directly in a RCP
- * and see what happens yourself and see what happens).
+ * For example, MPI uses the opaque object idiom for handling things
+ * like MPI_Comm, and MPI_Op.  Some implementations implement these
+ * opaque object handles as just integers.  This causes many problems
+ * when used with RCP (just try wrapping an MPI_Comm object directly
+ * in a RCP and see what happens yourself).
  *
- * For example, to wrap MPI_COMM_WORLD in a RCP, you would do
- * <tt>opaqueWrapper(MPI_COMM_WORLD)</tt> and that is it.
+ * For example, to wrap MPI_COMM_WORLD in a RCP, you would just do
+ * <tt>opaqueWrapper(MPI_COMM_WORLD)</tt>.
  *
- * Consider what would happen if you tried to directly wrap the MPI_Comm
- * MPI_COMM_WORLD in a RCP.  On some implementations like MPICH,
- * MPI_Comm is just a typedef to an integer and MPI_COMM_WORLD is just a define
- * to a literal interger.  In this case, the expression
- * <tt>rcp(&MPI_COMM_WORLD)</tt> would not even compile (try this on your
- * version of MPICH).  To make this compile, we might try something like:
+ * Consider what would happen if you tried to directly wrap the
+ * MPI_Comm MPI_COMM_WORLD in a RCP.  On some implementations like
+ * MPICH, MPI_Comm is just a typedef to an integer and MPI_COMM_WORLD
+ * is just a define to a literal interger.  In this case, the
+ * expression <tt>rcp(&MPI_COMM_WORLD)</tt> would not even compile
+ * (try this on your version of MPICH).  To make this compile, we
+ * might try something like:
  
  \code
 

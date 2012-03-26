@@ -50,38 +50,11 @@ namespace Teuchos {
     if (err == MPI_SUCCESS) {
       return "MPI_SUCCESS";
     }
-    else if (err == MPI_ERR_COMM) {
-      return "MPI_ERR_COMM";
-    }
-    else if (err == MPI_ERR_COUNT) {
-      return "MPI_ERR_COUNT";
-    }
-    else if (err == MPI_ERR_TYPE) {
-      return "MPI_ERR_TYPE";
-    }
-    else if (err == MPI_ERR_TAG) {
-      return "MPI_ERR_TAG";
-    }
-    else if (err == MPI_ERR_RANK) {
-      return "MPI_ERR_RANK";
-    }
-    else if (err == MPI_ERR_INTERN) {
-      return "MPI_ERR_INTERN";
-    }
-    else if (err == MPI_ERR_REQUEST) {
-      return "MPI_ERR_REQUEST";
-    }
-    else if (err == MPI_ERR_ARG) {
-      return "MPI_ERR_ARG";
-    }
-    else if (err == MPI_ERR_IN_STATUS) {
-      return "MPI_ERR_IN_STATUS";
-    }
-    else if (err == MPI_ERR_BUFFER) {
-      return "MPI_ERR_BUFFER";
-    }
     else {
-      return "Unknown MPI error";
+      char rawErrString[MPI_MAX_ERROR_STRING];
+      int len = 0;
+      (void) MPI_Error_string (err, rawErrString, &len);
+      return std::string (rawErrString);
     }
   }
 } // namespace Teuchos
