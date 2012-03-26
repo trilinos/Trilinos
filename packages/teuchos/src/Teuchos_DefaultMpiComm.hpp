@@ -245,6 +245,9 @@ public:
   /// error handler you provide.  You can always set the RCP's custom
   /// "deallocator" function to free the error handler, if you want it
   /// taken care of automatically.
+  ///
+  /// \param errHandler [in] The error handler to set.  If null, do
+  ///   nothing.
   void setErrorHandler (const RCP<const OpaqueWrapper<MPI_Errhandler> >& errHandler);
 
   //@}
@@ -441,7 +444,10 @@ MpiComm<Ordinal>::
 setErrorHandler (const RCP<const OpaqueWrapper<MPI_Errhandler> >& errHandler)
 {
   if (! is_null (errHandler)) {
-    const int err = MPI_Errhandler_set ();
+    const int err = MPI_Comm_set_errhandler (*getRawMpiComm(), *errHandler);
+    TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+      "Teuchos::MpiComm::setErrorHandler: MPI_Comm_set_errhandler() failed with "
+      "error \"" << mpiErrorCodeToString (err) << "\".");
   }
   // Wait to set this until the end, in case MPI_Errhandler_set()
   // doesn't succeed.
