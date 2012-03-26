@@ -12,6 +12,7 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
   MPI_OPT_DEV_NOEI
   ctest_linux_nightly_mpi_development_opt_noei_trilinos-test2.cmake
   CTEST_INSTALLER_TYPE release
+  TIMEOUT_MINUTES 240
 )
 
 #TRILINOS_DRIVER_ADD_DASHBOARD(
@@ -24,6 +25,7 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
   MPI_OPT_DEV_SHARED
   ctest_linux_nightly_mpi_development_opt_shared_trilinos-test2.cmake
   CTEST_INSTALLER_TYPE release
+  TIMEOUT_MINUTES 240
 )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
