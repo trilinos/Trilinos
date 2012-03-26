@@ -120,6 +120,12 @@ public:
     rawMpiRequest_ = MPI_REQUEST_NULL;
     return tmp_rawMpiRequest;
   }
+  
+  //! Whether the raw MPI_Request is MPI_REQUEST_NULL.
+  bool isNull() const {
+    return rawMpiRequest_ == MPI_REQUEST_NULL;
+  }
+
 private:
   //! The raw request (an opaque object).
   MPI_Request rawMpiRequest_;
@@ -787,25 +793,28 @@ waitAll (const ArrayView<RCP<CommRequest> >& requests) const
   // directly.
   //
   // Pull out the raw MPI requests from the wrapped requests.
+  // MPI_Waitall should not fail if a request is MPI_REQUEST_NULL, but
+  // we keep track just to inform the user.
+  bool someNullRequests = false;
   Array<MPI_Request> rawMpiRequests (count, MPI_REQUEST_NULL);
   for (int i = 0; i < count; ++i) {
     RCP<CommRequest> request = requests[i];
     if (! is_null (request)) {
-      RCP<MpiCommRequest> mpiCommRequest = 
+      RCP<MpiCommRequest> mpiRequest = 
 	rcp_dynamic_cast<MpiCommRequest> (request);
-      // This convinces the CommRequest to set its own raw MPI_Request
-      // to MPI_REQUEST_NULL, so we won't have any hanging raw request
-      // handles floating around afterwards.
-      //
-      // This call makes this function wait() not satisfy the strong
-      // exception guarantee, because releaseRawMpiRequest() modifies
-      // MpiCommRequest.
-      rawMpiRequests[i] = mpiCommRequest->releaseRawMpiRequest();
+      // releaseRawMpiRequest() sets the MpiCommRequest's raw
+      // MPI_Request to MPI_REQUEST_NULL.  This makes waitAll() not
+      // satisfy the strong exception guarantee.  That's OK because
+      // MPI_Waitall() doesn't promise that it satisfies the strong
+      // exception guarantee, and we would rather conservatively
+      // invalidate the handles than leave dangling requests around
+      // and risk users trying to wait on the same request twice.
+      rawMpiRequests[i] = mpiRequest->releaseRawMpiRequest();
     }
     else { // Null requests map to MPI_REQUEST_NULL
       rawMpiRequests[i] = MPI_REQUEST_NULL;
+      someNullRequests = true;
     }
-    requests[i] = null; // We've invalidated it above, so set to null.
   }
 
   Array<MPI_Status> rawMpiStatuses (count);
@@ -817,9 +826,23 @@ waitAll (const ArrayView<RCP<CommRequest> >& requests) const
   // requests if one of them failed, in a multiple completion routine
   // like MPI_Waitall().  We conservatively throw an exception in that
   // case.
-  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error, 
-    "Teuchos::MpiComm::waitAll: MPI_Waitall() failed with error \""
-    << mpiErrorCodeToString (err) << "\".");
+  if (err != MPI_SUCCESS) {
+    std::ostringstream os;
+    os << "Teuchos::MpiComm::waitAll: MPI_Waitall() failed with error \""
+       << mpiErrorCodeToString (err) << "\".";
+    if (someNullRequests) {
+      os << "  There was at least one MPI_Request that was MPI_REQUEST_NULL.  "
+	"MPI_Waitall should not normally fail in that case, but we thought we "
+	"should let you know regardless.";
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, 
+			       std::runtime_error, 
+			       os.str());
+  }
+
+  // Invalidate the input array of requests by setting all entries to
+  // null.
+  std::fill (requests.begin(), requests.end(), null);
 }
 
 
@@ -845,26 +868,28 @@ waitAll (const ArrayView<RCP<CommRequest> >& requests,
   // call into MPI directly.
   //
   // Pull out the raw MPI requests from the wrapped requests.
+  // MPI_Waitall should not fail if a request is MPI_REQUEST_NULL, but
+  // we keep track just to inform the user.
+  bool someNullRequests = false;
   Array<MPI_Request> rawMpiRequests (count, MPI_REQUEST_NULL);
   for (int i = 0; i < count; ++i) {
     RCP<CommRequest> request = requests[i];
     if (! is_null (request)) {
       RCP<MpiCommRequest> mpiRequest = 
 	rcp_dynamic_cast<MpiCommRequest> (requests[i]);
-      // This convinces the CommRequest to set its own raw MPI_Request
-      // to MPI_REQUEST_NULL, so we won't have any hanging raw request
-      // handles floating around afterwards.
-      //
-      // This call makes this function wait() not satisfy the strong
-      // exception guarantee, because releaseRawMpiRequest() modifies
-      // MpiCommRequest.
-      rawMpiRequests[i] = mpiRequest->releaseRawMpiRequest ();
-      requests[i] = null;
+      // releaseRawMpiRequest() sets the MpiCommRequest's raw
+      // MPI_Request to MPI_REQUEST_NULL.  This makes waitAll() not
+      // satisfy the strong exception guarantee.  That's OK because
+      // MPI_Waitall() doesn't promise that it satisfies the strong
+      // exception guarantee, and we would rather conservatively
+      // invalidate the handles than leave dangling requests around
+      // and risk users trying to wait on the same request twice.
+      rawMpiRequests[i] = mpiRequest->releaseRawMpiRequest();
     }
     else { // Null requests map to MPI_REQUEST_NULL
       rawMpiRequests[i] = MPI_REQUEST_NULL;
+      someNullRequests = true;
     }
-    requests[i] = null; // We've invalidated it above, so set to null.
   }
 
   Array<MPI_Status> rawMpiStatuses (count);
@@ -877,13 +902,26 @@ waitAll (const ArrayView<RCP<CommRequest> >& requests,
   // requests if one of them failed, in a multiple completion routine
   // like MPI_Waitall().  We conservatively throw an exception in that
   // case.
-  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error, 
-    "Teuchos::MpiComm::waitAll: MPI_Waitall() failed with error \""
-    << mpiErrorCodeToString (err) << "\".");
+  if (err != MPI_SUCCESS) {
+    std::ostringstream os;
+    os << "Teuchos::MpiComm::waitAll: MPI_Waitall() failed with error \""
+       << mpiErrorCodeToString (err) << "\".";
+    if (someNullRequests) {
+      os << "  There was at least one MPI_Request that was MPI_REQUEST_NULL.  "
+	"MPI_Waitall should not normally fail in that case, but we thought we "
+	"should let you know regardless.";
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, 
+			       std::runtime_error, 
+			       os.str());
+  }
 
-  // Repackage the raw MPI_Status structs into the CommStatus wrappers.
+  // Repackage the raw MPI_Status structs into the CommStatus
+  // wrappers, and invalidate the input array of requests by setting
+  // all entries to null.
   for (int i = 0; i < count; ++i) {
     statuses[i] = mpiCommStatus<Ordinal> (rawMpiStatuses[i]);
+    requests[i] = null;
   }
 }
 
