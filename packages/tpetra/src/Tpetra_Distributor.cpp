@@ -178,7 +178,9 @@ namespace Tpetra {
           "at least one request is not null.");
       }
 #endif // HAVE_TEUCHOS_DEBUG
-      requests_.clear();
+      // Restore the invariant that requests_.size() is the number of
+      // outstanding nonblocking communication requests.
+      requests_.resize (0);
     }
   }
 

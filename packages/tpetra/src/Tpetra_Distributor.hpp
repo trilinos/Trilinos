@@ -425,7 +425,12 @@ namespace Tpetra {
     Array<size_t> startsFrom_;
     Array<size_t> indicesFrom_;
 
-    //! Communication requests associated with nonblocking receives.
+    /// \brief Communication requests associated with nonblocking receives.
+    ///
+    /// \note To implementers: Distributor uses requests_.size() as
+    /// the number of outstanding nonblocking receives.  This means
+    /// you should always resize to zero after completing receive
+    /// requests.
     Array<RCP<Teuchos::CommRequest> > requests_;
 
     /// \brief The reverse distributor.
@@ -457,7 +462,10 @@ namespace Tpetra {
       const ArrayView<Packet>& imports) 
   {
     TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
-        Teuchos::typeName(*this) << "::doPostsAndWaits(): Cannot call with outstanding posts.");
+      Teuchos::typeName(*this) << "::doPostsAndWaits(): There are " 
+      << requests_.size() << " outstanding nonblocking messages pending.  It is "
+      "incorrect to call doPostsAndWaits with posts outstanding.");
+
     // doPosts takes imports as an ArrayRCP, requiring that the memory location is persisting
     // however, it need only persist until doWaits is called, so it is safe for us to 
     // use a non-persisting reference in this case
@@ -473,7 +481,10 @@ namespace Tpetra {
       const ArrayView<size_t> &numImportPacketsPerLID)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
-        Teuchos::typeName(*this) << "::doPostsAndWaits(): Cannot call with outstanding posts.");
+      Teuchos::typeName(*this) << "::doPostsAndWaits(): There are " 
+      << requests_.size() << " outstanding nonblocking messages pending.  It is "
+      "incorrect to call doPostsAndWaits with posts outstanding.");
+
     // doPosts takes imports as an ArrayRCP, requiring that the memory location is persisting
     // however, it need only persist until doWaits is called, so it is safe for us to 
     // use a non-persisting reference in this case
@@ -506,20 +517,19 @@ namespace Tpetra {
       << totalReceiveLength_ * numPackets << ".");
 #endif // HAVE_TEUCHOS_DEBUG
 
-    // Make space in requests, if the space isn't already there.
-    // requests_ needs to leave additional space for the "self
-    // message," if there is one.
+    // Distributor uses requests_.size() as the number of outstanding
+    // nonblocking receive requests, so we resize to zero to maintain
+    // this invariant.
     //
     // NOTE (mfh 19 Mar 2012): Epetra_MpiDistributor::DoPosts()
     // doesn't (re)allocate its array of requests.  That happens in
     // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
     // demand), or Resize_().
     const size_t actualNumReceives = numReceives_ + (selfMessage_ ? 1 : 0);
-    if (as<size_t> (requests_.size()) != actualNumReceives) {
-      requests_.resize (actualNumReceives);
-    }
+    requests_.resize (0);
 
-    // Post the nonblocking receives.
+    // Post the nonblocking receives.  It's common MPI wisdom to post
+    // receives before sends.
     {
       size_t curBufferOffset = 0;
       for (size_t i = 0; i < actualNumReceives; ++i) {
@@ -528,7 +538,7 @@ namespace Tpetra {
 	  // appropriate part of lengthsFrom_.
           ArrayRCP<Packet> recvBuf = 
 	    imports.persistingView (curBufferOffset, lengthsFrom_[i]*numPackets);
-          requests_[i] = ireceive<int,Packet> (*comm_, recvBuf, imagesFrom_[i]);
+          requests_.push_back (ireceive<int,Packet> (*comm_, recvBuf, imagesFrom_[i]));
         }
         else { // Receiving from myself
           selfReceiveOffset = curBufferOffset; // Remember the self-recv offset
@@ -541,7 +551,7 @@ namespace Tpetra {
       // Each ready-send below requires that its matching receive has
       // already been posted, so do a barrier to ensure that all the
       // nonblocking receives have posted first.
-      Teuchos::barrier(*comm_);
+      Teuchos::barrier (*comm_);
     }
 
     // setup scan through imagesTo_ list starting with higher numbered images
@@ -566,7 +576,8 @@ namespace Tpetra {
         }
 
         if (imagesTo_[p] != myImageID) {
-          ArrayView<const Packet> tmpSend (&exports[startsTo_[p]*numPackets], lengthsTo_[p]*numPackets);
+          ArrayView<const Packet> tmpSend (&exports[startsTo_[p]*numPackets], 
+					   lengthsTo_[p]*numPackets);
 	  if (doBarrierAndReadySends) {
 	    readySend<int,Packet>(*comm_, tmpSend, imagesTo_[p]);
 	  }
@@ -574,7 +585,7 @@ namespace Tpetra {
 	    // FIXME (mfh 23 Mar 2012) Implement a three-argument
 	    // version of send() that takes an ArrayView instead of a
 	    // raw array.
-	    send<int,Packet>(*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
+	    send<int,Packet> (*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
 	  }
         }
         else { // "Sending" the message to myself
@@ -663,18 +674,16 @@ namespace Tpetra {
       << totalNumPackets << ".");
 #endif // HAVE_TEUCHOS_DEBUG
 
-    // Make space in requests, if the space isn't already there.
-    // requests_ needs to leave additional space for the "self
-    // message," if there is one.
+    // Distributor uses requests_.size() as the number of outstanding
+    // nonblocking receive requests, so we resize to zero to maintain
+    // this invariant.
     //
     // NOTE (mfh 19 Mar 2012): Epetra_MpiDistributor::DoPosts()
     // doesn't (re)allocate its array of requests.  That happens in
     // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
     // demand), or Resize_().
     const size_t actualNumReceives = numReceives_ + (selfMessage_ ? 1 : 0);
-    if (as<size_t> (requests_.size()) != actualNumReceives) {
-      requests_.resize (actualNumReceives);
-    }
+    requests_.resize (0);
 
     // Post the nonblocking receives.
     {
@@ -697,7 +706,7 @@ namespace Tpetra {
 	  // 2. Start the Irecv and save the resulting request.
           ArrayRCP<Packet> recvBuf = 
 	    imports.persistingView (curBufferOffset, totalPacketsFrom_i);
-          requests_[i] = ireceive<int, Packet> (*comm_, recvBuf, imagesFrom_[i]);
+          requests_.push_back (ireceive<int, Packet> (*comm_, recvBuf, imagesFrom_[i]));
         }
         else { // Receiving these packet(s) from myself
           selfReceiveOffset = curBufferOffset; // Remember the offset
