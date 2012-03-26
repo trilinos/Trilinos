@@ -328,6 +328,7 @@ namespace stk {
       std::string m_nodeRegistryFile;
       std::string m_globalNodeRegistryFile;
       const unsigned FAMILY_TREE_RANK;
+      static const bool m_debug = false;
 
     public:
       enum { MaxPass = 3 };
@@ -388,23 +389,24 @@ namespace stk {
         getCurrentGlobalMaxId();
         findCurrentMaxId(m_eMesh);
         setCurrentGlobalMaxId();
-        printCurrentGlobalMaxId();
+        printCurrentGlobalMaxId("pass0");
       }
 
-      void printCurrentGlobalMaxId()
+      void printCurrentGlobalMaxId(std::string msg="")
       {
-        std::cout << "SerializeNR["<<M<<", "<<iM<<"]::printCurrentGlobalMaxId: = " << m_id_max << std::endl;
+        if (m_debug) std::cout << "SerializeNR["<<M<<", "<<iM<<"]::printCurrentGlobalMaxId: = " << m_id_max << " for: " << msg << std::endl;
       }
 
       /**
        *   pass1: refine mesh, write local NodeRegistry, set new max id from refined mesh
        *   (iM = 0...M)
-       *   1. open file.e.M.iM, refine mesh, save it
-       *   2. write NodeRegistry in name.yaml.M.iM
-       *   3. if iM==0, setCurrentGlobalMaxId to [0,0,0,0]
-       *   4. getCurrentGlobalMaxId()
-       *   5. resetNewElementIds
+       *   1. open file.e.M.iM, refine mesh
+       *   2. if iM==0, setCurrentGlobalMaxId to [0,0,0,0]
+       *   3. getCurrentGlobalMaxId()
+       *   4. resetNewElementIds() (resets new element ids by looking at child elements only,
+       *   5. write NodeRegistry in name.yaml.M.iM
        *   6. setCurrentGlobalMaxId()
+       *   7. save refined mesh
        */
       void pass1()
       {
@@ -424,7 +426,7 @@ namespace stk {
         getCurrentGlobalMaxId();
         resetNewElementIds(m_eMesh);
         setCurrentGlobalMaxId();
-        printCurrentGlobalMaxId();
+        printCurrentGlobalMaxId("pass1");
       }
 
       /**
@@ -442,6 +444,10 @@ namespace stk {
       {
         if (iM != 0) throw std::logic_error("SerializeNR::pass2 logic error");
 
+        getCurrentGlobalMaxId();
+        //setCurrentGlobalMaxId();
+        printCurrentGlobalMaxId("pass2 initial");
+
         PerceptMesh eMeshNew(s_spatialDim);
         eMeshNew.openEmpty();
         NodeRegistry globalNR(eMeshNew);
@@ -458,7 +464,8 @@ namespace stk {
           }
         resetIds(globalNR);  // on the in-memory global NodeRegistry
         writeNodeRegistry(globalNR, m_globalNodeRegistryFile);
-        //exit(1);
+        setCurrentGlobalMaxId();
+        printCurrentGlobalMaxId("pass2 done");
       }
 
       /**
@@ -508,7 +515,8 @@ namespace stk {
               }
             else
               {
-                std::cout << "found it" << std::endl;
+//                 if (m_debug)
+//                   std::cout << "found it" << std::endl;
               }
             VERIFY_OP_ON(global_nodeId_elementOwnderId_ptr, !=, 0, "SerializeNR::lookupAndSetNewNodeIds couldn't find subDimEntity");
 
@@ -522,19 +530,30 @@ namespace stk {
               {
                 stk::mesh::EntityId id_new = global_nodeIds_onSE.m_entity_id_vector[inode];
                 stk::mesh::EntityId id_old = nodeIds_onSE.m_entity_id_vector[inode];
-                stk::mesh::Entity* node = m_eMesh.getBulkData()->get_entity(0, id_old);
-                stk::mesh::Entity* new_node = m_eMesh.getBulkData()->get_entity(0, id_new);
-                std::cout << "iM= " << iM << " id_new= " << id_new << " id_old= " << id_old << std::endl;
-                VERIFY_OP_ON(node, !=, 0, "SerializeNR::lookupAndSetNewNodeIds null old node");
-                VERIFY_OP_ON(new_node, !=, 0, "SerializeNR::lookupAndSetNewNodeIds null new node");
-                //VERIFY_OP_ON(node, ==, nodeIds_onSE[inode], "SerializeNR::lookupAndSetNewNodeIds old node mistmatch");
-                //VERIFY_OP_ON(new_node, ==, global_nodeIds_onSE[inode], "SerializeNR::lookupAndSetNewNodeIds new node mistmatch");
-                nodeIds_onSE[inode] = global_nodeIds_onSE[inode];
+                stk::mesh::Entity* tmp_global_node = globalNR.getMesh().getBulkData()->get_entity(0, id_new);
+                stk::mesh::Entity* local_node_to_change = m_eMesh.getBulkData()->get_entity(0, id_old);
+                if (m_debug) std::cout << "iM= " << iM << " id_new= " << id_new << " id_old= " << id_old << std::endl;
+                VERIFY_OP_ON(local_node_to_change, !=, 0, "SerializeNR::lookupAndSetNewNodeIds null local_node_to_change");
+                VERIFY_OP_ON(tmp_global_node, !=, 0, "SerializeNR::lookupAndSetNewNodeIds null tmp_global_node");
+                //VERIFY_OP_ON(local_node_to_change, ==, nodeIds_onSE[inode], "SerializeNR::lookupAndSetNewNodeIds old node mistmatch");
+                VERIFY_OP_ON(tmp_global_node, ==, global_nodeIds_onSE[inode], "SerializeNR::lookupAndSetNewNodeIds new node mistmatch");
+                //nodeIds_onSE[inode] = global_nodeIds_onSE[inode];
                 if (id_new != id_old)
                   {
+                    if (m_debug) std::cout << "DIFF iM= " << iM << " id_new= " << id_new << " id_old= " << id_old << std::endl;
                     //bool did_destroy = m_eMesh.getBulkData()->destroy_entity(new_node);
                     //VERIFY_OP_ON(did_destroy, !=, false, "SerializeNR::lookupAndSetNewNodeIds couldn't destroy global node");
-                    //m_eMesh.getBulkData()->change_entity_id(id_new, *node);
+                    stk::mesh::Entity* local_node_new_id_check = m_eMesh.getBulkData()->get_entity(0, id_new);
+                    //VERIFY_OP_ON(local_node_new_id_check, ==, 0, "SerializeNR::lookupAndSetNewNodeIds couldn't change id of local node");
+                    if (local_node_new_id_check)
+                      {
+                        //VERIFY_OP_ON(local_node_new_id_check, ==, 0, "SerializeNR::lookupAndSetNewNodeIds couldn't change id of local node");
+                        
+                      }
+                    if (!local_node_new_id_check)
+                      {
+                        m_eMesh.getBulkData()->change_entity_id(id_new, *local_node_to_change);
+                      }
                   }
               }
           }
@@ -586,12 +605,15 @@ namespace stk {
           {
             const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
             SubDimCellData& nodeId_elementOwnderId = (*iter).second;
-            std::cout << "SerializeNR::processNodeRegistry inserting map entry = " << subDimEntity ;
-            for (unsigned kk=0; kk < subDimEntity.size(); kk++)
+            if (m_debug) 
               {
-                std::cout << " [" << subDimEntity[kk]->identifier() << "] ";
+                std::cout << "SerializeNR::processNodeRegistry inserting map entry = " << subDimEntity ;
+                for (unsigned kk=0; kk < subDimEntity.size(); kk++)
+                  {
+                    std::cout << " [" << subDimEntity[kk]->identifier() << "] ";
+                  }
+                std::cout << " data= " << nodeId_elementOwnderId << " nid=" <<  nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>().m_entity_id_vector[0] << std::endl;
               }
-            std::cout << " data= " << nodeId_elementOwnderId << " nid=" <<  nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>().m_entity_id_vector[0] << std::endl;
             /// clone subDimEntity...
             globalMap[subDimEntity] = nodeId_elementOwnderId;
           }        
@@ -602,6 +624,8 @@ namespace stk {
       ///   the shared nodes.
       void resetIds(NodeRegistry& nodeRegistry) 
       {
+        nodeRegistry.getMesh().getBulkData()->modification_begin();
+
         SubDimCellToDataMap::iterator iter;
         SubDimCellToDataMap& map = nodeRegistry.getMap();
         std::cout << " tmp SerializeNR::resetIds map size: " << map.size() << std::endl;
@@ -620,8 +644,19 @@ namespace stk {
                 stk::mesh::EntityId id_new = m_id_max[0]+1;
                 m_id_max[0] = id_new;
                 nodeIds_onSE.m_entity_id_vector[inode] = id_new;
+
+                stk::mesh::Entity * node = nodeRegistry.getMesh().getBulkData()->get_entity(0, id_new);
+                //key.insert(const_cast<stk::mesh::Entity*>(&element) );
+                VERIFY_OP_ON(node, ==, 0, "SerializeNR::resetIds found existing node with proposed new id");
+                if (!node)
+                  {
+                    stk::mesh::PartVector parts(1, &nodeRegistry.getMesh().getFEM_meta_data()->universal_part());
+                    node = &nodeRegistry.getMesh().getBulkData()->declare_entity(0, id_new, parts);
+                  }
+                nodeIds_onSE[inode] = node;
               }
           }
+        nodeRegistry.getMesh().getBulkData()->modification_end();
       }
 
       ///Note: we read and write to a file instead of storing in memory to allow stk_adapt_exe to be called on a 
@@ -711,7 +746,7 @@ namespace stk {
       void resetNewElementIds(PerceptMesh& eMesh)
       {
         eMesh.getBulkData()->modification_begin();
-        // skip nodes rank
+
         for (unsigned irank=1; irank < m_id_max.size(); irank++)
           {
             if (irank == FAMILY_TREE_RANK) continue;
@@ -732,7 +767,8 @@ namespace stk {
                         {
                           stk::mesh::EntityId id = m_id_max[irank] + 1;
                           m_id_max[irank] = id;
-                          std::cout << "old id= " << entity.identifier() << " new id= " << id << std::endl;
+                          if (m_debug) std::cout << "SerializeNR::resetNewElementIds irank= " << irank 
+                                                 << " old id= " << entity.identifier() << " new id= " << id << std::endl;
                           eMesh.getBulkData()->change_entity_id(id, entity);
                         }
                     }
@@ -1116,6 +1152,26 @@ namespace stk {
 
                 percept::PerceptMesh eMesh(0);  // FIXME
                 //percept::PerceptMesh eMesh;  // FIXME
+
+                if (1 && streaming_size)
+                  {
+                    // special case
+                    if (ipass == 3)
+                      {
+#if STK_ADAPT_HAVE_YAML_CPP
+                        std::string input_mesh_new= output_mesh_save+"."+toString(M)+"."+toString(iM);
+                        std::string output_mesh_new= output_mesh_save+"-renumbered."+toString(M)+"."+toString(iM);
+                        eMesh.openReadOnly(input_mesh_new);
+                        NodeRegistry *some_nr = 0;
+                        SerializeNR snr(eMesh, some_nr, input_mesh, output_mesh, M, iM);
+                        snr.pass(ipass);
+                        eMesh.saveAs(output_mesh_new);
+#else
+                        throw std::runtime_error("must have YAML for streaming refine");
+#endif
+                        continue;
+                      }
+                  }
 
                 //unsigned p_size = eMesh.getParallelSize();
         

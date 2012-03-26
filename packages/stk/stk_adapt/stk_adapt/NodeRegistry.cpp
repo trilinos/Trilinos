@@ -109,7 +109,7 @@ namespace stk {
       }
 
 #if STK_ADAPT_HAVE_YAML_CPP
-#define DEBUG_YAML 1
+#define DEBUG_YAML 0
 
     void NodeRegistry::serialize_write(YAML::Emitter& emitter, std::string msg)
     {
@@ -153,7 +153,8 @@ namespace stk {
           emitter << stk::mesh::entity_id(value_entity_key);
           for (unsigned ii = 0; ii < nodeIds_onSE.size(); ii++)
             {
-              emitter << (int)nodeIds_onSE[ii]->identifier();      YAML_ERRCHECK;
+              //emitter << (int)nodeIds_onSE[ii]->identifier();      YAML_ERRCHECK;
+              emitter << (int)nodeIds_onSE.m_entity_id_vector[ii];      YAML_ERRCHECK;
             }
           emitter << YAML::EndSeq;     YAML_ERRCHECK;
         }

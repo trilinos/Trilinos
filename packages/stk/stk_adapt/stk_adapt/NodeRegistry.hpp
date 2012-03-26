@@ -2280,6 +2280,7 @@ namespace stk {
 
     public:
       SubDimCellToDataMap& getMap() { return  m_cell_2_data_map; }
+      PerceptMesh& getMesh() { return m_eMesh; }
       bool getUseCustomGhosting() { return m_useCustomGhosting; }
 
       // remove any sub-dim entities from the map that have a node in deleted_nodes
