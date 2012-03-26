@@ -230,6 +230,23 @@ public:
   RCP<const OpaqueWrapper<MPI_Comm> > getRawMpiComm() const
   {return rawMpiComm_;}
 
+  /// \brief Set the MPI error handler for this communicator.
+  ///
+  /// MPI lets you set an error handler function specific to each
+  /// communicator.  MpiComm wraps this functionality.  Create an
+  /// error handler using \c MPI_Errhandler_create(), or use one of
+  /// the default error handlers that the MPI standard or your MPI
+  /// implementation provides.  You will need to wrap the MPI error
+  /// handler in an OpaqueWrapper first.  (See the documentation of
+  /// OpaqueWrapper for the rationale behind not using MPI's opaque
+  /// objects directly.)
+  ///
+  /// MpiComm will not attempt to call MPI_Errhandler_free() on the
+  /// error handler you provide.  You can always set the RCP's custom
+  /// "deallocator" function to free the error handler, if you want it
+  /// taken care of automatically.
+  void setErrorHandler (const RCP<const OpaqueWrapper<MPI_Errhandler> >& errHandler);
+
   //@}
 
   //! @name Overridden from Comm 
@@ -333,6 +350,9 @@ private:
   int size_;
   int tag_;
 
+  //! MPI error handler.  If null, MPI uses the default error handler.
+  RCP<const OpaqueWrapper<MPI_Errhandler> > customErrorHandler_;
+
   void assertRank(const int rank, const std::string &rankName) const;
 
   // Not defined and not to be called!
@@ -413,6 +433,21 @@ void MpiComm<Ordinal>::setupMembersFromComm()
     tagCounter_ = minTag_;
   tag_ = tagCounter_++;
 }
+
+
+template<typename Ordinal>
+void 
+MpiComm<Ordinal>::
+setErrorHandler (const RCP<const OpaqueWrapper<MPI_Errhandler> >& errHandler)
+{
+  if (! is_null (errHandler)) {
+    const int err = MPI_Errhandler_set ();
+  }
+  // Wait to set this until the end, in case MPI_Errhandler_set()
+  // doesn't succeed.
+  customErrorHandler_ = errHandler;
+}
+
 
 
 // Overridden from Comm
@@ -706,33 +741,36 @@ MpiComm<Ordinal>::ireceive (const ArrayView<char> &recvBuffer,
 
 
 template<typename Ordinal>
-void MpiComm<Ordinal>::waitAll(
-  const ArrayView<RCP<CommRequest> > &requests
-  ) const
+void 
+MpiComm<Ordinal>::
+waitAll (const ArrayView<RCP<CommRequest> >& requests) const
 {
   TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::waitAll(...)" );
 
   const int count = requests.size();
-#ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPT( requests.size() == 0 );
-#endif
+  if (count == 0) {
+    return; // No requests on which to wait
+  }
   
+  // Pull out the raw MPI requests from the wrapped requests.
   Array<MPI_Request> rawMpiRequests (count, MPI_REQUEST_NULL);
   for (int i = 0; i < count; ++i) {
-    RCP<CommRequest>& request = requests[i];
+    RCP<CommRequest> request = requests[i];
     if (! is_null (request)) {
-      const RCP<MpiCommRequest> mpiCommRequest =
-        rcp_dynamic_cast<MpiCommRequest>(request);
+      RCP<MpiCommRequest> mpiCommRequest = 
+	rcp_dynamic_cast<MpiCommRequest> (request);
       // This call makes this function wait() not satisfy the strong
       // exception guarantee, because releaseRawMpiRequest() modifies
       // MpiCommRequest.
       rawMpiRequests[i] = mpiCommRequest->releaseRawMpiRequest();
     }
-    // else already null
-    request = null;
+    else { // Null requests map to MPI_REQUEST_NULL
+      rawMpiRequests[i] = MPI_REQUEST_NULL;
+    }
+    requests[i] = null; // We've invalidated it above, so set to null.
   }
 
-  Array<MPI_Status> rawMpiStatuses(count);
+  Array<MPI_Status> rawMpiStatuses (count);
   const int err = MPI_Waitall (count, rawMpiRequests.getRawPtr(), 
 			       rawMpiStatuses.getRawPtr());
   // The MPI standard doesn't say what happens to the rest of the
@@ -776,12 +814,12 @@ waitAll (const ArrayView<RCP<CommRequest> >& requests,
   TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::waitAll(requests, statuses)" );
 
   const int count = requests.size();
-  if (count == 0) {
-    return;
-  }
   TEUCHOS_TEST_FOR_EXCEPTION(count != statuses.size(), 
     std::invalid_argument, "Teuchos::MpiComm::waitAll: requests.size() = " 
     << requests.size() << " != statuses.size() = " << statuses.size() << ".");
+  if (count == 0) {
+    return;
+  }
 
   // MpiComm wraps MPI and can't expose any MPI structs or opaque
   // objects.  Thus, we have to unpack both requests and statuses into

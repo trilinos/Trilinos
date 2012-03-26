@@ -80,6 +80,12 @@ namespace Teuchos {
     else if (err == MPI_ERR_BUFFER) {
       return "MPI_ERR_BUFFER";
     }
+    else if (err == MPI_ERR_OTHER) {
+      char estring[MPI_MAX_ERROR_STRING];
+      int len = 0;
+      (void) MPI_Error_string (err, estring, &len);
+      return std::string (estring);
+    }
     else {
       return "Unknown MPI error";
     }
