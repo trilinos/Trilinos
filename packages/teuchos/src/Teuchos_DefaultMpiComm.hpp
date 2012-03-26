@@ -414,9 +414,41 @@ MpiComm<Ordinal>::MpiComm(
   const RCP<const OpaqueWrapper<MPI_Comm> > &rawMpiComm
   )
 {
-  TEUCHOS_TEST_FOR_EXCEPT( rawMpiComm.get()==NULL );
-  TEUCHOS_TEST_FOR_EXCEPT( *rawMpiComm == MPI_COMM_NULL );
+  TEUCHOS_TEST_FOR_EXCEPTION(rawMpiComm.get()==NULL, std::invalid_argument, 
+    "Teuchos::MpiComm constructor: The input RCP is null.");
+  TEUCHOS_TEST_FOR_EXCEPTION(*rawMpiComm == MPI_COMM_NULL, 
+    std::invalid_argument, "Teuchos::MpiComm constructor: The given MPI_Comm "
+    "is MPI_COMM_NULL.");
   rawMpiComm_ = rawMpiComm;
+
+  // FIXME (mfh 26 Mar 2012) The following is a bit wicked in that it
+  // changes the behavior of existing applications that use MpiComm,
+  // without warning.  I've chosen to do it because I can't figure out
+  // any other way to help me debug MPI_Waitall failures on some (but
+  // not all) of the testing platforms.  The problem is that MPI's
+  // default error handler is MPI_ERRORS_ARE_FATAL, which immediately
+  // aborts on error without returning an error code from the MPI
+  // function.  Also, the testing platforms' MPI implementations'
+  // diagnostics are not giving me useful information.  Thus, I'm
+  // setting the default error handler to MPI_ERRORS_RETURN, so that
+  // MPI_Waitall will return an error code.
+  //
+  // Note that all MpiComm methods check error codes returned by MPI
+  // functions, and throw an exception if the code is not MPI_SUCCESS.
+  // Thus, this change in behavior will only affect your program in
+  // the following case: You call a function f() in the try block of a
+  // try-catch, and expect f() to throw an exception (generally
+  // std::runtime_error) in a particular case not related to MpiComm,
+  // but MpiComm throws the exception instead.  It's probably a bad
+  // idea for you to do this, because MpiComm might very well throw
+  // exceptions for things like invalid arguments.
+  const bool makeMpiErrorsReturn = true;
+  if (makeMpiErrorsReturn) {
+    RCP<const OpaqueWrapper<MPI_Errhandler> > errHandler = 
+      rcp (new OpaqueWrapper<MPI_Errhandler> (MPI_ERRORS_RETURN));
+    setErrorHandler (errHandler);
+  }
+
   setupMembersFromComm();
 }
 
