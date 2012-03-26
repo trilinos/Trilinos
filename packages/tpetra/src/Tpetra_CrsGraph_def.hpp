@@ -1823,7 +1823,7 @@ namespace Tpetra {
       // will be local to this method and the scope of our data
       ArrayRCP<pair<GO,GO> > tmpSendBuf = 
 	arcp (sendBuffers[s].getRawPtr(), 0, sendBuffers[s].size(), false);
-      requests.push_back (isend (*comm, tmpSendBuf, sendIDs[s]));
+      requests.push_back (isend<int, pair<GO,GO> > (*comm, tmpSendBuf, sendIDs[s]));
     }
     // calculate amount of storage needed for receives
     // setup pointers for the receives as well
