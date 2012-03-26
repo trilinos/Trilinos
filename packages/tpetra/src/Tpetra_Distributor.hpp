@@ -466,9 +466,12 @@ namespace Tpetra {
       << requests_.size() << " outstanding nonblocking messages pending.  It is "
       "incorrect to call doPostsAndWaits with posts outstanding.");
 
-    // doPosts takes imports as an ArrayRCP, requiring that the memory location is persisting
-    // however, it need only persist until doWaits is called, so it is safe for us to 
-    // use a non-persisting reference in this case
+    // doPosts() accepts the imports array as an ArrayRCP, requiring
+    // that the memory location is persisting (as is necessary for
+    // nonblocking receives).  However, it need only persist until
+    // doWaits() completes, so it is safe for us to use a
+    // nonpersisting reference in this case.  This is purely a
+    // performance optimization.
     doPosts(exports, numPackets, arcp<Packet>(imports.getRawPtr(),0,imports.size(),false));
     doWaits();
   }
@@ -485,9 +488,12 @@ namespace Tpetra {
       << requests_.size() << " outstanding nonblocking messages pending.  It is "
       "incorrect to call doPostsAndWaits with posts outstanding.");
 
-    // doPosts takes imports as an ArrayRCP, requiring that the memory location is persisting
-    // however, it need only persist until doWaits is called, so it is safe for us to 
-    // use a non-persisting reference in this case
+    // doPosts() accepts the imports array as an ArrayRCP, requiring
+    // that the memory location is persisting (as is necessary for
+    // nonblocking receives).  However, it need only persist until
+    // doWaits() completes, so it is safe for us to use a
+    // nonpersisting reference in this case.  This is purely a
+    // performance optimization.
     doPosts(exports, numExportPacketsPerLID, arcp<Packet>(imports.getRawPtr(),0,imports.size(),false), numImportPacketsPerLID);
     doWaits();
   }
