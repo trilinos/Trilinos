@@ -905,7 +905,7 @@ MpiComm<Ordinal>::wait (const Ptr<RCP<CommRequest> >& request) const
   MPI_Status status;
   const int err = MPI_Wait (&rawMpiRequest, &status);
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error, 
-    "Teuchos::MpiComm::wait: MPI_Wait() failed with error code "
+    "Teuchos::MpiComm::wait: MPI_Wait() failed with error \""
     << mpiErrorCodeToString (err) << "\".");
 
   *request = null;
@@ -926,16 +926,17 @@ RCP< Comm<Ordinal> >
 MpiComm<Ordinal>::split(const int color, const int key) const
 {
   MPI_Comm newComm;
-  int splitReturn = MPI_Comm_split(
-    *rawMpiComm_,
-    color < 0 ? MPI_UNDEFINED : color,
-    key,
-    &newComm);
+  const int splitReturn = 
+    MPI_Comm_split (*rawMpiComm_, 
+		    color < 0 ? MPI_UNDEFINED : color,
+		    key,
+		    &newComm);
   TEUCHOS_TEST_FOR_EXCEPTION(
     splitReturn != MPI_SUCCESS,
     std::logic_error,
-    "Failed to create communicator with color " << color <<
-    "and key " << key << ".");
+    "Teuchos::MpiComm::split: Failed to create communicator with color " 
+    << color << "and key " << key << ".  MPI_Comm_split failed with error \""
+    << mpiErrorCodeToString (splitReturn) << "\".");
   if (newComm == MPI_COMM_NULL) {
     return RCP< Comm<Ordinal> >();
   } else {
@@ -956,18 +957,24 @@ MpiComm<Ordinal>::createSubcommunicator(const ArrayView<const int> &ranks) const
   MPI_Group thisGroup;
   mpiReturn = MPI_Comm_group(*rawMpiComm_, &thisGroup);
   TEUCHOS_TEST_FOR_EXCEPTION(mpiReturn != MPI_SUCCESS, std::logic_error,
-                     "Failed to obtain group.");
+    "Failed to obtain group.  MPI_Comm_group failed with error \"" 
+    << mpiErrorCodeToString (mpiReturn) << "\".");
+
   // Create a new group with the specified members.
   MPI_Group newGroup;
   mpiReturn = MPI_Group_incl(
     thisGroup, ranks.size(), const_cast<int *>(&ranks[0]), &newGroup);
   TEUCHOS_TEST_FOR_EXCEPTION(mpiReturn != MPI_SUCCESS, std::logic_error,
-                     "Failed to create subgroup.");
+    "Failed to create subgroup.  MPI_Group_incl failed with error \""
+    << mpiErrorCodeToString (mpiReturn) << "\".");
+
   // Create a new communicator from the new group.
   MPI_Comm newComm;
   mpiReturn = MPI_Comm_create(*rawMpiComm_, newGroup, &newComm);
   TEUCHOS_TEST_FOR_EXCEPTION(mpiReturn != MPI_SUCCESS, std::logic_error,
-                     "Failed to create subcommunicator.");
+    "Failed to create subcommunicator.  MPI_Comm_create failed with error \""
+    << mpiErrorCodeToString (mpiReturn) << "\".");
+
   if (newComm == MPI_COMM_NULL) {
     return RCP< Comm<Ordinal> >();
   } else {
