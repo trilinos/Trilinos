@@ -263,8 +263,7 @@ BucketImpl::BucketImpl( BulkData & arg_mesh,
   }
 
   //allocate space for the fields
-  m_field_data = new unsigned char[field_data_size];
-
+  m_field_data = field_data_size > 0 ? new unsigned char[field_data_size] : NULL;
 }
 
 } // namespace impl
