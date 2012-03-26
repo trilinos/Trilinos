@@ -1631,7 +1631,7 @@ namespace Tpetra {
     using Teuchos::gatherAll;
     using Teuchos::ireceive;
     using Teuchos::isend;
-    using Teuchos::outarg;
+    using Teuchos::outArg;
     using Teuchos::RCP;
     using Teuchos::REDUCE_MAX;
     using Teuchos::reduceAll;
@@ -1782,7 +1782,9 @@ namespace Tpetra {
     for (size_t s = 0; s < numSends ; ++s) {
       // We're using a nonowning RCP because all communication
       // will be local to this method and the scope of our data
-      requests.push_back (isend (*comm, rcp (&sendSizes[s], false), sendIDs[s]));
+      requests.push_back (isend<int, size_t> (*comm, 
+					      rcp (&sendSizes[s], false), 
+					      sendIDs[s]));
     }
     // perform non-blocking receives: receive sizes from our senders
     Array<size_t> recvSizes (numRecvs);
