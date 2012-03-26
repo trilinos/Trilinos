@@ -421,8 +421,11 @@ MpiComm<Ordinal>::MpiComm(const MpiComm<Ordinal>& other)
   TEUCHOS_TEST_FOR_EXCEPT(other.getRawMpiComm().get() == NULL);
   TEUCHOS_TEST_FOR_EXCEPT(*other.getRawMpiComm() == MPI_COMM_NULL);
   MPI_Comm newComm;
-  MPI_Comm_dup(*other.getRawMpiComm(), &newComm);
-  rawMpiComm_ = opaqueWrapper(newComm);
+  const int err = MPI_Comm_dup (*other.getRawMpiComm(), &newComm);
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+    "Teuchos::MpiComm copy constructor: MPI_Comm_dup failed with error \"" 
+    << mpiErrorCodeToString (err) << "\".");
+  rawMpiComm_ = opaqueWrapper (newComm);
   setupMembersFromComm();
 }
 
@@ -479,7 +482,10 @@ void MpiComm<Ordinal>::barrier() const
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::barrier()"
     );
-  MPI_Barrier(*rawMpiComm_);
+  const int err = MPI_Barrier(*rawMpiComm_);
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+    "Teuchos::MpiComm::barrier: MPI_Barrier failed with error \"" 
+    << mpiErrorCodeToString (err) << "\".");
 }
 
   
@@ -491,7 +497,10 @@ void MpiComm<Ordinal>::broadcast(
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::broadcast(...)"
     );
-  MPI_Bcast(buffer,bytes,MPI_CHAR,rootRank,*rawMpiComm_);
+  const int err = MPI_Bcast(buffer,bytes,MPI_CHAR,rootRank,*rawMpiComm_);
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+    "Teuchos::MpiComm::broadcast: MPI_Bcast failed with error \"" 
+    << mpiErrorCodeToString (err) << "\".");
 }
 
   
@@ -505,13 +514,15 @@ void MpiComm<Ordinal>::gatherAll(
     "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::gatherAll(...)"
     );
   TEUCHOS_ASSERT_EQUALITY((sendBytes*size_), recvBytes );
-  MPI_Allgather(
-    const_cast<char *>(sendBuffer), sendBytes, MPI_CHAR,
-    recvBuffer, sendBytes, MPI_CHAR,
-    *rawMpiComm_
-    );
+  const int err = 
+    MPI_Allgather (const_cast<char *>(sendBuffer), sendBytes, MPI_CHAR,
+		   recvBuffer, sendBytes, MPI_CHAR, *rawMpiComm_);
   // NOTE: 'sendBytes' is being sent above for the MPI arg recvcount (which is
   // very confusing in the MPI documentation) for MPI_Allgether(...).
+
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+    "Teuchos::MpiComm::gatherAll: MPI_Allgather failed with error \"" 
+    << mpiErrorCodeToString (err) << "\".");
 }
 
   
@@ -526,12 +537,21 @@ void MpiComm<Ordinal>::reduceAll(
     );
   MpiReductionOpSetter op(mpiReductionOp(rcp(&reductOp,false)));
   MPI_Datatype char_block;
+
+  // TODO (mfh 26 Mar 2012) Check returned error codes of the MPI
+  // custom datatype functions.
   MPI_Type_contiguous(bytes, MPI_CHAR, &char_block);
   MPI_Type_commit(&char_block);
-  MPI_Allreduce(
-    const_cast<char*>(sendBuffer),globalReducts,1,char_block,op.mpi_op()
-    ,*rawMpiComm_
-    );
+
+  const int err = 
+    MPI_Allreduce (const_cast<char*>(sendBuffer), globalReducts, 1, char_block,
+		   op.mpi_op(), *rawMpiComm_);
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+    "Teuchos::MpiComm::reduceAll (custom op): MPI_Allreduce failed with error \"" 
+    << mpiErrorCodeToString (err) << "\".");
+
+  // TODO (mfh 26 Mar 2012) Check returned error codes of the MPI
+  // custom datatype functions.
   MPI_Type_free(&char_block);
 }
 
@@ -591,14 +611,17 @@ void MpiComm<Ordinal>::reduceAllAndScatter(
 
   // Perform the operation
   MpiReductionOpSetter op(mpiReductionOp(rcp(&reductOp, false)));
-  MPI_Reduce_scatter(
+
+  const int err = MPI_Reduce_scatter(
     const_cast<char*>(sendBuffer), myGlobalReducts,
     const_cast<int*>(int_recvCounts),
     MPI_CHAR,
     op.mpi_op(),
     *rawMpiComm_
     );
-
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+    "Teuchos::MpiComm::reduceAllAndScatter: MPI_Reduce_scatter failed with "
+    "error \"" << mpiErrorCodeToString (err) << "\".");
 }
 
 
@@ -615,7 +638,7 @@ void MpiComm<Ordinal>::scan(
     MPI_Scan (const_cast<char*>(sendBuffer), scanReducts, bytes, MPI_CHAR, 
 	      op.mpi_op(), *rawMpiComm_);
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
-    "Teuchos::MpiComm::scan: MPI_Scan() failed with error code \"" 
+    "Teuchos::MpiComm::scan: MPI_Scan() failed with error \"" 
     << mpiErrorCodeToString (err) << "\".");
 }
 
@@ -640,7 +663,7 @@ MpiComm<Ordinal>::send (const Ordinal bytes,
   const int err = MPI_Send (const_cast<char*>(sendBuffer), bytes, MPI_CHAR,
 			    destRank, tag_, *rawMpiComm_);
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
-    "Teuchos::MpiComm::send: MPI_Send() failed with error code \"" 
+    "Teuchos::MpiComm::send: MPI_Send() failed with error \"" 
     << mpiErrorCodeToString (err) << "\".");
 }
 
@@ -666,7 +689,7 @@ void MpiComm<Ordinal>::readySend(
     MPI_Rsend (const_cast<char*>(sendBuffer.getRawPtr()), sendBuffer.size(),
 	       MPI_CHAR, destRank, tag_, *rawMpiComm_);
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
-    "Teuchos::MpiComm::readySend: MPI_Rsend() failed with error code \"" 
+    "Teuchos::MpiComm::readySend: MPI_Rsend() failed with error \"" 
     << mpiErrorCodeToString (err) << "\".");
 }
 
@@ -688,7 +711,7 @@ MpiComm<Ordinal>::receive (const int sourceRank,
   const int err = MPI_Recv (recvBuffer, bytes, MPI_CHAR, theSrcRank, tag_, 
 			    *rawMpiComm_, &status);
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
-    "Teuchos::MpiComm::receive: MPI_Recv() failed with error code \"" 
+    "Teuchos::MpiComm::receive: MPI_Recv() failed with error \"" 
     << mpiErrorCodeToString (err) << "\".");
 
 #ifdef TEUCHOS_MPI_COMM_DUMP
@@ -715,7 +738,7 @@ MpiComm<Ordinal>::isend (const ArrayView<const char> &sendBuffer,
     MPI_Isend (const_cast<char*>(sendBuffer.getRawPtr()), sendBuffer.size(), 
 	       MPI_CHAR, destRank, tag_, *rawMpiComm_, &rawMpiRequest);
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
-    "Teuchos::MpiComm::isend: MPI_Isend() failed with error code \"" 
+    "Teuchos::MpiComm::isend: MPI_Isend() failed with error \"" 
     << mpiErrorCodeToString (err) << "\".");
 
   return mpiCommRequest (rawMpiRequest);
@@ -739,7 +762,7 @@ MpiComm<Ordinal>::ireceive (const ArrayView<char> &recvBuffer,
     MPI_Irecv (const_cast<char*>(recvBuffer.getRawPtr()), recvBuffer.size(), 
 	       MPI_CHAR, theSrcRank, tag_, *rawMpiComm_, &rawMpiRequest);
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
-    "Teuchos::MpiComm::ireceive: MPI_Irecv() failed with error code \"" 
+    "Teuchos::MpiComm::ireceive: MPI_Irecv() failed with error \"" 
     << mpiErrorCodeToString (err) << "\".");
 
   return mpiCommRequest (rawMpiRequest);
@@ -751,13 +774,18 @@ void
 MpiComm<Ordinal>::
 waitAll (const ArrayView<RCP<CommRequest> >& requests) const
 {
-  TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::waitAll(...)" );
+  TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::waitAll(requests)" );
 
   const int count = requests.size();
   if (count == 0) {
     return; // No requests on which to wait
   }
-  
+
+  // MpiComm wraps MPI and can't expose any MPI structs or opaque
+  // objects.  Thus, we have to unpack requests into a separate array.
+  // If that's too slow, then your code should just call into MPI
+  // directly.
+  //
   // Pull out the raw MPI requests from the wrapped requests.
   Array<MPI_Request> rawMpiRequests (count, MPI_REQUEST_NULL);
   for (int i = 0; i < count; ++i) {
@@ -765,6 +793,10 @@ waitAll (const ArrayView<RCP<CommRequest> >& requests) const
     if (! is_null (request)) {
       RCP<MpiCommRequest> mpiCommRequest = 
 	rcp_dynamic_cast<MpiCommRequest> (request);
+      // This convinces the CommRequest to set its own raw MPI_Request
+      // to MPI_REQUEST_NULL, so we won't have any hanging raw request
+      // handles floating around afterwards.
+      //
       // This call makes this function wait() not satisfy the strong
       // exception guarantee, because releaseRawMpiRequest() modifies
       // MpiCommRequest.
@@ -777,37 +809,17 @@ waitAll (const ArrayView<RCP<CommRequest> >& requests) const
   }
 
   Array<MPI_Status> rawMpiStatuses (count);
+  // This is the part where we've finally peeled off the wrapper and
+  // we can now interact with MPI directly.
   const int err = MPI_Waitall (count, rawMpiRequests.getRawPtr(), 
 			       rawMpiStatuses.getRawPtr());
   // The MPI standard doesn't say what happens to the rest of the
   // requests if one of them failed, in a multiple completion routine
-  // like MPI_Waitall().  We conservatively abort in that case.  If
-  // err == MPI_ERR_IN_STATUS, then we need to check each status'
-  // MPI_ERROR field to find the error.
-  if (err != MPI_SUCCESS) {
-    if (err == MPI_ERR_IN_STATUS) {
-      int firstErr = MPI_SUCCESS;
-      int firstIndexFailed = 0;
-      for (int i = 0; i < count; ++i) {
-	if (rawMpiStatuses[i].MPI_ERROR != MPI_SUCCESS) {
-	  firstErr = rawMpiStatuses[i].MPI_ERROR;
-	  firstIndexFailed = i;
-	  break;
-	}
-      }
-      TEUCHOS_TEST_FOR_EXCEPTION(firstErr != MPI_SUCCESS, std::runtime_error, 
-        "Teuchos::MpiComm::waitAll: MPI_Waitall() failed with error code "
-        "\"MPI_ERR_IN_STATUS\".  Of the " << count << " request" 
-        << (count != 1 ? "s" : "") << " given to MPI_Waitall(), the smallest "
-        "0-based index that failed is " << firstIndexFailed << " and its error "
-        "code is \"" << mpiErrorCodeToString (firstErr) << "\".");
-    }
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error, 
-        "Teuchos::MpiComm::waitAll: MPI_Waitall() failed with error code "
-	<< mpiErrorCodeToString (err) << "\".");
-    }
-  }
+  // like MPI_Waitall().  We conservatively throw an exception in that
+  // case.
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error, 
+    "Teuchos::MpiComm::waitAll: MPI_Waitall() failed with error \""
+    << mpiErrorCodeToString (err) << "\".");
 }
 
 
@@ -831,9 +843,12 @@ waitAll (const ArrayView<RCP<CommRequest> >& requests,
   // objects.  Thus, we have to unpack both requests and statuses into
   // separate arrays.  If that's too slow, then your code should just
   // call into MPI directly.
+  //
+  // Pull out the raw MPI requests from the wrapped requests.
   Array<MPI_Request> rawMpiRequests (count, MPI_REQUEST_NULL);
   for (int i = 0; i < count; ++i) {
-    if (! requests[i].is_null()) {
+    RCP<CommRequest> request = requests[i];
+    if (! is_null (request)) {
       RCP<MpiCommRequest> mpiRequest = 
 	rcp_dynamic_cast<MpiCommRequest> (requests[i]);
       // This convinces the CommRequest to set its own raw MPI_Request
@@ -846,6 +861,10 @@ waitAll (const ArrayView<RCP<CommRequest> >& requests,
       rawMpiRequests[i] = mpiRequest->releaseRawMpiRequest ();
       requests[i] = null;
     }
+    else { // Null requests map to MPI_REQUEST_NULL
+      rawMpiRequests[i] = MPI_REQUEST_NULL;
+    }
+    requests[i] = null; // We've invalidated it above, so set to null.
   }
 
   Array<MPI_Status> rawMpiStatuses (count);
@@ -856,33 +875,11 @@ waitAll (const ArrayView<RCP<CommRequest> >& requests,
 
   // The MPI standard doesn't say what happens to the rest of the
   // requests if one of them failed, in a multiple completion routine
-  // like MPI_Waitall().  We conservatively abort in that case.  If
-  // err == MPI_ERR_IN_STATUS, then we need to check each status'
-  // MPI_ERROR field to find the error.
-  if (err != MPI_SUCCESS) {
-    if (err == MPI_ERR_IN_STATUS) {
-      int firstErr = MPI_SUCCESS;
-      int firstIndexFailed = 0;
-      for (int i = 0; i < count; ++i) {
-	if (rawMpiStatuses[i].MPI_ERROR != MPI_SUCCESS) {
-	  firstErr = rawMpiStatuses[i].MPI_ERROR;
-	  firstIndexFailed = i;
-	  break;
-	}
-      }
-      TEUCHOS_TEST_FOR_EXCEPTION(firstErr != MPI_SUCCESS, std::runtime_error, 
-        "Teuchos::MpiComm::waitAll: MPI_Waitall() failed with error code "
-        "\"MPI_ERR_IN_STATUS\".  Of the " << count << " request" 
-        << (count != 1 ? "s" : "") << " given to MPI_Waitall(), the smallest "
-        "0-based index that failed is " << firstIndexFailed << " and its error "
-        "code is \"" << mpiErrorCodeToString (firstErr) << "\".");
-    }
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error, 
-        "Teuchos::MpiComm::waitAll: MPI_Waitall() failed with error code "
-	<< mpiErrorCodeToString (err) << "\".");
-    }
-  }
+  // like MPI_Waitall().  We conservatively throw an exception in that
+  // case.
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error, 
+    "Teuchos::MpiComm::waitAll: MPI_Waitall() failed with error \""
+    << mpiErrorCodeToString (err) << "\".");
 
   // Repackage the raw MPI_Status structs into the CommStatus wrappers.
   for (int i = 0; i < count; ++i) {
@@ -895,8 +892,6 @@ template<typename Ordinal>
 RCP<CommStatus<Ordinal> > 
 MpiComm<Ordinal>::wait (const Ptr<RCP<CommRequest> >& request) const
 {
-  TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::wait(...)" );
-
   TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::wait(...)" );
 
   if (is_null(*request)) {
