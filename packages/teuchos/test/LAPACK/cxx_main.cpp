@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
   float flapy = M.LAPY2(fx, fy);
   double dx = 3, dy = 4;
   double dlapy = L.LAPY2(dx, dy);
-  if ( dlapy == flapy ) {
+  if ( dlapy == flapy && dlapy == 5.0 && flapy == 5.0f ) {
     if (verbose) std::cout << "passed!" << std::endl;
   } else {
     if (verbose) std::cout << "FAILED (" << dlapy << " != " << flapy << ")" << std::endl;
