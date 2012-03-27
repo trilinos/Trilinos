@@ -428,7 +428,7 @@ collect_timers(
           }
         }
   
-        //parallel_timer = parallel_timer_vector[0];
+        if (parallel_rank==parallel_root && send_count>0) root_parallel_timer = parallel_timer_vector[0];
   
         for (size_t j = 0; j < parallel_timer_vector.size(); ++j)
           merge_parallel_timer(root_parallel_timer, parallel_timer_vector[j], checkpoint);
