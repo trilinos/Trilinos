@@ -84,16 +84,23 @@ namespace Amesos2 {
     Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
     >::get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map) const
     {
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      using Teuchos::rcpFromPtr;
       typedef Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> map_t;
-      Teuchos::RCP<matrix_t> t_mat;
-      t_mat = Teuchos::rcp(new matrix_t(Teuchos::rcpFromPtr(map), this->getMaxRowNNZ()));
+      typedef Tpetra::Import<local_ordinal_t, global_ordinal_t, node_t> import_t;
+
+      RCP<matrix_t> t_mat;
+      t_mat = rcp (new matrix_t (rcpFromPtr (map), this->getMaxRowNNZ()));
       
-      Teuchos::RCP<Tpetra::Import<local_ordinal_t, global_ordinal_t, node_t> > importer;
-      importer = Teuchos::rcp(new Tpetra::Import<local_ordinal_t, global_ordinal_t, node_t>(this->getRowMap(), Teuchos::rcpFromPtr(map)));
+      RCP<import_t> importer = 
+	rcp (new import_t (this->getRowMap(), rcpFromPtr (map)));
       
-      t_mat->doImport(*(this->mat_), *importer, Tpetra::REPLACE);
+      // mfh 27 Mar 2012: INSERT is correct in this case, because
+      // we're Importing into an empty matrix with a dynamic graph.
+      t_mat->doImport (*(this->mat_), *importer, Tpetra::INSERT);
       
-      return( rcp(new ConcreteMatrixAdapter<matrix_t>(t_mat)) );
+      return rcp (new ConcreteMatrixAdapter<matrix_t> (t_mat));
     }
 
 } // end namespace Amesos2
