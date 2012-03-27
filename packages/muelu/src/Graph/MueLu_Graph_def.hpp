@@ -62,7 +62,7 @@ namespace MueLu {
 
     // generate row dof map for amalgamated matrix with same distribution over all procs as row node map
     Teuchos::ArrayRCP<GlobalOrdinal> arr_myDofGIDs = Teuchos::arcp( myDofGIDs );
-    Teuchos::RCP<Map> ImportDofMap = MapFactory::Build(nodeMap->lib(), /*arr_myDofGIDs.size()*/ Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), arr_myDofGIDs(), nodeMap->getIndexBase(), nodeMap->getComm());
+    Teuchos::RCP<Map> ImportDofMap = MapFactory::Build(nodeMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), arr_myDofGIDs(), nodeMap->getIndexBase(), nodeMap->getComm());
     return ImportDofMap;
   }
 
