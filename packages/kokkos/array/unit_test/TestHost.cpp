@@ -54,7 +54,7 @@
 //----------------------------------------------------------------------------
 
 #include <Kokkos_Host_macros.hpp>
-
+#include <impl/Kokkos_IndexMapLeft_macros.hpp>
 #include <TestMemoryManagement.hpp>
 #include <TestValue.hpp>
 #include <TestMultiVector.hpp>

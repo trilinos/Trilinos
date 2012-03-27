@@ -51,21 +51,16 @@
 
 namespace Kokkos {
 
-#ifdef KOKKOS_MACRO_MDARRAY_TEMPLATE_ARGUMENT
-template< typename ValueType , KOKKOS_MACRO_MDARRAY_TEMPLATE_ARGUMENT >
-#else
 template< typename ValueType >
-#endif
 class MDArray< ValueType , KOKKOS_MACRO_DEVICE >
 {
 public:
-  typedef ValueType                           value_type ;
-  typedef KOKKOS_MACRO_DEVICE                 device_type ;
-  typedef typename device_type::mdarray_map   mdarray_map ;
-  typedef typename device_type::size_type     size_type ;
+  typedef ValueType                               value_type ;
+  typedef KOKKOS_MACRO_DEVICE                     device_type ;
+  typedef typename device_type::size_type         size_type ;
+  typedef typename device_type::IndexMap<>::type  index_map ;
 
-  typedef typename
-    Impl::MDArrayHostMirror< value_type , mdarray_map >::type HostMirror ;
+  typedef MDArray< value_type , HostMapped< device_type >::type > HostMirror ;
 
   /*------------------------------------------------------------------*/
   /** \brief  Query rank of the array */
@@ -447,9 +442,9 @@ public:
              rhs.m_map.dimension(4), rhs.m_map.dimension(5),
              rhs.m_map.dimension(6), rhs.m_map.dimension(7) )
   {
-    typedef typename DeviceRHS::mdarray_map rhs_mdarray_map ;
+    typedef typename DeviceRHS::index_map rhs_index_map ;
 
-    enum { SameMap = Impl::SameType< mdarray_map , rhs_mdarray_map >::value };
+    enum { SameMap = Impl::SameType< index_map , rhs_index_map >::value };
 
     Impl::StaticAssert< SameMap >::ok();
   }
@@ -488,7 +483,7 @@ private:
   typedef Impl::MemoryView< value_type , memory_space >  memory_view ;
 
   memory_view  m_memory ;
-  mdarray_map  m_map ;
+  index_map    m_map ;
 
   inline
   MDArray( const std::string & label ,
@@ -500,7 +495,7 @@ private:
       m_map.template assign<value_type>(nP,n1,n2,n3,n4,n5,n6,n7);
       m_memory.allocate( m_map.allocation_size() , label );
 
-      Impl::Initialize< MDArray<value_type,device_type> >::run( *this );
+      Impl::Initialize< MDArray >::run( *this );
     }
 
   template< typename V , class D >

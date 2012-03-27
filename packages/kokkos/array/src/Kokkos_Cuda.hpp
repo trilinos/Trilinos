@@ -44,7 +44,7 @@
 #ifndef KOKKOS_CUDA_HPP
 #define KOKKOS_CUDA_HPP
 
-#include <impl/Kokkos_MDArrayIndexMap.hpp>
+#include <impl/Kokkos_IndexMap.hpp>
 
 #define KOKKOS_CUDA  Kokkos::Cuda
 
@@ -57,9 +57,16 @@ public:
   /*--------------------------------*/
   /* required type declarations and functions for a device */
   
-  typedef unsigned int                             size_type ;
-  typedef Cuda                                     memory_space ;
-  typedef Impl::MDArrayIndexMapLeft<memory_space>  mdarray_map ;
+  typedef Cuda          memory_space ;
+  typedef unsigned int  size_type ;
+
+  template< unsigned Rank = 0 , unsigned N1 = 0 ,
+            unsigned N2   = 0 , unsigned N3 = 0 ,
+            unsigned N4   = 0 , unsigned N5 = 0 , 
+            unsigned N6   = 0 , unsigned N7 = 0 >
+  struct IndexMap {
+    typedef Impl::IndexMapLeft<memory_space,Rank,N1,N2,N3,N4,N5,N6,N7> type ;
+  };
   
   /*--------------------------------*/
 

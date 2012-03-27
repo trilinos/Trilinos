@@ -80,18 +80,8 @@
 #if defined( KOKKOS_MDARRAY_HPP ) && ! defined( KOKKOS_HOST_MDARRAY )
 #define KOKKOS_HOST_MDARRAY
 #include <Host/Kokkos_Host_MDArray.hpp>
-#include <impl/Kokkos_MDArrayIndexMapLeft_macros.hpp>
-#include <impl/Kokkos_MDArrayIndexMapRight_macros.hpp>
-
-// For MDArray< ValueType , Host >
+#include <impl/Kokkos_IndexMapRight_macros.hpp>
 #include <impl/Kokkos_MDArray_macros.hpp>
-
-// For MDArray< ValueType , HostMapped< MDArrayMap > >
-#undef  KOKKOS_MACRO_DEVICE
-#define KOKKOS_MACRO_DEVICE  Impl::HostMapped< MDArrayMap >
-#define KOKKOS_MACRO_MDARRAY_TEMPLATE_ARGUMENT  class MDArrayMap
-#include <impl/Kokkos_MDArray_macros.hpp>
-#undef KOKKOS_MACRO_MDARRAY_TEMPLATE_ARGUMENT
 #endif
 
 //----------------------------------------------------------------------------

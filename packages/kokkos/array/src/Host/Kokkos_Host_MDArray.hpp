@@ -46,36 +46,6 @@ namespace Impl {
 
 //----------------------------------------------------------------------------
 
-/** \brief  This is a device type hidden from the user to handle
- *          host memory space with a different mdarray map.
- *
- *  Use case: 
- *  class MDArray<T,Cuda> {
- *     typedef MDArray<T,HostMapped< Cuda::mdarray_map > > HostMirror ;
- *  };
- */
-template< class MDArrayMapType >
-class HostMapped {
-public:
-  typedef Host::size_type     size_type ;
-  typedef Host::memory_space  memory_space ;
-  typedef MDArrayMapType      mdarray_map ;
-};
-
-template< typename ValueType >
-class MDArrayHostMirror< ValueType , Host::mdarray_map > {
-public:
-  typedef MDArray< ValueType , Host > type ;
-};
-
-template< typename ValueType , class MDArrayMapType >
-class MDArrayHostMirror {
-public:
-  typedef MDArray< ValueType , HostMapped< MDArrayMapType > > type ;
-};
-
-//----------------------------------------------------------------------------
-
 template< typename ValueType >
 class Initialize< MDArray< ValueType , Host > >
   : public HostThreadWorker<void>
@@ -165,10 +135,10 @@ public:
   }
 };
 
-template< typename ValueType , class MDArrayMap >
-class Initialize< MDArray< ValueType , HostMapped< MDArrayMap > > > {
+template< typename ValueType , class Device >
+class Initialize< MDArray< ValueType , HostMapped< Device > > > {
 public:
-  typedef MDArray< ValueType , HostMapped< MDArrayMap > > dst_type ;
+  typedef MDArray< ValueType , HostMapped< Device > > dst_type ;
 
   static void run( const dst_type & dst )
   {
@@ -266,14 +236,14 @@ public:
   }
 };
 
-template< typename ValueType , class MDArrayMap >
+template< typename ValueType , class Device >
 class DeepCopy< MDArray< ValueType , Host > ,
-                MDArray< ValueType , HostMapped< MDArrayMap > > >
+                MDArray< ValueType , HostMapped< Device > > >
   : HostThreadWorker<void>
 {
 public:
-  typedef MDArray< ValueType , Host >                     dst_type ;
-  typedef MDArray< ValueType , HostMapped< MDArrayMap > > src_type ;
+  typedef MDArray< ValueType , Host >                 dst_type ;
+  typedef MDArray< ValueType , HostMapped< Device > > src_type ;
 
   static void run( const dst_type & dst , const src_type & src )
   {
@@ -293,14 +263,14 @@ public:
   }
 };
 
-template< typename ValueType , class MDArrayMap >
-class DeepCopy< MDArray< ValueType , HostMapped< MDArrayMap > > ,
+template< typename ValueType , class Device >
+class DeepCopy< MDArray< ValueType , HostMapped< Device > > ,
                 MDArray< ValueType , Host > >
   : HostThreadWorker<void>
 {
 public:
-  typedef MDArray< ValueType , HostMapped< MDArrayMap > > dst_type ;
-  typedef MDArray< ValueType , Host >                     src_type ;
+  typedef MDArray< ValueType , HostMapped< Device > > dst_type ;
+  typedef MDArray< ValueType , Host >                 src_type ;
 
   static void run( const dst_type & dst , const src_type & src )
   {

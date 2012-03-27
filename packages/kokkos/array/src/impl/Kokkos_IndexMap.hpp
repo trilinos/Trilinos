@@ -41,18 +41,39 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_IMPL_MDARRAYINDEXMAP_HPP
-#define KOKKOS_IMPL_MDARRAYINDEXMAP_HPP
+#ifndef KOKKOS_IMPL_INDEXMAP_HPP
+#define KOKKOS_IMPL_INDEXMAP_HPP
 
 namespace Kokkos {
 namespace Impl {
 
-template< class MemorySpace > class MDArrayIndexMapRight ;
-template< class MemorySpace > class MDArrayIndexMapLeft ;
+enum { IndexMapMaxRank = 8 };
+
+/** \brief  Mapping of a multi-index to an offset.
+ *
+ *  If the Rank is zero then then all dimensions are runtime knowledge.
+ *  If the Rank is non-zero then all but the leading dimension is
+ *  compile-time knowledge from the template arguments.
+ *
+ *  The leading dimension is always set at runtime.
+ */
+template< class MemorySpace ,
+          unsigned Rank = 0 , unsigned N1 = 0 ,
+          unsigned N2   = 0 , unsigned N3 = 0 ,
+          unsigned N4   = 0 , unsigned N5 = 0 ,
+          unsigned N6   = 0 , unsigned N7 = 0 >
+class IndexMapRight ;
+
+template< class MemorySpace ,
+          unsigned Rank = 0 , unsigned N1 = 0 ,
+          unsigned N2   = 0 , unsigned N3 = 0 ,
+          unsigned N4   = 0 , unsigned N5 = 0 ,
+          unsigned N6   = 0 , unsigned N7 = 0 >
+class IndexMapLeft ;
 
 } // namespace Impl
 } // namespace Kokkos
 
-#endif /* KOKKOS_IMPL_MDARRAYINDEXMAP_HPP */
+#endif /* KOKKOS_IMPL_INDEXMAP_HPP */
 
 

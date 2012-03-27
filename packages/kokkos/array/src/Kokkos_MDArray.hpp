@@ -87,12 +87,12 @@ enum { MDArrayMaxRank = 8 };
 template< typename ValueType , class DeviceType >
 class MDArray {
 public:
-  typedef ValueType                          value_type ;
-  typedef DeviceType                         device_type ;
-  typedef typename DeviceType::mdarray_map   mdarray_map ;
-  typedef typename DeviceType::size_type     size_type ;
+  typedef ValueType                                       value_type ;
+  typedef DeviceType                                      device_type ;
+  typedef typename DeviceType::size_type                  size_type ;
+  typedef typename DeviceType::template IndexMap<>::type  index_map ;
 
-  typedef MDArray< value_type , void /* HostMapped< mdarray_map > */ > HostMirror ;
+  typedef MDArray< value_type , typename HostMapped<device_type>::type > HostMirror ;
 
   /*------------------------------------------------------------------*/
   /** \brief  Query rank of the array */
@@ -345,15 +345,13 @@ inline
 typename MDArray< ValueType , DeviceType >::HostMirror
 create_mirror( const MDArray< ValueType , DeviceType > & a )
 {
-  typedef typename MDArray< ValueType , DeviceType >::HostMirror  host_view ;
-  typedef typename host_view::device_type                     host_device ;
-  typedef typename host_device::memory_space                  host_memory ;
-  typedef typename host_device::mdarray_map                   host_mdarray_map ;
-  typedef typename DeviceType::memory_space                   memory ;
-  typedef typename DeviceType::mdarray_map                    mdarray_map ;
+  // the index map type has both the algorithm and memory space
+  typedef MDArray< ValueType , DeviceType >   view_type ;
+  typedef typename view_type::index_map       index_map ;
+  typedef typename view_type::HostMirror      host_view ;
+  typedef typename host_view::index_map       host_index_map ;
 
-  enum { OPTIMIZE = Impl::SameType< memory , host_memory >::value &&
-                    Impl::SameType< mdarray_map , host_mdarray_map >::value &&
+  enum { OPTIMIZE = Impl::SameType< index_map , host_index_map >::value &&
 #if defined( KOKKOS_MIRROR_VIEW_OPTIMIZE )
                     KOKKOS_MIRROR_VIEW_OPTIMIZE
 #else

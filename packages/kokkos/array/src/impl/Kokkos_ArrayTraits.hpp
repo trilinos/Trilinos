@@ -41,6 +41,9 @@
 //@HEADER
 */
 
+#ifndef KOKKOS_ARRAYTRAITS_HPP
+#define KOKKOS_ARRAYTRAITS_HPP
+
 namespace Kokkos {
 namespace Impl {
 
@@ -66,10 +69,21 @@ template< class T > struct remove_all_extents ;
 
 //----------------------------------------------------------------------------
 
-template< class T > struct rank { enum { value = 0 }; };
-template< class T > struct rank<T[]> { enum { value = rank<T>::value + 1 }; };
+template <class T, T v>
+struct integral_constant
+{
+  static const T value = v;
+  typedef T value_type;
+  typedef integral_constant<T,v> type;
+};
+
+template< unsigned I > struct unsigned_ : public integral_const<unsigned,I> {};
+
+template< class T > struct rank       : public unsigned_< 0> {};
+template<>          struct rank<void> {};
+template< class T > struct rank<T[]>  : public unsigned_< 1> {};
 template< class T , unsigned N > struct rank<T[N]>
-  { enum { value = rank<T>::value + 1 }; };
+  : public unsigned_<rank<T>::value+1> {};
 
 //----------------------------------------------------------------------------
 
@@ -88,17 +102,20 @@ template< class T , unsigned N > struct remove_all_extents<T[N]>
 
 //----------------------------------------------------------------------------
 
-template< class T , unsigned I > struct extent         { enum { value = 0 }; };
-template< class T >              struct extent<T[], 0> { enum { value = 0 }; };
-template< class T , unsigned N > struct extent<T[N],0> { enum { value = N }; };
+template< class T , unsigned I > struct extent         : public unsigned_< 0> {};
+template< unsigned I >           struct extent<void,I> {};
+template< class T >              struct extent<T[], 0> : public unsigned_< 0> {};
+template< class T , unsigned N > struct extent<T[N],0> : public unsigned_< N> {};
 template< class T , unsigned I > struct extent<T[], I>
-  { enum { value = extent<T,I-1>::value }; };
+  : public unsigned_< extent<T,I-1>::value > {};
 template< class T , unsigned N , unsigned I > struct extent<T[N],I>
-  { enum { value = extent<T,I-1>::value }; };
-
-//----------------------------------------------------------------------------
+  : public unsigned_< extent<T,I-1>::value > {};
 
 } // namespace Impl
 } // namespace Kokkos
 
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#endif /* #ifndef KOKKOS_ARRAYTRAITS_HPP */
 

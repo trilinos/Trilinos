@@ -45,27 +45,37 @@
 //----------------------------------------------------------------------------
 // Partial specializations for the device
 
-#include <Kokkos_Cuda_macros.hpp>
 
 #if defined( KOKKOS_MULTIVECTOR_HPP ) && ! defined( KOKKOS_CUDA_MULTIVECTOR )
 #define KOKKOS_CUDA_MULTIVECTOR
+#include <Kokkos_Cuda_macros.hpp>
 #include <impl/Kokkos_MultiVector_macros.hpp>
 #include <Cuda/Kokkos_Cuda_MultiVector.hpp>
+#include <Kokkos_Clear_macros.hpp>
 #endif
 
 #if defined( KOKKOS_CRSMAP_HPP ) && ! defined( KOKKOS_CUDA_CRSMAP )
 #define KOKKOS_CUDA_CRSMAP
+#include <Kokkos_Cuda_macros.hpp>
 #include <impl/Kokkos_CrsMap_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
 #endif
 
 #if defined( KOKKOS_MDARRAY_HPP ) && ! defined( KOKKOS_CUDA_MDARRAY )
 #define KOKKOS_CUDA_MDARRAY
-#include <impl/Kokkos_MDArrayIndexMapLeft_macros.hpp>
+
+#include <Kokkos_Cuda_macros.hpp>
+#include <impl/Kokkos_IndexMapLeft_macros.hpp>
 #include <impl/Kokkos_MDArray_macros.hpp>
 #include <Cuda/Kokkos_Cuda_MDArray.hpp>
-#endif
-
 #include <Kokkos_Clear_macros.hpp>
+
+#include <Kokkos_Host_macros.hpp>
+#undef KOKKOS_MACRO_DEVICE
+#define KOKKOS_MACRO_DEVICE HostMapped< Cuda >
+#include <impl/Kokkos_MDArray_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
+#endif
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

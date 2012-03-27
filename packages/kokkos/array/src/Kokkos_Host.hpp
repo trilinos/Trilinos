@@ -45,7 +45,7 @@
 #define KOKKOS_HOST_HPP
 
 #include <cstddef>
-#include <impl/Kokkos_MDArrayIndexMap.hpp>
+#include <impl/Kokkos_IndexMap.hpp>
 
 #define KOKKOS_HOST  Kokkos::Host
 
@@ -62,9 +62,16 @@ public:
   /*--------------------------------*/
   /* required type declarations and functions for a device */
 
-  typedef size_t                                     size_type ;
-  typedef Host                                       memory_space ;
-  typedef Impl::MDArrayIndexMapRight< memory_space > mdarray_map ;
+  typedef Host    memory_space ;
+  typedef size_t  size_type ;
+
+  template< unsigned Rank = 0 , unsigned N1 = 0 ,
+            unsigned N2   = 0 , unsigned N3 = 0 ,
+            unsigned N4   = 0 , unsigned N5 = 0 ,
+            unsigned N6   = 0 , unsigned N7 = 0 >
+  struct IndexMap {
+    typedef Impl::IndexMapRight<memory_space,Rank,N1,N2,N3,N4,N5,N6,N7> type ;
+  };
 
   /*--------------------------------*/
 
@@ -123,6 +130,24 @@ public:
    */
   static size_type detect_core_count();
 };
+
+/*--------------------------------------------------------------------------*/
+/** \brief  Host memory space with another device's multi-index mapping. */
+template< class Device >
+struct HostMapped {
+public:
+  typedef HostMapped< Device > type ;
+  typedef Host::size_type      size_type ;
+  typedef Host::memory_space   memory_space ;
+
+  template< unsigned Rank = 0, unsigned N1=0, unsigned N2=0, unsigned N3=0,
+            unsigned N4   = 0, unsigned N5=0, unsigned N6=0, unsigned N7=0>
+  struct IndexMap {
+    typedef typename Device::template IndexMap<Rank,N1,N2,N3,N4,N5,N6,N7>::type type ;
+  };
+};
+
+template<> struct HostMapped<Host> { typedef Host type ; };
 
 /*--------------------------------------------------------------------------*/
 

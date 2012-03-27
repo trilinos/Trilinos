@@ -64,7 +64,7 @@
 #include <TestMDArray.hpp>
 #include <TestCrsMap.hpp>
 
-#include <impl/Kokkos_MDArrayIndexMapRight_macros.hpp>
+#include <impl/Kokkos_IndexMapRight_macros.hpp>
 #include <TestMDArrayIndexMap.hpp>
 
 #include <TestReduce.hpp>
