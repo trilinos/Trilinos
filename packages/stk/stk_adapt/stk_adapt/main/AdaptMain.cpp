@@ -1107,7 +1107,12 @@ namespace stk {
       // streaming
       int M = streaming_size ? streaming_size : 1;
       int streaming_pass_start = 0;
+#if STK_ADAPT_HAVE_YAML_CPP
       int streaming_pass_end = streaming_size ? SerializeNR::MaxPass : 0;
+#else
+      int streaming_pass_end = 0;
+#endif
+
       // allow for driving this from a script
       if (streaming_pass >= 0)
         {

@@ -2045,7 +2045,7 @@ namespace stk {
 
             //int inDim = nodalOp.getDomainDimensions()[0];
             //int outDim = nodalOp.getCodomainDimensions()[0];
-            int inDim = 3;
+            int inDim = m_metaData->spatial_dimension();
 
             num_nodes += num_nodes_in_bucket;
             // FIXME for multiple points
@@ -2086,7 +2086,7 @@ namespace stk {
                   }
 
                 if (field) output_nodal_field += stride;  // FIXME
-                coord += 3;  // FIXME
+                coord += inDim;  // FIXME
               }
 
           }

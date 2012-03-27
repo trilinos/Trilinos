@@ -258,6 +258,10 @@ namespace stk
                 {
                   if (!m_parallelEval)
                     {
+                      std::cout << "P[" << Util::getRank() << "] FieldFunction::operator() found_it = " << found_it << " points= "
+                                << input_phy_points_one
+                                << std::endl;
+
                       throw std::runtime_error("FieldFunction::operator() in local eval mode and didn't find element - logic error");
                     }
                   double max_val = std::numeric_limits<double>::max();
