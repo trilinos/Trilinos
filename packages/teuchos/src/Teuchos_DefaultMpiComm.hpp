@@ -852,25 +852,82 @@ waitAll (const ArrayView<RCP<CommRequest> >& requests) const
 
   Array<MPI_Status> rawMpiStatuses (count);
   // This is the part where we've finally peeled off the wrapper and
-  // we can now interact with MPI directly.
+  // we can now interact with MPI directly.  
+  //
+  // One option in the one-argument version of waitAll() is to ignore
+  // the statuses completely.  MPI lets you pass in the named constant
+  // MPI_STATUSES_IGNORE for the MPI_Status array output argument in
+  // MPI_Waitall(), which would tell MPI not to bother with the
+  // statuses.  However, we want the statuses because we can use them
+  // for detailed error diagnostics in case something goes wrong.
   const int err = MPI_Waitall (count, rawMpiRequests.getRawPtr(), 
 			       rawMpiStatuses.getRawPtr());
-  // The MPI standard doesn't say what happens to the rest of the
-  // requests if one of them failed, in a multiple completion routine
-  // like MPI_Waitall().  We conservatively throw an exception in that
-  // case.
+
+  // In MPI_Waitall(), an error indicates that one or more requests
+  // failed.  In that case, there could be requests that completed
+  // (their MPI_Status' error field is MPI_SUCCESS), and other
+  // requests that have not completed yet but have not necessarily
+  // failed (MPI_PENDING).  We make no attempt here to wait on the
+  // pending requests.  It doesn't make sense for us to do so, because
+  // in general Teuchos::Comm doesn't attempt to provide robust
+  // recovery from failed messages.
   if (err != MPI_SUCCESS) {
-    std::ostringstream os;
-    os << "Teuchos::MpiComm::waitAll: MPI_Waitall() failed with error \""
-       << mpiErrorCodeToString (err) << "\".";
-    if (someNullRequests) {
-      os << "  There was at least one MPI_Request that was MPI_REQUEST_NULL.  "
-	"MPI_Waitall should not normally fail in that case, but we thought we "
-	"should let you know regardless.";
+    if (err == MPI_ERR_IN_STATUS) {
+      //
+      // When MPI_Waitall returns MPI_ERR_IN_STATUS (a standard error
+      // class), it's telling us to check the error codes in the
+      // returned statuses.  In that case, we do so and generate a
+      // detailed exception message.
+      //
+      // Figure out which of the requests failed.
+      typedef Array<MPI_Request>::size_type size_type;
+      Array<std::pair<size_type, int> > errorLocationsAndCodes;
+      for (size_type k = 0; k < rawMpiStatuses.size(); ++k) {
+	const int curErr = rawMpiStatuses[k].MPI_ERROR;
+	if (curErr != MPI_SUCCESS) {
+	  errorLocationsAndCodes.push_back (std::make_pair (k, curErr));
+	}
+      }
+      const size_type numErrs = errorLocationsAndCodes.size();
+      if (numErrs > 0) {
+	// There was at least one error.  Assemble a detailed
+	// exception message reporting which requests failed,
+	// their error codes, and their source 
+	std::ostringstream os;
+	os << "Teuchos::MpiComm::waitAll: MPI_Waitall() failed with error \""
+	   << mpiErrorCodeToString (err) << "\".  Of the " << count 
+	   << " total request" << (count != 1 ? "s" : "") << ", " << numErrs 
+	   << " failed.  Here are the indices of the failed requests, and the "
+	  "error codes extracted from their returned MPI_Status objects:" 
+	   << std::endl;
+	for (size_type k = 0; k < numErrs; ++k) {
+	  const size_type errInd = errorLocationsAndCodes[k].first;
+	  os << "Request " << errInd << ": MPI_ERROR = " 
+	     << mpiErrorCodeToString (rawMpiStatuses[errInd].MPI_ERROR) 
+	     << std::endl;
+	}
+	if (someNullRequests) {
+	  os << "  On input to MPI_Waitall, there was at least one MPI_"
+	    "Request that was MPI_REQUEST_NULL.  MPI_Waitall should not "
+	    "normally fail in that case, but we thought we should let you know "
+	    "regardless.";
+	}
+	TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, os.str());
+      }
+      // If there were no actual errors in the returned statuses,
+      // well, then I guess everything is OK.  Just keep going.
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, 
-			       std::runtime_error, 
-			       os.str());
+    else {
+      std::ostringstream os;
+      os << "Teuchos::MpiComm::waitAll: MPI_Waitall() failed with error \""
+	 << mpiErrorCodeToString (err) << "\".";
+      if (someNullRequests) {
+	os << "  On input to MPI_Waitall, there was at least one MPI_Request "
+	  "that was MPI_REQUEST_NULL.  MPI_Waitall should not normally fail in "
+	  "that case, but we thought we should let you know regardless.";
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, os.str());
+    }
   }
 
   // Invalidate the input array of requests by setting all entries to
