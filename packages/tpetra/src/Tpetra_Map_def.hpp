@@ -495,6 +495,13 @@ namespace Tpetra {
   : comm_(comm_in)
   , node_(node_in) 
   {
+    using Teuchos::as;
+    using Teuchos::outArg;
+    using Teuchos::OrdinalTraits;
+    using Teuchos::REDUCE_MAX;
+    using Teuchos::REDUCE_SUM;
+    using Teuchos::reduceAll;
+
     // Distribute the elements across the nodes so that they are 
     // - non-overlapping
     // - contiguous
@@ -502,19 +509,16 @@ namespace Tpetra {
     // specified the number of elements per node, so that they are not
     // (necessarily) evenly distributed.
 
-    using Teuchos::outArg;
-
-    const size_t  L0 = Teuchos::OrdinalTraits<size_t>::zero();
-    const size_t  L1 = Teuchos::OrdinalTraits<size_t>::one();
-    const global_size_t GST0 = Teuchos::OrdinalTraits<global_size_t>::zero();
-    const global_size_t GST1 = Teuchos::OrdinalTraits<global_size_t>::one();
-    const global_size_t GSTI = Teuchos::OrdinalTraits<global_size_t>::invalid();
-    const GlobalOrdinal G1 = Teuchos::OrdinalTraits<GlobalOrdinal>::one();
+    const size_t  L0 = OrdinalTraits<size_t>::zero();
+    const size_t  L1 = OrdinalTraits<size_t>::one();
+    const global_size_t GST0 = OrdinalTraits<global_size_t>::zero();
+    const global_size_t GST1 = OrdinalTraits<global_size_t>::one();
+    const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
+    const GlobalOrdinal G1 = OrdinalTraits<GlobalOrdinal>::one();
 
     std::string errPrefix;
     errPrefix = Teuchos::typeName(*this) + "::constructor(numGlobal,numLocal,indexBase,platform): ";
 
-    // get a internodal communicator from the Platform
     const int myImageID = comm_->getRank();
 
     { // begin scoping block
@@ -528,8 +532,10 @@ namespace Tpetra {
            + ensure that it is the same on all nodes
        */
       global_size_t global_sum;
-      Teuchos::reduceAll<int,global_size_t>(*comm_,Teuchos::REDUCE_SUM,
-        Teuchos::as<global_size_t>(numLocalElements_in),outArg(global_sum));
+      reduceAll<int,global_size_t> (*comm_, 
+				    REDUCE_SUM, 
+				    as<global_size_t> (numLocalElements_in), 
+				    outArg (global_sum));
       /* there are three errors we should be detecting:
          - numGlobalElements != invalid() and it is incorrect/invalid
          - numLocalElements invalid (<0)
@@ -560,17 +566,17 @@ namespace Tpetra {
       }
       // REDUCE_MAX will give us the image ID of the highest rank proc that DID NOT pass
       // this will be -1 if all procs passed
-      Teuchos::reduceAll<int,int>(*comm_,Teuchos::REDUCE_MAX,2,localChecks,globalChecks);
+      reduceAll<int,int> (*comm_, REDUCE_MAX, 2, localChecks, globalChecks);
       if (globalChecks[0] != -1) {
         if (globalChecks[1] == 1) {
-          TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
-              errPrefix << "numLocal is not valid on at least one node (possibly node " 
-              << globalChecks[0] << ").");
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+            errPrefix << "numLocal is not valid on at least one node (possibly node " 
+            << globalChecks[0] << ").");
         }
         else if (globalChecks[1] == 2) {
           TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
-              errPrefix << "numGlobal is not valid on at least one node (possibly node " 
-              << globalChecks[0] << ").");
+            errPrefix << "numGlobal is not valid on at least one node (possibly node " 
+            << globalChecks[0] << ").");
         }
         else if (globalChecks[1] == 3) {
           TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
@@ -580,13 +586,15 @@ namespace Tpetra {
         }
         else if (globalChecks[1] == 4) {
           TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
-              errPrefix << "indexBase is not the same on all nodes (examine node " 
-              << globalChecks[0] << ").");
+            errPrefix << "indexBase is not the same on all nodes (examine node " 
+            << globalChecks[0] << ").");
         }
         else {
-          // logic error on my part
-          TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-              errPrefix << "logic error. Please contact the Tpetra team.");
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, errPrefix 
+	    << "Should never get here!  localChecks = " << localChecks[0] << "," 
+            << localChecks[1] << " and globalChecks = " << globalChecks[0] 
+            << "," << globalChecks[1] << ".  Please report this bug to the "
+            "Tpetra developers.");
         }
       }
       // set numGlobalElements
