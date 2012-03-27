@@ -565,14 +565,15 @@ void MpiComm<Ordinal>::gatherAll(
 
   
 template<typename Ordinal>
-void MpiComm<Ordinal>::reduceAll(
-  const ValueTypeReductionOp<Ordinal,char> &reductOp
-  ,const Ordinal bytes, const char sendBuffer[], char globalReducts[]
-  ) const
+void 
+MpiComm<Ordinal>::
+reduceAll (const ValueTypeReductionOp<Ordinal,char> &reductOp,
+	   const Ordinal bytes, 
+	   const char sendBuffer[], 
+	   char globalReducts[]) const
 {
-  TEUCHOS_COMM_TIME_MONITOR(
-    "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::reduceAll(...)"
-    );
+  TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::reduceAll(...)" );
+
   MpiReductionOpSetter op(mpiReductionOp(rcp(&reductOp,false)));
   MPI_Datatype char_block;
 
