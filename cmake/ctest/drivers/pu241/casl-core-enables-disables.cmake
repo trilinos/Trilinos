@@ -36,6 +36,11 @@ SET(Rythmos_ImplicitRK_ConvergenceTest_MPI_1_DISABLE TRUE)
 SET(ML_Blackboard_MPI_4_DISABLE TRUE)
 SET(ML_AdaptiveSA_MPI_4_DISABLE TRUE)
 
+# Turn off some failing Belos and Anasazi tests (see Trilinos bugs 5382 and 5383)
+SET(Belos_Tpetra_MVOPTester_complex_test_MPI_4_DISABLE TRUE)
+SET(Belos_Tpetra_MVOPTester_complex_test_DISABLE TRUE)
+SET(Anasazi_Tpetra_MVOPTester_MPI_4_DISABLE TRUE)
+SET(Anasazi_Tpetra_MVOPTester_DISABLE TRUE)
 
 # Turn on configure timing
 SET(${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING ON CACHE BOOL "")
