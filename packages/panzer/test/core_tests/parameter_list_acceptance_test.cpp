@@ -79,7 +79,7 @@ namespace panzer {
     using namespace Teuchos;
 
     ParameterList p;
-    updateParametersFromXmlFile("parameter_list_acceptance_test2.xml", ptrFromRef(p));
+    TEST_THROW(updateParametersFromXmlFile("parameter_list_acceptance_test2.xml", ptrFromRef(p)),std::logic_error);
 
     out << p << std::endl;
   }
