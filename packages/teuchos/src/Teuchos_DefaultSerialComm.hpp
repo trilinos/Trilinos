@@ -123,6 +123,10 @@ public:
     const Ordinal bytes, const char sendBuffer[], const int destRank
     ) const;
   /** \brief . */
+  virtual void ssend(
+    const Ordinal bytes, const char sendBuffer[], const int destRank
+    ) const;
+  /** \brief . */
   virtual int receive(
     const int sourceRank, const Ordinal bytes, char recvBuffer[]
     ) const;
@@ -295,6 +299,19 @@ void SerialComm<Ordinal>::scan(
   
 template<typename Ordinal>
 void SerialComm<Ordinal>::send(
+  const Ordinal /*bytes*/, const char []/*sendBuffer*/, const int /*destRank*/
+  ) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    true, std::logic_error
+    ,"SerialComm<Ordinal>::send(...): Error, you can not call send(...) when you"
+    " only have one process!"
+    );
+}
+
+
+template<typename Ordinal>
+void SerialComm<Ordinal>::ssend(
   const Ordinal /*bytes*/, const char []/*sendBuffer*/, const int /*destRank*/
   ) const
 {

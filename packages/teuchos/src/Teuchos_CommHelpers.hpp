@@ -461,6 +461,15 @@ void send(
   const Ordinal count, const Packet sendBuffer[], const int destRank
   );
 
+/** \brief Synchronously send objects that use values semantics to another process.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet>
+void ssend(
+  const Comm<Ordinal>& comm,
+  const Ordinal count, const Packet sendBuffer[], const int destRank
+  );
 
 /** \brief Send a single object that use values semantics to another process.
  *
@@ -468,6 +477,16 @@ void send(
  */
 template<typename Ordinal, typename Packet>
 void send(
+  const Comm<Ordinal>& comm,
+  const Packet &send, const int destRank
+  );
+
+/** \brief Synchronously send a single object that use values semantics to another process.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet>
+void ssend(
   const Comm<Ordinal>& comm,
   const Packet &send, const int destRank
   );
@@ -1622,6 +1641,24 @@ void Teuchos::send(
     );
 }
 
+template<typename Ordinal, typename Packet>
+void Teuchos::ssend(
+  const Comm<Ordinal>& comm,
+  const Ordinal count, const Packet sendBuffer[], const int destRank
+  )
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::CommHelpers: ssend<"
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
+    <<">( value type )"
+    );
+  ConstValueTypeSerializationBuffer<Ordinal,Packet>
+    charSendBuffer(count,sendBuffer);
+  comm.ssend(
+    charSendBuffer.getBytes(),charSendBuffer.getCharBuffer()
+    ,destRank
+    );
+}
 
 template<typename Ordinal, typename Packet>
 void Teuchos::send(
@@ -1632,6 +1669,14 @@ void Teuchos::send(
   Teuchos::send<Ordinal,Packet>(comm,1,&send,destRank);
 }
 
+template<typename Ordinal, typename Packet>
+void Teuchos::ssend(
+  const Comm<Ordinal>& comm,
+  const Packet &send, const int destRank
+  )
+{
+  Teuchos::ssend<Ordinal,Packet>(comm,1,&send,destRank);
+}
 
 template<typename Ordinal, typename Packet>
 void Teuchos::send(

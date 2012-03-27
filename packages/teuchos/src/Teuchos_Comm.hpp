@@ -247,7 +247,11 @@ public:
   //! @name Blocking Point-to-Point Operations 
   //@{
 
-  /** \brief Blocking send of data from this process to another process.
+  /** \brief Possibly blocking send of data from this process to another process.
+   *
+   * This routine does not return until you can reuse the send buffer.
+   * Whether this routine blocks depends on whether the MPI
+   * implementation buffers.
    *
    * \param bytes [in] The number of bytes of data being passed between
    * processes.
@@ -266,6 +270,30 @@ public:
   virtual void send(
     const Ordinal bytes, const char sendBuffer[], const int destRank
     ) const = 0;
+
+  /** \brief Always blocking send of data from this process to another process.
+   *
+   * This routine blocks until the matching receive posts.  After it
+   * returns, you are allowed to reuse the send buffer.
+   *
+   * \param bytes [in] The number of bytes of data being passed between
+   * processes.
+   *
+   * \param sendBuffer [in] Array (length <tt>bytes</tt>) of data being sent
+   * from this process.  This buffer can be immediately destroyed or reused as
+   * soon as the function exits (that is why this function is "blocking").
+   *
+   * \param destRank [in] The rank of the process to receive the data.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>0 <= destRank && destRank < this->getSize()</tt>
+   * <li><tt>destRank != this->getRank()</tt>
+   * </ul>
+   */
+  virtual void ssend(
+    const Ordinal bytes, const char sendBuffer[], const int destRank
+    ) const = 0;
+
 
   /** \brief Blocking receive of data from this process to another process.
    *
