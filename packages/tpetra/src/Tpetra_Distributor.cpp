@@ -341,18 +341,25 @@ namespace Tpetra {
     // communication pattern.  
     //
 
-    // This process doesn't need to receive from itself, since it
-    // didn't send to itself (see the send loop).
+    // At this point, numReceives_ includes any self message that
+    // there may be.  At the end of this routine, we'll subtract off
+    // the self message (if there is one) from numReceives_.  In this
+    // routine, we don't need to receive a message from ourselves in
+    // order to figure out our lengthsFrom_ and source process ID; we
+    // can just ask ourselves directly.  Thus, the actual number of
+    // nonblocking receives we post here does not include the self
+    // message.
     const size_t actualNumReceives = numReceives_ - (selfMessage_ ? 1 : 0);
 
     // Teuchos' wrapper for nonblocking receives requires receive
-    // buffers that it knows won't go away.  This is why we use RCPs.
-    // They get allocated in the loop below.
+    // buffers that it knows won't go away.  This is why we use RCPs,
+    // one RCP per nonblocking receive request.  They get allocated in
+    // the loop below.
     Array<RCP<CommRequest> > requests (actualNumReceives);
     Array<RCP<size_t> > lengthsFromBuffers (actualNumReceives);
     Array<RCP<CommStatus<int> > > statuses (actualNumReceives); 
 
-    // Teuchos::COMM treats a negative process ID as MPI_ANY_SOURCE
+    // Teuchos::Comm treats a negative process ID as MPI_ANY_SOURCE
     // (receive data from any process).
     const int anySourceProc = -1;
 

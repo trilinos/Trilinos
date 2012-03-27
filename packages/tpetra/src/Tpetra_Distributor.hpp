@@ -527,6 +527,11 @@ namespace Tpetra {
     // nonblocking receive requests, so we resize to zero to maintain
     // this invariant.
     //
+    // At this point, numReceives_ does _not_ include the self
+    // message, if there is one.  In doPosts(), we do actually send a
+    // message to ourselves, so we include the self message (if there
+    // is one) in the "actual" number of receives to post.
+    //
     // NOTE (mfh 19 Mar 2012): Epetra_MpiDistributor::DoPosts()
     // doesn't (re)allocate its array of requests.  That happens in
     // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
