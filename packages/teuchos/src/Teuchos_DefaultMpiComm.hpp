@@ -105,8 +105,10 @@ void dumpBuffer(
 class MpiCommRequest : public CommRequest {
 public:
   //! Constructor (from a raw MPI_Request).
-  MpiCommRequest (MPI_Request rawMpiRequest) : 
-    rawMpiRequest_ (rawMpiRequest) {}
+  MpiCommRequest (MPI_Request rawMpiRequest, 
+		  const ArrayView<char>::size_type numBytesInMessage) : 
+    rawMpiRequest_ (rawMpiRequest), numBytes_ (numBytesInMessage) 
+  {}
 
   /// \brief Return and relinquish ownership of the raw MPI_Request.
   ///
@@ -126,19 +128,36 @@ public:
     return rawMpiRequest_ == MPI_REQUEST_NULL;
   }
 
+  /// \brief Number of bytes in the nonblocking send or receive request.
+  ///
+  /// Remembering this is inexpensive, and is also useful for
+  /// debugging (e.g., for detecting whether the send and receive have
+  /// matching message lengths).
+  ArrayView<char>::size_type numBytes () const {
+    return numBytes_;
+  }
+
 private:
   //! The raw request (an opaque object).
   MPI_Request rawMpiRequest_;
+  //! Number of bytes in the nonblocking send or receive request.
+  ArrayView<char>::size_type numBytes_;
+
   MpiCommRequest(); // Not defined
 };
 
 /// \fn mpiCommRequest
 /// \brief Nonmember constructor for \c MpiCommRequest.
 /// \relates MpiCommRequest
+///
+/// \param rawMpiRequest [in] The raw MPI_Request opaque object.
+/// \param numBytes [in] The number of bytes in the nonblocking
+///   send or receive request.
 inline RCP<MpiCommRequest>
-mpiCommRequest (MPI_Request rawMpiRequest)
+mpiCommRequest (MPI_Request rawMpiRequest, 
+		const ArrayView<char>::size_type numBytes)
 {
-  return rcp (new MpiCommRequest (rawMpiRequest));
+  return rcp (new MpiCommRequest (rawMpiRequest, numBytes));
 }
 
 /// \class MpiCommStatus
@@ -780,7 +799,7 @@ MpiComm<Ordinal>::isend (const ArrayView<const char> &sendBuffer,
     "Teuchos::MpiComm::isend: MPI_Isend() failed with error \"" 
     << mpiErrorCodeToString (err) << "\".");
 
-  return mpiCommRequest (rawMpiRequest);
+  return mpiCommRequest (rawMpiRequest, sendBuffer.size());
 }
 
 
@@ -804,7 +823,7 @@ MpiComm<Ordinal>::ireceive (const ArrayView<char> &recvBuffer,
     "Teuchos::MpiComm::ireceive: MPI_Irecv() failed with error \"" 
     << mpiErrorCodeToString (err) << "\".");
 
-  return mpiCommRequest (rawMpiRequest);
+  return mpiCommRequest (rawMpiRequest, recvBuffer.size());
 }
 
 
@@ -934,6 +953,37 @@ namespace {
 	TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, os.str());
       }
     }
+
+#ifdef HAVE_TEUCHOS_DEBUG
+    {
+      // In debug mode, test whether the requests' message lengths
+      // matched the message lengths on completion.
+      Array<size_type> nonmatchingIndices;
+      for (size_type k = 0; k < count; ++k) {
+	if (! is_null (requests[k])) {
+	  RCP<MpiCommRequest> mpiRequest = 
+	    rcp_dynamic_cast<MpiCommRequest> (requests[k]);
+	  
+	  int statusCount = 0;
+	  (void) MPI_Get_count (&rawMpiStatuses[k], MPI_CHAR, &statusCount);
+	  if (mpiRequest->numBytes() != as<size_type> (statusCount)) {
+	    nonmatchingIndices.push_back (k);
+	  }
+	}
+      }
+      const size_type numNonmatching = nonmatchingIndices.size();
+      if (numNonmatching > 0) {
+	std::ostringstream os;
+	os << "Teuchos::MpiComm::waitAll(): " << numNonmatching << " message "
+	  "request" << (numNonmatching != 1 ? "s" : "") << " have a number of "
+	  "bytes which does not match the number of bytes in " 
+	   << (numNonmatching != 1 ? "their" : "its") << " corresponding status"
+	   << (numNonmatching != 1 ? "es" : "") << ".";
+	// This is a bug, so we throw std::logic_error.
+	TEUCHOS_TEST_FOR_EXCEPTION(numNonmatching > 0, std::logic_error, os.str());
+      }
+    }
+#endif // HAVE_TEUCHOS_DEBUG
 
     // Invalidate the input array of requests by setting all entries to
     // null.

@@ -535,7 +535,10 @@ namespace Tpetra {
     requests_.resize (0);
 
     // Post the nonblocking receives.  It's common MPI wisdom to post
-    // receives before sends.
+    // receives before sends.  In MPI terms, this means favoring
+    // adding to the "posted queue" (of receive requests) over adding
+    // to the "unexpected queue" (of arrived messages not yet matched
+    // with a receive).
     {
       size_t curBufferOffset = 0;
       for (size_t i = 0; i < actualNumReceives; ++i) {
