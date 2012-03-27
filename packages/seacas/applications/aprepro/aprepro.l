@@ -250,7 +250,7 @@ integer {D}+({E})?
 			      LINENUM_INC;
 			    }
 
-"{"[Ee]"lse}".*"\n"     { LINENUM_INC; 
+{WS}"{"[Ee]"lse}".*"\n"     { LINENUM_INC; 
     if (ap_options.debugging) 
 	fprintf (stderr, "DEBUG IF: 'else'   at level = %d at line %d\n",
 		 if_lvl, ap_file_list[nfile].lineno);
@@ -261,7 +261,7 @@ integer {D}+({E})?
 			    /* If neither is true, this is a nested 
 			       if that should be skipped */
 			  }
-"{"[Ee]"ndif}".*"\n"     { if (if_state[if_lvl] == IF_SKIP ||
+{WS}"{"[Ee]"ndif}".*"\n"     { if (if_state[if_lvl] == IF_SKIP ||
 			       if_state[if_lvl] == INITIAL)
 			     BEGIN(INITIAL);
 			   /* If neither is true, this is a nested 
