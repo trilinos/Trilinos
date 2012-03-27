@@ -439,6 +439,8 @@ namespace std
 %feature("docstring") Norm<int Power=1> "This class will evaluate the L1 norm of a function.";
 %template(L1Norm) stk::percept::Norm<int Power=1>;
 
+%feature("docstring") Norm<int Power=-1> "This class will evaluate the L-inf norm of a function.";
+%template(LInfNorm) stk::percept::Norm<int Power=-1>;
 
 //from stk_adapt
 %include stk_adapt/UniformRefinerPattern.hpp

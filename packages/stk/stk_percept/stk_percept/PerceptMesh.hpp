@@ -780,7 +780,7 @@ namespace stk {
       static BasisTypeRCP getBasis(shards::CellTopology& topo);
       static void setupBasisTable();
 
-      void nodalOpLoop(GenericFunction& nodalOp, stk::mesh::FieldBase *field);
+      void nodalOpLoop(GenericFunction& nodalOp, stk::mesh::FieldBase *field=0);
       void elementOpLoop(ElementOp& elementOp, stk::mesh::FieldBase *field=0, stk::mesh::Part *part = 0);
       void bucketOpLoop(BucketOp& bucketOp, stk::mesh::FieldBase *field=0, stk::mesh::Part *part = 0);
 

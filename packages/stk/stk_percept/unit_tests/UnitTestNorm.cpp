@@ -363,6 +363,16 @@ STKUNIT_UNIT_TEST(norm, string_function)
   sfx_expect = 0.25;
   STKUNIT_EXPECT_DOUBLE_EQ_APPROX( sfx_expect, sfx_res.getValue());
 
+  /// the function to be integrated:  (Max[ x^2+y^3+z^4, dxdydz]) =?= (@ [-0.5, 0.5]^3 ) ==> .5^2+.5^3+.5^4)
+  StringFunction sfmax("x^2 + y^3 + z^4", Name("sfmax"), Dimensions(3), Dimensions(1) );
+  Norm<-1> lInfNorm(bulkData, &metaData.universal_part(), TURBO_NONE);
+  lInfNorm.setCubDegree(10);
+  lInfNorm(sfmax, sfx_res);
+  double sf1=eval(.5,.5,.5,0.0, sfmax);
+  sfx_expect = 0.5*0.5 + 0.5*0.5*0.5 + 0.5*0.5*0.5*0.5;
+  std::cout << "sfmax= " << sf1 << " sfx_expect= " << sfx_expect << " sfx_res= " << sfx_res.getValue() << std::endl;
+  STKUNIT_EXPECT_DOUBLE_EQ_APPROX( sfx_expect, sfx_res.getValue());
+
   /// the function to be integrated:  sqrt(Integral[(x*y*z)^2, dxdydz]) =?= (see unitTest1.py)
   StringFunction sfxyz("x*y*z", Name("sfxyz"), Dimensions(3), Dimensions(1) );
   l2Norm(sfxyz, sfx_res);

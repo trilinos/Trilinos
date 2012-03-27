@@ -2040,7 +2040,8 @@ namespace stk {
             //if (Util::getFlag(9829)) std::cout << "spatialDim= " << spatialDim << std::endl;
 
             unsigned stride = 0;
-            double * output_nodal_field = PerceptMesh::field_data( field , bucket,  &stride);
+            double * output_nodal_field = (field ? PerceptMesh::field_data( field , bucket,  &stride) : 0);
+            if (!field) stride = (nodalOp.getCodomainDimensions().size() ? nodalOp.getCodomainDimensions()[0] : 0);
 
             //int inDim = nodalOp.getDomainDimensions()[0];
             //int outDim = nodalOp.getCodomainDimensions()[0];
@@ -2059,10 +2060,13 @@ namespace stk {
 
                 // an optional setting of the codomain from existing values (allows for +=, etc.)
                 // if(set_output) {
-                for (unsigned jout = 0; jout < stride; jout++)
+                if (field)
                   {
-                    out(jout) = output_nodal_field[jout];
-                    //if (Util::getFlag(9829)) std::cout << "bef jout= " << jout << " val= " << out(jout) << std::endl;
+                    for (unsigned jout = 0; jout < stride; jout++)
+                      {
+                        out(jout) = output_nodal_field[jout];
+                        //if (Util::getFlag(9829)) std::cout << "bef jout= " << jout << " val= " << out(jout) << std::endl;
+                      }
                   }
 
                 //if (Util::getFlag(9829)) std::cout << "nodalOp= " << nodalOp << std::endl;
@@ -2072,13 +2076,16 @@ namespace stk {
                   FieldFunction::m_parallelEval=true;
                 }
 
-                for (unsigned jout = 0; jout < stride; jout++)
+                if (field)
                   {
-                    //if (Util::getFlag(9829)) std::cout << "aft jout= " << jout << " val= " << out(jout) << std::endl;
-                    output_nodal_field[jout] = out(jout);
+                    for (unsigned jout = 0; jout < stride; jout++)
+                      {
+                        //if (Util::getFlag(9829)) std::cout << "aft jout= " << jout << " val= " << out(jout) << std::endl;
+                        output_nodal_field[jout] = out(jout);
+                      }
                   }
 
-                output_nodal_field += stride;  // FIXME
+                if (field) output_nodal_field += stride;  // FIXME
                 coord += 3;  // FIXME
               }
 
