@@ -96,7 +96,7 @@ namespace MueLu {
     @param aggToRowMap aggToRowMap[i][j] is the jth local DOF in local aggregate i
 
     This routine makes use of the amalgamation routine and should be able to handle #DOFs per node > 1
-    Prerequisite is that globalamalblockid2myrowid_ is set by the amalgamation method.
+    Prerequisite is that globalamalblockid2myrowid_ in amalgamationData_ is set by the amalgamation method.
     */
     void ComputeAggregateToRowMapDofs(Teuchos::ArrayRCP<Teuchos::ArrayRCP<LO> > &aggToRowMap) const; //AggregateToRowMap
 
@@ -109,14 +109,6 @@ namespace MueLu {
     //! Print the object with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding
     void print(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = verbLevel_default) const;
-
-    //! Set amalagamation routine (needed for ComputeAggregateToRowMap)
-    // This routine is called by MueLu::UCAggregationFactory::Build to transfer the amalgamation
-    // information from MueLu::Graph to MueLu::Aggregates.
-    // If matrix has not been amalgamated, then globalamalblockid2myrowid_ is just null.
-    //void SetAmalgamationInformation(const RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > >& globalamalblockid2myrowid) const {
-    //  globalamalblockid2myrowid_ = globalamalblockid2myrowid;
-    //};
 
     // gives access to amalgamation information container
     // TODO: we probably do not need this (can go away or set to private)
@@ -145,10 +137,6 @@ namespace MueLu {
     //! Get global number of aggregates
     // This method is private because it is used only for printing and because with the current implementation, communication occurs each time this method is called.
     GO GetNumGlobalAggregates() const;
-
-    //! amalgamation information (from graph)
-    //! map: global block id of amalagamated matrix -> vector of local row ids of unamalgamated matrix (only for global block ids of current proc)
-    //mutable RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid_;
 
     RCP<const Map> importDofMap_; // dof map for overlapping nullspace
 
