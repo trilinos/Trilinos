@@ -510,7 +510,7 @@ namespace Tpetra {
     using Teuchos::ireceive;
     using Teuchos::readySend;
     using Teuchos::send;
-    const bool doBarrierAndReadySends = false;
+    const bool doBarrierAndReadySends = true;
 
     const int myImageID = comm_->getRank();
     size_t selfReceiveOffset = 0;
@@ -671,7 +671,7 @@ namespace Tpetra {
     using Teuchos::ireceive;
     using Teuchos::readySend;
     using Teuchos::send;
-    const bool doBarrierAndReadySends = false;
+    const bool doBarrierAndReadySends = true;
 
     const int myImageID = comm_->getRank();
     size_t selfReceiveOffset = 0;
