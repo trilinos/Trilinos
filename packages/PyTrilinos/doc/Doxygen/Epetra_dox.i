@@ -10501,14 +10501,13 @@ C++ includes: Epetra_MpiCommData.h ";
 // File: classEpetra__MpiDistributor.xml
 %feature("docstring") Epetra_MpiDistributor "
 
-Epetra_MpiDistributor: The Epetra MPI implementation of the
-Epetra_Distributor Gather/Scatter Setup Class.
+MPI implementation of Epetra_Distributor.
 
-The Epetra_MpiDistributor class is an MPI implement of
-Epetra_Distributor that encapsulates the general information and
-services needed for other Epetra classes to perform gather/scatter
-operations on a parallel computer. An Epetra_MpiDistributor object is
-actually produced by calling a method in the Epetra_MpiComm class.
+This class is an MPI implementation of  Epetra_Distributor. It
+encapsulates the general information and services needed for other
+Epetra classes to perform gather/scatter operations on a parallel
+computer. An Epetra_MpiDistributor instance is actually produced by
+calling a method in the Epetra_MpiComm class.
 
 C++ includes: Epetra_MpiDistributor.h ";
 
@@ -10517,12 +10516,12 @@ C++ includes: Epetra_MpiDistributor.h ";
 %feature("docstring")  Epetra_MpiDistributor::Epetra_MpiDistributor "Epetra_MpiDistributor::Epetra_MpiDistributor(const Epetra_MpiComm
 &Comm)
 
-Epetra_Comm Default Constructor. ";
+Default constructor. ";
 
 %feature("docstring")  Epetra_MpiDistributor::Epetra_MpiDistributor "Epetra_MpiDistributor::Epetra_MpiDistributor(const
 Epetra_MpiDistributor &Distributor)
 
-Epetra_Comm Copy Constructor. ";
+Copy constructor. ";
 
 %feature("docstring")  Epetra_MpiDistributor::Clone "Epetra_Distributor* Epetra_MpiDistributor::Clone()
 
@@ -10530,7 +10529,7 @@ Clone method. ";
 
 %feature("docstring")  Epetra_MpiDistributor::~Epetra_MpiDistributor "Epetra_MpiDistributor::~Epetra_MpiDistributor()
 
-Epetra_Comm Destructor. ";
+Destructor (declared virtual for memory safety). ";
 
 /*  Gather/Scatter Constructors  */
 
@@ -10538,54 +10537,66 @@ Epetra_Comm Destructor. ";
 Epetra_MpiDistributor::CreateFromSends(const int &NumExportIDs, const
 int *ExportPIDs, bool Deterministic, int &NumRemoteIDs)
 
-Create Distributor object using list of process IDs to which we
-export.
+Create a communication plan from send list.
 
-Take a list of Process IDs and construct a plan for efficiently
-scattering to these processes. Return the number of IDs being sent to
-me.
+Given a list of process IDs to which to send the given number of data
+IDs, construct a communication plan for efficiently scattering data to
+these processes.
+
+The number of data IDs being sent to me.
 
 Parameters:
 -----------
 
-NumExportIDs:  In Number of IDs that need to be sent from this
-processor.
+NumExportIDs:  [in] Number of data IDs that need to be sent from the
+calling process.
 
-ExportPIDs:  In List of processors that will get the exported IDs.
+ExportPIDs:  [in] List of process IDs that will get the exported data
+IDs.
 
-Deterministic:  In No Op.
+Deterministic:  [in] Currently has no effect.
 
-NumRemoteIDs:  Out Number of IDs this processor will be receiving. ";
+NumRemoteIDs:  [out] Number of data IDs the calling process will be
+receiving. ";
 
 %feature("docstring")  Epetra_MpiDistributor::CreateFromRecvs "int
 Epetra_MpiDistributor::CreateFromRecvs(const int &NumRemoteIDs, const
 int *RemoteGIDs, const int *RemotePIDs, bool Deterministic, int
 &NumExportIDs, int *&ExportGIDs, int *&ExportPIDs)
 
-Create Distributor object using list of Remote global IDs and
-corresponding PIDs.
+Create a communication plan from receive list.
 
-Take a list of global IDs and construct a plan for efficiently
-scattering to these processes. Return the number and list of IDs being
-sent by me.
+Given a list of remote data IDs and corresponding process IDs from
+which to receive data, construct a communication plan for efficiently
+scattering data to these processes.
+
+The number and list of data IDs being sent by me.
 
 Parameters:
 -----------
 
-NumRemoteIDs:  In Number of IDs this processor will be receiving.
+NumRemoteIDs:  [in] Number of data IDs the calling process will be
+receiving.
 
-RemoteGIDs:  In List of IDs that this processor wants.
+RemoteGIDs:  [in] List of data IDs that the calling process wants to
+receive.
 
-RemotePIDs:  In List of processors that will send the remote IDs.
+RemotePIDs:  [in] List of IDs of the processes that will send the
+remote data IDs to the calling process.
 
-Deterministic:  In No Op.
+Deterministic:  [in] Currently has no effect.
 
-NumExportIDs:  Out Number of IDs that need to be sent from this
-processor.
+NumExportIDs:  [out] Number of data IDs that need to be sent from the
+calling process.
 
-ExportGIDs:  Out List of processors that will get the exported IDs.
+ExportGIDs:  [out] List of data IDs that the calling process will send
+out.
 
-ExportPIDs:  Out List of processors that will get the exported IDs. ";
+ExportPIDs:  [out] List of IDs of the processes that will receive the
+data IDs sent by the calling process.
+
+This method allocates the output arrays using new. The caller is
+responsible for deallocating them after use. ";
 
 /*  Execute Gather/Scatter Operations  */
 
