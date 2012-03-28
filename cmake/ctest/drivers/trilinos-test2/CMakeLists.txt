@@ -6,6 +6,7 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
   MPI_OPT_DEV
   ctest_linux_nightly_mpi_development_opt_trilinos-test2.cmake
   CTEST_INSTALLER_TYPE release
+  TIMEOUT_MINUTES 240
 )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
@@ -32,7 +33,7 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
   SERIAL_DEBUG_DEV
   ctest_linux_nightly_serial_development_debug_trilinos-test2.cmake
   CTEST_INSTALLER_TYPE release
-  TIMEOUT_MINUTES 210
+  TIMEOUT_MINUTES 240
 )
 
 SET(INSTALLATION_DIR "${CMAKE_BINARY_DIR}/../installation/installed")
