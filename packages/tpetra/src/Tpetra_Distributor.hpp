@@ -860,10 +860,13 @@ namespace Tpetra {
       size_t numPackets,
       const ArrayView<Packet>& imports) 
   {
-    // doPosts takes imports as an ArrayRCP, requiring that the memory location is persisting
-    // however, it need only persist until doWaits is called, so it is safe for us to 
-    // use a non-persisting reference in this case
-    doReversePosts(exports, numPackets, arcp<Packet>(imports.getRawPtr(),0,imports.size(),false));
+    // doReversePosts() takes imports as an ArrayRCP, requiring that
+    // the memory location is persisting.  However, it need only
+    // persist within the scope of that routine, so it is safe for us
+    // to use a nonpersisting reference in this case.
+    doReversePosts (exports, 
+		    numPackets, 
+		    arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false));
     doReverseWaits();
   }
 
@@ -874,10 +877,14 @@ namespace Tpetra {
        const ArrayView<Packet> &imports,
        const ArrayView<size_t> &numImportPacketsPerLID)
   {
-    // doPosts takes imports as an ArrayRCP, requiring that the memory location is persisting
-    // however, it need only persist until doWaits is called, so it is safe for us to 
-    // use a non-persisting reference in this case
-    doReversePosts(exports, numExportPacketsPerLID, arcp<Packet>(imports.getRawPtr(),0,imports.size(),false),numImportPacketsPerLID);
+    // doReversePosts() takes imports as an ArrayRCP, requiring that
+    // the memory location is persisting.  However, it need only
+    // persist within the scope of that routine, so it is safe for us
+    // to use a nonpersisting reference in this case.
+    doReversePosts (exports, 
+		    numExportPacketsPerLID, 
+		    arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false),
+		    numImportPacketsPerLID);
     doReverseWaits();
   }
 
