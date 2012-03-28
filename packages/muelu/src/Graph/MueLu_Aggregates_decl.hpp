@@ -8,6 +8,7 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
+#include "MueLu_AmalgamationInfo_fwd.hpp"
 
 #include "MueLu_Graph_fwd.hpp"
 
@@ -113,9 +114,15 @@ namespace MueLu {
     // This routine is called by MueLu::UCAggregationFactory::Build to transfer the amalgamation
     // information from MueLu::Graph to MueLu::Aggregates.
     // If matrix has not been amalgamated, then globalamalblockid2myrowid_ is just null.
-    void SetAmalgamationInformation(const RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > >& globalamalblockid2myrowid) const {
-      globalamalblockid2myrowid_ = globalamalblockid2myrowid;
-    };
+    //void SetAmalgamationInformation(const RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > >& globalamalblockid2myrowid) const {
+    //  globalamalblockid2myrowid_ = globalamalblockid2myrowid;
+    //};
+
+    // gives access to amalgamation information container
+    // TODO: we probably do not need this (can go away or set to private)
+    const RCP<AmalgamationInfo> & GetAmalgamationInfo() const {
+      return amalgamationData_;
+    }
 
   private:
     LO   nAggregates_;              /* Number of aggregates on this processor  */
@@ -141,10 +148,11 @@ namespace MueLu {
 
     //! amalgamation information (from graph)
     //! map: global block id of amalagamated matrix -> vector of local row ids of unamalgamated matrix (only for global block ids of current proc)
-    mutable RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid_;
+    //mutable RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid_;
 
     RCP<const Map> importDofMap_; // dof map for overlapping nullspace
 
+    RCP<AmalgamationInfo> amalgamationData_; // struct for amalgamation information
   };
 
 } //namespace MueLu

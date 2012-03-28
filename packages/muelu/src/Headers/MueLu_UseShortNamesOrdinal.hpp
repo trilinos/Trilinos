@@ -34,6 +34,10 @@ typedef MueLu::PRFactory<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PRFactory;
 typedef MueLu::ZoltanInterface<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> ZoltanInterface;
 #endif
 
+#ifdef MUELU_AMALGAMATIONINFO_SHORT
+typedef MueLu::AmalgamationInfo<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> AmalgamationInfo;
+#endif
+
 #ifdef MUELU_SINGLELEVELFACTORYBASE_SHORT
 typedef MueLu::SingleLevelFactoryBase SingleLevelFactoryBase;
 #endif

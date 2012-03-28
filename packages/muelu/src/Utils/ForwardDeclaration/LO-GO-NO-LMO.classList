@@ -4,4 +4,6 @@ LeftoverAggregationAlgorithm
 LocalAggregationAlgorithm
 UCAggregationCommHelper
 UCAggregationFactory
+#SubBlockAggregationFactory
+AmalgamationInfo
 #Zoltan

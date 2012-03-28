@@ -28,11 +28,12 @@ FactoryManager
 ThresholdAFilterFactory
 SegregationAFilterFactory
 SegregationATransferFactory
-Repartition
+RepartitionFactory
 MLParameterListInterpreter
 #AggregationExportFactory
 BlockedPFactory
 SubBlockAFactory
 BlockedGaussSeidelSmoother
 AggregationExportFactory
-VariableInformationFactory
+#MultiVectorTransferFactory
+#PermutedTransferFactory

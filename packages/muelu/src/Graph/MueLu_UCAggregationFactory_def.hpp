@@ -6,6 +6,7 @@
 #include "MueLu_Graph.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_AmalgamationInfo.hpp"
 
 namespace MueLu {
 
@@ -46,11 +47,7 @@ namespace MueLu {
       
       algo1_.CoarsenUncoupled(*graph, *aggregates);
       algo2_.AggregateLeftovers(*graph, *aggregates);
-      
-      // transfer amalgamation information from graph to aggregates
-      // note: if matrix has not been amalgamated, the amalgamation information is just Teuchos::null
-      aggregates->SetAmalgamationInformation(graph->GetAmalgamationParams());
-      
+
     }
 
     // Level Set

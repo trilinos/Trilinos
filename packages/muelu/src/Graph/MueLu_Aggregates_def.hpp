@@ -6,6 +6,7 @@
 
 #include "MueLu_Aggregates_decl.hpp"
 #include "MueLu_Graph.hpp"
+#include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_Utilities_decl.hpp" // sumAll
 
 namespace MueLu {
@@ -25,14 +26,19 @@ namespace MueLu {
       isRoot_[i] = false;
 
     importDofMap_ = graph.GetImportDofMap(); // overlapping Dof Map
-    globalamalblockid2myrowid_ = Teuchos::null; // amalgamation info
+
+    // create an empty container for amalgamation information
+    // transfer amalgamation data from graph to AmalgamationInfo container
+    // TODO: move this?
+    amalgamationData_ = rcp(new AmalgamationInfo());
+    amalgamationData_->SetAmalgamationParams(graph.GetMyAmalgamationParams(),graph.GetGlobalAmalgamationParams());
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void  Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeAggregateToRowMap(Teuchos::ArrayRCP<Teuchos::ArrayRCP<LocalOrdinal> > &aggToRowMap) const {
     // decide whether we need the DOF version (for problems with amalgamated matrix)
     // or just the Node version (for problems with 1 DOF per node)
-    if(globalamalblockid2myrowid_ == Teuchos::null) {
+    if(GetAmalgamationInfo()->GetMyAmalgamationParams() == Teuchos::null) {
       ComputeAggregateToRowMapNodes(aggToRowMap);
     }
     else {
@@ -94,7 +100,8 @@ namespace MueLu {
         // for loop over all local row ids for current block id = global node id?
         GlobalOrdinal gblockid = vertex2AggId_->getMap()->getGlobalElement(lnode);
 
-        std::vector<LocalOrdinal> blockdofs = (*globalamalblockid2myrowid_)[gblockid];
+        // unumalgamate graph-based information to dof-based information
+        std::vector<LocalOrdinal> blockdofs = (*(GetAmalgamationInfo()->GetMyAmalgamationParams()))[gblockid];
         for (LocalOrdinal blockdof=0; blockdof<Teuchos::as<LocalOrdinal>(blockdofs.size()); blockdof++) {
           aggToRowMap[ myAgg ][ numDofs[myAgg] ] = blockdofs[blockdof];  // add DOF to current aggregate
           ++(numDofs[myAgg]);
@@ -111,7 +118,8 @@ namespace MueLu {
     {
       // decide whether we need the DOF version (for problems with amalgamated matrix)
       // or just the Node version (for problems with 1 DOF per node)
-      if(globalamalblockid2myrowid_ == Teuchos::null) {
+      //if(globalamalblockid2myrowid_ == Teuchos::null) {
+      if (GetAmalgamationInfo()->GetMyAmalgamationParams() == Teuchos::null) {
         ComputeAggregateSizesNodes();
       }
       else {
@@ -159,7 +167,8 @@ namespace MueLu {
           if (procWinner[lnode] == myPid) {
             GlobalOrdinal gblockid = vertex2AggId_->getMap()->getGlobalElement(lnode);
 
-            std::vector<LocalOrdinal> blockdofs = (*globalamalblockid2myrowid_)[gblockid];
+            // unumalgamate graph-based information to dof-based information
+            std::vector<LocalOrdinal> blockdofs = (*(GetAmalgamationInfo()->GetMyAmalgamationParams()))[gblockid];
             aggregateSizes_[myAgg] += Teuchos::as<LocalOrdinal>(blockdofs.size());
           }
         }
@@ -190,7 +199,7 @@ namespace MueLu {
     GO nGlobalAggregates; sumAll(vertex2AggId_->getMap()->getComm(), (GO)nAggregates, nGlobalAggregates);
     return nGlobalAggregates;
   }
-    
+
 } //namespace MueLu
 
 #endif // MUELU_AGGREGATES_DEF_HPP

@@ -61,7 +61,11 @@ namespace MueLu {
 
     //! returns amalgamation information globalamalblockid2myrowid
     //! only valid if SetAmalgamationParams has been used before (i.e. CoalesceDropFactory::Amalgamate is called).
-    RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > GetAmalgamationParams() const;
+    RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > GetMyAmalgamationParams() const;
+
+    //! returns amalgamation information globalamalblockid2globalrowid
+    //! only valid if SetAmalgamationParams has been used before (i.e. CoalesceDropFactory::Amalgamate is called).
+    RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > GetGlobalAmalgamationParams() const;
 
 #ifdef MUELU_UNUSED
     size_t GetNodeNumGhost() const;
