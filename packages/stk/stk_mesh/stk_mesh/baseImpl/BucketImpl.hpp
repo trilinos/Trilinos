@@ -138,6 +138,7 @@ class BucketImpl {
   std::vector<Entity*>   m_entities ;    // Array of entity pointers,
                                          // beginning of field value memory.
   unsigned char* m_field_data;
+  unsigned char* m_field_data_end;
 
   unsigned char * field_data_location_impl( const unsigned & field_ordinal, const unsigned & entity_ordinal ) const
   {
@@ -147,6 +148,7 @@ class BucketImpl {
     if ( data_map.m_size ) {
       ptr = const_cast<unsigned char*>(m_field_data) + data_map.m_base + data_map.m_size * entity_ordinal;
     }
+    ThrowAssert(ptr < m_field_data_end);
     return ptr ;
   }
   unsigned char * fast_field_data_location_impl( const unsigned & field_ordinal, const unsigned & entity_ordinal ) const

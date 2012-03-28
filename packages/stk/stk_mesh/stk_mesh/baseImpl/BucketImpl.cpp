@@ -211,6 +211,7 @@ BucketImpl::BucketImpl( BulkData & arg_mesh,
   , m_field_map( m_mesh.mesh_meta_data().get_fields().size()+1)
   , m_entities(arg_capacity)
   , m_field_data(NULL)
+  , m_field_data_end(NULL)
 {
   //calculate the size of the field_data
 
@@ -264,6 +265,7 @@ BucketImpl::BucketImpl( BulkData & arg_mesh,
 
   //allocate space for the fields
   m_field_data = field_data_size > 0 ? new unsigned char[field_data_size] : NULL;
+  m_field_data_end = m_field_data + field_data_size;
 }
 
 } // namespace impl
