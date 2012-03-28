@@ -104,8 +104,10 @@ public:
    */
 
   XpetraCrsGraphInput(const RCP<const User> &ingraph,
-    std::vector<const scalar_t *> &vWeights,  std::vector<int> &vWeightStrides,
-    std::vector<const scalar_t *> &eWeights,  std::vector<int> &eWeightStrides);
+    const vector<const scalar_t *> &vWeights,  
+    const vector<int> &vWeightStrides,
+    const vector<const scalar_t *> &eWeights,  
+    const vector<int> &eWeightStrides);
 
   /*! \brief Constructor for graph with weights and vertex coordinates.
    *  \param ingraph the Epetra_CrsGraph, Tpetra::CrsGraph or Xpetra::CrsGraph
@@ -154,9 +156,12 @@ public:
    */
 
   XpetraCrsGraphInput(const RCP<const User> &ingraph,
-    std::vector<const scalar_t *> &vWeights,  std::vector<int> &vWeightStrides,
-    std::vector<const scalar_t *> &eWeights,  std::vector<int> &eWeightStrides,
-    std::vector<const scalar_t *> &coords,  std::vector<int> &coordStrides);
+    const vector<const scalar_t *> &vWeights,  
+    const vector<int> &vWeightStrides,
+    const vector<const scalar_t *> &eWeights,  
+    const vector<int> &eWeightStrides,
+    const vector<const scalar_t *> &coords,  
+    const vector<int> &coordStrides);
 
   /*! \brief Provide a pointer to one dimension of the vertex weights.
    *    \param dim A number from 0 to one less than 
@@ -234,7 +239,7 @@ public:
   // The InputAdapter interface.
   ////////////////////////////////////////////////////
 
-  std::string inputAdapterName()const { return std::string("XpetraCrsGraph");}
+  string inputAdapterName()const { return string("XpetraCrsGraph");}
 
   size_t getLocalNumberOfObjects() const { return getLocalNumberOfVertices();}
 
@@ -332,9 +337,12 @@ public:
 private:
 
   void initializeData(
-    std::vector<const scalar_t *> &vWeights,  std::vector<int> &vWeightStrides,
-    std::vector<const scalar_t *> &eWeights,  std::vector<int> &eWeightStrides,
-    std::vector<const scalar_t *> &coords,  std::vector<int> &coordStrides);
+    const vector<const scalar_t *> &vWeights,  
+    const vector<int> &vWeightStrides,
+    const vector<const scalar_t *> &eWeights,  
+    const vector<int> &eWeightStrides,
+    const vector<const scalar_t *> &coords,  
+    const vector<int> &coordStrides);
 
   RCP<const User > ingraph_;
   RCP<const xgraph_t > graph_;
@@ -371,35 +379,42 @@ template <typename User>
       coordinateDim_(0), coords_(0),
       env_(rcp(new Environment))
 {
-  std::vector<const scalar_t *> emptyValues;
-  std::vector<int> emptyStrides;
+  vector<const scalar_t *> emptyValues;
+  vector<int> emptyStrides;
 
   initializeData(emptyValues, emptyStrides, emptyValues, emptyStrides,
     emptyValues, emptyStrides);
 }
 
 template <typename User>
-  XpetraCrsGraphInput<User>::XpetraCrsGraphInput(const RCP<const User> &ingraph,
-    std::vector<const scalar_t *> &vWeights,  std::vector<int> &vWeightStrides,
-    std::vector<const scalar_t *> &eWeights,  std::vector<int> &eWeightStrides):
+  XpetraCrsGraphInput<User>::XpetraCrsGraphInput(
+    const RCP<const User> &ingraph,
+    const vector<const scalar_t *> &vWeights,  
+    const vector<int> &vWeightStrides,
+    const vector<const scalar_t *> &eWeights,  
+    const vector<int> &eWeightStrides):
       ingraph_(ingraph), graph_(), comm_() , offs_(), eids_(),
       vertexWeightDim_(vWeights.size()), vertexWeights_(vWeights.size()),
       edgeWeightDim_(eWeights.size()), edgeWeights_(eWeights.size()),
       coordinateDim_(0), coords_(0),
       env_(rcp(new Environment))
 {
-  std::vector<const scalar_t *> emptyValues;
-  std::vector<int> emptyStrides;
+  vector<const scalar_t *> emptyValues;
+  vector<int> emptyStrides;
 
   initializeData(vWeights, vWeightStrides, eWeights, eWeightStrides,
     emptyValues, emptyStrides);
 }
 
 template <typename User>
-  XpetraCrsGraphInput<User>::XpetraCrsGraphInput(const RCP<const User> &ingraph,
-    std::vector<const scalar_t *> &vWeights,  std::vector<int> &vWeightStrides,
-    std::vector<const scalar_t *> &eWeights,  std::vector<int> &eWeightStrides,
-    std::vector<const scalar_t *> &coords,  std::vector<int> &coordStrides):
+  XpetraCrsGraphInput<User>::XpetraCrsGraphInput(
+    const RCP<const User> &ingraph,
+    const vector<const scalar_t *> &vWeights,  
+    const vector<int> &vWeightStrides,
+    const vector<const scalar_t *> &eWeights,  
+    const vector<int> &eWeightStrides,
+    const vector<const scalar_t *> &coords,  
+    const vector<int> &coordStrides):
       ingraph_(ingraph), graph_(), comm_() , offs_(), eids_(),
       vertexWeightDim_(vWeights.size()), vertexWeights_(vWeights.size()),
       edgeWeightDim_(eWeights.size()), edgeWeights_(eWeights.size()),
@@ -412,9 +427,12 @@ template <typename User>
 
 template <typename User>
   void XpetraCrsGraphInput<User>::initializeData(
-    std::vector<const scalar_t *> &vWeights,  std::vector<int> &vWeightStrides,
-    std::vector<const scalar_t *> &eWeights,  std::vector<int> &eWeightStrides,
-    std::vector<const scalar_t *> &coords,  std::vector<int> &coordStrides)
+    const vector<const scalar_t *> &vWeights,  
+    const vector<int> &vWeightStrides,
+    const vector<const scalar_t *> &eWeights,  
+    const vector<int> &eWeightStrides,
+    const vector<const scalar_t *> &coords,  
+    const vector<int> &coordStrides)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
   env_->localInputAssertion(__FILE__, __LINE__, 

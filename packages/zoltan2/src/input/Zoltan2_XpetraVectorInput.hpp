@@ -71,7 +71,8 @@ public:
    *  lifetime of this InputAdapter.
    */
   XpetraVectorInput( const RCP<const User> &invector,
-    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides);
+    const vector<const scalar_t *> &weights, 
+    const vector<int> &weightStrides);
 
   /*! \brief Access to the xpetra-wrapped vector
    */
@@ -85,7 +86,7 @@ public:
   // The InputAdapter interface.
   ////////////////////////////////////////////////////
 
-  std::string inputAdapterName()const { return std::string("XpetraVector");}
+  string inputAdapterName()const { return string("XpetraVector");}
 
   size_t getLocalNumberOfObjects() const { return getLocalLength();}
 
@@ -149,7 +150,8 @@ private:
   
 template <typename User>
   XpetraVectorInput<User>::XpetraVectorInput(const RCP<const User> &invector, 
-    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
+    const vector<const scalar_t *> &weights, 
+    const vector<int> &weightStrides):
       invector_(invector), vector_(), map_(),
       env_(rcp(new Environment)), base_(),
       numWeights_(weights.size()), weights_(weights.size())
@@ -203,7 +205,7 @@ template <typename User>
     }
   }
   else{
-    throw std::logic_error("invalid underlying lib");
+    throw logic_error("invalid underlying lib");
   }
 
   ArrayView<const gid_t> gids = map_->getNodeElementList();

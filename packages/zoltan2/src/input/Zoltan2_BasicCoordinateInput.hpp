@@ -106,8 +106,10 @@ public:
    */
 
   BasicCoordinateInput(lno_t numIds, const gid_t *ids, 
-    std::vector<const scalar_t *> &values,  std::vector<int> &valueStrides,
-    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides);
+    const vector<const scalar_t *> &values,  
+    const vector<int> &valueStrides,
+    const vector<const scalar_t *> &weights, 
+    const vector<int> &weightStrides);
 
   /*! Destructor
    */
@@ -117,7 +119,7 @@ public:
   // The InputAdapter interface.
   ////////////////////////////////////////////////////////////////
 
-  std::string inputAdapterName() const {return std::string("BasicCoordinate");}
+  string inputAdapterName() const {return string("BasicCoordinate");}
 
   size_t getLocalNumberOfObjects() const { return numIds_;}
 
@@ -165,8 +167,8 @@ public:
 
 private:
   void initializeData(
-    std::vector<const scalar_t *> &values,  std::vector<int> &valueStrides,
-    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides);
+    const vector<const scalar_t *> &values,  const vector<int> &valueStrides,
+    const vector<const scalar_t *> &weights, const vector<int> &weightStrides);
 
   // A default Environment for error handling.
   RCP<const Environment> env_;
@@ -196,10 +198,10 @@ template <typename User>
       dimension_(0), coords_(0), 
       numWeights_(0), weights_(0)
 {
-  std::vector<const scalar_t *> values;
-  std::vector<int> strides;
-  std::vector<const scalar_t *> emptyValues;
-  std::vector<int> emptyStrides;
+  vector<const scalar_t *> values;
+  vector<int> strides;
+  vector<const scalar_t *> emptyValues;
+  vector<int> emptyStrides;
 
   if (x){
     values.push_back(x);
@@ -225,8 +227,8 @@ template <typename User>
 template <typename User>
   BasicCoordinateInput<User>::BasicCoordinateInput( 
     lno_t numIds, const gid_t *ids, 
-    std::vector<const scalar_t *> &values,  std::vector<int> &valueStrides,
-    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
+    const vector<const scalar_t *> &values,  const vector<int> &valueStrides,
+    const vector<const scalar_t *> &weights, const vector<int> &weightStrides):
       env_(rcp(new Environment)), 
       numIds_(numIds), globalNumIds_(), idList_(ids), 
       dimension_(values.size()), coords_(values.size()), 
@@ -237,8 +239,8 @@ template <typename User>
 
 template <typename User>
   void BasicCoordinateInput<User>::initializeData(
-    std::vector<const scalar_t *> &values,  std::vector<int> &valueStrides,
-    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides)
+    const vector<const scalar_t *> &values,  const vector<int> &valueStrides,
+    const vector<const scalar_t *> &weights, const vector<int> &weightStrides)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
 

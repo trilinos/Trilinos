@@ -54,13 +54,13 @@ public:
    */
 
   BasicIdentifierInput( lno_t numIds, const gid_t *idPtr, 
-    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides);
+    const vector<const scalar_t *> &weights, const vector<int> &weightStrides);
 
   ////////////////////////////////////////////////////////////////
   // The InputAdapter interface.
   ////////////////////////////////////////////////////////////////
 
-  std::string inputAdapterName() const {return std::string("BasicIdentifier");}
+  string inputAdapterName() const {return string("BasicIdentifier");}
 
   size_t getLocalNumberOfObjects() const { return numIds_;}
 
@@ -107,7 +107,7 @@ private:
 template <typename User>
   BasicIdentifierInput<User>::BasicIdentifierInput(
     lno_t numIds, const gid_t *idPtr,
-    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
+    const vector<const scalar_t *> &weights, const vector<int> &weightStrides):
       numIds_(numIds), idList_(idPtr), weights_(weights.size())
 {
   env_ = rcp(new Environment);    // for error messages

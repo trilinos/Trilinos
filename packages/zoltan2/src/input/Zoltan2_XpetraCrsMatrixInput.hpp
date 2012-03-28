@@ -91,7 +91,7 @@ public:
   // The InputAdapter interface.
   ////////////////////////////////////////////////////
 
-  std::string inputAdapterName()const { return std::string("XpetraCrsMatrix");}
+  string inputAdapterName()const { return string("XpetraCrsMatrix");}
 
   size_t getLocalNumberOfObjects() const { return getLocalNumRows();}
 

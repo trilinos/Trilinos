@@ -86,10 +86,10 @@ public:
       numIds_(numIds), globalNumIds_(0), idList_(ids),
       numVectors_(1), elements_(1), numWeights_(0), weights_(0)
   {
-    std::vector<const scalar_t *> values;
-    std::vector<int> strides;
-    std::vector<const scalar_t *> emptyValues;
-    std::vector<int> emptyStrides;
+    vector<const scalar_t *> values;
+    vector<int> strides;
+    vector<const scalar_t *> emptyValues;
+    vector<int> emptyStrides;
 
     values.push_back(elements);
     strides.push_back(elementStride);
@@ -118,14 +118,15 @@ public:
 
   BasicVectorInput(lno_t numIds, const gid_t *ids, 
     const scalar_t *elements, int elementStride,
-    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
+    const vector<const scalar_t *> &weights, 
+    const vector<int> &weightStrides):
       env_(rcp(new Environment)), 
       numIds_(numIds), globalNumIds_(0), idList_(ids),
       numVectors_(1), elements_(1), 
       numWeights_(weights.size()), weights_(weights.size())
   {
-    std::vector<const scalar_t *> values;
-    std::vector<int> strides;
+    vector<const scalar_t *> values;
+    vector<int> strides;
 
     values.push_back(elements);
     strides.push_back(elementStride);
@@ -158,8 +159,10 @@ public:
    */
 
   BasicVectorInput(lno_t numIds, const gid_t *ids, 
-    std::vector<const scalar_t *> &elements,  std::vector<int> &elementStrides,
-    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
+    const vector<const scalar_t *> &elements,  
+    const vector<int> &elementStrides,
+    const vector<const scalar_t *> &weights, 
+    const vector<int> &weightStrides):
       env_(rcp(new Environment)), 
       numIds_(numIds), globalNumIds_(0), idList_(ids),
       numVectors_(elements.size()), elements_(elements.size()), 
@@ -176,7 +179,7 @@ public:
   // The InputAdapter interface.
   ////////////////////////////////////////////////////////////////
 
-  std::string inputAdapterName() const {return std::string("BasicVector");}
+  string inputAdapterName() const {return string("BasicVector");}
 
   size_t getLocalNumberOfObjects() const { return numIds_;}
 
@@ -226,8 +229,10 @@ private:
   Array<RCP<StridedData<lno_t, scalar_t> > > weights_;
 
   void createBasicVector(
-    std::vector<const scalar_t *> &elements,  std::vector<int> &elementStrides,
-    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides);
+    const vector<const scalar_t *> &elements,  
+    const vector<int> &elementStrides,
+    const vector<const scalar_t *> &weights, 
+    const vector<int> &weightStrides);
 
 };
 
@@ -267,8 +272,10 @@ template <typename User>
 
 template <typename User>
   void BasicVectorInput<User>::createBasicVector(
-   std::vector<const scalar_t *> &elements,  std::vector<int> &elementStrides,
-   std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides)
+   const vector<const scalar_t *> &elements,  
+   const vector<int> &elementStrides,
+   const vector<const scalar_t *> &weights, 
+   const vector<int> &weightStrides)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
 

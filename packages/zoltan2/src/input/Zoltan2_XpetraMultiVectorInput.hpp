@@ -70,7 +70,8 @@ public:
    */
 
   XpetraMultiVectorInput(const RCP<const User> &invector,
-    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides);
+    const vector<const scalar_t *> &weights, 
+    const vector<int> &weightStrides);
 
   /*! \brief Access to xpetra wrapper multivector
    */
@@ -84,7 +85,7 @@ public:
   // The InputAdapter interface.
   ////////////////////////////////////////////////////
 
-  std::string inputAdapterName()const {return std::string("XpetraMultiVector");}
+  string inputAdapterName()const {return string("XpetraMultiVector");}
 
   size_t getLocalNumberOfObjects() const { return getLocalLength();}
 
@@ -146,7 +147,8 @@ private:
 template <typename User>
   XpetraMultiVectorInput<User>::XpetraMultiVectorInput(
     const RCP<const User> &invector,
-    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
+    const vector<const scalar_t *> &weights, 
+    const vector<int> &weightStrides):
       invector_(invector), vector_(), map_(), 
       env_(rcp(new Environment)), base_(),
       numWeights_(weights.size()), weights_(weights.size())
@@ -197,7 +199,7 @@ template <typename User>
     }
   }
   else{
-    throw std::logic_error("invalid underlying lib");
+    throw logic_error("invalid underlying lib");
   }
 
   ArrayView<const gid_t> gids = map_->getNodeElementList();
