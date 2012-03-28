@@ -399,7 +399,7 @@ namespace stk
             double theta = thetas[itheta];
             theta *= M_PI/180.0;
             // create a nxn quad mesh with sidesets
-            const unsigned n = 40;
+            const unsigned n = 20;
             //const unsigned nx = n , ny = n , nz = p_size*n ;
             const unsigned nx = n , ny = n;
 

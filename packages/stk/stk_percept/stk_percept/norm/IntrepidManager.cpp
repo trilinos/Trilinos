@@ -589,7 +589,8 @@ namespace stk
       unsigned cellOrd = 0;  // FIXME
       Intrepid::CellTools<double>::mapToReferenceFrame(found_parametric_coordinates, input_phy_points, cellWorkset, topo, cellOrd);
       MDArrayUInt inclusion_results(1);  // FIXME
-      Intrepid::CellTools<double>::checkPointwiseInclusion(inclusion_results, found_parametric_coordinates, topo);
+      double threshold = 1.e-4; // (INTREPID_THRESHOLD default = 10*double_eps ~ 20e-16)
+      Intrepid::CellTools<double>::checkPointwiseInclusion(inclusion_results, found_parametric_coordinates, topo, threshold);
       found_it = inclusion_results(0);
       if (found_it)
         {
