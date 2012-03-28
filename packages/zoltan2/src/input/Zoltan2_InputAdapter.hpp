@@ -54,7 +54,7 @@ public:
 
   /*! \brief Returns a descriptive name that identifies the concrete adapter.
    */
-  virtual std::string inputAdapterName() const = 0;
+  virtual string inputAdapterName() const = 0;
 
   /*! \brief Returns the number of objects in the input.
    *
