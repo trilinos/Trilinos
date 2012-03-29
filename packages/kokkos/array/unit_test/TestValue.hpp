@@ -75,7 +75,7 @@ public:
 
     dView dx , dy ;
 
-    dx = Kokkos::create_labeled_value<T,device> ( "dx" );
+    dx = Kokkos::create_value<dView> ( "dx" );
 
     Kokkos::deep_copy( dx , host_dx );
     Kokkos::deep_copy( host_dy , dx );

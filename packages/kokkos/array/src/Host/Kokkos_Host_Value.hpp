@@ -49,37 +49,125 @@
 namespace Kokkos {
 namespace Impl {
 
+//----------------------------------------------------------------------------
+
 template< typename ValueType >
-class Initialize< Value< ValueType , Host > > {
-public:
-  static void run( const Value< ValueType , Host > & dst )
-  { memset( dst.ptr_on_device() , 0 , sizeof(ValueType) ); }
+struct Factory< Value< ValueType , Host > , void >
+{
+  typedef Value< ValueType , Host > output_type ;
+
+  static inline
+  output_type create( const std::string & label )
+  {
+    output_type output ;
+    output.m_memory.allocate( 1 , label );
+    memset( output.ptr_on_device() , 0 , sizeof(ValueType) );
+    return output ;
+  }
+
+  static inline
+  output_type create() { return create( std::string() ); }
+};
+
+template< typename ValueType , class Device >
+struct Factory< Value< ValueType , HostMapped< Device > > , void >
+{
+  typedef Value< ValueType , HostMapped< Device > > output_type ;
+
+  static inline
+  output_type create( const std::string & label )
+  {
+    output_type output ;
+    output.m_memory.allocate( 1 , label );
+    memset( output.ptr_on_device() , 0 , sizeof(ValueType) );
+    return output ;
+  }
+
+  static inline
+  output_type create() { return create( std::string() ); }
+};
+
+//----------------------------------------------------------------------------
+
+template< typename ValueType >
+struct Factory< Value< ValueType , Host > ,
+                Value< ValueType , Host > >
+{
+  static inline
+  void deep_copy( const Value< ValueType , Host > & output ,
+                  const Value< ValueType , Host > & input )
+  { *output = *input ; }
 };
 
 template< typename ValueType >
-class DeepCopy< Value< ValueType , Host > ,
-                Value< ValueType , Host > > {
-public:
-  static void run( const Value< ValueType , Host > & dst ,
-                   const Value< ValueType , Host > & src )
-  { *dst = *src ; }
+struct Factory< Value< ValueType , Host > , ValueType >
+{
+  static inline
+  void deep_copy( const Value< ValueType , Host > & output ,
+                  const ValueType & input )
+  { *output = input ; }
 };
 
 template< typename ValueType >
-class DeepCopy< Value< ValueType , Host > , ValueType > {
-public:
-  static void run( const Value< ValueType , Host > & dst ,
-                   const ValueType & src )
-  { *dst = src ; }
+struct Factory< ValueType , Value< ValueType , Host > >
+{
+  static inline
+  void deep_copy( ValueType & output ,
+                  const Value< ValueType , Host > & input )
+  { output = *input ; }
 };
 
-template< typename ValueType >
-class DeepCopy< ValueType , Value< ValueType , Host > > {
-public:
-  static void run( ValueType & dst ,
-                   const Value< ValueType , Host > & src )
-  { dst = *src ; }
+//----------------------------------------------------------------------------
+
+template< typename ValueType , class Device >
+struct Factory< Value< ValueType , HostMapped< Device > > ,
+                Value< ValueType , HostMapped< Device > > >
+{
+  static inline
+  void deep_copy( const Value< ValueType , HostMapped< Device > > & output ,
+                  const Value< ValueType , HostMapped< Device > > & input )
+  { *output = *input ; }
 };
+
+template< typename ValueType , class Device >
+struct Factory< Value< ValueType , Host > ,
+                Value< ValueType , HostMapped< Device > > >
+{
+  static inline
+  void deep_copy( const Value< ValueType , Host > & output ,
+                  const Value< ValueType , HostMapped< Device > > & input )
+  { *output = *input ; }
+};
+
+template< typename ValueType , class Device >
+struct Factory< Value< ValueType , HostMapped< Device > > ,
+                Value< ValueType , Host > >
+{
+  static inline
+  void deep_copy( const Value< ValueType , HostMapped< Device > > & output ,
+                  const Value< ValueType , Host > & input )
+  { *output = *input ; }
+};
+
+template< typename ValueType , class Device >
+struct Factory< Value< ValueType , HostMapped< Device > > , ValueType >
+{
+  static inline
+  void deep_copy( const Value< ValueType , HostMapped< Device > > & output ,
+                  const ValueType & input )
+  { *output = input ; }
+};
+
+template< typename ValueType , class Device >
+struct Factory< ValueType , Value< ValueType , HostMapped< Device > > >
+{
+  static inline
+  void deep_copy( ValueType & output ,
+                  const Value< ValueType , HostMapped< Device > > & input )
+  { output = *input ; }
+};
+
+//----------------------------------------------------------------------------
 
 } // namespace Impl
 } // namespace Kokkos

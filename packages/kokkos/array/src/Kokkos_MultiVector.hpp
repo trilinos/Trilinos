@@ -49,6 +49,7 @@
 #include <impl/Kokkos_forward.hpp>
 #include <impl/Kokkos_MemoryView.hpp>
 #include <impl/Kokkos_StaticAssert.hpp>
+#include <impl/Kokkos_ArrayTraits.hpp>
 #include <impl/Kokkos_ArrayBounds.hpp>
 
 namespace Kokkos {
@@ -128,147 +129,25 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< typename ValueType , class DeviceType >
-MultiVector< ValueType , DeviceType >
-create_labeled_multivector( const std::string & label ,
-                            size_t length , size_t count = 1 );
-
 template< class MultiVectorType >
-inline
 MultiVector< typename MultiVectorType::value_type ,
              typename MultiVectorType::device_type >
-create_labeled_multivector( const std::string & label ,
-                            size_t length , size_t count = 1 );
-
-template< typename ValueType , class DeviceType >
-MultiVector< ValueType , DeviceType >
-create_multivector( size_t length , size_t count = 1 );
-
-template< class MultiVectorType >
-inline
-MultiVector< typename MultiVectorType::value_type ,
-             typename MultiVectorType::device_type >
-create_multivector( size_t length , size_t count = 1 );
-
-//----------------------------------------------------------------------------
-
-template< typename ValueType , class DeviceType >
-typename MultiVector< ValueType , DeviceType >::HostMirror
-create_mirror( const MultiVector< ValueType , DeviceType > & );
-
-//----------------------------------------------------------------------------
-
-template< typename ValueType , class DeviceDst , class DeviceSrc >
-void deep_copy( const MultiVector< ValueType , DeviceDst > & dst ,
-                const MultiVector< ValueType , DeviceSrc > & src );
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-/** \brief  The master creation method that all other versions call */
-template< typename ValueType , class DeviceType >
-inline
-MultiVector< ValueType , DeviceType >
-create_labeled_multivector( const std::string & label ,
-                            size_t length , size_t count )
+create_multivector(
+  const std::string & label , size_t length , size_t count = 1 )
 {
-  typedef typename DeviceType::memory_space   memory_space ;
-  typedef Impl::MemoryManager< memory_space > memory_manager ;
-
-  const size_t stride =
-    1 < count ? memory_manager::template preferred_alignment<ValueType>(length)
-              : length ;
-
-  return MultiVector< ValueType , DeviceType >( label, length, count, stride );
-}
-
-//----------------------------------------------------------------------------
-
-template< class MultiVectorType >
-inline
-MultiVector< typename MultiVectorType::value_type ,
-             typename MultiVectorType::device_type >
-create_labeled_multivector( const std::string & label ,
-                            size_t length , size_t count )
-{
-  return create_labeled_multivector< typename MultiVectorType::value_type ,
-                                     typename MultiVectorType::device_type >
-         ( label , length , count );
-}
-
-//----------------------------------------------------------------------------
-
-template< typename ValueType , class DeviceType >
-inline
-MultiVector< ValueType , DeviceType >
-create_multivector( size_t length , size_t count )
-{
-  return create_labeled_multivector< ValueType , DeviceType >
-    ( std::string() , length , count );
+  typedef MultiVector< typename MultiVectorType::value_type ,
+                       typename MultiVectorType::device_type > type ;
+  return Impl::Factory< type , void >::create( label , length , count );
 }
 
 template< class MultiVectorType >
-inline
 MultiVector< typename MultiVectorType::value_type ,
              typename MultiVectorType::device_type >
-create_multivector( size_t length , size_t count )
+create_multivector( const size_t length , size_t count = 1 )
 {
-  return create_labeled_multivector< typename MultiVectorType::value_type ,
-                                     typename MultiVectorType::device_type >
-         ( std::string() , length , count );
-}
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace Impl {
-
-template< typename ValueType , class Device >
-class CreateMirror< MultiVector< ValueType , Device > , true /* view */ >
-{
-public:
-  typedef  MultiVector< ValueType , Device >  View ;
-  typedef  typename View::HostMirror          HostMirror ;
-
-  static
-  HostMirror create( const View & v ) { return HostMirror( v ); }
-};
-
-template< typename ValueType , class Device >
-class CreateMirror< MultiVector< ValueType , Device > , false /* copy */ >
-{
-public:
-  typedef  MultiVector< ValueType , Device >  View ;
-  typedef  typename View::HostMirror          HostMirror ;
-
-  static
-  HostMirror create( const View & v )
-    { return HostMirror( std::string(), v.m_length, v.m_count, v.m_stride ); }
-};
-
-}
-
-//----------------------------------------------------------------------------
-
-template< typename ValueType , class DeviceType >
-inline
-typename MultiVector< ValueType , DeviceType >::HostMirror
-create_mirror( const MultiVector< ValueType , DeviceType > & v )
-{
-  typedef MultiVector< ValueType , DeviceType >  view_type ;
-  typedef typename view_type::HostMirror         host_view ;
-  typedef typename host_view::device_type        host_device ;
-  typedef typename host_device::memory_space     host_memory ;
-  typedef typename DeviceType::memory_space      memory ;
-
-  enum { optimize = Impl::SameType< memory , host_memory >::value &&
-#if defined( KOKKOS_MIRROR_VIEW_OPTIMIZE )
-                    KOKKOS_MIRROR_VIEW_OPTIMIZE
-#else
-                    false
-#endif
-       };
-
-  return Impl::CreateMirror< view_type , optimize >::create( v );
+  typedef MultiVector< typename MultiVectorType::value_type ,
+                       typename MultiVectorType::device_type > type ;
+  return Impl::Factory< type , void >::create( std::string() , length , count );
 }
 
 //----------------------------------------------------------------------------
@@ -285,7 +164,7 @@ void deep_copy( const MultiVector< ValueType , DeviceDst > & dst ,
     Impl::multivector_require_equal_dimension( dst.length() , dst.count() ,
                                                src.length() , src.count() );
 
-    Impl::DeepCopy<dst_type,src_type>::run( dst , src );
+    Impl::Factory<dst_type,src_type>::deep_copy( dst , src );
   }
 }
 
@@ -293,6 +172,8 @@ void deep_copy( const MultiVector< ValueType , DeviceDst > & dst ,
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+
+#include <impl/Kokkos_MultiVector_factory.hpp>
 
 #endif /* KOKKOS_MULTIVECTOR_HPP */
 

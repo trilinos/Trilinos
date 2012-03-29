@@ -54,17 +54,12 @@ namespace Kokkos {
 namespace Impl {
 
 template< typename ValueType >
-class Initialize< Value< ValueType , Cuda > > {
-public:
-  static void run( const Value< ValueType , Cuda > & ) {}
-};
-
-template< typename ValueType >
-class DeepCopy< Value< ValueType , Cuda > ,
-                Value< ValueType , Cuda > > {
-public:
-  static void run( const Value< ValueType , Cuda > & dst ,
-                   const Value< ValueType , Cuda > & src )
+struct Factory< Value< ValueType , Cuda > ,
+                Value< ValueType , Cuda > >
+{
+  static inline
+  void deep_copy( const Value< ValueType , Cuda > & dst ,
+                  const Value< ValueType , Cuda > & src )
   {
     MemoryManager< Cuda >::
       copy_to_device_from_device( dst.m_memory.ptr_on_device(),
@@ -74,14 +69,12 @@ public:
 };
 
 template< typename ValueType >
-class DeepCopy< Value< ValueType , Cuda > ,
-                typename Value< ValueType , Cuda >::HostMirror > {
-public:
-  typedef Value< ValueType , Cuda >                    dst_type ;
-  typedef typename Value< ValueType , Cuda >::HostMirror src_type ;
-
-  static void run( const Value< ValueType , Cuda > & dst ,
-                   const Value< ValueType , Cuda > & src )
+struct Factory< Value< ValueType , Cuda > ,
+                Value< ValueType , HostMapped< Cuda > > >
+{
+  static inline
+  void deep_copy( const Value< ValueType , Cuda > & dst ,
+                  const Value< ValueType , HostMapped< Cuda > > & src )
   {
     MemoryManager< Cuda >::
       copy_to_device_from_host( dst.m_memory.ptr_on_device(),
@@ -91,26 +84,26 @@ public:
 };
 
 template< typename ValueType >
-class DeepCopy< typename Value< ValueType , Cuda >::HostMirror ,
-                Value< ValueType , Cuda > > {
-public:
-  typedef typename Value< ValueType , Cuda >::HostMirror dst_type ;
-  typedef Value< ValueType , Cuda >                    src_type ;
-
-  static void run( const dst_type & dst , const src_type & src )
+struct Factory< Value< ValueType , HostMapped< Cuda > > ,
+                Value< ValueType , Cuda > >
+{
+  static inline
+  void deep_copy( const Value< ValueType , HostMapped< Cuda > > & src ,
+                  const Value< ValueType , Cuda > & dst )
   {
     MemoryManager< Cuda >::
-      copy_to_host_from_device( dst.m_memory.ptr_on_device(),
+      copy_to_device_from_host( dst.m_memory.ptr_on_device(),
                                 src.m_memory.ptr_on_device(),
                                 sizeof(ValueType) );
   }
 };
 
 template< typename ValueType >
-class DeepCopy< Value< ValueType , Cuda > , ValueType > {
-public:
-  static void run( const Value< ValueType , Cuda > & dst ,
-                   const ValueType & src )
+struct Factory< Value< ValueType , Cuda > , ValueType >
+{
+  inline static
+  void deep_copy( const Value< ValueType , Cuda > & dst ,
+                  const ValueType & src )
   {
     MemoryManager< Cuda >::
       copy_to_device_from_host( dst.m_memory.ptr_on_device(),
@@ -119,10 +112,11 @@ public:
 };
 
 template< typename ValueType >
-class DeepCopy< ValueType , Value< ValueType , Cuda > > {
+struct Factory< ValueType , Value< ValueType , Cuda > > {
 public:
-  static void run( ValueType & dst ,
-                   const Value< ValueType , Cuda > & src )
+  inline static
+  void deep_copy( ValueType & dst ,
+                  const Value< ValueType , Cuda > & src )
   {
     MemoryManager< Cuda >::
       copy_to_host_from_device( & dst ,

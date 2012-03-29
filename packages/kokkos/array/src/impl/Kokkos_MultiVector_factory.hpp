@@ -41,60 +41,69 @@
 //@HEADER
 */
 
-#include <iostream>
-#include <fstream>
+#ifndef KOKKOS_IMPL_MULTIVECTOR_FACTORY_HPP
+#define KOKKOS_IMPL_MULTIVECTOR_FACTORY_HPP
 
-// Print out sparse Matrix (A) to a file. Useful for visualizing matrix
-// to see correctness.
-template<class scalar_vector , class int_vector>
-void printSparse(const std::string & filename , scalar_vector & value ,
-                        int_vector & row ,
-                        int_vector & col )
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Impl {
+
+template< typename ValueType , class Device >
+struct Factory< MultiVector< ValueType , Device > , void >
 {
-  std::ofstream outfile(filename.c_str());
-  int end = row.length()-1;
-  outfile<<end << " " << col.length()<<std::endl;
-  for( int i = 0 ; i < end ; i++)
-  {
-    int stop = row(i+1);
-    for(int j = row(i) ; j < stop ; j++)
-    {
-      if(value(j) != 0)
-        outfile << i+1 <<" " << col(j)+1 << " " << value(j)<< std::endl;
-    }
-  }
-}
+  typedef MultiVector< ValueType , Device > output_type ;
 
-// Print out answer (X) to a file in a specialized format for viewing a GLUT visualization
-// of answer.
-template<class Scalar , class scalar_vector_d, class HostMirror_scalar, class HostMirror_int>
-void printGLUT(const std::string & filename , scalar_vector_d & X , HostMirror_scalar & elem_coords_h,
-                      HostMirror_int & elem_nodeIDs_h , int x , int y, int z)
-{
-  typedef Kokkos::MultiVector<Scalar , Kokkos::Host> scalar_vector_h;
-
-  int nelem = x * y * z;
-  int nnodes = X.length();
-  std::ofstream outfile(filename.c_str());
-  outfile<<x<<" "<<y<<" "<<z<< " " << 1<<std::endl;
-  scalar_vector_h X_host = Kokkos::create_multivector<scalar_vector_h>("X_host", nnodes);
-  Kokkos::deep_copy(X_host , X);
-  for(int i = 0 ; i < nelem ; i++)
+  static inline
+  output_type create( const std::string & label ,
+                      size_t length ,
+                      size_t count ,
+                      size_t stride = 0 )
   {
-      for(int j = 0 ; j < 8 ; j++)
-      {
-        //Coordinates temperature
-        outfile << elem_coords_h(i,0,j) << " "
-        << elem_coords_h(i,1,j)<< " "
-        << elem_coords_h(i,2,j) <<" "
-        << elem_nodeIDs_h(i,j) << std::endl;
+    typedef Impl::MemoryManager<typename Device::memory_space> memory_manager ;
+
+    if ( 0 == stride ) {
+      stride = length ;
+      if ( 1 < count ) {
+        stride = memory_manager::template preferred_alignment<ValueType>(length);
       }
-  }
+    }
 
-  for(int i = 0 ; i < nnodes ; i++)
-  {
-    outfile << i << " " << X_host(i) << std::endl;
+    output_type output ;
+
+    output.m_length = length ;
+    output.m_count  = count ;
+    output.m_stride = stride ;
+    output.m_memory.allocate( output.m_count * output.m_stride , label );
+    output.m_ptr_on_device = output.m_memory.ptr_on_device();
+
+    return output ;
   }
-  outfile.close();
-}
+};
+
+template< typename ValueType , class DeviceOutput >
+struct Factory< MultiVector< ValueType , DeviceOutput > , MirrorUseView >
+{
+  typedef MultiVector< ValueType , DeviceOutput > output_type ;
+
+  static inline
+  const output_type & create( const output_type & input ) { return input ; }
+
+  template< class DeviceInput >
+  static inline
+  output_type create( const MultiVector<ValueType,DeviceInput> & input )
+  {
+    typedef MultiVector<ValueType,DeviceInput> input_type ;
+    return Factory<output_type,input_type>::create( input );
+  }
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#endif /* KOKKOS_IMPL_MULTIVECTOR_FACTORY_HPP */
 

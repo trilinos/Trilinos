@@ -509,7 +509,7 @@ public:
                       value_type  & result )
   {
     view_type tmp =
-      create_labeled_value< value_type , Cuda >(
+      create_value< view_type >(
         std::string("parallel_reduce_temporary_result") );
 
     ParallelReduce< FunctorType , ReduceTraits , view_type , Cuda >

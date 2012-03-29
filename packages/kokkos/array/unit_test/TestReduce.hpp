@@ -51,6 +51,7 @@
 #include <sstream>
 #include <iostream>
 
+#include <Kokkos_Value.hpp>
 #include <Kokkos_ParallelReduce.hpp>
 
 #include <impl/Kokkos_Preprocessing_macros.hpp>
@@ -140,9 +141,9 @@ public:
   {
     value_type result ;
 
-    Kokkos::Value< value_type , device_type > device_result ;
+    typedef Kokkos::Value< value_type , device_type > result_type ;
 
-    device_result = Kokkos::create_value< value_type , device_type >();
+    result_type device_result = Kokkos::create_value< result_type >();
 
     Kokkos::parallel_reduce( nwork , functor_type( nwork ) , device_result );
 

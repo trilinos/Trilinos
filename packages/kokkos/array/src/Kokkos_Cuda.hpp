@@ -60,6 +60,12 @@ public:
   typedef Cuda          memory_space ;
   typedef unsigned int  size_type ;
 
+  /** \brief  The preferred multi-index map of this device.
+   *
+   *  If the rank is zero the map has a runtime-defined index space.
+   *  If the rank is non-zero then the 'N0' dimension is runtime-defined
+   *  and all other dimensions are compile-time defined.
+   */
   template< unsigned Rank = 0 , unsigned N1 = 0 ,
             unsigned N2   = 0 , unsigned N3 = 0 ,
             unsigned N4   = 0 , unsigned N5 = 0 , 

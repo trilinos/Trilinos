@@ -226,36 +226,9 @@ private:
   size_type   m_length ;
   size_type   m_count ;
 
-  inline
-  MultiVector( const std::string & label ,
-               size_type arg_length ,
-               size_type arg_count ,
-               size_type arg_stride )
-    : m_memory()
-    , m_ptr_on_device( 0 )
-    , m_stride( arg_stride )
-    , m_length( arg_length )
-    , m_count(  arg_count )
-    {
-      m_memory.allocate( m_count * m_stride , label );
-      m_ptr_on_device = m_memory.ptr_on_device();
-
-      Impl::Initialize< MultiVector >::run( *this );
-    }
-
-  template< typename V , class M >
-  friend
-  MultiVector< V , M >
-  create_labeled_multivector( const std::string & label ,
-                              size_t length , size_t count );
-
   template < typename V , class M > friend class MultiVector ;
 
-  template < class DstType > friend class Impl::Initialize ;
-
-  template< class SrcType , bool > friend class Impl::CreateMirror ;
-
-  template < class DstType , class SrcType > friend class Impl::DeepCopy ;
+  template < class , class > friend class Impl::Factory ;
 };
 
 } // namespace Kokkos

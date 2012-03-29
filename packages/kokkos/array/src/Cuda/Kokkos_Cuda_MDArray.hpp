@@ -47,19 +47,15 @@
 namespace Kokkos {
 namespace Impl {
 
-/** \brief No-op because memory is initialized at allocation */
 template< typename ValueType >
-class Initialize< MDArray< ValueType , Cuda > > {
-public:
-  static void run( const MDArray< ValueType , Cuda > & ) {}
-};
+struct Factory< MDArray< ValueType , Cuda > ,
+                MDArray< ValueType , Cuda > >
+{
+  typedef MDArray< ValueType , Cuda > output_type ;
 
-template< typename ValueType >
-class DeepCopy< MDArray< ValueType , Cuda > ,
-                MDArray< ValueType , Cuda > > {
-public:
-  static void run( const MDArray< ValueType , Cuda > & dst ,
-                   const MDArray< ValueType , Cuda > & src )
+  static inline
+  void deep_copy( const output_type & dst ,
+                  const output_type & src )
   {
     const size_t size = dst.m_map.allocation_size() * sizeof(ValueType);
 
@@ -68,42 +64,72 @@ public:
                                   src.m_memory.ptr_on_device(),
                                   size );
   }
+
+  static inline
+  output_type create( const output_type & input )
+  {
+    return Factory< output_type , void >::create(
+      std::string(),
+      ( 0 < input.rank() ? input.dimension(0) : 0 ),
+      ( 1 < input.rank() ? input.dimension(1) : 0 ),
+      ( 2 < input.rank() ? input.dimension(2) : 0 ),
+      ( 3 < input.rank() ? input.dimension(3) : 0 ),
+      ( 4 < input.rank() ? input.dimension(4) : 0 ),
+      ( 5 < input.rank() ? input.dimension(5) : 0 ),
+      ( 6 < input.rank() ? input.dimension(6) : 0 ),
+      ( 7 < input.rank() ? input.dimension(7) : 0 ) );
+  }
 };
 
 /** \brief  The hostview is identically mapped */
 template< typename ValueType >
-class DeepCopy< MDArray< ValueType , Cuda > ,
-                typename MDArray< ValueType , Cuda >::HostMirror > {
-public:
-  typedef MDArray< ValueType , Cuda >                    dst_type ;
-  typedef typename MDArray< ValueType , Cuda >::HostMirror src_type ;
+struct Factory< MDArray< ValueType , Cuda > ,
+                MDArray< ValueType , HostMapped< Cuda > > >
+{
+  typedef MDArray< ValueType , Cuda >                output_type ;
+  typedef MDArray< ValueType , HostMapped< Cuda > >  input_type ;
 
-  static void run( const dst_type & dst , const src_type & src )
+  static inline
+  void deep_copy( const output_type & output , const input_type & input )
   {
-    const size_t size = dst.m_map.allocation_size() * sizeof(ValueType);
+    const size_t size = output.m_map.allocation_size() * sizeof(ValueType);
 
     MemoryManager< Cuda >::
-      copy_to_device_from_host( dst.m_memory.ptr_on_device(),
-                                src.m_memory.ptr_on_device(),
+      copy_to_device_from_host( output.m_memory.ptr_on_device(),
+                                input.m_memory.ptr_on_device(),
                                 size );
   }
 };
 
 template< typename ValueType >
-class DeepCopy< typename MDArray< ValueType , Cuda >::HostMirror ,
-                MDArray< ValueType , Cuda > > {
-public:
-  typedef typename MDArray< ValueType , Cuda >::HostMirror dst_type ;
-  typedef MDArray< ValueType , Cuda >                    src_type ;
+struct Factory< MDArray< ValueType , HostMapped< Cuda > > ,
+                MDArray< ValueType , Cuda > >
+{
+  typedef MDArray< ValueType , HostMapped< Cuda > > output_type ;
+  typedef MDArray< ValueType , Cuda >               input_type ;
 
-  static void run( const dst_type & dst , const src_type & src )
+  static void deep_copy( const output_type & output , const input_type & input )
   {
-    const size_t size = src.m_map.allocation_size() * sizeof(ValueType);
+    const size_t size = input.m_map.allocation_size() * sizeof(ValueType);
 
     MemoryManager< Cuda >::
-      copy_to_host_from_device( dst.m_memory.ptr_on_device(),
-                                src.m_memory.ptr_on_device(),
+      copy_to_host_from_device( output.m_memory.ptr_on_device(),
+                                input.m_memory.ptr_on_device(),
                                 size );
+  }
+  static inline
+  output_type create( const input_type & input )
+  {
+    return Factory< output_type , void >::create(
+      std::string(),
+      ( 0 < input.rank() ? input.dimension(0) : 0 ),
+      ( 1 < input.rank() ? input.dimension(1) : 0 ),
+      ( 2 < input.rank() ? input.dimension(2) : 0 ),
+      ( 3 < input.rank() ? input.dimension(3) : 0 ),
+      ( 4 < input.rank() ? input.dimension(4) : 0 ),
+      ( 5 < input.rank() ? input.dimension(5) : 0 ),
+      ( 6 < input.rank() ? input.dimension(6) : 0 ),
+      ( 7 < input.rank() ? input.dimension(7) : 0 ) );
   }
 };
 

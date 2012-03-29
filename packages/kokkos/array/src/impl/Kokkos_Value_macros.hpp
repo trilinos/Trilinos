@@ -147,23 +147,7 @@ private:
 
   Impl::MemoryView< value_type , device_type::memory_space > m_memory ;
 
-  inline
-  explicit Value( const std::string & label )
-    : m_memory()
-    {
-      m_memory.allocate( 1 , label );
-
-      Impl::Initialize< Value >::run( *this );
-    }
-
-  template< typename V , class D >
-  friend
-  Value< V , D >
-  create_labeled_value( const std::string & label );
-
-  template< class DstType , class SrcType >
-  friend
-  class Impl::DeepCopy ;
+  template< class DstType , class SrcType > friend class Impl::Factory ;
 };
 
 } // namespace Kokkos

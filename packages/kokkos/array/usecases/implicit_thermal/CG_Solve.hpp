@@ -79,23 +79,23 @@ struct CG_Solve<Scalar , KOKKOS_MACRO_DEVICE>
     const int maximum_iteration = 200 ;
     const size_t rows = A_row.length()-1;
 
-    value one  = Kokkos::create_value<Scalar , device_type>();
-    value zero = Kokkos::create_value<Scalar , device_type>();
+    value one  = Kokkos::create_value<value>();
+    value zero = Kokkos::create_value<value>();
 
     Kokkos::deep_copy( one,  Scalar( 1 ) );
     Kokkos::deep_copy( zero, Scalar( 0 ) );
 
     // Solvers' working temporaries:
 
-    scalar_vector r = Kokkos::create_labeled_multivector<scalar_vector>("r",rows);
-    scalar_vector p = Kokkos::create_labeled_multivector<scalar_vector>("p",rows);
-    scalar_vector Ap = Kokkos::create_labeled_multivector<scalar_vector>("Ap",rows);
+    scalar_vector r = Kokkos::create_multivector<scalar_vector>("r",rows);
+    scalar_vector p = Kokkos::create_multivector<scalar_vector>("p",rows);
+    scalar_vector Ap = Kokkos::create_multivector<scalar_vector>("Ap",rows);
 
-    value rtrans    = Kokkos::create_value<Scalar , device_type>();
-    value ptrans    = Kokkos::create_value<Scalar , device_type>();
-    value oldrtrans = Kokkos::create_value<Scalar , device_type>();
-    value alpha     = Kokkos::create_value<Scalar , device_type>();
-    value beta      = Kokkos::create_value<Scalar , device_type>();
+    value rtrans    = Kokkos::create_value<value>();
+    value ptrans    = Kokkos::create_value<value>();
+    value oldrtrans = Kokkos::create_value<value>();
+    value alpha     = Kokkos::create_value<value>();
+    value beta      = Kokkos::create_value<value>();
 
     double normr = 1000;
 

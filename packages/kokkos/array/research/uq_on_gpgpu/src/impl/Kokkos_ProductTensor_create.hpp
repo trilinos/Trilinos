@@ -78,24 +78,21 @@ public:
     typedef Device                      device_type ;
     typedef typename Device::size_type  size_type ;
 
-    typedef MDArray< size_type, device_type>  coord_array_type ;
+    typedef MDArray< size_type, device_type>      coord_array_type ;
     typedef MultiVector< value_type, device_type> value_array_type ;
-
-    enum { is_host_memory =
-             SameType< typename device_type::memory_space , Host >::value };
 
     type tensor ;
 
-    tensor.m_coord = create_mdarray< size_type , device_type >( input.size(), 3 );
-    tensor.m_value = create_multivector< value_type, device_type >( input.size() );
+    tensor.m_coord = create_mdarray< coord_array_type >( input.size(), 3 );
+    tensor.m_value = create_multivector< value_array_type >( input.size() );
 
-    // Create mirror, is a view if is host memory
-
+    // Try to create as a view, not a copy
     typename coord_array_type::HostMirror
-      host_coord = Kokkos::Impl::CreateMirror< coord_array_type , is_host_memory >::create( tensor.m_coord );
+      host_coord = create_mirror( tensor.m_coord , Impl::MirrorUseView() );
 
+    // Try to create as a view, not a copy
     typename value_array_type::HostMirror
-      host_value = Kokkos::Impl::CreateMirror< value_array_type , is_host_memory >::create( tensor.m_value );
+      host_value = create_mirror( tensor.m_value , Impl::MirrorUseView() );
 
     size_type n = 0 ;
 
@@ -155,9 +152,6 @@ public:
     typedef MultiVector< value_type, device_type> value_array_type ;
     typedef CrsMap< device_type , CrsColumnIdentity > crsmap_type ;
 
-    enum { is_host_memory =
-             SameType< typename device_type::memory_space , Host >::value };
-
     const size_type dimension =
       input.empty() ? 0 : 1 + (*input.rbegin()).first.coord(0);
 
@@ -180,7 +174,7 @@ public:
 
     type tensor ;
 
-    tensor.m_map   = create_labeled_crsmap< crsmap_type >( std::string("ProductTensorMap") , coord_work );
+    tensor.m_map   = create_crsmap< crsmap_type >( std::string("ProductTensorMap") , coord_work );
     tensor.m_coord = create_mdarray< coord_array_type >( entry_count, 2 );
     tensor.m_value = create_multivector< value_array_type >( entry_count );
 
@@ -201,10 +195,10 @@ std::cout << std::endl << "CrsProductTensor" << std::endl
     // Create mirror, is a view if is host memory
 
     typename coord_array_type::HostMirror
-      host_coord = Kokkos::Impl::CreateMirror< coord_array_type , is_host_memory >::create( tensor.m_coord );
+      host_coord = create_mirror( tensor.m_coord , Impl::MirrorUseView() );
 
     typename value_array_type::HostMirror
-      host_value = Kokkos::Impl::CreateMirror< value_array_type , is_host_memory >::create( tensor.m_value );
+      host_value = create_mirror( tensor.m_value , Impl::MirrorUseView() );
 
     // Fill arrays in coordinate order...
 

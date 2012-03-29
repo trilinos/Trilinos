@@ -48,6 +48,7 @@
 #include <Kokkos_MultiVector.hpp>
 #include <Kokkos_MDArray.hpp>
 #include <Kokkos_CrsMap.hpp>
+#include <impl/Kokkos_Multiply.hpp>
 
 namespace Kokkos {
 

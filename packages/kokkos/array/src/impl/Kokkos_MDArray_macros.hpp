@@ -182,217 +182,6 @@ public:
 
   /*------------------------------------------------------------------*/
 
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void fill( const Impl::Rank<8> & , const size_type iP ,
-               const value_type & src ) const
-  {
-    for ( size_type i1 = 0 ; i1 < dimension(1) ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < dimension(2) ; ++i2 ) {
-    for ( size_type i3 = 0 ; i3 < dimension(3) ; ++i3 ) {
-    for ( size_type i4 = 0 ; i4 < dimension(4) ; ++i4 ) {
-    for ( size_type i5 = 0 ; i5 < dimension(5) ; ++i5 ) {
-    for ( size_type i6 = 0 ; i6 < dimension(6) ; ++i6 ) {
-    for ( size_type i7 = 0 ; i7 < dimension(7) ; ++i7 ) {
-      operator()(iP,i1,i2,i3,i4,i5,i6,i7) = src ;
-    }}}}}}}
-  }
-
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void fill( const Impl::Rank<7> & , const size_type iP ,
-               const value_type & src ) const
-  {
-    for ( size_type i1 = 0 ; i1 < dimension(1) ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < dimension(2) ; ++i2 ) {
-    for ( size_type i3 = 0 ; i3 < dimension(3) ; ++i3 ) {
-    for ( size_type i4 = 0 ; i4 < dimension(4) ; ++i4 ) {
-    for ( size_type i5 = 0 ; i5 < dimension(5) ; ++i5 ) {
-    for ( size_type i6 = 0 ; i6 < dimension(6) ; ++i6 ) {
-      operator()(iP,i1,i2,i3,i4,i5,i6) = src ;
-    }}}}}}
-  }
-
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void fill( const Impl::Rank<6> & , const size_type iP ,
-               const value_type & src ) const
-  {
-    for ( size_type i1 = 0 ; i1 < dimension(1) ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < dimension(2) ; ++i2 ) {
-    for ( size_type i3 = 0 ; i3 < dimension(3) ; ++i3 ) {
-    for ( size_type i4 = 0 ; i4 < dimension(4) ; ++i4 ) {
-    for ( size_type i5 = 0 ; i5 < dimension(5) ; ++i5 ) {
-      operator()(iP,i1,i2,i3,i4,i5) = src ;
-    }}}}}
-  }
-
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void fill( const Impl::Rank<5> & , const size_type iP ,
-               const value_type & src ) const
-  {
-    for ( size_type i1 = 0 ; i1 < dimension(1) ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < dimension(2) ; ++i2 ) {
-    for ( size_type i3 = 0 ; i3 < dimension(3) ; ++i3 ) {
-    for ( size_type i4 = 0 ; i4 < dimension(4) ; ++i4 ) {
-      operator()(iP,i1,i2,i3,i4) = src ;
-    }}}}
-  }
-
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void fill( const Impl::Rank<4> & , const size_type iP ,
-               const value_type & src ) const
-  {
-    for ( size_type i1 = 0 ; i1 < dimension(1) ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < dimension(2) ; ++i2 ) {
-    for ( size_type i3 = 0 ; i3 < dimension(3) ; ++i3 ) {
-      operator()(iP,i1,i2,i3) = src ;
-    }}}
-  }
-
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void fill( const Impl::Rank<3> & , const size_type iP ,
-               const value_type & src ) const
-  {
-    for ( size_type i1 = 0 ; i1 < dimension(1) ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < dimension(2) ; ++i2 ) {
-      operator()(iP,i1,i2) = src ;
-    }}
-  }
-
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void fill( const Impl::Rank<2> & , const size_type iP ,
-               const value_type & src ) const
-  {
-    for ( size_type i1 = 0 ; i1 < dimension(1) ; ++i1 ) {
-      operator()(iP,i1) = src ;
-    }
-  }
-
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void fill( const Impl::Rank<1> & , const size_type iP ,
-               const value_type & src ) const
-  {
-    operator()(iP) = src ;
-  }
-
-  /*------------------------------------------------------------------*/
-  /*------------------------------------------------------------------*/
-
-  template< class DeviceSrc >
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void assign( const Impl::Rank<8> & , const size_type iP ,
-               const MDArray< value_type , DeviceSrc > & src ) const
-  {
-    for ( size_type i1 = 0 ; i1 < dimension(1) ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < dimension(2) ; ++i2 ) {
-    for ( size_type i3 = 0 ; i3 < dimension(3) ; ++i3 ) {
-    for ( size_type i4 = 0 ; i4 < dimension(4) ; ++i4 ) {
-    for ( size_type i5 = 0 ; i5 < dimension(5) ; ++i5 ) {
-    for ( size_type i6 = 0 ; i6 < dimension(6) ; ++i6 ) {
-    for ( size_type i7 = 0 ; i7 < dimension(7) ; ++i7 ) {
-      operator()(iP,i1,i2,i3,i4,i5,i6,i7) = src(iP,i1,i2,i3,i4,i5,i6,i7);
-    }}}}}}}
-  }
-
-  template< class DeviceSrc >
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void assign( const Impl::Rank<7> & , const size_type iP ,
-               const MDArray< value_type , DeviceSrc > & src ) const
-  {
-    for ( size_type i1 = 0 ; i1 < dimension(1) ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < dimension(2) ; ++i2 ) {
-    for ( size_type i3 = 0 ; i3 < dimension(3) ; ++i3 ) {
-    for ( size_type i4 = 0 ; i4 < dimension(4) ; ++i4 ) {
-    for ( size_type i5 = 0 ; i5 < dimension(5) ; ++i5 ) {
-    for ( size_type i6 = 0 ; i6 < dimension(6) ; ++i6 ) {
-      operator()(iP,i1,i2,i3,i4,i5,i6) = src(iP,i1,i2,i3,i4,i5,i6);
-    }}}}}}
-  }
-
-  template< class DeviceSrc >
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void assign( const Impl::Rank<6> & , const size_type iP ,
-               const MDArray< value_type , DeviceSrc > & src ) const
-  {
-    for ( size_type i1 = 0 ; i1 < dimension(1) ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < dimension(2) ; ++i2 ) {
-    for ( size_type i3 = 0 ; i3 < dimension(3) ; ++i3 ) {
-    for ( size_type i4 = 0 ; i4 < dimension(4) ; ++i4 ) {
-    for ( size_type i5 = 0 ; i5 < dimension(5) ; ++i5 ) {
-      operator()(iP,i1,i2,i3,i4,i5) = src(iP,i1,i2,i3,i4,i5);
-    }}}}}
-  }
-
-  template< class DeviceSrc >
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void assign( const Impl::Rank<5> & , const size_type iP ,
-               const MDArray< value_type , DeviceSrc > & src ) const
-  {
-    for ( size_type i1 = 0 ; i1 < dimension(1) ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < dimension(2) ; ++i2 ) {
-    for ( size_type i3 = 0 ; i3 < dimension(3) ; ++i3 ) {
-    for ( size_type i4 = 0 ; i4 < dimension(4) ; ++i4 ) {
-      operator()(iP,i1,i2,i3,i4) = src(iP,i1,i2,i3,i4);
-    }}}}
-  }
-
-  template< class DeviceSrc >
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void assign( const Impl::Rank<4> & , const size_type iP ,
-               const MDArray< value_type , DeviceSrc > & src ) const
-  {
-    for ( size_type i1 = 0 ; i1 < dimension(1) ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < dimension(2) ; ++i2 ) {
-    for ( size_type i3 = 0 ; i3 < dimension(3) ; ++i3 ) {
-      operator()(iP,i1,i2,i3) = src(iP,i1,i2,i3);
-    }}}
-  }
-
-  template< class DeviceSrc >
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void assign( const Impl::Rank<3> & , const size_type iP ,
-               const MDArray< value_type , DeviceSrc > & src ) const
-  {
-    for ( size_type i1 = 0 ; i1 < dimension(1) ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < dimension(2) ; ++i2 ) {
-      operator()(iP,i1,i2) = src(iP,i1,i2);
-    }}
-  }
-
-  template< class DeviceSrc >
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void assign( const Impl::Rank<2> & , const size_type iP ,
-               const MDArray< value_type , DeviceSrc > & src ) const
-  {
-    for ( size_type i1 = 0 ; i1 < dimension(1) ; ++i1 ) {
-      operator()(iP,i1) = src(iP,i1);
-    }
-  }
-
-  template< class DeviceSrc >
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void assign( const Impl::Rank<1> & , const size_type iP ,
-               const MDArray< value_type , DeviceSrc > & src ) const
-  {
-    operator()(iP) = src(iP);
-  }
-
-  /*------------------------------------------------------------------*/
-
 #endif /* defined( KOKKOS_MACRO_DEVICE_FUNCTION ) */
 
   /*------------------------------------------------------------------*/
@@ -485,19 +274,6 @@ private:
   memory_view  m_memory ;
   index_map    m_map ;
 
-  inline
-  MDArray( const std::string & label ,
-           size_t nP , size_t n1 , size_t n2 , size_t n3 ,
-           size_t n4 , size_t n5 , size_t n6 , size_t n7 )
-    : m_memory()
-    , m_map()
-    {
-      m_map.template assign<value_type>(nP,n1,n2,n3,n4,n5,n6,n7);
-      m_memory.allocate( m_map.allocation_size() , label );
-
-      Impl::Initialize< MDArray >::run( *this );
-    }
-
   template< typename V , class D >
   friend
   MDArray< V , D >
@@ -505,16 +281,604 @@ private:
                           size_t nP , size_t n1 , size_t n2 , size_t n3 ,
                           size_t n4 , size_t n5 , size_t n6 , size_t n7 );
 
-  template< typename V , class D > friend class MDArray ;
-  template< class Dst , class Src > friend class Impl::DeepCopy ;
+  template< typename V , class D >  friend class MDArray ;
+  template< class , class >  friend class Impl::Factory ;
 };
-
-//----------------------------------------------------------------------------
 
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Impl {
+
+template< typename ValueType >
+struct DeepCopyKernelMDArray<
+  MDArray< ValueType , KOKKOS_MACRO_DEVICE > , ValueType , 8 >
+{
+  typedef KOKKOS_MACRO_DEVICE::memory_space           device_type ;
+  typedef KOKKOS_MACRO_DEVICE::size_type              size_type ;
+  typedef MDArray< ValueType , KOKKOS_MACRO_DEVICE >  dst_type ;
+  typedef ValueType                                   src_type ;
+
+  const dst_type dst ;
+  const src_type src ;
+  const size_type N1 , N2 , N3 , N4 , N5 , N6 , N7 ;
+
+  DeepCopyKernelMDArray( const dst_type & arg_dst , 
+                         const src_type & arg_src )
+    : dst( arg_dst ), src( arg_src )
+    , N1( arg_dst.dimension(1) )
+    , N2( arg_dst.dimension(2) )
+    , N3( arg_dst.dimension(3) )
+    , N4( arg_dst.dimension(4) )
+    , N5( arg_dst.dimension(5) )
+    , N6( arg_dst.dimension(6) )
+    , N7( arg_dst.dimension(7) )
+    {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const size_type i0 ) const
+  {
+    for ( size_type i1 = 0 ; i1 < N1 ; ++i1 ) {
+    for ( size_type i2 = 0 ; i2 < N2 ; ++i2 ) {
+    for ( size_type i3 = 0 ; i3 < N3 ; ++i3 ) {
+    for ( size_type i4 = 0 ; i4 < N4 ; ++i4 ) {
+    for ( size_type i5 = 0 ; i5 < N5 ; ++i5 ) {
+    for ( size_type i6 = 0 ; i6 < N6 ; ++i6 ) {
+    for ( size_type i7 = 0 ; i7 < N7 ; ++i7 ) {
+      dst(i0,i1,i2,i3,i4,i5,i6,i7) = src ;
+    }}}}}}}
+  }
+};
+
+template< typename ValueType >
+struct DeepCopyKernelMDArray<
+  MDArray< ValueType , KOKKOS_MACRO_DEVICE > , ValueType , 7 >
+{
+  typedef KOKKOS_MACRO_DEVICE::memory_space           device_type ;
+  typedef KOKKOS_MACRO_DEVICE::size_type              size_type ;
+  typedef MDArray< ValueType , KOKKOS_MACRO_DEVICE >  dst_type ;
+  typedef ValueType                                   src_type ;
+
+  const dst_type dst ;
+  const src_type src ;
+  const size_type N1 , N2 , N3 , N4 , N5 , N6 ;
+
+  DeepCopyKernelMDArray( const dst_type & arg_dst , 
+                         const src_type & arg_src )
+    : dst( arg_dst ), src( arg_src )
+    , N1( arg_dst.dimension(1) )
+    , N2( arg_dst.dimension(2) )
+    , N3( arg_dst.dimension(3) )
+    , N4( arg_dst.dimension(4) )
+    , N5( arg_dst.dimension(5) )
+    , N6( arg_dst.dimension(6) )
+    {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const size_type i0 ) const
+  {
+    for ( size_type i1 = 0 ; i1 < N1 ; ++i1 ) {
+    for ( size_type i2 = 0 ; i2 < N2 ; ++i2 ) {
+    for ( size_type i3 = 0 ; i3 < N3 ; ++i3 ) {
+    for ( size_type i4 = 0 ; i4 < N4 ; ++i4 ) {
+    for ( size_type i5 = 0 ; i5 < N5 ; ++i5 ) {
+    for ( size_type i6 = 0 ; i6 < N6 ; ++i6 ) {
+      dst(i0,i1,i2,i3,i4,i5,i6) = src ;
+    }}}}}}
+  }
+};
+
+template< typename ValueType >
+struct DeepCopyKernelMDArray<
+  MDArray< ValueType , KOKKOS_MACRO_DEVICE > , ValueType , 6 >
+{
+  typedef KOKKOS_MACRO_DEVICE::memory_space           device_type ;
+  typedef KOKKOS_MACRO_DEVICE::size_type              size_type ;
+  typedef MDArray< ValueType , KOKKOS_MACRO_DEVICE >  dst_type ;
+  typedef ValueType                                   src_type ;
+
+  const dst_type dst ;
+  const src_type src ;
+  const size_type N1 , N2 , N3 , N4 , N5 ;
+
+  DeepCopyKernelMDArray( const dst_type & arg_dst , 
+                         const src_type & arg_src )
+    : dst( arg_dst ), src( arg_src )
+    , N1( arg_dst.dimension(1) )
+    , N2( arg_dst.dimension(2) )
+    , N3( arg_dst.dimension(3) )
+    , N4( arg_dst.dimension(4) )
+    , N5( arg_dst.dimension(5) )
+    {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const size_type i0 ) const
+  {
+    for ( size_type i1 = 0 ; i1 < N1 ; ++i1 ) {
+    for ( size_type i2 = 0 ; i2 < N2 ; ++i2 ) {
+    for ( size_type i3 = 0 ; i3 < N3 ; ++i3 ) {
+    for ( size_type i4 = 0 ; i4 < N4 ; ++i4 ) {
+    for ( size_type i5 = 0 ; i5 < N5 ; ++i5 ) {
+      dst(i0,i1,i2,i3,i4,i5) = src ;
+    }}}}}
+  }
+};
+
+template< typename ValueType >
+struct DeepCopyKernelMDArray<
+  MDArray< ValueType , KOKKOS_MACRO_DEVICE > , ValueType , 5 >
+{
+  typedef KOKKOS_MACRO_DEVICE::memory_space           device_type ;
+  typedef KOKKOS_MACRO_DEVICE::size_type              size_type ;
+  typedef MDArray< ValueType , KOKKOS_MACRO_DEVICE >  dst_type ;
+  typedef ValueType                                   src_type ;
+
+  const dst_type dst ;
+  const src_type src ;
+  const size_type N1 , N2 , N3 , N4 ;
+
+  DeepCopyKernelMDArray( const dst_type & arg_dst , 
+                         const src_type & arg_src )
+    : dst( arg_dst ), src( arg_src )
+    , N1( arg_dst.dimension(1) )
+    , N2( arg_dst.dimension(2) )
+    , N3( arg_dst.dimension(3) )
+    , N4( arg_dst.dimension(4) )
+    {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const size_type i0 ) const
+  {
+    for ( size_type i1 = 0 ; i1 < N1 ; ++i1 ) {
+    for ( size_type i2 = 0 ; i2 < N2 ; ++i2 ) {
+    for ( size_type i3 = 0 ; i3 < N3 ; ++i3 ) {
+    for ( size_type i4 = 0 ; i4 < N4 ; ++i4 ) {
+      dst(i0,i1,i2,i3,i4) = src ;
+    }}}}
+  }
+};
+
+template< typename ValueType >
+struct DeepCopyKernelMDArray<
+  MDArray< ValueType , KOKKOS_MACRO_DEVICE > , ValueType , 4 >
+{
+  typedef KOKKOS_MACRO_DEVICE::memory_space           device_type ;
+  typedef KOKKOS_MACRO_DEVICE::size_type              size_type ;
+  typedef MDArray< ValueType , KOKKOS_MACRO_DEVICE >  dst_type ;
+  typedef ValueType                                   src_type ;
+
+  const dst_type dst ;
+  const src_type src ;
+  const size_type N1 , N2 , N3 ;
+
+  DeepCopyKernelMDArray( const dst_type & arg_dst , 
+                         const src_type & arg_src )
+    : dst( arg_dst ), src( arg_src )
+    , N1( arg_dst.dimension(1) )
+    , N2( arg_dst.dimension(2) )
+    , N3( arg_dst.dimension(3) )
+    {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const size_type i0 ) const
+  {
+    for ( size_type i1 = 0 ; i1 < N1 ; ++i1 ) {
+    for ( size_type i2 = 0 ; i2 < N2 ; ++i2 ) {
+    for ( size_type i3 = 0 ; i3 < N3 ; ++i3 ) {
+      dst(i0,i1,i2,i3) = src ;
+    }}}
+  }
+};
+
+template< typename ValueType >
+struct DeepCopyKernelMDArray<
+  MDArray< ValueType , KOKKOS_MACRO_DEVICE > , ValueType , 3 >
+{
+  typedef KOKKOS_MACRO_DEVICE::memory_space           device_type ;
+  typedef KOKKOS_MACRO_DEVICE::size_type              size_type ;
+  typedef MDArray< ValueType , KOKKOS_MACRO_DEVICE >  dst_type ;
+  typedef ValueType                                   src_type ;
+
+  const dst_type dst ;
+  const src_type src ;
+  const size_type N1 , N2 ;
+
+  DeepCopyKernelMDArray( const dst_type & arg_dst , 
+                         const src_type & arg_src )
+    : dst( arg_dst ), src( arg_src )
+    , N1( arg_dst.dimension(1) )
+    , N2( arg_dst.dimension(2) )
+    {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const size_type i0 ) const
+  {
+    for ( size_type i1 = 0 ; i1 < N1 ; ++i1 ) {
+    for ( size_type i2 = 0 ; i2 < N2 ; ++i2 ) {
+      dst(i0,i1,i2) = src ;
+    }}
+  }
+};
+
+template< typename ValueType >
+struct DeepCopyKernelMDArray<
+  MDArray< ValueType , KOKKOS_MACRO_DEVICE > , ValueType , 2 >
+{
+  typedef KOKKOS_MACRO_DEVICE::memory_space           device_type ;
+  typedef KOKKOS_MACRO_DEVICE::size_type              size_type ;
+  typedef MDArray< ValueType , KOKKOS_MACRO_DEVICE >  dst_type ;
+  typedef ValueType                                   src_type ;
+
+  const dst_type dst ;
+  const src_type src ;
+  const size_type N1 ;
+
+  DeepCopyKernelMDArray( const dst_type & arg_dst , 
+                         const src_type & arg_src )
+    : dst( arg_dst ), src( arg_src )
+    , N1( arg_dst.dimension(1) )
+    {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const size_type i0 ) const
+  {
+    for ( size_type i1 = 0 ; i1 < N1 ; ++i1 ) {
+      dst(i0,i1) = src ;
+    }
+  }
+};
+
+template< typename ValueType >
+struct DeepCopyKernelMDArray<
+  MDArray< ValueType , KOKKOS_MACRO_DEVICE > , ValueType , 1 >
+{
+  typedef KOKKOS_MACRO_DEVICE::memory_space           device_type ;
+  typedef KOKKOS_MACRO_DEVICE::size_type              size_type ;
+  typedef MDArray< ValueType , KOKKOS_MACRO_DEVICE >  dst_type ;
+  typedef ValueType                                   src_type ;
+
+  const dst_type dst ;
+  const src_type src ;
+
+  DeepCopyKernelMDArray( const dst_type & arg_dst , 
+                         const src_type & arg_src )
+    : dst( arg_dst ), src( arg_src )
+    {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const size_type i0 ) const
+  {
+    dst(i0) = src ;
+  }
+};
+
+//----------------------------------------------------------------------------
+
+template< typename ValueType , class SrcDevice >
+struct DeepCopyKernelMDArray<
+  MDArray< ValueType , KOKKOS_MACRO_DEVICE > ,
+  MDArray< ValueType , SrcDevice > , 8 >
+{
+  enum { OK = StaticAssert<
+                SameType< KOKKOS_MACRO_DEVICE::memory_space ,
+                          typename  SrcDevice::memory_space >::value >::value };
+
+  typedef KOKKOS_MACRO_DEVICE::memory_space          device_type ;
+  typedef KOKKOS_MACRO_DEVICE::size_type             size_type ;
+  typedef MDArray< ValueType , KOKKOS_MACRO_DEVICE > dst_type ;
+  typedef MDArray< ValueType , SrcDevice >           src_type ;
+
+  const dst_type dst ;
+  const src_type src ;
+  const size_type N1 , N2 , N3 , N4 , N5 , N6 , N7 ;
+
+  DeepCopyKernelMDArray( const dst_type & arg_dst , 
+                         const src_type & arg_src )
+    : dst( arg_dst ), src( arg_src )
+    , N1( arg_dst.dimension(1) )
+    , N2( arg_dst.dimension(2) )
+    , N3( arg_dst.dimension(3) )
+    , N4( arg_dst.dimension(4) )
+    , N5( arg_dst.dimension(5) )
+    , N6( arg_dst.dimension(6) )
+    , N7( arg_dst.dimension(7) )
+    {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const size_type i0 ) const
+  {
+    for ( size_type i1 = 0 ; i1 < N1 ; ++i1 ) {
+    for ( size_type i2 = 0 ; i2 < N2 ; ++i2 ) {
+    for ( size_type i3 = 0 ; i3 < N3 ; ++i3 ) {
+    for ( size_type i4 = 0 ; i4 < N4 ; ++i4 ) {
+    for ( size_type i5 = 0 ; i5 < N5 ; ++i5 ) {
+    for ( size_type i6 = 0 ; i6 < N6 ; ++i6 ) {
+    for ( size_type i7 = 0 ; i7 < N7 ; ++i7 ) {
+      dst(i0,i1,i2,i3,i4,i5,i6,i7) = src(i0,i1,i2,i3,i4,i5,i6,i7);
+    }}}}}}}
+  }
+};
+
+template< typename ValueType , class SrcDevice >
+struct DeepCopyKernelMDArray<
+  MDArray< ValueType , KOKKOS_MACRO_DEVICE > ,
+  MDArray< ValueType , SrcDevice > , 7 >
+{
+  enum { OK = StaticAssert<
+                SameType< KOKKOS_MACRO_DEVICE::memory_space ,
+                          typename  SrcDevice::memory_space >::value >::value };
+
+  typedef KOKKOS_MACRO_DEVICE::memory_space          device_type ;
+  typedef KOKKOS_MACRO_DEVICE::size_type             size_type ;
+  typedef MDArray< ValueType , KOKKOS_MACRO_DEVICE > dst_type ;
+  typedef MDArray< ValueType , SrcDevice >           src_type ;
+
+  const dst_type dst ;
+  const src_type src ;
+  const size_type N1 , N2 , N3 , N4 , N5 , N6 ;
+
+  DeepCopyKernelMDArray( const dst_type & arg_dst , 
+                         const src_type & arg_src )
+    : dst( arg_dst ), src( arg_src )
+    , N1( arg_dst.dimension(1) )
+    , N2( arg_dst.dimension(2) )
+    , N3( arg_dst.dimension(3) )
+    , N4( arg_dst.dimension(4) )
+    , N5( arg_dst.dimension(5) )
+    , N6( arg_dst.dimension(6) )
+    {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const size_type i0 ) const
+  {
+    for ( size_type i1 = 0 ; i1 < N1 ; ++i1 ) {
+    for ( size_type i2 = 0 ; i2 < N2 ; ++i2 ) {
+    for ( size_type i3 = 0 ; i3 < N3 ; ++i3 ) {
+    for ( size_type i4 = 0 ; i4 < N4 ; ++i4 ) {
+    for ( size_type i5 = 0 ; i5 < N5 ; ++i5 ) {
+    for ( size_type i6 = 0 ; i6 < N6 ; ++i6 ) {
+      dst(i0,i1,i2,i3,i4,i5,i6) = src(i0,i1,i2,i3,i4,i5,i6);
+    }}}}}}
+  }
+};
+
+template< typename ValueType , class SrcDevice >
+struct DeepCopyKernelMDArray<
+  MDArray< ValueType , KOKKOS_MACRO_DEVICE > ,
+  MDArray< ValueType , SrcDevice > , 6 >
+{
+  enum { OK = StaticAssert<
+                SameType< KOKKOS_MACRO_DEVICE::memory_space ,
+                          typename  SrcDevice::memory_space >::value >::value };
+
+  typedef KOKKOS_MACRO_DEVICE::memory_space          device_type ;
+  typedef KOKKOS_MACRO_DEVICE::size_type             size_type ;
+  typedef MDArray< ValueType , KOKKOS_MACRO_DEVICE > dst_type ;
+  typedef MDArray< ValueType , SrcDevice >           src_type ;
+
+  const dst_type dst ;
+  const src_type src ;
+  const size_type N1 , N2 , N3 , N4 , N5 ;
+
+  DeepCopyKernelMDArray( const dst_type & arg_dst , 
+                         const src_type & arg_src )
+    : dst( arg_dst ), src( arg_src )
+    , N1( arg_dst.dimension(1) )
+    , N2( arg_dst.dimension(2) )
+    , N3( arg_dst.dimension(3) )
+    , N4( arg_dst.dimension(4) )
+    , N5( arg_dst.dimension(5) )
+    {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const size_type i0 ) const
+  {
+    for ( size_type i1 = 0 ; i1 < N1 ; ++i1 ) {
+    for ( size_type i2 = 0 ; i2 < N2 ; ++i2 ) {
+    for ( size_type i3 = 0 ; i3 < N3 ; ++i3 ) {
+    for ( size_type i4 = 0 ; i4 < N4 ; ++i4 ) {
+    for ( size_type i5 = 0 ; i5 < N5 ; ++i5 ) {
+      dst(i0,i1,i2,i3,i4,i5) = src(i0,i1,i2,i3,i4,i5);
+    }}}}}
+  }
+};
+
+template< typename ValueType , class SrcDevice >
+struct DeepCopyKernelMDArray<
+  MDArray< ValueType , KOKKOS_MACRO_DEVICE > ,
+  MDArray< ValueType , SrcDevice > , 5 >
+{
+  enum { OK = StaticAssert<
+                SameType< KOKKOS_MACRO_DEVICE::memory_space ,
+                          typename  SrcDevice::memory_space >::value >::value };
+
+  typedef KOKKOS_MACRO_DEVICE::memory_space          device_type ;
+  typedef KOKKOS_MACRO_DEVICE::size_type             size_type ;
+  typedef MDArray< ValueType , KOKKOS_MACRO_DEVICE > dst_type ;
+  typedef MDArray< ValueType , SrcDevice >           src_type ;
+
+  const dst_type dst ;
+  const src_type src ;
+  const size_type N1 , N2 , N3 , N4 ;
+
+  DeepCopyKernelMDArray( const dst_type & arg_dst , 
+                         const src_type & arg_src )
+    : dst( arg_dst ), src( arg_src )
+    , N1( arg_dst.dimension(1) )
+    , N2( arg_dst.dimension(2) )
+    , N3( arg_dst.dimension(3) )
+    , N4( arg_dst.dimension(4) )
+    {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const size_type i0 ) const
+  {
+    for ( size_type i1 = 0 ; i1 < N1 ; ++i1 ) {
+    for ( size_type i2 = 0 ; i2 < N2 ; ++i2 ) {
+    for ( size_type i3 = 0 ; i3 < N3 ; ++i3 ) {
+    for ( size_type i4 = 0 ; i4 < N4 ; ++i4 ) {
+      dst(i0,i1,i2,i3,i4) = src(i0,i1,i2,i3,i4);
+    }}}}
+  }
+};
+
+template< typename ValueType , class SrcDevice >
+struct DeepCopyKernelMDArray<
+  MDArray< ValueType , KOKKOS_MACRO_DEVICE > ,
+  MDArray< ValueType , SrcDevice > , 4 >
+{
+  enum { OK = StaticAssert<
+                SameType< KOKKOS_MACRO_DEVICE::memory_space ,
+                          typename  SrcDevice::memory_space >::value >::value };
+
+  typedef KOKKOS_MACRO_DEVICE::memory_space          device_type ;
+  typedef KOKKOS_MACRO_DEVICE::size_type             size_type ;
+  typedef MDArray< ValueType , KOKKOS_MACRO_DEVICE > dst_type ;
+  typedef MDArray< ValueType , SrcDevice >           src_type ;
+
+  const dst_type dst ;
+  const src_type src ;
+  const size_type N1 , N2 , N3 ;
+
+  DeepCopyKernelMDArray( const dst_type & arg_dst , 
+                         const src_type & arg_src )
+    : dst( arg_dst ), src( arg_src )
+    , N1( arg_dst.dimension(1) )
+    , N2( arg_dst.dimension(2) )
+    , N3( arg_dst.dimension(3) )
+    {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const size_type i0 ) const
+  {
+    for ( size_type i1 = 0 ; i1 < N1 ; ++i1 ) {
+    for ( size_type i2 = 0 ; i2 < N2 ; ++i2 ) {
+    for ( size_type i3 = 0 ; i3 < N3 ; ++i3 ) {
+      dst(i0,i1,i2,i3) = src(i0,i1,i2,i3);
+    }}}
+  }
+};
+
+template< typename ValueType , class SrcDevice >
+struct DeepCopyKernelMDArray<
+  MDArray< ValueType , KOKKOS_MACRO_DEVICE > ,
+  MDArray< ValueType , SrcDevice > , 3 >
+{
+  enum { OK = StaticAssert<
+                SameType< KOKKOS_MACRO_DEVICE::memory_space ,
+                          typename  SrcDevice::memory_space >::value >::value };
+
+  typedef KOKKOS_MACRO_DEVICE::memory_space          device_type ;
+  typedef KOKKOS_MACRO_DEVICE::size_type             size_type ;
+  typedef MDArray< ValueType , KOKKOS_MACRO_DEVICE > dst_type ;
+  typedef MDArray< ValueType , SrcDevice >           src_type ;
+
+  const dst_type dst ;
+  const src_type src ;
+  const size_type N1 , N2 ;
+
+  DeepCopyKernelMDArray( const dst_type & arg_dst , 
+                         const src_type & arg_src )
+    : dst( arg_dst ), src( arg_src )
+    , N1( arg_dst.dimension(1) )
+    , N2( arg_dst.dimension(2) )
+    {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const size_type i0 ) const
+  {
+    for ( size_type i1 = 0 ; i1 < N1 ; ++i1 ) {
+    for ( size_type i2 = 0 ; i2 < N2 ; ++i2 ) {
+      dst(i0,i1,i2) = src(i0,i1,i2);
+    }}
+  }
+};
+
+template< typename ValueType , class SrcDevice >
+struct DeepCopyKernelMDArray<
+  MDArray< ValueType , KOKKOS_MACRO_DEVICE > ,
+  MDArray< ValueType , SrcDevice > , 2 >
+{
+  enum { OK = StaticAssert<
+                SameType< KOKKOS_MACRO_DEVICE::memory_space ,
+                          typename  SrcDevice::memory_space >::value >::value };
+
+  typedef KOKKOS_MACRO_DEVICE::memory_space          device_type ;
+  typedef KOKKOS_MACRO_DEVICE::size_type             size_type ;
+  typedef MDArray< ValueType , KOKKOS_MACRO_DEVICE > dst_type ;
+  typedef MDArray< ValueType , SrcDevice >           src_type ;
+
+  const dst_type dst ;
+  const src_type src ;
+  const size_type N1 ;
+
+  DeepCopyKernelMDArray( const dst_type & arg_dst , 
+                         const src_type & arg_src )
+    : dst( arg_dst ), src( arg_src )
+    , N1( arg_dst.dimension(1) )
+    {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const size_type i0 ) const
+  {
+    for ( size_type i1 = 0 ; i1 < N1 ; ++i1 ) {
+      dst(i0,i1) = src(i0,i1);
+    }
+  }
+};
+
+template< typename ValueType , class SrcDevice >
+struct DeepCopyKernelMDArray<
+  MDArray< ValueType , KOKKOS_MACRO_DEVICE > ,
+  MDArray< ValueType , SrcDevice > , 1 >
+{
+  enum { OK = StaticAssert<
+                SameType< KOKKOS_MACRO_DEVICE::memory_space ,
+                          typename  SrcDevice::memory_space >::value >::value };
+
+  typedef KOKKOS_MACRO_DEVICE::memory_space          device_type ;
+  typedef KOKKOS_MACRO_DEVICE::size_type             size_type ;
+  typedef MDArray< ValueType , KOKKOS_MACRO_DEVICE > dst_type ;
+  typedef MDArray< ValueType , SrcDevice >           src_type ;
+
+  const dst_type dst ;
+  const src_type src ;
+
+  DeepCopyKernelMDArray( const dst_type & arg_dst , 
+                         const src_type & arg_src )
+    : dst( arg_dst ), src( arg_src )
+    {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const size_type i0 ) const
+  {
+    dst(i0) = src(i0);
+  }
+};
+
+//----------------------------------------------------------------------------
+
+} // namespace Impl
+} // namespace Kokkos
 
 #endif
 

@@ -47,24 +47,18 @@ namespace Impl {
 //----------------------------------------------------------------------------
 
 template< typename ValueType >
-class Initialize< MDArray< ValueType , Host > >
+struct Factory< MDArray< ValueType , Host > , void >
   : public HostThreadWorker<void>
 {
 public:
   typedef Host::size_type              size_type ;
-  typedef MDArray< ValueType , Host >  dst_type ;
+  typedef MDArray< ValueType , Host >  output_type ;
 
-  dst_type   dst ;
-  size_type  chunk ;
+private:
 
-  Initialize( const dst_type & arg_dst )
-    : dst( arg_dst )
-    , chunk( 1 )
-    {
-      for ( size_type r = 1 ; r < dst.rank() ; ++r ) {
-        chunk *= dst.dimension(r);
-      }
-    }
+  output_type dst ;
+
+  Factory( const output_type & arg_dst ) : dst( arg_dst ) {}
 
   /** \brief  First touch the allocated memory with the proper thread.
    *
@@ -73,220 +67,97 @@ public:
   void execute_on_thread( Impl::HostThread & this_thread ) const
   {
     const std::pair<size_type,size_type> range =
-      this_thread.work_range( dst.dimension(0) );
+      this_thread.work_range( dst.m_map.allocation_size() );
 
-    ValueType * const x_end = dst.ptr_on_device() + chunk * range.second ;
-    ValueType *       x     = dst.ptr_on_device() + chunk * range.first ;
+    ValueType * const x_end = dst.ptr_on_device() + range.second ;
+    ValueType *       x     = dst.ptr_on_device() + range.first ;
     while ( x_end != x ) { *x++ = 0 ; }
 
     this_thread.barrier();
   }
 
-  static void run( const dst_type & arg_dst )
-  {
-    typedef MemoryManager< Host::memory_space > memory_manager ;
-    memory_manager::disable_memory_view_tracking();
-    Initialize driver( arg_dst );
-    memory_manager::enable_memory_view_tracking();
-    HostThreadWorker<void>::execute( driver );
-  }
-};
-
-//----------------------------------------------------------------------------
-
-template< typename DstType , unsigned N >
-class MDArrayInitializeHostPermute : public HostThreadWorker<void>
-{
-private:
-  MDArrayInitializeHostPermute();
-  MDArrayInitializeHostPermute( const MDArrayInitializeHostPermute & );
-  MDArrayInitializeHostPermute & operator = ( const MDArrayInitializeHostPermute & );
 public:
-  typedef Host::size_type size_type ;
 
-  DstType m_dst ;
-  Rank<N> rank ;
-
-  explicit
-  MDArrayInitializeHostPermute( const DstType & arg_dst )
-  : m_dst( arg_dst ), rank() {}
-
-  static void run( const DstType & arg_dst )
+  static output_type create( const std::string & label ,
+                             size_t nP , size_t n1 , size_t n2 , size_t n3 ,
+                             size_t n4 , size_t n5 , size_t n6 , size_t n7 )
   {
-    typedef MemoryManager< Host::memory_space > memory_manager ;
+    typedef MemoryManager< Host > memory_manager ;
+
+    output_type array ;
+
+    array.m_map.template assign< ValueType >(nP,n1,n2,n3,n4,n5,n6,n7);
+    array.m_memory.allocate( array.m_map.allocation_size() , label );
+
     memory_manager::disable_memory_view_tracking();
-    MDArrayInitializeHostPermute driver( arg_dst );
+
+    Factory driver( array );
+
     memory_manager::enable_memory_view_tracking();
+    
     HostThreadWorker<void>::execute( driver );
-  }
 
-  void execute_on_thread( Impl::HostThread & this_thread ) const
-  {
-    const typename DstType::value_type zero = 0 ;
-
-    const std::pair<size_type,size_type> range =
-      this_thread.work_range( m_dst.dimension(0) );
-
-    for ( size_type iP = range.first ; iP < range.second ; ++iP ) {
-      m_dst.fill( rank , iP , zero );
-    }
-
-    this_thread.barrier();
-  }
-};
-
-template< typename ValueType , class Device >
-class Initialize< MDArray< ValueType , HostMapped< Device > > > {
-public:
-  typedef MDArray< ValueType , HostMapped< Device > > dst_type ;
-
-  static void run( const dst_type & dst )
-  {
-    switch( dst.rank() ) {
-    case 1 : MDArrayInitializeHostPermute< dst_type,1>::run(dst); break ;
-    case 2 : MDArrayInitializeHostPermute< dst_type,2>::run(dst); break ;
-    case 3 : MDArrayInitializeHostPermute< dst_type,3>::run(dst); break ;
-    case 4 : MDArrayInitializeHostPermute< dst_type,4>::run(dst); break ;
-    case 5 : MDArrayInitializeHostPermute< dst_type,5>::run(dst); break ;
-    case 6 : MDArrayInitializeHostPermute< dst_type,6>::run(dst); break ;
-    case 7 : MDArrayInitializeHostPermute< dst_type,7>::run(dst); break ;
-    case 8 : MDArrayInitializeHostPermute< dst_type,8>::run(dst); break ;
-    }
+    return array ;
   }
 };
 
 //----------------------------------------------------------------------------
 
 template< typename ValueType >
-class DeepCopy< MDArray< ValueType , Host > ,
+struct Factory< MDArray< ValueType , Host > ,
                 MDArray< ValueType , Host > > : HostThreadWorker<void>
 {
 public:
   typedef Host::size_type             size_type ;
-  typedef MDArray< ValueType , Host > dst_type ;
-  typedef MDArray< ValueType , Host > src_type ;
+  typedef MDArray< ValueType , Host > output_type ;
+  typedef MDArray< ValueType , Host > input_type ;
 
 private:
 
-  dst_type  dst ;
-  src_type  src ;
-  size_type chunk ;
+  output_type  output ;
+  input_type  input ;
 
-  DeepCopy( const dst_type & arg_dst , const src_type & arg_src )
-    : dst( arg_dst )
-    , src( arg_src )
-    , chunk( 1 )
-    {
-      for ( size_type r = 1 ; r < dst.rank() ; ++r ) {
-        chunk *= dst.dimension(r);
-      }
-    }
-
-public:
+  Factory( const output_type & arg_output , const input_type & arg_input )
+    : output( arg_output ) , input( arg_input ) {} 
 
   void execute_on_thread( Impl::HostThread & this_thread ) const
   {
     const std::pair<size_type,size_type> range =
-      this_thread.work_range( dst.dimension(0) );
+      this_thread.work_range( output.m_map.allocation_size() );
 
-    ValueType * const x_end = dst.ptr_on_device() + chunk * range.second ;
-    ValueType *       x     = dst.ptr_on_device() + chunk * range.first ;
-    const ValueType * y     = src.ptr_on_device() + chunk * range.first ;
+    ValueType * const x_end = output.ptr_on_device() + range.second ;
+    ValueType *       x     = output.ptr_on_device() + range.first ;
+    const ValueType * y     = input.ptr_on_device() + range.first ;
     while ( x_end != x ) { *x++ = *y++ ; }
 
     this_thread.barrier();
   }
 
-  static void run( const dst_type & arg_dst , const src_type & arg_src )
+public:
+
+  static inline
+  void deep_copy( const output_type & arg_output , const input_type & arg_input )
   {
     typedef MemoryManager< Host::memory_space > memory_manager ;
     memory_manager::disable_memory_view_tracking();
-    DeepCopy driver( arg_dst , arg_src );
+    Factory driver( arg_output , arg_input );
     memory_manager::enable_memory_view_tracking();
     HostThreadWorker<void>::execute( driver );
   }
-};
 
-//----------------------------------------------------------------------------
-
-template< class DstType , class SrcType, unsigned N >
-class MDArrayDeepCopyHostPermute : HostThreadWorker<void> {
-public:
-  const DstType dst ;
-  const SrcType src ;
-  const Rank<N> rank ;
-
-  MDArrayDeepCopyHostPermute( const DstType & arg_dst ,
-                              const SrcType & arg_src )
-    : dst( arg_dst ) , src( arg_src ), rank()
-    { HostThreadWorker<void>::execute( *this ); }
-
-  void execute_on_thread( Impl::HostThread & this_thread ) const
+  static inline
+  output_type create( const input_type & input )
   {
-    typedef Host::size_type size_type ;
-
-    const std::pair<size_type,size_type> range =
-      this_thread.work_range( dst.dimension(0) );
-
-    for ( size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
-      dst.assign( rank , i0 , src );
-    }
-
-    this_thread.barrier();
-  }
-};
-
-template< typename ValueType , class Device >
-class DeepCopy< MDArray< ValueType , Host > ,
-                MDArray< ValueType , HostMapped< Device > > >
-  : HostThreadWorker<void>
-{
-public:
-  typedef MDArray< ValueType , Host >                 dst_type ;
-  typedef MDArray< ValueType , HostMapped< Device > > src_type ;
-
-  static void run( const dst_type & dst , const src_type & src )
-  {
-    typedef MemoryManager< Host::memory_space > memory_manager ;
-    memory_manager::disable_memory_view_tracking();
-    switch( dst.rank() ) {
-    case 1 : MDArrayDeepCopyHostPermute<dst_type,src_type,1>(dst,src); break ;
-    case 2 : MDArrayDeepCopyHostPermute<dst_type,src_type,2>(dst,src); break ;
-    case 3 : MDArrayDeepCopyHostPermute<dst_type,src_type,3>(dst,src); break ;
-    case 4 : MDArrayDeepCopyHostPermute<dst_type,src_type,4>(dst,src); break ;
-    case 5 : MDArrayDeepCopyHostPermute<dst_type,src_type,5>(dst,src); break ;
-    case 6 : MDArrayDeepCopyHostPermute<dst_type,src_type,6>(dst,src); break ;
-    case 7 : MDArrayDeepCopyHostPermute<dst_type,src_type,7>(dst,src); break ;
-    case 8 : MDArrayDeepCopyHostPermute<dst_type,src_type,8>(dst,src); break ;
-    }
-    memory_manager::enable_memory_view_tracking();
-  }
-};
-
-template< typename ValueType , class Device >
-class DeepCopy< MDArray< ValueType , HostMapped< Device > > ,
-                MDArray< ValueType , Host > >
-  : HostThreadWorker<void>
-{
-public:
-  typedef MDArray< ValueType , HostMapped< Device > > dst_type ;
-  typedef MDArray< ValueType , Host >                 src_type ;
-
-  static void run( const dst_type & dst , const src_type & src )
-  {
-    typedef MemoryManager< Host::memory_space > memory_manager ;
-    memory_manager::disable_memory_view_tracking();
-    switch( dst.rank() ) {
-    case 1 : MDArrayDeepCopyHostPermute<dst_type,src_type,1>(dst,src); break ;
-    case 2 : MDArrayDeepCopyHostPermute<dst_type,src_type,2>(dst,src); break ;
-    case 3 : MDArrayDeepCopyHostPermute<dst_type,src_type,3>(dst,src); break ;
-    case 4 : MDArrayDeepCopyHostPermute<dst_type,src_type,4>(dst,src); break ;
-    case 5 : MDArrayDeepCopyHostPermute<dst_type,src_type,5>(dst,src); break ;
-    case 6 : MDArrayDeepCopyHostPermute<dst_type,src_type,6>(dst,src); break ;
-    case 7 : MDArrayDeepCopyHostPermute<dst_type,src_type,7>(dst,src); break ;
-    case 8 : MDArrayDeepCopyHostPermute<dst_type,src_type,8>(dst,src); break ;
-    }
-    memory_manager::enable_memory_view_tracking();
+    return Factory< output_type , void >::create(
+      std::string(),
+      ( 0 < input.rank() ? input.dimension(0) : 0 ),
+      ( 1 < input.rank() ? input.dimension(1) : 0 ),
+      ( 2 < input.rank() ? input.dimension(2) : 0 ),
+      ( 3 < input.rank() ? input.dimension(3) : 0 ),
+      ( 4 < input.rank() ? input.dimension(4) : 0 ),
+      ( 5 < input.rank() ? input.dimension(5) : 0 ),
+      ( 6 < input.rank() ? input.dimension(6) : 0 ),
+      ( 7 < input.rank() ? input.dimension(7) : 0 ) );
   }
 };
 

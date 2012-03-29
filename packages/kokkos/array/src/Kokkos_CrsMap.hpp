@@ -124,47 +124,14 @@ public:
   bool operator != ( const CrsMap & ) const ;
 };
 
-} // namespace Kokkos
-
 //----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-#include <impl/Kokkos_CrsMap_create.hpp>
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace Kokkos {
 
 template< class CrsMapType , typename InputType >
-typename Impl::CreateCrsMap< CrsMapType , InputType >::type
-create_labeled_crsmap( const std::string & label , const InputType & input )
+inline
+typename Impl::Factory< CrsMapType , InputType >::output_type
+create_crsmap( const std::string & label , const InputType & input )
 {
-  return Impl::CreateCrsMap< CrsMapType , InputType >
-             ::create( label , input );
-}
-
-template< class DeviceType ,
-          template< class , typename > class ColumnType ,
-          typename SizeType >
-typename CrsMap< DeviceType , ColumnType , SizeType >::HostMirror
-create_mirror( const CrsMap< DeviceType , ColumnType , SizeType > & input )
-{
-  typedef CrsMap< DeviceType , ColumnType , SizeType >  view_type ;
-  typedef typename view_type::HostMirror      host_view ;
-  typedef typename host_view::device_type     host_device ;
-  typedef typename host_device::memory_space  host_memory ;
-  typedef typename DeviceType::memory_space   memory ;
-
-  enum { optimize = Impl::SameType< memory , host_memory >::value &&
-#if defined( KOKKOS_MIRROR_VIEW_OPTIMIZE )
-                    KOKKOS_MIRROR_VIEW_OPTIMIZE
-#else
-                    false
-#endif
-       };
-
-  return Impl::CreateMirror< view_type , optimize >::create( input );
+  return Impl::Factory< CrsMapType , InputType >::create( label , input );
 }
 
 //----------------------------------------------------------------------------
@@ -172,6 +139,7 @@ create_mirror( const CrsMap< DeviceType , ColumnType , SizeType > & input )
 
 } // namespace Kokkos
 
+#include <impl/Kokkos_CrsMap_factory.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

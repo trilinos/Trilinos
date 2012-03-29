@@ -143,10 +143,12 @@ public:
   template< unsigned Rank = 0, unsigned N1=0, unsigned N2=0, unsigned N3=0,
             unsigned N4   = 0, unsigned N5=0, unsigned N6=0, unsigned N7=0>
   struct IndexMap {
-    typedef typename Device::template IndexMap<Rank,N1,N2,N3,N4,N5,N6,N7>::type type ;
+    typedef typename
+      Device::template IndexMap<Rank,N1,N2,N3,N4,N5,N6,N7>::type type ;
   };
 };
 
+/** \brief  The host mapped onto the host is the host */
 template<> struct HostMapped<Host> { typedef Host type ; };
 
 /*--------------------------------------------------------------------------*/

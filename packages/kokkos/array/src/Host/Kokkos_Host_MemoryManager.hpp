@@ -163,14 +163,13 @@ public:
 //----------------------------------------------------------------------------
 
 template< typename ValueType >
-class DeepCopy< MemoryView< ValueType, Host > ,
-                MemoryView< ValueType, Host > > {
-public:
-
-  static
-  void run( const MemoryView< ValueType , Host > & dst ,
-            const MemoryView< ValueType , Host > & src ,
-            const size_t count )
+struct Factory< MemoryView< ValueType, Host > ,
+                MemoryView< ValueType, Host > >
+{
+  static inline
+  void deep_copy( const MemoryView< ValueType , Host > & dst ,
+                  const MemoryView< ValueType , Host > & src ,
+                  const size_t count )
   {
     ValueType * d = dst.ptr_on_device();
     const ValueType * s = src.ptr_on_device();

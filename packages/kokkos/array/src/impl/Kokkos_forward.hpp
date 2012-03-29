@@ -41,28 +41,68 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_FORWARD_HPP
-#define KOKKOS_FORWARD_HPP
+#ifndef KOKKOS_IMPL_FORWARD_HPP
+#define KOKKOS_IMPL_FORWARD_HPP
+
+//----------------------------------------------------------------------------
 
 namespace Kokkos {
+
 class Host ;
-template < class > struct HostMapped ;
-}
+
+template < class Device > struct HostMapped ;
+
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
 
 namespace Kokkos {
 namespace Impl {
 
-template< class ViewType > class Initialize ;
-template< class DstType , class SrcType >  class DeepCopy ;
-template< class ViewType , bool MirrorIsView > class CreateMirror ;
+template< class A , class B >
+struct SameType { static const bool value = false ; };
 
-template< class MatrixType ,
-          class InputVectorType  = void ,
-          class OutputVectorType = InputVectorType > class Multiply ;
+template< class A >
+struct SameType<A,A> { static const bool value = true ; };
+
+struct MirrorUseView {};
+
+template< class DstType , class SrcType >  struct Factory ;
 
 }
 }
 
-#endif /* #ifndef KOKKOS_FORWARD_HPP */
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+
+template< class ArrayType >
+inline
+typename ArrayType::HostMirror
+create_mirror( const ArrayType & input , const Impl::MirrorUseView )
+{
+  typedef typename ArrayType::HostMirror MirrorType ;
+  return Impl::Factory< MirrorType , Impl::MirrorUseView >::create( input );
+}
+
+template< class ArrayType >
+inline
+typename ArrayType::HostMirror
+create_mirror( const ArrayType & input )
+{
+  typedef typename ArrayType::HostMirror MirrorType ;
+#if KOKKOS_MIRROR_VIEW_OPTIMIZE
+  return Impl::Factory< MirrorType , Impl::MirrorUseView >::create( input );
+#else
+  return Impl::Factory< MirrorType , ArrayType >::create( input );
+#endif
+}
+
+}
+
+//----------------------------------------------------------------------------
+
+#endif /* #ifndef KOKKOS_IMPL_FORWARD_HPP */
+
 
 

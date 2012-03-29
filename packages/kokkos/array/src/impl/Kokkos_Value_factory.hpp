@@ -41,60 +41,57 @@
 //@HEADER
 */
 
-#include <iostream>
-#include <fstream>
+#ifndef KOKKOS_IMPL_VALUE_FACTORY_HPP
+#define KOKKOS_IMPL_VALUE_FACTORY_HPP
 
-// Print out sparse Matrix (A) to a file. Useful for visualizing matrix
-// to see correctness.
-template<class scalar_vector , class int_vector>
-void printSparse(const std::string & filename , scalar_vector & value ,
-                        int_vector & row ,
-                        int_vector & col )
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Impl {
+
+template< typename ValueType , class Device >
+struct Factory< Value< ValueType , Device > , void >
 {
-  std::ofstream outfile(filename.c_str());
-  int end = row.length()-1;
-  outfile<<end << " " << col.length()<<std::endl;
-  for( int i = 0 ; i < end ; i++)
-  {
-    int stop = row(i+1);
-    for(int j = row(i) ; j < stop ; j++)
-    {
-      if(value(j) != 0)
-        outfile << i+1 <<" " << col(j)+1 << " " << value(j)<< std::endl;
-    }
-  }
-}
+  typedef Value< ValueType , Device > type ;
 
-// Print out answer (X) to a file in a specialized format for viewing a GLUT visualization
-// of answer.
-template<class Scalar , class scalar_vector_d, class HostMirror_scalar, class HostMirror_int>
-void printGLUT(const std::string & filename , scalar_vector_d & X , HostMirror_scalar & elem_coords_h,
-                      HostMirror_int & elem_nodeIDs_h , int x , int y, int z)
+  static inline
+  type create()
+  {
+    type output ;
+    output.m_memory.allocate( 1 , std::string() );
+    return output ;
+  }
+
+  static inline
+  type create( const std::string & label )
+  {
+    type output ;
+    output.m_memory.allocate( 1 , label );
+    return output ;
+  }
+};
+
+template< typename ValueType , class Device >
+struct Factory< Value< ValueType , Device > , Impl::MirrorUseView >
 {
-  typedef Kokkos::MultiVector<Scalar , Kokkos::Host> scalar_vector_h;
+  typedef Value< ValueType , Device > type ;
 
-  int nelem = x * y * z;
-  int nnodes = X.length();
-  std::ofstream outfile(filename.c_str());
-  outfile<<x<<" "<<y<<" "<<z<< " " << 1<<std::endl;
-  scalar_vector_h X_host = Kokkos::create_multivector<scalar_vector_h>("X_host", nnodes);
-  Kokkos::deep_copy(X_host , X);
-  for(int i = 0 ; i < nelem ; i++)
-  {
-      for(int j = 0 ; j < 8 ; j++)
-      {
-        //Coordinates temperature
-        outfile << elem_coords_h(i,0,j) << " "
-        << elem_coords_h(i,1,j)<< " "
-        << elem_coords_h(i,2,j) <<" "
-        << elem_nodeIDs_h(i,j) << std::endl;
-      }
-  }
+  static inline
+  const type & create( const type & input ) { return input ; }
 
-  for(int i = 0 ; i < nnodes ; i++)
-  {
-    outfile << i << " " << X_host(i) << std::endl;
-  }
-  outfile.close();
-}
+  template< class DeviceInput >
+  static inline
+  type & create( const Value< ValueType , DeviceInput > & )
+  { return Factory< type , void >::create(); }
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#endif /* KOKKOS_IMPL_VALUE_FACTORY_HPP */
+
 

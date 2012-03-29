@@ -94,127 +94,25 @@ public:
 
 //----------------------------------------------------------------------------
 
-template< typename ValueType , class DeviceType >
-Value< ValueType , DeviceType >
-create_labeled_value( const std::string & label );
-
-template< typename ViewType >
-Value< typename ViewType::value_type , typename ViewType::device_type >
-create_labeled_value( const std::string & label );
-
-template< typename ValueType , class DeviceType >
-Value< ValueType , DeviceType >
-create_value();
-
-template< typename ViewType >
-Value< typename ViewType::value_type , typename ViewType::device_type >
-create_value();
-
-//----------------------------------------------------------------------------
-
-template< typename ValueType , class DeviceType >
-typename Value< ValueType , DeviceType >::HostMirror
-create_mirror( const Value< ValueType , DeviceType > & v );
-
-//----------------------------------------------------------------------------
-
-template< typename ValueType , class DeviceType >
-void deep_copy( const Value< ValueType , DeviceType > & dst ,
-                const ValueType & src );
-
-template< typename ValueType , class DeviceType >
-void deep_copy( ValueType & dst ,
-                const Value< ValueType , DeviceType > & src );
-
-template< typename ValueType , class DeviceDst , class DeviceSrc >
-void deep_copy( const Value< ValueType , DeviceDst > & dst ,
-                const Value< ValueType , DeviceSrc > & src );
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-template< typename ValueType , class DeviceType >
+template< class Type >
 inline
-Value< ValueType , DeviceType >
-create_labeled_value( const std::string & label )
-{ return Value< ValueType , DeviceType >( label ); }
-
-template< typename ValueType , class DeviceType >
-inline
-Value< ValueType , DeviceType >
-create_value()
-{ return create_labeled_value< ValueType , DeviceType >( std::string() ); }
-
-template< typename ViewType >
-inline
-Value< typename ViewType::value_type , typename ViewType::device_type >
-create_labeled_value( const std::string & label )
-{
-  return create_labeled_value< typename ViewType::value_type ,
-                               typename ViewType::device_type >( label );
-}
-
-template< typename ViewType >
-inline
-Value< typename ViewType::value_type , typename ViewType::device_type >
+Value< typename Type::value_type , typename Type::device_type >
 create_value()
 {
-  return create_labeled_value< typename ViewType::value_type ,
-                               typename ViewType::device_type >(std::string());
+  typedef Value< typename Type::value_type , typename Type::device_type > type ;
+  return Impl::Factory<type,void>::create();
 }
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace Impl {
-
-template< typename ValueType , class Device >
-class CreateMirror< Value< ValueType , Device > , true /* view */ >
-{
-public:
-  typedef  Value< ValueType , Device >            View ;
-  typedef  typename Value< ValueType , Device >::HostMirror  HostMirror ;
-
-  static
-  HostMirror create( const View & v ) { return HostMirror( v ); }
-};
-
-template< typename ValueType , class Device >
-class CreateMirror< Value< ValueType , Device > , false /* copy */ >
-{
-public:
-  typedef  Value< ValueType , Device >            View ;
-  typedef  typename Value< ValueType , Device >::HostMirror  HostMirror ;
-
-  static
-  HostMirror create( const View & )
-    { return create_labeled_value< HostMirror >( std::string() ); }
-};
-
-} // namespace Impl
-
-//----------------------------------------------------------------------------
-
-template< typename ValueType , class DeviceType >
+template< class Type >
 inline
-typename Value< ValueType , DeviceType >::HostMirror
-create_mirror( const Value< ValueType , DeviceType > & v )
+Value< typename Type::value_type , typename Type::device_type >
+create_value( const std::string & label )
 {
-  typedef Value< ValueType , DeviceType >     device_view ;
-  typedef typename device_view::HostMirror      host_view ;
-  typedef typename host_view::device_type     host_device ;
-  typedef typename host_device::memory_space  host_memory ;
-  typedef typename DeviceType::memory_space   device_memory ;
-
-  enum { optimize = Impl::SameType< device_memory , host_memory >::value
-#if defined( KOKKOS_MIRROR_VIEW_OPTIMIZE )
-                    && KOKKOS_MIRROR_VIEW_OPTIMIZE
-#endif
-       };
-
-  return Impl::CreateMirror< device_view , optimize >::create( v );
+  typedef Value< typename Type::value_type , typename Type::device_type > type ;
+  return Impl::Factory<type,void>::create( label );
 }
 
+//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 template< typename ValueType , class DeviceDst >
@@ -224,7 +122,7 @@ void deep_copy( const Value<ValueType,DeviceDst> & dst ,
 {
   typedef Value< ValueType , DeviceDst > dst_type ;
   typedef ValueType src_type ;
-  Impl::DeepCopy<dst_type,src_type>::run( dst , src );
+  Impl::Factory<dst_type,src_type>::deep_copy( dst , src );
 }
 
 template< typename ValueType , class DeviceSrc >
@@ -234,7 +132,7 @@ void deep_copy( ValueType & dst ,
 {
   typedef ValueType dst_type ;
   typedef Value< ValueType , DeviceSrc > src_type ;
-  Impl::DeepCopy<dst_type,src_type>::run( dst , src );
+  Impl::Factory<dst_type,src_type>::deep_copy( dst , src );
 }
 
 template< typename ValueType , class DeviceDst , class DeviceSrc >
@@ -244,13 +142,15 @@ void deep_copy( const Value< ValueType , DeviceDst > & dst ,
   typedef Value< ValueType , DeviceDst > dst_type ;
   typedef Value< ValueType , DeviceSrc > src_type ;
   if ( dst.operator != ( src ) ) {
-    Impl::DeepCopy<dst_type,src_type>::run( dst , src );
+    Impl::Factory<dst_type,src_type>::deep_copy( dst , src );
   }
 }
 
 //----------------------------------------------------------------------------
 
 } //Kokkos
+
+#include <impl/Kokkos_Value_factory.hpp>
 
 #endif /* KOKKOS_VALUE_HPP */
 

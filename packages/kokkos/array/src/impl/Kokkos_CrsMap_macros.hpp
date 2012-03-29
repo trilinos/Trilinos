@@ -224,7 +224,7 @@ private:
             typename I >
     friend class CrsMap ;
 
-  template< class Dst , class Src >  friend class Impl::CreateCrsMap ;
+  template< class Dst , class Src >  friend class Impl::Factory ;
 };
 
 //----------------------------------------------------------------------------

@@ -283,9 +283,6 @@ public:
   static
   type create( const input_type & variable_polynomial_degree )
   {
-    enum { is_host_memory =
-             SameType< typename device_type::memory_space , Host >::value };
-
     // Manufactor all required data
     const CreateSparseProductTensor work( variable_polynomial_degree );
 
@@ -318,9 +315,9 @@ public:
     tmp.m_variable  = work.m_variable_count ;
 
     {
+      // If possible the mirror uses a view.
       host_int_array_type degree_map =
-        Impl::CreateMirror< int_array_type , is_host_memory >
-            ::create( tmp.m_degree_map );
+        create_mirror( tmp.m_degree_map , Impl::MirrorUseView() );
 
       for ( int j = 0 ; j < work.m_variable_count ; ++j ) {
         degree_map(0,j) = work.m_variable_degree[j];

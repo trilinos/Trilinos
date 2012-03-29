@@ -53,10 +53,6 @@
 namespace Kokkos {
 
 //----------------------------------------------------------------------------
-
-enum { MDArrayMaxRank = 8 };
-
-//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 /** \brief  Multidimensional array allocated and mapped
  *          onto the memory space of a compute device.
@@ -76,12 +72,10 @@ enum { MDArrayMaxRank = 8 };
  *  The "labeled" group creates MDArray's with string labels that
  *  will appear in error messages.
  *
- *  create_labeled_mdarray< ValueType , DeviceType >( label , nP , ... );
- *  create_labeled_mdarray< MDArray<...> >( label , nP , ... );
+ *  create_mdarray< MDArray<...> >( label , nP , ... );
  *
  *  The "unlabeled" group creates MDArray's with NULL string labels.
  *
- *  create_mdarray< ValueType , DeviceType >( nP , ... );
  *  create_mdarray< MDArray<...> >( nP , ... );
  */
 template< typename ValueType , class DeviceType >
@@ -92,7 +86,8 @@ public:
   typedef typename DeviceType::size_type                  size_type ;
   typedef typename DeviceType::template IndexMap<>::type  index_map ;
 
-  typedef MDArray< value_type , typename HostMapped<device_type>::type > HostMirror ;
+  typedef MDArray< value_type ,
+                   typename HostMapped<device_type>::type > HostMirror ;
 
   /*------------------------------------------------------------------*/
   /** \brief  Query rank of the array */
@@ -197,170 +192,43 @@ public:
   bool operator != ( const MDArray & rhs ) const ;
 };
 
-
 //----------------------------------------------------------------------------
 
-template< typename ValueType , class DeviceType >
-MDArray< ValueType , DeviceType >
-create_labeled_mdarray( const std::string & label ,
-                        size_t nP , size_t n1 = 0 ,
-                        size_t n2 = 0 , size_t n3 = 0 ,
-                        size_t n4 = 0 , size_t n5 = 0 ,
-                        size_t n6 = 0 , size_t n7 = 0 );
-
+/** \brief  Create an MDArray with a label */
 template< typename MDArrayType >
 inline
 MDArray< typename MDArrayType::value_type ,
          typename MDArrayType::device_type >
-create_labeled_mdarray( const std::string & label ,
-                        size_t nP , size_t n1 = 0 , size_t n2 = 0 ,
-                                    size_t n3 = 0 , size_t n4 = 0 ,
-                                    size_t n5 = 0 , size_t n6 = 0 ,
-                                    size_t n7 = 0 );
+create_mdarray( const std::string & label ,
+                size_t nP ,     size_t n1 = 0 ,
+                size_t n2 = 0 , size_t n3 = 0 ,
+                size_t n4 = 0 , size_t n5 = 0 ,
+                size_t n6 = 0 , size_t n7 = 0 )
+{
+  return Impl::Factory< MDArrayType , void >
+           ::create( label, nP, n1, n2, n3, n4, n5, n6, n7 );
+}
 
-template< typename ValueType , class DeviceType >
-inline
-MDArray< ValueType , DeviceType >
-create_mdarray( size_t nP , size_t n1 = 0 , size_t n2 = 0 ,
-                            size_t n3 = 0 , size_t n4 = 0 ,
-                            size_t n5 = 0 , size_t n6 = 0 ,
-                            size_t n7 = 0 );
-
+/** \brief  Create an MDArray without a label */
 template< typename MDArrayType >
 inline
 MDArray< typename MDArrayType::value_type ,
          typename MDArrayType::device_type >
-create_mdarray( size_t nP , size_t n1 = 0 , size_t n2 = 0 ,
-                            size_t n3 = 0 , size_t n4 = 0 ,
-                            size_t n5 = 0 , size_t n6 = 0 ,
-                            size_t n7 = 0 );
-
-//----------------------------------------------------------------------------
-
-template< typename ValueType , class DeviceType >
-typename MDArray< ValueType , DeviceType >::HostMirror
-create_mirror( const MDArray< ValueType , DeviceType > & );
-
-//----------------------------------------------------------------------------
-
-template< typename ValueType , class DeviceDst , class DeviceSrc >
-inline
-void deep_copy( const MDArray<ValueType,DeviceDst> & dst ,
-                const MDArray<ValueType,DeviceSrc> & src );
-
-//----------------------------------------------------------------------------
-/** \brief  This is THE creation function.
- *          All other versions call this function.
- */
-template< typename ValueType , class DeviceType >
-inline
-MDArray< ValueType , DeviceType >
-create_labeled_mdarray( const std::string & label ,
-                        size_t nP , size_t n1 , size_t n2 , size_t n3 ,
-                        size_t n4 , size_t n5 , size_t n6 , size_t n7 )
+create_mdarray( size_t nP ,     size_t n1 = 0 ,
+                size_t n2 = 0 , size_t n3 = 0 ,
+                size_t n4 = 0 , size_t n5 = 0 ,
+                size_t n6 = 0 , size_t n7 = 0 )
 {
-  return MDArray< ValueType , DeviceType >
-           ( label , nP , n1 , n2 , n3 , n4 , n5 , n6 , n7 );
-}
-
-template< typename MDArrayType >
-inline
-MDArray< typename MDArrayType::value_type , typename MDArrayType::device_type >
-create_labeled_mdarray( const std::string & label ,
-                        size_t nP , size_t n1 , size_t n2 , size_t n3 ,
-                        size_t n4 , size_t n5 , size_t n6 , size_t n7 )
-{
-  return create_labeled_mdarray< typename MDArrayType::value_type ,
-                                 typename MDArrayType::device_type >
-           ( label , nP , n1 , n2 , n3 , n4 , n5 , n6 , n7 );
-}
-
-template< typename ValueType , class DeviceType >
-inline
-MDArray< ValueType , DeviceType >
-create_mdarray( size_t nP , size_t n1 , size_t n2 , size_t n3 ,
-                size_t n4 , size_t n5 , size_t n6 , size_t n7 )
-{
-  return create_labeled_mdarray< ValueType , DeviceType >
-           ( std::string() , nP , n1 , n2 , n3 , n4 , n5 , n6 , n7 );
-}
-
-template< typename MDArrayType >
-inline
-MDArray< typename MDArrayType::value_type , typename MDArrayType::device_type >
-create_mdarray( size_t nP , size_t n1 , size_t n2 , size_t n3 ,
-                size_t n4 , size_t n5 , size_t n6 , size_t n7 )
-{
-  return create_labeled_mdarray< typename MDArrayType::value_type ,
-                                 typename MDArrayType::device_type >
-           ( std::string() , nP , n1 , n2 , n3 , n4 , n5 , n6 , n7 );
+  return Impl::Factory< MDArrayType , void >
+           ::create( std::string(), nP, n1, n2, n3, n4, n5, n6, n7 );
 }
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 namespace Impl {
-
-template< unsigned N >
-class Rank { public: enum { value = N }; };
-
-template< typename ValueType , class MDArrayMap >
-class MDArrayHostMirror ;
-
-template< typename ValueType , class Device >
-class CreateMirror< MDArray< ValueType , Device > , true /* view */ >
-{
-public:
-  typedef  MDArray< ValueType , Device >            View ;
-  typedef  typename MDArray< ValueType , Device >::HostMirror  HostMirror ;
-
-  static
-  HostMirror create( const View & v ) { return HostMirror( v ); }
-};
-
-template< typename ValueType , class Device >
-class CreateMirror< MDArray< ValueType , Device > , false /* copy */ >
-{
-public:
-  typedef  MDArray< ValueType , Device >                     View ;
-  typedef  typename MDArray< ValueType , Device >::HostMirror  HostMirror ;
-  typedef  typename HostMirror::device_type                    HostDevice ;
-
-  static
-  HostMirror create( const View & a )
-    {
-      return create_labeled_mdarray< ValueType , HostDevice >(
-               std::string() ,
-               a.dimension(0) , a.dimension(1) ,
-               a.dimension(2) , a.dimension(3) ,
-               a.dimension(4) , a.dimension(5) ,
-               a.dimension(6) , a.dimension(7) );
-    }
-};
-
-}
-
-template< typename ValueType , class DeviceType >
-inline
-typename MDArray< ValueType , DeviceType >::HostMirror
-create_mirror( const MDArray< ValueType , DeviceType > & a )
-{
-  // the index map type has both the algorithm and memory space
-  typedef MDArray< ValueType , DeviceType >   view_type ;
-  typedef typename view_type::index_map       index_map ;
-  typedef typename view_type::HostMirror      host_view ;
-  typedef typename host_view::index_map       host_index_map ;
-
-  enum { OPTIMIZE = Impl::SameType< index_map , host_index_map >::value &&
-#if defined( KOKKOS_MIRROR_VIEW_OPTIMIZE )
-                    KOKKOS_MIRROR_VIEW_OPTIMIZE
-#else
-                    false
-#endif
-       };
-
-  return Impl::CreateMirror< MDArray< ValueType , DeviceType > , OPTIMIZE >
-    ::create( a );
+template < class OutputType , class InputType , unsigned Rank >
+struct DeepCopyKernelMDArray ;
 }
 
 //----------------------------------------------------------------------------
@@ -376,13 +244,15 @@ void deep_copy( const MDArray<ValueType,DeviceDst> & dst ,
   if ( dst.operator!=( src ) ) {
     Impl::mdarray_require_equal_dimension( dst , src );
 
-    Impl::DeepCopy< dst_type, src_type >::run( dst , src );
+    Impl::Factory< dst_type, src_type >::deep_copy( dst , src );
   }
 }
 
 //----------------------------------------------------------------------------
 
 } // namespace Kokkos
+
+#include <impl/Kokkos_MDArray_factory.hpp>
 
 #endif /* KOKKOS_MDARRAY_HPP */
 
