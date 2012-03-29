@@ -93,9 +93,11 @@ namespace MueLu {
       if (factoryName == "MultiVectorTransferFactory") {
         return BuildMultiVectorTransferFactory(paramList, factoryMapIn);
       }
+#if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
       if (factoryName == "ZoltanInterface") {
         return BuildZoltanInterface(paramList, factoryMapIn);
       }
+#endif
       if (factoryName == "RepartitionFactory") {
         return BuildRepartitionFactory(paramList, factoryMapIn);
       }
@@ -283,6 +285,7 @@ namespace MueLu {
       return rcp(new MultiVectorTransferFactory(vectorName, restrictionName, RFact));
     }
 
+#if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
     RCP<FactoryBase> BuildZoltanInterface(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
       TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "ZoltanInterface", Exceptions::RuntimeError, "");      
       
@@ -291,6 +294,7 @@ namespace MueLu {
       
       return rcp(new ZoltanInterface(AFact, TransferFactory));
     }
+#endif
 
     RCP<FactoryBase> BuildRepartitionFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
       TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "RepartitionFactory", Exceptions::RuntimeError, "");      
