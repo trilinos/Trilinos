@@ -17,7 +17,7 @@ using namespace percept;
 
 struct GeometryEvaluator
 {
-    GeometryEvaluator(Part* part) : mMesh(Selector(*part)) {}
+    GeometryEvaluator(Part* part) : mMesh(*part) {}
     GeometryHandle mGeometry;
     Selector mMesh;
 };
@@ -29,7 +29,7 @@ public:
   typedef boost::unordered_map<const stk::mesh::Bucket *, CacheBucketClassifyValueType > CacheBucketClassifyType;
   typedef boost::unordered_map<size_t, double> MaxDeltaOnGeometryType;
 
-  MeshGeometry(GeometryKernel* geom, double doCheckMovement=0.0, bool cache_bucket_selectors_is_active=false, bool doPrint=false);
+  MeshGeometry(GeometryKernel* geom, double doCheckMovement=0.0, double doCheckCpuTime=0.0, bool cache_bucket_selectors_is_active=false, bool doPrint=false);
     ~MeshGeometry();
 
   void print_node_movement_summary();
@@ -53,7 +53,11 @@ public:
   int classify_node(const stk::mesh::Entity& node, size_t& curveOrSurfaceEvaluator);
   int classify_bucket(const stk::mesh::Bucket& bucket, size_t& curveOrSurfaceEvaluator);
 
-    const std::vector<GeometryEvaluator*>& getGeomEvaluators();
+  const std::vector<GeometryEvaluator*>& getGeomEvaluators();
+  
+  // hold info for which nodes took maximum cpu time
+  //struct CpuMaxInfo
+
 private:
 
   int classify_bucket_internal(const stk::mesh::Bucket& bucket, size_t& curveOrSurfaceEvaluator);
@@ -65,7 +69,9 @@ protected:
     CacheBucketClassifyType m_cache_bucket_classify;
 
   double m_doCheckMovement;
+  double m_checkCPUTime;
   MaxDeltaOnGeometryType m_checkMovementMap;
+  MaxDeltaOnGeometryType m_checkCPUTimeMap;
 
 public:
   bool m_cache_classify_bucket_is_active;

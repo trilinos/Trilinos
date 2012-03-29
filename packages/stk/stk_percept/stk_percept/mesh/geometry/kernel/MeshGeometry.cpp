@@ -1,7 +1,8 @@
 #include "MeshGeometry.hpp"
+#include <stk_util/environment/CPUTime.hpp>
 
-MeshGeometry::MeshGeometry(GeometryKernel* geom, double doCheckMovement, bool cache_classify_bucket_is_active, bool doPrint) 
-  : m_doCheckMovement(doCheckMovement),  m_cache_classify_bucket_is_active(cache_classify_bucket_is_active), m_doPrint(doPrint),
+MeshGeometry::MeshGeometry(GeometryKernel* geom, double doCheckMovement, double doCheckCPUTime, bool cache_classify_bucket_is_active, bool doPrint) 
+  : m_doCheckMovement(doCheckMovement), m_checkCPUTime(doCheckCPUTime), m_cache_classify_bucket_is_active(cache_classify_bucket_is_active), m_doPrint(doPrint),
     m_type(-1)
 {
   geomKernel = geom;
@@ -12,6 +13,11 @@ MeshGeometry::MeshGeometry(GeometryKernel* geom, double doCheckMovement, bool ca
   mDbgNodeCoords[0] = 183.049;
   mDbgNodeCoords[1] = 174.609;
   mDbgNodeCoords[2] = 27.2434;
+  //big cpu = 0.462929 coords_0 = 5.60577 1.48796 19.3677 delta= -0.0963596 -0.0259963 0.00280205 coords_1= 5.50941 1.46197 19.3705 deltaMag= 0.099844 block= TOPOLOGY_SURFACE_BLOCK_20387
+
+  mDbgNodeCoords[0] = 5.60577;
+  mDbgNodeCoords[1] = 1.48796;
+  mDbgNodeCoords[2] = 19.3677;
 
 }
 
@@ -313,6 +319,7 @@ void MeshGeometry::snap_node
     double coord_0[3] = {coord[0], coord[1], coord[2]};
     bool doPrint = m_doPrint; //DEBUG_GEOM_SNAP
     bool doCheckMovement = m_doCheckMovement != 0.0;
+    bool doCheckCPUTime = m_checkCPUTime != 0.0;
 
     if ( is_dbg_node( coord ) )
     {
@@ -324,17 +331,45 @@ void MeshGeometry::snap_node
     {
       std::string str = geomKernel->get_attribute(evaluator_idx);
       std::cout << "tmp geom snap_points_to_geometry eval name= " << str << " node id= " << node.identifier() 
-                << " coords b4= " << coord[0] << " " << coord[1] << " " << coord[2] << " type= " << m_type;
+                << " coords b4= " << coord[0] << " " << coord[1] << " " << coord[2] << " type= " << m_type << std::endl;
     }
+
+    double cpu0 = 0.0, cpu1 = 0.0;
+    if (doCheckCPUTime) cpu0 = stk::cpu_time();
 
     geomKernel->snap_to(coord, geomEvaluators[evaluator_idx]->mGeometry);
 
+    if (doCheckCPUTime) cpu1 = stk::cpu_time() - cpu0;
+
+    delta[0] = coord[0] - delta[0];
+    delta[1] = coord[1] - delta[1];
+    delta[2] = coord[2] - delta[2];
+
+    if (doPrint || (doCheckCPUTime && cpu1 > m_checkCPUTime))
+      {
+        if (m_checkCPUTimeMap.find(evaluator_idx) == m_checkCPUTimeMap.end())
+          m_checkCPUTimeMap[evaluator_idx] = 0.0;
+
+        m_checkCPUTimeMap[evaluator_idx] = std::max(m_checkCPUTimeMap[evaluator_idx], cpu1);
+
+        bool print_every = true;
+        if (print_every)
+          {
+            std::string str = geomKernel->get_attribute(evaluator_idx);
+            double dtot = std::sqrt(delta[0]*delta[0]+delta[1]*delta[1]+delta[2]*delta[2]);
+
+            std::cout << "big cpu = " << cpu1 << " coords_0 = " << coord_0[0] << " " << coord_0[1] << " " << coord_0[2] 
+                      << " delta= " << delta[0] << " " << delta[1] << " " << delta[2] 
+                      << " coords_1= " << coord[0] << " " << coord[1] << " " << coord[2]
+                      << " deltaMag= " << dtot
+                      << " block= " << str
+                      << std::endl;
+          }
+      }
+    
     if (doPrint || doCheckMovement)
     {
       std::string str = geomKernel->get_attribute(evaluator_idx);
-      delta[0] = coord[0] - delta[0];
-      delta[1] = coord[1] - delta[1];
-      delta[2] = coord[2] - delta[2];
       double dtot = std::sqrt(delta[0]*delta[0]+delta[1]*delta[1]+delta[2]*delta[2]);
       if(doPrint)
         std::cout << " coords af= " << coord[0] << " " << coord[1] << " " << coord[2] 
@@ -362,6 +397,8 @@ void MeshGeometry::snap_node
           double factor = 1.0;
           if (dtot > edge_length_ave*factor)
             {
+              if (m_checkMovementMap.find(evaluator_idx) == m_checkMovementMap.end())
+                m_checkMovementMap[evaluator_idx] = 0.0;
               m_checkMovementMap[evaluator_idx] = std::max(m_checkMovementMap[evaluator_idx], dtot);
               const bool print_every = true;
               if (print_every)
@@ -391,6 +428,10 @@ void MeshGeometry::print_node_movement_summary()
   for (MaxDeltaOnGeometryType::iterator iter = m_checkMovementMap.begin(); iter != m_checkMovementMap.end(); ++iter)
     {
       std::cout << "MeshGeometry::print_node_movement_summary, delta= " << iter->second << " on geometry= " << iter->first << " = " << geomKernel->get_attribute(iter->first) << std::endl;
+    }
+  for (MaxDeltaOnGeometryType::iterator iter = m_checkCPUTimeMap.begin(); iter != m_checkCPUTimeMap.end(); ++iter)
+    {
+      std::cout << "MeshGeometry::print_node_movement_summary, cpu= " << iter->second << " on geometry= " << iter->first << " = " << geomKernel->get_attribute(iter->first) << std::endl;
     }
 }
 
