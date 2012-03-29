@@ -563,11 +563,12 @@ namespace Tpetra {
     using Teuchos::as;
     using Teuchos::typeName;
     using Teuchos::ireceive;
+    using Teuchos::isend;
     using Teuchos::readySend;
     using Teuchos::send;
     const bool doBarrier = true; 
     const bool doReadySends = true;
-    const bool doIsends = false; // mfh 29 Mar 2012: NOT IMPLEMENTED YET
+    const bool doIsends = false; // mfh 29 Mar 2012: NOT TESTED YET
 
     TEUCHOS_TEST_FOR_EXCEPTION(doReadySends && ! doBarrier, std::logic_error, 
       "Rsend implementation requires a barrier between Irecvs and Rsends.");
@@ -576,21 +577,22 @@ namespace Tpetra {
     size_t selfReceiveOffset = 0;
 
 #ifdef HAVE_TEUCHOS_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t>(imports.size()) != totalReceiveLength_ * numPackets, 
+    const size_t totalNumImportPackets = totalReceiveLength_ * numPackets;
+    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t>(imports.size()) != totalNumImportPackets, 
       std::runtime_error, typeName(*this) << "::doPosts(): imports must be "
       "large enough to store the imported data.  imports.size() = " 
-      << imports.size() << ", but totalReceiveLength_ * numPackets = " 
-      << totalReceiveLength_ * numPackets << ".");
+      << imports.size() << ", but total number of import packets = "
+      << totalNumImportPackets << ".");
 #endif // HAVE_TEUCHOS_DEBUG
 
     // Distributor uses requests_.size() as the number of outstanding
-    // nonblocking receive requests, so we resize to zero to maintain
+    // nonblocking message requests, so we resize to zero to maintain
     // this invariant.
     //
-    // At this point, numReceives_ does _not_ include the self
-    // message, if there is one.  In doPosts(), we do actually send a
-    // message to ourselves, so we include the self message (if there
-    // is one) in the "actual" number of receives to post.
+    // numReceives_ does _not_ include the self message, if there is
+    // one.  Here, we do actually send a message to ourselves, so we
+    // include any self message in the "actual" number of receives to
+    // post.
     //
     // NOTE (mfh 19 Mar 2012): Epetra_MpiDistributor::DoPosts()
     // doesn't (re)allocate its array of requests.  That happens in
@@ -608,11 +610,16 @@ namespace Tpetra {
       size_t curBufferOffset = 0;
       for (size_t i = 0; i < actualNumReceives; ++i) {
         if (imagesFrom_[i] != myImageID) { 
-	  // Make the receive buffer a persisting view of the
-	  // appropriate part of lengthsFrom_.
+	  // If my process is receiving these packet(s) from another
+	  // process (not a self-receive):
+	  //
+	  // 1. Set up the persisting view (recvBuf) of the imports
+	  //    array, given the offset and size (total number of
+	  //    packets from process imagesFrom_[i]).
+	  // 2. Start the Irecv and save the resulting request.
           ArrayRCP<Packet> recvBuf = 
 	    imports.persistingView (curBufferOffset, lengthsFrom_[i]*numPackets);
-          requests_.push_back (ireceive<int,Packet> (*comm_, recvBuf, imagesFrom_[i]));
+          requests_.push_back (ireceive<int, Packet> (*comm_, recvBuf, imagesFrom_[i]));
         }
         else { // Receiving from myself
           selfReceiveOffset = curBufferOffset; // Remember the self-recv offset
@@ -642,7 +649,9 @@ namespace Tpetra {
     size_t selfNum = 0;
     size_t selfIndex = 0;
 
-    if (indicesTo_.empty()) { // data are already blocked by processor
+    if (indicesTo_.empty()) {
+      // Data are already blocked (laid out) by process, so we don't
+      // need a separate send buffer (besides the exports array).
       for (size_t i = 0; i < numBlocks; ++i) {
         size_t p = i + imageIndex;
         if (p > (numBlocks - 1)) {
@@ -656,17 +665,15 @@ namespace Tpetra {
 	    readySend<int,Packet> (*comm_, tmpSend, imagesTo_[p]);
 	  }
 	  else if (doIsends) {
-	    TEUCHOS_TEST_FOR_EXCEPTION(doIsends, std::logic_error, 
-	      "MPI_Isend version not implemented yet.");
-	    // ArrayRCP<const Packet> tmpSendBuf = 
-	    //   exports.persistingView (startsTo_[p]*numPackets, lengthsTo_[p]*numPackets);
-	    // requests_.push_back (isend<int,Packet> (*comm_, tmpSendBuf, imagesTo_[p]));
+	    ArrayRCP<const Packet> tmpSendBuf = 
+	      exports.persistingView (startsTo_[p]*numPackets, lengthsTo_[p]*numPackets);
+	    requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf, imagesTo_[p]));
 	  }
 	  else {
 	    // FIXME (mfh 23 Mar 2012) Implement a three-argument
 	    // version of send() that takes an ArrayView instead of a
 	    // raw array.
-	    send<int,Packet> (*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
+	    send<int, Packet> (*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
 	  }
         }
         else { // "Sending" the message to myself
@@ -681,8 +688,7 @@ namespace Tpetra {
       }
     }
     else { // data are not blocked by image, use send buffer
-      // allocate sendArray buffer
-      Array<Packet> sendArray (maxSendLength_ * numPackets); 
+      ArrayRCP<Packet> sendArray (maxSendLength_ * numPackets); // send buffer
 
       for (size_t i = 0; i < numBlocks; ++i) {
         size_t p = i + imageIndex;
@@ -700,14 +706,15 @@ namespace Tpetra {
             std::copy (srcBegin, srcEnd, sendArray.begin()+sendArrayOffset);
             sendArrayOffset += numPackets;
           }
-          ArrayView<const Packet> tmpSend = sendArray (0, lengthsTo_[p]*numPackets);
+          ArrayView<const Packet> tmpSend = sendArray.view (0, lengthsTo_[p]*numPackets);
 
 	  if (doReadySends) {
 	    readySend<int,Packet> (*comm_, tmpSend, imagesTo_[p]);
 	  }
 	  else if (doIsends) {
-	    TEUCHOS_TEST_FOR_EXCEPTION(doIsends, std::logic_error, 
-	      "MPI_Isend version not implemented yet.");
+	    ArrayRCP<const Packet> tmpSendBuf = 
+	      sendArray.persistingView (0, lengthsTo_[p]*numPackets);
+	    requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf, imagesTo_[p]));
 	  }
 	  else {
 	    send<int,Packet> (*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
@@ -740,11 +747,12 @@ namespace Tpetra {
   {
     using Teuchos::as;
     using Teuchos::ireceive;
+    using Teuchos::isend;
     using Teuchos::readySend;
     using Teuchos::send;
     const bool doBarrier = true;
     const bool doReadySends = true;
-    const bool doIsends = false; // mfh 29 Mar 2012: NOT IMPLEMENTED YET
+    const bool doIsends = false; // mfh 29 Mar 2012: NOT TESTED YET
 
     TEUCHOS_TEST_FOR_EXCEPTION(doReadySends && ! doBarrier, std::logic_error, 
       "Rsend implementation requires a barrier between Irecvs and Rsends.");
@@ -753,20 +761,25 @@ namespace Tpetra {
     size_t selfReceiveOffset = 0;
 
 #ifdef HAVE_TEUCHOS_DEBUG
-    size_t totalNumPackets = 0;
+    size_t totalNumImportPackets = 0;
     for (int ii = 0; ii < numImportPacketsPerLID.size(); ++ii) {
-      totalNumPackets += numImportPacketsPerLID[ii];
+      totalNumImportPackets += numImportPacketsPerLID[ii];
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t>(imports.size()) != totalNumPackets, 
+    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t>(imports.size()) != totalNumImportPackets, 
       std::runtime_error, Teuchos::typeName(*this) << "::doPosts(): The imports "
       "array argument must be large enough to store the imported data.  imports."
       "size() = " << imports.size() << ", but the total number of packets is " 
-      << totalNumPackets << ".");
+      << totalNumImportPackets << ".");
 #endif // HAVE_TEUCHOS_DEBUG
 
     // Distributor uses requests_.size() as the number of outstanding
-    // nonblocking receive requests, so we resize to zero to maintain
+    // nonblocking message requests, so we resize to zero to maintain
     // this invariant.
+    //
+    // numReceives_ does _not_ include the self message, if there is
+    // one.  Here, we do actually send a message to ourselves, so we
+    // include any self message in the "actual" number of receives to
+    // post.
     //
     // NOTE (mfh 19 Mar 2012): Epetra_MpiDistributor::DoPosts()
     // doesn't (re)allocate its array of requests.  That happens in
@@ -775,7 +788,11 @@ namespace Tpetra {
     const size_t actualNumReceives = numReceives_ + (selfMessage_ ? 1 : 0);
     requests_.resize (0);
 
-    // Post the nonblocking receives.
+    // Post the nonblocking receives.  It's common MPI wisdom to post
+    // receives before sends.  In MPI terms, this means favoring
+    // adding to the "posted queue" (of receive requests) over adding
+    // to the "unexpected queue" (of arrived messages not yet matched
+    // with a receive).
     {
       size_t curBufferOffset = 0;
       size_t curLIDoffset = 0;
@@ -790,9 +807,9 @@ namespace Tpetra {
 	  // process (not a self-receive), and if there is at least
 	  // one packet to receive: 
 	  //
-	  // 1. Set up the reference (recvBuf) into the imports array,
-	  //    given the offset and size (total number of packets
-	  //    from process imagesFrom_[i]).
+	  // 1. Set up the persisting view (recvBuf) into the imports
+	  //    array, given the offset and size (total number of
+	  //    packets from process imagesFrom_[i]).
 	  // 2. Start the Irecv and save the resulting request.
           ArrayRCP<Packet> recvBuf = 
 	    imports.persistingView (curBufferOffset, totalPacketsFrom_i);
@@ -842,7 +859,9 @@ namespace Tpetra {
     size_t selfNum = 0;
     size_t selfIndex = 0;
 
-    if (indicesTo_.empty()) { // data are already laid out according to processor
+    if (indicesTo_.empty()) { 
+      // Data are already blocked (laid out) by process, so we don't
+      // need a separate send buffer (besides the exports array).
       for (size_t i = 0; i < numBlocks; ++i) {
         size_t p = i + imageIndex;
         if (p > (numBlocks - 1)) {
@@ -850,18 +869,21 @@ namespace Tpetra {
         }
 
         if (imagesTo_[p] != myImageID && packetsPerSend[p] > 0) {
-          // sending it to another image
           ArrayView<const Packet> tmpSend = 
 	    exports.view (sendPacketOffsets[p], packetsPerSend[p]);
 	  if (doReadySends) {
 	    readySend<int,Packet>(*comm_,tmpSend,imagesTo_[p]);
 	  }
 	  else if (doIsends) {
-	    TEUCHOS_TEST_FOR_EXCEPTION(doIsends, std::logic_error, 
-	      "MPI_Isend version not implemented yet.");
+	    ArrayRCP<const Packet> tmpSendBuf = 
+	      exports.persistingView (sendPacketOffsets[p], packetsPerSend[p]);
+	    requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf, imagesTo_[p]));
 	  }
 	  else {
-	    send<int,Packet>(*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
+	    // FIXME (mfh 23 Mar 2012) Implement a three-argument
+	    // version of send() that takes an ArrayView instead of a
+	    // raw array.
+	    send<int, Packet>(*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
 	  }
         }
         else { // "Sending" the message to myself
@@ -876,9 +898,9 @@ namespace Tpetra {
       }
     }
     else { // data are not blocked by image, use send buffer
-      // allocate sendArray buffer
-      Array<Packet> sendArray(maxNumPackets); 
-      Array<size_t> indicesOffsets(numExportPacketsPerLID.size(),0);
+      ArrayRCP<Packet> sendArray (maxNumPackets); // send buffer
+
+      Array<size_t> indicesOffsets (numExportPacketsPerLID.size(), 0);
       size_t ioffset = 0;
       for (int j=0; j<numExportPacketsPerLID.size(); ++j) {
         indicesOffsets[j] = ioffset;
@@ -892,7 +914,6 @@ namespace Tpetra {
         }
 
         if (imagesTo_[p] != myImageID) { 
-          // sending it to another image
           typename ArrayView<const Packet>::iterator srcBegin, srcEnd;
           size_t sendArrayOffset = 0;
           size_t j = startsTo_[p];
@@ -901,18 +922,19 @@ namespace Tpetra {
             srcBegin = exports.begin() + indicesOffsets[j];
             srcEnd   = srcBegin + numExportPacketsPerLID[j];
             numPacketsTo_p += numExportPacketsPerLID[j];
-            std::copy( srcBegin, srcEnd, sendArray.begin()+sendArrayOffset );
+            std::copy (srcBegin, srcEnd, sendArray.begin()+sendArrayOffset);
             sendArrayOffset += numExportPacketsPerLID[j];
           }
           if (numPacketsTo_p > 0) {
-            ArrayView<const Packet> tmpSend = sendArray(0,numPacketsTo_p);
+            ArrayView<const Packet> tmpSend = sendArray.view (0, numPacketsTo_p);
 
 	    if (doReadySends) {
 	      readySend<int,Packet>(*comm_,tmpSend,imagesTo_[p]);
 	    } 
 	    else if (doIsends) {
-	      TEUCHOS_TEST_FOR_EXCEPTION(doIsends, std::logic_error, 
-	        "MPI_Isend version not implemented yet.");
+	      ArrayRCP<const Packet> tmpSendBuf = 
+		sendArray.persistingView (0, numPacketsTo_p);
+	      requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf, imagesTo_[p]));
 	    }
 	    else {
 	      send<int,Packet> (*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
