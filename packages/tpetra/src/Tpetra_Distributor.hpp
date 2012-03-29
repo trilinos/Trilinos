@@ -47,17 +47,15 @@
 #include <Teuchos_Describable.hpp>
 
 
-// FINISH: some of the get accessors may not be necessary anymore. clean up.
-// FINISH: This class may not be const correct. doPosts() et al. perhaps should be const, with affected members made mutable.
-
 namespace Tpetra {
 
   /// \class Distributor
-  /// \brief Class that sets up gathers and scatters for Tpetra communication.
+  /// \brief Sets up and executes a communication plan for a Tpetra DistObject.
   ///
   /// This class encapsulates the general information and services
-  /// needed for other Tpetra classes to perform gather/scatter
-  /// operations on a parallel computer.
+  /// needed for subclasses of \c DistObject (such as CrsMatrix and
+  /// MultiVector) to do data redistribution (Import and Export)
+  /// operations.
   class Distributor : public Teuchos::Describable {
   public:
 
@@ -191,161 +189,163 @@ namespace Tpetra {
     //! @name Execute Distributor Plan Methods
     //@{ 
 
-    //! \brief Execute a plan specified by the distributor object.
-    /*! 
-      \param exports [in]
-             Contains the values we're exporting.
-
-      \param numPackets [in]
-             Specifies the number of values per export/import.
-
-      \param imports [out]
-             On entry, buffer must be large enough to accomodate the data exported to us.
-             On exit, contains the values exported to us.
-    */
+    /// \brief Execute the (forward) communication plan.
+    ///
+    /// Call this overload when you have the same number of Packets
+    /// for each LID to send or receive.
+    ///
+    /// \param exports [in] Contains the values to be sent by this
+    ///   node.  On exit from this method, it's OK to modify the
+    ///   entries of this buffer.
+    ///
+    /// \param numPackets [in] The number of Packets per export /
+    ///   import.  This version of the routine assumes that each LID
+    ///   has the same number of Packets associated with it.  (\c
+    ///   MultiVector is an example of a DistObject subclass
+    ///   satisfying this property.)
+    ///
+    /// \param imports [out] On entry, buffer must be large enough to
+    ///   accomodate the data exported (sent) to us.  On exit,
+    ///   contains the values exported to us.
     template <class Packet>
-    void doPostsAndWaits(const ArrayView<const Packet> &exports,
-                         size_t numPackets,
-                         const ArrayView<Packet> &imports);
+    void 
+    doPostsAndWaits (const ArrayView<const Packet> &exports,
+		     size_t numPackets,
+		     const ArrayView<Packet> &imports);
 
-    //! \brief Execute a plan specified by the distributor object.
-    /*! 
-      \param exports [in]
-             Contains the values we're exporting.
-
-      \param numPackets [in]
-             Specifies the number of values per export/import.
-
-      \param imports [out]
-             On entry, buffer must be large enough to accomodate the data exported to us.
-             On exit, contains the values exported to us.
-    */
+    /// \brief Execute the (forward) communication plan.
+    ///
+    /// Call this overload when you have possibly different numbers of
+    /// Packets for each LID to send or receive.
+    ///
+    /// \param exports [in] Contains the values to be sent by this
+    ///   node.  On exit from this method, it's OK to modify the
+    ///   entries of this buffer.
+    ///
+    /// \param numExportPacketsPerLID [in] The number of packets for
+    ///   each export LID (i.e., each LID to be sent).
+    ///
+    /// \param imports [out] On entry, buffer must be large enough to
+    ///   accomodate the data exported (sent) to us.  On exit,
+    ///   contains the values exported to us.
+    ///
+    /// \param numImportPacketsPerLID [in] The number of packets for
+    ///   each import LID (i.e., each LID to be received).
     template <class Packet>
-    void doPostsAndWaits(const ArrayView<const Packet> &exports,
-                         const ArrayView<size_t> &numExportPacketsPerLID,
-                         const ArrayView<Packet> &imports,
-                         const ArrayView<size_t> &numImportPacketsPerLID);
-
-    //! \brief Post the data for a distributor plan, but do not execute the waits yet.
-    /*! 
-      \param exports [in]
-             Contains the values to be sent by this node. 
-
-      \param numPackets [in]
-             Specifies the number of scalars per export/import.
-
-      \param imports [out]
-             Buffer must be large enough to accomodate the data exported to us. 
-             The buffer is not guaranteed to be filled until doWaits() is executed.
-    */
+    void 
+    doPostsAndWaits (const ArrayView<const Packet> &exports,
+		     const ArrayView<size_t> &numExportPacketsPerLID,
+		     const ArrayView<Packet> &imports,
+		     const ArrayView<size_t> &numImportPacketsPerLID);
+    
+    /// \brief Post the data for a forward plan, but do not execute the waits yet.
+    ///
+    /// Call this overload when you have the same number of Packets
+    /// for each LID to send or receive.
+    ///
+    /// \param exports [in] Contains the values to be sent by this
+    ///   node.  This is an ArrayRCP and not an ArrayView so that we
+    ///   have the freedom to use nonblocking sends if we wish.  Do
+    ///   not modify the data in this array until \c doWaits() has
+    ///   completed.
+    ///
+    /// \param numPackets [in] The number of Packets per export /
+    ///   import.  (Same as the three-argument version of
+    ///   doPostsAndWaits().)
+    ///
+    /// \param imports [out] On entry, buffer must be large enough to
+    ///   accomodate the data exported (sent) to us.  This is an
+    ///   ArrayRCP and not an ArrayView so that we have the freedom to
+    ///   use nonblocking sends if we wish.  Do not modify the data in
+    ///   this array until \c doWaits() has completed.  Upon
+    ///   completion of \c doWaits(), this buffer contains the values
+    ///   exported to us.
     template <class Packet>
-    void doPosts(const ArrayView<const Packet> &exports,
-                 size_t numPackets,
-                 const ArrayRCP<Packet> &imports);
+    void 
+    doPosts (const ArrayRCP<const Packet> &exports,
+	     size_t numPackets,
+	     const ArrayRCP<Packet> &imports);
 
-    //! \brief Post the data for a distributor plan, but do not execute the waits yet.
-    /*! 
-      \param exports [in]
-             Contains the values to be sent by this node. 
-
-      \param numPackets [in]
-             Specifies the number of scalars per export/import.
-
-      \param imports [out]
-             Buffer must be large enough to accomodate the data exported to us. 
-             The buffer is not guaranteed to be filled until doWaits() is executed.
-    */
+    /// \brief Post the data for a forward plan, but do not execute the waits yet.
+    ///
+    /// Call this overload when you have possibly different numbers of
+    /// Packets for each LID to send or receive.
+    /// 
+    /// \param exports [in] Same as in the three-argument version of
+    ///   \c doPosts().
+    ///
+    /// \param numExportPacketsPerLID [in] Same as in the
+    ///   four-argument version of \c doPostsAndWaits().
+    ///
+    /// \param imports [out] Same as in the three-argument version of
+    ///   \c doPosts().
+    ///
+    /// \param numImportPacketsPerLID [in] Same as in the
+    ///   four-argument version of \c doPostsAndWaits().
     template <class Packet>
-    void doPosts(const ArrayView<const Packet> &exports,
-                 const ArrayView<size_t> &numExportPacketsPerLID,
-                 const ArrayRCP<Packet> &imports,
-                 const ArrayView<size_t> &numImportPacketsPerLID);
+    void 
+    doPosts (const ArrayRCP<const Packet> &exports,
+	     const ArrayView<size_t> &numExportPacketsPerLID,
+	     const ArrayRCP<Packet> &imports,
+	     const ArrayView<size_t> &numImportPacketsPerLID);
 
     //! Wait on any outstanding posts to complete.
-    void doWaits();
+    void doWaits ();
 
-    //! \brief Execute a reverse plan specified by the distributor object.
-    /*! 
-      \param exports [in]
-             Contains the values to be sent by this node.
-
-      \param numPackets [in]
-             Specifies the number of scalars per export/import.
-
-      \param imports [out]
-             On entry, buffer must be large enough to accomodate the data exported to us.
-             On exit, contains the values exported to us.
-    */
+    /// \brief Execute the reverse communication plan.
+    ///
+    /// This method takes the same arguments as the three-argument
+    /// version of \c doPostsAndWaits().
     template <class Packet>
-    void doReversePostsAndWaits(const ArrayView<const Packet> &exports,
-                                size_t numPackets,
-                                const ArrayView<Packet> &imports);
+    void 
+    doReversePostsAndWaits (const ArrayView<const Packet> &exports,
+			    size_t numPackets,
+			    const ArrayView<Packet> &imports);
 
-    //! \brief Execute a reverse plan specified by the distributor object.
-    /*! 
-      \param exports [in]
-             Contains the values to be sent by this node.
-
-      \param numPackets [in]
-             Specifies the number of scalars per export/import.
-
-      \param imports [out]
-             On entry, buffer must be large enough to accomodate the data exported to us.
-             On exit, contains the values exported to us.
-    */
+    /// \brief Execute the reverse communication plan.
+    ///
+    /// This method takes the same arguments as the four-argument
+    /// version of \c doPostsAndWaits().
     template <class Packet>
-    void doReversePostsAndWaits(const ArrayView<const Packet> &exports,
-                                const ArrayView<size_t> &numExportPacketsPerLID,
-                                const ArrayView<Packet> &imports,
-                                const ArrayView<size_t> &numImportPacketsPerLID);
+    void 
+    doReversePostsAndWaits (const ArrayView<const Packet> &exports,
+			    const ArrayView<size_t> &numExportPacketsPerLID,
+			    const ArrayView<Packet> &imports,
+			    const ArrayView<size_t> &numImportPacketsPerLID);
 
-    //! \brief Post the data for a reverse plan, but do not execute the waits yet.
-    /*!
-      \param exports [in]
-             Contains the values we're exporting.
-
-      \param numPackets [in]
-             Specifies the number of scalars per export/import.
-
-      \param imports [out]
-             Buffer must be large enough to accomodate the data exported to us. 
-             The buffer is not guaranteed to be filled until doWaits() is executed.
-    */
+    /// \brief Post the data for a reverse plan, but do not execute the waits yet.
+    ///
+    /// This method takes the same arguments as the three-argument
+    /// version of \c doPosts().
     template <class Packet>
-    void doReversePosts(const ArrayView<const Packet> &exports,
-                        size_t numPackets,
-                        const ArrayRCP<Packet> &imports);
+    void 
+    doReversePosts (const ArrayRCP<const Packet> &exports,
+		    size_t numPackets,
+		    const ArrayRCP<Packet> &imports);
 
-    //! \brief Post the data for a reverse plan, but do not execute the waits yet.
-    /*!
-      \param exports [in]
-             Contains the values we're exporting.
-
-      \param numPackets [in]
-             Specifies the number of scalars per export/import.
-
-      \param imports [out]
-             Buffer must be large enough to accomodate the data exported to us. 
-             The buffer is not guaranteed to be filled until doWaits() is executed.
-    */
+    /// \brief Post the data for a reverse plan, but do not execute the waits yet.
+    ///
+    /// This method takes the same arguments as the four-argument
+    /// version of \c doPosts().
     template <class Packet>
-    void doReversePosts(const ArrayView<const Packet> &exports,
-                        const ArrayView<size_t> &numExportPacketsPerLID,
-                        const ArrayRCP<Packet> &imports,
-                        const ArrayView<size_t> &numImportPacketsPerLID);
+    void 
+    doReversePosts (const ArrayRCP<const Packet> &exports,
+		    const ArrayView<size_t> &numExportPacketsPerLID,
+		    const ArrayRCP<Packet> &imports,
+		    const ArrayView<size_t> &numImportPacketsPerLID);
 
     //! Wait on any outstanding reverse waits to complete.
-    void doReverseWaits();
+    void doReverseWaits ();
 
     //@}
 
     //! @name Overridden from Teuchos::Describable 
     //@{
 
-    /** \brief Return a simple one-line description of this object. */
+    //! A simple one-line description of this object.
     std::string description() const;
 
-    /** \brief Print the object with some verbosity level to an FancyOStream object. */
+    //! Print the object with some verbosity level to an \c FancyOStream.
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
     //@}
@@ -377,31 +377,49 @@ namespace Tpetra {
     /// the end subtracts one if selfMessage_ is true.
     size_t numSends_;
 
-    // imagesTo_, startsTo_ and lengthsTo_ each have size 
-    //   numSends_ + selfMessage_
+    /// \brief List of process IDs to which to send.
+    ///
+    /// This array has length numSends_ + selfMessage_ (that is, it
+    /// includes the self message, if there is one).
     Array<int> imagesTo_;
 
-    /// \brief Starting index of the block of values to send to each process.
+    /// \brief Starting index of the block of Packets to send to each process.
     ///
     /// Given an export buffer that contains all of the data being
-    /// sent by this process, the block of values to send to process i
-    /// will start at position startsTo_[i].
+    /// sent by this process, the block of Packets to send to process
+    /// p will start at position startsTo_[p].
     ///
     /// This array has length numSends_ + selfMessage_ (that is, it
     /// includes the self message, if there is one).
     Array<size_t> startsTo_;
 
-    /// \brief Length of my process' send to each process.
+    /// \brief Length (in number of Packets) of my process' send to each process.
     ///
-    /// lengthsTo_[i] is the length of my process' send to process i.
+    /// lengthsTo_[p] is the length of my process' send to process p.
     /// This array has length numSends_ + selfMessage_ (that is, it
     /// includes the self message, if there is one).
     Array<size_t> lengthsTo_;
 
-    /// \brief The maximum send length to another node.
+    /// \brief The maximum send length (in number of Packets) to another process.
     ///
-    /// maxSendLength_ = max(lengthsTo_[i]) for i != my process ID.
+    /// maxSendLength_ = max(lengthsTo_[p]) for p != my process ID.
     size_t maxSendLength_;
+
+    /// \brief Offset (by message, not by number of Packets) into exports array.
+    ///
+    /// This array is used by the three-argument version of \c
+    /// doPosts().  In that method, \c indicesTo_[j]*numPackets is the
+    /// offset into the \c exports array, where j = startsTo_[p] and p
+    /// is an index iterating through the sends in reverse order
+    /// (starting with the process ID right before the self message,
+    /// if there is a self message, else the largest process ID to
+    /// which this process sends).
+    ///
+    /// This array is only used if export data are not blocked (laid
+    /// out) by process ID, i.e., if we need to use a send buffer.
+    /// Otherwise, this array has no entries (in fact, Distributor
+    /// currently uses this in both overloads of \c doPosts() to test
+    /// whether data are laid out by process).
     Array<size_t> indicesTo_;
     
     /// \brief The number of messages received by my process from other processes.
@@ -415,22 +433,32 @@ namespace Tpetra {
     /// the end subtracts one if selfMessage_ is true.
     size_t numReceives_;
 
-    // totalReceiveLength_ is the total number of Packet received, used to 
-    // allocate the receive buffer
+    /// \brief sum(lengthsFrom_)
+    ///
+    /// This is computed by \c createFromSends() and is used to
+    /// allocate the receive buffer.  The reverse communicator's total
+    /// receive length is the total send length of the forward
+    /// communicator.
     size_t totalReceiveLength_;
+
     // imagesFrom_, startsFrom_ and lengthsFrom_ each have size 
     //   numReceives_ + selfMessage_
     Array<size_t> lengthsFrom_;
     Array<int> imagesFrom_;
     Array<size_t> startsFrom_;
+
+    /// \brief List that becomes the reverse communicator's indicesTo_.
+    ///
+    /// Array of length \c totalReceiveLength_.  Allocated and filled
+    /// in \c computeReceives().
     Array<size_t> indicesFrom_;
 
-    /// \brief Communication requests associated with nonblocking receives.
+    /// \brief Communication requests associated with nonblocking receives and sends.
     ///
     /// \note To implementers: Distributor uses requests_.size() as
-    /// the number of outstanding nonblocking receives.  This means
-    /// you should always resize to zero after completing receive
-    /// requests.
+    /// the number of outstanding nonblocking receives and sends.
+    /// This means you should always resize to zero after completing
+    /// receive and send requests.
     Array<RCP<Teuchos::CommRequest> > requests_;
 
     /// \brief The reverse distributor.
@@ -461,18 +489,42 @@ namespace Tpetra {
       size_t numPackets,
       const ArrayView<Packet>& imports) 
   {
+    using Teuchos::as;
+    using Teuchos::arcp;
+    using Teuchos::ArrayRCP;
+
     TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
       Teuchos::typeName(*this) << "::doPostsAndWaits(): There are " 
       << requests_.size() << " outstanding nonblocking messages pending.  It is "
       "incorrect to call doPostsAndWaits with posts outstanding.");
 
-    // doPosts() accepts the imports array as an ArrayRCP, requiring
-    // that the memory location is persisting (as is necessary for
-    // nonblocking receives).  However, it need only persist until
-    // doWaits() completes, so it is safe for us to use a
-    // nonpersisting reference in this case.  This is purely a
-    // performance optimization.
-    doPosts(exports, numPackets, arcp<Packet>(imports.getRawPtr(),0,imports.size(),false));
+    // doPosts() accepts the exports and imports arrays as ArrayRCPs,
+    // requiring that the memory location is persisting (as is
+    // necessary for nonblocking receives).  However, it need only
+    // persist until doWaits() completes, so it is safe for us to use
+    // a nonpersisting reference in this case.  The use of a
+    // nonpersisting reference is purely a performance optimization.
+
+    typedef typename ArrayRCP<const Packet>::size_type size_type;
+    //const Packet* exportsPtr = exports.getRawPtr();
+    //ArrayRCP<const Packet> exportsArcp (exportsPtr, as<size_type> (0), exports.size(), false);
+    ArrayRCP<const Packet> exportsArcp (exports.getRawPtr(), as<size_type> (0), 
+					exports.size(), false);
+
+    // For some reason, neither of the options below (that use arcp)
+    // compile for Packet=std::complex<double> with GCC 4.5.1.  The
+    // issue only arises with the exports array.  This is why we
+    // construct a separate nonowning ArrayRCP.
+
+    // doPosts (arcp<const Packet> (exports.getRawPtr(), 0, exports.size(), false),
+    // 	     numPackets, 
+    // 	     arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false));
+    // doPosts (arcp<const Packet> (exportsPtr, 0, exports.size(), false),
+    // 	     numPackets, 
+    // 	     arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false));
+    doPosts (exportsArcp,
+    	     numPackets, 
+    	     arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false));
     doWaits();
   }
 
@@ -488,20 +540,23 @@ namespace Tpetra {
       << requests_.size() << " outstanding nonblocking messages pending.  It is "
       "incorrect to call doPostsAndWaits with posts outstanding.");
 
-    // doPosts() accepts the imports array as an ArrayRCP, requiring
-    // that the memory location is persisting (as is necessary for
-    // nonblocking receives).  However, it need only persist until
-    // doWaits() completes, so it is safe for us to use a
-    // nonpersisting reference in this case.  This is purely a
-    // performance optimization.
-    doPosts(exports, numExportPacketsPerLID, arcp<Packet>(imports.getRawPtr(),0,imports.size(),false), numImportPacketsPerLID);
+    // doPosts() accepts the exports and imports arrays as ArrayRCPs,
+    // requiring that the memory location is persisting (as is
+    // necessary for nonblocking receives).  However, it need only
+    // persist until doWaits() completes, so it is safe for us to use
+    // a nonpersisting reference in this case.  The use of a
+    // nonpersisting reference is purely a performance optimization.
+    doPosts (arcp<const Packet> (exports.getRawPtr(), 0, exports.size(), false),
+	     numExportPacketsPerLID, 
+	     arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false), 
+	     numImportPacketsPerLID);
     doWaits();
   }
 
 
   template <class Packet>
   void 
-  Distributor::doPosts (const ArrayView<const Packet>& exports,
+  Distributor::doPosts (const ArrayRCP<const Packet>& exports,
 			size_t numPackets,
 			const ArrayRCP<Packet>& imports) 
   {
@@ -582,7 +637,7 @@ namespace Tpetra {
     size_t selfNum = 0;
     size_t selfIndex = 0;
 
-    if (indicesTo_.empty()) { // data is already blocked by processor
+    if (indicesTo_.empty()) { // data are already blocked by processor
       for (size_t i = 0; i < numBlocks; ++i) {
         size_t p = i + imageIndex;
         if (p > (numBlocks - 1)) {
@@ -590,8 +645,8 @@ namespace Tpetra {
         }
 
         if (imagesTo_[p] != myImageID) {
-          ArrayView<const Packet> tmpSend (&exports[startsTo_[p]*numPackets], 
-					   lengthsTo_[p]*numPackets);
+          ArrayView<const Packet> tmpSend = 
+	    exports.view (startsTo_[p]*numPackets, lengthsTo_[p]*numPackets);
 	  if (doBarrierAndReadySends) {
 	    readySend<int,Packet>(*comm_, tmpSend, imagesTo_[p]);
 	  }
@@ -613,7 +668,7 @@ namespace Tpetra {
 		   imports.begin()+selfReceiveOffset);
       }
     }
-    else { // data is not blocked by image, use send buffer
+    else { // data are not blocked by image, use send buffer
       // allocate sendArray buffer
       Array<Packet> sendArray (maxSendLength_ * numPackets); 
 
@@ -662,7 +717,7 @@ namespace Tpetra {
 
   template <class Packet>
   void 
-  Distributor::doPosts (const ArrayView<const Packet>& exports,
+  Distributor::doPosts (const ArrayRCP<const Packet>& exports,
 			const ArrayView<size_t>& numExportPacketsPerLID,
 			const ArrayRCP<Packet>& imports,
 			const ArrayView<size_t>& numImportPacketsPerLID) 
@@ -766,7 +821,7 @@ namespace Tpetra {
     size_t selfNum = 0;
     size_t selfIndex = 0;
 
-    if (indicesTo_.empty()) { // data is already laid out according to processor
+    if (indicesTo_.empty()) { // data are already laid out according to processor
       for (size_t i = 0; i < numBlocks; ++i) {
         size_t p = i + imageIndex;
         if (p > (numBlocks - 1)) {
@@ -775,7 +830,8 @@ namespace Tpetra {
 
         if (imagesTo_[p] != myImageID && packetsPerSend[p] > 0) {
           // sending it to another image
-          ArrayView<const Packet> tmpSend(&exports[sendPacketOffsets[p]],packetsPerSend[p]);
+          ArrayView<const Packet> tmpSend = 
+	    exports.view (sendPacketOffsets[p], packetsPerSend[p]);
 	  if (doBarrierAndReadySends) {
 	    readySend<int,Packet>(*comm_,tmpSend,imagesTo_[p]);
 	  }
@@ -794,7 +850,7 @@ namespace Tpetra {
 		   imports.begin()+selfReceiveOffset);
       }
     }
-    else { // data is not blocked by image, use send buffer
+    else { // data are not blocked by image, use send buffer
       // allocate sendArray buffer
       Array<Packet> sendArray(maxNumPackets); 
       Array<size_t> indicesOffsets(numExportPacketsPerLID.size(),0);
@@ -860,11 +916,11 @@ namespace Tpetra {
       size_t numPackets,
       const ArrayView<Packet>& imports) 
   {
-    // doReversePosts() takes imports as an ArrayRCP, requiring that
-    // the memory location is persisting.  However, it need only
-    // persist within the scope of that routine, so it is safe for us
-    // to use a nonpersisting reference in this case.
-    doReversePosts (exports, 
+    // doReversePosts() takes exports and imports as ArrayRCPs,
+    // requiring that the memory locations are persisting.  However,
+    // they need only persist within the scope of that routine, so it
+    // is safe for us to use nonpersisting references in this case.
+    doReversePosts (arcp<const Packet> (exports.getRawPtr(), 0, exports.size(), false),
 		    numPackets, 
 		    arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false));
     doReverseWaits();
@@ -877,11 +933,11 @@ namespace Tpetra {
        const ArrayView<Packet> &imports,
        const ArrayView<size_t> &numImportPacketsPerLID)
   {
-    // doReversePosts() takes imports as an ArrayRCP, requiring that
-    // the memory location is persisting.  However, it need only
-    // persist within the scope of that routine, so it is safe for us
-    // to use a nonpersisting reference in this case.
-    doReversePosts (exports, 
+    // doReversePosts() takes exports and imports as ArrayRCPs,
+    // requiring that the memory locations are persisting.  However,
+    // they need only persist within the scope of that routine, so it
+    // is safe for us to use nonpersisting references in this case.
+    doReversePosts (arcp<const Packet> (exports.getRawPtr(), 0, exports.size(), false),
 		    numExportPacketsPerLID, 
 		    arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false),
 		    numImportPacketsPerLID);
@@ -891,31 +947,36 @@ namespace Tpetra {
 
   template <class Packet>
   void Distributor::doReversePosts(
-      const ArrayView<const Packet>& exports,
+      const ArrayRCP<const Packet>& exports,
       size_t numPackets,
       const ArrayRCP<Packet>& imports) 
   {
+    // FIXME (mfh 29 Mar 2012) WHY?
     TEUCHOS_TEST_FOR_EXCEPTION(!indicesTo_.empty(),std::runtime_error,
-        Teuchos::typeName(*this) << "::doReversePosts(): Can only do reverse comm when original data is blocked by image.");
+      Teuchos::typeName(*this) << "::doReversePosts(): Can only do reverse comm "
+      "when original data are blocked by image.");
     if (reverseDistributor_ == null) {
       createReverseDistributor();
     }
-    reverseDistributor_->doPosts(exports,numPackets,imports);
+    reverseDistributor_->doPosts (exports, numPackets, imports);
   }
 
   template <class Packet>
   void Distributor::doReversePosts(
-      const ArrayView<const Packet>& exports,
+      const ArrayRCP<const Packet>& exports,
       const ArrayView<size_t>& numExportPacketsPerLID,
       const ArrayRCP<Packet>& imports,
       const ArrayView<size_t>& numImportPacketsPerLID) 
   {
+    // FIXME (mfh 29 Mar 2012) WHY?
     TEUCHOS_TEST_FOR_EXCEPTION(!indicesTo_.empty(),std::runtime_error,
-        Teuchos::typeName(*this) << "::doReversePosts(): Can only do reverse comm when original data is blocked by image.");
+      Teuchos::typeName(*this) << "::doReversePosts(): Can only do reverse comm "
+      "when original data are blocked by image.");
     if (reverseDistributor_ == null) {
       createReverseDistributor();
     }
-    reverseDistributor_->doPosts(exports,numExportPacketsPerLID,imports,numImportPacketsPerLID);
+    reverseDistributor_->doPosts (exports, numExportPacketsPerLID, 
+				  imports, numImportPacketsPerLID);
   }
 
 
