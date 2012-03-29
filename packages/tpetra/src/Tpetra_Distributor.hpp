@@ -289,7 +289,7 @@ namespace Tpetra {
 	     const ArrayRCP<Packet> &imports,
 	     const ArrayView<size_t> &numImportPacketsPerLID);
 
-    //! Wait on any outstanding posts to complete.
+    //! Wait on any outstanding nonblocking message requests to complete.
     void doWaits ();
 
     /// \brief Execute the reverse communication plan.

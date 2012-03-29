@@ -164,15 +164,15 @@ namespace Tpetra {
 
     if (requests_.size() > 0) {
       waitAll (*comm_, requests_());
-      // Requests should all be null, clear them
 #ifdef HAVE_TEUCHOS_DEBUG
+      // Make sure that waitAll() nulled out all the requests.
       using Teuchos::Array;
       using Teuchos::CommRequest;
       using Teuchos::RCP;
-      for (Array<RCP<CommRequest> >::const_iterator i = requests_.begin();
-           i != requests_.end(); ++i) 
+      for (Array<RCP<CommRequest> >::const_iterator it = requests_.begin();
+           it != requests_.end(); ++it) 
       {
-        TEUCHOS_TEST_FOR_EXCEPTION( ! is_null (*i), std::runtime_error,
+        TEUCHOS_TEST_FOR_EXCEPTION( ! is_null (*it), std::runtime_error,
           Teuchos::typeName(*this) << "::doWaits(): Communication requests "
           "should all be null aftr calling Teuchos::waitAll() on them, but "
           "at least one request is not null.");
