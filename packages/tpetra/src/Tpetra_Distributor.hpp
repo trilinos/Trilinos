@@ -565,7 +565,12 @@ namespace Tpetra {
     using Teuchos::ireceive;
     using Teuchos::readySend;
     using Teuchos::send;
-    const bool doBarrierAndReadySends = true;
+    const bool doBarrier = true; 
+    const bool doReadySends = true;
+    const bool doIsends = false; // mfh 29 Mar 2012: NOT IMPLEMENTED YET
+
+    TEUCHOS_TEST_FOR_EXCEPTION(doReadySends && ! doBarrier, std::logic_error, 
+      "Rsend implementation requires a barrier between Irecvs and Rsends.");
 
     const int myImageID = comm_->getRank();
     size_t selfReceiveOffset = 0;
@@ -616,7 +621,7 @@ namespace Tpetra {
       }
     }
 
-    if (doBarrierAndReadySends) {
+    if (doBarrier) {
       // Each ready-send below requires that its matching receive has
       // already been posted, so do a barrier to ensure that all the
       // nonblocking receives have posted first.
@@ -647,8 +652,15 @@ namespace Tpetra {
         if (imagesTo_[p] != myImageID) {
           ArrayView<const Packet> tmpSend = 
 	    exports.view (startsTo_[p]*numPackets, lengthsTo_[p]*numPackets);
-	  if (doBarrierAndReadySends) {
-	    readySend<int,Packet>(*comm_, tmpSend, imagesTo_[p]);
+	  if (doReadySends) {
+	    readySend<int,Packet> (*comm_, tmpSend, imagesTo_[p]);
+	  }
+	  else if (doIsends) {
+	    TEUCHOS_TEST_FOR_EXCEPTION(doIsends, std::logic_error, 
+	      "MPI_Isend version not implemented yet.");
+	    // ArrayRCP<const Packet> tmpSendBuf = 
+	    //   exports.persistingView (startsTo_[p]*numPackets, lengthsTo_[p]*numPackets);
+	    // requests_.push_back (isend<int,Packet> (*comm_, tmpSendBuf, imagesTo_[p]));
 	  }
 	  else {
 	    // FIXME (mfh 23 Mar 2012) Implement a three-argument
@@ -690,8 +702,12 @@ namespace Tpetra {
           }
           ArrayView<const Packet> tmpSend = sendArray (0, lengthsTo_[p]*numPackets);
 
-	  if (doBarrierAndReadySends) {
+	  if (doReadySends) {
 	    readySend<int,Packet> (*comm_, tmpSend, imagesTo_[p]);
+	  }
+	  else if (doIsends) {
+	    TEUCHOS_TEST_FOR_EXCEPTION(doIsends, std::logic_error, 
+	      "MPI_Isend version not implemented yet.");
 	  }
 	  else {
 	    send<int,Packet> (*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
@@ -726,7 +742,12 @@ namespace Tpetra {
     using Teuchos::ireceive;
     using Teuchos::readySend;
     using Teuchos::send;
-    const bool doBarrierAndReadySends = true;
+    const bool doBarrier = true;
+    const bool doReadySends = true;
+    const bool doIsends = false; // mfh 29 Mar 2012: NOT IMPLEMENTED YET
+
+    TEUCHOS_TEST_FOR_EXCEPTION(doReadySends && ! doBarrier, std::logic_error, 
+      "Rsend implementation requires a barrier between Irecvs and Rsends.");
 
     const int myImageID = comm_->getRank();
     size_t selfReceiveOffset = 0;
@@ -784,11 +805,11 @@ namespace Tpetra {
       }
     }
 
-    if (doBarrierAndReadySends) {
+    if (doBarrier) {
       // Each ready-send below requires that its matching receive has
       // already been posted, so do a barrier to ensure that all the
       // nonblocking receives have posted first.
-      Teuchos::barrier(*comm_);
+      Teuchos::barrier (*comm_);
     }
 
     // setup arrays containing starting-offsets into exports for each send,
@@ -832,8 +853,12 @@ namespace Tpetra {
           // sending it to another image
           ArrayView<const Packet> tmpSend = 
 	    exports.view (sendPacketOffsets[p], packetsPerSend[p]);
-	  if (doBarrierAndReadySends) {
+	  if (doReadySends) {
 	    readySend<int,Packet>(*comm_,tmpSend,imagesTo_[p]);
+	  }
+	  else if (doIsends) {
+	    TEUCHOS_TEST_FOR_EXCEPTION(doIsends, std::logic_error, 
+	      "MPI_Isend version not implemented yet.");
 	  }
 	  else {
 	    send<int,Packet>(*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
@@ -882,10 +907,13 @@ namespace Tpetra {
           if (numPacketsTo_p > 0) {
             ArrayView<const Packet> tmpSend = sendArray(0,numPacketsTo_p);
 
-
-	    if (doBarrierAndReadySends) {
+	    if (doReadySends) {
 	      readySend<int,Packet>(*comm_,tmpSend,imagesTo_[p]);
 	    } 
+	    else if (doIsends) {
+	      TEUCHOS_TEST_FOR_EXCEPTION(doIsends, std::logic_error, 
+	        "MPI_Isend version not implemented yet.");
+	    }
 	    else {
 	      send<int,Packet> (*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
 	    }
