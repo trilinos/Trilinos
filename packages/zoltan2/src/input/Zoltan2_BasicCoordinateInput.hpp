@@ -106,10 +106,8 @@ public:
    */
 
   BasicCoordinateInput(lno_t numIds, const gid_t *ids, 
-    const vector<const scalar_t *> &values,  
-    const vector<int> &valueStrides,
-    const vector<const scalar_t *> &weights, 
-    const vector<int> &weightStrides);
+    vector<const scalar_t *> &values,  vector<int> &valueStrides,
+    vector<const scalar_t *> &weights, vector<int> &weightStrides);
 
   /*! Destructor
    */
@@ -167,8 +165,8 @@ public:
 
 private:
   void initializeData(
-    const vector<const scalar_t *> &values,  const vector<int> &valueStrides,
-    const vector<const scalar_t *> &weights, const vector<int> &weightStrides);
+    vector<const scalar_t *> &values,  vector<int> &valueStrides,
+    vector<const scalar_t *> &weights, vector<int> &weightStrides);
 
   // A default Environment for error handling.
   RCP<const Environment> env_;
@@ -227,8 +225,8 @@ template <typename User>
 template <typename User>
   BasicCoordinateInput<User>::BasicCoordinateInput( 
     lno_t numIds, const gid_t *ids, 
-    const vector<const scalar_t *> &values,  const vector<int> &valueStrides,
-    const vector<const scalar_t *> &weights, const vector<int> &weightStrides):
+    vector<const scalar_t *> &values,  vector<int> &valueStrides,
+    vector<const scalar_t *> &weights, vector<int> &weightStrides):
       env_(rcp(new Environment)), 
       numIds_(numIds), globalNumIds_(), idList_(ids), 
       dimension_(values.size()), coords_(values.size()), 
@@ -239,8 +237,8 @@ template <typename User>
 
 template <typename User>
   void BasicCoordinateInput<User>::initializeData(
-    const vector<const scalar_t *> &values,  const vector<int> &valueStrides,
-    const vector<const scalar_t *> &weights, const vector<int> &weightStrides)
+    vector<const scalar_t *> &values,  vector<int> &valueStrides,
+    vector<const scalar_t *> &weights, vector<int> &weightStrides)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
 

@@ -54,7 +54,7 @@ public:
    */
 
   BasicIdentifierInput( lno_t numIds, const gid_t *idPtr, 
-    const vector<const scalar_t *> &weights, const vector<int> &weightStrides);
+    vector<const scalar_t *> &weights, vector<int> &weightStrides);
 
   ////////////////////////////////////////////////////////////////
   // The InputAdapter interface.
@@ -107,7 +107,7 @@ private:
 template <typename User>
   BasicIdentifierInput<User>::BasicIdentifierInput(
     lno_t numIds, const gid_t *idPtr,
-    const vector<const scalar_t *> &weights, const vector<int> &weightStrides):
+    vector<const scalar_t *> &weights, vector<int> &weightStrides):
       numIds_(numIds), idList_(idPtr), weights_(weights.size())
 {
   env_ = rcp(new Environment);    // for error messages

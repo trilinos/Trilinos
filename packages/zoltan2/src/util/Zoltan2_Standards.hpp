@@ -32,6 +32,7 @@
 #define global_size_t size_t
 
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_ArrayRCP.hpp>
@@ -43,6 +44,10 @@
 #include <Teuchos_CommHelpers.hpp>
 
 namespace Zoltan2{
+
+using namespace std;
+
+using Teuchos::ENull;
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcp_const_cast;

@@ -118,8 +118,7 @@ public:
 
   BasicVectorInput(lno_t numIds, const gid_t *ids, 
     const scalar_t *elements, int elementStride,
-    const vector<const scalar_t *> &weights, 
-    const vector<int> &weightStrides):
+    vector<const scalar_t *> &weights, vector<int> &weightStrides):
       env_(rcp(new Environment)), 
       numIds_(numIds), globalNumIds_(0), idList_(ids),
       numVectors_(1), elements_(1), 
@@ -159,10 +158,8 @@ public:
    */
 
   BasicVectorInput(lno_t numIds, const gid_t *ids, 
-    const vector<const scalar_t *> &elements,  
-    const vector<int> &elementStrides,
-    const vector<const scalar_t *> &weights, 
-    const vector<int> &weightStrides):
+    vector<const scalar_t *> &elements,  vector<int> &elementStrides,
+    vector<const scalar_t *> &weights, vector<int> &weightStrides):
       env_(rcp(new Environment)), 
       numIds_(numIds), globalNumIds_(0), idList_(ids),
       numVectors_(elements.size()), elements_(elements.size()), 
@@ -229,10 +226,8 @@ private:
   Array<RCP<StridedData<lno_t, scalar_t> > > weights_;
 
   void createBasicVector(
-    const vector<const scalar_t *> &elements,  
-    const vector<int> &elementStrides,
-    const vector<const scalar_t *> &weights, 
-    const vector<int> &weightStrides);
+    vector<const scalar_t *> &elements,  vector<int> &elementStrides,
+    vector<const scalar_t *> &weights, vector<int> &weightStrides);
 
 };
 
@@ -272,10 +267,8 @@ template <typename User>
 
 template <typename User>
   void BasicVectorInput<User>::createBasicVector(
-   const vector<const scalar_t *> &elements,  
-   const vector<int> &elementStrides,
-   const vector<const scalar_t *> &weights, 
-   const vector<int> &weightStrides)
+   vector<const scalar_t *> &elements,  vector<int> &elementStrides,
+   vector<const scalar_t *> &weights, vector<int> &weightStrides)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
 

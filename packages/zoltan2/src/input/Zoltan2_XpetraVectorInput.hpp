@@ -71,8 +71,7 @@ public:
    *  lifetime of this InputAdapter.
    */
   XpetraVectorInput( const RCP<const User> &invector,
-    const vector<const scalar_t *> &weights, 
-    const vector<int> &weightStrides);
+    vector<const scalar_t *> &weights, vector<int> &weightStrides);
 
   /*! \brief Access to the xpetra-wrapped vector
    */
@@ -150,8 +149,7 @@ private:
   
 template <typename User>
   XpetraVectorInput<User>::XpetraVectorInput(const RCP<const User> &invector, 
-    const vector<const scalar_t *> &weights, 
-    const vector<int> &weightStrides):
+    vector<const scalar_t *> &weights, vector<int> &weightStrides):
       invector_(invector), vector_(), map_(),
       env_(rcp(new Environment)), base_(),
       numWeights_(weights.size()), weights_(weights.size())
