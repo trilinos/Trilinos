@@ -211,6 +211,11 @@ namespace MueLu {
                                          bool doFillComplete,
                                          bool doOptimizeStorage)
   {
+#ifdef HAVE_MPI
+int mypid;
+static double t0=0,t1=0;
+t0 = MPI_Wtime();
+#endif
     RCP<Operator> C;
     //TODO Can we come up with an estimate for nnz-per-row for result C?
     if(transposeA) C = OperatorFactory::Build(A->getDomainMap(), 1);
@@ -239,19 +244,22 @@ namespace MueLu {
 
         case true:
           //if ML is not enabled, this case falls through to the EpetraExt multiply.
-#if defined(HAVE_MUELU_ML)
+#ifdef HAVE_MUELU_ML
           {
-#if 0 // Jonathan's ML-MULTIPLY
+//#define USE_JHU_ML_MULTIPLY
+#ifdef USE_JHU_ML_MULTIPLY // Jonathan's ML-MULTIPLY
+
             //ML matrix multiply wrap that uses ML_Operator_WrapEpetraCrsMatrix
             ML_Comm* comm;
             ML_Comm_Create(&comm);
             if (comm->ML_mypid == 0)
               std::cout << "****** USING ML's MATRIX MATRIX MULTIPLY ******" << std::endl;
 #ifdef HAVE_MPI
+            mypid = comm->ML_mypid;
             // ML_Comm uses MPI_COMM_WORLD, so try to use the same communicator as epA.
             const Epetra_MpiComm * Mcomm=dynamic_cast<const Epetra_MpiComm*>(&(epA->Comm()));
             if(Mcomm) ML_Comm_Set_UsrComm(comm,Mcomm->GetMpiComm());
-#endif
+#endif // HAVE_MPI
             //in order to use ML, there must be no indices missing from the matrix column maps.
             EpetraExt::CrsMatrix_SolverMap AcolMapTransform;
             Epetra_CrsMatrix *transA = &(AcolMapTransform(*epA));
@@ -285,7 +293,7 @@ namespace MueLu {
             C = Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(epAB);
           }
           break;
-#endif
+#endif // HAVE_MUELU_ML
 
         case false:
           {
@@ -299,9 +307,9 @@ namespace MueLu {
           }
           break;
 
-        } //switch (canUseML)
+        } // switch (canUseML)
 
-#endif //ifdef HAVE_MUELU_EPETRAEXT
+#endif // HAVE_MUELU_EPETRAEXT
 
       } else if(C->getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
@@ -324,6 +332,12 @@ namespace MueLu {
                       (transposeA) ? A->getDomainMap() : A->getRangeMap(),
                       Xpetra::DoOptimizeStorage);
     }
+
+#ifdef HAVE_MPI
+t1 += MPI_Wtime() - t0;
+if (mypid == 0)
+  std::cout << "cumulative MM time = " << t1 << std::endl;
+#endif
 
     return C;
   } //TwoMatrixMultiply()
