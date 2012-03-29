@@ -37,6 +37,7 @@
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 #include "Stokhos_OrthogPolyBasis.hpp"
 #include "Stokhos_OrthogPolyApprox.hpp"
@@ -70,8 +71,9 @@ namespace Stokhos {
      */
     MonomialGramSchmidtSimplexPCEBasis(
      ordinal_type p,
-     const Teuchos::Array< Teuchos::RCP<const Stokhos::OrthogPolyApprox<ordinal_type, value_type> > >& pce,
-     const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad);
+     const Teuchos::Array< Stokhos::OrthogPolyApprox<ordinal_type, value_type> >& pce,
+     const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad,
+     const Teuchos::ParameterList& params = Teuchos::ParameterList());
 
     //! Destructor
     virtual ~MonomialGramSchmidtSimplexPCEBasis();
@@ -170,6 +172,10 @@ namespace Stokhos {
     //! Transform coefficients from original basis to this basis
     void transformToOriginalBasis(const value_type *in, value_type *out) const;
 
+    //! Get reduced basis evaluated at original quadrature points
+    void getBasisAtOriginalQuadraturePoints(
+      Teuchos::Array< Teuchos::Array<double> >& red_basis_vals) const;
+
   protected:
     
     /*!
@@ -187,6 +193,13 @@ namespace Stokhos {
     ordinal_type compute_index(const Teuchos::Array<ordinal_type>& terms) const;
 
     void computeQR_CGS(
+      ordinal_type k,
+      Teuchos::SerialDenseMatrix<ordinal_type, value_type>& A,
+      const Teuchos::Array<value_type>& w,
+      Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
+      Teuchos::SerialDenseMatrix<ordinal_type, value_type>& R);
+
+     void computeQR_MGS(
       ordinal_type k,
       Teuchos::SerialDenseMatrix<ordinal_type, value_type>& A,
       const Teuchos::Array<value_type>& w,
@@ -213,7 +226,6 @@ namespace Stokhos {
       Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_points,
       Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_values);
 
-#ifdef HAVE_STOKHOS_CLP
     void reducedQuadrature_CLP(
       Teuchos::SerialDenseMatrix<ordinal_type, value_type>& B2,
       const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
@@ -222,7 +234,15 @@ namespace Stokhos {
       Teuchos::RCP< Teuchos::Array<value_type> >& reduced_weights,
       Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_points,
       Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_values);
-#endif
+
+    void reducedQuadrature_GLPK(
+      Teuchos::SerialDenseMatrix<ordinal_type, value_type>& B2,
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& Q,
+      const Teuchos::SerialDenseMatrix<ordinal_type, value_type>& F,
+      const Teuchos::Array<value_type>& weights,
+      Teuchos::RCP< Teuchos::Array<value_type> >& reduced_weights,
+      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_points,
+      Teuchos::RCP< Teuchos::Array< Teuchos::Array<value_type> > >& reduced_values);
 
   private:
 
@@ -239,6 +259,9 @@ namespace Stokhos {
 
     //! Original quadrature object
     Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> > quad;
+
+    //! Algorithm parameters
+    Teuchos::ParameterList params;
 
     //! Size of original pce basis
     ordinal_type pce_sz;
@@ -275,6 +298,15 @@ namespace Stokhos {
 
     Teuchos::LAPACK<ordinal_type,value_type> lapack;
     Teuchos::BLAS<ordinal_type,value_type> blas;
+
+    //! Whether to print a bunch of stuff out
+    bool verbose;
+
+    //! Dimension reduction tolerance
+    value_type reduction_tol;
+
+    //! Orthogonalization method
+    std::string orthogonalization_method;
 
   }; // class MonomialGramSchmidtSimplexPCEBasis
 

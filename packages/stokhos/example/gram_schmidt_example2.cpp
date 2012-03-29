@@ -41,7 +41,7 @@ int main(int argc, char **argv)
 {
   try {
  
-    const unsigned int d = 3;
+    const unsigned int d = 2;
     const unsigned int p = 5;
 
     // Create product basis
@@ -63,6 +63,9 @@ int main(int argc, char **argv)
     // Tensor product quadrature
     Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
       Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
+    // Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
+    //   Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(basis,
+    // 								 p+1));
 
     std::cout << "original quadrature size = " << quad->size() << std::endl;
 
@@ -79,12 +82,18 @@ int main(int argc, char **argv)
     quad_exp.times(w,v,u);
     
     // Create new basis from u and v
-    Teuchos::Array< Teuchos::RCP<const Stokhos::OrthogPolyApprox<int,double> > > pces(2);
-    pces[0] = Teuchos::rcp(&u,false);
-    pces[1] = Teuchos::rcp(&v,false);
+    Teuchos::Array< Stokhos::OrthogPolyApprox<int,double> > pces(2);
+    pces[0] = u;
+    pces[1] = v;
+    Teuchos::ParameterList params;
+    //params.set("Verbose", true);
+    //params.set("Reduced Quadrature Method", "L1 Minimization");
+    params.set("Reduced Quadrature Method", "Column-Pivoted QR");
+    //params.set("Orthogonalization Method", "Classical Gram-Schmidt");
+    params.set("Orthogonalization Method", "Modified Gram-Schmidt");
     Teuchos::RCP< Stokhos::MonomialGramSchmidtSimplexPCEBasis<int,double> > gs_basis = 
       Teuchos::rcp(new Stokhos::MonomialGramSchmidtSimplexPCEBasis<int,double>(
-		     2, pces, quad));
+		     p, pces, quad, params));
     Teuchos::RCP<const Stokhos::Quadrature<int,double> > gs_quad =
       gs_basis->getReducedQuadrature();
     Stokhos::OrthogPolyApprox<int,double>  u_gs(gs_basis), v_gs(gs_basis), 
