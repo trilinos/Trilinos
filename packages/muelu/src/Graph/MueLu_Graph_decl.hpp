@@ -44,9 +44,6 @@ namespace MueLu {
     //! returns overlapping import map (nodes)
     const RCP<const Map> GetImportMap() const { return graph_->getColMap();    }
 
-    //! returns overlapping import map (DOFs)
-    const RCP<const Map> GetImportDofMap() const;
-
     //! Return the list of vertices adjacent to the vertex 'v'
     Teuchos::ArrayView<const LocalOrdinal> getNeighborVertices(LocalOrdinal v) const;
 
@@ -65,7 +62,7 @@ namespace MueLu {
 
     //! returns amalgamation information globalamalblockid2globalrowid
     //! only valid if SetAmalgamationParams has been used before (i.e. CoalesceDropFactory::Amalgamate is called).
-    RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > GetGlobalAmalgamationParams() const;
+    RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > GetGlobalAmalgamationParams() const;
 
 #ifdef MUELU_UNUSED
     size_t GetNodeNumGhost() const;

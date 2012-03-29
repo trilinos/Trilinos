@@ -1,6 +1,7 @@
 #ifndef MUELU_AGGREGATES_DEF_HPP
 #define MUELU_AGGREGATES_DEF_HPP
 
+#include <Xpetra_MapFactory.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
@@ -25,13 +26,14 @@ namespace MueLu {
     for (size_t i=0; i < graph.GetImportMap()->getNodeNumElements(); i++)
       isRoot_[i] = false;
 
-    importDofMap_ = graph.GetImportDofMap(); // overlapping Dof Map
-
     // create an empty container for amalgamation information
     // transfer amalgamation data from graph to AmalgamationInfo container
     // TODO: move this?
     amalgamationData_ = rcp(new AmalgamationInfo());
     amalgamationData_->SetAmalgamationParams(graph.GetMyAmalgamationParams(),graph.GetGlobalAmalgamationParams());
+
+    importDofMap_ = GenerateImportDofMap(graph); // amalgamation parameters have to be set before!
+
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -198,6 +200,58 @@ namespace MueLu {
     LO nAggregates = GetNumAggregates();
     GO nGlobalAggregates; sumAll(vertex2AggId_->getMap()->getComm(), (GO)nAggregates, nGlobalAggregates);
     return nGlobalAggregates;
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GenerateImportDofMap(const Graph & graph) const
+  {
+    //TEUCHOS_TEST_FOR_EXCEPTION(globalamalblockid2globalrowid_==Teuchos::null, Exceptions::RuntimeError, "MueLu::Graph::GetImportDofMap: no amalgamation information! Error.");
+
+    RCP<const Map> nodeMap = graph.GetImportMap();  // import node map
+
+    std::cout << "GenerateImportDofMap" << std::endl;
+
+    // special case: 1 dof per node
+    if(GetAmalgamationInfo()->GetMyAmalgamationParams() == Teuchos::null &&
+        GetAmalgamationInfo()->GetGlobalAmalgamationParams() == Teuchos::null) {
+      GetOStream(Debug, 0) << "MueLu::Aggregates::GenerateImportDofMap: 1 dof per node -> skip reconstruction of import DOF map!" << std::endl;
+      // TODO: add debug statement
+
+      std::cout << "return nodeMap" << std::endl;
+
+      // no amalgamation information -> we can assume that we have 1 dof per node
+      // just return nodeMap as DOFMap!
+      return nodeMap;
+    }
+
+    TEUCHOS_TEST_FOR_EXCEPTION(GetAmalgamationInfo()->GetGlobalAmalgamationParams()==Teuchos::null, Exceptions::RuntimeError, "MueLu::Aggregates::GenerateImportDofMap: insufficient amalgamation information. Error");
+    TEUCHOS_TEST_FOR_EXCEPTION(GetAmalgamationInfo()->GetMyAmalgamationParams()==Teuchos::null    , Exceptions::RuntimeError, "MueLu::Aggregates::GenerateImportDofMap: insufficient amalgamation information. Error");
+
+    // build dof map from node map
+    RCP<std::vector<GlobalOrdinal> > myDofGIDs = Teuchos::rcp(new std::vector<GlobalOrdinal>);
+    for(LocalOrdinal n=0; n<Teuchos::as<LocalOrdinal>(nodeMap->getNodeNumElements()); n++) {
+      GlobalOrdinal globalblockid = (GlobalOrdinal) nodeMap->getGlobalElement(n);
+
+      TEUCHOS_TEST_FOR_EXCEPTION(GetAmalgamationInfo()->GetGlobalAmalgamationParams()->count(globalblockid)<=0, Exceptions::RuntimeError, "MueLu::Aggregates::GenerateImportDofMap: empty global block? Error.");
+      std::vector<GlobalOrdinal> myrowGIDs = (*(GetAmalgamationInfo()->GetGlobalAmalgamationParams()))[globalblockid];
+      TEUCHOS_TEST_FOR_EXCEPTION(myrowGIDs.size()==0, Exceptions::RuntimeError, "MueLu::Aggregates::GenerateImportDofMap: no amalgamation information! Error.");
+
+      typename std::vector<GlobalOrdinal>::iterator gidIt;
+      for(gidIt = myrowGIDs.begin(); gidIt!=myrowGIDs.end(); gidIt++) {
+        myDofGIDs->push_back(*gidIt); // append local row ids
+      }
+    }
+
+    std::cout << "GenerateImportDofMap::return ImportDofMap" << std::endl;
+
+    // generate row dof map for amalgamated matrix with same distribution over all procs as row node map
+    Teuchos::ArrayRCP<GlobalOrdinal> arr_myDofGIDs = Teuchos::arcp( myDofGIDs );
+    Teuchos::RCP<Map> ImportDofMap = MapFactory::Build(nodeMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), arr_myDofGIDs(), nodeMap->getIndexBase(), nodeMap->getComm());
+
+    ImportDofMap->describe(GetOStream(MueLu::Statistics1),Teuchos::VERB_EXTREME);
+
+
+    return ImportDofMap;
   }
 
 } //namespace MueLu

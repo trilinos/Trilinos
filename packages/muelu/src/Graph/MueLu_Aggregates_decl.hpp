@@ -138,6 +138,9 @@ namespace MueLu {
     // This method is private because it is used only for printing and because with the current implementation, communication occurs each time this method is called.
     GO GetNumGlobalAggregates() const;
 
+    //! generate overlapping import map (DOFs)
+    const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > GenerateImportDofMap(const Graph & graph) const;
+
     RCP<const Map> importDofMap_; // dof map for overlapping nullspace
 
     RCP<AmalgamationInfo> amalgamationData_; // struct for amalgamation information
