@@ -334,7 +334,7 @@ namespace Tpetra {
 		    const ArrayRCP<Packet> &imports,
 		    const ArrayView<size_t> &numImportPacketsPerLID);
 
-    //! Wait on any outstanding reverse waits to complete.
+    //! Wait on any outstanding reverse message requests to complete.
     void doReverseWaits ();
 
     //@}
@@ -346,7 +346,7 @@ namespace Tpetra {
     std::string description() const;
 
     //! Print the object with some verbosity level to an \c FancyOStream.
-    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+    void describe (Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
     //@}
 
