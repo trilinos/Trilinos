@@ -494,17 +494,28 @@ namespace MueLu {
     RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
     int mypid = comm->getRank();
 
-    if (!useDiffusiveHeuristic_) {
-      if (numPartitions==1)
-        GetOStream(Runtime0,0) << "Placing partitions on proc. 0." << std::endl;
-      else
-        GetOStream(Runtime0,0) << "Placing partitions on proc. 0-" << numPartitions-1 << "." << std::endl;
-      myPartitionNumber = -1;
-      for (int i=0; i<(int)numPartitions; ++i) {
-        partitionOwners.push_back(i);
-        if (i==mypid) myPartitionNumber = i;
+    /*
+      useDiffusiveHeuristic_ = 0      ====> always put on procs 0..N
+      useDiffusiveHeuristic_ = K > 0  ====> if #partitions is > K, put on procs 0..N
+                                            otherwise use diffusive
+      useDiffusiveHeuristic_ = -1     ====> put on procs 0..N this time only, then use diffusive in remaining rounds
+    */
+    if (useDiffusiveHeuristic_ != 1) {
+
+      if (numPartitions > useDiffusiveHeuristic_) {
+        if (numPartitions==1)
+          GetOStream(Runtime0,0) << "Placing partitions on proc. 0." << std::endl;
+        else
+          GetOStream(Runtime0,0) << "Placing partitions on proc. 0-" << numPartitions-1 << "." << std::endl;
+        myPartitionNumber = -1;
+        for (int i=0; i<(int)numPartitions; ++i) {
+          partitionOwners.push_back(i);
+          if (i==mypid) myPartitionNumber = i;
+        }
+        if (useDiffusiveHeuristic_ == -1)
+          useDiffusiveHeuristic_ = 1;
+        return;
       }
-      return;
     }
 
     GetOStream(Runtime0,0) << "Using diffusive heuristic for partition placement." << std::endl;

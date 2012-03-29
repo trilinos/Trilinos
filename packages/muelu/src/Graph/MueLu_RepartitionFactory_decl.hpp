@@ -123,7 +123,7 @@ namespace MueLu {
     //! First level at which repartitioning can possibly occur.  Repartitioning at finer levels is suppressed.
     int    startLevel_;
 
-    LO useDiffusiveHeuristic_;
+    mutable LO useDiffusiveHeuristic_; //FIXME HACK!!!
     //! Minimum number of nonzeros over all processes.  If any process falls below this, repartitioning is initiated.
     GO     minNnzPerProcessor_;
 

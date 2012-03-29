@@ -159,6 +159,22 @@ namespace MueLu {
     */
     //FIXME
     transferOp->apply(*vector,*result);
+    if (vectorName_ == "Coordinates") {
+      GetOStream(Runtime0,0) << "averaging coordinates" << std::endl;
+      size_t numLocalRows = transferOp->getNodeNumRows();
+      Array<SC> numEntriesPerRow(numLocalRows);
+      for (size_t i=0; i<numLocalRows; ++i) {
+        numEntriesPerRow.push_back(transferOp->getNumEntriesInLocalRow(i));
+        if (numEntriesPerRow[i] == 0) numEntriesPerRow[i] = 1;
+      }
+      assert(numLocalRows == result->getLocalLength());
+      for (int i=0; i<result->getNumVectors(); ++i) {
+        ArrayRCP<Scalar> vals = result->getDataNonConst(i);
+        for (int j=0; j<numLocalRows; ++j) {
+          vals[j] /= numEntriesPerRow[j];
+        }
+      }
+    }
     //coarseLevel.Set<RCP<MultiVector> >(vectorName_,result,this); //FIXME JJH
     coarseLevel.Set<RCP<MultiVector> >(vectorName_,result,NoFactory::get()); //FIXME JJH
     

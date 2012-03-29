@@ -62,13 +62,19 @@ namespace MueLu {
   void PermutedTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {
 
     FactoryMonitor m(*this, "Build", coarseLevel);
+    static RCP<const Teuchos::Comm<int> > comm;
 
     if (PorR_ == MueLu::INTERPOLATION) {
       GetOStream(Warnings0, 0) <<  "Jamming A into Level " << coarseLevel.GetLevelID() << " w/ generating factory "
                                << this << std::endl;
       RCP<Operator> A = coarseLevel.Get< RCP<Operator> >("A",initialAFact_.get());
       coarseLevel.Set< RCP<Operator> >("A",A,this);
+      comm = A->getRowMap()->getComm();
     }
+
+    static double t0=0,t1;
+
+    t0 = MPI_Wtime();
 
     RCP<Operator> permMatrix;
     try {
@@ -148,6 +154,10 @@ namespace MueLu {
         }
         break;
     } //switch
+
+    t1 += MPI_Wtime() - t0;
+    if (comm->getRank() == 0)
+      std::cout << "cumulative PermutedTransferFactory (excluding get(\"A\")) = " << t1 << std::endl;
 
   } //Build
 

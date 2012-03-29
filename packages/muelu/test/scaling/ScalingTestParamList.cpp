@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
   if (matrixParameters.GetMatrixType() == "Laplace1D") {
     coordinates = MueLu::GalleryUtils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D",map,matrixParameters.GetParameterList());
   }
-  else if (matrixParameters.GetMatrixType() == "Laplace2D") {
+  else if (matrixParameters.GetMatrixType() == "Laplace2D" || matrixParameters.GetMatrixType() == "Star2D") {
     coordinates = MueLu::GalleryUtils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D",map,matrixParameters.GetParameterList());
   }
   else if (matrixParameters.GetMatrixType() == "Laplace3D") {
@@ -213,7 +213,8 @@ int main(int argc, char *argv[]) {
     } //try
 
     catch(...) {
-      std::cout << std::endl << "ERROR:  Belos threw an error! " << std::endl;
+      if (comm->getRank() == 0)
+        std::cout << std::endl << "ERROR:  Belos threw an error! " << std::endl;
     }
 
     // Check convergence
