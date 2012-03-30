@@ -539,10 +539,10 @@ NNTI_result_t NNTI_ib_init (
         transport_global_data.cqe_count = dev_attr.max_cqe;
 
         log_debug(nnti_debug_level, "max %d shared receive queue work requests", dev_attr.max_srq_wr);
-        transport_global_data.srq_count = dev_attr.max_srq_wr;
+        transport_global_data.srq_count = dev_attr.max_srq_wr/2;
 
         log_debug(nnti_debug_level, "max %d queue pair work requests", dev_attr.max_qp_wr);
-        transport_global_data.qp_count = dev_attr.max_qp_wr;
+        transport_global_data.qp_count = dev_attr.max_qp_wr/2;
 
         /* Allocate a Protection Domain (global) */
         transport_global_data.pd = ibv_alloc_pd(transport_global_data.ctx);
