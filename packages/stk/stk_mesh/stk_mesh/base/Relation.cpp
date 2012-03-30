@@ -151,25 +151,6 @@ void insert_part_and_supersets(OrdinalVector& induced_parts,
   }
 }
 
-inline
-void insert_part_and_supersets(PartVector& induced_parts, 
-                               Part& part,
-                               bool include_supersets)
-{
-  insert( induced_parts , part );
-
-  // In order to preserve superset/subset consistency we should add supersets of
-  // induced parts to the induced part lists. Unfortunately, this opens up an ambiguity
-  // where, when a relation is removed, we cannot know if an unranked superset
-  // part should be removed.
-  if (include_supersets) {
-    const PartVector & supersets = part.supersets();
-    for (PartVector::const_iterator itr = supersets.begin(), end = supersets.end(); itr != end; ++itr) {
-      insert( induced_parts, **itr );
-    }
-  }
-}
-
 }
 
 void get_entities_through_relations(

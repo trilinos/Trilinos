@@ -45,15 +45,6 @@ bool less_cset::operator()( const std::type_info & lhs ,
 { return lhs.before( *rhs.first ) && lhs != *rhs.first ; }
 
 
-std::vector< Manager >::const_iterator
-lower_bound( const std::vector< Manager > & v , const std::type_info & t )
-{
-  std::vector< Manager >::const_iterator i = v.begin();
-  std::vector< Manager >::const_iterator j = v.end();
-
-  return std::lower_bound( i , j , t , less_cset() );
-}
-
 std::vector< Manager >::iterator
 lower_bound( std::vector< Manager > & v , const std::type_info & t )
 {

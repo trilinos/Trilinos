@@ -218,7 +218,7 @@ private:
   friend bool sierra::Fmwk::detail::set_attributes( Entity &, const int, const sierra::Fmwk::MeshObjSharedAttr *, const int);
   friend bool sierra::Fmwk::detail::set_attributes( Entity &, const sierra::Fmwk::MeshObjSharedAttr *, const int);
   friend void sierra::Fmwk::detail::unset_shared_attr(Entity &);
-  friend bool sierra::Fmwk::insert_relation( Entity * const, const stk::mesh::Relation::RelationType, Entity * const, const unsigned, const unsigned, const bool, MeshBulkData &);
+  friend bool sierra::Fmwk::insert_relation( Entity * const, const stk::mesh::Relation::RelationType, Entity * const, const unsigned, const unsigned, const bool, sierra::Fmwk::MeshBulkData &);
   friend bool sierra::Fmwk::remove_relation(Entity &, const stk::mesh::RelationIterator, sierra::Fmwk::MeshBulkData &);
   friend bool sierra::Fmwk::verify_relations(const Entity &);
   friend void sierra::Fmwk::roster_only::destroy_meshobj(stk::mesh::Entity*);
