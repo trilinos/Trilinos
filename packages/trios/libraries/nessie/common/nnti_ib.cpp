@@ -536,20 +536,10 @@ NNTI_result_t NNTI_ib_init (
         }
 
         log_debug(nnti_debug_level, "max %d completion queue entries", dev_attr.max_cqe);
-        transport_global_data.cqe_count = CQ_DEPTH;
-        if (dev_attr.max_cqe < transport_global_data.cqe_count) {
-            log_warn(nnti_debug_level, "not enough completion queue entries %d, hoping for %d",
-                    dev_attr.max_cqe, transport_global_data.cqe_count);
-            transport_global_data.cqe_count = dev_attr.max_cqe;
-        }
+        transport_global_data.cqe_count = dev_attr.max_cqe;
 
         log_debug(nnti_debug_level, "max %d shared receive queue work requests", dev_attr.max_srq_wr);
-        transport_global_data.srq_count = SRQ_DEPTH;
-        if (dev_attr.max_srq_wr < transport_global_data.srq_count) {
-            log_warn(nnti_debug_level, "not enough completion queue entries %d, hoping for %d",
-                    dev_attr.max_srq_wr, transport_global_data.srq_count);
-            transport_global_data.srq_count = dev_attr.max_srq_wr;
-        }
+        transport_global_data.srq_count = dev_attr.max_srq_wr;
 
         log_debug(nnti_debug_level, "max %d queue pair work requests", dev_attr.max_qp_wr);
         transport_global_data.qp_count = dev_attr.max_qp_wr;
