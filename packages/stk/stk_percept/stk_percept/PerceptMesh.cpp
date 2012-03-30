@@ -1333,6 +1333,36 @@ namespace stk {
       readBulkData();
     }
 
+    template<class T>
+    static void checkOmit(const std::vector<T *>& collection, std::string omit_part)
+    {
+      //typedef const typename std::vector<T *> Collection;
+      typename std::vector<T *>::const_iterator iter;
+      for (iter = collection.begin(); iter != collection.end(); iter++)
+        {
+          Ioss::GroupingEntity *entity = *iter;
+          if (entity != NULL && entity->name().find(omit_part) != std::string::npos)
+            {
+              std::cout << "tmp srk checkOmit found for entity = " << entity->name() << std::endl;
+              entity->property_add(Ioss::Property(std::string("omitted"), 1));
+            }
+        }
+    }
+
+    static void checkForPartsToAvoidReading(Ioss::Region& in_region, std::string omit_part)
+    {
+      checkOmit(in_region.get_node_blocks(), omit_part ) ; /*const NodeBlockContainer&  */
+      checkOmit(in_region.get_edge_blocks(), omit_part ) ; /*const EdgeBlockContainer&  */
+      checkOmit(in_region.get_face_blocks(), omit_part ) ; /*const FaceBlockContainer&  */
+      checkOmit(in_region.get_element_blocks(), omit_part ) ; /*const ElementBlockContainer& g*/
+      checkOmit(in_region.get_sidesets(), omit_part ) ; /*const SideSetContainer&  */
+      checkOmit(in_region.get_nodesets(), omit_part ) ; /*const NodeSetContainer&  */
+      checkOmit(in_region.get_edgesets(), omit_part ) ; /*const EdgeSetContainer&  */
+      checkOmit(in_region.get_facesets(), omit_part ) ; /*const FaceSetContainer&  */
+      checkOmit(in_region.get_elementsets(), omit_part ) ; /*const ElementSetContainer&  */
+      //checkOmit(in_region.    get_commsets(), omit_part ) ; /*const CommSetContainer&  */
+    }
+
     void PerceptMesh::read_metaDataNoCommit( const std::string& in_filename)
     {
       EXCEPTWATCH;
@@ -1365,6 +1395,7 @@ namespace stk {
       // Just an example of how application could control whether an
       // entity is subsetted or not...
 
+      checkForPartsToAvoidReading(in_region, s_omit_part);
 
       // Example command line in current code corresponding to behavior below:
 #if 0
@@ -1585,6 +1616,7 @@ namespace stk {
     }
 #endif
 
+#if DEPRECATED
     static void omit_entity(Ioss::GroupingEntity *entity)
     {
       //std::string topo_name = entity->topology()->name();
@@ -1595,6 +1627,8 @@ namespace stk {
       // FIXME - this is a bit of a hack until we can have a design review with Greg Sjaardema
       if (name.find(PerceptMesh::s_omit_part) != std::string::npos)
         {
+          std::cout << "tmp srk omit_entity found it " << name << std::endl;
+          exit(1);
           if ( entity->property_exists(std::string("omitted") ) )
             {
               entity->property_erase(std::string("omitted"));
@@ -1648,6 +1682,7 @@ namespace stk {
       }
 
     }
+#endif
 
     void PerceptMesh::checkForPartsToAvoidWriting()
     {
@@ -1661,7 +1696,7 @@ namespace stk {
           //std::cout << "tmp srk checkForPartsToAvoidWriting found part= " << name << " s_omit_part= " << s_omit_part << std::endl;
           if (name.find(PerceptMesh::s_omit_part) != std::string::npos)
           {
-            //std::cout << "tmp srk checkForPartsToAvoidWriting found omitted part= " << name << std::endl;
+            std::cout << "tmp srk checkForPartsToAvoidWriting found omitted part= " << name << std::endl;
             const Ioss::GroupingEntity *entity = part.attribute<Ioss::GroupingEntity>();
             if (entity) 
               stk::io::remove_io_part_attribute(part);
@@ -1674,10 +1709,11 @@ namespace stk {
       for (unsigned ipart=0; ipart < nparts; ipart++)
         {
           stk::mesh::Part& part = *((*parts)[ipart]);
-          //std::string name = part.name();
-          //std::cout << "tmp srk checkForPartsToAvoidWriting found part= " << name << " s_omit_part= " << s_omit_part << std::endl;
+          std::string name = part.name();
+          //std::cout << "tmp srk checkForPartsToAvoidWriting found part from get_io_omitted_parts() = " << name << " s_omit_part= " << s_omit_part << std::endl;
           {
-            //std::cout << "tmp srk checkForPartsToAvoidWriting found omitted part= " << name << std::endl;
+            std::cout << "tmp srk checkForPartsToAvoidWriting found part from get_io_omitted_parts() omitted part= " << name << std::endl;
+            exit(1);
             const Ioss::GroupingEntity *entity = part.attribute<Ioss::GroupingEntity>();
             if (entity) 
               stk::io::remove_io_part_attribute(part);
@@ -1721,7 +1757,7 @@ namespace stk {
 
       stk::io::define_output_db(out_region, bulk_data);
 
-      omitted_output_db_processing(out_region);
+      //deprecated omitted_output_db_processing(out_region);
 
       stk::io::write_output_db(out_region,  bulk_data);
 

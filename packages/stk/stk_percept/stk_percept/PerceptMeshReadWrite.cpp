@@ -94,7 +94,17 @@ namespace stk {
         //std::cout << "tmp srk found  part= " << name << std::endl;
         if (name.find(PerceptMesh::s_omit_part) != std::string::npos)
           {
-            //std::cout << "tmp srk found omitted part= " << name << std::endl;
+            std::cout << "tmp srk found omitted part= " << name << std::endl;
+            int omitted = 0;
+            if ( entity->property_exists(std::string("omitted") ) )
+              omitted = entity->get_property("omitted").get_int();
+
+            if (!omitted)
+              {
+                std::cout << "tmp srk found omitted part not omitted= " << name << std::endl;
+                throw std::logic_error("PerceptMesh::local_include_entity logic error in determining omitted parts.");
+              }
+
             if ( entity->property_exists(std::string("omitted") ) )
               {
                 entity->property_erase(std::string("omitted"));
