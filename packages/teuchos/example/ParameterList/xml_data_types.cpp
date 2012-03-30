@@ -194,6 +194,22 @@ int main(int argc, char* argv[])
   // Read the parameters in one at a time
   const int myInt = readPL->get<int>("my int");
   std::cout << "myInt = " << myInt << "\n";
+  const unsigned int myUnsignedInt = readPL->get<unsigned int>("my unsigned int");
+  std::cout << "myUnsignedInt = " << myUnsignedInt << "\n";
+  const short int myShortInt = readPL->get<short int>("my short int");
+  std::cout << "myShortInt = " << myShortInt << "\n";
+  const unsigned short int myUnsignedShortInt = readPL->get<unsigned short int>("my unsigned short int");
+  std::cout << "myUnsignedShortInt = " << myUnsignedShortInt << "\n";
+  const long int myLongInt = readPL->get<long int>("my long int");
+  std::cout << "myLongInt = " << myLongInt << "\n";
+  const unsigned long int myUnsignedLongInt = readPL->get<unsigned long int>("my unsigned long int");
+  std::cout << "myUnsignedLongInt = " << myUnsignedLongInt << "\n";
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+  const long long int myLongLongInt = readPL->get<long long int>("my long long int");
+  std::cout << "myLongLongInt = " << myLongLongInt << "\n";
+  const unsigned long long int myUnsignedLongLongInt = readPL->get<unsigned long long int>("my unsigned long long int");
+  std::cout << "myUnsignedLongLongInt = " << myUnsignedLongLongInt << "\n";
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
   const float myFloat = readPL->get<float>("my float");
   std::cout << "myFloat = " << myFloat << "\n";
   const double myDouble = readPL->get<double>("my double");
