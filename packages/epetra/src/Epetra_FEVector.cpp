@@ -380,39 +380,24 @@ int Epetra_FEVector::GlobalAssemble(Epetra_CombineMode mode,
 //----------------------------------------------------------------------------
 void Epetra_FEVector::createNonlocalMapAndExporter()
 {
-  if (nonlocalMap_ != 0) {
-    delete nonlocalMap_;
-  }
+  delete nonlocalMap_;
   int* nlIDptr = nonlocalIDs_.size()>0 ? &nonlocalIDs_[0] : NULL;
   nonlocalMap_ = new Epetra_BlockMap (-1, nonlocalIDs_.size(), nlIDptr, 
 				      &nonlocalElementSize_[0], Map().IndexBase(), 
 				      Map().Comm());
-  if (exporter_ != 0) {
-    delete exporter_;
-  }
+  delete exporter_;
   exporter_ = new Epetra_Export (*nonlocalMap_, Map());
 
-  if (nonlocalVector_ == 0) {
-    delete nonlocalVector_;
-  }
+  delete nonlocalVector_;
   nonlocalVector_ = new Epetra_MultiVector (*nonlocalMap_, NumVectors());
 }
 
 //----------------------------------------------------------------------------
 void Epetra_FEVector::destroyNonlocalMapAndExporter()
 {
-  if (nonlocalMap_ != 0) {
-    delete nonlocalMap_;
-    nonlocalMap_ = 0;
-  }
-  if (exporter_ != 0) {
-    delete exporter_;
-    exporter_ = 0;
-  }
-  if (nonlocalVector_ == 0) {
-    delete nonlocalVector_;
-    nonlocalVector_ = 0;
-  }
+  delete nonlocalMap_;    nonlocalMap_ = 0;
+  delete exporter_;       exporter_ = 0;
+  delete nonlocalVector_; nonlocalVector_ = 0;
 }
 
 //----------------------------------------------------------------------------
