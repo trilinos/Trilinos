@@ -236,16 +236,16 @@ class Epetra_MsrMatrix: public Epetra_Object, public Epetra_CompObject, public v
     double NormOne() const;
 
     //! Returns the number of nonzero entries in the global matrix.
-    int NumGlobalNonzeros() const {return(NumGlobalNonzeros_);};
+    long long NumGlobalNonzeros() const {return(NumGlobalNonzeros_);};
 
     //! Returns the number of global matrix rows.
-    int NumGlobalRows() const {return(OperatorRangeMap().NumGlobalPoints());};
+    long long NumGlobalRows() const {return(OperatorRangeMap().NumGlobalPoints());};
 
     //! Returns the number of global matrix columns.
-    int NumGlobalCols() const {return(OperatorDomainMap().NumGlobalPoints());};
+    long long NumGlobalCols() const {return(OperatorDomainMap().NumGlobalPoints());};
 
     //! Returns the number of global nonzero diagonal entries.
-    int NumGlobalDiagonals() const{return(OperatorDomainMap().NumGlobalPoints());};
+    long long NumGlobalDiagonals() const{return(OperatorDomainMap().NumGlobalPoints());};
     
     //! Returns the number of nonzero entries in the calling processor's portion of the matrix.
     int NumMyNonzeros() const {return(NumMyNonzeros_);};
@@ -386,7 +386,7 @@ class Epetra_MsrMatrix: public Epetra_Object, public Epetra_CompObject, public v
     Epetra_Import * Importer_;
     mutable Epetra_MultiVector * ImportVector_;
  
-    int NumGlobalNonzeros_;
+    long long NumGlobalNonzeros_;
     int NumMyNonzeros_;
     int NumMyRows_;
     int NumMyCols_;

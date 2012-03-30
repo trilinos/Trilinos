@@ -50,6 +50,7 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
+#include "Epetra_LongLongVector.h"
 #include "Epetra_Comm.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_MapColoring.h"
@@ -565,7 +566,7 @@ int Epetra_CrsSingletonFilter::ConstructRedistributeExporter(Epetra_Map * Source
   if(SourceMap->GlobalIndicesInt()) 
     SourceIndices = new Epetra_IntVector(View, ContiguousSourceMap, SourceMap->MyGlobalElements());
   else
-    SourceIndices_LL = new Epetra_LongLongVector(View, ContiguousSourceMap, SourceMap->MyGlobalElements());
+    SourceIndices_LL = new Epetra_LongLongVector(View, ContiguousSourceMap, SourceMap->MyGlobalElements_LL());
 
   // Create an exporter to send the SourceMap global IDs to the target distribution
   Epetra_Export Exporter(ContiguousSourceMap, ContiguousTargetMap);
@@ -577,7 +578,7 @@ int Epetra_CrsSingletonFilter::ConstructRedistributeExporter(Epetra_Map * Source
     TargetIndices = new Epetra_IntVector(ContiguousTargetMap);
     TargetIndices->Export(*SourceIndices, Exporter, Insert);
   } else {
-    TargetIndices_LL = new Epetra_IntVector(ContiguousTargetMap);
+    TargetIndices_LL = new Epetra_LongLongVector(ContiguousTargetMap);
     TargetIndices_LL->Export(*SourceIndices_LL, Exporter, Insert);
   }
 
