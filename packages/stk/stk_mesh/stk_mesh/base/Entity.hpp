@@ -222,7 +222,7 @@ private:
   friend bool sierra::Fmwk::remove_relation(Entity &, const stk::mesh::RelationIterator, sierra::Fmwk::MeshBulkData &);
   friend bool sierra::Fmwk::verify_relations(const Entity &);
   friend void sierra::Fmwk::roster_only::destroy_meshobj(stk::mesh::Entity*);
-  friend void sierra::Fmwk::roster_only::set_shared_attr(stk::mesh::Entity&, const MeshObjSharedAttr*);
+  friend void sierra::Fmwk::roster_only::set_shared_attr(stk::mesh::Entity&, const sierra::Fmwk::MeshObjSharedAttr*);
 
   typedef unsigned DerivedType; ///< Derived type identifier, the admissible values may be extended
 
