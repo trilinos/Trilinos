@@ -32,8 +32,25 @@ namespace MueLu {
     amalgamationData_ = rcp(new AmalgamationInfo());
     amalgamationData_->SetAmalgamationParams(graph.GetMyAmalgamationParams(),graph.GetGlobalAmalgamationParams());
 
-    importDofMap_ = GenerateImportDofMap(graph); // amalgamation parameters have to be set before!
+    importDofMap_ = GenerateImportDofMap(); // amalgamation parameters have to be set before!
 
+  }
+
+  // special copy constructor, does not handle amalgamation information!
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Aggregates(Aggregates & a) {
+    nAggregates_  = a.GetNumAggregates();
+
+    vertex2AggId_ = a.GetVertex2AggId();
+    procWinner_   = a.GetProcWinner();
+
+    isRoot_ = Teuchos::ArrayRCP<bool>(vertex2AggId_->getLocalLength());
+    for (size_t i=0; i < vertex2AggId_->getLocalLength(); i++)
+          isRoot_[i] = a.IsRoot(i);
+
+    amalgamationData_ = rcp(new AmalgamationInfo());
+
+    importDofMap_ = Teuchos::null;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -104,10 +121,13 @@ namespace MueLu {
 
         // unumalgamate graph-based information to dof-based information
         std::vector<LocalOrdinal> blockdofs = (*(GetAmalgamationInfo()->GetMyAmalgamationParams()))[gblockid];
+        //std::cout << blockdofs.size() << ": ";
         for (LocalOrdinal blockdof=0; blockdof<Teuchos::as<LocalOrdinal>(blockdofs.size()); blockdof++) {
+          //std::cout << blockdofs[blockdof] << " " ;
           aggToRowMap[ myAgg ][ numDofs[myAgg] ] = blockdofs[blockdof];  // add DOF to current aggregate
           ++(numDofs[myAgg]);
         }
+        //std::cout << std::endl;
       }
     }
 
@@ -203,21 +223,15 @@ namespace MueLu {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GenerateImportDofMap(const Graph & graph) const
+  const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GenerateImportDofMap() const
   {
-    //TEUCHOS_TEST_FOR_EXCEPTION(globalamalblockid2globalrowid_==Teuchos::null, Exceptions::RuntimeError, "MueLu::Graph::GetImportDofMap: no amalgamation information! Error.");
-
-    RCP<const Map> nodeMap = graph.GetImportMap();  // import node map
-
-    std::cout << "GenerateImportDofMap" << std::endl;
+    RCP<const Map> nodeMap = vertex2AggId_->getMap(); // use import node map from graph
 
     // special case: 1 dof per node
     if(GetAmalgamationInfo()->GetMyAmalgamationParams() == Teuchos::null &&
         GetAmalgamationInfo()->GetGlobalAmalgamationParams() == Teuchos::null) {
       GetOStream(Debug, 0) << "MueLu::Aggregates::GenerateImportDofMap: 1 dof per node -> skip reconstruction of import DOF map!" << std::endl;
       // TODO: add debug statement
-
-      std::cout << "return nodeMap" << std::endl;
 
       // no amalgamation information -> we can assume that we have 1 dof per node
       // just return nodeMap as DOFMap!
@@ -242,13 +256,9 @@ namespace MueLu {
       }
     }
 
-    std::cout << "GenerateImportDofMap::return ImportDofMap" << std::endl;
-
     // generate row dof map for amalgamated matrix with same distribution over all procs as row node map
     Teuchos::ArrayRCP<GlobalOrdinal> arr_myDofGIDs = Teuchos::arcp( myDofGIDs );
     Teuchos::RCP<Map> ImportDofMap = MapFactory::Build(nodeMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), arr_myDofGIDs(), nodeMap->getIndexBase(), nodeMap->getComm());
-
-    ImportDofMap->describe(GetOStream(MueLu::Statistics1),Teuchos::VERB_EXTREME);
 
 
     return ImportDofMap;

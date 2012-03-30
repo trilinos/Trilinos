@@ -48,6 +48,7 @@ namespace MueLu {
   public:
      
     Aggregates(const Graph & graph);
+    Aggregates(Aggregates & a); // special copy constructor (that skips amalgamation information)
     virtual ~Aggregates() { }
      
     LO GetNumAggregates() const           { return nAggregates_;        } // rename GetNumLocal ?
@@ -59,7 +60,7 @@ namespace MueLu {
     
     const RCP<const Map> GetMap() const { return vertex2AggId_->getMap(); }
 
-    const RCP<const Map> GetDofMap() const { return importDofMap_; }
+    const RCP<const Map> GetDofMap()  const { return importDofMap_; }
 
     Teuchos::ArrayRCP<LO> ComputeAggregateSizes() const; //ComputeAggSizesNodes
 
@@ -139,7 +140,7 @@ namespace MueLu {
     GO GetNumGlobalAggregates() const;
 
     //! generate overlapping import map (DOFs)
-    const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > GenerateImportDofMap(const Graph & graph) const;
+    const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > GenerateImportDofMap() const;
 
     RCP<const Map> importDofMap_; // dof map for overlapping nullspace
 
