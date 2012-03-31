@@ -117,6 +117,10 @@ namespace MueLu {
       return amalgamationData_;
     }
 
+    //! generate overlapping import map (DOFs)
+    // TODO: make this private
+    void GenerateImportDofMap() const;
+
   private:
     LO   nAggregates_;              /* Number of aggregates on this processor  */
     
@@ -139,10 +143,7 @@ namespace MueLu {
     // This method is private because it is used only for printing and because with the current implementation, communication occurs each time this method is called.
     GO GetNumGlobalAggregates() const;
 
-    //! generate overlapping import map (DOFs)
-    const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > GenerateImportDofMap() const;
-
-    RCP<const Map> importDofMap_; // dof map for overlapping nullspace
+    mutable RCP<const Map> importDofMap_; // dof map for overlapping nullspace (needed by TentativePFactory)
 
     RCP<AmalgamationInfo> amalgamationData_; // struct for amalgamation information
   };

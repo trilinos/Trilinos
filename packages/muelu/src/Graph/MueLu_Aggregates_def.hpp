@@ -32,7 +32,7 @@ namespace MueLu {
     amalgamationData_ = rcp(new AmalgamationInfo());
     amalgamationData_->SetAmalgamationParams(graph.GetMyAmalgamationParams(),graph.GetGlobalAmalgamationParams());
 
-    importDofMap_ = GenerateImportDofMap(); // amalgamation parameters have to be set before!
+    GenerateImportDofMap(); // amalgamation parameters have to be set before!
 
   }
 
@@ -223,7 +223,7 @@ namespace MueLu {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GenerateImportDofMap() const
+  void Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GenerateImportDofMap() const
   {
     RCP<const Map> nodeMap = vertex2AggId_->getMap(); // use import node map from graph
 
@@ -234,8 +234,10 @@ namespace MueLu {
       // TODO: add debug statement
 
       // no amalgamation information -> we can assume that we have 1 dof per node
-      // just return nodeMap as DOFMap!
-      return nodeMap;
+      // just use nodeMap as DOFMap!
+      importDofMap_ = nodeMap;
+    
+      return;
     }
 
     TEUCHOS_TEST_FOR_EXCEPTION(GetAmalgamationInfo()->GetGlobalAmalgamationParams()==Teuchos::null, Exceptions::RuntimeError, "MueLu::Aggregates::GenerateImportDofMap: insufficient amalgamation information. Error");
@@ -258,10 +260,8 @@ namespace MueLu {
 
     // generate row dof map for amalgamated matrix with same distribution over all procs as row node map
     Teuchos::ArrayRCP<GlobalOrdinal> arr_myDofGIDs = Teuchos::arcp( myDofGIDs );
-    Teuchos::RCP<Map> ImportDofMap = MapFactory::Build(nodeMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), arr_myDofGIDs(), nodeMap->getIndexBase(), nodeMap->getComm());
 
-
-    return ImportDofMap;
+    importDofMap_ = MapFactory::Build(nodeMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), arr_myDofGIDs(), nodeMap->getIndexBase(), nodeMap->getComm());
   }
 
 } //namespace MueLu
