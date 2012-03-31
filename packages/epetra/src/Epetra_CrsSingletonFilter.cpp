@@ -587,7 +587,7 @@ int Epetra_CrsSingletonFilter::ConstructRedistributeExporter(Epetra_Map * Source
   if(TargetMap->GlobalIndicesInt()) 
     RedistributeMap = new Epetra_Map(-1, TargetNumMyElements, TargetIndices->Values(), IndexBase, Comm);
   else
-    RedistributeMap = new Epetra_Map(-1, TargetNumMyElements, TargetIndices_LL->Values(), IndexBase, Comm);
+    RedistributeMap = new Epetra_Map((long long) -1, TargetNumMyElements, TargetIndices_LL->Values(), IndexBase, Comm);
 
   // This exporter will finally redistribute the Source MultiVector to the same layout as the TargetMap
   RedistributeExporter = new Epetra_Export(*SourceMap, *RedistributeMap);
