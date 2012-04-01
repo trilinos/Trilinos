@@ -15,7 +15,7 @@ namespace Xpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class StridedMap
-    : public Map<LocalOrdinal, GlobalOrdinal, Node>
+    : public virtual Map<LocalOrdinal, GlobalOrdinal, Node>
   {
 
   public:

@@ -191,7 +191,7 @@ namespace {
     stridedInfo.push_back(2);
     stridedInfo.push_back(1);
     
-    M map2(numGlobalElements, numLocalElements, 0,stridedInfo, comm);
+    M map2(numGlobalElements, numLocalElements, 0, stridedInfo, comm);
     TEST_EQUALITY_CONST( map2.getFixedBlockSize(), 3 );
     TEST_EQUALITY_CONST( map2.isStrided(), true );
     TEST_EQUALITY_CONST( map2.isBlocked(), true );
@@ -314,7 +314,7 @@ namespace {
 #ifdef HAVE_XPETRA_EPETRA
       UNIT_TEST_GROUP_ORDINAL_(Xpetra::StridedEpetraMap, int , int)
 #endif
-    // UNIT_TEST_GROUP_ORDINAL(int , int) // TODO fix me no Tpetra tests
+      UNIT_TEST_GROUP_ORDINAL(int , int) // TODO fix me no Tpetra tests
 
 # else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
@@ -337,7 +337,7 @@ namespace {
       UNIT_TEST_GROUP_ORDINAL_(StridedEpetraMap, int , int)
 #endif
 #ifdef HAVE_XPETRA_TPETRA
-      //UNIT_TEST_GROUP_ORDINAL(int , int) // TODO fix me, no Tpetra tests
+      UNIT_TEST_GROUP_ORDINAL(int , int) // TODO fix me, no Tpetra tests
 #endif
 
     // typedef short int ShortInt;

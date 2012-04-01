@@ -15,7 +15,7 @@ namespace Xpetra {
 
 
   class StridedEpetraMap
-    : public virtual EpetraMap, public StridedMap<int, int>
+    : public virtual EpetraMap, public virtual StridedMap<int, int>
   {
 
     typedef int LocalOrdinal;

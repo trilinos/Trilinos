@@ -7,14 +7,14 @@
 
 #include "Xpetra_StridedMap.hpp"
 #include "Xpetra_TpetraMap.hpp"
-//#include "Xpetra_Utils.hpp"
+#include "Xpetra_Utils.hpp"
 
 
 namespace Xpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class StridedTpetraMap
-    : public virtual StridedMap<LocalOrdinal,GlobalOrdinal,Node> {
+    : public virtual TpetraMap<LocalOrdinal,GlobalOrdinal,Node>, public virtual StridedMap<LocalOrdinal,GlobalOrdinal,Node> {
 
   public:
 
@@ -61,10 +61,10 @@ namespace Xpetra {
 	}
 	nDofsPerNode = stridingInfo[stridedBlockId];
 	
-	numGlobalElements = nodeMap->NumGlobalElements()*Teuchos::as<global_size_t>(nDofsPerNode);
+	numGlobalElements = nodeMap->getGlobalNumElements()*Teuchos::as<global_size_t>(nDofsPerNode);
       }
       std::vector<GlobalOrdinal> dofgids;
-      for(LocalOrdinal i = 0; i<nodeMap->getNodeNumElements(); i++) {
+      for(LocalOrdinal i = 0; i<Teuchos::as<LocalOrdinal>(nodeMap->getNodeNumElements()); i++) {
 	GlobalOrdinal gid = nodeMap->getGlobalElement(i);
 	for(size_t dof = 0; dof < nDofsPerNode; ++dof) {
 	  dofgids.push_back(gid*Teuchos::as<GlobalOrdinal>(StridedMapClass::getFixedBlockSize()) + Teuchos::as<GlobalOrdinal>(nStridedOffset + dof));
@@ -72,8 +72,7 @@ namespace Xpetra {
       }
       
       const Teuchos::ArrayView<const GlobalOrdinal> dofgidsview = Teuchos::ArrayView<const GlobalOrdinal>(dofgids);
-      Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::map_ = Teuchos::rcp(new const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalElements, dofgidsview, indexBase, comm, toTpetra(lg), node));
-
+      TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::map_ = Teuchos::rcp(new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalElements, dofgidsview, indexBase, comm, node));
       
       //TEUCHOS_TEST_FOR_EXCEPTION(Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::map_->getNodeNumElements() % nDofsPerNode != 0, Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
       if(stridedBlockId == -1) {
@@ -117,9 +116,10 @@ namespace Xpetra {
       // check input data and reorganize map
 
       global_size_t numGlobalNodes = numGlobalElements / StridedMapClass::getFixedBlockSize();	// number of nodes (over all processors)
+      global_size_t numLocalNodes  = numLocalElements / StridedMapClass::getFixedBlockSize();	// number of nodes (on one processor)
       
       // build an equally distributed node map
-      RCP<Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > nodeMap = Teuchos::rcp(new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalNodes, numLocalElements, indexBase, comm, node));
+      RCP<Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > nodeMap = Teuchos::rcp(new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalNodes, numLocalNodes, indexBase, comm, node));
       
       // translate local node ids to local dofs
       size_t nStridedOffset = 0;
@@ -131,10 +131,10 @@ namespace Xpetra {
 	}
 	nDofsPerNode = stridingInfo[stridedBlockId];
 	
-	numGlobalElements = nodeMap->NumGlobalElements()*Teuchos::as<global_size_t>(nDofsPerNode);
+	numGlobalElements = nodeMap->getGlobalNumElements()*Teuchos::as<global_size_t>(nDofsPerNode);
       }
       std::vector<GlobalOrdinal> dofgids;
-      for(LocalOrdinal i = 0; i<nodeMap->getNodeNumElements(); i++) {
+      for(LocalOrdinal i = 0; i<Teuchos::as<LocalOrdinal>(nodeMap->getNodeNumElements()); i++) {
 	GlobalOrdinal gid = nodeMap->getGlobalElement(i);
 	for(size_t dof = 0; dof < nDofsPerNode; ++dof) {
 	  dofgids.push_back(gid*Teuchos::as<GlobalOrdinal>(StridedMapClass::getFixedBlockSize()) + Teuchos::as<GlobalOrdinal>(nStridedOffset + dof));
@@ -142,8 +142,7 @@ namespace Xpetra {
       }
       
       const Teuchos::ArrayView<const GlobalOrdinal> dofgidsview = Teuchos::ArrayView<const GlobalOrdinal>(dofgids);
-      Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::map_ = Teuchos::rcp(new const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalElements, dofgidsview, indexBase, comm, node));
-
+      TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::map_ = Teuchos::rcp(new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalElements, dofgidsview, indexBase, comm, node));
       
       //TEUCHOS_TEST_FOR_EXCEPTION(Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::map_->getNodeNumElements() % nDofsPerNode != 0, Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
       if(stridedBlockId == -1) {
@@ -250,10 +249,10 @@ namespace Xpetra {
     //@{
 
     //! Returns true if map is compatible with this Map.
-    bool isCompatible(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const { return TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::isCompatible(toTpetra(map)); }
+    bool isCompatible(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const { return TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::isCompatible(map); }
 
     //! Returns true if map is identical to this Map.
-    bool isSameAs(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const { return TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::isSameAs(toTpetra(map)); }
+    bool isSameAs(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const { return TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::isSameAs(map); }
 
     //@}
 

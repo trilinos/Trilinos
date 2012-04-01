@@ -160,7 +160,7 @@ namespace Xpetra {
    
   protected:
 
-    const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > map_;
+    RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > map_;
 
   }; // TpetraMap class
 
