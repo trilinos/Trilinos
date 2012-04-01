@@ -70,6 +70,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     CrsMatrix/Xpetra_EpetraCrsMatrix.cpp
     Vector/Xpetra_EpetraVector.cpp
     Vector/Xpetra_EpetraIntVector.cpp
+    StridedMap/Xpetra_StridedEpetraMap.cpp
     )
 ENDIF()
 
@@ -85,6 +86,7 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Platform)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Utils)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Utils/ForwardDeclaration)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Map)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/StridedMap)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Import)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Export)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/DistObject)
@@ -105,6 +107,7 @@ APPEND_GLOB(HEADERS DistObject/*.hpp)
 APPEND_GLOB(HEADERS Export/*.hpp)
 APPEND_GLOB(HEADERS Import/*.hpp)
 APPEND_GLOB(HEADERS Map/*.hpp)
+APPEND_GLOB(HEADERS StridedMap/*.hpp)
 APPEND_GLOB(HEADERS MultiVector/*.hpp)
 APPEND_GLOB(HEADERS Operator/*.hpp)
 APPEND_GLOB(HEADERS Platform/*.hpp)

@@ -69,6 +69,14 @@ typedef Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMap;
 typedef Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsGraph;
 #endif
 
+#ifdef XPETRA_STRIDEDMAP_SHORT
+typedef Xpetra::StridedMap<LocalOrdinal, GlobalOrdinal, Node> StridedMap;
+#endif
+
+#ifdef XPETRA_STRIDEDMAPFACTORY_SHORT
+typedef Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node> StridedMapFactory;
+#endif
+
 // Note: There is no #ifndef/#define/#end in this header file because it can be included more than once (it can be included in methods templated by Scalar, LocalOrdinal, GlobalOrdinal, Node).
 
 // TODO: add namespace {} for shortcut types

@@ -158,7 +158,7 @@ namespace Xpetra {
 
     //@}
    
-  private:
+  protected:
 
     const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > map_;
 

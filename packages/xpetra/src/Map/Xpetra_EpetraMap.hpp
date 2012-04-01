@@ -164,7 +164,7 @@ namespace Xpetra {
 
     //@}
    
-  private:
+  protected:
 
     RCP<const Epetra_BlockMap> map_;
     //const RCP< const Epetra_BlockMap > map_;
