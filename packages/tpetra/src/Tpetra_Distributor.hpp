@@ -60,6 +60,10 @@ namespace Tpetra {
       DISTRIBUTOR_SEND,  // Use MPI_Send (Teuchos::send)
       DISTRIBUTOR_SSEND  // Use MPI_Ssend (Teuchos::ssend)
     };
+
+    // Convert an EDistributorSendType enum value to a string.
+    std::string 
+    DistributorSendTypeEnumToString (EDistributorSendType sendType);
   } // namespace (anonymous)
 
   //! Valid values for Distributor's "Send type" parameter.
@@ -613,14 +617,35 @@ namespace Tpetra {
 			const ArrayRCP<Packet>& imports) 
   {
     using Teuchos::as;
-    using Teuchos::typeName;
+    using Teuchos::FancyOStream;
+    using Teuchos::includesVerbLevel;
     using Teuchos::ireceive;
     using Teuchos::isend;
+    using Teuchos::OSTab;
     using Teuchos::readySend;
     using Teuchos::send;
     using Teuchos::ssend;
+    using Teuchos::typeName;
+    using std::endl;
     const EDistributorSendType sendType = sendType_;
     const bool doBarrier = barrierBetween_;
+
+#ifdef HAVE_TEUCHOS_DEBUG
+    // Prepare for verbose output, if applicable.
+    Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel ();
+    RCP<FancyOStream> out = this->getOStream ();
+    const bool doPrint = out.get () && 
+      includesVerbLevel (verbLevel, Teuchos::VERB_EXTREME, true);
+    const int myRank = comm_->getRank ();
+
+    if (doPrint && myRank == 0) {
+      // Only need one process to print out parameters.
+      *out << "Distributor::doPosts" << endl;
+      OSTab tab = this->getOSTab(); // Add one tab level
+      *out << "sendType=" << DistributorSendTypeEnumToString (sendType) 
+	   << ", doBarrier=" << doBarrier << endl;
+    }
+#endif // HAVE_TEUCHOS_DEBUG
 
     TEUCHOS_TEST_FOR_EXCEPTION(sendType == DISTRIBUTOR_RSEND && ! doBarrier, 
       std::logic_error, "Ready send implementation requires a barrier between "
