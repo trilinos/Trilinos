@@ -59,34 +59,35 @@ namespace Xpetra {
     //! @name Access functions for striding data
     //@{
     
-      std::vector<size_t> getStridingData() { return stridingInfo_; }
-      
-      void setStridingData(std::vector<size_t> stridingInfo) { stridingInfo_ = stridingInfo; }
-      
-      size_t getFixedBlockSize() const { 
-	// sum up size of all strided blocks (= number of dofs per node)
-	size_t blkSize = 0;
-	std::vector<size_t>::const_iterator it;
-	for(it = stridingInfo_.begin(); it != stridingInfo_.end(); ++it) {
-	  blkSize += *it;
-	}
-	return blkSize;
+    std::vector<size_t> getStridingData() { return stridingInfo_; }
+
+    void setStridingData(std::vector<size_t> stridingInfo) { stridingInfo_ = stridingInfo; }
+
+    size_t getFixedBlockSize() const {
+      // sum up size of all strided blocks (= number of dofs per node)
+      size_t blkSize = 0;
+      std::vector<size_t>::const_iterator it;
+      for(it = stridingInfo_.begin(); it != stridingInfo_.end(); ++it) {
+        blkSize += *it;
       }
-      
-      /// returns strided block id of the dofs stored in this map
-      /// or -1 if full strided map is stored in this map
-      LocalOrdinal getStridedBlockId() { return stridedBlockId_; }
-      
-      /// returns true, if this is a strided map (i.e. more than 1 strided blocks)
-      bool isStrided() { return stridingInfo_.size() > 1 ? true : false; }
-      
-      /// returns true, if this is a blocked map (i.e. more than 1 dof per node)
-      /// either strided or just 1 block per node
-      bool isBlocked() { return getFixedBlockSize() > 1 ? true : false; }
+      return blkSize;
+    }
+
+    /// returns strided block id of the dofs stored in this map
+    /// or -1 if full strided map is stored in this map
+    LocalOrdinal getStridedBlockId() { return stridedBlockId_; }
+
+    /// returns true, if this is a strided map (i.e. more than 1 strided blocks)
+    bool isStrided() { return stridingInfo_.size() > 1 ? true : false; }
+
+    /// returns true, if this is a blocked map (i.e. more than 1 dof per node)
+    /// either strided or just 1 block per node
+    bool isBlocked() { return getFixedBlockSize() > 1 ? true : false; }
     //@}
 
+  private:
+    virtual bool CheckConsistency() = 0;
 
-    
   protected:
     std::vector<size_t> stridingInfo_;   // vector with size of strided blocks (dofs)
     LocalOrdinal stridedBlockId_;        // member variable denoting which dofs are stored in map

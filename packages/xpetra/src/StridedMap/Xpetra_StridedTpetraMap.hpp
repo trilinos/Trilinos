@@ -7,7 +7,7 @@
 
 #include "Xpetra_StridedMap.hpp"
 #include "Xpetra_TpetraMap.hpp"
-#include "Xpetra_Utils.hpp"
+//#include "Xpetra_Utils.hpp"
 
 
 namespace Xpetra {
@@ -292,46 +292,47 @@ namespace Xpetra {
     const RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > & getTpetra_Map() const { return map_; }*/
 
     //@}
-   
+
+  private:
     bool CheckConsistency() {
       typedef Xpetra::StridedMap<LocalOrdinal,GlobalOrdinal,Node> StridedMapClass;
       
       if(StridedMapClass::getStridedBlockId() == -1) {
-	//if(isContiguous() == false) return false;
-	if(getNodeNumElements() % StridedMapClass::getFixedBlockSize() != 0) return false;
-	if(getGlobalNumElements() % StridedMapClass::getFixedBlockSize() != 0) return false;
-      }
-      else {
-	Teuchos::ArrayView< const GlobalOrdinal > dofGids = getNodeElementList();
-	//std::sort(dofGids.begin(),dofGids.end());
-	
-	// determine nStridedOffset
-	size_t nStridedOffset = 0;
-	for(int j=0; j<StridedMapClass::stridedBlockId_; j++) {
-	  nStridedOffset += StridedMapClass::stridingInfo_[j];
-	}
-	//size_t nDofsPerNode = stridingInfo_[stridedBlockId_];
-	
-	const GlobalOrdinal goStridedOffset = Teuchos::as<GlobalOrdinal>(nStridedOffset);
-	const GlobalOrdinal goZeroOffset = (dofGids[0] - nStridedOffset) / Teuchos::as<GlobalOrdinal>(StridedMapClass::getFixedBlockSize());
-	
-	GlobalOrdinal cnt = 0;
-	for(size_t i = 0; i<Teuchos::as<size_t>(dofGids.size())/StridedMapClass::stridingInfo_[StridedMapClass::stridedBlockId_]; i+=StridedMapClass::stridingInfo_[StridedMapClass::stridedBlockId_]) {
-	  
-	  for(size_t j=0; j<StridedMapClass::stridingInfo_[StridedMapClass::stridedBlockId_]; j++) {
-	    const GlobalOrdinal gid = dofGids[i+j];
-	    if((gid - Teuchos::as<GlobalOrdinal>(j) - goStridedOffset) / Teuchos::as<GlobalOrdinal>(StridedMapClass::getFixedBlockSize()) - goZeroOffset - cnt != 0) {
-	      //std::cout << "gid: " << gid << " GID: " <<  (gid - Teuchos::as<GlobalOrdinal>(j) - goStridedOffset) / Teuchos::as<GlobalOrdinal>(getFixedBlockSize()) - goZeroOffset - cnt << std::endl;
-	      return false;
-	    }
-	  }
-	  cnt++;
-	}
+
+        if(getNodeNumElements() % StridedMapClass::getFixedBlockSize() != 0) return false;
+        if(getGlobalNumElements() % StridedMapClass::getFixedBlockSize() != 0) return false;
+            }
+            else {
+        Teuchos::ArrayView< const GlobalOrdinal > dofGids = getNodeElementList();
+        //std::sort(dofGids.begin(),dofGids.end());
+
+        // determine nStridedOffset
+        size_t nStridedOffset = 0;
+        for(int j=0; j<StridedMapClass::stridedBlockId_; j++) {
+          nStridedOffset += StridedMapClass::stridingInfo_[j];
+        }
+        //size_t nDofsPerNode = stridingInfo_[stridedBlockId_];
+
+        const GlobalOrdinal goStridedOffset = Teuchos::as<GlobalOrdinal>(nStridedOffset);
+        const GlobalOrdinal goZeroOffset = (dofGids[0] - nStridedOffset) / Teuchos::as<GlobalOrdinal>(StridedMapClass::getFixedBlockSize());
+
+        GlobalOrdinal cnt = 0;
+        for(size_t i = 0; i<Teuchos::as<size_t>(dofGids.size())/StridedMapClass::stridingInfo_[StridedMapClass::stridedBlockId_]; i+=StridedMapClass::stridingInfo_[StridedMapClass::stridedBlockId_]) {
+
+          for(size_t j=0; j<StridedMapClass::stridingInfo_[StridedMapClass::stridedBlockId_]; j++) {
+            const GlobalOrdinal gid = dofGids[i+j];
+            if((gid - Teuchos::as<GlobalOrdinal>(j) - goStridedOffset) / Teuchos::as<GlobalOrdinal>(StridedMapClass::getFixedBlockSize()) - goZeroOffset - cnt != 0) {
+              //std::cout << "gid: " << gid << " GID: " <<  (gid - Teuchos::as<GlobalOrdinal>(j) - goStridedOffset) / Teuchos::as<GlobalOrdinal>(getFixedBlockSize()) - goZeroOffset - cnt << std::endl;
+              return false;
+            }
+          }
+          cnt++;
+        }
       }
       
       return true;
     }
-   
+
   }; // StridedTpetraMap class
 
  
