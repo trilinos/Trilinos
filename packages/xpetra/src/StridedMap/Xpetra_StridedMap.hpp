@@ -12,7 +12,34 @@
 
 namespace Xpetra {
 
+  /*!
+    @class StridedMap
+    @brief Class that stores a strided map
 
+    StridedMap extends the functionality of Xpetra::Map
+
+    It derives from Xpetra::Map and adds a std::vector, which contains the striding information.
+    E.g. for a strided map with 3dofs per node (2 velocity dofs, 1 pressure dof) the striding
+    information looks like:
+    std::vector<size_t> stridingInformation;
+    stridingInformation.push_back(2); // 2 velocity dofs
+    stridingInformation.push_back(1); // 1 pressure dof
+
+    For this example the getFixedBlockSize() returns 3 (3 dofs per node).
+    Providing a stridedBlockId parameter in the constructor the strided map only contains dofs of
+    one strided block, e.g. with above stridingInformation the call
+
+    StridingMap M(33,0,stridiningInformation,comm,0); // striding block 0 (velocity dofs)
+    returns a map with the gids
+    0, 1, 3, 4, 6, 7, ... (which contains only the velocity dofs)
+
+    and
+    StridingMap M(33,0,stridiningInformation,comm,1); // striding block 1 (pressure dofs)
+    creates a map with only the pressure dofs
+    2, 5, 8, ...
+
+    @note: there's no support for global offset, yet.
+  */
   template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class StridedMap
     : public virtual Map<LocalOrdinal, GlobalOrdinal, Node>
