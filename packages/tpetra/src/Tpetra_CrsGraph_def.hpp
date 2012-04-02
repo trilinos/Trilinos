@@ -200,12 +200,27 @@ namespace Tpetra {
 
     RCP<ParameterList> plist = parameterList ("Tpetra::CrsGraph");
 
-    RCP<ParameterList> distributorSublist = 
-      sublist (plist, "Tpetra::Distributor", false, "Options for how "
-	       "Distributor performs communication.");
+    // Make a sublist for the Import.
+    RCP<ParameterList> importSublist = parameterList ("Import");
+
+    // FIXME (mfh 02 Apr 2012) We should really have the Import and
+    // Export objects fill in these lists.  However, we don't want to
+    // create an Import or Export unless we need them.  For now, we
+    // know that the Import and Export just pass the list directly to
+    // their Distributor, so we can create a Distributor here
+    // (Distributor's constructor is a lightweight operation) and have
+    // it fill in the list.
+
     // Fill in Distributor default parameters by creating a
     // Distributor and asking it to do the work.
-    Distributor distributor (rowMap_->getComm(), distributorSublist);
+    Distributor distributor (rowMap_->getComm(), importSublist);
+    plist->set ("Import", *importSublist, "How the Import performs communication.");
+
+    // Make a sublist for the Export.  For now, it's a clone of the
+    // Import sublist.  It's not a shallow copy, though, since we
+    // might like the Import to do communication differently than the
+    // Export.
+    plist->set ("Export", *importSublist, "How the Export performs communication.");
 
     return rcp_const_cast<const ParameterList> (plist);
   }
@@ -2435,18 +2450,41 @@ namespace Tpetra {
   void 
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::makeImportExport()
   {
-    TEUCHOS_TEST_FOR_EXCEPT(! hasColMap ()); // must have column map
-    // create import, export
+    using Teuchos::ParameterList;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::sublist;
+    typedef Import<LocalOrdinal,GlobalOrdinal,Node> import_type;
+    typedef Export<LocalOrdinal,GlobalOrdinal,Node> export_type;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(! hasColMap (), std::logic_error, "Tpetra::"
+      "CrsGraph: It's not allowed to call makeImportExport() unless the graph "
+      "has a column Map.");
+    RCP<ParameterList> plist = this->getNonconstParameterList (); // could be null
+
+    // Create the Import instance if necessary.
     if (domainMap_ != colMap_ && (! domainMap_->isSameAs (*colMap_))) {
-      typedef Import<LocalOrdinal,GlobalOrdinal,Node> import_type;
-      importer_ = rcp (new import_type (domainMap_, colMap_));
+      if (plist.is_null () || ! plist->isSublist ("Import")) {
+	importer_ = rcp (new import_type (domainMap_, colMap_));
+      }
+      else {
+	RCP<ParameterList> importSublist = sublist (plist, "Import", true);
+	importer_ = rcp (new import_type (domainMap_, colMap_, importSublist));
+      }
     }
     else {
       importer_ = null;
     }
+
+    // Create the Export instance if necessary.
     if (rangeMap_ != rowMap_ && (!rangeMap_->isSameAs(*rowMap_))) {
-      typedef Export<LocalOrdinal,GlobalOrdinal,Node> export_type;
-      exporter_ = rcp (new export_type (rowMap_, rangeMap_));
+      if (plist.is_null () || ! plist->isSublist ("Export")) {
+	exporter_ = rcp (new export_type (rowMap_, rangeMap_));
+      }
+      else {
+	RCP<ParameterList> exportSublist = sublist (plist, "Export", true);
+	exporter_ = rcp (new export_type (rowMap_, rangeMap_, exportSublist));
+      }
     }
     else {
       exporter_ = null;
