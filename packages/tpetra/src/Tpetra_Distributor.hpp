@@ -46,7 +46,7 @@
 #include <Teuchos_as.hpp>
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
-
+#include <Teuchos_VerboseObject.hpp>
 
 namespace Tpetra {
 
@@ -73,7 +73,9 @@ namespace Tpetra {
   /// MultiVector) to do data redistribution (Import and Export)
   /// operations.
   class Distributor : 
-    public Teuchos::Describable, Teuchos::ParameterListAcceptorDefaultBase {
+    public Teuchos::Describable, 
+    public Teuchos::ParameterListAcceptorDefaultBase,
+    public Teuchos::VerboseObject<Distributor> {
   public:
 
     //! @name Constructor/Destructor

@@ -41,6 +41,7 @@
 
 #include "Tpetra_Distributor.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 namespace Tpetra {
 
@@ -152,6 +153,9 @@ namespace Tpetra {
       "corresponding receives have already been posted, and the only way to "
       "guarantee that in general is with a barrier.");
 
+    // Read the sublist for verbosity settings.
+    Teuchos::readVerboseObjectSublist (&*plist, this);
+
     // Now that we've validated the input list completely, save the results.
     sendType_ = sendType;
     barrierBetween_ = barrierBetween;
@@ -186,6 +190,7 @@ namespace Tpetra {
       defaultSendType, "When using MPI, the variant of MPI_Send to use in "
       "do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
 
+    Teuchos::setupVerboseObjectSublist (&*plist);
     return Teuchos::rcp_const_cast<const ParameterList> (plist);
   }
 

@@ -85,6 +85,7 @@ namespace {
   using Tpetra::REPLACE;
   using Tpetra::StaticProfile;
 
+  using std::cout;
   using std::ostream_iterator;
   using std::endl;
 
@@ -95,6 +96,7 @@ namespace {
   double errorTolSlack = 1e+1;
   std::string distributorSendType ("Send");
   bool barrierBetween = true;
+  bool verbose = false;
 
   TEUCHOS_STATIC_SETUP()
   {
@@ -117,26 +119,8 @@ namespace {
     clp.setOption ("barrier-between", "no-barrier-between", &barrierBetween,
 		   "In MPI tests, whether Tpetra::Distributor will execute a "
 		   "barrier between posting receives and posting sends.");
-  }
-
-  RCP<ParameterList> 
-  getDistributorParameterList ()
-  {
-    static RCP<ParameterList> plist; // NOT THREAD SAFE, but that's OK here.
-    if (plist.is_null ()) {
-      plist = parameterList ("Tpetra::Distributor");
-      plist->set ("Send type", distributorSendType);
-      plist->set ("Barrier between receives and sends", barrierBetween);
-    }
-    return plist;
-  }
-
-  RCP<ParameterList> getImportParameterList () {
-    return getDistributorParameterList (); // For now.
-  }
-
-  RCP<ParameterList> getExportParameterList () {
-    return getDistributorParameterList (); // For now.
+    clp.setOption ("verbose", "quiet", &verbose, "Whether to print verbose "
+		   "output.");
   }
 
   RCP<const Comm<int> > 
@@ -148,6 +132,30 @@ namespace {
     else {
       return rcp (new Teuchos::SerialComm<int> ());
     }
+  }
+
+  RCP<ParameterList> 
+  getDistributorParameterList ()
+  {
+    static RCP<ParameterList> plist; // NOT THREAD SAFE, but that's OK here.
+    if (plist.is_null ()) {
+      plist = parameterList ("Tpetra::Distributor");
+      plist->set ("Send type", distributorSendType);
+      plist->set ("Barrier between receives and sends", barrierBetween);
+
+      if (verbose && getDefaultComm()->getRank() == 0) {
+	cout << "ParameterList for Distributor: " << *plist << endl;
+      }
+    }
+    return plist;
+  }
+
+  RCP<ParameterList> getImportParameterList () {
+    return getDistributorParameterList (); // For now.
+  }
+
+  RCP<ParameterList> getExportParameterList () {
+    return getDistributorParameterList (); // For now.
   }
 
   //
