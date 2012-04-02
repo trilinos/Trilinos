@@ -827,14 +827,14 @@ namespace stk {
             fixture.generate_mesh();
 
             eMesh.printInfo("local tri mesh", printInfoLevel);
-            save_or_diff(eMesh, output_files_loc+"local_tri_0.e");
+            //save_or_diff(eMesh, output_files_loc+"local_tri_0.e");
 
             TestLocalRefinerTri breaker(eMesh, break_tri_to_tri_2, proc_rank_field);
             breaker.setRemoveOldElements(false);
             breaker.doBreak();
 
             eMesh.printInfo("local tri mesh refined", printInfoLevel);
-            save_or_diff(eMesh, output_files_loc+"local_tri_1.e");
+            //save_or_diff(eMesh, output_files_loc+"local_tri_1.e");
 
             // end_demo
           }

@@ -22,6 +22,8 @@
 #include <stk_percept/RunEnvironment.hpp>
 
 #include <stk_io/IossBridge.hpp>
+#include <stk_io/MeshReadWriteUtils.hpp>
+
 #include <Intrepid_HGRAD_HEX_C1_FEM.hpp>
 #include <Intrepid_CellTools.hpp>
 
@@ -33,9 +35,6 @@
 
 namespace stk {
   namespace percept {
-
-    using namespace io_util;
-
 
     //std::string PerceptMesh::s_omit_part = "_urp_original";
     //std::string PerceptMesh::s_omit_part = "_urporig";
@@ -890,7 +889,6 @@ namespace stk {
         }
 
       m_fixture       = 0;
-      //m_iossRegion    = 0;
       m_isCommitted   = false;
       m_isAdopted     = false;
       m_isOpen        = false;
@@ -1363,6 +1361,42 @@ namespace stk {
       //checkOmit(in_region.    get_commsets(), omit_part ) ; /*const CommSetContainer&  */
     }
 
+    // ========================================================================
+    static void setup_spatialDim_metaData(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta, int& spatial_dim)
+    {
+      size_t spatial_dimension = region.get_property("spatial_dimension").get_int();
+      spatial_dim = spatial_dimension; 
+
+      if (!meta.is_FEM_initialized())
+        {
+          std::vector<std::string> entity_rank_names = stk::mesh::fem::entity_rank_names(spatial_dim);
+#if PERCEPT_USE_FAMILY_TREE
+          entity_rank_names.push_back("FAMILY_TREE");
+#endif
+#if PERCEPT_USE_PSEUDO_ELEMENTS
+          entity_rank_names.push_back("PSEUDO_ELEMENT");
+#endif
+          meta.FEM_initialize(spatial_dim, entity_rank_names);
+        }
+
+      //s_spatial_dim = spatial_dim;
+      std::cout << "PerceptMesh::setup_spatialDim_metaData: spatial_dim= " << spatial_dim << std::endl;
+
+#if 0
+      stk::mesh::Field<double,stk::mesh::Cartesian> & coord_field =
+        meta.declare_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
+
+      stk::mesh::put_field( coord_field, stk::mesh::fem::FEMMetaData::NODE_RANK, meta.universal_part(),
+                            spatial_dim);
+
+      /** \todo IMPLEMENT truly handle fields... For this case we are
+       * just defining a field for each transient field that is present
+       * in the mesh...
+       */
+      stk::io::define_io_fields(nb, Ioss::Field::TRANSIENT, meta.universal_part(),stk::mesh::fem::FEMMetaData::NODE_RANK);
+#endif
+    }
+
     void PerceptMesh::read_metaDataNoCommit( const std::string& in_filename)
     {
       EXCEPTWATCH;
@@ -1379,8 +1413,7 @@ namespace stk {
       const stk::ParallelMachine& comm = m_comm;
 
       std::string dbtype("exodusII");
-      Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(dbtype, in_filename, Ioss::READ_MODEL,
-                                                      comm);
+      Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(dbtype, in_filename, Ioss::READ_MODEL, comm);
       if (dbi == NULL || !dbi->ok()) {
         std::cerr  << "ERROR: Could not open database '" << in_filename
                    << "' of type '" << dbtype << "'\n";
@@ -1388,47 +1421,11 @@ namespace stk {
       }
 
       // NOTE: 'in_region' owns 'dbi' pointer at this time...
-      m_iossRegion = Teuchos::rcp( new Ioss::Region(dbi, "input_model") );
+      //m_iossRegion = Teuchos::rcp( new Ioss::Region(dbi, "input_model") );
+      m_iossRegion = new Ioss::Region(dbi, "input_model");
       Ioss::Region& in_region = *m_iossRegion;
 
-      // SUBSETTING PARSING/PREPROCESSING...
-      // Just an example of how application could control whether an
-      // entity is subsetted or not...
-
       checkForPartsToAvoidReading(in_region, s_omit_part);
-
-      // Example command line in current code corresponding to behavior below:
-#if 0
-      std::cout << "\nWhen processing file multi-block.g for use case 2, the blocks below will be omitted:\n";
-      std::cout << "\tOMIT BLOCK Cblock Eblock I1 I2\n\n";
-
-      Ioss::ElementBlock *eb = in_region.get_element_block("cblock");
-      if (eb != NULL)
-        eb->property_add(Ioss::Property(std::string("omitted"), 1));
-
-      eb = in_region.get_element_block("eblock");
-      if (eb != NULL)
-        eb->property_add(Ioss::Property(std::string("omitted"), 1));
-
-      eb = in_region.get_element_block("i1");
-      if (eb != NULL)
-        eb->property_add(Ioss::Property(std::string("omitted"), 1));
-
-      eb = in_region.get_element_block("i2");
-      if (eb != NULL)
-        eb->property_add(Ioss::Property(std::string("omitted"), 1));
-#endif
-
-#if 0
-      // Example for subsetting -- omit "odd" blocks
-      if (entity->type() == Ioss::ELEMENTBLOCK) {
-        int id = entity->get_property("id").get_int();
-        if (id % 2) {
-          entity->property_add(Ioss::Property(std::string("omitted"), 1));
-          std::cout << "Skipping " << entity->type_string() << ": "  << entity->name() << "\n";
-        }
-      }
-#endif
 
       //----------------------------------
       // Process Entity Types. Subsetting is possible.
@@ -1439,13 +1436,8 @@ namespace stk {
       stk::mesh::fem::FEMMetaData& meta_data = *m_metaData;
       //      std::cout << "tmp1 m_metaData->is_commit() = " << m_metaData->is_commit() << std::endl;
 
-#if 0
-       process_read_elementblocks_meta(in_region, meta_data);
-       process_read_nodeblocks_meta(in_region,    meta_data, m_spatialDim);
-#else
       bool meta_is_init = meta_data.is_FEM_initialized();
-      process_read_nodeblocks_meta(in_region,    meta_data, m_spatialDim);
-      process_read_elementblocks_meta(in_region, meta_data);
+      setup_spatialDim_metaData(in_region,    meta_data, m_spatialDim);
       if (!meta_is_init)
         {
           m_bulkData   = new stk::mesh::BulkData( stk::mesh::fem::FEMMetaData::get_meta_data(*m_metaData) , m_comm );
@@ -1456,9 +1448,17 @@ namespace stk {
           const size_t ntype1 = stk::mesh::fem::FEMMetaData::get(*m_bulkData).entity_rank_count();
           std::cout << "tmp SRK m_spatialDim= " << m_spatialDim << " ntype= " << ntype << " ntype1= " << ntype1 << std::endl;
         }
-#endif
-      process_read_sidesets_meta(in_region,      meta_data);
-      process_read_nodesets_meta(in_region,      meta_data);
+
+      // Open, read, filter meta data from the input mesh file:
+      // The coordinates field will be set to the correct dimension.
+
+      m_iossMeshData = Teuchos::rcp( new stk::io::MeshData() );
+      stk::io::MeshData& mesh_data = *m_iossMeshData;
+      mesh_data.m_input_region = &(*m_iossRegion);
+      stk::io::create_input_mesh(dbtype, in_filename, comm, meta_data, mesh_data);
+
+      stk::io::define_input_fields(mesh_data, meta_data);
+
 
     }
 
@@ -1499,22 +1499,21 @@ namespace stk {
       // Process Bulkdata for all Entity Types. Subsetting is possible.
       //stk::mesh::BulkData bulk_data(meta_data, comm);
       stk::mesh::BulkData& bulk_data = *m_bulkData;
-      bulk_data.modification_begin();
-      process_read_elementblocks_bulk(in_region, bulk_data);
-      process_read_nodeblocks_bulk(in_region,    bulk_data);
-      process_read_sidesets_bulk(in_region,      bulk_data);
-      process_read_nodesets_bulk(in_region,      bulk_data);
-      bulk_data.modification_end();
+
+      // Read the model (topology, coordinates, attributes, etc)
+      // from the mesh-file into the mesh bulk data.
+      stk::io::MeshData& mesh_data = *m_iossMeshData;
+      stk::io::populate_bulk_data(bulk_data, mesh_data);
 
       int timestep_count = in_region.get_property("state_count").get_int();
       //std::cout << "tmp timestep_count= " << timestep_count << std::endl;
       //Util::pause(true, "tmp timestep_count");
 
+      // FIXME
       if (timestep_count == 0)
-        process_read_input_request(in_region, bulk_data, 0);
+        stk::io::process_input_request(mesh_data, bulk_data, 0);
       else
-        process_read_input_request(in_region, bulk_data, 1);
-
+        stk::io::process_input_request(mesh_data, bulk_data, 1);
 
     }
 
@@ -1743,98 +1742,15 @@ namespace stk {
       std::string dbtype("exodusII");
 
       const stk::ParallelMachine& comm = m_bulkData->parallel();
-      Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(dbtype, out_filename,
-                                                      Ioss::WRITE_RESULTS,
-                                                      comm);
-      if (dbo == NULL || !dbo->ok()) {
-        std::cerr << "ERROR: Could not open results database '" << out_filename
-                  << "' of type '" << dbtype << "'\n";
-        std::exit(EXIT_FAILURE);
-      }
-
-      // NOTE: 'out_region' owns 'dbo' pointer at this time...
-      Ioss::Region out_region(dbo, "results_output");
-
-      stk::io::define_output_db(out_region, bulk_data);
+      stk::io::MeshData mesh_data;
+      stk::io::create_output_mesh(out_filename, comm, bulk_data, mesh_data);
+      stk::io::define_output_fields(mesh_data, meta_data, false);
 
       //deprecated omitted_output_db_processing(out_region);
 
-      stk::io::write_output_db(out_region,  bulk_data);
-
-      // ------------------------------------------------------------------------
-      /** \todo REFACTOR A real app would register a subset of the
-       * fields on the mesh database as fields that the app would want
-       * read at one or all or specified steps.  In this example, all
-       * fields existing on the input mesh database are defined on the
-       * parts in the stk::mesh.
-       *
-       * The real app would also only register a subset of the stk::mesh
-       * fields as output fields and would probably have a mapping from
-       * the internally used name to some name picked by the user. In
-       * this example, all Ioss::Field::TRANSIENT fields defined on the stk::mesh are
-       * output to the results database and the internal stk::mesh field
-       * name is used as the name on the database....
-       */
-
-      out_region.begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
-
-      // Special processing for nodeblock (all nodes in model)...
-      stk::io::ioss_add_fields(meta_data.universal_part(), stk::mesh::fem::FEMMetaData::NODE_RANK,
-                               out_region.get_node_blocks()[0],
-                               Ioss::Field::TRANSIENT);
-
-      const stk::mesh::PartVector & all_parts = meta_data.get_parts();
-      for ( stk::mesh::PartVector::const_iterator
-              ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
-
-        stk::mesh::Part * const part = *ip;
-
-        // Check whether this part should be output to results database.
-        if (stk::io::is_part_io_part(*part)) {
-          // Get Ioss::GroupingEntity corresponding to this part...
-          Ioss::GroupingEntity *entity = out_region.get_entity(part->name());
-          if (entity != NULL) {
-            if (entity->type() == Ioss::SIDESET) {
-	      Ioss::SideSet *sset = dynamic_cast<Ioss::SideSet*>(entity);
-              int block_count = sset->block_count();
-              for (int i=0; i < block_count; i++) {
-                Ioss::SideBlock *fb = sset->get_block(i);
-                stk::io::ioss_add_fields(*part,
-                                         stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),
-                                         fb, Ioss::Field::TRANSIENT);
-              }
-            } else {
-              stk::io::ioss_add_fields(*part,
-                                       stk::percept::PerceptMesh::fem_entity_rank( part->primary_entity_rank() ),
-                                       entity, Ioss::Field::TRANSIENT);
-            }
-          } else {
-            /// \todo IMPLEMENT handle error... Possibly an assert since
-            /// I think the corresponding entity should always exist...
-          }
-        }
-      }
-      out_region.end_mode(Ioss::STATE_DEFINE_TRANSIENT);
-      // ------------------------------------------------------------------------
-
       // Read and Write transient fields...
-      out_region.begin_mode(Ioss::STATE_TRANSIENT);
-      //int timestep_count = in_region.get_property("state_count").get_int();
-      //for (int step = 1; step <= timestep_count; step++) {
-      {
-        //double time = in_region.get_state_time(step);
-
-        // Read data from the io input mesh database into stk::mesh fields...
-        //process_read_input_request(in_region, bulk_data, step);
-
-        // execute()
-
-        // Write data from the stk::mesh fields out to the output database.a
-        double time = 0.0;
-        int out_step = out_region.add_state(time);
-        process_output_request(out_region, bulk_data, out_step);
-      }
-      out_region.end_mode(Ioss::STATE_TRANSIENT);
+      double time = 0.0;
+      stk::io::process_output_request(mesh_data, bulk_data, time);
 
       if (p_rank == 0) std::cout << "PerceptMesh:: saving "<< out_filename << " ... done" << std::endl;
     }

@@ -37,7 +37,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "PerceptMeshReadWrite.hpp"
+//#include "PerceptMeshReadWrite.hpp"
 #include <stk_percept/function/ElementOp.hpp>
 #include <stk_percept/function/BucketOp.hpp>
 
@@ -907,7 +907,9 @@ namespace stk {
       stk::mesh::fem::FEMMetaData *                 m_metaData;
       stk::mesh::BulkData *                 m_bulkData;
       stk::io::util::Gmesh_STKmesh_Fixture* m_fixture;
-      Teuchos::RCP<Ioss::Region>            m_iossRegion;
+      //Teuchos::RCP<Ioss::Region>            m_iossRegion;
+      Ioss::Region*                         m_iossRegion;
+      Teuchos::RCP<stk::io::MeshData>       m_iossMeshData;
       VectorFieldType*                      m_coordinatesField;
       int                                   m_spatialDim;
       bool                                  m_ownData;
