@@ -130,6 +130,7 @@ namespace Tpetra {
   void
   Distributor::setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
   {
+    using Teuchos::getIntegralValue;
     using Teuchos::ParameterList;
     using Teuchos::parameterList;
     using Teuchos::RCP;
@@ -140,7 +141,7 @@ namespace Tpetra {
     const bool barrierBetween = 
       plist->get<bool> ("Barrier between receives and sends");
     const EDistributorSendType sendType = 
-      plist->get<EDistributorSendType> ("Send type");
+      getIntegralValue<EDistributorSendType> (*plist, "Send type");
     // We check this property explicitly, since we haven't yet learned
     // how to make a validator that can cross-check properties.
     // Later, turn this into a validator so that it can be embedded in
