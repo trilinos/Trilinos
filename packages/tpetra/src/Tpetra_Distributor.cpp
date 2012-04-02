@@ -279,12 +279,37 @@ namespace Tpetra {
 
 
   void Distributor::doWaits() {
+    using Teuchos::FancyOStream;
+    using Teuchos::includesVerbLevel;
     using Teuchos::is_null;
+    using Teuchos::OSTab;
+    using Teuchos::RCP;
     using Teuchos::waitAll;
+    using std::endl;
+
+#ifdef HAVE_TEUCHOS_DEBUG
+    // Prepare for verbose output, if applicable.
+    Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel ();
+    RCP<FancyOStream> out = this->getOStream ();
+    const bool doPrint = out.get () && 
+      includesVerbLevel (verbLevel, Teuchos::VERB_EXTREME, true);
+    const int myRank = comm_->getRank ();
+
+    if (doPrint) {
+      *out << "Distributor::doWaits (Proc " << myRank << "):" << endl;
+    }
+    OSTab tab = this->getOSTab(); // Add one tab level
+#endif // HAVE_TEUCHOS_DEBUG
 
     if (requests_.size() > 0) {
       waitAll (*comm_, requests_());
+
 #ifdef HAVE_TEUCHOS_DEBUG
+      if (doPrint) {
+	*out << "Proc " << myRank << ": waitAll completed " << requests_.size() 
+	     << " requests" << endl;
+      }
+
       // Make sure that waitAll() nulled out all the requests.
       using Teuchos::Array;
       using Teuchos::CommRequest;

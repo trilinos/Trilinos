@@ -146,6 +146,11 @@ namespace {
       if (verbose && getDefaultComm()->getRank() == 0) {
 	cout << "ParameterList for Distributor: " << *plist << endl;
       }
+
+      if (verbose) {
+	// Tell Distributor to print verbose output.
+	Teuchos::VerboseObject<Tpetra::Distributor>::setDefaultVerbLevel (Teuchos::VERB_EXTREME);
+      }
     }
     return plist;
   }
