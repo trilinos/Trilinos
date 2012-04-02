@@ -57,38 +57,44 @@
 #include "Tpetra_CrsMatrix.hpp"
 
 namespace {
-
   using Teuchos::as;
-  using Teuchos::RCP;
+  using Teuchos::Array;
   using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
-  using Teuchos::rcp;
-  using Tpetra::DefaultPlatform;
-  using Tpetra::global_size_t;
   using Teuchos::arrayViewFromVector;
+  using Teuchos::Comm;
   using Teuchos::OrdinalTraits;
+  using Teuchos::ParameterList;
+  using Teuchos::parameterList;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::ScalarTraits;
   using Teuchos::tuple;
-  using Tpetra::DoOptimizeStorage;
-  using Tpetra::StaticProfile;
-  using Tpetra::DynamicProfile;
-  using Tpetra::Map;
-  using Tpetra::Import;
-  using Tpetra::Export;
+
+  using Tpetra::ADD;
+  using Tpetra::createContigMap;
   using Tpetra::CrsGraph;
   using Tpetra::CrsMatrix;
-  using Teuchos::ScalarTraits;
-  using Teuchos::Comm;
-  using Teuchos::Array;
+  using Tpetra::DefaultPlatform;
+  using Tpetra::DoOptimizeStorage;
+  using Tpetra::DynamicProfile;
+  using Tpetra::Export;
+  using Tpetra::global_size_t;
+  using Tpetra::Import;
+  using Tpetra::Map;
   using Tpetra::REPLACE;
-  using Tpetra::ADD;
+  using Tpetra::StaticProfile;
+
   using std::ostream_iterator;
   using std::endl;
-  using Tpetra::createContigMap;
 
   typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
 
+  // Command-line argument values (initially set to defaults).
   bool testMpi = true;
   double errorTolSlack = 1e+1;
+  std::string distributorSendType ("Send");
+  bool barrierBetween = true;
 
   TEUCHOS_STATIC_SETUP()
   {
@@ -101,14 +107,47 @@ namespace {
     clp.setOption(
         "error-tol-slack", &errorTolSlack,
         "Slack off of machine epsilon used to check test results" );
+    // FIXME (mfh 02 Apr 2012) It would be better to ask Distributor
+    // for the list of valid send types, but setOption() needs a const
+    // char[], not an std::string.
+    clp.setOption ("distributor-send-type", &distributorSendType,
+		   "In MPI tests, the type of send operation that the Tpetra::"
+		   "Distributor will use.  Valid values include \"Isend\", "
+		   "\"Rsend\", \"Send\", and \"Ssend\".");
+    clp.setOption ("barrier-between", "no-barrier-between", &barrierBetween,
+		   "In MPI tests, whether Tpetra::Distributor will execute a "
+		   "barrier between posting receives and posting sends.");
   }
 
-  RCP<const Comm<int> > getDefaultComm()
+  RCP<ParameterList> 
+  getDistributorParameterList ()
+  {
+    static RCP<ParameterList> plist; // NOT THREAD SAFE, but that's OK here.
+    if (plist.is_null ()) {
+      plist = parameterList ("Tpetra::Distributor");
+      plist->set ("Send type", distributorSendType);
+      plist->set ("Barrier between receives and sends", barrierBetween);
+    }
+    return plist;
+  }
+
+  RCP<ParameterList> getImportParameterList () {
+    return getDistributorParameterList (); // For now.
+  }
+
+  RCP<ParameterList> getExportParameterList () {
+    return getDistributorParameterList (); // For now.
+  }
+
+  RCP<const Comm<int> > 
+  getDefaultComm()
   {
     if (testMpi) {
-      return DefaultPlatform::getDefaultPlatform().getComm();
+      return DefaultPlatform::getDefaultPlatform ().getComm ();
     }
-    return rcp(new Teuchos::SerialComm<int>());
+    else {
+      return rcp (new Teuchos::SerialComm<int> ());
+    }
   }
 
   //
@@ -147,10 +186,9 @@ namespace {
         src_graph->insertGlobalIndices( globalrow, diag() );
       }
 
-      Import<Ordinal> importer(src_map, tgt_map);
-      tgt_graph->doImport(*src_graph, importer, Tpetra::INSERT);
-
-      tgt_graph->fillComplete();
+      Import<Ordinal> importer (src_map, tgt_map, getImportParameterList ());
+      tgt_graph->doImport (*src_graph, importer, Tpetra::INSERT);
+      tgt_graph->fillComplete ();
 
       //Now loop through tgt_graph and make sure it is diagonal:
       row = 0;
@@ -194,7 +232,7 @@ namespace {
         src_graph->insertGlobalIndices( globalrow, cols() );
       }
 
-      Import<Ordinal> importer(src_map, tgt_map);
+      Import<Ordinal> importer (src_map, tgt_map, getImportParameterList ());
       tgt_graph->doImport(*src_graph, importer, Tpetra::INSERT);
 
       src_graph->fillComplete();
@@ -250,7 +288,7 @@ namespace {
       src_mat->fillComplete(DoOptimizeStorage);
 
       // Create the importer
-      Import<Ordinal> importer(src_map, tgt_map);
+      Import<Ordinal> importer(src_map, tgt_map, getImportParameterList ());
       // Do the import and complete fill on tgt_map
       tgt_mat->doImport(*src_mat, importer, Tpetra::INSERT);
       tgt_mat->fillComplete();
@@ -302,7 +340,7 @@ namespace {
         }
       }
 
-      Import<Ordinal> importer(src_map, tgt_map);
+      Import<Ordinal> importer (src_map, tgt_map, getImportParameterList ());
       tgt_mat->doImport(*src_mat, importer, Tpetra::INSERT);
       tgt_mat->fillComplete();
 
