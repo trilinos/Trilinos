@@ -58,7 +58,27 @@ namespace Tpetra {
     friend class Import<LocalOrdinal,GlobalOrdinal,Node>;
     friend class Export<LocalOrdinal,GlobalOrdinal,Node>;
   public:
-    ImportExportData(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & source, const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & target);
+    typedef LocalOrdinal local_ordinal_type;
+    typedef GlobalOrdinal global_ordinal_type;
+    typedef Node node_type;
+    typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
+
+    /// \brief Constructor 
+    ///
+    /// \param source [in] Source Map of the Import or Export
+    /// \param target [in] Target Map of the Import or Export
+    ImportExportData (const Teuchos::RCP<const map_type>& source, 
+		      const Teuchos::RCP<const map_type>& target);
+
+    /// \brief Constructor with ParameterList for Distributor
+    ///
+    /// \param source [in] Source Map of the Import or Export
+    /// \param target [in] Target Map of the Import or Export
+    /// \param plist [in/out] List of parameters for the Distributor
+    ImportExportData (const Teuchos::RCP<const map_type>& source, 
+		      const Teuchos::RCP<const map_type>& target,
+		      const Teuchos::RCP<Teuchos::ParameterList>& plist);
+
     ~ImportExportData();
 
   protected:
@@ -73,30 +93,47 @@ namespace Tpetra {
 
     size_t numSameIDs_;
 
-    // Maps
+    //! Source Map of the Import or Export
     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > source_;
+
+    //! Target Map of the Import or Export
     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > target_;
 
-    // Comm, Distributor
+    //! Communicator over which to distribute data.
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
+
+    //! Distributor that does the work of distributing data.
     Distributor distributor_;
 
   private:
     //! Copy constructor (declared but not defined, do not use)
-    ImportExportData(const ImportExportData<LocalOrdinal,GlobalOrdinal,Node> &rhs);
+    ImportExportData (const ImportExportData<LocalOrdinal,GlobalOrdinal,Node> &rhs);
     //! Assignment operator (declared but not defined, do not use)
-    ImportExportData<LocalOrdinal,GlobalOrdinal,Node> & operator = (const ImportExportData<LocalOrdinal,GlobalOrdinal,Node> & rhs);
+    ImportExportData<LocalOrdinal,GlobalOrdinal,Node>& 
+    operator= (const ImportExportData<LocalOrdinal,GlobalOrdinal,Node> & rhs);
   }; // class ImportExportData
 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::
+  ImportExportData (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
+		    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target)
+  : numSameIDs_ (0)
+  , source_ (source)
+  , target_ (target)
+  , comm_ (source->getComm())
+  , distributor_ (comm_)
+  {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::ImportExportData(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & source, 
-                                                                      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & target)
-  : numSameIDs_(0)
-  , source_(source)
-  , target_(target)
-  , comm_(source->getComm())
-  , distributor_(comm_)
+  ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::
+  ImportExportData (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
+		    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
+		    const Teuchos::RCP<Teuchos::ParameterList>& plist)
+  : numSameIDs_ (0)
+  , source_ (source)
+  , target_ (target)
+  , comm_ (source->getComm())
+  , distributor_ (comm_, plist)
   {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
