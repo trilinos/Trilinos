@@ -45,18 +45,20 @@
 //----------------------------------------------------------------------------
 // Partial specializations for the device
 
-#include <Kokkos_Host_macros.hpp>
-
 #if defined( KOKKOS_MEMORYVIEW_HPP ) && ! defined( KOKKOS_HOST_MEMORYVIEW )
 #define KOKKOS_HOST_MEMORYVIEW
+#include <Kokkos_Host_macros.hpp>
 #include <impl/Kokkos_MemoryView_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
 #endif
 
 //----------------------------------------------------------------------------
 
 #if defined( KOKKOS_VALUE_HPP ) && ! defined( KOKKOS_HOST_VALUE )
 #define KOKKOS_HOST_VALUE
+#include <Kokkos_Host_macros.hpp>
 #include <impl/Kokkos_Value_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
 #include <Host/Kokkos_Host_Value.hpp>
 #endif
 
@@ -64,31 +66,40 @@
 
 #if defined( KOKKOS_MULTIVECTOR_HPP ) && ! defined( KOKKOS_HOST_MULTIVECTOR )
 #define KOKKOS_HOST_MULTIVECTOR
+#include <Kokkos_Host_macros.hpp>
 #include <impl/Kokkos_MultiVector_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
 #include <Host/Kokkos_Host_MultiVector.hpp>
 #endif
 
 //----------------------------------------------------------------------------
 
-#if defined( KOKKOS_CRSMAP_HPP ) && ! defined( KOKKOS_HOST_CRSMAP )
-#define KOKKOS_HOST_CRSMAP
-#include <impl/Kokkos_CrsMap_macros.hpp>
+#if ( defined( KOKKOS_MDARRAY_HPP ) || defined( KOKKOS_CRSARRAY_HPP) ) && ! defined( KOKKOS_HOST_INDEXMAPRIGHT )
+#define KOKKOS_HOST_INDEXMAPRIGHT
+#include <Kokkos_Host_macros.hpp>
+#include <impl/Kokkos_IndexMapRight_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
 #endif
 
 //----------------------------------------------------------------------------
 
 #if defined( KOKKOS_MDARRAY_HPP ) && ! defined( KOKKOS_HOST_MDARRAY )
 #define KOKKOS_HOST_MDARRAY
-#include <Host/Kokkos_Host_MDArray.hpp>
-#include <impl/Kokkos_IndexMapRight_macros.hpp>
+#include <Kokkos_Host_macros.hpp>
 #include <impl/Kokkos_MDArray_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
+#include <Host/Kokkos_Host_MDArray.hpp>
 #endif
 
 //----------------------------------------------------------------------------
 
+#if defined( KOKKOS_CRSARRAY_HPP ) && ! defined( KOKKOS_HOST_CRSARRAY )
+#define KOKKOS_HOST_CRSARRAY
+#include <Kokkos_Host_macros.hpp>
+#include <impl/Kokkos_CrsArray_macros.hpp>
 #include <Kokkos_Clear_macros.hpp>
+#endif
 
-//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 

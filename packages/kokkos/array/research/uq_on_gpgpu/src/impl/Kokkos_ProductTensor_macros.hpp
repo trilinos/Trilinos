@@ -382,7 +382,7 @@ public:
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type entry_count() const
-  { return m_map.entry_count(); }
+  { return m_map.entry_dimension(0); }
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
@@ -411,7 +411,7 @@ public:
 
 private:
 
-  Kokkos::CrsMap< device_type , CrsColumnIdentity , size_type >  m_map ;
+  Kokkos::CrsArray< void, device_type, size_type >  m_map ;
   Kokkos::MDArray< size_type , device_type >       m_coord ;
   Kokkos::MultiVector< value_type , device_type >  m_value ;
   size_type                                        m_entry_max ;

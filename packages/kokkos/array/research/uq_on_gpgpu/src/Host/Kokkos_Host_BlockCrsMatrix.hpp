@@ -91,7 +91,7 @@ public:
     for ( size_type j = 0 ; j < m_A.block.dimension() ; ++j ) { y[j] = 0 ; }
 
     for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
-      const VectorValue * const x = & m_x( 0 , m_A.graph.column(iEntry) );
+      const VectorValue * const x = & m_x( 0 , m_A.graph(iEntry) );
       const MatrixValue * const a = & m_A.values( 0 , iEntry );
 
       Multiply< BlockSpec , void , void >::apply( m_A.block , a , x , y );

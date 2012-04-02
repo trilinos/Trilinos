@@ -224,14 +224,6 @@ create_mdarray( size_t nP ,     size_t n1 = 0 ,
 }
 
 //----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace Impl {
-template < class OutputType , class InputType , unsigned Rank >
-struct DeepCopyKernelMDArray ;
-}
-
-//----------------------------------------------------------------------------
 
 template< typename ValueType , class DeviceDst , class DeviceSrc >
 inline

@@ -77,9 +77,10 @@ void generate_matrix(
   const size_t N ,
   Kokkos::BlockCrsMatrix<Kokkos::SymmetricDiagonalSpec<Device>,long,Device> & matrix )
 {
-  typedef Kokkos::MultiVector< long , Device > values_type ;
-  typedef Kokkos::CrsMap< Device , Kokkos::CrsColumnMap >  graph_type ;
-  typedef Kokkos::SymmetricDiagonalSpec<Device>            block_type ;
+  typedef Kokkos::BlockCrsMatrix<Kokkos::SymmetricDiagonalSpec<Device>,long,Device> matrix_type ;
+  typedef Kokkos::MultiVector< long , Device >  values_type ;
+  typedef typename matrix_type::graph_type      graph_type ;
+  typedef typename matrix_type::block_spec      block_type ;
 
   typedef typename values_type::HostMirror host_values_type ;
   typedef typename graph_type ::HostMirror host_graph_type ;
@@ -114,7 +115,7 @@ void generate_matrix(
 
   const size_t block_size = Kokkos::Impl::Multiply< block_type >::matrix_size( matrix.block );
 
-  matrix.graph  = Kokkos::create_crsmap<graph_type>( std::string("test crs graph") , graph );
+  matrix.graph  = Kokkos::create_crsarray<graph_type>( std::string("test crs graph") , graph );
   matrix.values = Kokkos::create_multivector<values_type>( block_size , total );
 
   host_graph_type  h_graph  = Kokkos::create_mirror( matrix.graph );
@@ -126,7 +127,7 @@ void generate_matrix(
 
     for ( size_t outer_entry = outer_entry_begin ;
                  outer_entry < outer_entry_end ; ++outer_entry ) {
-      const size_t outer_column = h_graph.column(outer_entry);
+      const size_t outer_column = h_graph(outer_entry);
 
       for ( size_t inner_row = 0 ; inner_row < M ; ++inner_row ) {
         for ( size_t inner_column = 0 ; inner_column <= inner_row ; ++inner_column ) {
@@ -152,11 +153,13 @@ void test_block_crs_matrix( const size_t M , const size_t N )
   typedef long value_type ; // to avoid comparison round-off differences
   typedef Kokkos::MultiVector<value_type,Device> value_vector ;
 
-  typedef Kokkos::CrsMap< Device , Kokkos::CrsColumnMap >  graph_type ;
-  typedef typename graph_type::HostMirror host_graph_type ;
   typedef Kokkos::SymmetricDiagonalSpec< Device > block_spec ;
+  typedef Kokkos::BlockCrsMatrix< block_spec , value_type , Device > matrix_type ;
 
-  Kokkos::BlockCrsMatrix< block_spec , value_type , Device > matrix ;
+  typedef typename matrix_type::graph_type  graph_type ;
+  typedef typename graph_type::HostMirror   host_graph_type ;
+
+  matrix_type matrix ;
 
   generate_matrix( M , N , matrix );
 
@@ -193,7 +196,7 @@ void test_block_crs_matrix( const size_t M , const size_t N )
       for ( size_t outer_entry = outer_entry_begin ;
                    outer_entry < outer_entry_end ; ++outer_entry ) {
 
-        const size_t outer_column = h_graph.column( outer_entry );
+        const size_t outer_column = h_graph( outer_entry );
 
         for ( size_t inner_column = 0 ; inner_column < M ; ++inner_column ) {
 

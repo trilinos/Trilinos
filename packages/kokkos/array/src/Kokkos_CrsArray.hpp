@@ -41,108 +41,137 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_CRSMAP_HPP
-#define KOKKOS_CRSMAP_HPP
+#ifndef KOKKOS_CRSARRAY_HPP
+#define KOKKOS_CRSARRAY_HPP
 
 #include <string>
 #include <impl/Kokkos_forward.hpp>
+#include <impl/Kokkos_ArrayTraits.hpp>
 #include <impl/Kokkos_StaticAssert.hpp>
 
 namespace Kokkos {
 
-template< class Device , typename SizeType > class CrsColumnMap ;
-template< class Device , typename SizeType > class CrsColumnIdentity ;
-
 //----------------------------------------------------------------------------
-/** \brief  Compressed row storage map.
+/** \brief  Compressed row storage array.
  *
  *  Define a range of entries for each row:
  *    row_entry_begin(row) <= entry < row_entry_end(row)
- *    row_entry_end(row-1) == row_entry_begin(row)
+ *    row_entry_begin(row) == row_entry_end(row-1)
  *
- *  Optionally include a map of entry -> column defining the existence of
- *    ( row , column(entry) )
+ *  Access data member via 'operator()'
  */
-template< class DeviceType ,
-          template< class , typename > class Column = CrsColumnIdentity ,
+template< class ArrayType , class DeviceType ,
           typename SizeType = typename DeviceType::size_type >
-class CrsMap {
+class CrsArray {
 public:
   typedef DeviceType  device_type ;
   typedef SizeType    size_type ;
-  typedef CrsMap< size_type , Column , void /* Host */ > HostMirror ;
+  typedef ArrayType   array_type ;
+
+  typedef typename Impl::remove_all_extents<array_type>::type  value_type ;
+
+  typedef CrsArray< array_type , typename HostMapped< device_type >::type , size_type >
+          HostMirror ;
+
+  /** \brief  Rank is ( entry( row , column ) , dimensions<ValueType> ) */
+  enum { Rank = Impl::rank<array_type>::value + 1 };
 
   /*------------------------------------------------------------------*/
   /** \brief  Number of rows */
   size_type row_count() const ;
 
-  /** \brief  Number of entries / end of row map */
+  /** \brief  Number of entries == row_entry_end( row_count ) */
   size_type entry_count() const ;
 
   /** \brief  Begining of entries for a given row */
-  template< typename iType >
-  size_type row_entry_begin( const iType & row ) const ;
+  template< typename iTypeRow >
+  size_type row_entry_begin( const iTypeRow & row ) const ;
 
   /** \brief  End of entries for a given row */
-  template< typename iType >
-  size_type row_entry_end(   const iType & row ) const ;
+  template< typename iTypeRow >
+  size_type row_entry_end(   const iTypeRow & row ) const ;
 
   /*------------------------------------------------------------------*/
-  /** \brief  Has column mapping : entry -> column */
-  bool has_column() const ;
+  /** \brief  Value for rank-1 array */
+  template< typename iTypeEntry >
+  inline
+  value_type & operator()( const iTypeEntry & entry ) const ;
 
-  /** \brief  Column mapping : entry -> column */
-  template< typename iType >
-  size_type column( const iType & entry ) const ;
+  /** \brief  Value for rank-2 array */
+  template< typename iTypeEntry , typename iType1 >
+  inline
+  value_type & operator()( const iTypeEntry & entry ,
+                           const iType1     & i1 ) const ;
+
+  /** \brief  Value for rank-3 array */
+  template< typename iTypeEntry , typename iType1 , typename iType2 >
+  inline
+  value_type & operator()( const iTypeEntry & entry ,
+                           const iType1     & i1 ,
+                           const iType2     & i2 ) const ;
 
   /*------------------------------------------------------------------*/
   /** \brief  Construct a NULL view */
-  CrsMap();
+  CrsArray();
 
   /** \brief  Construct a view of the array */
-  CrsMap( const CrsMap & rhs );
+  CrsArray( const CrsArray & rhs );
 
   /** \brief  Assign to a view of the rhs array.
    *          If the old view is the last view
    *          then allocated memory is deallocated.
    */
-  CrsMap & operator = ( const CrsMap & rhs );
+  CrsArray & operator = ( const CrsArray & rhs );
 
   /**  \brief  Destroy this view of the array.
    *           If the last view then allocated memory is deallocated.
    */
-  ~CrsMap();
+  ~CrsArray();
 
   /*------------------------------------------------------------------*/
   /** \brief  Query if NULL view */
   operator bool () const ;
 
   /** \brief  Query if view to same memory */
-  bool operator == ( const CrsMap & ) const ;
+  bool operator == ( const CrsArray & ) const ;
 
   /** \brief  Query if not view to same memory */
-  bool operator != ( const CrsMap & ) const ;
+  bool operator != ( const CrsArray & ) const ;
 };
 
 //----------------------------------------------------------------------------
 
-template< class CrsMapType , typename InputType >
+template< class CrsArrayType , class InputType >
 inline
-typename Impl::Factory< CrsMapType , InputType >::output_type
-create_crsmap( const std::string & label , const InputType & input )
+CrsArray< typename CrsArrayType::array_type ,
+          typename CrsArrayType::device_type ,
+          typename CrsArrayType::size_type >
+create_crsarray( const std::string & label ,
+                 const InputType & input )
 {
-  return Impl::Factory< CrsMapType , InputType >::create( label , input );
+  return Impl::Factory< CrsArrayType , InputType >::create( label , input );
 }
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+template< class CrsArrayType , class InputType >
+inline
+CrsArray< typename CrsArrayType::array_type ,
+          typename CrsArrayType::device_type ,
+          typename CrsArrayType::size_type >
+create_crsarray( const InputType & input )
+{
+  return Impl::Factory< CrsArrayType , InputType >
+             ::create( std::string() , input );
+}
 
 } // namespace Kokkos
 
-#include <impl/Kokkos_CrsMap_factory.hpp>
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#include <impl/Kokkos_CrsArray_factory.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#endif /* #ifndef KOKKOS_CRSMAP_HPP */
+#endif /* #ifndef KOKKOS_CRSARRAY_HPP */
 

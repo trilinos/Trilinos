@@ -62,7 +62,7 @@ namespace Impl {
  */
 template< unsigned Rank , unsigned N1 , unsigned N2 , unsigned N3 ,
           unsigned N4 ,   unsigned N5 , unsigned N6 , unsigned N7 >
-struct IndexMapLeft< KOKKOS_MACRO_DEVICE::memory_space , 
+struct IndexMapLeft< KOKKOS_MACRO_DEVICE::memory_space ,
                      Rank, N1, N2, N3, N4, N5, N6, N7 >
 {
 public:
@@ -70,14 +70,13 @@ public:
 
 private:
   static const unsigned NSize =
-    1 < Rank ? 1 : N1 * (
-    2 < Rank ? 1 : N2 * (
-    3 < Rank ? 1 : N3 * (
-    4 < Rank ? 1 : N4 * (
-    5 < Rank ? 1 : N5 * (
-    6 < Rank ? 1 : N6 * (
-    7 < Rank ? 1 : N7 ))))));
-
+    Rank <= 1 ? 1 : N1 * (
+    Rank <= 2 ? 1 : N2 * (
+    Rank <= 3 ? 1 : N3 * ( 
+    Rank <= 4 ? 1 : N4 * ( 
+    Rank <= 5 ? 1 : N5 * ( 
+    Rank <= 6 ? 1 : N6 * ( 
+    Rank <= 7 ? 1 : N7 ))))));
 
   static const unsigned S2 = N1 ;
   static const unsigned S3 = N2 * S2 ;
@@ -282,7 +281,8 @@ public:
 
 /** \brief  Runtime dimensioned */
 template<>
-struct IndexMapLeft< KOKKOS_MACRO_DEVICE::memory_space, 0, 0,0,0,0,0,0,0 >
+struct IndexMapLeft< KOKKOS_MACRO_DEVICE::memory_space,
+                     0,  0,0,0,0,0,0,0 >
 {
 public:
   typedef KOKKOS_MACRO_DEVICE::size_type size_type ;
@@ -539,6 +539,7 @@ public:
   }
 };
 
+//----------------------------------------------------------------------------
 } // Impl namespace
 } // Kokkos namespace
 

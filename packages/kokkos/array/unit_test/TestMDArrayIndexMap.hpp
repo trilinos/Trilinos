@@ -68,8 +68,8 @@ public:
   typedef Kokkos::Impl::MemoryManager<memory_space>  memory_manager ;
 
   typedef Kokkos::MDArray< int , device_type > array_type ;
-  typedef Kokkos::Impl::IndexMapRight< memory_space >  map_right_type ;
-  typedef Kokkos::Impl::IndexMapLeft<  memory_space >  map_left_type ;
+  typedef Kokkos::Impl::IndexMapRight< memory_space , 0 >  map_right_type ;
+  typedef Kokkos::Impl::IndexMapLeft<  memory_space , 0 >  map_left_type ;
 
   enum { NP = 1000 , N1 = 10 , N2 = 20 };
 

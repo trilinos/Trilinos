@@ -50,24 +50,46 @@
 #define KOKKOS_CUDA_MULTIVECTOR
 #include <Kokkos_Cuda_macros.hpp>
 #include <impl/Kokkos_MultiVector_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
+
 #include <Cuda/Kokkos_Cuda_MultiVector.hpp>
+#endif
+
+//----------------------------------------------------------------------------
+
+#if ( defined( KOKKOS_MDARRAY_HPP ) || defined( KOKKOS_CRSARRAY_HPP ) ) && ! defined( KOKKOS_CUDA_INDEXMAPLEFT )
+#define KOKKOS_CUDA_INDEXMAPLEFT
+#include <Kokkos_Cuda_macros.hpp>
+#include <impl/Kokkos_IndexMapLeft_macros.hpp>
 #include <Kokkos_Clear_macros.hpp>
 #endif
 
-#if defined( KOKKOS_CRSMAP_HPP ) && ! defined( KOKKOS_CUDA_CRSMAP )
-#define KOKKOS_CUDA_CRSMAP
+//----------------------------------------------------------------------------
+
+#if defined( KOKKOS_CRSARRAY_HPP ) && ! defined( KOKKOS_CUDA_CRSARRAY )
+#define KOKKOS_CUDA_CRSARRAY
+
 #include <Kokkos_Cuda_macros.hpp>
-#include <impl/Kokkos_CrsMap_macros.hpp>
+#include <impl/Kokkos_CrsArray_macros.hpp>
 #include <Kokkos_Clear_macros.hpp>
+
+#include <Kokkos_Host_macros.hpp>
+#undef KOKKOS_MACRO_DEVICE
+#define KOKKOS_MACRO_DEVICE HostMapped< Cuda >
+#include <impl/Kokkos_CrsArray_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
+
+#include <Cuda/Kokkos_Cuda_CrsArray.hpp>
+
 #endif
+
+//----------------------------------------------------------------------------
 
 #if defined( KOKKOS_MDARRAY_HPP ) && ! defined( KOKKOS_CUDA_MDARRAY )
 #define KOKKOS_CUDA_MDARRAY
 
 #include <Kokkos_Cuda_macros.hpp>
-#include <impl/Kokkos_IndexMapLeft_macros.hpp>
 #include <impl/Kokkos_MDArray_macros.hpp>
-#include <Cuda/Kokkos_Cuda_MDArray.hpp>
 #include <Kokkos_Clear_macros.hpp>
 
 #include <Kokkos_Host_macros.hpp>
@@ -75,6 +97,9 @@
 #define KOKKOS_MACRO_DEVICE HostMapped< Cuda >
 #include <impl/Kokkos_MDArray_macros.hpp>
 #include <Kokkos_Clear_macros.hpp>
+
+#include <Cuda/Kokkos_Cuda_MDArray.hpp>
+
 #endif
 
 //----------------------------------------------------------------------------

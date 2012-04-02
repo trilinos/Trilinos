@@ -44,6 +44,8 @@
 #ifndef KOKKOS_IMPL_INDEXMAP_HPP
 #define KOKKOS_IMPL_INDEXMAP_HPP
 
+#include <impl/Kokkos_ArrayTraits.hpp>
+
 namespace Kokkos {
 namespace Impl {
 
@@ -57,18 +59,14 @@ enum { IndexMapMaxRank = 8 };
  *
  *  The leading dimension is always set at runtime.
  */
-template< class MemorySpace ,
-          unsigned Rank = 0 , unsigned N1 = 0 ,
-          unsigned N2   = 0 , unsigned N3 = 0 ,
-          unsigned N4   = 0 , unsigned N5 = 0 ,
-          unsigned N6   = 0 , unsigned N7 = 0 >
+template< class MemorySpace , unsigned Rank ,
+          unsigned N1 = 0, unsigned N2 = 0, unsigned N3 = 0,
+          unsigned N4 = 0, unsigned N5 = 0, unsigned N6 = 0, unsigned N7 = 0 >
 class IndexMapRight ;
 
-template< class MemorySpace ,
-          unsigned Rank = 0 , unsigned N1 = 0 ,
-          unsigned N2   = 0 , unsigned N3 = 0 ,
-          unsigned N4   = 0 , unsigned N5 = 0 ,
-          unsigned N6   = 0 , unsigned N7 = 0 >
+template< class MemorySpace , unsigned Rank ,
+          unsigned N1 = 0, unsigned N2 = 0, unsigned N3 = 0,
+          unsigned N4 = 0, unsigned N5 = 0, unsigned N6 = 0, unsigned N7 = 0 >
 class IndexMapLeft ;
 
 } // namespace Impl

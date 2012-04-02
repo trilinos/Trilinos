@@ -83,6 +83,9 @@ typedef integral_constant<bool,true>  true_type ;
 template< unsigned I >
 struct unsigned_ : public integral_constant<unsigned,I> {};
 
+template< int I >
+struct int_ : public integral_constant<int,I> {};
+
 template< class T > struct rank       : public unsigned_< 0> {};
 template<>          struct rank<void> {};
 template< class T > struct rank<T[]>  : public unsigned_< 1> {};

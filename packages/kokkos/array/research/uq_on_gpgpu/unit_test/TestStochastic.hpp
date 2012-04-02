@@ -166,7 +166,7 @@ test_product_tensor_matrix(
   matrix_type matrix ;
 
   matrix.block = Kokkos::create_product_tensor< tensor_type >( var_degree );
-  matrix.graph = Kokkos::create_crsmap<graph_type>( std::string("test crs graph") , graph );
+  matrix.graph = Kokkos::create_crsarray<graph_type>( std::string("test crs graph") , graph );
 
   const size_t inner_length      = matrix.block.dimension();
   const size_t inner_matrix_size = matrix.block.dimension();
@@ -278,7 +278,7 @@ test_product_tensor_diagonal_matrix(
   matrix_type matrix ;
 
   matrix.block  = Kokkos::SymmetricDiagonalSpec< Device >( inner_length );
-  matrix.graph  = Kokkos::create_crsmap<graph_type>( std::string("test product tensor graph") , graph );
+  matrix.graph  = Kokkos::create_crsarray<graph_type>( std::string("test product tensor graph") , graph );
   matrix.values = Kokkos::create_multivector<vector_type>( matrix.block.matrix_size() , graph_length );
 
   Kokkos::MultiVector<value_type,Device> x = Kokkos::create_multivector<vector_type>( inner_length , outer_length );
@@ -367,7 +367,7 @@ test_product_flat_commuted_matrix(
   //------------------------------
 
   typedef Kokkos::CrsMatrix<value_type,Device> matrix_type ;
-  typedef Kokkos::CrsMap<Device,Kokkos::CrsColumnMap,int> crsmap_type ;
+  typedef Kokkos::CrsArray<int,Device,int> crsarray_type ;
 
   //------------------------------
   // Generate FEM graph:
@@ -442,9 +442,9 @@ test_product_flat_commuted_matrix(
 
   matrix_type matrix ;
 
-  matrix.graph = Kokkos::create_crsmap<crsmap_type>( std::string("testing") , flat_graph );
+  matrix.graph = Kokkos::create_crsarray<crsarray_type>( std::string("testing") , flat_graph );
 
-  const size_t flat_graph_length = matrix.graph.entry_count();
+  const size_t flat_graph_length = matrix.graph.entry_dimension(0);
 
   matrix.values =
     Kokkos::create_multivector<vector_type>( flat_graph_length );
@@ -532,7 +532,7 @@ test_product_flat_original_matrix(
   //------------------------------
 
   typedef Kokkos::CrsMatrix<value_type,Device> matrix_type ;
-  typedef Kokkos::CrsMap<Device,Kokkos::CrsColumnMap,int> crsmap_type ;
+  typedef Kokkos::CrsArray<int,Device,int> crsarray_type ;
 
   //------------------------------
   // Generate FEM graph:
@@ -607,9 +607,9 @@ test_product_flat_original_matrix(
 
   matrix_type matrix ;
 
-  matrix.graph = Kokkos::create_crsmap<crsmap_type>( std::string("testing") , flat_graph );
+  matrix.graph = Kokkos::create_crsarray<crsarray_type>( std::string("testing") , flat_graph );
 
-  const size_t flat_graph_length = matrix.graph.entry_count();
+  const size_t flat_graph_length = matrix.graph.entry_dimension(0);
 
   matrix.values =
     Kokkos::create_multivector<vector_type>( flat_graph_length );
@@ -686,7 +686,7 @@ test_flat_matrix(
   //------------------------------
 
   typedef Kokkos::CrsMatrix<value_type,Device> matrix_type ;
-  typedef Kokkos::CrsMap<Device,Kokkos::CrsColumnMap,int> crsmap_type ;
+  typedef Kokkos::CrsArray<int,Device,int> crsarray_type ;
 
   //------------------------------
   // Generate FEM graph:
@@ -701,7 +701,7 @@ test_flat_matrix(
 
   matrix_type matrix ;
 
-  matrix.graph = Kokkos::create_crsmap<crsmap_type>( std::string("testing") , fem_graph );
+  matrix.graph = Kokkos::create_crsarray<crsarray_type>( std::string("testing") , fem_graph );
 
   matrix.values = Kokkos::create_multivector<vector_type>( graph_length );
   vector_type x = Kokkos::create_multivector<vector_type>( length );

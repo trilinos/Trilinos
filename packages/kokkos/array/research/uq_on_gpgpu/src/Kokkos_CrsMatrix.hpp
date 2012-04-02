@@ -44,7 +44,7 @@
 #ifndef KOKKOS_CRSMATRIX_HPP
 #define KOKKOS_CRSMATRIX_HPP
 
-#include <Kokkos_CrsMap.hpp>
+#include <Kokkos_CrsArray.hpp>
 #include <Kokkos_MultiVector.hpp>
 #include <impl/Kokkos_Multiply.hpp>
 
@@ -58,8 +58,8 @@ public:
   typedef Device     device_type ;
   typedef ValueType  value_type ;
 
-  MultiVector< value_type, device_type >      values ;
-  CrsMap< device_type , CrsColumnMap , int >  graph ;
+  MultiVector< value_type, device_type >  values ;
+  CrsArray< int , device_type , int >     graph ;
 };
 
 template< typename MatrixValueType ,

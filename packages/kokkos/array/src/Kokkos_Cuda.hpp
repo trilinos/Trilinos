@@ -46,8 +46,6 @@
 
 #include <impl/Kokkos_IndexMap.hpp>
 
-#define KOKKOS_CUDA  Kokkos::Cuda
-
 /*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
@@ -66,10 +64,10 @@ public:
    *  If the rank is non-zero then the 'N0' dimension is runtime-defined
    *  and all other dimensions are compile-time defined.
    */
-  template< unsigned Rank = 0 , unsigned N1 = 0 ,
-            unsigned N2   = 0 , unsigned N3 = 0 ,
-            unsigned N4   = 0 , unsigned N5 = 0 , 
-            unsigned N6   = 0 , unsigned N7 = 0 >
+  template< unsigned Rank = 0 ,
+            unsigned N1 = 0 , unsigned N2 = 0 , unsigned N3 = 0 ,
+            unsigned N4 = 0 , unsigned N5 = 0 , unsigned N6 = 0 ,
+            unsigned N7 = 0 >
   struct IndexMap {
     typedef Impl::IndexMapLeft<memory_space,Rank,N1,N2,N3,N4,N5,N6,N7> type ;
   };

@@ -86,9 +86,12 @@ void generate_matrix(
   const size_t N ,
   Kokkos::BlockCrsMatrix<Kokkos::SparseProductTensor<3,ScalarType,Device>,ScalarType,Device> & matrix )
 {
+  typedef Kokkos::BlockCrsMatrix<Kokkos::SparseProductTensor<3,ScalarType,Device>,ScalarType,Device> matrix_type ;
+
   typedef Kokkos::MultiVector< ScalarType , Device > values_type ;
-  typedef Kokkos::CrsMap< Device , Kokkos::CrsColumnMap >  graph_type ;
-  typedef Kokkos::SparseProductTensor<3,ScalarType,Device> tensor_type ;
+  typedef typename matrix_type::graph_type           graph_type ;
+  typedef typename matrix_type::block_spec           tensor_type ;
+  // typedef Kokkos::SparseProductTensor<3,ScalarType,Device> tensor_type ;
   typedef Kokkos::ProductTensorIndex<3,Device>             index_type ;
 
   typedef Kokkos::Impl::Multiply< tensor_type > tensor_multiply ;
@@ -107,7 +110,7 @@ void generate_matrix(
   const size_t total      = unit_test::generate_fem_graph( N , graph );
   const size_t block_size = tensor_multiply::matrix_size( matrix.block );
 
-  matrix.graph  = Kokkos::create_crsmap<graph_type>( std::string("test crs graph") , graph );
+  matrix.graph  = Kokkos::create_crsarray<graph_type>( std::string("test crs graph") , graph );
   matrix.values = Kokkos::create_multivector<values_type>( block_size , total );
 
   host_graph_type  h_graph  = Kokkos::create_mirror( matrix.graph );
@@ -119,7 +122,7 @@ void generate_matrix(
 
     for ( size_t outer_entry = outer_entry_begin ;
                  outer_entry < outer_entry_end ; ++outer_entry ) {
-      const size_t outer_column = h_graph.column(outer_entry);
+      const size_t outer_column = h_graph(outer_entry);
 
       for ( size_t inner_entry = 0 ; inner_entry < M ; ++inner_entry ) {
         h_values(inner_entry,outer_entry) =
@@ -140,12 +143,14 @@ void test_tensor_crs_matrix( const size_t M , const size_t N , const bool print 
   typedef IntType value_type ; // to avoid comparison round-off differences
   typedef Kokkos::MultiVector<value_type,Device> vector_type ;
 
-  typedef Kokkos::CrsMap< Device , Kokkos::CrsColumnMap >  graph_type ;
-  typedef typename graph_type::HostMirror          host_graph_type ;
   typedef Kokkos::SparseProductTensor< 3 , IntType , Device > block_spec ;
-  typedef Kokkos::ProductTensorIndex<3,Device>             index_type ;
+  typedef Kokkos::BlockCrsMatrix< block_spec , value_type , Device > matrix_type ;
 
-  Kokkos::BlockCrsMatrix< block_spec , value_type , Device > matrix ;
+  typedef typename matrix_type::graph_type      graph_type ;
+  typedef typename graph_type::HostMirror       host_graph_type ;
+  typedef Kokkos::ProductTensorIndex<3,Device>  index_type ;
+
+  matrix_type matrix ;
 
   generate_matrix( M , N , matrix );
 
@@ -186,7 +191,7 @@ void test_tensor_crs_matrix( const size_t M , const size_t N , const bool print 
       for ( size_t outer_entry = outer_entry_begin ;
                    outer_entry < outer_entry_end ; ++outer_entry ) {
 
-        const size_t outer_column = h_graph.column( outer_entry );
+        const size_t outer_column = h_graph( outer_entry );
 
         for ( typename std::map< index_type , IntType >::iterator
               iter =  tensor_input.begin() ;

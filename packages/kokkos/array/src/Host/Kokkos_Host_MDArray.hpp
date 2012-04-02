@@ -41,6 +41,11 @@
 //@HEADER
 */
 
+#ifndef KOKKOS_HOSTMDARRAY_HPP
+#define KOKKOS_HOSTMDARRAY_HPP
+
+#include <Host/Kokkos_Host_IndexMap.hpp>
+
 namespace Kokkos {
 namespace Impl {
 
@@ -136,157 +141,6 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-template< typename ValueType , class DeviceOutput , class DeviceInput >
-struct HostMDArrayMappedDeepCopy : public HostThreadWorker<void>
-{
-  typedef Host::size_type                     size_type ;
-  typedef MDArray< ValueType , DeviceOutput > output_type ;
-  typedef MDArray< ValueType , DeviceInput >  input_type ;
-
-private:
-
-  output_type dst ;
-  input_type  src ;
-  const size_type N1 ;
-  const size_type N2 ;
-  const size_type N3 ;
-  const size_type N4 ;
-  const size_type N5 ;
-  const size_type N6 ;
-  const size_type N7 ;
-
-  void copy8( const std::pair<size_type,size_type> range ) const
-  {
-    for ( size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
-    for ( size_type i1 = 0 ; i1 < N1 ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < N2 ; ++i2 ) {
-    for ( size_type i3 = 0 ; i3 < N3 ; ++i3 ) {
-    for ( size_type i4 = 0 ; i4 < N4 ; ++i4 ) {
-    for ( size_type i5 = 0 ; i5 < N5 ; ++i5 ) {
-    for ( size_type i6 = 0 ; i6 < N6 ; ++i6 ) {
-    for ( size_type i7 = 0 ; i7 < N7 ; ++i7 ) {
-      dst(i0,i1,i2,i3,i4,i5,i6,i7) = src(i0,i1,i2,i3,i4,i5,i6,i7);
-    }}}}}}}}
-  }
-
-  void copy7( const std::pair<size_type,size_type> range ) const
-  {
-    for ( size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
-    for ( size_type i1 = 0 ; i1 < N1 ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < N2 ; ++i2 ) {
-    for ( size_type i3 = 0 ; i3 < N3 ; ++i3 ) {
-    for ( size_type i4 = 0 ; i4 < N4 ; ++i4 ) {
-    for ( size_type i5 = 0 ; i5 < N5 ; ++i5 ) {
-    for ( size_type i6 = 0 ; i6 < N6 ; ++i6 ) {
-      dst(i0,i1,i2,i3,i4,i5,i6) = src(i0,i1,i2,i3,i4,i5,i6);
-    }}}}}}}
-  }
-
-  void copy6( const std::pair<size_type,size_type> range ) const
-  {
-    for ( size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
-    for ( size_type i1 = 0 ; i1 < N1 ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < N2 ; ++i2 ) {
-    for ( size_type i3 = 0 ; i3 < N3 ; ++i3 ) {
-    for ( size_type i4 = 0 ; i4 < N4 ; ++i4 ) {
-    for ( size_type i5 = 0 ; i5 < N5 ; ++i5 ) {
-      dst(i0,i1,i2,i3,i4,i5) = src(i0,i1,i2,i3,i4,i5);
-    }}}}}}
-  }
-
-  void copy5( const std::pair<size_type,size_type> range ) const
-  {
-    for ( size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
-    for ( size_type i1 = 0 ; i1 < N1 ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < N2 ; ++i2 ) {
-    for ( size_type i3 = 0 ; i3 < N3 ; ++i3 ) {
-    for ( size_type i4 = 0 ; i4 < N4 ; ++i4 ) {
-      dst(i0,i1,i2,i3,i4) = src(i0,i1,i2,i3,i4);
-    }}}}}
-  }
-
-  void copy4( const std::pair<size_type,size_type> range ) const
-  {
-    for ( size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
-    for ( size_type i1 = 0 ; i1 < N1 ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < N2 ; ++i2 ) {
-    for ( size_type i3 = 0 ; i3 < N3 ; ++i3 ) {
-      dst(i0,i1,i2,i3) = src(i0,i1,i2,i3);
-    }}}}
-  }
-
-  void copy3( const std::pair<size_type,size_type> range ) const
-  {
-    for ( size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
-    for ( size_type i1 = 0 ; i1 < N1 ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < N2 ; ++i2 ) {
-      dst(i0,i1,i2) = src(i0,i1,i2);
-    }}}
-  }
-
-  void copy2( const std::pair<size_type,size_type> range ) const
-  {
-    for ( size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
-    for ( size_type i1 = 0 ; i1 < N1 ; ++i1 ) {
-      dst(i0,i1) = src(i0,i1);
-    }}
-  }
-
-  void copy1( const std::pair<size_type,size_type> range ) const
-  {
-    for ( size_type i0 = range.first ; i0 < range.second ; ++i0 ) {
-      dst(i0) = src(i0);
-    }
-  }
-
-  void execute_on_thread( HostThread & this_thread ) const
-  {
-    const std::pair<size_type,size_type> range =
-      this_thread.work_range( dst.dimension(0) );
-
-    switch( dst.rank() ) {
-    case 1: copy1( range ); break ;
-    case 2: copy2( range ); break ;
-    case 3: copy3( range ); break ;
-    case 4: copy4( range ); break ;
-    case 5: copy5( range ); break ;
-    case 6: copy6( range ); break ;
-    case 7: copy7( range ); break ;
-    case 8: copy8( range ); break ;
-    }
-  }
-
-  HostMDArrayMappedDeepCopy( const output_type & output ,
-                             const input_type  & input )
-    : dst( output ), src( input )
-    , N1( 1 < output.rank() ? output.dimension(1) : 0 )
-    , N2( 2 < output.rank() ? output.dimension(2) : 0 )
-    , N3( 3 < output.rank() ? output.dimension(3) : 0 )
-    , N4( 4 < output.rank() ? output.dimension(4) : 0 )
-    , N5( 5 < output.rank() ? output.dimension(5) : 0 )
-    , N6( 6 < output.rank() ? output.dimension(6) : 0 )
-    , N7( 7 < output.rank() ? output.dimension(7) : 0 )
-    {}
-
-public:
-
-  static inline
-  void deep_copy( const output_type & output ,
-                  const input_type  & input )
-  {
-    typedef MemoryManager< Host > memory_manager ;
-
-    memory_manager::disable_memory_view_tracking();
-
-    const HostMDArrayMappedDeepCopy driver( output , input );
-
-    memory_manager::enable_memory_view_tracking();
-
-    HostThreadWorker<void>::execute( driver );
-  }
-};
-
-
 template< typename ValueType , class Device >
 struct Factory< MDArray< ValueType , Host > ,
                 MDArray< ValueType , HostMapped< Device > > >
@@ -297,8 +151,11 @@ struct Factory< MDArray< ValueType , Host > ,
   inline static
   void deep_copy( const output_type & output , const input_type & input )
   {
-    HostMDArrayMappedDeepCopy<ValueType, Host , HostMapped< Device > >
-      ::deep_copy( output , input );
+    HostIndexMapDeepCopy< ValueType,
+                          typename output_type::index_map ,
+                          typename input_type ::index_map >
+      ::deep_copy( output.m_memory , output.m_map ,
+                   input .m_memory , input .m_map );
   }
 };
 
@@ -312,8 +169,11 @@ struct Factory< MDArray< ValueType , HostMapped< Device > > ,
   inline static
   void deep_copy( const output_type & output , const input_type & input )
   {
-    HostMDArrayMappedDeepCopy<ValueType,HostMapped< Device > , Host >
-      ::deep_copy( output , input );
+    HostIndexMapDeepCopy< ValueType,
+                          typename output_type::index_map ,
+                          typename input_type ::index_map >
+      ::deep_copy( output.m_memory , output.m_map ,
+                   input .m_memory , input .m_map );
   }
 };
 
@@ -321,4 +181,6 @@ struct Factory< MDArray< ValueType , HostMapped< Device > > ,
 
 } // namespace Impl
 } // namespace Kokkos
+
+#endif /* #ifndef KOKKOS_HOSTMDARRAY_HPP */
 

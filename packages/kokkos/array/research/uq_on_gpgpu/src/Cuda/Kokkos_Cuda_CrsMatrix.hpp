@@ -124,7 +124,7 @@ public:
                       s.descra ,
                       A.values.ptr_on_device() ,
                       A.graph.row_map() ,
-                      A.graph.column_map() ,
+                      A.graph.data() ,
                       x.ptr_on_device() , 
                       beta ,
                       y.ptr_on_device() );
@@ -166,7 +166,7 @@ public:
                       s.descra ,
                       A.values.ptr_on_device() ,
                       A.graph.row_map() ,
-                      A.graph.column_map() ,
+                      A.graph.data() ,
                       x.ptr_on_device() , 
                       beta ,
                       y.ptr_on_device() );

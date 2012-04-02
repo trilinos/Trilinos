@@ -49,7 +49,7 @@
 #include <map>
 #include <Kokkos_MultiVector.hpp>
 #include <Kokkos_MDArray.hpp>
-#include <Kokkos_CrsMap.hpp>
+#include <Kokkos_CrsArray.hpp>
 
 namespace Kokkos {
 namespace Impl {
@@ -150,7 +150,7 @@ public:
 
     typedef MDArray< size_type, device_type>  coord_array_type ;
     typedef MultiVector< value_type, device_type> value_array_type ;
-    typedef CrsMap< device_type , CrsColumnIdentity > crsmap_type ;
+    typedef CrsArray< void , device_type > crsarray_type ;
 
     const size_type dimension =
       input.empty() ? 0 : 1 + (*input.rbegin()).first.coord(0);
@@ -174,7 +174,7 @@ public:
 
     type tensor ;
 
-    tensor.m_map   = create_crsmap< crsmap_type >( std::string("ProductTensorMap") , coord_work );
+    tensor.m_map   = create_crsarray< crsarray_type >( std::string("ProductTensorMap") , coord_work );
     tensor.m_coord = create_mdarray< coord_array_type >( entry_count, 2 );
     tensor.m_value = create_multivector< value_array_type >( entry_count );
 

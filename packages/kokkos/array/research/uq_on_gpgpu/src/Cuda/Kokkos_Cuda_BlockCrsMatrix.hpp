@@ -95,7 +95,7 @@ public:
             size_type iEntry    = m_A.graph.row_entry_begin(iBlock);
 
       for ( ; iEntry < iEntryEnd ; ++iEntry ) {
-        const VectorValue * const x = & m_x( 0 , m_A.graph.column(iEntry) );
+        const VectorValue * const x = & m_x( 0 , m_A.graph(iEntry) );
         const MatrixValue * const a = & m_A.values( 0 , iEntry );
 
         y += Multiply< BlockSpec >::apply( m_A.block , a , x );
