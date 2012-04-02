@@ -370,31 +370,30 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, gather_scatter_constr)
    }
 }
 
-/*
 TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, adjustDirichlet)
 {
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      Teuchos::RCP<Tpetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+      Teuchos::RCP<Teuchos::Comm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
    #else
-      Teuchos::RCP<Tpetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
+      Teuchos::RCP<Teuchos::Comm<int> > failure_comm = THIS_,_SERIAL_BUILDS_,_SHOULD_FAIL;
    #endif
 
    using Teuchos::RCP;
    using Teuchos::rcp;
    using Teuchos::rcp_dynamic_cast;
 
-   int myRank = eComm->MyPID();
-   int numProc = eComm->NumProc();
+   int myRank = tComm->getRank();
+   int numProc = tComm->getSize();
  
-   typedef TpetraLinearObjContainer LOC;
+   typedef TpetraLinearObjContainer<double,int,int> LOC;
 
    RCP<panzer::UniqueGlobalIndexer<int,int> > indexer 
          = rcp(new unit_test::UniqueGlobalIndexer<int>(myRank,numProc));
 
    // setup factory
-   Teuchos::RCP<panzer::TpetraLinearObjFactory<panzer::Traits,short> > la_factory
-         = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,short>(eComm.getConst(),indexer));
+   Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > la_factory
+         = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,int>(tComm.getConst(),indexer));
 
    RCP<LinearObjContainer> ghosted_0   = la_factory->buildGhostedLinearObjContainer();
    RCP<LinearObjContainer> ghosted_1   = la_factory->buildGhostedLinearObjContainer();
@@ -404,17 +403,21 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, adjustDirichlet)
    la_factory->initializeGhostedContainer(LinearObjContainer::X,*ghosted_1);
    la_factory->initializeGhostedContainer(LinearObjContainer::F | LinearObjContainer::Mat,*ghosted_sys);
 
-   RCP<TpetraLinearObjContainer> e_0   = rcp_dynamic_cast<EpetraLinearObjContainer>(ghosted_0);
-   RCP<TpetraLinearObjContainer> e_1   = rcp_dynamic_cast<EpetraLinearObjContainer>(ghosted_1);
-   RCP<TpetraLinearObjContainer> e_sys = rcp_dynamic_cast<EpetraLinearObjContainer>(ghosted_sys);
+   RCP<LOC> t_0   = rcp_dynamic_cast<LOC>(ghosted_0);
+   RCP<LOC> t_1   = rcp_dynamic_cast<LOC>(ghosted_1);
+   RCP<LOC> t_sys = rcp_dynamic_cast<LOC>(ghosted_sys);
 
-   TEST_ASSERT(!Teuchos::is_null(e_0->x));
-   TEST_ASSERT(!Teuchos::is_null(e_1->x));
-   TEST_ASSERT(!Teuchos::is_null(e_sys->f));
-   TEST_ASSERT(!Teuchos::is_null(e_sys->A));
+   Teuchos::ArrayRCP<double> x_0_a = t_0->x->get1dViewNonConst();
+   Teuchos::ArrayRCP<double> x_1_a = t_1->x->get1dViewNonConst();
+   Teuchos::ArrayRCP<double> f_a = t_sys->f->get1dViewNonConst();
 
-   e_sys->f->PutScalar(-3.0); // put some garbage in the systems
-   e_sys->A->PutScalar(-3.0);
+   TEST_ASSERT(!Teuchos::is_null(t_0->x));
+   TEST_ASSERT(!Teuchos::is_null(t_1->x));
+   TEST_ASSERT(!Teuchos::is_null(t_sys->f));
+   TEST_ASSERT(!Teuchos::is_null(t_sys->A));
+
+   t_sys->f->putScalar(-3.0); // put some garbage in the systems
+   t_sys->A->setAllToScalar(-3.0);
 
    // there are 3 cases for adjustDirichlet
    //   1. Local set only for GID
@@ -423,27 +426,27 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, adjustDirichlet)
 
    if(myRank==0) {   
       // case 0
-      (*(e_0->x))[0] = 1.0; // GID = 0
-      (*(e_1->x))[0] = 1.0; // GID = 0
+      x_0_a[0] = 1.0; // GID = 0
+      x_1_a[0] = 1.0; // GID = 0
 
       // case 1
-      (*(e_0->x))[2] = 1.0; // GID = 2
-      (*(e_1->x))[2] = 2.0; // GID = 2
+      x_0_a[2] = 1.0; // GID = 2
+      x_1_a[2] = 2.0; // GID = 2
 
       // case 2
-      (*(e_1->x))[5] = 2.0; // GID = 5
+      x_1_a[5] = 2.0; // GID = 5
    }
    else if(myRank==1) {
       // case 0
-      (*(e_0->x))[3] = 1.0; // GID = 9
-      (*(e_1->x))[3] = 1.0; // GID = 9
+      x_0_a[3] = 1.0; // GID = 9
+      x_1_a[3] = 1.0; // GID = 9
 
       // case 1
-      (*(e_0->x))[0] = 1.0; // GID = 2
-      (*(e_1->x))[0] = 2.0; // GID = 2
+      x_0_a[0] = 1.0; // GID = 2
+      x_1_a[0] = 2.0; // GID = 2
 
       // case 2
-      (*(e_1->x))[6] = 2.0; // GID = 4
+      x_1_a[6] = 2.0; // GID = 4
    }
    else 
       TEUCHOS_ASSERT(false);
@@ -451,40 +454,40 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, adjustDirichlet)
    // run test for conditions
    la_factory->adjustForDirichletConditions(*ghosted_0,*ghosted_1,*ghosted_sys);
 
-   int numEntries = 0;
-   double * values = 0;
-   int * indices = 0;
+   std::size_t sz = t_sys->A->getNodeMaxNumRowEntries();
+   std::size_t numEntries = 0;
+   Teuchos::Array<double> values(sz);
+   Teuchos::Array<int> indices(sz);
 
    if(myRank==0) {   
-      TEST_EQUALITY((*e_sys->f)[0],-3.0);     // case 0
-      e_sys->A->ExtractMyRowView(0,numEntries,values,indices);
-      for(int i=0;i<numEntries;i++) TEST_EQUALITY(values[i],-3.0);
+      TEST_EQUALITY(f_a[0],-3.0);     // case 0
+      t_sys->A->getLocalRowCopy(0,indices,values,numEntries);
+      for(std::size_t i=0;i<numEntries;i++) TEST_EQUALITY(values[i],-3.0);
 
-      TEST_EQUALITY((*e_sys->f)[2],-3.0/2.0); // case 1
-      e_sys->A->ExtractMyRowView(2,numEntries,values,indices);
-      for(int i=0;i<numEntries;i++) TEST_EQUALITY(values[i],-3.0/2.0);
+      TEST_EQUALITY(f_a[2],-3.0/2.0); // case 1
+      t_sys->A->getLocalRowCopy(2,indices,values,numEntries);
+      for(std::size_t i=0;i<numEntries;i++) TEST_EQUALITY(values[i],-3.0/2.0);
 
-      TEST_EQUALITY((*e_sys->f)[5],0.0);      // case 2
-      e_sys->A->ExtractMyRowView(5,numEntries,values,indices);
-      for(int i=0;i<numEntries;i++) TEST_EQUALITY(values[i],0.0);
+      TEST_EQUALITY(f_a[5],0.0);      // case 2
+      t_sys->A->getLocalRowCopy(5,indices,values,numEntries);
+      for(std::size_t i=0;i<numEntries;i++) TEST_EQUALITY(values[i],0.0);
    }
    else if(myRank==1) {
-      TEST_EQUALITY((*e_sys->f)[3],-3.0);     // case 0
-      e_sys->A->ExtractMyRowView(3,numEntries,values,indices);
-      for(int i=0;i<numEntries;i++) TEST_EQUALITY(values[i],-3.0);
+      TEST_EQUALITY(f_a[3],-3.0);     // case 0
+      t_sys->A->getLocalRowCopy(3,indices,values,numEntries);
+      for(std::size_t i=0;i<numEntries;i++) TEST_EQUALITY(values[i],-3.0);
 
-      TEST_EQUALITY((*e_sys->f)[0],-3.0/2.0); // case 1
-      e_sys->A->ExtractMyRowView(0,numEntries,values,indices);
-      for(int i=0;i<numEntries;i++) TEST_EQUALITY(values[i],-3.0/2.0);
+      TEST_EQUALITY(f_a[0],-3.0/2.0); // case 1
+      t_sys->A->getLocalRowCopy(0,indices,values,numEntries);
+      for(std::size_t i=0;i<numEntries;i++) TEST_EQUALITY(values[i],-3.0/2.0);
 
-      TEST_EQUALITY((*e_sys->f)[6],0.0);      // case 2
-      e_sys->A->ExtractMyRowView(6,numEntries,values,indices);
-      for(int i=0;i<numEntries;i++) TEST_EQUALITY(values[i],0.0);
+      TEST_EQUALITY(f_a[6],0.0);      // case 2
+      t_sys->A->getLocalRowCopy(6,indices,values,numEntries);
+      for(std::size_t i=0;i<numEntries;i++) TEST_EQUALITY(values[i],0.0);
    }
    else 
       TEUCHOS_ASSERT(false);
 }
-*/
 
 TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, initializeContainer)
 {

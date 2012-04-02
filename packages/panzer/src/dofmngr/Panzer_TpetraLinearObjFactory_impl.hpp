@@ -194,58 +194,67 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                              const LinearObjContainer & globalBCRows,
                              LinearObjContainer & ghostedObjs) const
 {
-/*
-   const ContainerType & e_localBCRows = Teuchos::dyn_cast<const ContainerType>(localBCRows); 
-   const ContainerType & e_globalBCRows = Teuchos::dyn_cast<const ContainerType>(globalBCRows); 
-   ContainerType & e_ghosted = Teuchos::dyn_cast<ContainerType>(ghostedObjs); 
+   const ContainerType & t_localBCRows = Teuchos::dyn_cast<const ContainerType>(localBCRows); 
+   const ContainerType & t_globalBCRows = Teuchos::dyn_cast<const ContainerType>(globalBCRows); 
+   ContainerType & t_ghosted = Teuchos::dyn_cast<ContainerType>(ghostedObjs); 
 
-   TEUCHOS_ASSERT(!Teuchos::is_null(e_localBCRows.x));
-   TEUCHOS_ASSERT(!Teuchos::is_null(e_globalBCRows.x));
+   TEUCHOS_ASSERT(!Teuchos::is_null(t_localBCRows.x));
+   TEUCHOS_ASSERT(!Teuchos::is_null(t_globalBCRows.x));
    
    // pull out jacobian and vector
-   Teuchos::RCP<CrsMatrixType> A = e_ghosted.A;
-   Teuchos::RCP<VectorType> f = e_ghosted.f;
+   Teuchos::RCP<CrsMatrixType> A = t_ghosted.A;
+   Teuchos::RCP<VectorType> f = t_ghosted.f;
+   Teuchos::ArrayRCP<double> f_array = f->get1dViewNonConst();
 
-   const VectorType & local_bcs  = *(e_localBCRows.x);
-   const VectorType & global_bcs = *(e_globalBCRows.x);
+   const VectorType & local_bcs  = *(t_localBCRows.x);
+   const VectorType & global_bcs = *(t_globalBCRows.x);
+   Teuchos::ArrayRCP<const double> local_bcs_array = local_bcs.get1dView();
+   Teuchos::ArrayRCP<const double> global_bcs_array = global_bcs.get1dView();
 
-   TEUCHOS_ASSERT(local_bcs.getLocalLength()==global_bcs.getLocalLength());
-   for(int i=0;i<local_bcs.getLocalLength();i++) {
-      if(global_bcs[i]==0.0)
+
+   TEUCHOS_ASSERT(local_bcs_array.size()==global_bcs_array.size());
+   for(std::size_t i=0;i<local_bcs_array.size();i++) {
+      if(global_bcs_array[i]==0.0)
          continue;
 
-      int numEntries = 0;
-      double * values = 0;
-      int * indices = 0;
+      std::size_t numEntries = 0;
+      std::size_t sz = A->getNumEntriesInLocalRow(i);
+      Teuchos::Array<LocalOrdinalT> indices(sz);
+      Teuchos::Array<double> values(sz);
 
-      if(local_bcs[i]==0.0) { 
+      if(local_bcs_array[i]==0.0) { 
          // this boundary condition was NOT set by this processor
 
          // if they exist put 0.0 in each entry
          if(!Teuchos::is_null(f))
-            (*f)[i] = 0.0;
+            f_array[i] = 0.0;
          if(!Teuchos::is_null(A)) {
-            A->ExtractMyRowView(i,numEntries,values,indices);
-            for(int c=0;c<numEntries;c++) 
+            A->getLocalRowCopy(i,indices,values,numEntries);
+
+            for(std::size_t c=0;c<numEntries;c++) 
                values[c] = 0.0;
+
+            A->replaceLocalValues(i,indices,values);
          }
       }
       else {
          // this boundary condition was set by this processor
 
-         double scaleFactor = global_bcs[i];
+         double scaleFactor = global_bcs_array[i];
 
          // if they exist scale linear objects by scale factor
          if(!Teuchos::is_null(f))
-            (*f)[i] /= scaleFactor;
+            f_array[i] /= scaleFactor;
          if(!Teuchos::is_null(A)) {
-            A->ExtractMyRowView(i,numEntries,values,indices);
-            for(int c=0;c<numEntries;c++) 
+            A->getLocalRowCopy(i,indices,values,numEntries);
+
+            for(std::size_t c=0;c<numEntries;c++) 
                values[c] /= scaleFactor;
+
+            A->replaceLocalValues(i,indices,values);
          }
       }
    }
-*/
 }
 
 // Functions for initalizing a container
