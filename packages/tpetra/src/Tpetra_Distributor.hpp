@@ -62,6 +62,9 @@ namespace Tpetra {
     };
   } // namespace (anonymous)
 
+  //! Valid values for Distributor's "Send type" parameter.
+  Array<std::string> distributorSendTypes ();
+
   /// \class Distributor
   /// \brief Sets up and executes a communication plan for a Tpetra DistObject.
   ///

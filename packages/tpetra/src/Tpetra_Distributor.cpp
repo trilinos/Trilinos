@@ -44,6 +44,17 @@
 
 namespace Tpetra {
 
+  Array<std::string> 
+  distributorSendTypes ()
+  {
+    Array<std::string> sendTypes;
+    sendTypes.push_back ("Isend");
+    sendTypes.push_back ("Rsend");
+    sendTypes.push_back ("Send");
+    sendTypes.push_back ("Ssend");
+    return sendTypes;
+  }
+
   Distributor::Distributor(const Teuchos::RCP<const Teuchos::Comm<int> > &comm) 
     : comm_(comm)
     , sendType_ (DISTRIBUTOR_SEND)
@@ -157,11 +168,7 @@ namespace Tpetra {
 
     const bool barrierBetween = true;
 
-    Array<std::string> sendTypes;
-    sendTypes.push_back ("Isend");
-    sendTypes.push_back ("Rsend");
-    sendTypes.push_back ("Send");
-    sendTypes.push_back ("Ssend");
+    Array<std::string> sendTypes = distributorSendTypes ();
     const std::string defaultSendType ("Isend");
     Array<EDistributorSendType> sendTypeEnums;
     sendTypeEnums.push_back (DISTRIBUTOR_ISEND);
