@@ -23,8 +23,14 @@ namespace MueLu {
     coarseLevel.DeclareInput("P", PFact_.get(), this); // transfer operators (from PRFactory, not from PFactory and RFactory!)
     coarseLevel.DeclareInput("R", RFact_.get(), this); //TODO: must be request according to (implicitTranspose flag!!!!!
     coarseLevel.DeclareInput("A", PFact_.get(), this); //FIXME hack
-    coarseLevel.DeclareInput("Permutation", RFact_.get(), this); //FIXME hack, could result in redundant work...
-    coarseLevel.DeclareInput("PermutationTrans", PFact_.get(), this); //FIXME hack, could result in redundant work...
+
+    //FIXME: the 'if' is a hack (needed because FactoryManager does not now about 'Permutation' for now).
+    if (RFact_ != Teuchos::null) {
+      coarseLevel.DeclareInput("Permutation", RFact_.get(), this); //FIXME hack, could result in redundant work...
+    }
+    if (PFact_ != Teuchos::null) {
+      coarseLevel.DeclareInput("PermutationTrans", PFact_.get(), this); //FIXME hack, could result in redundant work...
+    }
 
     // call DeclareInput of all user-given transfer factories
     for(std::vector<RCP<const FactoryBase> >::const_iterator it = TransferFacts_.begin(); it!=TransferFacts_.end(); ++it) {
