@@ -48,6 +48,26 @@ namespace Kokkos {
 namespace Impl {
 
 template< typename ValueType >
+struct Factory< MDArray< ValueType , Cuda > , void >
+{
+  typedef MDArray< ValueType , Cuda > output_type ;
+
+  static output_type create( const std::string & label ,
+                             size_t nP , size_t n1 , size_t n2 , size_t n3 ,
+                             size_t n4 , size_t n5 , size_t n6 , size_t n7 )
+  {
+    output_type array ;
+
+    array.m_map.template assign< ValueType >(nP,n1,n2,n3,n4,n5,n6,n7);
+    array.m_memory.allocate( array.m_map.allocation_size() , label );
+
+    // Cuda 'allocate' initializes to zero 
+
+    return array ;
+  }
+};
+
+template< typename ValueType >
 struct Factory< MDArray< ValueType , Cuda > ,
                 MDArray< ValueType , Cuda > >
 {

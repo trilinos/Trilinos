@@ -254,6 +254,36 @@ public:
     { HostThreadWorker<void>::execute( *this ); }
 };
 
+template< typename DstType >
+class HostParallelFill : public HostThreadWorker<void> {
+public:
+
+  DstType * const m_dst ;
+  const DstType   m_src ;
+  const Host::size_type m_count ;
+
+  void execute_on_thread( HostThread & this_thread ) const
+  {
+    std::pair<Host::size_type,Host::size_type> range =
+      this_thread.work_range( m_count );
+    DstType * const x_end = m_dst + range.second ;
+    DstType *       x     = m_dst + range.first ;
+
+    for ( ; x_end != x ; ++x ) { *x = m_src ; }
+
+    this_thread.barrier();
+  }
+
+  template< typename SrcType >
+  HostParallelFill( DstType * dst , const SrcType & src ,
+                    Host::size_type count )
+    : HostThreadWorker<void>()
+    , m_dst( dst ), m_src( src ), m_count( count )
+    { HostThreadWorker<void>::execute( *this ); }
+};
+
+//----------------------------------------------------------------------------
+
 //----------------------------------------------------------------------------
 
 } // namespace Impl

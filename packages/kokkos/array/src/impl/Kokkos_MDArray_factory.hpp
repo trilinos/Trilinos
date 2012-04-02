@@ -50,44 +50,6 @@
 namespace Kokkos {
 namespace Impl {
 
-template< typename ValueType , class Device >
-struct Factory< MDArray< ValueType , Device > , void >
-{
-  typedef MDArray< ValueType , Device > output_type ;
-
-  static output_type create( const std::string & label ,
-                             size_t nP , size_t n1 , size_t n2 , size_t n3 ,
-                             size_t n4 , size_t n5 , size_t n6 , size_t n7 )
-  {
-    typedef DeepCopyKernelMDArray< output_type, ValueType, 1 > kernel_1 ;
-    typedef DeepCopyKernelMDArray< output_type, ValueType, 2 > kernel_2 ;
-    typedef DeepCopyKernelMDArray< output_type, ValueType, 3 > kernel_3 ;
-    typedef DeepCopyKernelMDArray< output_type, ValueType, 4 > kernel_4 ;
-    typedef DeepCopyKernelMDArray< output_type, ValueType, 5 > kernel_5 ;
-    typedef DeepCopyKernelMDArray< output_type, ValueType, 6 > kernel_6 ;
-    typedef DeepCopyKernelMDArray< output_type, ValueType, 7 > kernel_7 ;
-    typedef DeepCopyKernelMDArray< output_type, ValueType, 8 > kernel_8 ;
-
-    output_type array ;
-
-    array.m_map.template assign< ValueType >(nP,n1,n2,n3,n4,n5,n6,n7);
-    array.m_memory.allocate( array.m_map.allocation_size() , label );
-
-    switch( array.m_map.rank() ) {
-    case 1 : parallel_for( nP , kernel_1( array , 0 ) ); break ;
-    case 2 : parallel_for( nP , kernel_2( array , 0 ) ); break ;
-    case 3 : parallel_for( nP , kernel_3( array , 0 ) ); break ;
-    case 4 : parallel_for( nP , kernel_4( array , 0 ) ); break ;
-    case 5 : parallel_for( nP , kernel_5( array , 0 ) ); break ;
-    case 6 : parallel_for( nP , kernel_6( array , 0 ) ); break ;
-    case 7 : parallel_for( nP , kernel_7( array , 0 ) ); break ;
-    case 8 : parallel_for( nP , kernel_8( array , 0 ) ); break ;
-    }
-
-    return array ;
-  }
-};
-
 //----------------------------------------------------------------------------
 
 /** \brief Mirror with view optimization */
