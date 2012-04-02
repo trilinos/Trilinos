@@ -78,10 +78,25 @@ namespace Tpetra {
 
     /// \brief Construct the Distributor using the specified communicator.
     ///
-    /// This doesn't actually set up the distribution pattern.  You
-    /// need to call one of the "gather / scatter 'constructors'" to
-    /// do that.
-    explicit Distributor(const RCP<const Comm<int> > & comm);
+    /// \param comm [in] Communicator used by the Distributor.
+    ///
+    /// The constructor doesn't actually set up the distribution
+    /// pattern.  You need to call one of the "gather / scatter
+    /// 'constructors'" to do that.
+    explicit Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
+
+    /// \brief Construct using the specified communicator and ParameterList.
+    ///
+    /// \param comm [in] Communicator used by the Distributor.
+    ///
+    /// \param plist [in/out] List of parameters controlling how the
+    ///   Distributor performs communication.  Must be nonnull.
+    ///
+    /// The constructor doesn't actually set up the distribution
+    /// pattern.  You need to call one of the "gather / scatter
+    /// 'constructors'" to do that.
+    explicit Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+			  const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
     //! Copy constructor.
     Distributor(const Distributor &distributor);

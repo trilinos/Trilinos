@@ -56,7 +56,28 @@ namespace Tpetra {
     , totalReceiveLength_(0)
   {}
 
-  Distributor::Distributor(const Distributor & distributor) 
+  Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+			    const Teuchos::RCP<Teuchos::ParameterList>& plist)
+    : comm_(comm)
+    , sendType_ (DISTRIBUTOR_SEND)
+    , barrierBetween_ (true)
+    , numExports_(0)
+    , selfMessage_(false)
+    , numSends_(0)
+    , maxSendLength_(0)
+    , numReceives_(0)
+    , totalReceiveLength_(0)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION (plist.is_null(), std::invalid_argument, "The "
+      "two-argument Distributor constructor requires that the input "
+      "RCP<ParameterList> be nonnull.  If you don't know what parameters to "
+      "set, you can either call the one-argument constructor, or supply a "
+      "nonnull but empty ParameterList.  Both of these options will set default "
+      "parameters.");
+    this->setParameterList (plist);
+  }
+
+  Distributor::Distributor (const Distributor & distributor) 
     : comm_(distributor.comm_)
     , sendType_ (distributor.sendType_)
     , barrierBetween_ (distributor.barrierBetween_)
@@ -67,7 +88,22 @@ namespace Tpetra {
     , numReceives_(distributor.numReceives_)
     , totalReceiveLength_(distributor.totalReceiveLength_)
     , reverseDistributor_(distributor.reverseDistributor_)
-  {}
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::RCP;
+
+    // Clone the right-hand side's ParameterList, so that this' list
+    // is decoupled from the right-hand side's list.  We don't need to
+    // do validation, since the right-hand side already has validated
+    // its parameters, so just call setMyParamList().  Note that this
+    // won't work if the right-hand side doesn't have a list set yet,
+    // so we first check for null.
+    RCP<const ParameterList> rhsList = distributor.getParameterList ();
+    if (! rhsList.is_null ()) {
+      this->setMyParamList (parameterList (* rhsList));
+    }
+  }
 
   Distributor::~Distributor() 
   {
