@@ -143,6 +143,7 @@ namespace Tpetra {
   , indicesAreLocal_(false)
   , indicesAreGlobal_(false)
   {
+    typedef Teuchos::OrdinalTraits<size_t> OTST;
     std::string tfecfFuncName("CrsGraph(rowMap,NumEntriesPerRowToAlloc)");
 
     staticAssertions();
@@ -151,11 +152,16 @@ namespace Tpetra {
     }
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC((size_t)NumEntriesPerRowToAlloc.size() != getNodeNumRows(), std::invalid_argument,
         ": NumEntriesPerRowToAlloc must have as many entries as specified by rowMap for this node.");
-    size_t numMin = OrdinalTraits<size_t>::max(),
-           numMax = OrdinalTraits<size_t>::zero();
+    //size_t numMin = OTST::max();
+    //size_t numMax = OTST::zero();
     for (size_t r=0; r < getNodeNumRows(); ++r) {
-      numMin = std::min<size_t>( numMin, NumEntriesPerRowToAlloc[r] );
-      numMax = std::max<size_t>( numMax, NumEntriesPerRowToAlloc[r] );
+      const size_t curRowCount = NumEntriesPerRowToAlloc[r];
+      TEUCHOS_TEST_FOR_EXCEPTION(curRowCount == OTST::invalid(), 
+        std::invalid_argument, "NumEntriesPerRowToAlloc[" << r << "] specifies "
+        "an invalid number of entries (Teuchos::OrdinalTraits<size_t>::"
+        "invalid()).");
+      //numMin = std::min<size_t> (numMin, curRowCount);
+      //numMax = std::max<size_t> (numMax, curRowCount);
     }
     resumeFill();
     checkInternalState();
@@ -182,6 +188,7 @@ namespace Tpetra {
   , indicesAreLocal_(false)
   , indicesAreGlobal_(false)
   {
+    typedef Teuchos::OrdinalTraits<size_t> OTST;
     std::string tfecfFuncName("CrsGraph(rowMap,colMap,NumEntriesPerRowToAlloc)");
 
     staticAssertions();
@@ -190,6 +197,17 @@ namespace Tpetra {
     }
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC((size_t)NumEntriesPerRowToAlloc.size() != getNodeNumRows(), std::invalid_argument,
         ": NumEntriesPerRowToAlloc must have as many entries as specified by rowMap for this node.");
+    //size_t numMin = OTST::max();
+    //size_t numMax = OTST::zero();
+    for (size_t r=0; r < getNodeNumRows(); ++r) {
+      const size_t curRowCount = NumEntriesPerRowToAlloc[r];
+      TEUCHOS_TEST_FOR_EXCEPTION(curRowCount == OTST::invalid(), 
+        std::invalid_argument, "NumEntriesPerRowToAlloc[" << r << "] specifies "
+        "an invalid number of entries (Teuchos::OrdinalTraits<size_t>::"
+        "invalid()).");
+      //numMin = std::min<size_t> (numMin, curRowCount);
+      //numMax = std::max<size_t> (numMax, curRowCount);
+    }
     resumeFill();
     checkInternalState();
   }

@@ -174,9 +174,9 @@ namespace {
       ArrayRCP<size_t> hints = arcp<size_t>(numLocal+1);
       std::fill(hints.begin(),hints.end(),1);
       hints[0] = INVALID;
-      TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal+1)), std::invalid_argument ); // too many
-      TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal-1)), std::invalid_argument ); // too few
-      TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal)),   std::invalid_argument ); // too few
+      TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal+1)), std::invalid_argument ); // too many entries
+      TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal-1)), std::invalid_argument ); // too few entries
+      TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal)),   std::invalid_argument ); // invalid value
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;
