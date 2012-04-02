@@ -163,7 +163,7 @@ namespace Tpetra {
 	      ProfileType pftype = DynamicProfile,
 	      const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
 
-    /// \brief Constructor specifying number of entries in each row.
+    /// \brief Constructor specifying (possibly different) number of entries in each row.
     ///
     /// \param rowMap [in] Distribution of rows of the graph.
     ///

@@ -163,36 +163,140 @@ namespace Tpetra {
             class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps >
   class CrsMatrix : public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
                     public DistObject<char, LocalOrdinal,GlobalOrdinal,Node> {
-    public:
-      typedef Scalar        scalar_type;
-      typedef LocalOrdinal  local_ordinal_type;
-      typedef GlobalOrdinal global_ordinal_type;
-      typedef Node          node_type;
-      // backwards compatibility defines both of these
-      typedef LocalMatOps   mat_vec_type;
-      typedef LocalMatOps   mat_solve_type;
+  public:
+    typedef Scalar        scalar_type;
+    typedef LocalOrdinal  local_ordinal_type;
+    typedef GlobalOrdinal global_ordinal_type;
+    typedef Node          node_type;
+    // backwards compatibility defines both of these
+    typedef LocalMatOps   mat_vec_type;
+    typedef LocalMatOps   mat_solve_type;
 
-      //! @name Constructor/Destructor Methods
-      //@{ 
+    //! @name Constructor/Destructor Methods
+    //@{ 
 
-      //! Constructor specifying the number of non-zeros for all rows.
-      CrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype = DynamicProfile);
+    /// \brief Constructor specifying fixed number of entries for each row.
+    ///
+    /// \param rowMap [in] Distribution of rows of the matrix.
+    ///
+    /// \param maxNumEntriesPerRow [in] Maximum number of matrix
+    ///   entries per row.  If pftype==DynamicProfile, this is only a
+    ///   hint, and you can set this to zero without affecting
+    ///   correctness.  If pftype==StaticProfile, this sets the amount
+    ///   of storage allocated, and you cannot exceed this number of
+    ///   entries in any row.
+    ///
+    /// \param pftype [in] Whether to allocate storage dynamically
+    ///   (DynamicProfile) or statically (StaticProfile).
+    ///
+    /// \param plist [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    CrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
+	       size_t maxNumEntriesPerRow, 
+	       ProfileType pftype = DynamicProfile,
+	       const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
 
-      //! Constructor specifying the number of non-zeros for each row.
-      CrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype = DynamicProfile);
+    /// \brief Constructor specifying (possibly different) number of entries in each row.
+    ///
+    /// \param rowMap [in] Distribution of rows of the matrix.
+    ///
+    /// \param NumEntriesPerRowToAlloc [in] Maximum number of matrix
+    ///   entries to allocate for each row.  If
+    ///   pftype==DynamicProfile, this is only a hint.  If
+    ///   pftype==StaticProfile, this sets the amount of storage
+    ///   allocated, and you cannot exceed the allocated number of
+    ///   entries for any row.
+    ///
+    /// \param pftype [in] Whether to allocate storage dynamically
+    ///   (DynamicProfile) or statically (StaticProfile).
+    ///
+    /// \param plist [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    CrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
+	       const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc, 
+	       ProfileType pftype = DynamicProfile,
+	       const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
 
-      //! Constructor specifying a column map and the number of non-zeros for all rows.
-      /** The column map will be used to filter any matrix entries inserted using insertLocalValues() or insertGlobalValues().
-        */
-      CrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype = DynamicProfile);
+    /// \brief Constructor specifying column Map and fixed number of entries for each row.
+    ///
+    /// The column Map will be used to filter any matrix entries
+    /// inserted using insertLocalValues() or insertGlobalValues().
+    ///
+    /// \param rowMap [in] Distribution of rows of the matrix.
+    ///
+    /// \param colMap [in] Distribution of columns of the matrix.
+    ///
+    /// \param maxNumEntriesPerRow [in] Maximum number of matrix
+    ///   entries per row.  If pftype==DynamicProfile, this is only a
+    ///   hint, and you can set this to zero without affecting
+    ///   correctness.  If pftype==StaticProfile, this sets the amount
+    ///   of storage allocated, and you cannot exceed this number of
+    ///   entries in any row.
+    ///
+    /// \param pftype [in] Whether to allocate storage dynamically
+    ///   (DynamicProfile) or statically (StaticProfile).
+    ///
+    /// \param plist [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    CrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
+	       const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap, 
+	       size_t maxNumEntriesPerRow, 
+	       ProfileType pftype = DynamicProfile,
+	       const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
 
-      //! Constructor specifying a column map and the number of non-zeros for each row.
-      /** The column map will be used to filter any matrix entries inserted using insertLocalValues() or insertGlobalValues().
-        */
-      CrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype = DynamicProfile);
+    /// \brief Constructor specifying column Map and number of entries in each row.
+    ///
+    /// The column Map will be used to filter any matrix indices
+    /// inserted using insertLocalValues() or insertGlobalValues().
+    ///
+    /// \param rowMap [in] Distribution of rows of the matrix.
+    ///
+    /// \param colMap [in] Distribution of columns of the matrix.
+    ///
+    /// \param NumEntriesPerRowToAlloc [in] Maximum number of matrix
+    ///   entries to allocate for each row.  If
+    ///   pftype==DynamicProfile, this is only a hint.  If
+    ///   pftype==StaticProfile, this sets the amount of storage
+    ///   allocated, and you cannot exceed the allocated number of
+    ///   entries for any row.
+    ///
+    /// \param pftype [in] Whether to allocate storage dynamically
+    ///   (DynamicProfile) or statically (StaticProfile).
+    ///
+    /// \param plist [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    CrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
+	       const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap, 
+	       const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc, 
+	       ProfileType pftype = DynamicProfile,
+	       const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
 
-      //! Constructor specifying a pre-constructed graph.
-      explicit CrsMatrix(const RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &graph);
+    /// \brief Constructor specifying a previously constructed graph.
+    ///
+    /// Calling this constructor fixes the graph structure of the
+    /// sparse matrix.  We say in this case that the matrix has a
+    /// "static graph."  If you create a CrsMatrix with this
+    /// constructor, you are not allowed to insert new entries into
+    /// the matrix, but you are allowed to change values in the
+    /// matrix.
+    ///
+    /// The given graph must be fill complete.  Note that calling
+    /// resumeFill() on the graph makes it not fill complete, even if
+    /// you had previously called fillComplete() on the graph.  In
+    /// that case, you must call fillComplete() on the graph again
+    /// before invoking this CrsMatrix constructor.
+    ///
+    /// \param graph [in] The graph structure of the sparse matrix.
+    ///   The graph <i>must</i> be fill complete.
+    /// \param plist [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    explicit CrsMatrix (const Teuchos::RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >& graph,
+			const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
 
       // !Destructor.
       virtual ~CrsMatrix();
