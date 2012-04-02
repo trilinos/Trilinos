@@ -56,10 +56,10 @@ int main(int argc, char* argv[])
   Teuchos::LAPACK<int,float> M;
 
   double Ad[16];
-  double xd[4];
+  //double xd[4];
   double bd[4];
   float Af[16];
-  float xf[4];
+  //float xf[4];
   float bf[4];
 
   int IPIV[4];
@@ -71,6 +71,7 @@ int main(int argc, char* argv[])
       Ad[i] = 0;
       Af[i] = 0;
     }
+/*
   for(i = 0; i < 4; i++)
     {
       xd[i] = 0;
@@ -78,12 +79,13 @@ int main(int argc, char* argv[])
       xf[i] = 0;
       bf[i] = 0;
     }
+*/
 
   Ad[0] = 1; Ad[2] = 1; Ad[5] = 1; Ad[8] = 2; Ad[9] = 1; Ad[10] = 1; Ad[14] = 2; Ad[15] = 2;
-  xd[0] = -2; xd[1] = 1; xd[2] = 1; xd[3] = 1;
+  //xd[0] = -2; xd[1] = 1; xd[2] = 1; xd[3] = 1;
   bd[1] = 2; bd[2] = 1; bd[3] = 2;
   Af[0] = 1; Af[2] = 1; Af[5] = 1; Af[8] = 2; Af[9] = 1; Af[10] = 1; Af[14] = 2; Af[15] = 2;
-  xf[0] = -2; xf[1] = 1; xf[2] = 1; xf[3] = 1;
+  //xf[0] = -2; xf[1] = 1; xf[2] = 1; xf[3] = 1;
   bf[1] = 2; bf[2] = 1; bf[3] = 2;
 
   if (verbose) std::cout << "GESV test ... ";

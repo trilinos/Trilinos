@@ -69,6 +69,9 @@ int main(int argc, char* argv[])
   rows = My_Copy3.numRows();  // number of rows
   cols = My_Copy3.numCols();  // number of columns
   stride = My_Copy3.stride(); // storage stride
+  TEUCHOS_ASSERT_EQUALITY(rows, 3);
+  TEUCHOS_ASSERT_EQUALITY(cols, 3);
+  TEUCHOS_ASSERT_EQUALITY(stride, 4);
 
   // Matrices can change dimension:
   Empty_Matrix.shape( 3 );      // size non-dimensional matrices
