@@ -1,4 +1,4 @@
-#include "MueLu_Monitor.hpp"
+#include "MueLu_TimeMonitor.hpp"
 
 namespace MueLu {
 
@@ -24,11 +24,5 @@ namespace MueLu {
       
     return r;
   }
-
-  template <class TagName>
-  std::stack<MutuallyExclusiveTime<TagName>*> MutuallyExclusiveTime<TagName>::timerStack_;
-
-  //FIXME: move this:
-  template class MutuallyExclusiveTime<FactoryBase>;
 
 } // namespace MueLu
