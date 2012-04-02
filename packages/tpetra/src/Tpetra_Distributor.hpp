@@ -45,9 +45,22 @@
 #include "Tpetra_Util.hpp"
 #include <Teuchos_as.hpp>
 #include <Teuchos_Describable.hpp>
+#include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
 
 
 namespace Tpetra {
+
+  namespace {
+    // This is an implementation detail of Distributor.  Please do not
+    // rely on these values in your code.  We use this to pick the
+    // type of send operation that Distributor uses.
+    enum EDistributorSendType {
+      DISTRIBUTOR_ISEND = 0, // Use MPI_Isend (Teuchos::isend)
+      DISTRIBUTOR_RSEND,     // Use MPI_Rsend (Teuchos::readySend)
+      DISTRIBUTOR_SEND,      // Use MPI_Send (Teuchos::send)
+      DISTRIBUTOR_SSEND      // Use MPI_Ssend (Teuchos::ssend)
+    };
+  } // namespace (anonymous)
 
   /// \class Distributor
   /// \brief Sets up and executes a communication plan for a Tpetra DistObject.
@@ -56,7 +69,8 @@ namespace Tpetra {
   /// needed for subclasses of \c DistObject (such as CrsMatrix and
   /// MultiVector) to do data redistribution (Import and Export)
   /// operations.
-  class Distributor : public Teuchos::Describable {
+  class Distributor : 
+    public Teuchos::Describable, Teuchos::ParameterListAcceptorDefaultBase {
   public:
 
     //! @name Constructor/Destructor
@@ -72,11 +86,21 @@ namespace Tpetra {
     //! Copy constructor.
     Distributor(const Distributor &distributor);
 
-    //! Destructor.
-    ~Distributor();
+    //! Destructor (virtual for memory safety).
+    virtual ~Distributor();
 
     //@}
 
+    //! @name Implementation of ParameterListAcceptorDefaultBase
+    //@{ 
+    
+    //! Set Distributor parameters.
+    void setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist);
+
+    //! List of valid Distributor parameters.
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters () const;
+
+    //@}
 
     //! \name Gather/Scatter Constructors
     //@{ 
@@ -354,6 +378,14 @@ namespace Tpetra {
     //! The communicator over which to perform distributions.
     RCP<const Comm<int> > comm_;
 
+    //! @name Parameters read in from \c Teuchos::ParameterList
+    //@{
+    //! The variant of send to use in do[Reverse]Posts().
+    EDistributorSendType sendType_;
+    //! Whether to do a barrier between receives and sends in do[Reverse]Posts().
+    bool barrierBetween_;
+    //@}
+
     /// \brief The number of export process IDs on input to \c createFromSends().
     ///
     /// This may differ from the number of sends.  We always want to
@@ -566,12 +598,14 @@ namespace Tpetra {
     using Teuchos::isend;
     using Teuchos::readySend;
     using Teuchos::send;
-    const bool doBarrier = true; 
-    const bool doReadySends = true;
-    const bool doIsends = false; // mfh 29 Mar 2012: NOT TESTED YET
+    using Teuchos::ssend;
+    const EDistributorSendType sendType = sendType_;
+    const bool doBarrier = barrierBetween_;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(doReadySends && ! doBarrier, std::logic_error, 
-      "Rsend implementation requires a barrier between Irecvs and Rsends.");
+    TEUCHOS_TEST_FOR_EXCEPTION(sendType == DISTRIBUTOR_RSEND && ! doBarrier, 
+      std::logic_error, "Ready send implementation requires a barrier between "
+      "posting receives and posting ready sends.  This should have been checked "
+      "before.  Please report this bug to the Tpetra developers.");
 
     const int myImageID = comm_->getRank();
     size_t selfReceiveOffset = 0;
@@ -637,7 +671,7 @@ namespace Tpetra {
 
     // setup scan through imagesTo_ list starting with higher numbered images
     // (should help balance message traffic)
-    size_t numBlocks = numSends_+ selfMessage_;
+    size_t numBlocks = numSends_ + selfMessage_;
     size_t imageIndex = 0;
     while ((imageIndex < numBlocks) && (imagesTo_[imageIndex] < myImageID)) {
       ++imageIndex;
@@ -661,21 +695,31 @@ namespace Tpetra {
         if (imagesTo_[p] != myImageID) {
           ArrayView<const Packet> tmpSend = 
 	    exports.view (startsTo_[p]*numPackets, lengthsTo_[p]*numPackets);
-	  if (doReadySends) {
+	  if (sendType == DISTRIBUTOR_RSEND) {
 	    readySend<int,Packet> (*comm_, tmpSend, imagesTo_[p]);
 	  }
-	  else if (doIsends) {
+	  else if (sendType == DISTRIBUTOR_ISEND) {
 	    ArrayRCP<const Packet> tmpSendBuf = 
-	      exports.persistingView (startsTo_[p]*numPackets, lengthsTo_[p]*numPackets);
+	      exports.persistingView (startsTo_[p] * numPackets, 
+				      lengthsTo_[p] * numPackets);
 	    requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf, imagesTo_[p]));
 	  }
-	  else {
+	  else if (sendType == DISTRIBUTOR_SSEND) {
+	    ssend<int, Packet> (*comm_, tmpSend.size(), 
+				tmpSend.getRawPtr(), imagesTo_[p]);
+	    
+	  } else { // if (sendType == DISTRIBUTOR_SEND) 
+	    // We've already validated sendType, so it has to be
+	    // DISTRIBUTOR_SEND.  If it's not, well, this is a
+	    // reasonable fallback.
+	    //
 	    // FIXME (mfh 23 Mar 2012) Implement a three-argument
 	    // version of send() that takes an ArrayView instead of a
 	    // raw array.
-	    send<int, Packet> (*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
+	    send<int, Packet> (*comm_, tmpSend.size(), 
+			       tmpSend.getRawPtr(), imagesTo_[p]);
 	  }
-        }
+	}
         else { // "Sending" the message to myself
           selfNum = p;
         }
@@ -708,16 +752,24 @@ namespace Tpetra {
           }
           ArrayView<const Packet> tmpSend = sendArray.view (0, lengthsTo_[p]*numPackets);
 
-	  if (doReadySends) {
+	  if (sendType == DISTRIBUTOR_RSEND) {
 	    readySend<int,Packet> (*comm_, tmpSend, imagesTo_[p]);
 	  }
-	  else if (doIsends) {
+	  else if (sendType == DISTRIBUTOR_ISEND) {
 	    ArrayRCP<const Packet> tmpSendBuf = 
-	      sendArray.persistingView (0, lengthsTo_[p]*numPackets);
+	      sendArray.persistingView (0, lengthsTo_[p] * numPackets);
 	    requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf, imagesTo_[p]));
 	  }
-	  else {
-	    send<int,Packet> (*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
+	  else if (sendType == DISTRIBUTOR_SSEND) {
+	    ssend<int,Packet> (*comm_, tmpSend.size(), 
+			       tmpSend.getRawPtr(), imagesTo_[p]);
+	  }
+	  else { // if (sendType == DISTRIBUTOR_SEND) 
+	    // We've already validated sendType, so it has to be
+	    // DISTRIBUTOR_SEND.  If it's not, well, this is a
+	    // reasonable fallback.
+	    send<int,Packet> (*comm_, tmpSend.size(), 
+			      tmpSend.getRawPtr(), imagesTo_[p]);
 	  }
         }
         else { // "Sending" the message to myself
@@ -750,12 +802,14 @@ namespace Tpetra {
     using Teuchos::isend;
     using Teuchos::readySend;
     using Teuchos::send;
-    const bool doBarrier = true;
-    const bool doReadySends = true;
-    const bool doIsends = false; // mfh 29 Mar 2012: NOT TESTED YET
+    using Teuchos::ssend;
+    const EDistributorSendType sendType = sendType_;
+    const bool doBarrier = barrierBetween_;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(doReadySends && ! doBarrier, std::logic_error, 
-      "Rsend implementation requires a barrier between Irecvs and Rsends.");
+    TEUCHOS_TEST_FOR_EXCEPTION(sendType == DISTRIBUTOR_RSEND && ! doBarrier, 
+      std::logic_error, "Ready send implementation requires a barrier between "
+      "posting receives and posting ready sends.  This should have been checked "
+      "before.  Please report this bug to the Tpetra developers.");
 
     const int myImageID = comm_->getRank();
     size_t selfReceiveOffset = 0;
@@ -871,19 +925,24 @@ namespace Tpetra {
         if (imagesTo_[p] != myImageID && packetsPerSend[p] > 0) {
           ArrayView<const Packet> tmpSend = 
 	    exports.view (sendPacketOffsets[p], packetsPerSend[p]);
-	  if (doReadySends) {
-	    readySend<int,Packet>(*comm_,tmpSend,imagesTo_[p]);
+	  if (sendType == DISTRIBUTOR_RSEND) {
+	    readySend<int,Packet> (*comm_, tmpSend, imagesTo_[p]);
 	  }
-	  else if (doIsends) {
+	  else if (sendType == DISTRIBUTOR_ISEND) {
 	    ArrayRCP<const Packet> tmpSendBuf = 
 	      exports.persistingView (sendPacketOffsets[p], packetsPerSend[p]);
 	    requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf, imagesTo_[p]));
 	  }
-	  else {
-	    // FIXME (mfh 23 Mar 2012) Implement a three-argument
-	    // version of send() that takes an ArrayView instead of a
-	    // raw array.
-	    send<int, Packet>(*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
+	  else if (sendType == DISTRIBUTOR_SSEND) {
+	    ssend<int, Packet> (*comm_, tmpSend.size(), 
+				tmpSend.getRawPtr(), imagesTo_[p]);
+	  }
+	  else { // if (sendType == DISTRIBUTOR_SEND)
+	    // We've already validated sendType, so it has to be
+	    // DISTRIBUTOR_SEND.  If it's not, well, this is a
+	    // reasonable fallback.
+	    send<int, Packet> (*comm_, tmpSend.size(), 
+			       tmpSend.getRawPtr(), imagesTo_[p]);
 	  }
         }
         else { // "Sending" the message to myself
@@ -928,15 +987,19 @@ namespace Tpetra {
           if (numPacketsTo_p > 0) {
             ArrayView<const Packet> tmpSend = sendArray.view (0, numPacketsTo_p);
 
-	    if (doReadySends) {
-	      readySend<int,Packet>(*comm_,tmpSend,imagesTo_[p]);
+	    if (sendType == DISTRIBUTOR_RSEND) {
+	      readySend<int,Packet> (*comm_,tmpSend,imagesTo_[p]);
 	    } 
-	    else if (doIsends) {
+	    else if (sendType == DISTRIBUTOR_ISEND) {
 	      ArrayRCP<const Packet> tmpSendBuf = 
 		sendArray.persistingView (0, numPacketsTo_p);
-	      requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf, imagesTo_[p]));
+	      requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf,
+						       imagesTo_[p]));
 	    }
-	    else {
+	    else if (sendType == DISTRIBUTOR_SSEND) {
+	      ssend<int,Packet> (*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
+	    }
+	    else { // if (sendType == DISTRIBUTOR_SSEND)
 	      send<int,Packet> (*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
 	    }
           }

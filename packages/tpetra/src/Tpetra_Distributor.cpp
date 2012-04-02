@@ -40,6 +40,7 @@
 // @HEADER
 
 #include "Tpetra_Distributor.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 
 namespace Tpetra {
 
@@ -74,6 +75,67 @@ namespace Tpetra {
       "should be none at this point.  Please report this bug to the Tpetra "
       "developers.");
   }
+
+  void
+  Distributor::setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
+  {
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::RCP;
+
+    RCP<const ParameterList> validParams = getValidParameters ();
+    plist->validateParametersAndSetDefaults (*validParams);
+
+    const bool barrierBetween = 
+      plist->get<bool> ("Barrier between receives and sends");
+    const EDistributorSendType sendType = 
+      plist->get<EDistributorSendType> ("Send type");
+    // We check this property explicitly, since we haven't yet learned
+    // how to make a validator that can cross-check properties.
+    // Later, turn this into a validator so that it can be embedded in
+    // the valid ParameterList and used in Optika.
+    TEUCHOS_TEST_FOR_EXCEPTION(! barrierBetween && sendType == DISTRIBUTOR_RSEND,
+      std::invalid_argument, "If you use ready sends, you must include a "
+      "barrier between receives and sends.  Ready sends require that their "
+      "corresponding receives have already been posted, and the only way to "
+      "guarantee that in general is with a barrier.");
+
+    // Now that we've validated the input list completely, save the results.
+    sendType_ = sendType;
+    barrierBetween_ = barrierBetween;
+    this->setMyParamList (plist);
+  }
+
+  Teuchos::RCP<const Teuchos::ParameterList> 
+  Distributor::getValidParameters () const
+  {
+    using Teuchos::Array;
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::RCP;
+    using Teuchos::setStringToIntegralParameter;
+
+    const bool barrierBetween = true;
+
+    Array<std::string> sendTypes;
+    sendTypes.push_back ("Isend");
+    sendTypes.push_back ("Rsend");
+    sendTypes.push_back ("Send");
+    sendTypes.push_back ("Ssend");
+    const std::string defaultSendType ("Isend");
+    Array<EDistributorSendType> sendTypeEnums;
+    sendTypeEnums.push_back (DISTRIBUTOR_ISEND);
+    sendTypeEnums.push_back (DISTRIBUTOR_RSEND);
+    sendTypeEnums.push_back (DISTRIBUTOR_SEND);
+    sendTypeEnums.push_back (DISTRIBUTOR_SSEND);
+
+    RCP<ParameterList> plist = parameterList ("Tpetra::Distributor");
+    plist->set ("Barrier between receives and sends", barrierBetween, "Whether to execute a barrier between receives and sends in do[Reverse]Posts()");
+    setStringToIntegralParameter<EDistributorSendType> ("Send type", defaultSendType, "When using MPI, the variant of MPI_Send to use in do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
+
+    return Teuchos::rcp_const_cast<const ParameterList> (plist);
+  }
+
 
   size_t Distributor::getTotalReceiveLength() const 
   { return totalReceiveLength_; }
