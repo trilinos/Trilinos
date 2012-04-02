@@ -18,9 +18,6 @@
 #include "Xpetra_StridedEpetraMap.hpp"
 #endif
 
-// FINISH: add testing of operator==, operator!=, operator=, copy construct
-// put these into test_same_as and test_is_compatible
-
 namespace {
 #ifdef HAVE_XPETRA_EPETRA
   typedef Xpetra::StridedEpetraMap StridedEpetraMap;
