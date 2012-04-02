@@ -91,6 +91,10 @@ namespace Tpetra {
     Teuchos::ArrayRCP<LocalOrdinal> exportLIDs_;
     Teuchos::ArrayRCP<int> exportImageIDs_;
 
+    /// \brief Number of initial identical IDs.
+    ///
+    /// The number of IDs that are identical between the source and
+    /// target Maps, up to the first different ID.
     size_t numSameIDs_;
 
     //! Source Map of the Import or Export
