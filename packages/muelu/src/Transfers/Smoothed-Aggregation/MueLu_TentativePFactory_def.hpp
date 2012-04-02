@@ -15,6 +15,8 @@
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_Monitor.hpp"
 
+#undef OLDCODE
+
 namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -106,6 +108,9 @@ namespace MueLu {
 
     // Create a lookup table to determine the rows (fine DOFs) that belong to a given aggregate.
     // aggToRowMap[i][j] is the jth DOF in aggregate i
+    // TODO: aggToRowMap lives in the column map of A (with overlapping). Note: ComputeAggregateToRowMap
+    // returns the local DOFs, that are transformed to global Dofs using the col map later. Wouldn't it be
+    // smarter to compute the global dofs in ComputeAggregateToRowMap?
     ArrayRCP< ArrayRCP<LO> > aggToRowMap(numAggs);
     aggregates.ComputeAggregateToRowMap(aggToRowMap);
 
@@ -116,6 +121,10 @@ namespace MueLu {
     //
 
     RCP<const Map> colMap = fineA.getColMap();
+#ifdef OLDCODE
+    // this is not necessary since rowMapForPtent is set to A->RowMap later
+    // do we need an overlapping row map for Ptent?? i think communication is done later
+    // with the null space and the QR decomposition
     std::vector<GO> globalIdsForPtent;
     for (int i=0; i< aggToRowMap.size(); ++i) {
       for (int k=0; k< aggToRowMap[i].size(); ++k) {
@@ -130,17 +139,24 @@ namespace MueLu {
     }
 
     Teuchos::ArrayView<GO> gidsForPtent(&globalIdsForPtent[0],globalIdsForPtent.size());
+#endif
 
     GO indexBase=fineA.getRowMap()->getIndexBase();
 
+#ifdef OLDCODE
     RCP<const Map > rowMapForPtent =
-      MapFactory::Build(
-                        fineA.getRowMap()->lib(),
-                        Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-                        gidsForPtent,
-                        indexBase,
-                        fineA.getRowMap()->getComm()
-                        );
+    MapFactory::Build(
+                      fineA.getRowMap()->lib(),
+                      Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                      gidsForPtent,
+                      indexBase,
+                      fineA.getRowMap()->getComm()
+                      );
+#else
+    RCP<const Map > rowMapForPtent = Teuchos::null; // TODO move me to line 230
+#endif
+
+
 
     // Allocate workspace for LAPACK QR routines.
     ArrayRCP<SC> localQR(maxAggSize*NSDim); // The submatrix of the nullspace to be orthogonalized.
@@ -160,6 +176,10 @@ namespace MueLu {
                                                     Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), nCoarseDofs,
                                                     indexBase, fineA.getRowMap()->getComm()); //JG:Xpetra::global_size_t>?
     } else {
+
+      // TODO: we need something smarter here. It would be nice to have strided maps for the coarse map
+      // -> needed for blocked problems
+
       // the number of domain dof gids starts from domainGidOffset_ > 0
       // first build a tentative coarse Dof map (equally distributed, starting with Gids beginning with 0)
       RCP<const Map > tentativecoarseMap = MapFactory::Build(fineA.getRowMap()->lib(),
