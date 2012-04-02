@@ -1,5 +1,6 @@
 #include "MueLu_MutuallyExclusiveTime.hpp"
 #include "MueLu_FactoryBase.hpp"
+#include "MueLu_Level.hpp"
 
 namespace MueLu {
 
@@ -8,5 +9,6 @@ namespace MueLu {
 
   //FIXME: move this:
   template class MutuallyExclusiveTime<FactoryBase>;
+  template class MutuallyExclusiveTime<Level>;
 
 } // namespace MueLu
