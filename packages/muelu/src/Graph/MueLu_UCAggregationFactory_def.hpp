@@ -27,11 +27,10 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
   void UCAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const
   {
+    FactoryMonitor m(*this, "Aggregation", currentLevel);
 
     RCP<Aggregates> aggregates;
     {
-      FactoryMonitor m(*this, "Aggregation", currentLevel);
-      
       //TODO check for reuse of aggregates here
       //FIXME should there be some way to specify the name of the graph in the needs table, i.e., could
       //FIXME there ever be more than one graph?

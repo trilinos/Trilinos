@@ -40,7 +40,6 @@ namespace MueLu {
   void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
   Build(Level &level) const
   {
-
     FactoryMonitor m(*this, "ZoltanInterface", level);
 
     RCP<Operator> A = level.Get< RCP<Operator> >("A",AFact_.get());

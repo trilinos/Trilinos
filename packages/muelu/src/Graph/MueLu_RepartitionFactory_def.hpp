@@ -55,11 +55,10 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level & currentLevel) const {
+    FactoryMonitor m(*this, "Build", currentLevel);
 
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
-
-    FactoryMonitor m(*this, "Build", currentLevel);
 
     //typedef Xpetra::Vector<GO,LO,GO,NO> GOVector; //TODO clean up the code below with this typedef
 

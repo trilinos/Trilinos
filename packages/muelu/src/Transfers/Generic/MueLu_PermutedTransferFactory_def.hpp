@@ -60,8 +60,8 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void PermutedTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {
-
     FactoryMonitor m(*this, "Build", coarseLevel);
+
     static RCP<const Teuchos::Comm<int> > comm;
 
     if (PorR_ == MueLu::INTERPOLATION) {

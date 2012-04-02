@@ -37,8 +37,9 @@ namespace MueLu {
     typedef Xpetra::BlockedCrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsOperatorClass; // TODO move me
 
     {
-      int levelID = coarseLevel.GetLevelID();
       FactoryMonitor m(*this, "Computing Ac = RAP", coarseLevel);
+
+      int levelID = coarseLevel.GetLevelID();
 
       GetOStream(Runtime0, 0) << "Ac: building coarse operator" << std::endl;
 
@@ -161,7 +162,7 @@ Teuchos::toString(counter) + ".dat";
     //
 
     if (TransferFacts_.begin() != TransferFacts_.end()) {
-      FactoryMonitor m(*this, "Projections", coarseLevel);
+      SubFactoryMonitor m(*this, "Projections", coarseLevel);
 
       // call Build of all user-given transfer factories
       for(std::vector<RCP<const FactoryBase> >::const_iterator it = TransferFacts_.begin(); it != TransferFacts_.end(); ++it) {
