@@ -45,13 +45,15 @@
 namespace panzer {
 namespace unit_test {
 
-UniqueGlobalIndexer::UniqueGlobalIndexer(int rank,int procCount)
+template <typename LocalOrdinalT>
+UniqueGlobalIndexer<LocalOrdinalT>::UniqueGlobalIndexer(int rank,int procCount)
    : procRank_(rank)
 {
    TEUCHOS_TEST_FOR_EXCEPTION(procCount!=2,std::runtime_error,"unit_test::UniqueGlobalIndexer runs on only two processors!");
 }
 
-int UniqueGlobalIndexer::getFieldNum(const std::string & str) const
+template <typename LocalOrdinalT>
+int UniqueGlobalIndexer<LocalOrdinalT>::getFieldNum(const std::string & str) const
 {
    if(str=="U") 
       return 0;
@@ -61,13 +63,15 @@ int UniqueGlobalIndexer::getFieldNum(const std::string & str) const
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"Can't find field \"" << str << "\" in unit_test::UniqueGlobalIndexer, try \'U\' or \'T\'");
 }
 
-void UniqueGlobalIndexer::getElementBlockIds(std::vector<std::string> & elementBlockIds) const 
+template <typename LocalOrdinalT>
+void UniqueGlobalIndexer<LocalOrdinalT>::getElementBlockIds(std::vector<std::string> & elementBlockIds) const 
 {
    elementBlockIds.clear();
    elementBlockIds.push_back("block_0");
 }
 
-bool UniqueGlobalIndexer::fieldInBlock(const std::string & field, const std::string & block) const
+template <typename LocalOrdinalT>
+bool UniqueGlobalIndexer<LocalOrdinalT>::fieldInBlock(const std::string & field, const std::string & block) const
 {
    if(block!="block_0") 
       return false;
@@ -78,13 +82,14 @@ bool UniqueGlobalIndexer::fieldInBlock(const std::string & field, const std::str
    return false;
 }
 
-const std::vector<short> & UniqueGlobalIndexer::getElementBlock(const std::string & blockId) const
+template <typename LocalOrdinalT>
+const std::vector<LocalOrdinalT> & UniqueGlobalIndexer<LocalOrdinalT>::getElementBlock(const std::string & blockId) const
 {
    TEUCHOS_TEST_FOR_EXCEPTION(blockId!="block_0",std::runtime_error,
                       "Can't find block ID \"" << blockId << "\" in unit_test::UniqueGlobalIndexer");
 
    if(elements_==Teuchos::null) { 
-      elements_ = Teuchos::rcp(new std::vector<short>);
+      elements_ = Teuchos::rcp(new std::vector<LocalOrdinalT>);
       switch(procRank_) {
       case 0:
          elements_->push_back(0);
@@ -100,7 +105,8 @@ const std::vector<short> & UniqueGlobalIndexer::getElementBlock(const std::strin
    return *elements_;
 }
 
-void UniqueGlobalIndexer::getElementGIDs(short localElmtId,std::vector<int> & gids,const std::string & blockId) const
+template <typename LocalOrdinalT>
+void UniqueGlobalIndexer<LocalOrdinalT>::getElementGIDs(LocalOrdinalT localElmtId,std::vector<int> & gids,const std::string & blockId) const
 {
    gids.resize(8);
 
@@ -122,7 +128,8 @@ void UniqueGlobalIndexer::getElementGIDs(short localElmtId,std::vector<int> & gi
    }
 }
 
-const std::vector<int> & UniqueGlobalIndexer::getGIDFieldOffsets(const std::string & blockId,int fieldNum) const
+template <typename LocalOrdinalT>
+const std::vector<int> & UniqueGlobalIndexer<LocalOrdinalT>::getGIDFieldOffsets(const std::string & blockId,int fieldNum) const
 {
    TEUCHOS_TEST_FOR_EXCEPTION(not ((fieldNum==0 || fieldNum==1) && blockId=="block_0"), std::runtime_error,
                    "unit_test::UniqueGlobalIndexer - Invalid field or block id specified");
@@ -145,15 +152,17 @@ const std::vector<int> & UniqueGlobalIndexer::getGIDFieldOffsets(const std::stri
    else return *field1Offset_;
 }
 
+template <typename LocalOrdinalT>
 const std::pair<std::vector<int>,std::vector<int> > & 
-UniqueGlobalIndexer::getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum,
+UniqueGlobalIndexer<LocalOrdinalT>::getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum,
                                                 int subcellDim,int subcellId) const
 {
    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                       "unit_test::UniqueGlobalIndexer::getGIDFieldOffsets_closure is not implemented yet.");
 }
 
-void UniqueGlobalIndexer::getOwnedIndices(std::vector<int> & indices) const
+template <typename LocalOrdinalT>
+void UniqueGlobalIndexer<LocalOrdinalT>::getOwnedIndices(std::vector<int> & indices) const
 {
    indices.resize(6);
    switch(procRank_) {
@@ -178,7 +187,8 @@ void UniqueGlobalIndexer::getOwnedIndices(std::vector<int> & indices) const
    }
 }
 
-void UniqueGlobalIndexer::getOwnedAndSharedIndices(std::vector<int> & indices) const
+template <typename LocalOrdinalT>
+void UniqueGlobalIndexer<LocalOrdinalT>::getOwnedAndSharedIndices(std::vector<int> & indices) const
 {
    indices.resize(8);
    switch(procRank_) {
@@ -207,7 +217,8 @@ void UniqueGlobalIndexer::getOwnedAndSharedIndices(std::vector<int> & indices) c
    }
 }
 
-void UniqueGlobalIndexer::ownedIndices(const std::vector<int> & indices,std::vector<bool> & isOwned) const
+template <typename LocalOrdinalT>
+void UniqueGlobalIndexer<LocalOrdinalT>::ownedIndices(const std::vector<int> & indices,std::vector<bool> & isOwned) const
 {
    std::vector<int> owned;
    getOwnedIndices(owned);
@@ -219,7 +230,8 @@ void UniqueGlobalIndexer::ownedIndices(const std::vector<int> & indices,std::vec
 
 /** Get field numbers associated with a particular element block.
   */
-const std::vector<int> & UniqueGlobalIndexer::getBlockFieldNumbers(const std::string & blockId) const
+template <typename LocalOrdinalT>
+const std::vector<int> & UniqueGlobalIndexer<LocalOrdinalT>::getBlockFieldNumbers(const std::string & blockId) const
 {
    static std::vector<int> fieldNums;
    if(fieldNums.size()==0) {
@@ -234,7 +246,8 @@ const std::vector<int> & UniqueGlobalIndexer::getBlockFieldNumbers(const std::st
    return fieldNums;
 }
 
-void UniqueGlobalIndexer::getCoordinates(short localElementId,Intrepid::FieldContainer<double> & vertices)
+template <typename LocalOrdinalT>
+void UniqueGlobalIndexer<LocalOrdinalT>::getCoordinates(LocalOrdinalT localElementId,Intrepid::FieldContainer<double> & vertices)
 {
    vertices.resize(1,4,2);
    switch(procRank_) {
@@ -254,6 +267,10 @@ void UniqueGlobalIndexer::getCoordinates(short localElementId,Intrepid::FieldCon
       TEUCHOS_ASSERT(false); // fail!
    };
 }
+
+template class UniqueGlobalIndexer<int>;
+template class UniqueGlobalIndexer<short>;
+
 
 } // end unit test
 } // end panzer
