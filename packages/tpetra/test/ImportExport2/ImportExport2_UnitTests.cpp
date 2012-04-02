@@ -165,7 +165,7 @@ namespace {
   }
 
   RCP<ParameterList> getExportParameterList () {
-    return getDistributorParameterList (); // For now.
+    return Teuchos::parameterList (* (getDistributorParameterList ())); // For now.
   }
 
   RCP<ParameterList> getCrsGraphParameterList () {
@@ -176,10 +176,14 @@ namespace {
       plist->set ("Export", * (getExportParameterList ()));
 
       if (verbose && getDefaultComm()->getRank() == 0) {
-	cout << "ParameterList for CrsMatrix: " << *plist << endl;
+	cout << "ParameterList for CrsGraph: " << *plist << endl;
       }
     }
     return plist;
+  }
+
+  RCP<ParameterList> getCrsMatrixParameterList () {
+    return Teuchos::parameterList (* (getCrsGraphParameterList ())); // For now.
   }
 
   //
@@ -356,9 +360,9 @@ namespace {
 
       // create CrsMatrix objects
       RCP<CrsMatrix<Scalar,Ordinal> > src_mat = 
-	rcp (new CrsMatrix<Scalar,Ordinal> (src_map, 1, StaticProfile));
+	rcp (new CrsMatrix<Scalar,Ordinal> (src_map, 1, StaticProfile, getCrsMatrixParameterList ()));
       RCP<CrsMatrix<Scalar,Ordinal> > tgt_mat = 
-	rcp (new CrsMatrix<Scalar,Ordinal> (tgt_map, 1, StaticProfile));
+	rcp (new CrsMatrix<Scalar,Ordinal> (tgt_map, 1, StaticProfile, getCrsMatrixParameterList ()));
 
       // Create a simple diagonal source graph.
       for (Ordinal globalrow = src_map->getMinGlobalIndex(); 
@@ -405,9 +409,9 @@ namespace {
 	createContigMap<Ordinal,Ordinal> (INVALID,tgt_num_local,comm);  
 
       RCP<CrsMatrix<Scalar,Ordinal> > src_mat = 
-	rcp (new CrsMatrix<Scalar,Ordinal> (src_map, 24, DynamicProfile));
+	rcp (new CrsMatrix<Scalar,Ordinal> (src_map, 24, DynamicProfile, getCrsMatrixParameterList ()));
       RCP<CrsMatrix<Scalar,Ordinal> > tgt_mat = 
-	rcp (new CrsMatrix<Scalar,Ordinal> (tgt_map, 24, DynamicProfile));
+	rcp (new CrsMatrix<Scalar,Ordinal> (tgt_map, 24, DynamicProfile, getCrsMatrixParameterList ()));
 
       // This time make src_mat a full lower-triangular matrix.  Each
       // row of column-indices will have length 'globalrow', and
