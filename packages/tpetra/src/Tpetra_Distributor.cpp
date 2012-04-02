@@ -46,6 +46,8 @@ namespace Tpetra {
 
   Distributor::Distributor(const Teuchos::RCP<const Teuchos::Comm<int> > &comm) 
     : comm_(comm)
+    , sendType_ (DISTRIBUTOR_SEND)
+    , barrierBetween_ (true)
     , numExports_(0)
     , selfMessage_(false)
     , numSends_(0)
@@ -56,6 +58,8 @@ namespace Tpetra {
 
   Distributor::Distributor(const Distributor & distributor) 
     : comm_(distributor.comm_)
+    , sendType_ (distributor.sendType_)
+    , barrierBetween_ (distributor.barrierBetween_)
     , numExports_(distributor.numExports_)
     , selfMessage_(distributor.selfMessage_)
     , numSends_(distributor.numSends_)
@@ -130,8 +134,12 @@ namespace Tpetra {
     sendTypeEnums.push_back (DISTRIBUTOR_SSEND);
 
     RCP<ParameterList> plist = parameterList ("Tpetra::Distributor");
-    plist->set ("Barrier between receives and sends", barrierBetween, "Whether to execute a barrier between receives and sends in do[Reverse]Posts()");
-    setStringToIntegralParameter<EDistributorSendType> ("Send type", defaultSendType, "When using MPI, the variant of MPI_Send to use in do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
+    plist->set ("Barrier between receives and sends", barrierBetween, 
+		"Whether to execute a barrier between receives and sends in do"
+		"[Reverse]Posts()");
+    setStringToIntegralParameter<EDistributorSendType> ("Send type", 
+      defaultSendType, "When using MPI, the variant of MPI_Send to use in "
+      "do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
 
     return Teuchos::rcp_const_cast<const ParameterList> (plist);
   }

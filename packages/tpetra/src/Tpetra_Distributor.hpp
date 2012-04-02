@@ -55,10 +55,10 @@ namespace Tpetra {
     // rely on these values in your code.  We use this to pick the
     // type of send operation that Distributor uses.
     enum EDistributorSendType {
-      DISTRIBUTOR_ISEND = 0, // Use MPI_Isend (Teuchos::isend)
-      DISTRIBUTOR_RSEND,     // Use MPI_Rsend (Teuchos::readySend)
-      DISTRIBUTOR_SEND,      // Use MPI_Send (Teuchos::send)
-      DISTRIBUTOR_SSEND      // Use MPI_Ssend (Teuchos::ssend)
+      DISTRIBUTOR_ISEND, // Use MPI_Isend (Teuchos::isend)
+      DISTRIBUTOR_RSEND, // Use MPI_Rsend (Teuchos::readySend)
+      DISTRIBUTOR_SEND,  // Use MPI_Send (Teuchos::send)
+      DISTRIBUTOR_SSEND  // Use MPI_Ssend (Teuchos::ssend)
     };
   } // namespace (anonymous)
 
