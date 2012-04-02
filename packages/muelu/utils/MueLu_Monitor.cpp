@@ -24,5 +24,11 @@ namespace MueLu {
       
     return r;
   }
-  
+
+  template <class TagName>
+  std::stack<MutuallyExclusiveTimer<TagName>*> MueLu::MutuallyExclusiveTimer<TagName>::timerStack_;
+
+  //FIXME: move this:
+  template class MutuallyExclusiveTimer<MueLu::FactoryBase>;
+
 } // namespace MueLu

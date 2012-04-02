@@ -61,7 +61,7 @@ namespace MueLu {
       
       // pause currently running timer
       if (!timerStack_.empty()) {
-	timerStack_.top().pause();
+	timerStack_.top()->pause();
       }
       
       // start this timer
@@ -75,16 +75,19 @@ namespace MueLu {
     // stop() can be called on an already stopped timer or on the currently running timer
     double stop() {
       TEUCHOS_TEST_FOR_EXCEPTION(isPaused(), Exceptions::RuntimeError, "MueLu::MutuallyExclusiveTimer::start(): timer is paused. Use resume().");
-      if (!isRunning()) { return; } // stop() can be called on stopped timer
+      if (!isRunning()) { return timer_.stop(); } // stop() can be called on stopped timer
       
       // Here, timer is running, so it is the head of the stack
       TopOfTheStack();
       
       timerStack_.pop();
+      double r = timer_.stop();
+
       if (!timerStack_.empty()) {
-	timerStack_.top().resume();
+	timerStack_.top()->resume();
       }
       
+      return r;
     }
     
     //! Pause running timer. Used internally by start().
@@ -132,7 +135,7 @@ namespace MueLu {
 
       // Unfortunatly, there is no function to register a timer in Teuchos::TimeMonitor but this should do the trick.
       {
-	Teuchos::TimeMonitor(timer_);
+	Teuchos::TimeMonitor t(timer_);
       }
       timer_.reset(); // Resets the cummulative time and number of times this timer has been called. 
     }
@@ -140,7 +143,8 @@ namespace MueLu {
     //! Return a new MutuallyExclusiveTimer that is register with the Teuchos::TimeMonitor (for timer summary)
     static RCP<MutuallyExclusiveTimer<TagName> > getNewTimer(const std::string& name) {
       RCP<MutuallyExclusiveTimer<TagName> > timer = rcp(new MutuallyExclusiveTimer<TagName>(name));
-      timer.monitor();
+      timer->monitor();
+      return timer;
     }
 
   private:
@@ -152,7 +156,7 @@ namespace MueLu {
     //       : timer_(timer) 
     //     { }
     
-    MutuallyExclusiveTimer() { }
+    // MutuallyExclusiveTimer() { }
     
     Teuchos::Time timer_;
     bool isPaused_;
@@ -234,7 +238,7 @@ namespace MueLu {
 
   //TODO: code duplication MutuallyExclusiveTimerMonitor / TimeMonitor
 
-  template<class TagName>
+  template <class TagName>
   class MutuallyExclusiveTimerMonitor : public BaseClass {
 
   public:
@@ -283,7 +287,7 @@ namespace MueLu {
     MutuallyExclusiveTimerMonitor() { }
     
   private:
-    RCP<MutuallyExclusiveTimerMonitor<TagName> > timer_; // keep a reference on the timer to print stats if RuntimeTimings=ON //TODO:use base class instead
+    RCP<MutuallyExclusiveTimer<TagName> > timer_; // keep a reference on the timer to print stats if RuntimeTimings=ON //TODO:use base class instead
     RCP<Teuchos::TimeMonitor> timeMonitor_; //TODO
   };
   
@@ -348,23 +352,31 @@ namespace MueLu {
   class FactoryMonitor: public Monitor {
   public:
     FactoryMonitor(const BaseClass& object, const std::string & msg, int levelID, MsgType msgLevel = Runtime0, MsgType timerLevel = Timings0) 
-      : Monitor(object, msg, msgLevel, timerLevel)
+      : Monitor(object, msg, msgLevel, timerLevel),
+        timerMonitorME_(object, msg, timerLevel)
     { 
       if (IsPrint(TimingsByLevel)) {
         levelTimerMonitor_ = rcp(new TimerMonitor(object, object.ShortClassName() + ": " + msg + " (level=" + Teuchos::Utils::toString(levelID) + ")", timerLevel));
+	levelTimerMonitorME_ = rcp(new MutuallyExclusiveTimerMonitor<Level>(object, object.ShortClassName() + ": " + msg + " (level=" + Teuchos::Utils::toString(levelID) + ")", timerLevel));
       }
     }
 
+    //TODO: code factorization
     FactoryMonitor(const BaseClass& object, const std::string & msg, const Level & level, MsgType msgLevel = Runtime0, MsgType timerLevel = Timings0) 
-      : Monitor(object, msg, msgLevel, timerLevel)
+      : Monitor(object, msg, msgLevel, timerLevel),
+        timerMonitorME_(object, msg, timerLevel)
     { 
       if (IsPrint(TimingsByLevel)) {
         levelTimerMonitor_ = rcp(new TimerMonitor(object, object.ShortClassName() + ": " +  msg + " (level=" + Teuchos::Utils::toString(level.GetLevelID()) + ")", timerLevel));
+	levelTimerMonitorME_ = rcp(new MutuallyExclusiveTimerMonitor<Level>(object, object.ShortClassName() + ": " + msg + " (level=" + Teuchos::Utils::toString(level.GetLevelID()) + ")", timerLevel));
       }
     }
 
   private:
     RCP<TimerMonitor> levelTimerMonitor_;
+
+    MutuallyExclusiveTimerMonitor<FactoryBase>  timerMonitorME_;
+    RCP<MutuallyExclusiveTimerMonitor<Level> >  levelTimerMonitorME_;
   };
 
   // Factory monitor
