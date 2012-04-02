@@ -660,9 +660,11 @@ namespace Tpetra {
     if (doPrint && myRank == 0) {
       // Only need one process to print out parameters.
       *out << "Distributor::doPosts" << endl;
-      OSTab tab = this->getOSTab(); // Add one tab level
+    }
+    OSTab tab = this->getOSTab(); // Add one tab level
+    if (doPrint && myRank == 0) {
       *out << "sendType=" << DistributorSendTypeEnumToString (sendType) 
-	   << ", doBarrier=" << doBarrier << endl;
+	   << ", barrierBetween=" << doBarrier << endl;
     }
 #endif // HAVE_TEUCHOS_DEBUG
 

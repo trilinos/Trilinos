@@ -59,7 +59,7 @@ namespace Tpetra {
   Distributor::Distributor(const Teuchos::RCP<const Teuchos::Comm<int> > &comm) 
     : comm_(comm)
     , sendType_ (DISTRIBUTOR_SEND)
-    , barrierBetween_ (false)
+    , barrierBetween_ (true)
     , numExports_(0)
     , selfMessage_(false)
     , numSends_(0)
@@ -72,7 +72,7 @@ namespace Tpetra {
 			    const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : comm_(comm)
     , sendType_ (DISTRIBUTOR_SEND)
-    , barrierBetween_ (false)
+    , barrierBetween_ (true)
     , numExports_(0)
     , selfMessage_(false)
     , numSends_(0)
@@ -131,10 +131,29 @@ namespace Tpetra {
   void
   Distributor::setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
   {
+    using Teuchos::FancyOStream;
     using Teuchos::getIntegralValue;
+    using Teuchos::includesVerbLevel;
+    using Teuchos::OSTab;
     using Teuchos::ParameterList;
     using Teuchos::parameterList;
     using Teuchos::RCP;
+    using std::endl;
+
+#ifdef HAVE_TEUCHOS_DEBUG
+    // Prepare for verbose output, if applicable.
+    Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel ();
+    RCP<FancyOStream> out = this->getOStream ();
+    const bool doPrint = out.get () && 
+      includesVerbLevel (verbLevel, Teuchos::VERB_EXTREME, true);
+    const int myRank = comm_->getRank ();
+
+    if (doPrint && myRank == 0) {
+      // Only need one process to print out parameters.
+      *out << "Distributor::setParameterList" << endl;
+    }
+    OSTab tab = this->getOSTab(); // Add one tab level
+#endif // HAVE_TEUCHOS_DEBUG
 
     RCP<const ParameterList> validParams = getValidParameters ();
     plist->validateParametersAndSetDefaults (*validParams);
@@ -143,6 +162,15 @@ namespace Tpetra {
       plist->get<bool> ("Barrier between receives and sends");
     const EDistributorSendType sendType = 
       getIntegralValue<EDistributorSendType> (*plist, "Send type");
+
+#ifdef HAVE_TEUCHOS_DEBUG
+    if (doPrint && myRank == 0) {
+      // Only need one process to print out parameters.
+      *out << "sendType=" << DistributorSendTypeEnumToString (sendType) 
+	   << ", barrierBetween=" << barrierBetween << endl;
+    }
+#endif // HAVE_TEUCHOS_DEBUG
+
     // We check this property explicitly, since we haven't yet learned
     // how to make a validator that can cross-check properties.
     // Later, turn this into a validator so that it can be embedded in
@@ -159,6 +187,13 @@ namespace Tpetra {
     // Now that we've validated the input list completely, save the results.
     sendType_ = sendType;
     barrierBetween_ = barrierBetween;
+#ifdef HAVE_TEUCHOS_DEBUG
+    if (doPrint && myRank == 0) {
+      // Only need one process to print out parameters.
+      *out << "sendType_=" << DistributorSendTypeEnumToString (sendType_) 
+	   << ", barrierBetween_=" << barrierBetween_ << endl;
+    }
+#endif // HAVE_TEUCHOS_DEBUG
     this->setMyParamList (plist);
   }
 
