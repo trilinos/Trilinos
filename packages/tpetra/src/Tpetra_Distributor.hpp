@@ -63,7 +63,26 @@ namespace Tpetra {
 
     // Convert an EDistributorSendType enum value to a string.
     std::string 
-    DistributorSendTypeEnumToString (EDistributorSendType sendType);
+    DistributorSendTypeEnumToString (EDistributorSendType sendType)
+    {
+      if (sendType == DISTRIBUTOR_ISEND) {
+	return "Isend";
+      }
+      else if (sendType == DISTRIBUTOR_RSEND) {
+	return "Rsend";
+      }
+      else if (sendType == DISTRIBUTOR_SEND) {
+	return "Send";
+      }
+      else if (sendType == DISTRIBUTOR_SSEND) {
+	return "Ssend";
+      }
+      else {
+	TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid "
+          "EDistributorSendType enum value " << sendType << ".");
+      }
+    }
+
   } // namespace (anonymous)
 
   //! Valid values for Distributor's "Send type" parameter.
