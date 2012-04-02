@@ -79,7 +79,7 @@ namespace Tpetra {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
 
     staticAssertions();
-    TEUCHOS_TEST_FOR_EXCEPTION(maxNumEntriesPerRow != OTST::invalid(), 
+    TEUCHOS_TEST_FOR_EXCEPTION(maxNumEntriesPerRow == OTST::invalid(), 
       std::invalid_argument, "The allocation hint must be a valid size_t value, "
       "which in this case means it must not be Teuchos::OrdinalTraits<size_t>::"
       "invalid().");
@@ -113,7 +113,7 @@ namespace Tpetra {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
 
     staticAssertions();
-    TEUCHOS_TEST_FOR_EXCEPTION(maxNumEntriesPerRow != OTST::invalid(), 
+    TEUCHOS_TEST_FOR_EXCEPTION(maxNumEntriesPerRow == OTST::invalid(), 
       std::invalid_argument, "The allocation hint must be a valid size_t value, "
       "which in this case means it must not be Teuchos::OrdinalTraits<size_t>::"
       "invalid().");
