@@ -76,7 +76,13 @@ namespace Tpetra {
   , indicesAreLocal_(false)
   , indicesAreGlobal_(false)
   {
+    typedef Teuchos::OrdinalTraits<size_t> OTST;
+
     staticAssertions();
+    TEUCHOS_TEST_FOR_EXCEPTION(maxNumEntriesPerRow != OTST::invalid(), 
+      std::invalid_argument, "The allocation hint must be a valid size_t value, "
+      "which in this case means it must not be Teuchos::OrdinalTraits<size_t>::"
+      "invalid().");
     if (! plist.is_null ()) {
       this->setParameterList (plist);
     }
@@ -104,7 +110,13 @@ namespace Tpetra {
   , indicesAreLocal_(false)
   , indicesAreGlobal_(false)
   {
+    typedef Teuchos::OrdinalTraits<size_t> OTST;
+
     staticAssertions();
+    TEUCHOS_TEST_FOR_EXCEPTION(maxNumEntriesPerRow != OTST::invalid(), 
+      std::invalid_argument, "The allocation hint must be a valid size_t value, "
+      "which in this case means it must not be Teuchos::OrdinalTraits<size_t>::"
+      "invalid().");
     if (! plist.is_null ()) {
       this->setParameterList (plist);
     }
@@ -137,7 +149,7 @@ namespace Tpetra {
     if (! plist.is_null ()) {
       this->setParameterList (plist);
     }
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC((size_t)NumEntriesPerRowToAlloc.size() != getNodeNumRows(), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC((size_t)NumEntriesPerRowToAlloc.size() != getNodeNumRows(), std::invalid_argument,
         ": NumEntriesPerRowToAlloc must have as many entries as specified by rowMap for this node.");
     size_t numMin = OrdinalTraits<size_t>::max(),
            numMax = OrdinalTraits<size_t>::zero();
@@ -176,7 +188,7 @@ namespace Tpetra {
     if (! plist.is_null ()) {
       this->setParameterList (plist);
     }
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC((size_t)NumEntriesPerRowToAlloc.size() != getNodeNumRows(), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC((size_t)NumEntriesPerRowToAlloc.size() != getNodeNumRows(), std::invalid_argument,
         ": NumEntriesPerRowToAlloc must have as many entries as specified by rowMap for this node.");
     resumeFill();
     checkInternalState();

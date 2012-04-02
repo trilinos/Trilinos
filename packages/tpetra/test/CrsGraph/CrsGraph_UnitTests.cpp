@@ -167,16 +167,16 @@ namespace {
     RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,numLocal,comm);
     {
       // bad constructor
-      TEST_THROW( GRAPH badgraph(map,INVALID), std::runtime_error ); // allocation hint must be >= 0
+      TEST_THROW( GRAPH badgraph(map,INVALID), std::invalid_argument ); // allocation hint must be >= 0
     }
     {
       // bad constructor
       ArrayRCP<size_t> hints = arcp<size_t>(numLocal+1);
       std::fill(hints.begin(),hints.end(),1);
       hints[0] = INVALID;
-      TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal+1)), std::runtime_error ); // too many
-      TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal-1)), std::runtime_error ); // too few
-      TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal)),   std::runtime_error ); // too few
+      TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal+1)), std::invalid_argument ); // too many
+      TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal-1)), std::invalid_argument ); // too few
+      TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal)),   std::invalid_argument ); // too few
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;
