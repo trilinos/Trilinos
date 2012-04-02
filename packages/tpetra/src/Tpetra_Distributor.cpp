@@ -58,7 +58,7 @@ namespace Tpetra {
   Distributor::Distributor(const Teuchos::RCP<const Teuchos::Comm<int> > &comm) 
     : comm_(comm)
     , sendType_ (DISTRIBUTOR_SEND)
-    , barrierBetween_ (true)
+    , barrierBetween_ (false)
     , numExports_(0)
     , selfMessage_(false)
     , numSends_(0)
@@ -71,7 +71,7 @@ namespace Tpetra {
 			    const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : comm_(comm)
     , sendType_ (DISTRIBUTOR_SEND)
-    , barrierBetween_ (true)
+    , barrierBetween_ (false)
     , numExports_(0)
     , selfMessage_(false)
     , numSends_(0)
@@ -167,10 +167,10 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::setStringToIntegralParameter;
 
-    const bool barrierBetween = true;
+    const bool barrierBetween = false;
 
     Array<std::string> sendTypes = distributorSendTypes ();
-    const std::string defaultSendType ("Isend");
+    const std::string defaultSendType ("Send");
     Array<EDistributorSendType> sendTypeEnums;
     sendTypeEnums.push_back (DISTRIBUTOR_ISEND);
     sendTypeEnums.push_back (DISTRIBUTOR_RSEND);
@@ -180,7 +180,8 @@ namespace Tpetra {
     RCP<ParameterList> plist = parameterList ("Tpetra::Distributor");
     plist->set ("Barrier between receives and sends", barrierBetween, 
 		"Whether to execute a barrier between receives and sends in do"
-		"[Reverse]Posts()");
+		"[Reverse]Posts().  Required for correctness when \"Send type\""
+		"=\"Rsend\", otherwise correct but not recommended.");
     setStringToIntegralParameter<EDistributorSendType> ("Send type", 
       defaultSendType, "When using MPI, the variant of MPI_Send to use in "
       "do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
