@@ -1953,6 +1953,7 @@ static NNTI_result_t setup_request_channel(void)
     }
 
     struct ibv_srq_init_attr attr;
+    memset(&attr, 0, sizeof(attr)); // initialize to avoid valgrind uninitialized warning
     attr.attr.max_wr = transport_global_data.srq_count;
     attr.attr.max_sge = 1;
 
@@ -2013,6 +2014,7 @@ static NNTI_result_t setup_data_channel(void)
     }
 
     struct ibv_srq_init_attr attr;
+    memset(&attr, 0, sizeof(attr));   // initialize to avoid valgrind warning
     attr.attr.max_wr  = transport_global_data.srq_count;
     attr.attr.max_sge = 1;
 
@@ -3234,6 +3236,10 @@ static int new_server_connection(
         uint32_t peer_qpn;
     } param_in, param_out;
 
+    // initialize structs to avoid valgrind warnings
+    memset(&param_out, 0, sizeof(param_out));
+    memset(&param_in, 0, sizeof(param_in));
+
     trios_declare_timer(callTime);
 
     strcpy(param_out.name, transport_global_data.listen_name);
@@ -3730,7 +3736,7 @@ static NNTI_result_t check_listen_socket_for_new_connections()
     struct sockaddr_in ssin;
     socklen_t len;
     int s;
-    NNTI_peer_t *peer=NULL;
+    NNTI_peer_t peer;   // this doesn't need to be a pointer
     ib_connection *conn = NULL;
 
     len = sizeof(ssin);
@@ -3745,13 +3751,14 @@ static NNTI_result_t check_listen_socket_for_new_connections()
         NNTI_ip_addr  peer_addr  = ssin.sin_addr.s_addr;
         NNTI_tcp_port peer_port  = ntohs(ssin.sin_port);
 
-        peer=(NNTI_peer_t *)malloc(sizeof(NNTI_peer_t));
-        log_debug(nnti_debug_level, "malloc returned peer=%p.", peer);
-        if (peer == NULL) {
-            log_error(nnti_debug_level, "malloc returned NULL.  out of memory?: %s", strerror(errno));
-            rc=NNTI_ENOMEM;
-            goto cleanup;
-        }
+        // we don't need allocate heap space for the peer struct
+//        peer=(NNTI_peer_t *)malloc(sizeof(NNTI_peer_t));
+//        log_debug(nnti_debug_level, "malloc returned peer=%p.", peer);
+//        if (peer == NULL) {
+//            log_error(nnti_debug_level, "malloc returned NULL.  out of memory?: %s", strerror(errno));
+//            rc=NNTI_ENOMEM;
+//            goto cleanup;
+//        }
 
         conn = (ib_connection *)calloc(1, sizeof(ib_connection));
         log_debug(nnti_debug_level, "calloc returned conn=%p.", conn);
@@ -3767,18 +3774,19 @@ static NNTI_result_t check_listen_socket_for_new_connections()
             goto cleanup;
         }
         create_peer(
-                peer,
+                &peer,
                 conn->peer_name,
                 conn->peer_addr,
                 conn->peer_port);
         insert_conn_qpn(conn->req_qp.qpn, conn);
         insert_conn_qpn(conn->data_qp.qpn, conn);
-        insert_conn_peer(peer, conn);
+        insert_conn_peer(&peer, conn);
 
         transition_connection_to_ready(s, conn);
 //        nthread_unlock(&nnti_ib_lock);
 
         log_debug(nnti_debug_level, "accepted new connection from %s:%u", peer_hostname, peer_port);
+        if (peer_hostname) free(peer_hostname);   // fixed to avoid lost bytes reported by valgrind
 
         if (close(s) < 0) {
             log_error(nnti_debug_level, "failed to close new tcp socket");
@@ -3786,7 +3794,7 @@ static NNTI_result_t check_listen_socket_for_new_connections()
 
         if (logging_debug(nnti_debug_level)) {
             fprint_NNTI_peer(logger_get_file(), "peer",
-                    "end of check_listen_socket_for_new_connections", peer);
+                    "end of check_listen_socket_for_new_connections", &peer);
         }
 
         nthread_yield();
@@ -3818,6 +3826,8 @@ static void *connection_listener_thread(void *args)
 
     nthread_exit(&rc);
 
+    log_debug(LOG_ALL, "exiting listener thread");
+
     return(NULL);
 }
 
@@ -3836,7 +3846,10 @@ static int start_connection_listener_thread()
         log_error(nnti_debug_level, "could not spawn thread");
         rc = 1;
     }
-
+    else {
+        /* Tell this thread to clean up after exit -- valgrind detected memory leak */
+        rc = nthread_detach(thread);
+    }
     return rc;
 }
 
