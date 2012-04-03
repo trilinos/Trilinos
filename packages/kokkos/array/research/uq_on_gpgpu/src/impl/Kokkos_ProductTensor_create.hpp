@@ -148,9 +148,8 @@ public:
     typedef Device                      device_type ;
     typedef typename Device::size_type  size_type ;
 
-    typedef MDArray< size_type, device_type>  coord_array_type ;
-    typedef MultiVector< value_type, device_type> value_array_type ;
-    typedef CrsArray< void , device_type > crsarray_type ;
+    typedef CrsArray< size_type[2] , device_type > coord_array_type ;
+    typedef MultiVector< value_type, device_type > value_array_type ;
 
     const size_type dimension =
       input.empty() ? 0 : 1 + (*input.rbegin()).first.coord(0);
@@ -174,10 +173,8 @@ public:
 
     type tensor ;
 
-    tensor.m_map   = create_crsarray< crsarray_type >( std::string("ProductTensorMap") , coord_work );
-    tensor.m_coord = create_mdarray< coord_array_type >( entry_count, 2 );
+    tensor.m_coord = create_crsarray< coord_array_type >( coord_work );
     tensor.m_value = create_multivector< value_array_type >( entry_count );
-
     tensor.m_entry_max = 0 ;
 
     for ( size_type i = 0 ; i < dimension ; ++i ) {
@@ -202,13 +199,8 @@ std::cout << std::endl << "CrsProductTensor" << std::endl
 
     // Fill arrays in coordinate order...
 
-    {
-      size_type n = 0 ;
-      for ( size_type iCoord = 0 ; iCoord < dimension ; ++iCoord ) {
-        const size_type count = coord_work[iCoord] ; // count
-        coord_work[iCoord] = n ; // offset
-        n += count ; // accumulate offset
-      }
+    for ( size_type iCoord = 0 ; iCoord < dimension ; ++iCoord ) {
+      coord_work[iCoord] = host_coord.row_entry_begin(iCoord);
     }
 
     for ( typename input_type::const_iterator

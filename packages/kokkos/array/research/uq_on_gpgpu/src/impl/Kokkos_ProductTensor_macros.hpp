@@ -350,7 +350,6 @@ public:
 
 private:
 
-  typedef Kokkos::MDArray<     size_type, device_type>  map_type ;
   typedef Kokkos::MultiVector< value_type,device_type>  vec_type ;
 
 public:
@@ -359,16 +358,15 @@ public:
   ~CrsProductTensor() {}
 
   inline
-  CrsProductTensor() : m_map() , m_coord() , m_value() {}
+  CrsProductTensor() : m_coord() , m_value() , m_entry_max(0) {}
 
   inline
   CrsProductTensor( const CrsProductTensor & rhs )
-  : m_map( rhs.m_map ), m_coord( rhs.m_coord ) , m_value( rhs.m_value ) {}
+  : m_coord( rhs.m_coord ) , m_value( rhs.m_value ) , m_entry_max( rhs.m_entry_max ) {}
 
   inline
   CrsProductTensor & operator = ( const CrsProductTensor & rhs )
   {
-    m_map   = rhs.m_map ;
     m_coord = rhs.m_coord ;
     m_value = rhs.m_value ;
     m_entry_max = rhs.m_entry_max ;
@@ -377,12 +375,12 @@ public:
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type dimension() const { return m_map.row_count(); }
+  size_type dimension() const { return m_coord.row_count(); }
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type entry_count() const
-  { return m_map.entry_dimension(0); }
+  { return m_coord.entry_dimension(0); }
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
@@ -392,12 +390,12 @@ public:
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
   size_type entry_begin( size_type i ) const
-  { return m_map.row_entry_begin(i); }
+  { return m_coord.row_entry_begin(i); }
 
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
   size_type entry_end( size_type i ) const
-  { return m_map.row_entry_end(i); }
+  { return m_coord.row_entry_end(i); }
 
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
@@ -411,8 +409,7 @@ public:
 
 private:
 
-  Kokkos::CrsArray< void, device_type, size_type >  m_map ;
-  Kokkos::MDArray< size_type , device_type >       m_coord ;
+  Kokkos::CrsArray< size_type[2] , device_type >   m_coord ;
   Kokkos::MultiVector< value_type , device_type >  m_value ;
   size_type                                        m_entry_max ;
 
