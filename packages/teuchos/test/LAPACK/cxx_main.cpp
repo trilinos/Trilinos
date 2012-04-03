@@ -71,15 +71,13 @@ int main(int argc, char* argv[])
       Ad[i] = 0;
       Af[i] = 0;
     }
-/*
   for(i = 0; i < 4; i++)
     {
-      xd[i] = 0;
+      //xd[i] = 0;
       bd[i] = 0;
-      xf[i] = 0;
+      //xf[i] = 0;
       bf[i] = 0;
     }
-*/
 
   Ad[0] = 1; Ad[2] = 1; Ad[5] = 1; Ad[8] = 2; Ad[9] = 1; Ad[10] = 1; Ad[14] = 2; Ad[15] = 2;
   //xd[0] = -2; xd[1] = 1; xd[2] = 1; xd[3] = 1;
