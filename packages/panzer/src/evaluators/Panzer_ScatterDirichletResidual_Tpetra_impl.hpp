@@ -336,9 +336,10 @@ evaluateFields(typename Traits::EvalData workset)
 
             // zero out matrix row
             {
+               std::size_t sz = Jac->getNumEntriesInLocalRow(lid);
                std::size_t numEntries = 0;
-               Teuchos::ArrayView<LO> rowIndices;
-               Teuchos::ArrayView<double> rowValues;
+               Teuchos::Array<LO> rowIndices(sz);
+               Teuchos::Array<double> rowValues(sz);
 
                // Jac->getLocalRowView(lid,numEntries,rowValues,rowIndices);
                Jac->getLocalRowCopy(lid,rowIndices,rowValues,numEntries);
