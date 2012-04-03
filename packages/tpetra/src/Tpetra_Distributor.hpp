@@ -1112,11 +1112,30 @@ namespace Tpetra {
        const ArrayView<Packet> &imports,
        const ArrayView<size_t> &numImportPacketsPerLID)
   {
-    // doReversePosts() takes exports and imports as ArrayRCPs,
-    // requiring that the memory locations are persisting.  However,
-    // they need only persist within the scope of that routine, so it
-    // is safe for us to use nonpersisting references in this case.
-    doReversePosts (arcp<const Packet> (exports.getRawPtr(), 0, exports.size(), false),
+    using Teuchos::as;
+    using Teuchos::arcp;
+    using Teuchos::ArrayRCP;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
+      Teuchos::typeName(*this) << "::doReversePostsAndWaits(): There are " 
+      << requests_.size() << " outstanding nonblocking messages pending.  It is "
+      "incorrect to call doReversePostsAndWaits with posts outstanding.");
+
+    // doReversePosts() accepts the exports and imports arrays as
+    // ArrayRCPs, requiring that the memory location is persisting (as
+    // is necessary for nonblocking receives).  However, it need only
+    // persist until doReverseWaits() completes, so it is safe for us
+    // to use a nonpersisting reference in this case.  The use of a
+    // nonpersisting reference is purely a performance optimization.
+
+    // mfh 02 Apr 2012: For some reason, calling arcp<const Packet>
+    // for Packet=std::complex<double> fails to compile with some
+    // versions of GCC.  The issue only arises with the exports array.
+    // This is why we construct a separate nonowning ArrayRCP.
+    typedef typename ArrayRCP<const Packet>::size_type size_type;
+    ArrayRCP<const Packet> exportsArcp (exports.getRawPtr(), as<size_type> (0), 
+					exports.size(), false);
+    doReversePosts (exportsArcp,
 		    numExportPacketsPerLID, 
 		    arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false),
 		    numImportPacketsPerLID);
