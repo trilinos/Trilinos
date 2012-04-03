@@ -67,7 +67,7 @@ double x,y,z, *rbm;
          if (fscanf(fp_in,"%lf",&z) != 1) 
             printf("Data missing for %dth z coordinate\n",j);
 
-         ML_Coord2RBM(1, &x, &y, &z, rbm, Ndof);
+         ML_Coord2RBM(1, &x, &y, &z, rbm, Ndof,0);
          for (k = 0; k < Ndof ; k++)
             fprintf(fp_out,"%e\n",rbm[k+Ndof*i]);
       }

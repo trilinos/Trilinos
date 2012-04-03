@@ -89,7 +89,7 @@ int TestMultiLevelPreconditioner(char ProblemType[],
 
   // Nullspace
   double *rbm = new double[7*A->NumMyRows()];
-  ML_Coord2RBM(coord1->MyLength(),&((*coord1)[0]),&((*coord2)[0]),&((*coord3)[0]),rbm,3);
+  ML_Coord2RBM(coord1->MyLength(),&((*coord1)[0]),&((*coord2)[0]),&((*coord3)[0]),rbm,3,0);
   MLList.set("null space: vectors",rbm);
 
   ML_Epetra::MultiLevelPreconditioner * MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);

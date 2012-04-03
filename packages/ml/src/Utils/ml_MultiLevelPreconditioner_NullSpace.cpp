@@ -60,7 +60,6 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
   else if (option == "elasticity from coordinates")
   {
     //TODO could add an option to provide center of rotations
-//int ML_Coord2RBM(int Nnodes, double x[], double y[], double z[], double rbm[], int Ndof)
     double *in_x_coord = List_.get("x-coordinates", (double *)0);
     double *in_y_coord = List_.get("y-coordinates", (double *)0);
     double *in_z_coord = List_.get("z-coordinates", (double *)0);
@@ -79,7 +78,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
 
     NullSpacePtr = new double[NullSpaceDim*NumMyRows()];
     ML_Coord2RBM(NumMyRows()/NumPDEEqns_, in_x_coord, in_y_coord, in_z_coord, NullSpacePtr,
-                 NumPDEEqns_);
+                 NumPDEEqns_, 0);
     ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,NullSpaceDim,NullSpacePtr, RowMatrix_->NumMyRows());
     if (verbose_) {
       cout << PrintMsg_ << "Null space type      = elasticity from coordinates" << endl;
