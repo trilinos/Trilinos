@@ -70,6 +70,7 @@ public:
   {
     run_test_void();
     run_test_graph();
+    run_test_graph2();
   }
 
   void run_test_void()
@@ -139,7 +140,6 @@ public:
 
   void run_test_graph()
   {
-#if 1
     typedef Kokkos::CrsArray< unsigned , device > dView ;
     typedef dView::HostMirror hView ;
 
@@ -169,44 +169,65 @@ public:
         ASSERT_EQ( (int) hx( j + begin ) , graph[i][j] );
       }
     }
-#endif
   }
 
   void run_test_graph2()
   {
-#if 0
-    typedef Kokkos::CrsArray< unsigned[2] , device > dView ;
+    typedef Kokkos::CrsArray< unsigned[3] , device > dView ;
     typedef dView::HostMirror hView ;
 
-    enum { LENGTH = 1000 };
-    dView dx ;
-    hView hx ;
+    enum { LENGTH = 10 };
 
-    std::vector< std::vector< int[2] > > graph( LENGTH );
+    std::vector< size_t > sizes( LENGTH );
+
+    size_t total_length = 0 ;
 
     for ( size_t i = 0 ; i < LENGTH ; ++i ) {
-      graph[i].reserve(8);
-      for ( size_t j = 0 ; j < 8 ; ++j ) {
-        const int data[2] = { i + j * 3 , 1 + i + j * 3 };
-        graph[i].push_back( data );
+      total_length += ( sizes[i] = 6 + i % 4 );
+    }
+
+    dView dx = Kokkos::create_crsarray<dView>( sizes );
+    hView hx = Kokkos::create_crsarray<hView>( sizes );
+
+    ASSERT_EQ( (size_t) dx.row_count() , (size_t) LENGTH );
+    ASSERT_EQ( (size_t) hx.row_count() , (size_t) LENGTH );
+    ASSERT_EQ( (size_t) dx.entry_dimension(0) , (size_t) total_length );
+    ASSERT_EQ( (size_t) hx.entry_dimension(0) , (size_t) total_length );
+    ASSERT_EQ( (size_t) dx.entry_dimension(1) , (size_t) 3 );
+    ASSERT_EQ( (size_t) hx.entry_dimension(1) , (size_t) 3 );
+
+    for ( size_t i = 0 ; i < LENGTH ; ++i ) {
+      const size_t entry_begin = hx.row_entry_begin(i);
+      const size_t entry_end   = hx.row_entry_end(i);
+      for ( size_t j = entry_begin ; j < entry_end ; ++j ) {
+        hx(j,0) = j + 1 ;
+        hx(j,1) = j + 2 ;
+        hx(j,2) = j + 3 ;
       }
     }
 
-    dx = Kokkos::create_crsarray<dView>( "dx" , graph );
-    hx = Kokkos::create_mirror( dx );
+    Kokkos::deep_copy( dx , hx );
+
+    hView mx = Kokkos::create_mirror( dx );
+
+    ASSERT_EQ( (size_t) mx.row_count() , (size_t) LENGTH );
+    ASSERT_EQ( (size_t) mx.entry_dimension(0) , (size_t) total_length );
+    ASSERT_EQ( (size_t) mx.entry_dimension(1) , (size_t) 3 );
+
+    Kokkos::deep_copy( mx , dx );
    
-    ASSERT_EQ( hx.row_count() , LENGTH );
+    ASSERT_EQ( mx.row_count() , LENGTH );
 
     for ( size_t i = 0 ; i < LENGTH ; ++i ) {
-      const size_t begin = hx.row_entry_begin(i);
-      const size_t n = hx.row_entry_end(i) - begin ;
-      ASSERT_EQ( n , graph[i].size() );
-      for ( size_t j = 0 ; j < n ; ++j ) {
-        ASSERT_EQ( (int) hx( j + begin , 0 ) , graph[i][j][0] );
-        ASSERT_EQ( (int) hx( j + begin , 1 ) , graph[i][j][1] );
+      const size_t entry_begin = mx.row_entry_begin(i);
+      const size_t entry_end   = mx.row_entry_end(i);
+      ASSERT_EQ( ( entry_end - entry_begin ) , sizes[i] );
+      for ( size_t j = entry_begin ; j < entry_end ; ++j ) {
+        ASSERT_EQ( (size_t) mx( j , 0 ) , ( j + 1 ) );
+        ASSERT_EQ( (size_t) mx( j , 1 ) , ( j + 2 ) );
+        ASSERT_EQ( (size_t) mx( j , 2 ) , ( j + 3 ) );
       }
     }
-#endif
   }
 
 };

@@ -214,23 +214,44 @@ public:
   template< typename iTypeEntry >
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
-  value_type operator()( const iTypeEntry & entry ) const
+  value_type & operator()( const iTypeEntry & entry ) const
     { return m_data[ entry ]; }
 
   template< typename iTypeEntry , typename iType1 >
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
-  value_type operator()( const iTypeEntry & entry ,
-                         const iType1     & i1 ) const
-    { return m_data[ m_index_map( entry , i1 ) ]; }
+  value_type & operator()( const iTypeEntry & entry ,
+                           const iType1     & i1 ) const
+    { return m_data[ m_index_map.offset( entry , i1 ) ]; }
 
   template< typename iTypeEntry , typename iType1 , typename iType2 >
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
-  value_type operator()( const iTypeEntry & entry ,
-                         const iType1     & i1 ,
-                         const iType2     & i2 ) const
-    { return m_data[ m_index_map( entry , i1 , i2 ) ]; }
+  value_type & operator()( const iTypeEntry & entry ,
+                           const iType1     & i1 ,
+                           const iType2     & i2 ) const
+    { return m_data[ m_index_map.offset( entry , i1 , i2 ) ]; }
+
+  template< typename iTypeEntry , typename iType1 , typename iType2 ,
+            typename iType3 >
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  value_type & operator()( const iTypeEntry & entry ,
+                           const iType1     & i1 ,
+                           const iType2     & i2 ,
+                           const iType3     & i3 ) const
+    { return m_data[ m_index_map.offset( entry , i1 , i2 , i3 ) ]; }
+
+  template< typename iTypeEntry , typename iType1 , typename iType2 ,
+            typename iType3 , typename iType4 >
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  value_type & operator()( const iTypeEntry & entry ,
+                           const iType1     & i1 ,
+                           const iType2     & i2 ,
+                           const iType3     & i3 ,
+                           const iType4     & i4 ) const
+    { return m_data[ m_index_map.offset( entry , i1 , i2 , i3 , i4 ) ]; }
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
@@ -288,6 +309,21 @@ public:
   /** \brief  Query if not view to same memory */
   bool operator != ( const CrsArray & rhs ) const
   { return m_row_map.ptr_on_device() != rhs.m_row_map.ptr_on_device() ; }
+
+  /*------------------------------------------------------------------*/
+
+  template< class DevRHS >
+  bool operator == ( const CrsArray< ArrayType , DevRHS , SizeType > & rhs ) const
+  {
+    return Impl::SameType< device_type , DevRHS >::value &&
+           m_row_map.ptr_on_device() == rhs.m_row_map.ptr_on_device() ;
+  }
+
+  template< class DevRHS >
+  bool operator != ( const CrsArray< ArrayType , DevRHS , SizeType > & rhs ) const
+  { return ! operator == ( rhs ); }
+
+  /*------------------------------------------------------------------*/
 
 private:
 

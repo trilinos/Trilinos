@@ -81,13 +81,13 @@ private:
 
   size_type N0 ;
 
-  static const unsigned S6 = N7 ;
-  static const unsigned S5 = N6 * ( 6 < Rank ? S6 : 1 );
-  static const unsigned S4 = N5 * ( 5 < Rank ? S5 : 1 );
-  static const unsigned S3 = N4 * ( 4 < Rank ? S4 : 1 );
-  static const unsigned S2 = N3 * ( 3 < Rank ? S3 : 1 );
-  static const unsigned S1 = N2 * ( 2 < Rank ? S2 : 1 );
-  static const unsigned S0 = N1 * ( 1 < Rank ? S1 : 1 );
+  static const unsigned S6 = 7 < Rank ? N7 : 1 ;
+  static const unsigned S5 = 6 < Rank ? N6 * S6 : 1 ;
+  static const unsigned S4 = 5 < Rank ? N5 * S5 : 1 ;
+  static const unsigned S3 = 4 < Rank ? N4 * S4 : 1 ;
+  static const unsigned S2 = 3 < Rank ? N3 * S3 : 1 ;
+  static const unsigned S1 = 2 < Rank ? N2 * S2 : 1 ;
+  static const unsigned S0 = 1 < Rank ? N1 * S1 : 1 ;
 
 public:
 

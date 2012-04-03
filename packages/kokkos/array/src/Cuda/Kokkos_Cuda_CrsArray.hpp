@@ -106,7 +106,7 @@ struct Factory< CrsArray< ArrayType , Cuda , SizeType > ,
     typedef typename output_type::value_type value_type ;
 
     const size_t size_row = sizeof(SizeType)*(output.m_row_count + 1 );
-    const size_t size_data = sizeof(value_type)*output.m_map.allocation_size();
+    const size_t size_data = sizeof(value_type)*output.m_index_map.allocation_size();
 
     MemoryManager< Cuda >::
       copy_to_device_from_host( output.m_row_map.ptr_on_device(),

@@ -163,6 +163,29 @@ create_crsarray( const InputType & input )
              ::create( std::string() , input );
 }
 
+//----------------------------------------------------------------------------
+
+template< class ArrayType ,
+          class DeviceDst ,
+          class DeviceSrc ,
+          typename SizeType >
+inline
+void deep_copy( const CrsArray<ArrayType,DeviceDst,SizeType> & dst ,
+                const CrsArray<ArrayType,DeviceSrc,SizeType> & src )
+{
+  typedef CrsArray<ArrayType,DeviceDst,SizeType> dst_type ;
+  typedef CrsArray<ArrayType,DeviceSrc,SizeType> src_type ;
+
+  if ( dst.operator!=(src) ) {
+
+    Impl::crsarray_require_equal_dimension(
+      dst.row_count() , dst.entry_dimension(0) ,
+      src.row_count() , src.entry_dimension(0) );
+
+    Impl::Factory< dst_type , src_type >::deep_copy( dst , src );
+  }
+}
+
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
