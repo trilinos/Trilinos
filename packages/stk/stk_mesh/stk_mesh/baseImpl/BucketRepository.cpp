@@ -301,16 +301,6 @@ void BucketRepository::update_field_data_states() const
 
 //----------------------------------------------------------------------
 
-const std::vector<Bucket*> & BucketRepository::buckets( EntityRank rank ) const
-{
-  ThrowRequireMsg( MetaData::get(m_mesh).check_rank(rank),
-                   "Invalid entity rank " << rank );
-
-  return m_buckets[ rank ];
-}
-
-//----------------------------------------------------------------------
-
 
 void BucketRepository::internal_sort_bucket_entities()
 {

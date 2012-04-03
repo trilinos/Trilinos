@@ -30,7 +30,12 @@ public:
       );
 
   /** \brief  Query all buckets of a given entity rank */
-  const std::vector<Bucket*> & buckets( EntityRank rank ) const ;
+  const std::vector<Bucket*> & buckets( EntityRank rank ) const
+  {
+    ThrowAssertMsg( rank < m_buckets.size(), "Invalid entity rank " << rank );
+  
+    return m_buckets[ rank ];
+  }
 
   /*  Entity modification consequences:
    *  1) Change entity relation => update via part relation => change parts
