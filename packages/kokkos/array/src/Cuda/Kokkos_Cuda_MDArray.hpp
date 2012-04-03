@@ -41,6 +41,25 @@
 //@HEADER
 */
 
+#ifndef KOKKOS_CUDA_MDARRAY_HPP
+#define KOKKOS_CUDA_MDARRAY_HPP
+
+#include <string>
+
+#include <Cuda/Kokkos_Cuda_IndexMap.hpp>
+
+#include <Kokkos_Cuda_macros.hpp>
+#include <impl/Kokkos_MDArray_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
+
+// For the host-mapped memory view:
+
+#include <Kokkos_Host_macros.hpp>
+#undef KOKKOS_MACRO_DEVICE
+#define KOKKOS_MACRO_DEVICE HostMapped< Cuda >
+#include <impl/Kokkos_MDArray_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
@@ -155,4 +174,6 @@ struct Factory< MDArray< ValueType , HostMapped< Cuda > > ,
 
 } // namespace Impl
 } // namespace Kokkos
+
+#endif /* #ifndef KOKKOS_CUDA_MDARRAY_HPP */
 

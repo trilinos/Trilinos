@@ -44,9 +44,12 @@
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
+#ifndef KOKKOS_CUDA_VALUE_HPP
+#define KOKKOS_CUDA_VALUE_HPP
+
 #include <Kokkos_Value.hpp>
+
 #include <Kokkos_Cuda_macros.hpp>
-#include <impl/Kokkos_MemoryView_macros.hpp>
 #include <impl/Kokkos_Value_macros.hpp>
 #include <Kokkos_Clear_macros.hpp>
 
@@ -127,4 +130,6 @@ public:
 
 } // namespace Impl
 } // namespace Kokkos
+
+#endif /* #ifndef KOKKOS_CUDA_VALUE_HPP */
 

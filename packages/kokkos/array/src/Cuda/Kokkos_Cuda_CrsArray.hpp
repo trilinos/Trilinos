@@ -44,6 +44,22 @@
 #ifndef KOKKOS_CUDA_CRSARRAY_HPP
 #define KOKKOS_CUDA_CRSARRAY_HPP
 
+#include <string>
+
+#include <Cuda/Kokkos_Cuda_IndexMap.hpp>
+
+#include <Kokkos_Cuda_macros.hpp>
+#include <impl/Kokkos_CrsArray_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
+
+// For the host mirror:
+
+#include <Kokkos_Host_macros.hpp>
+#undef KOKKOS_MACRO_DEVICE
+#define KOKKOS_MACRO_DEVICE HostMapped< Cuda >
+#include <impl/Kokkos_CrsArray_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 

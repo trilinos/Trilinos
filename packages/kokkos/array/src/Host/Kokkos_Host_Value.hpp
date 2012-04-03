@@ -44,7 +44,14 @@
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
+#ifndef KOKKOS_HOST_VALUE_HPP
+#define KOKKOS_HOST_VALUE_HPP
+
 #include <string.h>
+
+#include <Kokkos_Host_macros.hpp>
+#include <impl/Kokkos_Value_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
 
 namespace Kokkos {
 namespace Impl {
@@ -171,4 +178,6 @@ struct Factory< ValueType , Value< ValueType , HostMapped< Device > > >
 
 } // namespace Impl
 } // namespace Kokkos
+
+#endif /* #ifndef KOKKOS_HOST_VALUE_HPP */
 

@@ -44,6 +44,15 @@
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
+#ifndef KOKKOS_HOST_MULTIVECTOR_HPP
+#define KOKKOS_HOST_MULTIVECTOR_HPP
+
+#include <string>
+
+#include <Kokkos_Host_macros.hpp>
+#include <impl/Kokkos_MultiVector_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
+
 namespace Kokkos {
 namespace Impl {
 
@@ -227,4 +236,6 @@ public:
 
 } // namespace Impl
 } // namespace Kokkos
+
+#endif /* #ifndef KOKKOS_HOST_MULTIVECTOR_HPP */
 

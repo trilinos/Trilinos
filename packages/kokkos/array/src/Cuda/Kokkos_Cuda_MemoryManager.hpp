@@ -180,5 +180,9 @@ struct Factory< MemoryView< ValueType, Host> , MemoryView< ValueType, Cuda> >
 } // namespace Impl
 } // namespace Kokkos
 
-#endif /* #define KOKKOS_CUDAMEMORYMANAGER_HPP */
+#include <Kokkos_Cuda_macros.hpp>
+#include <impl/Kokkos_MemoryView_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
+
+#endif /* #define KOKKOS_CUDA_MEMORYMANAGER_HPP */
 

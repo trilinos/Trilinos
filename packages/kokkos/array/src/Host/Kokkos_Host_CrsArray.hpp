@@ -41,68 +41,14 @@
 //@HEADER
 */
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-// Partial specializations for the device
+#ifndef KOKKOS_HOST_CRSARRAY_HPP
+#define KOKKOS_HOST_CRSARRAY_HPP
 
+#include <Host/Kokkos_Host_IndexMap.hpp>
 
-#if defined( KOKKOS_MULTIVECTOR_HPP ) && ! defined( KOKKOS_CUDA_MULTIVECTOR )
-#define KOKKOS_CUDA_MULTIVECTOR
-#include <Kokkos_Cuda_macros.hpp>
-#include <impl/Kokkos_MultiVector_macros.hpp>
-#include <Kokkos_Clear_macros.hpp>
-
-#include <Cuda/Kokkos_Cuda_MultiVector.hpp>
-#endif
-
-//----------------------------------------------------------------------------
-
-#if ( defined( KOKKOS_MDARRAY_HPP ) || defined( KOKKOS_CRSARRAY_HPP ) ) && ! defined( KOKKOS_CUDA_INDEXMAPLEFT )
-#define KOKKOS_CUDA_INDEXMAPLEFT
-#include <Kokkos_Cuda_macros.hpp>
-#include <impl/Kokkos_IndexMapLeft_macros.hpp>
-#include <Kokkos_Clear_macros.hpp>
-#endif
-
-//----------------------------------------------------------------------------
-
-#if defined( KOKKOS_CRSARRAY_HPP ) && ! defined( KOKKOS_CUDA_CRSARRAY )
-#define KOKKOS_CUDA_CRSARRAY
-
-#include <Kokkos_Cuda_macros.hpp>
+#include <Kokkos_Host_macros.hpp>
 #include <impl/Kokkos_CrsArray_macros.hpp>
 #include <Kokkos_Clear_macros.hpp>
 
-#include <Kokkos_Host_macros.hpp>
-#undef KOKKOS_MACRO_DEVICE
-#define KOKKOS_MACRO_DEVICE HostMapped< Cuda >
-#include <impl/Kokkos_CrsArray_macros.hpp>
-#include <Kokkos_Clear_macros.hpp>
-
-#include <Cuda/Kokkos_Cuda_CrsArray.hpp>
-
-#endif
-
-//----------------------------------------------------------------------------
-
-#if defined( KOKKOS_MDARRAY_HPP ) && ! defined( KOKKOS_CUDA_MDARRAY )
-#define KOKKOS_CUDA_MDARRAY
-
-#include <Kokkos_Cuda_macros.hpp>
-#include <impl/Kokkos_MDArray_macros.hpp>
-#include <Kokkos_Clear_macros.hpp>
-
-#include <Kokkos_Host_macros.hpp>
-#undef KOKKOS_MACRO_DEVICE
-#define KOKKOS_MACRO_DEVICE HostMapped< Cuda >
-#include <impl/Kokkos_MDArray_macros.hpp>
-#include <Kokkos_Clear_macros.hpp>
-
-#include <Cuda/Kokkos_Cuda_MDArray.hpp>
-
-#endif
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
+#endif /* #ifndef KOKKOS_HOST_CRSARRAY_HPP */
 

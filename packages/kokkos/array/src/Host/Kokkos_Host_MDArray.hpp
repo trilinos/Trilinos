@@ -41,10 +41,15 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_HOSTMDARRAY_HPP
-#define KOKKOS_HOSTMDARRAY_HPP
+#ifndef KOKKOS_HOST_MDARRAY_HPP
+#define KOKKOS_HOST_MDARRAY_HPP
 
 #include <Host/Kokkos_Host_IndexMap.hpp>
+
+#include <Kokkos_Host_macros.hpp>
+#include <impl/Kokkos_MDArray_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
+
 
 namespace Kokkos {
 namespace Impl {
@@ -182,5 +187,5 @@ struct Factory< MDArray< ValueType , HostMapped< Device > > ,
 } // namespace Impl
 } // namespace Kokkos
 
-#endif /* #ifndef KOKKOS_HOSTMDARRAY_HPP */
+#endif /* #ifndef KOKKOS_HOST_MDARRAY_HPP */
 

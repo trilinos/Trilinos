@@ -131,7 +131,28 @@ public:
 
 #endif /* #ifndef KOKKOS_CUDA_HPP */
 
+//----------------------------------------------------------------------------
 /* Partial specializations for optional data structures */
-#include <Cuda/Kokkos_Cuda_Specialize.hpp>
+
+#if   defined( KOKKOS_MULTIVECTOR_HPP ) && \
+    ! defined( KOKKOS_CUDA_MULTIVECTOR_HPP )
+#include <Cuda/Kokkos_Cuda_MultiVector.hpp>
+#endif
+
+
+#if   defined( KOKKOS_CRSARRAY_HPP ) && \
+    ! defined( KOKKOS_CUDA_CRSARRAY )
+#include <Cuda/Kokkos_Cuda_CrsArray.hpp>
+#endif
+
+#if   defined( KOKKOS_MDARRAY_HPP ) && \
+    ! defined( KOKKOS_CUDA_MDARRAY_HPP )
+#include <Cuda/Kokkos_Cuda_MDArray.hpp>
+#endif
+
+//----------------------------------------------------------------------------
+
+
+
 
 

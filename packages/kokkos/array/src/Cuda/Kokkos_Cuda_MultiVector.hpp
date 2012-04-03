@@ -41,6 +41,15 @@
 //@HEADER
 */
 
+#ifndef KOKKOS_CUDA_MULTIVECTOR_HPP
+#define KOKKOS_CUDA_MULTIVECTOR_HPP
+
+#include <string>
+
+#include <Kokkos_Cuda_macros.hpp>
+#include <impl/Kokkos_MultiVector_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
@@ -150,4 +159,6 @@ struct Factory< MultiVector< ValueType , Host > ,
 
 } // namespace Impl
 } // namespace Kokkos
+
+#endif /* #ifndef KOKKOS_CUDA_MULTIVECTOR_HPP */
 

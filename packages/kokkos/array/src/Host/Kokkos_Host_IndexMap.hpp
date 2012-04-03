@@ -41,8 +41,12 @@
 //@HEADER
 */
 
-#ifndef HOST_INDEXMAPDEEPCOPY_HPP
-#define HOST_INDEXMAPDEEPCOPY_HPP
+#ifndef KOKKOS_HOST_INDEXMAP_HPP
+#define KOKKOS_HOST_INDEXMAP_HPP
+
+#include <Kokkos_Host_macros.hpp>
+#include <impl/Kokkos_IndexMapRight_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
 
 namespace Kokkos {
 namespace Impl {
@@ -225,5 +229,6 @@ public:
 } // namespace Impl
 } // namespace Kokkos
 
-#endif /* #ifndef HOST_INDEXMAPDEEPCOPY_HPP */
+#endif /* #ifndef KOKKOS_HOST_INDEXMAP_HPP */
+
 

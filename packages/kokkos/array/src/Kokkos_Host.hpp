@@ -162,6 +162,29 @@ template<> struct HostMapped<Host> { typedef Host type ; };
 
 #endif /* #define KOKKOS_HOST_HPP */
 
+//----------------------------------------------------------------------------
 /* Partial specializations for optional data structures */
-#include <Host/Kokkos_Host_Specialize.hpp>
+
+#if   defined( KOKKOS_VALUE_HPP ) && \
+    ! defined( KOKKOS_HOST_VALUE_HPP )
+#include <Host/Kokkos_Host_Value.hpp>
+#endif
+
+#if   defined( KOKKOS_MULTIVECTOR_HPP ) && \
+    ! defined( KOKKOS_HOST_MULTIVECTOR_HPP )
+#include <Host/Kokkos_Host_MultiVector.hpp>
+#endif
+
+#if   defined( KOKKOS_MDARRAY_HPP ) && \
+    ! defined( KOKKOS_HOST_MDARRAY_HPP )
+#include <Host/Kokkos_Host_MDArray.hpp>
+#endif
+
+#if   defined( KOKKOS_CRSARRAY_HPP ) && \
+    ! defined( KOKKOS_HOST_CRSARRAY_HPP )
+#include <Host/Kokkos_Host_CrsArray.hpp>
+#endif
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
