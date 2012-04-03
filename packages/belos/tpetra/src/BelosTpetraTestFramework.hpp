@@ -590,11 +590,17 @@ namespace Belos {
       ///   - "Output RHS filename" (std::string): If provided and not
       ///     "", write the right-hand side(s) (RHS) out in Matrix
       ///     Market format to the file with the given name.
-      ///   - "Problem type" (std::string): The type of problem to
-      ///     generate.  Currently, the only value for which this
-      ///     matters is "GMRES unfriendly", which means generate a
-      ///     right-hand side corresponding to the linear system for
-      ///     which GMRES converges slowly.
+      ///   - "Number of RHS" (size_t): If provided, and if no input
+      ///     filename was specified, B, X_guess, and X_exact will all
+      ///     have this number of columns.  Defaults to 1.
+      ///   - "Random solution" (bool): If true, pick a random (via
+      ///     MultiVector::randomize()) exact solution, and compute
+      ///     the right-hand side(s) accordingly.
+      ///   - "Problem type" (std::string): Optional: The type of
+      ///     problem to generate.  Currently, the only value for
+      ///     which this matters is "GMRES unfriendly", which means
+      ///     generate a right-hand side corresponding to the linear
+      ///     system for which GMRES converges slowly.
       void
       makeVectors (const Teuchos::RCP<const sparse_matrix_type>& A,
 		   Teuchos::RCP<multivector_type>& X_guess,
@@ -602,9 +608,11 @@ namespace Belos {
 		   Teuchos::RCP<multivector_type>& B,
 		   const Teuchos::RCP<Teuchos::ParameterList>& params)
       {
-	using std::endl;
+	using Teuchos::as;
 	using Teuchos::RCP;
 	using Teuchos::rcp;
+	using std::endl;
+
 	typedef local_ordinal_type LO;
 	typedef global_ordinal_type GO;
 	typedef node_type NT;
@@ -627,52 +635,112 @@ namespace Belos {
 	    gmresUnfriendly = true;
 	  }
 	}
+	
+	// This applies only if generating the right-hand side(s), and
+	// if the problem type is not "GMRES unfriendly".
+	const bool randomSolution = ! gmresUnfriendly && inRhsFilename == "" &&
+	  params->isParameter ("Random solution") && 
+	  params->get<bool> ("Random solution");
+
+	// Number of right-hand side(s).
+	size_t numRHS = 1;
+	if (inRhsFilename == "") {
+	  // Be liberal about the accepted type of this parameter.
+	  if (params->isType<size_t> ("Number of RHS")) {
+	    numRHS = params->get<size_t> ("Number of RHS");
+	  }
+	  else if (params->isType<long> ("Number of RHS")) {
+	    numRHS = as<size_t> (params->get<long> ("Number of RHS"));
+	  }
+	  else if (params->isType<int> ("Number of RHS")) {
+	    numRHS = as<size_t> (params->get<int> ("Number of RHS"));
+	  }
+	  // If reading the right-hand side(s) from a file, numRHS
+	  // will be (re)set accordingly.
+	}
+
+	RCP<const map_type> domainMap = A->getDomainMap();
+	RCP<const map_type> rangeMap = A->getRangeMap();
+
+	if (inRhsFilename != "") {
+	  // If reading the right-hand side(s) from a file, don't set
+	  // the exact solution(s).  Later we could try to read those
+	  // from a file too.
+	  *out << "Reading right-hand side(s) B from Matrix Market file" << endl;
+	  Teuchos::OSTab tab2 (out);
+	  typedef ::Tpetra::MatrixMarket::Reader<SparseMatrixType> reader_type;
+	  B = reader_type::readDenseFile (inRhsFilename, comm_, A->getNode(),
+					  rangeMap, tolerant_, debug_);
+	  TEUCHOS_TEST_FOR_EXCEPTION(B.is_null (), std::runtime_error, "Failed "
+            "to read right-hand side(s) B from Matrix Market file \"" 
+            << inRhsFilename << "\".");
+	  numRHS = B->getNumVectors ();
+	}
 
 	// Construct X_guess (the initial guess for the solution of
 	// AX=B) from the domain of the matrix A, and fill it with
 	// zeros.
 	{
 	  *out << "Constructing initial guess vector X_guess" << endl;
-	  X_guess = rcp (new MV (A->getDomainMap(), 1));
+	  X_guess = rcp (new MV (domainMap, numRHS));
 	  X_guess->putScalar (STS::zero());
 	}
 
+	// Compute the exact solution vector(s).
+	X_exact = rcp (new MV (domainMap, numRHS));
 	if (inRhsFilename != "") {
-	  // If reading the right-hand side(s) from a file, don't set
-	  // the exact solution(s).  Later we could try to read those
-	  // from a file too.
-	  *out << "Reading right-hand side B from Matrix Market file" << endl;
-	  Teuchos::OSTab tab2 (out);
-	  typedef ::Tpetra::MatrixMarket::Reader<SparseMatrixType> reader_type;
-	  RCP<const map_type> map = A->getRangeMap();
-	  B = reader_type::readDenseFile (inRhsFilename, comm_, A->getNode(),
-					  map, tolerant_, debug_);
-	} else {
-	  // Our choice of exact solution and right-hand side depend on
-	  // the test problem.  If we generated the GMRES-unfriendly
-	  // example, we need B = e_{globalNumRows} and therefore
-	  // X_exact = e_{globalNumRows} as well.  Otherwise, we pick
-	  // X_exact first and compute B via SpMV: B = A * X_exact.
-	  X_exact = rcp (new MV (A->getDomainMap(), 1));
+	  // FIXME (mfh 03 Apr 2012) We don't compute the exact
+	  // solution vector(s) in this case.  We could always fire up
+	  // Amesos2 and do a direct solve, but instead, we just fill
+	  // with zeros and be done with it.
+	  X_exact->putScalar (STS::zero ());
+	}
+	else { // if (inRhsFilename == "")
+	  // Our choice of exact solution and right-hand side depend
+	  // on the test problem.  If we generated the
+	  // GMRES-unfriendly example, we need B = e_{globalNumRows}
+	  // and therefore X_exact = e_{globalNumRows} as well.
+	  // Otherwise, we pick X_exact first and compute B via the
+	  // product B = A * X_exact.
+	  X_exact = rcp (new MV (domainMap, numRHS));
 
 	  // Construct the right-hand side B from the range of the
 	  // matrix A.  Don't just clone X_guess, since the range may
 	  // differ from the domain.
-	  B = rcp (new MV (A->getRangeMap(), 1));
+	  B = rcp (new MV (rangeMap, numRHS));
 
 	  if (gmresUnfriendly) {
 	    *out << "Constructing B and X_exact for canonical \"GMRES-"
 	      "unfriendly\" example" << endl;
-	    X_exact->putScalar (STS::zero());
-	    X_exact->replaceGlobalValue (A->getGlobalNumRows()-1, 0, STS::one());
+	    X_exact->putScalar (STS::zero ());
+
+	    // Only the owning process is allowed to call
+	    // MV::replaceGlobalValue().  First check via the domain
+	    // (for X_exact) resp. range (for B) Maps whether the
+	    // calling process owns that row, and if so, make the
+	    // change there.  (Domain and range Maps of a CrsMatrix
+	    // should never be overlapping, so we don't have to worry
+	    // about multiple processes owning the row.)
+	    const GO rowToChange = as<GO> (A->getGlobalNumRows() - 1);
+	    if (domainMap->isNodeGlobalElement (rowToChange)) {
+	      X_exact->replaceGlobalValue (rowToChange, 0, STS::one ());
+	    }
 	    B->putScalar (STS::zero());
-	    B->replaceGlobalValue (A->getGlobalNumRows()-1, 0, STS::one());
+	    if (rangeMap->isNodeGlobalElement (rowToChange)) {
+	      B->replaceGlobalValue (rowToChange, 0, STS::one ());
+	    }
 	  } else {
-	    // Construct the exact solution vector and fill it with all
-	    // ones.  Tacky, but deterministic.  Not so good if we
-	    // expect A to be singular with rigid body modes.
-	    *out << "Setting X_exact = [1; ...; 1]" << endl;
-	    X_exact->putScalar (STS::one());
+	    if (randomSolution) {
+	      *out << "Randomizing X_exact" << endl;
+	      X_exact->randomize ();
+	    }
+	    else {
+	      // Construct the exact solution vector and fill it with
+	      // all ones.  Tacky, but deterministic.  Not good if we
+	      // expect A to be singular with rigid body modes.
+	      *out << "Setting X_exact = [1; ...; 1]" << endl;
+	      X_exact->putScalar (STS::one ());
+	    }
       
 	    // Compute the right-hand side B := A*X_exact.
 	    *out << "Computing B := A*X_exact" << endl;
