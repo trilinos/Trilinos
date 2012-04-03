@@ -212,6 +212,7 @@ int main(int argc, char *argv[]) {
 
   ML_Epetra::SetDefaults("SA",MLList);
   MLList.set("smoother: type", "Jacobi");
+  MLList.set("smoother: damping factor", .5);
 
   TestMultiLevelPreconditioner(mystring, MLList, Problem, TotalErrorResidual,
                                TotalErrorExactSol,true);
