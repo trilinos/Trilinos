@@ -1775,7 +1775,7 @@ int Epetra_VbrMatrix::DoMultiply(bool TransA, const Epetra_MultiVector& X, Epetr
 	Epetra_SerialDenseMatrix* Asub = **Entries;
 	double *A = Asub->A_ ;
 
-	if ( ( NumVectors == 1 ) ) { 
+	if ( NumVectors == 1 ) { 
 
 	  for (i=0; i < NumMyBlockRows_; i++) {
 	    int      NumEntries = *NumBlockEntriesPerRow++;

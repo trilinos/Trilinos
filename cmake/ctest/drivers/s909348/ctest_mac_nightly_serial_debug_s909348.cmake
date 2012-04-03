@@ -63,6 +63,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.s909348.gcc.cmake")
 SET(COMM_TYPE SERIAL)
 SET(BUILD_TYPE DEBUG)
 SET(BUILD_DIR_NAME SERIAL_DEBUG_DEV)
+SET(CTEST_TEST_TYPE Nightly)
 #SET(CTEST_TEST_TIMEOUT 900)
 
 # Exclude Sundance because of strange segfault (see bug 4382)

@@ -54,7 +54,7 @@ int main(int argc, char ** argv)
   int beg = 4 ;
   int end = 12 ;
   int runs = 3 ;
-  int host_threads = -1;
+  int host_threads = 4 ;
 
   if ( 1 < argc ) {
     host_threads = atoi(argv[1]);

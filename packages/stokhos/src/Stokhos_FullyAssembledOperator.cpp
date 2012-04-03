@@ -29,6 +29,7 @@
 // @HEADER
 
 #include "Stokhos_FullyAssembledOperator.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 Stokhos::FullyAssembledOperator::
 FullyAssembledOperator(
@@ -68,6 +69,10 @@ Stokhos::FullyAssembledOperator::
 setupOperator(
    const Teuchos::RCP<Stokhos::EpetraOperatorOrthogPoly >& ops)
 {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
+  TEUCHOS_FUNC_TIME_MONITOR("Stokhos: SG Fully Assembled Operator Assembly");
+#endif
+
   block_ops = ops;
 
   // Zero out matrix
@@ -119,4 +124,14 @@ Stokhos::FullyAssembledOperator::
 getSGPolynomial() const
 {
   return block_ops;
+}
+
+int 
+Stokhos::FullyAssembledOperator::
+Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
+{
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
+  TEUCHOS_FUNC_TIME_MONITOR("Stokhos: SG Operator Apply");
+#endif
+  return Epetra_CrsMatrix::Apply(Input, Result);
 }

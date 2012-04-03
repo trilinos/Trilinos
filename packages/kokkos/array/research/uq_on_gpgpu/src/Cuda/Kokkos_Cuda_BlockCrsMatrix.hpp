@@ -95,13 +95,15 @@ public:
             size_type iEntry    = m_A.graph.row_entry_begin(iBlock);
 
       for ( ; iEntry < iEntryEnd ; ++iEntry ) {
-        const VectorValue * const x = & m_x( 0 , m_A.graph.column(iEntry) );
+        const VectorValue * const x = & m_x( 0 , m_A.graph(iEntry) );
         const MatrixValue * const a = & m_A.values( 0 , iEntry );
 
-        Multiply< BlockSpec >::apply( m_A.block , a , x , y );
+        y += Multiply< BlockSpec >::apply( m_A.block , a , x );
       }
 
-      m_y(threadIdx.x,iBlock) = y ;
+      if ( threadIdx.x + blockDim.x * threadIdx.y < m_A.block.dimension() ) {
+        m_y(threadIdx.x,iBlock) = y ;
+      }
     }
   }
 
@@ -112,20 +114,21 @@ public:
     const size_type thread_max =
       cuda_internal_maximum_warp_count() * Impl::CudaTraits::WarpSize ;
 
-    const size_type blockCount =
-      std::max( A.graph.row_count() , cuda_internal_maximum_grid_count() );
-    const size_type threadCount = A.block.dimension();
+    const dim3 grid(
+      std::min( A.graph.row_count() , cuda_internal_maximum_grid_count() ) , 1 , 1 );
+    const dim3 block = Multiply<BlockSpec>::thread_block( A.block );
+
     const size_type shmem       = Multiply<BlockSpec>::template shmem_size<vector_type>( A.block );
 
-    if ( thread_max < threadCount ) {
+    if ( thread_max < block.x * block.y ) {
       std::ostringstream msg ;
       msg << "Kokkos::Impl::Multiply< BlockCrsMatrix< Block , Value , Cuda > , ... >"
-          << " ERROR: block dimension = " << threadCount
+          << " ERROR: block dimension = " << block.x * block.y
           << " > " << thread_max << "== maximum Cuda threads per block" ;
       throw std::runtime_error(msg.str());
     }
 
-    Impl::cuda_parallel_launch_local_memory<<< blockCount , threadCount , shmem >>>( Multiply(A,x,y) );
+    Impl::cuda_parallel_launch_local_memory<<< grid , block , shmem >>>( Multiply(A,x,y) );
   }
 };
 

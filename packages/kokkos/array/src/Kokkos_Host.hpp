@@ -45,9 +45,7 @@
 #define KOKKOS_HOST_HPP
 
 #include <cstddef>
-#include <impl/Kokkos_MDArrayIndexMap.hpp>
-
-#define KOKKOS_HOST  Kokkos::Host
+#include <impl/Kokkos_IndexMap.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -62,9 +60,16 @@ public:
   /*--------------------------------*/
   /* required type declarations and functions for a device */
 
-  typedef size_t                                     size_type ;
-  typedef Host                                       memory_space ;
-  typedef Impl::MDArrayIndexMapRight< memory_space > mdarray_map ;
+  typedef Host    memory_space ;
+  typedef size_t  size_type ;
+
+  template< unsigned Rank = 0 ,
+            unsigned N1 = 0 , unsigned N2 = 0 , unsigned N3 = 0 ,
+            unsigned N4 = 0 , unsigned N5 = 0 , unsigned N6 = 0 ,
+            unsigned N7 = 0 >
+  struct IndexMap {
+    typedef Impl::IndexMapRight<memory_space,Rank,N1,N2,N3,N4,N5,N6,N7> type ;
+  };
 
   /*--------------------------------*/
 
@@ -125,6 +130,28 @@ public:
 };
 
 /*--------------------------------------------------------------------------*/
+/** \brief  Host memory space with another device's multi-index mapping. */
+template< class Device >
+struct HostMapped {
+public:
+  typedef HostMapped< Device >        type ;
+  typedef typename Device::size_type  size_type ;
+  typedef Host::memory_space          memory_space ;
+
+  template< unsigned Rank = 0,
+            unsigned N1 = 0, unsigned N2 = 0, unsigned N3 = 0,
+            unsigned N4 = 0, unsigned N5 = 0, unsigned N6 = 0,
+            unsigned N7 = 0 >
+  struct IndexMap {
+    typedef typename
+      Device::template IndexMap<Rank,N1,N2,N3,N4,N5,N6,N7>::type type ;
+  };
+};
+
+/** \brief  The host mapped onto the host is the host */
+template<> struct HostMapped<Host> { typedef Host type ; };
+
+/*--------------------------------------------------------------------------*/
 
 } // namespace Kokkos
 
@@ -135,6 +162,29 @@ public:
 
 #endif /* #define KOKKOS_HOST_HPP */
 
+//----------------------------------------------------------------------------
 /* Partial specializations for optional data structures */
-#include <Host/Kokkos_Host_Specialize.hpp>
+
+#if   defined( KOKKOS_VALUE_HPP ) && \
+    ! defined( KOKKOS_HOST_VALUE_HPP )
+#include <Host/Kokkos_Host_Value.hpp>
+#endif
+
+#if   defined( KOKKOS_MULTIVECTOR_HPP ) && \
+    ! defined( KOKKOS_HOST_MULTIVECTOR_HPP )
+#include <Host/Kokkos_Host_MultiVector.hpp>
+#endif
+
+#if   defined( KOKKOS_MDARRAY_HPP ) && \
+    ! defined( KOKKOS_HOST_MDARRAY_HPP )
+#include <Host/Kokkos_Host_MDArray.hpp>
+#endif
+
+#if   defined( KOKKOS_CRSARRAY_HPP ) && \
+    ! defined( KOKKOS_HOST_CRSARRAY_HPP )
+#include <Host/Kokkos_Host_CrsArray.hpp>
+#endif
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 

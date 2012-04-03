@@ -1,0 +1,112 @@
+Bourne Again Shell
+    filter remove_matches ^\s*#
+    filter remove_inline #.*$
+    extension bash
+    script_exe bash
+    3rd_gen_scale 3.81
+    end_of_line_continuation \\$
+Bourne Shell
+    filter remove_matches ^\s*#
+    filter remove_inline #.*$
+    extension sh
+    script_exe sh
+    3rd_gen_scale 3.81
+    end_of_line_continuation \\$
+CMake
+    filter remove_matches ^\s*#
+    filter remove_inline #.*$
+    extension CMakeLists.txt
+    extension cmake
+    filename CMakeLists.txt
+    3rd_gen_scale 1.00
+    end_of_line_continuation \\$
+Cython
+    filter remove_matches ^\s*#
+    filter docstring_to_C
+    filter call_regexp_common C
+    filter remove_inline #.*$
+    extension pyx
+    3rd_gen_scale 3.80
+    end_of_line_continuation \\$
+DOS Batch
+    filter remove_matches ^\s*rem
+    extension BAT
+    extension bat
+    3rd_gen_scale 0.63
+Javascript
+    filter remove_matches ^\s*//
+    filter call_regexp_common C
+    filter remove_inline //.*$
+    extension js
+    3rd_gen_scale 1.48
+    end_of_line_continuation \\$
+Korn Shell
+    filter remove_matches ^\s*#
+    filter remove_inline #.*$
+    extension ksh
+    script_exe ksh
+    3rd_gen_scale 3.81
+    end_of_line_continuation \\$
+Lisp
+    filter remove_matches ^\s*;
+    extension cl
+    extension el
+    extension jl
+    extension lisp
+    extension lsp
+    extension sc
+    extension scm
+    3rd_gen_scale 1.25
+MATLAB
+    filter remove_matches ^\s*%
+    filter remove_inline %.*$
+    3rd_gen_scale 4.00
+    end_of_line_continuation \.\.\.\s*$
+Perl
+    filter remove_below ^__(END|DATA)__
+    filter remove_matches ^\s*#
+    filter remove_below_above ^=head1
+    filter remove_inline #.*$
+    extension PL
+    extension perl
+    extension pl
+    extension plh
+    extension plx
+    extension pm
+    script_exe perl
+    script_exe perl5
+    3rd_gen_scale 4.00
+Python
+    filter remove_matches ^\s*#
+    filter docstring_to_C
+    filter call_regexp_common C
+    filter remove_inline #.*$
+    extension py
+    3rd_gen_scale 4.20
+    end_of_line_continuation \\$
+Ruby
+    filter remove_matches ^\s*#
+    filter remove_inline #.*$
+    extension rb
+    script_exe ruby
+    3rd_gen_scale 4.20
+    end_of_line_continuation \\$
+Visual Basic
+    filter remove_above ^\s*Attribute\s+VB_Name\s+=
+    filter remove_matches ^\s*Attribute\s+
+    filter remove_matches ^\s*\47
+    extension VB
+    extension VBA
+    extension VBS
+    extension bas
+    extension cls
+    extension frm
+    extension vb
+    extension vba
+    extension vbs
+    3rd_gen_scale 2.76
+m4
+    filter remove_matches ^dnl 
+    extension ac
+    extension m4
+    3rd_gen_scale 1.00

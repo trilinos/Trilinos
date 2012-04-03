@@ -63,7 +63,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.godel.icpc.cmake")
 SET(COMM_TYPE SERIAL)
 SET(BUILD_TYPE RELEASE)
 SET(BUILD_DIR_NAME SERIAL_RELEASE_ICPC)
-#SET(CTEST_TEST_TYPE Experimental)
+SET(CTEST_TEST_TYPE Nightly)
 #SET(CTEST_TEST_TIMEOUT 900)
 
 SET(Trilinos_PACKAGES Teuchos RTOp GlobiPack Tpetra Thyra OptiPack Stratimikos Phalanx Rythmos MOOCHO)

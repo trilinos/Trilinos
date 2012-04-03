@@ -339,6 +339,85 @@ private:
 };
 
 //----------------------------------------------------------------------------
+
+template< typename ValueType >
+class CrsProductTensor< 3 , ValueType , KOKKOS_MACRO_DEVICE > {
+public:
+
+  typedef KOKKOS_MACRO_DEVICE     device_type ;
+  typedef device_type::size_type  size_type ;
+  typedef ValueType               value_type ;
+
+private:
+
+  typedef Kokkos::MultiVector< value_type,device_type>  vec_type ;
+
+public:
+
+  inline
+  ~CrsProductTensor() {}
+
+  inline
+  CrsProductTensor() : m_coord() , m_value() , m_entry_max(0) {}
+
+  inline
+  CrsProductTensor( const CrsProductTensor & rhs )
+  : m_coord( rhs.m_coord ) , m_value( rhs.m_value ) , m_entry_max( rhs.m_entry_max ) {}
+
+  inline
+  CrsProductTensor & operator = ( const CrsProductTensor & rhs )
+  {
+    m_coord = rhs.m_coord ;
+    m_value = rhs.m_value ;
+    m_entry_max = rhs.m_entry_max ;
+    return *this ;
+  }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type dimension() const { return m_coord.row_count(); }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type entry_count() const
+  { return m_coord.entry_dimension(0); }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type entry_maximum() const
+  { return m_entry_max ; }
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  size_type entry_begin( size_type i ) const
+  { return m_coord.row_entry_begin(i); }
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  size_type entry_end( size_type i ) const
+  { return m_coord.row_entry_end(i); }
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  size_type coord( const size_type entry , const size_type c ) const
+  { return m_coord( entry , c ); }
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  const value_type & value( const size_type entry ) const
+  { return m_value( entry ); }
+
+private:
+
+  Kokkos::CrsArray< size_type[2] , device_type >   m_coord ;
+  Kokkos::MultiVector< value_type , device_type >  m_value ;
+  size_type                                        m_entry_max ;
+
+  template< class T , class I >
+  friend class Impl::CreateSparseProductTensor ;
+};
+
+//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 } // namespace Kokkos

@@ -48,72 +48,82 @@
 class Epetra_MpiComm;
 #include <mpi.h>
 
-//! Epetra_MpiDistributor:  The Epetra MPI implementation of the Epetra_Distributor Gather/Scatter Setup Class.
-/*! The Epetra_MpiDistributor class is an MPI implement of Epetra_Distributor that encapsulates the general
-  information and services needed for other Epetra classes to perform gather/scatter
-  operations on a parallel computer.
-  An Epetra_MpiDistributor object is actually produced by calling a method in the Epetra_MpiComm class.
-  
-*/
-
+/// \class Epetra_MpiDistributor
+/// \brief MPI implementation of Epetra_Distributor.
+///
+/// This class is an MPI implementation of \c Epetra_Distributor.  It
+/// encapsulates the general information and services needed for other
+/// Epetra classes to perform gather/scatter operations on a parallel
+/// computer.  An Epetra_MpiDistributor instance is actually produced
+/// by calling a method in the Epetra_MpiComm class.
 class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distributor {
     
   public:
 
-    //! @name Constructors/Destructor
+  //! @name Constructors/Destructor
   //@{ 
 
-  //! Epetra_Comm Default Constructor.
+  //! Default constructor.
   Epetra_MpiDistributor(const Epetra_MpiComm & Comm);
 
-  //! Epetra_Comm Copy Constructor.
+  //! Copy constructor.
   Epetra_MpiDistributor(const Epetra_MpiDistributor & Distributor);
 
   //! Clone method
   Epetra_Distributor * Clone(){return(dynamic_cast<Epetra_Distributor *>(new Epetra_MpiDistributor(*this)));};
 
-  //! Epetra_Comm Destructor.
+  //! Destructor (declared virtual for memory safety).
   virtual ~Epetra_MpiDistributor();
   //@}
 
   
   //! @name Gather/Scatter Constructors
   //@{ 
-  //! Create Distributor object using list of process IDs to which we export
-  /*! Take a list of Process IDs and construct a plan for efficiently scattering to these processes.
-      Return the number of IDs being sent to me.
-    \param NumExportIDs In
-           Number of IDs that need to be sent from this processor.
-    \param ExportPIDs In
-           List of processors that will get the exported IDs.
-    \param Deterministic In
-           No Op.
-    \param NumRemoteIDs Out
-           Number of IDs this processor will be receiving.
-  */
+
+  /// \brief Create a communication plan from send list.
+  ///
+  /// Given a list of process IDs to which to send the given number of
+  /// data IDs, construct a communication plan for efficiently
+  /// scattering data to these processes.
+  ///
+  /// \return The number of data IDs being sent to me.
+  ///
+  /// \param NumExportIDs [in] Number of data IDs that need to be sent
+  ///   from the calling process.
+  /// \param ExportPIDs [in] List of process IDs that will get the
+  ///   exported data IDs.
+  /// \param Deterministic [in] Currently has no effect.
+  /// \param NumRemoteIDs [out] Number of data IDs the calling process
+  ///   will be receiving.
   int CreateFromSends( const int & NumExportIDs,
                        const int * ExportPIDs,
 		       bool Deterministic,
                        int & NumRemoteIDs );
 
-  //! Create Distributor object using list of Remote global IDs and corresponding PIDs
-  /*! Take a list of global IDs and construct a plan for efficiently scattering to these processes.
-      Return the number and list of IDs being sent by me.
-    \param NumRemoteIDs In
-           Number of IDs this processor will be receiving.
-    \param RemoteGIDs In
-           List of IDs that this processor wants.
-    \param RemotePIDs In
-           List of processors that will send the remote IDs.
-    \param Deterministic In
-           No Op.
-    \param NumExportIDs Out
-           Number of IDs that need to be sent from this processor.
-    \param ExportGIDs Out
-           List of processors that will get the exported IDs.
-    \param ExportPIDs Out
-           List of processors that will get the exported IDs.
-  */
+  /// \brief Create a communication plan from receive list.
+  ///
+  /// Given a list of remote data IDs and corresponding process IDs
+  /// from which to receive data, construct a communication plan for
+  /// efficiently scattering data to these processes.
+  ///
+  /// \return The number and list of data IDs being sent by me.
+  ///
+  /// \param NumRemoteIDs [in] Number of data IDs the calling process
+  ///   will be receiving.
+  /// \param RemoteGIDs [in] List of data IDs that the calling process
+  ///   wants to receive.
+  /// \param RemotePIDs [in] List of IDs of the processes that will
+  ///   send the remote data IDs to the calling process.
+  /// \param Deterministic [in] Currently has no effect.
+  /// \param NumExportIDs [out] Number of data IDs that need to be
+  ///   sent from the calling process.
+  /// \param ExportGIDs [out] List of data IDs that the calling
+  ///   process will send out.
+  /// \param ExportPIDs [out] List of IDs of the processes that will
+  ///   receive the data IDs sent by the calling process.  
+  ///
+  /// \note This method allocates the output arrays using \c new.  The
+  ///   caller is responsible for deallocating them after use.
   int CreateFromRecvs( const int & NumRemoteIDs,
                        const int * RemoteGIDs,
                        const int * RemotePIDs,

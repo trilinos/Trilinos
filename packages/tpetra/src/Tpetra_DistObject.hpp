@@ -148,6 +148,11 @@ namespace Tpetra {
 
     /// \enum ReverseOption
     /// \brief Whether the data transfer should be performed in forward or reverse mode.
+    ///
+    /// "Reverse mode" means calling \c doExport() with an \c Import
+    /// object, or calling \c doImport() with an \c Export object.
+    /// "Forward mode" means calling \c doExport() with an \c Export
+    /// object, or calling \c doImport() with an \c Import object.
     enum ReverseOption {
       DoForward, //*!< Perform the transfer in forward mode.
       DoReverse  //*!< Perform the transfer in reverse mode.
@@ -254,23 +259,45 @@ namespace Tpetra {
     Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > map_;
 
   private:
-    // buffers into which packed data is imported
+    //! Buffers into which packed data is imported (received from other processes).
     Teuchos::Array<Packet> imports_;
+    /// \brief Number of packets to receive for each receive operation.
+    /// 
+    /// This array is used in \c Distributor::doPosts() (and \c
+    /// doReversePosts()) when starting the ireceive operation.  
+    ///
+    /// This may be ignored in \c doTransfer() if constantNumPackets
+    /// is nonzero, indicating a constant number of packets per LID.
+    /// (For example, MultiVector sets the constantNumPackets output
+    /// argument of \c packAndPrepare() to the number of columns in
+    /// the multivector.)
     Teuchos::Array<size_t> numImportPacketsPerLID_;
-    // buffers from which packed data is exported
+    //! Buffers from which packed data is exported (sent to other processes).
     Teuchos::Array<Packet> exports_;
+    /// \brief Number of packets to send for each send operation.
+    ///
+    /// This array is used in \c Distributor::doPosts() (and \c
+    /// doReversePosts()) for preparing for the send operation.
+    ///
+    /// This may be ignored in \c doTransfer() if constantNumPackets
+    /// is nonzero, indicating a constant number of packets per LID.
+    /// (For example, MultiVector sets the constantNumPackets output
+    /// argument of \c packAndPrepare() to the number of columns in
+    /// the multivector.)
     Teuchos::Array<size_t> numExportPacketsPerLID_;
 
   }; // class DistObject
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::DistObject(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & map)
-  : map_(map)
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  DistObject (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map)
+    : map_ (map)
   {}
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::DistObject(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & source)
-  : map_(source.map_)
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  DistObject (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source)
+    : map_ (source.map_)
   {}
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -284,8 +311,10 @@ namespace Tpetra {
 	    const Import<LocalOrdinal,GlobalOrdinal,Node> & importer, 
 	    CombineMode CM) 
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(   *getMap() != *importer.getTargetMap(), std::runtime_error, "Target Maps don't match.");
-    TEUCHOS_TEST_FOR_EXCEPTION( *A.getMap() != *importer.getSourceMap(), std::runtime_error, "Source Maps don't match.");
+    TEUCHOS_TEST_FOR_EXCEPTION(   *getMap() != *importer.getTargetMap(), std::invalid_argument,
+      "doImport: The target DistObject's Map is not identical to the Import's target Map.");
+    TEUCHOS_TEST_FOR_EXCEPTION( *A.getMap() != *importer.getSourceMap(), std::invalid_argument,
+      "doImport: The source DistObject's Map is not identical to the Import's source Map.");
     size_t numSameIDs = importer.getNumSameIDs();
     const Teuchos::ArrayView<const LocalOrdinal> exportLIDs      = importer.getExportLIDs();
     const Teuchos::ArrayView<const LocalOrdinal> remoteLIDs      = importer.getRemoteLIDs();
@@ -302,8 +331,10 @@ namespace Tpetra {
 	    const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter, 
 	    CombineMode CM) 
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(   *getMap() != *exporter.getTargetMap(), std::runtime_error, "Target Maps don't match.");
-    TEUCHOS_TEST_FOR_EXCEPTION( *A.getMap() != *exporter.getSourceMap(), std::runtime_error, "Source Maps don't match.");
+    TEUCHOS_TEST_FOR_EXCEPTION(   *getMap() != *exporter.getTargetMap(), std::invalid_argument, 
+      "doExport: The target DistObject's Map is not identical to the Export's target Map.");
+    TEUCHOS_TEST_FOR_EXCEPTION( *A.getMap() != *exporter.getSourceMap(), std::invalid_argument, 
+      "doExport: The source DistObject's Map is not identical to the Export's source Map.");
     size_t numSameIDs = exporter.getNumSameIDs();
     Teuchos::ArrayView<const LocalOrdinal> exportLIDs      = exporter.getExportLIDs();
     Teuchos::ArrayView<const LocalOrdinal> remoteLIDs      = exporter.getRemoteLIDs();
@@ -320,8 +351,10 @@ namespace Tpetra {
 	    const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter, 
 	    CombineMode CM) 
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(  * getMap() != *exporter.getSourceMap(), std::runtime_error, "Target Maps don't match.");
-    TEUCHOS_TEST_FOR_EXCEPTION( *A.getMap() != *exporter.getTargetMap(), std::runtime_error, "Source Maps don't match.");
+    TEUCHOS_TEST_FOR_EXCEPTION(  * getMap() != *exporter.getSourceMap(), std::invalid_argument,
+      "doImport (with Export): The target DistObject's Map is not identical to the Export's source Map.");
+    TEUCHOS_TEST_FOR_EXCEPTION( *A.getMap() != *exporter.getTargetMap(), std::invalid_argument,
+      "doImport (with Export): The source DistObject's Map is not identical to the Export's target Map.");
     size_t numSameIDs = exporter.getNumSameIDs();
     Teuchos::ArrayView<const LocalOrdinal> exportLIDs      = exporter.getRemoteLIDs();
     Teuchos::ArrayView<const LocalOrdinal> remoteLIDs      = exporter.getExportLIDs();
@@ -338,8 +371,10 @@ namespace Tpetra {
 	    const Import<LocalOrdinal,GlobalOrdinal,Node> & importer, 
 	    CombineMode CM) 
   {
-    TEUCHOS_TEST_FOR_EXCEPTION( *  getMap() != *importer.getSourceMap(), std::runtime_error, "Target Maps don't match.");
-    TEUCHOS_TEST_FOR_EXCEPTION( *A.getMap() != *importer.getTargetMap(), std::runtime_error, "Source Maps don't match.");
+    TEUCHOS_TEST_FOR_EXCEPTION( *  getMap() != *importer.getSourceMap(), std::invalid_argument,
+      "doExport (with Import): The target DistObject's Map is not identical to the Import's source Map.");
+    TEUCHOS_TEST_FOR_EXCEPTION( *A.getMap() != *importer.getTargetMap(), std::invalid_argument, 
+      "doExport (with Import): The source DistObject's Map is not identical to the Import's target Map.");
     size_t numSameIDs = importer.getNumSameIDs();
     Teuchos::ArrayView<const LocalOrdinal> exportLIDs      = importer.getRemoteLIDs();
     Teuchos::ArrayView<const LocalOrdinal> remoteLIDs      = importer.getExportLIDs();
@@ -365,8 +400,13 @@ namespace Tpetra {
       const Teuchos::ArrayView<const LocalOrdinal> &exportLIDs,
       Distributor &distor, ReverseOption revOp) 
   {
-    TEUCHOS_TEST_FOR_EXCEPTION( checkSizes(source) == false, std::runtime_error, 
-        "Tpetra::DistObject::doTransfer(): checkSizes() indicates that DistOjbects are not size-compatible.");
+    using Teuchos::as;
+
+    TEUCHOS_TEST_FOR_EXCEPTION( checkSizes(source) == false, std::invalid_argument, 
+      "Tpetra::DistObject::doTransfer(): checkSizes() indicates that the target "
+      "DistObject is not a legal target for redistribution from the source "
+      "DistObject.  This probably means that they do not have the same sizes.  "
+      "For example, MultiVectors must have the same number of rows and columns.");
     Kokkos::ReadWriteOption rwo = Kokkos::ReadWrite;
     if (CM == INSERT || CM == REPLACE) {
       if (numSameIDs + permuteToLIDs.size() + remoteLIDs.size() == this->getMap()->getNodeNumElements()) {
@@ -374,22 +414,58 @@ namespace Tpetra {
         rwo = Kokkos::WriteOnly;
       }
     }
+    // Tell the source to create a read-only view of its data.  On a
+    // discrete accelerator such as a GPU, this brings EVERYTHING from
+    // device memory to host memory.
+    //
+    // FIXME (mfh 23 Mar 2012) By passing in the list of GIDs and
+    // packet counts, createViews() could create a "sparse view" that
+    // only brings in the necessary data from device to host memory.
     source.createViews();
+    // Tell the target to create a view of its data.  Depending on
+    // rwo, this could be a write-only view or a read-and-write view.
+    // On a discrete accelerator such as a GPU, a write-only view only
+    // requires a transfer from host to device memory.  A
+    // read-and-write view requires a two-way transfer.  This has the
+    // same problem as createViews(): it transfers EVERYTHING, not
+    // just the necessary data.
+    //
+    // FIXME (mfh 23 Mar 2012) By passing in the list of GIDs and
+    // packet counts, createViewsNonConst() could create a "sparse
+    // view" that only transfers the necessary data.
     this->createViewsNonConst(rwo); 
+
     if (numSameIDs + permuteToLIDs.size()) {
+      // There is at least one GID to copy or permute.
       copyAndPermute(source,numSameIDs,permuteToLIDs,permuteFromLIDs);
     }
     size_t constantNumPackets = 0;
     numExportPacketsPerLID_.resize(exportLIDs.size());
     numImportPacketsPerLID_.resize(remoteLIDs.size());
+
+    // Ask the source to pack data.  Also ask it whether there are a
+    // constant number of packets per element (constantNumPackets is
+    // an output argument).  If there are, constantNumPackets will
+    // come back nonzero.  Otherwise, the source will fill the
+    // numExportPacketsPerLID_ array.
     packAndPrepare(source,exportLIDs,exports_,numExportPacketsPerLID_(),constantNumPackets,distor);
+
+    // We don't need the source's data anymore, so it can let go of
+    // its views.  On a discrete accelerator, this frees host memory,
+    // since device memory has the "master" version of the data.
     source.releaseViews();
+
     if (constantNumPackets != 0) {
-      size_t rbufLen = remoteLIDs.size()*constantNumPackets;
-      imports_.resize(rbufLen);
+      // There are a constant number of packets per element.  We
+      // already know (from the number of "remote" (incoming)
+      // elements) how many incoming elements we expect, so we can
+      // resize the buffer accordingly.
+      const size_t rbufLen = remoteLIDs.size() * constantNumPackets;
+      if (as<size_t> (imports_.size()) != rbufLen) {
+	imports_.resize (rbufLen);
+      }
     }
-    if ((isDistributed() && revOp == DoReverse) || (source.isDistributed() && revOp == DoForward)) 
-    {
+    if ((isDistributed() && revOp == DoReverse) || (source.isDistributed() && revOp == DoForward)) {
       // call one of the doPostsAndWaits functions
       if (revOp == DoReverse) {
         if (constantNumPackets == 0) { //variable num-packets-per-LID:
@@ -407,7 +483,7 @@ namespace Tpetra {
           distor.doReversePostsAndWaits(exports_().getConst(),constantNumPackets,imports_());
         }
       }
-      else {
+      else { // revOp == DoForward
         if (constantNumPackets == 0) { //variable num-packets-per-LID:
           distor.doPostsAndWaits(numExportPacketsPerLID_().getConst(), 1,
                                  numImportPacketsPerLID_());
@@ -431,12 +507,18 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::print(std::ostream &os) const
   {
+    using Teuchos::FancyOStream;
+    using Teuchos::getFancyOStream;
+    using Teuchos::RCP;
+    using Teuchos::rcpFromRef;
     using std::endl;
-    os << "Tpetra::DistObject" << endl
-       << " export buffer size: " << exports_.size() << endl
-       << " import buffer size: " << imports_.size() << endl
-       << "Map:" << endl
-       << map_;
+
+    RCP<FancyOStream> out = getFancyOStream (rcpFromRef (os));
+    *out << "Tpetra::DistObject" << endl;
+    Teuchos::OSTab tab (out);
+    *out << "Export buffer size: " << exports_.size() << endl
+	 << "Import buffer size: " << imports_.size() << endl
+	 << "Map over which this object is distributed:" << endl << map_;
   }
 
 } // namespace Tpetra

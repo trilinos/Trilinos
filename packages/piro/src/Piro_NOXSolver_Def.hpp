@@ -174,8 +174,8 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
 
   solve_status = solver->solve(initial_guess.get(), &solve_criteria, NULL);
 
-  if (solve_status.solveStatus == ::Thyra::SOLVE_STATUS_CONVERGED)
-    std::cout << "Test passed!" << std::endl;
+//   if (solve_status.solveStatus == ::Thyra::SOLVE_STATUS_CONVERGED)
+//     std::cout << "Test passed!" << std::endl;
 
   // return the final solution as an additional g-vector, if requested
   RCP<const Thyra::VectorBase<Scalar> > finalSolution = solver->get_current_x();

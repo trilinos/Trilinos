@@ -723,7 +723,7 @@ namespace TSQR {
       // leading dimension, whether or not cache blocks are stored
       // contiguously.
       mat_view C_view (nrows, ncols_C, C, ldc);
-      mat_view C_top = top_block (C_view, contiguous_cache_blocks);
+      mat_view C_top = this->top_block (C_view, contiguous_cache_blocks);
 
       // Fill C with zeros, and then fill the topmost block of C with
       // the first ncols_C columns of the identity matrix, so that C

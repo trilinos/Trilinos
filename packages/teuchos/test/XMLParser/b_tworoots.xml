@@ -1,0 +1,6 @@
+XML parse error at line 4: document not well-formed: more than one root element specified
+<root1>
+  <child/>
+</root1>
+<root2>
+</root2>

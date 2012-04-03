@@ -7,7 +7,7 @@ EpetraExt is a set of extensions to Epetra.  To allow Epetra to remain
 focused on its primary functionality as a Linear Algebra object support,
 EpetraExt was created to maintain additional support for such capabilities
 as transformations (permutations, sub-block views, etc.), coloring support,
-partitioning (Zoltan), and I/O.
+and I/O.
 
 \section EpetraExt_startup Overview of EpetraExt
 
@@ -80,9 +80,6 @@ Operator objects.  Available when EpetraExt is configured with \c --enable-epetr
 
 <li> Coloring: Helper tools for generating Finite Differencing Colorings of Linear Problems.
 
-<li> Zoltan Tools: Primarily tools for generation of repartitioned Epetra objects using
-     the Zoltan library.
-     
 <li> Matlab: Communication interface between Epetra and Matlab.  Exports Epetra objects to Matlab and imports objects from Matlab.
      Sends user specified Matlab commands to the Matlab engine to modify the Matlab workspace which provides user interaction with the Matlab engine.
 
@@ -192,7 +189,6 @@ cmake \
   -D Trilinos_ENABLE_Teuchos:BOOL=ON \
   -D Trilinos_ENABLE_TrilinosCouplings:BOOL=ON \
   -D Trilinos_ENABLE_Triutils:BOOL=ON \
-  -D Trilinos_ENABLE_Zoltan:BOOL=ON \
 \
   -D EpetraExt_USING_PETSC:BOOL=ON \
   -D TPL_ENABLE_PETSC:BOOL=ON \

@@ -46,6 +46,7 @@
 #include "Stokhos_EpetraOperatorOrthogPoly.hpp"
 #include "Stokhos_SGOperator.hpp"
 #include "Stokhos_EpetraSparse3Tensor.hpp"
+#include "Stokhos_SGPreconditionerFactory.hpp"
 
 namespace Stokhos {
 
@@ -381,6 +382,9 @@ namespace Stokhos {
     mutable Teuchos::RCP<Epetra_Vector> my_x;
 
     bool scaleOP;
+
+    //! Preconditioner factory
+    Teuchos::RCP< Stokhos::SGPreconditionerFactory > sg_prec_factory;
 
   };
 

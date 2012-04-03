@@ -100,6 +100,7 @@ protected:
   }
 
   void check_configuration(int max_iterator_concurrency) {}
+  void set_communicators_checks(int max_iterator_concurrency) {}
 
 private:
 

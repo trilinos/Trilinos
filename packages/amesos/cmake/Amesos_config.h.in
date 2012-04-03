@@ -67,6 +67,9 @@
 /* Define if want to build amesos-umfpack */
 #cmakedefine HAVE_AMESOS_UMFPACK
 
+/* Define if want to build amesos-paraklete */
+#cmakedefine HAVE_AMESOS_CSPARSE
+
 /* define if we want to use MPI */
 #cmakedefine HAVE_MPI
 

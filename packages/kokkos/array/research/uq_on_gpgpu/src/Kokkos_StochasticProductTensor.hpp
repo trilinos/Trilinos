@@ -71,7 +71,9 @@ namespace Kokkos {
  *  The bases space is sparse due to orthogonality within the
  *  expansion.
  */
-template< typename ValueType , class BasesType , class Device >
+template< typename ValueType , class BasesType , class Device ,
+          template< unsigned , typename , class >
+          class TensorType = SparseProductTensor >
 class StochasticProductTensor {
 public:
   typedef Device                           device_type ;

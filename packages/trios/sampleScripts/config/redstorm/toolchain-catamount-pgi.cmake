@@ -5,6 +5,8 @@ set(CMAKE_C_COMPILER cc)
 set(CMAKE_C_FLAGS "--target=catamount")
 set(CMAKE_CXX_COMPILER CC)
 set(CMAKE_CXX_FLAGS "--target=catamount")
+set(CMAKE_Fortran_COMPILER ftn)
+set(CMAKE_Fortran_FLAGS "--target=catamount")
 
 # Gemini configuration
 set(PORTALS_INCLUDE_DIRS /opt/xt-pe/default/include)

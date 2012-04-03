@@ -44,10 +44,12 @@
 #ifndef KOKKOS_PRODUCTTENSOR_CREATE_HPP
 #define KOKKOS_PRODUCTTENSOR_CREATE_HPP
 
+#include <iostream>
+
 #include <map>
 #include <Kokkos_MultiVector.hpp>
 #include <Kokkos_MDArray.hpp>
-#include <Kokkos_CrsMap.hpp>
+#include <Kokkos_CrsArray.hpp>
 
 namespace Kokkos {
 namespace Impl {
@@ -76,24 +78,21 @@ public:
     typedef Device                      device_type ;
     typedef typename Device::size_type  size_type ;
 
-    typedef MDArray< size_type, device_type>  coord_array_type ;
+    typedef MDArray< size_type, device_type>      coord_array_type ;
     typedef MultiVector< value_type, device_type> value_array_type ;
-
-    enum { is_host_memory =
-             SameType< typename device_type::memory_space , Host >::value };
 
     type tensor ;
 
-    tensor.m_coord = create_mdarray< size_type , device_type >( input.size(), 3 );
-    tensor.m_value = create_multivector< value_type, device_type >( input.size() );
+    tensor.m_coord = create_mdarray< coord_array_type >( input.size(), 3 );
+    tensor.m_value = create_multivector< value_array_type >( input.size() );
 
-    // Create mirror, is a view if is host memory
-
+    // Try to create as a view, not a copy
     typename coord_array_type::HostMirror
-      host_coord = Kokkos::Impl::CreateMirror< coord_array_type , is_host_memory >::create( tensor.m_coord );
+      host_coord = create_mirror( tensor.m_coord , Impl::MirrorUseView() );
 
+    // Try to create as a view, not a copy
     typename value_array_type::HostMirror
-      host_value = Kokkos::Impl::CreateMirror< value_array_type , is_host_memory >::create( tensor.m_value );
+      host_value = create_mirror( tensor.m_value , Impl::MirrorUseView() );
 
     size_type n = 0 ;
 
@@ -123,10 +122,128 @@ public:
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+/** \brief  Create a sparse product tensor on the device
+ *          from a map of tensor indices to values.
+ *
+ *  The std::map input guarantees uniqueness and proper sorting of
+ *  the product tensor's symmetric entries.
+ */
+template< typename ValueType , class Device , class D >
+class CreateSparseProductTensor<
+  CrsProductTensor< 3 , ValueType , Device > ,
+  std::map< ProductTensorIndex<3,D> , ValueType > >
+{
+public:
+  enum { Rank = 3 };
+  typedef CrsProductTensor<Rank,ValueType,Device> type ;
+  typedef std::map< ProductTensorIndex< Rank , D > , ValueType > input_type ;
+
+  // input entries are sorted: coord(0) >= coord(1) >= coord(2)
+  // thus last entry has maximum coordinate
+
+  static
+  type create( const input_type & input )
+  {
+    typedef ValueType                   value_type ;
+    typedef Device                      device_type ;
+    typedef typename Device::size_type  size_type ;
+
+    typedef CrsArray< size_type[2] , device_type > coord_array_type ;
+    typedef MultiVector< value_type, device_type > value_array_type ;
+
+    const size_type dimension =
+      input.empty() ? 0 : 1 + (*input.rbegin()).first.coord(0);
+
+    std::vector< size_t > coord_work( dimension , (size_t) 0 );
+
+    size_type entry_count = 0 ;
+
+    for ( typename input_type::const_iterator
+          iter = input.begin() ; iter != input.end() ; ++iter ) {
+
+      const size_type i = (*iter).first.coord(0);
+      const size_type j = (*iter).first.coord(1);
+      const size_type k = (*iter).first.coord(2);
+
+      ++coord_work[i];
+      ++entry_count ;
+      if ( i != j ) { ++coord_work[j]; ++entry_count ; }
+      if ( i != k && j != k ) { ++coord_work[k]; ++entry_count ; }
+    }
+
+    type tensor ;
+
+    tensor.m_coord = create_crsarray< coord_array_type >( coord_work );
+    tensor.m_value = create_multivector< value_array_type >( entry_count );
+    tensor.m_entry_max = 0 ;
+
+    for ( size_type i = 0 ; i < dimension ; ++i ) {
+      tensor.m_entry_max = std::max( tensor.m_entry_max , (size_type) coord_work[i] );
+    }
+
+/*
+std::cout << std::endl << "CrsProductTensor" << std::endl
+          << "  Tensor dimension     = " << dimension << std::endl
+          << "  Tensor maximum entry = " << tensor.m_entry_max << std::endl
+          << "  Compact tensor count = " << input.size() << std::endl
+          << "  Crs     tensor count = " << entry_count << std::endl ;
+*/
+
+    // Create mirror, is a view if is host memory
+
+    typename coord_array_type::HostMirror
+      host_coord = create_mirror( tensor.m_coord , Impl::MirrorUseView() );
+
+    typename value_array_type::HostMirror
+      host_value = create_mirror( tensor.m_value , Impl::MirrorUseView() );
+
+    // Fill arrays in coordinate order...
+
+    for ( size_type iCoord = 0 ; iCoord < dimension ; ++iCoord ) {
+      coord_work[iCoord] = host_coord.row_entry_begin(iCoord);
+    }
+
+    for ( typename input_type::const_iterator
+          iter = input.begin() ; iter != input.end() ; ++iter ) {
+
+      const size_type i = (*iter).first.coord(0);
+      const size_type j = (*iter).first.coord(1);
+      const size_type k = (*iter).first.coord(2);
+
+      {
+        const size_type n = coord_work[i]; ++coord_work[i];
+        host_value(n) = (*iter).second ;
+        host_coord(n,0) = j ;
+        host_coord(n,1) = k ;
+      }
+      if ( i != j ) {
+        const size_type n = coord_work[j]; ++coord_work[j];
+        host_value(n) = (*iter).second ;
+        host_coord(n,0) = i ;
+        host_coord(n,1) = k ;
+      }
+      if ( i != k && j != k ) {
+        const size_type n = coord_work[k]; ++coord_work[k];
+        host_value(n) = (*iter).second ;
+        host_coord(n,0) = i ;
+        host_coord(n,1) = j ;
+      }
+    }
+
+    Kokkos::deep_copy( tensor.m_coord , host_coord );
+    Kokkos::deep_copy( tensor.m_value , host_value );
+
+    return tensor ;
+  }
+};
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 } // namespace Impl
 } // namespace Kokkos
 
 #endif /* #ifndef KOKKOS_PRODUCTTENSOR_CREATE_HPP */
+
 
 

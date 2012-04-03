@@ -55,7 +55,7 @@
 
 
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.zan.gcc.cmake")
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../../TrilinosVersion.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../../../Version.cmake")
 
 #
 # Set the options specific to this build case
@@ -66,7 +66,7 @@ SET(BUILD_TYPE OPT)
 SET(BUILD_DIR_NAME "CUDA_OPT_RELEASE_GCC_${Trilinos_VERSION}")
 SET(Trilinos_TRACK ${Trilinos_TESTING_TRACK})
 SET(Trilinos_BRANCH ${Trilinos_REPOSITORY_BRANCH})
-#SET(CTEST_TEST_TYPE Experimental)
+SET(CTEST_TEST_TYPE Nightly)
 SET( CTEST_PARALLEL_LEVEL "1" )
 #SET(CTEST_TEST_TIMEOUT 900)
 

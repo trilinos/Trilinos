@@ -136,12 +136,11 @@ public:
 //----------------------------------------------------------------------------
 
 template< typename ValueType >
-class DeepCopy< MemoryView< ValueType, Cuda> , MemoryView< ValueType, Cuda> > {
-public:
-
-  static void run( const MemoryView< ValueType , Cuda > & dst ,
-                   const MemoryView< ValueType , Cuda > & src ,
-                   const size_t count )
+struct Factory< MemoryView< ValueType, Cuda> , MemoryView< ValueType, Cuda> >
+{
+  static void deep_copy( const MemoryView< ValueType , Cuda > & dst ,
+                         const MemoryView< ValueType , Cuda > & src ,
+                         const size_t count )
   {
     ValueType * d = dst.ptr_on_device();
     ValueType * s = src.ptr_on_device();
@@ -153,12 +152,11 @@ public:
 };
 
 template< typename ValueType >
-class DeepCopy< MemoryView< ValueType, Cuda> , MemoryView< ValueType, Host> > {
-public:
-
-  static void run( const MemoryView< ValueType , Cuda > & dst ,
-                   const MemoryView< ValueType , Host > & src ,
-                   const size_t count )
+struct Factory< MemoryView< ValueType, Cuda> , MemoryView< ValueType, Host> >
+{
+  static void deep_copy( const MemoryView< ValueType , Cuda > & dst ,
+                         const MemoryView< ValueType , Host > & src ,
+                         const size_t count )
   {
     MemoryManager< Cuda >::copy_to_device_from_host(
       dst.ptr_on_device() , src.ptr_on_device() , sizeof(ValueType) * count );
@@ -166,12 +164,11 @@ public:
 };
 
 template< typename ValueType >
-class DeepCopy< MemoryView< ValueType, Host> , MemoryView< ValueType, Cuda> > {
-public:
-
-  static void run( const MemoryView< ValueType , Host > & dst ,
-                   const MemoryView< ValueType , Cuda > & src ,
-                   const size_t count )
+struct Factory< MemoryView< ValueType, Host> , MemoryView< ValueType, Cuda> >
+{
+  static void deep_copy( const MemoryView< ValueType , Host > & dst ,
+                         const MemoryView< ValueType , Cuda > & src ,
+                         const size_t count )
   {
     MemoryManager< Cuda >::copy_to_host_from_device(
       dst.ptr_on_device() , src.ptr_on_device() , sizeof(ValueType) * count );
@@ -183,5 +180,9 @@ public:
 } // namespace Impl
 } // namespace Kokkos
 
-#endif /* #define KOKKOS_CUDAMEMORYMANAGER_HPP */
+#include <Kokkos_Cuda_macros.hpp>
+#include <impl/Kokkos_MemoryView_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
+
+#endif /* #define KOKKOS_CUDA_MEMORYMANAGER_HPP */
 

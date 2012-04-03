@@ -47,17 +47,22 @@
 namespace Tpetra {
   namespace MatrixMarket {
 
-    /// \class CoordDataReaderBase 
-    /// \brief Coordinate-format sparse matrix data reader.
+    /// \class CoordDataReaderBase
+    /// \brief Common functionality of a coordinate-format sparse matrix or graph data reader.
     ///
-    /// This class is an interface and partial implementation of
-    /// reading coordinate-format sparse matrix data from a Matrix
-    /// Market file.  There are two concrete implementations: one for
-    /// real-valued data, and the other for complex-valued data.
-    template<class Callback, class Ordinal, class Scalar, bool isComplex = ScalarTraits<Scalar>::isComplex>
+    /// This class provides common functionality for reading
+    /// coordinate-format sparse matrix or graph data from a Matrix
+    /// Market file.  In particular, this class does not depend on the
+    /// Scalar type, so it works for both graph and matrix data.
+    ///
+    /// \tparam Callback The type of a callback (a.k.a. closure) that
+    ///   knows how to add entries to the sparse graph or matrix.
+    ///
+    /// \param Ordinal The type of indices of the sparse graph or matrix.
+    template<class Callback, class Ordinal> 
     class CoordDataReaderBase {
-    private:
-      //! Closure that knows how to add entries to the sparse matrix.
+    protected:
+      //! Closure that knows how to add entries to the sparse graph or matrix.
       RCP<Callback> adder_;
 
     public:
@@ -65,20 +70,21 @@ namespace Tpetra {
       ///
       /// This is the favored way to construct an instance of this
       /// type.  Only use the no-argument constructor if you have a
-      /// "chicken-and-egg" problem (where the adder needs the matrix
-      /// dimensions).
+      /// "chicken-and-egg" problem (where the adder needs the graph
+      /// or matrix dimensions).
       /// 
-      /// \param adder [in/out] Closure whose operator() adds an entry
-      ///   to the sparse matrix on each invocation.
+      /// \param adder [in/out] Closure (a.k.a. callback) whose
+      ///   operator() adds an entry to the sparse graph or matrix on
+      ///   each invocation.
       CoordDataReaderBase (const RCP<Callback>& adder) : 
 	adder_ (adder) {}
 
       /// \brief No-argument constructor.
       ///
       /// We offer this option in case the adder's constructor needs
-      /// the matrix dimensions, so that it's necessary to call
-      /// readDimensions() first before constructing the adder.  You
-      /// should call setAdder() with a non-null argument before
+      /// the graph or matrix dimensions, so that it's necessary to
+      /// call readDimensions() first before constructing the adder.
+      /// You should call setAdder() with a non-null argument before
       /// calling read() or readLine().
       CoordDataReaderBase () : adder_ (null) {}
 
@@ -95,17 +101,40 @@ namespace Tpetra {
 	adder_ = adder;
       }
 
+    protected:
+
       /// \brief Read in the data from a single line of the input stream.
       ///
-      /// This method has a different implementation, depending on
-      /// whether Scalar is complex or not.
+      /// \param theLine [in] The line read in from the input stream.
+      /// \param adder [in/out] The callback to invoke for adding an
+      ///   entry to the sparse matrix.
+      /// \param lineNumber [in] Current line number of the file.
+      ///   We use this for generating informative exception messages.
+      /// \param tolerant [in] Whether to parse tolerantly.
+      ///
+      /// \return In tolerant parsing mode (tolerant==true), then this
+      ///   method returns true if parsing the current line succeeded,
+      ///   else false.  Otherwise, this method throws an exception
+      ///   (and does not invoke the adder) if parsing the current
+      ///   line did not succeed.
+      ///
+      /// \note To implementers: Use the callback (\c adder_) in your
+      ///   implementations of this method to add entries to the
+      ///   sparse graph or matrix.
+      ///
+      /// \note To implementers: We defer implementation of this
+      ///   method to subclasses, because the callback for a graph
+      ///   will take different arguments than the callback for a
+      ///   matrix.  Abstracting around that using templates isn't
+      ///   worth the trouble.  (Remember you're reading from a file
+      ///   and parsing strings.  Virtual method call overhead isn't
+      ///   significant by comparison.)
       virtual bool
       readLine (const std::string& theLine, 
-		Ordinal& rowIndex, 
-		Ordinal& colIndex, 
-		Scalar& value, 
 		const size_t lineNumber,
 		const bool tolerant) = 0;
+
+    public:
 
       /// \brief Read in all the data from the given input stream.
       ///
@@ -123,54 +152,50 @@ namespace Tpetra {
       ///
       /// \param debug [in] If true, print verbose debugging output.
       ///
-      std::pair<bool, std::vector<size_t> >
+      /// \return If tolerant==false, the returned pair is always true
+      ///   and the empty vector.  If tolerant==true, the first entry
+      ///   of the pair is whether all lines of data were read
+      ///   successfully, and the second entry is the list of line
+      ///   numbers containing bad data.  The first entry of the pair
+      ///   is false if and only if the vector has nonzero size.
+      ///
+      /// \note This method is virtual in case derived classes want to
+      ///   override the default behavior.  The specific example we
+      ///   have in mind is a "pattern matrix" (i.e., a sparse graph),
+      ///   which we would represent with Scalar=void.
+      virtual std::pair<bool, std::vector<size_t> >
       read (std::istream& in, 
 	    const size_t startingLineNumber, 
 	    const bool tolerant,
 	    const bool debug = false)
       {
-	using std::cerr;
-	using std::endl;
-	typedef ScalarTraits<Scalar> STS;
-
-	if (isComplex != STS::isComplex)
-	  throw std::logic_error("Should never get here!");
-	else if (! in)
-	  throw std::invalid_argument("Input stream is invalid");
+	(void) debug; // silence unused input argument warning
+	TEUCHOS_TEST_FOR_EXCEPTION(! in, std::invalid_argument, 
+          "Input stream is invalid.");
 
 	std::string line;
 	size_t lineNumber = startingLineNumber;
 	bool allSucceeded = true;
 	std::vector<size_t> badLineNumbers; 
 	size_t validDataLines = 0;
-	while (getline (in, line))
-	  {
-	    size_t start, size;
-	    if (checkCommentLine (line, start, size, lineNumber, tolerant))
-	      {
-		// if (debug)
-		// 	cerr << "Comment line: " << lineNumber << endl;
-		lineNumber++;
-		continue; // it's a comment line
-	      }
-	    const std::string theLine = line.substr (start, size);
-	    // if (debug)
-	    //   cerr << "Possible data line " << lineNumber << ": " << line << endl;
-
-	    Ordinal rowIndex, colIndex;
-	    Scalar value;
-	    const bool localSuccess = readLine (theLine, rowIndex, colIndex, 
-						value, lineNumber, tolerant);
-	    lineNumber++;
-	    allSucceeded = allSucceeded && localSuccess;
-	    if (! localSuccess)
-	      badLineNumbers.push_back (lineNumber);
-	    else
-	      {
-		(*adder_) (rowIndex, colIndex, value);
-		validDataLines++;
-	      }
+	while (getline (in, line)) {
+	  size_t start, size;
+	  if (checkCommentLine (line, start, size, lineNumber, tolerant)) {
+	    ++lineNumber;
+	    continue; // it's a comment line
 	  }
+	  const std::string theLine = line.substr (start, size);
+
+	  const bool localSuccess = readLine (theLine, lineNumber, tolerant);
+	  ++lineNumber;
+	  allSucceeded = allSucceeded && localSuccess;
+	  if (! localSuccess) {
+	    badLineNumbers.push_back (lineNumber);
+	  }
+	  else {
+	    ++validDataLines;
+	  }
+	}
 	return std::make_pair (allSucceeded, badLineNumbers);
       }
 
@@ -219,137 +244,138 @@ namespace Tpetra {
 	// the matrix has zero rows or columns, or zero entries).
 	std::string line;
 	bool commentLine = true;
-	while (commentLine)
-	  {
-	    // Is it even valid to read from the input stream?
-	    if (in.eof() || in.fail())
-	      {
-		if (tolerant)
-		  return std::make_pair (dims, false);
-		else
-		  {
-		    std::ostringstream os;
-		    os << "Unable to get coordinate dimensions line (at all) "
-		      "from (line " << lineNumber << ") of input stream; the "
-		      "input stream claims that it is at \"end-of-file\" or has "
-		      "an otherwise \"fail\"ed state.";
-		    throw std::invalid_argument(os.str());
-		  }
-	      }
-	    // Try to get the next line from the input stream.
-	    if (getline(in, line))
-	      lineNumber++; // We did actually read a line
-	    else
-	      {
-		if (tolerant)
-		  return std::make_pair (dims, false);
-		else
-		  {
-		    std::ostringstream os;
-		    os << "Failed to read coordinate dimensions line (at all) "
-		      "from (line " << lineNumber << " from input stream.  The "
-		      "line should contain the coordinate matrix dimensions in "
-		       << " the form \"<numRows> <numCols> <numNonzeros>\".";
-		    throw std::invalid_argument (os.str());
-		  }
-	      }
-	    // Is the current line a comment line?  Ignore start and
-	    // size; they are only useful for reading the actual matrix
-	    // entries.  (We could use them here as an optimization, but
-	    // we've chosen not to.)
-	    size_t start = 0, size = 0;
-	    commentLine = checkCommentLine (line, start, size, 
-					    lineNumber, tolerant);
+	while (commentLine) {
+	  // Is it even valid to read from the input stream?
+	  if (in.eof() || in.fail()) {
+	    if (tolerant) {
+	      return std::make_pair (dims, false);
+	    }
+	    else {
+	      std::ostringstream os;
+	      os << "Unable to get coordinate dimensions line (at all) "
+		"from (line " << lineNumber << ") of input stream; the "
+		"input stream claims that it is at \"end-of-file\" or has "
+		"an otherwise \"fail\"ed state.";
+	      throw std::invalid_argument(os.str());
+	    }
 	  }
+	  // Try to get the next line from the input stream.
+	  if (getline(in, line)) {
+	    lineNumber++; // We did actually read a line
+	  }
+	  else {
+	    if (tolerant) {
+	      return std::make_pair (dims, false);
+	    }
+	    else {
+	      std::ostringstream os;
+	      os << "Failed to read coordinate dimensions line (at all) "
+		"from (line " << lineNumber << " from input stream.  The "
+		"line should contain the coordinate matrix dimensions in "
+		 << " the form \"<numRows> <numCols> <numNonzeros>\".";
+	      throw std::invalid_argument (os.str());
+	    }
+	  }
+	  // Is the current line a comment line?  Ignore start and
+	  // size; they are only useful for reading the actual matrix
+	  // entries.  (We could use them here as an optimization, but
+	  // we've chosen not to.)
+	  size_t start = 0, size = 0;
+	  commentLine = checkCommentLine (line, start, size, 
+					  lineNumber, tolerant);
+	}
 	//
 	// Read in <numRows> <numCols> <numNonzeros> from input line
 	//
 	std::istringstream istr (line);
 	// Does line contain anything at all?  Can we safely read from
 	// the input stream wrapping the line?
-	if (istr.eof() || istr.fail())
-	  {
-	    if (tolerant)
-	      return std::make_pair (dims, false);
-	    std::ostringstream os;
-	    os << "Unable to read any data from line " << lineNumber 
-	       << " of input; the line should contain the coordinate matrix "
-	       << "dimensions \"<numRows> <numCols> <numNonzeros>\".";
-	    throw std::invalid_argument(os.str());
+	if (istr.eof() || istr.fail()) {
+	  if (tolerant) {
+	    return std::make_pair (dims, false);
 	  }
+	  std::ostringstream os;
+	  os << "Unable to read any data from line " << lineNumber 
+	     << " of input; the line should contain the coordinate matrix "
+	     << "dimensions \"<numRows> <numCols> <numNonzeros>\".";
+	  throw std::invalid_argument(os.str());
+	}
 	// Read in <numRows>
 	{
 	  Ordinal theNumRows = 0;
 	  istr >> theNumRows;
-	  if (istr.fail())
-	    {
-	      if (tolerant)
-		return std::make_pair (dims, false);
-	      std::ostringstream os;
-	      os << "Failed to get number of rows from line " << lineNumber 
-		 << " of input; the line should contain the coordinate matrix "
-		 << " dimensions \"<numRows> <numCols> <numNonzeros>\".";
-	      throw std::invalid_argument(os.str());
-	    }
-	  else // Capture the validly read result before checking for eof.
-	    dims[0] = theNumRows;
-	}
-	// There should be two more things to read.
-	if (istr.eof())
-	  {
-	    if (tolerant)
+	  if (istr.fail()) {
+	    if (tolerant) {
 	      return std::make_pair (dims, false);
+	    }
 	    std::ostringstream os;
-	    os << "No more data after number of rows on line " << lineNumber
+	    os << "Failed to get number of rows from line " << lineNumber 
 	       << " of input; the line should contain the coordinate matrix "
 	       << " dimensions \"<numRows> <numCols> <numNonzeros>\".";
 	    throw std::invalid_argument(os.str());
 	  }
+	  else { // Capture the validly read result before checking for eof.
+	    dims[0] = theNumRows;
+	  }
+	}
+	// There should be two more things to read.
+	if (istr.eof()) {
+	  if (tolerant) {
+	    return std::make_pair (dims, false);
+	  }
+	  std::ostringstream os;
+	  os << "No more data after number of rows on line " << lineNumber
+	     << " of input; the line should contain the coordinate matrix "
+	     << " dimensions \"<numRows> <numCols> <numNonzeros>\".";
+	  throw std::invalid_argument(os.str());
+	}
 	// Read in <numCols>
 	{
 	  Ordinal theNumCols = 0;
 	  istr >> theNumCols;
-	  if (istr.fail())
-	    {
-	      if (tolerant)
-		return std::make_pair (dims, false);
-	      std::ostringstream os;
-	      os << "Failed to get number of columns from line " << lineNumber 
-		 << " of input; the line should contain the coordinate matrix "
-		 << " dimensions \"<numRows> <numCols> <numNonzeros>\".";
-	      throw std::invalid_argument(os.str());
-	    }
-	  else // Capture the validly read result before checking for eof.
-	    dims[1] = theNumCols;
-	}
-	// There should be one more thing to read.
-	if (istr.eof())
-	  {
-	    if (tolerant)
+	  if (istr.fail()) {
+	    if (tolerant) {
 	      return std::make_pair (dims, false);
+	    }
 	    std::ostringstream os;
-	    os << "No more data after number of columns on line " << lineNumber
+	    os << "Failed to get number of columns from line " << lineNumber 
 	       << " of input; the line should contain the coordinate matrix "
 	       << " dimensions \"<numRows> <numCols> <numNonzeros>\".";
 	    throw std::invalid_argument(os.str());
 	  }
+	  else { // Capture the validly read result before checking for eof.
+	    dims[1] = theNumCols;
+	  }
+	}
+	// There should be one more thing to read.
+	if (istr.eof()) {
+	  if (tolerant) {
+	    return std::make_pair (dims, false);
+	  }
+	  std::ostringstream os;
+	  os << "No more data after number of columns on line " << lineNumber
+	     << " of input; the line should contain the coordinate matrix "
+	     << " dimensions \"<numRows> <numCols> <numNonzeros>\".";
+	  throw std::invalid_argument(os.str());
+	}
 	// Read in <numNonzeros>
 	{
 	  Ordinal theNumNonzeros = 0;
 	  istr >> theNumNonzeros;
-	  if (istr.fail())
-	    {
-	      if (tolerant)
-		return std::make_pair (dims, false);
-	      std::ostringstream os;
-	      os << "Failed to get number of (structural) nonzeros from line " 
-		 << lineNumber 
-		 << " of input; the line should contain the coordinate matrix "
-		 << " dimensions \"<numRows> <numCols> <numNonzeros>\".";
-	      throw std::invalid_argument(os.str());
+	  if (istr.fail()) {
+	    if (tolerant) {
+	      return std::make_pair (dims, false);
 	    }
-	  else // Capture the validly read result
+	    std::ostringstream os;
+	    os << "Failed to get number of (structural) nonzeros from line " 
+	       << lineNumber 
+	       << " of input; the line should contain the coordinate matrix "
+	       << " dimensions \"<numRows> <numCols> <numNonzeros>\".";
+	    throw std::invalid_argument(os.str());
+	  }
+	  else { // Capture the validly read result
 	    dims[2] = theNumNonzeros;
+	  }
 	}
 	// It would be nice to validate the read-in data further.  The
 	// only thing we can do now is test if it's negative.  However,
@@ -359,18 +385,18 @@ namespace Tpetra {
       }
     };
 
-
     /// \class CoordDataReader
     /// \brief Coordinate-format sparse matrix data reader.
     ///
-    /// This class completes the implementation of
-    /// CoordDataReaderBase.  There are two concrete specializations:
+    /// This class completes the implementation of CoordDataReaderBase
+    /// for sparse matrices.  There are two concrete specializations:
     /// one for real-valued data, and the other for complex-valued
     /// data.
-    template<class Callback, class Ordinal, class Scalar, bool isComplex = ScalarTraits<Scalar>::isComplex>
-    class CoordDataReader :
-      public CoordDataReaderBase<Callback, Ordinal, Scalar, isComplex>
-    {
+    template<class Callback, 
+	     class Ordinal, 
+	     class Scalar, 
+	     bool isComplex = ScalarTraits<Scalar>::isComplex>
+    class CoordDataReader : public CoordDataReaderBase<Callback, Ordinal> {
     public:
       CoordDataReader (const RCP<Callback>& adder);
       CoordDataReader ();
@@ -378,90 +404,149 @@ namespace Tpetra {
       //! Virtual destructor for safety and happy compilers.
       virtual ~CoordDataReader();
 
+    protected:
       bool
       readLine (const std::string& theLine, 
-		Ordinal& rowIndex, 
-		Ordinal& colIndex, 
-		Scalar& value, 
 		const size_t lineNumber,
 		const bool tolerant);
     };
 
 #ifdef HAVE_TEUCHOS_COMPLEX
+    // Specialization for complex Scalar types.
     template<class Callback, class Ordinal, class Scalar>
     class CoordDataReader<Callback, Ordinal, Scalar, true> : 
-      public CoordDataReaderBase<Callback, Ordinal, Scalar, true>
-    {
+      public CoordDataReaderBase<Callback, Ordinal> {
     public:
       CoordDataReader (const RCP<Callback>& adder) :
-	CoordDataReaderBase<Callback, Ordinal, Scalar, true> (adder)
+	CoordDataReaderBase<Callback, Ordinal> (adder)
       {}
 
       CoordDataReader() : 
-	CoordDataReaderBase<Callback, Ordinal, Scalar, true> (null)
+	CoordDataReaderBase<Callback, Ordinal> (null)
       {}
 
       //! Virtual destructor for safety and happy compilers.
       virtual ~CoordDataReader() {};
 
+    protected:
       bool
       readLine (const std::string& theLine, 
-		Ordinal& rowIndex, 
-		Ordinal& colIndex, 
-		Scalar& value, 
 		const size_t lineNumber,
 		const bool tolerant)
       {
 	typedef ScalarTraits<Scalar> STS;
 	typedef typename STS::magnitudeType Real;
+
+	Ordinal rowIndex;
+	Ordinal colIndex;
+	Scalar value;
+
 	Real realPart, imagPart;
 	const bool localSuccess = 
 	  readComplexLine (theLine, rowIndex, colIndex, realPart, imagPart,
 			   lineNumber, tolerant);
-	if (localSuccess)
-	  {
-	    // Assume that assignment from std::complex<Real> to
-	    // Scalar (which itself is complex-valued) is valid.
-	    // We have to do this, since the C++ compiler may not
-	    // be smart enough to assume here (when it
-	    // instantiates the templates) that Scalar is an
-	    // std::complex<Real> -- even though it has to be, if
-	    // STS::isComplex is true (which as of 31 Jan 2011,
-	    // only holds for std::complex<T>).
-	    const std::complex<Real> theValue (realPart, imagPart);
-	    value = theValue;
-	  }
+	if (localSuccess) {
+	  // Assume that assignment from std::complex<Real> to Scalar
+	  // (which itself is complex-valued) is valid.  We have to do
+	  // this, since the C++ compiler may not be smart enough to
+	  // assume here (when it instantiates the templates) that
+	  // Scalar is an std::complex<Real> -- even though it has to
+	  // be, if STS::isComplex is true (which as of 31 Jan 2011,
+	  // only holds for std::complex<T>).
+	  value = std::complex<Real> (realPart, imagPart);
+
+	  // Now that we've read in the (i, j, A_ij) triple
+	  // successfully, we can add the entry to the sparse matrix.
+	  (*(this->adder_)) (rowIndex, colIndex, value);
+	}
 	return localSuccess;
       }
     };
 #endif // HAVE_TEUCHOS_COMPLEX
 
+    // Specialization for real Scalar types.
     template<class Callback, class Ordinal, class Scalar>
     class CoordDataReader<Callback, Ordinal, Scalar, false> : 
-      public CoordDataReaderBase<Callback, Ordinal, Scalar, false>
-    {
+      public CoordDataReaderBase<Callback, Ordinal> {
     public:
       CoordDataReader (const RCP<Callback>& adder) :
-	CoordDataReaderBase<Callback, Ordinal, Scalar, false> (adder)
+	CoordDataReaderBase<Callback, Ordinal> (adder)
       {}
 
       CoordDataReader() : 
-	CoordDataReaderBase<Callback, Ordinal, Scalar, false> (null)
+	CoordDataReaderBase<Callback, Ordinal> (null)
       {}
 
       //! Virtual destructor for safety and happy compilers.
       virtual ~CoordDataReader() {};
 
+    protected:
       bool
       readLine (const std::string& theLine, 
-		Ordinal& rowIndex, 
-		Ordinal& colIndex, 
-		Scalar& value, 
 		const size_t lineNumber,
 		const bool tolerant)
       {
-	return readRealLine (theLine, rowIndex, colIndex, value, 
-			     lineNumber, tolerant);
+	Ordinal rowIndex;
+	Ordinal colIndex;
+	Scalar value;
+	const bool localSuccess = readRealLine (theLine, rowIndex, colIndex, 
+						value, lineNumber, tolerant);
+	if (localSuccess) {
+	  // Now that we've read in the (i, j, A_ij) triple
+	  // successfully, we can add the entry to the sparse matrix.
+	  (*(this->adder_)) (rowIndex, colIndex, value);
+	}
+	return localSuccess;
+      }
+    };
+
+
+    /// \class CoordPatternReader
+    /// \brief Read in a "pattern matrix" (sparse graph).
+    ///
+    /// \c CoordDataReaderBase is sufficiently general that we can
+    /// extend it to read in a sparse graph.  "Pattern" refers to the
+    /// Matrix Market keyword "pattern" that indicates a sparse graph.
+    ///
+    /// \tparam Callback Same as the \c Callback template parameter of
+    ///   \c CoordDataReaderBase.  The type of the callback
+    ///   (a.k.a. closure) for adding entries to the sparse graph.
+    ///
+    /// \tparam Ordinal Same as the \c Ordinal template parameter of
+    ///   \c CoordDataReaderBase.  The type of indices of the sparse
+    ///   graph.
+    template<class Callback, class Ordinal>
+    class CoordPatternReader : public CoordDataReaderBase<Callback, Ordinal> {
+    public:
+      //! Constructor (same argument as the base class' constructor).
+      CoordPatternReader (const RCP<Callback>& adder) :
+	CoordDataReaderBase<Callback, Ordinal> (adder)
+      {}
+
+      //! Default constructor (like the base class' constructor).
+      CoordPatternReader() : 
+	CoordDataReaderBase<Callback, Ordinal> (null)
+      {}
+
+      //! Virtual destructor for safety and happy compilers.
+      virtual ~CoordPatternReader() {};
+
+    protected:
+      bool
+      readLine (const std::string& theLine, 
+		const size_t lineNumber,
+		const bool tolerant)
+      {
+	Ordinal rowIndex;
+	Ordinal colIndex;
+	const bool localSuccess = 
+	  readPatternLine (theLine, rowIndex, colIndex, lineNumber, tolerant);
+	if (localSuccess) {
+	  // Now that we've read in the (i, j) pair successfully, we
+	  // can add the entry to the sparse graph.
+	  (*(this->adder_)) (rowIndex, colIndex);
+	}
+	return localSuccess;
       }
     };
 

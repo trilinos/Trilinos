@@ -199,7 +199,13 @@ TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 
 TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 
-TRIBITS_EXCLUDE_FILES()
+TRIBITS_EXCLUDE_FILES(
+  doc/PyTrilinos-SciProg/CoupledSolver.png
+  doc/PyTrilinos-SciProg/CoupledSolver.pptx
+  doc/PyTrilinos-SciProg/Response.pdf
+  doc/PyTrilinos-SciProg/Response.tex
+  doc/PyTrilinos-SciProg/cage12rcb8.png
+  )
 
 # Execute the package postprocessing
 TRIBITS_PACKAGE_POSTPROCESS()

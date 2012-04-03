@@ -77,7 +77,7 @@ void printGLUT(const std::string & filename , scalar_vector_d & X , HostMirror_s
   int nnodes = X.length();
   std::ofstream outfile(filename.c_str());
   outfile<<x<<" "<<y<<" "<<z<< " " << 1<<std::endl;
-  scalar_vector_h X_host = Kokkos::create_labeled_multivector<scalar_vector_h>("X_host", nnodes);
+  scalar_vector_h X_host = Kokkos::create_multivector<scalar_vector_h>("X_host", nnodes);
   Kokkos::deep_copy(X_host , X);
   for(int i = 0 ; i < nelem ; i++)
   {

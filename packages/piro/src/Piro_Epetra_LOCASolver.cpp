@@ -134,11 +134,27 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> piroPa
                  "Invalid value for parameter \" Jacobian Operator\"= " <<
                   jacobianSource << std::endl);
 
+
+  /* Check flag if separate memory is requested for shifted matrix.
+   * This allows 2 Matrix versions of eigensolvers, which save lots
+   * of matrix recomputations.  */
+  Teuchos::RCP<Epetra_Operator> Ashift=A;
+  bool separateMatrixMem = piroParams->get("LOCASolver: Create Second Matrix",false);
+  if (separateMatrixMem) {
+    Teuchos::RCP<Epetra_CrsMatrix> Acrs = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(A); 
+    if (Acrs != Teuchos::null)
+     // Ashift = Teuchos::rcp(new Epetra_CrsMatrix(*Acrs));
+     Ashift = model->create_W();
+    else TEUCHOS_TEST_FOR_EXCEPTION(Acrs == Teuchos::null, Teuchos::Exceptions::InvalidParameter,
+                 "Error in Piro::Epetra::LOCASolver " <<
+                 "LOCASolver: Create Second Matrix was requested, but only implemented for CrsMatrix\n");
+  }
+
   // Create separate preconditioner if the model supports it
   /* NOTE: How do we want to decide between using an
    * available preconditioner: (1) If the model supports
    * it, then we use it, or (2) if a parameter list says
-   * User_Defined ?  [Below, logic is ooption (1).]
+   * User_Defined ?  [Below, logic is option (1).]
    */
 
   Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner> WPrec;
@@ -157,7 +173,7 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> piroPa
                   *currentSolution, WPrec->isAlreadyInverted));
     shiftedLinSys =
       Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(printParams,
-  		  noxstratlsParams, iJac, A, iPrec, WPrec->PrecOp,
+  		  noxstratlsParams, iJac, Ashift, iPrec, WPrec->PrecOp,
                   *currentSolution, WPrec->isAlreadyInverted));
   }
   else {
@@ -166,7 +182,7 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> piroPa
                           noxstratlsParams, iJac, A, *currentSolution));
      shiftedLinSys =
         Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(printParams,
-                          noxstratlsParams, iJac, A, *currentSolution));
+                          noxstratlsParams, iJac, Ashift, *currentSolution));
   }
 
   Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent> iTime = interface;
@@ -175,7 +191,9 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> piroPa
   grp = Teuchos::rcp(new LOCA::Epetra::Group(globalData, printParams, iTime,
                                        *currentSolution, linsys,
                                         shiftedLinSys, *pVector));
+
   grp->setDerivUtils(interface);
+  if (separateMatrixMem) grp->declareSeparateMatrixMemory();
 
   // Saves one resid calculation per solve, but not as safe
   if (leanMatrixFree) grp->disableLinearResidualComputation(true);

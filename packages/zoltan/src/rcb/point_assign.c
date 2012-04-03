@@ -29,8 +29,8 @@ ZZ       *zz,                   /* The Zoltan structure */
 double   *coords,
 int      *proc,                 /* processor that point lands in;
                                    if NULL, processor info is not returned. */
-int      *part                  /* partition that point lands in; 
-                                   if NULL, partition info is not returned. */
+int      *part                  /* part that point lands in; 
+                                   if NULL, part info is not returned. */
 )
 {
 /* Locate which processor a point is inside within the tree defined

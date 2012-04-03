@@ -56,11 +56,6 @@
 # Define the TriBITS minimum required CMake version
 SET(TRIBITS_CMAKE_MINIMUM_REQUIRED 2.7)
 
-# Define policies for CMake
-CMAKE_POLICY(SET CMP0003 NEW)
-CMAKE_POLICY(SET CMP0007 NEW)
-CMAKE_POLICY(SET CMP0011 NEW)
-
 # File names for TriBITS system
 
 SET(${PROJECT_NAME}_PACKAGES_FILE_NAME PackagesList.cmake)
@@ -102,6 +97,6 @@ IF(WIN32)
   #So even though "git clone ..." is valid to use on windows we need to give the
   #full name of the command we want to run.
   SET(GIT_NAME git.cmd)
-ELSE()
+ELSE(WIN32)
   SET(GIT_NAME git)
-ENDIF()
+ENDIF(WIN32)

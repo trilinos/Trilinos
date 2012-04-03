@@ -44,8 +44,9 @@
 #ifndef KOKKOS_BLOCKCRSMATRIX_HPP
 #define KOKKOS_BLOCKCRSMATRIX_HPP
 
-#include <Kokkos_CrsMap.hpp>
+#include <Kokkos_CrsArray.hpp>
 #include <Kokkos_MultiVector.hpp>
+#include <impl/Kokkos_Multiply.hpp>
 
 namespace Kokkos {
 
@@ -60,12 +61,14 @@ namespace Kokkos {
 template< class BlockSpec , typename ValueType , class Device >
 class BlockCrsMatrix {
 public:
-  typedef Device     device_type ;
-  typedef ValueType  value_type ;
-  typedef BlockSpec  block_spec ;
+  typedef Device                              device_type ;
+  typedef typename device_type::size_type     size_type ;
+  typedef ValueType                           value_type ;
+  typedef BlockSpec                           block_spec ;
+  typedef CrsArray< size_type , device_type > graph_type ;
 
   MultiVector< value_type, device_type >  values ;
-  CrsMap< device_type , CrsColumnMap >    graph ;
+  graph_type                              graph ;
   block_spec                              block ;
 };
 

@@ -144,6 +144,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   UMFPACK         "cmake/TPLs/"    SS
   MA28            "cmake/TPLs/"    TS
   AMD             "cmake/TPLs/"    TS
+  CSparse         "cmake/TPLs/"    EX
   PETSC           "cmake/TPLs/"    SS
   HYPRE           "cmake/TPLs/"    EX
   BLACS           "cmake/TPLs/"    SS
@@ -169,6 +170,8 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   InfiniBand      "cmake/TPLs/"    SS
   Pablo           "cmake/TPLs/"    SS
   Pnetcdf         "cmake/TPLs/"    SS
+  Clp             "cmake/TPLs/"    EX
+  GLPK            "cmake/TPLs/"    EX
   )
 
 # NOTES:

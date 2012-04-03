@@ -116,9 +116,6 @@
 /* Define to 1 if you have the `parmetis' library (-lparmetis). */
 #undef HAVE_LIBPARMETIS
 
-/* Define to 1 if you have the `zoltan' library (-lzoltan). */
-#undef HAVE_LIBZOLTAN
-
 /* Define to 1 if you have the <map> header file. */
 #undef HAVE_MAP
 
@@ -202,9 +199,6 @@
 
 /* Define if want to build with warning_messages enabled */
 #undef HAVE_WARNING_MESSAGES
-
-/* Define if want to build epetraext-zoltan */
-#undef HAVE_ZOLTAN
 
 /* define if STL map key is required to be const */
 #undef MUST_CONST_STL_MAP_KEY

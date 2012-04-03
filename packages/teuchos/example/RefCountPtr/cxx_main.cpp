@@ -109,6 +109,7 @@ int main(int argc, char* argv[])
   // Get the raw C++ pointer.
   A* true_ptr = 0;
   true_ptr = a_ptr1.get();
+  TEUCHOS_ASSERT_EQUALITY(true_ptr, b1_ptr.get());
 
   return 0;
 

@@ -371,14 +371,22 @@ void EpetraExt::HDF5::Open(const std::string FileName, int AccessType)
 
   FileName_ = FileName;
 
-  // create the file collectively and release property list identifier.
-  file_id_ = H5Fopen(FileName.c_str(), AccessType, H5P_DEFAULT);
+  // Set up file access property list with parallel I/O access
+  plist_id_ = H5Pcreate(H5P_FILE_ACCESS);
 
 #ifdef HAVE_MPI
-// FIXME: DO I NEED THE MPIO_COLLECTIVE??
-//  plist_id_ = H5Pcreate(H5P_DATASET_XFER);
-//  H5Pset_dxpl_mpio(plist_id_, H5FD_MPIO_COLLECTIVE);
+  // Create property list for collective dataset write.
+  const Epetra_MpiComm* MpiComm ( dynamic_cast<const Epetra_MpiComm*> (&Comm_) );
+
+  if (MpiComm == 0)
+    H5Pset_fapl_mpio(plist_id_, MPI_COMM_WORLD, MPI_INFO_NULL);
+  else
+    H5Pset_fapl_mpio(plist_id_, MpiComm->Comm(), MPI_INFO_NULL);
 #endif
+
+  // create the file collectively and release property list identifier.
+  file_id_ = H5Fopen(FileName.c_str(), AccessType, plist_id_);
+  H5Pclose(plist_id_);
 
   IsOpen_ = true;
 }

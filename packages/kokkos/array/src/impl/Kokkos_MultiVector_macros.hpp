@@ -218,7 +218,6 @@ public:
 private:
 
   typedef device_type::memory_space                     memory_space ;
-  typedef Impl::MemoryManager< memory_space >           memory_manager ;
   typedef Impl::MemoryView< value_type , memory_space > memory_view ;
 
   memory_view m_memory ;
@@ -227,35 +226,9 @@ private:
   size_type   m_length ;
   size_type   m_count ;
 
-  inline
-  MultiVector( const std::string & label ,
-               size_type arg_length , size_type arg_count )
-    : m_memory()
-    , m_ptr_on_device( 0 )
-    , m_stride( arg_length )
-    , m_length( arg_length )
-    , m_count(  arg_count )
-    {
-      if ( 1 < arg_count ) {
-        m_stride = memory_manager::preferred_alignment<value_type>( m_stride );
-      }
-      m_memory.allocate( m_count * m_stride , label );
-      m_ptr_on_device = m_memory.ptr_on_device();
-
-      Impl::Initialize< MultiVector >::run( *this );
-    }
-
-  template< typename V , class M >
-  friend
-  MultiVector< V , M >
-  create_labeled_multivector( const std::string & label ,
-                              size_t length , size_t count );
-
   template < typename V , class M > friend class MultiVector ;
 
-  template < class DstType > friend class Impl::Initialize ;
-
-  template < class DstType , class SrcType > friend class Impl::DeepCopy ;
+  template < class , class > friend class Impl::Factory ;
 };
 
 } // namespace Kokkos

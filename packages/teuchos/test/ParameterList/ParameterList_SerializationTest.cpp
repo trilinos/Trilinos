@@ -44,7 +44,6 @@
 #include "Teuchos_StandardParameterEntryXMLConverters.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_XMLParameterListWriter.hpp"
-#include "Teuchos_XMLParameterListReader.hpp"
 #include "Teuchos_as.hpp"
 #include "Teuchos_XMLParameterListExceptions.hpp"
 #include "Teuchos_ValidatorXMLConverterDB.hpp"

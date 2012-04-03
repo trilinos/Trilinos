@@ -45,6 +45,10 @@
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
 
+#ifdef HAVE_TPETRA_UNORDERED_MAP
+#  include <unordered_map>
+#endif // HAVE_TPETRA_UNORDERED_MAP
+
 // enums and defines
 #include "Tpetra_ConfigDefs.hpp"
 
@@ -411,6 +415,20 @@ namespace Tpetra {
     /// describe(), may invoke \c getNodeElementList().  
     mutable Teuchos::ArrayRCP<GlobalOrdinal> lgMap_;
 
+    /// \typedef global_to_local_table_type
+    /// \brief Type of the table that maps global IDs to local IDs.
+    /// 
+    /// The actual type depends on the Tpetra_ENABLE_UNORDERD_MAP
+    /// configure-time option.  If the option was set, we use
+    /// std::unordered_map (implemented as a hash table with linear
+    /// chaining).  Otherwise, we use std::map (a sorted data
+    /// structure which is typically implemented as a red-black tree).
+#ifdef HAVE_TPETRA_UNORDERED_MAP
+    typedef std::unordered_map<GlobalOrdinal, LocalOrdinal> global_to_local_table_type;
+#else
+    typedef std::map<GlobalOrdinal, LocalOrdinal> global_to_local_table_type;
+#endif // HAVE_TPETRA_UNORDERED_MAP
+
     /// \brief A mapping from global IDs to local IDs.
     ///
     /// This is a local mapping.  \c Directory implements the global
@@ -423,7 +441,7 @@ namespace Tpetra {
     /// noncontiguous map constructor.  For noncontiguous maps, the \c
     /// getLocalElement() and \c isNodeGlobalElement() methods use
     /// this mapping.
-    std::map<GlobalOrdinal, LocalOrdinal> glMap_;
+    global_to_local_table_type glMap_;
 
     /// \brief A Directory for looking up nodes for this Map. 
     ///

@@ -6,12 +6,14 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
   MPI_OPT_DEV
   ctest_linux_nightly_mpi_development_opt_trilinos-test2.cmake
   CTEST_INSTALLER_TYPE release
+  TIMEOUT_MINUTES 240
 )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
   MPI_OPT_DEV_NOEI
   ctest_linux_nightly_mpi_development_opt_noei_trilinos-test2.cmake
   CTEST_INSTALLER_TYPE release
+  TIMEOUT_MINUTES 240
 )
 
 #TRILINOS_DRIVER_ADD_DASHBOARD(
@@ -24,13 +26,14 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
   MPI_OPT_DEV_SHARED
   ctest_linux_nightly_mpi_development_opt_shared_trilinos-test2.cmake
   CTEST_INSTALLER_TYPE release
+  TIMEOUT_MINUTES 240
 )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
   SERIAL_DEBUG_DEV
   ctest_linux_nightly_serial_development_debug_trilinos-test2.cmake
   CTEST_INSTALLER_TYPE release
-  TIMEOUT_MINUTES 210
+  TIMEOUT_MINUTES 240
 )
 
 SET(INSTALLATION_DIR "${CMAKE_BINARY_DIR}/../installation/installed")
@@ -42,7 +45,7 @@ ADD_TEST(Install_Trilinos ${PYTHON_EXE}
   "--no-dashboard"
   "--working-dir=${INSTALLATION_WORKING_DIR}"
   "--install-dir=${INSTALLATION_DIR}"
-  "--boost-dir=/home/trilinos/include"
+  "--boost-dir=/home/trilinos/tpl/gcc4.1.2/boost-1.46.1/include"
   "--netcdf-dir=/home/trilinos/tpl/gcc4.1.2/netcdf_4.0"
   "--verbose-errors"
   )

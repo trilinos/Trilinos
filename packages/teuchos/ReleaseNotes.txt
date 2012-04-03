@@ -2,7 +2,23 @@
 Release Notes for Trilinos Package Teuchos
 ------------------------------------------
 
+Trilinos 10.11 (dev): 
+----------------------
 
+(*) The current behavior of the Teuchos::XMLParameterListReader has been modified 
+to throw an exception (Teuchos::DuplicateParameterSublist) the event that a sublist
+is duplicated in an XML stream. This change is disabled by default in the 
+XMLParameterListReader class, and is enabled by calling:
+    XMLParameterListReader::setAllowsDuplicateSublists( false ) 
+This is configured, and thereby constitutes a non-backwards compatible change, 
+in the following encapsulating helper methods: 
+    Teuchos::updateParametersFromXmlFile(...)
+    Teuchos::updateParametersFromXmlFileAndBroadcast(...)
+    Teuchos::getParametersFromXmlFile(...)
+    Teuchos::updateParametersFromXmlString(...)
+    Teuchos::getParametersFromXmlString(...)
+This change was requested by Panzer/Drekar developers, to aid in debugging the input
+of large XML programs specifying a physics application.
 
 Trilinos 10.10:
 ----------------

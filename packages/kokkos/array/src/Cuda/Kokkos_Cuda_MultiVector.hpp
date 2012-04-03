@@ -41,25 +41,27 @@
 //@HEADER
 */
 
+#ifndef KOKKOS_CUDA_MULTIVECTOR_HPP
+#define KOKKOS_CUDA_MULTIVECTOR_HPP
+
+#include <string>
+
+#include <Kokkos_Cuda_macros.hpp>
+#include <impl/Kokkos_MultiVector_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
 namespace Impl {
 
-/** \brief No-op because memory is initialized at allocation */
 template< typename ValueType >
-class Initialize< MultiVector< ValueType , Cuda > > {
-public:
-  static void run( const MultiVector< ValueType , Cuda > & ) {}
-};
-
-template< typename ValueType >
-class DeepCopy< MultiVector< ValueType , Cuda > ,
+struct Factory< MultiVector< ValueType , Cuda > ,
                 MultiVector< ValueType , Cuda > > {
 public:
-  static void run( const MultiVector< ValueType , Cuda > & dst ,
-                   const MultiVector< ValueType , Cuda > & src )
+  static void deep_copy( const MultiVector< ValueType , Cuda > & dst ,
+                         const MultiVector< ValueType , Cuda > & src )
   {
     const Cuda::size_type alloc_size =
       dst.m_stride * dst.m_count * sizeof(ValueType );
@@ -72,45 +74,91 @@ public:
 };
 
 template< typename ValueType >
-class DeepCopy< MultiVector< ValueType , Cuda > ,
-                typename MultiVector< ValueType , Cuda >::HostMirror > {
-public:
-  typedef MultiVector< ValueType , Cuda >                    dst_type ;
-  typedef typename MultiVector< ValueType , Cuda >::HostMirror src_type ;
+struct Factory< MultiVector< ValueType , Cuda > ,
+                MultiVector< ValueType , HostMapped< Cuda > > >
+{
+  typedef MultiVector< ValueType , Cuda >                dst_type ;
+  typedef MultiVector< ValueType , HostMapped< Cuda > >  src_type ;
 
-  static void run( const dst_type & dst , const src_type & src )
+  static void deep_copy( const dst_type & dst , const src_type & src )
   {
-    const size_t size = dst.m_length * sizeof(ValueType);
+    const Cuda::size_type size =
+      dst.m_stride * dst.m_count * sizeof(ValueType);
 
-    for ( Cuda::size_type i = 0 ; i < dst.m_count ; ++i ) {
-      MemoryManager< Cuda >::
-        copy_to_device_from_host( dst.m_ptr_on_device + i * dst.m_stride ,
-                                  src.m_ptr_on_device + i * src.m_stride ,
-                                  size );
-    }
+    MemoryManager< Cuda >::
+      copy_to_device_from_host( dst.m_ptr_on_device ,
+                                src.m_ptr_on_device ,
+                                size );
   }
 };
 
 template< typename ValueType >
-class DeepCopy< typename MultiVector< ValueType , Cuda >::HostMirror ,
-                MultiVector< ValueType , Cuda > > {
-public:
-  typedef typename MultiVector< ValueType , Cuda >::HostMirror dst_type ;
-  typedef MultiVector< ValueType , Cuda >                    src_type ;
+struct Factory< MultiVector< ValueType , HostMapped< Cuda > > ,
+                MultiVector< ValueType , Cuda > >
+{
+  typedef MultiVector< ValueType , HostMapped< Cuda > >  dst_type ;
+  typedef MultiVector< ValueType , Cuda >                src_type ;
 
-  static void run( const dst_type & dst , const src_type & src )
+  static void deep_copy( const dst_type & dst , const src_type & src )
   {
-    const size_t size = dst.m_length * sizeof(ValueType);
+    const Cuda::size_type size =
+      dst.m_stride * dst.m_count * sizeof(ValueType);
 
-    for ( Cuda::size_type i = 0 ; i < dst.m_count ; ++i ) {
-      MemoryManager< Cuda >::
-        copy_to_host_from_device( dst.m_ptr_on_device + i * dst.m_stride ,
-                                  src.m_ptr_on_device + i * src.m_stride ,
-                                  size );
-    }
+    MemoryManager< Cuda >::
+      copy_to_host_from_device( dst.m_ptr_on_device ,
+                                src.m_ptr_on_device ,
+                                size );
+  }
+};
+
+template< typename ValueType >
+struct Factory< MultiVector< ValueType , Cuda > ,
+                MultiVector< ValueType , Host > >
+{
+  typedef MultiVector< ValueType , Cuda >  dst_type ;
+  typedef MultiVector< ValueType , Host >  src_type ;
+
+  static void deep_copy( const dst_type & dst , const src_type & src )
+  {
+    const Cuda::size_type size =
+      dst.m_stride * dst.m_count * sizeof(ValueType);
+
+    MemoryManager< Cuda >::
+      copy_to_device_from_host( dst.m_ptr_on_device ,
+                                src.m_ptr_on_device ,
+                                size );
+  }
+};
+
+template< typename ValueType >
+struct Factory< MultiVector< ValueType , Host > ,
+                MultiVector< ValueType , Cuda > >
+{
+  typedef MultiVector< ValueType , Host >  output_type ;
+  typedef MultiVector< ValueType , Cuda >  input_type ;
+
+  static void deep_copy( const output_type & output , const input_type & input )
+  {
+    const Cuda::size_type size =
+      output.m_stride * output.m_count * sizeof(ValueType);
+
+    MemoryManager< Cuda >::
+      copy_to_host_from_device( output.m_ptr_on_device ,
+                                input.m_ptr_on_device ,
+                                size );
+  }
+
+  static inline
+  output_type create( const input_type & input )
+  {
+    return Factory< output_type , void >
+             ::create( std::string(),
+                       input.m_length , input.m_count , input.m_stride );
   }
 };
 
 } // namespace Impl
 } // namespace Kokkos
+
+#endif /* #ifndef KOKKOS_CUDA_MULTIVECTOR_HPP */
 

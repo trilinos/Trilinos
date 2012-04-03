@@ -108,14 +108,14 @@ TEUCHOS_LIB_DLL_EXPORT void readVerboseObjectSublist(
  *
  * \param paramList
  *          [in/out] On input, contains the user's parameter list for the
- *          given objet for which "VerboseObject" can be a sublist of.
+ *          given object of which "VerboseObject" can be a sublist.
  * \param verboseObject
  *          [in/out] The verbose object that will have its verbosity level
  *          and/or output stream set.
  *
  * This function just calls the above nontemplated
- * <tt>readVerboseObjectSublist()</tt> to validate and and read the verbosity
- * and output stream from the "VerboseObject" sublist.
+ * <tt>readVerboseObjectSublist()</tt> to validate and and read the
+ * verbosity and output stream from the "VerboseObject" sublist.
  *
  * \relates VerboseObject
  */

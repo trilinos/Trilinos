@@ -1915,8 +1915,8 @@ void CellTools<Scalar>::getPhysicalFaceNormals(ArrayFaceNormal &             fac
 #endif
   
   // Temp storage for physical face tangents: rank-3 (C,P,D) arrays
-  FieldContainer<double> faceTanU(worksetSize, facePtCount, pCellDim);
-  FieldContainer<double> faceTanV(worksetSize, facePtCount, pCellDim);
+  FieldContainer<Scalar> faceTanU(worksetSize, facePtCount, pCellDim);
+  FieldContainer<Scalar> faceTanV(worksetSize, facePtCount, pCellDim);
   getPhysicalFaceTangents(faceTanU, faceTanV, worksetJacobians, worksetFaceOrd, parentCell);
   
   // Compute the vector product of the physical face tangents:

@@ -111,9 +111,9 @@ void mdarray_require_equal_dimension( const MDArrayType1 & array1 ,
 
 //----------------------------------------------------------------------------
 
-void crsmap_require_equal_dimension(
-  size_t x_first_count , size_t x_size ,
-  size_t y_first_count , size_t y_size );
+void crsarray_require_equal_dimension(
+  size_t x_row_count , size_t x_entry_count ,
+  size_t y_row_count , size_t y_entry_count );
 
 
 } // namespace Impl

@@ -1,0 +1,29 @@
+#!/bin/sh
+TRILINOS_PATH=/Users/rouson/Trilinos.base/Trilinos
+EXTRA_ARGS=$@
+
+rm -f CMakeCache.txt
+
+cmake \
+  -D CMAKE_BUILD_TYPE:STRING=DEBUG \
+  -D CMAKE_CXX_COMPILER:FILEPATH="/usr/bin/g++" \
+  -D CMAKE_C_COMPILER:FILEPATH="/usr/bin/gcc" \
+  -D CMAKE_Fortran_COMPILER:FILEPATH="/usr/bin/nagfor" \
+  -D CMAKE_Fortran_FLAGS:STRING="-f2003 -g -C=all" \
+  -D HAVE_GCC_ABI_DEMANGLE:BOOL=ON \
+  -D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING="" \
+  -D Trilinos_ENABLE_DEFAULT_PACKAGES:BOOL=OFF \
+  -D DART_TESTING_TIMEOUT:STRING=600 \
+  -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
+  -D Trilinos_ENABLE_CTrilinos:BOOL=ON\
+  -D Trilinos_ENABLE_ForTrilinos:BOOL=ON\
+  -D ForTrilinos_ENABLE_TESTS:BOOL=ON \
+  -D ForTrilinos_ENABLE_OBJECT_ORIENTED:BOOL=ON \
+  -D ForTrilinos_ENABLE_EXAMPLES:BOOL=ON \
+  -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
+  -D Trilinos_ENABLE_TESTS:BOOL=ON \
+$EXTRA_ARGS \
+$TRILINOS_PATH
+
+
+

@@ -114,10 +114,10 @@ namespace {
     
     Array<int> imageIDs(2);
     Array<LO> localIDs(2);
-    TEST_THROW( dir.getDirectoryEntries(tuple<GO>(0,1), imageIDs(0,1)), std::runtime_error );
-    TEST_THROW( dir.getDirectoryEntries(tuple<GO>(0,1), imageIDs(0,1), localIDs(0,1)), std::runtime_error );
-    TEST_THROW( dir.getDirectoryEntries(tuple<GO>(0,1), imageIDs(0,2), localIDs(0,1)), std::runtime_error );
-    TEST_THROW( dir.getDirectoryEntries(tuple<GO>(0,1), imageIDs(0,1), localIDs(0,2)), std::runtime_error );
+    TEST_THROW( dir.getDirectoryEntries(tuple<GO>(0,1), imageIDs(0,1)), std::invalid_argument );
+    TEST_THROW( dir.getDirectoryEntries(tuple<GO>(0,1), imageIDs(0,1), localIDs(0,1)), std::invalid_argument );
+    TEST_THROW( dir.getDirectoryEntries(tuple<GO>(0,1), imageIDs(0,2), localIDs(0,1)), std::invalid_argument );
+    TEST_THROW( dir.getDirectoryEntries(tuple<GO>(0,1), imageIDs(0,1), localIDs(0,2)), std::invalid_argument );
     // All procs fail if any node fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );

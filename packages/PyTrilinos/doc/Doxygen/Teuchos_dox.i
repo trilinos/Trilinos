@@ -616,7 +616,7 @@ C++ includes: Teuchos_ParameterList.hpp ";
 
 /*  Public types  */
 
-/*  Constructors/Destructor.  */
+/*  Constructors/Destructor/Info.  */
 
 %feature("docstring")  Teuchos::ParameterList::ParameterList "Teuchos::ParameterList::ParameterList()
 
@@ -633,6 +633,11 @@ Copy Constructor. ";
 %feature("docstring")  Teuchos::ParameterList::~ParameterList "Teuchos::ParameterList::~ParameterList()
 
 Deconstructor. ";
+
+%feature("docstring")  Teuchos::ParameterList::numParams "Ordinal
+Teuchos::ParameterList::numParams() const
+
+Get the number of stored parameters. ";
 
 /*  Set Functions  */
 
@@ -695,16 +700,16 @@ Teuchos::ParameterList::set(std::string const &name, char value[],
 std::string const &docString=\"\", RCP< const ParameterEntryValidator
 > const &validator=null)
 
-Template specialization for the case when a user sets the parameter
-with a character std::string in parenthesis. ";
+Specialization for the case when a user sets the parameter with a
+character std::string in parenthesis. ";
 
 %feature("docstring")  Teuchos::ParameterList::set "ParameterList&
 Teuchos::ParameterList::set(std::string const &name, const char
 value[], std::string const &docString=\"\", RCP< const
 ParameterEntryValidator > const &validator=null)
 
-Template specialization for the case when a user sets the parameter
-with a character std::string in parenthesis. ";
+Specialization for the case when a user sets the parameter with a
+character std::string in parenthesis. ";
 
 %feature("docstring")  Teuchos::ParameterList::set "ParameterList &
 Teuchos::ParameterList::set(std::string const &name, ParameterList
@@ -741,7 +746,7 @@ Exception is thrown if name exists, but is not of type T. ";
 %feature("docstring")  Teuchos::ParameterList::get "std::string &
 Teuchos::ParameterList::get(const std::string &name, char def_value[])
 
-Template specialization of get, where the nominal value is a character
+Specialization of get, where the nominal value is a character
 std::string in parenthesis. Both char* and std::string are stored as
 strings and return std::string values. ";
 
@@ -749,7 +754,7 @@ strings and return std::string values. ";
 Teuchos::ParameterList::get(const std::string &name, const char
 def_value[])
 
-Template specialization of get, where the nominal value is a character
+Specialization of get, where the nominal value is a character
 std::string in parenthesis. Both char* and std::string are stored as
 strings and return std::string values. ";
 
@@ -969,15 +974,15 @@ An iterator pointing to the first entry. ";
 
 An iterator pointing beyond the last entry. ";
 
-%feature("docstring")  Teuchos::ParameterList::entry "const
-ParameterEntry & Teuchos::ParameterList::entry(ConstIterator i) const
-
-Access to ParameterEntry (i.e., returns i->second) ";
-
 %feature("docstring")  Teuchos::ParameterList::name "const
 std::string & Teuchos::ParameterList::name(ConstIterator i) const
 
 Access to name (i.e., returns i->first) ";
+
+%feature("docstring")  Teuchos::ParameterList::entry "const
+ParameterEntry & Teuchos::ParameterList::entry(ConstIterator i) const
+
+Access to ParameterEntry (i.e., returns i->second) ";
 
 /*  Validation Functions  */
 
@@ -1815,6 +1820,30 @@ Teuchos::XMLParameterListReader::toParameterList(const XMLObject &xml)
 const
 
 Write the given XML object to a parameter list ";
+
+%feature("docstring")
+Teuchos::XMLParameterListReader::setAllowsDuplicateSublists "void
+Teuchos::XMLParameterListReader::setAllowsDuplicateSublists(bool
+policy)
+
+Set policy regarding duplicated sublists.
+
+The default behavior of this class is to allow duplicated sublists,
+although the resulting ParameterList is undefined for the duplicated
+sublists (in most cases, they will be merged in the order they are
+encountered in the XML character stream).
+
+If set false, then duplicated sublists in the XML tree will result in
+the Teuchos::DuplicateParameterSublist exception being thrown.
+
+If set true, the default behavior is restored. ";
+
+%feature("docstring")
+Teuchos::XMLParameterListReader::getAllowsDuplicateSublists "bool
+Teuchos::XMLParameterListReader::getAllowsDuplicateSublists() const
+
+Specifies the current policy regarding duplicated sublists. See
+setAllowsDuplicateSublists() for more details. ";
 
 
 // File: classTeuchos_1_1XMLParameterListWriter.xml

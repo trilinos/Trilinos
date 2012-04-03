@@ -137,9 +137,14 @@ namespace Tpetra {
     /// permutation, without actually moving data.  This only works if
     /// the input Map is compatible (in the sense of \c
     /// Map::isCompatible()) with the multivector's current Map, so
-    /// that the number of rows per process does not change.  If the
-    /// input Map is <i>not</i> compatible, then this method throws \c
-    /// std::invalid_argument.
+    /// that the number of rows per process does not change.  
+    ///
+    /// We only check for compatibility in debug mode (when Trilinos
+    /// was built with the Trilinos_ENABLE_DEBUG option set).  In that
+    /// case, if the input Map is <i>not</i> compatible, then this
+    /// method throws \c std::invalid_argument.  We only check in
+    /// debug mode because the check requires communication
+    /// (\f$O(1)\f$ all-reduces).
     ///
     /// \note This method is <i>not</i> for arbitrary data
     ///   redistribution.  If you need to move data around, use \c
@@ -148,19 +153,24 @@ namespace Tpetra {
     /// \note This method must always be called as a collective
     ///   operation on all processes over which the multivector is
     ///   distributed.  This is because the method reserves the right
-    ///   to check for compatibility of the two Maps.  It will do this
-    ///   at least in Tpetra debug mode (Boolean configure-time option
-    ///   Tpetra_ENABLE_DEBUG set), if not always.  That check
-    ///   requires a constant number of reductions over all the
-    ///   processes in the multivector's current Map's communicator.
+    ///   to check for compatibility of the two Maps, at least in
+    ///   debug mode.
     void replaceMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map);
 
     //! Instruct a local (non-distributed) MultiVector to sum values across all nodes.
     void reduce();
 
-    //! = Operator.
-    /*! \param In A - Multivector to copy
-     */
+    /// \brief Assign the contents of \c source to this multivector (deep copy).
+    ///
+    /// \pre The two multivectors must have the same communicator.
+    /// \pre The input multivector's Map must be compatible with this multivector's Map.
+    /// \pre The two multivectors must have the same number of columns.
+    ///
+    /// \note This method must always be called as a collective
+    ///   operation on all processes over which the multivector is
+    ///   distributed.  This is because the method reserves the right
+    ///   to check for compatibility of the two Maps, at least in
+    ///   debug mode.
     MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& operator=(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source);
 
     //@}
@@ -175,25 +185,25 @@ namespace Tpetra {
      */
     //@{
 
-    //! Returns a MultiVector with copies of selected columns.
+    //! Return a MultiVector with copies of selected columns.
     Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::Range1D &colRng) const;
 
-    //! Returns a MultiVector with copies of selected columns.
+    //! Return a MultiVector with copies of selected columns.
     Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::ArrayView<const size_t> &cols) const;
 
-    //! Returns a const MultiVector with const views of selected columns.
+    //! Return a const MultiVector with const views of selected columns.
     Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::Range1D &colRng) const;
 
-    //! Returns a const MultiVector with const views of selected columns.
+    //! Return a const MultiVector with const views of selected columns.
     Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::ArrayView<const size_t> &cols) const;
 
-    //! Returns a MultiVector with views of selected columns.
+    //! Return a MultiVector with views of selected columns.
     Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(const Teuchos::Range1D &colRng);
 
-    //! Returns a MultiVector with views of selected columns.
+    //! Return a MultiVector with views of selected columns.
     Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(const Teuchos::ArrayView<const size_t> &cols);
 
-    //! \brief Returns a const MultiVector view of a subset of rows.
+    //! \brief Return a const MultiVector view of a subset of rows.
     /** 
         Returns a const view of this MultiVector consisting of a subset of the rows, as specified by an offset and a sub-Map.
 
@@ -204,7 +214,7 @@ namespace Tpetra {
      */
     Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > offsetView(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap, size_t offset) const;
 
-    //! \brief Returns a non-const MultiVector view of a subset of rows.
+    //! \brief Return a non-const MultiVector view of a subset of rows.
     /** 
         Returns a non-const view of this MultiVector consisting of a subset of the rows, as specified by an offset and a sub-Map.
 
@@ -215,10 +225,10 @@ namespace Tpetra {
      */
     Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > offsetViewNonConst(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap, size_t offset);
 
-    //! Const Vector access function.
+    //! Return a Vector which is a const view of column j.
     Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getVector(size_t j) const;
 
-    //! Vector access function.
+    //! Return a Vector which is a nonconst view of column j.
     Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getVectorNonConst(size_t j);
 
     //! Const Local vector access function.
@@ -335,7 +345,34 @@ namespace Tpetra {
     /** \brief Return a simple one-line description of this object. */
     std::string description() const;
 
-    /** \brief Print the object with some verbosity level to an FancyOStream object. */
+    /// \brief Print the object with the given verbosity level to a FancyOStream.
+    ///
+    /// \param out [out] Output stream to which to print.  For
+    ///   verbosity levels VERB_LOW and lower, only the process with
+    ///   rank 0 ("Proc 0") in the MultiVector's communicator prints.
+    ///   For verbosity levels strictly higher than VERB_LOW, all
+    ///   processes in the communicator need to be able to print to
+    ///   the output stream.
+    ///
+    /// \param verbLevel [in] Verbosity level.  The default verbosity
+    ///   (verbLevel=VERB_DEFAULT) is VERB_LOW.
+    ///
+    /// The amount and content of what this method prints depends on
+    /// the verbosity level.  In the list below, each higher level
+    /// includes all the content of the previous levels, as well as
+    /// its own content.
+    ///
+    /// - VERB_LOW: Only Proc 0 prints; it prints the same thing as \c
+    ///   description().
+    /// - VERB_MEDIUM: Each process prints its local length (the
+    ///   number of rows that it owns).
+    /// - VERB_HIGH: Each process prints whether the multivector has
+    ///   constant stride (see \c isConstantStride()), and if so, what
+    ///   that stride is.  (Stride may differ on different processes.)
+    /// - VERB_EXTREME: Each process prints the values in its local
+    ///   part of the multivector.  This will print out as many rows
+    ///   of data as the global number of rows in the multivector, so
+    ///   beware.
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
     //@}
@@ -364,7 +401,10 @@ namespace Tpetra {
     MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
                 Teuchos::ArrayRCP<Scalar> data, size_t LDA, size_t NumVectors);
 
-    // four functions needed for DistObject derivation
+    /// \brief Whether data redistribution between \c sourceObj and this object is legal.
+    ///
+    /// This method is called in \c DistObject::doTransfer() to check
+    /// whether data redistribution between the two objects is legal.
     bool checkSizes(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> &sourceObj);
 
     void copyAndPermute(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> &sourceObj,

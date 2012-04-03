@@ -145,8 +145,12 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
   ADVANCED_OPTION(${PROJECT_NAME}_ENABLE_CXX
     "Enable the C++ compiler and related code"
     ON )
-  
+
   IF(WIN32 AND NOT CYGWIN)
+    IF ("${${PROJECT_NAME}_ENABLE_Fortran}" STREQUAL "")
+      MESSAGE(STATUS "Warning: Setting ${PROJECT_NAME}_ENABLE_Fortran=OFF by default"
+        " because this is Windows (not cygwin) and we assume to not have Fortran!")
+    ENDIF()
     SET(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT OFF)
   ELSE()
     SET(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT ON)
@@ -226,11 +230,17 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS)
     CACHE BOOL
     "Determines if export makefiles will be create and installed."
     )
-  
+ 
+  # Creating <Package>Config.cmake files is currently *very* expensive for large
+  # TriBITS projects so we disable this by default for TriBITS.
+  IF ("${${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT}" STREQUAL "")
+    SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT OFF)
+  ENDIF()
+ 
   ADVANCED_SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES
-    ON
+    ${${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT}
     CACHE BOOL
-    "Determines if *Config.cmake files are created or not."
+    "Determines if ${PROJECT_NAME}Config.cmake and <PACKAGE>Config.cmake files are created or not."
     )
 
   ADVANCED_SET( ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE OFF CACHE BOOL

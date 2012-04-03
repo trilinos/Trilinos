@@ -96,7 +96,6 @@ type(Zoltan_Struct) , intent(in) :: zz
 interface
   subroutine fn_ptr(data,level,zz,ierr)
   use zoltan_types
-  use lb_user_const
   use zoltan_user_data
   type(Zoltan_User_Data_1) , intent(in) :: data
   integer(Zoltan_INT), intent(in) :: level
@@ -121,7 +120,6 @@ type(Zoltan_Struct) , intent(in) :: zz
 interface
   subroutine fn_ptr(data,level,zz,ierr)
   use zoltan_types
-  use lb_user_const
   use zoltan_user_data
   type(Zoltan_User_Data_2) , intent(in) :: data
   integer(Zoltan_INT), intent(in) :: level
@@ -146,7 +144,6 @@ type(Zoltan_Struct) , intent(in) :: zz
 interface
   subroutine fn_ptr(data,level,zz,ierr)
   use zoltan_types
-  use lb_user_const
   use zoltan_user_data
   type(Zoltan_User_Data_3) , intent(in) :: data
   integer(Zoltan_INT), intent(in) :: level
@@ -171,7 +168,6 @@ type(Zoltan_Struct) , intent(in) :: zz
 interface
   subroutine fn_ptr(data,level,zz,ierr)
   use zoltan_types
-  use lb_user_const
   use zoltan_user_data
   type(Zoltan_User_Data_4) , intent(in) :: data
   integer(Zoltan_INT), intent(in) :: level

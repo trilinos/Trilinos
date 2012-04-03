@@ -96,7 +96,6 @@ namespace Sacado {
 			   "Complex magnitude is not a differentiable "
 			   "function of complex inputs.");
 #endif
-	//return std::fabs(a); 
 	magnitudeType b(a.expansion());
 	b.val() = Teuchos::ScalarTraits<ValueT>::magnitude(a.val());
 	if (Teuchos::ScalarTraits<ValueT>::real(a.val()) >= 0)
@@ -181,6 +180,12 @@ namespace Sacado {
       static PCEType pow(const PCEType& x, const PCEType& y) { 
 	return std::pow(x,y); 
       }
+      static PCEType log(const PCEType& x) { 
+	return std::log(x); 
+      }
+      static PCEType log10(const PCEType& x) { 
+	return std::log10(x); 
+      }
 
       // Helper function to determine whether a complex value is real
       static bool is_complex_real(const ValueT& x) {
@@ -201,6 +206,19 @@ namespace Sacado {
       }
 
     }; // class ScalarTraitsImp
+
+    //! Implementation for Teuchos::ValueTypeConversionTraits for all PCE types
+    template <typename TypeTo, typename PCEType>
+    struct ValueTypeConversionTraitsImp {
+      typedef typename Sacado::ValueType<PCEType>::type ValueT;
+      typedef Teuchos::ValueTypeConversionTraits<TypeTo,ValueT> VTCT;
+      static TypeTo convert( const PCEType t ) {
+	return VTCT::convert(t.val());
+      }
+      static TypeTo safeConvert( const PCEType t ) {
+	return VTCT::safeConvert(t.val());
+      }
+    };
 
 
     //! Implementation of Teuchos::SerializationTraits for all PCE types

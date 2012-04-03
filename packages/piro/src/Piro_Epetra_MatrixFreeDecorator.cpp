@@ -304,7 +304,10 @@ int  Piro::Epetra::MatrixFreeOperator::Apply
 
   modelInArgs.set_x(xPert);
   if (haveXdot) modelInArgs.set_x_dot(xdotPert);
-  modelOutArgs.set_f(fPert);
+
+  // Alert model that this is a perturbed calculation, in case it does something different.
+  EpetraExt::ModelEvaluator::Evaluation<Epetra_Vector> fPertEval(fPert, EpetraExt::ModelEvaluator::EVAL_TYPE_APPROX_DERIV);
+  modelOutArgs.set_f(fPertEval);
 
   model->evalModel(modelInArgs, modelOutArgs);
 

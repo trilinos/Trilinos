@@ -254,11 +254,11 @@ struct ModifiedGramSchmidt< Scalar , KOKKOS_MACRO_DEVICE >
   double seconds ;
 
   ModifiedGramSchmidt( const typename multivector_type::HostMirror & A )
-  : Q( Kokkos::create_multivector<Scalar,device_type>( A.length(), A.count()) )
-  , R( Kokkos::create_multivector<Scalar,device_type>( A.count() , A.count()) )
+  : Q( Kokkos::create_multivector<multivector_type>( A.length(), A.count()) )
+  , R( Kokkos::create_multivector<multivector_type>( A.count() , A.count()) )
   {
     const size_type N = A.length();
-    Value tmp = Kokkos::create_value<Scalar,device_type>();
+    Value tmp = Kokkos::create_value<Value>();
 
     Kokkos::deep_copy( Q , A );
 
@@ -298,7 +298,7 @@ struct ModifiedGramSchmidt< Scalar , KOKKOS_MACRO_DEVICE >
 
     // Create and fill A on the host
 
-    HostMultiVector A( Kokkos::create_labeled_multivector<HostMultiVector>( "A" , length , count ) );
+    HostMultiVector A( Kokkos::create_multivector<HostMultiVector>( "A" , length , count ) );
 
     for ( size_type j = 0 ; j < A.count() ; ++j ) {
       for ( size_type i = 0 ; i < A.length() ; ++i ) {

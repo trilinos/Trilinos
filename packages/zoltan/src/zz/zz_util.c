@@ -518,7 +518,7 @@ int Zoltan_get_global_id_type(char **name)
 
 int Zoltan_overflow_test(size_t val)
 {
-ssize_t mask;
+size_t mask;
 
   /* is value too large to store an int */
 

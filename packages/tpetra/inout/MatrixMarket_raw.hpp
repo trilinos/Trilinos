@@ -272,20 +272,19 @@ namespace Tpetra {
 	void 
 	operator() (const Ordinal i, const Ordinal j, const Scalar& Aij) 
 	{
-	  if (! tolerant_)
-	    {
-	      TEUCHOS_TEST_FOR_EXCEPTION(i < 1 || j < 1 || i > expectedNumRows_ || j > expectedNumCols_, 
-				 std::invalid_argument, 
-				 "Matrix is " << expectedNumRows_ << " x " << expectedNumCols_ 
-				 << ", so entry A(" << i << "," << j << ") = " 
-				 << Aij << " is out of range.");
-	      TEUCHOS_TEST_FOR_EXCEPTION(seenNumEntries_ >= expectedNumEntries_, 
-				 std::invalid_argument,
-				 "Cannot add entry A(" << i << "," << j << ") = " 
-				 << Aij << " to matrix; already have expected "
-				 "number of entries " << expectedNumEntries_ 
-				 << ".");
-	    }
+	  if (! tolerant_) {
+	    const bool indexPairOutOfRange = i < 1 || j < 1 || 
+	      i > expectedNumRows_ || j > expectedNumCols_;
+
+	    TEUCHOS_TEST_FOR_EXCEPTION(indexPairOutOfRange, 
+              std::invalid_argument, "Matrix is " << expectedNumRows_ << " x "
+              << expectedNumCols_ << ", so entry A(" << i << "," << j << ") = "
+              << Aij << " is out of range.");
+	    TEUCHOS_TEST_FOR_EXCEPTION(seenNumEntries_ >= expectedNumEntries_, 
+	      std::invalid_argument, "Cannot add entry A(" << i << "," << j 
+              << ") = " << Aij << " to matrix; already have expected number "
+	      "of entries " << expectedNumEntries_ << ".");
+	  }
 	  // i and j are 1-based indices, but we store them as 0-based.
 	  elts_.push_back (element_type (i-1, j-1, Aij));
 
@@ -311,10 +310,11 @@ namespace Tpetra {
 	void 
 	print (std::ostream& out, const bool doMerge, const bool replace=false) 
 	{
-	  if (doMerge)
+	  if (doMerge) {
 	    merge (replace);
-	  else
+	  } else {
 	    std::sort (elts_.begin(), elts_.end());
+	  }
 	  // Print out the results, delimited by newlines.
 	  typedef std::ostream_iterator<element_type> iter_type;
 	  std::copy (elts_.begin(), elts_.end(), iter_type (out, "\n"));
@@ -454,25 +454,23 @@ namespace Tpetra {
 	  // interpretation.
 	  int readFile = 0;
 	  RCP<std::ifstream> in; // only valid on Rank 0
-	  if (myRank == 0)
-	    {
-	      if (debug)
-		cerr << "Attempting to open file \"" << filename 
-		     << "\" on Rank 0...";
-	      in = rcp (new std::ifstream (filename.c_str()));
-	      if (! *in)
-		{
-		  readFile = 0;
-		  if (debug)
-		    cerr << "failed." << endl;
-		}
-	      else
-		{
-		  readFile = 1;
-		  if (debug)
-		    cerr << "succeeded." << endl;
-		}
+	  if (myRank == 0) {
+	    if (debug) {
+	      cerr << "Attempting to open file \"" << filename 
+		   << "\" on Rank 0...";
 	    }
+	    in = rcp (new std::ifstream (filename.c_str()));
+	    if (! *in) {
+	      readFile = 0;
+	      if (debug)
+		cerr << "failed." << endl;
+	    }
+	    else {
+	      readFile = 1;
+	      if (debug)
+		cerr << "succeeded." << endl;
+	    }
+	  }
 	  Teuchos::broadcast (comm, 0, &readFile);
 	  TEUCHOS_TEST_FOR_EXCEPTION(! readFile, std::runtime_error,
 			     "Failed to open input file \"" + filename + "\".");
@@ -504,68 +502,67 @@ namespace Tpetra {
 	  const int myRank = Teuchos::rank (comm);
 	  std::pair<bool, std::string> result;
 	  int msgSize = 0; // Size of error message (if any)
-	  if (myRank == 0)
-	    {
-	      if (in.is_null())
-		{
-		  result.first = false;
-		  result.second = "Input stream is null on Rank 0";
-		}
-	      else
-		{
-		  if (debug)
-		    cerr << "About to read from input stream on Rank 0" << endl;
-		  result = readOnRank0 (*in, echo, tolerant, debug);
-		  if (debug)
-		    {
-		      if (result.first)
-			cerr << "Successfully read sparse matrix from "
-			  "input stream on Rank 0" << endl;
-		      else
-			cerr << "Failed to read sparse matrix from input "
-			  "stream on Rank 0" << endl;
-		    }
-		}
-	      if (result.first)
-		msgSize = 0;
-	      else
-		msgSize = result.second.size();
+	  if (myRank == 0) {
+	    if (in.is_null()) {
+	      result.first = false;
+	      result.second = "Input stream is null on Rank 0";
 	    }
+	    else {
+	      if (debug) {
+		cerr << "About to read from input stream on Rank 0" << endl;
+	      }
+	      result = readOnRank0 (*in, echo, tolerant, debug);
+	      if (debug) {
+		if (result.first) {
+		  cerr << "Successfully read sparse matrix from "
+		    "input stream on Rank 0" << endl;
+		}
+		else {
+		  cerr << "Failed to read sparse matrix from input "
+		    "stream on Rank 0" << endl;
+		}
+	      }
+	    }
+	    if (result.first) {
+	      msgSize = 0;
+	    }
+	    else {
+	      msgSize = result.second.size();
+	    }
+	  }
 	  int success = result.first ? 1 : 0;
 	  Teuchos::broadcast (comm, 0, &success);
-	  if (! success)
-	    {
-	      if (! tolerant)
-		{
-		  // Tell all ranks how long the error message is, so
-		  // they can make space for it in order to receive
-		  // the broadcast of the error message.
-		  Teuchos::broadcast (comm, 0, &msgSize);
+	  if (! success) {
+	    if (! tolerant) {
+	      // Tell all ranks how long the error message is, so
+	      // they can make space for it in order to receive
+	      // the broadcast of the error message.
+	      Teuchos::broadcast (comm, 0, &msgSize);
 
-		  if (msgSize > 0)
-		    {
-		      std::string errMsg (msgSize, ' ');
-		      if (myRank == 0)
-			std::copy (result.second.begin(), result.second.end(),
-				   errMsg.begin());
-		      Teuchos::broadcast (comm, 0, static_cast<int>(msgSize), &errMsg[0]);
-		      TEUCHOS_TEST_FOR_EXCEPTION(! success, std::runtime_error, errMsg);
-		    }
-		  else
-		    TEUCHOS_TEST_FOR_EXCEPTION(! success, std::runtime_error, 
-				       "Unknown error when reading Matrix "
-				       "Market sparse matrix file; the error "
-				       "is \"unknown\" because the error "
-				       "message has length 0.");
+	      if (msgSize > 0) {
+		std::string errMsg (msgSize, ' ');
+		if (myRank == 0) {
+		  std::copy (result.second.begin(), result.second.end(),
+			     errMsg.begin());
 		}
-	      else if (myRank == 0)
-		{
-		  using std::cerr;
-		  using std::endl;
-		  cerr << "The following error occurred when reading the "
-		    "sparse matrix: " << result.second << endl;
-		}
+		Teuchos::broadcast (comm, 0, static_cast<int>(msgSize), &errMsg[0]);
+		TEUCHOS_TEST_FOR_EXCEPTION(! success, std::runtime_error, errMsg);
+	      }
+	      else {
+		TEUCHOS_TEST_FOR_EXCEPTION(! success, std::runtime_error, 
+					   "Unknown error when reading Matrix "
+					   "Market sparse matrix file; the error "
+					   "is \"unknown\" because the error "
+					   "message has length 0.");
+	      }
 	    }
+	    else if (myRank == 0) {
+	      using std::cerr;
+	      using std::endl;
+	      cerr << "The following error occurred when reading the "
+		"sparse matrix: " << result.second << endl;
+	    }
+	  }
 	  return success;
 	}
 
@@ -661,38 +658,37 @@ namespace Tpetra {
 	  RCP<const Banner> pBanner;
 	  try {
 	    pBanner = readBanner (in, lineNumber, tolerant, debug);
-	  } catch (std::exception& e) {
+	  } 
+	  catch (std::exception& e) {
 	    err << "Failed to read Banner: " << e.what();
 	    return std::make_pair (false, err.str());
 	  }
 	  //
 	  // Validate the metadata in the Banner.
 	  //
-	  if (pBanner->matrixType() != "coordinate")
-	    {
-	      err << "Matrix Market input file must contain a "
-		"\"coordinate\"-format sparse matrix in "
-		"order to create a sparse matrix object "
-		"from it.";
-	      return std::make_pair (false, err.str());
-	    }
-	  else if (! STS::isComplex && pBanner->dataType() == "complex")
-	    {
-	      err << "The Matrix Market sparse matrix file contains complex-"
-		"valued data, but you are try to read the data into a sparse "
-		"matrix containing real values (your matrix's Scalar type is "
-		"real).";
-	      return std::make_pair (false, err.str());
-	    }
+	  if (pBanner->matrixType() != "coordinate") {
+	    err << "Matrix Market input file must contain a "
+	      "\"coordinate\"-format sparse matrix in "
+	      "order to create a sparse matrix object "
+	      "from it.";
+	    return std::make_pair (false, err.str());
+	  }
+	  else if (! STS::isComplex && pBanner->dataType() == "complex") {
+	    err << "The Matrix Market sparse matrix file contains complex-"
+	      "valued data, but you are try to read the data into a sparse "
+	      "matrix containing real values (your matrix's Scalar type is "
+	      "real).";
+	    return std::make_pair (false, err.str());
+	  }
 	  else if (pBanner->dataType() != "real" && 
-		   pBanner->dataType() != "complex")
-	    {
-	      err << "Only real or complex data types (no pattern or integer "
-		"matrices) are currently supported.";
-	      return std::make_pair (false, err.str());
-	    }
-	  if (debug)
+		   pBanner->dataType() != "complex") {
+	    err << "Only real or complex data types (no pattern or integer "
+	      "matrices) are currently supported.";
+	    return std::make_pair (false, err.str());
+	  }
+	  if (debug) {
 	    cerr << "Banner line:" << endl << *pBanner << endl;
+	  }
 	  
 	  // The reader will invoke the adder (see below) once for
 	  // each matrix entry it reads from the input stream.
@@ -707,12 +703,11 @@ namespace Tpetra {
 	  // us whether the values were gotten successfully.
 	  std::pair<Tuple<Ordinal, 3>, bool> dims = 
 	    reader.readDimensions (in, lineNumber, tolerant);
-	  if (! dims.second)
-	    {
-	      err << "Error reading Matrix Market sparse matrix "
-		"file: failed to read coordinate dimensions.";
-	      return std::make_pair (false, err.str());
-	    }
+	  if (! dims.second) {
+	    err << "Error reading Matrix Market sparse matrix "
+	      "file: failed to read coordinate dimensions.";
+	    return std::make_pair (false, err.str());
+	  }
 	  // These are "expected" values read from the input stream's
 	  // metadata.  The actual matrix entries read from the input
 	  // stream might not conform to their constraints.  We allow
@@ -721,12 +716,11 @@ namespace Tpetra {
 	  const Ordinal numRows = dims.first[0];
 	  const Ordinal numCols = dims.first[1];
 	  const Ordinal numEntries = dims.first[2];
-	  if (debug)
-	    {
-	      cerr << "Reported dimensions: " << numRows << " x " << numCols 
-		   << ", with " << numEntries << " entries (counting possible "
-		   << "duplicates)." << endl;
-	    }
+	  if (debug) {
+	    cerr << "Reported dimensions: " << numRows << " x " << numCols 
+		 << ", with " << numEntries << " entries (counting possible "
+		 << "duplicates)." << endl;
+	  }
 
 	  // The "raw" adder knows about the expected matrix
 	  // dimensions, but doesn't know about symmetry.
@@ -745,41 +739,39 @@ namespace Tpetra {
 	  // sparse matrix entries are stored in the (raw) Adder object.
 	  std::pair<bool, std::vector<size_t> > results = 
 	    reader.read (in, lineNumber, tolerant, debug);
-	  if (debug)
-	    {
-	      if (results.first)
-		cerr << "Matrix Market file successfully read" << endl;
-	      else 
-		cerr << "Failed to read Matrix Market file" << endl;
+	  if (debug) {
+	    if (results.first) {
+	      cerr << "Matrix Market file successfully read" << endl;
 	    }
+	    else {
+	      cerr << "Failed to read Matrix Market file" << endl;
+	    }
+	  }
 
 	  // Report any bad line number(s).
-	  if (! results.first)
-	    {
-	      if (! tolerant)
-		{
-		  err << "The Matrix Market input stream had syntax error(s)."
-		    "  Here is the error report." << endl;
-		  reportBadness (err, results);
-		  err << endl;
-		  return std::make_pair (false, err.str());
-		}
-	      else
-		{
-		  if (debug)
-		    reportBadness (cerr, results);
-		}
+	  if (! results.first) {
+	    if (! tolerant) {
+	      err << "The Matrix Market input stream had syntax error(s)."
+		"  Here is the error report." << endl;
+	      reportBadness (err, results);
+	      err << endl;
+	      return std::make_pair (false, err.str());
 	    }
+	    else {
+	      if (debug) {
+		reportBadness (cerr, results);
+	      }
+	    }
+	  }
 	  // We're done reading in the sparse matrix.  If we're in
 	  // "echo" mode, print out the matrix entries to stdout.  The
 	  // entries will have been symmetrized if applicable.
-	  if (echo)
-	    {
-	      const bool doMerge = false;
-	      const bool replace = false;
-	      rawAdder->print (cout, doMerge, replace);
-	      cout << endl;
-	    }
+	  if (echo) {
+	    const bool doMerge = false;
+	    const bool replace = false;
+	    rawAdder->print (cout, doMerge, replace);
+	    cout << endl;
+	  }
 	  return std::make_pair (true, err.str());
 	}
 
@@ -793,18 +785,20 @@ namespace Tpetra {
 	  const size_t maxNumErrorsToReport = 20;
 	  out << numErrors << " errors when reading Matrix Market sparse "
 	    "matrix file." << endl;
-	  if (numErrors > maxNumErrorsToReport)
+	  if (numErrors > maxNumErrorsToReport) {
 	    out << "-- We do not report individual errors when there "
 	      "are more than " << maxNumErrorsToReport << ".";
-	  else if (numErrors == 1)
+	  }
+	  else if (numErrors == 1) {
 	    out << "Error on line " << results.second[0] << endl;
-	  else if (numErrors > 1)
-	    {
-	      out << "Errors on lines {";
-	      for (size_t k = 0; k < numErrors-1; ++k)
-		out << results.second[k] << ", ";
-	      out << results.second[numErrors-1] << "}" << endl;
+	  }
+	  else if (numErrors > 1) {
+	    out << "Errors on lines {";
+	    for (size_t k = 0; k < numErrors-1; ++k) {
+	      out << results.second[k] << ", ";
 	    }
+	    out << results.second[numErrors-1] << "}" << endl;
+	  }
 	}
       };
 

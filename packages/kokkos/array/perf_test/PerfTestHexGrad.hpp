@@ -282,10 +282,10 @@ struct HexGrad< KOKKOS_MACRO_DEVICE >
 
   static double test( int count )
   {
-    Kokkos::MDArray<double,device_type> coord =
-      Kokkos::create_mdarray< double , device_type >( count , 3 , 8 );
-    Kokkos::MDArray<float, device_type> grad =
-      Kokkos::create_mdarray< float , device_type >( count , 3 , 8 );
+    typedef Kokkos::MDArray<double,device_type> darray ;
+    typedef Kokkos::MDArray<float,device_type>  farray ;
+    darray coord = Kokkos::create_mdarray< darray >( count , 3 , 8 );
+    farray grad  = Kokkos::create_mdarray< farray >( count , 3 , 8 );
 
     // Execute the parallel kernels on the arrays:
 

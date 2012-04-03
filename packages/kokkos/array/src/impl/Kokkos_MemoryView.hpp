@@ -76,35 +76,29 @@ public:
 
 template< class DeviceType > class MemoryManager ;
 
-template< class ValueType , class DeviceType >
-class CreateMirror< MemoryView< ValueType , DeviceType > , true > {
-public:
+//----------------------------------------------------------------------------
 
-  typedef  MemoryView< ValueType , DeviceType >  View ;
-  typedef  typename View::HostMirror             HostMirror ;
+template< class ValueType , class Device >
+struct Factory< MemoryView< ValueType , Device > , Impl::MirrorUseView >
+{
+  typedef MemoryView< ValueType , Device > output_type ;
 
-  template< typename SizeType >
-  static
-  HostMirror create( const View & v , const SizeType & count )
-    { return v ; }
+  static inline
+  const output_type & create( const output_type & input , const size_t )
+  { return input ; }
+
+  template< class DeviceInput >
+  static inline
+  output_type create( const MemoryView< ValueType , DeviceInput > & input ,
+                      const size_t count )
+  {
+    output_type output ;
+    output.allocate( count , std::string() );
+    return output ;
+  }
 };
 
-template< class ValueType , class DeviceType >
-class CreateMirror< MemoryView< ValueType , DeviceType > , false > {
-public:
-
-  typedef  MemoryView< ValueType , DeviceType >  View ;
-  typedef  typename View::HostMirror             HostMirror ;
-
-  template< typename SizeType >
-  static
-  HostMirror create( const View & v , const SizeType & count )
-    {
-      HostMirror tmp ;
-      tmp.allocate( count , std::string() );
-      return tmp ;
-    }
-};
+//----------------------------------------------------------------------------
 
 } // namespace Impl
 } // namespace Kokkos
