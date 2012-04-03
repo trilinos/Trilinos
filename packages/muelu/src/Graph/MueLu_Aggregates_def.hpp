@@ -58,10 +58,18 @@ namespace MueLu {
     // decide whether we need the DOF version (for problems with amalgamated matrix)
     // or just the Node version (for problems with 1 DOF per node)
     if(GetAmalgamationInfo()->GetMyAmalgamationParams() == Teuchos::null) {
+#ifndef ALTERNATIVE_COMPUTEAGGTOROWMAPDOFS
       ComputeAggregateToRowMapNodes(aggToRowMap);
+#else
+      ComputeAggregateToRowMapNodes2(aggToRowMap);
+#endif
     }
     else {
+#ifndef ALTERNATIVE_COMPUTEAGGTOROWMAPDOFS
       ComputeAggregateToRowMapDofs(aggToRowMap);
+#else
+      ComputeAggregateToRowMapDofs2(aggToRowMap);
+#endif
     }
   }
 
@@ -88,6 +96,32 @@ namespace MueLu {
     }
 
   } //AggregateToRowMapNodes
+
+#ifdef ALTERNATIVE_COMPUTEAGGTOROWMAPDOFS
+  ///////////////////////////////////////////////////////
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void  Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeAggregateToRowMapNodes2(Teuchos::ArrayRCP<Teuchos::ArrayRCP<LocalOrdinal> > &aggToRowMap) const {
+    int myPid = vertex2AggId_->getMap()->getComm()->getRank();
+    ArrayRCP<LO> procWinner   = procWinner_->getDataNonConst(0);
+    ArrayRCP<LO> vertex2AggId = vertex2AggId_->getDataNonConst(0);
+
+    ArrayRCP<LO> aggSizes = ComputeAggregateSizes();
+    LO t=0;
+    for (typename ArrayRCP<ArrayRCP<LO> >::iterator a2r=aggToRowMap.begin(); a2r!=aggToRowMap.end(); ++a2r)
+      *a2r = ArrayRCP<LO>(aggSizes[t++]);
+    ArrayRCP< LO > numDofs(nAggregates_,0);  //Track how many DOFS have been recorded so far
+    //for each each aggregate in aggToRowMap.
+    LO size = procWinner.size();
+    for (LO k = 0; k < size; ++k ) {
+      LO myAgg = vertex2AggId[k];
+      if (procWinner[k] == myPid) {
+        aggToRowMap[ myAgg ][ numDofs[myAgg] ] = vertex2AggId_->getMap()->getGlobalElement(k); // corresponds to A->getColMap()->getGlobalElement...
+        ++(numDofs[myAgg]);
+      }
+    }
+
+  } //AggregateToRowMapNodes2
+#endif
 
   ///////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>     
@@ -132,6 +166,53 @@ namespace MueLu {
     }
 
   }
+
+#ifdef ALTERNATIVE_COMPUTEAGGTOROWMAPDOFS
+  ///////////////////////////////////////////////////////
+  // returns global ids instead of local ids
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void  Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeAggregateToRowMapDofs2(Teuchos::ArrayRCP<Teuchos::ArrayRCP<LocalOrdinal> > &aggToRowMap) const {
+
+    int myPid = vertex2AggId_->getMap()->getComm()->getRank();
+    ArrayRCP<LO> procWinner   = procWinner_->getDataNonConst(0);
+    ArrayRCP<LO> vertex2AggId = vertex2AggId_->getDataNonConst(0); // vector: node 2 aggid
+
+    ArrayRCP<LO> aggSizes = ComputeAggregateSizesDofs(); // size of aggregats (# of nodes in agg)
+
+    // length of aggToRowMap should be the number of DOFs (not the number of nodes)
+    LO t=0;
+    for (typename ArrayRCP<ArrayRCP<LO> >::iterator a2r=aggToRowMap.begin(); a2r!=aggToRowMap.end(); ++a2r) {
+      *a2r = ArrayRCP<LO>(aggSizes[t++]);
+    }
+
+    // track how many dofs have been recorded so far
+    ArrayRCP< LO > numDofs(nAggregates_,0);
+
+    //for each each aggregate in aggToRowMap.
+    LO size = procWinner.size();
+
+    // loop over local node ids
+    for (LO lnode = 0; lnode < size; ++lnode ) {
+      LO myAgg = vertex2AggId[lnode]; // local agg id for current local node id
+
+      if (procWinner[lnode] == myPid) {
+        // for loop over all local row ids for current block id = global node id?
+        GlobalOrdinal gblockid = vertex2AggId_->getMap()->getGlobalElement(lnode);
+
+        // unumalgamate graph-based information to dof-based information
+        std::vector<LocalOrdinal> blockdofs = (*(GetAmalgamationInfo()->GetGlobalAmalgamationParams()))[gblockid];
+        //std::cout << blockdofs.size() << ": ";
+        for (LocalOrdinal blockdof=0; blockdof<Teuchos::as<LocalOrdinal>(blockdofs.size()); blockdof++) {
+          //std::cout << blockdofs[blockdof] << " " ;
+          aggToRowMap[ myAgg ][ numDofs[myAgg] ] = blockdofs[blockdof];  // add DOF to current aggregate
+          ++(numDofs[myAgg]);
+        }
+        //std::cout << std::endl;
+      }
+    }
+
+  }
+#endif
 
   ///////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

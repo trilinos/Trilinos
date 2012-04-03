@@ -12,6 +12,8 @@
 
 #include "MueLu_Graph_fwd.hpp"
 
+#define ALTERNATIVE_COMPUTEAGGTOROWMAPDOFS
+
 #define MUELU_UNAGGREGATED  -1   /* indicates that a node is unassigned to  */
                                  /* any aggregate.                          */
 
@@ -92,6 +94,10 @@ namespace MueLu {
     */
     void ComputeAggregateToRowMapNodes(Teuchos::ArrayRCP<Teuchos::ArrayRCP<LO> > &aggToRowMap) const; //AggregateToRowMapNodes
 
+#ifdef ALTERNATIVE_COMPUTEAGGTOROWMAPDOFS
+    void ComputeAggregateToRowMapNodes2(Teuchos::ArrayRCP<Teuchos::ArrayRCP<LO> > &aggToRowMap) const; //AggregateToRowMapNodes
+#endif
+
     /*! @brief Compute lookup table that provides DOFs belonging to a given aggregate.
 
     @param aggToRowMap aggToRowMap[i][j] is the jth local DOF in local aggregate i
@@ -100,6 +106,10 @@ namespace MueLu {
     Prerequisite is that globalamalblockid2myrowid_ in amalgamationData_ is set by the amalgamation method.
     */
     void ComputeAggregateToRowMapDofs(Teuchos::ArrayRCP<Teuchos::ArrayRCP<LO> > &aggToRowMap) const; //AggregateToRowMap
+
+#ifdef ALTERNATIVE_COMPUTEAGGTOROWMAPDOFS
+    void  ComputeAggregateToRowMapDofs2(Teuchos::ArrayRCP<Teuchos::ArrayRCP<LocalOrdinal> > &aggToRowMap) const;
+#endif
 
     //! @name Overridden from Teuchos::Describable 
     //@{

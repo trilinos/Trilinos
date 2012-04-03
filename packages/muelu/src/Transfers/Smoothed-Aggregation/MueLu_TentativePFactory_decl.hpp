@@ -19,6 +19,8 @@
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
 
+#define ALTERNATIVE_MAKETENTATIVE // if defined, use new MakeTentative (make sure that ALTERNATIVE_COMPUTEAGGTOROWMAPDOFS is set in Muelu_Aggregates_decl.hpp)
+
 namespace MueLu {
 
   /*!
@@ -138,6 +140,13 @@ namespace MueLu {
                        RCP<MultiVector> & coarseNullspace, RCP<Operator> & Ptentative) const;                  //-> OUTPUT
 
     //@}
+
+#ifdef ALTERNATIVE_MAKETENTATIVE
+    // temporary test
+    void MakeTentative2(const Operator& fineA, const Aggregates& aggregates, const MultiVector & fineNullspace, //-> INPUT
+                       RCP<MultiVector> & coarseNullspace, RCP<Operator> & Ptentative) const;                  //-> OUTPUT
+#endif
+
 
   private:
     RCP<const FactoryBase> aggregatesFact_; //! Factory that creates aggregates
