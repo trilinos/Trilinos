@@ -372,7 +372,7 @@ const Teuchos::RCP<Tpetra::Import<LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGhostedImport() const
 {
-   return Teuchos::rcp(new ImportType(getGhostedMap(),getMap()));
+   return Teuchos::rcp(new ImportType(getMap(),getGhostedMap()));
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
@@ -432,6 +432,7 @@ buildGraph() const
    RCP<ExportType> exporter = getGhostedExport();
    graph->doExport( *oGraph, *exporter, Tpetra::INSERT );
    graph->fillComplete();
+
    return graph;
 }
 

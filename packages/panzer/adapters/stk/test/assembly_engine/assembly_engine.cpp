@@ -69,6 +69,7 @@ using Teuchos::rcp;
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_ParameterList_ObjectBuilders.hpp"
 #include "Panzer_GlobalData.hpp"
+#include "Panzer_PauseToAttach.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
@@ -84,6 +85,10 @@ using Teuchos::rcp;
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
 
+#include "Thyra_EpetraLinearOp.hpp"
+#include "Thyra_TpetraThyraWrappers.hpp"
+#include "Thyra_LinearOpTester.hpp"
+
 #include <cstdio> // for get char
 
 namespace panzer {
@@ -91,7 +96,10 @@ namespace panzer {
   void testInitialzation(panzer::InputPhysicsBlock& ipb,
 			 std::vector<panzer::BC>& bcs);
 
-  TEUCHOS_UNIT_TEST(field_manager_builder, basic_epetra)
+  Teuchos::RCP<const Thyra::LinearOpBase<double> >  eLinearOp;
+  Teuchos::RCP<const Thyra::LinearOpBase<double> >  tLinearOp;
+
+  TEUCHOS_UNIT_TEST(assembly_engine, basic_epetra)
   {
     using Teuchos::RCP;
   
@@ -199,16 +207,22 @@ namespace panzer {
                                         panzer::EpetraLinearObjContainer::DxDt |
                                         panzer::EpetraLinearObjContainer::F |
                                         panzer::EpetraLinearObjContainer::Mat,*eGlobal);
+    eGhosted->initialize();
+    eGlobal->initialize();
     panzer::AssemblyEngineInArgs input(eGhosted,eGlobal);
+    input.alpha = 0.0;
+    input.beta = 1.0;
 
     ae_tm.getAsObject<panzer::Traits::Residual>()->evaluate(input);
     ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
 
     //input.f->Print(std::cout);
     //input.j->Print(std::cout);
+
+    eLinearOp = Thyra::epetraLinearOp(eGlobal->A);
   }
 
-  TEUCHOS_UNIT_TEST(field_manager_builder, basic_tpetra)
+  TEUCHOS_UNIT_TEST(assembly_engine, basic_tpetra)
   {
     using Teuchos::RCP;
 
@@ -315,10 +329,45 @@ namespace panzer {
                                        panzer::EpetraLinearObjContainer::DxDt |
                                        panzer::EpetraLinearObjContainer::F |
                                        panzer::EpetraLinearObjContainer::Mat,*tGlobal);
+
+    // panzer::pauseToAttach();
+    tGhosted->initialize();
+    tGlobal->initialize();
+
     panzer::AssemblyEngineInArgs input(tGhosted,tGlobal);
+    input.alpha = 0.0;
+    input.beta = 1.0;
 
     ae_tm.getAsObject<panzer::Traits::Residual>()->evaluate(input);
     ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
+
+    RCP<panzer::TpetraLinearObjContainer<double,int,int> > globalCont 
+       = Teuchos::rcp_dynamic_cast<panzer::TpetraLinearObjContainer<double,int,int> >(tGlobal);
+
+    globalCont->A->fillComplete();
+    Teuchos::RCP<const Tpetra::Operator<double,int,int> > baseOp = globalCont->A;
+    Teuchos::RCP<const Thyra::VectorSpaceBase<double> > rangeSpace = Thyra::createVectorSpace<double>(baseOp->getRangeMap());
+    Teuchos::RCP<const Thyra::VectorSpaceBase<double> > domainSpace = Thyra::createVectorSpace<double>(baseOp->getDomainMap());
+    tLinearOp = Thyra::constTpetraLinearOp<double,int,int>(rangeSpace, domainSpace, baseOp);
+  }
+
+  TEUCHOS_UNIT_TEST(assembly_engine, z_basic_epetra_vtpetra)
+  {
+     TEUCHOS_ASSERT(tLinearOp!=Teuchos::null);
+     TEUCHOS_ASSERT(eLinearOp!=Teuchos::null);
+
+     Thyra::LinearOpTester<double> tester;
+     tester.set_all_error_tol(1e-14);
+     tester.show_all_tests(true);
+     tester.dump_all(true);
+     // tester.enable_all_tests(false);
+     // tester.check_linear_properties(true);
+
+     {
+        std::stringstream ss;
+        const bool result = tester.compare( *tLinearOp, *eLinearOp, &out );
+        TEST_ASSERT(result);
+     }
   }
 
   void testInitialzation(panzer::InputPhysicsBlock& ipb,
