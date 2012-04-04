@@ -306,6 +306,7 @@ int ne_put_version(int neid)
 /*****************************************************************************/
 int ne_check_file_version(int neid)
 {
+#if 0
   char  *func_name="ne_check_file_version";
 
   float  file_ver;
@@ -332,6 +333,7 @@ int ne_check_file_version(int neid)
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);
   }
+#endif
   return (EX_NOERR);
 }
 
