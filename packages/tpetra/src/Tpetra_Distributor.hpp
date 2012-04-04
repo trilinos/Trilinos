@@ -610,6 +610,10 @@ namespace Tpetra {
       const ArrayView<Packet> &imports,
       const ArrayView<size_t> &numImportPacketsPerLID)
   {
+    using Teuchos::arcp;
+    using Teuchos::ArrayRCP;
+    using Teuchos::as;
+
     TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
       Teuchos::typeName(*this) << "::doPostsAndWaits(): There are " 
       << requests_.size() << " outstanding nonblocking messages pending.  It is "
@@ -1107,6 +1111,8 @@ namespace Tpetra {
       size_t numPackets,
       const ArrayView<Packet>& imports) 
   {
+    using Teuchos::as;
+
     // doReversePosts() takes exports and imports as ArrayRCPs,
     // requiring that the memory locations are persisting.  However,
     // they need only persist within the scope of that routine, so it
