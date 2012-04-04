@@ -619,9 +619,21 @@ namespace Tpetra {
     // requiring that the memory location is persisting (as is
     // necessary for nonblocking receives).  However, it need only
     // persist until doWaits() completes, so it is safe for us to use
-    // a nonpersisting reference in this case.  The use of a
-    // nonpersisting reference is purely a performance optimization.
-    doPosts (arcp<const Packet> (exports.getRawPtr(), 0, exports.size(), false),
+    // a nonpersisting reference in this case.
+
+    // mfh 04 Apr 2012: For some reason, calling arcp<const Packet>
+    // for Packet=std::complex<T> (e.g., T=float) fails to compile
+    // with some versions of GCC.  The issue only arises with the
+    // exports array.  This is why we construct a separate nonowning
+    // ArrayRCP.
+    typedef typename ArrayRCP<const Packet>::size_type size_type;
+    ArrayRCP<const Packet> exportsArcp (exports.getRawPtr(), as<size_type> (0),
+					exports.size(), false);
+    // mfh 04 Apr 2012: This is the offending code.  This statement
+    // would normally be in place of "exportsArcp" in the
+    // doPosts() call below.
+    //arcp<const Packet> (exports.getRawPtr(), 0, exports.size(), false),
+    doPosts (exportsArcp, 
 	     numExportPacketsPerLID, 
 	     arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false), 
 	     numImportPacketsPerLID);
@@ -1099,9 +1111,22 @@ namespace Tpetra {
     // requiring that the memory locations are persisting.  However,
     // they need only persist within the scope of that routine, so it
     // is safe for us to use nonpersisting references in this case.
-    doReversePosts (arcp<const Packet> (exports.getRawPtr(), 0, exports.size(), false),
-		    numPackets, 
-		    arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false));
+
+    // mfh 04 Apr 2012: For some reason, calling arcp<const Packet>
+    // for Packet=std::complex<T> (e.g., T=float) fails to compile
+    // with some versions of GCC.  The issue only arises with the
+    // exports array.  This is why we construct a separate nonowning
+    // ArrayRCP.
+    typedef typename ArrayRCP<const Packet>::size_type size_type;
+    ArrayRCP<const Packet> exportsArcp (exports.getRawPtr(), as<size_type> (0),
+					exports.size(), false);
+    // mfh 04 Apr 2012: This is the offending code.  This statement
+    // would normally be in place of "exportsArcp" in the
+    // doReversePosts() call below.
+    //arcp<const Packet> (exports.getRawPtr(), 0, exports.size(), false)
+    doReversePosts (exportsArcp,
+    		    numPackets, 
+    		    arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false));
     doReverseWaits();
   }
 
