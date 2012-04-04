@@ -123,6 +123,11 @@ namespace stk {
 
     struct SierraPort {};
 
+    /// signifies a part that has been defined automatically during adaptivity
+    struct STK_Adapt_Auto_Part {};
+    extern STK_Adapt_Auto_Part stk_adapt_auto_part;
+
+
     /// The base class for all refinement patterns
     /// ------------------------------------------------------------------------------------------------------------------------
     //template< typename ToTopology >
@@ -159,14 +164,14 @@ namespace stk {
       stk::mesh::PartVector m_toParts;
       const std::string m_appendConvertString; //="_urpconv_"
       const std::string m_appendOriginalString; //="_urporig_100000"
-      const std::string m_oldElementsPartName;
+      static const std::string m_oldElementsPartName;
       stk::mesh::EntityRank m_primaryEntityRank;
     public:
       //typedef ToTopology TTopo;
 
       UniformRefinerPatternBase() : m_appendConvertString("_urpconv"),
                                     m_appendOriginalString(percept::PerceptMesh::s_omit_part+"_1000"),  // _100000
-                                    m_oldElementsPartName("urp_oldElements"),
+                                    //m_oldElementsPartName("urp_oldElements"),
                                     m_primaryEntityRank(stk::mesh::fem::FEMMetaData::INVALID_RANK)
       {
         Elem::StdMeshObjTopologies::bootstrap();
@@ -231,7 +236,7 @@ namespace stk {
       stk::mesh::PartVector& getFromParts() { return m_fromParts; }
       const std::string& getAppendConvertString() { return m_appendConvertString; }
       const std::string& getAppendOriginalString() { return m_appendOriginalString; }
-      const std::string& getOldElementsPartName() { return m_oldElementsPartName; }
+      static const std::string& getOldElementsPartName() { return m_oldElementsPartName; }
 
       /// utilities
       /// ---------
@@ -307,7 +312,6 @@ namespace stk {
 
 
     };
-
     /// Utility intermediate base class providing more support for standard refinement operations
     /// ------------------------------------------------------------------------------------------------------------------------
 
@@ -2429,7 +2433,9 @@ namespace stk {
             stk::mesh::Part* new_nodes_part = eMesh.getNonConstPart("refine_new_nodes_part");
             if (!new_nodes_part)
               {
-                eMesh.getFEM_meta_data()->declare_part("refine_new_nodes_part", mesh::fem::FEMMetaData::NODE_RANK);
+                stk::mesh::Part& part = eMesh.getFEM_meta_data()->declare_part("refine_new_nodes_part", mesh::fem::FEMMetaData::NODE_RANK);
+                mesh::MetaData & meta = mesh::MetaData::get(part);
+                meta.declare_attribute_no_delete(part, &stk_adapt_auto_part);
               }
           }
 
@@ -2439,12 +2445,16 @@ namespace stk {
             stk::mesh::Part* active_elements_part = eMesh.getNonConstPart("refine_active_elements_part");
             if (!active_elements_part)
               {
-                eMesh.getFEM_meta_data()->declare_part("refine_active_elements_part", eMesh.element_rank());
+                stk::mesh::Part& part = eMesh.getFEM_meta_data()->declare_part("refine_active_elements_part", eMesh.element_rank());
+                mesh::MetaData & meta = mesh::MetaData::get(part);
+                meta.declare_attribute_no_delete(part, &stk_adapt_auto_part);
               }
             stk::mesh::Part* inactive_elements_part = eMesh.getNonConstPart("refine_inactive_elements_part");
             if (!inactive_elements_part)
               {
-                eMesh.getFEM_meta_data()->declare_part("refine_inactive_elements_part", eMesh.element_rank());
+                stk::mesh::Part& part = eMesh.getFEM_meta_data()->declare_part("refine_inactive_elements_part", eMesh.element_rank());
+                mesh::MetaData & meta = mesh::MetaData::get(part);
+                meta.declare_attribute_no_delete(part, &stk_adapt_auto_part);
               }
           }
 
@@ -2559,7 +2569,7 @@ namespace stk {
                           }
                       }
                   }
-                bool isOldElementsPart = ( (part->name()).find(m_oldElementsPartName) != std::string::npos);
+                bool isOldElementsPart = ( (part->name()).find(UniformRefinerPatternBase::m_oldElementsPartName) != std::string::npos);
                 doThisPart = doThisPart && ( part->primary_entity_rank() == m_primaryEntityRank );
                 doThisPart = doThisPart && !isOldElementsPart;
 
@@ -2614,7 +2624,7 @@ namespace stk {
                           }
 
 
-                        if (!((part->name()).find(m_oldElementsPartName) != std::string::npos))
+                        if (!((part->name()).find(UniformRefinerPatternBase::getOldElementsPartName()) != std::string::npos))
                           //if (!(part->name() == m_oldElementsPartName+toString(m_primaryEntityRank)))
                           {
                             if (0) std::cout << "tmp setNeededParts:: fromPart = " << part->name() << " toPart = " << block_to->name() << std::endl;
@@ -2630,7 +2640,7 @@ namespace stk {
 
         {
           stk::mesh::PartVector all_parts = eMesh.getFEM_meta_data()->get_parts();
-          std::string oldPartName = m_oldElementsPartName+toString(m_primaryEntityRank);
+          std::string oldPartName = UniformRefinerPatternBase::getOldElementsPartName() + toString(m_primaryEntityRank);
           bool foundOldPart = false;
           for (mesh::PartVector::iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
             {
@@ -2643,7 +2653,11 @@ namespace stk {
             }
 
           if (!foundOldPart)
-            eMesh.getFEM_meta_data()->declare_part(oldPartName, m_primaryEntityRank);
+            {
+              stk::mesh::Part& part = eMesh.getFEM_meta_data()->declare_part(oldPartName, m_primaryEntityRank);
+              mesh::MetaData & meta = mesh::MetaData::get(part);
+              meta.declare_attribute_no_delete(part, &stk_adapt_auto_part);
+            }
         }
 
 

@@ -1223,12 +1223,14 @@ namespace stk {
         }
 
       m_eMesh.getBulkData()->modification_begin();
+      SidePartMap side_part_map;
+      get_side_part_relations(false, side_part_map);
 #if PERCEPT_USE_FAMILY_TREE
       removeFamilyTrees();
 #endif
       //std::cout << "tmp removeElements(parents) size= " << parents.size() << std::endl;
       removeElements(parents);
-      fix_side_sets_2();
+      fix_side_sets_3(false, side_part_map);
 
       m_eMesh.getBulkData()->modification_end();
 
@@ -2783,6 +2785,246 @@ namespace stk {
       //std::cout << "tmp fix_side_sets_1 ...end" << std::endl;
     }
 
+    // determine side part to elem part relations
+    void Refiner::
+    get_side_part_relations(bool checkParentChild, SidePartMap& side_part_map)
+    {
+      EXCEPTWATCH;
+      std::cout << "get_side_part_relations start...\n";
+
+      stk::mesh::EntityRank node_rank = m_eMesh.node_rank();
+      stk::mesh::EntityRank edge_rank = m_eMesh.edge_rank();
+      stk::mesh::EntityRank side_rank = m_eMesh.side_rank();
+      stk::mesh::EntityRank element_rank = m_eMesh.element_rank();
+
+      int spatialDim = m_eMesh.getSpatialDim();
+
+      unsigned side_rank_iter_begin = side_rank;
+      unsigned side_rank_iter_end = side_rank;
+      if (spatialDim == 3)
+        {
+          side_rank_iter_begin = edge_rank;
+        }
+
+      // get super-relations (side_part.name() --> elem_part.name())
+      for (unsigned side_rank_iter = side_rank_iter_begin; side_rank_iter <= side_rank_iter_end; side_rank_iter++)
+        {
+          const vector<stk::mesh::Bucket*> & side_buckets = m_eMesh.getBulkData()->buckets( side_rank_iter );
+          for ( vector<stk::mesh::Bucket*>::const_iterator it_side_bucket = side_buckets.begin() ; it_side_bucket != side_buckets.end() ; ++it_side_bucket )
+            {
+              stk::mesh::Bucket & side_bucket = **it_side_bucket ;
+              stk::mesh::PartVector side_parts;
+              side_bucket.supersets(side_parts);
+              if (0)
+                for (unsigned isp=0; isp < side_parts.size(); isp++)
+                  {
+                    std::cout << "side_part= " << side_parts[isp]->name() << std::endl;
+                  }
+
+              const unsigned num_elements_in_side_bucket = side_bucket.size();
+              for (unsigned i_side = 0; i_side < num_elements_in_side_bucket; i_side++)
+                {
+                  stk::mesh::Entity& side = side_bucket[i_side];
+
+                  if (m_eMesh.isGhostElement(side))
+                    continue;
+
+                  if (side.relations(node_rank).size() == 0)
+                    continue;
+
+                  if (side.relations(element_rank).size() > 1)
+                    {
+                      std::cout << "get_side_part_relations: too many side relations" << std::endl;
+                      throw std::logic_error("get_side_part_relations: too many side relations");
+                    }
+
+                  bool isLeafElement = !checkParentChild || m_eMesh.isLeafElement(side);
+                  if (isLeafElement)
+                    {
+                      stk::mesh::PairIterRelation side_to_elem_rels = side.relations(element_rank);
+                      for (unsigned irel = 0; irel < side_to_elem_rels.size(); irel++)
+                        {
+                          stk::mesh::Entity& elem = *side_to_elem_rels[irel].entity();
+                          stk::mesh::PartVector elem_parts;
+                          elem.bucket().supersets(elem_parts);
+                          for (unsigned isp=0; isp < side_parts.size(); isp++)
+                            {
+                              if ( stk::mesh::is_auto_declared_part(*side_parts[isp]) )
+                                continue;
+                              const CellTopologyData *const topology = stk::percept::PerceptMesh::get_cell_topology(*side_parts[isp]);
+                              if (!topology)
+                                continue;
+
+                              for (unsigned iep=0; iep < elem_parts.size(); iep++)
+                                {
+                                  if ( stk::mesh::is_auto_declared_part(*elem_parts[iep]) )
+                                    continue;
+
+                                  //if (elem_parts[iep]->name().find(UniformRefinerPatternBase::getOldElementsPartName()) != std::string::npos)
+                                  //  continue;
+
+                                  const STK_Adapt_Auto_Part *auto_part = elem_parts[iep]->attribute<STK_Adapt_Auto_Part>();
+                                  if (elem_parts[iep]->name().find(UniformRefinerPatternBase::getOldElementsPartName()) != std::string::npos)
+                                    {
+                                      if (!auto_part) throw std::runtime_error("Refiner::get_side_part_relations: bad old part attribute for auto");
+                                    }
+
+                                  if (auto_part) 
+                                    {
+                                      continue;
+                                    }
+
+                                  if (elem_parts[iep] != side_parts[isp])
+                                    {
+                                      SidePartMap::iterator found = side_part_map.find(side_parts[isp]);
+                                      if (found != side_part_map.end())
+                                        {
+                                          if (found->second != elem_parts[iep])
+                                            {
+                                              std::cout << "side_part = " << side_parts[isp]->name() 
+                                                        << " elem_part = " << elem_parts[iep]->name()
+                                                        << " found_elem_part = " << found->second
+                                                        << std::endl;
+                                              throw std::runtime_error("Refiner::get_side_part_relations: too many side_part to elem_part relations");
+                                            }
+                                        }
+                                      side_part_map[side_parts[isp]] = elem_parts[iep];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+      if (1)
+        {
+          SidePartMap::iterator iter;
+          for (iter = side_part_map.begin(); iter != side_part_map.end(); iter++)
+            {
+              std::cout << "Refiner::get_side_part_relations: side_part = " << iter->first->name() << " elem_part= " << iter->second->name() << std::endl;
+            }
+          //exit(1);
+        }
+      std::cout << "get_side_part_relations ... done\n";
+    }
+
+    // fast reconnector - checks for which super-connections are valid (from the original mesh, look
+    //   at which side-part touches which element-part, save the info), and reconnects found side/elem matches.
+    void Refiner::
+    fix_side_sets_3(bool checkParentChild, SidePartMap& side_part_map)
+    {
+      EXCEPTWATCH;
+
+      std::cout << "tmp fix_side_sets_3 start... checkParentChild= " <<  checkParentChild << std::endl;
+
+      stk::mesh::EntityRank node_rank = m_eMesh.node_rank();
+      stk::mesh::EntityRank edge_rank = m_eMesh.edge_rank();
+      stk::mesh::EntityRank side_rank = m_eMesh.side_rank();
+      stk::mesh::EntityRank element_rank = m_eMesh.element_rank();
+
+      int spatialDim = m_eMesh.getSpatialDim();
+
+      //const unsigned FAMILY_TREE_RANK = m_eMesh.element_rank() + 1u;
+      //const vector<stk::mesh::Bucket*> & family_tree_buckets = m_eMesh.getBulkData()->buckets( FAMILY_TREE_RANK );
+      //bool have_family_tree = family_tree_buckets.size() > 0;
+
+      //std::cout << "tmp fix_side_sets_3 side_rank= " << side_rank << " element_rank= " << element_rank << std::endl;
+
+      // loop over all sides that are leaves (not parent or have no family tree), 
+      //   loop over their nodes and their associated elements,
+      //     connect element and side if they share a face
+
+      unsigned side_rank_iter_begin = side_rank;
+      unsigned side_rank_iter_end = side_rank;
+      if (spatialDim == 3)
+        {
+          side_rank_iter_begin = edge_rank;
+        }
+
+      for (unsigned side_rank_iter = side_rank_iter_begin; side_rank_iter <= side_rank_iter_end; side_rank_iter++)
+        {
+          SetOfEntities side_set;
+          int connections=0;
+
+          const vector<stk::mesh::Bucket*> & side_buckets = m_eMesh.getBulkData()->buckets( side_rank_iter );
+          for ( vector<stk::mesh::Bucket*>::const_iterator it_side_bucket = side_buckets.begin() ; it_side_bucket != side_buckets.end() ; ++it_side_bucket )
+            {
+              stk::mesh::Bucket & side_bucket = **it_side_bucket ;
+              const unsigned num_elements_in_side_bucket = side_bucket.size();
+              for (unsigned i_side = 0; i_side < num_elements_in_side_bucket; i_side++)
+                {
+                  stk::mesh::Entity& side = side_bucket[i_side];
+
+                  if (m_eMesh.isGhostElement(side))
+                    continue;
+
+                  if (side.relations(node_rank).size() == 0)
+                    continue;
+
+                  if (side.relations(element_rank).size() > 1)
+                    {
+                      std::cout << "fix_side_sets_3: too many side relations" << std::endl;
+                      throw std::logic_error("fix_side_sets_3: too many side relations");
+                    }
+
+                  bool isLeafElement = !checkParentChild || m_eMesh.isLeafElement(side);
+                  if (!isLeafElement)
+                    continue;
+
+                  side_set.insert(&side);
+                }
+            }
+      
+          for (SetOfEntities::iterator it_side=side_set.begin(); it_side != side_set.end(); ++it_side)
+            {
+              stk::mesh::Entity& side = **it_side;
+
+              bool found = false;
+
+              stk::mesh::PairIterRelation side_nodes = side.relations(node_rank);
+
+              for (unsigned isnode=0; isnode < side_nodes.size(); isnode++)
+                {
+                  stk::mesh::PairIterRelation node_elements = side_nodes[isnode].entity()->relations(element_rank);
+                  for (unsigned ienode=0; ienode < node_elements.size(); ienode++)
+                    {
+                      stk::mesh::Entity& element = *node_elements[ienode].entity();
+
+                      if (element.relations(node_rank).size() == 0)
+                        continue;
+                      if (m_eMesh.isGhostElement(element))
+                        continue;
+
+                      // FIXME
+                      bool isLeafElement = !checkParentChild || m_eMesh.isLeafElement(element);
+                      if (isLeafElement)
+                        {
+                          if (connectSides(&element, &side, &side_part_map))
+                            {
+                              ++connections;
+                              found = true;
+                            }
+                        }
+                      if (found) break;
+                    }
+                  if (found) break;
+                }
+
+              if (!found)
+                {
+                  std::cout << "ERROR: side = " << side << std::endl;
+                  throw std::logic_error("fix_side_sets_3 error 2");
+                }
+            }
+          std::cout << "Refiner::fix_side_sets_3 number of connections for side_rank= " << side_rank_iter << " = " << connections << std::endl;
+          
+        }
+
+      std::cout << "tmp fix_side_sets_3 ...end" << std::endl;
+    }
+
     // fast check if side elems have relations to elements and vice versa
     void Refiner::
     fix_side_sets_2()
@@ -2811,7 +3053,6 @@ namespace stk {
         }
       for (unsigned side_rank_iter = side_rank_iter_begin; side_rank_iter <= side_rank_iter_end; side_rank_iter++)
         {
-          typedef std::set<stk::mesh::Entity *> SetOfEntities;
           SetOfEntities side_set;
 
           const vector<stk::mesh::Bucket*> & side_buckets = m_eMesh.getBulkData()->buckets( side_rank_iter );
@@ -2891,16 +3132,59 @@ namespace stk {
 
       // FIXME - cleanup, remove all old code
 
-      fix_side_sets_2();
+      std::cout << "fixElementSides1 " << std::endl;
+      SidePartMap side_part_map;
+      // we don't check parent child here so we can pick up the original elements
+      // FIXME - should we have option of checking parent, child, parent|child, etc?
+      get_side_part_relations(false, side_part_map);
+      fix_side_sets_3(true, side_part_map);
 
     }
 
     // if the element (element) has a side that matches  the given side (side_elem), connect them but first delete old connections
-    bool Refiner::connectSides(stk::mesh::Entity *element, stk::mesh::Entity *side_elem)
+    bool Refiner::connectSides(stk::mesh::Entity *element, stk::mesh::Entity *side_elem, SidePartMap *side_part_map)
     {
       EXCEPTWATCH;
       shards::CellTopology element_topo(stk::percept::PerceptMesh::get_cell_topology(*element));
       unsigned element_nsides = (unsigned)element_topo.getSideCount();
+
+      // check validity of connection 
+      if (side_part_map)
+        {
+          bool valid = false;
+          stk::mesh::PartVector side_parts, elem_parts;
+          element->bucket().supersets(elem_parts);
+          side_elem->bucket().supersets(side_parts);
+          for (unsigned isp = 0; isp < side_parts.size(); isp++)
+            {
+              if ( stk::mesh::is_auto_declared_part(*side_parts[isp]) )
+                continue;
+              const CellTopologyData *const topology = stk::percept::PerceptMesh::get_cell_topology(*side_parts[isp]);
+              if (!topology)
+                continue;
+
+              SidePartMap::iterator found = side_part_map->find(side_parts[isp]);
+              if (found == side_part_map->end())
+                {
+                  //std::cout << "side_part = " << side_parts[isp]->name() << std::endl;
+                  //throw std::runtime_error("Refiner::connectSides: couldn't find side map part");
+                  continue;
+                }
+              //std::string& elem_part_name = found->second->name();
+              for (unsigned iep = 0; iep < elem_parts.size(); iep++)
+                {
+                  if ( stk::mesh::is_auto_declared_part(*elem_parts[iep]) )
+                    continue;
+                  //if (elem_parts[iep]->name() == elem_part_name)
+                  if (elem_parts[iep] == found->second)
+                    {
+                      valid = true;
+                      break;
+                    }
+                }
+            }
+          if (!valid) return false;
+        }
 
       // special case for shells
       int topoDim = UniformRefinerPatternBase::getTopoDim(element_topo);

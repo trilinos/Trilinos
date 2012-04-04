@@ -54,6 +54,8 @@ namespace stk {
   namespace adapt {
 
     typedef std::set<stk::mesh::Entity *> ElementUnrefineCollection;
+    typedef std::map<stk::mesh::Part*, stk::mesh::Part*> SidePartMap;
+    //typedef std::map<std::string, std::string> SidePartMap;
 
     using std::vector;
     using std::map;
@@ -174,8 +176,12 @@ namespace stk {
       void check_sidesets_2(std::string msg);
       void fix_side_sets_1();
       void fix_side_sets_2();
+      void fix_side_sets_3(bool checkParentChild, SidePartMap& side_part_map);
 
-      bool connectSides(stk::mesh::Entity *element, stk::mesh::Entity *side_elem);
+      /// determine side part to elem part relations
+      void get_side_part_relations(bool checkParentChild, SidePartMap& side_part_map);
+
+      bool connectSides(stk::mesh::Entity *element, stk::mesh::Entity *side_elem, SidePartMap* side_part_map=0);
       void fixElementSides2();
       void fixSides(stk::mesh::Entity *parent);
 
