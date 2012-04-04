@@ -731,7 +731,7 @@ int Epetra_CrsGraph::FillComplete(const Epetra_BlockMap& domainMap, const Epetra
   CrsGraphData_->DomainMap_ = domainMap;
   CrsGraphData_->RangeMap_ = rangeMap;
 
-  MakeIndicesLocal(domainMap, rangeMap); // Convert indices to zero based on each processor
+  MakeIndicesLocal(domainMap, rangeMap); // Convert global indices to local indices to on each processor
   SortIndices();  // Sort column entries from smallest to largest
   RemoveRedundantIndices(); // Get rid of any redundant index values
   DetermineTriangular(); //determine if lower/upper triangular
