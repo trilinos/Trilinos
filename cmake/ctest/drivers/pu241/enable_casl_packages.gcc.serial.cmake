@@ -1,7 +1,6 @@
 SET(${PROJECT_NAME}_PACKAGES
   CTeuchos
   ForTeuchos
-  Coupler
   DataTransferKit
   STARCCM
   DeCART
