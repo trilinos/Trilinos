@@ -33,9 +33,12 @@ CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Coa
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
   currentLevel.DeclareInput("A", AFact_.get(), this);
-  //currentLevel.DeclareInput("Nullspace", nullspaceFact_.get(), this); //FIXME JJH
-  //currentLevel.DeclareInput("Nullspace"); //FIXME JJH
-  currentLevel.Request("Nullspace"); //FIXME JJH
+
+  if (currentLevel.GetLevelID() == 0) //FIXME
+    currentLevel.DeclareInput("Nullspace", NoFactory::get(), this);
+  else
+    currentLevel.DeclareInput("Nullspace", nullspaceFact_.get(), this);
+
   if(fixedBlkSize_ == false && currentLevel.GetLevelID() == 0)
     currentLevel.DeclareInput("VariableBlockSizeInfo", MueLu::NoFactory::get(), this);
 }
@@ -57,8 +60,11 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
 
   RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
 
-  //RCP<MultiVector> nullspace  = currentLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get()); //FIXME JJH
-  RCP<MultiVector> nullspace  = currentLevel.Get< RCP<MultiVector> >("Nullspace"); //FIXME JJH
+  RCP<MultiVector> nullspace;
+  if (currentLevel.GetLevelID() == 0) //FIXME
+    nullspace  = currentLevel.Get< RCP<MultiVector> >("Nullspace", NoFactory::get()); // use user-nullspace by default (same mecanism as in Level::GetFactory, but for explicitly defined generating factory)
+  else
+    nullspace  = currentLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
 
   LocalOrdinal blockdim = 1; // block dim for fixed size blocks
 

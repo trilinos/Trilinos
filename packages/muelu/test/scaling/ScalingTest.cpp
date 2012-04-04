@@ -32,6 +32,7 @@
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Exceptions.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_UCAggregationFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
@@ -262,7 +263,6 @@ int main(int argc, char *argv[]) {
       permRFactory = rcp( new PermutedTransferFactory(RepartitionFact, Acfact, Rfact, MueLu::RESTRICTION, PtentFact, mvTransFact));
       AcfactFinal = rcp( new RAPFactory(permPFactory,permRFactory) );
 
-
     } else {
   
         H->SetImplicitTranspose(true);
@@ -310,9 +310,14 @@ int main(int argc, char *argv[]) {
 
     M.SetFactory("A",AcfactFinal);
     M.SetFactory("Smoother",SmooFact);
+
+    RCP<CoalesceDropFactory> GraphFact = rcp(new CoalesceDropFactory(Teuchos::null, PtentFact)); /* do not use the permuted nullspace (otherwise, circular dependencies) */
+    M.SetFactory("Graph", GraphFact);
+
     if (useExplicitR) {
       M.SetFactory("P",permPFactory);
       M.SetFactory("R",permRFactory);
+      M.SetFactory("Nullspace", permRFactory);
     } else {
       M.SetFactory("P",SaPfact);
       M.SetFactory("R",Rfact);

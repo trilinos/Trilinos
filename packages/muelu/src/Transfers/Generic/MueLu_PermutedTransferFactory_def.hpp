@@ -40,10 +40,13 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void PermutedTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     coarseLevel.DeclareInput("A", initialAFact_.get(),this);
-    if (PorR_ == MueLu::INTERPOLATION)
+    if (PorR_ == MueLu::INTERPOLATION) {
       coarseLevel.DeclareInput("P",initialTransferFact_.get(),this);
-    else
+    } else {
       coarseLevel.DeclareInput("R",initialTransferFact_.get(),this);
+      coarseLevel.DeclareInput("Nullspace",nullspaceFact_.get(),this);
+    }
+
     coarseLevel.DeclareInput("Permutation",repartitionFact_.get(),this);
   }
 
@@ -80,7 +83,7 @@ namespace MueLu {
     try {
       permMatrix = coarseLevel.Get< RCP<Operator> >("Permutation",repartitionFact_.get());
     }
-    catch(Teuchos::ExceptionBase e) {
+    catch(MueLu::Exceptions::HaltRepartitioning e) {
       std::string gridTransferType;
       GetOStream(Warnings0, 0) <<  "Skipping permuting of "
                                << ((PorR_ == MueLu::INTERPOLATION) ? "prolongator" : "restriction")
@@ -140,16 +143,21 @@ namespace MueLu {
               permMatrix->apply(*coords,*permutedCoords,Teuchos::NO_TRANS,1,0);
               coarseLevel.Set< RCP<MultiVector> >("Coordinates",permutedCoords); //FIXME JJH no generating factory specified
             }
-            if (coarseLevel.IsAvailable("Nullspace")) {
+            if (coarseLevel.IsAvailable("Nullspace",nullspaceFact_.get())) {
               SubFactoryMonitor m2(*this, "Permuting nullspace", coarseLevel.GetLevelID());
-              //RCP<MultiVector> nullspace  = coarseLevel.Get< RCP<MultiVector> >("Nullspace",nullspaceFact_.get());
-              RCP<MultiVector> nullspace  = coarseLevel.Get< RCP<MultiVector> >("Nullspace");
+              RCP<MultiVector> nullspace  = coarseLevel.Get< RCP<MultiVector> >("Nullspace",nullspaceFact_.get());
               RCP<MultiVector> permutedNullspace  = MultiVectorFactory::Build(permMatrix->getRangeMap(),nullspace->getNumVectors());
               permMatrix->apply(*nullspace,*permutedNullspace,Teuchos::NO_TRANS,1,0);
-              coarseLevel.Set< RCP<MultiVector> >("Nullspace",permutedNullspace); //FIXME no generating factory specified
+              coarseLevel.Set< RCP<MultiVector> >("Nullspace",permutedNullspace, this);
             }
           } else {
             coarseLevel.Set< RCP<Operator> >("R",originalR,this);
+
+            if (coarseLevel.IsAvailable("Nullspace",nullspaceFact_.get())) {
+              RCP<MultiVector> nullspace  = coarseLevel.Get< RCP<MultiVector> >("Nullspace",nullspaceFact_.get());
+              coarseLevel.Set< RCP<MultiVector> >("Nullspace",nullspace, this);
+            }
+
           }
         }
         break;

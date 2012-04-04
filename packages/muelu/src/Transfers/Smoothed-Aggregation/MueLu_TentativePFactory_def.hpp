@@ -30,11 +30,9 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level & fineLevel, Level & coarseLevel) const {
-
     fineLevel.DeclareInput("A", AFact_.get(), this);
     fineLevel.DeclareInput("Aggregates", aggregatesFact_.get(), this);
-    //fineLevel.DeclareInput("Nullspace",  nullspaceFact_.get(), this);
-    fineLevel.Request("Nullspace");
+    fineLevel.DeclareInput("Nullspace",  nullspaceFact_.get(), this);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -53,14 +51,9 @@ namespace MueLu {
 
     FactoryMonitor m(*this, "Tentative prolongator", coarseLevel);
 
+#ifdef DEBUG_ME
 RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 fos->setOutputToRootOnly(-1);
-
-//FIXME
- if ((fineLevel.GetLevelID() == 0) && (!fineLevel.IsAvailable("Nullspace"))) {
-   NullspaceFactory nsFac;
-   nsFac.Build(fineLevel);
- }
 
  RCP<MultiVector> nstmp  = fineLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
 
@@ -69,7 +62,10 @@ fos->setOutputToRootOnly(-1);
     nstmp = Teuchos::null;
     //sleep(1); comm->barrier();
     // get data from fine level
-    RCP<Operator>    A          = fineLevel.Get< RCP<Operator> >("A", AFact_.get());
+#endif
+
+    RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A", AFact_.get());
+
     /*
     RCP<Operator>    A;
     for (int i=0; i<comm->getSize(); ++i) {
@@ -110,9 +106,7 @@ fos->setOutputToRootOnly(-1);
 #endif
 
     // Level Set
-    //coarseLevel.Set("Nullspace", coarseNullspace, nullspaceFact_.get()); //FIXME !!!!
-    //coarseLevel.Set("Nullspace", coarseNullspace, this);
-    coarseLevel.Set("Nullspace", coarseNullspace);
+    coarseLevel.Set("Nullspace", coarseNullspace, this);
     coarseLevel.Set("P", Ptentative, this);
   }
 
