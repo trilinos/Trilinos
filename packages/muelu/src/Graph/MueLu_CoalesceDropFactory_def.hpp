@@ -34,9 +34,9 @@ template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, clas
 void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
   currentLevel.DeclareInput("A", AFact_.get(), this);
 
-  if (currentLevel.GetLevelID() == 0) //FIXME
-    currentLevel.DeclareInput("Nullspace", NoFactory::get(), this);
-  else
+  if ((currentLevel.GetLevelID() == 0) && currentLevel.IsAvailable("Nullspace", NoFactory::get())) // always use user-defined nullspace by default and ignore nullspaceFact //FIXME
+    currentLevel.DeclareInput("Nullspace", NoFactory::get(), this);                                // (same mecanism as in Level::GetFactory, but for explicitly defined generating factory)
+  else 
     currentLevel.DeclareInput("Nullspace", nullspaceFact_.get(), this);
 
   if(fixedBlkSize_ == false && currentLevel.GetLevelID() == 0)
@@ -61,8 +61,8 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
   RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
 
   RCP<MultiVector> nullspace;
-  if (currentLevel.GetLevelID() == 0) //FIXME
-    nullspace  = currentLevel.Get< RCP<MultiVector> >("Nullspace", NoFactory::get()); // use user-nullspace by default (same mecanism as in Level::GetFactory, but for explicitly defined generating factory)
+  if ((currentLevel.GetLevelID() == 0) && currentLevel.IsAvailable("Nullspace", NoFactory::get())) // always use user-defined nullspace by default and ignore nullspaceFact //FIXME         
+    nullspace  = currentLevel.Get< RCP<MultiVector> >("Nullspace", NoFactory::get());              // (same mecanism as in Level::GetFactory, but for explicitly defined generating factory)
   else
     nullspace  = currentLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
 
