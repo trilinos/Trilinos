@@ -86,7 +86,11 @@ using Teuchos::rcp;
 #include "Teuchos_OpaqueWrapper.hpp"
 
 #include "Thyra_EpetraLinearOp.hpp"
+#include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_TpetraThyraWrappers.hpp"
+#include "Thyra_TpetraVector.hpp"
+#include "Thyra_TpetraVectorSpace.hpp"
+
 #include "Thyra_LinearOpTester.hpp"
 
 #include <cstdio> // for get char
@@ -98,6 +102,9 @@ namespace panzer {
 
   Teuchos::RCP<const Thyra::LinearOpBase<double> >  eLinearOp;
   Teuchos::RCP<const Thyra::LinearOpBase<double> >  tLinearOp;
+
+  Teuchos::RCP<const Thyra::VectorBase<double> >  eVector;
+  Teuchos::RCP<const Thyra::VectorBase<double> >  tVector;
 
   TEUCHOS_UNIT_TEST(assembly_engine, basic_epetra)
   {
@@ -220,6 +227,7 @@ namespace panzer {
     //input.j->Print(std::cout);
 
     eLinearOp = Thyra::epetraLinearOp(eGlobal->A);
+    eVector = Thyra::create_Vector(eGlobal->f,eLinearOp->range());
   }
 
   TEUCHOS_UNIT_TEST(assembly_engine, basic_tpetra)
@@ -348,7 +356,10 @@ namespace panzer {
     Teuchos::RCP<const Tpetra::Operator<double,int,int> > baseOp = globalCont->A;
     Teuchos::RCP<const Thyra::VectorSpaceBase<double> > rangeSpace = Thyra::createVectorSpace<double>(baseOp->getRangeMap());
     Teuchos::RCP<const Thyra::VectorSpaceBase<double> > domainSpace = Thyra::createVectorSpace<double>(baseOp->getDomainMap());
+
     tLinearOp = Thyra::constTpetraLinearOp<double,int,int>(rangeSpace, domainSpace, baseOp);
+    tVector = Thyra::constTpetraVector<double,int,int>(Thyra::tpetraVectorSpace<double,int,int>(baseOp->getRangeMap()).getConst(),
+                                                       globalCont->f.getConst());
   }
 
   TEUCHOS_UNIT_TEST(assembly_engine, z_basic_epetra_vtpetra)
@@ -356,16 +367,27 @@ namespace panzer {
      TEUCHOS_ASSERT(tLinearOp!=Teuchos::null);
      TEUCHOS_ASSERT(eLinearOp!=Teuchos::null);
 
+     TEUCHOS_ASSERT(tVector!=Teuchos::null);
+     TEUCHOS_ASSERT(eVector!=Teuchos::null);
+
      Thyra::LinearOpTester<double> tester;
      tester.set_all_error_tol(1e-14);
      tester.show_all_tests(true);
      tester.dump_all(true);
-     // tester.enable_all_tests(false);
-     // tester.check_linear_properties(true);
+     tester.num_random_vectors(200);
 
      {
-        std::stringstream ss;
         const bool result = tester.compare( *tLinearOp, *eLinearOp, &out );
+        TEST_ASSERT(result);
+     }
+
+     {
+        const bool result = Thyra::testRelNormDiffErr(
+           "Tpetra",*tVector,
+           "Epetra",*eVector,
+           "linear_properties_error_tol()", 1e-14,
+           "linear_properties_warning_tol()", 1e-14,
+           &out);
         TEST_ASSERT(result);
      }
   }
