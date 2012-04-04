@@ -45,9 +45,11 @@ namespace Xpetra {
     { 
       typedef Xpetra::StridedMap<LocalOrdinal,GlobalOrdinal,Node> StridedMapClass;
       // check input data and reorganize map
-
-      global_size_t numGlobalNodes = numGlobalElements / StridedMapClass::getFixedBlockSize();	// number of nodes (over all processors)
       
+      global_size_t numGlobalNodes = Teuchos::OrdinalTraits<global_size_t>::invalid();
+      if(numGlobalElements != Teuchos::OrdinalTraits<global_size_t>::invalid())
+        numGlobalNodes = numGlobalElements / StridedMapClass::getFixedBlockSize();	// number of nodes (over all processors)
+
       // build an equally distributed node map
       RCP<Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > nodeMap = Teuchos::rcp(new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalNodes, indexBase, comm, toTpetra(lg), node));
       
@@ -55,20 +57,20 @@ namespace Xpetra {
       size_t nStridedOffset = 0;
       size_t nDofsPerNode = StridedMapClass::getFixedBlockSize(); // dofs per node for local striding block
       if(stridedBlockId > -1) {
-	// determine nStridedOffset
-	for(int j=0; j<stridedBlockId; j++) {
-	  nStridedOffset += stridingInfo[j];
-	}
-	nDofsPerNode = stridingInfo[stridedBlockId];
-	
-	numGlobalElements = nodeMap->getGlobalNumElements()*Teuchos::as<global_size_t>(nDofsPerNode);
+        // determine nStridedOffset
+        for(int j=0; j<stridedBlockId; j++) {
+          nStridedOffset += stridingInfo[j];
+        }
+        nDofsPerNode = stridingInfo[stridedBlockId];
+
+        numGlobalElements = nodeMap->getGlobalNumElements()*Teuchos::as<global_size_t>(nDofsPerNode);
       }
       std::vector<GlobalOrdinal> dofgids;
       for(LocalOrdinal i = 0; i<Teuchos::as<LocalOrdinal>(nodeMap->getNodeNumElements()); i++) {
-	GlobalOrdinal gid = nodeMap->getGlobalElement(i);
-	for(size_t dof = 0; dof < nDofsPerNode; ++dof) {
-	  dofgids.push_back(gid*Teuchos::as<GlobalOrdinal>(StridedMapClass::getFixedBlockSize()) + Teuchos::as<GlobalOrdinal>(nStridedOffset + dof));
-	}
+        GlobalOrdinal gid = nodeMap->getGlobalElement(i);
+        for(size_t dof = 0; dof < nDofsPerNode; ++dof) {
+          dofgids.push_back(gid*Teuchos::as<GlobalOrdinal>(StridedMapClass::getFixedBlockSize()) + Teuchos::as<GlobalOrdinal>(nStridedOffset + dof));
+        }
       }
       
       const Teuchos::ArrayView<const GlobalOrdinal> dofgidsview = Teuchos::ArrayView<const GlobalOrdinal>(dofgids);
@@ -76,13 +78,13 @@ namespace Xpetra {
       
       //TEUCHOS_TEST_FOR_EXCEPTION(Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::map_->getNodeNumElements() % nDofsPerNode != 0, Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
       if(stridedBlockId == -1) {
-	TEUCHOS_TEST_FOR_EXCEPTION(getNodeNumElements() != Teuchos::as<size_t>(nodeMap->getNodeNumElements()*nDofsPerNode), Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
-	TEUCHOS_TEST_FOR_EXCEPTION(getGlobalNumElements() != Teuchos::as<size_t>(nodeMap->getGlobalNumElements()*nDofsPerNode), Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
+        TEUCHOS_TEST_FOR_EXCEPTION(getNodeNumElements() != Teuchos::as<size_t>(nodeMap->getNodeNumElements()*nDofsPerNode), Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
+        TEUCHOS_TEST_FOR_EXCEPTION(getGlobalNumElements() != Teuchos::as<size_t>(nodeMap->getGlobalNumElements()*nDofsPerNode), Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
       } else {
-	TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo.size() < Teuchos::as<size_t>(stridedBlockId), Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: stridedBlockId > stridingInfo.size()");      
-	int nDofsInStridedBlock = stridingInfo[stridedBlockId];
-	TEUCHOS_TEST_FOR_EXCEPTION(getNodeNumElements() != Teuchos::as<size_t>(nodeMap->getNodeNumElements()*nDofsInStridedBlock), Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
-	TEUCHOS_TEST_FOR_EXCEPTION(getGlobalNumElements() != Teuchos::as<size_t>(nodeMap->getGlobalNumElements()*nDofsInStridedBlock), Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
+        TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo.size() < Teuchos::as<size_t>(stridedBlockId), Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: stridedBlockId > stridingInfo.size()");
+        int nDofsInStridedBlock = stridingInfo[stridedBlockId];
+        TEUCHOS_TEST_FOR_EXCEPTION(getNodeNumElements() != Teuchos::as<size_t>(nodeMap->getNodeNumElements()*nDofsInStridedBlock), Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
+        TEUCHOS_TEST_FOR_EXCEPTION(getGlobalNumElements() != Teuchos::as<size_t>(nodeMap->getGlobalNumElements()*nDofsInStridedBlock), Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
       }  
       
       TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: CheckConsistency() == false"); 
@@ -115,7 +117,9 @@ namespace Xpetra {
       typedef Xpetra::StridedMap<LocalOrdinal,GlobalOrdinal,Node> StridedMapClass;
       // check input data and reorganize map
 
-      global_size_t numGlobalNodes = numGlobalElements / StridedMapClass::getFixedBlockSize();	// number of nodes (over all processors)
+      global_size_t numGlobalNodes = Teuchos::OrdinalTraits<global_size_t>::invalid();
+      if(numGlobalElements != Teuchos::OrdinalTraits<global_size_t>::invalid())
+        numGlobalNodes = numGlobalElements / StridedMapClass::getFixedBlockSize();	// number of nodes (over all processors)
       global_size_t numLocalNodes  = numLocalElements / StridedMapClass::getFixedBlockSize();	// number of nodes (on one processor)
       
       // build an equally distributed node map
@@ -125,20 +129,20 @@ namespace Xpetra {
       size_t nStridedOffset = 0;
       size_t nDofsPerNode = StridedMapClass::getFixedBlockSize(); // dofs per node for local striding block
       if(stridedBlockId > -1) {
-	// determine nStridedOffset
-	for(int j=0; j<stridedBlockId; j++) {
-	  nStridedOffset += stridingInfo[j];
-	}
-	nDofsPerNode = stridingInfo[stridedBlockId];
-	
-	numGlobalElements = nodeMap->getGlobalNumElements()*Teuchos::as<global_size_t>(nDofsPerNode);
+        // determine nStridedOffset
+        for(int j=0; j<stridedBlockId; j++) {
+          nStridedOffset += stridingInfo[j];
+        }
+        nDofsPerNode = stridingInfo[stridedBlockId];
+
+        numGlobalElements = nodeMap->getGlobalNumElements()*Teuchos::as<global_size_t>(nDofsPerNode);
       }
       std::vector<GlobalOrdinal> dofgids;
       for(LocalOrdinal i = 0; i<Teuchos::as<LocalOrdinal>(nodeMap->getNodeNumElements()); i++) {
-	GlobalOrdinal gid = nodeMap->getGlobalElement(i);
-	for(size_t dof = 0; dof < nDofsPerNode; ++dof) {
-	  dofgids.push_back(gid*Teuchos::as<GlobalOrdinal>(StridedMapClass::getFixedBlockSize()) + Teuchos::as<GlobalOrdinal>(nStridedOffset + dof));
-	}
+        GlobalOrdinal gid = nodeMap->getGlobalElement(i);
+        for(size_t dof = 0; dof < nDofsPerNode; ++dof) {
+          dofgids.push_back(gid*Teuchos::as<GlobalOrdinal>(StridedMapClass::getFixedBlockSize()) + Teuchos::as<GlobalOrdinal>(nStridedOffset + dof));
+        }
       }
       
       const Teuchos::ArrayView<const GlobalOrdinal> dofgidsview = Teuchos::ArrayView<const GlobalOrdinal>(dofgids);
@@ -146,13 +150,13 @@ namespace Xpetra {
       
       //TEUCHOS_TEST_FOR_EXCEPTION(Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::map_->getNodeNumElements() % nDofsPerNode != 0, Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
       if(stridedBlockId == -1) {
-	TEUCHOS_TEST_FOR_EXCEPTION(getNodeNumElements() != Teuchos::as<size_t>(nodeMap->getNodeNumElements()*nDofsPerNode), Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
-	TEUCHOS_TEST_FOR_EXCEPTION(getGlobalNumElements() != Teuchos::as<size_t>(nodeMap->getGlobalNumElements()*nDofsPerNode), Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
+        TEUCHOS_TEST_FOR_EXCEPTION(getNodeNumElements() != Teuchos::as<size_t>(nodeMap->getNodeNumElements()*nDofsPerNode), Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
+        TEUCHOS_TEST_FOR_EXCEPTION(getGlobalNumElements() != Teuchos::as<size_t>(nodeMap->getGlobalNumElements()*nDofsPerNode), Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
       } else {
-	TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo.size() < Teuchos::as<size_t>(stridedBlockId), Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: stridedBlockId > stridingInfo.size()");      
-	int nDofsInStridedBlock = stridingInfo[stridedBlockId];
-	TEUCHOS_TEST_FOR_EXCEPTION(getNodeNumElements() != Teuchos::as<size_t>(nodeMap->getNodeNumElements()*nDofsInStridedBlock), Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
-	TEUCHOS_TEST_FOR_EXCEPTION(getGlobalNumElements() != Teuchos::as<size_t>(nodeMap->getGlobalNumElements()*nDofsInStridedBlock), Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
+        TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo.size() < Teuchos::as<size_t>(stridedBlockId), Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: stridedBlockId > stridingInfo.size()");
+        int nDofsInStridedBlock = stridingInfo[stridedBlockId];
+        TEUCHOS_TEST_FOR_EXCEPTION(getNodeNumElements() != Teuchos::as<size_t>(nodeMap->getNodeNumElements()*nDofsInStridedBlock), Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
+        TEUCHOS_TEST_FOR_EXCEPTION(getGlobalNumElements() != Teuchos::as<size_t>(nodeMap->getGlobalNumElements()*nDofsInStridedBlock), Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
       }  
       
       TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: CheckConsistency() == false"); 

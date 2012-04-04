@@ -24,8 +24,9 @@ namespace Xpetra {
   : EpetraMap(numGlobalElements, indexBase, comm, lg, node), StridedMap<int, int>(numGlobalElements, indexBase, stridingInfo, comm, stridedBlockId)
   {    
     // check input data and reorganize map
-
-    global_size_t numGlobalNodes = numGlobalElements / getFixedBlockSize();	// number of nodes (over all processors)
+    global_size_t numGlobalNodes = Teuchos::OrdinalTraits<global_size_t>::invalid();
+    if(numGlobalElements != Teuchos::OrdinalTraits<global_size_t>::invalid())
+      numGlobalNodes = numGlobalElements / getFixedBlockSize();	// number of nodes (over all processors)
     
     // build an equally distributed node map
     RCP<Epetra_Map> nodeMap = Teuchos::null;
@@ -37,7 +38,7 @@ namespace Xpetra {
     if(stridedBlockId > -1) {
       // determine nStridedOffset
       for(int j=0; j<stridedBlockId; j++) {
-	nStridedOffset += stridingInfo[j];
+        nStridedOffset += stridingInfo[j];
       }
       nDofsPerNode = stridingInfo[stridedBlockId];
       
@@ -47,7 +48,7 @@ namespace Xpetra {
     for(int i = 0; i<nodeMap->NumMyElements(); i++) {
       int gid = nodeMap->GID(i);
       for(int dof = 0; dof < nDofsPerNode; ++dof) {
-	dofgids.push_back(gid*getFixedBlockSize() + nStridedOffset + dof);
+        dofgids.push_back(gid*getFixedBlockSize() + nStridedOffset + dof);
       }
     }
     
@@ -77,7 +78,9 @@ namespace Xpetra {
   {
     // check input data and reorganize map
 
-    global_size_t numGlobalNodes = numGlobalElements / getFixedBlockSize();	// number of nodes (over all processors)
+    global_size_t numGlobalNodes = Teuchos::OrdinalTraits<global_size_t>::invalid();
+    if(numGlobalElements != Teuchos::OrdinalTraits<global_size_t>::invalid())
+      numGlobalElements / getFixedBlockSize();	// number of nodes (over all processors)
     size_t        numLocalNodes  = numLocalElements / getFixedBlockSize();      // number of nodes (on each processor)
     
     // build an equally distributed node map
