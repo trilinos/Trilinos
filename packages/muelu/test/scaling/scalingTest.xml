@@ -17,6 +17,11 @@
       <Parameter name="P" type="string" value="myTentativePFact"/>
     </ParameterList>
 
+    <ParameterList name="myCoalesceDropFact">
+      <Parameter name="factory" type="string" value="CoalesceDropFactory"/>
+      <Parameter name="Nullspace" type="string" value="myTentativePFact"/>
+    </ParameterList>
+
     <ParameterList name="myProlongatorFact">
       <Parameter name="factory"  type="string" value="SaPFactory"/>
       <Parameter name="InitialP" type="string" value="myTentativePFact"/>
@@ -43,6 +48,8 @@
         <Parameter name="For Coordinates" type="string" value="myCoordinateTransfertFact"/>
       </ParameterList>
     </ParameterList>
+
+
 
 <!-- -->
 <!-- -->
@@ -137,6 +144,7 @@
       <Parameter name="startLevel" type="int" value="0"/>
       <Parameter name="Smoother"   type="string" value="SymGaussSeidel"/>
       <Parameter name="Aggregates" type="string" value="myAggregationFact"/>
+      <Parameter name="Graph"      type="string" value="myCoalesceDropFact"/>
     </ParameterList>
 
     <ParameterList name="OtherLevels">
@@ -146,12 +154,13 @@
       <Parameter name="R"          type="string" value="myPermutedRestrictionFact"/> <!-- TODO: should not be needed -->
       <Parameter name="Smoother"   type="string" value="SymGaussSeidel"/>
       <Parameter name="Aggregates" type="string" value="myAggregationFact"/>
+      <Parameter name="Graph"      type="string" value="myCoalesceDropFact"/>
+      <Parameter name="Nullspace"  type="string" value="myPermutedRestrictionFact"/>
     </ParameterList>
     
     <ParameterList name="CoarsestLevel">
       <Parameter name="startLevel"   type="int" value="-1"/>
       <Parameter name="CoarseSolver" type="string" value="DirectSolver"/>
-
       <!-- TODO: check how last level is built (A,P,R) fact -->
     </ParameterList>
     

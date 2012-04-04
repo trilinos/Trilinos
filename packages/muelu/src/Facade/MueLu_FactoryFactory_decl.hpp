@@ -18,6 +18,7 @@
 #include "MueLu_FactoryManager_fwd.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
 
+#include "MueLu_CoalesceDropFactory.hpp" //TMP
 #include "MueLu_RAPFactory.hpp" //TMP
 #include "MueLu_TransPFactory.hpp" //TMP
 #include "MueLu_SaPFactory.hpp" //TMP
@@ -69,6 +70,9 @@ namespace MueLu {
       } 
 
       // TODO: see how Teko handles this.
+      if (factoryName == "CoalesceDropFactory") {
+        return BuildCoalesceDropFactory(paramList, factoryMapIn);
+      }
       if (factoryName == "TentativePFactory") {
         return BuildTentativePFactory(paramList, factoryMapIn);
       }
@@ -138,6 +142,14 @@ namespace MueLu {
 #define MUELU_FACTORY_PARAM(name, var)                                  \
     RCP<const FactoryBase> var; if (paramList.isParameter(name)) { var = BuildFactory(paramList.getEntry(name), factoryMapIn); }
     
+    //! CoalesceDropFactory
+    RCP<FactoryBase> BuildCoalesceDropFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
+      MUELU_FACTORY_PARAM("A", AFact);
+      MUELU_FACTORY_PARAM("Nullspace", NullspaceFact);
+
+      return rcp(new CoalesceDropFactory(AFact, NullspaceFact));
+    }
+
     //! TentativePFactory
     RCP<FactoryBase> BuildTentativePFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
       MUELU_FACTORY_PARAM("Aggregates", AggFact);
