@@ -83,7 +83,11 @@ namespace MueLu {
     Teuchos::ArrayRCP<LO> ComputeAggregateSizesDofs() const; //ComputeAggSizesDofs
 
     /*! @brief Compute lookup table that provides DOFs belonging to a given table */
+#ifndef ALTERNATIVE_COMPUTEAGGTOROWMAPDOFS
     void ComputeAggregateToRowMap(Teuchos::ArrayRCP<Teuchos::ArrayRCP<LO> > &aggToRowMap) const; //AggregateToRowMap
+#else
+    void ComputeAggregateToRowMap(Teuchos::ArrayRCP<Teuchos::ArrayRCP<GO> > &aggToRowMap) const; //AggregateToRowMap
+#endif
 
     /*! @brief Compute lookup table that provides DOFs belonging to a given aggregate.
 
@@ -92,10 +96,10 @@ namespace MueLu {
     This routine only works for DOF = NODE (i.e. 1 DOF per node)
 
     */
+#ifndef ALTERNATIVE_COMPUTEAGGTOROWMAPDOFS
     void ComputeAggregateToRowMapNodes(Teuchos::ArrayRCP<Teuchos::ArrayRCP<LO> > &aggToRowMap) const; //AggregateToRowMapNodes
-
-#ifdef ALTERNATIVE_COMPUTEAGGTOROWMAPDOFS
-    void ComputeAggregateToRowMapNodes2(Teuchos::ArrayRCP<Teuchos::ArrayRCP<LO> > &aggToRowMap) const; //AggregateToRowMapNodes
+#else
+    void ComputeAggregateToRowMapNodes(Teuchos::ArrayRCP<Teuchos::ArrayRCP<GO> > &aggToRowMap) const; //AggregateToRowMapNodes
 #endif
 
     /*! @brief Compute lookup table that provides DOFs belonging to a given aggregate.
@@ -105,10 +109,10 @@ namespace MueLu {
     This routine makes use of the amalgamation routine and should be able to handle #DOFs per node > 1
     Prerequisite is that globalamalblockid2myrowid_ in amalgamationData_ is set by the amalgamation method.
     */
+#ifndef ALTERNATIVE_COMPUTEAGGTOROWMAPDOFS
     void ComputeAggregateToRowMapDofs(Teuchos::ArrayRCP<Teuchos::ArrayRCP<LO> > &aggToRowMap) const; //AggregateToRowMap
-
-#ifdef ALTERNATIVE_COMPUTEAGGTOROWMAPDOFS
-    void  ComputeAggregateToRowMapDofs2(Teuchos::ArrayRCP<Teuchos::ArrayRCP<LocalOrdinal> > &aggToRowMap) const;
+#else
+    void  ComputeAggregateToRowMapDofs(Teuchos::ArrayRCP<Teuchos::ArrayRCP<GO> > &aggToRowMap) const;
 #endif
 
     //! @name Overridden from Teuchos::Describable 
