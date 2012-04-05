@@ -126,7 +126,7 @@ getQuadPoints(ordinal_type quad_order,
       quad_weights[i] = value_type(0);
       quad_points[i] = quad_points[0];
       quad_values[i].resize(this->p+1);
-      evaluateBases(quad_points[i], quad_values[i]);
+      this->evaluateBases(quad_points[i], quad_values[i]);
     }
   }
 }
