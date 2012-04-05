@@ -56,6 +56,9 @@ Ioss::EntitySet::EntitySet(Ioss::DatabaseIO *io_database,
   fields.add(Ioss::Field("distribution_factors",
 			 Ioss::Field::REAL, "scalar",
 			 Ioss::Field::MESH, entity_count));
+  fields.add(Ioss::Field("ids_raw",
+			 field_int_type(), "scalar",
+			 Ioss::Field::MESH, entity_count));
 }
 
 Ioss::Property Ioss::EntitySet::get_implicit_property(const std::string& my_name) const

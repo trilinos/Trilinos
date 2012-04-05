@@ -64,25 +64,25 @@ Ioss::SideBlock::SideBlock(Ioss::DatabaseIO *io_database,
 				Ioss::Property::INTEGER));
   
   fields.add(Ioss::Field("element_side",
-			 Ioss::Field::INTEGER, "pair",
+			 field_int_type(), "pair",
 			 Ioss::Field::MESH, side_count));
 
   // Same as element_side except that the element id are the local
   // element position (1-based) and not the global element id.
   fields.add(Ioss::Field("element_side_raw",
-			 Ioss::Field::INTEGER, "pair",
+			 field_int_type(), "pair",
 			 Ioss::Field::MESH, side_count));
   
   // Distribution factors are optional...
 }
 
-int Ioss::SideBlock::internal_get_field_data(const Ioss::Field& field,
+int64_t Ioss::SideBlock::internal_get_field_data(const Ioss::Field& field,
 					     void *data, size_t data_size) const
 {
   return get_database()->get_field(this, field, data, data_size);
 }
 
-int Ioss::SideBlock::internal_put_field_data(const Ioss::Field& field,
+int64_t Ioss::SideBlock::internal_put_field_data(const Ioss::Field& field,
 					     void *data, size_t data_size) const
 {
   return get_database()->put_field(this, field, data, data_size);
@@ -93,8 +93,8 @@ Ioss::SideBlock::get_implicit_property(const std::string& my_name) const
 {
   if (my_name == "distribution_factor_count") {
     if (field_exists("distribution_factors")) {
-      int nnodes = topology()->number_nodes();
-      int nside  = get_property("entity_count").get_int();
+      int64_t nnodes = topology()->number_nodes();
+      int64_t nside  = get_property("entity_count").get_int();
       return Ioss::Property(my_name, nnodes*nside);
     } else {
       return Ioss::Property(my_name, 0);
@@ -122,24 +122,40 @@ void Ioss::SideBlock::block_membership(std::vector<std::string> &block_members)
   block_members = blockMembership;
 }
 
+namespace {
+  template <typename INT>
+  int internal_consistent_side_number(std::vector<INT> &element_side)
+  {
+    size_t ecount = element_side.size();
+    int side = ecount > 0 ? element_side[1] : 0;
+    for (size_t i=3; i < ecount; i+=2) {
+      int this_side = element_side[i];
+      if (this_side != side) {
+	side = 999; // Indicates the sides are not consistent ;
+	break;
+      }
+    }
+    return side;
+  }
+}
+
 int  Ioss::SideBlock::get_consistent_side_number() const
 {
   if (consistentSideNumber == -1) {
     // It wasn't calculated during the metadata reading of the surfaces.
     // Determine it now...
-    int ecount  = get_property("entity_count").get_int();
-    std::vector<int> element_side(2*ecount);
     if (field_exists("element_side")) {
-      get_field_data("element_side", element_side);
-      
-      int side = ecount > 0 ? element_side[1] : 0;
-      for (int i=3; i < 2*ecount; i+=2) {
-	int this_side = element_side[i];
-	if (this_side != side) {
-	  side = 999; // Indicates the sides are not consistent ;
-	  break;
-	}
+      int side = 0;
+      if (get_database()->int_byte_size_api() == 8) {
+	std::vector<int64_t> element_side;
+	get_field_data("element_side", element_side);
+	side = internal_consistent_side_number(element_side);
+      } else {
+	std::vector<int> element_side;
+	get_field_data("element_side", element_side);
+	side = internal_consistent_side_number(element_side);
       }
+
       int side_max = get_database()->util().global_minmax(side, Ioss::ParallelUtils::DO_MAX);
       if (side_max != 999)
 	consistentSideNumber = side_max;

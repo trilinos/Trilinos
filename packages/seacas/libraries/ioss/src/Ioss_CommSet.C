@@ -52,17 +52,17 @@ Ioss::CommSet::CommSet(Ioss::DatabaseIO *io_database,
   properties.add(Ioss::Property("entity_type",  entity_type));
 
   // Field contains a pair of type [entity_id, shared_cpu]
-  fields.add(Ioss::Field("entity_processor", Ioss::Field::INTEGER, "pair",
+  fields.add(Ioss::Field("entity_processor", field_int_type(), "pair",
 			 Ioss::Field::COMMUNICATION, entity_count));
 }
 
-int Ioss::CommSet::internal_get_field_data(const Ioss::Field& field,
+int64_t Ioss::CommSet::internal_get_field_data(const Ioss::Field& field,
 				 void *data, size_t data_size) const
 {
   return get_database()->get_field(this, field, data, data_size);
 }
 
-int Ioss::CommSet::internal_put_field_data(const Ioss::Field& field,
+int64_t Ioss::CommSet::internal_put_field_data(const Ioss::Field& field,
 				 void *data, size_t data_size) const
 {
   return get_database()->put_field(this, field, data, data_size);

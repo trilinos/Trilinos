@@ -976,7 +976,7 @@ namespace Iopg {
     return true;
   }
 
-  int DatabaseIO::get_field_internal(const Ioss::NodeBlock* nb,
+  int64_t DatabaseIO::get_field_internal(const Ioss::NodeBlock* nb,
 				     const Ioss::Field& field,
 				     void *data, size_t data_size) const
   {
@@ -1034,13 +1034,13 @@ namespace Iopg {
     return num_to_get;
   }
 
-  int DatabaseIO::get_field_internal(const Ioss::Region* /* reg */, const Ioss::Field& /* field */,
+  int64_t DatabaseIO::get_field_internal(const Ioss::Region* /* reg */, const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
     return -1;
   }
 
-  int DatabaseIO::get_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
+  int64_t DatabaseIO::get_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
 				     void *data, size_t data_size) const
   {
     size_t num_to_get = field.verify(data_size);
@@ -1102,7 +1102,7 @@ namespace Iopg {
     return num_to_get;
   }
 
-  int DatabaseIO::get_field_internal(const Ioss::CommSet* cs,
+  int64_t DatabaseIO::get_field_internal(const Ioss::CommSet* cs,
 				     const Ioss::Field& field,
 				     void *data, size_t data_size) const
   {
@@ -1184,7 +1184,7 @@ namespace Iopg {
     }
   }
 
-  int DatabaseIO::get_field_internal(const Ioss::SideBlock* fb,
+  int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock* fb,
 				     const Ioss::Field& field,
 				     void *data, size_t data_size) const
   {
@@ -1263,7 +1263,7 @@ namespace Iopg {
 	    }
 	  } else {
 	    Ioss::IntVector is_valid_side(number_sides);
-	    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, element, TOPTR(sides),
+	    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, element, TOPTR(sides),
 							number_sides, get_region());
 	    size_t ieb = 0;
 	    for (int iel = 0; iel < number_sides; iel++) {
@@ -1311,7 +1311,7 @@ namespace Iopg {
 	    assert(index/2 == entity_count);
 	  } else {
 	    Ioss::IntVector is_valid_side(number_sides);
-	    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, TOPTR(element), TOPTR(sides),
+	    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, TOPTR(element), TOPTR(sides),
 							number_sides, get_region());
 
 	    size_t index = 0;
@@ -1350,7 +1350,7 @@ namespace Iopg {
     return num_to_get;
   }
 
-  int DatabaseIO::get_field_internal(const Ioss::NodeSet* ns,
+  int64_t DatabaseIO::get_field_internal(const Ioss::NodeSet* ns,
 				     const Ioss::Field& field,
 				     void *data, size_t data_size) const
   {
@@ -1389,50 +1389,50 @@ namespace Iopg {
     return num_to_get;
   }
     
-  int DatabaseIO::get_field_internal(const Ioss::SideSet* /* fs */, const Ioss::Field& /* field */,
+  int64_t DatabaseIO::get_field_internal(const Ioss::SideSet* /* fs */, const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
     return -1;
   }
-  int DatabaseIO::put_field_internal(const Ioss::Region* /* region */, const Ioss::Field& /* field */,
+  int64_t DatabaseIO::put_field_internal(const Ioss::Region* /* region */, const Ioss::Field& /* field */,
 				     void * /* data */, size_t /* data_size */) const
   {
     unsupported("output region field");
     return -1;
   }
 
-  int DatabaseIO::put_field_internal(const Ioss::ElementBlock* /* eb */, const Ioss::Field& /* field */,
+  int64_t DatabaseIO::put_field_internal(const Ioss::ElementBlock* /* eb */, const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
     unsupported("output element block field");
     return -1;
   }
-  int DatabaseIO::put_field_internal(const Ioss::SideBlock* /* fb */, const Ioss::Field& /* field */,
+  int64_t DatabaseIO::put_field_internal(const Ioss::SideBlock* /* fb */, const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
     unsupported("output sideblock field");
     return -1;
   }
-  int DatabaseIO::put_field_internal(const Ioss::NodeBlock* /* nb */, const Ioss::Field& /* field */,
+  int64_t DatabaseIO::put_field_internal(const Ioss::NodeBlock* /* nb */, const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
     unsupported("output nodeblock field");
     return -1;
   }
 
-  int DatabaseIO::put_field_internal(const Ioss::NodeSet* /* ns */, const Ioss::Field& /* field */,
+  int64_t DatabaseIO::put_field_internal(const Ioss::NodeSet* /* ns */, const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
     unsupported("output nodeset field");
     return -1;
   }
-  int DatabaseIO::put_field_internal(const Ioss::SideSet* /* fs */, const Ioss::Field& /* field */,
+  int64_t DatabaseIO::put_field_internal(const Ioss::SideSet* /* fs */, const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
     unsupported("output sideset field");
     return -1;
   }
-  int DatabaseIO::put_field_internal(const Ioss::CommSet* /* cs */, const Ioss::Field& /* field */,
+  int64_t DatabaseIO::put_field_internal(const Ioss::CommSet* /* cs */, const Ioss::Field& /* field */,
 				     void */* data */, size_t /* data_size */) const
   {
     unsupported("output commset field");
@@ -1447,12 +1447,14 @@ namespace Iopg {
       nodeMap.resize(nodeCount+1);
 
       if (is_input()) {
-	int error = im_ex_get_node_num_map(get_file_pointer(), &nodeMap[1]);
+	std::vector<int>node_map(nodeMap.size());
+	int error = im_ex_get_node_num_map(get_file_pointer(), &node_map[1]);
 	if (error < 0) {
 	  // Clear out the vector...
 	  Ioss::MapContainer().swap(nodeMap);
 	  pamgen_error(get_file_pointer(), __LINE__, myProcessor);
 	}
+	std::copy(node_map.begin(), node_map.end(), nodeMap.begin());
 	// Check for sequential node map.
 	// If not, build the reverse G2L node map...
 	sequentialNG2L = true;
@@ -1487,12 +1489,14 @@ namespace Iopg {
       elementMap.resize(elementCount+1);
 
       if (is_input()) {
-	int error = im_ex_get_elem_num_map(get_file_pointer(), &elementMap[1]);
+	std::vector<int>elem_map(elementMap.size());
+	int error = im_ex_get_elem_num_map(get_file_pointer(), &elem_map[1]);
 	if (error < 0) {
 	  // Clear out the vector...
 	  Ioss::MapContainer().swap(elementMap);
 	  pamgen_error(get_file_pointer(), __LINE__, myProcessor);
 	}
+	std::copy(elem_map.begin(), elem_map.end(), elementMap.begin());
 
 	// Check for sequential element map.
 	// If not, build the reverse G2L element map...
@@ -1800,7 +1804,7 @@ namespace Iopg {
     }
   }
 
-  void DatabaseIO::compute_block_membership(int id, std::vector<std::string> &block_membership) const
+  void DatabaseIO::compute_block_membership(int64_t id, std::vector<std::string> &block_membership) const
   {
     Ioss::IntVector block_ids(elementBlockCount);
     if (elementBlockCount == 1) {
@@ -1915,7 +1919,7 @@ namespace Iopg {
 //----
 
     Ioss::IntVector is_valid_side(number_sides);
-    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, TOPTR(element), TOPTR(side),
+    Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, 4, TOPTR(element), TOPTR(side),
 						number_sides, get_region());
 
     Ioss::IntVector elconnect;
@@ -1925,7 +1929,7 @@ namespace Iopg {
 
     Ioss::ElementBlock *block = NULL;
 
-    Ioss::MapContainer side_elem_map; // Maps the side into the elements
+    Ioss::IntVector side_elem_map; // Maps the side into the elements
     // connectivity array
     int current_side = -1;
     int nelnode = 0;
@@ -1961,7 +1965,8 @@ namespace Iopg {
 
 	// NOTE: Element connectivity is returned with nodes in global id space
 	if (current_side != side[iel]) {
-	  side_elem_map = block->topology()->boundary_connectivity(side[iel]);
+	  int side_id = side[iel];
+	  side_elem_map = block->topology()->boundary_connectivity(side_id);
 	  current_side = side[iel];
 	  assert(block->topology()->boundary_type(side[iel]) != NULL);
 	  nfnodes = block->topology()->boundary_type(side[iel])->number_nodes();

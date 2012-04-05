@@ -48,18 +48,18 @@ Ioss::NodeSet::NodeSet()
 {}
 
 Ioss::NodeSet::NodeSet(Ioss::DatabaseIO *io_database, const std::string& my_name,
-		       size_t number_nodes)
+		       int64_t number_nodes)
   : Ioss::EntitySet(io_database, my_name, number_nodes)
 {
 }
 
-int Ioss::NodeSet::internal_get_field_data(const Ioss::Field& field,
+int64_t Ioss::NodeSet::internal_get_field_data(const Ioss::Field& field,
 				      void *data, size_t data_size) const
 {
   return get_database()->get_field(this, field, data, data_size);
 }
 
-int Ioss::NodeSet::internal_put_field_data(const Ioss::Field& field,
+int64_t Ioss::NodeSet::internal_put_field_data(const Ioss::Field& field,
 				      void *data, size_t data_size) const
 {
   return get_database()->put_field(this, field, data, data_size);

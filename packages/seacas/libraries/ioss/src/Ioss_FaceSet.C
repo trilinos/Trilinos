@@ -47,7 +47,7 @@ Ioss::FaceSet::FaceSet()
 {}
 
 Ioss::FaceSet::FaceSet(Ioss::DatabaseIO *io_database, const std::string& my_name,
-		       size_t number_faces)
+		       int64_t number_faces)
   : Ioss::EntitySet(io_database, my_name, number_faces)
 {
   // Add the standard fields...
@@ -56,13 +56,13 @@ Ioss::FaceSet::FaceSet(Ioss::DatabaseIO *io_database, const std::string& my_name
 			 Ioss::Field::MESH, number_faces));
 }
 
-int Ioss::FaceSet::internal_get_field_data(const Ioss::Field& field,
+int64_t Ioss::FaceSet::internal_get_field_data(const Ioss::Field& field,
 				      void *data, size_t data_size) const
 {
   return get_database()->get_field(this, field, data, data_size);
 }
 
-int Ioss::FaceSet::internal_put_field_data(const Ioss::Field& field,
+int64_t Ioss::FaceSet::internal_put_field_data(const Ioss::Field& field,
 				      void *data, size_t data_size) const
 {
   return get_database()->put_field(this, field, data, data_size);

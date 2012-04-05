@@ -78,6 +78,8 @@ Ioss::Sphere::Sphere()
   Ioss::ElementTopology::alias("sphere", "Particle_1_2D");
   Ioss::ElementTopology::alias("sphere", "circle");  
   Ioss::ElementTopology::alias("sphere", "circle1");
+  Ioss::ElementTopology::alias("sphere", "point");
+  Ioss::ElementTopology::alias("sphere", "point1");
 }
 
 Ioss::Sphere::~Sphere() {}

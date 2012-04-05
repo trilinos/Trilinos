@@ -82,10 +82,10 @@ namespace Ioss {
     void set_consistent_side_number(int side) {consistentSideNumber = side;}
 
   protected:
-    int internal_get_field_data(const Field& field,
+    int64_t internal_get_field_data(const Field& field,
 				void *data, size_t data_size) const;
 
-    int internal_put_field_data(const Field& field,
+    int64_t internal_put_field_data(const Field& field,
 				void *data, size_t data_size) const;
 
   private:

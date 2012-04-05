@@ -102,13 +102,13 @@ bool Ioss::SideSet::add(Ioss::SideBlock *side_block)
     return true;
 }
 
-int Ioss::SideSet::internal_get_field_data(const Ioss::Field& field,
+int64_t Ioss::SideSet::internal_get_field_data(const Ioss::Field& field,
 				      void *data, size_t data_size) const
 {
   return get_database()->get_field(this, field, data, data_size);
 }
 
-int Ioss::SideSet::internal_put_field_data(const Ioss::Field& field,
+int64_t Ioss::SideSet::internal_put_field_data(const Ioss::Field& field,
 				      void *data, size_t data_size) const
 {
   return get_database()->put_field(this, field, data, data_size);

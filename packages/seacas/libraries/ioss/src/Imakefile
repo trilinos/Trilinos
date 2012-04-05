@@ -1,0 +1,217 @@
+# Copyright(C) 1999-2010
+# Sandia Corporation. Under the terms of Contract
+# DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+# certain rights in this software.
+#         
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+# 
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+# 
+#     * Redistributions in binary form must reproduce the above
+#       copyright notice, this list of conditions and the following
+#       disclaimer in the documentation and/or other materials provided
+#       with the distribution.
+#     * Neither the name of Sandia Corporation nor the names of its
+#       contributors may be used to endorse or promote products derived
+#       from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+#define IHaveSubdirs
+#define PassDebugFlags	"DEBUG=$(DEBUG)" \
+	                "CDEBUGFLAGS=$(CDEBUGFLAGS)" \
+	                "CXXDEBUGFLAGS=$(CXXDEBUGFLAGS)" \
+			"F90DEBUGFLAGS=$(F90DEBUGFLAGS)" \
+			"F77DEBUGFLAGS=$(F77DEBUGFLAGS)"
+
+#define ExtraOptions	"CCOPTIONS=$(CCOPTIONS)" "CXXOPTIONS=$(CXXOPTIONS)" "CXXEXTRA_DEFINES=$(CXXEXTRA_DEFINES)"
+
+#ifdef PARALLEL
+CCOPTIONS  = ParallelCCOptions
+F77OPTIONS = ParallelF77Options
+LIBDIR     = $(PLIBDIR)
+#endif
+
+CXXEXTRA_INCLUDES = -I.
+#if defined SGIArchitecture
+CXXETRA_DEFINES = -ptused -DNO_MPI -DNO_PAMGEN_SUPPORT
+#else
+CXXEXTRA_DEFINES = -DNO_MPI -DNO_PAMGEN_SUPPORT
+#endif
+
+
+LIBRARY = libIoss.a
+SUBDIRS = exodusII generated init transform heartbeat main utest
+
+
+SRCS = \
+Ioss_Bar2.C \
+Ioss_Bar3.C \
+Ioss_CommSet.C \
+Ioss_CompositeVariableType.C \
+Ioss_ConcreteVariableType.C \
+Ioss_ConstructedVariableType.C \
+Ioss_DatabaseIO.C \
+Ioss_Edge2.C \
+Ioss_Edge2D2.C \
+Ioss_Edge2D3.C \
+Ioss_Edge3.C \
+Ioss_ElementBlock.C \
+Ioss_FaceBlock.C \
+Ioss_EdgeBlock.C \
+Ioss_NodeBlock.C \
+Ioss_ElementSet.C \
+Ioss_FaceSet.C \
+Ioss_EdgeSet.C \
+Ioss_NodeSet.C \
+Ioss_ElementTopology.C \
+Ioss_EntityBlock.C \
+Ioss_EntitySet.C \
+Ioss_SideBlock.C \
+Ioss_SideSet.C \
+Ioss_Field.C \
+Ioss_FieldManager.C \
+Ioss_FileInfo.C \
+Ioss_GroupingEntity.C \
+Ioss_Hex20.C \
+Ioss_Hex27.C \
+Ioss_Hex8.C \
+Ioss_Initializer.C \
+Ioss_IOFactory.C \
+Ioss_Map.C \
+Ioss_Node.C \
+Ioss_ParallelUtils.C \
+Ioss_Property.C \
+Ioss_PropertyManager.C \
+Ioss_Pyramid13.C \
+Ioss_Pyramid5.C \
+Ioss_Quad4.C \
+Ioss_Quad8.C \
+Ioss_Quad9.C \
+Ioss_Region.C \
+Ioss_SerializeIO.C \
+Ioss_Shell4.C \
+Ioss_Shell8.C \
+Ioss_Shell9.C \
+Ioss_ShellLine2D2.C \
+Ioss_ShellLine2D3.C \
+Ioss_Sphere.C \
+Ioss_Super.C \
+Ioss_Tet10.C \
+Ioss_Tet4.C \
+Ioss_Tet7.C \
+Ioss_Tet8.C \
+Ioss_Transform.C \
+Ioss_Tri3.C \
+Ioss_Tri4.C \
+Ioss_Tri4a.C \
+Ioss_Tri6.C \
+Ioss_TriShell3.C \
+Ioss_TriShell6.C \
+Ioss_Unknown.C \
+Ioss_Utils.C \
+Ioss_VariableType.C \
+Ioss_Wedge15.C \
+Ioss_Wedge6.C \
+tokenize.C
+
+OBJS = ${SRCS:.C=.o}
+
+all:: libIoex.a libIoss.a libIotr.a libIonit.a libIogn.a libIohb.a SEACASIoss_config.h
+
+INCLIST = \
+	SEACASIoss_config.h \
+	Ioss_CodeTypes.h \
+	Ioss_CommSet.h \
+	Ioss_ConcreteVariableType.h \
+	Ioss_DBUsage.h \
+	Ioss_DataSize.h \
+	Ioss_DatabaseIO.h \
+	Ioss_ElementTopology.h \
+	Ioss_EntityBlock.h \
+	Ioss_EntitySet.h \
+	Ioss_EntityType.h \
+	Ioss_Field.h \
+	Ioss_FieldManager.h \
+	Ioss_FileInfo.h \
+	Ioss_GroupingEntity.h \
+	Ioss_IOFactory.h \
+	Ioss_NodeBlock.h \
+	Ioss_EdgeBlock.h \
+	Ioss_FaceBlock.h \
+	Ioss_ElementBlock.h \
+	Ioss_NodeSet.h \
+	Ioss_EdgeSet.h \
+	Ioss_FaceSet.h \
+	Ioss_ElementSet.h \
+	Ioss_SideBlock.h \
+	Ioss_SideSet.h \
+	Ioss_ParallelUtils.h \
+	Ioss_Property.h \
+	Ioss_PropertyManager.h \
+	Ioss_Region.h \
+	Ioss_SerializeIO.h \
+	Ioss_State.h \
+	Ioss_SurfaceSplit.h \
+	Ioss_SubSystem.h \
+	Ioss_Transform.h \
+	Ioss_VariableType.h \
+	Ioss_Utils.h 
+
+# Can be empty.  Is used in Trilinos, so just create dummy here.
+SEACASIoss_config.h:
+	touch SEACASIoss_config.h
+
+makeincludes:: SEACASIoss_config.h
+install:: SEACASIoss_config.h
+
+
+NormalLibraryTarget(Ioss,$(OBJS))
+NamedTargetSubdirs(libIoex.a,  exodusII,  "making Ioss/exodusII",  PassDebugFlags ExtraOptions,libIoex.a)
+
+NamedTargetSubdirs(libIogn.a,  generated, "making Ioss/generated", PassDebugFlags ExtraOptions,libIogn.a)
+NamedTargetSubdirs(libIotr.a,  transform, "making Ioss/transform", PassDebugFlags ExtraOptions,libIotr.a)
+NamedTargetSubdirs(libIohb.a,  heartbeat, "making Ioss/heartbeat", PassDebugFlags ExtraOptions,libIohb.a)
+NamedTargetSubdirs(libIonit.a, init,      "making Ioss/init",      PassDebugFlags ExtraOptions,libIonit.a)
+NamedTargetSubdirs(all,        main,      "making Ioss/main",      PassDebugFlags ExtraOptions,all)
+
+AllTarget(libIoss.a)
+AllTarget(libIoex.a)
+
+AllTarget(libIogn.a)
+AllTarget(libIotr.a)
+AllTarget(libIohb.a)
+AllTarget(libIonit.a)
+
+InstallLibrary(Ioss,$(LIBDIR))
+InstallLibrary(Ioex,$(LIBDIR))
+
+InstallLibrary(Iogn,$(LIBDIR))
+InstallLibrary(Iotr,$(LIBDIR))
+InstallLibrary(Iohb,$(LIBDIR))
+InstallLibrary(Ionit,$(LIBDIR))
+
+MakeDirectories(makeincludes, $(INCDIR)/ioss)
+MakeDirectories(makeincludes, $(INCDIR)/ioss/init)
+MakeDirectories(install, $(INCDIR)/ioss)
+MakeDirectories(install, $(INCDIR)/ioss/init)
+InstallIncludeList(makeincludes,$(INCLIST),$(INCDIR)/ioss)
+InstallIncludeList(install,$(INCLIST),$(INCDIR)/ioss)
+InstallSubdirIncludeList(makeincludes,init,Ionit_Initializer.h,$(INCDIR)/ioss/init)
+
+ExtraStuffToClean(SEACASIoss_config.h)
+DependTarget()
+DependSubdirs($(SUBDIRS))

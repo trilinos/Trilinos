@@ -34,8 +34,12 @@
 #define IOSS_Iogn_GeneratedMesh_h
 #include <string>
 #include <vector>
+#include <stdint.h>
 
 namespace Iogn {
+  typedef std::vector<int64_t> MapVector;
+  typedef std::vector<int64_t> Int64Vector;
+  typedef std::vector<int>     IntVector;
   class GeneratedMesh
   {
   public:
@@ -178,7 +182,7 @@ namespace Iogn {
        time the coordinates are generated/retrieved)
     */
     explicit GeneratedMesh(const std::string &parameters, int proc_count = 1, int my_proc = 0);
-    GeneratedMesh(int num_x, int num_y, int num_z,        int proc_count = 1, int my_proc = 0);
+    GeneratedMesh(int64_t num_x, int64_t num_y, int64_t num_z,        int proc_count = 1, int my_proc = 0);
     ~GeneratedMesh();
 
     /**
@@ -194,7 +198,7 @@ namespace Iogn {
      * - PZ = add shell layer on the face with maximum Z
      *
      */
-    size_t add_shell_block(ShellLocation loc);
+    int64_t add_shell_block(ShellLocation loc);
     
     /**
      * Add a nodeset along the specified face of the hex mesh.
@@ -209,7 +213,7 @@ namespace Iogn {
      * - PZ = add nodeset on the face with maximum Z
      *
      */
-    size_t add_nodeset(ShellLocation loc);
+    int64_t add_nodeset(ShellLocation loc);
     
     /**
      * Add a sideset along the specified face of the hex mesh.
@@ -227,7 +231,7 @@ namespace Iogn {
      * - PZ = add sideset on the face with maximum Z
      *
      */
-    size_t add_sideset(ShellLocation loc);
+    int64_t add_sideset(ShellLocation loc);
     
     /**
      * Specify the coordinate scaling and offset in all three
@@ -259,113 +263,116 @@ namespace Iogn {
     /**
      * Return number of nodes in the entire model.
      */
-    size_t node_count() const;
+    int64_t node_count() const;
 
     /**
      * Return number of nodes on this processor.
      */
-    size_t node_count_proc() const;
+    int64_t node_count_proc() const;
 
     /**
      * Return number of element blocks in the entire model.
      */
-    size_t block_count() const;
+    int64_t block_count() const;
 
     /**
      * Return number of nodesets in the entire model.
      */
-    size_t nodeset_count() const;
+    int64_t nodeset_count() const;
 
     /**
      * Return number of nodeset nodes on nodeset 'id'
      */
-    size_t nodeset_node_count(size_t id) const;
+    int64_t nodeset_node_count(int64_t id) const;
 
     /**
      * Return number of nodeset nodes on nodeset 'id' on the current processor
      */
-    size_t nodeset_node_count_proc(size_t id) const;
+    int64_t nodeset_node_count_proc(int64_t id) const;
 
     /**
      * Return number of sidesets in the entire model.
      */
-    size_t sideset_count() const;
+    int64_t sideset_count() const;
 
     /**
      * Return number of sideset 'sides' on sideset 'id'
      */
-    size_t sideset_side_count(size_t id) const;
+    int64_t sideset_side_count(int64_t id) const;
 
     /**
      * Return number of sideset 'sides' on sideset 'id' on the current
      * processor.
      */
-    size_t sideset_side_count_proc(size_t id) const;
+    int64_t sideset_side_count_proc(int64_t id) const;
 
     /**
      * Return number of elements in all element blocks in the model.
      */
-    size_t element_count() const;
+    int64_t element_count() const;
 
     /**
      * Return number of shell elements in all element blocks in the model.
      */
-    size_t shell_element_count(ShellLocation) const;
+    int64_t shell_element_count(ShellLocation) const;
 
     /**
      * Return number of elements in all element blocks on this processor.
      */
-    size_t element_count_proc() const;
+    int64_t element_count_proc() const;
 
     /**
      * Return number of shell elements in all element blocks on this processor.
      */
-    size_t shell_element_count_proc(ShellLocation) const;
+    int64_t shell_element_count_proc(ShellLocation) const;
 
     /**
      * Return number of elements in the element block with id
      * 'block_number'. The 'block_number' ranges from '1' to
      * 'block_count()'. 
      */
-    size_t element_count(size_t block_number) const;
+    int64_t element_count(int64_t block_number) const;
 
     /**
      * Return number of elements on this processor in the element
      * block with id 'block_number'. The 'block_number' ranges from
      * '1' to 'block_count()'.
      */
-    size_t element_count_proc(size_t block_number) const;
+    int64_t element_count_proc(int64_t block_number) const;
 
     /**
      * Returns pair containing "topology type string" and "number of
      * nodes / element". The topology type string will be "hex8" for
      * the hex element block and "shell4" for the shell element blocks.
      */
-    std::pair<std::string, int>  topology_type(size_t block_number) const;
+    std::pair<std::string, int>  topology_type(int64_t block_number) const;
     
-    size_t communication_node_count_proc() const;
-    void node_communication_map(std::vector<int> &map, std::vector<int> &proc);
+    int64_t communication_node_count_proc() const;
+    void node_communication_map(MapVector &map, std::vector<int> &proc);
     
     /** 
      * Fill the passed in 'map' argument with the node map
      * "map[local_position] = global_id" for the nodes on this
      * processor.
      */
-    void node_map(std::vector<int> &map);
+    void node_map(MapVector &map);
+    void node_map(IntVector &map);
 
     /** 
      * Fill the passed in 'map' argument with the element map
      * "map[local_position] = global_id" for the elements on this
      * processor in block "block_number".
      */
-    void element_map(size_t block_number, std::vector<int> &map) const;
+    void element_map(int64_t block_number, MapVector &map) const;
+    void element_map(int     block_number, IntVector &map) const;
 
     /** 
      * Fill the passed in 'map' argument with the element map
      * "map[local_position] = global_id" for all elements on this
      * processor 
      */
-    void element_map(std::vector<int> &map) const;
+    void element_map(MapVector &map) const;
+    void element_map(IntVector &map) const;
     
     /** 
      * Fill the passed in 'map' argument with the element map pair
@@ -374,7 +381,7 @@ namespace Iogn {
      * all elements on the current processor having a face on the
      * surface defined by ShellLocation.
      */
-    void element_surface_map(ShellLocation loc, std::vector<int> &map) const;
+    void element_surface_map(ShellLocation loc, MapVector &map) const;
     
     /**
      * Return the connectivity for the elements on this processor in
@@ -386,7 +393,10 @@ namespace Iogn {
      * size required to contain the nodal connectivity for the
      * specified block; all information in 'connect' will be overwritten.
      */
-    void connectivity(size_t block_number, std::vector<int> &connect) const;
+    void connectivity(int64_t block_number, Int64Vector &connect) const;
+    void connectivity(int64_t block_number, IntVector &connect) const;
+    void connectivity(int64_t block_number, int64_t* connect) const;
+    void connectivity(int64_t block_number, int* connect) const;
 
     /**
      * Return the coordinates for all nodes on this processor.  The
@@ -396,6 +406,7 @@ namespace Iogn {
      * all information in 'coord' will be overwritten.
      */
     void coordinates(std::vector<double> &coord) const;
+    void coordinates(double *coord) const;
 
     /**
      * Return the coordinates for all nodes on this processor in
@@ -407,13 +418,23 @@ namespace Iogn {
 		     std::vector<double> &y,
 		     std::vector<double> &z) const;
     
+    /**
+     * Return the coordinates for componenet 'comp' (1=x, 2=y, 3=z)
+     * for all nodes on this processor. The
+     * vector will be resized to the size required to contain the
+     * nodal coordinates; all information in the vector will be
+     * overwritten.
+     * It is an error to request the coordinates via this function
+     * if a rotation is defined.
+     */
+    void coordinates(int component, std::vector<double> &xyz) const;
 
     /**
      * Return the list of nodes in nodeset 'id' on this processor.
      * The 'nodes' vector will be resized to the size required to
      * contain the node list. The ids are global ids.
      */
-    void nodeset_nodes(size_t nset_id, std::vector<int> &nodes) const;
+    void nodeset_nodes(int64_t nset_id, Int64Vector &nodes) const;
 
     /**
      * Return the list of the face/ordinal pairs
@@ -424,10 +445,10 @@ namespace Iogn {
      * required to contain the list. The element ids are global ids,
      * the side ordinal is 0-based.
      */
-    void sideset_elem_sides(size_t nset_id, std::vector<int> &elem_sides) const;
-    size_t get_num_x() const {return numX;}
-    size_t get_num_y() const {return numY;}
-    size_t get_num_z() const {return numZ;}
+    void sideset_elem_sides(int64_t nset_id, Int64Vector &elem_sides) const;
+    int64_t get_num_x() const {return numX;}
+    int64_t get_num_y() const {return numY;}
+    int64_t get_num_z() const {return numZ;}
 
   private:
     

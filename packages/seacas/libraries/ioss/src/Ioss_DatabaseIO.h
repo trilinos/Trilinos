@@ -35,11 +35,13 @@
 
 #include <Ioss_CodeTypes.h>
 #include <string>
+#include <stdint.h>
 
 // Defines the Ioss_State enum...
 #include <Ioss_State.h>
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_DBUsage.h>
+#include <Ioss_DataSize.h>
 #include <Ioss_SurfaceSplit.h>
 
 #include <vector>
@@ -80,8 +82,8 @@ namespace Ioss {
       // database supports that type (e.g. return_value & Ioss::FACESET)
       virtual unsigned entity_field_support() const = 0;
 
-      virtual int node_global_to_local(int global, bool must_exist) const = 0;
-      virtual int element_global_to_local(int global) const = 0;
+      virtual int64_t node_global_to_local(int64_t global, bool must_exist) const = 0;
+      virtual int64_t element_global_to_local(int64_t global) const = 0;
 
       virtual ~DatabaseIO();
 
@@ -119,14 +121,14 @@ namespace Ioss {
       // derived classes code.  This also fulfills the hueristic that a
       // public interface should not contain pure virtual functions.
       template <typename T>
-	int get_field(const T* reg,      const Field& field, void *data, size_t data_size) const
+	int64_t get_field(const T* reg,      const Field& field, void *data, size_t data_size) const
       {
 	verify_and_log(reg, field);
 	return get_field_internal(reg, field, data, data_size);
       }
       
       template <typename T>
-	int put_field(const T* reg,      const Field& field, void *data, size_t data_size) const
+	int64_t put_field(const T* reg,      const Field& field, void *data, size_t data_size) const
       {
 	verify_and_log(reg, field);
 	return put_field_internal(reg, field, data, data_size);
@@ -148,13 +150,16 @@ namespace Ioss {
       
       virtual void get_block_adjacencies(const Ioss::ElementBlock *eb,
 					 std::vector<std::string> &block_adjacency) const {}
-      virtual void compute_block_membership(int id,
+      virtual void compute_block_membership(int64_t id,
 					    std::vector<std::string> &block_membership) const {}
 
       virtual void compute_block_membership(Ioss::SideBlock *efblock,
                                            std::vector<std::string> &block_membership) const {}
  
 
+      int  int_byte_size_api() const; //! Returns 4 or 8
+      void set_int_byte_size_api(Ioss::DataSize size) const;
+      
       /*!
        * The owning region of this database.
        */
@@ -264,6 +269,7 @@ namespace Ioss {
       char fieldSuffixSeparator;
       Ioss::SurfaceSplitType splitType;
       Ioss::DatabaseUsage dbUsage;
+      mutable Ioss::DataSize dbIntSizeAPI;
 
       // True if the old node global id mapping should be enabled.  This is:
       // * Do not use node global_id_order map ever
@@ -283,54 +289,54 @@ namespace Ioss {
     private:
       void verify_and_log(const GroupingEntity *reg, const Field& field) const;
       
-      virtual int get_field_internal(const Region* reg, const Field& field,
+      virtual int64_t get_field_internal(const Region* reg, const Field& field,
 				     void *data, size_t data_size) const = 0;
-      virtual int get_field_internal(const NodeBlock* nb, const Field& field,
+      virtual int64_t get_field_internal(const NodeBlock* nb, const Field& field,
 				     void *data, size_t data_size) const = 0;
-      virtual int get_field_internal(const EdgeBlock* nb, const Field& field,
+      virtual int64_t get_field_internal(const EdgeBlock* nb, const Field& field,
 				     void *data, size_t data_size) const = 0;
-      virtual int get_field_internal(const FaceBlock* nb, const Field& field,
+      virtual int64_t get_field_internal(const FaceBlock* nb, const Field& field,
 				     void *data, size_t data_size) const = 0;
-      virtual int get_field_internal(const ElementBlock* eb, const Field& field,
+      virtual int64_t get_field_internal(const ElementBlock* eb, const Field& field,
 				     void *data, size_t data_size) const = 0;
-      virtual int get_field_internal(const SideBlock* fb, const Field& field,
+      virtual int64_t get_field_internal(const SideBlock* fb, const Field& field,
 				     void *data, size_t data_size) const = 0;
-      virtual int get_field_internal(const NodeSet* ns, const Field& field,
+      virtual int64_t get_field_internal(const NodeSet* ns, const Field& field,
 				     void *data, size_t data_size) const = 0;
-      virtual int get_field_internal(const EdgeSet* ns, const Field& field,
+      virtual int64_t get_field_internal(const EdgeSet* ns, const Field& field,
 				     void *data, size_t data_size) const = 0;
-      virtual int get_field_internal(const FaceSet* ns, const Field& field,
+      virtual int64_t get_field_internal(const FaceSet* ns, const Field& field,
 				     void *data, size_t data_size) const = 0;
-      virtual int get_field_internal(const ElementSet* ns, const Field& field,
+      virtual int64_t get_field_internal(const ElementSet* ns, const Field& field,
 				     void *data, size_t data_size) const = 0;
-      virtual int get_field_internal(const SideSet* fs, const Field& field,
+      virtual int64_t get_field_internal(const SideSet* fs, const Field& field,
 				     void *data, size_t data_size) const = 0;
-      virtual int get_field_internal(const CommSet* cs, const Field& field,
+      virtual int64_t get_field_internal(const CommSet* cs, const Field& field,
 				     void *data, size_t data_size) const = 0;
 
-      virtual int put_field_internal(const Region* reg, const Field& field,
+      virtual int64_t put_field_internal(const Region* reg, const Field& field,
 				     void *data, size_t data_size) const = 0;
-      virtual int put_field_internal(const NodeBlock* nb, const Field& field,
+      virtual int64_t put_field_internal(const NodeBlock* nb, const Field& field,
 				     void *data, size_t data_size) const = 0;
-      virtual int put_field_internal(const EdgeBlock* nb, const Field& field,
+      virtual int64_t put_field_internal(const EdgeBlock* nb, const Field& field,
 				     void *data, size_t data_size) const = 0;
-      virtual int put_field_internal(const FaceBlock* nb, const Field& field,
+      virtual int64_t put_field_internal(const FaceBlock* nb, const Field& field,
 				     void *data, size_t data_size) const = 0;
-      virtual int put_field_internal(const ElementBlock* eb, const Field& field,
+      virtual int64_t put_field_internal(const ElementBlock* eb, const Field& field,
 				     void *data, size_t data_size) const = 0;
-      virtual int put_field_internal(const SideBlock* fb, const Field& field,
+      virtual int64_t put_field_internal(const SideBlock* fb, const Field& field,
 				     void *data, size_t data_size) const = 0;
-      virtual int put_field_internal(const NodeSet* ns, const Field& field,
+      virtual int64_t put_field_internal(const NodeSet* ns, const Field& field,
 				     void *data, size_t data_size) const = 0;
-      virtual int put_field_internal(const EdgeSet* ns, const Field& field,
+      virtual int64_t put_field_internal(const EdgeSet* ns, const Field& field,
 				     void *data, size_t data_size) const = 0;
-      virtual int put_field_internal(const FaceSet* ns, const Field& field,
+      virtual int64_t put_field_internal(const FaceSet* ns, const Field& field,
 				     void *data, size_t data_size) const = 0;
-      virtual int put_field_internal(const ElementSet* ns, const Field& field,
+      virtual int64_t put_field_internal(const ElementSet* ns, const Field& field,
 				     void *data, size_t data_size) const = 0;
-      virtual int put_field_internal(const SideSet* fs, const Field& field,
+      virtual int64_t put_field_internal(const SideSet* fs, const Field& field,
 				     void *data, size_t data_size) const = 0;
-      virtual int put_field_internal(const CommSet* cs, const Field& field,
+      virtual int64_t put_field_internal(const CommSet* cs, const Field& field,
 				     void *data, size_t data_size) const = 0;
 
       DatabaseIO(); // Do not implement

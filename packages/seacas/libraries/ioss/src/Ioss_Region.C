@@ -387,7 +387,7 @@ namespace Ioss {
 
 	// Now update the block offsets based on this new order...
 	{
-	  int offset = 0;
+	  int64_t offset = 0;
 	  ElementBlockContainer::iterator i = elementBlocks.begin();
 	  while (i != elementBlocks.end()) {
 	    (*i)->set_offset(offset);
@@ -395,7 +395,7 @@ namespace Ioss {
 	  }
 	}
 	{
-	  int offset = 0;
+	  int64_t offset = 0;
 	  FaceBlockContainer::iterator i = faceBlocks.begin();
 	  while (i != faceBlocks.end()) {
 	    (*i)->set_offset(offset);
@@ -403,7 +403,7 @@ namespace Ioss {
 	  }
 	}
 	{
-	  int offset = 0;
+	  int64_t offset = 0;
 	  EdgeBlockContainer::iterator i = edgeBlocks.begin();
 	  while (i != edgeBlocks.end()) {
 	    (*i)->set_offset(offset);
@@ -645,11 +645,12 @@ namespace Ioss {
 
       if (get_database()->is_input()) {
 	size_t nblocks = elementBlocks.size();
-	int offset = 0;
+	int64_t offset = 0;
 	if (nblocks > 0) {
 	  offset = elementBlocks[nblocks-1]->get_offset() +
 	    elementBlocks[nblocks-1]->get_property("entity_count").get_int();
 	}
+	assert(offset >= 0);
 	element_block->set_offset(offset);
       } else {
 	// Check whether the "original_block_order" property exists on
@@ -689,7 +690,7 @@ namespace Ioss {
 
       if (get_database()->is_input()) {
 	size_t nblocks = faceBlocks.size();
-	int offset = 0;
+	int64_t offset = 0;
 	if (nblocks > 0) {
 	  offset = faceBlocks[nblocks-1]->get_offset() +
 	    faceBlocks[nblocks-1]->get_property("entity_count").get_int();
@@ -733,7 +734,7 @@ namespace Ioss {
 
       if (get_database()->is_input()) {
 	size_t nblocks = edgeBlocks.size();
-	int offset = 0;
+	int64_t offset = 0;
 	if (nblocks > 0) {
 	  offset = edgeBlocks[nblocks-1]->get_offset() +
 	    edgeBlocks[nblocks-1]->get_property("entity_count").get_int();
@@ -879,8 +880,8 @@ namespace Ioss {
     if (old_ge != NULL && ge != old_ge) {
       if (!((old_ge->type() == SIDEBLOCK &&     ge->type() == SIDESET) ||
 	    (    ge->type() == SIDEBLOCK && old_ge->type() == SIDESET))) {
-	int old_id = -1;
-	int new_id = -1;
+	ssize_t old_id = -1;
+	ssize_t new_id = -1;
 	if (old_ge->property_exists(id_str())) {
 	  old_id = old_ge->get_property(id_str()).get_int();
 	}
@@ -1210,7 +1211,7 @@ namespace Ioss {
   // The 'local_id' is the local database id (1-based), not the global id.
   // returns NULL if no element block contains this element (local_id <= 0
   // or greater than number of elements in database)
-  ElementBlock* Region::get_element_block(int local_id) const
+  ElementBlock* Region::get_element_block(size_t local_id) const
   {
     ElementBlockContainer::const_iterator i = elementBlocks.begin();
     while (i != elementBlocks.end()) {
@@ -1266,7 +1267,7 @@ namespace Ioss {
     }
 
     if (my_name == "element_count") {
-      int count = 0;
+      int64_t count = 0;
       ElementBlockContainer::const_iterator i = elementBlocks.begin();
       while (i != elementBlocks.end()) {
 	count += (*i++)->get_property("entity_count").get_int();
@@ -1275,7 +1276,7 @@ namespace Ioss {
     }
 
     if (my_name == "face_count") {
-      int count = 0;
+      int64_t count = 0;
       FaceBlockContainer::const_iterator i = faceBlocks.begin();
       while (i != faceBlocks.end()) {
 	count += (*i++)->get_property("entity_count").get_int();
@@ -1284,7 +1285,7 @@ namespace Ioss {
     }
 
     if (my_name == "edge_count") {
-      int count = 0;
+      int64_t count = 0;
       EdgeBlockContainer::const_iterator i = edgeBlocks.begin();
       while (i != edgeBlocks.end()) {
 	count += (*i++)->get_property("entity_count").get_int();
@@ -1293,7 +1294,7 @@ namespace Ioss {
     }
 
     if (my_name == "node_count") {
-      int count = 0;
+      int64_t count = 0;
       NodeBlockContainer::const_iterator i = nodeBlocks.begin();
       while (i != nodeBlocks.end()) {
 	count += (*i++)->get_property("entity_count").get_int();
@@ -1310,13 +1311,13 @@ namespace Ioss {
       return GroupingEntity::get_implicit_property(my_name);
   }
 
-  int Region::internal_get_field_data(const Field& field,
+  int64_t Region::internal_get_field_data(const Field& field,
 				      void *data, size_t data_size) const
   {
     return get_database()->get_field(this, field, data, data_size);
   }
 
-  int Region::internal_put_field_data(const Field& field,
+  int64_t Region::internal_put_field_data(const Field& field,
 				      void *data, size_t data_size) const
   {
     return get_database()->put_field(this, field, data, data_size);
@@ -1404,7 +1405,7 @@ namespace Ioss {
 
 	  // See if there is an 'id' property...
 	  if (ge->property_exists(id_str())) {
-	    int id = ge->get_property(id_str()).get_int();
+	    int64_t id = ge->get_property(id_str()).get_int();
 
 	    if (this_ge->property_exists(id_str())) {
 	      // Remove the old property...
@@ -1433,7 +1434,7 @@ namespace Ioss {
 
 	  // Specific to entity blocks. Transfer the "original_block_order" property.
 	  if (ge->property_exists(orig_block_order())) {
-	    int offset = ge->get_property(orig_block_order()).get_int();
+	    int64_t offset = ge->get_property(orig_block_order()).get_int();
 	    if (this_ge->property_exists(orig_block_order())) {
 	      this_ge->property_erase(orig_block_order());
 	    }
@@ -1454,7 +1455,7 @@ namespace Ioss {
 	      if (this_ge->field_exists(field_name)) {
 		// If the field is already defined on the entity, make
 		// sure that the attribute index matches...
-		int index = field.get_index();
+		size_t index = field.get_index();
 		const Ioss::Field &this_field = this_ge->get_fieldref(field_name);
 		this_field.set_index(index);
 	      } else {
