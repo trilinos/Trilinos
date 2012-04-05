@@ -19,7 +19,7 @@
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
 
-#define ALTERNATIVE_MAKETENTATIVE // if defined, use new MakeTentative (make sure that ALTERNATIVE_COMPUTEAGGTOROWMAPDOFS is set in Muelu_Aggregates_decl.hpp)
+#undef USE_STRIDEDDOMAINMAP // if defined, the user can prescribe striding information for the domain map of P
 
 namespace MueLu {
 
@@ -84,13 +84,42 @@ namespace MueLu {
     /*! @brief SetDomainMapOffset
      sets offset for domain map Gids in tentative prolongation operator.
      offset must not be smaller than zero. Note: Direct solvers (Amesos/Amesos2) are not properly working with offset > 0.
+
+     // TODO remove me
      */
     void SetDomainMapOffset(GlobalOrdinal offset);
 
     /*! @brief GetDomainMapOffset
      * returns offset of domain map.
+     *
+     * TODO remove me
      */
     GlobalOrdinal GetDomainMapOffset() const;
+
+#ifdef USE_STRIDEDDOMAINMAP
+
+    std::vector<size_t> getStridingData() { return stridingInfo_; }
+
+    void setStridingData(std::vector<size_t> stridingInfo) { stridingInfo_ = stridingInfo; }
+
+    size_t getFixedBlockSize() const {
+      // sum up size of all strided blocks (= number of dofs per node)
+      size_t blkSize = 0;
+      std::vector<size_t>::const_iterator it;
+      for(it = stridingInfo_.begin(); it != stridingInfo_.end(); ++it) {
+        blkSize += *it;
+      }
+      return blkSize;
+    }
+
+    /// returns strided block id of the dofs stored in this map
+    /// or -1 if full strided map is stored in this map
+    LocalOrdinal getStridedBlockId() { return stridedBlockId_; }
+
+    void setStridedBlockId(LocalOrdinal stridedBlockId) {
+      stridedBlockId_ = stridedBlockId;
+    }
+#endif
 
     //@}
   private:
@@ -139,15 +168,6 @@ namespace MueLu {
     void MakeTentative(const Operator& fineA, const Aggregates& aggregates, const MultiVector & fineNullspace, //-> INPUT
                        RCP<MultiVector> & coarseNullspace, RCP<Operator> & Ptentative) const;                  //-> OUTPUT
 
-    //@}
-
-#ifdef ALTERNATIVE_MAKETENTATIVE
-    // temporary test
-    void MakeTentative2(const Operator& fineA, const Aggregates& aggregates, const MultiVector & fineNullspace, //-> INPUT
-                       RCP<MultiVector> & coarseNullspace, RCP<Operator> & Ptentative) const;                  //-> OUTPUT
-#endif
-
-
   private:
     RCP<const FactoryBase> aggregatesFact_; //! Factory that creates aggregates
     RCP<const FactoryBase> nullspaceFact_;  //! Factory creating the nullspace
@@ -155,7 +175,16 @@ namespace MueLu {
 
     bool QR_; //! use QR decomposition for improving nullspace information per default
 
+    // TODO to be removed: add a domainGidOffset to strided maps
     GlobalOrdinal domainGidOffset_; //! offset for domain gids (coarse gids) of tentative prolongator  (default = 0). The GIDs for the domain dofs of Ptent start with domainGidOffset, are contiguous and distributed equally over the procs (unless some reordering is done).
+
+#ifdef USE_STRIDEDDOMAINMAP
+    mutable std::vector<size_t> stridingInfo_;   // vector with size of strided blocks (dofs)
+    LocalOrdinal stridedBlockId_;        // member variable denoting which dofs are stored in map
+                                         // stridedBlock == -1: the full map (with all strided block dofs)
+                                         // stridedBlock >  -1: only dofs of strided block with index "stridedBlockId" are stored in this map
+#endif
+
 
   }; //class TentativePFactory
 
