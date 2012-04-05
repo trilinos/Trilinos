@@ -256,8 +256,12 @@ void BulkData::change_entity_id( EntityId id, Entity & entity)
   require_good_rank_and_id(entity.entity_rank(),id);
 
   EntityKey key(entity.entity_rank(),id);
+  EntityKey old_key = entity.key();
 
   m_entity_repo.update_entity_key(key,entity);
+
+  //We also need to swap the comm-vectors for these entities:
+  entity_comm_swap(key, old_key);
 }
 
 //----------------------------------------------------------------------

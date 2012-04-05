@@ -40,6 +40,7 @@ public:
   inline bool erase( const EntityKey & key, const Ghosting & ghost );
   inline void comm_clear_ghosting(const EntityKey & key );
   inline void comm_clear(const EntityKey & key );
+  inline void comm_swap(const EntityKey & key1, const EntityKey & key2);
 
 private:
   map_type m_comm_map;
@@ -101,7 +102,7 @@ inline bool EntityComm::insert( const EntityKey & key, const EntityCommInfo & va
   std::vector< EntityCommInfo >::iterator i =
     std::lower_bound( m_comm.begin() , m_comm.end() , val );
 
-  const bool result = ( (i == m_comm.end()) || (val != *i) );
+  const bool result = ((i == m_comm.end()) || (val != *i));
 
   if ( result ) {
     m_comm.insert( i , val );
@@ -124,9 +125,9 @@ inline bool EntityComm::erase( const EntityKey & key, const EntityCommInfo & val
     m_comm.erase( i );
   }
 
-  if (m_comm.empty()) {
-    m_comm_map.erase(key);
-  }
+//  if (m_comm.empty()) {
+//    m_comm_map.erase(key);
+//  }
 
   return result ;
 }
@@ -151,9 +152,9 @@ inline bool EntityComm::erase( const EntityKey & key, const Ghosting & ghost )
     m_comm.erase( i , e );
   }
 
-  if (m_comm.empty()) {
-    m_comm_map.erase(key);
-  }
+//  if (m_comm.empty()) {
+//    m_comm_map.erase(key);
+//  }
 
   return result ;
 }
@@ -167,17 +168,32 @@ inline void EntityComm::comm_clear_ghosting(const EntityKey & key)
   while ( j != m_comm.end() && j->ghost_id == 0 ) { ++j ; }
   m_comm.erase( j , m_comm.end() );
 
-  if (m_comm.empty()) {
-    m_comm_map.erase(key);
-  }
+//  if (m_comm.empty()) {
+//    m_comm_map.erase(key);
+//  }
 }
 
 inline void EntityComm::comm_clear(const EntityKey & key)
 {
   TraceIfWatching("stk::mesh::EntityComm::comm_clear", LOG_ENTITY, key());
-  m_comm_map.erase(key);
+  EntityCommInfoVector& commvec = m_comm_map[key];
+  commvec.clear();
 }
 
+inline void EntityComm::comm_swap(const EntityKey & key1, const EntityKey & key2)
+{
+  map_type::iterator it1 = m_comm_map.find(key1);
+  map_type::iterator it2 = m_comm_map.find(key2);
+
+  if (it1 == m_comm_map.cend() && it2 == m_comm_map.cend()) {
+    return;
+  }
+
+  EntityCommInfoVector & comm1 = it1 == m_comm_map.cend() ? m_comm_map[key1] : it1->second;
+  EntityCommInfoVector & comm2 = it2 == m_comm_map.cend() ? m_comm_map[key2] : it2->second;
+
+  comm1.swap(comm2);
+}
 
 
 /** \brief  Is shared with any other process */

@@ -252,7 +252,7 @@ void EntityRepository::update_entity_key(EntityKey key, Entity & entity)
     Entity* key_entity = itr->second;
     ThrowRequireMsg( key_entity->log_query() == EntityLogDeleted, "update_entity_key ERROR: non-deleted entity already present for new key (" << key.rank()<<","<<key.id()<<")");
 
-    //We found an entity with 'key', we'll change it's key to old_key and then
+    //We found an entity with 'key', we'll change its key to old_key and then
     //entity (old_itr) will adopt key.
 
     key_entity->m_entityImpl.update_key(old_key);

@@ -403,6 +403,7 @@ public:
   bool entity_comm_erase(  const EntityKey & key, const Ghosting & ghost) { return m_entity_comm_map.erase(key,ghost); }
   void entity_comm_clear_ghosting(const EntityKey & key ) { m_entity_comm_map.comm_clear_ghosting(key); }
   void entity_comm_clear(const EntityKey & key) { m_entity_comm_map.comm_clear(key); }
+  void entity_comm_swap(const EntityKey & key1, const EntityKey & key2) { m_entity_comm_map.comm_swap(key1, key2); }
 
 private:
 
