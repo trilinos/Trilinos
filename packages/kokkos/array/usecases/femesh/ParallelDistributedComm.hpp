@@ -45,7 +45,6 @@
 #define PARALLELDISTRIBUTEDCOMM_HPP
 
 #include <cstddef>
-#include <iosfwd>
 
 //------------------------------------------------------------------------
 
