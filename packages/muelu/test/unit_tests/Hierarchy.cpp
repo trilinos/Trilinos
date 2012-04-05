@@ -364,11 +364,11 @@ TEUCHOS_UNIT_TEST(Hierarchy, Iterate)
   UCAggFact->SetPhase3AggCreation(0.5);
 
   RCP<CoalesceDropFactory> cdFact;
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
+  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory());
 
-  RCP<SaPFactory>         Pfact = rcp( new SaPFactory(TentPFact) );
-  RCP<RFactory>           Rfact = rcp( new TransPFactory(Pfact));
-  RCP<RAPFactory>         Acfact = rcp( new RAPFactory(Pfact,Rfact) );
+  RCP<SaPFactory>         Pfact = rcp( new SaPFactory() );
+  RCP<RFactory>           Rfact = rcp( new TransPFactory());
+  RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
   
 
 #ifdef HAVE_MUELU_IFPACK
@@ -378,17 +378,23 @@ TEUCHOS_UNIT_TEST(Hierarchy, Iterate)
   RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(smooProto) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
-  Teuchos::ParameterList status;
-  int maxLevels = 5;
-  status = H.FullPopulate(*Pfact, *Rfact, *Acfact, *SmooFact, 0, maxLevels);
-  out  << "======================\n Multigrid statistics \n======================" << std::endl;
-  status.print(out, Teuchos::ParameterList::PrintOptions().indent(2));
-
   //FIXME we should be able to just call smoother->SetNIts(50) ... but right now an exception gets thrown
   Teuchos::ParameterList amesosList;
   RCP<SmootherPrototype> coarseProto = rcp( new AmesosSmoother("Amesos_Klu", amesosList) );
-  SmootherFactory coarseSolveFact(coarseProto);
-  H.SetCoarsestSolver(coarseSolveFact, MueLu::PRE);
+  RCP<SmootherFactory> coarseSolveFact = rcp( new SmootherFactory(coarseProto, Teuchos::null));
+
+  int maxLevels = 5;
+
+  FactoryManager M;
+  M.SetFactory("P", Pfact);
+  M.SetFactory("R", Rfact);
+  M.SetFactory("A", Acfact);
+  M.SetFactory("Ptent", TentPFact);
+  M.SetFactory("Aggregates", UCAggFact);
+  M.SetFactory("Smoother", SmooFact);
+  M.SetFactory("CoarseSolver", coarseSolveFact);
+  
+  H.Setup(M, 0, maxLevels);
 
   RCP<MultiVector> X = MultiVectorFactory::Build(map, 1);
   RCP<MultiVector> RHS = MultiVectorFactory::Build(map, 1);
@@ -452,11 +458,11 @@ TEUCHOS_UNIT_TEST(Hierarchy, IterateWithImplicitRestriction)
   UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
   UCAggFact->SetPhase3AggCreation(0.5);
   RCP<CoalesceDropFactory> cdFact;
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
+  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory());
 
-  RCP<SaPFactory>         Pfact = rcp( new SaPFactory(TentPFact) );
-  RCP<RFactory>           Rfact = rcp( new TransPFactory(Pfact));
-  RCP<RAPFactory>         Acfact = rcp( new RAPFactory(Pfact,Rfact) );
+  RCP<SaPFactory>         Pfact = rcp( new SaPFactory() );
+  RCP<RFactory>           Rfact = rcp( new TransPFactory());
+  RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
   Acfact->SetImplicitTranspose(true);
 
 #ifdef HAVE_MUELU_IFPACK
@@ -466,17 +472,26 @@ TEUCHOS_UNIT_TEST(Hierarchy, IterateWithImplicitRestriction)
   RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(smooProto) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
-  Teuchos::ParameterList status;
-  int maxLevels = 5;
-  status = H.FullPopulate(*Pfact, *Rfact, *Acfact, *SmooFact, 0, maxLevels);
-  out  << "======================\n Multigrid statistics \n======================" << std::endl;
-  status.print(out, Teuchos::ParameterList::PrintOptions().indent(2));
-
   //FIXME we should be able to just call smoother->SetNIts(50) ... but right now an exception gets thrown
   Teuchos::ParameterList amesosList;
   RCP<SmootherPrototype> coarseProto = rcp( new AmesosSmoother("Amesos_Klu", amesosList) );
-  SmootherFactory coarseSolveFact(coarseProto);
-  H.SetCoarsestSolver(coarseSolveFact, MueLu::PRE);
+  RCP<SmootherFactory> coarseSolveFact = rcp( new SmootherFactory(coarseProto, Teuchos::null));
+
+  int maxLevels = 5;
+
+  FactoryManager M;
+  M.SetFactory("P", Pfact);
+  M.SetFactory("R", Rfact);
+  M.SetFactory("A", Acfact);
+  M.SetFactory("Ptent", TentPFact);
+  M.SetFactory("Aggregates", UCAggFact);
+  M.SetFactory("Smoother", SmooFact);
+  M.SetFactory("CoarseSolver", coarseSolveFact);
+  
+  H.Setup(M, 0, maxLevels);
+
+  //  Teuchos::ParameterList status;
+  // status.print(out, Teuchos::ParameterList::PrintOptions().indent(2));
 
   RCP<MultiVector> X = MultiVectorFactory::Build(map, 1);
   RCP<MultiVector> RHS = MultiVectorFactory::Build(map, 1);
@@ -734,7 +749,9 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3levelFacManagers)
 
   FactoryManager M1; // first coarse level (Plain aggregation)
   M1.SetFactory("A", rcp(new RAPFactory()));
-  M1.SetFactory("P", rcp(new TentativePFactory()));
+  RCP<FactoryBase> PFact = rcp(new TentativePFactory());
+  M1.SetFactory("P", PFact);
+  M1.SetFactory("Ptent", PFact); //FIXME: can it be done automatically in FactoryManager?
   M1.SetFactory("Smoother", postSmooFact);
 
   FactoryManager M2; // last level (SA)
