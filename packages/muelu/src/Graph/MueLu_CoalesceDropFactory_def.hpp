@@ -91,6 +91,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
 
   if (bDoAmalgamation) {
     FactoryMonitor m2(*this, "Amalgamate", currentLevel);
+    std::cout << "CoalesceDropFactory::Build: blockdim = " << blockdim << std::endl;
     Amalgamate(A, blockdim, graph);
   } else {
     graph = rcp(new Graph(A->getCrsGraph(), "Graph of A"));
@@ -130,7 +131,9 @@ template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, clas
 const Teuchos::RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > CoalesceDropFactory<Scalar, LocalOrdinal,
 GlobalOrdinal, Node, LocalMatOps>::SetupAmalgamationData(const RCP<Operator>& A, const RCP<Xpetra::Vector<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> >& globalgid2globalamalblockid_vector, LocalOrdinal blockSize) const {
 
+#ifdef SUPPORT_FOR_LOCALIDS
   globalamalblockid2myrowid_ = Teuchos::rcp(new std::map<GlobalOrdinal,std::vector<LocalOrdinal> >);
+#endif
   globalamalblockid2globalrowid_ = Teuchos::rcp(new std::map<GlobalOrdinal,std::vector<GlobalOrdinal> >);
 
   RCP<std::vector<GlobalOrdinal> > globalamalblockids;
@@ -147,11 +150,15 @@ GlobalOrdinal, Node, LocalMatOps>::SetupAmalgamationData(const RCP<Operator>& A,
     GlobalOrdinal globalblockid = GlobalId2GlobalAmalBlockId(gDofId, A, globalgid2globalamalblockid_vector, blockSize);
 
     // gblockid -> gDofId/lDofId
-    if(globalamalblockid2myrowid_->count(globalblockid) > 0) {
+    if(globalamalblockid2globalrowid_->count(globalblockid) > 0) {
+#ifdef SUPPORT_FOR_LOCALIDS
       globalamalblockid2myrowid_->find(globalblockid)->second.push_back(i);
+#endif
       globalamalblockid2globalrowid_->find(globalblockid)->second.push_back(gDofId);
     } else {
+#ifdef SUPPORT_FOR_LOCALIDS
       (*globalamalblockid2myrowid_)[globalblockid] = std::vector<LocalOrdinal>(1,i);
+#endif
       (*globalamalblockid2globalrowid_)[globalblockid] = std::vector<GlobalOrdinal>(1,gDofId);
       if(A->getRowMap()->isNodeGlobalElement(gDofId)) {
         globalamalblockids->push_back(globalblockid);
@@ -161,8 +168,9 @@ GlobalOrdinal, Node, LocalMatOps>::SetupAmalgamationData(const RCP<Operator>& A,
   }
 
   // clean up DofVectors (remove duplicate entries)
+
+#ifdef SUPPORT_FOR_LOCALIDS
   typename std::map<GlobalOrdinal,std::vector<LocalOrdinal> >::iterator lit;
-  typename std::map<GlobalOrdinal,std::vector<GlobalOrdinal> >::iterator git;
   for (lit=globalamalblockid2myrowid_->begin(); lit!=globalamalblockid2myrowid_->end(); lit++) {
     std::vector<LocalOrdinal> lrowids = lit->second;
     sort(lrowids.begin(), lrowids.end());
@@ -170,6 +178,8 @@ GlobalOrdinal, Node, LocalMatOps>::SetupAmalgamationData(const RCP<Operator>& A,
     lendLocation = std::unique(lrowids.begin(), lrowids.end());
     lrowids.erase(lendLocation,lrowids.end());
   }
+#endif
+  typename std::map<GlobalOrdinal,std::vector<GlobalOrdinal> >::iterator git;
   for (git=globalamalblockid2globalrowid_->begin(); git!=globalamalblockid2globalrowid_->end(); git++) {
     std::vector<GlobalOrdinal> growids = git->second;
     sort(growids.begin(), growids.end());
@@ -177,6 +187,16 @@ GlobalOrdinal, Node, LocalMatOps>::SetupAmalgamationData(const RCP<Operator>& A,
     gendLocation = std::unique(growids.begin(), growids.end());
     growids.erase(gendLocation,growids.end());
   }
+
+  // debug output
+//  for (git=globalamalblockid2globalrowid_->begin(); git!=globalamalblockid2globalrowid_->end(); git++) {
+//    std::vector<GlobalOrdinal> growids = git->second;
+//    std::cout << git->first << ": ";
+//    for(size_t i=0; i<growids.size(); ++i) {
+//      std::cout << growids[i] << " ";
+//    }
+//    std::cout << std::endl;
+//  }
 
   // inter processor communication: sum up number of block ids
   GlobalOrdinal num_blockids = 0;
@@ -209,7 +229,6 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
   }
 
   // do amalgamation
-
 
   // setup amalgamation information (will be stored in Graph in the end of the routine)
   RCP<Map> amal_map = SetupAmalgamationData(A, blkSizeInfo_, blockSize);
@@ -259,7 +278,11 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
   graph = rcp(new Graph(crsGraph, "amalgamated graph of A"));
 
   // store information in Graph object for unamalgamation of vectors
+#ifdef SUPPORT_FOR_LOCALIDS
   graph->SetAmalgamationParams(globalamalblockid2myrowid_, globalamalblockid2globalrowid_);
+#else
+  graph->SetAmalgamationParams(Teuchos::null, globalamalblockid2globalrowid_);
+#endif
 }
 
 } //namespace MueLu
