@@ -58,7 +58,7 @@ namespace MueLu {
   void  Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeAggregateToRowMap(Teuchos::ArrayRCP<Teuchos::ArrayRCP<LocalOrdinal> > &aggToRowMap) const {
     // decide whether we need the DOF version (for problems with amalgamated matrix)
     // or just the Node version (for problems with 1 DOF per node)
-    if(GetAmalgamationInfo()->GetMyAmalgamationParams() == Teuchos::null) {
+    if(GetAmalgamationInfo()->GetGlobalAmalgamationParams() == Teuchos::null) {
 #ifndef ALTERNATIVE_COMPUTEAGGTOROWMAPDOFS
       ComputeAggregateToRowMapNodes(aggToRowMap);
 #else
@@ -78,7 +78,7 @@ namespace MueLu {
     void  Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ComputeAggregateToRowMap(Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> > &aggToRowMap) const {
       // decide whether we need the DOF version (for problems with amalgamated matrix)
       // or just the Node version (for problems with 1 DOF per node)
-      if(GetAmalgamationInfo()->GetMyAmalgamationParams() == Teuchos::null) {
+      if(GetAmalgamationInfo()->GetGlobalAmalgamationParams() == Teuchos::null) {
         ComputeAggregateToRowMapNodes(aggToRowMap);
       }
       else {
@@ -239,7 +239,7 @@ namespace MueLu {
       // decide whether we need the DOF version (for problems with amalgamated matrix)
       // or just the Node version (for problems with 1 DOF per node)
       //if(globalamalblockid2myrowid_ == Teuchos::null) {
-      if (GetAmalgamationInfo()->GetMyAmalgamationParams() == Teuchos::null) {
+      if (GetAmalgamationInfo()->GetGlobalAmalgamationParams() == Teuchos::null) {
         ComputeAggregateSizesNodes();
       }
       else {
@@ -288,7 +288,7 @@ namespace MueLu {
             GlobalOrdinal gblockid = vertex2AggId_->getMap()->getGlobalElement(lnode);
 
             // unumalgamate graph-based information to dof-based information
-            std::vector<LocalOrdinal> blockdofs = (*(GetAmalgamationInfo()->GetMyAmalgamationParams()))[gblockid];
+            std::vector<LocalOrdinal> blockdofs = (*(GetAmalgamationInfo()->GetGlobalAmalgamationParams()))[gblockid];
             aggregateSizes_[myAgg] += Teuchos::as<LocalOrdinal>(blockdofs.size());
           }
         }
@@ -326,8 +326,7 @@ namespace MueLu {
     RCP<const Map> nodeMap = vertex2AggId_->getMap(); // use import node map from graph
 
     // special case: 1 dof per node
-    if(GetAmalgamationInfo()->GetMyAmalgamationParams() == Teuchos::null &&
-        GetAmalgamationInfo()->GetGlobalAmalgamationParams() == Teuchos::null) {
+    if(GetAmalgamationInfo()->GetGlobalAmalgamationParams() == Teuchos::null) {
       GetOStream(Debug, 0) << "MueLu::Aggregates::GenerateImportDofMap: 1 dof per node -> skip reconstruction of import DOF map!" << std::endl;
       // TODO: add debug statement
 
@@ -339,7 +338,7 @@ namespace MueLu {
     }
 
     TEUCHOS_TEST_FOR_EXCEPTION(GetAmalgamationInfo()->GetGlobalAmalgamationParams()==Teuchos::null, Exceptions::RuntimeError, "MueLu::Aggregates::GenerateImportDofMap: insufficient amalgamation information. Error");
-    TEUCHOS_TEST_FOR_EXCEPTION(GetAmalgamationInfo()->GetMyAmalgamationParams()==Teuchos::null    , Exceptions::RuntimeError, "MueLu::Aggregates::GenerateImportDofMap: insufficient amalgamation information. Error");
+    //TEUCHOS_TEST_FOR_EXCEPTION(GetAmalgamationInfo()->GetMyAmalgamationParams()==Teuchos::null    , Exceptions::RuntimeError, "MueLu::Aggregates::GenerateImportDofMap: insufficient amalgamation information. Error");
 
     // build dof map from node map
     RCP<std::vector<GlobalOrdinal> > myDofGIDs = Teuchos::rcp(new std::vector<GlobalOrdinal>);
