@@ -30,7 +30,7 @@ namespace MueLu {
     // transfer amalgamation data from graph to AmalgamationInfo container
     // TODO: move this?
     amalgamationData_ = rcp(new AmalgamationInfo());
-    amalgamationData_->SetAmalgamationParams(graph.GetMyAmalgamationParams(),graph.GetGlobalAmalgamationParams());
+    amalgamationData_->SetAmalgamationParams(graph.GetGlobalAmalgamationParams());
 
     GenerateImportDofMap(); // amalgamation parameters have to be set before!
 

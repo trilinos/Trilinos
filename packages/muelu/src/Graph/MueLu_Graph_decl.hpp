@@ -27,7 +27,6 @@ namespace MueLu {
 
     Graph(const RCP<const CrsGraph> & graph, const std::string & objectLabel="") : graph_(graph) { 
       //setObjectLabel(objectLabel); 
-      globalamalblockid2myrowid_ = Teuchos::null;
       globalamalblockid2globalrowid_ = Teuchos::null;
     }
 
@@ -54,11 +53,11 @@ namespace MueLu {
     //! the overlapping DofMap that is needed by the tentative prolongation operator (TentativePFactory).
     //! The map globalamalblockid2myrowid can be accessed from outside by GetAmalgamationParams and is needed
     //! by the aggregation algorithm
-    void SetAmalgamationParams(RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid,RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > globalamalblockid2globalrowid) const;
+    void SetAmalgamationParams(RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > globalamalblockid2globalrowid) const;
 
     //! returns amalgamation information globalamalblockid2myrowid
     //! only valid if SetAmalgamationParams has been used before (i.e. CoalesceDropFactory::Amalgamate is called).
-    RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > GetMyAmalgamationParams() const;
+    //RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > GetMyAmalgamationParams() const;
 
     //! returns amalgamation information globalamalblockid2globalrowid
     //! only valid if SetAmalgamationParams has been used before (i.e. CoalesceDropFactory::Amalgamate is called).
@@ -83,8 +82,7 @@ namespace MueLu {
     //! @name amalgamation information variables
     //@{
 
-    /// map: global block id of amalagamated matrix -> vector of local row ids of unamalgamated matrix (only for global block ids of current proc)
-    mutable RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal> > > globalamalblockid2myrowid_;   //< used by aggregation factory
+    /// map: global block id of amalagamated matrix -> vector of global row ids of unamalgamated matrix (only for global block ids of current proc)
     mutable RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > globalamalblockid2globalrowid_; //< used for building overlapping ImportDofMap
 
     //@}

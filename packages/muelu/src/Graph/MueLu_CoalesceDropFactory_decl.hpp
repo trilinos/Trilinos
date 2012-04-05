@@ -17,8 +17,6 @@
 #include "MueLu_Graph_fwd.hpp"
 #include "MueLu_PreDropFunctionBaseClass_fwd.hpp"
 
-#undef SUPPORT_FOR_LOCALIDS
-
 namespace MueLu {
 
   /*!
@@ -103,11 +101,7 @@ namespace MueLu {
     RCP<PreDropFunctionBaseClass> predrop_;
 
     /// amalgamation information
-#ifdef SUPPORT_FOR_LOCALIDS
-    mutable RCP<std::map<GlobalOrdinal,std::vector<LocalOrdinal > > > globalamalblockid2myrowid_;
-#endif
     mutable RCP<std::map<GlobalOrdinal,std::vector<GlobalOrdinal> > > globalamalblockid2globalrowid_;
-
 
   }; //class CoalesceDropFactory
 
