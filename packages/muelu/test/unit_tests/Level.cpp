@@ -65,11 +65,15 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST(Level, RequestRelease)
   {
     Level l;
-    
+    l.SetLevelID(0);
+
+    RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2);
+    l.Set("A", A);
+
     RCP<FactoryManager> facManager = rcp(new FactoryManager());
     l.SetFactoryManager(facManager);
 
-    RCP<FactoryBase> factory = rcp(new CoalesceDropFactory(rcpFromRef(*MueLu::NoFactory::get())));
+    RCP<FactoryBase> factory = rcp(new CoalesceDropFactory());
     
     l.Request("Graph", factory.get());
     TEST_EQUALITY(l.IsRequested("Graph", factory.get()), true);
@@ -82,6 +86,7 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST(Level, RequestReleaseFactory)
   {
     Level l;
+    l.SetLevelID(0);
 
     RCP<FactoryManager> facManager = rcp(new FactoryManager());
     l.SetFactoryManager(facManager);
@@ -89,7 +94,7 @@ namespace MueLuTests {
     RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2);
     l.Set("A", A);
 
-    RCP<FactoryBase> graphFact = rcp(new CoalesceDropFactory(rcpFromRef(*MueLu::NoFactory::get())));
+    RCP<FactoryBase> graphFact = rcp(new CoalesceDropFactory());
     RCP<FactoryBase> aggFact   = rcp(new UCAggregationFactory(graphFact));
     
     l.Request("Aggregates", aggFact.get());
@@ -110,6 +115,7 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST(Level, KeepFactory)
   {
     Level l;
+    l.SetLevelID(0);
 
     RCP<FactoryManager> facManager = rcp(new FactoryManager());
     l.SetFactoryManager(facManager);
@@ -117,7 +123,7 @@ namespace MueLuTests {
     RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(2);
     l.Set("A", A);
 
-    RCP<FactoryBase> graphFact = rcp(new CoalesceDropFactory(rcpFromRef(*MueLu::NoFactory::get())));
+    RCP<FactoryBase> graphFact = rcp(new CoalesceDropFactory());
     RCP<FactoryBase> aggFact   = rcp(new UCAggregationFactory(graphFact));
 
     l.Keep("Aggregates", aggFact.get());      // set keep flag
@@ -153,7 +159,7 @@ namespace MueLuTests {
     RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(144);
     l.Set("A", A);
 
-    RCP<CoalesceDropFactory>  graphFact = rcp(new CoalesceDropFactory(rcpFromRef(*MueLu::NoFactory::get())));
+    RCP<CoalesceDropFactory>  graphFact = rcp(new CoalesceDropFactory());
     RCP<UCAggregationFactory> aggFact   = rcp(new UCAggregationFactory(graphFact));
 
     l.Keep("Aggregates", aggFact.get());      // set keep flag
@@ -217,7 +223,7 @@ namespace MueLuTests {
     RCP<Operator> A = TestHelpers::Factory<SC, LO, GO, NO, LMO>::Build1DPoisson(144);
     l.Set("A", A);
 
-    RCP<CoalesceDropFactory>  graphFact = rcp(new CoalesceDropFactory(rcpFromRef(*MueLu::NoFactory::get())));
+    RCP<CoalesceDropFactory>  graphFact = rcp(new CoalesceDropFactory());
     RCP<UCAggregationFactory> aggFact   = rcp(new UCAggregationFactory(graphFact));
 
     TEST_EQUALITY(l.IsRequested("Aggregates", aggFact.get()),   false);
@@ -311,7 +317,7 @@ namespace MueLuTests {
   }
 
   //! Test if circular dependencies between factories are allowed
-  //  This test Corresponds to a use-case found developping repartitionning capability
+  //  This test corresponds to a use-case found developping repartitionning capability
   TEUCHOS_UNIT_TEST(Level, CircularDependencyWithTwoFactories) {
     CircularFactory A(2);
     CircularFactory B(3);
