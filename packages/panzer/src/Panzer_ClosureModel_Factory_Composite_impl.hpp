@@ -100,8 +100,6 @@ buildClosureModels(const std::string& model_id,
   for (ParameterList::ConstIterator model_it = my_models.begin(); 
        model_it != my_models.end(); ++model_it) {
     
-    bool found = false;
-
     std::string model_key = model_it->first;
     
     // Duplicate models sublist with just the particular model you
@@ -121,19 +119,8 @@ buildClosureModels(const std::string& model_id,
 	for (vector< RCP<Evaluator<panzer::Traits> > >::const_iterator eval = tmp_evaluators->begin(); eval != tmp_evaluators->end(); ++eval)
 	  evaluators->push_back(*eval);
 
-	found = true;
-	break;
       }
       
-    }
-    
-    if (!found) {
-      std::stringstream msg;
-      msg << "ERROR: ClosureModelFactoryComposite failed to build model \"" << model_id << "\",\n"
-	  << "with the sublist key \"" << model_key << "\".\n"
-	  << "Please correct the model input or add support for this key to a\nclosure "
-	  << "model factory." << std::endl;
-      TEUCHOS_TEST_FOR_EXCEPTION(!found, std::logic_error, msg.str());
     }
 
   }

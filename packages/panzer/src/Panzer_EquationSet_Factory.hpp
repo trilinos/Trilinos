@@ -52,6 +52,15 @@
 
 namespace panzer {
 
+  /** \brief Allocates and initializes an equation set template manager
+
+     \param ies [in] Input equation set
+     \param cell_data [in] The cell data
+     \param global_data [in] Global data
+     \param build_transient_support [in] If true, the transient evaluators will be built, registered, and required in the Phalanx evaluation graph.
+
+     Returns an RCP to a newly allocated EquationSet_TemplateManager.  
+  */
   struct EquationSetFactory {
 
     virtual Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> >

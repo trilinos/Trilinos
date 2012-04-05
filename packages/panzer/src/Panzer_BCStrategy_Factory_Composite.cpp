@@ -40,47 +40,43 @@
 // ***********************************************************************
 // @HEADER
 
-#include <Teuchos_ConfigDefs.hpp>
-#include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_TimeMonitor.hpp>
-
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include <iostream>
+#include "Panzer_BCStrategy_Factory_Composite.hpp"
+#include "Panzer_BC.hpp"
 
 namespace panzer {
-
-  TEUCHOS_UNIT_TEST(parameter_list_acceptance_test,order_preserving)
+  
+  BCFactoryComposite::BCFactoryComposite(const std::vector<Teuchos::RCP<panzer::BCStrategyFactory> >& factories) :
+    m_bc_strategy_factories(factories)
   {
-    using namespace Teuchos;
+    
+  }
+  
+  Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> >
+  BCFactoryComposite::
+  buildBCStrategy(const panzer::BC& bc, 
+		  const Teuchos::RCP<panzer::GlobalData>& global_data) const
+  {    
+    Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> > bcs_tm;
+    
+    bool found = false;
 
-    ParameterList p;
-    updateParametersFromXmlFile("parameter_list_acceptance_test.xml", ptrFromRef(p));
+    for (std::vector<Teuchos::RCP<panzer::BCStrategyFactory> >::const_iterator factory = m_bc_strategy_factories.begin(); factory != m_bc_strategy_factories.end(); ++factory) {
 
-    TEST_ASSERT(p.isSublist("Boundary Conditions"));
-
-    ParameterList bcs = p.sublist("Boundary Conditions");
-
-    typedef ParameterList::ConstIterator pl_it;
-
-    int index = 0;
-    for (pl_it bc=bcs.begin(); bc != bcs.end(); ++bc,++index) {
-      ParameterList* sublist=0;
-      TEST_EQUALITY(bc->second.getValue(sublist).get<int>("order"),index);
+      bcs_tm = (*factory)->buildBCStrategy(bc,global_data);
+      
+      if (nonnull(bcs_tm)) {
+	found = true;
+	break;
+      }
 
     }
-
-    out << p << std::endl;
+        
+    TEUCHOS_TEST_FOR_EXCEPTION(!found, std::logic_error, 
+			       "Error - the BC Strategy called \"" << bc.strategy() <<
+			       "\" is not a valid identifier in the BCStrategyFactory.  Either add a valid implementation to the factory or fix the input file.  The relevant boundary condition is:\n\n" << bc << std::endl);
+    
+    return bcs_tm;
+    
   }
-
-  TEUCHOS_UNIT_TEST(parameter_list_acceptance_test,repeated_sublist_name)
-  {
-    using namespace Teuchos;
-
-    ParameterList p;
-    TEST_THROW(updateParametersFromXmlFile("parameter_list_acceptance_test2.xml", ptrFromRef(p)),std::logic_error);
-
-    out << p << std::endl;
-  }
+  
 }

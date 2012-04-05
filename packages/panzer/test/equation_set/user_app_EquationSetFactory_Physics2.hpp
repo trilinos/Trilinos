@@ -40,47 +40,57 @@
 // ***********************************************************************
 // @HEADER
 
-#include <Teuchos_ConfigDefs.hpp>
-#include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_TimeMonitor.hpp>
 
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include <iostream>
+#include "Panzer_EquationSet_Factory.hpp"
+#include "Panzer_EquationSet_Factory_Defines.hpp"
+#include "Panzer_InputEquationSet.hpp"
+#include "Panzer_CellData.hpp"
 
-namespace panzer {
+// Add my equation sets here
+#include "user_app_EquationSet_Energy.hpp"
 
-  TEUCHOS_UNIT_TEST(parameter_list_acceptance_test,order_preserving)
-  {
-    using namespace Teuchos;
+namespace user_app {
 
-    ParameterList p;
-    updateParametersFromXmlFile("parameter_list_acceptance_test.xml", ptrFromRef(p));
+  /* comment out - already declared in physics 1
+  PANZER_DECLARE_EQSET_TEMPLATE_BUILDER("Energy 1", user_app::EquationSet_Energy,
+					EquationSet_Energy)
+  */
+  
+  class MyFactory2 : public panzer::EquationSetFactory {
 
-    TEST_ASSERT(p.isSublist("Boundary Conditions"));
+    bool m_throw_on_failure;
 
-    ParameterList bcs = p.sublist("Boundary Conditions");
+  public:
 
-    typedef ParameterList::ConstIterator pl_it;
+    MyFactory2(bool throw_on_failure) : m_throw_on_failure(throw_on_failure) {}
 
-    int index = 0;
-    for (pl_it bc=bcs.begin(); bc != bcs.end(); ++bc,++index) {
-      ParameterList* sublist=0;
-      TEST_EQUALITY(bc->second.getValue(sublist).get<int>("order"),index);
+    Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> >
+    buildEquationSet(const panzer::InputEquationSet& ies,
+		     const panzer::CellData& cell_data,
+		     const Teuchos::RCP<panzer::GlobalData>& global_data,
+		     const bool build_transient_support) const
+    {
+      Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> > eq_set= 
+	Teuchos::rcp(new panzer::EquationSet_TemplateManager<panzer::Traits>);
+      
+      bool found = false;
+      
+      PANZER_BUILD_EQSET_OBJECTS("Energy 2", my_app::EquationSet_Energy,
+				 EquationSet_Energy)
+      
+      if (!found && m_throw_on_failure) {
+	std::string msg = "Error - the \"Equation Set\" called \"" + ies.name +
+	  "\" is not a valid equation set identifier. Please supply the correct factory.\n";
+	TEUCHOS_TEST_FOR_EXCEPTION(!found && m_throw_on_failure, std::logic_error, msg);
+      }
+      
+      if (!found)
+	return Teuchos::null;
 
+      return eq_set;
     }
+    
+  };
 
-    out << p << std::endl;
-  }
-
-  TEUCHOS_UNIT_TEST(parameter_list_acceptance_test,repeated_sublist_name)
-  {
-    using namespace Teuchos;
-
-    ParameterList p;
-    TEST_THROW(updateParametersFromXmlFile("parameter_list_acceptance_test2.xml", ptrFromRef(p)),std::logic_error);
-
-    out << p << std::endl;
-  }
 }
+

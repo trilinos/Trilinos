@@ -52,6 +52,15 @@ namespace panzer {
   template<typename T> class BCStrategy_TemplateManager;
   class GlobalData;
 
+  /** \brief Interface for constructing a BCStrategy_TemplateManager
+
+     \param bc [in] A description of the boundary condition.
+     \param globa_data [in] a nonnull rcp to a GlobalData object.
+
+     Returns a nonnull RCP to the BCStrategy_TemplateManager.  The
+     object should throw an exception if the BCStrategy object fails
+     to build correctly.
+  */
   struct BCStrategyFactory {
 
     BCStrategyFactory() {}
