@@ -634,7 +634,9 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3level)
 
   FactoryManager M1; // first coarse level (Plain aggregation)
   M1.SetFactory("A", rcp(new RAPFactory()));
-  M1.SetFactory("P", rcp(new TentativePFactory()));
+  RCP<FactoryBase> P = rcp(new TentativePFactory());
+  M1.SetFactory("P", P);
+  M1.SetFactory("Ptent", P); //FIXME: can it be done automatically in FactoryManager?
 
   FactoryManager M2; // last level (SA)
   M2.SetFactory("A", rcp(new RAPFactory()));
