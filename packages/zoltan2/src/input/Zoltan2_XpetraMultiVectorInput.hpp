@@ -72,6 +72,13 @@ public:
   XpetraMultiVectorInput(const RCP<const User> &invector,
     vector<const scalar_t *> &weights, vector<int> &weightStrides);
 
+  /*! \brief Constructor for case when weights are not being used.
+   *
+   *  \param invector  the user's Xpetra, Tpetra or Epetra MultiVector object
+   */
+
+  XpetraMultiVectorInput(const RCP<const User> &invector);
+
   /*! \brief Access to xpetra wrapper multivector
    */
 
@@ -169,6 +176,21 @@ template <typename User>
     }
   }
 }
+
+
+template <typename User>
+  XpetraMultiVectorInput<User>::XpetraMultiVectorInput(const RCP<const User> &invector):
+      invector_(invector), vector_(), map_(), 
+      env_(rcp(new Environment)), base_(),
+      numWeights_(0), weights_(0)
+{
+  typedef StridedData<lno_t, scalar_t> input_t;
+
+  vector_ = XpetraTraits<User>::convertToXpetra(invector);
+  map_ = vector_->getMap();
+  base_ = map_->getIndexBase();
+}
+
 template <typename User>
   size_t XpetraMultiVectorInput<User>::getVector(int i, const gid_t *&Ids, 
     const scalar_t *&elements, int &stride) const
