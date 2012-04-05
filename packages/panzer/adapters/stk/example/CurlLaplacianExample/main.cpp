@@ -48,6 +48,7 @@
 
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
 
 #include "Panzer_config.hpp"
 #include "Panzer_ParameterList_ObjectBuilders.hpp"
@@ -59,6 +60,7 @@
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_TpetraLinearObjFactory.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
@@ -80,6 +82,9 @@
 
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_VectorOut.h"
+
+#include "BelosBlockGmresSolMgr.hpp"
+#include "BelosTpetraAdapter.hpp"
 
 #include "Example_BCStrategy_Factory.hpp"
 #include "Example_ClosureModel_Factory_TemplateBuilder.hpp"
@@ -135,6 +140,9 @@ using Teuchos::rcp;
 void testInitialization(panzer::InputPhysicsBlock& ipb,
 		       std::vector<panzer::BC>& bcs);
 
+void solveEpetraSystem(panzer::LinearObjContainer & container);
+void solveTpetraSystem(panzer::LinearObjContainer & container);
+
 // calls MPI_Init and MPI_Finalize
 int main(int argc,char * argv[])
 {
@@ -145,10 +153,20 @@ int main(int argc,char * argv[])
 
    Teuchos::GlobalMPISession mpiSession(&argc,&argv);
    RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-   Teuchos::MpiComm<int> comm(Teuchos::opaqueWrapper(MPI_COMM_WORLD));
+   Teuchos::RCP<Teuchos::Comm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
    Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
    out.setOutputToRootOnly(0);
    out.setShowProcRank(true);
+
+   // Build command line processor
+   ////////////////////////////////////////////////////
+
+   bool useTpetra = false;
+   Teuchos::CommandLineProcessor clp;
+   clp.setOption("use-tpetra","use-epetra",&useTpetra);
+
+   // parse commandline argument
+   TEUCHOS_ASSERT(clp.parse(argc,argv)==Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL);
 
    // variable declarations
    ////////////////////////////////////////////////////
@@ -251,8 +269,11 @@ int main(int argc,char * argv[])
          = globalIndexerFactory.buildUniqueGlobalIndexer(MPI_COMM_WORLD,physicsBlocks,conn_manager);
 
    // construct some linear algebra object, build object to pass to evaluators
-   Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
-         = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),dofManager));
+   Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory;
+   if(!useTpetra)
+      linObjFactory = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),dofManager));
+   else
+      linObjFactory = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,int>(comm,dofManager));
 
    // Setup STK response library for writing out the solution fields
    ////////////////////////////////////////////////////////////////////////
@@ -362,12 +383,41 @@ int main(int argc,char * argv[])
    // solve linear system
    /////////////////////////////////////////////////////////////
 
+   if(useTpetra)
+      solveTpetraSystem(*container);
+   else
+      solveEpetraSystem(*container);
+  
+   // output data (optional)
+   /////////////////////////////////////////////////////////////
+
+   // write out solution
+   if(true) {
+      // redistribute solution vector to ghosted vector
+      linObjFactory->globalToGhostContainer(*container,*ghostCont, panzer::LinearObjContainer::X 
+                                                                 | panzer::LinearObjContainer::DxDt); 
+
+      // fill STK mesh objects
+      stkIOResponseLibrary->evaluateVolumeFieldManagers<panzer::Traits::Residual>(input,*comm);
+
+      // write to exodus
+      mesh->writeToExodus("output.exo");
+   }
+
+   // all done!
+   /////////////////////////////////////////////////////////////
+
+   return 0;
+}
+
+void solveEpetraSystem(panzer::LinearObjContainer & container)
+{
    // convert generic linear object container to epetra container
-   RCP<panzer::EpetraLinearObjContainer> ep_container 
-         = rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(container);
+   panzer::EpetraLinearObjContainer & ep_container 
+         = Teuchos::dyn_cast<panzer::EpetraLinearObjContainer>(container);
 
    // Setup the linear solve: notice A is used directly 
-   Epetra_LinearProblem problem(&*ep_container->A,&*ep_container->x,&*ep_container->f); 
+   Epetra_LinearProblem problem(&*ep_container.A,&*ep_container.x,&*ep_container.f); 
 
    // build the solver
    AztecOO solver(problem);
@@ -385,37 +435,60 @@ int main(int argc,char * argv[])
    //     J*e = -r = -(f - J*0) where f = J*u
    // Therefore we have  J*e=-J*u which implies e = -u
    // thus we will scale the solution vector 
-   ep_container->x->Scale(-1.0);
-  
-   // output data (optional)
-   /////////////////////////////////////////////////////////////
+   ep_container.x->Scale(-1.0);
 
    // write out linear system
-   if(true) {
-      EpetraExt::RowMatrixToMatrixMarketFile("a_op.mm",*ep_container->A);
-      EpetraExt::VectorToMatrixMarketFile("x_vec.mm",*ep_container->x);
-      EpetraExt::VectorToMatrixMarketFile("b_vec.mm",*ep_container->f);
+   if(false) {
+      EpetraExt::RowMatrixToMatrixMarketFile("a_op.mm",*ep_container.A);
+      EpetraExt::VectorToMatrixMarketFile("x_vec.mm",*ep_container.x);
+      EpetraExt::VectorToMatrixMarketFile("b_vec.mm",*ep_container.f);
    }
 
-   // write out solution
-   if(true) {
-      // redistribute solution vector to ghosted vector
-      linObjFactory->globalToGhostContainer(*container,*ghostCont, panzer::EpetraLinearObjContainer::X 
-                                                                 | panzer::EpetraLinearObjContainer::DxDt); 
+}
 
-      // fill STK mesh objects
-      stkIOResponseLibrary->evaluateVolumeFieldManagers<panzer::Traits::Residual>(input,comm);
+void solveTpetraSystem(panzer::LinearObjContainer & container)
+{
+  typedef panzer::TpetraLinearObjContainer<double,int,int> LOC;
 
-      // // get X Epetra_Vector from ghosted container
-      // RCP<panzer::EpetraLinearObjContainer> ep_ghostCont = rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ghostCont);
-      // panzer_stk::write_solution_data(*rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,*ep_ghostCont->x);
-      mesh->writeToExodus("output.exo");
-   }
+  LOC & tp_container = Teuchos::dyn_cast<LOC>(container);
+  tp_container.A->fillComplete(); // where does this go?
 
-   // all done!
-   /////////////////////////////////////////////////////////////
+  // do stuff
+  // Wrap the linear problem to solve in a Belos::LinearProblem
+  // object.  The "X" argument of the LinearProblem constructor is
+  // only copied shallowly and will be overwritten by the solve, so we
+  // make a deep copy here.  That way we can compare the result
+  // against the original X_guess.
+  typedef Tpetra::MultiVector<double,int,int> MV;
+  typedef Tpetra::Operator<double,int,int> OP;
+  typedef Belos::LinearProblem<double,MV, OP> ProblemType;
+  Teuchos::RCP<ProblemType> problem(new ProblemType(tp_container.A, tp_container.x, tp_container.f));
+  TEUCHOS_ASSERT(problem->setProblem());
 
-   return 0;
+  typedef Belos::BlockGmresSolMgr<double,MV,OP> SolverType;
+
+  Teuchos::ParameterList belosList;
+  belosList.set( "Flexible Gmres", false );               // Flexible Gmres will be used to solve this problem
+  belosList.set( "Num Blocks", 1000 );            // Maximum number of blocks in Krylov factorization
+  belosList.set( "Block Size", 1 );              // Blocksize to be used by iterative solver
+  belosList.set( "Maximum Iterations", 1000 );       // Maximum number of iterations allowed
+  belosList.set( "Maximum Restarts", 1 );      // Maximum number of restarts allowed
+  belosList.set( "Convergence Tolerance", 1e-5 );         // Relative convergence tolerance requested
+  belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + Belos::TimingDetails + Belos::StatusTestDetails );
+  belosList.set( "Output Frequency", 1 );
+  belosList.set( "Output Style", 1 );
+
+  SolverType solver(problem, Teuchos::rcpFromRef(belosList));
+
+  Belos::ReturnType result = solver.solve();
+  if (result == Belos::Converged)
+    std::cout << "Result: Converged." << endl;
+  else {
+    TEUCHOS_ASSERT(false); // FAILURE!
+  }
+
+  // scale by -1
+  tp_container.x->scale(-1.0);
 }
 
 void testInitialization(panzer::InputPhysicsBlock& ipb,
