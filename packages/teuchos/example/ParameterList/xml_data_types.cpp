@@ -119,12 +119,18 @@ int main(int argc, char* argv[])
   myPL.set<int>("my int", 1);
   myPL.set<unsigned int>("my unsigned int", 1);
   myPL.set<short int>("my short int", 1);
+  myPL.set<short>("my short", 1);
   myPL.set<unsigned short int>("my unsigned short int", 1);
+  myPL.set<unsigned short>("my unsigned short", 1);
   myPL.set<long int>("my long int", 1);
+  myPL.set<long>("my long", 1);
   myPL.set<unsigned long int>("my unsigned long int", 1);
+  myPL.set<unsigned long>("my unsigned long", 1);
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
   myPL.set<long long int>("my long long int", 1);
+  myPL.set<long long>("my long long", 1);
   myPL.set<unsigned long long int>("my unsigned long long int", 1);
+  myPL.set<unsigned long long>("my unsigned long long", 1);
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
   myPL.set<float>("my float", 4.3);
   myPL.set<double>("my double", 4.3);
@@ -198,17 +204,29 @@ int main(int argc, char* argv[])
   std::cout << "myUnsignedInt = " << myUnsignedInt << "\n";
   const short int myShortInt = readPL->get<short int>("my short int");
   std::cout << "myShortInt = " << myShortInt << "\n";
+  const short int myShort = readPL->get<short>("my short");
+  std::cout << "myShort = " << myShort << "\n";
   const unsigned short int myUnsignedShortInt = readPL->get<unsigned short int>("my unsigned short int");
   std::cout << "myUnsignedShortInt = " << myUnsignedShortInt << "\n";
+  const unsigned short int myUnsignedShort = readPL->get<unsigned short>("my unsigned short");
+  std::cout << "myUnsignedShort = " << myUnsignedShort << "\n";
   const long int myLongInt = readPL->get<long int>("my long int");
   std::cout << "myLongInt = " << myLongInt << "\n";
+  const long int myLong = readPL->get<long>("my long");
+  std::cout << "myLong = " << myLong << "\n";
   const unsigned long int myUnsignedLongInt = readPL->get<unsigned long int>("my unsigned long int");
   std::cout << "myUnsignedLongInt = " << myUnsignedLongInt << "\n";
+  const unsigned long myUnsignedLong = readPL->get<unsigned long>("my unsigned long");
+  std::cout << "myUnsignedLong = " << myUnsignedLong << "\n";
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
   const long long int myLongLongInt = readPL->get<long long int>("my long long int");
   std::cout << "myLongLongInt = " << myLongLongInt << "\n";
+  const long long int myLongLong = readPL->get<long long>("my long long");
+  std::cout << "myLongLong = " << myLongLong << "\n";
   const unsigned long long int myUnsignedLongLongInt = readPL->get<unsigned long long int>("my unsigned long long int");
   std::cout << "myUnsignedLongLongInt = " << myUnsignedLongLongInt << "\n";
+  const unsigned long long myUnsignedLongLong = readPL->get<unsigned long long>("my unsigned long long");
+  std::cout << "myUnsignedLongLong = " << myUnsignedLongLong << "\n";
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
   const float myFloat = readPL->get<float>("my float");
   std::cout << "myFloat = " << myFloat << "\n";
