@@ -55,10 +55,15 @@ namespace MueLuTests {
     fineOnes->putScalar(1.0);
     fineLevel.Set("onesVector",fineOnes);
 
+    RCP<TentativePFactory>    PtentFact = rcp(new TentativePFactory());
+    RCP<TransPFactory>        RFact = rcp(new TransPFactory());
 
-    RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
-    RCP<TentativePFactory>    PtentFact = rcp(new TentativePFactory(UCAggFact));
-    RCP<TransPFactory>        RFact = rcp(new TransPFactory(PtentFact));
+    RCP<FactoryManager> M = rcp(new FactoryManager());
+    M->SetFactory("P", PtentFact);
+    M->SetFactory("Ptent", PtentFact);
+    M->SetFactory("R", RFact);
+    //    fineLevel.SetFactoryManager(M);
+    coarseLevel.SetFactoryManager(M);
 
     RCP<MueLu::MultiVectorTransferFactory<SC, LO, GO, NO, LMO> > mvtf = rcp(new MueLu::MultiVectorTransferFactory<SC, LO, GO, NO, LMO>("onesVector","R",RFact));
 
@@ -104,9 +109,9 @@ namespace MueLuTests {
     UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
     UCAggFact->SetPhase3AggCreation(0.5);
 
-    RCP<TentativePFactory> PFact = rcp(new TentativePFactory(UCAggFact)); //just using plain aggregation
-    RCP<RFactory>          RFact = rcp( new TransPFactory(PFact) );
-    RCP<RAPFactory>        AcFact = rcp( new RAPFactory(PFact,RFact) );
+    RCP<TentativePFactory> PFact = rcp(new TentativePFactory()); //just using plain aggregation
+    RCP<RFactory>          RFact = rcp( new TransPFactory() );
+    RCP<RAPFactory>        AcFact = rcp( new RAPFactory() );
     H->SetMaxCoarseSize(1);
 
     Teuchos::ParameterList smootherParamList;
@@ -117,6 +122,14 @@ namespace MueLuTests {
     RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
     AcFact->setVerbLevel(Teuchos::VERB_HIGH);
 
+    FactoryManager M;
+    M.SetFactory("Aggregates", UCAggFact);
+    M.SetFactory("P", PFact);
+    M.SetFactory("Ptent", PFact); // for nullspace
+    M.SetFactory("R", RFact);
+    M.SetFactory("A", AcFact);
+    M.SetFactory("Smoother", SmooFact);
+
     //set up the transfer factory
     RCP<MultiVector> fineOnes = MultiVectorFactory::Build(A->getRowMap(),1);
     fineOnes->putScalar(1.0);
@@ -125,7 +138,7 @@ namespace MueLuTests {
     AcFact->AddTransferFactory(mvtf);
 
     int maxLevels = 3;
-    Teuchos::ParameterList status = H->FullPopulate(*PFact,*RFact, *AcFact,*SmooFact,0,maxLevels);
+    H->Setup(M, 0, maxLevels);
 
 /*
     //FIXME we probably need to do some requests....

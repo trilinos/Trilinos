@@ -175,8 +175,9 @@ namespace MueLu {
         }
       }
     }
-    //coarseLevel.Set<RCP<MultiVector> >(vectorName_,result,this); //FIXME JJH
-    coarseLevel.Set<RCP<MultiVector> >(vectorName_,result,NoFactory::get()); //FIXME JJH
+
+    coarseLevel.Set<RCP<MultiVector> >(vectorName_, result, this);
+    coarseLevel.Set<RCP<MultiVector> >(vectorName_, result); //FIXME
     
   } //Build
 
