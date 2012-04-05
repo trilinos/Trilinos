@@ -121,7 +121,7 @@ namespace MueLuTests {
             M.SetFactory("R", Rfact);
             M.SetFactory("A", Acfact);
             M.SetFactory("Ptent", Ptentfact);
-            M.SetFactory("Aggregation", UCAggFact);
+            M.SetFactory("Aggregates", UCAggFact);
             M.SetFactory("Smoother", SmooFact);
             M.SetFactory("CoarseSolver", coarseSolveFact);
             

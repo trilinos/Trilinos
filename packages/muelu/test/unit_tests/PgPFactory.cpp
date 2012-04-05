@@ -111,7 +111,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, nonsymExample)
   M.SetFactory("R", Rfact);
   M.SetFactory("A", Acfact);
   M.SetFactory("Ptent", Ptentfact);
-  M.SetFactory("Aggregation", UCAggFact);
+  M.SetFactory("Aggregates", UCAggFact);
   M.SetFactory("Smoother", SmooFact);
   M.SetFactory("CoarseSolver", coarseSolveFact);
 
@@ -328,7 +328,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, NonStandardMaps)
   M.SetFactory("R", Rfact);
   M.SetFactory("A", Acfact);
   M.SetFactory("Ptent", Ptentfact);
-  M.SetFactory("Aggregation", UCAggFact);
+  M.SetFactory("Aggregates", UCAggFact);
   M.SetFactory("Smoother", SmooFact);
 
   H->Setup(M, 0, maxLevels);
@@ -638,7 +638,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegas)
   M.SetFactory("R", Rfact);
   M.SetFactory("A", Acfact);
   M.SetFactory("Ptent", Ptentfact);
-  M.SetFactory("Aggregation", UCAggFact);
+  M.SetFactory("Aggregates", UCAggFact);
   M.SetFactory("Smoother", SmooFact);
   M.SetFactory("CoarseSolver", coarseSolveFact);
 
@@ -806,7 +806,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegasTransP)
   M.SetFactory("R", Rfact);
   M.SetFactory("A", Acfact);
   M.SetFactory("Ptent", Ptentfact);
-  M.SetFactory("Aggregation", UCAggFact);
+  M.SetFactory("Aggregates", UCAggFact);
   M.SetFactory("Smoother", SmooFact);
   M.SetFactory("CoarseSolver", coarseSolveFact);
 
@@ -983,7 +983,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, EpetraVsTpetra)
       M.SetFactory("R", Rfact);
       M.SetFactory("A", Acfact);
       M.SetFactory("Ptent", Ptentfact);
-      M.SetFactory("Aggregation", UCAggFact);
+      M.SetFactory("Aggregates", UCAggFact);
       M.SetFactory("Smoother", SmooFact);
       M.SetFactory("CoarseSolver", coarseSolveFact);
       

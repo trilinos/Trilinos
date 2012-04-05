@@ -346,7 +346,7 @@ namespace MueLuTests {
     M.SetFactory("R", Rfact);
     M.SetFactory("A", Acfact);
     M.SetFactory("Ptent", Pfact);
-    M.SetFactory("Aggregation", UCAggFact);
+    M.SetFactory("Aggregates", UCAggFact);
     M.SetFactory("Smoother", SmooFact);
     
     H->Setup(M, 0, maxLevels);
@@ -484,7 +484,7 @@ namespace MueLuTests {
             M.SetFactory("R", Rfact);
             M.SetFactory("A", Acfact);
             M.SetFactory("Ptent", Pfact);
-            M.SetFactory("Aggregation", UCAggFact);
+            M.SetFactory("Aggregates", UCAggFact);
             M.SetFactory("Smoother", SmooFact);
             M.SetFactory("CoarseSolver", coarseSolveFact);
             
