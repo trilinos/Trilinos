@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
   gno_t *globalIds = coords->getMap()->getNodeElementList()->getRawPtr();
    
   ///////////////////////////////////////////////////////////////////////
-  // Create a Zoltan2 input adapter with no weights
+  // Create a Zoltan2 input adapter for this geometry.
 
   typedef Zoltan2::BasicCoordinateInput<tMVector_t> inputAdapter_t;
 
@@ -80,6 +80,7 @@ int main(int argc, char *argv[])
   parParams.set("algorithm", "rcb");
   parParams.set("imbalance_tolerance", 1.1);
   parParams.set("num_global_parts", nprocs);
+  parParams.set("bisection_num_test_cuts", 7);
    
   ///////////////////////////////////////////////////////////////////////
   // Create a Zoltan2 partitioning problem

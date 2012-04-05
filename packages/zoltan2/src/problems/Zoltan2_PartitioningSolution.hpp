@@ -197,6 +197,21 @@ public:
       return pSize_[idx][part];
   }
 
+/*! \brief Return true if the two weight dimensions have the same
+ *          part size information.
+
+    \param c1   A value from 0 through one less than the number of weights. 
+    \param c2   A value from 0 through one less than the number of weights. 
+    \return   If weight dimension \c c1 and weight dimension \c c2 have
+        the same part size information, the \c true is returned, otherwise
+        \c false is returned.
+  
+    It may be a problem for some algorithms if there are multiple weight
+    dimensions with differing part size constraints to be satisfied.
+ */
+
+  bool criteriaHaveSamePartSizes(int c1, int c2) const;
+
   ////////////////////////////////////////////////////////////////////
   // Method used by the algorithm to set results.
 
@@ -221,7 +236,7 @@ public:
    *     can be omitted.
    */
   
-  void setParts(ArrayView<const gno_t> gnoList, ArrayRCP<partId_t> partList,
+  void setParts(ArrayView<const gno_t> gnoList, ArrayRCP<partId_t> &partList,
     ArrayRCP<MetricValues<scalar_t> > &metrics);
   
   ////////////////////////////////////////////////////////////////////
@@ -772,6 +787,7 @@ template <typename User_t>
     COMPLEX_ASSERTION);
 
   // Check ids and sizes and find min, max and average sizes.
+  // If sizes are very close to uniform, call them uniform parts.
 
   partId_t nparts = nGlobalParts_;
   unsigned char *buf = new unsigned char [nparts];
@@ -779,6 +795,7 @@ template <typename User_t>
   memset(buf, 0, nparts);
   ArrayRCP<unsigned char> partIdx(buf, 0, nparts, true);
 
+  scalar_t epsilon = 10e-5 / nparts;
   scalar_t min=sizes[0], max=sizes[0], sum=0;
 
   for (int i=0; i < len; i++){
@@ -808,15 +825,17 @@ template <typename User_t>
   if (sum == 0){   
 
     // User has given us a list of parts of size 0, we'll set
-    // the rest to them to 1.0 divided by the number of part ids.
+    // the rest to them to equally sized parts.
     
     scalar_t *allSizes = new scalar_t [2];
     env_->localMemoryAssertion(__FILE__, __LINE__, 2, allSizes);
 
     ArrayRCP<scalar_t> sizeArray(allSizes, 0, 2, true);
 
+    int numNonZero = nparts - len;
+
     allSizes[0] = 0.0;
-    allSizes[1] = 1.0 / len;
+    allSizes[1] = 1.0 / numNonZero;
 
     for (partId_t p=0; p < nparts; p++)
       buf[p] = 1;                 // index to default part size
@@ -829,8 +848,6 @@ template <typename User_t>
 
     return;
   }
-
-  double epsilon = (max - min) * 10e-5;  // to distinguish different sizes
 
   if (max - min <= epsilon){
     pSizeUniform_[wdim] = true;
@@ -973,7 +990,7 @@ template <typename User_t>
 
 template <typename User_t>
   void PartitioningSolution<User_t>::setParts(
-    ArrayView<const gno_t> gnoList, ArrayRCP<partId_t> partList,
+    ArrayView<const gno_t> gnoList, ArrayRCP<partId_t> &partList,
     ArrayRCP<MetricValues<scalar_t> > &metrics) 
 {
   qualityMetrics_ = metrics;
@@ -1129,6 +1146,41 @@ template <typename User_t>
     procMax = partDist_[partId+1] - 1;
   }
 }
+
+template <typename User_t>
+  bool PartitioningSolution<User_t>::criteriaHaveSamePartSizes(
+    int c1, int c2) const
+{
+  if (c1 < 0 || c1 >= weightDim_ || c2 < 0 || c2 >= weightDim_ )
+    throw logic_error("criteriaHaveSamePartSizes error");
+
+  bool theSame = false;
+
+  if (c1 == c2)
+    theSame = true;
+
+  else if (pSizeUniform_[c1] == true && pSizeUniform_[c2] == true)
+    theSame = true;
+
+  else if (pCompactIndex_[c1].size() == pCompactIndex_[c2].size()){
+    theSame = true;
+    bool useIndex = pCompactIndex_[c1].size() > 0;
+    if (useIndex){
+      for (partId_t p=0; theSame && p < nGlobalParts_; p++)
+        if (pSize_[c1][pCompactIndex_[c1][p]] != 
+            pSize_[c2][pCompactIndex_[c2][p]])
+          theSame = false;
+    }
+    else{
+      for (partId_t p=0; theSame && p < nGlobalParts_; p++)
+        if (pSize_[c1][p] != pSize_[c2][p])
+          theSame = false;
+    }
+  }
+
+  return theSame;
+}
+
 
 }  // namespace Zoltan2
 

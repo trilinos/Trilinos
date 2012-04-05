@@ -129,6 +129,12 @@ public:
    * Zoltan2 assumes that uniform partition sizes are desired by the caller,
    * unless specified otherwise in a call to setPartSizes or 
    * setPartSizesForCritiera.
+   *
+   * \todo A user should be able to give us one set of part sizes
+   *            that applies to all weight dimensions.  Right now
+   *            for each weight dimension that does not have
+   *            uniform part sizes, the user has to give us the
+   *            part sizes once for each.
    */
 
   void setPartSizes(int len, partId_t *partIds, float *partSizes, 
@@ -726,5 +732,5 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   }
 }
 
-}
+}  // namespace Zoltan2
 #endif

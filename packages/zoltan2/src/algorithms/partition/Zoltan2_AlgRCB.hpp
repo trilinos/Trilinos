@@ -41,10 +41,12 @@ enum rcbParams {
   rcb_balanceTotalMaximum, /*!< objective = mc_balance_total_maximum */
   rcb_averageCuts,          /*!< averageCuts = yes */
   rcb_rectilinearBlocks,    /*!< rectilinearBlocks = yes */
+  rcb_multiplePartSizeSpecs,  /*!< multicriteria w/differing part sizes */
   NUM_RCB_PARAMS
 };
 
 /*! \brief During partitioning flags are stored in unsigned char arrays.
+ *
  *  Flag is also used to store a region number, but there are at most
  *  251 regions.  Therefore region number will not conflict with leftFlag
  *  and rightFlag. (Number of regions is number of test cuts plus one.)
@@ -66,8 +68,7 @@ template <typename mvector_t>
     mvector_t::scalar_type &minCoord, mvector_t::scalar_type &maxCoord);
 
 template <typename mvector_t>
- void serialRCB<mvector_t(
-    const RCP<const Environment> &env,
+ void serialRCB( const RCP<const Environment> &env,
     const std::bitset<NUM_RCB_PARAMS> &params,
     int numTestCuts, mvector_t::scalar_type imbalanceTolerance, 
     int coordDim, const RCP<mvector_t> &vectors, 
@@ -86,7 +87,7 @@ template <typename mvector_t>
     ArrayView<mvector_t::scalar_type> &fractionLeft, 
     ArrayView<bool> uniformWeights,
     mvector_t::scalar_type coordGlobalMin, 
-    mvector::scalar_type coordGlobalMax, 
+    mvector_t::scalar_type coordGlobalMax, 
     mvector_t::scalar_type &cutValue, ArrayView<unsigned char> lrflags, 
     mvector_t::scalar_type &imbalance);
 
@@ -124,14 +125,11 @@ template <typename scalar_t>
  *      contains part information, on return it also contains 
  *      the solution and quality metrics.
  *                    
- *   \todo timing and memory usage profiling
+ *   \todo timing and memory usage profiling and debug messages
  *   \todo  catch errors and pass back
  *   \todo write the rcb tree back to the solution
  *   \todo for "repartition", start with the tree in the solution
- *   \todo for now we balance the first weight, so we need to add
- *             the multicriteria options as Zoltan1 does it.
- *   \todo incorporate part sizes as Zoltan1 does it.
- * \todo implement rectilinear_blocks and average_cuts
+ *   \todo implement rectilinear_blocks and average_cuts
  *   \todo  work on performance issues.  Some of the global
  *               communication can probably be consolidated
  *                into fewer messages.
@@ -248,9 +246,9 @@ void AlgRCB(
   env->getValue<int>(
     env->getList(
       env->getList(env->getParameters(), "partitioning"), "geometric"),
-    "bisection_num_cuts", isSet, intChoice);
+    "bisection_num_test_cuts", isSet, intChoice);
 
-  int numTestCuts = 3;
+  int numTestCuts = 5;
   if (isSet)
     numTestCuts = intChoice;
 
@@ -297,8 +295,8 @@ void AlgRCB(
 
   ////////////////////////////////////////////////////////
   // From the Solution we get part information.
-  // If the part sizes for a given criteria are not uniform, then
-  // they are values that sum to 1.0.
+  // If the part sizes for a given criteria are not uniform,
+  // then they are values that sum to 1.0.
 
   size_t numGlobalParts = solution->getGlobalNumberOfParts();
 
@@ -310,21 +308,34 @@ void AlgRCB(
       uniformParts[wdim] = true;
     }
     else{
-      uniformParts[wdim] = false;
       scalar_t *tmp = new scalar_t [numGlobalParts];
       env->localMemoryAssertion(__FILE__, __LINE__, numGlobalParts, tmp) ;
+    
       for (partId_t i=0; i < numGlobalParts; i++){
         tmp[i] = solution->getCriteriaPartSize(i, wdim);
       }
+
       partSizes[wdim] = arcp(tmp, 0, numGlobalParts);
     }
   }
 
+  // It may not be possible to solve the partitioning problem
+  // if we have multiple weight dimensions with part size
+  // arrays that differ. So let's be aware of this possibility.
+
   bool multiplePartSizeSpecs = false;
 
-  // TODO if weightDim > 1 figure out if user asked for
-  //       different part size specifications for different
-  //      weight dimensions. 
+  if (weightDim > 1){
+    for (int wdim1 = 0; wdim1 < weightDim; wdim1++)
+      for (int wdim2 = wdim1+1; wdim2 < weightDim; wdim2++)
+        if (!solution->criteriaHaveSamePartSizes(wdim1, wdim2)){
+          multiplePartSizeSpecs = true;
+          break;
+        }
+  }
+  
+  if (multiplePartSizeSpecs)
+    params.set(rcb_multiplePartSizeSpecs);
 
   ////////////////////////////////////////////////////////
   // Create the distributed data for the algorithm.
@@ -381,8 +392,7 @@ void AlgRCB(
 
   while (!done && sanityCheck--){
 
-    // Determine which coordinates are left and which
-    // are right.
+    // Determine which coordinates are left and which are right.
 
     Array<unsigned char> lrflags(mvector->getLocalLength());
     scalar_t cutValue;  // TODO eventually save this for user
@@ -397,7 +407,6 @@ void AlgRCB(
     }
     Z2_FORWARD_EXCEPTIONS
 
-    
     // Migrate the multivector of data.
 
     int numParts = part1 - part0 + 1;
@@ -481,9 +490,21 @@ void AlgRCB(
       partId[i] = part0;
   }
 
-  // Now we have a part assignment.  Compute the imbalance and update the
-  // solution.
+  ////////////////////////////////////////////////////////
+  // Done.  Update the solution
+  
+  ArrayRCP<MetricValues<scalar_t> > metrics;
+  partId_t numParts, numNonemptyParts;
+  size_t len = mvector->getLocalLength();
 
+  objectMetrics(env, comm, numGlobalParts,             // input
+    partSizes.view(0, weightDim), partId.view(0, len), // input
+    wgts.view(0, weightDim), mcNorm,                   // input
+    numParts, numNonemptyParts, metrics);              // output
+
+  ArrayView<const gno_t> gnoList = mvector->getMap()->getNodeElementList();
+
+  solution->setParts(gnoList, partId, metrics);
 }
 
 /*! \brief Find the point in space that divides the data evenly with
@@ -984,6 +1005,7 @@ template <typename mvector_t>
   // halves.
 
   int weightDim = uniformWeights.size();
+  size_t numLocalCoords = vectors->getLocalLength();
   ArrayView<lno_t> emptyIndices;
 
   try{
