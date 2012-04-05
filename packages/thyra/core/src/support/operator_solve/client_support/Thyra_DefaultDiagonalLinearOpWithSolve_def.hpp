@@ -66,7 +66,7 @@ DefaultDiagonalLinearOpWithSolve<Scalar>::DefaultDiagonalLinearOpWithSolve(
   const RCP<const VectorBase<Scalar> >   &diag
   )
 {
-  initialize(diag);
+  this->initialize(diag);
 }
 
 
