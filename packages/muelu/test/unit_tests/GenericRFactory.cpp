@@ -206,11 +206,9 @@ namespace MueLuTests {
       if (comm->getRank() == 0)
         out << "||NS|| = " << norms[0] << std::endl;
 
-
-      RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
-      RCP<PgPFactory>         Pfact = rcp( new PgPFactory(Ptentfact));
-      RCP<RFactory>           Rfact = rcp( new GenericRFactory(Pfact) );
-      RCP<RAPFactory>        Acfact = rcp( new RAPFactory(Pfact,Rfact) );
+      RCP<PgPFactory>         Pfact = rcp( new PgPFactory());
+      RCP<RFactory>           Rfact = rcp( new GenericRFactory() );
+      RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
 
       // setup smoothers
       Teuchos::ParameterList smootherParamList;
