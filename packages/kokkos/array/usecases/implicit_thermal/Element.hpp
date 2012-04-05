@@ -103,7 +103,7 @@ struct TensorIntegration<Scalar,1,3>
 template< typename Scalar , unsigned Order >
 struct TensorIntegration<Scalar,3,Order>
 {
-  enum { N = Order * Order * Order };
+  static const unsigned N = Order * Order * Order ;
 
   Scalar pts[N][3] ;
   Scalar wts[N];
@@ -128,10 +128,10 @@ struct TensorIntegration<Scalar,3,Order>
 
 template< typename Scalar >
 struct ShapeFunctionEvaluation {
-  enum { PointCount = 9 };
-  enum { FunctionCount = 8 };
-  enum { SpatialDimension = 3 };
-  enum { IntegrationOrder = 2 };
+  static const unsigned PointCount = 9 ;
+  static const unsigned FunctionCount = 8 ;
+  static const unsigned SpatialDimension = 3 ;
+  static const unsigned IntegrationOrder = 2 ;
 
   Scalar value   [ PointCount ][ FunctionCount ] ;
   Scalar gradient[ PointCount ][ FunctionCount * SpatialDimension ];
@@ -226,8 +226,8 @@ struct ElementComp <Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
   typedef Kokkos::MDArray<ScalarCoord, device_type>  coord_array ;
   typedef ShapeFunctionEvaluation< Scalar > shape_function_data ;
 
-  enum { SpatialDimension = shape_function_data::SpatialDimension };
-  enum { FunctionCount    = shape_function_data::FunctionCount };
+  static const SpatialDimension = shape_function_data::SpatialDimension ;
+  static const FunctionCount    = shape_function_data::FunctionCount ;
 
   shape_function_data  shape_eval ;
   index_array          elem_node_ids ;
@@ -252,7 +252,7 @@ struct ElementComp <Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
   , coeff_Q( arg_coeff_Q )
   {}
 
-  enum { FLOPS_jacobian = FunctionCount * SpatialDimension * SpatialDimension * 2 };
+  static const unsigned FLOPS_jacobian = FunctionCount * SpatialDimension * SpatialDimension * 2 ;
 
   KOKKOS_MACRO_DEVICE_FUNCTION
   void jacobian( const ScalarCoord * x, 
@@ -285,7 +285,7 @@ struct ElementComp <Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
     }
   }
 
-  enum { FLOPS_inverse_and_det = 46 };
+  static const unsigned FLOPS_inverse_and_det = 46 ;
 
   KOKKOS_MACRO_DEVICE_FUNCTION
   Scalar inverse_and_determinant3x3( Scalar * const J ) const
@@ -343,7 +343,7 @@ struct ElementComp <Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
 
   }
 
-  enum { FLOPS_contributeDiffusionMatrix = FunctionCount * ( 3 * 5 + FunctionCount * 7 ) };
+  static const unsigned FLOPS_contributeDiffusionMatrix = FunctionCount * ( 3 * 5 + FunctionCount * 7 ) ;
 
   KOKKOS_MACRO_DEVICE_FUNCTION
   void contributeDiffusionMatrix(
@@ -376,7 +376,7 @@ struct ElementComp <Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
     }
   }
 
-  enum { FLOPS_contributeSourceVector = FunctionCount * 2 };
+  static const unsigned FLOPS_contributeSourceVector = FunctionCount * 2 ;
 
   KOKKOS_MACRO_DEVICE_FUNCTION
   void contributeSourceVector( const Scalar term ,
@@ -389,12 +389,12 @@ struct ElementComp <Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
   }
 
 
-  enum { FLOPS_operator =
+  static const unsigned FLOPS_operator =
            shape_function_data::PointCount * ( 3
              + FLOPS_jacobian
              + FLOPS_inverse_and_det
              + FLOPS_contributeDiffusionMatrix
-             + FLOPS_contributeSourceVector ) };
+             + FLOPS_contributeSourceVector ) ;
 
   KOKKOS_MACRO_DEVICE_FUNCTION
   void operator()( int ielem )const {

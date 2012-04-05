@@ -41,77 +41,44 @@
 //@HEADER
 */
 
-#ifndef PARALLELDISTRIBUTEDCOMM_HPP
-#define PARALLELDISTRIBUTEDCOMM_HPP
+#ifndef KOKKOS_FEMESH_HPP
+#define KOKKOS_FEMESH_HPP
 
-#include <cstddef>
+#include <utility>
+#include <limits>
+#include <iostream>
+#include <sstream>
+#include <stdexcept>
 
-//------------------------------------------------------------------------
+#include <Kokkos_CrsArray.hpp>
+#include <Kokkos_MDArray.hpp>
+#include <Kokkos_MultiVector.hpp>
 
-#if defined( HAVE_MPI )
+#include <ParallelComm.hpp>
+#include <ParallelDataMap.hpp>
 
-#include <mpi.h>
+//----------------------------------------------------------------------------
+/** \brief  Finite element mesh fixture for hybrid parallel performance tests.
+ */
+template< typename CoordScalarType , unsigned ElemNodeCount , class Device >
+struct FEMesh {
 
-namespace comm {
+  typedef typename Device::size_type size_type ;
 
-struct Machine {
-  MPI_Comm mpi_comm ;
+  static const size_type element_node_count = ElemNodeCount ;
 
-  Machine() : mpi_comm( MPI_COMM_NULL ) {}
+  typedef Kokkos::MDArray<  CoordScalarType , Device >  node_coords_type ;
+  typedef Kokkos::MDArray<  size_type ,       Device >  elem_node_ids_type ;
+  typedef Kokkos::CrsArray< size_type[2] ,    Device >  node_elem_ids_type ;
+  typedef Kokkos::ParallelDataMap< Device >             parallel_data_map_type ;
 
-  Machine( const Machine & rhs )
-    : mpi_comm( rhs.mpi_comm ) {}
-
-  Machine( MPI_Comm c ) : mpi_comm( c ) {}
-
-  static Machine init( int * argc , char *** argv )
-  {
-    MPI_Init( argc , argv );
-    return Machine( MPI_COMM_WORLD );
-  }
-
-  static void finalize() { MPI_Finalize(); }
+  node_coords_type        node_coords ;
+  elem_node_ids_type      elem_node_ids ;
+  node_elem_ids_type      node_elem_ids ;
+  parallel_data_map_type  parallel_data_map ;
 };
 
-inline
-unsigned  size( Machine machine )
-{
-  int np ; MPI_Comm_size( machine.mpi_comm , & np ); return np ;
-}
+//----------------------------------------------------------------------------
 
-inline
-unsigned  rank( Machine machine )
-{
-  int ip ; MPI_Comm_rank( machine.mpi_comm , & ip ); return ip ;
-}
-
-}
-
-#else /* ! defined( HAVE_MPI ) */
-
-namespace comm {
-
-// Stub for non-parallel
-
-struct Machine {
-  static Machine init( int * argc , char *** argv )
-  { return Machine(); }
-
-  static void finalize() {}
-};
-
-inline
-unsigned  size( Machine ) { return 1 ; }
-
-inline
-unsigned  rank( Machine ) { return 0 ; }
-
-}
-
-#endif /* ! defined( HAVE_MPI ) */
-
-//------------------------------------------------------------------------
-
-#endif /* #ifndef PARALLELDISTRIBUTEDCOMM_HPP */
-
+#endif /* #ifndef KOKKOS_FEMESH_HPP */
 

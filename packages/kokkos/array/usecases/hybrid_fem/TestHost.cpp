@@ -8,8 +8,11 @@
 
 #include <Kokkos_Host.hpp>
 
-#include <Kokkos_Host_macros.hpp>
 #include <TestBoxMeshFixture.hpp>
+
+#include <Kokkos_Host_macros.hpp>
+#include <ParallelDataMap_macros.hpp>
+#include <TestBoxMeshFixture_macros.hpp>
 #include <Kokkos_Clear_macros.hpp>
 
 //----------------------------------------------------------------------------
