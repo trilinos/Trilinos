@@ -47,6 +47,7 @@
 #include <string>
 #include <impl/Kokkos_forward.hpp>
 #include <impl/Kokkos_ArrayTraits.hpp>
+#include <impl/Kokkos_ArrayBounds.hpp>
 #include <impl/Kokkos_StaticAssert.hpp>
 
 namespace Kokkos {

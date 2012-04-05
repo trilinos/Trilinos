@@ -64,6 +64,12 @@ int nthread_create(
         const nthread_attr_t *attr,
         void *(*start_routine)(void*),
         void *arg);
+
+/**
+ * Reclaim the space allocated for the thread when the thread exits.
+ */
+int nthread_detach(nthread_t thread);
+
 void nthread_exit(void *retval);
 
 int nthread_cond_init(

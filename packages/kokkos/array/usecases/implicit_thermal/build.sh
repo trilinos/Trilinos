@@ -8,7 +8,7 @@ INC_PATH="-I. -I../../src"
 CXX="g++"
 CXXFLAGS="-Wall"
 
-CXX_SOURCES="main.cpp testHost.cpp"
+CXX_SOURCES="implicit_main.cpp implicit_test_host.cpp"
 CXX_SOURCES="${CXX_SOURCES} ../../src/impl/*.cpp"
 CXX_SOURCES="${CXX_SOURCES} ../../src/Host/Kokkos_Host_Impl.cpp"
 CXX_SOURCES="${CXX_SOURCES} ../../src/Host/Kokkos_Host_MemoryManager.cpp"
@@ -49,7 +49,7 @@ done
 if [ -n "${HAVE_CUDA}" ] ;
 then
   TEST_MACRO="${TEST_MACRO} -DTEST_KOKKOS_CUDA"
-  NVCC_SOURCES="../../src/Cuda/*.cu testCuda.cu"
+  NVCC_SOURCES="../../src/Cuda/*.cu implicit_test_cuda.cu"
   LIB="${LIB} -L/usr/local/cuda/lib64 libCuda.a -lcudart -lcuda -lcusparse"
   nvcc -arch=sm_20 -lib -o libCuda.a ${OPTFLAGS} ${INC_PATH} ${NVCC_SOURCES}
 fi

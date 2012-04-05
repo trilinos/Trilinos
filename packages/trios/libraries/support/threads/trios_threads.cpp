@@ -88,6 +88,17 @@ int nthread_create(
     return rc;
 }
 
+int nthread_detach(
+        nthread_t thread)
+{
+    int rc = 0;
+    log_debug(thread_debug_level, "nthread_detach(STUB)");
+#ifdef HAVE_TRIOS_PTHREAD
+    rc = pthread_detach(thread.thread);
+#endif
+    return rc;
+}
+
 void nthread_exit(void *retval)
 {
     log_debug(thread_debug_level, "nthread_exit(STUB)");

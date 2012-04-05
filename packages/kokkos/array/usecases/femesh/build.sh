@@ -4,11 +4,13 @@
 # Simple build script with options
 #-----------------------------------------------------------------------------
 
+EXECUTABLE="testit.exe"
+
 INC_PATH="-I. -I../../src"
 CXX="g++"
 CXXFLAGS="-Wall"
 
-CXX_SOURCES="explicit_main.cpp explicit_test_host.cpp"
+CXX_SOURCES="./*.cpp"
 CXX_SOURCES="${CXX_SOURCES} ../../src/impl/*.cpp"
 CXX_SOURCES="${CXX_SOURCES} ../../src/Host/Kokkos_Host_Impl.cpp"
 CXX_SOURCES="${CXX_SOURCES} ../../src/Host/Kokkos_Host_MemoryManager.cpp"
@@ -23,8 +25,9 @@ shift 1
 case ${ARG} in
 #-------------------------------
 #----------- OPTIONS -----------
-CUDA | Cuda | cuda ) HAVE_CUDA=1 ;;
+MPI | mpi ) HAVE_MPI=${1} ; shift 1 ;;
 HWLOC | hwloc ) HAVE_HWLOC=${1} ; shift 1 ;;
+CUDA | Cuda | cuda ) HAVE_CUDA=1 ;;
 OPT | opt | O3 | -O3 ) OPTFLAGS="-O3" ;;
 DBG | dbg | g | -g )   OPTFLAGS="-g" ;;
 #-------------------------------
@@ -49,9 +52,10 @@ done
 if [ -n "${HAVE_CUDA}" ] ;
 then
   TEST_MACRO="${TEST_MACRO} -DTEST_KOKKOS_CUDA"
-  NVCC_SOURCES="../../src/Cuda/*.cu explicit_test_cuda.cu"
+  NVCC_SOURCES="./*.cu"
+  NVCC_SOURCES="${NVCC_SOURCES} ../../src/Cuda/*.cu"
   LIB="${LIB} -L/usr/local/cuda/lib64 libCuda.a -lcudart -lcuda -lcusparse"
-  nvcc -arch=sm_20 -lib -o libCuda.a ${OPTFLAGS} ${INC_PATH} ${NVCC_SOURCES} ;
+  nvcc -arch=sm_20 -lib -o libCuda.a ${OPTFLAGS} ${INC_PATH} ${NVCC_SOURCES}
 fi
 
 #-----------------------------------------------------------------------------
@@ -80,11 +84,19 @@ fi
 
 #-----------------------------------------------------------------------------
 
+if [ -n "${HAVE_MPI}" ]
+then
+  CXX="${HAVE_MPI}/bin/mpiCC"
+  CXXFLAGS="${CXXFLAGS} -DHAVE_MPI"
+fi
+
+#-----------------------------------------------------------------------------
+
 echo "Building regular files as: " ${CXX} ${CXXFLAGS} ${OPTFLAGS}
 
-${CXX} ${CXXFLAGS} ${OPTFLAGS} ${INC_PATH} ${TEST_MACRO} -o explicit_dynamics.x ${CXX_SOURCES} ${LIB}
+${CXX} ${CXXFLAGS} ${OPTFLAGS} ${INC_PATH} ${TEST_MACRO} -o ${EXECUTABLE} ${CXX_SOURCES} ${LIB}
 
-rm -f *.o *.a ThreadPool_config.h
+rm -f *.o *.a
 
 #-----------------------------------------------------------------------------
 
