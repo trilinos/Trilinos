@@ -185,7 +185,6 @@ namespace stk {
               //std::cout << "tmp family_tree_id = " << family_tree_id << " parent_id= " << parent_id << std::endl;
             }
 
-
 #if DEBUG_MULTI_LEVEL
           if (parent_to_family_tree_relations.size() == 1) 
             {
@@ -314,6 +313,10 @@ namespace stk {
             }
 
           stk::mesh::PairIterRelation child_elem_nodes = newElement.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+          if (child_elem_nodes.size() == 0)
+            {
+              throw std::runtime_error("child_elem has no nodes");
+            }
           for (unsigned i = 0; i < child_elem_nodes.size(); i++)
             {
               if (!stk::mesh::in_shared(*child_elem_nodes[i].entity())) continue;
@@ -366,6 +369,10 @@ namespace stk {
 
 
       if (0) std::cout << "tmp here 12 ordinal= " << ordinal << " [ " << getNumNewElemPerElem() << "] newElement_ptr= "<< &newElement<< std::endl;
+      bool foundSide = findSideRelations(eMesh, &parent_elem, &newElement);
+      if (!foundSide) {
+        //throw std::runtime_error("UniformRefinerPatternBase:: set_parent_child_relations couldn't set child side to elem relations");
+      }
 #endif
     }
 #endif
@@ -428,6 +435,128 @@ namespace stk {
                 }
             }
       
+        }
+    }
+
+    bool UniformRefinerPatternBase::findSideRelations(percept::PerceptMesh& eMesh, stk::mesh::Entity* parent, stk::mesh::Entity* child)
+    {
+      VERIFY_OP_ON(parent->entity_rank(), ==, child->entity_rank(), "UniformRefinerPatternBase::findSideRelations: bad ranks");
+      if (parent->entity_rank() == eMesh.element_rank()) 
+        return true;
+      
+      for (unsigned higher_order_rank = parent->entity_rank()+1u; higher_order_rank <= eMesh.element_rank(); higher_order_rank++)
+        {
+          stk::mesh::PairIterRelation parent_to_elem_rels = parent->relations(higher_order_rank);
+          VERIFY_OP_ON(parent_to_elem_rels.size(), <=, 1, "UniformRefinerPatternBase::findSideRelations bad number of side to elem relations");
+          if (parent_to_elem_rels.size() == 0)
+            {
+              // nothing to do
+              return true;
+            }
+
+          for (unsigned i_parent_to_elem=0; i_parent_to_elem < parent_to_elem_rels.size(); i_parent_to_elem++)
+            {
+              stk::mesh::Entity *parents_volume_element = parent_to_elem_rels[i_parent_to_elem].entity();
+
+              std::vector<stk::mesh::Entity*> parents_volume_elements_children;
+              VERIFY_OP_ON(eMesh.hasFamilyTree(*parents_volume_element), == , true, "UniformRefinerPatternBase::findSideRelations parent's volume element has no children.");
+              eMesh.getChildren(*parents_volume_element, parents_volume_elements_children);
+              for (unsigned i_vol_child=0; i_vol_child < parents_volume_elements_children.size(); i_vol_child++)
+                {
+                  stk::mesh::Entity* parents_volume_elements_child = parents_volume_elements_children[i_vol_child];
+                  
+                  VERIFY_OP_ON(parents_volume_elements_child->entity_rank(), ==, higher_order_rank, "UniformRefinerPatternBase::findSideRelations: bad ranks 2");
+                  if (connectSides(eMesh, parents_volume_elements_child, child))
+                    return true;
+                }
+            }
+        }
+      return false;
+    }
+
+    // if the element (element) has a side that matches  the given side (side_elem), connect them but first delete old connections
+    bool UniformRefinerPatternBase::connectSides(percept::PerceptMesh& eMesh, stk::mesh::Entity *element, stk::mesh::Entity *side_elem)
+    {
+      EXCEPTWATCH;
+      shards::CellTopology element_topo(stk::percept::PerceptMesh::get_cell_topology(*element));
+      unsigned element_nsides = (unsigned)element_topo.getSideCount();
+
+      // special case for shells
+      int topoDim = UniformRefinerPatternBase::getTopoDim(element_topo);
+
+      bool isShell = false;
+      if (topoDim < (int)element->entity_rank())
+        {
+          isShell = true;
+        }
+      int spatialDim = eMesh.getSpatialDim();
+      if (spatialDim == 3 && isShell && side_elem->entity_rank() == eMesh.edge_rank())
+        {
+          element_nsides = (unsigned) element_topo.getEdgeCount();
+        }
+
+      int permIndex = -1;
+      int permPolarity = 1;
+
+      unsigned k_element_side = 0;
+
+      // try search
+      for (unsigned j_element_side = 0; j_element_side < element_nsides; j_element_side++)
+        {
+          PerceptMesh::element_side_permutation(*element, *side_elem, j_element_side, permIndex, permPolarity);
+          if (permIndex >= 0)
+            {
+              k_element_side = j_element_side;
+              break;
+            }
+        }
+
+      if (permIndex >= 0)
+        {
+          mesh::PairIterRelation rels = side_elem->relations(eMesh.element_rank());
+
+          if (rels.size() > 1)
+            {
+              throw std::logic_error("rels.size() > 1");
+            }
+
+          if (rels.size())
+            {
+              stk::mesh::Entity *to_rel = rels[0].entity();
+              stk::mesh::RelationIdentifier to_id = rels[0].identifier();
+              bool del = eMesh.getBulkData()->destroy_relation( *to_rel, *side_elem, to_id);
+              if (!del)
+                throw std::logic_error("connectSides:: destroy_relation failed");
+            }
+
+          // special case for shells
+          if (0 && isShell)
+            {
+              // FIXME for 2D
+              if (side_elem->entity_rank() == eMesh.face_rank())
+                {
+                  stk::mesh::PairIterRelation elem_sides = element->relations(side_elem->entity_rank());
+                  unsigned elem_sides_size= elem_sides.size();
+                  //std::cout << "tmp srk found shell, elem_sides_size= " << elem_sides_size << std::endl;
+                  if (elem_sides_size == 1)
+                    {
+                      stk::mesh::RelationIdentifier rel_id = elem_sides[0].identifier();
+                      if (rel_id > 1) 
+                        throw std::logic_error("connectSides:: logic 1");
+                      k_element_side = (rel_id == 0 ? 1 : 0);
+                      //std::cout << "tmp srk k_element_side= " << k_element_side << " rel_id= " << rel_id << std::endl;
+                    }
+                }
+            }
+
+          eMesh.getBulkData()->declare_relation(*element, *side_elem, k_element_side);
+          return true;
+        }
+      else
+        {
+          // error condition?
+          //throw std::runtime_error("connectSides: couldn't find a matching face");
+          return false;
         }
     }
 

@@ -54,8 +54,8 @@ namespace stk {
   namespace adapt {
 
     typedef std::set<stk::mesh::Entity *> ElementUnrefineCollection;
-    typedef std::map<stk::mesh::Part*, stk::mesh::Part*> SidePartMap;
-    //typedef std::map<std::string, std::string> SidePartMap;
+    //typedef std::map<stk::mesh::Part*, stk::mesh::Part*> SidePartMap;
+    typedef std::map<std::string, std::string> SidePartMap;
 
     using std::vector;
     using std::map;

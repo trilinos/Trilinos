@@ -1223,14 +1223,15 @@ namespace stk {
         }
 
       m_eMesh.getBulkData()->modification_begin();
-      SidePartMap side_part_map;
-      get_side_part_relations(false, side_part_map);
+      //SidePartMap side_part_map;
+      //get_side_part_relations(false, side_part_map);
 #if PERCEPT_USE_FAMILY_TREE
       removeFamilyTrees();
 #endif
       //std::cout << "tmp removeElements(parents) size= " << parents.size() << std::endl;
       removeElements(parents);
-      fix_side_sets_3(false, side_part_map);
+      //fix_side_sets_3(false, side_part_map);
+      fix_side_sets_2();
 
       m_eMesh.getBulkData()->modification_end();
 
@@ -2876,10 +2877,10 @@ namespace stk {
 
                                   if (elem_parts[iep] != side_parts[isp])
                                     {
-                                      SidePartMap::iterator found = side_part_map.find(side_parts[isp]);
+                                      SidePartMap::iterator found = side_part_map.find(side_parts[isp]->name());
                                       if (found != side_part_map.end())
                                         {
-                                          if (found->second != elem_parts[iep])
+                                          if (found->second != elem_parts[iep]->name())
                                             {
                                               std::cout << "side_part = " << side_parts[isp]->name() 
                                                         << " elem_part = " << elem_parts[iep]->name()
@@ -2888,7 +2889,7 @@ namespace stk {
                                               throw std::runtime_error("Refiner::get_side_part_relations: too many side_part to elem_part relations");
                                             }
                                         }
-                                      side_part_map[side_parts[isp]] = elem_parts[iep];
+                                      side_part_map[side_parts[isp]->name()] = elem_parts[iep]->name();
                                     }
                                 }
                             }
@@ -2903,7 +2904,7 @@ namespace stk {
           SidePartMap::iterator iter;
           for (iter = side_part_map.begin(); iter != side_part_map.end(); iter++)
             {
-              std::cout << "Refiner::get_side_part_relations: side_part = " << iter->first->name() << " elem_part= " << iter->second->name() << std::endl;
+              std::cout << "Refiner::get_side_part_relations: side_part = " << iter->first << " elem_part= " << iter->second << std::endl;
             }
           //exit(1);
         }
@@ -3075,6 +3076,9 @@ namespace stk {
                       std::cout << "fix_side_sets_2: too many side relations" << std::endl;
                       throw std::logic_error("fix_side_sets_2: too many side relations");
                     }
+                  // if we already have a connection, skip this side
+                  if (side.relations(element_rank).size() == 1)
+                    continue;
 
                   if (!m_eMesh.isLeafElement(side))
                     continue;
@@ -3132,12 +3136,13 @@ namespace stk {
 
       // FIXME - cleanup, remove all old code
 
-      std::cout << "fixElementSides1 " << std::endl;
-      SidePartMap side_part_map;
+      //std::cout << "fixElementSides1 " << std::endl;
       // we don't check parent child here so we can pick up the original elements
       // FIXME - should we have option of checking parent, child, parent|child, etc?
-      get_side_part_relations(false, side_part_map);
-      fix_side_sets_3(true, side_part_map);
+      //SidePartMap side_part_map;
+      //get_side_part_relations(false, side_part_map);
+      //fix_side_sets_3(true, side_part_map);
+      fix_side_sets_2();
 
     }
 
@@ -3163,20 +3168,20 @@ namespace stk {
               if (!topology)
                 continue;
 
-              SidePartMap::iterator found = side_part_map->find(side_parts[isp]);
+              SidePartMap::iterator found = side_part_map->find(side_parts[isp]->name());
               if (found == side_part_map->end())
                 {
                   //std::cout << "side_part = " << side_parts[isp]->name() << std::endl;
                   //throw std::runtime_error("Refiner::connectSides: couldn't find side map part");
                   continue;
                 }
-              //std::string& elem_part_name = found->second->name();
+              std::string& elem_part_name = found->second;
               for (unsigned iep = 0; iep < elem_parts.size(); iep++)
                 {
                   if ( stk::mesh::is_auto_declared_part(*elem_parts[iep]) )
                     continue;
-                  //if (elem_parts[iep]->name() == elem_part_name)
-                  if (elem_parts[iep] == found->second)
+                  if (elem_parts[iep]->name() == elem_part_name)
+                    //if (elem_parts[iep] == found->second)
                     {
                       valid = true;
                       break;

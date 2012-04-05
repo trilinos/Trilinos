@@ -207,6 +207,11 @@ namespace stk {
       void set_parent_child_relations(percept::PerceptMesh& eMesh, stk::mesh::Entity& old_owning_elem, stk::mesh::Entity& newElement, unsigned ordinal, unsigned *numChild=0);
 
       void interpolateElementFields(percept::PerceptMesh& eMesh, stk::mesh::Entity& old_owning_elem, stk::mesh::Entity& newElement);
+      
+      /// given a new element (child) that is a child of an original element (parent), look at parent's side to elem
+      ///   relations and from the children of the element, choose an element to connect the new side to (using connectSides)
+      bool findSideRelations(percept::PerceptMesh& eMesh, stk::mesh::Entity *parent, stk::mesh::Entity *child);
+      bool connectSides(percept::PerceptMesh& eMesh, stk::mesh::Entity *element, stk::mesh::Entity *side_elem);
 
       /// optionally overridden (must be overridden if sidesets are to work properly) to provide info on which sub pattern
       /// should be used to refine side sets (and edge sets)
@@ -985,10 +990,6 @@ namespace stk {
 
             change_entity_parts(eMesh, element, newElement);
 
-            set_parent_child_relations(eMesh, element, newElement, ielem);
-
-            interpolateElementFields(eMesh, element, newElement);
-
             for (int inode=0; inode < ToTopology::node_count; inode++)
               {
                 stk::mesh::EntityId eid = elems[ielem][inode];
@@ -1009,6 +1010,10 @@ namespace stk {
                 std::cout << "tmp newElement: " << std::endl;
                 eMesh.printEntity(std::cout, newElement, eMesh.getCoordinatesField() );
               }
+
+            set_parent_child_relations(eMesh, element, newElement, ielem);
+
+            interpolateElementFields(eMesh, element, newElement);
 
             element_pool++;
 

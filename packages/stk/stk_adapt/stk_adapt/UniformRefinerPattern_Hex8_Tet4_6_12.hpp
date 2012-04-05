@@ -331,7 +331,6 @@ namespace stk {
             change_entity_parts(eMesh, element, newElement);
 
             unsigned nchild = new_elements.size();
-            set_parent_child_relations(eMesh, element, newElement, ielem, &nchild);
 
             {
               if (!new_elements[ielem].get<0>())
@@ -344,6 +343,8 @@ namespace stk {
             eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(new_elements[ielem].get<1>()), 1);
             eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(new_elements[ielem].get<2>()), 2);
             eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(new_elements[ielem].get<3>()), 3);
+
+            set_parent_child_relations(eMesh, element, newElement, ielem, &nchild);
 
             element_pool++;
           }

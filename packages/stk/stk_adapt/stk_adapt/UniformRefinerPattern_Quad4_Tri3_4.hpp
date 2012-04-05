@@ -107,7 +107,6 @@ namespace stk {
 
             //std::cout << "P["<< m_eMesh.getRank() << "] urp tmp 4 "  << std::endl;
             change_entity_parts(eMesh, element, newElement);
-            set_parent_child_relations(eMesh, element, newElement, ielem);
 
             //std::cout << "P["<< m_eMesh.getRank() << "] urp tmp 5 "  << std::endl;
 
@@ -126,6 +125,7 @@ namespace stk {
             eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<2>()), 2);
 
             //std::cout << "P["<< m_eMesh.getRank() << "] urp tmp 7 "  << std::endl;
+            set_parent_child_relations(eMesh, element, newElement, ielem);
 
             element_pool++;
 

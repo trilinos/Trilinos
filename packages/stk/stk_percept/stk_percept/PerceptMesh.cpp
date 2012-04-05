@@ -1380,7 +1380,7 @@ namespace stk {
         }
 
       //s_spatial_dim = spatial_dim;
-      std::cout << "PerceptMesh::setup_spatialDim_metaData: spatial_dim= " << spatial_dim << std::endl;
+      //std::cout << "PerceptMesh::setup_spatialDim_metaData: spatial_dim= " << spatial_dim << std::endl;
 
 #if 0
       stk::mesh::Field<double,stk::mesh::Cartesian> & coord_field =
@@ -2339,11 +2339,13 @@ namespace stk {
         }
       else if (needed_entity_rank == meta.edge_rank())
         {
+          VERIFY_OP_ON(iSubDimOrd, <, cell_topo_data->edge_count, "err 1001");
           inodes = cell_topo_data->edge[iSubDimOrd].node;
           nSubDimNodes = 2;
         }
       else if (needed_entity_rank == meta.face_rank() )
         {
+          VERIFY_OP_ON(iSubDimOrd, <, cell_topo_data->side_count, "err 1002");
           nSubDimNodes = cell_topo_data->side[iSubDimOrd].topology->vertex_count;
           // note, some cells have sides with both 3 and 4 nodes (pyramid, prism)
           inodes = cell_topo_data->side[iSubDimOrd].node;
@@ -2355,6 +2357,25 @@ namespace stk {
           for (unsigned node_offset = 0; node_offset < nSubDimNodes; node_offset++)
             {
               unsigned knode = (jnode + node_offset) % nSubDimNodes;
+              if (1)
+                {
+                  VERIFY_OP_ON(inodes[jnode], <, elem_nodes.size(), "err 1003");
+                  VERIFY_OP_ON(knode, < , side_nodes.size(), "err 1005");
+                  if (knode >= side_nodes.size())
+                    {
+                      std::cout << "err 1005\n";
+                    }
+                  stk::mesh::Entity *elem_nodes_jnode = elem_nodes[inodes[jnode]].entity();
+                  stk::mesh::Entity *side_nodes_knode = side_nodes[ knode ].entity();
+                  VERIFY_OP_ON(elem_nodes_jnode, !=, 0, "err 1006");
+                  VERIFY_OP_ON(side_nodes_knode, !=, 0, "err 1007");
+                  if (!elem_nodes_jnode || !side_nodes_knode)
+                    {
+                      std::cout << "elem_nodes_jnode= " << elem_nodes_jnode << std::endl;
+                      std::cout << "side_nodes_knode= " << side_nodes_knode << std::endl;
+                    }
+                }
+              
               if (elem_nodes[inodes[jnode]].entity()->identifier() == side_nodes[ knode ].entity()->identifier() )
                 {
                   found_node_offset = (int)node_offset;
@@ -2368,6 +2389,8 @@ namespace stk {
           for (unsigned jnode = 0; jnode < nSubDimNodes; jnode++)
             {
               unsigned knode = (jnode + found_node_offset) % nSubDimNodes;
+              VERIFY_OP_ON(inodes[jnode], <, elem_nodes.size(), "err 2003");
+              VERIFY_OP_ON(knode, < , side_nodes.size(), "err 2005");
               if (elem_nodes[inodes[jnode]].entity()->identifier() != side_nodes[ knode ].entity()->identifier() )
                 {
                   matched = false;
@@ -2390,6 +2413,8 @@ namespace stk {
                 {
                   int knode = ( found_node_offset + (int)nSubDimNodes - (int)jnode) % ((int)nSubDimNodes);
 
+                  VERIFY_OP_ON(inodes[jnode], <, elem_nodes.size(), "err 2003");
+                  VERIFY_OP_ON(knode, < , (int)side_nodes.size(), "err 2005");
                   if (elem_nodes[inodes[jnode]].entity()->identifier() != side_nodes[ knode ].entity()->identifier() )
                     {
                       matched = false;

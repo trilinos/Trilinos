@@ -129,7 +129,6 @@ namespace stk {
 
             change_entity_parts(eMesh, element, newElement);
 
-            set_parent_child_relations(eMesh, element, newElement, ielem);
 
             {
               if (!elems[ielem][0])
@@ -145,6 +144,8 @@ namespace stk {
                 stk::mesh::Entity& node = eMesh.createOrGetNode(eid);
                 eMesh.getBulkData()->declare_relation(newElement, node, inode);
               }
+
+            set_parent_child_relations(eMesh, element, newElement, ielem);
 
             element_pool++;
 

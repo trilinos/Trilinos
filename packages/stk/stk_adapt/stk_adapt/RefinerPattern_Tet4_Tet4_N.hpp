@@ -587,10 +587,6 @@ namespace stk {
             //eMesh.getBulkData()->change_entity_parts( newElement, add_parts, remove_parts );
             change_entity_parts(eMesh, element, newElement);
 
-            set_parent_child_relations(eMesh, element, newElement, ielem);
-
-            interpolateElementFields(eMesh, element, newElement);
-
             {
               if (!elems[ielem].get<0>())
                 {
@@ -604,6 +600,10 @@ namespace stk {
             eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<1>()), 1);
             eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<2>()), 2);
             eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<3>()), 3);
+
+            set_parent_child_relations(eMesh, element, newElement, ielem);
+
+            interpolateElementFields(eMesh, element, newElement);
 
             if (0)
               {
