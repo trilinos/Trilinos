@@ -90,9 +90,9 @@ TEUCHOS_UNIT_TEST(PgPFactory, nonsymExample)
   UCAggFact->SetPhase3AggCreation(0.5);
 
   RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory(UCAggFact));
-  RCP<PgPFactory>         Pfact = rcp( new PgPFactory(Ptentfact));
-  RCP<RFactory>           Rfact = rcp( new GenericRFactory(Pfact) );
-  RCP<RAPFactory>        Acfact = rcp( new RAPFactory(Pfact,Rfact) );
+  RCP<PgPFactory>         Pfact = rcp( new PgPFactory());
+  RCP<RFactory>           Rfact = rcp( new GenericRFactory() );
+  RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
   H->SetMaxCoarseSize(1);
 
   // setup smoothers
@@ -104,11 +104,18 @@ TEUCHOS_UNIT_TEST(PgPFactory, nonsymExample)
   RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
-  Teuchos::ParameterList status;
-  status = H->FullPopulate(*Pfact,*Rfact, *Acfact,*SmooFact,0,maxLevels);
+  RCP<SmootherFactory> coarseSolveFact = rcp(new SmootherFactory(smooProto, Teuchos::null));
 
-  SmootherFactory coarseSolveFact(smooProto);
-  H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
+  FactoryManager M;
+  M.SetFactory("P", Pfact);
+  M.SetFactory("R", Rfact);
+  M.SetFactory("A", Acfact);
+  M.SetFactory("Ptent", Ptentfact);
+  M.SetFactory("Aggregation", UCAggFact);
+  M.SetFactory("Smoother", SmooFact);
+  M.SetFactory("CoarseSolver", coarseSolveFact);
+
+  H->Setup(M, 0, maxLevels);
 
   // test some basic multigrid data
   RCP<Level> coarseLevel = H->GetLevel(1);
@@ -301,10 +308,10 @@ TEUCHOS_UNIT_TEST(PgPFactory, NonStandardMaps)
   UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
   UCAggFact->SetPhase3AggCreation(0.5);
 
-  RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory(UCAggFact));
-  RCP<PgPFactory> Pfact = rcp(new PgPFactory(Ptentfact));
-  RCP<RFactory>          Rfact = rcp( new GenericRFactory(Pfact) );
-  RCP<RAPFactory>        Acfact = rcp( new RAPFactory(Pfact,Rfact) );
+  RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
+  RCP<PgPFactory> Pfact = rcp(new PgPFactory());
+  RCP<RFactory>          Rfact = rcp( new GenericRFactory() );
+  RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
   H->SetMaxCoarseSize(1);
 
   // setup smoothers
@@ -316,8 +323,15 @@ TEUCHOS_UNIT_TEST(PgPFactory, NonStandardMaps)
   RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
-  Teuchos::ParameterList status;
-  status = H->FullPopulate(*Pfact,*Rfact, *Acfact,*SmooFact,0,maxLevels);
+  FactoryManager M;
+  M.SetFactory("P", Pfact);
+  M.SetFactory("R", Rfact);
+  M.SetFactory("A", Acfact);
+  M.SetFactory("Ptent", Ptentfact);
+  M.SetFactory("Aggregation", UCAggFact);
+  M.SetFactory("Smoother", SmooFact);
+
+  H->Setup(M, 0, maxLevels);
 
   RCP<Level> coarseLevel = H->GetLevel(1);
   TEST_EQUALITY(coarseLevel->IsRequested("A",MueLu::NoFactory::get()), false);
@@ -355,12 +369,12 @@ TEUCHOS_UNIT_TEST(PgPFactory, NonStandardMaps)
   TEST_EQUALITY(coarseLevel2->IsRequested("PostSmoother",MueLu::NoFactory::get()), false);
   TEST_EQUALITY(coarseLevel2->IsAvailable("A",MueLu::NoFactory::get()), true);
   TEST_EQUALITY(coarseLevel2->IsAvailable("P",MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(coarseLevel2->IsAvailable("PreSmoother",MueLu::NoFactory::get()), false);
+  TEST_EQUALITY(coarseLevel2->IsAvailable("PreSmoother",MueLu::NoFactory::get()), true);
   TEST_EQUALITY(coarseLevel2->IsAvailable("PostSmoother",MueLu::NoFactory::get()), false);
   TEST_EQUALITY(coarseLevel2->IsAvailable("R",MueLu::NoFactory::get()), true);
   TEST_EQUALITY(coarseLevel2->GetKeepFlag("A",MueLu::NoFactory::get()), MueLu::Final);
   TEST_EQUALITY(coarseLevel2->GetKeepFlag("P",MueLu::NoFactory::get()), MueLu::Final);
-  TEST_EQUALITY(coarseLevel2->GetKeepFlag("PreSmoother",MueLu::NoFactory::get()), 0);
+  TEST_EQUALITY(coarseLevel2->GetKeepFlag("PreSmoother",MueLu::NoFactory::get()), MueLu::Final);
   TEST_EQUALITY(coarseLevel2->GetKeepFlag("PostSmoother",MueLu::NoFactory::get()), 0);
   TEST_EQUALITY(coarseLevel2->GetKeepFlag("R",MueLu::NoFactory::get()), MueLu::Final);
   TEST_EQUALITY(coarseLevel2->IsRequested("P",Pfact.get()), false);
@@ -600,10 +614,10 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegas)
   UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
   UCAggFact->SetPhase3AggCreation(0.5);
 
-  RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory(UCAggFact));
-  RCP<PgPFactory>        Pfact = rcp( new PgPFactory(Ptentfact));
-  RCP<RFactory>          Rfact = rcp( new GenericRFactory(Pfact) );
-  RCP<RAPFactory>        Acfact = rcp( new RAPFactory(Pfact,Rfact) );
+  RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
+  RCP<PgPFactory>        Pfact = rcp( new PgPFactory());
+  RCP<RFactory>          Rfact = rcp( new GenericRFactory() );
+  RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
   H->SetMaxCoarseSize(1);
 
   Pfact->ReUseDampingParameters(true);
@@ -617,11 +631,18 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegas)
   RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
-  Teuchos::ParameterList status;
-  status = H->FullPopulate(*Pfact,*Rfact, *Acfact,*SmooFact,0,maxLevels);
+  RCP<SmootherFactory> coarseSolveFact = rcp(new SmootherFactory(smooProto, Teuchos::null));
 
-  SmootherFactory coarseSolveFact(smooProto);
-  H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
+  FactoryManager M;
+  M.SetFactory("P", Pfact);
+  M.SetFactory("R", Rfact);
+  M.SetFactory("A", Acfact);
+  M.SetFactory("Ptent", Ptentfact);
+  M.SetFactory("Aggregation", UCAggFact);
+  M.SetFactory("Smoother", SmooFact);
+  M.SetFactory("CoarseSolver", coarseSolveFact);
+
+  H->Setup(M, 0, maxLevels);
 
   // test some basic multigrid data
   RCP<Level> coarseLevel = H->GetLevel(1);
@@ -761,10 +782,10 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegasTransP)
   UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
   UCAggFact->SetPhase3AggCreation(0.5);
 
-  RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory(UCAggFact));
-  RCP<PgPFactory>        Pfact = rcp( new PgPFactory(Ptentfact));
-  RCP<RFactory>          Rfact = rcp( new TransPFactory(Pfact) );
-  RCP<RAPFactory>        Acfact = rcp( new RAPFactory(Pfact,Rfact) );
+  RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
+  RCP<PgPFactory>        Pfact = rcp( new PgPFactory());
+  RCP<RFactory>          Rfact = rcp( new TransPFactory() );
+  RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
   H->SetMaxCoarseSize(1);
 
   Pfact->ReUseDampingParameters(true);
@@ -778,11 +799,18 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegasTransP)
   RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
-  Teuchos::ParameterList status;
-  status = H->FullPopulate(*Pfact,*Rfact, *Acfact,*SmooFact,0,maxLevels);
+  RCP<SmootherFactory> coarseSolveFact = rcp(new SmootherFactory(smooProto, Teuchos::null));
 
-  SmootherFactory coarseSolveFact(smooProto);
-  H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
+  FactoryManager M;
+  M.SetFactory("P", Pfact);
+  M.SetFactory("R", Rfact);
+  M.SetFactory("A", Acfact);
+  M.SetFactory("Ptent", Ptentfact);
+  M.SetFactory("Aggregation", UCAggFact);
+  M.SetFactory("Smoother", SmooFact);
+  M.SetFactory("CoarseSolver", coarseSolveFact);
+
+  H->Setup(M, 0, maxLevels);
 
   // test some basic multigrid data
   RCP<Level> coarseLevel = H->GetLevel(1);
@@ -933,10 +961,10 @@ TEUCHOS_UNIT_TEST(PgPFactory, EpetraVsTpetra)
       UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
       UCAggFact->SetPhase3AggCreation(0.5);
 
-      RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory(UCAggFact));
-      RCP<PgPFactory>         Pfact = rcp( new PgPFactory(Ptentfact));
-      RCP<RFactory>           Rfact = rcp( new GenericRFactory(Pfact) );
-      RCP<RAPFactory>        Acfact = rcp( new RAPFactory(Pfact,Rfact) );
+      RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
+      RCP<PgPFactory>         Pfact = rcp( new PgPFactory());
+      RCP<RFactory>           Rfact = rcp( new GenericRFactory() );
+      RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
       H->SetMaxCoarseSize(1);
 
       // setup smoothers
@@ -948,11 +976,18 @@ TEUCHOS_UNIT_TEST(PgPFactory, EpetraVsTpetra)
       RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
       Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
-      Teuchos::ParameterList status;
-      status = H->FullPopulate(*Pfact,*Rfact, *Acfact,*SmooFact,0,maxLevels);
-
-      SmootherFactory coarseSolveFact(smooProto);
-      H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
+      RCP<SmootherFactory> coarseSolveFact = rcp(new SmootherFactory(smooProto, Teuchos::null));
+      
+      FactoryManager M;
+      M.SetFactory("P", Pfact);
+      M.SetFactory("R", Rfact);
+      M.SetFactory("A", Acfact);
+      M.SetFactory("Ptent", Ptentfact);
+      M.SetFactory("Aggregation", UCAggFact);
+      M.SetFactory("Smoother", SmooFact);
+      M.SetFactory("CoarseSolver", coarseSolveFact);
+      
+      H->Setup(M, 0, maxLevels);
 
       // test some basic multigrid data
       RCP<Level> coarseLevel = H->GetLevel(1);
