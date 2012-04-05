@@ -90,19 +90,21 @@ public:
     const char *msg, bool ok, AssertionLevel level) const {}
 
   void globalInputAssertion(const char *file, int lineNum,
-    const char *msg, bool ok, AssertionLevel level, const Comm_t &comm) const {}
+    const char *msg, bool ok, AssertionLevel level, 
+    const Comm_t &comm=comm_) const {}
 
   void localBugAssertion(const char *file, int lineNum,
     const char *msg, bool ok, AssertionLevel level) const {}
 
   void globalBugAssertion(const char *file, int lineNum,
-    const char *msg, bool ok, AssertionLevel level, const Comm_t &comm) const {}
+    const char *msg, bool ok, AssertionLevel level, 
+    const Comm_t &comm=comm_) const {}
 
   void localMemoryAssertion(const char *file, int lineNum,
     size_t nobj, bool ok) const {}
 
   void globalMemoryAssertion(const char *file, int lineNum,
-    size_t nobj, bool ok, const Comm_t &comm) const {}
+    size_t nobj, bool ok, const Comm_t &comm=comm_) const {}
 
 #else
 
@@ -137,7 +139,8 @@ public:
    *   \param msg      an optional descriptive message
    *   \param ok       a boolean which if false indicates an error
    *   \param level    a AssertionLevel value
-   *   \param comm     a RCP<const Comm<int> > for the global check
+   *   \param comm     a RCP<const Comm<int> > for the global check,
+   *        if not specified we use the Environment's communicator.
    *
    *  If the \c level does not exceed the \c error_check_level parameter
    *  set by the user, then the assertion is tested on all processes in
@@ -146,7 +149,8 @@ public:
    */
 
   void globalInputAssertion(const char *file, int lineNum,
-    const char *msg, bool ok, AssertionLevel level, const Comm_t &comm) const {
+    const char *msg, bool ok, AssertionLevel level, 
+    const Comm_t &comm) const {
 
     if (level <= errorCheckLevel_){
       int anyFail=0, fail = (!ok ? 1 : 0); 
@@ -203,7 +207,8 @@ public:
    *   \param msg      an optional descriptive message
    *   \param ok       a boolean which if false indicates an error
    *   \param level    a AssertionLevel value
-   *   \param comm     a RCP<const Comm<int> > for the global check
+   *   \param comm     a RCP<const Comm<int> > for the global check,
+   *        if not specified we use the Environment's communicator.
    *
    *  If the \c level does not exceed the \c error_check_level parameter
    *  set by the user, then the assertion is tested and a std::logic_error
@@ -217,7 +222,8 @@ public:
    */
 
   void globalBugAssertion(const char *file, int lineNum,
-    const char *msg, bool ok, AssertionLevel level, const Comm_t &comm) const {
+    const char *msg, bool ok, AssertionLevel level, 
+   const Comm_t &comm) const {
 
     if (level <= errorCheckLevel_){
       int anyFail=0, fail = (!ok ? 1 : 0); 
@@ -266,7 +272,8 @@ public:
    *   \param lineNum  the __LINE__ value of the caller.
    *   \param nobj     a value indicating the amount of memory wanted
    *   \param ok       a boolean which if false indicates failure
-   *   \param comm     a RCP<const Comm<int> > for the global check
+   *   \param comm     a RCP<const Comm<int> > for the global check,
+   *        if not specified we use the Environment's communicator.
    *
    *  If the assertion fails anywhere, we throw std::bad_alloc.  There is no
    *  level to this macro because memory assertions are BASIC_ASSERTIONs.
@@ -459,6 +466,42 @@ public:
    */
 
   static void convertStringToInt(Teuchos::ParameterList &params);
+
+  /*! \brief Return a sublist of the given parameter list.
+   *   \param pl  a Teuchos::ParameterList.
+   *   \param listName  the name of a parameter list that may be a sublist
+   *                          of pl.
+   *   \return the requested parameter list if it exists, an empty list 
+   *                    otherwise.
+   *
+   *  If the sublist does not exist, an empty parameter list named "emptyList"
+   *  is returned.  If the input list \c pl is such an empty list, then
+   *  the empty list is returned.  In this way getList() can be nested when
+   *  it is not known if the intermediate lists exist.  For example:
+   *
+     \code
+           getList(getList(getParameters(), "partitioning"), "geometric")
+     \endcode
+   *
+   * will work (by returning an empty list) even if there is 
+   * no "partitioning" list.
+   */
+ 
+  const Teuchos::ParameterList &getList(const Teuchos::ParameterList &pl,
+    const char *listName) const;
+
+  /*! \brief Find the value of the named parameter.
+   *  \param pl A parameter list that may contain the parameter.
+   *  \param name  The name of the parameter entry.
+   *  \param set  On return, true if the parameter is set and false if
+   *               it is not set (does not appear in the parameter list).
+   *  \param value On return, if the entry was found, this will be set
+   *                    to the value of the entry.  Otherwise it is
+   *                    undefined.
+   */
+  template <typename T>
+    void getValue(const Teuchos::ParameterList &pl, const char *name, 
+      bool &set, T &value) const;
 
 private:
 

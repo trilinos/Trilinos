@@ -9,6 +9,7 @@
 
 #include <sstream>
 #include <string>
+#include <bitset>
 
 /*! \file Zoltan2_AlgBlock.hpp
  *  \brief The algorithm for block partitioning.
@@ -17,6 +18,17 @@
 typedef zoltan2_partId_t partId_t;
 
 namespace Zoltan2{
+
+/*! \brief The boolean parameters of interest to the Block algorithm.
+ */
+enum blockParams{
+  block_balanceCount,            /*!< objective = balance_object_count */
+  block_balanceWeight,          /*!< objective = balance_object_weight */
+  block_minTotalWeight,      /*!< objective = mc_minimize_total_weight */
+  block_minMaximumWeight,  /*!< objective = mc_minimize_maximum_weight */
+  block_balanceTotalMaximum, /*!< objective = mc_balance_total_maximum */
+  NUM_BLOCK_PARAMS
+};
 
 /*! Block partitioning method.
  *
@@ -28,6 +40,10 @@ namespace Zoltan2{
  *  Preconditions: The parameters in the environment have been
  *    processed (committed).  No special requirements on the
  *    identifiers.
+ *
+ *   \todo Block partitioning uses one weight only
+ *   \todo Block partitioning assumes one part per process.
+ *   \todo check for memory allocation failures
  */
 
 
@@ -45,85 +61,52 @@ void AlgPTBlock(
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::scalar_t scalar_t;
 
-  ////////////////////////////////////////////////////////
-  // Library parameters of interest:
-  //
-  //    are we printing out debug messages
-  //    are we timing
-  //    are we computing memory used
-
-  bool debug = env->doStatus();
-#if 0
-  bool timing = env->doTiming();
-  bool memstats = env->doMemoryProfiling();
-#endif
-
-  if (debug)
+  if (env->doStatus())
     env->debug(DETAILED_STATUS, string("Entering AlgBlock"));
 
   int rank = env->myRank_;
   int nprocs = env->numProcs_;
 
-  // Parameters that may drive algorithm choices
-  //    speed_versus_quality
-  //    memory_versus_speed
-
-#if 0
-  const Teuchos::ParameterList &pl = env->getParameters();
-  const string defaultVal("balance");
-
-  const string *mvr = pl.getPtr<string>("memory_versus_speed");
-  if (!mvr)
-    mvr = &defaultVal;
-  
-  const string *svq = pl.getPtr<string>("speed_versus_quality");
-  if (!svq)
-    svq = &defaultVal;
-
-  bool fastSolution = (*svq==string("speed"));
-  bool goodSolution = (*svq==string("quality"));
-  bool balancedSolution = (*svq==string("balance"));
- 
-  bool lowMemory = (*mvr==string("memory"));
-  bool lowRunTime = (*mvr==string("speed"));
-  bool balanceMemoryRunTime = (*mvr==string("balance"));
-#endif
-
   ////////////////////////////////////////////////////////
-  // Problem parameters of interest:
+  // Partitioning problem parameters of interest:
   //    objective
   //    imbalance_tolerance
 
-#if 0
-  const string *obj=NULL;
-  const double *tol=NULL;
+  std::bitset<NUM_BLOCK_PARAMS> params;
+  double imbalanceTolerance=0.0;
+  bool isSet;
+  string strChoice;
 
-  if (env->hasPartitioningParameters()){
-    const Teuchos::ParameterList &plPart = pl.sublist("partitioning");
+  env->getValue<string>(
+     env->getList(env->getParameters(), "partitioning"),
+    "objective", isSet, strChoice);
 
-    obj = plPart.getPtr<string>("objective");
-    tol = plPart.getPtr<double>("imbalance_tolerance");
-  }
+  if (isSet && strChoice == string("balance_object_count"))
+    params.set(block_balanceCount);
+  else if (isSet && strChoice ==
+    string("multicriteria_minimize_total_weight"))
+    params.set(block_minTotalWeight);
+  else if (isSet && strChoice ==
+    string("multicriteria_minimize_maximum_weight"))
+    params.set(block_minMaximumWeight);
+  else if (isSet && strChoice ==
+    string("multicriteria_balance_total_maximum"))
+    params.set(block_balanceTotalMaximum);
+  else
+    params.set(block_balanceWeight);
 
-  double imbalanceTolerance = (tol ? *tol : 1.1);
-  string objective = (obj ? *obj : string("balance_object_weight"));
+  env->getValue<double>(
+     env->getList(env->getParameters(), "partitioning"),
+    "imbalance_tolerance", isSet, imbalanceTolerance);
 
-  bool balanceCount = (objective == string("balance_object_count"));
-  bool balanceWeight = (objective == string("balance_object_weight"));
-  bool minTotalWeight = 
-    (objective == string("multicriteria_minimize_total_weight"));
-  bool minMaximumWeight = 
-    (objective == string("multicriteria_minimize_maximum_weight"));
-  bool balanceTotalMaximum = 
-    (objective == string("multicriteria_balance_total_maximum"));
-#endif
+  if (!isSet)
+    imbalanceTolerance = 1.1;
 
   ////////////////////////////////////////////////////////
   // From the IdentifierModel we need:
   //    the number of gnos
   //    number of weights per gno
   //    the weights
-  // TODO: modify algorithm for weight dimension greater than 1.
 
   size_t numGnos = ids->getLocalNumIdentifiers();
   int wtflag = ids->getIdentifierWeightDim();
@@ -137,14 +120,12 @@ void AlgPTBlock(
 
   ////////////////////////////////////////////////////////
   // From the Solution we get part information.
-  //
-  //   TODO: for now, we have 1 part per proc and all
-  //   part sizes are the same.
 
   size_t numGlobalParts = solution->getGlobalNumberOfParts();
-#if 0
+
   size_t numLocalParts = solution->getLocalNumberOfParts();
-#endif
+  if (numLocalParts != 1){
+  }
   
   ////////////////////////////////////////////////////////
   // The algorithm
@@ -175,14 +156,25 @@ void AlgPTBlock(
 
   scalar_t globalTotalWeight = scansum[nprocs];
 
-  /* Overwrite part_sizes with cumulative sum (inclusive) part_sizes. */
-  /* A cleaner way is to make a copy, but this works. */
+  /* part_sizes - inclusive sum */
 
-  Array<scalar_t> part_sizes(numGlobalParts, 1.0/numGlobalParts); 
-  for (int i=1; i<numGlobalParts; i++)
-    part_sizes[i] += part_sizes[i-1];
+  Array<scalar_t> part_sizes(numGlobalParts);
 
-  if (debug){
+  if (!solution->criteriaHasUniformPartSizes(0)){
+    part_sizes[0] = solution->getCriteriaPartSize(0, 0);
+    for (int i=1; i<numGlobalParts; i++)
+      part_sizes[i] = part_sizes[i-1] + solution->getCriteriaPartSize(i, 0);
+  }
+  else{
+    scalar_t onePart = 1.0/numGlobalParts;
+    part_sizes[0] = onePart;
+    for (int i=1; i<numGlobalParts; i++)
+      part_sizes[i] += onePart;
+  }
+
+  // TODO assertion that last part sizes is about equal to 1.0
+
+  if (env->doStatus()){
     ostringstream oss("Part sizes: ");
     for (int i=0; i < numGlobalParts; i++)
       oss << part_sizes[i] << " ";
@@ -216,55 +208,52 @@ void AlgPTBlock(
   ////////////////////////////////////////////////////////////
   // Compute the imbalance.
 
-  ArrayRCP<float> imbalance = arcp(new float[weightDim], 0, weightDim);
-
-  // TODO - get part sizes from the solution object.  For now, 
-  //    an empty part size array means uniform parts.
-
-  ArrayView<float> defaultPartSizes(Teuchos::null);
-  Array<ArrayView<float> > partSizes(weightDim, defaultPartSizes);
-
-  // TODO have partNums default to 0 through numGlobalParts-1 in
-  //    imbalances() call.
-  Array<partId_t> partNums(numGlobalParts);
-  for (partId_t i=0; i < numGlobalParts; i++) partNums[i] = i;
-
-  Array<ArrayView<scalar_t> > partWeights(1);
-  partWeights[0] = partTotal.view(0, numGlobalParts);
+  ArrayRCP<MetricValues<scalar_t> > metrics;
+  partId_t numParts;
+  partId_t numNonemptyParts;
 
   try{
-    imbalances<scalar_t>(env, problemComm, numGlobalParts, 
-      partSizes, partNums.view(0, numGlobalParts),
-         partWeights, imbalance.view(0, weightDim));
+    objectMetrics<scalar_t, partId_t, lno_t, gno_t>(
+      env, problemComm, numGlobalParts, 
+      gnoPart.view(0, numGnos),  wgtList[0],
+      numParts, numNonemptyParts, metrics);
   }
   Z2_FORWARD_EXCEPTIONS;
-  
+
+  if (metrics.size() == 2)
+    wgtImbalance = metrics[1].getMaxImbalance();
+  else
+    wgtImbalance = metrics[0].getMaxImbalance();
 
   ////////////////////////////////////////////////////////////
   // Done
   
-  if (debug){
+  if (env->doStatus()){
 #if 0
-    if (imbalance[0] > Teuchos::as<scalar_t>(imbalanceTolerance)){
+    if (wgtImbalance > Teuchos::as<scalar_t>(imbalanceTolerance)){
       ostringstream oss("Warning: imbalance is ");
-      oss << imbalance[0] << std::endl;
+      oss << wgtImbalance << std::endl;
       env->debug(BASIC_STATUS, oss.str());
     }
     else{
 #endif
       ostringstream oss("Imbalance: ");
-      oss << imbalance[0] << std::endl;
+      oss << wgtImbalance << std::endl;
       env->debug(DETAILED_STATUS, oss.str());
 #if 0
     }
 #endif
   }
 
-  // Done, update the solution
+  // Done, update the solution TODO - compute the metrics
+  //    with objectMetrics() call
 
-  solution->setParts(idList, gnoPart, imbalance);
+  ArrayRCP<MetricValues<scalar_t> > emptyMetrics =
+    arcp(new MetricValues<scalar_t> [2], 0, 2);
 
-  if (debug)
+  solution->setParts(idList, gnoPart, emptyMetrics);
+
+  if (env->doStatus())
     env->debug(DETAILED_STATUS, string("Exiting AlgBlock"));
 }
 

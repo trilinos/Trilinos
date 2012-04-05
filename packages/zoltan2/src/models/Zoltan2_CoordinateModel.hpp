@@ -15,6 +15,7 @@
 #include <Zoltan2_Model.hpp>
 #include <Zoltan2_MatrixInput.hpp>
 #include <Zoltan2_GraphInput.hpp>
+#include <Zoltan2_IdentifierInput.hpp>
 #include <Zoltan2_CoordinateInput.hpp>
 #include <Zoltan2_StridedData.hpp>
 
@@ -105,7 +106,6 @@ public:
 };
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-
 
 ////////////////////////////////////////////////////////////////
 // Coordinate model derived from CoordinateInput.
@@ -307,6 +307,47 @@ template <typename User>
   gnosConst_ = arcp_const_cast<const gno_t>(gnos_);
 }
 
+////////////////////////////////////////////////////////////////
+// Coordinate model derived from IdentifierInput.
+// A coordinate model can not be built from IdentifierInput.
+// This specialization exists so that other code can compile.
+////////////////////////////////////////////////////////////////
+
+template <typename User>
+class CoordinateModel<IdentifierInput<User> > : 
+  public Model<IdentifierInput<User> >
+{
+public:
+
+  typedef typename CoordinateInput<User>::scalar_t  scalar_t;
+  typedef typename CoordinateInput<User>::gno_t     gno_t;
+  typedef typename CoordinateInput<User>::lno_t     lno_t;
+  typedef StridedData<lno_t, scalar_t> input_t;
+  
+  CoordinateModel( const IdentifierInput<User> *ia, 
+    const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
+    modelFlag_t flags)
+  {
+    throw logic_error(
+      "a coordinate model can not be build from identifier input");
+  }
+
+  int getCoordinateDim() const { return 0;}
+  size_t getLocalNumCoordinates() const { return 0;}
+  global_size_t getGlobalNumCoordinates() const {return 0;}
+  int getCoordinateWeightDim() const { return 0;}
+  size_t getCoordinates(ArrayView<const gno_t>  &Ids,
+    ArrayView<input_t> &xyz,
+    ArrayView<input_t> &wgts) const { return 0;}
+
+  ////////////////////////////////////////////////////
+  // The Model interface.
+  ////////////////////////////////////////////////////
+
+  size_t getLocalNumObjects() const {return 0;}
+  size_t getGlobalNumObjects() const {return 0;}
+  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const {return;}
+};
 
 
 #endif   // DOXYGEN_SHOULD_SKIP_THIS

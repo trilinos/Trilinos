@@ -34,6 +34,8 @@ It would look like this:
 
 #include <Zoltan2_SomeModel.hpp>
 #include <Zoltan2_TestHelpers.hpp>
+#include <Teuchos_GlobalMPISession.hpp>
+#include <Teuchos_DefaultComm.hpp>
 
 void SomeModelTest(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
 {

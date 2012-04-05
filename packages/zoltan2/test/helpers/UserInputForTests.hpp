@@ -323,7 +323,8 @@ public:
 
   RCP<tcrsGraph_t> getTpetraCrsGraph() 
   { 
-    if (!flags_.test(OBJECT_DATA)) return rcp(tcrsGraph_t);
+    if (!flags_.test(OBJECT_DATA)) 
+      throw std::runtime_error("object data wasn't requested.");
     if (M_.is_null())
      createMatrix();
     return rcp_const_cast<tcrsGraph_t>(M_->getCrsGraph());
@@ -331,7 +332,8 @@ public:
 
   RCP<tVector_t> getTpetraVector() 
   { 
-    if (!flags_.test(OBJECT_DATA)) return rcp(tVector_t);
+    if (!flags_.test(OBJECT_DATA)) 
+      throw std::runtime_error("object data wasn't requested.");
     if (M_.is_null())
      createMatrix();
     RCP<tVector_t> V = rcp(new tVector_t(M_->getRowMap(),  1));
@@ -342,7 +344,8 @@ public:
 
   RCP<tMVector_t> getTpetraMultiVector(int nvec) 
   { 
-    if (!flags_.test(OBJECT_DATA)) return rcp(tMVector_t);
+    if (!flags_.test(OBJECT_DATA)) 
+      throw std::runtime_error("object data wasn't requested.");
     if (M_.is_null())
      createMatrix();
     RCP<tMVector_t> mV = rcp(new tMVector_t(M_->getRowMap(), nvec));
@@ -353,7 +356,8 @@ public:
 
   RCP<xcrsMatrix_t> getXpetraCrsMatrix() 
   { 
-    if (!flags_.test(OBJECT_DATA)) return rcp(xcrsMatrix_t);
+    if (!flags_.test(OBJECT_DATA)) 
+      throw std::runtime_error("object data wasn't requested.");
     if (xM_.is_null())
      createMatrix();
     return xM_;
@@ -361,7 +365,8 @@ public:
 
   RCP<xcrsGraph_t> getXpetraCrsGraph() 
   { 
-    if (!flags_.test(OBJECT_DATA)) return rcp(xcrsGraph_t);
+    if (!flags_.test(OBJECT_DATA)) 
+      throw std::runtime_error("object data wasn't requested.");
     if (xM_.is_null())
      createMatrix();
     return rcp_const_cast<xcrsGraph_t>(xM_->getCrsGraph());
@@ -369,7 +374,8 @@ public:
 
   RCP<xVector_t> getXpetraVector() 
   { 
-    if (!flags_.test(OBJECT_DATA)) return rcp(xVector_t);
+    if (!flags_.test(OBJECT_DATA)) 
+      throw std::runtime_error("object data wasn't requested.");
     RCP<const tVector_t> tV = getTpetraVector();
     RCP<const xVector_t> xV =
       Zoltan2::XpetraTraits<tVector_t>::convertToXpetra(tV);
@@ -378,7 +384,8 @@ public:
 
   RCP<xMVector_t> getXpetraMultiVector(int nvec) 
   { 
-    if (!flags_.test(OBJECT_DATA)) return rcp(xMVector_t);
+    if (!flags_.test(OBJECT_DATA)) 
+      throw std::runtime_error("object data wasn't requested.");
     RCP<const tMVector_t> tMV = getTpetraMultiVector(nvec);
     RCP<const xMVector_t> xMV =
       Zoltan2::XpetraTraits<tMVector_t>::convertToXpetra(tMV);
@@ -388,7 +395,8 @@ public:
 #ifdef HAVE_EPETRA_DATA_TYPES
   RCP<Epetra_CrsGraph> getEpetraCrsGraph()
   {
-    if (!flags_.test(OBJECT_DATA)) return rcp(Epetra_CrsGraph);
+    if (!flags_.test(OBJECT_DATA)) 
+      throw std::runtime_error("object data wasn't requested.");
     if (eG_.is_null()){
       if (M_.is_null())
         createMatrix();
@@ -430,7 +438,8 @@ public:
 
   RCP<Epetra_CrsMatrix> getEpetraCrsMatrix()
   {
-    if (!flags_.test(OBJECT_DATA)) return rcp(Epetra_CrsMatrix);
+    if (!flags_.test(OBJECT_DATA)) 
+      throw std::runtime_error("object data wasn't requested.");
     if (eM_.is_null()){
       RCP<Epetra_CrsGraph> egraph = getEpetraCrsGraph();
       eM_ = rcp(new Epetra_CrsMatrix(Copy, *egraph));
@@ -461,7 +470,8 @@ public:
 
   RCP<Epetra_Vector> getEpetraVector() 
   { 
-    if (!flags_.test(OBJECT_DATA)) return rcp(Epetra_Vector);
+    if (!flags_.test(OBJECT_DATA)) 
+      throw std::runtime_error("object data wasn't requested.");
     RCP<Epetra_CrsGraph> egraph = getEpetraCrsGraph();
     RCP<Epetra_Vector> V = 
       rcp(new Epetra_Vector(egraph->RowMap()));
@@ -471,7 +481,8 @@ public:
 
   RCP<Epetra_MultiVector> getEpetraMultiVector(int nvec) 
   { 
-    if (!flags_.test(OBJECT_DATA)) return rcp(Epetra_MultiVector);
+    if (!flags_.test(OBJECT_DATA)) 
+      throw std::runtime_error("object data wasn't requested.");
     RCP<Epetra_CrsGraph> egraph = getEpetraCrsGraph();
     RCP<Epetra_MultiVector> mV = 
       rcp(new Epetra_MultiVector(egraph->RowMap(), nvec));

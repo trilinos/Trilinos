@@ -6,7 +6,7 @@
 // ***********************************************************************
 // @HEADER
 
-/*! \file Zoltan2_Problem.cpp
+/*! \file Zoltan2_Problem.hpp
     \brief Defines the Problem base class.
 */
 
@@ -16,6 +16,7 @@
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_IdentifierModel.hpp>
+#include <Zoltan2_CoordinateModel.hpp>
 
 using std::cout;
 using std::endl;
@@ -97,7 +98,7 @@ private:
 template <typename Adapter>
   Problem<Adapter>::Problem( Adapter *input, ParameterList *params,
     MPI_Comm comm) : inputAdapter_(input), baseInputAdapter_(),
-      graphModel_(), identifierModel_(), generalModel_(),
+      graphModel_(), identifierModel_(), baseModel_(),
       params_(RCP<ParameterList>(params,false)), comm_(), env_(), envConst_()
 {
   using Teuchos::OpaqueWrapper;
@@ -123,7 +124,7 @@ template <typename Adapter>
   Problem<Adapter>::Problem( Adapter *input, ParameterList *params):
     inputAdapter_(input), 
     baseInputAdapter_(dynamic_cast<base_adapter_t *>(input)),
-    graphModel_(), identifierModel_(), generalModel_(),
+    graphModel_(), identifierModel_(), baseModel_(),
     params_(RCP<ParameterList>(params,false)), comm_(), env_(), envConst_()
 {
   HELLO;

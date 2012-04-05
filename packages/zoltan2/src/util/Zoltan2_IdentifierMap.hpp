@@ -103,6 +103,11 @@ public:
    */
   bool gnosAreGids() const;
 
+  /*! \brief Return the minimum and maximum values of the internal
+   *  global numbers 
+   */
+  void getGnoRange(gno_t &min, gno_t &max) const;
+
   /*! \brief Return true if our internal global numbers are consecutive.
    */
   bool gnosAreConsecutive() const;
@@ -257,10 +262,19 @@ template<typename User>
   setupMap();
 }
 
+// TODO many of these should be inline
+
 template< typename User>
   bool IdentifierMap<User>::gnosAreGids() const
 {
   return userGidsAreZoltan2Gnos_;
+}
+
+template <typename User>
+  void IdentifierMap<User>::getGnoRange(gno_t &min, gno_t &max) const
+{
+  min = minGlobalGno_;
+  max = maxGlobalGno_;
 }
 
 template< typename User>

@@ -16,6 +16,8 @@
 
 #include <Zoltan2_IdentifierMap.hpp>
 #include <Zoltan2_Solution.hpp>
+#include <Zoltan2_Metric.hpp>
+#include <Zoltan2_PartToProc.hpp>
 
 #include <cmath>
 #include <algorithm>
@@ -41,8 +43,15 @@ template <typename User_t>
 public:
 
   typedef typename InputTraits<User_t>::gno_t gno_t;
+  typedef typename InputTraits<User_t>::scalar_t scalar_t;
   typedef typename InputTraits<User_t>::lno_t lno_t;
   typedef typename InputTraits<User_t>::gid_t gid_t;
+
+  static void partsToProcs(
+    const RCP<const Teuchos::Comm<int> > &comm,
+    bool doCheck, bool haveNumLocalParts, bool haveNumGlobalParts,
+    partId_t numLocalParts, partId_t numGlobalParts,
+    bool &oneToOne, vector<int> &partDist, vector<partId_t> procDist);
 
 /*! \brief Constructor when part sizes are not supplied.
  *
@@ -87,7 +96,7 @@ public:
  *
  *   If across the application there are some part numbers that are not
  *   included in the reqPartIds lists, then those part sizes are assumed
- *   to be the average of the supplied part sizes.
+ *   to be 1.0.
  *
  *   \todo handle errors that may arise - like duplicate part numbers
  */
@@ -96,7 +105,7 @@ public:
     RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<User_t> > &idMap,
     int userWeightDim, ArrayView<ArrayRCP<partId_t> > reqPartIds,
-    ArrayView<ArrayRCP<float> > reqPartSizes );
+    ArrayView<ArrayRCP<scalar_t> > reqPartSizes );
   
   ////////////////////////////////////////////////////////////////////
   // Information that the algorithm may wish to query.
@@ -108,7 +117,7 @@ public:
 /*! \brief Returns the number of parts (or fraction of one part) to 
             be assigned to this process.
  */
-  float getLocalNumberOfParts() const { return nLocalParts_; }
+  scalar_t getLocalNumberOfParts() const { return nLocalParts_; }
   
 /*! \brief Is the part-to-process distribution is one-to-one.
      \return true if Process p owns part p for all p, and false if the part
@@ -160,7 +169,7 @@ public:
   const partId_t *getProcDistribution() const { return &procDist_[0]; }
   
 /*! \brief Determine if balancing criteria (weight dimension) has uniform
-                parts.
+                part sizes.  (User can specify differing part sizes.)
     \param idx   A value from 0 to one less than the number of weights per 
                    object.
     \return true if part sizes are uniform for this criteria.
@@ -179,7 +188,7 @@ public:
       \todo It would be useful to algorithms to get the sum of
            part sizes from a to b, or the sum or a list of parts.
  */
-  float getCriteriaPartSize(int idx, partId_t part) const { 
+  scalar_t getCriteriaPartSize(int idx, partId_t part) const { 
     if (pSizeUniform_[idx]) 
       return 1.0 / nGlobalParts_;
     else if (pCompactIndex_[idx].size())
@@ -205,9 +214,7 @@ public:
    *      should be in partList[i].  The partList is allocated and written
    *      by the algorithm. We save an RCP to the part list.
    *
-   *   \param  imbalance  The algorithm computes one imbalance for each
-   *      weight dimension.  It allocates and writes the imbalance array.
-   *      We copy the metrics.
+   *   \param metrics An array of named MetricValues objects.
    *
    *  \todo If the algorithm will always provide the partList in the
    *     same order as the gnos listed in the model, then the gnoList
@@ -215,7 +222,7 @@ public:
    */
   
   void setParts(ArrayView<const gno_t> gnoList, ArrayRCP<partId_t> partList,
-    ArrayRCP<float> &imbalance);
+    ArrayRCP<MetricValues<scalar_t> > &metrics);
   
   ////////////////////////////////////////////////////////////////////
   // Results that may be queried by the user or by migration methods.
@@ -247,7 +254,14 @@ public:
   /*! \brief Returns the imbalance of the solution.
    *      \todo add more metrics
    */
-  const float *getImbalance() const { return imbalance_.getRawPtr(); }
+  const scalar_t *getImbalance() const { 
+    if (qualityMetrics_.size() == 1)
+      return qualityMetrics_[0].getMaxImbalance();   // object counts
+    else if (qualityMetrics_.size() > 1)
+      return qualityMetrics_[1].getMaxImbalance();   // normed object weights
+    else
+      return 0.0;
+  }
 
   /*! \brief Get the parts belonging to a process.
    *  \param procId a process rank
@@ -303,10 +317,10 @@ private:
   void setPartDistribution();
 
   void setPartSizes(ArrayView<ArrayRCP<partId_t> > reqPartIds,
-    ArrayView<ArrayRCP<float> > reqPartSizes);
+    ArrayView<ArrayRCP<scalar_t> > reqPartSizes);
 
   void computePartSizes(int wdim, ArrayView<partId_t> ids, 
-    ArrayView<float> sizes);
+    ArrayView<scalar_t> sizes);
 
   void broadcastPartSizes(int wdim);
 
@@ -315,7 +329,7 @@ private:
   RCP<const IdentifierMap<User_t> > idMap_;
 
   gno_t nGlobalParts_; // the global number of parts
-  float nLocalParts_;  // Zero, fraction of one part, or number of whole parts
+  scalar_t nLocalParts_; // Zero, fraction of one part, or number of whole parts
   int weightDim_;      // if user has no weights, this is 1
 
   // If process p is to be assigned part p for all p, then onePartPerProc_ 
@@ -384,7 +398,7 @@ private:
 
   ArrayRCP<bool> pSizeUniform_;
   ArrayRCP<ArrayRCP<unsigned char> > pCompactIndex_;
-  ArrayRCP<ArrayRCP<float> > pSize_;
+  ArrayRCP<ArrayRCP<scalar_t> > pSize_;
 
   ////////////////////////////////////////////////////////////////
   // The algorithm sets these values upon completion.  (The
@@ -393,7 +407,8 @@ private:
 
   ArrayRCP<const gid_t>  gids_;   // User's global IDs 
   ArrayRCP<partId_t> parts_;      // part number assigned to gids_[i]
-  ArrayRCP<float> imbalance_;     // weightDim_ imbalance measures
+
+  ArrayRCP<MetricValues<scalar_t> > qualityMetrics_;
 
   ////////////////////////////////////////////////////////////////
   // The solution calculates this from the part assignments,
@@ -415,7 +430,7 @@ template <typename User_t>
       nGlobalParts_(0), nLocalParts_(0), weightDim_(),
       onePartPerProc_(false), partDist_(), procDist_(), 
       pSizeUniform_(), pCompactIndex_(), pSize_(),
-      gids_(), parts_(), imbalance_(), procs_()
+      gids_(), parts_(), qualityMetrics_(), procs_()
 {
   weightDim_ = (userWeightDim ? userWeightDim : 1); 
 
@@ -425,9 +440,9 @@ template <typename User_t>
   // been provided by the user on other processes.
 
   ArrayRCP<partId_t> *noIds = new ArrayRCP<partId_t> [weightDim_];
-  ArrayRCP<float> *noSizes = new ArrayRCP<float> [weightDim_];
+  ArrayRCP<scalar_t> *noSizes = new ArrayRCP<scalar_t> [weightDim_];
   ArrayRCP<ArrayRCP<partId_t> > ids(noIds, 0, weightDim_, true);
-  ArrayRCP<ArrayRCP<float> > sizes(noSizes, 0, weightDim_, true);
+  ArrayRCP<ArrayRCP<scalar_t> > sizes(noSizes, 0, weightDim_, true);
 
   setPartSizes(ids.view(0, weightDim_), sizes.view(0, weightDim_));
 }
@@ -438,12 +453,12 @@ template <typename User_t>
     RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<User_t> > &idMap, int userWeightDim,
     ArrayView<ArrayRCP<partId_t> > reqPartIds, 
-    ArrayView<ArrayRCP<float> > reqPartSizes)
+    ArrayView<ArrayRCP<scalar_t> > reqPartSizes)
     : env_(env), comm_(comm), idMap_(idMap),
       nGlobalParts_(0), nLocalParts_(0), weightDim_(),
       onePartPerProc_(false), partDist_(), procDist_(), 
       pSizeUniform_(), pCompactIndex_(), pSize_(),
-      gids_(), parts_(), imbalance_(), procs_()
+      gids_(), parts_(), qualityMetrics_(), procs_()
 {
   weightDim_ = (userWeightDim ? userWeightDim : 1); 
 
@@ -455,9 +470,6 @@ template <typename User_t>
 template <typename User_t>
   void PartitioningSolution<User_t>::setPartDistribution()
 {
-  int rank = env_->myRank_;
-  int nprocs = env_->numProcs_;
-  
   // Did the caller define num_global_parts and/or num_local_parts?
 
   size_t haveGlobalNumParts=0, haveLocalNumParts=0;
@@ -480,171 +492,51 @@ template <typename User_t>
     if (entry2){
       haveLocalNumParts = 1;
       double val = *entry2;
-      nLocalParts_ = float(val);
+      nLocalParts_ = scalar_t(val);
     }
   }
-
-  size_t vals[4] = {haveGlobalNumParts, haveLocalNumParts, 
-    nGlobalParts_, size_t(nLocalParts_)};
-  size_t reducevals[4];
 
   try{
-    reduceAll<int, size_t>(*comm_, Teuchos::REDUCE_SUM, 4, vals, reducevals);
+    partToProc(env_, comm_, true, 
+      haveLocalNumParts, haveGlobalNumParts, nGlobalParts_, nLocalParts_,
+      onePartPerProc_, partDist_, procDist_);
   }
-  Z2_THROW_OUTSIDE_ERROR(*env_);
+  Z2_FORWARD_EXCEPTIONS
 
-  size_t sumHaveGlobal = reducevals[0];
-  size_t sumHaveLocal = reducevals[1];
-  size_t sumGlobal = reducevals[2];
-  size_t sumLocal = reducevals[3];
-
-  env_->localInputAssertion(__FILE__, __LINE__,
-    "Either all procs specify num_global/local_parts or none do",
-    (sumHaveGlobal == 0 || sumHaveGlobal == nprocs) &&
-    (sumHaveLocal == 0 || sumHaveLocal == nprocs), 
-    BASIC_ASSERTION);
-
-  if (sumHaveGlobal == 0 && sumHaveLocal == 0){
-    onePartPerProc_ = true;   // default if user did not specify
+  if (onePartPerProc_){
     nGlobalParts_ = nprocs;
     nLocalParts_ = 1;
-    return;
-  }
-
-  if (sumHaveGlobal == nprocs){
-    vals[0] = nGlobalParts_;
-    vals[1] = size_t(nLocalParts_);
-    try{
-      reduceAll<int, size_t>(*comm_, Teuchos::REDUCE_MAX, 2, vals, reducevals);
-    }
-    Z2_THROW_OUTSIDE_ERROR(*env_);
-
-    size_t maxGlobal = reducevals[0];
-    size_t maxLocal = reducevals[1];
-
-    env_->localInputAssertion(__FILE__, __LINE__,
-      "Value for num_global_parts is different on different processes.",
-      maxGlobal * nprocs == sumGlobal, BASIC_ASSERTION);
-
-    if (sumLocal){
-      env_->localInputAssertion(__FILE__, __LINE__,
-        "Sum of num_local_parts does not equal requested num_global_parts",
-        sumLocal == nGlobalParts_, BASIC_ASSERTION);
-
-      if (sumLocal == nprocs && maxLocal == 1){
-        onePartPerProc_ = true;   // user specified one part per proc
-        return;
+  } 
+  else if (partDist_.size() > 0){   // more procs than parts
+    nGlobalParts_ = partDist_.size() - 1;
+    int pstart = partDist_[0];
+    for (int i=1; i <= nGlobalParts_; i++){
+      int pend = partDist_[i];
+      if (rank >= pstart && rank < pend){
+        int numOwners = pend - pstart;
+        nLocalParts_ = 1.0 / numOwners;
+        break;
       }
-    }
-    else{
-      if (maxGlobal == nprocs){
-        onePartPerProc_ = true;   // user specified num parts is num procs
-        nLocalParts_ = 1;
-        return;
-      }
+      pstart = pend;
     }
   }
-
-  // If we are here, we do not have #parts == #procs.
-
-  if (sumHaveLocal == nprocs){
-    //
-    // We will go by the number of local parts specified.
-    //
-
-    try{
-      procDist_.resize(nprocs+1);
-    }
-    catch (std::exception &e){
-      throw(std::bad_alloc());
-    }
-
-    int *procArray = &procDist_[0];
-
-    try{
-      partId_t tmp = partId_t(nLocalParts_);
-      gatherAll<int, partId_t>(*comm_, 1, &tmp, nprocs, procArray + 1); 
-    }
-    Z2_THROW_OUTSIDE_ERROR(*env_);
-
-    procArray[0] = 0;
-
-    for (int proc=0; proc < nprocs; proc++)
-      procArray[proc+1] += procArray[proc];
-
-    nGlobalParts_ = procArray[nprocs];
+  else if (procDist_.size() > 0){  // more parts than procs
+    nGlobalParts_ = procDist_[nprocs];
+    nLocalParts_ = procDist_[rank+1] - procDist_[rank];
   }
-  else{
-    //
-    // We will allocate global number of parts to the processes.
-    //
-    double fParts = nGlobalParts_;
-    double fProcs = nprocs;
-
-    if (fParts < fProcs){
-
-      try{
-        partDist_.resize(size_t(fParts+1));
-      }
-      catch (std::exception &e){
-        throw(std::bad_alloc());
-      }
-
-      int *partArray = &partDist_[0];
-
-      double each = floor(fProcs / fParts);
-      double extra = fmod(fProcs, fParts);
-      partDist_[0] = 0;     
-
-      for (partId_t part=0; part < nGlobalParts_; part++){
-        int numOwners = int(each + ((part<extra) ? 1 : 0));
-        partArray[part+1] = partArray[part] + numOwners;
-        if ((nLocalParts_ == 0) && (partArray[part+1] > rank))
-          nLocalParts_ = 1.0 / numOwners;
-      }
-
-      env_->globalBugAssertion(__FILE__, __LINE__, "#parts != #procs", 
-        partDist_[nGlobalParts_] == nprocs, COMPLEX_ASSERTION, comm_);
-    }
-    else if (fParts > fProcs){ 
-
-      try{
-        procDist_.resize(size_t(fProcs+1));
-      }
-      catch (std::exception &e){
-        throw(std::bad_alloc());
-      }
-
-      int *procArray = &procDist_[0];
-
-      double each = floor(fParts / fProcs);
-      double extra = fmod(fParts, fProcs);
-      procArray[0] = 0;     
-
-      for (int proc=0; proc < nprocs; proc++){
-        partId_t numParts = partId_t(each + ((proc<extra) ? 1 : 0));
-        procArray[proc+1] = procArray[proc] + numParts;
-        if (proc == rank)
-            nLocalParts_ = numParts;
-      }
-
-      env_->globalBugAssertion(__FILE__, __LINE__, "#parts != #procs", 
-        procDist_[nprocs] == nGlobalParts_, COMPLEX_ASSERTION, comm_);
-    }
-    else{
-      env_->globalBugAssertion(__FILE__, __LINE__, 
-        "should never get here", 1, COMPLEX_ASSERTION, comm_);
-    }
+  else {
+    throw logic_error("partToProc error");
   }
+
 }
 
 template <typename User_t>
   void PartitioningSolution<User_t>::setPartSizes(
-    ArrayView<ArrayRCP<partId_t> > ids, ArrayView<ArrayRCP<float> > sizes)
+    ArrayView<ArrayRCP<partId_t> > ids, ArrayView<ArrayRCP<scalar_t> > sizes)
 {
   int wdim = weightDim_;
   bool fail=false;
-  partId_t *counts = new partId_t [wdim*2];
+  size_t *counts = new size_t [wdim*2];
 
   fail = ((ids.size() != wdim) || (sizes.size() != wdim));
 
@@ -658,7 +550,7 @@ template <typename User_t>
 
   // Are all part sizes the same?  This is the common case.
 
-  ArrayRCP<float> *emptySizes= new ArrayRCP<float> [wdim];
+  ArrayRCP<scalar_t> *emptySizes= new ArrayRCP<scalar_t> [wdim];
   pSize_ = arcp(emptySizes, 0, wdim);
 
   ArrayRCP<unsigned char> *emptyIndices= new ArrayRCP<unsigned char> [wdim];
@@ -674,7 +566,7 @@ template <typename User_t>
   }
 
   try{
-    reduceAll<int, partId_t>(*comm_, Teuchos::REDUCE_MAX, wdim, counts, 
+    reduceAll<int, size_t>(*comm_, Teuchos::REDUCE_MAX, wdim, counts, 
       counts + wdim);
   }
   Z2_THROW_OUTSIDE_ERROR(*env_);
@@ -697,7 +589,7 @@ template <typename User_t>
   int rank = comm_->getRank();
   Array<long> sendCount(nprocs, 0);
   ArrayRCP<long> recvCount;
-  ArrayRCP<float> recvSizes;
+  ArrayRCP<scalar_t> recvSizes;
   ArrayRCP<partId_t> recvIds;
 
   for (int w=0; w < wdim; w++){
@@ -715,14 +607,14 @@ template <typename User_t>
     Z2_FORWARD_EXCEPTIONS
 
     try{
-      AlltoAllv<float, long>(*comm_, *env_, sizes[w].view(0, len),
+      AlltoAllv<scalar_t, long>(*comm_, *env_, sizes[w].view(0, len),
         sendCount.view(0, nprocs), recvSizes, recvCount);
     }
     Z2_FORWARD_EXCEPTIONS
 
     if (rank == 0){
       try{
-        partId_t numVals = recvIds.size();
+        gno_t numVals = recvIds.size();
         computePartSizes(w, recvIds.view(0,numVals), recvSizes.view(0,numVals));
       }
       Z2_FORWARD_EXCEPTIONS
@@ -804,10 +696,10 @@ template <typename User_t>
 
     int numSizes = maxIdx + 1;
   
-    float *sizeList = NULL;
+    scalar_t *sizeList = NULL;
 
     if (rank > 0){
-      sizeList = new float [numSizes];
+      sizeList = new scalar_t [numSizes];
       env_->localMemoryAssertion(__FILE__, __LINE__, numSizes, sizeList);
     }
     else{
@@ -818,7 +710,7 @@ template <typename User_t>
     }
 
     try{
-      Teuchos::broadcast<int, float>(*comm_, 0, numSizes, sizeList);
+      Teuchos::broadcast<int, scalar_t>(*comm_, 0, numSizes, sizeList);
     }
     Z2_THROW_OUTSIDE_ERROR(*env_);
 
@@ -832,10 +724,10 @@ template <typename User_t>
 
     // broadcast the size of each part
 
-    float *sizeList = NULL;
+    scalar_t *sizeList = NULL;
 
     if (rank > 0){
-      sizeList = new float [nparts];
+      sizeList = new scalar_t [nparts];
       env_->localMemoryAssertion(__FILE__, __LINE__, nparts, sizeList);
     }
     else{
@@ -846,7 +738,7 @@ template <typename User_t>
     }
 
     try{
-      Teuchos::broadcast<int, float>(*comm_, 0, nparts, sizeList);
+      Teuchos::broadcast<int, scalar_t>(*comm_, 0, nparts, sizeList);
     }
     Z2_THROW_OUTSIDE_ERROR(*env_);
 
@@ -859,11 +751,11 @@ template <typename User_t>
 
 template <typename User_t>
   void PartitioningSolution<User_t>::computePartSizes(int wdim,
-    ArrayView<partId_t> ids, ArrayView<float> sizes)
+    ArrayView<partId_t> ids, ArrayView<scalar_t> sizes)
 {
   int len = ids.size();
 
-  if (len == 1){
+  if (len == 0){
     pSizeUniform_[wdim] = true;
     return;
   }
@@ -887,11 +779,11 @@ template <typename User_t>
   memset(buf, 0, nparts);
   ArrayRCP<unsigned char> partIdx(buf, 0, nparts, true);
 
-  float min, max, sum;
+  scalar_t min=sizes[0], max=sizes[0], sum=0;
 
   for (int i=0; i < len; i++){
     partId_t id = ids[i];
-    float size = sizes[i];
+    scalar_t size = sizes[i];
 
     env_->localInputAssertion(__FILE__, __LINE__, "invalid part id", 
       id>=0 && id<nparts, BASIC_ASSERTION);
@@ -906,22 +798,25 @@ template <typename User_t>
     env_->localInputAssertion(__FILE__, __LINE__, 
       "multiple sizes provided for one part", partIdx[id]==0, BASIC_ASSERTION);
 
-    partIdx[id] = 1;
+    partIdx[id] = 1;    // mark that we have a size for this part
 
-    if (i==0 || size < min) min = size;
-    if (i==0 || size > max) max = size;
+    if (size < min) min = size;
+    if (size > max) max = size;
     sum += size;
   }
 
-  if (sum == 0){   // user has given us a list of parts of size 0
+  if (sum == 0){   
+
+    // User has given us a list of parts of size 0, we'll set
+    // the rest to them to 1.0 divided by the number of part ids.
     
-    float *allSizes = new float [2];
+    scalar_t *allSizes = new scalar_t [2];
     env_->localMemoryAssertion(__FILE__, __LINE__, 2, allSizes);
 
-    ArrayRCP<float> sizeArray(allSizes, 0, 2, true);
+    ArrayRCP<scalar_t> sizeArray(allSizes, 0, 2, true);
 
     allSizes[0] = 0.0;
-    allSizes[1] = 1.0 / (nparts - len);
+    allSizes[1] = 1.0 / len;
 
     for (partId_t p=0; p < nparts; p++)
       buf[p] = 1;                 // index to default part size
@@ -942,32 +837,32 @@ template <typename User_t>
     return;
   }
 
-  float avg = sum / len;    // size for parts that were not specified
+  scalar_t avg = 1.0;    // size for parts that were not specified
 
   // We are going to merge part sizes that are very close.  This takes
   // computation time now, but can save considerably in the storage of
   // all part sizes on each process.  For example, a common case may
   // be some parts are size 1 and all the rest are size 2.
 
-  float *tmp = new float [len];
+  scalar_t *tmp = new scalar_t [len];
   env_->localMemoryAssertion(__FILE__, __LINE__, len, tmp);
-  memcpy(tmp, sizes.getRawPtr(), sizeof(float) * len);
-  ArrayRCP<float> partSizes(tmp, 0, len, true);
+  memcpy(tmp, sizes.getRawPtr(), sizeof(scalar_t) * len);
+  ArrayRCP<scalar_t> partSizes(tmp, 0, len, true);
 
   std::sort(partSizes.begin(), partSizes.end());
 
   // create a list of sizes that are unique within epsilon
 
-  Array<float> nextUniqueSize;
+  Array<scalar_t> nextUniqueSize;
   nextUniqueSize.push_back(partSizes[len-1]);   // largest
-  float curr = partSizes[len-1];
+  scalar_t curr = partSizes[len-1];
   int avgIndex = len;
   bool haveAvg = false;
   if (curr - avg <= epsilon)
      avgIndex = 0;
 
   for (int i=len-2; i >= 0; i--){
-    float val = partSizes[i];
+    scalar_t val = partSizes[i];
     if (curr - val > epsilon){
       nextUniqueSize.push_back(val);  // the highest in the group
       curr = val;
@@ -991,9 +886,9 @@ template <typename User_t>
 
     if (!haveAvg) sizeArrayLen++;   // need to include average
     
-    float *allSizes = new float [sizeArrayLen];
+    scalar_t *allSizes = new scalar_t [sizeArrayLen];
     env_->localMemoryAssertion(__FILE__, __LINE__, sizeArrayLen, allSizes);
-    ArrayRCP<float> sizeArray(allSizes, 0, sizeArrayLen, true);
+    ArrayRCP<scalar_t> sizeArray(allSizes, 0, sizeArrayLen, true);
 
     int newAvgIndex = sizeArrayLen;
 
@@ -1024,7 +919,7 @@ template <typename User_t>
 
     for (int i=0; i < len; i++){
       int id = ids[i];
-      float size = sizes[i];
+      scalar_t size = sizes[i];
       int index;
 
       // Find the first size greater than or equal to this size.
@@ -1032,8 +927,8 @@ template <typename User_t>
       if (size < avg && avg - size <= epsilon)
         index = newAvgIndex;
       else{
-        ArrayRCP<float>::iterator found = std::lower_bound(sizeArray.begin(),
-          sizeArray.end(), size);
+        typename ArrayRCP<scalar_t>::iterator found = 
+          std::lower_bound(sizeArray.begin(), sizeArray.end(), size);
 
         env_->localBugAssertion(__FILE__, __LINE__, "size array", 
           found != sizeArray.end(), COMPLEX_ASSERTION);
@@ -1053,12 +948,12 @@ template <typename User_t>
     pSize_[wdim] = sizeArray;
   }
   else{
-    // To have access to part sizes, we must store nparts floats on 
+    // To have access to part sizes, we must store nparts scalar_ts on 
     // every process.  We expect this is a rare case.
 
     partIdx.clear();
 
-    tmp = new float [nparts];
+    tmp = new scalar_t [nparts];
     env_->localMemoryAssertion(__FILE__, __LINE__, nparts, tmp);
 
     sum += ((nparts - len) * avg);
@@ -1079,8 +974,10 @@ template <typename User_t>
 template <typename User_t>
   void PartitioningSolution<User_t>::setParts(
     ArrayView<const gno_t> gnoList, ArrayRCP<partId_t> partList,
-    ArrayRCP<float> &imbalance)
+    ArrayRCP<MetricValues<scalar_t> > &metrics) 
 {
+  qualityMetrics_ = metrics;
+
   size_t ngnos = gnoList.size();
   
   if (ngnos){
@@ -1183,14 +1080,6 @@ template <typename User_t>
       }
     }
   }
-
-  // Create imbalance list: one for each weight dimension: weights_
-  
-  float *imbList = new float [weightDim_];
-  env_->localMemoryAssertion(__FILE__, __LINE__, weightDim_, imbList);
-  memcpy(imbList, imbalance.getRawPtr(), sizeof(float) * weightDim_);
-  
-  imbalance_ = arcp<float>(imbList, 0, weightDim_);
 }
 
 template <typename User_t>

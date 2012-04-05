@@ -85,7 +85,8 @@ Environment::Environment( Teuchos::ParameterList &problemParams,
 
 Environment::Environment():
   myRank_(0), numProcs_(1), comm_(), errorCheckLevel_(BASIC_ASSERTION),
-  unvalidatedParams_(), params_(),
+  unvalidatedParams_(Teuchos::ParameterList("emptyList")), 
+  params_(Teuchos::ParameterList("emptyList")),
   debugOut_(), timerOut_(), memoryOut_()
 {
   comm_ = Teuchos::DefaultComm<int>::getComm();
@@ -266,6 +267,38 @@ void Environment::convertStringToInt(Teuchos::ParameterList &params)
   }
 }
 
+const Teuchos::ParameterList & Environment::getList(
+  const Teuchos::ParameterList &superList, const char *listName) const
+{
+  if (superList.name() == std::string("emptyList"))
+    return superList;
+
+  const Teuchos::ParameterEntry *sublist = superList.getEntryPtr(listName);
+
+  if (!sublist || !sublist->isList())
+    return Teuchos::ParameterList("emptyList");
+
+  return superList.sublist(listName);
+}
+
+template <typename T>
+  void Environment::getValue(const Teuchos::ParameterList &pl, 
+    const char *paramName, bool &isSet, T &value) const
+{
+  isSet = false;
+  value = 0;
+
+  if (pl.name() == std::string("emptyList"))
+    return;
+
+  const Teuchos::ParameterEntry *pe = pl.getEntryPtr(paramName);
+
+  if (!pe)
+    return;
+
+  isSet = true;
+  value = pe->getValue<T>(&value);
+}
 
 //////////////////////////////////////////////////////////////////////
 // Definitions static methods used by the Environment

@@ -50,6 +50,13 @@ public:
    */
   StridedData(): vec_(), stride_(0) { }
 
+  /*! \brief Return the length of the strided array.
+   *
+   *  The length may be longer than the number of values because the
+   *  stride may be greater than one.
+   */
+  lno_t size() const { return vec_.size(); }
+
   /*! \brief Access an element of the input array. 
    *
    *   \param idx  The logical index of the element in the strided array. 

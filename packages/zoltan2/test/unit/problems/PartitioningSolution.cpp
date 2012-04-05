@@ -179,11 +179,9 @@ int main(int argc, char *argv[])
   }
   ArrayRCP<partId_t> partList = arcp(partAssignments, 0, numIdsPerProc);
 
-  float *imbalances = new float [weightDim];
-  for (int i=0; i < weightDim; i++){
-    imbalances[i] = 1.0;    // for now just set it to perfect balance
-  }
-  ArrayRCP<float> metrics = arcp(imbalances, 0, weightDim);
+  // empty metric values
+  ArrayRCP<MetricValues<scalar_t> > metrics = 
+    arcp(new MetricValues<scalar_t> , 0, 2+weightDim);
 
   try{
     solution->setParts(gidArray.view(0, numIdsPerProc), partList, metrics); 

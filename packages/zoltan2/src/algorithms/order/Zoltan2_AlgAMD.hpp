@@ -57,11 +57,6 @@ class AMDTraits<long>
 #endif
 #endif
 
-////////////////////////////////////////////////////////////////////////
-//! \file Zoltan2_AlgAMD.hpp
-//! \brief AMD ordering of a graph (serial)
-
-
 namespace Zoltan2{
 
 template <typename Adapter>

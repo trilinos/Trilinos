@@ -314,10 +314,12 @@ void AlgPTScotch(
     for (size_t i = 0; i < nVtx; i++) partList[i] = partloctab[i];
   }
 
-  ArrayRCP<float> imbalance(new float [weightFlag],0, weightFlag, true);
-  imbalance[0] = 1.0;  // TODO calculate imbalance.
+  // TODO compute the metrics using objectMetrics call
 
-  solution->setParts(vtxID, partList, imbalance);
+  ArrayRCP<MetricValues<scalar_t> > metrics =
+    arcp(new MetricValues<scalar_t> [2], 0, 2);
+
+  solution->setParts(vtxID, partList, metrics);
 
 #ifdef SHOW_ZOLTAN2_LINUX_MEMORY
   if (me==0){

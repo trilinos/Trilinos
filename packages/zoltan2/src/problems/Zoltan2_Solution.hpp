@@ -6,7 +6,7 @@
 // ***********************************************************************
 // @HEADER
 
-/*! \file Zoltan2_Solution.cpp
+/*! \file Zoltan2_Solution.hpp
     \brief Defines the Solution base class.
 */
 

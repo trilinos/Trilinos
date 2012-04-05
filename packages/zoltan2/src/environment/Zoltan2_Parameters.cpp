@@ -62,6 +62,8 @@ namespace Zoltan2 {
  * the Environment::commitParameters() method is called.  They throw
  * an error with an explanation if the parameter is invalid.
  *
+ *  \todo imbalance_tolerance should be a list of tolerances, one for
+ *              each weight
  *  \todo Should all of our parameter values be strings, in order
  *          to support reading in parameters from a file?
  *  \todo Many parameters remain to be added here.
