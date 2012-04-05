@@ -105,8 +105,6 @@ namespace MueLu {
     RCP<PFactory> PFact;
     RCP<RFactory> RFact;
 
-    RCP<PFactory> PtentFact = rcp(new TentativePFactory());
-
     if (agg_damping == 0.0 && bEnergyMinimization == false) {
       // tentative prolongation operator (PA-AMG)
       PFact = rcp( new TentativePFactory() );
@@ -119,7 +117,7 @@ namespace MueLu {
       RFact  = rcp( new TransPFactory() );
     } else if(bEnergyMinimization == true) {
       // Petrov Galerkin PG-AMG smoothed aggregation (energy minimization in ML)
-      PFact  = rcp( new PgPFactory(PtentFact) );
+      PFact  = rcp( new PgPFactory() );
       RFact  = rcp( new GenericRFactory() );
     }
 
@@ -181,8 +179,6 @@ namespace MueLu {
       manager->SetFactory("A", AcFact);                     // same RAP factory
       manager->SetFactory("P", PFact);                      // same prolongator and restrictor factories
       manager->SetFactory("R", RFact);                      // same prolongator and restrictor factories
-      manager->SetFactory("Ptent", PtentFact);
-      manager->SetFactory("Nullspace", PtentFact);          // use same nullspace factory throughout all multigrid levels //FIXME: should be different for first level (NullspaceFactory instead)
 
       this->AddFactoryManager(levelID, 1, manager);
     }
