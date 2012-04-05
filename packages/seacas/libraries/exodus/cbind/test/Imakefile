@@ -45,7 +45,7 @@ PROGS = testwt testwtd testrd testrd1 testrdd testwt1 testwt2 testwtm \
 	testwt-one-attrib create_mesh rd_wt_mesh \
 	testrd-partial testwt-partial testwt-nsided testrd-nsided testwt-nfaced \
 	testrd-nfaced testwt-long-name testrd-long-name \
-	oned twod MakeTestData
+	oned twod MakeTestData test_nemesis
 #if 0
 	CreateEdgeFace ReadEdgeFace
 #endif
@@ -94,6 +94,8 @@ NormalProgramTarget(rd_wt_mesh,  rd_wt_mesh.o, $(LOCALEXO), /**/, $(LIBS))
 
 NormalProgramTarget(CreateEdgeFace, CreateEdgeFace.o, $(LOCALEXO), /**/, $(LIBS))
 NormalProgramTarget(ReadEdgeFace,   ReadEdgeFace.o,   $(LOCALEXO), /**/, $(LIBS))
+
+NormalProgramTarget(test_nemesis,   test_nemesis.o,   $(LOCALEXO), /**/, $(LIBS))
 
 testall: testall.in1 $(CONFIGDIR)/$(MACROFILE)
 	rm -f testall

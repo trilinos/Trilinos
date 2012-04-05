@@ -223,5 +223,10 @@ echo "begin testrd-long-name" >> test.output
 ${PREFIX} ${SRCDIR}/testrd-long-name | grep -v version | diff - ${SRCDIR}/testrd-long-name.dmp | tee testrd-long-name.res
 echo "end testrd-long-name" >> test.output
 
+echo "test_nemesis - read long name file..."
+echo "begin test_nemesis" >> test.output
+${PREFIX} ${SRCDIR}/test_nemesis | grep -v version | diff - ${SRCDIR}/test_nemesis.dmp | tee test_nemesis.res
+echo "end test_nemesis" >> test.output
+
 echo "************************************************************************"
 echo "************************************************************************"

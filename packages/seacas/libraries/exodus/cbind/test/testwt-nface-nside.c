@@ -220,33 +220,6 @@ int main (int argc, char **argv)
    connect[i++] = 5;
    connect[i++] = 8;
    connect[i++] = 7; /* connectivity of face 1 of element 2 */
-   1 3 4 # face 2 of element 2
-7 8 4 3 # face 3 of element 2
-7 3 1 5 # face 4 of element 2
-5 1 4 8 # face 5 of element 2 -- dup
-
-8 4 14 10 12 # connectivity of face 1 of element 3
-7 11 9 13 3 # face 2 of element 3
-7 8 12 11 # face 3 of element 3
-11 12 10 9 # face 4 of element 3
-9 10 14 13 # face 5 of element 3
-13 14 4 3 # face 6 of element 3
-7 3 4 8 # face 7 of element 3 -- dup
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
    connect[i++] = 1; connect[i++] = 2; connect[i++] = 3; connect[i++] = 4;
    nnpe[j++] = 4;

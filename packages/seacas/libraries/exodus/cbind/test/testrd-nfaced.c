@@ -43,11 +43,12 @@
 #include <string.h>
 #include "netcdf.h"
 #include <assert.h>
+#include <inttypes.h>
 #include "exodusII.h"
 
 int main (int argc, char **argv)
 {
-  int exoid, num_dim, num_nodes, num_elem, num_elem_blk;
+  int exoid, num_dim, num_nodes, num_elem_blk;
   int *num_elem_in_block, *num_face_in_block, *num_nodes_per_elem, *num_edges_per_elem, *num_faces_per_elem, *num_attr;
   int error, nnodes;
   int i, j, k;
@@ -97,18 +98,17 @@ int main (int argc, char **argv)
 
     printf ("database parameters:\n");
     printf ("title =  '%s'\n",par.title);
-    printf ("num_dim = %3d\n",par.num_dim);
-    printf ("num_nodes = %3d\n",par.num_nodes);
-    printf ("num_edge = %3d\n",par.num_edge);
-    printf ("num_face = %3d\n",par.num_face);
-    printf ("num_elem = %3d\n",par.num_elem);
-    printf ("num_elem_blk = %3d\n",par.num_elem_blk);
-    printf ("num_node_sets = %3d\n",par.num_node_sets);
-    printf ("num_side_sets = %3d\n",par.num_side_sets);
+    printf ("num_dim = %"PRId64"\n",par.num_dim);
+    printf ("num_nodes = %"PRId64"\n",par.num_nodes);
+    printf ("num_edge = %"PRId64"\n",par.num_edge);
+    printf ("num_face = %"PRId64"\n",par.num_face);
+    printf ("num_elem = %"PRId64"\n",par.num_elem);
+    printf ("num_elem_blk = %"PRId64"\n",par.num_elem_blk);
+    printf ("num_node_sets = %"PRId64"\n",par.num_node_sets);
+    printf ("num_side_sets = %"PRId64"\n",par.num_side_sets);
 
     num_dim = par.num_dim;
     num_nodes = par.num_nodes;
-    num_elem = par.num_elem;
     num_elem_blk = par.num_elem_blk;
   }
     
