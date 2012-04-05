@@ -195,8 +195,8 @@ int main(int argc, char *argv[])
     aList.set("Step Size", 1);         // How often to check convergence
     aList.set("Maximum Restarts",1);   // Maximum number of restarts
     aList.set("Operator", "Cayley");
-    aList.set("Cayley Pole", 0.1);
-    aList.set("Cayley Zero", -0.1);
+    aList.set("Cayley Pole", 0.4);
+    aList.set("Cayley Zero", -0.4);
     aList.set("Sorting Order", "CA");
 #else
     stepperList.set("Compute Eigenvalues",false);

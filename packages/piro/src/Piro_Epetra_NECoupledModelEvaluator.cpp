@@ -54,6 +54,7 @@
 
 #include "Stokhos_Epetra.hpp"
 #include "Stokhos_StieltjesGramSchmidtBuilder.hpp"
+#include "Stokhos_MonomialGramSchmidtSimplexPCEBasis.hpp"
 #include "EpetraExt_MultiComm.h"
 
 Piro::Epetra::NECoupledModelEvaluator::
@@ -248,7 +249,8 @@ NECoupledModelEvaluator(
   g_sg.resize(n_models);
   dgdp_sg_layout.resize(n_models);
   dgdp_sg.resize(n_models);
-  reduce_dimension = params->get("Reduce Dimension", false);
+  reduce_dimension = 
+    params->sublist("Dimension Reduction").get("Reduce Dimension", false);
   red_basis_vals.resize(n_models);
 }
 
@@ -825,86 +827,124 @@ do_dimension_reduction(
   Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > red_basis;
   Teuchos::RCP<const Stokhos::Quadrature<int,double> > red_quad;
   Teuchos::Array<Stokhos::OrthogPolyApprox<int,double> > red_pces;
-  bool orthogonalize_bases = params->get("Orthogonalize Bases", false);
-  int order = basis->order();
-  int new_order = order;
-  if (orthogonalize_bases) {
-    Stokhos::StieltjesGramSchmidtBuilder<int,double> gs_builder(
-      quad, p_opa, new_order, true, false);
-    red_basis = gs_builder.getReducedBasis();
-    red_quad = gs_builder.getReducedQuadrature();
-    red_basis_vals = Teuchos::rcp(&(red_quad->getBasisAtQuadPoints()),false);
-    gs_builder.computeReducedPCEs(p_opa, red_pces);
+  Teuchos::ParameterList& reduct_params = 
+    params->sublist("Dimension Reduction");
+  std::string reduction_method = reduct_params.get("Dimension Reduction Method",
+						   "Tensor Product Stieltjes");
+  if (reduction_method == "Tensor Product Stieltjes") {
+    bool orthogonalize_bases = reduct_params.get("Orthogonalize Bases", false);
+    int order = basis->order();
+    int new_order = reduct_params.get("Reduced Order", -1);
+    if (new_order == -1)
+      new_order = order;
+    if (orthogonalize_bases) {
+      Stokhos::StieltjesGramSchmidtBuilder<int,double> gs_builder(
+	quad, p_opa, new_order, true, false);
+      red_basis = gs_builder.getReducedBasis();
+      red_quad = gs_builder.getReducedQuadrature();
+      red_basis_vals = Teuchos::rcp(&(red_quad->getBasisAtQuadPoints()),false);
+      gs_builder.computeReducedPCEs(p_opa, red_pces);
+    }
+    else {
+      Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double > > >
+	coordinate_bases = basis->getCoordinateBases();
+      Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double > > >
+	new_coordinate_bases(p_opa.size());
+      Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk = 
+	expansion->getTripleProduct();
+      if (st_quad == Teuchos::null) {
+	st_quad = quad;
+	// st_quad =
+	//   Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(
+	// 		 basis, new_order+1));
+      }
+      for (int i=0; i<p_opa.size(); i++) {
+	new_coordinate_bases[i] = Teuchos::rcp(
+	  new Stokhos::StieltjesPCEBasis<int,double>(
+	    new_order, Teuchos::rcp(&(p_opa[i]),false), st_quad, 
+	    false, false, true, Cijk));
+      }
+      Teuchos::RCP<const Stokhos::ProductBasis<int,double> > tensor_basis = 
+	Teuchos::rcp(
+	  new Stokhos::CompletePolynomialBasis<int,double>(new_coordinate_bases)
+	  );
+      red_basis = tensor_basis;
+      if (red_basis->dimension() <= 3)
+	red_quad = 
+	  Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(
+			 tensor_basis));
+      else
+#ifdef HAVE_STOKHOS_DAKOTA
+	red_quad = 
+	  Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(
+			 tensor_basis, new_order));
+#else
+      red_quad = 
+	Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(
+		       tensor_basis));
+#endif
+      const Teuchos::Array< Teuchos::Array<double> >& points = 
+	quad->getQuadPoints();
+      const Teuchos::Array< Teuchos::Array<double> >& basis_vals = 
+	quad->getBasisAtQuadPoints();
+      int nqp = points.size();
+      Teuchos::Array<double> p_opa_val(p_opa.size());
+      Teuchos::RCP< Teuchos::Array< Teuchos::Array<double> > > ncred_basis_vals
+	= Teuchos::rcp(new Teuchos::Array< Teuchos::Array<double> >(nqp));
+      for (int i=0; i<nqp; i++) {
+	for (int j=0; j<p_opa_val.size(); j++)
+	  p_opa_val[j] = p_opa[j].evaluate(points[i], basis_vals[i]);
+	(*ncred_basis_vals)[i].resize(red_basis->size());
+	red_basis->evaluateBases(p_opa_val, (*ncred_basis_vals)[i]);
+      }
+      red_basis_vals = ncred_basis_vals;
+      red_pces.resize(p_opa.size());
+      for (int k=0; k<p_opa.size(); k++) {
+	red_pces[k].reset(red_basis);
+	red_pces[k].term(k, 0) = p_opa[k].mean();
+	red_pces[k].term(k, 1) = 1.0; 
+      }
+    }
   }
-  else {
-    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double > > >
-      coordinate_bases = basis->getCoordinateBases();
-    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double > > >
-      new_coordinate_bases(p_opa.size());
-    Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk = 
-      expansion->getTripleProduct();
+  else if (reduction_method == "Gram-Schmidt QR") {
+    int order = basis->order();
+    int new_order = reduct_params.get("Reduced Order", -1);
+    if (new_order == -1)
+      new_order = order;
     if (st_quad == Teuchos::null) {
       st_quad = quad;
       // st_quad =
       //   Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(
       // 		 basis, new_order+1));
+      // st_quad =
+      //   Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(
+      // 		 basis, 4*new_order+1));
+      // std::cout << "st_quad->size() = " << st_quad->size() << std::endl;
     }
-    for (int i=0; i<p_opa.size(); i++) {
-      new_coordinate_bases[i] = Teuchos::rcp(
-	new Stokhos::StieltjesPCEBasis<int,double>(
-	  new_order, Teuchos::rcp(&(p_opa[i]),false), st_quad, 
-	  false, false, true, Cijk));
-    }
-    Teuchos::RCP<const Stokhos::ProductBasis<int,double> > tensor_basis = 
-      Teuchos::rcp(
-	new Stokhos::CompletePolynomialBasis<int,double>(new_coordinate_bases)
-	);
-    red_basis = tensor_basis;
-    if (red_basis->dimension() <= 3)
-      red_quad = 
-	Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(
-		       tensor_basis));
-    else
-#ifdef HAVE_STOKHOS_DAKOTA
-      red_quad = 
-	Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(
-		       tensor_basis, new_order));
-#else
-    red_quad = 
-      Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(
-		     tensor_basis));
-#endif
-    const Teuchos::Array< Teuchos::Array<double> >& points = 
-      quad->getQuadPoints();
-    const Teuchos::Array< Teuchos::Array<double> >& basis_vals = 
-      quad->getBasisAtQuadPoints();
-    int nqp = points.size();
-    Teuchos::Array<double> p_opa_val(p_opa.size());
-    Teuchos::RCP< Teuchos::Array< Teuchos::Array<double> > > ncred_basis_vals
-      = Teuchos::rcp(new Teuchos::Array< Teuchos::Array<double> >(nqp));
-    for (int i=0; i<nqp; i++) {
-      for (int j=0; j<p_opa_val.size(); j++)
-	p_opa_val[j] = p_opa[j].evaluate(points[i], basis_vals[i]);
-      (*ncred_basis_vals)[i].resize(red_basis->size());
-      red_basis->evaluateBases(p_opa_val, (*ncred_basis_vals)[i]);
-    }
-    red_basis_vals = ncred_basis_vals;
+    Teuchos::RCP< Stokhos::MonomialGramSchmidtSimplexPCEBasis<int,double> > gs_basis = 
+      Teuchos::rcp(new Stokhos::MonomialGramSchmidtSimplexPCEBasis<int,double>(
+		     new_order, p_opa, st_quad, reduct_params));
+    red_basis = gs_basis;
+    red_quad = gs_basis->getReducedQuadrature();
     red_pces.resize(p_opa.size());
-    for (int k=0; k<p_opa.size(); k++) {
-      red_pces[k].reset(red_basis);
-      red_pces[k].term(k, 0) = p_opa[k].mean();
-      red_pces[k].term(k, 1) = 1.0; 
+    for (int i=0; i<p_opa.size(); i++) {
+      red_pces[i].reset(red_basis);
+      gs_basis->computeTransformedPCE(i, red_pces[i]);
     }
+    Teuchos::RCP< Teuchos::Array< Teuchos::Array<double> > > ncred_basis_vals
+	= Teuchos::rcp(new Teuchos::Array< Teuchos::Array<double> >);
+    gs_basis->getBasisAtOriginalQuadraturePoints(*ncred_basis_vals);
+    red_basis_vals = ncred_basis_vals;
   }
-
-  Teuchos::RCP<const EpetraExt::MultiComm> multiComm = x_sg->productComm();
     
+  Teuchos::RCP<const EpetraExt::MultiComm> multiComm = x_sg->productComm();
+  
   // Copy into Epetra objects
   int red_sz = red_basis->size();
   Teuchos::RCP<const Epetra_BlockMap> red_overlap_map =
     Teuchos::rcp(new Epetra_LocalMap(red_sz, 0, 
 				     multiComm->TimeDomainComm()));
-
+  
   // p_red
   index = 0;
   for (int i=0; i<solver_inargs.Np(); i++) {
@@ -921,7 +961,7 @@ do_dimension_reduction(
       reduced_inargs.set_p_sg(i, p_red);
     }
   }
-  
+    
   for (int i=0; i<solver_outargs.Ng(); i++) {
 
     // g_red

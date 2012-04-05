@@ -416,7 +416,7 @@ public:
 
         if ( read_coeff ) {
           // Coalesced read of block for 'A' and 'x' into shared memory
-          const size_type iBlockColumn = m_A.graph.column(iBlockEntry);
+          const size_type iBlockColumn = m_A.graph(iBlockEntry);
 
           shared_matrix_value( iCoeff ) = m_A.values( iCoeff , iBlockEntry );
           shared_vector_value( iCoeff ) = m_x( iCoeff , iBlockColumn );
@@ -497,7 +497,7 @@ public:
 
       for ( ; iBlockEntry < iBlockEntryEnd ; ++iBlockEntry ) {
 
-        const size_type iBlockColumn = m_A.graph.column( iBlockEntry );
+        const size_type iBlockColumn = m_A.graph( iBlockEntry );
 
         // Coalesced read of X and A into shared memory
 
@@ -597,7 +597,7 @@ public:
         // Coalesced read of X and A into shared memory
 
         for ( size_type i = tid ; i < dim ; i += nid ) {
-          sh[ i ] = m_x( i , m_A.graph.column(iBlockEntry) );
+          sh[ i ] = m_x( i , m_A.graph(iBlockEntry) );
         }
 
         for ( size_type i = tid ; i < dim ; i += nid ) {

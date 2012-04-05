@@ -109,6 +109,20 @@ class DanglingReferenceError : public ExceptionBase
 class IncompatibleIteratorsError : public ExceptionBase
 {public:IncompatibleIteratorsError(const std::string& what_arg) : ExceptionBase(what_arg) {}};
 
+/** \brief Optionally thrown when a sublist is set twice by either 
+ * updateParametersFromXmlFile(), updateParametersFromXmlFileAndUpdate() or 
+ * updateParametersFromXmlString()
+ * 
+ * \relates \c ParameterList
+ */
+class DuplicateParameterSublist : public ExceptionBase {
+
+public:
+  DuplicateParameterSublist(const std::string& what_arg):
+    ExceptionBase(what_arg){}
+    
+};
+
 /** \brief Thrown when a Parameter Entry that is already being tracked
  * is attempted to be inserted again into the masterParameterEntryMap
  * and masterIDMap

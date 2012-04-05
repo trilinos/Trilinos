@@ -83,8 +83,8 @@ public:
     ASSERT_FALSE(hy);
     ASSERT_FALSE(hz);
 
-    dx = Kokkos::create_labeled_multivector<T,device> ( "dx" , LENGTH , 2 );
-    dy = Kokkos::create_labeled_multivector<T,device> ( "dy" , LENGTH , 2 );
+    dx = Kokkos::create_multivector<dView> ( "dx" , LENGTH , 2 );
+    dy = Kokkos::create_multivector<dView> ( "dy" , LENGTH , 2 );
 
     ASSERT_TRUE(dx);
     ASSERT_TRUE(dy);

@@ -51,21 +51,16 @@
 
 namespace Kokkos {
 
-#ifdef KOKKOS_MACRO_MDARRAY_TEMPLATE_ARGUMENT
-template< typename ValueType , KOKKOS_MACRO_MDARRAY_TEMPLATE_ARGUMENT >
-#else
 template< typename ValueType >
-#endif
 class MDArray< ValueType , KOKKOS_MACRO_DEVICE >
 {
 public:
-  typedef ValueType                           value_type ;
-  typedef KOKKOS_MACRO_DEVICE                 device_type ;
-  typedef typename device_type::mdarray_map   mdarray_map ;
-  typedef typename device_type::size_type     size_type ;
+  typedef ValueType                               value_type ;
+  typedef KOKKOS_MACRO_DEVICE                     device_type ;
+  typedef typename device_type::size_type         size_type ;
+  typedef typename device_type::IndexMap<>::type  index_map ;
 
-  typedef typename
-    Impl::MDArrayHostMirror< value_type , mdarray_map >::type HostMirror ;
+  typedef MDArray< value_type , HostMapped< device_type >::type > HostMirror ;
 
   /*------------------------------------------------------------------*/
   /** \brief  Query rank of the array */
@@ -187,217 +182,6 @@ public:
 
   /*------------------------------------------------------------------*/
 
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void fill( const Impl::Rank<8> & , const size_type iP ,
-               const value_type & src ) const
-  {
-    for ( size_type i1 = 0 ; i1 < dimension(1) ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < dimension(2) ; ++i2 ) {
-    for ( size_type i3 = 0 ; i3 < dimension(3) ; ++i3 ) {
-    for ( size_type i4 = 0 ; i4 < dimension(4) ; ++i4 ) {
-    for ( size_type i5 = 0 ; i5 < dimension(5) ; ++i5 ) {
-    for ( size_type i6 = 0 ; i6 < dimension(6) ; ++i6 ) {
-    for ( size_type i7 = 0 ; i7 < dimension(7) ; ++i7 ) {
-      operator()(iP,i1,i2,i3,i4,i5,i6,i7) = src ;
-    }}}}}}}
-  }
-
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void fill( const Impl::Rank<7> & , const size_type iP ,
-               const value_type & src ) const
-  {
-    for ( size_type i1 = 0 ; i1 < dimension(1) ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < dimension(2) ; ++i2 ) {
-    for ( size_type i3 = 0 ; i3 < dimension(3) ; ++i3 ) {
-    for ( size_type i4 = 0 ; i4 < dimension(4) ; ++i4 ) {
-    for ( size_type i5 = 0 ; i5 < dimension(5) ; ++i5 ) {
-    for ( size_type i6 = 0 ; i6 < dimension(6) ; ++i6 ) {
-      operator()(iP,i1,i2,i3,i4,i5,i6) = src ;
-    }}}}}}
-  }
-
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void fill( const Impl::Rank<6> & , const size_type iP ,
-               const value_type & src ) const
-  {
-    for ( size_type i1 = 0 ; i1 < dimension(1) ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < dimension(2) ; ++i2 ) {
-    for ( size_type i3 = 0 ; i3 < dimension(3) ; ++i3 ) {
-    for ( size_type i4 = 0 ; i4 < dimension(4) ; ++i4 ) {
-    for ( size_type i5 = 0 ; i5 < dimension(5) ; ++i5 ) {
-      operator()(iP,i1,i2,i3,i4,i5) = src ;
-    }}}}}
-  }
-
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void fill( const Impl::Rank<5> & , const size_type iP ,
-               const value_type & src ) const
-  {
-    for ( size_type i1 = 0 ; i1 < dimension(1) ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < dimension(2) ; ++i2 ) {
-    for ( size_type i3 = 0 ; i3 < dimension(3) ; ++i3 ) {
-    for ( size_type i4 = 0 ; i4 < dimension(4) ; ++i4 ) {
-      operator()(iP,i1,i2,i3,i4) = src ;
-    }}}}
-  }
-
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void fill( const Impl::Rank<4> & , const size_type iP ,
-               const value_type & src ) const
-  {
-    for ( size_type i1 = 0 ; i1 < dimension(1) ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < dimension(2) ; ++i2 ) {
-    for ( size_type i3 = 0 ; i3 < dimension(3) ; ++i3 ) {
-      operator()(iP,i1,i2,i3) = src ;
-    }}}
-  }
-
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void fill( const Impl::Rank<3> & , const size_type iP ,
-               const value_type & src ) const
-  {
-    for ( size_type i1 = 0 ; i1 < dimension(1) ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < dimension(2) ; ++i2 ) {
-      operator()(iP,i1,i2) = src ;
-    }}
-  }
-
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void fill( const Impl::Rank<2> & , const size_type iP ,
-               const value_type & src ) const
-  {
-    for ( size_type i1 = 0 ; i1 < dimension(1) ; ++i1 ) {
-      operator()(iP,i1) = src ;
-    }
-  }
-
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void fill( const Impl::Rank<1> & , const size_type iP ,
-               const value_type & src ) const
-  {
-    operator()(iP) = src ;
-  }
-
-  /*------------------------------------------------------------------*/
-  /*------------------------------------------------------------------*/
-
-  template< class DeviceSrc >
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void assign( const Impl::Rank<8> & , const size_type iP ,
-               const MDArray< value_type , DeviceSrc > & src ) const
-  {
-    for ( size_type i1 = 0 ; i1 < dimension(1) ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < dimension(2) ; ++i2 ) {
-    for ( size_type i3 = 0 ; i3 < dimension(3) ; ++i3 ) {
-    for ( size_type i4 = 0 ; i4 < dimension(4) ; ++i4 ) {
-    for ( size_type i5 = 0 ; i5 < dimension(5) ; ++i5 ) {
-    for ( size_type i6 = 0 ; i6 < dimension(6) ; ++i6 ) {
-    for ( size_type i7 = 0 ; i7 < dimension(7) ; ++i7 ) {
-      operator()(iP,i1,i2,i3,i4,i5,i6,i7) = src(iP,i1,i2,i3,i4,i5,i6,i7);
-    }}}}}}}
-  }
-
-  template< class DeviceSrc >
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void assign( const Impl::Rank<7> & , const size_type iP ,
-               const MDArray< value_type , DeviceSrc > & src ) const
-  {
-    for ( size_type i1 = 0 ; i1 < dimension(1) ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < dimension(2) ; ++i2 ) {
-    for ( size_type i3 = 0 ; i3 < dimension(3) ; ++i3 ) {
-    for ( size_type i4 = 0 ; i4 < dimension(4) ; ++i4 ) {
-    for ( size_type i5 = 0 ; i5 < dimension(5) ; ++i5 ) {
-    for ( size_type i6 = 0 ; i6 < dimension(6) ; ++i6 ) {
-      operator()(iP,i1,i2,i3,i4,i5,i6) = src(iP,i1,i2,i3,i4,i5,i6);
-    }}}}}}
-  }
-
-  template< class DeviceSrc >
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void assign( const Impl::Rank<6> & , const size_type iP ,
-               const MDArray< value_type , DeviceSrc > & src ) const
-  {
-    for ( size_type i1 = 0 ; i1 < dimension(1) ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < dimension(2) ; ++i2 ) {
-    for ( size_type i3 = 0 ; i3 < dimension(3) ; ++i3 ) {
-    for ( size_type i4 = 0 ; i4 < dimension(4) ; ++i4 ) {
-    for ( size_type i5 = 0 ; i5 < dimension(5) ; ++i5 ) {
-      operator()(iP,i1,i2,i3,i4,i5) = src(iP,i1,i2,i3,i4,i5);
-    }}}}}
-  }
-
-  template< class DeviceSrc >
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void assign( const Impl::Rank<5> & , const size_type iP ,
-               const MDArray< value_type , DeviceSrc > & src ) const
-  {
-    for ( size_type i1 = 0 ; i1 < dimension(1) ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < dimension(2) ; ++i2 ) {
-    for ( size_type i3 = 0 ; i3 < dimension(3) ; ++i3 ) {
-    for ( size_type i4 = 0 ; i4 < dimension(4) ; ++i4 ) {
-      operator()(iP,i1,i2,i3,i4) = src(iP,i1,i2,i3,i4);
-    }}}}
-  }
-
-  template< class DeviceSrc >
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void assign( const Impl::Rank<4> & , const size_type iP ,
-               const MDArray< value_type , DeviceSrc > & src ) const
-  {
-    for ( size_type i1 = 0 ; i1 < dimension(1) ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < dimension(2) ; ++i2 ) {
-    for ( size_type i3 = 0 ; i3 < dimension(3) ; ++i3 ) {
-      operator()(iP,i1,i2,i3) = src(iP,i1,i2,i3);
-    }}}
-  }
-
-  template< class DeviceSrc >
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void assign( const Impl::Rank<3> & , const size_type iP ,
-               const MDArray< value_type , DeviceSrc > & src ) const
-  {
-    for ( size_type i1 = 0 ; i1 < dimension(1) ; ++i1 ) {
-    for ( size_type i2 = 0 ; i2 < dimension(2) ; ++i2 ) {
-      operator()(iP,i1,i2) = src(iP,i1,i2);
-    }}
-  }
-
-  template< class DeviceSrc >
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void assign( const Impl::Rank<2> & , const size_type iP ,
-               const MDArray< value_type , DeviceSrc > & src ) const
-  {
-    for ( size_type i1 = 0 ; i1 < dimension(1) ; ++i1 ) {
-      operator()(iP,i1) = src(iP,i1);
-    }
-  }
-
-  template< class DeviceSrc >
-  inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
-  void assign( const Impl::Rank<1> & , const size_type iP ,
-               const MDArray< value_type , DeviceSrc > & src ) const
-  {
-    operator()(iP) = src(iP);
-  }
-
-  /*------------------------------------------------------------------*/
-
 #endif /* defined( KOKKOS_MACRO_DEVICE_FUNCTION ) */
 
   /*------------------------------------------------------------------*/
@@ -447,9 +231,9 @@ public:
              rhs.m_map.dimension(4), rhs.m_map.dimension(5),
              rhs.m_map.dimension(6), rhs.m_map.dimension(7) )
   {
-    typedef typename DeviceRHS::mdarray_map rhs_mdarray_map ;
+    typedef typename DeviceRHS::index_map rhs_index_map ;
 
-    enum { SameMap = Impl::SameType< mdarray_map , rhs_mdarray_map >::value };
+    enum { SameMap = Impl::SameType< index_map , rhs_index_map >::value };
 
     Impl::StaticAssert< SameMap >::ok();
   }
@@ -488,20 +272,7 @@ private:
   typedef Impl::MemoryView< value_type , memory_space >  memory_view ;
 
   memory_view  m_memory ;
-  mdarray_map  m_map ;
-
-  inline
-  MDArray( const std::string & label ,
-           size_t nP , size_t n1 , size_t n2 , size_t n3 ,
-           size_t n4 , size_t n5 , size_t n6 , size_t n7 )
-    : m_memory()
-    , m_map()
-    {
-      m_map.template assign<value_type>(nP,n1,n2,n3,n4,n5,n6,n7);
-      m_memory.allocate( m_map.allocation_size() , label );
-
-      Impl::Initialize< MDArray<value_type,device_type> >::run( *this );
-    }
+  index_map    m_map ;
 
   template< typename V , class D >
   friend
@@ -510,11 +281,9 @@ private:
                           size_t nP , size_t n1 , size_t n2 , size_t n3 ,
                           size_t n4 , size_t n5 , size_t n6 , size_t n7 );
 
-  template< typename V , class D > friend class MDArray ;
-  template< class Dst , class Src > friend class Impl::DeepCopy ;
+  template< typename V , class D >  friend class MDArray ;
+  template< class , class >  friend class Impl::Factory ;
 };
-
-//----------------------------------------------------------------------------
 
 } // namespace Kokkos
 

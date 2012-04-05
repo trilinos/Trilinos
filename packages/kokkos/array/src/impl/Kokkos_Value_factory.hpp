@@ -41,64 +41,57 @@
 //@HEADER
 */
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-// Partial specializations for the device
-
-#include <Kokkos_Host_macros.hpp>
-
-#if defined( KOKKOS_MEMORYVIEW_HPP ) && ! defined( KOKKOS_HOST_MEMORYVIEW )
-#define KOKKOS_HOST_MEMORYVIEW
-#include <impl/Kokkos_MemoryView_macros.hpp>
-#endif
-
-//----------------------------------------------------------------------------
-
-#if defined( KOKKOS_VALUE_HPP ) && ! defined( KOKKOS_HOST_VALUE )
-#define KOKKOS_HOST_VALUE
-#include <impl/Kokkos_Value_macros.hpp>
-#include <Host/Kokkos_Host_Value.hpp>
-#endif
-
-//----------------------------------------------------------------------------
-
-#if defined( KOKKOS_MULTIVECTOR_HPP ) && ! defined( KOKKOS_HOST_MULTIVECTOR )
-#define KOKKOS_HOST_MULTIVECTOR
-#include <impl/Kokkos_MultiVector_macros.hpp>
-#include <Host/Kokkos_Host_MultiVector.hpp>
-#endif
-
-//----------------------------------------------------------------------------
-
-#if defined( KOKKOS_CRSMAP_HPP ) && ! defined( KOKKOS_HOST_CRSMAP )
-#define KOKKOS_HOST_CRSMAP
-#include <impl/Kokkos_CrsMap_macros.hpp>
-#endif
-
-//----------------------------------------------------------------------------
-
-#if defined( KOKKOS_MDARRAY_HPP ) && ! defined( KOKKOS_HOST_MDARRAY )
-#define KOKKOS_HOST_MDARRAY
-#include <Host/Kokkos_Host_MDArray.hpp>
-#include <impl/Kokkos_MDArrayIndexMapLeft_macros.hpp>
-#include <impl/Kokkos_MDArrayIndexMapRight_macros.hpp>
-
-// For MDArray< ValueType , Host >
-#include <impl/Kokkos_MDArray_macros.hpp>
-
-// For MDArray< ValueType , HostMapped< MDArrayMap > >
-#undef  KOKKOS_MACRO_DEVICE
-#define KOKKOS_MACRO_DEVICE  Impl::HostMapped< MDArrayMap >
-#define KOKKOS_MACRO_MDARRAY_TEMPLATE_ARGUMENT  class MDArrayMap
-#include <impl/Kokkos_MDArray_macros.hpp>
-#undef KOKKOS_MACRO_MDARRAY_TEMPLATE_ARGUMENT
-#endif
-
-//----------------------------------------------------------------------------
-
-#include <Kokkos_Clear_macros.hpp>
+#ifndef KOKKOS_IMPL_VALUE_FACTORY_HPP
+#define KOKKOS_IMPL_VALUE_FACTORY_HPP
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Impl {
+
+template< typename ValueType , class Device >
+struct Factory< Value< ValueType , Device > , void >
+{
+  typedef Value< ValueType , Device > type ;
+
+  static inline
+  type create()
+  {
+    type output ;
+    output.m_memory.allocate( 1 , std::string() );
+    return output ;
+  }
+
+  static inline
+  type create( const std::string & label )
+  {
+    type output ;
+    output.m_memory.allocate( 1 , label );
+    return output ;
+  }
+};
+
+template< typename ValueType , class Device >
+struct Factory< Value< ValueType , Device > , Impl::MirrorUseView >
+{
+  typedef Value< ValueType , Device > type ;
+
+  static inline
+  const type & create( const type & input ) { return input ; }
+
+  template< class DeviceInput >
+  static inline
+  type & create( const Value< ValueType , DeviceInput > & )
+  { return Factory< type , void >::create(); }
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#endif /* KOKKOS_IMPL_VALUE_FACTORY_HPP */
 
 

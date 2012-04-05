@@ -62,7 +62,7 @@ namespace Teuchos {
       unsigned char c;
       TEUCHOS_TEST_FOR_EXCEPTION( stream->readBytes(&c,1) < 1, std::runtime_error, "Failure reading error message from test file." );
       if (c == '\n') break;
-      error.push_back(c);
+      if (c != '\r') error.push_back(c);
     }
     out << "Expected error string: \"" << error << "\"" << std::endl;
     bool caughtError = false;

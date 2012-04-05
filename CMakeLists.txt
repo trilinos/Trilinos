@@ -81,5 +81,8 @@ PROJECT(${PROJECT_NAME} NONE)
 
 INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits/package_arch/TribitsProject.cmake)
 
+# Make Trilinos create <Package>Config.cmake files by default
+SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT ON)
+
 # Do all of the processing for this Tribits project
 TRIBITS_PROJECT()

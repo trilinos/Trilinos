@@ -1051,25 +1051,22 @@ namespace Tpetra {
         // coordinate matrix dimensions succeeded ("Guilty unless
         // proven innocent").
         bool success = false;
-        if (Teuchos::rank(*pComm) == 0)
-          { 
-            TEUCHOS_TEST_FOR_EXCEPTION(pBanner->matrixType() != "coordinate", 
-                               std::invalid_argument,
-                               "The Tpetra::CrsMatrix Matrix Market reader "
-                               "only accepts \"coordinate\" (sparse) matrix "
-                               "data.");
-            // Unpacked coordinate matrix dimensions
-            global_ordinal_type numRows, numCols, numNonzeros;
-            // Only MPI Rank 0 reads from the input stream
-            success = readCoordinateDimensions (in, numRows, numCols, 
-                                                numNonzeros, lineNumber, 
-                                                tolerant);
-            // Pack up the data into a Tuple so we can send them with
-            // one broadcast instead of three.
-            dims[0] = numRows;
-            dims[1] = numCols;
-            dims[2] = numNonzeros;
-          }
+        if (pComm->getRank() == 0) {
+	  TEUCHOS_TEST_FOR_EXCEPTION(pBanner->matrixType() != "coordinate", 
+            std::invalid_argument, "The Tpetra::CrsMatrix Matrix Market reader "
+	    "only accepts \"coordinate\" (sparse) matrix data.");
+	  // Unpacked coordinate matrix dimensions
+	  global_ordinal_type numRows, numCols, numNonzeros;
+	  // Only MPI Rank 0 reads from the input stream
+	  success = readCoordinateDimensions (in, numRows, numCols, 
+					      numNonzeros, lineNumber, 
+					      tolerant);
+	  // Pack up the data into a Tuple so we can send them with
+	  // one broadcast instead of three.
+	  dims[0] = numRows;
+	  dims[1] = numCols;
+	  dims[2] = numNonzeros;
+	}
         // Only Rank 0 did the reading, so it decides success.
         //
         // FIXME (mfh 02 Feb 2011) Teuchos::broadcast doesn't know how
@@ -1080,19 +1077,21 @@ namespace Tpetra {
           Teuchos::broadcast (*pComm, 0, &the_success);
           success = (the_success == 1);
         }
-        if (success)
+        if (success) {
           // Broadcast (numRows, numCols, numNonzeros) from Rank 0
           // to all the other MPI ranks.  
           Teuchos::broadcast (*pComm, 0, dims);
-        else
+	}
+        else {
           // Perhaps in tolerant mode, we could set all the
           // dimensions to zero for now, and deduce correct
           // dimensions by reading all of the file's entries and
           // computing the max(row index) and max(column index).
           // However, for now we just error out in that case.
-          throw std::invalid_argument ("Error reading Matrix Market sparse "
-                                       "matrix: failed to read coordinate "
-                                       "matrix dimensions.");
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+	    "Error reading Matrix Market sparse matrix: failed to read "
+            "coordinate matrix dimensions.");
+	}
         return dims;
       }
       
@@ -1141,17 +1140,15 @@ namespace Tpetra {
                  const bool tolerant=false,
                  const bool debug=false)
       {
-        if (Teuchos::rank (*pComm) == 0)
-          {
-            typedef Raw::Adder<scalar_type, global_ordinal_type> raw_adder_type;
-
-            RCP<raw_adder_type> pRaw (new raw_adder_type (dims[0], dims[1], 
-                                                          dims[2], tolerant, 
-                                                          debug));
-            return rcp (new adder_type (pRaw, pBanner->symmType()));
-          }
-        else
+        if (pComm->getRank() == 0) {
+	  typedef Raw::Adder<scalar_type, global_ordinal_type> raw_adder_type;
+	  RCP<raw_adder_type> pRaw = 
+	    rcp (new raw_adder_type (dims[0], dims[1], dims[2], tolerant, debug));
+	  return rcp (new adder_type (pRaw, pBanner->symmType()));
+	}
+	else {
           return null;
+	}
       }
 
     public:
@@ -1317,25 +1314,24 @@ namespace Tpetra {
         // proven innocent" (the read didn't succeed unless we
         // proclaim that it did).
         bool readSuccess = false;
-        if (myRank == 0)
-          {
-            // Reader for "coordinate" format sparse matrix data.
-            typedef CoordDataReader<adder_type, global_ordinal_type, 
-              scalar_type, STS::isComplex> reader_type;
-            reader_type reader (pAdder);
+        if (myRank == 0) {
+	  // Reader for "coordinate" format sparse matrix data.
+	  typedef CoordDataReader<adder_type, global_ordinal_type, 
+	    scalar_type, STS::isComplex> reader_type;
+	  reader_type reader (pAdder);
 
-            // Read the sparse matrix entries.
-            //
-            // FIXME (mfh 28 Mar 2011) We should catch exceptions
-            // here, and broadcast any error messages to all
-            // processors so that the exception can be rethrown
-            // everywhere (fail fast and hard, rather than hoping that
-            // MPI propagates the exceptions quickly).
-            std::pair<bool, std::vector<size_t> > results = 
-              reader.read (in, lineNumber, tolerant, debug);
+	  // Read the sparse matrix entries.
+	  //
+	  // FIXME (mfh 28 Mar 2011) We should catch exceptions
+	  // here, and broadcast any error messages to all
+	  // processors so that the exception can be rethrown
+	  // everywhere (fail fast and hard, rather than hoping that
+	  // MPI propagates the exceptions quickly).
+	  std::pair<bool, std::vector<size_t> > results = 
+	    reader.read (in, lineNumber, tolerant, debug);
 
-            readSuccess = results.first;
-          }
+	  readSuccess = results.first;
+	}
         // The broadcast of readSuccess from MPI Rank 0 serves as a
         // barrier.  Note that Tpetra::CrsMatrix::fillComplete() only
         // starts with a barrier in debug mode, so we need some kind

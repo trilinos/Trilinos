@@ -1557,6 +1557,7 @@ int nssi_service_start(
     double idle_time = 0;
     double processing_time = 0;
     trios_declare_timer(call_time);
+    trios_declare_timer(loop_time);
     int rank = FIXRANK;
     //queue<struct thread_pool_task *> task_queue;
 
@@ -1636,6 +1637,8 @@ int nssi_service_start(
     /* SIGINT (Ctrl-C) will get us out of this loop */
     while (!trios_exit_now()) {
 
+        trios_start_timer(loop_time);
+
         log_debug(rpc_debug_level, "a");
 
         /* exit if the time_to_die flag is set */
@@ -1659,11 +1662,13 @@ int nssi_service_start(
             t1 = trios_get_time();
         }
 
+        trios_start_timer(call_time);
         rc=NNTI_wait(
                 &req_queue,
-                NNTI_RECV_DST,
+                NNTI_RECV_QUEUE,
                 progress_timeout,
                 &status);
+        trios_stop_timer("request queue wait", call_time);
         if (rc != NNTI_OK) {
             log_error(debug_level, "failed waiting for a request: %s",
                     nnti_err_str(rc));
@@ -1738,6 +1743,8 @@ int nssi_service_start(
                 progress_last_time=trios_get_time_ms();
             }
         }
+
+        trios_stop_timer("service loop", loop_time);
     }
 
 

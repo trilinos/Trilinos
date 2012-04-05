@@ -45,49 +45,259 @@
     ! defined(KOKKOS_MACRO_DEVICE)                  || \
     ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
 
-#error "Including <impl/Kokkos_MDArrayIndexMapLeft_macros.hpp> without macros defined"
+#error "Including <impl/Kokkos_IndexMapRight_macros.hpp> without macros defined"
 
 #else
 
-#include <impl/Kokkos_MDArrayIndexMap.hpp>
+#include <impl/Kokkos_IndexMap.hpp>
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 namespace Kokkos {
 namespace Impl {
 
-template<>
-class MDArrayIndexMapLeft< KOKKOS_MACRO_DEVICE::memory_space > {
+
+template< unsigned Rank , unsigned N1 ,
+          unsigned N2   , unsigned N3 ,
+          unsigned N4   , unsigned N5 ,
+          unsigned N6   , unsigned N7 >
+struct IndexMapRight< KOKKOS_MACRO_DEVICE::memory_space ,
+          Rank , N1 , N2 , N3 , N4 , N5 , N6 , N7 >
+{
 public:
 
-  /** \brief  The size type most appropriate for the device memory space. */
   typedef KOKKOS_MACRO_DEVICE::size_type size_type ;
 
 private:
+  static const unsigned NSize =
+    Rank <= 1 ? 1 : N1 * (
+    Rank <= 2 ? 1 : N2 * (
+    Rank <= 3 ? 1 : N3 * (
+    Rank <= 4 ? 1 : N4 * (
+    Rank <= 5 ? 1 : N5 * (
+    Rank <= 6 ? 1 : N6 * (
+    Rank <= 7 ? 1 : N7 ))))));
 
-  // Stride for the rank #0 index,
-  // If contiguous then the rank #0 dimension.
-  // If padded to the alignment then rank #0 dimension + padding.
-  enum { S0 = MDArrayMaxRank };
+  size_type N0 ;
+
+  static const unsigned S6 = 7 < Rank ? N7 : 1 ;
+  static const unsigned S5 = 6 < Rank ? N6 * S6 : 1 ;
+  static const unsigned S4 = 5 < Rank ? N5 * S5 : 1 ;
+  static const unsigned S3 = 4 < Rank ? N4 * S4 : 1 ;
+  static const unsigned S2 = 3 < Rank ? N3 * S3 : 1 ;
+  static const unsigned S1 = 2 < Rank ? N2 * S2 : 1 ;
+  static const unsigned S0 = 1 < Rank ? N1 * S1 : 1 ;
 
 public:
 
-  /** \brief  Rank of the index space */
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type rank() const { return m_rank ; }
+  size_type rank() const { return Rank ; }
 
-  /** \brief  Dimension of a given rank of the index space */
   template< typename iType >
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type dimension( const iType & ordinal ) const
   {
-    KOKKOS_MACRO_CHECK( require_less( ordinal , MDArrayMaxRank ) );
+    KOKKOS_MACRO_CHECK( require_less( ordinal , Rank ) );
+    const size_type d[] = { N0, N1, N2, N3, N4, N5, N6, N7 };
+    return d[ordinal];
+  }
+
+  template< typename iType >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  void dimensions( iType * const dims ) const
+  {
+    const size_type d[] = { N0, N1, N2, N3, N4, N5, N6, N7 };
+    for ( size_type i = 0 ; i < Rank ; ++i ) { dims[i] = d[i] ; }
+  }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type size() const { return N0 * NSize ; }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type allocation_size() const { return size(); }
+
+  //------------------------------
+
+  template < typename iType0 , typename iType1 ,
+             typename iType2 , typename iType3 ,
+             typename iType4 , typename iType5 ,
+             typename iType6 , typename iType7 >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type offset( const iType0 & i0 , const iType1 & i1 ,
+                    const iType2 & i2 , const iType3 & i3 ,
+                    const iType4 & i4 , const iType5 & i5 ,
+                    const iType6 & i6 , const iType7 & i7 ) const
+  {
+    enum { InputRank = 8 };
+
+    KOKKOS_MACRO_CHECK(
+      mdarray_require_dimension( Rank, N0, N1, N2, N3, N4, N5, N6, N7,
+                            InputRank, i0, i1, i2, i3, i4, i5, i6, i7 ) );
+
+    return i7 + S6 * i6 + S5 * i5 + S4 * i4 + S3 * i3 + S2 * i2 + S1 * i1 + S0 * i0 ;
+  }
+
+  template < typename iType0 , typename iType1 ,
+             typename iType2 , typename iType3 ,
+             typename iType4 , typename iType5 ,
+             typename iType6 >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type offset( const iType0 & i0 , const iType1 & i1 ,
+                    const iType2 & i2 , const iType3 & i3 ,
+                    const iType4 & i4 , const iType5 & i5 ,
+                    const iType6 & i6 ) const
+  {
+    enum { InputRank = 7 };
+
+    KOKKOS_MACRO_CHECK(
+      mdarray_require_dimension( Rank, N0, N1, N2, N3, N4, N5, N6, 0,
+                            InputRank, i0, i1, i2, i3, i4, i5, i6, 0 ) );
+
+    return i6 + S5 * i5 + S4 * i4 + S3 * i3 + S2 * i2 + S1 * i1 + S0 * i0 ;
+  }
+
+  template < typename iType0 , typename iType1 ,
+             typename iType2 , typename iType3 ,
+             typename iType4 , typename iType5 >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type offset( const iType0 & i0 , const iType1 & i1 ,
+                    const iType2 & i2 , const iType3 & i3 ,
+                    const iType4 & i4 , const iType5 & i5 ) const
+  {
+    enum { InputRank = 6 };
+
+    KOKKOS_MACRO_CHECK(
+      mdarray_require_dimension( Rank, N0, N1, N2, N3, N4, N5, 0, 0,
+                            InputRank, i0, i1, i2, i3, i4, i5, 0, 0 ) );
+
+    return i5 + S4 * i4 + S3 * i3 + S2 * i2 + S1 * i1 + S0 * i0 ;
+  }
+
+  template < typename iType0 , typename iType1 ,
+             typename iType2 , typename iType3 ,
+             typename iType4 >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type offset( const iType0 & i0 , const iType1 & i1 ,
+                    const iType2 & i2 , const iType3 & i3 ,
+                    const iType4 & i4 ) const
+  {
+    enum { InputRank = 5 };
+
+    KOKKOS_MACRO_CHECK(
+      mdarray_require_dimension( Rank, N0, N1, N2, N3, N4, 0, 0, 0,
+                            InputRank, i0, i1, i2, i3, i4, 0, 0, 0 ) );
+
+    return i4 + S3 * i3 + S2 * i2 + S1 * i1 + S0 * i0 ;
+  }
+
+  template < typename iType0 , typename iType1 ,
+             typename iType2 , typename iType3 >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type offset( const iType0 & i0 , const iType1 & i1 ,
+                    const iType2 & i2 , const iType3 & i3 ) const
+  {
+    enum { InputRank = 4 };
+
+    KOKKOS_MACRO_CHECK(
+      mdarray_require_dimension( Rank, N0, N1, N2, N3, 0, 0, 0, 0,
+                            InputRank, i0, i1, i2, i3, 0, 0, 0, 0 ) );
+
+    return i3 + S2 * i2 + S1 * i1 + S0 * i0 ;
+  }
+
+  template < typename iType0 , typename iType1 ,
+             typename iType2 >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type offset( const iType0 & i0 , const iType1 & i1 ,
+                    const iType2 & i2 ) const
+  {
+    enum { InputRank = 3 };
+
+    KOKKOS_MACRO_CHECK(
+      mdarray_require_dimension( Rank, N0, N1, N2, 0, 0, 0, 0, 0,
+                            InputRank, i0, i1, i2, 0, 0, 0, 0, 0 ) );
+
+    return i2 + S1 * i1 + S0 * i0 ;
+  }
+
+  template < typename iType0 , typename iType1 >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type offset( const iType0 & i0 , const iType1 & i1 ) const
+  {
+    enum { InputRank = 2 };
+
+    KOKKOS_MACRO_CHECK(
+      mdarray_require_dimension( Rank, N0, N1, 0, 0, 0, 0, 0, 0,
+                            InputRank, i0, i1, 0, 0, 0, 0, 0, 0 ) );
+
+    return i1 + S0 * i0 ;
+  }
+
+  template< typename iType0 >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type offset( const iType0 & i0 ) const
+  {
+    enum { InputRank = 1 };
+
+    KOKKOS_MACRO_CHECK(
+      mdarray_require_dimension( Rank, N0, 0, 0, 0, 0, 0, 0, 0,
+                            InputRank, i0, 0, 0, 0, 0, 0, 0, 0 ) );
+
+    return i0 ;
+  }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  IndexMapRight() : N0(0) {}
+
+  template< typename ValueType >
+  inline
+  void assign( size_t n0 ) { N0 = n0 ; }
+};
+
+//----------------------------------------------------------------------------
+
+template<>
+class IndexMapRight< KOKKOS_MACRO_DEVICE::memory_space,
+                     0, 0,0,0,0,0,0,0 > {
+public:
+
+  typedef KOKKOS_MACRO_DEVICE::size_type  size_type ;
+
+private:
+
+  size_type m_rank ;
+  size_type m_dims[ IndexMapMaxRank ];
+
+public:
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type rank() const { return m_rank; }
+
+  template< typename iType >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type dimension( const iType & ordinal ) const
+  {
+    KOKKOS_MACRO_CHECK( require_less( ordinal , IndexMapMaxRank ) );
     return m_dims[ordinal];
   }
 
-  /** \brief  Dimension of all ranks of the index space.
-   *          The 'dims' output array must be at least of length 'rank()'.
-   */
   template< typename iType >
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
@@ -98,24 +308,20 @@ public:
     }
   }
 
-  /** \brief  The size of the index space; i.e., produce of dimensions. */
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type size() const
     {
-      size_type n = m_dims[0]; //  The actual rank #0 dimension
+      size_type n = m_dims[0] ;
       for ( size_type i = 1 ; i < m_rank ; ++i ) { n *= m_dims[i] ; }
       return n ;
     }
 
-  /** \brief  Amount of memory to allocate for the array
-   *          including the necessary padding.
-   */
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type allocation_size() const
     {
-      size_type n = m_dims[ S0 ]; // The padded rank #0 dimension
+      size_type n = m_dims[0] ;
       for ( size_type i = 1 ; i < m_rank ; ++i ) { n *= m_dims[i] ; }
       return n ;
     }
@@ -139,10 +345,10 @@ public:
                                  m_dims[4], m_dims[5], m_dims[6], m_dims[7],
                                  8, i0, i1, i2, i3, i4, i5, i6, i7 ) );
 
-    return ( i0 + m_dims[S0] * ( i1 + m_dims[1] *
-           ( i2 + m_dims[2]  * ( i3 + m_dims[3] *
-           ( i4 + m_dims[4]  * ( i5 + m_dims[5] *
-           ( i6 + m_dims[6]  * ( i7 ))))))));
+    return ( i7 + m_dims[7] * ( i6 + m_dims[6] *
+           ( i5 + m_dims[5] * ( i4 + m_dims[4] *
+           ( i3 + m_dims[3] * ( i2 + m_dims[2] *
+           ( i1 + m_dims[1] * ( i0 ))))))));
   }
 
   template < typename iType0 , typename iType1 ,
@@ -162,10 +368,10 @@ public:
                                  m_dims[4], m_dims[5], m_dims[6], m_dims[7],
                                  7, i0, i1, i2, i3, i4, i5, i6, 0 ) );
 
-    return ( i0 + m_dims[S0] * ( i1 + m_dims[1] *
-           ( i2 + m_dims[2]  * ( i3 + m_dims[3] *
-           ( i4 + m_dims[4]  * ( i5 + m_dims[5] *
-           ( i6 )))))));
+    return ( i6 + m_dims[6] *
+           ( i5 + m_dims[5] * ( i4 + m_dims[4] *
+           ( i3 + m_dims[3] * ( i2 + m_dims[2] *
+           ( i1 + m_dims[1] * ( i0 )))))));
   }
 
   template < typename iType0 , typename iType1 ,
@@ -183,9 +389,9 @@ public:
                                  m_dims[4], m_dims[5], m_dims[6], m_dims[7],
                                  6, i0, i1, i2, i3, i4, i5, 0, 0 ) );
 
-    return ( i0 + m_dims[S0] * ( i1 + m_dims[1] *
-           ( i2 + m_dims[2]  * ( i3 + m_dims[3] *
-           ( i4 + m_dims[4]  * ( i5 ))))));
+    return ( i5 + m_dims[5] * ( i4 + m_dims[4] *
+           ( i3 + m_dims[3] * ( i2 + m_dims[2] *
+           ( i1 + m_dims[1] * ( i0 ))))));
   }
 
   template < typename iType0 , typename iType1 ,
@@ -203,9 +409,9 @@ public:
                                  m_dims[4], m_dims[5], m_dims[6], m_dims[7],
                                  5, i0, i1, i2, i3, i4, 0, 0, 0 ) );
 
-    return ( i0 + m_dims[S0] * ( i1 + m_dims[1] *
-           ( i2 + m_dims[2]  * ( i3 + m_dims[3] *
-           ( i4 )))));
+    return ( i4 + m_dims[4] *
+           ( i3 + m_dims[3] * ( i2 + m_dims[2] *
+           ( i1 + m_dims[1] * ( i0 )))));
   }
 
   template < typename iType0 , typename iType1 ,
@@ -221,8 +427,9 @@ public:
                                  m_dims[4], m_dims[5], m_dims[6], m_dims[7],
                                  4, i0, i1, i2, i3, 0, 0, 0, 0 ) );
 
-    return ( i0 + m_dims[S0] * ( i1 + m_dims[1] *
-           ( i2 + m_dims[2]  * ( i3 ))));
+
+    return ( i3 + m_dims[3] * ( i2 + m_dims[2] *
+           ( i1 + m_dims[1] * ( i0 ))));
   }
 
   template < typename iType0 , typename iType1 ,
@@ -238,7 +445,7 @@ public:
                                  m_dims[4], m_dims[5], m_dims[6], m_dims[7],
                                  3, i0, i1, i2, 0, 0, 0, 0, 0 ) );
 
-    return ( i0 + m_dims[S0] * ( i1 + m_dims[1] * ( i2 )));
+    return ( i2 + m_dims[2] * ( i1 + m_dims[1] * ( i0 )));
   }
 
   template < typename iType0 , typename iType1 >
@@ -252,7 +459,7 @@ public:
                                  m_dims[4], m_dims[5], m_dims[6], m_dims[7],
                                  2, i0, i1, 0, 0, 0, 0, 0, 0 ) );
 
-    return ( i0 + m_dims[S0] * ( i1 ));
+    return ( i1 + m_dims[1] * ( i0 ));
   }
 
   template < typename iType0 >
@@ -275,7 +482,8 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   void reverse_index( size_type offset, size_type * const indices ) const
   {
-    for ( size_type i = 0 ; i < m_rank ; ++i ) {
+    for ( size_type i = m_rank ; 0 < i ; ) {
+      --i ;
       indices[i] = offset % m_dims[i] ;
       offset /= m_dims[i] ;
     }
@@ -285,14 +493,13 @@ public:
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  MDArrayIndexMapLeft()
+  IndexMapRight()
     : m_rank(0)
   {
     m_dims[0] = 0 ; m_dims[1] = 0 ;
     m_dims[2] = 0 ; m_dims[3] = 0 ;
     m_dims[4] = 0 ; m_dims[5] = 0 ;
     m_dims[6] = 0 ; m_dims[7] = 0 ;
-    m_dims[S0] = 0 ;
   }
 
   template< typename ValueType >
@@ -300,22 +507,18 @@ public:
   void assign( size_t n0 , size_t n1 , size_t n2 , size_t n3 ,
                size_t n4 , size_t n5 , size_t n6 , size_t n7 )
   {
-    typedef KOKKOS_MACRO_DEVICE::memory_space   memory_space ;
-    typedef Impl::MemoryManager< memory_space > memory_manager ;
-
+    typedef  KOKKOS_MACRO_DEVICE::memory_space  memory_space ;
     m_rank = mdarray_deduce_rank( n0, n1, n2, n3, n4, n5, n6, n7 );
     m_dims[0] = n0 ; m_dims[1] = n1 ; m_dims[2] = n2 ; m_dims[3] = n3 ;
     m_dims[4] = n4 ; m_dims[5] = n5 ; m_dims[6] = n6 ; m_dims[7] = n7 ;
-    m_dims[S0] = memory_manager::preferred_alignment< ValueType >( n0 );
   }
-
-private:
-  size_type  m_rank ;
-  size_type  m_dims[ MDArrayMaxRank + 1 ];
 };
+
+//----------------------------------------------------------------------------
 
 } // Impl namespace
 } // Kokkos namespace
+
 
 #endif
 

@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,15 +35,15 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
 
 #include <cstddef>
 #include <SparseOutput.hpp>
-#include <BoxMeshFixture.hpp>
+#include <ImplicitBoxMeshFixture.hpp>
 #include <CRSGraph.hpp>
 
 #define  PRINT_SAMPLE_OF_SOLUTION  0
@@ -145,8 +145,8 @@ static void run(int x, int y, int z, PerformanceData & perf )
 
   // Copy sparse matrix graph to device
 
-  A_row_d = Kokkos::create_labeled_multivector< index_array_d >("A_row_d",A_row_h.length());
-  A_col_d = Kokkos::create_labeled_multivector< index_array_d >("A_col_d",A_col_h.length());
+  A_row_d = Kokkos::create_multivector< index_array_d >("A_row_d",A_row_h.length());
+  A_col_d = Kokkos::create_multivector< index_array_d >("A_col_d",A_col_h.length());
 
   Kokkos::deep_copy(A_row_d, A_row_h);
   Kokkos::deep_copy(A_col_d, A_col_h);
@@ -158,9 +158,9 @@ static void run(int x, int y, int z, PerformanceData & perf )
   //------------------------------
   // Allocate device memory for linear system and element contributions.
 
-  A = Kokkos::create_labeled_multivector< scalar_vector_d > ("A",A_col_h.length());
-  b = Kokkos::create_labeled_multivector< scalar_vector_d > ("b",mesh.node_count);
-  X = Kokkos::create_labeled_multivector< scalar_vector_d > ("X",mesh.node_count);
+  A = Kokkos::create_multivector< scalar_vector_d > ("A",A_col_h.length());
+  b = Kokkos::create_multivector< scalar_vector_d > ("b",mesh.node_count);
+  X = Kokkos::create_multivector< scalar_vector_d > ("X",mesh.node_count);
 
   elem_stiffness =  Kokkos::create_mdarray< scalar_array_d > (mesh.elem_count, 8, 8);
   elem_load      =  Kokkos::create_mdarray< scalar_array_d > (mesh.elem_count, 8);

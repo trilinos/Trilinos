@@ -11,7 +11,7 @@
 
 #include <assert.h>
 
-#include <netcdf.h>
+#include <pnetcdf.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1113,31 +1113,6 @@ int nc_inq(
 }
 
 extern "C"
-int nc_inq_att(
-        int ncid,
-        int varid,
-        const char *name,
-        nc_type *xtypep,
-        size_t *lenp)
-{
-    int rc = NC_NOERR;
-
-    rc = nc_inq_attlen(ncid, varid, name, lenp);
-    if (rc != NC_NOERR) {
-        log_error(netcdf_debug_level, "%s", nc_strerror(rc));
-        return rc;
-    }
-
-    rc = nc_inq_atttype(ncid, varid, name, xtypep);
-    if (rc != NC_NOERR) {
-        log_error(netcdf_debug_level, "%s", nc_strerror(rc));
-        return rc;
-    }
-
-    return rc;
-}
-
-extern "C"
 int nc_inq_attlen(
         int ncid,
         int varid,
@@ -1171,6 +1146,31 @@ int nc_inq_atttype(
     }
 
     rc = group_map[ncid]->inq_atttype(varid, name, xtypep);
+
+    return rc;
+}
+
+extern "C"
+int nc_inq_att(
+        int ncid,
+        int varid,
+        const char *name,
+        nc_type *xtypep,
+        size_t *lenp)
+{
+    int rc = NC_NOERR;
+
+    rc = nc_inq_attlen(ncid, varid, name, lenp);
+    if (rc != NC_NOERR) {
+        log_error(netcdf_debug_level, "%s", nc_strerror(rc));
+        return rc;
+    }
+
+    rc = nc_inq_atttype(ncid, varid, name, xtypep);
+    if (rc != NC_NOERR) {
+        log_error(netcdf_debug_level, "%s", nc_strerror(rc));
+        return rc;
+    }
 
     return rc;
 }

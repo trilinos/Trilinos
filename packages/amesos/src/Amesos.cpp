@@ -59,6 +59,9 @@
 #ifdef HAVE_AMESOS_PARAKLETE
 #include "Amesos_Paraklete.h"
 #endif
+#ifdef HAVE_AMESOS_CSPARSE
+#include "Amesos_CSparse.h"
+#endif
 #include "Epetra_Object.h"
 
 static bool verbose = false; 
@@ -173,6 +176,15 @@ Amesos_BaseSolver* Amesos::Create(const std::string CT,
 #endif
   } 
   
+  if ((CT == "Amesos_CSparse") || (CT == "CSparse")) {
+#ifdef HAVE_AMESOS_CSPARSE
+    return new Amesos_CSparse(LinearProblem);
+#else
+    if (verbose) std::cerr << "Amesos_CSparse is not implemented" << std::endl ;
+    return(0);
+#endif
+  }
+
   if (verbose) std::cerr << "Unknown class type:" << CT << std::endl ; 
   return(0); 
 }
@@ -276,6 +288,14 @@ bool Amesos::Query(const std::string CT)
 #endif
   } 
   
+  if ((CT == "Amesos_CSparse") || (CT == "CSparse")) {
+#ifdef HAVE_AMESOS_CSPARSE
+    return true;
+#else
+    return false;
+#endif
+  }
+
   return(false);
 
 }

@@ -48,14 +48,14 @@
 class Epetra_MpiComm;
 #include <mpi.h>
 
-//! Epetra_MpiDistributor:  The Epetra MPI implementation of the Epetra_Distributor Gather/Scatter Setup Class.
-/*! The Epetra_MpiDistributor class is an MPI implement of Epetra_Distributor that encapsulates the general
-  information and services needed for other Epetra classes to perform gather/scatter
-  operations on a parallel computer.
-  An Epetra_MpiDistributor object is actually produced by calling a method in the Epetra_MpiComm class.
-  
-*/
-
+/// \class Epetra_MpiDistributor
+/// \brief MPI implementation of Epetra_Distributor.
+///
+/// This class is an MPI implementation of \c Epetra_Distributor.  It
+/// encapsulates the general information and services needed for other
+/// Epetra classes to perform gather/scatter operations on a parallel
+/// computer.  An Epetra_MpiDistributor instance is actually produced
+/// by calling a method in the Epetra_MpiComm class.
 class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distributor {
     
   public:

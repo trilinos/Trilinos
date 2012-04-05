@@ -497,9 +497,6 @@ struct NNTI_buffer_t {
     /** @brief permitted operations */
     NNTI_buf_ops_t ops;
 
-    /** @brief Only exchange data with this peer. */
-    NNTI_peer_t peer;
-
     /** @brief Size of this buffer. */
     uint64_t     payload_size;
     /** @brief Local address of the memory buffer cast to a uint64_t. */

@@ -51,16 +51,18 @@ namespace Tpetra {
     namespace details {
 
       /// \class SetScientific
-      /// \brief Politely make an output stream use scientific notation.
+      /// \brief Politely make an output stream use scientific notation with sufficient precision.
       /// \author Mark Hoemmen
       ///
       /// On construction, apply the necessary flags to the given
       /// output stream so that floating-point numbers are written in
-      /// scientific notation with precision appropriate for the
-      /// Scalar type.  On destruction, restore the original
-      /// (pre-construction) flags to the output stream.  This makes
-      /// SetScientific good for scope-protected alteration of the
-      /// output stream's flags; no matter how the scope exits
+      /// scientific notation with precision (dependent on the Scalar
+      /// type) sufficient to ensure that they can be read in with the
+      /// same value.  On destruction, restore the original
+      /// (pre-construction) flags to the output stream.  
+      ///
+      /// This makes SetScientific good for scope-protected alteration
+      /// of the output stream's flags; no matter how the scope exits
       /// (normally or by a thrown exception), the original flags will
       /// be restored.  Hence, "polite": we restore the original flags
       /// on scope exit.
@@ -74,6 +76,7 @@ namespace Tpetra {
       template<class Scalar>
       class SetScientific {
       public:
+	//! The Scalar type with which SetScientific was specialized.
 	typedef Scalar scalar_type;
 
 	/// \brief Constructor.
@@ -194,34 +197,53 @@ namespace Tpetra {
 
     } // namespace details
 
+    
+    namespace {
+      bool isSkew (const std::string& symmType) {
+	return symmType.size() >= 4 && symmType.substr(0,4) == "skew";
+      }
 
-    static bool isSkew (const std::string& symmType) {
-      return symmType.size() >= 4 && symmType.substr(0,4) == "skew";
-    }
-    static bool isConj (const std::string& symmType) {
-      return std::string::npos != symmType.find ("hermitian");
-    }
-    static bool needsSymmetrization (const std::string& symmType) {
-      return symmType != "general";
-    }
+      bool isConj (const std::string& symmType) {
+	return std::string::npos != symmType.find ("hermitian");
+      }
+
+      bool needsSymmetrization (const std::string& symmType) {
+	return symmType != "general";
+      }
+    } // namespace (anonymous)
 
     /// \class SymmetrizingAdder
     /// \author Mark Hoemmen
     /// \brief Adds entries with optional symmetry to a sparse matrix
     ///
-    /// This class wraps any existing class (AdderType) that defines the
-    /// index_type and value_type typedefs, and a "void operator()
-    /// (const index_type, const index_type, const value_type&)" (that
-    /// conceptually adds an entry to a sparse matrix).  Given the
-    /// Matrix Market symmetry type, this class' corresponding
-    /// operator() may invoke AdderType's operator() twice, in order to
-    /// add entry (j,i) if entry (i,j) is to be added.
+    /// This class wraps any existing class (AdderType) with the
+    /// interface shown below.  Given the Matrix Market symmetry type,
+    /// this class' corresponding operator() may invoke AdderType's
+    /// operator() twice, in order to add entry (j,i) if entry (i,j)
+    /// is to be added.
+    ///
+    /// \tparam AdderType A class with at least the following interface:
+    ///   \code
+    ///   class AdderType {
+    ///   public:
+    ///     typedef ... index_type; // Ellipsis represents the actual type
+    ///     typedef ... value_type; // Ellipsis represents the actual type
+    ///     void operator() (const index_type, const index_type, const value_type&);
+    ///   };
     template<class AdderType>
     class SymmetrizingAdder {
     public:
+      //! The type of indices of the sparse matrix
       typedef typename AdderType::index_type index_type;
+      //! The type of entries of the sparse matrix
       typedef typename AdderType::value_type value_type;
     
+      /// \brief Constructor
+      ///
+      /// \param adder [in/out] The wrapped AdderType instance
+      ///
+      /// \param symmType [in] Canonical Matrix Market string
+      ///   representing the symmetry storage type of the matrix data.
       SymmetrizingAdder (const Teuchos::RCP<AdderType>& adder, 
 			 const std::string& symmType) :
 	adder_ (adder),
@@ -229,10 +251,13 @@ namespace Tpetra {
 	conjugate_ (isConj (symmType)),
 	skew_ (isSkew (symmType))
       {}
-
-
     
-      void operator() (const index_type i, const index_type j, const value_type& Aij) {
+      //! Add value A_ij to entry (i,j), and optionally symmetrize.
+      void 
+      operator() (const index_type i, 
+		  const index_type j, 
+		  const value_type& Aij) 
+      {
 	AdderType& theAdder = *adder_;
 
 	theAdder (i, j, Aij);
@@ -253,8 +278,14 @@ namespace Tpetra {
       }
 
     private:
+      //! The wrapped AdderType instance.
       Teuchos::RCP<AdderType> adder_;
-      bool symmetrize_, conjugate_, skew_;
+      //! Whether to do symmetrization at all.
+      bool symmetrize_;
+      //! Whether to conjugate when symmetrizing.
+      bool conjugate_;
+      //! Whether to negate when symmetrizing.
+      bool skew_;
     };
 
   } // namespace MatrixMarket

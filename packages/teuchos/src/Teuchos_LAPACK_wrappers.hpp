@@ -581,7 +581,9 @@
 #define SSYEV_F77   F77_BLAS_MANGLE(ssyev,SSYEV)
 #define SSYGV_F77   F77_BLAS_MANGLE(ssygv,SSYGV)
 #define SSTEQR_F77  F77_BLAS_MANGLE(ssteqr,SSTEQR)
-#define SLAPY2_F77  F77_BLAS_MANGLE(slapy2,SLAPY2)
+#ifdef HAVE_TEUCHOS_BLASFLOAT
+  #define SLAPY2_F77  F77_BLAS_MANGLE(slapy2,SLAPY2)
+#endif
 #define SLARTG_F77  F77_BLAS_MANGLE(slartg,SLARTG)
 #define SLARFG_F77  F77_BLAS_MANGLE(slarfg,SLARFG)
 #define SGEBAL_F77  F77_BLAS_MANGLE(sgebal,SGEBAL)
@@ -775,7 +777,14 @@ int PREFIX ILAENV_F77( const int* ispec, const char* name, unsigned int name_len
 int PREFIX ILAENV_F77( const int* ispec, const char* name, const char* opts, const int* N1, const int* N2, const int* N3, const int* N4, unsigned int name_length, unsigned int opts_length );
 #endif
 
-float PREFIX SLAPY2_F77(const float* x, const float* y);
+#ifdef HAVE_TEUCHOS_BLASFLOAT
+  #if defined(HAVE_SLAPY2_PROBLEM) && defined(HAVE_SLAPY2_DOUBLE_RETURN)
+    double PREFIX SLAPY2_F77(const float* x, const float* y);
+  #else 
+    float PREFIX SLAPY2_F77(const float* x, const float* y);
+  #endif
+#endif
+
 double PREFIX DLAPY2_F77(const double* x, const double* y);
 
 #ifdef HAVE_TEUCHOS_COMPLEX

@@ -152,6 +152,7 @@ namespace LOCA {
        * is a valid option for passing the shifted solver, but this will cause
        * the shifted matrix to overwrite the Jacobian possibly resulting in
        * more matrix fills.
+       * See declareSeparateMatrixMemory() method below to assert separate memory.
        */
       Group(
 	const Teuchos::RCP<LOCA::GlobalData>& global_data,
@@ -434,6 +435,21 @@ namespace LOCA {
 			        Teuchos::ParameterList& params, 
 				const NOX::Abstract::MultiVector& input,
 				NOX::Abstract::MultiVector& result) const;
+
+      //! Compute the second shifted matrix (uses different memory then Shifted matrix)
+      virtual NOX::Abstract::Group::ReturnType
+      computeSecondShiftedMatrix(double alpha, double beta);
+
+      //! Multiply the second shifted matrix by a vector.
+      virtual NOX::Abstract::Group::ReturnType
+      applySecondShiftedMatrix(const NOX::Abstract::Vector& input,
+			 NOX::Abstract::Vector& result) const;
+
+      //! Multiply the second shifted matrix by a multi-vector.
+      virtual NOX::Abstract::Group::ReturnType
+      applySecondShiftedMatrixMultiVector(
+				const NOX::Abstract::MultiVector& input,
+				NOX::Abstract::MultiVector& result) const;
       //@}
 
       /*! 
@@ -517,6 +533,10 @@ namespace LOCA {
       //! Method to inject an interface for calucatiuong the free energy
       virtual void setFreeEnergyInterface(
               const Teuchos::RCP<LOCA::Epetra::Interface::FreeEnergy>& iFE);
+
+      //! Method for calling code to guarantee to LOCA that separate matrix
+      //  memory was used for linSys and shiftedLinSys (see 3rd constructor)
+      void declareSeparateMatrixMemory(bool separateMem=true);
 
       /*! 
        * @name Implementation of LOCA::PhseTransition::AbstractGroup virtual methods.
@@ -622,6 +642,8 @@ namespace LOCA {
       //! Is complex matrix preconditioner valid
       mutable bool isValidComplexPrec;
 
+      //! Is complex matrix valid
+      bool separateMatrixMemoryDeclared;
     };
 
   } // namespace Epetra

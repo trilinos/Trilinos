@@ -75,69 +75,188 @@ namespace Tpetra {
     GlobalIndices
   };
 
-  //! \brief A class for constructing and using sparse compressed graphs with row access.
+  //! \brief A graph accessed by rows and stored sparsely.
   /*!
-   \tparam LocalOrdinal  A ordinal type for lists of local indices. This specifies the \c LocalOrdinal type for Map objects used by this graph.
-   \tparam GlobalOrdinal A ordinal type for lists of global indices. This specifies the \c GlobalOrdinal type for Map objects used by this graph.
-   \tparam Node          A shared-memory node class, fulfilling the \ref kokkos_node_api "Kokkos Node API"
-   \tparam LocalMatOps   A local sparse matrix operations class, fulfiling the \ref kokkos_crs_ops "Kokkos CRS Ops API".
-   * 
-   * This class allows the construction of sparse graphs with row-access. 
-   * 
-   * <b>Local vs. Global</b>
-   * 
-   * Graph entries can be added using either local or global coordinates for the indices. The 
-   * accessors isGloballyIndexed() and isLocallyIndexed() indicate whether the indices are currently
-   * stored as global or local indices. Many of the class methods are divided into global and local 
-   * versions, which differ only in whether they accept/return indices in the global or local coordinate
-   * space. Some of these methods may only be used if the graph coordinates are in the appropriate coordinates.
-   * For example, getGlobalRowView() returns a View to the indices in global coordinates; if the indices are 
-   * not in global coordinates, then no such View can be created.
-   * 
-   * The global/local distinction does distinguish between operation on the global/local graph. Almost all methods 
-   * operate on the local graph, i.e., the rows of the graph associated with the local node, per the distribution specified
-   * by the row map. Access to non-local rows requires performing an explicit communication via the import/export capabilities of the
-   * CrsGraph object; see DistObject. However, the method insertGlobalValues() is an exception to this rule, as non-local rows are 
-   * allowed to be added via the local graph. These rows are stored in the local graph and communicated to the appropriate node 
-   * on the next call to globalAssemble() or fillComplete() (the latter calls the former).
+
+   \tparam LocalOrdinal A ordinal type for lists of local
+     indices. This specifies the \c LocalOrdinal type for Map objects
+     used by this graph.
+
+   \tparam GlobalOrdinal A ordinal type for lists of global
+     indices. This specifies the \c GlobalOrdinal type for Map objects
+     used by this graph.
+
+   \tparam Node A shared-memory node class, fulfilling the \ref
+     kokkos_node_api "Kokkos Node API"
+
+   \tparam LocalMatOps A local sparse matrix operations class,
+     fulfiling the \ref kokkos_crs_ops "Kokkos CRS Ops API".
+
+   This class allows the construction of sparse graphs with row-access. 
+   
+   <b>Local vs. Global</b>
+   
+   Graph entries can be added using either local or global coordinates
+   for the indices. The accessors isGloballyIndexed() and
+   isLocallyIndexed() indicate whether the indices are currently
+   stored as global or local indices. Many of the class methods are
+   divided into global and local versions, which differ only in
+   whether they accept/return indices in the global or local
+   coordinate space. Some of these methods may only be used if the
+   graph coordinates are in the appropriate coordinates.  For example,
+   getGlobalRowView() returns a View to the indices in global
+   coordinates; if the indices are not in global coordinates, then no
+   such View can be created.
+    
+   The global/local distinction does distinguish between operation on
+   the global/local graph. Almost all methods operate on the local
+   graph, i.e., the rows of the graph associated with the local node,
+   per the distribution specified by the row map. Access to non-local
+   rows requires performing an explicit communication via the
+   import/export capabilities of the CrsGraph object; see
+   DistObject. However, the method insertGlobalValues() is an
+   exception to this rule, as non-local rows are allowed to be added
+   via the local graph. These rows are stored in the local graph and
+   communicated to the appropriate node on the next call to
+   globalAssemble() or fillComplete() (the latter calls the former).
    */
   template <class LocalOrdinal, 
             class GlobalOrdinal = LocalOrdinal, 
             class Node = Kokkos::DefaultNode::DefaultNodeType,
             class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps >
-  class CrsGraph : public RowGraph<LocalOrdinal,GlobalOrdinal,Node>,
-                   public DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> {
+  class CrsGraph : 
+    public RowGraph<LocalOrdinal,GlobalOrdinal,Node>,
+    public DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>,
+    public Teuchos::ParameterListAcceptorDefaultBase
+  {
     template <class S, class LO, class GO, class N, class SpMatOps>
     friend class CrsMatrix;
 
-    public: 
-      typedef LocalOrdinal  local_ordinal_type;
-      typedef GlobalOrdinal global_ordinal_type;
-      typedef Node          node_type;
+  public: 
+    typedef LocalOrdinal                         local_ordinal_type;
+    typedef GlobalOrdinal                        global_ordinal_type;
+    typedef Node                                 node_type;
+    typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
-      //! @name Constructor/Destructor Methods
-      //@{ 
+    //! @name Constructor/Destructor Methods
+    //@{ 
 
-      //! Constructor with fixed number of indices per row.
-      CrsGraph(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype = DynamicProfile);
+    /// \brief Constructor specifying fixed number of entries for each row.
+    ///
+    /// \param rowMap [in] Distribution of rows of the graph.
+    ///
+    /// \param maxNumEntriesPerRow [in] Maximum number of graph
+    ///   entries per row.  If pftype==DynamicProfile, this is only a
+    ///   hint, and you can set this to zero without affecting
+    ///   correctness.  If pftype==StaticProfile, this sets the amount
+    ///   of storage allocated, and you cannot exceed this number of
+    ///   entries in any row.
+    ///
+    /// \param pftype [in] Whether to allocate storage dynamically
+    ///   (DynamicProfile) or statically (StaticProfile).
+    ///
+    /// \param plist [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    CrsGraph (const Teuchos::RCP<const map_type>& rowMap, 
+	      size_t maxNumEntriesPerRow, 
+	      ProfileType pftype = DynamicProfile,
+	      const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
 
-      //! Constructor with variable number of indices per row.
-      CrsGraph(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype = DynamicProfile);
+    /// \brief Constructor specifying (possibly different) number of entries in each row.
+    ///
+    /// \param rowMap [in] Distribution of rows of the graph.
+    ///
+    /// \param NumEntriesPerRowToAlloc [in] Maximum number of graph
+    ///   entries to allocate for each row.  If
+    ///   pftype==DynamicProfile, this is only a hint.  If
+    ///   pftype==StaticProfile, this sets the amount of storage
+    ///   allocated, and you cannot exceed the allocated number of
+    ///   entries for any row.
+    ///
+    /// \param pftype [in] Whether to allocate storage dynamically
+    ///   (DynamicProfile) or statically (StaticProfile).
+    ///
+    /// \param plist [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
+	      const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc, 
+	      ProfileType pftype = DynamicProfile,
+	      const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
 
-      //! Constructor with fixed number of indices per row and specified column map.
-      /** The column map will be used to filter any graph indices inserted using insertLocalIndices() or insertGlobalIndices().
-        */
-      CrsGraph(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype = DynamicProfile);
+    /// \brief Constructor specifying column Map and fixed number of entries for each row.
+    ///
+    /// The column Map will be used to filter any graph indices
+    /// inserted using insertLocalIndices() or insertGlobalIndices().
+    ///
+    /// \param rowMap [in] Distribution of rows of the graph.
+    ///
+    /// \param colMap [in] Distribution of columns of the graph.
+    ///
+    /// \param maxNumEntriesPerRow [in] Maximum number of graph
+    ///   entries per row.  If pftype==DynamicProfile, this is only a
+    ///   hint, and you can set this to zero without affecting
+    ///   correctness.  If pftype==StaticProfile, this sets the amount
+    ///   of storage allocated, and you cannot exceed this number of
+    ///   entries in any row.
+    ///
+    /// \param pftype [in] Whether to allocate storage dynamically
+    ///   (DynamicProfile) or statically (StaticProfile).
+    ///
+    /// \param plist [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
+	      const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap, 
+	      size_t maxNumEntriesPerRow, 
+	      ProfileType pftype = DynamicProfile,
+	      const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
 
-      //! Constructor with variable number of indices per row and specified column map.
-      /** The column map will be used to filter any graph indices inserted using insertLocalIndices() or insertGlobalIndices().
-        */
-      CrsGraph(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype = DynamicProfile);
+    /// \brief Constructor specifying column Map and number of entries in each row.
+    ///
+    /// The column Map will be used to filter any graph indices
+    /// inserted using insertLocalIndices() or insertGlobalIndices().
+    ///
+    /// \param rowMap [in] Distribution of rows of the graph.
+    ///
+    /// \param colMap [in] Distribution of columns of the graph.
+    ///
+    /// \param NumEntriesPerRowToAlloc [in] Maximum number of graph
+    ///   entries to allocate for each row.  If
+    ///   pftype==DynamicProfile, this is only a hint.  If
+    ///   pftype==StaticProfile, this sets the amount of storage
+    ///   allocated, and you cannot exceed the allocated number of
+    ///   entries for any row.
+    ///
+    /// \param pftype [in] Whether to allocate storage dynamically
+    ///   (DynamicProfile) or statically (StaticProfile).
+    ///
+    /// \param plist [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
+	      const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap, 
+	      const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, 
+	      ProfileType pftype = DynamicProfile,
+	      const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
 
-      // !Destructor.
-      virtual ~CrsGraph();
+    //! Destructor.
+    virtual ~CrsGraph();
 
-      //@}
+    //@}
+
+    //! @name Implementation of Teuchos::ParameterListAcceptor
+    //@{ 
+
+    //! Set the given list of parameters (must be nonnull).
+    void setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist);
+
+    //! Default parameter list suitable for validation.
+    Teuchos::RCP<const Teuchos::ParameterList>
+    getValidParameters () const;
+
+    //@}
 
       //! @name Insertion/Removal Methods
       //@{ 

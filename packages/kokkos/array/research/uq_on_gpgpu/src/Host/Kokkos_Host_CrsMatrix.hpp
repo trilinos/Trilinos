@@ -82,7 +82,7 @@ public:
     double sum = 0 ;
 
     for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
-      sum += m_A.values(iEntry) * m_x( m_A.graph.column(iEntry) );
+      sum += m_A.values(iEntry) * m_x( m_A.graph(iEntry) );
     }
 
     m_y(iRow) = sum ;

@@ -53,15 +53,10 @@
 
 namespace Kokkos {
 
-  //=========================================================================================================================
-  // 
-  // A host-resident CrsMatrix
-  // 
-  //=========================================================================================================================
-
-  /** \brief A default host-compute compressed-row sparse matrix.
-      \ingroup kokkos_crs_ops
-   */
+  /// \class CrsMatrixHostCompute
+  /// \brief A compressed-row sparse matrix that lives in host memory.
+  /// \ingroup kokkos_crs_ops
+  ///
   template <class Scalar, 
             class Ordinal, 
             class Node,
@@ -117,18 +112,22 @@ namespace Kokkos {
     //! Indicates that the graph is filled, but empty.
     bool isEmpty() const;
 
-    //! Indicatest that the graph has been finalized.
+    //! Whether the graph has been finalized.
     bool isFinalized() const;
 
-    //! \brief Indicate that the structure is 1D.
-    //! It will never be the case that both is1DStructure() and is2DStructure() return true.
+    /// \brief Whether the structure is 1D.
+    ///
+    /// It will never be the case that both \c is1DStructure() and
+    /// \c is2DStructure() return true.
     bool is1DStructure() const;
 
-    //! \brief Indicate that the structure is 2D.
-    //! It will never be the case that both is1DStructure() and is2DStructure() return true.
+    /// \brief Whether the structure is 2D.
+    ///
+    /// It will never be the case that both \c is1DStructure() and \c
+    /// is2DStructure() return true.
     bool is2DStructure() const;
 
-    //! \brief Indicate that the stucture is optimized.
+    //! Whether the sparse matrix stucture is optimized.
     bool isOptimized() const;
 
     //! Submit the values for 1D storage.
@@ -347,21 +346,14 @@ namespace Kokkos {
     isFinalized_ = true;
   }
 
-
-  //=========================================================================================================================
-  // 
-  // A device-resident CrsMatrix
-  // 
-  //=========================================================================================================================
-
-
-  /** \brief A default device-compute compressed-row sparse matrix.
-      \ingroup kokkos_crs_ops
-
-      This is externally identical to the host-based matrix; in fact, it
-      derives from CrsMatrixHostCompute. The difference is that that it
-      contains additional storage and logic for device-bound compute buffers.
-   */
+  /// \class CrsMatrixDeviceCompute
+  /// \brief A compressed-row sparse matrix stored on a device.
+  /// \ingroup kokkos_crs_ops
+  ///
+  /// This is externally identical to the host-based matrix; in fact,
+  /// it derives from CrsMatrixHostCompute. The difference is that
+  /// that it contains additional storage and logic for device-bound
+  /// compute buffers.
   template <class Scalar,
             class Ordinal, 
             class Node,
@@ -372,7 +364,7 @@ namespace Kokkos {
     //! @name Constructors/Destructor
     //@{
 
-    //! Default constructor with a no graph (must be set later).
+    //! Default constructor with no graph (must be set later).
     CrsMatrixDeviceCompute();
 
     //! Constructor with a matrix-owned non-const graph
@@ -381,12 +373,12 @@ namespace Kokkos {
     //! Constructor with a non-owned const graph.
     CrsMatrixDeviceCompute(const CrsGraphDeviceCompute<Ordinal,Node,LocalMatOps> &graph);
 
-    //! CrsMatrixDeviceCompute Destructor
+    //! Destructor
     ~CrsMatrixDeviceCompute();
 
     //@}
 
-    //! @name Methods over-riding CrsGraphDeviceCompute.
+    //! @name Methods overriding CrsGraphDeviceCompute.
     //@{
 
     //! Set matrix-owned graph.

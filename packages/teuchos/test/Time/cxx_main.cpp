@@ -110,6 +110,7 @@ int main(int argc, char* argv[])
     {
       double x = 0.0;
       x = sqrtFunc();
+      (void)x; // Not used!
     }
 
     /* time a reentrant function */
@@ -135,6 +136,7 @@ int main(int argc, char* argv[])
       {
         double x = 0.0;
         x = localFunc();
+        (void)x; // Not used!
       }
     }
 
@@ -143,6 +145,7 @@ int main(int argc, char* argv[])
     {
       double x = 0.0;
       x = exceptFunc();
+      (void)x; // Not used!
     }
 
       

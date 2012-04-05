@@ -45,6 +45,7 @@
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_Array.hpp"	
 #include "Teuchos_Version.hpp"
+#include "Teuchos_as.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -53,6 +54,7 @@ int main(int argc, char* argv[])
   using Teuchos::RCP;
   using Teuchos::Array;
   using Teuchos::tuple;
+  using Teuchos::as;
 
   std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
@@ -83,7 +85,7 @@ int main(int argc, char* argv[])
      correct data type.  However, in the case where the compiler is not casting the input
      value to the expected data type, an explicit cast can be used with the ``set'' method:
   */
-  myPL.set("Tolerance", (float)(1e-10), "The tolerance used for the convergence check");
+  myPL.set("Tolerance", as<float>(1e-10), "The tolerance used for the convergence check");
 
   /* Reference-counted pointers can also be passed through a ParameterList.
      To illustrate this we will use the Array class to create an array of 10 doubles
@@ -110,21 +112,27 @@ int main(int argc, char* argv[])
   // Has a solver been chosen?
   bool solver_defined = false, prec_defined = false, dtol_double = false;
   solver_defined = myPL.isParameter("Solver");
+  TEUCHOS_ASSERT_EQUALITY(solver_defined, true);  
   // Has a preconditioner been chosen?
   prec_defined = myPL.isSublist("Preconditioner"); 
+  TEUCHOS_ASSERT_EQUALITY(prec_defined, true);  
   // Has a tolerance been chosen and is it a double-precision number?
   bool tol_double = false;
   tol_double = myPL.INVALID_TEMPLATE_QUALIFIER isType<double>("Tolerance");
+  TEUCHOS_ASSERT_EQUALITY(tol_double, false); // It is 'float'!
   // Has a drop tolerance been chosen and is it a double-precision number?
   dtol_double = Teuchos::isParameterType<double>(Prec_List, "Drop Tolerance"); 
+  TEUCHOS_ASSERT_EQUALITY(dtol_double, true);
 
   // Parameters can be retrieved from the parameter list in quite a few ways:
   // Get method that creates and sets the parameter if it doesn't exist.
   int its = -1;
   its = myPL.get("Max Iters", 1200);
+  TEUCHOS_ASSERT_EQUALITY(its, 1550); // Was already ste
   // Get method that retrieves a parameter of a particular type that must exist.
   float tol = -1.0;
   tol = myPL.get<float>("Tolerance");
+  TEUCHOS_ASSERT_EQUALITY(tol, as<float>(1e-10));
   // Get the "Solver" value and validate!
   std::string
     solver = solverValidator->validateString(

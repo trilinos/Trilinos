@@ -41,18 +41,12 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_IMPL_MDARRAYINDEXMAP_HPP
-#define KOKKOS_IMPL_MDARRAYINDEXMAP_HPP
+#ifndef KOKKOS_CUDA_INDEXMAP_HPP
+#define KOKKOS_CUDA_INDEXMAP_HPP
 
-namespace Kokkos {
-namespace Impl {
+#include <Kokkos_Cuda_macros.hpp>
+#include <impl/Kokkos_IndexMapLeft_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
 
-template< class MemorySpace > class MDArrayIndexMapRight ;
-template< class MemorySpace > class MDArrayIndexMapLeft ;
-
-} // namespace Impl
-} // namespace Kokkos
-
-#endif /* KOKKOS_IMPL_MDARRAYINDEXMAP_HPP */
-
+#endif /* #ifndef KOKKOS_CUDA_INDEXMAP_HPP */
 

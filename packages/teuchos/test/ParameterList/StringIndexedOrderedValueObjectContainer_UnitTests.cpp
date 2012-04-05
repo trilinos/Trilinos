@@ -138,7 +138,7 @@ TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, basic_set_get )
 {
 
   typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
-  typedef SIOVOCB::Ordinal Ordinal;
+  //typedef SIOVOCB::Ordinal Ordinal;
   ECHO(StringIndexedOrderedValueObjectContainer<int> oc);
 
   ECHO(const Ordinal my_int_1_idx1 = oc.setObj("my_int_1", 3));
@@ -171,7 +171,7 @@ TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, set_two_keep_ref )
   // Test test makes sure that objects keep the same address when adding new
   // objects.
   typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
-  typedef SIOVOCB::Ordinal Ordinal;
+  //typedef SIOVOCB::Ordinal Ordinal;
   ECHO(StringIndexedOrderedValueObjectContainer<int> oc);
   ECHO(const Ordinal my_int_1_idx = oc.setObj("my_int_1", 3));
   ECHO(const int &my_int_1 = *oc.getObjPtr(my_int_1_idx));
@@ -186,7 +186,7 @@ TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, getObjOrdinalIndex 
 {
 
   typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
-  typedef SIOVOCB::Ordinal Ordinal;
+  //typedef SIOVOCB::Ordinal Ordinal;
   ECHO(StringIndexedOrderedValueObjectContainer<int> oc);
   ECHO(oc.setObj("my_int_1", 3));
   TEST_EQUALITY_CONST(oc.getObjOrdinalIndex("my_int_1"), 0);
@@ -199,7 +199,7 @@ TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, getObjOrdinalIndex 
 TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, set_and_set_again )
 {
 
-  typedef StringIndexedOrderedValueObjectContainerBase::Ordinal Ordinal;
+  //typedef StringIndexedOrderedValueObjectContainerBase::Ordinal Ordinal;
   ECHO(StringIndexedOrderedValueObjectContainer<int> oc);
 
   ECHO(const Ordinal my_int_1_idx1 = oc.setObj("my_int_1", 3));

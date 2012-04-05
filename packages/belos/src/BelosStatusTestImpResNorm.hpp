@@ -544,7 +544,7 @@ StatusType StatusTestImpResNorm<ScalarType,MV,OP>::checkStatus( Iteration<Scalar
   lclInd.resize(have);
   
   // Now check the exact residuals
-  if (have) {
+  if (have) { // At least one RHS implicit residual has converged
     Teuchos::RCP<MV> cur_update = iSolver->getCurrentUpdate();
     curSoln_ = lp.updateSolution( cur_update );
     Teuchos::RCP<MV> cur_res = MVT::Clone( *curSoln_, MVT::GetNumberVecs( *curSoln_) );
@@ -573,17 +573,49 @@ StatusType StatusTestImpResNorm<ScalarType,MV,OP>::checkStatus( Iteration<Scalar
     // Check if we want to keep the linear system and try to reduce the residual more.
     int have2 = 0;
     for (int i=0; i<have; ++i) {
+      // FIXME (mfh 28 Mar 2012) This looks like it might be broken.
+      // Third branch will drop currTolerance_, and then iteration
+      // hits the second branch below.  It could be that the explicit
+      // residual now meets the original tolerance, but the diff is
+      // bigger than the new, _smaller_ tolerance, so the check
+      // unfairly reports loss of accuracy.  Andy S. plans some
+      // experiments to see if this is really happening, but I do
+      // suspect that the check below should use the original
+      // tolerance, not the new tolerance.  (Explicit residual should
+      // only have to meet the original tolerance.)
+      //
+      // testvector_ contains the implicit (i.e., recursive, computed
+      // by the algorithm) (possibly scaled) residuals.
+      //
+      // tmp_testvector contains the explicit (i.e., ||B-AX||)
+      // (possibly scaled) residuals.
       MagnitudeType diff = Teuchos::ScalarTraits<MagnitudeType>::magnitude( testvector_[ ind_[i] ]-tmp_testvector[ i ] );
-      if (tmp_testvector[ i ] <= currTolerance_) {
+      // FIXME (mfh 28 Mar 2012) For the first branch below, the
+      // explicit residual (tmp_testvector[i]) should only have to
+      // meet the _original_ tolerance, not the new tolerance.  We're
+      // only checking this because the implicit residual has already
+      // met the current tolerance.
+      if (tmp_testvector[ i ] <= currTolerance_) { 
+	// If my explicit residual norm is <= the convergence
+	// tolerance, this RHS has converged.
         ind_[have2] = ind_[i];
         have2++;
       }
       else if (diff > currTolerance_) {
+	// Otherwise, if the absolute difference between the explicit
+	// and implicit residuals is bigger than the convergence
+	// tolerance, report a loss of accuracy, but mark this RHS
+	// converged.  Note that currTolerance_ may have been changed
+	// by the third branch below.
         lossDetected_ = true;
         ind_[have2] = ind_[i];
         have2++;
       } 
       else {
+	// Otherwise, the explicit and implicit residuals are pretty
+	// close together, and the implicit residual has converged,
+	// but the explicit residual hasn't converged.  Reduce the
+	// convergence tolerance by some formula related to the diff.
         currTolerance_ = currTolerance_ - 1.5*diff;
         while (currTolerance_ < 0.0) currTolerance_ += 0.1*diff;
       }  

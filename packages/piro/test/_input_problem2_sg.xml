@@ -88,6 +88,7 @@
     
   <ParameterList name="Stochastic Galerkin">
     <Parameter name="SG Method" type="string" value="Direct"/>
+    <!--Parameter name="SG Method" type="string" value="Non-intrusive"/-->
     <Parameter name="Number of Spatial Processors" type="int" value="1"/>
     <Parameter name="Triple Product Size" type="string" value="Full"/>
     <ParameterList name="Basis">

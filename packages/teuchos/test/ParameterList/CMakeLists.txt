@@ -20,11 +20,11 @@ TRIBITS_ADD_LIBRARY(
   DEPLIBS teuchos
   )
 
-SET(SerializationFiles 
+SET(PLXMLTestFiles 
     BadRootElement.xml BadParameterListElement.xml
     NoNameAttribute.xml NoTypeAttribute.xml NoValueAttribute.xml 
 	  CantFindParameterEntryConverter.xml 
-    DuplicateParameterIDs.xml )
+    DuplicateParameterIDs.xml DuplicateSublists.xml )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ParameterList_test 
@@ -60,8 +60,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ParameterList_XMLDuplicateSublists
+  SOURCES ParameterList_XMLDuplicateSublists.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  ARGS --filename=DuplicateSublists.xml
+  )
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(ParameterListFileCopies
-  DEST_FILES ${SerializationFiles}
+  DEST_FILES ${PLXMLTestFiles}
   SOURCE_DIR ${PACKAGE_SOURCE_DIR}/test/ParameterList
   EXEDEPS ParameterList_SerializationTest
 )

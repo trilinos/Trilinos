@@ -461,12 +461,32 @@ void send(
   const Ordinal count, const Packet sendBuffer[], const int destRank
   );
 
+/** \brief Synchronously send objects that use values semantics to another process.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet>
+void ssend(
+  const Comm<Ordinal>& comm,
+  const Ordinal count, const Packet sendBuffer[], const int destRank
+  );
+
 /** \brief Send a single object that use values semantics to another process.
  *
  * \relates Comm
  */
 template<typename Ordinal, typename Packet>
 void send(
+  const Comm<Ordinal>& comm,
+  const Packet &send, const int destRank
+  );
+
+/** \brief Synchronously send a single object that use values semantics to another process.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet>
+void ssend(
   const Comm<Ordinal>& comm,
   const Packet &send, const int destRank
   );
@@ -666,19 +686,60 @@ void waitAll(
   const ArrayView<RCP<CommRequest> > &requests
   );
 
-/** \brief Wait on on a single request
- *
- * Blocks until the communication operation associated with the CommRequest
- * object has completed.
- *
- * \relates Comm
- */
+/// \brief Wait on communication requests, and return their statuses.
+///
+/// \pre requests.size() == statuses.size()
+///
+/// \pre For i in 0, 1, ..., requests.size()-1, requests[i] is
+///   either null or requests[i] was returned by an ireceive() or
+///   isend().
+///
+/// \post For i in 0, 1, ..., requests.size()-1,
+///   requests[i].is_null() is true.
+///
+/// \param requests [in/out] On input: the requests on which to
+///   wait.  On output: all set to null.
+///
+/// \param statuses [out] The status results of waiting on the
+///   requests.
+///
+/// This function blocks until all communication operations associated
+/// with the CommRequest objects have completed.
+///
+/// \relates Comm
 template<typename Ordinal>
-void wait(
-  const Comm<Ordinal>& comm,
-  const Ptr<RCP<CommRequest> > &request
-  );
+void 
+waitAll (const Comm<Ordinal>& comm,
+	 const ArrayView<RCP<CommRequest> >& requests,
+	 const ArrayView<RCP<CommStatus<Ordinal> > >& statuses);
 
+/// \brief Wait on a single communication request, and return its status.
+///
+/// \param request [in/out] On input: request is not null, and
+/// *request is either null (in which case this function does
+/// nothing) or an RCP of a valid CommRequest instance representing
+/// an outstanding communication request.  On output: If the
+/// communication request completed successfully, we set *request to
+/// null, indicating that the request has completed.  (This helps
+/// prevent common bugs like trying to complete the same request
+/// twice.)
+///
+/// \return A CommStatus instance representing the result of
+/// completing the request.  In the case of a nonblocking receive
+/// request, you can query the CommStatus instance for the process
+/// ID of the sending process.  (This is useful for receiving from
+/// any process via MPI_ANY_SOURCE.)
+/// 
+/// \pre !is_null(request) (that is, the Ptr is not null).
+/// \post is_null(*request) (that is, the RCP is null).
+///
+/// This function blocks until the communication operation associated
+/// with the CommRequest object has completed.
+///
+/// \relates Comm
+template<typename Ordinal>
+RCP<CommStatus<Ordinal> >
+wait (const Comm<Ordinal>& comm, const Ptr<RCP<CommRequest> >& request);
 
 //
 // Standard reduction subclasses for objects that use value semantics
@@ -1580,6 +1641,24 @@ void Teuchos::send(
     );
 }
 
+template<typename Ordinal, typename Packet>
+void Teuchos::ssend(
+  const Comm<Ordinal>& comm,
+  const Ordinal count, const Packet sendBuffer[], const int destRank
+  )
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::CommHelpers: ssend<"
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
+    <<">( value type )"
+    );
+  ConstValueTypeSerializationBuffer<Ordinal,Packet>
+    charSendBuffer(count,sendBuffer);
+  comm.ssend(
+    charSendBuffer.getBytes(),charSendBuffer.getCharBuffer()
+    ,destRank
+    );
+}
 
 template<typename Ordinal, typename Packet>
 void Teuchos::send(
@@ -1590,6 +1669,14 @@ void Teuchos::send(
   Teuchos::send<Ordinal,Packet>(comm,1,&send,destRank);
 }
 
+template<typename Ordinal, typename Packet>
+void Teuchos::ssend(
+  const Comm<Ordinal>& comm,
+  const Packet &send, const int destRank
+  )
+{
+  Teuchos::ssend<Ordinal,Packet>(comm,1,&send,destRank);
+}
 
 template<typename Ordinal, typename Packet>
 void Teuchos::send(
@@ -1856,13 +1943,21 @@ void Teuchos::waitAll(
 
 
 template<typename Ordinal>
-void Teuchos::wait(
-  const Comm<Ordinal>& comm,
-  const Ptr<RCP<CommRequest> > &request
-  )
+void 
+Teuchos::waitAll (const Comm<Ordinal>& comm,
+		  const ArrayView<RCP<CommRequest> >& requests,
+		  const ArrayView<RCP<CommStatus<Ordinal> > >& statuses)
 {
-  comm.wait(request);
-  // NOTE: This will release the ArrayRCP to the buffer of data!
+  comm.waitAll (requests, statuses);
+}
+
+
+template<typename Ordinal>
+Teuchos::RCP<Teuchos::CommStatus<Ordinal> >
+Teuchos::wait (const Comm<Ordinal>& comm,
+	       const Ptr<RCP<CommRequest> > &request)
+{
+  return comm.wait (request);
 }
 
 

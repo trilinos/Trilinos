@@ -91,23 +91,29 @@ namespace Tpetra {
     v = val;
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::CrsMatrix(
-                                          const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, 
-                                          size_t maxNumEntriesPerRow, 
-                                          ProfileType pftype)
+  template <class Scalar, 
+	    class LocalOrdinal, 
+	    class GlobalOrdinal, 
+	    class Node, 
+	    class LocalMatOps>
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, 
+	     size_t maxNumEntriesPerRow, 
+	     ProfileType pftype,
+	     const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : DistObject<char, LocalOrdinal,GlobalOrdinal,Node>(rowMap)
   , lclMatOps_(rowMap->getNode())
   {
     try {
-      myGraph_ = rcp( new Graph(rowMap,maxNumEntriesPerRow,pftype) );
+      // FIXME (mfh 02 Apr 2012) For now, we just pass the parameter
+      // list straight into the CrsGraph constructor.  Later, we may
+      // make the CrsGraph parameter list a sublist.
+      myGraph_ = rcp (new Graph (rowMap, maxNumEntriesPerRow, pftype, plist));
     }
     catch (std::exception &e) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-          typeName(*this) << "::CrsMatrix(): caught exception while allocating CrsGraph object: " 
-          << std::endl << e.what() << std::endl);
+        typeName(*this) << "::CrsMatrix(): caught exception while allocating "
+        "CrsGraph object: " << std::endl << e.what ());
     }
     staticGraph_ = myGraph_;
     lclMatrix_.setOwnedGraph(myGraph_->getLocalGraphNonConst());
@@ -116,23 +122,27 @@ namespace Tpetra {
     // which would allow it to persist past the destruction of *this
     sameScalarMultiplyOp_ = createCrsMatrixMultiplyOp<Scalar>( rcp(this,false).getConst() );
     resumeFill();
-    //
     checkInternalState();
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::CrsMatrix(
-                                          const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, 
-                                          const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, 
-                                          ProfileType pftype)
+  template <class Scalar, 
+	    class LocalOrdinal, 
+	    class GlobalOrdinal, 
+	    class Node, 
+	    class LocalMatOps>
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, 
+	     const Teuchos::ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, 
+	     ProfileType pftype,
+	     const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : DistObject<char, LocalOrdinal,GlobalOrdinal,Node>(rowMap)
   , lclMatOps_(rowMap->getNode())
   {
     try {
-      myGraph_ = rcp( new Graph(rowMap,NumEntriesPerRowToAlloc,pftype) );
+      // FIXME (mfh 02 Apr 2012) For now, we just pass the parameter
+      // list straight into the CrsGraph constructor.  Later, we may
+      // make the CrsGraph parameter list a sublist.
+      myGraph_ = rcp (new Graph (rowMap, NumEntriesPerRowToAlloc, pftype, plist));
     }
     catch (std::exception &e) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
@@ -146,29 +156,33 @@ namespace Tpetra {
     // which would allow it to persist past the destruction of *this
     sameScalarMultiplyOp_ = createCrsMatrixMultiplyOp<Scalar>( rcp(this,false).getConst() );
     resumeFill();
-    //
     checkInternalState();
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::CrsMatrix(
-                                          const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, 
-                                          const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, 
-                                          size_t maxNumEntriesPerRow, 
-                                          ProfileType pftype)
+  template <class Scalar, 
+	    class LocalOrdinal, 
+	    class GlobalOrdinal, 
+	    class Node, 
+	    class LocalMatOps>
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
+	     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap, 
+	     size_t maxNumEntriesPerRow, 
+	     ProfileType pftype,
+	     const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : DistObject<char, LocalOrdinal,GlobalOrdinal,Node>(rowMap)
   , lclMatOps_(rowMap->getNode())
   {
     try {
-      myGraph_ = rcp( new Graph(rowMap,colMap,maxNumEntriesPerRow,pftype) );
+      // FIXME (mfh 02 Apr 2012) For now, we just pass the parameter
+      // list straight into the CrsGraph constructor.  Later, we may
+      // make the CrsGraph parameter list a sublist.
+      myGraph_ = rcp (new Graph (rowMap, colMap, maxNumEntriesPerRow, pftype, plist));
     }
     catch (std::exception &e) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-          typeName(*this) << "::CrsMatrix(): caught exception while allocating CrsGraph object: " 
-          << std::endl << e.what() << std::endl);
+        typeName(*this) << "::CrsMatrix(): caught exception while allocating "
+        "CrsGraph object: " << std::endl << e.what ());
     }
     staticGraph_ = myGraph_;
     lclMatrix_.setOwnedGraph(myGraph_->getLocalGraphNonConst());
@@ -177,29 +191,34 @@ namespace Tpetra {
     // which would allow it to persist past the destruction of *this
     sameScalarMultiplyOp_ = createCrsMatrixMultiplyOp<Scalar>( rcp(this,false).getConst() );
     resumeFill();
-    //
     checkInternalState();
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::CrsMatrix(
-                                          const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, 
-                                          const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, 
-                                          const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, 
-                                          ProfileType pftype)
-  : DistObject<char, LocalOrdinal,GlobalOrdinal,Node>(rowMap)
-  , lclMatOps_(rowMap->getNode())
+  template <class Scalar, 
+	    class LocalOrdinal, 
+	    class GlobalOrdinal, 
+	    class Node, 
+	    class LocalMatOps>
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
+	     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap, 
+	     const Teuchos::ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, 
+	     ProfileType pftype,
+	     const Teuchos::RCP<Teuchos::ParameterList>& plist)
+  : DistObject<char, LocalOrdinal,GlobalOrdinal,Node> (rowMap)
+  , lclMatOps_ (rowMap->getNode ())
   {
     try {
-      myGraph_ = rcp( new Graph(rowMap,colMap,NumEntriesPerRowToAlloc,pftype) );
+      // FIXME (mfh 02 Apr 2012) For now, we just pass the parameter
+      // list straight into the CrsGraph constructor.  Later, we may
+      // make the CrsGraph parameter list a sublist.
+      myGraph_ = rcp (new Graph (rowMap, colMap, NumEntriesPerRowToAlloc, 
+				 pftype, plist));
     }
     catch (std::exception &e) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-          typeName(*this) << "::CrsMatrix(): caught exception while allocating CrsGraph object: " 
-          << std::endl << e.what() << std::endl);
+        typeName(*this) << "::CrsMatrix(): caught exception while allocating "
+	"CrsGraph object: " << std::endl << e.what ());
     }
     staticGraph_ = myGraph_;
     lclMatrix_.setOwnedGraph(myGraph_->getLocalGraphNonConst());
@@ -208,7 +227,6 @@ namespace Tpetra {
     // which would allow it to persist past the destruction of *this
     sameScalarMultiplyOp_ = createCrsMatrixMultiplyOp<Scalar>( rcp(this,false).getConst() );
     resumeFill();
-    //
     checkInternalState();
   }
 
@@ -219,23 +237,30 @@ namespace Tpetra {
 	   class Node, 
 	   class LocalMatOps>
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  CrsMatrix (const RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &graph)
-    : DistObject<char, LocalOrdinal,GlobalOrdinal,Node>(graph->getRowMap()),
-      staticGraph_(graph),
-      lclMatOps_(graph->getNode())
+  CrsMatrix (const RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &graph,
+	     const Teuchos::RCP<Teuchos::ParameterList>& plist)
+    : DistObject<char, LocalOrdinal,GlobalOrdinal,Node> (graph->getRowMap ()),
+      staticGraph_ (graph),
+      lclMatOps_ (graph->getNode ())
   {
+    // mfh 02 Apr 2012: Parameters ignored for now.  The CrsGraph has
+    // its own parameters which govern communication behavior.  We
+    // don't attempt to override them here, since the graph is passed
+    // in as const.
+    (void) plist; 
+
     const std::string tfecfFuncName("CrsMatrix(graph)");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(staticGraph_.is_null(), 
       std::runtime_error, ": When calling the CrsMatrix constructor that "
       "accepts a static graph, the pointer to the graph must not be null.");
-    // we prohibit the case where the graph is not yet filled
+    // We prohibit the case where the graph is not yet filled.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! staticGraph_->isFillComplete(), 
       std::runtime_error, ": The specified graph is not fill-complete. You "
       "must invoke fillComplete() on the graph before using it to construct a "
       "CrsMatrix.  Note that calling resumeFill() makes the graph not fill-"
       "complete, even if you had previously called fillComplete().  In that "
       "case, you must call fillComplete() on the graph again.");
-    lclMatrix_.setStaticGraph (staticGraph_->getLocalGraph());
+    lclMatrix_.setStaticGraph (staticGraph_->getLocalGraph ());
     // it is okay to create this now; this will prevent us from having to check for it on every call to apply()
     // we will use a non-owning rcp to wrap *this; this is safe as long as we do not shared sameScalarMultiplyOp_ with anyone, 
     // which would allow it to persist past the destruction of *this
@@ -653,13 +678,17 @@ namespace Tpetra {
     typename Graph::SLocalGlobalViews         inds_view;
     ArrayView<const Scalar> vals_view;
     if (lrow != LOT::invalid()) {
-      // if we have a column map, use it to filter the entries.
+      // We have to declare these Arrays here rather than in the
+      // hasColMap() if branch, so that views to them will remain
+      // valid for the whole scope.
       Array<GlobalOrdinal> filtered_indices;
       Array<Scalar>        filtered_values;
       if (hasColMap()) {
+	// If we have a column map, use it to filter the indices and
+	// corresponding values, so that we only insert entries into
+	// the columns we own.
         typename Graph::SLocalGlobalNCViews inds_ncview;
         ArrayView<Scalar> vals_ncview;
-        // filter indices and values through the column map
         filtered_indices.assign(indices.begin(), indices.end());
         filtered_values.assign(values.begin(), values.end());
         inds_ncview.ginds = filtered_indices();
@@ -667,7 +696,7 @@ namespace Tpetra {
         inds_view.ginds = filtered_indices(0,numFilteredEntries);
         vals_view       = filtered_values(0,numFilteredEntries);
       }
-      else {
+      else { // we don't have a column Map.
         inds_view.ginds = indices;
         vals_view       = values;
       }
@@ -679,26 +708,38 @@ namespace Tpetra {
         const size_t newNumEntries = curNumEntries + numFilteredEntries;
         if (newNumEntries > rowInfo.allocSize) {
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(getProfileType() == StaticProfile, std::runtime_error, ": new indices exceed statically allocated graph structure.");
-          TPETRA_EFFICIENCY_WARNING(true,std::runtime_error,
-              "::insertGlobalValues(): Pre-allocated space has been exceeded, requiring new allocation. To improve efficiency, suggest larger allocation.");
-          // update allocation only as much as necessary
+          TPETRA_EFFICIENCY_WARNING(true, std::runtime_error, "::insertGlobal"
+           "Values(): Preallocated space has been exceeded, requiring new "
+           "allocation. To improve efficiency, suggest a larger per-row "
+           "allocation in CrsMatrix's constructor.");
+          // Update allocation only as much as necessary
           rowInfo = myGraph_->template updateAllocAndValues<GlobalIndices,Scalar>(rowInfo, newNumEntries, values2D_[lrow]);
         }
         if (isGloballyIndexed()) {
+	  // <GlobalIndices, GlobalIndices> template parameters
+	  // involve getGlobalViewNonConst() and direct copying, which
+	  // should be reasonably fast.
           myGraph_->template insertIndicesAndValues<GlobalIndices,GlobalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), vals_view.begin());
         }
         else {
+	  // <GlobalIndices, LocalIndices> template parameters involve
+	  // calling the Map's getLocalElement() once per entry to
+	  // insert.  This may be slow.
           myGraph_->template insertIndicesAndValues<GlobalIndices,LocalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), vals_view.begin());
         }
 #ifdef HAVE_TPETRA_DEBUG
         {
           const size_t chkNewNumEntries = myGraph_->getNumEntriesInLocalRow(lrow);
-          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(chkNewNumEntries != newNumEntries, std::logic_error, ": Internal logic error. Please contact Tpetra team.");
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(chkNewNumEntries != newNumEntries, 
+            std::logic_error, ": There should be a total of " << newNumEntries 
+            << " entries in the row, but the graph now reports " << chkNewNumEntries
+            << " entries.  Please report this bug to the Tpetra developers.");
         }
-#endif
+#endif // HAVE_TPETRA_DEBUG
       }
     }
-    else {
+    else { // The calling process doesn't own the given row, so add
+	   // the new data to the list of nonlocals.
       typename ArrayView<const GlobalOrdinal>::iterator ind = indices.begin();
       typename ArrayView<const Scalar       >::iterator val =  values.begin();
       nonlocals_[globalRow].reserve( nonlocals_[globalRow].size() + indices.size() );
@@ -1127,10 +1168,10 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!isFillComplete(), std::runtime_error, ": matrix must be fill complete.");
     RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xp = null;
     if(getRangeMap()->isSameAs(*(x.getMap()))){
-      // Take from Epetra:
-      // If we have a non-trivial exporter, we must import elements that are 
-      // permuted or are on other processors.  (We will use the exporter to
-      // perform the import.)
+      // Take from Epetra: If we have a non-trivial exporter, we must
+      // import elements that are permuted or are on other processors.
+      // (We will use the exporter to perform the import ("reverse
+      // mode").)
       if(getCrsGraph()->getExporter() != null){
         RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tempVec
           = rcp(new Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(getRowMap()));
@@ -1144,8 +1185,10 @@ namespace Tpetra {
     else if(getRowMap()->isSameAs(*(x.getMap()))){
       xp = rcpFromRef(x);
     }
-    else{
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::runtime_error, ": The vector x must be the same as either the row map or the range map");
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::invalid_argument, ": The "
+        "input scaling vector x's Map must be the same as either the row Map or "
+        "the range Map of the CrsMatrix.");
     }
     ArrayRCP<const Scalar> vectorVals = xp->getData(0);
     ArrayView<Scalar> rowValues = null;
@@ -1573,16 +1616,21 @@ namespace Tpetra {
                                             OptimizeOption os) 
   {
     const std::string tfecfFuncName("fillComplete()");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isFillActive() == false || isFillComplete() == true, std::runtime_error, ": Matrix fill state must be active.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive() || isFillComplete(), 
+      std::runtime_error, ": Matrix fill state must be active (isFillActive() "
+      "must be true) before calling fillComplete().");
 #ifdef HAVE_TPETRA_DEBUG
     Teuchos::barrier( *getRowMap()->getComm() );
-#endif
+#endif // HAVE_TPETRA_DEBUG
+
     // allocate if unallocated
-    if (getCrsGraph()->indicesAreAllocated() == false) {
+    if (! getCrsGraph()->indicesAreAllocated()) {
       // allocate global, in case we do not have a column map
       allocateValues( GlobalIndices, GraphNotYetAllocated );
     }
-    // global assemble
+    // Global assemble, if we need to (we certainly don't need to if
+    // there's only one process).  This call only costs a single
+    // all-reduce if we don't need global assembly.
     if (getComm()->getSize() > 1) {
       globalAssemble();
     }
@@ -1600,28 +1648,31 @@ namespace Tpetra {
       os = DoNotOptimizeStorage;
     }
     //
-    if (isStaticGraph() == true) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC((staticGraph_->getDomainMap() != getDomainMap()) || (staticGraph_->getRangeMap() != getRangeMap()), std::runtime_error,
-          ": domain map and range map do not match maps in existing graph, and the graph cannot be changed because it was specified during matrix construction.");
+    if (isStaticGraph()) {
+      const bool domainMapsMatch = staticGraph_->getDomainMap() == getDomainMap();
+      const bool rangeMapsMatch = staticGraph_->getRangeMap() == getRangeMap();
+      // FIXME (mfh 19 Mar 2012) Why can't we allow the Maps to be
+      // different objects, but semantically the same (in the sense of
+      // isSameAs())?
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! domainMapsMatch || ! rangeMapsMatch, 
+        std::runtime_error, ": domain map and range map do not match maps in "
+        "existing graph, and the graph cannot be changed because it was given "
+        "to the CrsMatrix constructor as const.");
     }
     else {
       // set domain/range map: may clear the import/export objects
       myGraph_->setDomainRangeMaps(domainMap, rangeMap);
       // make column map
-      if (myGraph_->hasColMap() == false) {
+      if (! myGraph_->hasColMap()) {
         myGraph_->makeColMap();
       }
       // make indices local
-      if (myGraph_->isGloballyIndexed() == true) {
+      if (myGraph_->isGloballyIndexed()) {
         myGraph_->makeIndicesLocal();
       }
-      // sort entries
       sortEntries();
-      // merge entries
       mergeRedundantEntries();
-      // make import/export objects
-      myGraph_->makeImportExport();
-      // compute global constants
+      myGraph_->makeImportExport(); // Make Import and Export objects
       myGraph_->computeGlobalConstants();
       myGraph_->fillComplete_ = true;
       myGraph_->checkInternalState();

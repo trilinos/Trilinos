@@ -380,7 +380,7 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Triutils,Galeri"/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="SuperLUDist,ParMETIS,UMFPACK,SuperLU,BLACS,SCALAPACK,MUMPS,TAUCS,PARDISO_MKL"/>
+    <LIB_OPTIONAL_DEP_TPLS value="SuperLUDist,ParMETIS,UMFPACK,SuperLU,BLACS,SCALAPACK,MUMPS,TAUCS,PARDISO_MKL,CSparse"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
@@ -1143,7 +1143,7 @@
     <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt,Isorropia,Amesos,AztecOO,Belos,Ifpack,ML,NOX,Zoltan,STK"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="Amesos,Isorropia,Epetra,EpetraExt,Ifpack,Intrepid,Pamgen,AztecOO,ML,Zoltan,STK,Teko"/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Amesos,Isorropia,Epetra,EpetraExt,Ifpack,Intrepid,Pamgen,AztecOO,ML,Zoltan,STK,Teko,Tpetra"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>
@@ -1205,7 +1205,7 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="AztecOO,Stratimikos,Tpetra,Belos,Ifpack2"/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="ForUQTK,CUDA,Thrust"/>
+    <LIB_OPTIONAL_DEP_TPLS value="ForUQTK,CUDA,Thrust,Clp,GLPK"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>

@@ -83,8 +83,8 @@ public:
     ASSERT_FALSE(hy);
     ASSERT_FALSE(hz);
 
-    dx = Kokkos::create_labeled_mdarray<T,device> ( "dx" , NP , N1 , N2 );
-    dy = Kokkos::create_labeled_mdarray<T,device> ( "dy" , NP , N1 , N2 );
+    dx = Kokkos::create_mdarray<dView> ( "dx" , NP , N1 , N2 );
+    dy = Kokkos::create_mdarray<dView> ( "dy" , NP , N1 , N2 );
 
     ASSERT_TRUE(dx);
     ASSERT_TRUE(dy);

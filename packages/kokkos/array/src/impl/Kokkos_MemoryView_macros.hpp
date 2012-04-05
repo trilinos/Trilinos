@@ -174,6 +174,91 @@ public:
     { return m_tracker.test_support_view_count(); }
 };
 
+//----------------------------------------------------------------------------
+
+template<>
+class MemoryView< void , KOKKOS_MACRO_DEVICE::memory_space > {
+public:
+  typedef void                               value_type ;
+  typedef KOKKOS_MACRO_DEVICE::memory_space  memory_space ;
+  typedef KOKKOS_MACRO_DEVICE::size_type     size_type ;
+  typedef MemoryView< void , Host >          HostMirror ;
+
+  /*------------------------------------------------------------------*/
+
+#if defined(KOKKOS_MACRO_DEVICE_FUNCTION)
+
+  /** \brief  Query value at offset */
+  template< typename iType >
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator[]( const iType & ) const {}
+
+#endif /* defined(KOKKOS_MACRO_DEVICE_FUNCTION) */
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  void * ptr_on_device() const { return 0 ; }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  operator bool() const { return false ; }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  bool operator == ( const MemoryView & rhs ) const
+    { return true ; }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  bool operator != ( const MemoryView & rhs ) const
+    { return false ; }
+
+  /** \brief  If the RHS is a different memory space then not equal */
+  template< class MemoryRHS >
+  inline
+  bool operator == ( const MemoryView< void , MemoryRHS > & ) const
+    { return false ; }
+
+  /** \brief  If the RHS is a different memory space then not equal */
+  template< class MemoryRHS >
+  inline
+  bool operator != ( const MemoryView< void , MemoryRHS > & ) const
+    { return true ; }
+
+  /*------------------------------------------------------------------*/
+  /**  \brief  Destroy this view of the array.
+   *           If the last view then allocated memory is deallocated.
+   */
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  ~MemoryView() {}
+
+  /** \brief  Construct a NULL view */
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  MemoryView() {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  MemoryView( const MemoryView & ) {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  MemoryView & operator = ( const MemoryView & ) { return *this ; }
+
+  /*------------------------------------------------------------------*/
+  /** \brief  Allocation occurs only on the host */
+  inline
+  void allocate( size_type count , const std::string & label ) {}
+
+  /*------------------------------------------------------------------*/
+  /** \brief  On the host for testing purposes only
+   *          can get a count of number of views on the host.
+   */
+  size_t test_support_view_count() const { return 0 ; }
+};
+
 } // namespace Impl
 } // namespace Kokkos
 

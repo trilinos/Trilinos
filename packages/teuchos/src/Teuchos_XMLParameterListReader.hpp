@@ -86,8 +86,30 @@ public:
   /** Write the given XML object to a parameter list */
   ParameterList toParameterList(const XMLObject& xml) const;
 
+  /** \brief Set policy regarding duplicated sublists
+    *
+    * The default behavior of this class is to allow duplicated sublists, 
+    * although the resulting
+    * ParameterList is undefined for the duplicated sublists (in most 
+    * cases, they will be merged in the order they are encountered in the 
+    * XML character stream).
+    * 
+    * If set \c false, then duplicated sublists in the XML tree 
+    * will result in the Teuchos::DuplicateParameterSublist 
+    * exception being thrown. 
+    *
+    * If set \c true, the default behavior is restored.
+    */
+  void setAllowsDuplicateSublists(bool policy);
+
+  /** \brief Specifies the current policy regarding duplicated sublists.
+      See setAllowsDuplicateSublists() for more details.
+  */
+  bool getAllowsDuplicateSublists() const;
 
 private:
+
+  bool _allowDuplicateSublists;
 
   /** \brief Write the given XML object to a parameter list along with the
    * validators located in the given map.

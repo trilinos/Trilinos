@@ -21,7 +21,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 FILE(GLOB BAD_XML_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "b_*.xml")
-PRINT_VAR(BAD_XML_FILES)
 
 TRIBITS_ADD_EXECUTABLE(
   XMLParser_ParseFileForError
@@ -34,17 +33,13 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(BadXmlTestFiles
   EXEDEPS XMLParser_ParseFileForError
 )
 
-IF (NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
-
-  FOREACH (B ${BAD_XML_FILES})
-    TRIBITS_ADD_TEST(
-      XMLParser_ParseFileForError
-      NAME XMLParse_BadParse_${B}
-      ARGS "--filename=${B}"
-      COMM serial mpi
-      NUM_MPI_PROCS 1
-      STANDARD_PASS_OUTPUT
-    )
-  ENDFOREACH()
-
-ENDIF()
+FOREACH (B ${BAD_XML_FILES})
+  TRIBITS_ADD_TEST(
+    XMLParser_ParseFileForError
+    NAME XMLParse_BadParse_${B}
+    ARGS "--filename=${B}"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
+ENDFOREACH()

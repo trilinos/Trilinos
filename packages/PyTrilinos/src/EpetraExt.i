@@ -161,6 +161,7 @@ example subdirectory of the PyTrilinos package:
 #include "EpetraExt_HDF5.h"
 #include "EpetraExt_XMLReader.h"
 #include "EpetraExt_XMLWriter.h"
+#include "EpetraExt_SubCopy_CrsMatrix.h"
 #include "EpetraExt_ModelEvaluator.h"
 
 // EpetraExt python includes
@@ -449,13 +450,18 @@ namespace EpetraExt
 /////////////////////////////////
 %include "EpetraExt_Transform.h"
 %template () std::vector<Epetra_IntVector>;
+
 %template () EpetraExt::Transform<Epetra_CrsGraph, Epetra_MapColoring>;
 %template () EpetraExt::Transform<Epetra_CrsGraph,
 				  std::vector<Epetra_IntVector,
 					      std::allocator<Epetra_IntVector> > >;
+%template () EpetraExt::Transform<Epetra_CrsMatrix, Epetra_CrsMatrix >;
+
 %template () EpetraExt::StructuralTransform<Epetra_CrsGraph, Epetra_MapColoring>;
 %template () EpetraExt::StructuralTransform<Epetra_CrsGraph,
 					    std::vector<Epetra_IntVector> >;
+
+%template () EpetraExt::SameTypeTransform<Epetra_CrsMatrix >;
 
 ///////////////////////////////////
 // EpetraExt_MapColoring support //
@@ -533,6 +539,11 @@ EpetraExt::MatrixMarketFileToMap;
 // EpetraExt_BlockMapOut support //
 ///////////////////////////////////
 %include "EpetraExt_BlockMapOut.h"
+
+/////////////////////////////////////////
+// EpetraExt_SubCopy_CrsMatrix support //
+/////////////////////////////////////////
+%include "EpetraExt_SubCopy_CrsMatrix.h"
 
 ////////////////////////////////////////////
 // EpetraExt.Add() and Multiply() support //

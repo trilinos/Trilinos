@@ -41,24 +41,172 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_FORWARD_HPP
-#define KOKKOS_FORWARD_HPP
+#ifndef KOKKOS_IMPL_FORWARD_HPP
+#define KOKKOS_IMPL_FORWARD_HPP
+
+//----------------------------------------------------------------------------
 
 namespace Kokkos {
+
 class Host ;
-}
+
+template < class Device > struct HostMapped ;
+
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
 
 namespace Kokkos {
 namespace Impl {
-template< class ViewType > class Initialize ;
-template< class DstType , class SrcType >  class DeepCopy ;
-template< class ViewType , bool MirrorIsView > class CreateMirror ;
-template< class MatrixType ,
-          class InputVectorType  = void ,
-          class OutputVectorType = InputVectorType > class Multiply ;
+
+template< class A , class B >
+struct SameType { static const bool value = false ; };
+
+template< class A >
+struct SameType<A,A> { static const bool value = true ; };
+
+struct MirrorUseView {};
+
+template< class DstType , class SrcType >  struct Factory ;
+
 }
 }
 
-#endif /* #ifndef KOKKOS_FORWARD_HPP */
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+
+template< class ArrayType >
+inline
+typename ArrayType::HostMirror
+create_mirror( const ArrayType & input , const Impl::MirrorUseView )
+{
+  typedef typename ArrayType::HostMirror MirrorType ;
+  return Impl::Factory< MirrorType , Impl::MirrorUseView >::create( input );
+}
+
+template< class ArrayType >
+inline
+typename ArrayType::HostMirror
+create_mirror( const ArrayType & input )
+{
+  typedef typename ArrayType::HostMirror MirrorType ;
+#if KOKKOS_MIRROR_VIEW_OPTIMIZE
+  return Impl::Factory< MirrorType , Impl::MirrorUseView >::create( input );
+#else
+  return Impl::Factory< MirrorType , ArrayType >::create( input );
+#endif
+}
+
+}
+
+#if 0
+
+namespace Kokkos {
+
+//----------------------------------------------------------------------------
+// Possible consolidation of 'create_*' function APIs
+
+template< class ArrayType >
+inline
+ArrayType create()
+{ return Impl::Factory<ArrayType,void>::create(); }
+
+template< class ArrayType , class Arg0Type>
+inline
+ArrayType create( const Arg0Type & arg0 )
+{ return Impl::Factory<ArrayType,void>::create( arg0 ); }
+
+template< class ArrayType ,
+          class Arg0Type , class Arg1Type >
+inline
+ArrayType create( const Arg0Type & arg0 , const Arg1Type & arg1 )
+{ return Impl::Factory<ArrayType,void>::create( arg0 , arg1 ); }
+
+template< class ArrayType ,
+          class Arg0Type , class Arg1Type , class Arg2Type >
+inline
+ArrayType create( const Arg0Type & arg0 , const Arg1Type & arg1 ,
+                  const Arg2Type & arg2 )
+{ return Impl::Factory<ArrayType,void>::create( arg0 , arg1 , arg2 ); }
+
+template< class ArrayType ,
+          class Arg0Type , class Arg1Type , class Arg2Type ,
+          class Arg3Type >
+inline
+ArrayType create( const Arg0Type & arg0 , const Arg1Type & arg1 ,
+                  const Arg2Type & arg2 , const Arg3Type & arg3 )
+{ return Impl::Factory<ArrayType,void>::create( arg0 , arg1 , arg2 , arg3 ); }
+
+template< class ArrayType ,
+          class Arg0Type , class Arg1Type , class Arg2Type ,
+          class Arg3Type , class Arg4Type >
+inline
+ArrayType create( const Arg0Type & arg0 , const Arg1Type & arg1 ,
+                  const Arg2Type & arg2 , const Arg3Type & arg3 ,
+                  const Arg4Type & arg4 )
+{ return Impl::Factory<ArrayType,void>
+             ::create( arg0 , arg1 , arg2 , arg3 , arg4 ); }
+
+template< class ArrayType ,
+          class Arg0Type , class Arg1Type , class Arg2Type ,
+          class Arg3Type , class Arg4Type , class Arg5Type >
+inline
+ArrayType create( const Arg0Type & arg0 , const Arg1Type & arg1 ,
+                  const Arg2Type & arg2 , const Arg3Type & arg3 ,
+                  const Arg4Type & arg4 , const Arg5Type & arg5 )
+{ return Impl::Factory<ArrayType,void>
+             ::create( arg0 , arg1 , arg2 , arg3 , arg4 , arg5 ); }
+
+template< class ArrayType ,
+          class Arg0Type , class Arg1Type , class Arg2Type ,
+          class Arg3Type , class Arg4Type , class Arg5Type ,
+          class Arg6Type >
+inline
+ArrayType create( const Arg0Type & arg0 , const Arg1Type & arg1 ,
+                  const Arg2Type & arg2 , const Arg3Type & arg3 ,
+                  const Arg4Type & arg4 , const Arg5Type & arg5 ,
+                  const Arg4Type & arg6 )
+{ return Impl::Factory<ArrayType,void>
+             ::create( arg0 , arg1 , arg2 , arg3 , arg4 , arg5 , arg6 ); }
+
+template< class ArrayType ,
+          class Arg0Type , class Arg1Type , class Arg2Type ,
+          class Arg3Type , class Arg4Type , class Arg5Type ,
+          class Arg6Type , class Arg7Type >
+inline
+ArrayType create( const Arg0Type & arg0 , const Arg1Type & arg1 ,
+                  const Arg2Type & arg2 , const Arg3Type & arg3 ,
+                  const Arg4Type & arg4 , const Arg5Type & arg5 ,
+                  const Arg4Type & arg6 , const Arg7Type & arg7 )
+{
+  return Impl::Factory<ArrayType,void>
+             ::create( arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7 );
+}
+
+template< class ArrayType ,
+          class Arg0Type , class Arg1Type , class Arg2Type ,
+          class Arg3Type , class Arg4Type , class Arg5Type ,
+          class Arg6Type , class Arg7Type , class Arg8Type >
+inline
+ArrayType create( const Arg0Type & arg0 , const Arg1Type & arg1 ,
+                  const Arg2Type & arg2 , const Arg3Type & arg3 ,
+                  const Arg4Type & arg4 , const Arg5Type & arg5 ,
+                  const Arg4Type & arg6 , const Arg7Type & arg7 ,
+                  const Arg4Type & arg8 )
+{
+  return Impl::Factory<ArrayType,void>
+             ::create( arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8 );
+}
+
+} // namespace Kokkos
+
+#endif /* possible consolidation of 'create_*' APIs */
+
+
+//----------------------------------------------------------------------------
+
+#endif /* #ifndef KOKKOS_IMPL_FORWARD_HPP */
+
 
 

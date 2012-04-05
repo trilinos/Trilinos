@@ -88,20 +88,40 @@ namespace Tpetra {
   class Export: public Teuchos::Describable {
 
   public:
+    //! The specialization of Map used by this class.
+    typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
+
     //! @name Constructor/Destructor Methods
     //@{ 
 
     /// \brief Construct a Export object from the source and target Map.
     ///
-    /// \param source [in] The source distribution.  This may be an
+    /// \param source [in] The source distribution.  This may be a
     ///   multiply owned (overlapping) distribution.
     ///
     /// \param target [in] The target distribution.  This <i>must</i>
     ///   be a uniquely owned (nonoverlapping) distribution.
-    Export (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source, 
-	    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target);
+    Export (const Teuchos::RCP<const map_type>& source, 
+	    const Teuchos::RCP<const map_type>& target);
 
-    //! Copy constructor. 
+    /// \brief Constructor (with list of parameters)
+    ///
+    /// \param source [in] The source distribution.  This may be a
+    ///   multiply owned (overlapping) distribution.
+    ///
+    /// \param target [in] The target distribution.  This <i>must</i>
+    ///   be a uniquely owned (nonoverlapping) distribution.
+    ///
+    /// \param plist [in/out] List of parameters.  Currently passed
+    ///   directly to the Distributor that implements communication.
+    Export (const Teuchos::RCP<const map_type>& source,
+            const Teuchos::RCP<const map_type>& target,
+	    const Teuchos::RCP<Teuchos::ParameterList>& plist);
+
+    /// \brief Copy constructor. 
+    ///
+    /// \note Currently this only makes a shallow copy of the Export's
+    ///   underlying data.
     Export (const Export<LocalOrdinal,GlobalOrdinal,Node>& rhs);
 
     //! Destructor.
@@ -112,19 +132,28 @@ namespace Tpetra {
     //! @name Export Attribute Methods
     //@{ 
 
-    //! The number of entries that are identical between the source and target maps, up to the first different ID.
+
+    /// \brief Number of initial identical IDs.
+    ///
+    /// The number of IDs that are identical between the source and
+    /// target Maps, up to the first different ID.
     inline size_t getNumSameIDs() const;
 
-    //! The number of entries that are local to the calling image, but not part of the first \c getNumSameIDs() entries.
+    /// \brief Number of IDs to permute but not to communicate.
+    ///
+    /// The number of IDs that are local to the calling process, but
+    /// not part of the first \c getNumSameIDs() entries.  The Import
+    /// will permute these entries locally (without distributed-memory
+    /// communication).
     inline size_t getNumPermuteIDs() const;
 
-    //! List of entries in the source Map that are permuted. (non-persisting view)
+    //! List of IDs in the source Map that are permuted. (non-persisting view)
     inline ArrayView<const LocalOrdinal> getPermuteFromLIDs() const;
 
-    //! List of entries in the target Map that are permuted. (non-persisting view)
+    //! List of IDs in the target Map that are permuted. (non-persisting view)
     inline ArrayView<const LocalOrdinal> getPermuteToLIDs() const;
 
-    //! The number of entries that are not on the calling image.
+    //! Number of entries not on the calling process.
     inline size_t getNumRemoteIDs() const;
 
     //! List of entries in the target Map that are coming from other images. (non-persisting view)
@@ -139,10 +168,10 @@ namespace Tpetra {
     //! List of images to which entries will be sent, getExportLIDs() [i] will be sent to image getExportImageIDs() [i]. (non-persisting view)
     inline ArrayView<const int> getExportImageIDs() const;
 
-    //! The source \c Map used to construct this exporter.
+    //! The source \c Map used to construct this Export.
     inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getSourceMap() const;
 
-    //! The target \c Map used to construct this exporter.
+    //! The target \c Map used to construct this Export.
     inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getTargetMap() const;
 
     //! The Distributor that this \c Export object uses to move data.
@@ -193,11 +222,32 @@ namespace Tpetra {
     //@}
   };
 
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Export<LocalOrdinal,GlobalOrdinal,Node>::Export(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & source,   
-                                                  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & target) {
-    ExportData_ = rcp(new ImportExportData<LocalOrdinal,GlobalOrdinal,Node>(source, target));
-    // call subfunctions
+  Export<LocalOrdinal,GlobalOrdinal,Node>::
+  Export (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,   
+	  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target)
+  {
+    using Teuchos::rcp;
+    typedef ImportExportData<LocalOrdinal,GlobalOrdinal,Node> data_type;
+
+    ExportData_ = rcp (new data_type (source, target));
+    setupSamePermuteExport();
+    if (source->isDistributed()) {
+      setupRemote();
+    }
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Export<LocalOrdinal,GlobalOrdinal,Node>::
+  Export (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,   
+	  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
+	  const Teuchos::RCP<Teuchos::ParameterList>& plist)
+  {
+    using Teuchos::rcp;
+    typedef ImportExportData<LocalOrdinal,GlobalOrdinal,Node> data_type;
+
+    ExportData_ = rcp (new data_type (source, target, plist));
     setupSamePermuteExport();
     if (source->isDistributed()) {
       setupRemote();

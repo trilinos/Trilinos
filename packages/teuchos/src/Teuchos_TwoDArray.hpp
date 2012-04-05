@@ -303,8 +303,8 @@ std::string TwoDArray<T>::toString(const TwoDArray<T> array){
 }
 
 template<class T>
-TwoDArray<T> TwoDArray<T>::fromString(const std::string& string){
-  std::string curString = string;
+TwoDArray<T> TwoDArray<T>::fromString(const std::string& string_in){
+  std::string curString = string_in;
   std::string metaSeperator = TwoDArray<T>::getMetaSeperator();
   size_t curPos = curString.find(metaSeperator);
   std::string dimString = curString.substr(0, curPos);

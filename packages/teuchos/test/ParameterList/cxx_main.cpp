@@ -180,7 +180,9 @@ int main( int argc, char *argv[] )
   PL_Direction.get("Method", "Newton");
   PL_LinSol.set("Tol",1e-5);
   tol = PL_LinSol.get("Tolerance",1e-10);
+  (void)tol; // Not used, bad test!
   RBNS = PL_Newton.get("Rescue Bad Newton Solve", true );
+  (void)RBNS; // Not used, bad test!
 
   //-----------------------------------------------------------
   // Print out Direction Sublist
@@ -236,18 +238,27 @@ int main( int argc, char *argv[] )
     ls_method = PL_My_LineSearch.get("Method", ls_method_char);
     ParameterList& PL_Polynomial = PL_My_LineSearch.sublist("Polynomial");
     ARI = PL_Polynomial.get("Allowed Relative Increase", 100 );
+    (void)ARI; // Not used, bad test!
     alpha_factor = PL_Polynomial.get("Alpha Factor", 0.0001 );
+    (void)alpha_factor; // Not used, bad test!
     default_step = PL_Polynomial.get("Default Step", 1 );
+    (void)default_step; // Not used, bad test!
     force_interp = PL_Polynomial.get("Force Interpolation", false );
+    (void)force_interp; // Not used, bad test!
     std::string interp_type = PL_Polynomial.get("Interpolation Type", "Cubic" );
     max_bnds_factor = PL_Polynomial.get("Max Bounds Factor", 0.5 );
+    (void)max_bnds_factor; // Not used, bad test!
     PL_Polynomial.set("Max Iters", 3 );
     max_iter_inc = PL_Polynomial.get("Maximum Iteration for Increase", 0 );
+    (void)max_iter_inc; // Not used, bad test!
     min_bnds_factor = PL_Polynomial.get("Min Bounds Factor", 0.1 );
+    (void)min_bnds_factor; // Not used, bad test!
     rec_step = PL_Polynomial.get("Recovery Step", 1 );
+    (void)rec_step; // Not used, bad test!
     std::string rec_step_type = PL_Polynomial.get("Recovery Step Type", "Constant");
     std::string suff_dec_cond = PL_Polynomial.get("Sufficient Decrease Condition", "Armijo-Goldstein" );
     use_cntrs = PL_Polynomial.get("Use Counters", true );
+    (void)use_cntrs; // Not used, bad test!
     PL_Main.set("Nonlinear Solver", "Line Search Based");
 
     //-----------------------------------------------------------
@@ -358,6 +369,7 @@ int main( int argc, char *argv[] )
     tempMeth = false;
     try {
       mbf = PL_LinSol.INVALID_TEMPLATE_QUALIFIER get<float>( "Tol" );
+      (void)mbf; // Not used, bad test!
       FailedTests++;
     }
     catch( const Teuchos::Exceptions::InvalidParameter&) {
@@ -393,6 +405,7 @@ int main( int argc, char *argv[] )
     tempMeth = false;
     try {
       mbf = PL_LinSol.INVALID_TEMPLATE_QUALIFIER get<float>( "Tol" );
+      (void)mbf; // Not used, bad test!
       FailedTests++;
     }
     catch( const Teuchos::Exceptions::InvalidParameter&) {
@@ -467,6 +480,7 @@ int main( int argc, char *argv[] )
 
     max_iters_ptr = PL_My_Polynomial.INVALID_TEMPLATE_QUALIFIER getPtr<int>("Max Iters");
     nonlin_solver_ptr = PL_Main.INVALID_TEMPLATE_QUALIFIER getPtr<std::string>("Nonlinear Solver");
+    (void)nonlin_solver_ptr; // Not used, bad test!
 
     if (verbose) {
       cout<< "Is the templated 'getPtr' method functional ... "<<std::endl;
@@ -505,6 +519,7 @@ int main( int argc, char *argv[] )
     try {
       def_step = Teuchos::getParameter<int>(PL_Polynomial, "Default Step");
       alpha_fact = Teuchos::getParameter<double>(PL_Polynomial, "Alpha Factor");
+      (void)alpha_fact; // Not used, bad test!
     }
     catch( const Teuchos::Exceptions::InvalidParameter&) { tempMeth = false; }
     if (verbose && def_step==1) {

@@ -47,20 +47,20 @@
 #include <Kokkos_Value.hpp>
 #include <Kokkos_MultiVector.hpp>
 #include <Kokkos_MDArray.hpp>
-#include <Kokkos_CrsMap.hpp>
+#include <Kokkos_CrsArray.hpp>
 
 #include <Kokkos_Host.hpp>
 
 //----------------------------------------------------------------------------
 
 #include <Kokkos_Host_macros.hpp>
-
+#include <impl/Kokkos_IndexMapLeft_macros.hpp>
 #include <TestMemoryManagement.hpp>
 #include <TestValue.hpp>
 #include <TestMultiVector.hpp>
 #include <TestMDArray.hpp>
 #include <TestMDArrayIndexMap.hpp>
-#include <TestCrsMap.hpp>
+#include <TestCrsArray.hpp>
 #include <TestReduce.hpp>
 #include <TestMultiReduce.hpp>
 
@@ -105,8 +105,8 @@ TEST_F( host, multivector_int) {
   TestMultiVector< int, Kokkos::Host >();
 }
 
-TEST_F( host, crsmap) {
-  TestCrsMap< Kokkos::Host >();
+TEST_F( host, crsarray) {
+  TestCrsArray< Kokkos::Host >();
 }
 
 TEST_F( host, mdarray_view_double) {

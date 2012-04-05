@@ -19,11 +19,11 @@ IF(Kokkos_ENABLE_CUDA)
   SET(CUDA_LIB kokkosdevicecuda)
 ELSE()
   SET(CUDA_LIB "")
+  TRIBITS_ADD_LIBRARY(
+    kokkosdevicecuda
+    HEADERS ${HEADERS}
+    DEPLIBS ${CUDA_LIB}
+    )
 ENDIF()
 
-TRIBITS_ADD_LIBRARY(
-  kokkosdevicecuda
-  HEADERS ${HEADERS}
-  DEPLIBS ${CUDA_LIB}
-  )
 

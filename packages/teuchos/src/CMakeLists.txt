@@ -339,6 +339,7 @@ IF (${PACKAGE_NAME}_ENABLE_MPI)
     )
 
   APPEND_SET(SOURCES
+    Teuchos_DefaultMpiComm.cpp
     Teuchos_MpiReductionOpSetter.cpp
     )
 

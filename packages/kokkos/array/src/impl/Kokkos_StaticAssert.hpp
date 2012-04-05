@@ -51,12 +51,6 @@ template < bool > struct StaticAssert ;
 
 template<> struct StaticAssert< true > { enum { value = true }; };
 
-template< typename TypeFirst , typename TypeSecond >
-struct SameType { enum { value = false }; };
-
-template< typename Type >
-struct SameType<Type,Type> { enum { value = true }; };
-
 } // namespace Impl
 } // namespace Kokkos
 

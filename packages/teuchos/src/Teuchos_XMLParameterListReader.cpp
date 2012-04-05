@@ -51,7 +51,14 @@ namespace Teuchos {
 
 
 XMLParameterListReader::XMLParameterListReader()
+: _allowDuplicateSublists(true)
 {;}
+
+bool XMLParameterListReader::getAllowsDuplicateSublists() const
+{ return _allowDuplicateSublists; }
+
+void XMLParameterListReader::setAllowsDuplicateSublists(bool policy) 
+{ _allowDuplicateSublists = policy; }
 
 RCP<ParameterList> XMLParameterListReader::toParameterList(
   const XMLObject& xml, RCP<DependencySheet> depSheet) const 
@@ -209,8 +216,15 @@ XMLParameterListReader::convertParameterList(const XMLObject& xml,
             ss << "child" << i;
             name = ss.str();
           }
+          TEUCHOS_TEST_FOR_EXCEPTION( 
+            _allowDuplicateSublists == false
+            &&
+            parentList->isSublist(name) == true, 
+            DuplicateParameterSublist,
+            "XMLParameterListReader encountered duplicate sublist \"" << name << "\", in violation"
+            << " of the policy specified by XMLParameterListReader::setAllowsDuplicateSublists()." );
           RCP<ParameterList> newList = sublist(parentList, name);
-            convertParameterList(child, newList, entryIDsMap, validatorIDsMap);
+          convertParameterList(child, newList, entryIDsMap, validatorIDsMap);
         }
         else if (child.getTag() == ParameterEntry::getTagName()) {
           TEUCHOS_TEST_FOR_EXCEPTION(
