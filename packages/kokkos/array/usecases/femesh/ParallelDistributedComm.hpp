@@ -73,13 +73,13 @@ struct Machine {
   static void finalize() { MPI_Finalize(); }
 };
 
-typedef MPI_Datatype Datatype ;
-
+inline
 unsigned  size( Machine machine )
 {
   int np ; MPI_Comm_size( machine.mpi_comm , & np ); return np ;
 }
 
+inline
 unsigned  rank( Machine machine )
 {
   int ip ; MPI_Comm_rank( machine.mpi_comm , & ip ); return ip ;
@@ -100,10 +100,11 @@ struct Machine {
   static void finalize() {}
 };
 
+inline
 unsigned  size( Machine ) { return 1 ; }
-unsigned  rank( Machine ) { return 0 ; }
 
-typedef int Datatype ;
+inline
+unsigned  rank( Machine ) { return 0 ; }
 
 }
 

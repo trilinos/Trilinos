@@ -41,6 +41,10 @@
 //@HEADER
 */
 
+#ifndef TESTFEMESHBOXFIXTURE_HPP
+#define TESTFEMESHBOXFIXTURE_HPP
+
+#include <stdio.h>
 #include <iostream>
 #include <stdexcept>
 #include <limits>
@@ -49,190 +53,40 @@
 
 #include <ParallelDistributedComm.hpp>
 
-#include <Kokkos_Host.hpp>
+//----------------------------------------------------------------------------
+
+namespace TestFEMesh {
+
+template< class FEMeshType >
+struct VerifyPack ;
+
+template< class FEMeshType >
+struct VerifyUnpack  ;
+
+}
 
 //----------------------------------------------------------------------------
 
 #ifdef HAVE_MPI
 
-namespace {
-
-template< class ValueType , class Device >
-class AsyncExchange {
-public:
-  typedef Kokkos::CrsArray< void ,        Device >  recv_part_type ;
-  typedef Kokkos::CrsArray< unsigned ,    Device >  send_map_type ;
-  typedef Kokkos::Impl::MemoryView< ValueType , Device >  buffer_type ;
-  typedef typename buffer_type::HostMirror host_buffer_type ;
-
-  static const int mpi_tag = 11 ;
-
-
-  MPI_Comm                    mpi_comm ;
-  const size_t                n_proc ;
-  const size_t                my_proc ;
-  std::vector< MPI_Request >  recv_request ;
-  recv_part_type              recv_part ;
-  send_map_type               send_map ;
-  buffer_type                 recv_buffer ;
-  buffer_type                 send_buffer ;
-  host_buffer_type            host_recv_buffer ;
-  host_buffer_type            host_send_buffer ;
-  size_t                      chunk_size ;
-
-  AsyncExchange( comm::Machine         arg_machine ,
-                 const recv_part_type & arg_recv_part ,
-                 const send_map_type & arg_send_map ,
-                 const size_t          arg_chunk )
-  : mpi_comm( arg_machine.mpi_comm )
-  , n_proc( comm::size( arg_machine ) )
-  , my_proc( comm::rank( arg_machine ) )
-  , recv_request()
-  , recv_part( arg_recv_part )
-  , send_map( arg_send_map )
-  , recv_buffer()
-  , send_buffer()
-  , host_recv_buffer()
-  , host_send_buffer()
-  , chunk_size( arg_chunk )
-  {
-    const size_t recv_msg_base = recv_part.row_entry_end(0);
-    const size_t recv_msg_size = recv_part.row_entry_end(n_proc-1) -
-                                 recv_msg_base ;
-    size_t recv_msg_count = 0 ;
-    size_t send_msg_size = 0 ;
-
-    for ( size_t i = 1 ; i < n_proc ; ++i ) {
-
-      if ( recv_part.row_entry_end(i) > recv_part.row_entry_begin(i) ) {
-        ++recv_msg_count ;
-      }
-
-      send_msg_size += send_map.row_entry_end(i) -
-                       send_map.row_entry_begin(i);
-    }
-
-    recv_request.assign( recv_msg_count , MPI_REQUEST_NULL );
-    recv_buffer .allocate( recv_msg_size * chunk_size , std::string() );
-    send_buffer .allocate( send_msg_size * chunk_size , std::string() );
-
-    typedef Kokkos::Impl::Factory< host_buffer_type ,
-                                   Kokkos::Impl::MirrorUseView >
-      buffer_mirror_factory ;
-
-    host_recv_buffer = buffer_mirror_factory::create( recv_buffer , recv_msg_size * chunk_size );
-    host_send_buffer = buffer_mirror_factory::create( send_buffer , send_msg_size * chunk_size );
-
-    for ( size_t i = 1 , j = 0 ; i < n_proc ; ++i ) {
-      const int proc = ( i + my_proc ) % n_proc ;
-
-      const size_t begin =
-        chunk_size * ( recv_part.row_entry_begin(i) - recv_msg_base );
-
-      const size_t count =
-        chunk_size * ( recv_part.row_entry_end(i) -
-                       recv_part.row_entry_begin(i) );
-
-      if ( count ) {
-        MPI_Irecv( host_recv_buffer.ptr_on_device() + begin ,
-                   count * sizeof(ValueType) , MPI_BYTE ,
-                   proc , mpi_tag , mpi_comm , & recv_request[j] );
-        ++j ;
-      }
-    }
-  }
-
-  void send()
-  {
-    // Copy from the device send buffer to host mirror send buffer
-    // and then ready-send the data:
-
-    typedef Kokkos::Impl::Factory< host_buffer_type , buffer_type >
-      buffer_copy_factory ;
-
-    const size_t send_msg_size = send_map.row_entry_end(n_proc-1) -
-                                 send_map.row_entry_end(0);
-
-    buffer_copy_factory::deep_copy( host_send_buffer , send_buffer ,
-                                    send_msg_size * chunk_size );
-
-    // Wait for all receives to be posted before ready-sending
-    MPI_Barrier( mpi_comm );
-
-    for ( size_t i = 1 ; i < n_proc ; ++i ) {
-      const int proc = ( i + my_proc) % n_proc ;
-      const size_t begin = chunk_size * send_map.row_entry_begin(i);
-      const size_t count = chunk_size * send_map.row_entry_end(i) - begin ;
-
-      if ( count ) { // Ready-send to that process
-        MPI_Rsend( host_send_buffer.ptr_on_device() + begin ,
-                   count * sizeof(ValueType) , MPI_BYTE ,
-                   proc , mpi_tag , mpi_comm );
-      }
-    }
-  }
-
-  void wait_receive()
-  { 
-    // Wait for data to be received into the host mirror receive buffer
-    // and then deep copy to the device receive buffer.
-
-    std::vector< MPI_Status > recv_status( recv_request.size() );
-
-    MPI_Waitall( recv_request.size() , & recv_request[0] , & recv_status[0] );
-
-    for ( size_t i = 1 , j = 0 ; i < n_proc ; ++i ) {
-      const int proc = ( i + my_proc ) % n_proc ;
-      const size_t recv_count = chunk_size * ( recv_part.row_entry_end(i) -
-                                               recv_part.row_entry_begin(i) );
-
-      if ( recv_count ) {
-        int recv_size = 0 ;
-
-        MPI_Get_count( & recv_status[j] , MPI_BYTE , & recv_size );
-
-        if ( ( proc != (int) recv_status[j].MPI_SOURCE ) ||
-             ( recv_size != (int)( recv_count * sizeof(ValueType) ) ) ) {
-          std::ostringstream msg ;
-          msg << "AsyncExchange error:"
-              << " P" << my_proc << " received from P"
-              << recv_status[j].MPI_SOURCE
-              << " size " << recv_size
-              << " expected " << recv_count * sizeof(ValueType)
-              << " from P" << proc ;
-          throw std::runtime_error( msg.str() ); 
-        }
-
-        ++j ;
-      }
-    }
-
-    typedef Kokkos::Impl::Factory< buffer_type , host_buffer_type >
-      buffer_copy_factory ;
-
-    const size_t recv_msg_size = recv_part.row_entry_end(n_proc-1) -
-                                 recv_part.row_entry_end(0);
-
-    buffer_copy_factory::deep_copy( recv_buffer , host_recv_buffer , 
-                                    recv_msg_size * chunk_size );
-  }
-};
-
-//----------------------------------------------------------------------------
-
+namespace TestFEMesh {
 
 template< typename identifier_integer_type ,
           typename coordinate_scalar_type ,
           unsigned ElemNodeCount ,
           class Device >
-void test_box_fixture_verify_parallel(
+void verify_parallel(
   comm::Machine machine ,
   const FEMeshFixture< identifier_integer_type ,
                        coordinate_scalar_type ,
                        ElemNodeCount ,
                        Device > & fixture )
 {
-  const size_t proc_count = comm::size( machine );
+  typedef FEMeshFixture< identifier_integer_type ,
+                         coordinate_scalar_type ,
+                         ElemNodeCount ,
+                         Device > femesh_type ;
+
   const size_t chunk_size = 3 ;
 
   // Communicate node coordinates to verify communication and setup.
@@ -240,15 +94,7 @@ void test_box_fixture_verify_parallel(
   AsyncExchange< coordinate_scalar_type , Device >
     exchange( machine , fixture.node_part , fixture.node_send , chunk_size );
 
-  // Pack send buffer:
-  for ( size_t k = 0 ,
-               j = fixture.node_send.row_entry_begin(1) ;
-               j < fixture.node_send.row_entry_end(proc_count-1) ; ++j ) {
-    const size_t node_id = fixture.node_send(j);
-    exchange.send_buffer[k++] = fixture.node_coords(node_id,0);
-    exchange.send_buffer[k++] = fixture.node_coords(node_id,1);
-    exchange.send_buffer[k++] = fixture.node_coords(node_id,2);
-  }
+  Kokkos::parallel_for( exchange.send_count , VerifyPack<femesh_type>( fixture , exchange.send_buffer ) );
 
   exchange.send();
 
@@ -259,50 +105,43 @@ void test_box_fixture_verify_parallel(
   exchange.wait_receive();
 
   // Unpack recv buffer
-   
-  unsigned local_error = 0 ;
-  unsigned global_error = 0 ;
 
-  for ( size_t k = 0 ,
-               j = fixture.node_part.row_entry_begin(1) ;
-               j < fixture.node_part.row_entry_end(proc_count-1) ; ++j ) {
+  unsigned local[2] ;
 
-    const coordinate_scalar_type x = exchange.recv_buffer[k++];
-    const coordinate_scalar_type y = exchange.recv_buffer[k++];
-    const coordinate_scalar_type z = exchange.recv_buffer[k++];
+  local[0] = exchange.recv_count ;
+  local[1] =
+    Kokkos::parallel_reduce( exchange.recv_count ,
+      VerifyUnpack< femesh_type >( fixture , exchange.recv_buffer , exchange.host_recv_part.row_entry_begin(1) ) );
 
-    if ( x != fixture.node_coords(j,0) ||
-         y != fixture.node_coords(j,1) ||
-         z != fixture.node_coords(j,2) ) {
-      ++local_error ;
-    }
+  unsigned global[2] = { 0 , 0 };
+
+  MPI_Allreduce( local , global ,
+                 2 , MPI_UNSIGNED , MPI_SUM , machine.mpi_comm );
+
+  if ( 0 == comm::rank( machine ) ) {
+    std::cout << "TestFEMesh::verify_parallel "
+              << "NP(" << comm::size( machine )
+              << ") verified_nodes(" << global[0]
+              << ") failed_nodes(" << global[1]
+              << ")" << std::endl ;
   }
 
-  MPI_Allreduce( & local_error , & global_error ,
-                 1 , MPI_UNSIGNED , MPI_SUM , machine.mpi_comm );
-
-  if ( global_error ) {
+  if ( global[1] ) {
     throw std::runtime_error( std::string("coordinate exchange failed") );
   }
-
-  std::cout << "PASSED test_box_fixture P" << comm::rank( machine )
-            << " : verify node count = "
-            << ( fixture.node_part.row_entry_end(proc_count-1) -
-                 fixture.node_part.row_entry_begin(1) )
-            << std::endl ;
 }
 
-}
+} // namespace TestFEMesh
 
 #else /* ! #ifdef HAVE_MPI */
 
-namespace {
+namespace TestFEMesh {
 
 template< typename identifier_integer_type ,
           typename coordinate_scalar_type ,
           unsigned ElemNodeCount ,
           class Device >
-void test_box_fixture_verify_parallel(
+void verify_parallel(
   comm::Machine ,
   const FEMeshFixture< identifier_integer_type ,
                        coordinate_scalar_type ,
@@ -311,29 +150,143 @@ void test_box_fixture_verify_parallel(
 {
 }
 
-}
+} // namespace TestFEMesh
 
 #endif /* ! #ifdef HAVE_MPI */
 
 //----------------------------------------------------------------------------
 
-void test_box_fixture( comm::Machine machine )
+template< class Device >
+void test_box_fixture( comm::Machine machine ,
+                       const size_t nodes_nx ,
+                       const size_t nodes_ny ,
+                       const size_t nodes_nz )
 {
   typedef int coordinate_scalar_type ;
-  typedef BoxMeshFixture< coordinate_scalar_type, Kokkos::Host > box_mesh_type ;
-  typedef box_mesh_type::fixture_dev_type mesh_fixture_type ;
+  typedef BoxMeshFixture< coordinate_scalar_type, Device > box_mesh_type ;
+  typedef typename box_mesh_type::fixture_dev_type mesh_fixture_type ;
 
   const size_t proc_count = comm::size( machine );
   const size_t proc_local = comm::rank( machine ) ;
-  const size_t nodes_nx = 100 ;
-  const size_t nodes_ny = 200 ;
-  const size_t nodes_nz = 300 ;
 
   const box_mesh_type
     box_mesh( proc_count, proc_local, nodes_nx, nodes_ny, nodes_nz );
 
   const mesh_fixture_type & fixture = box_mesh ;
 
-  test_box_fixture_verify_parallel( machine , fixture );
+  TestFEMesh::verify_parallel( machine , fixture );
+}
+
+#endif /* #ifndef TESTFEMESHBOXFIXTURE_HPP */
+
+//----------------------------------------------------------------------------
+
+namespace TestFEMesh {
+
+template< typename identifier_integer_type ,
+          typename coordinate_scalar_type ,
+          unsigned ElemNodeCount >
+struct VerifyPack
+  < FEMeshFixture< identifier_integer_type ,
+                   coordinate_scalar_type ,
+                   ElemNodeCount ,
+                   KOKKOS_MACRO_DEVICE > >
+{
+  typedef KOKKOS_MACRO_DEVICE              device_type ;
+  typedef typename device_type::size_type  size_type ;
+  typedef Kokkos::Impl::MemoryView< coordinate_scalar_type , device_type > buffer_type ;
+
+  typedef FEMeshFixture< identifier_integer_type ,
+                         coordinate_scalar_type ,
+                         ElemNodeCount ,
+                         device_type >
+    femesh_type ;
+
+  const femesh_type   femesh ;
+  const buffer_type   send_buffer ;
+
+  VerifyPack(
+    const femesh_type & arg_femesh ,
+    const buffer_type & arg_send_buffer )
+  : femesh( arg_femesh )
+  , send_buffer( arg_send_buffer )
+  {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const size_type i ) const
+  {
+    size_type k = i * 3 ;
+    const size_type node_id = femesh.node_send(i);
+    send_buffer[k]   = femesh.node_coords(node_id,0);
+    send_buffer[k+1] = femesh.node_coords(node_id,1);
+    send_buffer[k+2] = femesh.node_coords(node_id,2);
+  }
+};
+
+template< typename identifier_integer_type ,
+          typename coordinate_scalar_type ,
+          unsigned ElemNodeCount >
+struct VerifyUnpack 
+  < FEMeshFixture< identifier_integer_type ,
+                   coordinate_scalar_type ,
+                   ElemNodeCount ,
+                   KOKKOS_MACRO_DEVICE > >
+{
+  typedef KOKKOS_MACRO_DEVICE              device_type ;
+  typedef typename device_type::size_type  size_type ;
+  typedef size_type                        value_type ;
+  typedef Kokkos::Impl::MemoryView< coordinate_scalar_type , device_type > buffer_type ;
+
+  typedef FEMeshFixture< identifier_integer_type ,
+                         coordinate_scalar_type ,
+                         ElemNodeCount ,
+                         device_type >
+    femesh_type ;
+
+  const femesh_type femesh ;
+  const buffer_type recv_buffer ;
+  const size_type  node_id_begin ;
+
+  VerifyUnpack(
+    const femesh_type & arg_femesh ,
+    const buffer_type & arg_recv_buffer ,
+    const size_type     arg_node_id_begin )
+  : femesh( arg_femesh )
+  , recv_buffer( arg_recv_buffer )
+  , node_id_begin( arg_node_id_begin )
+  {}
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  static void init( value_type & update )
+  { update = 0 ; }
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  static void join( volatile value_type & update ,
+                    const volatile value_type & source )
+  { update += source ; }
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const size_type i , value_type & update ) const
+  {
+    const size_type node_id = i + node_id_begin ;
+    const size_type k = i * 3 ;
+
+    const coordinate_scalar_type x = recv_buffer[k];
+    const coordinate_scalar_type y = recv_buffer[k+1];
+    const coordinate_scalar_type z = recv_buffer[k+2];
+
+    if ( x != femesh.node_coords(node_id,0) ||
+         y != femesh.node_coords(node_id,1) ||
+         z != femesh.node_coords(node_id,2) ) {
+      printf("TestFEMesh::VerifyUnpack failed at node %d\n",(int)node_id);
+      ++update ;
+    }
+  }
+};
+
 }
 

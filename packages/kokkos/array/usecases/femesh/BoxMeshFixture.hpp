@@ -52,33 +52,7 @@
 #include <Kokkos_MultiVector.hpp>
 
 #include <BoxMeshPartition.hpp>
-
-//----------------------------------------------------------------------------
-
-
-template< typename IntType ,
-          typename FloatType ,
-          unsigned ElemNodeCount ,
-          class Device >
-struct FEMeshFixture {
-
-  static const IntType element_node_count = ElemNodeCount ;
-
-  // typedef Array< FloatType[3] , Device > node_coords_type ;
-  // typedef Array< IntType[ElemNodeCount] , Device > elem_node_ids_type ;
-
-  typedef Kokkos::MDArray<  FloatType ,  Device >  node_coords_type ;
-  typedef Kokkos::MDArray<  IntType ,    Device >  elem_node_ids_type ;
-  typedef Kokkos::CrsArray< IntType[2] , Device >  node_elem_ids_type ;
-  typedef Kokkos::CrsArray< void ,       Device >  node_part_type ;
-  typedef Kokkos::CrsArray< unsigned ,   Device >  node_send_type ;
-
-  node_coords_type    node_coords ;
-  elem_node_ids_type  elem_node_ids ;
-  node_elem_ids_type  node_elem_ids ;
-  node_part_type      node_part ;
-  node_send_type      node_send ;
-};
+#include <FEMeshFixture.hpp>
 
 //----------------------------------------------------------------------------
 //  construct a structured, rectangular prism mesh of Hex elements,
