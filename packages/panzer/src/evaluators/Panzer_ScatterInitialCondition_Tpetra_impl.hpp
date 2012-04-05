@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_SCATTER_INITIAL_CONDITION_EPETRA_IMPL_HPP
-#define PANZER_SCATTER_INITIAL_CONDITION_EPETRA_IMPL_HPP
+#ifndef PANZER_SCATTER_INITIAL_CONDITION_TPETRA_IMPL_HPP
+#define PANZER_SCATTER_INITIAL_CONDITION_TPETRA_IMPL_HPP
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Assert.hpp"
