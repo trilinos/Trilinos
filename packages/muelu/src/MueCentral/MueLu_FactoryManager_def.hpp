@@ -62,7 +62,7 @@ namespace MueLu {
     } else {
           
       if (varName == "A")             return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory()));
-      if (varName == "P")             return SetAndReturnDefaultFactory(varName, rcp(new SaPFactory(GetDefaultFactory("Ptent")))); // GetDefaultFactory("Ptent"): Use the same factory instance for both "P" and "Nullspace"
+      if (varName == "P")             return SetAndReturnDefaultFactory(varName, rcp(new SaPFactory(GetFactory("Ptent")))); // GetFactory("Ptent"): Use the same factory instance for both "P" and "Nullspace"
       if (varName == "R")             return SetAndReturnDefaultFactory(varName, rcp(new TransPFactory()));
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
 //       if (varName == "Partition")     {
@@ -81,7 +81,7 @@ namespace MueLu {
 //       }
 
       if (varName == "Nullspace") {
-        return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory(Teuchos::null, GetDefaultFactory("Ptent")))); // GetDefaultFactory("Ptent"): Use the same factory instance for both "P" and "Nullspace"
+        return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory(Teuchos::null, GetFactory("Ptent")))); // GetFactory("Ptent"): Use the same factory instance for both "P" and "Nullspace"
       }
 
       if (varName == "Graph")         return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));

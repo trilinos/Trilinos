@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
 
   // Timing
   Teuchos::Time myTime("global");
-  Teuchos::TimeMonitor M(myTime);
+  Teuchos::TimeMonitor m(myTime);
 
 #ifndef HAVE_TEUCHOS_LONG_LONG_INT
   *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
@@ -191,12 +191,12 @@ int main(int argc, char *argv[]) {
   *out << "=============================================================================" << std::endl;
 
   // build transfer operators
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
-  //RCP<PgPFactory> Pfact = rcp( new PgPFactory(TentPFact) );
-  //RCP<RFactory> Rfact  = rcp( new GenericRFactory(Pfact));
-  RCP<SaPFactory> Pfact  = rcp( new SaPFactory(TentPFact) );
-  RCP<RFactory>   Rfact  = rcp( new TransPFactory(Pfact) );
-  RCP<RAPFactory> Acfact = rcp( new RAPFactory(Pfact, Rfact) );
+  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory());
+  //RCP<PgPFactory> Pfact = rcp( new PgPFactory() );
+  //RCP<RFactory> Rfact  = rcp( new GenericRFactory());
+  RCP<SaPFactory> Pfact  = rcp( new SaPFactory() );
+  RCP<RFactory>   Rfact  = rcp( new TransPFactory() );
+  RCP<RAPFactory> Acfact = rcp( new RAPFactory() );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
   // build level smoothers
@@ -213,8 +213,17 @@ int main(int argc, char *argv[]) {
   if (maxLevels > 1)
     SmooFact = rcp( new SmootherFactory(smooProto) );
 
-  Teuchos::ParameterList status;
-  status = H->FullPopulate(*Pfact,*Rfact,*Acfact,*SmooFact,0,maxLevels);
+  FactoryManager M;
+  M.SetFactory("Aggregates", UCAggFact);
+  M.SetFactory("P", Pfact);
+  M.SetFactory("R", Rfact);
+  M.SetFactory("A", Acfact);
+  M.SetFactory("Smoother", SmooFact);
+  M.SetFactory("Ptent", TentPFact);
+
+//   Teuchos::ParameterList status;
+//   status = H->FullPopulate(*Pfact,*Rfact,*Acfact,*SmooFact,0,maxLevels);
+  H->Setup(M, 0, maxLevels);
 
   // create coarsest smoother
   RCP<SmootherPrototype> coarsestSmooProto;
@@ -229,8 +238,8 @@ int main(int argc, char *argv[]) {
   coarsestSmooFact = rcp(new SmootherFactory(coarsestSmooProto));
   H->SetCoarsestSolver(*coarsestSmooFact);
 
-  *out << "======================\n Multigrid statistics \n======================" << std::endl;
-  status.print(*out,Teuchos::ParameterList::PrintOptions().indent(2));
+//   *out << "======================\n Multigrid statistics \n======================" << std::endl;
+//   status.print(*out,Teuchos::ParameterList::PrintOptions().indent(2));
 
   Finest->print(*out);
 
