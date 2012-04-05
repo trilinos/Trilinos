@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
 
   double* Values = new double[2];
   Values[0] = -1.0; 
-	Values[1] = -1.0;
+  Values[1] = -1.0;
   long long* Indices = new long long[2];
   double two = 2.0;
   int NumEntries;

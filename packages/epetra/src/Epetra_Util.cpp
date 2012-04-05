@@ -338,6 +338,8 @@ Epetra_BlockMap
 Epetra_Util::Create_OneToOne_BlockMap(const Epetra_BlockMap& usermap,
 				      bool high_rank_proc_owns_shared)
 {
+  // TODO this needs to be changed for long long
+
   //if usermap is already 1-to-1 then we'll just return a copy of it.
   if (usermap.IsOneToOne()) {
     Epetra_BlockMap newmap(usermap);

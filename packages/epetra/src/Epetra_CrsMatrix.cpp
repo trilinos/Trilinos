@@ -508,9 +508,9 @@ int Epetra_CrsMatrix::InsertGlobalValues(int Row, int NumEntries,
 					 const int* Indices)
 {
   if(RowMap().GlobalIndicesInt())
-	return TInsertGlobalValues<int>(Row, NumEntries, values, Indices);
+    return TInsertGlobalValues<int>(Row, NumEntries, values, Indices);
   else
-	throw ReportError("Epetra_CrsMatrix::InsertGlobalValues int version called for a matrix that is not int.", -1);
+    throw ReportError("Epetra_CrsMatrix::InsertGlobalValues int version called for a matrix that is not int.", -1);
 }
 
 int Epetra_CrsMatrix::InsertGlobalValues(long long Row, int NumEntries,
@@ -518,9 +518,9 @@ int Epetra_CrsMatrix::InsertGlobalValues(long long Row, int NumEntries,
 					 const long long* Indices)
 {
   if(RowMap().GlobalIndicesLongLong())
-	return TInsertGlobalValues<long long>(Row, NumEntries, values, Indices);
+    return TInsertGlobalValues<long long>(Row, NumEntries, values, Indices);
   else
-	throw ReportError("Epetra_CrsMatrix::InsertGlobalValues long long version called for a matrix that is not long long.", -1);
+    throw ReportError("Epetra_CrsMatrix::InsertGlobalValues long long version called for a matrix that is not long long.", -1);
 }
 
 //==========================================================================
@@ -546,19 +546,20 @@ int Epetra_CrsMatrix::InsertGlobalValues(int Row, int NumEntries,
 					 int* Indices)
 {
   if(RowMap().GlobalIndicesInt())
-	return TInsertGlobalValues<int>(Row, NumEntries, values, Indices);
-  else
-	throw ReportError("Epetra_CrsMatrix::InsertGlobalValues int version called for a matrix that is not int.", -1);
+    return TInsertGlobalValues<int>(Row, NumEntries, values, Indices);
+  else 
+    throw ReportError("Epetra_CrsMatrix::InsertGlobalValues int version called for a matrix that is not int.", -1);
 }
 
 int Epetra_CrsMatrix::InsertGlobalValues(long long Row, int NumEntries,
 					 double* values,
 					 long long* Indices)
 {
-  if(RowMap().GlobalIndicesLongLong())
-	return TInsertGlobalValues<long long>(Row, NumEntries, values, Indices);
+  if(RowMap().GlobalIndicesLongLong()) {
+    return TInsertGlobalValues<long long>(Row, NumEntries, values, Indices);
+  }
   else
-	throw ReportError("Epetra_CrsMatrix::InsertGlobalValues long long version called for a matrix that is not long long.", -1);
+    throw ReportError("Epetra_CrsMatrix::InsertGlobalValues long long version called for a matrix that is not long long.", -1);
 }
 //==========================================================================
 int Epetra_CrsMatrix::InsertMyValues(int Row, int NumEntries,
@@ -618,9 +619,9 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
 				   const int* Indices)
 {
   if(RowMap().GlobalIndicesInt() || (RowMap().GlobalIndicesLongLong() && IndicesAreLocal()))
-	return InsertValues<int>(Row, NumEntries, values, Indices);
+    return InsertValues<int>(Row, NumEntries, values, Indices);
   else
-	throw ReportError("Epetra_CrsMatrix::InsertValues int version called for a matrix that is not int.", -1);
+    throw ReportError("Epetra_CrsMatrix::InsertValues int version called for a matrix that is not int.", -1);
 }
 
 int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
@@ -628,9 +629,9 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
 				   const long long* Indices)
 {
   if(RowMap().GlobalIndicesLongLong())
-	return InsertValues<long long>(Row, NumEntries, values, Indices);
+    return InsertValues<long long>(Row, NumEntries, values, Indices);
   else
-	throw ReportError("Epetra_CrsMatrix::InsertValues long long version called for a matrix that is not long long.", -1);
+    throw ReportError("Epetra_CrsMatrix::InsertValues long long version called for a matrix that is not long long.", -1);
 }
 
 //==========================================================================
@@ -1304,18 +1305,18 @@ int Epetra_CrsMatrix::ExtractGlobalRowCopy(int Row, int Length, int & NumEntries
 					   int * Indices) const 
 {
   if(RowMap().GlobalIndicesInt())
-	return ExtractGlobalRowCopy<int>(Row, Length, NumEntries, values, Indices);
+    return ExtractGlobalRowCopy<int>(Row, Length, NumEntries, values, Indices);
   else
-	throw ReportError("Epetra_CrsMatrix::ExtractGlobalRowCopy int version called for a matrix that is not int.", -1);
+    throw ReportError("Epetra_CrsMatrix::ExtractGlobalRowCopy int version called for a matrix that is not int.", -1);
 }
 
 int Epetra_CrsMatrix::ExtractGlobalRowCopy(long long Row, int Length, int & NumEntries, double * values,
 					   long long * Indices) const 
 {
   if(RowMap().GlobalIndicesLongLong())
-	return ExtractGlobalRowCopy<long long>(Row, Length, NumEntries, values, Indices);
+    return ExtractGlobalRowCopy<long long>(Row, Length, NumEntries, values, Indices);
   else
-	throw ReportError("Epetra_CrsMatrix::ExtractGlobalRowCopy long long version called for a matrix that is not long long.", -1);
+    throw ReportError("Epetra_CrsMatrix::ExtractGlobalRowCopy long long version called for a matrix that is not long long.", -1);
 }
 
 //==========================================================================
@@ -1353,17 +1354,17 @@ int Epetra_CrsMatrix::ExtractGlobalRowCopy(int_type Row, int Length, int & NumEn
 int Epetra_CrsMatrix::ExtractGlobalRowCopy(int Row, int Length, int & NumEntries, double * values) const
 {
   if(RowMap().GlobalIndicesInt())
-	return ExtractGlobalRowCopy<int>(Row, Length, NumEntries, values);
+    return ExtractGlobalRowCopy<int>(Row, Length, NumEntries, values);
   else
-	throw ReportError("Epetra_CrsMatrix::ExtractGlobalRowCopy int version called for a matrix that is not int.", -1);
+    throw ReportError("Epetra_CrsMatrix::ExtractGlobalRowCopy int version called for a matrix that is not int.", -1);
 }
 
 int Epetra_CrsMatrix::ExtractGlobalRowCopy(long long Row, int Length, int & NumEntries, double * values) const
 {
   if(RowMap().GlobalIndicesLongLong())
-	return ExtractGlobalRowCopy<long long>(Row, Length, NumEntries, values);
+    return ExtractGlobalRowCopy<long long>(Row, Length, NumEntries, values);
   else
-	throw ReportError("Epetra_CrsMatrix::ExtractGlobalRowCopy long long version called for a matrix that is not long long.", -1);
+    throw ReportError("Epetra_CrsMatrix::ExtractGlobalRowCopy long long version called for a matrix that is not long long.", -1);
 }
 
 //==========================================================================
@@ -1460,17 +1461,17 @@ int Epetra_CrsMatrix::ExtractGlobalRowView(int_type Row, int & NumEntries, doubl
 int Epetra_CrsMatrix::ExtractGlobalRowView(int Row, int & NumEntries, double *& values, int *& Indices) const 
 {
   if(RowMap().GlobalIndicesInt())
-	return ExtractGlobalRowView<int>(Row, NumEntries, values, Indices);
+    return ExtractGlobalRowView<int>(Row, NumEntries, values, Indices);
   else
-	throw ReportError("Epetra_CrsMatrix::ExtractGlobalRowView int version called for a matrix that is not int.", -1);
+    throw ReportError("Epetra_CrsMatrix::ExtractGlobalRowView int version called for a matrix that is not int.", -1);
 }
 
 int Epetra_CrsMatrix::ExtractGlobalRowView(long long Row, int & NumEntries, double *& values, long long *& Indices) const 
 {
   if(RowMap().GlobalIndicesLongLong())
-	return ExtractGlobalRowView<long long>(Row, NumEntries, values, Indices);
+    return ExtractGlobalRowView<long long>(Row, NumEntries, values, Indices);
   else
-	throw ReportError("Epetra_CrsMatrix::ExtractGlobalRowView long long version called for a matrix that is not long long.", -1);
+    throw ReportError("Epetra_CrsMatrix::ExtractGlobalRowView long long version called for a matrix that is not long long.", -1);
 }
 
 //==========================================================================
@@ -1496,17 +1497,17 @@ int Epetra_CrsMatrix::ExtractGlobalRowView(int_type Row, int & NumEntries, doubl
 int Epetra_CrsMatrix::ExtractGlobalRowView(int Row, int & NumEntries, double *& values) const 
 {
   if(RowMap().GlobalIndicesInt())
-	return ExtractGlobalRowView<int>(Row, NumEntries, values);
+    return ExtractGlobalRowView<int>(Row, NumEntries, values);
   else
-	throw ReportError("Epetra_CrsMatrix::ExtractGlobalRowView int version called for a matrix that is not int.", -1);
+    throw ReportError("Epetra_CrsMatrix::ExtractGlobalRowView int version called for a matrix that is not int.", -1);
 }
 
 int Epetra_CrsMatrix::ExtractGlobalRowView(long long Row, int & NumEntries, double *& values) const 
 {
   if(RowMap().GlobalIndicesLongLong())
-	return ExtractGlobalRowView<long long>(Row, NumEntries, values);
+    return ExtractGlobalRowView<long long>(Row, NumEntries, values);
   else
-	throw ReportError("Epetra_CrsMatrix::ExtractGlobalRowView long long version called for a matrix that is not long long.", -1);
+    throw ReportError("Epetra_CrsMatrix::ExtractGlobalRowView long long version called for a matrix that is not long long.", -1);
 }
 
 //==========================================================================
