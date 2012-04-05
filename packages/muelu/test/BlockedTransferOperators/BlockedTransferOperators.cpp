@@ -40,7 +40,6 @@
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Exceptions.hpp"
-#include "MueLu_UCAggregationFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
@@ -235,11 +234,11 @@ int main(int argc, char *argv[]) {
   RCP<SubBlockAFactory> A22Fact = Teuchos::rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(), 1, 1));
 
   RCP<TentativePFactory> P11Fact = rcp(new TentativePFactory());
-  RCP<TransPFactory> R11Fact = rcp(new TransPFactory(P11Fact));
+  RCP<TransPFactory> R11Fact = rcp(new TransPFactory());
 
   RCP<TentativePFactory> P22TentFact = rcp(new TentativePFactory());
-  RCP<PgPFactory> P22Fact = rcp(new PgPFactory(P22TentFact));
-  RCP<GenericRFactory> R22Fact = rcp(new GenericRFactory(P22Fact));
+  RCP<PgPFactory> P22Fact = rcp(new PgPFactory());
+  RCP<GenericRFactory> R22Fact = rcp(new GenericRFactory());
 
   std::string ifpackType;
   Teuchos::ParameterList ifpackList;
@@ -259,14 +258,16 @@ int main(int argc, char *argv[]) {
   RCP<FactoryManager> M11 = rcp(new FactoryManager());
   M11->SetFactory("A", A11Fact);
   M11->SetFactory("P", P11Fact);
-  M11->SetFactory("R", R11Fact); // TODO add nullspace factories
+  M11->SetFactory("Ptent", P11Fact); //for Nullspace
+  M11->SetFactory("R", R11Fact);
   M11->SetFactory("Smoother", Smoo11Fact);
   M11->SetIgnoreUserData(true);
 
   RCP<FactoryManager> M22 = rcp(new FactoryManager());
   M22->SetFactory("A", A22Fact);
   M22->SetFactory("P", P22Fact);
-  M22->SetFactory("R", R22Fact); // TODO add nullspace factories
+  M22->SetFactory("R", R22Fact);
+  M22->SetFactory("Ptent", P22TentFact); //for both P22 and Nullspace
   M22->SetFactory("Smoother", Smoo22Fact);
   M22->SetIgnoreUserData(true);
 
@@ -274,9 +275,9 @@ int main(int argc, char *argv[]) {
   PFact->AddFactoryManager(M11);
   PFact->AddFactoryManager(M22);
 
-  RCP<GenericRFactory> RFact = rcp(new GenericRFactory(PFact));
+  RCP<GenericRFactory> RFact = rcp(new GenericRFactory());
 
-  RCP<RAPFactory> AcFact = rcp(new RAPFactory(PFact, RFact));
+  RCP<RAPFactory> AcFact = rcp(new RAPFactory());
 
   // Smoothers
   //RCP<SmootherPrototype> smootherPrototype     = rcp( new GaussSeidelSmoother(1, 1.0) );
@@ -291,7 +292,6 @@ int main(int argc, char *argv[]) {
   coarseSolverPrototype->AddFactoryManager(M11);
   coarseSolverPrototype->AddFactoryManager(M22);
   RCP<SmootherFactory>   coarseSolverFact      = rcp( new SmootherFactory(coarseSolverPrototype, Teuchos::null) );
-
 
   // main factory manager
   FactoryManager M;
