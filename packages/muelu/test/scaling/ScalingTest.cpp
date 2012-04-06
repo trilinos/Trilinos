@@ -213,7 +213,7 @@ int main(int argc, char *argv[]) {
     Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
     Finest->Set("A",Op);
     Finest->Set("Nullspace",nullSpace);
-    Finest->Set("Coordinates",Coordinates);
+    Finest->Set("Coordinates",Coordinates); //FIXME: XCoordinates, YCoordinates, ..
 
     RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
     *out << "========================= Aggregate option summary  =========================" << std::endl;

@@ -321,7 +321,41 @@ namespace MueLuTests {
     list.set("ny",ny);
     RCP<const Map> coalescedMap = MapFactory::createContigMap(TestHelpers::Parameters::getLib(), numGlobalElements/dofsPerNode, numMyNodes, comm);
     RCP<MultiVector> XYZ = MueLu::GalleryUtils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D",coalescedMap,list);
-    level.Set("Coordinates",XYZ);
+
+    // XYZ are the "coalesce" coordinates as it has been generated for 1 DOF/node and we are using them for 3 DOFS/node
+    // level.Set("Coordinates",XYZ); "Coordinates" == uncoalesce. "X,Y,ZCoordinates" == coalesce
+    {
+      RCP<MultiVector> coordinates = XYZ;
+      
+      // making a copy because I don't want to keep 'open' the Xpetra_MultiVector
+      if (coordinates->getNumVectors() >= 1) {
+        Teuchos::ArrayRCP<const SC> coord = coordinates->getData(0);
+        Teuchos::ArrayRCP<SC> coordCpy(coord.size());
+        for(int i=0; i<coord.size(); i++) {
+          coordCpy[i] = coord[i];
+        }
+        level.Set("XCoordinates", coordCpy);
+        //std::cout << coordCpy << std::endl;
+      }
+      
+      if (coordinates->getNumVectors() >= 2) {
+        Teuchos::ArrayRCP<const SC> coord = coordinates->getData(1);
+        Teuchos::ArrayRCP<SC> coordCpy(coord.size());
+        for(int i=0; i<coord.size(); i++) {
+          coordCpy[i] = coord[i];
+        }
+        level.Set("YCoordinates", coordCpy);
+      }
+      
+      /*if (coordinates->getNumVectors() >= 3) {
+        Teuchos::ArrayRCP<const SC> coord = coordinates->getData(2);
+        Teuchos::ArrayRCP<SC> coordCpy(coord.size());
+        for(int i=0; i<coord.size(); i++) {
+          coordCpy[i] = coord[i];
+        }
+        level.Set("ZCoordinates", coordCpy);
+        }*/
+    }
 
     coalescedMap->describe(*fos,Teuchos::VERB_EXTREME);
     sleep(1); comm->barrier();
