@@ -1,0 +1,52 @@
+XCOMM Copyright(C) 2011 Sandia Corporation. Under the terms of Contract
+XCOMM DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+XCOMM certain rights in this software.
+XCOMM         
+XCOMM Redistribution and use in source and binary forms, with or without
+XCOMM modification, are permitted provided that the following conditions are
+XCOMM met:
+XCOMM 
+XCOMM     * Redistributions of source code must retain the above copyright
+XCOMM       notice, this list of conditions and the following disclaimer.
+XCOMM 
+XCOMM     * Redistributions in binary form must reproduce the above
+XCOMM       copyright notice, this list of conditions and the following
+XCOMM       disclaimer in the documentation and/or other materials provided
+XCOMM       with the distribution.
+XCOMM     * Neither the name of Sandia Corporation nor the names of its
+XCOMM       contributors may be used to endorse or promote products derived
+XCOMM       from this software without specific prior written permission.
+XCOMM 
+XCOMM THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+XCOMM "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+XCOMM LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+XCOMM A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+XCOMM OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+XCOMM SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+XCOMM LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+XCOMM DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+XCOMM THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+XCOMM (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+XCOMM OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+LIB = mapvarlib
+
+INCLIST = aexds1.blk amesh.blk  contrl.blk ebbyeb.blk header.blk ntpdat.blk schdat.blk tapes.blk  varept.blk \
+	aexds2.blk bmesh.blk  debg.blk   ex2tp.blk  inival.blk rundat.blk steps.blk  toldat.blk varnpt.blk
+
+SRCS = 	avg.f     bs.f       elgrad.f   exth.f     frge.f     initlz.f   invcon.f   mvopnfil.f rda2.f     seton0.f   sintpe.f   tranab.f \
+	bldpte.f   clsfil.f   elton0.f   extq.f     hexsrc.f   intrp3.f   jacobn.f   node.f     rdb1.f     seton1.f   sintpn.f   trutbl.f \
+	bldptn.f   cntr.f     elton1.f   exts.f     inielt.f   intrpe.f   mke.f      qadsrc.f   rdb2.f     shapef.f   stran.f    vol.f    \
+	bldsrf.f   debug.f    error.f    flgrad.f   ininod.f   intrpn.f   mkei.f     rda1.f     rdinpt.f   shlsrc.f   tetsrc.f   wrtc.f   
+
+OBJS = ${SRCS:.f=.o}
+
+NormalLibraryTarget($(LIB),$(OBJS))
+
+InstallIncludeList(makeincludes,$(INCLIST),$(INCDIR))
+InstallIncludeList(install,$(INCLIST),$(INCDIR))
+
+InstallLibrary($(LIB),$(LIBDIR))
+
+DependTarget()
+

@@ -37,26 +37,6 @@ C=======================================================================
 C
 C   --*** DBIVTT *** Read element variable truth table
 C   --   Modified for ExodusII format 8/26/95
-C   --*** DBINAM *** (EXOLIB) Read database names
-C   --   Written by Amy Gilkey - revised 02/08/88
-C   --
-C   --
-C   --DBINAM performed a number of different input file read base
-C   --on the passed in option argument.  DBINAM was split up
-C   --into a number of different subroutins
-
-C   --DBINAM reads the names of the coordinates, the element block types,
-C   --and the database variables from the database.  All names are converted
-C   --to uppercase and all embedded blanks within a name are removed.
-C   --The element block variable truth table is also read.
-C   --
-C   --Note that the numbers of variables are read in this routine.
-C   --
-C   --This routine calls DBVINI and uses DBVIX to get the variable name
-C   --indices.
-C   --
-C   --Dynamic memory is reserved in this routine.  If there is a problem,
-C   --MEMERR is called and then this routine returns with and error IOERR=1
 C   --
 C   --Parameters:
 C   --   NDB    - IN  - the database number
@@ -71,8 +51,6 @@ C   --                  truth table;variable i,block j exists iff ISEVOK(j,i)
       INTEGER ITMP(NVAREL, NELBLK)
 
 C     Read the element block variable truth table
-C     call exgvtt(fileid, num_elem_blks, num_elem_var,
-C                   isevok(num_elem_var, num_elem_blks, errorid)
 C       isevok - num_elem_var cycles faster
       if (nvarel .gt. 0) then
         CALL EXGVTT(NDB, NELBLK, NVAREL, ITMP, IERR)

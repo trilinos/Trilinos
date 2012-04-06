@@ -40,7 +40,7 @@ BISON = bison --yacc --defines
 FLEX = flex
 
 SRCS = \
-ap_builtin.c  aprepro.c     ap_stat.c     ap_getline_int.c \
+ap_builtin.c  ap_aprepro.c  ap_stat.c     ap_getline_int.c \
 ap_util.c     ap_init.c     ap_hash.c     ap_units.c ap_exodus.c
 OSRCS = \
 aprepro.l  aprepro.y  my_aprepro.h
@@ -48,7 +48,7 @@ aprepro.l  aprepro.y  my_aprepro.h
 #else
 
 SRCS = \
-ap_builtin.c  aprepro.c     ap_stat.c     ap_getline_int.c \
+ap_builtin.c  ap_aprepro.c     ap_stat.c     ap_getline_int.c \
 y.tab.c    lex.yy.c   ap_util.c     ap_init.c    ap_hash.c  ap_exodus.c   ap_units.c
 
 OSRCS = \
@@ -56,10 +56,10 @@ aprepro.l  aprepro.y  my_aprepro.h
 
 #endif
 
-LIBS=$(SUPLIB) $(NEMESISC) $(EXOIIV2C) $(NETCDF) -lm 
+LIBS=$(SUPLIB) $(EXOIIV2C) $(NETCDF) -lm 
 
 OBJS = \
-y.tab.o    ap_builtin.o  aprepro.o     ap_stat.o  ap_getline_int.o \
+y.tab.o    ap_builtin.o  ap_aprepro.o     ap_stat.o  ap_getline_int.o \
 ap_util.o  ap_init.o     ap_hash.o     ap_units.o ap_exodus.o 
 
 DEFINES = $(ALLOCA_DEFINES)

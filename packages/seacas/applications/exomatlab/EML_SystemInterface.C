@@ -61,7 +61,7 @@ namespace {
 
 SystemInterface::SystemInterface()
   : minimumTime_(0.0), maximumTime_(-1.0), inputFile_(), outputFile_(),
-    listVars_(false), fieldSuffix_('_')
+    listVars_(false), fieldSuffix_(0)
 {
   enroll_options();
 }
@@ -82,8 +82,8 @@ void SystemInterface::enroll_options()
 
   options_.enroll("field_suffix", GetLongOption::MandatoryValue,
 		  "Character used to separate a field component suffix from the field name.\n"
-		  "\t\tEnter 'none' for no separator (fieldx, fieldy fieldz).\n"
-		  "\t\tDefault = '_' (field_x, field_y, field_z)", "_");
+		  "\t\tEnter '_' to treat field_x, field_y, field_z as a 3-component vector 'field'.\n"
+		  "\t\tDefault = none (field_x, field_y, field_z are different fields)", "none");
   
   options_.enroll("minimum_time", GetLongOption::MandatoryValue,
 		  "Minimum timestep for which to transfer data to matlab file.", 0);

@@ -83,11 +83,15 @@ GetLongOption::parse(int argc, char * const *argv)
    while ( argc >= 1 ) {
       char *token = *++argv; --argc;
 
-      if ( token[0] != optmarker || token[1] == optmarker )
+      // '--' signifies end of options if followed by space
+      if ( token[0] != optmarker || (token[1] == optmarker && strlen(token) == 2))
 	 break;	/* end of options */
 
       ++my_optind;
       char *tmptoken = ++token;
+      if (token[0] == optmarker) // Handle a double '--'
+	tmptoken = ++token;
+
       while ( *tmptoken && *tmptoken != '=' )
 	 ++tmptoken;
       /* (tmptoken - token) is now equal to the command line option
@@ -163,7 +167,7 @@ GetLongOption::parse(char * const str, char * const p)
    const char *name = p ? p : "GetLongOption";
 
    while ( token ) {
-      if ( token[0] != optmarker || token[1] == optmarker ) {
+     if ( token[0] != optmarker || (token[1] == optmarker && strlen(token) == 2)) {
 	 std::cerr << name << ": nonoptions not allowed\n";
 	 return -1;	/* end of options */
       }

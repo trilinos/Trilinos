@@ -45,16 +45,26 @@
 #define MAX_FNL		2048
 
 /* Restart structure */
+template <typename T>
 struct Restart_Description {
 
+  Restart_Description() :
+    Flag(-1), Num_Times(-1), Block_Size(-1),
+    Time_Idx(NULL), Time(NULL),
+    NVar_Glob(-1), NVar_Elem(-1), NVar_Node(-1), NVar_Nset(-1), NVar_Sset(-1),
+    Elem_TT(NULL), GElem_TT(NULL), Nset_TT(NULL), GNset_TT(NULL), Sset_TT(NULL), GSset_TT(NULL),
+    Glob_Vals(NULL), Elem_Vals(NULL), Node_Vals(NULL), Nset_Vals(NULL), Sset_Vals(NULL),
+    NV_Name(NULL), EV_Name(NULL), GV_Name(NULL), NSV_Name(NULL), SSV_Name(NULL)
+  {}
+
+  
   int       Flag;	/* Indicates whether restart info is to be processed */
 
   int       Num_Times;	/* The number of time indices to spread */
   int       Block_Size;	/* How many time steps will be read and moved
                            before being written to disk                     */
   int      *Time_Idx;	/* Time indicies to read, need to keep track of all */
-  float    *Time_sp;	/* array holding time values for each block read */
-  double   *Time_dp;
+  T        *Time;	/* array holding time values for each block read */
 
   int       NVar_Glob;	/* Number of global variables read */
   int       NVar_Elem;	/* Number of elemental variables read */
@@ -80,17 +90,12 @@ struct Restart_Description {
    * To be able to support single or double precision exodus files,
    * need to have both float and double pointers here.
    */
-  float   **Glob_Vals_sp; /* Global variable values, only one per variable *
+  T   **Glob_Vals; /* Global variable values, only one per variable *
                           * and processor                                 */
-  double  **Glob_Vals_dp;
-  float  ***Elem_Vals_sp; /* Element variable values for each processor */
-  double ***Elem_Vals_dp;
-  float  ***Node_Vals_sp; /* Nodal variable values for each processor */
-  double ***Node_Vals_dp;
-  float  ***Nset_Vals_sp; /* Nodeset variable values for each processor */
-  double ***Nset_Vals_dp;
-  float  ***Sset_Vals_sp; /* Sideset variable values for each processor */
-  double ***Sset_Vals_dp;
+  T  ***Elem_Vals; /* Element variable values for each processor */
+  T  ***Node_Vals; /* Nodal variable values for each processor */
+  T  ***Nset_Vals; /* Nodeset variable values for each processor */
+  T  ***Sset_Vals; /* Sideset variable values for each processor */
 
   char    **NV_Name;	/* Names of the nodal variables */
   char    **EV_Name;	/* Names of the elemental variables */
@@ -98,9 +103,6 @@ struct Restart_Description {
   char    **NSV_Name;	/* Names of the nodeset variables */
   char    **SSV_Name;	/* Names of the sideset variables */
 };
-
-typedef struct Restart_Description  RESTART;
-typedef struct Restart_Description *RESTART_PTR;
 
 /*****************************************************************************/
 /*	EXTERN STATEMENTS for GLOBALS USED IN I/O ROUTINES		     */
@@ -151,15 +153,4 @@ extern
 int Num_Sset_Var;		/* The number of sideset variables to reserve */
 				/* space in the output file for. */
 
-extern RESTART Restart_Info;	/* The restart information structure */
-
-/*****************************************************************************/
-/*	PROTOTYPES FOR GLOBAL FUNCTIONS THAT READ THE INPUT FILE             */
-/*****************************************************************************/
-
- extern int   read_string (FILE *, char *, int );
- extern int   look_for    (FILE *, char *, char [], int);
- extern void  strip       (char * );
-
-/*****************************************************************************/
 #endif

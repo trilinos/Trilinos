@@ -119,7 +119,6 @@ void match_node_xyz(RegionVector &part_mesh,
   size_t part_count = part_mesh.size();
   enum {X=0, Y=1, Z=2};
 
-  IntVector global_map();
   for (size_t ip=0; ip < part_count; ip++) {
     vector3d i_max;
     vector3d i_min;

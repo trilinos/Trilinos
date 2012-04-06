@@ -353,6 +353,9 @@ bool Parse_Token(string& tok, string& opt_arg)
   else if ( tok == "-norms" ) {
     specs.doNorms = true;
   }
+  else if ( tok == "-pedantic" ) {
+    specs.pedantic = true;
+  }
   else if (abbreviation(tok, "-allow_name_mismatch", 8)) {
     specs.allowNameMismatch = true;
   }
@@ -879,6 +882,10 @@ void Parse_Command_Line(int argc, char* argv[],
                         abbreviation(tok2, "match", 3) )
                 {
                   specs.nsmap_flag = true;
+                }
+              else if ( tok1 == "pedantic")
+                {
+                  specs.pedantic = true;
                 }
               else if ( tok1 == "sideset" &&
                         abbreviation(tok2, "match", 3) )

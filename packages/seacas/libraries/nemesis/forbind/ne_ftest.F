@@ -191,7 +191,6 @@ C Test the output of the element map
       END IF
 
 C Test the output of the concatenated communication map params
-#ifndef Build64  
       PRINT*, 'testing concatenated communication map params output...'
       CALL NETPCMPC(NEID, IERR)
       IF (IERR.NE.0) THEN
@@ -204,7 +203,6 @@ C Test the output of the concatenated communication map params
         PRINT*, '...successful'
         T_PASS = T_PASS + 1
       END IF
-#endif
       
 C Test nodal communication map output
       PRINT*, 'testing nodal communication map output...'

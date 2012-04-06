@@ -35,8 +35,8 @@
 static char const *qainfo[] =
 {
   "ejoin",
-  "2011/09/13",
-  "1.2.8",
+  "2012/03/23",
+  "1.2.9",
 };
 
 #endif // SEACAS_Version_h

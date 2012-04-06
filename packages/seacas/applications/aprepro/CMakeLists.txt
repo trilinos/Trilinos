@@ -15,7 +15,7 @@ SET(SOURCES ap_builtin.c  ap_stat.c  y.tab.c  ap_util.c  ap_init.c
 	    ap_hash.c     ap_liballoc.c  ap_units.c)
 
 TRIBITS_ADD_LIBRARY(aprepro_app_lib SOURCES ${SOURCES} DEPLIBS suplib)
-TRIBITS_ADD_EXECUTABLE(aprepro NOEXEPREFIX NOEXESUFFIX SOURCES aprepro.c DEPLIBS aprepro_app_lib suplib m COMM serial mpi)
+TRIBITS_ADD_EXECUTABLE(aprepro NOEXEPREFIX NOEXESUFFIX SOURCES ap_aprepro.c DEPLIBS aprepro_app_lib suplib m COMM serial mpi)
 install_executable(aprepro)
 
 TRIBITS_SUBPACKAGE_POSTPROCESS()

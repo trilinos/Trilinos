@@ -58,6 +58,7 @@ Specifications::Specifications()
     noSymmetricNameCheck (false),
     allowNameMismatch    (false),
     doNorms              (false),
+    pedantic             (false),
     coord_tol            ( ABSOLUTE, 1.0e-6, 0.0 ),
     time_tol             ( RELATIVE, 1.0e-6, 1.0e-15 ),
     time_step_offset     (0),

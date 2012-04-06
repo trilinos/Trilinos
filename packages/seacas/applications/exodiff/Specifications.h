@@ -83,6 +83,7 @@ public:
   bool noSymmetricNameCheck; // By default, the second file's variable
   bool allowNameMismatch;    // By default, name in 1st db must be in second also.
   bool doNorms;
+  bool pedantic;             // Be most picky on what is different (not fully picky yet)
   
   // These should correspond to the values specified during parsing of
   // coordinate tolerance.

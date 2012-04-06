@@ -202,10 +202,11 @@ void Compute_Maps(int*& node_map, int*& elmt_map,
         // Check that the element types are the same.
         if (num_nodes_per_elmt != block2->Num_Nodes_per_Elmt())
         {
-          std::cout << "\nexodiff: ERROR: Files are different (element match el= "
-		    << (i+1) << ", Bid= " << file1.Block_Id(b) << " to "
-		    << (l2+1) << ", " << file2.Block_Id(b2)
-		    << " has different number of nodes per element)"
+          std::cout << "\nexodiff: ERROR: Files are different.\n"
+		    << " In File 1: Element " << (i+1)  << " in Block " << file1.Block_Id(b)
+		    << " has " << num_nodes_per_elmt << " and\n"
+		    << " In File 2: Element " << (l2+1) << " in Block " << file2.Block_Id(b2)
+		    << " has " << block2->Num_Nodes_per_Elmt()
 		    << std::endl;
           exit(1);
         }
@@ -275,11 +276,25 @@ void Compute_Maps(int*& node_map, int*& elmt_map,
             }
           }
           if (!found) {
-            std::cout << "\nexodiff: ERROR: Files are different (element match el= "
-		      << (i+1) << ", Bid= " << file1.Block_Id(b) << " to "
-		      << (l2+1) << ", " << file2.Block_Id(b2)
-		      << " doesn't match file1 local node " << ln1 << ")"
-		      << std::endl;
+            std::cout << "\nexodiff: ERROR: Cannot find a match for node at position "
+		      << ln1+1 << " in first element.\n"
+		      << "\tFile 1: Element " << (i+1)  << " in Block " << file1.Block_Id(b) << " nodes:\n";
+	    for (int l1 = 0; l1 < num_nodes_per_elmt; ++l1) {
+	      double x_val = x1_f[ conn1[l1] - 1 ];
+	      double y_val = dim > 1 ? y1_f[ conn1[l1] - 1 ] : 0.0;
+	      double z_val = dim > 2 ? z1_f[ conn1[l1] - 1 ] : 0.0;
+	      std::cout << "\t(" << l1+1 << ")\t" << conn1[l1] << "\t" << x_val << "\t" << y_val << "\t" << z_val << "\n";
+	    }
+	    std::cout << "\tFile 2: Element " << (l2+1) << " in Block " << file1.Block_Id(b) << " nodes:\n";
+	    for (int l2 = 0; l2 < num_nodes_per_elmt; ++l2) {
+	      double x_val = x2_f[ conn2[l2] - 1 ];
+	      double y_val = dim > 1 ? y2_f[ conn2[l2] - 1 ] : 0.0;
+	      double z_val = dim > 2 ? z2_f[ conn2[l2] - 1 ] : 0.0;
+	      std::cout << "\t(" << l2+1 << ")\t" << conn2[l2] << "\t" << x_val << "\t" << y_val << "\t" << z_val << "\n";
+	    }
+	    std::cout << "Coordinates compared using tolerance: " << specs.coord_tol.value
+		      << " (" << specs.coord_tol.typestr() << "), floor: "
+		      <<  specs.coord_tol.floor << "\n";
             exit(1);
           }
         }  // End of local node loop on file1's element.
@@ -473,10 +488,11 @@ void Compute_Partial_Maps(int*& node_map, int*& elmt_map,
         // Check that the element types are the same.
         if (num_nodes_per_elmt != block2->Num_Nodes_per_Elmt())
         {
-          std::cout << "\nexodiff: ERROR: Files are different (element match el= "
-		    << (i+1) << ", Bid= " << file1.Block_Id(b) << " to "
-		    << (l2+1) << ", " << file2.Block_Id(b2)
-		    << " has different number of nodes per element)"
+          std::cout << "\nexodiff: ERROR: Files are different.\n"
+		    << " In File 1: Element " << (i+1)  << " in Block " << file1.Block_Id(b)
+		    << " has " << num_nodes_per_elmt << " and\n"
+		    << " In File 2: Element " << (l2+1) << " in Block " << file2.Block_Id(b2)
+		    << " has " << block2->Num_Nodes_per_Elmt()
 		    << std::endl;
           exit(1);
         }
@@ -510,11 +526,25 @@ void Compute_Partial_Maps(int*& node_map, int*& elmt_map,
             }
           }
           if (!found) {
-            std::cout << "\nexodiff: ERROR: Files are different (element match el= "
-		      << (i+1) << ", Bid= " << file1.Block_Id(b) << " to "
-		      << (l2+1) << ", " << file2.Block_Id(b2)
-		      << " doesn't match file1 local node " << ln1 << ")"
-		      << std::endl;
+            std::cout << "\nexodiff: ERROR: Cannot find a match for node at position "
+		      << ln1+1 << " in first element.\n"
+		      << "\tFile 1: Element " << (i+1)  << " in Block " << file1.Block_Id(b) << " nodes:\n";
+	    for (int l1 = 0; l1 < num_nodes_per_elmt; ++l1) {
+	      double x_val = x1_f[ conn1[l1] - 1 ];
+	      double y_val = dim > 1 ? y1_f[ conn1[l1] - 1 ] : 0.0;
+	      double z_val = dim > 2 ? z1_f[ conn1[l1] - 1 ] : 0.0;
+	      std::cout << "\t(" << l1+1 << ")\t" << conn1[l1] << "\t" << x_val << "\t" << y_val << "\t" << z_val << "\n";
+	    }
+	    std::cout << "\tFile 2: Element " << (l2+1) << " in Block " << file1.Block_Id(b) << " nodes:\n";
+	    for (int l2 = 0; l2 < num_nodes_per_elmt; ++l2) {
+	      double x_val = x2_f[ conn2[l2] - 1 ];
+	      double y_val = dim > 1 ? y2_f[ conn2[l2] - 1 ] : 0.0;
+	      double z_val = dim > 2 ? z2_f[ conn2[l2] - 1 ] : 0.0;
+	      std::cout << "\t(" << l2+1 << ")\t" << conn2[l2] << "\t" << x_val << "\t" << y_val << "\t" << z_val << "\n";
+	    }
+	    std::cout << "Coordinates compared using tolerance: " << specs.coord_tol.value
+		      << " (" << specs.coord_tol.typestr() << "), floor: "
+		      <<  specs.coord_tol.floor << "\n";
             exit(1);
           }
         }  // End of local node loop on file1's element.

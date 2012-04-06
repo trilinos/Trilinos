@@ -1,0 +1,218 @@
+##############################################################################
+# Lines beginning with a "#" are considered a comment.
+#
+# Blank lines are ignored.
+#
+# This file is set up as a number of lines, each of which consists of
+# a key phrase, followed by a value.
+#
+# The order of the key phrases is not significant
+#
+# Case is not significant, unless it is significant in the value of a
+# variable (such as file names).
+#
+# Order of the suboptions is not significant.
+##############################################################################
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# INPUT EXODUSII FILE = <filename>
+#
+# This line contains the name of the input ExodusII mesh file which is
+# to be load balanced
+#-----------------------------------------------------------------------------
+INPUT EXODUSII FILE		= testa.exoII
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# OUTPUT NEMESISI FILE = <filename>
+#
+# This line is OPTIONAL.
+#
+# This line contains the name of the output NemsisI. This filename must
+# be different than the input filename.
+#
+# Default: nem_slice generates a name
+#-----------------------------------------------------------------------------
+OUTPUT NEMESISI FILE		= testa.nemI
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# OUTPUT VISUALIZATION FILE = <option>
+#
+# This line is OPTIONAL.
+#
+# Specify if a visualization file should be generated for this decomposition.
+# The options for this line are "yes", "true", "false", and "no".
+#
+# Default: no visualization file
+#-----------------------------------------------------------------------------
+OUTPUT VISUALIZATION FILE	= true
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# GRAPH TYPE FILE = [ELEMENTAL | NODAL]
+#
+# This line determines what kind of a decomposition is going to be
+# generated. The options are ELEMENTAL and NODAL.
+#-----------------------------------------------------------------------------
+GRAPH TYPE			= ELEMENTAL
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# DECOMPOSITION METHOD = <options>
+#
+# This line contains all of the information about the decomposition
+# method that will be used. The options are:
+#	multikl			- use multilevel Kernighan-Lin partitioning
+#				  method
+#	spectral		- use spectral partitioning method
+#	scattered		- use scattered partitioning method
+#	linear			- use linear partitioning method
+#	inertial		- use inertial partitioning method
+#	random			- use random partitioning method
+#	infile=<filename>	- read assignment vector from file
+# NOTE: one and only one of the above options must be specified
+#
+#	kl			- OPTIONAL, use Kernighan-Lin refinement for
+#				  multilevel methods; Default = none
+#	none			- OPTIONAL, do not use any refinement;
+#				  Default = none
+#	num_sects=<integer>	- OPTIONAL, number of eigenvectors; Default = 1
+#	cnctd_dom		- OPTIONAL, set CONNECTED_DOMAINS parameter
+#				  in Chaco. This option forces Chaco to make
+#				  sure that all domains are connected after
+#				  the partitioning. Default = off
+#	outfile=<filename>	- OPTIONAL, One the partition is complete,
+#				  write out the assignment vector to an ascii
+#				  file. The nemesisI file is still created if
+#				  this option is used. NOTE: This option and
+#				  the "infile" option cannot be used at the
+#				  same time. Default = off
+#-----------------------------------------------------------------------------
+DECOMPOSITION METHOD		= INERTIAL,KL, NUM_SECTS=1, CNCTD_DOM
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# SOLVER SPECIFICATIONS = <options>
+#
+# This line is OPTIONAL.
+#
+# This line contains all of the options for the eigensolver. The options are:
+#       tolerance=<number>	- OPTIONAL, set the eigensolver tolerance;
+#				  Default = 1.0e-3
+#       use_rqi			- OPTIONAL, use the RQI/Symmlq eigensolver;
+#				  Default = OFF
+#       vmax=<integer>		- OPTIONAL, set the number of vertices to
+#                                 coarsen down to; Default = 200
+#-----------------------------------------------------------------------------
+SOLVER SPECIFICATIONS		= TOLERANCE=2.0e-3,USE_RQI,VMAX=200
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# MACHINE DESCRIPTION = <options>
+#
+# This line is used to describe the machine. The options are:
+#	hcube=<integer>		- Set machine type to hypercube where the
+#				  order of the cube is given.
+#	hypercube=<integer>	- same as "hcube"
+#	mesh=<mesh description>	- Set the machine type to a mesh. The
+#				  description can be given as a 1, 2, or
+#				  three dimensional mesh by giving the
+#				  number of processors in each dimension
+#				  seperated by an "x". For example, a 2d
+#				  mesh with 10 processors on each side is
+#				  designated be "10x10"
+#	cluster=<cluster desc>	- Set the machine type to a Cluster machine.
+#				  This causes nem_slice to slice first on
+#				  the number of boxes, and then call Chaco
+#				  for each box. The hope is that this will
+#				  minimize the communication accross the boxes.
+#				  The machine description is as follows:
+#					<# boxes><m|h><description>
+#					# boxes     - number of boxes, integer
+#					m | h       - designates each boxe as
+#						      either mesh or hypercube
+#					description - the description of the
+#						      mesh or hypercube same
+#						      as above.
+#					example:
+#					cluster=16m8x8
+#					16 boxes, and each box has a 2d mesh
+#					that is 8 by 8 processors.
+#-----------------------------------------------------------------------------
+MACHINE DESCRIPTION		= MESH=2x2
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# WEIGHTING SPECIFICATIONS = <options>
+#
+# This line is OPTIONAL.
+#
+# This line contains any weighting information. If this line is absent,
+# then all weighting is turned off. The options are:
+#	read=<filename>		- OPTIOINAL, This is the name of an ExodusII
+#				  file from which to read the vertex weights.
+#				  If this is specified, then either var_name
+#				  or var_index must be specified.
+#	var_name=<var name>	- This is the name of the variable in the
+#				  file, read, which will be used as vertex
+#				  weights.
+#	var_index=<integer>	- This is the index of the variable in the
+#				  file, read, which will be used as vertex
+#				  weights.
+#	time_index=<integer>	- OPTIONAL, This is the time index of the
+#				  variable to be read. If it is not given
+#				  then the default is time index 1.
+#	eb=<block id>:<weight>	- OPTIONAL, This is a way to weight a specific
+#				  element block. Weights should be specified
+#				  with integers. So, in order to assign element
+#				  block id 10 with a weight of 6 the following
+#				  would be used: eb=10:6. If an element block
+#				  weight is place after a read on the weighting
+#				  specification line, then it will overwrite
+#				  the vertex weights from the read.
+#	edges			- turn edge weights on
+#-----------------------------------------------------------------------------
+WEIGHTING SPECIFICATIONS	= READ=testa-out-r.exoII,Var_Name=Temp,time_index=5
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# MISC OPTIONS = <options>
+#
+# This line is OPTIONAL.
+#
+# This line is used to handle any miscellaneous information that doesn't
+# really fit anywhere else. The options are:
+#	checks_off		- OPTIONAL, This turns off some of the
+#				  error checking that nem_slice performs
+#				  when it is finding an elements side ids.
+#				  NOTE: this option should be used with
+#				  caution.
+#	face_adj		- OPTIONAL, In an elemental distribution,
+#				  use a face concept of adjacency to generate
+#				  the graph that will be passed to Chaco.
+#				  This definition only allows adjacency
+#				  between elements if they share an entire
+#				  face. The default is for elements to be
+#				  adjacent if the share at least one node.
+#	groups {group designator} - Define groups that will be passed into
+#				  Chaco seperately. The groups are designated
+#				  by element block ids. This option should be
+#				  used when there is a problem handling
+#				  elements from different blocks on the same
+#				  processor. The rules for the group designator
+#				  are as follows:
+#				  - The beginning and end of the group
+#				    designator are set using brackets "{","}"
+#				  - Blocks are grouped using the slash "/"
+#				    character
+#				  - Ids are separated with white space, comma,
+#				    or by the hyphen "-" character
+#				  - Any blocks not included in the list, are
+#				    added to a separate group
+#				  - Duplicates in the list are permitted, but
+#				    the last group to which a block is placed
+#				    is where the block will go
+#				  - Block IDs not in the exodus file are
+#				    quietly ignored
+#				  Example:
+#    Assume block IDs= 1-20 31-45
+# 
+#      descriptor              group1          group2     group3
+#    - {1-20}                  1-20             31-45
+#    - {30-45 3/ 10-12}        3, 30-45         10,11,12   1,2,4-20
+#    - {1-20/40-45/5-10 21-41}  1-4,11-20       42,43,45   5-10 31-41
+#-----------------------------------------------------------------------------
+MISC OPTIONS			= checks_off, face_adj, groups {1 / 2}

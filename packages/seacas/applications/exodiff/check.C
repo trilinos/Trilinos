@@ -301,7 +301,9 @@ namespace {
     bool is_same = true;
     if (file1.Num_Node_Sets() != file2.Num_Node_Sets()) {
       if(specs.map_flag != PARTIAL){
-	std::cout << "exodiff: WARNING .. Number of nodesets don't agree...\n";
+	std::cout << "exodiff: ERROR .. Number of nodesets don't agree...\n";
+	if (specs.pedantic)
+	  is_same = false;
       }
     }
     // Check that the files both contain the same nodesets...
@@ -309,12 +311,16 @@ namespace {
       Node_Set* set1 = file1.Get_Node_Set_by_Index(b);
       Node_Set* set2 = file2.Get_Node_Set_by_Id(set1->Id());
       if (set2 == NULL) {
-	std::cout << "exodiff: WARNING .. Nodeset id " << set1->Id()
+	std::cout << "exodiff: ERROR .. Nodeset id " << set1->Id()
 		  << " exists in first file but not the second.\n";
+	if (specs.pedantic)
+	  is_same = false;
       } else {
 	if (set1->Size() != set2->Size()) {
-	  std::cout << "exodiff: WARNING .. The node count for nodeset id " << set1->Id()
+	  std::cout << "exodiff: ERROR .. The node count for nodeset id " << set1->Id()
 		    << " is not the same in the two files.\n";
+	  if (specs.pedantic)
+	    is_same = false;
 	}
       }
     }
@@ -322,8 +328,10 @@ namespace {
     for (int b = 0; b < file2.Num_Node_Sets(); ++b) {
       Node_Set* set2 = file2.Get_Node_Set_by_Index(b);
       if (set2 == NULL) {
-	std::cout << "exodiff: WARNING .. Nodeset id " << set2->Id()
+	std::cout << "exodiff: ERROR .. Nodeset id " << set2->Id()
 		  << " exists in second file but not the first.\n";
+	if (specs.pedantic)
+	  is_same = false;
       }
     }
 
@@ -376,7 +384,9 @@ namespace {
     bool is_same = true;
     if (file1.Num_Side_Sets() != file2.Num_Side_Sets()) {
       if(specs.map_flag != PARTIAL){
-	std::cout << "exodiff: WARNING .. Number of sidesets don't agree...\n";
+	std::cout << "exodiff: ERROR .. Number of sidesets don't agree...\n";
+	if (specs.pedantic)
+	  is_same = false;
       }
     }
     // Check that the files both contain the same sidesets...
@@ -384,12 +394,16 @@ namespace {
       Side_Set* set1 = file1.Get_Side_Set_by_Index(b);
       Side_Set* set2 = file2.Get_Side_Set_by_Id(set1->Id());
       if (set2 == NULL) {
-	std::cout << "exodiff: WARNING .. Sideset id " << set1->Id()
+	std::cout << "exodiff: ERROR .. Sideset id " << set1->Id()
 		  << " exists in first file but not the second.\n";
+	if (specs.pedantic)
+	  is_same = false;
       } else {
 	if (set1->Size() != set2->Size()) {
-	  std::cout << "exodiff: WARNING .. The side count for sideset id " << set1->Id()
+	  std::cout << "exodiff: ERROR .. The side count for sideset id " << set1->Id()
 		    << " is not the same in the two files.\n";
+	  if (specs.pedantic)
+	    is_same = false;
 	}
       }
     }
@@ -397,8 +411,10 @@ namespace {
     for (int b = 0; b < file2.Num_Side_Sets(); ++b) {
       Side_Set* set2 = file2.Get_Side_Set_by_Index(b);
       if (set2 == NULL) {
-	std::cout << "exodiff: WARNING .. Sideset id " << set2->Id()
+	std::cout << "exodiff: ERROR .. Sideset id " << set2->Id()
 		  << " exists in second file but not the first.\n";
+	if (specs.pedantic)
+	  is_same = false;
       }
     }
 

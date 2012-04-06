@@ -58,7 +58,7 @@
 
 using namespace std;
 
-string Version() { return "2.49 (2011-11-17)"; }
+string Version() { return "2.51 (2012-04-02)"; }
 
 string Date() {
   char tbuf[32];
@@ -173,6 +173,8 @@ void Echo_Help(const std::string &option) {
       << "\n"
       << "    -no_nsmap : Compare nodeset nodes based on file order only\n"
       << "    -no_ssmap : Compare sideset faces based on file order only\n"
+      << "\n"
+      << "    -pedantic : Be more picky about what is a difference.\n"
       << "\n"
       << "    -s : Short block type compare.  Forces element block type strings to\n"
       << "         be compared only up to the shortest string length.  For example,\n"

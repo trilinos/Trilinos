@@ -157,7 +157,7 @@ namespace {
     case Excn::NSET:
       return EX_NODE_SET;
     default:
-      throw std::runtime_error("Invalid Object Type in exodus_object_type: " + conjoin_type);
+      throw std::runtime_error("Invalid Object Type in exodus_object_type: " + to_string(conjoin_type));
     }
     return EX_INVALID;
   }
