@@ -42,10 +42,6 @@ SET(Belos_Tpetra_MVOPTester_complex_test_DISABLE TRUE)
 SET(Anasazi_Tpetra_MVOPTester_MPI_4_DISABLE TRUE)
 SET(Anasazi_Tpetra_MVOPTester_DISABLE TRUE)
 
-# Don't allow Optika GUI tests since they just seem to work and are not tested
-# (see discussion in commit message).
-SET(Optika_DO_GUI_UNIT_TESTS OFF CACHE BOOL "")
-
 # Turn on configure timing
 SET(${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING ON CACHE BOOL "")
 

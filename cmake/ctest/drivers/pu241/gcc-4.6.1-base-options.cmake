@@ -15,9 +15,6 @@ IF ("${HYBRIDBUILD_INTEL_VERSION}" STREQUAL "")
   INCLUDE(${CMAKE_CURRENT_LIST_DIR}/mkl-12.0.4-options.cmake)
   SET(BLAS_INCLUDE_DIRS   ${MKL_GCC451_MODULE_PATH} CACHE PATH "Path to MKL BLAS Fortran modules compatible with gfortran")
   SET(LAPACK_INCLUDE_DIRS ${MKL_GCC451_MODULE_PATH} CACHE PATH "Path to MKL LAPACK Fortran modules compatible with gfortran")
-  # The ANC/VIPRE/BOA code does not work with gfortran 4.6.1 (or any GCC version of Fortran)
-  SET(VERA_ENABLE_CASLRAVE OFF CACHE BOOL "")
-  SET(VERA_ENABLE_CASLBOA OFF CACHE BOOL "")
 ELSE()
   IF ("${HYBRIDBUILD_INTEL_VERSION}" STREQUAL "12.0.4")
     MESSAGE(STATUS "Selecting ifort 12.0.4 compiler and libraries")
@@ -36,7 +33,7 @@ ENDIF()
 # To avoid problem with EpetraExt_inout_test failure in optimized code for hybrid build
 SET(Epetra_ENABLE_Fortran OFF CACHE BOOL "")
 
-# This compiler supports BinUtils
+# this compiler supports BinUtils
 SET(TPL_ENABLE_BinUtils ON CACHE BOOL "")
 
 # Point to basic CASL-related TPLs related to the GCC C/C++ 4.6.1 compiler

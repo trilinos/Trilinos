@@ -160,7 +160,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   MATLAB          "cmake/TPLs/"    EX
   CASK            "cmake/TPLs/"    EX
   SPARSKIT        "cmake/TPLs/"    SS
-  QT             "${${PROJECT_NAME}_TRIBITS_DIR}/tpls/"    SS
+  QT              "cmake/TPLs/"    SS
   gtest           "cmake/TPLs/"    EX
   BoostLib        "cmake/TPLs/"    SS
   OpenNURBS       "cmake/TPLs/"    EX

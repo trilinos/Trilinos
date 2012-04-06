@@ -54,7 +54,7 @@
 # @HEADER
 
 INCLUDE(TribitsTplDeclareLibraries)
-INCLUDE(Split)
+
 SET(TPL_QT_QMAKE_EXECUTABLE "" CACHE STRING "A Trilinos specific variable that defines where the Qt Qmake Execuatable is")
 
 IF(TPL_QT_QMAKE_EXECUTABLE AND QT_QMAKE_EXECUTABLE)
@@ -91,9 +91,9 @@ IF(NOT QT_REQUIRED_VERSION)
   SET(QT_REQUIRED_VERSION 4.5.0)
 ENDIF()
 IF(NOT QT_REQUIRED_COMPONENTS)
-  SET(QT_REQUIRED_COMPONENTS QtXml QtSql QtTest QtCore )
+  SET(QT_REQUIRED_COMPONENTS QtCore QtGui QtTest QtXml)
 ENDIF()
-MESSAGE("QT_REQUIRED_VERSION: ${QT_REQUIRED_COMPONENTS}")
+
 FIND_PACKAGE(Qt4 ${QT_REQUIRED_VERSION} COMPONENTS ${QT_REQUIRED_COMPONENTS} REQUIRED)
 if(NOT QT4_FOUND)
 	message("                             ____")
@@ -128,55 +128,11 @@ IF(NOT(TPL_QT_LIBRARY_DIRS))
 ENDIF()
 
 IF(NOT(TPL_QT_LIBRARIES))
-  SET(ADDITIONAL_LIBS)
-  #Look at the QT package configuration for linked libraries
-   #Check each required component
-  FOREACH( component QtCore QtCore_debug) #${QT_REQUIRED_COMPONENTS})
-    #platform dependent component configuration name
-    IF(CMAKE_SYSTEM_NAME MATCHES "Windows" )
-      SET(component_pkg ${TPL_QT_LIBRARY_DIRS}/${component}.prl)
-    ELSE(CMAKE_SYSTEM_NAME MATCHES "Windows" )
-      SET(component_pkg ${TPL_QT_LIBRARY_DIRS}/lib${component}.prl)
-    ENDIF(CMAKE_SYSTEM_NAME MATCHES "Windows" )
-    MESSAGE(STATUS "Searching for component: ${component_pkg}")
-    #Check if this componet configuration exists
-    IF( EXISTS ${component_pkg} )
-      MESSAGE("-- Found QT component(${component}) configuration: ${component_pkg}")
-      #read the component description file
-      FILE(STRINGS ${component_pkg} file_lines)
-      #loop over each line
-      FOREACH(line ${file_lines})
-         #only pay attention to library line
-         IF(line MATCHES "QMAKE_PRL_LIBS")
-           STRING(REGEX REPLACE "^.*=" "" line_pruned ${line}) 
-           SPLIT( "${line_pruned}" " +" field_list) 
-           IF(CMAKE_SYSTEM_NAME MATCHES "Windows")
-              SET(ADDITIONAL_LIBS ${field_list})
-           ELSE(CMAKE_SYSTEM_NAME MATCHES "Windows")
-              FOREACH(field ${field_list})
-                 IF( field MATCHES "-l" )
-                    STRING(REGEX REPLACE "-l" "" field ${field})
-                    LIST(APPEND ADDITIONAL_LIBS ${field})
-                 ENDIF( field MATCHES "-l" )
-              ENDFOREACH(field ${field_list})
-             ENDIF(CMAKE_SYSTEM_NAME MATCHES "Windows")
-          ENDIF(line MATCHES "QMAKE_PRL_LIBS")
-        ENDFOREACH(line ${file_lines})
-      ELSE( EXISTS ${component_pkg} )
-        MESSAGE("-- Did not find QT component(${component})")
-        MESSAGE("-- System libraries QT depends on may not be included correctly!")
-    ENDIF( EXISTS ${component_pkg} )
-  ENDFOREACH( component ${QT_REQUIRED_COMPONENTS})
-  #remove duplicate entries list
-  IF (ADDITIONAL_LIBS)
-    LIST(REMOVE_DUPLICATES ADDITIONAL_LIBS)
-  ENDIF()
-  SET(TPL_QT_LIBRARIES ${QT_QTSQL_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTTEST_LIBRARY} ${QT_QTXML_LIBRARY} ${QT_QTCORE_LIBRARY} ${ADDITIONAL_LIBS})
+	SET(TPL_QT_LIBRARIES ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTTEST_LIBRARY} ${QT_QTXML_LIBRARY})
 ENDIF()
-
 
 TRIBITS_TPL_DECLARE_LIBRARIES( QT
   REQUIRED_HEADERS QMainWindow QDialog QAbstratItemModel QTreeView QItemDelegate QPushButton QGridLayout QSpinBox QComboBox QLineEdit QLabel QScrollArea QDir QXmlStreamWriter QXmlStreamReader QStringList QDomElement
-  REQUIRED_LIBS_NAMES QtSql QtGui QtXml QtTest QtCore 
+  REQUIRED_LIBS_NAMES QtCore QtGui QtXml
   )
 
