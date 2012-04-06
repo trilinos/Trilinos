@@ -236,7 +236,7 @@ namespace Iovs {
   }
   
   //------------------------------------------------------------------------
-  int DatabaseIO::put_field_internal(const Ioss::Region* /* region */,
+  int64_t DatabaseIO::put_field_internal(const Ioss::Region* /* region */,
                                      const Ioss::Field& field,
                                      void *data, size_t data_size) const
   {
@@ -284,7 +284,7 @@ namespace Iovs {
     }
   }
 
-  int DatabaseIO::put_field_internal(const Ioss::NodeBlock* nb,
+  int64_t DatabaseIO::put_field_internal(const Ioss::NodeBlock* nb,
                                      const Ioss::Field& field,
                                      void *data, size_t data_size) const
   {
@@ -401,7 +401,7 @@ namespace Iovs {
     }
   }
 
-  int DatabaseIO::put_field_internal(const Ioss::ElementBlock* eb,
+  int64_t DatabaseIO::put_field_internal(const Ioss::ElementBlock* eb,
                                      const Ioss::Field& field,
                                      void *data, size_t data_size) const
   {
