@@ -60,6 +60,20 @@ namespace Xpetra {
       operatorViewTable_.put(viewLabel, view);
     }
     
+    void CreateView(const viewLabel_t viewLabel, const RCP<Operator> & op, bool bTranspose = false) {
+      TEUCHOS_TEST_FOR_EXCEPTION(op->operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.CreateView(): view '" + viewLabel + "' does not exist.");
+      
+      if(op->IsView(viewLabel) == true) {
+	Xpetra::viewLabel_t oldView = op->SwitchToView(viewLabel); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
+	Teuchos::RCP<const Map> rangeMap = (bTranspose) ?  op->getColMap() : op->getRowMap();
+	Teuchos::RCP<const Map> domainMap = (bTranspose) ? op->getRowMap() : op->getColMap();
+	oldView = op->SwitchToView(oldView);
+	if( IsView(viewLabel) == true) RemoveView(viewLabel);
+	CreateView(viewLabel, rangeMap, domainMap);  
+      }
+    }
+
+    
     void RemoveView(const viewLabel_t viewLabel) {
       TEUCHOS_TEST_FOR_EXCEPTION(operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.RemoveView(): view '" + viewLabel + "' does not exist.");
       TEUCHOS_TEST_FOR_EXCEPTION(viewLabel == GetDefaultViewLabel(), Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.RemoveView(): view '" + viewLabel + "' is the default view and cannot be removed.");
@@ -73,12 +87,16 @@ namespace Xpetra {
       return oldViewLabel;
     }
 
+    bool IsView(const viewLabel_t viewLabel) const {
+      return operatorViewTable_.containsKey(viewLabel);
+    }
+
     const viewLabel_t SwitchToDefaultView() { return SwitchToView(GetDefaultViewLabel()); }
 
     const viewLabel_t & GetDefaultViewLabel() const { return defaultViewLabel_; }
 
     const viewLabel_t & GetCurrentViewLabel() const { return currentViewLabel_; }
-
+    
     //@}
 
     //! @name Insertion/Removal Methods
