@@ -394,7 +394,11 @@ private:
   //
 
   fmwk_attributes* m_fmwk_attrs;
-  unsigned m_local_id;    
+
+  // Not a supported STK_Mesh concept, but fmwk requires it. We have it
+  // here instead of in m_fmwk_attrs for performance reasons (saves a
+  // memory hop when accessing local_id).
+  unsigned m_local_id;
 #endif
 };
 

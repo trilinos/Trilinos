@@ -25,22 +25,21 @@
 namespace stk {
 namespace mesh {
 
-
 class EntityComm
 {
 public:
   typedef boost::unordered_map<EntityKey, EntityCommInfoVector> map_type;
 
-  inline PairIterEntityComm sharing( const EntityKey & key ) const;
-  inline PairIterEntityComm comm( const EntityKey & key ) const; 
-  inline PairIterEntityComm comm( const EntityKey & key, const Ghosting & sub ) const;
+  PairIterEntityComm sharing( const EntityKey & key ) const;
+  PairIterEntityComm comm( const EntityKey & key ) const;
+  PairIterEntityComm comm( const EntityKey & key, const Ghosting & sub ) const;
 
-  inline bool insert( const EntityKey & key, const EntityCommInfo & val );
-  inline bool erase( const EntityKey & key, const EntityCommInfo & val );
-  inline bool erase( const EntityKey & key, const Ghosting & ghost );
-  inline void comm_clear_ghosting(const EntityKey & key );
-  inline void comm_clear(const EntityKey & key );
-  inline void comm_swap(const EntityKey & key1, const EntityKey & key2);
+  bool insert( const EntityKey & key, const EntityCommInfo & val );
+  bool erase( const EntityKey & key, const EntityCommInfo & val );
+  bool erase( const EntityKey & key, const Ghosting & ghost );
+  void comm_clear_ghosting(const EntityKey & key );
+  void comm_clear(const EntityKey & key );
+  void comm_swap(const EntityKey & key1, const EntityKey & key2);
 
 private:
   map_type m_comm_map;
@@ -64,8 +63,8 @@ inline PairIterEntityComm EntityComm::sharing( const EntityKey & key ) const
   return PairIterEntityComm( i , e );
 }
 
-inline PairIterEntityComm EntityComm::comm( const EntityKey & key ) const  
-{ 
+inline PairIterEntityComm EntityComm::comm( const EntityKey & key ) const
+{
   map_type::const_iterator it = m_comm_map.find(key);
   if (it == m_comm_map.cend()) {
     return PairIterEntityComm();
@@ -125,10 +124,6 @@ inline bool EntityComm::erase( const EntityKey & key, const EntityCommInfo & val
     m_comm.erase( i );
   }
 
-//  if (m_comm.empty()) {
-//    m_comm_map.erase(key);
-//  }
-
   return result ;
 }
 
@@ -152,10 +147,6 @@ inline bool EntityComm::erase( const EntityKey & key, const Ghosting & ghost )
     m_comm.erase( i , e );
   }
 
-//  if (m_comm.empty()) {
-//    m_comm_map.erase(key);
-//  }
-
   return result ;
 }
 
@@ -167,10 +158,6 @@ inline void EntityComm::comm_clear_ghosting(const EntityKey & key)
   std::vector< EntityCommInfo >::iterator j = m_comm.begin();
   while ( j != m_comm.end() && j->ghost_id == 0 ) { ++j ; }
   m_comm.erase( j , m_comm.end() );
-
-//  if (m_comm.empty()) {
-//    m_comm_map.erase(key);
-//  }
 }
 
 inline void EntityComm::comm_clear(const EntityKey & key)
@@ -194,7 +181,6 @@ inline void EntityComm::comm_swap(const EntityKey & key1, const EntityKey & key2
 
   comm1.swap(comm2);
 }
-
 
 /** \brief  Is shared with any other process */
 bool in_shared( const Entity & entity );
@@ -229,19 +215,17 @@ void comm_procs( const Entity & entity , std::vector<unsigned> & procs );
 void comm_procs( const Ghosting & ghost ,
                  const Entity & entity , std::vector<unsigned> & procs );
 
-
 //----------------------------------------------------------------------
 
 void pack_entity_info( CommBuffer & buf , const Entity & entity );
- 
+
 void unpack_entity_info(
   CommBuffer     & buf,
   const BulkData & mesh ,
   EntityKey      & key ,
-  unsigned       & owner , 
-  PartVector     & parts , 
+  unsigned       & owner ,
+  PartVector     & parts ,
   std::vector<Relation> & relations );
- 
 
 /** \brief  Pack an entity's field values into a buffer */
 void pack_field_values( CommBuffer & , Entity & );
@@ -252,8 +236,4 @@ bool unpack_field_values( CommBuffer & , Entity & , std::ostream & error_msg );
 } // namespace mesh
 } // namespace stk
 
-//----------------------------------------------------------------------
-//----------------------------------------------------------------------
-
 #endif
-

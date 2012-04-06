@@ -391,8 +391,8 @@ public:
   /** \brief  Query all ghostings */
   const std::vector<Ghosting*> & ghostings() const { return m_ghosting ; }
 
-  /** \brief  Entity Comm functions that are now moved to BulkData 
-   * These functions are only here for backwards compatibility.  
+  /** \brief  Entity Comm functions that are now moved to BulkData
+   * These functions are only here for backwards compatibility.
    * We plan to remove all comm accessors from the Entity in the future.
    */
   PairIterEntityComm entity_comm(const EntityKey & key) const { return m_entity_comm_map.comm(key); }

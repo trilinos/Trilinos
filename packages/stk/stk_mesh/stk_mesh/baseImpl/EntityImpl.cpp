@@ -214,44 +214,44 @@ void EntityImpl::update_key(EntityKey key)
 
 }
 
-PairIterEntityComm EntityImpl::comm() const 
-{ 
-  return BulkData::get(bucket()).entity_comm(m_key); 
+PairIterEntityComm EntityImpl::comm() const
+{
+  return BulkData::get(bucket()).entity_comm(m_key);
 }
 
-PairIterEntityComm EntityImpl::sharing() const 
-{ 
-  return BulkData::get(bucket()).entity_comm_sharing(m_key); 
+PairIterEntityComm EntityImpl::sharing() const
+{
+  return BulkData::get(bucket()).entity_comm_sharing(m_key);
 }
 
-PairIterEntityComm EntityImpl::comm( const Ghosting & sub ) const 
-{ 
-  return BulkData::get(bucket()).entity_comm(m_key,sub); 
+PairIterEntityComm EntityImpl::comm( const Ghosting & sub ) const
+{
+  return BulkData::get(bucket()).entity_comm(m_key,sub);
 }
 
-bool EntityImpl::insert( const EntityCommInfo & val ) 
-{ 
-  return BulkData::get(bucket()).entity_comm_insert(m_key,val); 
+bool EntityImpl::insert( const EntityCommInfo & val )
+{
+  return BulkData::get(bucket()).entity_comm_insert(m_key,val);
 }
 
-bool EntityImpl::erase( const EntityCommInfo & val ) 
-{ 
-  return BulkData::get(bucket()).entity_comm_erase(m_key,val); 
-} 
+bool EntityImpl::erase( const EntityCommInfo & val )
+{
+  return BulkData::get(bucket()).entity_comm_erase(m_key,val);
+}
 
-bool EntityImpl::erase( const Ghosting & ghost ) 
-{ 
-  return BulkData::get(bucket()).entity_comm_erase(m_key,ghost); 
+bool EntityImpl::erase( const Ghosting & ghost )
+{
+  return BulkData::get(bucket()).entity_comm_erase(m_key,ghost);
 }
 
 void EntityImpl::comm_clear_ghosting()
 {
-  return BulkData::get(bucket()).entity_comm_clear_ghosting(m_key); 
+  return BulkData::get(bucket()).entity_comm_clear_ghosting(m_key);
 }
 
 void EntityImpl::comm_clear()
 {
-  return BulkData::get(bucket()).entity_comm_clear(m_key); 
+  return BulkData::get(bucket()).entity_comm_clear(m_key);
 }
 
 } // namespace impl

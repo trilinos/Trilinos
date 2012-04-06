@@ -53,9 +53,9 @@ public:
   RelationVector::const_iterator node_relation(unsigned ordinal) const
   { return m_relation.begin() + ordinal; }
 
-  PairIterEntityComm comm() const; 
-  PairIterEntityComm sharing() const; 
-  PairIterEntityComm comm( const Ghosting & sub ) const; 
+  PairIterEntityComm comm() const;
+  PairIterEntityComm sharing() const;
+  PairIterEntityComm comm( const Ghosting & sub ) const;
 
   Bucket & bucket() const
   {
@@ -83,8 +83,8 @@ public:
                          bool is_back_relation = false);
 
   // Communication info access:
-  bool insert( const EntityCommInfo & val ); 
-  bool erase( const EntityCommInfo & val ); 
+  bool insert( const EntityCommInfo & val );
+  bool erase( const EntityCommInfo & val );
   bool erase( const Ghosting & ghost );
   void comm_clear_ghosting();
   void comm_clear();
@@ -163,7 +163,7 @@ public:
     //      print_entity_key( MetaData::get( bucket() ), key() ) <<
     //      "\nWas in nil bucket: " << (bucket().capacity() == 0) << ", " <<
     //      "was in destroyed state: " << (m_mod_log == EntityLogDeleted) );
-  
+
     return m_mod_log == EntityLogDeleted;
   }
 
