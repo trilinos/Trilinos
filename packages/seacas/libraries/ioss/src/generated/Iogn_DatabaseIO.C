@@ -448,6 +448,8 @@ namespace Iogn {
 	  IOSS_ERROR(errmsg);
 	}
 
+      } else if (field.get_name() == "ids") {
+	// Do nothing, just handles an idiosyncracy of the GroupingEntity
       } else {
 	num_to_get = Ioss::Utils::field_warning(cs, field, "input");
       }
