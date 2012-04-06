@@ -188,7 +188,6 @@ int main(int argc, char *argv[]) {
   *out << "=============================================================================" << std::endl;
 
   // build transfer operators
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory());
   RCP<SaPFactory> Pfact  = rcp( new SaPFactory() );
   RCP<RFactory>   Rfact  = rcp( new TransPFactory() );
 
@@ -224,7 +223,7 @@ int main(int argc, char *argv[]) {
   coarsestSmooProto = Teuchos::rcp( new DirectSolver("Klu", coarsestSmooList) );
 #endif
   RCP<SmootherFactory> coarsestSmooFact;
-  coarsestSmooFact = rcp(new SmootherFactory(coarsestSmooProto));
+  coarsestSmooFact = rcp(new SmootherFactory(coarsestSmooProto, Teuchos::null));
 
   FactoryManager M;
   M.SetFactory("Aggregates", UCAggFact);
@@ -232,7 +231,6 @@ int main(int argc, char *argv[]) {
   M.SetFactory("R", Rfact);
   M.SetFactory("A", Acfact);
   M.SetFactory("Smoother", SmooFact);
-  M.SetFactory("Ptent", TentPFact);
   M.SetFactory("CoarseSolver", coarsestSmooFact);
 
   //   Teuchos::ParameterList status;

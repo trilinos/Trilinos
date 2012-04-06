@@ -191,7 +191,6 @@ int main(int argc, char *argv[]) {
   *out << "=============================================================================" << std::endl;
 
   // build transfer operators
-  RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory());
   //RCP<PgPFactory> Pfact = rcp( new PgPFactory() );
   //RCP<RFactory> Rfact  = rcp( new GenericRFactory());
   RCP<SaPFactory> Pfact  = rcp( new SaPFactory() );
@@ -213,18 +212,6 @@ int main(int argc, char *argv[]) {
   if (maxLevels > 1)
     SmooFact = rcp( new SmootherFactory(smooProto) );
 
-  FactoryManager M;
-  M.SetFactory("Aggregates", UCAggFact);
-  M.SetFactory("P", Pfact);
-  M.SetFactory("R", Rfact);
-  M.SetFactory("A", Acfact);
-  M.SetFactory("Smoother", SmooFact);
-  M.SetFactory("Ptent", TentPFact);
-
-//   Teuchos::ParameterList status;
-//   status = H->FullPopulate(*Pfact,*Rfact,*Acfact,*SmooFact,0,maxLevels);
-  H->Setup(M, 0, maxLevels);
-
   // create coarsest smoother
   RCP<SmootherPrototype> coarsestSmooProto;
   std::string type = "";
@@ -234,12 +221,17 @@ int main(int argc, char *argv[]) {
 #else
   coarsestSmooProto = Teuchos::rcp( new DirectSolver("Klu", coarsestSmooList) );
 #endif
-  RCP<SmootherFactory> coarsestSmooFact;
-  coarsestSmooFact = rcp(new SmootherFactory(coarsestSmooProto));
-  H->SetCoarsestSolver(*coarsestSmooFact);
+  RCP<SmootherFactory> coarsestSmooFact = rcp(new SmootherFactory(coarsestSmooProto, Teuchos::null));
 
-//   *out << "======================\n Multigrid statistics \n======================" << std::endl;
-//   status.print(*out,Teuchos::ParameterList::PrintOptions().indent(2));
+  FactoryManager M;
+  M.SetFactory("Aggregates", UCAggFact);
+  M.SetFactory("P", Pfact);
+  M.SetFactory("R", Rfact);
+  M.SetFactory("A", Acfact);
+  M.SetFactory("Smoother", SmooFact);
+  M.SetFactory("CoarseSolver", coarsestSmooFact);
+
+  H->Setup(M, 0, maxLevels);
 
   Finest->print(*out);
 
