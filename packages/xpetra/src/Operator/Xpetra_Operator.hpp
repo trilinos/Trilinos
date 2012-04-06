@@ -60,7 +60,7 @@ namespace Xpetra {
       operatorViewTable_.put(viewLabel, view);
     }
     
-    void CreateView(const viewLabel_t viewLabel, const RCP<Operator> & op, bool bTranspose = false) {
+    /*void CreateView(const viewLabel_t viewLabel, const RCP<Operator> & op, bool bTranspose = false) {
       TEUCHOS_TEST_FOR_EXCEPTION(op->operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.CreateView(): view '" + viewLabel + "' does not exist.");
       
       if(op->IsView(viewLabel) == true) {
@@ -71,6 +71,34 @@ namespace Xpetra {
 	if( IsView(viewLabel) == true) RemoveView(viewLabel);
 	CreateView(viewLabel, rangeMap, domainMap);  
       }
+    }*/
+    
+    void CreateView(const viewLabel_t viewLabel, const RCP<Operator> & A, bool transposeA = false, const RCP<Operator> & B = Teuchos::null, bool transposeB = false) {
+            
+      RCP<const Map> domainMap = Teuchos::null;
+      RCP<const Map> rangeMap  = Teuchos::null;
+
+      // A has strided Maps
+      if(A->IsView(viewLabel)) {
+	Xpetra::viewLabel_t oldView = A->SwitchToView(viewLabel); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
+	rangeMap = (transposeA) ? A->getColMap() : A->getRowMap();
+	domainMap = (transposeA) ? A->getRowMap() : A->getColMap(); // overwrite if B != Teuchos::null
+	oldView = A->SwitchToView(oldView);
+      } else rangeMap = (transposeA) ? A->getDomainMap() : A->getRangeMap();
+      
+      // B has strided Maps
+      if(B != Teuchos::null ) {
+	if(B->IsView(viewLabel)) {
+	  Xpetra::viewLabel_t oldView = B->SwitchToView(viewLabel); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
+	  domainMap = (transposeB) ? B->getRowMap() : B->getColMap();
+	  oldView = B->SwitchToView(oldView);
+	} else domainMap = (transposeB) ? B->getRangeMap() : B->getDomainMap();
+      }
+      
+      
+      if(IsView(viewLabel)) RemoveView(viewLabel);
+      
+      CreateView(viewLabel, rangeMap, domainMap);   
     }
 
     
