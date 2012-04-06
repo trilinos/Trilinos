@@ -243,6 +243,9 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST(TentativePFactory, NonStandardMaps)
   {
 
+#warning Unit test PgPFactory NonStandardMaps disabled
+  return;
+
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
 
