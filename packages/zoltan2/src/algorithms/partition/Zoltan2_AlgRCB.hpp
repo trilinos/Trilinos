@@ -504,7 +504,9 @@ void AlgRCB(
 
   ArrayView<const gno_t> gnoList = mvector->getMap()->getNodeElementList();
 
-  solution->setParts(gnoList, partId, metrics);
+  ArrayRCP<const gno_t> gnos = arcpFromArrayView(gnoList);
+
+  solution->setParts(gnos, partId, metrics);
 }
 
 /*! \brief Find the point in space that divides the data evenly with

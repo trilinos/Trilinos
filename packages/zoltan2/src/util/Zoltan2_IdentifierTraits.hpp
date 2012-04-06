@@ -51,7 +51,7 @@ template <typename T>
 template <typename T>
   void z2GlobalMinMax(const Comm<int> &comm, 
     const T &localMin, const T &localMax, T &globalMin, T &globalMax,
-    const Environment env=Environment)
+    const Environment env=Environment())
 {
   int nprocs = comm.getSize();
 

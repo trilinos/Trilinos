@@ -52,7 +52,9 @@ void partToProc(
 {
   int nprocs = comm->getSize();
   int rank = comm->getRank();
-  size_t vals[4], reducevals[4];
+  size_t vals[4] = {haveNumGlobalParts, haveNumLocalParts,
+      numGlobalParts, numLocalParts};
+  size_t reducevals[4];
   size_t sumHaveGlobal, sumHaveLocal;
   size_t sumGlobal, sumLocal;
   size_t maxGlobal, maxLocal;
@@ -61,20 +63,18 @@ void partToProc(
   procDist.clear();
 
   if (doCheck){
-    vals[4] = {haveNumGlobalParts, haveNumLocalParts,
-      numGlobalParts, numLocalParts};
 
     try{
-      reduceAll<int, size_t>(*comm_, Teuchos::REDUCE_SUM, 4, vals, reducevals);
+      reduceAll<int, size_t>(*comm, Teuchos::REDUCE_SUM, 4, vals, reducevals);
     }
-    Z2_THROW_OUTSIDE_ERROR(*env_);
+    Z2_THROW_OUTSIDE_ERROR(*env);
 
     sumHaveGlobal = reducevals[0];
     sumHaveLocal = reducevals[1];
     sumGlobal = reducevals[2];
     sumLocal = reducevals[3];
 
-    env_->localInputAssertion(__FILE__, __LINE__,
+    env->localInputAssertion(__FILE__, __LINE__,
       "Either all procs specify num_global/local_parts or none do",
       (sumHaveGlobal == 0 || sumHaveGlobal == nprocs) &&
       (sumHaveLocal == 0 || sumHaveLocal == nprocs), 
@@ -104,20 +104,20 @@ void partToProc(
       vals[1] = numLocalParts;
       try{
         reduceAll<int, size_t>(
-          *comm_, Teuchos::REDUCE_MAX, 2, vals, reducevals);
+          *comm, Teuchos::REDUCE_MAX, 2, vals, reducevals);
       }
-      Z2_THROW_OUTSIDE_ERROR(*env_);
+      Z2_THROW_OUTSIDE_ERROR(*env);
   
       maxGlobal = reducevals[0];
       maxLocal = reducevals[1];
   
-      env_->localInputAssertion(__FILE__, __LINE__,
+      env->localInputAssertion(__FILE__, __LINE__,
         "Value for num_global_parts is different on different processes.",
         maxGlobal * nprocs == sumGlobal, BASIC_ASSERTION);
     }
 
     if (sumLocal){
-      env_->localInputAssertion(__FILE__, __LINE__,
+      env->localInputAssertion(__FILE__, __LINE__,
         "Sum of num_local_parts does not equal requested num_global_parts",
         sumLocal == numGlobalParts, BASIC_ASSERTION);
 
@@ -152,9 +152,9 @@ void partToProc(
 
     try{
       partId_t tmp = partId_t(numLocalParts);
-      gatherAll<int, partId_t>(*comm_, 1, &tmp, nprocs, procArray + 1); 
+      gatherAll<int, partId_t>(*comm, 1, &tmp, nprocs, procArray + 1); 
     }
-    Z2_THROW_OUTSIDE_ERROR(*env_);
+    Z2_THROW_OUTSIDE_ERROR(*env);
 
     procArray[0] = 0;
 
@@ -188,8 +188,8 @@ void partToProc(
         partArray[part+1] = partArray[part] + numOwners;
       }
 
-      env_->globalBugAssertion(__FILE__, __LINE__, "#parts != #procs", 
-        partDist[numGlobalParts] == nprocs, COMPLEX_ASSERTION, comm_);
+      env->globalBugAssertion(__FILE__, __LINE__, "#parts != #procs", 
+        partDist[numGlobalParts] == nprocs, COMPLEX_ASSERTION, comm);
     }
     else if (fParts > fProcs){ 
 
@@ -211,12 +211,12 @@ void partToProc(
         procArray[proc+1] = procArray[proc] + numParts;
       }
 
-      env_->globalBugAssertion(__FILE__, __LINE__, "#parts != #procs", 
-        procDist[nprocs] == numGlobalParts, COMPLEX_ASSERTION, comm_);
+      env->globalBugAssertion(__FILE__, __LINE__, "#parts != #procs", 
+        procDist[nprocs] == numGlobalParts, COMPLEX_ASSERTION, comm);
     }
     else{
-      env_->globalBugAssertion(__FILE__, __LINE__, 
-        "should never get here", 1, COMPLEX_ASSERTION, comm_);
+      env->globalBugAssertion(__FILE__, __LINE__, 
+        "should never get here", 1, COMPLEX_ASSERTION, comm);
     }
   }
 }

@@ -42,16 +42,12 @@ template <typename User_t>
 {
 public:
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
   typedef typename InputTraits<User_t>::gno_t gno_t;
   typedef typename InputTraits<User_t>::scalar_t scalar_t;
   typedef typename InputTraits<User_t>::lno_t lno_t;
   typedef typename InputTraits<User_t>::gid_t gid_t;
-
-  static void partsToProcs(
-    const RCP<const Teuchos::Comm<int> > &comm,
-    bool doCheck, bool haveNumLocalParts, bool haveNumGlobalParts,
-    partId_t numLocalParts, partId_t numGlobalParts,
-    bool &oneToOne, vector<int> &partDist, vector<partId_t> procDist);
+#endif
 
 /*! \brief Constructor when part sizes are not supplied.
  *
@@ -59,7 +55,8 @@ public:
  *   The rest of the Solution methods do not.
  *
  *    \param env the environment for the application
- *    \param comm the communicator for the problem associated with this solution
+ *    \param comm the communicator for the problem associated with 
+ *             this solution
  *    \param idMap  the IdentifierMap corresponding to the solution
  *    \param userWeightDim  the number of weights supplied by the application
  *                         for each object.
@@ -90,7 +87,8 @@ public:
  *          of part sizes for weight i corresponding to parts in 
  *          reqPartIds[i]
  *
- *   If reqPartIds[i].size() and reqPartSizes[i].size() are zero for 
+ *   If <tt>reqPartIds[i].size()</tt> and <tt>reqPartSizes[i].size()</tt> 
+ *           are zero for 
  *   all processes, it is assumed that part sizes for weight 
  *   dimension "i" are uniform.
  *
@@ -156,8 +154,9 @@ public:
     \return If the mapping of parts to processes is not one-to-one, and
       if parts are not divided across processes, then the mapping
       \c A is returned. \c A such that \c A[i] is the first part 
-      assigned to process \c i.  (Parts are assigned sequentially to processes.)
-      However if \c A[i+1] is equal to \c A[i], there
+      assigned to process \c i.  
+      (Parts are assigned sequentially to processes.)
+      However if <tt> A[i+1]</tt> is equal to \c A[i], there
       are no parts assigned to process \c i.  The length of the array is
       one greater than the number of processes.  The last element of
       the array is the global number of parts.
@@ -217,13 +216,7 @@ public:
 
   /*! \brief The algorithm uses setParts to set the solution.
    *
-   *   \param gnoList  A view of the list of global numbers that was
-   *     supplied to the algorithm by the model. If the model used
-   *     the application's global IDs as our internal global numbers,
-   *     this may be a view of the global IDs in the application's memory.
-   *     Otherwise it is a view of the internal global numbers created
-   *     by the IdentifierMap, or a re-ordered set of global numbers
-   *     created during the course of the algorithm.
+   *   \param gnoList  A list of global numbers.
    *
    *   \param partList  The part assigned to gnoList[i] by the algorithm
    *      should be in partList[i].  The partList is allocated and written
@@ -231,12 +224,13 @@ public:
    *
    *   \param metrics An array of named MetricValues objects.
    *
-   *  \todo If the algorithm will always provide the partList in the
-   *     same order as the gnos listed in the model, then the gnoList
-   *     can be omitted.
+   * The global numbers supplied by the algorithm do not need to be
+   * those representing the global Ids of that process.  But
+   * all global numbers should be assigned a part by exactly one
+   * process.
    */
   
-  void setParts(ArrayView<const gno_t> gnoList, ArrayRCP<partId_t> &partList,
+  void setParts(ArrayRCP<const gno_t> &gnoList, ArrayRCP<partId_t> &partList,
     ArrayRCP<MetricValues<scalar_t> > &metrics);
   
   ////////////////////////////////////////////////////////////////////
@@ -269,7 +263,7 @@ public:
   /*! \brief Returns the imbalance of the solution.
    *      \todo add more metrics
    */
-  const scalar_t *getImbalance() const { 
+  const scalar_t getImbalance() const { 
     if (qualityMetrics_.size() == 1)
       return qualityMetrics_[0].getMaxImbalance();   // object counts
     else if (qualityMetrics_.size() > 1)
@@ -344,7 +338,7 @@ private:
   RCP<const IdentifierMap<User_t> > idMap_;
 
   gno_t nGlobalParts_; // the global number of parts
-  scalar_t nLocalParts_; // Zero, fraction of one part, or number of whole parts
+  scalar_t nLocalParts_; // Fraction of one part, or number of whole parts
   int weightDim_;      // if user has no weights, this is 1
 
   // If process p is to be assigned part p for all p, then onePartPerProc_ 
@@ -416,9 +410,7 @@ private:
   ArrayRCP<ArrayRCP<scalar_t> > pSize_;
 
   ////////////////////////////////////////////////////////////////
-  // The algorithm sets these values upon completion.  (The
-  // algorithm gives gnos to the solution, which converts them
-  // to the user's gids.)
+  // The algorithm sets these values upon completion.
 
   ArrayRCP<const gid_t>  gids_;   // User's global IDs 
   ArrayRCP<partId_t> parts_;      // part number assigned to gids_[i]
@@ -517,6 +509,9 @@ template <typename User_t>
       onePartPerProc_, partDist_, procDist_);
   }
   Z2_FORWARD_EXCEPTIONS
+
+  int nprocs = comm_->getSize();
+  int rank = comm_->getRank();
 
   if (onePartPerProc_){
     nGlobalParts_ = nprocs;
@@ -647,8 +642,8 @@ template <typename User_t>
     pSizeUniform_.size()>wdim && pCompactIndex_.size()>wdim, 
     COMPLEX_ASSERTION);
 
-  int rank = env_->myRank_;
-  int nprocs = env_->numProcs_;
+  int rank = comm_->getRank();
+  int nprocs = comm_->getSize();
   partId_t nparts = nGlobalParts_;
 
   if (nprocs < 2)
@@ -987,114 +982,221 @@ template <typename User_t>
   }
 }
 
-
 template <typename User_t>
   void PartitioningSolution<User_t>::setParts(
-    ArrayView<const gno_t> gnoList, ArrayRCP<partId_t> &partList,
+    ArrayRCP<const gno_t> &gnoList, ArrayRCP<partId_t> &partList,
     ArrayRCP<MetricValues<scalar_t> > &metrics) 
 {
   qualityMetrics_ = metrics;
 
-  size_t ngnos = gnoList.size();
+  // Find the owners of the global numbers.
+
+  size_t len = gnoList.size();
+  ArrayView<gid_t> emptyView;
+  int *tmp = new int [len];
+  env_->localMemoryAssertion(__FILE__, __LINE__, len, tmp);
+  ArrayView<int> procList(tmp, len);
+
+  idMap_->gnoGlobalTranslate (gnoList.view(0,len), emptyView, procList);
+
+  int remotelyOwned = 0;
+  int rank = comm_->getRank();
+  for (lno_t i=0; !remotelyOwned && i < len; i++)
+    if (procList[i] != rank)
+      remotelyOwned = 1;
+
+  int anyRemotelyOwned=0;
+
+  try{
+    reduceAll<int, int>(*comm_, Teuchos::REDUCE_MAX, 1,
+      &remotelyOwned, &anyRemotelyOwned);
+  }
+  Z2_THROW_OUTSIDE_ERROR(*env_);
+
+  if (anyRemotelyOwned){
+
+    // Send the owners of these gnos their part assignments.
+
+    int nprocs = comm_->getSize();
   
-  if (ngnos){
+    lno_t *tmpCount = new lno_t [nprocs];
+    memset(tmpCount, 0, sizeof(lno_t) * nprocs);
+    env_->localMemoryAssertion(__FILE__, __LINE__, nprocs, tmpCount);
+    ArrayView<lno_t> countOutBuf(tmpCount, nprocs);
+
+    ArrayView<gno_t> outBuf;
+
+    if (len > 0){
+      gno_t *tmpGno = new gno_t [len*2];
+      env_->localMemoryAssertion(__FILE__, __LINE__, len*2, tmpGno);
+      outBuf = ArrayView<gno_t>(tmpGno, len*2);
+    
+      lno_t *tmpOff = new lno_t [nprocs+1];
+      env_->localMemoryAssertion(__FILE__, __LINE__, nprocs+1, tmpOff);
+      ArrayView<lno_t> offsetBuf(tmpOff, nprocs+1);
+    
+      for (int i=0; i < len; i++)
+        countOutBuf[procList[i]]+=2;
+    
+      offsetBuf[0] = 0;
+      for (int i=0; i < nprocs; i++)
+        offsetBuf[i+1] = offsetBuf[i] + countOutBuf[i];
+    
+      for (int i=0; i < len; i++){
+        int p = procList[i];
+        int off = offsetBuf[p];
+        outBuf[off] = gnoList[i];
+        outBuf[off+1] = static_cast<gno_t>(partList[i]);
+        offsetBuf[p]+=2;
+      }
   
-    // Create list of application's global IDs: gids_
-  
-    if (idMap_->gnosAreGids()){
-      gids_ = Teuchos::arcpFromArrayView<const gid_t>(gnoList);
+      delete [] procList.getRawPtr();
+      delete [] tmpOff;
     }
-    else{
-      ArrayView<gno_t> gnoView = av_const_cast<gno_t>(gnoList);
   
-      gid_t *gidList = new gid_t [gnoList.size()];
-      env_->localMemoryAssertion(__FILE__, __LINE__, ngnos, gidList);
+    ArrayRCP<gno_t> inBuf;
+    ArrayRCP<lno_t> countInBuf;
   
-      gids_ = arcp<const gid_t>(gidList, 0, ngnos);
-   
-      ArrayView<gid_t> gidView(gidList, ngnos);
+    try{
+      AlltoAllv<gno_t, lno_t>(*comm_, *env_,
+        outBuf, countOutBuf, inBuf, countInBuf);
+    }
+    Z2_FORWARD_EXCEPTIONS;
+
+    if (len)
+      delete [] outBuf.getRawPtr();
+
+    delete [] countOutBuf.getRawPtr();
+
+    lno_t newLen = 0;
+    for (int i=0; i < nprocs; i++)
+      newLen += countInBuf[i];
+
+    newLen /= 2;
+
+    ArrayRCP<partId_t> parts;
+    ArrayRCP<const gno_t> myGnos;
+
+    if (newLen > 0){
+
+      gno_t *tmpGno = new gno_t [newLen];
+      env_->localMemoryAssertion(__FILE__, __LINE__, newLen, tmpGno);
+  
+      partId_t *tmpPart = new partId_t [newLen];
+      env_->localMemoryAssertion(__FILE__, __LINE__, newLen, tmpPart);
+  
+      int next = 0;
+      for (lno_t i=0; i < newLen; i++){
+        tmpGno[i] = inBuf[next++];
+        tmpPart[i] = inBuf[next++];
+      }
+  
+      parts = arcp(tmpPart, 0, newLen);
+      myGnos = arcp(tmpGno, 0, newLen);
+    }
+
+    gnoList = myGnos;
+    partList = parts;
+    len = newLen;
+  }
+  else{
+    if (len)
+      delete [] procList.getRawPtr();
+  }
+  
+  if (idMap_->gnosAreGids()){
+    gids_ = Teuchos::arcp_reinterpret_cast<const gid_t>(gnoList);
+  }
+  else{
+    gid_t *gidList = new gid_t [len];
+    env_->localMemoryAssertion(__FILE__, __LINE__, len, gidList);
+    ArrayView<gid_t> gidView(gidList, len);
+
+    const gno_t *gnos = gnoList.getRawPtr();
+    ArrayView<gno_t> gnoView(const_cast<gno_t *>(gnos), len);
+
+    try{
+      idMap_->gidTranslate(gidView, gnoView, TRANSLATE_LIB_TO_APP);
+    }
+    Z2_FORWARD_EXCEPTIONS
+
+    gids_ = arcp<const gid_t>(gidList, 0, len);
+  }
+
+  parts_ = partList;
+
+  // Now determine which process gets each object, if not one-to-one.
+
+  if (!onePartPerProc_){
+
+    int *procs = new int [len];
+    env_->localMemoryAssertion(__FILE__, __LINE__, len, procs);
+    procs_ = arcp<int>(procs, 0, len);
+
+    partId_t *parts = partList.getRawPtr();
+
+    if (procDist_.size() > 0){    // parts are not split across procs
+
+      int procId;
+      for (lno_t i=0; i < len; i++){
+        partToProcs(parts[i], procs[i], procId);
+      }
+    }
+    else{  // harder - we need to split the parts across multiple procs
+
+      lno_t *partCounter = new lno_t [nGlobalParts_];
+      env_->localMemoryAssertion(__FILE__, __LINE__, nGlobalParts_, 
+        partCounter);
+
+      int numProcs = comm_->getSize();
+
+      for (lno_t i=0; i < partList.size(); i++)
+        partCounter[parts[i]]++;
+
+      lno_t *procCounter = new lno_t [numProcs];
+      env_->localMemoryAssertion(__FILE__, __LINE__, numProcs, procCounter);
       
-      try{
-        idMap_->gidTranslate(gidView , gnoView, TRANSLATE_LIB_TO_APP);
-      }
-      Z2_FORWARD_EXCEPTIONS
-    }
+      int proc2 = partDist_[0];
 
-    // Save part_ list, create proc_ list if it's not the same.
-  
-    parts_ = partList;
+      for (lno_t part=1; part < nGlobalParts_; part++){
+        int proc1 = proc2;
+        proc2 = partDist_[part+1];
+        int nprocs = proc2 - proc1;
 
-    if (!onePartPerProc_){
-
-      int *procs = new int [ngnos];
-      env_->localMemoryAssertion(__FILE__, __LINE__, ngnos, procs);
-      procs_ = arcp<int>(procs, 0, ngnos);
-
-      partId_t *parts = partList.getRawPtr();
-
-      if (procDist_.size() > 0){    // parts are not split across procs
-
-        int procId;
-        for (lno_t i=0; i < ngnos; i++){
-          partToProcs(parts[i], procs[i], procId);
-        }
-      }
-      else{  // harder - we need to split the parts across multiple procs
-
-        lno_t *partCounter = new lno_t [nGlobalParts_];
-        env_->localMemoryAssertion(__FILE__, __LINE__, nGlobalParts_, 
-          partCounter);
-
-        int numProcs = comm_->getSize();
-
-        for (lno_t i=0; i < partList.size(); i++)
-          partCounter[parts[i]]++;
-
-        lno_t *procCounter = new lno_t [numProcs];
-        env_->localMemoryAssertion(__FILE__, __LINE__, numProcs, procCounter);
+        double dNum = partCounter[part];
+        double dProcs = nprocs;
         
-        int proc2 = partDist_[0];
+        double each = floor(dNum/dProcs);
+        double extra = fmod(dNum,dProcs);
 
-        for (lno_t part=1; part < nGlobalParts_; part++){
-          int proc1 = proc2;
-          proc2 = partDist_[part+1];
-          int nprocs = proc2 - proc1;
-
-          double dNum = partCounter[part];
-          double dProcs = nprocs;
-          
-          double each = floor(dNum/dProcs);
-          double extra = fmod(dNum,dProcs);
-
-          for (int proc=proc1, i=0; proc<proc2; proc++, i++){
-            if (i < extra)
-              procCounter[proc] = lno_t(each) + 1;
-            else
-              procCounter[proc] = lno_t(each);
-          }          
-        }
-
-        delete [] partCounter;
-
-        for (lno_t i=0; i < partList.size(); i++){
-          partId_t partNum = parts[i];
-          int proc1 = partDist_[partNum];
-          int proc2 = partDist_[partNum + 1];
-          int proc=0;
-          
-          for (proc=proc1; proc < proc2; proc++){
-            if (procCounter[proc] > 0){
-              procs[i] = proc;
-              procCounter[proc]--;
-              break;
-            }
-          }
-          env_->localBugAssertion(__FILE__, __LINE__, "part to proc", 
-            proc < proc2, COMPLEX_ASSERTION);
-        }
-
-        delete [] procCounter;
+        for (int proc=proc1, i=0; proc<proc2; proc++, i++){
+          if (i < extra)
+            procCounter[proc] = lno_t(each) + 1;
+          else
+            procCounter[proc] = lno_t(each);
+        }          
       }
+
+      delete [] partCounter;
+
+      for (lno_t i=0; i < partList.size(); i++){
+        partId_t partNum = parts[i];
+        int proc1 = partDist_[partNum];
+        int proc2 = partDist_[partNum + 1];
+        int proc=0;
+        
+        for (proc=proc1; proc < proc2; proc++){
+          if (procCounter[proc] > 0){
+            procs[i] = proc;
+            procCounter[proc]--;
+            break;
+          }
+        }
+        env_->localBugAssertion(__FILE__, __LINE__, "part to proc", 
+          proc < proc2, COMPLEX_ASSERTION);
+      }
+
+      delete [] procCounter;
     }
   }
 }

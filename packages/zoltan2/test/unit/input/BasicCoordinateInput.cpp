@@ -94,7 +94,6 @@ int main(int argc, char *argv[])
   Teuchos::GlobalMPISession session(&argc, &argv);
   RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
   int rank = comm->getRank();
-  int nprocs = comm->getSize();
   int fail = 0;
 
   // Get some coordinates

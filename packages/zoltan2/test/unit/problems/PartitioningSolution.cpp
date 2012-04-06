@@ -28,11 +28,11 @@ double epsilon = 10e-6;
 
 typedef zoltan2_partId_t partId_t;
 
-void makeArrays(int wdim, int *lens, partId_t **ids, float **sizes,
-  ArrayRCP<ArrayRCP<partId_t> > &idList, ArrayRCP<ArrayRCP<float> > &sizeList)
+void makeArrays(int wdim, int *lens, partId_t **ids, scalar_t **sizes,
+  ArrayRCP<ArrayRCP<partId_t> > &idList, ArrayRCP<ArrayRCP<scalar_t> > &sizeList)
 {
   ArrayRCP<partId_t> *idArrays = new ArrayRCP<partId_t> [wdim];
-  ArrayRCP<float> *sizeArrays = new ArrayRCP<float> [wdim];
+  ArrayRCP<scalar_t> *sizeArrays = new ArrayRCP<scalar_t> [wdim];
 
   for (int w=0; w < wdim; w++){
     idArrays[w] = arcp(ids[w], 0, lens[w], true);
@@ -59,11 +59,11 @@ int main(int argc, char *argv[])
   int maxNumPartSizes = nprocs;
   int *lengths = new int [maxWeightDim];
   partId_t **idLists = new partId_t * [maxWeightDim];
-  float **sizeLists = new float * [maxWeightDim];
+  scalar_t **sizeLists = new scalar_t * [maxWeightDim];
 
   for (int w=0; w < maxWeightDim; w++){
     idLists[w] = new partId_t [maxNumPartSizes];
-    sizeLists[w] = new float [maxNumPartSizes];
+    sizeLists[w] = new scalar_t [maxNumPartSizes];
   }
 
   /////////////
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
     myGids[i] = x++;
   }
 
-  ArrayRCP<gno_t> gidArray(myGids, 0, numIdsPerProc, true);
+  ArrayRCP<const gno_t> gidArray(myGids, 0, numIdsPerProc, true);
 
   RCP<const Zoltan2::IdentifierMap<user_t> > idMap = 
     rcp(new Zoltan2::IdentifierMap<user_t>(env, comm, gidArray)); 
@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
   int weightDim = 1;
 
   ArrayRCP<ArrayRCP<partId_t> > ids;
-  ArrayRCP<ArrayRCP<float> > sizes;
+  ArrayRCP<ArrayRCP<scalar_t> > sizes;
 
   memset(lengths, 0, sizeof(int) * maxWeightDim);
 
@@ -104,8 +104,8 @@ int main(int argc, char *argv[])
 
   // Normalized part size for every part, for checking later on
 
-  float *normalizedPartSizes = new float [numGlobalParts];
-  float sumSizes=0;
+  scalar_t *normalizedPartSizes = new scalar_t [numGlobalParts];
+  scalar_t sumSizes=0;
   for (int i=0; i < numGlobalParts; i++){
     normalizedPartSizes[i] = 1.0;
     if (i % 2) normalizedPartSizes[i] = 2.0;
@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
 
   if (!fail){
     for (int partId=0; !fail && partId < numGlobalParts; partId++){
-      float psize = solution->getCriteriaPartSize(0, partId);
+      scalar_t psize = solution->getCriteriaPartSize(0, partId);
 
       if ( psize < normalizedPartSizes[partId] - epsilon ||
            psize > normalizedPartSizes[partId] + epsilon )
@@ -180,11 +180,11 @@ int main(int argc, char *argv[])
   ArrayRCP<partId_t> partList = arcp(partAssignments, 0, numIdsPerProc);
 
   // empty metric values
-  ArrayRCP<MetricValues<scalar_t> > metrics = 
-    arcp(new MetricValues<scalar_t> , 0, 2+weightDim);
+  ArrayRCP<Zoltan2::MetricValues<scalar_t> > metrics = 
+    arcp(new Zoltan2::MetricValues<scalar_t> , 0, 2+weightDim);
 
   try{
-    solution->setParts(gidArray.view(0, numIdsPerProc), partList, metrics); 
+    solution->setParts(gidArray, partList, metrics); 
   }
   catch (std::exception &e){
     fail=10;
@@ -218,11 +218,9 @@ int main(int argc, char *argv[])
   }
 
   if (!fail){
-    const float *val = solution->getImbalance();
-    for (int i=0; !fail && i < weightDim; i++){
-      if (val[i] != 1.0)
-        fail = 14;
-    }
+    const scalar_t val = solution->getImbalance();
+    if (val != 1.0)
+      fail = 14;
   }
 
   gfail = globalFail(comm, fail);

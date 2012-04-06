@@ -251,7 +251,9 @@ void AlgPTBlock(
   ArrayRCP<MetricValues<scalar_t> > emptyMetrics =
     arcp(new MetricValues<scalar_t> [2], 0, 2);
 
-  solution->setParts(idList, gnoPart, emptyMetrics);
+  ArrayRCP<const gno_t> gnos = arcpFromArrayView(idList);
+
+  solution->setParts(gnos, gnoPart, emptyMetrics);
 
   if (env->doStatus())
     env->debug(DETAILED_STATUS, string("Exiting AlgBlock"));

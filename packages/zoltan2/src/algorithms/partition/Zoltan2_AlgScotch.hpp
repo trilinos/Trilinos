@@ -319,7 +319,9 @@ void AlgPTScotch(
   ArrayRCP<MetricValues<scalar_t> > metrics =
     arcp(new MetricValues<scalar_t> [2], 0, 2);
 
-  solution->setParts(vtxID, partList, metrics);
+  ArrayRCP<const gno_t> gnos = arcpFromArrayView(vtxID);
+
+  solution->setParts(gnos, partList, metrics);
 
 #ifdef SHOW_ZOLTAN2_LINUX_MEMORY
   if (me==0){

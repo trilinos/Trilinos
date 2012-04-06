@@ -277,16 +277,18 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
   }
 
   if (!haveNonUniform){
-    for (lno_t i=0; i < numObjects; i++)
+    for (lno_t i=0; i < numObjects; i++){
       if (checkNum && (parts[i] < partNumMin || parts[i] > partNumMax))
         continue;
       weights[parts[i]]++;
+    }
   }
   else if (vwgtDim == 1){
-    for (lno_t i=0; i < numObjects; i++)
+    for (lno_t i=0; i < numObjects; i++){
       if (checkNum && (parts[i] < partNumMin || parts[i] > partNumMax))
         continue;
       weights[parts[i]] += vwgts[0][i];
+    }
   }
   else{
     switch (mcNorm){
@@ -471,11 +473,12 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
       if (part[i] > localNum[1]) localNum[1] = part[i];
   }
   else{
-    for (lno_t i=0; i < localNumObj; i++)
+    for (lno_t i=0; i < localNumObj; i++){
       if (part[i] < partNumMin || part[i] > partNumMax)
         continue;
       if (part[i] > localNum[1]) 
         localNum[1] = part[i];
+    }
   }
 
   try{
