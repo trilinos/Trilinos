@@ -120,9 +120,6 @@ namespace MueLu {
     // dimension of fine level nullspace
     const size_t NSDim = fineNullspace.getNumVectors();
 
-    // number of coarse level dofs (fixed by number of aggregats and nullspace dimension)
-    GO nCoarseDofs = numAggs*NSDim;
-
     // index base for coarse Dof map (usually 0)
     GO indexBase=fineA.getRowMap()->getIndexBase();
 
@@ -131,6 +128,9 @@ namespace MueLu {
     if (domainGidOffset_ == 0) {
 
 #ifndef USE_STRIDEDDOMAINMAP
+      // number of coarse level dofs (fixed by number of aggregats and nullspace dimension)
+      GO nCoarseDofs = numAggs*NSDim;
+      
       // default: no offset for domain gids.
       // the gids for the domain Dofs are contiguously numbered starting from zero and equally distributed over all procs
       coarseMap = MapFactory::Build(fineA.getRowMap()->lib(),
@@ -150,22 +150,14 @@ namespace MueLu {
         // stridedBlockId_ > -1
         TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockId_ > Teuchos::as<LO>(stridingInfo_.size() - 1) , Exceptions::RuntimeError, "MueLu::TentativePFactory::MakeTentative(): it is stridingInfo_.size() <= stridedBlockId_. error.");
         size_t stridedBlockSize = stridingInfo_[stridedBlockId_];
-        //TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockSize != NSDim , Exceptions::RuntimeError, "MueLu::TentativePFactory::MakeTentative(): dimension of strided block != NSDim. error.");
-
-        std::cout << "stridedBlockSize = " << stridedBlockSize << ", NSDim = " << NSDim << ", nCoarseDofs = " << nCoarseDofs << std::endl;
-
+        TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockSize != NSDim , Exceptions::RuntimeError, "MueLu::TentativePFactory::MakeTentative(): dimension of strided block != NSDim. error.");      
       }
 
+      // number of coarse level dofs (fixed by number of aggregats and nullspace dimension)
+      GO nCoarseDofs = numAggs * getFixedBlockSize(); // TODO FIXME this is a hack
 
       // default: no offset for domain gids.
-      // the gids for the domain Dofs are contiguously numbered starting from zero and equally distributed over all procs
-      /*coarseMap = MapFactory::Build(fineA.getRowMap()->lib(),
-                                                    Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), nCoarseDofs,
-                                                    indexBase, fineA.getRowMap()->getComm());*/
-      //nCoarseDofs = nCoarseDofs / stridingInfo_[0] * (stridingInfo_[0] + stridingInfo_[1]);
-      nCoarseDofs = numAggs * getFixedBlockSize(); // TODO FIXME this is a hack
-      std::cout << "USE STRIDED MAPS" << std::endl;
-      RCP<Xpetra::StridedMap<LO,GO,Node> > strcoarseMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(fineA.getRowMap()->lib(),
+      coarseMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(fineA.getRowMap()->lib(),
                                                     Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
                                                     nCoarseDofs,
                                                     indexBase,
@@ -174,13 +166,6 @@ namespace MueLu {
                                                     stridedBlockId_
                                                     );
       
-      std::cout << "strcoarseMap = " << strcoarseMap << std::endl;
-
-      coarseMap = strcoarseMap;
-      
-      std::cout << "coarseMap = " << strcoarseMap << std::endl;
-      //std::cout << "numAggs=" << numAggs << std::endl;
-      //coarseMap->describe(GetOStream(Statistics1),Teuchos::VERB_EXTREME);
 #endif
 
     } else {
@@ -188,6 +173,9 @@ namespace MueLu {
       // TODO: we need something smarter here. It would be nice to have strided maps for the coarse map
       // -> needed for blocked problems
 
+      // number of coarse level dofs (fixed by number of aggregats and nullspace dimension)
+      GO nCoarseDofs = numAggs*NSDim;
+      
       // the number of domain dof gids starts from domainGidOffset_ > 0
       // first build a tentative coarse Dof map (equally distributed, starting with Gids beginning with 0)
       RCP<const Map > tentativecoarseMap = MapFactory::Build(fineA.getRowMap()->lib(),
@@ -531,6 +519,13 @@ namespace MueLu {
 
     ///////////////////////////////////////////////////////////////////////// complete tentative prolongator
     Ptentative->fillComplete(coarseMap,fineA.getDomainMap()); //(domain,range) of Ptentative
+    
+#ifdef USE_STRIDEDDOMAINMAP    
+    // check if A has strided maps
+    if(fineA.IsView("stridedMaps") == true) {
+      Ptentative->CreateView("stridedMaps", fineA.getRowMap("stridedMaps"), coarseMap);
+    } else Ptentative->CreateView("stridedMaps", Ptentative->getRangeMap(), coarseMap);
+#endif
   } //MakeTentative()
 
   //! Non-member templated function to handle extracting Q from QR factorization for different Scalar types.

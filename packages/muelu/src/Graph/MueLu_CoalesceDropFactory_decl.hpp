@@ -8,6 +8,7 @@
 #include <Xpetra_CrsGraph_fwd.hpp>
 #include <Xpetra_CrsGraphFactory.hpp> //TODO
 #include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_StridedMap_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"

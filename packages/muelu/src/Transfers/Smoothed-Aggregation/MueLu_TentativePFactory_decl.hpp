@@ -19,7 +19,7 @@
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
 
-#undef USE_STRIDEDDOMAINMAP // if defined, the user can prescribe striding information for the domain map of P
+#define USE_STRIDEDDOMAINMAP // if defined, the user can prescribe striding information for the domain map of P
 
 namespace MueLu {
 

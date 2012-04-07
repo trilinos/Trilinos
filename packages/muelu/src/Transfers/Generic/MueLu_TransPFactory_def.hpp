@@ -48,6 +48,10 @@ namespace MueLu {
     RCP<Operator> R = Utils2::Transpose(P,true);
 
     coarseLevel.Set("R", R, this);
+    
+    ///////////////////////// EXPERIMENTAL
+    if(P->IsView("stridedMaps")) R->CreateView("stridedMaps", P, true);  
+    ///////////////////////// EXPERIMENTAL
 
   } //BuildR
 

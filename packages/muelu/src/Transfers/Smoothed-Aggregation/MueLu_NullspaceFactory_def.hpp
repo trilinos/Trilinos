@@ -55,7 +55,14 @@ namespace MueLu {
         
       RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get()); // no request since given by user
 
-      LocalOrdinal numPDEs = A->GetFixedBlockSize();
+      // determine numPDEs
+      LocalOrdinal numPDEs = 1;
+      if(A->IsView("stridedMaps")==true) {
+	Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
+	TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap()) == Teuchos::null,Exceptions::BadCast,"MueLu::CoalesceFactory::Build: cast to strided row map failed.");
+	numPDEs = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getFixedBlockSize();
+	oldView = A->SwitchToView(oldView);
+      }
       
       GetOStream(Runtime1, 0) << "Generating canonical nullspace: dimension = " << numPDEs << std::endl;
       nullspace = MultiVectorFactory::Build(A->getDomainMap(), numPDEs);

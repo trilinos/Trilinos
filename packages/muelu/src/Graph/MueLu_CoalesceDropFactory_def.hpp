@@ -8,6 +8,7 @@
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_CrsGraph.hpp>
 #include <Xpetra_CrsGraphFactory.hpp>
+#include <Xpetra_StridedMap.hpp>
 
 #include "MueLu_CoalesceDropFactory_decl.hpp"
 
@@ -71,14 +72,37 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
       blkSizeInfo_->doImport(*blkSizeInfo,*importer,Xpetra::INSERT);
       TEUCHOS_TEST_FOR_EXCEPTION(blkSizeInfo_->getMap()->isSameAs(*(A->getColMap()))==false, Exceptions::RuntimeError, "MueLu::CoalesceFactory::Build: map of blkSizeInfo does not match the column map of A. Error.");
     } else {
-      // constant block size
-      blockdim = A->GetFixedBlockSize();
-      blkSizeInfo_ = Teuchos::null;
+      // check for strided map information
+      if(A->IsView("stridedMaps")) {
+	Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
+	TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap()) == Teuchos::null,Exceptions::BadCast,"MueLu::CoalesceFactory::Build: cast to strided row map failed.");
+	blockdim = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getFixedBlockSize();
+	oldView = A->SwitchToView(oldView);
+	blkSizeInfo_ = Teuchos::null; // TODO: remove this
+	std::cout << "found blocksize " << blockdim << " from strided row map" << std::endl;
+      } else {
+	// TODO remove this: support for old method
+	blockdim = A->GetFixedBlockSize();
+	//TEUCHOS_TEST_FOR_EXCEPTION(true,Exceptions::BadCast,"MueLu::CoalesceFactory::Build: A->GetFixedBlockSize() is outdated");
+	blkSizeInfo_ = Teuchos::null; // TODO:remove this
+      }
     }
   } else {
-    // switch to constant blocksize on intermediate and coarse levels
-    blockdim = Teuchos::as<LocalOrdinal>(nullspace->getNumVectors());
-    fixedBlkSize_ = true; // TODO: what about this??
+    // currentLevel.GetLevelID() > 0
+    // check for strided map information
+    if(A->IsView("stridedMaps")) {
+      Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
+      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap()) == Teuchos::null,Exceptions::BadCast,"MueLu::CoalesceFactory::Build: cast to strided row map failed.");
+      blockdim = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getFixedBlockSize();
+      oldView = A->SwitchToView(oldView);
+      blkSizeInfo_ = Teuchos::null; // TODO: remove this
+      fixedBlkSize_ = true;
+      std::cout << "found blocksize " << blockdim << " from strided row map" << std::endl;
+    } else {
+      // TODO remove this: support for old method
+      blockdim = Teuchos::as<LocalOrdinal>(nullspace->getNumVectors());
+      fixedBlkSize_ = true; // TODO: what about this??
+    }
   }
 
   // pre-dropping

@@ -210,7 +210,7 @@ namespace MueLu {
                                          RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > const &B, bool transposeB,
                                          bool doFillComplete,
                                          bool doOptimizeStorage)
-  {
+  { 
     RCP<Operator> C;
     //TODO Can we come up with an estimate for nnz-per-row for result C?
     if(transposeA) C = OperatorFactory::Build(A->getDomainMap(), 1);
@@ -325,6 +325,10 @@ namespace MueLu {
                       Xpetra::DoOptimizeStorage);
     }
 
+    ///////////////////////// EXPERIMENTAL
+    C->CreateView("stridedMaps", A, transposeA, B, transposeB);
+    ///////////////////////// EXPERIMENTAL
+    
     return C;
   } //TwoMatrixMultiply()
 
