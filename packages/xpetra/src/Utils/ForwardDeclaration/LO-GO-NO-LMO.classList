@@ -1,6 +1,4 @@
 TpetraCrsGraph
 CrsGraph
 CrsGraphFactory
-StridedMap
-StridedTpetraMap
-StridedMapFactory
+
