@@ -12,6 +12,8 @@
 #include "Xpetra_CrsMatrix.hpp"
 #include "Xpetra_CrsMatrixFactory.hpp"
 #include "Xpetra_OperatorView.hpp"
+#include "Xpetra_StridedMap.hpp"
+#include "Xpetra_StridedMapFactory.hpp"
 
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_Hashtable.hpp>
@@ -59,19 +61,6 @@ namespace Xpetra {
       RCP<OperatorView> view = rcp(new OperatorView(rowMap, colMap));
       operatorViewTable_.put(viewLabel, view);
     }
-    
-    /*void CreateView(const viewLabel_t viewLabel, const RCP<Operator> & op, bool bTranspose = false) {
-      TEUCHOS_TEST_FOR_EXCEPTION(op->operatorViewTable_.containsKey(viewLabel) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::Operator.CreateView(): view '" + viewLabel + "' does not exist.");
-      
-      if(op->IsView(viewLabel) == true) {
-	Xpetra::viewLabel_t oldView = op->SwitchToView(viewLabel); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
-	Teuchos::RCP<const Map> rangeMap = (bTranspose) ?  op->getColMap() : op->getRowMap();
-	Teuchos::RCP<const Map> domainMap = (bTranspose) ? op->getRowMap() : op->getColMap();
-	oldView = op->SwitchToView(oldView);
-	if( IsView(viewLabel) == true) RemoveView(viewLabel);
-	CreateView(viewLabel, rangeMap, domainMap);  
-      }
-    }*/
     
     void CreateView(const viewLabel_t viewLabel, const RCP<Operator> & A, bool transposeA = false, const RCP<Operator> & B = Teuchos::null, bool transposeB = false) {
             
@@ -385,11 +374,44 @@ namespace Xpetra {
     // ----------------------------------------------------------------------------------
     // "TEMPORARY" VIEW MECHANISM
     // TODO: the view mechanism should be implemented as in MueMat.
-    LocalOrdinal blksize_; 
+    LocalOrdinal blksize_; // TODO remove this
     // RCP<GOVector> variableBlockSizeInfo_; TODO: should be moved from CoalesceDropFactory to here.
 
-    void         SetFixedBlockSize(LocalOrdinal blksize) { blksize_ = blksize; }
-    LocalOrdinal GetFixedBlockSize() const               { return blksize_;    }; //TODO: why LocalOrdinal?
+    void SetFixedBlockSize(LocalOrdinal blksize) { 
+      TEUCHOS_TEST_FOR_EXCEPTION(isFillComplete() == false, Exceptions::RuntimeError, "Xpetra::Operator::SetFixedBlockSize(): operator is not filled and completed."); // TODO: do we need this? we just wanna "copy" the domain and range map
+
+      std::vector<size_t> stridingInfo;
+      stridingInfo.push_back(Teuchos::as<size_t>(blksize));
+      LocalOrdinal stridedBlockId = -1;
+            
+      RCP<const Xpetra::StridedMap<LocalOrdinal, GlobalOrdinal, Node> > stridedRangeMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(getRangeMap()->lib(),
+                                                    getRangeMap(),
+                                                    stridingInfo,
+                                                    stridedBlockId
+                                                    );
+      RCP<const Map> stridedDomainMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(getDomainMap()->lib(),
+					      getDomainMap(),
+					      stridingInfo,
+					      stridedBlockId
+					      );
+
+      if(IsView("stridedMaps") == true) RemoveView("stridedMaps");
+      CreateView("stridedMaps", stridedRangeMap, stridedDomainMap); 
+    }
+    LocalOrdinal GetFixedBlockSize() const               { 
+
+	if(IsView("StridedMaps")==true) {
+	  Teuchos::RCP<const StridedMap<LocalOrdinal, GlobalOrdinal, Node> > rangeMap = Teuchos::rcp_dynamic_cast<const StridedMap<LocalOrdinal, GlobalOrdinal, Node> >(getRowMap("stridedMaps"));
+	  Teuchos::RCP<const StridedMap<LocalOrdinal, GlobalOrdinal, Node> > domainMap = Teuchos::rcp_dynamic_cast<const StridedMap<LocalOrdinal, GlobalOrdinal, Node> >(getColMap("stridedMaps"));
+	  TEUCHOS_TEST_FOR_EXCEPTION(rangeMap  == Teuchos::null, Exceptions::BadCast, "Xpetra::Operator::GetFixedBlockSize(): rangeMap is not of type StridedMap");
+ 	  TEUCHOS_TEST_FOR_EXCEPTION(domainMap == Teuchos::null, Exceptions::BadCast, "Xpetra::Operator::GetFixedBlockSize(): domainMap is not of type StridedMap");
+	  TEUCHOS_TEST_FOR_EXCEPTION(domainMap->getFixedBlockSize() != rangeMap->getFixedBlockSize(), Exceptions::RuntimeError, "Xpetra::Operator::GetFixedBlockSize(): block size of rangeMap and domainMap are different.");
+	  TEUCHOS_TEST_FOR_EXCEPTION(domainMap->getFixedBlockSize() != Teuchos::as<size_t>(blksize_), Exceptions::RuntimeError, "Xpetra::Operator::GetFixedBlockSize(): block size of domainMap and blksize_ are different.");
+	  return Teuchos::as<LocalOrdinal>(domainMap->getFixedBlockSize()); // TODO: why LocalOrdinal?
+	} else
+	  TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "Xpetra::Operator::GetFixedBlockSize(): no blksize_ available."); // TODO remove this
+	  return blksize_;
+    }; //TODO: why LocalOrdinal?
     // ----------------------------------------------------------------------------------
 
   }; //class Operator
