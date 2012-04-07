@@ -60,7 +60,9 @@
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
-
+#include <Epetra_LinearProblem.h>
+#include <AztecOO.h>
+#include <MueLu_EpetraOperator.hpp>
 
 /*!
  *  2d structural mechanics example for Epetra
@@ -96,19 +98,19 @@ void FillMLParameterList(Teuchos::ParameterList & params) {
   Teuchos::ParameterList & l6 = params.sublist("smoother: list (level 6)");
 
 
-  l0.set("smoother: damping factor", 0.9);
+  l0.set("smoother: damping factor", 1.0);
   l0.set("smoother: sweeps", 1);
   l0.set("smoother: pre or post", "both");
   l0.set("smoother: type", "symmetric Gauss-Seidel");
-  l1.set("smoother: damping factor", 0.9);
+  l1.set("smoother: damping factor", 1.0);
   l1.set("smoother: sweeps", 1);
-  l1.set("smoother: pre or post", "post");
+  l1.set("smoother: pre or post", "both"); // "post"
   l1.set("smoother: type", "symmetric Gauss-Seidel");
-  l2.set("smoother: damping factor", 0.9);
+  l2.set("smoother: damping factor", 1.0);
   l2.set("smoother: sweeps", 1);
   l2.set("smoother: pre or post", "both");
   l2.set("smoother: type", "symmetric Gauss-Seidel");
-  l3.set("smoother: damping factor", 0.9);
+  l3.set("smoother: damping factor", 1.0);
   l3.set("smoother: sweeps", 1);
   l3.set("smoother: pre or post", "pre");
   l3.set("smoother: type", "symmetric Gauss-Seidel");
@@ -216,14 +218,31 @@ int main(int argc, char *argv[]) {
     //xLsg->describe(*out,Teuchos::VERB_EXTREME);
   }
 
-  *out << mlParams << std::endl;
+  //
+  // Solve Ax = b using AMG as a preconditioner in AztecOO
+  //
+  {
+    RCP<Epetra_Vector> X = rcp(new Epetra_Vector(epv->Map()));
+    X->PutScalar(0.0);
+    Epetra_LinearProblem epetraProblem(epA.get(), X.get(), epv.get());
 
+    AztecOO aztecSolver(epetraProblem);
+    aztecSolver.SetAztecOption(AZ_solver, AZ_cg);
 
-  for(int i=0; i<H->GetNumLevels(); i++) {
+    MueLu::EpetraOperator aztecPrec(H);
+    aztecSolver.SetPrecOperator(&aztecPrec);
+
+    int maxIts = 50;
+    double tol = 1e-8;
+
+    aztecSolver.Iterate(maxIts, tol);
+  }
+
+  /*for(int i=0; i<H->GetNumLevels(); i++) {
     RCP<Level> l = H->GetLevel(i);
     *out << std::endl << "Level " << i << std::endl;
     l->print(*out);
-  }
+  }*/
 
 
   return EXIT_SUCCESS;

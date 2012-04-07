@@ -24,18 +24,25 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DEPLIBS muelu muelu-xpetra
 )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Structure2D_MLmode_Test
-  SOURCES Structure2D_MLmode_epetra.cpp
-  COMM serial mpi
-  DEPLIBS muelu muelu-xpetra
-)
-
 IF(Trilinos_ENABLE_AztecOO) 
 	# build only if AztecOO available, too
 	TRIBITS_ADD_EXECUTABLE_AND_TEST(
+	  Structure2D_MLmode_Test
+	  SOURCES Structure2D_MLmode_epetra.cpp
+	  COMM serial mpi
+	  DEPLIBS muelu muelu-xpetra
+	)
+
+	TRIBITS_ADD_EXECUTABLE_AND_TEST(
 	  Structure2D_visualization
 	  SOURCES Structure2D_visualization.cpp
+	  COMM serial mpi
+	  DEPLIBS muelu muelu-xpetra
+	)
+	
+	TRIBITS_ADD_EXECUTABLE_AND_TEST(
+	  Structure2D_strided
+	  SOURCES Structure2D_strided.cpp
 	  COMM serial mpi
 	  DEPLIBS muelu muelu-xpetra
 	)
