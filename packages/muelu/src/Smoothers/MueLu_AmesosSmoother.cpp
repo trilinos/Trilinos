@@ -71,6 +71,11 @@ namespace MueLu {
     prec_ = rcp(factory.Create(type_, *linearProblem_));
     TEUCHOS_TEST_FOR_EXCEPTION(prec_ == Teuchos::null, Exceptions::RuntimeError, "MueLu::AmesosSmoother::Setup(): Solver '" + type_ + "' not supported by Amesos");
 
+    // set Reindex flag, if A is distributed with non-contiguous maps
+    // unfortunately there is no reindex for Amesos2, yet. So, this only works for Epetra based problems
+    if(A_->getRowMap()->isDistributed() == true && A_->getRowMap()->isContiguous() == false)
+      paramList_.set("Reindex", true);
+    
     prec_->SetParameters(paramList_);
 
     int r = prec_->NumericFactorization();
