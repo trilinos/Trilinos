@@ -286,8 +286,12 @@ namespace Xpetra {
     //@{
 
     //! TpetraMap constructor to wrap a Tpetra::Map object
-    /*StridedTpetraMap(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node > > &map) 
-      : map_(map) { }*/
+    StridedTpetraMap(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node > > &map, std::vector<size_t>& stridingInfo, LocalOrdinal stridedBlockId=-1) 
+      : Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(map), Xpetra::StridedMap<LocalOrdinal,GlobalOrdinal,Node>(stridingInfo, stridedBlockId) { 
+	size_t nDofsPerNode = Teuchos::as<size_t>(getFixedBlockSize());
+	TEUCHOS_TEST_FOR_EXCEPTION(map_->getNodeNumElements() % nDofsPerNode != 0, Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
+	TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: CheckConsistency() == false");      
+    }
 
     //! Get the library used by this object (Tpetra or Epetra?)
     UnderlyingLib lib() const { return Xpetra::UseTpetra; }
