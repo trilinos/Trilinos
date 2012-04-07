@@ -72,14 +72,10 @@
  *  3 level multigrid with smoothed aggregation transfer operators.
  */
 
-
-int main(int argc, char *argv[]) {
+Teuchos::RCP<Vector> runExample(std::vector<size_t> stridingInfo, LocalOrdinal stridedBlockId) {
   using Teuchos::RCP;
   using Teuchos::rcp;
-
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
-
+  
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   out->setOutputToRootOnly(0);
@@ -191,11 +187,8 @@ int main(int argc, char *argv[]) {
   // build transfer operators
   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(UCAggFact));
 
-  std::vector<size_t> stridingInfo;
-  stridingInfo.push_back(3);
-  stridingInfo.push_back(1);
   TentPFact->setStridingData(stridingInfo);
-  TentPFact->setStridedBlockId(0);
+  TentPFact->setStridedBlockId(stridedBlockId);
 
   RCP<SaPFactory> Pfact  = rcp( new SaPFactory(TentPFact) );
   //RCP<PgPFactory> Pfact  = rcp( new PgPFactory(TentPFact) );
@@ -245,15 +238,7 @@ int main(int argc, char *argv[]) {
   *out << "======================\n Multigrid statistics \n======================" << std::endl;
   status.print(*out,Teuchos::ParameterList::PrintOptions().indent(2));
 
-  Finest->print(*out);
-
-  RCP<Level> coarseLevel = H->GetLevel(1);
-  coarseLevel->print(*out);
-
-  RCP<Level> coarseLevel2 = H->GetLevel(2);
-  coarseLevel2->print(*out);
-
-  RCP<MultiVector> xLsg = MultiVectorFactory::Build(map,1);
+  RCP<Vector> xLsg = VectorFactory::Build(map);
 
   // Use AMG directly as an iterative method
   {
@@ -283,14 +268,42 @@ int main(int argc, char *argv[]) {
 
     aztecSolver.Iterate(maxIts, tol);
   }
+  
+  return xLsg;
+}
 
-  RCP<Operator> AA1 = coarseLevel->Get<RCP<Operator> >("A");
-  //AA1->describe(*out,Teuchos::VERB_EXTREME);
+int main(int argc, char *argv[]) {
 
-  //AA1->getRowMap()->describe(*out, Teuchos::VERB_EXTREME);
 
-  //RCP<const StridedMap> strMap = Teuchos::rcp_dynamic_cast<const StridedMap>(AA1->getRowMap());
-  //std::cout << strMap << std::endl;
+  Teuchos::oblackholestream blackhole;
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
+
+  std::vector<size_t> stridingInfo;
+  stridingInfo.push_back(3);
+    
+  Teuchos::RCP<Vector> ref = runExample(stridingInfo, -1);
+  
+  int cnt_errors = 0;
+  
+  stridingInfo.push_back(1);
+  Teuchos::RCP<Vector> lsg2 = runExample(stridingInfo, 0);
+  lsg2->update(-1.0, *ref, 1.0);
+  if(lsg2->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
+  
+  stridingInfo.push_back(4);
+  Teuchos::RCP<Vector> lsg3 = runExample(stridingInfo, 0);
+  lsg3->update(-1.0, *ref, 1.0);
+  if(lsg3->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
+
+  stridingInfo.push_back(3);
+  Teuchos::RCP<Vector> lsg4 = runExample(stridingInfo, 3);
+  lsg4->update(-1.0, *ref, 1.0);
+  if(lsg4->norm2() != Teuchos::ScalarTraits< Scalar >::zero()) { cnt_errors++; }
+
+  if(cnt_errors>0) {
+    std::cout << "results do not match. Error" << std::endl;
+    return EXIT_FAILURE;
+  }
 
   return EXIT_SUCCESS;
 }
