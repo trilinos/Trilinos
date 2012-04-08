@@ -89,15 +89,10 @@ namespace Xpetra {
     //}
     size_t        numLocalNodes  = numLocalElements / blockSize;      // number of nodes (on each processor)
     
-    std::cout << "StridedEpetraMap: numGlobalNodes = " << numGlobalNodes << " numGlobalElements = " << numGlobalElements << std::endl;
-    std::cout << "StridedEpetraMap: numLocalNodes = " << numLocalNodes << " numLocalElements = " << numLocalElements << std::endl;
-
     // build an equally distributed node map
     RCP<Epetra_Map> nodeMap = Teuchos::null;
     IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((nodeMap = (rcp(new Epetra_Map(numGlobalNodes, numLocalNodes, indexBase, *toEpetra(comm))))));
     
-    //std::cout << *nodeMap << std::endl;
-
     // translate local node ids to local dofs
     int nStridedOffset = 0;
     int nDofsPerNode = Teuchos::as<int>(getFixedBlockSize()); // dofs per node for local striding block
@@ -120,17 +115,12 @@ namespace Xpetra {
       }
     }
     
-    std::cout << "numGlobalElements (recalculated): " << numGlobalElements << std::endl;
-    std::cout << "#dofgids=" << dofgids.size() << std::endl;
-
     if (numGlobalElements == Teuchos::OrdinalTraits<global_size_t>::invalid()) {
       IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(-1, dofgids.size(), &dofgids[0], 1, indexBase, *toEpetra(comm))))));
     } else {
       IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(numGlobalElements, dofgids.size(), &dofgids[0], 1, indexBase, *toEpetra(comm))))));
     }
     
-    //std::cout << *map_ << std::endl;
-
     TEUCHOS_TEST_FOR_EXCEPTION(map_->NumMyPoints() % nDofsPerNode != 0, Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: wrong distribution of dofs among processors.");
     if(stridedBlockId == -1) {
       TEUCHOS_TEST_FOR_EXCEPTION(getNodeNumElements() != Teuchos::as<size_t>(nodeMap->NumMyElements()*nDofsPerNode), Exceptions::RuntimeError, "StridedEpetraMap::StridedEpetraMap: wrong distribution of dofs among processors.");
