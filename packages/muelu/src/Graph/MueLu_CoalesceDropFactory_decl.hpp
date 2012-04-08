@@ -65,7 +65,7 @@ namespace MueLu {
 
     void Build(Level &currentLevel) const; // Build
 
-    void Amalgamate(const RCP<Operator>& A, const LocalOrdinal blocksize, RCP<Graph>& graph) const; // Amalgamate
+    void Amalgamate(const RCP<Operator>& A, const LocalOrdinal blocksize, const GlobalOrdinal offset, RCP<Graph>& graph) const; // Amalgamate
 
   private:
 
@@ -74,7 +74,8 @@ namespace MueLu {
     // @param A: input operator (just used to check the maps for validity)
     // @param globalgid2globalamalblockid_vector: Xpetra vector which holds block amalgamation gids for all column gids (vector lives on overlapping column map of A! needed for variable block size)
     // @param blockSize (LocalOrdinal): block size (needed for constant block size)
-    GlobalOrdinal GlobalId2GlobalAmalBlockId(GlobalOrdinal gid, const RCP<Operator>& A, const RCP<GOVector>& globalgid2globalamalblockid_vector, LocalOrdinal blockSize) const;
+    // @param offset (GlobalOrdinal): global offset for dofs (stored in strided map, default = 0)
+    GlobalOrdinal GlobalId2GlobalAmalBlockId(GlobalOrdinal gid, const RCP<Operator>& A, const RCP<GOVector>& globalgid2globalamalblockid_vector, LocalOrdinal blockSize, const GlobalOrdinal offset = 0) const;
 
     //! setup amalgamation data
     // This routine fills the private members lobalamalblockid2myrowid_ and lobalamalblockid2globalrowid_
@@ -82,8 +83,9 @@ namespace MueLu {
     // @param A: input operator (just used to check the maps for validity)
     // @param globalgid2globalamalblockid_vector: Xpetra vector which holds block amalgamation gids for all column gids (vector lives on overlapping column map of A! needed for variable block size)
     // @param blockSize (LocalOrdinal): block size (needed for constant block size)
+    // @param offset (GlobalOrdinal): global offset for dofs (stored in strided map, default = 0)
     // returns amalgamated map
-    const Teuchos::RCP<Map> SetupAmalgamationData(const RCP<Operator>& A, const RCP<GOVector>& globalgid2globalamalblockid_vector, LocalOrdinal blockSize) const;
+    const Teuchos::RCP<Map> SetupAmalgamationData(const RCP<Operator>& A, const RCP<GOVector>& globalgid2globalamalblockid_vector, LocalOrdinal blockSize, const GlobalOrdinal offset = 0) const;
 
     //! A Factory
     RCP<const FactoryBase> AFact_;
