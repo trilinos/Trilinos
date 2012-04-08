@@ -19,8 +19,6 @@
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
 
-#define USE_STRIDEDDOMAINMAP // if defined, the user can prescribe striding information for the domain map of P
-
 namespace MueLu {
 
   /*!
@@ -81,27 +79,34 @@ namespace MueLu {
 
     //! @name Get/Set functions
 
-    /*! @brief SetDomainMapOffset
-     sets offset for domain map Gids in tentative prolongation operator.
+    /*! @brief setDomainMapOffset
+     sets offset for domain map DOF Gids in tentative prolongation operator.
      offset must not be smaller than zero. Note: Direct solvers (Amesos/Amesos2) are not properly working with offset > 0.
-
-     // TODO remove me
      */
-    void SetDomainMapOffset(GlobalOrdinal offset);
+    void setDomainMapOffset(GlobalOrdinal offset);
 
-    /*! @brief GetDomainMapOffset
-     * returns offset of domain map.
-     *
-     * TODO remove me
+    /*! @brief getDomainMapOffset
+     * returns offset of the domain DOF map (=coarse map).
      */
-    GlobalOrdinal GetDomainMapOffset() const;
+    GlobalOrdinal getDomainMapOffset() const;
 
-#ifdef USE_STRIDEDDOMAINMAP
-
+    /*! @brief getStridingData
+     * returns vector with size of striding blocks in the domain DOF map (= coarse map). 
+     * e.g. for 2 velocity dofs and 1 pressure dof the vector is (2,1)
+     */
     std::vector<size_t> getStridingData() { return stridingInfo_; }
 
+    /*! @brief setStridingData
+     * set striding vector for the domain DOF map (= coarse map),
+     * e.g. (2,1) for 2 velocity dofs and 1 pressure dof
+     */
     void setStridingData(std::vector<size_t> stridingInfo) { stridingInfo_ = stridingInfo; }
 
+    /*! @brief getFixedBlockSize
+     * returns the full block size (number of DOFs per node) of the domain DOF map (= coarse map). 
+     * This is the sum of all entries in the striding vector.
+     * e.g. for 2 velocity dofs and 1 pressure dof the return value is 3.
+     */
     size_t getFixedBlockSize() const {
       // sum up size of all strided blocks (= number of dofs per node)
       size_t blkSize = 0;
@@ -112,14 +117,19 @@ namespace MueLu {
       return blkSize;
     }
 
-    /// returns strided block id of the dofs stored in this map
-    /// or -1 if full strided map is stored in this map
+    /*! @brief getStridedBlockId
+     * returns strided block id for the domain DOF map of Ptent (= coarse map)
+     * or -1 if full strided map is stored in the domain map of Ptent (= coarse map)
+     */
     LocalOrdinal getStridedBlockId() { return stridedBlockId_; }
 
+    /*! @brief setStridedBlockId
+     * set strided block id for the domain DOF map of Ptent (= coarse map)
+     * or -1 if full strided map is stored in the domain map of Ptent (= coarse map)
+     */
     void setStridedBlockId(LocalOrdinal stridedBlockId) {
       stridedBlockId_ = stridedBlockId;
     }
-#endif
 
     //@}
   private:
@@ -178,12 +188,10 @@ namespace MueLu {
     // TODO to be removed: add a domainGidOffset to strided maps
     GlobalOrdinal domainGidOffset_; //! offset for domain gids (coarse gids) of tentative prolongator  (default = 0). The GIDs for the domain dofs of Ptent start with domainGidOffset, are contiguous and distributed equally over the procs (unless some reordering is done).
 
-#ifdef USE_STRIDEDDOMAINMAP
     mutable std::vector<size_t> stridingInfo_;   // vector with size of strided blocks (dofs)
     LocalOrdinal stridedBlockId_;        // member variable denoting which dofs are stored in map
                                          // stridedBlock == -1: the full map (with all strided block dofs)
                                          // stridedBlock >  -1: only dofs of strided block with index "stridedBlockId" are stored in this map
-#endif
 
 
   }; //class TentativePFactory
