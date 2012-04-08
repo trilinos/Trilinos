@@ -283,6 +283,54 @@ namespace {
     TEST_EQUALITY_CONST( map3.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[2]);
   }
   
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( StridedMap, StridedPartConstructorWithOffset, M, LO, GO )
+  {
+    // create a comm  
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numImages = comm->getSize();
+
+    GO offset = 111;
+    
+    // constructor calls: (num global elements, index base)
+    global_size_t numGlobalElements = 120 * numImages;
+    size_t numLocalElements = 120;
+    std::vector<size_t> stridedInfo;
+    stridedInfo.push_back(3);
+    stridedInfo.push_back(4);
+    stridedInfo.push_back(5);
+    
+    M map(numGlobalElements, 0,stridedInfo, comm, 0, offset);
+    TEST_EQUALITY_CONST( map.getFixedBlockSize(), 12 );
+    TEST_EQUALITY_CONST( map.isStrided(), true );
+    TEST_EQUALITY_CONST( map.isBlocked(), true );
+    TEST_EQUALITY_CONST( map.getMinAllGlobalIndex(), offset );
+    TEST_EQUALITY_CONST( map.getMaxAllGlobalIndex(), offset + Teuchos::as<GO>(numGlobalElements) - 10 );
+    TEST_EQUALITY_CONST( map.isContiguous(), false);
+    TEST_EQUALITY_CONST( map.getNodeNumElements() % 3 , 0);
+    TEST_EQUALITY_CONST( map.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[0] );
+    
+    M map2(numGlobalElements, 0,stridedInfo, comm, 1, offset);
+    TEST_EQUALITY_CONST( map2.getFixedBlockSize(), 12 );
+    TEST_EQUALITY_CONST( map2.isStrided(), true );
+    TEST_EQUALITY_CONST( map2.isBlocked(), true );
+    TEST_EQUALITY_CONST( map2.getMinAllGlobalIndex(), offset + 3 );
+    TEST_EQUALITY_CONST( map2.getMaxAllGlobalIndex(), offset + Teuchos::as<GO>(numGlobalElements) - 6 );
+    TEST_EQUALITY_CONST( map2.isContiguous(), false);
+    TEST_EQUALITY_CONST( map2.getNodeNumElements() % 4 , 0);
+    TEST_EQUALITY_CONST( map2.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[1]);
+    
+    M map3(numGlobalElements, 0,stridedInfo, comm, 2, offset);
+    TEST_EQUALITY_CONST( map3.getFixedBlockSize(), 12 );
+    TEST_EQUALITY_CONST( map3.isStrided(), true );
+    TEST_EQUALITY_CONST( map3.isBlocked(), true );
+    TEST_EQUALITY_CONST( map3.getMinAllGlobalIndex(), offset + 7 );
+    TEST_EQUALITY_CONST( map3.getMaxAllGlobalIndex(), offset + Teuchos::as<GO>(numGlobalElements) - 1 );
+    TEST_EQUALITY_CONST( map3.isContiguous(), false);
+    TEST_EQUALITY_CONST( map3.getNodeNumElements() % 5 , 0);
+    TEST_EQUALITY_CONST( map3.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[2]);
+  }  
+  
   // 
   // INSTANTIATIONS
   //
@@ -300,7 +348,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, Constructor1, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, Constructor2, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructor1, M, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructor2, M, LO, GO )
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructor2, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructorWithOffset, M, LO, GO )
       //TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, invalidConstructor3, M, LO, GO )
 
 #  define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
@@ -321,7 +370,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, Constructor1, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, Constructor2, M, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructor1, M, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructor2, M, LO, GO )
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructor2, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructorWithOffset, M, LO, GO )
       //JG TODO FAILED: TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, invalidConstructor3, M, LO, GO )
 
 #  define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
