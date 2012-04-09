@@ -325,6 +325,7 @@ int main(int argc, char *argv[]) {
 #else
       M.SetFactory("P",SaPfact);
       M.SetFactory("R",Rfact);
+      M.SetFactory("Ptent", PtentFact); // for nullspace
 #endif
     } else {
       M.SetFactory("P",SaPfact);
