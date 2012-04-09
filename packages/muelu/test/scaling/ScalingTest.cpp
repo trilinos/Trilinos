@@ -263,7 +263,8 @@ int main(int argc, char *argv[]) {
       permPFactory = rcp( new PermutedTransferFactory(RepartitionFact, Acfact, SaPfact, MueLu::INTERPOLATION) );
       permRFactory = rcp( new PermutedTransferFactory(RepartitionFact, Acfact, Rfact, MueLu::RESTRICTION, PtentFact, mvTransFact));
       AcfactFinal = rcp( new RAPFactory(permPFactory,permRFactory) );
-//TODO: #else ?
+#else
+      AcfactFinal = Acfact;
 #endif
     } else {
   
