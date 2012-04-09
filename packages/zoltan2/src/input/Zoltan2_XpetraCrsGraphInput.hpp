@@ -44,7 +44,7 @@ namespace Zoltan2 {
 */
 
 template <typename User, typename Scalar=typename InputTraits<User>::scalar_t>
-  class XpetraCrsGraphInput : public GraphInput<User> {
+  class XpetraCrsGraphInput : public GraphInput<User, Scalar> {
 
 public:
 
@@ -55,7 +55,7 @@ public:
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef Xpetra::CrsGraph<lno_t, gno_t, node_t> xgraph_t;
-  typedef GraphInput<User>       base_adapter_t;
+  typedef GraphInput<User, Scalar>       base_adapter_t;
   typedef User user_t;
 #endif
 
@@ -334,9 +334,9 @@ public:
  /*! \brief Repartition a graph that has the same structure as
    *   the graph that instantiated this input adapter.
    */
-  template<typename User2>
+  template<typename Adapter>
     size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<User2> &solution) const;
+         const PartitioningSolution<Adapter> &solution) const;
 
 private:
 
@@ -371,8 +371,8 @@ private:
 // Definitions
 /////////////////////////////////////////////////////////////////
 
-template <typename User>
-  XpetraCrsGraphInput<User>::XpetraCrsGraphInput(
+template <typename User, typename Scalar>
+  XpetraCrsGraphInput<User, Scalar>::XpetraCrsGraphInput(
     const RCP<const User> &ingraph):
       ingraph_(ingraph), graph_(), comm_() , offs_(), eids_(),
       vertexWeightDim_(0), vertexWeights_(0),
@@ -387,10 +387,11 @@ template <typename User>
     emptyValues, emptyStrides);
 }
 
-template <typename User>
-  XpetraCrsGraphInput<User>::XpetraCrsGraphInput(const RCP<const User> &ingraph,
-    vector<const scalar_t *> &vWeights,  vector<int> &vWeightStrides,
-    vector<const scalar_t *> &eWeights,  vector<int> &eWeightStrides):
+template <typename User, typename Scalar>
+  XpetraCrsGraphInput<User, Scalar>::XpetraCrsGraphInput(
+  const RCP<const User> &ingraph,
+    vector<const Scalar *> &vWeights,  vector<int> &vWeightStrides,
+    vector<const Scalar *> &eWeights,  vector<int> &eWeightStrides):
       ingraph_(ingraph), graph_(), comm_() , offs_(), eids_(),
       vertexWeightDim_(vWeights.size()), vertexWeights_(vWeights.size()),
       edgeWeightDim_(eWeights.size()), edgeWeights_(eWeights.size()),
@@ -404,11 +405,12 @@ template <typename User>
     emptyValues, emptyStrides);
 }
 
-template <typename User>
-  XpetraCrsGraphInput<User>::XpetraCrsGraphInput(const RCP<const User> &ingraph,
-    vector<const scalar_t *> &vWeights,  vector<int> &vWeightStrides,
-    vector<const scalar_t *> &eWeights,  vector<int> &eWeightStrides,
-    vector<const scalar_t *> &coords,  vector<int> &coordStrides):
+template <typename User, typename Scalar>
+  XpetraCrsGraphInput<User, Scalar>::XpetraCrsGraphInput(
+    const RCP<const User> &ingraph,
+    vector<const Scalar *> &vWeights,  vector<int> &vWeightStrides,
+    vector<const Scalar *> &eWeights,  vector<int> &eWeightStrides,
+    vector<const Scalar *> &coords,  vector<int> &coordStrides):
       ingraph_(ingraph), graph_(), comm_() , offs_(), eids_(),
       vertexWeightDim_(vWeights.size()), vertexWeights_(vWeights.size()),
       edgeWeightDim_(eWeights.size()), edgeWeights_(eWeights.size()),
@@ -419,11 +421,11 @@ template <typename User>
     coords, coordStrides);
 }
 
-template <typename User>
-  void XpetraCrsGraphInput<User>::initializeData(
-    vector<const scalar_t *> &vWeights,  vector<int> &vWeightStrides,
-    vector<const scalar_t *> &eWeights,  vector<int> &eWeightStrides,
-    vector<const scalar_t *> &coords,  vector<int> &coordStrides)
+template <typename User, typename Scalar>
+  void XpetraCrsGraphInput<User, Scalar>::initializeData(
+    vector<const Scalar *> &vWeights,  vector<int> &vWeightStrides,
+    vector<const Scalar *> &eWeights,  vector<int> &eWeightStrides,
+    vector<const Scalar *> &coords,  vector<int> &coordStrides)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
   env_->localInputAssertion(__FILE__, __LINE__, 
@@ -489,11 +491,11 @@ template <typename User>
   }
 }
 
-template <typename User>
-  template<typename User2>
-    size_t XpetraCrsGraphInput<User>::applyPartitioningSolution(
+template <typename User, typename Scalar>
+  template<typename Adapter>
+    size_t XpetraCrsGraphInput<User, Scalar>::applyPartitioningSolution(
       const User &in, User *&out, 
-      const PartitioningSolution<User2> &solution) const
+      const PartitioningSolution<Adapter> &solution) const
 {
   // Get an import list
 
@@ -512,7 +514,7 @@ template <typename User>
   const RCP<const Comm<int> > comm = graph_->getComm();
 
   try{
-    numNewVtx = convertSolutionToImportList<User2, lno_t>(
+    numNewVtx = convertSolutionToImportList<Adapter, lno_t>(
       solution, dummyIn, importList, dummyOut);
   }
   Z2_FORWARD_EXCEPTIONS;

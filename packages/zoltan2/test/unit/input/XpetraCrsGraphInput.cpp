@@ -138,7 +138,6 @@ int main(int argc, char *argv[])
   // Our solution just assigns all objects to part zero.
 
   typedef Zoltan2::IdentifierMap<tgraph_t> idmap_t;
-  typedef Zoltan2::PartitioningSolution<tgraph_t> soln_t;
 
   RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
 
@@ -153,8 +152,9 @@ int main(int argc, char *argv[])
   memset(p, 0, sizeof(zoltan2_partId_t) * nvtx);
   ArrayRCP<zoltan2_partId_t> solnParts(p, 0, nvtx, true);
 
+  typedef Zoltan2::XpetraCrsGraphInput<tgraph_t, scalar_t>  adapter_t;
+  typedef Zoltan2::PartitioningSolution<adapter_t> soln_t;
   soln_t solution(env, comm, idMap, weightDim);
-
   solution.setParts(gidArray, solnParts, metrics);
 
   /////////////////////////////////////////////////////////////
@@ -182,7 +182,8 @@ int main(int argc, char *argv[])
     if (!gfail){
       tgraph_t *mMigrate = NULL;
       try{
-        tGInput->applyPartitioningSolution<tgraph_t>(*tG, mMigrate, solution);
+        tGInput->applyPartitioningSolution<adapter_t tgraph_t>(
+          *tG, mMigrate, solution);
         newG = rcp(mMigrate);
       }
       catch (std::exception &e){
@@ -243,7 +244,8 @@ int main(int argc, char *argv[])
     if (!gfail){
       xgraph_t *mMigrate =NULL;
       try{
-        xGInput->applyPartitioningSolution<tgraph_t>(*xG, mMigrate, solution);
+        xGInput->applyPartitioningSolution<adapter_t, tgraph_t>(
+          *xG, mMigrate, solution);
       }
       catch (std::exception &e){
         fail = 11;
@@ -305,7 +307,8 @@ int main(int argc, char *argv[])
     if (!gfail){
       egraph_t *mMigrate =NULL;
       try{
-        eGInput->applyPartitioningSolution<tgraph_t>(*eG, mMigrate, solution);
+        eGInput->applyPartitioningSolution<adapter_t, tgraph_t>(
+          *eG, mMigrate, solution);
       }
       catch (std::exception &e){
         fail = 11;

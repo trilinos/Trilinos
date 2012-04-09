@@ -41,7 +41,7 @@ namespace Zoltan2 {
 */
 
 template <typename User, typename Scalar=typename InputTraits<User>::scalar_t>
-  class XpetraMultiVectorInput : public VectorInput<User> {
+  class XpetraMultiVectorInput : public VectorInput<User, Scalar> {
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -50,7 +50,7 @@ public:
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
-  typedef VectorInput<User>       base_adapter_t;
+  typedef VectorInput<User, Scalar>       base_adapter_t;
   typedef User user_t;
 
   typedef Xpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> x_mvector_t;
@@ -139,9 +139,9 @@ public:
     return length;
   }
 
-  template <typename User2>
+  template <typename Adapter>
     size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<User2> &solution) const;
+         const PartitioningSolution<Adapter> &solution) const;
 
 private:
 
@@ -159,10 +159,10 @@ private:
 // Definitions
 //////////////////////////////////////////////////////////
 
-template <typename User>
-  XpetraMultiVectorInput<User>::XpetraMultiVectorInput(
+template <typename User, typename Scalar>
+  XpetraMultiVectorInput<User, Scalar>::XpetraMultiVectorInput(
     const RCP<const User> &invector,
-    vector<const scalar_t *> &weights, vector<int> &weightStrides):
+    vector<const Scalar *> &weights, vector<int> &weightStrides):
       invector_(invector), vector_(), map_(), 
       env_(rcp(new Environment)), base_(),
       numWeights_(weights.size()), weights_(weights.size())
@@ -187,8 +187,9 @@ template <typename User>
 }
 
 
-template <typename User>
-  XpetraMultiVectorInput<User>::XpetraMultiVectorInput(const RCP<const User> &invector):
+template <typename User, typename Scalar>
+  XpetraMultiVectorInput<User, Scalar>::XpetraMultiVectorInput(
+    const RCP<const User> &invector):
       invector_(invector), vector_(), map_(), 
       env_(rcp(new Environment)), base_(),
       numWeights_(0), weights_(0)
@@ -200,9 +201,9 @@ template <typename User>
   base_ = map_->getIndexBase();
 }
 
-template <typename User>
+template <typename User, typename Scalar>
   size_t XpetraMultiVectorInput<User>::getVector(int i, const gid_t *&Ids, 
-    const scalar_t *&elements, int &stride) const
+    const Scalar *&elements, int &stride) const
 {
   stride = 1;
   elements = NULL;
@@ -236,11 +237,11 @@ template <typename User>
   return gids.size();
 }
 
-template <typename User>
-  template <typename User2>
-    size_t XpetraMultiVectorInput<User>::applyPartitioningSolution(
+template <typename User, typename Scalar>
+  template <typename Adapter>
+    size_t XpetraMultiVectorInput<User, Scalar>::applyPartitioningSolution(
       const User &in, User *&out, 
-      const PartitioningSolution<User2> &solution) const
+      const PartitioningSolution<Adapter> &solution) const
 {
   size_t len = solution.getLocalNumberOfIds();
   const gid_t *gids = solution.getIdList();
@@ -257,7 +258,7 @@ template <typename User>
 
   try{
     // Get an import list
-    numNewRows = convertSolutionToImportList<User2, lno_t>(
+    numNewRows = convertSolutionToImportList<Adapter, lno_t>(
       solution, dummyIn, importList, dummyOut);
   }
   Z2_FORWARD_EXCEPTIONS;

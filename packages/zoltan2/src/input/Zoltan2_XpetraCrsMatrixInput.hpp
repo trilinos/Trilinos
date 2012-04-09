@@ -46,7 +46,7 @@ namespace Zoltan2 {
 */
 
 template <typename User, typename Scalar=typename InputTraits<User>::scalar_t>
-  class XpetraCrsMatrixInput : public MatrixInput<User> {
+  class XpetraCrsMatrixInput : public MatrixInput<User, Scalar> {
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -56,7 +56,7 @@ public:
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> xmatrix_t;
-  typedef MatrixInput<User>       base_adapter_t;
+  typedef MatrixInput<User, Scalar>       base_adapter_t;
   typedef User user_t;
 #endif
 
@@ -162,9 +162,9 @@ public:
   // End of MatrixInput interface.
   ////////////////////////////////////////////////////
 
-  template <typename User2>
+  template <typename Adapter>
     size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<User2> &solution) const;
+         const PartitioningSolution<Adapter> &solution) const;
 
 private:
 
@@ -187,8 +187,8 @@ private:
 // Definitions
 /////////////////////////////////////////////////////////////////
 
-template <typename User>
-  XpetraCrsMatrixInput<User>::XpetraCrsMatrixInput(
+template <typename User, typename Scalar>
+  XpetraCrsMatrixInput<User, Scalar>::XpetraCrsMatrixInput(
     const RCP<const User> &inmatrix, int coordDim):
       env_(rcp(new Environment)),
       inmatrix_(inmatrix), matrix_(), rowMap_(), colMap_(), base_(),
@@ -222,8 +222,8 @@ template <typename User>
 }
 
 // TODO (from 3/21/12 mtg):  Consider changing interface to take an XpetraMultivector
-template <typename User>
-  void XpetraCrsMatrixInput<User>::setRowCoordinates(int dim,
+template <typename User, typename Scalar>
+  void XpetraCrsMatrixInput<User, Scalar>::setRowCoordinates(int dim,
     const scalar_t *coordVal, int stride)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
@@ -239,11 +239,11 @@ template <typename User>
       new input_t(ArrayView<const scalar_t>(coordVal, nvtx), stride));
 }
 
-template <typename User>
-  template <typename User2>
-    size_t XpetraCrsMatrixInput<User>::applyPartitioningSolution(
+template <typename User, typename Scalar>
+  template <typename Adapter>
+    size_t XpetraCrsMatrixInput<User, Scalar>::applyPartitioningSolution(
       const User &in, User *&out, 
-      const PartitioningSolution<User2> &solution) const
+      const PartitioningSolution<Adapter> &solution) const
 { 
   // Get an import list
 
@@ -260,7 +260,7 @@ template <typename User>
   const RCP<const Comm<int> > comm = matrix_->getRowMap()->getComm();
 
   try{
-    numNewRows = convertSolutionToImportList<User2, lno_t>(
+    numNewRows = convertSolutionToImportList<Adapter, lno_t>(
       solution, dummyIn, importList, dummyOut);
   }
   Z2_FORWARD_EXCEPTIONS;

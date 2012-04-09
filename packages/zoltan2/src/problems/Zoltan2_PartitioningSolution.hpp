@@ -37,16 +37,17 @@ namespace Zoltan2 {
     \todo doxyfy the comments in this file.
 */
 
-template <typename User_t>
+template <typename Adapter>
   class PartitioningSolution : public Solution
 {
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef typename InputTraits<User_t>::gno_t gno_t;
-  typedef typename InputTraits<User_t>::scalar_t scalar_t;
-  typedef typename InputTraits<User_t>::lno_t lno_t;
-  typedef typename InputTraits<User_t>::gid_t gid_t;
+  typedef Adapter::gno_t gno_t;
+  typedef Adapter::scalar_t scalar_t;
+  typedef Adapter::lno_t lno_t;
+  typedef Adapter::gid_t gid_t;
+  typedef Adapter::user_t user_t;
 #endif
 
 /*! \brief Constructor when part sizes are not supplied.
@@ -68,7 +69,7 @@ public:
  
   PartitioningSolution( RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
-    RCP<const IdentifierMap<User_t> > &idMap,
+    RCP<const IdentifierMap<user_t> > &idMap,
     int userWeightDim);
 
 /*! \brief Constructor when part sizes are supplied.
@@ -101,7 +102,7 @@ public:
 
   PartitioningSolution( RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
-    RCP<const IdentifierMap<User_t> > &idMap,
+    RCP<const IdentifierMap<user_t> > &idMap,
     int userWeightDim, ArrayView<ArrayRCP<partId_t> > reqPartIds,
     ArrayView<ArrayRCP<scalar_t> > reqPartSizes );
   
@@ -335,7 +336,7 @@ private:
 
   RCP<const Environment> env_;             // has application communicator
   RCP<const Comm<int> > comm_;             // the problem communicator
-  RCP<const IdentifierMap<User_t> > idMap_;
+  RCP<const IdentifierMap<user_t> > idMap_;
 
   gno_t nGlobalParts_; // the global number of parts
   scalar_t nLocalParts_; // Fraction of one part, or number of whole parts
@@ -428,11 +429,11 @@ private:
 // Definitions
 ////////////////////////////////////////////////////////////////////
 
-template <typename User_t>
-  PartitioningSolution<User_t>::PartitioningSolution(
+template <typename Adapter>
+  PartitioningSolution<Adapter>::PartitioningSolution(
     RCP<const Environment> &env, 
     RCP<const Comm<int> > &comm,
-    RCP<const IdentifierMap<User_t> > &idMap, int userWeightDim)
+    RCP<const IdentifierMap<user_t> > &idMap, int userWeightDim)
     : env_(env), comm_(comm), idMap_(idMap),
       nGlobalParts_(0), nLocalParts_(0), weightDim_(),
       onePartPerProc_(false), partDist_(), procDist_(), 
@@ -454,11 +455,11 @@ template <typename User_t>
   setPartSizes(ids.view(0, weightDim_), sizes.view(0, weightDim_));
 }
 
-template <typename User_t>
-  PartitioningSolution<User_t>::PartitioningSolution(
+template <typename Adapter>
+  PartitioningSolution<Adapter>::PartitioningSolution(
     RCP<const Environment> &env, 
     RCP<const Comm<int> > &comm,
-    RCP<const IdentifierMap<User_t> > &idMap, int userWeightDim,
+    RCP<const IdentifierMap<user_t> > &idMap, int userWeightDim,
     ArrayView<ArrayRCP<partId_t> > reqPartIds, 
     ArrayView<ArrayRCP<scalar_t> > reqPartSizes)
     : env_(env), comm_(comm), idMap_(idMap),
@@ -474,8 +475,8 @@ template <typename User_t>
   setPartSizes(reqPartIds, reqPartSizes);
 }
 
-template <typename User_t>
-  void PartitioningSolution<User_t>::setPartDistribution()
+template <typename Adapter>
+  void PartitioningSolution<Adapter>::setPartDistribution()
 {
   // Did the caller define num_global_parts and/or num_local_parts?
 
@@ -540,8 +541,8 @@ template <typename User_t>
 
 }
 
-template <typename User_t>
-  void PartitioningSolution<User_t>::setPartSizes(
+template <typename Adapter>
+  void PartitioningSolution<Adapter>::setPartSizes(
     ArrayView<ArrayRCP<partId_t> > ids, ArrayView<ArrayRCP<scalar_t> > sizes)
 {
   int wdim = weightDim_;
@@ -634,8 +635,8 @@ template <typename User_t>
   } 
 }
 
-template <typename User_t>
-  void PartitioningSolution<User_t>::broadcastPartSizes(int wdim)
+template <typename Adapter>
+  void PartitioningSolution<Adapter>::broadcastPartSizes(int wdim)
 {
   env_->localBugAssertion(__FILE__, __LINE__, "preallocations", 
     pSize_.size()>wdim && 
@@ -748,7 +749,7 @@ template <typename User_t>
     }
 
     try{
-      Teuchos::broadcast<int, scalar_t>(*comm_, 0, nparts, sizeList);
+      Teuchos::broadcast<int, scalar_t >(*comm_, 0, nparts, sizeList);
     }
     Z2_THROW_OUTSIDE_ERROR(*env_);
 
@@ -759,8 +760,8 @@ template <typename User_t>
   }
 }
 
-template <typename User_t>
-  void PartitioningSolution<User_t>::computePartSizes(int wdim,
+template <typename Adapter>
+  void PartitioningSolution<Adapter>::computePartSizes(int wdim,
     ArrayView<partId_t> ids, ArrayView<scalar_t> sizes)
 {
   int len = ids.size();
@@ -982,8 +983,8 @@ template <typename User_t>
   }
 }
 
-template <typename User_t>
-  void PartitioningSolution<User_t>::setParts(
+template <typename Adapter>
+  void PartitioningSolution<Adapter>::setParts(
     ArrayRCP<const gno_t> &gnoList, ArrayRCP<partId_t> &partList,
     ArrayRCP<MetricValues<scalar_t> > &metrics) 
 {
@@ -1201,8 +1202,8 @@ template <typename User_t>
   }
 }
 
-template <typename User_t>
-  void PartitioningSolution<User_t>::procToParts(int procId, 
+template <typename Adapter>
+  void PartitioningSolution<Adapter>::procToParts(int procId, 
     double &numParts, partId_t &partMin, partId_t &partMax) const
 {
   if (onePartPerProc_){
@@ -1227,8 +1228,8 @@ template <typename User_t>
   }
 }
 
-template <typename User_t>
-  void PartitioningSolution<User_t>::partToProcs(partId_t partId, 
+template <typename Adapter>
+  void PartitioningSolution<Adapter>::partToProcs(partId_t partId, 
     int &procMin, int &procMax) const
 {
   if (onePartPerProc_){
@@ -1249,8 +1250,8 @@ template <typename User_t>
   }
 }
 
-template <typename User_t>
-  bool PartitioningSolution<User_t>::criteriaHaveSamePartSizes(
+template <typename Adapter>
+  bool PartitioningSolution<Adapter>::criteriaHaveSamePartSizes(
     int c1, int c2) const
 {
   if (c1 < 0 || c1 >= weightDim_ || c2 < 0 || c2 >= weightDim_ )

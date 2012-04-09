@@ -62,15 +62,15 @@ template <typename Ordinal>
  *              return part Id for each global Id as well?
  */
 
-template <typename User, typename Extra>
+template <typename Adapter, typename Extra>
   size_t convertSolutionToImportList(
-    const PartitioningSolution<User> &solution,
+    const PartitioningSolution<Adapter> &solution,
     ArrayRCP<Extra> &xtraInfo,
-    ArrayRCP<typename InputTraits<User>::gid_t> &imports,
+    ArrayRCP<Adapter::gid_t> &imports,
     ArrayRCP<Extra> &newXtraInfo)
 {
-  typedef typename InputTraits<User>::lno_t lno_t;
-  typedef typename InputTraits<User>::gid_t gid_t;
+  typedef Adapter::lno_t lno_t;
+  typedef Adapter::gid_t gid_t;
   typedef Teuchos::Comm<int> comm_t;
 
   const RCP<const comm_t> &comm     = solution.getCommunicator();

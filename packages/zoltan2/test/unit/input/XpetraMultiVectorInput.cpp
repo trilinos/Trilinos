@@ -140,9 +140,7 @@ int main(int argc, char *argv[])
   RCP<const idmap_t> idMap = rcp(new idmap_t(env, comm, gidArray));
 
   int weightDim = 1;
-  float *imbal = new float [weightDim];
-  imbal[0] = 1.0;
-  ArrayRCP<float> metric(imbal, 0, 1, true);
+  ArrayRCP<Zoltan2::MetricValues<scalar_t> > metrics;
 
   zoltan2_partId_t *p = new zoltan2_partId_t [vlen];
   memset(p, 0, sizeof(zoltan2_partId_t) * vlen);
@@ -150,7 +148,7 @@ int main(int argc, char *argv[])
 
   soln_t solution(env, comm, idMap, weightDim);
 
-  solution.setParts(rowGids, solnParts, metric);
+  solution.setParts(gidArray, solnParts, metrics);
 
   std::vector<const scalar_t *> emptyWeights;
   std::vector<int> emptyStrides;

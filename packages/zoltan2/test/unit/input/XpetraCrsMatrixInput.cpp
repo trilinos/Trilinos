@@ -142,7 +142,6 @@ int main(int argc, char *argv[])
   // object.  The Solution needs an IdentifierMap.
 
   typedef Zoltan2::IdentifierMap<tmatrix_t> idmap_t;
-  typedef Zoltan2::PartitioningSolution<tmatrix_t> soln_t;
 
   RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
 
@@ -151,17 +150,16 @@ int main(int argc, char *argv[])
 
   int weightDim = 1;
 
-  float *imbal = new float [weightDim];
-  imbal[0] = 1.0;
-  ArrayRCP<float> metric(imbal, 0, 1, true);
+  ArrayRCP<Zoltan2::MetricValues<scalar_t> > metrics;
 
   zoltan2_partId_t *p = new zoltan2_partId_t [nrows];
   memset(p, 0, sizeof(zoltan2_partId_t) * nrows);
   ArrayRCP<zoltan2_partId_t> solnParts(p, 0, nrows, true);
 
+  typedef Zoltan2::XpetraCrsMatrixInput<tmatrix_t> adapter_t;
+  typedef Zoltan2::PartitioningSolution<adapter_t> soln_t;
   soln_t solution(env, comm, idMap, weightDim);
-
-  solution.setParts(rowGids, solnParts, metric);
+  solution.setParts(gidArray, solnParts, metrics);
 
   /////////////////////////////////////////////////////////////
   // User object is Tpetra::CrsMatrix
@@ -188,7 +186,8 @@ int main(int argc, char *argv[])
     if (!gfail){
       tmatrix_t *mMigrate = NULL;
       try{
-        tMInput->applyPartitioningSolution<tmatrix_t>(*tM, mMigrate, solution);
+        tMInput->applyPartitioningSolution<adapter_t, tmatrix_t>(
+          *tM, mMigrate, solution);
         newM = rcp(mMigrate);
       }
       catch (std::exception &e){
@@ -249,7 +248,8 @@ int main(int argc, char *argv[])
     if (!gfail){
       xmatrix_t *mMigrate =NULL;
       try{
-        xMInput->applyPartitioningSolution<tmatrix_t>(*xM, mMigrate, solution);
+        xMInput->applyPartitioningSolution<adapter_t, xmatrix_t>(
+          *xM, mMigrate, solution);
       }
       catch (std::exception &e){
         fail = 11;
@@ -311,7 +311,8 @@ int main(int argc, char *argv[])
     if (!gfail){
       ematrix_t *mMigrate =NULL;
       try{
-        eMInput->applyPartitioningSolution<tmatrix_t>(*eM, mMigrate, solution);
+        eMInput->applyPartitioningSolution<adapter_t, tmatrix_t>(
+          *eM, mMigrate, solution);
       }
       catch (std::exception &e){
         fail = 11;
