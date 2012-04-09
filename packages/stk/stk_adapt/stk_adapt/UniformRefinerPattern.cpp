@@ -460,6 +460,7 @@ namespace stk {
 
               std::vector<stk::mesh::Entity*> parents_volume_elements_children;
               VERIFY_OP_ON(eMesh.hasFamilyTree(*parents_volume_element), == , true, "UniformRefinerPatternBase::findSideRelations parent's volume element has no children.");
+              //if (! eMesh.hasFamilyTree(*parents_volume_element) ) return true;
               eMesh.getChildren(*parents_volume_element, parents_volume_elements_children);
               for (unsigned i_vol_child=0; i_vol_child < parents_volume_elements_children.size(); i_vol_child++)
                 {
