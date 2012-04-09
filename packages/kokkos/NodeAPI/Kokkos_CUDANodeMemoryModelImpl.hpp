@@ -52,6 +52,7 @@
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ParameterList.hpp>
+#include <Teuchos_TypeNameTraits.hpp>
 
 #include "Kokkos_NodeAPIConfigDefs.hpp"
 #include "Kokkos_BufferMacros.hpp"
@@ -68,10 +69,11 @@ namespace Kokkos {
     const size_t sizeInBytes = sizeof(T)*size;
     if (size > 0) {
       cudaError_t err = cudaMalloc( (void**)&devptr, sizeInBytes );
-      TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
-          "Kokkos::CUDANodeMemoryModel::allocBuffer(): cudaMalloc() returned error: "
-          << cudaGetErrorString(err) 
-          );
+      TEUCHOS_TEST_FOR_EXCEPTION( err != cudaSuccess, std::runtime_error,
+        "Kokkos::CUDANodeMemoryModel::allocBuffer<" 
+        << Teuchos::TypeNameTraits<T>::name () << ">: cudaMalloc() returned "
+        "error: " << cudaGetErrorString (err) 
+        );
 #ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
       allocSize_ += sizeInBytes;
 #endif
@@ -86,8 +88,16 @@ namespace Kokkos {
   template <class T> inline
   void CUDANodeMemoryModel::copyFromBuffer(size_t size, const ArrayRCP<const T> &buffSrc, const ArrayView<T> &hostDest) {
     CHECK_COMPUTE_BUFFER(buffSrc);
-    TEUCHOS_TEST_FOR_EXCEPTION( (size_t)buffSrc.size() < size || (size_t)hostDest.size() < size, std::runtime_error,
-        "CUDANodeMemoryModel::copyFromBuffer: invalid copy.");
+    TEUCHOS_TEST_FOR_EXCEPTION( (size_t)buffSrc.size() < size, std::runtime_error,
+      "CUDANodeMemoryModel::copyFromBuffer<" 
+      << Teuchos::TypeNameTraits<T>::name () 
+      << ">: invalid copy.  Device source buffer has size " << buffSrc.size () 
+      << ", which is less than the requested copy size " << size << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION( (size_t)hostDest.size() < size, std::runtime_error,
+      "CUDANodeMemoryModel::copyFromBuffer<" 
+      << Teuchos::TypeNameTraits<T>::name () 
+      << ">: invalid copy.  Host destination buffer has size " << hostDest.size () 
+      << ", which is less than the requested copy size " << size << ".");
 #ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
     ++numCopiesD2H_;
     bytesCopiedD2H_ += size*sizeof(T);
@@ -97,16 +107,25 @@ namespace Kokkos {
 #endif
     cudaError_t err = cudaMemcpy( hostDest.getRawPtr(), buffSrc.getRawPtr(), size*sizeof(T), cudaMemcpyDeviceToHost);
     TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
-        "Kokkos::CUDANodeMemoryModel::copyFromBuffer(): cudaMemcpy() returned error: "
-        << cudaGetErrorString(err) 
-        );
+      "Kokkos::CUDANodeMemoryModel::copyFromBuffer<"
+      << Teuchos::TypeNameTraits<T>::name () 
+      << ">(): cudaMemcpy() returned error: " << cudaGetErrorString (err) 
+      );
   }
 
   template <class T> inline
   void CUDANodeMemoryModel::copyToBuffer(size_t size, const ArrayView<const T> &hostSrc, const ArrayRCP<T> &buffDest) {
     CHECK_COMPUTE_BUFFER(buffDest);
-    TEUCHOS_TEST_FOR_EXCEPTION( hostSrc.size() < size, std::runtime_error, "CUDANodeMemoryModel::copyToBuffer: invalid copy.");
-    TEUCHOS_TEST_FOR_EXCEPTION( buffDest.size() < size, std::runtime_error, "CUDANodeMemoryModel::copyToBuffer: invalid copy.");
+    TEUCHOS_TEST_FOR_EXCEPTION( (size_t)buffDest.size() < size, std::runtime_error,
+      "CUDANodeMemoryModel::copyToBuffer<" 
+      << Teuchos::TypeNameTraits<T>::name () 
+      << ">: invalid copy.  Device destination buffer has size " << buffDest.size () 
+      << ", which is less than the requested copy size " << size << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION( (size_t)hostSrc.size() < size, std::runtime_error,
+      "CUDANodeMemoryModel::copyToBuffer<" 
+      << Teuchos::TypeNameTraits<T>::name () 
+      << ">: invalid copy.  Host source buffer has size " << hostSrc.size () 
+      << ", which is less than the requested copy size " << size << ".");
 #ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
     ++numCopiesH2D_;
     bytesCopiedH2D_ += size*sizeof(T);
@@ -116,17 +135,28 @@ namespace Kokkos {
 #endif
     cudaError_t err = cudaMemcpy( buffDest.getRawPtr(), hostSrc.getRawPtr(), size*sizeof(T), cudaMemcpyHostToDevice);
     TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
-        "Kokkos::CUDANodeMemoryModel::copyToBuffer(): cudaMemcpy() returned error: "
-        << cudaGetErrorString(err) 
-        );
+      "Kokkos::CUDANodeMemoryModel::copyToBuffer<"
+      << Teuchos::TypeNameTraits<T>::name () 
+      ">(): cudaMemcpy() returned error: " << cudaGetErrorString (err)
+      );
   }
 
   template <class T> inline
   void CUDANodeMemoryModel::copyBuffers(size_t size, const ArrayRCP<const T> &buffSrc, const ArrayRCP<T> &buffDest) {
     CHECK_COMPUTE_BUFFER(buffSrc);
     CHECK_COMPUTE_BUFFER(buffDest);
-    TEUCHOS_TEST_FOR_EXCEPTION( buffSrc.size() < size || buffDest.size() < size, std::runtime_error,
-        "CUDANodeMemoryModel::copyBuffers: invalid copy.");
+
+    TEUCHOS_TEST_FOR_EXCEPTION( (size_t)buffDest.size() < size, std::runtime_error,
+      "CUDANodeMemoryModel::copyBuffers<" 
+      << Teuchos::TypeNameTraits<T>::name () 
+      << ">: invalid copy.  Device destination buffer has size " << buffDest.size () 
+      << ", which is less than the requested copy size " << size << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION( (size_t)buffSrc.size() < size, std::runtime_error,
+      "CUDANodeMemoryModel::copyBuffers<" 
+      << Teuchos::TypeNameTraits<T>::name () 
+      << ">: invalid copy.  Device source buffer has size " << buffSrc.size () 
+      << ", which is less than the requested copy size " << size << ".");
+
 #ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
     ++numCopiesD2D_;
     bytesCopiedD2D_ += size*sizeof(T);
@@ -136,9 +166,10 @@ namespace Kokkos {
 #endif
     cudaError_t err = cudaMemcpy( buffDest.getRawPtr(), buffSrc.getRawPtr(), size*sizeof(T), cudaMemcpyDeviceToDevice);
     TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
-        "Kokkos::CUDANodeMemoryModel::copyBuffers(): cudaMemcpy() returned error: "
-        << cudaGetErrorString(err) 
-        );
+      "Kokkos::CUDANodeMemoryModel::copyBuffers<"
+      << Teuchos::TypeNameTraits<T>::name () 
+      ">(): cudaMemcpy() returned error: " << cudaGetErrorString (err)
+      );
   }
 
   template <class T> inline
@@ -160,9 +191,9 @@ namespace Kokkos {
   ArrayRCP<T> 
   CUDANodeMemoryModel::viewBufferNonConst(ReadWriteOption rw, size_t size, const ArrayRCP<T> &buff) {
     CHECK_COMPUTE_BUFFER(buff);
-    // create a copy-back deallocator that copies back to "buff"
+    // Create a copy-back deallocator that copies back to buff.
     CUDANodeCopyBackDeallocator<T> dealloc(buff.persistingView(0,size), rcpFromRef(*this));
-    // it allocates a host buffer with the appropriate deallocator embedded
+    // It allocates a host buffer with the appropriate deallocator embedded.
     ArrayRCP<T> hostBuff = dealloc.alloc();
     if (rw == ReadWrite) {
 #ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_TRACE
