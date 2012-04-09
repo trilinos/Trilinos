@@ -465,7 +465,6 @@ int ex_put_concat_sets (int   exoid,
   /* Now, use ExodusII call to store sets */
   for (i=0; i<num_sets; i++) {
     int64_t set_id;
-    size_t num_df;
     size_t df_ndx;
     
     if (set_stat[i] == 0) /* Is this a NULL set? */

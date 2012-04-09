@@ -220,7 +220,7 @@ int ex_create_int (const char *path,
     exerrval = EX_BADPARAM;
     sprintf(errmsg,
 	    "Warning: conflicting mode specification for file %s, mode %d. Using normal",
-	    path, my_mode);
+	    path, (int)my_mode);
     ex_err("ex_create",errmsg,exerrval);
   }
   if (my_mode & EX_NORMAL_MODEL)

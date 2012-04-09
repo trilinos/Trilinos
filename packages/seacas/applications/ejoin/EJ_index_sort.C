@@ -63,8 +63,8 @@ namespace {
   template <typename T>
   int ex_int_median3(T *v, int iv[], int left, int right)
   {
-    int center;
-    center = (left + right) / 2;
+    ssize_t center;
+    center = ((ssize_t)left + (ssize_t)right) / 2;
 
     if (v[iv[left]] > v[iv[center]])
       ex_swap(iv, left, center);

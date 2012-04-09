@@ -286,10 +286,10 @@ void Compute_Maps(int*& node_map, int*& elmt_map,
 	      std::cout << "\t(" << l1+1 << ")\t" << conn1[l1] << "\t" << x_val << "\t" << y_val << "\t" << z_val << "\n";
 	    }
 	    std::cout << "\tFile 2: Element " << (l2+1) << " in Block " << file1.Block_Id(b) << " nodes:\n";
-	    for (int l2 = 0; l2 < num_nodes_per_elmt; ++l2) {
-	      double x_val = x2_f[ conn2[l2] - 1 ];
-	      double y_val = dim > 1 ? y2_f[ conn2[l2] - 1 ] : 0.0;
-	      double z_val = dim > 2 ? z2_f[ conn2[l2] - 1 ] : 0.0;
+	    for (int l3 = 0; l3 < num_nodes_per_elmt; ++l3) {
+	      double x_val = x2_f[ conn2[l3] - 1 ];
+	      double y_val = dim > 1 ? y2_f[ conn2[l3] - 1 ] : 0.0;
+	      double z_val = dim > 2 ? z2_f[ conn2[l3] - 1 ] : 0.0;
 	      std::cout << "\t(" << l2+1 << ")\t" << conn2[l2] << "\t" << x_val << "\t" << y_val << "\t" << z_val << "\n";
 	    }
 	    std::cout << "Coordinates compared using tolerance: " << specs.coord_tol.value
@@ -536,10 +536,10 @@ void Compute_Partial_Maps(int*& node_map, int*& elmt_map,
 	      std::cout << "\t(" << l1+1 << ")\t" << conn1[l1] << "\t" << x_val << "\t" << y_val << "\t" << z_val << "\n";
 	    }
 	    std::cout << "\tFile 2: Element " << (l2+1) << " in Block " << file1.Block_Id(b) << " nodes:\n";
-	    for (int l2 = 0; l2 < num_nodes_per_elmt; ++l2) {
-	      double x_val = x2_f[ conn2[l2] - 1 ];
-	      double y_val = dim > 1 ? y2_f[ conn2[l2] - 1 ] : 0.0;
-	      double z_val = dim > 2 ? z2_f[ conn2[l2] - 1 ] : 0.0;
+	    for (int l3 = 0; l3 < num_nodes_per_elmt; ++l3) {
+	      double x_val = x2_f[ conn2[l3] - 1 ];
+	      double y_val = dim > 1 ? y2_f[ conn2[l3] - 1 ] : 0.0;
+	      double z_val = dim > 2 ? z2_f[ conn2[l3] - 1 ] : 0.0;
 	      std::cout << "\t(" << l2+1 << ")\t" << conn2[l2] << "\t" << x_val << "\t" << y_val << "\t" << z_val << "\n";
 	    }
 	    std::cout << "Coordinates compared using tolerance: " << specs.coord_tol.value
@@ -599,11 +599,13 @@ namespace {
   bool internal_compute_maps(int *map, const int *file1_id_map, const int *file2_id_map,
 			     int count, const char *type)
   {
-    std::vector<int> id1(count);
-    std::vector<int> id2(count);
+    std::vector<int> id1;
+    id1.reserve(count);
+    std::vector<int> id2;
+    id2.reserve(count);
     for (int i=0; i < count; i++) {
-      id1[i] = i;
-      id2[i] = i;
+      id1.push_back(i);
+      id2.push_back(i);
     }
   
     // Check whether sorting needed...
@@ -1070,6 +1072,7 @@ bool Compare_Maps(ExoII_Read& file1, ExoII_Read& file2, const int *node_map, con
   const int *elem_id_map2 = file2.Get_Elmt_Map();
 
   bool diff = false;
+  int warn_count = 0;
   
   if (node_map != NULL) {
     // There is a map between file1 and file2, but all nodes are
@@ -1081,6 +1084,11 @@ bool Compare_Maps(ExoII_Read& file1, ExoII_Read& file2, const int *node_map, con
 		    << " in file1 has the global id " << node_id_map2[node_map[i]]
 		    << " in file2.\n";
 	  diff = true;
+	  warn_count++;
+	  if (warn_count > 100) {
+	    std::cout << "exodiff: WARNING .. Too many warnings, skipping remainder...\n";
+	    break;
+	  }
 	}
       }
     }
@@ -1093,11 +1101,17 @@ bool Compare_Maps(ExoII_Read& file1, ExoII_Read& file2, const int *node_map, con
 		    << " in file1 has the global id " << node_id_map2[i]
 		    << " in file2.\n";
 	  diff = true;
+	  warn_count++;
+	  if (warn_count > 100) {
+	    std::cout << "exodiff: WARNING .. Too many warnings, skipping remainder...\n";
+	    break;
+	  }
 	}
       }
     }
   }
 
+  warn_count = 0;
   if (elmt_map != NULL) {
     // There is a map between file1 and file2, but all elements are
     // used in both files.
@@ -1108,6 +1122,11 @@ bool Compare_Maps(ExoII_Read& file1, ExoII_Read& file2, const int *node_map, con
 		    << " in file1 has the global id " << elem_id_map2[elmt_map[i]]
 		    << " in file2.\n";
 	  diff = true;
+	  warn_count++;
+	  if (warn_count > 100) {
+	    std::cout << "exodiff: WARNING .. Too many warnings, skipping remainder...\n";
+	    break;
+	  }
 	}
       }
     }
@@ -1120,6 +1139,11 @@ bool Compare_Maps(ExoII_Read& file1, ExoII_Read& file2, const int *node_map, con
 		    << " in file1 has the global id " << elem_id_map2[i]
 		    << " in file2.\n";
 	  diff = true;
+	  warn_count++;
+	  if (warn_count > 100) {
+	    std::cout << "exodiff: WARNING .. Too many warnings, skipping remainder...\n";
+	    break;
+	  }
 	}
       }
     }

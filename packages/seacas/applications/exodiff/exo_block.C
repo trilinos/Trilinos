@@ -156,7 +156,7 @@ const int* Exo_Block::Connectivity(int elmt_index) const
   
   if (!conn || elmt_index < 0 || elmt_index >= numEntity) return 0;
   
-  return &conn[elmt_index * num_nodes_per_elmt];
+  return &conn[(size_t)elmt_index * num_nodes_per_elmt];
 }
 
 string Exo_Block::Give_Connectivity(int& num_e, int& npe, int*& recv_conn)
