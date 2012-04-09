@@ -75,9 +75,11 @@ namespace MueLu {
       comm = A->getRowMap()->getComm();
     }
 
+#ifdef HAVE_MPI
     static double t0=0,t1;
 
     t0 = MPI_Wtime();
+#endif
 
     RCP<Operator> permMatrix;
     try {
@@ -163,9 +165,11 @@ namespace MueLu {
         break;
     } //switch
 
+#ifdef HAVE_MPI
     t1 += MPI_Wtime() - t0;
     if (comm->getRank() == 0)
       std::cout << "cumulative PermutedTransferFactory (excluding get(\"A\")) = " << t1 << std::endl;
+#endif
 
   } //Build
 

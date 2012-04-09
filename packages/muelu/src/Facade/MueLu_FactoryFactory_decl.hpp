@@ -102,9 +102,11 @@ namespace MueLu {
         return BuildZoltanInterface(paramList, factoryMapIn);
       }
 #endif
+#ifdef HAVE_MPI
       if (factoryName == "RepartitionFactory") {
         return BuildRepartitionFactory(paramList, factoryMapIn);
       }
+#endif
       if (factoryName == "PermutedTransferFactory") {
         return BuildPermutedTransferFactory(paramList, factoryMapIn);
       }

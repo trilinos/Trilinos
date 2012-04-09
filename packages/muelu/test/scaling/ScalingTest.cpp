@@ -250,6 +250,7 @@ int main(int argc, char *argv[]) {
     RCP<PermutedTransferFactory> permPFactory, permRFactory;
     RCP<MultiVectorTransferFactory> mvTransFact;
     if (useExplicitR) {
+#if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
       //Operator used to transfer coordinates to coarse grid
       RCP<RFactory> Rtentfact = rcp( new TransPFactory(PtentFact) ); //for projecting coordinates
       //Factory that will invoke the coordinate transfer. This factory associates data and operator.
@@ -262,7 +263,8 @@ int main(int argc, char *argv[]) {
       permPFactory = rcp( new PermutedTransferFactory(RepartitionFact, Acfact, SaPfact, MueLu::INTERPOLATION) );
       permRFactory = rcp( new PermutedTransferFactory(RepartitionFact, Acfact, Rfact, MueLu::RESTRICTION, PtentFact, mvTransFact));
       AcfactFinal = rcp( new RAPFactory(permPFactory,permRFactory) );
-
+//TODO: #else ?
+#endif
     } else {
   
         H->SetImplicitTranspose(true);
@@ -315,9 +317,14 @@ int main(int argc, char *argv[]) {
     M.SetFactory("Graph", GraphFact);
 
     if (useExplicitR) {
+#if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
       M.SetFactory("P",permPFactory);
       M.SetFactory("R",permRFactory);
       M.SetFactory("Nullspace", permRFactory);
+#else
+      M.SetFactory("P",SaPfact);
+      M.SetFactory("R",Rfact);
+#endif
     } else {
       M.SetFactory("P",SaPfact);
       M.SetFactory("R",Rfact);
