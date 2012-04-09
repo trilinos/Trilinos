@@ -32,15 +32,24 @@ namespace Zoltan2 {
      \li Tpetra::CrsGraph
      \li Xpetra::CrsGraph
      \li Epetra_CrsGraph
+
+    The \c scalar_t type, representing use data such as matrix values, is
+    used by Zoltan2 for weights, coordinates, part sizes and
+    quality metrics.
+    Some User types (like Tpetra::CrsMatrix) have an inherent scalar type,
+    and some
+    (like Tpetra::CrsGraph) do not.  For such objects, the scalar type is
+    set by Zoltan2 to \c float.  If you wish to change it to double, set
+    the second template parameter to \c double.
 */
 
-template <typename User>
-class XpetraCrsGraphInput : public GraphInput<User> {
+template <typename User, typename Scalar=typename InputTraits<User>::scalar_t>
+  class XpetraCrsGraphInput : public GraphInput<User> {
 
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef typename InputTraits<User>::scalar_t scalar_t;
+  typedef Scalar scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;

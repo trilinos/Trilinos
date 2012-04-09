@@ -64,7 +64,7 @@ void printGraph(RCP<const Comm<int> > &comm, lno_t nvtx,
 
 template <typename User>
 int verifyInputAdapter(
-  Zoltan2::XpetraCrsGraphInput<User> &ia, tgraph_t &graph)
+  Zoltan2::XpetraCrsGraphInput<User, scalar_t> &ia, tgraph_t &graph)
 {
   RCP<const Comm<int> > comm = graph.getComm();
   int fail = 0, gfail=0;
@@ -147,9 +147,7 @@ int main(int argc, char *argv[])
 
   int weightDim = 1;
 
-  float *imbal = new float [weightDim];
-  imbal[0] = 1.0;
-  ArrayRCP<float> metric(imbal, 0, 1, true);
+  ArrayRCP<Zoltan2::MetricValues<scalar_t> > metrics;
 
   zoltan2_partId_t *p = new zoltan2_partId_t [nvtx];
   memset(p, 0, sizeof(zoltan2_partId_t) * nvtx);
@@ -157,17 +155,17 @@ int main(int argc, char *argv[])
 
   soln_t solution(env, comm, idMap, weightDim);
 
-  solution.setParts(rowGids, solnParts, metric);
+  solution.setParts(gidArray, solnParts, metrics);
 
   /////////////////////////////////////////////////////////////
   // User object is Tpetra::CrsGraph
   if (!gfail){
     RCP<const tgraph_t> ctG = rcp_const_cast<const tgraph_t>(tG);
-    RCP<Zoltan2::XpetraCrsGraphInput<tgraph_t> > tGInput;
+    RCP<Zoltan2::XpetraCrsGraphInput<tgraph_t, scalar_t> > tGInput;
 
     try {
       tGInput =
-        rcp(new Zoltan2::XpetraCrsGraphInput<tgraph_t>(ctG));
+        rcp(new Zoltan2::XpetraCrsGraphInput<tgraph_t, scalar_t>(ctG));
     }
     catch (std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0,
@@ -195,9 +193,9 @@ int main(int argc, char *argv[])
 
       if (!gfail){
         RCP<const tgraph_t> cnewG = rcp_const_cast<const tgraph_t>(newG);
-        RCP<Zoltan2::XpetraCrsGraphInput<tgraph_t> > newInput;
+        RCP<Zoltan2::XpetraCrsGraphInput<tgraph_t, scalar_t> > newInput;
         try{
-          newInput = rcp(new Zoltan2::XpetraCrsGraphInput<tgraph_t>(cnewG));
+          newInput = rcp(new Zoltan2::XpetraCrsGraphInput<tgraph_t, scalar_t>(cnewG));
         }
         catch (std::exception &e){
           TEST_FAIL_AND_EXIT(*comm, 0,
@@ -224,11 +222,11 @@ int main(int argc, char *argv[])
   if (!gfail){
     RCP<xgraph_t> xG = uinput->getXpetraCrsGraph();
     RCP<const xgraph_t> cxG = rcp_const_cast<const xgraph_t>(xG);
-    RCP<Zoltan2::XpetraCrsGraphInput<xgraph_t> > xGInput;
+    RCP<Zoltan2::XpetraCrsGraphInput<xgraph_t, scalar_t> > xGInput;
 
     try {
       xGInput =
-        rcp(new Zoltan2::XpetraCrsGraphInput<xgraph_t>(cxG));
+        rcp(new Zoltan2::XpetraCrsGraphInput<xgraph_t, scalar_t>(cxG));
     }
     catch (std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0,
@@ -255,10 +253,10 @@ int main(int argc, char *argv[])
 
       if (!gfail){
         RCP<const xgraph_t> cnewG(mMigrate);
-        RCP<Zoltan2::XpetraCrsGraphInput<xgraph_t> > newInput;
+        RCP<Zoltan2::XpetraCrsGraphInput<xgraph_t, scalar_t> > newInput;
         try{
           newInput =
-            rcp(new Zoltan2::XpetraCrsGraphInput<xgraph_t>(cnewG));
+            rcp(new Zoltan2::XpetraCrsGraphInput<xgraph_t, scalar_t>(cnewG));
         }
         catch (std::exception &e){
           TEST_FAIL_AND_EXIT(*comm, 0,
@@ -286,11 +284,11 @@ int main(int argc, char *argv[])
   if (!gfail){
     RCP<egraph_t> eG = uinput->getEpetraCrsGraph();
     RCP<const egraph_t> ceG = rcp_const_cast<const egraph_t>(eG);
-    RCP<Zoltan2::XpetraCrsGraphInput<egraph_t> > eGInput;
+    RCP<Zoltan2::XpetraCrsGraphInput<egraph_t, double> > eGInput;
 
     try {
       eGInput =
-        rcp(new Zoltan2::XpetraCrsGraphInput<egraph_t>(ceG));
+        rcp(new Zoltan2::XpetraCrsGraphInput<egraph_t, double>(ceG));
     }
     catch (std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0,
@@ -317,10 +315,10 @@ int main(int argc, char *argv[])
 
       if (!gfail){
         RCP<const egraph_t> cnewG(mMigrate, true);
-        RCP<Zoltan2::XpetraCrsGraphInput<egraph_t> > newInput;
+        RCP<Zoltan2::XpetraCrsGraphInput<egraph_t, double> > newInput;
         try{
           newInput =
-            rcp(new Zoltan2::XpetraCrsGraphInput<egraph_t>(cnewG));
+            rcp(new Zoltan2::XpetraCrsGraphInput<egraph_t, double>(cnewG));
         }
         catch (std::exception &e){
           TEST_FAIL_AND_EXIT(*comm, 0,

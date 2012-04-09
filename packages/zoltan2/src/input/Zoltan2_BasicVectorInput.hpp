@@ -40,6 +40,17 @@ namespace Zoltan2 {
     the empty helper class \c BasicUserTypes with which a Zoltan2 user
     can easily supply the data types for the library.
 
+
+    The \c scalar_t type, representing use data such as matrix values, is
+    used by Zoltan2 for weights, coordinates, part sizes and
+    quality metrics.
+    Some User types (like Tpetra::CrsMatrix) have an inherent scalar type,
+    and some
+    (like Tpetra::CrsGraph) do not.  For such objects, the scalar type is
+    set by Zoltan2 to \c float.  If you wish to change it to double, set
+    the second template parameter to \c double.
+
+
     BasicVectorInput may be a single vector or a set of corresponding vectors
     which have with the
     same global identifiers and the same distribution across processes.
@@ -51,7 +62,7 @@ namespace Zoltan2 {
 
 */
 
-template <typename User>
+template <typename User, typename Scalar=typename InputTraits<User>::scalar_t>
   class BasicVectorInput : public VectorInput<User> {
 
 public:
