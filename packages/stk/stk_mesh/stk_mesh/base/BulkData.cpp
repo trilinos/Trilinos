@@ -573,7 +573,8 @@ void BulkData::internal_change_entity_parts(
 void BulkData::internal_change_entity_parts(
   Entity & entity ,
   const OrdinalVector & add_parts ,
-  const OrdinalVector & remove_parts )
+  const OrdinalVector & remove_parts,
+  bool always_propagate_internal_changes )
 {
   TraceIfWatching("stk::mesh::BulkData::internal_change_entity_parts", LOG_ENTITY, entity.key());
   DiagIfWatching(LOG_ENTITY, entity.key(), "entity state: " << entity);
@@ -678,7 +679,8 @@ void BulkData::internal_change_entity_parts(
     }
   }
 
-  if (!rank_parts_removed.empty() || !m_mesh_meta_data.get_field_relations().empty()) {
+  if (always_propagate_internal_changes ||
+      !rank_parts_removed.empty() || !m_mesh_meta_data.get_field_relations().empty()) {
     internal_propagate_part_changes( entity , rank_parts_removed );
   }
 

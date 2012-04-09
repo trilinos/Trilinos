@@ -240,10 +240,15 @@ public:
                         remove_parts.begin(), remove_parts.end());
   }
 
+//Optional parameter 'always_propagate_internal_changes' is always true except when this function
+//is being called from the sierra-framework. The fmwk redundantly does its own propagation of the
+//internal part changes (mostly induced-part stuff), so it's a performance optimization to avoid
+//the propagation that stk-mesh does.
   template<typename AddIterator, typename RemoveIterator>
   void change_entity_parts( Entity & entity,
                             AddIterator begin_add_parts, AddIterator end_add_parts,
-                            RemoveIterator begin_remove_parts, RemoveIterator end_remove_parts );
+                            RemoveIterator begin_remove_parts, RemoveIterator end_remove_parts,
+                            bool always_propagate_internal_changes=true );
 
   /** \brief  Request the destruction an entity on the local process.
    *
@@ -449,9 +454,14 @@ private:
                                      const PartVector & add_parts ,
                                      const PartVector & remove_parts );
 
+//Optional parameter 'always_propagate_internal_changes' is always true except when this function
+//is being called from the sierra-framework. The fmwk redundantly does its own propagation of the
+//internal part changes (mostly induced-part stuff), so it's a performance optimization to avoid
+//the propagation that stk-mesh does.
   void internal_change_entity_parts( Entity & ,
                                      const OrdinalVector & add_parts ,
-                                     const OrdinalVector & remove_parts );
+                                     const OrdinalVector & remove_parts,
+                                     bool always_propagate_internal_changes=true);
 
   void internal_propagate_part_changes( Entity & entity, const PartVector & removed );
   void internal_propagate_part_changes( Entity & entity, const OrdinalVector & removed );
@@ -585,10 +595,15 @@ inline bool BulkData::internal_quick_verify_change_part(const Part* part,
   return intersection_ok && rel_target_ok && rank_ok;
 }
 
+//Optional parameter 'always_propagate_internal_changes' is always true except when this function
+//is being called from the sierra-framework. The fmwk redundantly does its own propagation of the
+//internal part changes (mostly induced-part stuff), so it's a performance optimization to avoid
+//the propagation that stk-mesh does.
 template<typename AddIterator, typename RemoveIterator>
 void BulkData::change_entity_parts( Entity & entity,
                                     AddIterator begin_add_parts, AddIterator end_add_parts,
-                                    RemoveIterator begin_remove_parts, RemoveIterator end_remove_parts )
+                                    RemoveIterator begin_remove_parts, RemoveIterator end_remove_parts,
+                                    bool always_propagate_internal_changes)
 {
   TraceIfWatching("stk::mesh::BulkData::change_entity_parts", LOG_ENTITY, entity.key());
   DiagIfWatching(LOG_ENTITY, entity.key(), "entity state: " << entity);
@@ -679,7 +694,7 @@ void BulkData::change_entity_parts( Entity & entity,
 #endif
   }
 
-  internal_change_entity_parts( entity , a_parts , r_parts );
+  internal_change_entity_parts( entity , a_parts , r_parts , always_propagate_internal_changes );
 
   return ;
 }
