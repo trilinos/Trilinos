@@ -68,13 +68,13 @@ namespace MueLu {
 //       if (varName == "Partition")     {
 //         return SetAndReturnDefaultFactory(varName, rcp(new ZoltanInterface()));
 //       }
+#endif //ifdef HAVE_MPI
       if (varName == "Permutation") {
         return SetAndReturnDefaultFactory(varName, NoFactory::getRCP()); // allows calls to IsAvailable() from RAPFActory
       }
       if (varName == "PermutationTrans") {
         return SetAndReturnDefaultFactory(varName, NoFactory::getRCP()); // allows calls to IsAvailable() from RAPFActory
       }
-#endif //ifdef HAVE_MPI
       //JJH FIXME is this going to bite me in the backside?
 //       if (varName == "Coordinates") {
 //         return SetAndReturnDefaultFactory(varName, rcp(new MueLu::MultiVectorTransferFactory<SC,LO,GO,NO,LMO>(varName,"R")));
