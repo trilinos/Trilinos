@@ -69,7 +69,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, Test0, Scalar, LocalOrdinal
   Teuchos::ParameterList params;
   params.set("relaxation: type", "Jacobi");
 
-  TEUCHOS_TEST_NOTHROW(prec.setParameters(params), out, success);
+  TEST_NOTHROW(prec.setParameters(params));
 
   //trivial tests to insist that the preconditioner's domain/range maps are
   //identically those of the matrix:
@@ -79,8 +79,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, Test0, Scalar, LocalOrdinal
   const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>* prec_dom_map_ptr = &*prec.getDomainMap();
   const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>* prec_rng_map_ptr = &*prec.getRangeMap();
 
-  TEUCHOS_TEST_EQUALITY( prec_dom_map_ptr, mtx_dom_map_ptr, out, success );
-  TEUCHOS_TEST_EQUALITY( prec_rng_map_ptr, mtx_rng_map_ptr, out, success );
+  TEST_EQUALITY( prec_dom_map_ptr, mtx_dom_map_ptr);
+  TEST_EQUALITY( prec_rng_map_ptr, mtx_rng_map_ptr);
 
   prec.initialize();
   prec.compute();

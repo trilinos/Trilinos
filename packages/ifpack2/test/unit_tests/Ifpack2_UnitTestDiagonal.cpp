@@ -75,8 +75,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Diagonal, Test0, Scalar, LocalOrdinal, 
   const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& prec_dom_map = *prec.getDomainMap();
   const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& prec_rng_map = *prec.getRangeMap();
 
-  TEUCHOS_TEST_EQUALITY( prec_dom_map.isSameAs(mtx_dom_map), true, out, success );
-  TEUCHOS_TEST_EQUALITY( prec_rng_map.isSameAs(mtx_rng_map), true, out, success );
+  TEST_EQUALITY( prec_dom_map.isSameAs(mtx_dom_map), true );
+  TEST_EQUALITY( prec_rng_map.isSameAs(mtx_rng_map), true );
 
   prec.compute();
 

@@ -61,7 +61,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2IlukGraph, IlukGraphTest0, LocalOrdinal
 
   Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph = tif_utest::create_test_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
 
-  TEUCHOS_TEST_EQUALITY( crsgraph->getMap()->getNodeNumElements(), num_rows_per_proc, out, success)
+  TEST_EQUALITY( crsgraph->getMap()->getNodeNumElements(), num_rows_per_proc)
 
   LocalOrdinal overlap_levels = 2;
 
@@ -76,7 +76,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2IlukGraph, IlukGraphTest0, LocalOrdinal
 
   size_t num_global_rows = iluk0_graph.getL_Graph()->getGlobalNumRows();
 
-  TEUCHOS_TEST_EQUALITY( num_global_rows, num_global_elements, out, success)
+  TEST_EQUALITY( num_global_rows, num_global_elements)
 
   //The number of nonzeros in an ILU(0) graph should be the same as the
   //number of nonzeros in the input graph:
@@ -87,7 +87,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2IlukGraph, IlukGraphTest0, LocalOrdinal
 
   size_t nnz_input = crsgraph->getGlobalNumEntries();
 
-  TEUCHOS_TEST_EQUALITY( nnz0, nnz_input, out, success)
+  TEST_EQUALITY( nnz0, nnz_input)
 
   fill_levels = 2;
 
@@ -95,7 +95,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2IlukGraph, IlukGraphTest0, LocalOrdinal
 
   iluk2_graph.constructFilledGraph();
 
-  TEUCHOS_TEST_EQUALITY( num_global_rows, num_global_elements, out, success)
+  TEST_EQUALITY( num_global_rows, num_global_elements)
 
   //The number of nonzeros in an ILU(2) graph should be greater than the
   //number of nonzeros in the ILU(0) graph:
@@ -105,7 +105,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2IlukGraph, IlukGraphTest0, LocalOrdinal
                 iluk2_graph.getNumGlobalDiagonals();
 
   bool nnz2_greater_than_nnz0 = nnz2 > nnz0;
-  TEUCHOS_TEST_EQUALITY( nnz2_greater_than_nnz0, true, out, success)
+  TEST_EQUALITY( nnz2_greater_than_nnz0, true)
 }
 
 #define UNIT_TEST_GROUP_ORDINAL(LocalOrdinal,GlobalOrdinal) \
