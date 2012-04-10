@@ -53,16 +53,7 @@ namespace stk
       {
         m_notInitialized=true;  // force this object to be used only once 
       }
-      bool operator()(const stk::mesh::Entity& element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
-      {
-        if (m_notInitialized)
-          throw std::runtime_error("BuildBoundingBoxes::operator(): you must re-construct this object before reusing it");
-
-        AABoundingBox bb = getBoundingBox(element, bulkData);
-        if (0 || EXTRA_PRINT) std::cout << "bb = " << bb << std::endl;
-        m_boxes.push_back(bb);
-        return false;  // never break out of the enclosing loop
-      }
+      bool operator()(const stk::mesh::Entity& element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData);
 
       AABoundingBox getBoundingBox(const stk::mesh::Entity& element, const mesh::BulkData& bulkData)
       {
@@ -188,6 +179,19 @@ namespace stk
       return out;
     }
 #endif
+
+    template<unsigned SpatialDim>
+    bool BuildBoundingBoxes<SpatialDim>::operator()(const stk::mesh::Entity& element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
+    {
+      if (m_notInitialized)
+        throw std::runtime_error("BuildBoundingBoxes::operator(): you must re-construct this object before reusing it");
+
+      AABoundingBox bb = getBoundingBox(element, bulkData);
+      if (0 || EXTRA_PRINT) std::cout << "bb = " << bb << std::endl;
+      m_boxes.push_back(bb);
+      return false;  // never break out of the enclosing loop
+    }
+
 
   }
 }
