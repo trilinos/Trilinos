@@ -74,6 +74,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
     // switch between constant and variable block size on finest level
     if(fixedBlkSize_ == false) {
       // variable block size
+      // TODO remove this???
       blockdim = -1; // no constant block size
       // read in and transform variable block size information
       RCP<GOVector> blkSizeInfo = currentLevel.Get<RCP<GOVector> >("VariableBlockSizeInfo", MueLu::NoFactory::get());
@@ -85,37 +86,40 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
     } else {
       // check for strided map information
       if(A->IsView("stridedMaps")) {
-	Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
-	TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap()) == Teuchos::null,Exceptions::BadCast,"MueLu::CoalesceFactory::Build: cast to strided row map failed.");
-	blockdim = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getFixedBlockSize();
-	offset   = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getOffset();
-	oldView = A->SwitchToView(oldView);
-	blkSizeInfo_ = Teuchos::null; // TODO: remove this
-	std::cout << "found blocksize " << blockdim << " from strided row map" << std::endl;
+        Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
+        TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap()) == Teuchos::null,Exceptions::BadCast,"MueLu::CoalesceFactory::Build: cast to strided row map failed.");
+        blockdim = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getFixedBlockSize();
+        offset   = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getOffset();
+        oldView = A->SwitchToView(oldView);
+        blkSizeInfo_ = Teuchos::null; // TODO: remove this
+        std::cout << "found blocksize " << blockdim << " from strided row map" << std::endl;
       } else {
-	// TODO remove this: support for old method
-	blockdim = A->GetFixedBlockSize();
-	//TEUCHOS_TEST_FOR_EXCEPTION(true,Exceptions::BadCast,"MueLu::CoalesceFactory::Build: A->GetFixedBlockSize() is outdated");
-	blkSizeInfo_ = Teuchos::null; // TODO:remove this
+        // TODO remove this: support for old method
+        blockdim = A->GetFixedBlockSize();
+        //TEUCHOS_TEST_FOR_EXCEPTION(true,Exceptions::BadCast,"MueLu::CoalesceFactory::Build: A->GetFixedBlockSize() is outdated");
+        blkSizeInfo_ = Teuchos::null; // TODO:remove this
       }
     }
   } else {
     // currentLevel.GetLevelID() > 0
     // check for strided map information
-    if(A->IsView("stridedMaps")) {
+    if(A->IsView("stridedMaps") &&
+      Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap("stridedMaps")) != Teuchos::null) {
       Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
       TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap()) == Teuchos::null,Exceptions::BadCast,"MueLu::CoalesceFactory::Build: cast to strided row map failed.");
       blockdim = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getFixedBlockSize();
       offset   = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getOffset();
       oldView = A->SwitchToView(oldView);
-      blkSizeInfo_ = Teuchos::null; // TODO: remove this
-      fixedBlkSize_ = true;
-      std::cout << "found blocksize " << blockdim << " from strided row map" << std::endl;
+      GetOStream(Debug, 0) << color_esc << color_purple << "CoalesceDropFactory::Build():" << color_esc << color_std << " found blockdim=" << blockdim << " from strided maps. offset=" << offset << std::endl;
     } else {
       // TODO remove this: support for old method
+      // this is still used for ScalingTest with PermutedTransferFactory.
       blockdim = Teuchos::as<LocalOrdinal>(nullspace->getNumVectors());
-      fixedBlkSize_ = true; // TODO: what about this??
+      GetOStream(Debug, 0) << color_esc << color_purple << "CoalesceDropFactory::Build():" << color_esc << color_std << " found blockdim=" << blockdim << " from nullspace dimension. offset=0."<< std::endl;
     }
+
+    blkSizeInfo_ = Teuchos::null; // TODO: remove this
+    fixedBlkSize_ = true;
   }
 
   // pre-dropping
