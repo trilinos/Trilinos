@@ -692,7 +692,7 @@ int generate_loadbal(Machine_Description* machine,
 	if (problem->local_mech == 1)
 	  FREE_GRAPH = 0;
 	else
-	  FREE_GRAPH = 1;/* Have Chaco to free the adjacency */	  
+	  FREE_GRAPH = 0;/* Have Chaco to free the adjacency -- not anymore, using vectors*/	  
 
         for(int cnt = 0; cnt < machine->num_dims; cnt++) 
           tmpdim[cnt] = machine->dim[cnt];

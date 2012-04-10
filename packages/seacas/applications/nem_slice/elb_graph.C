@@ -299,6 +299,7 @@ namespace {
 				   (graph->adj)+(graph->start[cnt])) < 0);
 #endif
 		    tmp_element[entry] = ecnt;
+		    (graph->nadj)++;
 		    graph->adj.push_back(entry);
 		    if (weight->type & EDGE_WGT)
 		      weight->edges.push_back(1.0);
@@ -559,6 +560,7 @@ namespace {
 			}
 
 			if (sid > 0) {
+			  (graph->nadj)++;
 			  graph->adj.push_back(entry);
 			  if (weight->type & EDGE_WGT) {
 			    /*
@@ -655,6 +657,7 @@ namespace {
 		      if((iret=in_list(entry, graph->adj.size()-graph->start[cnt],
 				       &graph->adj[graph->start[cnt]])) < 0) {
 
+			(graph->nadj)++;
 			graph->adj.push_back(entry);
 			if (weight->type & EDGE_WGT)
 			  weight->edges.push_back(1.0);
@@ -681,6 +684,7 @@ namespace {
     }
 
     graph->start[problem->num_vertices] = graph->adj.size();
+    graph->nadj = graph->adj.size();
 
     /* Adjust for a mesh with spheres */
     if(problem->type == ELEMENTAL && sphere->num) {

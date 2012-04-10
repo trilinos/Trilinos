@@ -357,7 +357,6 @@ int read_mesh(const std::string &exo_file,
 	  xptr = mesh->coords;
 	}
 
-      printf("ex_get_coord\n");
       if(ex_get_coord(exoid, xptr, yptr, zptr) < 0)
 	{
 	  Gen_Error(0, "fatal: unable to read coordinate values for mesh");
@@ -370,7 +369,6 @@ int read_mesh(const std::string &exo_file,
   std::vector<INT> el_blk_ids(mesh->num_el_blks);
   std::vector<INT> el_blk_cnts(mesh->num_el_blks);
 
-  printf("ex_get_elem_blk_ids\n");
   if(ex_get_elem_blk_ids(exoid, &el_blk_ids[0]) < 0)
     {
       Gen_Error(0, "fatal: unable to read element block IDs");
@@ -381,7 +379,6 @@ int read_mesh(const std::string &exo_file,
   size_t gelem_cnt=0;
   for(size_t cnt=0; cnt < mesh->num_el_blks; cnt++) {
     INT nodes_per_elem, num_attr;
-    printf("ex_get_elem_block %d\n", __LINE__);
     if(ex_get_elem_block(exoid, el_blk_ids[cnt], elem_type,
                          &(el_blk_cnts[cnt]), &nodes_per_elem,
                          &num_attr) < 0)
@@ -400,13 +397,11 @@ int read_mesh(const std::string &exo_file,
       }
 
     /* Get the connectivity for this element block */
-    printf("ex_get_elem_conn %d\n", __LINE__);
     if(ex_get_elem_conn(exoid, el_blk_ids[cnt], blk_connect) < 0)
       {
 	Gen_Error(0, "fatal: failed to get element connectivity");
 	return 0;
       }
-    printf("ex_get_elem_conn %d\n", __LINE__);
 
     /* find out if this element block is weighted */
     int wgt = -1;
@@ -479,8 +474,6 @@ int read_mesh(const std::string &exo_file,
       }
     } else {
       // No weights...
-      size_t dout = 0;
-      size_t dout1 = 0;
       for(INT cnt2=0; cnt2 < el_blk_cnts[cnt]; cnt2++) {
 	mesh->elem_type[gelem_cnt] = blk_elem_type;
 
@@ -489,15 +482,6 @@ int read_mesh(const std::string &exo_file,
 	  mesh->connect[gelem_cnt][cnt3] = node;
 	}
 
-	if (dout++ > 1000000) {
-	  dout = 0;
-	  if (dout1++ > 100) {
-	    dout1 = 0;
-	    fprintf(stderr,"|");
-	  } else {
-	    fprintf(stderr,".");
-	  }
-	}
 	gelem_cnt++;
       }
     }
