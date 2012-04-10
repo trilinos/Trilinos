@@ -551,7 +551,7 @@ namespace MueLuTests {
             }
         }
 
-        TEST_EQUALITY(results[0], results[1]); // check results of EPETRA vs TPETRA
+        TEST_FLOATING_EQUALITY(results[0], results[1], 1e-14); // check results of EPETRA vs TPETRA
     } // comm->getSize == 1
 
   } // TentativePFactory_EpetraVsTpetra
