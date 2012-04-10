@@ -254,7 +254,7 @@ void Relaxation<MatrixType>::apply(
   // AztecOO gives X and Y pointing to the same memory location.
   // In that case we need to create an auxiliary vector, Xcopy
   Teuchos::RCP< const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Xcopy;
-  if (&(X.get2dView()[0][0]) == &(Y.get2dView()[0][0]))
+  if (X.getLocalMV().getValues() == Y.getLocalMV().getValues())
     Xcopy = Teuchos::rcp( new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(X) );
   else
     Xcopy = Teuchos::rcp( &X, false );
