@@ -293,8 +293,8 @@ namespace Xpetra {
     StridedTpetraMap(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node > > &map, std::vector<size_t>& stridingInfo, LocalOrdinal stridedBlockId=-1, GlobalOrdinal offset = 0) 
       : Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(map), Xpetra::StridedMap<LocalOrdinal,GlobalOrdinal,Node>(stridingInfo, stridedBlockId, offset) {
       typedef Xpetra::StridedMap<LocalOrdinal,GlobalOrdinal,Node> StridedMapClass;
-      size_t nDofsPerNode = Teuchos::as<size_t>(StridedMapClass::getFixedBlockSize());
-      TEUCHOS_TEST_FOR_EXCEPTION(Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node >::map_->getNodeNumElements() % nDofsPerNode != 0, Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
+      //size_t nDofsPerNode = Teuchos::as<size_t>(StridedMapClass::getFixedBlockSize());
+      //TEUCHOS_TEST_FOR_EXCEPTION((Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node >)::map_->getNodeNumElements() % nDofsPerNode != 0, Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: wrong distribution of dofs among processors.");
       TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, Exceptions::RuntimeError, "StridedTpetraMap::StridedTpetraMap: CheckConsistency() == false");
     }
 
