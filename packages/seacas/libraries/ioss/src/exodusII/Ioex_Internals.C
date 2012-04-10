@@ -31,6 +31,13 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Copyright 2001, 2008, 2009 Sandia Corporation, Albuquerque, NM.
 
+// This must appear before exodusII_int.h include.
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
+#ifndef PRId64
+#error "PRId64 not defined"
+#endif
+
 #include <Ioss_Utils.h>                 // for IOSS_WARNING
 #include <assert.h>                     // for assert
 #include <exodusII/Ioex_Internals.h>    // for Internals, ElemBlock, etc
@@ -60,11 +67,6 @@ extern "C" {
 #include "Ioss_SideSet.h"
 #include "Ioss_VariableType.h"
 #include "exodusII.h"                   // for ex_err, ex_opts, etc
-
-#include <inttypes.h>
-#ifndef PRId64
-#define PRId64 "ld"
-#endif
 
 using namespace Ioex;
 

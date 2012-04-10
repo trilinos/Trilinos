@@ -32,6 +32,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
+
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
+#ifndef PRId64
+#error "PRId64 not defined"
+#endif
+
 #include <EP_ExodusEntity.h>            // for Block, Mesh
 #include <EP_Internals.h>               // for Internals, Redefine
 
@@ -49,11 +56,6 @@
 #include "exodusII.h"                   // for ex_err, ex_opts, etc
 #include "exodusII_int.h"               // for EX_FATAL, EX_NOERR, etc
 #include "netcdf.h"                     // for NC_NOERR, nc_def_var, etc
-
-#include <inttypes.h>
-#ifndef PRId64
-#define PRId64 "ld"
-#endif
 
 // Explicit Initialization of the functions used...
 namespace Excn {
