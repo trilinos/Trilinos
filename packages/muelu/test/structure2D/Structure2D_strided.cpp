@@ -83,7 +83,7 @@ Teuchos::RCP<Vector> runExample(std::vector<size_t> stridingInfo, LocalOrdinal s
 
   // Timing
   Teuchos::Time myTime("global");
-  Teuchos::TimeMonitor M(myTime);
+  Teuchos::TimeMonitor Mt(myTime);
 
 #ifndef HAVE_TEUCHOS_LONG_LONG_INT
   *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
@@ -191,14 +191,14 @@ Teuchos::RCP<Vector> runExample(std::vector<size_t> stridingInfo, LocalOrdinal s
   TentPFact->setStridedBlockId(stridedBlockId);
   TentPFact->setDomainMapOffset(offset);
 
-  RCP<SaPFactory> Pfact  = rcp( new SaPFactory(TentPFact) );
+  RCP<SaPFactory> Pfact  = rcp( new SaPFactory() );
   //RCP<PgPFactory> Pfact  = rcp( new PgPFactory(TentPFact) );
   //RCP<TentativePFactory> Pfact  = rcp( new TentativePFactory(UCAggFact) );
-  RCP<RFactory>   Rfact  = rcp( new TransPFactory(Pfact) );
+  RCP<RFactory>   Rfact  = rcp( new TransPFactory() );
   //RCP<RFactory>   Rfact  = rcp( new GenericRFactory(Pfact) );
 
   // RAP Factory
-  RCP<RAPFactory> Acfact = rcp( new RAPFactory(Pfact, Rfact) );
+  RCP<RAPFactory> Acfact = rcp( new RAPFactory() );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
   // register aggregation export factory in RAPFactory
@@ -219,9 +219,6 @@ Teuchos::RCP<Vector> runExample(std::vector<size_t> stridingInfo, LocalOrdinal s
   if (maxLevels > 1)
     SmooFact = rcp( new SmootherFactory(smooProto) );
 
-  Teuchos::ParameterList status;
-  status = H->FullPopulate(*Pfact,*Rfact,*Acfact,*SmooFact,0,maxLevels);
-
   // create coarsest smoother
   RCP<SmootherPrototype> coarsestSmooProto;
   std::string type = "";
@@ -232,12 +229,19 @@ Teuchos::RCP<Vector> runExample(std::vector<size_t> stridingInfo, LocalOrdinal s
   coarsestSmooProto = Teuchos::rcp( new DirectSolver("Klu", coarsestSmooList) );
 #endif
   RCP<SmootherFactory> coarsestSmooFact;
-  coarsestSmooFact = rcp(new SmootherFactory(coarsestSmooProto));
+  coarsestSmooFact = rcp(new SmootherFactory(coarsestSmooProto, Teuchos::null));
   H->SetCoarsestSolver(*coarsestSmooFact);
   //H->SetCoarsestSolver(*SmooFact);
 
-  *out << "======================\n Multigrid statistics \n======================" << std::endl;
-  status.print(*out,Teuchos::ParameterList::PrintOptions().indent(2));
+  FactoryManager M;
+  M.SetFactory("Aggregates", UCAggFact);
+  M.SetFactory("P", Pfact);
+  M.SetFactory("R", Rfact);
+  M.SetFactory("A", Acfact);
+  M.SetFactory("Smoother", SmooFact);
+  M.SetFactory("CoarseSolver", coarsestSmooFact);
+
+  H->Setup(M, 0, maxLevels);
 
   RCP<Vector> xLsg = VectorFactory::Build(map);
 
