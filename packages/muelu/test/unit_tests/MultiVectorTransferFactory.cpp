@@ -129,6 +129,7 @@ namespace MueLuTests {
     M.SetFactory("R", RFact);
     M.SetFactory("A", AcFact);
     M.SetFactory("Smoother", SmooFact);
+    M.SetFactory("CoarseSolver", SmooFact); // This line avoid dependency to Amesos/Amesos2 for this test.
 
     //set up the transfer factory
     RCP<MultiVector> fineOnes = MultiVectorFactory::Build(A->getRowMap(),1);
