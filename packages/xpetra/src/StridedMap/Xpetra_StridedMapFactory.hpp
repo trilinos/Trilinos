@@ -128,7 +128,7 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_TPETRA
       if (lib == UseTpetra) {
-	Teuchos::RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > tmap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(map);
+	Teuchos::RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > tmap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal, GlobalOrdinal, Node> >(map);
 	TEUCHOS_TEST_FOR_EXCEPTION(tmap == Teuchos::null, Exceptions::RuntimeError,"Xpetra::StridedMapFactory::Build: bad cast. map is not a TpetraMap.");
         return rcp( new StridedTpetraMap<LocalOrdinal,GlobalOrdinal, Node> (tmap->getTpetra_Map(), stridingInfo, stridedBlockId, offset) );
       }
