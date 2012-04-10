@@ -68,8 +68,10 @@ Ioss::GroupingEntity::GroupingEntity(Ioss::DatabaseIO *io_database,
 				Ioss::Property::INTEGER));
 
   if (my_name != "null_entity") {
-    fields.add(Ioss::Field("ids",
-			   field_int_type(), "scalar",
+    Ioss::Field::BasicType int_type = Ioss::Field::INTEGER;
+    if (io_database != NULL)
+      int_type = field_int_type();
+    fields.add(Ioss::Field("ids", int_type, "scalar",
 			   Ioss::Field::MESH, entity_count));
   }
 }
