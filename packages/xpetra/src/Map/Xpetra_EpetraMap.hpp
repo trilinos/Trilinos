@@ -37,10 +37,10 @@ namespace Xpetra {
     //! @name Constructor/Destructor Methods
     //@{
 
-    //! Map constructor with Tpetra-defined contiguous uniform distribution. The elements are distributed among nodes so that the subsets of global elements are non-overlapping and contiguous and as evenly distributed across the nodes as possible.
+    //! Map constructor with Tpetra-defined contiguous uniform distribution.
     EpetraMap(global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalGlobal lg=GloballyDistributed, const Teuchos::RCP< Node > &node=Kokkos::DefaultNode::getDefaultNode());
 
-    //! Map constructor with a user-defined contiguous distribution. The elements are distributed among the nodes so that the subsets of global elements are non-overlapping and contiguous.
+    //! Map constructor with a user-defined contiguous distribution.
     EpetraMap(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=Kokkos::DefaultNode::getDefaultNode());
 
     //! Map constructor with user-defined non-contiguous (arbitrary) distribution.
@@ -54,55 +54,55 @@ namespace Xpetra {
     //! @name Map Attribute Methods
     //@{
 
-    //! Returns the number of elements in this Map.
+    //! The number of elements in this Map.
     global_size_t getGlobalNumElements() const { return map_->NumGlobalElements(); }
 
-    //! Returns the number of elements belonging to the calling node.
+    //! The number of elements belonging to the calling node.
     size_t getNodeNumElements() const { return map_->NumMyElements(); }
 
-    //! Returns the index base for this Map.
+    //! The index base for this Map.
     GlobalOrdinal getIndexBase() const { return map_->IndexBase(); }
 
-    //! Returns minimum local index.
+    //! The minimum local index.
     LocalOrdinal getMinLocalIndex() const { return map_->MinLID(); }
 
-    //! Returns maximum local index.
+    //! The maximum local index.
     LocalOrdinal getMaxLocalIndex() const { return map_->MaxLID(); }
 
-    //! Returns minimum global index owned by this node.
+    //! The minimum global index owned by this node.
     GlobalOrdinal getMinGlobalIndex() const { return map_->MinMyGID(); }
 
-    //! Returns maximum global index owned by this node.
+    //! The maximum global index owned by this node.
     GlobalOrdinal getMaxGlobalIndex() const { return map_->MaxMyGID(); }
 
-    //! Return the minimum global index over all nodes.
+    //! The minimum global index over all nodes.
     GlobalOrdinal getMinAllGlobalIndex() const { return map_->MinAllGID(); }
 
-    //! Return the maximum global index over all nodes.
+    //! The maximum global index over all nodes.
     GlobalOrdinal getMaxAllGlobalIndex() const { return map_->MaxAllGID(); }
 
-    //! Return the local index for a given global index.
+    //! The local index corresponding to the given global index.
     LocalOrdinal getLocalElement(GlobalOrdinal globalIndex) const { return map_->LID(globalIndex); }
 
-    //! Returns the node IDs and corresponding local indices for a given list of global indices.
+    //! Return the node IDs and corresponding local IDs for a given list of global IDs.
     LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< LocalOrdinal > &LIDList) const;
 
-    //! Returns the node IDs for a given list of global indices.
+    //! Return the node IDs for a given list of global IDs.
     LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const;
 
-    //! Return a list of the global indices owned by this node.
+    //! Return a view of the global indices owned by this node.
     Teuchos::ArrayView< const GlobalOrdinal > getNodeElementList() const;
 
-    //! Returns true if the local index is valid for this Map on this node; returns false if it isn't.
+    //! True if the local index is valid for this Map on this node, else false.
     bool isNodeLocalElement(LocalOrdinal localIndex) const { return map_->MyLID(localIndex); }
 
-    //! Returns true if the global index is found in this Map on this node; returns false if it isn't.
+    //! True if the global index is found in this Map on this node, else false.
     bool isNodeGlobalElement(GlobalOrdinal globalIndex) const { return map_->MyGID(globalIndex); }
 
-    //! Returns true if this Map is distributed contiguously; returns false otherwise.
+    //! True if this Map is distributed contiguously, else false.
     bool isContiguous() const { return map_->LinearMap(); }
 
-    //! Returns true if this Map is distributed across more than one node; returns false otherwise.
+    //! Whether this Map is globally distributed or locally replicated.
     bool isDistributed() const { return map_->DistributedGlobal(); }
 
     //@}
@@ -110,10 +110,10 @@ namespace Xpetra {
     //! @name Boolean Tests
     //@{
 
-    //! Returns true if map is compatible with this Map.
+    //! True if and only if map is compatible with this Map.
     bool isCompatible(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const { return map_->PointSameAs(toEpetra(map)); }
 
-    //! Returns true if map is identical to this Map.
+    //! True if and only if map is identical to this Map.
     bool isSameAs(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const { return map_->SameAs(toEpetra(map)); }
 
     //@}
@@ -135,7 +135,7 @@ namespace Xpetra {
     //! Return a simple one-line description of this object.
     std::string description() const;
 
-    //! Print the object with some verbosity level to a FancyOStream object.
+    //! Print this object with the given verbosity level to the given FancyOStream object.
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
     //@}

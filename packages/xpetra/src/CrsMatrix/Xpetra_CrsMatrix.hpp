@@ -100,6 +100,9 @@ namespace Xpetra {
     //! Returns true if fillComplete() has been called and the matrix is in compute mode.
     virtual bool isFillComplete() const = 0;
 
+    //! Returns the Frobenius norm of the matrix.
+    virtual typename ScalarTraits< Scalar >::magnitudeType getFrobeniusNorm() const = 0;
+
     //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
     virtual void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView< const GlobalOrdinal > &indices, ArrayView< const Scalar > &values) const = 0;
 
@@ -108,9 +111,6 @@ namespace Xpetra {
 
     //! Get a copy of the diagonal entries owned by this node, with local row indices.
     virtual void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const = 0;
-
-    //! Get Frobenius norm of the matrix
-    virtual typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const = 0;
 
     //@}
 

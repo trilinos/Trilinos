@@ -28,6 +28,7 @@ namespace MueLu {
     Currently, it supports the RCB algorithm only.
   */
 
+  //FIXME: this class should not be templated
   template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType,
             class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class ZoltanInterface : public SingleLevelFactoryBase {
@@ -107,6 +108,8 @@ namespace MueLu {
 
     RCP<const FactoryBase> AFact_;
     RCP<const FactoryBase> TransferFact_;
+
+    static ArrayRCP<double> coalesceCoordinates(ArrayRCP<double> coord, LocalOrdinal blksize);
 
   };  //class ZoltanInterface
 

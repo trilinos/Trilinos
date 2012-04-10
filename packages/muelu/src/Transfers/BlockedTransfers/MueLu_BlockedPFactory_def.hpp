@@ -61,7 +61,7 @@ void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::De
   //Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
 
   std::vector<Teuchos::RCP<const FactoryManagerBase> >::const_iterator it;
-  for(it = FactManager_.begin(); it!=FactManager_.end(); it++) {
+  for(it = FactManager_.begin(); it!=FactManager_.end(); ++it) {
     SetFactoryManager fineSFM  (rcpFromRef(fineLevel),   *it);
     SetFactoryManager coarseSFM(rcpFromRef(coarseLevel), *it);
 
@@ -111,7 +111,7 @@ void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Bu
   // since we put together the full range and domain map from the submaps we do not have
   // to use the maps from blocked A
   std::vector<Teuchos::RCP<const FactoryManagerBase> >::const_iterator it;
-  for(it = FactManager_.begin(); it!=FactManager_.end(); it++) {
+  for(it = FactManager_.begin(); it!=FactManager_.end(); ++it) {
     SetFactoryManager fineSFM  (rcpFromRef(fineLevel),   *it);
     SetFactoryManager coarseSFM(rcpFromRef(coarseLevel), *it);
     if(!restrictionMode_) {

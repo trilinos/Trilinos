@@ -85,11 +85,11 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(agg_type != "Uncoupled", Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter::Setup(): parameter \"aggregation: type\": only 'Uncoupled' aggregation is supported.");
 
     // Create MueLu factories
-    RCP<NullspaceFactory>     nspFact = rcp(new NullspaceFactory());
-    RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory(/*Teuchos::null,nspFact*/));
+    // RCP<NullspaceFactory>     nspFact = rcp(new NullspaceFactory());
+    RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
     //dropFact->SetVerbLevel(toMueLuVerbLevel(eVerbLevel));
 
-    RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory(dropFact));
+    RCP<UCAggregationFactory> UCAggFact = rcp(new UCAggregationFactory());
     if(verbosityLevel > 3) { // TODO fix me: Setup is a static function: we cannot use GetOStream without an object...
       *out << "========================= Aggregate option summary  =========================" << std::endl;
       *out << "min Nodes per aggregate :               " << minPerAgg << std::endl;
@@ -107,23 +107,21 @@ namespace MueLu {
 
     if (agg_damping == 0.0 && bEnergyMinimization == false) {
       // tentative prolongation operator (PA-AMG)
-      PFact = rcp( new TentativePFactory(UCAggFact/*,nspFact*/) );
-      RFact = rcp( new TransPFactory(PFact) );
+      PFact = rcp( new TentativePFactory() );
+      RFact = rcp( new TransPFactory() );
     } else if(agg_damping != 0.0 && bEnergyMinimization == false) {
       // smoothed aggregation (SA-AMG)
-      RCP<PFactory>  PtentFact = rcp(new TentativePFactory(UCAggFact/*,nspFact*/));
-      PFact  = rcp( new SaPFactory(PtentFact) );
-      RCP<SaPFactory> SaPFact = Teuchos::rcp_dynamic_cast<SaPFactory>(PFact);
+      RCP<SaPFactory> SaPFact =  rcp( new SaPFactory() );
       SaPFact->SetDampingFactor(agg_damping);
-      RFact  = rcp( new TransPFactory(PFact) );
+      PFact  = SaPFact;
+      RFact  = rcp( new TransPFactory() );
     } else if(bEnergyMinimization == true) {
       // Petrov Galerkin PG-AMG smoothed aggregation (energy minimization in ML)
-      RCP<PFactory> PtentFact = rcp(new TentativePFactory(UCAggFact/*,nspFact*/));
-      PFact  = rcp( new PgPFactory(PtentFact) );
-      RFact  = rcp( new GenericRFactory(PFact) );
+      PFact  = rcp( new PgPFactory() );
+      RFact  = rcp( new GenericRFactory() );
     }
 
-    RCP<RAPFactory> AcFact = rcp( new RAPFactory(PFact, RFact) );
+    RCP<RAPFactory> AcFact = rcp( new RAPFactory() );
     for (size_t i = 0; i<TransferFacts_.size(); i++) {
       AcFact->AddTransferFactory(TransferFacts_[i]);
     }
@@ -176,11 +174,11 @@ namespace MueLu {
     	manager->SetFactory("Smoother" ,  SmooFactFine);    // Hierarchy.Setup uses TOPSmootherFactory, that only needs "Smoother"
       manager->SetFactory("CoarseSolver", coarsestSmooFact);
       manager->SetFactory("Graph", dropFact);
+      manager->SetFactory("Aggregates", UCAggFact);
       manager->SetFactory("DofsPerNode", dropFact);
       manager->SetFactory("A", AcFact);                     // same RAP factory
       manager->SetFactory("P", PFact);                      // same prolongator and restrictor factories
       manager->SetFactory("R", RFact);                      // same prolongator and restrictor factories
-      manager->SetFactory("Nullspace", nspFact);            // use same nullspace factory throughout all multigrid levels
 
       this->AddFactoryManager(levelID, 1, manager);
     }
@@ -191,7 +189,6 @@ namespace MueLu {
   void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetupHierarchy(Hierarchy & H) const {
 
     if (nullspace_ != NULL) {
-      
       RCP<Level> fineLevel = H.GetLevel(0);
       const RCP<const Map> rowMap = fineLevel->Get< RCP<Operator> >("A")->getRowMap();
       RCP<MultiVector> nullspace = MultiVectorFactory::Build(rowMap, nullspaceDim_, true);

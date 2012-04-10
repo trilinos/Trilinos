@@ -182,7 +182,7 @@ namespace Xpetra {
     //! Return a simple one-line description of this object.
     std::string description() const { return vec_->description(); }
 
-    //! Print the object with some verbosity level to an FancyOStream object.
+    //! Print the object with the given verbosity level to a FancyOStream.
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { vec_->describe(out, verbLevel); }
 
     //@}

@@ -10,6 +10,7 @@
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_FactoryManagerBase.hpp"
 
 namespace MueLu {
 
@@ -17,11 +18,6 @@ namespace MueLu {
   SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SaPFactory(RCP<const FactoryBase> InitialPFact, RCP<const FactoryBase> AFact)
     : initialPFact_(InitialPFact), AFact_(AFact),
       dampingFactor_(4./3), diagonalView_("current") {
-    if(initialPFact_ == Teuchos::null)
-      {
-        // use tentative P factory as default
-        initialPFact_ = rcp(new TentativePFactory());
-      }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -50,7 +46,13 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     fineLevel.DeclareInput("A",AFact_.get(),this);
-    coarseLevel.DeclareInput("P",initialPFact_.get(),this);
+
+    // Get default tentative prolongator factory
+    // Getting it that way ensure that the same factory instance will be used for both SaPFactory and NullspaceFactory.
+    // -- Warning: Do not use directly initialPFact_. Use initialPFact instead everywhere!
+    RCP<const FactoryBase> initialPFact = initialPFact_;
+    if (initialPFact == Teuchos::null) { initialPFact = coarseLevel.GetFactoryManager()->GetFactory("Ptent"); }
+    coarseLevel.DeclareInput("P",initialPFact.get(),this);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -60,12 +62,17 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildP(Level &fineLevel, Level &coarseLevel) const {
+    FactoryMonitor m(*this, "Prolongator smoothing", coarseLevel);
+
+    // Get default tentative prolongator factory
+    // Getting it that way ensure that the same factory instance will be used for both SaPFactory and NullspaceFactory.
+    // -- Warning: Do not use directly initialPFact_. Use initialPFact instead everywhere!
+    RCP<const FactoryBase> initialPFact = initialPFact_;
+    if (initialPFact == Teuchos::null) { initialPFact = coarseLevel.GetFactoryManager()->GetFactory("Ptent"); }
 
     // Level Get
     RCP<Operator> A     = fineLevel.  Get< RCP<Operator> >("A", AFact_.get());
-    RCP<Operator> Ptent = coarseLevel.Get< RCP<Operator> >("P", initialPFact_.get());
-
-    FactoryMonitor m(*this, "Prolongator smoothing", coarseLevel);
+    RCP<Operator> Ptent = coarseLevel.Get< RCP<Operator> >("P", initialPFact.get());
 
     if(restrictionMode_) {
       SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);

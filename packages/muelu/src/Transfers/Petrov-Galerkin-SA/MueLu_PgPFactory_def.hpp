@@ -13,6 +13,7 @@
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_Utilities.hpp"
+#include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {
@@ -21,12 +22,7 @@ template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, clas
 PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PgPFactory(RCP<PFactory> InitialPFact, RCP<SingleLevelFactoryBase> AFact)
 : initialPFact_(InitialPFact), AFact_(AFact),
   diagonalView_("current") {
-  if(initialPFact_ == Teuchos::null)
-  {
-    // use tentative P factory as default
-    initialPFact_ = rcp(new TentativePFactory());
-  }
-
+ 
   min_norm_ = DINVANORM;
 
   bReUseRowBasedOmegas_ = false;
@@ -54,7 +50,13 @@ std::string PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
   fineLevel.DeclareInput("A",AFact_.get(),this);
-  coarseLevel.DeclareInput("P",initialPFact_.get(),this);
+
+    // Get default tentative prolongator factory
+    // Getting it that way ensure that the same factory instance will be used for both SaPFactory and NullspaceFactory.
+    // -- Warning: Do not use directly initialPFact_. Use initialPFact instead everywhere!
+    RCP<const FactoryBase> initialPFact = initialPFact_;
+    if (initialPFact == Teuchos::null) { initialPFact = coarseLevel.GetFactoryManager()->GetFactory("Ptent"); }
+    coarseLevel.DeclareInput("P",initialPFact.get(),this);
 
   /* If PgPFactory is reusing the row based damping parameters omega for
    * restriction, it has to request the data here.
@@ -77,11 +79,17 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Declare
 
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& fineLevel, Level &coarseLevel) const {
+  FactoryMonitor m(*this, "Prolongator smoothing (PG-AMG)", coarseLevel);
+
   // Level Get
-  RCP<Operator> Ptent = coarseLevel.Get< RCP<Operator> >("P", initialPFact_.get());
   RCP<Operator> A     = fineLevel.  Get< RCP<Operator> >("A", AFact_.get());
 
-  SubFactoryMonitor m(*this, "Prolongator smoothing (PG-AMG)", coarseLevel);
+  // Get default tentative prolongator factory
+  // Getting it that way ensure that the same factory instance will be used for both SaPFactory and NullspaceFactory.
+  // -- Warning: Do not use directly initialPFact_. Use initialPFact instead everywhere!
+  RCP<const FactoryBase> initialPFact = initialPFact_;
+  if (initialPFact == Teuchos::null) { initialPFact = coarseLevel.GetFactoryManager()->GetFactory("Ptent"); }
+  RCP<Operator> Ptent = coarseLevel.Get< RCP<Operator> >("P", initialPFact.get());
 
   /////////////////// switch from A to A^T in restriction mode (necessary as long as implicit transpose not working for Epetra)
   if(restrictionMode_) {

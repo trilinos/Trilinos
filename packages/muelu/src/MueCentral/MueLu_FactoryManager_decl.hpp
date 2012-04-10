@@ -58,9 +58,10 @@ namespace MueLu {
     FactoryManager(const RCP<const FactoryBase> PFact = Teuchos::null, const RCP<const FactoryBase> RFact = Teuchos::null, const RCP<const FactoryBase> AcFact = Teuchos::null);
     
     //! Constructor used by HierarchyFactory (temporary, will be removed)
-    FactoryManager(const std::map<std::string, RCP<const FactoryBase> >& factoryTable) {
+    FactoryManager(const std::map<std::string, RCP<const FactoryBase> >& factoryTable)
+    {
       factoryTable_ = factoryTable;
-      SetIgnoreUserData(false); // set IgnorUserData flag to false (default behaviour)
+      SetIgnoreUserData(false); // set IgnorUserData flag to false (default behaviour) //TODO: use parent class constructor instead
     }
 
     //! Destructor.
@@ -124,7 +125,7 @@ namespace MueLu {
     */
     mutable 
     std::map<std::string, RCP<const FactoryBase> > defaultFactoryTable_;
-    
+
   }; // class
 
 } // namespace MueLu

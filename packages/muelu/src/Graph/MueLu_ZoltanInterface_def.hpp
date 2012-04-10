@@ -8,6 +8,7 @@
 
 #include "MueLu_Level.hpp"
 #include "MueLu_Exceptions.hpp"
+#include "MueLu_Monitor.hpp"
 
 namespace MueLu {
 
@@ -27,7 +28,8 @@ namespace MueLu {
   DeclareInput(Level & level) const
   {
     level.DeclareInput("A", AFact_.get());
-    level.DeclareInput("Coordinates", TransferFact_.get());
+    level.DeclareInput("Coordinates", NoFactory::get()); //FIXME JJH
+    //level.DeclareInput("Coordinates", TransferFact_.get()); //FIXME JJH
   } //DeclareInput()
 
   //-------------------------------------------------------------------------------------------------------------
@@ -38,6 +40,8 @@ namespace MueLu {
   void ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
   Build(Level &level) const
   {
+    FactoryMonitor m(*this, "ZoltanInterface", level);
+
     RCP<Operator> A = level.Get< RCP<Operator> >("A",AFact_.get());
     // Tell Zoltan what kind of local/global IDs we will use.
     // In our case, each GID is two ints and there are no local ids.
@@ -62,15 +66,56 @@ namespace MueLu {
     ss << numPartitions_;
     zoltanObj_->Set_Param("num_global_partitions",ss.str());
 
-    if (level.IsAvailable("Coordinates",TransferFact_.get()) == false)
+    //if (level.IsAvailable("Coordinates",TransferFact_.get()) == false) //FIXME JJH
+    //~~ if (level.IsAvailable("Coordinates",NoFactory::get()) == false) //FIXME JJH
+    //~~  throw(Exceptions::HaltRepartitioning("MueLu::ZoltanInterface : no coordinates available"));
+    //RCP<MultiVector> XYZ = level.Get< RCP<MultiVector> >("Coordinates",TransferFact_.get()); //FIXME JJH
+    //~~    RCP<MultiVector> XYZ = level.Get< RCP<MultiVector> >("Coordinates");
+
+    //TODO: coordinates should be const
+
+    Array<ArrayRCP<SC> > XYZ; // Using this format because no communications needed here. No need for a map and a Xpetra::MultiVector
+
+    // Build XYZ from XCoordinates, YCoordinates and ZCoordinates
+    if (level.IsAvailable("XCoordinates")) {
+      
+      { 
+        XYZ.push_back(level.Get< ArrayRCP<SC> >("XCoordinates"));
+      }
+      
+      if (level.IsAvailable("YCoordinates")) {
+        XYZ.push_back(level.Get< ArrayRCP<SC> >("YCoordinates"));
+      }
+      
+      if (level.IsAvailable("ZCoordinates")) {
+        TEUCHOS_TEST_FOR_EXCEPTION(!level.IsAvailable("YCoordinates"), Exceptions::RuntimeError, "ZCoordinates specified but no YCoordinates");
+        XYZ.push_back(level.Get< ArrayRCP<SC> >("ZCoordinates"));
+      }
+
+    } else if (level.IsAvailable("Coordinates")) {
+
+      RCP<Operator> Aloc = level.Get<RCP<Operator> >("A", AFact_.get());
+      LocalOrdinal blksize = Aloc->GetFixedBlockSize();
+
+      RCP<MultiVector> multiVectorXYZ = level.Get< RCP<MultiVector> >("Coordinates");
+      for (int i=0; i< (int)multiVectorXYZ->getNumVectors(); i++) { //FIXME cast
+        XYZ.push_back(coalesceCoordinates(multiVectorXYZ->getDataNonConst(i), blksize)); // If blksize == 1, not copy but it's OK to leave 'open' the MultiVector until the destruction of XYZ because no communications using Xpetra
+      }
+
+      // TODO: level.Set(XCoordinates / YCoordinates / ZCoordinates as it is computed and might be needed somewhere else. But can wait for now. This code have to be moved anyway.
+
+    } else {
       throw(Exceptions::HaltRepartitioning("MueLu::ZoltanInterface : no coordinates available"));
-    RCP<MultiVector> XYZ = level.Get< RCP<MultiVector> >("Coordinates",TransferFact_.get());
-    size_t problemDimension_ = XYZ->getNumVectors();
+    }
+
+    //~~ size_t problemDimension_ = XYZ->getNumVectors();
+    size_t problemDimension_ = XYZ.size();
 
     zoltanObj_->Set_Num_Obj_Fn(GetLocalNumberOfRows,(void *) &*A);
     zoltanObj_->Set_Obj_List_Fn(GetLocalNumberOfNonzeros,(void *) &*A);
     zoltanObj_->Set_Num_Geom_Fn(GetProblemDimension, (void *) &problemDimension_);
-    zoltanObj_->Set_Geom_Multi_Fn(GetProblemGeometry, (void *) &*XYZ);
+    //~~ zoltanObj_->Set_Geom_Multi_Fn(GetProblemGeometry, (void *) &*XYZ);
+    zoltanObj_->Set_Geom_Multi_Fn(GetProblemGeometry, (void *) &XYZ);
 
     // Data pointers that Zoltan requires.
     ZOLTAN_ID_PTR import_gids = NULL;  // Global nums of objs to be imported   
@@ -103,12 +148,18 @@ namespace MueLu {
       ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
       for (typename ArrayRCP<GO>::iterator i = decompEntries.begin(); i != decompEntries.end(); ++i)
         *i = mypid;
-      for (int i=0; i< num_exported; ++i)
-        decompEntries[ rowMap->getLocalElement(export_gids[i]) ] = export_to_part[i];
+      LocalOrdinal blockSize = A->GetFixedBlockSize();
+      for (int i=0; i< num_exported; ++i) {
+        LO localEl = rowMap->getLocalElement(export_gids[i]);
+        int partNum = export_to_part[i];
+        for (LO j=0; j<blockSize; ++j)
+          decompEntries[ localEl + j ] = partNum;
+          //decompEntries[ rowMap->getLocalElement(export_gids[i]) + j ] = export_to_part[i];
+      }
     } else {
       //Running on one processor, so decomposition is the trivial one, all zeros.
       decomposition = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(rowMap,true);
-    }
+    } // if (newDecomp) ... else
     level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition",decomposition,this);
 
     zoltanObj_->LB_Free_Part(&import_gids, &import_lids, &import_procs, &import_to_part);
@@ -132,7 +183,9 @@ namespace MueLu {
     //TODO is there a safer way to cast?
     //Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> *A = (Operator*) data;
     Operator *A = (Operator*) data;
-    return A->getRowMap()->getNodeNumElements();
+    LocalOrdinal blockSize = A->GetFixedBlockSize(); //FIXME
+    if (blockSize==0) throw(Exceptions::RuntimeError("MueLu::Zoltan : Operator has block size 0."));
+    return (A->getRowMap()->getNodeNumElements() / blockSize); //FIXME
   } //GetLocalNumberOfRows()
 
   //-------------------------------------------------------------------------------------------------------------
@@ -156,10 +209,28 @@ namespace MueLu {
     RCP<const Map> map = A->getRowMap();
     Teuchos::ArrayView<const LO> cols;
     Teuchos::ArrayView<const SC> vals;
-    for (size_t i=0; i<map->getNodeNumElements(); ++i) {
-      gids[i] = (ZOLTAN_ID_TYPE) map->getGlobalElement(i);
-      A->getLocalRowView(i,cols,vals);
-      weights[i] = cols.size();
+    LocalOrdinal blockSize = A->GetFixedBlockSize(); //FIXME
+    if (blockSize==0) throw(Exceptions::RuntimeError("MueLu::Zoltan : Operator has block size 0."));
+    if (blockSize == 1) {
+      for (size_t i=0; i<map->getNodeNumElements(); ++i) {
+        gids[i] = (ZOLTAN_ID_TYPE) map->getGlobalElement(i);
+        A->getLocalRowView(i,cols,vals);
+        weights[i] = cols.size();
+      }
+    } else {
+      LocalOrdinal numBlocks = A->getRowMap()->getNodeNumElements() / blockSize;
+      std::set<LocalOrdinal> uniqueColsInBlockRow;
+      Teuchos::ArrayView<LO> nonconstCols =Teuchos::av_const_cast<LO>(cols);
+      for (LocalOrdinal i=0; i<numBlocks; ++i) {
+        gids[i] = (ZOLTAN_ID_TYPE) map->getGlobalElement(i*blockSize);
+        for (LocalOrdinal j=i*blockSize; j<(i+1)*blockSize; ++j) {
+          A->getLocalRowView(j,cols,vals);
+          LO *tt = nonconstCols.getRawPtr();
+          uniqueColsInBlockRow.insert(tt,tt+nonconstCols.size());  //yes, cols.size() is correct, one past last entry
+        }
+        weights[i] = uniqueColsInBlockRow.size();
+        uniqueColsInBlockRow.clear();
+      } //for (size_t i=0; i<numBlocks; ++i)
     }
 
   } //GetLocalNumberOfNonzeros()
@@ -193,24 +264,65 @@ namespace MueLu {
     }
 
     //TODO is there a safer way to cast?
-    MultiVector *XYZ = (MultiVector*) data;
-    if (dim != (int) XYZ->getNumVectors()) {
+    //~~ MultiVector *XYZ = (MultiVector*) data;
+    Array<ArrayRCP<SC> > * XYZpt = (Array<ArrayRCP<SC> > *)data;
+    Array<ArrayRCP<SC> > & XYZ   = *XYZpt;
+
+    //~~ if (dim != (int) XYZ->getNumVectors()) {
+    if (dim != (int) XYZ.size()) { //FIXME: cast to size_t instead?
       //FIXME I'm assuming dim should be 1,2,or 3 coming in?!
       *ierr = ZOLTAN_FATAL;
       return;
     }
 
+    //~ assert(numObjectIDs == XYZ->getLocalLength());
+    for(int j=0; j<dim; j++) {
+      assert(numObjectIDs == XYZ[j].size()); //FIXME: TEST_FOR_EXCEPTION instead?      
+    }
+
+    /*~~
     ArrayRCP<ArrayRCP<const SC> > XYZdata(dim);
-    for (int i=0; i<dim; ++i) XYZdata[i] = XYZ->getData(i);
+    for (int j=0; j<dim; ++j) XYZdata[j] = XYZ->getData(j);
     for (size_t i=0; i<XYZ->getLocalLength(); ++i) {
       for (int j=0; j<dim; ++j) {
         coordinates[i*dim+j] = (double) XYZdata[j][i];
+      }
+    }
+    */
+
+    for (size_t i=0; i<(size_t)XYZ[0].size(); ++i) { //FIXME cast OK?
+      for (int j=0; j<dim; ++j) {
+        coordinates[i*dim+j] = (double) XYZ[j][i];
       }
     }
 
     *ierr = ZOLTAN_OK;
 
   } //GetProblemGeometry
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  ArrayRCP<double> ZoltanInterface<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::coalesceCoordinates(ArrayRCP<double> coord, LocalOrdinal blksize) {
+    if (blksize == 1)
+      return coord;
+    
+    ArrayRCP<double> coalesceCoord(coord.size()/blksize); //TODO: how to avoid automatic initialization of the vector? using arcp()?
+
+    for(int i=0; i<coord.size(); i++) {
+#define myDEBUG
+#ifdef myDEBUG //FIXME-> HAVE_MUELU_DEBUG
+      for(int j=1; j < blksize; j++) {
+        TEUCHOS_TEST_FOR_EXCEPTION(coord[i*blksize + j] != coord[i*blksize], Exceptions::RuntimeError, "MueLu::ZoltanInterface: coalesceCoord problem");
+      }
+#endif
+      coalesceCoord[i] = coalesceCoord[i*blksize];
+    }
+    
+    //std::cout << coord << std::endl;
+    //std::cout << coalesceCoord << std::endl;
+
+    return coalesceCoord;
+  }
 
 } //namespace MueLu
 

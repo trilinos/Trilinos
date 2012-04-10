@@ -34,7 +34,12 @@ CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Coa
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
   currentLevel.DeclareInput("A", AFact_.get(), this);
-  currentLevel.DeclareInput("Nullspace", nullspaceFact_.get(), this);
+
+  if ((currentLevel.GetLevelID() == 0) && currentLevel.IsAvailable("Nullspace", NoFactory::get())) // always use user-defined nullspace by default and ignore nullspaceFact //FIXME
+    currentLevel.DeclareInput("Nullspace", NoFactory::get(), this);                                // (same mecanism as in Level::GetFactory, but for explicitly defined generating factory)
+  else 
+    currentLevel.DeclareInput("Nullspace", nullspaceFact_.get(), this);
+
   if(fixedBlkSize_ == false && currentLevel.GetLevelID() == 0)
     currentLevel.DeclareInput("VariableBlockSizeInfo", MueLu::NoFactory::get(), this);
 }
@@ -55,7 +60,12 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
   //RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
   RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
-  RCP<MultiVector> nullspace  = currentLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
+
+  RCP<MultiVector> nullspace;
+  if ((currentLevel.GetLevelID() == 0) && currentLevel.IsAvailable("Nullspace", NoFactory::get())) // always use user-defined nullspace by default and ignore nullspaceFact //FIXME         
+    nullspace  = currentLevel.Get< RCP<MultiVector> >("Nullspace", NoFactory::get());              // (same mecanism as in Level::GetFactory, but for explicitly defined generating factory)
+  else
+    nullspace  = currentLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
 
   LocalOrdinal blockdim = 1; // block dim for fixed size blocks
   GlobalOrdinal offset = 0;  // global offset of dof gids
@@ -117,8 +127,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
   if(fixedBlkSize_ == true  && blockdim > 1)                  bDoAmalgamation = true; // constant block size > 1
 
   if (bDoAmalgamation) {
-    FactoryMonitor m2(*this, "Amalgamate", currentLevel);
-    std::cout << "CoalesceDropFactory::Build: blockdim = " << blockdim << std::endl;
+    SubFactoryMonitor m2(*this, "Amalgamate", currentLevel);
     Amalgamate(A, blockdim, offset, graph);
   } else {
     graph = rcp(new Graph(A->getCrsGraph(), "Graph of A"));
@@ -187,7 +196,8 @@ GlobalOrdinal, Node, LocalMatOps>::SetupAmalgamationData(const RCP<Operator>& A,
 
   // clean up DofVectors (remove duplicate entries)
   typename std::map<GlobalOrdinal,std::vector<GlobalOrdinal> >::iterator git;
-  for (git=globalamalblockid2globalrowid_->begin(); git!=globalamalblockid2globalrowid_->end(); git++) {
+
+  for (git=globalamalblockid2globalrowid_->begin(); git!=globalamalblockid2globalrowid_->end(); ++git) {
     std::vector<GlobalOrdinal> growids = git->second;
     sort(growids.begin(), growids.end());
     typename std::vector<GlobalOrdinal>::iterator gendLocation;

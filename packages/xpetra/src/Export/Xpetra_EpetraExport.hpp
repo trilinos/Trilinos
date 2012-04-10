@@ -32,13 +32,13 @@ namespace Xpetra {
     //! @name Constructor/Destructor Methods
     //@{
 
-    //! Constructs a Export object from the source and target Map.
+    //! Construct a Export object from the source and target Map.
     EpetraExport(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &source, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &target);
 
-    //! copy constructor.
-    EpetraExport(const Export< LocalOrdinal, GlobalOrdinal, Node > &import);
+    //! Copy constructor.
+    EpetraExport(const Export< LocalOrdinal, GlobalOrdinal, Node > &rhs);
 
-    //! destructor.
+    //! Destructor.
     ~EpetraExport() { }
 
     //@}
@@ -46,10 +46,10 @@ namespace Xpetra {
     //! @name Export Attribute Methods
     //@{
 
-    //! Returns the number of entries that are identical between the source and target maps, up to the first different ID.
+    //! The number of entries that are identical between the source and target maps, up to the first different ID.
     size_t getNumSameIDs() const { return export_->NumSameIDs(); }
 
-    //! Returns the number of entries that are local to the calling image, but not part of the first getNumSameIDs() entries.
+    //! The number of entries that are local to the calling image, but not part of the first getNumSameIDs() entries.
     size_t getNumPermuteIDs() const { return export_->NumPermuteIDs(); }
 
     //! List of entries in the source Map that are permuted. (non-persisting view).
@@ -58,13 +58,13 @@ namespace Xpetra {
     //! List of entries in the target Map that are permuted. (non-persisting view).
     ArrayView< const LocalOrdinal > getPermuteToLIDs() const;
 
-    //! Returns the number of entries that are not on the calling image.
+    //! The number of entries that are not on the calling image.
     size_t getNumRemoteIDs() const;
 
     //! List of entries in the target Map that are coming from other images. (non-persisting view).
     ArrayView< const LocalOrdinal > getRemoteLIDs() const;
 
-    //! Returns the number of entries that must be sent by the calling image to other images.
+    //! The number of entries that must be sent by the calling image to other images.
     size_t getNumExportIDs() const;
 
     //! List of entries in the source Map that will be sent to other images. (non-persisting view).
@@ -73,10 +73,10 @@ namespace Xpetra {
     //! List of images to which entries will be sent, getExportLIDs() [i] will be sent to image getExportImageIDs() [i]. (non-persisting view).
     ArrayView< const int > getExportImageIDs() const;
 
-    //! Returns the Source Map used to construct this exporter.
+    //! The source Map used to construct this exporter.
     const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getSourceMap() const { return toXpetra(export_->SourceMap()); }
 
-    //! Returns the Target Map used to construct this exporter.
+    //! The target Map used to construct this exporter.
     const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getTargetMap() const { return toXpetra(export_->TargetMap()); }
 
     //@}
@@ -84,7 +84,7 @@ namespace Xpetra {
     //! @name I/O Methods
     //@{
 
-    //! Print method.
+    //! Print the Export's data to the given output stream.
     void print(std::ostream &os) const;
 
     //@}

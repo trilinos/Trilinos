@@ -53,7 +53,7 @@ namespace MueLu {
     Transfer factories are derived from TwoLevelFactoryBase and project some data from the fine level to
     the next coarser level.
     */
-    void AddTransferFactory(const RCP<FactoryBase>& factory);
+    void AddTransferFactory(const RCP<const FactoryBase>& factory);
 
     // TODO add a function to remove a specific transfer factory?
 
@@ -85,7 +85,7 @@ namespace MueLu {
     RCP<const FactoryBase> AFact_;
 
     //! list of user-defined transfer Factories
-    std::vector<RCP<FactoryBase> > TransferFacts_;
+    std::vector<RCP<const FactoryBase> > TransferFacts_;
 
     //! If true, the action of the restriction operator action is implicitly defined by the transpose of the prolongator.
     bool implicitTranspose_;

@@ -33,58 +33,58 @@ namespace Xpetra {
     //! @name Map Attribute Methods
     //@{
 
-    //! Returns the number of elements in this Map.
+    //! The number of elements in this Map.
     virtual global_size_t getGlobalNumElements() const = 0;
 
-    //! Returns the number of elements belonging to the calling node.
+    //! The number of elements belonging to the calling node.
     virtual size_t getNodeNumElements() const = 0;
 
-    //! Returns the index base for this Map.
+    //! The index base for this Map.
     virtual GlobalOrdinal getIndexBase() const = 0;
 
-    //! Returns minimum local index.
+    //! The minimum local index.
     virtual LocalOrdinal getMinLocalIndex() const = 0;
 
-    //! Returns maximum local index.
+    //! The maximum local index.
     virtual LocalOrdinal getMaxLocalIndex() const = 0;
 
-    //! Returns minimum global index owned by this node.
+    //! The minimum global index owned by this node.
     virtual GlobalOrdinal getMinGlobalIndex() const = 0;
 
-    //! Returns maximum global index owned by this node.
+    //! The maximum global index owned by this node.
     virtual GlobalOrdinal getMaxGlobalIndex() const = 0;
 
-    //! Return the minimum global index over all nodes.
+    //! The minimum global index over all nodes.
     virtual GlobalOrdinal getMinAllGlobalIndex() const = 0;
 
-    //! Return the maximum global index over all nodes.
+    //! The maximum global index over all nodes.
     virtual GlobalOrdinal getMaxAllGlobalIndex() const = 0;
 
-    //! Return the local index for a given global index.
+    //! The local index corresponding to the given global index.
     virtual LocalOrdinal getLocalElement(GlobalOrdinal globalIndex) const = 0;
 
-    //! Return the global index for a given local index.
+    //! The global index corresponding to the given local index.
     virtual GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const = 0;
 
-    //! Returns the node IDs and corresponding local indices for a given list of global indices.
+    //! Return the node IDs and corresponding local IDs for a given list of global IDs.
     virtual LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< LocalOrdinal > &LIDList) const = 0;
 
-    //! Returns the node IDs for a given list of global indices.
+    //! Return the node IDs for a given list of global IDs.
     virtual LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const = 0;
 
-    //! Return a list of the global indices owned by this node.
+    //! Return a view of the global indices owned by this node.
     virtual Teuchos::ArrayView< const GlobalOrdinal > getNodeElementList() const = 0;
 
-    //! Returns true if the local index is valid for this Map on this node; returns false if it isn't.
+    //! True if the local index is valid for this Map on this node, else false.
     virtual bool isNodeLocalElement(LocalOrdinal localIndex) const = 0;
 
-    //! Returns true if the global index is found in this Map on this node; returns false if it isn't.
+    //! True if the global index is found in this Map on this node, else false.
     virtual bool isNodeGlobalElement(GlobalOrdinal globalIndex) const = 0;
 
-    //! Returns true if this Map is distributed contiguously; returns false otherwise.
+    //! True if this Map is distributed contiguously, else false.
     virtual bool isContiguous() const = 0;
 
-    //! Returns true if this Map is distributed across more than one node; returns false otherwise.
+    //! Whether this Map is globally distributed or locally replicated.
     virtual bool isDistributed() const = 0;
 
     //@}
@@ -92,10 +92,10 @@ namespace Xpetra {
     //! @name Boolean Tests
     //@{
 
-    //! Returns true if map is compatible with this Map.
+    //! True if and only if map is compatible with this Map.
     virtual bool isCompatible(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const = 0;
 
-    //! Returns true if map is identical to this Map.
+    //! True if and only if map is identical to this Map.
     virtual bool isSameAs(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const = 0;
 
     //@}
@@ -117,7 +117,7 @@ namespace Xpetra {
     //! Return a simple one-line description of this object.
     virtual std::string description() const = 0;
 
-    //! Print the object with some verbosity level to a FancyOStream object.
+    //! Print this object with the given verbosity level to the given FancyOStream object.
     virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const = 0;
 
     //@}

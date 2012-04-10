@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
   // Epetra_CrsMatrix -> Xpetra::Operator
   RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
   RCP<CrsOperator> crsOp = Teuchos::rcp(new CrsOperator(exA));
-  RCP<Operator> Op = Teuchos::rcp_dynamic_cast<Operator>(crsOp);
+  RCP<Operator> Op = crsOp;
 
   // Epetra_Vector -> Xpetra::Vector
   RCP<Vector> xRhs = Teuchos::rcp(new Xpetra::EpetraVector(epv));

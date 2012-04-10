@@ -41,6 +41,17 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     DEPLIBS muelu muelu-xpetra muelu-adapters
     )
   
+  TRIBITS_ADD_EXECUTABLE( #TODO: to be add to nightly tests
+    ScalingTestParamList  #TODO: Suffix Int/LongInt when done in the source code
+    SOURCES ScalingTestParamList.cpp
+    COMM serial mpi
+    DEPLIBS muelu muelu-xpetra muelu-adapters
+    )
+  
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(ScalingTestParamList_cp
+    SOURCE_FILES scalingTest.xml
+    )
+
 ENDIF()
 
 #
@@ -54,5 +65,5 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKA
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
-  XPETRA_ADD_TEST_TPETRA(${MueLu_ScalingTestName} 4)
+#  XPETRA_ADD_TEST_TPETRA(${MueLu_ScalingTestName} 4)
 ENDIF()

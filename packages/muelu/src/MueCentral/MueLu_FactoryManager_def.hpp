@@ -25,12 +25,13 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::FactoryManager(const RCP<const FactoryBase> PFact, const RCP<const FactoryBase> RFact, const RCP<const FactoryBase> AcFact) { 
+  FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::FactoryManager(const RCP<const FactoryBase> PFact, const RCP<const FactoryBase> RFact, const RCP<const FactoryBase> AcFact) 
+  { 
     if (PFact  != Teuchos::null) SetFactory("P", PFact);
     if (RFact  != Teuchos::null) SetFactory("R", RFact);
     if (AcFact != Teuchos::null) SetFactory("A", AcFact);
 
-    SetIgnoreUserData(false); // set IgnorUserData flag to false (default behaviour)
+    SetIgnoreUserData(false); // set IgnorUserData flag to false (default behaviour)     
   }
     
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -61,21 +62,28 @@ namespace MueLu {
     } else {
           
       if (varName == "A")             return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory()));
-      if (varName == "P")             return SetAndReturnDefaultFactory(varName, rcp(new SaPFactory(rcp(new TentativePFactory()))));
+      if (varName == "P")             return SetAndReturnDefaultFactory(varName, rcp(new SaPFactory(GetFactory("Ptent")))); // GetFactory("Ptent"): Use the same factory instance for both "P" and "Nullspace"
       if (varName == "R")             return SetAndReturnDefaultFactory(varName, rcp(new TransPFactory()));
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
-      if (varName == "Partition")     {
-        return SetAndReturnDefaultFactory(varName, rcp(new ZoltanInterface()));
-      }
-      if (varName == "Permutation") {
-        return SetAndReturnDefaultFactory(varName, rcp(new RepartitionFactory()));
-      }
+//       if (varName == "Partition")     {
+//         return SetAndReturnDefaultFactory(varName, rcp(new ZoltanInterface()));
+//       }
 #endif //ifdef HAVE_MPI
-      if (varName == "Coordinates") {
-        return SetAndReturnDefaultFactory(varName, rcp(new MueLu::MultiVectorTransferFactory<SC,LO,GO,NO,LMO>(varName,"R")));
+      if (varName == "Permutation") {
+        return SetAndReturnDefaultFactory(varName, NoFactory::getRCP()); // allows calls to IsAvailable() from RAPFActory
+      }
+      if (varName == "PermutationTrans") {
+        return SetAndReturnDefaultFactory(varName, NoFactory::getRCP()); // allows calls to IsAvailable() from RAPFActory
+      }
+      //JJH FIXME is this going to bite me in the backside?
+//       if (varName == "Coordinates") {
+//         return SetAndReturnDefaultFactory(varName, rcp(new MueLu::MultiVectorTransferFactory<SC,LO,GO,NO,LMO>(varName,"R")));
+//       }
+
+      if (varName == "Nullspace") {
+        return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory(Teuchos::null, GetFactory("Ptent")))); // GetFactory("Ptent"): Use the same factory instance for both "P" and "Nullspace"
       }
 
-      if (varName == "Nullspace")     return SetAndReturnDefaultFactory(varName, rcp(new NullspaceFactory()));
       if (varName == "Graph")         return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
       if (varName == "Aggregates")    return SetAndReturnDefaultFactory(varName, rcp(new UCAggregationFactory()));
 
@@ -93,6 +101,8 @@ namespace MueLu {
       }
 
       if (varName == "CoarseSolver")  return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new DirectSolver()),Teuchos::null)));
+
+      if (varName == "Ptent") return SetAndReturnDefaultFactory(varName, rcp(new TentativePFactory())); // Use the same factory instance for both "P" and "Nullspace"
 
       TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "MueLu::FactoryManager::GetDefaultFactory(): No default factory available for building '"+varName+"'.");
     }

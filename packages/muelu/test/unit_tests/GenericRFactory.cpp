@@ -85,10 +85,8 @@ namespace MueLuTests {
     UCAggFact->SetOrdering(MueLu::AggOptions::NATURAL);
     UCAggFact->SetPhase3AggCreation(0.5);
 
-    RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory(UCAggFact));
-    RCP<SaPFactory>         Pfact = rcp( new SaPFactory(Ptentfact));
-    RCP<RFactory>           Rfact = rcp( new GenericRFactory(Pfact) );
-    RCP<RAPFactory>        Acfact = rcp( new RAPFactory(Pfact,Rfact) );
+    RCP<SaPFactory>         Pfact = rcp( new SaPFactory());
+    RCP<RFactory>           Rfact = rcp( new GenericRFactory() );
     H->SetMaxCoarseSize(1);
 
     // setup smoothers
@@ -98,13 +96,18 @@ namespace MueLuTests {
     smootherParamList.set("relaxation: damping factor", (SC) 1.0);
     RCP<SmootherPrototype> smooProto = rcp( new TrilinosSmoother("RELAXATION", smootherParamList) );
     RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
-    Acfact->setVerbLevel(Teuchos::VERB_HIGH);
+    //Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
-    Teuchos::ParameterList status;
-    status = H->FullPopulate(*Pfact,*Rfact, *Acfact,*SmooFact,0,maxLevels);
+    RCP<SmootherFactory> coarseSolveFact = rcp(new SmootherFactory(smooProto, Teuchos::null));
 
-    SmootherFactory coarseSolveFact(smooProto);
-    H->SetCoarsestSolver(coarseSolveFact,MueLu::PRE);
+    FactoryManager M;
+    M.SetFactory("P", Pfact);
+    M.SetFactory("R", Rfact);
+    M.SetFactory("Aggregates", UCAggFact);
+    M.SetFactory("Smoother", SmooFact);
+    M.SetFactory("CoarseSolver", coarseSolveFact);
+
+    H->Setup(M, 0, maxLevels);
 
     RCP<Level> coarseLevel = H->GetLevel(1);
     RCP<Operator> P1 = coarseLevel->Get< RCP<Operator> >("P");
@@ -203,11 +206,9 @@ namespace MueLuTests {
       if (comm->getRank() == 0)
         out << "||NS|| = " << norms[0] << std::endl;
 
-
-      RCP<TentativePFactory> Ptentfact = rcp(new TentativePFactory());
-      RCP<PgPFactory>         Pfact = rcp( new PgPFactory(Ptentfact));
-      RCP<RFactory>           Rfact = rcp( new GenericRFactory(Pfact) );
-      RCP<RAPFactory>        Acfact = rcp( new RAPFactory(Pfact,Rfact) );
+      RCP<PgPFactory>         Pfact = rcp( new PgPFactory());
+      RCP<RFactory>           Rfact = rcp( new GenericRFactory() );
+      RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
 
       // setup smoothers
       Teuchos::ParameterList smootherParamList;

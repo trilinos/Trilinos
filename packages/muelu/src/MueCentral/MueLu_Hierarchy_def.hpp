@@ -19,14 +19,14 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Hierarchy()
-    : maxCoarseSize_(50), implicitTranspose_(false)
+    : maxCoarseSize_(50), implicitTranspose_(false), isPreconditioner_(true)
   {
     AddLevel(rcp( new Level() ));
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Hierarchy(const RCP<Operator> & A)
-    :  maxCoarseSize_(50), implicitTranspose_(false)
+    :  maxCoarseSize_(50), implicitTranspose_(false), isPreconditioner_(true)
   {
     RCP<Level> Finest = rcp( new Level() );
     AddLevel(Finest);
@@ -131,8 +131,8 @@ namespace MueLu {
 
     // Use PrintMonitor/TimerMonitor instead of just a FactoryMonitor to print "Level 0" instead of Hierarchy(0)
     // Print is done after the requests for next coarse level
-    TimerMonitor m1(*this, this->ShortClassName() + ": " + "Setup");
-    TimerMonitor m2(*this, this->ShortClassName() + ": " + "Setup" + " (level=" + Teuchos::Utils::toString(coarseLevelID) + ")");
+    TimeMonitor m1(*this, this->ShortClassName() + ": " + "Setup");
+    TimeMonitor m2(*this, this->ShortClassName() + ": " + "Setup" + " (level=" + Teuchos::Utils::toString(coarseLevelID) + ")");
 
     TEUCHOS_TEST_FOR_EXCEPTION(coarseLevelManager == Teuchos::null, Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): argument coarseLevelManager cannot be null"); //So, it should not be passed as a pointer but as a reference
 
@@ -395,16 +395,16 @@ namespace MueLu {
 
       RCP<Level> Fine = Levels_[startLevel];
 
-/*
-      if (startLevel == 0 && IsPrint(Statistics1)) {
+      if (startLevel == 0 && IsPrint(Statistics1) && !isPreconditioner_) {
+        Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> rn;
+        rn = Utils::ResidualNorm(*(Fine->Get< RCP<Operator> >("A")), X, B);
         GetOStream(Statistics1, 0) << "iter:    "
                                    << std::setiosflags(std::ios::left)
                                    << std::setprecision(3) << i
                                    << "           residual = "
-                                   << std::setprecision(10) << Utils::ResidualNorm(*(Fine->Get< RCP<Operator> >("A")), X, B)
+                                   << std::setprecision(10) << rn
                                    << std::endl;
       }
-*/
 
       //X.norm2(norms);
       if (Fine->Get< RCP<Operator> >("A")->getDomainMap()->isCompatible(*(X.getMap())) == false) {
@@ -548,6 +548,11 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Hierarchy(const Hierarchy &h) { }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::IsPreconditioner(const bool flag) {
+    isPreconditioner_ = flag;
+  }
 
 } //namespace MueLu
 

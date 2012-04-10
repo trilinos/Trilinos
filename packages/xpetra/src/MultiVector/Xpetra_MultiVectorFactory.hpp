@@ -38,6 +38,18 @@ namespace Xpetra {
       XPETRA_FACTORY_END;
     }
 
+    //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy).
+    static Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors) {
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (map->lib() == UseTpetra)
+        return rcp( new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> (map, ArrayOfPtrs, NumVectors) );
+#endif
+      
+      XPETRA_FACTORY_ERROR_IF_EPETRA(map->lib());
+      XPETRA_FACTORY_END;
+    }
+
   };
 
   template <>
@@ -64,6 +76,22 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_EPETRA
       if (map->lib() == UseEpetra)
         return rcp( new EpetraMultiVector(map, NumVectors, zeroOut) );
+#endif
+
+      XPETRA_FACTORY_END;
+    }
+
+    //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy).
+    static Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors) {
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (map->lib() == UseTpetra)
+        return rcp( new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> (map, ArrayOfPtrs, NumVectors) );
+#endif
+      
+#ifdef HAVE_XPETRA_EPETRA
+      if (map->lib() == UseEpetra)
+        return rcp( new EpetraMultiVector(map, ArrayOfPtrs, NumVectors) );
 #endif
 
       XPETRA_FACTORY_END;

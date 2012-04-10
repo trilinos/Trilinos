@@ -50,6 +50,9 @@ namespace Xpetra {
     EpetraMultiVector(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source)
       : vec_(Teuchos::rcp(new Epetra_MultiVector(toEpetra(source)))) { }
 
+    //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy).
+    EpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors);
+
     //! MultiVector destructor.
     virtual ~EpetraMultiVector() { }
 
@@ -138,7 +141,7 @@ namespace Xpetra {
     //! Return a simple one-line description of this object.
     std::string description() const;
 
-    //! Print the object with some verbosity level to an FancyOStream object.
+    //! Print the object with the given verbosity level to a FancyOStream.
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
     //@}

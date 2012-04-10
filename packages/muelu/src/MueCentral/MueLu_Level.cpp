@@ -22,7 +22,7 @@ namespace MueLu {
     std::vector<const MueLu::FactoryBase*> ehandles = needs_.RequestedFactories();
     for (std::vector<const MueLu::FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++) {
       std::vector<std::string> enames = needs_.RequestedKeys(*kt);
-      for (std::vector<std::string>::iterator it = enames.begin(); it != enames.end(); it++) {
+      for (std::vector<std::string>::iterator it = enames.begin(); it != enames.end(); ++it) {
         const std::string & ename = *it;
         const MueLu::FactoryBase* fac = *kt;
         if (IsKept(ename, fac, MueLu::Keep)) { // MueLu::Keep is the only flag propagated
@@ -191,8 +191,12 @@ namespace MueLu {
   }
 
   void Level::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
-    MUELU_DESCRIBE; 
+    //MUELU_DESCRIBE; 
     //out0 << ""; // remove warning
+    RCP<Teuchos::FancyOStream> out0 = Teuchos::rcpFromRef(out);
+    int previousSetting = out0->getOutputToRootOnly();
+    out0->setOutputToRootOnly(0);
+    out0->setShowProcRank(true);
 
     Teuchos::TabularOutputter outputter(out0);
     outputter.pushFieldSpec("data name",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 20);
@@ -204,10 +208,11 @@ namespace MueLu {
     outputter.pushFieldSpec("data",               Teuchos::TabularOutputter::STRING, Teuchos::TabularOutputter::LEFT, Teuchos::TabularOutputter::GENERAL, 20);
     outputter.outputHeader();
 
+    out0->setOutputToRootOnly(-1);
     std::vector<const MueLu::FactoryBase*> ehandles = needs_.RequestedFactories();
     for (std::vector<const MueLu::FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++) {
       std::vector<std::string> enames = needs_.RequestedKeys(*kt);
-      for (std::vector<std::string>::iterator it = enames.begin(); it != enames.end(); it++) {
+      for (std::vector<std::string>::iterator it = enames.begin(); it != enames.end(); ++it) {
         outputter.outputField(*it);   // variable name
 
         // factory name
@@ -216,10 +221,7 @@ namespace MueLu {
         outputter.outputField((ss1.str()).substr(0,30));
 
         // factory ptr
-        if (*kt == NoFactory::get())
-          outputter.outputField("NoFactory");
-        else
-          outputter.outputField(*kt);
+        outputter.outputField(*kt);
         
         int reqcount = needs_.NumRequests(*it, *kt); // request counter
         outputter.outputField(reqcount);
@@ -269,7 +271,9 @@ namespace MueLu {
 
         outputter.nextRow();
       }
-    }
+    } //for (std::vector<const MueLu::FactoryBase*>::iterator kt = ehandles.begin(); kt != ehandles.end(); kt++)
+    out0->setOutputToRootOnly(previousSetting);
+    out0->setShowProcRank(false);
 
   }
 
@@ -283,6 +287,7 @@ namespace MueLu {
          // User-provided data shall always be ignored. always ask factoryManager_ for a valid factory
          const FactoryBase* fac = factoryManager_->GetFactory(varname).get();
          TEUCHOS_TEST_FOR_EXCEPTION(fac == NULL, Exceptions::RuntimeError, "MueLu::Level("<< levelID_ << ")::GetFactory(" << varname << ", " << factory << "): Default factory returned by FactoryManager cannot be NULL");
+
          return fac;
        } else
        {

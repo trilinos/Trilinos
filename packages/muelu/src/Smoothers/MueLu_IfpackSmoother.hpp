@@ -6,6 +6,7 @@
 
 #include <Teuchos_ParameterList.hpp>
 #include <Xpetra_Operator.hpp>
+#include "Xpetra_MultiVectorFactory_fwd.hpp"
 
 class Ifpack_Preconditioner;
 

@@ -85,7 +85,9 @@ int main(int argc, char *argv[]) {
 
   FactoryManager M1; // first coarse level (Plain aggregation)
   M1.SetFactory("A", rcp(new RAPFactory()));
-  M1.SetFactory("P", rcp(new TentativePFactory()));
+  RCP<FactoryBase> PFact = rcp(new TentativePFactory());
+  M1.SetFactory("P", PFact);
+  M1.SetFactory("Nullspace", PFact); // This line is mandatory. FIXME: can it be done automatically?
 
   FactoryManager M2; // last level (SA)
   M2.SetFactory("A", rcp(new RAPFactory()));

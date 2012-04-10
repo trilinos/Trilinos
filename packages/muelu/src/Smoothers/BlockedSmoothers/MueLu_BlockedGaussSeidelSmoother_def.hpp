@@ -48,7 +48,7 @@ namespace MueLu {
 
     // loop over all factory managers for the subblocks of blocked operator A
     std::vector<Teuchos::RCP<const FactoryManagerBase> >::const_iterator it;
-    for(it = FactManager_.begin(); it!=FactManager_.end(); it++) {
+    for(it = FactManager_.begin(); it!=FactManager_.end(); ++it) {
       SetFactoryManager currentSFM  (rcpFromRef(currentLevel),   *it);
 
       // request "Smoother" for current subblock row.
@@ -85,7 +85,7 @@ namespace MueLu {
     size_t bgsOrderingIndex = 0;
     //std::map<size_t,size_t> bgsOrderingIndex2blockRowIndex;
     std::vector<Teuchos::RCP<const FactoryManagerBase> >::const_iterator it;
-    for(it = FactManager_.begin(); it!=FactManager_.end(); it++) {
+    for(it = FactManager_.begin(); it!=FactManager_.end(); ++it) {
       SetFactoryManager currentSFM  (rcpFromRef(currentLevel),   *it);
 
       // extract Smoother for current block row (BGS ordering)

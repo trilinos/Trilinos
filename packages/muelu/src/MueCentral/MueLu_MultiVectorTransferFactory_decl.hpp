@@ -69,6 +69,8 @@ namespace MueLu {
     //! factory that generates the transfer Operator.
     RCP<const FactoryBase> restrictionFact_;
 
+    static ArrayRCP<SC> expandCoordinates(ArrayRCP<SC> coord, LocalOrdinal blksize);
+
   }; // class MultiVectorTransferFactory
 
 } // namespace MueLu

@@ -30,7 +30,7 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
     //@{
 
     //! Constructor.
-    TransPFactory(RCP<FactoryBase> PFact = Teuchos::null);
+    TransPFactory(RCP<const FactoryBase> PFact = Teuchos::null);
 
     //! Destructor.
     virtual ~TransPFactory();
@@ -63,7 +63,7 @@ template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal =
     //@}
 
     //! P Factory
-    RCP<FactoryBase> PFact_;
+    RCP<const FactoryBase> PFact_;
 
   }; //class TransPFactory
 

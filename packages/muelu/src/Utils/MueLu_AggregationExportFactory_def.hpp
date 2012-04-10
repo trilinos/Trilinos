@@ -36,6 +36,8 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {
+    FactoryMonitor m(*this, "AggregationExportFactory", coarseLevel);
+
     //typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> OperatorClass;
     //typedef Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsOperatorClass;
     //typedef MueLu::Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> AggregatesClass;
@@ -43,8 +45,6 @@ namespace MueLu {
     Teuchos::RCP<Operator> A =            fineLevel.Get< Teuchos::RCP<Operator> >("A", AFact_);
     Teuchos::RCP<Aggregates> aggregates = fineLevel.Get< Teuchos::RCP<Aggregates> >("Aggregates",AggFact_);
     LocalOrdinal DofsPerNode =                 fineLevel.Get< LocalOrdinal > ("DofsPerNode", CoalesceDropFact_);
-
-    FactoryMonitor m(*this, "AggregationExportFactory", coarseLevel);
 
     GetOStream(Runtime0, 0) << "AggregationExportFactory: DofsPerNode: " << DofsPerNode << std::endl;
 

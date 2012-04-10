@@ -18,7 +18,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND
     ${PACKAGE_NAME}_ENABLE_Amesos) 
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Structure2D_Test
+  Structure2D_Test #FIXME: not the same name as the cpp file. Confusing
   SOURCES Structure2D_epetra.cpp
   COMM serial mpi
   DEPLIBS muelu muelu-xpetra
