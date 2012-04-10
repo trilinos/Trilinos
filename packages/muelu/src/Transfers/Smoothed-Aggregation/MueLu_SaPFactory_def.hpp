@@ -146,9 +146,9 @@ namespace MueLu {
         // prolongation factory is in prolongation mode
         coarseLevel.Set("P", finalP, this);
 	
-	///////////////////////// EXPERIMENTAL
-	if(Ptent->IsView("stridedMaps")) finalP->CreateView("stridedMaps", Ptent);  
-	///////////////////////// EXPERIMENTAL
+        ///////////////////////// EXPERIMENTAL
+        if(Ptent->IsView("stridedMaps")) finalP->CreateView("stridedMaps", Ptent);
+        ///////////////////////// EXPERIMENTAL
       }
     else
       {
@@ -156,9 +156,9 @@ namespace MueLu {
         RCP<Operator> R = Utils2::Transpose(finalP,true); // use Utils2 -> specialization for double
         coarseLevel.Set("R", R, this);
 	
-	///////////////////////// EXPERIMENTAL
-	if(Ptent->IsView("stridedMaps")) R->CreateView("stridedMaps", Ptent, true);  
-	///////////////////////// EXPERIMENTAL
+        ///////////////////////// EXPERIMENTAL
+        if(Ptent->IsView("stridedMaps")) R->CreateView("stridedMaps", Ptent, true);
+        ///////////////////////// EXPERIMENTAL
       }
 
   } //Build()
