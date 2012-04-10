@@ -69,19 +69,19 @@ namespace Xpetra {
 
       // A has strided Maps
       if(A->IsView(viewLabel)) {
-	Xpetra::viewLabel_t oldView = A->SwitchToView(viewLabel); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
-	rangeMap = (transposeA) ? A->getColMap() : A->getRowMap();
-	domainMap = (transposeA) ? A->getRowMap() : A->getColMap(); // overwrite if B != Teuchos::null
-	oldView = A->SwitchToView(oldView);
+        Xpetra::viewLabel_t oldView = A->SwitchToView(viewLabel); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
+        rangeMap = (transposeA) ? A->getColMap() : A->getRowMap();
+        domainMap = (transposeA) ? A->getRowMap() : A->getColMap(); // overwrite if B != Teuchos::null
+        oldView = A->SwitchToView(oldView);
       } else rangeMap = (transposeA) ? A->getDomainMap() : A->getRangeMap();
       
       // B has strided Maps
       if(B != Teuchos::null ) {
-	if(B->IsView(viewLabel)) {
-	  Xpetra::viewLabel_t oldView = B->SwitchToView(viewLabel); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
-	  domainMap = (transposeB) ? B->getRowMap() : B->getColMap();
-	  oldView = B->SwitchToView(oldView);
-	} else domainMap = (transposeB) ? B->getRangeMap() : B->getDomainMap();
+        if(B->IsView(viewLabel)) {
+          Xpetra::viewLabel_t oldView = B->SwitchToView(viewLabel); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
+          domainMap = (transposeB) ? B->getRowMap() : B->getColMap();
+          oldView = B->SwitchToView(oldView);
+        } else domainMap = (transposeB) ? B->getRangeMap() : B->getDomainMap();
       }
       
       
