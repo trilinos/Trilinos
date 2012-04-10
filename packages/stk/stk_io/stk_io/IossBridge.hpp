@@ -69,6 +69,16 @@ namespace io {
  */
 bool include_entity(Ioss::GroupingEntity *entity);
 
+void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::fem::FEMMetaData &meta);
+
+void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::fem::FEMMetaData &meta);
+
+//! \deprecated
+void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta);
+
+//! \deprecated
+void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &meta);
+
 /** This is the primary function used by an application to define
  *	the stk::mesh which corresponds to the Ioss mesh read from the
  *	finite element model (e.g. exodusII file). For all entities in
@@ -280,16 +290,6 @@ void put_io_part_attribute( mesh::Part &part, Ioss::GroupingEntity *entity = NUL
 void remove_io_part_attribute(mesh::Part &part);
 
 const Ioss::GroupingEntity *get_associated_ioss_entity(const mesh::Part &part);
-
-void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::fem::FEMMetaData &meta);
-
-void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::fem::FEMMetaData &meta);
-
-//! \deprecated
-void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta);
-
-//! \deprecated
-void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &meta);
 
 // To minimize ifdefs for the deprecated code:
 bool invalid_rank(mesh::EntityRank rank);
