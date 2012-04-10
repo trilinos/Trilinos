@@ -243,8 +243,8 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST(TentativePFactory, NonStandardMaps)
   {
 
-#warning Unit test PgPFactory NonStandardMaps disabled
-  return;
+//#warning Unit test PgPFactory NonStandardMaps disabled
+//  return;
 
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
@@ -360,6 +360,7 @@ namespace MueLuTests {
     M.SetFactory("Ptent", Pfact);
     M.SetFactory("Aggregates", UCAggFact);
     M.SetFactory("Smoother", SmooFact);
+    M.SetFactory("CoarseSolver", SmooFact);
     
     H->Setup(M, 0, maxLevels);
 
@@ -401,12 +402,12 @@ namespace MueLuTests {
     TEST_EQUALITY(coarseLevel2->IsAvailable("A",MueLu::NoFactory::get()), true);
     TEST_EQUALITY(coarseLevel2->IsAvailable("P",MueLu::NoFactory::get()), true);
     TEST_EQUALITY(coarseLevel2->IsAvailable("PreSmoother",MueLu::NoFactory::get()), true);
-    TEST_EQUALITY(coarseLevel2->IsAvailable("PostSmoother",MueLu::NoFactory::get()), false);
+    TEST_EQUALITY(coarseLevel2->IsAvailable("PostSmoother",MueLu::NoFactory::get()), true);
     TEST_EQUALITY(coarseLevel2->IsAvailable("R",MueLu::NoFactory::get()), true);
     TEST_EQUALITY(coarseLevel2->GetKeepFlag("A",MueLu::NoFactory::get()), MueLu::Final);
     TEST_EQUALITY(coarseLevel2->GetKeepFlag("P",MueLu::NoFactory::get()), MueLu::Final);
     TEST_EQUALITY(coarseLevel2->GetKeepFlag("PreSmoother",MueLu::NoFactory::get()), MueLu::Final);
-    TEST_EQUALITY(coarseLevel2->GetKeepFlag("PostSmoother",MueLu::NoFactory::get()), 0);
+    TEST_EQUALITY(coarseLevel2->GetKeepFlag("PostSmoother",MueLu::NoFactory::get()), MueLu::Final);
     TEST_EQUALITY(coarseLevel2->GetKeepFlag("R",MueLu::NoFactory::get()), MueLu::Final);
     TEST_EQUALITY(coarseLevel2->IsRequested("P",Pfact.get()), false);
     TEST_EQUALITY(coarseLevel2->IsRequested("R",Rfact.get()), false);
