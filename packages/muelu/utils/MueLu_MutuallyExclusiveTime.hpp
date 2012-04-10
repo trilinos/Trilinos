@@ -28,12 +28,12 @@ namespace MueLu {
     
   public:
     
-    MutuallyExclusiveTime(const std::string &name, bool start=false)
+    MutuallyExclusiveTime(const std::string &name, bool startFlag=false)
       : timer_(rcp(new Teuchos::Time(name, false))),  // second argument is false in any case, because if start==true, 
                                                       // timer has to be started by MutuallyExclusiveTime::start() instead of Teuchos::Time::start().
 	isPaused_(false)
     { 
-      if (start == true) timer_->start();
+      if (startFlag == true) timer_->start();
     }
     
     ~MutuallyExclusiveTime() {

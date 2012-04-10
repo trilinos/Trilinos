@@ -168,9 +168,9 @@ namespace MueLu {
         if (numEntriesPerRow[i] == 0) numEntriesPerRow[i] = 1;
       }
       assert(numLocalRows == result->getLocalLength());
-      for (int i=0; i<result->getNumVectors(); ++i) {
+      for (size_t i=0; i<result->getNumVectors(); ++i) {
         ArrayRCP<Scalar> vals = result->getDataNonConst(i);
-        for (int j=0; j<numLocalRows; ++j) {
+        for (size_t j=0; j<numLocalRows; ++j) {
           vals[j] /= numEntriesPerRow[j];
         }
       }
