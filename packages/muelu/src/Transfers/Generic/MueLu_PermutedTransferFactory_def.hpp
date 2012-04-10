@@ -115,6 +115,13 @@ namespace MueLu {
             //RCP<Operator> permutedP = Utils::TwoMatrixMultiply(originalP,false,permMatrix,true); //P*transpose(perm)
             RCP<Operator> permutedP = Utils::TwoMatrixMultiply(originalP,false,transposedPerm,false); //P*transpose(perm)
             coarseLevel.Set< RCP<Operator> >("P",permutedP,this);
+
+            ///////////////////////// EXPERIMENTAL
+            // TODO FIXME somehow we have to transfer the striding information of the permuted domain/range maps.
+            // That is probably something for an external permutation factory
+            //if(originalP->IsView("stridedMaps")) permutedP->CreateView("stridedMaps", originalP);
+            ///////////////////////// EXPERIMENTAL
+
           } else {
             coarseLevel.Set< RCP<Operator> >("P",originalP,this);
           }
@@ -130,6 +137,13 @@ namespace MueLu {
             SubFactoryMonitor m1(*this, "Permuting restriction", coarseLevel.GetLevelID());
             RCP<Operator> permutedR = Utils::TwoMatrixMultiply(permMatrix,false,originalR,false); //perm * R
             coarseLevel.Set< RCP<Operator> >("R",permutedR,this);
+
+            ///////////////////////// EXPERIMENTAL
+            // TODO FIXME somehow we have to transfer the striding information of the permuted domain/range maps.
+            // That is probably something for an external permutation factory
+            //if(originalR->IsView("stridedMaps")) permutedR->CreateView("stridedMaps", originalR);
+            ///////////////////////// EXPERIMENTAL
+
             //if (coarseLevel.IsAvailable("Coordinates",coordinateFact_.get()))  //FIXME JJH
 
             GetOStream(Runtime0, 0) <<  "Stashing 'Permutation' into Level " << coarseLevel.GetLevelID() << " w/ generating factory "
