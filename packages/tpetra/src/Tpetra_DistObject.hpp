@@ -155,7 +155,8 @@ namespace Tpetra {
     /// \brief Whether this is a globally distributed object.
     ///
     /// For a definition of "globally distributed" (and its opposite,
-    /// "locally replicated"), see the documentation of \c Map.
+    /// "locally replicated"), see the documentation of Map's \c
+    /// isDistributed() method.
     inline bool isDistributed () const;
 
     //! The Map with which this DistObject was constructed.
