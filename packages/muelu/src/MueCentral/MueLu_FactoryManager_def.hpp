@@ -69,10 +69,7 @@ namespace MueLu {
 //         return SetAndReturnDefaultFactory(varName, rcp(new ZoltanInterface()));
 //       }
 #endif //ifdef HAVE_MPI
-      if (varName == "Permutation") {
-        return SetAndReturnDefaultFactory(varName, NoFactory::getRCP()); // allows calls to IsAvailable() from RAPFActory
-      }
-      if (varName == "PermutationTrans") {
+      if (varName == "Importer") {
         return SetAndReturnDefaultFactory(varName, NoFactory::getRCP()); // allows calls to IsAvailable() from RAPFActory
       }
       //JJH FIXME is this going to bite me in the backside?
