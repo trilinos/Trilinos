@@ -192,7 +192,7 @@ namespace Tpetra {
     ///
     /// We declare this method virtual so that subclasses of
     /// \c DistObject may override it.
-    virtual std::string description ();
+    virtual std::string description () const;
 
     //@} 
 
@@ -431,7 +431,7 @@ namespace Tpetra {
   
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::string
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::description ()
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::description () const
   {
     using Teuchos::TypeNameTraits;
 
