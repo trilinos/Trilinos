@@ -29,7 +29,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RepartitionFactory(
                 RCP<const FactoryBase> loadBalancer, RCP<const FactoryBase> AFact,
-                GO minRowsPerProcessor, SC nnzMaxMinRatio, GO startLevel, LO useDiffusiveHeuristic, GO minNnzPerProcessor) :
+                LO minRowsPerProcessor, SC nnzMaxMinRatio, GO startLevel, LO useDiffusiveHeuristic, GO minNnzPerProcessor) :
     loadBalancer_(loadBalancer),
     AFact_(AFact),
     minRowsPerProcessor_(minRowsPerProcessor),
@@ -71,16 +71,16 @@ namespace MueLu {
     RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
     int mypid = comm->getRank();
     Scalar imbalance;
-    GO minNumRows;
+    LO minNumRows;
     GO numActiveProcesses=0;
     if (currentLevel.GetLevelID() >= startLevel_) {
 
       if (minRowsPerProcessor_ > 0) {
-        //Check whether any row has too few rows
+        //Check whether any node has too few rows
         size_t numMyRows = A->getNodeNumRows();
-        GO maxNumRows;
-        maxAll(comm, (GO)numMyRows, maxNumRows);
-        minAll(comm, (GO)((numMyRows > 0) ? numMyRows : maxNumRows), minNumRows);
+        LO maxNumRows;
+        maxAll(comm, (LO)numMyRows, maxNumRows); //FIXME: this comm can be avoided just by defining maxNumRows = max of LO
+        minAll(comm, (LO)((numMyRows > 0) ? numMyRows : maxNumRows), minNumRows);
         if (minNumRows < minRowsPerProcessor_) {
           doRepartition=true; 
         }
@@ -89,7 +89,7 @@ namespace MueLu {
       //Check whether the number of nonzeros per process is imbalanced
       size_t numMyNnz  = A->getNodeNumEntries();
       GO maxNnz, minNnz;
-      maxAll(comm,(GO)numMyNnz,maxNnz);
+      maxAll(comm,(GO)numMyNnz,maxNnz); //FIXME: this comm can be avoided just by defining maxNnz = max of GO
       //min nnz over all proc (disallow any processors with 0 nnz)
       minAll(comm, (GO)((numMyNnz > 0) ? numMyNnz : maxNnz), minNnz);
       imbalance = ((SC) maxNnz) / minNnz;
