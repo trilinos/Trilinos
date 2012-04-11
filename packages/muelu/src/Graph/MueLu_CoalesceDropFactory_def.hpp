@@ -92,7 +92,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>
         offset   = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getOffset();
         oldView = A->SwitchToView(oldView);
         blkSizeInfo_ = Teuchos::null; // TODO: remove this
-        std::cout << "found blocksize " << blockdim << " from strided row map" << std::endl;
+        GetOStream(Runtime0, 0) << "found blocksize " << blockdim << " from strided row map" << std::endl;
       } else {
         // TODO remove this: support for old method
         blockdim = A->GetFixedBlockSize();
