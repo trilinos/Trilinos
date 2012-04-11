@@ -1165,7 +1165,8 @@ namespace stk {
                       {
 #if STK_ADAPT_HAVE_YAML_CPP
                         std::string input_mesh_new= output_mesh_save+"."+toString(M)+"."+toString(iM);
-                        std::string output_mesh_new= output_mesh_save+"-renumbered."+toString(M)+"."+toString(iM);
+                        //std::string output_mesh_new= output_mesh_save+"-renumbered."+toString(M)+"."+toString(iM);
+                        std::string output_mesh_new= output_mesh_save+"."+toString(M)+"."+toString(iM);
                         eMesh.openReadOnly(input_mesh_new);
                         NodeRegistry *some_nr = 0;
                         SerializeNR snr(eMesh, some_nr, input_mesh, output_mesh, M, iM);
