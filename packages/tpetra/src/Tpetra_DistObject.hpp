@@ -61,6 +61,18 @@ namespace Tpetra {
   /// the basic mechanisms and interface specifications for importing
   /// and exporting operations using \c Import and \c Export objects.
   ///
+  /// \tparam LocalOrdinal The type of local IDs.  Same as \c Map's \c
+  ///   LocalOrdinal template parameter.  This should be an integer
+  ///   type, preferably signed.
+  ///
+  /// \tparam GlobalOrdinal The type of global IDs.  Same as Map's \c
+  ///   GlobalOrdinal template parameter.  Defaults to the same type
+  ///   as LocalOrdinal.  This should also be an integer type,
+  ///   preferably signed.
+  ///
+  /// \tparam Node Same as Map's \c Node template parameter.  Defaults
+  ///   to the default Kokkos Node type.
+  ///
   /// Most Tpetra users will create subclasses of \c DistObject (like
   /// \c CrsMatrix or \c MultiVector), describe data distribution via
   /// \c Map instances, create data redistribution plans via \c Import
@@ -85,23 +97,19 @@ namespace Tpetra {
   /// nothing.  The documentation of these methods explains different
   /// ways you might choose to implement them.
   ///
-  /// <b> Distributed Global vs. Replicated Local.</b>
-  ///
-  /// <ul>
-  /// <li> Distributed Global objects - In most instances, a
-  ///      distributed object will be partitioned across multiple
-  ///      memory images associated with multiple processors.  In this
-  ///      case, there is a unique copy of each element and elements
-  ///      are spread across all images specified by the Teuchos::Comm
-  ///      communicator object.
-  /// <li> Replicated Local Objects - Some algorithms use objects that
-  ///      are too small to be distributed across all processors.  The
-  ///      upper Hessenberg matrix in a GMRES iterative solve is a
-  ///      good example.  In other cases, such as with block iterative
-  ///      methods, block dot product functions produce small dense
-  ///      matrices that are required by all images.  Replicated local
-  ///      objects handle these situations.  
-  /// </ul>
+  /// Distributed Tpetra objects may be either "distributed global" or
+  /// "replicated local."  Distributed global objects are partitioned
+  /// across multiple processes in a communicator.  Each process owns
+  /// at least one element in the object's Map that is not owned by
+  /// another process.  For replicated local objects, each element in
+  /// the object's Map is owned redundantly by all processes in the
+  /// object's communicator.  Some algorithms use objects that are too
+  /// small to be distributed across all processes.  The upper
+  /// Hessenberg matrix in a GMRES iterative solve is a good example.
+  /// In other cases, such as with block iterative methods, block dot
+  /// product functions produce small dense matrices that are required
+  /// by all images.  Replicated local objects handle these
+  /// situations.
   template <class Packet, 
 	    class LocalOrdinal = int, 
 	    class GlobalOrdinal = LocalOrdinal, 
@@ -175,6 +183,19 @@ namespace Tpetra {
 
     //@} 
 
+
+    //@}
+    //! @name Implementation of \c Teuchos::Describable
+    //@{ 
+
+    /// \brief One-line descriptiion of this object.
+    ///
+    /// We declare this method virtual so that subclasses of
+    /// \c DistObject may override it.
+    virtual std::string description ();
+
+    //@} 
+
   protected:
 
     /// \enum ReverseOption
@@ -222,7 +243,16 @@ namespace Tpetra {
 		Distributor &distor,
 		ReverseOption revOp);
 
-    //! Methods that derived classes must implement
+    /// \name Methods implemented by subclasses and used by \c doTransfer().
+    /// 
+    /// The \c doTransfer() method uses the subclass' implementations
+    /// of these methods to implement data transfer.  Subclasses of
+    /// DistObject must implement these methods.  This is an instance
+    /// of the <a
+    /// href="http://en.wikipedia.org/wiki/Template_method_pattern">Template
+    /// Method Pattern</a>.  ("Template" here doesn't mean "C++
+    /// template"; it means "pattern with holes that are filled in by
+    /// the subclass' method implementations.")
     //@{ 
 
     /// \brief Compare the source and target (\e this) objects for compatibility.
@@ -398,6 +428,22 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::~DistObject() 
   {}
+  
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::string
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::description ()
+  {
+    using Teuchos::TypeNameTraits;
+
+    std::ostringstream os;
+    os << "Tpetra::DistObject<"
+       << TypeNameTraits<Packet>::name ()
+       << ", " << TypeNameTraits<LocalOrdinal>::name ()
+       << ", " << TypeNameTraits<GlobalOrdinal>::name ()
+       << ", " << TypeNameTraits<Node>::name ()
+       << ">";
+    return os.str ();
+  }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void 
