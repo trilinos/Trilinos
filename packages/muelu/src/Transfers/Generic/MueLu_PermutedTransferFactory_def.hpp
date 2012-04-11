@@ -99,15 +99,8 @@ namespace MueLu {
             //TODO see note below about domain/range map of R and its implications for P.
 
             // Now copy P so that we can give it a domain map that matches the range map of R.
-            RCP<MultiVector> onesVec  = MultiVectorFactory::Build(originalP->getDomainMap(),1);
-            RCP<MultiVector> nnzPerRow  = MultiVectorFactory::Build(originalP->getRangeMap(),1);
-            originalP->apply(*onesVec,*nnzPerRow,Teuchos::NO_TRANS,1,0);
-            int maxNnzPerRow=0;
-            ArrayRCP<const Scalar> nnzCounts = nnzPerRow->getData(0);
-            for (int i=0; i<nnzCounts.size(); ++i)
-              if (nnzCounts[i] > maxNnzPerRow)
-                maxNnzPerRow = (int) nnzCounts[i];
-            RCP<Operator> permutedP = OperatorFactory::Build(originalP->getRowMap(), maxNnzPerRow);
+            //TODO is there a better preallocation strategy?
+            RCP<Operator> permutedP = OperatorFactory::Build(originalP->getRowMap(), originalP->getGlobalMaxNumRowEntries());
             //P needs to be fillCompleted again.  To achieve this, I just copy P using the trivial importer.
             RCP<Import> trivialImporter = ImportFactory::Build( originalP->getRowMap(), originalP->getRowMap());
             RCP<CrsOperator> crsOp = rcp_dynamic_cast<CrsOperator>(permutedP);
@@ -140,22 +133,8 @@ namespace MueLu {
           if (permImporter != Teuchos::null) {
             RCP<SubFactoryMonitor> m1 = rcp( new SubFactoryMonitor(*this, "Rebalancing restriction", coarseLevel.GetLevelID()) );
 
-            // In order to preallocate space for R, we do the following:
-            // 1) Allocate ones vector, ovec.
-            // 2) Multiply R*ovec, which gives nnz per row.
-            // 3) Use permImporter to communicate nnz to new proc owners.
-            // 4) Allocate new R, using nnz info. 
-
-            RCP<MultiVector> onesVec  = MultiVectorFactory::Build(originalR->getDomainMap(),1);
-            RCP<MultiVector> nnzPerRow  = MultiVectorFactory::Build(originalR->getRangeMap(),1);
-            originalR->apply(*onesVec,*nnzPerRow,Teuchos::NO_TRANS,1,0);
-            int maxNnzPerRow=0;
-            ArrayRCP<const Scalar> nnzCounts = nnzPerRow->getData(0);
-            for (int i=0; i<nnzCounts.size(); ++i)
-              if (nnzCounts[i] > maxNnzPerRow)
-                maxNnzPerRow = (int) nnzCounts[i];
-
-            RCP<Operator> permutedR = OperatorFactory::Build(permImporter->getTargetMap(), maxNnzPerRow);
+            //TODO is there a better preallocation strategy?
+            RCP<Operator> permutedR = OperatorFactory::Build(permImporter->getTargetMap(), originalR->getGlobalMaxNumRowEntries());
             RCP<CrsOperator> crsOp = rcp_dynamic_cast<CrsOperator>(permutedR);
             RCP<CrsMatrix> crsMtx = crsOp->getCrsMatrix();
             RCP<CrsOperator> origOp = rcp_dynamic_cast<CrsOperator>(originalR);
