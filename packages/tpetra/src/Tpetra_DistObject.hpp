@@ -194,6 +194,14 @@ namespace Tpetra {
     /// \c DistObject may override it.
     virtual std::string description () const;
 
+
+    /// \brief Print a descriptiion of this object to the given output stream.
+    ///
+    /// We declare this method virtual so that subclasses of
+    /// \c DistObject may override it.
+    virtual void 
+    describe (Teuchos::FancyOStream &out, 
+	      const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
     //@} 
 
   protected:
@@ -448,6 +456,28 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void 
   DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
+  describe (Teuchos::FancyOStream &out, 
+	    const Teuchos::EVerbosityLevel verbLevel) const 
+  {
+    using Teuchos::rcpFromRef;
+    using std::endl;
+
+    const Teuchos::EVerbosityLevel vl = (verbLevel == Teuchos::VERB_DEFAULT) ? 
+      Teuchos::VERB_LOW : verbLevel;
+
+    if (vl != Teuchos::VERB_NONE) {
+      out << this->description () << endl;
+      Teuchos::OSTab tab (rcpFromRef (out));
+      out << "Export buffer size (in packets): " << exports_.size() << endl
+	  << "Import buffer size (in packets): " << imports_.size() << endl
+	  << "Map over which this object is distributed:" << endl;
+      map_->describe (out, vl);
+    }
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void 
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
   doImport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A, 
 	    const Import<LocalOrdinal,GlobalOrdinal,Node> & importer, 
 	    CombineMode CM) 
@@ -692,19 +722,10 @@ namespace Tpetra {
     using Teuchos::getFancyOStream;
     using Teuchos::RCP;
     using Teuchos::rcpFromRef;
-    using Teuchos::TypeNameTraits;
     using std::endl;
 
     RCP<FancyOStream> out = getFancyOStream (rcpFromRef (os));
-    *out << "Tpetra::DistObject<" << TypeNameTraits<Packet>::name ()
-	 << "," << TypeNameTraits<LocalOrdinal>::name ()
-	 << "," << TypeNameTraits<GlobalOrdinal>::name ()
-	 << "," << TypeNameTraits<Node>::name ()
-	 << ">" << endl;
-    Teuchos::OSTab tab (out);
-    *out << "Export buffer size: " << exports_.size() << endl
-	 << "Import buffer size: " << imports_.size() << endl
-	 << "Map over which this object is distributed:" << endl << map_;
+    this->describe (Teuchos::VERB_DEFAULT, *out);
   }
 
 } // namespace Tpetra
