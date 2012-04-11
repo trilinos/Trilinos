@@ -70,12 +70,11 @@ struct FEMesh {
   typedef Kokkos::MDArray<  CoordScalarType , Device >  node_coords_type ;
   typedef Kokkos::MDArray<  size_type ,       Device >  elem_node_ids_type ;
   typedef Kokkos::CrsArray< size_type[2] ,    Device >  node_elem_ids_type ;
-  typedef Kokkos::ParallelDataMap< Device >             parallel_data_map_type ;
 
-  node_coords_type        node_coords ;
-  elem_node_ids_type      elem_node_ids ;
-  node_elem_ids_type      node_elem_ids ;
-  parallel_data_map_type  parallel_data_map ;
+  node_coords_type         node_coords ;
+  elem_node_ids_type       elem_node_ids ;
+  node_elem_ids_type       node_elem_ids ;
+  Kokkos::ParallelDataMap  parallel_data_map ;
 };
 
 //----------------------------------------------------------------------------

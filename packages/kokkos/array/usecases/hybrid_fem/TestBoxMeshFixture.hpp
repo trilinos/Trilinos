@@ -72,27 +72,26 @@ template< typename coordinate_scalar_type ,
           unsigned ElemNodeCount ,
           class Device >
 void verify_parallel(
-  comm::Machine machine ,
   const FEMesh< coordinate_scalar_type ,
                 ElemNodeCount ,
                 Device > & mesh )
 {
   typedef FEMesh< coordinate_scalar_type, ElemNodeCount, Device > femesh_type ;
-  typedef typename femesh_type::parallel_data_map_type parallel_data_map_type ;
   typedef typename femesh_type::node_coords_type node_coords_type ;
+
+  comm::Machine machine = mesh.parallel_data_map.machine ;
 
   // Communicate node coordinates to verify communication and setup.
 
   const size_t chunk_size = 3 ;
 
-  Kokkos::AsyncExchange< coordinate_scalar_type , parallel_data_map_type >
+  Kokkos::AsyncExchange< coordinate_scalar_type, Device, Kokkos::ParallelDataMap >
     exchange( machine , mesh.parallel_data_map , chunk_size );
 
   const size_t send_begin = mesh.parallel_data_map.count_interior ;
   const size_t send_count = mesh.parallel_data_map.count_send ;
 
-  const size_t recv_begin = mesh.parallel_data_map.count_interior +
-                            mesh.parallel_data_map.count_send ;
+  const size_t recv_begin = mesh.parallel_data_map.count_owned ;
   const size_t recv_count = mesh.parallel_data_map.count_receive ;
 
   typedef Kokkos::PackArray< node_coords_type ,
@@ -107,8 +106,7 @@ void verify_parallel(
   exchange.receive();
 
   unsigned long local[3] ;
-  local[0] = mesh.parallel_data_map.count_interior +
-             mesh.parallel_data_map.count_send ;
+  local[0] = mesh.parallel_data_map.count_owned ;
   local[1] = mesh.parallel_data_map.count_receive ;
   local[2] = TestFEMesh::VerifyUnpack< node_coords_type >::unpack( mesh.node_coords, recv_begin, recv_count, exchange.buffer() );
 
@@ -165,7 +163,9 @@ void test_box_fixture( comm::Machine machine ,
     box_mesh_fixture< coordinate_scalar_type , Device >
       ( proc_count , proc_local , nodes_nx , nodes_ny , nodes_nz );
 
-  TestFEMesh::verify_parallel( machine , mesh );
+  mesh.parallel_data_map.machine = machine ;
+
+  TestFEMesh::verify_parallel( mesh );
 }
 
 #endif /* #ifndef TESTFEMESHBOXFIXTURE_HPP */

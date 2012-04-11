@@ -52,33 +52,35 @@
 
 #include <Kokkos_MDArray.hpp>
 #include <Kokkos_Host.hpp>
+#include <ParallelComm.hpp>
 
 namespace Kokkos {
 
 //----------------------------------------------------------------------------
 /** \brief  Parallel distributed data mapping
  *
- *  item ordering { interior : { owned items not sent elsewhere }
- *                  send     : { owned items sent }
- *                  receive  : { not-owned items received } }
+ *  ordering { interior : { owned items not sent elsewhere }
+ *             send     : { owned items sent }
+ *             receive  : { not-owned items received } }
  *
- *  item recv { { N ghosted items from process P : ( P , N ) } }
+ *  recv { { N ghosted items from process P : ( P , N ) } }
  *
- *  item send { { N send items to process P : ( P , N ) } }
+ *  send { { N send items to process P : ( P , N ) } }
  *
- *  item send item { send item offsets within 'send' range }
+ *  send_item { send item offsets within 'send' range }
  */
-template< class Device >
 struct ParallelDataMap {
+  comm::Machine               machine ;
   MDArray< unsigned , Host >  host_recv ;
   MDArray< unsigned , Host >  host_send ;
-  MDArray< unsigned , Host >  host_send_item ;  // offsets of items to send
-  unsigned  count_interior ;
-  unsigned  count_send ;
-  unsigned  count_receive ;
+  MDArray< unsigned , Host >  host_send_item ;
+  unsigned                    count_interior ;
+  unsigned                    count_send ;
+  unsigned                    count_owned ; // = count_interior + count_send
+  unsigned                    count_receive ;
 };
 
-}
+} // namespace Kokkos
 
 //----------------------------------------------------------------------------
 // Application call procedure:
@@ -100,15 +102,15 @@ namespace Kokkos {
 template< class ArrayType , class Rank = void > struct PackArray ;
 template< class ArrayType , class Rank = void > struct UnpackArray ;
 
-template< class ValueType , class DataMap >
+template< class ValueType , class Device , class DataMap >
 class AsyncExchange ;
 
 template< class ValueType , class Device >
-class AsyncExchange< ValueType, Kokkos::ParallelDataMap<Device> > {
+class AsyncExchange< ValueType, Device , Kokkos::ParallelDataMap > {
 public:
 
   typedef Device                                              device_type ;
-  typedef Kokkos::ParallelDataMap< device_type >              data_map_type ;
+  typedef Kokkos::ParallelDataMap                             data_map_type ;
   typedef Kokkos::Impl::MemoryView< ValueType , device_type > buffer_dev_type ;
   typedef Kokkos::Impl::MemoryView< ValueType , Host >        buffer_host_type ;
 

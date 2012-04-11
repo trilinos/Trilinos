@@ -257,6 +257,7 @@ box_mesh_fixture( const size_t proc_count ,
                                                   element_node_count );
 
   mesh.parallel_data_map.count_interior = node_count_interior ;
+  mesh.parallel_data_map.count_owned    = node_count_owned ;
   mesh.parallel_data_map.count_send     = node_count_owned - node_count_interior ;
   mesh.parallel_data_map.count_receive  = node_count_total - node_count_owned ;
 
