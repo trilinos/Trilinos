@@ -191,7 +191,7 @@ namespace MueLu {
             GlobalOrdinal gblockid = vertex2AggId_->getMap()->getGlobalElement(lnode);
 
             // unumalgamate graph-based information to dof-based information
-            std::vector<LocalOrdinal> blockdofs = (*(GetAmalgamationInfo()->GetGlobalAmalgamationParams()))[gblockid];
+            std::vector<GlobalOrdinal> blockdofs = (*(GetAmalgamationInfo()->GetGlobalAmalgamationParams()))[gblockid];
             aggregateSizes_[myAgg] += Teuchos::as<LocalOrdinal>(blockdofs.size());
           }
         }
