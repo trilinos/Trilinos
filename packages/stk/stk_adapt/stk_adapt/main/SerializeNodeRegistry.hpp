@@ -501,7 +501,7 @@ namespace stk {
                   for (unsigned iEntity = 0; iEntity < num_entities_in_bucket; iEntity++)
                     {
                       stk::mesh::Entity& entity = bucket[iEntity];
-                      if (eMesh.isChildElement(entity))
+                      if (eMesh.hasFamilyTree(entity) && eMesh.isChildElement(entity))
                         {
                           stk::mesh::EntityId id = m_id_max[irank] + 1;
                           m_id_max[irank] = id;

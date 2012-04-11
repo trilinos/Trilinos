@@ -635,6 +635,9 @@ namespace stk {
 
       // streaming
       int M = streaming_size ? streaming_size : 1;
+      int remove_original_elements_save = remove_original_elements;
+      int delete_parents_save = delete_parents;
+
       int streaming_pass_start = 0;
 #if STK_ADAPT_HAVE_YAML_CPP
       int streaming_pass_end = streaming_size ? SerializeNodeRegistry::MaxPass : 0;
@@ -651,6 +654,17 @@ namespace stk {
 
       for (int ipass=streaming_pass_start; ipass <= streaming_pass_end; ipass++)
         {
+          if (streaming_size) 
+            {
+              remove_original_elements = 0;
+              delete_parents = 0;
+              if (ipass == streaming_pass_end) 
+                {
+                  remove_original_elements = remove_original_elements_save;
+                  delete_parents = delete_parents_save;
+                }
+            }
+
           if (1 && streaming_size)
             {
               // special case, no exodus files i/o
