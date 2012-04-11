@@ -298,10 +298,10 @@ namespace Tpetra {
     explicit CrsMatrix (const Teuchos::RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >& graph,
 			const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
 
-      // !Destructor.
-      virtual ~CrsMatrix();
+    //! Destructor.
+    virtual ~CrsMatrix();
 
-      //@}
+    //@}
 
       //! @name Insertion/Removal Methods
       //@{ 
@@ -957,19 +957,91 @@ namespace Tpetra {
 
   /** \brief Non-member function to create an empty CrsMatrix given a row map and a non-zero profile.
 
-      Returns a dynamically allocated (DynamicProfile) matrix with specified number of non-zeros per row (defaults to zero).
+      \return A dynamically allocated (DynamicProfile) matrix with specified number of nonzeros per row (defaults to zero).
 
       \relatesalso CrsMatrix
    */
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  createCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, size_t maxNumEntriesPerRow = 0)
+  Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  createCrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, 
+		   size_t maxNumEntriesPerRow = 0,
+		   const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null)
   {
-    RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > ret;
-    ret = rcp(new CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map, maxNumEntriesPerRow, DynamicProfile) );
-    return ret;
+    using Teuchos::rcp;
+    typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
+
+    return rcp (new matrix_type (map, maxNumEntriesPerRow, DynamicProfile, plist));
   }
 
+  /// \brief Nonmember CrsMatrix constructor that fuses Import and fillComplete().
+  /// \relatesalso CrsMatrix
+  /// \tparam CrsMatrixType A specialization of CrsMatrix.
+  ///
+  /// A common use case is to create an empty destination CrsMatrix,
+  /// redistribute from a source CrsMatrix (by an Import or Export
+  /// operation), then call fillComplete() on the destination
+  /// CrsMatrix.  This constructor fuses these three cases, for an
+  /// Import redistribution.
+  ///
+  /// Fusing redistribution and fillComplete() exposes potential
+  /// optimizations.  For example, it may make constructing the
+  /// column Map faster, and it may avoid intermediate unoptimized
+  /// storage in the destination CrsMatrix.
+  ///
+  /// The resulting matrix is fill complete (in the sense of
+  /// isFillComplete()) and has optimized storage (in the sense of
+  /// isStorageOptimized()).  It has the same domain and range Maps as
+  /// the source matrix.
+  ///
+  /// \param sourceMatrix [in] The source matrix from which to
+  ///   import.  The source of an Import must have a nonoverlapping
+  ///   distribution.
+  ///
+  /// \param importer [in] The Import instance containing a
+  ///   precomputed redistribution plan.  The source Map of the
+  ///   Import must be the same as the row Map of sourceMatrix.
+  ///
+  /// \param plist [in/out] Optional list of parameters.  If not
+  ///   null, any missing parameters will be filled in with their
+  ///   default values.
+  template<class CrsMatrixType>
+  Teuchos::RCP<CrsMatrixType>
+  importAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
+				  const Import<typename CrsMatrixType::local_ordinal_type, 
+				               typename CrsMatrixType::global_ordinal_type, 
+				               typename CrsMatrixType::node_type>& importer,
+				  const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
+
+  /// \brief Nonmember CrsMatrix constructor that fuses Export and fillComplete().
+  /// \relatesalso CrsMatrix
+  /// \tparam CrsMatrixType A specialization of CrsMatrix.
+  ///
+  /// For justification, see the documentation fo the constructor
+  /// that fuses Import and fillComplete().
+  ///
+  /// The resulting matrix is fill complete (in the sense of
+  /// isFillComplete()) and has optimized storage (in the sense of
+  /// isStorageOptimized()).  It has the same domain and range Maps as
+  /// the source matrix.
+  ///
+  /// \param sourceMatrix [in] The source matrix from which to
+  ///   export.  Its row Map may be overlapping, since the source of
+  ///   an Export may be overlapping.
+  ///
+  /// \param exporter [in] The Export instance containing a
+  ///   precomputed redistribution plan.  The source Map of the
+  ///   Export must be the same as the row Map of sourceMatrix.
+  ///
+  /// \param plist [in/out] Optional list of parameters.  If not
+  ///   null, any missing parameters will be filled in with their
+  ///   default values.
+  template<class CrsMatrixType>
+  Teuchos::RCP<CrsMatrixType>
+  exportAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
+				  const Export<typename CrsMatrixType::local_ordinal_type, 
+				               typename CrsMatrixType::global_ordinal_type, 
+				               typename CrsMatrixType::node_type>& exporter,
+				  const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
 } // namespace Tpetra
 
 /**

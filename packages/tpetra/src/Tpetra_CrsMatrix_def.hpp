@@ -280,7 +280,6 @@ namespace Tpetra {
     checkInternalState();
   }
 
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::~CrsMatrix() {
   }
@@ -1615,13 +1614,17 @@ namespace Tpetra {
   }
 
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillComplete(
-                                            const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, 
-                                            const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, 
-                                            OptimizeOption os) 
+
+  template<class Scalar, 
+	   class LocalOrdinal, 
+	   class GlobalOrdinal, 
+	   class Node, 
+	   class LocalMatOps>
+  void 
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  fillComplete (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, 
+		const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, 
+		OptimizeOption os) 
   {
     const std::string tfecfFuncName("fillComplete()");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive() || isFillComplete(), 
@@ -2555,7 +2558,55 @@ namespace Tpetra {
     }
   }
 
-    
+  template<class CrsMatrixType>
+  Teuchos::RCP<CrsMatrixType>
+  importAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
+				  const Import<typename CrsMatrixType::local_ordinal_type, 
+				               typename CrsMatrixType::global_ordinal_type, 
+				               typename CrsMatrixType::node_type>& importer,
+				  const Teuchos::RCP<Teuchos::ParameterList>& plist)
+  {
+    using Teuchos::as;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+
+    // FIXME (mfh 11 Apr 2012) The current implementation doesn't
+    // actually fuse these operations.
+    RCP<CrsMatrixType> destMat = 
+      rcp (new CrsMatrixType (sourceMatrix.getRowMap (), 
+			      as<size_t> (0), 
+			      DynamicProfile, 
+			      plist));
+    destMat->doImport (sourceMatrix, importer, INSERT);
+    destMat->fillComplete (sourceMatrix->getDomainMap (),
+			   sourceMatrix->getRangeMap ());
+    return destMat;
+  }
+
+  template<class CrsMatrixType>
+  Teuchos::RCP<CrsMatrixType>
+  exportAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
+				  const Export<typename CrsMatrixType::local_ordinal_type, 
+				               typename CrsMatrixType::global_ordinal_type, 
+				               typename CrsMatrixType::node_type>& exporter,
+				  const Teuchos::RCP<Teuchos::ParameterList>& plist)
+  {
+    using Teuchos::as;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+
+    // FIXME (mfh 11 Apr 2012) The current implementation doesn't
+    // actually fuse these operations.
+    RCP<CrsMatrixType> destMat = 
+      rcp (new CrsMatrixType (sourceMatrix.getRowMap (), 
+			      as<size_t> (0), 
+			      DynamicProfile, 
+			      plist));
+    destMat->doExport (sourceMatrix, exporter, INSERT);
+    destMat->fillComplete (sourceMatrix->getDomainMap (),
+			   sourceMatrix->getRangeMap ());
+    return destMat;
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
