@@ -40,86 +40,78 @@
 // ************************************************************************
 //@HEADER
 
-/** \file shylu_util.h
 
-    \brief Utilities for ShyLU
+#ifndef SHYLU_LOCAL_SCHUR_OPERATOR_H
+#define SHYLU_LOCAL_SCHUR_OPERATOR_H
 
-    \author Siva Rajamanickam
+#include <Epetra_Operator.h>
+#include <Epetra_CrsMatrix.h>
+#include <Epetra_LinearProblem.h>
+#include <Amesos_BaseSolver.h>
+#include <Epetra_MultiVector.h>
+#include <Epetra_Map.h>
+#include <Epetra_Comm.h>
+#include <Teuchos_Time.hpp>
+#include <Teuchos_RCP.hpp>
+#include "shylu_util.h"
 
-*/
-#ifndef SHYLU_UTIL_H
-#define SHYLU_UTIL_H
+class ShyLU_Local_Schur_Operator : public virtual Epetra_Operator
+{
 
-#include <assert.h>
-#include <mpi.h>
-#include <iostream>
-#include <sstream>
+    public:
 
-// To dump all the matrices into files.
-//#define DUMP_MATRICES
+    // TODO: Change to RCPs
+    ShyLU_Local_Schur_Operator(Epetra_CrsMatrix *G, Epetra_CrsMatrix *R,
+    Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
+    Epetra_Map *LocalDRowMap, int nvectors);
 
-//#define TIMING_OUTPUT
+    int SetUseTranspose(bool useTranspose);
 
-#include "Isorropia_config.h" // Just for HAVE_MPI
+    int Apply(const Epetra_MultiVector &X, Epetra_MultiVector &Y) const;
 
-// Epetra includes
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-#include "Epetra_SerialComm.h"
-#include "Epetra_Time.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Map.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_LinearProblem.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
+    int ApplyInverse(const Epetra_MultiVector &X, Epetra_MultiVector &Y) const;
 
-// Teuchos includes
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_LAPACK.hpp"
-#include "Teuchos_Time.hpp"
+    double NormInf() const;
 
-// EpetraExt includes
-#include "EpetraExt_RowMatrixOut.h"
-#include "EpetraExt_MultiVectorOut.h"
-#include "EpetraExt_CrsMatrixIn.h"
+    const char *Label() const;
 
-// Amesos includes
-#include "Amesos.h"
-#include "Amesos_BaseSolver.h"
+    bool UseTranspose() const;
 
-// AztecOO includes
-#include "AztecOO.h"
+    bool HasNormInf() const;
 
-#include "Isorropia_EpetraProber.hpp"
+    const Epetra_Comm& Comm() const;
 
-using namespace std;
+    const Epetra_Map& OperatorDomainMap() const;
 
-Epetra_CrsMatrix* balanceAndRedistribute(Epetra_CrsMatrix* A, 
-                        Teuchos::ParameterList isoList);
+    const Epetra_Map& OperatorRangeMap() const;
 
-void checkMaps(Epetra_CrsMatrix *A);
+    void PrintTimingInfo();
 
-void findLocalColumns(Epetra_CrsMatrix *A, int *gvals, int &SNumGlobalCols);
+    void ResetTempVectors(int nvectors);
 
-void findNarrowSeparator(Epetra_CrsMatrix *A, int *gvals);
+    mutable int cntApply;
 
-void findBlockElems(Epetra_CrsMatrix *A, int nrows, int *rows, int *gvals,
-        int Lnr, int *LeftElems,
-        int Rnr, int *RightElems, string s1, string s2, bool cols);
+    Epetra_CrsMatrix *G_;
+    Epetra_CrsMatrix *R_;
+    Epetra_LinearProblem *LP_;
+    Amesos_BaseSolver *solver_;
+    Epetra_CrsMatrix *C_;
+    Epetra_Map *localDRowMap_;
 
-#ifdef SHYLU_DEBUG
-
-#define ASSERT(A) assert(A)
-
-#else
-
-#define ASSERT(A)
-
+    int nvectors_;
+    Teuchos::RCP<Epetra_MultiVector> temp;
+    Teuchos::RCP<Epetra_MultiVector> temp2;
+    //Teuchos::RCP<Epetra_MultiVector> ltemp;
+    Teuchos::RCP<Epetra_MultiVector> localX;
+#ifdef TIMING_OUTPUT
+    Teuchos::RCP<Teuchos::Time> matvec_time_;
+    Teuchos::RCP<Teuchos::Time> localize_time_;
+    Teuchos::RCP<Teuchos::Time> trisolve_time_;
+    Teuchos::RCP<Teuchos::Time> dist_time_;
+    Teuchos::RCP<Teuchos::Time> matvec2_time_;
+    Teuchos::RCP<Teuchos::Time> apply_time_;
+    Teuchos::RCP<Teuchos::Time> update_time_;
 #endif
 
-#endif //SHYLU_UTIL_H
+};
+#endif // SHYLU_LOCAL_SCHUR_OPERATOR_H

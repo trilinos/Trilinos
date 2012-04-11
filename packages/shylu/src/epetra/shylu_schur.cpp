@@ -46,6 +46,7 @@
 //#include "EpetraExt_Transpose_RowMatrix.h"
 #include "Epetra_Vector.h"
 #include "shylu_probing_operator.h"
+#include "shylu_local_schur_operator.h"
 #include <EpetraExt_Reindex_CrsMatrix.h>
 
 /* Apply an identity matrix to the Schur complement operator. Drop the entries
@@ -274,29 +275,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
     int r_localcolElems = (R->ColMap()).NumMyElements();
 
     Epetra_SerialComm LComm;
-    Epetra_Map C_localRMap (-1, c_localElems, c_rows, 0, LComm);
-    Epetra_Map C_localCMap (-1, c_localcolElems, c_cols, 0, LComm);
     Epetra_Map G_localRMap (-1, g_localElems, g_rows, 0, LComm);
-    Epetra_Map R_localRMap (-1, r_localElems, r_rows, 0, LComm);
-    Epetra_Map R_localCMap (-1, r_localcolElems, r_cols, 0, LComm);
-
-    //cout << "#local rows" << g_localElems << "#non zero local cols" << c_localcolElems << endl;
-
-#ifdef DEBUG
-    cout << "DEBUG MODE" << endl;
-    int nrows = C->RowMap().NumMyElements();
-    assert(nrows == localDRowMap->NumGlobalElements());
-
-    int gids[nrows], gids1[nrows];
-    C_localRMap.MyGlobalElements(gids);
-    localDRowMap->MyGlobalElements(gids1);
-    cout << "Comparing R's domain map with D's row map" << endl;
-
-    for (int i = 0; i < nrows; i++)
-    {
-       assert(gids[i] == gids1[i]);
-    }
-#endif
 
     int nentries1, gid;
     // maxentries is the maximum of all three possible matrices as the arrays
@@ -310,35 +289,6 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
     int *indices1 = new int[maxentries];
     int *indices2 = new int[maxentries];
     int *indices3 = new int[maxentries];
-
-    //cout << "Creating local matrices" << endl;
-    int err;
-    Epetra_CrsMatrix localC(Copy, C_localRMap, C->MaxNumEntries(), false);
-    for (i = 0; i < c_localElems ; i++)
-    {
-        gid = c_rows[i];
-        err = C->ExtractGlobalRowCopy(gid, maxentries, nentries1, values1,
-                                        indices1);
-        assert (err == 0);
-        //if (nentries1 > 0) // TODO: Later
-        //{
-        err = localC.InsertGlobalValues(gid, nentries1, values1, indices1);
-        assert (err == 0);
-        //}
-    }
-    localC.FillComplete(G_localRMap, C_localRMap);
-
-    //cout << "Created local C matrix" << endl;
-
-    Epetra_CrsMatrix localR(Copy, R_localRMap, R->MaxNumEntries(), false);
-    for (i = 0; i < r_localElems ; i++)
-    {
-        gid = r_rows[i];
-        R->ExtractGlobalRowCopy(gid, maxentries, nentries1, values1, indices1);
-        localR.InsertGlobalValues(gid, nentries1, values1, indices1);
-    }
-    localR.FillComplete(*localDRowMap, R_localRMap);
-    //cout << "Created local R matrix" << endl;
 
     // Sbar - Approximate Schur complement
     Teuchos::RCP<Epetra_CrsMatrix> Sbar = Teuchos::rcp(new Epetra_CrsMatrix(
@@ -376,7 +326,9 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
     //cout << "Created local G matrix" << endl;
 
     int nvectors = 16;
-    ShyLU_Probing_Operator probeop(&localG, &localR, LP, solver, &localC,
+    /*ShyLU_Probing_Operator probeop(&localG, &localR, LP, solver, &localC,
+                                        localDRowMap, nvectors);*/
+    ShyLU_Local_Schur_Operator probeop(&localG, R, LP, solver, C,
                                         localDRowMap, nvectors);
 
 #ifdef DUMP_MATRICES
@@ -758,12 +710,13 @@ Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing
         Epetra_MultiVector Scol(G_localRMap, nvectors);
         for (i = 0 ; i < findex*nvectors ; i+=nvectors)
         {
-            probevec.PutScalar(0.0);
+            probevec.PutScalar(0.0); // TODO: Move it out
             for (int k = 0; k < nvectors; k++)
             {
                 cindex = k+i;
                 // TODO: Can do better than this, just need to go to the column map
                 // of C, there might be null columns in C
+                // Not much of use for Shasta 2x2 .. Later.
                 probevec.ReplaceGlobalValue(g_rows[cindex], k, 1.0);
                 //if (mypid == 0)
                 //cout << "Changing row to 1.0 " << g_rows[cindex] << endl;

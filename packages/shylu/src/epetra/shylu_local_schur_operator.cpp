@@ -47,11 +47,11 @@
 #include <Amesos_BaseSolver.h>
 #include <Epetra_MultiVector.h>
 #include <Teuchos_Time.hpp>
-#include "shylu_probing_operator.h"
+#include "shylu_local_schur_operator.h"
+#include "shylu_util.h"
 
-// TODO: 1. ltemp is not needed in the all local case.
 
-ShyLU_Probing_Operator::ShyLU_Probing_Operator(Epetra_CrsMatrix *G, 
+ShyLU_Local_Schur_Operator::ShyLU_Local_Schur_Operator(Epetra_CrsMatrix *G, 
     Epetra_CrsMatrix *R,
     Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
     Epetra_Map *localDRowMap, int nvectors)
@@ -80,20 +80,24 @@ ShyLU_Probing_Operator::ShyLU_Probing_Operator(Epetra_CrsMatrix *G,
 #endif
 }
 
-int ShyLU_Probing_Operator::SetUseTranspose(bool useTranspose)
+int ShyLU_Local_Schur_Operator::SetUseTranspose(bool useTranspose)
 {
     return 0;
 }
 
-int ShyLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
+int ShyLU_Local_Schur_Operator::Apply(const Epetra_MultiVector &X,
             Epetra_MultiVector &Y) const
 {
 #ifdef TIMING_OUTPUT
     apply_time_->start();
 #endif
 
+    //cout << "In local schur's Apply" << endl;
+
     int nvectors = X.NumVectors();
-    bool local = (C_->Comm().NumProc() == 1);
+    // TODO: For local_scur_operation this will always be local !!!
+    // Remove these cases or merge with schur operator.
+    bool local = (G_->Comm().NumProc() == 1);
     int err;
     //cout << "No of colors after probing" << nvectors << endl;
 
@@ -102,23 +106,9 @@ int ShyLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
 #endif
 
     err = G_->Multiply(false, X, *temp2);
-    assert(err == 0);
-    if (!local)
-        err = C_->Multiply(false, X, *temp);
-    else
-    {
-        // localize X
-        double *values;
-        int mylda;
-        X.ExtractView(&values, &mylda);
-
-       Epetra_SerialComm LComm;        // Use Serial Comm for the local blocks.
-       Epetra_Map SerialMap(X.Map().NumMyElements(), X.Map().NumMyElements(),
-                   X.Map().MyGlobalElements(), 0, LComm);
-       Epetra_MultiVector Xl(View, SerialMap, values, mylda, X.NumVectors());
-       err = C_->Multiply(false, Xl, *temp);
-    }
-    assert(err == 0);
+    assert((err == 0));
+    err = C_->Multiply(false, X, *temp);
+    assert((err == 0));
 
 #ifdef TIMING_OUTPUT
     matvec_time_->stop();
@@ -128,7 +118,7 @@ int ShyLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
 
 #ifdef DEBUG
     cout << "DEBUG MODE" << endl;
-    assert(nrows == localDRowMap_->NumGlobalElements());
+    ASSERT((nrows == localDRowMap_->NumGlobalElements()));
 
     int gids[nrows], gids1[nrows];
     C_->RowMap().MyGlobalElements(gids);
@@ -136,7 +126,7 @@ int ShyLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
 
     for (int i = 0; i < nrows; i++)
     {
-       assert(gids[i] == gids1[i]);
+       ASSERT((gids[i] == gids1[i]));
     }
 #endif
 
@@ -145,15 +135,15 @@ int ShyLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
 #endif
 
     //int err;
-    int lda;
+    /*int lda;
     double *values;
     if (!local)
     {
         err = temp->ExtractView(&values, &lda);
-        assert (err == 0);
+        assert((err == 0));
 
         // copy to local vector //TODO: OMP parallel
-        assert(lda == nrows);
+        ASSERT((lda == nrows));
 
     //#pragma omp parallel for shared(nvectors, nrows, values)
         for (int v = 0; v < nvectors; v++)
@@ -161,24 +151,24 @@ int ShyLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
            for (int i = 0; i < nrows; i++)
            {
                err = ltemp->ReplaceMyValue(i, v, values[i+v*lda]);
-               assert (err == 0);
+               assert((err == 0));
            }
         }
-    }
+    }*/
 
 #ifdef TIMING_OUTPUT
     localize_time_->stop();
     trisolve_time_->start();
 #endif
 
-    if (!local)
+    /*if (!local)
     {
         LP_->SetRHS(ltemp.getRawPtr());
     }
     else
-    {
+    {*/
         LP_->SetRHS(temp.getRawPtr());
-    }
+    /*}*/
     LP_->SetLHS(localX.getRawPtr());
     solver_->Solve();
 
@@ -187,10 +177,10 @@ int ShyLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
     dist_time_->start();
 #endif
 
-    if (!local)
+    /*if (!local)
     {
         err = localX->ExtractView(&values, &lda);
-        assert (err == 0);
+        assert((err == 0));
 
         //Copy back to dist vector //TODO: OMP parallel
     //#pragma omp parallel for
@@ -199,34 +189,24 @@ int ShyLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
            for (int i = 0; i < nrows; i++)
            {
                err = temp->ReplaceMyValue(i, v, values[i+v*lda]);
-               assert (err == 0);
+               assert((err == 0));
            }
         }
-    }
+    }*/
 
 #ifdef TIMING_OUTPUT
     dist_time_->stop();
     matvec2_time_->start();
 #endif
 
-    if (!local)
+    /*if (!local)
     {
         R_->Multiply(false, *temp, Y);
     }
     else
-    {
-        // Should Y be localY in Multiply and then exported to Y ?? TODO:
-        // Use view mode ?
-        double *values;
-        int mylda;
-        Y.ExtractView(&values, &mylda);
-
-       Epetra_SerialComm LComm;        // Use Serial Comm for the local blocks.
-       Epetra_Map SerialMap(Y.Map().NumMyElements(), Y.Map().NumMyElements(),
-                   Y.Map().MyGlobalElements(), 0, LComm);
-       Epetra_MultiVector Yl(View, SerialMap, values, mylda, Y.NumVectors());
-        R_->Multiply(false, *localX, Yl);
-    }
+    {*/
+        R_->Multiply(false, *localX, Y);
+    /*}*/
 
 #ifdef TIMING_OUTPUT
     matvec2_time_->stop();
@@ -235,17 +215,18 @@ int ShyLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
 
     err = Y.Update(1.0, *temp2, -1.0);
     //cout << Y.MyLength() << " " << temp2.MyLength() << endl;
-    assert(err == 0);
+    assert((err == 0));
 
 #ifdef TIMING_OUTPUT
     update_time_->stop();
     apply_time_->stop();
 #endif
+    //cout << "Out of local schur's Apply" << endl;
     cntApply++;
     return 0;
 }
 
-void ShyLU_Probing_Operator::PrintTimingInfo()
+void ShyLU_Local_Schur_Operator::PrintTimingInfo()
 {
 #ifdef TIMING_OUTPUT
     cout << matvec_time_->name()<< matvec_time_->totalElapsedTime() << endl;
@@ -258,7 +239,7 @@ void ShyLU_Probing_Operator::PrintTimingInfo()
 #endif
 }
 
-void ShyLU_Probing_Operator::ResetTempVectors(int nvectors)
+void ShyLU_Local_Schur_Operator::ResetTempVectors(int nvectors)
 {
     using Teuchos::RCP;
     nvectors_ = nvectors;
@@ -267,50 +248,50 @@ void ShyLU_Probing_Operator::ResetTempVectors(int nvectors)
                                      nvectors));
     temp2 = RCP<Epetra_MultiVector>(new Epetra_MultiVector(G_->RowMap(),
                                      nvectors));
-    ltemp = RCP<Epetra_MultiVector>(new Epetra_MultiVector(*localDRowMap_,
-                                     nvectors));
+    //ltemp = RCP<Epetra_MultiVector>(new Epetra_MultiVector(*localDRowMap_,
+                                     //nvectors));
     localX = RCP<Epetra_MultiVector>(new Epetra_MultiVector(*localDRowMap_,
                                      nvectors));
 }
 
-int ShyLU_Probing_Operator::ApplyInverse(const Epetra_MultiVector &X,
+int ShyLU_Local_Schur_Operator::ApplyInverse(const Epetra_MultiVector &X,
              Epetra_MultiVector &Y) const
 {
     return 0;
 }
 
-double ShyLU_Probing_Operator::NormInf() const
+double ShyLU_Local_Schur_Operator::NormInf() const
 {
    return -1;
 }
 
-const char* ShyLU_Probing_Operator::Label() const
+const char* ShyLU_Local_Schur_Operator::Label() const
 {
-    return "Shylu probing";
+    return "Shylu Local Schur Operator (Wide Separator)";
 }
 
-bool ShyLU_Probing_Operator::UseTranspose() const
-{
-    return false;
-}
-
-bool ShyLU_Probing_Operator::HasNormInf() const
+bool ShyLU_Local_Schur_Operator::UseTranspose() const
 {
     return false;
 }
 
-const Epetra_Comm& ShyLU_Probing_Operator::Comm() const
+bool ShyLU_Local_Schur_Operator::HasNormInf() const
+{
+    return false;
+}
+
+const Epetra_Comm& ShyLU_Local_Schur_Operator::Comm() const
 {
     return G_->Comm();
 }
 
-const Epetra_Map& ShyLU_Probing_Operator::OperatorDomainMap() const
+const Epetra_Map& ShyLU_Local_Schur_Operator::OperatorDomainMap() const
 {
     //return C_->ColMap();
     return G_->DomainMap();
 }
 
-const Epetra_Map& ShyLU_Probing_Operator::OperatorRangeMap() const
+const Epetra_Map& ShyLU_Local_Schur_Operator::OperatorRangeMap() const
 {
     //return R_->RowMap();
     return G_->RangeMap();

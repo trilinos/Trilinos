@@ -91,6 +91,7 @@ int create_matrices
     Epetra_Map LocalDRowMap(-1, Dnr, DRowElems, 0, LComm);
     Epetra_Map DRowMap(-1, Dnr, DRowElems, 0, A->Comm());
     Epetra_Map SRowMap(-1, Snr, SRowElems, 0, A->Comm());
+    Epetra_Map LocalSRowMap(-1, Snr, SRowElems, 0, LComm);
 
     // Create the local column map
     Epetra_Map LocalDColMap(-1, Dnc, DColElems, 0, LComm);
@@ -235,17 +236,31 @@ int create_matrices
     ssym->G = Teuchos::RCP<Epetra_CrsMatrix> (new Epetra_CrsMatrix(Copy,
                                 SRowMap, GNumEntriesPerRow, true));
     //config->dm.print(5, "Created S matrix");
+    if (config->sep_type != 1)
+    {
 
-    ssym->C = Teuchos::RCP<Epetra_CrsMatrix> (new Epetra_CrsMatrix(Copy,
+        ssym->C = Teuchos::RCP<Epetra_CrsMatrix> (new Epetra_CrsMatrix(Copy,
                                 DRowMap, CNumEntriesPerRow, true));
-    //config->dm.print(5, "Created C matrix");
+        //config->dm.print(5, "Created C matrix");
 
-    ssym->R = Teuchos::RCP<Epetra_CrsMatrix> (new Epetra_CrsMatrix(Copy,
+        ssym->R = Teuchos::RCP<Epetra_CrsMatrix> (new Epetra_CrsMatrix(Copy,
                                 SRowMap, RNumEntriesPerRow, true));
-    //config->dm.print(5, "Created R matrix");
+        //config->dm.print(5, "Created R matrix");
+    }
+    else
+    {
+        ssym->C = Teuchos::RCP<Epetra_CrsMatrix> (new Epetra_CrsMatrix(Copy,
+                                    LocalDRowMap, CNumEntriesPerRow, true));
+        //config->dm.print(5, "Created C matrix");
+
+        ssym->R = Teuchos::RCP<Epetra_CrsMatrix> (new Epetra_CrsMatrix(Copy,
+                                    LocalSRowMap, RNumEntriesPerRow, true));
+        //config->dm.print(5, "Created R matrix");
+    }
 
     if (config->schurApproxMethod == 1)
     {
+        // TODO: Check for the local case.
         ssym->Sg = Teuchos::RCP<Epetra_CrsGraph> (new Epetra_CrsGraph(Copy,
                                 SRowMap, SBarNumEntriesPerRow, false));
         //config->dm.print(5, "Created Sg graph");
@@ -393,9 +408,23 @@ int extract_matrices
     if (insertValues)
     {
         /* ------------- Create the maps for the DBBD form ------------------ */
-        Epetra_Map DRowMap(-1, data->Dnr, data->DRowElems, 0, A->Comm());
-        Epetra_Map SRowMap(-1, data->Snr, data->SRowElems, 0, A->Comm());
-        Epetra_Map DColMap(-1, data->Dnc, DColElems, 0, A->Comm());
+        Epetra_Map *DRowMap, *SRowMap, *DColMap;
+        Epetra_SerialComm LComm;
+        if (config->sep_type != 1)
+        {
+            DRowMap = new Epetra_Map(-1, data->Dnr, data->DRowElems, 0,
+                             A->Comm());
+            SRowMap = new Epetra_Map(-1, data->Snr, data->SRowElems, 0,
+                             A->Comm());
+            DColMap = new Epetra_Map(-1, data->Dnc, DColElems, 0,
+                             A->Comm());
+        }
+        else
+        {
+            DRowMap = new Epetra_Map(-1, data->Dnr, data->DRowElems, 0, LComm);
+            SRowMap = new Epetra_Map(-1, data->Snr, data->SRowElems, 0, LComm);
+            DColMap = new Epetra_Map(-1, data->Dnc, DColElems, 0, LComm);
+        }
 
         D->FillComplete();
         //config->dm.print(5, "Done D fillcomplete");
@@ -403,11 +432,11 @@ int extract_matrices
         G->FillComplete();
         //config->dm.print(5, "Done G fillcomplete");
 
-        C->FillComplete(SRowMap, DRowMap); //TODO: Won't work if permutation is
+        C->FillComplete(*SRowMap, *DRowMap); //TODO:Won't work if permutation is
                                                 // unsymmetric SRowMap
         //config->dm.print(5, "Done C fillcomplete");
 
-        R->FillComplete(DColMap, SRowMap);
+        R->FillComplete(*DColMap, *SRowMap);
         //config->dm.print(5, "Done R fillcomplete");
 
         int Sdiag = (int) data->Snr * Sdiagfactor;
@@ -440,6 +469,10 @@ int extract_matrices
 
         if (config->schurApproxMethod == 1)
             Sg->FillComplete();
+
+        delete DRowMap;
+        delete SRowMap;
+        delete DColMap;
     }
     // A is no longer needed
     delete[] LeftIndex;
@@ -689,6 +722,10 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
     Solver->NumericFactorization();
     //config->dm.print(3, "Numeric Factorization done");
     cout << "Numeric Factorization done" << endl;
+
+#ifdef SHYLU_DEBUG
+    Solver->PrintStatus();
+#endif
 
 #ifdef TIMING_OUTPUT
     ftime.stop();

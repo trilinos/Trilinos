@@ -51,7 +51,7 @@
 #include "shylu_util.h"
 #include "shylu.h"
 
-int shylu_solve(
+static int shylu_dist_solve(
     shylu_symbolic *ssym,
     shylu_data *data,
     shylu_config *config,
@@ -94,7 +94,6 @@ int shylu_solve(
     assert(BdImporter.SourceMap().SameAs(newX->Map()));
     assert((newX->Map()).SameAs(BdImporter.SourceMap()));
     Bd.Import(*newX, BdImporter, Insert);
-
 
     int lda;
     double *values;
@@ -140,11 +139,11 @@ int shylu_solve(
     Epetra_LinearProblem Problem(data->Sbar.get(), &Xs, &Bs);
     if (config->schurSolver == "Amesos")
     {
-        Amesos_BaseSolver *solver = data->dsolver;
+        Amesos_BaseSolver *solver2 = data->dsolver;
         data->LP2->SetLHS(&Xs);
         data->LP2->SetRHS(&Bs);
         //cout << "Calling solve *****************************" << endl;
-        solver->Solve();
+        solver2->Solve();
         //cout << "Out of solve *****************************" << endl;
     }
     else
@@ -240,4 +239,137 @@ int shylu_solve(
         delete solver;
     }
     return 0;
+}
+
+static int shylu_local_solve(
+    shylu_symbolic *ssym,
+    shylu_data *data,
+    shylu_config *config,
+    const Epetra_MultiVector& X,
+    Epetra_MultiVector& Y
+)
+{
+    int err;
+    int nvectors = X.NumVectors();
+    Epetra_SerialComm LComm;        // Use Serial Comm for the local blocks.
+    //cout <<" In local solve " << endl;
+
+    Epetra_Map LocalDMap(-1, data->Dnr, data->DRowElems, 0, LComm);
+    Epetra_Map LocalSMap(-1, data->Snr, data->SRowElems, 0, LComm);
+    Epetra_Map SMap(-1, data->Snr, data->SRowElems, 0, X.Comm());
+
+    Epetra_Import BdImporter(LocalDMap, X.Map()); // TODO: Construct only once
+
+    // Get local portion of X
+    Epetra_MultiVector localrhs(LocalDMap, nvectors);
+    localrhs.Import(X, BdImporter, Insert);
+
+    Epetra_MultiVector locallhs(LocalDMap, nvectors); // z in ShyLU paper.
+    Epetra_MultiVector temp3(LocalDMap, nvectors); // z in ShyLU paper.
+
+    ssym->LP->SetRHS(&localrhs);
+    ssym->LP->SetLHS(&locallhs);
+    ssym->Solver->Solve();
+
+    Epetra_MultiVector temp1(LocalSMap, nvectors);
+    err = ssym->R->Multiply(false, locallhs, temp1);
+    assert (err == 0);
+
+    // Export temp1 to a dist vector - temp2
+    Epetra_MultiVector temp2(SMap, nvectors);
+    Epetra_Import DistImporter(SMap, LocalSMap);
+    //temp2.Import(X, DistImporter, Insert);
+    temp2.Import(temp1, DistImporter, Insert);
+
+    Epetra_MultiVector Bs(SMap, nvectors); // b_2 - R * z in ShyLU paper
+    Epetra_MultiVector Xs(SMap, nvectors);
+    Epetra_Import BsImporter(SMap, X.Map());
+    Bs.Import(X, BsImporter, Insert);
+
+    Bs.Update(-1.0, temp2, 1.0);
+
+    AztecOO *solver;
+    Epetra_LinearProblem Problem(data->Sbar.get(), &Xs, &Bs);
+    if (config->schurSolver == "Amesos")
+    {
+        Amesos_BaseSolver *solver2 = data->dsolver;
+        data->LP2->SetLHS(&Xs);
+        data->LP2->SetRHS(&Bs);
+        //cout << "Calling solve *****************************" << endl;
+        solver2->Solve();
+        //cout << "Out of solve *****************************" << endl;
+    }
+    else
+    {
+        if (config->libName == "Belos")
+        {
+            solver = data->innersolver;
+            solver->SetLHS(&Xs);
+            solver->SetRHS(&Bs);
+        }
+        else
+        {
+            // See the comment above on why we are not able to reuse the solver
+            // when outer solve is AztecOO as well.
+            solver = new AztecOO();
+            //solver.SetPrecOperator(precop_);
+            solver->SetAztecOption(AZ_solver, AZ_gmres);
+            // Do not use AZ_none
+            solver->SetAztecOption(AZ_precond, AZ_dom_decomp);
+            //solver->SetAztecOption(AZ_precond, AZ_none);
+            //solver->SetAztecOption(AZ_precond, AZ_Jacobi);
+            ////solver->SetAztecOption(AZ_precond, AZ_Neumann);
+            //solver->SetAztecOption(AZ_overlap, 3);
+            //solver->SetAztecOption(AZ_subdomain_solve, AZ_ilu);
+            //solver->SetAztecOption(AZ_output, AZ_all);
+            //solver->SetAztecOption(AZ_diagnostics, AZ_all);
+            solver->SetProblem(Problem);
+        }
+
+        // What should be a good inner_tolerance :-) ?
+        solver->Iterate(config->inner_maxiters, config->inner_tolerance);
+    }
+
+    // Import Xs locally
+    Epetra_MultiVector LocalXs(LocalSMap, nvectors);
+    Epetra_Import XsImporter(LocalSMap, SMap);
+    LocalXs.Import(Xs, XsImporter, Insert);
+
+    err = ssym->C->Multiply(false, LocalXs, temp3);
+    assert (err == 0);
+    temp3.Update(1.0, localrhs, -1.0);
+
+    ssym->LP->SetRHS(&temp3);
+    ssym->LP->SetLHS(&locallhs);
+    ssym->Solver->Solve();
+
+    Epetra_Export XdExporter(LocalDMap, Y.Map());
+    Y.Export(locallhs, XdExporter, Insert);
+
+    Epetra_Export XsExporter2(LocalSMap, Y.Map());
+    Y.Export(LocalXs, XsExporter2, Insert);
+
+    if (config->libName == "Belos" || config->schurSolver == "Amesos")
+    {
+        // clean up
+    }
+    else
+    {
+        delete solver;
+    }
+    return 0;
+}
+
+int shylu_solve(
+    shylu_symbolic *ssym,
+    shylu_data *data,
+    shylu_config *config,
+    const Epetra_MultiVector& X,
+    Epetra_MultiVector& Y
+)
+{
+    if (config->sep_type != 1)
+        shylu_dist_solve(ssym, data, config, X, Y);
+    else
+        shylu_local_solve(ssym, data, config, X, Y);
 }
