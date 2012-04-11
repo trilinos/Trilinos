@@ -136,15 +136,13 @@ namespace MueLu {
     if (currentLevel.IsAvailable("number of partitions")) {
       numPartitions = currentLevel.Get<GO>("number of partitions");
     } else {
-
-      GetOStream(Runtime0, 0) << "Did not find \"number of partitions\" in Level, calculating it now!" << std::endl;
       if ((GO)A->getGlobalNumRows() < minRowsPerProcessor_) numPartitions = 1;
       else                                                  numPartitions = A->getGlobalNumRows() / minRowsPerProcessor_;
       if (numPartitions > comm->getSize())
         numPartitions = comm->getSize();
-      GetOStream(Statistics0,0) << "Number of partitions to use = " << numPartitions << std::endl;
       currentLevel.Set<GO>("number of partitions",numPartitions);
     }
+    GetOStream(Statistics0,0) << "Number of partitions to use = " << numPartitions << std::endl;
 
     // ======================================================================================================
     // Determine the global size of each partition.
