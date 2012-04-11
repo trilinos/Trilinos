@@ -13,6 +13,7 @@
 #include "Xpetra_VectorFactory.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"
 #include "Xpetra_ExportFactory.hpp"
+#include "Xpetra_OperatorFactory.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_Utilities.hpp"
 
