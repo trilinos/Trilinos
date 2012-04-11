@@ -32,51 +32,54 @@ namespace Xpetra {
     //! @name Constructor/Destructor Methods
     //@{
 
-    //! Constructs a Import object from the source and target Maps.
-    EpetraImport(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &source, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &target);
+    //! Construct an Import from the source and target Maps.
+    EpetraImport(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &source, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &target);
 
-    //! copy constructor.
+    //! Constructor (with list of parameters).
+    EpetraImport(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &source, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &target, const Teuchos::RCP< Teuchos::ParameterList > &plist);
+
+    //! Copy constructor.
     EpetraImport(const Import< LocalOrdinal, GlobalOrdinal, Node > &import);
 
-    //! destructor.
+    //! Destructor.
     ~EpetraImport() { }
 
     //@}
 
-    //! @name Export Attribute Methods
+    //! @name Import Attribute Methods
     //@{
 
-    //! Returns the number of entries that are identical between the source and target maps, up to the first different ID.
+    //! Number of initial identical IDs.
     size_t getNumSameIDs() const { return import_->NumSameIDs(); }
 
-    //! Returns the number of entries that are local to the calling image, but not part of the first getNumSameIDs() entries.
+    //! Number of IDs to permute but not to communicate.
     size_t getNumPermuteIDs() const { return import_->NumPermuteIDs(); }
 
-    //! List of entries in the source Map that are permuted. (non-persisting view).
+    //! List of local IDs in the source Map that are permuted.
     ArrayView< const LocalOrdinal > getPermuteFromLIDs() const;
 
-    //! List of entries in the target Map that are permuted. (non-persisting view).
+    //! List of local IDs in the target Map that are permuted.
     ArrayView< const LocalOrdinal > getPermuteToLIDs() const;
 
-    //! Returns the number of entries that are not on the calling image.
+    //! Number of entries not on the calling process.
     size_t getNumRemoteIDs() const;
 
-    //! List of entries in the target Map that are coming from other images. (non-persisting view).
+    //! List of entries in the target Map to receive from other processes.
     ArrayView< const LocalOrdinal > getRemoteLIDs() const;
 
-    //! Returns the number of entries that must be sent by the calling image to other images.
+    //! Number of entries that must be sent by the calling process to other processes.
     size_t getNumExportIDs() const;
 
-    //! List of entries in the source Map that will be sent to other images. (non-persisting view).
+    //! List of entries in the source Map that will be sent to other processes.
     ArrayView< const LocalOrdinal > getExportLIDs() const;
 
-    //! List of images to which entries will be sent, getExportLIDs() [i] will be sent to image getExportImageIDs() [i]. (non-persisting view).
+    //! List of processes to which entries will be sent.
     ArrayView< const int > getExportImageIDs() const;
 
-    //! Returns the Source Map used to construct this importer.
+    //! The Source Map used to construct this Import object.
     const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getSourceMap() const { return toXpetra(import_->SourceMap()); }
 
-    //! Returns the Target Map used to construct this importer.
+    //! The Target Map used to construct this Import object.
     const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getTargetMap() const { return toXpetra(import_->TargetMap()); }
 
     //@}

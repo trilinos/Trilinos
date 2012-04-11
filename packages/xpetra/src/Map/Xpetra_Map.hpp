@@ -30,7 +30,7 @@ namespace Xpetra {
 
    //@}
 
-    //! @name Map Attribute Methods
+    //! @name Attributes
     //@{
 
     //! The number of elements in this Map.
@@ -66,7 +66,7 @@ namespace Xpetra {
     //! The global index corresponding to the given local index.
     virtual GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const = 0;
 
-    //! Return the node IDs and corresponding local IDs for a given list of global IDs.
+    //! Process IDs and corresponding local IDs for a given list of global IDs.
     virtual LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< LocalOrdinal > &LIDList) const = 0;
 
     //! Return the node IDs for a given list of global IDs.
@@ -74,6 +74,11 @@ namespace Xpetra {
 
     //! Return a view of the global indices owned by this node.
     virtual Teuchos::ArrayView< const GlobalOrdinal > getNodeElementList() const = 0;
+
+    //@}
+
+    //! @name Boolean tests
+    //@{
 
     //! True if the local index is valid for this Map on this node, else false.
     virtual bool isNodeLocalElement(LocalOrdinal localIndex) const = 0;
@@ -87,11 +92,6 @@ namespace Xpetra {
     //! Whether this Map is globally distributed or locally replicated.
     virtual bool isDistributed() const = 0;
 
-    //@}
-
-    //! @name Boolean Tests
-    //@{
-
     //! True if and only if map is compatible with this Map.
     virtual bool isCompatible(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const = 0;
 
@@ -103,10 +103,10 @@ namespace Xpetra {
     //! @name 
     //@{
 
-    //! Get the Comm object for this Map.
+    //! Get this Map's Comm object.
     virtual const Teuchos::RCP< const Teuchos::Comm< int > >  getComm() const = 0;
 
-    //! Get the Node object for this Map.
+    //! Get this Map's Node object.
     virtual const Teuchos::RCP< Node >  getNode() const = 0;
 
     //@}
@@ -117,7 +117,7 @@ namespace Xpetra {
     //! Return a simple one-line description of this object.
     virtual std::string description() const = 0;
 
-    //! Print this object with the given verbosity level to the given FancyOStream object.
+    //! Print this object with the given verbosity level to the given FancyOStream.
     virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const = 0;
 
     //@}

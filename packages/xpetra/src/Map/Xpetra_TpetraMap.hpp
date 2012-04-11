@@ -31,7 +31,7 @@ namespace Xpetra {
 
   public:
 
-    //! @name Constructor/Destructor Methods
+    //! @name Constructors and destructor
     //@{
 
     //! Map constructor with Tpetra-defined contiguous uniform distribution.
@@ -46,12 +46,12 @@ namespace Xpetra {
     TpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView< const GlobalOrdinal > &elementList, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=Kokkos::DefaultNode::getDefaultNode())
       : map_(Teuchos::rcp(new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalElements, elementList, indexBase, comm, node))) { }
 
-    //! Map destructor.
+    //! Destructor.
     ~TpetraMap() { }
 
     //@}
 
-    //! @name Map Attribute Methods
+    //! @name Attributes
     //@{
 
     //! The number of elements in this Map.
@@ -87,7 +87,7 @@ namespace Xpetra {
     //! The global index corresponding to the given local index.
     GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const { return map_->getGlobalElement(localIndex); }
 
-    //! Return the node IDs and corresponding local IDs for a given list of global IDs.
+    //! Process IDs and corresponding local IDs for a given list of global IDs.
     LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< LocalOrdinal > &LIDList) const { return toXpetra(map_->getRemoteIndexList(GIDList, nodeIDList, LIDList)); }
 
     //! Return the node IDs for a given list of global IDs.
@@ -95,6 +95,11 @@ namespace Xpetra {
 
     //! Return a view of the global indices owned by this node.
     Teuchos::ArrayView< const GlobalOrdinal > getNodeElementList() const { return map_->getNodeElementList(); }
+
+    //@}
+
+    //! @name Boolean tests
+    //@{
 
     //! True if the local index is valid for this Map on this node, else false.
     bool isNodeLocalElement(LocalOrdinal localIndex) const { return map_->isNodeLocalElement(localIndex); }
@@ -108,11 +113,6 @@ namespace Xpetra {
     //! Whether this Map is globally distributed or locally replicated.
     bool isDistributed() const { return map_->isDistributed(); }
 
-    //@}
-
-    //! @name Boolean Tests
-    //@{
-
     //! True if and only if map is compatible with this Map.
     bool isCompatible(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const { return map_->isCompatible(toTpetra(map)); }
 
@@ -124,10 +124,10 @@ namespace Xpetra {
     //! @name 
     //@{
 
-    //! Get the Comm object for this Map.
+    //! Get this Map's Comm object.
     const Teuchos::RCP< const Teuchos::Comm< int > >  getComm() const { return map_->getComm(); }
 
-    //! Get the Node object for this Map.
+    //! Get this Map's Node object.
     const Teuchos::RCP< Node >  getNode() const { return map_->getNode(); }
 
     //@}
@@ -138,7 +138,7 @@ namespace Xpetra {
     //! Return a simple one-line description of this object.
     std::string description() const { return map_->description(); }
 
-    //! Print this object with the given verbosity level to the given FancyOStream object.
+    //! Print this object with the given verbosity level to the given FancyOStream.
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { map_->describe(out, verbLevel); }
 
     //@}
