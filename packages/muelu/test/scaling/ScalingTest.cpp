@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
   int maxNbrAlreadySelected=0;
   int writeMatrix=0;
   int printTimings=0;
-  GO minRowsPerProc=2000;
+  LO minRowsPerProc=2000;
   double nonzeroImbalance=1.2;
 
   clp.setOption("aggOrdering",&aggOrdering,"aggregation ordering strategy (natural,random,graph)");

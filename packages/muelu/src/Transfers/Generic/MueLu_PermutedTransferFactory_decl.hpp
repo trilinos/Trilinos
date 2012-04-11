@@ -2,9 +2,11 @@
 #define MUELU_PERMUTEDTRANSFER_FACTORY_DECL_HPP
 
 #include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_OperatorFactory_fwd.hpp>
 #include "Xpetra_MultiVector_fwd.hpp"
 #include "Xpetra_MultiVectorFactory_fwd.hpp"
 #include "Xpetra_Import_fwd.hpp"
+#include "Xpetra_ImportFactory_fwd.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"

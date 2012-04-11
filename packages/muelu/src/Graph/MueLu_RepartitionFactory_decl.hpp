@@ -39,7 +39,7 @@ namespace MueLu {
     //! Constructor.
     RepartitionFactory(RCP<const FactoryBase> loadBalancer=Teuchos::null,
                        RCP<const FactoryBase> AFact=Teuchos::null,
-                       GO minRowsPerProcessor=1000, SC nnzMaxMinRatio=1.2, GO startLevel=1, LO useDiffusiveHeuristic=0, GO minNnzPerProcessor=-1);
+                       LO minRowsPerProcessor=1000, SC nnzMaxMinRatio=1.2, GO startLevel=1, LO useDiffusiveHeuristic=0, GO minNnzPerProcessor=-1);
 
     //! Destructor.
     virtual ~RepartitionFactory();
@@ -117,7 +117,7 @@ namespace MueLu {
     RCP<const FactoryBase> loadBalancer_;
     RCP<const FactoryBase> AFact_;
     //! Minimum number of rows over all processes.  If any process falls below this, repartitioning is initiated.
-    GO     minRowsPerProcessor_;
+    LO     minRowsPerProcessor_;
     //! Imbalance threshold, below which repartitioning is initiatied.  Imbalance is measured by ratio of maximum nonzeros over all processes to minimum number of nonzeros over all processes.
     Scalar nnzMaxMinRatio_;
     //! First level at which repartitioning can possibly occur.  Repartitioning at finer levels is suppressed.

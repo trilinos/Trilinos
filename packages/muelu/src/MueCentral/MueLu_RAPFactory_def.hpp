@@ -2,6 +2,8 @@
 #define MUELU_RAPFACTORY_DEF_HPP
 
 #include <Xpetra_Operator.hpp>
+#include <Xpetra_CrsOperator.hpp>
+#include <Xpetra_OperatorFactory.hpp>
 #include <Xpetra_BlockedCrsOperator.hpp>
 
 #include "MueLu_RAPFactory_decl.hpp"
