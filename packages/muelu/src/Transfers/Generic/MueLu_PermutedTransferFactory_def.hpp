@@ -4,7 +4,9 @@
 #include "Xpetra_MultiVector.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"
 #include <Xpetra_Operator.hpp>
+#include <Xpetra_OperatorFactory.hpp>
 #include <Xpetra_Import.hpp>
+#include <Xpetra_ImportFactory.hpp>
 
 #include "MueLu_PermutedTransferFactory_decl.hpp"
 #include "MueLu_Utilities.hpp"

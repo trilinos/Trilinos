@@ -2,6 +2,8 @@
 #define MUELU_RAPFACTORY_DECL_HPP
 
 #include <Xpetra_Operator_fwd.hpp>
+#include <Xpetra_CrsOperator_fwd.hpp>
+#include <Xpetra_OperatorFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"

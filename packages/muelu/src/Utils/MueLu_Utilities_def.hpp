@@ -212,7 +212,7 @@ namespace MueLu {
                                          bool doOptimizeStorage)
   {
 #ifdef HAVE_MPI
-int mypid;
+int mypid=-1;
 static double t0=0,t1=0;
 t0 = MPI_Wtime();
 #endif

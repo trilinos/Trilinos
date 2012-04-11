@@ -183,24 +183,24 @@ namespace MueLu {
     // TODO: const coordinates...
 
     RCP<Level>     lvl0 = H.GetLevel(0);
-    int dim=-1; // DEBUG ONLY
+    //int dim=-1; // DEBUG ONLY
 
     if(operatorList_.isParameter("XCoordinates")) {
       ArrayRCP<SC> coords = operatorList_.get<ArrayRCP<SC> >("XCoordinates");
       lvl0->Set("XCoordinates", coords);
-      dim=1;
+      //dim=1;
     }
     if(operatorList_.isParameter("YCoordinates")) {
       TEUCHOS_TEST_FOR_EXCEPTION(!operatorList_.isParameter("XCoordinates"), Exceptions::RuntimeError, "YCoordinates specified but no XCoordinates");
       ArrayRCP<SC> coords = operatorList_.get<ArrayRCP<SC> >("YCoordinates");
       lvl0->Set("YCoordinates", coords);
-      dim=2;
+      //dim=2;
     }
     if(operatorList_.isParameter("ZCoordinates")) {
       TEUCHOS_TEST_FOR_EXCEPTION(!operatorList_.isParameter("YCoordinates"), Exceptions::RuntimeError, "ZCoordinates specified but no YCoordinates");
       ArrayRCP<SC> coords = operatorList_.get<ArrayRCP<SC> >("ZCoordinates");
       lvl0->Set("ZCoordinates", coords);
-      dim=3;
+      //dim=3;
     }
 
     //    GetOStream(Runtime1, 0) << "MueLu::ParameterListInterpreter: Coordinates found! (dim=" << dim << ")" << std::endl;
