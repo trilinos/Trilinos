@@ -1,4 +1,10 @@
 #include "Teuchos_UnitTestHarness.hpp"
+
+#include "Xpetra_VectorFactory.hpp"
+#include "Xpetra_MultiVectorFactory.hpp"
+#include "Xpetra_ExportFactory.hpp"
+#include "Xpetra_OperatorFactory.hpp"
+
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 
@@ -10,10 +16,6 @@
 #define XPETRA_ENABLED // == Gallery have to be build with the support of Xpetra matrices.
 #include "MueLu_GalleryUtils.hpp"
 
-#include "Xpetra_VectorFactory.hpp"
-#include "Xpetra_MultiVectorFactory.hpp"
-#include "Xpetra_ExportFactory.hpp"
-#include "Xpetra_OperatorFactory.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_Utilities.hpp"
 
