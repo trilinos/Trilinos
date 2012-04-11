@@ -105,19 +105,21 @@ class BasicUserTypes{
 template <typename User>
 struct InputTraits {
 
+/* TODO ADD IFDEFS FOR TRILINOS EXPLICIT INSTANTIATION HERE */
+/* TODO DEFAULTS WITHOUT EXPLICIT INSTANTIATION ARE BELOW */
   /*! \brief The data type for weights and coordinates.
    */
-  typedef float scalar_t;
+  typedef double scalar_t;
 
   /*! \brief The ordinal type (e.g., int, long, int64_t) that represents
    *              local counts and local indices.
    */
-  typedef int   lno_t;
+  typedef int lno_t;
 
   /*! \brief The ordinal type (e.g., int, long, int64_t) that can represent
    *             global counts and identifiers.
    */
-  typedef long  gno_t;
+  typedef int gno_t;
 
   /*! \brief The data type that the user uses for global Identifiers.
    *
@@ -125,7 +127,7 @@ struct InputTraits {
    *   user uses Ids that are not Teuchos Ordinals, such as
    *   std::pair<int, int> then this is different.  
    */
-  typedef long  gid_t;
+  typedef long gid_t;
 
   /*! \brief  The Kokkos node type.  This is only meaningful for users
    *             of Tpetra objects.
