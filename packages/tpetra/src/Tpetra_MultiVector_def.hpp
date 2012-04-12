@@ -588,7 +588,7 @@ namespace Tpetra {
     using Teuchos::arcp_const_cast;
     typedef ScalarTraits<Scalar> SCT;
     typedef typename SCT::magnitudeType Mag;
-    const Mag OneOverN = ScalarTraits<Mag>::one() / Teuchos::as<Mag>(getGlobalLength());
+    const Mag OneOverN = ScalarTraits<Mag>::one() / getGlobalLength();
     bool OneW = false;
     const size_t numVecs = this->getNumVectors();
     if (weights.getNumVectors() == 1) {
@@ -721,7 +721,7 @@ namespace Tpetra {
       // only combine if we are a distributed MV
       Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,Teuchos::as<int>(numVecs),lmeans.getRawPtr(),means.getRawPtr());
     }
-    const Scalar OneOverN = Teuchos::ScalarTraits<Scalar>::one() / Teuchos::as<Scalar>(getGlobalLength());
+    const Scalar OneOverN = Teuchos::ScalarTraits<Scalar>::one() / getGlobalLength();
     for (typename Teuchos::ArrayView<Scalar>::iterator i = means.begin(); i != means.begin()+numVecs; ++i) {
       (*i) = (*i)*OneOverN;
     }

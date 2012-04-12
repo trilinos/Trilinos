@@ -2673,4 +2673,10 @@ namespace Tpetra {
   \
   template class CrsMatrix< SCALAR , LO , GO , NODE >;
 
+#define TPETRA_CRSMATRIX_CONVERT_INSTANT(SO,SN,LO,GO,NODE) \
+  \
+  template RCP< CrsMatrix< SN , LO , GO , NODE > >   \
+                CrsMatrix< SO , LO , GO , NODE >::convert< SN > () const;
+
+
 #endif

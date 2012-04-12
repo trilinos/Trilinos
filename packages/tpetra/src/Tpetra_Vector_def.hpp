@@ -131,7 +131,7 @@ namespace Tpetra {
       Scalar lsum = sum;
       Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lsum,outArg(sum));
     }
-    return sum / Teuchos::as<Scalar>(this->getGlobalLength());
+    return sum / this->getGlobalLength();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -190,7 +190,7 @@ namespace Tpetra {
       Mag lnorm = norm;
       Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lnorm,outArg(norm));
     }
-    return ScalarTraits<Mag>::squareroot(norm / Teuchos::as<Mag>(this->getGlobalLength()));
+    return ScalarTraits<Mag>::squareroot(norm / this->getGlobalLength());
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
