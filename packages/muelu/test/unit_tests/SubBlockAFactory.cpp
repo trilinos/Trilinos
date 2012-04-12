@@ -4,7 +4,7 @@
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 
-#include <Xpetra_MapFactory.hpp>
+#include <Xpetra_StridedMapFactory.hpp>
 #include <Xpetra_MapExtractorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
@@ -107,8 +107,11 @@ namespace MueLuTests {
 
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
     
-    map1   = MapFactory::Build(lib, numElements1, 0, comm);
-    map2   = MapFactory::Build(lib, numElements2, numElements1, comm);
+    std::vector<size_t> stridingInfo;
+    stridingInfo.push_back(1);
+
+    map1   = StridedMapFactory::Build(lib, numElements1, 0, stridingInfo, comm);
+    map2   = StridedMapFactory::Build(lib, numElements2, numElements1, stridingInfo, comm);
 
     std::vector<GlobalOrdinal> localGids; // vector with all local GIDs on cur proc
     Teuchos::ArrayView< const GlobalOrdinal > map1eleList = map1->getNodeElementList(); // append all local gids from map1 and map2
