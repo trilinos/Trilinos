@@ -107,7 +107,7 @@ namespace Xpetra {
 
     /// returns strided block id of the dofs stored in this map
     /// or -1 if full strided map is stored in this map
-    LocalOrdinal getStridedBlockId() { return stridedBlockId_; }
+    LocalOrdinal getStridedBlockId() const { return stridedBlockId_; }
 
     /// returns true, if this is a strided map (i.e. more than 1 strided blocks)
     bool isStrided() { return stridingInfo_.size() > 1 ? true : false; }
