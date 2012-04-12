@@ -1062,7 +1062,7 @@ namespace Tpetra {
     // method doesn't actually fuse the Import with fillComplete().
     // This will change in the future.
     RCP<CrsMatrixType> destMat = 
-      rcp (new CrsMatrixType (sourceMatrix->getRowMap (), 
+      rcp (new CrsMatrixType (importer.getTargetMap (),
 			      as<size_t> (0), 
 			      DynamicProfile, 
 			      plist));
@@ -1113,7 +1113,7 @@ namespace Tpetra {
     // method doesn't actually fuse the Export with fillComplete().
     // This will change in the future.
     RCP<CrsMatrixType> destMat = 
-      rcp (new CrsMatrixType (sourceMatrix->getRowMap (), 
+      rcp (new CrsMatrixType (exporter.getTargetMap (),
 			      as<size_t> (0), 
 			      DynamicProfile, 
 			      plist));
