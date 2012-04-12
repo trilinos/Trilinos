@@ -1204,6 +1204,7 @@ int NNTI_ptl_wait (
             log_debug(debug_level, "\tmd.max_size  = %d", event.md.max_size);
             log_debug(debug_level, "\tmd.threshold = %d", event.md.threshold);
             log_debug(debug_level, "\tmd.user_ptr  = %p", event.md.user_ptr);
+            log_debug(debug_level, "}");
 
 
             /* case 1: success */
@@ -1965,35 +1966,35 @@ static int process_event(
                     goto cleanup;
             }
             break;
-            case RDMA_TARGET_BUFFER:
-                switch (event->type) {
-                    case PTL_EVENT_PUT_START:
-                        log_debug(debug_level, "got PTL_EVENT_PUT_START  - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
-                                ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
-                        wr->op_state.put_target.put_start = TRUE;
-                        break;
-                    case PTL_EVENT_PUT_END:
-                        log_debug(debug_level, "got PTL_EVENT_PUT_END    - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
-                                ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
-                        wr->op_state.put_target.put_end = TRUE;
-                        break;
-                    case PTL_EVENT_GET_START:
-                        log_debug(debug_level, "got PTL_EVENT_GET_START  - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
-                                ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
-                        wr->op_state.get_target.get_start = TRUE;
-                        break;
-                    case PTL_EVENT_GET_END:
-                        log_debug(debug_level, "got PTL_EVENT_GET_END    - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
-                                ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
-                        wr->op_state.get_target.get_end = TRUE;
-                        break;
-                    default:
-                        log_error(debug_level, "unrecognized event type: %d - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
-                                event->type, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
-                        rc = NNTI_EINVAL;
-                        goto cleanup;
-                }
-                break;
+        case RDMA_TARGET_BUFFER:
+            switch (event->type) {
+                case PTL_EVENT_PUT_START:
+                    log_debug(debug_level, "got PTL_EVENT_PUT_START  - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
+                            ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                    wr->op_state.put_target.put_start = TRUE;
+                    break;
+                case PTL_EVENT_PUT_END:
+                    log_debug(debug_level, "got PTL_EVENT_PUT_END    - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
+                            ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                    wr->op_state.put_target.put_end = TRUE;
+                    break;
+                case PTL_EVENT_GET_START:
+                    log_debug(debug_level, "got PTL_EVENT_GET_START  - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
+                            ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                    wr->op_state.get_target.get_start = TRUE;
+                    break;
+                case PTL_EVENT_GET_END:
+                    log_debug(debug_level, "got PTL_EVENT_GET_END    - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
+                            ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                    wr->op_state.get_target.get_end = TRUE;
+                    break;
+                default:
+                    log_error(debug_level, "unrecognized event type: %d - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
+                            event->type, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                    rc = NNTI_EINVAL;
+                    goto cleanup;
+            }
+            break;
     }
 
     if (event->ni_fail_type != PTL_NI_OK) {
