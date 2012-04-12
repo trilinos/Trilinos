@@ -8,9 +8,13 @@
 #ifndef MUELU_SUBBLOCKAFACTORY_DECL_HPP_
 #define MUELU_SUBBLOCKAFACTORY_DECL_HPP_
 
+#include "Xpetra_Map_fwd.hpp"
+#include "Xpetra_StridedMap_fwd.hpp"
+
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_SubBlockAFactory_fwd.hpp"
+
 
 namespace MueLu {
 
