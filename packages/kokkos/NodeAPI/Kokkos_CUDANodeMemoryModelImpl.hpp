@@ -137,7 +137,7 @@ namespace Kokkos {
     TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
       "Kokkos::CUDANodeMemoryModel::copyToBuffer<"
       << Teuchos::TypeNameTraits<T>::name () 
-      ">(): cudaMemcpy() returned error: " << cudaGetErrorString (err)
+      << ">(): cudaMemcpy() returned error: " << cudaGetErrorString (err)
       );
   }
 
@@ -168,7 +168,7 @@ namespace Kokkos {
     TEUCHOS_TEST_FOR_EXCEPTION( cudaSuccess != err, std::runtime_error,
       "Kokkos::CUDANodeMemoryModel::copyBuffers<"
       << Teuchos::TypeNameTraits<T>::name () 
-      ">(): cudaMemcpy() returned error: " << cudaGetErrorString (err)
+      << ">(): cudaMemcpy() returned error: " << cudaGetErrorString (err)
       );
   }
 
