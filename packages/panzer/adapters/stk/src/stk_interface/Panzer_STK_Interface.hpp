@@ -660,9 +660,12 @@ void STK_Interface::setCellFieldData(const std::string & fieldName,const std::st
 template <typename ArrayT>
 void STK_Interface::getElementVertices(std::vector<std::size_t> & localElementIds, ArrayT & vertices) const
 {
+
    // nothing to do! silently return
-   if(localElementIds.size()==0)
+   if(localElementIds.size()==0) {
+      vertices.resize(0,0,0);
       return;
+   }
 
    const std::vector<stk::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
 

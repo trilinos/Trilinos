@@ -222,16 +222,22 @@ void IntrepidFieldPattern::getInterpolatoryCoordinates(Intrepid::FieldContainer<
 void IntrepidFieldPattern::getInterpolatoryCoordinates(const Intrepid::FieldContainer<double> & cellVertices,
                                                        Intrepid::FieldContainer<double> & coords) const
 {
+   TEUCHOS_ASSERT(cellVertices.rank()==3);
+
+   int numCells = cellVertices.dimension(0);
+
    // grab the local coordinates
    Intrepid::FieldContainer<double> localCoords;
    getInterpolatoryCoordinates(localCoords);
 
    // resize the coordinates field container
-   coords.resize(cellVertices.dimension(0),localCoords.dimension(0),getDimension());
+   coords.resize(numCells,localCoords.dimension(0),getDimension());
 
-   // map to phsyical coordinates
-   Intrepid::CellTools<double> cellTools;
-   cellTools.mapToPhysicalFrame(coords,localCoords,cellVertices,intrepidBasis_->getBaseCellTopology());
+   if(numCells>0) {
+      // map to phsyical coordinates
+      Intrepid::CellTools<double> cellTools;
+      cellTools.mapToPhysicalFrame(coords,localCoords,cellVertices,intrepidBasis_->getBaseCellTopology());
+   }
 }
 
 }
