@@ -71,7 +71,6 @@ def buildFuncLineEpetra( functionNode ):
     # hack for MultiVector
     if name == "scale" and "Teuchos::ArrayView< const Scalar > alpha" in argsstring: return ''
     if name == "scale" and "const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A" in argsstring: return ''
-    if name == "EpetraMultiVector" and 'ArrayView' in argsstring: return ''
 
     # hack for Vector
     if name == 'EpetraVector' and 'Map' in argsstring: declStr = 'explicit ' + declStr
