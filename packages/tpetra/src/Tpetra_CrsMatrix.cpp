@@ -66,17 +66,98 @@ namespace Tpetra {
 
 #if defined(HAVE_TPETRA_INST_DOUBLE)
   TPETRA_CRSMATRIX_INSTANT(double,int,int,Kokkos::SerialNode)
+
+  template<>
+  Teuchos::RCP<CrsMatrix<double, int, int, Kokkos::SerialNode> >
+  importAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrix<double, int, int, Kokkos::SerialNode> >& sourceMatrix,
+				  const Import<CrsMatrix<double, int, int, Kokkos::SerialNode>::local_ordinal_type, 
+				               CrsMatrix<double, int, int, Kokkos::SerialNode>::global_ordinal_type, 
+				               CrsMatrix<double, int, int, Kokkos::SerialNode>::node_type>& importer,
+				  const Teuchos::RCP<Teuchos::ParameterList>& plist);
+
+  template<>
+  Teuchos::RCP<CrsMatrix<double, int, int, Kokkos::SerialNode> >
+  exportAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrix<double, int, int, Kokkos::SerialNode> >& sourceMatrix,
+				  const Export<CrsMatrix<double, int, int, Kokkos::SerialNode>::local_ordinal_type, 
+				               CrsMatrix<double, int, int, Kokkos::SerialNode>::global_ordinal_type, 
+				               CrsMatrix<double, int, int, Kokkos::SerialNode>::node_type>& exporter,
+				  const Teuchos::RCP<Teuchos::ParameterList>& plist);
+
 #if defined(HAVE_KOKKOS_TBB)
   TPETRA_CRSMATRIX_INSTANT(double,int,int,Kokkos::TBBNode)
+
+  template<>
+  Teuchos::RCP<CrsMatrix<double, int, int, Kokkos::TBBNode> >
+  importAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrix<double, int, int, Kokkos::TBBNode> >& sourceMatrix,
+				  const Import<CrsMatrix<double, int, int, Kokkos::TBBNode>::local_ordinal_type, 
+				               CrsMatrix<double, int, int, Kokkos::TBBNode>::global_ordinal_type, 
+				               CrsMatrix<double, int, int, Kokkos::TBBNode>::node_type>& importer,
+				  const Teuchos::RCP<Teuchos::ParameterList>& plist);
+
+  template<>
+  Teuchos::RCP<CrsMatrix<double, int, int, Kokkos::TBBNode> >
+  exportAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrix<double, int, int, Kokkos::TBBNode> >& sourceMatrix,
+				  const Export<CrsMatrix<double, int, int, Kokkos::TBBNode>::local_ordinal_type, 
+				               CrsMatrix<double, int, int, Kokkos::TBBNode>::global_ordinal_type, 
+				               CrsMatrix<double, int, int, Kokkos::TBBNode>::node_type>& exporter,
+				  const Teuchos::RCP<Teuchos::ParameterList>& plist);
 #endif
 #if defined(HAVE_KOKKOS_THREADPOOL)
     TPETRA_CRSMATRIX_INSTANT(double,int,int,Kokkos::TPINode)
+
+  template<>
+  Teuchos::RCP<CrsMatrix<double, int, int, Kokkos::TPINode> >
+  importAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrix<double, int, int, Kokkos::TPINode> >& sourceMatrix,
+				  const Import<CrsMatrix<double, int, int, Kokkos::TPINode>::local_ordinal_type, 
+				               CrsMatrix<double, int, int, Kokkos::TPINode>::global_ordinal_type, 
+				               CrsMatrix<double, int, int, Kokkos::TPINode>::node_type>& importer,
+				  const Teuchos::RCP<Teuchos::ParameterList>& plist);
+
+  template<>
+  Teuchos::RCP<CrsMatrix<double, int, int, Kokkos::TPINode> >
+  exportAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrix<double, int, int, Kokkos::TPINode> >& sourceMatrix,
+				  const Export<CrsMatrix<double, int, int, Kokkos::TPINode>::local_ordinal_type, 
+				               CrsMatrix<double, int, int, Kokkos::TPINode>::global_ordinal_type, 
+				               CrsMatrix<double, int, int, Kokkos::TPINode>::node_type>& exporter,
+				  const Teuchos::RCP<Teuchos::ParameterList>& plist);
 #endif
 #if defined(HAVE_KOKKOS_OPENMP)
     TPETRA_CRSMATRIX_INSTANT(double,int,int,Kokkos::OpenMPNode)
+
+  template<>
+  Teuchos::RCP<CrsMatrix<double, int, int, Kokkos::OpenMPNode> >
+  importAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrix<double, int, int, Kokkos::OpenMPNode> >& sourceMatrix,
+				  const Import<CrsMatrix<double, int, int, Kokkos::OpenMPNode>::local_ordinal_type, 
+				               CrsMatrix<double, int, int, Kokkos::OpenMPNode>::global_ordinal_type, 
+				               CrsMatrix<double, int, int, Kokkos::OpenMPNode>::node_type>& importer,
+				  const Teuchos::RCP<Teuchos::ParameterList>& plist);
+
+  template<>
+  Teuchos::RCP<CrsMatrix<double, int, int, Kokkos::OpenMPNode> >
+  exportAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrix<double, int, int, Kokkos::OpenMPNode> >& sourceMatrix,
+				  const Export<CrsMatrix<double, int, int, Kokkos::OpenMPNode>::local_ordinal_type, 
+				               CrsMatrix<double, int, int, Kokkos::OpenMPNode>::global_ordinal_type, 
+				               CrsMatrix<double, int, int, Kokkos::OpenMPNode>::node_type>& exporter,
+				  const Teuchos::RCP<Teuchos::ParameterList>& plist);
 #endif
 #if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
     TPETRA_CRSMATRIX_INSTANT(double,int,int,Kokkos::ThrustGPUNode)
+
+  template<>
+  Teuchos::RCP<CrsMatrix<double, int, int, Kokkos::ThrustGPUNode> >
+  importAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrix<double, int, int, Kokkos::ThrustGPUNode> >& sourceMatrix,
+				  const Import<CrsMatrix<double, int, int, Kokkos::ThrustGPUNode>::local_ordinal_type, 
+				               CrsMatrix<double, int, int, Kokkos::ThrustGPUNode>::global_ordinal_type, 
+				               CrsMatrix<double, int, int, Kokkos::ThrustGPUNode>::node_type>& importer,
+				  const Teuchos::RCP<Teuchos::ParameterList>& plist);
+
+  template<>
+  Teuchos::RCP<CrsMatrix<double, int, int, Kokkos::ThrustGPUNode> >
+  exportAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrix<double, int, int, Kokkos::ThrustGPUNode> >& sourceMatrix,
+				  const Export<CrsMatrix<double, int, int, Kokkos::ThrustGPUNode>::local_ordinal_type, 
+				               CrsMatrix<double, int, int, Kokkos::ThrustGPUNode>::global_ordinal_type, 
+				               CrsMatrix<double, int, int, Kokkos::ThrustGPUNode>::node_type>& exporter,
+				  const Teuchos::RCP<Teuchos::ParameterList>& plist);
 #endif
 #endif // DOUBLE
 #if defined(HAVE_TPETRA_INST_FLOAT)
