@@ -1023,9 +1023,12 @@ namespace Tpetra {
   /// Import redistribution.
   ///
   /// Fusing redistribution and fillComplete() exposes potential
-  /// optimizations.  For example, it may make constructing the
-  /// column Map faster, and it may avoid intermediate unoptimized
-  /// storage in the destination CrsMatrix.
+  /// optimizations.  For example, it may make constructing the column
+  /// Map faster, and it may avoid intermediate unoptimized storage in
+  /// the destination CrsMatrix.  These optimizations may improve
+  /// performance for specialized kernels like sparse matrix-matrix
+  /// multiply, as well as for redistributing data after doing load
+  /// balancing.
   ///
   /// The resulting matrix is fill complete (in the sense of
   /// isFillComplete()) and has optimized storage (in the sense of
@@ -1049,14 +1052,34 @@ namespace Tpetra {
 				  const Import<typename CrsMatrixType::local_ordinal_type, 
 				               typename CrsMatrixType::global_ordinal_type, 
 				               typename CrsMatrixType::node_type>& importer,
-				  const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
+				  const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null)
+  {
+    using Teuchos::as;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+
+    // FIXME (mfh 11 Apr 2012) The current implementation of this
+    // method doesn't actually fuse the Import with fillComplete().
+    // This will change in the future.
+    RCP<CrsMatrixType> destMat = 
+      rcp (new CrsMatrixType (sourceMatrix->getRowMap (), 
+			      as<size_t> (0), 
+			      DynamicProfile, 
+			      plist));
+    destMat->doImport (*sourceMatrix, importer, INSERT);
+    destMat->fillComplete (sourceMatrix->getDomainMap (),
+			   sourceMatrix->getRangeMap ());
+    return destMat;
+  }
+
 
   /// \brief Nonmember CrsMatrix constructor that fuses Export and fillComplete().
   /// \relatesalso CrsMatrix
   /// \tparam CrsMatrixType A specialization of CrsMatrix.
   ///
-  /// For justification, see the documentation fo the constructor
-  /// that fuses Import and fillComplete().
+  /// For justification, see the documentation of
+  /// importAndFillCompleteCrsMatrix() (which is the Import analog of
+  /// this function).
   ///
   /// The resulting matrix is fill complete (in the sense of
   /// isFillComplete()) and has optimized storage (in the sense of
@@ -1080,7 +1103,25 @@ namespace Tpetra {
 				  const Export<typename CrsMatrixType::local_ordinal_type, 
 				               typename CrsMatrixType::global_ordinal_type, 
 				               typename CrsMatrixType::node_type>& exporter,
-				  const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
+				  const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null)
+  {
+    using Teuchos::as;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+
+    // FIXME (mfh 11 Apr 2012) The current implementation of this
+    // method doesn't actually fuse the Export with fillComplete().
+    // This will change in the future.
+    RCP<CrsMatrixType> destMat = 
+      rcp (new CrsMatrixType (sourceMatrix->getRowMap (), 
+			      as<size_t> (0), 
+			      DynamicProfile, 
+			      plist));
+    destMat->doExport (*sourceMatrix, exporter, INSERT);
+    destMat->fillComplete (sourceMatrix->getDomainMap (),
+			   sourceMatrix->getRangeMap ());
+    return destMat;
+  }
 } // namespace Tpetra
 
 /**
