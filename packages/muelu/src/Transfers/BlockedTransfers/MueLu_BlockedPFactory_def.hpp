@@ -121,12 +121,19 @@ void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Bu
       subBlockP.push_back(coarseLevel.Get<RCP<Operator> >("R", (*it)->GetFactory("R").get())); // create and return block R operator
     }
 
-    subBlockPRangeMaps.push_back(subBlockP.back()->getRangeMap());
+    // check if prolongator/restrictor operators have strided maps
+    TEUCHOS_TEST_FOR_EXCEPTION(subBlockP.back()->IsView("stridedMaps")==false, Exceptions::BadCast, "MueLu::BlockedPFactory::Build: subBlock P operator has no strided map information. error.");
+
+    // append strided row map (= range map) to list of range maps.
+    subBlockPRangeMaps.push_back(subBlockP.back()->getRowMap("stridedMaps"));
     Teuchos::ArrayView< const GlobalOrdinal > nodeRangeMap = subBlockPRangeMaps.back()->getNodeElementList();
     fullRangeMapVector.insert(fullRangeMapVector.end(), nodeRangeMap.begin(), nodeRangeMap.end());
-    subBlockPDomainMaps.push_back(subBlockP.back()->getDomainMap());
+    sort(fullRangeMapVector.begin(), fullRangeMapVector.end());
+    // append strided col map (= domain map) to list of range maps.
+    subBlockPDomainMaps.push_back(subBlockP.back()->getColMap("stridedMaps"));
     Teuchos::ArrayView< const GlobalOrdinal > nodeDomainMap = subBlockPDomainMaps.back()->getNodeElementList();
     fullDomainMapVector.insert(fullDomainMapVector.end(), nodeDomainMap.begin(), nodeDomainMap.end());
+    sort(fullDomainMapVector.begin(), fullDomainMapVector.end());
   }
 
   // build full row (=range) map and full domain map from vector of prolongator objects
@@ -173,6 +180,8 @@ void BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Bu
   }
 
   bP->fillComplete();
+
+  // TODO use strided maps for map extractor objects!!!!
 
   //bP->describe(*fos,Teuchos::VERB_EXTREME);
 
