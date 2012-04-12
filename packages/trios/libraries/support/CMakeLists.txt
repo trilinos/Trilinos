@@ -38,12 +38,13 @@ APPEND_SET(SOURCES
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/threads)
 
-# If pthreads is supported, we use some of the features from Unix98: PTHREAD_MUTEX_DEFAULT, 
+# If pthreads is supported, we use some of the features from Unix98: PTHREAD_MUTEX_DEFAULT,
 # PTHREAD_MUTEX_NORMAL, PTHREAD_MUTEX_RECURSIVE, and PTHREAD_MUTEX_ERRORCHECK
 ADD_DEFINITIONS(-D_GNU_SOURCE)
 
 APPEND_SET(HEADERS
   threads/Trios_threads.h
+  threads/Trios_threads_types.h
 )
 
 APPEND_SET(SOURCES
@@ -82,21 +83,21 @@ APPEND_SET(SOURCES
 
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/trace)
-  
+
 APPEND_SET(HEADERS
   trace/Trios_trace.h
 )
-  
+
 APPEND_SET(NOINSTALLHEADERS
   trace/SDDF.h
   trace/TraceFile.h
   trace/TraceGroup.h
 )
-  
+
 APPEND_SET(SOURCES
   trace/trace.cc
 )
-  
+
 # See if PABLO is enabled
 IF (${PACKAGE_NAME}_ENABLE_Pablo)
   APPEND_SET(SOURCES trace/SDDF.cc)
