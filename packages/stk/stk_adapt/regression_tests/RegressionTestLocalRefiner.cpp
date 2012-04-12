@@ -708,7 +708,7 @@ namespace stk
 
       STKUNIT_UNIT_TEST(regr_localRefiner, break_tet_to_tet_N_5_EdgeBased_moving_shock)
       {
-        if (1) return;
+        //if (1) return;
         const bool do_full_demo = false;
         if (LARGE_TEST_ONLY || !DO_TESTS) return;
         if (do_full_demo)
