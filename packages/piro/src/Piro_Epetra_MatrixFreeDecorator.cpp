@@ -250,10 +250,15 @@ Piro::Epetra::MatrixFreeOperator::MatrixFreeOperator(
 {
   using Teuchos::rcp;
 
+  // Save an RCP to a map, preventing it from going out of scope 
+  // when references to the map anc comm are later pulled out
+  map = model->get_x_map();
+ 
+
   // Allocate space for perturbed solution and residuals
-  xPert = rcp(new Epetra_Vector(*(model->get_x_map())));
+  xPert = rcp(new Epetra_Vector(*map));
   fPert = rcp(new Epetra_Vector(*(model->get_f_map())));
-  xdotPert = rcp(new Epetra_Vector(*(model->get_x_map())));
+  xdotPert = rcp(new Epetra_Vector(*map));
 }
 
 void Piro::Epetra::MatrixFreeOperator::setBase(
@@ -359,9 +364,9 @@ bool  Piro::Epetra::MatrixFreeOperator::HasNormInf() const
 bool  Piro::Epetra::MatrixFreeOperator::UseTranspose() const
 { return false; }
 const Epetra_Comm &  Piro::Epetra::MatrixFreeOperator::Comm() const
-{ return model->get_x_map()->Comm(); }
+{ return map->Comm(); }
 const Epetra_Map&  Piro::Epetra::MatrixFreeOperator::OperatorDomainMap() const
-{ return *(model->get_x_map()); }
+{ return *map; }
 const Epetra_Map&  Piro::Epetra::MatrixFreeOperator::OperatorRangeMap() const
-{ return *(model->get_x_map()); }
+{ return *map; }
 

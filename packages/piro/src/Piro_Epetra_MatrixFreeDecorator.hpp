@@ -173,6 +173,8 @@ class MatrixFreeOperator
    Teuchos::RCP<EpetraExt::ModelEvaluator> model;
    // Storage for Base solution vector for MatrixFree 
    mutable EpetraExt::ModelEvaluator::InArgs modelInArgs;
+   // RCP to the x map, saved so that references to it stay in scope
+   Teuchos::RCP<const Epetra_Map> map;
    // Storage for Perturbed solution vector for MatrixFree 
    Teuchos::RCP<Epetra_Vector> xPert;
    // Storage for Perturbed solution vector for MatrixFree 

@@ -25,6 +25,9 @@ export TDD_CTEST_TEST_TYPE=Nightly
 export TDD_CTEST_DROP_SITE=casl-dev.ornl.gov
 export TDD_CTEST_DROP_LOCATION="/cdash/submit.php?project=TrilinosDriver"
 
+# ToDo: Remove this once things pass!
+export CTEST_TEST_TYPE=Experimental
+
 time env python ../cron_driver.py
 
 echo

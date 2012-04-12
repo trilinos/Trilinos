@@ -1836,7 +1836,7 @@ double ML_srandom1(int *seed)
 
 /* Essentially, like printf , but we exit at the end */
 #include <stdarg.h>
-void pr_error(char *fmt,  ... ) 
+void pr_error(const char *fmt,  ... ) 
 {
   char ml_message_string[800];
   va_list ap;

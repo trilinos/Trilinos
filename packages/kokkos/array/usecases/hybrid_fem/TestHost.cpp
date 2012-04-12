@@ -10,8 +10,12 @@
 
 #include <TestBoxMeshFixture.hpp>
 
-//----------------------------------------------------------------------------
+#include <Kokkos_Host_macros.hpp>
+#include <ParallelDataMap_macros.hpp>
+#include <TestBoxMeshFixture_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
 
+//----------------------------------------------------------------------------
 
 void test_box_partition( bool print )
 {
@@ -135,15 +139,12 @@ void test_box_partition( bool print )
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-int main( int argc , char ** argv )
+void test_host( comm::Machine machine )
 {
-  comm::Machine machine = comm::Machine::init( & argc , & argv );
+  if ( 1 == comm::size( machine ) ) {
+    test_box_partition( false );
+  }
 
-  test_box_partition( false );
-  test_box_fixture( machine );
-
-  comm::Machine::finalize();
-
-  return 0 ;
+  test_box_fixture<Kokkos::Host>( machine , 100 , 200 , 300 );
 }
 

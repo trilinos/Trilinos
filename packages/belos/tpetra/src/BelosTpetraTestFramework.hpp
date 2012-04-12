@@ -97,8 +97,10 @@ namespace Belos {
     template<class NodeType>
     Teuchos::RCP<NodeType>
     getNode (Teuchos::RCP<Teuchos::ParameterList> params) {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "The Kokkos Node type \"" 
-        << Teuchos::TypeNameTraits<NodeType>::name() << "\" is not supported.");
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "getNode() has no "
+        "specialization for the Kokkos Node type \"" 
+        << Teuchos::TypeNameTraits<NodeType>::name() << "\".  Please ask the "
+        "Belos or Tpetra developers to implement this specialization.");
     }
 
     // Specialization of getNode for Kokkos::SerialNode.
@@ -116,6 +118,8 @@ namespace Belos {
     template<>
     Teuchos::RCP<Kokkos::TBBNode>
     getNode (Teuchos::RCP<Teuchos::ParameterList> params) {
+      // "Num Threads" specifies the number of threads.  Defaults to
+      // an automatically chosen value.
       if (params.is_null()) {
 	params = Teuchos::parameterList ();
       }
@@ -140,12 +144,13 @@ namespace Belos {
       // nothing), but we set 1 as the default, so that you can see
       // how many threads are being used if you don't set a specific
       // number.
-      if (params.is_null()) {
+      if (params.is_null ()) {
 	params = Teuchos::parameterList ();
 	int verbosity = 1;
 	params->set ("Verbose", verbosity);
       }
-      else if (isParameterType<int>(*params, "Num Threads") && params->get<int>("Num Threads") == -1) {
+      else if (isParameterType<int> (*params, "Num Threads") && 
+	       params->get<int> ("Num Threads") == -1) {
 	params->set ("Num Threads", static_cast<int>(0));
       }
 
@@ -189,7 +194,7 @@ namespace Belos {
     /// \brief Read a Harwell-Boeing format file into a Tpetra::CrsMatrix.
     /// \author Mark Hoemmen
     ///
-    /// \note This reader is incomplete.  It currently only handles
+    /// \warning This reader is incomplete.  It currently only handles
     ///   real double-precision floating-point data and indices of
     ///   Fortran type integer, and only some of the possible ways
     ///   that these can be represented in the file.

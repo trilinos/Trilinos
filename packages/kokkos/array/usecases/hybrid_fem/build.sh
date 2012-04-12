@@ -25,11 +25,11 @@ shift 1
 case ${ARG} in
 #-------------------------------
 #----------- OPTIONS -----------
-MPI | mpi ) HAVE_MPI=${1} ; shift 1 ;;
 HWLOC | hwloc ) HAVE_HWLOC=${1} ; shift 1 ;;
+MPI | mpi ) HAVE_MPI=${1} ; shift 1 ;;
 CUDA | Cuda | cuda ) HAVE_CUDA=1 ;;
-OPT | opt | O3 | -O3 ) OPTFLAGS="-O3" ;;
-DBG | dbg | g | -g )   OPTFLAGS="-g" ;;
+OPT | opt | O3 | -O3 ) OPTFLAGS="${OPTFLAGS} -O3" ;;
+DBG | dbg | g | -g )   OPTFLAGS="${OPTFLAGS} -g" ;;
 #-------------------------------
 #---------- COMPILERS ----------
 GNU | gnu | g++ )
@@ -49,13 +49,11 @@ done
 
 #-----------------------------------------------------------------------------
 
-if [ -n "${HAVE_CUDA}" ] ;
+if [ -n "${HAVE_MPI}" ]
 then
-  TEST_MACRO="${TEST_MACRO} -DTEST_KOKKOS_CUDA"
-  NVCC_SOURCES="./*.cu"
-  NVCC_SOURCES="${NVCC_SOURCES} ../../src/Cuda/*.cu"
-  LIB="${LIB} -L/usr/local/cuda/lib64 libCuda.a -lcudart -lcuda -lcusparse"
-  nvcc -arch=sm_20 -lib -o libCuda.a ${OPTFLAGS} ${INC_PATH} ${NVCC_SOURCES}
+  CXX="${HAVE_MPI}/bin/mpiCC"
+  INC_PATH="${INC_PATH} -I${HAVE_MPI}/include"
+  OPTFLAGS="${OPTFLAGS} -DHAVE_MPI"
 fi
 
 #-----------------------------------------------------------------------------
@@ -84,17 +82,20 @@ fi
 
 #-----------------------------------------------------------------------------
 
-if [ -n "${HAVE_MPI}" ]
+if [ -n "${HAVE_CUDA}" ] ;
 then
-  CXX="${HAVE_MPI}/bin/mpiCC"
-  CXXFLAGS="${CXXFLAGS} -DHAVE_MPI"
+  OPTFLAGS="${OPTFLAGS} -DHAVE_CUDA"
+  NVCC_SOURCES="./*.cu"
+  NVCC_SOURCES="${NVCC_SOURCES} ../../src/Cuda/*.cu"
+  LIB="${LIB} -L/usr/local/cuda/lib64 libCuda.a -lcudart -lcuda -lcusparse"
+  nvcc -arch=sm_20 -lib -o libCuda.a ${OPTFLAGS} ${INC_PATH} ${NVCC_SOURCES}
 fi
 
 #-----------------------------------------------------------------------------
 
 echo "Building regular files as: " ${CXX} ${CXXFLAGS} ${OPTFLAGS}
 
-${CXX} ${CXXFLAGS} ${OPTFLAGS} ${INC_PATH} ${TEST_MACRO} -o ${EXECUTABLE} ${CXX_SOURCES} ${LIB}
+${CXX} ${CXXFLAGS} ${OPTFLAGS} ${INC_PATH} -o ${EXECUTABLE} ${CXX_SOURCES} ${LIB}
 
 rm -f *.o *.a
 

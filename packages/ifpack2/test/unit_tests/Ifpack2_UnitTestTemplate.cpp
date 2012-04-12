@@ -56,13 +56,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Ifpack2Group0, Ifpack2Test0, T)
 
   std::string version = Ifpack2::Version();
   bool empty_version = version.empty();
-  TEUCHOS_TEST_EQUALITY(empty_version, false, out, success);
+  TEST_EQUALITY(empty_version, false);
 
   T input = 5;
   T result = my_trivial_function(input);
   T expected_result = input*input;
 
-  TEUCHOS_TEST_EQUALITY(result, expected_result, out, success);
+  TEST_EQUALITY(result, expected_result);
 }
 
 //this macro instantiates and registers the test:

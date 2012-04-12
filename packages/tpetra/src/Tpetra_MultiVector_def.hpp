@@ -308,6 +308,9 @@ namespace Tpetra {
       // For the remaining GIDs, execute the permutations.  This may
       // involve noncontiguous access of both source and destination
       // vectors, depending on the LID lists.
+      //
+      // FIXME (mfh 09 Apr 2012) Permutation should be done on the
+      // device, not on the host.
       for (pTo = permuteToLIDs.begin(), pFrom = permuteFromLIDs.begin();
            pTo != permuteToLIDs.end(); ++pTo, ++pFrom) {
         dstptr[*pTo] = srcptr[*pFrom];
@@ -329,30 +332,32 @@ namespace Tpetra {
     using Teuchos::Array;
     using Teuchos::ArrayView;
     using Teuchos::ArrayRCP;
+    typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
 
-    const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &sourceMV = dynamic_cast<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &>(sourceObj);
+    const MV& sourceMV = dynamic_cast<const MV&> (sourceObj);
 
     /* The layout in the export for MultiVectors is as follows:
        exports = { all of the data from row exportLIDs.front() ; 
                    ....
                    all of the data from row exportLIDs.back() }
-      this doesn't have the best locality, but is necessary because the data for a Packet
-      (all data associated with an LID) is required to be contiguous */
-    TEUCHOS_TEST_FOR_EXCEPTION(as<int>(numExportPacketsPerLID.size()) != exportLIDs.size(), 
+      This doesn't have the best locality, but is necessary because
+      the data for a Packet (all data associated with an LID) is
+      required to be contiguous. */
+    TEUCHOS_TEST_FOR_EXCEPTION(as<int> (numExportPacketsPerLID.size ()) != exportLIDs.size (), 
       std::runtime_error, "Tpetra::MultiVector::packAndPrepare(): size of num"
       "ExportPacketsPerLID buffer should be the same as exportLIDs.  numExport"
       "PacketsPerLID.size() = " << numExportPacketsPerLID.size() << ", but "
       "exportLIDs.size() = " << exportLIDs.size() << ".");
-    const KMV &srcData = sourceMV.lclMV_;
-    const size_t numCols = sourceMV.getNumVectors();
-    const size_t stride = MVT::getStride(srcData);
+    const KMV& srcData = sourceMV.lclMV_;
+    const size_t numCols = sourceMV.getNumVectors ();
+    const size_t stride = MVT::getStride (srcData);
     constantNumPackets = numCols;
-    exports.resize(numCols*exportLIDs.size());
+    exports.resize (numCols * exportLIDs.size ());
     typename ArrayView<const LocalOrdinal>::iterator idptr;
     typename Array<Scalar>::iterator expptr;
     expptr = exports.begin();
 
-    if (sourceMV.isConstantStride()) {
+    if (sourceMV.isConstantStride ()) {
       size_t i = 0;
       for (idptr = exportLIDs.begin(); idptr != exportLIDs.end(); ++idptr, ++i) {
         for (size_t j = 0; j < numCols; ++j) {
@@ -396,8 +401,9 @@ namespace Tpetra {
        imports = { all of the data from row exportLIDs.front() ; 
                    ....
                    all of the data from row exportLIDs.back() }
-      this doesn't have the best locality, but is necessary because the data for a Packet
-      (all data associated with an LID) is required to be contiguous */
+      This doesn't have the best locality, but is necessary because
+      the data for a Packet (all data associated with an LID) is
+      required to be contiguous. */
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(as<size_t>(imports.size()) != getNumVectors()*importLIDs.size(), std::runtime_error,
         ": Imports buffer size must be consistent with the amount of data to be exported.");
@@ -582,7 +588,7 @@ namespace Tpetra {
     using Teuchos::arcp_const_cast;
     typedef ScalarTraits<Scalar> SCT;
     typedef typename SCT::magnitudeType Mag;
-    const Mag OneOverN = ScalarTraits<Mag>::one() / Teuchos::as<Mag>(getGlobalLength());
+    const Mag OneOverN = ScalarTraits<Mag>::one() / getGlobalLength();
     bool OneW = false;
     const size_t numVecs = this->getNumVectors();
     if (weights.getNumVectors() == 1) {
@@ -715,7 +721,7 @@ namespace Tpetra {
       // only combine if we are a distributed MV
       Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,Teuchos::as<int>(numVecs),lmeans.getRawPtr(),means.getRawPtr());
     }
-    const Scalar OneOverN = Teuchos::ScalarTraits<Scalar>::one() / Teuchos::as<Scalar>(getGlobalLength());
+    const Scalar OneOverN = Teuchos::ScalarTraits<Scalar>::one() / getGlobalLength();
     for (typename Teuchos::ArrayView<Scalar>::iterator i = means.begin(); i != means.begin()+numVecs; ++i) {
       (*i) = (*i)*OneOverN;
     }
@@ -1878,27 +1884,78 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createViews() const {
-    Teuchos::RCP<Node> node = this->getMap()->getNode();
-    if (cview_ == Teuchos::null && getLocalLength() > 0) {
-      Teuchos::ArrayRCP<const Scalar> buff = MVT::getValues(lclMV_);
+  void 
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  createViews() const 
+  {
+    using Teuchos::ArrayRCP;
+    using Teuchos::RCP;
+
+    TPETRA_EFFICIENCY_WARNING(! cview_.is_null (), std::runtime_error,
+      "::createViews(): The const view "
+      "has already been created and is therefore not null.  (For"
+      "Tpetra developers: cview_.total_count() = " << cview_.total_count ()
+      << ".  This "
+      "means that MultiVector is either creating a view unnecessarily, or "
+      "hanging on to a view beyond its needed scope.  This "
+      "probably does not affect correctness, it but does affect total memory "
+      "use.  Please report this performance bug to the Tpetra developers.");
+
+    RCP<Node> node = this->getMap ()->getNode ();
+    if (cview_.is_null () && getLocalLength () > 0) {
+      ArrayRCP<const Scalar> buff = MVT::getValues (lclMV_);
       KOKKOS_NODE_TRACE("MultiVector::createViews()")
-      cview_ = node->template viewBuffer<Scalar>(buff.size(),buff);
+      cview_ = node->template viewBuffer<Scalar> (buff.size (), buff);
     }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createViewsNonConst(Kokkos::ReadWriteOption rwo) {
-    Teuchos::RCP<Node> node = this->getMap()->getNode();
-    if (ncview_ == Teuchos::null && getLocalLength() > 0) {
-      Teuchos::ArrayRCP<Scalar> buff = MVT::getValuesNonConst(lclMV_);
+  void 
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  createViewsNonConst (Kokkos::ReadWriteOption rwo) 
+  {
+    using Teuchos::ArrayRCP;
+    using Teuchos::RCP;
+
+    TPETRA_EFFICIENCY_WARNING(! ncview_.is_null (), std::runtime_error,
+      "::createViewsNonConst(): The nonconst view "
+      "has already been created and is therefore not null.  (For"
+      "Tpetra developers: ncview_.total_count() = " << ncview_.total_count ()
+      << ".  This "
+      "means that MultiVector is either creating a view unnecessarily, or "
+      "hanging on to a view beyond its needed scope.  This "
+      "probably does not affect correctness, it but does affect total memory "
+      "use.  Please report this performance bug to the Tpetra developers.");
+
+    RCP<Node> node = this->getMap ()->getNode ();
+    if (ncview_.is_null () && getLocalLength () > 0) {
+      ArrayRCP<Scalar> buff = MVT::getValuesNonConst (lclMV_);
       KOKKOS_NODE_TRACE("MultiVector::createViewsNonConst()")
-      ncview_ = node->template viewBufferNonConst<Scalar>(rwo,buff.size(),buff);
+      ncview_ = node->template viewBufferNonConst<Scalar> (rwo, buff.size (), buff);
     }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::releaseViews() const {
+  void 
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::releaseViews () const 
+  {
+    const int constViewCount = cview_.total_count ();
+    const int nonconstViewCount = ncview_.total_count ();
+
+    // This prevents unused variable compiler warnings, in case Tpetra
+    // efficiency warnings aren't enabled.
+    (void) constViewCount;
+    (void) nonconstViewCount;
+
+    TPETRA_EFFICIENCY_WARNING(constViewCount > 1 || nonconstViewCount > 1, 
+      std::runtime_error, "::releaseViews(): Either the const view or the "
+      "nonconst view has a reference count greater than 1.  (For Tpetra "
+      "developers: cview_.total_count() = " << constViewCount << " and ncview_."
+      "total_count() = " << nonconstViewCount << ".  This means that release"
+      "Views() won't actually free memory.  This probably does not affect "
+      "correctness, it but does affect total memory use.  Please report this "
+      "performance bug to the Tpetra developers.");
+
     cview_ = Teuchos::null;
     ncview_ = Teuchos::null;
   }

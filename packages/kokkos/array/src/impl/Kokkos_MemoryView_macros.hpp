@@ -158,12 +158,18 @@ public:
   inline
   void allocate( size_type count , const std::string & label )
     {
-      memory_manager::clear(  m_tracker , m_ptr_on_device );
-      memory_manager::assign( m_tracker , m_tracker );
+      memory_manager::clear( m_tracker , m_ptr_on_device );
 
-      m_ptr_on_device = (value_type *)
-        memory_manager::allocate(
-          label , typeid(value_type) , sizeof(value_type) , count );
+      if ( count ) {
+        memory_manager::assign( m_tracker , m_tracker );
+
+        m_ptr_on_device = (value_type *)
+          memory_manager::allocate(
+            label , typeid(value_type) , sizeof(value_type) , count );
+      }
+      else {
+        m_ptr_on_device = 0 ;
+      }
     }
 
   /*------------------------------------------------------------------*/

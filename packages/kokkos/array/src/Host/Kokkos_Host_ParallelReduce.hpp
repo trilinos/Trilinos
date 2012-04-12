@@ -55,6 +55,67 @@
 namespace Kokkos {
 namespace Impl {
 
+template< class FunctorType , class ReduceTraits >
+class ParallelReduce< FunctorType , ReduceTraits , void , Host >
+  : public HostThreadWorker<void> {
+private:
+  typedef          Host::size_type           size_type ;
+  typedef typename ReduceTraits ::value_type value_type ;
+
+  const FunctorType  m_work_functor ;
+  const size_type    m_work_count ;
+  value_type       & m_result ;
+
+  // Virtual method defined in HostThreadWorker
+  void execute_on_thread( HostThread & this_thread ) const
+  {
+    value_type update ; // This thread's reduction value
+
+    ReduceTraits::init( update );
+
+    // Iterate this thread's work
+
+    const std::pair<size_type,size_type> range =
+      this_thread.work_range( m_work_count );
+
+    for ( size_type iwork = range.first ; iwork < range.second ; ++iwork ) {
+      m_work_functor( iwork , update );
+    }
+
+    // Fan-in reduction of other threads' reduction data:
+    this_thread.reduce< ReduceTraits >( update );
+
+    if ( 0 == this_thread.rank() ) {
+      // Root of the fan-in reduction
+      m_result = update ;
+    }
+  }
+
+  ParallelReduce( const size_type      work_count ,
+                  const FunctorType  & functor ,
+                        value_type   & result )
+    : HostThreadWorker<void>()
+    , m_work_functor( functor )
+    , m_work_count( work_count )
+    , m_result( result )
+    {}
+
+public:
+
+  static void execute( const size_type      work_count ,
+                       const FunctorType  & functor ,
+                             value_type   & result )
+  {
+    MemoryManager< Host >::disable_memory_view_tracking();
+
+    ParallelReduce driver( work_count , functor , result );
+
+    MemoryManager< Host >::enable_memory_view_tracking();
+
+    HostThreadWorker<void>::execute( driver );
+  }
+};
+
 template< class FunctorType , class ReduceTraits , class FinalizeType >
 class ParallelReduce< FunctorType , ReduceTraits , FinalizeType , Host >
   : public HostThreadWorker<void> {

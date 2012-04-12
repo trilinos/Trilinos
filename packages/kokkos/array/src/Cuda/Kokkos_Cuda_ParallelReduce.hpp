@@ -504,6 +504,7 @@ public:
   typedef typename ReduceTraits::value_type     value_type ;
   typedef Value< value_type , Cuda >  view_type ;
 
+  static
   void execute( const size_t        work_count ,
                 const FunctorType & work_functor ,
                       value_type  & result )

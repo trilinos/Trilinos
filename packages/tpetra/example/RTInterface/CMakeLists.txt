@@ -2,6 +2,7 @@ INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE(TribitsCopyFilesToBinaryDir)
 
 IF (${PROJECT_NAME}_ENABLE_CXX11)
+
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     RTIExample
     SOURCES RTIExample
@@ -9,6 +10,7 @@ IF (${PROJECT_NAME}_ENABLE_CXX11)
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
+    DEPLIBS tpetrartitestlib
   )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -35,6 +37,7 @@ IF (${PROJECT_NAME}_ENABLE_CXX11)
       ARGS 
       COMM serial mpi
       STANDARD_PASS_OUTPUT
+      DEPLIBS tpetrartitestlib
     )
   ENDIF()
 

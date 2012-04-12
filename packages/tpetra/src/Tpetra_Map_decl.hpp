@@ -52,11 +52,9 @@
 // enums and defines
 #include "Tpetra_ConfigDefs.hpp"
 
-/** \file Tpetra_Map_decl.hpp 
-
-    The declarations for the class Tpetra::Map and related non-member constructors.
- */
-
+/// \file Tpetra_Map_decl.hpp 
+/// \brief Declarations for the Tpetra::Map class and related nonmember constructors.
+///
 namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -64,17 +62,18 @@ namespace Tpetra {
   template <class LO, class GO, class N> class Directory;
 #endif
 
-  /** \brief A class for partitioning distributed objects.
-
-   This class is templated on \c LocalOrdinal and \c GlobalOrdinal. 
-   The \c GlobalOrdinal type, if omitted, defaults to the \c LocalOrdinal type.
-  */
-  template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+  /// \class Map
+  /// \brief A class for partitioning distributed objects.
+  ///
+  /// This class is templated on \c LocalOrdinal and \c GlobalOrdinal.
+  /// The \c GlobalOrdinal type, if omitted, defaults to the \c
+  /// LocalOrdinal type.
+  template <class LocalOrdinal, 
+	    class GlobalOrdinal = LocalOrdinal, 
+	    class Node = Kokkos::DefaultNode::DefaultNodeType>
   class Map : public Teuchos::Describable {
-
   public:
-
-    //! @name Constructor/Destructor Methods
+    //! @name Constructors and destructor
     //@{ 
 
     /** \brief Map constructor with Tpetra-defined contiguous uniform distribution.
@@ -126,13 +125,11 @@ namespace Tpetra {
 	 const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
 	 const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
 
-    //! Map destructor. 
+    //! Destructor. 
     ~Map();
 
     //@}
-
-
-    //! @name Map Attribute Methods
+    //! @name Attributes
     //@{ 
 
     //! The number of elements in this Map.
@@ -145,10 +142,23 @@ namespace Tpetra {
     inline GlobalOrdinal getIndexBase() const { return indexBase_; }
 
     //! The minimum local index.
-    inline LocalOrdinal getMinLocalIndex() const { return Teuchos::OrdinalTraits<LocalOrdinal>::zero(); }
+    inline LocalOrdinal getMinLocalIndex() const { 
+      return Teuchos::OrdinalTraits<LocalOrdinal>::zero(); 
+    }
 
-    //! The maximum local index.
-    inline LocalOrdinal getMaxLocalIndex() const { return Teuchos::as<LocalOrdinal>(numLocalElements_-1); }
+    /// \brief The maximum local index.
+    ///
+    /// If getNodeNumElements() == 0, this returns -1 (assuming that
+    /// LocalOrdinal is a signed integer type).
+    inline LocalOrdinal getMaxLocalIndex() const {
+      using Teuchos::as;
+      typedef LocalOrdinal LO;
+      // This typecast sequence ensures that we return -1 if
+      // getNodeNumElements() == 0, rather than some huge positive
+      // number (which could happen if we first subtracted 1, then
+      // converted from size_t to LO).
+      return as<LO> (getNodeNumElements ()) - as<LO> (1);
+    }
 
     //! The minimum global index owned by this node.
     inline GlobalOrdinal getMinGlobalIndex() const { return minMyGID_; }
@@ -174,7 +184,7 @@ namespace Tpetra {
     /// <tt>Teuchos::OrdinalTraits<GlobalOrdinal>::invalid()</tt>.
     GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const;
 
-    /// \brief Return the node IDs and corresponding local IDs for a given list of global IDs.
+    /// \brief Process IDs and corresponding local IDs for a given list of global IDs.
     ///
     /// \pre nodeIDList.size() == GIDList.size()
     /// \pre LIDList.size() == GIDList.size()
@@ -186,9 +196,10 @@ namespace Tpetra {
     /// \note For a distributed noncontiguous Map, this operation
     ///   requires communication.  This is crucial technology used in
     ///   \c Export, \c Import, \c CrsGraph, and \c CrsMatrix.
-    LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
-                                    const Teuchos::ArrayView<                int> & nodeIDList, 
-                                    const Teuchos::ArrayView<       LocalOrdinal> & LIDList) const;
+    LookupStatus 
+    getRemoteIndexList (const Teuchos::ArrayView<const GlobalOrdinal>& GIDList, 
+			const Teuchos::ArrayView<                int>& nodeIDList, 
+			const Teuchos::ArrayView<       LocalOrdinal>& LIDList) const;
 
     /// \brief Return the node IDs for a given list of global IDs.
     ///
@@ -202,17 +213,22 @@ namespace Tpetra {
     /// \note For a distributed noncontiguous Map, this operation
     ///   requires communication.  This is crucial technology used in
     ///   \c Export, \c Import, \c CrsGraph, and \c CrsMatrix.
-    LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
-                                    const Teuchos::ArrayView<                int> & nodeIDList) const;
+    LookupStatus 
+    getRemoteIndexList (const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
+			const Teuchos::ArrayView<                int> & nodeIDList) const;
 
     //! Return a view of the global indices owned by this node.
     Teuchos::ArrayView<const GlobalOrdinal> getNodeElementList() const;
 
+    //@}
+    //! @name Boolean tests
+    //@{ 
+
     //! True if the local index is valid for this Map on this node, else false.
-    bool isNodeLocalElement(LocalOrdinal localIndex) const;
+    bool isNodeLocalElement (LocalOrdinal localIndex) const;
 
     //! True if the global index is found in this Map on this node, else false.
-    bool isNodeGlobalElement(GlobalOrdinal globalIndex) const;
+    bool isNodeGlobalElement (GlobalOrdinal globalIndex) const;
 
     /// \brief True if this Map is distributed contiguously, else false.
     ///
@@ -225,7 +241,7 @@ namespace Tpetra {
     /// faster for contiguous Maps.  Thus, if you know the indices are
     /// contiguous on all processes, you should consider using one of
     /// the constructors for contiguous elements.
-    bool isContiguous() const;
+    bool isContiguous () const;
 
     /// \brief Whether this Map is globally distributed or locally replicated.
     ///
@@ -246,12 +262,7 @@ namespace Tpetra {
     ///
     /// Calling this method requires no communication or computation,
     /// because the result is precomputed in Map's constructors.
-    bool isDistributed() const;
-
-    //@}
-
-    //! @name Boolean Tests
-    //@{ 
+    bool isDistributed () const;
 
     /// \brief True if and only if \c map is compatible with this Map.
     ///
@@ -323,27 +334,28 @@ namespace Tpetra {
     bool isSameAs (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const;
 
     //@}
+    //! Accessors for the \c Teuchos::Comm and Kokkos Node objects.
+    //@{ 
 
-    //@{ Accessors for the \c Teuchos::Comm and Kokkos Node objects.
-
-    //! Get the Comm object for this Map
+    //! Get this Map's Comm object.
     const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
 
-    //! Get the Node object for this Map
+    //! Get this Map's Node object.
     const Teuchos::RCP<Node> & getNode() const;
 
     //@}
-
-    //@{ Implementation of \c Teuchos::Describable 
+    //! Implementation of \c Teuchos::Describable 
+    //@{
 
     //! Return a simple one-line description of this object.
     std::string description() const;
 
-    //! Print this object with the given verbosity level to the given \c FancyOStream object.
-    void describe( Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const;
+    //! Print this object with the given verbosity level to the given \c FancyOStream.
+    void 
+    describe (Teuchos::FancyOStream &out, 
+	      const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
     //@}
-
 
   private:
 
@@ -370,7 +382,8 @@ namespace Tpetra {
     Map(const Map<LocalOrdinal,GlobalOrdinal,Node> & source);
 
     //! Assignment operator (declared but not defined; do not use).
-    Map<LocalOrdinal,GlobalOrdinal,Node>& operator=(const Map<LocalOrdinal,GlobalOrdinal,Node> & source);
+    Map<LocalOrdinal,GlobalOrdinal,Node>& 
+    operator= (const Map<LocalOrdinal,GlobalOrdinal,Node> & source);
 
     //! The communicator over which this Map is distributed.
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
@@ -418,7 +431,7 @@ namespace Tpetra {
     /// \typedef global_to_local_table_type
     /// \brief Type of the table that maps global IDs to local IDs.
     /// 
-    /// The actual type depends on the Tpetra_ENABLE_UNORDERD_MAP
+    /// The actual type depends on the Tpetra_ENABLE_UNORDERED_MAP
     /// configure-time option.  If the option was set, we use
     /// std::unordered_map (implemented as a hash table with linear
     /// chaining).  Otherwise, we use std::map (a sorted data

@@ -84,6 +84,18 @@ CREATE_DEPENDENCY_XML_DUMP_TEST_CASE(
   )
 
 
+CREATE_DEPENDENCY_XML_DUMP_TEST_CASE(
+  WithExtraRepoOnePackage
+  ARGS
+    -DTrilinos_EXTRA_REPOSITORIES=extraRepoOnePackage
+  PASS_REGULAR_EXPRESSION_ALL
+    "Trilinos_NUM_PACKAGES='24'"
+    "Trilinos_NUM_TPLS='19'"
+  COMPARE_XML_FILE
+    TrilinosPackageDependencies.extraRepoOnePackage.gold.xml
+  )
+
+
 #
 # Unit tests for full dependency handling
 #

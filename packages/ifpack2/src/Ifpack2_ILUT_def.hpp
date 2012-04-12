@@ -554,11 +554,10 @@ void ILUT<MatrixType>::apply(
 
   Time_.start(true);
 
-  //The following comment is from Ifpack's code. Leave it in Ifpack2 for now...
-  // AztecOO gives X and Y pointing to the same memory location,
-  // need to create an auxiliary vector, Xcopy
-  Teuchos::RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Xcopy;
-  if (&(X.get2dView()[0][0]) == &(Y.get2dView()[0][0]))
+  // If X and Y are pointing to the same memory location,
+  // we need to create an auxiliary vector, Xcopy
+  Teuchos::RCP< const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Xcopy;
+  if (X.getLocalMV().getValues() == Y.getLocalMV().getValues())
     Xcopy = Teuchos::rcp( new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(X) );
   else
     Xcopy = Teuchos::rcp( &X, false );

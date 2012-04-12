@@ -63,7 +63,7 @@ namespace Intrepid {
     bases[0].resize(2);
     bases[0][0] = Teuchos::rcp( new Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar>( orderx , pts_x ) );
     bases[0][1] = Teuchos::rcp( new Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar>( ordery , pts_y ) );
-    setBases( bases );
+    this->setBases( bases );
 
     this->basisCardinality_ = (orderx+1)*(ordery+1);
     if (orderx > ordery) {
@@ -99,7 +99,7 @@ namespace Intrepid {
     bases[0].resize(2);
     bases[0][0] = Teuchos::rcp( new Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar>( order , pointType ) );
     bases[0][1] = Teuchos::rcp( new Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar>( order , pointType ) );
-    setBases( bases );
+    this->setBases( bases );
 
     this->basisCardinality_ = (order+1)*(order+1);
     this->basisDegree_ = order;

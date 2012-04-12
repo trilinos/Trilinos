@@ -115,6 +115,8 @@ namespace Tpetra {
         typeName(*this) << "::CrsMatrix(): caught exception while allocating "
         "CrsGraph object: " << std::endl << e.what ());
     }
+    // FIXME (mfh 11 Apr 2012) Somebody explain to me why we're
+    // setting the static graph, when this matrix has a dynamic graph.
     staticGraph_ = myGraph_;
     lclMatrix_.setOwnedGraph(myGraph_->getLocalGraphNonConst());
     // it is okay to create this now; this will prevent us from having to check for it on every call to apply()
@@ -149,6 +151,8 @@ namespace Tpetra {
           typeName(*this) << "::CrsMatrix(): caught exception while allocating CrsGraph object: " 
           << std::endl << e.what() << std::endl);
     }
+    // FIXME (mfh 11 Apr 2012) Somebody explain to me why we're
+    // setting the static graph, when this matrix has a dynamic graph.
     staticGraph_ = myGraph_;
     lclMatrix_.setOwnedGraph(myGraph_->getLocalGraphNonConst());
     // it is okay to create this now; this will prevent us from having to check for it on every call to apply()
@@ -184,6 +188,8 @@ namespace Tpetra {
         typeName(*this) << "::CrsMatrix(): caught exception while allocating "
         "CrsGraph object: " << std::endl << e.what ());
     }
+    // FIXME (mfh 11 Apr 2012) Somebody explain to me why we're
+    // setting the static graph, when this matrix has a dynamic graph.
     staticGraph_ = myGraph_;
     lclMatrix_.setOwnedGraph(myGraph_->getLocalGraphNonConst());
     // it is okay to create this now; this will prevent us from having to check for it on every call to apply()
@@ -220,6 +226,8 @@ namespace Tpetra {
         typeName(*this) << "::CrsMatrix(): caught exception while allocating "
 	"CrsGraph object: " << std::endl << e.what ());
     }
+    // FIXME (mfh 11 Apr 2012) Somebody explain to me why we're
+    // setting the static graph, when this matrix has a dynamic graph.
     staticGraph_ = myGraph_;
     lclMatrix_.setOwnedGraph(myGraph_->getLocalGraphNonConst());
     // it is okay to create this now; this will prevent us from having to check for it on every call to apply()
@@ -271,7 +279,6 @@ namespace Tpetra {
     resumeFill();
     checkInternalState();
   }
-
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::~CrsMatrix() {
@@ -1607,13 +1614,17 @@ namespace Tpetra {
   }
 
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillComplete(
-                                            const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, 
-                                            const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, 
-                                            OptimizeOption os) 
+
+  template<class Scalar, 
+	   class LocalOrdinal, 
+	   class GlobalOrdinal, 
+	   class Node, 
+	   class LocalMatOps>
+  void 
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  fillComplete (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, 
+		const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, 
+		OptimizeOption os) 
   {
     const std::string tfecfFuncName("fillComplete()");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive() || isFillComplete(), 
@@ -1866,7 +1877,12 @@ namespace Tpetra {
     // always remains in a valid state
 
     // we must have a static graph
+    //
+    // FIXME (mfh 11 Apr 2012) This so-called "static graph" could be
+    // a dynamic graph, depending on which constructor was used.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( staticGraph_ == null,                                             std::logic_error, err);
+    // mfh 11 Apr 2012: myGraph == null means that the matrix has a
+    // static graph.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( myGraph_ != null && myGraph_ != staticGraph_,                     std::logic_error, err);
     // if matrix is fill complete, then graph must be fill complete
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( fillComplete_ == true && staticGraph_->isFillComplete() == false, std::logic_error, err);
@@ -1880,7 +1896,7 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( staticGraph_->indicesAreAllocated() 
                         && staticGraph_->getNodeAllocationSize() > 0 && staticGraph_->getNodeNumRows() > 0
                         && values2D_ == null && values1D_ == null,                                   std::logic_error, err);
-    // we can nae have both a 1D and 2D allocation
+    // we cannot have both a 1D and 2D allocation
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( values1D_ != null && values2D_ != null,                           std::logic_error, err);
 #endif
   }
@@ -1908,28 +1924,36 @@ namespace Tpetra {
   }
 
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
+  void 
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  describe (Teuchos::FancyOStream &out, 
+	    const Teuchos::EVerbosityLevel verbLevel) const 
+  {
     using std::endl;
     using std::setw;
+    using Teuchos::as;
+    using Teuchos::Comm;
+    using Teuchos::RCP;
     using Teuchos::VERB_DEFAULT;
     using Teuchos::VERB_NONE;
     using Teuchos::VERB_LOW;
     using Teuchos::VERB_MEDIUM;
     using Teuchos::VERB_HIGH;
     using Teuchos::VERB_EXTREME;
+
     Teuchos::EVerbosityLevel vl = verbLevel;
-    if (vl == VERB_DEFAULT) vl = VERB_LOW;
+    if (vl == VERB_DEFAULT) {
+      vl = VERB_LOW;
+    }
     RCP<const Comm<int> > comm = this->getComm();
-    const int myImageID = comm->getRank(),
-              numImages = comm->getSize();
+    const int myImageID = comm->getRank();
+    const int numImages = comm->getSize();
     size_t width = 1;
     for (size_t dec=10; dec<getGlobalNumRows(); dec *= 10) {
       ++width;
     }
-    width = std::max<size_t>(width,Teuchos::as<size_t>(11)) + 2;
+    width = std::max<size_t> (width, as<size_t> (11)) + 2;
     Teuchos::OSTab tab(out);
     //    none: print nothing
     //     low: print O(1) info from node 0
@@ -2058,19 +2082,24 @@ namespace Tpetra {
   }
 
 
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  bool CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::checkSizes(const DistObject<char, LocalOrdinal,GlobalOrdinal,Node> & source)
+  template<class Scalar, 
+	   class LocalOrdinal, 
+	   class GlobalOrdinal, 
+	   class Node, 
+	   class LocalMatOps>
+  bool 
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  checkSizes (const DistObject<char, LocalOrdinal, GlobalOrdinal, Node>& source)
   {
     // It's not clear what kind of compatibility checks on sizes can be performed here.
     // Epetra_CrsGraph doesn't check any sizes for compatibility.
 
     // right now, we'll only support import/exporting between CrsMatrix<Scalar>
     // if the source dist object isn't CrsMatrix or some offspring, flag this operation as incompatible.
-    try  {
-      const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> & A = dynamic_cast<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> &>(source);
-      (void)A;
+    try {
+      typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> this_type;
+      const this_type& A = dynamic_cast<const this_type&> (source);
+      (void) A;
     }
     catch (...) {
       // If the input isn't even a CrsMatrix, then certainly the sizes
@@ -2087,7 +2116,7 @@ namespace Tpetra {
 	   class Node, 
 	   class LocalMatOps>
   void 
-  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
   copyAndPermute (const DistObject<char, LocalOrdinal,GlobalOrdinal,Node> & source,
 		  size_t numSameIDs,
 		  const ArrayView<const LocalOrdinal> &permuteToLIDs,
@@ -2239,11 +2268,11 @@ namespace Tpetra {
 	   class Node, 
 	   class LocalMatOps>
   void 
-  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  packAndPrepare (const DistObject<char, LocalOrdinal,GlobalOrdinal,Node> & source,
-		  const ArrayView<const LocalOrdinal> &exportLIDs,
-		  Array<char> &exports,
-		  const ArrayView<size_t> & numPacketsPerLID,
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
+  packAndPrepare (const DistObject<char, LocalOrdinal,GlobalOrdinal,Node>& source,
+		  const ArrayView<const LocalOrdinal>& exportLIDs,
+		  Array<char>& exports,
+		  const ArrayView<size_t>& numPacketsPerLID,
 		  size_t& constantNumPackets,
 		  Distributor &distor)
   {
@@ -2373,7 +2402,7 @@ namespace Tpetra {
 	   class Node, 
 	   class LocalMatOps>
   void 
-  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
   combineGlobalValues (const GlobalOrdinal globalRowIndex, 
 		       const Teuchos::ArrayView<const GlobalOrdinal> columnIndices,
 		       const Teuchos::ArrayView<const Scalar> values,
@@ -2529,8 +2558,6 @@ namespace Tpetra {
     }
   }
 
-    
-
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   //                                                                         //
@@ -2645,5 +2672,11 @@ namespace Tpetra {
 #define TPETRA_CRSMATRIX_INSTANT(SCALAR,LO,GO,NODE) \
   \
   template class CrsMatrix< SCALAR , LO , GO , NODE >;
+
+#define TPETRA_CRSMATRIX_CONVERT_INSTANT(SO,SN,LO,GO,NODE) \
+  \
+  template RCP< CrsMatrix< SN , LO , GO , NODE > >   \
+                CrsMatrix< SO , LO , GO , NODE >::convert< SN > () const;
+
 
 #endif
