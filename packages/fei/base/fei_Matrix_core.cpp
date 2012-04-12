@@ -257,7 +257,7 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
 
     MPI_Send(&bsize, 1, MPI_INT, proc, tag1, comm_);
 
-    remotelyOwned_[proc]->clear();//setValues(0.0);
+    remotelyOwned_[proc]->setValues(0.0); //clear();
   }
 
   int numRecvProcs = recvProcs_.size();
