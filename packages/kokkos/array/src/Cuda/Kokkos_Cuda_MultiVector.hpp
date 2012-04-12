@@ -67,49 +67,22 @@ public:
       dst.m_stride * dst.m_count * sizeof(ValueType );
 
     MemoryManager< Cuda >::
-      copy_to_device_from_device( dst.m_memory.ptr_on_device(),
-                                  src.m_memory.ptr_on_device(),
+      copy_to_device_from_device( dst.m_ptr_on_device ,
+                                  src.m_ptr_on_device ,
                                   alloc_size );
   }
-};
 
-template< typename ValueType >
-struct Factory< MultiVector< ValueType , Cuda > ,
-                MultiVector< ValueType , HostMapped< Cuda > > >
-{
-  typedef MultiVector< ValueType , Cuda >                dst_type ;
-  typedef MultiVector< ValueType , HostMapped< Cuda > >  src_type ;
-
-  static void deep_copy( const dst_type & dst , const src_type & src )
+  static void deep_copy( const MultiVector< ValueType , Cuda > & dst ,
+                         const MultiVector< ValueType , Cuda > & src ,
+                         const size_t length )
   {
-    const Cuda::size_type size =
-      dst.m_stride * dst.m_count * sizeof(ValueType);
-
     MemoryManager< Cuda >::
-      copy_to_device_from_host( dst.m_ptr_on_device ,
-                                src.m_ptr_on_device ,
-                                size );
+      copy_to_device_from_device( dst.m_ptr_on_device ,
+                                  src.m_ptr_on_device ,
+                                  length * sizeof(ValueType) );
   }
 };
 
-template< typename ValueType >
-struct Factory< MultiVector< ValueType , HostMapped< Cuda > > ,
-                MultiVector< ValueType , Cuda > >
-{
-  typedef MultiVector< ValueType , HostMapped< Cuda > >  dst_type ;
-  typedef MultiVector< ValueType , Cuda >                src_type ;
-
-  static void deep_copy( const dst_type & dst , const src_type & src )
-  {
-    const Cuda::size_type size =
-      dst.m_stride * dst.m_count * sizeof(ValueType);
-
-    MemoryManager< Cuda >::
-      copy_to_host_from_device( dst.m_ptr_on_device ,
-                                src.m_ptr_on_device ,
-                                size );
-  }
-};
 
 template< typename ValueType >
 struct Factory< MultiVector< ValueType , Cuda > ,
@@ -123,10 +96,22 @@ struct Factory< MultiVector< ValueType , Cuda > ,
     const Cuda::size_type size =
       dst.m_stride * dst.m_count * sizeof(ValueType);
 
+    // Require src.m_stride == dst.m_stride
+    // Require src.m_count  == dst.m_count 
+
     MemoryManager< Cuda >::
       copy_to_device_from_host( dst.m_ptr_on_device ,
                                 src.m_ptr_on_device ,
                                 size );
+  }
+
+  static void deep_copy( const dst_type & dst , const src_type & src ,
+                         const size_t length )
+  {
+    MemoryManager< Cuda >::
+      copy_to_device_from_host( dst.m_ptr_on_device ,
+                                src.m_ptr_on_device ,
+                                length * sizeof(ValueType) );
   }
 };
 
@@ -142,12 +127,25 @@ struct Factory< MultiVector< ValueType , Host > ,
     const Cuda::size_type size =
       output.m_stride * output.m_count * sizeof(ValueType);
 
+    // Require src.m_stride == dst.m_stride
+    // Require src.m_count  == dst.m_count 
+
     MemoryManager< Cuda >::
       copy_to_host_from_device( output.m_ptr_on_device ,
                                 input.m_ptr_on_device ,
                                 size );
   }
 
+  static void deep_copy( const output_type & output , const input_type & input ,
+                         const size_t length )
+  {
+    MemoryManager< Cuda >::
+      copy_to_host_from_device( output.m_ptr_on_device ,
+                                input.m_ptr_on_device ,
+                                length * sizeof(ValueType) );
+  }
+
+  // Mirror creation:
   static inline
   output_type create( const input_type & input )
   {

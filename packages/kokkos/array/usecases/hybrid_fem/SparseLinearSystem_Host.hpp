@@ -41,47 +41,65 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_FEMESH_HPP
-#define KOKKOS_FEMESH_HPP
+#ifndef SPARSELINEARSYSTEM_HOST_HPP
+#define SPARSELINEARSYSTEM_HOST_HPP
 
-#include <utility>
-#include <limits>
-#include <iostream>
-#include <sstream>
-#include <stdexcept>
+#include <SparseLinearSystem.hpp>
+#include <Kokkos_Host.hpp>
 
-#include <Kokkos_CrsArray.hpp>
-#include <Kokkos_MDArray.hpp>
-#include <Kokkos_MultiVector.hpp>
+namespace Kokkos {
+namespace Impl {
 
-#include <ParallelComm.hpp>
-#include <ParallelDataMap.hpp>
+template< typename AScalarType , typename VScalarType >
+struct Multiply< CrsMatrix<AScalarType,Host> ,
+                 MultiVector<VScalarType,Host > ,
+                 MultiVector<VScalarType,Host > >
+{
+  typedef Host                                      device_type ;
+  typedef device_type::size_type                    size_type ;
+  typedef MultiVector< VScalarType , device_type >  vector_type ;
+  typedef CrsMatrix< AScalarType , device_type >    matrix_type ;
 
-namespace HybridFEM {
+private:
 
-//----------------------------------------------------------------------------
-/** \brief  Finite element mesh fixture for hybrid parallel performance tests.
- */
-template< typename CoordScalarType , unsigned ElemNodeCount , class Device >
-struct FEMesh {
+  matrix_type  m_A ;
+  vector_type  m_x ;
+  vector_type  m_y ;
 
-  typedef typename Device::size_type size_type ;
+public:
 
-  static const size_type element_node_count = ElemNodeCount ;
+  //--------------------------------------------------------------------------
 
-  typedef Kokkos::MDArray<  CoordScalarType , Device >  node_coords_type ;
-  typedef Kokkos::MDArray<  size_type ,       Device >  elem_node_ids_type ;
-  typedef Kokkos::CrsArray< size_type[2] ,    Device >  node_elem_ids_type ;
+  inline
+  void operator()( const size_type iRow ) const
+  {
+    const size_type iEntryBegin = m_A.graph.row_entry_begin(iRow);
+    const size_type iEntryEnd   = m_A.graph.row_entry_end(iRow);
 
-  node_coords_type         node_coords ;
-  elem_node_ids_type       elem_node_ids ;
-  node_elem_ids_type       node_elem_ids ;
-  Kokkos::ParallelDataMap  parallel_data_map ;
+    double sum = 0 ;
+
+    for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
+      sum += m_A.coefficients(iEntry) * m_x( m_A.graph(iEntry) );
+    }
+
+    m_y(iRow) = sum ;
+  }
+
+  static void apply( const matrix_type & A ,
+                     const vector_type & x ,
+                     const vector_type & y )
+  {
+    Multiply op ;
+    op.m_A = A ;
+    op.m_x = x ;
+    op.m_y = y ;
+    parallel_for( A.graph.row_count() , op );
+  }
 };
 
-//----------------------------------------------------------------------------
+} /* namespace Impl */
+} /* namespace Kokkos */
 
-} /* namespace HybridFEM */
 
-#endif /* #ifndef KOKKOS_FEMESH_HPP */
+#endif /* #ifndef SPARSELINEARSYSTEM_HOST_HPP */
 

@@ -156,7 +156,7 @@ box_mesh_fixture_verify(
 //
 
 template < typename Scalar , class Device >
-FEMesh< Scalar , 8 , Device >
+HybridFEM::FEMesh< Scalar , 8 , Device >
 box_mesh_fixture( const size_t proc_count ,
                   const size_t proc_local ,
                   const size_t nodes_x ,
@@ -168,7 +168,7 @@ box_mesh_fixture( const size_t proc_count ,
 
   typedef typename Device::size_type  size_type ;
   typedef Scalar                      scalar_type ;
-  typedef FEMesh< scalar_type , element_node_count , Device > femesh_type ;
+  typedef HybridFEM::FEMesh< scalar_type , element_node_count , Device > femesh_type ;
 
   const size_t elem_node_local_coord[ element_node_count ][3] =
     { { 0 , 0 , 0 } , { 1 , 0 , 0 } , { 1 , 1 , 0 } , { 0 , 1 , 0 } ,
@@ -249,12 +249,16 @@ box_mesh_fixture( const size_t proc_count ,
   typedef typename femesh_type::node_elem_ids_type  node_elem_ids_type ;
   typedef Kokkos::MDArray< unsigned , Kokkos::Host > comm_data_array_type ;
 
-  mesh.node_coords =
-    Kokkos::create_mdarray< node_coords_type >( node_count_total , 3 );
+  if ( node_count_total ) {
+    mesh.node_coords =
+      Kokkos::create_mdarray< node_coords_type >( node_count_total , 3 );
+  }
 
-  mesh.elem_node_ids =
-    Kokkos::create_mdarray< elem_node_ids_type >( elem_count_total ,
-                                                  element_node_count );
+  if ( elem_count_total ) {
+    mesh.elem_node_ids =
+      Kokkos::create_mdarray< elem_node_ids_type >( elem_count_total ,
+                                                    element_node_count );
+  }
 
   mesh.parallel_data_map.count_interior = node_count_interior ;
   mesh.parallel_data_map.count_owned    = node_count_owned ;

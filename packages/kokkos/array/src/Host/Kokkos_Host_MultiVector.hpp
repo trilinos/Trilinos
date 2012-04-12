@@ -187,18 +187,25 @@ struct Factory< MultiVector< ValueType , Host > ,
 
 private:
 
-  output_type output ;
-  input_type input ;
+  output_type     output ;
+  input_type      input ;
+  const size_type length ;
+  const size_type count ;
 
-  Factory( const output_type & arg_output , const input_type & arg_input )
-    : output( arg_output ), input( arg_input ) {}
+  Factory( const output_type & arg_output , const input_type & arg_input ,
+           const size_t arg_length , const size_t arg_count )
+    : output( arg_output )
+    , input( arg_input )
+    , length( arg_length )
+    , count(  arg_count )
+    {}
 
   void execute_on_thread( HostThread & this_thread ) const
   {
     const std::pair<size_type,size_type> range =
-      this_thread.work_range( output.length() );
+      this_thread.work_range( length );
 
-    for ( size_type i = 0 ; i < output.count() ; ++i ) {
+    for ( size_type i = 0 ; i < count ; ++i ) {
       const output_type x( output , i );
       const input_type y( input , i );
       ValueType * const x_end = x.ptr_on_device() + range.second ;
@@ -217,7 +224,18 @@ public:
   {
     typedef MemoryManager< Host::memory_space > memory_manager ;
     memory_manager::disable_memory_view_tracking();
-    Factory driver( output , input );
+    Factory driver( output , input , output.length() , output.length() );
+    memory_manager::enable_memory_view_tracking();
+    HostThreadWorker<void>::execute( driver );
+  }
+
+  static inline
+  void deep_copy( const output_type & output , const input_type & input ,
+                  const size_t length )
+  {
+    typedef MemoryManager< Host::memory_space > memory_manager ;
+    memory_manager::disable_memory_view_tracking();
+    Factory driver( output , input , length , 1 );
     memory_manager::enable_memory_view_tracking();
     HostThreadWorker<void>::execute( driver );
   }

@@ -1,19 +1,26 @@
 
+#define KOKKOS_ARRAY_BOUNDS_CHECK 1
+
 #include <iostream>
 #include <stdexcept>
 #include <limits>
 #include <utility>
 #include <BoxMeshPartition.hpp>
 #include <BoxMeshFixture.hpp>
+#include <TestBoxMeshFixture.hpp>
+#include <Implicit.hpp>
 
 #include <Kokkos_Host.hpp>
-
-#include <TestBoxMeshFixture.hpp>
 
 #include <Kokkos_Host_macros.hpp>
 #include <ParallelDataMap_macros.hpp>
 #include <TestBoxMeshFixture_macros.hpp>
+#include <Implicit_macros.hpp>
+#include <SparseLinearSystem_macros.hpp>
+#include <SparseLinearSystemFill_macros.hpp>
 #include <Kokkos_Clear_macros.hpp>
+
+#include <SparseLinearSystem_Host.hpp>
 
 //----------------------------------------------------------------------------
 
@@ -146,5 +153,7 @@ void test_host( comm::Machine machine )
   }
 
   test_box_fixture<Kokkos::Host>( machine , 100 , 200 , 300 );
+
+  HybridFEM::Implicit::driver<double,Kokkos::Host>( "Host" , machine , 0 , 0 , 0 );
 }
 

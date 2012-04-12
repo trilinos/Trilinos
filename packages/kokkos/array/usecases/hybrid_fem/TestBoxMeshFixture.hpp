@@ -72,11 +72,11 @@ template< typename coordinate_scalar_type ,
           unsigned ElemNodeCount ,
           class Device >
 void verify_parallel(
-  const FEMesh< coordinate_scalar_type ,
-                ElemNodeCount ,
-                Device > & mesh )
+  const HybridFEM::FEMesh< coordinate_scalar_type ,
+                           ElemNodeCount ,
+                           Device > & mesh )
 {
-  typedef FEMesh< coordinate_scalar_type, ElemNodeCount, Device > femesh_type ;
+  typedef HybridFEM::FEMesh< coordinate_scalar_type, ElemNodeCount, Device > femesh_type ;
   typedef typename femesh_type::node_coords_type node_coords_type ;
 
   comm::Machine machine = mesh.parallel_data_map.machine ;
@@ -86,7 +86,7 @@ void verify_parallel(
   const size_t chunk_size = 3 ;
 
   Kokkos::AsyncExchange< coordinate_scalar_type, Device, Kokkos::ParallelDataMap >
-    exchange( machine , mesh.parallel_data_map , chunk_size );
+    exchange( mesh.parallel_data_map , chunk_size );
 
   const size_t send_begin = mesh.parallel_data_map.count_interior ;
   const size_t send_count = mesh.parallel_data_map.count_send ;
@@ -137,9 +137,9 @@ template< typename coordinate_scalar_type ,
           class Device >
 void verify_parallel(
   comm::Machine machine ,
-  const FEMesh< coordinate_scalar_type ,
-                ElemNodeCount ,
-                Device > & mesh )
+  const HybridFEM::FEMesh< coordinate_scalar_type ,
+                           ElemNodeCount ,
+                           Device > & mesh )
 {}
 
 } // namespace TestFEMesh
@@ -159,7 +159,7 @@ void test_box_fixture( comm::Machine machine ,
   const size_t proc_count = comm::size( machine );
   const size_t proc_local = comm::rank( machine ) ;
 
-  FEMesh< coordinate_scalar_type , 8 , Device > mesh =
+  HybridFEM::FEMesh< coordinate_scalar_type , 8 , Device > mesh =
     box_mesh_fixture< coordinate_scalar_type , Device >
       ( proc_count , proc_local , nodes_nx , nodes_ny , nodes_nz );
 

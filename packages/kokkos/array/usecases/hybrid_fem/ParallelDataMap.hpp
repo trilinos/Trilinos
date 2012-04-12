@@ -119,7 +119,6 @@ private:
   static const int mpi_tag = 11 ;
 
   const data_map_type  data_map ;
-  comm::Machine        machine ;
   unsigned             chunk_size ;
   unsigned             send_count_max ;
   buffer_host_type     host_send_buffer ;
@@ -129,11 +128,9 @@ public:
 
   const buffer_dev_type & buffer() const { return dev_buffer ; }
 
-  AsyncExchange( comm::Machine         arg_machine ,
-                 const data_map_type & arg_data_map ,
+  AsyncExchange( const data_map_type & arg_data_map ,
                  const size_t          arg_chunk )
   : data_map( arg_data_map )
-  , machine( arg_machine )
   , chunk_size( arg_chunk )
   , send_count_max( 0 )
   , host_send_buffer()
@@ -191,7 +188,8 @@ public:
         const int count = data_map.host_recv(i,1) * chunk_size ;
 
         MPI_Irecv( ptr , count * sizeof(ValueType) , MPI_BYTE ,
-                   proc , mpi_tag , machine.mpi_comm , & recv_request[i] );
+                   proc , mpi_tag , data_map.machine.mpi_comm ,
+                   & recv_request[i] );
 
         ptr += count ;
       }
@@ -199,7 +197,7 @@ public:
 
     // Wait for all receives to be posted before ready-sending
 
-    MPI_Barrier( machine.mpi_comm );
+    MPI_Barrier( data_map.machine.mpi_comm );
 
     {
       buffer_host_type send_msg_buffer ;
@@ -221,7 +219,7 @@ public:
 
         MPI_Rsend( send_msg_buffer.ptr_on_device(),
                    count * chunk_size * sizeof(ValueType) , MPI_BYTE ,
-                   proc , mpi_tag , machine.mpi_comm );
+                   proc , mpi_tag , data_map.machine.mpi_comm );
       }
     }
 
@@ -247,7 +245,7 @@ public:
            ( expected_size != recv_size ) ) {
         std::ostringstream msg ;
         msg << "AsyncExchange error:"
-            << " P" << comm::rank( machine )
+            << " P" << comm::rank( data_map.machine )
             << " received from P" << recv_proc
             << " size "     << recv_size
             << " expected " << expected_size
