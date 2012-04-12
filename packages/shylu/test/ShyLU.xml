@@ -25,7 +25,7 @@
 
         <Parameter name="Schur Approximation Method" type="string" value="Threshold" />
         <Parameter name="Relative Threshold" type="double" value="1e-3" />
-        <Parameter name="Schur Complement Solver" type="string" value="Amesos"/>
+        <Parameter name="Schur Complement Solver" type="string" value="AztecOO-Exact"/>
 
         <!--Please leave symmetry as it is " /-->
         <Parameter name="Symmetry" type="int" value="1" />
