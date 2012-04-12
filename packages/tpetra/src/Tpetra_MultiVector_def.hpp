@@ -695,9 +695,13 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::meanValue(const Teuchos::ArrayView<Scalar> &means) const
   {
-    typedef Teuchos::ScalarTraits<Scalar> SCT;
-    using Teuchos::ArrayRCP;
+    using Teuchos::as;
     using Teuchos::arcp_const_cast;
+    using Teuchos::ArrayRCP;
+    using Teuchos::reduceAll;
+    using Teuchos::REDUCE_SUM;
+    typedef Teuchos::ScalarTraits<Scalar> SCT;
+
     const size_t numVecs = getNumVectors();
     const size_t myLen   = getLocalLength();
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(means.size()) != numVecs, std::runtime_error,
@@ -719,11 +723,18 @@ namespace Tpetra {
     if (this->isDistributed()) {
       Teuchos::Array<Scalar> lmeans(means);
       // only combine if we are a distributed MV
-      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,Teuchos::as<int>(numVecs),lmeans.getRawPtr(),means.getRawPtr());
+      reduceAll (*this->getMap ()->getComm (), REDUCE_SUM, as<int> (numVecs), 
+		 lmeans.getRawPtr (), means.getRawPtr ());
     }
-    const Scalar OneOverN = Teuchos::ScalarTraits<Scalar>::one() / getGlobalLength();
-    for (typename Teuchos::ArrayView<Scalar>::iterator i = means.begin(); i != means.begin()+numVecs; ++i) {
-      (*i) = (*i)*OneOverN;
+    // mfh 12 Apr 2012: Don't take out the cast from the ordinal type
+    // to the magnitude type, since operator/ (std::complex<T>, int)
+    // isn't necessarily defined.
+    const Scalar OneOverN = 
+      SCT::one() / as<typename SCT::magnitudeType> (getGlobalLength ());
+    for (typename Teuchos::ArrayView<Scalar>::iterator i = means.begin(); 
+	 i != means.begin() + numVecs; 
+	 ++i) {
+      (*i) = (*i) * OneOverN;
     }
   }
 

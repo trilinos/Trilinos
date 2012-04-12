@@ -124,14 +124,19 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Scalar Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::meanValue() const {
+    using Teuchos::as;
     using Teuchos::outArg;
     typedef Teuchos::ScalarTraits<Scalar> SCT;
+
     Scalar sum = MVT::Sum(this->lclMV_);
     if (this->isDistributed()) {
       Scalar lsum = sum;
       Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lsum,outArg(sum));
     }
-    return sum / this->getGlobalLength();
+    // mfh 12 Apr 2012: Don't take out the cast from the ordinal type
+    // to the magnitude type, since operator/ (std::complex<T>, int)
+    // isn't necessarily defined.
+    return sum / as<typename SCT::magnitudeType> (this->getGlobalLength ());
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
