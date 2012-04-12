@@ -26,40 +26,40 @@ namespace Xpetra {
 
    //@}
 
-    //! @name Export Attribute Methods
+    //! @name Import Attribute Methods
     //@{
 
-    //! Returns the number of entries that are identical between the source and target maps, up to the first different ID.
+    //! Number of initial identical IDs.
     virtual size_t getNumSameIDs() const = 0;
 
-    //! Returns the number of entries that are local to the calling image, but not part of the first getNumSameIDs() entries.
+    //! Number of IDs to permute but not to communicate.
     virtual size_t getNumPermuteIDs() const = 0;
 
-    //! List of entries in the source Map that are permuted. (non-persisting view).
+    //! List of local IDs in the source Map that are permuted.
     virtual ArrayView< const LocalOrdinal > getPermuteFromLIDs() const = 0;
 
-    //! List of entries in the target Map that are permuted. (non-persisting view).
+    //! List of local IDs in the target Map that are permuted.
     virtual ArrayView< const LocalOrdinal > getPermuteToLIDs() const = 0;
 
-    //! Returns the number of entries that are not on the calling image.
+    //! Number of entries not on the calling process.
     virtual size_t getNumRemoteIDs() const = 0;
 
-    //! List of entries in the target Map that are coming from other images. (non-persisting view).
+    //! List of entries in the target Map to receive from other processes.
     virtual ArrayView< const LocalOrdinal > getRemoteLIDs() const = 0;
 
-    //! Returns the number of entries that must be sent by the calling image to other images.
+    //! Number of entries that must be sent by the calling process to other processes.
     virtual size_t getNumExportIDs() const = 0;
 
-    //! List of entries in the source Map that will be sent to other images. (non-persisting view).
+    //! List of entries in the source Map that will be sent to other processes.
     virtual ArrayView< const LocalOrdinal > getExportLIDs() const = 0;
 
-    //! List of images to which entries will be sent, getExportLIDs() [i] will be sent to image getExportImageIDs() [i]. (non-persisting view).
+    //! List of processes to which entries will be sent.
     virtual ArrayView< const int > getExportImageIDs() const = 0;
 
-    //! Returns the Source Map used to construct this importer.
+    //! The Source Map used to construct this Import object.
     virtual const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getSourceMap() const = 0;
 
-    //! Returns the Target Map used to construct this importer.
+    //! The Target Map used to construct this Import object.
     virtual const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getTargetMap() const = 0;
 
     //@}

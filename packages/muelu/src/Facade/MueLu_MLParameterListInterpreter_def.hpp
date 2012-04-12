@@ -52,9 +52,9 @@ namespace MueLu {
     int    verbosityLevel        = 10;   // verbosity level
     int    maxCoarseSize         = 50;
     int    nDofsPerNode          = 1;    // coalesce and drop parameters
-    double agg_threshold         = 0.0;  // aggregation parameters
+    //double agg_threshold         = 0.0;  // aggregation parameters
     double agg_damping           = 4/3;
-    int    agg_smoothingsweeps   = 1;
+    //int    agg_smoothingsweeps   = 1;
     int    minPerAgg             = 3;    // optimal for 2d
     int    maxNbrAlreadySelected = 0;
     std::string agg_type         = "Uncoupled";
@@ -64,9 +64,9 @@ namespace MueLu {
     if(paramList.isParameter("ML output"))                       verbosityLevel      = paramList.get<int>("ML output");
     if(paramList.isParameter("coarse: max size"))                maxCoarseSize       = paramList.get<int>("coarse: max size");
     if(paramList.isParameter("PDE equations"))                   nDofsPerNode        = paramList.get<int>("PDE equations");
-    if(paramList.isParameter("aggregation: threshold"))          agg_threshold       = paramList.get<double>("aggregation: threshold");
+    //if(paramList.isParameter("aggregation: threshold"))          agg_threshold       = paramList.get<double>("aggregation: threshold");
     if(paramList.isParameter("aggregation: damping factor"))     agg_damping         = paramList.get<double>("aggregation: damping factor");
-    if(paramList.isParameter("aggregation: smoothing sweeps"))   agg_smoothingsweeps = paramList.get<int>   ("aggregation: smoothing sweeps");
+    //if(paramList.isParameter("aggregation: smoothing sweeps"))   agg_smoothingsweeps = paramList.get<int>   ("aggregation: smoothing sweeps");
     if(paramList.isParameter("aggregation: type"))               agg_type            = paramList.get<std::string> ("aggregation: type");
     //if(paramList.isParameter("aggregation: nodes per aggregate")) minPerAgg        = paramList.get<int>("aggregation: nodes per aggregate");
     if(paramList.isParameter("energy minimization: enable"))     bEnergyMinimization = paramList.get<bool>("energy minimization: enable");

@@ -66,22 +66,22 @@ namespace Xpetra {
     //! @name Post-construction modification routines
     //@{
 
-    //! Replace current value at the specified (globalRow, vectorIndex) location with specified value.
+    //! Replace value, using global (row) index.
     void replaceGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) { vec_->replaceGlobalValue(globalRow, vectorIndex, value); }
 
-    //! Adds specified value to existing value at the specified (globalRow, vectorIndex) location.
+    //! Add value to existing value, using global (row) index.
     void sumIntoGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) { vec_->sumIntoGlobalValue(globalRow, vectorIndex, value); }
 
-    //! Replace current value at the specified (myRow, vectorIndex) location with specified value.
+    //! Replace value, using local (row) index.
     void replaceLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) { vec_->replaceLocalValue(myRow, vectorIndex, value); }
 
-    //! Adds specified value to existing value at the specified (myRow, vectorIndex) location.
+    //! Add value to existing value, using local (row) index.
     void sumIntoLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) { vec_->sumIntoLocalValue(myRow, vectorIndex, value); }
 
-    //! Initialize all values in a multi-vector with specified value.
+    //! Set all values in the multivector with the given value.
     void putScalar(const Scalar &value) { vec_->putScalar(value); }
 
-    //! Instruct a local (non-distributed) MultiVector to sum values across all nodes.
+    //! For a locally replicated multivector: sum values across all processes.
     void reduce() { vec_->reduce(); }
 
     //@}
@@ -89,25 +89,25 @@ namespace Xpetra {
     //! @name Data Copy and View get methods
     //@{
 
-    //! 
+    //! Const view of the local values in a particular vector of this multivector.
     Teuchos::ArrayRCP< const Scalar > getData(size_t j) const { return vec_->getData(j); }
 
-    //! 
+    //! View of the local values in a particular vector of this multivector.
     Teuchos::ArrayRCP< Scalar > getDataNonConst(size_t j) { return vec_->getDataNonConst(j); }
 
-    //! Return multi-vector values in user-provided two-dimensional array (using Teuchos memory management classes).
+    //! Fill the given array with a copy of this multivector's local values.
     void get1dCopy(Teuchos::ArrayView< Scalar > A, size_t LDA) const { vec_->get1dCopy(A, LDA); }
 
-    //! Return multi-vector values in user-provided array of pointers (using Teuchos memory management classes).
+    //! Fill the given array with a copy of this multivector's local values.
     void get2dCopy(Teuchos::ArrayView< const Teuchos::ArrayView< Scalar > > ArrayOfPtrs) const { vec_->get2dCopy(ArrayOfPtrs); }
 
-    //! Return const persisting view of values in a one-dimensional array. Throws std::runtime_error if the underlying data is non-contiguous.
+    //! Const persisting (1-D) view of this multivector's local values.
     Teuchos::ArrayRCP< const Scalar > get1dView() const { return vec_->get1dView(); }
 
     //! Return const persisting pointers to values.
     Teuchos::ArrayRCP< Teuchos::ArrayRCP< const Scalar > > get2dView() const { return vec_->get2dView(); }
 
-    //! Return non-const persisting view of values in a one-dimensional array. Throws std::runtime_error if the underlying data is non-contiguous. Teuchos::ArrayRCP<Scalar> get1dViewNonConst();.
+    //! Nonconst persisting (1-D) view of this multivector's local values.
     Teuchos::ArrayRCP< Scalar > get1dViewNonConst() { return vec_->get1dViewNonConst(); }
 
     //! Return non-const persisting pointers to values.
@@ -118,13 +118,13 @@ namespace Xpetra {
     //! @name Mathematical methods
     //@{
 
-    //! Computes dot product of each corresponding pair of vectors, dots[i] = this[i].dot(A[i]).
+    //! Compute dot product of each corresponding pair of vectors, dots[i] = this[i].dot(A[i]).
     void dot(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const Teuchos::ArrayView< Scalar > &dots) const { vec_->dot(toTpetra(A), dots); }
 
-    //! Puts element-wise absolute values of input Multi-vector in target: A = abs(this).
+    //! Put element-wise absolute values of input Multi-vector in target: A = abs(this).
     void abs(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A) { vec_->abs(toTpetra(A)); }
 
-    //! Puts element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
+    //! Put element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
     void reciprocal(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A) { vec_->reciprocal(toTpetra(A)); }
 
     //! Scale the current values of a multi-vector, this = alpha*this.
@@ -157,7 +157,7 @@ namespace Xpetra {
     //! Compute mean (average) value of each vector in multi-vector.
     void meanValue(const Teuchos::ArrayView< Scalar > &means) const { vec_->meanValue(means); }
 
-    //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).
+    //! Matrix-matrix multiplication: this = beta*this + alpha*op(A)*op(B).
     void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, const Scalar &beta) { vec_->multiply(transA, transB, alpha, toTpetra(A), toTpetra(B), beta); }
 
     //@}
@@ -165,13 +165,13 @@ namespace Xpetra {
     //! @name Attribute access functions
     //@{
 
-    //! Returns the number of vectors in the multi-vector.
+    //! Number of columns in the multivector.
     size_t getNumVectors() const { return vec_->getNumVectors(); }
 
-    //! Returns the local vector length on the calling processor of vectors in the multi-vector.
+    //! Local number of rows on the calling process.
     size_t getLocalLength() const { return vec_->getLocalLength(); }
 
-    //! Returns the global vector length of vectors in the multi-vector.
+    //! Global number of rows in the multivector.
     global_size_t getGlobalLength() const { return vec_->getGlobalLength(); }
 
     //@}
@@ -179,7 +179,7 @@ namespace Xpetra {
     //! @name Overridden from Teuchos::Describable
     //@{
 
-    //! Return a simple one-line description of this object.
+    //! A simple one-line description of this object.
     std::string description() const { return vec_->description(); }
 
     //! Print the object with the given verbosity level to a FancyOStream.

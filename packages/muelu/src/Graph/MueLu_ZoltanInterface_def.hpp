@@ -41,6 +41,7 @@ namespace MueLu {
   Build(Level &level) const
   {
     FactoryMonitor m(*this, "ZoltanInterface", level);
+    RCP<SubFactoryMonitor> m1;
 
     RCP<Operator> A = level.Get< RCP<Operator> >("A",AFact_.get());
     // Tell Zoltan what kind of local/global IDs we will use.
@@ -60,6 +61,8 @@ namespace MueLu {
       throw(Exceptions::RuntimeError("MueLu::Zoltan::Setup : setting parameter 'num_lid_entries' returned error code " + Teuchos::toString(rv)));
     if ( (rv=zoltanObj_->Set_Param("obj_weight_dim", "1") ) != ZOLTAN_OK )
       throw(Exceptions::RuntimeError("MueLu::Zoltan::Setup : setting parameter 'obj_weight_dim' returned error code " + Teuchos::toString(rv)));
+
+    zoltanObj_->Set_Param("debug_level", "0");
 
     GO numPartitions_ = level.Get<GO>("number of partitions");
     std::stringstream ss;
@@ -132,12 +135,14 @@ namespace MueLu {
     int   num_gid_entries;             // Number of array entries in a global ID.  
     int   num_lid_entries;
 
+    m1 = rcp(new SubFactoryMonitor(*this, "Zoltan RCB", level));
     rv = zoltanObj_->LB_Partition(newDecomp, num_gid_entries, num_lid_entries,
                                   num_imported, import_gids, import_lids, import_procs, import_to_part,
                                   num_exported, export_gids, export_lids, export_procs, export_to_part);
     if (rv == ZOLTAN_FATAL) {
       throw(Exceptions::RuntimeError("Zoltan::LB_Partition() returned error code"));
     }
+    m1 = Teuchos::null;
 
     //TODO check that A's row map is 1-1.  Zoltan requires this.
     RCP<const Map> rowMap = A->getRowMap();

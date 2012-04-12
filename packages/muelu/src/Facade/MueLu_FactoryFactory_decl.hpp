@@ -310,6 +310,7 @@ namespace MueLu {
     }
 #endif
 
+#ifdef HAVE_MPI
     RCP<FactoryBase> BuildRepartitionFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
       TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "RepartitionFactory", Exceptions::RuntimeError, "");      
       
@@ -322,6 +323,7 @@ namespace MueLu {
       
       return rcp(new RepartitionFactory(Factory, AFact, minRowsPerProc, nonzeroImbalance, startLevel, diffusive));
     }
+#endif
 
     RCP<FactoryBase> BuildPermutedTransferFactory(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn) const {
       TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "PermutedTransferFactory", Exceptions::RuntimeError, "");      

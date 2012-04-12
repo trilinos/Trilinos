@@ -36,7 +36,7 @@ namespace Xpetra {
     //! @name Post-construction modification routines
     //@{
 
-    //! Initialize all values in a multi-vector with specified value.
+    //! Set all values in the multivector with the given value.
     virtual void putScalar(const Scalar &value)= 0;
 
     //@}
@@ -44,10 +44,10 @@ namespace Xpetra {
     //! @name Data Copy and View get methods
     //@{
 
-    //! 
+    //! Const view of the local values in a particular vector of this multivector.
     virtual Teuchos::ArrayRCP< const Scalar > getData(size_t j) const = 0;
 
-    //! 
+    //! View of the local values in a particular vector of this multivector.
     virtual Teuchos::ArrayRCP< Scalar > getDataNonConst(size_t j)= 0;
 
     //@}
@@ -55,13 +55,13 @@ namespace Xpetra {
     //! @name Mathematical methods
     //@{
 
-    //! Computes dot product of each corresponding pair of vectors, dots[i] = this[i].dot(A[i]).
+    //! Compute dot product of each corresponding pair of vectors, dots[i] = this[i].dot(A[i]).
     virtual void dot(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const Teuchos::ArrayView< Scalar > &dots) const = 0;
 
-    //! Puts element-wise absolute values of input Multi-vector in target: A = abs(this).
+    //! Put element-wise absolute values of input Multi-vector in target: A = abs(this).
     virtual void abs(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A)= 0;
 
-    //! Puts element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
+    //! Put element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
     virtual void reciprocal(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A)= 0;
 
     //! Scale the current values of a multi-vector, this = alpha*this.
@@ -88,7 +88,7 @@ namespace Xpetra {
     //! Compute mean (average) value of each vector in multi-vector.
     virtual void meanValue(const Teuchos::ArrayView< Scalar > &means) const = 0;
 
-    //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).
+    //! Matrix-matrix multiplication: this = beta*this + alpha*op(A)*op(B).
     virtual void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &B, const Scalar &beta)= 0;
 
     //! Element-wise multiply of a Vector A with a MultiVector B.
@@ -99,13 +99,13 @@ namespace Xpetra {
     //! @name Attribute access functions
     //@{
 
-    //! Returns the number of vectors in the multi-vector.
+    //! Number of columns in the multivector.
     virtual size_t getNumVectors() const = 0;
 
-    //! Returns the local vector length on the calling processor of vectors in the multi-vector.
+    //! Local number of rows on the calling process.
     virtual size_t getLocalLength() const = 0;
 
-    //! Returns the global vector length of vectors in the multi-vector.
+    //! Global number of rows in the multivector.
     virtual global_size_t getGlobalLength() const = 0;
 
     //@}
@@ -113,7 +113,7 @@ namespace Xpetra {
     //! @name Overridden from Teuchos::Describable
     //@{
 
-    //! Return a simple one-line description of this object.
+    //! A simple one-line description of this object.
     virtual std::string description() const = 0;
 
     //! Print the object with the given verbosity level to a FancyOStream.

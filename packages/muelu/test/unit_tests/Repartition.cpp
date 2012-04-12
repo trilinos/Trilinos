@@ -1,4 +1,10 @@
 #include "Teuchos_UnitTestHarness.hpp"
+
+#include "Xpetra_VectorFactory.hpp"
+#include "Xpetra_MultiVectorFactory.hpp"
+#include "Xpetra_ExportFactory.hpp"
+#include "Xpetra_OperatorFactory.hpp"
+
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 
@@ -10,9 +16,6 @@
 #define XPETRA_ENABLED // == Gallery have to be build with the support of Xpetra matrices.
 #include "MueLu_GalleryUtils.hpp"
 
-#include "Xpetra_VectorFactory.hpp"
-#include "Xpetra_MultiVectorFactory.hpp"
-#include "Xpetra_ExportFactory.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_Utilities.hpp"
 
@@ -676,7 +679,7 @@ namespace MueLuTests {
     level.Set<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition",decomposition, zoltan.get());
     level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
     RCP<RepartitionFactory> repart = rcp(new RepartitionFactory(zoltan, Teuchos::null, 1000, 1.2, 1, 10/*useDiffusiveHeuristic*/, -1));
-    level.Request("Permutation",repart.get());  // request permutation matrix
+    level.Request("Importer",repart.get());  // request permutation matrix
 
     repart->Build(level);
 
@@ -686,10 +689,10 @@ namespace MueLuTests {
     //               pid 1 owns partition 1
     //               pid 2 does not own a partition
     //               pid 3 owns partition 0
-    RCP<Operator> permMat;
-    level.Get("Permutation",permMat,repart.get());
-    RCP<Vector> result = VectorFactory::Build(permMat->getRangeMap(),false);
-    permMat->apply(*decompositionAsScalar,*result,Teuchos::NO_TRANS,1,0);
+    RCP<const Import> importer;
+    level.Get("Importer",importer,repart.get());
+    RCP<Vector> result = VectorFactory::Build(importer->getTargetMap(),false);
+    result->doImport(*decompositionAsScalar,*importer,Xpetra::INSERT);
     int thisPidFailed=-1;
     // local entries in the resulting vector should be equal to the partition number
     Teuchos::ArrayRCP<SC> resultData;
@@ -842,26 +845,33 @@ namespace MueLuTests {
     level.SetLevelID(2); //partitioning by default won't happen unless level >= 1
     RCP<RepartitionFactory> repart = rcp(new RepartitionFactory(zoltan));
     //RCP<RepartitionFactory> repart = rcp(new RepartitionFactory(zoltan, Teuchos::null, 1000, 1.2, 1, 10/*useDiffusiveHeuristic*/, -1));
-    level.Request("Permutation",repart.get());  // request permutation matrix
+    //level.Request("Permutation",repart.get());  // request permutation matrix
+    level.Request("Importer",repart.get());  // request permutation matrix
 
     repart->Build(level);
 
-    RCP<Operator> permMat;
-    level.Get("Permutation",permMat,repart.get());
-    RCP<Operator> PermTimesA = Utils::TwoMatrixMultiply(permMat,false,Op,false);
-
-RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-fos->setOutputToRootOnly(-1);
+    RCP<const Import> importer;
+    level.Get("Importer",importer,repart.get());
+    //TODO this next bit needs to be put into Xpetra::Operator or Xpetra::Utils
+    RCP<Operator> PermTimesA = OperatorFactory::Build(importer->getTargetMap(), Op->getGlobalMaxNumRowEntries());
+    RCP<CrsOperator> crsOp = rcp_dynamic_cast<CrsOperator>(PermTimesA);
+    RCP<CrsMatrix> crsMtx = crsOp->getCrsMatrix();
+    RCP<CrsOperator> origOp = rcp_dynamic_cast<CrsOperator>(Op);
+    RCP<CrsMatrix> origMtx = origOp->getCrsMatrix();
+    crsMtx->doImport(*origMtx, *importer,Xpetra::INSERT);
+    crsMtx = Teuchos::null;
+    PermTimesA->fillComplete(Op->getDomainMap(),importer->getTargetMap());
+    //TODO end of this next bit
 
     // Calculate vectors y1=Perm*(A*v) and y2 = (Perm*A)*v for random vector v. They should be identical.
     RCP<Vector> randomVec = VectorFactory::Build(Op->getDomainMap(),false);
     randomVec->randomize();
     RCP<Vector> workVec = VectorFactory::Build(Op->getRangeMap(),false);
-    RCP<Vector> P_Av = VectorFactory::Build(PermTimesA->getRangeMap(),false);
+    RCP<Vector> P_Av = VectorFactory::Build(importer->getTargetMap(),false);
     RCP<Vector> PA_v = VectorFactory::Build(PermTimesA->getRangeMap(),false);
     PermTimesA->apply(*randomVec,*PA_v,Teuchos::NO_TRANS,1,0);
     Op->apply(*randomVec,*workVec,Teuchos::NO_TRANS,1,0);
-    permMat->apply(*workVec,*P_Av,Teuchos::NO_TRANS,1,0);
+    P_Av->doImport(*workVec,*importer,Xpetra::INSERT);
 
     RCP<MultiVector> diff = VectorFactory::Build(PermTimesA->getRangeMap());
     //diff = P_Av + (-1.0)*(PA_v) + 0*diff

@@ -29,7 +29,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::RepartitionFactory(
                 RCP<const FactoryBase> loadBalancer, RCP<const FactoryBase> AFact,
-                GO minRowsPerProcessor, SC nnzMaxMinRatio, GO startLevel, LO useDiffusiveHeuristic, GO minNnzPerProcessor) :
+                LO minRowsPerProcessor, SC nnzMaxMinRatio, GO startLevel, LO useDiffusiveHeuristic, GO minNnzPerProcessor) :
     loadBalancer_(loadBalancer),
     AFact_(AFact),
     minRowsPerProcessor_(minRowsPerProcessor),
@@ -71,16 +71,16 @@ namespace MueLu {
     RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
     int mypid = comm->getRank();
     Scalar imbalance;
-    GO minNumRows;
+    LO minNumRows;
     GO numActiveProcesses=0;
     if (currentLevel.GetLevelID() >= startLevel_) {
 
       if (minRowsPerProcessor_ > 0) {
-        //Check whether any row has too few rows
+        //Check whether any node has too few rows
         size_t numMyRows = A->getNodeNumRows();
-        GO maxNumRows;
-        maxAll(comm, (GO)numMyRows, maxNumRows);
-        minAll(comm, (GO)((numMyRows > 0) ? numMyRows : maxNumRows), minNumRows);
+        LO maxNumRows;
+        maxAll(comm, (LO)numMyRows, maxNumRows); //FIXME: this comm can be avoided just by defining maxNumRows = max of LO
+        minAll(comm, (LO)((numMyRows > 0) ? numMyRows : maxNumRows), minNumRows);
         if (minNumRows < minRowsPerProcessor_) {
           doRepartition=true; 
         }
@@ -89,7 +89,7 @@ namespace MueLu {
       //Check whether the number of nonzeros per process is imbalanced
       size_t numMyNnz  = A->getNodeNumEntries();
       GO maxNnz, minNnz;
-      maxAll(comm,(GO)numMyNnz,maxNnz);
+      maxAll(comm,(GO)numMyNnz,maxNnz); //FIXME: this comm can be avoided just by defining maxNnz = max of GO
       //min nnz over all proc (disallow any processors with 0 nnz)
       minAll(comm, (GO)((numMyNnz > 0) ? numMyNnz : maxNnz), minNnz);
       imbalance = ((SC) maxNnz) / minNnz;
@@ -136,15 +136,13 @@ namespace MueLu {
     if (currentLevel.IsAvailable("number of partitions")) {
       numPartitions = currentLevel.Get<GO>("number of partitions");
     } else {
-
-      GetOStream(Runtime0, 0) << "Did not find \"number of partitions\" in Level, calculating it now!" << std::endl;
       if ((GO)A->getGlobalNumRows() < minRowsPerProcessor_) numPartitions = 1;
       else                                                  numPartitions = A->getGlobalNumRows() / minRowsPerProcessor_;
       if (numPartitions > comm->getSize())
         numPartitions = comm->getSize();
-      GetOStream(Statistics0,0) << "Number of partitions to use = " << numPartitions << std::endl;
       currentLevel.Set<GO>("number of partitions",numPartitions);
     }
+    GetOStream(Statistics0,0) << "Number of partitions to use = " << numPartitions << std::endl;
 
     // ======================================================================================================
     // Determine the global size of each partition.
@@ -451,32 +449,17 @@ namespace MueLu {
     targetVec->doImport(*sourceVec,*importer,Xpetra::INSERT);
 
     // =================================================================================================
-    // Assemble permutation matrix.
+    // Create an importer between the original row map and the permuted row map
     // =================================================================================================
-    RCP<Operator> permutationMatrix = OperatorFactory::Build(targetMap,1);
-    Array<SC> matrixEntry(1);
-    matrixEntry[0] = 1.0;
-    if (targetVec->getLocalLength() > 0) {
-      vectorData = targetVec->getDataNonConst(0);
-    }
-    for (int i=0; i< uniqueGIDsAfterPermute.size(); ++i) {
-      permutationMatrix->insertGlobalValues(uniqueGIDsAfterPermute[i], vectorData(i,1),matrixEntry());
-    }
-    vectorData = Teuchos::null;
+    vectorData = targetVec->getDataNonConst(0);
+    RCP<Map> newRowMap = MapFactory::Build(decomposition->getMap()->lib(),
+                    Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                    vectorData(),
+                    indexBase,
+                    comm);
 
-    permutationMatrix->fillComplete(A->getDomainMap(),targetMap);
-
-    currentLevel.Set<RCP<Operator> >("Permutation",permutationMatrix, this);
-
-    /*
-    sleep(1);comm->barrier();
-    if (mypid == 0) std::cout << "~~~~~~ permutation matrix ~~~~~~" << std::endl;
-    comm->barrier();
-    RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    fos->setOutputToRootOnly(-1);
-    permutationMatrix->describe(*fos,Teuchos::VERB_EXTREME);
-    sleep(1);comm->barrier();
-    */
+    RCP<const Import> importerForRepartitioning = ImportFactory::Build( A->getRowMap(),newRowMap);
+    currentLevel.Set<RCP<const Import> >("Importer",importerForRepartitioning, this);
 
   } //Build
 
@@ -495,7 +478,8 @@ namespace MueLu {
 
     /*
       useDiffusiveHeuristic_ = 0      ====> always put on procs 0..N
-      useDiffusiveHeuristic_ = K > 0  ====> if #partitions is > K, put on procs 0..N
+      useDiffusiveHeuristic_ = 1      ====> always use diffusive heuristic
+      useDiffusiveHeuristic_ = K > 1  ====> if #partitions is > K, put on procs 0..N
                                             otherwise use diffusive
       useDiffusiveHeuristic_ = -1     ====> put on procs 0..N this time only, then use diffusive in remaining rounds
     */
@@ -521,10 +505,10 @@ namespace MueLu {
 
     RCP<SubFactoryMonitor> m1 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: Setup", currentLevel));
 
-RCP<SubFactoryMonitor> m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: getting 'Partition'", currentLevel));
+//RCP<SubFactoryMonitor> m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: getting 'Partition'", currentLevel));
     RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = currentLevel.Get<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition", loadBalancer_.get());
     // Figure out how many nnz there are per row.
-m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: figuring out nnz per row", currentLevel));
+//m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: figuring out nnz per row", currentLevel));
     RCP<Xpetra::Vector<GO,LO,GO,NO> > nnzPerRowVector = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(A->getRowMap(),false);
     ArrayRCP<GO> nnzPerRow;
     if (nnzPerRowVector->getLocalLength() > 0)
@@ -533,7 +517,7 @@ m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: figuring out
       nnzPerRow[i] = A->getNumEntriesInLocalRow(i);
 
     // Use a hashtable to record how many nonzeros in the local matrix belong to each partition.
-m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: hashing", currentLevel));
+//m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: hashing", currentLevel));
     RCP<Teuchos::Hashtable<GO,GO> > hashTable;
     hashTable = rcp(new Teuchos::Hashtable<GO,GO>(numPartitions + numPartitions/2));
     ArrayRCP<const GO> decompEntries;
@@ -552,7 +536,7 @@ m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: hashing", cu
       }
     }
 
-m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: arrayify", currentLevel));
+//m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: arrayify", currentLevel));
     int problemPid;
     maxAll(comm, (flag ? mypid : -1), problemPid);
     std::ostringstream buf; buf << problemPid;
@@ -562,8 +546,9 @@ m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: arrayify", c
     Teuchos::Array<GO> allPartitionsIContributeTo;
     Teuchos::Array<GO> localNnzPerPartition;
     hashTable->arrayify(allPartitionsIContributeTo,localNnzPerPartition);
-m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: build target map", currentLevel));
+//m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: build target map", currentLevel));
     //map in which all pids have all partition numbers as GIDs.
+    //FIXME this next map ctor can be a real time hog in parallel
     Array<GO> allPartitions;
     for (int i=0; i<numPartitions; ++i) allPartitions.push_back(i);
     RCP<Map> targetMap = MapFactory::Build(decomposition->getMap()->lib(),
@@ -572,7 +557,7 @@ m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: build target
                                            decomposition->getMap()->getIndexBase(),
                                            comm);
 
-m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: build vectors", currentLevel));
+//m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: build vectors", currentLevel));
     RCP<Xpetra::Vector<SC,LO,GO,NO> > globalWeightVec = Xpetra::VectorFactory<SC,LO,GO,NO>::Build(targetMap);  //TODO why does the compiler grumble about this when I omit template arguments?
     RCP<Xpetra::Vector<LO,LO,GO,NO> > procWinnerVec = Xpetra::VectorFactory<LO,LO,GO,NO>::Build(targetMap);
     ArrayRCP<LO> procWinner;
@@ -582,7 +567,7 @@ m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: build vector
     procWinner = Teuchos::null;
     RCP<Xpetra::Vector<SC,LO,GO,NO> > scalarProcWinnerVec = Xpetra::VectorFactory<SC,LO,GO,NO>::Build(targetMap);
 
-m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: build unique map", currentLevel));
+//m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: build unique map", currentLevel));
     Array<GO> myPidArray; 
     myPidArray.push_back(mypid);
 
@@ -592,11 +577,11 @@ m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: build unique
                                            myPidArray(),
                                            decomposition->getMap()->getIndexBase(),
                                            comm);
-m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: build comm helper", currentLevel));
+//m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: build comm helper", currentLevel));
     MueLu::UCAggregationCommHelper<LO,GO,NO,LMO> commHelper(uniqueMap,targetMap);
     myPartitionNumber = -1;
     int doArbitrate = 1;
-m3 = Teuchos::null;
+//m3 = Teuchos::null;
 
     /*
        Use ArbitrateAndCommunicate to determine which process should own each partition.
@@ -705,14 +690,14 @@ m3 = Teuchos::null;
                                "Number of partition owners (" + buf.str() + ") is not equal to number of partitions");
     partitionOwners = procWinnerConst(); //only works if procWinner is const ...
 
-    // print the grid of processors, showing partition owners with a '+'
+    // print the grid of processors
     GetOStream(Statistics0,0) << "Partition distribution over cores, + indicates partition ownership" << std::endl;
     int numProc = comm->getSize();
     ArrayRCP<char> grid(numProc,'.');
     for (int i=0; i<partitionOwners.size(); ++i) grid[ partitionOwners[i] ] = '+';
     int sizeOfARow = (int) sqrt(numProc);
     int numRows = numProc / sizeOfARow;
-    int leftOvers = numProc  - (numProc/numRows)*sizeOfARow;
+    int leftOvers = numProc  - (numProc/sizeOfARow)*sizeOfARow;
     int ctr=0;
     int pidCtr=0;
     for (int i=0; i<numRows; ++i) {
@@ -724,7 +709,10 @@ m3 = Teuchos::null;
     if (leftOvers > 0) {
       for (int i=0; i<leftOvers; ++i)
         GetOStream(Statistics0,0) << grid[ctr++];
-      GetOStream(Statistics0,0) << "      " << pidCtr << ":" << pidCtr+leftOvers-1 << std::endl;;
+ 
+      Array<char> aos(sizeOfARow-leftOvers,' ');
+      std::string spaces(aos.begin(),aos.end());
+      GetOStream(Statistics0,0) << spaces << "      " << pidCtr << ":" << pidCtr+leftOvers-1 << std::endl;;
     }
 
   } //DeterminePartitionPlacement

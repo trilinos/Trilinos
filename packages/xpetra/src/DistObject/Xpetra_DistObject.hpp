@@ -27,28 +27,39 @@ namespace Xpetra {
 
    //@}
 
-    //! @name Import/Export Methods
+    //! @name Public methods for redistributing data
     //@{
 
-    //! Import.
+    //! Import using an Import object ("forward mode").
     virtual void doImport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM)= 0;
 
-    //! Export.
+    //! Export using an Export object ("forward mode").
     virtual void doExport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &dest, const Export< LocalOrdinal, GlobalOrdinal, Node > &exporter, CombineMode CM)= 0;
 
-    //! Import (using an Exporter).
+    //! Import using an Export object ("reverse mode").
     virtual void doImport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Export< LocalOrdinal, GlobalOrdinal, Node > &exporter, CombineMode CM)= 0;
 
-    //! Export (using an Importer).
+    //! Export using an Import object ("reverse mode").
     virtual void doExport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &dest, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM)= 0;
 
     //@}
 
-    //! @name Attribute Accessor Methods
+    //! @name Attribute accessor methods
     //@{
 
     //! The Map with which this DistObject was constructed.
     virtual const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getMap() const = 0;
+
+    //@}
+
+    //! @name Implementation of \c Teuchos::Describable
+    //@{
+
+    //! One-line descriptiion of this object.
+    virtual std::string description() const = 0;
+
+    //! Print a descriptiion of this object to the given output stream.
+    virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const = 0;
 
     //@}
 

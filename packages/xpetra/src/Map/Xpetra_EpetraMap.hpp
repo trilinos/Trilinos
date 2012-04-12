@@ -34,7 +34,7 @@ namespace Xpetra {
 
   public:
 
-    //! @name Constructor/Destructor Methods
+    //! @name Constructors and destructor
     //@{
 
     //! Map constructor with Tpetra-defined contiguous uniform distribution.
@@ -46,12 +46,12 @@ namespace Xpetra {
     //! Map constructor with user-defined non-contiguous (arbitrary) distribution.
     EpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView< const GlobalOrdinal > &elementList, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=Kokkos::DefaultNode::getDefaultNode());
 
-    //! Map destructor.
+    //! Destructor.
     ~EpetraMap() { }
 
     //@}
 
-    //! @name Map Attribute Methods
+    //! @name Attributes
     //@{
 
     //! The number of elements in this Map.
@@ -84,7 +84,7 @@ namespace Xpetra {
     //! The local index corresponding to the given global index.
     LocalOrdinal getLocalElement(GlobalOrdinal globalIndex) const { return map_->LID(globalIndex); }
 
-    //! Return the node IDs and corresponding local IDs for a given list of global IDs.
+    //! Process IDs and corresponding local IDs for a given list of global IDs.
     LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< LocalOrdinal > &LIDList) const;
 
     //! Return the node IDs for a given list of global IDs.
@@ -92,6 +92,11 @@ namespace Xpetra {
 
     //! Return a view of the global indices owned by this node.
     Teuchos::ArrayView< const GlobalOrdinal > getNodeElementList() const;
+
+    //@}
+
+    //! @name Boolean tests
+    //@{
 
     //! True if the local index is valid for this Map on this node, else false.
     bool isNodeLocalElement(LocalOrdinal localIndex) const { return map_->MyLID(localIndex); }
@@ -105,11 +110,6 @@ namespace Xpetra {
     //! Whether this Map is globally distributed or locally replicated.
     bool isDistributed() const { return map_->DistributedGlobal(); }
 
-    //@}
-
-    //! @name Boolean Tests
-    //@{
-
     //! True if and only if map is compatible with this Map.
     bool isCompatible(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const { return map_->PointSameAs(toEpetra(map)); }
 
@@ -121,10 +121,10 @@ namespace Xpetra {
     //! @name 
     //@{
 
-    //! Get the Comm object for this Map.
+    //! Get this Map's Comm object.
     const Teuchos::RCP< const Teuchos::Comm< int > >  getComm() const { return toXpetra(map_->Comm()); }
 
-    //! Get the Node object for this Map.
+    //! Get this Map's Node object.
     const Teuchos::RCP< Node >  getNode() const;
 
     //@}
@@ -135,7 +135,7 @@ namespace Xpetra {
     //! Return a simple one-line description of this object.
     std::string description() const;
 
-    //! Print this object with the given verbosity level to the given FancyOStream object.
+    //! Print this object with the given verbosity level to the given FancyOStream.
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
     //@}
