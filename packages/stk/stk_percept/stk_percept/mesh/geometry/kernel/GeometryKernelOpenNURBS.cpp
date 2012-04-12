@@ -80,7 +80,10 @@ std::string GeometryKernelOpenNURBS::get_attribute(GeometryHandle geom)
 void GeometryKernelOpenNURBS::snap_to
 (
   KernelPoint& point,
-  GeometryHandle geom
+  GeometryHandle geom,
+  double *converged_tolerance,
+  double *uvw_computed,
+  double *uvw_hint
 )
 {
   const ON_Surface* surface = dynamic_cast<const ON_Surface*>(onModel.m_object_table[geom].m_object);
@@ -90,7 +93,12 @@ void GeometryKernelOpenNURBS::snap_to
     ON_3dPoint p(point);
     double u, v;
 
-    surface->GetClosestPoint(p, &u, &v);
+    surface->GetClosestPoint(p, &u, &v, 0.0, NULL, NULL, converged_tolerance, uvw_computed);
+    if(uvw_computed)
+    {
+      uvw_computed[0] = u;
+      uvw_computed[1] = v;
+    }
     surface->EvPoint(u, v, p);
     point[0] = p.x;
     point[1] = p.y;

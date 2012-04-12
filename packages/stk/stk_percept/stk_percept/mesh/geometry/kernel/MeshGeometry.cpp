@@ -337,7 +337,20 @@ void MeshGeometry::snap_node
     double cpu0 = 0.0, cpu1 = 0.0;
     if (doCheckCPUTime) cpu0 = stk::cpu_time();
 
-    geomKernel->snap_to(coord, geomEvaluators[evaluator_idx]->mGeometry);
+    // Look at the neighboring edges and calculate an average edge length.  This will be 
+    // used as a tolerance to tell the projection code that if the projected point
+    // has moved less than this value we can consider it a valid solution.  This will
+    // greatly reduce the number of iterations the projection code has to do.
+    double edge_length_ave=0.0;
+    // get edge lengths
+    stk::mesh::PairIterRelation node_elements = node.relations(eMesh->element_rank());
+    for(unsigned ii=0; ii < node_elements.size(); ii++)
+    {
+      edge_length_ave += eMesh->edge_length_ave(*node_elements[ii].entity());
+    }
+    edge_length_ave /= ((double)node_elements.size());
+
+    geomKernel->snap_to(coord, geomEvaluators[evaluator_idx]->mGeometry, &edge_length_ave);
 
     if (doCheckCPUTime) cpu1 = stk::cpu_time() - cpu0;
 
@@ -379,18 +392,7 @@ void MeshGeometry::snap_node
                   << std::endl;
       if (doCheckMovement)
         {
-          double edge_length_ave=0.0;
-          if (m_doCheckMovement < 0.0)
-            {
-              // get edge lengths
-              stk::mesh::PairIterRelation node_elements = node.relations(eMesh->element_rank());
-              for(unsigned ii=0; ii < node_elements.size(); ii++)
-                {
-                  edge_length_ave += eMesh->edge_length_ave(*node_elements[ii].entity());
-                }
-              edge_length_ave /= ((double)node_elements.size());
-            }
-          else
+          if (m_doCheckMovement >= 0.0)
             {
               edge_length_ave = m_doCheckMovement;
             }

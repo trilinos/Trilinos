@@ -18,7 +18,10 @@ public:
 
     virtual std::string get_attribute(GeometryHandle geom) = 0;
 
-    virtual void snap_to(KernelPoint& point, GeometryHandle geom) = 0;
+    virtual void snap_to(KernelPoint& point, GeometryHandle geom,
+                    double *converged_tolerance = NULL,
+                    double *uvw_computed = NULL,
+                    double *uvw_hint = NULL) = 0;
 
     virtual void normal_at(KernelPoint& point, GeometryHandle geom, std::vector<double>& normal) = 0;
 
