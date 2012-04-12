@@ -24,6 +24,7 @@ IF (${PROJECT_NAME}_ENABLE_CXX11)
       ARGS "--matrix-file=bcsstk14.hb --param-file=qd.xml"
       COMM serial mpi
       STANDARD_PASS_OUTPUT
+      DEPLIBS tpetrartitestlib
     )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(MultiPrecExample_qd_dd
@@ -31,6 +32,7 @@ IF (${PROJECT_NAME}_ENABLE_CXX11)
       ARGS "--matrix-file=bcsstk14.hb --param-file=qd_dd.xml"
       COMM serial mpi
       STANDARD_PASS_OUTPUT
+      DEPLIBS tpetrartitestlib
     )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(MultiPrecExample_qd_dd_double
@@ -38,6 +40,7 @@ IF (${PROJECT_NAME}_ENABLE_CXX11)
       ARGS "--matrix-file=bcsstk14.hb --param-file=qd_dd_double.xml"
       COMM serial mpi
       STANDARD_PASS_OUTPUT
+      DEPLIBS tpetrartitestlib
     )
   ENDIF()
 
@@ -60,6 +63,7 @@ IF (${PROJECT_NAME}_ENABLE_CXX11)
     ARGS "--matrix-file=bcsstk14.hb --param-file=double_float.xml"
     COMM serial mpi
     STANDARD_PASS_OUTPUT
+    DEPLIBS tpetrartitestlib
   )
 
 ENDIF()
