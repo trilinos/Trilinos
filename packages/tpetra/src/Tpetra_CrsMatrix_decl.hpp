@@ -905,12 +905,39 @@ namespace Tpetra {
       ///   the graph must be owned by the matrix.
       void allocateValues (ELocalGlobal lg, GraphAllocationStatus gas);
 
-      // Sorting and merging
+      /// \brief Sort the entries of each row by their column indices.
+      ///
+      /// This only does anything if the graph isn't already sorted
+      /// (i.e., ! myGraph_->isSorted ()).  This method is called in
+      /// fillComplete().
       void sortEntries();
+
+      /// \brief Merge entries in each row with the same column indices.
+      ///
+      /// This only does anything if the graph isn't already merged
+      /// (i.e., ! myGraph_->isMerged ()).  This method is called in
+      /// fillComplete().
       void mergeRedundantEntries();
-      // global consts
+
+      /// \brief Clear matrix properties that require collectives.
+      /// 
+      /// This clears whatever computeGlobalConstants() (which see)
+      /// computed, in preparation for changes to the matrix.  The
+      /// current implementation of this method does nothing.
+      ///
+      /// This method is called in resumeFill().
       void clearGlobalConstants();
+
+      /// \brief Compute matrix properties that require collectives.
+      /// 
+      /// The corresponding Epetra_CrsGraph method computes things
+      /// like the global number of nonzero entries, that require
+      /// collectives over the matrix's communicator.  The current
+      /// Tpetra implementation of this method does nothing.
+      ///
+      /// This method is called in fillComplete().
       void computeGlobalConstants();
+
       // matrix data accessors
       ArrayView<const Scalar>    getView(RowInfo rowinfo) const;
       ArrayView<      Scalar>    getViewNonConst(RowInfo rowinfo);
@@ -941,9 +968,21 @@ namespace Tpetra {
       // ArrayRCP< typedef ArrayRCP<const Scalar>::iterator > rowPtrs_;
       // ArrayRCP< typedef ArrayRCP<      Scalar>::iterator > rowPtrsNC_;
 
+      //! Whether the matrix is fill complete.
       bool fillComplete_;
 
-      // non-local data
+      /// \brief Nonlocal data added using insertGlobalValues().
+      ///
+      /// These data are cleared by globalAssemble(), once it finishes
+      /// redistributing them to their owning processes.
+      ///
+      /// \note For Epetra developers: Tpetra::CrsMatrix corresponds
+      ///   more to Epetra_FECrsMatrix than to Epetra_CrsMatrix.  The
+      ///   insertGlobalValues() method in Tpetra::CrsMatrix, unlike
+      ///   its corresponding method in Epetra_CrsMatrix, allows
+      ///   insertion into rows which are not owned by the calling
+      ///   process.  The globalAssemble() method redistributes these
+      ///   to their owning processes.
       std::map<GlobalOrdinal, Array<std::pair<GlobalOrdinal,Scalar> > > nonlocals_;
 
       // a wrapper around multiply, for use in apply; it contains a non-owning RCP to *this, therefore, it is not allowed 
