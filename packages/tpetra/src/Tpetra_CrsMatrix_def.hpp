@@ -2573,11 +2573,11 @@ namespace Tpetra {
     // FIXME (mfh 11 Apr 2012) The current implementation doesn't
     // actually fuse these operations.
     RCP<CrsMatrixType> destMat = 
-      rcp (new CrsMatrixType (sourceMatrix.getRowMap (), 
+      rcp (new CrsMatrixType (sourceMatrix->getRowMap (), 
 			      as<size_t> (0), 
 			      DynamicProfile, 
 			      plist));
-    destMat->doImport (sourceMatrix, importer, INSERT);
+    destMat->doImport (*sourceMatrix, importer, INSERT);
     destMat->fillComplete (sourceMatrix->getDomainMap (),
 			   sourceMatrix->getRangeMap ());
     return destMat;
@@ -2598,11 +2598,11 @@ namespace Tpetra {
     // FIXME (mfh 11 Apr 2012) The current implementation doesn't
     // actually fuse these operations.
     RCP<CrsMatrixType> destMat = 
-      rcp (new CrsMatrixType (sourceMatrix.getRowMap (), 
+      rcp (new CrsMatrixType (sourceMatrix->getRowMap (), 
 			      as<size_t> (0), 
 			      DynamicProfile, 
 			      plist));
-    destMat->doExport (sourceMatrix, exporter, INSERT);
+    destMat->doExport (*sourceMatrix, exporter, INSERT);
     destMat->fillComplete (sourceMatrix->getDomainMap (),
 			   sourceMatrix->getRangeMap ());
     return destMat;

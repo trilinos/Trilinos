@@ -348,6 +348,9 @@ namespace {
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
 
+    // Parameters for CrsMatrix.  We'll let all CrsMatrix instances
+    // use the same parameter list.
+    RCP<ParameterList> crsMatPlist = getCrsMatrixParameterList ();
 
     if (numImages < 2) {
       // Testing Import/Export is more meaningful with at least two processes.
@@ -370,10 +373,10 @@ namespace {
       // Create CrsMatrix objects.
       RCP<CrsMatrix<Scalar,Ordinal> > src_mat = 
 	rcp (new CrsMatrix<Scalar,Ordinal> (src_map, 1, StaticProfile, 
-					    getCrsMatrixParameterList ()));
+					    crsMatPlist));
       RCP<CrsMatrix<Scalar,Ordinal> > tgt_mat = 
 	rcp (new CrsMatrix<Scalar,Ordinal> (tgt_map, 1, StaticProfile, 
-					    getCrsMatrixParameterList ()));
+					    crsMatPlist));
 
       // Create a simple diagonal source graph.
       for (Ordinal globalrow = src_map->getMinGlobalIndex(); 
@@ -404,27 +407,104 @@ namespace {
         TEST_EQUALITY_CONST(rowvals.size(), 1);
         TEST_EQUALITY(rowvals[0], as<Scalar>(localrow));
       }
-    }
+
+      // Test the all-in-one import and fill complete nonmember
+      // constructor.  The returned matrix should also be diagonal and
+      // should equal tgt_mat.
+      typedef CrsMatrix<Scalar, Ordinal> crs_type;
+      RCP<crs_type> A_tgt2 = 
+	Tpetra::importAndFillCompleteCrsMatrix<crs_type> (src_mat, importer, 
+							  crsMatPlist);
+
+      // Make sure that A_tgt2's row Map is the same as tgt_map, and
+      // is also the same as the Import's targetMap.  They should have
+      // the same Map: not just in the sense of Map::isSameAs(), but
+      // also in the sense of pointer equality.  (A Map isSameAs
+      // itself, so we only need to test for pointer equality.)
+      TEST_EQUALITY(A_tgt2->getRowMap ().getRawPtr (), 
+		    tgt_map.getRawPtr ());
+      TEST_EQUALITY(A_tgt2->getRowMap ().getRawPtr (), 
+		    importer.getTargetMap ().getRawPtr ());
+
+      // Loop through A_tgt2 and make sure each row has the same
+      // entries as tgt_mat.  In the fully general case, the
+      // redistribution may have added together values, resulting in
+      // small rounding errors.  This is why we use an error tolerance
+      // (with a little bit of wiggle room).
+      typedef typename ScalarTraits<Scalar>::magnitudeType magnitude_type;
+      // Include a little wiggle room in the error tolerance.  It
+      // would be smarter to use an a posteriori error bound, but we
+      // can't get inside the Import to see which values it's adding
+      // together, so we make a rough guess.
+      const magnitude_type tol = 
+	as<Scalar> (10) * ScalarTraits<magnitude_type>::eps ();
+
+      Array<Ordinal> tgtRowInds;
+      Array<Scalar>  tgtRowVals;
+      Array<Ordinal> tgt2RowInds;
+      Array<Scalar>  tgt2RowVals;
+      for (Ordinal localrow = tgt_map->getMinLocalIndex(); 
+	   localrow <= tgt_map->getMaxLocalIndex(); 
+	   ++localrow) 
+      {
+	size_t tgtNumEntries = tgt_mat->getNumEntriesInLocalRow (localrow);
+	size_t tgt2NumEntries = tgt_mat->getNumEntriesInLocalRow (localrow);
+
+	// Same number of entries in each row?
+	TEST_EQUALITY(tgtNumEntries, tgt2NumEntries);
+
+	if (tgtNumEntries > as<size_t> (tgtRowInds.size ())) {
+	  tgtRowInds.resize (tgtNumEntries);
+	  tgtRowVals.resize (tgtNumEntries);
+	}
+	if (tgt2NumEntries > as<size_t> (tgt2RowInds.size ())) {
+	  tgt2RowInds.resize (tgt2NumEntries);
+	  tgt2RowVals.resize (tgt2NumEntries);
+	}
+        tgt_mat->getLocalRowCopy (localrow, tgtRowInds(), tgtRowVals(), tgtNumEntries);
+        A_tgt2->getLocalRowCopy (localrow, tgt2RowInds(), tgt2RowVals(), tgt2NumEntries);
+
+	// Entries should be sorted, but let's sort them by column
+	// index just in case.  This is why we got a row copy instead
+	// of a row view.
+	Tpetra::sort2 (tgtRowInds.begin(), tgtRowInds.end(), tgtRowVals.begin());
+	Tpetra::sort2 (tgt2RowInds.begin(), tgt2RowInds.end(), tgt2RowVals.begin());
+
+	// Now that the entries are sorted, compare to make sure they
+	// have the same column indices and values.  In the fully
+	// general case, the redistribution may have added together
+	// values, resulting in small rounding errors.
+	typedef typename Array<Scalar>::size_type size_type;
+	for (size_type k = 0; k < as<size_type> (tgtNumEntries); ++k) {
+          TEST_EQUALITY(tgtRowInds[k], tgt2RowInds[k]);
+	  // The "out" and "success" variables should have been
+	  // automatically defined by the unit test framework, in case
+	  // you're wondering where they came from.
+          TEUCHOS_TEST_FLOATING_EQUALITY(tgtRowVals[k], tgt2RowVals[k], tol, out, success);
+        } // for each entry in the current row
+      } // for each row in the matrix
+    } // end of the first test
 
 
     // For the next test, we need an even number of processes:
     if (numImages%2 == 0) {
-      // Create Maps that are distributed differently but have the same global
-      // number of elements. The source-map will have 3 elements on even-numbered
-      // processors and 5 on odd-numbered processors. The target-map will have
-      // 4 elements on each processor:
+      // Create Maps that are distributed differently but have the
+      // same global number of elements. The source-map will have 3
+      // elements on even-numbered processes and 5 on odd-numbered
+      // processes. The target-map will have 4 elements on each
+      // process.
       const Ordinal src_num_local = (myImageID%2 == 0 ? 3 : 5);
       const Ordinal tgt_num_local = 4;
 
       RCP<const Map<Ordinal> > src_map = 
-	createContigMap<Ordinal,Ordinal> (INVALID,src_num_local,comm);
+	createContigMap<Ordinal,Ordinal> (INVALID, src_num_local, comm);
       RCP<const Map<Ordinal> > tgt_map = 
-	createContigMap<Ordinal,Ordinal> (INVALID,tgt_num_local,comm);  
+	createContigMap<Ordinal,Ordinal> (INVALID, tgt_num_local, comm);
 
       RCP<CrsMatrix<Scalar,Ordinal> > src_mat = 
-	rcp (new CrsMatrix<Scalar,Ordinal> (src_map, 24, DynamicProfile, getCrsMatrixParameterList ()));
+	rcp (new CrsMatrix<Scalar,Ordinal> (src_map, 24, DynamicProfile, crsMatPlist));
       RCP<CrsMatrix<Scalar,Ordinal> > tgt_mat = 
-	rcp (new CrsMatrix<Scalar,Ordinal> (tgt_map, 24, DynamicProfile, getCrsMatrixParameterList ()));
+	rcp (new CrsMatrix<Scalar,Ordinal> (tgt_map, 24, DynamicProfile, crsMatPlist));
 
       // This time make src_mat a full lower-triangular matrix.  Each
       // row of column-indices will have length 'globalrow', and
