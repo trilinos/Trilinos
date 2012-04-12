@@ -312,8 +312,9 @@ namespace Ioex {
   {
     CommunicationMetaData() : processorId(0), processorCount(0),
 			      globalNodes(0), globalElements(0),
+			      globalElementBlocks(0), globalNodeSets(0), globalSideSets(0),
 			      nodesInternal(0), nodesBorder(0), nodesExternal(0),
-			      elementsInternal(0), elementsBorder(0) {}
+			      elementsInternal(0), elementsBorder(0), outputNemesis(false) {}
 
     std::vector<CommunicationMap> nodeMap;
     std::vector<CommunicationMap> elementMap;
@@ -321,12 +322,15 @@ namespace Ioex {
     int processorCount;
     int64_t globalNodes;
     int64_t globalElements;
+    int64_t globalElementBlocks;
+    int64_t globalNodeSets;
+    int64_t globalSideSets;
     int64_t nodesInternal;
     int64_t nodesBorder;
     int64_t nodesExternal;
     int64_t elementsInternal;
     int64_t elementsBorder;
-
+    bool    outputNemesis;
     private:
     CommunicationMetaData(const CommunicationMetaData &);
   };
