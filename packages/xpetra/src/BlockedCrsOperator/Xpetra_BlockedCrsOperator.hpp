@@ -164,8 +164,8 @@ public:
     {
       for (size_t c=0; c<Cols(); ++c)
       {
-	if(getMatrix(r,c)->isFillComplete() == false)
-	  getMatrix(r,c)->fillComplete(getDomainMap(c),getRangeMap(r),os);
+        if(getMatrix(r,c)->isFillComplete() == false)
+          getMatrix(r,c)->fillComplete(getDomainMap(c),getRangeMap(r),os);
       }
     }
 
@@ -183,19 +183,19 @@ public:
         std::set<GlobalOrdinal> colset;
         for (size_t r=0; r<Rows(); ++r)
         {
-	  if(getMatrix(r,c) != Teuchos::null) {
-	    Teuchos::RCP<const MapClass> colmap = getMatrix(r,c)->getColMap();
-	    copy(colmap->getNodeElementList().getRawPtr(),
-		colmap->getNodeElementList().getRawPtr()+colmap->getNodeNumElements(),
-		inserter(colset,colset.begin()));
-	  }
+          if(getMatrix(r,c) != Teuchos::null) {
+            Teuchos::RCP<const MapClass> colmap = getMatrix(r,c)->getColMap();
+            copy(colmap->getNodeElementList().getRawPtr(),
+          colmap->getNodeElementList().getRawPtr()+colmap->getNodeNumElements(),
+          inserter(colset,colset.begin()));
+          }
         }
         colmapentries.reserve(colmapentries.size()+colset.size());
         copy(colset.begin(), colset.end(), back_inserter(colmapentries));
         sort(colmapentries.begin(), colmapentries.end());
-	typename std::vector<GlobalOrdinal>::iterator gendLocation;
-	gendLocation = std::unique(colmapentries.begin(), colmapentries.end());
-	colmapentries.erase(gendLocation,colmapentries.end());
+        typename std::vector<GlobalOrdinal>::iterator gendLocation;
+        gendLocation = std::unique(colmapentries.begin(), colmapentries.end());
+        colmapentries.erase(gendLocation,colmapentries.end());
       }
 
       // sum up number of local elements

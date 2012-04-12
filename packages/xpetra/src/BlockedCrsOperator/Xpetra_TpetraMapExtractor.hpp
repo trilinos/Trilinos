@@ -229,6 +229,17 @@ namespace Xpetra
     /// the full map
     const Teuchos::RCP<const MapClass> getFullMap() const { return fullmap_; }
 
+    size_t getMapIndexForGID(GlobalOrdinal gid) const {
+
+      for(size_t i = 0; i < NumMaps(); i++) {
+        if(getMap(i)->isNodeGlobalElement(gid) == true)
+          return i;
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION( false, Xpetra::Exceptions::RuntimeError,
+                  "getMapIndexForGID: GID " << gid << " is not contained by a map in mapextractor." );
+      return 0;
+    }
+
     //@}
   private:
 

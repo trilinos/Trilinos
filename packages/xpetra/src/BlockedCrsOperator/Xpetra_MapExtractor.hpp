@@ -85,6 +85,9 @@ namespace Xpetra
     /// the full map
     virtual const Teuchos::RCP<const MapClass> getFullMap() const = 0;
 
+    /// returns map index in map extractor which contains GID or -1 otherwise
+    virtual size_t getMapIndexForGID(GlobalOrdinal gid) const = 0;
+
     //@}
 
   private:
