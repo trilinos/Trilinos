@@ -240,7 +240,6 @@ namespace Ioss {
       mutable Ioss::State dbState;
 
       bool isParallel; //!< true if running in parallel
-      mutable bool isSerialParallel; //!< true if a serial code that needs to read/write the parallel information.
       int  myProcessor; //!< number of processor this database is for
 
       /*!

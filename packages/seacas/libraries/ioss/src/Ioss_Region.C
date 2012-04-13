@@ -37,7 +37,6 @@
 #include <ctype.h>
 #include <limits.h>
 #include <stddef.h>
-#include <unistd.h>
 #include <algorithm>
 #include <iomanip>
 #include <iostream>

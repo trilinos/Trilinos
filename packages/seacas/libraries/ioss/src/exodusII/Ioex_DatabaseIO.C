@@ -888,49 +888,35 @@ namespace Ioex {
     int64_t num_internal_elems = elementCount;
     int64_t num_border_elems   = 0;
     
-    bool nemesis_file = true;
-    int error = ex_get_init_info(get_file_pointer(),
-				 &num_proc, &num_proc_in_file, &file_type[0]);
-    if (error < 0) {
-      // Not a nemesis file
-      nemesis_file = false;
-      if (isParallel && util().parallel_size() > 1) {
-	std::ostringstream errmsg;
-	errmsg << "Exodus file does not contain nemesis information.\n";
-	IOSS_ERROR(errmsg);
-      }
-    } else {
-      if (!isParallel) {
-	// The file contains nemesis parallel information.
-	// Even though we are running in serial, make the information
-	// available to the application.
-	isSerialParallel = true;
-	get_region()->property_add(Ioss::Property("processor_count",num_proc));
-      }
-    }
-    
-    if (isParallel && num_proc != util().parallel_size() && util().parallel_size() > 1) {
+    if (isParallel) {
+      int error = ex_get_init_info(get_file_pointer(),
+				   &num_proc, &num_proc_in_file, &file_type[0]);
+      if (error < 0) {
+	// Not a nemesis file
+	if (util().parallel_size() > 1) {
+	  std::ostringstream errmsg;
+	  errmsg << "Exodus file does not contain nemesis information.\n";
+	  IOSS_ERROR(errmsg);
+	}
+      } else if (num_proc != util().parallel_size() && util().parallel_size() > 1) {
 	std::ostringstream errmsg;
 	errmsg <<  "Exodus file was decomposed for " << num_proc
 	       << " processors; application is currently being run on "
 	       << util().parallel_size() << " processors";
 	IOSS_ERROR(errmsg);
 
-    }
-    if (num_proc_in_file != 1) {
-      std::ostringstream errmsg;
-      errmsg <<"Exodus file contains data for " << num_proc_in_file
-	     << " processors; application requires 1 processor per file.";
-      IOSS_ERROR(errmsg);
-      
-    }
-    if (file_type[0] != 'p') {
-      std::ostringstream errmsg;
-      errmsg << "Exodus file contains scalar nemesis data; application requires parallel nemesis data.";
-      IOSS_ERROR(errmsg);
-    }
+      } else if (num_proc_in_file != 1) {
+	std::ostringstream errmsg;
+	errmsg <<"Exodus file contains data for " << num_proc_in_file
+	       << " processors; application requires 1 processor per file.";
+	IOSS_ERROR(errmsg);
 
-    if (nemesis_file) {
+      } else if (file_type[0] != 'p') {
+	std::ostringstream errmsg;
+	errmsg << "Exodus file contains scalar nemesis data; application requires parallel nemesis data.";
+	IOSS_ERROR(errmsg);
+      }
+
       if (int_byte_size_api() == 4) {
 	int nin, nbn, nen, nie, nbe, nnc, nec;
 	error = ex_get_loadbal_param(get_file_pointer(),
@@ -955,7 +941,10 @@ namespace Ioex {
       }
       if (error < 0)
 	exodus_error(get_file_pointer(), __LINE__, myProcessor);
-      
+
+      commsetNodeCount = num_node_cmaps;
+      commsetElemCount = num_elem_cmaps;
+
       // A nemesis file typically separates nodes into multiple
       // communication sets by processor.  (each set specifies
       // nodes/elements that communicate with only a single processor).
@@ -978,9 +967,6 @@ namespace Ioex {
       if (error < 0)
 	exodus_error(get_file_pointer(), __LINE__, myProcessor);
     }
-  
-    commsetNodeCount = num_node_cmaps;
-    commsetElemCount = num_elem_cmaps;
 
     Ioss::Region *region = get_region();
     region->property_add(Ioss::Property("internal_node_count",
@@ -993,9 +979,6 @@ namespace Ioex {
 					num_border_elems));
     region->property_add(Ioss::Property("global_node_count",    global_nodes));
     region->property_add(Ioss::Property("global_element_count", global_elements));
-    region->property_add(Ioss::Property("global_element_block_count", global_eblocks));
-    region->property_add(Ioss::Property("global_node_set_count", global_nsets));
-    region->property_add(Ioss::Property("global_side_set_count", global_ssets));
 
     // Possibly, the following 4 fields should be nodesets and element
     // sets instead of fields on the region...
@@ -2621,7 +2604,7 @@ namespace Ioex {
       // If this is a serial execution, there will be no communication
       // nodesets, just return an empty container.
 
-      if (isParallel || isSerialParallel) {
+      if (isParallel) {
 	Ioss::SerializeIO	serializeIO__(this);
 	// This is a parallel run. There should be communications data
 	// Get nemesis commset metadata
@@ -6187,7 +6170,6 @@ namespace Ioex {
       if (isParallel) {
 	meta->processorCount = util().parallel_size();
 	meta->processorId = myProcessor;
-	meta->outputNemesis = true;
       } else {
 	if (get_region()->property_exists("processor_count")) {
 	  meta->processorCount = get_region()->get_property("processor_count").get_int();
@@ -6195,13 +6177,9 @@ namespace Ioex {
 	if (get_region()->property_exists("my_processor")) {
 	  meta->processorId = get_region()->get_property("my_processor").get_int();
 	}
-	if (get_region()->get_commsets().size() > 0) {
-	  isSerialParallel = true;
-	  meta->outputNemesis = true;
-	}
       }
 
-      if (isSerialParallel || meta->processorCount > 0) {
+      if (meta->processorCount > 0) {
 	meta->globalNodes    = 1; // Just need a nonzero value.
 	meta->globalElements = 1; // Just need a nonzero value.
 
@@ -6211,24 +6189,6 @@ namespace Ioex {
 
 	if (get_region()->property_exists("global_element_count")) {
 	  meta->globalElements = get_region()->get_property("global_element_count").get_int();
-	}
-
-	if (get_region()->property_exists("global_element_block_count")) {
-	  meta->globalElementBlocks = get_region()->get_property("global_element_block_count").get_int();
-	} else {
-	  meta->globalElementBlocks = get_region()->get_element_blocks().size();
-	}
-
-	if (get_region()->property_exists("global_node_set_count")) {
-	  meta->globalNodeSets = get_region()->get_property("global_node_set_count").get_int();
-	} else {
-	  meta->globalNodeSets = get_region()->get_nodesets().size();
-	}
-
-	if (get_region()->property_exists("global_side_set_count")) {
-	  meta->globalSideSets = get_region()->get_property("global_side_set_count").get_int();
-	} else {
-	  meta->globalSideSets = get_region()->get_sidesets().size();
 	}
 
 	// ========================================================================

@@ -941,21 +941,19 @@ int Internals::put_metadata(const Mesh &mesh,
   if (status != EX_NOERR) return EX_FATAL;
 
   // Define dimension for the number of processors
-  if (comm.outputNemesis) {
-    if (comm.processorCount > 0) {
-      int procdim;
-      status=nc_inq_dimid(exodusFilePtr, DIM_NUM_PROCS, &procdim);
+  if (comm.processorCount > 1) {
+    int procdim;
+    status=nc_inq_dimid(exodusFilePtr, DIM_NUM_PROCS, &procdim);
+    if (status != NC_NOERR) {
+      int ltempsv = comm.processorCount;
+      status=nc_def_dim(exodusFilePtr, DIM_NUM_PROCS, ltempsv, &procdim);
       if (status != NC_NOERR) {
-	int ltempsv = comm.processorCount;
-	status=nc_def_dim(exodusFilePtr, DIM_NUM_PROCS, ltempsv, &procdim);
-	if (status != NC_NOERR) {
-	  ex_opts(EX_VERBOSE);
-	  sprintf(errmsg,
-		  "Error: failed to dimension \"%s\" in file ID %d",
-		  DIM_NUM_PROCS, exodusFilePtr);
-	  ex_err(routine, errmsg, status);
-	  return (EX_FATAL);
-	}
+	ex_opts(EX_VERBOSE);
+	sprintf(errmsg,
+		"Error: failed to dimension \"%s\" in file ID %d",
+		DIM_NUM_PROCS, exodusFilePtr);
+	ex_err(routine, errmsg, status);
+	return (EX_FATAL);
       }
     }
 
@@ -1026,13 +1024,14 @@ int Internals::put_metadata(const Mesh &mesh,
     // Output the number of global element blocks. This is output as a
     // dimension since the vector of global element block IDs is sized
     // by this quantity.
+    // For Sierra, global block count == local block count
     {
       const char *vars[] = {VAR_ELBLK_IDS_GLOBAL,
 			    VAR_ELBLK_CNT_GLOBAL,
 			    NULL};
       const nc_type types[] = {ids_type, bulk_type};
       
-      status = define_variables(exodusFilePtr, (int)comm.globalElementBlocks, DIM_NUM_ELBLK_GLOBAL, vars, types);
+      status = define_variables(exodusFilePtr, (int)mesh.elemblocks.size(), DIM_NUM_ELBLK_GLOBAL, vars, types);
       if (status != EX_NOERR) return EX_FATAL;
     }
 
@@ -1046,7 +1045,7 @@ int Internals::put_metadata(const Mesh &mesh,
 			    NULL};
       const nc_type types[] = {ids_type, bulk_type, bulk_type};
 
-      status = define_variables(exodusFilePtr, (int)comm.globalNodeSets, DIM_NUM_NS_GLOBAL, vars, types);
+      status = define_variables(exodusFilePtr, (int)mesh.nodesets.size(), DIM_NUM_NS_GLOBAL, vars, types);
       if (status != EX_NOERR) return EX_FATAL;
     }
 	
@@ -1060,7 +1059,7 @@ int Internals::put_metadata(const Mesh &mesh,
 			    NULL};
       const nc_type types[] = {ids_type, bulk_type, bulk_type};
 
-      status = define_variables(exodusFilePtr, (int)comm.globalSideSets, DIM_NUM_SS_GLOBAL, vars, types);
+      status = define_variables(exodusFilePtr, (int)mesh.sidesets.size(), DIM_NUM_SS_GLOBAL, vars, types);
       if (status != EX_NOERR) return EX_FATAL;
     }
 
@@ -1719,7 +1718,7 @@ int Internals::put_non_define_data(const Mesh&,
   // Metadata that must be written outside of define mode...
 
   // Output the file type
-  if (comm.outputNemesis) {
+  if (comm.processorCount > 1) {
     int varid;
     status=nc_inq_varid(exodusFilePtr, VAR_FILE_TYPE, &varid);
     if (status != NC_NOERR) {
