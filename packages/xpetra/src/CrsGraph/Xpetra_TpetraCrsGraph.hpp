@@ -15,6 +15,8 @@
 
 #include "Xpetra_TpetraImport.hpp"
 
+#include "Xpetra_TpetraExport.hpp"
+
 namespace Xpetra {
  
   // TODO: move that elsewhere
@@ -32,6 +34,9 @@ namespace Xpetra {
   class TpetraCrsGraph
     : public CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
   {
+
+    // The following typedef is used by the XPETRA_DYNAMIC_CAST() macro.
+    typedef TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> TpetraCrsGraphClass;
 
   public:
 
@@ -189,6 +194,57 @@ namespace Xpetra {
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { graph_->describe(out, verbLevel); }
 
     //@}
+
+    //! Implements DistObject interface
+    //{@
+
+    //! Access function for the Tpetra::Map this DistObject was constructed with.
+    const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { return rcp( new TpetraMap< LocalOrdinal, GlobalOrdinal, Node >(graph_->getMap()) ); }
+
+    //! Import.
+    void doImport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &source, 
+                  const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) { 
+
+      XPETRA_DYNAMIC_CAST(const TpetraCrsGraphClass, source, tSource, "Xpetra::TpetraCrsGraph::doImport only accept Xpetra::TpetraCrsGraph as input arguments.");//TODO: remove and use toTpetra()
+      RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > v = tSource.getTpetra_CrsGraph();
+      //graph_->doImport(toTpetraCrsGraph(source), *tImporter.getTpetra_Import(), toTpetra(CM));
+
+      graph_->doImport(*v, toTpetra(importer), toTpetra(CM));
+    }
+
+    //! Export.
+    void doExport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &dest,
+                  const Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM) {
+
+      XPETRA_DYNAMIC_CAST(const TpetraCrsGraphClass, dest, tDest, "Xpetra::TpetraCrsGraph::doImport only accept Xpetra::TpetraCrsGraph as input arguments.");//TODO: remove and use toTpetra()
+      RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > v = tDest.getTpetra_CrsGraph();
+      graph_->doExport(*v, toTpetra(importer), toTpetra(CM)); 
+
+    }
+
+    //! Import (using an Exporter).
+    void doImport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &source,
+                  const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {
+
+      XPETRA_DYNAMIC_CAST(const TpetraCrsGraphClass, source, tSource, "Xpetra::TpetraCrsGraph::doImport only accept Xpetra::TpetraCrsGraph as input arguments.");//TODO: remove and use toTpetra()
+      RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > v = tSource.getTpetra_CrsGraph();
+
+      graph_->doImport(*v, toTpetra(exporter), toTpetra(CM));
+
+    }
+
+    //! Export (using an Importer).
+    void doExport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &dest,
+                  const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {
+
+      XPETRA_DYNAMIC_CAST(const TpetraCrsGraphClass, dest, tDest, "Xpetra::TpetraCrsGraph::doImport only accept Xpetra::TpetraCrsGraph as input arguments.");//TODO: remove and use toTpetra()
+      RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > v = tDest.getTpetra_CrsGraph();
+
+      graph_->doExport(*v, toTpetra(exporter), toTpetra(CM)); 
+
+    }
+
+    // @}
 
     //! @name Xpetra specific
     //@{

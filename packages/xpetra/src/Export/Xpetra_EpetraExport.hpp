@@ -11,6 +11,8 @@
 
 #include "Epetra_Export.h"
 
+namespace Teuchos { class ParameterList; }
+
 // Note: 'export' is a reserved keyword in C++. Do not use 'export' as a variable name.
 
 namespace Xpetra {

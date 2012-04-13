@@ -1,6 +1,9 @@
 #include "Xpetra_EpetraCrsGraph.hpp"
 
+#include "Xpetra_Exceptions.hpp"
 #include "Xpetra_Utils.hpp"
+#include "Xpetra_EpetraExport.hpp"
+#include "Xpetra_EpetraImport.hpp"
 
 namespace Xpetra {
 
@@ -76,5 +79,51 @@ namespace Xpetra {
     return rcp ( new Xpetra::EpetraCrsGraph(graph) );
   }
   //
+
+  // TODO: use toEpetra()    
+  void EpetraCrsGraph::doImport(const DistObject<int, int, int> &source, 
+                                 const Import<int, int> &importer, CombineMode CM) {
+
+    XPETRA_DYNAMIC_CAST(const EpetraCrsGraph, source, tSource, "Xpetra::EpetraCrsGraph::doImport only accept Xpetra::EpetraCrsGraph as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Xpetra::EpetraCrsGraph::doImport only accept Xpetra::EpetraImport as input arguments.");
+
+    RCP<const Epetra_CrsGraph> v = tSource.getEpetra_CrsGraph();
+    int err = graph_->Import(*v, *tImporter.getEpetra_Import(), toEpetra(CM));
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+  }
+
+  void EpetraCrsGraph::doExport(const DistObject<int, int, int> &dest,
+                                 const Import<int, int>& importer, CombineMode CM) {
+      
+    XPETRA_DYNAMIC_CAST(const EpetraCrsGraph, dest, tDest, "Xpetra::EpetraCrsGraph::doImport only accept Xpetra::EpetraCrsGraph as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Xpetra::EpetraCrsGraph::doImport only accept Xpetra::EpetraImport as input arguments.");
+
+    RCP<const Epetra_CrsGraph> v = tDest.getEpetra_CrsGraph();
+    int err = graph_->Export(*v, *tImporter.getEpetra_Import(), toEpetra(CM)); 
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+  }
+
+  void EpetraCrsGraph::doImport(const DistObject<int, int, int> &source,
+                                 const Export<int, int>& exporter, CombineMode CM) {
+
+    XPETRA_DYNAMIC_CAST(const EpetraCrsGraph, source, tSource, "Xpetra::EpetraCrsGraph::doImport only accept Xpetra::EpetraCrsGraph as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Xpetra::EpetraCrsGraph::doImport only accept Xpetra::EpetraImport as input arguments.");
+
+    RCP<const Epetra_CrsGraph> v = tSource.getEpetra_CrsGraph();
+    int err = graph_->Import(*v, *tExporter.getEpetra_Export(), toEpetra(CM));
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+
+  }
+
+  void EpetraCrsGraph::doExport(const DistObject<int, int, int> &dest,
+                                 const Export<int, int>& exporter, CombineMode CM) {
+      
+    XPETRA_DYNAMIC_CAST(const EpetraCrsGraph, dest, tDest, "Xpetra::EpetraCrsGraph::doImport only accept Xpetra::EpetraCrsGraph as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Xpetra::EpetraCrsGraph::doImport only accept Xpetra::EpetraImport as input arguments.");
+
+    RCP<const Epetra_CrsGraph> v = tDest.getEpetra_CrsGraph();
+    int err = graph_->Export(*v, *tExporter.getEpetra_Export(), toEpetra(CM)); 
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
+  }
 
 } // namespace Xpetra
