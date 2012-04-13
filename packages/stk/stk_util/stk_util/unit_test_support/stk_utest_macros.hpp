@@ -19,7 +19,7 @@
 //
 //This file is kind of like a unit-test abstraction layer:
 //A series of STKUNIT_* macros are defined in terms of either
-//cppunit macros, or trilinos/teuchos unit-test macros, depending
+//gtest macros, or trilinos/teuchos unit-test macros, depending
 //on whether stk_mesh is being built as a sierra product or Trilinos package.
 //
 #ifdef HAVE_MPI
