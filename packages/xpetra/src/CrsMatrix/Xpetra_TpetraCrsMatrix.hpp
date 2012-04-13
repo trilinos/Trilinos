@@ -27,7 +27,7 @@ namespace Xpetra {
   {
 
     // The following typedef are used by the XPETRA_DYNAMIC_CAST() macro.
-    typedef TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraCrsMatrixClass;
+    typedef TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> TpetraCrsMatrixClass;
     typedef TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraVectorClass;
 
   public:
@@ -193,37 +193,37 @@ namespace Xpetra {
                   const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) { 
 
       XPETRA_DYNAMIC_CAST(const TpetraCrsMatrixClass, source, tSource, "Xpetra::TpetraCrsMatrix::doImport only accept Xpetra::TpetraCrsMatrix as input arguments.");//TODO: remove and use toTpetra()
-      RCP< const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tSource.getTpetra_CrsMatrix();
+      RCP< const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > v = tSource.getTpetra_CrsMatrix();
       //mtx_->doImport(toTpetraCrsMatrix(source), *tImporter.getTpetra_Import(), toTpetra(CM));
       mtx_->doImport(*v, toTpetra(importer), toTpetra(CM));
     }
 
     //! Export.
-    void doExport(const DistObject<char,LocalOrdinal, GlobalOrdinal, Node> &dest,
+    void doExport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &dest,
                   const Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM) {
 
       XPETRA_DYNAMIC_CAST(const TpetraCrsMatrixClass, dest, tDest, "Xpetra::TpetraCrsMatrix::doImport only accept Xpetra::TpetraCrsMatrix as input arguments.");//TODO: remove and use toTpetra()
-      RCP< const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tDest.getTpetra_CrsMatrix();
+      RCP< const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > v = tDest.getTpetra_CrsMatrix();
       mtx_->doExport(*v, toTpetra(importer), toTpetra(CM)); 
 
     }
 
     //! Import (using an Exporter).
-    void doImport(const DistObject<char,LocalOrdinal, GlobalOrdinal, Node> &source,
+    void doImport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &source,
                   const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {
 
       XPETRA_DYNAMIC_CAST(const TpetraCrsMatrixClass, source, tSource, "Xpetra::TpetraCrsMatrix::doImport only accept Xpetra::TpetraCrsMatrix as input arguments.");//TODO: remove and use toTpetra()
-      RCP< const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tSource.getTpetra_CrsMatrix();
+      RCP< const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > v = tSource.getTpetra_CrsMatrix();
       mtx_->doImport(*v, toTpetra(exporter), toTpetra(CM));
 
     }
 
     //! Export (using an Importer).
-    void doExport(const DistObject<char,LocalOrdinal, GlobalOrdinal, Node> &dest,
+    void doExport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &dest,
                   const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) {
 
       XPETRA_DYNAMIC_CAST(const TpetraCrsMatrixClass, dest, tDest, "Xpetra::TpetraCrsMatrix::doImport only accept Xpetra::TpetraCrsMatrix as input arguments.");//TODO: remove and use toTpetra()
-      RCP< const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tDest.getTpetra_CrsMatrix();
+      RCP< const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > v = tDest.getTpetra_CrsMatrix();
       mtx_->doExport(*v, toTpetra(exporter), toTpetra(CM)); 
 
     }

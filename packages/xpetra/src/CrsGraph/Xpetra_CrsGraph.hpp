@@ -7,10 +7,9 @@
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
 #include "Xpetra_ConfigDefs.hpp"
+#include "Xpetra_DistObject.hpp"
 
 #include "Xpetra_Map.hpp"
-#include "Xpetra_Import.hpp"
-#include "Xpetra_Export.hpp"
 
 namespace Xpetra {
 
@@ -34,7 +33,7 @@ namespace Xpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class CrsGraph
-    //TODO : public RowGraph<>, DistObject<>
+    : /*public RowGraph<>,*/ public DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>
   {
 
   public:

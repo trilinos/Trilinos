@@ -34,6 +34,26 @@ namespace Xpetra {
 
 $TMPL_PUBLIC_FUNCTIONS
 
+    //! Implements DistObject interface
+    //{@
+
+    //! Access function for the Tpetra::Map this DistObject was constructed with.
+    const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { return toXpetra(graph_->Map()); }
+
+    //! Import.
+    void doImport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM);
+
+    //! Export.
+    void doExport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &dest, const Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM);
+
+    //! Import (using an Exporter).
+    void doImport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &source, const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM);
+
+    //! Export (using an Importer).
+    void doExport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &dest, const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM);
+
+    //@}
+
     //! @name Xpetra specific
     //@{
 
