@@ -71,7 +71,7 @@ namespace MueLu {
       // calculate At = A-A^T
       RCP<OOperator> At = UUtils::Transpose(Ain,true);
       RCP<OOperator> AtmA = rcp(new CrsOOperator(Ain->getRowMap(),Ain->getGlobalMaxNumRowEntries()));
-      UUUtils::TwoMatrixAdd(At, false, 1.0, Ain, false, -1.0, AtmA);
+      UUtils::TwoMatrixAdd(At, false, 1.0, Ain, false, -1.0, AtmA);
       AtmA->fillComplete();
 
       GetOStream(Statistics0,0) << varName_ << "(" << factory_ << "): ||" << varName_ << "-" << varName_ << "^T||_F = " << AtmA->getFrobeniusNorm() << ", entries: " << AtmA->getGlobalNumEntries() << std::endl;
