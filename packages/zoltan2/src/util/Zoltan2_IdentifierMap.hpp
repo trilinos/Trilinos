@@ -855,7 +855,7 @@ template< typename User>
 
     // Easy case - use gidGlobalTranslate.
 
-    const gno_t *gnos = in_gno->getRawPtr();
+    const gno_t *gnos = in_gno.getRawPtr();
     ArrayView<const gid_t> gids(static_cast<const gid_t *>(gnos), len);
     ArrayView<gno_t> noGnos;
 
@@ -916,21 +916,26 @@ template< typename User>
 
   // Get the global ID from the owner.
 
-  lno_t *tmpLno = new lno_t [len];
-  env_->localMemoryAssertion(__FILE__, __LINE__, len, tmpLno);
-  ArrayRCP<lno_t> indexList(tmpLno, 0, len);
+  ArrayRCP<lno_t> indexList;
+  ArrayRCP<gno_t> gnoOutBuf;
 
-  gno_t *tmpGno = new gno_t [len];
-  env_->localMemoryAssertion(__FILE__, __LINE__, len, tmpGno);
-  Array<gno_t> gnoOutBuf(tmpGno, 0, len);
+  if (len){
+    lno_t *tmpLno = new lno_t [len];
+    env_->localMemoryAssertion(__FILE__, __LINE__, len, tmpLno);
+    indexList = arcp(tmpLno, 0, len, true);
+  
+    gno_t *tmpGno = new gno_t [len];
+    env_->localMemoryAssertion(__FILE__, __LINE__, len, tmpGno);
+    gnoOutBuf = arcp(tmpGno, 0, len, true);
+  }
 
   lno_t *tmpCount = new lno_t [numProcs_];
   env_->localMemoryAssertion(__FILE__, __LINE__, numProcs_, tmpCount);
-  Array<lno_t> countOutBuf(tmpCount, 0, numProcs_);
+  ArrayRCP<lno_t> countOutBuf(tmpCount, 0, numProcs_, true);
 
   lno_t *tmpOff = new lno_t [numProcs_+1];
   env_->localMemoryAssertion(__FILE__, __LINE__, numProcs_+1, tmpOff);
-  Array<lno_t> offsetBuf(tmpOff, 0, numProcs_+1);
+  ArrayRCP<lno_t> offsetBuf(tmpOff, 0, numProcs_+1, true);
 
   for (int i=0; i < len; i++)
     countOutBuf[out_proc[i]]++;
@@ -946,7 +951,7 @@ template< typename User>
     offsetBuf[p]++;
   }
 
-  delete [] tmpOff;
+  offsetBuf.clear();
 
   ArrayRCP<gno_t> gnoInBuf;
   ArrayRCP<lno_t> countInBuf;
@@ -958,18 +963,20 @@ template< typename User>
   }
   Z2_FORWARD_EXCEPTIONS;
 
-  if (len)
-    delete [] tmpGno;
-
-  delete [] tmpCount;
+  gnoOutBuf.clear();
+  countOutBuf.clear();
 
   lno_t numRequests = 0;
   for (int i=0; i < numProcs_; i++)
     numRequests += countInBuf[i];
 
-  gid_t *tmpGid = new gid_t [numRequests];
-  env_->localMemoryAssertion(__FILE__, __LINE__, len, tmpGno);
-  Array<gid_t> gidQueryBuf(tmpGid, 0, numRequests);
+  ArrayRCP<gid_t> gidQueryBuf;
+
+  if (numRequests){
+    gid_t *tmpGid = new gid_t [numRequests];
+    env_->localMemoryAssertion(__FILE__, __LINE__, numRequests, tmpGid);
+    gidQueryBuf = arcp(tmpGid, 0, numRequests);
+  }
 
   try{
     gidTranslate(gidQueryBuf.view(0, numRequests),
@@ -988,8 +995,7 @@ template< typename User>
   }
   Z2_FORWARD_EXCEPTIONS;
 
-  if (numRequests)
-    delete [] tmpGid;
+  gidQueryBuf.clear();
 
   // copy in to right place in gid list
 
@@ -1018,8 +1024,8 @@ template< typename User>
   gid_t mingid_t, maxgid_t;
 
   userGidsAreConsecutive_ = globallyConsecutiveOrdinals<gid_t>(
-    *(env_->comm_), *env_, gidPtr, localNumberOfIds_,      // input
-    tmpDist, globalNumberOfIds_);                          // output
+    *comm_, *env_, gidPtr, localNumberOfIds_,      // input
+    tmpDist, globalNumberOfIds_);                  // output
 
   bool baseZeroConsecutiveIds = false;
 
