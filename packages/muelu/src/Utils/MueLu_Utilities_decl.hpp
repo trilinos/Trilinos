@@ -168,7 +168,6 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
 
       Note that B does not have to be fill-completed.
     */
-   static void TwoMatrixAdd(RCP<Operator> const &A, bool transposeA, SC alpha, RCP<Operator> &B, SC beta); //TwoMatrixAdd()
 
     /*! @brief Helper function to calculate C = alpha*A + beta*B.
 
@@ -182,9 +181,6 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
 
       It is up to the caller to ensure that the resulting matrix sum is fillComplete'd.
     */
-   static void TwoMatrixAdd(RCP<Operator> const &A, bool const &transposeA, SC const &alpha,
-                                     RCP<Operator> const &B, bool const &transposeB, SC const &beta,
-                                     RCP<Operator> &C); //TwoMatrixAdd()
 
     static void MatrixPrint(RCP<Operator> const &Op);
 
@@ -273,6 +269,9 @@ RCP<Xpetra::CrsOperator<SC,LO,GO,NO,LMO> > Convert_Epetra_CrsMatrix_ToXpetra_Crs
                                 bool doFillComplete=true,
                                 bool doOptimizeStorage=true); //ScaleMatrix()
 
+   static void MyOldScaleMatrix_Tpetra(RCP<Operator> &Op, Teuchos::ArrayRCP<SC> const &scalingVector,
+                               bool doFillComplete, bool doOptimizeStorage);
+
    static RCP<Teuchos::FancyOStream> MakeFancy(std::ostream & os);
 
   }; // class Utils
@@ -307,8 +306,12 @@ std::string toString(T const &what) {
 
 //RCP<Xpetra::CrsOperator<double,int,int,KDNT,KDKSO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator<double,int,int,KDNT,KDKSO > (RCP<Epetra_CrsMatrix> epAB)
 
-/*
-  Separate class for Utilities that need a specialization for Epetra.
+
+/*!
+  @class Utils2
+  @brief MueLu utility class.
+
+  Separate class for utilities that need a specialization for Epetra.
 */
   template <class Scalar, 
             class LocalOrdinal  = int,
@@ -326,11 +329,21 @@ public:
       Note: Currently, an error is thrown if the matrix isn't a Tpetra::CrsMatrix or Epetra_CrsMatrix.
       In principle, however, we could allow any Epetra_RowMatrix because the Epetra transposer does.
     */
-
    static RCP<Operator> Transpose(RCP<Operator> const &Op, bool const & optimizeTranspose=false); //Transpose
+
+   //! Scale an Epetra matrix.
+   static void MyOldScaleMatrix_Epetra(RCP<Operator> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doFillComplete, bool doOptimizeStorage);
+
+   //! @brief Add two Operators.
+   static void TwoMatrixAdd(RCP<Operator> const &A, bool transposeA, SC alpha, RCP<Operator> &B, SC beta);
+
+   //! Add two Operators.
+   static void TwoMatrixAdd(RCP<Operator> const &A, bool const &transposeA, SC const &alpha,
+                                     RCP<Operator> const &B, bool const &transposeB, SC const &beta,
+                                     RCP<Operator> &C); //TwoMatrixAdd()
   }; // class Utils2
 
-  // specialization Utils2 for SC=double
+  // specialization Utils2 for SC=double, LO=GO=int
   template<>
   class Utils2<double,int,int>//, Kokkos::DefaultNode::DefaultNodeType,
                //Kokkos::DefaultKernels<double,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps >
@@ -345,6 +358,11 @@ public:
 public:
 
    static RCP<Operator> Transpose(RCP<Operator> const &Op, bool const & optimizeTranspose=false); //Transpose
+   static void MyOldScaleMatrix_Epetra(RCP<Operator> &Op, Teuchos::ArrayRCP<SC> const &scalingVector, bool doFillComplete, bool doOptimizeStorage);
+   static void TwoMatrixAdd(RCP<Operator> const &A, bool transposeA, SC alpha, RCP<Operator> &B, SC beta);
+   static void TwoMatrixAdd(RCP<Operator> const &A, bool const &transposeA, SC const &alpha,
+                                     RCP<Operator> const &B, bool const &transposeB, SC const &beta,
+                                     RCP<Operator> &C);
   }; //specialization to Scalar=double
 
 

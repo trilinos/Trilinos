@@ -150,7 +150,7 @@ void PgPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(L
   RCP<Operator> P_smoothed = Teuchos::null;
   Utils::MyOldScaleMatrix(DinvAP0,RowBasedOmega_local,false,doFillComplete,optimizeStorage); //scale matrix with reciprocal of diag
 
-  Utils::TwoMatrixAdd(Ptent, false, Teuchos::ScalarTraits<Scalar>::one(),
+  Utils2::TwoMatrixAdd(Ptent, false, Teuchos::ScalarTraits<Scalar>::one(),
       DinvAP0, false, -Teuchos::ScalarTraits<Scalar>::one(),
       P_smoothed);
   P_smoothed->fillComplete(Ptent->getDomainMap(), Ptent->getRangeMap());

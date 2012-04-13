@@ -64,6 +64,8 @@ namespace MueLu {
   void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildP(Level &fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Prolongator smoothing", coarseLevel);
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
+
     // Get default tentative prolongator factory
     // Getting it that way ensure that the same factory instance will be used for both SaPFactory and NullspaceFactory.
     // -- Warning: Do not use directly initialPFact_. Use initialPFact instead everywhere!
@@ -85,7 +87,7 @@ namespace MueLu {
     //FIXME Xpetra::Operator should calculate/stash max eigenvalue
     //FIXME SC lambdaMax = A->GetDinvALambda();
 
-    if (dampingFactor_ != 0) {
+    if (dampingFactor_ != Teuchos::ScalarTraits<Scalar>::one()) {
 
       //Teuchos::ParameterList matrixList;
       //RCP<Operator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map,CrsOperator>("Identity",fineLevel.Get< RCP<Operator> >("A")->getRowMap(),matrixList);
@@ -114,7 +116,8 @@ namespace MueLu {
       Scalar lambdaMax;
       {
         SubFactoryMonitor m2(*this, "Eigenvalue estimate", coarseLevel);
-        lambdaMax = Utils::PowerMethod(*A, true, (LO) 10,(Scalar)1e-4);
+        Magnitude stopTol = 1e-4;
+        lambdaMax = Utils::PowerMethod(*A, true, (LO) 10, stopTol);
         //Scalar lambdaMax = Utils::PowerMethod(*A, true, (LO) 50,(Scalar)1e-7, true);
         GetOStream(Statistics1, 0) << "Damping factor = " << dampingFactor_/lambdaMax << " (" << dampingFactor_ << " / " << lambdaMax << ")" << std::endl;
       }
@@ -124,9 +127,9 @@ namespace MueLu {
         
         bool doTranspose=false; 
         if (AP->isFillComplete())
-          Utils::TwoMatrixAdd(Ptent,doTranspose,1.0,AP,doTranspose,-dampingFactor_/lambdaMax,finalP);
+          Utils2::TwoMatrixAdd(Ptent,doTranspose,Teuchos::ScalarTraits<Scalar>::one(),AP,doTranspose,-dampingFactor_/lambdaMax,finalP);
         else {
-          Utils::TwoMatrixAdd(Ptent,doTranspose,1.0,AP,-dampingFactor_/lambdaMax);
+          Utils2::TwoMatrixAdd(Ptent,doTranspose,Teuchos::ScalarTraits<Scalar>::one(),AP,-dampingFactor_/lambdaMax);
           finalP = AP;
         }
       }

@@ -519,7 +519,7 @@ if (mypid == 0)
                 RCP<Operator> temp = MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::TwoMatrixMultiply(crop1, false, crop2, false);
 
                 // sum up
-                MueLu::Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(temp, false, 1.0, Cij, 1.0);
+                MueLu::Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(temp, false, 1.0, Cij, 1.0);
               }
 
             Cij->fillComplete(B->getDomainMap(j), A->getRangeMap(i));
@@ -539,90 +539,6 @@ if (mypid == 0)
 
     return C;
   } // TwoMatrixMultiplyBlock
-
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(RCP<Operator> const &A, bool transposeA, SC alpha, RCP<Operator> &B, SC beta)
-  {
-    if ( !(A->getRowMap()->isSameAs(*(B->getRowMap()))) ) {
-      throw(Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same."));
-    }
-
-    if (A->getRowMap()->lib() == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRAEXT
-      RCP<const Epetra_CrsMatrix> epA = Op2EpetraCrs(A);
-      RCP<Epetra_CrsMatrix> epB = Op2NonConstEpetraCrs(B);
-        
-      //FIXME is there a bug if beta=0?
-      int i = EpetraExt::MatrixMatrix::Add(*epA,transposeA,(double)alpha,*epB,(double)beta);
-
-      if (i != 0) {
-        std::ostringstream buf;
-        buf << i;
-        std::string msg = "EpetraExt::MatrixMatrix::Add return value of " + buf.str();
-        throw(Exceptions::RuntimeError(msg));
-      }
-#else
-      throw(Exceptions::RuntimeError("MueLu must be compile with EpetraExt."));
-#endif
-    } else if(A->getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
-      RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpA = Op2TpetraCrs(A);
-      RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpB = Op2NonConstTpetraCrs(B);
-        
-      Tpetra::MatrixMatrix::Add(*tpA, transposeA, alpha, *tpB, beta);
-#else
-      throw(Exceptions::RuntimeError("MueLu must be compiled with Tpetra."));
-#endif
-    }
-
-  } //TwoMatrixAdd()
-
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(RCP<Operator> const &A, bool const &transposeA, SC const &alpha,
-                           RCP<Operator> const &B, bool const &transposeB, SC const &beta,
-                           RCP<Operator> &C)
-  {
-    if ( !(A->getRowMap()->isSameAs(*(B->getRowMap()))) ) {
-      throw(Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same."));
-    }
-    if (C==Teuchos::null)
-      //FIXME 5 is a complete guess as to the #nonzeros per row
-      C = rcp( new CrsOperator(A->getRowMap(), 5) );
-
-    if (C->getRowMap()->lib() == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRAEXT
-      RCP<const Epetra_CrsMatrix> epA = Op2EpetraCrs(A);
-      RCP<const Epetra_CrsMatrix> epB = Op2EpetraCrs(B);
-      RCP<Epetra_CrsMatrix>       epC = Op2NonConstEpetraCrs(C);
-      Epetra_CrsMatrix* ref2epC = &*epC; //to avoid a compiler error...
-
-      //FIXME is there a bug if beta=0?
-      int i = EpetraExt::MatrixMatrix::Add(*epA,transposeA,(double)alpha,*epB,transposeB,(double)beta,ref2epC);
-
-      if (i != 0) {
-        std::ostringstream buf;
-        buf << i;
-        std::string msg = "EpetraExt::MatrixMatrix::Add return value of " + buf.str();
-        throw(Exceptions::RuntimeError(msg));
-      }
-#else
-      throw(Exceptions::RuntimeError("MueLu must be compile with EpetraExt."));
-#endif
-    } else if(C->getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
-      RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpA = Op2TpetraCrs(A);
-      RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpB = Op2TpetraCrs(B);
-      RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >       tpC = Op2NonConstTpetraCrs(C);
-
-      Tpetra::MatrixMatrix::Add(*tpA, transposeA, alpha, *tpB, transposeB, beta, tpC);
-#else
-      throw(Exceptions::RuntimeError("MueLu must be compile with Tpetra."));
-#endif
-    }
-
-  } //TwoMatrixAdd()
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -1004,34 +920,6 @@ if (mypid == 0)
                                bool doFillComplete,
                                bool doOptimizeStorage)
   {
-    //Note: Epetra and Tpetra could be enabled simultaneously.
-#ifdef HAVE_MUELU_EPETRAEXT
-    std::string TorE = "epetra";
-#else
-    std::string TorE = "tpetra";
-#endif
-
-#ifdef HAVE_MUELU_EPETRAEXT
-    RCP<const Epetra_CrsMatrix> epOp;
-    try {
-      epOp = Op2NonConstEpetraCrs(Op);
-    }
-    catch (...){
-      TorE = "tpetra";
-    }
-#endif
-
-#ifdef HAVE_MUELU_TPETRA
-    RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpOp;
-    if (TorE=="tpetra") {
-      try {
-        tpOp = Op2NonConstTpetraCrs(Op);
-      }
-      catch(...) {
-        throw(Exceptions::RuntimeError("Only Epetra_CrsMatrix or Tpetra::CrsMatrix types can be scaled (Err.1)"));
-      }
-    } //if
-#endif
 
     Teuchos::ArrayRCP<SC> sv(scalingVector.size());
     if (doInverse) {
@@ -1042,8 +930,33 @@ if (mypid == 0)
         sv[i] = scalingVector[i];
     }
 
-    if (TorE == "tpetra") {
+    switch (Op->getRowMap()->lib()) {
+      case Xpetra::UseTpetra:
+        MyOldScaleMatrix_Tpetra(Op, sv, doFillComplete, doOptimizeStorage);
+        break;
+      case Xpetra::UseEpetra:
+        Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MyOldScaleMatrix_Epetra(Op, sv, doFillComplete, doOptimizeStorage);
+        break;
+      default:
+        throw(Exceptions::RuntimeError("Only Epetra and Tpetra matrices can be scaled."));
+        break;
+    } //switch
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MyOldScaleMatrix_Tpetra(RCP<Operator> &Op, Teuchos::ArrayRCP<SC> const &scalingVector,
+                               bool doFillComplete,
+                               bool doOptimizeStorage)
+  {
 #ifdef HAVE_MUELU_TPETRA
+    RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpOp;
+    try {
+      tpOp = Op2NonConstTpetraCrs(Op);
+    }
+    catch(...) {
+      throw(Exceptions::RuntimeError("Only Tpetra::CrsMatrix types can be scaled (Err.1)"));
+    }
+
       const RCP<const Tpetra::Map<LO,GO,NO> > rowMap = tpOp->getRowMap();
       const RCP<const Tpetra::Map<LO,GO,NO> > domainMap = tpOp->getDomainMap();
       const RCP<const Tpetra::Map<LO,GO,NO> > rangeMap = tpOp->getRangeMap();
@@ -1066,7 +979,7 @@ if (mypid == 0)
             scaledVals.resize(maxRowSize);
           }
           for (size_t j=0; j<nnz; ++j) {
-            scaledVals[j] = vals[j]*sv[i];
+            scaledVals[j] = vals[j]*scalingVector[i];
           }
           if (nnz>0) {
             Teuchos::ArrayView<const SC> valview(&scaledVals[0],nnz);
@@ -1085,7 +998,7 @@ if (mypid == 0)
             scaledVals.resize(maxRowSize);
           }
           for (size_t j=0; j<nnz; ++j) {
-            scaledVals[j] = vals[j]*sv[i]; //FIXME i or gid?
+            scaledVals[j] = vals[j]*scalingVector[i]; //FIXME i or gid?
           }
           if (nnz>0) {
             Teuchos::ArrayView<const SC> valview(&scaledVals[0],nnz);
@@ -1103,31 +1016,12 @@ if (mypid == 0)
           Op->fillComplete(Op->getDomainMap(),Op->getRangeMap(),Xpetra::DoNotOptimizeStorage);
       }
 #else
-      throw(Exceptions::RuntimeError("Tpetra"));   
-#endif // HAVE_MUELU_TPETRA
-    } 
+      throw(Exceptions::RuntimeError("Matrix scaling is not possible because Tpetra has not been enabled."));
+#endif
+  } //MyOldScaleMatrix_Tpetra()
 
-    if (TorE == "epetra") {
-#ifdef HAVE_MUELU_EPETRAEXT
-      Epetra_Map const &rowMap = epOp->RowMap();
-      int nnz;
-      double *vals;
-      int *cols;
-      for (int i=0; i<rowMap.NumMyElements(); ++i) {
-        epOp->ExtractMyRowView(i,nnz,vals,cols);
-        for (int j=0; j<nnz; ++j)
-          vals[j] *= sv[i];
-      }
-#else
-      throw(Exceptions::RuntimeError("Epetra (Err. 1)"));   
-#endif // HAVE_MUELU_EPETRAEXT
-    }
-
-    if (TorE != "epetra" && TorE != "tpetra")
-      //throw should already have occured, thus should never get here
-      throw(Exceptions::RuntimeError("Only Epetra_CrsMatrix or Tpetra::CrsMatrix types can be scaled (Err. 2)"));
-
-  } //ScaleMatrix()
+  typedef Kokkos::DefaultNode::DefaultNodeType KDNT;
+  typedef Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps KDKSO;
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -1143,8 +1037,6 @@ if (mypid == 0)
 //     return Teuchos::null;
 //   }
 
-  typedef Kokkos::DefaultNode::DefaultNodeType KDNT;
-  typedef Kokkos::DefaultKernels<void,int,Kokkos::DefaultNode::DefaultNodeType>::SparseOps KDKSO;
 
 //   template<>
 //   inline RCP<Xpetra::CrsOperator<double,int,int,KDNT,KDKSO> > Convert_Epetra_CrsMatrix_ToXpetra_CrsOperator<double,int,int,KDNT,KDKSO > (RCP<Epetra_CrsMatrix> &epAB) {
@@ -1212,6 +1104,66 @@ if (mypid == 0)
     return Teuchos::null;
      
   } //Transpose
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MyOldScaleMatrix_Epetra(RCP<Operator> &Op, Teuchos::ArrayRCP<SC> const &scalingVector,
+                               bool doFillComplete,
+                               bool doOptimizeStorage)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MyOldScalematrix and Epetra cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(RCP<Operator> const &A, bool transposeA, SC alpha, RCP<Operator> &B, SC beta)
+  {
+    if ( !(A->getRowMap()->isSameAs(*(B->getRowMap()))) ) {
+      throw(Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same."));
+    }
+
+    if (A->getRowMap()->lib() == Xpetra::UseEpetra) {
+      throw(Exceptions::RuntimeError("You cannot use Epetra::MatrixMatrix::Add with Scalar!=double or Ordinal!=int"));
+    } else if(A->getRowMap()->lib() == Xpetra::UseTpetra) {
+#ifdef HAVE_MUELU_TPETRA
+      RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpA = Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Op2TpetraCrs(A);
+      RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpB = Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Op2NonConstTpetraCrs(B);
+        
+      Tpetra::MatrixMatrix::Add(*tpA, transposeA, alpha, *tpB, beta);
+#else
+      throw(Exceptions::RuntimeError("MueLu must be compiled with Tpetra."));
+#endif
+    }
+
+  } //Utils2::TwoMatrixAdd()
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(RCP<Operator> const &A, bool const &transposeA, SC const &alpha,
+                           RCP<Operator> const &B, bool const &transposeB, SC const &beta,
+                           RCP<Operator> &C)
+  {
+    if ( !(A->getRowMap()->isSameAs(*(B->getRowMap()))) ) {
+      throw(Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same."));
+    }
+    if (C==Teuchos::null)
+      //FIXME 5 is a complete guess as to the #nonzeros per row
+      C = rcp( new CrsOperator(A->getRowMap(), 5) );
+
+    if (C->getRowMap()->lib() == Xpetra::UseEpetra) {
+      throw(Exceptions::RuntimeError("You cannot use Epetra::MatrixMatrix::Add with Scalar!=double or Ordinal!=int"));
+    } else if(C->getRowMap()->lib() == Xpetra::UseTpetra) {
+#ifdef HAVE_MUELU_TPETRA
+      RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpA = Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Op2TpetraCrs(A);
+      RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > tpB = Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Op2TpetraCrs(B);
+      RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >       tpC = Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Op2NonConstTpetraCrs(C);
+
+      Tpetra::MatrixMatrix::Add(*tpA, transposeA, alpha, *tpB, transposeB, beta, tpC);
+#else
+      throw(Exceptions::RuntimeError("MueLu must be compile with Tpetra."));
+#endif
+    }
+
+  } //Utils2::TwoMatrixAdd()
+
 
 } //namespace MueLu
 
