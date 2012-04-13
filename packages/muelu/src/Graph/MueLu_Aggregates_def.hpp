@@ -248,9 +248,13 @@ namespace MueLu {
     for(LocalOrdinal n=0; n<Teuchos::as<LocalOrdinal>(nodeMap->getNodeNumElements()); n++) {
       GlobalOrdinal globalblockid = (GlobalOrdinal) nodeMap->getGlobalElement(n);
 
-      TEUCHOS_TEST_FOR_EXCEPTION(GetAmalgamationInfo()->GetGlobalAmalgamationParams()->count(globalblockid)<=0, Exceptions::RuntimeError, "MueLu::Aggregates::GenerateImportDofMap: empty global block? Error.");
+      GetOStream(Statistics1) << "nodeMap->getGlobalElement(" << n << ")=" << nodeMap->getGlobalElement(n) << std::endl;
+
+      // TODO: have to think about this
+      //TEUCHOS_TEST_FOR_EXCEPTION(GetAmalgamationInfo()->GetGlobalAmalgamationParams()->count(globalblockid)<=0, Exceptions::RuntimeError, "MueLu::Aggregates::GenerateImportDofMap: empty global block? globalblockid=" << globalblockid << ". Error.");
       std::vector<GlobalOrdinal> myrowGIDs = (*(GetAmalgamationInfo()->GetGlobalAmalgamationParams()))[globalblockid];
-      TEUCHOS_TEST_FOR_EXCEPTION(myrowGIDs.size()==0, Exceptions::RuntimeError, "MueLu::Aggregates::GenerateImportDofMap: no amalgamation information! Error.");
+      // TODO: have to think about this
+      //TEUCHOS_TEST_FOR_EXCEPTION(myrowGIDs.size()==0, Exceptions::RuntimeError, "MueLu::Aggregates::GenerateImportDofMap: no amalgamation information! Error.");
 
       typename std::vector<GlobalOrdinal>::iterator gidIt;
       for(gidIt = myrowGIDs.begin(); gidIt!=myrowGIDs.end(); gidIt++) {
