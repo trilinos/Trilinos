@@ -40,6 +40,9 @@ namespace MueLu {
     //! Constructor
     NullspaceFactory(RCP<const FactoryBase> AFact = Teuchos::null, RCP<const FactoryBase> nullspaceFact = Teuchos::null);
 
+    //! alternative Constructor
+    NullspaceFactory(std::string nspName, RCP<const FactoryBase> nullspaceFact = Teuchos::null);
+
     //! Destructor
     virtual ~NullspaceFactory();
 
@@ -66,6 +69,9 @@ namespace MueLu {
     //@}
 
   private:
+
+    //! name of nullspace vector on finest level
+    std::string nspName_;
 
     //! Factory for generating matrix A.
     RCP<const FactoryBase> AFact_;
