@@ -51,7 +51,7 @@ public:
   //! @name Constructor/Destructor Methods
   //@{
 
-  //! Constructor
+  //! Constructor specifying fixed number of entries for each row.
   CrsOperator(const RCP<const Map> &rowMap, size_t maxNumEntriesPerRow, Xpetra::ProfileType pftype = Xpetra::DynamicProfile)
     : finalDefaultView_(false)
   {
@@ -62,6 +62,17 @@ public:
     CreateDefaultView();
   }
 
+  //! Constructor specifying (possibly different) number of entries in each row.
+  CrsOperator(const RCP<const Map> &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype = Xpetra::DynamicProfile)
+    : finalDefaultView_(false)
+  {
+    // Set matrix data
+    matrixData_ = CrsMatrixFactory::Build(rowMap, NumEntriesPerRowToAlloc, pftype);
+    
+    // Default view
+    CreateDefaultView();
+  }
+  
   CrsOperator(RCP<CrsMatrix> &matrix)
     : finalDefaultView_(matrix->isFillComplete())
   {
