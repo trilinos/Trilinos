@@ -37,3 +37,4 @@ BlockedGaussSeidelSmoother
 AggregationExportFactory
 #MultiVectorTransferFactory
 #PermutedTransferFactory
+SubBlockAggregationFactory

@@ -34,3 +34,4 @@ AggregationExportFactory
 VariableInformationFactory
 PermutedTransferFactory
 MultiVectorTransferFactory
+SubBlockAggregationFactory
