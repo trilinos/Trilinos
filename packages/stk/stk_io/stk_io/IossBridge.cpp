@@ -1263,10 +1263,15 @@ namespace stk {
       }
     } // namespace <blank>
 
+    struct part_compare {
+      bool operator() (stk::mesh::Part *i, stk::mesh::Part *j) { return (i->name() < j->name()); }
+    };
+
     void define_output_db(Ioss::Region & io_region ,
 			  const mesh::BulkData &bulk_data,
 			  const Ioss::Region *input_region,
-			  const stk::mesh::Selector *anded_selector)
+        const stk::mesh::Selector *anded_selector,
+        bool sort_stk_parts)
     {
       const mesh::MetaData & meta_data = mesh::MetaData::get(bulk_data);
 
@@ -1280,7 +1285,14 @@ namespace stk {
       define_node_block(meta_data.universal_part(), bulk_data, io_region, anded_selector);
 
       // All parts of the meta data:
-      const mesh::PartVector & all_parts = meta_data.get_parts();
+      //const mesh::PartVector & all_parts = meta_data.get_parts();
+      const mesh::PartVector & all_parts_unsorted = meta_data.get_parts();
+
+      // sort parts so they go out the same on all processors (srk: this was induced by streaming refine)
+      mesh::PartVector all_parts = all_parts_unsorted;
+      if (sort_stk_parts) 
+        std::sort(all_parts.begin(), all_parts.end(), part_compare());
+
       for (mesh::PartVector::const_iterator i = all_parts.begin();
 	   i != all_parts.end(); ++i) {
 

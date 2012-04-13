@@ -85,7 +85,8 @@ namespace stk {
       m_isAdopted(false),
       m_dontCheckState(false),
       m_filename(),
-      m_comm(comm)
+      m_comm(comm),
+      m_streaming_size(0)
     {
       init( m_comm);
     }
@@ -843,7 +844,8 @@ namespace stk {
         m_isAdopted(true),
         m_dontCheckState(false),
         m_filename(),
-        m_comm()
+        m_comm(),
+        m_streaming_size(0)
     {
       if (!bulkData)
         throw std::runtime_error("PerceptMesh::PerceptMesh: must pass in non-null bulkData");
@@ -1720,9 +1722,49 @@ namespace stk {
         }
     }
 
+    
+    static void percept_create_output_mesh(const std::string &filename,
+                                           stk::ParallelMachine comm,
+                                           stk::mesh::BulkData &bulk_data,
+                                           stk::io::MeshData &mesh_data)
+    {
+      Ioss::Region *out_region = NULL;
+    
+      std::string out_filename = filename;
+      Ioss::DatabaseIO *dbo = Ioss::IOFactory::create("exodusII", out_filename,
+                                                      Ioss::WRITE_RESULTS,
+                                                      comm);
+      if (dbo == NULL || !dbo->ok()) {
+        std::cerr << "ERROR: Could not open results database '" << out_filename
+                  << "' of type 'exodusII'\n";
+        std::exit(EXIT_FAILURE);
+      }
+
+      // NOTE: 'out_region' owns 'dbo' pointer at this time...
+      out_region = new Ioss::Region(dbo, "results_output");
+
+      int my_processor = 0;
+      int processor_count = 0;
+      std::cout << "PerceptMesh::percept_create_output_mesh: filename= " << filename 
+                << " processor_count= " << processor_count << " my_processor= " << my_processor << std::endl;
+
+      my_processor = boost::lexical_cast<int>(filename.substr(filename.size()-1, 1));
+      processor_count = boost::lexical_cast<int>(filename.substr(filename.size()-3, 1));
+      std::cout << "PerceptMesh::percept_create_output_mesh: filename= " << filename 
+                << " processor_count= " << processor_count << " my_processor= " << my_processor << std::endl;
+      out_region->property_add(Ioss::Property("processor_count", processor_count));
+      out_region->property_add(Ioss::Property("my_processor", my_processor));
+
+      bool sort_stk_parts = true;
+      stk::io::define_output_db(*out_region, bulk_data, mesh_data.m_input_region, mesh_data.m_anded_selector, sort_stk_parts);
+      stk::io::write_output_db(*out_region,  bulk_data, mesh_data.m_anded_selector);
+      mesh_data.m_output_region = out_region;
+    }
+
     void PerceptMesh::writeModel( const std::string& out_filename)
     {
       const unsigned p_rank = parallel_machine_rank( getBulkData()->parallel() );
+      const unsigned p_size = parallel_machine_size( getBulkData()->parallel() );
 
       if (p_rank == 0) std::cout << "PerceptMesh:: saving "<< out_filename << std::endl;
       
@@ -1743,7 +1785,12 @@ namespace stk {
 
       const stk::ParallelMachine& comm = m_bulkData->parallel();
       stk::io::MeshData mesh_data;
-      stk::io::create_output_mesh(out_filename, comm, bulk_data, mesh_data);
+      std::cout << "tmp srk out_filename= " << out_filename << " m_streaming_size= " << m_streaming_size << std::endl;
+      if (p_size == 1 && m_streaming_size)
+        percept_create_output_mesh(out_filename, comm, bulk_data, mesh_data);
+      else
+        stk::io::create_output_mesh(out_filename, comm, bulk_data, mesh_data);
+
       stk::io::define_output_fields(mesh_data, meta_data, false);
 
       //deprecated omitted_output_db_processing(out_region);

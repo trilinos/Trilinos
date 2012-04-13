@@ -38,6 +38,8 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/static_assert.hpp>
 
+#define YAML_CHECK(emitter) do { if (1 && !emitter.good()) { std::cout << "Emitter error: " << __FILE__ << ":" << __LINE__ << " emitter.good()= " \
+                                                                     << emitter.good() << " Error Message: " << emitter.GetLastError() << std::endl; return;} } while(0)
 
 
 namespace stk { 
@@ -68,13 +70,19 @@ namespace stk {
       int m_spatialDim;
 
     public:
+      typedef boost::tuple<stk::mesh::EntityRank, std::string> PartMapData;
+      typedef std::map<std::string, PartMapData> PartMap;
+      PartMap *m_partMap;
+
+    public:
       enum { MaxPass = 3 };
 
       SerializeNodeRegistry(PerceptMesh& eMesh, NodeRegistry* nodeRegistry, std::string input_mesh_name, std::string output_mesh_name, int M, int iM, int P=1, int iP=0) : 
         m_eMesh(eMesh), m_nodeRegistry(nodeRegistry), m_input_mesh_name(input_mesh_name), m_output_mesh_name(output_mesh_name), m_filePrefix(input_mesh_name), 
         M(M), iM(iM), P(P), iP(iP),
         m_entity_rank_names(eMesh.getFEM_meta_data()->entity_rank_names()),
-        m_id_max(m_entity_rank_names.size(), 0u),  FAMILY_TREE_RANK(eMesh.element_rank() + 1u)
+        m_id_max(m_entity_rank_names.size(), 0u),  FAMILY_TREE_RANK(eMesh.element_rank() + 1u),
+        m_partMap(0)
       {
         size_t pos = m_filePrefix.find(".");
         if (pos != std::string::npos)
@@ -88,21 +96,166 @@ namespace stk {
       void pass(int streaming_pass)
       {
         std::cout << "\n\n ------ SerializeNodeRegistry ----- pass number " << streaming_pass << "\n\n" << std::endl;
-        if ( streaming_pass== 0)
+        if ( streaming_pass== -1)
           {
-            pass0();
+            passM1(); return;
+          }
+        else if ( streaming_pass== 0)
+          {
+            pass0(); return;
           }
         else if (streaming_pass == 1)
           {
-            pass1();
+            pass1(); return;
           }
         else if (streaming_pass == 2)
           {
-            pass2();
+            pass2(); return;
           }
         else if (streaming_pass == 3)
           {
-            pass3();
+            pass3(); return;
+          }
+        else
+          {
+            throw std::logic_error("SerializeNodeRegistry::pass unknown pass");
+          }
+      }
+
+      //fem::CellTopology get_cell_topology( const Part & part) const;
+
+      /**
+       *   passM1: open unrefined mesh, get Part (exodus block) information, put to global yaml file
+       *   (iM = 0...M)
+       */
+      // part primary_entity_rank, topology name
+      void createGlobalPartsFile()
+      {
+        std::fstream file;
+        //file.open(m_globalIdFile.c_str(), std::ios_base::out | std::ios_base::trunc);
+        std::string m_globalPartsFile = "global_parts.yaml";
+        file.open(m_globalPartsFile.c_str(), std::ios_base::out | std::ios_base::trunc);
+        if (!file.is_open())
+          {
+            throw std::runtime_error(std::string("SerializeNodeRegistry::createGlobalPartsFile couldn't open file ")+m_globalPartsFile);
+          }
+        YAML::Emitter out;
+        out << YAML::BeginMap; YAML_CHECK(out);
+        PartMap::iterator iter;
+        for (iter = m_partMap->begin(); iter != m_partMap->end(); ++iter)
+          {
+            out << YAML::Key << iter->first;  YAML_CHECK(out);
+            out << YAML::Value;               YAML_CHECK(out);
+            out << YAML::Flow;                YAML_CHECK(out);
+            out << YAML::BeginSeq;            YAML_CHECK(out);
+            out << iter->second.get<0>();
+            out << iter->second.get<1>();
+            out << YAML::EndSeq;              YAML_CHECK(out);
+          }
+        out << YAML::EndMap; YAML_CHECK(out);
+        file << out.c_str();
+        file.close();
+      }
+
+      void declareGlobalParts()
+      {
+        if (!m_partMap) readGlobalPartsFile();
+        PartMap::iterator iter;
+        for (iter = m_partMap->begin(); iter != m_partMap->end(); ++iter)
+          {
+            std::string part_name = iter->first;
+            stk::mesh::EntityRank part_rank = iter->second.get<0>();
+            std::string topo_name = iter->second.get<1>();
+            const stk::mesh::Part* c_part = m_eMesh.getFEM_meta_data()->get_part(part_name);
+            stk::mesh::Part *part = const_cast<stk::mesh::Part *>(c_part);
+            if (!part)
+              {
+                part = &m_eMesh.getFEM_meta_data()->declare_part(part_name, part_rank);
+                stk::io::put_io_part_attribute(*part);
+                stk::mesh::fem::CellTopology topo = m_eMesh.getFEM_meta_data()->get_cell_topology(topo_name);
+                if (!topo.getCellTopologyData())
+                  {
+                    std::cout << "bad cell topo SerializeNodeRegistry::declareGlobalParts topo_name= " << topo_name << std::endl;
+                    throw std::runtime_error("bad cell topo SerializeNodeRegistry::declareGlobalParts");
+                  }
+                stk::mesh::fem::set_cell_topology(*part, topo);
+              }
+          }        
+      }
+
+      // part primary_entity_rank, topology name
+      void readGlobalPartsFile()
+      {
+        if (m_partMap) delete m_partMap;
+        m_partMap = new PartMap;
+
+        std::fstream file;
+        //file.open(m_globalIdFile.c_str(), std::ios_base::out | std::ios_base::trunc);
+        std::string m_globalPartsFile = "global_parts.yaml";
+        file.open(m_globalPartsFile.c_str(), std::ios_base::in);
+        if (!file.is_open())
+          {
+            throw std::runtime_error(std::string("SerializeNodeRegistry::readGlobalPartsFile couldn't open file ")+m_globalPartsFile);
+          }
+
+        YAML::Parser parser(file);
+        YAML::Node doc;
+
+        try {
+          while(parser.GetNextDocument(doc)) {
+            std::cout << "\n readGlobalPartsFile doc.Type() = " << doc.Type() << " doc.Tag()= " << doc.Tag() << " doc.size= " << doc.size() << std::endl;
+            if (doc.Type() == YAML::NodeType::Map)
+              {
+                for(YAML::Iterator iter=doc.begin();iter!=doc.end();++iter) 
+                  {
+                    const YAML::Node& key = iter.first();
+                    std::string part_name;
+                    key >> part_name;
+
+                    const YAML::Node& valSeq = iter.second();
+                    stk::mesh::EntityRank rank;
+                    std::string topo_name;
+                    YAML::Iterator itv=valSeq.begin();
+                    *itv >> rank;
+                    ++itv;
+                    *itv >> topo_name;
+                    PartMapData pmd(rank, topo_name);
+                    (*m_partMap)[part_name] = pmd;
+                  }
+              }
+            else
+              {
+                throw std::runtime_error("bad global_parts file");
+              }
+          }
+        }
+        catch(YAML::ParserException& e) {
+          std::cout << e.what() << "\n";
+          throw std::runtime_error( e.what());
+        }
+        file.close();
+      }
+      
+      void passM1()
+      {
+        const stk::mesh::PartVector& parts = m_eMesh.getFEM_meta_data()->get_parts();
+        for (unsigned ipart=0; ipart < parts.size(); ipart++)
+          {
+            const Part& part = *parts[ipart];
+            if (stk::mesh::is_auto_declared_part(part))
+              {
+                continue;
+              }
+            fem::CellTopology topo = m_eMesh.getFEM_meta_data()->get_cell_topology(part);
+            std::string topo_name = "null";
+            if (topo.getCellTopologyData()) topo_name = topo.getName();
+            std::cout << "part, topo= " << part.name() << " " << topo_name << std::endl;
+            PartMapData pmd(part.primary_entity_rank(), topo_name);
+            (*m_partMap)[part.name()] = pmd;
+          }
+        if (iM == M-1)
+          {
+            createGlobalPartsFile();
           }
       }
 

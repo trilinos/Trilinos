@@ -638,7 +638,7 @@ namespace stk {
       int remove_original_elements_save = remove_original_elements;
       int delete_parents_save = delete_parents;
 
-      int streaming_pass_start = 0;
+      int streaming_pass_start = -1;
 #if STK_ADAPT_HAVE_YAML_CPP
       int streaming_pass_end = streaming_size ? SerializeNodeRegistry::MaxPass : 0;
 #else
@@ -652,29 +652,55 @@ namespace stk {
           streaming_pass_end = streaming_pass;
         }
 
-      for (int ipass=streaming_pass_start; ipass <= streaming_pass_end; ipass++)
+      for (int i_pass=streaming_pass_start; i_pass <= streaming_pass_end; i_pass++)
         {
           if (streaming_size) 
             {
               remove_original_elements = 0;
               delete_parents = 0;
-              if (ipass == streaming_pass_end) 
+              if (i_pass == streaming_pass_end) 
                 {
                   remove_original_elements = remove_original_elements_save;
                   delete_parents = delete_parents_save;
                 }
             }
 
-          if (1 && streaming_size)
+          if (streaming_size)
             {
-              // special case, no exodus files i/o
-              if (ipass == 2)
+              // special cases
+
+              // read all files, get global parts info
+              if (i_pass == -1)
+                {
+#if STK_ADAPT_HAVE_YAML_CPP
+                  SerializeNodeRegistry::PartMap partMap;
+                  for (int iM=0; iM < M; iM++)
+                    {
+                      if (streaming_size)
+                        {
+                          input_mesh = input_mesh_save+"."+toString(M)+"."+toString(iM);
+                        }
+                      PerceptMesh eMesh(s_spatialDim);
+                      eMesh.openReadOnly(input_mesh);
+                      NodeRegistry *some_nr = 0;
+                      SerializeNodeRegistry snr(eMesh, some_nr, input_mesh, output_mesh, M, iM);
+                      snr.m_partMap = &partMap;
+                      snr.pass(i_pass);
+                    }
+#else
+                  throw std::runtime_error("must have YAML for streaming refine");
+#endif
+                  continue;
+                }
+
+              //  no exodus files i/o
+              if (i_pass == 2)
                 {
 #if STK_ADAPT_HAVE_YAML_CPP
                   PerceptMesh eMesh(s_spatialDim);
                   eMesh.openEmpty();
                   SerializeNodeRegistry snr(eMesh, 0, input_mesh, output_mesh, M, 0);
-                  snr.pass(ipass);
+                  snr.pass(i_pass);
 #else
                   throw std::runtime_error("must have YAML for streaming refine");
 #endif
@@ -701,19 +727,25 @@ namespace stk {
                 percept::PerceptMesh eMesh(0);  // FIXME
                 //percept::PerceptMesh eMesh;  // FIXME
 
-                if (1 && streaming_size)
+                if (streaming_size)
                   {
-                    // special case
-                    if (ipass == 3)
+                    // special cases
+                    if (i_pass == 3)
                       {
 #if STK_ADAPT_HAVE_YAML_CPP
                         std::string input_mesh_new= output_mesh_save+"."+toString(M)+"."+toString(iM);
                         //std::string output_mesh_new= output_mesh_save+"-renumbered."+toString(M)+"."+toString(iM);
                         std::string output_mesh_new= output_mesh_save+"."+toString(M)+"."+toString(iM);
-                        eMesh.openReadOnly(input_mesh_new);
+                        eMesh.open(input_mesh_new);
+                        eMesh.setStreamingSize(streaming_size);
+                        NodeRegistry *some_nr0 = 0;
+                        SerializeNodeRegistry snr0(eMesh, some_nr0, input_mesh, output_mesh, M, iM);
+                        snr0.declareGlobalParts();
+                        eMesh.commit();
+                        
                         NodeRegistry *some_nr = 0;
                         SerializeNodeRegistry snr(eMesh, some_nr, input_mesh, output_mesh, M, iM);
-                        snr.pass(ipass);
+                        snr.pass(i_pass);
                         eMesh.saveAs(output_mesh_new);
 #else
                         throw std::runtime_error("must have YAML for streaming refine");
@@ -772,32 +804,14 @@ namespace stk {
                     proc_rank_field_ptr = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
                   }
 
+                // add global parts not found in this file
+                if (streaming_size)
+                  {
+                    NodeRegistry *some_nr = 0;
+                    SerializeNodeRegistry snr(eMesh, some_nr, input_mesh, output_mesh, M, iM);
+                    snr.declareGlobalParts();
+                  }
                 eMesh.commit();
-
-                if (0 && streaming_size)
-                  {
-                    // special case
-                    if (ipass == 2)
-                      {
-#if STK_ADAPT_HAVE_YAML_CPP
-                        SerializeNodeRegistry snr(eMesh, 0, input_mesh, output_mesh, M, 0);
-                        snr.pass(ipass);
-#else
-                        throw std::runtime_error("must have YAML for streaming refine");
-#endif
-                        continue;
-                      }
-                  }
-
-#if 0 && STK_ADAPT_HAVE_YAML_CPP
-                if (streaming_size && ipass == 0)
-                  {
-                    SerializeNodeRegistry snr(eMesh, 0, input_mesh, output_mesh, M, iM);
-                    snr.pass(ipass);
-                    eMesh.close();
-                    continue;
-                  }
-#endif
 
                 if (print_memory_usage)
                   memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.getBulkData(), 0, "after file open");
@@ -923,7 +937,7 @@ namespace stk {
                       {
 #if STK_ADAPT_HAVE_YAML_CPP
                         SerializeNodeRegistry snr(eMesh, &breaker.getNodeRegistry(), input_mesh, output_mesh, M, iM);
-                        snr.pass(ipass);
+                        snr.pass(i_pass);
 #else
                         throw std::runtime_error("must have YAML for streaming refine");
 #endif
@@ -1006,7 +1020,7 @@ namespace stk {
                   std::cout << "P[" << p_rank << ", " << p_size << "]  sum cpu  clock time = " << cpuSum << " (sec)" << std::endl;
                 }
             } // iM
-        } // ipass
+        } // i_pass
 
       return result;
     }

@@ -220,6 +220,10 @@ namespace stk {
       // allow setting spatial dim after creation (for compatability with new FEMMetaData)
       void setSpatialDim(int sd);
 
+      // streaming refine mesh
+      void setStreamingSize(int streaming_size) { m_streaming_size= streaming_size; }
+      int getStreamingSize() { return m_streaming_size; }
+
       /// reads the given file into a temporary model and prints info about it
       void dump(const std::string& file="");
       void dumpElements(const std::string& partName = "");
@@ -926,6 +930,9 @@ namespace stk {
       SameRankRelation m_adapt_parent_to_child_relations;
 
       stk::mesh::PartVector                 m_io_omitted_parts;
+
+      // normally 0, unless using streaming refine
+      int                                   m_streaming_size;
 
       void checkStateSpec(const std::string& function, bool cond1=true, bool cond2=true, bool cond3=true);
 

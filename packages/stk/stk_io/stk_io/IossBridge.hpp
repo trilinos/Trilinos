@@ -118,11 +118,22 @@ void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaDat
  * corresponding Ioss entity will be defined.  This routine only
  * deals with the non-transient portion of the model; no transient
  * fields are defined at this point.
+ *
+ * \param[in] sort_stk_parts Force a sorted order on the stk_mesh
+ * parts so all pieces of a decomposed mesh have consistent part
+ * ordering.  Normally not necessary, since MetaData is created
+ * from a parallel-consistent data base.  It is useful in cases
+ * such as streaming refinement where each piece of a parallel-
+ * decomposed mesh is read in sequentially and parts are thus 
+ * possibly created in different orderings.
+ *
  */
 void define_output_db( Ioss::Region & io_region,
                        const mesh::BulkData& bulk_data,
                        const Ioss::Region *input_region = NULL,
-		       const stk::mesh::Selector *anded_selector = NULL);
+           const stk::mesh::Selector *anded_selector = NULL,
+           bool sort_stk_parts = false);
+
 
 /** Given an Ioss::Region 'io_region' which has already had its
  * metadata defined via 'define_output_db()' call; transfer all bulk
