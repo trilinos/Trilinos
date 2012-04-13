@@ -91,7 +91,7 @@ namespace MueLu {
           maxAll(comm,(GO)numMyNnz,maxNnz);
           //min nnz over all proc (disallow any processors with 0 nnz)
           minAll(comm, (GO)((numMyNnz > 0) ? numMyNnz : maxNnz), minNnz);
-          Scalar imbalance = ((SC) maxNnz) / minNnz;
+          double imbalance = ((double) maxNnz) / minNnz;
 
           size_t numMyRows = Ac->getNodeNumRows();
           //Check whether Ac is spread over more than one process.
@@ -100,7 +100,7 @@ namespace MueLu {
 
           //min, max, and avg # rows per proc
           GO minNumRows, maxNumRows;
-          Scalar avgNumRows;
+          double avgNumRows;
           maxAll(comm, (GO)numMyRows, maxNumRows);
           minAll(comm, (GO)((numMyRows > 0) ? numMyRows : maxNumRows), minNumRows);
           assert(numActiveProcesses > 0);

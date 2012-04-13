@@ -79,4 +79,118 @@ namespace MueLu {
      
   } //Transpose
 
+  // -- ------------------------------------------------------- --
+
+  void Utils2<double,int,int>::MyOldScaleMatrix_Epetra(RCP<Operator> &Op, Teuchos::ArrayRCP<SC> const &scalingVector,
+                               bool doFillComplete,
+                               bool doOptimizeStorage)
+  {
+#ifdef HAVE_MUELU_EPETRA
+    RCP<const Epetra_CrsMatrix> epOp;
+    try {
+      epOp = Utils<double,int,int>::Op2NonConstEpetraCrs(Op);
+    }
+    catch (...){
+      throw(Exceptions::RuntimeError("Only Epetra_CrsMatrix types can be scaled"));
+    }
+
+      Epetra_Map const &rowMap = epOp->RowMap();
+      int nnz;
+      double *vals;
+      int *cols;
+      for (int i=0; i<rowMap.NumMyElements(); ++i) {
+        epOp->ExtractMyRowView(i,nnz,vals,cols);
+        for (int j=0; j<nnz; ++j)
+          vals[j] *= scalingVector[i];
+      }
+#else
+    throw(Exceptions::RuntimeError("Matrix scaling is not possible because Epetra has not been enabled."));
+#endif // HAVE_MUELU_EPETRAEXT
+
+  } //Utils2::MyOldScaleMatrix_Epetra()
+
+  // -- ------------------------------------------------------- --
+
+  void Utils2<double, int, int>::TwoMatrixAdd(RCP<Operator> const &A, bool transposeA, SC alpha, RCP<Operator> &B, SC beta)
+  {
+    if ( !(A->getRowMap()->isSameAs(*(B->getRowMap()))) ) {
+      throw(Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same."));
+    }
+
+    if (A->getRowMap()->lib() == Xpetra::UseEpetra) {
+#ifdef HAVE_MUELU_EPETRAEXT
+      RCP<const Epetra_CrsMatrix> epA = Utils<double,int,int>::Op2EpetraCrs(A);
+      RCP<Epetra_CrsMatrix> epB = Utils<double,int,int>::Op2NonConstEpetraCrs(B);
+        
+      //FIXME is there a bug if beta=0?
+      int i = EpetraExt::MatrixMatrix::Add(*epA,transposeA,alpha,*epB,beta);
+
+      if (i != 0) {
+        std::ostringstream buf;
+        buf << i;
+        std::string msg = "EpetraExt::MatrixMatrix::Add return value of " + buf.str();
+        throw(Exceptions::RuntimeError(msg));
+      }
+#else
+      throw(Exceptions::RuntimeError("MueLu must be compiled with EpetraExt."));
+#endif
+    } else if(A->getRowMap()->lib() == Xpetra::UseTpetra) {
+#ifdef HAVE_MUELU_TPETRA
+      RCP<const Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> > tpA = Utils<double,int,int>::Op2TpetraCrs(A);
+      RCP<Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> > tpB = Utils<double,int,int>::Op2NonConstTpetraCrs(B);
+        
+      Tpetra::MatrixMatrix::Add(*tpA, transposeA, alpha, *tpB, beta);
+#else
+      throw(Exceptions::RuntimeError("MueLu must be compiled with Tpetra."));
+#endif
+    }
+
+  } //Utils2::TwoMatrixAdd() (specialization)
+
+  // -- ------------------------------------------------------- --
+
+  void Utils2<double,int,int>::TwoMatrixAdd(RCP<Operator> const &A, bool const &transposeA, SC const &alpha,
+                           RCP<Operator> const &B, bool const &transposeB, SC const &beta,
+                           RCP<Operator> &C)
+  {
+    if ( !(A->getRowMap()->isSameAs(*(B->getRowMap()))) ) {
+      throw(Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same."));
+    }
+    if (C==Teuchos::null)
+      //FIXME 5 is a complete guess as to the #nonzeros per row
+      C = rcp( new Xpetra::CrsOperator<double,int,int>(A->getRowMap(), 5) );
+
+    if (C->getRowMap()->lib() == Xpetra::UseEpetra) {
+#ifdef HAVE_MUELU_EPETRAEXT
+      RCP<const Epetra_CrsMatrix> epA = Utils<double,int,int>::Op2EpetraCrs(A);
+      RCP<const Epetra_CrsMatrix> epB = Utils<double,int,int>::Op2EpetraCrs(B);
+      RCP<Epetra_CrsMatrix>       epC = Utils<double,int,int>::Op2NonConstEpetraCrs(C);
+      Epetra_CrsMatrix* ref2epC = &*epC; //to avoid a compiler error...
+
+      //FIXME is there a bug if beta=0?
+      int i = EpetraExt::MatrixMatrix::Add(*epA,transposeA,alpha,*epB,transposeB,beta,ref2epC);
+
+      if (i != 0) {
+        std::ostringstream buf;
+        buf << i;
+        std::string msg = "EpetraExt::MatrixMatrix::Add return value of " + buf.str();
+        throw(Exceptions::RuntimeError(msg));
+      }
+#else
+      throw(Exceptions::RuntimeError("MueLu must be compile with EpetraExt."));
+#endif
+    } else if(C->getRowMap()->lib() == Xpetra::UseTpetra) {
+#ifdef HAVE_MUELU_TPETRA
+      RCP<const Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> > tpA = Utils<double,int,int>::Op2TpetraCrs(A);
+      RCP<const Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> > tpB = Utils<double,int,int>::Op2TpetraCrs(B);
+      RCP<Tpetra::CrsMatrix<SC, LO, GO, NO, LMO> >       tpC = Utils<double,int,int>::Op2NonConstTpetraCrs(C);
+
+      Tpetra::MatrixMatrix::Add(*tpA, transposeA, alpha, *tpB, transposeB, beta, tpC);
+#else
+      throw(Exceptions::RuntimeError("MueLu must be compile with Tpetra."));
+#endif
+    }
+
+  } //Utils2::TwoMatrixAdd() (specialization)
+
 }
