@@ -193,8 +193,10 @@ int main(int argc, char *argv[]) {
   GO numElements2 = 100;
 
   //bigMap = MapFactory::Build(Xpetra::UseEpetra, numElements,  0, comm); // ok this is the problem :-)
-  map1   = MapFactory::Build(lib, numElements1, 0, comm);
-  map2   = MapFactory::Build(lib, numElements2, numElements1, comm);
+  std::vector<size_t> stridingInfo;
+  stridingInfo.push_back(1);
+  map1   = StridedMapFactory::Build(lib, numElements1, 0, stridingInfo, comm, -1);
+  map2   = StridedMapFactory::Build(lib, numElements2, numElements1, stridingInfo, comm, -1);
 
   std::vector<GlobalOrdinal> localGids; // vector with all local GIDs on cur proc
   Teuchos::ArrayView< const GlobalOrdinal > map1eleList = map1->getNodeElementList(); // append all local gids from map1 and map2
