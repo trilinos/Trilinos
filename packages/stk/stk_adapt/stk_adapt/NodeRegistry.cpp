@@ -115,7 +115,7 @@ namespace stk {
     {
       SubDimCellToDataMap::iterator iter;
       SubDimCellToDataMap& map = m_cell_2_data_map;
-      std::cout << msg << " tmp serialize_write map size: " << map.size() << std::endl;
+      //std::cout << msg << " tmp serialize_write map size: " << map.size() << std::endl;
 
       if (0) emitter << YAML::Anchor("NodeRegistry::map");   YAML_ERRCHECK;
       //emitter << YAML::Flow;      YAML_ERRCHECK;
@@ -179,7 +179,7 @@ namespace stk {
           << std::endl;
 
       SubDimCellToDataMap& map = m_cell_2_data_map;
-      std::cout << msg << " tmp serialize_read map size: " << map.size() << std::endl;
+      //std::cout << msg << " tmp serialize_read map size: " << map.size() << std::endl;
 
       try {
         while(parser.GetNextDocument(doc)) {

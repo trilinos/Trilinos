@@ -70,8 +70,12 @@ namespace stk {
       int m_spatialDim;
 
     public:
-      typedef boost::tuple<stk::mesh::EntityRank, std::string> PartMapData;
-      typedef std::map<std::string, PartMapData> PartMap;
+      // PartMap maps a part name to data about the part: its primary entity rank, topology name, subset parts 
+      typedef std::string TopologyName;
+      typedef std::string PartName;
+      typedef std::vector<PartName> PartSubsets;
+      typedef boost::tuple<stk::mesh::EntityRank, TopologyName, PartSubsets> PartMapData;
+      typedef std::map<PartName, PartMapData> PartMap;
       PartMap *m_partMap;
 
     public:
@@ -150,6 +154,16 @@ namespace stk {
             out << YAML::BeginSeq;            YAML_CHECK(out);
             out << iter->second.get<0>();
             out << iter->second.get<1>();
+            {
+              out << YAML::Flow;                YAML_CHECK(out);
+              out << YAML::BeginSeq;            YAML_CHECK(out);
+              PartSubsets subsets = iter->second.get<2>();
+              for (unsigned isub=0; isub < subsets.size(); isub++)
+                {
+                  out << subsets[isub];
+                }
+              out << YAML::EndSeq;              YAML_CHECK(out);
+            }
             out << YAML::EndSeq;              YAML_CHECK(out);
           }
         out << YAML::EndMap; YAML_CHECK(out);
@@ -163,9 +177,9 @@ namespace stk {
         PartMap::iterator iter;
         for (iter = m_partMap->begin(); iter != m_partMap->end(); ++iter)
           {
-            std::string part_name = iter->first;
+            PartName part_name = iter->first;
             stk::mesh::EntityRank part_rank = iter->second.get<0>();
-            std::string topo_name = iter->second.get<1>();
+            TopologyName topo_name = iter->second.get<1>();
             const stk::mesh::Part* c_part = m_eMesh.getFEM_meta_data()->get_part(part_name);
             stk::mesh::Part *part = const_cast<stk::mesh::Part *>(c_part);
             if (!part)
@@ -181,6 +195,29 @@ namespace stk {
                 stk::mesh::fem::set_cell_topology(*part, topo);
               }
           }        
+        // once parts are declared, declare part subsets
+        for (iter = m_partMap->begin(); iter != m_partMap->end(); ++iter)
+          {
+            PartName part_name = iter->first;
+            const stk::mesh::Part* c_part = m_eMesh.getFEM_meta_data()->get_part(part_name);
+            stk::mesh::Part *part = const_cast<stk::mesh::Part *>(c_part);
+            if (!part)
+              {
+                throw std::runtime_error(std::string("no part found SerializeNodeRegistry::declareGlobalParts: part= ")+part_name);
+              }                
+            PartSubsets subsets = iter->second.get<2>();
+            for (unsigned isub=0; isub < subsets.size(); isub++)
+              {
+                const stk::mesh::Part* c_subset = m_eMesh.getFEM_meta_data()->get_part(subsets[isub]);
+                stk::mesh::Part *subset = const_cast<stk::mesh::Part *>(c_subset);
+                
+                if (!subset)
+                  {
+                    throw std::runtime_error(std::string("no subset part found SerializeNodeRegistry::declareGlobalParts: subset part= ")+subsets[isub]);
+                  }                
+                m_eMesh.getFEM_meta_data()->declare_part_subset(*part, *subset);
+              }
+          }
       }
 
       // part primary_entity_rank, topology name
@@ -203,23 +240,33 @@ namespace stk {
 
         try {
           while(parser.GetNextDocument(doc)) {
-            std::cout << "\n readGlobalPartsFile doc.Type() = " << doc.Type() << " doc.Tag()= " << doc.Tag() << " doc.size= " << doc.size() << std::endl;
+            //std::cout << "\n readGlobalPartsFile doc.Type() = " << doc.Type() << " doc.Tag()= " << doc.Tag() << " doc.size= " << doc.size() << std::endl;
             if (doc.Type() == YAML::NodeType::Map)
               {
                 for(YAML::Iterator iter=doc.begin();iter!=doc.end();++iter) 
                   {
                     const YAML::Node& key = iter.first();
-                    std::string part_name;
+                    PartName part_name;
                     key >> part_name;
 
                     const YAML::Node& valSeq = iter.second();
                     stk::mesh::EntityRank rank;
-                    std::string topo_name;
+                    TopologyName topo_name;
                     YAML::Iterator itv=valSeq.begin();
                     *itv >> rank;
                     ++itv;
                     *itv >> topo_name;
-                    PartMapData pmd(rank, topo_name);
+                    ++itv;
+                    const YAML::Node& subsetSeq = *itv;
+                    YAML::Iterator iss;
+                    PartSubsets subsets;
+                    for (iss = subsetSeq.begin(); iss != subsetSeq.end(); ++iss)
+                      {
+                        PartName subset_name;
+                        *iss >> subset_name;
+                        subsets.push_back(subset_name);
+                      }
+                    PartMapData pmd(rank, topo_name, subsets);
                     (*m_partMap)[part_name] = pmd;
                   }
               }
@@ -247,11 +294,23 @@ namespace stk {
                 continue;
               }
             fem::CellTopology topo = m_eMesh.getFEM_meta_data()->get_cell_topology(part);
-            std::string topo_name = "null";
+            TopologyName topo_name = "null";
             if (topo.getCellTopologyData()) topo_name = topo.getName();
-            std::cout << "part, topo= " << part.name() << " " << topo_name << std::endl;
-            PartMapData pmd(part.primary_entity_rank(), topo_name);
-            (*m_partMap)[part.name()] = pmd;
+            //std::cout << "part, topo= " << part.name() << " " << topo_name << std::endl;
+            const stk::mesh::PartVector& part_subsets = part.subsets();
+            PartSubsets subsets(part_subsets.size());
+            for (unsigned isub=0; isub < subsets.size(); isub++)
+              {
+                subsets[isub] = part_subsets[isub]->name();
+              }
+            PartMapData pmd(part.primary_entity_rank(), topo_name, subsets);
+            PartMap::iterator inMap = m_partMap->find(part.name());
+            // if not yet in the map, or if already in map, choose to overwrite if this is the one with subset info
+            if (inMap == m_partMap->end() ||
+                (inMap->second.get<2>().size() == 0 && subsets.size()))
+              {
+                (*m_partMap)[part.name()] = pmd;
+              }
           }
         if (iM == M-1)
           {
@@ -387,7 +446,7 @@ namespace stk {
         m_eMesh.getBulkData()->modification_begin();
         SubDimCellToDataMap& map = localNR.getMap();
         //SubDimCellToDataMap& globalMap = globalNR.getMap();
-        std::cout << " tmp SerializeNodeRegistry::lookupAndSetNewNodeIds map size: " << map.size() << std::endl;
+        //std::cout << " tmp SerializeNodeRegistry::lookupAndSetNewNodeIds map size: " << map.size() << std::endl;
 
         SubDimCellToDataMap::iterator iter;
         for (iter = map.begin(); iter != map.end(); ++iter)
@@ -454,7 +513,7 @@ namespace stk {
       void writeNodeRegistry(NodeRegistry& nodeRegistry, std::string filename)
       {
         YAML::Emitter yaml;
-        std::cout << "\nnodeRegistry.serialize_write(yaml) to file= " << filename << std::endl;
+        if (m_debug) std::cout << "\nnodeRegistry.serialize_write(yaml) to file= " << filename << std::endl;
         nodeRegistry.serialize_write(yaml);
         if (!yaml.good())
           {
@@ -472,7 +531,7 @@ namespace stk {
 
       void readNodeRegistry(NodeRegistry& nodeRegistry, std::string filename)
       {
-        std::cout << "\nnodeRegistry.serialize_read() from file= " << filename << std::endl;
+        if (m_debug) std::cout << "\nnodeRegistry.serialize_read() from file= " << filename << std::endl;
         std::ifstream file(filename.c_str());
         if (!file.is_open() || !file.good())
           {
@@ -487,7 +546,7 @@ namespace stk {
         SubDimCellToDataMap::iterator iter;
         SubDimCellToDataMap& map = newLocalNR.getMap();
         SubDimCellToDataMap& globalMap = globalNR.getMap();
-        std::cout << " tmp SerializeNodeRegistry::processNodeRegistry map size: " << map.size() << std::endl;
+        //std::cout << " tmp SerializeNodeRegistry::processNodeRegistry map size: " << map.size() << std::endl;
 
         // key.serialized = { nodeid_0,... : set<EntityId> }
         // value.serialized = { {new_nid0, new_nid1,...}:vector<EntityId>, {elem_own[rank, ele_id]:EntityKey} }
@@ -508,7 +567,7 @@ namespace stk {
             /// clone subDimEntity...
             globalMap[subDimEntity] = nodeId_elementOwnderId;
           }        
-        std::cout << "SerializeNodeRegistry::processNodeRegistry globalMap size= " << globalMap.size() << std::endl;
+        if (m_debug) std::cout << "SerializeNodeRegistry::processNodeRegistry globalMap size= " << globalMap.size() << std::endl;
       }
 
       /// Using the current global max id, in a simple id-server manner, generate new id's and assign to 
@@ -519,7 +578,7 @@ namespace stk {
 
         SubDimCellToDataMap::iterator iter;
         SubDimCellToDataMap& map = nodeRegistry.getMap();
-        std::cout << " tmp SerializeNodeRegistry::resetIds map size: " << map.size() << std::endl;
+        //std::cout << " tmp SerializeNodeRegistry::resetIds map size: " << map.size() << std::endl;
 
         // key.serialized = { nodeid_0,... : set<EntityId> }
         // value.serialized = { {new_nid0, new_nid1,...}:vector<EntityId>, {elem_own[rank, ele_id]:EntityKey} }
@@ -567,7 +626,7 @@ namespace stk {
 
         try {
           while(parser.GetNextDocument(doc)) {
-            std::cout << "\n read doc.Type() = " << doc.Type() << " doc.Tag()= " << doc.Tag() << " doc.size= " << doc.size() << std::endl;
+            if (m_debug) std::cout << "\n read doc.Type() = " << doc.Type() << " doc.Tag()= " << doc.Tag() << " doc.size= " << doc.size() << std::endl;
             if (doc.Type() == YAML::NodeType::Map)
               {
                 for (unsigned irank=0; irank < m_id_max.size(); irank++)
