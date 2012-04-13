@@ -224,7 +224,7 @@ public:
   {
     typedef MemoryManager< Host::memory_space > memory_manager ;
     memory_manager::disable_memory_view_tracking();
-    Factory driver( output , input , output.length() , output.length() );
+    Factory driver( output , input , output.length() , output.count() );
     memory_manager::enable_memory_view_tracking();
     HostThreadWorker<void>::execute( driver );
   }

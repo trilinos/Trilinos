@@ -66,6 +66,8 @@ box_mesh_fixture_verify(
   const typename FEMeshType::node_elem_ids_type::HostMirror & node_elem_ids )
 {
   typedef typename FEMeshType::size_type size_type ;
+  typedef typename FEMeshType::node_coords_type node_coords_type ;
+  typedef typename node_coords_type::value_type coords_type ;
 
   enum { element_node_count = 8 };
 
@@ -97,14 +99,14 @@ box_mesh_fixture_verify(
     }
   }
 
-  const size_type elem_node_local_coord[ element_node_count ][3] =
+  const coords_type elem_node_local_coord[ element_node_count ][3] =
     { { 0 , 0 , 0 } , { 1 , 0 , 0 } , { 1 , 1 , 0 } , { 0 , 1 , 0 } ,
       { 0 , 0 , 1 } , { 1 , 0 , 1 } , { 1 , 1 , 1 } , { 0 , 1 , 1 } };
 
   for ( size_type elem_index = 0 ;
                   elem_index < elem_count_total; ++elem_index ) {
 
-    size_type elem_node_coord[ element_node_count ][3] ;
+    coords_type elem_node_coord[ element_node_count ][3] ;
 
     for ( size_type nn = 0 ; nn < element_node_count ; ++nn ) {
       const size_type node_index = elem_node_ids( elem_index , nn );

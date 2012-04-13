@@ -154,6 +154,6 @@ void test_host( comm::Machine machine )
 
   test_box_fixture<Kokkos::Host>( machine , 100 , 200 , 300 );
 
-  HybridFEM::Implicit::driver<double,Kokkos::Host>( "Host" , machine , 0 , 0 , 0 );
+  HybridFEM::Implicit::driver<double,Kokkos::Host>( "Host" , machine , 3 , 4 , 1 );
 }
 

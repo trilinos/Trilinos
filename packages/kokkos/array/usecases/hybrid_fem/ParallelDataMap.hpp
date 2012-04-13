@@ -80,6 +80,12 @@ struct ParallelDataMap {
   unsigned                    count_receive ;
 };
 
+template< class ArrayType , class Rank = void > struct PackArray ;
+template< class ArrayType , class Rank = void > struct UnpackArray ;
+
+template< class ValueType , class Device , class DataMap >
+class AsyncExchange ;
+
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
@@ -98,12 +104,6 @@ struct ParallelDataMap {
 #ifdef HAVE_MPI
 
 namespace Kokkos {
-
-template< class ArrayType , class Rank = void > struct PackArray ;
-template< class ArrayType , class Rank = void > struct UnpackArray ;
-
-template< class ValueType , class Device , class DataMap >
-class AsyncExchange ;
 
 template< class ValueType , class Device >
 class AsyncExchange< ValueType, Device , Kokkos::ParallelDataMap > {
