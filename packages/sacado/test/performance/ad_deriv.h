@@ -1,7 +1,7 @@
 /************************** DISCLAIMER ********************************/
 /*                                                                    */
-/*   This file was generated on 01/12/10 10:38:06 by the version of   */
-/*   ADIC compiled on  08/30/00 16:47:46                              */
+/*   This file was generated on 04/13/12 11:10:49 by the version of   */
+/*   ADIC 1.2.3 compiled on  04/14/09 12:39:01                        */
 /*                                                                    */
 /*   ADIC was prepared as an account of work sponsored by an          */
 /*   agency of the United States Government and the University of     */
@@ -40,6 +40,8 @@ typedef struct {
 #define DERIV_val(a) ((a).value)
 
 #define DERIV_grad(a) ((a).grad)
+
+#undef _FLOAT_INITIALIZER_
 
 #define _FLOAT_INITIALIZER_(x) { x, 0.0 }
 
