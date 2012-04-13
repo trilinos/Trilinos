@@ -136,7 +136,6 @@ template< typename coordinate_scalar_type ,
           unsigned ElemNodeCount ,
           class Device >
 void verify_parallel(
-  comm::Machine machine ,
   const HybridFEM::FEMesh< coordinate_scalar_type ,
                            ElemNodeCount ,
                            Device > & mesh )
