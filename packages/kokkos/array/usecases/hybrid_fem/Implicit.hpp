@@ -100,9 +100,9 @@ struct DirichletBoundary ;
 
 template< typename Scalar , class Device >
 PerformanceData run( comm::Machine machine ,
-                     const int global_x ,
-                     const int global_y ,
-                     const int global_z ,
+                     const int global_count_x ,
+                     const int global_count_y ,
+                     const int global_count_z ,
                      const bool print_sample )
 {
   typedef Device                           device_type;
@@ -160,7 +160,7 @@ PerformanceData run( comm::Machine machine ,
   mesh_type mesh =
     box_mesh_fixture< coordinate_scalar_type , device_type >
       ( comm::size( machine ) , comm::rank( machine ) ,
-        global_x , global_y , global_z );
+        global_count_x , global_count_y , global_count_z );
 
   mesh.parallel_data_map.machine = machine ;
 
@@ -238,7 +238,7 @@ PerformanceData run( comm::Machine machine ,
     wall_clock.reset();
 
     BoundaryFunctor::apply( linsys_matrix , linsys_rhs , mesh , 
-                            0 , global_z , 0 , global_z );
+                            0 , global_count_z - 1 , 0 , global_count_z - 1 );
 
     device_type::fence();
     perf_data.matrix_boundary_condition_time = wall_clock.seconds();

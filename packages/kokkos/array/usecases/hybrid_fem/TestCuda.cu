@@ -33,7 +33,7 @@ void test_cuda( comm::Machine machine )
 
   if ( comm_size <= dev_size ) {
     Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( comm_rank ) );
-    test_box_fixture<Kokkos::Cuda>( machine , 100 , 200 , 300 );
+    test_box_fixture<Kokkos::Cuda>( machine , 50 , 100 , 200 );
     Kokkos::Cuda::finalize();
   }
 

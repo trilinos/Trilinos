@@ -218,6 +218,9 @@ void cgsolve(
   Kokkos::Impl::Timer wall_clock ;
 
   while ( tolerance < normr && iteration < maximum_iteration ) {
+
+    /* Ap = A * p  */ multiply( data_map , A , p , Ap );
+
     const double pAp_dot = dot( data_map , p , Ap );
     const double alpha   = old_rdot / pAp_dot ;
 

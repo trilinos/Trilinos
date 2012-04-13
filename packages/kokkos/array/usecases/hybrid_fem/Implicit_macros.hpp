@@ -122,10 +122,15 @@ struct TensorIntegration<Scalar,3,Order>
 
 template< typename Scalar >
 struct ShapeFunctionEvaluation {
-  static const unsigned PointCount = 9 ;
+
   static const unsigned FunctionCount = 8 ;
   static const unsigned SpatialDimension = 3 ;
   static const unsigned IntegrationOrder = 2 ;
+
+  typedef TensorIntegration< Scalar , SpatialDimension , IntegrationOrder > 
+    TensorIntegrationType ;
+
+  static const unsigned PointCount = TensorIntegrationType::N ;
 
   Scalar value   [ PointCount ][ FunctionCount ] ;
   Scalar gradient[ PointCount ][ FunctionCount * SpatialDimension ];

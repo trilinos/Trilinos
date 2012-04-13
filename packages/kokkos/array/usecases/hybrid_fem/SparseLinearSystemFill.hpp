@@ -110,10 +110,14 @@ struct Factory< Kokkos::CrsArray< IndexType , Device , IndexType > ,
     //  Node->node mapping for the CrsMatrix graph
 
     std::vector< std::vector< unsigned > > node_node_ids( owned_node );
+    std::vector< unsigned > node_node_begin( owned_node );
 
+    size_t offset = 0 ;
     for ( size_t i = 0 ; i < owned_node ; ++i ) {
       const size_t j_end = node_elem_ids.row_entry_end(i);
             size_t j     = node_elem_ids.row_entry_begin(i);
+
+      node_node_begin[i] = offset ;
 
       std::vector< unsigned > & work = node_node_ids[i] ;
 
@@ -127,6 +131,8 @@ struct Factory< Kokkos::CrsArray< IndexType , Device , IndexType > ,
       std::sort( work.begin() , work.end() );
 
       work.erase( std::unique( work.begin() , work.end() ) , work.end() );
+
+      offset += work.size();
     }
 
     graph = create_crsarray< graph_type >( node_node_ids );
@@ -138,6 +144,8 @@ struct Factory< Kokkos::CrsArray< IndexType , Device , IndexType > ,
       for ( size_t i = 0 ; i < ElemNodeCount ; ++i ) {
 
         const size_t node_row = elem_node_ids( elem_id , i );
+        const size_t node_row_begin = node_node_begin[ node_row ];
+        const std::vector< unsigned > & column = node_node_ids[ node_row ] ;
 
         if ( owned_node <= node_row ) {
           for ( unsigned j = 0 ; j < ElemNodeCount ; ++j ) {
@@ -145,7 +153,6 @@ struct Factory< Kokkos::CrsArray< IndexType , Device , IndexType > ,
           }
         }
         else {
-          const std::vector< unsigned > & column = node_node_ids[i] ;
 
           for ( unsigned j = 0 ; j < ElemNodeCount ; ++j ) {
             const size_type node_col = elem_node_ids( elem_id , j );
@@ -165,7 +172,10 @@ struct Factory< Kokkos::CrsArray< IndexType , Device , IndexType > ,
                 len = half ;
               }
             }
-            elem_map_host( elem_id , i , j ) = col_search ;
+if ( node_col != column[col_search] ) {
+  throw std::runtime_error(std::string("Failed"));
+}
+            elem_map_host( elem_id , i , j ) = col_search + node_row_begin ;
           }
         }
       }
