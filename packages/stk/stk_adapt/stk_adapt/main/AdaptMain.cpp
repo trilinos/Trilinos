@@ -674,6 +674,7 @@ namespace stk {
                 {
 #if STK_ADAPT_HAVE_YAML_CPP
                   SerializeNodeRegistry::PartMap partMap;
+                  SerializeNodeRegistry::NodeMap nodeMap;
                   for (int iM=0; iM < M; iM++)
                     {
                       if (streaming_size)
@@ -685,6 +686,7 @@ namespace stk {
                       NodeRegistry *some_nr = 0;
                       SerializeNodeRegistry snr(eMesh, some_nr, input_mesh, output_mesh, M, iM);
                       snr.m_partMap = &partMap;
+                      snr.m_nodeMap = &nodeMap;
                       snr.pass(i_pass);
                     }
 #else
