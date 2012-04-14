@@ -38,7 +38,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/static_assert.hpp>
 
-#include <stk_adapt/main/SerializeNodeRegistry.hpp>
+#include <stk_adapt/SerializeNodeRegistry.hpp>
 
 #define ALLOW_MEM_TEST 1
 

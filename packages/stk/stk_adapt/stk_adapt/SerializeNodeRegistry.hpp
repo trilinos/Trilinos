@@ -38,8 +38,19 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/static_assert.hpp>
 
+#define DEBUG_YAML 0
+
+#define STK_ADAPT_USE_YAML_CPP 1
+#define STK_ADAPT_HAVE_YAML_CPP (STK_ADAPT_USE_YAML_CPP && STK_BUILT_IN_SIERRA)
+#if STK_ADAPT_HAVE_YAML_CPP
+#include <yaml-cpp/yaml.h>
+
 #define YAML_CHECK(emitter) do { if (1 && !emitter.good()) { std::cout << "Emitter error: " << __FILE__ << ":" << __LINE__ << " emitter.good()= " \
-                                                                     << emitter.good() << " Error Message: " << emitter.GetLastError() << std::endl; return;} } while(0)
+                                                                       << emitter.good() << " Error Message: " << emitter.GetLastError() << std::endl; return;} } while(0)
+
+#define YAML_ERRCHECK YAML_CHECK(emitter)
+
+#endif
 
 
 namespace stk { 
@@ -364,12 +375,12 @@ namespace stk {
         writeNodeRegistry(nodeRegistry, m_nodeRegistryFile);
 
         /*
-        if (0 == iM)
+          if (0 == iM)
           {
-            // create initial file, write 0's in it  for m_id_max (it should be initialized to 0, but just to be sure, we reset it here)
-            for (unsigned irank=0; irank < m_id_max.size(); irank++)
-              m_id_max[irank]=0u;
-            setCurrentGlobalMaxId();
+          // create initial file, write 0's in it  for m_id_max (it should be initialized to 0, but just to be sure, we reset it here)
+          for (unsigned irank=0; irank < m_id_max.size(); irank++)
+          m_id_max[irank]=0u;
+          setCurrentGlobalMaxId();
           }
         */
 
@@ -465,8 +476,8 @@ namespace stk {
               }
             else
               {
-//                 if (m_debug)
-//                   std::cout << "found it" << std::endl;
+                //                 if (m_debug)
+                //                   std::cout << "found it" << std::endl;
               }
             VERIFY_OP_ON(global_nodeId_elementOwnderId_ptr, !=, 0, "SerializeNodeRegistry::lookupAndSetNewNodeIds couldn't find subDimEntity");
 
@@ -514,7 +525,7 @@ namespace stk {
       {
         YAML::Emitter yaml;
         if (m_debug) std::cout << "\nnodeRegistry.serialize_write(yaml) to file= " << filename << std::endl;
-        nodeRegistry.serialize_write(yaml);
+        serialize_write(nodeRegistry, yaml);
         if (!yaml.good())
           {
             std::cout << "Emitter error: " << yaml.good() << " " <<yaml.GetLastError() << "\n";
@@ -538,7 +549,7 @@ namespace stk {
             throw std::runtime_error(std::string("SerializeNodeRegistry::readNodeRegistry couldn't open file ")+filename);
           }
         
-        nodeRegistry.serialize_read(file);
+        serialize_read(nodeRegistry, file);
       }
 
       void processNodeRegistry(NodeRegistry& newLocalNR, NodeRegistry& globalNR)
@@ -727,6 +738,207 @@ namespace stk {
           }
         eMesh.getBulkData()->modification_begin();
       }
+
+
+      static void serialize_write(NodeRegistry& nodeRegistry, YAML::Emitter& emitter, std::string msg="")
+      {
+        SubDimCellToDataMap::iterator iter;
+        SubDimCellToDataMap& map = nodeRegistry.getMap();
+        //std::cout << msg << " tmp serialize_write map size: " << map.size() << std::endl;
+
+        if (0) emitter << YAML::Anchor("NodeRegistry::map");   YAML_ERRCHECK;
+        //emitter << YAML::Flow;      YAML_ERRCHECK;
+        emitter << YAML::BeginMap;      YAML_ERRCHECK;
+
+        // key.serialized = { nodeid_0,... : set<EntityId> }
+        // value.serialized = { {new_nid0, new_nid1,...}:vector<EntityId>, {elem_own[rank, ele_id]:EntityKey} }
+
+        int jj=0;
+        for (iter = map.begin(); iter != map.end(); ++iter)
+          {
+            const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+            SubDimCellData& nodeId_elementOwnderId = (*iter).second;
+            
+            //emitter << YAML::Key << subDimEntity;
+            emitter << YAML::Key;       YAML_ERRCHECK;
+            emitter << YAML::Flow;      YAML_ERRCHECK;
+            emitter << YAML::BeginSeq;  YAML_ERRCHECK;
+            if (0) emitter << YAML::Anchor(std::string("seq")+boost::lexical_cast<std::string>(jj++));   YAML_ERRCHECK;
+            for (unsigned k=0; k < subDimEntity.size(); k++)
+              {
+                //std::cout << " " << subDimEntity[k]->identifier() << " ";
+                emitter << subDimEntity[k]->identifier();          YAML_ERRCHECK;
+              }
+            emitter << YAML::EndSeq;      YAML_ERRCHECK;
+
+            NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+            stk::mesh::EntityKey& value_entity_key = nodeId_elementOwnderId.get<SDC_DATA_OWNING_ELEMENT_KEY>();
+
+            //emitter << YAML::Scalar << nodeIds_onSE.size()
+            emitter << YAML::Value;          YAML_ERRCHECK;
+            emitter << YAML::Flow;           YAML_ERRCHECK;
+            emitter << YAML::BeginSeq;       YAML_ERRCHECK;
+            emitter << stk::mesh::entity_rank(value_entity_key);
+            emitter << stk::mesh::entity_id(value_entity_key);
+            for (unsigned ii = 0; ii < nodeIds_onSE.size(); ii++)
+              {
+                //emitter << (int)nodeIds_onSE[ii]->identifier();      YAML_ERRCHECK;
+                emitter << (int)nodeIds_onSE.m_entity_id_vector[ii];      YAML_ERRCHECK;
+              }
+            emitter << YAML::EndSeq;     YAML_ERRCHECK;
+          }
+
+        emitter << YAML::EndMap;    YAML_ERRCHECK;
+
+      }
+
+      static void serialize_read(NodeRegistry& nodeRegistry, std::ifstream& file_in,  std::string msg="", bool force_have_node=false)
+      {
+        PerceptMesh& eMesh = nodeRegistry.getMesh();
+        eMesh.getBulkData()->modification_begin();
+
+        YAML::Parser parser(file_in);
+        YAML::Node doc;
+        if (DEBUG_YAML)
+          std::cout 
+            << "\n serialize_read..." 
+            << " YAML::NodeType::Null= " <<  YAML::NodeType::Null
+            << " YAML::NodeType::Scalar= " <<  YAML::NodeType::Scalar
+            << " YAML::NodeType::Sequence= " <<  YAML::NodeType::Sequence
+            << " YAML::NodeType::Map= " <<  YAML::NodeType::Map 
+            << std::endl;
+
+        SubDimCellToDataMap& map = nodeRegistry.getMap();
+        //std::cout << msg << " tmp serialize_read map size: " << map.size() << std::endl;
+
+        try {
+          while(parser.GetNextDocument(doc)) {
+            if (DEBUG_YAML) std::cout << "s_r doc.Type() = " << doc.Type() << " doc.Tag()= " << doc.Tag() << " doc.size= " << doc.size() << std::endl;
+            if (doc.Type() == YAML::NodeType::Map)
+              {
+                for(YAML::Iterator it=doc.begin();it!=doc.end();++it) {
+                  typedef stk::mesh::EntityId SDSEntityType_ID;
+                  //typedef stk::mesh::Entity * SDSEntityType;
+                  SDSEntityType_ID key_quantum;
+                  //typedef SubDimCell<SDSEntityType> SubDimCell_SDSEntityType;
+                  SubDimCell_SDSEntityType key; // subDimEntity = (*iter).first;
+
+                  //struct NodeIdsOnSubDimEntityType : public std::vector<NodeIdsOnSubDimEntityTypeQuantum>
+                  // { 
+                  //     typedef std::vector<stk::mesh::EntityId> entity_id_vector_type;
+
+                  stk::mesh::EntityId value_tuple_0_quantum;
+                  NodeIdsOnSubDimEntityType value_tuple_0;
+                  //stk::mesh::EntityKey::raw_key_type value_tuple_1;
+
+                  //typedef boost::tuple<NodeIdsOnSubDimEntityType, stk::mesh::EntityKey> SubDimCellData;
+                  SubDimCellData value; // nodeId_elementOwnderId = (*iter).second;
+                  NodeIdsOnSubDimEntityType& nodeIds_onSE = value.get<SDC_DATA_GLOBAL_NODE_IDS>();
+                  nodeIds_onSE.resize(0);
+                  stk::mesh::EntityKey& value_entity_key = value.get<SDC_DATA_OWNING_ELEMENT_KEY>();
+                  // value = { {new_node0, new_node1,...}:[vector<Entity*>,vector<EntityId>], {elem_own[rank, ele_id]:EntityKey} }
+                  // key = { nodePtr_0,... : set<Entity *> }
+                  // value.serialized = { {new_nid0, new_nid1,...}:vector<EntityId>, {elem_own[rank, ele_id]:EntityKey} }
+                  // key.serialized = { nodeid_0,... : set<EntityId> }
+                
+
+                  //if (DEBUG_YAML) std::cout << "it.first().Type() = " << it.first().Type() << " it.first().Tag()= " << it.first().Tag() << std::endl;
+                  //if (DEBUG_YAML) std::cout << "it.second().Type() = " << it.second().Type() << " it.second().Tag()= " << it.second().Tag() << std::endl;
+                  const YAML::Node& keySeq = it.first();
+                  for(YAML::Iterator itk=keySeq.begin();itk!=keySeq.end();++itk) {
+                    *itk >> key_quantum;
+                    if (DEBUG_YAML) std::cout << "s_r key_quantum= " << key_quantum << std::endl;
+                    SDSEntityType node = eMesh.getBulkData()->get_entity(0, key_quantum);
+                    //key.insert(const_cast<stk::mesh::Entity*>(&element) );
+                    if (!node)
+                      {
+                        if (force_have_node)
+                          throw std::runtime_error("NodeRegistry::serialize_read: null node returned from get_entity");
+                        else
+                          {
+                            stk::mesh::PartVector parts(1, &eMesh.getFEM_meta_data()->universal_part());
+                            node = &eMesh.getBulkData()->declare_entity(0, static_cast<stk::mesh::EntityId>(key_quantum), parts);
+                          }
+                      }
+                  
+                    key.insert( node );
+
+                  }
+              
+                  int iseq=0;
+                  const YAML::Node& valSeq = it.second();
+                  stk::mesh::EntityRank rank;
+                  stk::mesh::EntityKey::raw_key_type id;
+                  for(YAML::Iterator itv=valSeq.begin();itv!=valSeq.end();++itv,++iseq) {
+                    if (iseq == 0)
+                      {
+                        *itv >> rank;
+                      }
+                    else if (iseq == 1)
+                      {
+                        *itv >> id;
+                        stk::mesh::EntityKey entityKey(rank,id);
+                        if (DEBUG_YAML) std::cout << "s_r value_tuple_1= " << rank << " " << id << std::endl;
+                        value_entity_key = stk::mesh::EntityKey(rank,id);
+                        if (DEBUG_YAML) std::cout << "s_r owning element rank= " << stk::mesh::entity_rank(value.get<SDC_DATA_OWNING_ELEMENT_KEY>())
+                                                  << " owning element id= " << stk::mesh::entity_id(value.get<SDC_DATA_OWNING_ELEMENT_KEY>()) 
+                                                  << std::endl;
+                      }
+                    else
+                      {
+                        *itv >> value_tuple_0_quantum;
+
+                        //stk::mesh::EntityId owning_elementId = stk::mesh::entity_id(data.get<SDC_DATA_OWNING_ELEMENT_KEY>());
+                        nodeIds_onSE.m_entity_id_vector.push_back(value_tuple_0_quantum);
+                        stk::mesh::Entity *entity = eMesh.getBulkData()->get_entity(0, value_tuple_0_quantum);
+                        if (!entity)
+                          {
+                            if (force_have_node)
+                              throw std::runtime_error("NodeRegistry::serialize_read: null node returned from get_entity 2");
+                            else
+                              {
+                                stk::mesh::PartVector parts(1, &eMesh.getFEM_meta_data()->universal_part());
+                                entity = &eMesh.getBulkData()->declare_entity(0, static_cast<stk::mesh::EntityId>(value_tuple_0_quantum), 
+                                                                              parts);
+                              }
+                          }
+
+                        nodeIds_onSE.push_back(entity);
+
+                        if (DEBUG_YAML) std::cout << "s_r value_tuple_0_quantum= " << value_tuple_0_quantum << " entity= " << entity 
+                                                  <<  " len0= " << nodeIds_onSE.size() << " len1= " << nodeIds_onSE.m_entity_id_vector.size() << std::endl;
+                      }
+                  }
+              
+                  map[key] = value;
+                }
+#if 0
+                const YAML::Node& node = *it;
+                std::cout << "it= " << &node << std::endl;
+                switch (it->Type())
+                  {
+                  case YAML::NodeType::Null:
+                    break;
+                  case YAML::NodeType::Scalar:
+                    break;
+                  case YAML::NodeType::Sequence:
+                    break;
+                  case YAML::NodeType::Map:
+                    break;
+              
+                  }
+#endif
+              }
+          }
+        }
+        catch(YAML::ParserException& e) {
+          std::cout << e.what() << "\n";
+          throw std::runtime_error(std::string("yaml parsing error: ")+e.what());
+        }
+
+        eMesh.getBulkData()->modification_end();
+      }
+
 
     };
 
