@@ -45,9 +45,6 @@ int checkBasicCoordinate(
   if (!fail && ia->getLocalNumberOfCoordinates() != len)
     fail = 102;
 
-  if (!fail && ia->getGlobalNumberOfCoordinates() != glen)
-    fail = 103;
-
   for (int x=0; !fail && x < nCoords; x++){
     const gno_t *idList;
     const scalar_t *vals;

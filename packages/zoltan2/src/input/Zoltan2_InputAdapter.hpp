@@ -64,6 +64,8 @@ public:
   virtual size_t getLocalNumberOfObjects() const = 0;
 
   /*! \brief Returns the number of weights per object.
+   *   Number of weights per object should be zero or greater.  If
+   *   zero, then it is assumed that all objects are equally weighted.
    */ 
   virtual int getNumberOfWeightsPerObject() const = 0;
 };

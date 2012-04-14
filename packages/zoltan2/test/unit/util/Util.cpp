@@ -15,6 +15,7 @@
 #include <Zoltan2_Util.hpp>   
 #include <Zoltan2_TestHelpers.hpp>   
 #include <Zoltan2_PartitioningSolution.hpp>   
+#include <Zoltan2_BasicIdentifierInput.hpp>   
 
 using Teuchos::RCP;
 using Teuchos::Comm;
@@ -57,14 +58,9 @@ void convertSolutionToImportListTest(RCP<const Comm<int> > &comm)
 
   RCP<const idMap_t> idMap = rcp(new idMap_t(env, comm, gidArray, false));
 
-  // An identifier adapter
-
-  vector<const scalar_t> noWeights;
-  vector<int> noStrides;
+  // An identifier adapter type for Solution
 
   typedef Zoltan2::BasicIdentifierInput<userTypes_t> idAdapter_t;
-
-  idAdapter_t ia(localNumObjects, mygids, noWeights, noStrides);
 
   // Create a partitioning solution.  Update with a solution
   // where gids are assigned to parts in a round robin fashion.

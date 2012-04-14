@@ -57,6 +57,7 @@ private:
   }
   ArrayRCP<scalar_t> values;
   string metricName;
+  multiCriteriaNorm mcnorm;
 
 public:
 
@@ -92,13 +93,16 @@ static void printHeader(ostream &os);
 void printLine(ostream &os) const;
 
 /*! \brief Constructor */
-MetricValues(string mname) : metricName(mname) { resetValues();}
+MetricValues(string mname) : metricName(mname), mcnorm() { resetValues();}
 
 /*! \brief Constructor */
-MetricValues() : metricName("unset") { resetValues();}
+MetricValues() : metricName("unset"), mcnorm() { resetValues();}
 
 /*! \brief Set or reset the name.  */
 void setName(string name) { metricName = name;}
+
+/*! \brief Set or reset the norm.  */
+void setNorm(multiCriteriaNorm normVal) { mcnorm = normVal;}
 
 /*! \brief Set the sum on the local process.  */
 void setLocalSum(scalar_t x) { values[evalLocalSum] = x;}
@@ -128,6 +132,9 @@ void setAvgImbalance(scalar_t x) { values[evalAvgImbalance] = x;}
 
 /*! \brief Get the name of the item measured. */
 const string &getName() const { return metricName; }
+
+/*! \brief Get the norm.  */
+multiCriteriaNorm getNorm() { return mcnorm;}
 
 /*! \brief Get the sum on the local process. */
 scalar_t getLocalSum() const { return values[evalLocalSum];}
@@ -161,13 +168,36 @@ scalar_t getAvgImbalance() const { return values[evalAvgImbalance];}
 template <typename scalar_t>
   void MetricValues<scalar_t>::printLine(ostream &os) const
 {
-  os << setw(20) << metricName;
-  os << setw(12) << setprecision(4) << scientific << values[evalGlobalMin];
-  os << setw(12) << setprecision(4) << scientific << values[evalGlobalAvg];
-  os << setw(12) << setprecision(4) << scientific << values[evalGlobalMax];
+  string label(metricName);
+  if (mcnorm > 0){
+    multiCriteriaNorm realNorm = multiCriteriaNorm(mcnorm - 1);
+    ostringstream oss;
+    switch (realNorm){
+      case normMinimizeTotalWeight:   // 1-norm = Manhattan norm 
+        oss << metricName << " (1)";
+        break;
+      case normBalanceTotalMaximum:   // 2-norm = sqrt of sum of squares
+        oss << metricName << " (2)";
+        break;
+      case normMinimizeMaximumWeight: // inf-norm = maximum norm 
+        oss << metricName << " (inf)";
+        break;
+      default:
+        oss << metricName << " (?)";
+        break;
+    }
+
+    label = oss.str();
+  }
+
+  os << setw(20) << label;
+  os << setw(12) << setprecision(4) << values[evalGlobalMin];
+  os << setw(12) << setprecision(4) << values[evalGlobalMax];
+  os << setw(12) << setprecision(4) << values[evalGlobalAvg];
+  os << setw(2) << " ";
   os << setw(6) << setprecision(4) << values[evalMinImbalance];
-  os << setw(6) << setprecision(4) << values[evalAvgImbalance];
   os << setw(6) << setprecision(4) << values[evalMaxImbalance];
+  os << setw(6) << setprecision(4) << values[evalAvgImbalance];
   os << endl;
 }
 
@@ -175,13 +205,15 @@ template <typename scalar_t>
   void MetricValues<scalar_t>::printHeader(ostream &os)
 {
   os << setw(20) << " ";
-  os << setw(36) << "SUM PER PART";
+  os << setw(36) << "------------SUM PER PART-----------";
+  os << setw(2) << " ";
   os << setw(18) << "IMBALANCE PER PART";
   os << endl;
 
   os << setw(20) << " ";
-  os << setw(12) << "min" << "max" << "avg";
-  os << setw(6) << "min" << "max" << "avg";
+  os << setw(12) << "min" << setw(12) << "max" << setw(12) << "avg";
+  os << setw(2) << " ";
+  os << setw(6) << "min" << setw(6) << "max" << setw(6) << "avg";
   os << endl;
 }
 
@@ -257,9 +289,6 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
   bool checkNum = (partNumMin < partNumMax);
   int numObjects = parts.size();
   int vwgtDim = vwgts.size();
-  scalar_t *partWeights = new scalar_t [numberOfParts];
-  env->localMemoryAssertion(__FILE__, __LINE__, numberOfParts, partWeights);
-  memset(partWeights, 0, sizeof(scalar_t) * numberOfParts);
 
   memset(weights, 0, sizeof(scalar_t) * numberOfParts);
 
@@ -310,6 +339,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
             }
           }
         }  // next weight dimension
+        break;
        
       case normBalanceTotalMaximum:   /*!< 2-norm = sqrt of sum of squares */
         if (!haveUniform){
@@ -340,6 +370,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
             weights[parts[i]] += sqrt(ssum);
           }
         }
+        break;
 
       case normMinimizeMaximumWeight: /*!< inf-norm = maximum norm */
 
@@ -367,10 +398,12 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
             weights[parts[i]] += max;
           }
         }
+        break;
 
       default:
         env->localBugAssertion(__FILE__, __LINE__, "invalid norm", false,
           BASIC_ASSERTION);
+        break;
     } 
   } 
 }
@@ -455,7 +488,12 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
   if (vwgtDim > 1)
     numMetrics += vwgtDim;   // "weight n"
 
-  metrics = arcp(new MetricValues<scalar_t> [numMetrics], 0, numMetrics);
+  typedef MetricValues<scalar_t> mv_t;
+  mv_t *newMetrics = new mv_t [numMetrics];
+  env->localMemoryAssertion(__FILE__, __LINE__, numMetrics, newMetrics); 
+  ArrayRCP<mv_t> metricArray(newMetrics, 0, numMetrics, true);
+
+  metrics = metricArray;
 
   bool checkNum = (partNumMin < partNumMax);
 
@@ -624,6 +662,9 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
     ArrayView<scalar_t> normedWVec(wgt, nparts);
     getStridedStats<scalar_t>(normedWVec, 1, 0, min, max, sum);
 
+    if (vwgtDim > 1)
+      metrics[next].setNorm(multiCriteriaNorm(mcNorm+1));
+
     metrics[next].setGlobalMin(min);
     metrics[next].setGlobalMax(max);
     metrics[next].setGlobalSum(sum);
@@ -660,8 +701,6 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
 
   for (partId_t p=0; p < numParts; p++)
     if (obj[p] == 0) numNonemptyParts--;
-
-  delete [] sumBuf;
 }
 
 /*! \brief Compute the imbalance
@@ -704,6 +743,11 @@ template <typename scalar_t>
 
   if (sumVals <= 0 || targetNumParts < 1 || numParts < 1)
     return;
+
+  if (targetNumParts==1 || numParts==1){
+    min = max = avg = 0;  // 0 imbalance
+    return;
+  }
 
   if (!psizes){
     scalar_t target = sumVals / targetNumParts;
@@ -789,6 +833,11 @@ template <typename scalar_t>
   if (sumVals <= 0 || targetNumParts < 1 || numParts < 1)
     return;
 
+  if (targetNumParts==1 || numParts==1){
+    min = max = avg = 0;  // 0 imbalance
+    return;
+  }
+
   bool allUniformParts = true;
   for (int i=0; i < numSizes; i++){
     if (psizes[i] != NULL){
@@ -803,8 +852,11 @@ template <typename scalar_t>
     return;
   }
 
-  scalar_t uniformSize = 1.0 / targetNumParts;
-  Array<double> sizeVec(numSizes, uniformSize);
+  double uniformSize = 1.0 / targetNumParts;
+  ArrayRCP<double> sizeVec(new double [numSizes], 0, numSizes, true);
+  for (int i=0; i < numSizes; i++){
+    sizeVec[i] = uniformSize;
+  }
 
   for (partId_t p=0; p < numParts; p++){
 
@@ -841,7 +893,7 @@ template <typename scalar_t>
 
       //  |A - T| / |T|
 
-      double imbalance = actual.Norm2() / targetNorm;
+      scalar_t imbalance = actual.Norm2() / targetNorm;
 
       if (imbalance < min)
         min = imbalance;
@@ -963,9 +1015,9 @@ template <typename scalar_t, typename lno_t>
       metrics[0].getGlobalSum(), objCount, 
       min, max, avg);
 
-  metrics[0].setMinImbalance(min);
-  metrics[0].setMaxImbalance(max);
-  metrics[0].setAvgImbalance(avg);
+  metrics[0].setMinImbalance(1.0 + min);
+  metrics[0].setMaxImbalance(1.0 + max);
+  metrics[0].setAvgImbalance(1.0 + avg);
 
   ///////////////////////////////////////////////////////////////////////////
   // Compute imbalances for the normed weight sum.
@@ -988,9 +1040,9 @@ template <typename scalar_t, typename lno_t>
       metrics[1].getGlobalSum(), wgts,
       min, max, avg);
   
-    metrics[1].setMinImbalance(min);
-    metrics[1].setMaxImbalance(max);
-    metrics[1].setAvgImbalance(avg);
+    metrics[1].setMinImbalance(1.0 + min);
+    metrics[1].setMaxImbalance(1.0 + max);
+    metrics[1].setAvgImbalance(1.0 + avg);
   }
 
   ///////////////////////////////////////////////////////////////////////////
@@ -1009,9 +1061,9 @@ template <typename scalar_t, typename lno_t>
         metrics[next].getGlobalSum(), wgts,
         min, max, avg);
 
-      metrics[next].setMinImbalance(min);
-      metrics[next].setMaxImbalance(max);
-      metrics[next].setAvgImbalance(avg);
+      metrics[next].setMinImbalance(1.0 + min);
+      metrics[next].setMaxImbalance(1.0 + max);
+      metrics[next].setAvgImbalance(1.0 + avg);
       next++;
     }
   }
@@ -1228,7 +1280,9 @@ template <typename scalar_t, typename lno_t>
       ArrayRCP<MetricValues<scalar_t> > &metrics)
 {
   int vwgtDim = vwgts.size();
-  Array<ArrayView<scalar_t> > noPartSizes(vwgtDim);
+  typedef ArrayView<scalar_t> av_t;
+
+  ArrayRCP<av_t> noPartSizes(new av_t [vwgtDim], 0, vwgtDim, true);
 
   return objectMetrics(env, comm, targetNumParts,
     noPartSizes.view(0,vwgtDim), parts, vwgts, mcNorm,

@@ -14,9 +14,11 @@
 // We create a few Solutions in this unit test.
 
 #include <Zoltan2_PartitioningSolution.hpp>
+#include <Zoltan2_BasicIdentifierInput.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 
 typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> user_t;
+typedef Zoltan2::BasicIdentifierInput<user_t> idInput_t;
 
 using Teuchos::ArrayRCP;
 using Teuchos::Array;
@@ -117,10 +119,10 @@ int main(int argc, char *argv[])
   /////////////
   // Create a solution object with part size information, and check it.
 
-  RCP<Zoltan2::PartitioningSolution<user_t> > solution;
+  RCP<Zoltan2::PartitioningSolution<idInput_t> > solution;
 
   try{
-    solution = rcp(new Zoltan2::PartitioningSolution<user_t>(
+    solution = rcp(new Zoltan2::PartitioningSolution<idInput_t>(
       env,                // application environment info
       comm,               // problem communicator
       idMap,              // problem identifiers (global Ids, local Ids)

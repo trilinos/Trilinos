@@ -69,9 +69,6 @@ int verifyInputAdapter(
   if (!fail && ia.getLocalLength() != vector.getLocalLength())
     fail = 4;
 
-  if (!fail && ia.getGlobalLength() != vector.getGlobalLength())
-    fail = 5;
-
   gfail = globalFail(comm, fail);
 
   if (!gfail){
@@ -197,8 +194,7 @@ int main(int argc, char *argv[])
     if (!gfail){
       tvector_t *vMigrate = NULL;
       try{
-        tVInput->applyPartitioningSolution<adapter_t, tvector_t>(
-          *tV, vMigrate, solution);
+        tVInput->applyPartitioningSolution(*tV, vMigrate, solution);
         newV = rcp(vMigrate);
       }
       catch (std::exception &e){
@@ -261,8 +257,7 @@ int main(int argc, char *argv[])
     if (!gfail){
       xvector_t *vMigrate =NULL;
       try{
-        xVInput->applyPartitioningSolution<adapter_t, tvector_t>(
-          *xV, vMigrate, solution);
+        xVInput->applyPartitioningSolution(*xV, vMigrate, solution);
       }
       catch (std::exception &e){
         fail = 11;
@@ -326,8 +321,7 @@ int main(int argc, char *argv[])
     if (!gfail){
       evector_t *vMigrate =NULL;
       try{
-        eVInput->applyPartitioningSolution<adapter_t, tvector_t>(
-          *eV, vMigrate, solution);
+        eVInput->applyPartitioningSolution(*eV, vMigrate, solution);
       }
       catch (std::exception &e){
         fail = 11;

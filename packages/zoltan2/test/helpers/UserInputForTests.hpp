@@ -71,7 +71,6 @@ enum testOutputType {
 };
 
 typedef std::bitset<NUM_TEST_OUTPUT_TYPE> outputFlag_t;
-outputFlag_t defaultFlags(OBJECT_DATA);
 
 static int z2Test_read_mtx_coords(
   std::string &fname, ArrayRCP<ArrayRCP<scalar_t> > &xyz);
@@ -143,9 +142,6 @@ private:
     typedef Map<lno_t, gno_t, node_t> map_t;
     typedef Export<lno_t, gno_t, node_t> export_t;
 
-    gno_t globalNrows = M_->getGlobalNumRows();
-    gno_t base = M_->getIndexBase();
-    const RCP<const map_t> &toMap = M_->getRowMap();
     int coordDim = 0;
     ArrayRCP<ArrayRCP<scalar_t> > xyz;
 
@@ -164,6 +160,28 @@ private:
 
     if (coordDim == 0)
       throw std::runtime_error("No coordinates or not enough memory.");
+
+    gno_t globalNrows;
+    gno_t base;
+    RCP<const map_t> toMap;
+
+    if (flags_.test(OBJECT_DATA)){
+      globalNrows = M_->getGlobalNumRows();
+      base = M_->getIndexBase();
+      const RCP<const map_t> &mapM = M_->getRowMap();
+      toMap = mapM;
+    }
+    else{
+      // Broadcast global number of coordinates
+      if (tcomm_->getRank() == 0)
+        globalNrows = xyz[0].size();
+      
+      Teuchos::broadcast<int, gno_t>(*tcomm_, 0, 1, &globalNrows);
+      base = 0;
+
+      map_t *defaultMap = new map_t(globalNrows, base, tcomm_);
+      toMap = rcp<const map_t>(defaultMap);
+    }
 
     // Export coordinates to their owners
 
@@ -253,12 +271,15 @@ public:
   // Market file.
 
   UserInputForTests(std::string s, const RCP<const Comm<int> > &c,
-    outputFlag_t flags=defaultFlags): 
+    outputFlag_t flags=outputFlag_t()): 
     xdim_(0), ydim_(0), zdim_(0), mtype_(), fname_(s),
      node_(Kokkos::DefaultNode::getDefaultNode()), 
      tcomm_(c), ecomm_(),
      M_(), xM_(), eM_(), eG_(), flags_(flags), xyz_()
   {
+    if (!flags_.any())
+      flags_.set(OBJECT_DATA);     // the default operation
+
     ecomm_ = Xpetra::toEpetra(c);
   }
 
@@ -267,12 +288,15 @@ public:
 
   UserInputForTests(int x, int y, int z, const RCP<const Comm<int> > &c,
     std::string matrixType=std::string("Laplace3D"),
-    outputFlag_t flags=defaultFlags): 
+    outputFlag_t flags=outputFlag_t()): 
      xdim_(x), ydim_(y), zdim_(z), mtype_(matrixType), fname_(),
      node_(Kokkos::DefaultNode::getDefaultNode()),
      tcomm_(c), ecomm_(),
      M_(), xM_(), eM_(), eG_(), flags_(flags), xyz_()
   {
+    if (!flags_.any())
+      flags_.set(OBJECT_DATA);     // the default operation
+
     if (flags_.test(OBJECT_COORDINATES))
       std::cout << "Coordinates for meshes not supported yet" << std::endl;
     ecomm_ = Xpetra::toEpetra(c);
@@ -282,11 +306,13 @@ public:
   // Market file.
 
   UserInputForTests(std::string s, const RCP<const Comm<int> > &c,
-    outputFlag_t flags=defaultFlags):
+    outputFlag_t flags=outputFlag_t()):
     xdim_(0), ydim_(0), zdim_(0), mtype_(), fname_(s), 
      node_(Kokkos::DefaultNode::getDefaultNode()),
      tcomm_(c), M_(), xM_(), flags_(flags), xyz_()
   {
+    if (!flags_.any())
+      flags_.set(OBJECT_DATA);     // the default operation
   }
 
   // Constructor for a user object created in memory using
@@ -294,11 +320,14 @@ public:
 
   UserInputForTests(gno_t x, gno_t y, gno_t z, const RCP<const Comm<int> > &c,
     std::string matrixType=std::string("Laplace3D"),
-    outputFlag_t flags=defaultFlags): 
+    outputFlag_t flags=outputFlag_t()): 
      xdim_(x), ydim_(y), zdim_(z), mtype_(matrixType), fname_(), 
      node_(Kokkos::DefaultNode::getDefaultNode()),
      tcomm_(c), M_(), xM_(), flags_(flags), xyz_()
   {
+    if (!flags_.any())
+      flags_.set(OBJECT_DATA);     // the default operation
+
     if (flags_.test(OBJECT_COORDINATES))
       std::cout << "Coordinates for meshes not supported yet" << std::endl;
   }

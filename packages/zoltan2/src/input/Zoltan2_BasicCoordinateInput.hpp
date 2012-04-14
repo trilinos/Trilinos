@@ -52,14 +52,14 @@ namespace Zoltan2 {
    
 */
 
-template <typename User, typename Scalar=typename InputTraits<User>::scalar_t>
+template <typename User>
   class BasicCoordinateInput : public CoordinateInput<User> {
 
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
-  typedef Scalar scalar_t;
+  typedef typename InputTraits<User>::scalar_t    scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
@@ -143,8 +143,6 @@ public:
 
   size_t getLocalNumberOfCoordinates() const { return numIds_; }
 
-  size_t getGlobalNumberOfCoordinates() const { return globalNumIds_;}
-
   size_t getCoordinates(int dim, const gid_t *&gids, const scalar_t *&coords, 
     int &stride) const
   {
@@ -155,7 +153,7 @@ public:
     
     size_t length;
 
-    coords_[dim]->getStridedList(length, coords, stride);
+    coords_[dim].getStridedList(length, coords, stride);
 
     return length;
   }
@@ -168,7 +166,7 @@ public:
     
     size_t length;
 
-    weights_[dim]->getStridedList(length, weights, stride);
+    weights_[dim].getStridedList(length, weights, stride);
 
     return length;
   }
@@ -182,14 +180,13 @@ private:
   RCP<const Environment> env_;
 
   lno_t numIds_;
-  gno_t globalNumIds_;
   const gid_t *idList_;
 
   int dimension_;
-  Array<RCP<StridedData<lno_t, scalar_t> > > coords_;
+  ArrayRCP<StridedData<lno_t, scalar_t> > coords_;
 
   int numWeights_;
-  Array<RCP<StridedData<lno_t, scalar_t> > > weights_;
+  ArrayRCP<StridedData<lno_t, scalar_t> > weights_;
 };
 
 /////////////////////////////////////////////////////////////////
@@ -202,9 +199,9 @@ template <typename User>
     const scalar_t *x, const scalar_t *y, const scalar_t *z,
     int xStride, int yStride, int zStride):
       env_(rcp(new Environment)), 
-      numIds_(numIds), globalNumIds_(), idList_(ids), 
-      dimension_(0), coords_(0), 
-      numWeights_(0), weights_(0)
+      numIds_(numIds), idList_(ids), 
+      dimension_(0), coords_(), 
+      numWeights_(0), weights_()
 {
   vector<const scalar_t *> values;
   vector<int> strides;
@@ -227,8 +224,6 @@ template <typename User>
     }
   }
 
-  coords_.resize(values.size());
-
   initializeData(values, strides, emptyValues, emptyStrides);
 }
 
@@ -238,9 +233,9 @@ template <typename User>
     vector<const scalar_t *> &values,  vector<int> &valueStrides,
     vector<const scalar_t *> &weights, vector<int> &weightStrides):
       env_(rcp(new Environment)), 
-      numIds_(numIds), globalNumIds_(), idList_(ids), 
-      dimension_(values.size()), coords_(values.size()), 
-      numWeights_(weights.size()), weights_(weights.size())
+      numIds_(numIds), idList_(ids), 
+      dimension_(values.size()), coords_(),
+      numWeights_(weights.size()), weights_()
 {
   initializeData(values, valueStrides, weights, weightStrides);
 }
@@ -252,20 +247,18 @@ template <typename User>
 {
   typedef StridedData<lno_t,scalar_t> input_t;
 
-  gno_t tmp = numIds_;
-  try{
-    reduceAll<int, gno_t>(*(env_->comm_), Teuchos::REDUCE_SUM, 1, 
-       &tmp, &globalNumIds_);
-  }
-  Z2_THROW_OUTSIDE_ERROR(*env_);
+  coords_ = arcp(new input_t [dimension_], 0, dimension_, true);
+
+  if (numWeights_ > 0)
+    weights_ = arcp(new input_t [numWeights_], 0, numWeights_, true);
 
   if (numIds_){
     int stride = 1;
     for (int x=0; x < dimension_; x++){
       if (valueStrides.size())
         stride = valueStrides[x];
-      coords_[x] = rcp<input_t>(new input_t(
-        ArrayView<const scalar_t>(values[x], stride*numIds_), stride));
+      ArrayRCP<const scalar_t> coordV(values[x], 0, stride*numIds_, false); 
+      coords_[x] = input_t(coordV, stride);
     }
 
     if (numWeights_){
@@ -273,8 +266,8 @@ template <typename User>
       for (int w=0; w < numWeights_; w++){
         if (weightStrides.size())
           stride = weightStrides[w];
-        weights_[w] = rcp<input_t>(new input_t(
-          ArrayView<const scalar_t>(weights[w], stride*numIds_), stride));
+        ArrayRCP<const scalar_t> wgtV(weights[w], 0, stride*numIds_, false); 
+        weights_[w] = input_t(wgtV, stride);
       }
     }
   }

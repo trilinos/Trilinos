@@ -4,8 +4,7 @@
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_Metric.hpp>
-
-#include <Teuchos_ParameterList.hpp>
+#include <Zoltan2_GetParameter.hpp>
 
 #include <sstream>
 #include <string>
@@ -44,15 +43,17 @@ enum blockParams{
  *   \todo Block partitioning uses one weight only
  *   \todo Block partitioning assumes one part per process.
  *   \todo check for memory allocation failures
+ *   \todo The metrics come out really bad.  Is it an error in
+ *                algorithm or in metrics.
  */
 
 
 template <typename Adapter>
-void AlgPTBlock(
+void AlgBlock(
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
-  const RCP<const IdentifierModel<Adapter> > &ids, 
-  RCP<PartitioningSolution<typename Adapter::user_t> > &solution
+  const RCP<const IdentifierModel<typename Adapter::base_adapter_t> > &ids, 
+  RCP<PartitioningSolution<Adapter> > &solution
 ) 
 {
   using std::string;
@@ -77,8 +78,9 @@ void AlgPTBlock(
   bool isSet;
   string strChoice;
 
-  env->getValue<string>(
-     env->getList(env->getParameters(), "partitioning"),
+  const Teuchos::ParameterList &pl = env->getParameters();
+
+  getParameterValue<string>(pl, "partitioning",
     "objective", isSet, strChoice);
 
   if (isSet && strChoice == string("balance_object_count"))
@@ -95,8 +97,7 @@ void AlgPTBlock(
   else
     params.set(block_balanceWeight);
 
-  env->getValue<double>(
-     env->getList(env->getParameters(), "partitioning"),
+  getParameterValue<double>(pl, "partitioning",
     "imbalance_tolerance", isSet, imbalanceTolerance);
 
   if (!isSet)
@@ -109,21 +110,26 @@ void AlgPTBlock(
   //    the weights
 
   size_t numGnos = ids->getLocalNumIdentifiers();
-  int wtflag = ids->getIdentifierWeightDim();
-
-  int weightDim = (wtflag ? wtflag : 1);
 
   ArrayView<const gno_t> idList;
-  ArrayView<StridedData<lno_t, scalar_t> > wgtList;
+  typedef StridedData<lno_t, scalar_t> input_t;
+  ArrayView<input_t> wgtList;
   
   ids->getIdentifierList(idList, wgtList);
+
+  // If user supplied no weights, we use uniform weights.
+  Array<input_t> uwArray(1);
+  if (wgtList.size() == 0)
+    wgtList = uwArray.view(0,1);
+
+  bool uniformWeights = (wgtList[0].size() == 0);
 
   ////////////////////////////////////////////////////////
   // From the Solution we get part information.
 
   size_t numGlobalParts = solution->getGlobalNumberOfParts();
 
-  size_t numLocalParts = solution->getLocalNumberOfParts();
+  scalar_t numLocalParts = solution->getLocalNumberOfParts();
   if (numLocalParts != 1){
   }
   
@@ -137,7 +143,7 @@ void AlgPTBlock(
 
   scalar_t wtsum(0);
 
-  if (wtflag){
+  if (!uniformWeights){
     for (size_t i=0; i<numGnos; i++)
       wtsum += wgtList[0][i];          // [] operator knows stride
   }
@@ -160,17 +166,15 @@ void AlgPTBlock(
 
   Array<scalar_t> part_sizes(numGlobalParts);
 
-  if (!solution->criteriaHasUniformPartSizes(0)){
-    part_sizes[0] = solution->getCriteriaPartSize(0, 0);
-    for (int i=1; i<numGlobalParts; i++)
-      part_sizes[i] = part_sizes[i-1] + solution->getCriteriaPartSize(i, 0);
-  }
-  else{
-    scalar_t onePart = 1.0/numGlobalParts;
-    part_sizes[0] = onePart;
-    for (int i=1; i<numGlobalParts; i++)
-      part_sizes[i] += onePart;
-  }
+  if (!solution->criteriaHasUniformPartSizes(0))
+    for (int i=0; i<numGlobalParts; i++)
+      part_sizes[i] = solution->getCriteriaPartSize(0, i);
+  else
+    for (int i=0; i<numGlobalParts; i++)
+      part_sizes[i] = 1.0 / numGlobalParts;
+
+  for (int i=1; i<numGlobalParts; i++)
+    part_sizes[i] += part_sizes[i-1];
 
   // TODO assertion that last part sizes is about equal to 1.0
 
@@ -193,7 +197,7 @@ void AlgPTBlock(
   ArrayRCP<partId_t> gnoPart= arcp(new partId_t [numGnos], 0, numGnos);
 
   for (size_t i=0; i<numGnos; i++){
-    scalar_t gnoWeight = (wtflag? wgtList[0][i] : 1.0);
+    scalar_t gnoWeight = (uniformWeights ? 1.0 : wgtList[0][i]);
     /* wtsum is now sum of all lower-ordered object */
     /* determine new partition number for this object,
        using the "center of gravity" */
@@ -213,47 +217,18 @@ void AlgPTBlock(
   partId_t numNonemptyParts;
 
   try{
-    objectMetrics<scalar_t, partId_t, lno_t, gno_t>(
-      env, problemComm, numGlobalParts, 
+    objectMetrics( env, problemComm, numGlobalParts, 
       gnoPart.view(0, numGnos),  wgtList[0],
       numParts, numNonemptyParts, metrics);
   }
   Z2_FORWARD_EXCEPTIONS;
 
-  if (metrics.size() == 2)
-    wgtImbalance = metrics[1].getMaxImbalance();
-  else
-    wgtImbalance = metrics[0].getMaxImbalance();
-
   ////////////////////////////////////////////////////////////
   // Done
-  
-  if (env->doStatus()){
-#if 0
-    if (wgtImbalance > Teuchos::as<scalar_t>(imbalanceTolerance)){
-      ostringstream oss("Warning: imbalance is ");
-      oss << wgtImbalance << std::endl;
-      env->debug(BASIC_STATUS, oss.str());
-    }
-    else{
-#endif
-      ostringstream oss("Imbalance: ");
-      oss << wgtImbalance << std::endl;
-      env->debug(DETAILED_STATUS, oss.str());
-#if 0
-    }
-#endif
-  }
-
-  // Done, update the solution TODO - compute the metrics
-  //    with objectMetrics() call
-
-  ArrayRCP<MetricValues<scalar_t> > emptyMetrics =
-    arcp(new MetricValues<scalar_t> [2], 0, 2);
 
   ArrayRCP<const gno_t> gnos = arcpFromArrayView(idList);
 
-  solution->setParts(gnos, gnoPart, emptyMetrics);
+  solution->setParts(gnos, gnoPart, metrics);
 
   if (env->doStatus())
     env->debug(DETAILED_STATUS, string("Exiting AlgBlock"));

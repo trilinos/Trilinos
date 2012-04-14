@@ -225,7 +225,7 @@ void OrderingProblem<Adapter>::createOrderingProblem()
     break;
 
   case HypergraphModelType:
-  case GeometryModelType:
+  case CoordinateModelType:
     cout << __func__ << " Model type " << modelType << " not yet supported." 
          << endl;
     break;

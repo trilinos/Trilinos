@@ -35,6 +35,7 @@ using namespace std;
 void MetricTest(RCP<const Teuchos::Comm<int> > &comm)
 {
   int nprocs = comm->getSize();
+  int rank = comm->getRank();
   RCP<const Environment> env = rcp(new Environment);
   
   int numLocalObj = 10;
@@ -48,25 +49,25 @@ void MetricTest(RCP<const Teuchos::Comm<int> > &comm)
   for (int i=0; i < numLocalObj; i++)
     wgt[i] = (i%2) + 1.0;
 
-  scalar_t *upDownWeights = wgt;
+  ArrayRCP<scalar_t> upDownWeights(wgt, 0, numLocalObj, false);
 
   wgt += numLocalObj;
   for (int i=0; i < numLocalObj; i++)
     wgt[i] = 1.0;
 
-  scalar_t *uniformWeights = wgt;
+  ArrayRCP<scalar_t> uniformWeights(wgt, 0, numLocalObj, false);
 
   wgt += numLocalObj;
   for (int i=0; i < numLocalObj; i++)
     wgt[i] = (i < numLocalObj/2)? 1.0 : 2.0;
 
-  scalar_t *heavyHalfWeights = wgt;
+  ArrayRCP<scalar_t> heavyHalfWeights(wgt, 0, numLocalObj, false);
 
   typedef StridedData<lno_t, scalar_t> strided_t;
 
-  strided_t w1(ArrayView<scalar_t>(upDownWeights, numLocalObj), 1);
-  strided_t w2(ArrayView<scalar_t>(uniformWeights, numLocalObj), 1);
-  strided_t w3(ArrayView<scalar_t>(heavyHalfWeights, numLocalObj), 1);
+  strided_t w1(upDownWeights, 1);
+  strided_t w2(uniformWeights, 1);
+  strided_t w3(heavyHalfWeights, 1);
 
   // Create three different part size arrays.
 
@@ -125,7 +126,7 @@ void MetricTest(RCP<const Teuchos::Comm<int> > &comm)
   Array<strided_t> threeWeights(3);
   threeWeights[0] = w1;
   threeWeights[1] = w2;
-  threeWeights[2] = w2;
+  threeWeights[2] = w3;
 
 
   Array<ArrayView< scalar_t> > threePartSizes(3);
@@ -141,9 +142,10 @@ void MetricTest(RCP<const Teuchos::Comm<int> > &comm)
     threeWeights.view(0,3), mcnorm,
     numParts, numNonemptyParts, metrics);
 
-  printMetrics(std::cout, 
-    numGlobalParts, numParts, numNonemptyParts, 
-    metrics.view(0,metrics.size()));
+  if (rank == 0)
+    printMetrics(std::cout, 
+      numGlobalParts, numParts, numNonemptyParts, 
+      metrics.view(0,metrics.size()));
 
   /*! \test Multiple non-uniform weights but uniform part sizes
    */
@@ -155,10 +157,10 @@ void MetricTest(RCP<const Teuchos::Comm<int> > &comm)
     threeWeights.view(0,3), mcnorm,
     numParts, numNonemptyParts, metrics);
 
-  printMetrics(std::cout, 
-    numGlobalParts, numParts, numNonemptyParts, 
-    metrics.view(0,metrics.size()));
-
+  if (rank == 0)
+    printMetrics(std::cout, 
+      numGlobalParts, numParts, numNonemptyParts, 
+      metrics.view(0,metrics.size()));
 
   /*! \test One weight with non-uniform part sizes
    */
@@ -167,9 +169,10 @@ void MetricTest(RCP<const Teuchos::Comm<int> > &comm)
     numGlobalParts, parts.view(0,numLocalObj), w1, 
     numParts, numNonemptyParts, metrics);
 
-  printMetrics(std::cout, 
-    numGlobalParts, numParts, numNonemptyParts, 
-    metrics.view(0,metrics.size()));
+  if (rank==0)
+    printMetrics(std::cout, 
+      numGlobalParts, numParts, numNonemptyParts, 
+      metrics.view(0,metrics.size()));
 
   /*! \test One weight with uniform part sizes
    */
@@ -178,9 +181,10 @@ void MetricTest(RCP<const Teuchos::Comm<int> > &comm)
     numGlobalParts, parts.view(0,numLocalObj), w1, 
     numParts, numNonemptyParts, metrics);
 
-  printMetrics(std::cout, 
-    numGlobalParts, numParts, numNonemptyParts, 
-    metrics.view(0,metrics.size()));
+  if (rank==0)
+    printMetrics(std::cout, 
+      numGlobalParts, numParts, numNonemptyParts, 
+      metrics.view(0,metrics.size()));
 
   /*! \test Weights and part sizes are uniform.
    */
@@ -189,9 +193,10 @@ void MetricTest(RCP<const Teuchos::Comm<int> > &comm)
     parts.view(0,numLocalObj),
     numParts, numNonemptyParts, metrics);
 
-  printMetrics(std::cout, 
-    numGlobalParts, numParts, numNonemptyParts, 
-    metrics.view(0,metrics.size()));
+  if (rank==0)
+    printMetrics(std::cout, 
+      numGlobalParts, numParts, numNonemptyParts, 
+      metrics.view(0,metrics.size()));
 
 
   /*! \test Target number of parts is greater than current, non-uniform
@@ -211,9 +216,10 @@ void MetricTest(RCP<const Teuchos::Comm<int> > &comm)
     parts.view(0,numLocalObj), w1, 
     numParts, numNonemptyParts, metrics);
 
-  printMetrics(std::cout, 
-    targetNumParts, numParts, numNonemptyParts, 
-    metrics.view(0,metrics.size()));
+  if (rank==0)
+    printMetrics(std::cout, 
+      targetNumParts, numParts, numNonemptyParts, 
+      metrics.view(0,metrics.size()));
 
 
   /*! \test Target number of parts is greater than current, uniform
@@ -224,9 +230,10 @@ void MetricTest(RCP<const Teuchos::Comm<int> > &comm)
     parts.view(0,numLocalObj),
     numParts, numNonemptyParts, metrics);
 
-  printMetrics(std::cout, 
-    targetNumParts, numParts, numNonemptyParts, 
-    metrics.view(0,metrics.size()));
+  if (rank==0)
+    printMetrics(std::cout, 
+      targetNumParts, numParts, numNonemptyParts, 
+      metrics.view(0,metrics.size()));
 
   if (nprocs > 2){
 
@@ -247,9 +254,10 @@ void MetricTest(RCP<const Teuchos::Comm<int> > &comm)
       parts.view(0,numLocalObj), w1, 
       numParts, numNonemptyParts, metrics);
 
-    printMetrics(std::cout, 
-      targetNumParts, numParts, numNonemptyParts, 
-      metrics.view(0,metrics.size()));
+    if (rank==0)
+      printMetrics(std::cout, 
+        targetNumParts, numParts, numNonemptyParts, 
+        metrics.view(0,metrics.size()));
   
     /*! \test Target number of parts is less than current, uniform
      *            weights and part sizes.
@@ -259,9 +267,10 @@ void MetricTest(RCP<const Teuchos::Comm<int> > &comm)
       parts.view(0,numLocalObj),
       numParts, numNonemptyParts, metrics);
 
-    printMetrics(std::cout, 
-      targetNumParts, numParts, numNonemptyParts, 
-      metrics.view(0,metrics.size()));
+    if (rank==0)
+      printMetrics(std::cout, 
+        targetNumParts, numParts, numNonemptyParts, 
+        metrics.view(0,metrics.size()));
   }
 
   return;
@@ -275,7 +284,7 @@ int main(int argc, char *argv[])
 
   MetricTest(comm);
 
-  if (comm->getRank() > 0)
+  if (comm->getRank() == 0)
     std::cout << "PASS" << std::endl;
 
   return 0;

@@ -14,6 +14,7 @@
 #define _ZOLTAN2_ENVIRONMENT_HPP_
 
 #include <Zoltan2_config.h>
+#include <Zoltan2_IO.hpp>
 #include <Zoltan2_Parameters.hpp>
 #include <Zoltan2_DebugManager.hpp>
 #include <Zoltan2_MetricOutputManager.hpp>
@@ -467,42 +468,6 @@ public:
 
   static void convertStringToInt(Teuchos::ParameterList &params);
 
-  /*! \brief Return a sublist of the given parameter list.
-   *   \param pl  a Teuchos::ParameterList.
-   *   \param listName  the name of a parameter list that may be a sublist
-   *                          of pl.
-   *   \return the requested parameter list if it exists, an empty list 
-   *                    otherwise.
-   *
-   *  If the sublist does not exist, an empty parameter list named "emptyList"
-   *  is returned.  If the input list \c pl is such an empty list, then
-   *  the empty list is returned.  In this way getList() can be nested when
-   *  it is not known if the intermediate lists exist.  For example:
-   *
-     \code
-           getList(getList(getParameters(), "partitioning"), "geometric")
-     \endcode
-   *
-   * will work (by returning an empty list) even if there is 
-   * no "partitioning" list.
-   */
- 
-  const Teuchos::ParameterList &getList(const Teuchos::ParameterList &pl,
-    const char *listName) const;
-
-  /*! \brief Find the value of the named parameter.
-   *  \param pl A parameter list that may contain the parameter.
-   *  \param name  The name of the parameter entry.
-   *  \param set  On return, true if the parameter is set and false if
-   *               it is not set (does not appear in the parameter list).
-   *  \param value On return, if the entry was found, this will be set
-   *                    to the value of the entry.  Otherwise it is
-   *                    undefined.
-   */
-  template <typename T>
-    void getValue(const Teuchos::ParameterList &pl, const char *name, 
-      bool &set, T &value) const;
-
 private:
 
   /*! \brief Set up the Environment for the constructor.
@@ -530,7 +495,60 @@ private:
   TimerManager_t timerOut_;    /*!< \brief timer output */
 
   MemoryProfilerManager_t memoryOut_;  /*!< \brief memory profiling output */
+
+  
 };
+
+/*! \brief A value to indicate a string parameter that was 
+              not set by the user.
+ */
+#define Z2_UNSET std::string("notSet")
+
+//////////////////////////////////////////////////////////////////////
+// Templated namespace definitions used by the class
+
+/*! \brief Create an output manager for a metric value.
+ *
+ *  \param rank  the MPI rank of the calling process in the application
+ *  \param iPrint   true if this process should print metric information
+ *  \param fname    name of file to which output is to be appended, or
+ *                      or Z2_UNSET
+ *  \param osname   "std::cout", "std::cerr", "/dev/null", or Z2_UNSET
+ *  \param mgr     on return, a pointer to the created output manager
+ *
+ * The template parameter is the data type of the entity being measured.
+ */
+template<typename metric_t>
+  void makeMetricOutputManager(int rank, bool iPrint, 
+    std::string fname, std::string osname, 
+    Teuchos::RCP<MetricOutputManager<metric_t> > &mgr)
+{
+  std::ofstream *oFile=NULL;
+
+  if (iPrint && (fname != Z2_UNSET)){
+    std::string newFname;
+    addNumberToFileName(rank, fname, newFname);
+
+    try{
+      oFile = new std::ofstream;
+      oFile->open(newFname.c_str(), std::ios::out|std::ios::trunc);
+    }
+    catch(std::exception &e){
+      throw std::runtime_error(e.what());
+    }
+  }
+
+  typedef MetricOutputManager<metric_t> manager_t;
+
+  if (osname == std::string("std::cout"))
+    mgr = Teuchos::rcp(new manager_t(rank, iPrint, std::cout, true));
+  else if (osname == std::string("std::cerr"))
+    mgr = Teuchos::rcp(new manager_t(rank, iPrint, std::cerr, true));
+  else if (oFile)
+    mgr = Teuchos::rcp(new manager_t(rank, iPrint, *oFile, true));
+  else
+    mgr = Teuchos::rcp(new manager_t(rank, false, std::cout, true));
+}
 
 }  // namespace Zoltan2
 

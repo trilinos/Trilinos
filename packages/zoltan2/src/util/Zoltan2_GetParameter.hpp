@@ -37,7 +37,7 @@ namespace Zoltan2{
  */
 
 const Teuchos::ParameterList & getParameterList(
-  const Teuchos::ParameterList &superList, const char *listName) const
+  const Teuchos::ParameterList &superList, const char *listName)
 {
   static Teuchos::ParameterList emptyList("emptyList");
 
@@ -47,7 +47,7 @@ const Teuchos::ParameterList & getParameterList(
   const Teuchos::ParameterEntry *sublist = superList.getEntryPtr(listName);
 
   if (!sublist || !sublist->isList()){
-    return &emptyList;
+    return emptyList;
   }
 
   return superList.sublist(listName);
@@ -60,15 +60,14 @@ const Teuchos::ParameterList & getParameterList(
  *               it is not set (does not appear in the parameter list).
  *  \param value On return, if the entry was found, this will be set
  *                    to the value of the entry.  Otherwise it is
- *                    undefined.
+ *                    untouched.
  */
 
 template <typename T>
   void getParameterValue(const Teuchos::ParameterList &pl,
-    const char *name, bool &isSet, T &value) const
+    const char *name, bool &isSet, T &value)
 {
   isSet = false;
-  value = T(0);
 
   if (pl.name() == std::string("emptyList"))
     return;
@@ -89,15 +88,17 @@ template <typename T>
  *               it is not set (does not appear in the parameter list).
  *  \param value On return, if the entry was found, this will be set
  *                    to the value of the entry.  Otherwise it is
- *                    undefined.
+ *                    untouched.
  */
 
 template <typename T>
   void getParameterValue(const Teuchos::ParameterList &pl,
     const char *name1, const char *name2, 
-    bool &isSet, T &value) const
+    bool &isSet, T &value)
 {
-  getParameterValue(getParameterList(pl, name1), name2, isSet, value);
+  getParameterValue(
+    getParameterList(pl, name1), name2, 
+    isSet, value);
 }
 
 /*! \brief Find the value of a third level parameter.
@@ -108,13 +109,13 @@ template <typename T>
  *               it is not set (does not appear in the parameter list).
  *  \param value On return, if the entry was found, this will be set
  *                    to the value of the entry.  Otherwise it is
- *                    undefined.
+ *                    untouched.
  */
 
 template <typename T>
   void getParameterValue(const Teuchos::ParameterList &pl,
-    const char *name1, const char *name2, 
-    bool &isSet, T &value) const
+    const char *name1, const char *name2, const char *name3,
+    bool &isSet, T &value)
 {
   getParameterValue(
     getParameterList(getParameterList(pl, name1), name2), 

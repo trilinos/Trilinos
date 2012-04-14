@@ -103,6 +103,14 @@ public:
    */
   bool gnosAreGids() const;
 
+  /*! \brief Return the global number of identifiers.
+   */
+  gno_t getGlobalNumberOfIds() const { return globalNumberOfIds_;}
+
+  /*! \brief Return the local number of identifiers.
+   */
+  gno_t getLocalNumberOfIds() const { return localNumberOfIds_;}
+
   /*! \brief Return the minimum and maximum values of the internal
    *  global numbers 
    */

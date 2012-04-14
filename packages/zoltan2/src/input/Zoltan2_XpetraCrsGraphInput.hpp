@@ -43,19 +43,19 @@ namespace Zoltan2 {
     the second template parameter to \c double.
 */
 
-template <typename User, typename Scalar=typename InputTraits<User>::scalar_t>
-  class XpetraCrsGraphInput : public GraphInput<User, Scalar> {
+template <typename User>
+  class XpetraCrsGraphInput : public GraphInput<User> {
 
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef Scalar scalar_t;
+  typedef typename InputTraits<User>::scalar_t    scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef Xpetra::CrsGraph<lno_t, gno_t, node_t> xgraph_t;
-  typedef GraphInput<User, Scalar>       base_adapter_t;
+  typedef GraphInput<User>       base_adapter_t;
   typedef User user_t;
 #endif
 
@@ -257,16 +257,8 @@ public:
     return graph_->getNodeNumRows(); 
   }
 
-  global_size_t getGlobalNumberOfVertices() const { 
-    return graph_->getGlobalNumRows(); 
-  }
-
   size_t getLocalNumberOfEdges() const { 
     return graph_->getNodeNumEntries();
-  }
-
-  global_size_t getGlobalNumberOfEdges() const { 
-    return graph_->getGlobalNumEntries();
   }
 
   int getVertexWeightDimension() const { 
@@ -304,7 +296,7 @@ public:
       dim >= 0 && dim < vertexWeightDim_, BASIC_ASSERTION);
 
     size_t length;
-    vertexWeights_[dim]->getStridedList(length, weights, stride);
+    vertexWeights_[dim].getStridedList(length, weights, stride);
     return length;
   }
 
@@ -315,7 +307,7 @@ public:
       dim >= 0 && dim < edgeWeightDim_, BASIC_ASSERTION);
 
     size_t length;
-    edgeWeights_[dim]->getStridedList(length, weights, stride);
+    edgeWeights_[dim].getStridedList(length, weights, stride);
     return length;
   }
 
@@ -327,7 +319,7 @@ public:
       dim >= 0 && dim < coordinateDim_, BASIC_ASSERTION);
 
     size_t length;
-    coords_[dim]->getStridedList(length, coords, stride);
+    coords_[dim].getStridedList(length, coords, stride);
     return length;
   }
 
@@ -353,13 +345,13 @@ private:
   ArrayRCP<const gid_t> eids_;
 
   int vertexWeightDim_;
-  Array<RCP<StridedData<lno_t, scalar_t> > > vertexWeights_;
+  ArrayRCP<StridedData<lno_t, scalar_t> > vertexWeights_;
 
   int edgeWeightDim_;
-  Array<RCP<StridedData<lno_t, scalar_t> > > edgeWeights_;
+  ArrayRCP<StridedData<lno_t, scalar_t> > edgeWeights_;
 
   int coordinateDim_;
-  Array<RCP<StridedData<lno_t, scalar_t> > > coords_;
+  ArrayRCP<StridedData<lno_t, scalar_t> > coords_;
 
   // A default Environment for error messages.  User-written
   // InputAdapter classes can use some other error return convention
@@ -371,13 +363,13 @@ private:
 // Definitions
 /////////////////////////////////////////////////////////////////
 
-template <typename User, typename Scalar>
-  XpetraCrsGraphInput<User, Scalar>::XpetraCrsGraphInput(
+template <typename User>
+  XpetraCrsGraphInput<User>::XpetraCrsGraphInput(
     const RCP<const User> &ingraph):
       ingraph_(ingraph), graph_(), comm_() , offs_(), eids_(),
-      vertexWeightDim_(0), vertexWeights_(0),
-      edgeWeightDim_(0), edgeWeights_(0),
-      coordinateDim_(0), coords_(0),
+      vertexWeightDim_(0), vertexWeights_(),
+      edgeWeightDim_(0), edgeWeights_(),
+      coordinateDim_(0), coords_(),
       env_(rcp(new Environment))
 {
   vector<const scalar_t *> emptyValues;
@@ -387,15 +379,15 @@ template <typename User, typename Scalar>
     emptyValues, emptyStrides);
 }
 
-template <typename User, typename Scalar>
-  XpetraCrsGraphInput<User, Scalar>::XpetraCrsGraphInput(
+template <typename User>
+  XpetraCrsGraphInput<User>::XpetraCrsGraphInput(
   const RCP<const User> &ingraph,
-    vector<const Scalar *> &vWeights,  vector<int> &vWeightStrides,
-    vector<const Scalar *> &eWeights,  vector<int> &eWeightStrides):
+    vector<const scalar_t *> &vWeights,  vector<int> &vWeightStrides,
+    vector<const scalar_t *> &eWeights,  vector<int> &eWeightStrides):
       ingraph_(ingraph), graph_(), comm_() , offs_(), eids_(),
-      vertexWeightDim_(vWeights.size()), vertexWeights_(vWeights.size()),
-      edgeWeightDim_(eWeights.size()), edgeWeights_(eWeights.size()),
-      coordinateDim_(0), coords_(0),
+      vertexWeightDim_(vWeights.size()), vertexWeights_(),
+      edgeWeightDim_(eWeights.size()), edgeWeights_(),
+      coordinateDim_(0), coords_(),
       env_(rcp(new Environment))
 {
   vector<const scalar_t *> emptyValues;
@@ -405,33 +397,46 @@ template <typename User, typename Scalar>
     emptyValues, emptyStrides);
 }
 
-template <typename User, typename Scalar>
-  XpetraCrsGraphInput<User, Scalar>::XpetraCrsGraphInput(
+template <typename User>
+  XpetraCrsGraphInput<User>::XpetraCrsGraphInput(
     const RCP<const User> &ingraph,
-    vector<const Scalar *> &vWeights,  vector<int> &vWeightStrides,
-    vector<const Scalar *> &eWeights,  vector<int> &eWeightStrides,
-    vector<const Scalar *> &coords,  vector<int> &coordStrides):
+    vector<const scalar_t *> &vWeights,  vector<int> &vWeightStrides,
+    vector<const scalar_t *> &eWeights,  vector<int> &eWeightStrides,
+    vector<const scalar_t *> &coords,  vector<int> &coordStrides):
       ingraph_(ingraph), graph_(), comm_() , offs_(), eids_(),
-      vertexWeightDim_(vWeights.size()), vertexWeights_(vWeights.size()),
-      edgeWeightDim_(eWeights.size()), edgeWeights_(eWeights.size()),
-      coordinateDim_(coords.size()), coords_(coords.size()),
+      vertexWeightDim_(vWeights.size()), vertexWeights_(),
+      edgeWeightDim_(eWeights.size()), edgeWeights_(),
+      coordinateDim_(coords.size()), coords_(),
       env_(rcp(new Environment))
 {
   initializeData(vWeights, vWeightStrides, eWeights, eWeightStrides,
     coords, coordStrides);
 }
 
-template <typename User, typename Scalar>
-  void XpetraCrsGraphInput<User, Scalar>::initializeData(
-    vector<const Scalar *> &vWeights,  vector<int> &vWeightStrides,
-    vector<const Scalar *> &eWeights,  vector<int> &eWeightStrides,
-    vector<const Scalar *> &coords,  vector<int> &coordStrides)
+template <typename User>
+  void XpetraCrsGraphInput<User>::initializeData(
+    vector<const scalar_t *> &vWeights,  vector<int> &vWeightStrides,
+    vector<const scalar_t *> &eWeights,  vector<int> &eWeightStrides,
+    vector<const scalar_t *> &coords,  vector<int> &coordStrides)
 {
-  typedef StridedData<lno_t,scalar_t> input_t;
   env_->localInputAssertion(__FILE__, __LINE__, 
     "invalid number of dimensions", 
     vertexWeightDim_ >= 0 && edgeWeightDim_ >= 0 && coordinateDim_ >= 0, 
     BASIC_ASSERTION);
+
+  typedef StridedData<lno_t,scalar_t> input_t;
+
+  if (vertexWeightDim_)
+    vertexWeights_ = 
+      arcp(new input_t [vertexWeightDim_], 0, vertexWeightDim_, true);
+
+  if (edgeWeightDim_)
+    edgeWeights_ = 
+      arcp(new input_t [edgeWeightDim_], 0, edgeWeightDim_, true);
+
+  if (coordinateDim_)
+    coords_ = 
+      arcp(new input_t [coordinateDim_], 0, coordinateDim_, true);
 
   graph_ = XpetraTraits<User>::convertToXpetra(ingraph_);
   comm_ = graph_->getComm();
@@ -467,33 +472,30 @@ template <typename User, typename Scalar>
   for (int dim=0; dim < coordinateDim_; dim++){
     if (coordStrides.size())
       stride = coordStrides[dim];
-    coords_[dim] = 
-      rcp<input_t>(
-        new input_t(ArrayView<const scalar_t>(coords[dim], nvtx), stride));
+    ArrayRCP<const scalar_t> coordV(coords[dim], 0, nvtx, false);
+    coords_[dim] = input_t(coordV, stride);
   }
 
   stride = 1;
   for (int dim=0; dim < vertexWeightDim_; dim++){
     if (vWeightStrides.size())
       stride = vWeightStrides[dim];
-    vertexWeights_[dim] = 
-      rcp<input_t>(
-        new input_t(ArrayView<const scalar_t>(vWeights[dim], nvtx), stride));
+    ArrayRCP<const scalar_t> wgtV(vWeights[dim], 0, nvtx, false);
+    vertexWeights_[dim] = input_t(wgtV, stride);
   }
 
   stride = 1;
   for (int dim=0; dim < edgeWeightDim_; dim++){
     if (eWeightStrides.size())
       stride = eWeightStrides[dim];
-    edgeWeights_[dim] = 
-      rcp<input_t>(
-        new input_t(ArrayView<const scalar_t>(eWeights[dim], nedges), stride));
+    ArrayRCP<const scalar_t> ewgtV(eWeights[dim], 0, nedges, false);
+    edgeWeights_[dim] = input_t(ewgtV, stride);
   }
 }
 
-template <typename User, typename Scalar>
+template <typename User>
   template<typename Adapter>
-    size_t XpetraCrsGraphInput<User, Scalar>::applyPartitioningSolution(
+    size_t XpetraCrsGraphInput<User>::applyPartitioningSolution(
       const User &in, User *&out, 
       const PartitioningSolution<Adapter> &solution) const
 {

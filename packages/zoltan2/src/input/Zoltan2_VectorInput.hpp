@@ -61,14 +61,14 @@ namespace Zoltan2 {
  
 */
 
-template <typename User, typename Scalar=typename InputTraits<User>::scalar_t>
+template <typename User>
   class VectorInput : public InputAdapter {
 private:
 
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef Scalar scalar_t;
+  typedef typename InputTraits<User>::scalar_t    scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
@@ -95,16 +95,14 @@ public:
   virtual int getNumberOfVectors() const = 0;
 
   /*! \brief Return the number of weights per vector element.
+   *     Number of weights per element should be zero or greater.  If
+   *     zero, it is assumed each vector is equally weighted.
    */
   virtual int getNumberOfWeights() const = 0;
 
   /*! \brief Return the length of the portion of the vector on this process.
    */
   virtual size_t getLocalLength() const = 0;
-
-  /*! \brief Return the global length of the vector.
-   */
-  virtual size_t getGlobalLength() const = 0;
 
   /*! \brief Provide a pointer to the vertex elements.  If the VectorInput
        represents more than one vector, vector zero is implied.
@@ -140,7 +138,9 @@ public:
         
       \param dimension ranges from zero to one less than getNumberOfWeights()
       \param weights is the list of weights of the given dimension for
-           the elements listed in getVector.
+           the elements listed in getVector.  If weights for
+           this dimension are to be uniform for all vectors in the
+           global problem, the \c weights should be a NULL pointer.
        \param stride The k'th weight is located at weights[stride*k]
        \return The number of weights listed, which should be the same
                   as the number of elements listed in getVector().
@@ -167,9 +167,9 @@ public:
    *  \return   Returns the number of local Ids in the new partitioning.
    */
 
-  template <typename User2>
+  template <typename Adapter>
     size_t applyPartitioningSolution(User &in, User *&out,
-         const PartitioningSolution<User2> &solution) const
+         const PartitioningSolution<Adapter> &solution) const
   {
     return 0;
   } 

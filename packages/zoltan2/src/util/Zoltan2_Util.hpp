@@ -66,11 +66,11 @@ template <typename Adapter, typename Extra>
   size_t convertSolutionToImportList(
     const PartitioningSolution<Adapter> &solution,
     ArrayRCP<Extra> &xtraInfo,
-    ArrayRCP<Adapter::gid_t> &imports,
+    ArrayRCP<typename Adapter::gid_t> &imports,
     ArrayRCP<Extra> &newXtraInfo)
 {
-  typedef Adapter::lno_t lno_t;
-  typedef Adapter::gid_t gid_t;
+  typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::gid_t gid_t;
   typedef Teuchos::Comm<int> comm_t;
 
   const RCP<const comm_t> &comm     = solution.getCommunicator();

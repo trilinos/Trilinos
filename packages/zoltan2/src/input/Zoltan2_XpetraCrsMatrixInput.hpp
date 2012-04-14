@@ -45,18 +45,18 @@ namespace Zoltan2 {
 
 */
 
-template <typename User, typename Scalar=typename InputTraits<User>::scalar_t>
-  class XpetraCrsMatrixInput : public MatrixInput<User, Scalar> {
+template <typename User>
+  class XpetraCrsMatrixInput : public MatrixInput<User> {
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef Scalar scalar_t;
+  typedef typename InputTraits<User>::scalar_t    scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> xmatrix_t;
-  typedef MatrixInput<User, Scalar>       base_adapter_t;
+  typedef MatrixInput<User>       base_adapter_t;
   typedef User user_t;
 #endif
 
@@ -154,7 +154,7 @@ public:
       dim >= 0 && dim < coordinateDim_, BASIC_ASSERTION);
 
     size_t length;
-    rowCoords_[dim]->getStridedList(length, coords, stride);
+    rowCoords_[dim].getStridedList(length, coords, stride);
     return length;
   }
 
@@ -179,7 +179,7 @@ private:
   ArrayRCP<gno_t> columnIds_;
 
   int coordinateDim_;
-  Array<RCP<StridedData<lno_t, scalar_t> > > rowCoords_;
+  ArrayRCP<StridedData<lno_t, scalar_t> > rowCoords_;
 
 };
 
@@ -187,14 +187,15 @@ private:
 // Definitions
 /////////////////////////////////////////////////////////////////
 
-template <typename User, typename Scalar>
-  XpetraCrsMatrixInput<User, Scalar>::XpetraCrsMatrixInput(
+template <typename User>
+  XpetraCrsMatrixInput<User>::XpetraCrsMatrixInput(
     const RCP<const User> &inmatrix, int coordDim):
       env_(rcp(new Environment)),
       inmatrix_(inmatrix), matrix_(), rowMap_(), colMap_(), base_(),
       offset_(), columnIds_(),
-      coordinateDim_(coordDim), rowCoords_(coordDim)
+      coordinateDim_(coordDim), rowCoords_()
 {
+  typedef StridedData<lno_t,scalar_t> input_t;
   matrix_ = XpetraTraits<User>::convertToXpetra(inmatrix);
   rowMap_ = matrix_->getRowMap();
   colMap_ = matrix_->getColMap();
@@ -219,11 +220,14 @@ template <typename User, typename Scalar>
     }
     offset_[i+1] = offset_[i] + nnz;
   } 
+
+  if (coordinateDim_ > 0)
+    rowCoords_ = arcp(new input_t [coordinateDim_], 0, coordinateDim_, true);
 }
 
 // TODO (from 3/21/12 mtg):  Consider changing interface to take an XpetraMultivector
-template <typename User, typename Scalar>
-  void XpetraCrsMatrixInput<User, Scalar>::setRowCoordinates(int dim,
+template <typename User>
+  void XpetraCrsMatrixInput<User>::setRowCoordinates(int dim,
     const scalar_t *coordVal, int stride)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
@@ -234,14 +238,13 @@ template <typename User, typename Scalar>
 
   size_t nvtx = getLocalNumRows();
 
-  rowCoords_[dim] =
-    rcp<input_t>(
-      new input_t(ArrayView<const scalar_t>(coordVal, nvtx), stride));
+  ArrayRCP<const scalar_t> coordV(coordVal, 0, nvtx, false);
+  rowCoords_[dim] = input_t(coordV, stride);
 }
 
-template <typename User, typename Scalar>
+template <typename User>
   template <typename Adapter>
-    size_t XpetraCrsMatrixInput<User, Scalar>::applyPartitioningSolution(
+    size_t XpetraCrsMatrixInput<User>::applyPartitioningSolution(
       const User &in, User *&out, 
       const PartitioningSolution<Adapter> &solution) const
 { 

@@ -49,11 +49,15 @@ class PartitioningProblem : public Problem<Adapter>
 {
 public:
 
+  typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::gid_t gid_t;
+  typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::user_t user_t;
+  typedef typename Adapter::base_adapter_t base_adapter_t;
 
-  // \brief Destructor
+  /*! \brief Destructor
+   */
   ~PartitioningProblem() {};
 
 #ifdef HAVE_ZOLTAN2_MPI
@@ -95,7 +99,7 @@ public:
   //
   //   \return  a reference to the solution to the most recent solve().
 
-  PartitioningSolution<user_t> &getSolution() {
+  const PartitioningSolution<Adapter> &getSolution() {
     return *(solution_.getRawPtr());
   };
 
@@ -137,7 +141,7 @@ public:
    *            part sizes once for each.
    */
 
-  void setPartSizes(int len, partId_t *partIds, float *partSizes, 
+  void setPartSizes(int len, partId_t *partIds, scalar_t *partSizes, 
     bool makeCopy=true) 
   { 
     setPartSizesForCritiera(0, len, partIds, partSizes, makeCopy);
@@ -178,14 +182,14 @@ public:
    */
 
   void setPartSizesForCritiera(int criteria, int len, partId_t *partIds, 
-    float *partSizes, bool makeCopy=true) ;
+    scalar_t *partSizes, bool makeCopy=true) ;
 
 private:
   void initializeProblem();
 
   void createPartitioningProblem(bool newData);
 
-  RCP<PartitioningSolution<user_t> > solution_;
+  RCP<PartitioningSolution<Adapter> > solution_;
 
   InputAdapterType inputType_;
   ModelType modelType_;
@@ -206,7 +210,7 @@ private:
   // So numberOfCriteria_ is numberOfWeights_ or one, whichever is greater.
 
   ArrayRCP<ArrayRCP<partId_t> > partIds_;
-  ArrayRCP<ArrayRCP<float> > partSizes_;
+  ArrayRCP<ArrayRCP<scalar_t> > partSizes_;
   int numberOfCriteria_;
 
   // Number of parts to be computed at each level in hierarchical partitioning.
@@ -261,7 +265,7 @@ template <typename Adapter>
   // does not, the part size arrays are empty.
 
   ArrayRCP<partId_t> *noIds = new ArrayRCP<partId_t> [numberOfCriteria_];
-  ArrayRCP<float> *noSizes = new ArrayRCP<float> [numberOfCriteria_];
+  ArrayRCP<scalar_t> *noSizes = new ArrayRCP<scalar_t> [numberOfCriteria_];
 
   partIds_ = arcp(noIds, 0, numberOfCriteria_, true);
   partSizes_ = arcp(noSizes, 0, numberOfCriteria_, true);
@@ -269,7 +273,7 @@ template <typename Adapter>
 
 template <typename Adapter>
   void PartitioningProblem<Adapter>::setPartSizesForCritiera(
-    int criteria, int len, partId_t *partIds, float *partSizes, bool makeCopy) 
+    int criteria, int len, partId_t *partIds, scalar_t *partSizes, bool makeCopy) 
 {
   this->env_->localInputAssertion(__FILE__, __LINE__, "invalid length", 
     len>= 0, BASIC_ASSERTION);
@@ -279,7 +283,7 @@ template <typename Adapter>
 
   if (len == 0){
     partIds_[criteria] = ArrayRCP<partId_t>();
-    partSizes_[criteria] = ArrayRCP<float>();
+    partSizes_[criteria] = ArrayRCP<scalar_t>();
     return;
   }
 
@@ -291,7 +295,7 @@ template <typename Adapter>
   // part sizes.
 
   partId_t *z2_partIds = partIds;
-  float *z2_partSizes = partSizes;
+  scalar_t *z2_partSizes = partSizes;
   bool own_memory = false;
 
   if (makeCopy){
@@ -299,7 +303,7 @@ template <typename Adapter>
     z2_partIds = new partId_t [len];
     this->env_->localMemoryAssertion(__FILE__, __LINE__, len, z2_partIds);
     z2_partSizes = NULL;
-    z2_partSizes = new float [len];
+    z2_partSizes = new scalar_t [len];
     this->env_->localMemoryAssertion(__FILE__, __LINE__, len, z2_partSizes);
     bool own_memory = true;
   }
@@ -312,12 +316,6 @@ template <typename Adapter>
 void PartitioningProblem<Adapter>::solve(bool updateInputData)
 {
   HELLO;
-
-  typedef typename Adapter::gid_t gid_t;
-  typedef typename Adapter::gno_t gno_t;
-  typedef typename Adapter::lno_t lno_t;
-  typedef typename Adapter::user_t user_t;
-  typedef typename Adapter::base_adapter_t base_adapter_t;
 
   // Create the computational model.
 
@@ -334,23 +332,31 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   RCP<const IdentifierMap<user_t> > idMap = 
     this->baseModel_->getIdentifierMap();
 
-  solution_ = rcp(new PartitioningSolution<user_t>( this->envConst_,
-    this->comm_, idMap, numberOfWeights_, partIds_.view(0, numberOfCriteria_), 
-    partSizes_.view(0, numberOfCriteria_)));
+  PartitioningSolution<Adapter> *soln = NULL;
+
+  try{
+    soln = new PartitioningSolution<Adapter>( 
+      this->envConst_, this->comm_, idMap, numberOfWeights_, 
+      partIds_.view(0, numberOfCriteria_), 
+      partSizes_.view(0, numberOfCriteria_));
+  }
+  Z2_FORWARD_EXCEPTIONS;
+
+  solution_ = rcp(soln);
 
   // Call the algorithm
 
   try {
     if (algorithm_ == string("scotch")){
-      AlgPTScotch<base_adapter_t>(this->envConst_, this->comm_, 
+      AlgPTScotch<Adapter>(this->envConst_, this->comm_, 
         this->graphModel_, solution_);
     }
     else if (algorithm_ == string("block")){
-      AlgPTBlock<base_adapter_t>(this->envConst_, this->comm_, 
+      AlgBlock<Adapter>(this->envConst_, this->comm_, 
         this->identifierModel_, solution_);
     }
     else if (algorithm_ == string("rcb")){
-      AlgPTRCB<base_adapter_t>(this->envConst_, this->comm_, 
+      AlgRCB<Adapter>(this->envConst_, this->comm_, 
         this->coordinateModel_, solution_);
     }
     else{
@@ -382,13 +388,13 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   idFlags_.reset();
   coordFlags_.reset();
 
-  /////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////
   // It's possible at this point that the Problem may want to
   // add problem parameters to the parameter list in the Environment. 
   //
   // Since the parameters in the Environment have already been
   // validated in its constructor, a new Environment must be created:
-  /////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////
   // Teuchos::RCP<const Teuchos::Comm<int> > oldComm = this->env_->comm_;
   // const ParameterList &oldParams = this->env_->getUnvalidatedParameters();
   // 
@@ -399,35 +405,23 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   // newPartParams.set("new_partitioning_parameter", "its_value");
   // 
   // this->env_ = rcp(new Environment(newParams, oldComm));
-  /////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////
 
   Environment &env = *(this->env_);
+  ParameterList &pl = env.getParametersNonConst();
 
-  ParameterList *general = &(env.getParametersNonConst());
-  ParameterList *partitioning = NULL;
-  if (env.hasPartitioningParameters()){
-    partitioning = &(general->sublist("partitioning"));
-  }
-
-  string unset("notSet");
+  bool isSet;
+  string defString("default");
 
   // Did the user specify a computational model?
 
-  string model(unset);
-  if (partitioning){
-    string *modelName = partitioning->getPtr<string>(string("model"));
-    if (modelName)
-      model = *modelName;
-  }
+  string model(defString);
+  getParameterValue(pl, "partitioning", "model", isSet, model);
 
   // Did the user specify an algorithm?
 
-  string algorithm(unset);
-  if (partitioning){
-    string *algorithmName = partitioning->getPtr<string>(string("algorithm"));
-    if (algorithmName)
-      algorithm = *algorithmName;
-  }
+  string algorithm(defString);
+  getParameterValue(pl, "partitioning", "algorithm", isSet, algorithm);
 
   // Possible algorithm requirements that must be conveyed to the model:
 
@@ -438,7 +432,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   // Determine algorithm, model, and algorithm requirements.  This
   // is a first pass.  Feel free to change this and add to it.
   
-  if (algorithm != unset){
+  if (algorithm != defString){
     // Figure out the model required by the algorithm
     if (algorithm == string("block") ||
         algorithm == string("random") ||
@@ -480,7 +474,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       throw std::logic_error("parameter list algorithm is invalid");
     }
   }
-  else if (model != unset){
+  else if (model != defString){
     // Figure out the algorithm suggested by the model.
     if (model == string("hypergraph")){
       modelType_ = HypergraphModelType;
@@ -569,13 +563,10 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
   // Hierarchical partitioning?
 
-  ParameterEntry *topo = NULL;
-  if (partitioning)
-    topo = partitioning->getEntryPtr("topology");
+  Array<int> valueList;
+  getParameterValue(pl, "partitioning", "topology", isSet, valueList);
 
-  if (topo){
-    Array<int> *aiVar = NULL;
-    Array<int> &valueList = topo->getValue(aiVar);
+  if (isSet){
     if (!Zoltan2::noValuesAreInRangeList(valueList)){
       int *n = new int [valueList.size() + 1];
       levelNumberParts_ = arcp(n, 0, valueList.size() + 1, true);
@@ -599,12 +590,8 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
   // Object to be partitioned? (rows, columns, etc)
 
-  string objectOfInterest(unset);
-  if (partitioning){
-    string *objectName = partitioning->getPtr<string>(string("objects"));
-    if (objectName)
-      objectOfInterest = *objectName;
-  }
+  string objectOfInterest(defString);
+  getParameterValue(pl, "partitioning", "objects", isSet, objectOfInterest);
 
   ///////////////////////////////////////////////////////////////////
   // Set model creation flags, if any.
@@ -613,30 +600,23 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
     // Any parameters in the graph sublist?
 
-    ParameterList *graphParams=NULL;
-    ParameterEntry *sublist = partitioning->getEntryPtr("graph");
-    if (sublist && sublist->isList())
-      graphParams = &(partitioning->sublist("graph"));      
+    string symParameter(defString);
+    getParameterValue(pl, "partitioning", "graph", "symmetrize_input",
+      isSet, symParameter);
 
-    if (graphParams){
-      ParameterEntry *sym= graphParams->getEntryPtr("symmetrize_input");
-      if (sym){
-        string *strVar=NULL;
-        string &symParameter = sym->getValue<string>(strVar);
-        if (symParameter == string("transpose"))
-          graphFlags_.set(SYMMETRIZE_INPUT_TRANSPOSE);
-        else if (symParameter == string("bipartite"))
-          graphFlags_.set(SYMMETRIZE_INPUT_BIPARTITE);
-      } 
+    if (isSet){
+      if (symParameter == string("transpose"))
+        graphFlags_.set(SYMMETRIZE_INPUT_TRANSPOSE);
+      else if (symParameter == string("bipartite"))
+        graphFlags_.set(SYMMETRIZE_INPUT_BIPARTITE);
+    } 
 
-      ParameterEntry *sg = graphParams->getEntryPtr("subset_graph");
-      if (sg){
-        int *intVar = NULL;
-        int &sgParameter = sg->getValue<int>(intVar);
-        if (sgParameter == 1)
-          graphFlags_.set(GRAPH_IS_A_SUBSET_GRAPH);
-      }
-    }
+    int sgParameter = 0;
+    getParameterValue(pl, "partitioning", "graph", "subset_graph",
+      isSet, sgParameter);
+
+    if (isSet && (sgParameter == 1))
+        graphFlags_.set(GRAPH_IS_A_SUBSET_GRAPH);
 
     // Any special behaviors required by the algorithm?
     
@@ -649,7 +629,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     // How does user input map to vertices and edges?
 
     if (inputType_ == MatrixAdapterType){
-      if (objectOfInterest == unset ||
+      if (objectOfInterest == defString ||
           objectOfInterest == string("matrix_rows") )
         graphFlags_.set(VERTICES_ARE_MATRIX_ROWS);
       else if (objectOfInterest == string("matrix_columns"))
@@ -659,7 +639,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     }
 
     else if (inputType_ == MeshAdapterType){
-      if (objectOfInterest == unset ||
+      if (objectOfInterest == defString ||
           objectOfInterest == string("mesh_nodes") )
         graphFlags_.set(VERTICES_ARE_MESH_NODES);
       else if (objectOfInterest == string("mesh_elements"))

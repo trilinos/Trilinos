@@ -42,12 +42,12 @@ namespace Zoltan2 {
 
  */
 
-template <typename User, typename Scalar=typename InputTraits<User>::scalar_t>
+template <typename User>
   class BasicIdentifierInput: public IdentifierInput<User> {
 
 public:
 
-  typedef Scalar scalar_t;
+  typedef typename InputTraits<User>::scalar_t    scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
@@ -105,7 +105,7 @@ public:
       dimension >= 0 && dimension < weights_.size(), BASIC_ASSERTION);
 
     size_t length;
-    weights_[dimension]->getStridedList(length, weights, stride);
+    weights_[dimension].getStridedList(length, weights, stride);
     return length;
   }
 
@@ -114,7 +114,7 @@ private:
   RCP<const Environment> env_;
   lno_t numIds_;
   const gid_t *idList_;
-  Array<RCP<StridedData<lno_t, scalar_t> > > weights_;
+  ArrayRCP<StridedData<lno_t, scalar_t> > weights_;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -125,22 +125,22 @@ template <typename User>
   BasicIdentifierInput<User>::BasicIdentifierInput(
     lno_t numIds, const gid_t *idPtr,
     vector<const scalar_t *> &weights, vector<int> &weightStrides):
-      numIds_(numIds), idList_(idPtr), weights_(weights.size())
+      numIds_(numIds), idList_(idPtr), weights_()
 {
+  typedef StridedData<lno_t,scalar_t> input_t;
   env_ = rcp(new Environment);    // for error messages
   size_t numWeights = weights.size();
 
-  if (numWeights){
-    typedef StridedData<lno_t,scalar_t> input_t;
-    if (weightStrides.size())
-      for (int i=0; i < numWeights; i++)
-        weights_[i] = rcp<input_t>(new input_t(
-          ArrayView<const scalar_t>(weights[i], weightStrides[i]*numIds),
-          weightStrides[i]));
-    else
-      for (int i=0; i < numWeights; i++)
-        weights_[i] = rcp<input_t>(new input_t(
-          ArrayView<const scalar_t>(weights[i], numIds), 1));
+  if (numWeights > 0){
+    weights_ = arcp(new input_t [numWeights], 0, numWeights, true);
+
+    if (numIds > 0){
+      for (int i=0; i < numWeights; i++){
+        int stride = weightStrides.size() ? weightStrides[i] : 1;
+        ArrayRCP<const scalar_t> wgtV(weights[i], 0, stride*numIds, false);
+        weights_[i] = input_t(wgtV, stride);
+      }
+    }
   }
 }
 

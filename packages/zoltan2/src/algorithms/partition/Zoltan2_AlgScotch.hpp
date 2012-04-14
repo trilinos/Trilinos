@@ -28,8 +28,8 @@ template <typename Adapter>
 void AlgPTScotch(
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
-  const RCP<GraphModel<Adapter> > &model,
-  RCP<PartitioningSolution<typename Adapter::user_t> > &solution
+  const RCP<GraphModel<typename Adapter::base_adapter_t> > &model,
+  RCP<PartitioningSolution<Adapter> > &solution
 
 )
 {
@@ -180,8 +180,8 @@ template <typename Adapter>
 void AlgPTScotch(
   const RCP<const Environment> &env,        // parameters & app comm
   const RCP<const Comm<int> > &problemComm, // problem comm
-  const RCP<GraphModel<Adapter> > &model,   // the graph
-  RCP<PartitioningSolution<typename Adapter::user_t> > &solution
+  const RCP<GraphModel<typename Adapter::base_adapter_t> > &model, // the graph
+  RCP<PartitioningSolution<Adapter> > &solution
 )
 {
   HELLO;
@@ -193,8 +193,6 @@ void AlgPTScotch(
   int ierr = 0;
 
   size_t numGlobalParts = solution->getGlobalNumberOfParts();
-  int weightDim = model->getNumWeights();
-  int weightFlag = (weightDim ? weightDim : 1);
 
   SCOTCH_Num partnbr;
   SCOTCH_Num_Traits<size_t>::ASSIGN_TO_SCOTCH_NUM(partnbr, numGlobalParts, env);

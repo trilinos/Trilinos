@@ -218,7 +218,8 @@ public:
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t &modelFlags):
      input_(ia), env_(env), comm_(comm),
-     gids_(), gnos_(), edgeGids_(), edgeGnos_(), procIds_(), 
+     gids_(), gnos_(), numGlobalVertices_(), 
+     edgeGids_(), edgeGnos_(), procIds_(), 
      offsets_(), gnosConst_(), edgeGnosConst_(), procIdsConst_(), 
      numLocalEdges_(0), numGlobalEdges_(0), numLocalVtx_(0), 
      gidsAreGnos_(false), nearEdgeLnos_(), nearEdgeOffsets_(), 
@@ -241,7 +242,7 @@ public:
 
   global_size_t getGlobalNumVertices() const
   {
-    return input_->getGlobalNumRows();
+    return numGlobalVertices_;
   }
 
   size_t getLocalNumEdges() const
@@ -423,6 +424,7 @@ private:
 
   ArrayRCP<const gid_t> gids_;
   ArrayRCP<gno_t> gnos_;
+  global_size_t numGlobalVertices_;
 
   // Note: in case of graph subsetting, size of these arrays
   // may be larger than numLocalEdges_.  So do not use .size().
@@ -543,6 +545,7 @@ template <typename User>
   }
   Z2_FORWARD_EXCEPTIONS;
 
+  numGlobalVertices_ = idMap->getGlobalNumberOfIds();
   gidsAreGnos_ = idMap->gnosAreGids();
 
   if (numLocalVtx_ && !gidsAreGnos_){

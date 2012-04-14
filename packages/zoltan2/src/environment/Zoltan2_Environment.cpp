@@ -23,27 +23,7 @@
 namespace Zoltan2 {
 
 //////////////////////////////////////////////////////////////////////
-// Prototypes for static namespace methods used by the Environment
-
-/*! \brief A value to indicate a string parameter that was not set by the user.
- */
-#define Z2_UNSET std::string("notSet")
-
-/*! \brief Create an output manager for a metric value.
- *
- *  \param rank  the MPI rank of the calling process in the application
- *  \param iPrint   true if this process should print metric information
- *  \param fname    name of file to which output is to be appended, or
- *                      or Z2_UNSET
- *  \param osname   "std::cout", "std::cerr", "/dev/null", or Z2_UNSET
- *  \param mgr     on return, a pointer to the created output manager
- *
- * The template parameter is the data type of the entity being measured.
- */
-
-template <typename metric_t>
-  static void makeMetricOutputManager(int rank, bool iPrint, std::string fname,
-    std::string osname, Teuchos::RCP<MetricOutputManager<metric_t> > &mgr);
+// Namespace definitions used by this class.
 
 /*! \brief Create an output manager for debugging or status information
  *
@@ -55,19 +35,34 @@ template <typename metric_t>
  *  \param mgr     on return, a pointer to the created output manager
  */
 
-static void makeDebugManager(int rank, bool iPrint,
+void makeDebugManager(int rank, bool iPrint,
   int level, std::string fname, std::string osname,
-  Teuchos::RCP<DebugManager> &mgr);
+  Teuchos::RCP<DebugManager> &mgr)
+{
+  std::ofstream *dbgFile = NULL;
+  if (iPrint && (fname != Z2_UNSET)){
+    std::string newFname;
+    addNumberToFileName(rank, fname, newFname);
+    try{
+      dbgFile = new std::ofstream;
+      dbgFile->open(newFname.c_str(), std::ios::out|std::ios::trunc);
+    }
+    catch(std::exception &e){
+      throw std::runtime_error(e.what());
+    }
+  }
 
-/*! \brief Helper method to add process rank to a file name.
- *    \param rank   the rank of the calling process
- *    \param fname  the file name to modify
- *    \param newf   on return newf is fname with the rank added to the name.
- *
- *   If fname has no dot in it, then the rank is added to the end of the name.
- *   Otherwise the rank is added before the first dot in fname.
- */
-static void addRankToFileName(int rank, std::string fname, std::string &newf);
+  MessageOutputLevel lvl = static_cast<MessageOutputLevel>(level);
+
+  if (osname == std::string("std::cout"))
+    mgr = Teuchos::rcp(new DebugManager(rank, iPrint, std::cout, lvl));
+  else if (osname == std::string("std::cerr"))
+    mgr = Teuchos::rcp(new DebugManager(rank, iPrint, std::cerr, lvl));
+  else if (dbgFile)
+    mgr = Teuchos::rcp(new DebugManager(rank, iPrint, *dbgFile, lvl));
+  else
+    mgr = Teuchos::rcp(new DebugManager(rank, false, std::cout, lvl));
+}
 
 //////////////////////////////////////////////////////////////////////
 // Environment definitions
@@ -85,8 +80,7 @@ Environment::Environment( Teuchos::ParameterList &problemParams,
 
 Environment::Environment():
   myRank_(0), numProcs_(1), comm_(), errorCheckLevel_(BASIC_ASSERTION),
-  unvalidatedParams_(Teuchos::ParameterList("emptyList")), 
-  params_(Teuchos::ParameterList("emptyList")),
+  unvalidatedParams_("emptyList"), params_("emptyList"), 
   debugOut_(), timerOut_(), memoryOut_()
 {
   comm_ = Teuchos::DefaultComm<int>::getComm();
@@ -266,120 +260,6 @@ void Environment::convertStringToInt(Teuchos::ParameterList &params)
     ++next;
   }
 }
-
-const Teuchos::ParameterList & Environment::getList(
-  const Teuchos::ParameterList &superList, const char *listName) const
-{
-  if (superList.name() == std::string("emptyList"))
-    return superList;
-
-  const Teuchos::ParameterEntry *sublist = superList.getEntryPtr(listName);
-
-  if (!sublist || !sublist->isList())
-    return Teuchos::ParameterList("emptyList");
-
-  return superList.sublist(listName);
-}
-
-template <typename T>
-  void Environment::getValue(const Teuchos::ParameterList &pl, 
-    const char *paramName, bool &isSet, T &value) const
-{
-  isSet = false;
-  value = 0;
-
-  if (pl.name() == std::string("emptyList"))
-    return;
-
-  const Teuchos::ParameterEntry *pe = pl.getEntryPtr(paramName);
-
-  if (!pe)
-    return;
-
-  isSet = true;
-  value = pe->getValue<T>(&value);
-}
-
-//////////////////////////////////////////////////////////////////////
-// Definitions static methods used by the Environment
-
-static void addRankToFileName(int rank, std::string fname, std::string &newf)
-{
-  std::ostringstream id;
-  id << "_";
-  id.width(6);
-  id.fill('0');
-  id << rank;
-
-  std::ostringstream localFileName;
-  std::string::size_type loc = fname.find('.');
-
-  if (loc == std::string::npos)
-    localFileName << fname << id.str();
-  else
-    localFileName << fname.substr(0, loc) << id.str() << fname.substr(loc);
-
-  newf = localFileName.str();
-}
-
-template<typename metric_t>
-  static void makeMetricOutputManager(int rank, bool iPrint, std::string fname, 
-    std::string osname, Teuchos::RCP<MetricOutputManager<metric_t> > &mgr)
-{
-  std::ofstream oFile;
-
-  if (fname != Z2_UNSET){
-    std::string newFname;
-    addRankToFileName(rank, fname, newFname);
-
-    try{
-      oFile.open(newFname.c_str(), std::ios::out|std::ios::trunc);
-    }
-    catch(std::exception &e){
-      throw std::runtime_error(e.what());
-    }
-  }
-
-  typedef MetricOutputManager<metric_t> manager_t;
-
-  if (osname == std::string("std::cout"))
-    mgr = Teuchos::rcp(new manager_t(rank, iPrint, std::cout, true));
-  else if (osname == std::string("std::cerr"))
-    mgr = Teuchos::rcp(new manager_t(rank, iPrint, std::cerr, true));
-  else if (osname != std::string("/dev/null"))
-    mgr = Teuchos::rcp(new manager_t(rank, iPrint, oFile, true));
-  else
-    mgr = Teuchos::rcp(new manager_t(rank, false, std::cout, true));
-}
-
-static void makeDebugManager(int rank, bool iPrint,
-  int level, std::string fname, std::string osname,
-  Teuchos::RCP<DebugManager> &mgr)
-{
-  std::ofstream dbgFile;
-  if (fname != Z2_UNSET){
-    std::string newFname;
-    addRankToFileName(rank, fname, newFname);
-    try{
-      dbgFile.open(newFname.c_str(), std::ios::out|std::ios::trunc);
-    }
-    catch(std::exception &e){
-      throw std::runtime_error(e.what());
-    }
-  }
-
-  MessageOutputLevel lvl = static_cast<MessageOutputLevel>(level);
-
-  if (osname == std::string("std::cout"))
-    mgr = Teuchos::rcp(new DebugManager(rank, iPrint, std::cout, lvl));
-  else if (osname == std::string("std::cerr"))
-    mgr = Teuchos::rcp(new DebugManager(rank, iPrint, std::cerr, lvl));
-  else if (osname != std::string("/dev/null"))
-    mgr = Teuchos::rcp(new DebugManager(rank, iPrint, dbgFile, lvl));
-  else
-    mgr = Teuchos::rcp(new DebugManager(rank, false, std::cout, lvl));
-}
-
 
 }  //namespace Zoltan2
 

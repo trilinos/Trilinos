@@ -48,10 +48,9 @@ void partToProc(
   const RCP<const Teuchos::Comm<int> > &comm,
   bool doCheck, bool haveNumLocalParts, bool haveNumGlobalParts,
   partId_t numLocalParts, partId_t numGlobalParts, 
-  bool &oneToOne, vector<int> &partDist, vector<partId_t> procDist)
+  bool &oneToOne, vector<int> &partDist, vector<partId_t> &procDist)
 {
   int nprocs = comm->getSize();
-  int rank = comm->getRank();
   size_t vals[4] = {haveNumGlobalParts, haveNumLocalParts,
       numGlobalParts, numLocalParts};
   size_t reducevals[4];

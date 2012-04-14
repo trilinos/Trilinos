@@ -69,7 +69,7 @@ int main(int argc, char **argv)
 
   problem.solve();
 
-  Zoltan2::PartitioningSolution<mydata_t> solution = problem.getSolution();
+  Zoltan2::PartitioningSolution<adapter_t> solution = problem.getSolution();
 
   scalar_t *totalWeight = new scalar_t [nprocs];
   scalar_t *sumWeight = new scalar_t [nprocs];
@@ -77,7 +77,7 @@ int main(int argc, char **argv)
 
   const gno_t *idList = solution.getIdList();
   const zoltan2_partId_t *partList = solution.getPartList();
-  const float *metrics = solution.getImbalance();
+  const scalar_t libImbalance = solution.getImbalance();
 
   for (lno_t i=0; !fail && i < numMyIdentifiers; i++){
     if (idList[i] != myIds[i])
@@ -128,13 +128,13 @@ int main(int argc, char **argv)
     imbalance += 1.0;
 
     std::cout << "Computed imbalance: " << imbalance << std::endl;
-    std::cout << "Returned imbalance: " << metrics[0] << std::endl;
+    std::cout << "Library's imbalance: " << libImbalance << std::endl;
 
     double err;
-    if (imbalance > metrics[0])
-      err = imbalance - metrics[0];
+    if (imbalance > libImbalance)
+      err = imbalance - libImbalance;
     else
-      err = metrics[0] - imbalance;
+      err = libImbalance - imbalance;
 
     if (err > epsilon)
       fail = 1;

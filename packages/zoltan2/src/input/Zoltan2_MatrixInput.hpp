@@ -60,17 +60,17 @@ namespace Zoltan2 {
              or column weights, or is this something the algorithm
              will add?
       \todo  This is a row-oriented matrix.  Do we need a column-oriented
-              matrix?
+              matrix?  In particular - we assumed coordinates are for rows.
 */
 
-template <typename User, typename Scalar=typename InputTraits<User>::scalar_t>
+template <typename User>
   class MatrixInput : public InputAdapter {
 private:
 
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef Scalar scalar_t;
+  typedef typename InputTraits<User>::scalar_t    scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
@@ -88,17 +88,9 @@ public:
    */
   virtual size_t getLocalNumRows() const = 0;
 
-  /*! \brief Returns the global number rows.
-   */
-  virtual global_size_t getGlobalNumRows() const = 0;
-
   /*! \brief Returns the number columns on this process.
    */
   virtual size_t getLocalNumColumns() const = 0;
-
-  /*! \brief Returns the global number columns.
-   */
-  virtual global_size_t getGlobalNumColumns() const = 0;
 
   /*! \brief Return true if the sparse square matrix may globally have
    *  diagonal entries.  Return false otherwise.
@@ -170,9 +162,9 @@ public:
    *  \return   Returns the number of Ids in the new partitioning.
    */
 
-  template <typename User2>
+  template <typename Adapter>
     size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<User2> &solution) const
+         const PartitioningSolution<Adapter> &solution) const
   {
     return 0;
   }

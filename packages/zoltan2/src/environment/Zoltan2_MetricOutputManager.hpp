@@ -14,6 +14,7 @@
 
 #include <string>
 #include <iostream>
+#include <fstream>
 
 namespace Zoltan2
 {
@@ -44,6 +45,19 @@ template <typename T>
 {
     public:
 
+    /*! \brief Constructor for output to a file.
+     *   \param rank         the MPI rank of this process.
+     *   \param doPrinting  true if this process outputs messages.
+     *   \param messageOs      the output stream for messages.
+     *   \param metricsOn   true if any process outputs messages.
+     */
+
+    MetricOutputManager (int rank, bool doPrinting, std::ofstream &Os, 
+      bool metricsOn): me_(rank), 
+        os_(static_cast<std::ostream *>(&Os)), osFile_(&Os),
+        iPrint_(doPrinting), wePrint_(metricsOn){}
+
+
     /*! \brief Constructor
      *   \param rank         the MPI rank of this process.
      *   \param doPrinting  true if this process outputs messages.
@@ -51,17 +65,18 @@ template <typename T>
      *   \param metricsOn   true if any process outputs messages.
      */
 
-    MetricOutputManager ( int rank, bool doPrinting, std::ostream &Os, bool metricsOn)
-    {
-      me_ = rank;
-      iPrint_ = doPrinting;
-      os_ = &Os;
-      wePrint_ = metricsOn;
-    }
+    MetricOutputManager (int rank, bool doPrinting, std::ostream &Os, 
+      bool metricsOn): me_(rank), os_(&Os), osFile_(NULL), 
+        iPrint_(doPrinting), wePrint_(metricsOn){}
 
     /*! \brief Destructor
      */
-    virtual ~MetricOutputManager() {};
+    ~MetricOutputManager() 
+    {
+      os_->flush();
+      if (osFile_)
+        osFile_->close();
+    };
 
     /*! \brief Return the output stream for debug/status messages.
      */
@@ -97,6 +112,7 @@ private:
 
     int me_;
     std::ostream *os_;
+    std::ofstream *osFile_;
     bool iPrint_;    // I am printing metrics
     bool wePrint_;   // at least one process is printing metrics
 };

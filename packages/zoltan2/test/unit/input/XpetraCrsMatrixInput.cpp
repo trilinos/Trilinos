@@ -71,16 +71,10 @@ int verifyInputAdapter(
   if (!fail && ia.getLocalNumRows() != M.getNodeNumRows())
     fail = 4;
 
-  if (!fail && ia.getGlobalNumRows() != M.getGlobalNumRows())
-    fail = 5;
-
   if (M.getNodeNumRows()){
     if (!fail && ia.getLocalNumColumns() != M.getNodeNumCols())
       fail = 6;
   }
-
-  if (!fail && ia.getGlobalNumColumns() != M.getGlobalNumCols())
-    fail = 7;
 
   gfail = globalFail(comm, fail);
 
@@ -186,8 +180,7 @@ int main(int argc, char *argv[])
     if (!gfail){
       tmatrix_t *mMigrate = NULL;
       try{
-        tMInput->applyPartitioningSolution<adapter_t, tmatrix_t>(
-          *tM, mMigrate, solution);
+        tMInput->applyPartitioningSolution(*tM, mMigrate, solution);
         newM = rcp(mMigrate);
       }
       catch (std::exception &e){
@@ -248,8 +241,7 @@ int main(int argc, char *argv[])
     if (!gfail){
       xmatrix_t *mMigrate =NULL;
       try{
-        xMInput->applyPartitioningSolution<adapter_t, xmatrix_t>(
-          *xM, mMigrate, solution);
+        xMInput->applyPartitioningSolution(*xM, mMigrate, solution);
       }
       catch (std::exception &e){
         fail = 11;
@@ -311,8 +303,7 @@ int main(int argc, char *argv[])
     if (!gfail){
       ematrix_t *mMigrate =NULL;
       try{
-        eMInput->applyPartitioningSolution<adapter_t, tmatrix_t>(
-          *eM, mMigrate, solution);
+        eMInput->applyPartitioningSolution(*eM, mMigrate, solution);
       }
       catch (std::exception &e){
         fail = 11;

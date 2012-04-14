@@ -78,7 +78,6 @@ public:
   typedef typename Adapter::gid_t    gid_t;
   typedef typename Adapter::scalar_t    scalar_t;
   typedef typename Adapter::user_t    user_t;
-  typedef StridedData<lno_t, scalar_t> input_t;
   typedef IdentifierMap<user_t> idmap_t;
 #endif
 

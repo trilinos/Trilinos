@@ -79,6 +79,14 @@ using Teuchos::gatherAll;
 //   Prepend API types with zoltan2_.
 //////////////////////////////////////////////////////
 
+/*! \brief a data type for part IDs
+ *
+ * Partitioning algorithms deal with part lists, which
+ * have length on the order of the number of objects.
+ * Defining a part ID data type to be a small integral
+ * can save significant storage at runtime.
+ */
+
 typedef int zoltan2_partId_t;
 
 namespace Zoltan2{

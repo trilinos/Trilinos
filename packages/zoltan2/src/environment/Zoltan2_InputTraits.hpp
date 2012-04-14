@@ -24,6 +24,31 @@
 
 namespace Zoltan2{
 
+typedef int default_lno_t;
+
+#ifdef HAVE_ZOLTAN2_INST_FLOAT_INT_LONG
+typedef float default_scalar_t;
+typedef long default_gno_t;
+#else
+ #ifdef HAVE_ZOLTAN2_INST_DOUBLE_INT_LONG
+ typedef double default_scalar_t;
+ typedef long default_gno_t;
+ #else
+  #ifdef HAVE_ZOLTAN2_INST_FLOAT_INT_INT
+  typedef float default_scalar_t;
+  typedef int default_gno_t;
+  #else
+   #ifdef HAVE_ZOLTAN2_INST_DOUBLE_INT_INT
+   typedef double default_scalar_t;
+   typedef int default_gno_t;
+   #else
+   typedef double default_scalar_t;
+   typedef int default_gno_t;
+   #endif
+  #endif
+ #endif
+#endif
+
 /*! \brief A simple class that can be the User template argument 
  *             for an InputAdapter.
  *
@@ -107,17 +132,17 @@ struct InputTraits {
 
   /*! \brief The data type for weights and coordinates.
    */
-  typedef float scalar_t;
+  typedef default_scalar_t scalar_t;
 
   /*! \brief The ordinal type (e.g., int, long, int64_t) that represents
    *              local counts and local indices.
    */
-  typedef int   lno_t;
+  typedef default_lno_t lno_t;
 
   /*! \brief The ordinal type (e.g., int, long, int64_t) that can represent
    *             global counts and identifiers.
    */
-  typedef long  gno_t;
+  typedef default_gno_t gno_t;
 
   /*! \brief The data type that the user uses for global Identifiers.
    *
@@ -125,7 +150,7 @@ struct InputTraits {
    *   user uses Ids that are not Teuchos Ordinals, such as
    *   pair<int, int> then this is different.  
    */
-  typedef long  gid_t;
+  typedef default_gno_t gid_t;
 
   /*! \brief  The Kokkos node type.  This is only meaningful for users
    *             of Tpetra objects.
@@ -197,7 +222,7 @@ template <typename LocalOrdinal,
           typename Node>
 struct InputTraits<Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
 {
-  typedef float         scalar_t;
+  typedef default_scalar_t scalar_t;
   typedef LocalOrdinal  lno_t;
   typedef GlobalOrdinal gno_t;
   typedef GlobalOrdinal gid_t;
@@ -210,7 +235,7 @@ template <typename LocalOrdinal,
           typename Node>
 struct InputTraits<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
 {
-  typedef float         scalar_t;
+  typedef default_scalar_t scalar_t;
   typedef LocalOrdinal  lno_t;
   typedef GlobalOrdinal gno_t;
   typedef GlobalOrdinal gid_t;
@@ -221,7 +246,7 @@ struct InputTraits<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
 template < >
 struct InputTraits<Epetra_CrsGraph>
 {
-  typedef float scalar_t;
+  typedef double scalar_t;
   typedef int   lno_t;
   typedef int   gno_t;
   typedef int   gid_t;

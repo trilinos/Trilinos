@@ -43,17 +43,17 @@ namespace Zoltan2 {
 
 */
 
-template <typename User, typename Scalar=typename InputTraits<User>::scalar_t>
-  class XpetraVectorInput : public VectorInput<User, Scalar> {
+template <typename User>
+  class XpetraVectorInput : public VectorInput<User> {
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef Scalar scalar_t;
+  typedef typename InputTraits<User>::scalar_t    scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
   typedef typename InputTraits<User>::node_t   node_t;
-  typedef VectorInput<User, Scalar>       base_adapter_t;
+  typedef VectorInput<User>       base_adapter_t;
   typedef User user_t;
 
   typedef Xpetra::Vector<
@@ -133,7 +133,7 @@ public:
 
     size_t length;
 
-    weights_[dim]->getStridedList(length, weights, stride);
+    weights_[dim].getStridedList(length, weights, stride);
 
     return length;
   }
@@ -151,20 +151,20 @@ private:
   lno_t base_;
 
   int numWeights_;
-  Array<RCP<StridedData<lno_t, scalar_t> > > weights_;
+  ArrayRCP<StridedData<lno_t, scalar_t> > weights_;
 };
 
 ////////////////////////////////////////////////////////////////
 // Definitions
 ////////////////////////////////////////////////////////////////
   
-template <typename User, typename Scalar
-  XpetraVectorInput<User, Scalar>::XpetraVectorInput(
+template <typename User>
+  XpetraVectorInput<User>::XpetraVectorInput(
     const RCP<const User> &invector, 
-    vector<const Scalar *> &weights, vector<int> &weightStrides):
+    vector<const scalar_t *> &weights, vector<int> &weightStrides):
       invector_(invector), vector_(), map_(),
       env_(rcp(new Environment)), base_(),
-      numWeights_(weights.size()), weights_(weights.size())
+      numWeights_(weights.size()), weights_()
 {
   typedef StridedData<lno_t, scalar_t> input_t;
 
@@ -174,20 +174,23 @@ template <typename User, typename Scalar
 
   size_t length = vector_->getLocalLength();
 
+  if (numWeights_ > 0)
+    weights_ = arcp(new input_t [numWeights_], 0, numWeights_, true);
+
   if (length > 0 && numWeights_ > 0){
     int stride = 1;
     for (int w=0; w < numWeights_; w++){
       if (weightStrides.size())
         stride = weightStrides[w];
-      weights_[w] = rcp<input_t>(new input_t(
-        ArrayView<const scalar_t>(weights[w], stride*length), stride));
+      ArrayRCP<const scalar_t> wtArray(weights[w], 0, stride*length, false);
+      weights_[w] = input_t(wtArray, stride);
     }
   }
 }
 
-template <typename User, typename Scalar>
-  size_t XpetraVectorInput<User, Scalar>::getVector(const gid_t *&Ids, 
-    const Scalar *&elements, int &stride) const
+template <typename User>
+  size_t XpetraVectorInput<User>::getVector(const gid_t *&Ids, 
+    const scalar_t *&elements, int &stride) const
 {
   stride = 1;
   elements = NULL;
@@ -224,9 +227,9 @@ template <typename User, typename Scalar>
   return getLocalLength();
 }
 
-template <typename User, typename Scalar>
+template <typename User>
   template <typename Adapter>
-    size_t XpetraVectorInput<User, Scalar>::applyPartitioningSolution(
+    size_t XpetraVectorInput<User>::applyPartitioningSolution(
       const User &in, User *&out, 
       const PartitioningSolution<Adapter> &solution) const
 { 

@@ -18,6 +18,7 @@
 #include <Zoltan2_Solution.hpp>
 #include <Zoltan2_Metric.hpp>
 #include <Zoltan2_PartToProc.hpp>
+#include <Zoltan2_GetParameter.hpp>
 
 #include <cmath>
 #include <algorithm>
@@ -43,11 +44,11 @@ template <typename Adapter>
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef Adapter::gno_t gno_t;
-  typedef Adapter::scalar_t scalar_t;
-  typedef Adapter::lno_t lno_t;
-  typedef Adapter::gid_t gid_t;
-  typedef Adapter::user_t user_t;
+  typedef typename Adapter::gno_t gno_t;
+  typedef typename Adapter::scalar_t scalar_t;
+  typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::gid_t gid_t;
+  typedef typename Adapter::user_t user_t;
 #endif
 
 /*! \brief Constructor when part sizes are not supplied.
@@ -273,6 +274,14 @@ public:
       return 0.0;
   }
 
+  /*! \brief Get the array of metrics
+   *
+   *   \todo We need a better interface for users to this data.
+   */
+  const ArrayRCP<MetricValues<scalar_t> > &getMetrics() const { 
+    return qualityMetrics_;
+  }
+
   /*! \brief Get the parts belonging to a process.
    *  \param procId a process rank
    *  \param numParts on return will be set the number of parts belonging
@@ -296,7 +305,7 @@ public:
     env_->localInputAssertion(__FILE__, __LINE__, "invalid process id",
       procId >= 0 && procId < comm_->getSize(), BASIC_ASSERTION);
 
-    procToParts(procId, numParts, partMin, partMax);
+    procToPartsMap(procId, numParts, partMin, partMax);
   }
 
   /*! \brief Get the processes containing a part.
@@ -315,14 +324,14 @@ public:
     env_->localInputAssertion(__FILE__, __LINE__, "invalid part id",
       partId >= 0 && partId < nGlobalParts_, BASIC_ASSERTION);
 
-    partToProcs(partId, procMin, procMax);
+    partToProcsMap(partId, procMin, procMax);
   }
 
 private:
-  void procToParts(int procId, double &numParts, partId_t &partMin, 
+  void procToPartsMap(int procId, double &numParts, partId_t &partMin, 
     partId_t &partMax) const;
 
-  void partToProcs(partId_t partId, int &procMin, int &procMax) const;
+  void partToProcsMap(partId_t partId, int &procMin, int &procMax) const;
 
   void setPartDistribution();
 
@@ -506,7 +515,8 @@ template <typename Adapter>
 
   try{
     partToProc(env_, comm_, true, 
-      haveLocalNumParts, haveGlobalNumParts, nGlobalParts_, nLocalParts_,
+      haveLocalNumParts, haveGlobalNumParts, 
+      static_cast<partId_t>(nLocalParts_), static_cast<partId_t>(nGlobalParts_),
       onePartPerProc_, partDist_, procDist_);
   }
   Z2_FORWARD_EXCEPTIONS
@@ -547,7 +557,9 @@ template <typename Adapter>
 {
   int wdim = weightDim_;
   bool fail=false;
-  size_t *counts = new size_t [wdim*2];
+
+  size_t *countBuf = new size_t [wdim*2];
+  ArrayRCP<size_t> counts(countBuf, 0, wdim*2, true);
 
   fail = ((ids.size() != wdim) || (sizes.size() != wdim));
 
@@ -576,9 +588,11 @@ template <typename Adapter>
     return;   // there's only one part in the whole problem
   }
 
+  size_t *ptr1 = counts.getRawPtr();
+  size_t *ptr2 = counts.getRawPtr() + wdim;
+
   try{
-    reduceAll<int, size_t>(*comm_, Teuchos::REDUCE_MAX, wdim, counts, 
-      counts + wdim);
+    reduceAll<int, size_t>(*comm_, Teuchos::REDUCE_MAX, wdim, ptr1, ptr2);
   }
   Z2_THROW_OUTSIDE_ERROR(*env_);
 
@@ -626,7 +640,8 @@ template <typename Adapter>
     if (rank == 0){
       try{
         gno_t numVals = recvIds.size();
-        computePartSizes(w, recvIds.view(0,numVals), recvSizes.view(0,numVals));
+        computePartSizes(w, recvIds.view(0,numVals), 
+          recvSizes.view(0,numVals));
       }
       Z2_FORWARD_EXCEPTIONS
     }
@@ -1140,7 +1155,7 @@ template <typename Adapter>
 
       int procId;
       for (lno_t i=0; i < len; i++){
-        partToProcs(parts[i], procs[i], procId);
+        partToProcsMap(parts[i], procs[i], procId);
       }
     }
     else{  // harder - we need to split the parts across multiple procs
@@ -1203,7 +1218,7 @@ template <typename Adapter>
 }
 
 template <typename Adapter>
-  void PartitioningSolution<Adapter>::procToParts(int procId, 
+  void PartitioningSolution<Adapter>::procToPartsMap(int procId, 
     double &numParts, partId_t &partMin, partId_t &partMax) const
 {
   if (onePartPerProc_){
@@ -1229,7 +1244,7 @@ template <typename Adapter>
 }
 
 template <typename Adapter>
-  void PartitioningSolution<Adapter>::partToProcs(partId_t partId, 
+  void PartitioningSolution<Adapter>::partToProcsMap(partId_t partId, 
     int &procMin, int &procMax) const
 {
   if (onePartPerProc_){
