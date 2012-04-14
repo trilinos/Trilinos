@@ -306,35 +306,64 @@ namespace stk {
       /**
        * file with all node/proc pairs to determine shared/non-shared nodes and ownership
        */
-      void createGlobalNodesFile()
+      void createGlobalNodesFiles()
       {
         std::fstream file;
-        //file.open(m_globalIdFile.c_str(), std::ios_base::out | std::ios_base::trunc);
-        std::string m_globalNodesFile = "global_nodes.yaml";
-        file.open(m_globalNodesFile.c_str(), std::ios_base::out | std::ios_base::trunc);
-        if (!file.is_open())
+        for (int jM = 0; jM < M; jM++)
           {
-            throw std::runtime_error(std::string("SerializeNodeRegistry::createGlobalNodesFile couldn't open file ")+m_globalNodesFile);
+            //file.open(m_globalIdFile.c_str(), std::ios_base::out | std::ios_base::trunc);
+            std::string m_globalNodesFile = std::string("global_nodes.yaml")+"."+toString(M)+"."+toString(jM);
+            file.open(m_globalNodesFile.c_str(), std::ios_base::out | std::ios_base::trunc);
+            if (!file.is_open())
+              {
+                throw std::runtime_error(std::string("SerializeNodeRegistry::createGlobalNodesFiles couldn't open file ")+m_globalNodesFile);
+              }
+            YAML::Emitter out;
+            out << YAML::BeginMap; YAML_CHECK(out);
+            NodeMap::iterator iter;
+            for (iter = m_nodeMap->begin(); iter != m_nodeMap->end(); ++iter)
+              {
+                NodeMapValue& procs = iter->second;
+                if (procs.size() <= 1) throw std::logic_error("SerializeNodeRegistry::createGlobalNodesFiles procs.size is <=1");
+                NodeMapValue::iterator find_my_proc = std::find(procs.begin(), procs.end(), jM);
+                if (find_my_proc != procs.end())  // shared by me 
+                  {
+                    if (procs[0] == jM)  // I own it
+                      {
+                      }
+
+                    out << YAML::Key << iter->first;     YAML_CHECK(out);
+                    out << YAML::Value;                  YAML_CHECK(out);
+                    // not strictly necessary, but we'll leave it as a sequence to be consistent with NodeMap type
+                    out << YAML::Flow;                YAML_CHECK(out);
+                    out << YAML::BeginSeq;            YAML_CHECK(out);
+                    // put out the owner of the node
+                    out << procs[0];                  YAML_CHECK(out);
+                    out << YAML::EndSeq;              YAML_CHECK(out);
+                  }
+              }
+            out << YAML::EndMap; YAML_CHECK(out);
+            file << out.c_str();
+            file.close();
           }
-        YAML::Emitter out;
-        out << YAML::BeginMap; YAML_CHECK(out);
+      }
+
+      void cullNodeMap()
+      {
         NodeMap::iterator iter;
+        std::vector<NodeMapKey> non_shared;
         for (iter = m_nodeMap->begin(); iter != m_nodeMap->end(); ++iter)
           {
-            out << YAML::Key << iter->first;     YAML_CHECK(out);
-            out << YAML::Value;                  YAML_CHECK(out);
             const NodeMapValue& procs = iter->second;
-            out << YAML::Flow;                YAML_CHECK(out);
-            out << YAML::BeginSeq;            YAML_CHECK(out);
-            for (unsigned ip=0; ip < procs.size(); ip++)
+            if (procs.size() == 1)
               {
-                out << procs[ip];             YAML_CHECK(out);
+                non_shared.push_back(iter->first);
               }
-            out << YAML::EndSeq;              YAML_CHECK(out);
           }
-        out << YAML::EndMap; YAML_CHECK(out);
-        file << out.c_str();
-        file.close();
+        for (unsigned i = 0; i < non_shared.size(); i++)
+          {
+            m_nodeMap->erase(non_shared[i]);
+          }
       }
 
       // node, proc owner
@@ -345,7 +374,7 @@ namespace stk {
 
         std::fstream file;
         //file.open(m_globalIdFile.c_str(), std::ios_base::out | std::ios_base::trunc);
-        std::string m_globalNodesFile = "global_nodes.yaml";
+        std::string m_globalNodesFile = std::string("global_nodes.yaml")+"."+toString(M)+"."+toString(iM);
         file.open(m_globalNodesFile.c_str(), std::ios_base::in);
         if (!file.is_open())
           {
@@ -365,9 +394,11 @@ namespace stk {
                     const YAML::Node& key = iter.first();
                     stk::mesh::EntityId id;
                     key >> id;
-                    unsigned proc;
+                    NodeMapValue procs;
                     const YAML::Node& val = iter.second();
-                    val >> proc;
+                    val >> procs;
+                    if (procs.size() != 1) 
+                      throw std::logic_error(std::string("SerializeNodeRegistry::readGlobalNodesFile procs.size is != 1, = ")+toString(procs.size()));
                     //(*m_nodeMap)[id] = proc;
                   }
               }
@@ -453,7 +484,8 @@ namespace stk {
           }
         if (iM == M-1)
           {
-            createGlobalNodesFile();
+            cullNodeMap();
+            createGlobalNodesFiles();
           }
       }
 
