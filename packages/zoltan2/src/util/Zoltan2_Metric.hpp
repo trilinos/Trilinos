@@ -53,11 +53,11 @@ private:
   void resetValues(){
     scalar_t *tmp = new scalar_t [evalNumMetrics];
     memset(tmp, 0, sizeof(scalar_t) * evalNumMetrics);
-    values = arcp(tmp, 0, evalNumMetrics);
+    values_ = arcp(tmp, 0, evalNumMetrics, true);
   }
-  ArrayRCP<scalar_t> values;
-  string metricName;
-  multiCriteriaNorm mcnorm;
+  ArrayRCP<scalar_t> values_;
+  string metricName_;
+  multiCriteriaNorm mcnorm_;   // store "actualNorm + 1"
 
 public:
 
@@ -77,7 +77,7 @@ enum metricOffset{
   evalMinImbalance, /*!< the imbalance of best balanced part */
   evalAvgImbalance, /*!< the average of the part imbalances */
   evalMaxImbalance, /*!< the worst, which is the overall imbalance */
-  evalNumMetrics    /*!< the number of metric values */
+  evalNumMetrics    /*!< the number of metric values_ */
 };
 
 /*! \brief Print a standard header 
@@ -93,74 +93,79 @@ static void printHeader(ostream &os);
 void printLine(ostream &os) const;
 
 /*! \brief Constructor */
-MetricValues(string mname) : metricName(mname), mcnorm() { resetValues();}
+MetricValues(string mname) : 
+  values_(), metricName_(mname), mcnorm_(multiCriteriaNorm(0)) { 
+    resetValues();}
 
 /*! \brief Constructor */
-MetricValues() : metricName("unset"), mcnorm() { resetValues();}
+MetricValues() : 
+  values_(), metricName_("unset"), mcnorm_(multiCriteriaNorm(0)) { 
+    resetValues();}
 
 /*! \brief Set or reset the name.  */
-void setName(string name) { metricName = name;}
+void setName(string name) { metricName_ = name;}
 
 /*! \brief Set or reset the norm.  */
-void setNorm(multiCriteriaNorm normVal) { mcnorm = normVal;}
+void setNorm(multiCriteriaNorm normVal) { 
+  mcnorm_ = multiCriteriaNorm(normVal+1);}
 
 /*! \brief Set the sum on the local process.  */
-void setLocalSum(scalar_t x) { values[evalLocalSum] = x;}
+void setLocalSum(scalar_t x) { values_[evalLocalSum] = x;}
 
 /*! \brief Set the global sum.  */
-void setGlobalSum(scalar_t x) { values[evalGlobalSum] = x;}
+void setGlobalSum(scalar_t x) { values_[evalGlobalSum] = x;}
 
 /*! \brief Set the global minimum across parts.  */
-void setGlobalMin(scalar_t x) { values[evalGlobalMin] = x;}
+void setGlobalMin(scalar_t x) { values_[evalGlobalMin] = x;}
 
 /*! \brief Set the global maximum across parts.  */
-void setGlobalMax(scalar_t x) { values[evalGlobalMax] = x;}
+void setGlobalMax(scalar_t x) { values_[evalGlobalMax] = x;}
 
 /*! \brief Set the global average (sum / numParts).  */
-void setGlobalAvg(scalar_t x) { values[evalGlobalAvg] = x;}
+void setGlobalAvg(scalar_t x) { values_[evalGlobalAvg] = x;}
 
 /*! \brief Set the imbalance of the least imbalanced part. */
-void setMinImbalance(scalar_t x) { values[evalMinImbalance] = x;}
+void setMinImbalance(scalar_t x) { values_[evalMinImbalance] = x;}
 
 /*! \brief Set the imbalance of the worst imbalanced part. 
      This is what we normally call the imbalance of a partition.
 */
-void setMaxImbalance(scalar_t x) { values[evalMaxImbalance] = x;}
+void setMaxImbalance(scalar_t x) { values_[evalMaxImbalance] = x;}
 
 /*! \brief Set the average imbalance of all parts. */
-void setAvgImbalance(scalar_t x) { values[evalAvgImbalance] = x;}
+void setAvgImbalance(scalar_t x) { values_[evalAvgImbalance] = x;}
 
 /*! \brief Get the name of the item measured. */
-const string &getName() const { return metricName; }
+const string &getName() const { return metricName_; }
 
 /*! \brief Get the norm.  */
-multiCriteriaNorm getNorm() { return mcnorm;}
+multiCriteriaNorm getNorm() { return multiCriteriaNorm(mcnorm_-1);}
 
 /*! \brief Get the sum on the local process. */
-scalar_t getLocalSum() const { return values[evalLocalSum];}
+scalar_t getLocalSum() const { return values_[evalLocalSum];}
 
 /*! \brief Get the global sum for all parts. */
-scalar_t getGlobalSum() const { return values[evalGlobalSum];}
+scalar_t getGlobalSum() const { return values_[evalGlobalSum];}
 
 /*! \brief Get the global minimum across all parts. */
-scalar_t getGlobalMin() const { return values[evalGlobalMin];}
+scalar_t getGlobalMin() const { return values_[evalGlobalMin];}
 
 /*! \brief Get the global maximum across all parts. */
-scalar_t getGlobalMax() const { return values[evalGlobalMax];}
+scalar_t getGlobalMax() const { return values_[evalGlobalMax];}
 
 /*! \brief Get the average of the sum over all parts. */
-scalar_t getGlobalAvg() const { return values[evalGlobalAvg];}
+scalar_t getGlobalAvg() const { return values_[evalGlobalAvg];}
 
 /*! \brief Get the imbalance of the least imbalanced part. */
-scalar_t getMinImbalance() const { return values[evalMinImbalance];}
+scalar_t getMinImbalance() const { return values_[evalMinImbalance];}
 
 /*! \brief Get the imbalance of the most imbalanced part. 
      This is what we normally call the imbalance of a partition.
 */
-scalar_t getMaxImbalance() const { return values[evalMaxImbalance];}
+scalar_t getMaxImbalance() const { return values_[evalMaxImbalance];}
 
 /*! \brief Get the average of the part imbalances. */
-scalar_t getAvgImbalance() const { return values[evalAvgImbalance];}
+scalar_t getAvgImbalance() const { return values_[evalAvgImbalance];}
 
 };  // end class
 
@@ -168,22 +173,22 @@ scalar_t getAvgImbalance() const { return values[evalAvgImbalance];}
 template <typename scalar_t>
   void MetricValues<scalar_t>::printLine(ostream &os) const
 {
-  string label(metricName);
-  if (mcnorm > 0){
-    multiCriteriaNorm realNorm = multiCriteriaNorm(mcnorm - 1);
+  string label(metricName_);
+  if (mcnorm_ > 0){
+    multiCriteriaNorm realNorm = multiCriteriaNorm(mcnorm_ - 1);
     ostringstream oss;
     switch (realNorm){
       case normMinimizeTotalWeight:   // 1-norm = Manhattan norm 
-        oss << metricName << " (1)";
+        oss << metricName_ << " (1)";
         break;
       case normBalanceTotalMaximum:   // 2-norm = sqrt of sum of squares
-        oss << metricName << " (2)";
+        oss << metricName_ << " (2)";
         break;
       case normMinimizeMaximumWeight: // inf-norm = maximum norm 
-        oss << metricName << " (inf)";
+        oss << metricName_ << " (inf)";
         break;
       default:
-        oss << metricName << " (?)";
+        oss << metricName_ << " (?)";
         break;
     }
 
@@ -191,13 +196,13 @@ template <typename scalar_t>
   }
 
   os << setw(20) << label;
-  os << setw(12) << setprecision(4) << values[evalGlobalMin];
-  os << setw(12) << setprecision(4) << values[evalGlobalMax];
-  os << setw(12) << setprecision(4) << values[evalGlobalAvg];
+  os << setw(12) << setprecision(4) << values_[evalGlobalMin];
+  os << setw(12) << setprecision(4) << values_[evalGlobalMax];
+  os << setw(12) << setprecision(4) << values_[evalGlobalAvg];
   os << setw(2) << " ";
-  os << setw(6) << setprecision(4) << values[evalMinImbalance];
-  os << setw(6) << setprecision(4) << values[evalMaxImbalance];
-  os << setw(6) << setprecision(4) << values[evalAvgImbalance];
+  os << setw(6) << setprecision(4) << values_[evalMinImbalance];
+  os << setw(6) << setprecision(4) << values_[evalMaxImbalance];
+  os << setw(6) << setprecision(4) << values_[evalAvgImbalance];
   os << endl;
 }
 
@@ -663,7 +668,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
     getStridedStats<scalar_t>(normedWVec, 1, 0, min, max, sum);
 
     if (vwgtDim > 1)
-      metrics[next].setNorm(multiCriteriaNorm(mcNorm+1));
+      metrics[next].setNorm(multiCriteriaNorm(mcNorm));
 
     metrics[next].setGlobalMin(min);
     metrics[next].setGlobalMax(max);

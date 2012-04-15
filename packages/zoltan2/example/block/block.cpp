@@ -25,13 +25,14 @@ int main(int argc, char *argv[])
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  ///////////////////////////////////////////////////////////////////////
-  // Initialize MPI
-
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
-  int rank = tcomm->getRank();
-  int nprocs = tcomm->getSize();
+#ifdef ZOLTAN2_HAVE_MPI
+  MPI_Init(&argc, &argv);
+  int rank, nprocs;
+  MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#else
+  int rank=0, nprocs=1;
+#endif
 
   ///////////////////////////////////////////////////////////////////////
   // Read coordinates from a file.
@@ -80,8 +81,12 @@ int main(int argc, char *argv[])
   ///////////////////////////////////////////////////////////////////////
   // Create a Zoltan2 partitioning problem
 
+#ifdef ZOLTAN2_HAVE_MPI
   Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params, 
     MPI_COMM_WORLD);
+#else
+  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params)
+#endif
    
   ///////////////////////////////////////////////////////////////////////
   // Solve the problem

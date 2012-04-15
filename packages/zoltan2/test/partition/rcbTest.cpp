@@ -89,8 +89,12 @@ int main(int argc, char *argv[])
   ///////////////////////////////////////////////////////////////////////
   // Create a Zoltan2 partitioning problem
 
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params, 
+#ifdef ZOLTAN2_HAVE_MPI
+  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params,
     MPI_COMM_WORLD);
+#else
+  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params);
+#endif
    
   ///////////////////////////////////////////////////////////////////////
   // Solve the problem

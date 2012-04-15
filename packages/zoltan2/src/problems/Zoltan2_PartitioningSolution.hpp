@@ -712,7 +712,7 @@ template <typename Adapter>
     Z2_THROW_OUTSIDE_ERROR(*env_);
 
     if (rank > 0)
-      pCompactIndex_[wdim] = arcp(idxbuf, 0, nparts);
+      pCompactIndex_[wdim] = arcp(idxbuf, 0, nparts, true);
 
     // broadcast the list of different part sizes
 
@@ -741,7 +741,7 @@ template <typename Adapter>
     Z2_THROW_OUTSIDE_ERROR(*env_);
 
     if (rank > 0)
-      pSize_[wdim] = arcp(sizeList, 0, numSizes);
+      pSize_[wdim] = arcp(sizeList, 0, numSizes, true);
 
     return;
   }
@@ -978,8 +978,6 @@ template <typename Adapter>
   else{
     // To have access to part sizes, we must store nparts scalar_ts on 
     // every process.  We expect this is a rare case.
-
-    partIdx.clear();
 
     tmp = new scalar_t [nparts];
     env_->localMemoryAssertion(__FILE__, __LINE__, nparts, tmp);

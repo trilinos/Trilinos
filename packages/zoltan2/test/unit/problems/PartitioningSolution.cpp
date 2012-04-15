@@ -182,8 +182,18 @@ int main(int argc, char *argv[])
   ArrayRCP<partId_t> partList = arcp(partAssignments, 0, numIdsPerProc);
 
   // empty metric values
+  int numMetrics = 1;
+  if (weightDim > 1)
+    numMetrics += (weightDim+1);
+  else
+    numMetrics += 1;
+  
   ArrayRCP<Zoltan2::MetricValues<scalar_t> > metrics = 
-    arcp(new Zoltan2::MetricValues<scalar_t> , 0, 2+weightDim);
+    arcp(new Zoltan2::MetricValues<scalar_t> [numMetrics], 0, numMetrics);
+
+  for (int i=0; i < numMetrics; i++){
+    metrics[i].setMaxImbalance(1.1);
+  }
 
   try{
     solution->setParts(gidArray, partList, metrics); 
@@ -219,9 +229,11 @@ int main(int argc, char *argv[])
     }
   }
 
+  double epsilon = 10e-6;
+
   if (!fail){
     const scalar_t val = solution->getImbalance();
-    if (val != 1.0)
+    if (val < 1.1-epsilon || val > 1.1+epsilon)
       fail = 14;
   }
 

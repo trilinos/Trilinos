@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
   // and Epetra matrices for testing.
 
   outputFlag_t flags;
-  flags.set(OBJECT_COORDINATES);
+  flags.set(OBJECT_DATA);
   RCP<uinput_t> uinput;
 
   try{
