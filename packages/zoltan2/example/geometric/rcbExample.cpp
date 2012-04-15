@@ -320,5 +320,10 @@ int main(int argc, char *argv[])
   delete [] partIds;
   delete [] partSizes;
 #endif
+
+#ifdef HAVE_ZOLTAN2_MPI
+  MPI_Finalize();
+#endif
+
 }
 
