@@ -119,6 +119,39 @@ namespace Xpetra {
     GlobalOrdinal getOffset() const { return offset_; } 
     
     void setOffset( GlobalOrdinal offset ) { offset_ = offset; }
+    
+    /* // function currently not needed but maybe useful
+    std::vector<GlobalOrdinal> NodeId2GlobalDofIds(GlobalOrdinal nodeId) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo_.size() == 0, Exceptions::RuntimeError, "StridedMap::NodeId2GlobalDofIds: stridingInfo not valid: stridingInfo.size() = 0?");
+      std::vector<GlobalOrdinal> dofs;
+      if(stridedBlockId_ > -1) {
+          TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo_[stridedBlockId_] == 0, Exceptions::RuntimeError, "StridedMap::NodeId2GlobalDofIds: stridingInfo not valid: stridingInfo[stridedBlockId] = 0?");
+
+          // determine nStridedOffset
+          size_t nStridedOffset = 0;
+          for(int j=0; j<stridedBlockId_; j++) {
+            nStridedOffset += stridingInfo_[j];
+          }
+
+          for(size_t i = 0; i<stridingInfo_[stridedBlockId_]; i++) {
+            GlobalOrdinal gid =
+                nodeId * Teuchos::as<GlobalOrdinal>(getFixedBlockSize()) +
+                offset_ +
+                Teuchos::as<GlobalOrdinal>(nStridedOffset) +
+                Teuchos::as<GlobalOrdinal>(i);
+            dofs.push_back(gid);
+          }
+      } else {
+        for(size_t i = 0; i<getFixedBlockSize(); i++) {
+          GlobalOrdinal gid =
+              nodeId * Teuchos::as<GlobalOrdinal>(getFixedBlockSize()) +
+              offset_ +
+              Teuchos::as<GlobalOrdinal>(i);
+          dofs.push_back(gid);
+        }
+      }
+      return dofs;
+    }*/
     //@}
 
   private:
