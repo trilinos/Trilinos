@@ -30,13 +30,18 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <Ioss_ElementBlock.h>
 #include <Ioss_DatabaseIO.h>
+#include <Ioss_ElementBlock.h>
 #include <Ioss_Property.h>
-#include <Ioss_Field.h>
-#include <Ioss_ElementTopology.h>
-
+#include <stddef.h>
 #include <string>
+#include <vector>
+
+#include "Ioss_EntityBlock.h"
+
+namespace Ioss {
+class Field;
+}  // namespace Ioss
 
 Ioss::ElementBlock::ElementBlock(Ioss::DatabaseIO *io_database,
 				 const std::string& my_name,

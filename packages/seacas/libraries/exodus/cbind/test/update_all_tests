@@ -39,7 +39,7 @@
 #set PREFIX = "valgrind --tool=memcheck"
 set PREFIX = ""
 set SRCDIR = .
-set NCDUMP = /home/gdsjaar/src/SEACAS.git/bin/ncdump
+set NCDUMP = /Users/gdsjaar/src/SEACAS.git/bin/ncdump
 echo "************************************************************************"
 echo "************************************************************************"
 rm -f test.output
@@ -211,6 +211,22 @@ echo "testrd-nfaced - read file with nfaced elements..."
 echo "begin testrd-nfaced" >> test.output
 ${PREFIX} ${SRCDIR}/testrd-nfaced | grep -v version > ${SRCDIR}/testrd-nfaced.dmp
 echo "end testrd-nfaced" >> test.output
+
+echo "testwt-long-name - write file with long (64-character) names..."
+echo "begin testwt-long-name" >> test.output
+${PREFIX} ${SRCDIR}/testwt-long-name >> test.output
+echo "end testwt-long-name" >> test.output
+${NCDUMP} -d5,5 test.exo | grep -v version > ${SRCDIR}/testwt-long-name.dmp
+
+echo "testrd - read long name file truncating to 32 characters on read..."
+echo "begin testrd (truncate)" >> test.output
+${PREFIX} ${SRCDIR}/testrd | grep -v version > ${SRCDIR}/testrd-nm32.dmp 
+echo "end testrd (truncate)" >> test.output
+
+echo "testrd-long-name - read long name file..."
+echo "begin testrd-long-name" >> test.output
+${PREFIX} ${SRCDIR}/testrd-long-name | grep -v version > ${SRCDIR}/testrd-long-name.dmp
+echo "end testrd-long-name" >> test.output
 
 echo "************************************************************************"
 echo "************************************************************************"

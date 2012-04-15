@@ -49,10 +49,12 @@
 
 #include "Teuchos_ParameterListExceptions.hpp"
 #include "Teuchos_ParameterEntry.hpp"
+#include "Teuchos_StringIndexedOrderedValueObjectContainer.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_map.hpp"
+
 
 /** \example ParameterList/cxx_main.cpp
     This is an example of how to use the Teuchos::ParameterList class.
@@ -60,7 +62,7 @@
 
 namespace Teuchos {
 
-/** \brief .
+/** \brief Validation used enum.
  * \relates ParameterList
  */
 enum EValidateUsed {
@@ -72,7 +74,7 @@ enum EValidateUsed {
                               the validation list */
 };
 
-/** \brief .
+/** \brief Validation defaults enum.
  * \relates ParameterList
  */
 enum EValidateDefaults {
@@ -99,11 +101,11 @@ enum EValidateDefaults {
 */
 class TEUCHOS_LIB_DLL_EXPORT ParameterList {
 
-  //! Parameter container typedef
-  typedef Teuchos::map<std::string, ParameterEntry> Map;
+  //! Internal data-structure
+  typedef StringIndexedOrderedValueObjectContainer<ParameterEntry> params_t;
 
   //! Parameter container iterator typedef
-  typedef Map::iterator Iterator;
+  typedef params_t::Iterator Iterator;
   
 public:
 
@@ -111,7 +113,7 @@ public:
   //@{
 
   //! Parameter container const iterator typedef
-  typedef Map::const_iterator ConstIterator;
+  typedef params_t::ConstIterator ConstIterator;
 
   /** \brief Utility class for setting and passing in print options. */
   class PrintOptions {
@@ -136,7 +138,7 @@ public:
 
   //@}
   
-  //! @name Constructors/Destructor. 
+  //! @name Constructors/Destructor/Info. 
   //@{
 
   //! Constructor
@@ -150,6 +152,9 @@ public:
   
   //! Deconstructor
   virtual ~ParameterList();
+
+  //! Get the number of stored parameters.
+  Ordinal numParams() const;
 
   //@}
   
@@ -204,24 +209,24 @@ public:
   */
   template<typename T>
   ParameterList& set(
-    std::string const& name, T const& value, std::string const& docString = ""
-    ,RCP<const ParameterEntryValidator> const& validator = null
+    std::string const& name, T const& value, std::string const& docString = "",
+    RCP<const ParameterEntryValidator> const& validator = null
     );
 
-  /*! \brief Template specialization for the case when a user sets the parameter with a character
+  /*! \brief Specialization for the case when a user sets the parameter with a character
     std::string in parenthesis.
   */
   ParameterList& set(
-    std::string const& name, char value[], std::string const& docString = ""
-    ,RCP<const ParameterEntryValidator> const& validator = null
+    std::string const& name, char value[], std::string const& docString = "",
+    RCP<const ParameterEntryValidator> const& validator = null
     );
 
-  /*! \brief Template specialization for the case when a user sets the parameter with a character
+  /*! \brief Specialization for the case when a user sets the parameter with a character
     std::string in parenthesis.
   */
   ParameterList& set(
-    std::string const& name, const char value[], std::string const& docString = ""
-    ,RCP<const ParameterEntryValidator> const& validator = null
+    std::string const& name, const char value[], std::string const& docString = "",
+    RCP<const ParameterEntryValidator> const& validator = null
     );
 
   /*! \brief Template specialization for the case when a user sets the parameter with a ParameterList.
@@ -254,12 +259,12 @@ public:
   template<typename T>
   T& get(const std::string& name, T def_value);
 
-  /*! \brief Template specialization of get, where the nominal value is a character std::string in parenthesis.
+  /*! \brief Specialization of get, where the nominal value is a character std::string in parenthesis.
     Both char* and std::string are stored as strings and return std::string values.
   */
   std::string& get(const std::string& name, char def_value[]);
   
-  /*! \brief Template specialization of get, where the nominal value is a character std::string in parenthesis.
+  /*! \brief Specialization of get, where the nominal value is a character std::string in parenthesis.
     Both char* and std::string are stored as strings and return std::string values.
   */
   std::string& get(const std::string& name, const char def_value[]);
@@ -301,6 +306,8 @@ public:
   template<typename T>
   inline
   const T* getPtr(const std::string& name) const;  
+
+  // ToDo: Add getSafePtr() functions to return Ptr<T> instead of raw T*
   
   /*! \brief Retrieves an entry with the name <tt>name</tt>.
    *
@@ -321,6 +328,9 @@ public:
    *  it exists. */
   inline
   ParameterEntry* getEntryPtr(const std::string& name);  
+
+  // ToDo: Add function called getEntrySafePtr() to return Ptr<> as the main
+  // implementation and deprecate getEntryPtr()
   
   /*! \brief Retrieves the pointer for a constant entry with the name <tt>name</tt> if
    *  it exists. */
@@ -389,7 +399,8 @@ public:
   /*! \brief Query the existence of a parameter.  \return "true" if a
       parameter with this \c name exists, else "false".  Warning, this
       function should almost never be used!  Instead, consider using
-      getEntryPtr() instead.
+      getEntryPtr() instead. \todo Depreicate this function and instead use
+      index lookup.
   */
   bool isParameter(const std::string& name) const;
   
@@ -456,16 +467,16 @@ public:
   //@{
 
   //! An iterator pointing to the first entry
-  ConstIterator begin() const ;
+  inline ConstIterator begin() const;
 
   //! An iterator pointing beyond the last entry
-  ConstIterator end() const ;
-
-  //! Access to ParameterEntry (i.e., returns i->second)
-  const ParameterEntry& entry(ConstIterator i) const;
+  inline ConstIterator end() const;
   
   //! Access to name (i.e., returns i->first)
-  const std::string& name(ConstIterator i) const;
+  inline const std::string& name(ConstIterator i) const;
+
+  //! Access to ParameterEntry (i.e., returns i->second)
+  inline const ParameterEntry& entry(ConstIterator i) const;
 
   //@}
 
@@ -568,18 +579,26 @@ public:
   //@}
   
 private: // Functions
- 
+
   //! An iterator pointing to the first entry
-  Iterator nonconstBegin();
+  inline Iterator nonconstBegin();
   //! An iterator pointing beyond the last entry
-  Iterator nonconstEnd();
+  inline Iterator nonconstEnd();
   //! Access to ParameterEntry (i.e., returns i->second)
-  ParameterEntry& entry(Iterator i);
+  inline ParameterEntry& nonconstEntry(Iterator i);
   //! Validate that a parameter exists
-  void validateEntryExists( const std::string &funcName, const std::string &name, const ParameterEntry *entry ) const;
+  void validateEntryExists(const std::string &funcName, const std::string &name,
+    const ParameterEntry *entry) const;
+  // ToDo: Change above function to take Ptr<> instead of raw pointer.
   //! Validate that a type is the same
   template<typename T>
-  void validateEntryType( const std::string &funcName, const std::string &name, const ParameterEntry &entry ) const;
+  void validateEntryType(const std::string &funcName, const std::string &name,
+    const ParameterEntry &entry ) const;
+  //! Validate a sublist param is indeed a sublist
+  void validateEntryIsList(const std::string &name, const ParameterEntry &entry) const;
+  //! Throw a sublist does not exist exception
+  void validateMissingSublistMustExist(const std::string &baselist_name,
+    const std::string &sublist_name, const bool mustAlreadyExist) const;
   //! Update sublist names recursively
   void updateSubListNames(int depth = 0);
   
@@ -590,14 +609,14 @@ private: // Data members
 
   //! Parameter list
 //use pragmas to disable some false-positive warnings for windows sharedlibs export
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4251)
-#endif
-  Map params_;
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
+//#ifdef _MSC_VER
+//#pragma warning(push)
+//#pragma warning(disable:4251)
+//#endif
+  params_t params_;
+//#ifdef _MSC_VER
+//#pragma warning(pop)
+//#endif
 
   //! Validate into list or not
   bool disableRecursiveValidation_;
@@ -638,6 +657,28 @@ RCP<ParameterList> parameterList(const ParameterList& source)
 }
 
 
+/** \brief Nonmember constructor.
+ *
+ * \relates ParameterList
+ */
+inline
+RCP<ParameterList> createParameterList()
+{
+  return rcp(new ParameterList);
+}
+
+
+/** \brief Nonmember constructor.
+ *
+ * \relates ParameterList
+ */
+inline
+RCP<ParameterList> createParameterList(const std::string &name)
+{
+  return rcp(new ParameterList(name));
+}
+
+
 /** \brief Traits specialization.
  *
  * \relates ParameterList
@@ -650,11 +691,13 @@ public:
     { return name(); }
 };
 
+
 /** \brief Returns true if two parameter lists are the same.
  *
  * \relates ParameterList
  */
 TEUCHOS_LIB_DLL_EXPORT bool operator==( const ParameterList& list1, const ParameterList& list2 );
+
 
 /** \brief Returns true if two parameter lists are <b>not</tt> the same.
  *
@@ -665,6 +708,7 @@ bool operator!=( const ParameterList& list1, const ParameterList& list2 )
 {
   return !( list1 == list2 );
 }
+
 
 /** \brief Returns true if two parameter lists have the same values.
  *
@@ -688,7 +732,9 @@ ParameterList& ParameterList::setName( const std::string &name_in )
   return *this;
 }
 
+
 // Set functions
+
 
 template<typename T>
 inline
@@ -697,21 +743,40 @@ ParameterList& ParameterList::set(
   RCP<const ParameterEntryValidator> const& validator_in
   )
 {
-  ParameterEntry &foundEntry = params_[name_in]; // Will add the entry if not exists
-  foundEntry.setValue(value_in,false,docString_in,validator_in);
-  // Validate the value *after* you set it.  It is important to use
-  // entry.validator() instead of validator since validator might be null!
-  if(foundEntry.validator().get())
-    foundEntry.validator()->validate(foundEntry,name_in,this->name());
+  typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
+  const Ordinal param_idx = params_.getObjOrdinalIndex(name_in);
+  if (param_idx != SIOVOCB::getInvalidOrdinal()) {
+    Ptr<ParameterEntry> param = params_.getNonconstObjPtr(param_idx);
+    const std::string docString =
+      (docString_in.length() ? docString_in : param->docString());
+    const RCP<const ParameterEntryValidator> validator =
+      (nonnull(validator_in) ? validator_in : param->validator());
+     // Create temp param to validate before setting
+    ParameterEntry param_new(value_in, false, false, docString, validator );
+    if (nonnull(validator)) {
+      validator->validate(param_new, name_in, this->name());
+    }
+    // Strong guarantee: (if exception is thrown, the value is not changed)
+    *param = param_new;
+  }
+  else {
+    ParameterEntry param_new(value_in, false, false, docString_in, validator_in);
+    if (nonnull(param_new.validator())) {
+      param_new.validator()->validate(param_new, name_in, this->name());
+    }
+    params_.setObj(name_in, param_new);
+  }
   return *this;
 }
+
 
 inline
 ParameterList& ParameterList::set(
   std::string const& name_in, char value[], std::string const& docString
   ,RCP<const ParameterEntryValidator> const& validator
   ) 
-{ return set( name_in, std::string(value), docString, validator ); }
+{ return set(name_in, std::string(value), docString, validator); }
+
 
 inline
 ParameterList& ParameterList::set(
@@ -719,6 +784,7 @@ ParameterList& ParameterList::set(
   ,RCP<const ParameterEntryValidator> const& validator
   ) 
 { return set( name_in, std::string(value), docString, validator ); }
+
 
 inline
 ParameterList& ParameterList::set(
@@ -729,40 +795,42 @@ ParameterList& ParameterList::set(
   return *this;
 }
 
+
 inline
 ParameterList& ParameterList::setEntry(std::string const& name_in, ParameterEntry const& entry_in)
 {
-  params_[name_in] = entry_in;
+  params_.setObj(name_in, entry_in);
   return *this;
 }
 
+
 // Get functions
+
 
 template<typename T>
 T& ParameterList::get(const std::string& name_in, T def_value)
 {
-  ConstIterator i = params_.find(name_in);
-    
-  // The parameter was not found, add it to the list
-  if (i == params_.end()) {
-    params_[name_in].setValue(def_value, true);
-    i = params_.find(name_in);
-  } else {
-    // The parameter was found, make sure it is the same type as T.
-    this->template validateEntryType<T>("get", name_in, entry(i));
+  typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
+  Ordinal param_idx = params_.getObjOrdinalIndex(name_in); 
+  if (param_idx == SIOVOCB::getInvalidOrdinal()) {
+    // Param does not exist
+    param_idx = params_.setObj(name_in, ParameterEntry(def_value, true));
   }
-
-  // Return the value of the parameter
-  return getValue<T>(entry(i));
+  Ptr<ParameterEntry> param = params_.getNonconstObjPtr(param_idx);
+  this->template validateEntryType<T>("get", name_in, *param);
+  return getValue<T>(*param);
 }
+
 
 inline
 std::string& ParameterList::get(const std::string& name_in, char def_value[])
 { return get(name_in, std::string(def_value)); }
 
+
 inline
 std::string& ParameterList::get(const std::string& name_in, const char def_value[])
 { return get(name_in, std::string(def_value)); }
+
 
 template<typename T>
 T& ParameterList::get(const std::string& name_in) 
@@ -772,6 +840,7 @@ T& ParameterList::get(const std::string& name_in)
   this->template validateEntryType<T>("get",name_in,*foundEntry);
   return getValue<T>(*foundEntry);
 }
+
   
 template<typename T>
 const T& ParameterList::get(const std::string& name_in) const
@@ -782,112 +851,191 @@ const T& ParameterList::get(const std::string& name_in) const
   return getValue<T>(*foundEntry);
 }
 
+
 template<typename T>
 inline
 T* ParameterList::getPtr(const std::string& name_in) 
 {
-  ConstIterator i = params_.find(name_in);
-  if ( i == params_.end() || entry(i).getAny().type() != typeid(T) )
-    return NULL;
-  return &getValue<T>(entry(i));
+  typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
+  const Ordinal param_idx = params_.getObjOrdinalIndex(name_in);
+  if (param_idx != SIOVOCB::getInvalidOrdinal()) {
+    const Ptr<ParameterEntry> param_ptr = params_.getNonconstObjPtr(param_idx);
+    if (param_ptr->isType<T>()) {
+      return &param_ptr->getValue<T>(0);
+    }
+    // Note: The above is inefficinet.  You have to do the dynamic_cast twice
+    // (once to see if it is the type and once to do the cast).  This could be
+    // made more efficinet by upgrading Teuchos::any to add a any_cast_ptr()
+    // function but I don't think anyone actually uses this function.
+    return 0;
+  }
+  return 0;
 }
+
   
 template<typename T>
 inline
 const T* ParameterList::getPtr(const std::string& name_in) const
 {
-  ConstIterator i = params_.find(name_in);
-  if ( i == params_.end() || entry(i).getAny().type() != typeid(T) )
-    return NULL;
-  return &getValue<T>(entry(i));
+  typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
+  const Ordinal param_idx = params_.getObjOrdinalIndex(name_in);
+  if (param_idx != SIOVOCB::getInvalidOrdinal()) {
+    const Ptr<const ParameterEntry> param_ptr = params_.getObjPtr(param_idx);
+    if (param_ptr->isType<T>()) {
+      return &param_ptr->getValue<T>(0);
+    }
+    // Note: The above is inefficinet, see above non-const getPtr() function.
+    return 0;
+  }
+  return 0;
 }
+
 
 inline
 ParameterEntry& ParameterList::getEntry(const std::string& name_in)
 {
   ParameterEntry *foundEntry = this->getEntryPtr(name_in);
-  validateEntryExists("get",name_in,foundEntry);
+  validateEntryExists("get", name_in, foundEntry);
   return *foundEntry;
 }
+
   
 inline
 const ParameterEntry& ParameterList::getEntry(const std::string& name_in) const
 {
   const ParameterEntry *foundEntry = this->getEntryPtr(name_in);
-  validateEntryExists("get",name_in,foundEntry);
+  validateEntryExists("get", name_in, foundEntry);
   return *foundEntry;
 }
+
 
 inline
 ParameterEntry*
 ParameterList::getEntryPtr(const std::string& name_in)
 {
-  Map::iterator i = params_.find(name_in);
-  if ( i == params_.end() )
-    return NULL;
-  return &entry(i);
+  typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
+  const Ordinal param_idx = params_.getObjOrdinalIndex(name_in);
+  if (param_idx != SIOVOCB::getInvalidOrdinal()) {
+    return &*params_.getNonconstObjPtr(param_idx);
+  }
+  return 0;
 }
+
 
 inline
 const ParameterEntry*
 ParameterList::getEntryPtr(const std::string& name_in) const
 {
-  ConstIterator i = params_.find(name_in);
-  if ( i == params_.end() )
-    return NULL;
-  return &entry(i);
+  typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
+  const Ordinal param_idx = params_.getObjOrdinalIndex(name_in);
+  if (param_idx != SIOVOCB::getInvalidOrdinal()) {
+    return &*params_.getObjPtr(param_idx);
+  }
+  return 0;
 }
+
 
 inline RCP<ParameterEntry>
 ParameterList::getEntryRCP(const std::string& name_in)
 {
-  Iterator i = params_.find(name_in);
-  if ( i == params_.end() )
-    return null;
-  return rcpFromRef(entry(i));
+  typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
+  const Ordinal param_idx = params_.getObjOrdinalIndex(name_in);
+  if (param_idx != SIOVOCB::getInvalidOrdinal()) {
+    return rcpFromPtr(params_.getNonconstObjPtr(param_idx));
+  }
+  return null;
 }
+
 
 inline RCP<const ParameterEntry>
 ParameterList::getEntryRCP(const std::string& name_in) const
 {
-  ConstIterator i = params_.find(name_in);
-  if ( i == params_.end() )
-    return null;
-  return rcpFromRef(entry(i));
+  typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
+  const Ordinal param_idx = params_.getObjOrdinalIndex(name_in);
+  if (param_idx != SIOVOCB::getInvalidOrdinal()) {
+    return rcpFromPtr(params_.getObjPtr(param_idx));
+  }
+  return null;
 }
 
+
 // Attribute Functions
+
 
 inline
 const std::string& ParameterList::name() const
 {
   return name_;
 }
+
   
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 template<typename T>
 bool ParameterList::isType(const std::string& name_in, T* /*ptr*/) const
 {
-  ConstIterator i = params_.find(name_in);
-  // If parameter doesn't exist, return false.
-  if (i == params_.end()) 
-    return false;
-  return entry(i).getAny().type() == typeid(T);
+  typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
+  const Ordinal param_idx = params_.getObjOrdinalIndex(name_in);
+  if (param_idx != SIOVOCB::getInvalidOrdinal()) {
+    return params_.getObjPtr(param_idx)->isType<T>();
+  }
+  return false;
 }
 #endif
+
   
 template<typename T>
 bool ParameterList::isType(const std::string& name_in) const
 {
-  ConstIterator i = params_.find(name_in);
-  // If parameter doesn't exist, return false.
-  if (i == params_.end()) 
-    return false;
-  return entry(i).getAny().type() == typeid(T);
+  return this->isType(name_in, static_cast<T*>(0));
+}
+
+
+// Read-only access to the iterator
+
+
+inline ParameterList::ConstIterator ParameterList::begin() const
+{
+  return params_.begin();
+}
+
+
+inline ParameterList::ConstIterator ParameterList::end() const
+{
+  return params_.end();
+}
+
+
+inline const std::string& ParameterList::name(ConstIterator i) const
+{
+  return (i->first);
+}
+
+
+inline const ParameterEntry& ParameterList::entry(ConstIterator i) const
+{
+  return (i->second);
 }
 
 
 // private
+
+
+inline ParameterList::Iterator ParameterList::nonconstBegin()
+{
+  return params_.nonconstBegin();
+}
+
+
+inline ParameterList::Iterator ParameterList::nonconstEnd()
+{
+  return params_.nonconstEnd();
+}
+
+
+inline ParameterEntry& ParameterList::nonconstEntry(Iterator i)
+{
+  return (i->second);
+}
 
 
 template<typename T>
@@ -906,8 +1054,10 @@ void ParameterList::validateEntryType(
     );
 }
 
+
 // //////////////////////////////////////
 // Helper functions
+
   
 /*! \relates ParameterList
   \brief A templated helper function for getting a parameter from a non-const list.
@@ -920,6 +1070,7 @@ T& getParameter( ParameterList& l, const std::string& name )
 {
   return l.template get<T>(name);
 }
+
   
 /*! \relates ParameterList
   \brief A shorter name for <tt>getParameter()</tt>.
@@ -932,6 +1083,7 @@ T& get( ParameterList& l, const std::string& name )
 {
   return getParameter<T>(l,name);
 }
+
   
 /*! \relates ParameterList
   \brief A templated helper function for getting a parameter from a const list.
@@ -944,6 +1096,7 @@ const T& getParameter( const ParameterList& l, const std::string& name )
 {
   return l.template get<T>(name);
 }
+
   
 /*! \relates ParameterList
   \brief A templated helper function for getting a pointer to a parameter from
@@ -958,6 +1111,7 @@ T* getParameterPtr( ParameterList& l, const std::string& name )
 {
   return l.template getPtr<T>(name);
 }
+
   
 /*! \relates ParameterList
   \brief A templated helper function for getting a pointer to a parameter from
@@ -972,6 +1126,7 @@ const T* getParameterPtr( const ParameterList& l, const std::string& name )
 {
   return l.template getPtr<T>(name);
 }
+
   
 /*! \relates ParameterList
   \brief A templated helper function for determining the type of a parameter entry for a non-const list.  
@@ -985,6 +1140,7 @@ bool isParameterType( ParameterList& l, const std::string& name )
 {
   return l.isType( name, (T*)NULL );
 }
+
   
 /*! \relates ParameterList
   \brief A templated helper function for determining the type of a parameter entry for a const list.  
@@ -998,6 +1154,7 @@ bool isParameterType( const ParameterList& l, const std::string& name )
 {
   return l.isType( name, (T*)NULL );
 }
+
   
 /** \brief Set a std::string parameter representation of an array.
  *
@@ -1020,6 +1177,7 @@ void setStringParameterFromArray(
   TEUCHOS_TEST_FOR_EXCEPT(!paramList);
   paramList->set(paramName,toString(array));
 }
+
   
 /** \brief Get an Array object (with entries of type <tt>T</tt>) from a
  * parameter holding a std::string representation of the array.
@@ -1135,17 +1293,20 @@ Array<T> getArrayFromStringParameter(
   return a;
 }
 
+
 /*! \relates ParameterList
   \brief Return a RCP to a sublist in another RCP-ed parameter list.
 */
 inline
 RCP<ParameterList> sublist(
-  const RCP<ParameterList> &paramList, const std::string& name, bool mustAlreadyExist = false
+  const RCP<ParameterList> &paramList, const std::string& name,
+  bool mustAlreadyExist = false, const std::string& docString = ""
   )
 {
   return rcpWithEmbeddedObjPostDestroy(
-    &paramList->sublist(name,mustAlreadyExist), paramList, false );
+    &paramList->sublist(name, mustAlreadyExist, docString), paramList, false );
 }
+
 
 /*! \relates ParameterList
   \brief Return a RCP to a sublist in another RCP-ed parameter list.
@@ -1158,6 +1319,7 @@ RCP<const ParameterList> sublist(
   return rcpWithEmbeddedObjPostDestroy(
     &paramList->sublist(name), paramList, false );
 }
+
   
 /*! \relates ParameterList
   \brief Output stream operator for handling the printing of the parameter list.
@@ -1166,9 +1328,9 @@ inline std::ostream& operator<<(std::ostream& os, const ParameterList& l)
 {
   return l.print(os);
 }
+
   
 } // end of Teuchos namespace
 
+
 #endif
-
-

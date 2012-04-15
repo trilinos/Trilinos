@@ -48,6 +48,7 @@
 #include "Teuchos_stacktrace.hpp"
 #include "Teuchos_Assert.hpp"
 
+
 #ifdef HAVE_TEUCHOS_STACKTRACE
 #  define TEUCHOS_GET_STORED_STACKTRACE() \
   (Teuchos::TestForException_getEnableStacktrace() \
@@ -56,6 +57,55 @@
 #else
 #  define TEUCHOS_GET_STORED_STACKTRACE() ""
 #endif
+
+
+/** \brief Implementation of TEUCHOS_STANDARD_CATCH_STATEMENTS(...) that
+ * allows toggle of showing stack trace.
+ */
+#define TEUCHOS_STANDARD_CATCH_STATEMENTS_IMPL(VERBOSE, ERR_STREAM, \
+  SHOW_STACK_TRACE, SUCCESS_FLAG \
+  ) \
+  catch (const std::exception &excpt) { \
+    if((VERBOSE)) { \
+      std::ostringstream oss; \
+      oss \
+        << "\np="<<::Teuchos::GlobalMPISession::getRank() \
+        <<": *** Caught standard std::exception of type \'" \
+        <<Teuchos::concreteTypeName(excpt)<<"\' :\n\n"; \
+      Teuchos::OSTab scsi_tab(oss); \
+      if (SHOW_STACK_TRACE) { \
+        scsi_tab.o() << TEUCHOS_GET_STORED_STACKTRACE(); \
+      } \
+      scsi_tab.o() << excpt.what() << std::endl; \
+      (ERR_STREAM) << std::flush; \
+      (ERR_STREAM) << oss.str(); \
+      (SUCCESS_FLAG) = false; \
+    } \
+  } \
+  catch (const int &excpt_code) { \
+    if((VERBOSE)) { \
+      std::ostringstream oss; \
+      oss \
+        << "\np="<<::Teuchos::GlobalMPISession::getRank() \
+        << ": *** Caught an integer std::exception with value = " \
+        << excpt_code << std::endl; \
+      (ERR_STREAM) << std::flush; \
+      (ERR_STREAM) << oss.str(); \
+      (SUCCESS_FLAG) = false; \
+    } \
+  } \
+  catch ( ... ) { \
+    if ((VERBOSE)) { \
+      std::ostringstream oss; \
+      oss << "\np="<<::Teuchos::GlobalMPISession::getRank() \
+          <<": *** Caught an unknown exception\n"; \
+      (ERR_STREAM) << std::flush; \
+      (ERR_STREAM) << oss.str(); \
+      (SUCCESS_FLAG) = false; \
+    } \
+  }
+
+
 
 /** \brief Simple macro that catches and reports standard exceptions and other
  * exceptions.
@@ -84,41 +134,7 @@
  * page for details).
  */
 #define TEUCHOS_STANDARD_CATCH_STATEMENTS(VERBOSE, ERR_STREAM, SUCCESS_FLAG) \
-  catch (const std::exception &excpt) { \
-    if((VERBOSE)) { \
-      std::ostringstream oss; \
-      oss \
-        << "\np="<<::Teuchos::GlobalMPISession::getRank() \
-        <<": *** Caught standard std::exception of type \'" \
-        <<Teuchos::concreteTypeName(excpt)<<"\' :\n\n"; \
-        Teuchos::OSTab(oss).o() << TEUCHOS_GET_STORED_STACKTRACE() \
-                                << excpt.what() << std::endl; \
-        std::cout << std::flush; \
-      (ERR_STREAM) << oss.str(); \
-    (SUCCESS_FLAG) = false; \
-    } \
-  } \
-  catch (const int &excpt_code) { \
-    if((VERBOSE)) { \
-      std::ostringstream oss; \
-      oss \
-        << "\np="<<::Teuchos::GlobalMPISession::getRank() \
-        << ": *** Caught an integer std::exception with value = " \
-        << excpt_code << std::endl; \
-        std::cout << std::flush; \
-      (ERR_STREAM) << oss.str(); \
-    (SUCCESS_FLAG) = false; \
-    } \
-  } \
-  catch ( ... ) { \
-    if ((VERBOSE)) { \
-      std::ostringstream oss; \
-      oss << "\np="<<::Teuchos::GlobalMPISession::getRank() \
-          <<": *** Caught an unknown exception\n"; \
-      std::cout << std::flush; \
-      (ERR_STREAM) << oss.str(); \
-      (SUCCESS_FLAG) = false; \
-    } \
-  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS_IMPL(VERBOSE, ERR_STREAM, true, SUCCESS_FLAG)
+
 
 #endif // TEUCHOS_STANDARD_CATCH_MACROS_HPP

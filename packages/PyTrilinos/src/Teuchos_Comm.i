@@ -37,7 +37,12 @@
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
 #include "Teuchos_CommHelpers.hpp"
+#include "Teuchos_OpaqueWrapper.hpp"
+using Teuchos::OpaqueWrapper;
 %}
+
+// Teuchos Array support
+%include "Teuchos_Array.i"
 
 /////////////////////////////////////
 // Teuchos::VerbosityLevel support //
@@ -404,7 +409,6 @@ def scan(comm, reductOp, buffer):
 #ifdef HAVE_MPI
 %{
 #include "mpi.h"
-#include "Teuchos_OpaqueWrapper.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"
 %}
 

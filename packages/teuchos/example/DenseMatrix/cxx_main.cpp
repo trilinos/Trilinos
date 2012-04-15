@@ -70,6 +70,9 @@ int main(int argc, char* argv[])
   rows = My_Copy3.numRows();  // number of rows
   cols = My_Copy3.numCols();  // number of columns
   stride = My_Copy3.stride(); // storage stride
+  TEUCHOS_ASSERT_EQUALITY(rows, 2);
+  TEUCHOS_ASSERT_EQUALITY(cols, 3);
+  TEUCHOS_ASSERT_EQUALITY(stride, 3);
 
   // Matrices can change dimension:
   Empty_Matrix.shape( 3, 3 );      // size non-dimensional matrices
@@ -92,17 +95,23 @@ int main(int argc, char* argv[])
   My_Copy2 += My_Matrix;         // Matrix addition
   My_Copy2.scale( 0.5 );         // Matrix scaling
   d = x.dot( y );                // Vector dot product  
+  (void)d; // Not used! 
   
   // The pointer to the array of matrix values can be obtained:
   double *My_Array=0, *My_Column=0;
   My_Array = My_Matrix.values();   // pointer to matrix values
   My_Column = My_Matrix[2];        // pointer to third column values
+  (void)My_Array; // Not used!
+  (void)My_Column; // Not used!
 
   // The norm of a matrix can be computed:
   double norm_one, norm_inf, norm_fro;
   norm_one = My_Matrix.normOne();        // one norm
   norm_inf = My_Matrix.normInf();        // infinity norm
   norm_fro = My_Matrix.normFrobenius();  // frobenius norm
+  (void)norm_one; // Not used!
+  (void)norm_inf; // Not used!
+  (void)norm_fro; // Not used!
 
   // Matrices can be compared:
   // Check if the matrices are equal in dimension and values

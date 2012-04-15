@@ -24,9 +24,6 @@
 /* ZOLTAN_ID_TYPE is unsigned long long */
 #cmakedefine UNSIGNED_LONG_LONG_GLOBAL_IDS
 
-/* Define if want to build with drum enabled */
-#cmakedefine HAVE_DRUM
-
 /* define if we want to use MPI */
 #cmakedefine HAVE_MPI
 
@@ -53,9 +50,6 @@
 #define NO_MPI_TPL
 #endif
 
-/* Define if want to build with octreepartitioning enabled */
-#cmakedefine HAVE_ZOLTAN_OCT
-
 /* Define if want to build with zlib enabled */
 #cmakedefine HAVE_GZIP
 
@@ -64,6 +58,9 @@
 
 /* HUND support */
 #cmakedefine HAVE_ZOLTAN_HUND
+
+/* Revert to Old Hash function support */
+#cmakedefine HAVE_ZOLTAN_KNUTH_HASH
 
 #ifdef HAVE_ZOLTAN_HUND
 #define CEDRIC_2D_PARTITIONS

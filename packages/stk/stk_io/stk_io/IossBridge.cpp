@@ -620,9 +620,13 @@ namespace stk {
 			     bool add_all)
     {
       const Ioss::Field::RoleType *role = stk::io::get_field_role(*field);
-      if (!add_all && (role == NULL || *role != filter_role)) {
+
+      if (!add_all && role == NULL) {
 	return false;
       }
+
+      if (role != NULL && *role != filter_role)
+	return false;
 
       const stk::mesh::FieldBase::Restriction &res = field->restriction(part_type, part);
       if (res.dimension() > 0) {

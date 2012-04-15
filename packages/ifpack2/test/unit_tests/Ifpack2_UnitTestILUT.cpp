@@ -70,7 +70,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2ILUT, Test0, Scalar, LocalOrdinal, Glob
   params.set("fact: ilut level-of-fill", 1.0);
   params.set("fact: drop tolerance", 0.0);
 
-  TEUCHOS_TEST_NOTHROW(prec.setParameters(params), out, success);
+  TEST_NOTHROW(prec.setParameters(params));
 
   //trivial tests to insist that the preconditioner's domain/range maps are
   //identically those of the matrix:
@@ -80,8 +80,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2ILUT, Test0, Scalar, LocalOrdinal, Glob
   const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>* prec_dom_map_ptr = &*prec.getDomainMap();
   const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>* prec_rng_map_ptr = &*prec.getRangeMap();
 
-  TEUCHOS_TEST_EQUALITY( prec_dom_map_ptr, mtx_dom_map_ptr, out, success );
-  TEUCHOS_TEST_EQUALITY( prec_rng_map_ptr, mtx_rng_map_ptr, out, success );
+  TEST_EQUALITY( prec_dom_map_ptr, mtx_dom_map_ptr );
+  TEST_EQUALITY( prec_rng_map_ptr, mtx_rng_map_ptr );
 
   prec.initialize();
   prec.compute();
@@ -121,7 +121,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2ILUT, Test1, Scalar, LocalOrdinal, Glob
   params.set("fact: ilut level-of-fill", 6.0);
   params.set("fact: drop tolerance", 0.0);
 
-  TEUCHOS_TEST_NOTHROW(prec.setParameters(params), out, success);
+  TEST_NOTHROW(prec.setParameters(params));
 
   prec.initialize();
   prec.compute();

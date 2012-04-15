@@ -609,6 +609,57 @@ namespace Sacado {
 
 } // namespace Sacado
 
+//-------------------------- Boolean Operators -----------------------
+namespace Sacado {
+
+  namespace Fad {
+
+    template <typename T>
+    bool toBool(const SimpleFad<T>& x) {
+      bool is_zero = (x.val() == 0.0);
+      for (int i=0; i<x.size(); i++)
+	is_zero = is_zero && (x.dx(i) == 0.0);
+      return !is_zero;
+    }
+
+  } // namespace Fad
+
+} // namespace Sacado
+
+#define FAD_BOOL_MACRO(OP)						\
+namespace Sacado {							\
+  namespace Fad {							\
+    template <typename T1, typename T2>					\
+    inline bool								\
+    operator OP (const SimpleFad<T1>& expr1,				\
+		 const SimpleFad<T2>& expr2)				\
+    {									\
+      return toBool(expr1) OP toBool(expr2);				\
+    }									\
+									\
+    template <typename T2>						\
+    inline bool								\
+    operator OP (const typename SimpleFad<T2>::value_type& a,		\
+		 const SimpleFad<T2>& expr2)				\
+    {									\
+      return a OP toBool(expr2);					\
+    }									\
+									\
+    template <typename T1>						\
+    inline bool								\
+    operator OP (const SimpleFad<T1>& expr1,				\
+		 const typename SimpleFad<T1>::value_type& b)		\
+    {									\
+      return toBool(expr1) OP b;					\
+    }									\
+  }									\
+}
+
+FAD_BOOL_MACRO(&&)
+FAD_BOOL_MACRO(||)
+
+#undef FAD_BOOL_MACRO
+
 //-------------------------- I/O Operators -----------------------
 
 namespace Sacado {

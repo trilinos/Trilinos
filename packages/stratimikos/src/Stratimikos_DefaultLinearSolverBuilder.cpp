@@ -75,19 +75,19 @@ namespace Stratimikos {
 
 
 DefaultLinearSolverBuilder::DefaultLinearSolverBuilder(
-  const std::string    &paramsXmlFileName
-  ,const std::string   &extraParamsXmlString
-  ,const std::string   &paramsUsedXmlOutFileName
-  ,const std::string   &paramsXmlFileNameOption
-  ,const std::string   &extraParamsXmlStringOption
-  ,const std::string   &paramsUsedXmlOutFileNameOption
+  const std::string    &paramsXmlFileName_in
+  ,const std::string   &extraParamsXmlString_in
+  ,const std::string   &paramsUsedXmlOutFileName_in
+  ,const std::string   &paramsXmlFileNameOption_in
+  ,const std::string   &extraParamsXmlStringOption_in
+  ,const std::string   &paramsUsedXmlOutFileNameOption_in
   )
-  :paramsXmlFileName_(paramsXmlFileName)
-  ,extraParamsXmlString_(extraParamsXmlString)
-  ,paramsUsedXmlOutFileName_(paramsUsedXmlOutFileName)
-  ,paramsXmlFileNameOption_(paramsXmlFileNameOption)
-  ,extraParamsXmlStringOption_(extraParamsXmlStringOption)
-  ,paramsUsedXmlOutFileNameOption_(paramsUsedXmlOutFileNameOption)
+  :paramsXmlFileName_(paramsXmlFileName_in)
+  ,extraParamsXmlString_(extraParamsXmlString_in)
+  ,paramsUsedXmlOutFileName_(paramsUsedXmlOutFileName_in)
+  ,paramsXmlFileNameOption_(paramsXmlFileNameOption_in)
+  ,extraParamsXmlStringOption_(extraParamsXmlStringOption_in)
+  ,paramsUsedXmlOutFileNameOption_(paramsUsedXmlOutFileNameOption_in)
   ,enableDelayedSolverConstruction_(EnableDelayedSolverConstruction_default)
 {
   this->initializeDefaults();

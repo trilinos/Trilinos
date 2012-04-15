@@ -67,10 +67,12 @@ IF (Piro_ENABLE_Stokhos AND Piro_ENABLE_NOX)
   APPEND_SET(HEADERS Piro_Epetra_StokhosNOXObserver.hpp
   		     Piro_Epetra_StokhosSolverFactory.hpp
   		     Piro_Epetra_StokhosSolver.hpp
+		     Piro_Epetra_StokhosMPSolver.hpp
 		     Piro_Epetra_NECoupledModelEvaluator.hpp) 
   APPEND_SET(SOURCES Piro_Epetra_StokhosNOXObserver.cpp
   		     Piro_Epetra_StokhosSolverFactory.cpp
   		     Piro_Epetra_StokhosSolver.cpp
+		     Piro_Epetra_StokhosMPSolver.cpp
 		     Piro_Epetra_NECoupledModelEvaluator.cpp)
 ENDIF()
 #
@@ -89,6 +91,11 @@ APPEND_SET(SOURCES Piro_PerformAnalysis.cpp)
 ## DEPRECATED Thyra Namespace in Piro: REMOVE THESE FOR TRILINOS 11.0)
 APPEND_SET(HEADERS Piro_Thyra_PerformAnalysis.hpp) 
 APPEND_SET(SOURCES Piro_Thyra_PerformAnalysis.cpp)
+
+IF (Piro_ENABLE_TriKota AND Piro_ENABLE_Stokhos AND Piro_ENABLE_NOX)
+  APPEND_SET(HEADERS TriKota_MPDirectApplicInterface.hpp) 
+  APPEND_SET(SOURCES TriKota_MPDirectApplicInterface.cpp)
+ENDIF()
 
 #
 # C) Define the targets for package's library(s)

@@ -82,10 +82,22 @@ namespace Sacado {
 
       //! Copy constructor
       CacheTaylorImplementation(const CacheTaylorImplementation& x) : 
-	coeff_(x.coeff_) {}
+        coeff_(x.coeff_) {}
 
       //! Destructor
       ~CacheTaylorImplementation() {}
+
+       //! Resize polynomial to degree d
+      /*!
+       * Coefficients are preserved if \c keep_coeffs is \c true, otherwise 
+       * all coefficients are reset to zero.
+       */
+      void resize(unsigned int d, bool keep_coeffs) {
+	if (keep_coeffs)
+	  resizeCoeffs(d);
+	else
+	  coeff_.resize(d+1, T(0.));
+      }
 
       /*!
        * @name Value accessor methods
@@ -126,10 +138,21 @@ namespace Sacado {
       T& fastAccessCoeff(unsigned int i) { return coeff_[i];}
 
       //! Returns degree \c i term without bounds checking
-      T fastAccessCoeff(unsigned int i) const { return coeff_[i];}
+      const T& fastAccessCoeff(unsigned int i) const { return coeff_[i];}
 
       //! Allocate coefficient cache
       void allocateCache(unsigned int d) const {}
+
+      //! Returns whether two Taylor objects have the same values
+      template <typename S>
+      bool isEqualTo(const Expr<S>& x) const {
+	typedef IsEqual<value_type> IE;
+	if (x.degree() != this->degree()) return false;
+	bool eq = true;
+	for (unsigned int i=0; i<=this->degree(); i++)
+	  eq = eq && IE::eval(x.coeff(i), this->coeff(i));
+	return eq;
+      }
     
       //@}
 
@@ -138,9 +161,16 @@ namespace Sacado {
       //! Resize coefficient array to new size
       void resizeCoeffs(unsigned int dnew) {
 	std::valarray<T> tmp = coeff_;
-	std::slice s(0,coeff_.size(),1);
+	unsigned int sz = coeff_.size();
 	coeff_.resize(dnew+1,T(0.));
-	coeff_[s] = tmp;
+	if (sz > dnew+1) {
+	  std::slice s(0,dnew+1,1);
+	  coeff_ = tmp[s];
+	}
+	else {
+	  std::slice s(0,sz,1);
+	  coeff_[s] = tmp;
+	}
       }
 
     protected:
@@ -190,6 +220,12 @@ namespace Sacado {
 
     public:
 
+      //! Typename of values
+      typedef T value_type;
+
+      //! Typename of scalar's (which may be different from ValueT)
+      typedef typename ScalarType<T>::type scalar_type;
+
       //! Turn CacheTaylor into a meta-function class usable with mpl::apply
       template <typename U> 
       struct apply {
@@ -209,6 +245,14 @@ namespace Sacado {
        * Sets the first coefficient to x
        */
       CacheTaylor(const T & x) : Expr< CacheTaylorImplementation<T> >(x) {}
+
+      //! Constructor with supplied value \c x
+      /*!
+       * Sets the first coefficient to x.
+       * Creates a dummy overload when ValueT and ScalarT are the same type.
+       */
+      CacheTaylor(const typename dummy<value_type,scalar_type>::type& x) :
+	Expr< CacheTaylorImplementation<T> >(value_type(x)) {}
 
       //! Constructor with degree d and value \c x
       /*!
@@ -235,6 +279,16 @@ namespace Sacado {
 
       //! Assignment operator with constant right-hand-side
       CacheTaylor<T>& operator=(const T& v);
+
+      //! Assignment operator with constant right-hand-side
+      /*!
+       * Creates a dummy overload when value_type and scalar_type are 
+       * the same type.
+       */
+      CacheTaylor<T>& 
+      operator=(const typename dummy<value_type,scalar_type>::type& val) {
+	return operator=(value_type(val));
+      }
 
       //! Assignment with CacheTaylor right-hand-side
       CacheTaylor<T>& operator=(const CacheTaylor<T>& x);

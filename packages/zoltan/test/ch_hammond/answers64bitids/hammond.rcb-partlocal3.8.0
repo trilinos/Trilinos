@@ -1,0 +1,11 @@
+Decomposition Method 	= rcb
+Zoltan Parameters	= 
+Zoltan Parameters       = keep_cuts=1
+File Type		= Chaco
+File Name		= hammond
+Parallel Disk Info	= number=0
+test local partitions	= 3
+Test Drops		= 1
+Test null export lists  = 1
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm

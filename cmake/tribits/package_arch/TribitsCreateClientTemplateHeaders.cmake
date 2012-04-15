@@ -74,13 +74,19 @@ INCLUDE(PrintVar)
 #
 #  BASE_DIR
 #
-#    The base directory where files with the extension *_decl.hpp will be
+#    The base directory where files with the extension 
+#    ${${PARENT_PACKAGE_NAME}_TEMPLATE_DECL_EXT} will be
 #    globed for.
 #
 #  ADDITIONAL_OUTPUT_DIRS
 #
 #    If set, then the files will be copied to an additional output
 #    directories as well.  These must be abolute paths.
+#
+# The default file extensions are:
+#
+#    ${PARENT_PACKAGE_NAME}_TEMPLATE_DECL_EXT = "_decl.hpp"
+#    ${PARENT_PACKAGE_NAME}_TEMPLATE_DEF_EXT = "_def.hpp"
 #
 
 FUNCTION(TRIBITS_CREATE_CLIENT_TEMPLATE_HEADERS BASE_DIR)
@@ -102,30 +108,42 @@ FUNCTION(TRIBITS_CREATE_CLIENT_TEMPLATE_HEADERS BASE_DIR)
     )
 
   #
-  # B) Glob the names of all the X_decl.hpp files
+  # B) Get the names of the extensions
   #
 
-  FILE(GLOB DECL_HEADERS_LIST "${BASE_DIR}/*_decl.hpp")
+  IF (NOT ${PARENT_PACKAGE_NAME}_TEMPLATE_DECL_EXT)
+    SET(${PARENT_PACKAGE_NAME}_TEMPLATE_DECL_EXT "_decl.hpp")
+  ENDIF()
+
+  IF (NOT ${PARENT_PACKAGE_NAME}_TEMPLATE_DEF_EXT)
+    SET(${PARENT_PACKAGE_NAME}_TEMPLATE_DEF_EXT "_def.hpp")
+  ENDIF()
+
+  #
+  # C) Glob the names of all the X_decl.hpp files
+  #
+
+  FILE(GLOB DECL_HEADERS_LIST "${BASE_DIR}/*${${PARENT_PACKAGE_NAME}_TEMPLATE_DECL_EXT}")
   #PRINT_VAR(DECL_HEADERS_LIST)
 
   #
-  # C) Write the client header files for each globed decl file
+  # D) Write the client header files for each globed decl file
   #
 
   FOREACH(DECL_HEADER ${DECL_HEADERS_LIST})
  
     # Get the base file names (without _decl.hpp)
-    STRING(REGEX REPLACE ".*/(.+)_decl.hpp" "\\1"  DECL_HEADER_BASE ${DECL_HEADER})
+    STRING(REGEX REPLACE ".*/(.+)${${PARENT_PACKAGE_NAME}_TEMPLATE_DECL_EXT}" "\\1"  DECL_HEADER_BASE ${DECL_HEADER})
     #PRINT_VAR(DECL_HEADER_BASE)
 
     # Create the client header file
     SET(CLIENT_HEADER_STR "")
     APPEND_STRING_VAR(CLIENT_HEADER_STR
-      "#include \"${DECL_HEADER_BASE}_decl.hpp\"\n"
+      "#include \"${DECL_HEADER_BASE}${${PARENT_PACKAGE_NAME}_TEMPLATE_DECL_EXT}\"\n"
        )
     IF (NOT HAVE_${PACKAGE_NAME_UC}_EXPLICIT_INSTANTIATION)
       APPEND_STRING_VAR(CLIENT_HEADER_STR
-        "#include \"${DECL_HEADER_BASE}_def.hpp\"\n"
+        "#include \"${DECL_HEADER_BASE}${${PARENT_PACKAGE_NAME}_TEMPLATE_DEF_EXT}\"\n"
          )
     ENDIF()
     #PRINT_VAR(CLIENT_HEADER_STR)
@@ -147,9 +165,9 @@ FUNCTION(TRIBITS_CREATE_CLIENT_TEMPLATE_HEADERS BASE_DIR)
     FOREACH(OUTPUT_DIR ${PARSE_ADDITIONAL_OUTPUT_DIRS})
       SET(EXTERNAL_CLIENT_HEADER_STR "")
       APPEND_STRING_VAR(EXTERNAL_CLIENT_HEADER_STR
-        "#include \"${DECL_HEADER_BASE}_decl.hpp\"\n"
+        "#include \"${DECL_HEADER_BASE}${${PARENT_PACKAGE_NAME}_TEMPLATE_DECL_EXT}\"\n"
         "#ifndef HAVE_${PACKAGE_NAME_UC}_EXPLICIT_INSTANTIATION\n"
-        "#  include \"${DECL_HEADER_BASE}_def.hpp\"\n"
+        "#  include \"${DECL_HEADER_BASE}${${PARENT_PACKAGE_NAME}_TEMPLATE_DEF_EXT}\"\n"
         "#endif\n"
          )
       SET(EXTERNAL_HEADER "${OUTPUT_DIR}/${DECL_HEADER_BASE}.hpp")

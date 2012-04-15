@@ -71,9 +71,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, Test0, Scalar, LocalOrdinal, Glo
   params.set("fact: iluk level-of-fill", fill_level);
   params.set("fact: iluk level-of-overlap", 0);
 
-  TEUCHOS_TEST_NOTHROW(prec.setParameters(params), out, success);
+  TEST_NOTHROW(prec.setParameters(params));
 
-  TEUCHOS_TEST_EQUALITY( prec.getLevelOfFill(), fill_level, out, success);
+  TEST_EQUALITY( prec.getLevelOfFill(), fill_level);
 
   prec.initialize();
   //trivial tests to insist that the preconditioner's domain/range maps are
@@ -84,8 +84,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, Test0, Scalar, LocalOrdinal, Glo
   const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& prec_dom_map = *prec.getDomainMap();
   const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& prec_rng_map = *prec.getRangeMap();
 
-  TEUCHOS_TEST_EQUALITY( prec_dom_map.isSameAs(mtx_dom_map), true, out, success );
-  TEUCHOS_TEST_EQUALITY( prec_rng_map.isSameAs(mtx_rng_map), true, out, success );
+  TEST_EQUALITY( prec_dom_map.isSameAs(mtx_dom_map), true );
+  TEST_EQUALITY( prec_rng_map.isSameAs(mtx_rng_map), true );
 
   prec.compute();
 
@@ -124,7 +124,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, Test1, Scalar, LocalOrdinal, Glo
   params.set("fact: iluk level-of-fill", 1);
   params.set("fact: iluk level-of-overlap", 0);
 
-  TEUCHOS_TEST_NOTHROW(prec.setParameters(params), out, success);
+  TEST_NOTHROW(prec.setParameters(params));
 
   prec.initialize();
   prec.compute();

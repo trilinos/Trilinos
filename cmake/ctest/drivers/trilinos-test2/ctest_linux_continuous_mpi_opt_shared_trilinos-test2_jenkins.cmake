@@ -71,8 +71,7 @@ SET( CTEST_PARALLEL_LEVEL "12" )
 
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 
-#disabling Mesquite because of a build error when shared libs is turned on.
-SET(EXTRA_EXCLUDE_PACKAGES Mesquite STK Claps)
+SET(EXTRA_EXCLUDE_PACKAGES STK Claps Zoltan2)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
@@ -81,7 +80,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DMPI_BASE_DIR:PATH=/home/trilinos"
   "-DTPL_ENABLE_Pthread:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
-  "-DBoost_INCLUDE_DIRS:FILEPATH=/home/trilinos/include"
+  "-DBoost_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/boost-1.46.1/include"
   "-DTPL_ENABLE_Expat:BOOL=ON"
   "-DTPL_ENABLE_LAMMPS:BOOL=ON"
   "-DTPL_ENABLE_couple:BOOL=ON"

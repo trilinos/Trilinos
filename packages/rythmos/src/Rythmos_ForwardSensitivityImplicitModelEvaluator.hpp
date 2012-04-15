@@ -454,7 +454,7 @@ public:
 //    );
 
   // 2007/05/22: rabartl: ToDo: Add an InterpolationBufferBase
-  // stateInterpBuffer object to the initailizeState(...) function that can be
+  // stateInterpBuffer object to the initializeState(...) function that can be
   // used to get x and x_dot at different points in time t.  Then, modify the
   // logic to recompute all of the needed matrices if t != t_base (as passed
   // in through stateBasePoint).  The values of x(t) and xdot(t) can then be

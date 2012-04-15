@@ -1,0 +1,4 @@
+XML parse error at line 3: document not well-formed: end element tag = 'badClose' did not match start element 'goodOpen' from line 1
+<goodOpen>
+  <goodOpenAndClose var=""/>
+</badClose>

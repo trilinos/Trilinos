@@ -253,6 +253,14 @@ INCLUDE(TribitsAddTestHelpers)
 #
 #     If passed in, then the pass/fail criteria will be inverted.
 #
+# NOTES:
+#
+# 1) The test can be disabled by setting the variable
+# ${PACKAGE_NAME}_${TEST_NAME}_DISABLE=TRUE (perhaps in the cache).  This allows
+# tests to be disable on a case-by-case basis.  Here, TEST_NAME is ${EXE_NAME}
+# plus any other postfixes.  This is the name that shows up in 'ctest -N' when
+# running the test.
+#
 
 FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
 

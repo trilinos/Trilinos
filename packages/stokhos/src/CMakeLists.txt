@@ -70,6 +70,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_CompletePolynomialBasisImp.hpp
   Stokhos_GramSchmidtBasis.hpp
   Stokhos_GramSchmidtBasisImp.hpp
+  Stokhos_MonomialGramSchmidtSimplexPCEBasis.hpp
+  Stokhos_MonomialGramSchmidtSimplexPCEBasisImp.hpp
   Stokhos_BasisFactory.hpp
   Stokhos_BasisFactoryImp.hpp
   Stokhos_SparseArray.hpp
@@ -90,9 +92,15 @@ SET(HEADERS ${HEADERS}
   Stokhos_QuadratureFactory.hpp
   Stokhos_QuadratureFactoryImp.hpp
   Stokhos_StandardStorage.hpp
+  Stokhos_StaticStandardStorage.hpp
+  Stokhos_StaticFixedStandardStorage.hpp
   Stokhos_OrthogPolyApprox.hpp
   Stokhos_OrthogPolyApproxImp.hpp
   Stokhos_OrthogPolyExpansion.hpp
+  Stokhos_DivisionExpansionStrategy.hpp
+  Stokhos_MeanBasedDivisionExpansionStrategy.hpp
+  Stokhos_DenseDirectDivisionExpansionStrategy.hpp
+  Stokhos_SPDDenseDirectDivisionExpansionStrategy.hpp
   Stokhos_OrthogPolyExpansionBase.hpp
   Stokhos_OrthogPolyExpansionBaseImp.hpp
   Stokhos_ConstantOrthogPolyExpansion.hpp
@@ -234,6 +242,7 @@ IF (Stokhos_ENABLE_Sacado)
     sacado/Sacado_PCE_OrthogPoly.hpp
     sacado/Sacado_PCE_OrthogPolyImp.hpp
     sacado/Sacado_PCE_OrthogPolyTraits.hpp
+    sacado/Sacado_PCE_ScalarTraitsImp.hpp
     sacado/Sacado_ETPCE_OrthogPoly.hpp
     sacado/Sacado_ETPCE_OrthogPolyImp.hpp
     sacado/Sacado_ETPCE_OrthogPolyTraits.hpp
@@ -241,7 +250,11 @@ IF (Stokhos_ENABLE_Sacado)
     sacado/Sacado_ETV_Vector.hpp
     sacado/Sacado_ETV_VectorImp.hpp
     sacado/Sacado_ETV_VectorOps.hpp
+    sacado/Sacado_ETV_ScalarTraitsImp.hpp
     sacado/Sacado_ETV_VectorTraits.hpp
+    sacado/Sacado_ETV_Vector2.hpp
+    sacado/Sacado_ETV_Vector2Imp.hpp
+    sacado/Sacado_ETV_Vector2Traits.hpp
     )
   SET(SOURCES ${SOURCES}
     sacado/Sacado_PCE_OrthogPoly.cpp

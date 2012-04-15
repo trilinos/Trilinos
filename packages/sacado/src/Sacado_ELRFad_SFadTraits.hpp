@@ -144,6 +144,21 @@ namespace Sacado {
     }
   };
 
+  //! Specialization of %IsEqual to SFad types
+  template <typename ValueT, int Num>
+  struct IsEqual< ELRFad::SFad<ValueT,Num> > {
+    static bool eval(const ELRFad::SFad<ValueT,Num>& x, 
+		     const ELRFad::SFad<ValueT,Num>& y) {
+       return x.isEqualTo(y);
+    }
+  };
+
+  //! Specialization of %IsStaticallySized to SFad types
+  template <typename ValueT, int Num>
+  struct IsStaticallySized< ELRFad::SFad<ValueT,Num> > {
+    static const bool value = true;
+  };
+
 } // namespace Sacado
 
 // Define Teuchos traits classes
@@ -180,11 +195,33 @@ namespace Teuchos {
     promote;
   };
 
-  //! Specializtion of Teuchos::ScalarTraits
+  //! Specializtion of %Teuchos::ScalarTraits
   template <typename ValueT, int Num>
   struct ScalarTraits< Sacado::ELRFad::SFad<ValueT,Num> > :
     public Sacado::Fad::ScalarTraitsImp< Sacado::ELRFad::SFad<ValueT,Num> >
   {};
+
+  //! Specialization of %Teuchos::SerializationTraits
+  template <typename Ordinal, typename ValueT, int Num>
+  struct SerializationTraits<Ordinal, Sacado::ELRFad::SFad<ValueT,Num> > :
+    public Sacado::Fad::SerializationTraitsImp< Ordinal, 
+						Sacado::ELRFad::SFad<ValueT,Num> > 
+  {};
+
+  //! Specialization of %Teuchos::ValueTypeSerializer
+  template <typename Ordinal, typename ValueT, int Num>
+  struct ValueTypeSerializer<Ordinal, Sacado::ELRFad::SFad<ValueT,Num> > :
+    public Sacado::Fad::SerializerImp< Ordinal, 
+				       Sacado::ELRFad::SFad<ValueT,Num>,
+				       ValueTypeSerializer<Ordinal,ValueT> > 
+  {
+    typedef Sacado::ELRFad::SFad<ValueT,Num> FadType;
+    typedef ValueTypeSerializer<Ordinal,ValueT> ValueSerializer;
+    typedef Sacado::Fad::SerializerImp< Ordinal,FadType,ValueSerializer> Base;
+    ValueTypeSerializer(const Teuchos::RCP<const ValueSerializer>& vs,
+			Ordinal sz = 0) :
+      Base(vs, sz) {}
+  };
 }
 #endif // HAVE_SACADO_TEUCHOS
 

@@ -55,6 +55,9 @@ namespace Sacado {
 
     public:
 
+      //! Typename of values
+      typedef ValueT value_type;
+
       //! Typename of scalar's (which may be different from ValueT)
       typedef typename ScalarType<ValueT>::type ScalarT;
 
@@ -122,6 +125,16 @@ namespace Sacado {
 
       //! Destructor
       ~SimpleFad() {}
+
+      //! Returns whether two Fad objects have the same values
+      bool isEqualTo(const SimpleFad& x) const {
+	typedef IsEqual<value_type> IE;
+	if (x.size() != this->size()) return false;
+	bool eq = IE::eval(x.val(), this->val());
+	for (int i=0; i<this->size(); i++)
+	  eq = eq && IE::eval(x.dx(i), this->dx(i));
+	return eq;
+      }
 
       //! Assignment operator with constant right-hand-side
       SimpleFad& operator=(const ValueT& v) {

@@ -48,8 +48,8 @@ template<typename Scalar>
 struct initialize_node<Scalar, KOKKOS_MACRO_DEVICE>
 {
 	typedef KOKKOS_MACRO_DEVICE     device_type ;
-	typedef typename Kokkos::MDArrayView<Scalar,device_type> array_type ;
-  typedef typename Kokkos::MDArrayView<int,device_type>    int_array_type ;
+	typedef typename Kokkos::MDArray<Scalar,device_type> array_type ;
+  typedef typename Kokkos::MDArray<int,device_type>    int_array_type ;
 
   enum { NumNodePerElement = 8 };
 

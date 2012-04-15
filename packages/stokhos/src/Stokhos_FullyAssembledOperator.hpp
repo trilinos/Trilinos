@@ -81,6 +81,17 @@ namespace Stokhos {
 
     //@}
 
+    /** \name Overloaded Epetra_Operator methods */
+    //@{
+
+    /*! 
+     * \brief Wrap Apply() to add a timer.
+     */
+    virtual int Apply(const Epetra_MultiVector& Input, 
+                      Epetra_MultiVector& Result) const;
+
+    //@}
+
   private:
     
     //! Private to prohibit copying

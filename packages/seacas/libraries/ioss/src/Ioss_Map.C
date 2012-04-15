@@ -31,12 +31,15 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_Map.h>
-
-#include <assert.h>
 #include <Ioss_Utils.h>
-#include <string>
+#include <assert.h>
+#include <stddef.h>
 #include <algorithm>
+#include <iterator>
 #include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
 
 Ioss::Map::Map() :
   entityCount(-1), sequentialG2L(true), entityReordered(false)

@@ -4,52 +4,16 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../TPL)
 
-SET(SOURCES UnitTestMain.cpp UnitTestHost.cpp ../TPL/gtest/gtest-all.cc)
+SET(SOURCES UnitTestMain.cpp TestHost.cpp ../TPL/gtest/gtest-all.cc)
 SET(LIBRARIES kokkos kokkosdevicehost kokkosimpl)
-
-IF(Kokkos_ENABLE_DeviceNUMA)
-  LIST( APPEND SOURCES
-    UnitTestNUMA.cpp
-  )
-  LIST( APPEND LIBRARIES
-    kokkosdevicenuma
-  )
-ENDIF()
-
-IF(Kokkos_ENABLE_DevicePthread)
-  LIST( APPEND SOURCES
-    UnitTestPthread.cpp
-  )
-  LIST( APPEND LIBRARIES
-    kokkosdevicepthread
-  )
-ENDIF()
-
-IF(Kokkos_ENABLE_DeviceTPI)
-  LIST( APPEND SOURCES
-    UnitTestTPI.cpp
-  )
-  LIST( APPEND LIBRARIES
-    kokkosdevicetpi
-  )
-ENDIF()
-
-IF(Kokkos_ENABLE_DeviceTBB)
-  LIST( APPEND SOURCES
-    UnitTestTBB.cpp
-  )
-  LIST( APPEND LIBRARIES
-    kokkosdevicetbb tbb
-  )
-ENDIF()
 
 IF(Kokkos_ENABLE_DeviceCuda)
   PACKAGE_ADD_CUDA_LIBRARY(
     unit_cuda
-    SOURCES UnitTestCuda.cu
+    SOURCES TestCudaFunctions.cu
     )
   LIST( APPEND SOURCES
-    UnitTestCuda.cpp
+    TestCuda.cpp
   )
   LIST( APPEND LIBRARIES
     kokkosdevicecuda unit_cuda
@@ -57,7 +21,7 @@ IF(Kokkos_ENABLE_DeviceCuda)
 ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  UnitTest
+  ArrayUnitTest
   SOURCES ${SOURCES}
   COMM serial mpi
   NUM_MPI_PROCS 1

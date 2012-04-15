@@ -158,7 +158,7 @@ std::cout << "--- Leaving:
 #endif
 #endif
 
-   void   pr_error(char *fmt,  ... );
+   void   pr_error(const char *fmt,  ... );
    double GetClock(void);
    void StartTimer(double* t0);
    void StopTimer(double* t0, double* delta);
@@ -184,8 +184,7 @@ std::cout << "--- Leaving:
 
    void   ML_serial_start(ML_Comm *comm);
    void   ML_serial_end(ML_Comm *comm);
-   int    ML_Coord2RBM(int Nnodes, double x[], double y[], double z[],
-                       double rbm[], int Ndof, int Npdes);
+   int    ML_Coord2RBM(int Nnodes, double x[], double y[], double z[], double rbm[], int Ndof, int NscalarDof);
    void ML_az_dsort2(double dlist[], int N, int list2[]);
 
    /* these are functions used by Ray in his RAP thing */

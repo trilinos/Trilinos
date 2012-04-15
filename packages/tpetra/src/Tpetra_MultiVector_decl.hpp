@@ -104,42 +104,121 @@ namespace Tpetra {
     //! @name Post-construction modification routines
     //@{ 
 
-    //! Replace current value at the specified (globalRow, vectorIndex) location with specified value.
-    /** \pre \c globalRow must be a valid global element on this node, according to the row map.
-      */
-    void replaceGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value);
+    /// \brief Replace value, using global (row) index.
+    ///
+    /// Replace the current value at row globalRow (a global index)
+    /// and column vectorIndex with the given value.  The column index
+    /// is zero based.
+    ///
+    /// \pre \c globalRow must be a valid global element on this
+    ///   process, according to the row Map.
+    void 
+    replaceGlobalValue (GlobalOrdinal globalRow, 
+			size_t vectorIndex, 
+			const Scalar &value);
 
-    //! Adds specified value to existing value at the specified (globalRow, vectorIndex) location.
-    /** \pre \c globalRow must be a valid global element on this node, according to the row map.
-      */
-    void sumIntoGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value);
+    /// \brief Add value to existing value, using global (row) index.
+    ///
+    /// Add the given value to the existing value at row globalRow (a
+    /// global index) and column vectorIndex.  The column index is
+    /// zero based.
+    ///
+    /// \pre \c globalRow must be a valid global element on this
+    ///   process, according to the row Map.
+    void 
+    sumIntoGlobalValue (GlobalOrdinal globalRow, 
+			size_t vectorIndex, 
+			const Scalar &value);
 
-    //! Replace current value at the specified (myRow, vectorIndex) location with specified value.
-    /** \pre \c localRow must be a valid local element on this node, according to the row map.
-      */
-    void replaceLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value);
+    /// \brief Replace value, using local (row) index.
+    ///
+    /// Replace the current value at row myRow (a local index) and
+    /// column vectorIndex with the given value.  The column index is
+    /// zero based.
+    ///
+    /// \pre \c myRow must be a valid local element on this process,
+    ///   according to the row Map.
+    void 
+    replaceLocalValue (LocalOrdinal myRow, 
+		       size_t vectorIndex, 
+		       const Scalar &value);
 
-    //! Adds specified value to existing value at the specified (myRow, vectorIndex) location.
-    /** \pre \c localRow must be a valid local element on this node, according to the row map.
-      */
-    void sumIntoLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value);
+    /// \brief Add value to existing value, using local (row) index.
+    ///
+    /// Add the given value to the existing value at row myRow (a
+    /// local index) and column vectorIndex.  The column index is
+    /// zero based.
+    ///
+    /// \pre \c myRow must be a valid local element on this process,
+    ///   according to the row Map.
+    void 
+    sumIntoLocalValue (LocalOrdinal myRow, 
+		       size_t vectorIndex, 
+		       const Scalar &value);
 
-    //! Initialize all values in a multi-vector with specified value.
-    void putScalar(const Scalar &value);
+    //! Set all values in the multivector with the given value.
+    void putScalar (const Scalar &value);
 
-    //! Set multi-vector values to random numbers.
+    /// \brief Set all values in the multivector to pseudorandom numbers.
+    ///
+    /// \note The implementation of this method may depend on the
+    ///   Kokkos Node type and on what third-party libraries you have
+    ///   available.  Do not expect repeatable results.
+    ///
+    /// \note Behavior of this method may or may not depend on
+    ///   external use of the C library routines \c srand() and \c
+    ///   rand().
+    ///
+    /// \warning This method does <i>not</i> promise to use a
+    ///   distributed-memory parallel pseudorandom number generator.
+    ///   Corresponding values on different processes might be
+    ///   correlated.  It also does not promise to use a high-quality
+    ///   pseudorandom number generator within each process.
     void randomize();
 
-    //! Replace the underlying Map with a compatible one.
+    /// \brief Replace the underlying Map with a compatible one.
+    ///
+    /// This method relabels the rows of the multivector using the
+    /// global IDs in the input Map.  Thus, it implicitly applies a
+    /// permutation, without actually moving data.  This only works if
+    /// the input Map is compatible (in the sense of \c
+    /// Map::isCompatible()) with the multivector's current Map, so
+    /// that the number of rows per process does not change.  
+    ///
+    /// We only check for compatibility in debug mode (when Trilinos
+    /// was built with the Trilinos_ENABLE_DEBUG option set).  In that
+    /// case, if the input Map is <i>not</i> compatible, then this
+    /// method throws \c std::invalid_argument.  We only check in
+    /// debug mode because the check requires communication
+    /// (\f$O(1)\f$ all-reduces).
+    ///
+    /// \note This method is <i>not</i> for arbitrary data
+    ///   redistribution.  If you need to move data around, use \c
+    ///   Import or \c Export.
+    ///
+    /// \note This method must always be called as a collective
+    ///   operation on all processes over which the multivector is
+    ///   distributed.  This is because the method reserves the right
+    ///   to check for compatibility of the two Maps, at least in
+    ///   debug mode.
     void replaceMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map);
 
-    //! Instruct a local (non-distributed) MultiVector to sum values across all nodes.
+    //! For a locally replicated multivector: sum values across all processes.
     void reduce();
 
-    //! = Operator.
-    /*! \param In A - Multivector to copy
-     */
-    MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& operator=(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source);
+    /// \brief Assign the contents of \c source to this multivector (deep copy).
+    ///
+    /// \pre The two multivectors must have the same communicator.
+    /// \pre The input multivector's Map must be compatible with this multivector's Map.
+    /// \pre The two multivectors must have the same number of columns.
+    ///
+    /// \note This method must always be called as a collective
+    ///   operation on all processes over which the multivector is
+    ///   distributed.  This is because the method reserves the right
+    ///   to check for compatibility of the two Maps, at least in
+    ///   debug mode.
+    MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& 
+    operator= (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& source);
 
     //@}
 
@@ -153,73 +232,106 @@ namespace Tpetra {
      */
     //@{
 
-    //! Returns a MultiVector with copies of selected columns.
-    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::Range1D &colRng) const;
+    //! Return a MultiVector with copies of selected columns.
+    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
+    subCopy (const Teuchos::Range1D &colRng) const;
 
-    //! Returns a MultiVector with copies of selected columns.
-    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::ArrayView<const size_t> &cols) const;
+    //! Return a MultiVector with copies of selected columns.
+    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
+    subCopy (const Teuchos::ArrayView<const size_t> &cols) const;
 
-    //! Returns a const MultiVector with const views of selected columns.
-    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::Range1D &colRng) const;
+    //! Return a const MultiVector with const views of selected columns.
+    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
+    subView (const Teuchos::Range1D &colRng) const;
 
-    //! Returns a const MultiVector with const views of selected columns.
-    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::ArrayView<const size_t> &cols) const;
+    //! Return a const MultiVector with const views of selected columns.
+    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
+    subView (const Teuchos::ArrayView<const size_t> &cols) const;
 
-    //! Returns a MultiVector with views of selected columns.
-    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(const Teuchos::Range1D &colRng);
+    //! Return a MultiVector with views of selected columns.
+    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
+    subViewNonConst (const Teuchos::Range1D &colRng);
 
-    //! Returns a MultiVector with views of selected columns.
-    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(const Teuchos::ArrayView<const size_t> &cols);
+    //! Return a MultiVector with views of selected columns.
+    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
+    subViewNonConst (const Teuchos::ArrayView<const size_t> &cols);
 
-    //! \brief Returns a const MultiVector view of a subset of rows.
+    //! \brief Return a const MultiVector view of a subset of rows.
     /** 
-        Returns a const view of this MultiVector consisting of a subset of the rows, as specified by an offset and a sub-Map.
+        Return a const view of this MultiVector consisting of a subset
+        of the rows, as specified by an offset and a subset Map of
+        this MultiVector's current row Map.
 
-        \param In subMap - The row map for the new MultiVector.
+        \param In subMap - The row Map for the new MultiVector.
         \param In offset - The offset into the data of <tt>(*this)</tt>.
 
-        \pre  <tt>subMap->getNodeNumElements() + offset < this->getLocalLength()</tt>
+        \pre <tt>subMap->getNodeNumElements() + offset < this->getLocalLength()</tt>
+	\pre The given Map must be a subset Map of this MultiVector's row Map.
      */
-    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > offsetView(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap, size_t offset) const;
+    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
+    offsetView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& subMap, 
+		size_t offset) const;
 
-    //! \brief Returns a non-const MultiVector view of a subset of rows.
+    //! \brief Return a non-const MultiVector view of a subset of rows.
     /** 
-        Returns a non-const view of this MultiVector consisting of a subset of the rows, as specified by an offset and a sub-Map.
+        Returns a non-const view of this MultiVector consisting of a
+        subset of the rows, as specified by an offset and a subset Map
+        of this MultiVector's current row Map.
 
-        \param In subMap - The row map for the new MultiVector.
+        \param In subMap - The row Map for the new MultiVector.
         \param In offset - The offset into the data of <tt>(*this)</tt>.
 
-        \pre  <tt>subMap->getNodeNumElements() + offset < this->getLocalLength()</tt>
+        \pre <tt>subMap->getNodeNumElements() + offset < this->getLocalLength()</tt>
+	\pre The given Map must be a subset Map of this MultiVector's row Map.
      */
-    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > offsetViewNonConst(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap, size_t offset);
+    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
+    offsetViewNonConst (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap, 
+			size_t offset);
 
-    //! Const Vector access function.
-    Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getVector(size_t j) const;
+    //! Return a Vector which is a const view of column j.
+    Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
+    getVector (size_t j) const;
 
-    //! Vector access function.
-    Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getVectorNonConst(size_t j);
+    //! Return a Vector which is a nonconst view of column j.
+    Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
+    getVectorNonConst (size_t j);
 
-    //! Const Local vector access function.
-    //! View of the local values in a particular vector of this multi-vector.
+    //! Const view of the local values in a particular vector of this multivector.
     Teuchos::ArrayRCP<const Scalar> getData(size_t j) const;
 
-    //! Local vector access function.
-    //! View of the local values in a particular vector of this multi-vector.
+    //! View of the local values in a particular vector of this multivector.
     Teuchos::ArrayRCP<Scalar> getDataNonConst(size_t j);
 
-    //! Return multi-vector values in user-provided two-dimensional array (using Teuchos memory management classes).
+    /// \brief Fill the given array with a copy of this multivector's local values.
+    ///
+    /// \param A [out] View of the array to fill.  We consider A as a
+    ///   matrix with column-major storage.
+    ///
+    /// \param LDA [in] Leading dimension of the matrix A.
     void get1dCopy(Teuchos::ArrayView<Scalar> A, size_t LDA) const;
 
-    //! Return multi-vector values in user-provided array of pointers (using Teuchos memory management classes).
+    /// \brief Fill the given array with a copy of this multivector's local values.
+    ///
+    /// \param ArrayOfPtrs [out] Array of arrays, one for each column
+    ///   of the multivector.  On output, we fill ArrayOfPtrs[j] with
+    ///   the data for column j of this multivector.
     void get2dCopy(Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > ArrayOfPtrs) const;
 
-    //! Return const persisting view of values in a one-dimensional array. Throws std::runtime_error if the underlying data is non-contiguous.
+    /// \brief Const persisting (1-D) view of this multivector's local values.
+    ///
+    /// This method assumes that the columns of the multivector are
+    /// stored contiguously.  If not, this method throws
+    /// std::runtime_error.
     Teuchos::ArrayRCP<const Scalar> get1dView() const;
 
     //! Return const persisting pointers to values.
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > get2dView() const;
 
-    //! Return non-const persisting view of values in a one-dimensional array. Throws std::runtime_error if the underlying data is non-contiguous.  Teuchos::ArrayRCP<Scalar> get1dViewNonConst();
+    /// \brief Nonconst persisting (1-D) view of this multivector's local values.
+    ///
+    /// This method assumes that the columns of the multivector are
+    /// stored contiguously.  If not, this method throws
+    /// std::runtime_error.
     Teuchos::ArrayRCP<Scalar> get1dViewNonConst();
 
     //! Return non-const persisting pointers to values.
@@ -236,13 +348,13 @@ namespace Tpetra {
     //! @name Mathematical methods
     //@{ 
 
-    //! Computes dot product of each corresponding pair of vectors, dots[i] = this[i].dot(A[i])
+    //! Compute dot product of each corresponding pair of vectors, dots[i] = this[i].dot(A[i])
     void dot(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Teuchos::ArrayView<Scalar> &dots) const;
 
-    //! Puts element-wise absolute values of input Multi-vector in target: A = abs(this)
+    //! Put element-wise absolute values of input Multi-vector in target: A = abs(this)
     void abs(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A);
 
-    //! Puts element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
+    //! Put element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
     void reciprocal(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A);
 
     //! Scale the current values of a multi-vector, this = alpha*this.
@@ -275,8 +387,14 @@ namespace Tpetra {
     //! Compute mean (average) value of each vector in multi-vector.
     void meanValue(const Teuchos::ArrayView<Scalar> &means) const;
 
-    //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).
-    void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &beta);
+    //! Matrix-matrix multiplication: this = beta*this + alpha*op(A)*op(B).
+    void 
+    multiply (Teuchos::ETransp transA, 
+	      Teuchos::ETransp transB, 
+	      const Scalar& alpha, 
+	      const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, 
+	      const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& B, 
+	      const Scalar& beta);
 
     //! Element-wise multiply of a Vector A with a MultiVector B.
     /** Forms this = scalarThis * this + scalarAB * B @ A
@@ -284,25 +402,35 @@ namespace Tpetra {
      *  B must be the same shape (size and num-vectors) as this, while
      *  A is the same size but a single vector (column).
      */
-    void elementWiseMultiply(Scalar scalarAB, const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, Scalar scalarThis);
+    void 
+    elementWiseMultiply (Scalar scalarAB, 
+			 const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, 
+			 const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& B, 
+			 Scalar scalarThis);
     //@} 
 
     //! @name Attribute access functions
     //@{ 
 
-    //! Returns the number of vectors in the multi-vector.
+    //! Number of columns in the multivector.
     size_t getNumVectors() const;
 
-    //! Returns the local vector length on the calling processor of vectors in the multi-vector.
+    //! Local number of rows on the calling process.
     size_t getLocalLength() const;
 
-    //! Returns the global vector length of vectors in the multi-vector.
+    //! Global number of rows in the multivector.
     global_size_t getGlobalLength() const;
 
-    //! Returns the stride between vectors in the multi-vector (only meaningful if ConstantStride() is true). WARNING: this may vary from node to node.
+    /// \brief Stride between columns in the multivector.
+    ///
+    /// This is only meaningful if \c isConstantStride() returns true.
+    ///
+    /// \warning This may be different on different processes.
     size_t getStride() const;
 
-    //! Returns true if this multi-vector has constant stride between vectors. WARNING: This may vary from node to node.
+    /// \brief Whether this multivector has constant stride between columns.
+    ///
+    /// \warning This may be different on different processes.
     bool isConstantStride() const;
 
     //@} 
@@ -310,15 +438,44 @@ namespace Tpetra {
     //! @name Overridden from Teuchos::Describable 
     //@{
 
-    /** \brief Return a simple one-line description of this object. */
+    //! A simple one-line description of this object.
     std::string description() const;
 
-    /** \brief Print the object with some verbosity level to an FancyOStream object. */
-    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+    /// \brief Print the object with the given verbosity level to a FancyOStream.
+    ///
+    /// \param out [out] Output stream to which to print.  For
+    ///   verbosity levels VERB_LOW and lower, only the process with
+    ///   rank 0 ("Proc 0") in the MultiVector's communicator prints.
+    ///   For verbosity levels strictly higher than VERB_LOW, all
+    ///   processes in the communicator need to be able to print to
+    ///   the output stream.
+    ///
+    /// \param verbLevel [in] Verbosity level.  The default verbosity
+    ///   (verbLevel=VERB_DEFAULT) is VERB_LOW.
+    ///
+    /// The amount and content of what this method prints depends on
+    /// the verbosity level.  In the list below, each higher level
+    /// includes all the content of the previous levels, as well as
+    /// its own content.
+    ///
+    /// - VERB_LOW: Only Proc 0 prints; it prints the same thing as \c
+    ///   description().
+    /// - VERB_MEDIUM: Each process prints its local length (the
+    ///   number of rows that it owns).
+    /// - VERB_HIGH: Each process prints whether the multivector has
+    ///   constant stride (see \c isConstantStride()), and if so, what
+    ///   that stride is.  (Stride may differ on different processes.)
+    /// - VERB_EXTREME: Each process prints the values in its local
+    ///   part of the multivector.  This will print out as many rows
+    ///   of data as the global number of rows in the multivector, so
+    ///   beware.
+    void 
+    describe (Teuchos::FancyOStream& out, 
+	      const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
     //@}
 
-    protected:
+  protected:
 
     typedef Kokkos::MultiVector<Scalar,Node> KMV;
     typedef Kokkos::DefaultArithmetic<KMV>   MVT;
@@ -330,8 +487,12 @@ namespace Tpetra {
     KMV lclMV_;
     Teuchos::Array<size_t> whichVectors_;
 
+    /// \fn getSubArrayRCP
+    /// \brief Persisting view of j-th column in the given ArrayRCP.
+    ///
+    /// This method considers isConstantStride().  The ArrayRCP may
+    /// correspond either to a compute buffer or a host view.
     template <class T>
-    //! Get persisting view of j-th column in given ArrayRCP, considering isConstantStride(). ArrayRCP may correspond to a compute buffer or host view.
     Teuchos::ArrayRCP<T> getSubArrayRCP(Teuchos::ArrayRCP<T> arr, size_t j) const;
 
     //! Advanced constructor for non-contiguous views.
@@ -342,46 +503,63 @@ namespace Tpetra {
     MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
                 Teuchos::ArrayRCP<Scalar> data, size_t LDA, size_t NumVectors);
 
-    // four functions needed for DistObject derivation
-    bool checkSizes(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> &sourceObj);
+    //! @name Implementation of Tpetra::DistObject interface
+    //@{
 
-    void copyAndPermute(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> &sourceObj,
-                        size_t numSameIDs,
-                        const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
-                        const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs);
+    /// \brief Whether data redistribution between \c sourceObj and this object is legal.
+    ///
+    /// This method is called in \c DistObject::doTransfer() to check
+    /// whether data redistribution between the two objects is legal.
+    bool 
+    checkSizes (const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>& sourceObj);
 
-    void packAndPrepare(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> &sourceObj,
-                        const Teuchos::ArrayView<const LocalOrdinal> &exportLIDs,
-                        Teuchos::Array<Scalar> &exports,
-                        const Teuchos::ArrayView<size_t> &numExportPacketsPerLID,
-                        size_t& constantNumPackets,
-                        Distributor &distor);
+    void 
+    copyAndPermute (const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>& sourceObj,
+		    size_t numSameIDs,
+		    const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
+		    const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs);
 
-    void unpackAndCombine(const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
-                          const Teuchos::ArrayView<const Scalar> &imports,
-                          const Teuchos::ArrayView<size_t> &numPacketsPerLID,
-                          size_t constantNumPackets,
-                          Distributor &distor,
-                          CombineMode CM);
+    void 
+    packAndPrepare (const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>& sourceObj,
+		    const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+		    Teuchos::Array<Scalar>& exports,
+		    const Teuchos::ArrayView<size_t>& numExportPacketsPerLID,
+		    size_t& constantNumPackets,
+		    Distributor& distor);
 
-  mutable Teuchos::ArrayRCP<Scalar> ncview_;
-  mutable Teuchos::ArrayRCP<const Scalar> cview_;
+    void 
+    unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
+		      const Teuchos::ArrayView<const Scalar>& imports,
+		      const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+		      size_t constantNumPackets,
+		      Distributor& distor,
+		      CombineMode CM);
 
-  void createViews() const;
-  void createViewsNonConst(Kokkos::ReadWriteOption rwo);
-  void releaseViews() const;
+    void createViews () const;
+    void createViewsNonConst (Kokkos::ReadWriteOption rwo);
+    void releaseViews () const;
+    //@}
 
+    mutable Teuchos::ArrayRCP<Scalar> ncview_;
+    mutable Teuchos::ArrayRCP<const Scalar> cview_;
   }; // class MultiVector
 
-  /** \brief Non-member function to create a MultiVector from a specified Map.
-      \relatesalso MultiVector
-   */
+  /// \brief Nonmember constructor: make a MultiVector from a given Map.
+  /// \relatesalso MultiVector
+  ///
+  /// \param map [in] Map describing the distribution of rows of the
+  ///   resulting MultiVector.
+  /// \param numVectors [in] Number of columns of the resulting
+  ///   MultiVector.
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP< MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   createMultiVector(const RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, size_t numVectors) 
   {
-    const bool DO_INIT_TO_ZERO = true;
-    return rcp( new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,numVectors,DO_INIT_TO_ZERO) );
+    using Teuchos::rcp;
+    typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+
+    const bool initToZero = true;
+    return rcp (new MV (map, numVectors, initToZero));
   }
 
 

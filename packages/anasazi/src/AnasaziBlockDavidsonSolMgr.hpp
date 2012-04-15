@@ -174,7 +174,7 @@ class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
    *   - time spent locking converged eigenvectors
    */
    Teuchos::Array<Teuchos::RCP<Teuchos::Time> > getTimers() const {
-     return tuple(_timerSolve, _timerRestarting, _timerLocking);
+     return Teuchos::tuple(_timerSolve, _timerRestarting, _timerLocking);
    }
 
   //@}

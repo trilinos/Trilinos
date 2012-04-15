@@ -273,6 +273,8 @@ Frequently Asked Questions
 <!------------  Keep them in the same order!                     ---------->
 <!------------------------------------------------------------------------->
 <!------------------------------------------------------------------------->
+<li>  <a href="#ZOLTANH">How do I upgrade from the Zoltan v1 interface (in
+lbi_const.h) to the current Zoltan interface (in zoltan.h)?
 <li>  <a href="#EMPTYPART">Zoltan's hypergraph partitioner
 is returning empty parts, that is, parts that have zero
 objects in them. Is this a bug?</a>
@@ -303,6 +305,27 @@ Makefile:28: mem.d: No such file or directory
 <!------------  Keep them in the same order as list above! ---------------->
 <!------------------------------------------------------------------------->
 <!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<li>  <a NAME="ZOLTANH"></a>How do I upgrade from the Zoltan v1 interface (in
+lbi_const.h) to the current Zoltan interface (in zoltan.h)?
+<p>
+The Zoltan interface was revised in version 1.3 to include "Zoltan" in 
+function names and defined types.  Upgrading to this interface is easy.
+<ul>
+<li>  Include "zoltan.h" instead of "lbi_const.h" in your source files.
+<li>  For most Zoltan functions and constants, prefix "LB_" is replaced 
+by "Zoltan_"; for example, "LB_Set_Param" is now "Zoltan_Set_Param."  
+A few exceptions exist; for example, 
+"LB_Balance" is Zoltan_LB_Balance; "LB_Free_Data" is "Zoltan_LB_Free_Data."
+See the <a href="ug_html/ug_backward.html#Backward v1.3">Release v1.3
+backward compatibility notes</a> for a complete list of name changes.
+<li>  Fortran90 applications should define user-defined data 
+in <i>zoltan_user_data.f90</i> rather than <i>lb_user_const.f90</i>.
+</ul>
+More complete details are in the 
+<a href="ug_html/ug_backward.html#Backward v1.3">Release v1.3
+backward compatibility notes</a>.
+<hr WIDTH="100%">
 <li>  <a NAME="EMPTYPART"></a>Zoltan's hypergraph partitioner
 is returning empty parts, that is, parts that have zero
 objects in them. Is this a bug?

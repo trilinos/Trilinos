@@ -79,6 +79,11 @@ VerboseObjectBase::getDefaultOStream()
   return privateDefaultOStream();
 }
 
+// Destructor
+
+VerboseObjectBase::~VerboseObjectBase()
+{
+}
 
 // Constructors/Initializers
 

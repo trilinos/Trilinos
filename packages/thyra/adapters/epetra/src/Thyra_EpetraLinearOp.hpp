@@ -215,7 +215,7 @@ public:
    * In debug mode, asserts will be performed to ensure that everything
    * matches up as it should.
    *
-   * The functions <tt>initailize()</tt> ore <tt>partiallyInitialize()</tt>
+   * The functions <tt>initialize()</tt> ore <tt>partiallyInitialize()</tt>
    * must have been called prior to calling this function.
    */
   void setFullyInitialized(bool isFullyInitialized = true);

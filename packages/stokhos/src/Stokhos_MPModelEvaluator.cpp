@@ -890,11 +890,35 @@ Stokhos::MPModelEvaluator::set_x_mp_init(
   *mp_x_init = x_mp_in;
 }
 
+Teuchos::RCP<const Stokhos::ProductEpetraVector>
+Stokhos::MPModelEvaluator::get_x_mp_init() const
+{
+  return mp_x_init;
+}
+
 void 
 Stokhos::MPModelEvaluator::set_p_mp_init(
   int i, const Stokhos::ProductEpetraVector& p_mp_in)
 {
-  *mp_p_init[i] = p_mp_in;
+  Teuchos::Array<int>::iterator it = std::find(mp_p_index_map.begin(),
+					       mp_p_index_map.end(), 
+					       i);
+  TEUCHOS_TEST_FOR_EXCEPTION(it == mp_p_index_map.end(), std::logic_error,
+		     "Error!  Invalid p map index " << i);
+  int ii = it - mp_p_index_map.begin();
+  *mp_p_init[ii] = p_mp_in;
+}
+
+Teuchos::RCP<const Stokhos::ProductEpetraVector>
+Stokhos::MPModelEvaluator::get_p_mp_init(int l) const
+{
+  Teuchos::Array<int>::const_iterator it = std::find(mp_p_index_map.begin(),
+						     mp_p_index_map.end(), 
+						     l);
+  TEUCHOS_TEST_FOR_EXCEPTION(it == mp_p_index_map.end(), std::logic_error,
+		     "Error!  Invalid p map index " << l);
+  int ll = it - mp_p_index_map.begin();
+  return mp_p_init[ll];
 }
 
 Teuchos::Array<int> 
@@ -966,6 +990,29 @@ Stokhos::MPModelEvaluator::create_p_mp(int l, Epetra_DataAccess CV,
 			  mp_p_map[ll], mp_comm));
   else
     mp_p = Teuchos::rcp(new Stokhos::ProductEpetraVector(
+			  mp_block_map, me->get_p_map(l),
+			  mp_p_map[ll], mp_comm, CV, *v));
+  return mp_p;
+}
+
+Teuchos::RCP<Stokhos::ProductEpetraMultiVector>
+Stokhos::MPModelEvaluator::create_p_mv_mp(int l, int num_vecs, 
+					  Epetra_DataAccess CV, 
+					  const Epetra_MultiVector* v) const
+{
+  Teuchos::RCP<Stokhos::ProductEpetraMultiVector> mp_p;
+  Teuchos::Array<int>::const_iterator it = std::find(mp_p_index_map.begin(),
+						     mp_p_index_map.end(), 
+						     l);
+  TEUCHOS_TEST_FOR_EXCEPTION(it == mp_p_index_map.end(), std::logic_error,
+		     "Error!  Invalid p map index " << l);
+  int ll = it - mp_p_index_map.begin();
+  if (v == NULL)
+    mp_p = Teuchos::rcp(new Stokhos::ProductEpetraMultiVector(
+			  mp_block_map, me->get_p_map(l),
+			  mp_p_map[ll], mp_comm, num_vecs));
+  else
+    mp_p = Teuchos::rcp(new Stokhos::ProductEpetraMultiVector(
 			  mp_block_map, me->get_p_map(l),
 			  mp_p_map[ll], mp_comm, CV, *v));
   return mp_p;

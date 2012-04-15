@@ -49,7 +49,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Parameters, Test0)
 
   Teuchos::ParameterList validparams;
 
-  TEUCHOS_TEST_NOTHROW(Ifpack2::getValidParameters(validparams), out, success);
+  TEST_NOTHROW(Ifpack2::getValidParameters(validparams));
 
   params.validateParameters(validparams);
 
@@ -57,10 +57,10 @@ TEUCHOS_UNIT_TEST(Ifpack2Parameters, Test0)
 
   //call getParameter with a wrong name:
   Ifpack2::getParameter(params, "level-of-fill", level_of_fill);
-  TEUCHOS_TEST_EQUALITY(level_of_fill, 0, out, success)
+  TEST_EQUALITY(level_of_fill, 0)
 
   //call getParameter with a valid name:
   Ifpack2::getParameter(params, "fact: iluk level-of-fill", level_of_fill);
-  TEUCHOS_TEST_EQUALITY(level_of_fill, 2, out, success)
+  TEST_EQUALITY(level_of_fill, 2)
 }
 

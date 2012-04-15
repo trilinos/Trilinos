@@ -236,10 +236,10 @@ struct AZ_PREC_STRUCT {
   /* Used to represent preconditioners. In particular,            */
   /* two structures  are                                          */
   /* passed into AZ_iterate:                                      */
-  /* AZ_iterate(..., AZ_MATRIX *Amat, AZ_PRECOND *Precond, ...) */
-  /* corresponding to matrix and preconditioner descriptions. */
+  /* AZ_iterate(..., AZ_MATRIX *Amat, AZ_PRECOND *Precond, ...)   */
+  /* corresponding to matrix and preconditioner descriptions.     */
   /*                                                              */
-  /* For matrix-vector products, a subroutine Amat.'matvec'*/
+  /* For matrix-vector products, a subroutine Amat.'matvec'       */
   /* can be supplied. 'Amat' is be passed to this routine and thus*/
   /* relevant data can be placed in this structure. If a matrix-  */
   /* vector product is not supplied, either an MSR or VBR matrix  */
@@ -252,7 +252,7 @@ struct AZ_PREC_STRUCT {
   /* must be set to "AZ_user_precond". Otherwise                  */
   /* options[AZ_precond] must be set to one of the preconditioners*/
   /* supplied by Aztec and the matrix must be a MSR or VBR format */
-  /* The matrix used as preconditionner is descibed in a AZ_MATRIX*/
+  /* The matrix used as preconditioner is descibed in a AZ_MATRIX */
   /* structure which could be either the same as Amat             */
   /* (precond.Pmat = Amat) or  a different matrix described       */
   /* by the arrays bindx,indx,rpntr,cpntr, bpntr, and val.        */
@@ -262,7 +262,7 @@ struct AZ_PREC_STRUCT {
   /* parameters which Aztec copies to this  structure.            */
   /*                                                              */
 
-  struct AZ_MATRIX_STRUCT *Pmat;     /* matrix used by the precondtioner  */
+  struct AZ_MATRIX_STRUCT *Pmat;     /* matrix used by the preconditioner */
   /* when not using multilevel stuff   */
   /*                                   */
   int           prec_create_called;/* =1 indicates that AZ_precond_create() */
@@ -686,7 +686,7 @@ void PREFIX AZ_SLAIC1_F77(int * , int *, float *, float *, float *, float *,
                        /*      the numerical entries rather than the sparse */
                        /*      pattern.                                     */
                        /*                                                   */
-                       /*      3: use precondtioner from last level 1 or 2  */
+                       /*      3: use preconditioner from last level 1 or 2 */
                        /*      call to precond. (see specific precondioner  */
                        /*      for more info)                               */
                        int data_org[], double status[], int proc_config[]);

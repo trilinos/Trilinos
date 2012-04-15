@@ -67,7 +67,7 @@
 extern void sort_blk_col_indx(int num_blks_row, int *bindx_start_row,
                        int *ordered_index);
 
-extern void sort2(int, int *, int*);
+extern void sort2 (int* list, int *parlist, int start, int end);
 
 extern void order_parallel(int M, double *val_old, double *val_new, 
                    int *bindx_old, int *bindx_new, int *indx_old, int *indx_new,
@@ -121,7 +121,7 @@ void sort_blk_col_indx(int num_blks_row, int *bindx_start_row,
 
   /* Sort block column index array and produce the ordering index */
 
-  sort2(num_blks_row, bindx_start_row-1, ordered_index-1);
+  sort2(bindx_start_row, ordered_index, 0, num_blks_row-1);
 
 } /* sort_blk_col_indx */
 
@@ -129,25 +129,47 @@ void sort_blk_col_indx(int num_blks_row, int *bindx_start_row,
 /******************************************************************************/
 /******************************************************************************/
 
-void sort2(int n, int ra[], int rb[])
+static void quickpart (
+  int *list, int *parlist, int start, int end, int *equal, int *larger)
+/*******************************************************************************
+    Partition for the quicksort function sort2.
+*******************************************************************************/
+{
+int i, key, change, parchange;
+
+  key = list ? list[(end+start)/2] : 1;
+
+  *equal = *larger = start;
+  for (i = start; i <= end; i++)
+    if (list[i] < key) {
+      parchange         = parlist[i];
+      parlist[i]        = parlist[*larger];
+      parlist[(*larger)]= parlist[*equal];
+      parlist[(*equal)] = parchange;
+      change            = list[i];
+      list[i]           = list[*larger];
+      list[(*larger)++] = list[*equal];
+      list[(*equal)++]  = change;
+    }
+    else if (list[i] == key) {
+      parchange         = parlist[i];
+      parlist[i]        = parlist[*larger];
+      parlist[(*larger)]= parchange;
+      list[i]           = list[*larger];
+      list[(*larger)++] = key;
+    }
+}
+
+
+
+void sort2 (int* list, int *parlist, int start, int end)
 
 /*******************************************************************************
 
-  Numerical Recipes C source code modified to have first argument an integer
-  array.
-
-  Sorts the array ra[1,..,n] in ascending numerical order using heapsort
+  Sorts the array list[0,..,n-1] in ascending numerical order using quicksort
   algorithm, while making the corresponding rearrangement of the array
-  rb[1,..,n].
+  parlist[0,..,n-1]. Copy of the quicksort from Zoltan.
 
-  NOTE: The arrays start at 1 instead of 0, therefore you must pass call from C
-  for a zero based array as:
-
-                   sort(n, ra-1, rb-1);
-
-
-  Author:          Modified by John N. Shadid, SNL, 1421
-  =======
 
   Return code:     void
   ============
@@ -155,62 +177,23 @@ void sort2(int n, int ra[], int rb[])
   Parameter list:
   ===============
 
-  n:               Length of arrays ra and rb.
+  list:            Array to be sorted.
 
-  ra:              Array to be sorted.
+  parlist:         Second array order acording to the sorted ra array.
 
-  rb               Second array order acording to the sorted ra array.
+  start:           start index
+
+  end:             end index
 
 *******************************************************************************/
-
 {
+  int  equal, larger;
 
-  /* local variables */
-
-  int l, j, ir, i;
-  int rra;
-  int rrb;
-
-  /**************************** execution begins ******************************/
-
-  l  = (n >> 1) + 1;
-  ir = n;
-
-  for (;;) {
-    if (l > 1) {
-      rra = ra[--l];
-      rrb = rb[l];
-    }
-    else {
-      rra    = ra[ir];
-      rrb    = rb[ir];
-      ra[ir] = ra[1];
-      rb[ir] = rb[1];
-
-      if (--ir <= 1) {
-        ra[1] = rra;
-        rb[1] = rrb;
-        return;
-      }
-    }
-
-    i = l;
-    j = l << 1;
-
-    while (j <= ir) {
-      if (j < ir && ra[j] < ra[j+1]) ++j;
-      if (rra < ra[j]) {
-        ra[i] = ra[j];
-        rb[i] = rb[j];
-        j    += (i = j);
-      }
-      else j = ir + 1;
-    }
-
-    ra[i] = rra;
-    rb[i] = rrb;
+  if (start < end) {
+    quickpart (list, parlist, start, end, &equal, &larger);
+    sort2 (list, parlist, start,  equal-1);
+    sort2 (list, parlist, larger, end);
   }
-
 } /* sort2 */
 
 /******************************************************************************/

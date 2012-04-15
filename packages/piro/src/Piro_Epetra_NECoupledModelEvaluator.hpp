@@ -1,3 +1,47 @@
+/*
+// @HEADER
+// ************************************************************************
+// 
+//        Piro: Strategy package for embedded analysis capabilitites
+//                  Copyright (2010) Sandia Corporation
+// 
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
+// National Laboratories.
+// 
+// ************************************************************************
+// @HEADER
+*/
+
 #ifndef PIRO_EPETRA_NE_COUPLED_MODEL_EVALUATOR_HPP
 #define PIRO_EPETRA_NE_COUPLED_MODEL_EVALUATOR_HPP
 
@@ -13,6 +57,7 @@
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
 
+#include "Teuchos_Array.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
@@ -22,6 +67,64 @@
 namespace Piro {
   namespace Epetra {
 
+    class AbstractNetworkModel {
+    public:
+
+      //! Constructor
+      AbstractNetworkModel() {}
+
+      //! Destructor
+      virtual ~AbstractNetworkModel() {}
+
+      //! evaluate model
+      virtual void evalModel(
+	const Teuchos::Array<EpetraExt::ModelEvaluator::InArgs>& model_inargs, 
+	const Teuchos::Array<EpetraExt::ModelEvaluator::OutArgs>& model_outargs,
+	const EpetraExt::ModelEvaluator::InArgs& network_inargs, 
+	const EpetraExt::ModelEvaluator::OutArgs& network_outargs,
+	const Teuchos::Array<int>& n_p,
+	const Teuchos::Array<int>& n_g,
+	const Teuchos::Array< Teuchos::RCP<Epetra_Vector> >& p,
+	const Teuchos::Array< Teuchos::RCP<Epetra_Vector> >& g,
+	const Teuchos::Array< Teuchos::RCP<Epetra_MultiVector> >& dgdp,
+	const Teuchos::Array<EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation>& dgdp_layout,
+	const Teuchos::Array<EpetraExt::ModelEvaluator::OutArgs::sg_vector_t>& p_sg,
+	const Teuchos::Array<EpetraExt::ModelEvaluator::OutArgs::sg_vector_t>& g_sg,
+	const Teuchos::Array<Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> >& dgdp_sg,
+	const Teuchos::Array<EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation>& dgdp_sg_layout) const = 0;
+
+    };
+
+    class ParamToResponseNetworkModel : 
+      public AbstractNetworkModel {
+
+    public:
+
+      //! Constructor
+      ParamToResponseNetworkModel() {}
+
+      //! Destructor
+      virtual ~ParamToResponseNetworkModel() {}
+
+      //! evaluate model
+      virtual void evalModel(
+	const Teuchos::Array<EpetraExt::ModelEvaluator::InArgs>& model_inargs, 
+	const Teuchos::Array<EpetraExt::ModelEvaluator::OutArgs>& model_outargs,
+	const EpetraExt::ModelEvaluator::InArgs& network_inargs, 
+	const EpetraExt::ModelEvaluator::OutArgs& network_outargs,
+	const Teuchos::Array<int>& n_p,
+	const Teuchos::Array<int>& n_g,
+	const Teuchos::Array< Teuchos::RCP<Epetra_Vector> >& p,
+	const Teuchos::Array< Teuchos::RCP<Epetra_Vector> >& g,
+	const Teuchos::Array< Teuchos::RCP<Epetra_MultiVector> >& dgdp,
+	const Teuchos::Array<EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation>& dgdp_layout,
+	const Teuchos::Array<EpetraExt::ModelEvaluator::OutArgs::sg_vector_t>& p_sg,
+	const Teuchos::Array<EpetraExt::ModelEvaluator::OutArgs::sg_vector_t>& g_sg,
+	const Teuchos::Array<Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> >& dgdp_sg,
+	const Teuchos::Array<EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation>& dgdp_sg_layout) const;
+
+    };
+
     class NECoupledModelEvaluator : 
       public EpetraExt::ModelEvaluator,
       public Teuchos::VerboseObject<NECoupledModelEvaluator> {
@@ -29,10 +132,9 @@ namespace Piro {
 
       /** \brief . */
       NECoupledModelEvaluator(
-	const Teuchos::RCP<EpetraExt::ModelEvaluator>& modelA, 
-	const Teuchos::RCP<EpetraExt::ModelEvaluator>& modelB,
-	const Teuchos::RCP<Teuchos::ParameterList>& piroParamsA,
-	const Teuchos::RCP<Teuchos::ParameterList>& piroParamsB,
+	const Teuchos::Array<Teuchos::RCP<EpetraExt::ModelEvaluator> >& models,
+	const Teuchos::Array<Teuchos::RCP<Teuchos::ParameterList> >& piroParams,
+	const Teuchos::RCP<AbstractNetworkModel>& network_model,
 	const Teuchos::RCP<Teuchos::ParameterList>& params,
 	const Teuchos::RCP<const Epetra_Comm>& comm);
 
@@ -93,37 +195,33 @@ namespace Piro {
       
       typedef Stokhos::StandardStorage<int,double> StorageType;
 
-      Teuchos::RCP<EpetraExt::ModelEvaluator> modelA;
-      Teuchos::RCP<EpetraExt::ModelEvaluator> modelB;
-      Teuchos::RCP<Teuchos::ParameterList> piroParamsA;
-      Teuchos::RCP<Teuchos::ParameterList> piroParamsB;
+      Teuchos::Array<Teuchos::RCP<EpetraExt::ModelEvaluator> > models;
+      Teuchos::Array< Teuchos::RCP<Teuchos::ParameterList> > piroParams;
+      Teuchos::RCP<AbstractNetworkModel> network_model;
       Teuchos::RCP<Teuchos::ParameterList> params;
       Teuchos::RCP<const Epetra_Comm> comm;
-      Teuchos::RCP<EpetraExt::ModelEvaluator> solverA;
-      Teuchos::RCP<EpetraExt::ModelEvaluator> solverB;
-      Teuchos::RCP<Piro::Epetra::StokhosSolver> sgSolverA;
-      Teuchos::RCP<Piro::Epetra::StokhosSolver> sgSolverB;
-      int pIndexA;
-      int pIndexB;
-      int gIndexA;
-      int gIndexB;
-      int n_p_A;
-      int n_p_B;
-      int n_g_A;
-      int n_g_B;
-      int num_params_A;
-      int num_params_B;
+      
+      Teuchos::Array< Teuchos::RCP<EpetraExt::ModelEvaluator> > solvers;
+      Teuchos::Array< Teuchos::RCP<Piro::Epetra::StokhosSolver> > sgSolvers;
+      int n_models;
+      Teuchos::Array<int> p_indices;
+      Teuchos::Array<int> g_indices;     
+      Teuchos::Array<int> n_p;
+      Teuchos::Array<int> n_g;
+      Teuchos::Array<int> num_params;
+      Teuchos::Array<int> num_responses;
       int num_params_total;
-      int num_responses_A;
-      int num_responses_B;
       int num_responses_total;
       bool supports_W;
-      Teuchos::Array<int> param_map;
-      Teuchos::Array<int> response_map;
-      Teuchos::RCP<const Epetra_Map> p_map_A;
-      Teuchos::RCP<const Epetra_Map> p_map_B;
-      Teuchos::RCP<const Epetra_Map> g_map_A;
-      Teuchos::RCP<const Epetra_Map> g_map_B;
+      Teuchos::Array< std::pair<int,int> > param_map;
+      Teuchos::Array< std::pair<int,int> > response_map;
+
+      mutable Teuchos::Array<EpetraExt::ModelEvaluator::InArgs> solver_inargs; 
+      mutable Teuchos::Array<EpetraExt::ModelEvaluator::OutArgs> solver_outargs;
+
+      Teuchos::Array< Teuchos::RCP<const Epetra_Map> > p_maps;
+      Teuchos::Array< Teuchos::RCP<const Epetra_Map> > g_maps;
+      
       Teuchos::RCP<Epetra_Map> x_map;
       Teuchos::RCP<Epetra_Map> f_map;
       Teuchos::RCP<Epetra_Map> x_overlap_map;
@@ -136,33 +234,28 @@ namespace Piro {
       Teuchos::RCP<Epetra_CrsGraph> W_overlap_graph;
       Teuchos::RCP<Epetra_CrsMatrix> W_overlap;
       Teuchos::RCP<Epetra_Vector> x_init;
-      Teuchos::RCP<Epetra_Vector> p_A;
-      Teuchos::RCP<Epetra_Vector> p_B;
-      Teuchos::RCP<Epetra_Vector> g_A;
-      Teuchos::RCP<Epetra_Vector> g_B;
-      EDerivativeMultiVectorOrientation dgdp_A_layout;
-      EDerivativeMultiVectorOrientation dgdp_B_layout;
-      Teuchos::RCP<Epetra_MultiVector> dgdp_A;
-      Teuchos::RCP<Epetra_MultiVector> dgdp_B;
+
+      Teuchos::Array< Teuchos::RCP<Epetra_Vector> > p;
+      Teuchos::Array< Teuchos::RCP<Epetra_Vector> > g;
+      Teuchos::Array< EDerivativeMultiVectorOrientation > dgdp_layout;
+      Teuchos::Array< Teuchos::RCP<Epetra_MultiVector> > dgdp;
      
       // Stochastic Galerkin data
       bool supports_x_sg;
       bool supports_f_sg;
       bool supports_W_sg;
       mutable Teuchos::RCP<const Epetra_BlockMap> sg_overlap_map;
-      mutable OutArgs::sg_vector_t p_A_sg;
-      mutable OutArgs::sg_vector_t p_B_sg;
-      mutable OutArgs::sg_vector_t g_A_sg;
-      mutable OutArgs::sg_vector_t g_B_sg;
-      mutable EDerivativeMultiVectorOrientation dgdp_A_sg_layout;
-      mutable EDerivativeMultiVectorOrientation dgdp_B_sg_layout;
-      mutable Teuchos::RCP< Stokhos::EpetraMultiVectorOrthogPoly > dgdp_A_sg;
-      mutable Teuchos::RCP< Stokhos::EpetraMultiVectorOrthogPoly > dgdp_B_sg;
+      mutable OutArgs::sg_vector_t x_sg_overlap;
+      mutable OutArgs::sg_vector_t f_sg_overlap;
+      mutable OutArgs::sg_operator_t W_sg_overlap;
+      mutable Teuchos::Array<OutArgs::sg_vector_t> p_sg;
+      mutable Teuchos::Array<OutArgs::sg_vector_t> g_sg;
+      mutable Teuchos::Array<EDerivativeMultiVectorOrientation> dgdp_sg_layout;
+      mutable Teuchos::Array<Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> > dgdp_sg;
 
       bool reduce_dimension;
       mutable Teuchos::RCP<const Stokhos::Quadrature<int,double> > st_quad;
-      mutable Teuchos::RCP<const Teuchos::Array< Teuchos::Array<double> > > red_basis_vals_A;
-      mutable Teuchos::RCP<const Teuchos::Array< Teuchos::Array<double> > > red_basis_vals_B;
+      mutable Teuchos::Array<Teuchos::RCP<const Teuchos::Array< Teuchos::Array<double> > > > red_basis_vals;
     };
 
   }

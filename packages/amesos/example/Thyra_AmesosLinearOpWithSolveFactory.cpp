@@ -328,10 +328,10 @@ void AmesosLinearOpWithSolveFactory::initializePreconditionedOp(
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     this->throwOnPrecInput_, std::logic_error
-    ,"Error, the concrete implementation described as \'"<<this->description()<<"\' does not support precondtioners "
+    ,"Error, the concrete implementation described as \'"<<this->description()<<"\' does not support preconditioners "
     "and has been configured to throw this exception when the  initializePreconditionedOp(...) function is called!"
     );
-  this->initializeOp(fwdOpSrc,Op,supportSolveUse); // Ignore the precondtioner!
+  this->initializeOp(fwdOpSrc,Op,supportSolveUse); // Ignore the preconditioner!
 }
 
 void AmesosLinearOpWithSolveFactory::initializePreconditionedOp(
@@ -343,10 +343,10 @@ void AmesosLinearOpWithSolveFactory::initializePreconditionedOp(
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     this->throwOnPrecInput_, std::logic_error
-    ,"Error, the concrete implementation described as \'"<<this->description()<<"\' does not support precondtioners "
+    ,"Error, the concrete implementation described as \'"<<this->description()<<"\' does not support preconditioners "
     "and has been configured to throw this exception when the  initializePreconditionedOp(...) function is called!"
     );
-  this->initializeOp(fwdOpSrc,Op,supportSolveUse); // Ignore the precondtioner!
+  this->initializeOp(fwdOpSrc,Op,supportSolveUse); // Ignore the preconditioner!
 }
 
 void AmesosLinearOpWithSolveFactory::uninitializeOp(

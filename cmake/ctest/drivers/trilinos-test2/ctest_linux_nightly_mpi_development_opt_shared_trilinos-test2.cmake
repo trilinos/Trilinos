@@ -63,12 +63,12 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.trilinos-test2.gcc.cm
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
 SET(BUILD_DIR_NAME MPI_OPT_DEV_SHARED)
+SET(CTEST_TEST_TYPE Nightly)
 #SET(CTEST_TEST_TIMEOUT 900)
 
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 
-#disabling Mesquite because of a build error when shared libs is turned on.
-SET(EXTRA_EXCLUDE_PACKAGES Mesquite STK Claps Zoltan2)
+SET(EXTRA_EXCLUDE_PACKAGES STK Claps Zoltan2)
 #can't use default Trilinos_EXCLUDE_PACKAGES because it includes PyTrilinos
 SET( Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} TriKota)
 
@@ -79,7 +79,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DMPI_BASE_DIR:PATH=/home/trilinos"
   "-DTPL_ENABLE_Pthread:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
-  "-DBoost_INCLUDE_DIRS:FILEPATH=/home/trilinos/include"
+  "-DBoost_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/boost-1.46.1/include"
   "-DSWIG_EXECUTABLE:FILEPATH=/home/trilinos/tpl/gcc4.1.2/swig-2.0.0/bin/swig"
   "-DNOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK=ON"
   "-DTPL_ENABLE_Expat:BOOL=ON"

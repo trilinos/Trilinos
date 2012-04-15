@@ -50,7 +50,7 @@ struct Dot<Scalar , KOKKOS_MACRO_DEVICE >
   
   typedef KOKKOS_MACRO_DEVICE                 device_type;
   typedef device_type::size_type                size_type;
-  typedef Kokkos::MultiVectorView<Scalar, device_type>     scalar_vector;  
+  typedef Kokkos::MultiVector<Scalar, device_type>     scalar_vector;  
   typedef double                          value_type;
 
   scalar_vector x;

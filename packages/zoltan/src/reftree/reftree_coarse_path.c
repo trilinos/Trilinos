@@ -18,6 +18,7 @@ extern "C" {
 
 #include <stdio.h>
 #include "zz_const.h"
+#include "zz_sort.h"
 #include "reftree.h"
 #include "hsfc_hilbert_const.h"
 
@@ -59,7 +60,6 @@ static int find_inout(int elem, int prev, int prevprev,
 static double InvSierpinski2d(ZZ *zz, double *coord);
 static double sier2d(double x, double y, int state, int level, double addf,
               double addp, double peakx, double peaky);
-static void sort_index(int n, double ra[], int indx[]);
 
 
 /*****************************************************************************/
@@ -1923,7 +1923,7 @@ static int sfc_coarse_grid_path(int nobj, int *num_vert, ZOLTAN_ID_PTR vertices,
   }
 
   for (i=0; i<nobj; i++) ind[i] = i;
-  sort_index(nobj, sfccoord, ind);
+  Zoltan_quicksort_pointer_inc_double(ind, sfccoord, 0, nobj-1);
 
 /*
  * Determine where each element's vertices start in vertices
@@ -2271,68 +2271,6 @@ static int MAXLEV = 24;
 
   }
   return (double) 0;
-}
-
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-
-static void sort_index(int n, double ra[], int indx[])
-  
-/*
-*       Numerical Recipies in C source code
-*       modified to have first argument an integer array
-*       WFM 8/4/2004 I copied this routine from driver/dr_util.c and
-*       modified it to take ra as a double.
-*
-*       Sorts the array ra[0,..,(n-1)] in ascending numerical order using
-*       heapsort algorithm.
-*       Array ra is not reorganized.  An index array indx is built that
-*       gives the new order.
-*
-*/
-
-{
-  int   l, j, ir, i;
-  int   irra;
-  double rra;
-
-  /*
-   *  No need to sort if one or fewer items.
-   */
-  if (n <= 1) return;
-
-  l=n >> 1;
-  ir=n-1;
-  for (;;) {
-    if (l > 0) {
-      rra=ra[indx[--l]];
-      irra = indx[l];
-    }
-    else {
-      rra=ra[indx[ir]];
-      irra=indx[ir];
-
-      indx[ir]=indx[0];
-      if (--ir == 0) {
-        indx[0]=irra;
-        return;
-      }
-    }
-    i=l; 
-    j=(l << 1)+1;
-    while (j <= ir) {
-      if (j < ir &&
-          (ra[indx[j]] <  ra[indx[j+1]]))
-        ++j;
-      if (rra <  ra[indx[j]]) {
-        indx[i] = indx[j];
-        j += (i=j)+1;
-      }
-      else j=ir+1;
-    }
-    indx[i]=irra;
-  }
 }
 
 /*****************************************************************************/

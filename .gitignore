@@ -15,6 +15,7 @@ doxygen_objdb_*.tmp
 # Trilinos extra repos
 /preCopyrightTrilinos/
 /Panzer/
+/DrekarResearch/
 /LIMEExt/
 /TerminalApplication/
 
@@ -28,6 +29,7 @@ doxygen_objdb_*.tmp
 /RELAP5Ext/
 /StarCCMExt/
 /Coupler/
+/DataTransferKit/
 
 # Ignore gtags generated files
 /GPATH

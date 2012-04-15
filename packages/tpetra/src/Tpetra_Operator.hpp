@@ -52,7 +52,7 @@ namespace Tpetra {
   //! \brief Abstract interface for linear operators accepting Tpetra MultiVector objects.
   /*!  This class is templated on \c Scalar, \c LocalOrdinal, \c GlobalOrdinal and \c Node. 
      The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal 
-     type, if omitted, defaults to the \c LocalOrdinal type  Node is by defult of type Kokkos::DefaultNode::DefaultNodeType.
+     type, if omitted, defaults to the \c LocalOrdinal type. Node is by default of type Kokkos::DefaultNode::DefaultNodeType.
 
      A Operator object applies a linear operator to a MultiVector, storing the result in another MultiVector. The scalar type \c Scalar 
      of the Operator specifies the scalar field of the input and output MultiVector objects, not that of the underlying linear operator. Operator is an 

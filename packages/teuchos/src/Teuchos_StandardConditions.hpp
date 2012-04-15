@@ -223,7 +223,7 @@ private:
 };
 
 
-/** \brief Speicialized class for retrieving a dummy object of type
+/** \brief Specialized class for retrieving a dummy object of type
  * StringCondition.
  *
  * \relates StringCondition
@@ -333,7 +333,7 @@ private:
 };
 
 
-/** \brief Speicialized class for retrieving a dummy object of type
+/** \brief Specialized class for retrieving a dummy object of type
  * NumberCondition.
  *
  * \relates NumberCondition
@@ -408,7 +408,7 @@ public:
 };
 
 
-/** \brief Speicialized class for retrieving a dummy object of type
+/** \brief Specialized class for retrieving a dummy object of type
  * BoolCondition.
  *
  * \relates BoolCondition
@@ -575,7 +575,7 @@ public:
 };
 
 
-/** \brief Speicialized class for retrieving a dummy object of type
+/** \brief Specialized class for retrieving a dummy object of type
  * OrCondition.
  *
  * \relates OrCondition
@@ -647,7 +647,7 @@ public:
 };
 
 
-/** \brief Speicialized class for retrieving a dummy object of type
+/** \brief Specialized class for retrieving a dummy object of type
  * AndCondition.
  *
  * \relates AndCondition
@@ -718,7 +718,7 @@ public:
 };
 
 
-/** \brief Speicialized class for retrieving a dummy object of type
+/** \brief Specialized class for retrieving a dummy object of type
  * EqualsCondition.
  *
  * \relates EqualsCondition
@@ -813,7 +813,7 @@ private:
 };
 
 
-/** \brief Speicialized class for retrieving a dummy object of type
+/** \brief Specialized class for retrieving a dummy object of type
  * NotCondition.
  *
  * \relates NotCondition

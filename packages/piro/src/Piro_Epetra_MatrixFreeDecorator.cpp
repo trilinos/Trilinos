@@ -7,21 +7,33 @@
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 // 
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//  
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
-// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
 // 
@@ -238,10 +250,15 @@ Piro::Epetra::MatrixFreeOperator::MatrixFreeOperator(
 {
   using Teuchos::rcp;
 
+  // Save an RCP to a map, preventing it from going out of scope 
+  // when references to the map anc comm are later pulled out
+  map = model->get_x_map();
+ 
+
   // Allocate space for perturbed solution and residuals
-  xPert = rcp(new Epetra_Vector(*(model->get_x_map())));
+  xPert = rcp(new Epetra_Vector(*map));
   fPert = rcp(new Epetra_Vector(*(model->get_f_map())));
-  xdotPert = rcp(new Epetra_Vector(*(model->get_x_map())));
+  xdotPert = rcp(new Epetra_Vector(*map));
 }
 
 void Piro::Epetra::MatrixFreeOperator::setBase(
@@ -292,7 +309,10 @@ int  Piro::Epetra::MatrixFreeOperator::Apply
 
   modelInArgs.set_x(xPert);
   if (haveXdot) modelInArgs.set_x_dot(xdotPert);
-  modelOutArgs.set_f(fPert);
+
+  // Alert model that this is a perturbed calculation, in case it does something different.
+  EpetraExt::ModelEvaluator::Evaluation<Epetra_Vector> fPertEval(fPert, EpetraExt::ModelEvaluator::EVAL_TYPE_APPROX_DERIV);
+  modelOutArgs.set_f(fPertEval);
 
   model->evalModel(modelInArgs, modelOutArgs);
 
@@ -344,9 +364,9 @@ bool  Piro::Epetra::MatrixFreeOperator::HasNormInf() const
 bool  Piro::Epetra::MatrixFreeOperator::UseTranspose() const
 { return false; }
 const Epetra_Comm &  Piro::Epetra::MatrixFreeOperator::Comm() const
-{ return model->get_x_map()->Comm(); }
+{ return map->Comm(); }
 const Epetra_Map&  Piro::Epetra::MatrixFreeOperator::OperatorDomainMap() const
-{ return *(model->get_x_map()); }
+{ return *map; }
 const Epetra_Map&  Piro::Epetra::MatrixFreeOperator::OperatorRangeMap() const
-{ return *(model->get_x_map()); }
+{ return *map; }
 

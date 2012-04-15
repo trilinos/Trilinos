@@ -88,6 +88,9 @@ namespace Sacado {
       //! Number of arguments
       static const int num_args = 1;
 
+      //! Is expression linear
+      static const bool is_linear = true;
+
       /*!
        * @name Initialization methods
        */
@@ -146,6 +149,13 @@ namespace Sacado {
        */
       void resize(int sz);
 
+      //! Expand derivative array to size sz
+      /*!
+       * Since the derivative array length is not dynamic, this method
+       * throws an error if compiled with SACADO_DEBUG defined.
+       */
+      void expand(int sz) { resize(sz); }
+
       //! Zero out the derivative array
       void zero() { ss_array<T>::zero(dx_, Num); }
 
@@ -154,6 +164,17 @@ namespace Sacado {
 
       //! Return whether this Fad object has an updated value
       bool updateValue() const { return update_val_; }
+
+      //! Returns whether two Fad objects have the same values
+      template <typename S>
+      bool isEqualTo(const Expr<S>& x) const {
+	typedef IsEqual<value_type> IE;
+	if (x.size() != this->size()) return false;
+	bool eq = IE::eval(x.val(), this->val());
+	for (int i=0; i<this->size(); i++)
+	  eq = eq && IE::eval(x.dx(i), this->dx(i));
+	return eq;
+      }
 
       //@}
 
@@ -221,7 +242,7 @@ namespace Sacado {
 
       //! Return tangent component \c i of argument \c Arg
       template <int Arg>
-      T getTangent(int i) const { return this->dx_[i]; }
+      const T& getTangent(int i) const { return this->dx_[i]; }
     
       //@}
 
@@ -301,6 +322,7 @@ namespace Sacado {
 	int i;
 	inline LocalAccumOp(const ExprT& x_) :
 	  x(x_) { x.computePartials(value_type(1.), partials); }
+	inline void getTangents(int i_) { i = i_; }
 	template <typename ArgT>
 	inline void operator () (ArgT arg) const {
 	  const int Arg = ArgT::value;

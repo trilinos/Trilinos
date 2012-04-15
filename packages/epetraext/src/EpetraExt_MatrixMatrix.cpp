@@ -1156,9 +1156,14 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
   //Now import any needed remote rows and populate the Aview struct.
   EPETRA_CHK_ERR( import_and_extract_views(A, *targetMap_A, Aview) );
 
-  //We will also need local access to all rows of B that correspond to the
-  //column-map of op(A).
+
+  // Make sure B's views are consistent with A even in serial for A*B (scenario 1)
+  if(scenario==1){
+    targetMap_B = &(A.ColMap());
+  }
+
   if (numProcs > 1) {
+    // Get the target map
     const Epetra_Map* colmap_op_A = NULL;
     if (transposeA) {
       colmap_op_A = targetMap_A;
@@ -1166,8 +1171,8 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
     else {
       colmap_op_A = &(A.ColMap());
     }
-
     targetMap_B = colmap_op_A;
+
 
     //If op(B) = B^T, find all rows of B that contain column-indices in the
     //local-portion of the domain-map, or in the column-map of op(A).

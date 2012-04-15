@@ -114,7 +114,7 @@ class Komplex_Operator : public virtual Epetra_Operator {
   ~Komplex_Operator();
   //@}
   
-  //@{ \name Atribute set methods.
+  //@{ \name Attribute set methods.
 
   //! If set true, the transpose of this operator will be applied.
   /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag

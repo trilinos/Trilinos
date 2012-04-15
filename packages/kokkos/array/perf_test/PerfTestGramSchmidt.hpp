@@ -74,7 +74,7 @@ struct DotSingle<Scalar, KOKKOS_MACRO_DEVICE , 1 > {
   typedef KOKKOS_MACRO_DEVICE     device_type ;
   typedef Scalar                  value_type ;
   typedef device_type::size_type  size_type ;
-  typedef Kokkos::MultiVectorView<value_type,device_type> vector_type ;
+  typedef Kokkos::MultiVector<value_type,device_type> vector_type ;
 
   vector_type X ;
 
@@ -104,7 +104,7 @@ struct Dot< Scalar, KOKKOS_MACRO_DEVICE , 1 > {
   typedef KOKKOS_MACRO_DEVICE     device_type ;
   typedef Scalar                  value_type ;
   typedef device_type::size_type  size_type ;
-  typedef Kokkos::MultiVectorView<value_type,device_type> vector_type ;
+  typedef Kokkos::MultiVector<value_type,device_type> vector_type ;
 
   vector_type X , Y ;
 
@@ -137,12 +137,12 @@ struct MultiVectorScale<Scalar, KOKKOS_MACRO_DEVICE ,1> {
   typedef Scalar                  value_type ;
   typedef device_type::size_type  size_type ;
 
-  Kokkos::MultiVectorView<Scalar,device_type> Y ;
-  Kokkos::ValueView<Scalar,device_type>     S ;
+  Kokkos::MultiVector<Scalar,device_type> Y ;
+  Kokkos::Value<Scalar,device_type>     S ;
 
   MultiVectorScale(
-    const Kokkos::MultiVectorView<Scalar,device_type> & argY ,
-    const Kokkos::ValueView<Scalar,device_type>       & argS )
+    const Kokkos::MultiVector<Scalar,device_type> & argY ,
+    const Kokkos::Value<Scalar,device_type>       & argS )
     : Y( argY ), S( argS ) {}
 
   KOKKOS_MACRO_DEVICE_FUNCTION
@@ -158,12 +158,12 @@ struct MultiVectorYPAX<Scalar, KOKKOS_MACRO_DEVICE ,1> {
   typedef Scalar                  value_type ;
   typedef device_type::size_type  size_type ;
 
-  Kokkos::MultiVectorView<Scalar,device_type> Y , X ;
-  Kokkos::ValueView<Scalar,device_type>     A ;
+  Kokkos::MultiVector<Scalar,device_type> Y , X ;
+  Kokkos::Value<Scalar,device_type>     A ;
 
-  MultiVectorYPAX( const Kokkos::MultiVectorView<Scalar,device_type> & argY ,
-                   const Kokkos::ValueView<Scalar,device_type>     & argA ,
-                   const Kokkos::MultiVectorView<Scalar,device_type> & argX )
+  MultiVectorYPAX( const Kokkos::MultiVector<Scalar,device_type> & argY ,
+                   const Kokkos::Value<Scalar,device_type>     & argA ,
+                   const Kokkos::MultiVector<Scalar,device_type> & argX )
    : Y( argY ), X( argX ), A( argA ) {}
 
   KOKKOS_MACRO_DEVICE_FUNCTION
@@ -185,10 +185,10 @@ struct ModifiedGramSchmidt ;
 template< typename Scalar >
 struct ModifiedGramSchmidt< Scalar , KOKKOS_MACRO_DEVICE >
 {
-  typedef KOKKOS_MACRO_DEVICE                         device_type ;
-  typedef device_type::size_type                      size_type ;
-  typedef Kokkos::MultiVectorView<Scalar,device_type> MultiVector ;
-  typedef Kokkos::ValueView<Scalar,device_type>       Value ;
+  typedef KOKKOS_MACRO_DEVICE                     device_type ;
+  typedef device_type::size_type                  size_type ;
+  typedef Kokkos::MultiVector<Scalar,device_type> multivector_type ;
+  typedef Kokkos::Value<Scalar,device_type>       Value ;
 
   typedef Kokkos::DotSingle< Scalar , device_type , 1 > DotSingle ;
   typedef Kokkos::Dot< Scalar , device_type , 1 > Dot ;
@@ -198,11 +198,11 @@ struct ModifiedGramSchmidt< Scalar , KOKKOS_MACRO_DEVICE >
   // Reduction   : result = dot( Q(:,j) , Q(:,j) );
   // PostProcess : R(j,j) = result ; inv = 1 / result ;
   struct InvNorm2 {
-    MultiVector R ;
+    multivector_type R ;
     Value       inv ;
     size_type   j ;
 
-    InvNorm2( const MultiVector & argR ,
+    InvNorm2( const multivector_type & argR ,
               const Value       & argInv ,
               size_type argJ )
       : R( argR )
@@ -227,11 +227,11 @@ struct ModifiedGramSchmidt< Scalar , KOKKOS_MACRO_DEVICE >
   // PostProcess : tmp = - ( R(j,k) = result );
   struct DotM {
 
-    MultiVector R ;
+    multivector_type R ;
     Value       tmp ;
     size_type j , k ;
 
-    DotM( const MultiVector & argR ,
+    DotM( const multivector_type & argR ,
           const Value       & argTmp ,
           size_type argJ ,
           size_type argK )
@@ -249,16 +249,16 @@ struct ModifiedGramSchmidt< Scalar , KOKKOS_MACRO_DEVICE >
     }
   };
 
-  MultiVector Q ;
-  MultiVector R ;
+  multivector_type Q ;
+  multivector_type R ;
   double seconds ;
 
-  ModifiedGramSchmidt( const typename MultiVector::HostView & A )
-  : Q( Kokkos::create_multivector<Scalar,device_type>( A.length(), A.count()) )
-  , R( Kokkos::create_multivector<Scalar,device_type>( A.count() , A.count()) )
+  ModifiedGramSchmidt( const typename multivector_type::HostMirror & A )
+  : Q( Kokkos::create_multivector<multivector_type>( A.length(), A.count()) )
+  , R( Kokkos::create_multivector<multivector_type>( A.count() , A.count()) )
   {
     const size_type N = A.length();
-    Value tmp = Kokkos::create_value<Scalar,device_type>();
+    Value tmp = Kokkos::create_value<Value>();
 
     Kokkos::deep_copy( Q , A );
 
@@ -271,7 +271,7 @@ struct ModifiedGramSchmidt< Scalar , KOKKOS_MACRO_DEVICE >
                                    InvNorm2( R , tmp , j ) );
 
       // Q(:,j) *= ( 1 / R(j,j) ); => Q(:,j) *= tmp ;
-      Kokkos::parallel_for( N , Scale( MultiVector( Q , j ) , tmp ) );
+      Kokkos::parallel_for( N , Scale( multivector_type( Q , j ) , tmp ) );
 
       for ( size_t k = j + 1 ; k < Q.count() ; ++k ) {
         // Reduction   : R(j,k) = dot( Q(:,j) , Q(:,k) );
@@ -280,11 +280,11 @@ struct ModifiedGramSchmidt< Scalar , KOKKOS_MACRO_DEVICE >
                                      DotM( R , tmp , j , k ) );
 
         // Q(:,k) -= R(j,k) * Q(:,j); => Q(:,k) += tmp * Q(:,j)
-        Kokkos::parallel_for( N , YPAX( MultiVector( Q , k ) , tmp , MultiVector( Q , j ) ) );
+        Kokkos::parallel_for( N , YPAX( multivector_type( Q , k ) , tmp , multivector_type( Q , j ) ) );
       }
     }
 
-    device_type::wait_functor_completion();
+    device_type::fence();
 
     seconds = timer.seconds();
   }
@@ -294,11 +294,11 @@ struct ModifiedGramSchmidt< Scalar , KOKKOS_MACRO_DEVICE >
   static double test( const size_t length ,
                       const size_t count )
   {
-    typedef Kokkos::MultiVectorView<Scalar,Kokkos::DeviceHost> HostMultiVector ;
+    typedef typename multivector_type::HostMirror HostMultiVector ;
 
     // Create and fill A on the host
 
-    HostMultiVector A( Kokkos::create_labeled_multivector<HostMultiVector>( "A" , length , count ) );
+    HostMultiVector A( Kokkos::create_multivector<HostMultiVector>( "A" , length , count ) );
 
     for ( size_type j = 0 ; j < A.count() ; ++j ) {
       for ( size_type i = 0 ; i < A.length() ; ++i ) {
@@ -306,8 +306,8 @@ struct ModifiedGramSchmidt< Scalar , KOKKOS_MACRO_DEVICE >
       }
     }
 
-    MultiVector Q ;
-    MultiVector R ;
+    multivector_type Q ;
+    multivector_type R ;
 
     double seconds ;
     {

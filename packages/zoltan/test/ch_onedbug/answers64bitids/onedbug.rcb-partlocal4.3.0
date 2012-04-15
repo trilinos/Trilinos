@@ -1,0 +1,14 @@
+Decomposition Method 	= rcb
+Zoltan Parameters	= debug_memory=3,debug_level=10,remap=0
+Zoltan Parameters       = obj_weight_dim=1
+Zoltan Parameters       = comm_weight_dim=1
+Zoltan Parameters       = keep_cuts=1
+Zoltan Parameters       = rcb_output_level=2
+Zoltan Parameters       = rcb_overalloc=2.0
+File Type		= Chaco
+File Name		= onedbug
+Parallel Disk Info	= number=0
+test local partitions	= 4
+Test Drops		= 1
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm

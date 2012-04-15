@@ -27,6 +27,7 @@
 extern "C" {
 #endif
 
+extern void Zoltan_quicksort_pointer_inc_int_int(int*, int*, int*, int, int);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -140,7 +141,7 @@ int output_gnu(const char *cmd_file,
   if (Output.Plot_Partition) {
     /* Sort by partition numbers.  Assumes # parts >= # proc. */
     if (nelems > 0) 
-      sort_index(nelems, parts, index);
+      Zoltan_quicksort_pointer_inc_int_int(index, parts, NULL, 0, nelems-1);
     MPI_Allreduce(&max_part, &gmax_part, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
     gnum_part = gmax_part + 1;
   }

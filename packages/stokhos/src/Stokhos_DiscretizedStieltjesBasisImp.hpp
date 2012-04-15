@@ -188,7 +188,7 @@ eval_inner_product(const ordinal_type& order1, const ordinal_type& order2) const
       quadIdx < static_cast<ordinal_type>(quad_points.size()); quadIdx++){
     value_type x = (rightEndPt_ - leftEndPt_)*.5*quad_points[quadIdx] + 
       (rightEndPt_ + leftEndPt_)*.5;
-    integral += evaluate(x,order1)*evaluate(x,order2)*evaluateWeight(x)*quad_weights[quadIdx];
+    integral += this->evaluate(x,order1)*this->evaluate(x,order2)*evaluateWeight(x)*quad_weights[quadIdx];
   }
   
   return integral*(rightEndPt_ - leftEndPt_);

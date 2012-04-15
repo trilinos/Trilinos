@@ -369,7 +369,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   PL->set("XML input file","ml_ParameterList.xml",string(""));
 
   /* Smoothed Aggregation and the Null Space (Section 6.4.9) */
-  setStringToIntegralParameter<int>("null space: type","default vectors","Type of null space to use",tuple<string>("pre-computed","enriched","default vectors","from coordinates"),PL);
+  setStringToIntegralParameter<int>("null space: type","default vectors","Type of null space to use",tuple<string>("pre-computed","enriched","default vectors","elasticity from coordinates"),PL);
   PL->set("null space: vectors",(double*)0); 
   setIntParameter("null space: dimension",0,"Number of user-supplied null space vectors",PL,intParam);
   setIntParameter("null space: vectors to compute",1,"Number of vectors to compute",PL,intParam);
@@ -381,7 +381,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
 
   /* Unlisted Options */ 
   PL->set("ML debug mode",false);
-  setStringToIntegralParameter<int>("default values","SA","Internal Option",tuple<string>("SA","DD","DD-ML","maxwell","NSSA","RefMaxwell"),PL);
+  setStringToIntegralParameter<int>("default values","SA","Internal Option",tuple<string>("SA","DD","DD-ML","maxwell","NSSA","RefMaxwell","DD-ML-LU"),PL);
   PL->set("ML validate parameter list",true);
   setIntParameter("ML validate depth",0,"Internal option to control validation depth",PL,intParam);
   PL->set("ResetList",true); 

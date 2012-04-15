@@ -1588,6 +1588,9 @@ int nssi_call_rpc(
         rc = NSSI_ENOMEM;
         goto cleanup;
     }
+
+    log_debug(rpc_debug_level, "Allocated short req buffer");
+
     trios_start_timer(call_time);
     rc=NNTI_register_memory(
             &transports[svc->transport_id],
@@ -1603,6 +1606,8 @@ int nssi_call_rpc(
                 nnti_err_str(rc));
         goto cleanup;
     }
+
+    log_debug(rpc_debug_level, "Registered short req buffer");
 
     if (data_size > 0) {
         trios_start_timer(call_time);
@@ -1621,6 +1626,8 @@ int nssi_call_rpc(
             goto cleanup;
         }
         header.data_addr=request->data_hdl;
+
+        log_debug(rpc_debug_level, "Registered long args buffer");
     }
 
     trios_start_timer(call_time);
@@ -1632,7 +1639,7 @@ int nssi_call_rpc(
         goto cleanup;
     }
 
-    log_debug(rpc_debug_level, "Allocated buffer buf=%p", buf);
+    log_debug(rpc_debug_level, "Allocated short result buffer buf=%p", buf);
 
     trios_start_timer(call_time);
     rc=NNTI_register_memory(
@@ -1651,10 +1658,7 @@ int nssi_call_rpc(
     }
     header.res_addr=request->short_result_hdl;
 
-
-
-//    rc = post_data_md(svc, &header, (char *)data, data_size, request);
-//    rc = post_result_md(svc, &header, (char *)result, request);
+    log_debug(rpc_debug_level, "Registered short result buffer");
 
     /* --- encode the arguments (might place args in the short request) --- */
     trios_start_timer(call_time);

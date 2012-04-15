@@ -34,7 +34,9 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SuperLU2_0
   "Enable the SUPERLU 2.0 functionality."
   OFF )
 
-IF(${PACKAGE_NAME}_ENABLE_SuperLU)
+# macro ADD_OPTION_AND_DEFINE should not be used here:
+# because SuperLU is a TPL the CMake build system defines ${PACKAGE_NAME}_ENABLE_SuperLU
+IF(${PACKAGE_NAME}_ENABLE_SuperLU) #TODO: can it be safely replaced by: SET(HAVE_ML_SUPERLU4_0 "${${PACKAGE_NAME}_ENABLE_SuperLU}") ?
    SET(HAVE_ML_SUPERLU4_0 ON)
 ELSE()
    SET(HAVE_ML_SUPERLU4_0 OFF)
@@ -85,16 +87,12 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Cfunc
   "Enable the Cfunc functionality."
   OFF )
 
-
-#Adding a define for when the TPL matlab is enabled.
-#This replaces an option that was reusing an existing name.
-SET(HAVE_ML_MATLAB "${${PACKAGE_NAME}_ENABLE_MATLAB}")
-
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TekoSmoothers
   HAVE_ML_TekoSmoothers
   "Enable Teko Smoothing Functionality."
   OFF )
 
+# Note: macro HAVE_ML_MATLAB is automatically defined if TPL MATLAB is enabled.
 
 #
 # C) Add the libraries, tests, and examples

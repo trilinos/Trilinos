@@ -104,8 +104,8 @@ int main(int argc, char *argv[])
     "   </ParameterList>                                                            "
     " </ParameterList>                                                              "
   );
-  Teuchos::updateParametersFromXmlString(defaultMachine,machinePL.getRawPtr());
-  if (machineFile != "") Teuchos::updateParametersFromXmlFile(machineFile,machinePL.getRawPtr());
+  Teuchos::updateParametersFromXmlString(defaultMachine,machinePL.ptr());
+  if (machineFile != "") Teuchos::updateParametersFromXmlFile(machineFile,machinePL.ptr());
 
   // 
   // create the platform object
@@ -145,8 +145,8 @@ int main(int argc, char *argv[])
     "   </ParameterList>                                                    \n"
     " </ParameterList>                                                      \n"
   );
-  Teuchos::updateParametersFromXmlString(xmlString,params.getRawPtr());
-  if (xmlfile != "") Teuchos::updateParametersFromXmlFile(xmlfile,params.getRawPtr());
+  Teuchos::updateParametersFromXmlString(xmlString,params.ptr());
+  if (xmlfile != "") Teuchos::updateParametersFromXmlFile(xmlfile,params.ptr());
   // hand solver parameters to driver
   driver.params = params;
 

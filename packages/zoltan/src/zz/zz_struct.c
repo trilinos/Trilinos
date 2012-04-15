@@ -99,10 +99,6 @@ int proc;
 
   Zoltan_LB_Init(&(zz->LB), zz->Num_Proc);
   Zoltan_Migrate_Init(&(zz->Migrate));
-#ifdef ZOLTAN_DRUM
-  /* Initialize DRUM-related structure field */
-  Zoltan_Drum_Init_Struct(&(zz->Drum));
-#endif
 
   zz->ZTime = Zoltan_Timer_Create(ZOLTAN_TIMER_DEF);
 
@@ -168,10 +164,6 @@ int Zoltan_Copy_To(ZZ *to, ZZ const *from)
   memset(&(to->LB), 0, sizeof(struct Zoltan_LB_Struct));
   Zoltan_LB_Copy_Struct(to, from);
 
-#ifdef ZOLTAN_DRUM
-  Zoltan_Drum_Copy_Struct(&(to->Drum), &(from->Drum));
-#endif
-
   return 0;
 }
 
@@ -228,11 +220,6 @@ static void Zoltan_Free_Structures(
     zz->LB.Free_Structure(zz);
 
  /* Add calls to additional module-specific free routines here.  */
-
-#ifdef ZOLTAN_DRUM
-  /* DRUM/Zoltan interface */
-  Zoltan_Drum_Free_Structure(zz);
-#endif
 }
 
 /*****************************************************************************/

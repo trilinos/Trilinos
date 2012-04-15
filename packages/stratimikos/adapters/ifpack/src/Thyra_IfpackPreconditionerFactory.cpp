@@ -180,7 +180,7 @@ void IfpackPreconditionerFactory::initializePrec(
     ,"Error, incorrect apply mode for an Epetra_RowMatrix"
     );
   //
-  // Get the concrete precondtioner object
+  // Get the concrete preconditioner object
   //
   DefaultPreconditioner<double>
     *defaultPrec = &Teuchos::dyn_cast<DefaultPreconditioner<double> >(*prec);
@@ -240,7 +240,7 @@ void IfpackPreconditionerFactory::initializePrec(
       // Above, I have not idea how any error messages for a mistake will be
       // reported back to the user!
     }
-    // Initailize the structure for the preconditioner
+    // Initialize the structure for the preconditioner
     TEUCHOS_TEST_FOR_EXCEPT(0!=ifpack_precOp->Initialize());
   }
   //
@@ -253,7 +253,7 @@ void IfpackPreconditionerFactory::initializePrec(
   //
   {
     if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
-      *out << "\nComputing the factorization of the preconditioner ...\n";
+      *out << "\nComputing the preconditioner ...\n";
 #ifdef STRATIMIKOS_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor factorizationTimeMonitor(*factorizationTimer);
 #endif
@@ -261,7 +261,7 @@ void IfpackPreconditionerFactory::initializePrec(
     TEUCHOS_TEST_FOR_EXCEPT(0!=ifpack_precOp->Compute());
     timer.stop();
     if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
-      OSTab(out).o() <<"=> Factorization time = "<<timer.totalElapsedTime()<<" sec\n";
+      OSTab(out).o() <<"=> Setup time = "<<timer.totalElapsedTime()<<" sec\n";
   }
   //
   // Compute the conditioner number estimate if asked
@@ -288,7 +288,7 @@ void IfpackPreconditionerFactory::initializePrec(
     );
   if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_MEDIUM)) {
     *out << "\nDescription of created preconditioner:\n";
-    OSTab tab(out);
+    OSTab tab2(out);
     ifpack_precOp->Print(*out);
   }
 

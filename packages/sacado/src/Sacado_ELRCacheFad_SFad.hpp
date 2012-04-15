@@ -82,11 +82,17 @@ namespace Sacado {
       //! Typename of values
       typedef T value_type;
 
+      //! Typename of scalar's (which may be different from T)
+      typedef typename ScalarType<T>::type scalar_type;
+
       //! Typename of base-expressions
       typedef Expr< SFadExprTag<T,Num> > base_expr_type;
 
       //! Number of arguments
       static const int num_args = 1;
+
+      //! Is expression linear
+      static const bool is_linear = true;
 
       /*!
        * @name Initialization methods
@@ -146,6 +152,13 @@ namespace Sacado {
        */
       void resize(int sz);
 
+      //! Expand derivative array to size sz
+      /*!
+       * Since the derivative array length is not dynamic, this method
+       * throws an error if compiled with SACADO_DEBUG defined.
+       */
+      void expand(int sz) { resize(sz); }
+
       //! Zero out the derivative array
       void zero() { ss_array<T>::zero(dx_, Num); }
 
@@ -157,6 +170,17 @@ namespace Sacado {
 
       //! Cache values
       void cache() const {}
+
+      //! Returns whether two Fad objects have the same values
+      template <typename S>
+      bool isEqualTo(const Expr<S>& x) const {
+	typedef IsEqual<value_type> IE;
+	if (x.size() != this->size()) return false;
+	bool eq = IE::eval(x.val(), this->val());
+	for (int i=0; i<this->size(); i++)
+	  eq = eq && IE::eval(x.dx(i), this->dx(i));
+	return eq;
+      }
 
       //@}
 

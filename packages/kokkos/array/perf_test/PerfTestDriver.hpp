@@ -74,7 +74,7 @@ void run_test_hexgrad< KOKKOS_MACRO_DEVICE >( int exp_beg , int exp_end )
     const int parallel_work_length = 1<<i;
 
     for ( int j = 0 ; j < NUMBER_OF_TRIALS ; ++j ) {
-      const double seconds = HexGrad< double , KOKKOS_MACRO_DEVICE >::test(parallel_work_length) ;
+      const double seconds = HexGrad< KOKKOS_MACRO_DEVICE >::test(parallel_work_length) ;
 
       if ( 0 == j ) {
         min_seconds = seconds ;

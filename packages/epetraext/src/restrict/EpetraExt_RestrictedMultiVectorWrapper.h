@@ -59,11 +59,17 @@ public:
   
   ~RestrictedMultiVectorWrapper();
     
-  //! Set the MPI communicator corresponding to the restricted multivector.
-  /*! Sets the MPISubComm if it hasn't been set already.
-    \param MPI_Comm (In) An MPI_Comm object representing the subcommunicator.
-
-    \return Returns 0 if the SubComm hasn't ready been set , -1 if it has */  
+  /// \brief Set the subcommunicator over which to restrict multivectors.
+  ///
+  /// This sets the subcommunicator only if it has not already been
+  /// set.  If it has been set, this routine does nothing.
+  ///
+  /// \param MPI_Comm [in] MPI communicator representing the
+  ///   subcommunicator over which the multivector is to be
+  ///   restricted.
+  ///
+  /// \return 0 if the subcommunicator has not already been set, else
+  ///   -1 if it has already been set.
   int SetMPISubComm(MPI_Comm MPI_SubComm);
 
   //! Get the MPI communicator corresponding to the restricted multivector.
@@ -72,29 +78,36 @@ public:
   //! Get the Epetra communicator corresponding to the restricted multivector.
   const Epetra_MpiComm & RestrictedComm(){return *RestrictedComm_;}    
 
-  //! Notes whether or not the proc is active for the restricted multivector.
+  //! Whether the calling process is active for the restricted multivector.
   bool RestrictedProcIsActive(){return proc_is_active;}
 
-  //! Returns the input multivector.
+  //! The input multivector.
   Teuchos::RCP<Epetra_MultiVector> InputMultiVector(){return input_mv_;}
 
-  //! Returns the input multivector, restricted to the active procs.
+  //! The input multivector, restricted to the active processes.
   Teuchos::RCP<Epetra_MultiVector> RestrictedMultiVector(){return restricted_mv_;}
 
-  //! Restricts the multivector.
-  /*! Restricts the multivector.  If the MPISubComm is not set, restrict sets it to
-     include only the active processors and then restricts the multivector.  If
-     MPISubComm is set in a fashion compatible with the existing multivector (aka all
-     procs with active rows must be in the subcomm), it
-     creates a multivector using that MPISubComm
-
-     \return 0 if sucessful, -1 if the input_multivector is deficient, and -2 if the
-  MPI_Comm object set with SetMPISubComm is not consistent with the input multivector.
-  */
+  /// \brief Restrict the given multivector.
+  ///
+  /// If the MPISubComm is not set, this method sets it to include
+  /// only the active processes.  Then this method restricts the
+  /// multivector.  If MPISubComm is set in a fashion compatible with
+  /// the existing multivector (that is, all processes with active
+  /// rows must be in the subcommunicator), it creates a multivector
+  /// using that MPISubComm.  This method also sets the input
+  /// multivector (what InputMultiVector() returns) to the given
+  /// multivector.
+  ///
+  /// \return 0 if sucessful, -1 if the input_multivector is deficient
+  ///   (e.g., its Epetra_Comm is not an Epetra_MpiComm), or -2 if the
+  ///   MPI_Comm object set with SetMPISubComm is not consistent with
+  ///   the input multivector or if splitting the communicator failed.
   int restrict_comm(Teuchos::RCP<Epetra_MultiVector> input_mv);
 
 private:
+  //! Whether the calling process is part of the restricted multivector.
   bool proc_is_active;
+  //! Whether the subcommunicator has been set (using SetMPISubComm()).
   bool subcomm_is_set;
   
   MPI_Comm MPI_SubComm_;
@@ -103,7 +116,6 @@ private:
   
   Teuchos::RCP<Epetra_MultiVector> input_mv_;
   Teuchos::RCP<Epetra_MultiVector> restricted_mv_;
-
 };
 
 

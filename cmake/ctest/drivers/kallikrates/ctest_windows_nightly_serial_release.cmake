@@ -54,7 +54,7 @@
 # @HEADER
 
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.kallikrates.msvc.cmake")
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../../TrilinosVersion.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../../../Version.cmake")
 
 #
 # Set the options specific to this build case
@@ -63,14 +63,13 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../../TrilinosVersion.cmake")
 SET(COMM_TYPE SERIAL)
 SET(BUILD_TYPE RELEASE)
 SET(BUILD_DIR_NAME "SERIAL_RELEASE_${Trilinos_VERSION}")
+SET(CTEST_TEST_TYPE Experimental)
 SET(Trilinos_TRACK ${Trilinos_TESTING_TRACK})
-SET(CTEST_TEST_TYPE EXPERIMENTAL)
 #SET(CTEST_TEST_TIMEOUT 900)
 
 SET(Trilinos_BRANCH ${Trilinos_REPOSITORY_BRANCH})
 
-# SET( EXTRA_EXCLUDE_PACKAGES TrilinosFramework Stokhos Piro FEApp)
-SET( Trilinos_PACKAGES Stratimikos )
+SET( EXTRA_EXCLUDE_PACKAGES TrilinosFramework Stokhos Piro FEApp)
 
 #
 # Set the rest of the system-specific options and run the dashboard build/test

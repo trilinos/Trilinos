@@ -18,6 +18,7 @@
 
 #include "DD.h"
 #include "zoltan_align.h"
+#include "zz_hash.h"
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -97,6 +98,7 @@ int Zoltan_DD_Create (
 
    /* malloc memory for the directory structure + hash table */
    size = (table_length) ? table_length: ZOLTAN_DD_HASH_TABLE_COUNT;
+   size = Zoltan_Recommended_Hash_Size(size);
    *dd  = (Zoltan_DD_Directory*) ZOLTAN_MALLOC (sizeof (Zoltan_DD_Directory)
         + size * sizeof(DD_Node*));
    if (*dd == NULL)  {

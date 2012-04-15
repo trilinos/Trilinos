@@ -30,8 +30,10 @@
 #define STOKHOS_ORTHOGPOLYEXPANSIONBASE_HPP
 
 #include "Stokhos_OrthogPolyExpansion.hpp"
+#include "Stokhos_DivisionExpansionStrategy.hpp"
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 namespace Stokhos {
 
@@ -48,7 +50,8 @@ namespace Stokhos {
     //! Constructor
     OrthogPolyExpansionBase(
       const Teuchos::RCP<const OrthogPolyBasis<ordinal_type, value_type> >& basis,
-      const Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk);
+      const Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk,
+      const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     //! Destructor
     virtual ~OrthogPolyExpansionBase() {}
@@ -91,6 +94,9 @@ namespace Stokhos {
     void timesEqual(
       OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
       const OrthogPolyApprox<ordinal_type, value_type, node_type>& x);
+    void divideEqual(
+      OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+      const OrthogPolyApprox<ordinal_type, value_type, node_type>& x);
 
     void plus(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
               const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
@@ -119,6 +125,12 @@ namespace Stokhos {
     void times(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
                const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
                const value_type& b);
+    void divide(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+                const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
+                const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
+    void divide(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+                const value_type& a, 
+                const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
     void divide(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
                 const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
                 const value_type& b);
@@ -165,6 +177,12 @@ namespace Stokhos {
 
     //! Triple-product tensor
     Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk;
+
+    //! Parameter list
+    Teuchos::RCP<Teuchos::ParameterList> params;
+
+    //! Division expansion strategy
+    Teuchos::RCP<Stokhos::DivisionExpansionStrategy<ordinal_type,value_type,node_type> > division_strategy;
 
     //! Expansions size
     ordinal_type sz;

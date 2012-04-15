@@ -684,6 +684,15 @@ void Epetra_BlockMap::GlobalToLocalSetup()
 
 #ifdef EPETRA_BLOCKMAP_NEW_LID
 
+  // Here follows an optimization that checks for an initial block of
+  // contiguous GIDs, and stores the GID->LID mapping for those in a
+  // more efficient way.  This supports a common use case for
+  // overlapping Maps, in which owned entries of a vector are ordered
+  // before halo entries.
+  //
+  // Epetra defines EPETRA_BLOCKMAP_NEW_LID by default (see the top of
+  // this file).
+
   //check for initial contiguous block
   int val = BlockMapData_->MyGlobalElements_[0];
   for( i = 0 ; i < numMyElements; ++i ) {

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-usageHelp = r"""egdist --extra-repos=repo1,repo2,... [OPTIONS]
+usageHelp = r"""egdist --extra-repos=Repo1,Repo2,... [OPTIONS]
 
 Run eg recursively over extra repos
 
@@ -10,13 +10,33 @@ Instead of typing
 
 type:
 
-  $ egdist [--extra-repos=repo1,repo2,...] [OPTIONS]
+  $ egdist [--extra-repos=Repo1,Repo2,...] [OPTIONS]
 
 This will distribute git options across all git repos listed, including the
 base git repo.
 
-If --extra-repos="", then the list of extra repos will be grabbed from the file
-.egdist.
+If --extra-repos="", then the list of extra repos will be read from the file
+.egdist.  The format of this file is to have one repo name per line as in:
+
+   Repo1
+   Repo2
+   Repo3
+   ...
+
+NOTE: If any extra repository does not exist, then it will be ignored and no
+output will be proudced.  Therefore, be careful to manually verify that the
+script regognises the repositories that you list.  The best way to do that is
+to type 'egdist status'.
+
+NOTE: This script has no other depenenices so it can be copied and moved
+anywhere and used.
+
+TIPS:
+
+ - Use 'egdist --no-pager <command> ...' to get the full output from
+   all extra repos in one contiguous stream which can then be piped
+   to 'less' or to a file to be read with emacs or vi.
+
 """
 
 import sys
@@ -121,12 +141,15 @@ baseRepoName = baseDirArray[-1]
 
 print "" 
 print "*** Base Git Repo: "+txtbld+txtblu+baseRepoName+txtrst
+sys.stdout.flush()
+
 os.system("eg "+cmndLineArgs)
 
 for extraRepo in extraReposFullList:
   if os.path.isdir(extraRepo):
     print "" 
     print "*** Git Repo: "+txtbld+txtblu+extraRepo+txtrst
+    sys.stdout.flush()
     os.chdir(extraRepo)
     cmnd = "eg "+cmndLineArgs
     #print cmnd
@@ -134,3 +157,4 @@ for extraRepo in extraReposFullList:
     os.chdir(baseDir)
 
 print ""
+sys.stdout.flush()

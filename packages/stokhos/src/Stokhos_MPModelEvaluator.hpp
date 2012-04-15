@@ -117,8 +117,14 @@ namespace Stokhos {
     //! Set initial multi-point solution
     void set_x_mp_init(const Stokhos::ProductEpetraVector& x_mp_in);
 
+    //! Return initial SG x
+    Teuchos::RCP<const Stokhos::ProductEpetraVector> get_x_mp_init() const;
+
     //! Set initial multi-point parameter
     void set_p_mp_init(int i, const Stokhos::ProductEpetraVector& p_mp_in);
+
+    //! Return initial SG parameters
+    Teuchos::RCP<const Stokhos::ProductEpetraVector> get_p_mp_init(int l) const;
 
     //! Get indices of MP parameters
     /*!
@@ -150,6 +156,11 @@ namespace Stokhos {
     Teuchos::RCP<Stokhos::ProductEpetraVector> 
     create_p_mp(int l, Epetra_DataAccess CV = Copy, 
 		const Epetra_Vector* v = NULL) const;
+
+    //! Create multi-point vector using p map
+    Teuchos::RCP<Stokhos::ProductEpetraMultiVector> 
+    create_p_mv_mp(int l, int num_vecs, Epetra_DataAccess CV = Copy, 
+		   const Epetra_MultiVector* v = NULL) const;
 
     //! Create multi-point vector using f map
     Teuchos::RCP<Stokhos::ProductEpetraVector> 

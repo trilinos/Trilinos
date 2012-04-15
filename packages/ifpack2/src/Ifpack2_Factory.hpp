@@ -41,7 +41,7 @@
 /** Classes and functions for templated preconditioning.  */
 namespace Ifpack2 {
 
-/** \brief Return true if the specified precondtioner type supports
+/** \brief Return true if the specified preconditioner type supports
  * unsymmetric matrices. */
 bool supportsUnsymmetric(const std::string& prec_type);
 

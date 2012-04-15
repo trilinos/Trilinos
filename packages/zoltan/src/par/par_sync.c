@@ -108,9 +108,8 @@ void Zoltan_Print_Sync_End(MPI_Comm communicator, int do_print_line)
  * Author: John Shadid (9221, SNL)
  */
 
-int         flag = 1, from, type, to;
+int         flag = 1, type, to;
 static int  offset = 0;
-MPI_Status  st;
 int proc, num_proc;
 char *yo = "Zoltan_Print_Sync_End";
 char msg[256];
@@ -123,10 +122,16 @@ char msg[256];
   offset = (offset + 1)%100;
   type   = PRINT_SYNC + offset;
 
-  if (proc < num_proc -1)
+  if (proc < num_proc -1) {
     to = proc + 1;
+    if (MPI_Send((void *) &flag, 1, MPI_INT, to, type, communicator) 
+        != MPI_SUCCESS ) {
+      sprintf(msg, "MPI_Send failed, message type %d.", type);
+      ZOLTAN_PRINT_ERROR(proc, yo, msg);
+      exit (-1);
+    }
+  }
   else {
-    to = 0;
     if (do_print_line) {
       printf("\n");
       for (flag = 0; flag < 37; flag++) printf("#");
@@ -136,26 +141,8 @@ char msg[256];
     }
   }
 
-  if (MPI_Send((void *) &flag, 1, MPI_INT, to, type, communicator) 
-      != MPI_SUCCESS ) {
-    sprintf(msg, "MPI_Send failed, message type %d.", type);
-    ZOLTAN_PRINT_ERROR(proc, yo, msg);
-    exit (-1);
-  }
-  if (proc == 0) {
-    from = num_proc -1;
-    if (MPI_Recv((void *) &flag, 1, MPI_INT, from, type, communicator, &st)
-        != MPI_SUCCESS) {
-      sprintf(msg, "MPI_Recv failed, message type %d.", type);
-      ZOLTAN_PRINT_ERROR(proc, yo, msg);
-      exit (-1);
-    }
-  }
-
   /*
-   * Do a final sync among all the processors, so that all of the other
-   * processors must wait for Proc 0 to receive the final message from Proc
-   * (num_proc-1)
+   * Do a final sync among all the processors.
    */
 
   MPI_Barrier(communicator);

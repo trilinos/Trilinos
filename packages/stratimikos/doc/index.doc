@@ -3,7 +3,7 @@
 The package Stratimikos contains a unified set of Thyra-based wrappers to
 linear solver and preconditioner capabilities in Trilinos.  The word
 "stratimikos" has no real meaning in itself; it was created from the Greek
-words "stratigiki" and "grammikos" which which mean "strategy" and "linear" in
+words "stratigiki" and "grammikos" which mean "strategy" and "linear" in
 English.  The Stratimikos package is also a place where unified testing of
 linear solvers and preconditioners can be performed.  Given these object, you
 can solve individual linear systems (see \ref stratimikos_examples_sec "examples").
@@ -56,14 +56,11 @@ but they can also be used on their own.
 
 <ul>
 
-<li><tt>Thyra::AmesosLinearOpWithSolveFactory</tt> : Amesos/Thyra adatpers.
-Must be enabled with <tt>--enable-amesos</tt>.
+<li><tt>Thyra::AmesosLinearOpWithSolveFactory</tt> : Amesos/Thyra adapters.
 
-<li><tt>Thyra::AztecOOLinearOpWithSolveFactory</tt> : AztecOO/Thyra adatpers.
-Must be enabled with <tt>--enable-aztecoo</tt>.
+<li><tt>Thyra::AztecOOLinearOpWithSolveFactory</tt> : AztecOO/Thyra adapters.
 
-<li><tt>Thyra::BelosLinearOpWithSolveFactory</tt> : Belos/Thyra adatpers.
-Must be enabled with <tt>--enable-belos</tt>.
+<li><tt>Thyra::BelosLinearOpWithSolveFactory</tt> : Belos/Thyra adapters.
 
 </ul>
 
@@ -77,11 +74,9 @@ own.
 
 <ul>
 
-<li><tt>Thyra::IfpackPreconditionerFactory</tt> : Ifpack/Thyra adatpers.
-Must be enabled with <tt>--enable-ifpack</tt>.
+<li><tt>Thyra::IfpackPreconditionerFactory</tt> : Ifpack/Thyra adapters.
 
-<li><tt>Thyra::MLPreconditionerFactory</tt> : ML/Thyra adatpers.
-Must be enabled with <tt>--enable-ifpack</tt>.
+<li><tt>Thyra::MLPreconditionerFactory</tt> : ML/Thyra adapters.
 
 </ul>
 

@@ -117,7 +117,7 @@ class RTRSolMgr : public SolverManager<ScalarType,MV,OP> {
    *   - time spent in solve() routine
    */
    Teuchos::Array<Teuchos::RCP<Teuchos::Time> > getTimers() const {
-     return tuple(_timerSolve);
+     return Teuchos::tuple(_timerSolve);
    }
 
   //! Get the iteration count for the most recent call to solve.

@@ -95,9 +95,8 @@ libzoltan_a_DEPENDENCIES =
 am__libzoltan_a_SOURCES_DIST = $(srcdir)/all/all_allo.c \
 	$(srcdir)/coloring/coloring.c $(srcdir)/coloring/color_test.c \
 	$(srcdir)/coloring/bucket.c $(srcdir)/coloring/g2l_hash.c \
-	$(srcdir)/graph/graph.c $(srcdir)/ha/build_machine_desc.c \
-	$(srcdir)/ha/divide_machine.c \
-	$(srcdir)/ha/get_processor_name.c $(srcdir)/ha/ha_drum.c \
+	$(srcdir)/graph/graph.c $(srcdir)/ha/divide_machine.c \
+	$(srcdir)/ha/get_processor_name.c $(srcdir)/ha/ha_ovis.c \
 	$(srcdir)/hier/hier.c $(srcdir)/hier/hier_free_struct.c \
 	$(srcdir)/hsfc/hsfc_box_assign.c $(srcdir)/hsfc/hsfc.c \
 	$(srcdir)/hsfc/hsfc_hilbert.c \
@@ -113,13 +112,6 @@ am__libzoltan_a_SOURCES_DIST = $(srcdir)/all/all_allo.c \
 	$(srcdir)/matrix/matrix_distribute.c \
 	$(srcdir)/matrix/matrix_operations.c \
 	$(srcdir)/matrix/matrix_sym.c $(srcdir)/matrix/matrix_utils.c \
-	$(srcdir)/matrix/common_sort.c $(srcdir)/oct/costs.c \
-	$(srcdir)/oct/dfs.c $(srcdir)/oct/migoct.c \
-	$(srcdir)/oct/migreg.c $(srcdir)/oct/migtags.c \
-	$(srcdir)/oct/msg.c $(srcdir)/oct/octant.c \
-	$(srcdir)/oct/oct_plot.c $(srcdir)/oct/octree.c \
-	$(srcdir)/oct/octupdate.c $(srcdir)/oct/oct_util.c \
-	$(srcdir)/oct/output.c $(srcdir)/oct/rootlist.c \
 	$(srcdir)/order/order.c $(srcdir)/order/order_struct.c \
 	$(srcdir)/order/order_tools.c $(srcdir)/order/hsfcOrder.c \
 	$(srcdir)/order/perm.c $(srcdir)/par/par_average.c \
@@ -134,7 +126,6 @@ am__libzoltan_a_SOURCES_DIST = $(srcdir)/all/all_allo.c \
 	$(srcdir)/tpls/build_graph.c $(srcdir)/tpls/postprocessing.c \
 	$(srcdir)/tpls/preprocessing.c $(srcdir)/tpls/scatter_graph.c \
 	$(srcdir)/tpls/third_library.c $(srcdir)/tpls/verify_graph.c \
-	$(srcdir)/ccolamd/ccolamd.c \
 	$(srcdir)/tpls/parmetis_interface.c $(srcdir)/phg/phg_build.c \
 	$(srcdir)/phg/phg_build_calls.c $(srcdir)/phg/phg.c \
 	$(srcdir)/phg/phg_lookup.c $(srcdir)/phg/phg_verbose.c \
@@ -187,20 +178,20 @@ am__libzoltan_a_SOURCES_DIST = $(srcdir)/all/all_allo.c \
 	$(srcdir)/Utilities/shared/zoltan_align.c \
 	$(srcdir)/Utilities/shared/zoltan_id.c $(srcdir)/zz/zz_coord.c \
 	$(srcdir)/zz/zz_gen_files.c $(srcdir)/zz/zz_hash.c \
-	$(srcdir)/zz/zz_map.c $(srcdir)/zz/zz_heap.c \
-	$(srcdir)/zz/zz_init.c $(srcdir)/zz/zz_obj_list.c \
-	$(srcdir)/zz/zz_rand.c $(srcdir)/zz/zz_set_fn.c \
-	$(srcdir)/zz/zz_sort.c $(srcdir)/zz/zz_struct.c \
-	$(srcdir)/zz/zz_back_trace.c $(srcdir)/zz/zz_util.c \
-	$(srcdir)/fort/ztypes.f90 $(srcdir)/fort/cwrap.c \
-	$(srcdir)/fort/zoltan_user_data.f90 \
-	$(srcdir)/fort/lb_user_const.f90 $(srcdir)/fort/fwrap.f90
+	$(srcdir)/zz/murmur3.c $(srcdir)/zz/zz_map.c \
+	$(srcdir)/zz/zz_heap.c $(srcdir)/zz/zz_init.c \
+	$(srcdir)/zz/zz_obj_list.c $(srcdir)/zz/zz_rand.c \
+	$(srcdir)/zz/zz_set_fn.c $(srcdir)/zz/zz_sort.c \
+	$(srcdir)/zz/zz_struct.c $(srcdir)/zz/zz_back_trace.c \
+	$(srcdir)/zz/zz_util.c $(srcdir)/fort/ztypes.f90 \
+	$(srcdir)/fort/cwrap.c $(srcdir)/fort/zoltan_user_data.f90 \
+	$(srcdir)/fort/fwrap.f90
 am__objects_1 = all_allo.$(OBJEXT)
 am__objects_2 = coloring.$(OBJEXT) color_test.$(OBJEXT) \
 	bucket.$(OBJEXT) g2l_hash.$(OBJEXT)
 am__objects_3 = graph.$(OBJEXT)
-am__objects_4 = build_machine_desc.$(OBJEXT) divide_machine.$(OBJEXT) \
-	get_processor_name.$(OBJEXT) ha_drum.$(OBJEXT)
+am__objects_4 = divide_machine.$(OBJEXT) get_processor_name.$(OBJEXT) \
+	ha_ovis.$(OBJEXT)
 am__objects_5 = hier.$(OBJEXT) hier_free_struct.$(OBJEXT)
 am__objects_6 = hsfc_box_assign.$(OBJEXT) hsfc.$(OBJEXT) \
 	hsfc_hilbert.$(OBJEXT) hsfc_point_assign.$(OBJEXT)
@@ -212,30 +203,23 @@ am__objects_7 = lb_balance.$(OBJEXT) lb_box_assign.$(OBJEXT) \
 	lb_set_part_sizes.$(OBJEXT)
 am__objects_8 = matrix_build.$(OBJEXT) matrix_distribute.$(OBJEXT) \
 	matrix_operations.$(OBJEXT) matrix_sym.$(OBJEXT) \
-	matrix_utils.$(OBJEXT) common_sort.$(OBJEXT)
-am__objects_9 = costs.$(OBJEXT) dfs.$(OBJEXT) migoct.$(OBJEXT) \
-	migreg.$(OBJEXT) migtags.$(OBJEXT) msg.$(OBJEXT) \
-	octant.$(OBJEXT) oct_plot.$(OBJEXT) octree.$(OBJEXT) \
-	octupdate.$(OBJEXT) oct_util.$(OBJEXT) output.$(OBJEXT) \
-	rootlist.$(OBJEXT)
-@BUILD_OCTREEPARTITIONING_TRUE@am__objects_10 = $(am__objects_9)
-am__objects_11 = order.$(OBJEXT) order_struct.$(OBJEXT) \
+	matrix_utils.$(OBJEXT)
+am__objects_9 = order.$(OBJEXT) order_struct.$(OBJEXT) \
 	order_tools.$(OBJEXT) hsfcOrder.$(OBJEXT) perm.$(OBJEXT)
-am__objects_12 = par_average.$(OBJEXT) par_bisect.$(OBJEXT) \
+am__objects_10 = par_average.$(OBJEXT) par_bisect.$(OBJEXT) \
 	par_median.$(OBJEXT) par_median_randomized.$(OBJEXT) \
 	par_stats.$(OBJEXT) par_sync.$(OBJEXT) \
 	par_tflops_special.$(OBJEXT)
-am__objects_13 = assign_param_vals.$(OBJEXT) bind_param.$(OBJEXT) \
+am__objects_11 = assign_param_vals.$(OBJEXT) bind_param.$(OBJEXT) \
 	check_param.$(OBJEXT) free_params.$(OBJEXT) \
 	key_params.$(OBJEXT) print_params.$(OBJEXT) \
 	set_param.$(OBJEXT)
-am__objects_14 = build_graph.$(OBJEXT) postprocessing.$(OBJEXT) \
+am__objects_12 = build_graph.$(OBJEXT) postprocessing.$(OBJEXT) \
 	preprocessing.$(OBJEXT) scatter_graph.$(OBJEXT) \
 	third_library.$(OBJEXT) verify_graph.$(OBJEXT)
-am__objects_15 = ccolamd.$(OBJEXT)
-am__objects_16 = parmetis_interface.$(OBJEXT)
-@BUILD_PARMETIS_TRUE@am__objects_17 = $(am__objects_16)
-am__objects_18 = phg_build.$(OBJEXT) phg_build_calls.$(OBJEXT) \
+am__objects_13 = parmetis_interface.$(OBJEXT)
+@BUILD_PARMETIS_TRUE@am__objects_14 = $(am__objects_13)
+am__objects_15 = phg_build.$(OBJEXT) phg_build_calls.$(OBJEXT) \
 	phg.$(OBJEXT) phg_lookup.$(OBJEXT) phg_verbose.$(OBJEXT) \
 	phg_coarse.$(OBJEXT) phg_comm.$(OBJEXT) phg_distrib.$(OBJEXT) \
 	phg_gather.$(OBJEXT) phg_hypergraph.$(OBJEXT) \
@@ -244,18 +228,18 @@ am__objects_18 = phg_build.$(OBJEXT) phg_build_calls.$(OBJEXT) \
 	phg_refinement.$(OBJEXT) phg_scale.$(OBJEXT) \
 	phg_serialpartition.$(OBJEXT) phg_util.$(OBJEXT) \
 	phg_tree.$(OBJEXT) phg_Vcycle.$(OBJEXT)
-am__objects_19 = box_assign.$(OBJEXT) create_proc_list.$(OBJEXT) \
+am__objects_16 = box_assign.$(OBJEXT) create_proc_list.$(OBJEXT) \
 	inertial1d.$(OBJEXT) inertial2d.$(OBJEXT) inertial3d.$(OBJEXT) \
 	point_assign.$(OBJEXT) rcb_box.$(OBJEXT) rcb.$(OBJEXT) \
 	rcb_util.$(OBJEXT) rib.$(OBJEXT) rib_util.$(OBJEXT) \
 	shared.$(OBJEXT)
-am__objects_20 = reftree_build.$(OBJEXT) reftree_coarse_path.$(OBJEXT) \
+am__objects_17 = reftree_build.$(OBJEXT) reftree_coarse_path.$(OBJEXT) \
 	reftree_hash.$(OBJEXT) reftree_part.$(OBJEXT)
-am__objects_21 = scotch_interface.$(OBJEXT)
-@BUILD_SCOTCH_TRUE@am__objects_22 = $(am__objects_21)
-am__objects_23 = block.$(OBJEXT) cyclic.$(OBJEXT) random.$(OBJEXT)
-am__objects_24 = timer_params.$(OBJEXT)
-am__objects_25 = comm_exchange_sizes.$(OBJEXT) \
+am__objects_18 = scotch_interface.$(OBJEXT)
+@BUILD_SCOTCH_TRUE@am__objects_19 = $(am__objects_18)
+am__objects_20 = block.$(OBJEXT) cyclic.$(OBJEXT) random.$(OBJEXT)
+am__objects_21 = timer_params.$(OBJEXT)
+am__objects_22 = comm_exchange_sizes.$(OBJEXT) \
 	comm_invert_map.$(OBJEXT) comm_do.$(OBJEXT) \
 	comm_do_reverse.$(OBJEXT) comm_info.$(OBJEXT) \
 	comm_create.$(OBJEXT) comm_resize.$(OBJEXT) \
@@ -268,24 +252,22 @@ am__objects_25 = comm_exchange_sizes.$(OBJEXT) \
 	DD_Set_Neighbor_Hash_Fn2.$(OBJEXT) DD_Set_Hash_Fn.$(OBJEXT) \
 	DD_Set_Neighbor_Hash_Fn1.$(OBJEXT) mem.$(OBJEXT) \
 	zoltan_align.$(OBJEXT) zoltan_id.$(OBJEXT)
-am__objects_26 = zz_coord.$(OBJEXT) zz_gen_files.$(OBJEXT) \
-	zz_hash.$(OBJEXT) zz_map.$(OBJEXT) zz_heap.$(OBJEXT) \
-	zz_init.$(OBJEXT) zz_obj_list.$(OBJEXT) zz_rand.$(OBJEXT) \
-	zz_set_fn.$(OBJEXT) zz_sort.$(OBJEXT) zz_struct.$(OBJEXT) \
-	zz_back_trace.$(OBJEXT) zz_util.$(OBJEXT)
-am__objects_27 = ztypes.$(OBJEXT) cwrap.$(OBJEXT) \
-	zoltan_user_data.$(OBJEXT) lb_user_const.$(OBJEXT) \
-	fwrap.$(OBJEXT)
-@BUILD_ZOLTAN_F90_INTERFACE_TRUE@am__objects_28 = $(am__objects_27)
+am__objects_23 = zz_coord.$(OBJEXT) zz_gen_files.$(OBJEXT) \
+	zz_hash.$(OBJEXT) murmur3.$(OBJEXT) zz_map.$(OBJEXT) \
+	zz_heap.$(OBJEXT) zz_init.$(OBJEXT) zz_obj_list.$(OBJEXT) \
+	zz_rand.$(OBJEXT) zz_set_fn.$(OBJEXT) zz_sort.$(OBJEXT) \
+	zz_struct.$(OBJEXT) zz_back_trace.$(OBJEXT) zz_util.$(OBJEXT)
+am__objects_24 = ztypes.$(OBJEXT) cwrap.$(OBJEXT) \
+	zoltan_user_data.$(OBJEXT) fwrap.$(OBJEXT)
+@BUILD_ZOLTAN_F90_INTERFACE_TRUE@am__objects_25 = $(am__objects_24)
 am_libzoltan_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
 	$(am__objects_6) $(am__objects_7) $(am__objects_8) \
-	$(am__objects_10) $(am__objects_11) $(am__objects_12) \
-	$(am__objects_13) $(am__objects_14) $(am__objects_15) \
-	$(am__objects_17) $(am__objects_18) $(am__objects_19) \
-	$(am__objects_20) $(am__objects_22) $(am__objects_23) \
-	$(am__objects_24) $(am__objects_25) $(am__objects_26) \
-	$(am__objects_28)
+	$(am__objects_9) $(am__objects_10) $(am__objects_11) \
+	$(am__objects_12) $(am__objects_14) $(am__objects_15) \
+	$(am__objects_16) $(am__objects_17) $(am__objects_19) \
+	$(am__objects_20) $(am__objects_21) $(am__objects_22) \
+	$(am__objects_23) $(am__objects_25)
 libzoltan_a_OBJECTS = $(am_libzoltan_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src/include@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -464,13 +446,12 @@ GRAPH = \
 
 HA_H = \
 	$(srcdir)/ha/ha_const.h \
-	$(srcdir)/ha/ha_drum.h
+	$(srcdir)/ha/ha_ovis.h 
 
 HA = \
-	$(srcdir)/ha/build_machine_desc.c \
 	$(srcdir)/ha/divide_machine.c \
 	$(srcdir)/ha/get_processor_name.c \
-	$(srcdir)/ha/ha_drum.c
+	$(srcdir)/ha/ha_ovis.c 
 
 HIER_H = \
 	$(srcdir)/hier/hier.h
@@ -535,46 +516,8 @@ MATRIX = \
 	$(srcdir)/matrix/matrix_distribute.c \
 	$(srcdir)/matrix/matrix_operations.c \
 	$(srcdir)/matrix/matrix_sym.c \
-	$(srcdir)/matrix/matrix_utils.c \
-	$(srcdir)/matrix/common_sort.c
+	$(srcdir)/matrix/matrix_utils.c 
 
-EXTRA_OCT_H = \
-	$(srcdir)/oct/costs_const.h \
-	$(srcdir)/oct/costs.h \
-	$(srcdir)/oct/dfs_const.h \
-	$(srcdir)/oct/dfs.h \
-	$(srcdir)/oct/migoct_const.h \
-	$(srcdir)/oct/migreg_const.h \
-	$(srcdir)/oct/migreg.h \
-	$(srcdir)/oct/migtags_const.h \
-	$(srcdir)/oct/msg_const.h \
-	$(srcdir)/oct/octant_const.h \
-	$(srcdir)/oct/octree_const.h \
-	$(srcdir)/oct/octupdate_const.h \
-	$(srcdir)/oct/octupdate.h \
-	$(srcdir)/oct/oct_util_const.h \
-	$(srcdir)/oct/rootlist_const.h \
-	$(srcdir)/oct/SFC.h
-
-EXTRA_OCT = \
-	$(srcdir)/oct/costs.c \
-	$(srcdir)/oct/dfs.c \
-	$(srcdir)/oct/migoct.c \
-	$(srcdir)/oct/migreg.c \
-	$(srcdir)/oct/migtags.c \
-	$(srcdir)/oct/msg.c \
-	$(srcdir)/oct/octant.c \
-	$(srcdir)/oct/oct_plot.c \
-	$(srcdir)/oct/octree.c \
-	$(srcdir)/oct/octupdate.c \
-	$(srcdir)/oct/oct_util.c \
-	$(srcdir)/oct/output.c \
-	$(srcdir)/oct/rootlist.c
-
-@BUILD_OCTREEPARTITIONING_FALSE@OCT_H = 
-@BUILD_OCTREEPARTITIONING_TRUE@OCT_H = $(EXTRA_OCT_H)
-@BUILD_OCTREEPARTITIONING_FALSE@OCT = 
-@BUILD_OCTREEPARTITIONING_TRUE@OCT = $(EXTRA_OCT)
 ORDER_H = \
 	$(srcdir)/order/order_const.h \
 	$(srcdir)/order/hsfcOrder.h 
@@ -628,12 +571,6 @@ TPLS = \
 	$(srcdir)/tpls/scatter_graph.c \
 	$(srcdir)/tpls/third_library.c \
 	$(srcdir)/tpls/verify_graph.c
-
-CCOLAMD_H = \
-	$(srcdir)/ccolamd/zoltan_ccolamd.h
-
-CCOLAMD = \
-	$(srcdir)/ccolamd/ccolamd.c
 
 EXTRA_PARMETIS_INTERFACE_H = \
 	$(srcdir)/tpls/parmetis_interface.h
@@ -783,12 +720,14 @@ ZZ_H = \
 	$(srcdir)/zz/zz_id_const.h \
 	$(srcdir)/zz/zz_rand.h \
 	$(srcdir)/zz/zz_sort.h \
+	$(srcdir)/zz/murmur3.h \
 	$(srcdir)/zz/zz_util_const.h
 
 ZZ = \
 	$(srcdir)/zz/zz_coord.c \
 	$(srcdir)/zz/zz_gen_files.c \
 	$(srcdir)/zz/zz_hash.c \
+	$(srcdir)/zz/murmur3.c \
 	$(srcdir)/zz/zz_map.c \
 	$(srcdir)/zz/zz_heap.c \
 	$(srcdir)/zz/zz_init.c \
@@ -802,48 +741,28 @@ ZZ = \
 
 EXTRA_FORTRAN_H = \
     $(srcdir)/fort/cwrap_fmangle.h \
-    $(srcdir)/fort/lbfn.h \
-    $(srcdir)/fort/lbif.h \
     $(srcdir)/fort/set_borderobjlist.fn \
-    $(srcdir)/fort/set_borderobjlist.fn.lbfn \
     $(srcdir)/fort/set_borderobjlist.if \
-    $(srcdir)/fort/set_borderobjlist.if.lbif \
     $(srcdir)/fort/set_childlist.fn \
-    $(srcdir)/fort/set_childlist.fn.lbfn \
     $(srcdir)/fort/set_childlist.if \
-    $(srcdir)/fort/set_childlist.if.lbif \
     $(srcdir)/fort/set_childweight.fn \
-    $(srcdir)/fort/set_childweight.fn.lbfn \
     $(srcdir)/fort/set_childweight.if \
-    $(srcdir)/fort/set_childweight.if.lbif \
     $(srcdir)/fort/set_coarseobjlist.fn \
-    $(srcdir)/fort/set_coarseobjlist.fn.lbfn \
     $(srcdir)/fort/set_coarseobjlist.if \
-    $(srcdir)/fort/set_coarseobjlist.if.lbif \
     $(srcdir)/fort/set_edgelist.fn \
-    $(srcdir)/fort/set_edgelist.fn.lbfn \
     $(srcdir)/fort/set_edgelist.if \
-    $(srcdir)/fort/set_edgelist.if.lbif \
     $(srcdir)/fort/set_edgelistmulti.fn \
     $(srcdir)/fort/set_edgelistmulti.if \
     $(srcdir)/fort/set_firstborderobj.fn \
-    $(srcdir)/fort/set_firstborderobj.fn.lbfn \
     $(srcdir)/fort/set_firstborderobj.if \
-    $(srcdir)/fort/set_firstborderobj.if.lbif \
     $(srcdir)/fort/set_firstcoarseobj.fn \
-    $(srcdir)/fort/set_firstcoarseobj.fn.lbfn \
     $(srcdir)/fort/set_firstcoarseobj.if \
-    $(srcdir)/fort/set_firstcoarseobj.if.lbif \
     $(srcdir)/fort/set_firstobj.fn \
-    $(srcdir)/fort/set_firstobj.fn.lbfn \
     $(srcdir)/fort/set_firstobj.if \
-    $(srcdir)/fort/set_firstobj.if.lbif \
     $(srcdir)/fort/set_fixedobjlist.fn \
     $(srcdir)/fort/set_fixedobjlist.if \
     $(srcdir)/fort/set_geom.fn \
-    $(srcdir)/fort/set_geom.fn.lbfn \
     $(srcdir)/fort/set_geom.if \
-    $(srcdir)/fort/set_geom.if.lbif \
     $(srcdir)/fort/set_geommulti.fn \
     $(srcdir)/fort/set_geommulti.if \
     $(srcdir)/fort/set_hgcs.fn \
@@ -861,65 +780,39 @@ EXTRA_FORTRAN_H = \
     $(srcdir)/fort/set_hierpartition.fn \
     $(srcdir)/fort/set_hierpartition.if \
     $(srcdir)/fort/set_midmigrate.fn \
-    $(srcdir)/fort/set_midmigrate.fn.lbfn \
     $(srcdir)/fort/set_midmigrate.if \
-    $(srcdir)/fort/set_midmigrate.if.lbif \
     $(srcdir)/fort/set_midmigratepp.fn \
     $(srcdir)/fort/set_midmigratepp.if \
     $(srcdir)/fort/set_nextborderobj.fn \
-    $(srcdir)/fort/set_nextborderobj.fn.lbfn \
     $(srcdir)/fort/set_nextborderobj.if \
-    $(srcdir)/fort/set_nextborderobj.if.lbif \
     $(srcdir)/fort/set_nextcoarseobj.fn \
-    $(srcdir)/fort/set_nextcoarseobj.fn.lbfn \
     $(srcdir)/fort/set_nextcoarseobj.if \
-    $(srcdir)/fort/set_nextcoarseobj.if.lbif \
     $(srcdir)/fort/set_nextobj.fn \
-    $(srcdir)/fort/set_nextobj.fn.lbfn \
     $(srcdir)/fort/set_nextobj.if \
-    $(srcdir)/fort/set_nextobj.if.lbif \
     $(srcdir)/fort/set_numborderobj.fn \
-    $(srcdir)/fort/set_numborderobj.fn.lbfn \
     $(srcdir)/fort/set_numborderobj.if \
-    $(srcdir)/fort/set_numborderobj.if.lbif \
     $(srcdir)/fort/set_numchild.fn \
-    $(srcdir)/fort/set_numchild.fn.lbfn \
     $(srcdir)/fort/set_numchild.if \
-    $(srcdir)/fort/set_numchild.if.lbif \
     $(srcdir)/fort/set_numcoarseobj.fn \
-    $(srcdir)/fort/set_numcoarseobj.fn.lbfn \
     $(srcdir)/fort/set_numcoarseobj.if \
-    $(srcdir)/fort/set_numcoarseobj.if.lbif \
     $(srcdir)/fort/set_numedges.fn \
-    $(srcdir)/fort/set_numedges.fn.lbfn \
     $(srcdir)/fort/set_numedges.if \
-    $(srcdir)/fort/set_numedges.if.lbif \
     $(srcdir)/fort/set_numedgesmulti.fn \
     $(srcdir)/fort/set_numedgesmulti.if \
     $(srcdir)/fort/set_numfixedobj.fn \
     $(srcdir)/fort/set_numfixedobj.if \
     $(srcdir)/fort/set_numgeom.fn \
-    $(srcdir)/fort/set_numgeom.fn.lbfn \
     $(srcdir)/fort/set_numgeom.if \
-    $(srcdir)/fort/set_numgeom.if.lbif \
     $(srcdir)/fort/set_numobj.fn \
-    $(srcdir)/fort/set_numobj.fn.lbfn \
     $(srcdir)/fort/set_numobj.if \
-    $(srcdir)/fort/set_numobj.if.lbif \
     $(srcdir)/fort/set_objlist.fn \
-    $(srcdir)/fort/set_objlist.fn.lbfn \
     $(srcdir)/fort/set_objlist.if \
-    $(srcdir)/fort/set_objlist.if.lbif \
     $(srcdir)/fort/set_objsize.fn \
-    $(srcdir)/fort/set_objsize.fn.lbfn \
     $(srcdir)/fort/set_objsize.if \
-    $(srcdir)/fort/set_objsize.if.lbif \
     $(srcdir)/fort/set_objsizemulti.fn \
     $(srcdir)/fort/set_objsizemulti.if \
     $(srcdir)/fort/set_packobj.fn \
-    $(srcdir)/fort/set_packobj.fn.lbfn \
     $(srcdir)/fort/set_packobj.if \
-    $(srcdir)/fort/set_packobj.if.lbif \
     $(srcdir)/fort/set_packobjmulti.fn \
     $(srcdir)/fort/set_packobjmulti.if \
     $(srcdir)/fort/set_partition.fn \
@@ -927,21 +820,15 @@ EXTRA_FORTRAN_H = \
     $(srcdir)/fort/set_partitionmulti.fn \
     $(srcdir)/fort/set_partitionmulti.if \
     $(srcdir)/fort/set_postmigrate.fn \
-    $(srcdir)/fort/set_postmigrate.fn.lbfn \
     $(srcdir)/fort/set_postmigrate.if \
-    $(srcdir)/fort/set_postmigrate.if.lbif \
     $(srcdir)/fort/set_postmigratepp.fn \
     $(srcdir)/fort/set_postmigratepp.if \
     $(srcdir)/fort/set_premigrate.fn \
-    $(srcdir)/fort/set_premigrate.fn.lbfn \
     $(srcdir)/fort/set_premigrate.if \
-    $(srcdir)/fort/set_premigrate.if.lbif \
     $(srcdir)/fort/set_premigratepp.fn \
     $(srcdir)/fort/set_premigratepp.if \
     $(srcdir)/fort/set_unpackobj.fn \
-    $(srcdir)/fort/set_unpackobj.fn.lbfn \
     $(srcdir)/fort/set_unpackobj.if \
-    $(srcdir)/fort/set_unpackobj.if.lbif \
     $(srcdir)/fort/set_unpackobjmulti.fn \
     $(srcdir)/fort/set_unpackobjmulti.if 
 
@@ -949,7 +836,6 @@ EXTRA_FORTRAN = \
     $(srcdir)/fort/ztypes.f90 \
     $(srcdir)/fort/cwrap.c \
     $(srcdir)/fort/zoltan_user_data.f90 \
-    $(srcdir)/fort/lb_user_const.f90 \
     $(srcdir)/fort/fwrap.f90 
 
 @BUILD_ZOLTAN_F90_INTERFACE_FALSE@FORTRAN_H = 
@@ -971,12 +857,10 @@ ZOLTAN_H = \
 	$(INCLUDE_H) \
 	$(LB_H) \
 	$(MATRIX_H) \
-	$(OCT_H) \
 	$(ORDER_H) \
 	$(PAR_H) \
 	$(PARAMS_H) \
 	$(TPLS_H) \
-	$(CCOLAMD_H) \
 	$(PARMETIS_INTERFACE_H) \
 	$(PHG_H) \
 	$(RCB_H) \
@@ -997,12 +881,10 @@ libzoltan_a_SOURCES = \
 	$(HSFC) \
 	$(LB) \
 	$(MATRIX) \
-	$(OCT) \
 	$(ORDER) \
 	$(PAR) \
 	$(PARAMS) \
 	$(TPLS) \
-	$(CCOLAMD) \
 	$(PARMETIS_INTERFACE) \
 	$(PHG) \
 	$(RCB) \
@@ -1015,8 +897,6 @@ libzoltan_a_SOURCES = \
 	$(FORTRAN)
 
 EXTRA_libzoltan_a_SOURCES = \
-	$(EXTRA_OCT_H) \
-	$(EXTRA_OCT) \
 	$(EXTRA_PARMETIS_INTERFACE_H) \
 	$(EXTRA_PARMETIS_INTERFACE) \
 	$(EXTRA_SCOTCH_INTERFACE_H) \
@@ -1286,8 +1166,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/box_assign.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bucket.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/build_graph.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/build_machine_desc.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ccolamd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_param.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/color_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/coloring.Po@am__quote@
@@ -1301,18 +1179,15 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_invert_plan.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_resize.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_sort_ints.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/common_sort.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/costs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/create_proc_list.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cwrap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cyclic.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dfs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/divide_machine.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/free_params.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/g2l_hash.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get_processor_name.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/graph.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ha_drum.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ha_ovis.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hier.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hier_free_struct.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hsfc.Po@am__quote@
@@ -1344,19 +1219,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/matrix_sym.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/matrix_utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mem.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/migoct.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/migreg.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/migtags.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/msg.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/oct_plot.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/oct_util.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/octant.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/octree.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/octupdate.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/murmur3.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/order.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/order_struct.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/order_tools.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/output.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/par_average.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/par_bisect.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/par_median.Po@am__quote@
@@ -1402,7 +1268,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reftree_part.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rib.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rib_util.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rootlist.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scatter_graph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scotch_interface.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/set_param.Po@am__quote@
@@ -1526,20 +1391,6 @@ graph.obj: $(srcdir)/graph/graph.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o graph.obj `if test -f '$(srcdir)/graph/graph.c'; then $(CYGPATH_W) '$(srcdir)/graph/graph.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/graph/graph.c'; fi`
 
-build_machine_desc.o: $(srcdir)/ha/build_machine_desc.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT build_machine_desc.o -MD -MP -MF $(DEPDIR)/build_machine_desc.Tpo -c -o build_machine_desc.o `test -f '$(srcdir)/ha/build_machine_desc.c' || echo '$(srcdir)/'`$(srcdir)/ha/build_machine_desc.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/build_machine_desc.Tpo $(DEPDIR)/build_machine_desc.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ha/build_machine_desc.c' object='build_machine_desc.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o build_machine_desc.o `test -f '$(srcdir)/ha/build_machine_desc.c' || echo '$(srcdir)/'`$(srcdir)/ha/build_machine_desc.c
-
-build_machine_desc.obj: $(srcdir)/ha/build_machine_desc.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT build_machine_desc.obj -MD -MP -MF $(DEPDIR)/build_machine_desc.Tpo -c -o build_machine_desc.obj `if test -f '$(srcdir)/ha/build_machine_desc.c'; then $(CYGPATH_W) '$(srcdir)/ha/build_machine_desc.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ha/build_machine_desc.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/build_machine_desc.Tpo $(DEPDIR)/build_machine_desc.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ha/build_machine_desc.c' object='build_machine_desc.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o build_machine_desc.obj `if test -f '$(srcdir)/ha/build_machine_desc.c'; then $(CYGPATH_W) '$(srcdir)/ha/build_machine_desc.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ha/build_machine_desc.c'; fi`
-
 divide_machine.o: $(srcdir)/ha/divide_machine.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT divide_machine.o -MD -MP -MF $(DEPDIR)/divide_machine.Tpo -c -o divide_machine.o `test -f '$(srcdir)/ha/divide_machine.c' || echo '$(srcdir)/'`$(srcdir)/ha/divide_machine.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/divide_machine.Tpo $(DEPDIR)/divide_machine.Po
@@ -1568,19 +1419,19 @@ get_processor_name.obj: $(srcdir)/ha/get_processor_name.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o get_processor_name.obj `if test -f '$(srcdir)/ha/get_processor_name.c'; then $(CYGPATH_W) '$(srcdir)/ha/get_processor_name.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ha/get_processor_name.c'; fi`
 
-ha_drum.o: $(srcdir)/ha/ha_drum.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ha_drum.o -MD -MP -MF $(DEPDIR)/ha_drum.Tpo -c -o ha_drum.o `test -f '$(srcdir)/ha/ha_drum.c' || echo '$(srcdir)/'`$(srcdir)/ha/ha_drum.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/ha_drum.Tpo $(DEPDIR)/ha_drum.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ha/ha_drum.c' object='ha_drum.o' libtool=no @AMDEPBACKSLASH@
+ha_ovis.o: $(srcdir)/ha/ha_ovis.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ha_ovis.o -MD -MP -MF $(DEPDIR)/ha_ovis.Tpo -c -o ha_ovis.o `test -f '$(srcdir)/ha/ha_ovis.c' || echo '$(srcdir)/'`$(srcdir)/ha/ha_ovis.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/ha_ovis.Tpo $(DEPDIR)/ha_ovis.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ha/ha_ovis.c' object='ha_ovis.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ha_drum.o `test -f '$(srcdir)/ha/ha_drum.c' || echo '$(srcdir)/'`$(srcdir)/ha/ha_drum.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ha_ovis.o `test -f '$(srcdir)/ha/ha_ovis.c' || echo '$(srcdir)/'`$(srcdir)/ha/ha_ovis.c
 
-ha_drum.obj: $(srcdir)/ha/ha_drum.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ha_drum.obj -MD -MP -MF $(DEPDIR)/ha_drum.Tpo -c -o ha_drum.obj `if test -f '$(srcdir)/ha/ha_drum.c'; then $(CYGPATH_W) '$(srcdir)/ha/ha_drum.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ha/ha_drum.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/ha_drum.Tpo $(DEPDIR)/ha_drum.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ha/ha_drum.c' object='ha_drum.obj' libtool=no @AMDEPBACKSLASH@
+ha_ovis.obj: $(srcdir)/ha/ha_ovis.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ha_ovis.obj -MD -MP -MF $(DEPDIR)/ha_ovis.Tpo -c -o ha_ovis.obj `if test -f '$(srcdir)/ha/ha_ovis.c'; then $(CYGPATH_W) '$(srcdir)/ha/ha_ovis.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ha/ha_ovis.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/ha_ovis.Tpo $(DEPDIR)/ha_ovis.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ha/ha_ovis.c' object='ha_ovis.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ha_drum.obj `if test -f '$(srcdir)/ha/ha_drum.c'; then $(CYGPATH_W) '$(srcdir)/ha/ha_drum.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ha/ha_drum.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ha_ovis.obj `if test -f '$(srcdir)/ha/ha_ovis.c'; then $(CYGPATH_W) '$(srcdir)/ha/ha_ovis.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ha/ha_ovis.c'; fi`
 
 hier.o: $(srcdir)/hier/hier.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT hier.o -MD -MP -MF $(DEPDIR)/hier.Tpo -c -o hier.o `test -f '$(srcdir)/hier/hier.c' || echo '$(srcdir)/'`$(srcdir)/hier/hier.c
@@ -1932,202 +1783,6 @@ matrix_utils.obj: $(srcdir)/matrix/matrix_utils.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o matrix_utils.obj `if test -f '$(srcdir)/matrix/matrix_utils.c'; then $(CYGPATH_W) '$(srcdir)/matrix/matrix_utils.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/matrix/matrix_utils.c'; fi`
 
-common_sort.o: $(srcdir)/matrix/common_sort.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT common_sort.o -MD -MP -MF $(DEPDIR)/common_sort.Tpo -c -o common_sort.o `test -f '$(srcdir)/matrix/common_sort.c' || echo '$(srcdir)/'`$(srcdir)/matrix/common_sort.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/common_sort.Tpo $(DEPDIR)/common_sort.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/matrix/common_sort.c' object='common_sort.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o common_sort.o `test -f '$(srcdir)/matrix/common_sort.c' || echo '$(srcdir)/'`$(srcdir)/matrix/common_sort.c
-
-common_sort.obj: $(srcdir)/matrix/common_sort.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT common_sort.obj -MD -MP -MF $(DEPDIR)/common_sort.Tpo -c -o common_sort.obj `if test -f '$(srcdir)/matrix/common_sort.c'; then $(CYGPATH_W) '$(srcdir)/matrix/common_sort.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/matrix/common_sort.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/common_sort.Tpo $(DEPDIR)/common_sort.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/matrix/common_sort.c' object='common_sort.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o common_sort.obj `if test -f '$(srcdir)/matrix/common_sort.c'; then $(CYGPATH_W) '$(srcdir)/matrix/common_sort.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/matrix/common_sort.c'; fi`
-
-costs.o: $(srcdir)/oct/costs.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT costs.o -MD -MP -MF $(DEPDIR)/costs.Tpo -c -o costs.o `test -f '$(srcdir)/oct/costs.c' || echo '$(srcdir)/'`$(srcdir)/oct/costs.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/costs.Tpo $(DEPDIR)/costs.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/oct/costs.c' object='costs.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o costs.o `test -f '$(srcdir)/oct/costs.c' || echo '$(srcdir)/'`$(srcdir)/oct/costs.c
-
-costs.obj: $(srcdir)/oct/costs.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT costs.obj -MD -MP -MF $(DEPDIR)/costs.Tpo -c -o costs.obj `if test -f '$(srcdir)/oct/costs.c'; then $(CYGPATH_W) '$(srcdir)/oct/costs.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/oct/costs.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/costs.Tpo $(DEPDIR)/costs.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/oct/costs.c' object='costs.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o costs.obj `if test -f '$(srcdir)/oct/costs.c'; then $(CYGPATH_W) '$(srcdir)/oct/costs.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/oct/costs.c'; fi`
-
-dfs.o: $(srcdir)/oct/dfs.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT dfs.o -MD -MP -MF $(DEPDIR)/dfs.Tpo -c -o dfs.o `test -f '$(srcdir)/oct/dfs.c' || echo '$(srcdir)/'`$(srcdir)/oct/dfs.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/dfs.Tpo $(DEPDIR)/dfs.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/oct/dfs.c' object='dfs.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o dfs.o `test -f '$(srcdir)/oct/dfs.c' || echo '$(srcdir)/'`$(srcdir)/oct/dfs.c
-
-dfs.obj: $(srcdir)/oct/dfs.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT dfs.obj -MD -MP -MF $(DEPDIR)/dfs.Tpo -c -o dfs.obj `if test -f '$(srcdir)/oct/dfs.c'; then $(CYGPATH_W) '$(srcdir)/oct/dfs.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/oct/dfs.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/dfs.Tpo $(DEPDIR)/dfs.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/oct/dfs.c' object='dfs.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o dfs.obj `if test -f '$(srcdir)/oct/dfs.c'; then $(CYGPATH_W) '$(srcdir)/oct/dfs.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/oct/dfs.c'; fi`
-
-migoct.o: $(srcdir)/oct/migoct.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT migoct.o -MD -MP -MF $(DEPDIR)/migoct.Tpo -c -o migoct.o `test -f '$(srcdir)/oct/migoct.c' || echo '$(srcdir)/'`$(srcdir)/oct/migoct.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/migoct.Tpo $(DEPDIR)/migoct.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/oct/migoct.c' object='migoct.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o migoct.o `test -f '$(srcdir)/oct/migoct.c' || echo '$(srcdir)/'`$(srcdir)/oct/migoct.c
-
-migoct.obj: $(srcdir)/oct/migoct.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT migoct.obj -MD -MP -MF $(DEPDIR)/migoct.Tpo -c -o migoct.obj `if test -f '$(srcdir)/oct/migoct.c'; then $(CYGPATH_W) '$(srcdir)/oct/migoct.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/oct/migoct.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/migoct.Tpo $(DEPDIR)/migoct.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/oct/migoct.c' object='migoct.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o migoct.obj `if test -f '$(srcdir)/oct/migoct.c'; then $(CYGPATH_W) '$(srcdir)/oct/migoct.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/oct/migoct.c'; fi`
-
-migreg.o: $(srcdir)/oct/migreg.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT migreg.o -MD -MP -MF $(DEPDIR)/migreg.Tpo -c -o migreg.o `test -f '$(srcdir)/oct/migreg.c' || echo '$(srcdir)/'`$(srcdir)/oct/migreg.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/migreg.Tpo $(DEPDIR)/migreg.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/oct/migreg.c' object='migreg.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o migreg.o `test -f '$(srcdir)/oct/migreg.c' || echo '$(srcdir)/'`$(srcdir)/oct/migreg.c
-
-migreg.obj: $(srcdir)/oct/migreg.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT migreg.obj -MD -MP -MF $(DEPDIR)/migreg.Tpo -c -o migreg.obj `if test -f '$(srcdir)/oct/migreg.c'; then $(CYGPATH_W) '$(srcdir)/oct/migreg.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/oct/migreg.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/migreg.Tpo $(DEPDIR)/migreg.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/oct/migreg.c' object='migreg.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o migreg.obj `if test -f '$(srcdir)/oct/migreg.c'; then $(CYGPATH_W) '$(srcdir)/oct/migreg.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/oct/migreg.c'; fi`
-
-migtags.o: $(srcdir)/oct/migtags.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT migtags.o -MD -MP -MF $(DEPDIR)/migtags.Tpo -c -o migtags.o `test -f '$(srcdir)/oct/migtags.c' || echo '$(srcdir)/'`$(srcdir)/oct/migtags.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/migtags.Tpo $(DEPDIR)/migtags.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/oct/migtags.c' object='migtags.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o migtags.o `test -f '$(srcdir)/oct/migtags.c' || echo '$(srcdir)/'`$(srcdir)/oct/migtags.c
-
-migtags.obj: $(srcdir)/oct/migtags.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT migtags.obj -MD -MP -MF $(DEPDIR)/migtags.Tpo -c -o migtags.obj `if test -f '$(srcdir)/oct/migtags.c'; then $(CYGPATH_W) '$(srcdir)/oct/migtags.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/oct/migtags.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/migtags.Tpo $(DEPDIR)/migtags.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/oct/migtags.c' object='migtags.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o migtags.obj `if test -f '$(srcdir)/oct/migtags.c'; then $(CYGPATH_W) '$(srcdir)/oct/migtags.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/oct/migtags.c'; fi`
-
-msg.o: $(srcdir)/oct/msg.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT msg.o -MD -MP -MF $(DEPDIR)/msg.Tpo -c -o msg.o `test -f '$(srcdir)/oct/msg.c' || echo '$(srcdir)/'`$(srcdir)/oct/msg.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/msg.Tpo $(DEPDIR)/msg.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/oct/msg.c' object='msg.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o msg.o `test -f '$(srcdir)/oct/msg.c' || echo '$(srcdir)/'`$(srcdir)/oct/msg.c
-
-msg.obj: $(srcdir)/oct/msg.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT msg.obj -MD -MP -MF $(DEPDIR)/msg.Tpo -c -o msg.obj `if test -f '$(srcdir)/oct/msg.c'; then $(CYGPATH_W) '$(srcdir)/oct/msg.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/oct/msg.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/msg.Tpo $(DEPDIR)/msg.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/oct/msg.c' object='msg.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o msg.obj `if test -f '$(srcdir)/oct/msg.c'; then $(CYGPATH_W) '$(srcdir)/oct/msg.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/oct/msg.c'; fi`
-
-octant.o: $(srcdir)/oct/octant.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT octant.o -MD -MP -MF $(DEPDIR)/octant.Tpo -c -o octant.o `test -f '$(srcdir)/oct/octant.c' || echo '$(srcdir)/'`$(srcdir)/oct/octant.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/octant.Tpo $(DEPDIR)/octant.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/oct/octant.c' object='octant.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o octant.o `test -f '$(srcdir)/oct/octant.c' || echo '$(srcdir)/'`$(srcdir)/oct/octant.c
-
-octant.obj: $(srcdir)/oct/octant.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT octant.obj -MD -MP -MF $(DEPDIR)/octant.Tpo -c -o octant.obj `if test -f '$(srcdir)/oct/octant.c'; then $(CYGPATH_W) '$(srcdir)/oct/octant.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/oct/octant.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/octant.Tpo $(DEPDIR)/octant.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/oct/octant.c' object='octant.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o octant.obj `if test -f '$(srcdir)/oct/octant.c'; then $(CYGPATH_W) '$(srcdir)/oct/octant.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/oct/octant.c'; fi`
-
-oct_plot.o: $(srcdir)/oct/oct_plot.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT oct_plot.o -MD -MP -MF $(DEPDIR)/oct_plot.Tpo -c -o oct_plot.o `test -f '$(srcdir)/oct/oct_plot.c' || echo '$(srcdir)/'`$(srcdir)/oct/oct_plot.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/oct_plot.Tpo $(DEPDIR)/oct_plot.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/oct/oct_plot.c' object='oct_plot.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o oct_plot.o `test -f '$(srcdir)/oct/oct_plot.c' || echo '$(srcdir)/'`$(srcdir)/oct/oct_plot.c
-
-oct_plot.obj: $(srcdir)/oct/oct_plot.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT oct_plot.obj -MD -MP -MF $(DEPDIR)/oct_plot.Tpo -c -o oct_plot.obj `if test -f '$(srcdir)/oct/oct_plot.c'; then $(CYGPATH_W) '$(srcdir)/oct/oct_plot.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/oct/oct_plot.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/oct_plot.Tpo $(DEPDIR)/oct_plot.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/oct/oct_plot.c' object='oct_plot.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o oct_plot.obj `if test -f '$(srcdir)/oct/oct_plot.c'; then $(CYGPATH_W) '$(srcdir)/oct/oct_plot.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/oct/oct_plot.c'; fi`
-
-octree.o: $(srcdir)/oct/octree.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT octree.o -MD -MP -MF $(DEPDIR)/octree.Tpo -c -o octree.o `test -f '$(srcdir)/oct/octree.c' || echo '$(srcdir)/'`$(srcdir)/oct/octree.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/octree.Tpo $(DEPDIR)/octree.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/oct/octree.c' object='octree.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o octree.o `test -f '$(srcdir)/oct/octree.c' || echo '$(srcdir)/'`$(srcdir)/oct/octree.c
-
-octree.obj: $(srcdir)/oct/octree.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT octree.obj -MD -MP -MF $(DEPDIR)/octree.Tpo -c -o octree.obj `if test -f '$(srcdir)/oct/octree.c'; then $(CYGPATH_W) '$(srcdir)/oct/octree.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/oct/octree.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/octree.Tpo $(DEPDIR)/octree.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/oct/octree.c' object='octree.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o octree.obj `if test -f '$(srcdir)/oct/octree.c'; then $(CYGPATH_W) '$(srcdir)/oct/octree.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/oct/octree.c'; fi`
-
-octupdate.o: $(srcdir)/oct/octupdate.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT octupdate.o -MD -MP -MF $(DEPDIR)/octupdate.Tpo -c -o octupdate.o `test -f '$(srcdir)/oct/octupdate.c' || echo '$(srcdir)/'`$(srcdir)/oct/octupdate.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/octupdate.Tpo $(DEPDIR)/octupdate.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/oct/octupdate.c' object='octupdate.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o octupdate.o `test -f '$(srcdir)/oct/octupdate.c' || echo '$(srcdir)/'`$(srcdir)/oct/octupdate.c
-
-octupdate.obj: $(srcdir)/oct/octupdate.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT octupdate.obj -MD -MP -MF $(DEPDIR)/octupdate.Tpo -c -o octupdate.obj `if test -f '$(srcdir)/oct/octupdate.c'; then $(CYGPATH_W) '$(srcdir)/oct/octupdate.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/oct/octupdate.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/octupdate.Tpo $(DEPDIR)/octupdate.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/oct/octupdate.c' object='octupdate.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o octupdate.obj `if test -f '$(srcdir)/oct/octupdate.c'; then $(CYGPATH_W) '$(srcdir)/oct/octupdate.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/oct/octupdate.c'; fi`
-
-oct_util.o: $(srcdir)/oct/oct_util.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT oct_util.o -MD -MP -MF $(DEPDIR)/oct_util.Tpo -c -o oct_util.o `test -f '$(srcdir)/oct/oct_util.c' || echo '$(srcdir)/'`$(srcdir)/oct/oct_util.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/oct_util.Tpo $(DEPDIR)/oct_util.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/oct/oct_util.c' object='oct_util.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o oct_util.o `test -f '$(srcdir)/oct/oct_util.c' || echo '$(srcdir)/'`$(srcdir)/oct/oct_util.c
-
-oct_util.obj: $(srcdir)/oct/oct_util.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT oct_util.obj -MD -MP -MF $(DEPDIR)/oct_util.Tpo -c -o oct_util.obj `if test -f '$(srcdir)/oct/oct_util.c'; then $(CYGPATH_W) '$(srcdir)/oct/oct_util.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/oct/oct_util.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/oct_util.Tpo $(DEPDIR)/oct_util.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/oct/oct_util.c' object='oct_util.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o oct_util.obj `if test -f '$(srcdir)/oct/oct_util.c'; then $(CYGPATH_W) '$(srcdir)/oct/oct_util.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/oct/oct_util.c'; fi`
-
-output.o: $(srcdir)/oct/output.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT output.o -MD -MP -MF $(DEPDIR)/output.Tpo -c -o output.o `test -f '$(srcdir)/oct/output.c' || echo '$(srcdir)/'`$(srcdir)/oct/output.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/output.Tpo $(DEPDIR)/output.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/oct/output.c' object='output.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o output.o `test -f '$(srcdir)/oct/output.c' || echo '$(srcdir)/'`$(srcdir)/oct/output.c
-
-output.obj: $(srcdir)/oct/output.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT output.obj -MD -MP -MF $(DEPDIR)/output.Tpo -c -o output.obj `if test -f '$(srcdir)/oct/output.c'; then $(CYGPATH_W) '$(srcdir)/oct/output.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/oct/output.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/output.Tpo $(DEPDIR)/output.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/oct/output.c' object='output.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o output.obj `if test -f '$(srcdir)/oct/output.c'; then $(CYGPATH_W) '$(srcdir)/oct/output.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/oct/output.c'; fi`
-
-rootlist.o: $(srcdir)/oct/rootlist.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT rootlist.o -MD -MP -MF $(DEPDIR)/rootlist.Tpo -c -o rootlist.o `test -f '$(srcdir)/oct/rootlist.c' || echo '$(srcdir)/'`$(srcdir)/oct/rootlist.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/rootlist.Tpo $(DEPDIR)/rootlist.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/oct/rootlist.c' object='rootlist.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o rootlist.o `test -f '$(srcdir)/oct/rootlist.c' || echo '$(srcdir)/'`$(srcdir)/oct/rootlist.c
-
-rootlist.obj: $(srcdir)/oct/rootlist.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT rootlist.obj -MD -MP -MF $(DEPDIR)/rootlist.Tpo -c -o rootlist.obj `if test -f '$(srcdir)/oct/rootlist.c'; then $(CYGPATH_W) '$(srcdir)/oct/rootlist.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/oct/rootlist.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/rootlist.Tpo $(DEPDIR)/rootlist.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/oct/rootlist.c' object='rootlist.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o rootlist.obj `if test -f '$(srcdir)/oct/rootlist.c'; then $(CYGPATH_W) '$(srcdir)/oct/rootlist.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/oct/rootlist.c'; fi`
-
 order.o: $(srcdir)/order/order.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT order.o -MD -MP -MF $(DEPDIR)/order.Tpo -c -o order.o `test -f '$(srcdir)/order/order.c' || echo '$(srcdir)/'`$(srcdir)/order/order.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/order.Tpo $(DEPDIR)/order.Po
@@ -2477,20 +2132,6 @@ verify_graph.obj: $(srcdir)/tpls/verify_graph.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/tpls/verify_graph.c' object='verify_graph.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o verify_graph.obj `if test -f '$(srcdir)/tpls/verify_graph.c'; then $(CYGPATH_W) '$(srcdir)/tpls/verify_graph.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/tpls/verify_graph.c'; fi`
-
-ccolamd.o: $(srcdir)/ccolamd/ccolamd.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ccolamd.o -MD -MP -MF $(DEPDIR)/ccolamd.Tpo -c -o ccolamd.o `test -f '$(srcdir)/ccolamd/ccolamd.c' || echo '$(srcdir)/'`$(srcdir)/ccolamd/ccolamd.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/ccolamd.Tpo $(DEPDIR)/ccolamd.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ccolamd/ccolamd.c' object='ccolamd.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ccolamd.o `test -f '$(srcdir)/ccolamd/ccolamd.c' || echo '$(srcdir)/'`$(srcdir)/ccolamd/ccolamd.c
-
-ccolamd.obj: $(srcdir)/ccolamd/ccolamd.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ccolamd.obj -MD -MP -MF $(DEPDIR)/ccolamd.Tpo -c -o ccolamd.obj `if test -f '$(srcdir)/ccolamd/ccolamd.c'; then $(CYGPATH_W) '$(srcdir)/ccolamd/ccolamd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ccolamd/ccolamd.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/ccolamd.Tpo $(DEPDIR)/ccolamd.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ccolamd/ccolamd.c' object='ccolamd.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ccolamd.obj `if test -f '$(srcdir)/ccolamd/ccolamd.c'; then $(CYGPATH_W) '$(srcdir)/ccolamd/ccolamd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ccolamd/ccolamd.c'; fi`
 
 parmetis_interface.o: $(srcdir)/tpls/parmetis_interface.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT parmetis_interface.o -MD -MP -MF $(DEPDIR)/parmetis_interface.Tpo -c -o parmetis_interface.o `test -f '$(srcdir)/tpls/parmetis_interface.c' || echo '$(srcdir)/'`$(srcdir)/tpls/parmetis_interface.c
@@ -3528,6 +3169,20 @@ zz_hash.obj: $(srcdir)/zz/zz_hash.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zz_hash.obj `if test -f '$(srcdir)/zz/zz_hash.c'; then $(CYGPATH_W) '$(srcdir)/zz/zz_hash.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zz/zz_hash.c'; fi`
 
+murmur3.o: $(srcdir)/zz/murmur3.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT murmur3.o -MD -MP -MF $(DEPDIR)/murmur3.Tpo -c -o murmur3.o `test -f '$(srcdir)/zz/murmur3.c' || echo '$(srcdir)/'`$(srcdir)/zz/murmur3.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/murmur3.Tpo $(DEPDIR)/murmur3.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/zz/murmur3.c' object='murmur3.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o murmur3.o `test -f '$(srcdir)/zz/murmur3.c' || echo '$(srcdir)/'`$(srcdir)/zz/murmur3.c
+
+murmur3.obj: $(srcdir)/zz/murmur3.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT murmur3.obj -MD -MP -MF $(DEPDIR)/murmur3.Tpo -c -o murmur3.obj `if test -f '$(srcdir)/zz/murmur3.c'; then $(CYGPATH_W) '$(srcdir)/zz/murmur3.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zz/murmur3.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/murmur3.Tpo $(DEPDIR)/murmur3.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/zz/murmur3.c' object='murmur3.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o murmur3.obj `if test -f '$(srcdir)/zz/murmur3.c'; then $(CYGPATH_W) '$(srcdir)/zz/murmur3.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zz/murmur3.c'; fi`
+
 zz_map.o: $(srcdir)/zz/zz_map.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zz_map.o -MD -MP -MF $(DEPDIR)/zz_map.Tpo -c -o zz_map.o `test -f '$(srcdir)/zz/zz_map.c' || echo '$(srcdir)/'`$(srcdir)/zz/zz_map.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/zz_map.Tpo $(DEPDIR)/zz_map.Po
@@ -3699,12 +3354,6 @@ zoltan_user_data.o: $(srcdir)/fort/zoltan_user_data.f90
 
 zoltan_user_data.obj: $(srcdir)/fort/zoltan_user_data.f90
 	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o zoltan_user_data.obj `if test -f '$(srcdir)/fort/zoltan_user_data.f90'; then $(CYGPATH_W) '$(srcdir)/fort/zoltan_user_data.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fort/zoltan_user_data.f90'; fi`
-
-lb_user_const.o: $(srcdir)/fort/lb_user_const.f90
-	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o lb_user_const.o `test -f '$(srcdir)/fort/lb_user_const.f90' || echo '$(srcdir)/'`$(srcdir)/fort/lb_user_const.f90
-
-lb_user_const.obj: $(srcdir)/fort/lb_user_const.f90
-	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o lb_user_const.obj `if test -f '$(srcdir)/fort/lb_user_const.f90'; then $(CYGPATH_W) '$(srcdir)/fort/lb_user_const.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fort/lb_user_const.f90'; fi`
 
 fwrap.o: $(srcdir)/fort/fwrap.f90
 	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fwrap.o `test -f '$(srcdir)/fort/fwrap.f90' || echo '$(srcdir)/'`$(srcdir)/fort/fwrap.f90

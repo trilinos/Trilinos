@@ -17,7 +17,7 @@ class MLPreconditionerState : public BlockPreconditionerState {
 public:
    MLPreconditionerState();
 
-   //! Build an ML precondtioner object using the set of coarsening parameters
+   //! Build an ML preconditioner object using the set of coarsening parameters
    Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> 
    constructMLPreconditioner(const Teuchos::ParameterList & mainList,
                              const std::vector<Teuchos::RCP<const Teuchos::ParameterList> > & coarseningParams);

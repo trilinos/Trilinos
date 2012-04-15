@@ -34,9 +34,14 @@
  */
 #include "EP_SystemInterface.h"
 
+#include "GetLongOpt.h"                 // for GetLongOption, etc
+
+#include <ctype.h>                      // for tolower
+#include <stddef.h>                     // for size_t
+#include <string>                       // for string, basic_string, etc
+#include <utility>                      // for pair, make_pair
 #include <iostream>
 #include <algorithm>
-#include <functional>
 #include <vector>
 
 #include <limits.h>
@@ -85,77 +90,77 @@ void Excn::SystemInterface::enroll_options()
 {
   options_.usage("[options] basename");
 
-  options_.enroll("help", GetLongOpt::NoValue,
+  options_.enroll("help", GetLongOption::NoValue,
 		  "Print this summary and exit", 0);
 
-  options_.enroll("version", GetLongOpt::NoValue,
+  options_.enroll("version", GetLongOption::NoValue,
 		  "Print version and exit", NULL);
 
-  options_.enroll("auto", GetLongOpt::NoValue,
+  options_.enroll("auto", GetLongOption::NoValue,
 		  "Automatically set Root, Proc, Ext from filename 'Root/basename.ext.#p.00'.",
 		  NULL);
-  options_.enroll("map", GetLongOpt::NoValue,
+  options_.enroll("map", GetLongOption::NoValue,
 		  "Map element ids to original order if possible [default]", NULL);
 
-  options_.enroll("nomap", GetLongOpt::NoValue,
+  options_.enroll("nomap", GetLongOption::NoValue,
 		  "Do not map element ids to original order", NULL);
 
-  options_.enroll("extension", GetLongOpt::MandatoryValue,
+  options_.enroll("extension", GetLongOption::MandatoryValue,
 		  "Exodus database extension for the input files", "e");
 
-  options_.enroll("output_extension", GetLongOpt::MandatoryValue,
+  options_.enroll("output_extension", GetLongOption::MandatoryValue,
 		  "Exodus database extension for the output file", NULL);
 
-  options_.enroll("offset", GetLongOpt::MandatoryValue,
+  options_.enroll("offset", GetLongOption::MandatoryValue,
 		  "Raid Offset", 0);
 
-  options_.enroll("raid_count", GetLongOpt::MandatoryValue,
+  options_.enroll("raid_count", GetLongOption::MandatoryValue,
 		  "Number of raids", "0");
 
-  options_.enroll("processor_count", GetLongOpt::MandatoryValue,
+  options_.enroll("processor_count", GetLongOption::MandatoryValue,
 		  "Number of processors", "1");
 
-  options_.enroll("current_directory", GetLongOpt::MandatoryValue,
+  options_.enroll("current_directory", GetLongOption::MandatoryValue,
 		  "Current Directory", ".");
 
-  options_.enroll("Root_directory", GetLongOpt::MandatoryValue,
+  options_.enroll("Root_directory", GetLongOption::MandatoryValue,
 		  "Root directory", 0);
 
-  options_.enroll("Subdirectory", GetLongOpt::MandatoryValue,
+  options_.enroll("Subdirectory", GetLongOption::MandatoryValue,
 		  "subdirectory containing input exodusII files", NULL);
 
-  options_.enroll("width", GetLongOpt::MandatoryValue,
+  options_.enroll("width", GetLongOption::MandatoryValue,
 		  "Width of output screen, default = 80",
 		  "80");
   
-  options_.enroll("add_processor_id", GetLongOpt::NoValue,
+  options_.enroll("add_processor_id", GetLongOption::NoValue,
 		  "Add 'processor_id' element variable to the output file",
 		  NULL);
 
-  options_.enroll("large_model", GetLongOpt::NoValue,
+  options_.enroll("large_model", GetLongOption::NoValue,
 		  "Create output database in the exodus large model format",
 		  NULL);
 
-  options_.enroll("append", GetLongOpt::NoValue,
+  options_.enroll("append", GetLongOption::NoValue,
 		  "Append to database instead of opening a new database.\n"
 		  "\t\tTimestep transfer will start after last timestep on database",
 		  NULL);
 
-  options_.enroll("steps", GetLongOpt::MandatoryValue,
+  options_.enroll("steps", GetLongOption::MandatoryValue,
 		  "Specify subset of timesteps to transfer to output file.\n"
 		  "\t\tFormat is beg:end:step. 1:10:2 --> 1,3,5,7,9\n"
 		  "\t\tEnter LAST for last step",
 		  "1:");
 
-  options_.enroll("Part_count", GetLongOpt::MandatoryValue,
+  options_.enroll("Part_count", GetLongOption::MandatoryValue,
 		  "How many pieces (files) of the model should be joined.",
 		  "0");
 
-  options_.enroll("start_part", GetLongOpt::MandatoryValue,
+  options_.enroll("start_part", GetLongOption::MandatoryValue,
 		  "Start with piece {n} (file)",
 		  "0");
 
-  options_.enroll("subcycle", GetLongOpt::OptionalValue,
+  options_.enroll("subcycle", GetLongOption::OptionalValue,
 		  "Subcycle. Create $val subparts if $val is specified.\n"
 		  "\t\tOtherwise, create multiple parts each of size 'Part_count'.\n"
 		  "\t\tThe subparts can then be joined by a subsequent run of epu.\n"
@@ -163,43 +168,43 @@ void Excn::SystemInterface::enroll_options()
 		  "\t\tthan the processor count.",
 		  "0");
 
-  options_.enroll("sum_shared_nodes", GetLongOpt::NoValue,
+  options_.enroll("sum_shared_nodes", GetLongOption::NoValue,
 		  "The nodal results data on all shared nodes (nodes on processor boundaries)\n"
 		  "\t\twill be the sum of the individual nodal results data on each shared node.\n"
 		  "\t\tThe default behavior assumes that the values are equal.",
 		  NULL);
   
-  options_.enroll("gvar", GetLongOpt::MandatoryValue,
+  options_.enroll("gvar", GetLongOption::MandatoryValue,
 		  "Comma-separated list of global variables to be joined or ALL or NONE.",
 		  0);
 
-  options_.enroll("evar", GetLongOpt::MandatoryValue,
+  options_.enroll("evar", GetLongOption::MandatoryValue,
 		  "Comma-separated list of element variables to be joined or ALL or NONE.\n"
 		  "\t\tVariables can be limited to certain blocks by appending a\n"
 		  "\t\tcolon followed by the block id.  E.g. -evar sigxx:10:20",
 		  0);
 
-  options_.enroll("nvar", GetLongOpt::MandatoryValue,
+  options_.enroll("nvar", GetLongOption::MandatoryValue,
 		  "Comma-separated list of nodal variables to be joined or ALL or NONE.",
 		  0);
 
-  options_.enroll("nsetvar", GetLongOpt::MandatoryValue,
+  options_.enroll("nsetvar", GetLongOption::MandatoryValue,
 		  "Comma-separated list of nodeset variables to be joined or ALL or NONE.",
 		  0);
 
-  options_.enroll("ssetvar", GetLongOpt::MandatoryValue,
+  options_.enroll("ssetvar", GetLongOption::MandatoryValue,
 		  "Comma-separated list of sideset variables to be joined or ALL or NONE.",
 		  0);
 
-  options_.enroll("omit_nodesets", GetLongOpt::NoValue,
+  options_.enroll("omit_nodesets", GetLongOption::NoValue,
 		  "Don't transfer nodesets to output file.",
 		  NULL);
 
-  options_.enroll("omit_sidesets", GetLongOpt::NoValue,
+  options_.enroll("omit_sidesets", GetLongOption::NoValue,
 		  "Don't transfer sidesets to output file.",
 		  NULL);
 
-  options_.enroll("debug", GetLongOpt::MandatoryValue,
+  options_.enroll("debug", GetLongOption::MandatoryValue,
 		  "debug level (values are or'd)\n"
 		  "\t\t  1 = timing information.\n"
 		  "\t\t  2 = Check consistent nodal field values between processors.\n"
@@ -211,7 +216,7 @@ void Excn::SystemInterface::enroll_options()
 		  "\t\t128 = Check consistent global field values between processors.",
 		  "0");
 
-  options_.enroll("copyright", GetLongOpt::NoValue,
+  options_.enroll("copyright", GetLongOption::NoValue,
 		  "Show copyright and license data.",
 		  NULL);
 }

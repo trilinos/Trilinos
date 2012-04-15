@@ -33,7 +33,7 @@ C
 
 C=======================================================================
 *DECK,OPNFIL
-      SUBROUTINE OPNFIL
+      SUBROUTINE MVOPNFIL
 C
 C     ******************************************************************
 C
@@ -45,7 +45,7 @@ C     Called by MAPVAR
 C
 C     ******************************************************************
 C
-      CHARACTER*256 fntpo, fntp2, fntp3, fntp4, filnam, option, errmsg
+      CHARACTER*2048 fntpo, fntp2, fntp3, fntp4, filnam, option, errmsg
       character*1   cdum
 C
       include 'exodusII.inc'

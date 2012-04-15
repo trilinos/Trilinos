@@ -44,38 +44,33 @@
 #include <iostream>
 #include <iomanip>
 
-#include <Kokkos_DeviceHost.hpp>
-#include <Kokkos_DeviceHost_MDArrayView.hpp>
-#include <Kokkos_DeviceHost_MultiVectorView.hpp>
-#include <Kokkos_DeviceHost_ValueView.hpp>
+#include <Kokkos_MDArray.hpp>
+#include <Kokkos_MultiVector.hpp>
+#include <Kokkos_Value.hpp>
 
-#include <Kokkos_DeviceCuda.hpp>
-#include <Kokkos_DeviceCuda_MDArrayView.hpp>
-#include <Kokkos_DeviceCuda_MultiVectorView.hpp>
-#include <Kokkos_DeviceCuda_ValueView.hpp>
-#include <Kokkos_DeviceCuda_ParallelFor.hpp>
-#include <Kokkos_DeviceCuda_ParallelReduce.hpp>
+#include <Kokkos_Host.hpp>
+#include <Kokkos_Cuda.hpp>
 
-#include <Kokkos_DeviceCuda_macros.hpp>
+#include <Kokkos_Cuda_macros.hpp>
 #include <PerfTestHexGrad.hpp>
 #include <PerfTestGramSchmidt.hpp>
 #include <PerfTestDriver.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
 
 namespace Test {
 
 void test_device_cuda_init() {
-  Kokkos::DeviceCuda::initialize();
+  Kokkos::Cuda::initialize();
 }
 
 void test_cuda_hexgrad(int exp_beg, int exp_end)
 {
-  run_test_hexgrad< Kokkos::DeviceCuda>( exp_beg , exp_end );
+  run_test_hexgrad< Kokkos::Cuda>( exp_beg , exp_end );
 }
 
 void test_cuda_gramschmidt(int exp_beg, int exp_end)
 {
-  Test::run_test_gramschmidt< Kokkos::DeviceCuda>( exp_beg , exp_end );
+  Test::run_test_gramschmidt< Kokkos::Cuda>( exp_beg , exp_end );
 }
 
 } // namespace Test

@@ -97,6 +97,14 @@ double do_tanh(double x);
 double do_polarX(double rad, double ang);
 double do_polarY(double rad, double ang);
 double do_strtod(char *string);
+double do_option(char *option, double value);
+double do_word_count(char *string, char *delm );
+double do_Material(double id, char *type, char *name, char *model, char *code, FILE * yyout);
+double do_lgamma(double val);
+double do_juldayhms(double mon, double day, double year,
+			    double h, double mi, double se);
+double do_julday(double mon, double day, double year);
+double do_log1p(double mag);
 
 const char  *do_execute(char *string);
 const char  *do_getenv(char *string);
@@ -109,17 +117,9 @@ const char  *do_error(char *error_string);
 const char  *do_get_date(void);
 const char  *do_get_iso_date(void);
 const char  *do_get_time(void);
-double do_option(char *option, double value);
-double do_word_count(char *string, char *delm );
 const char  *do_get_word(double n, char *string, char *delm);
 const char  *do_file_to_string(char *filename);
 const char  *do_extract(char *string, char *begin, char *end);
-double do_Material(double id, char *type, char *name, char *model, char *code, FILE * yyout);
-double do_lgamma(double val);
-double do_juldayhms(double mon, double day, double year,
-			    double h, double mi, double se);
-double do_julday(double mon, double day, double year);
-double do_log1p(double mag);
 const char  *do_include_path(char *newpath);
 const char  *do_intout(double intval);
 

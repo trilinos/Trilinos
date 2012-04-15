@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_VIEWTRACKER_hpp
-#define KOKKOS_VIEWTRACKER_hpp
+#ifndef KOKKOS_VIEWTRACKER_HPP
+#define KOKKOS_VIEWTRACKER_HPP
 
 namespace Kokkos {
 namespace Impl {
@@ -77,5 +77,5 @@ struct ViewTracker {
 } // namespace Impl
 } // namespace Kokkos
 
-#endif /* KOKKOS_VIEWTRACKER */
+#endif /* KOKKOS_VIEWTRACKER_HPP */
 

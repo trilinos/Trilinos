@@ -237,9 +237,11 @@ struct map_list_head *tmp_maps = NULL, *map = NULL;
        */
 
       if (proc < mesh->ecmap_id[i]) 
-        sort2_index(mesh->ecmap_cnt[i], map->glob_id, map->neigh_id, sindex);
+        quicksort_pointer_inc_id_id(sindex, map->glob_id, map->neigh_id,
+                                    0, mesh->ecmap_cnt[i]-1);
       else
-        sort2_index(mesh->ecmap_cnt[i], map->neigh_id, map->glob_id, sindex);
+        quicksort_pointer_inc_id_id(sindex, map->neigh_id, map->glob_id,
+                                    0, mesh->ecmap_cnt[i]-1);
 
       /*
        * Copy sorted data into elem map arrays. 
@@ -631,9 +633,11 @@ int indx;
     sindex[i] = i;
 
   if (proc < nbor_proc)
-    sort2_index(map_size, map->glob_id, map->neigh_id, sindex);
+    quicksort_pointer_inc_id_id(sindex, map->glob_id, map->neigh_id,
+                                0, map_size-1);
   else 
-    sort2_index(map_size, map->neigh_id, map->glob_id, sindex);
+    quicksort_pointer_inc_id_id(sindex, map->neigh_id, map->glob_id,
+                                0, map_size-1);
   
   /*
    * Compute offset into mesh communication maps for the given nbor proc.

@@ -78,10 +78,10 @@ public:
   /** \name Query methods */
   //@{
 
-  /** \brief Queries whether a given interface is avaiable or not. */
+  /** \brief Queries whether a given interface is available or not. */
   bool Query(const char * ClassType);
 
-  /** \brief Queries whether a given interface is avaiable or not. */
+  /** \brief Queries whether a given interface is available or not. */
   bool Query(const std::string CT);
 
   /** \brief Get the list of valid parameters. */

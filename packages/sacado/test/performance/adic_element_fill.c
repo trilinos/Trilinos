@@ -27,15 +27,11 @@ void adic_element_fill(ElemData* e,
   }
 
   /* Compute sum of equations for coupling */
-  double *s = malloc(e->nqp*neqn*sizeof(double));
+  double *s = malloc(e->nqp*sizeof(double));
   for (unsigned int qp=0; qp<e->nqp; qp++) {
-    for (unsigned int eqn=0; eqn<neqn; eqn++) {
-      s[qp*neqn+eqn] = 0.0;
-      for (unsigned int j=0; j<neqn; j++) {
-      	if (j != eqn)
-      	  s[qp*neqn+eqn] += u[qp*neqn+j]; 
-      }
-    }
+    s[qp] = 0.0;
+    for (unsigned int eqn=0; eqn<neqn; eqn++)
+      s[qp] += u[qp*neqn+eqn]*u[qp*neqn+eqn];
   }
 
   /* Evaluate element residual */
@@ -45,10 +41,7 @@ void adic_element_fill(ElemData* e,
       f[row] = 0.0;
       for (unsigned int qp=0; qp<e->nqp; qp++) {
 	f[row] += 
-	  e->w[qp]*e->jac[qp]*(-(1.0/(e->jac[qp]*e->jac[qp]))*
-			     du[qp*neqn+eqn]*e->dphi[qp][node] + 
-			     e->phi[qp][node]*(exp(u[qp*neqn+eqn]) + 
-					      u[qp*neqn+eqn]*s[qp*neqn+eqn]));
+	  e->w[qp]*e->jac[qp]*(-e->dphi[qp][node]/(e->jac[qp]*e->jac[qp])*du[qp*neqn+eqn] + e->phi[qp][node]*s[qp]*exp(u[qp*neqn+eqn]));
       }
     }
   }

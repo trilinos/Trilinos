@@ -33,10 +33,10 @@
  * 
  */
 
-#include <smart_assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <iostream>
 #include <string>
 
 #include <EP_ParallelDisks.h>

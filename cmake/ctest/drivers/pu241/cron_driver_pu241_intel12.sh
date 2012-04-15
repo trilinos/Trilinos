@@ -4,9 +4,9 @@ echo
 echo "Starting nightly Trilinos testing on pu241: `date`"
 echo
 
-BASEDIR=/home/casl-vri-admin/NightlyDashboardsIntel12
+BASEDIR=/home/casl-vri-admin/TrilinosNightlyDashboardsIntel12
 DRIVER_SCRIPT_DIR=$BASEDIR/Trilinos/cmake/ctest/drivers/pu241
-TRILINOS_REPOSITORY_LOCATION="cgbaker@software.sandia.gov:/space/git/Trilinos"
+TRILINOS_REPOSITORY_LOCATION="software.sandia.gov:/space/git/Trilinos"
 
 
 # Allow override of dev env
@@ -27,7 +27,12 @@ export TDD_CTEST_TEST_TYPE=Nightly
 
 # Submit the outer TDD tests to casl-dev always since these are CASL machines
 export TDD_CTEST_DROP_SITE=casl-dev.ornl.gov
-export TDD_CTEST_DROP_LOCATION="/CDash/submit.php?project=TrilinosDriver"
+export TDD_CTEST_DROP_LOCATION="/cdash/submit.php?project=TrilinosDriver"
+
+# ToDo: Remove this once things pass!
+export CTEST_TEST_TYPE=Experimental
+
+export TDD_BUILD_NAME="Linux-TDD-Intel12-pu241"
 
 time env python ../cron_driver.py
 
@@ -35,4 +40,3 @@ echo
 echo "Ending nightly Trilinos testing on pu241 (Intel 12): `date`"
 echo
 
-echo "Finished nightly Trilinos Intel 12 CMake tests pu241: http://casl-dev.ornl.gov/CDash/index.php?project=Trilinos" | mailx -s "Nightly Intel 12 CTest: pu241" casl-vri-admin@localhost

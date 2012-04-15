@@ -8,6 +8,7 @@ ADD_SUBDIRECTORIES(
   ImportExport
   ImportExport2
   MultiVector
+  MultiVectorFiller
   BasicPerfTest
   Utils
   CrsGraph

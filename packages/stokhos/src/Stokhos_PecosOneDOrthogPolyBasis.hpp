@@ -153,30 +153,25 @@ namespace Stokhos {
 		  Teuchos::Array<value_type>& weights,
 		  Teuchos::Array< Teuchos::Array<value_type> >& values) const;
 
-    //! Get sparse grid rule number as defined by Dakota's \c webbur package
+    //! Function pointer needed for level_to_order mappings
+    typedef typename OneDOrthogPolyBasis<ordinal_type,value_type>::LevelToOrderFnPtr LevelToOrderFnPtr;
+
+    //! Get sparse grid level_to_order mapping function
     /*!
-     * This method is needed for building Smolyak sparse grids out of this 
-     * basis. 
+     * Predefined functions are:
+     *  webbur::level_to_order_linear_wn Symmetric Gaussian linear growth
+     *  webbur::level_to_order_linear_nn Asymmetric Gaussian linear growth
+     *  webbur::level_to_order_exp_cc    Clenshaw-Curtis exponential growth
+     *  webbur::level_to_order_exp_gp    Gauss-Patterson exponential growth
+     *  webbur::level_to_order_exp_hgk   Genz-Keister exponential growth
+     *  webbur::level_to_order_exp_f2    Fejer-2 exponential growth
      */
-    virtual int getSparseGridRule() const { return sparse_grid_rule; }
+    virtual LevelToOrderFnPtr getSparseGridGrowthRule() const {
+      return sparse_grid_growth_rule; }
 
     //! Set sparse grid rule
-    virtual void setSparseGridRule(int rule) { sparse_grid_rule = rule; }
-
-    /*! 
-     * \brief Get sparse grid rule growth rule as defined by 
-     * Dakota's \c webbur package
-     */
-    /*!
-     * This method is needed for building Smolyak sparse grids out of this 
-     * basis. 
-     */
-    virtual int getSparseGridGrowthRule() const { 
-      return sparse_grid_growth_rule; };
-
-    //! Set sparse grid growth rule
-    virtual void setSparseGridGrowthRule(int rule) { 
-      sparse_grid_growth_rule = rule; }
+    virtual void setSparseGridGrowthRule(LevelToOrderFnPtr ptr) {
+      sparse_grid_growth_rule = ptr; }
 
     /*! 
      * \brief Clone this object with the option of building a higher order
@@ -222,11 +217,8 @@ namespace Stokhos {
     //! Order of basis
     ordinal_type p;
 
-    //! Sparse grid rule (as determined by Pecos)
-    int sparse_grid_rule;
-
     //! Sparse grid growth rule (as determined by Pecos)
-    int sparse_grid_growth_rule;
+    LevelToOrderFnPtr sparse_grid_growth_rule;
 
     //! Norms
     Teuchos::Array<value_type> norms;

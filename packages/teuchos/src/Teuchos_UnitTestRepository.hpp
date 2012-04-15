@@ -43,7 +43,7 @@
 #define TEUCHOS_UNIT_TEST_REPOSITORY_HPP
 
 
-/*! \file Teuchos_UnitTestHarness.hpp
+/*! \file Teuchos_UnitTestRepository.hpp
     \brief Unit testing support.
 */
 

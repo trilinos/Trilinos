@@ -174,6 +174,19 @@ void broadcast(
   const int rootRank, const ArrayView<const Ptr<Packet> > &buffer
   );
 
+/** \brief Broadcast array of objects that use value semantics using
+ * customized serializer.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet, typename Serializer>
+void broadcast(
+  const Comm<Ordinal>& comm,
+  const Serializer& serializer,
+  const int rootRank,
+  const Ordinal count, Packet buffer[]
+  );
+
 /** \brief Gather array of objects that use value semantics from every process
  * to every process.
  *
@@ -196,6 +209,19 @@ void gatherAll(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer,
   const Ordinal sendCount, const Packet*const sendBuffer[],
   const Ordinal recvCount, Packet*const recvBuffer[]
+  );
+
+/** \brief Gather array of objects that use value semantics from every process
+ * to every process using customized serializer.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet, typename Serializer>
+void gatherAll(
+  const Comm<Ordinal>& comm,
+  const Serializer& serializer,
+  const Ordinal sendCount, const Packet sendBuffer[],
+  const Ordinal recvCount, Packet recvBuffer[]
   );
 
 /** \brief Collective reduce all of array of objects using value semantics
@@ -253,6 +279,32 @@ void reduceAll(
   const Ordinal count, const Packet*const sendBuffer[], Packet*const globalReducts[]
   );
 
+/** \brief Collective reduce all of array of objects using value semantics
+ * using a user-defined reduction operator and customized serializer.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet, typename Serializer>
+void reduceAll(
+  const Comm<Ordinal>& comm, 
+  const Serializer& serializer,
+  const ValueTypeReductionOp<Ordinal,Packet> &reductOp,
+  const Ordinal count, const Packet sendBuffer[], Packet globalReducts[]
+  );
+
+/** \brief Collective reduce all of array of objects using value semantics
+ * using a pre-defined reduction type and customized serializer.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet, typename Serializer>
+void reduceAll(
+  const Comm<Ordinal>& comm, 
+  const Serializer& serializer,
+  const EReductionType reductType,
+  const Ordinal count, const Packet sendBuffer[], Packet globalReducts[]
+  );
+
 /** \brief Reduce and Scatter array of objects that use value semantics using
  * a user-defined reduction object.
  *
@@ -301,6 +353,34 @@ void scan(
   const Ordinal count, const Packet sendBuffer[], Packet scanReducts[]
   );
 
+/** \brief Reduce and Scatter array of objects that use value semantics using
+ * a user-defined reduction object and customized serializer.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet, typename Serializer>
+void reduceAllAndScatter(
+  const Comm<Ordinal>& comm, 
+  const Serializer& serializer,
+  const ValueTypeReductionOp<Ordinal,Packet> &reductOp,
+  const Ordinal sendCount, const Packet sendBuffer[],
+  const Ordinal recvCounts[], Packet myGlobalReducts[]
+  );
+
+/** \brief Reduce and Scatter array of objects that use value semantics using
+ * a a pre-defined reduction type and customized serializer.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet, typename Serializer>
+void reduceAllAndScatter(
+  const Comm<Ordinal>& comm, 
+  const Serializer& serializer,
+  const EReductionType reductType,
+  const Ordinal sendCount, const Packet sendBuffer[] ,
+  const Ordinal recvCounts[], Packet myGlobalReducts[]
+  );
+
 /** \brief Scan/Reduce array of objects using value semantics using a
  * predefined reduction type.
  *
@@ -345,12 +425,48 @@ void scan(
   const Ordinal count, const Packet*const sendBuffer[], Packet*const scanReducts[]
   );
 
+/** \brief Scan/Reduce array of objects that use value semantics using a
+ * user-defined reduction operator and customized serializer.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet, typename Serializer>
+void scan(
+  const Comm<Ordinal>& comm, 
+  const Serializer& serializer,
+  const ValueTypeReductionOp<Ordinal,Packet> &reductOp,
+  const Ordinal count, const Packet sendBuffer[], Packet scanReducts[]
+  );
+
+/** \brief Scan/Reduce array of objects using value semantics using a
+ * predefined reduction type and customized serializer.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet, typename Serializer>
+void scan(
+  const Comm<Ordinal>& comm, 
+  const Serializer& serializer,
+  const EReductionType reductType,
+  const Ordinal count, const Packet sendBuffer[], Packet scanReducts[]
+  );
+
 /** \brief Send objects that use values semantics to another process.
  *
  * \relates Comm
  */
 template<typename Ordinal, typename Packet>
 void send(
+  const Comm<Ordinal>& comm,
+  const Ordinal count, const Packet sendBuffer[], const int destRank
+  );
+
+/** \brief Synchronously send objects that use values semantics to another process.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet>
+void ssend(
   const Comm<Ordinal>& comm,
   const Ordinal count, const Packet sendBuffer[], const int destRank
   );
@@ -365,6 +481,16 @@ void send(
   const Packet &send, const int destRank
   );
 
+/** \brief Synchronously send a single object that use values semantics to another process.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet>
+void ssend(
+  const Comm<Ordinal>& comm,
+  const Packet &send, const int destRank
+  );
+
 /** \brief Send objects that use reference semantics to another process.
  *
  * \relates Comm
@@ -375,6 +501,18 @@ template<typename Ordinal, typename Packet>
 void send(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer,
   const Ordinal count, const Packet*const sendBuffer[], const int destRank
+  );
+
+/** \brief Send objects that use values semantics to another process
+ * using customized serializer.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet, typename Serializer>
+void send(
+  const Comm<Ordinal>& comm,
+  const Serializer& serializer,
+  const Ordinal count, const Packet sendBuffer[], const int destRank
   );
 
 /** \brief Receive objects that use values semantics from another process.
@@ -407,6 +545,18 @@ int receive(
   const int sourceRank, const Ordinal count, Packet*const recvBuffer[] 
   );
 
+/** \brief Receive objects that use values semantics from another process
+ * using customized serializer.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet, typename Serializer>
+int receive(
+  const Comm<Ordinal>& comm,
+  const Serializer& serializer,
+  const int sourceRank, const Ordinal count, Packet recvBuffer[] 
+  );
+
 /** \brief Ready-Send an array of objects that use values semantics to another
  * process.
  *
@@ -430,6 +580,19 @@ void readySend(
   const int destRank
   );
 
+/** \brief Ready-Send an array of objects that use values semantics to another
+ * process using customized serializer.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet, typename Serializer>
+void readySend(
+  const Comm<Ordinal>& comm,
+  const Serializer& serializer,
+  const ArrayView<const Packet> &sendBuffer,
+  const int destRank
+  );
+
 /** \brief Send objects that use values semantics to another process.
  *
  * \relates Comm
@@ -450,6 +613,19 @@ template<typename Ordinal, typename Packet>
 RCP<CommRequest> isend(
   const Comm<Ordinal>& comm,
   const RCP<const Packet> &send,
+  const int destRank
+  );
+
+/** \brief Send objects that use values semantics to another process 
+ * using customized serializer.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet, typename Serializer>
+RCP<CommRequest> isend(
+  const Comm<Ordinal>& comm,
+  const Serializer& serializer,
+  const ArrayRCP<const Packet> &sendBuffer,
   const int destRank
   );
 
@@ -480,6 +656,19 @@ RCP<CommRequest> ireceive(
   const int sourceRank
   );
 
+/** \brief Send objects that use values semantics to another process 
+ * using customized serializer.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet, typename Serializer>
+RCP<CommRequest> ireceive(
+  const Comm<Ordinal>& comm,
+  const Serializer& serializer,
+  const ArrayRCP<Packet> &recvBuffer,
+  const int sourceRank
+  );
+
 
 // 2008/07/29: rabartl: ToDo: Add reference semantics version of ireceive!
 
@@ -497,19 +686,60 @@ void waitAll(
   const ArrayView<RCP<CommRequest> > &requests
   );
 
-/** \brief Wait on on a single request
- *
- * Blocks until the communication operation associated with the CommRequest
- * object has completed.
- *
- * \relates Comm
- */
+/// \brief Wait on communication requests, and return their statuses.
+///
+/// \pre requests.size() == statuses.size()
+///
+/// \pre For i in 0, 1, ..., requests.size()-1, requests[i] is
+///   either null or requests[i] was returned by an ireceive() or
+///   isend().
+///
+/// \post For i in 0, 1, ..., requests.size()-1,
+///   requests[i].is_null() is true.
+///
+/// \param requests [in/out] On input: the requests on which to
+///   wait.  On output: all set to null.
+///
+/// \param statuses [out] The status results of waiting on the
+///   requests.
+///
+/// This function blocks until all communication operations associated
+/// with the CommRequest objects have completed.
+///
+/// \relates Comm
 template<typename Ordinal>
-void wait(
-  const Comm<Ordinal>& comm,
-  const Ptr<RCP<CommRequest> > &request
-  );
+void 
+waitAll (const Comm<Ordinal>& comm,
+	 const ArrayView<RCP<CommRequest> >& requests,
+	 const ArrayView<RCP<CommStatus<Ordinal> > >& statuses);
 
+/// \brief Wait on a single communication request, and return its status.
+///
+/// \param request [in/out] On input: request is not null, and
+/// *request is either null (in which case this function does
+/// nothing) or an RCP of a valid CommRequest instance representing
+/// an outstanding communication request.  On output: If the
+/// communication request completed successfully, we set *request to
+/// null, indicating that the request has completed.  (This helps
+/// prevent common bugs like trying to complete the same request
+/// twice.)
+///
+/// \return A CommStatus instance representing the result of
+/// completing the request.  In the case of a nonblocking receive
+/// request, you can query the CommStatus instance for the process
+/// ID of the sending process.  (This is useful for receiving from
+/// any process via MPI_ANY_SOURCE.)
+/// 
+/// \pre !is_null(request) (that is, the Ptr is not null).
+/// \post is_null(*request) (that is, the RCP is null).
+///
+/// This function blocks until the communication operation associated
+/// with the CommRequest object has completed.
+///
+/// \relates Comm
+template<typename Ordinal>
+RCP<CommStatus<Ordinal> >
+wait (const Comm<Ordinal>& comm, const Ptr<RCP<CommRequest> >& request);
 
 //
 // Standard reduction subclasses for objects that use value semantics
@@ -939,6 +1169,25 @@ void Teuchos::broadcast(
     buffer.size(), bufferPtrArray.getRawPtr());
 }
 
+template<typename Ordinal, typename Packet, typename Serializer>
+void Teuchos::broadcast(
+  const Comm<Ordinal>& comm,
+  const Serializer& serializer,
+  const int rootRank, const Ordinal count, Packet buffer[]
+  )
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::CommHelpers: broadcast<"
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
+    <<">( value type )"
+    );
+  ValueTypeSerializationBuffer<Ordinal,Packet,Serializer>
+    charBuffer(count,buffer,rcp(&serializer,false));
+  comm.broadcast(
+    rootRank,charBuffer.getBytes(),charBuffer.getCharBuffer()
+    );
+}
+
 
 template<typename Ordinal, typename Packet>
 void Teuchos::gatherAll(
@@ -971,6 +1220,29 @@ void Teuchos::gatherAll(
   )
 {
   TEUCHOS_TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
+}
+
+template<typename Ordinal, typename Packet, typename Serializer>
+void Teuchos::gatherAll(
+  const Comm<Ordinal>& comm,
+  const Serializer& serializer,
+  const Ordinal sendCount, const Packet sendBuffer[],
+  const Ordinal recvCount, Packet recvBuffer[]
+  )
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::CommHelpers: gatherAll<"
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
+    <<">( value type )"
+    );
+  ConstValueTypeSerializationBuffer<Ordinal,Packet,Serializer>
+    charSendBuffer(sendCount,sendBuffer,rcp(&serializer,false));
+  ValueTypeSerializationBuffer<Ordinal,Packet,Serializer>
+    charRecvBuffer(recvCount,recvBuffer,rcp(&serializer,false));
+  comm.gatherAll(
+    charSendBuffer.getBytes(),charSendBuffer.getCharBuffer()
+    ,charRecvBuffer.getBytes(),charRecvBuffer.getCharBuffer()
+    );
 }
 
 
@@ -1047,6 +1319,50 @@ void Teuchos::reduceAll(
     charReductOp,charSendBuffer.getBytes(),charSendBuffer.getCharBuffer()
     ,charGlobalReducts.getCharBuffer()
     );
+}
+
+template<typename Ordinal, typename Packet, typename Serializer>
+void Teuchos::reduceAll(
+  const Comm<Ordinal>& comm, 
+  const Serializer& serializer,
+  const ValueTypeReductionOp<Ordinal,Packet> &reductOp,
+  const Ordinal count, const Packet sendBuffer[], Packet globalReducts[]
+  )
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::CommHelpers: reduceAll<"
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
+    <<">( value type, user-defined op )"
+    );
+  ConstValueTypeSerializationBuffer<Ordinal,Packet,Serializer>
+    charSendBuffer(count,sendBuffer,rcp(&serializer,false));
+  ValueTypeSerializationBuffer<Ordinal,Packet,Serializer>
+    charGlobalReducts(count,globalReducts,rcp(&serializer,false));
+  CharToValueTypeReductionOp<Ordinal,Packet,Serializer>
+    charReductOp(rcp(&reductOp,false),rcp(&serializer,false));
+  comm.reduceAll(
+    charReductOp,charSendBuffer.getBytes(),charSendBuffer.getCharBuffer()
+    ,charGlobalReducts.getCharBuffer()
+    );
+}
+
+
+template<typename Ordinal, typename Packet, typename Serializer>
+void Teuchos::reduceAll(
+  const Comm<Ordinal>& comm, 
+  const Serializer& serializer,
+  const EReductionType reductType,
+  const Ordinal count, const Packet sendBuffer[], Packet globalReducts[]
+  )
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::CommHelpers: reduceAll<"
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
+    <<">( value type, "<<toString(reductType)<<" )"
+    );
+  std::auto_ptr<ValueTypeReductionOp<Ordinal,Packet> >
+    reductOp(createOp<Ordinal,Packet>(reductType));
+  reduceAll(comm,serializer,*reductOp,count,sendBuffer,globalReducts);
 }
 
 
@@ -1129,6 +1445,77 @@ void Teuchos::reduceAllAndScatter(
   TEUCHOS_TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
 }
 
+template<typename Ordinal, typename Packet, typename Serializer>
+void Teuchos::reduceAllAndScatter(
+  const Comm<Ordinal>& comm, 
+  const Serializer& serializer,
+  const ValueTypeReductionOp<Ordinal,Packet> &reductOp,
+  const Ordinal sendCount, const Packet sendBuffer[] ,
+  const Ordinal recvCounts[], Packet myGlobalReducts[]
+  )
+{
+
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::CommHelpers: reduceAllAndScatter<"
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
+    <<">( value type, user-defined op )"
+    );
+
+  const Ordinal size = Teuchos::size(comm);
+  const Ordinal rank = Teuchos::rank(comm);
+
+#ifdef TEUCHOS_DEBUG
+  Ordinal sumRecvCounts = 0;
+  for( Ordinal i = 0; i < size; ++i )
+    sumRecvCounts += recvCounts[static_cast<ptrdiff_t>(i)];
+  TEUCHOS_TEST_FOR_EXCEPT(!(sumRecvCounts==sendCount));
+#endif
+
+  ConstValueTypeSerializationBuffer<Ordinal,Packet,Serializer>
+    charSendBuffer(sendCount,sendBuffer,rcp(&serializer,false));
+  ValueTypeSerializationBuffer<Ordinal,Packet,Serializer>
+    charMyGlobalReducts(recvCounts[static_cast<ptrdiff_t>(rank)], myGlobalReducts,rcp(&serializer,false));
+  CharToValueTypeReductionOp<Ordinal,Packet,Serializer>
+    charReductOp(rcp(&reductOp,false),rcp(&serializer,false));
+
+  const Ordinal
+    packetSize = charSendBuffer.getBytes()/sendCount;
+
+  WorkspaceStore* wss = get_default_workspace_store().get();
+  Workspace<Ordinal> charRecvCounts(wss, size);
+  for (Ordinal k = 0; k < size; ++k) {
+    charRecvCounts[k] = as<Ordinal>(recvCounts[static_cast<ptrdiff_t>(k)] * packetSize);
+  }
+ 
+  comm.reduceAllAndScatter(
+    charReductOp, charSendBuffer.getBytes(), charSendBuffer.getCharBuffer(),
+    &charRecvCounts[0], charMyGlobalReducts.getCharBuffer()
+    );
+
+}
+
+template<typename Ordinal, typename Packet, typename Serializer>
+void Teuchos::reduceAllAndScatter(
+  const Comm<Ordinal>& comm, 
+  const Serializer& serializer,
+  const EReductionType reductType,
+  const Ordinal sendCount, const Packet sendBuffer[] ,
+  const Ordinal recvCounts[], Packet myGlobalReducts[]
+  )
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::CommHelpers: reduceAllAndScatter<"
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
+    <<">( value type, "<<toString(reductType)<<" )"
+    );
+  std::auto_ptr<ValueTypeReductionOp<Ordinal,Packet> >
+    reductOp(createOp<Ordinal,Packet>(reductType));
+  reduceAllAndScatter(
+    comm, serializer, *reductOp, sendCount, sendBuffer, recvCounts, 
+    myGlobalReducts
+    );
+}
+
 
 template<typename Ordinal, typename Packet>
 void Teuchos::scan(
@@ -1191,6 +1578,49 @@ void Teuchos::scan(
   TEUCHOS_TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
 }
 
+template<typename Ordinal, typename Packet, typename Serializer>
+void Teuchos::scan(
+  const Comm<Ordinal>& comm, 
+  const Serializer& serializer,
+  const ValueTypeReductionOp<Ordinal,Packet> &reductOp,
+  const Ordinal count, const Packet sendBuffer[], Packet scanReducts[]
+  )
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::CommHelpers: scan<"
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
+    <<">( value type, user-defined op )"
+    );
+  ConstValueTypeSerializationBuffer<Ordinal,Packet,Serializer>
+    charSendBuffer(count,sendBuffer,rcp(&serializer,false));
+  ValueTypeSerializationBuffer<Ordinal,Packet,Serializer>
+    charScanReducts(count,scanReducts,rcp(&serializer,false));
+  CharToValueTypeReductionOp<Ordinal,Packet,Serializer>
+    charReductOp(rcp(&reductOp,false),rcp(&serializer,false));
+  comm.scan(
+    charReductOp,charSendBuffer.getBytes(),charSendBuffer.getCharBuffer()
+    ,charScanReducts.getCharBuffer()
+    );
+}
+
+
+template<typename Ordinal, typename Packet, typename Serializer>
+void Teuchos::scan(
+  const Comm<Ordinal>& comm, 
+  const Serializer& serializer,
+  const EReductionType reductType,
+  const Ordinal count, const Packet sendBuffer[], Packet scanReducts[]
+  )
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::CommHelpers: scan<"
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
+    <<">( value type, "<<toString(reductType)<<" )"
+    );
+  std::auto_ptr<ValueTypeReductionOp<Ordinal,Packet> >
+    reductOp(createOp<Ordinal,Packet>(reductType));
+  scan(comm,serializer,*reductOp,count,sendBuffer,scanReducts);
+}
 
 template<typename Ordinal, typename Packet>
 void Teuchos::send(
@@ -1211,6 +1641,24 @@ void Teuchos::send(
     );
 }
 
+template<typename Ordinal, typename Packet>
+void Teuchos::ssend(
+  const Comm<Ordinal>& comm,
+  const Ordinal count, const Packet sendBuffer[], const int destRank
+  )
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::CommHelpers: ssend<"
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
+    <<">( value type )"
+    );
+  ConstValueTypeSerializationBuffer<Ordinal,Packet>
+    charSendBuffer(count,sendBuffer);
+  comm.ssend(
+    charSendBuffer.getBytes(),charSendBuffer.getCharBuffer()
+    ,destRank
+    );
+}
 
 template<typename Ordinal, typename Packet>
 void Teuchos::send(
@@ -1221,6 +1669,14 @@ void Teuchos::send(
   Teuchos::send<Ordinal,Packet>(comm,1,&send,destRank);
 }
 
+template<typename Ordinal, typename Packet>
+void Teuchos::ssend(
+  const Comm<Ordinal>& comm,
+  const Packet &send, const int destRank
+  )
+{
+  Teuchos::ssend<Ordinal,Packet>(comm,1,&send,destRank);
+}
 
 template<typename Ordinal, typename Packet>
 void Teuchos::send(
@@ -1229,6 +1685,26 @@ void Teuchos::send(
   )
 {
   TEUCHOS_TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
+}
+
+template<typename Ordinal, typename Packet, typename Serializer>
+void Teuchos::send(
+  const Comm<Ordinal>& comm,
+  const Serializer& serializer,
+  const Ordinal count, const Packet sendBuffer[], const int destRank
+  )
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::CommHelpers: send<"
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
+    <<">( value type )"
+    );
+  ConstValueTypeSerializationBuffer<Ordinal,Packet,Serializer>
+    charSendBuffer(count,sendBuffer,rcp(&serializer,false));
+  comm.send(
+    charSendBuffer.getBytes(),charSendBuffer.getCharBuffer()
+    ,destRank
+    );
 }
 
 template<typename Ordinal, typename Packet>
@@ -1270,6 +1746,25 @@ int Teuchos::receive(
   TEUCHOS_TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
 }
 
+template<typename Ordinal, typename Packet, typename Serializer>
+int Teuchos::receive(
+  const Comm<Ordinal>& comm,
+  const Serializer& serializer,
+  const int sourceRank, const Ordinal count, Packet recvBuffer[] 
+  )
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::CommHelpers: receive<"
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
+    <<">( value type )"
+    );
+  ValueTypeSerializationBuffer<Ordinal,Packet,Serializer>
+    charRecvBuffer(count,recvBuffer,rcp(&serializer,false));
+  return comm.receive(
+    sourceRank
+    ,charRecvBuffer.getBytes(),charRecvBuffer.getCharBuffer()
+    );
+}
 
 template<typename Ordinal, typename Packet>
 void Teuchos::readySend(
@@ -1299,6 +1794,23 @@ void Teuchos::readySend(
   readySend<Ordinal, Packet>( comm, arrayView(&send,1), destRank );
 }
 
+template<typename Ordinal, typename Packet, typename Serializer>
+void Teuchos::readySend(
+  const Comm<Ordinal>& comm,
+  const Serializer& serializer,
+  const ArrayView<const Packet> &sendBuffer,
+  const int destRank
+  )
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::CommHelpers: readySend<"
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
+    <<">( value type )"
+    );
+  ConstValueTypeSerializationBuffer<Ordinal,Packet,Serializer>
+    charSendBuffer(sendBuffer.size(), sendBuffer.getRawPtr(), serializer);
+  comm.readySend( charSendBuffer.getCharBufferView(), destRank );
+}
 
 template<typename Ordinal, typename Packet>
 Teuchos::RCP<Teuchos::CommRequest>
@@ -1337,6 +1849,27 @@ Teuchos::isend(
   return isend<Ordinal, Packet>( comm, sendBuffer, destRank );
 }
 
+template<typename Ordinal, typename Packet, typename Serializer>
+Teuchos::RCP<Teuchos::CommRequest>
+Teuchos::isend(
+  const Comm<Ordinal>& comm,
+  const Serializer& serializer,
+  const ArrayRCP<const Packet> &sendBuffer,
+  const int destRank
+  )
+{
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::CommHelpers: isend<"
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
+    <<">( value type )"
+    );
+  ConstValueTypeSerializationBuffer<Ordinal,Packet,Serializer>
+    charSendBuffer(sendBuffer.size(), sendBuffer.getRawPtr(), serializer);
+  RCP<CommRequest> commRequest = comm.isend(
+    charSendBuffer.getCharBufferView(), destRank );
+  set_extra_data( sendBuffer, "buffer", inOutArg(commRequest) );
+  return commRequest;
+}
 
 template<typename Ordinal, typename Packet>
 Teuchos::RCP<Teuchos::CommRequest>
@@ -1376,6 +1909,28 @@ Teuchos::ireceive(
   return ireceive<Ordinal, Packet>( comm, recvBuffer, sourceRank );
 }
 
+template<typename Ordinal, typename Packet, typename Serializer>
+Teuchos::RCP<Teuchos::CommRequest>
+Teuchos::ireceive(
+  const Comm<Ordinal>& comm,
+  const Serializer& serializer,
+  const ArrayRCP<Packet> &recvBuffer,
+  const int sourceRank
+  )
+{
+  typedef std::pair<RCP<CommRequest>, ArrayRCP<const Packet> > comm_buffer_pair_t;
+  TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::CommHelpers: ireceive<"
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
+    <<">( value type )"
+    );
+  ValueTypeSerializationBuffer<Ordinal,Packet,Serializer>
+    charRecvBuffer(recvBuffer.size(), recvBuffer.getRawPtr(), serializer);
+  RCP<CommRequest> commRequest = comm.ireceive(
+    charRecvBuffer.getCharBufferView(), sourceRank );
+  set_extra_data( recvBuffer, "buffer", inOutArg(commRequest) );
+  return commRequest;
+}
 
 template<typename Ordinal>
 void Teuchos::waitAll(
@@ -1388,13 +1943,21 @@ void Teuchos::waitAll(
 
 
 template<typename Ordinal>
-void Teuchos::wait(
-  const Comm<Ordinal>& comm,
-  const Ptr<RCP<CommRequest> > &request
-  )
+void 
+Teuchos::waitAll (const Comm<Ordinal>& comm,
+		  const ArrayView<RCP<CommRequest> >& requests,
+		  const ArrayView<RCP<CommStatus<Ordinal> > >& statuses)
 {
-  comm.wait(request);
-  // NOTE: This will release the ArrayRCP to the buffer of data!
+  comm.waitAll (requests, statuses);
+}
+
+
+template<typename Ordinal>
+Teuchos::RCP<Teuchos::CommStatus<Ordinal> >
+Teuchos::wait (const Comm<Ordinal>& comm,
+	       const Ptr<RCP<CommRequest> > &request)
+{
+  return comm.wait (request);
 }
 
 

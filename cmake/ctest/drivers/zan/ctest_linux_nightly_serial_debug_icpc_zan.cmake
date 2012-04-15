@@ -63,16 +63,19 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.zan.icpc.cmake")
 SET(COMM_TYPE SERIAL)
 SET(BUILD_TYPE DEBUG)
 SET(BUILD_DIR_NAME SERIAL_DEBUG_ICPC)
-#SET(CTEST_TEST_TYPE Experimental)
+SET(CTEST_TEST_TYPE Nightly)
+# Intel 11.1 is compatible with GCC 4.2. Make sure that is the one on the PATH.
+SET(ENV{PATH} "$ENV{HOME}/compilers/gcc/4.2/bin:$ENV{PATH}")
 SET(ENV{LD_LIBRARY_PATH} "$ENV{LD_LIBRARY_PATH}:/opt/intel/Compiler/11.1/064/lib/intel64:/opt/intel/Compiler/11.1/064/mkl/lib/em64t")
 #SET(CTEST_TEST_TIMEOUT 900)
 
 #SET(Trilinos_PACKAGES Teuchos RTOp GlobiPack Thyra OptiPack Stratimikos Phalanx Rythmos)
-SET(EXTRA_EXCLUDE_PACKAGES Sundance Rythmos STK Phalanx Thyra Zoltan2)
+SET(EXTRA_EXCLUDE_PACKAGES Sundance Rythmos STK Phalanx Thyra)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_Fortran:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
+  "-DBoost_INCLUDE_DIRS=$ENV{HOME}/tpls/intel/11.1/boost/1.46.1/include"
   "-DTrilinos_ENABLE_STK:BOOL=OFF"
   "-DNetcdf_INCLUDE_DIRS=/home/trilinos/tpl/gcc4.4.4/netcdf-4.1.3/include"
   "-DNetcdf_LIBRARY_DIRS=/home/trilinos/tpl/gcc4.4.4/netcdf-4.1.3/lib"

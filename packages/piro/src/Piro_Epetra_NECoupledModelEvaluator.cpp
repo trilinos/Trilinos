@@ -1,3 +1,47 @@
+/*
+// @HEADER
+// ************************************************************************
+// 
+//        Piro: Strategy package for embedded analysis capabilitites
+//                  Copyright (2010) Sandia Corporation
+// 
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
+// National Laboratories.
+// 
+// ************************************************************************
+// @HEADER
+*/
+
 #include "Piro_Epetra_NECoupledModelEvaluator.hpp"
 #include "Piro_Epetra_Factory.hpp"
 #include "Piro_Epetra_StokhosSolver.hpp"
@@ -10,205 +54,159 @@
 
 #include "Stokhos_Epetra.hpp"
 #include "Stokhos_StieltjesGramSchmidtBuilder.hpp"
+#include "Stokhos_MonomialGramSchmidtSimplexPCEBasis.hpp"
 #include "EpetraExt_MultiComm.h"
 
 Piro::Epetra::NECoupledModelEvaluator::
 NECoupledModelEvaluator(
-  const Teuchos::RCP<EpetraExt::ModelEvaluator>& modelA_, 
-  const Teuchos::RCP<EpetraExt::ModelEvaluator>& modelB_,
-  const Teuchos::RCP<Teuchos::ParameterList>& piroParamsA_,
-  const Teuchos::RCP<Teuchos::ParameterList>& piroParamsB_,
+  const Teuchos::Array<Teuchos::RCP<EpetraExt::ModelEvaluator> >& models_,
+  const Teuchos::Array<Teuchos::RCP<Teuchos::ParameterList> >& piroParams_,
+  const Teuchos::RCP<AbstractNetworkModel>& network_model_,
   const Teuchos::RCP<Teuchos::ParameterList>& params_,
   const Teuchos::RCP<const Epetra_Comm>& comm_):
-  modelA(modelA_),
-  modelB(modelB_),
-  piroParamsA(piroParamsA_),
-  piroParamsB(piroParamsB_),
+  models(models_),
+  piroParams(piroParams_),
+  network_model(network_model_),
   params(params_),
   comm(comm_)
 {
   // Setup VerboseObject
   Teuchos::readVerboseObjectSublist(params.get(), this);
 
+  n_models = models.size();
+  solvers.resize(n_models);
+
   // Create solvers for models A and B
   bool stochastic = params->get("Stochastic", false);
   if (stochastic) {
-    sgSolverA = Teuchos::rcp(new Piro::Epetra::StokhosSolver(piroParamsA, 
-							     comm));
-    sgSolverB = Teuchos::rcp(new Piro::Epetra::StokhosSolver(piroParamsB, 
-							     comm));
-    sgSolverA->setup(modelA);
-    sgSolverB->setup(modelB);
-    solverA = sgSolverA;
-    solverB = sgSolverB;
+    sgSolvers.resize(n_models);
+    for (int i=0; i<n_models; i++) {
+      sgSolvers[i] = 
+	Teuchos::rcp(new Piro::Epetra::StokhosSolver(piroParams[i], 
+						     comm));
+      sgSolvers[i]->setup(models[i]);
+      solvers[i] = sgSolvers[i];
+    }
   }
   else {
-    solverA = Piro::Epetra::Factory::createSolver(piroParamsA, modelA);
-    solverB = Piro::Epetra::Factory::createSolver(piroParamsB, modelB);
+    for (int i=0; i<n_models; i++)
+      solvers[i] = Piro::Epetra::Factory::createSolver(piroParams[i], 
+						       models[i]);
   }
 
   // Get connectivity information
-  pIndexA = params->get("Model A Parameter Index", 0);
-  pIndexB = params->get("Model B Parameter Index", 0);
-  gIndexA = params->get("Model A Response Index", 0);
-  gIndexB = params->get("Model B Response Index", 0);
+  p_indices = 
+    params->get< Teuchos::Array<int> >("Network Coupling Parameter Indices");
+  g_indices = 
+    params->get< Teuchos::Array<int> >("Network Coupling Response Indices");
+  TEUCHOS_ASSERT(p_indices.size() == n_models);
+  TEUCHOS_ASSERT(g_indices.size() == n_models);
 
   // Get number of parameter and response vectors
-  EpetraExt::ModelEvaluator::InArgs solverA_inargs = solverA->createInArgs();
-  EpetraExt::ModelEvaluator::InArgs solverB_inargs = solverB->createInArgs();
-  EpetraExt::ModelEvaluator::OutArgs solverA_outargs = solverA->createOutArgs();
-  EpetraExt::ModelEvaluator::OutArgs solverB_outargs = solverB->createOutArgs();
-  num_params_A = solverA_inargs.Np();
-  num_params_B = solverB_inargs.Np();
-  num_responses_A = solverA_outargs.Ng();
-  num_responses_B = solverB_outargs.Ng();
-
+  solver_inargs.resize(n_models); 
+  solver_outargs.resize(n_models);
+  num_params.resize(n_models);
+  num_responses.resize(n_models);
+  num_params_total = 0;
+  num_responses_total = 0;
+  for (int i=0; i<n_models; i++) {
+    solver_inargs[i] = solvers[i]->createInArgs();
+    solver_outargs[i] = solvers[i]->createOutArgs();
+    num_params[i] = solver_inargs[i].Np();
+    num_responses[i] = solver_outargs[i].Ng();
+    num_params_total += num_params[i];
+    num_responses_total += num_responses[i];
+  }
+  num_params_total -= n_models;
+  num_responses_total -= n_models;
+  
   // Building indexing maps between coupled system parameters/responses and
   // individual components
-  num_params_total = num_params_A + num_params_B - 2;
-  param_map.resize(num_params_total);
-  for (int i=0; i<pIndexA; i++)
-    param_map[i] = i;
-  for (int i=pIndexA+1; i<num_params_A; i++)
-    param_map[i-1] = i;
-  for (int i=0; i<pIndexB; i++)
-    param_map[num_params_A-1+i] = i;
-  for (int i=pIndexB+1; i<num_params_B; i++)
-    param_map[num_params_A-2+i] = i;
+  // Parameter vector i of this model evaluator corresponds to parameter
+  // param_map[i].second for model param_map[i].first.  Similarly for the
+  // responses
+  for (int i=0; i<n_models; i++) {
+    for (int j=0; j<num_params[i]; j++)
+      if (j != p_indices[i])
+	param_map.push_back(std::make_pair(i,j));
+    for (int j=0; j<num_responses[i]; j++)
+      if (j != g_indices[i])
+	response_map.push_back(std::make_pair(i,j));
+  }
+  TEUCHOS_ASSERT(param_map.size() == num_params_total);
+  TEUCHOS_ASSERT(response_map.size() == num_responses_total);
 
-  num_responses_total = num_responses_A + num_responses_B - 2;
-  response_map.resize(num_responses_total);
-  for (int i=0; i<pIndexA; i++)
-    response_map[i] = i;
-  for (int i=pIndexA+1; i<num_responses_A; i++)
-    response_map[i-1] = i;
-  for (int i=0; i<pIndexB; i++)
-    response_map[num_responses_A-1+i] = i;
-  for (int i=pIndexB+1; i<num_responses_B; i++)
-    response_map[num_responses_A-2+i] = i;
-
-  //
-  // The network equations look like:
-  //    p_1 - g_2(x_2,p_2) = 0 s.t. f_1(x_1,p_1) = 0
-  //    p_2 - g_1(x_1,p_1) = 0 s.t. f_2(x_2,p_2) = 0
-  //
-  // We define x = [p_1; p_2] and f = [ p_1 - g_2(x_2,p_2); p_2 - g_1(x_1,p_1)]
-  //
-
-  // Build x map, which is the product of the pIndexA and pIndexB parameter maps
+  // Build x map, which is the product of the p_indices parameter maps
   // For the time being, we will assume local maps, in the future we need to
   // build proper product maps
-  p_map_A = solverA->get_p_map(pIndexA);
-  p_map_B = solverB->get_p_map(pIndexB);
-  n_p_A = p_map_A->NumGlobalElements();
-  n_p_B = p_map_B->NumGlobalElements();
-  int nx = n_p_A + n_p_B;
+  p_maps.resize(n_models);
+  n_p.resize(n_models);
+  int nx = 0;
+  for (int i=0; i<n_models; i++) {
+    p_maps[i] = solvers[i]->get_p_map(p_indices[i]);
+    n_p[i] = p_maps[i]->NumGlobalElements();
+    nx += n_p[i];
+  }
   x_map = Teuchos::rcp(new Epetra_Map(nx, 0, *comm));
   x_overlap_map = Teuchos::rcp(new Epetra_LocalMap(nx, 0, *comm));
   x_importer = Teuchos::rcp(new Epetra_Import(*x_overlap_map, *x_map));
   x_overlap = Teuchos::rcp(new Epetra_Vector(*x_overlap_map));
 
-  // Build f map, which is the product of the gIndexA and gIndexB response maps
+  // Build f map, which is the product of the g_indices response maps
   // For the time being, we will assume local maps, in the future we need to
   // build proper product maps
-  g_map_A = solverA->get_g_map(gIndexA);
-  g_map_B = solverB->get_g_map(gIndexB);
-  n_g_A = g_map_A->NumGlobalElements();
-  n_g_B = g_map_B->NumGlobalElements();
-  int nf = n_g_A + n_g_B;
+  g_maps.resize(n_models);
+  n_g.resize(n_models);
+  int nf = 0;
+  for (int i=0; i<n_models; i++) {
+    g_maps[i] = solvers[i]->get_g_map(g_indices[i]);
+    n_g[i] = g_maps[i]->NumGlobalElements();
+    nf += n_g[i];
+  }
   f_map = Teuchos::rcp(new Epetra_Map(nf, 0, *comm));
   f_overlap_map = Teuchos::rcp(new Epetra_LocalMap(nf, 0, *comm));
   f_exporter = Teuchos::rcp(new Epetra_Export(*f_overlap_map, *f_map));
   f_overlap = Teuchos::rcp(new Epetra_Vector(*f_overlap_map));
+  
+  // Determine what we support
+  supports_W = true;
+  supports_x_sg = true;
+  supports_f_sg = true;
+  supports_W_sg = true;
+  Teuchos::Array<DerivativeSupport> ds(n_models);
+  for (int i=0; i<n_models; i++) {
+    ds[i] = 
+      solver_outargs[i].supports(OUT_ARG_DgDp, g_indices[i], p_indices[i]);
+    DerivativeSupport ds_sg = 
+      solver_outargs[i].supports(OUT_ARG_DgDp_sg, g_indices[i], p_indices[i]);
+    supports_W = supports_W && 
+      (ds[i].supports(DERIV_MV_BY_COL) || 
+       ds[i].supports(DERIV_TRANS_MV_BY_ROW));
+    supports_x_sg = supports_x_sg &&
+      solver_inargs[i].supports(IN_ARG_p_sg, p_indices[i]);
+    supports_f_sg = supports_f_sg && 
+      solver_outargs[i].supports(OUT_ARG_g_sg, g_indices[i]);
+    supports_W_sg = supports_W_sg &&
+      (ds_sg.supports(DERIV_MV_BY_COL) || 
+       ds_sg.supports(DERIV_TRANS_MV_BY_ROW));
+  }
 
-  // Do some consistency checking
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    !p_map_A->SameAs(*g_map_B), std::logic_error,
-    "Model A parameter map for index " << pIndexA << " must be the same " <<
-    "map as model B response map for index " << gIndexB << "!");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    !p_map_B->SameAs(*g_map_A), std::logic_error,
-    "Model B parameter map for index " << pIndexB << " must be the same " <<
-    "map as model A response map for index " << gIndexA << "!");
-
-  DerivativeSupport dsA = 
-    solverA_outargs.supports(OUT_ARG_DgDp, gIndexA, pIndexA);
-  DerivativeSupport dsB = 
-    solverB_outargs.supports(OUT_ARG_DgDp, gIndexB, pIndexB);
-  supports_W = 
-    (dsA.supports(DERIV_MV_BY_COL) || dsA.supports(DERIV_TRANS_MV_BY_ROW)) && 
-    (dsB.supports(DERIV_MV_BY_COL) || dsB.supports(DERIV_TRANS_MV_BY_ROW));
-
-  supports_x_sg = 
-    solverA_inargs.supports(IN_ARG_p_sg, pIndexA) &&
-    solverB_inargs.supports(IN_ARG_p_sg, pIndexB);
-  supports_f_sg = 
-    solverA_outargs.supports(OUT_ARG_g_sg, gIndexA) &&
-    solverB_outargs.supports(OUT_ARG_g_sg, gIndexB);
-  DerivativeSupport dsA_sg = 
-    solverA_outargs.supports(OUT_ARG_DgDp_sg, gIndexA, pIndexA);
-  DerivativeSupport dsB_sg = 
-    solverB_outargs.supports(OUT_ARG_DgDp_sg, gIndexB, pIndexB);
-  supports_W_sg = 
-    (dsA_sg.supports(DERIV_MV_BY_COL) || 
-     dsA_sg.supports(DERIV_TRANS_MV_BY_ROW)) && 
-    (dsB_sg.supports(DERIV_MV_BY_COL) || 
-     dsB_sg.supports(DERIV_TRANS_MV_BY_ROW));
-
-  // Build the Jacobian graph, which looks like
-  //   [     I      dg_2/dp_2 ]
-  //   [ dg_1/dp_1     I      ]
+  // Build the Jacobian graph (currently dense)
   if (supports_W || supports_W_sg) {
     W_graph = Teuchos::rcp(new Epetra_CrsGraph(Copy, *f_map, nx));
+    int *indices = f_map->MyGlobalElements();
     for (int i=0; i<f_map->NumMyElements(); i++) {
       int row = f_map->GID(i);
-      // Diagonal part
-      int index = row;
-      W_graph->InsertGlobalIndices(row, 1, &index);
-      if (row < n_p_A) {
-	// dg_2/dp_2 part
-	for (int j=0; j<n_p_B; j++) {
-	  index = n_p_A + j;
-	  W_graph->InsertGlobalIndices(row, 1, &index);
-	}
-      }
-      else {
-	// dg_1/dp_1 part
-	for (int j=0; j<n_p_A; j++) {
-	  index = j;
-	  W_graph->InsertGlobalIndices(row, 1, &index);
-	}
-      }
+      W_graph->InsertGlobalIndices(row, nx, indices);
     }
     W_graph->FillComplete();
 
     W_overlap_graph = 
       Teuchos::rcp(new Epetra_CrsGraph(Copy, *f_overlap_map, nx));
-    for (int i=0; i<n_p_A; i++) {
-      int row = i;
-
-      // Diagonal part
-      int index = row;
-      W_overlap_graph->InsertGlobalIndices(row, 1, &index);
-      
-      // dg_2/dp_2 part
-      for (int j=0; j<n_p_B; j++) {
-	index = n_p_A + j;
-	W_overlap_graph->InsertGlobalIndices(row, 1, &index);
-      }
-    }
-    for (int i=0; i<n_p_B; i++) {
-      int row = i+n_p_B;
-
-      // Diagonal part
-      int index = row;
-      W_overlap_graph->InsertGlobalIndices(row, 1, &index);
-
-      // dg_1/dp_1 part
-      for (int j=0; j<n_p_A; j++) {
-	index = j;
-	W_overlap_graph->InsertGlobalIndices(row, 1, &index);
-      }
+    int *overlap_indices = f_overlap_map->MyGlobalElements();
+    for (int i=0; i<f_overlap_map->NumMyElements(); i++) {
+      int row = f_overlap_map->GID(i);
+      W_overlap_graph->InsertGlobalIndices(row, nx, overlap_indices);
     }
     W_overlap_graph->FillComplete();
     W_overlap = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *W_overlap_graph));
@@ -216,40 +214,44 @@ NECoupledModelEvaluator(
 
   // Build initial guess
   Epetra_Vector x_init_overlap(*x_overlap_map);
-  Teuchos::RCP<const Epetra_Vector> p_init_A = solverA->get_p_init(pIndexA);
-  Teuchos::RCP<const Epetra_Vector> p_init_B = solverB->get_p_init(pIndexB);
-  for (int i=0; i<n_p_A; i++)
-    x_init_overlap[i] = (*p_init_A)[i];
-  for (int i=0; i<n_p_B; i++)
-    x_init_overlap[n_p_A + i] = (*p_init_B)[i];
+  int offset = 0;
+  for (int i=0; i<n_models; i++) {
+    Teuchos::RCP<const Epetra_Vector> p_init = 
+      solvers[i]->get_p_init(p_indices[i]);
+    for (int j=0; j<n_p[i]; j++)
+      x_init_overlap[j+offset] = (*p_init)[j];
+    offset += n_p[i];
+  }
   x_init = Teuchos::rcp(new Epetra_Vector(*x_map));
   x_init->Export(x_init_overlap, *x_importer, Insert);
 
   // Create storage for parameters, responses, and derivatives
-  p_A = Teuchos::rcp(new Epetra_Vector(*p_map_A));
-  p_B = Teuchos::rcp(new Epetra_Vector(*p_map_B));
-  g_A = Teuchos::rcp(new Epetra_Vector(*g_map_A));
-  g_B = Teuchos::rcp(new Epetra_Vector(*g_map_B));
-  if (supports_W || supports_W_sg) {
-    if (dsA.supports(DERIV_MV_BY_COL)) {
-      dgdp_A_layout = DERIV_MV_BY_COL;
-      dgdp_A = Teuchos::rcp(new Epetra_MultiVector(*g_map_A, n_p_A));
-    }
-    else {
-      dgdp_A_layout = DERIV_TRANS_MV_BY_ROW;
-      dgdp_A = Teuchos::rcp(new Epetra_MultiVector(*p_map_A, n_g_A));
-    }
-    if (dsB.supports(DERIV_MV_BY_COL)) {
-      dgdp_B_layout = DERIV_MV_BY_COL;
-      dgdp_B = Teuchos::rcp(new Epetra_MultiVector(*g_map_B, n_p_B));
-    }
-    else {
-      dgdp_B_layout = DERIV_TRANS_MV_BY_ROW;
-      dgdp_B = Teuchos::rcp(new Epetra_MultiVector(*p_map_B, n_g_B));
+  p.resize(n_models);
+  g.resize(n_models);
+  dgdp_layout.resize(n_models);
+  dgdp.resize(n_models);
+  for (int i=0; i<n_models; i++) {
+    p[i] = Teuchos::rcp(new Epetra_Vector(*p_maps[i]));
+    g[i] = Teuchos::rcp(new Epetra_Vector(*g_maps[i]));
+    if (supports_W || supports_W_sg) {
+      if (ds[i].supports(DERIV_MV_BY_COL)) {
+	dgdp_layout[i] = DERIV_MV_BY_COL;
+	dgdp[i] = Teuchos::rcp(new Epetra_MultiVector(*g_maps[i], n_p[i]));
+      }
+      else {
+	dgdp_layout[i] = DERIV_TRANS_MV_BY_ROW;
+	dgdp[i] = Teuchos::rcp(new Epetra_MultiVector(*p_maps[i], n_g[i]));
+      }
     }
   }
 
-  reduce_dimension = params->get("Reduce Dimension", false);
+  p_sg.resize(n_models);
+  g_sg.resize(n_models);
+  dgdp_sg_layout.resize(n_models);
+  dgdp_sg.resize(n_models);
+  reduce_dimension = 
+    params->sublist("Dimension Reduction").get("Reduce Dimension", false);
+  red_basis_vals.resize(n_models);
 }
 
 // Overridden from EpetraExt::ModelEvaluator
@@ -285,9 +287,7 @@ get_p_map(int j) const
     "Error in Piro::Epetra::NECoupledModelEvaluator::get_p_map():  " <<
     "Invalid parameter index j = " << j << std::endl);
 
-  if (j < num_params_A-1)
-    return solverA->get_p_map(param_map[j]);
-  return solverB->get_p_map(param_map[j]);
+  return solvers[param_map[j].first]->get_p_map(param_map[j].second);
 }
 
 Teuchos::RCP<const Epetra_Map>
@@ -300,9 +300,7 @@ get_g_map(int j) const
     "Error in Piro::Epetra::NECoupledModelEvaluator::get_g_map():  " <<
     "Invalid response index j = " << j << std::endl);
 
-  if (j < num_responses_A-1)
-    return solverA->get_g_map(response_map[j]);
-  return solverB->get_g_map(response_map[j]);
+  return solvers[response_map[j].first]->get_g_map(response_map[j].second);
 }
 
 Teuchos::RCP<const Teuchos::Array<std::string> > 
@@ -315,9 +313,7 @@ get_p_names(int j) const
     "Error in Piro::Epetra::NECoupledModelEvaluator::get_p_names():  " <<
     "Invalid parameter index j = " << j << std::endl);
 
-  if (j < num_params_A-1)
-    return solverA->get_p_names(param_map[j]);
-  return solverB->get_p_names(param_map[j]);
+  return solvers[param_map[j].first]->get_p_names(param_map[j].second);
 }
 
 Teuchos::RCP<const Epetra_Vector>
@@ -330,9 +326,7 @@ get_p_init(int j) const
     "Error in Piro::Epetra::NECoupledModelEvaluator::get_p_init():  " <<
     "Invalid parameter index j = " << j << std::endl);
 
-  if (j < num_params_A-1)
-    return solverA->get_p_init(param_map[j]);
-  return solverB->get_p_init(param_map[j]);
+  return solvers[param_map[j].first]->get_p_init(param_map[j].second);
 }
 
 Teuchos::RCP<Epetra_Operator>
@@ -352,25 +346,23 @@ createInArgs() const
   InArgsSetup inArgs;
   inArgs.setModelEvalDescription(this->description());
 
-  EpetraExt::ModelEvaluator::InArgs solverA_inargs = solverA->createInArgs();
-  EpetraExt::ModelEvaluator::InArgs solverB_inargs = solverB->createInArgs();
-
   // Deterministic InArgs
   inArgs.setSupports(IN_ARG_x, true);
   inArgs.set_Np(num_params_total);
   
   // Stochastic InArgs
-  inArgs.setSupports(IN_ARG_x_sg, supports_x_sg);
-  for (int i=0; i<num_params_A-1; i++)
-    inArgs.setSupports(IN_ARG_p_sg, i, 
-		       solverA_inargs.supports(IN_ARG_p_sg, param_map[i])); 
-  for (int i=0; i<num_params_B-1; i++)
-    inArgs.setSupports(IN_ARG_p_sg, num_params_A-1+i, 
-		       solverB_inargs.supports(IN_ARG_p_sg, 
-					      param_map[num_params_A-1+i])); 
-  inArgs.setSupports(IN_ARG_sg_basis,true);
-  inArgs.setSupports(IN_ARG_sg_quadrature,true);
-  inArgs.setSupports(IN_ARG_sg_expansion,true);
+  if (supports_x_sg) {
+    inArgs.setSupports(IN_ARG_x_sg, supports_x_sg);
+    inArgs.setSupports(IN_ARG_sg_basis,true);
+    inArgs.setSupports(IN_ARG_sg_quadrature,true);
+    inArgs.setSupports(IN_ARG_sg_expansion,true);
+    for (int i=0; i<num_params_total; i++) {
+      inArgs.setSupports(
+	IN_ARG_p_sg, i, 
+	solver_inargs[param_map[i].first].supports(IN_ARG_p_sg, 
+						   param_map[i].second)); 
+    }
+  }
 
   return inArgs;
 }
@@ -382,88 +374,61 @@ createOutArgs() const
   OutArgsSetup outArgs;
   outArgs.setModelEvalDescription(this->description());
 
-  EpetraExt::ModelEvaluator::OutArgs solverA_outargs = solverA->createOutArgs();
-  EpetraExt::ModelEvaluator::OutArgs solverB_outargs = solverB->createOutArgs();
-
   // Deterministic OutArgs
   outArgs.setSupports(OUT_ARG_f, true);
   outArgs.setSupports(OUT_ARG_W, supports_W);
   outArgs.set_W_properties(
     DerivativeProperties(DERIV_LINEARITY_NONCONST, DERIV_RANK_FULL, true));
   outArgs.set_Np_Ng(num_params_total, num_responses_total);
-  for (int i=0; i<num_params_A-1; i++)
+  for (int i=0; i<num_params_total; i++)
     outArgs.setSupports(
-      OUT_ARG_DfDp, i,
-      solverA_outargs.supports(OUT_ARG_DgDp, gIndexA, param_map[i])); 
-  for (int i=0; i<num_params_B-1; i++)
+      OUT_ARG_DfDp, i, solver_outargs[param_map[i].first].supports(
+	OUT_ARG_DgDp, g_indices[param_map[i].first], param_map[i].second)); 
+  for (int i=0; i<num_responses_total; i++) {
+    int model_index = response_map[i].first;
     outArgs.setSupports(
-      OUT_ARG_DfDp, num_params_A-1+i, 
-      solverB_outargs.supports(OUT_ARG_DgDp, gIndexB, 
-			      param_map[num_params_A-1+i]));
-  for (int i=0; i<num_responses_A-1; i++) {
-    outArgs.setSupports(OUT_ARG_DgDx, i, 
-			solverA_outargs.supports(OUT_ARG_DgDx, 
-						 response_map[i]));
-    for (int j=0; j<num_params_A-1; j++)
-      outArgs.setSupports(OUT_ARG_DgDp, i, j, 
-			  solverA_outargs.supports(OUT_ARG_DgDp, 
-						   response_map[i],
-						   param_map[j])); 
-  }
-  for (int i=0; i<num_responses_B-1; i++) {
-    outArgs.setSupports(
-      OUT_ARG_DgDx, num_responses_A-1+i, 
-      solverA_outargs.supports(OUT_ARG_DgDx, 
-			      response_map[num_responses_A-1+i]));
-    for (int j=0; j<num_params_B-1; j++)
-      outArgs.setSupports(
-	OUT_ARG_DgDp, num_responses_A-1+i, num_params_A-1+j, 
-	solverB_outargs.supports(OUT_ARG_DgDp, 
-				 response_map[num_responses_A-1+i],
-				 param_map[num_params_A-1+j]));
+      OUT_ARG_DgDx, i, 
+      solver_outargs[model_index].supports(OUT_ARG_DgDx, 
+					   response_map[i].second));
+    for (int j=0; j<num_params_total; j++) {
+      if (param_map[j].first == model_index) {
+	outArgs.setSupports(
+	  OUT_ARG_DgDp, i, j, 
+	  solver_outargs[model_index].supports(OUT_ARG_DgDp, 
+					       response_map[i].second,
+					       param_map[j].second));
+      }
+    }
   }
 
   // Stochastic OutArgs
-  outArgs.setSupports(OUT_ARG_f_sg, supports_f_sg);
-  outArgs.setSupports(OUT_ARG_W_sg, supports_W_sg);
-  for (int i=0; i<num_responses_A-1; i++)
+  if (supports_f_sg)
+    outArgs.setSupports(OUT_ARG_f_sg, supports_f_sg);
+  if (supports_W_sg)
+    outArgs.setSupports(OUT_ARG_W_sg, supports_W_sg);
+  for (int i=0; i<num_responses_total; i++)
     outArgs.setSupports(
-      OUT_ARG_g_sg, i, solverA_outargs.supports(OUT_ARG_g_sg, response_map[i]));
-  for (int i=0; i<num_responses_B-1; i++)
+      OUT_ARG_g_sg, i, solver_outargs[response_map[i].first].supports(
+	OUT_ARG_g_sg, response_map[i].second));
+  for (int i=0; i<num_params_total; i++)
     outArgs.setSupports(
-      OUT_ARG_g_sg, num_responses_A-1+i, 
-      solverB_outargs.supports(OUT_ARG_g_sg, 
-			      response_map[num_responses_A-1+i]));
-  for (int i=0; i<num_params_A-1; i++)
+      OUT_ARG_DfDp_sg, i, solver_outargs[param_map[i].first].supports(
+	OUT_ARG_DgDp_sg, g_indices[param_map[i].first], param_map[i].second)); 
+  for (int i=0; i<num_responses_total; i++) {
+    int model_index = response_map[i].first;
     outArgs.setSupports(
-      OUT_ARG_DfDp_sg, i, 
-      solverA_outargs.supports(OUT_ARG_DgDp_sg, gIndexA, param_map[i])); 
-  for (int i=0; i<num_params_B-1; i++)
-    outArgs.setSupports(
-      OUT_ARG_DfDp_sg, num_params_A-1+i, 
-      solverB_outargs.supports(OUT_ARG_DgDp_sg, gIndexB, 
-			      param_map[num_params_A-1+i]));
-  for (int i=0; i<num_responses_A-1; i++) {
-    outArgs.setSupports(OUT_ARG_DgDx_sg, i, 
-			solverA_outargs.supports(OUT_ARG_DgDx_sg, 
-						response_map[i]));
-    for (int j=0; j<num_params_A-1; j++)
-      outArgs.setSupports(OUT_ARG_DgDp_sg, i, j, 
-			  solverA_outargs.supports(OUT_ARG_DgDp_sg, 
-						  response_map[i],
-						  param_map[j]));
-  }
-  for (int i=0; i<num_responses_B-1; i++) {
-    outArgs.setSupports(
-      OUT_ARG_DgDx_sg, num_responses_A-1+i, 
-      solverA_outargs.supports(OUT_ARG_DgDx_sg, 
-			      response_map[num_responses_A-1+i]));
-    for (int j=0; j<num_params_B-1; j++)
-      outArgs.setSupports(
-	OUT_ARG_DgDp_sg, num_responses_A-1+i, num_params_A-1+j, 
-	solverB_outargs.supports(OUT_ARG_DgDp_sg, 
-				 response_map[num_responses_A-1+i],
-				 param_map[num_params_A-1+j]));
+      OUT_ARG_DgDx_sg, i, 
+      solver_outargs[model_index].supports(OUT_ARG_DgDx_sg, 
+					   response_map[i].second));
+    for (int j=0; j<num_params_total; j++) {
+      if (param_map[j].first == model_index) {
+	outArgs.setSupports(
+	  OUT_ARG_DgDp_sg, i, j, 
+	  solver_outargs[model_index].supports(OUT_ARG_DgDp_sg, 
+					       response_map[i].second,
+					       param_map[j].second));
+      }
+    }
   }
   
   return outArgs;
@@ -476,10 +441,14 @@ evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
 
-  EpetraExt::ModelEvaluator::InArgs solverA_inargs = solverA->createInArgs();
-  EpetraExt::ModelEvaluator::InArgs solverB_inargs = solverB->createInArgs();
-  EpetraExt::ModelEvaluator::OutArgs solverA_outargs = solverA->createOutArgs();
-  EpetraExt::ModelEvaluator::OutArgs solverB_outargs = solverB->createOutArgs();
+  // Create fresh in/out args for sub-models
+  for (int i=0; i<n_models; i++) {
+    solver_inargs[i] = solvers[i]->createInArgs();
+    solver_outargs[i] = solvers[i]->createOutArgs();
+  }
+
+  EpetraExt::ModelEvaluator::InArgs network_inargs = inArgs;
+  EpetraExt::ModelEvaluator::OutArgs network_outargs = outArgs;
 
   //
   // Deterministic calculation
@@ -491,67 +460,65 @@ evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
 
     // p
     x_overlap->Import(*x, *x_importer, Insert);
-    for (int i=0; i<n_p_A; i++)
-      (*p_A)[i] = (*x_overlap)[i];
-    for (int i=0; i<n_p_B; i++)
-      (*p_B)[i] = (*x_overlap)[n_p_A + i];
-    solverA_inargs.set_p(pIndexA, p_A);
-    solverB_inargs.set_p(pIndexB, p_B);
-    for (int i=0; i<num_params_A-1; i++)
-      solverA_inargs.set_p(param_map[i], inArgs.get_p(i));
-    for (int i=0; i<num_params_B-1; i++)
-      solverB_inargs.set_p(param_map[num_params_A-1+i], 
-			   inArgs.get_p(num_params_A-1+i));
+    int offset = 0;
+    for (int i=0; i<n_models; i++) {
+      for (int j=0; j<n_p[i]; j++)
+	(*p[i])[j] = (*x_overlap)[j+offset];
+      offset += n_p[i];
+      solver_inargs[i].set_p(p_indices[i], p[i]);
+      for (int j=0; j<num_params_total; j++)
+	if (param_map[j].first == i)
+	  solver_inargs[i].set_p(param_map[j].second, inArgs.get_p(j));
+    }
+    network_inargs.set_x(x_overlap);
     
     // f
     Teuchos::RCP<Epetra_Vector> f = outArgs.get_f();
     if (f != Teuchos::null) {
-      solverA_outargs.set_g(gIndexA, g_A);
-      solverB_outargs.set_g(gIndexB, g_B);
+      for (int i=0; i<n_models; i++)
+	solver_outargs[i].set_g(g_indices[i], g[i]);
+      network_outargs.set_f(f_overlap);
     }
 
     // W
     Teuchos::RCP<Epetra_Operator> W = outArgs.get_W();
     if (W != Teuchos::null) {
-      Derivative dgdp_A_deriv(dgdp_A, dgdp_A_layout);
-      Derivative dgdp_B_deriv(dgdp_B, dgdp_B_layout);
-      solverA_outargs.set_DgDp(gIndexA, pIndexA, dgdp_A_deriv);
-      solverB_outargs.set_DgDp(gIndexB, pIndexB, dgdp_B_deriv);
+      for (int i=0; i<n_models; i++) {
+	Derivative dgdp_deriv(dgdp[i], dgdp_layout[i]);
+	solver_outargs[i].set_DgDp(g_indices[i], p_indices[i], dgdp_deriv);
+      }
+      network_outargs.set_W(W_overlap);
     }
 
-    // g
-    for (int i=0; i<num_responses_A-1; i++)
-      solverA_outargs.set_g(response_map[i], outArgs.get_g(i));
-    for (int i=0; i<num_responses_B-1; i++)
-      solverB_outargs.set_g(response_map[i+num_responses_A-1], 
-			    outArgs.get_g(i+num_responses_A-1));
+    for (int i=0; i<num_responses_total; i++) {
+      int model_index = response_map[i].first;
+      
+      // g
+      solver_outargs[model_index].set_g(response_map[i].second, 
+					outArgs.get_g(i));
+    
 
-    // dg/dx
-    for (int i=0; i<num_responses_A-1; i++)
-      if (!solverA_outargs.supports(OUT_ARG_DgDx, response_map[i]).none())
-	solverA_outargs.set_DgDx(response_map[i], outArgs.get_DgDx(i));
-    for (int i=0; i<num_responses_B-1; i++)
-      if (!solverB_outargs.supports(OUT_ARG_DgDx, 
-				    response_map[i+num_responses_A-1]).none())
-	solverB_outargs.set_DgDx(response_map[i+num_responses_A-1], 
-				 outArgs.get_DgDx(i+num_responses_A-1));
+      // dg/dx
+      if (!solver_outargs[model_index].supports(OUT_ARG_DgDx, 
+						response_map[i].second).none())
+	solver_outargs[model_index].set_DgDx(response_map[i].second, 
+					     outArgs.get_DgDx(i));
+    
 
-    // dg/dp
-    for (int i=0; i<num_responses_A-1; i++)
-      for (int j=0; j<num_params_A-1; j++)
-	if (!solverA_outargs.supports(OUT_ARG_DgDp, response_map[i], 
-				      param_map[j]).none())
-	  solverA_outargs.set_DgDp(response_map[i], param_map[j], 
-				   outArgs.get_DgDp(i,j));
-    for (int i=0; i<num_responses_B-1; i++)
-      for (int j=0; j<num_params_B-1; j++)
-	if (!solverB_outargs.supports(OUT_ARG_DgDp,
-				      param_map[j+num_params_A-1],
-				      response_map[i+num_responses_A-1]).none())
-	  solverB_outargs.set_DgDp(response_map[i+num_responses_A-1], 
-				   param_map[j+num_params_A-1],
-				   outArgs.get_DgDp(i+num_responses_A-1,
-						    j+num_params_A-1));
+      // dg/dp
+      for (int j=0; j<num_params_total; j++) {
+	if (param_map[j].first == model_index) {
+	  if (!solver_outargs[model_index].supports(OUT_ARG_DgDp, 
+						    response_map[i].second, 
+						    param_map[j].second).none())
+	    solver_outargs[model_index].set_DgDp(response_map[i].second, 
+						 param_map[j].second, 
+						 outArgs.get_DgDp(i,j));
+	}
+      }
+
+    }
+    
   }
 
   //
@@ -567,324 +534,230 @@ evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
     // SG data
     Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 
       inArgs.get_sg_basis();
-    if (solverA_inargs.supports(IN_ARG_sg_basis))
-      solverA_inargs.set_sg_basis(basis);
-    if (solverA_inargs.supports(IN_ARG_sg_quadrature))
-      solverA_inargs.set_sg_quadrature(inArgs.get_sg_quadrature());
-    if (solverA_inargs.supports(IN_ARG_sg_expansion))
-      solverA_inargs.set_sg_expansion(inArgs.get_sg_expansion());
-    if (solverB_inargs.supports(IN_ARG_sg_basis))
-      solverB_inargs.set_sg_basis(basis);
-    if (solverB_inargs.supports(IN_ARG_sg_quadrature))
-      solverB_inargs.set_sg_quadrature(inArgs.get_sg_quadrature());
-    if (solverB_inargs.supports(IN_ARG_sg_expansion))
-      solverB_inargs.set_sg_expansion(inArgs.get_sg_expansion());
-
-    if (p_A_sg == Teuchos::null) {
-      Teuchos::RCP<const EpetraExt::MultiComm> multiComm;
-      multiComm = x_sg->productComm();
+    Teuchos::RCP<const EpetraExt::MultiComm> multiComm = 
+      x_sg->productComm();
+    if (sg_overlap_map == Teuchos::null)
       sg_overlap_map =
 	Teuchos::rcp(new Epetra_LocalMap(basis->size(), 0, 
 					 multiComm->TimeDomainComm()));
-      p_A_sg = 
+
+    if (x_sg_overlap == Teuchos::null)
+      x_sg_overlap = 
 	Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(
-		       basis, sg_overlap_map, p_map_A, multiComm));
-      p_B_sg = 
+		       basis, sg_overlap_map, x_overlap_map, multiComm));
+    if (supports_f_sg && f_sg_overlap == Teuchos::null)
+      f_sg_overlap = 
 	Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(
-		       basis, sg_overlap_map, p_map_B, multiComm));
-      if (supports_f_sg) {
-	g_A_sg = 
-	  Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(
-			 basis, sg_overlap_map, g_map_A, multiComm));
-	g_B_sg = 
-	  Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(
-			 basis, sg_overlap_map, g_map_B, multiComm));
+		       basis, sg_overlap_map, f_overlap_map, multiComm));
+    if (supports_W_sg && W_sg_overlap == Teuchos::null) {
+      Teuchos::RCP<const Epetra_Map> domain_base_map = 
+	x_overlap_map;
+      Teuchos::RCP<const Epetra_Map> range_base_map = 
+	f_overlap_map;
+      W_sg_overlap =
+	Teuchos::rcp(new Stokhos::EpetraOperatorOrthogPoly(
+		       basis, sg_overlap_map, domain_base_map, range_base_map, 
+		       multiComm));
+      for (int block=0; block<W_sg_overlap->size(); block++) {
+	Teuchos::RCP<Epetra_Operator> W =
+	  Teuchos::rcp(new Epetra_CrsMatrix(Copy, *W_overlap_graph));
+	W_sg_overlap->setCoeffPtr(block,W);
       }
-      if (supports_W_sg) {
-	DerivativeSupport dsA_sg = 
-	  solverA_outargs.supports(OUT_ARG_DgDp_sg, gIndexA, pIndexA);
-	DerivativeSupport dsB_sg = 
-	  solverB_outargs.supports(OUT_ARG_DgDp_sg, gIndexB, pIndexB);
-	if (dsA_sg.supports(DERIV_MV_BY_COL)) {
-	  dgdp_A_sg_layout = DERIV_MV_BY_COL;
-	  dgdp_A_sg = 
-	    Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
-			   basis, sg_overlap_map, g_map_A, multiComm, n_p_A));
+    }
+
+    for (int i=0; i<n_models; i++) {
+      if (solver_inargs[i].supports(IN_ARG_sg_basis))
+	solver_inargs[i].set_sg_basis(basis);
+      if (solver_inargs[i].supports(IN_ARG_sg_quadrature))
+	solver_inargs[i].set_sg_quadrature(inArgs.get_sg_quadrature());
+      if (solver_inargs[i].supports(IN_ARG_sg_expansion))
+	solver_inargs[i].set_sg_expansion(inArgs.get_sg_expansion());
+      
+      if (p_sg[i] == Teuchos::null) {
+	p_sg[i] = 
+	  Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(
+			 basis, sg_overlap_map, p_maps[i], multiComm));
+	if (supports_f_sg) {
+	  g_sg[i] = 
+	    Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(
+			   basis, sg_overlap_map, g_maps[i], multiComm));
 	}
-	else {
-	  dgdp_A_sg_layout = DERIV_TRANS_MV_BY_ROW;
-	  dgdp_A_sg = 
-	    Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
-			   basis, sg_overlap_map, p_map_A, multiComm, n_g_A));
-	}
-	if (dsB_sg.supports(DERIV_MV_BY_COL)) {
-	  dgdp_B_sg_layout = DERIV_MV_BY_COL;
-	  dgdp_B_sg = 
-	    Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
-			   basis, sg_overlap_map, g_map_B, multiComm, n_p_B));
-	}
-	else {
-	  dgdp_B_sg_layout = DERIV_TRANS_MV_BY_ROW;
-	  dgdp_B_sg = 
-	    Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
-			   basis, sg_overlap_map, p_map_B, multiComm, n_g_B));
+	if (supports_W_sg) {
+	  DerivativeSupport ds_sg = 
+	    solver_outargs[i].supports(OUT_ARG_DgDp_sg, g_indices[i], 
+				       p_indices[i]);
+	  if (ds_sg.supports(DERIV_MV_BY_COL)) {
+	    dgdp_sg_layout[i] = DERIV_MV_BY_COL;
+	    dgdp_sg[i] = 
+	      Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
+			     basis, sg_overlap_map, g_maps[i], multiComm, 
+			     n_p[i]));
+	  }
+	  else {
+	    dgdp_sg_layout[i] = DERIV_TRANS_MV_BY_ROW;
+	    dgdp_sg[i] = 
+	      Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
+			     basis, sg_overlap_map, p_maps[i], multiComm, 
+			     n_g[i]));
+	  }
 	}
       }
     }
-  
+      
     // p_sg
     for (int block=0; block<x_sg->size(); block++) {
-      x_overlap->Import((*x_sg)[block], *x_importer, Insert);
-      for (int i=0; i<n_p_A; i++)
-	(*p_A_sg)[block][i] = (*x_overlap)[i];
-      for (int i=0; i<n_p_B; i++)
-	(*p_B_sg)[block][i] = (*x_overlap)[n_p_A + i];
+      (*x_sg_overlap)[block].Import((*x_sg)[block], *x_importer, Insert);
+      int offset = 0;
+      for (int i=0; i<n_models; i++) {
+	for (int j=0; j<n_p[i]; j++)
+	  (*p_sg[i])[block][j] = (*x_sg_overlap)[block][j+offset];
+	offset += n_p[i];
+      }
+      network_inargs.set_x_sg(x_sg_overlap);
     }
-    solverA_inargs.set_p_sg(pIndexA, p_A_sg);
-    solverB_inargs.set_p_sg(pIndexB, p_B_sg);
-    for (int i=0; i<num_params_A-1; i++)
-      if (solverA_inargs.supports(IN_ARG_p_sg, param_map[i]))
-	solverA_inargs.set_p_sg(param_map[i], inArgs.get_p_sg(i));
-    for (int i=0; i<num_params_B-1; i++)
-      if (solverB_inargs.supports(IN_ARG_p_sg, param_map[num_params_A-1+i]))
-	solverB_inargs.set_p_sg(param_map[num_params_A-1+i], 
-				inArgs.get_p_sg(num_params_A-1+i));
       
+    for (int i=0; i<n_models; i++) {
+      solver_inargs[i].set_p_sg(p_indices[i], p_sg[i]);
+      for (int j=0; j<num_params_total; j++)
+	if (param_map[j].first == i)
+	  if (solver_inargs[i].supports(IN_ARG_p_sg, param_map[i].second))
+	    solver_inargs[i].set_p_sg(param_map[j].second, 
+				      inArgs.get_p_sg(j));
+    }
+    
     // f_sg
     if (supports_f_sg) {
       OutArgs::sg_vector_t f_sg = outArgs.get_f_sg();
       if (f_sg != Teuchos::null) {
-	solverA_outargs.set_g_sg(gIndexA, g_A_sg);
-	solverB_outargs.set_g_sg(gIndexB, g_B_sg);
+	for (int i=0; i<n_models; i++)
+	  solver_outargs[i].set_g_sg(g_indices[i], g_sg[i]);
+	network_outargs.set_f_sg(f_sg_overlap);
       }
     }
-
+      
     // W_sg
     if (supports_W_sg) {
       OutArgs::sg_operator_t W_sg = outArgs.get_W_sg();
       if (W_sg != Teuchos::null) {
-	solverA_outargs.set_DgDp_sg(gIndexA, pIndexA, dgdp_A_sg);
-	solverB_outargs.set_DgDp_sg(gIndexB, pIndexB, dgdp_B_sg);
+	for (int i=0; i<n_models; i++) {
+	  SGDerivative dgdp_deriv(dgdp_sg[i], dgdp_sg_layout[i]);
+	  solver_outargs[i].set_DgDp_sg(g_indices[i], p_indices[i], dgdp_deriv);
+	}
+	network_outargs.set_W_sg(W_sg_overlap);
       }
     }
 
-    // g_sg
-    for (int i=0; i<num_responses_A-1; i++)
-      if (solverA_outargs.supports(OUT_ARG_g_sg, response_map[i]))
-	solverA_outargs.set_g_sg(response_map[i], outArgs.get_g_sg(i));
-    for (int i=0; i<num_responses_B-1; i++)
-      if (solverB_outargs.supports(OUT_ARG_g_sg, 
-				   response_map[i+num_responses_A-1]))
-	solverB_outargs.set_g_sg(response_map[i+num_responses_A-1], 
-				 outArgs.get_g_sg(i+num_responses_A-1));
-
-    // dg/dx_sg
-    for (int i=0; i<num_responses_A-1; i++)
-      if (!solverA_outargs.supports(OUT_ARG_DgDx_sg, response_map[i]).none())
-	solverA_outargs.set_DgDx_sg(response_map[i], outArgs.get_DgDx_sg(i));
-    for (int i=0; i<num_responses_B-1; i++)
-      if (!solverB_outargs.supports(OUT_ARG_DgDx_sg, 
-				    response_map[i+num_responses_A-1]).none())
-	solverB_outargs.set_DgDx_sg(response_map[i+num_responses_A-1], 
-				    outArgs.get_DgDx_sg(i+num_responses_A-1));
-
-    // dg/dp_sg
-    for (int i=0; i<num_responses_A-1; i++)
-      for (int j=0; j<num_params_A-1; j++)
-	if (!solverA_outargs.supports(OUT_ARG_DgDp_sg, response_map[i], 
-				      param_map[j]).none())
-	  solverA_outargs.set_DgDp_sg(response_map[i], param_map[j], 
-				      outArgs.get_DgDp_sg(i,j));
-    for (int i=0; i<num_responses_B-1; i++)
-      for (int j=0; j<num_params_B-1; j++)
-	if (!solverB_outargs.supports(OUT_ARG_DgDp_sg,
-				      param_map[j+num_params_A-1],
-				      response_map[i+num_responses_A-1]).none())
-	  solverB_outargs.set_DgDp_sg(response_map[i+num_responses_A-1], 
-				      param_map[j+num_params_A-1],
-				      outArgs.get_DgDp_sg(i+num_responses_A-1,
-							  j+num_params_A-1));
+    for (int i=0; i<num_responses_total; i++) {
+      int model_index = response_map[i].first;
+      
+      // g_sg
+      if (solver_outargs[model_index].supports(OUT_ARG_g_sg, 
+					       response_map[i].second))
+	solver_outargs[model_index].set_g_sg(response_map[i].second, 
+					     outArgs.get_g_sg(i));
+      
+      // dg/dx_sg
+      if (!solver_outargs[model_index].supports(OUT_ARG_DgDx_sg, 
+						response_map[i].second).none())
+	solver_outargs[model_index].set_DgDx_sg(response_map[i].second, 
+						outArgs.get_DgDx_sg(i));
+      
+      
+      // dg/dp_sg
+      for (int j=0; j<num_params_total; j++) {
+	if (param_map[j].first == model_index) {
+	  if (!solver_outargs[model_index].supports(OUT_ARG_DgDp_sg, 
+						    response_map[i].second, 
+						    param_map[j].second).none())
+	    solver_outargs[model_index].set_DgDp_sg(response_map[i].second, 
+						    param_map[j].second, 
+						    outArgs.get_DgDp_sg(i,j));
+	}
+      }
+      
+    } 
   }
 
   // Stochastic dimension reduction
-  EpetraExt::ModelEvaluator::InArgs solverA_inargs_red;
-  EpetraExt::ModelEvaluator::InArgs solverB_inargs_red;
-  EpetraExt::ModelEvaluator::OutArgs solverA_outargs_red;
-  EpetraExt::ModelEvaluator::OutArgs solverB_outargs_red;
-  Teuchos::RCP<EpetraExt::ModelEvaluator> solverA_red;
-  Teuchos::RCP<EpetraExt::ModelEvaluator> solverB_red;
-  Teuchos::RCP<Teuchos::ParameterList> piroParamsA_red;
-  Teuchos::RCP<Teuchos::ParameterList> piroParamsB_red;
-  do_dimension_reduction(inArgs, 
-			 solverA_inargs, solverA_outargs,
-			 modelA, solverA, piroParamsA,
-			 solverA_inargs_red, solverA_outargs_red,
-			 solverA_red, piroParamsA_red,
-			 red_basis_vals_A);
-  do_dimension_reduction(inArgs,
-			 solverB_inargs, solverB_outargs,
-			 modelB, solverB, piroParamsB,
-			 solverB_inargs_red, solverB_outargs_red,
-			 solverB_red, piroParamsB_red,
-			 red_basis_vals_B);
+  Teuchos::Array<EpetraExt::ModelEvaluator::InArgs> solver_inargs_red(n_models);
+  Teuchos::Array<EpetraExt::ModelEvaluator::OutArgs> solver_outargs_red(n_models);
+  Teuchos::Array<Teuchos::RCP<EpetraExt::ModelEvaluator> > solvers_red(n_models);
+  
+  Teuchos::Array<Teuchos::RCP<Teuchos::ParameterList> > piroParams_red(n_models);
+  
+  for (int i=0; i<n_models; i++) {
+    do_dimension_reduction(inArgs, 
+			   solver_inargs[i], solver_outargs[i],
+			   models[i], solvers[i], piroParams[i],
+			   solver_inargs_red[i], solver_outargs_red[i],
+			   solvers_red[i], piroParams_red[i],
+			   red_basis_vals[i]);
+  }
+  
 
   int proc = comm->MyPID();
 
   // Evaluate models
-  {
-  TEUCHOS_FUNC_TIME_MONITOR("NECoupledModelEvaluator -- Model A nonlinear elimination");
-  if (verbLevel != Teuchos::VERB_NONE)
-    *out << "Eliminating model A states...";
-  solverA_red->evalModel(solverA_inargs_red, solverA_outargs_red);
-  }
-
-  {
-  TEUCHOS_FUNC_TIME_MONITOR("NECoupledModelEvaluator -- Model B nonlinear elimination");
-  if (verbLevel != Teuchos::VERB_NONE)
-    *out << "Eliminating model B states...";
-  solverB_red->evalModel(solverB_inargs_red, solverB_outargs_red);
+  for (int i=0; i<n_models; i++) {
+    TEUCHOS_FUNC_TIME_MONITOR(
+      "NECoupledModelEvaluator -- Model nonlinear elimination");
+    if (verbLevel != Teuchos::VERB_NONE)
+      *out << "Eliminating model " << i+1 << " states...";
+    solvers_red[i]->evalModel(solver_inargs_red[i], solver_outargs_red[i]);
   }
 
   // Project back to original stochastic bases
-  do_dimension_projection(inArgs, solverA_inargs_red, solverA_outargs_red,
-			  red_basis_vals_A, solverA_outargs);
-  do_dimension_projection(inArgs, solverB_inargs_red, solverB_outargs_red,
-			  red_basis_vals_B, solverB_outargs);
+  for (int i=0; i<n_models; i++)
+    do_dimension_projection(inArgs, solver_inargs_red[i], solver_outargs_red[i],
+			    red_basis_vals[i], solver_outargs[i]);
 
-  if (do_deterministic) {
+  // Evaluate network model
+  network_model->evalModel(solver_inargs, solver_outargs, 
+			   network_inargs, network_outargs,
+			   n_p, n_g, p, g, dgdp, dgdp_layout,
+			   p_sg, g_sg, dgdp_sg, dgdp_sg_layout);
 
-    // f
-    Teuchos::RCP<Epetra_Vector> f = outArgs.get_f();
-    if (f != Teuchos::null) {
-      f_overlap->PutScalar(0.0);
-      for (int i=0; i<n_p_A; i++)
-	(*f_overlap)[i]       = (*p_A)[i] - (*g_B)[i];
-      for (int i=0; i<n_p_B; i++)
-	(*f_overlap)[i+n_p_A] = (*p_B)[i] - (*g_A)[i];
-      f->Export(*f_overlap, *f_exporter, Insert);
-    }
+  // Export network residuals, Jacobians, etc...
 
-    // W
-    Teuchos::RCP<Epetra_Operator> W = outArgs.get_W();
-    if (W != Teuchos::null) {
-      Teuchos::RCP<Epetra_CrsMatrix> W_crs = 
-	Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W, true);
-      W_overlap->PutScalar(0.0);
-      int row, col;
-      double val;
-      for (int i=0; i<n_p_A; i++) {
-	row = i; 
+  // f
+  Teuchos::RCP<Epetra_Vector> f = outArgs.get_f();
+  if (f != Teuchos::null)
+    f->Export(*f_overlap, *f_exporter, Insert);
 
-	// Diagonal part
-	col = row; 
-	val = 1.0;
-	W_overlap->ReplaceGlobalValues(row, 1, &val, &col);
+  // W
+  Teuchos::RCP<Epetra_Operator> W = outArgs.get_W();
+  if (W != Teuchos::null) {
+    Teuchos::RCP<Epetra_CrsMatrix> W_crs = 
+      Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W, true);
+    W_crs->Export(*W_overlap, *f_exporter, Insert);
+  }
 
-	// dg_2/dp_2 part
-	for (int j=0; j<n_p_B; j++) {
-	  col = n_p_A+j; 
-	  if (dgdp_B_layout == DERIV_MV_BY_COL)
-	    val = -(*dgdp_B)[j][i];
-	  else
-	    val = -(*dgdp_B)[i][j];
-	  W_overlap->ReplaceGlobalValues(row, 1, &val, &col);
-	}
-      }
-      for (int i=0; i<n_p_B; i++) {
-	row = n_p_A + i; 
-
-	// Diagonal part
-	col = row; 
-	val = 1.0;
-	W_overlap->ReplaceGlobalValues(row, 1, &val, &col);
-
-	// dg_1/dp_1 part
-	for (int j=0; j<n_p_A; j++) {
-	  col = j; 
-	  if (dgdp_A_layout == DERIV_MV_BY_COL)
-	    val = -(*dgdp_A)[j][i];
-	  else
-	    val = -(*dgdp_A)[i][j];
-	  W_overlap->ReplaceGlobalValues(row, 1, &val, &col);
-	}
-      }
-      W_crs->Export(*W_overlap, *f_exporter, Insert);
+  // f_sg
+  if (supports_f_sg) {
+    OutArgs::sg_vector_t f_sg = outArgs.get_f_sg();
+    if (f_sg != Teuchos::null) {
+      for (int block=0; block<f_sg->size(); block++)
+	(*f_sg)[block].Export((*f_sg_overlap)[block], *f_exporter, Insert);
     }
   }
 
-  if (do_stochastic) {
-
-    // f_sg
-    if (supports_f_sg) {
-      OutArgs::sg_vector_t f_sg = outArgs.get_f_sg();
-      if (f_sg != Teuchos::null) {
-	for (int block=0; block<f_sg->size(); block++) {
-	  f_overlap->PutScalar(0.0);
-	  for (int i=0; i<n_p_A; i++)
-	    (*f_overlap)[i]       = (*p_A_sg)[block][i] - (*g_B_sg)[block][i];
-	  for (int i=0; i<n_p_B; i++)
-	    (*f_overlap)[i+n_p_A] = (*p_B_sg)[block][i] - (*g_A_sg)[block][i];
-	  (*f_sg)[block].Export(*f_overlap, *f_exporter, Insert);
-	}
-      }
-    }
-
-    // W_sg
-    if (supports_W_sg) {
-      OutArgs::sg_operator_t W_sg = outArgs.get_W_sg();
-      if (W_sg != Teuchos::null) {
-	for (int block=0; block<W_sg->size(); block++) {
-	  Teuchos::RCP<Epetra_CrsMatrix> W_crs = 
-	    Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_sg->getCoeffPtr(block), true);
-	  W_overlap->PutScalar(0.0);
-	  int row, col;
-	  double val;
-	  for (int i=0; i<n_p_A; i++) {
-	    row = i; 
-
-	    // Diagonal part
-	    if (block == 0) {
-	      col = row; 
-	      val = 1.0;
-	      W_overlap->ReplaceGlobalValues(row, 1, &val, &col);
-	    }
-
-	    // dg_2/dp_2 part
-	    for (int j=0; j<n_p_B; j++) {
-	      col = n_p_A+j; 
-	      if (dgdp_B_layout == DERIV_MV_BY_COL)
-		val = -(*dgdp_B_sg)[block][j][i];
-	      else
-		val = -(*dgdp_B_sg)[block][i][j];
-	      W_overlap->ReplaceGlobalValues(row, 1, &val, &col);
-	    }
-	  }
-	  for (int i=0; i<n_p_B; i++) {
-	    row = n_p_A + i; 
-	    
-	    // Diagonal part
-	    if (block == 0) {
-	      col = row; 
-	      val = 1.0;
-	      W_overlap->ReplaceGlobalValues(row, 1, &val, &col);
-	    }
-
-	    // dg_1/dp_1 part
-	    for (int j=0; j<n_p_A; j++) {
-	      col = j; 
-	      if (dgdp_A_layout == DERIV_MV_BY_COL)
-		val = -(*dgdp_A_sg)[block][j][i];
-	      else
-		val = -(*dgdp_A_sg)[block][i][j];
-	      W_overlap->ReplaceGlobalValues(row, 1, &val, &col);
-	    }
-	  }
-	  W_crs->Export(*W_overlap, *f_exporter, Insert);
-	}
+  // W_sg
+  if (supports_W_sg) {
+    OutArgs::sg_operator_t W_sg = outArgs.get_W_sg();
+    if (W_sg != Teuchos::null) {
+      for (int block=0; block<W_sg->size(); block++) {
+	Teuchos::RCP<Epetra_CrsMatrix> W_crs = 
+	  Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(
+	    W_sg->getCoeffPtr(block), true);
+	Teuchos::RCP<Epetra_CrsMatrix> W_overlap_crs = 
+	  Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(
+	    W_sg_overlap->getCoeffPtr(block), true);
+	W_crs->Export(*W_overlap_crs, *f_exporter, Insert);
       }
     }
   }
-}
+  }
+
 
 void
 Piro::Epetra::NECoupledModelEvaluator:: 
@@ -954,86 +827,124 @@ do_dimension_reduction(
   Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > red_basis;
   Teuchos::RCP<const Stokhos::Quadrature<int,double> > red_quad;
   Teuchos::Array<Stokhos::OrthogPolyApprox<int,double> > red_pces;
-  bool orthogonalize_bases = params->get("Orthogonalize Bases", false);
-  int order = basis->order();
-  int new_order = order;
-  if (orthogonalize_bases) {
-    Stokhos::StieltjesGramSchmidtBuilder<int,double> gs_builder(
-      quad, p_opa, new_order, true, false);
-    red_basis = gs_builder.getReducedBasis();
-    red_quad = gs_builder.getReducedQuadrature();
-    red_basis_vals = Teuchos::rcp(&(red_quad->getBasisAtQuadPoints()),false);
-    gs_builder.computeReducedPCEs(p_opa, red_pces);
+  Teuchos::ParameterList& reduct_params = 
+    params->sublist("Dimension Reduction");
+  std::string reduction_method = reduct_params.get("Dimension Reduction Method",
+						   "Tensor Product Stieltjes");
+  if (reduction_method == "Tensor Product Stieltjes") {
+    bool orthogonalize_bases = reduct_params.get("Orthogonalize Bases", false);
+    int order = basis->order();
+    int new_order = reduct_params.get("Reduced Order", -1);
+    if (new_order == -1)
+      new_order = order;
+    if (orthogonalize_bases) {
+      Stokhos::StieltjesGramSchmidtBuilder<int,double> gs_builder(
+	quad, p_opa, new_order, true, false);
+      red_basis = gs_builder.getReducedBasis();
+      red_quad = gs_builder.getReducedQuadrature();
+      red_basis_vals = Teuchos::rcp(&(red_quad->getBasisAtQuadPoints()),false);
+      gs_builder.computeReducedPCEs(p_opa, red_pces);
+    }
+    else {
+      Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double > > >
+	coordinate_bases = basis->getCoordinateBases();
+      Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double > > >
+	new_coordinate_bases(p_opa.size());
+      Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk = 
+	expansion->getTripleProduct();
+      if (st_quad == Teuchos::null) {
+	st_quad = quad;
+	// st_quad =
+	//   Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(
+	// 		 basis, new_order+1));
+      }
+      for (int i=0; i<p_opa.size(); i++) {
+	new_coordinate_bases[i] = Teuchos::rcp(
+	  new Stokhos::StieltjesPCEBasis<int,double>(
+	    new_order, Teuchos::rcp(&(p_opa[i]),false), st_quad, 
+	    false, false, true, Cijk));
+      }
+      Teuchos::RCP<const Stokhos::ProductBasis<int,double> > tensor_basis = 
+	Teuchos::rcp(
+	  new Stokhos::CompletePolynomialBasis<int,double>(new_coordinate_bases)
+	  );
+      red_basis = tensor_basis;
+      if (red_basis->dimension() <= 3)
+	red_quad = 
+	  Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(
+			 tensor_basis));
+      else
+#ifdef HAVE_STOKHOS_DAKOTA
+	red_quad = 
+	  Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(
+			 tensor_basis, new_order));
+#else
+      red_quad = 
+	Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(
+		       tensor_basis));
+#endif
+      const Teuchos::Array< Teuchos::Array<double> >& points = 
+	quad->getQuadPoints();
+      const Teuchos::Array< Teuchos::Array<double> >& basis_vals = 
+	quad->getBasisAtQuadPoints();
+      int nqp = points.size();
+      Teuchos::Array<double> p_opa_val(p_opa.size());
+      Teuchos::RCP< Teuchos::Array< Teuchos::Array<double> > > ncred_basis_vals
+	= Teuchos::rcp(new Teuchos::Array< Teuchos::Array<double> >(nqp));
+      for (int i=0; i<nqp; i++) {
+	for (int j=0; j<p_opa_val.size(); j++)
+	  p_opa_val[j] = p_opa[j].evaluate(points[i], basis_vals[i]);
+	(*ncred_basis_vals)[i].resize(red_basis->size());
+	red_basis->evaluateBases(p_opa_val, (*ncred_basis_vals)[i]);
+      }
+      red_basis_vals = ncred_basis_vals;
+      red_pces.resize(p_opa.size());
+      for (int k=0; k<p_opa.size(); k++) {
+	red_pces[k].reset(red_basis);
+	red_pces[k].term(k, 0) = p_opa[k].mean();
+	red_pces[k].term(k, 1) = 1.0; 
+      }
+    }
   }
-  else {
-    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double > > >
-      coordinate_bases = basis->getCoordinateBases();
-    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double > > >
-      new_coordinate_bases(p_opa.size());
-    Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk = 
-      expansion->getTripleProduct();
+  else if (reduction_method == "Gram-Schmidt QR") {
+    int order = basis->order();
+    int new_order = reduct_params.get("Reduced Order", -1);
+    if (new_order == -1)
+      new_order = order;
     if (st_quad == Teuchos::null) {
       st_quad = quad;
       // st_quad =
       //   Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(
       // 		 basis, new_order+1));
+      // st_quad =
+      //   Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(
+      // 		 basis, 4*new_order+1));
+      // std::cout << "st_quad->size() = " << st_quad->size() << std::endl;
     }
-    for (int i=0; i<p_opa.size(); i++) {
-      new_coordinate_bases[i] = Teuchos::rcp(
-	new Stokhos::StieltjesPCEBasis<int,double>(
-	  new_order, Teuchos::rcp(&(p_opa[i]),false), st_quad, 
-	  false, false, true, Cijk));
-    }
-    Teuchos::RCP<const Stokhos::ProductBasis<int,double> > tensor_basis = 
-      Teuchos::rcp(
-	new Stokhos::CompletePolynomialBasis<int,double>(new_coordinate_bases)
-	);
-    red_basis = tensor_basis;
-    if (red_basis->dimension() <= 3)
-      red_quad = 
-	Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(
-		       tensor_basis));
-    else
-#ifdef HAVE_STOKHOS_DAKOTA
-      red_quad = 
-	Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(
-		       tensor_basis, new_order));
-#else
-    red_quad = 
-      Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(
-		     tensor_basis));
-#endif
-    const Teuchos::Array< Teuchos::Array<double> >& points = 
-      quad->getQuadPoints();
-    const Teuchos::Array< Teuchos::Array<double> >& basis_vals = 
-      quad->getBasisAtQuadPoints();
-    int nqp = points.size();
-    Teuchos::Array<double> p_opa_val(p_opa.size());
-    Teuchos::RCP< Teuchos::Array< Teuchos::Array<double> > > ncred_basis_vals
-      = Teuchos::rcp(new Teuchos::Array< Teuchos::Array<double> >(nqp));
-    for (int i=0; i<nqp; i++) {
-      for (int j=0; j<p_opa_val.size(); j++)
-	p_opa_val[j] = p_opa[j].evaluate(points[i], basis_vals[i]);
-      (*ncred_basis_vals)[i].resize(red_basis->size());
-      red_basis->evaluateBases(p_opa_val, (*ncred_basis_vals)[i]);
-    }
-    red_basis_vals = ncred_basis_vals;
+    Teuchos::RCP< Stokhos::MonomialGramSchmidtSimplexPCEBasis<int,double> > gs_basis = 
+      Teuchos::rcp(new Stokhos::MonomialGramSchmidtSimplexPCEBasis<int,double>(
+		     new_order, p_opa, st_quad, reduct_params));
+    red_basis = gs_basis;
+    red_quad = gs_basis->getReducedQuadrature();
     red_pces.resize(p_opa.size());
-    for (int k=0; k<p_opa.size(); k++) {
-      red_pces[k].reset(red_basis);
-      red_pces[k].term(k, 0) = p_opa[k].mean();
-      red_pces[k].term(k, 1) = 1.0; 
+    for (int i=0; i<p_opa.size(); i++) {
+      red_pces[i].reset(red_basis);
+      gs_basis->computeTransformedPCE(i, red_pces[i]);
     }
+    Teuchos::RCP< Teuchos::Array< Teuchos::Array<double> > > ncred_basis_vals
+	= Teuchos::rcp(new Teuchos::Array< Teuchos::Array<double> >);
+    gs_basis->getBasisAtOriginalQuadraturePoints(*ncred_basis_vals);
+    red_basis_vals = ncred_basis_vals;
   }
-
-  Teuchos::RCP<const EpetraExt::MultiComm> multiComm = x_sg->productComm();
     
+  Teuchos::RCP<const EpetraExt::MultiComm> multiComm = x_sg->productComm();
+  
   // Copy into Epetra objects
   int red_sz = red_basis->size();
   Teuchos::RCP<const Epetra_BlockMap> red_overlap_map =
     Teuchos::rcp(new Epetra_LocalMap(red_sz, 0, 
 				     multiComm->TimeDomainComm()));
-
+  
   // p_red
   index = 0;
   for (int i=0; i<solver_inargs.Np(); i++) {
@@ -1050,7 +961,7 @@ do_dimension_reduction(
       reduced_inargs.set_p_sg(i, p_red);
     }
   }
-  
+    
   for (int i=0; i<solver_outargs.Ng(); i++) {
 
     // g_red
@@ -1204,6 +1115,156 @@ do_dimension_projection(
 	    dgdp_red->evaluate((*red_basis_vals)[qp], dgdp_val);
 	    dgdp_sg->sumIntoAllTerms(weights[qp], basis_vals[qp], norms, 
 				     dgdp_val);
+	  }
+	}
+      }
+    }
+  }
+}
+
+
+void 
+Piro::Epetra::ParamToResponseNetworkModel::
+evalModel(
+  const Teuchos::Array<EpetraExt::ModelEvaluator::InArgs>& model_inargs, 
+  const Teuchos::Array<EpetraExt::ModelEvaluator::OutArgs>& model_outargs,
+  const EpetraExt::ModelEvaluator::InArgs& network_inargs, 
+  const EpetraExt::ModelEvaluator::OutArgs& network_outargs,
+  const Teuchos::Array<int>& n_p,
+  const Teuchos::Array<int>& n_g,
+  const Teuchos::Array< Teuchos::RCP<Epetra_Vector> >& p,
+  const Teuchos::Array< Teuchos::RCP<Epetra_Vector> >& g,
+  const Teuchos::Array< Teuchos::RCP<Epetra_MultiVector> >& dgdp,
+  const Teuchos::Array<EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation >& dgdp_layout,
+  const Teuchos::Array<EpetraExt::ModelEvaluator::OutArgs::sg_vector_t>& p_sg,
+  const Teuchos::Array<EpetraExt::ModelEvaluator::OutArgs::sg_vector_t>& g_sg,
+  const Teuchos::Array<Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> >& dgdp_sg,
+  const Teuchos::Array<EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation>& dgdp_sg_layout) const
+{
+
+  // f
+  Teuchos::RCP<Epetra_Vector> f = network_outargs.get_f();
+  if (f != Teuchos::null) {
+    f->PutScalar(0.0);
+    for (int i=0; i<n_p[0]; i++)
+      (*f)[i]        = (*p[0])[i] - (*g[1])[i];
+    for (int i=0; i<n_p[1]; i++)
+      (*f)[i+n_p[0]] = (*p[1])[i] - (*g[0])[i];
+  }
+
+  // W
+  Teuchos::RCP<Epetra_Operator> W = network_outargs.get_W();
+  if (W != Teuchos::null) {
+    Teuchos::RCP<Epetra_CrsMatrix> W_crs = 
+      Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W, true);
+    W_crs->PutScalar(0.0);
+    int row, col;
+    double val;
+    for (int i=0; i<n_p[0]; i++) {
+      row = i; 
+      
+      // Diagonal part
+      col = row; 
+      val = 1.0;
+      W_crs->ReplaceGlobalValues(row, 1, &val, &col);
+      
+      // dg_2/dp_2 part
+      for (int j=0; j<n_p[1]; j++) {
+	col = n_p[0]+j; 
+	if (dgdp_layout[1] == EpetraExt::ModelEvaluator::DERIV_MV_BY_COL)
+	  val = -(*dgdp[1])[j][i];
+	else
+	  val = -(*dgdp[1])[i][j];
+	W_crs->ReplaceGlobalValues(row, 1, &val, &col);
+      }
+    }
+    for (int i=0; i<n_p[1]; i++) {
+      row = n_p[0] + i; 
+      
+      // Diagonal part
+      col = row; 
+      val = 1.0;
+      W_crs->ReplaceGlobalValues(row, 1, &val, &col);
+      
+      // dg_1/dp_1 part
+      for (int j=0; j<n_p[0]; j++) {
+	col = j; 
+	if (dgdp_layout[0] == EpetraExt::ModelEvaluator::DERIV_MV_BY_COL)
+	  val = -(*dgdp[0])[j][i];
+	else
+	  val = -(*dgdp[0])[i][j];
+	W_crs->ReplaceGlobalValues(row, 1, &val, &col);
+      }
+    }
+  }
+
+  // f_sg
+  if (network_outargs.supports(EpetraExt::ModelEvaluator::OUT_ARG_f_sg)) {
+    EpetraExt::ModelEvaluator::OutArgs::sg_vector_t f_sg = 
+      network_outargs.get_f_sg();
+    if (f_sg != Teuchos::null) {
+      f_sg->init(0.0);
+      for (int block=0; block<f_sg->size(); block++) {
+	for (int i=0; i<n_p[0]; i++)
+	  (*f_sg)[block][i] = 
+	    (*p_sg[0])[block][i] - (*g_sg[1])[block][i];
+	for (int i=0; i<n_p[1]; i++)
+	  (*f_sg)[block][i+n_p[0]] = 
+	    (*p_sg[1])[block][i] - (*g_sg[0])[block][i];
+      }
+    }
+  }
+  
+  // W_sg
+  if (network_outargs.supports(EpetraExt::ModelEvaluator::OUT_ARG_W_sg)) {
+    EpetraExt::ModelEvaluator::OutArgs::sg_operator_t W_sg = 
+      network_outargs.get_W_sg();
+    if (W_sg != Teuchos::null) {
+      for (int block=0; block<W_sg->size(); block++) {
+	Teuchos::RCP<Epetra_CrsMatrix> W_crs = 
+	  Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_sg->getCoeffPtr(block), 
+						      true);
+	W_crs->PutScalar(0.0);
+	int row, col;
+	double val;
+	for (int i=0; i<n_p[0]; i++) {
+	  row = i; 
+	  
+	  // Diagonal part
+	  if (block == 0) {
+	    col = row; 
+	    val = 1.0;
+	    W_crs->ReplaceGlobalValues(row, 1, &val, &col);
+	  }
+	  
+	  // dg_2/dp_2 part
+	  for (int j=0; j<n_p[1]; j++) {
+	    col = n_p[0]+j; 
+	    if (dgdp_layout[1] == EpetraExt::ModelEvaluator::DERIV_MV_BY_COL)
+	      val = -(*dgdp_sg[1])[block][j][i];
+	    else
+	      val = -(*dgdp_sg[1])[block][i][j];
+	    W_crs->ReplaceGlobalValues(row, 1, &val, &col);
+	  }
+	}
+	for (int i=0; i<n_p[1]; i++) {
+	  row = n_p[0] + i; 
+	  
+	  // Diagonal part
+	  if (block == 0) {
+	    col = row; 
+	    val = 1.0;
+	    W_crs->ReplaceGlobalValues(row, 1, &val, &col);
+	  }
+	  
+	  // dg_1/dp_1 part
+	  for (int j=0; j<n_p[0]; j++) {
+	    col = j; 
+	    if (dgdp_layout[0] == EpetraExt::ModelEvaluator::DERIV_MV_BY_COL)
+	      val = -(*dgdp_sg[0])[block][j][i];
+	    else
+	      val = -(*dgdp_sg[0])[block][i][j];
+	    W_crs->ReplaceGlobalValues(row, 1, &val, &col);
 	  }
 	}
       }

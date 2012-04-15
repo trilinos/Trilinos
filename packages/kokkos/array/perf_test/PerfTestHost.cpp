@@ -43,30 +43,41 @@
 
 #include <gtest/gtest.h>
 
+#include <Kokkos_MDArray.hpp>
+#include <Kokkos_MultiVector.hpp>
+#include <Kokkos_Value.hpp>
 
-#include <Kokkos_DeviceHost.hpp>
-#include <Kokkos_DeviceHost_MDArrayView.hpp>
-#include <Kokkos_DeviceHost_MultiVectorView.hpp>
-#include <Kokkos_DeviceHost_ValueView.hpp>
-#include <Kokkos_DeviceHost_ParallelFor.hpp>
-#include <Kokkos_DeviceHost_ParallelReduce.hpp>
+#include <Kokkos_Host.hpp>
 
-#include <Kokkos_DeviceHost_macros.hpp>
+#include <Kokkos_Host_macros.hpp>
 #include <PerfTestHexGrad.hpp>
 #include <PerfTestGramSchmidt.hpp>
 #include <PerfTestDriver.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
 
 //------------------------------------------------------------------------
 
 namespace Test {
 
-TEST( host, hexgrad ) {
-  EXPECT_NO_THROW(run_test_hexgrad< Kokkos::DeviceHost>( 10, 20 ));
+class host : public ::testing::Test {
+protected:
+  static void SetUpTestCase()
+  {
+    Kokkos::Host::initialize( Kokkos::Host::SetThreadCount( 8 ) );
+  }
+  
+  static void TearDownTestCase()
+  { 
+    Kokkos::Host::finalize();
+  }
+};
+
+TEST_F( host, hexgrad ) {
+  EXPECT_NO_THROW(run_test_hexgrad< Kokkos::Host>( 10, 20 ));
 }
 
-TEST( host, gramschmidt ) {
-  EXPECT_NO_THROW(run_test_gramschmidt< Kokkos::DeviceHost>( 10, 20 ));
+TEST_F( host, gramschmidt ) {
+  EXPECT_NO_THROW(run_test_gramschmidt< Kokkos::Host>( 10, 20 ));
 }
 
 } // namespace Test

@@ -44,3 +44,9 @@
 
 /* Define if Thrust is enabled */
 #cmakedefine HAVE_STOKHOS_THRUST
+
+/* Define if Clp is enabled */
+#cmakedefine HAVE_STOKHOS_CLP
+
+/* Define if GLPK is enabled */
+#cmakedefine HAVE_STOKHOS_GLPK

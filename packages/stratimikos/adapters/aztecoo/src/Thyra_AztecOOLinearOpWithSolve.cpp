@@ -179,17 +179,17 @@ namespace Thyra {
 
 
 AztecOOLinearOpWithSolve::AztecOOLinearOpWithSolve(
-  const int fwdDefaultMaxIterations
-  ,const double fwdDefaultTol
-  ,const int adjDefaultMaxIterations
-  ,const double adjDefaultTol
-  ,const bool outputEveryRhs
+  const int fwdDefaultMaxIterations_in
+  ,const double fwdDefaultTol_in
+  ,const int adjDefaultMaxIterations_in
+  ,const double adjDefaultTol_in
+  ,const bool outputEveryRhs_in
   )
-  :fwdDefaultMaxIterations_(fwdDefaultMaxIterations)
-  ,fwdDefaultTol_(fwdDefaultTol)
-  ,adjDefaultMaxIterations_(adjDefaultMaxIterations)
-  ,adjDefaultTol_(adjDefaultTol)
-  ,outputEveryRhs_(outputEveryRhs)
+  :fwdDefaultMaxIterations_(fwdDefaultMaxIterations_in)
+  ,fwdDefaultTol_(fwdDefaultTol_in)
+  ,adjDefaultMaxIterations_(adjDefaultMaxIterations_in)
+  ,adjDefaultTol_(adjDefaultTol_in)
+  ,outputEveryRhs_(outputEveryRhs_in)
   ,isExternalPrec_(false)
   ,allowInexactFwdSolve_(false)
   ,allowInexactAdjSolve_(false)
@@ -201,7 +201,7 @@ void AztecOOLinearOpWithSolve::initialize(
   const RCP<const LinearOpBase<double> > &fwdOp
   ,const RCP<const LinearOpSourceBase<double> > &fwdOpSrc
   ,const RCP<const PreconditionerBase<double> > &prec
-  ,const bool isExternalPrec
+  ,const bool isExternalPrec_in
   ,const RCP<const LinearOpSourceBase<double> > &approxFwdOpSrc
   ,const RCP<AztecOO> &aztecFwdSolver
   ,const bool allowInexactFwdSolve
@@ -217,7 +217,7 @@ void AztecOOLinearOpWithSolve::initialize(
 #endif
   fwdOp_ = fwdOp;
   fwdOpSrc_ = fwdOpSrc;
-  isExternalPrec_ = isExternalPrec;
+  isExternalPrec_ = isExternalPrec_in;
   prec_ = prec;
   approxFwdOpSrc_ = approxFwdOpSrc;
   aztecFwdSolver_ = aztecFwdSolver;
@@ -271,7 +271,7 @@ void AztecOOLinearOpWithSolve::uninitialize(
   RCP<const LinearOpBase<double> > *fwdOp,
   RCP<const LinearOpSourceBase<double> > *fwdOpSrc,
   RCP<const PreconditionerBase<double> > *prec,
-  bool *isExternalPrec,
+  bool *isExternalPrec_inout,
   RCP<const LinearOpSourceBase<double> > *approxFwdOpSrc,
   RCP<AztecOO> *aztecFwdSolver,
   bool *allowInexactFwdSolve,
@@ -283,7 +283,7 @@ void AztecOOLinearOpWithSolve::uninitialize(
   if (fwdOp) *fwdOp = fwdOp_;
   if (fwdOpSrc) *fwdOpSrc = fwdOpSrc_;
   if (prec) *prec = prec_;
-  if (isExternalPrec) *isExternalPrec = isExternalPrec_;
+  if (isExternalPrec_inout) *isExternalPrec_inout = isExternalPrec_;
   if (approxFwdOpSrc) *approxFwdOpSrc = approxFwdOpSrc_;
   if (aztecFwdSolver) *aztecFwdSolver = aztecFwdSolver_;
   if (allowInexactFwdSolve) *allowInexactFwdSolve = allowInexactFwdSolve_;

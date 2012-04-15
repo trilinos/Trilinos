@@ -1649,7 +1649,7 @@ def checkinTest(baseDir, inOptions, configuration={}):
         "cmake",
         "-DPROJECT_NAME=%s" % inOptions.projectName,
         cmakeDefine(inOptions.projectName, "TRIBITS_DIR", inOptions.srcDir + "/cmake/tribits"),
-        cmakeDefine(inOptions.projectName, "DEPS_HOME_DIR", inOptions.srcDir),
+        "-DPROJECT_SOURCE_DIR="+inOptions.srcDir,
         cmakeDefine(inOptions.projectName, "OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR", baseTestDir),
         cmakeDefine(inOptions.projectName, "EXTRA_REPOSITORIES", inOptions.extraRepos),
         "-P %s/cmake/tribits/package_arch/TribitsDumpDepsXmlScript.cmake" % inOptions.srcDir,

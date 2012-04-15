@@ -168,7 +168,6 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    /* find out about how much memory to allocate for the matrix     */
    /* ------------------------------------------------------------- */
 
-   true_bdry = ML_Operator_IdentifyDirichletRows(Amatrix);
    ML_Operator_Get_Diag(Amatrix,Amatrix->outvec_leng,&diagonal);
    nz_cnt = ML_Operator_ComputeNumNzs(Amatrix);
 
@@ -361,6 +360,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 				   Amatrix->outvec_leng,NULL,0);
      ML_Operator_Set_Getrow(Cmatrix, Cmatrix->outvec_leng, 
 			    MSR_get_ones_rows);
+     true_bdry = ML_Operator_IdentifyDirichletRows(Cmatrix);
      ML_Aggregate_CoarsenUncoupledCore(ml_ag,comm,Cmatrix,mat_indx,
 				       bdry_array, &aggr_count, &aggr_index, true_bdry);
    }
@@ -370,7 +370,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
      ML_Operator_Set_ApplyFuncData(Cmatrix,nvblocks, nvblocks, 
 				   csr_data, nvblocks, NULL,0);
      ML_Operator_Set_Getrow(Cmatrix, nvblocks, MSR_get_ones_rows);
-
+     true_bdry = ML_Operator_IdentifyDirichletRows(Cmatrix);
      ML_Aggregate_CoarsenUncoupledCore(ml_ag,comm,Cmatrix,amal_mat_indx,
 				       bdry_array, &aggr_count, &aggr_index, true_bdry);
 #ifdef ML_AGGR_INAGGR
@@ -1282,6 +1282,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
       printf("Aggregation(UC) : Phase 1 - total aggregates = %d \n",j);
    }
 #ifdef newstuff
+
    ML_Aggregate_Phase2_3_Cleanup(ml_ag, Amat, &aggr_count, Nrows, aggr_index,
    				   Nrows, comm, true_bdry, "UC_Phase2_3",NULL);
 #else

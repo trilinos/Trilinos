@@ -56,29 +56,13 @@ namespace Stokhos {
     //! Constructor
     AlgebraicOrthogPolyExpansion(
       const Teuchos::RCP<const OrthogPolyBasis<ordinal_type, value_type> >& basis,
-      const Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk);
+      const Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk,
+      const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     //! Destructor
     virtual ~AlgebraicOrthogPolyExpansion() {}
  
     // Operations
-    void divideEqual(
-      OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-      const value_type& x);
-    void divideEqual(
-      OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-      const OrthogPolyApprox<ordinal_type, value_type, node_type>& x);
-
-    void divide(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-                const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
-                const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
-    void divide(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-                const value_type& a, 
-                const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
-    void divide(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
-                const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
-                const value_type& b);
-
     void exp(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
              const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
     void log(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 

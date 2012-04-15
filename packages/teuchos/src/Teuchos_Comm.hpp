@@ -45,12 +45,45 @@
 #include "Teuchos_ReductionOp.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 
+
 namespace Teuchos {
 
-
-/** \brief . */
+/// \class CommRequest
+/// \brief Encapsulation of MPI_Request.
+///
+/// An MPI_Request encapsulates the result of a nonblocking MPI send
+/// or receive (which we in turn encapsulate by \c isend() resp. \c
+/// ireceive()).  This class in turn wraps MPI_Request.
+///
+/// This is an opaque object which is meant to be given to \c wait()
+/// or \c waitall().
 class CommRequest : public Teuchos::Describable {};
 
+/// \class CommStatus
+/// \brief Encapsulation of MPI_Status.
+///
+/// This interface encapsulates the result of a receive (the \c
+/// MPI_Status struct).  Its main use is to figure out which process
+/// sent you a message, if you received it using \c MPI_ANY_SOURCE.
+///
+/// \tparam OrdinalType The same template parameter as \c Comm.  Only
+///   use \c int here.  We only make this a template class for
+///   compatibility with \c Comm.
+///
+/// \note For now, this class only exposes the rank of the process
+///   that sent the message (the "source rank").  Later, we might
+///   expose other fields of \c MPI_Status in this interface.  For
+///   now, you can attempt a dynamic cast to \c MpiCommStatus to
+///   access all three fields (MPI_SOURCE, MPI_TAG, and MPI_ERROR).
+template<class OrdinalType>
+class CommStatus {
+public:
+  //! Destructor (declared virtual for memory safety)
+  virtual ~CommStatus() {}
+
+  //! The source rank that sent the message.
+  virtual OrdinalType getSourceRank () = 0;
+};
 
 /** \brief Abstract interface class for a basic communication channel between
  * one or more processes.
@@ -214,7 +247,11 @@ public:
   //! @name Blocking Point-to-Point Operations 
   //@{
 
-  /** \brief Blocking send of data from this process to another process.
+  /** \brief Possibly blocking send of data from this process to another process.
+   *
+   * This routine does not return until you can reuse the send buffer.
+   * Whether this routine blocks depends on whether the MPI
+   * implementation buffers.
    *
    * \param bytes [in] The number of bytes of data being passed between
    * processes.
@@ -233,6 +270,30 @@ public:
   virtual void send(
     const Ordinal bytes, const char sendBuffer[], const int destRank
     ) const = 0;
+
+  /** \brief Always blocking send of data from this process to another process.
+   *
+   * This routine blocks until the matching receive posts.  After it
+   * returns, you are allowed to reuse the send buffer.
+   *
+   * \param bytes [in] The number of bytes of data being passed between
+   * processes.
+   *
+   * \param sendBuffer [in] Array (length <tt>bytes</tt>) of data being sent
+   * from this process.  This buffer can be immediately destroyed or reused as
+   * soon as the function exits (that is why this function is "blocking").
+   *
+   * \param destRank [in] The rank of the process to receive the data.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>0 <= destRank && destRank < this->getSize()</tt>
+   * <li><tt>destRank != this->getRank()</tt>
+   * </ul>
+   */
+  virtual void ssend(
+    const Ordinal bytes, const char sendBuffer[], const int destRank
+    ) const = 0;
+
 
   /** \brief Blocking receive of data from this process to another process.
    *
@@ -320,7 +381,7 @@ public:
     ) const = 0;
 
 
-  /** \brief Wait on a set of communication request.
+  /** \brief Wait on a set of communication requests.
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>requests.size() > 0</tt>
@@ -334,21 +395,52 @@ public:
     const ArrayView<RCP<CommRequest> > &requests
     ) const = 0;
 
+  /// \brief Wait on communication requests, and return their statuses.
+  /// 
+  /// \pre requests.size() == statuses.size()
+  ///
+  /// \pre For i in 0, 1, ..., requests.size()-1, requests[i] is
+  ///   either null or requests[i] was returned by an ireceive() or
+  ///   isend().
+  ///
+  /// \post For i in 0, 1, ..., requests.size()-1,
+  ///   requests[i].is_null() is true.
+  ///
+  /// \param requests [in/out] On input: the requests on which to
+  ///   wait.  On output: all set to null.
+  ///
+  /// \param statuses [out] The status results of waiting on the
+  ///   requests.
+  virtual void 
+  waitAll (const ArrayView<RCP<CommRequest> >& requests,
+	   const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const = 0;
 
-  /** \brief Wait on a single communication request.
-   *
-   * <b>Preconditions:</b><ul>
-   * <li> <tt>!is_null(request))</tt>
-   * </ul>
-   *
-   * <b>Postconditions:</b><ul>
-   * <li> <tt>is_null(*request))</tt>
-   * </ul>
-   */
-  virtual void wait(
-    const Ptr<RCP<CommRequest> > &request
-    ) const = 0;
-
+  /// \brief Wait on a single communication request, and return its status.
+  ///
+  /// \param request [in/out] On input: request is not null, and
+  /// *request is either null (in which case this function does
+  /// nothing and returns null) or an RCP of a valid CommRequest
+  /// instance representing an outstanding communication request.  On
+  /// output: If the communication request completed successfully, we
+  /// set *request to null, indicating that the request has completed.
+  /// (This helps prevent common bugs like trying to complete the same
+  /// request twice.)
+  ///
+  /// \return If *request is null, this method returns null.
+  /// Otherwise this method returns a \c CommStatus instance
+  /// representing the result of completing the request.  In the case
+  /// of a nonblocking receive request, you can query the \c
+  /// CommStatus instance for the process ID of the sending process.
+  /// (This is useful for receiving from any process via \c
+  /// MPI_ANY_SOURCE.)
+  /// 
+  /// \pre !is_null(request) (that is, the Ptr is not null).
+  /// \post is_null(*request) (that is, the RCP is null).
+  ///
+  /// This function blocks until the communication operation
+  /// associated with the CommRequest object has completed.
+  virtual RCP<CommStatus<Ordinal> > 
+  wait (const Ptr<RCP<CommRequest> >& request) const = 0;
 
   //@}
 
@@ -411,12 +503,13 @@ public:
    *
    * \return A new communicator.
    */
-  virtual RCP< Comm > createSubcommunicator(const std::vector<int>& ranks) const = 0;
+  virtual RCP<Comm> createSubcommunicator(
+    const ArrayView<const int>& ranks) const = 0;
 
   //@}
-	
+  
 }; // class Comm
-
+  
 } // namespace Teuchos
 
 #endif // TEUCHOS_COMM_HPP

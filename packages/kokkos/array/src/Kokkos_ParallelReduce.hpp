@@ -46,7 +46,6 @@
 
 #include <cstddef>
 
-#include <Kokkos_ValueView.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
 namespace Kokkos {
@@ -82,7 +81,9 @@ parallel_reduce( const size_t work_count ,
                  const FunctorType & functor )
 {
   typedef typename FunctorType::device_type device_type ;
-  typename FunctorType::value_type result ;
+  typedef typename FunctorType::value_type  value_type ;
+
+  value_type result ;
 
   Impl::ParallelReduce< FunctorType , FunctorType , void , device_type >
     ::execute( work_count , functor , result );

@@ -183,8 +183,10 @@ void MpiReductionOp<Ordinal>::reduce(
   //TEUCHOS_TEST_FOR_EXCEPT(!(*datatype==MPI_CHAR));
   // We also allow datatypes that are blocks of chars!
 #endif
+  int sz;
+  MPI_Type_size(*datatype, &sz);
   reductOp_->reduce(
-    *len,reinterpret_cast<char*>(invec),reinterpret_cast<char*>(inoutvec)
+    *len*sz,reinterpret_cast<char*>(invec),reinterpret_cast<char*>(inoutvec)
     );
 }
 

@@ -171,6 +171,7 @@ int Zoltan_Color_Test(
       goto End;
   }
 
+KDDKDDKDD(zz->Proc, "COLORTEST DD");
   /* Exchange global color information */
   if (vtxdist[zz->Num_Proc] && !(color = (int *) ZOLTAN_CALLOC(vtxdist[zz->Num_Proc], sizeof(int))))
       MEMORY_ERROR;
@@ -185,7 +186,7 @@ int Zoltan_Color_Test(
       global_GNOs[i] = i;
 
   ierr = Zoltan_DD_Create (&dd_color, zz->Communicator, 
-                           sizeof(ZOLTAN_GNO_TYPE)/sizeof(ZOLTAN_ID_TYPE), 0, 0, 0, 0);
+                           sizeof(ZOLTAN_GNO_TYPE)/sizeof(ZOLTAN_ID_TYPE), 0, 0, num_obj, 0);
   if (ierr != ZOLTAN_OK)
       ZOLTAN_COLOR_ERROR(ierr, "Cannot construct DDirectory.");
   /* Put req obs with 1 but first inialize the rest with 0 */
@@ -208,6 +209,7 @@ int Zoltan_Color_Test(
   ZOLTAN_FREE(&local_GNOs);
   ZOLTAN_FREE(&global_GNOs);
 
+KDDKDDKDD(zz->Proc, "COLORTEST CHECK");
 
   if (coloring_problem == 'P' || coloring_problem == '2') {
       if (vtxdist[zz->Num_Proc] && !(partialD2 = (int *) ZOLTAN_CALLOC(vtxdist[zz->Num_Proc], sizeof(int))))
@@ -287,6 +289,7 @@ int Zoltan_Color_Test(
       ZOLTAN_COLOR_ERROR(ZOLTAN_WARN, "Zoltan_Color_Test is only implemented for distance-1 and distance-2 coloring. Unknown coloring, skipping verification.");      
   
  End:
+KDDKDDKDD(zz->Proc, "COLORTEST DONE");
   if (ierr==ZOLTAN_FATAL)
       ierr = 2;
   MPI_Allreduce(&ierr, &ferr, 1, MPI_INT, MPI_MAX, zz->Communicator);

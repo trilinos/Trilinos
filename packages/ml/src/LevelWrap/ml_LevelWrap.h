@@ -77,7 +77,7 @@ namespace ML_Epetra
     //@}
 
     
-    //@{ \name Atribute access functions
+    //@{ \name Attribute access functions
 
     // Manually set the A1 operator
     //    void SetA1(Teuchos::RCP<Epetra_Operator> A1){A1_=A1;}

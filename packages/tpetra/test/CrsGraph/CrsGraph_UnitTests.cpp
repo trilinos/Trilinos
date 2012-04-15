@@ -132,7 +132,7 @@ namespace {
     clp.setOption(
         "test-mpi", "test-serial", &testMpi,
         "Test MPI (if available) or force test of serial.  In a serial build,"
-        " this option is ignord and a serial comm is always used." );
+        " this option is ignored and a serial comm is always used." );
     clp.setOption(
         "error-tol-slack", &errorTolSlack,
         "Slack off of machine epsilon used to check test results" );
@@ -167,16 +167,16 @@ namespace {
     RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,numLocal,comm);
     {
       // bad constructor
-      TEST_THROW( GRAPH badgraph(map,INVALID), std::runtime_error ); // allocation hint must be >= 0
+      TEST_THROW( GRAPH badgraph(map,INVALID), std::invalid_argument ); // allocation hint must be >= 0
     }
     {
       // bad constructor
       ArrayRCP<size_t> hints = arcp<size_t>(numLocal+1);
       std::fill(hints.begin(),hints.end(),1);
       hints[0] = INVALID;
-      TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal+1)), std::runtime_error ); // too many
-      TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal-1)), std::runtime_error ); // too few
-      TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal)),   std::runtime_error ); // too few
+      TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal+1)), std::invalid_argument ); // too many entries
+      TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal-1)), std::invalid_argument ); // too few entries
+      TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal)),   std::invalid_argument ); // invalid value
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;

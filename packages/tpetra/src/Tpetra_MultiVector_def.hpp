@@ -256,12 +256,20 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::checkSizes(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> &sourceObj) 
+  bool 
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  checkSizes(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> &sourceObj) 
   {
-    const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A = dynamic_cast<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(sourceObj);
-    // objects maps have already been checked. simply check the number of vectors.
-    bool compat = (A.getNumVectors() == this->getNumVectors());
-    return compat;
+    typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+    // rcp_dynamic_cast gives us superior cast failure output to dynamic_cast.
+    Teuchos::RCP<const MV> A = Teuchos::rcp_dynamic_cast<const MV> (Teuchos::rcpFromRef (sourceObj), true);
+
+    // This method is called in DistObject::doTransfer().  By that
+    // point, we've already constructed an Import or Export object
+    // using the two multivectors' Maps, which means that (hopefully)
+    // we've already checked other attributes of the multivectors.
+    // Thus, all we need to do here is check the number of columns.
+    return (A->getNumVectors() == this->getNumVectors());
   }
 
 
@@ -278,17 +286,31 @@ namespace Tpetra {
     // any other error will be caught by Teuchos
     TEUCHOS_TEST_FOR_EXCEPTION(permuteToLIDs.size() != permuteFromLIDs.size(), std::runtime_error,
         "Tpetra::MultiVector::copyAndPermute(): permuteToLIDs and permuteFromLIDs must have the same size.");
-    // one vector at a time
     Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
     const size_t numCols = getNumVectors();
-    // Get a host view of the local multivector data.
+
+    // Copy the vectors one at a time.  This works whether or not the
+    // multivectors have constant stride.
     for (size_t j = 0; j < numCols; ++j) {
-      // The first numImportIDs GIDs are the same between source and target,
-      // We can just copy them
+      // Get host views of the current source and destination column.
+      //
+      // FIXME (mfh 10 Mar 2012) Copying should really be done on the
+      // device.  There's no need to bring everything back to the
+      // host, copy there, and then copy back.
       ArrayRCP<const Scalar> srcptr = sourceMV.getSubArrayRCP(sourceMV.cview_,j);
       ArrayRCP<      Scalar> dstptr =          getSubArrayRCP(ncview_,j);
+
+      // The first numImportIDs IDs are the same between source and
+      // target, so we can just copy the data.  (This favors faster
+      // contiguous access whenever we can do it.)
       std::copy(srcptr,srcptr+numSameIDs,dstptr);
-      // next, do permutations
+
+      // For the remaining GIDs, execute the permutations.  This may
+      // involve noncontiguous access of both source and destination
+      // vectors, depending on the LID lists.
+      //
+      // FIXME (mfh 09 Apr 2012) Permutation should be done on the
+      // device, not on the host.
       for (pTo = permuteToLIDs.begin(), pFrom = permuteFromLIDs.begin();
            pTo != permuteToLIDs.end(); ++pTo, ++pFrom) {
         dstptr[*pTo] = srcptr[*pFrom];
@@ -304,29 +326,38 @@ namespace Tpetra {
           Teuchos::Array<Scalar> &exports,
           const Teuchos::ArrayView<size_t> &numExportPacketsPerLID,
           size_t& constantNumPackets,
-          Distributor & /* distor */ ) {
-    const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &sourceMV = dynamic_cast<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &>(sourceObj);
+          Distributor & /* distor */ ) 
+  {
+    using Teuchos::as;
+    using Teuchos::Array;
     using Teuchos::ArrayView;
     using Teuchos::ArrayRCP;
+    typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+
+    const MV& sourceMV = dynamic_cast<const MV&> (sourceObj);
+
     /* The layout in the export for MultiVectors is as follows:
        exports = { all of the data from row exportLIDs.front() ; 
                    ....
                    all of the data from row exportLIDs.back() }
-      this doesn't have the best locality, but is necessary because the data for a Packet
-      (all data associated with an LID) is required to be contiguous */
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<int>(numExportPacketsPerLID.size()) != exportLIDs.size(), std::runtime_error,
-        "Tpetra::MultiVector::packAndPrepare(): size of numExportPacketsPerLID buffer should be the same as exportLIDs.");
-    const KMV &srcData = sourceMV.lclMV_;
-    const size_t numCols = sourceMV.getNumVectors(),
-                  stride = MVT::getStride(srcData);
+      This doesn't have the best locality, but is necessary because
+      the data for a Packet (all data associated with an LID) is
+      required to be contiguous. */
+    TEUCHOS_TEST_FOR_EXCEPTION(as<int> (numExportPacketsPerLID.size ()) != exportLIDs.size (), 
+      std::runtime_error, "Tpetra::MultiVector::packAndPrepare(): size of num"
+      "ExportPacketsPerLID buffer should be the same as exportLIDs.  numExport"
+      "PacketsPerLID.size() = " << numExportPacketsPerLID.size() << ", but "
+      "exportLIDs.size() = " << exportLIDs.size() << ".");
+    const KMV& srcData = sourceMV.lclMV_;
+    const size_t numCols = sourceMV.getNumVectors ();
+    const size_t stride = MVT::getStride (srcData);
     constantNumPackets = numCols;
-    exports.resize(numCols*exportLIDs.size());
+    exports.resize (numCols * exportLIDs.size ());
     typename ArrayView<const LocalOrdinal>::iterator idptr;
-    typename Teuchos::Array<Scalar>::iterator expptr;
+    typename Array<Scalar>::iterator expptr;
     expptr = exports.begin();
 
-    Teuchos::RCP<Node> node = MVT::getNode(srcData);
-    if (sourceMV.isConstantStride()) {
+    if (sourceMV.isConstantStride ()) {
       size_t i = 0;
       for (idptr = exportLIDs.begin(); idptr != exportLIDs.end(); ++idptr, ++i) {
         for (size_t j = 0; j < numCols; ++j) {
@@ -351,42 +382,52 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::unpackAndCombine(
-                  const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
-                  const Teuchos::ArrayView<const Scalar> &imports,
-                  const Teuchos::ArrayView<size_t> &numPacketsPerLID,
-                  size_t constantNumPackets,
-                  Distributor & /* distor */,
-                  CombineMode CM) {
-    const std::string tfecfFuncName("unpackAndCombine()");
-    typedef ScalarTraits<Scalar> SCT;
+  void 
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
+		    const Teuchos::ArrayView<const Scalar> &imports,
+		    const Teuchos::ArrayView<size_t> &numPacketsPerLID,
+		    size_t constantNumPackets,
+		    Distributor & /* distor */,
+		    CombineMode CM) 
+  {
+    using Teuchos::as;
     using Teuchos::ArrayView;
     using Teuchos::ArrayRCP;
+    typedef Teuchos::ScalarTraits<Scalar> SCT;
+
+    const std::string tfecfFuncName("unpackAndCombine()");
     /* The layout in the export for MultiVectors is as follows:
        imports = { all of the data from row exportLIDs.front() ; 
                    ....
                    all of the data from row exportLIDs.back() }
-      this doesn't have the best locality, but is necessary because the data for a Packet
-      (all data associated with an LID) is required to be contiguous */
+      This doesn't have the best locality, but is necessary because
+      the data for a Packet (all data associated with an LID) is
+      required to be contiguous. */
 #ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(imports.size()) != getNumVectors()*importLIDs.size(), std::runtime_error,
-        ": sizing of imports buffer should be appropriate for the amount of data to be exported.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(as<size_t>(imports.size()) != getNumVectors()*importLIDs.size(), std::runtime_error,
+        ": Imports buffer size must be consistent with the amount of data to be exported.");
 #endif
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(constantNumPackets) == 0u, std::runtime_error,
-        ": 'constantNumPackets' input argument should be nonzero.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(as<size_t>(constantNumPackets) == as<size_t>(0), std::runtime_error,
+        ": constantNumPackets input argument must be nonzero.");
 
-    const size_t myStride = MVT::getStride(lclMV_),
-                 numVecs  = getNumVectors();
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(numPacketsPerLID.size()) != Teuchos::as<size_t>(importLIDs.size()), std::runtime_error,
-        ": 'numPacketsPerLID' must have same length as importLIDs.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(numVecs) != Teuchos::as<size_t>(constantNumPackets), std::runtime_error,
-        ": 'constantNumPackets' must equal numVecs.");
+    const size_t myStride = MVT::getStride(lclMV_);
+    const size_t numVecs  = getNumVectors();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(as<size_t>(numPacketsPerLID.size()) != as<size_t>(importLIDs.size()), std::runtime_error,
+        ": numPacketsPerLID must have the same length as importLIDs.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(as<size_t>(numVecs) != as<size_t>(constantNumPackets), std::runtime_error,
+        ": constantNumPackets must equal numVecs.");
 
-    Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
     if (numVecs > 0 && importLIDs.size()) {
       typename ArrayView<const       Scalar>::iterator impptr;
       typename ArrayView<const LocalOrdinal>::iterator  idptr;
       impptr = imports.begin();
+      // NOTE (mfh 10 Mar 2012) If you want to implement custom
+      // combine modes, start editing here.  Also, if you trust
+      // inlining, it would be nice to condense this code by using a
+      // binary function object f:
+      //
+      // ncview_[...] = f (ncview_[...], *impptr++);
       if (CM == INSERT || CM == REPLACE) {
         if (isConstantStride()) {
           for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr) {
@@ -449,27 +490,27 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   inline size_t MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNumVectors() const {
-    size_t ret;
     if (isConstantStride()) {
-      ret = MVT::getNumCols(lclMV_);
+      return MVT::getNumCols(lclMV_);
     }
     else {
-      ret = whichVectors_.size();
+      return whichVectors_.size();
     }
-    return ret;
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot(
-      const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, 
-      const Teuchos::ArrayView<Scalar> &dots) const 
+  void 
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, 
+       const Teuchos::ArrayView<Scalar> &dots) const 
   {
-    const std::string tfecfFuncName("dot()");
     using Teuchos::ArrayRCP;
     using Teuchos::arcp_const_cast;
-    const size_t myLen   = getLocalLength(),
-                 numVecs = getNumVectors();
+
+    const std::string tfecfFuncName("dot()");
+    const size_t myLen   = getLocalLength();
+    const size_t numVecs = getNumVectors();
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*A.getMap()), std::runtime_error,
         ": MultiVectors do not have compatible Maps:" << std::endl
@@ -488,11 +529,11 @@ namespace Tpetra {
     }
     else {
       KMV v(MVT::getNode(lclMV_)), a(MVT::getNode(lclMV_));
-      ArrayRCP<Scalar> vptr = arcp_const_cast<Scalar>(MVT::getValues(lclMV_)),
-                      avptr = arcp_const_cast<Scalar>(MVT::getValues(A.lclMV_));
+      ArrayRCP<Scalar> vptr  = arcp_const_cast<Scalar>(MVT::getValues(lclMV_));
+      ArrayRCP<Scalar> avptr = arcp_const_cast<Scalar>(MVT::getValues(A.lclMV_));
       for (size_t j=0; j < numVecs; ++j) {
-        ArrayRCP<Scalar> vj =   getSubArrayRCP( vptr,j),
-                        avj = A.getSubArrayRCP(avptr,j);
+        ArrayRCP<Scalar> vj  =   getSubArrayRCP( vptr,j);
+	ArrayRCP<Scalar> avj = A.getSubArrayRCP(avptr,j);
         MVT::initializeValues(a,myLen, 1, avj, myLen);
         MVT::initializeValues(v,myLen, 1,  vj, myLen);
         dots[j] = MVT::Dot((const KMV&)v,(const KMV &)a);
@@ -547,7 +588,7 @@ namespace Tpetra {
     using Teuchos::arcp_const_cast;
     typedef ScalarTraits<Scalar> SCT;
     typedef typename SCT::magnitudeType Mag;
-    const Mag OneOverN = ScalarTraits<Mag>::one() / Teuchos::as<Mag>(getGlobalLength());
+    const Mag OneOverN = ScalarTraits<Mag>::one() / getGlobalLength();
     bool OneW = false;
     const size_t numVecs = this->getNumVectors();
     if (weights.getNumVectors() == 1) {
@@ -654,9 +695,13 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::meanValue(const Teuchos::ArrayView<Scalar> &means) const
   {
-    typedef Teuchos::ScalarTraits<Scalar> SCT;
-    using Teuchos::ArrayRCP;
+    using Teuchos::as;
     using Teuchos::arcp_const_cast;
+    using Teuchos::ArrayRCP;
+    using Teuchos::reduceAll;
+    using Teuchos::REDUCE_SUM;
+    typedef Teuchos::ScalarTraits<Scalar> SCT;
+
     const size_t numVecs = getNumVectors();
     const size_t myLen   = getLocalLength();
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(means.size()) != numVecs, std::runtime_error,
@@ -678,11 +723,18 @@ namespace Tpetra {
     if (this->isDistributed()) {
       Teuchos::Array<Scalar> lmeans(means);
       // only combine if we are a distributed MV
-      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,Teuchos::as<int>(numVecs),lmeans.getRawPtr(),means.getRawPtr());
+      reduceAll (*this->getMap ()->getComm (), REDUCE_SUM, as<int> (numVecs), 
+		 lmeans.getRawPtr (), means.getRawPtr ());
     }
-    const Scalar OneOverN = Teuchos::ScalarTraits<Scalar>::one() / Teuchos::as<Scalar>(getGlobalLength());
-    for (typename Teuchos::ArrayView<Scalar>::iterator i = means.begin(); i != means.begin()+numVecs; ++i) {
-      (*i) = (*i)*OneOverN;
+    // mfh 12 Apr 2012: Don't take out the cast from the ordinal type
+    // to the magnitude type, since operator/ (std::complex<T>, int)
+    // isn't necessarily defined.
+    const Scalar OneOverN = 
+      SCT::one() / as<typename SCT::magnitudeType> (getGlobalLength ());
+    for (typename Teuchos::ArrayView<Scalar>::iterator i = means.begin(); 
+	 i != means.begin() + numVecs; 
+	 ++i) {
+      (*i) = (*i) * OneOverN;
     }
   }
 
@@ -722,6 +774,20 @@ namespace Tpetra {
     }
   }
 
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void 
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  replaceMap (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map) 
+  {
+#ifdef HAVE_TEUCHOS_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION(!this->getMap()->isCompatible(*map), 
+      std::invalid_argument, "Tpetra::MultiVector::replaceMap(): The input map "
+      "is not compatible with this multivector's current map.  The replaceMap() "
+      "method is not for data redistribution; use Import or Export for that.");
+#endif // HAVE_TEUCHOS_DEBUG
+    this->map_ = map;
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::scale(const Scalar &alpha) {
@@ -1000,24 +1066,26 @@ namespace Tpetra {
     // Check for special case of this=Source, in which case we do nothing
     if (this != &source) {
 #ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*source.getMap()), std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*source.getMap()), std::invalid_argument,
           ": MultiVectors do not have compatible Maps:" << std::endl
           << "this->getMap(): " << std::endl << *this->getMap() 
           << "source.getMap(): " << std::endl << *source.getMap() << std::endl);
 #else
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( getLocalLength() != source.getLocalLength(), std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( getLocalLength() != source.getLocalLength(), std::invalid_argument,
           ": MultiVectors do not have the same local length.");
 #endif
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(source.getNumVectors() != getNumVectors(), std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(source.getNumVectors() != getNumVectors(), std::invalid_argument,
           ": MultiVectors must have the same number of vectors.");
       Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
       const size_t numVecs = getNumVectors();
       if (isConstantStride() && source.isConstantStride() && getLocalLength()==getStride() && source.getLocalLength()==source.getStride()) {
-        // we're both packed, we can copy in one call
+        // Both multivectors' data are stored contiguously, so we can
+        // copy in one call.
         KOKKOS_NODE_TRACE("MultiVector::operator=()")
         node->template copyBuffers<Scalar>(getLocalLength()*numVecs, MVT::getValues(source.lclMV_), MVT::getValuesNonConst(lclMV_) );
       }
       else {
+	// We have to copy the columns one at a time.
         for (size_t j=0; j < numVecs; ++j) {
           KOKKOS_NODE_TRACE("MultiVector::operator=()")
           node->template copyBuffers<Scalar>(getLocalLength(), source.getSubArrayRCP(MVT::getValues(source.lclMV_),j),  
@@ -1761,102 +1829,144 @@ namespace Tpetra {
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
     using std::endl;
     using std::setw;
+    using Teuchos::ArrayRCP;
+    using Teuchos::RCP;
     using Teuchos::VERB_DEFAULT;
     using Teuchos::VERB_NONE;
     using Teuchos::VERB_LOW;
     using Teuchos::VERB_MEDIUM;
     using Teuchos::VERB_HIGH;
     using Teuchos::VERB_EXTREME;
-    Teuchos::EVerbosityLevel vl = verbLevel;
-    if (vl == VERB_DEFAULT) vl = VERB_LOW;
-    Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getMap()->getComm();
-    const int myImageID = comm->getRank(),
-              numImages = comm->getSize();
-    size_t width = 1;
-    for (size_t dec=10; dec<getGlobalLength(); dec *= 10) {
-      ++width;
-    }
-    Teuchos::OSTab tab(out);
+
+    // Set default verbosity if applicable.
+    const Teuchos::EVerbosityLevel vl = 
+      (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
+
+    RCP<const Teuchos::Comm<int> > comm = this->getMap()->getComm();
+    const int myImageID = comm->getRank();
+    const int numImages = comm->getSize();
+
     if (vl != VERB_NONE) {
-      // VERB_LOW and higher prints description()
-      if (myImageID == 0) out << this->description() << std::endl; 
+      // Don't set the tab level unless we're printing something.
+      Teuchos::OSTab tab (out);
+
+      if (myImageID == 0) { // >= VERB_LOW prints description()
+	out << this->description() << endl; 
+      }
       for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
         if (myImageID == imageCtr) {
           if (vl != VERB_LOW) {
-            // VERB_MEDIUM and higher prints getLocalLength()
-            out << "node " << setw(width) << myImageID << ": local length=" << getLocalLength();
+	    // At verbosity > VERB_LOW, each process prints something.
+            out << "Process " << myImageID << ":" << endl;
+
+	    Teuchos::OSTab procTab (out);
+            // >= VERB_MEDIUM: print the local vector length.
+	    out << "local length=" << getLocalLength();
             if (vl != VERB_MEDIUM) {
-              // VERB_HIGH and higher prints isConstantStride() and getStride()
-              if (isConstantStride()) out << ", constant stride=" << getStride() << endl;
-              else out << ", non-constant stride" << endl;
-              if (vl == VERB_EXTREME && getLocalLength() > 0) {
-                Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
-                if (isConstantStride()) {
-                  KOKKOS_NODE_TRACE("MultiVector::describe()")
-                  Teuchos::ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(
-                                          getLocalLength()+getStride()*(getNumVectors()-1), 
-                                          MVT::getValues(lclMV_) );
-                  // VERB_EXTREME prints values
-                  for (size_t i=0; i<getLocalLength(); ++i) {
-                    out << setw(width) << this->getMap()->getGlobalElement(i) << ": ";
-                    for (size_t j=0; j<getNumVectors(); ++j) {
-                      out << myview[j*getStride()] << "  ";
-                    }
-                    ++myview;
-                    out << endl;
-                  }
-                  myview = Teuchos::null;
-                }
-                else {
-                  const size_t stride = MVT::getStride(lclMV_),
-                               rows   = MVT::getNumRows(lclMV_),
-                               cols   = MVT::getNumCols(lclMV_);
-                  KOKKOS_NODE_TRACE("MultiVector::describe()")
-                  Teuchos::ArrayRCP<const Scalar> myview = 
-                    node->template viewBuffer<Scalar>( rows + stride * (cols - 1), MVT::getValues(lclMV_) );
-                  // VERB_EXTREME prints values
-                  for (size_t i=0; i<getLocalLength(); ++i) {
-                    out << setw(width) << this->getMap()->getGlobalElement(i) << ": ";
-                    for (size_t j=0; j<getNumVectors(); ++j) {
-                      out << myview[whichVectors_[j]*stride + i] << "  ";
-                    }
-                    out << endl;
-                  }
-                  myview = Teuchos::null;
-                }
-              }
-            }
-            else {
+              // >= VERB_HIGH: print isConstantStride() and getStride()
+              if (isConstantStride()) {
+		out << ", constant stride=" << getStride() << endl;
+	      }
+              else {
+		out << ", not constant stride" << endl;
+	      }
+              if (vl == VERB_EXTREME) {
+		// VERB_EXTREME: print all the values in the multivector.
+		out << "Values:" << endl;
+		ArrayRCP<ArrayRCP<const Scalar> > X = this->get2dView();
+		for (size_t i = 0; i < getLocalLength(); ++i) {
+		  for (size_t j = 0; j < getNumVectors(); ++j) {
+		    out << X[j][i];
+		    if (j < getNumVectors() - 1) {
+		      out << " ";
+		    }
+		  } // for each column
+		  out << endl;
+		} // for each row
+	      } // if vl == VERB_EXTREME
+            } // if (vl != VERB_MEDIUM)
+            else { // vl == VERB_LOW
               out << endl;
             }
-          }
-        }
-      }
-    }
+          } // if vl != VERB_LOW
+        } // if it is my process' turn to print
+      } // for each process in the communicator
+    } // if vl != VERB_NONE
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createViews() const {
-    Teuchos::RCP<Node> node = this->getMap()->getNode();
-    if (cview_ == Teuchos::null && getLocalLength() > 0) {
-      Teuchos::ArrayRCP<const Scalar> buff = MVT::getValues(lclMV_);
+  void 
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  createViews() const 
+  {
+    using Teuchos::ArrayRCP;
+    using Teuchos::RCP;
+
+    TPETRA_EFFICIENCY_WARNING(! cview_.is_null (), std::runtime_error,
+      "::createViews(): The const view "
+      "has already been created and is therefore not null.  (For"
+      "Tpetra developers: cview_.total_count() = " << cview_.total_count ()
+      << ".  This "
+      "means that MultiVector is either creating a view unnecessarily, or "
+      "hanging on to a view beyond its needed scope.  This "
+      "probably does not affect correctness, it but does affect total memory "
+      "use.  Please report this performance bug to the Tpetra developers.");
+
+    RCP<Node> node = this->getMap ()->getNode ();
+    if (cview_.is_null () && getLocalLength () > 0) {
+      ArrayRCP<const Scalar> buff = MVT::getValues (lclMV_);
       KOKKOS_NODE_TRACE("MultiVector::createViews()")
-      cview_ = node->template viewBuffer<Scalar>(buff.size(),buff);
+      cview_ = node->template viewBuffer<Scalar> (buff.size (), buff);
     }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createViewsNonConst(Kokkos::ReadWriteOption rwo) {
-    Teuchos::RCP<Node> node = this->getMap()->getNode();
-    if (ncview_ == Teuchos::null && getLocalLength() > 0) {
-      Teuchos::ArrayRCP<Scalar> buff = MVT::getValuesNonConst(lclMV_);
+  void 
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  createViewsNonConst (Kokkos::ReadWriteOption rwo) 
+  {
+    using Teuchos::ArrayRCP;
+    using Teuchos::RCP;
+
+    TPETRA_EFFICIENCY_WARNING(! ncview_.is_null (), std::runtime_error,
+      "::createViewsNonConst(): The nonconst view "
+      "has already been created and is therefore not null.  (For"
+      "Tpetra developers: ncview_.total_count() = " << ncview_.total_count ()
+      << ".  This "
+      "means that MultiVector is either creating a view unnecessarily, or "
+      "hanging on to a view beyond its needed scope.  This "
+      "probably does not affect correctness, it but does affect total memory "
+      "use.  Please report this performance bug to the Tpetra developers.");
+
+    RCP<Node> node = this->getMap ()->getNode ();
+    if (ncview_.is_null () && getLocalLength () > 0) {
+      ArrayRCP<Scalar> buff = MVT::getValuesNonConst (lclMV_);
       KOKKOS_NODE_TRACE("MultiVector::createViewsNonConst()")
-      ncview_ = node->template viewBufferNonConst<Scalar>(rwo,buff.size(),buff);
+      ncview_ = node->template viewBufferNonConst<Scalar> (rwo, buff.size (), buff);
     }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::releaseViews() const {
+  void 
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::releaseViews () const 
+  {
+    const int constViewCount = cview_.total_count ();
+    const int nonconstViewCount = ncview_.total_count ();
+
+    // This prevents unused variable compiler warnings, in case Tpetra
+    // efficiency warnings aren't enabled.
+    (void) constViewCount;
+    (void) nonconstViewCount;
+
+    TPETRA_EFFICIENCY_WARNING(constViewCount > 1 || nonconstViewCount > 1, 
+      std::runtime_error, "::releaseViews(): Either the const view or the "
+      "nonconst view has a reference count greater than 1.  (For Tpetra "
+      "developers: cview_.total_count() = " << constViewCount << " and ncview_."
+      "total_count() = " << nonconstViewCount << ".  This means that release"
+      "Views() won't actually free memory.  This probably does not affect "
+      "correctness, it but does affect total memory use.  Please report this "
+      "performance bug to the Tpetra developers.");
+
     cview_ = Teuchos::null;
     ncview_ = Teuchos::null;
   }

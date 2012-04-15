@@ -97,6 +97,6 @@ C STRLMT=tolerance for isoparametric coords to lie within an element
 C
       END
 
-      subroutine init
+      subroutine initbd
       return
       end

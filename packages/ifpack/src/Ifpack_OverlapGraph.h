@@ -72,7 +72,7 @@ class Ifpack_OverlapGraph: public Epetra_Object {
   virtual ~Ifpack_OverlapGraph() {};
   //@}
 
-  //@{ \name Atribute access methods.
+  //@{ \name Attribute access methods.
     
   //! Set parameters using a Teuchos::ParameterList object.
   /* This method is only available if the configure argument

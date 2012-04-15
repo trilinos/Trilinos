@@ -57,10 +57,6 @@
 # CTest script that is used to do an experimental build/test right from a
 # developer's own build directory.
 #
-# NOTE: You need a recent (CVS) version of CMake/CTest for this to work.  You
-# can't use CMake/CTest 2.6.x.  If you don't have the right version, it will
-# tell you.
-#
 # To run this script:
 #
 # 1) First configure your directory without enabling any packages (to set the
@@ -74,12 +70,12 @@
 # 2) Run the script (overriding any appropriate options) as:
 #
 #    env ${PROJECT_NAME}_PACKAGES="<PACKAGES>" \
-#      ctest -S $TRILINOS_HOME/cmake/ctest/experimental_build_test.cmake -VV
+#      ctest -S ${PROJECT_NAME}_TRIBITS_DIR/ctest/experimental_build_test.cmake -VV
 #
 # where PACAKGES is the semi-colon-separated list of packages being tested
-# (e.g. ${PROJECT_NAME}_PACKAGES="Teuchos;Epetra;NOX") and TRILINOS_HOME points back
-# to your home Trilinos directory.  You can take off the -VV argument if you
-# don't want this to be too verbose.
+# (e.g. ${PROJECT_NAME}_PACKAGES="Teuchos;Epetra;NOX") and
+# ${PROJECT_NAME}_TRIBITS_DIR points back to your home project directory.  You
+# can take off the -VV argument if you don't want this to be too verbose.
 #
 # There are a number of other options that you can change as
 # environment varibles.  See the macros SET_DEFAULT_AND_FROM_ENV(...)
@@ -90,11 +86,10 @@
 # When this script finishes running, the last package listed in
 # ${PROJECT_NAME}_PACAKGES will be enabled in the CMakeCache.txt file.
 #
-# NOTE: It is better to use the CMake-built make target 'experimental' to run
+# NOTE: It is better to use the CMake-built make target 'dashboard' to run
 # this script as it takes care of the details of manipulating the cache and
 # restoring the package enables when it is done.
 #
-
 
 #
 # General setup code:
@@ -113,6 +108,7 @@ SET( CMAKE_MODULE_PATH
 
 INCLUDE(TribitsCTestDriverCore)
 INCLUDE(GetLastDirName)
+INCLUDE(SetDefaultAndFromEnv)
 
 #
 # Override some configuration variables
@@ -129,7 +125,8 @@ SET(CTEST_GENERATE_DEPS_XML_OUTPUT_FILE TRUE)
 SET(CTEST_WIPE_CACHE FALSE)
 
 # This script should be in PROJECT_BASE/cmake/tribits/ctest
-SET(CTEST_SOURCE_DIRECTORY "${${PROJECT_NAME}_HOME_DIR}")
+SET_DEFAULT_AND_FROM_ENV(PROJECT_SOURCE_DIR "${CTEST_SCRIPT_DIRECTORY}/../../..")
+SET(CTEST_SOURCE_DIRECTORY "${PROJECT_SOURCE_DIR}")
 
 GET_FILENAME_COMPONENT(PWD . REALPATH)
 SET(CTEST_BINARY_DIRECTORY "${PWD}")

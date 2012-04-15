@@ -87,14 +87,15 @@ const char *sg_op_names[] = { "Matrix-Free",
 			      "Fully-Assembled" };
 
 // Krylov preconditioning approaches
-enum SG_Prec { MEAN, GS, AGS, AJ, KP };
-const int num_sg_prec = 5;
-const SG_Prec sg_prec_values[] = { MEAN, GS, AGS, AJ, KP };
+enum SG_Prec { MEAN, GS, AGS, AJ, KP, NONE };
+const int num_sg_prec = 6;
+const SG_Prec sg_prec_values[] = { MEAN, GS, AGS, AJ, KP, NONE };
 const char *sg_prec_names[] = { "Mean-Based", 
 				"Gauss-Seidel", 
 				"Approx-Gauss-Seidel", 
 				"Approx-Jacobi", 
-				"Kronecker-Product" };
+				"Kronecker-Product",
+				"None" };
 
 // Random field types
 enum SG_RF { UNIFORM, RYS, LOGNORMAL };
@@ -542,6 +543,9 @@ int main(int argc, char *argv[]) {
       GPrecParams.set("fact: ilut level-of-fill", 1.0);
       GPrecParams.set("schwarz: combine mode", "Add");
     }
+    else if (precMethod == NONE)  {
+      sgPrecParams.set("Preconditioner Method", "None");
+    }
     else
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
 		       "Error!  Unknown preconditioner method " << precMethod
@@ -552,6 +556,9 @@ int main(int argc, char *argv[]) {
       Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, Teuchos::null,
                                                  expansion, sg_parallel_data, 
 						 sgParams, scaleOP));
+    EpetraExt::ModelEvaluator::InArgs sg_inArgs = sg_model->createInArgs();
+    EpetraExt::ModelEvaluator::OutArgs sg_outArgs = 
+      sg_model->createOutArgs();
 
     // Set up stochastic parameters
     Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_p_init =
@@ -583,9 +590,15 @@ int main(int argc, char *argv[]) {
     // Build linear solver
     Teuchos::RCP<NOX::Epetra::LinearSystem> linsys;
     if (solve_method==SG_KRYLOV) {
-      Teuchos::RCP<Epetra_Operator> M = sg_model->create_WPrec()->PrecOp;
-      Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = 
-	nox_interface;
+      bool has_M = 
+	sg_outArgs.supports(EpetraExt::ModelEvaluator::OUT_ARG_WPrec);
+      Teuchos::RCP<Epetra_Operator> M;
+      Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec;
+      if (has_M) {
+	M = sg_model->create_WPrec()->PrecOp;
+	iPrec = nox_interface;
+      }
+      stratParams.set("Preconditioner Type", "None");
       if (outer_krylov_solver == AZTECOO) {
 	stratParams.set("Linear Solver Type", "AztecOO");
 	Teuchos::ParameterList& aztecOOParams = 
@@ -603,10 +616,15 @@ int main(int argc, char *argv[]) {
 	aztecOOParams.set("Max Iterations", outer_its);
 	aztecOOParams.set("Tolerance", outer_tol);
 	stratLinSolParams.set("Preconditioner", "User Defined");
-	linsys = 
-	  Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(
-			 printParams, stratLinSolParams, iJac, A, iPrec, M, 
-			 *u, true));
+	if (has_M)
+	  linsys = 
+	    Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(
+			   printParams, stratLinSolParams, iJac, A, iPrec, M, 
+			   *u, true));
+	else
+	  linsys = 
+	    Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(
+			   printParams, stratLinSolParams, iJac, A, *u));
       }
       else if (outer_krylov_solver == BELOS){
 	stratParams.set("Linear Solver Type", "Belos");
@@ -636,10 +654,16 @@ int main(int argc, char *argv[]) {
 	belosSolverParams->set("Output Style",1);
 	belosSolverParams->set("Verbosity",33);
 	stratLinSolParams.set("Preconditioner", "User Defined");
-	linsys = 
-	  Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(
-			 printParams, stratLinSolParams, iJac, A, iPrec, M, 
-			 *u, true));
+	if (has_M)
+	  linsys = 
+	    Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(
+			   printParams, stratLinSolParams, iJac, A, iPrec, M, 
+			   *u, true));
+	else
+	  linsys = 
+	    Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(
+			   printParams, stratLinSolParams, iJac, A, *u));
+	  
       }
     }
     else if (solve_method==SG_GS) {
@@ -704,9 +728,6 @@ int main(int argc, char *argv[]) {
     EpetraExt::VectorToMatrixMarketFile("std_dev_gal.mm", std_dev);
       
     // Evaluate SG responses at SG parameters
-    EpetraExt::ModelEvaluator::InArgs sg_inArgs = sg_model->createInArgs();
-    EpetraExt::ModelEvaluator::OutArgs sg_outArgs = 
-      sg_model->createOutArgs();
     Teuchos::RCP<const Epetra_Vector> sg_p = sg_model->get_p_init(1);
     Teuchos::RCP<Epetra_Vector> sg_g = 
       Teuchos::rcp(new Epetra_Vector(*(sg_model->get_g_map(0))));

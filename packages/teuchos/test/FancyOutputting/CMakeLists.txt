@@ -15,4 +15,5 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DEPLIBS teuchos_algorithma
   COMM serial mpi
   STANDARD_PASS_OUTPUT
+  XHOSTTYPE Windows Windows_NT
   )

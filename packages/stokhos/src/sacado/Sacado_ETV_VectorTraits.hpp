@@ -121,14 +121,24 @@ namespace Sacado {
 	StringName<T>::eval() + " >"; }
   };
 
+  //! Specialization of IsEqual to Vector types
+  template <typename T, typename S>
+  struct IsEqual< ETV::Vector<T,S> > {
+    static bool eval(const ETV::Vector<T,S>& x, 
+		     const ETV::Vector<T,S>& y) {
+      return x.isEqualTo(y);
+    }
+  };
+
 } // namespace Sacado
 
 // Define Teuchos traits classes
 #ifdef HAVE_SACADO_TEUCHOS
 #include "Teuchos_PromotionTraits.hpp"
 #include "Teuchos_ScalarTraits.hpp"
-#include "Teuchos_Assert.hpp"
-#include "Sacado_mpl_apply.hpp"
+#include "Sacado_ETV_ScalarTraitsImp.hpp"
+#include "Teuchos_SerializationTraits.hpp"
+
 
 namespace Teuchos {
 
@@ -158,117 +168,32 @@ namespace Teuchos {
 
   //! Specializtion of Teuchos::ScalarTraits
   template <typename T, typename S>
-  struct ScalarTraits< Sacado::ETV::Vector<T,S> > {
-    typedef Sacado::ETV::Vector<T,S> ScalarType;
-    typedef typename Sacado::ValueType<T>::type ValueT;
-    
-    typedef typename Sacado::mpl::apply<ScalarType,typename Teuchos::ScalarTraits<ValueT>::magnitudeType>::type magnitudeType;
-    typedef typename Sacado::mpl::apply<ScalarType,typename Teuchos::ScalarTraits<ValueT>::halfPrecision>::type halfPrecision;
-    typedef typename Sacado::mpl::apply<ScalarType,typename Teuchos::ScalarTraits<ValueT>::doublePrecision>::type doublePrecision;
-    
-    static const bool isComplex = Teuchos::ScalarTraits<ValueT>::isComplex;
-    static const bool isOrdinal = Teuchos::ScalarTraits<ValueT>::isOrdinal;
-    static const bool isComparable = 
-      Teuchos::ScalarTraits<ValueT>::isComparable;
-    static const bool hasMachineParameters = 
-      Teuchos::ScalarTraits<ValueT>::hasMachineParameters;
-    static typename Teuchos::ScalarTraits<ValueT>::magnitudeType eps() {
-      return Teuchos::ScalarTraits<ValueT>::eps();
-    }
-    static typename Teuchos::ScalarTraits<ValueT>::magnitudeType sfmin() {
-      return Teuchos::ScalarTraits<ValueT>::sfmin();
-    }
-    static typename Teuchos::ScalarTraits<ValueT>::magnitudeType base()  {
-      return Teuchos::ScalarTraits<ValueT>::base();
-    }
-    static typename Teuchos::ScalarTraits<ValueT>::magnitudeType prec()  {
-      return Teuchos::ScalarTraits<ValueT>::prec();
-    }
-    static typename Teuchos::ScalarTraits<ValueT>::magnitudeType t()     {
-      return Teuchos::ScalarTraits<ValueT>::t();
-    }
-    static typename Teuchos::ScalarTraits<ValueT>::magnitudeType rnd()   {
-      return Teuchos::ScalarTraits<ValueT>::rnd();
-    }
-    static typename Teuchos::ScalarTraits<ValueT>::magnitudeType emin()  {
-      return Teuchos::ScalarTraits<ValueT>::emin();
-    }
-    static typename Teuchos::ScalarTraits<ValueT>::magnitudeType rmin()  {
-      return Teuchos::ScalarTraits<ValueT>::rmin();
-    }
-    static typename Teuchos::ScalarTraits<ValueT>::magnitudeType emax()  {
-      return Teuchos::ScalarTraits<ValueT>::emax();
-    }
-    static typename Teuchos::ScalarTraits<ValueT>::magnitudeType rmax()  {
-      return Teuchos::ScalarTraits<ValueT>::rmax();
-    }
-    static magnitudeType magnitude(const ScalarType& a) {
-      return std::fabs(a); 
-    }
-    static ValueT zero()  { 
-      return ValueT(0.0); 
-    }
-    static ValueT one()   { 
-      return ValueT(1.0); 
-    }
-    
-    // Conjugate is only defined for real derivative components
-    static ScalarType conjugate(const ScalarType& x) {
-      int sz = x.size();
-      ScalarType y(sz);
-      for (int i=0; i<sz; i++)
-	y.fastAccessCoeff(i) = 
-	  Teuchos::ScalarTraits<ValueT>::conjugate(x.fastAccessCoeff(i));
-      return y;
-    }   
-    
-    // Real part is only defined for real derivative components
-    static ScalarType real(const ScalarType& x) { 
-      int sz = x.size();
-      ScalarType y(sz);
-      for (int i=0; i<sz; i++)
-	y.fastAccessCoeff(i) = 
-	  Teuchos::ScalarTraits<ValueT>::real(x.fastAccessCoeff(i));
-      return y;
-    }
-    
-    // Imaginary part is only defined for real derivative components
-    static ScalarType imag(const ScalarType& x) { 
-     int sz = x.size();
-      ScalarType y(sz);
-      for (int i=0; i<sz; i++)
-	y.fastAccessCoeff(i) = 
-	  Teuchos::ScalarTraits<ValueT>::imag(x.fastAccessCoeff(i));
-      return y;
-    }
-    
-    static ValueT nan() {
-      return Teuchos::ScalarTraits<ValueT>::nan(); 
-    }
-    static bool isnaninf(const ScalarType& x) { 
-      for (int i=0; i<x.size(); i++)
-	if (Teuchos::ScalarTraits<ValueT>::isnaninf(x.fastAccessCoeff(i)))
-	  return true;
-      return false;
-    }
-    static void seedrandom(unsigned int s) { 
-      Teuchos::ScalarTraits<ValueT>::seedrandom(s); 
-    }
-    static ValueT random() { 
-      return Teuchos::ScalarTraits<ValueT>::random(); 
-    }
-    static std::string name() { 
-      return Sacado::StringName<ScalarType>::eval(); 
-    }
-    static ScalarType squareroot(const ScalarType& x) {
-      return std::sqrt(x); 
-    }
-    static ScalarType pow(const ScalarType& x, const ScalarType& y) { 
-      return std::pow(x,y); 
-    }
+  struct ScalarTraits< Sacado::ETV::Vector<T,S> > : 
+    public Sacado::ETV::ScalarTraitsImp< Sacado::ETV::Vector<T,S> > {};
 
-  }; // class ScalarTraits< Sacado::ETV::Vector<T,S> >
+
+  //! Specialization of %Teuchos::SerializationTraits
+  template <typename Ordinal, typename T, typename S>
+  struct SerializationTraits<Ordinal, Sacado::ETV::Vector<T,S> > :
+    public Sacado::ETV::SerializationTraitsImp< Ordinal, 
+						Sacado::ETV::Vector<T,S> > {};
+
+  //! Specialization of %Teuchos::ValueTypeSerializer
+  template <typename Ordinal, typename T, typename S>
+  struct ValueTypeSerializer<Ordinal, Sacado::ETV::Vector<T,S> > :
+    public Sacado::ETV::SerializerImp< Ordinal,
+				       Sacado::ETV::Vector<T,S>,
+				       ValueTypeSerializer<Ordinal,T> >
+  {
+    typedef Sacado::ETV::Vector<T,S> VecType;
+    typedef ValueTypeSerializer<Ordinal,T> ValueSerializer;
+    typedef Sacado::ETV::SerializerImp< Ordinal,VecType,ValueSerializer> Base;
+    ValueTypeSerializer(const Teuchos::RCP<const ValueSerializer>& vs,
+			Ordinal sz = 0) :
+      Base(vs, sz) {}
+  };
+  
 }
 #endif // HAVE_SACADO_TEUCHOS
 
-#endif // SACADO_ETV_ORTHOGPOLYTRAITS_HPP
+#endif // SACADO_ETV_VECTORTRAITS_HPP

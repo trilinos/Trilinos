@@ -53,28 +53,51 @@
 # ************************************************************************
 # @HEADER
 
+#
 # Tribits platform-independent test driver.
 #
-# This script locates the modules it needs to include relative to the
-# source code root directory for the project. By default, this script
-# is assumed to be located at
+# To understand this script, one must understand that it gets run in several
+# different modes:
 #
-# <project-root>/cmake/tribits/ctest
+# Mode 1: Existing source and binary directories (CTEST_DASHBOARD_ROOT empty).
+# The script is run on an existing source and binary tree.  In this case,
+# there is one project source tree.  In this case, CTEST_SOURCE_DIRECTORY and
+# CTEST_BINARY_DIRECTORY must be set before calling this script.
+
+# Mode 2: A new binary directory is created and new sources are cloned (or
+# updated) in a driver directory (CTEST_DASHBOARD_ROOT is *not* empty).  In
+# this case, there are always two (partial) project source tree's, i) a
+# "driver" skeleton source tree (typically embedded with TriBITS directory)
+# that bootstraps the testing process, and ii) a true full "source" that is
+# (optionally) cloned and/or updated.
 #
-# And uses this assumed directory structure to locate its required
-# CMake modules. However, you can set environment variables to change
-# the default locations:
-# - TRIBITS_PROJECT_ROOT Will tell this script where the source code
-#   resides.
-# - ${PROJECT_NAME}_TRIBITS_DIR Will allow this script to utilize a
-#   different version of Tribits.
+# There are a few different directory locations are significant for this
+# script:
 #
-# This script can be run from anywhere by default and will find the
-# right related CMake files to run but it requires that the client set
-# CTEST_DASHBOARD_ROOT (or override this in the env) before running
-# this script.  The varible CTEST_DASHBOARD_ROOT determines where the
-# project source code will be cloned to and determines where the
-# build directly will be put.
+# TRIBITS_PROJECT_ROOT: The root directory to an existing source tree where
+# the project's ProjectName.cmake (defining PROJECT_NAME variable) and
+# Version.cmake file's can be found.
+#
+# ${PROJECT_NAME}_TRIBITS_DIR: The base directory for the TriBITS system's
+# various CMake modules, python scripts, and other files.  By default this is
+# assumed to be in the source tree under ${TRIBITS_PROJECT_ROOT} (see below)
+# but it can be overridden to point to any location.
+#
+# CTEST_DASHBOARD_ROOT: If set, this is the base directory where this script
+# runs that clones the sources for the project.  If this directory does not
+# exist, it will be created.  If empty, then has no effect on the script.
+#
+# CTEST_SOURCE_DIRECTORY: Determines the location of the sources that are used
+# to define packages, dependencies and configure and build the software.  This
+# is a varaible that CTest directly reads and must therefore be set. This
+# is used to set PROJECT_SOURCE_DIR which is used by the TriBITS system.  If
+# CTEST_DASHBOARD_ROOT is set, then this is hard-coded to
+# ${CTEST_DASHBOARD_ROOT}/${CTEST_SOURCE_NAME}.
+#
+# CTEST_BINARY_DIRECTORY: Determines the location of the binary tree where
+# output from CMake/CTest is put.  This is used to set to PROJECT_BINARY_DIR which
+# is used by the TriBITS system.  If CTEST_DASHBOARD_ROOT is set, then this is
+# hard-coded to ${CTEST_DASHBOARD_ROOT}/BUILD.
 #
 
 MESSAGE("")
@@ -90,6 +113,9 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.7.0 FATAL_ERROR)
 # Get the basic varaibles that define the project and the build
 #
 
+#
+# Set TRIBITS_PROJECT_ROOT
+#
 # We must locate the source code root directory before processing this
 # file. Once the root directory is located, we can make good guesses
 # at other properties, but this file is a CTest script that is always
@@ -103,7 +129,7 @@ IF (NOT TRIBITS_PROJECT_ROOT)
   SET(TRIBITS_PROJECT_ROOT "$ENV{TRIBITS_PROJECT_ROOT}")
 ENDIF()
 #MESSAGE("TRIBITS_PROJECT_ROOT (after env) = '${TRIBITS_PROJECT_ROOT}'")
-IF(NOT TRIBITS_PROJECT_ROOT)
+IF (NOT TRIBITS_PROJECT_ROOT)
   # Fall back on the default convention, in which this file is located at: 
   #   <root>/cmake/tribits/ctest.
   GET_FILENAME_COMPONENT(CMAKE_CURRENT_LIST_DIR ${CMAKE_CURRENT_LIST_FILE} PATH)
@@ -112,6 +138,9 @@ ENDIF()
 GET_FILENAME_COMPONENT(TRIBITS_PROJECT_ROOT "${TRIBITS_PROJECT_ROOT}" ABSOLUTE)
 MESSAGE("TRIBITS_PROJECT_ROOT = '${TRIBITS_PROJECT_ROOT}'")
 
+#
+# Read in PROJECT_NAME
+#
 # Assert that the ProjectName.cmake file exists.
 SET(TRIBITS_PROJECT_NAME_INCLUDE "${TRIBITS_PROJECT_ROOT}/ProjectName.cmake")
 IF(NOT EXISTS "${TRIBITS_PROJECT_NAME_INCLUDE}")
@@ -121,7 +150,6 @@ IF(NOT EXISTS "${TRIBITS_PROJECT_NAME_INCLUDE}")
     "  Set the TRIBITS_PROJECT_ROOT environment variable "
     "to point at the source root.")
 ENDIF()
-
 # Include the ProjectName.cmake file and get PROJECT_NAME
 INCLUDE(${TRIBITS_PROJECT_NAME_INCLUDE})
 IF(NOT PROJECT_NAME)
@@ -131,25 +159,23 @@ IF(NOT PROJECT_NAME)
 ENDIF()
 MESSAGE("PROJECT_NAME = ${PROJECT_NAME}")
 
-# Get the source code root.
-SET(${PROJECT_NAME}_HOME_DIR "${TRIBITS_PROJECT_ROOT}")
-MESSAGE("${PROJECT_NAME}_HOME_DIR=${${PROJECT_NAME}_HOME_DIR}")
-
-SET(${PROJECT_NAME}_CMAKE_DIR "${${PROJECT_NAME}_HOME_DIR}/cmake")
-MESSAGE("${PROJECT_NAME}_CMAKE_DIR = ${${PROJECT_NAME}_CMAKE_DIR}")
-
-# Get the Tribits directory
+#
+# Set ${PROJECT_NAME}_TRIBITS_DIR
+#
 IF (NOT ${PROJECT_NAME}_TRIBITS_DIR)
   SET(${PROJECT_NAME}_TRIBITS_DIR "$ENV{${PROJECT_NAME}_TRIBITS_DIR}")
 ENDIF()
-IF(NOT ${PROJECT_NAME}_TRIBITS_DIR)
-  SET(${PROJECT_NAME}_TRIBITS_DIR "${${PROJECT_NAME}_CMAKE_DIR}/tribits")
+IF (NOT ${PROJECT_NAME}_TRIBITS_DIR)
+  SET(${PROJECT_NAME}_TRIBITS_DIR "${TRIBITS_PROJECT_ROOT}/cmake//tribits")
 ENDIF()
 MESSAGE("${PROJECT_NAME}_TRIBITS_DIR = ${${PROJECT_NAME}_TRIBITS_DIR}")
 
+#
+# Set CMAKE_MODULE_PATH
+#
 SET( CMAKE_MODULE_PATH
-  "${${PROJECT_NAME}_CMAKE_DIR}"
-  "${${PROJECT_NAME}_CMAKE_DIR}/.."
+  "${TRIBITS_PROJECT_ROOT}"
+  "${TRIBITS_PROJECT_ROOT}/cmake"
   "${${PROJECT_NAME}_TRIBITS_DIR}/utils"
   "${${PROJECT_NAME}_TRIBITS_DIR}/package_arch"
   )
@@ -389,23 +415,27 @@ ENDMACRO()
 MACRO(TRIBITS_SETUP_PACKAGES)
 
   # Here, we must point into the source tree just cloned (or updated)
-  # and not the master source dir tree for two reasons.  First, the
+  # and not the "driver" source dir tree for two reasons.  First, the
   # list of core packages may be more recent in what was checked out.
-  # Second, the extra repos do not even exist in the master source
+  # Second, the extra repos do not even exist in the "driver" source
   # tree.
-  IF (NOT ${PROJECT_NAME}_DEPS_HOME_DIR)
-    SET(${PROJECT_NAME}_DEPS_HOME_DIR "${CTEST_SOURCE_DIRECTORY}")
-  ENDIF()
+
+  SET(PROJECT_SOURCE_DIR "${CTEST_SOURCE_DIRECTORY}")
+  SET(PROJECT_BINARY_DIR "${CTEST_BINARY_DIRECTORY}")
+  PRINT_VAR(PROJECT_SOURCE_DIR)
+  PRINT_VAR(PROJECT_BINARY_DIR)
 
   SET(${PROJECT_NAME}_ASSERT_MISSING_PACKAGES FALSE)
   SET(${PROJECT_NAME}_IGNORE_PACKAGE_EXISTS_CHECK TRUE)
   SET(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES FALSE)
-  SET(${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR "${CTEST_BINARY_DIRECTORY}")
-  SET(PROJECT_HOME_DIR "${${PROJECT_NAME}_HOME_DIR}")
+  SET(${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR "${PROJECT_BINARY_DIR}")
 
-  # Ignore missing extra repos in case someone messed up the git URL or
-  # something.  We don't want a sloppy commit to bring down automated testing.
-  SET(${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES ON)
+  # Don't ignore missing repos.  This will allow processing to continue but this outer
+  # CTest script will fail (thereby sending a CDash email from the TDD
+  # system).  However, when we configure actual packages, we do set this to
+  # TRUE so that the package configures will not fail due to missing extra
+  # repositories.
+  SET(${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES FALSE)
 
   TRIBITS_READ_IN_NATIVE_REPOSITORIES()
   TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()
@@ -521,14 +551,18 @@ MACRO(ENABLE_MODIFIED_PACKAGES_ONLY)
     MESSAGE(FATAL_ERROR "Error, Python must be enabled to map from modified files to packages!")
   ENDIF()
 
-  EXECUTE_PROCESS(
-    COMMAND ${PYTHON_EXECUTABLE}
-      ${${PROJECT_NAME}_TRIBITS_DIR}/python/get-tribits-packages-from-files-list.py
-      --files-list-file=${MODIFIED_FILES_FILE_NAME}
-      --deps-xml-file=${CTEST_BINARY_DIRECTORY}/${${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME}
-    OUTPUT_VARIABLE MODIFIED_PACKAGES_LIST
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
+  IF (EXISTS "${MODIFIED_FILES_FILE_NAME}")
+    EXECUTE_PROCESS(
+      COMMAND ${PYTHON_EXECUTABLE}
+        ${${PROJECT_NAME}_TRIBITS_DIR}/python/get-tribits-packages-from-files-list.py
+        --files-list-file=${MODIFIED_FILES_FILE_NAME}
+        --deps-xml-file=${CTEST_BINARY_DIRECTORY}/${${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME}
+      OUTPUT_VARIABLE MODIFIED_PACKAGES_LIST
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      )
+  ELSE()
+    SET(MODIFIED_PACKAGES_LIST)
+  ENDIF()
 
   PRINT_VAR(MODIFIED_PACKAGES_LIST)
 
@@ -722,7 +756,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
     "\n***\n")
   
   # The type of test (e.g. Nightly, Experimental, Continuous)
-  SET_DEFAULT_AND_FROM_ENV( CTEST_TEST_TYPE Nightly )
+  SET_DEFAULT_AND_FROM_ENV( CTEST_TEST_TYPE Experimental )
   
   # The default track to send the build to. This can be changed to send
   # the data to a different nightly grouping on the dashboard.
@@ -745,18 +779,9 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # The name of the site in the dashboard (almost never need to override this)
   SET_DEFAULT_AND_FROM_ENV( CTEST_SITE ${CTEST_SITE_DEFAULT} )
 
-  # When run in by the TDD system, gives the root directory
-  SET_DEFAULT_AND_FROM_ENV( TDD_DASHBOARD_ROOT "" )
-
   # The root of the dasbhoard where ${PROJECT_NAME} will be cloned and the
   # BUILD directory will be create (only override for separate testing)
-  IF (TDD_DASHBOARD_ROOT)
-    MESSAGE("Hard setting CTEST_DASHBOARD_ROOT because TDD_DASHBOARD_ROOT is set!")
-    SET(CTEST_DASHBOARD_ROOT "${TDD_DASHBOARD_ROOT}/${BUILD_DIR_NAME}")
-    PRINT_VAR(CTEST_DASHBOARD_ROOT)
-  ELSE()
-    SET_DEFAULT_AND_FROM_ENV( CTEST_DASHBOARD_ROOT "" )
-  ENDIF()
+  SET_DEFAULT_AND_FROM_ENV( CTEST_DASHBOARD_ROOT "" )
 
   # The build type (e.g. DEBUG, RELEASE, NONE)
   SET_DEFAULT_AND_FROM_ENV( BUILD_TYPE NONE )
@@ -866,26 +891,15 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # ${PROJECT_NAME}_PACKAGES always be the full set of packages as defined by
   # the basic readin process
 
-  # Override the location of the base directory where the package dependency
-  # related files will be read relative to.  If left "", then this will be reset
-  # to CTEST_SORUCE_DIRECTORY.
-  SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_DEPS_HOME_DIR "")
-
   # Set the file that the extra repos will be read from
   #
-  # NOTE: Here, we have no choice but to point into the master
+  # NOTE: Here, we have no choice but to point into the "driver"
   # ${PROJECT_NAME} source treee because the local ${PROJECT_NAME} sources have not
   # even been checked out yet!  Unless, of course, we are unit testing
   # in which case we will use whatever has been passed in.
 
-  IF (NOT ${PROJECT_NAME}_DEPS_HOME_DIR)
-    SET(${PROJECT_NAME}_EXTRAREPOS_FILE_DEFAULT
-      "${${PROJECT_NAME}_CMAKE_DIR}/${${PROJECT_NAME}_EXTRA_EXTERNAL_REPOS_FILE_NAME}")
-  ELSE()
-    SET(${PROJECT_NAME}_EXTRAREPOS_FILE_DEFAULT
-      "${${PROJECT_NAME}_DEPS_HOME_DIR}/cmake/${${PROJECT_NAME}_EXTRA_EXTERNAL_REPOS_FILE_NAME}")
-  ENDIF()
-  SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_EXTRAREPOS_FILE ${${PROJECT_NAME}_EXTRAREPOS_FILE_DEFAULT})
+  SET_DEFAULT_AND_FROM_ENV(${PROJECT_NAME}_EXTRAREPOS_FILE
+    "${TRIBITS_PROJECT_ROOT}/cmake/${${PROJECT_NAME}_EXTRA_EXTERNAL_REPOS_FILE_NAME}")
 
   # Select the set of extra external repos to add in packages.
   # These are the same types as CTEST_TEST_TYPE (e.g. 'Continuous' and
@@ -895,6 +909,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # If in release mode generally we do not want any external repositories
   # even though the CTEST_TEST_TYPE is set to "Nightly" for most release
   # builds.
+  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
   IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
     SET(${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE_DEFAULT ${CTEST_TEST_TYPE})
   ELSE()
@@ -964,9 +979,8 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # Some platform-independent setup
   #
   
-  INCLUDE("${${PROJECT_NAME}_HOME_DIR}/CTestConfig.cmake")
+  INCLUDE("${TRIBITS_PROJECT_ROOT}/CTestConfig.cmake")
   SET(CMAKE_CACHE_CLEAN_FILE "${CTEST_BINARY_DIRECTORY}/CMakeCache.clean.txt")
-  SET(CTEST_NOTES_FILES "${CTEST_NOTES_FILES};${CMAKE_CACHE_CLEAN_FILE}")
   SET(CTEST_USE_LAUNCHERS 1)
 
   # For coverage dashboards, send results to specialized dashboard if
@@ -1083,7 +1097,6 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
 
     FILE(WRITE "${CTEST_BINARY_DIRECTORY}/Updates.txt"
      ${EXTRA_REPO_CHANGES_STR})
-    SET(CTEST_NOTES_FILES "${CTEST_BINARY_DIRECTORY}/Updates.txt;${CTEST_NOTES_FILES}")
     # NOTE: Above, we are making the 'Updates.txt' file come first because
     # this will be the first Notes file shown on CDash.
 
@@ -1221,6 +1234,9 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
     "\n***\n"
     )
 
+  IF (EXISTS ${CTEST_BINARY_DIRECTORY}/Updates.txt)
+    SET(CTEST_NOTES_FILES "${CTEST_BINARY_DIRECTORY}/Updates.txt;${CTEST_NOTES_FILES}")
+  ENDIF()
   PRINT_VAR(CTEST_NOTES_FILES)
 
   # Note: We must only do the submit after we have decided if there are any
@@ -1303,6 +1319,8 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
       ENDIF()
       LIST(APPEND CONFIGURE_OPTIONS
         "-D${PROJECT_NAME}_EXTRAREPOS_FILE:STRING=${${PROJECT_NAME}_EXTRAREPOS_FILE}")
+      LIST(APPEND CONFIGURE_OPTIONS # See TRIBITS_SETUP_PACKAGES
+        "-D${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES:BOOL=ON")
       LIST(APPEND CONFIGURE_OPTIONS
         "-D${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=${${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE}")
       IF (DEFINED ${PROJECT_NAME}_LAST_CONFIGURED_PACKAGE)
@@ -1357,8 +1375,13 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
           # load target properties and test keywords
           CTEST_READ_CUSTOM_FILES(BUILD "${CTEST_BINARY_DIRECTORY}")
           # Overridde from this file!
-          INCLUDE("${${PROJECT_NAME}_CMAKE_DIR}/../CTestConfig.cmake")
+          INCLUDE("${TRIBITS_PROJECT_ROOT}/CTestConfig.cmake")
         ENDIF()
+
+        IF (EXISTS ${CMAKE_CACHE_CLEAN_FILE})
+          SET(CTEST_NOTES_FILES "${CTEST_NOTES_FILES};${CMAKE_CACHE_CLEAN_FILE}")
+        ENDIF()
+        PRINT_VAR(CTEST_NOTES_FILES)
       
         # Submit configure results and the notes to the dashboard 
         IF (CTEST_DO_SUBMIT)

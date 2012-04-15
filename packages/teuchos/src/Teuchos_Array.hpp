@@ -406,26 +406,30 @@ public:
 	/** \brief Return non-const view of a contiguous range of elements.
 	 *
 	 * <b>Preconditions:</b><ul>
-	 * <li><tt>this->size()() > 0</tt>
    * <li><tt>0 <= offset && offset + size <= this->size()</tt>
 	 * </ul>
 	 *
 	 * <b>Postconditions:</b><ul>
    * <li><tt>returnVal.size() == size</tt>
 	 * </ul>
+   *
+   * NOTE: A <tt>size==0</tt> view of even an empty Array is allowed and
+   * returns a <tt>null</tt> view.
    */
 	inline ArrayView<T> view( size_type offset, size_type size );
 
 	/** \brief Return const view of a contiguous range of elements.
 	 *
 	 * <b>Preconditions:</b><ul>
-	 * <li><tt>this->size()() > 0</tt>
    * <li><tt>0 <= offset && offset + size <= this->size()</tt>
 	 * </ul>
 	 *
 	 * <b>Postconditions:</b><ul>
    * <li><tt>returnVal.size() == size</tt>
 	 * </ul>
+   *
+   * NOTE: A <tt>size==0</tt> view of even an empty Array is allowed and
+   * returns a <tt>null</tt> view.
    */
 	inline ArrayView<const T> view( size_type offset, size_type size ) const;
 

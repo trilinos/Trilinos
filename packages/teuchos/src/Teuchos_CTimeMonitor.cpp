@@ -63,7 +63,7 @@ int Teuchos_startTimer( char timerName[], int timerID )
   try {
     if( timerID < 0 ) {
       // The timer does not exist so create it!
-      timerArray.push_back(Teuchos::TimeMonitor::getNewTimer(timerName));
+      timerArray.push_back(Teuchos::TimeMonitor::getNewCounter(timerName));
       timerArray.back()->start();
       return timerArray.size()-1;
     }
@@ -88,6 +88,7 @@ int Teuchos_startTimer( char timerName[], int timerID )
     return -1;
   }
   return timerID;
+  (void)success; // To avoid wrong compiler warning on GCC 4.6.1 
 }
 
 
@@ -108,4 +109,5 @@ void Teuchos_stopTimer( int timerID )
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,
     *Teuchos::VerboseObjectBase::getDefaultOStream(), success);
+  (void)success; // GCC 4.6.1 says this variable is unused?
 }

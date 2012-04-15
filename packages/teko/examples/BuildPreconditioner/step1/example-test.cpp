@@ -147,7 +147,7 @@ int main(int argc,char * argv[])
    Teko::Epetra::EpetraBlockPreconditioner prec(precFact); /*@ \label{lnet:const-epetra-prec} @*/
    prec.buildPreconditioner(A); // fill epetra preconditioner using the strided operator
 
-   // apply the precondtioner
+   // apply the preconditioner
    prec.ApplyInverse(b,x);
 
    x.Print(std::cout);

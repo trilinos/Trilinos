@@ -139,11 +139,11 @@ InstallParallelLibrary(nemIf32,$(PLIBDIR))
 CTESTLIBS = $(EXOIIV2C) $(NETCDF) -lm
 FTESTLIBS = $(EXOIIV2FOR) $(EXOIIV2C) $(NETCDF) -lm
 
-test: libnemesis.a libnemIf.a ne_test.c forbind/ne_test.F
-	$(CC) -c $(CFLAGS) ne_test.c
-	$(CC) $(LDOPTIONS) -o ne_ctest ne_test.o libnemesis.a $(LIBPATH) $(CTESTLIBS)
-	$(FC) -c $(FFLAGS) $(STD_DEFINES) -I./forbind forbind/ne_test.F
-	$(FC) $(LDOPTIONS) -o ne_ftest ne_test.o libnemIf.a libnemesis.a $(LIBPATH) $(FTESTLIBS)
+test: libnemesis.a libnemIf.a ne_ctest.c forbind/ne_ftest.F
+	$(CC) -c $(CFLAGS) ne_ctest.c
+	$(CC) $(LDOPTIONS) -o ne_ctest ne_ctest.o libnemesis.a $(LIBPATH) $(CTESTLIBS)
+	$(FC) -c $(FFLAGS) $(STD_DEFINES) -I./forbind forbind/ne_ftest.F
+	$(FC) $(LDOPTIONS) -o ne_ftest ne_ftest.o libnemIf.a libnemesis.a $(LIBPATH) $(FTESTLIBS)
 
 ExtraStuffToClean(ne_ctest ne_ftest ne_test.exoII  ne_test.nemI)
 

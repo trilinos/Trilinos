@@ -461,27 +461,31 @@ namespace Tpetra {
       bool allSucceeded = true;
       std::vector<size_t> badLineNumbers; 
       size_t validDataLines = 0;
-      while (getline (in, line))
-	{
-	  size_t start, size;
-	  if (checkCommentLine (line, start, size, lineNumber, tolerant))
-	    continue; // it's a comment line
-	  const std::string theLine = line.substr (start, size);
-
-	  Ordinal rowIndex, colIndex;
-	  const bool localSuccess = readPatternLine (theLine, rowIndex, colIndex, lineNumber++, tolerant);
-	  anySucceeded = anySucceeded || localSuccess;
-	  allSucceeded = allSucceeded && localSuccess;
-	  if (! localSuccess)
-	    badLineNumbers.push_back (lineNumber);
-	  else
-	    {
-	      add (rowIndex, colIndex);
-	      validDataLines++;
-	    }
+      while (getline (in, line)) {
+	size_t start, size;
+	if (checkCommentLine (line, start, size, lineNumber, tolerant)) {
+	  continue; // it's a comment line
 	}
-      if (lineNumber == startingLineNumber)
+	const std::string theLine = line.substr (start, size);
+
+	Ordinal rowIndex, colIndex;
+	const bool localSuccess = 
+	  readPatternLine (theLine, rowIndex, colIndex, 
+			   lineNumber++, tolerant);
+	anySucceeded = anySucceeded || localSuccess;
+	allSucceeded = allSucceeded && localSuccess;
+	if (! localSuccess) {
+	  badLineNumbers.push_back (lineNumber);
+	}
+	else {
+	  // Add the newly read entry to the sparse graph.
+	  add (rowIndex, colIndex);
+	  ++validDataLines;
+	}
+      }
+      if (lineNumber == startingLineNumber) {
 	anySucceeded = true; // Trivially true
+      }
     
       return std::make_pair (allSucceeded, badLineNumbers);
     }

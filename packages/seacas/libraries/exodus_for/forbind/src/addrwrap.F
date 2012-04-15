@@ -2433,7 +2433,6 @@ C
         INTEGER*4 NUMLNK4
         INTEGER*4 NUMATR4
 
-        INTEGER   NUMLNK
         INTEGER   NUMELB
 
         IDEXO4 = IDEXO

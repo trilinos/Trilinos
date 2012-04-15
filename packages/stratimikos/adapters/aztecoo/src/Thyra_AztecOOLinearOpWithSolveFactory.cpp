@@ -594,7 +594,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
       outArg(epetra_epetraPrecOpApplyAs), outArg(epetra_epetraPrecOpAdjointSupport));
     TEUCHOS_TEST_FOR_EXCEPTION(
       epetra_epetraPrecOp.get()==NULL,std::logic_error
-      ,"Error, The input prec object and its embedded precondtioner"
+      ,"Error, The input prec object and its embedded preconditioner"
       " operator must be fully initialized before calling this function!"
       );
     // 2007/08/10: rabartl: This next set_extra_data(...) call is likely to be
@@ -948,7 +948,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
       //
       // The preconditioner comes as an operator so let's use it as such
       //
-      // Forawrd solve
+      // Forward solve
       RCP<const Epetra_Operator>
         epetraOps[]
         = { epetra_epetraPrecOp };

@@ -323,13 +323,17 @@ APPEND_SET(HEADERS
   LOCA_AnasaziOperator_AbstractStrategy.H
   LOCA_AnasaziOperator_JacobianInverse.H
   LOCA_AnasaziOperator_ShiftInvert.H
+  LOCA_AnasaziOperator_ShiftInvert2Matrix.H
   LOCA_AnasaziOperator_Cayley.H
+  LOCA_AnasaziOperator_Cayley2Matrix.H
   LOCA_AnasaziOperator_Factory.H
   )
 APPEND_SET(SOURCES
   LOCA_AnasaziOperator_JacobianInverse.C
   LOCA_AnasaziOperator_ShiftInvert.C
+  LOCA_AnasaziOperator_ShiftInvert2Matrix.C
   LOCA_AnasaziOperator_Cayley.C
+  LOCA_AnasaziOperator_Cayley2Matrix.C
   LOCA_AnasaziOperator_Factory.C
   )
 IF (NOX_ENABLE_Anasazi)

@@ -215,7 +215,7 @@ float edgeSizeThreshold;
 int randomizeInitDist;
 int final_output;
 
-int nCoords;
+int nCoords=0;
 double *tmpcoords = NULL;
  
 phg_GID_lookup  *lookup_myObjs = NULL;
@@ -1804,13 +1804,14 @@ MPI_Datatype zoltan_gno_mpi_type;
     goPinGNO = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * nremove_size);
     goPinProc = (int *)ZOLTAN_MALLOC(sizeof(int) * nremove_size);
 
-    if (!goEdgeGNO || !goEdgeSize || !goPinGNO || !goPinProc){
+    if ((nremove && (!goEdgeGNO || !goEdgeSize)) ||
+        (nremove_size && (!goPinGNO||!goPinProc))) {
       MEMORY_ERROR;
     }
 
     goEdgeWeight = (float *)ZOLTAN_MALLOC(sizeof(float) * nremove * ew_dim);
 
-    if (ew_dim && !goEdgeWeight){
+    if (nremove && ew_dim && !goEdgeWeight){
       MEMORY_ERROR;
     }
   }

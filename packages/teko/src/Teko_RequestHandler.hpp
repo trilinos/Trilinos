@@ -64,7 +64,7 @@ namespace Teko {
   * data a "request", however it actually requires 
   * a handler to satisfy the request.
   *
-  * \note The implemntation is based on the listener pattern.
+  * \note The implementation is based on the listener pattern.
   */
 class RequestHandler {
 public:

@@ -31,19 +31,38 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_CodeTypes.h>
-
-#include <assert.h>
-#include <stdlib.h>
-#include <fstream>
-#include <iostream>
-#include <iomanip>
-#include <math.h>
-#include <string>
-#include <cstring>
-
-#include <init/Ionit_Initializer.h>
-#include <Ioss_SubSystem.h>
 #include <Ioss_Utils.h>
+#include <assert.h>
+#include <init/Ionit_Initializer.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <algorithm>
+#include <cstring>
+#include <iomanip>
+#include <iostream>
+#include <fstream>
+#include <map>
+#include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "Ioss_CommSet.h"
+#include "Ioss_DBUsage.h"
+#include "Ioss_DatabaseIO.h"
+#include "Ioss_ElementBlock.h"
+#include "Ioss_ElementTopology.h"
+#include "Ioss_Field.h"
+#include "Ioss_GroupingEntity.h"
+#include "Ioss_IOFactory.h"
+#include "Ioss_NodeBlock.h"
+#include "Ioss_NodeSet.h"
+#include "Ioss_Property.h"
+#include "Ioss_Region.h"
+#include "Ioss_SideBlock.h"
+#include "Ioss_SideSet.h"
+#include "Ioss_State.h"
+#include "Ioss_VariableType.h"
 #include "vector3d.h"
 
 #ifdef HAVE_MPI

@@ -103,7 +103,7 @@ class MLPrecOp: public virtual Epetra_Operator {
     //! Destructor
   ~MLPrecOp(){}
   //@}
-  //@{ \name Atribute set methods.
+  //@{ \name Attribute set methods.
 
     //! If set true, transpose of this operator will be applied.
     /*! This flag allows the transpose of the given operator to be used
@@ -153,7 +153,7 @@ class MLPrecOp: public virtual Epetra_Operator {
   double NormInf() const {return(0.0);};
   //@}
   
-  //@{ \name Atribute access functions
+  //@{ \name Attribute access functions
 
   //! Returns a character string describing the operator
   const char * Label() const{return(Label_);};

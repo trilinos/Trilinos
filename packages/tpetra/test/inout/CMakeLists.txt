@@ -27,3 +27,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   DEPLIBS kokkos kokkoslinalg kokkosnodeapi tpetrainout tpetratestlib
   )
+
+# This test should work for any number of MPI processes, as long as
+# the dense matrix to be read in has enough rows that it may be
+# distributed over all of them.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MatrixMarket_Tpetra_MultiVector_InOutTest
+  SOURCES
+    MatrixMarket_Tpetra_MultiVector_InOutTest.cpp
+  ARGS ""
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  DEPLIBS kokkos kokkoslinalg kokkosnodeapi tpetrainout tpetratestlib
+  )

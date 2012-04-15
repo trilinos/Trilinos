@@ -41,13 +41,12 @@ GRAPH = \
 
 HA_H = \
 	$(srcdir)/ha/ha_const.h \
-	$(srcdir)/ha/ha_drum.h
+	$(srcdir)/ha/ha_ovis.h 
 
 HA = \
-	$(srcdir)/ha/build_machine_desc.c \
 	$(srcdir)/ha/divide_machine.c \
 	$(srcdir)/ha/get_processor_name.c \
-	$(srcdir)/ha/ha_drum.c
+	$(srcdir)/ha/ha_ovis.c 
 
 HIER_H = \
 	$(srcdir)/hier/hier.h
@@ -112,55 +111,7 @@ MATRIX = \
 	$(srcdir)/matrix/matrix_distribute.c \
 	$(srcdir)/matrix/matrix_operations.c \
 	$(srcdir)/matrix/matrix_sym.c \
-	$(srcdir)/matrix/matrix_utils.c \
-	$(srcdir)/matrix/common_sort.c
-
-EXTRA_OCT_H = \
-	$(srcdir)/oct/costs_const.h \
-	$(srcdir)/oct/costs.h \
-	$(srcdir)/oct/dfs_const.h \
-	$(srcdir)/oct/dfs.h \
-	$(srcdir)/oct/migoct_const.h \
-	$(srcdir)/oct/migreg_const.h \
-	$(srcdir)/oct/migreg.h \
-	$(srcdir)/oct/migtags_const.h \
-	$(srcdir)/oct/msg_const.h \
-	$(srcdir)/oct/octant_const.h \
-	$(srcdir)/oct/octree_const.h \
-	$(srcdir)/oct/octupdate_const.h \
-	$(srcdir)/oct/octupdate.h \
-	$(srcdir)/oct/oct_util_const.h \
-	$(srcdir)/oct/rootlist_const.h \
-	$(srcdir)/oct/SFC.h
-
-EXTRA_OCT = \
-	$(srcdir)/oct/costs.c \
-	$(srcdir)/oct/dfs.c \
-	$(srcdir)/oct/migoct.c \
-	$(srcdir)/oct/migreg.c \
-	$(srcdir)/oct/migtags.c \
-	$(srcdir)/oct/msg.c \
-	$(srcdir)/oct/octant.c \
-	$(srcdir)/oct/oct_plot.c \
-	$(srcdir)/oct/octree.c \
-	$(srcdir)/oct/octupdate.c \
-	$(srcdir)/oct/oct_util.c \
-	$(srcdir)/oct/output.c \
-	$(srcdir)/oct/rootlist.c
-
-if BUILD_OCTREEPARTITIONING
-
-OCT_H = $(EXTRA_OCT_H)
-
-OCT = $(EXTRA_OCT)
-
-else
-
-OCT_H =
-
-OCT =
-
-endif
+	$(srcdir)/matrix/matrix_utils.c 
 
 ORDER_H = \
 	$(srcdir)/order/order_const.h \
@@ -215,12 +166,6 @@ TPLS = \
 	$(srcdir)/tpls/scatter_graph.c \
 	$(srcdir)/tpls/third_library.c \
 	$(srcdir)/tpls/verify_graph.c
-
-CCOLAMD_H = \
-	$(srcdir)/ccolamd/zoltan_ccolamd.h
-
-CCOLAMD = \
-	$(srcdir)/ccolamd/ccolamd.c
 
 EXTRA_PARMETIS_INTERFACE_H = \
 	$(srcdir)/tpls/parmetis_interface.h
@@ -390,12 +335,14 @@ ZZ_H = \
 	$(srcdir)/zz/zz_id_const.h \
 	$(srcdir)/zz/zz_rand.h \
 	$(srcdir)/zz/zz_sort.h \
+	$(srcdir)/zz/murmur3.h \
 	$(srcdir)/zz/zz_util_const.h
 
 ZZ = \
 	$(srcdir)/zz/zz_coord.c \
 	$(srcdir)/zz/zz_gen_files.c \
 	$(srcdir)/zz/zz_hash.c \
+	$(srcdir)/zz/murmur3.c \
 	$(srcdir)/zz/zz_map.c \
 	$(srcdir)/zz/zz_heap.c \
 	$(srcdir)/zz/zz_init.c \
@@ -409,48 +356,28 @@ ZZ = \
 
 EXTRA_FORTRAN_H = \
     $(srcdir)/fort/cwrap_fmangle.h \
-    $(srcdir)/fort/lbfn.h \
-    $(srcdir)/fort/lbif.h \
     $(srcdir)/fort/set_borderobjlist.fn \
-    $(srcdir)/fort/set_borderobjlist.fn.lbfn \
     $(srcdir)/fort/set_borderobjlist.if \
-    $(srcdir)/fort/set_borderobjlist.if.lbif \
     $(srcdir)/fort/set_childlist.fn \
-    $(srcdir)/fort/set_childlist.fn.lbfn \
     $(srcdir)/fort/set_childlist.if \
-    $(srcdir)/fort/set_childlist.if.lbif \
     $(srcdir)/fort/set_childweight.fn \
-    $(srcdir)/fort/set_childweight.fn.lbfn \
     $(srcdir)/fort/set_childweight.if \
-    $(srcdir)/fort/set_childweight.if.lbif \
     $(srcdir)/fort/set_coarseobjlist.fn \
-    $(srcdir)/fort/set_coarseobjlist.fn.lbfn \
     $(srcdir)/fort/set_coarseobjlist.if \
-    $(srcdir)/fort/set_coarseobjlist.if.lbif \
     $(srcdir)/fort/set_edgelist.fn \
-    $(srcdir)/fort/set_edgelist.fn.lbfn \
     $(srcdir)/fort/set_edgelist.if \
-    $(srcdir)/fort/set_edgelist.if.lbif \
     $(srcdir)/fort/set_edgelistmulti.fn \
     $(srcdir)/fort/set_edgelistmulti.if \
     $(srcdir)/fort/set_firstborderobj.fn \
-    $(srcdir)/fort/set_firstborderobj.fn.lbfn \
     $(srcdir)/fort/set_firstborderobj.if \
-    $(srcdir)/fort/set_firstborderobj.if.lbif \
     $(srcdir)/fort/set_firstcoarseobj.fn \
-    $(srcdir)/fort/set_firstcoarseobj.fn.lbfn \
     $(srcdir)/fort/set_firstcoarseobj.if \
-    $(srcdir)/fort/set_firstcoarseobj.if.lbif \
     $(srcdir)/fort/set_firstobj.fn \
-    $(srcdir)/fort/set_firstobj.fn.lbfn \
     $(srcdir)/fort/set_firstobj.if \
-    $(srcdir)/fort/set_firstobj.if.lbif \
     $(srcdir)/fort/set_fixedobjlist.fn \
     $(srcdir)/fort/set_fixedobjlist.if \
     $(srcdir)/fort/set_geom.fn \
-    $(srcdir)/fort/set_geom.fn.lbfn \
     $(srcdir)/fort/set_geom.if \
-    $(srcdir)/fort/set_geom.if.lbif \
     $(srcdir)/fort/set_geommulti.fn \
     $(srcdir)/fort/set_geommulti.if \
     $(srcdir)/fort/set_hgcs.fn \
@@ -468,65 +395,39 @@ EXTRA_FORTRAN_H = \
     $(srcdir)/fort/set_hierpartition.fn \
     $(srcdir)/fort/set_hierpartition.if \
     $(srcdir)/fort/set_midmigrate.fn \
-    $(srcdir)/fort/set_midmigrate.fn.lbfn \
     $(srcdir)/fort/set_midmigrate.if \
-    $(srcdir)/fort/set_midmigrate.if.lbif \
     $(srcdir)/fort/set_midmigratepp.fn \
     $(srcdir)/fort/set_midmigratepp.if \
     $(srcdir)/fort/set_nextborderobj.fn \
-    $(srcdir)/fort/set_nextborderobj.fn.lbfn \
     $(srcdir)/fort/set_nextborderobj.if \
-    $(srcdir)/fort/set_nextborderobj.if.lbif \
     $(srcdir)/fort/set_nextcoarseobj.fn \
-    $(srcdir)/fort/set_nextcoarseobj.fn.lbfn \
     $(srcdir)/fort/set_nextcoarseobj.if \
-    $(srcdir)/fort/set_nextcoarseobj.if.lbif \
     $(srcdir)/fort/set_nextobj.fn \
-    $(srcdir)/fort/set_nextobj.fn.lbfn \
     $(srcdir)/fort/set_nextobj.if \
-    $(srcdir)/fort/set_nextobj.if.lbif \
     $(srcdir)/fort/set_numborderobj.fn \
-    $(srcdir)/fort/set_numborderobj.fn.lbfn \
     $(srcdir)/fort/set_numborderobj.if \
-    $(srcdir)/fort/set_numborderobj.if.lbif \
     $(srcdir)/fort/set_numchild.fn \
-    $(srcdir)/fort/set_numchild.fn.lbfn \
     $(srcdir)/fort/set_numchild.if \
-    $(srcdir)/fort/set_numchild.if.lbif \
     $(srcdir)/fort/set_numcoarseobj.fn \
-    $(srcdir)/fort/set_numcoarseobj.fn.lbfn \
     $(srcdir)/fort/set_numcoarseobj.if \
-    $(srcdir)/fort/set_numcoarseobj.if.lbif \
     $(srcdir)/fort/set_numedges.fn \
-    $(srcdir)/fort/set_numedges.fn.lbfn \
     $(srcdir)/fort/set_numedges.if \
-    $(srcdir)/fort/set_numedges.if.lbif \
     $(srcdir)/fort/set_numedgesmulti.fn \
     $(srcdir)/fort/set_numedgesmulti.if \
     $(srcdir)/fort/set_numfixedobj.fn \
     $(srcdir)/fort/set_numfixedobj.if \
     $(srcdir)/fort/set_numgeom.fn \
-    $(srcdir)/fort/set_numgeom.fn.lbfn \
     $(srcdir)/fort/set_numgeom.if \
-    $(srcdir)/fort/set_numgeom.if.lbif \
     $(srcdir)/fort/set_numobj.fn \
-    $(srcdir)/fort/set_numobj.fn.lbfn \
     $(srcdir)/fort/set_numobj.if \
-    $(srcdir)/fort/set_numobj.if.lbif \
     $(srcdir)/fort/set_objlist.fn \
-    $(srcdir)/fort/set_objlist.fn.lbfn \
     $(srcdir)/fort/set_objlist.if \
-    $(srcdir)/fort/set_objlist.if.lbif \
     $(srcdir)/fort/set_objsize.fn \
-    $(srcdir)/fort/set_objsize.fn.lbfn \
     $(srcdir)/fort/set_objsize.if \
-    $(srcdir)/fort/set_objsize.if.lbif \
     $(srcdir)/fort/set_objsizemulti.fn \
     $(srcdir)/fort/set_objsizemulti.if \
     $(srcdir)/fort/set_packobj.fn \
-    $(srcdir)/fort/set_packobj.fn.lbfn \
     $(srcdir)/fort/set_packobj.if \
-    $(srcdir)/fort/set_packobj.if.lbif \
     $(srcdir)/fort/set_packobjmulti.fn \
     $(srcdir)/fort/set_packobjmulti.if \
     $(srcdir)/fort/set_partition.fn \
@@ -534,21 +435,15 @@ EXTRA_FORTRAN_H = \
     $(srcdir)/fort/set_partitionmulti.fn \
     $(srcdir)/fort/set_partitionmulti.if \
     $(srcdir)/fort/set_postmigrate.fn \
-    $(srcdir)/fort/set_postmigrate.fn.lbfn \
     $(srcdir)/fort/set_postmigrate.if \
-    $(srcdir)/fort/set_postmigrate.if.lbif \
     $(srcdir)/fort/set_postmigratepp.fn \
     $(srcdir)/fort/set_postmigratepp.if \
     $(srcdir)/fort/set_premigrate.fn \
-    $(srcdir)/fort/set_premigrate.fn.lbfn \
     $(srcdir)/fort/set_premigrate.if \
-    $(srcdir)/fort/set_premigrate.if.lbif \
     $(srcdir)/fort/set_premigratepp.fn \
     $(srcdir)/fort/set_premigratepp.if \
     $(srcdir)/fort/set_unpackobj.fn \
-    $(srcdir)/fort/set_unpackobj.fn.lbfn \
     $(srcdir)/fort/set_unpackobj.if \
-    $(srcdir)/fort/set_unpackobj.if.lbif \
     $(srcdir)/fort/set_unpackobjmulti.fn \
     $(srcdir)/fort/set_unpackobjmulti.if 
 
@@ -556,7 +451,6 @@ EXTRA_FORTRAN = \
     $(srcdir)/fort/ztypes.f90 \
     $(srcdir)/fort/cwrap.c \
     $(srcdir)/fort/zoltan_user_data.f90 \
-    $(srcdir)/fort/lb_user_const.f90 \
     $(srcdir)/fort/fwrap.f90 
 
 if BUILD_ZOLTAN_F90_INTERFACE
@@ -582,12 +476,10 @@ ZOLTAN_H = \
 	$(INCLUDE_H) \
 	$(LB_H) \
 	$(MATRIX_H) \
-	$(OCT_H) \
 	$(ORDER_H) \
 	$(PAR_H) \
 	$(PARAMS_H) \
 	$(TPLS_H) \
-	$(CCOLAMD_H) \
 	$(PARMETIS_INTERFACE_H) \
 	$(PHG_H) \
 	$(RCB_H) \
@@ -608,12 +500,10 @@ libzoltan_a_SOURCES = \
 	$(HSFC) \
 	$(LB) \
 	$(MATRIX) \
-	$(OCT) \
 	$(ORDER) \
 	$(PAR) \
 	$(PARAMS) \
 	$(TPLS) \
-	$(CCOLAMD) \
 	$(PARMETIS_INTERFACE) \
 	$(PHG) \
 	$(RCB) \
@@ -626,8 +516,6 @@ libzoltan_a_SOURCES = \
 	$(FORTRAN)
 
 EXTRA_libzoltan_a_SOURCES = \
-	$(EXTRA_OCT_H) \
-	$(EXTRA_OCT) \
 	$(EXTRA_PARMETIS_INTERFACE_H) \
 	$(EXTRA_PARMETIS_INTERFACE) \
 	$(EXTRA_SCOTCH_INTERFACE_H) \

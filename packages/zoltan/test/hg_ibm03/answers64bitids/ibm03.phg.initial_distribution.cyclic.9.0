@@ -1,0 +1,51 @@
+Decomposition Method 	= hypergraph
+Zoltan Parameters       = obj_weight_dim = 1
+Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
+Zoltan Parameters       = lb_approach = partition
+File Type		= matrixmarket+, initial distribution=cyclic, initial pins=cyclic
+File Name		= ibm03
+Parallel Disk Info	= number=0
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm
+210	0	-1	-1
+786	0	-1	-1
+1629	0	-1	-1
+1735	0	-1	-1
+2632	0	-1	-1
+5387	0	-1	-1
+5575	0	-1	-1
+6820	0	-1	-1
+6840	0	-1	-1
+7090	0	-1	-1
+7292	0	-1	-1
+7343	0	-1	-1
+7452	0	-1	-1
+8297	0	-1	-1
+8366	0	-1	-1
+9184	0	-1	-1
+9190	0	-1	-1
+9768	0	-1	-1
+9809	0	-1	-1
+10868	0	-1	-1
+11143	0	-1	-1
+11463	0	-1	-1
+12134	0	-1	-1
+12998	0	-1	-1
+13158	0	-1	-1
+18480	0	-1	-1
+18482	0	-1	-1
+18510	0	-1	-1
+18784	0	-1	-1
+18984	0	-1	-1
+19420	0	-1	-1
+19446	0	-1	-1
+19896	0	-1	-1
+20424	0	-1	-1
+20602	0	-1	-1
+20846	0	-1	-1
+20922	0	-1	-1
+22110	0	-1	-1
+22199	0	-1	-1
+22287	0	-1	-1
+22354	0	-1	-1
+22822	0	-1	-1

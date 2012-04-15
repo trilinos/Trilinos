@@ -405,6 +405,14 @@ matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_P
     graph_callbacks = 1;
   }
 
+/* TEMPORARY FIX */
+if (!graph_callbacks){
+  fprintf(stderr,"Bug #5470: matrix_get_edges fails for hypergraph queries\n");
+  return ZOLTAN_FATAL; 
+}
+hypergraph_callbacks=0;
+/* TEMPORARY FIX */
+
   if (graph_callbacks && hypergraph_callbacks){
 /*     if (hgraph_model == GRAPH) */
 /*       hypergraph_callbacks = 0; */
@@ -419,7 +427,6 @@ matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_P
       *xGID = NULL;
     ZOLTAN_FREE(xLID);
     ZOLTAN_FREE(xGNO);
-
     ierr = Zoltan_Hypergraph_Queries(zz, &matrix->nY,
 				     &matrix->nPins, yGID, &matrix->ystart,
 				     pinID);
@@ -431,11 +438,9 @@ matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_P
     int vertex;
     int numGID, numLID;
 
-
     matrix->opts.enforceSquare = 1;
     matrix->nY = nX; /* It is square ! */
     matrix->yGNO = *xGNO;
-    *xGNO = NULL;
     *yGID = NULL;
     matrix->ywgtdim = zz->Obj_Weight_Dim;
     *xwgt = NULL;
@@ -481,10 +486,14 @@ matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_P
 
     /* Not Useful anymore */
     ZOLTAN_FREE(xLID);
-    if (use_full_dd || ((ZOLTAN_ID_PTR) *xGNO != *xGID))
+    if (use_full_dd || ((ZOLTAN_ID_PTR) *xGNO != *xGID)) {
       ZOLTAN_FREE(xGID);
-    else
+      *xGNO = NULL;
+    }
+    else {
       *xGID = NULL;
+      *xGNO = NULL;
+    }
     ZOLTAN_FREE(&nbors_proc);
 
     /* Now construct CSR indexing */

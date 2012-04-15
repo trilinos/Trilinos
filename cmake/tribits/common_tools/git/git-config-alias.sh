@@ -12,15 +12,20 @@
 
 # Shorter versions of log
 eg config --global alias.log-short "log --pretty=format:'%Cgreen%h%Creset \"%s\"%nAuthor: %an <%ae>%nDate:   %ad (%cr)%n'"
+eg config --global alias.log-short-nc "log --pretty=format:'%h \"%s\"%nAuthor: %an <%ae>%nDate:   %ad (%cr)%n'"
 eg config --global alias.log-oneline "log --pretty=format:'%Cgreen%h%Creset \"%s\" <%ae> [%ad] (%cr)'"
 eg config --global alias.log-oneline-nc "log --pretty=format:'%h \"%s\" <%ae> [%ad] (%cr)'"
 eg config --global alias.log-local "log --pretty=format:'%Cgreen%h%Creset \"%s\" <%ae> [%ad] (%cr)' origin.."
 
 # Summarizing changes locally and remotely
 eg config --global alias.local-stat "!git status ; echo ; echo 'Commits in local repo not yet pushed to origin/master:' ; echo ; git log --pretty=format:'%Cgreen%h%Creset \"%s\" <%ae> [%ad] (%cr)' --name-status HEAD ^origin/master"
+eg config --global alias.local-stat-nc "!git status ; echo ; echo 'Commits in local repo not yet pushed to origin/master:' ; echo ; git log --pretty=format:'%h \"%s\" <%ae> [%ad] (%cr)' --name-status HEAD ^origin/master"
 eg config --global alias.remote-stat "!git status ; echo ; echo 'Commits in origin/master not in local repo:' ; echo ; git log --pretty=format:'%Cgreen%h%Creset \"%s\" <%ae> [%ad] (%cr)' --name-status ^HEAD origin/master"
+eg config --global alias.remote-stat-nc "!git status ; echo ; echo 'Commits in origin/master not in local repo:' ; echo ; git log --pretty=format:'%h \"%s\" <%ae> [%ad] (%cr)' --name-status ^HEAD origin/master"
 eg config --global alias.local-stat-short "!git status ; echo ; echo 'Commits in local repo not yet pushed to origin/master:' ; echo ; git log --pretty=format:'%Cgreen%h%Creset \"%s\" <%ae> [%ad] (%cr)' --shortstat --dirstat=0 HEAD ^origin/master"
+eg config --global alias.local-stat-short-nc "!git status ; echo ; echo 'Commits in local repo not yet pushed to origin/master:' ; echo ; git log --pretty=format:'%h \"%s\" <%ae> [%ad] (%cr)' --shortstat --dirstat=0 HEAD ^origin/master"
 eg config --global alias.remote-stat-short "!git status ; echo ; echo 'Commits in origin/master not in local repo:' ; echo ; git log --pretty=format:'%Cgreen%h%Creset \"%s\" <%ae> [%ad] (%cr)' --shortstat --dirstat=0 ^HEAD origin/master"
+eg config --global alias.remote-stat-short-nc "!git status ; echo ; echo 'Commits in origin/master not in local repo:' ; echo ; git log --pretty=format:'%h \"%s\" <%ae> [%ad] (%cr)' --shortstat --dirstat=0 ^HEAD origin/master"
 
 # Diffing text files like latex (undocumented option --color-words)
 eg config --global alias.wlog "log --color-words"

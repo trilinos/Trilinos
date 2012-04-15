@@ -1,4 +1,4 @@
-INCLUDE("../../../TrilinosVersion.cmake")
+INCLUDE("../../../../Version.cmake")
 
 TRILINOS_DRIVER_SETUP()
 
@@ -59,7 +59,7 @@ IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "master")
     ctest_linux_nightly_serial_development_opt_pgi_11.1_stable_trilinos-test.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
-    TIMEOUT_MINUTES 300
+    TIMEOUT_MINUTES 420
   )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(

@@ -37,6 +37,7 @@
 #include "Stokhos_Quadrature.hpp"
 #include "Stokhos_ProductBasis.hpp"
 #include "Teuchos_RCP.hpp"
+#include "pecos_global_defs.hpp"
 
 namespace Stokhos {
 
@@ -63,7 +64,9 @@ namespace Stokhos {
     AnisoSparseGridQuadrature(
       const Teuchos::RCP<const ProductBasis<ordinal_type,value_type> >& product_basis,
       ordinal_type sparse_grid_level,
-      value_type dim_weights[]);
+      value_type dim_weights[],
+      value_type duplicate_tol = 1.0e-12,
+      ordinal_type growth_rate = Pecos::MODERATE_RESTRICTED_GROWTH);
 
     //! Destructor
     virtual ~AnisoSparseGridQuadrature() {}

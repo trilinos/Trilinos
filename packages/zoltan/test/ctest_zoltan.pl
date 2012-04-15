@@ -105,6 +105,15 @@ print LOG "$time\n";
 ### If output subdirectory does not exist, create it.
 mkdir "output" unless -d "output";
 
+### If answers directory exists, use it.  Otherwise look for answers64bitids.
+if (-d "answers") {
+  $answersdir = "answers";
+}
+else
+{
+  $answersdir = "answers64bitids";
+}
+
 
 ### Get list of input files
 if ($package eq "Zoltan") {
@@ -190,7 +199,7 @@ TEST:  foreach $file (@inpfiles) {
   ### For serial tests only...if answer file doesn't exist, skip the test.
   if ($loop_np == 1) {
     $zoutfile = sprintf("%s%d", $archfilebase, 0);
-    if (!(-e "answers/$zoutfile")) {
+    if (!(-e "$answersdir/$zoutfile")) {
       print LOG "Test $dirname:$testname SKIPPED (no answer file)\n";
       print "Test $dirname:$testname SKIPPED (no answer file)\n";
       next TEST;
@@ -220,8 +229,8 @@ TEST:  foreach $file (@inpfiles) {
     $zoutdrop = sprintf("$format", $zoutdropbase, $ii);
     $archfile = sprintf("output/$format", $archfilebase, $ii);
     $archdrop = sprintf("output/$format", $archdropbase, $ii);
-    $answfile = sprintf("answers/$format", $archfilebase, $ii);
-    $answdrop = sprintf("answers/$format", $archdropbase, $ii);
+    $answfile = sprintf("$answersdir/$format", $archfilebase, $ii);
+    $answdrop = sprintf("$answersdir/$format", $archdropbase, $ii);
     if ($debug) {print "DEBUG moving files:  $zoutfile $archfile\n";}
     if (-e "$zoutfile") {
       move($zoutfile, $archfile);

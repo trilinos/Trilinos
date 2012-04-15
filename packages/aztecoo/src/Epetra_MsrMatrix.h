@@ -217,7 +217,7 @@ class Epetra_MsrMatrix: public Epetra_Object, public Epetra_CompObject, public v
 
   //@}
   
-  //! @name Atribute access functions
+  //! @name Attribute access functions
   //@{ 
 
     //! Returns a pointer to the Aztec Msr matrix used to create this object.

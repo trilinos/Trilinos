@@ -116,6 +116,30 @@ TEUCHOS_UNIT_TEST( ArrayRCP, operator_parenth_ArrayView_const_null )
 }
 
 
+TEUCHOS_UNIT_TEST( ArrayRCP, null_zero_ArrayView_operator )
+{
+  const ArrayRCP<const A> a_arcp;
+  const ArrayView<const A> av = a_arcp(0, 0);
+  TEST_ASSERT(is_null(av));
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, null_zero_ArrayView_view_func )
+{
+  const ArrayRCP<const A> a_arcp;
+  const ArrayView<const A> av = a_arcp.view(0, 0);
+  TEST_ASSERT(is_null(av));
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, null_zero_ArrayView_persistingView )
+{
+  const ArrayRCP<const A> a_arcp;
+  const ArrayRCP<const A> a_arcp2 = a_arcp.persistingView(0, 0);
+  TEST_ASSERT(is_null(a_arcp2));
+}
+
+
 TEUCHOS_UNIT_TEST( ArrayRCP, implicit_ArrayRCP_const )
 {
   const ArrayRCP<A> a_arcp;
@@ -644,6 +668,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, assign_begin_end, T )
 }
 
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, print_iterators, T )
+{
+  typedef typename ArrayRCP<T>::const_iterator const_iterator;
+  ECHO(ArrayRCP<T> a_arcp = arcp<T>(n));
+  ECHO(const_iterator itr = a_arcp.begin());
+  out << "itr = " << itr << "\n";
+  TEST_EQUALITY(itr, a_arcp.begin());
+  ECHO(itr += n);
+  out << "itr = " << itr << "\n";
+  TEST_EQUALITY(itr, a_arcp.end());
+}
+
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, deepCopy, T )
 {
   const T val = as<T>(1);
@@ -980,6 +1017,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, outOfBounds, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, assignSelf, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, assign_n_val, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, assign_begin_end, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, print_iterators, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, deepCopy, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, resize, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, clear, T ) \

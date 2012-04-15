@@ -57,7 +57,7 @@
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../../TrilinosVersion.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../../../Version.cmake")
 
 #
 # Set the options specific to this build case
@@ -67,6 +67,7 @@ SET(BUILD_TYPE DEBUG)
 SET(BUILD_DIR_NAME "ZOLTAN_LONG_IDS")
 SET(Trilinos_TRACK ${Trilinos_TESTING_TRACK})
 SET(Trilinos_BRANCH ${Trilinos_REPOSITORY_BRANCH})
+SET(CTEST_TEST_TYPE Nightly)
 SET(CTEST_TEST_TIMEOUT "2400")
 
 #

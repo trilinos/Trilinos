@@ -1,24 +1,38 @@
-# kallikrates driver
+INCLUDE("../../../../Version.cmake")
 
-set(CTEST_EXE "${CMAKE_CTEST_COMMAND}")
-set(workingdir "${TrilinosDriver_BINARY_DIR}")
+TRILINOS_DRIVER_SETUP()
 
-# Now run ctest on each of the ctest build scripts for this machine
-add_test(serial_release
-  "${CTEST_EXE}"
-  -S
-  "${CMAKE_CURRENT_SOURCE_DIR}/ctest_windows_nightly_serial_release.cmake"
-  -VV
-  --output-log
-  "${workingdir}/ctest_msvc_nightly_serial_release_kallikrates.out"
-)
+IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "master")
+  #Nightly tests
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    SERIAL_OPT
+    ctest_windows_nightly_serial_development.cmake
+    RUN_SERIAL
+    TIMEOUT_MINUTES 300
+  )
+  
+   TRILINOS_DRIVER_ADD_DASHBOARD(
+    SERIAL_OPT_SHARED
+    ctest_windows_nightly_serial_development_shared.cmake
+    RUN_SERIAL
+    TIMEOUT_MINUTES 60
+  )
+ 
+ELSE()
+  #Release tests
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    SERIAL_OPT_RELEASE
+    ctest_windows_nightly_serial_release.cmake
+    RUN_SERIAL
+    TIMEOUT_MINUTES 300
+  )
 
-# disabling temporarily since the mpi build is unstable on windows right now.
-#add_test(mpi_release
-#  "${CTEST_EXE}"
-#  -S
-#  "${CMAKE_CURRENT_SOURCE_DIR}/ctest_windows_nightly_mpi_release.cmake"
-#  -VV
-#  --output-log
-#  "${workingdir}/ctest_msvc_nightly_mpi_release_kallikrates.out"
-#)
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    SERIAL_OPT_RELEASE_SHARED
+    ctest_windows_nightly_serial_release_shared.cmake
+    RUN_SERIAL
+    TIMEOUT_MINUTES 60
+  )
+ENDIF()
+
+TRILINOS_ADD_REQUIRED_CMAKE_INSTALLS()

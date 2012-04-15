@@ -3,8 +3,6 @@
 # packages.  This list is read in and used in a variety of places.
 
 SET(${PROJECT_NAME}_EXCLUDE_PACKAGES
-  TrilinosFramework
-  ThreadPool
   Zoltan
   GlobiPack
   OptiPack

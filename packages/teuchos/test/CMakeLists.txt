@@ -8,9 +8,11 @@ ADD_SUBDIRECTORIES(
   Comm
   Containers
   Conditions
+  CWrapperSupport
   DenseMatrix
   Dependencies
   FancyOutputting
+  FilteredIterator
   FunctionObjects
   LAPACK
   MemoryManagement
@@ -19,11 +21,11 @@ ADD_SUBDIRECTORIES(
   ScalarTraits
   TabularOutputter
   Time
+  TwoDArray
   UnitTest
   Validators
   Workspace
   XML
   XMLParser
   dyn_cast
-  TwoDArray
   )

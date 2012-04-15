@@ -38,11 +38,7 @@ ClenshawCurtisLegendreBasis(ordinal_type p, bool normalize, bool isotropic_) :
   this->setup();
 
 #ifdef HAVE_STOKHOS_DAKOTA
-  this->setSparseGridRule(Pecos::CLENSHAW_CURTIS);
-  if (isotropic)
-    this->setSparseGridGrowthRule(Pecos::FULL_EXPONENTIAL);
-  else
-    this->setSparseGridGrowthRule(Pecos::MODERATE_EXPONENTIAL);
+  this->setSparseGridGrowthRule(webbur::level_to_order_exp_cc);
 #endif
 }
 

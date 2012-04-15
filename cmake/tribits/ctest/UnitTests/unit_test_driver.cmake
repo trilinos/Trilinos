@@ -54,59 +54,66 @@
 # @HEADER
 
 
+#
+# This is a helper CTest script that is used to drive unit testing of the
+# TribitsCTestDriverCore.cmake scirpt.
+#
+# NOTE: Some varibles need to be set in the calling script in order to
+# override options set in the environment form the parent TriBITS project run
+# of TribitsCTestDriverCore.cmake
+#
 
 #
-# General setup code:
+# A) General setup code:
 #
 # Do not modify any of this directly, use use environment variables instead!
 #
 
-#
-# Include some CMake/CTest code files
-#
+MESSAGE("CTEST_SCRIPT_DIRECTORY = '${CTEST_SCRIPT_DIRECTORY}'")
 
-#MESSAGE("CTEST_SCRIPT_DIRECTORY = ${CTEST_SCRIPT_DIRECTORY}")
+# The mock test project 
+SET(MOCK_PROJECT_NAME Trilinos)
 
-SET(Trilinos_TRIBITS_DIR $ENV{Trilinos_TRIBITS_DIR})
+GET_FILENAME_COMPONENT(${MOCK_PROJECT_NAME}_TRIBITS_DIR
+  "${CTEST_SCRIPT_DIRECTORY}/../.." ABSOLUTE)
+MESSAGE("${MOCK_PROJECT_NAME}_TRIBITS_DIR = '${${MOCK_PROJECT_NAME}_TRIBITS_DIR}'")
+
+SET(TRIBITS_PROJECT_ROOT "${${MOCK_PROJECT_NAME}_TRIBITS_DIR}/package_arch/UnitTests/MockTrilinos")
 
 SET( CMAKE_MODULE_PATH
-  "${Trilinos_TRIBITS_DIR}/utils"  # To find general support macros
-  "${CTEST_SCRIPT_DIRECTORY}/.."   # To find TrilinosCMakeCoreDriver.cmake
+  "${${MOCK_PROJECT_NAME}_TRIBITS_DIR}/utils"  # To find general support macros
+  "${${MOCK_PROJECT_NAME}_TRIBITS_DIR}/ctest"  # To find TrilinosCMakeCoreDriver.cmake
   )
 
-#
-# Includes
-#
-
 INCLUDE(TribitsCTestDriverCore)
-INCLUDE(GetLastDirName)
 
 
 #
-# Override some configuration variables
+# B) Override some configuration variables
 #
 
 # All these can be changed by env vars
 SET(CTEST_TEST_TYPE Experimental)
 #SET(CTEST_DO_UPDATES FALSE)
-SET(Trilinos_WARNINGS_AS_ERRORS_FLAGS "-Werror")
+SET(${MOCK_PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS "-DummyErrFlags")
 
 # Don't change these in the env!
 SET(CTEST_START_WITH_EMPTY_BINARY_DIRECTORY FALSE)
 SET(CTEST_GENERATE_DEPS_XML_OUTPUT_FILE TRUE)
 SET(CTEST_WIPE_CACHE FALSE)
 
-SET(CTEST_SOURCE_DIRECTORY "${CTEST_SCRIPT_DIRECTORY}/../../..")
-SET(Trilinos_DEPS_HOME_DIR "${Trilinos_TRIBITS_DIR}/package_arch/UnitTests/MockTrilinos")
+SET(CTEST_SOURCE_DIRECTORY "${TRIBITS_PROJECT_ROOT}")
 GET_FILENAME_COMPONENT(PWD . REALPATH)
 SET(CTEST_BINARY_DIRECTORY "${PWD}")
+SET(BUILD_DIR_NAME UnitTests)
+SET(${MOCK_PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE ON)
 
-SET_DEFAULT_AND_FROM_ENV(Trilinos_CTEST_COMMAND ctest)
-SET(CTEST_COMMAND ${Trilinos_CTEST_COMMAND})
+SET_DEFAULT_AND_FROM_ENV(${MOCK_PROJECT_NAME}_CTEST_COMMAND ctest)
+SET(CTEST_COMMAND ${${MOCK_PROJECT_NAME}_CTEST_COMMAND})
 
 
 #
-# Run the build/test/submit driver
+# C) Run the build/test/submit driver
 #
 
 TRIBITS_CTEST_DRIVER()

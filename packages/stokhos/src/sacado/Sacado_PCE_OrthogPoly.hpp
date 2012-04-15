@@ -35,6 +35,7 @@
 
 #include "Teuchos_RCP.hpp"
 
+#include "Sacado_Traits.hpp"
 #include "Sacado_Handle.hpp"
 #include "Sacado_mpl_apply.hpp"
 
@@ -178,6 +179,9 @@ namespace Sacado {
       //! Print approximation in basis
       std::ostream& print(std::ostream& os) const { return th->print(os); }
 
+      //! Returns whether two PCE objects have the same values
+      bool isEqualTo(const OrthogPoly& x) const;
+
       /*!
        * @name Assignment operators
        */
@@ -197,7 +201,7 @@ namespace Sacado {
       //@{
 
       //! Get basis
-      Teuchos::RCP<basis_type> basis() const { return th->basis(); }
+      Teuchos::RCP<const basis_type> basis() const { return th->basis(); }
 
       //! Get expansion
       Teuchos::RCP<expansion_type> expansion() const { return expansion_; }

@@ -64,6 +64,7 @@ APPEND_SET(HEADERS
   Teuchos_ConfigDefs.hpp
   Teuchos_ConstNonconstObjectContainer.hpp
   Teuchos_ConstTypeTraits.hpp
+  Teuchos_CWrapperSupport_Cpp.hpp
   Teuchos_DataAccess.hpp
   Teuchos_DebugDefaultAsserts.hpp
   Teuchos_DefaultComm.hpp
@@ -79,6 +80,7 @@ APPEND_SET(HEADERS
   Teuchos_ExplicitInstantiationHelpers.hpp
   Teuchos_F77_wrappers.h
   Teuchos_FancyOStream.hpp
+  Teuchos_FilteredIterator.hpp
   Teuchos_Flops.hpp
   Teuchos_FunctionObject.hpp
   Teuchos_GlobalMPISession.hpp
@@ -136,6 +138,7 @@ APPEND_SET(HEADERS
   Teuchos_SerializationTraitsHelpers.hpp
   Teuchos_Serializer.hpp
   Teuchos_SerializerHelpers.hpp
+  Teuchos_SimpleObjectDB.hpp
   Teuchos_SimpleObjectTable.hpp
   Teuchos_StandardCatchMacros.hpp
   Teuchos_StandardCompositionMacros.hpp
@@ -145,6 +148,7 @@ APPEND_SET(HEADERS
   Teuchos_StandardMemberCompositionMacros.hpp
   Teuchos_StandardParameterEntryValidators.hpp
   Teuchos_StaticSetupMacro.hpp
+  Teuchos_StringIndexedOrderedValueObjectContainer.hpp
   Teuchos_StringToIntMap.hpp
   Teuchos_TableColumn.hpp
   Teuchos_TableEntry.hpp
@@ -193,6 +197,7 @@ APPEND_SET(SOURCES
   Teuchos_CTimeMonitor.cpp
   Teuchos_CommandLineProcessor.cpp
   Teuchos_CompObject.cpp
+  Teuchos_CWrapperSupport.cpp
   Teuchos_Describable.cpp
   Teuchos_Dependency.cpp
   Teuchos_DependencySheet.cpp
@@ -334,6 +339,7 @@ IF (${PACKAGE_NAME}_ENABLE_MPI)
     )
 
   APPEND_SET(SOURCES
+    Teuchos_DefaultMpiComm.cpp
     Teuchos_MpiReductionOpSetter.cpp
     )
 

@@ -37,82 +37,6 @@ extern "C" {
 #define BITSET(data, elem)       ((data)[(elem) >> 5] |=( 1 << ((elem) & 31)))
 #define BITCHECK(data, elem)     ((data)[(elem) >> 5] & (1 << ((elem) & 31)))
     
-/* UVC:
-   Following quicksort routines are modified from
-   Numerical Recipes Software
-   these versions of quicksort seems to perform
-   better than the ones that exist in Zoltan
-*/
-    
-#define SWAP(a,b) {temp=(a);(a)=(b);(b)=temp;}
-
-#define M             7
-#define NSTACK        50
-
-
-static void uqsorti(int n, int *arr)
-{
-    int         i, ir=n, j, k, l=1;
-    int         jstack=0, istack[NSTACK];
-    int         temp;
-    int a;
-    
-    --arr;
-    for (;;) {
-        if (ir-l < M) {
-            for (j=l+1;j<=ir;j++) {
-                a=arr[j];
-                for (i=j-1;i>=1;i--) {
-                    if (arr[i] <= a) 
-                        break;
-                    arr[i+1] = arr[i];
-                }
-                arr[i+1]=a;
-            }
-            if (jstack == 0) 
-                break;
-            ir=istack[jstack--];
-            l=istack[jstack--];
-        } else {
-            k=(l+ir) >> 1;
-            SWAP(arr[k],arr[l+1]);
-            if (arr[l+1] > arr[ir]) 
-                SWAP(arr[l+1], arr[ir]);
-            if (arr[l] > arr[ir]) 
-                SWAP(arr[l], arr[ir]);
-            if (arr[l+1] > arr[l]) 
-                SWAP(arr[l+1], arr[l]);
-            i=l+1;
-            j=ir;
-            a=arr[l];
-            for (;;) {
-                do i++; while (arr[i] < a);
-                do j--; while (arr[j] > a);
-                if (j < i) break;
-                SWAP(arr[i], arr[j]);
-            }
-            arr[l]=arr[j];
-            arr[j]=a;
-            jstack += 2;
-            if (jstack > NSTACK) 
-                errexit("uqsort: NSTACK too small in sort.");
-            if (ir-i+1 >= j-l) {
-                istack[jstack]=ir;
-                istack[jstack-1]=i;
-                ir=j-1;
-            } else {
-                istack[jstack]=j-1;
-                istack[jstack-1]=l;
-                l=i;
-            }
-        }
-    }
-}
-
-
-#undef M
-#undef NSTACK
-#undef SWAP
 
 static unsigned int hashValue(HGraph *hg, int n, int *ar)
 {
@@ -178,7 +102,7 @@ int Zoltan_PHG_Coarsening
   ZOLTAN_GNO_TYPE *gnoptr;
   int *intptr;
   float *floatptr;
-  double *doubleptr;
+  double *doubleptr = NULL;
   MPI_Datatype zoltan_gno_mpi_type;
   struct phg_timer_indices *timer = NULL;
   int time_details;
@@ -545,9 +469,6 @@ if (VTX_LNO_TO_GNO(hg, i) == 35 || VTX_LNO_TO_GNO(hg, i) == 65 || VTX_LNO_TO_GNO
 
     lno = (int)LevelMap[lno];
     if (hg->nDim) {
-#ifdef KDDKDD_DEBUG
-if (gnoptr[0] == 35 || gnoptr[0] == 65 || gnoptr[0] == 66) printf("%d RECEIVED %d (%f %f %f) into lno %d coorcount %f doublptr %x\n", zz->Proc, gnoptr[0], *doubleptr, *(doubleptr+1), *(doubleptr+2), lno, coorcount[lno]+1., doubleptr);
-#endif
       for (j = 0; j < hg->nDim; j++){
         /* NOTE:  This code must preceed accumulation of vwgt below so that 
          * floatptr is correct. */
@@ -641,9 +562,7 @@ if (gnoptr[0] == 35 || gnoptr[0] == 65 || gnoptr[0] == 66) printf("%d RECEIVED %
           }
       }          
       /* in qsort start and end indices are inclusive */
-      /*    Zoltan_quicksort_list_inc_int(&c_hg->hvertex[sidx], 0, idx-sidx-1); */
-      /* UVC my qsort code is a little bit faster :) */
-      uqsorti(idx-sidx, &c_hg->hvertex[sidx]);
+      Zoltan_quicksort_list_inc_one_int(&c_hg->hvertex[sidx], 0, idx-sidx-1);
   }
   c_hg->hindex[hg->nEdge] = c_hg->nPins = idx;
 

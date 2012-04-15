@@ -46,25 +46,28 @@ module unload PrgEnv-cray
 module unload PrgEnv-intel
 
 module load PrgEnv-${TARGET_COMPILER}
+module load craype-hugepages2m
+module load craype-hugepages2M
 
+module unload papi
+module unload xt-papi
+module unload xt-libsci
 
 if [ -z $VALGRIND_BUILD ]; then
   # These specific module versions are required (defaults don't work)
   echo "Loading fftw"
-  module load fftw/3.2.2.1
-  module load xt-papi
+  module load fftw
+  module load papi
 else
   echo "Unloading libsci and fftw"
   # Unload any problematic modules
   module unload xt-libsci
   module unload fftw
-  module unload xt-papi
 fi
 
 # If you need to something special for your compiler.  Do it here.
 case ${TARGET_COMPILER} in
   pgi)
-    module swap pgi/10.9.0
     ;;
   gnu)
     ;;

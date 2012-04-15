@@ -1051,25 +1051,22 @@ namespace Tpetra {
         // coordinate matrix dimensions succeeded ("Guilty unless
         // proven innocent").
         bool success = false;
-        if (Teuchos::rank(*pComm) == 0)
-          { 
-            TEUCHOS_TEST_FOR_EXCEPTION(pBanner->matrixType() != "coordinate", 
-                               std::invalid_argument,
-                               "The Tpetra::CrsMatrix Matrix Market reader "
-                               "only accepts \"coordinate\" (sparse) matrix "
-                               "data.");
-            // Unpacked coordinate matrix dimensions
-            global_ordinal_type numRows, numCols, numNonzeros;
-            // Only MPI Rank 0 reads from the input stream
-            success = readCoordinateDimensions (in, numRows, numCols, 
-                                                numNonzeros, lineNumber, 
-                                                tolerant);
-            // Pack up the data into a Tuple so we can send them with
-            // one broadcast instead of three.
-            dims[0] = numRows;
-            dims[1] = numCols;
-            dims[2] = numNonzeros;
-          }
+        if (pComm->getRank() == 0) {
+	  TEUCHOS_TEST_FOR_EXCEPTION(pBanner->matrixType() != "coordinate", 
+            std::invalid_argument, "The Tpetra::CrsMatrix Matrix Market reader "
+	    "only accepts \"coordinate\" (sparse) matrix data.");
+	  // Unpacked coordinate matrix dimensions
+	  global_ordinal_type numRows, numCols, numNonzeros;
+	  // Only MPI Rank 0 reads from the input stream
+	  success = readCoordinateDimensions (in, numRows, numCols, 
+					      numNonzeros, lineNumber, 
+					      tolerant);
+	  // Pack up the data into a Tuple so we can send them with
+	  // one broadcast instead of three.
+	  dims[0] = numRows;
+	  dims[1] = numCols;
+	  dims[2] = numNonzeros;
+	}
         // Only Rank 0 did the reading, so it decides success.
         //
         // FIXME (mfh 02 Feb 2011) Teuchos::broadcast doesn't know how
@@ -1080,19 +1077,21 @@ namespace Tpetra {
           Teuchos::broadcast (*pComm, 0, &the_success);
           success = (the_success == 1);
         }
-        if (success)
+        if (success) {
           // Broadcast (numRows, numCols, numNonzeros) from Rank 0
           // to all the other MPI ranks.  
           Teuchos::broadcast (*pComm, 0, dims);
-        else
+	}
+        else {
           // Perhaps in tolerant mode, we could set all the
           // dimensions to zero for now, and deduce correct
           // dimensions by reading all of the file's entries and
           // computing the max(row index) and max(column index).
           // However, for now we just error out in that case.
-          throw std::invalid_argument ("Error reading Matrix Market sparse "
-                                       "matrix: failed to read coordinate "
-                                       "matrix dimensions.");
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+	    "Error reading Matrix Market sparse matrix: failed to read "
+            "coordinate matrix dimensions.");
+	}
         return dims;
       }
       
@@ -1141,17 +1140,15 @@ namespace Tpetra {
                  const bool tolerant=false,
                  const bool debug=false)
       {
-        if (Teuchos::rank (*pComm) == 0)
-          {
-            typedef Raw::Adder<scalar_type, global_ordinal_type> raw_adder_type;
-
-            RCP<raw_adder_type> pRaw (new raw_adder_type (dims[0], dims[1], 
-                                                          dims[2], tolerant, 
-                                                          debug));
-            return rcp (new adder_type (pRaw, pBanner->symmType()));
-          }
-        else
+        if (pComm->getRank() == 0) {
+	  typedef Raw::Adder<scalar_type, global_ordinal_type> raw_adder_type;
+	  RCP<raw_adder_type> pRaw = 
+	    rcp (new raw_adder_type (dims[0], dims[1], dims[2], tolerant, debug));
+	  return rcp (new adder_type (pRaw, pBanner->symmType()));
+	}
+	else {
           return null;
+	}
       }
 
     public:
@@ -1317,25 +1314,24 @@ namespace Tpetra {
         // proven innocent" (the read didn't succeed unless we
         // proclaim that it did).
         bool readSuccess = false;
-        if (myRank == 0)
-          {
-            // Reader for "coordinate" format sparse matrix data.
-            typedef CoordDataReader<adder_type, global_ordinal_type, 
-              scalar_type, STS::isComplex> reader_type;
-            reader_type reader (pAdder);
+        if (myRank == 0) {
+	  // Reader for "coordinate" format sparse matrix data.
+	  typedef CoordDataReader<adder_type, global_ordinal_type, 
+	    scalar_type, STS::isComplex> reader_type;
+	  reader_type reader (pAdder);
 
-            // Read the sparse matrix entries.
-            //
-            // FIXME (mfh 28 Mar 2011) We should catch exceptions
-            // here, and broadcast any error messages to all
-            // processors so that the exception can be rethrown
-            // everywhere (fail fast and hard, rather than hoping that
-            // MPI propagates the exceptions quickly).
-            std::pair<bool, std::vector<size_t> > results = 
-              reader.read (in, lineNumber, tolerant, debug);
+	  // Read the sparse matrix entries.
+	  //
+	  // FIXME (mfh 28 Mar 2011) We should catch exceptions
+	  // here, and broadcast any error messages to all
+	  // processors so that the exception can be rethrown
+	  // everywhere (fail fast and hard, rather than hoping that
+	  // MPI propagates the exceptions quickly).
+	  std::pair<bool, std::vector<size_t> > results = 
+	    reader.read (in, lineNumber, tolerant, debug);
 
-            readSuccess = results.first;
-          }
+	  readSuccess = results.first;
+	}
         // The broadcast of readSuccess from MPI Rank 0 serves as a
         // barrier.  Note that Tpetra::CrsMatrix::fillComplete() only
         // starts with a barrier in debug mode, so we need some kind
@@ -1707,42 +1703,21 @@ namespace Tpetra {
       /// and distribute it to all processors.  Return the resulting
       /// distributed MultiVector.
       ///
-      /// Unlike \c readSparse(), this method allows callers to supply
-      /// a Map over which to distribute the resulting MultiVector.
-      /// The Map argument is optional; if null, we construct our own
-      /// reasonable Map.  We let users supply their own Map, because
-      /// a common case in Tpetra is to read in or construct a sparse
-      /// matrix first, and then create vectors that are compatible
-      /// with the sparse matrix, using the sparse matrix's domain or
-      /// range Map.
+      /// See documentation of \c readDense() for details.
       ///
-      /// \note This is a collective operation.  Only Rank 0 opens the
-      ///   file and reads data from it, but all ranks participate and
-      ///   wait for the final result.
-      /// 
-      /// \note "Tolerant" parsing mode means something different for
-      ///   dense matrices than it does for sparse matrices.  Since
-      ///   Matrix Market dense matrix files don't store indices with
-      ///   each value, unlike sparse matrices, we can't determine the
-      ///   matrix dimensions from the data alone.  Thus, we require
-      ///   the metadata to include a valid number of rows and
-      ///   columns.  "Tolerant" in the dense case refers to the data;
-      ///   in tolerant mode, the number of stored matrix entries may
-      ///   be more or less than the number reported by the metadata
-      ///   (number of rows times number of columns).  If more, the
-      ///   extra data are ignored; if less, the remainder is filled
-      ///   in with zeros.
-      /// 
-      /// \param filename [in] Name of the Matrix Market file.
-      /// \param pComm [in] Communicator containing all processor(s)
+      /// \param filename [in] Name of the Matrix Market file from
+      ///   which to read.  Both the filename and the file itself are
+      ///   only accessed on Rank 0 of the given communicator.
+      /// \param pComm [in] Communicator containing all process(es)
       ///   over which the dense matrix will be distributed.
       /// \param pNode [in] Kokkos Node object.
-      /// \param pMap [in/out] If nonnull, the map describing how to
-      ///   distribute the vector.  If null, we create a sensible map,
-      ///   and assign that map to pMap.  If pMap is nonnull on input,
-      ///   the map's communicator and node must equal pComm
-      ///   resp. pNode above.  pMap is not a "const RCP&" so that we
-      ///   can assign to it.
+      /// \param pMap [in/out] On input: if nonnull, the map
+      ///   describing how to distribute the vector (not modified).
+      ///   In this case, the map's communicator and node must equal
+      ///   pComm resp. pNode.  If null on input, then on output, a
+      ///   sensible (contiguous and uniformly distributed over the
+      ///   given communicator) map describing the distribution of the
+      ///   output multivector.
       /// \param tolerant [in] Whether to read the data tolerantly
       ///   from the file.
       /// \param debug [in] Whether to produce copious status output
@@ -1752,7 +1727,7 @@ namespace Tpetra {
       readDenseFile (const std::string& filename,
                      const RCP<const comm_type>& pComm, 
                      const RCP<node_type>& pNode,
-                     RCP<const map_type> pMap,
+                     RCP<const map_type>& pMap,
                      const bool tolerant=false,
                      const bool debug=false)
       {
@@ -1781,9 +1756,9 @@ namespace Tpetra {
       /// a Map over which to distribute the resulting MultiVector.
       /// The Map argument is optional; if null, we construct our own
       /// reasonable Map.  We let users supply their own Map, because
-      /// a common case in Tpetra is to read in or construct a matrix
-      /// first, and then create vectors using the matrix's domain or
-      /// range Map.
+      /// a common case in Tpetra is to read in or construct a sparse
+      /// matrix first, and then create dense (multi)vectors
+      /// distributed with the sparse matrix's domain or range Map.
       ///
       /// \note This is a collective operation.  Only Rank 0 opens the
       ///   file and reads data from it, but all ranks participate and
@@ -1801,19 +1776,34 @@ namespace Tpetra {
       ///   (number of rows times number of columns).  If more, the
       ///   extra data are ignored; if less, the remainder is filled
       ///   in with zeros.
-      /// 
-      /// \param in [in] The input stream from which to read.
-      /// \param pComm [in] Communicator containing all processor(s)
+      ///
+      /// \note On Map compatibility: Suppose that you write a
+      ///   multivector X to a file.  Then, you read it back in as a
+      ///   different multivector Y distributed over the same
+      ///   communicator, but with a Map constructed by the input
+      ///   routine (i.e., a null Map on input to \c readDenseFile()
+      ///   or \c readDense()).  In that case, the only properties
+      ///   shared by the maps of X and Y are that they have the same
+      ///   communicator and the same number of GIDs.  The Maps need
+      ///   not necessarily be compatible (in the sense of \c
+      ///   isCompatible()), and they certainly need not necessarily
+      ///   be the same Map (in the sense of \c isSameAs()).
+      ///
+      /// \param in [in] The input stream from which to read.  The
+      ///   stream is only accessed on Rank 0 of the given
+      ///   communicator.
+      /// \param pComm [in] Communicator containing all process(es)
       ///   over which the dense matrix will be distributed.
       /// \param pNode [in] Kokkos Node object.
-      /// \param pMap [in/out] If nonnull, the map describing how to
-      ///   distribute the vector.  If null, we create a sensible map,
-      ///   and assign that map to pMap.  If pMap is nonnull on input,
-      ///   the map's communicator and node must equal pComm
-      ///   resp. pNode above.  pMap is not a "const RCP&" so that we
-      ///   can assign to it.
+      /// \param pMap [in/out] On input: if nonnull, the map
+      ///   describing how to distribute the vector (not modified).
+      ///   In this case, the map's communicator and node must equal
+      ///   pComm resp. pNode.  If null on input, then on output, a
+      ///   sensible (contiguous and uniformly distributed over the
+      ///   given communicator) map describing the distribution of the
+      ///   output multivector.
       /// \param tolerant [in] Whether to read the data tolerantly
-      ///   from the file.
+      ///   from the stream.
       /// \param debug [in] Whether to produce copious status output
       ///   useful for Tpetra developers, but probably not useful for
       ///   anyone else.
@@ -1821,7 +1811,7 @@ namespace Tpetra {
       readDense (std::istream& in,
                  const RCP<const comm_type>& pComm,
                  const RCP<node_type>& pNode,
-                 RCP<const map_type> pMap,
+                 RCP<const map_type>& pMap,
                  const bool tolerant=false,
                  const bool debug=false)
       {
@@ -1839,7 +1829,7 @@ namespace Tpetra {
 
         // Rank 0 is the only (MPI) process allowed to read from the
         // input stream.
-        const int myRank = Teuchos::rank (*pComm);
+        const int myRank = pComm->getRank ();
 
         if (debug && myRank == 0) {
           cerr << "Matrix Market reader: readDense:" << endl;
@@ -1850,12 +1840,11 @@ namespace Tpetra {
         // now avoids doing a lot of file reading before we detect the
         // violated precondition.
         TEUCHOS_TEST_FOR_EXCEPTION(! pMap.is_null() && 
-                           (pMap->getComm() != pComm || 
-			    pMap->getNode() != pNode),
-                           std::invalid_argument,
-                           "If you supply a nonnull Map, the Map's communicator"
-                           " resp. node must equal the supplied communicator "
-                           "resp. node.");
+				   (pMap->getComm() != pComm || 
+				    pMap->getNode() != pNode),
+	  std::invalid_argument, "If you supply a nonnull Map, the Map's "
+          "communicator and node must equal the supplied communicator resp. "
+          "node.");
 
         // Rank 0 will read in the matrix dimensions from the file,
         // and broadcast them to all ranks in the given communicator.
@@ -1874,121 +1863,98 @@ namespace Tpetra {
         size_t lineNumber = 1;         
 
         // Only Rank 0 gets to read matrix data from the input stream.
-        if (myRank == 0) 
-	  {
-	    if (debug && myRank == 0) 
-	      cerr << "-- Reading banner line (dense)" << endl;
+        if (myRank == 0) {
+	  if (debug && myRank == 0) {
+	    cerr << "-- Reading banner line (dense)" << endl;
+	  }
 
-	    // The "Banner" tells you whether the input stream
-	    // represents a dense matrix, the symmetry type of the
-	    // matrix, and the type of the data it contains.
-	    RCP<const Banner> pBanner = readBanner (in, lineNumber, pComm, 
-						    tolerant, debug);
-	    TEUCHOS_TEST_FOR_EXCEPTION(pBanner->matrixType() != "array",
-			       std::invalid_argument,
-			       "The Matrix Market file does not contain dense "
-			       "matrix data.  Its banner (first) line says that"
-			       " its matrix type is \"" << pBanner->matrixType()
-			       << "\", rather than the required \"array\".");
-	    TEUCHOS_TEST_FOR_EXCEPTION(pBanner->dataType() == "pattern",
-			       std::invalid_argument,
-			       "The Matrix Market file's banner (first) line "
-			       "claims that its data type is \"pattern\".  "
-			       "This does not make sense for a dense matrix.  "
-			       "The only valid data types for a dense matrix "
-			       "are \"real\", \"complex\", and \"integer\".");
-	    // Encode the data type reported by the Banner in the
-	    // third element of the dimensions Tuple: "real" == 0,
-	    // "complex" == 1, "integer" == 0 (same as "real").
-	    // "pattern" == 2.  The lat
-	    if (pBanner->dataType() == "real" || 
-		pBanner->dataType() == "integer")
-	      dims[2] = 0;
-	    else if (pBanner->dataType() == "complex")
-	      dims[2] = 1;
-	    else {
-	      // We should never get here; Banner validates the
-	      // reported data type and ensures it is one of the above
-	      // three values.  We repeat the full test to make the
-	      // exception message more informative.
-	      TEUCHOS_TEST_FOR_EXCEPTION(pBanner->dataType() != "real" && 
-				 pBanner->dataType() != "complex" && 
-				 pBanner->dataType() != "integer", 
-				 std::logic_error, 
-				 "Unrecognized Matrix Market data type \"" 
-				 << pBanner->dataType() << "\".");
-	    }
+	  // The "Banner" tells you whether the input stream
+	  // represents a dense matrix, the symmetry type of the
+	  // matrix, and the type of the data it contains.
+	  RCP<const Banner> pBanner = 
+	    readBanner (in, lineNumber, pComm, tolerant, debug);
+	  TEUCHOS_TEST_FOR_EXCEPTION(pBanner->matrixType() != "array",
+            std::invalid_argument, "The Matrix Market file does not contain "
+            "dense matrix data.  Its banner (first) line says that its matrix "
+	    "type is \"" << pBanner->matrixType() << "\", rather than the "
+            "required \"array\".");
+	  TEUCHOS_TEST_FOR_EXCEPTION(pBanner->dataType() == "pattern",
+	    std::invalid_argument, "The Matrix Market file's banner (first) "
+            "line claims that the matrix's data type is \"pattern\".  This does "
+            "not make sense for a dense matrix, yet the file reports the matrix "
+            "as dense.  The only valid data types for a dense matrix are "
+            "\"real\", \"complex\", and \"integer\".");
+	  // Encode the data type reported by the Banner as the third
+	  // element of the dimensions Tuple.
+	  dims[2] = encodeDataType (pBanner->dataType());
 
-          if (debug && myRank == 0) 
+          if (debug && myRank == 0) {
 	    cerr << "-- Reading dimensions line (dense)" << endl;
-
+	  }
           // Keep reading lines from the input stream until we find a
-          // non-comment line, or until we run out of lines.  The latter
-          // is an error, since every "array" format Matrix Market
-          // file must have a dimensions line after the banner (even if
-          // the matrix has zero rows or columns, or zero entries).
+          // non-comment line, or until we run out of lines.  The
+          // latter is an error, since every "array" format Matrix
+          // Market file must have a dimensions line after the banner
+          // (even if the matrix has zero rows or columns, or zero
+          // entries).
           std::string line;
           bool commentLine = true;
           while (commentLine) {
             // Test whether it is even valid to read from the
             // input stream wrapping the line.
             TEUCHOS_TEST_FOR_EXCEPTION(in.eof() || in.fail(), std::runtime_error,
-                               "Unable to get array dimensions line (at all) "
-                               "from line " << lineNumber << " of input "
-                               "stream.  The input stream claims that it is "
-                               << (in.eof() ? 
-				   "at end-of-file." : 
-				   "in a failed state."));
+	      "Unable to get array dimensions line (at all) from line " 
+              << lineNumber << " of input stream.  The input stream claims that "
+              "it is " << (in.eof() ? "at end-of-file." : "in a failed state."));
             // Try to get the next line from the input stream.
-            if (getline(in, line))
+            if (getline(in, line)) {
               ++lineNumber; // We did actually read a line.
-
+	    }
             // Is the current line a comment line?  Ignore start and
-            // size; they are only useful for reading the actual matrix
-            // entries.  (We could use them here as an optimization, but
-            // we've chosen not to.)
+            // size; they are only useful for reading the actual
+            // matrix entries.  (We could use them here as an
+            // optimization, but we've chosen not to.)
             size_t start = 0, size = 0;
-            commentLine = checkCommentLine (line, start, size, 
-                                            lineNumber, tolerant);
+            commentLine = checkCommentLine (line, start, size, lineNumber, tolerant);
           }
           //
           // Read in <numRows> <numCols> from input line.
           //
           std::istringstream istr (line);
-
+	  
           // Test whether it is even valid to read from the input
           // stream wrapping the line.
           TEUCHOS_TEST_FOR_EXCEPTION(istr.eof() || istr.fail(), std::runtime_error,
-                             "Unable to read any data from line " << lineNumber
-                             << " of input; the line should contain the matrix "
-                             << "dimensions \"<numRows> <numCols>\".");
+				     "Unable to read any data from line " << lineNumber
+				     << " of input; the line should contain the matrix "
+				     << "dimensions \"<numRows> <numCols>\".");
           // Read in <numRows>.
           {
             GO theNumRows = 0;
             istr >> theNumRows;
             TEUCHOS_TEST_FOR_EXCEPTION(istr.fail(), std::runtime_error,
-                               "Failed to get number of rows from line " 
-			       << lineNumber << " of input; the line should "
-			       "contain the matrix dimensions \"<numRows> "
-			       "<numCols>\".");
+				       "Failed to get number of rows from line " 
+				       << lineNumber << " of input; the line should "
+				       "contain the matrix dimensions \"<numRows> "
+				       "<numCols>\".");
             // Capture the validly read result before checking for eof.
             dims[0] = theNumRows;
           }
           // There should be one more thing to read.
           TEUCHOS_TEST_FOR_EXCEPTION(istr.eof(), std::runtime_error,
-                             "No more data after number of rows on line " 
-			     << lineNumber << " of input; the line should "
-			     "contain the matrix dimensions \"<numRows> "
-			     "<numCols>\".");
+				     "No more data after number of rows on line " 
+				     << lineNumber << " of input; the line should "
+				     "contain the matrix dimensions \"<numRows> "
+				     "<numCols>\".");
           // Read in <numCols>
           {
             GO theNumCols = 0;
             istr >> theNumCols;
             TEUCHOS_TEST_FOR_EXCEPTION(istr.fail(), std::runtime_error,
-                               "Failed to get number of columns from line " 
-                               << lineNumber << " of input; the line should "
-                               "contain the matrix dimensions \"<numRows> "
-                               "<numCols>\".");
+				       "Failed to get number of columns from line " 
+				       << lineNumber << " of input; the line should "
+				       "contain the matrix dimensions \"<numRows> "
+				       "<numCols>\".");
             // Capture the validly read result.
             dims[1] = theNumCols;
           }
@@ -2019,233 +1985,265 @@ namespace Tpetra {
         // On Rank 0, read the Matrix Market data from the input
         // stream into the multivector X.
         //
-        if (myRank == 0)
-          {
-            if (debug && myRank == 0)
-              cerr << "-- Reading matrix data (dense)" << endl;
+        if (myRank == 0) {
+	  if (debug && myRank == 0) {
+	    cerr << "-- Reading matrix data (dense)" << endl;
+	  }
 
-            // Make sure that we can get a 1-D view of X.
-            TEUCHOS_TEST_FOR_EXCEPTION(! X->isConstantStride (), std::logic_error,
-                               "Can't get a 1-D view of the entries of the "
-                               "MultiVector X on Rank 0, because the stride "
-			       "between the columns of X is not constant.  "
-			       "This shouldn't happen because we just created "
-			       "X and haven't filled it in yet.  Please report "
-			       "this bug to the Tpetra developers.");
-            
-            // Get a writeable 1-D view of the entries of X.  Rank 0
-            // owns all of them.  The view will expire at the end of
-            // scope, so (if necessary) it will be written back to X
-            // at this time.
-            ArrayRCP<S> X_view = X->get1dViewNonConst ();
-            TEUCHOS_TEST_FOR_EXCEPTION(static_cast<global_size_t> (X_view.size()) < numRows * numCols,
-                               std::logic_error,
-                               "The view of X has size " << X_view 
-                               << " which is not enough to accommodate the "
-			       "expected number of entries numRows*numCols = " 
-			       << numRows << "*" << numCols << " = " 
-			       << numRows*numCols << ".  Please report this "
-			       "bug to the Tpetra developers.");
-            const size_t stride = X->getStride ();
+	  // Make sure that we can get a 1-D view of X.
+	  TEUCHOS_TEST_FOR_EXCEPTION(! X->isConstantStride (), std::logic_error,
+				     "Can't get a 1-D view of the entries of the "
+				     "MultiVector X on Rank 0, because the stride "
+				     "between the columns of X is not constant.  "
+				     "This shouldn't happen because we just created "
+				     "X and haven't filled it in yet.  Please report "
+				     "this bug to the Tpetra developers.");
+	  
+	  // Get a writeable 1-D view of the entries of X.  Rank 0
+	  // owns all of them.  The view will expire at the end of
+	  // scope, so (if necessary) it will be written back to X
+	  // at this time.
+	  ArrayRCP<S> X_view = X->get1dViewNonConst ();
+	  TEUCHOS_TEST_FOR_EXCEPTION(static_cast<global_size_t> (X_view.size()) < numRows * numCols,
+				     std::logic_error,
+				     "The view of X has size " << X_view 
+				     << " which is not enough to accommodate the "
+				     "expected number of entries numRows*numCols = " 
+				     << numRows << "*" << numCols << " = " 
+				     << numRows*numCols << ".  Please report this "
+				     "bug to the Tpetra developers.");
+	  const size_t stride = X->getStride ();
 
-            // The third element of the dimensions Tuple encodes the data
-            // type reported by the Banner: "real" == 0, "complex" == 1,
-            // "integer" == 0 (same as "real"), "pattern" == 2.  We do not
-            // allow dense matrices to be pattern matrices, so dims[2] ==
-            // 0 or 1.  We've already checked for this above.
-            const bool isComplex = (dims[2] == 1);
-            typename ArrayRCP<S>::size_type count = 0, curRow = 0, curCol = 0;
+	  // The third element of the dimensions Tuple encodes the data
+	  // type reported by the Banner: "real" == 0, "complex" == 1,
+	  // "integer" == 0 (same as "real"), "pattern" == 2.  We do not
+	  // allow dense matrices to be pattern matrices, so dims[2] ==
+	  // 0 or 1.  We've already checked for this above.
+	  const bool isComplex = (dims[2] == 1);
+	  typename ArrayRCP<S>::size_type count = 0, curRow = 0, curCol = 0;
 
-            std::string line;
-            while (getline(in, line))
-              {
-                ++lineNumber;
-                // Is the current line a comment line?  If it's not,
-                // line.substr(start,size) contains the data.
-                size_t start = 0, size = 0;
-                const bool commentLine = 
-                  checkCommentLine (line, start, size, lineNumber, tolerant);
-                if (! commentLine)
-                  { // Make sure we have room in which to put the new
-                    // matrix entry.  We check this only after
-                    // checking for a comment line, because there may
-                    // be one or more comment lines at the end of the
-                    // file.  In tolerant mode, we simply ignore any
-                    // extra data.
-                    if (count >= X_view.size())
-                      {
-                        if (tolerant)
-                          break;
-                        else
-                          TEUCHOS_TEST_FOR_EXCEPTION(count >= X_view.size(), 
+	  std::string line;
+	  while (getline(in, line)) {
+	    ++lineNumber;
+	    // Is the current line a comment line?  If it's not,
+	    // line.substr(start,size) contains the data.
+	    size_t start = 0, size = 0;
+	    const bool commentLine = 
+	      checkCommentLine (line, start, size, lineNumber, tolerant);
+	    if (! commentLine) {
+	      // Make sure we have room in which to put the new matrix
+	      // entry.  We check this only after checking for a
+	      // comment line, because there may be one or more
+	      // comment lines at the end of the file.  In tolerant
+	      // mode, we simply ignore any extra data.
+	      if (count >= X_view.size()) {
+		if (tolerant) {
+		  break;
+		}
+		else {
+		  TEUCHOS_TEST_FOR_EXCEPTION(count >= X_view.size(), 
                                              std::runtime_error,
                                              "The Matrix Market input stream has "
                                              "more data in it than its metadata "
                                              "reported.  Current line number is "
                                              << lineNumber << ".");
-                      }
-                    std::istringstream istr (line.substr (start, size));
-                    // Does the line contain anything at all?  Can we
-                    // safely read from the input stream wrapping the
-                    // line?
-                    if (istr.eof() || istr.fail())
-                      { // In tolerant mode, simply ignore the line.
-                        if (tolerant)
-                          break;
-                        // We repeat the full test here so the
-                        // exception message is more informative.
-                        TEUCHOS_TEST_FOR_EXCEPTION(! tolerant && 
-					   (istr.eof() || istr.fail()),
-                                           std::runtime_error,
-                                           "Line " << lineNumber << " of the "
-                                           "Matrix Market file is empty, or we "
-                                           "cannot read from it for some other "
-                                           "reason.");
-                      }
-                    // Current matrix entry to read in.
-                    S val = STS::zero();
-                    // Real and imaginary parts of the current matrix
-                    // entry.  The imaginary part is zero if the
-                    // matrix is real-valued.
-                    M real = STM::zero(), imag = STM::zero();
+		}
+	      }
+	      std::istringstream istr (line.substr (start, size));
+	      // Does the line contain anything at all?  Can we
+	      // safely read from the input stream wrapping the
+	      // line?
+	      if (istr.eof() || istr.fail()) {
+		// In tolerant mode, simply ignore the line.
+		if (tolerant) {
+		  break;
+		}
+		// We repeat the full test here so the exception
+		// message is more informative.
+		TEUCHOS_TEST_FOR_EXCEPTION(! tolerant && (istr.eof() || istr.fail()),
+                  std::runtime_error, "Line " << lineNumber << " of the Matrix "
+                  "Market file is empty, or we cannot read from it for some "
+		  "other reason.");
+	      }
+	      // Current matrix entry to read in.
+	      S val = STS::zero();
+	      // Real and imaginary parts of the current matrix entry.
+	      // The imaginary part is zero if the matrix is
+	      // real-valued.
+	      M real = STM::zero(), imag = STM::zero();
 
-                    // isComplex refers to the input stream's data,
-                    // not to the scalar type S.  It's OK to read
-                    // real-valued data into a matrix storing
-                    // complex-valued data; in that case, all entries'
-                    // imaginary parts are zero.
-                    if (isComplex)
-                      { // STS::real() and STS::imag() return a copy
-                        // of their respective components, not a
-                        // writeable reference.  Otherwise we could
-                        // just assign to them using the istream
-                        // extraction operator (>>).  That's why we
-                        // have separate magnitude type "real" and
-                        // "imag" variables.
+	      // isComplex refers to the input stream's data, not to
+	      // the scalar type S.  It's OK to read real-valued data
+	      // into a matrix storing complex-valued data; in that
+	      // case, all entries' imaginary parts are zero.
+	      if (isComplex) {
+		// STS::real() and STS::imag() return a copy of their
+		// respective components, not a writeable reference.
+		// Otherwise we could just assign to them using the
+		// istream extraction operator (>>).  That's why we
+		// have separate magnitude type "real" and "imag"
+		// variables.
                         
-                        // Attempt to read the real part of the
-                        // current matrix entry.
-                        istr >> real;
-                        if (istr.fail())
-                          {
-                            TEUCHOS_TEST_FOR_EXCEPTION(! tolerant && istr.fail(),
-                                               std::runtime_error,
-                                               "Failed to get real part of a "
-                                               "complex-valued matrix entry "
-                                               "from line " << lineNumber 
-                                               << " of Matrix Market file.");
-                            // In tolerant mode, just skip bad lines.
-                            if (tolerant)
-                              break;
-                          }
-                        else if (istr.eof())
-                          {
-                            TEUCHOS_TEST_FOR_EXCEPTION(! tolerant && istr.eof(),
-                                               std::runtime_error,
-                                               "Missing imaginary part of a "
-                                               "complex-valued matrix entry "
-                                               "on line " << lineNumber 
-                                               << " of Matrix Market file.");
-                            // In tolerant mode, let any missing
-                            // imaginary part be 0.
-                          }
-                        else
-                          { // Attempt to read the imaginary part of
-                            // the current matrix entry.
-                            istr >> imag;
-                            TEUCHOS_TEST_FOR_EXCEPTION(! tolerant && istr.fail(),
-                                               std::runtime_error,
-                                               "Failed to get imaginary part "
-                                               "of a complex-valued matrix "
-                                               "entry from line " << lineNumber
-                                               << " of Matrix Market file.");
-                            // In tolerant mode, let any missing
-                            // or corrupted imaginary part be 0.
-                          }
-                      }
-                    else // Matrix Market file contains real-valued data.
-                      {
-                        // Attempt to read the current matrix entry.
-                        istr >> real;
-                        TEUCHOS_TEST_FOR_EXCEPTION(! tolerant && istr.fail(),
+		// Attempt to read the real part of the current matrix
+		// entry.
+		istr >> real;
+		if (istr.fail()) {
+		  TEUCHOS_TEST_FOR_EXCEPTION(! tolerant && istr.fail(),
+					     std::runtime_error,
+					     "Failed to get real part of a "
+					     "complex-valued matrix entry "
+					     "from line " << lineNumber 
+					     << " of Matrix Market file.");
+		  // In tolerant mode, just skip bad lines.
+		  if (tolerant) {
+		    break;
+		  }
+		}
+		else if (istr.eof()) {
+		  TEUCHOS_TEST_FOR_EXCEPTION(! tolerant && istr.eof(),
+					     std::runtime_error,
+					     "Missing imaginary part of a "
+					     "complex-valued matrix entry "
+					     "on line " << lineNumber 
+					     << " of Matrix Market file.");
+		  // In tolerant mode, let any missing imaginary part
+		  // be 0.
+		}
+		else {
+		  // Attempt to read the imaginary part of the current
+		  // matrix entry.
+		  istr >> imag;
+		  TEUCHOS_TEST_FOR_EXCEPTION(! tolerant && istr.fail(),
+					     std::runtime_error,
+					     "Failed to get imaginary part "
+					     "of a complex-valued matrix "
+					     "entry from line " << lineNumber
+					     << " of Matrix Market file.");
+		  // In tolerant mode, let any missing
+		  // or corrupted imaginary part be 0.
+		}
+	      }
+	      else { // Matrix Market file contains real-valued data.
+		// Attempt to read the current matrix entry.
+		istr >> real;
+		TEUCHOS_TEST_FOR_EXCEPTION(! tolerant && istr.fail(),
                                            std::runtime_error,
                                            "Failed to get a real-valued matrix "
                                            "entry from line " << lineNumber 
                                            << " of Matrix Market file.");
-                        // In tolerant mode, simply ignore the line if
-                        // we failed to read a matrix entry.
-                        if (istr.fail() && tolerant)
-                          break;
-                      }
+		// In tolerant mode, simply ignore the line if
+		// we failed to read a matrix entry.
+		if (istr.fail() && tolerant) {
+		  break;
+		}
+	      }
 
+	      // In tolerant mode, we simply let pass through whatever
+	      // data we got.
+	      TEUCHOS_TEST_FOR_EXCEPTION(! tolerant && istr.fail(), 
+					 std::runtime_error,
+					 "Failed to read matrix data from line " 
+					 << lineNumber << " of the Matrix Market "
+					 "file.");
+	      
+	      // val = S(real, imag), without potential badness
+	      // if S is a real type.
+	      details::assignScalar<S> (val, real, imag);
+	      
+	      curRow = count % numRows;
+	      curCol = count / numRows;
+	      X_view[curRow + curCol*stride] = val;
+	      ++count;
+	    } // if not a comment line
+	  } // while there are still lines in the file, get the next one
 
-                    // In tolerant mode, we simply let pass through
-                    // whatever data we got.
-                    TEUCHOS_TEST_FOR_EXCEPTION(! tolerant && istr.fail(), 
-                                       std::runtime_error,
-                                       "Failed to read matrix data from line " 
-                                       << lineNumber << " of the Matrix Market "
-                                       "file.");
+	  TEUCHOS_TEST_FOR_EXCEPTION(! tolerant && 
+				     static_cast<global_size_t> (count) < numRows * numCols,
+				     std::runtime_error,
+				     "The Matrix Market metadata reports that the "
+				     "dense matrix is " << numRows <<  " x " 
+				     << numCols << ", and thus has " 
+				     << numRows*numCols << " total entries, but we "
+				     "only managed to find " << count << " entr" 
+				     << (count == 1 ? "y" : "ies") 
+				     << " in the file.");
+	} // if (myRank == 0)
 
-                    // val = S(real, imag), without potential badness
-                    // if S is a real type.
-                    details::assignScalar<S> (val, real, imag);
-
-                    curRow = count % numRows;
-                    curCol = count / numRows;
-                    X_view[curRow + curCol*stride] = val;
-                    ++count;
-                  }
-              }
-            TEUCHOS_TEST_FOR_EXCEPTION(! tolerant && 
-			       static_cast<global_size_t> (count) < numRows * numCols,
-                               std::runtime_error,
-                               "The Matrix Market metadata reports that the "
-                               "dense matrix is " << numRows <<  " x " 
-                               << numCols << ", and thus has " 
-                               << numRows*numCols << " total entries, but we "
-                               "only managed to find " << count << " entr" 
-                               << (count == 1 ? "y" : "ies") 
-                               << " in the file.");
-          } // if (myRank == 0)
-
-        // If there's only one MPI process, we're done.  Return the
-        // multivector that we read in.  It has the correct map.
-        if (Teuchos::size (*pComm))
+        // If there's only one MPI process and the user didn't supply
+        // a Map (i.e., pMap is null), we're done.  Set pMap to the
+        // Map used to distribute X, and return X.
+        if (pComm->getSize() == 1 && pMap.is_null()) {
+	  pMap = pRank0Map;
+	  if (debug && myRank == 0) {
+	    cerr << "-- Done reading multivector" << endl;
+	  }
           return X;
+	}
 
-        if (debug && myRank == 0)
+        if (debug && myRank == 0) {
           cerr << "-- Creating distributed Map and target MultiVector" << endl;
+	}
 
         // If pMap is null, make a distributed map.  We've already
         // checked the preconditions above, in the case that pMap was
         // not null on input to this method.
         if (pMap.is_null()) {
-          pMap = createUniformContigMapWithNode<LO, GO, Node> (numRows, 
-                                                               pComm, 
-                                                               pNode);
+          pMap = createUniformContigMapWithNode<LO, GO, Node> (numRows, pComm, pNode);
         }
         // Make a multivector Y with the distributed map pMap.
-        RCP<multivector_type> Y = 
-	  createMultiVector<S, LO, GO, Node> (pMap, numCols);
+        RCP<multivector_type> Y = createMultiVector<S, LO, GO, Node> (pMap, numCols);
 
         // Make an Export object that will export X to Y.  First
         // argument is the source map, second argument is the target
         // map.
         Export<LO, GO, Node> exporter (pRank0Map, pMap);
 
-        if (debug && myRank == 0) 
-	  cerr << "-- Exporting from MultiVector X to global MultiVector Y" 
+        if (debug && myRank == 0) {
+	  cerr << "-- Exporting from X (owned by Rank 0) to globally owned Y" 
 	       << endl;
-
+	}
         // Export X into Y.
         Y->doExport (*X, exporter, INSERT);
 
-        if (debug && myRank == 0) 
+        if (debug && myRank == 0) {
 	  cerr << "-- Done reading multivector" << endl;
+	}
 
         // Y is distributed over all process(es) in the communicator.
         return Y;
+      }
+
+    private:
+      
+      /// \brief Encode the Matrix Market data type as an int.
+      ///
+      /// We assume that the Banner has already validated the data
+      /// type string, so the string is one of four canonical values.
+      /// We encode these values as follows: "real" as 0, "complex" as
+      /// 1, "integer" as 0 (same as "real", since the way we
+      /// implement reading integer values is the same as the way we
+      /// implement reading real values), and "pattern" as 2.
+      ///
+      /// We use this encoding for communicating the data type.
+      static int
+      encodeDataType (const std::string& dataType)
+      {
+	if (dataType == "real" || dataType == "integer") {
+	  return 0;
+	}
+	else if (dataType == "complex") {
+	  return 1;
+	}
+	else if (dataType == "pattern") {
+	  return 2;
+	}
+	else {
+	  // We should never get here, since Banner validates the
+	  // reported data type and ensures it is one of the accepted
+	  // values.
+	  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
+            "Unrecognized Matrix Market data type \"" << dataType << "\".");
+	}
       }
     };
 
@@ -2801,6 +2799,8 @@ namespace Tpetra {
 		  const std::string& matrixName,
 		  const std::string& matrixDescription)
       {
+	using Teuchos::rcp;
+	using Teuchos::rcp_const_cast;
         using std::endl;
 
         typedef typename Teuchos::ScalarTraits<scalar_type> STS;
@@ -2811,6 +2811,12 @@ namespace Tpetra {
         // Convenient abbreviations.
         typedef local_ordinal_type LO;
         typedef global_ordinal_type GO;
+	typedef node_type NT;
+
+	// If true, when making the "gather" Map, use the same index
+	// base as X's Map.  Otherwise, just use the default index
+	// base for the gather Map.
+	const bool keepTheSameIndexBase = false;
 
         // Make the output stream write floating-point numbers in
         // scientific notation.  It will politely put the output
@@ -2818,85 +2824,82 @@ namespace Tpetra {
         // terminates.
         details::SetScientific<scalar_type> sci (out);
 
-        RCP<const Comm<int> > pComm = X->getMap()->getComm();
-        const int myRank = Teuchos::rank (*pComm);
-        RCP<const map_type> pMap = X->getMap();
-        const global_size_t numRows = pMap->getGlobalNumElements();
+        RCP<const Comm<int> > comm = X->getMap()->getComm();
+        const int myRank = comm->getRank ();
+        RCP<const map_type> map = X->getMap();
+        const global_size_t numRows = map->getGlobalNumElements();
 	// Promote to global_size_t.
         const global_size_t numCols = X->getNumVectors(); 
 
         // Make the "gather" map, where Proc 0 owns all rows of X, and
         // the other procs own no rows.
         const size_t localNumRows = (myRank == 0) ? numRows : 0;
-        RCP<node_type> pNode = pMap->getNode();
-        RCP<const map_type> pGatherMap = 
-	  createContigMapWithNode<LO, GO, node_type> (numRows, localNumRows, 
-						      pComm, pNode);
+        RCP<NT> node = map->getNode();
+        RCP<const map_type> gatherMap = keepTheSameIndexBase ? 
+	  rcp_const_cast<const map_type> (rcp (new map_type (numRows, localNumRows, map->getIndexBase(), comm, node))) :
+	  createContigMapWithNode<LO, GO, NT> (numRows, localNumRows, comm, node);
+
         // Create an Import object to import X's data into a
         // multivector Y owned entirely by Proc 0.  In the Import
         // constructor, X's map is the source map, and the "gather
         // map" is the target map.
-        Import<LO, GO, node_type> importer (pMap, pGatherMap);
+        Import<LO, GO, NT> importer (map, gatherMap);
 
         // Create a new multivector Y to hold the result of the import.
         RCP<multivector_type> Y = 
-	  createMultiVector<scalar_type, LO, GO, node_type> (pGatherMap, 
-							     numCols);
+	  createMultiVector<scalar_type, LO, GO, NT> (gatherMap, numCols);
+
         // Import the multivector onto Proc 0.
         Y->doImport (*X, importer, INSERT);
 
         //
         // Print the matrix in Matrix Market format on Rank 0.
         //
-        if (myRank == 0)
-	  {
-	    // Print the Matrix Market banner line.  MultiVector
-	    // stores data nonsymmetrically.
-	    out << "%%MatrixMarket matrix array " 
-		<< (STS::isComplex ? "complex" : "real") 
-		<< " general" << endl;
+        if (myRank == 0) {
+	  // Print the Matrix Market banner line.  MultiVector
+	  // stores data nonsymmetrically, hence "general".
+	  out << "%%MatrixMarket matrix array " 
+	      << (STS::isComplex ? "complex" : "real") 
+	      << " general" << endl;
 
-	    // Print comments (the matrix name and / or description).
-	    if (matrixName != "")
-	      printAsComment (out, matrixName);
-	    if (matrixDescription != "")
-	      printAsComment (out, matrixDescription);
-
-	    // Print the Matrix Market dimensions header for dense matrices.
-	    out << numRows << " " << numCols << endl;
-
-	    //
-	    // Get a read-only view of the entries of Y.  
-	    // Rank 0 owns all of the entries of Y.
-	    //
-	    // Y must have constant stride, since multivectors have
-	    // constant stride if created with a map and number of
-	    // vectors.  This should be the case even if X does not
-	    // have constant stride.  However, we check Y, just to
-	    // make sure.
-	    //
-	    TEUCHOS_TEST_FOR_EXCEPTION(! Y->isConstantStride (),
-			       std::logic_error,
-			       "The multivector Y imported onto Rank 0 does not"
-			       " have constant stride.  Please report this bug "
-			       "to the Tpetra developers.");
-	    ArrayRCP<const scalar_type> Y_view = Y->get1dView();
-	    //
-	    // Print the entries of the matrix, in column-major order.
-	    //
-	    const global_size_t stride = Y->getStride ();
-	    for (global_size_t j = 0; j < numCols; ++j) {
-	      for (global_size_t i = 0; i < numRows; ++i) {
-		const scalar_type Y_ij = Y_view[i + j*stride];
-		if (STS::isComplex) {
-		  out << STS::real(Y_ij) << " " << STS::imag(Y_ij) << endl;
-		}
-		else {
-		  out << Y_ij << endl;
-		}
+	  // Print comments (the matrix name and / or description).
+	  if (matrixName != "") {
+	    printAsComment (out, matrixName);
+	  }
+	  if (matrixDescription != "") {
+	    printAsComment (out, matrixDescription);
+	  }
+	  // Print the Matrix Market dimensions header for dense matrices.
+	  out << numRows << " " << numCols << endl;
+	  //
+	  // Get a read-only view of the entries of Y.  
+	  // Rank 0 owns all of the entries of Y.
+	  //
+	  // Y must have constant stride, since multivectors have
+	  // constant stride if created with a map and number of
+	  // vectors.  This should be the case even if X does not
+	  // have constant stride.  However, we check Y, just to
+	  // make sure.
+	  TEUCHOS_TEST_FOR_EXCEPTION(! Y->isConstantStride (), std::logic_error,
+            "The multivector Y imported onto Rank 0 does not have constant "
+            "stride.  Please report this bug to the Tpetra developers.");
+	  ArrayRCP<const scalar_type> Y_view = Y->get1dView();
+	  //
+	  // Print the entries of the matrix, in column-major order.
+	  //
+	  const global_size_t stride = Y->getStride ();
+	  for (global_size_t j = 0; j < numCols; ++j) {
+	    for (global_size_t i = 0; i < numRows; ++i) {
+	      const scalar_type Y_ij = Y_view[i + j*stride];
+	      if (STS::isComplex) {
+		out << STS::real(Y_ij) << " " << STS::imag(Y_ij) << endl;
+	      }
+	      else {
+		out << Y_ij << endl;
 	      }
 	    }
-	  } // if (myRank == 0)
+	  }
+	} // if (myRank == 0)
       }
 
       /// \brief Print the multivector in Matrix Market format.
@@ -2955,18 +2958,18 @@ namespace Tpetra {
 	std::istringstream istream (str);
 	std::string line;
 
-	while (getline (istream, line))
-	  {
-	    if (! line.empty())
-	      {
-		// Note that getline() doesn't store '\n', so we have
-		// to append the endline ourselves.
-		if (line[0] == '%') // Line starts with a comment character.
-		  out << line << endl; 
-		else // Line doesn't start with a comment character.
-		  out << "%% " << line << endl;
-	      }
+	while (getline (istream, line)) {
+	  if (! line.empty()) {
+	    // Note that getline() doesn't store '\n', so we have to
+	    // append the endline ourselves.
+	    if (line[0] == '%') { // Line starts with a comment character.
+	      out << line << endl; 
+	    }
+	    else { // Line doesn't start with a comment character.
+	      out << "%% " << line << endl;
+	    }
 	  }
+	}
       }
     }; // class Writer
     

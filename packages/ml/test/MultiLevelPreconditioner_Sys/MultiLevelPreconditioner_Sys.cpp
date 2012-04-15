@@ -89,7 +89,7 @@ int TestMultiLevelPreconditioner(char ProblemType[],
 
   // Nullspace
   double *rbm = new double[7*A->NumMyRows()];
-  ML_Coord2RBM(coord1->MyLength(),&((*coord1)[0]),&((*coord2)[0]),&((*coord3)[0]),rbm,3,6);
+  ML_Coord2RBM(coord1->MyLength(),&((*coord1)[0]),&((*coord2)[0]),&((*coord3)[0]),rbm,3,0);
   MLList.set("null space: vectors",rbm);
 
   ML_Epetra::MultiLevelPreconditioner * MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
@@ -212,6 +212,7 @@ int main(int argc, char *argv[]) {
 
   ML_Epetra::SetDefaults("SA",MLList);
   MLList.set("smoother: type", "Jacobi");
+  MLList.set("smoother: damping factor", .5);
 
   TestMultiLevelPreconditioner(mystring, MLList, Problem, TotalErrorResidual,
                                TotalErrorExactSol,true);

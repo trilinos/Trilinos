@@ -77,7 +77,7 @@ coarsen (
     double   dot(), normalize(), find_maxdeg(), seconds();
     struct orthlink *makeorthlnk();
     void      makevwsqrt(), eigensolve(), coarsen1(), orthogvec(), rqi_ext();
-    void      interpolate(), orthog1(), rqi(), scadd(), free_graph();
+    void      ch_interpolate(), orthog1(), rqi(), scadd(), free_graph();
 
     if (DEBUG_COARSEN > 0) {
 	printf("<Entering coarsen, step=%d, nvtxs=%d, nedges=%d, vmax=%d>\n",
@@ -215,7 +215,7 @@ coarsen (
 	    igeom, ccoords, cyvecs, ndims, solver_flag, vmax, eigtol,
 	    nstep, nextstep, give_up);
 
-    interpolate(yvecs, cyvecs, ndims, graph, nvtxs, v2cv, using_ewgts);
+    ch_interpolate(yvecs, cyvecs, ndims, graph, nvtxs, v2cv, using_ewgts);
 
     sfree(cterm_wgts[1]);
     sfree(v2cv);

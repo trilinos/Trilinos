@@ -190,7 +190,7 @@ int output_results(const char *cmd_file,
   ZOLTAN_ID_TYPE   *parts = NULL;
   ZOLTAN_ID_TYPE   *perm = NULL;
   ZOLTAN_ID_TYPE   *invperm = NULL;
-  ZOLTAN_ID_TYPE   *index = NULL;
+  int              *index = NULL;
   int    i, j;
 
   FILE  *fp;
@@ -199,7 +199,7 @@ int output_results(const char *cmd_file,
   DEBUG_TRACE_START(Proc, yo);
 
   if (mesh->num_elems) {
-     global_ids = (ZOLTAN_ID_TYPE *) malloc(5 * mesh->num_elems * sizeof(ZOLTAN_ID_TYPE));
+     global_ids = (ZOLTAN_ID_TYPE*) malloc(4 * mesh->num_elems * sizeof(ZOLTAN_ID_TYPE) + mesh->num_elems * sizeof(int));
      if (!global_ids) {
        Gen_Error(0, "fatal: insufficient memory");
        return 0;
@@ -207,21 +207,22 @@ int output_results(const char *cmd_file,
      parts = global_ids + mesh->num_elems;
      perm = parts + mesh->num_elems;
      invperm = perm + mesh->num_elems;
-     index = invperm + mesh->num_elems;
+     index = (int*)(invperm + mesh->num_elems);
   }
 
   for (i = j = 0; i < mesh->elem_array_len; i++) {
     if (mesh->elements[i].globalID != ZOLTAN_ID_INVALID) {
-      global_ids[j] = mesh->elements[i].globalID;
+      global_ids[j] = (ZOLTAN_ID_TYPE) mesh->elements[i].globalID;
       parts[j] =(ZOLTAN_ID_TYPE) mesh->elements[i].my_part;
       perm[j] = (ZOLTAN_ID_TYPE)mesh->elements[i].perm_value;
       invperm[j] = (ZOLTAN_ID_TYPE)mesh->elements[i].invperm_value;
-      index[j] = (ZOLTAN_ID_TYPE)j;
+      index[j] = j;
       j++;
     }
   }
 
-  sort_id_type_index(mesh->num_elems, global_ids, index);
+  quicksort_pointer_inc_id_id(index, global_ids, NULL,
+                              0, mesh->num_elems-1);
 
   /* generate the parallel filename for this processor */
   strcpy(ctemp, pio_info->pexo_fname);
@@ -262,8 +263,8 @@ int output_results(const char *cmd_file,
     for (i = 0; i < mesh->num_elems; i++) {
       total_nodes += mesh->eb_nnodes[mesh->elements[i].elem_blk];
     }
-    global_ids = (ZOLTAN_ID_TYPE *) malloc(2 * total_nodes * sizeof(ZOLTAN_ID_TYPE));
-    index = global_ids + total_nodes;
+    global_ids = (ZOLTAN_ID_TYPE *) malloc(total_nodes * (sizeof(ZOLTAN_ID_TYPE)+sizeof(int)));
+    index = (int*)(global_ids + total_nodes);
     x = (float *) calloc(3 * total_nodes,  sizeof(float));
     y = x + total_nodes;
     z = y + total_nodes;
@@ -271,18 +272,19 @@ int output_results(const char *cmd_file,
     for (k = 0, i = 0; i < mesh->num_elems; i++) {
       current_element = &(mesh->elements[i]);
       for (j = 0; j < mesh->eb_nnodes[current_element->elem_blk]; j++) {
-        global_ids[k] = current_element->connect[j];
+        global_ids[k] = (ZOLTAN_ID_TYPE)(current_element->connect[j]);
         x[k] = current_element->coord[j][0];
         if (mesh->num_dims > 1) 
           y[k] = current_element->coord[j][1];
         if (mesh->num_dims > 2)
           z[k] = current_element->coord[j][2];
-        index[k] = (ZOLTAN_ID_TYPE)k;
+        index[k] = k;
         k++;
       }
     }
 
-    sort_id_type_index(total_nodes, global_ids, index);
+    quicksort_pointer_inc_id_id(index, global_ids, NULL, 
+                                0, total_nodes-1);
 
     strcat(par_out_fname, ".mesh");
     fp = fopen(par_out_fname, "w");

@@ -31,8 +31,4 @@ zoltan_types.h --  Data types for Zoltan IDs and error codes.
  
 zoltan_align.h --  Prototype for data alignment functions used by Zoltan.
 
-lbi_const.h    --  Backward compatible interface using Zoltan's old LB_* 
-                   naming convention.  Former Zoltan users can continue to 
-                   include lbi_const.h; new users should include zoltan.h.
-
 

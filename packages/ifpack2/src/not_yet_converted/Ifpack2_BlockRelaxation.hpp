@@ -170,7 +170,7 @@ public:
   }
   //@}
 
-  //@{ \name Atribute access functions
+  //@{ \name Attribute access functions
 
   virtual int SetUseTranspose(bool UseTranspose_in)
   {

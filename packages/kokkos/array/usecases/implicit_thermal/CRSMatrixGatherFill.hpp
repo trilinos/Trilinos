@@ -52,11 +52,11 @@ struct CRSMatrixGatherFill<Scalar ,KOKKOS_MACRO_DEVICE>{
   typedef KOKKOS_MACRO_DEVICE     device_type;
   typedef device_type::size_type  index_type;
 
-  typedef Kokkos::MultiVectorView<Scalar , device_type>     scalar_vector_d;
-  typedef Kokkos::MultiVectorView<index_type , device_type> index_vector_d;
+  typedef Kokkos::MultiVector<Scalar , device_type>     scalar_vector_d;
+  typedef Kokkos::MultiVector<index_type , device_type> index_vector_d;
 
-  typedef Kokkos::MDArrayView<Scalar,device_type>      scalar_array_d;
-  typedef Kokkos::MDArrayView<index_type,device_type>  index_array_d;    
+  typedef Kokkos::MDArray<Scalar,device_type>      scalar_array_d;
+  typedef Kokkos::MDArray<index_type,device_type>  index_array_d;    
   
   scalar_vector_d  A ;
   scalar_vector_d  b ;
@@ -105,7 +105,8 @@ struct CRSMatrixGatherFill<Scalar ,KOKKOS_MACRO_DEVICE>{
       const index_type elem_id        = node_elemIDs( i, 0);
       const index_type elem_row_index = node_elemIDs( i, 1);
 
-      b(irow) += element_load(elem_id, elem_row_index);
+      const Scalar value = element_load(elem_id, elem_row_index);
+      b(irow) += value ;
 
       //  for each node in a particular related element  
       //  gather the contents of the element stiffness

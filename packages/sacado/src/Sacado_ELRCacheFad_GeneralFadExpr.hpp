@@ -59,6 +59,9 @@ namespace Sacado {
       //! Number of arguments
       static const int num_args = 1;
 
+      //! Is expression linear
+      static const bool is_linear = true;
+
       //! Default constructor
       Expr() : 
 	GeneralFad<T,Storage>() {}
@@ -114,21 +117,46 @@ namespace Sacado {
       template <int Arg>
       bool isActive() const { return this->size() > 0; }
 
+      //! Return whether expression is linear
+      bool isLinear() const { return true; }
+
       //! Return tangent component \c i of argument \c Arg
       template <int Arg>
       T getTangent(int i) const { return this->fastAccessDx(i); }
+
+      const base_expr_type& getArg(int j) const { return *this; }
 
     }; // class Expr<GeneralFad>
     
     //! Specialization of %ExprPromote to GeneralFad types
     template <typename T, typename S>
-    struct ExprPromote< GeneralFad<T,S>, T > {
+    struct ExprPromote< GeneralFad<T,S>, 
+			typename GeneralFad<T,S>::value_type > {
       typedef GeneralFad<T,S> type;
     };
     
     //! Specialization of %ExprPromote to GeneralFad types
     template <typename T, typename S>
-    struct ExprPromote< T, GeneralFad<T,S> > {
+    struct ExprPromote< typename GeneralFad<T,S>::value_type, 
+			GeneralFad<T,S> > {
+      typedef GeneralFad<T,S> type;
+    };
+
+    //! Specialization of %ExprPromote to GeneralFad types
+    template <typename T, typename S>
+    struct ExprPromote< GeneralFad<T,S>, 
+			typename dummy<typename GeneralFad<T,S>::value_type,
+				       typename GeneralFad<T,S>::scalar_type
+				       >::type > {
+      typedef GeneralFad<T,S> type;
+    };
+    
+    //! Specialization of %ExprPromote to GeneralFad types
+    template <typename T, typename S>
+    struct ExprPromote< typename dummy<typename GeneralFad<T,S>::value_type,
+				       typename GeneralFad<T,S>::scalar_type
+				       >::type, 
+			GeneralFad<T,S> > {
       typedef GeneralFad<T,S> type;
     };
 

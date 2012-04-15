@@ -45,9 +45,6 @@ echo "
  -D Trilinos_ENABLE_Fortran:BOOL=OFF 
  -D Trilinos_ENABLE_CXX11:BOOL=OFF
  -D Tpetra_ENABLE_RTI=OFF
- -D TPL_ENABLE_QD:BOOL=ON
- -D QD_INCLUDE_DIRS=/usr/local/qd/include
- -D QD_LIBRARY_DIRS=/usr/local/qd/lib
  -D TPL_ENABLE_CUDA:BOOL=ON
  -D TPL_ENABLE_Thrust:BOOL=ON
  -D Thrust_INCLUDE_DIRS=/usr/local/cuda/include

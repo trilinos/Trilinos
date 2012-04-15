@@ -67,6 +67,8 @@ APPEND_SET(HEADERS
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Discretization/Integration)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Discretization/FunctionSpaceTools)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Discretization/Basis)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Discretization/TensorProductSpaceTools)
+
 APPEND_SET(HEADERS  
   Discretization/Integration/Intrepid_AdaptiveSparseGridInterfaceDef.hpp
   Discretization/Integration/Intrepid_AdaptiveSparseGridInterface.hpp
@@ -187,6 +189,8 @@ APPEND_SET(HEADERS
   Discretization/Basis/Intrepid_ProductTopology.hpp
   Discretization/Basis/Intrepid_ProductTopologyDef.hpp
   Discretization/Basis/Intrepid_TensorBasis.hpp
+  Discretization/TensorProductSpaceTools/Intrepid_TensorProductSpaceTools.hpp
+  Discretization/TensorProductSpaceTools/Intrepid_TensorProductSpaceToolsDef.hpp
   )
 
 #

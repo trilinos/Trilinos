@@ -75,9 +75,9 @@ template<typename Scalar>
 struct decomp_rotate<Scalar, KOKKOS_MACRO_DEVICE>{
 
   typedef KOKKOS_MACRO_DEVICE     device_type ;
-  typedef typename Kokkos::MDArrayView<Scalar,device_type> array_type ;
+  typedef typename Kokkos::MDArray<Scalar,device_type> array_type ;
 
-  typedef Kokkos::ValueView<Scalar,device_type>     scalar;
+  typedef Kokkos::Value<Scalar,device_type>     scalar;
 
   const array_type rotation;
   const array_type vel_grad;

@@ -21,6 +21,12 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 TriosProcessXDR(${CMAKE_CURRENT_SOURCE_DIR}/xfer_service_args.x)
 
 
+TRIBITS_ADD_EXECUTABLE(
+  XferMPITest
+  SOURCES xfer_service_args.c xfer_buffer_util.cpp xfer_mpi_server.cpp xfer_mpi_test.cpp xfer_mpi_client.cpp
+  DEPLIBS ${DEPLIBS}
+)
+
 
 TRIBITS_ADD_EXECUTABLE(
   XferServiceTest

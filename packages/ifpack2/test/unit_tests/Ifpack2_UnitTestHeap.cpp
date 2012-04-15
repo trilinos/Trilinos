@@ -62,19 +62,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2Heap, Test1, Scalar, GlobalOrdinal)
   ++idx;
   Ifpack2::add_to_heap(idx, heap1, heap1_len);
 
-  TEUCHOS_TEST_EQUALITY(heap1.size() == 3, true, out, success);
-  TEUCHOS_TEST_EQUALITY(heap1_len == 3, true, out, success);
-  TEUCHOS_TEST_EQUALITY(heap1.front() == 1, true, out, success);
+  TEST_EQUALITY(heap1.size() == 3, true);
+  TEST_EQUALITY(heap1_len == 3, true);
+  TEST_EQUALITY(heap1.front() == 1, true);
 
   Ifpack2::rm_heap_root(heap1, heap1_len);
-  TEUCHOS_TEST_EQUALITY(heap1.size() == 3, true, out, success);
-  TEUCHOS_TEST_EQUALITY(heap1_len == 2, true, out, success);
-  TEUCHOS_TEST_EQUALITY(heap1.front() == 2, true, out, success);
+  TEST_EQUALITY(heap1.size() == 3, true);
+  TEST_EQUALITY(heap1_len == 2, true);
+  TEST_EQUALITY(heap1.front() == 2, true);
 
   Ifpack2::rm_heap_root(heap1, heap1_len);
-  TEUCHOS_TEST_EQUALITY(heap1.size() == 3, true, out, success);
-  TEUCHOS_TEST_EQUALITY(heap1_len == 1, true, out, success);
-  TEUCHOS_TEST_EQUALITY(heap1.front() == 3, true, out, success);
+  TEST_EQUALITY(heap1.size() == 3, true);
+  TEST_EQUALITY(heap1_len == 1, true);
+  TEST_EQUALITY(heap1.front() == 3, true);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2Heap, Test3, Scalar, GlobalOrdinal)
@@ -107,26 +107,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2Heap, Test3, Scalar, GlobalOrdinal)
   ++idx;
   Ifpack2::add_to_heap(idx, heap1, heap1_len, vals_comp);
 
-  TEUCHOS_TEST_EQUALITY(heap1.size(), 4, out, success);
-  TEUCHOS_TEST_EQUALITY(heap1_len, 4, out, success);
-  TEUCHOS_TEST_EQUALITY(heap1.front(), 3, out, success);
+  TEST_EQUALITY(heap1.size(), 4);
+  TEST_EQUALITY(heap1_len, 4);
+  TEST_EQUALITY(heap1.front(), 3);
 
   Ifpack2::rm_heap_root(heap1, heap1_len, vals_comp);
-  TEUCHOS_TEST_EQUALITY(heap1.size(), 4, out, success);
-  TEUCHOS_TEST_EQUALITY(heap1_len, 3, out, success);
-  TEUCHOS_TEST_EQUALITY(heap1.front(), 2, out, success);
+  TEST_EQUALITY(heap1.size(), 4);
+  TEST_EQUALITY(heap1_len, 3);
+  TEST_EQUALITY(heap1.front(), 2);
 
   Ifpack2::rm_heap_root(heap1, heap1_len, vals_comp);
-  TEUCHOS_TEST_EQUALITY(heap1.size(), 4, out, success);
-  TEUCHOS_TEST_EQUALITY(heap1_len, 2, out, success);
-  TEUCHOS_TEST_EQUALITY(heap1.front(), 1, out, success);
+  TEST_EQUALITY(heap1.size(), 4);
+  TEST_EQUALITY(heap1_len, 2);
+  TEST_EQUALITY(heap1.front(), 1);
 
   Ifpack2::rm_heap_root(heap1, heap1_len, vals_comp);
-  TEUCHOS_TEST_EQUALITY(heap1_len, 1, out, success);
-  TEUCHOS_TEST_EQUALITY(heap1.front(), 0, out, success);
+  TEST_EQUALITY(heap1_len, 1);
+  TEST_EQUALITY(heap1.front(), 0);
 
   Ifpack2::rm_heap_root(heap1, heap1_len, vals_comp);
-  TEUCHOS_TEST_EQUALITY(heap1_len, 0, out, success);
+  TEST_EQUALITY(heap1_len, 0);
 }
 
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,GlobalOrdinal) \

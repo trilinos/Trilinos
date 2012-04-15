@@ -60,7 +60,8 @@ class ArrayIndex : public Value {
   }
 
   std::ostream& operator<<(std::ostream& os) const {
-    os << "ArrayIndex:" << _parent->getName() << "[" << *_indexExpr << "]";
+    //os << "ArrayIndex:" << _parent->getName() << "[" << *_indexExpr << "]";
+    os << _parent->getArrayValue((int)_indexExpr->execute()->getValue());
     return os;
   }
 

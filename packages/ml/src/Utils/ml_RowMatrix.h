@@ -215,7 +215,7 @@ class RowMatrix : public virtual Epetra_RowMatrix {
 
   //@}
   
-  //@{ \name Atribute access functions
+  //@{ \name Attribute access functions
 
     //! If FillComplete() has been called, this query returns true, otherwise it returns false.
     virtual bool Filled() const
@@ -284,7 +284,7 @@ class RowMatrix : public virtual Epetra_RowMatrix {
   int SetOwnership(bool ownership){return(-1);};
 
   //! Sets use transpose (not implemented).
-  int SetUseTranspose(bool UseTranspose){return(-1);}
+  int SetUseTranspose(bool UseTransposeFlag){return(-1);}
 
   //! Returns the current UseTranspose setting.
   bool UseTranspose() const {return(false);};

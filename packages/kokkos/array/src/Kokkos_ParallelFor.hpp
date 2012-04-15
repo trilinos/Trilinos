@@ -96,7 +96,7 @@ void parallel_for( const size_t work_count ,
 
   // The ParallelFor may launch the functor and return immediately.
   // Must wait for functor to complete to get correct timing data.
-  device_type::wait_functor_completion();
+  device_type::fence();
 
   seconds = timer.seconds(); // Time since construction
 }

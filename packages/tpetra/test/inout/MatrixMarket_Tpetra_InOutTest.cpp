@@ -103,7 +103,6 @@ namespace Tpetra {
       ///   tolerantly.
       /// \param verbose [in] Whether to print verbose output.
       /// \param debug [in] Whether to print debugging output.
-      ///
       void
       testReadAndWriteSparseFile (const std::string& inputFilename, 
 				  const std::string& outputFilename, 
@@ -197,8 +196,6 @@ main (int argc, char *argv[])
   bool echo = false;     // Echo the read-in matrix back?
   bool verbose = false;  // Verbosity of output
   bool debug = false;    // Print debugging info?
-
-
 
   CommandLineProcessor cmdp (false, true);
   cmdp.setOption ("inputFilename", &inputFilename,
