@@ -111,15 +111,15 @@ namespace MueLu {
       }
 
         // debug output
-        typename std::map<GlobalOrdinal,std::vector<GlobalOrdinal> >::iterator git;
-        for (git=globalamalblockid2globalrowid->begin(); git!=globalamalblockid2globalrowid->end(); git++) {
-          std::vector<GlobalOrdinal> growids = git->second;
-          std::cout << A->getRowMap()->getComm()->getRank() << " " << git->first << ": ";
-          for(size_t i=0; i<growids.size(); ++i) {
-            std::cout << growids[i] << " ";
-          }
-          std::cout << std::endl;
-        }
+//        typename std::map<GlobalOrdinal,std::vector<GlobalOrdinal> >::iterator git;
+//        for (git=globalamalblockid2globalrowid->begin(); git!=globalamalblockid2globalrowid->end(); git++) {
+//          std::vector<GlobalOrdinal> growids = git->second;
+//          std::cout << A->getRowMap()->getComm()->getRank() << " " << git->first << ": ";
+//          for(size_t i=0; i<growids.size(); ++i) {
+//            std::cout << growids[i] << " ";
+//          }
+//          std::cout << std::endl;
+//        }
 
       // set amalgamation information in aggregates structure
       aggregates->GetAmalgamationInfo()->SetAmalgamationParams(globalamalblockid2globalrowid);
