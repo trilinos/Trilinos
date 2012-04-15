@@ -100,17 +100,24 @@ namespace MueLu {
 
             // Now copy P so that we can give it a domain map that matches the range map of R.
             //TODO is there a better preallocation strategy?
-            RCP<Operator> permutedP = OperatorFactory::Build(originalP->getRowMap(), originalP->getGlobalMaxNumRowEntries());
+            ArrayRCP<size_t> nnzPerRow(originalP->getNodeNumRows(),0);
+            for (size_t i=0; i<originalP->getNodeNumRows(); ++i)
+              nnzPerRow[i] = originalP->getNumEntriesInLocalRow(i);
+            RCP<Operator> permutedP = OperatorFactory::Build(originalP->getRowMap(), nnzPerRow, Xpetra::StaticProfile);
             //P needs to be fillCompleted again.  To achieve this, I just copy P using the trivial importer.
             RCP<Import> trivialImporter = ImportFactory::Build( originalP->getRowMap(), originalP->getRowMap());
             RCP<CrsOperator> crsOp = rcp_dynamic_cast<CrsOperator>(permutedP);
             RCP<CrsMatrix> crsMtx = crsOp->getCrsMatrix();
             RCP<CrsOperator> origOp = rcp_dynamic_cast<CrsOperator>(originalP);
             RCP<CrsMatrix> origMtx = origOp->getCrsMatrix();
+            RCP<SubFactoryMonitor> m2 = rcp( new SubFactoryMonitor(*this, "Rebalancing prolongator -- import only",
+                                                                   coarseLevel.GetLevelID()) );
             crsMtx->doImport(*origMtx,*trivialImporter,Xpetra::INSERT);
             crsMtx = Teuchos::null;
             //new domain (coarse) map, same range (fine) map
+            m2 = rcp( new SubFactoryMonitor(*this, "Rebalancing prolongator -- fillComplete", coarseLevel.GetLevelID()) );
             permutedP->fillComplete(permImporter->getTargetMap(), originalP->getRangeMap() );
+            m2 = Teuchos::null;
             originalP = Teuchos::null;
             coarseLevel.Set< RCP<Operator> >("P",permutedP,this);
 
@@ -131,22 +138,44 @@ namespace MueLu {
           //TODO how do we handle implicitly transposed restriction operators?
           RCP<Operator> originalR = coarseLevel.Get< RCP<Operator> >("R",initialTransferFact_.get());
           if (permImporter != Teuchos::null) {
-            RCP<SubFactoryMonitor> m1 = rcp( new SubFactoryMonitor(*this, "Rebalancing restriction", coarseLevel.GetLevelID()) );
+            SubFactoryMonitor m2(*this, "Rebalancing restriction", coarseLevel.GetLevelID());
+            RCP<SubFactoryMonitor> m1 = rcp( new SubFactoryMonitor(*this, "Rebalancing restriction -- allocate new R", coarseLevel.GetLevelID()) );
 
             //TODO is there a better preallocation strategy?
-            RCP<Operator> permutedR = OperatorFactory::Build(permImporter->getTargetMap(), originalR->getGlobalMaxNumRowEntries());
+            /*
+              Answer:  YES! :
+               Count nnz per row of R
+               Put this in a MV
+               Use the permImporter to communicate this
+               Allocate permutedR according to the nnz info
+               Proceed as usual
+            */
+            RCP<Xpetra::Vector<size_t,LO,GO,Node> > originalNnzPerRowVec = Xpetra::VectorFactory<size_t,LO,GO,Node>::Build(permImporter->getSourceMap());
+            ArrayRCP<size_t> nnzPerRow = originalNnzPerRowVec->getDataNonConst(0);
+            for (size_t i=0; i<originalR->getNodeNumRows(); ++i)
+              nnzPerRow[i] = originalR->getNumEntriesInLocalRow(i);
+            nnzPerRow = Teuchos::null;
+            RCP<Xpetra::Vector<size_t,LO,GO,Node> > permutedNnzPerRowVec = Xpetra::VectorFactory<size_t,LO,GO,Node>::Build(permImporter->getTargetMap());
+            permutedNnzPerRowVec->doImport(*originalNnzPerRowVec,*permImporter,Xpetra::INSERT);
+            ArrayRCP<const size_t> permutedNnzPerRow = permutedNnzPerRowVec->getData(0);
+            RCP<Operator> permutedR = OperatorFactory::Build(permImporter->getTargetMap(), permutedNnzPerRow, Xpetra::StaticProfile);
             RCP<CrsOperator> crsOp = rcp_dynamic_cast<CrsOperator>(permutedR);
             RCP<CrsMatrix> crsMtx = crsOp->getCrsMatrix();
             RCP<CrsOperator> origOp = rcp_dynamic_cast<CrsOperator>(originalR);
             RCP<CrsMatrix> origMtx = origOp->getCrsMatrix();
+            m1 = Teuchos::null;
+            m1 = rcp( new SubFactoryMonitor(*this, "Rebalancing restriction -- import", coarseLevel.GetLevelID()) );
             crsMtx->doImport(*origMtx,*permImporter,Xpetra::INSERT);
             crsMtx = Teuchos::null;
             //TODO is the following range map correct?
             //TODO RangeMap controls where a coarse grid vector's data resides after applying R
             //TODO if the targetMap of the importer is used, then we must either resumeFill or copy/fillComplete P so
             //TODO its domain map matches the range map of R.
+            m1 = Teuchos::null;
+            m1 = rcp( new SubFactoryMonitor(*this, "Rebalancing restriction -- fillComplete", coarseLevel.GetLevelID()) );
             permutedR->fillComplete( originalR->getDomainMap() , permImporter->getTargetMap() );
             //coarseLevel.Set< RCP<Operator> >("newR",permutedR,this);
+            m1 = Teuchos::null;
             coarseLevel.Set< RCP<Operator> >("R",permutedR,this);
 
             ///////////////////////// EXPERIMENTAL
@@ -154,7 +183,6 @@ namespace MueLu {
             // That is probably something for an external permutation factory
             //if(originalR->IsView("stridedMaps")) permutedR->CreateView("stridedMaps", originalR);
             ///////////////////////// EXPERIMENTAL
-            m1 = Teuchos::null;
          
             coarseLevel.Set< RCP<const Import> >("Importer",permImporter,this);
 

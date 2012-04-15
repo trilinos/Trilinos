@@ -37,7 +37,19 @@ namespace Xpetra {
       XPETRA_FACTORY_ERROR_IF_EPETRA(rowMap->lib());
       XPETRA_FACTORY_END;
     }
-    
+
+    //! Constructor specifying (possibly different) number of entries in each row.
+    static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Build(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype = Xpetra::DynamicProfile) {
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (rowMap->lib() == UseTpetra)
+        return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(rowMap, NumEntriesPerRowToAlloc, pftype) );
+#endif
+
+      XPETRA_FACTORY_ERROR_IF_EPETRA(rowMap->lib());
+      XPETRA_FACTORY_END;
+    }
+  
   };
 
   template <>
@@ -65,6 +77,21 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_EPETRA
       if (rowMap->lib() == UseEpetra)
         return rcp( new EpetraCrsMatrix(rowMap, maxNumEntriesPerRow, pftype) );
+#endif
+
+      XPETRA_FACTORY_END;
+    }
+
+    static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > Build(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype = Xpetra::DynamicProfile) {
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (rowMap->lib() == UseTpetra)
+        return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(rowMap, NumEntriesPerRowToAlloc, pftype) );
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+      if (rowMap->lib() == UseEpetra)
+        return rcp( new EpetraCrsMatrix(rowMap, NumEntriesPerRowToAlloc, pftype) );
 #endif
 
       XPETRA_FACTORY_END;

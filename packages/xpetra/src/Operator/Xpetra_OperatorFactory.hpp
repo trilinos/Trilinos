@@ -34,7 +34,11 @@ namespace Xpetra {
 
       // TEUCHOS_TEST_FOR_EXCEPTION(1,Xpetra::Exceptions::BadCast,"?");
     }
-    
+
+    //! Constructor specifying (possibly different) number of entries in each row.
+    static RCP<Operator> Build(const RCP<const Map> &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype = Xpetra::DynamicProfile) {
+      return rcp( new CrsOperator(rowMap, NumEntriesPerRowToAlloc, pftype) );
+    }
   };
 
 }
