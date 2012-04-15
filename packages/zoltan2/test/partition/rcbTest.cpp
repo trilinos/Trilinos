@@ -6,6 +6,7 @@
 
 /*! \file rcb.cpp
     \brief An example of partitioning coordinates with RCB.
+    \todo add more cases to this test.
 */
 
 #include <Zoltan2_TestHelpers.hpp>
@@ -89,7 +90,7 @@ int main(int argc, char *argv[])
   ///////////////////////////////////////////////////////////////////////
   // Create a Zoltan2 partitioning problem
 
-#ifdef ZOLTAN2_HAVE_MPI
+#ifdef HAVE_ZOLTAN2_MPI                   
   Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params,
     MPI_COMM_WORLD);
 #else
@@ -125,8 +126,12 @@ int main(int argc, char *argv[])
     cout << "Serial partitioning: " << 2*nprocs << " parts." << endl;
     parParams.set("num_global_parts", 2*nprocs);
 
+#ifdef HAVE_ZOLTAN2_MPI                   
     Zoltan2::PartitioningProblem<inputAdapter_t> serialProblem(
       &ia, &params, MPI_COMM_SELF);
+#else
+    Zoltan2::PartitioningProblem<inputAdapter_t> serialProblem(&ia, &params);
+#endif
  
     serialProblem.solve();
 

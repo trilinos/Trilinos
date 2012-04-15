@@ -8,6 +8,7 @@
 
 /*! \file Zoltan2_PartitioningProblem.hpp
     \brief Defines the PartitioningProblem class.
+\todo add resetParameters
 */
 
 #ifndef _ZOLTAN2_PARTITIONINGPROBLEM_HPP_
@@ -305,7 +306,6 @@ template <typename Adapter>
     z2_partSizes = NULL;
     z2_partSizes = new scalar_t [len];
     this->env_->localMemoryAssertion(__FILE__, __LINE__, len, z2_partSizes);
-    bool own_memory = true;
   }
 
   partIds_[criteria] = arcp(z2_partIds, 0, len, own_memory);

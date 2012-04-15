@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-#ifdef ZOLTAN2_HAVE_MPI
+#ifdef HAVE_ZOLTAN2_MPI
   MPI_Init(&argc, &argv);
   int rank, nprocs;
   MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
@@ -42,6 +42,8 @@ int main(int argc, char *argv[])
   flags.set(OBJECT_COORDINATES);
 
   typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
+  Teuchos::RCP<const Teuchos::Comm<int> > tcomm =
+    Teuchos::DefaultComm<int>::getComm();
 
   UserInputForTests uinput(fname, tcomm, flags);
 
@@ -81,11 +83,11 @@ int main(int argc, char *argv[])
   ///////////////////////////////////////////////////////////////////////
   // Create a Zoltan2 partitioning problem
 
-#ifdef ZOLTAN2_HAVE_MPI
+#ifdef HAVE_ZOLTAN2_MPI
   Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params, 
     MPI_COMM_WORLD);
 #else
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params)
+  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params);
 #endif
    
   ///////////////////////////////////////////////////////////////////////

@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-#ifdef ZOLTAN2_HAVE_MPI
+#ifdef HAVE_ZOLTAN2_MPI                   
   MPI_Init(&argc, &argv);
   int rank, nprocs;
   MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
@@ -44,6 +44,8 @@ int main(int argc, char *argv[])
 
   typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
 
+  Teuchos::RCP<const Teuchos::Comm<int> > tcomm =
+    Teuchos::DefaultComm<int>::getComm();
   UserInputForTests uinput(fname, tcomm, flags);
 
   RCP<tMVector_t> coords = uinput.getCoordinates();
@@ -91,11 +93,11 @@ int main(int argc, char *argv[])
 
   // Create a Zoltan2 partitioning problem
 
-#ifdef ZOLTAN2_HAVE_MPI
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem1(&ia, &params, 
+#ifdef HAVE_ZOLTAN2_MPI                   
+  Zoltan2::PartitioningProblem<inputAdapter_t> problem1(&ia1, &params, 
     MPI_COMM_WORLD);
 #else
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem1(&ia, &params);
+  Zoltan2::PartitioningProblem<inputAdapter_t> problem1(&ia1, &params);
 #endif
    
   // Solve the problem
@@ -117,7 +119,7 @@ int main(int argc, char *argv[])
       metrics1.view(0,metrics1.size()));
 
   if (rank == 0)
-    if (metrics1[0].getImbalance < 1.1)   // object imbalance
+    if (solution1.getImbalance() < 1.1)   // object imbalance
       std::cout << "PASS" << std::endl;
     else
       std::cout << "FAIL" << std::endl;
@@ -154,8 +156,12 @@ int main(int argc, char *argv[])
 
   // Create a Zoltan2 partitioning problem
 
+#ifdef HAVE_ZOLTAN2_MPI                   
   Zoltan2::PartitioningProblem<inputAdapter_t> problem2(
     &ia2, &params, MPI_COMM_WORLD);
+#else
+  Zoltan2::PartitioningProblem<inputAdapter_t> problem2(&ia2, &params);
+#endif
 
   // Solve the problem
 
@@ -178,10 +184,13 @@ int main(int argc, char *argv[])
       metrics2.view(0,metrics2.size()));
 
   if (rank == 0)
-    if (metrics2[1].getImbalance < 1.1)   // weight imbalance
+    if (solution2.getImbalance() < 1.1)   // weight imbalance
       std::cout << "PASS" << std::endl;
     else
       std::cout << "FAIL" << std::endl;
+
+  if (localCount > 0)
+    delete [] weights;
 
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
@@ -189,14 +198,12 @@ int main(int argc, char *argv[])
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
 
+#if 0
   // Add to the parameters the multicriteria objective.
 
   parParams.set("objective", "multicriteria_minimize_total_weight");
 
   // Create the new weights.
-
-  if (localCount > 0)
-    delete [] weights;
 
   weights = new scalar_t [localCount*3];
   srand(555);
@@ -210,7 +217,7 @@ int main(int argc, char *argv[])
   // Create a Zoltan2 input adapter with these weights.
 
   weightVec.resize(3);
-  weightStrides.reside(3);
+  weightStrides.resize(3);
 
   weightVec[0] = weights;   weightStrides[0] = 3;
   weightVec[1] = weights+1; weightStrides[1] = 3;
@@ -223,8 +230,12 @@ int main(int argc, char *argv[])
 
   // Create a Zoltan2 partitioning problem.
 
+#ifdef HAVE_ZOLTAN2_MPI                   
   Zoltan2::PartitioningProblem<inputAdapter_t> problem3(
     &ia3, &params, MPI_COMM_WORLD);
+#else
+  Zoltan2::PartitioningProblem<inputAdapter_t> problem3(&ia3, &params);
+#endif
 
   // Solve the problem
 
@@ -247,7 +258,7 @@ int main(int argc, char *argv[])
       metrics3.view(0,metrics3.size()));
 
   if (rank == 0)
-    if (metrics3[1].getImbalance < 1.1)   // normed weight imbalance
+    if (solution3.getImbalance() < 1.1) 
       std::cout << "PASS" << std::endl;
     else
       std::cout << "FAIL" << std::endl;
@@ -270,7 +281,7 @@ int main(int argc, char *argv[])
   // Using the initial problem that did not have any weights, reset
   // parameter list, and give it some part sizes.
 
-  problem1.resetParameterList(params);
+  problem1.resetParameterList(&params);
 
   zoltan2_partId_t *partIds = new zoltan2_partId_t [2];
   scalar_t *partSizes = new scalar_t [2];
@@ -289,7 +300,7 @@ int main(int argc, char *argv[])
   // Obtain the solution
 
   const Zoltan2::PartitioningSolution<inputAdapter_t> &solution4 =
-    problem.getSolution();
+    problem1.getSolution();
 
   // Check the solution.
 
@@ -301,12 +312,13 @@ int main(int argc, char *argv[])
       metrics4.view(0,metrics4.size()));
 
   if (rank == 0)
-    if (metrics4[0].getImbalance < 1.1)   // object imbalance
+    if (solution4.getImbalance() < 1.1)   // object imbalance
       std::cout << "PASS" << std::endl;
     else
       std::cout << "FAIL" << std::endl;
 
   delete [] partIds;
   delete [] partSizes;
+#endif
 }
 

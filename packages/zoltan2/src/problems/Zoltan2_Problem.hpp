@@ -8,6 +8,7 @@
 
 /*! \file Zoltan2_Problem.hpp
     \brief Defines the Problem base class.
+\todo add resetParameters
 */
 
 #ifndef _ZOLTAN2_PROBLEM_HPP_
@@ -26,6 +27,7 @@ namespace Zoltan2{
 ////////////////////////////////////////////////////////////////////////
 //! \brief Problem base class from which other classes (PartitioningProblem, 
 //!        ColoringProblem, OrderingProblem, MatchingProblem, etc.) derive.
+     
 template<typename Adapter>
 class Problem {
 public:
