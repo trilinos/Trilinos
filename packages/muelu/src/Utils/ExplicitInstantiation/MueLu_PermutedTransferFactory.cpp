@@ -33,7 +33,7 @@ TPETRA_MULTIVECTOR_INSTANT(size_t,int,int,Kokkos::DefaultNode::DefaultNodeType)
 #endif
 #ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
 # ifdef HAVE_TEUCHOS_LONG_LONG_INT
-TPETRA_VECTOR_INSTANT(size_t,int,long long int,Kokkos::DefaultNode::DefaultNodeType);
+TPETRA_VECTOR_INSTANT(size_t,int,long long int,Kokkos::DefaultNode::DefaultNodeType)
 TPETRA_MULTIVECTOR_INSTANT(size_t,int,long long int,Kokkos::DefaultNode::DefaultNodeType)
 #endif
 #endif
