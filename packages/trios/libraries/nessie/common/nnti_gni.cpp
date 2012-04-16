@@ -3102,7 +3102,8 @@ static int process_event(
 
 //    wc->inst_id = wr->wc.inst_id;
 
-    wr=gni_mem_hdl->wr_queue.front();
+//    wr=gni_mem_hdl->wr_queue.front();
+    wr=first_incomplete_wr(gni_mem_hdl);
     assert(wr);
 
     log_debug(nnti_debug_level, "event_buf=%p; wr=%p; wr->last_op=%d", event_buf, wr, wr->last_op);
