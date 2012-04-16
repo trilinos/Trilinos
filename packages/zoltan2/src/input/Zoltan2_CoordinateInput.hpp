@@ -45,14 +45,22 @@ namespace Zoltan2 {
     represent a vector, or it may be the helper class BasicUserTypes.
     See InputTraits for more information.
 
+
+    The \c scalar_t type, representing use data such as matrix values, is
+    used by Zoltan2 for weights, coordinates, and quality metrics.
+    Some User types (like Tpetra::CrsMatrix) have an inherent scalar type,
+    and some
+    (like Tpetra::CrsGraph) do not.  For such objects, the scalar type is
+    set by Zoltan2 to \c float.  If you wish to change it to double, set
+    the second template parameter to \c double.
+
+
     Input adapters provide access for Zoltan2 to the user's data.  The
     methods in the interface must be defined by users.  Many built-in
     adapters are already defined for common data structures, such as
     Tpetra and Epetra objects and C-language pointers to arrays.
 
     \todo We don't really need global Ids.  They should be optional
-    \todo Do we want to remove getGlobalNumberOfCoordinates?  We
-                 can figure that out.
     \todo Migration doesn't move weights.  Should it?
 */
 
@@ -62,7 +70,7 @@ template <typename User>
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef typename InputTraits<User>::scalar_t scalar_t;
+  typedef typename InputTraits<User>::scalar_t    scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
@@ -98,11 +106,6 @@ public:
    */
   virtual size_t getLocalNumberOfCoordinates() const = 0;
 
-  /*! \brief Return the number of coordinates in the entire problem.
-   *   \return  the global count of coordinates.
-   */
-  virtual size_t getGlobalNumberOfCoordinates() const = 0;
-
   /*! \brief Provide a pointer to one dimension of this process' coordinates.
       \param coordDim  is a value from 0 to one less than 
          getLocalNumberOfCoordinates() specifying which dimension is
@@ -129,10 +132,13 @@ public:
 
       \param weightDim ranges from zero to one less than getNumberOfWeights()
       \param weights is the list of weights of the given dimension for
-           the coordinates listed in getCoordinates().
+           the coordinates listed in getCoordinates().  If weights for
+           this dimension are to be uniform for all coordinates in the
+           global problem, the \c weights should be a NULL pointer.
        \param stride The k'th weight is located at weights[stride*k]
-       \return The number of weights listed, which should be the same
-                  as the number of elements listed in getCoordinates().
+       \return The number of weights listed, which should be at least
+                  the local number of coordinates times the stride for
+                  non-uniform weights, zero otherwise.
    */
 
   virtual size_t getCoordinateWeights(int weightDim,
@@ -156,9 +162,9 @@ public:
    *  \return   Returns the number of local Ids in the new partitioning.
    */
 
-  template <typename User2>
+  template <typename Adapter>
     size_t applyPartitioningSolution(User &in, User *&out,
-         const PartitioningSolution<User2> &solution) const
+         const PartitioningSolution<Adapter> &solution) const
   {
     return 0;
   } 

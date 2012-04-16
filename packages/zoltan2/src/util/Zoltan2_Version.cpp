@@ -7,7 +7,7 @@
 #include <Zoltan2_Version.hpp>
 
 /*! \file Zoltan2_Version.cpp
-    \brief Implementation of a Trilinow convention.
+    \brief Implementation of a Trilinos convention.
 */
 
 namespace Zoltan2 {

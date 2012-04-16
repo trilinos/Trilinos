@@ -72,14 +72,8 @@ int verifyInputAdapter(
   if (!fail && ia.getLocalNumberOfVertices() != graph.getNodeNumRows())
     fail = 4;
 
-  if (!fail && ia.getGlobalNumberOfVertices() != graph.getGlobalNumRows())
-    fail = 5;
-
   if (!fail && ia.getLocalNumberOfEdges() != graph.getNodeNumEntries())
       fail = 6;
-
-  if (!fail && ia.getGlobalNumberOfEdges() != graph.getGlobalNumEntries())
-    fail = 7;
 
   gfail = globalFail(comm, fail);
 
@@ -138,7 +132,6 @@ int main(int argc, char *argv[])
   // Our solution just assigns all objects to part zero.
 
   typedef Zoltan2::IdentifierMap<tgraph_t> idmap_t;
-  typedef Zoltan2::PartitioningSolution<tgraph_t> soln_t;
 
   RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
 
@@ -147,17 +140,16 @@ int main(int argc, char *argv[])
 
   int weightDim = 1;
 
-  float *imbal = new float [weightDim];
-  imbal[0] = 1.0;
-  ArrayRCP<float> metric(imbal, 0, 1, true);
+  ArrayRCP<Zoltan2::MetricValues<scalar_t> > metrics;
 
   zoltan2_partId_t *p = new zoltan2_partId_t [nvtx];
   memset(p, 0, sizeof(zoltan2_partId_t) * nvtx);
   ArrayRCP<zoltan2_partId_t> solnParts(p, 0, nvtx, true);
 
+  typedef Zoltan2::XpetraCrsGraphInput<tgraph_t>  adapter_t;
+  typedef Zoltan2::PartitioningSolution<adapter_t> soln_t;
   soln_t solution(env, comm, idMap, weightDim);
-
-  solution.setParts(rowGids, solnParts, metric);
+  solution.setParts(gidArray, solnParts, metrics);
 
   /////////////////////////////////////////////////////////////
   // User object is Tpetra::CrsGraph
@@ -184,7 +176,7 @@ int main(int argc, char *argv[])
     if (!gfail){
       tgraph_t *mMigrate = NULL;
       try{
-        tGInput->applyPartitioningSolution<tgraph_t>(*tG, mMigrate, solution);
+        tGInput->applyPartitioningSolution( *tG, mMigrate, solution);
         newG = rcp(mMigrate);
       }
       catch (std::exception &e){
@@ -245,7 +237,7 @@ int main(int argc, char *argv[])
     if (!gfail){
       xgraph_t *mMigrate =NULL;
       try{
-        xGInput->applyPartitioningSolution<tgraph_t>(*xG, mMigrate, solution);
+        xGInput->applyPartitioningSolution( *xG, mMigrate, solution);
       }
       catch (std::exception &e){
         fail = 11;
@@ -286,11 +278,11 @@ int main(int argc, char *argv[])
   if (!gfail){
     RCP<egraph_t> eG = uinput->getEpetraCrsGraph();
     RCP<const egraph_t> ceG = rcp_const_cast<const egraph_t>(eG);
-    RCP<Zoltan2::XpetraCrsGraphInput<egraph_t> > eGInput;
+    RCP<Zoltan2::XpetraCrsGraphInput<egraph_t, double> > eGInput;
 
     try {
       eGInput =
-        rcp(new Zoltan2::XpetraCrsGraphInput<egraph_t>(ceG));
+        rcp(new Zoltan2::XpetraCrsGraphInput<egraph_t, double>(ceG));
     }
     catch (std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0,
@@ -307,7 +299,7 @@ int main(int argc, char *argv[])
     if (!gfail){
       egraph_t *mMigrate =NULL;
       try{
-        eGInput->applyPartitioningSolution<tgraph_t>(*eG, mMigrate, solution);
+        eGInput->applyPartitioningSolution( *eG, mMigrate, solution);
       }
       catch (std::exception &e){
         fail = 11;
@@ -317,10 +309,10 @@ int main(int argc, char *argv[])
 
       if (!gfail){
         RCP<const egraph_t> cnewG(mMigrate, true);
-        RCP<Zoltan2::XpetraCrsGraphInput<egraph_t> > newInput;
+        RCP<Zoltan2::XpetraCrsGraphInput<egraph_t, double> > newInput;
         try{
           newInput =
-            rcp(new Zoltan2::XpetraCrsGraphInput<egraph_t>(cnewG));
+            rcp(new Zoltan2::XpetraCrsGraphInput<egraph_t, double>(cnewG));
         }
         catch (std::exception &e){
           TEST_FAIL_AND_EXIT(*comm, 0,

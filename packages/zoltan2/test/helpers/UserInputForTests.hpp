@@ -65,12 +65,12 @@ using Teuchos::rcp;
 using Teuchos::rcp_const_cast;
 
 enum testOutputType {
+  OBJECT_DATA,
   OBJECT_COORDINATES,
   NUM_TEST_OUTPUT_TYPE
 };
 
 typedef std::bitset<NUM_TEST_OUTPUT_TYPE> outputFlag_t;
-outputFlag_t defaultFlags;
 
 static int z2Test_read_mtx_coords(
   std::string &fname, ArrayRCP<ArrayRCP<scalar_t> > &xyz);
@@ -121,16 +121,18 @@ private:
     using Tpetra::MultiVector;
     using Tpetra::Export;
  
-    try{
-      M_ = Tpetra::MatrixMarket::Reader<tcrsMatrix_t>::readSparseFile(fname_, 
-        tcomm_, node_);
+    if (flags_.test(OBJECT_DATA)){
+      try{
+        M_ = Tpetra::MatrixMarket::Reader<tcrsMatrix_t>::readSparseFile(fname_, 
+          tcomm_, node_);
+      }
+      catch (std::exception &e) {
+        TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());
+      }
+      RCP<const xcrsMatrix_t> xm = 
+        Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
+      xM_ = rcp_const_cast<xcrsMatrix_t>(xm);
     }
-    catch (std::exception &e) {
-      TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());
-    }
-    RCP<const xcrsMatrix_t> xm = 
-      Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
-    xM_ = rcp_const_cast<xcrsMatrix_t>(xm);
 
     if (!flags_.test(OBJECT_COORDINATES))
       return;
@@ -140,9 +142,6 @@ private:
     typedef Map<lno_t, gno_t, node_t> map_t;
     typedef Export<lno_t, gno_t, node_t> export_t;
 
-    gno_t globalNrows = M_->getGlobalNumRows();
-    gno_t base = M_->getIndexBase();
-    const RCP<const map_t> &toMap = M_->getRowMap();
     int coordDim = 0;
     ArrayRCP<ArrayRCP<scalar_t> > xyz;
 
@@ -161,6 +160,28 @@ private:
 
     if (coordDim == 0)
       throw std::runtime_error("No coordinates or not enough memory.");
+
+    gno_t globalNrows;
+    gno_t base;
+    RCP<const map_t> toMap;
+
+    if (flags_.test(OBJECT_DATA)){
+      globalNrows = M_->getGlobalNumRows();
+      base = M_->getIndexBase();
+      const RCP<const map_t> &mapM = M_->getRowMap();
+      toMap = mapM;
+    }
+    else{
+      // Broadcast global number of coordinates
+      if (tcomm_->getRank() == 0)
+        globalNrows = xyz[0].size();
+      
+      Teuchos::broadcast<int, gno_t>(*tcomm_, 0, 1, &globalNrows);
+      base = 0;
+
+      map_t *defaultMap = new map_t(globalNrows, base, tcomm_);
+      toMap = rcp<const map_t>(defaultMap);
+    }
 
     // Export coordinates to their owners
 
@@ -250,12 +271,15 @@ public:
   // Market file.
 
   UserInputForTests(std::string s, const RCP<const Comm<int> > &c,
-    outputFlag_t flags=defaultFlags): 
+    outputFlag_t flags=outputFlag_t()): 
     xdim_(0), ydim_(0), zdim_(0), mtype_(), fname_(s),
      node_(Kokkos::DefaultNode::getDefaultNode()), 
      tcomm_(c), ecomm_(),
      M_(), xM_(), eM_(), eG_(), flags_(flags), xyz_()
   {
+    if (!flags_.any())
+      flags_.set(OBJECT_DATA);     // the default operation
+
     ecomm_ = Xpetra::toEpetra(c);
   }
 
@@ -264,12 +288,15 @@ public:
 
   UserInputForTests(int x, int y, int z, const RCP<const Comm<int> > &c,
     std::string matrixType=std::string("Laplace3D"),
-    outputFlag_t flags=defaultFlags): 
+    outputFlag_t flags=outputFlag_t()): 
      xdim_(x), ydim_(y), zdim_(z), mtype_(matrixType), fname_(),
      node_(Kokkos::DefaultNode::getDefaultNode()),
      tcomm_(c), ecomm_(),
      M_(), xM_(), eM_(), eG_(), flags_(flags), xyz_()
   {
+    if (!flags_.any())
+      flags_.set(OBJECT_DATA);     // the default operation
+
     if (flags_.test(OBJECT_COORDINATES))
       std::cout << "Coordinates for meshes not supported yet" << std::endl;
     ecomm_ = Xpetra::toEpetra(c);
@@ -279,11 +306,13 @@ public:
   // Market file.
 
   UserInputForTests(std::string s, const RCP<const Comm<int> > &c,
-    outputFlag_t flags=defaultFlags):
+    outputFlag_t flags=outputFlag_t()):
     xdim_(0), ydim_(0), zdim_(0), mtype_(), fname_(s), 
      node_(Kokkos::DefaultNode::getDefaultNode()),
      tcomm_(c), M_(), xM_(), flags_(flags), xyz_()
   {
+    if (!flags_.any())
+      flags_.set(OBJECT_DATA);     // the default operation
   }
 
   // Constructor for a user object created in memory using
@@ -291,11 +320,14 @@ public:
 
   UserInputForTests(gno_t x, gno_t y, gno_t z, const RCP<const Comm<int> > &c,
     std::string matrixType=std::string("Laplace3D"),
-    outputFlag_t flags=defaultFlags): 
+    outputFlag_t flags=outputFlag_t()): 
      xdim_(x), ydim_(y), zdim_(z), mtype_(matrixType), fname_(), 
      node_(Kokkos::DefaultNode::getDefaultNode()),
      tcomm_(c), M_(), xM_(), flags_(flags), xyz_()
   {
+    if (!flags_.any())
+      flags_.set(OBJECT_DATA);     // the default operation
+
     if (flags_.test(OBJECT_COORDINATES))
       std::cout << "Coordinates for meshes not supported yet" << std::endl;
   }
@@ -312,6 +344,7 @@ public:
 
   RCP<tcrsMatrix_t> getTpetraCrsMatrix() 
   { 
+    if (!flags_.test(OBJECT_DATA)) return M_;
     if (M_.is_null())
      createMatrix();
     return M_;
@@ -319,6 +352,8 @@ public:
 
   RCP<tcrsGraph_t> getTpetraCrsGraph() 
   { 
+    if (!flags_.test(OBJECT_DATA)) 
+      throw std::runtime_error("object data wasn't requested.");
     if (M_.is_null())
      createMatrix();
     return rcp_const_cast<tcrsGraph_t>(M_->getCrsGraph());
@@ -326,6 +361,8 @@ public:
 
   RCP<tVector_t> getTpetraVector() 
   { 
+    if (!flags_.test(OBJECT_DATA)) 
+      throw std::runtime_error("object data wasn't requested.");
     if (M_.is_null())
      createMatrix();
     RCP<tVector_t> V = rcp(new tVector_t(M_->getRowMap(),  1));
@@ -336,6 +373,8 @@ public:
 
   RCP<tMVector_t> getTpetraMultiVector(int nvec) 
   { 
+    if (!flags_.test(OBJECT_DATA)) 
+      throw std::runtime_error("object data wasn't requested.");
     if (M_.is_null())
      createMatrix();
     RCP<tMVector_t> mV = rcp(new tMVector_t(M_->getRowMap(), nvec));
@@ -346,6 +385,8 @@ public:
 
   RCP<xcrsMatrix_t> getXpetraCrsMatrix() 
   { 
+    if (!flags_.test(OBJECT_DATA)) 
+      throw std::runtime_error("object data wasn't requested.");
     if (xM_.is_null())
      createMatrix();
     return xM_;
@@ -353,6 +394,8 @@ public:
 
   RCP<xcrsGraph_t> getXpetraCrsGraph() 
   { 
+    if (!flags_.test(OBJECT_DATA)) 
+      throw std::runtime_error("object data wasn't requested.");
     if (xM_.is_null())
      createMatrix();
     return rcp_const_cast<xcrsGraph_t>(xM_->getCrsGraph());
@@ -360,6 +403,8 @@ public:
 
   RCP<xVector_t> getXpetraVector() 
   { 
+    if (!flags_.test(OBJECT_DATA)) 
+      throw std::runtime_error("object data wasn't requested.");
     RCP<const tVector_t> tV = getTpetraVector();
     RCP<const xVector_t> xV =
       Zoltan2::XpetraTraits<tVector_t>::convertToXpetra(tV);
@@ -368,6 +413,8 @@ public:
 
   RCP<xMVector_t> getXpetraMultiVector(int nvec) 
   { 
+    if (!flags_.test(OBJECT_DATA)) 
+      throw std::runtime_error("object data wasn't requested.");
     RCP<const tMVector_t> tMV = getTpetraMultiVector(nvec);
     RCP<const xMVector_t> xMV =
       Zoltan2::XpetraTraits<tMVector_t>::convertToXpetra(tMV);
@@ -377,6 +424,8 @@ public:
 #ifdef HAVE_EPETRA_DATA_TYPES
   RCP<Epetra_CrsGraph> getEpetraCrsGraph()
   {
+    if (!flags_.test(OBJECT_DATA)) 
+      throw std::runtime_error("object data wasn't requested.");
     if (eG_.is_null()){
       if (M_.is_null())
         createMatrix();
@@ -418,6 +467,8 @@ public:
 
   RCP<Epetra_CrsMatrix> getEpetraCrsMatrix()
   {
+    if (!flags_.test(OBJECT_DATA)) 
+      throw std::runtime_error("object data wasn't requested.");
     if (eM_.is_null()){
       RCP<Epetra_CrsGraph> egraph = getEpetraCrsGraph();
       eM_ = rcp(new Epetra_CrsMatrix(Copy, *egraph));
@@ -448,6 +499,8 @@ public:
 
   RCP<Epetra_Vector> getEpetraVector() 
   { 
+    if (!flags_.test(OBJECT_DATA)) 
+      throw std::runtime_error("object data wasn't requested.");
     RCP<Epetra_CrsGraph> egraph = getEpetraCrsGraph();
     RCP<Epetra_Vector> V = 
       rcp(new Epetra_Vector(egraph->RowMap()));
@@ -457,6 +510,8 @@ public:
 
   RCP<Epetra_MultiVector> getEpetraMultiVector(int nvec) 
   { 
+    if (!flags_.test(OBJECT_DATA)) 
+      throw std::runtime_error("object data wasn't requested.");
     RCP<Epetra_CrsGraph> egraph = getEpetraCrsGraph();
     RCP<Epetra_MultiVector> mV = 
       rcp(new Epetra_MultiVector(egraph->RowMap(), nvec));

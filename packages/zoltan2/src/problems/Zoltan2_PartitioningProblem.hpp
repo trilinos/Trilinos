@@ -8,6 +8,7 @@
 
 /*! \file Zoltan2_PartitioningProblem.hpp
     \brief Defines the PartitioningProblem class.
+\todo add resetParameters
 */
 
 #ifndef _ZOLTAN2_PARTITIONINGPROBLEM_HPP_
@@ -40,17 +41,24 @@ namespace Zoltan2{
  *  \todo hierarchical partitioning
  *  \todo repartition given an initial solution
  *  \todo follow partitioning with global or local ordering
+ *  \todo allow unsetting of part sizes by passing in null pointers
+ *  \todo add a parameter by which user tells us there are no self 
+ *        edges to be removed.
  */
 template<typename Adapter>
 class PartitioningProblem : public Problem<Adapter>
 {
 public:
 
+  typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::gid_t gid_t;
+  typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::user_t user_t;
+  typedef typename Adapter::base_adapter_t base_adapter_t;
 
-  // \brief Destructor
+  /*! \brief Destructor
+   */
   ~PartitioningProblem() {};
 
 #ifdef HAVE_ZOLTAN2_MPI
@@ -63,6 +71,7 @@ public:
 
   //! \brief Constructor where communicator is the Teuchos default.
   PartitioningProblem(Adapter *A, Teuchos::ParameterList *p) ;
+
 
   //!  \brief Reset the parameter list.
 
@@ -91,7 +100,7 @@ public:
   //
   //   \return  a reference to the solution to the most recent solve().
 
-  PartitioningSolution<user_t> &getSolution() {
+  const PartitioningSolution<Adapter> &getSolution() {
     return *(solution_.getRawPtr());
   };
 
@@ -125,9 +134,15 @@ public:
    * Zoltan2 assumes that uniform partition sizes are desired by the caller,
    * unless specified otherwise in a call to setPartSizes or 
    * setPartSizesForCritiera.
+   *
+   * \todo A user should be able to give us one set of part sizes
+   *            that applies to all weight dimensions.  Right now
+   *            for each weight dimension that does not have
+   *            uniform part sizes, the user has to give us the
+   *            part sizes once for each.
    */
 
-  void setPartSizes(int len, partId_t *partIds, float *partSizes, 
+  void setPartSizes(int len, partId_t *partIds, scalar_t *partSizes, 
     bool makeCopy=true) 
   { 
     setPartSizesForCritiera(0, len, partIds, partSizes, makeCopy);
@@ -168,21 +183,20 @@ public:
    */
 
   void setPartSizesForCritiera(int criteria, int len, partId_t *partIds, 
-    float *partSizes, bool makeCopy=true) ;
+    scalar_t *partSizes, bool makeCopy=true) ;
 
 private:
   void initializeProblem();
 
-  /*! \brief  TODO
-   */
   void createPartitioningProblem(bool newData);
 
-  RCP<PartitioningSolution<user_t> > solution_;
+  RCP<PartitioningSolution<Adapter> > solution_;
 
   InputAdapterType inputType_;
   ModelType modelType_;
   modelFlag_t graphFlags_;
   modelFlag_t idFlags_;
+  modelFlag_t coordFlags_;
   std::string algorithm_;
 
   int numberOfWeights_;
@@ -197,7 +211,7 @@ private:
   // So numberOfCriteria_ is numberOfWeights_ or one, whichever is greater.
 
   ArrayRCP<ArrayRCP<partId_t> > partIds_;
-  ArrayRCP<ArrayRCP<float> > partSizes_;
+  ArrayRCP<ArrayRCP<scalar_t> > partSizes_;
   int numberOfCriteria_;
 
   // Number of parts to be computed at each level in hierarchical partitioning.
@@ -213,7 +227,7 @@ template <typename Adapter>
     ParameterList *p, MPI_Comm comm):
       Problem<Adapter>(A,p,comm), solution_(),
       inputType_(InvalidAdapterType), modelType_(InvalidModel), 
-      graphFlags_(), idFlags_(), algorithm_(),
+      graphFlags_(), idFlags_(), coordFlags_(), algorithm_(),
       numberOfWeights_(), partIds_(), partSizes_(), 
       numberOfCriteria_(), levelNumberParts_(), hierarchical_(false)
 {
@@ -226,7 +240,7 @@ template <typename Adapter>
     ParameterList *p):
       Problem<Adapter>(A,p), solution_(),
       inputType_(InvalidAdapterType), modelType_(InvalidModel), 
-      graphFlags_(), idFlags_(), algorithm_(),
+      graphFlags_(), idFlags_(), coordFlags_(), algorithm_(),
       numberOfWeights_(), 
       partIds_(), partSizes_(), numberOfCriteria_(), 
       levelNumberParts_(), hierarchical_(false)
@@ -252,16 +266,15 @@ template <typename Adapter>
   // does not, the part size arrays are empty.
 
   ArrayRCP<partId_t> *noIds = new ArrayRCP<partId_t> [numberOfCriteria_];
-  ArrayRCP<float> *noSizes = new ArrayRCP<float> [numberOfCriteria_];
+  ArrayRCP<scalar_t> *noSizes = new ArrayRCP<scalar_t> [numberOfCriteria_];
 
   partIds_ = arcp(noIds, 0, numberOfCriteria_, true);
   partSizes_ = arcp(noSizes, 0, numberOfCriteria_, true);
 }
 
-// TODO - allow unsetting of part sizes by passing in null pointers
 template <typename Adapter>
   void PartitioningProblem<Adapter>::setPartSizesForCritiera(
-    int criteria, int len, partId_t *partIds, float *partSizes, bool makeCopy) 
+    int criteria, int len, partId_t *partIds, scalar_t *partSizes, bool makeCopy) 
 {
   this->env_->localInputAssertion(__FILE__, __LINE__, "invalid length", 
     len>= 0, BASIC_ASSERTION);
@@ -271,7 +284,7 @@ template <typename Adapter>
 
   if (len == 0){
     partIds_[criteria] = ArrayRCP<partId_t>();
-    partSizes_[criteria] = ArrayRCP<float>();
+    partSizes_[criteria] = ArrayRCP<scalar_t>();
     return;
   }
 
@@ -283,7 +296,7 @@ template <typename Adapter>
   // part sizes.
 
   partId_t *z2_partIds = partIds;
-  float *z2_partSizes = partSizes;
+  scalar_t *z2_partSizes = partSizes;
   bool own_memory = false;
 
   if (makeCopy){
@@ -291,9 +304,8 @@ template <typename Adapter>
     z2_partIds = new partId_t [len];
     this->env_->localMemoryAssertion(__FILE__, __LINE__, len, z2_partIds);
     z2_partSizes = NULL;
-    z2_partSizes = new float [len];
+    z2_partSizes = new scalar_t [len];
     this->env_->localMemoryAssertion(__FILE__, __LINE__, len, z2_partSizes);
-    bool own_memory = true;
   }
 
   partIds_[criteria] = arcp(z2_partIds, 0, len, own_memory);
@@ -305,12 +317,6 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 {
   HELLO;
 
-  typedef typename Adapter::gid_t gid_t;
-  typedef typename Adapter::gno_t gno_t;
-  typedef typename Adapter::lno_t lno_t;
-  typedef typename Adapter::user_t user_t;
-  typedef typename Adapter::base_adapter_t base_adapter_t;
-
   // Create the computational model.
 
   createPartitioningProblem(updateInputData);
@@ -321,27 +327,37 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   //   for part and weight information. The algorithm will
   //   update the solution with part assignments and quality
   //   metrics.  The Solution object itself will convert our internal
-  //   global numbers back to application global Ids.
-
-  int weightDim = this->generalModel_->getNumWeights();
+  //   global numbers back to application global Ids if needed.
 
   RCP<const IdentifierMap<user_t> > idMap = 
-    this->generalModel_->getIdentifierMap();
+    this->baseModel_->getIdentifierMap();
 
-  solution_ = rcp(new PartitioningSolution<user_t>( this->envConst_,
-    this->comm_, idMap, weightDim, partIds_.view(0, numberOfCriteria_), 
-    partSizes_.view(0, numberOfCriteria_)));
+  PartitioningSolution<Adapter> *soln = NULL;
+
+  try{
+    soln = new PartitioningSolution<Adapter>( 
+      this->envConst_, this->comm_, idMap, numberOfWeights_, 
+      partIds_.view(0, numberOfCriteria_), 
+      partSizes_.view(0, numberOfCriteria_));
+  }
+  Z2_FORWARD_EXCEPTIONS;
+
+  solution_ = rcp(soln);
 
   // Call the algorithm
 
   try {
     if (algorithm_ == string("scotch")){
-      AlgPTScotch<base_adapter_t>(this->envConst_, this->comm_, 
+      AlgPTScotch<Adapter>(this->envConst_, this->comm_, 
         this->graphModel_, solution_);
     }
     else if (algorithm_ == string("block")){
-      AlgPTBlock<base_adapter_t>(this->envConst_, this->comm_, 
+      AlgBlock<Adapter>(this->envConst_, this->comm_, 
         this->identifierModel_, solution_);
+    }
+    else if (algorithm_ == string("rcb")){
+      AlgRCB<Adapter>(this->envConst_, this->comm_, 
+        this->coordinateModel_, solution_);
     }
     else{
       throw std::logic_error("partitioning algorithm not supported yet");
@@ -357,14 +373,28 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   using std::string;
   using Teuchos::ParameterList;
 
-  /////////////////////////////////////////////////////////////////////////////
+  // A Problem object may be reused.  The input data may have changed and
+  // new parameters or part sizes may have been set.
+  //
+  // Save these values in order to determine if we need to create a new model.
+
+  ModelType previousModel = modelType_;
+  modelFlag_t previousGraphModelFlags = graphFlags_;
+  modelFlag_t previousIdentifierModelFlags = idFlags_;
+  modelFlag_t previousCoordinateModelFlags = coordFlags_;
+
+  modelType_ = InvalidModel;
+  graphFlags_.reset();
+  idFlags_.reset();
+  coordFlags_.reset();
+
+  ////////////////////////////////////////////////////////////////////////////
   // It's possible at this point that the Problem may want to
   // add problem parameters to the parameter list in the Environment. 
   //
   // Since the parameters in the Environment have already been
   // validated in its constructor, a new Environment must be created:
-  //
-  /////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////
   // Teuchos::RCP<const Teuchos::Comm<int> > oldComm = this->env_->comm_;
   // const ParameterList &oldParams = this->env_->getUnvalidatedParameters();
   // 
@@ -374,57 +404,35 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   // ParameterList &newPartParams = newParams.sublist("partitioning");
   // newPartParams.set("new_partitioning_parameter", "its_value");
   // 
-  // this->env_ = rcp(new Environment(oldParams, oldComm));
-  /////////////////////////////////////////////////////////////////////////////
+  // this->env_ = rcp(new Environment(newParams, oldComm));
+  ////////////////////////////////////////////////////////////////////////////
 
   Environment &env = *(this->env_);
+  ParameterList &pl = env.getParametersNonConst();
 
-  ParameterList *general = &(env.getParametersNonConst());
-  ParameterList *partitioning = NULL;
-  if (env.hasPartitioningParameters()){
-    partitioning = &(general->sublist("partitioning"));
-  }
-
-  string unset("notSet");
+  bool isSet;
+  string defString("default");
 
   // Did the user specify a computational model?
 
-  string model(unset);
-  if (partitioning){
-    string *modelName = partitioning->getPtr<string>(string("model"));
-    if (modelName)
-      model = *modelName;
-  }
+  string model(defString);
+  getParameterValue(pl, "partitioning", "model", isSet, model);
 
   // Did the user specify an algorithm?
 
-  string algorithm(unset);
-  if (partitioning){
-    string *algorithmName = partitioning->getPtr<string>(string("algorithm"));
-    if (algorithmName)
-      algorithm = *algorithmName;
-  }
+  string algorithm(defString);
+  getParameterValue(pl, "partitioning", "algorithm", isSet, algorithm);
 
   // Possible algorithm requirements that must be conveyed to the model:
 
   bool needConsecutiveGlobalIds = false;
   bool removeSelfEdges= false;
 
-  // Save these values in order to determine if we need to create a new model.
-
-  ModelType previousModel = modelType_;
-  modelFlag_t previousGraphModelFlags = graphFlags_;
-  modelFlag_t previousIdentifierModelFlags = idFlags_;
-
-  modelType_ = InvalidModel;
-  graphFlags_.reset();
-  idFlags_.reset();
-
   ///////////////////////////////////////////////////////////////////
   // Determine algorithm, model, and algorithm requirements.  This
   // is a first pass.  Feel free to change this and add to it.
   
-  if (algorithm != unset){
+  if (algorithm != defString){
     // Figure out the model required by the algorithm
     if (algorithm == string("block") ||
         algorithm == string("random") ||
@@ -438,9 +446,8 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
              algorithm == string("rib") ||
              algorithm == string("hsfc")){
 
-      modelType_ = GeometryModelType;
+      modelType_ = CoordinateModelType;
       algorithm_ = algorithm;
-      needConsecutiveGlobalIds = true;
     }
     else if (algorithm == string("metis") ||
              algorithm == string("parmetis") ||
@@ -449,8 +456,6 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
       modelType_ = GraphModelType;
       algorithm_ = algorithm;
-      // TODO: add a parameter by which user tells us there are
-      // no self edges to be removed.
       removeSelfEdges = true;
       needConsecutiveGlobalIds = true;
     }
@@ -469,7 +474,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       throw std::logic_error("parameter list algorithm is invalid");
     }
   }
-  else if (model != unset){
+  else if (model != defString){
     // Figure out the algorithm suggested by the model.
     if (model == string("hypergraph")){
       modelType_ = HypergraphModelType;
@@ -507,9 +512,8 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 #endif
     }
     else if (model == string("geometry")){
-      modelType_ = GeometryModelType;
-      algorithm_ = string("rib");
-      needConsecutiveGlobalIds = true;
+      modelType_ = CoordinateModelType;
+      algorithm_ = string("rcb");
     }
     else if (model == string("ids")){
       modelType_ = IdentifierModelType;
@@ -543,8 +547,8 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
         algorithm_ = string("patoh"); 
     }
     else if (inputType_ == CoordinateAdapterType){
-      modelType_ = GeometryModelType;
-      algorithm_ = string("rib");
+      modelType_ = CoordinateModelType;
+      algorithm_ = string("rcb");
     }
     else if (inputType_ == VectorAdapterType ||
              inputType_ == IdentifierAdapterType){
@@ -559,13 +563,10 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
   // Hierarchical partitioning?
 
-  ParameterEntry *topo = NULL;
-  if (partitioning)
-    topo = partitioning->getEntryPtr("topology");
+  Array<int> valueList;
+  getParameterValue(pl, "partitioning", "topology", isSet, valueList);
 
-  if (topo){
-    Array<int> *aiVar = NULL;
-    Array<int> &valueList = topo->getValue(aiVar);
+  if (isSet){
     if (!Zoltan2::noValuesAreInRangeList(valueList)){
       int *n = new int [valueList.size() + 1];
       levelNumberParts_ = arcp(n, 0, valueList.size() + 1, true);
@@ -587,14 +588,10 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
   hierarchical_ = levelNumberParts_.size() > 0;
 
-  // Object to be partitioned?
+  // Object to be partitioned? (rows, columns, etc)
 
-  string objectOfInterest(unset);
-  if (partitioning){
-    string *objectName = partitioning->getPtr<string>(string("objects"));
-    if (objectName)
-      objectOfInterest = *objectName;
-  }
+  string objectOfInterest(defString);
+  getParameterValue(pl, "partitioning", "objects", isSet, objectOfInterest);
 
   ///////////////////////////////////////////////////////////////////
   // Set model creation flags, if any.
@@ -603,30 +600,23 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
     // Any parameters in the graph sublist?
 
-    ParameterList *graphParams=NULL;
-    ParameterEntry *sublist = partitioning->getEntryPtr("graph");
-    if (sublist && sublist->isList())
-      graphParams = &(partitioning->sublist("graph"));      
+    string symParameter(defString);
+    getParameterValue(pl, "partitioning", "graph", "symmetrize_input",
+      isSet, symParameter);
 
-    if (graphParams){
-      ParameterEntry *sym= graphParams->getEntryPtr("symmetrize_input");
-      if (sym){
-        string *strVar=NULL;
-        string &symParameter = sym->getValue<string>(strVar);
-        if (symParameter == string("transpose"))
-          graphFlags_.set(SYMMETRIZE_INPUT_TRANSPOSE);
-        else if (symParameter == string("bipartite"))
-          graphFlags_.set(SYMMETRIZE_INPUT_BIPARTITE);
-      } 
+    if (isSet){
+      if (symParameter == string("transpose"))
+        graphFlags_.set(SYMMETRIZE_INPUT_TRANSPOSE);
+      else if (symParameter == string("bipartite"))
+        graphFlags_.set(SYMMETRIZE_INPUT_BIPARTITE);
+    } 
 
-      ParameterEntry *sg = graphParams->getEntryPtr("subset_graph");
-      if (sg){
-        int *intVar = NULL;
-        int &sgParameter = sg->getValue<int>(intVar);
-        if (sgParameter == 1)
-          graphFlags_.set(GRAPH_IS_A_SUBSET_GRAPH);
-      }
-    }
+    int sgParameter = 0;
+    getParameterValue(pl, "partitioning", "graph", "subset_graph",
+      isSet, sgParameter);
+
+    if (isSet && (sgParameter == 1))
+        graphFlags_.set(GRAPH_IS_A_SUBSET_GRAPH);
 
     // Any special behaviors required by the algorithm?
     
@@ -639,7 +629,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     // How does user input map to vertices and edges?
 
     if (inputType_ == MatrixAdapterType){
-      if (objectOfInterest == unset ||
+      if (objectOfInterest == defString ||
           objectOfInterest == string("matrix_rows") )
         graphFlags_.set(VERTICES_ARE_MATRIX_ROWS);
       else if (objectOfInterest == string("matrix_columns"))
@@ -649,7 +639,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     }
 
     else if (inputType_ == MeshAdapterType){
-      if (objectOfInterest == unset ||
+      if (objectOfInterest == defString ||
           objectOfInterest == string("mesh_nodes") )
         graphFlags_.set(VERTICES_ARE_MESH_NODES);
       else if (objectOfInterest == string("mesh_elements"))
@@ -663,10 +653,19 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     if (needConsecutiveGlobalIds)
       idFlags_.set(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
   }
+  else if (modelType_ == CoordinateModelType){
+
+    // Any special behaviors required by the algorithm?
+    
+    if (needConsecutiveGlobalIds)
+      coordFlags_.set(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
+  }
+
 
   if (  newData ||
        (modelType_ != previousModel) ||
        (graphFlags_ != previousGraphModelFlags) ||
+       (coordFlags_ != previousCoordinateModelFlags) ||
        (idFlags_ != previousIdentifierModelFlags) ) {
 
     // Create the computational model.
@@ -682,7 +681,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
         this->baseInputAdapter_, this->envConst_, this->comm_, graphFlags_));
 
-      this->generalModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
+      this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
         this->graphModel_);
 
       break;
@@ -690,14 +689,19 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     case HypergraphModelType:
       break;
   
-    case GeometryModelType:
+    case CoordinateModelType:
+      this->coordinateModel_ = rcp(new CoordinateModel<base_adapter_t>(
+        this->baseInputAdapter_, this->envConst_, this->comm_, coordFlags_));
+
+      this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
+        this->coordinateModel_);
       break;
 
     case IdentifierModelType:
       this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
         this->baseInputAdapter_, this->envConst_, this->comm_, idFlags_));
 
-      this->generalModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
+      this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
         this->identifierModel_);
       break;
 
@@ -708,5 +712,5 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   }
 }
 
-}
+}  // namespace Zoltan2
 #endif

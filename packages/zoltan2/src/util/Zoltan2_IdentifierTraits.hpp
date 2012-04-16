@@ -22,6 +22,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <limits>
 
 using Teuchos::SerializationTraits;
 
@@ -33,10 +34,12 @@ namespace Zoltan2
 template <typename T>
   std::pair<T, T> z2LocalMinMax(const T *val, size_t n)
 {
-  if (n < 1) return std::pair<T,T>(0,0);
+  T max = numeric_limits<T>::min();
+  T min = numeric_limits<T>::max();
 
-  T min = val[0], max = val[0];
-  for (size_t i=1; i < n; i++){
+  if (n < 1) return std::pair<T,T>(min, max);
+
+  for (size_t i=0; i < n; i++){
     if (val[i] < min) min = val[i];
     else if (val[i] > max) max = val[i];
   }
@@ -47,7 +50,8 @@ template <typename T>
  */
 template <typename T>
   void z2GlobalMinMax(const Comm<int> &comm, 
-    const T &localMin, const T &localMax, T &globalMin, T &globalMax)
+    const T &localMin, const T &localMax, T &globalMin, T &globalMax,
+    const Environment env=Environment())
 {
   int nprocs = comm.getSize();
 
@@ -57,12 +61,6 @@ template <typename T>
     return;
   }
   
-  // Need an environment for error messages
-  ParameterList params;
-  RCP<Comm<int> > comm2 = comm.duplicate();
-  RCP<const Comm<int> > comm2Const = rcp_const_cast<const Comm<int> >(comm2);
-  Environment env(params, comm2Const);
-
   ArrayRCP<T> recvBufMin;
   ArrayRCP<T> recvBufMax;
   Array<T> sendBufMin(nprocs, localMin);

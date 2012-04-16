@@ -1,8 +1,8 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  usingXpetra
-  SOURCES usingXpetra.cpp
+  block_example
+  SOURCES block.cpp
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"

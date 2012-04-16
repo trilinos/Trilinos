@@ -103,6 +103,19 @@ public:
    */
   bool gnosAreGids() const;
 
+  /*! \brief Return the global number of identifiers.
+   */
+  gno_t getGlobalNumberOfIds() const { return globalNumberOfIds_;}
+
+  /*! \brief Return the local number of identifiers.
+   */
+  gno_t getLocalNumberOfIds() const { return localNumberOfIds_;}
+
+  /*! \brief Return the minimum and maximum values of the internal
+   *  global numbers 
+   */
+  void getGnoRange(gno_t &min, gno_t &max) const;
+
   /*! \brief Return true if our internal global numbers are consecutive.
    */
   bool gnosAreConsecutive() const;
@@ -187,6 +200,23 @@ public:
                            ArrayView<gno_t> out_gno,
                            ArrayView<int> out_proc) const;
 
+  /*! \brief Map library internal global numbers to application GIDs,
+                        and their process owners
+
+      \param in_gno input, an array of the global numbers.
+      \param out_gid output, an optional array of the corresponding 
+          user global Ids.  If out_gid.size() is zero,
+          we assume global Ids are not desired.
+      \param out_proc output, an array of the process ranks corresponding with
+                         the in_gno and out_gid, out_proc[i] is the process
+                         that supplied out_gid[i] to Zoltan2.  
+
+      All processes must call this.  The global numbers
+      supplied may belong to another process.  
+   */
+  void gnoGlobalTranslate( ArrayView<const gno_t> in_gno,
+                           ArrayView<gid_t> out_gid,
+                           ArrayView<int> out_proc) const;
 private:
 
   // Problem parameters, library configuration.
@@ -257,10 +287,19 @@ template<typename User>
   setupMap();
 }
 
+// TODO many of these should be inline
+
 template< typename User>
   bool IdentifierMap<User>::gnosAreGids() const
 {
   return userGidsAreZoltan2Gnos_;
+}
+
+template <typename User>
+  void IdentifierMap<User>::getGnoRange(gno_t &min, gno_t &max) const
+{
+  min = minGlobalGno_;
+  max = maxGlobalGno_;
 }
 
 template< typename User>
@@ -801,6 +840,177 @@ template< typename User>
   }
 }
 
+template< typename User>
+  void IdentifierMap<User>::gnoGlobalTranslate(
+    ArrayView<const gno_t> in_gno,
+    ArrayView<gid_t> out_gid,
+    ArrayView<int> out_proc) const
+{
+  size_t len=in_gno.size();
+
+  if (len == 0){
+    return;
+  }
+
+  bool skipGid = (out_gid.size() == 0);
+
+  env_->localInputAssertion(__FILE__, __LINE__, 
+    "Destination array is too small", 
+    (out_proc.size() >= len) && (skipGid || (out_gid.size() >= len)),
+    BASIC_ASSERTION);
+
+  if (userGidsAreZoltan2Gnos_){
+
+    // Easy case - use gidGlobalTranslate.
+
+    const gno_t *gnos = in_gno.getRawPtr();
+    ArrayView<const gid_t> gids(static_cast<const gid_t *>(gnos), len);
+    ArrayView<gno_t> noGnos;
+
+    try{
+      gidGlobalTranslate(gids, noGnos, out_proc);
+    }
+    Z2_FORWARD_EXCEPTIONS;
+
+    if (!skipGid)
+      for (lno_t i=0; i < len; i++)
+        out_gid[i] = gids[i];
+
+    return;
+  }
+
+  // Since user global IDs were mapped to internal global numbers,
+  // and since internal global numbers are consecutive, we know the
+  // process owning each global number.
+
+  gno_t *gnos = gnoDist_.getRawPtr();
+  gno_t *final = gnos + numProcs_ + 1;
+  bool remote = false;
+  int rank = comm_->getRank();
+
+  for (size_t i=0; i < len; i++){
+
+    env_->localInputAssertion(__FILE__, __LINE__, "invalid global number", 
+      in_gno[i] < globalNumberOfIds_, BASIC_ASSERTION);
+
+    gno_t *ub = std::upper_bound(gnos, final, in_gno[i]);
+
+    env_->localBugAssertion(__FILE__, __LINE__, "finding gno", ub != final, 
+      BASIC_ASSERTION);
+   
+    out_proc[i] = (ub - gnos - 1);
+
+    if (!remote && out_proc[i] != rank)
+      remote = true;
+  }
+
+  if (skipGid)
+    return;
+
+  if (!remote){
+
+    // Make a local call to get the gids
+
+    const gno_t *gnos = in_gno.getRawPtr();
+    ArrayView<gno_t> gnoList(const_cast<gno_t *>(gnos), len);
+
+    try{
+      gidTranslate(out_gid, gnoList, TRANSLATE_LIB_TO_APP);
+    }
+    Z2_FORWARD_EXCEPTIONS;
+
+    return;
+  }
+
+  // Get the global ID from the owner.
+
+  ArrayRCP<lno_t> indexList;
+  ArrayRCP<gno_t> gnoOutBuf;
+
+  if (len){
+    lno_t *tmpLno = new lno_t [len];
+    env_->localMemoryAssertion(__FILE__, __LINE__, len, tmpLno);
+    indexList = arcp(tmpLno, 0, len, true);
+  
+    gno_t *tmpGno = new gno_t [len];
+    env_->localMemoryAssertion(__FILE__, __LINE__, len, tmpGno);
+    gnoOutBuf = arcp(tmpGno, 0, len, true);
+  }
+
+  lno_t *tmpCount = new lno_t [numProcs_];
+  env_->localMemoryAssertion(__FILE__, __LINE__, numProcs_, tmpCount);
+  ArrayRCP<lno_t> countOutBuf(tmpCount, 0, numProcs_, true);
+
+  lno_t *tmpOff = new lno_t [numProcs_+1];
+  env_->localMemoryAssertion(__FILE__, __LINE__, numProcs_+1, tmpOff);
+  ArrayRCP<lno_t> offsetBuf(tmpOff, 0, numProcs_+1, true);
+
+  for (int i=0; i < len; i++)
+    countOutBuf[out_proc[i]]++;
+
+  for (int i=0; i < numProcs_; i++)
+    offsetBuf[i+1] = offsetBuf[i] + countOutBuf[i];
+
+  for (int i=0; i < len; i++){
+    int p = out_proc[i];
+    int off = offsetBuf[p];
+    indexList[off] = i;
+    gnoOutBuf[off] = in_gno[i];
+    offsetBuf[p]++;
+  }
+
+  offsetBuf.clear();
+
+  ArrayRCP<gno_t> gnoInBuf;
+  ArrayRCP<lno_t> countInBuf;
+
+  try{
+    AlltoAllv<gno_t, lno_t>(*comm_, *env_, 
+      gnoOutBuf.view(0, len), countOutBuf.view(0, numProcs_),
+      gnoInBuf, countInBuf);
+  }
+  Z2_FORWARD_EXCEPTIONS;
+
+  gnoOutBuf.clear();
+  countOutBuf.clear();
+
+  lno_t numRequests = 0;
+  for (int i=0; i < numProcs_; i++)
+    numRequests += countInBuf[i];
+
+  ArrayRCP<gid_t> gidQueryBuf;
+
+  if (numRequests){
+    gid_t *tmpGid = new gid_t [numRequests];
+    env_->localMemoryAssertion(__FILE__, __LINE__, numRequests, tmpGid);
+    gidQueryBuf = arcp(tmpGid, 0, numRequests);
+  }
+
+  try{
+    gidTranslate(gidQueryBuf.view(0, numRequests),
+                 gnoInBuf.view(0, numRequests),
+                 TRANSLATE_LIB_TO_APP);
+  }
+  Z2_FORWARD_EXCEPTIONS;
+
+  ArrayRCP<gid_t> gidInBuf;
+  ArrayRCP<lno_t> newCountInBuf;
+
+  try{
+    AlltoAllv<gid_t, lno_t>(*comm_, *env_, 
+      gidQueryBuf.view(0, numRequests), countInBuf.view(0, numProcs_),
+      gidInBuf, newCountInBuf);
+  }
+  Z2_FORWARD_EXCEPTIONS;
+
+  gidQueryBuf.clear();
+
+  // copy in to right place in gid list
+
+  for (int i=0; i < len; i++){
+    out_gid[indexList[i]] = gidInBuf[i];
+  }
+}
 
 template< typename User> 
   void IdentifierMap<User>::setupMap(void)
@@ -822,8 +1032,8 @@ template< typename User>
   gid_t mingid_t, maxgid_t;
 
   userGidsAreConsecutive_ = globallyConsecutiveOrdinals<gid_t>(
-    *(env_->comm_), *env_, gidPtr, localNumberOfIds_,      // input
-    tmpDist, globalNumberOfIds_);                          // output
+    *comm_, *env_, gidPtr, localNumberOfIds_,      // input
+    tmpDist, globalNumberOfIds_);                  // output
 
   bool baseZeroConsecutiveIds = false;
 

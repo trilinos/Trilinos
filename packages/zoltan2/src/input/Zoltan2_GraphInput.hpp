@@ -45,6 +45,15 @@ namespace Zoltan2 {
     represent a vector, or it may be the helper class BasicUserTypes.
     See InputTraits for more information.
 
+    The \c scalar_t type, representing use data such as matrix values, is
+    used by Zoltan2 for weights, coordinates, part sizes and
+    quality metrics.
+    Some User types (like Tpetra::CrsMatrix) have an inherent scalar type,
+    and some
+    (like Tpetra::CrsGraph) do not.  For such objects, the scalar type is
+    set by Zoltan2 to \c float.  If you wish to change it to double, set
+    the second template parameter to \c double.
+
    \todo Create BasicCrsGraphInput subclass.
 */
 
@@ -55,7 +64,7 @@ private:
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef typename InputTraits<User>::scalar_t scalar_t;
+  typedef typename InputTraits<User>::scalar_t    scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
@@ -73,20 +82,9 @@ public:
    */
   virtual size_t getLocalNumberOfVertices() const = 0;
 
-  /*! \brief Returns the global number vertices.
-   *   \todo For GraphInput, should a user have to tell us
-   *            global number of vertices and edges?  Zoltan2
-   *            can figure that out.
-   */
-  virtual global_size_t getGlobalNumberOfVertices() const = 0;
-
   /*! \brief Returns the number edges on this process.
    */
   virtual size_t getLocalNumberOfEdges() const = 0;
-
-  /*! \brief Returns the global number edges.
-   */
-  virtual global_size_t getGlobalNumberOfEdges() const = 0;
 
   /*! \brief Returns the dimension (0 or greater) of vertex weights.
    */
@@ -126,10 +124,13 @@ public:
       \param weightDim ranges from zero to one less than 
                    getVertexWeightDimension().
       \param weights is the list of weights of the given dimension for
-           the vertices returned in getVertexListView().
+           the vertices returned in getVertexListView().  If weights for
+           this dimension are to be uniform for all vertices in the
+           global problem, the \c weights should be a NULL pointer.
        \param stride The k'th weight is located at weights[stride*k]
-       \return The number of weights listed, which should be the same
-               as the number of vertices in getVertexListView().
+      \return The number of weights listed, which should be at least
+                  the local number of vertices times the stride for
+                  non-uniform weights, zero otherwise.
 
       Zoltan2 does not copy your data.  The data pointed to by weights
       must remain valid for the lifetime of this InputAdapter.
@@ -195,9 +196,9 @@ public:
    *  \return   Returns the number of local Ids in the new partitioning.
    */
 
-  template <typename User2>
+  template <typename Adapter>
     size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<User2> &solution) const
+         const PartitioningSolution<Adapter> &solution) const
   {
     return 0;
   }

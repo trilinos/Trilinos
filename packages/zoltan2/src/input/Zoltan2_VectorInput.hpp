@@ -43,6 +43,16 @@ namespace Zoltan2 {
     represent a vector, or it may be the helper class BasicUserTypes.
     See InputTraits for more information.  
 
+    The \c scalar_t type, representing use data such as matrix values, is
+    used by Zoltan2 for weights, coordinates, part sizes and
+    quality metrics.
+    Some User types (like Tpetra::CrsMatrix) have an inherent scalar type,
+    and some
+    (like Tpetra::CrsGraph) do not.  For such objects, the scalar type is
+    set by Zoltan2 to \c float.  If you wish to change it to double, set
+    the second template parameter to \c double.
+
+
     VectorInput may be a single vector or a set of corresponding vectors
     which have with the same global identifiers and the same distribution 
     across processes.
@@ -58,7 +68,7 @@ private:
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef typename InputTraits<User>::scalar_t scalar_t;
+  typedef typename InputTraits<User>::scalar_t    scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
@@ -85,16 +95,14 @@ public:
   virtual int getNumberOfVectors() const = 0;
 
   /*! \brief Return the number of weights per vector element.
+   *     Number of weights per element should be zero or greater.  If
+   *     zero, it is assumed each vector is equally weighted.
    */
   virtual int getNumberOfWeights() const = 0;
 
   /*! \brief Return the length of the portion of the vector on this process.
    */
   virtual size_t getLocalLength() const = 0;
-
-  /*! \brief Return the global length of the vector.
-   */
-  virtual size_t getGlobalLength() const = 0;
 
   /*! \brief Provide a pointer to the vertex elements.  If the VectorInput
        represents more than one vector, vector zero is implied.
@@ -130,7 +138,9 @@ public:
         
       \param dimension ranges from zero to one less than getNumberOfWeights()
       \param weights is the list of weights of the given dimension for
-           the elements listed in getVector.
+           the elements listed in getVector.  If weights for
+           this dimension are to be uniform for all vectors in the
+           global problem, the \c weights should be a NULL pointer.
        \param stride The k'th weight is located at weights[stride*k]
        \return The number of weights listed, which should be the same
                   as the number of elements listed in getVector().
@@ -157,9 +167,9 @@ public:
    *  \return   Returns the number of local Ids in the new partitioning.
    */
 
-  template <typename User2>
+  template <typename Adapter>
     size_t applyPartitioningSolution(User &in, User *&out,
-         const PartitioningSolution<User2> &solution) const
+         const PartitioningSolution<Adapter> &solution) const
   {
     return 0;
   } 

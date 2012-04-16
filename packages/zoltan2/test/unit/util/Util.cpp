@@ -14,6 +14,8 @@
 
 #include <Zoltan2_Util.hpp>   
 #include <Zoltan2_TestHelpers.hpp>   
+#include <Zoltan2_PartitioningSolution.hpp>   
+#include <Zoltan2_BasicIdentifierInput.hpp>   
 
 using Teuchos::RCP;
 using Teuchos::Comm;
@@ -56,11 +58,15 @@ void convertSolutionToImportListTest(RCP<const Comm<int> > &comm)
 
   RCP<const idMap_t> idMap = rcp(new idMap_t(env, comm, gidArray, false));
 
+  // An identifier adapter type for Solution
+
+  typedef Zoltan2::BasicIdentifierInput<userTypes_t> idAdapter_t;
+
   // Create a partitioning solution.  Update with a solution
   // where gids are assigned to parts in a round robin fashion.
 
-  RCP<PartitioningSolution<userTypes_t> > solution =
-    rcp(new PartitioningSolution<userTypes_t>(env, comm, idMap, 1));
+  RCP<PartitioningSolution<idAdapter_t> > solution =
+    rcp(new PartitioningSolution<idAdapter_t>(env, comm, idMap, 1));
 
   size_t numGlobalParts = solution->getGlobalNumberOfParts();
 
@@ -75,9 +81,9 @@ void convertSolutionToImportListTest(RCP<const Comm<int> > &comm)
     
   ArrayRCP<zoltan2_partId_t> partArray(partList, 0, localNumObjects, true);
 
-  ArrayRCP<float> metrics(1, 1.1);
+  ArrayRCP<Zoltan2::MetricValues<scalar_t> > metrics;
 
-  solution->setParts(gidArray.view(0, localNumObjects),
+  solution->setParts(gidArray,
                      partArray,
                      metrics);
 
@@ -87,8 +93,9 @@ void convertSolutionToImportListTest(RCP<const Comm<int> > &comm)
   ArrayRCP<int> dummyInfoIn;
   ArrayRCP<gno_t> myImports;
 
-  size_t numNewObjects = Zoltan2::convertSolutionToImportList(
-    *solution, dummyInfoOut, myImports, dummyInfoIn);
+  size_t numNewObjects = 
+    Zoltan2::convertSolutionToImportList<idAdapter_t, int>(
+      *solution, dummyInfoOut, myImports, dummyInfoIn);
 
   int fail = 0;
 

@@ -28,8 +28,8 @@ template <typename Adapter>
 void AlgPTScotch(
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
-  const RCP<GraphModel<Adapter> > &model,
-  RCP<PartitioningSolution<typename Adapter::user_t> > &solution
+  const RCP<GraphModel<typename Adapter::base_adapter_t> > &model,
+  RCP<PartitioningSolution<Adapter> > &solution
 
 )
 {
@@ -180,8 +180,8 @@ template <typename Adapter>
 void AlgPTScotch(
   const RCP<const Environment> &env,        // parameters & app comm
   const RCP<const Comm<int> > &problemComm, // problem comm
-  const RCP<GraphModel<Adapter> > &model,   // the graph
-  RCP<PartitioningSolution<typename Adapter::user_t> > &solution
+  const RCP<GraphModel<typename Adapter::base_adapter_t> > &model, // the graph
+  RCP<PartitioningSolution<Adapter> > &solution
 )
 {
   HELLO;
@@ -193,8 +193,6 @@ void AlgPTScotch(
   int ierr = 0;
 
   size_t numGlobalParts = solution->getGlobalNumberOfParts();
-  int weightDim = model->getNumWeights();
-  int weightFlag = (weightDim ? weightDim : 1);
 
   SCOTCH_Num partnbr;
   SCOTCH_Num_Traits<size_t>::ASSIGN_TO_SCOTCH_NUM(partnbr, numGlobalParts, env);
@@ -314,10 +312,14 @@ void AlgPTScotch(
     for (size_t i = 0; i < nVtx; i++) partList[i] = partloctab[i];
   }
 
-  ArrayRCP<float> imbalance(new float [weightFlag],0, weightFlag, true);
-  imbalance[0] = 1.0;  // TODO calculate imbalance.
+  // TODO compute the metrics using objectMetrics call
 
-  solution->setParts(vtxID, partList, imbalance);
+  ArrayRCP<MetricValues<scalar_t> > metrics =
+    arcp(new MetricValues<scalar_t> [2], 0, 2);
+
+  ArrayRCP<const gno_t> gnos = arcpFromArrayView(vtxID);
+
+  solution->setParts(gnos, partList, metrics);
 
 #ifdef SHOW_ZOLTAN2_LINUX_MEMORY
   if (me==0){

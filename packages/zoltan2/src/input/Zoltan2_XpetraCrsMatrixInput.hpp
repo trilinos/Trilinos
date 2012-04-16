@@ -33,14 +33,24 @@ namespace Zoltan2 {
      \li Tpetra::CrsGraph
      \li Xpetra::CrsGraph
      \li Epetra_CrsGraph
+
+    The \c scalar_t type, representing use data such as matrix values, is
+    used by Zoltan2 for weights, coordinates, part sizes and
+    quality metrics.
+    Some User types (like Tpetra::CrsMatrix) have an inherent scalar type,
+    and some
+    (like Tpetra::CrsGraph) do not.  For such objects, the scalar type is
+    set by Zoltan2 to \c float.  If you wish to change it to double, set
+    the second template parameter to \c double.
+
 */
 
 template <typename User>
-class XpetraCrsMatrixInput : public MatrixInput<User> {
+  class XpetraCrsMatrixInput : public MatrixInput<User> {
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef typename InputTraits<User>::scalar_t scalar_t;
+  typedef typename InputTraits<User>::scalar_t    scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
@@ -91,7 +101,7 @@ public:
   // The InputAdapter interface.
   ////////////////////////////////////////////////////
 
-  std::string inputAdapterName()const { return std::string("XpetraCrsMatrix");}
+  string inputAdapterName()const { return string("XpetraCrsMatrix");}
 
   size_t getLocalNumberOfObjects() const { return getLocalNumRows();}
 
@@ -144,7 +154,7 @@ public:
       dim >= 0 && dim < coordinateDim_, BASIC_ASSERTION);
 
     size_t length;
-    rowCoords_[dim]->getStridedList(length, coords, stride);
+    rowCoords_[dim].getStridedList(length, coords, stride);
     return length;
   }
 
@@ -152,9 +162,9 @@ public:
   // End of MatrixInput interface.
   ////////////////////////////////////////////////////
 
-  template <typename User2>
+  template <typename Adapter>
     size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<User2> &solution) const;
+         const PartitioningSolution<Adapter> &solution) const;
 
 private:
 
@@ -169,7 +179,7 @@ private:
   ArrayRCP<gno_t> columnIds_;
 
   int coordinateDim_;
-  Array<RCP<StridedData<lno_t, scalar_t> > > rowCoords_;
+  ArrayRCP<StridedData<lno_t, scalar_t> > rowCoords_;
 
 };
 
@@ -183,8 +193,9 @@ template <typename User>
       env_(rcp(new Environment)),
       inmatrix_(inmatrix), matrix_(), rowMap_(), colMap_(), base_(),
       offset_(), columnIds_(),
-      coordinateDim_(coordDim), rowCoords_(coordDim)
+      coordinateDim_(coordDim), rowCoords_()
 {
+  typedef StridedData<lno_t,scalar_t> input_t;
   matrix_ = XpetraTraits<User>::convertToXpetra(inmatrix);
   rowMap_ = matrix_->getRowMap();
   colMap_ = matrix_->getColMap();
@@ -209,6 +220,9 @@ template <typename User>
     }
     offset_[i+1] = offset_[i] + nnz;
   } 
+
+  if (coordinateDim_ > 0)
+    rowCoords_ = arcp(new input_t [coordinateDim_], 0, coordinateDim_, true);
 }
 
 // TODO (from 3/21/12 mtg):  Consider changing interface to take an XpetraMultivector
@@ -224,16 +238,15 @@ template <typename User>
 
   size_t nvtx = getLocalNumRows();
 
-  rowCoords_[dim] =
-    rcp<input_t>(
-      new input_t(ArrayView<const scalar_t>(coordVal, nvtx), stride));
+  ArrayRCP<const scalar_t> coordV(coordVal, 0, nvtx, false);
+  rowCoords_[dim] = input_t(coordV, stride);
 }
 
 template <typename User>
-  template <typename User2>
+  template <typename Adapter>
     size_t XpetraCrsMatrixInput<User>::applyPartitioningSolution(
       const User &in, User *&out, 
-      const PartitioningSolution<User2> &solution) const
+      const PartitioningSolution<Adapter> &solution) const
 { 
   // Get an import list
 
@@ -250,7 +263,7 @@ template <typename User>
   const RCP<const Comm<int> > comm = matrix_->getRowMap()->getComm();
 
   try{
-    numNewRows = convertSolutionToImportList<User2, lno_t>(
+    numNewRows = convertSolutionToImportList<Adapter, lno_t>(
       solution, dummyIn, importList, dummyOut);
   }
   Z2_FORWARD_EXCEPTIONS;

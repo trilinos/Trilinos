@@ -69,9 +69,6 @@ int verifyInputAdapter(
   if (!fail && ia.getLocalLength() != vector.getLocalLength())
     fail = 4;
 
-  if (!fail && ia.getGlobalLength() != vector.getGlobalLength())
-    fail = 5;
-
   gfail = globalFail(comm, fail);
 
   if (!gfail){
@@ -148,7 +145,6 @@ int main(int argc, char *argv[])
   // object.  The Solution needs an IdentifierMap.
 
   typedef Zoltan2::IdentifierMap<tvector_t> idmap_t;
-  typedef Zoltan2::PartitioningSolution<tvector_t> soln_t;
 
   RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
 
@@ -156,26 +152,25 @@ int main(int argc, char *argv[])
   RCP<const idmap_t> idMap = rcp(new idmap_t(env, comm, gidArray));
 
   int weightDim = 1;
-  float *imbal = new float [weightDim];
-  imbal[0] = 1.0;
-  ArrayRCP<float> metric(imbal, 0, 1, true);
+  ArrayRCP<Zoltan2::MetricValues<scalar_t> > metrics;
 
   zoltan2_partId_t *p = new zoltan2_partId_t [vlen];
   memset(p, 0, sizeof(zoltan2_partId_t) * vlen);
   ArrayRCP<zoltan2_partId_t> solnParts(p, 0, vlen, true);
 
-  soln_t solution(env, comm, idMap, weightDim);
-
-  solution.setParts(rowGids, solnParts, metric);
-
   std::vector<const scalar_t *> emptyWeights;
   std::vector<int> emptyStrides;
+
+  typedef Zoltan2::XpetraVectorInput<tvector_t> adapter_t;
+  Zoltan2::PartitioningSolution<adapter_t> solution(
+    env, comm, idMap, weightDim);
+  solution.setParts(gidArray, solnParts, metrics);
 
   /////////////////////////////////////////////////////////////
   // User object is Tpetra::Vector, no weights
   if (!gfail){ 
     RCP<const tvector_t> ctV = rcp_const_cast<const tvector_t>(tV);
-    RCP<Zoltan2::XpetraVectorInput<tvector_t> > tVInput;
+    RCP<adapter_t> tVInput;
   
     try {
       tVInput = 
@@ -199,7 +194,7 @@ int main(int argc, char *argv[])
     if (!gfail){
       tvector_t *vMigrate = NULL;
       try{
-        tVInput->applyPartitioningSolution<tvector_t>(*tV, vMigrate, solution);
+        tVInput->applyPartitioningSolution(*tV, vMigrate, solution);
         newV = rcp(vMigrate);
       }
       catch (std::exception &e){
@@ -262,7 +257,7 @@ int main(int argc, char *argv[])
     if (!gfail){
       xvector_t *vMigrate =NULL;
       try{
-        xVInput->applyPartitioningSolution<tvector_t>(*xV, vMigrate, solution);
+        xVInput->applyPartitioningSolution(*xV, vMigrate, solution);
       }
       catch (std::exception &e){
         fail = 11;
@@ -326,7 +321,7 @@ int main(int argc, char *argv[])
     if (!gfail){
       evector_t *vMigrate =NULL;
       try{
-        eVInput->applyPartitioningSolution<tvector_t>(*eV, vMigrate, solution);
+        eVInput->applyPartitioningSolution(*eV, vMigrate, solution);
       }
       catch (std::exception &e){
         fail = 11;

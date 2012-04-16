@@ -54,7 +54,7 @@ public:
 
   /*! \brief Returns a descriptive name that identifies the concrete adapter.
    */
-  virtual std::string inputAdapterName() const = 0;
+  virtual string inputAdapterName() const = 0;
 
   /*! \brief Returns the number of objects in the input.
    *
@@ -64,6 +64,8 @@ public:
   virtual size_t getLocalNumberOfObjects() const = 0;
 
   /*! \brief Returns the number of weights per object.
+   *   Number of weights per object should be zero or greater.  If
+   *   zero, then it is assumed that all objects are equally weighted.
    */ 
   virtual int getNumberOfWeightsPerObject() const = 0;
 };

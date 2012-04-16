@@ -50,6 +50,16 @@ namespace Zoltan2 {
     \c User may be the actual class or structure used by application to
     represent a vector, or it may be the helper class BasicUserTypes.
     See InputTraits for more information.
+
+    The \c scalar_t type, representing use data such as matrix values, is
+    used by Zoltan2 for weights, coordinates, part sizes and
+    quality metrics.
+    Some User types (like Tpetra::CrsMatrix) have an inherent scalar type,
+    and some
+    (like Tpetra::CrsGraph) do not.  For such objects, the scalar type is
+    set by Zoltan2 to \c float.  If you wish to change it to double, set
+    the second template parameter to \c double.
+
 */
 
 template <typename User>
@@ -58,7 +68,7 @@ template <typename User>
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef typename InputTraits<User>::scalar_t scalar_t;
+  typedef typename InputTraits<User>::scalar_t    scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
@@ -85,6 +95,8 @@ public:
   virtual size_t getLocalNumberOfIdentifiers() const = 0;
 
   /*! \brief Return the number of weights associated with each identifier.
+   *   If the number of weights is zero, then we assume that the
+   *   identifiers are equally weighted.
    */
   virtual int getNumberOfWeights() const = 0;
 
@@ -98,11 +110,15 @@ public:
 
   virtual size_t getIdentifierList(gid_t const *&Ids) const = 0;
 
-  /*! \brief Provide a pointer to one of the dimensions of this process' optional weights.
+  /*! \brief Provide a pointer to one of the dimensions of this process' 
+                optional weights.
 
-      \param dimension is a value ranging from zero to one less than getNumberOfWeights()
+      \param dimension is a value ranging from zero to one less than 
+                   getNumberOfWeights()
       \param weights on return will contain a list of the weights for
-               the dimension specified.
+               the dimension specified.  If weights for
+           this dimension are to be uniform for all identifierse in the
+           global problem, the \c weights should be a NULL pointer.
 
       \param stride on return will indicate the stride of the weights list.
 
@@ -138,9 +154,9 @@ public:
    *  \return   Returns the number of local Ids in the new partitioning.
    */
 
-  template <typename User2>
+  template <typename Adapter>
     size_t applyPartitioningSolution(User &in, User *&out,
-      const PartitioningSolution<User2> &solution) const
+      const PartitioningSolution<Adapter> &solution) const
   {
     return 0;
   } 

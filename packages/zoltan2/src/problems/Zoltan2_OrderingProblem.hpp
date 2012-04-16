@@ -207,7 +207,7 @@ void OrderingProblem<Adapter>::createOrderingProblem()
     this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
       this->baseInputAdapter_, this->envConst_, this->comm_, graphFlags));
 
-    this->generalModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
+    this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
       this->graphModel_);
 
     break;
@@ -219,13 +219,13 @@ void OrderingProblem<Adapter>::createOrderingProblem()
     this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
       this->baseInputAdapter_, this->envConst_, this->comm_, idFlags));
 
-    this->generalModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
+    this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
       this->identifierModel_);
 
     break;
 
   case HypergraphModelType:
-  case GeometryModelType:
+  case CoordinateModelType:
     cout << __func__ << " Model type " << modelType << " not yet supported." 
          << endl;
     break;

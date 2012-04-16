@@ -40,6 +40,17 @@ namespace Zoltan2 {
     the empty helper class \c BasicUserTypes with which a Zoltan2 user
     can easily supply the data types for the library.
 
+
+    The \c scalar_t type, representing use data such as matrix values, is
+    used by Zoltan2 for weights, coordinates, part sizes and
+    quality metrics.
+    Some User types (like Tpetra::CrsMatrix) have an inherent scalar type,
+    and some
+    (like Tpetra::CrsGraph) do not.  For such objects, the scalar type is
+    set by Zoltan2 to \c float.  If you wish to change it to double, set
+    the second template parameter to \c double.
+
+
     BasicVectorInput may be a single vector or a set of corresponding vectors
     which have with the
     same global identifiers and the same distribution across processes.
@@ -58,7 +69,7 @@ public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
-  typedef typename InputTraits<User>::scalar_t scalar_t;
+  typedef typename InputTraits<User>::scalar_t    scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
@@ -84,12 +95,12 @@ public:
     int elementStride=1):
       env_(rcp(new Environment)), 
       numIds_(numIds), globalNumIds_(0), idList_(ids),
-      numVectors_(1), elements_(1), numWeights_(0), weights_(0)
+      numVectors_(1), elements_(), numWeights_(0), weights_()
   {
-    std::vector<const scalar_t *> values;
-    std::vector<int> strides;
-    std::vector<const scalar_t *> emptyValues;
-    std::vector<int> emptyStrides;
+    vector<const scalar_t *> values;
+    vector<int> strides;
+    vector<const scalar_t *> emptyValues;
+    vector<int> emptyStrides;
 
     values.push_back(elements);
     strides.push_back(elementStride);
@@ -118,14 +129,14 @@ public:
 
   BasicVectorInput(lno_t numIds, const gid_t *ids, 
     const scalar_t *elements, int elementStride,
-    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
+    vector<const scalar_t *> &weights, vector<int> &weightStrides):
       env_(rcp(new Environment)), 
       numIds_(numIds), globalNumIds_(0), idList_(ids),
-      numVectors_(1), elements_(1), 
-      numWeights_(weights.size()), weights_(weights.size())
+      numVectors_(1), elements_(), 
+      numWeights_(weights.size()), weights_()
   {
-    std::vector<const scalar_t *> values;
-    std::vector<int> strides;
+    vector<const scalar_t *> values;
+    vector<int> strides;
 
     values.push_back(elements);
     strides.push_back(elementStride);
@@ -158,12 +169,12 @@ public:
    */
 
   BasicVectorInput(lno_t numIds, const gid_t *ids, 
-    std::vector<const scalar_t *> &elements,  std::vector<int> &elementStrides,
-    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
+    vector<const scalar_t *> &elements,  vector<int> &elementStrides,
+    vector<const scalar_t *> &weights, vector<int> &weightStrides):
       env_(rcp(new Environment)), 
       numIds_(numIds), globalNumIds_(0), idList_(ids),
-      numVectors_(elements.size()), elements_(elements.size()), 
-      numWeights_(weights.size()), weights_(weights.size())
+      numVectors_(elements.size()), elements_(),
+      numWeights_(weights.size()), weights_()
   {
     createBasicVector(elements, elementStrides, weights, weightStrides);
   }
@@ -176,7 +187,7 @@ public:
   // The InputAdapter interface.
   ////////////////////////////////////////////////////////////////
 
-  std::string inputAdapterName() const {return std::string("BasicVector");}
+  string inputAdapterName() const {return string("BasicVector");}
 
   size_t getLocalNumberOfObjects() const { return numIds_;}
 
@@ -220,14 +231,14 @@ private:
   const gid_t *idList_;
 
   int numVectors_;
-  Array<RCP<StridedData<lno_t, scalar_t> > > elements_ ;
+  ArrayRCP<StridedData<lno_t, scalar_t> > elements_ ;
 
   int numWeights_;
-  Array<RCP<StridedData<lno_t, scalar_t> > > weights_;
+  ArrayRCP<StridedData<lno_t, scalar_t> > weights_;
 
   void createBasicVector(
-    std::vector<const scalar_t *> &elements,  std::vector<int> &elementStrides,
-    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides);
+    vector<const scalar_t *> &elements,  vector<int> &elementStrides,
+    vector<const scalar_t *> &weights, vector<int> &weightStrides);
 
 };
 
@@ -246,7 +257,7 @@ template <typename User>
 
   size_t length;
 
-  elements_[i]->getStridedList(length, element, stride);
+  elements_[i].getStridedList(length, element, stride);
 
   return length;
 }
@@ -260,15 +271,15 @@ template <typename User>
 
   size_t length;
 
-  weights_[dimension]->getStridedList(length, weights, stride);
+  weights_[dimension].getStridedList(length, weights, stride);
 
   return length;
 }
 
 template <typename User>
   void BasicVectorInput<User>::createBasicVector(
-   std::vector<const scalar_t *> &elements,  std::vector<int> &elementStrides,
-   std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides)
+   vector<const scalar_t *> &elements,  vector<int> &elementStrides,
+   vector<const scalar_t *> &weights, vector<int> &weightStrides)
 {
   typedef StridedData<lno_t,scalar_t> input_t;
 
@@ -281,20 +292,22 @@ template <typename User>
 
   if (numIds_){
     int stride = 1;
+    elements_ = arcp(new input_t [numVectors_], 0, numVectors_, true);
     for (int v=0; v < numVectors_; v++){
       if (elementStrides.size())
         stride = elementStrides[v];
-      elements_[v] = rcp<input_t>(new input_t(
-        ArrayView<const scalar_t>(elements[v], stride*numIds_), stride));
+      ArrayRCP<const scalar_t> eltV(elements[v], 0, stride*numIds_, false); 
+      elements_[v] = input_t(eltV, stride);
     }
 
     if (numWeights_){
       stride = 1;
+      weights_ = arcp(new input_t [numWeights_], 0, numWeights_, true);
       for (int w=0; w < numWeights_; w++){
         if (weightStrides.size())
           stride = weightStrides[w];
-        weights_[w] = rcp<input_t>(new input_t(
-          ArrayView<const scalar_t>(weights[w], stride*numIds_), stride));
+        ArrayRCP<const scalar_t> wgtV(weights[w], 0, stride*numIds_, false); 
+        weights_[w] = input_t(wgtV, stride);
       }
     }
   }

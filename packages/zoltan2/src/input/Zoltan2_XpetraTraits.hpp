@@ -240,7 +240,7 @@ struct XpetraTraits<Xpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> >
     Xpetra::UnderlyingLib lib = from->getRowMap()->lib();
 
     if (lib == Xpetra::UseEpetra){
-       throw std::logic_error("compiler should have used specialization");
+       throw logic_error("compiler should have used specialization");
     } else{
       // Do the import with the Tpetra::CrsMatrix traits object
       const x_matrix_t *xm = from.get();
@@ -474,7 +474,7 @@ struct XpetraTraits<Xpetra::CrsGraph<lno_t, gno_t, node_t> >
     Xpetra::UnderlyingLib lib = from->getRowMap()->lib();
 
     if (lib == Xpetra::UseEpetra){
-       throw std::logic_error("compiler should have used specialization");
+       throw logic_error("compiler should have used specialization");
     } else{
       // Do the import with the Tpetra::CrsGraph traits object
       const x_graph_t *xg = from.get();
@@ -659,7 +659,7 @@ struct XpetraTraits<Xpetra::Vector<scalar_t, lno_t, gno_t, node_t> >
     Xpetra::UnderlyingLib lib = from->getMap()->lib();
 
     if (lib == Xpetra::UseEpetra){
-       throw std::logic_error("compiler should have used specialization");
+       throw logic_error("compiler should have used specialization");
     } else{
       // Do the import with the Tpetra::Vector traits object
       const x_vector_t *xv = from.get();
@@ -849,7 +849,7 @@ struct XpetraTraits<Xpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> >
     Xpetra::UnderlyingLib lib = from->getMap()->lib();
 
     if (lib == Xpetra::UseEpetra){
-       throw std::logic_error("compiler should have used specialization");
+       throw logic_error("compiler should have used specialization");
     } else{
       // Do the import with the Tpetra::MultiVector traits object
       const x_mvector_t *xmv = from.get();

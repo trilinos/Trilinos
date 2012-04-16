@@ -1,28 +1,46 @@
 /*! 
 
-\mainpage Trilinos/Zoltan2: Dynamic Partitioning, Matrix Ordering and Graph Coloring Package
+\mainpage Trilinos/Zoltan2: Dynamic parallel partitioning and ordering.
 
 \section zoltan2_intro Introduction to Zoltan2
 
-Zoltan2 is a refactoring of the Zoltan library in C++ for the purpose
-of supporting template programming for users and 
-library that provides dynamic parallel data partitioning.
-When it is released in the Fall of 2012 it will also include graph coloring
-and matrix ordering algorithms.
+Zoltan2 is a refactoring of the 
+\htmlonly
+<a href=http://www.cs.sandia.gov/Zoltan>
+\endhtmlonly
+Zoltan
+\htmlonly
+</a> 
+\endhtmlonly
+library into C++ in order to support template programming,
+to scale to larger problems, and to support architecture aware partitioning.
+This library is currently under active development, and is still 
+in pre-copyright status.  
+
+Partitioning functionality that is available now is:
+
+<ul>
+<li> Recursive coordinate bisection (RCB) of weighted geometric coordinates.
+<li> Block partitioning of weighted objects.
+<li> Graph partitioning of undirected weighted graphs through an interface to PTScotch.
+</ul>
 
 
-This document is a work in progress.
+Serial ordering available now is:
 
-\section zoltan2_startup Overview of Zoltan2
+<ul>
+<li> RCM
+<li> AMD
+<li> Increasing degree
+<li> Natural (identity permutation)
+<li> Random
+</ul>
 
-\section zoltan2_classes Zoltan 2 classes
+\section zoltan2_users Overview of Zoltan2 for users
 
-\section zoltan2_evaluation Migrating user data
+\section zoltan2_developers Overview of Zoltan2 for developers
 
 \section zoltan2_examples Zoltan 2 examples
-
-// These sections can have links to sections on other .doc files.  See isorropia.
-// HTML lists can be used in this file.
 
 \section zoltan2_developers List of Developers
 

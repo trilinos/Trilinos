@@ -15,6 +15,7 @@
 
 #include <string>
 #include <iostream>
+#include <fstream>
 
 namespace Zoltan2
 {
@@ -43,7 +44,22 @@ class DebugManager
 {
     public:
 
-    /*! \brief Constructor
+    /*! \brief Constructor for output to an ofstream.
+     *   \param rank  the MPI rank of this process.
+     *   \param doPrinting  true if this process is one that outputs messages.
+     *   \param debugOs      the output stream for debug messages.
+     *   \param debugLevel   the highest level of message to print, messages
+     *                      that are below this level will be ignored.
+     *
+     * Different constructor for file output so we can close the file
+     * in the destructor.
+     */
+    DebugManager ( int rank, bool doPrinting, std::ofstream &debugOs, 
+      int debugLevel) : myPID_(rank), debugLevel_(debugLevel),
+        myOS_(static_cast<std::ostream *>(&debugOs)), fileOS_(&debugOs), 
+        iPrint_(doPrinting) {}
+
+    /*! \brief Constructor for output to an iostream.
      *   \param rank  the MPI rank of this process.
      *   \param doPrinting  true if this process is one that outputs messages.
      *   \param debugOs      the output stream for debug messages.
@@ -51,16 +67,17 @@ class DebugManager
      *                      that are below this level will be ignored.
      */
     DebugManager ( int rank, bool doPrinting, std::ostream &debugOs, 
-      int debugLevel){
-      myPID_ = rank;
-      iPrint_ = doPrinting;
-      myOS_ = &debugOs;
-      debugLevel_ = debugLevel;
-    }
+      int debugLevel) : myPID_(rank), debugLevel_(debugLevel),
+        myOS_(&debugOs), fileOS_(NULL), iPrint_(doPrinting) {}
 
     /*! \brief Destructor
      */
-    virtual ~DebugManager() {};
+    virtual ~DebugManager()
+    {
+      myOS_->flush();
+      if (fileOS_)
+        fileOS_->close();
+    }
 
     /*! \brief Return the output stream for debug/status messages.
      */
@@ -112,7 +129,7 @@ class DebugManager
     inline void print(int debugLevel, const char *output){
 #ifndef Z2_OMIT_ALL_STATUS_MESSAGES
       if (debugLevel <= debugLevel_ && iPrint_)
-        *myOS_ << output << std::endl;
+        *myOS_ << myPID_ << ": " << output << std::endl;
 #endif
     }
 
@@ -136,6 +153,7 @@ class DebugManager
     int myPID_;
     int debugLevel_;
     std::ostream *myOS_;
+    std::ofstream *fileOS_;
     bool iPrint_;
 };
 

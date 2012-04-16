@@ -44,6 +44,15 @@ namespace Zoltan2 {
     represent a vector, or it may be the helper class BasicUserTypes.
     See InputTraits for more information.
 
+    The \c scalar_t type, representing use data such as matrix values, is
+    used by Zoltan2 for weights, coordinates, part sizes and
+    quality metrics.
+    Some User types (like Tpetra::CrsMatrix) have an inherent scalar type,
+    and some
+    (like Tpetra::CrsGraph) do not.  For such objects, the scalar type is
+    set by Zoltan2 to \c float.  If you wish to change it to double, set
+    the second template parameter to \c double.
+
      \todo Create BasicCrsMatrixInput subclass
      \todo Do we want to require input adapters to give us the global
                number of rows, columns etc?  We can figure that out.
@@ -51,7 +60,7 @@ namespace Zoltan2 {
              or column weights, or is this something the algorithm
              will add?
       \todo  This is a row-oriented matrix.  Do we need a column-oriented
-              matrix?
+              matrix?  In particular - we assumed coordinates are for rows.
 */
 
 template <typename User>
@@ -61,7 +70,7 @@ private:
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  typedef typename InputTraits<User>::scalar_t scalar_t;
+  typedef typename InputTraits<User>::scalar_t    scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
@@ -79,17 +88,9 @@ public:
    */
   virtual size_t getLocalNumRows() const = 0;
 
-  /*! \brief Returns the global number rows.
-   */
-  virtual global_size_t getGlobalNumRows() const = 0;
-
   /*! \brief Returns the number columns on this process.
    */
   virtual size_t getLocalNumColumns() const = 0;
-
-  /*! \brief Returns the global number columns.
-   */
-  virtual global_size_t getGlobalNumColumns() const = 0;
 
   /*! \brief Return true if the sparse square matrix may globally have
    *  diagonal entries.  Return false otherwise.
@@ -161,9 +162,9 @@ public:
    *  \return   Returns the number of Ids in the new partitioning.
    */
 
-  template <typename User2>
+  template <typename Adapter>
     size_t applyPartitioningSolution(const User &in, User *&out,
-         const PartitioningSolution<User2> &solution) const
+         const PartitioningSolution<Adapter> &solution) const
   {
     return 0;
   }

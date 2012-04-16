@@ -39,14 +39,14 @@ void StridedDataTest(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   /*! \test strided input with stride 1
    */
 
-  Array<value_t> input1(12);
+  ArrayRCP<value_t> input1(new value_t [12], 0, 12, true);
   for (int i=0; i < 12; i++)
     input1[i] = (i+1) * 5; 
 
   RCP<stridedInput_t> s1;
 
   try{
-    s1 = rcp<stridedInput_t>(new stridedInput_t(input1.view(0, 12), 1));
+    s1 = rcp<stridedInput_t>(new stridedInput_t(input1, 1));
   }
   catch (std::exception &e){
     TEST_FAIL_AND_EXIT(*comm, 0, "Error in constructor 1", 1);
@@ -77,14 +77,14 @@ void StridedDataTest(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   /*! \test strided input with stride 3
    */
 
-  Array<value_t> input2(12, -1);
+  ArrayRCP<value_t> input2(new value_t [12], 0, 12, true);
   for (int i=0; i < 12; i+=3)
-    input2[i] = (i+1) * 5; 
+    input2[i] = (i+1) * -5.0; 
 
   RCP<stridedInput_t> s2;
 
   try{
-    s2 = rcp<stridedInput_t>(new stridedInput_t(input2.view(0, 12), 3));
+    s2 = rcp<stridedInput_t>(new stridedInput_t(input2, 3));
   }
   catch (std::exception &e){
     TEST_FAIL_AND_EXIT(*comm, 0, "Error in constructor 2", 2);

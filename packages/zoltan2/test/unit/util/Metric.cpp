@@ -1,215 +1,292 @@
 // @HEADER
 // ***********************************************************************
-//
-//         Zoltan2: Sandia Partitioning Ordering & Coloring Library
-//
-//                Copyright message goes here.   TODO
-//
+//                Copyright message goes here.
 // ***********************************************************************
 //
-// Basic testing of the namespace methods in Zoltan2_Metric.hpp.
-//
+// Test for Zoltan2::BasicCoordinateInput
 
-#include <Zoltan2_Metric.hpp>
+/*! \file Metric.cpp
+ *
+ *  \brief Tests the Zoltan2_Metric.hpp functions.
+ *  \todo test for exceptions
+ *  \todo We need to check the correctness of the functions.
+ */
+
 #include <Zoltan2_TestHelpers.hpp>
+#include <Zoltan2_Metric.hpp>
 
-using Teuchos::RCP;
-using Teuchos::rcp;
-using Teuchos::Comm;
-using Teuchos::DefaultComm;
+#include <Teuchos_GlobalMPISession.hpp>
+#include <Teuchos_DefaultComm.hpp>
+
 using Teuchos::Array;
+using Teuchos::ArrayRCP;
+using Teuchos::RCP;
 using Teuchos::ArrayView;
-using Zoltan2::imbalances;
+using Teuchos::rcp;
+
+using Zoltan2::StridedData;
+using Zoltan2::Environment;
+using Zoltan2::MetricValues;
+using Zoltan2::objectMetrics;
+using Zoltan2::printMetrics;
+
+using namespace std;
+
+void MetricTest(RCP<const Teuchos::Comm<int> > &comm)
+{
+  int nprocs = comm->getSize();
+  int rank = comm->getRank();
+  RCP<const Environment> env = rcp(new Environment);
+  
+  int numLocalObj = 10;
+  int numGlobalParts = nprocs;
+
+  // Create three different weight arrays.
+
+  Array<scalar_t> weights(3*numLocalObj);
+  scalar_t *wgt = weights.getRawPtr();
+
+  for (int i=0; i < numLocalObj; i++)
+    wgt[i] = (i%2) + 1.0;
+
+  ArrayRCP<scalar_t> upDownWeights(wgt, 0, numLocalObj, false);
+
+  wgt += numLocalObj;
+  for (int i=0; i < numLocalObj; i++)
+    wgt[i] = 1.0;
+
+  ArrayRCP<scalar_t> uniformWeights(wgt, 0, numLocalObj, false);
+
+  wgt += numLocalObj;
+  for (int i=0; i < numLocalObj; i++)
+    wgt[i] = (i < numLocalObj/2)? 1.0 : 2.0;
+
+  ArrayRCP<scalar_t> heavyHalfWeights(wgt, 0, numLocalObj, false);
+
+  typedef StridedData<lno_t, scalar_t> strided_t;
+
+  strided_t w1(upDownWeights, 1);
+  strided_t w2(uniformWeights, 1);
+  strided_t w3(heavyHalfWeights, 1);
+
+  // Create three different part size arrays.
+
+  Array<scalar_t> partSizes(3*numGlobalParts);
+  scalar_t *psize = partSizes.getRawPtr();
+  scalar_t psizeTotal = 0;
+
+  for (int i=0; i < numGlobalParts; i++)
+    psize[i] = 1.0 / numGlobalParts;
+
+  scalar_t *uniformParts = psize;
+
+  psize += numGlobalParts;
+  for (int i=0; i < numGlobalParts; i++){
+    psize[i] = (i ? 1.0 : 2.0);
+    psizeTotal += psize[i];
+  }
+
+  for (int i=0; i < numGlobalParts; i++)
+    psize[i] /= psizeTotal;
+
+  scalar_t *oneBigPart = psize;
+
+  psize += numGlobalParts;
+  psizeTotal = 0;
+  for (int i=0; i < numGlobalParts; i++){
+    psize[i] = (i%2 ? 1.0 : 2.0);
+    psizeTotal += psize[i];
+  }
+
+  for (int i=0; i < numGlobalParts; i++)
+    psize[i] /= psizeTotal;
+
+  scalar_t *alternatingSizeParts = psize;
+
+  ArrayView<scalar_t> p1(uniformParts, numGlobalParts);
+  ArrayView<scalar_t> p2(oneBigPart, numGlobalParts);
+  ArrayView<scalar_t> p3(alternatingSizeParts, numGlobalParts);
+
+  // Create a local part assignment array.
+
+  Array<zoltan2_partId_t> parts(numLocalObj);
+  for (int i=0; i < numLocalObj; i++){
+    parts[i] = i % numGlobalParts;
+  }
+
+  // A multicriteria norm:
+  // normMinimizeTotalWeight, normBalanceTotalMaximum or 
+  // normMinimizeMaximumWeight
+
+  Zoltan2::multiCriteriaNorm mcnorm = Zoltan2::normBalanceTotalMaximum;
+
+  /*! \test Multiple non-uniform weights and part sizes
+   */
+
+  Array<strided_t> threeWeights(3);
+  threeWeights[0] = w1;
+  threeWeights[1] = w2;
+  threeWeights[2] = w3;
+
+
+  Array<ArrayView< scalar_t> > threePartSizes(3);
+  threePartSizes[0] = p1;
+  threePartSizes[1] = p2;
+  threePartSizes[2] = p3;
+
+  zoltan2_partId_t numParts, numNonemptyParts;
+  ArrayRCP<MetricValues<scalar_t> > metrics;
+
+  objectMetrics<scalar_t, lno_t>(env, comm, 
+    numGlobalParts, threePartSizes.view(0,3), parts.view(0,numLocalObj),
+    threeWeights.view(0,3), mcnorm,
+    numParts, numNonemptyParts, metrics);
+
+  if (rank == 0)
+    printMetrics(std::cout, 
+      numGlobalParts, numParts, numNonemptyParts, 
+      metrics.view(0,metrics.size()));
+
+  /*! \test Multiple non-uniform weights but uniform part sizes
+   */
+
+  mcnorm = Zoltan2::normMinimizeTotalWeight;
+
+  objectMetrics<scalar_t, lno_t>(env, comm, 
+    numGlobalParts, parts.view(0,numLocalObj),
+    threeWeights.view(0,3), mcnorm,
+    numParts, numNonemptyParts, metrics);
+
+  if (rank == 0)
+    printMetrics(std::cout, 
+      numGlobalParts, numParts, numNonemptyParts, 
+      metrics.view(0,metrics.size()));
+
+  /*! \test One weight with non-uniform part sizes
+   */
+
+  objectMetrics<scalar_t, lno_t>(env, comm, 
+    numGlobalParts, parts.view(0,numLocalObj), w1, 
+    numParts, numNonemptyParts, metrics);
+
+  if (rank==0)
+    printMetrics(std::cout, 
+      numGlobalParts, numParts, numNonemptyParts, 
+      metrics.view(0,metrics.size()));
+
+  /*! \test One weight with uniform part sizes
+   */
+
+  objectMetrics<scalar_t, lno_t>(env, comm, 
+    numGlobalParts, parts.view(0,numLocalObj), w1, 
+    numParts, numNonemptyParts, metrics);
+
+  if (rank==0)
+    printMetrics(std::cout, 
+      numGlobalParts, numParts, numNonemptyParts, 
+      metrics.view(0,metrics.size()));
+
+  /*! \test Weights and part sizes are uniform.
+   */
+
+  objectMetrics<scalar_t, lno_t>(env, comm, numGlobalParts, 
+    parts.view(0,numLocalObj),
+    numParts, numNonemptyParts, metrics);
+
+  if (rank==0)
+    printMetrics(std::cout, 
+      numGlobalParts, numParts, numNonemptyParts, 
+      metrics.view(0,metrics.size()));
+
+
+  /*! \test Target number of parts is greater than current, non-uniform
+   *            weights and part sizes.
+   */
+
+  int targetNumParts = numGlobalParts + 2;
+  ArrayView<scalar_t> newPartSizeList(partSizes.getRawPtr(), targetNumParts);
+  psizeTotal = 0;
+  for (int i=0; i < targetNumParts; i++)
+    psizeTotal += newPartSizeList[i];
+  for (int i=0; i < targetNumParts; i++)
+    newPartSizeList[i] /= psizeTotal;
+
+  objectMetrics<scalar_t, lno_t>(env, comm, 
+    targetNumParts, newPartSizeList, 
+    parts.view(0,numLocalObj), w1, 
+    numParts, numNonemptyParts, metrics);
+
+  if (rank==0)
+    printMetrics(std::cout, 
+      targetNumParts, numParts, numNonemptyParts, 
+      metrics.view(0,metrics.size()));
+
+
+  /*! \test Target number of parts is greater than current, uniform
+   *            weights and part sizes.
+   */
+
+  objectMetrics<scalar_t, lno_t>(env, comm, targetNumParts, 
+    parts.view(0,numLocalObj),
+    numParts, numNonemptyParts, metrics);
+
+  if (rank==0)
+    printMetrics(std::cout, 
+      targetNumParts, numParts, numNonemptyParts, 
+      metrics.view(0,metrics.size()));
+
+  if (nprocs > 2){
+
+    /*! \test Target number of parts is less than current, non-uniform
+     *            weights and part sizes.
+     */
+  
+    int targetNumParts = numGlobalParts - 1;
+    newPartSizeList = ArrayView<scalar_t>(
+      partSizes.getRawPtr(), targetNumParts);
+    psizeTotal = 0;
+    for (int i=0; i < targetNumParts; i++)
+      psizeTotal += newPartSizeList[i];
+    for (int i=0; i < targetNumParts; i++)
+      newPartSizeList[i] /= psizeTotal;
+  
+    objectMetrics<scalar_t, lno_t>(env, comm, targetNumParts, newPartSizeList,
+      parts.view(0,numLocalObj), w1, 
+      numParts, numNonemptyParts, metrics);
+
+    if (rank==0)
+      printMetrics(std::cout, 
+        targetNumParts, numParts, numNonemptyParts, 
+        metrics.view(0,metrics.size()));
+  
+    /*! \test Target number of parts is less than current, uniform
+     *            weights and part sizes.
+     */
+  
+    objectMetrics<scalar_t, lno_t>(env, comm, targetNumParts,
+      parts.view(0,numLocalObj),
+      numParts, numNonemptyParts, metrics);
+
+    if (rank==0)
+      printMetrics(std::cout, 
+        targetNumParts, numParts, numNonemptyParts, 
+        metrics.view(0,metrics.size()));
+  }
+
+  return;
+}
 
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession session(&argc, &argv);
-  RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
-  int rank = comm->getRank();
-  int nprocs = comm->getSize();
-  int fail = 0;
-  float epsilon = 1e-5;
+  Teuchos::RCP<const Teuchos::Comm<int> > comm =
+    Teuchos::DefaultComm<int>::getComm();
 
-  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
+  MetricTest(comm);
 
-  // The PART NUMBERS.  
-
-  size_t numGlobalParts = nprocs;
-  Array<zoltan2_partId_t> partNums(numGlobalParts);
-  for (size_t i=0; i < numGlobalParts; i++)
-    partNums[i] = i;
-
-  // The WEIGHTS per part under the current partitioning.
-
-  int weightDim = 3;
-
-  Array<float> passMin(weightDim, 1.0 - epsilon);
-  Array<float> passMax(weightDim, 1.0 + epsilon);
-
-  scalar_t *weight = new scalar_t [numGlobalParts * weightDim];
-
-  for (size_t i=0; i < numGlobalParts; i++){
-    weight[i] = 1.0;
-  }
-
-  ArrayView<scalar_t> w0(weight, numGlobalParts);
-
-  size_t offset = numGlobalParts;
-
-  for (size_t i=0; i < numGlobalParts; i++){
-    if (i < numGlobalParts/2)
-      weight[offset + i] = 1.0;
-    else
-      weight[offset + i] = 2.0;
-  }
-
-  ArrayView<scalar_t> w1(weight + offset, numGlobalParts);
-  if (nprocs > 1){
-    passMin[1] = 1.2;
-    passMax[1] = 1.4;
-  }
-
-  offset += numGlobalParts;
-  
-  for (size_t i=0; i < numGlobalParts; i++){
-    weight[offset + i] = nprocs - rank;
-  }
-
-  ArrayView<scalar_t> w2(weight + offset, numGlobalParts);
-
-  Array<ArrayView<scalar_t> > weights;
-  weights.push_back(w0);
-  weights.push_back(w1);
-  weights.push_back(w2);
-
-  // The PART SIZES default to equal parts.
-
-  ArrayView<float> p0(Teuchos::null);   // 3 empty part size arrays
-  ArrayView<float> p1(Teuchos::null);   //   implies uniform parts
-  ArrayView<float> p2(Teuchos::null);
-  
-  Array<ArrayView<float> > partSizes;
-  partSizes.push_back(p0);
-  partSizes.push_back(p1);
-  partSizes.push_back(p2);
-
-  // Answer
-
-  Array<float> answer(weightDim, 0.0);
-
-  /////////////////////////////////////////////////////////////
-  // Test: multiple weights, uniform part sizes
-  /////////////////////////////////////////////////////////////
-
-  imbalances<scalar_t>(env, comm, numGlobalParts, 
-      partSizes, partNums, weights, answer.view(0, weightDim));
-
-  if (rank == 0){
-    std::cout << "Test 1: " << answer[0] << " ";
-    for (int i=1; i < weightDim; i++){
-      std::cout << answer[i] << " ";
-    }
-    std::cout << std::endl;
-  }
-
-  fail = 0;
-
-  for (int i=0; !fail && (i < weightDim); i++){
-    if (answer[i] < passMin[i] || answer[i] > passMax[i])
-      fail=1;
-  }
-
-  TEST_FAIL_AND_EXIT(*comm, fail==0, "invalid imbalance", 1);
-
-  /////////////////////////////////////////////////////////////
-  // Test: one weight, uniform part sizes
-  /////////////////////////////////////////////////////////////
-
-  float result;
-
-  imbalances<scalar_t>(env, comm, numGlobalParts, p1, 
-    partNums.view(0, numGlobalParts), w1, result);
-
-  if (rank == 0)
-    std::cout << "Test 2: " << result << std::endl;
-
-  if (result < passMin[1] || result > passMax[1])
-    fail=1;
-
-  TEST_FAIL_AND_EXIT(*comm, fail==0, "invalid imbalance", 1);
-
-  /////////////////////////////////////////////////////////////
-  // Test: multiple weights, varying part sizes
-  /////////////////////////////////////////////////////////////
-
-  Array<float> varyingPartSizes(numGlobalParts, 1.0);
-  float partSizeTotal = 0;
-  for (size_t i=0; i < numGlobalParts/3; i++){
-    varyingPartSizes[i] = .5;
-    partSizeTotal += .5;
-  }
-  for (size_t i=numGlobalParts/3; i < 2*numGlobalParts/3; i++){
-    partSizeTotal += 1.0;
-  }
-  for (size_t i=2*numGlobalParts/3; i < numGlobalParts; i++){
-    varyingPartSizes[i] = 1.5;
-    partSizeTotal += 1.5;
-  }
-
-  for (size_t i=0; i < numGlobalParts; i++)
-    varyingPartSizes[i] /= partSizeTotal;
-
-  partSizes[0] = varyingPartSizes;
-  if (nprocs==2){
-    passMin[0] = 1.25 - epsilon;
-    passMax[0] = 1.25 + epsilon;
-  }
-  else if (nprocs > 2){
-    passMin[0] = 2.0 - epsilon;
-    passMax[0] = 2.5;
-  }
-
-  imbalances<scalar_t>(env, comm, numGlobalParts, 
-      partSizes, partNums, weights, answer.view(0, weightDim));
-
-  if (rank == 0){
-    std::cout << "Test 3: " << answer[0] << " ";
-    for (int i=1; i < weightDim; i++){
-      std::cout << answer[i] << " ";
-    }
-    std::cout << std::endl;
-  }
-
-  fail = 0;
-
-  for (int i=0; !fail && (i < weightDim); i++){
-    if (answer[i] < passMin[i] || answer[i] > passMax[i])
-      fail=1;
-  }
-
-  TEST_FAIL_AND_EXIT(*comm, fail==0, "invalid imbalance", 1);
-
-  /////////////////////////////////////////////////////////////
-  // Test: single weight, varying part sizes
-  /////////////////////////////////////////////////////////////
-
-  imbalances<scalar_t>(env, comm, numGlobalParts, partSizes[0], 
-    partNums, w0, result);
-
-  if (rank == 0)
-    std::cout << "Test 4: " << result << std::endl;
-
-  if (result < passMin[0] || result > passMax[0])
-    fail=1;
-
-  TEST_FAIL_AND_EXIT(*comm, fail==0, "invalid imbalance", 1);
-
-  /////////////////////////////////////////////////////////////
-  // Done
-  /////////////////////////////////////////////////////////////
-  
-  if (rank == 0)
+  if (comm->getRank() == 0)
     std::cout << "PASS" << std::endl;
+
+  return 0;
 }
-  
-  
+

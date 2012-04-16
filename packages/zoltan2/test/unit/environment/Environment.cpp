@@ -110,6 +110,13 @@ int main(int argc, char *argv[])
   myParams.set("timing_procs", "0"); 
   myParams.set("timing_output_file", "appPerformance.txt");
 
+  if (nprocs > 3)
+    myParams.set("memory_profiling_procs", "0-1,3"); 
+  else
+    myParams.set("memory_profiling_procs", "0"); 
+
+  myParams.set("memory_profiling_output_file", "memInfo.txt");
+
   myParams.set("speed_versus_quality", "speed");
   myParams.set("memory_versus_speed", "memory");
 
@@ -128,6 +135,39 @@ int main(int argc, char *argv[])
   catch(std::exception &e){
     std::cerr << e.what() << std::endl;
     fail=2000;
+  }
+
+  if (!fail){
+     try{
+       env->debug(Zoltan2::BASIC_STATUS, "A basic debugging message.");
+     }
+     catch(std::exception &e){
+       std::cerr << e.what() << std::endl;
+       fail=3000;
+     }
+  }
+
+  if (!fail){
+     try{
+       env->timer("Timer start", "usecs", 23.23232);
+       env->timer("Timer end", "usecs", 25.23232);
+     }
+     catch(std::exception &e){
+       std::cerr << e.what() << std::endl;
+       fail=3001;
+     }
+  }
+
+  if (!fail){
+     try{
+       env->memory("Memory info", "MB", 55);
+       env->memory("Memory info next", "MB", 55);
+       env->memory("Memory info after", "MB", 55);
+     }
+     catch(std::exception &e){
+       std::cerr << e.what() << std::endl;
+       fail=3002;
+     }
   }
 
   if (checkErrorCode(comm, fail))
@@ -163,7 +203,7 @@ int main(int argc, char *argv[])
   if (!fail && env->doTiming() != true)
     fail = 2006;
 
-  if (!fail && env->doMemoryProfiling() != false)
+  if (!fail && env->doMemoryProfiling() != true)
     fail = 2007;
 
   if (!fail && env->errorCheckLevel_ != Zoltan2::BASIC_ASSERTION)
@@ -209,6 +249,8 @@ int main(int argc, char *argv[])
   ParameterList newParams = oldParams;
   newParams.set("error_check_level", "debug_mode_assertions");
   newParams.set("memory_versus_speed", "speed");
+  newParams.remove("timing_output_file");
+  newParams.remove("memory_profiling_output_file");
   
   ParameterList &newPartParams = newParams.sublist("partitioning");
   newPartParams.set("imbalance_tolerance", "1.05");
