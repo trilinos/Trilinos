@@ -24,11 +24,16 @@ template class MueLu::PermutedTransferFactory<std::complex<double>, int, int, Ko
 #endif
 
 #include "Tpetra_Vector_def.hpp"
+#include "Tpetra_MultiVector_def.hpp"
 #ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
-TPETRA_VECTOR_INSTANT(size_t,int,int,Kokkos::DefaultNode::DefaultNodeType);
+namespace Tpetra {
+TPETRA_VECTOR_INSTANT(size_t,int,int,Kokkos::DefaultNode::DefaultNodeType)
+TPETRA_MULTIVECTOR_INSTANT(size_t,int,int,Kokkos::DefaultNode::DefaultNodeType)
+}
 #endif
 #ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
 # ifdef HAVE_TEUCHOS_LONG_LONG_INT
 TPETRA_VECTOR_INSTANT(size_t,int,long long int,Kokkos::DefaultNode::DefaultNodeType);
+TPETRA_MULTIVECTOR_INSTANT(size_t,int,long long int,Kokkos::DefaultNode::DefaultNodeType)
 #endif
 #endif
