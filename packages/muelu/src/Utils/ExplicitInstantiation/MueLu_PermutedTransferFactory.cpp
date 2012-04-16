@@ -22,3 +22,13 @@ template class MueLu::PermutedTransferFactory<std::complex<double>, int, int, Ko
 # warning To compile MueLu with 'complex' support, please turn on Teuchos_ENABLE_COMPLEX
 # endif
 #endif
+
+#include "Tpetra_Vector_def.hpp"
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
+TPETRA_VECTOR_INSTANT(size_t,int,int,Kokkos::DefaultNode::DefaultNodeType);
+#endif
+#ifdef HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT
+# ifdef HAVE_TEUCHOS_LONG_LONG_INT
+TPETRA_VECTOR_INSTANT(size_t,int,long long int,Kokkos::DefaultNode::DefaultNodeType);
+#endif
+#endif
