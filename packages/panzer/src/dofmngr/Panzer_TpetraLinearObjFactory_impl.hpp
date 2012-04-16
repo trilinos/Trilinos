@@ -194,6 +194,8 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                              const LinearObjContainer & globalBCRows,
                              LinearObjContainer & ghostedObjs) const
 {
+   typedef Teuchos::ArrayRCP<const double>::Ordinal Ordinal;
+
    const ContainerType & t_localBCRows = Teuchos::dyn_cast<const ContainerType>(localBCRows); 
    const ContainerType & t_globalBCRows = Teuchos::dyn_cast<const ContainerType>(globalBCRows); 
    ContainerType & t_ghosted = Teuchos::dyn_cast<ContainerType>(ghostedObjs); 
@@ -211,9 +213,8 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
    Teuchos::ArrayRCP<const double> local_bcs_array = local_bcs.get1dView();
    Teuchos::ArrayRCP<const double> global_bcs_array = global_bcs.get1dView();
 
-
    TEUCHOS_ASSERT(local_bcs_array.size()==global_bcs_array.size());
-   for(std::size_t i=0;i<local_bcs_array.size();i++) {
+   for(Ordinal i=0;i<local_bcs_array.size();i++) {
       if(global_bcs_array[i]==0.0)
          continue;
 

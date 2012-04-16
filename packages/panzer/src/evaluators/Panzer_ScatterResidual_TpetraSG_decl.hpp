@@ -40,75 +40,38 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_EVALUATOR_SCATTER_DIRICHLET_RESIDUAL_TPETRA_DECL_HPP
-#define PANZER_EVALUATOR_SCATTER_DIRICHLET_RESIDUAL_TPETRA_DECL_HPP
-
-#include "Phalanx_ConfigDefs.hpp"
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_MDField.hpp"
-
-#include "Teuchos_ParameterList.hpp"
-
-#include "Panzer_config.hpp"
-#include "Panzer_Dimension.hpp"
-#include "Panzer_Traits.hpp"
-#include "Panzer_CloneableEvaluator.hpp"
-#include "Panzer_TpetraLinearObjContainer.hpp"
-
-#include "Kokkos_DefaultNode.hpp"
+#ifdef HAVE_STOKHOS
+#ifndef PANZER_EVALUATOR_SCATTER_RESIDUAL_TPETRA_SG_DECL_HPP
+#define PANZER_EVALUATOR_SCATTER_RESIDUAL_TPETRA_SG_DECL_HPP
 
 namespace panzer {
 
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-class UniqueGlobalIndexer;
-
-/** \brief Pushes residual values into the residual vector for a 
-           Newton-based solve
-
-    Currently makes an assumption that the stride is constant for dofs
-    and that the number of dofs is equal to the size of the solution
-    names vector.
-
-*/
-template<typename EvalT, typename Traits,typename LO,typename GO,typename NodeT=Kokkos::DefaultNode::DefaultNodeType>
-class ScatterDirichletResidual_Tpetra;
-
 // **************************************************************
-// **************************************************************
-// * Specializations
-// **************************************************************
-// **************************************************************
-
-
-// **************************************************************
-// Residual 
+// SGResidual 
 // **************************************************************
 template<typename Traits,typename LO,typename GO,typename NodeT>
-class ScatterDirichletResidual_Tpetra<panzer::Traits::Residual,Traits,LO,GO,NodeT>
+class ScatterResidual_Tpetra<panzer::Traits::SGResidual,Traits,LO,GO,NodeT>
   : public PHX::EvaluatorWithBaseImpl<Traits>,
-    public PHX::EvaluatorDerived<panzer::Traits::Residual, Traits>,
-    public panzer::CloneableEvaluator  {
+    public PHX::EvaluatorDerived<panzer::Traits::SGResidual, Traits>,
+    public panzer::CloneableEvaluator {
   
 public:
-  ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer)
+  ScatterResidual_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer) 
      : globalIndexer_(indexer) {}
   
-  ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
-                                  const Teuchos::ParameterList& p);
+  ScatterResidual_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
+                         const Teuchos::ParameterList& p);
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
-
-  void preEvaluate(typename Traits::PreEvalData d);
   
   void evaluateFields(typename Traits::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterDirichletResidual_Tpetra<panzer::Traits::Residual,Traits,LO,GO>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new ScatterResidual_Tpetra<panzer::Traits::SGResidual,Traits,LO,GO>(globalIndexer_,pl)); }
 
 private:
-  typedef typename panzer::Traits::Residual::ScalarT ScalarT;
-  typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
+  typedef typename panzer::Traits::SGResidual::ScalarT ScalarT;
 
   // dummy field so that the evaluator will have something to do
   Teuchos::RCP<PHX::FieldTag> scatterHolder_;
@@ -126,47 +89,36 @@ private:
   //    fieldMap_["RESIDUAL_Velocity"] --> "Velocity"
   //    fieldMap_["RESIDUAL_Pressure"] --> "Pressure"
   Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
-
-  std::size_t num_nodes;
-
-  std::size_t side_subcell_dim_;
-  std::size_t local_side_id_;
-
-  ScatterDirichletResidual_Tpetra() {}
-
-  Teuchos::RCP<typename LOC::VectorType> dirichletCounter_;
 };
 
 // **************************************************************
-// Jacobian
+// SGJacobian
 // **************************************************************
 template<typename Traits,typename LO,typename GO,typename NodeT>
-class ScatterDirichletResidual_Tpetra<panzer::Traits::Jacobian,Traits,LO,GO,NodeT>
+class ScatterResidual_Tpetra<panzer::Traits::SGJacobian,Traits,LO,GO,NodeT>
   : public PHX::EvaluatorWithBaseImpl<Traits>,
-    public PHX::EvaluatorDerived<panzer::Traits::Jacobian, Traits>,
-    public panzer::CloneableEvaluator  {
+    public PHX::EvaluatorDerived<panzer::Traits::SGJacobian, Traits>, 
+    public panzer::CloneableEvaluator {
   
 public:
-  ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer)
-     : globalIndexer_(indexer) {}
   
-  ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
-                                  const Teuchos::ParameterList& p);
+  ScatterResidual_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer) 
+     : globalIndexer_(indexer) {}
 
-  void preEvaluate(typename Traits::PreEvalData d);
+  ScatterResidual_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
+                         const Teuchos::ParameterList& pl);
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
   
   void evaluateFields(typename Traits::EvalData workset);
-
-  virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterDirichletResidual_Tpetra<panzer::Traits::Jacobian,Traits,LO,GO>(globalIndexer_,pl)); }
   
+  virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
+  { return Teuchos::rcp(new ScatterResidual_Tpetra<panzer::Traits::SGJacobian,Traits,LO,GO>(globalIndexer_,pl)); }
+
 private:
 
-  typedef typename panzer::Traits::Jacobian::ScalarT ScalarT;
-  typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
+  typedef typename panzer::Traits::SGJacobian::ScalarT ScalarT;
 
   // dummy field so that the evaluator will have something to do
   Teuchos::RCP<PHX::FieldTag> scatterHolder_;
@@ -185,24 +137,10 @@ private:
   //    fieldMap_["RESIDUAL_Pressure"] --> "Pressure"
   Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
 
-  std::size_t num_nodes;
-  std::size_t num_eq;
-
-  std::size_t side_subcell_dim_;
-  std::size_t local_side_id_;
-
-  Teuchos::RCP<typename LOC::VectorType> dirichletCounter_;
-
-  ScatterDirichletResidual_Tpetra();
+  ScatterResidual_Tpetra();
 };
 
 }
 
-// **************************************************************
-
-#ifdef HAVE_STOKHOS
-#include "Panzer_ScatterDirichletResidual_TpetraSG.hpp"
 #endif
-
-// **************************************************************
 #endif

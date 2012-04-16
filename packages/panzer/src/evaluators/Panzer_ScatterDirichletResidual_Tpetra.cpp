@@ -49,6 +49,9 @@
 #include "Panzer_ScatterDirichletResidual_Tpetra_decl.hpp"
 #include "Panzer_ScatterDirichletResidual_Tpetra_impl.hpp"
 
+#include "Panzer_ScatterDirichletResidual_TpetraSG_decl.hpp"
+#include "Panzer_ScatterDirichletResidual_TpetraSG_impl.hpp"
+
 PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::ScatterDirichletResidual_Tpetra,int,int)
 
 #endif

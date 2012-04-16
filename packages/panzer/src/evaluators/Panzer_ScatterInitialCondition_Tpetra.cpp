@@ -49,6 +49,9 @@
 #include "Panzer_ScatterInitialCondition_Tpetra_decl.hpp"
 #include "Panzer_ScatterInitialCondition_Tpetra_impl.hpp"
 
+#include "Panzer_ScatterInitialCondition_TpetraSG_decl.hpp"
+#include "Panzer_ScatterInitialCondition_TpetraSG_impl.hpp"
+
 PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::ScatterInitialCondition_Tpetra,int,int)
 
 #endif
