@@ -2,4 +2,25 @@
 
 \section rcb_algorithm RCB algorithm
 
+Recursive coordinate bisection (RCB) is a parallel geometric partitioning algorithm.  Geometric coordinates are partitioned into two balanced parts.  Partitioning continues recursively in each part until the desired number of balanced parts has been created.
+
+
+\subsection rcb_input Input
+
+RCB expects a Zoltan2::CoordinateInput object.  This class supports geometric coordinates of arbitrary dimension, with weights of arbritrary dimension.  If weights are not provided, RCB assumes coordinates are equally weighted.
+
+\subsection rcb_parameters Parameters
+
+\subsection rcb_solution Solution
+
+An RCB solution is a list of global IDs with a corresponding list of part numbers and process ranks.  
+
+\subsection rcb_quality_measures Quality measures
+
+RCB quality is measured with an imbalance measure.
+
+\subsection rcb_examples Examples
+
+RCB examples can be found:
+
 */

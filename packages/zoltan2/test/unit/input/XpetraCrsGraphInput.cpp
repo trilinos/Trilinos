@@ -278,11 +278,11 @@ int main(int argc, char *argv[])
   if (!gfail){
     RCP<egraph_t> eG = uinput->getEpetraCrsGraph();
     RCP<const egraph_t> ceG = rcp_const_cast<const egraph_t>(eG);
-    RCP<Zoltan2::XpetraCrsGraphInput<egraph_t, double> > eGInput;
+    RCP<Zoltan2::XpetraCrsGraphInput<egraph_t> > eGInput;
 
     try {
       eGInput =
-        rcp(new Zoltan2::XpetraCrsGraphInput<egraph_t, double>(ceG));
+        rcp(new Zoltan2::XpetraCrsGraphInput<egraph_t>(ceG));
     }
     catch (std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0,
@@ -309,10 +309,10 @@ int main(int argc, char *argv[])
 
       if (!gfail){
         RCP<const egraph_t> cnewG(mMigrate, true);
-        RCP<Zoltan2::XpetraCrsGraphInput<egraph_t, double> > newInput;
+        RCP<Zoltan2::XpetraCrsGraphInput<egraph_t> > newInput;
         try{
           newInput =
-            rcp(new Zoltan2::XpetraCrsGraphInput<egraph_t, double>(cnewG));
+            rcp(new Zoltan2::XpetraCrsGraphInput<egraph_t>(cnewG));
         }
         catch (std::exception &e){
           TEST_FAIL_AND_EXIT(*comm, 0,
