@@ -1,0 +1,13 @@
+/*! \page scotchPartPage Graph partitioning with PTScotch
+
+\section scotchPart_algorithm The algorithm
+
+\subsection scotchPart_input Input
+\subsection scotchPart_parameters Parameters
+\subsection scotchPart_solution Solution
+\subsection scotchPart_quality_measures Quality measures
+\subsection scotchPart_examples Examples
+\subsection scotchPart_source Source
+Zoltan2_AlgPTScotch.hpp is the source file for PTScotch partitioning.
+
+*/

@@ -20,9 +20,9 @@ in pre-copyright status.
 Partitioning functionality that is available now is:
 
 <ul>
-<li> Recursive coordinate bisection (RCB) of weighted geometric coordinates.
-<li> Block partitioning of weighted objects.
-<li> Graph partitioning of undirected weighted graphs through an interface to PTScotch.
+<li> \ref blockPage for simple weighted identifiers.
+<li> \ref rcbPage for weighted geometric coordinates.
+<li> \ref scotchPartPage for undirected weighted graphs.
 </ul>
 
 

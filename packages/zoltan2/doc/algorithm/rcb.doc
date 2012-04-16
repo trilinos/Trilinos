@@ -1,4 +1,4 @@
-/*!
+/*! \page rcbPage Recursive Coordinate Bisection (RCB)
 
 \section rcb_algorithm RCB algorithm
 
@@ -21,6 +21,7 @@ RCB quality is measured with an imbalance measure.
 
 \subsection rcb_examples Examples
 
-RCB examples can be found:
+\subsection rcb_source Source
+Zoltan2_AlgRCB.hpp is the source file for RCB.
 
 */
