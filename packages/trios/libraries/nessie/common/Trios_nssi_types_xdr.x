@@ -132,6 +132,9 @@ enum nssi_rpc_transport {
     /** @brief Use Cray Gemini to transfer rpc requests. */
     NSSI_RPC_GEMINI,
 
+    /** @brief Use MPI to transfer rpc requests. */
+    NSSI_RPC_MPI,
+
     /** @brief Use a local buffer (not a remote operation). */
     NSSI_RPC_LOCAL
 };

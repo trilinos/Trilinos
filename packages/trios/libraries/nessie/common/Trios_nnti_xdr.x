@@ -67,6 +67,9 @@ enum NNTI_transport_id_t {
     /** @brief Use Cray Gemini to transfer rpc requests. */
     NNTI_TRANSPORT_GEMINI,
 
+    /** @brief Use Cray Gemini to transfer rpc requests. */
+    NNTI_TRANSPORT_MPI,
+
     /** @brief Use a local buffer (no remote operations). */
     NSSI_TRANSPORT_LOCAL,
 
@@ -264,6 +267,20 @@ struct NNTI_gni_process_t {
 
 
 
+/**
+ * @brief Remote process identifier for MPI.
+ *
+ * The <tt>\ref NNTI_mpi_process_t</tt> identifies a particular process
+ * on a particular node.
+ */
+struct NNTI_mpi_process_t {
+    /** @brief MPI rank. */
+    int rank;
+};
+
+
+
+
 
 /**
  * @brief A structure to represent a remote processes.
@@ -282,6 +299,8 @@ union NNTI_remote_process_t switch (NNTI_transport_id_t transport_id) {
     case NNTI_TRANSPORT_LUC:     NNTI_luc_process_t     luc;
     /** @brief The Cray Gemini representation of a process on the network. */
     case NNTI_TRANSPORT_GEMINI:  NNTI_gni_process_t     gni;
+    /** @brief The MPI representation of a process on the network. */
+    case NNTI_TRANSPORT_MPI:     NNTI_mpi_process_t     mpi;
 };
 #else
 union NNTI_remote_process_t {
@@ -293,6 +312,8 @@ union NNTI_remote_process_t {
     NNTI_luc_process_t     luc;
     /** @brief The Cray Gemini representation of a process on the network. */
     NNTI_gni_process_t     gni;
+    /** @brief The MPI representation of a process on the network. */
+    NNTI_mpi_process_t     mpi;
 };
 #endif
 
@@ -420,6 +441,18 @@ struct NNTI_gni_rdma_addr_t {
 
 
 
+/**
+ * @brief RDMA address used for the MPI implementation.
+ */
+struct NNTI_mpi_rdma_addr_t {
+    /** @brief The match bits. */
+    NNTI_match_bits tag;
+    /** @brief Size of the the memory buffer. */
+    uint32_t        size;
+};
+
+
+
 
 /**
  * @brief A structure to represent a remote memory region.
@@ -438,6 +471,8 @@ union NNTI_remote_addr_t switch (NNTI_transport_id_t transport_id) {
     case NNTI_TRANSPORT_LUC:     NNTI_luc_rdma_addr_t     luc;
     /** @brief The Cray Gemini representation of a memory region. */
     case NNTI_TRANSPORT_GEMINI:  NNTI_gni_rdma_addr_t     gni;
+    /** @brief The MPI representation of a memory region. */
+    case NNTI_TRANSPORT_MPI:     NNTI_mpi_rdma_addr_t     mpi;
 };
 #else
 union NNTI_remote_addr_t {
@@ -449,6 +484,8 @@ union NNTI_remote_addr_t {
     NNTI_luc_rdma_addr_t     luc;
     /** @brief The Cray Gemini representation of a memory region. */
     NNTI_gni_rdma_addr_t     gni;
+    /** @brief The MPI representation of a memory region. */
+    NNTI_mpi_rdma_addr_t     mpi;
 };
 #endif
 
