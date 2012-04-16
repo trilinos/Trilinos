@@ -43,7 +43,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace ROL{
     template <typename VS>
     class DataStructures{
-    private:
+        // No copy constructor required
+    // We really want this to be private, but AIX throws an error
+    public:
         // Prevent allocation of this class
         explicit DataStructures();
         // No assignment operator required
@@ -2199,6 +2201,7 @@ namespace ROL{
         // Prevent instantiation of this class
         explicit parest();
         // No assignment operator required
+        // No copy constructor required
     public:
         // Setup some types
         typedef typename U::Vector U_Vector; 
