@@ -119,8 +119,8 @@ typedef struct {
     uint16_t      peer_lid;
     uint32_t      peer_req_qpn;
 
-    conn_qp          req_qp;
-    conn_qp          data_qp;
+    conn_qp       req_qp;
+    conn_qp       data_qp;
 
     ib_connection_state state;
 
@@ -1402,6 +1402,11 @@ NNTI_result_t NNTI_ib_wait (
     assert(reg_buf);
     assert(status);
 
+    if (logging_debug(debug_level)) {
+        fprint_NNTI_buffer(logger_get_file(), "reg_buf",
+                "start of NNTI_ib_wait", reg_buf);
+    }
+
     q_hdl     =&transport_global_data.req_queue;
     assert(q_hdl);
 
@@ -2238,19 +2243,20 @@ static const NNTI_buffer_t *decode_event_buffer(
 
     log_debug(nnti_debug_level, "enter");
 
-    if ((wait_buf != NULL) && (wait_buf->transport_private != NULL) && (((ib_memory_handle *)wait_buf->transport_private)->type == REQUEST_BUFFER)) {
-        event_buf=wait_buf;
+    if (wc->opcode==IBV_WC_RECV) {
+        log_debug(nnti_debug_level, "wc->opcode is IBV_WC_RECV, so wc.wr_id is the request buffer index.");
+
+        event_buf=transport_global_data.req_queue.reg_buf;
         ib_mem_hdl=(ib_memory_handle *)event_buf->transport_private;
         assert(ib_mem_hdl);
 
-        if (wc->opcode==IBV_WC_RECV) {
-            log_debug(nnti_debug_level, "the wait buffer is a REQUEST_BUFFER and wc is IBV_WC_RECV, so wc.wr_id is the request buffer index.");
-        } else if (wc->opcode==IBV_WC_SEND) {
-            log_debug(nnti_debug_level, "the wait buffer is a REQUEST_BUFFER but wc is IBV_WC_SEND, so wc.wr_id is wr hash (IB_OP_SEND_REQUEST).");
-            wr = get_wr_wrhash(wc->wr_id);
-            assert(wr);
-            event_buf=wr->reg_buf;
-        }
+    } else if (wc->opcode==IBV_WC_SEND) {
+        log_debug(nnti_debug_level, "wc->opcode is IBV_WC_SEND, so wc.wr_id is wr hash (IB_OP_SEND_REQUEST).");
+
+        wr = get_wr_wrhash(wc->wr_id);
+        assert(wr);
+        event_buf=wr->reg_buf;
+
     } else {
         if (wc->imm_data == 0) {
             // This is not a request buffer and I am the initiator, so wc.wr_id is the hash of the work request
@@ -2307,7 +2313,7 @@ int process_event(
 
     wr = decode_work_request(wc);
     if (wr == NULL) {
-        wr=ib_mem_hdl->wr_queue.front();
+        wr=first_incomplete_wr(ib_mem_hdl);
     }
     assert(wr);
 
@@ -3182,6 +3188,7 @@ static int new_client_connection(
     att.qp_context       = c;
     att.send_cq          = transport_global_data.req_cq;
     att.recv_cq          = transport_global_data.req_cq;
+    att.srq              = transport_global_data.req_srq;
     att.cap.max_recv_wr  = transport_global_data.qp_count;
     att.cap.max_send_wr  = transport_global_data.qp_count;
     att.cap.max_recv_sge = 1;
@@ -3344,6 +3351,7 @@ static NNTI_result_t insert_conn_peer(const NNTI_peer_t *peer, ib_connection *co
     }
 
     nthread_lock(&nnti_conn_peer_lock);
+    assert(connections_by_peer.find(key) == connections_by_peer.end());
     connections_by_peer[key] = conn;   // add to connection map
     nthread_unlock(&nnti_conn_peer_lock);
 
