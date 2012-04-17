@@ -291,22 +291,22 @@ public:
     return(14.0);
   }
 
-  virtual int NumGlobalNonzeros() const
+  virtual long long NumGlobalNonzeros() const
   {
     return(NumGlobalNonzeros_);
   }
 
-  virtual int NumGlobalRows() const
+  virtual long long NumGlobalRows() const
   {
     return(NumGlobalRows_);
   }
 
-  virtual int NumGlobalCols() const
+  virtual long long NumGlobalCols() const
   {
     return(NumGlobalRows_);
   }
 
-  virtual int NumGlobalDiagonals() const
+  virtual long long NumGlobalDiagonals() const
   {
     return(NumGlobalDiagonals_);
   }

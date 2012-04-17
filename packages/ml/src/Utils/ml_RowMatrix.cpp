@@ -347,26 +347,26 @@ double ML_Epetra::RowMatrix::NormInf() const
 
 
 //==============================================================================
-int ML_Epetra::RowMatrix::NumGlobalNonzeros() const
+long long ML_Epetra::RowMatrix::NumGlobalNonzeros() const
 {
   return(NumGlobalNonzeros_);
 }
 
 //==============================================================================
-int ML_Epetra::RowMatrix::NumGlobalRows() const
+long long ML_Epetra::RowMatrix::NumGlobalRows() const
 {
   return(NumGlobalRows_);
 }
 
 
 //==============================================================================
-int ML_Epetra::RowMatrix::NumGlobalCols() const
+long long ML_Epetra::RowMatrix::NumGlobalCols() const
 {
   return(NumGlobalCols_);
 }
 
 //==============================================================================
-int ML_Epetra::RowMatrix::NumGlobalDiagonals() const
+long long ML_Epetra::RowMatrix::NumGlobalDiagonals() const
 {
   return(NumGlobalDiagonals_);
 }

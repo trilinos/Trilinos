@@ -181,22 +181,22 @@ public:
     ML_CHK_ERR(-1);
   }
 
-  virtual int NumGlobalNonzeros() const
+  virtual long long NumGlobalNonzeros() const
   {
     return(NumMyNonzeros_);
   }
 
-  virtual int NumGlobalRows() const
+  virtual long long NumGlobalRows() const
   {
      return(NumMyRows_);
   }
 
-  virtual int NumGlobalCols() const
+  virtual long long NumGlobalCols() const
   {
     return(NumMyCols_);
   }
 
-  virtual int NumGlobalDiagonals() const
+  virtual long long NumGlobalDiagonals() const
   {
     return(NumMyDiagonals_);
   }

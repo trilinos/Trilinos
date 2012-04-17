@@ -116,22 +116,22 @@ public:
     return(Matrix_->NormOne());
   }
 
-  virtual int NumGlobalNonzeros() const
+  virtual long long NumGlobalNonzeros() const
   {
     return(Matrix_->NumGlobalNonzeros());
   }
 
-  virtual int NumGlobalRows() const
+  virtual long long NumGlobalRows() const
   {
     return(Matrix_->NumGlobalRows());
   }
 
-  virtual int NumGlobalCols() const
+  virtual long long NumGlobalCols() const
   {
     return(Matrix_->NumGlobalCols());
   }
 
-  virtual int NumGlobalDiagonals() const
+  virtual long long NumGlobalDiagonals() const
   {
     return(Matrix_->NumGlobalDiagonals());
   }

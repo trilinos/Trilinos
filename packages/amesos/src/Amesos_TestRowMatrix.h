@@ -190,25 +190,25 @@ public:
   }
 
   //! Returns the number of nonzero entries in the global matrix.
-  virtual int NumGlobalNonzeros() const
+  virtual long long NumGlobalNonzeros() const
   {
     return(Matrix().NumGlobalNonzeros());
   }
 
   //! Returns the number of global matrix rows.
-  virtual int NumGlobalRows() const
+  virtual long long NumGlobalRows() const
   {
     return(Matrix().NumGlobalRows());
   }
 
   //! Returns the number of global matrix columns.
-  virtual int NumGlobalCols() const
+  virtual long long NumGlobalCols() const
   {
     return(Matrix().NumGlobalCols());
   }
 
   //! Returns the number of global nonzero diagonal entries, based on global row/column index comparisons.
-  virtual int NumGlobalDiagonals() const
+  virtual long long NumGlobalDiagonals() const
   {
     return(Matrix().NumGlobalDiagonals());
   }
