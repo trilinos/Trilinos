@@ -6,48 +6,6 @@ INCLUDE(TrilinosCreateClientTemplateHeaders)
 #
 # A) Package-specific configuration options
 #
-ASSERT_DEFINED(
-  ${PACKAGE_NAME}_ENABLE_Tpetra
-  ${PACKAGE_NAME}_ENABLE_Epetra
-  ${PACKAGE_NAME}_ENABLE_EpetraExt
-  )
-
-IF (${PACKAGE_NAME}_ENABLE_Tpetra)
-  GLOBAL_SET(HAVE_XPETRA_TPETRA   ON)
-  GLOBAL_SET(Xpetra_ENABLE_Tpetra ON)
-ELSE()
-  GLOBAL_SET(HAVE_XPETRA_TPETRA   OFF)
-  GLOBAL_SET(Xpetra_ENABLE_Tpetra OFF)
-ENDIF()
-
-IF (${PACKAGE_NAME}_ENABLE_Epetra)
-  GLOBAL_SET(HAVE_XPETRA_EPETRA   ON)
-  GLOBAL_SET(Xpetra_ENABLE_Epetra ON)
-ELSE()
-  GLOBAL_SET(HAVE_XPETRA_EPETRA   OFF)
-  GLOBAL_SET(Xpetra_ENABLE_Epetra OFF)
-ENDIF()
-
-IF (${PACKAGE_NAME}_ENABLE_EpetraExt)
-  GLOBAL_SET(HAVE_XPETRA_EPETRAEXT   ON)
-  GLOBAL_SET(Xpetra_ENABLE_EpetraExt ON)
-ELSE()
-  GLOBAL_SET(HAVE_XPETRA_EPETRAEXT   OFF)
-  GLOBAL_SET(Xpetra_ENABLE_EpetraExt OFF)
-ENDIF()
-
-IF (${PACKAGE_NAME}_ENABLE_DEBUG)
-  GLOBAL_SET(HAVE_XPETRA_DEBUG   ON)
-  GLOBAL_SET(Xpetra_ENABLE_DEBUG ON)
-ELSE()
-  GLOBAL_SET(HAVE_XPETRA_DEBUG   OFF)
-  GLOBAL_SET(Xpetra_ENABLE_DEBUG OFF)
-ENDIF()
-
-CONFIGURE_FILE(
-  ../cmake/Xpetra_config.hpp.in 
-  ${CMAKE_CURRENT_BINARY_DIR}/Xpetra_config.hpp
-  )
 
 # Note: cannot use the macro TRIBITS_CONFIGURE_FILE() because 
 # Xpetra_config.hpp.in is not in ${PACKAGE_SOURCE_DIR}/cmake
@@ -78,7 +36,6 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     CrsMatrix/Xpetra_EpetraCrsMatrix.cpp
     Vector/Xpetra_EpetraVector.cpp
     Vector/Xpetra_EpetraIntVector.cpp
-    StridedMap/Xpetra_StridedEpetraMap.cpp
     )
 ENDIF()
 
@@ -94,7 +51,6 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Platform)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Utils)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Utils/ForwardDeclaration)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Map)
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/StridedMap)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Import)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Export)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/DistObject)
@@ -102,12 +58,9 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/CrsGraph)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/MultiVector)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Vector)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/CrsMatrix)
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Operator)
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/BlockedCrsOperator)
 
 #The HEADERS variable is the list of headers that will be copied to the install directory during "make install".
 #Note: Do not use */*.hpp. Append FakeKokkos/*.hpp only if Kokkos is disabled.
-APPEND_GLOB(HEADERS BlockedCrsOperator/*.hpp)
 APPEND_GLOB(HEADERS CrsGraph/*.hpp)
 APPEND_GLOB(HEADERS CrsMatrix/*.hpp)
 APPEND_GLOB(HEADERS Headers/*.hpp)
@@ -115,9 +68,7 @@ APPEND_GLOB(HEADERS DistObject/*.hpp)
 APPEND_GLOB(HEADERS Export/*.hpp)
 APPEND_GLOB(HEADERS Import/*.hpp)
 APPEND_GLOB(HEADERS Map/*.hpp)
-APPEND_GLOB(HEADERS StridedMap/*.hpp)
 APPEND_GLOB(HEADERS MultiVector/*.hpp)
-APPEND_GLOB(HEADERS Operator/*.hpp)
 APPEND_GLOB(HEADERS Platform/*.hpp)
 APPEND_GLOB(HEADERS RowGraph/*.hpp)
 APPEND_GLOB(HEADERS Utils/*.hpp)
