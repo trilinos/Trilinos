@@ -61,7 +61,7 @@ enum leftRightFlag{
 
 template <typename mvector_t>
   void getCutDimension( const RCP<const Environment> &env,
-    const RCP<const Comm<int> > &comm, 
+    const RCP<Comm<int> > &comm, 
     int coordDim, const RCP<mvector_t> &vectors, 
     ArrayView<typename mvector_t::local_ordinal_type> index,
     int &dimension, 
@@ -80,7 +80,7 @@ template <typename mvector_t>
 
 template <typename mvector_t>
   void BSPfindCut( const RCP<const Environment> &env,
-    const RCP<const Teuchos::Comm<int> > &comm, 
+    const RCP<Teuchos::Comm<int> > &comm, 
     const std::bitset<NUM_RCB_PARAMS> &params,
     int numTestCuts, 
     typename mvector_t::scalar_type tolerance, int cutDim,
@@ -96,7 +96,7 @@ template <typename mvector_t>
 
 template <typename mvector_t>
   void determineCut( const RCP<const Environment> &env,
-    const RCP<const Comm<int> > &comm,
+    const RCP<Comm<int> > &comm,
     const std::bitset<NUM_RCB_PARAMS> &params,
     int numTestCuts, typename mvector_t::scalar_type tolerance,
     int coordDim, const RCP<mvector_t> &vectors, 
@@ -111,7 +111,7 @@ template <typename mvector_t>
 
 template <typename mvector_t>
   void migrateData( const RCP<const Environment> &env,
-    const RCP<const Comm<int> > &comm,
+    const RCP<Comm<int> > &comm,
     ArrayView<unsigned char> lrflags,
     RCP<mvector_t> &vectors, int &numProcsLeftHalf);
 
@@ -138,12 +138,15 @@ template <typename scalar_t>
  *   \todo  work on performance issues.  Some of the global
  *               communication can probably be consolidated
  *                into fewer messages.
+ *
+ * The algorithm is documented in \ref rcbPage.  Please document
+ * changes at this page.
  */
 
 template <typename Adapter>
 void AlgRCB(
   const RCP<const Environment> &env,
-  const RCP<const Comm<int> > &problemComm,
+  RCP<Comm<int> > &problemComm,
   const RCP<const CoordinateModel<
     typename Adapter::base_adapter_t> > &coords, 
   RCP<PartitioningSolution<Adapter> > &solution
@@ -395,7 +398,7 @@ void AlgRCB(
   ////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////
 
-  RCP<const Comm<int> > comm = rcp_const_cast<Comm<int> >(problemComm);
+  RCP<Comm<int> > comm = problemComm;
   partId_t part0 = 0;
   partId_t part1 = numGlobalParts-1;
   int sanityCheck = numGlobalParts;
@@ -471,7 +474,9 @@ void AlgRCB(
 
     ArrayView<const int> idView(ids, groupSize);
     RCP<Comm<int> > subComm(comm->createSubcommunicator(idView));
-    comm = rcp_const_cast<const Comm<int> >(subComm);
+    comm = subComm;
+
+    delete [] ids;
 
     ////////////////////////////////////////////////////////
     // Create a new multivector for my smaller group.
@@ -641,7 +646,7 @@ void AlgRCB(
 template <typename mvector_t>
   void BSPfindCut(
     const RCP<const Environment> &env,
-    const RCP<const Teuchos::Comm<int> > &comm,
+    const RCP<Teuchos::Comm<int> > &comm,
     const std::bitset<NUM_RCB_PARAMS> &params,
     int numTestCuts,
     typename mvector_t::scalar_type tolerance,
@@ -1069,7 +1074,7 @@ template <typename mvector_t>
 template <typename mvector_t>
   void determineCut(
     const RCP<const Environment> &env,
-    const RCP<const Comm<int> > &comm,
+    const RCP<Comm<int> > &comm,
     const std::bitset<NUM_RCB_PARAMS> &params,
     int numTestCuts, typename mvector_t::scalar_type tolerance,
     int coordDim, const RCP<mvector_t> &vectors,
@@ -1142,7 +1147,7 @@ template <typename mvector_t>
 
 template <typename mvector_t>
   void migrateData(
-    const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
+    const RCP<const Environment> &env, const RCP<Comm<int> > &comm,
     ArrayView<unsigned char> lrflags,
     RCP<mvector_t> &vectors,    // on return is the new data
     int &leftNumProcs)          // on return is num procs with left data
@@ -1312,7 +1317,7 @@ template <typename mvector_t>
   typedef typename mvector_t::scalar_type scalar_t;
   typedef typename mvector_t::local_ordinal_type lno_t;
 
-  RCP<const Comm<int> > comm(new Teuchos::SerialComm<int>);  
+  RCP<Comm<int> > comm(new Teuchos::SerialComm<int>);  
 
   int numLocalCoords=0;
   bool useIndices;
@@ -1524,7 +1529,7 @@ template <typename scalar_t>
 template <typename mvector_t>
   void getCutDimension(
     const RCP<const Environment> &env,
-    const RCP<const Comm<int> > &comm,
+    const RCP<Comm<int> > &comm,
     int coordDim,
     const RCP<mvector_t> &vectors,
     ArrayView<typename mvector_t::local_ordinal_type> index,

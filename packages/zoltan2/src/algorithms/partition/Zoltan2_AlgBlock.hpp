@@ -51,7 +51,7 @@ enum blockParams{
 template <typename Adapter>
 void AlgBlock(
   const RCP<const Environment> &env,
-  const RCP<const Comm<int> > &problemComm,
+  const RCP<Comm<int> > &problemComm,
   const RCP<const IdentifierModel<typename Adapter::base_adapter_t> > &ids, 
   RCP<PartitioningSolution<Adapter> > &solution
 ) 

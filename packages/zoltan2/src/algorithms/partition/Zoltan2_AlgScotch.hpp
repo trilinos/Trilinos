@@ -28,6 +28,9 @@ template <typename Adapter>
 void AlgPTScotch(
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &problemComm,
+#ifdef HAVE_ZOLTAN2_MPI
+  MPI_Comm mpicomm,
+#endif
   const RCP<GraphModel<typename Adapter::base_adapter_t> > &model,
   RCP<PartitioningSolution<Adapter> > &solution
 
@@ -180,6 +183,9 @@ template <typename Adapter>
 void AlgPTScotch(
   const RCP<const Environment> &env,        // parameters & app comm
   const RCP<const Comm<int> > &problemComm, // problem comm
+#ifdef HAVE_ZOLTAN2_MPI
+  MPI_Comm mpicomm,
+#endif
   const RCP<GraphModel<typename Adapter::base_adapter_t> > &model, // the graph
   RCP<PartitioningSolution<Adapter> > &solution
 )
@@ -205,9 +211,6 @@ void AlgPTScotch(
   SCOTCH_Strat stratstr;          // Strategy string
                                   // TODO:  Set from parameters
   SCOTCH_stratInit(&stratstr);
-
-  MPI_Comm mpicomm = *(rcp_dynamic_cast<const Teuchos::MpiComm<int> >(
-    problemComm)->getRawMpiComm());
 
   // Allocate & initialize PTScotch data structure.
   SCOTCH_Dgraph *gr = SCOTCH_dgraphAlloc();  // Scotch distributed graph
