@@ -892,19 +892,31 @@ int AztecOO::recursiveIterate(int MaxIters, double Tolerance)
   return(ierr);
 }
 //=============================================================================
-int AztecOO::Iterate(int MaxIters, double Tolerance)
+int AztecOO::Iterate(long long MaxIters, double Tolerance)
 {
-  if (X_ == 0 || B_ == 0 || UserOperatorData_ == 0) EPETRA_CHK_ERR(-11);
+  // jhurani@txcorp.com -- The "units/type" of MaxIters should be same as
+  // the "units/type" of matrix size, and it can be long long after Epetra
+  // has support for long long.  Hence the option should be set using
+  // long long, and if called using int, the int value will be automatically
+  // upgraded.  However, currently we can't store MaxIters value that is
+  // greater than maximum int, so we error out.  This seems like a reasonable
+  // design assumption since one would rarely want O(10^9) billion iterations.
+  // In future, long long is stored in the options, the interface will not
+  // have to change.
+
+  if (X_ == 0 || B_ == 0 || UserOperatorData_ == 0 || MaxIters > INT_MAX) EPETRA_CHK_ERR(-11);
 
   if (UserMatrixData_!=0)
     if (GetUserMatrix()!=0) {
-      int nnz = GetUserMatrix()->NumGlobalNonzeros();
+      long long nnz = GetUserMatrix()->NumGlobalNonzeros();
       if (nnz==0) {
 	EPETRA_CHK_ERR(-12); // Matrix has no entries.
       }
     }
 
-  SetAztecOption(AZ_max_iter, MaxIters);
+  // MaxIters not greater than INT_MAX because of check above.
+  int MaxIters_int = static_cast<int>(MaxIters);
+  SetAztecOption(AZ_max_iter, MaxIters_int);
   SetAztecParam(AZ_tol, Tolerance);
 
   
