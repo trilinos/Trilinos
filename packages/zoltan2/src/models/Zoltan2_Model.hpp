@@ -15,7 +15,6 @@
 
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_IdentifierMap.hpp>
-#include <Zoltan2_StridedData.hpp>
 #include <bitset>
 
 namespace Zoltan2 {

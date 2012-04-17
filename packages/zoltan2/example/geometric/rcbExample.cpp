@@ -35,14 +35,15 @@ int main(int argc, char *argv[])
   int rank=0, nprocs=1;
 #endif
 
+  typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
+  typedef Zoltan2::BasicCoordinateInput<tMVector_t> inputAdapter_t;
+
   ///////////////////////////////////////////////////////////////////////
   // Read coordinates from a file.
 
   std::string fname(testDataFilePath+"/USAir97.mtx");
   outputFlag_t flags;
   flags.set(OBJECT_COORDINATES);
-
-  typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
 
   Teuchos::RCP<const Teuchos::Comm<int> > tcomm =
     Teuchos::DefaultComm<int>::getComm();
@@ -67,6 +68,10 @@ int main(int argc, char *argv[])
   ///////////////////////////////////////////////////////////////////////
   // Create parameters for an RCB problem
 
+  scalar_t tolerance = 1.2;
+  if (rank == 0)
+    std::cout << "Imbalance tolerance is " << tolerance << std::endl;
+
   Teuchos::ParameterList params("test params");
   params.set("debug_level", "detailed_status");
   params.set("debug_procs", "0");
@@ -74,11 +79,11 @@ int main(int argc, char *argv[])
 
   Teuchos::ParameterList &parParams = params.sublist("partitioning");
   parParams.set("algorithm", "rcb");
-  parParams.set("imbalance_tolerance", 1.1);
+  parParams.set("imbalance_tolerance", tolerance);
   parParams.set("num_global_parts", nprocs);
 
   Teuchos::ParameterList &geoParams = parParams.sublist("geometric");
-  geoParams.set("bisection_num_test_cuts", 7);
+  geoParams.set("bisection_num_test_cuts", 1);
    
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
@@ -88,7 +93,6 @@ int main(int argc, char *argv[])
 
   // Create a Zoltan2 input adapter for this geometry.
 
-  typedef Zoltan2::BasicCoordinateInput<tMVector_t> inputAdapter_t;
   inputAdapter_t ia1(localCount, globalIds, x, y, z, 1, 1, 1);
 
   // Create a Zoltan2 partitioning problem
@@ -118,11 +122,13 @@ int main(int argc, char *argv[])
     Zoltan2::printMetrics<scalar_t>(cout, nprocs, nprocs, nprocs, 
       metrics1.view(0,metrics1.size()));
 
-  if (rank == 0)
-    if (solution1.getImbalance() < 1.1)   // object imbalance
-      std::cout << "PASS" << std::endl;
+  if (rank == 0){
+    scalar_t imb = solution1.getImbalance();
+    if (imb < tolerance)
+      std::cout << "PASS: " << imb << std::endl;
     else
-      std::cout << "FAIL" << std::endl;
+      std::cout << "FAIL: " << imb << std::endl;
+  }
    
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
@@ -132,7 +138,7 @@ int main(int argc, char *argv[])
 
   scalar_t *weights = new scalar_t [localCount];
   for (int i=0; i < localCount; i++){
-    weights[i] = 1.0 + rank / nprocs;
+    weights[i] = 1.0 + scalar_t(rank) / scalar_t(nprocs);
   }
 
   // Create a Zoltan2 input adapter that includes weights.
@@ -167,13 +173,11 @@ int main(int argc, char *argv[])
 
   problem2.solve();
 
-  ///////////////////////////////////////////////////////////////////////
   // Obtain the solution
 
   const Zoltan2::PartitioningSolution<inputAdapter_t> &solution2 =
     problem2.getSolution();
 
-  ///////////////////////////////////////////////////////////////////////
   // Check the solution.
 
   const ArrayRCP<MetricValues<scalar_t> > & metrics2 =
@@ -183,11 +187,13 @@ int main(int argc, char *argv[])
     Zoltan2::printMetrics<scalar_t>(cout, nprocs, nprocs, nprocs,
       metrics2.view(0,metrics2.size()));
 
-  if (rank == 0)
-    if (solution2.getImbalance() < 1.1)   // weight imbalance
-      std::cout << "PASS" << std::endl;
+  if (rank == 0){
+    scalar_t imb = solution2.getImbalance();
+    if (imb < tolerance)
+      std::cout << "PASS: " << imb << std::endl;
     else
-      std::cout << "FAIL" << std::endl;
+      std::cout << "FAIL: " << imb << std::endl;
+  }
 
   if (localCount > 0)
     delete [] weights;
@@ -198,7 +204,6 @@ int main(int argc, char *argv[])
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
 
-#if 0
   // Add to the parameters the multicriteria objective.
 
   parParams.set("objective", "multicriteria_minimize_total_weight");
@@ -241,13 +246,11 @@ int main(int argc, char *argv[])
 
   problem3.solve();
 
-  ///////////////////////////////////////////////////////////////////////
   // Obtain the solution
 
   const Zoltan2::PartitioningSolution<inputAdapter_t> &solution3 =
     problem3.getSolution();
 
-  ///////////////////////////////////////////////////////////////////////
   // Check the solution.
 
   const ArrayRCP<MetricValues<scalar_t> > & metrics3 =
@@ -257,15 +260,18 @@ int main(int argc, char *argv[])
     Zoltan2::printMetrics<scalar_t>(cout, nprocs, nprocs, nprocs,
       metrics3.view(0,metrics3.size()));
 
-  if (rank == 0)
-    if (solution3.getImbalance() < 1.1) 
-      std::cout << "PASS" << std::endl;
+  if (rank == 0){
+    scalar_t imb = solution3.getImbalance();
+    if (imb < tolerance)
+      std::cout << "PASS: " << imb << std::endl;
     else
-      std::cout << "FAIL" << std::endl;
+      std::cout << "FAIL: " << imb << std::endl;
+  }
 
   if (localCount)
     delete [] weights;
 
+#if 0
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
   // Using part sizes, ask for some parts to be empty.
@@ -311,11 +317,13 @@ int main(int argc, char *argv[])
     Zoltan2::printMetrics<scalar_t>(cout, nprocs, nprocs, nprocs,
       metrics4.view(0,metrics4.size()));
 
-  if (rank == 0)
-    if (solution4.getImbalance() < 1.1)   // object imbalance
-      std::cout << "PASS" << std::endl;
+  if (rank == 0){
+    scalar_t imb = solution4.getImbalance();
+    if (imb < tolerance)
+      std::cout << "PASS: " << imb << std::endl;
     else
-      std::cout << "FAIL" << std::endl;
+      std::cout << "FAIL: " << imb << std::endl;
+  }
 
   delete [] partIds;
   delete [] partSizes;

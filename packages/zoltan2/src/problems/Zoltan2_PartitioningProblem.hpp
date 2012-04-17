@@ -44,6 +44,7 @@ namespace Zoltan2{
  *  \todo allow unsetting of part sizes by passing in null pointers
  *  \todo add a parameter by which user tells us there are no self 
  *        edges to be removed.
+ *  \todo resetParameterList
  */
 template<typename Adapter>
 class PartitioningProblem : public Problem<Adapter>

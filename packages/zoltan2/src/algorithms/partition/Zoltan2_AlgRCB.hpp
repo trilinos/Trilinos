@@ -124,7 +124,7 @@ template <typename scalar_t>
 /*! \brief Recursive coordinate bisection algorithm.
  *
  *  \param env   library configuration and problem parameters
- *  \param problemComm  the communicator for the problem
+ *  \param comm the communicator for the problem
  *  \param coords    a CoordinateModel with user data
  *  \param solution  a PartitioningSolution, on input it 
  *      contains part information, on return it also contains 
@@ -146,7 +146,7 @@ template <typename scalar_t>
 template <typename Adapter>
 void AlgRCB(
   const RCP<const Environment> &env,
-  RCP<Comm<int> > &problemComm,
+  RCP<Comm<int> > &comm,
   const RCP<const CoordinateModel<
     typename Adapter::base_adapter_t> > &coords, 
   RCP<PartitioningSolution<Adapter> > &solution
@@ -366,7 +366,7 @@ void AlgRCB(
 
   RCP<map_t> map;
   try{
-    map = rcp(new map_t(numGlobalCoords, gnos, gnoMin, problemComm));
+    map = rcp(new map_t(numGlobalCoords, gnos, gnoMin, comm));
   }
   Z2_THROW_OUTSIDE_ERROR(*env)
 
@@ -398,7 +398,6 @@ void AlgRCB(
   ////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////
 
-  RCP<Comm<int> > comm = problemComm;
   partId_t part0 = 0;
   partId_t part1 = numGlobalParts-1;
   int sanityCheck = numGlobalParts;
@@ -473,7 +472,7 @@ void AlgRCB(
     }
 
     ArrayView<const int> idView(ids, groupSize);
-    RCP<Comm<int> > subComm(comm->createSubcommunicator(idView));
+    RCP<Comm<int> > subComm = comm->createSubcommunicator(idView);
     comm = subComm;
 
     delete [] ids;
@@ -590,7 +589,7 @@ void AlgRCB(
   }
 
   objectMetrics<scalar_t, lno_t>(
-    env, problemComm, numGlobalParts,                  // input
+    env, comm, numGlobalParts,                  // input
     partSizeArrays.view(0, criteriaDim),               // input
     partId.view(0, numLocalCoords),                    // input
     objWgt.view(0, criteriaDim), mcnorm,               // input
