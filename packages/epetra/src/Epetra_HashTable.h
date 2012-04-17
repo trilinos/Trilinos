@@ -72,11 +72,10 @@ class Epetra_HashTable : public Epetra_Object
   Node ** Container_;
   long long Size_;
   unsigned int Seed_;
-  unsigned int BitwiseAndVal_;
 
   int Func( const long long key ) { 
-    int intkey = (int) ((key & 0x00000000ffffffff) + ((key & 0xffffffff00000000) >> 31));
-    return (Seed_ + intkey)&BitwiseAndVal_; 
+    int intkey = (int) ((key & 0x000000007fffffffLL) + ((key & 0x7fffffff80000000LL) >> 31));
+    return (Seed_ ^ intkey)%Size_;
   } 
      
  public:
