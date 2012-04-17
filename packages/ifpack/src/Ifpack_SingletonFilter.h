@@ -115,22 +115,22 @@ public:
     return(-1.0);
   }
 
-  virtual int NumGlobalNonzeros() const
+  virtual long long NumGlobalNonzeros() const
   {
     return(NumNonzeros_);
   }
 
-  virtual int NumGlobalRows() const
+  virtual long long NumGlobalRows() const
   {
     return(NumRows_);
   }
 
-  virtual int NumGlobalCols() const
+  virtual long long NumGlobalCols() const
   {
     return(NumRows_);
   }
 
-  virtual int NumGlobalDiagonals() const
+  virtual long long NumGlobalDiagonals() const
   {
     return(NumRows_);
   }
