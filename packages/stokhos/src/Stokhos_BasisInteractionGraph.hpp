@@ -48,11 +48,23 @@ namespace Stokhos {
                            const Stokhos::ProductBasis<int,double> & rowBasis,
                            const Stokhos::ProductBasis<int,double> & colBasis,bool onlyUseLinear=false,int porder=-1);
 
+     BasisInteractionGraph(const Stokhos::OrthogPolyBasis<int,double> & max_basis,
+                           const Stokhos::Sparse3Tensor<int,double> & Cijk,
+                           bool onlyUseLinear=false,int porder=-1);
+
+     BasisInteractionGraph(const Stokhos::ProductBasis<int,double> & masterBasis,
+                           const Stokhos::Sparse3Tensor<int,double> & Cijk,
+                           const Stokhos::ProductBasis<int,double> & rowBasis,
+                           const Stokhos::ProductBasis<int,double> & colBasis,bool onlyUseLinear=false,int porder=-1);
+
      //! Setup the lookup graph
-     void initialize(const Stokhos::OrthogPolyBasis<int,double> & max_basis,int porder=-1);
+     void initialize(const Stokhos::OrthogPolyBasis<int,double> & max_basis,
+                     const Stokhos::Sparse3Tensor<int,double> & Cijk,
+                     int porder=-1);
 
      //! Setup the lookup graph
      void initialize(const Stokhos::ProductBasis<int,double> & max_basis,
+                     const Stokhos::Sparse3Tensor<int,double> & Cijk,
                      const Stokhos::ProductBasis<int,double> & rowBasis,
                      const Stokhos::ProductBasis<int,double> & colBasis,int porder=-1);
 
