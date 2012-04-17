@@ -85,6 +85,14 @@ unsigned  rank( Machine machine )
   int ip ; MPI_Comm_rank( machine.mpi_comm , & ip ); return ip ;
 }
 
+inline
+double max( Machine machine , double local )
+{
+  double global = 0;
+  MPI_Allreduce( & local , & global , 1 , MPI_DOUBLE , MPI_MAX , machine.mpi_comm );
+  return global ;
+}
+
 }
 
 #else /* ! defined( HAVE_MPI ) */
@@ -105,6 +113,10 @@ unsigned  size( Machine ) { return 1 ; }
 
 inline
 unsigned  rank( Machine ) { return 0 ; }
+
+inline
+double max( Machine , double local )
+{ return local ; }
 
 }
 

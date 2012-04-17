@@ -165,7 +165,7 @@ PerformanceData run( comm::Machine machine ,
   mesh.parallel_data_map.machine = machine ;
 
   device_type::fence();
-  perf_data.mesh_time = wall_clock.seconds();
+  perf_data.mesh_time = comm::max( machine , wall_clock.seconds() );
 
   const size_t element_count = mesh.elem_node_ids.dimension(0);
 
@@ -177,7 +177,7 @@ PerformanceData run( comm::Machine machine ,
   graph_factory::create( mesh , linsys_matrix.graph , element_map );
 
   device_type::fence();
-  perf_data.graph_time = wall_clock.seconds();
+  perf_data.graph_time = comm::max( machine , wall_clock.seconds() );
 
   //------------------------------------
   // Allocate linear system coefficients and rhs:
@@ -219,7 +219,7 @@ PerformanceData run( comm::Machine machine ,
                            elem_coeff_K , elem_load_Q );
 
     device_type::fence();
-    perf_data.elem_time = wall_clock.seconds();
+    perf_data.elem_time = comm::max( machine , wall_clock.seconds() );
 
     //------------------------------------
     // Fill linear system coefficients:
@@ -231,7 +231,7 @@ PerformanceData run( comm::Machine machine ,
                mesh , element_map , elem_matrices , elem_vectors );
 
     device_type::fence();
-    perf_data.matrix_gather_fill_time = wall_clock.seconds();
+    perf_data.matrix_gather_fill_time = comm::max( machine , wall_clock.seconds() );
 
     // Apply boundary conditions:
 
@@ -241,7 +241,7 @@ PerformanceData run( comm::Machine machine ,
                             0 , global_count_z - 1 , 0 , global_count_z - 1 );
 
     device_type::fence();
-    perf_data.matrix_boundary_condition_time = wall_clock.seconds();
+    perf_data.matrix_boundary_condition_time = comm::max( machine , wall_clock.seconds() );
   }
 
   //------------------------------------
@@ -289,10 +289,12 @@ void driver( const char * label ,
 {
   if ( beg == 0 || end == 0 || runs == 0 ) return ;
 
-  std::cout << std::endl ;
-  std::cout << "\"Kokkos::HybridFE::Implicit " << label << "\"" << std::endl;
-  std::cout << "\"Size\" ,  \"Meshing\" ,  \"Graphing\" , \"Element\" , \"Fill\" ,   \"Boundary\" ,  \"CG-Iter\"" << std::endl
-            << "\"nodes\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\"" << std::endl ;
+  if ( comm::rank( machine ) == 0 ) {
+    std::cout << std::endl ;
+    std::cout << "\"Kokkos::HybridFE::Implicit " << label << "\"" << std::endl;
+    std::cout << "\"Size\" ,  \"Meshing\" ,  \"Graphing\" , \"Element\" , \"Fill\" ,   \"Boundary\" ,  \"CG-Iter\"" << std::endl
+              << "\"nodes\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\"" << std::endl ;
+  }
 
   for(int i = beg ; i < end; ++i )
   {
@@ -305,7 +307,7 @@ void driver( const char * label ,
 
     for(int j = 0; j < runs; j++){
 
-     perf_data = run<Scalar,Device>(machine,ix,iy,iz, true );
+     perf_data = run<Scalar,Device>(machine,ix,iy,iz, false );
 
      if( j == 0 ) {
        perf_best = perf_data ;
@@ -317,7 +319,7 @@ void driver( const char * label ,
 
    /// TODO: reduction across processors
 
-   if ( comm::rank( machine ) == 0 ) {
+  if ( comm::rank( machine ) == 0 ) {
 
      std::cout << std::setw(8) << n << " , "
                << std::setw(10) << perf_best.mesh_time * 1000 << " , "

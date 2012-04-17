@@ -25,7 +25,7 @@ DOXYFILE_ENCODING      = UTF-8
 # The PROJECT_NAME tag is a single word (or a sequence of words surrounded 
 # by quotes) that should identify the project.
 
-PROJECT_NAME           = "Tifpack Templated Preconditioning Package"
+PROJECT_NAME           = "Ifpack2 Templated Preconditioning Package"
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number. 
 # This could be handy for archiving the generated documentation or 
@@ -1417,3 +1417,8 @@ DOT_CLEANUP            = YES
 # used. If set to NO the values of all tags below this one will be ignored.
 
 SEARCHENGINE           = YES
+
+#
+# Use MathJax for nice rescaling of LaTeX output. Needs a fairly recent version of doxygen.
+#
+USE_MATHJAX            = YES

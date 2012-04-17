@@ -8,7 +8,7 @@ else
 fi
 
 echo
-echo "Generating main Tifpack doxygen documentation ..."
+echo "Generating main Ifpack2 doxygen documentation ..."
 echo
 
 doxygen Doxyfile

@@ -26,18 +26,19 @@ void test_cuda( comm::Machine machine )
   const size_t comm_size = comm::size( machine );
   const size_t dev_size  = Kokkos::Cuda::detect_device_count();
 
+/*
   std::cout << "P" << comm_rank
             << ": test_cuda { comm_size = " << comm_size
             << " dev_size = " << dev_size 
             << " }" << std::endl ;
+*/
 
   if ( comm_size <= dev_size ) {
     Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( comm_rank ) );
     test_box_fixture<Kokkos::Cuda>( machine , 50 , 100 , 200 );
+
+    HybridFEM::Implicit::driver<double,Kokkos::Cuda>( "Cuda" , machine , 4 , 7 , 1 );
     Kokkos::Cuda::finalize();
   }
-
-  HybridFEM::Implicit::driver<double,Kokkos::Cuda>( "Cuda" , machine , 0 , 0 , 0 );
-
 }
 
