@@ -1,45 +1,45 @@
 /*! 
-    \mainpage Trilinos/Tifpack: Templated Preconditioning Package
+    \mainpage Trilinos/Ifpack2: Templated Preconditioning Package
 
-   \section tifpack_intro Introduction to Tifpack
+   \section tifpack_intro Introduction to Ifpack2
 
-Tifpack provides templated preconditioning algorithms using linear algebra
+Ifpack2 provides templated preconditioning algorithms using linear algebra
 objects (matrices, operators, multivectors) provided by the Tpetra package.
 
-Tifpack will (when finished) provide the same functionality as the Ifpack
+Ifpack2 will (when finished) provide the same functionality as the Ifpack
 package (which uses Epetra linear algebra objects).
 
-\section startup Overview of Tifpack
+\section startup Overview of Ifpack2
 
-\subsection types Templated Types in Tifpack
+\subsection types Templated Types in Ifpack2
 
-All classes in Tifpack utilize templates. Most of the preconditioner classes
+All classes in Ifpack2 utilize templates. Most of the preconditioner classes
 are templated on the type of the input matrix. This allows the user to provide
 any Tpetra matrix (i.e., templated on any of the Scalar/Ordinal/Node/etc types
 that are possible with Tpetra).
 
-\subsection precs Tifpack Preconditioners
+\subsection precs Ifpack2 Preconditioners
 
-All Tifpack preconditioners inherit the base class Tifpack::Preconditioner.
+All Ifpack2 preconditioners inherit the base class Ifpack2::Preconditioner.
 
 The preconditioners that are supported in the current release are:
 <ul>
-<li> Tifpack::Diagonal
-<li> Tifpack::Relaxation
-<li> Tifpack::Chebyshev
-<li> Tifpack::ILUT
-<li> Tifpack::RILUK
+<li> Ifpack2::Diagonal
+<li> Ifpack2::Relaxation
+<li> Ifpack2::Chebyshev
+<li> Ifpack2::ILUT
+<li> Ifpack2::RILUK
 </ul>
 
-\subsection trilinos Trilinos and Tifpack
+\subsection trilinos Trilinos and Ifpack2
 
-Tifpack preconditioners can be used with the solver algorithms in the
+Ifpack2 preconditioners can be used with the solver algorithms in the
 Trilinos/Belos package.
 
 \subsection Examples
 
 A test program (tifpack/test/belos) is provided which demonstrates creating
-and using Tifpack preconditioners with Belos solvers. The test program is
+and using Ifpack2 preconditioners with Belos solvers. The test program is
 entirely driven by XML input files, which specify the matrix file to be used,
 as well as parameters for the preconditioner, and the belos solver, etc.
 */
