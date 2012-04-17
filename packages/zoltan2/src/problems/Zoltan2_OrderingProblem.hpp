@@ -55,7 +55,7 @@ public:
   typedef typename Adapter::lno_t lno_t;
 
 #ifdef HAVE_ZOLTAN2_MPI
-   typedef Teuchos::OpaqueWrapper<MPI_Comm> > mpiWrapper_t;
+   typedef Teuchos::OpaqueWrapper<MPI_Comm> mpiWrapper_t;
 #endif
 
   /*! \brief Destructor
@@ -114,6 +114,7 @@ private:
   RCP<OrderingSolution<gid_t, lno_t> > solution_;
 
   RCP<Comm<int> > problemComm_;
+  RCP<const Comm<int> > problemCommConst_;
 
 #ifdef HAVE_ZOLTAN2_MPI
   MPI_Comm mpiComm_;
@@ -204,6 +205,8 @@ void OrderingProblem<Adapter>::createOrderingProblem()
   // Create a copy of the user's communicator.
 
   problemComm_ = this->comm_->duplicate();
+  problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
+
 
 #ifdef HAVE_ZOLTAN2_MPI
 
@@ -246,7 +249,7 @@ void OrderingProblem<Adapter>::createOrderingProblem()
   case GraphModelType:
     graphFlags.set(SELF_EDGES_MUST_BE_REMOVED);
     this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
-      this->baseInputAdapter_, this->envConst_, problemComm_, graphFlags));
+      this->baseInputAdapter_, this->envConst_, problemCommConst_, graphFlags));
 
     this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
       this->graphModel_);
@@ -258,7 +261,7 @@ void OrderingProblem<Adapter>::createOrderingProblem()
   case IdentifierModelType:
     idFlags.set(SELF_EDGES_MUST_BE_REMOVED);
     this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
-      this->baseInputAdapter_, this->envConst_, problemComm_, idFlags));
+      this->baseInputAdapter_, this->envConst_, problemCommConst_, idFlags));
 
     this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
       this->identifierModel_);
