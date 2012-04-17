@@ -1123,12 +1123,12 @@ namespace {
 
 	if (components) {
     
-	  printf("There are %ld connected components.\n",components);
+	  printf("There are %lu connected components.\n",components);
 	  for(size_t i=0; i <components; i++){
 	    ki = (list_ptr)[i];
 	    kf = (list_ptr)[i+1]-1;
 	    size_t distance = kf - ki + 1;
-	    printf("Connection %ld #elements %ld\n",i+1, distance);
+	    printf("Connection %lu #elements %lu\n",i+1, distance);
 	  }
 	}
 
@@ -1427,7 +1427,7 @@ namespace {
 
 	      if(check_type == LOCAL_ISSUES) 
 		{
-		  printf("WARNING: On Processor %d Local Element %ld (%s) has a mechanism through Global Node %ld with Local Element %ld (%s)\n", 
+		  printf("WARNING: On Processor %d Local Element %lu (%s) has a mechanism through Global Node %lu with Local Element %lu (%s)\n", 
 			 proc, 
 			 (size_t)local_number[ecnt], 
 			 elem_names[etype], 
@@ -1438,7 +1438,7 @@ namespace {
 		}
 	      else 
 		{
-		  printf("WARNING: Element %ld (%s) has a mechanism through Node %ld with Element %ld (%s)\n", 
+		  printf("WARNING: Element %lu (%s) has a mechanism through Node %lu with Element %lu (%s)\n", 
 			 (size_t)ecnt+1, elem_names[etype], (size_t)node, (size_t)el2+1, elem_names[etype2]); 
 		}
 	      num_found++;
@@ -1454,7 +1454,7 @@ namespace {
       free(local_number);
 
       if(num_found) {
-	printf("Total mechanisms found = %ld\n", num_found);
+	printf("Total mechanisms found = %lu\n", num_found);
 	if(check_type == LOCAL_ISSUES) {
 	  if(problem->mech_add_procs == 1) {
 	    machine->num_procs++;
@@ -1688,7 +1688,7 @@ namespace {
 	    }
 	  }
 	  else {
-	    printf("WARNING: Element = %ld is a DEGENERATE BAR\n", ecnt+1);
+	    printf("WARNING: Element = %lu is a DEGENERATE BAR\n", ecnt+1);
 	  }
 	}
 	else { /* Is a hex */
@@ -1768,7 +1768,7 @@ namespace {
 		  
 		} else {
 		  if (!dflag) {
-		    fprintf(stderr, "Possible corrupted mesh detected at element %ld, strange connectivity.\n", ecnt);
+		    fprintf(stderr, "Possible corrupted mesh detected at element %lu, strange connectivity.\n", ecnt);
 		  } 
 		  /* This is the second or later time through this
 		     loop and each time through, there have been two
@@ -1920,29 +1920,29 @@ namespace {
 		  sprintf(cmesg,
 			  "Error returned while getting side id for communication map.");
 		  Gen_Error(0, cmesg);
-		  sprintf(cmesg, "Element 1: %ld", (ecnt+1));
+		  sprintf(cmesg, "Element 1: %lu", (ecnt+1));
 		  Gen_Error(0, cmesg);
 		  nnodes = get_elem_info(NNODES, etype);
 		  strcpy(cmesg, "connect table:");
 		  for (int i = 0; i < nnodes; i++) {
-		    sprintf(tmpstr, " %ld", (size_t)(mesh->connect[ecnt][i]+1));
+		    sprintf(tmpstr, " %lu", (size_t)(mesh->connect[ecnt][i]+1));
 		    strcat(cmesg, tmpstr);
 		  }
 		  Gen_Error(0, cmesg);
-		  sprintf(cmesg, "side id: %ld", (size_t)(nscnt+1));
+		  sprintf(cmesg, "side id: %lu", (size_t)(nscnt+1));
 		  Gen_Error(0, cmesg);
 		  strcpy(cmesg, "side nodes:");
 		  for (int i = 0; i < side_cnt; i++) {
-		    sprintf(tmpstr, " %ld", (size_t)(side_nodes[i]+1));
+		    sprintf(tmpstr, " %lu", (size_t)(side_nodes[i]+1));
 		    strcat(cmesg, tmpstr);
 		  }
 		  Gen_Error(0, cmesg);
-		  sprintf(cmesg, "Element 2: %ld", (size_t)(elem+1));
+		  sprintf(cmesg, "Element 2: %lu", (size_t)(elem+1));
 		  Gen_Error(0, cmesg);
 		  nnodes = get_elem_info(NNODES, etype2);
 		  strcpy(cmesg, "connect table:");
 		  for (int i = 0; i < nnodes; i++) {
-		    sprintf(tmpstr, " %ld", (size_t)(mesh->connect[elem][i]+1));
+		    sprintf(tmpstr, " %lu", (size_t)(mesh->connect[elem][i]+1));
 		    strcat(cmesg, tmpstr);
 		  }
 		  Gen_Error(0, cmesg);
@@ -2146,16 +2146,16 @@ namespace {
 			  &fv2, &lv2);
 #if 1
 	  if (lv2-fv2 != lv1-fv1) {
-	    fprintf(stderr, "%ld: %ld to %ld\n", (size_t)pcnt2, (size_t)fv1, (size_t)lv1);
+	    fprintf(stderr, "%lu: %lu to %lu\n", (size_t)pcnt2, (size_t)fv1, (size_t)lv1);
 	    for (i=fv1; i <= lv1; i++)
-	      fprintf(stderr, "%ld: %ld\t%ld\t%ld\t%ld\n", i,
+	      fprintf(stderr, "%lu: %lu\t%lu\t%lu\t%lu\n", (size_t)i,
 		      (size_t)lb->e_cmap_elems[pcnt][i],
 		      (size_t)lb->e_cmap_neigh[pcnt][i],
 		      (size_t)lb->e_cmap_procs[pcnt][i],
 		      (size_t)lb->e_cmap_sides[pcnt][i]);
-	    fprintf(stderr, "%ld: %ld to %ld\n", (size_t)pcnt, (size_t)fv2, (size_t)lv2);
+	    fprintf(stderr, "%lu: %lu to %lu\n", (size_t)pcnt, (size_t)fv2, (size_t)lv2);
 	    for (i=fv2; i <= lv2; i++)
-	      fprintf(stderr, "%ld: %ld\t%ld\t%ld\t%ld\n", i,
+	      fprintf(stderr, "%lu: %lu\t%lu\t%lu\t%lu\n", (size_t)i,
 		      (size_t)lb->e_cmap_elems[pcnt2][i],
 		      (size_t)lb->e_cmap_neigh[pcnt2][i],
 		      (size_t)lb->e_cmap_procs[pcnt2][i],
@@ -2777,7 +2777,7 @@ namespace {
 
     /* Sanity check */
     if (ndot != (size_t)znobj) {
-      fprintf(stderr, "Sanity check failed; ndot %ld != znobj %ld.\n", 
+      fprintf(stderr, "Sanity check failed; ndot %lu != znobj %lu.\n", 
 	      (size_t)ndot, (size_t)znobj);
       goto End;
     }

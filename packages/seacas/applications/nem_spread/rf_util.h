@@ -45,7 +45,7 @@ inline void swap(T &r, T &s)
 }
 
 template <typename T, typename U>
-static void siftDown( T *a, U *b, int64_t start, int64_t end)
+void siftDown( T *a, U *b, int64_t start, int64_t end)
 {
   int64_t root = start;
  

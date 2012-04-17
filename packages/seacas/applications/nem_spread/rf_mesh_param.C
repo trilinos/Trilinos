@@ -117,8 +117,8 @@ void NemSpread<T,INT>::read_mesh_param ()
   printf ("\nExodus file (%s)\n", exofile);
   printf ("\tTitle of file: %s\n", GeomTitle);
   printf ("\tDimensionality of problem = %d\n",   globals.Num_Dim);
-  printf ("\tNumber of nodes           = %ld\n",   globals.Num_Node);
-  printf ("\tNumber of elements        = %ld\n",   globals.Num_Elem);
+  printf ("\tNumber of nodes           = %lu\n",   globals.Num_Node);
+  printf ("\tNumber of elements        = %lu\n",   globals.Num_Elem);
   printf ("\tNumber of element blocks  = %d\n",   globals.Num_Elem_Blk);
   printf ("\tNumber of node sets       = %d\n",   globals.Num_Node_Set);
   printf ("\tNumber of side sets       = %d\n\n", globals.Num_Side_Set);

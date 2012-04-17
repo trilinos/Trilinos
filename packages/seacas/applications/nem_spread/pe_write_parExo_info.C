@@ -133,11 +133,11 @@ void NemSpread<T,INT>::write_parExo_data(int mesh_exoid, int max_name_length,
 
   if(Debug_Flag >= 4) {
     printf("Putting init global info in file id: %d\n", mesh_exoid);
-    printf("\tNumber Global Nodes: %ld\n", (size_t)globals.Num_Node);
-    printf("\tNumber Global Elements: %ld\n", (size_t)globals.Num_Elem);
-    printf("\tNumber Global Element Blocks: %ld\n", (size_t)globals.Num_Elem_Blk);
-    printf("\tNumber Global Node Sets: %ld\n", (size_t)globals.Num_Node_Set);
-    printf("\tNumber Global Side Sets: %ld\n", (size_t)globals.Num_Side_Set);
+    printf("\tNumber Global Nodes: %lu\n", (size_t)globals.Num_Node);
+    printf("\tNumber Global Elements: %lu\n", (size_t)globals.Num_Elem);
+    printf("\tNumber Global Element Blocks: %lu\n", (size_t)globals.Num_Elem_Blk);
+    printf("\tNumber Global Node Sets: %lu\n", (size_t)globals.Num_Node_Set);
+    printf("\tNumber Global Side Sets: %lu\n", (size_t)globals.Num_Side_Set);
   }
 
   if(ex_put_init_global(mesh_exoid, globals.Num_Node, globals.Num_Elem,
@@ -312,13 +312,13 @@ void NemSpread<T,INT>::write_parExo_data(int mesh_exoid, int max_name_length,
   if(Debug_Flag >= 6) {
     printf("Putting init load balance info in file id: %d\n",
            mesh_exoid);
-    printf("\tNumber Internal Nodes: %ld\n", (size_t)globals.Num_Internal_Nodes[iproc]);
-    printf("\tNumber Border Nodes: %ld\n", (size_t)globals.Num_Border_Nodes[iproc]);
-    printf("\tNumber External Nodes: %ld\n", (size_t)globals.Num_External_Nodes[iproc]);
-    printf("\tNumber Internal Elements: %ld\n", (size_t)globals.Num_Internal_Elems[iproc]);
-    printf("\tNumber Border Elements: %ld\n", (size_t)globals.Num_Border_Elems[iproc]);
-    printf("\tNumber Nodal Cmaps: %ld\n", (size_t)ncomm_cnt);
-    printf("\tNumber Elemental Cmaps: %ld\n", (size_t)ecomm_cnt);
+    printf("\tNumber Internal Nodes: %lu\n", (size_t)globals.Num_Internal_Nodes[iproc]);
+    printf("\tNumber Border Nodes: %lu\n", (size_t)globals.Num_Border_Nodes[iproc]);
+    printf("\tNumber External Nodes: %lu\n", (size_t)globals.Num_External_Nodes[iproc]);
+    printf("\tNumber Internal Elements: %lu\n", (size_t)globals.Num_Internal_Elems[iproc]);
+    printf("\tNumber Border Elements: %lu\n", (size_t)globals.Num_Border_Elems[iproc]);
+    printf("\tNumber Nodal Cmaps: %lu\n", (size_t)ncomm_cnt);
+    printf("\tNumber Elemental Cmaps: %lu\n", (size_t)ecomm_cnt);
     printf("\tProccesor For: %d\n", proc_for);
   }
 
@@ -611,12 +611,12 @@ void NemSpread<T,INT>::write_parExo_data(int mesh_exoid, int max_name_length,
     printf("Putting init info in file id: %d\n", mesh_exoid);
     printf("\tTitle: %s\n", cTitle);
     printf("\tNumber Dimensions: %d\n", globals.Num_Dim);
-    printf("\tNumber Nodes: %ld\n", itotal_nodes);
-    printf("\tNumber Elements: %ld\n",
+    printf("\tNumber Nodes: %lu\n", itotal_nodes);
+    printf("\tNumber Elements: %lu\n",
            (size_t)globals.Num_Internal_Elems[iproc]+(size_t)globals.Num_Border_Elems[iproc]);
-    printf("\tNumber Element Blocks: %ld\n", (size_t)globals.Num_Elem_Blk);
-    printf("\tNumber Node Sets: %ld\n", (size_t)globals.Num_Node_Set);
-    printf("\tNumber Side Sets: %ld\n", (size_t)globals.Num_Side_Set);
+    printf("\tNumber Element Blocks: %lu\n", (size_t)globals.Num_Elem_Blk);
+    printf("\tNumber Node Sets: %lu\n", (size_t)globals.Num_Node_Set);
+    printf("\tNumber Side Sets: %lu\n", (size_t)globals.Num_Side_Set);
   }
 
   if(ex_put_init(mesh_exoid, cTitle, globals.Num_Dim, itotal_nodes,
@@ -1362,7 +1362,6 @@ template <typename T, typename INT>
 void NemSpread<T,INT>::write_var_timestep(int exoid, int proc, int time_step, int blk_cnt,
 					  INT *eb_ids_global, INT *ss_ids_global, INT *ns_ids_global)
 {
-  size_t bytes_out;
   int error;
 
   /* output the time */
@@ -1374,7 +1373,6 @@ void NemSpread<T,INT>::write_var_timestep(int exoid, int proc, int time_step, in
 
   /* start by outputting the global variables */
   if (Restart_Info.NVar_Glob > 0) {
-    bytes_out += Restart_Info.NVar_Glob * io_ws;
 
     T *var_ptr = Restart_Info.Glob_Vals[blk_cnt];
 
@@ -1392,7 +1390,6 @@ void NemSpread<T,INT>::write_var_timestep(int exoid, int proc, int time_step, in
 
       size_t var_offset = var_num * num_nodes;
 
-      bytes_out += num_nodes * io_ws;
 
       T *var_ptr = &(Restart_Info.Node_Vals[proc][blk_cnt][var_offset]);
 
@@ -1426,8 +1423,6 @@ void NemSpread<T,INT>::write_var_timestep(int exoid, int proc, int time_step, in
 
         if (Restart_Info.Elem_TT[proc]
 	    [eb_num_g*Restart_Info.NVar_Elem+var_num]) {
-	  
-          bytes_out += globals.Proc_Num_Elem_In_Blk[proc][eb_num] * io_ws;
 	  
           error = ex_put_var(exoid, time_step, EX_ELEM_BLOCK, (var_num+1),
                                   globals.Proc_Elem_Blk_Ids[proc][eb_num],
@@ -1467,7 +1462,6 @@ void NemSpread<T,INT>::write_var_timestep(int exoid, int proc, int time_step, in
 	assert(globals.Proc_SS_Ids[proc][ss_num] == ss_ids_global[ss_num_g]);
 
         if (Restart_Info.Sset_TT[proc][ss_num_g*Restart_Info.NVar_Sset+var_num]) {
-          bytes_out += globals.Proc_SS_Elem_Count[proc][ss_num] * io_ws;
 	  
           error = ex_put_var(exoid, time_step, EX_SIDE_SET, (var_num+1),
                                   globals.Proc_SS_Ids[proc][ss_num],
@@ -1507,7 +1501,6 @@ void NemSpread<T,INT>::write_var_timestep(int exoid, int proc, int time_step, in
 	assert(globals.Proc_NS_Ids[proc][ns_num] == ns_ids_global[ns_num_g]);
 
         if (Restart_Info.Nset_TT[proc][ns_num_g*Restart_Info.NVar_Nset+var_num]) {
-          bytes_out += globals.Proc_NS_Count[proc][ns_num] * io_ws;
 	  
           error = ex_put_var(exoid, time_step, EX_NODE_SET, (var_num+1),
                                   globals.Proc_NS_Ids[proc][ns_num],

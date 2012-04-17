@@ -285,7 +285,7 @@ int read_mesh_params(const std::string &exo_file,
       sphere->end[cnt]   = sphere->begin[cnt] + num_elems;
     }
 
-    mesh->max_np_elem = MAX(mesh->max_np_elem, nodes_in_elem);
+    mesh->max_np_elem = MAX(mesh->max_np_elem, (size_t)nodes_in_elem);
   }
 
   /* Close the ExodusII file */
@@ -295,11 +295,11 @@ int read_mesh_params(const std::string &exo_file,
   printf("ExodusII mesh information\n");
   if(strlen(mesh->title) > 0)
     printf("\ttitle: %s\n", mesh->title);
-  printf("\tgeometry dimension: %ld\n", mesh->num_dims);
-  printf("\tnumber of nodes: %ld\tnumber of elements: %ld\n", mesh->num_nodes,
+  printf("\tgeometry dimension: %lu\n", mesh->num_dims);
+  printf("\tnumber of nodes: %lu\tnumber of elements: %lu\n", mesh->num_nodes,
          mesh->num_elems);
-  printf("\tnumber of element blocks: %ld\n", mesh->num_el_blks);
-  printf("\tnumber of node sets: %ld\tnumber of side sets: %ld\n",
+  printf("\tnumber of element blocks: %lu\n", mesh->num_el_blks);
+  printf("\tnumber of node sets: %lu\tnumber of side sets: %lu\n",
          mesh->num_node_sets, mesh->num_side_sets);
 
   return 1;

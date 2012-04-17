@@ -348,20 +348,20 @@ void NemSpread<T,INT>::load_lb_info(void)
       printf("\n\t***For Processor %d***\n", Proc_Ids[iproc]);
       printf("\tInternal nodes owned by the current processor\n\t");
       for(INT i = 0; i < globals.Num_Internal_Nodes[iproc]; i++)
-        printf(" %ld", (size_t)globals.GNodes[iproc][i]);
+        printf(" %lu", (size_t)globals.GNodes[iproc][i]);
 
       printf("\n");
 
       printf("\tBorder nodes owned by the current processor\n\t");
       for(INT i = 0; i < globals.Num_Border_Nodes[iproc]; i++)
-        printf(" %ld", (size_t)globals.GNodes[iproc][i + globals.Num_Internal_Nodes[iproc]]);
+        printf(" %lu", (size_t)globals.GNodes[iproc][i + globals.Num_Internal_Nodes[iproc]]);
 
       printf("\n");
 
       if(globals.Num_External_Nodes[iproc] > 0) {
         printf("\tExternal nodes needed by the current processor\n\t");
         for(INT i = 0; i < globals.Num_External_Nodes[iproc]; i++)
-          printf(" %ld", (size_t)globals.GNodes[iproc][i + globals.Num_Internal_Nodes[iproc] +
+          printf(" %lu", (size_t)globals.GNodes[iproc][i + globals.Num_Internal_Nodes[iproc] +
 						       globals.Num_Border_Nodes[iproc]]);
 
         printf("\n");
@@ -369,14 +369,14 @@ void NemSpread<T,INT>::load_lb_info(void)
 
       printf("\tInternal elements owned by the current processor\n\t");
       for(INT i = 0; i < globals.Num_Internal_Elems[iproc]; i++)
-        printf(" %ld", (size_t)globals.GElems[iproc][i]);
+        printf(" %lu", (size_t)globals.GElems[iproc][i]);
 
       printf("\n");
 
       if(globals.Num_Border_Elems[iproc] > 0) {
         printf("\tBorder elements owned by the current processor\n\t");
         for(INT i=0; i < globals.Num_Border_Elems[iproc]; i++)
-          printf(" %ld", (size_t)globals.GElems[iproc][i+globals.Num_Internal_Elems[iproc]]);
+          printf(" %lu", (size_t)globals.GElems[iproc][i+globals.Num_Internal_Elems[iproc]]);
 
         printf("\n");
       }
@@ -385,10 +385,10 @@ void NemSpread<T,INT>::load_lb_info(void)
         printf("\tNodal Comm Map for the current processor\n");
         printf("\t\tnode IDs:");
         for(size_t i=0; i < globals.N_Comm_Map[iproc]->node_cnt; i++)
-          printf(" %ld", (size_t)globals.N_Comm_Map[iproc]->node_ids[i]);
+          printf(" %lu", (size_t)globals.N_Comm_Map[iproc]->node_ids[i]);
         printf("\n\t\tproc IDs:");
         for(size_t i=0; i < globals.N_Comm_Map[iproc]->node_cnt; i++)
-          printf(" %ld", (size_t)globals.N_Comm_Map[iproc]->proc_ids[i]);
+          printf(" %lu", (size_t)globals.N_Comm_Map[iproc]->proc_ids[i]);
 
         printf("\n");
       }
@@ -397,13 +397,13 @@ void NemSpread<T,INT>::load_lb_info(void)
         printf("\tElemental Comm Map for the current processor\n");
         printf("\t\telement IDs:");
         for(size_t i=0; i < globals.E_Comm_Map[iproc]->elem_cnt; i++)
-          printf(" %ld", (size_t)globals.E_Comm_Map[iproc]->elem_ids[i]);
+          printf(" %lu", (size_t)globals.E_Comm_Map[iproc]->elem_ids[i]);
         printf("\n\t\tside IDs:");
         for(size_t i=0; i < globals.E_Comm_Map[iproc]->elem_cnt; i++)
-          printf(" %ld", (size_t)globals.E_Comm_Map[iproc]->side_ids[i]);
+          printf(" %lu", (size_t)globals.E_Comm_Map[iproc]->side_ids[i]);
         printf("\n\t\tproc IDs:");
         for(size_t i=0; i < globals.E_Comm_Map[iproc]->elem_cnt; i++)
-          printf(" %ld", (size_t)globals.E_Comm_Map[iproc]->proc_ids[i]);
+          printf(" %lu", (size_t)globals.E_Comm_Map[iproc]->proc_ids[i]);
 
         printf("\n");
       }
@@ -731,7 +731,7 @@ in mesh file",yo);
 	   " Int_Elems Bor_Elems N_Comm_Maps E_Comm_Maps");
     print_line("-", 79); printf ("\n");
     for(int i=0; i <Proc_Info[2]; i++) {
-      printf("%6ld  %6ld  %6ld   %6ld    %6ld    %6ld     %6ld     %6ld\n",
+      printf("%6lu  %6lu  %6lu   %6lu    %6lu    %6lu     %6lu     %6lu\n",
              (size_t)Proc_Ids[i], (size_t)globals.Num_Internal_Nodes[i], (size_t)globals.Num_Border_Nodes[i],
              (size_t)globals.Num_External_Nodes[i], (size_t)globals.Num_Internal_Elems[i],
              (size_t)globals.Num_Border_Elems[i], (size_t)globals.Num_N_Comm_Maps[i], (size_t)globals.Num_E_Comm_Maps[i]);
@@ -843,7 +843,7 @@ void NemSpread<T,INT>::read_cmap_params(int lb_exoid,
   if(Debug_Flag >= 4) {
     print_line("=", 79);
     printf("\t\tCOMMUNICATION MAP INFORMATION\n");
-    printf("\t\t   largest cmap = %ld integers\n", (size_t)*cmap_max_size);
+    printf("\t\t   largest cmap = %lu integers\n", (size_t)*cmap_max_size);
     print_line("=", 79);
 
     int bprnt_n=0;
@@ -860,7 +860,7 @@ void NemSpread<T,INT>::read_cmap_params(int lb_exoid,
       for (int iproc=0; iproc <Proc_Info[2]; iproc++) {
         if(globals.Num_N_Comm_Maps[iproc] > 0) {
           for(int i1=0; i1 < globals.Num_N_Comm_Maps[iproc]; i1++) {
-            printf("\t     %ld\t\t    %ld\t\t    %ld\n",
+            printf("\t     %lu\t\t    %lu\t\t    %lu\n",
 		   (size_t)Proc_Ids[iproc],
                    (size_t)(N_Comm_Map[iproc]+i1)->map_id,
                    (size_t)(N_Comm_Map[iproc]+i1)->node_cnt);
@@ -875,7 +875,7 @@ void NemSpread<T,INT>::read_cmap_params(int lb_exoid,
       for (int iproc=0; iproc <Proc_Info[2]; iproc++) {
         if(globals.Num_E_Comm_Maps[iproc] > 0) {
           for(int i1=0; i1 < globals.Num_E_Comm_Maps[iproc]; i1++) {
-            printf("\t     %ld\t\t    %ld\t\t    %ld\n",
+            printf("\t     %lu\t\t    %lu\t\t    %lu\n",
                    (size_t)Proc_Ids[iproc],
                    (size_t)(E_Comm_Map[iproc]+i1)->map_id,
                    (size_t)(E_Comm_Map[iproc]+i1)->elem_cnt);

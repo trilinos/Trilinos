@@ -167,12 +167,13 @@ int main (int argc, char *argv[])
   
   ex_opts(EX_VERBOSE);
   
+  int status;
   if (int64db || int64com) {
     printf("Using 64-bit integer mode for decomposition...\n");
-    return internal_main(argc, argv, int64_t(0));
+    status = internal_main(argc, argv, int64_t(0));
   }
   else {
-    return internal_main(argc, argv, int(0));
+    status = internal_main(argc, argv, int(0));
   }
 
   /* Report any non-fatal errors that may have occured */
@@ -182,6 +183,7 @@ int main (int argc, char *argv[])
   double end_time = get_time();
   printf("The entire load balance took %fs\n", end_time-start_time);
   add_to_log(argv[0], end_time-start_time);
+  return status;
 }
 
 template <typename INT>
@@ -711,7 +713,7 @@ namespace {
       {
 	printf("\tElement Block weights specified\n");
 	for (size_t cnt=0; cnt < weight->elemblk.size(); cnt++)
-	  printf("\telement block: %ld, weight: %ld\n",
+	  printf("\telement block: %lu, weight: %lu\n",
 		 (size_t)weight->elemblk[cnt],
 		 (size_t)weight->elemblk_wgt[cnt]);
       }

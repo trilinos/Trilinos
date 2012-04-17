@@ -795,7 +795,7 @@ void NemSpread<T,INT>::load_mesh()
 
 	if (globals.Num_Node_Set > 0) {
 	  for (int i = 0; i < globals.Num_Node_Set; i++)
-	    printf("%6d%11ld%12ld\n", i, (size_t)Node_Set_Ids[i],
+	    printf("%6d%11lu%12lu\n", i, (size_t)Node_Set_Ids[i],
 		   (size_t)num_nodes_in_node_set[i]);
 	}
 
@@ -851,7 +851,7 @@ void NemSpread<T,INT>::load_mesh()
 
 	if (globals.Num_Side_Set > 0) {
 	  for (int i = 0; i < globals.Num_Side_Set; i++)
-	    printf("%6d%11ld  %12ld\n", i, (size_t)Side_Set_Ids[i],
+	    printf("%6d%11lu  %12lu\n", i, (size_t)Side_Set_Ids[i],
 		   (size_t)num_elem_in_ssets[i]);
 	}
 
@@ -927,34 +927,6 @@ void NemSpread<T,INT>::read_coord(int exoid, int max_name_length)
     exit(1);
   }
 
-  if (Debug_Flag > 6) {
-    for (int iproc=Proc_Info[4]; iproc <Proc_Info[4]+Proc_Info[5]; iproc++) {
-      
-      INT itotal_nodes = globals.Num_Internal_Nodes[iproc] + globals.Num_Border_Nodes[iproc] +
-	globals.Num_External_Nodes[iproc];
-      
-      print_line ("=", 79);
-      printf("Coordinates of Nodes for Proc %d\n", Proc_Ids[iproc]);
-      
-      print_line ("-", 79);
-      printf("\tNode_Num | Node_Type |    Coordinates\n");
-      print_line ("-", 79);
-      
-      for (INT ii = 0; ii < itotal_nodes; ii++) {
-	printf("\t %6ld  | ", (size_t)ii);
-	if (ii < globals.Num_Internal_Nodes[iproc])  printf("Internal  |");
-	else if (ii < (globals.Num_Internal_Nodes[iproc]+globals.Num_Border_Nodes[iproc]))
-	  printf("Border    |");
-	else                         printf("External  |");
-	for (int j = 0; j < globals.Num_Dim; j++) {
-	  printf(" %11.3e", globals.Coor[iproc][j][ii]);
-	}
-	printf("\n");
-      }
-      print_line ("=", 79);
-    }
-  }
-  
   /* Handle global node ids... */
   INT *global_node_ids = (INT *) array_alloc(__FILE__, __LINE__, 1, globals.Num_Node,
 					     sizeof(INT));
@@ -1155,7 +1127,7 @@ void NemSpread<T,INT>::read_coord(int exoid, int max_name_length)
 		 "Glb_Elm_In_Blk");
 	  print_line("-", 79);
 	  for (int i = 0; i < globals.Proc_Num_Elem_Blk[iproc]; i++ )
-	    printf("%4d\t\t%5ld\t%8ld\t%8ld\t%8ld\t%8ld\t%8ld\t%8ld\n",i,
+	    printf("%4d\t\t%5lu\t%8lu\t%8lu\t%8lu\t%8lu\t%8lu\t%8lu\n",i,
 		   (size_t)globals.GElem_Blks[iproc][i],
 		   (size_t)globals.Proc_Elem_Blk_Ids[iproc][i],
 		   (size_t)globals.Proc_Nodes_Per_Elem[iproc][i],
@@ -1301,19 +1273,19 @@ void NemSpread<T,INT>::read_coord(int exoid, int max_name_length)
 	  if (Debug_Flag > 1) {
 	    printf("\n\nMessage summary for Element Block number %d, ",
 		   ielem_blk);
-	    printf("having a block id of %ld:\n", (size_t)Elem_Blk_Ids[ielem_blk]);
+	    printf("having a block id of %lu:\n", (size_t)Elem_Blk_Ids[ielem_blk]);
 	    printf("\tNumber of messages needed for the element connectivity "
-		   "vector = %ld\n", num_elem_messages);
-	    printf("\tNumber of elements per message = %ld\n",
+		   "vector = %lu\n", num_elem_messages);
+	    printf("\tNumber of elements per message = %lu\n",
 		   num_elem_per_message);
-	    printf("\tNumber of nodes per element = %ld\n",
+	    printf("\tNumber of nodes per element = %lu\n",
 		   (size_t)Num_Nodes_Per_Elem[ielem_blk]);
-	    printf("\tLength of each message = %ld bytes\n",
+	    printf("\tLength of each message = %lu bytes\n",
 		   (size_t)(Num_Nodes_Per_Elem[ielem_blk] * num_elem_per_message *
 		    sizeof(INT)));
 	    if (num_attr_messages > 0)
-	      printf("\tNumber of attribute messages: %ld\n\tNumber "
-		     "of attributes per message: %ld\n\n",
+	      printf("\tNumber of attribute messages: %lu\n\tNumber "
+		     "of attributes per message: %lu\n\n",
 		     num_attr_messages, num_attr_per_message);
 	  }
 
@@ -1338,7 +1310,7 @@ void NemSpread<T,INT>::read_coord(int exoid, int max_name_length)
 	  for(size_t i=0; i < num_elem_messages; i++) {
 
 	    if(Debug_Flag >= 2)
-	      printf("\telem block message: %ld of %ld\n", i+1, num_elem_messages);
+	      printf("\telem block message: %lu of %lu\n", i+1, num_elem_messages);
 
 	    /* Initialize the element connectivity list to a value of -1.0 */
 	    for (size_t j = 0; j < Num_Nodes_Per_Elem[ielem_blk]*num_elem_per_message;
@@ -1381,15 +1353,15 @@ void NemSpread<T,INT>::read_coord(int exoid, int max_name_length)
 	      printf("Printout of Element connectivity list obtained from "
 		     "Exodus II file:\n");
 	      printf("\tGlobal element block number = %d\n", ielem_blk);
-	      printf("\tElement ID number     = %ld\n",
+	      printf("\tElement ID number     = %lu\n",
 		     (size_t)Elem_Blk_Ids[ielem_blk]);
-	      printf("\tMessage number        = %ld\n", i);
+	      printf("\tMessage number        = %lu\n", i);
 	      print_line("-", 79);
 	      ipos = 0;
 	      for (size_t j = 0; j < num_to_get; j++) {
-		printf("\t elem: %ld, nodes:", j);
+		printf("\t elem: %lu, nodes:", j);
 		for (int k = 0; k < Num_Nodes_Per_Elem[ielem_blk]; k++)
-		  printf(" %ld", (size_t)elem_blk[ipos++]);
+		  printf(" %lu", (size_t)elem_blk[ipos++]);
 		printf("\n");
 	      }
 	      print_line("=", 79);
@@ -1412,7 +1384,7 @@ void NemSpread<T,INT>::read_coord(int exoid, int max_name_length)
 	  for (size_t i = 0; i < num_attr_messages; i++) {
 
 	    if(Debug_Flag >= 2)
-	      printf("\tattribute message: %ld of %ld\n", i+1, num_attr_messages);
+	      printf("\tattribute message: %lu of %lu\n", i+1, num_attr_messages);
 
 	    /* Initialize */
 	    for (size_t j = 0; j < Num_Attr_Per_Elem[ielem_blk]*num_attr_per_message; j++)
@@ -1892,7 +1864,7 @@ void NemSpread<T,INT>::find_elem_block(INT *proc_elem_blk, int iproc, int proc_f
       }
       if (!found) {
 	fprintf(stderr, "find_elem_block: Error!:\n");
-	fprintf(stderr, "\tElement %ld not found in any element "
+	fprintf(stderr, "\tElement %lu not found in any element "
 		"block.\n", (size_t)i);
 	exit(1);
       }
@@ -1927,7 +1899,7 @@ void NemSpread<T,INT>::find_elem_block(INT *proc_elem_blk, int iproc, int proc_f
       }
       if (!found) {
 	fprintf(stderr, "find_elem_block: Error!:\n");
-	fprintf(stderr, "\tElement %ld not found in any element "
+	fprintf(stderr, "\tElement %lu not found in any element "
 		"block.\n", (size_t)i);
 	exit(1);
       }
@@ -2120,13 +2092,13 @@ void NemSpread<T,INT>::read_node_sets(int exoid, INT *num_nodes_in_node_set,
 
       if (Debug_Flag > 1)
 	{
-	  printf("\nMessage summary for Node Set number %ld, with an ID of %ld:\n",
+	  printf("\nMessage summary for Node Set number %lu, with an ID of %lu:\n",
 		 (size_t)i, (size_t)Node_Set_Ids[i]);
-	  printf("\tNumber of messages need for node set = %ld\n",
+	  printf("\tNumber of messages need for node set = %lu\n",
 		 num_messages);
-	  printf("\tNumber of node IDs and dist. factors per message = %ld\n",
+	  printf("\tNumber of node IDs and dist. factors per message = %lu\n",
 		 num_node_per_message);
-	  printf("\tLength of each message = %ld\n",
+	  printf("\tLength of each message = %lu\n",
 		 num_node_per_message*iss_size);
 	}
 
@@ -2529,13 +2501,13 @@ void NemSpread<T,INT>::read_side_sets(int exoid, INT *num_elem_in_ssets,
 			&num_messages, &num_left_over);
 
       if(Debug_Flag >= 2) {
-	printf("Message summary for Side Set number %d, with an ID of %ld:\n",
+	printf("Message summary for Side Set number %d, with an ID of %lu:\n",
 	       i, (size_t)Side_Set_Ids[i]);
-	printf("\tNumber of messages needed for element and side list = %ld\n",
+	printf("\tNumber of messages needed for element and side list = %lu\n",
 	       num_messages);
-	printf("\tNumber of element and side IDs per message = %ld\n",
+	printf("\tNumber of element and side IDs per message = %lu\n",
 	       num_elem_per_message);
-	printf("\tLength of each message = %ld\n",
+	printf("\tLength of each message = %lu\n",
 	       iss_size*num_elem_per_message);
       }
 
@@ -2552,7 +2524,7 @@ void NemSpread<T,INT>::read_side_sets(int exoid, INT *num_elem_in_ssets,
       for(size_t imess=0; imess < num_messages; imess++) {
 
 	if(Debug_Flag >= 2)
-	  printf("\tside set message: %ld of %ld\n", imess+1, num_messages);
+	  printf("\tside set message: %lu of %lu\n", imess+1, num_messages);
 
 	size_t istart_ss = imess*num_elem_per_message;
 
@@ -2709,13 +2681,13 @@ void NemSpread<T,INT>::read_side_sets(int exoid, INT *num_elem_in_ssets,
 			  &num_messages, &num_left_over);
 
 	if(Debug_Flag >= 4) {
-	  printf("Message summary for Side Set number %d, with ID of %ld:\n",
+	  printf("Message summary for Side Set number %d, with ID of %lu:\n",
 		 i, (size_t)Side_Set_Ids[i]);
 	  printf("\tNumber of messages needed for distribution "
-		 "factors = %ld\n", num_messages);
-	  printf("\tNumber of dist. factors in each message = %ld\n",
+		 "factors = %lu\n", num_messages);
+	  printf("\tNumber of dist. factors in each message = %lu\n",
 		 num_elem_per_message);
-	  printf("\tLength of each message = %ld\n",
+	  printf("\tLength of each message = %lu\n",
 		 (size_t)(num_elem_per_message * sizeof(T)));
 	}
 

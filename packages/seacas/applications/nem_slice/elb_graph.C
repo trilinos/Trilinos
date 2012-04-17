@@ -147,7 +147,7 @@ namespace {
 
     for(size_t ncnt=0; ncnt < mesh->num_nodes; ncnt++) {
       if(graph->sur_elem[ncnt].empty()) {
-	printf("WARNING: Node = %ld has no elements\n", ncnt+1);
+	printf("WARNING: Node = %lu has no elements\n", ncnt+1);
       } else {
 	size_t nsur = graph->sur_elem[ncnt].size();
 	if (nsur > graph->max_nsur)
@@ -587,12 +587,12 @@ namespace {
 			  sprintf(cmesg,
 				  "Error returned while getting side id for communication map.");
 			  Gen_Error(0, cmesg);
-			  sprintf(cmesg, "Element 1: %ld", (ecnt+1));
+			  sprintf(cmesg, "Element 1: %lu", (ecnt+1));
 			  Gen_Error(0, cmesg);
 			  nnodes = get_elem_info(NNODES, etype);
 			  strcpy(cmesg, "connect table:");
 			  for (int ii = 0; ii < nnodes; ii++) {
-			    sprintf(tmpstr, " %ld", (size_t)(mesh->connect[ecnt][ii]+1));
+			    sprintf(tmpstr, " %lu", (size_t)(mesh->connect[ecnt][ii]+1));
 			    strcat(cmesg, tmpstr);
 			  }
 			  Gen_Error(0, cmesg);
@@ -600,16 +600,16 @@ namespace {
 			  Gen_Error(0, cmesg);
 			  strcpy(cmesg, "side nodes:");
 			  for (int ii = 0; ii < side_cnt; ii++) {
-			    sprintf(tmpstr, " %ld", (size_t)(side_nodes[ii]+1));
+			    sprintf(tmpstr, " %lu", (size_t)(side_nodes[ii]+1));
 			    strcat(cmesg, tmpstr);
 			  }
 			  Gen_Error(0, cmesg);
-			  sprintf(cmesg, "Element 2: %ld", (entry+1));
+			  sprintf(cmesg, "Element 2: %lu", (entry+1));
 			  Gen_Error(0, cmesg);
 			  nnodes = get_elem_info(NNODES, etype2);
 			  strcpy(cmesg, "connect table:");
 			  for (int ii = 0; ii < nnodes; ii++) {
-			    sprintf(tmpstr, " %ld", (size_t)(mesh->connect[entry][ii]+1));
+			    sprintf(tmpstr, " %lu", (size_t)(mesh->connect[entry][ii]+1));
 			    strcat(cmesg, tmpstr);
 			  }
 			  Gen_Error(0, cmesg);
