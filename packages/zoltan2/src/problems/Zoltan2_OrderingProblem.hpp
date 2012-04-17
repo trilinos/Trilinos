@@ -54,6 +54,10 @@ public:
   typedef typename Adapter::gid_t gid_t;
   typedef typename Adapter::lno_t lno_t;
 
+#ifdef HAVE_ZOLTAN2_MPI
+   typedef Teuchos::OpaqueWrapper<MPI_Comm> > mpiWrapper_t;
+#endif
+
   /*! \brief Destructor
    */
   virtual ~OrderingProblem() {};
@@ -157,6 +161,17 @@ void OrderingProblem<Adapter>::solve(bool newData)
                           problemComm_);
       }
   }
+
+#ifdef HAVE_ZOLTAN2_MPI
+
+  // The algorithm may have changed the communicator.  Change it back.
+
+  RCP<const mpiWrapper_t > wrappedComm = rcp(new mpiWrapper_t(mpiComm_));
+  problemComm_ = rcp(new Teuchos::MpiComm<int>(wrappedComm));
+  problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
+
+#endif
+
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -197,7 +212,7 @@ void OrderingProblem<Adapter>::createOrderingProblem()
   Comm<int> *c = problemComm_.getRawPtr();
   Teuchos::MpiComm<int> *mc = dynamic_cast<Teuchos::MpiComm<int> *>(c);
   if (mc){
-    RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > wrappedComm = mc->getRawMpiComm();
+    RCP<const mpiWrapper_t> wrappedComm = mc->getRawMpiComm();
     mpiComm_ = (*wrappedComm.getRawPtr())();
   }
   else{

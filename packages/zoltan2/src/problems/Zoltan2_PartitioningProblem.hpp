@@ -57,6 +57,10 @@ public:
   typedef typename Adapter::user_t user_t;
   typedef typename Adapter::base_adapter_t base_adapter_t;
 
+#ifdef HAVE_ZOLTAN2_MPI
+  typedef Teuchos::OpaqueWrapper<MPI_Comm> mpiWrapper_t;
+#endif
+
   /*! \brief Destructor
    */
   ~PartitioningProblem() {};
@@ -278,7 +282,7 @@ template <typename Adapter>
   Comm<int> *c = problemComm_.getRawPtr();
   Teuchos::MpiComm<int> *mc = dynamic_cast<Teuchos::MpiComm<int> *>(c);
   if (mc){
-    RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > wrappedComm = mc->getRawMpiComm();
+    RCP<const mpiWrapper_t> wrappedComm = mc->getRawMpiComm();
     mpiComm_ = (*wrappedComm.getRawPtr())();
   }
   else{
@@ -401,6 +405,17 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
     }
   }
   Z2_FORWARD_EXCEPTIONS;
+
+#ifdef HAVE_ZOLTAN2_MPI
+
+  // The algorithm may have changed the communicator.  Change it back.
+
+  RCP<const mpiWrapper_t > wrappedComm = rcp(new mpiWrapper_t(mpiComm_));
+  problemComm_ = rcp(new Teuchos::MpiComm<int>(wrappedComm));
+  problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
+
+#endif
+
 }
 
 template <typename Adapter>
