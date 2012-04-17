@@ -152,8 +152,12 @@ void test_host( comm::Machine machine )
     test_box_partition( false );
   }
 
+  Kokkos::Host::initialize( Kokkos::Host::SetThreadCount(2) );
+
   test_box_fixture<Kokkos::Host>( machine , 50 , 100 , 200 );
 
-  HybridFEM::Implicit::driver<double,Kokkos::Host>( "Host" , machine , 3 , 4 , 1 );
+  HybridFEM::Implicit::driver<double,Kokkos::Host>( "Host" , machine , 4 , 7 , 1 );
+
+  Kokkos::Host::finalize( );
 }
 
