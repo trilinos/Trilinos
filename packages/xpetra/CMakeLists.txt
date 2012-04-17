@@ -36,11 +36,6 @@ ELSE()
   GLOBAL_SET(Xpetra_ENABLE_DEBUG OFF)
 ENDIF()
 
-CONFIGURE_FILE(
-  cmake/Xpetra_config.hpp.in 
-  ${CMAKE_CURRENT_BINARY_DIR}/Xpetra_config.hpp
-  )
-
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(sup)
 
