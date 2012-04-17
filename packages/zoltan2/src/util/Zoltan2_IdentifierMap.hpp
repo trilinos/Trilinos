@@ -370,7 +370,7 @@ template< typename User>
       }
     }
     else{
-      lno_t idx;
+      lno_t idx=0;
       if (userGidsAreConsecutive_){
         for (size_t i=0; i < len; i++){
           gno[i] = firstGno + IdentifierTraits<gid_t>::difference(
@@ -1029,7 +1029,7 @@ template< typename User>
   localNumberOfIds_ = myGids_.size();
   const gid_t *gidPtr = myGids_.get();
   ArrayRCP<gid_t> tmpDist;
-  gid_t mingid_t, maxgid_t;
+  gid_t mingid_t=0, maxgid_t=0;
 
   userGidsAreConsecutive_ = globallyConsecutiveOrdinals<gid_t>(
     *comm_, *env_, gidPtr, localNumberOfIds_,      // input
