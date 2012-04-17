@@ -678,7 +678,7 @@ Partitioner::createNewMap(Epetra_Map * &outputMap)
   if (numMyElements > 0)
     input_map_->MyGlobalElements( &elementList[0] );
   else
-    input_map_->MyGlobalElements(NULL);
+    input_map_->MyGlobalElements((int*)NULL); // disambiguate int/long long
 
   int newGIDSize = numMyElements - exportsSize_;
 
