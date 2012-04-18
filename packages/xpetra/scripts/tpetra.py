@@ -31,10 +31,14 @@ def buildFuncLineTpetra( functionNode ):
     # <argsstring>
     argsstring = functionNode.xpath('argsstring')[0].text
 
-    #hack for Vector
+    # hack for Vector:
+    # - add missing 'typename'
+    # - do not add MultiVector inherited methods
     if 'magnitudeType' in type: type = 'typename ' + type
     if functionNode.xpath('//compoundname')[0].text == 'Tpetra::Vector':
         if name in ['dot','norm1','norm2','normInf','normWeighted','meanValue'] and 'ArrayView' in argsstring: return ''
+    if functionNode.xpath('//compoundname')[0].text == 'Tpetra::Vector':
+        if name in ['replaceGlobalValue','sumIntoGlobalValue','replaceLocalValue','sumIntoLocalValue'] and 'size_t vectorIndex' in argsstring: return ''
 
     # <param> -> get list of arg name as a string 'GIDList, nodeIDList, LIDList'
     # Simple version

@@ -55,6 +55,23 @@ namespace Xpetra {
 
     //@}
 
+    //! @name Post-construction modification routines
+    //@{
+
+    //! Replace current value at the specified location with specified value.
+    void replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value);
+
+    //! Adds specified value to existing value at the specified location.
+    void sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value);
+
+    //! Replace current value at the specified location with specified values.
+    void replaceLocalValue(LocalOrdinal myRow, const Scalar &value);
+
+    //! Adds specified value to existing value at the specified location.
+    void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value);
+
+    //@}
+
     //! @name Mathematical methods
     //@{
 

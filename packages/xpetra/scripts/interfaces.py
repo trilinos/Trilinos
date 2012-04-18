@@ -41,6 +41,12 @@ def buildFuncLineInterface( functionNode ):
     if name == "scale" and "Teuchos::ArrayView< const Scalar > alpha" in argsstring: return ''
     if name == "scale" and "const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A" in argsstring: return ''
 
+    # hack for Vector:
+    # - do not add MultiVector inherited methods
+    if functionNode.xpath('//compoundname')[0].text == 'Tpetra::Vector':
+        if name in ['replaceGlobalValue','sumIntoGlobalValue','replaceLocalValue','sumIntoLocalValue'] and 'size_t vectorIndex' in argsstring: return ''
+
+    #
     if name in conf_RemoveRefFunctionList: declStr = declStr.replace('&', '')
         
     descStr = "    //! " + briefdescription.lstrip().rstrip() + "\n"

@@ -69,6 +69,18 @@ namespace Xpetra {
     //! @name Post-construction modification routines
     //@{ 
 
+    //! Replace current value at the specified location with specified value.
+    void replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value);
+
+    //! Adds specified value to existing value at the specified location.
+    void sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value);
+
+    //! Replace current value at the specified location with specified values.
+    void replaceLocalValue(LocalOrdinal myRow, const Scalar &value);
+
+    //! Adds specified value to existing value at the specified location.
+    void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value);
+
     //! Initialize all values in a multi-vector with specified value.
     void putScalar(const int &value) {  vec_->PutValue(value); }
 
@@ -138,6 +150,23 @@ namespace Xpetra {
     //! Element-wise multiply of a Vector A with a EpetraMultiVector B.
     void elementWiseMultiply(int scalarAB, const Vector<int,int,int> &A, const MultiVector<int,int,int> &B, int scalarThis);
     //@} 
+
+    //! @name Post-construction modification routines
+    //@{
+
+    //! Replace value, using global (row) index.
+    void replaceGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value);
+
+    //! Add value to existing value, using global (row) index.
+    void sumIntoGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value);
+
+    //! Replace value, using local (row) index.
+    void replaceLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value);
+
+    //! Add value to existing value, using local (row) index.
+    void sumIntoLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value);
+
+    //@}
 
     //! @name Attribute access functions
     //@{ 

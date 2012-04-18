@@ -36,6 +36,18 @@ namespace Xpetra {
     //! @name Post-construction modification routines
     //@{
 
+    //! Replace value, using global (row) index.
+    virtual void replaceGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value)= 0;
+
+    //! Add value to existing value, using global (row) index.
+    virtual void sumIntoGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value)= 0;
+
+    //! Replace value, using local (row) index.
+    virtual void replaceLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value)= 0;
+
+    //! Add value to existing value, using local (row) index.
+    virtual void sumIntoLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value)= 0;
+
     //! Set all values in the multivector with the given value.
     virtual void putScalar(const Scalar &value)= 0;
 

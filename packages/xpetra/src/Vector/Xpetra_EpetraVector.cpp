@@ -6,6 +6,14 @@ namespace Xpetra {
 
   EpetraVector::EpetraVector(const Teuchos::RCP<const Map<int,int> > &map, bool zeroOut) : EpetraMultiVector(map,1,zeroOut) { }
   
+  void EpetraVector::replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { getEpetra_MultiVector()->ReplaceGlobalValue(globalRow, 0, value); }
+
+  void EpetraVector::sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { getEpetra_MultiVector()->SumIntoGlobalValue(globalRow, 0, value); }
+
+  void EpetraVector::replaceLocalValue(LocalOrdinal myRow, const Scalar &value) { getEpetra_MultiVector()->ReplaceMyValue(myRow, 0, value); }
+
+  void EpetraVector::sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { getEpetra_MultiVector()->SumIntoMyValue(myRow, 0, value); }
+
   double EpetraVector::dot(const Vector<double,int,int> &a) const { 
        
       XPETRA_DYNAMIC_CAST(const EpetraVector, a, tA, "This Xpetra::EpetraVector method only accept Xpetra::EpetraVector as input arguments.");

@@ -56,6 +56,23 @@ namespace Xpetra {
 
     //@}
 
+    //! @name Post-construction modification routines
+    //@{
+
+    //! Replace current value at the specified location with specified value.
+    void replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { getTpetra_Vector()->replaceGlobalValue(globalRow, value); }
+
+    //! Adds specified value to existing value at the specified location.
+    void sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { getTpetra_Vector()->sumIntoGlobalValue(globalRow, value); }
+
+    //! Replace current value at the specified location with specified values.
+    void replaceLocalValue(LocalOrdinal myRow, const Scalar &value) { getTpetra_Vector()->replaceLocalValue(myRow, value); }
+
+    //! Adds specified value to existing value at the specified location.
+    void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { getTpetra_Vector()->sumIntoLocalValue(myRow, value); }
+
+    //@}
+
     //! @name Mathematical methods
     //@{
 
