@@ -478,6 +478,17 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
 
 
 CREATE_DEPENDENCY_HANDLING_TEST_CASE(
+  extraTrilinosRepo_ReplacePackagesList
+  ARGS -DTrilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos
+    -DpreCopyrightTrilinos_PACKAGES_LIST_FILE=cmake/Reduced_preCopyrightTrilinos_PackagesList.cmake
+  PASS_REGULAR_EXPRESSION_ALL
+    "Reading a list of extra packages from .*/MockTrilinos/cmake/Reduced_preCopyrightTrilinos_PackagesList.cmake"
+    "Trilinos_NUM_PACKAGES='24'"
+    "Final set of non-enabled SE packages:  .* Phalanx Stalix 30"
+  )
+
+
+CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   ENABLE_KNOWN_EXTERNAL_REPOS_TYPE_CI_EnableTeko
   ARGS -DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Continuous
     -DTrilinos_ENABLE_Teko=ON
