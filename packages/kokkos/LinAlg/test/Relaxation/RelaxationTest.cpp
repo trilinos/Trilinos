@@ -49,6 +49,7 @@
 
 #include "Kokkos_MultiVector.hpp"
 #include "Kokkos_DefaultArithmetic.hpp"
+#include "Kokkos_DefaultKernels.hpp"
 #include "Kokkos_CrsMatrix.hpp"
 #include "Kokkos_DefaultRelaxation.hpp"
 
@@ -73,6 +74,7 @@ namespace {
   using Kokkos::CrsMatrix;
   using Kokkos::CrsGraph;
   using Kokkos::DefaultArithmetic;
+  using Kokkos::DefaultKernels;
   using Kokkos::DefaultRelaxation;
   using Kokkos::SerialNode;
   using Teuchos::ArrayRCP;
@@ -162,10 +164,10 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, Relaxation, Ordinal, Scalar, Node )
   {
     RCP<Node> node = getNode<Node>();
-    typedef CrsGraph<Ordinal,Node>  GRPH;
-    typedef CrsMatrix<Scalar,Node>  MAT;
+    typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps DSM;
+    typedef CrsGraph<Ordinal,Node,DSM>  GRPH;
+    typedef CrsMatrix<Scalar,Ordinal,Node,DSM>  MAT;
     typedef MultiVector<Scalar,Node> MV;
-    typedef typename Node::size_t size_t;
     // generate tridiagonal matrix:
     // [ 2 -1                   ]
     // [-1  2  -1               ]
@@ -175,41 +177,38 @@ namespace {
     // [                   -1  2]
     if (N<2) return;
     GRPH G(N,node);
-    MAT  A(N,node);
+    MAT  A(G);
     // allocate buffers for offsets, indices and values
     const size_t totalNNZ = 3*N - 2;
-    ArrayRCP<size_t> offsets = node->template allocBuffer<size_t> (N+1);
-    ArrayRCP<Ordinal>   inds = node->template allocBuffer<Ordinal>(totalNNZ);
-    ArrayRCP<Scalar>    vals = node->template allocBuffer<Scalar >(totalNNZ);
+    ArrayRCP<size_t> offsets(N+1);
+    ArrayRCP<Ordinal>   inds(totalNNZ);
+    ArrayRCP<Scalar>    vals(totalNNZ);
     // fill the buffers on the host
     {
-      ArrayRCP<size_t>  offsets_h = node->template viewBufferNonConst<size_t> (Kokkos::WriteOnly,N+1,offsets);
-      ArrayRCP<Ordinal>    inds_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,totalNNZ,inds);
-      ArrayRCP<Scalar>     vals_h = node->template viewBufferNonConst<Scalar >(Kokkos::WriteOnly,totalNNZ,vals);
       size_t NNZsofar = 0;
-      offsets_h[0] = NNZsofar;
-      inds_h[NNZsofar] = 0; inds_h[NNZsofar+1] =  1;
-      vals_h[NNZsofar] = 2; vals_h[NNZsofar+1] = -1;
+      offsets[0] = NNZsofar;
+      inds[NNZsofar] = 0; inds[NNZsofar+1] =  1;
+      vals[NNZsofar] = 2; vals[NNZsofar+1] = -1;
       NNZsofar += 2;
       for (int i=1; i != N-1; ++i) {
-        offsets_h[i] = NNZsofar;
-        inds_h[NNZsofar] = i-1; inds_h[NNZsofar+1] = i; inds_h[NNZsofar+2] = i+1;
-        vals_h[NNZsofar] =  -1; vals_h[NNZsofar+1] = 2; vals_h[NNZsofar+2] =  -1;
+        offsets[i] = NNZsofar;
+        inds[NNZsofar] = i-1; inds[NNZsofar+1] = i; inds[NNZsofar+2] = i+1;
+        vals[NNZsofar] =  -1; vals[NNZsofar+1] = 2; vals[NNZsofar+2] =  -1;
         NNZsofar += 3;
       }
-      offsets_h[N-1] = NNZsofar;
-      inds_h[NNZsofar] = N-2; inds_h[NNZsofar+1] = N-1;
-      vals_h[NNZsofar] =  -1; vals_h[NNZsofar+1] = 2;
+      offsets[N-1] = NNZsofar;
+      inds[NNZsofar] = N-2; inds[NNZsofar+1] = N-1;
+      vals[NNZsofar] =  -1; vals[NNZsofar+1] = 2;
       NNZsofar += 2;
-      offsets_h[N]   = NNZsofar;
+      offsets[N]   = NNZsofar;
       TEUCHOS_TEST_FOR_EXCEPT(NNZsofar != totalNNZ);
-      inds_h    = null;
-      vals_h    = null;
-      offsets_h = null;
     }
-    G.setPackedStructure(offsets, inds);
-    A.setPackedValues(vals);
-
+    G.set1DStructure(inds, offsets, offsets.persistingView(1,N));
+    offsets = Teuchos::null;
+    inds    = Teuchos::null;
+    A.set1DValues(vals);
+    vals    = Teuchos::null;
+    A.finalize(true);
 
     printf("\n");
 
@@ -228,6 +227,7 @@ namespace {
     RHS.initializeValues(N,1,rhsdat,N);
     Scalar norms,norm0;
 
+#ifdef ENABLE_ALL_OTHER_RELAXATION
     // Set starting vector & run Fine Hybrid
     Teuchos::ScalarTraits<Scalar>::seedrandom(24601);
     DefaultArithmetic<MV>::Random(X0);
@@ -265,6 +265,7 @@ namespace {
     }
     norms=DefaultArithmetic<MV>::Norm2Squared(X0);
     printf("[%3d] ||x0|| = %22.16e\n",its,(double)norms/norm0);
+#endif //ifdef ENABLE_ALL_OTHER_RELAXATION
 
     // Set starting vector & run Jacobi
     Teuchos::ScalarTraits<Scalar>::seedrandom(24601);
@@ -279,6 +280,7 @@ namespace {
     printf("[%3d] ||x0|| = %22.16e\n",its,(double)norms/norm0);
 
 
+#ifdef ENABLE_ALL_OTHER_RELAXATION
     // Set starting vector & run Chebyshev
     Teuchos::ScalarTraits<Scalar>::seedrandom(24601);
     DefaultArithmetic<MV>::Random(X0);
@@ -296,6 +298,7 @@ namespace {
     }
     norms=DefaultArithmetic<MV>::Norm2Squared(X0);
     printf("[%3d] ||x0|| = %22.16e\n",its,(double)norms/norm0);
+#endif //ifdef ENABLE_ALL_OTHER_RELAXATION
 
     x0dat = null;
     rhsdat= null;
