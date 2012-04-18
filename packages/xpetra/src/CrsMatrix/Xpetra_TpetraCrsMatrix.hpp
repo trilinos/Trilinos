@@ -66,6 +66,9 @@ namespace Xpetra {
     //! Insert matrix entries, using global IDs.
     void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &cols, const ArrayView< const Scalar > &vals) { mtx_->insertGlobalValues(globalRow, cols, vals); }
 
+    //! Set all matrix entries equal to scalarThis.
+    void setAllToScalar(const Scalar &alpha) { mtx_->setAllToScalar(alpha); }
+
     //! Scale the current values of a matrix, this = alpha*this.
     void scale(const Scalar &alpha) { mtx_->scale(alpha); }
 
