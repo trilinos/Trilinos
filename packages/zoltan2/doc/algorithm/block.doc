@@ -1,0 +1,16 @@
+/*! \page blockPage Block partitioning
+
+\section block_algorithm The algorithm
+
+\subsection block_input Input
+
+\subsection block_solution Solution
+
+\subsection block_quality_measures Quality measures
+
+\subsection block_examples Examples
+
+\subsection block_source Source
+Zoltan2_AlgBlock.hpp is the source file for block partitioning.
+
+*/

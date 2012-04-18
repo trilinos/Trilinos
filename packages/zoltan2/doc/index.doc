@@ -2,6 +2,8 @@
 
 \mainpage Trilinos/Zoltan2: Dynamic parallel partitioning and ordering.
 
+\tableofcontents
+
 \section zoltan2_intro Introduction to Zoltan2
 
 Zoltan2 is a refactoring of the 
@@ -20,9 +22,9 @@ in pre-copyright status.
 Partitioning functionality that is available now is:
 
 <ul>
-<li> Recursive coordinate bisection (RCB) of weighted geometric coordinates.
-<li> Block partitioning of weighted objects.
-<li> Graph partitioning of undirected weighted graphs through an interface to PTScotch.
+<li> \ref blockPage for simple weighted identifiers.
+<li> \ref rcbPage for weighted geometric coordinates.
+<li> \ref scotchPartPage for undirected weighted graphs.
 </ul>
 
 
@@ -38,7 +40,11 @@ Serial ordering available now is:
 
 \section zoltan2_users Overview of Zoltan2 for users
 
+Parameters are listed at \ref parameterPage.
+
 \section zoltan2_developers Overview of Zoltan2 for developers
+
+Parameters are defined in the source file Zoltan2_Parameters.cpp.
 
 \section zoltan2_examples Zoltan 2 examples
 

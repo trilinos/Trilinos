@@ -65,7 +65,7 @@ int AlgAMD(
   const RCP<OrderingSolution<typename Adapter::gid_t,
                              typename Adapter::lno_t> > &solution,
   const RCP<Teuchos::ParameterList> &pl,
-  const RCP<const Teuchos::Comm<int> > &comm
+  const RCP<Teuchos::Comm<int> > &comm
 ) 
 {
   typedef typename Adapter::lno_t lno_t;

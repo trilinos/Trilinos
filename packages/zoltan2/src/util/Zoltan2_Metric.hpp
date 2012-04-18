@@ -649,7 +649,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
   // Global sum, min, max, and average over all parts
 
   obj = sumBuf;                     // # of objects
-  scalar_t min, max, sum;
+  scalar_t min=0, max=0, sum=0;
   next = 0;
 
   ArrayView<scalar_t> objVec(obj, nparts);

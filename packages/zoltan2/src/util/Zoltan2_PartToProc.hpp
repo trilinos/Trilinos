@@ -54,9 +54,9 @@ void partToProc(
   size_t vals[4] = {haveNumGlobalParts, haveNumLocalParts,
       numGlobalParts, numLocalParts};
   size_t reducevals[4];
-  size_t sumHaveGlobal, sumHaveLocal;
-  size_t sumGlobal, sumLocal;
-  size_t maxGlobal, maxLocal;
+  size_t sumHaveGlobal=0, sumHaveLocal=0;
+  size_t sumGlobal=0, sumLocal=0;
+  size_t maxGlobal=0, maxLocal=0;
 
   partDist.clear();
   procDist.clear();

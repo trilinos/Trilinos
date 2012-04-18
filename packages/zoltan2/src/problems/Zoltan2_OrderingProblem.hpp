@@ -54,6 +54,10 @@ public:
   typedef typename Adapter::gid_t gid_t;
   typedef typename Adapter::lno_t lno_t;
 
+#ifdef HAVE_ZOLTAN2_MPI
+   typedef Teuchos::OpaqueWrapper<MPI_Comm> mpiWrapper_t;
+#endif
+
   /*! \brief Destructor
    */
   virtual ~OrderingProblem() {};
@@ -108,6 +112,13 @@ private:
   void createOrderingProblem();
 
   RCP<OrderingSolution<gid_t, lno_t> > solution_;
+
+  RCP<Comm<int> > problemComm_;
+  RCP<const Comm<int> > problemCommConst_;
+
+#ifdef HAVE_ZOLTAN2_MPI
+  MPI_Comm mpiComm_;
+#endif
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -132,15 +143,15 @@ void OrderingProblem<Adapter>::solve(bool newData)
   if (method.compare("rcm") == 0)
   {
       AlgRCM<base_adapter_t>(this->graphModel_, this->solution_, this->params_,
-                      this->comm_);
+                      problemComm_);
   }
   else if (method.compare("Natural") == 0)
   {
-      AlgNatural<base_adapter_t>(this->identifierModel_, this->solution_, this->params_, this->comm_);
+      AlgNatural<base_adapter_t>(this->identifierModel_, this->solution_, this->params_, problemComm_);
   }
   else if (method.compare("Random") == 0)
   {
-      AlgRandom<base_adapter_t>(this->identifierModel_, this->solution_, this->params_, this->comm_);
+      AlgRandom<base_adapter_t>(this->identifierModel_, this->solution_, this->params_, problemComm_);
   }
   else if (method.compare("Minimum_Degree") == 0)
   {
@@ -148,9 +159,20 @@ void OrderingProblem<Adapter>::solve(bool newData)
       if (pkg.compare("amd") == 0)
       {
           AlgAMD<base_adapter_t>(this->graphModel_, this->solution_, this->params_,
-                          this->comm_);
+                          problemComm_);
       }
   }
+
+#ifdef HAVE_ZOLTAN2_MPI
+
+  // The algorithm may have changed the communicator.  Change it back.
+
+  RCP<const mpiWrapper_t > wrappedComm = rcp(new mpiWrapper_t(mpiComm_));
+  problemComm_ = rcp(new Teuchos::MpiComm<int>(wrappedComm));
+  problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
+
+#endif
+
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -180,6 +202,28 @@ void OrderingProblem<Adapter>::createOrderingProblem()
   ovis_enabled(this->comm_->getRank());
 #endif
 
+  // Create a copy of the user's communicator.
+
+  problemComm_ = this->comm_->duplicate();
+  problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
+
+
+#ifdef HAVE_ZOLTAN2_MPI
+
+  // TPLs may want an MPI communicator
+
+  Comm<int> *c = problemComm_.getRawPtr();
+  Teuchos::MpiComm<int> *mc = dynamic_cast<Teuchos::MpiComm<int> *>(c);
+  if (mc){
+    RCP<const mpiWrapper_t> wrappedComm = mc->getRawMpiComm();
+    mpiComm_ = (*wrappedComm.getRawPtr())();
+  }
+  else{
+    mpiComm_ = MPI_COMM_SELF;   // or would this be an error?
+  }
+
+#endif
+
   ParameterList *general = &(this->env_->getParametersNonConst());
   ParameterList *ordering = NULL;
   if (this->env_->hasOrderingParameters()){
@@ -205,7 +249,7 @@ void OrderingProblem<Adapter>::createOrderingProblem()
   case GraphModelType:
     graphFlags.set(SELF_EDGES_MUST_BE_REMOVED);
     this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
-      this->baseInputAdapter_, this->envConst_, this->comm_, graphFlags));
+      this->baseInputAdapter_, this->envConst_, problemCommConst_, graphFlags));
 
     this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
       this->graphModel_);
@@ -217,7 +261,7 @@ void OrderingProblem<Adapter>::createOrderingProblem()
   case IdentifierModelType:
     idFlags.set(SELF_EDGES_MUST_BE_REMOVED);
     this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
-      this->baseInputAdapter_, this->envConst_, this->comm_, idFlags));
+      this->baseInputAdapter_, this->envConst_, problemCommConst_, idFlags));
 
     this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
       this->identifierModel_);

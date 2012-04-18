@@ -44,11 +44,12 @@ void printGraph(lno_t nrows, const gno_t *v, const lno_t *elid,
   int rank = comm->getRank();
   int nprocs = comm->getSize();
   comm->barrier();
-  if (rank == 0)
+  if (rank == 0){
     if (owner)
       std::cout << "Global graph:" << std::endl;
     else
       std::cout << "Local graph:" << std::endl;
+  }
 
   for (int p=0; p < nprocs; p++){
     if (p == rank){

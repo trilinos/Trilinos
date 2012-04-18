@@ -248,7 +248,7 @@ template <typename User>
       }
       Z2_FORWARD_EXCEPTIONS;
 
-      ArrayRCP<const scalar_t> cArray(coords, 0, nLocalIds, false);
+      ArrayRCP<const scalar_t> cArray(coords, 0, nLocalIds*stride, false);
       coordArray[dim] = input_t(cArray, stride);
 
       if (dim==0)
@@ -264,7 +264,7 @@ template <typename User>
       Z2_FORWARD_EXCEPTIONS;
 
       if (weights){
-        ArrayRCP<const scalar_t> wArray(weights, 0, nLocalIds, false);
+        ArrayRCP<const scalar_t> wArray(weights, 0, nLocalIds*stride, false);
         weightArray[wdim] = input_t(wArray, stride);
         arrayLengths[wdim] = nLocalIds;
       }
@@ -446,7 +446,7 @@ template <typename User>
       }
       Z2_FORWARD_EXCEPTIONS;
 
-      ArrayRCP<const scalar_t> cArray(coords, 0, nLocalIds, false);
+      ArrayRCP<const scalar_t> cArray(coords, 0, nLocalIds*stride, false);
       coordArray[dim] = input_t(cArray, stride);
     }
   }

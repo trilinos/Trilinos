@@ -44,6 +44,7 @@ namespace Zoltan2{
  *  \todo allow unsetting of part sizes by passing in null pointers
  *  \todo add a parameter by which user tells us there are no self 
  *        edges to be removed.
+ *  \todo resetParameterList
  */
 template<typename Adapter>
 class PartitioningProblem : public Problem<Adapter>
@@ -56,6 +57,10 @@ public:
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::user_t user_t;
   typedef typename Adapter::base_adapter_t base_adapter_t;
+
+#ifdef HAVE_ZOLTAN2_MPI
+  typedef Teuchos::OpaqueWrapper<MPI_Comm> mpiWrapper_t;
+#endif
 
   /*! \brief Destructor
    */
@@ -192,6 +197,13 @@ private:
 
   RCP<PartitioningSolution<Adapter> > solution_;
 
+  RCP<Comm<int> > problemComm_;
+  RCP<const Comm<int> > problemCommConst_;
+
+#ifdef HAVE_ZOLTAN2_MPI
+  MPI_Comm mpiComm_;
+#endif
+
   InputAdapterType inputType_;
   ModelType modelType_;
   modelFlag_t graphFlags_;
@@ -226,6 +238,7 @@ template <typename Adapter>
   PartitioningProblem<Adapter>::PartitioningProblem(Adapter *A, 
     ParameterList *p, MPI_Comm comm):
       Problem<Adapter>(A,p,comm), solution_(),
+      problemComm_(), problemCommConst_(),
       inputType_(InvalidAdapterType), modelType_(InvalidModel), 
       graphFlags_(), idFlags_(), coordFlags_(), algorithm_(),
       numberOfWeights_(), partIds_(), partSizes_(), 
@@ -239,6 +252,7 @@ template <typename Adapter>
   PartitioningProblem<Adapter>::PartitioningProblem(Adapter *A, 
     ParameterList *p):
       Problem<Adapter>(A,p), solution_(),
+      problemComm_(), problemCommConst_(),
       inputType_(InvalidAdapterType), modelType_(InvalidModel), 
       graphFlags_(), idFlags_(), coordFlags_(), algorithm_(),
       numberOfWeights_(), 
@@ -252,9 +266,34 @@ template <typename Adapter>
   void PartitioningProblem<Adapter>::initializeProblem()
 {
   HELLO;
+
 #ifdef HAVE_ZOLTAN2_OVIS
   ovis_enabled(this->comm_->getRank());
 #endif
+
+  // Create a copy of the user's communicator.  
+
+  problemComm_ = this->comm_->duplicate();
+  problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
+
+#ifdef HAVE_ZOLTAN2_MPI
+
+  // TPLs may want an MPI communicator
+
+  Comm<int> *c = problemComm_.getRawPtr();
+  Teuchos::MpiComm<int> *mc = dynamic_cast<Teuchos::MpiComm<int> *>(c);
+  if (mc){
+    RCP<const mpiWrapper_t> wrappedComm = mc->getRawMpiComm();
+    mpiComm_ = (*wrappedComm.getRawPtr())();
+  }
+  else{
+    mpiComm_ = MPI_COMM_SELF;   // or would this be an error?
+  }
+
+#endif
+
+  // Number of criteria is number of user supplied weights if non-zero.
+  // Otherwise it is 1 and uniform weight is implied.
 
   numberOfWeights_ = this->inputAdapter_->getNumberOfWeightsPerObject();
 
@@ -336,7 +375,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
   try{
     soln = new PartitioningSolution<Adapter>( 
-      this->envConst_, this->comm_, idMap, numberOfWeights_, 
+      this->envConst_, problemCommConst_, idMap, numberOfWeights_, 
       partIds_.view(0, numberOfCriteria_), 
       partSizes_.view(0, numberOfCriteria_));
   }
@@ -348,15 +387,18 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
   try {
     if (algorithm_ == string("scotch")){
-      AlgPTScotch<Adapter>(this->envConst_, this->comm_, 
+      AlgPTScotch<Adapter>(this->envConst_, problemComm_,
+#ifdef HAVE_ZOLTAN2_MPI
+        mpiComm_,
+#endif
         this->graphModel_, solution_);
     }
     else if (algorithm_ == string("block")){
-      AlgBlock<Adapter>(this->envConst_, this->comm_, 
+      AlgBlock<Adapter>(this->envConst_, problemComm_,
         this->identifierModel_, solution_);
     }
     else if (algorithm_ == string("rcb")){
-      AlgRCB<Adapter>(this->envConst_, this->comm_, 
+      AlgRCB<Adapter>(this->envConst_, problemComm_,
         this->coordinateModel_, solution_);
     }
     else{
@@ -364,6 +406,17 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
     }
   }
   Z2_FORWARD_EXCEPTIONS;
+
+#ifdef HAVE_ZOLTAN2_MPI
+
+  // The algorithm may have changed the communicator.  Change it back.
+
+  RCP<const mpiWrapper_t > wrappedComm = rcp(new mpiWrapper_t(mpiComm_));
+  problemComm_ = rcp(new Teuchos::MpiComm<int>(wrappedComm));
+  problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
+
+#endif
+
 }
 
 template <typename Adapter>
@@ -478,7 +531,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     // Figure out the algorithm suggested by the model.
     if (model == string("hypergraph")){
       modelType_ = HypergraphModelType;
-      if (this->comm_->getSize() > 1)
+      if (problemComm_->getSize() > 1)
         algorithm_ = string("phg"); 
       else
         algorithm_ = string("patoh"); 
@@ -487,7 +540,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     else if (model == string("graph")){
       modelType_ = GraphModelType;
 #ifdef HAVE_ZOLTAN2_SCOTCH
-      if (this->comm_->getSize() > 1)
+      if (problemComm_->getSize() > 1)
         algorithm_ = string("ptscotch"); 
       else
         algorithm_ = string("scotch"); 
@@ -495,14 +548,14 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       needConsecutiveGlobalIds = true;
 #else
 #ifdef HAVE_ZOLTAN2_PARMETIS
-      if (this->comm_->getSize() > 1)
+      if (problemComm_->getSize() > 1)
         algorithm_ = string("parmetis"); 
       else
         algorithm_ = string("metis"); 
       removeSelfEdges = true;
       needConsecutiveGlobalIds = true;
 #else
-      if (this->comm_->getSize() > 1)
+      if (problemComm_->getSize() > 1)
         algorithm_ = string("phg"); 
       else
         algorithm_ = string("patoh"); 
@@ -533,7 +586,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
     if (inputType_ == MatrixAdapterType){
       modelType_ = HypergraphModelType;
-      if (this->comm_->getSize() > 1)
+      if (problemComm_->getSize() > 1)
         algorithm_ = string("phg"); 
       else
         algorithm_ = string("patoh"); 
@@ -541,7 +594,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     else if (inputType_ == GraphAdapterType ||
         inputType_ == MeshAdapterType){
       modelType_ = GraphModelType;
-      if (this->comm_->getSize() > 1)
+      if (problemComm_->getSize() > 1)
         algorithm_ = string("phg"); 
       else
         algorithm_ = string("patoh"); 
@@ -679,7 +732,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
     case GraphModelType:
       this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
-        this->baseInputAdapter_, this->envConst_, this->comm_, graphFlags_));
+        this->baseInputAdapter_, this->envConst_, problemComm_, graphFlags_));
 
       this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
         this->graphModel_);
@@ -691,7 +744,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   
     case CoordinateModelType:
       this->coordinateModel_ = rcp(new CoordinateModel<base_adapter_t>(
-        this->baseInputAdapter_, this->envConst_, this->comm_, coordFlags_));
+        this->baseInputAdapter_, this->envConst_, problemComm_, coordFlags_));
 
       this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
         this->coordinateModel_);
@@ -699,7 +752,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
     case IdentifierModelType:
       this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
-        this->baseInputAdapter_, this->envConst_, this->comm_, idFlags_));
+        this->baseInputAdapter_, this->envConst_, problemComm_, idFlags_));
 
       this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
         this->identifierModel_);
