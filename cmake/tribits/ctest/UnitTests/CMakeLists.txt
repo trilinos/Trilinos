@@ -92,7 +92,6 @@ FUNCTION(CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE TEST_NAME)
       )
     IF (PYTHON_EXECUTABLE)
       SET(TEST_BLOCKS ${TEST_BLOCKS}
-        "Dumping the HTML dependencies webpage file .*/${TEST_FULL_NAME}/TrilinosPackageDependenciesTable.html"
         "Dumping the CDash XML dependencies file .*/${TEST_FULL_NAME}/CDashSubprojectDependencies.xml"
         )
     ENDIF()

@@ -429,6 +429,7 @@ MACRO(TRIBITS_SETUP_PACKAGES)
   SET(${PROJECT_NAME}_IGNORE_PACKAGE_EXISTS_CHECK TRUE)
   SET(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES FALSE)
   SET(${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR "${PROJECT_BINARY_DIR}")
+  SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE)
 
   # Don't ignore missing repos.  This will allow processing to continue but this outer
   # CTest script will fail (thereby sending a CDash email from the TDD
