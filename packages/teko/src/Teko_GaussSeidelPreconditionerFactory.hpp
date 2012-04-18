@@ -68,14 +68,36 @@ typedef enum {GS_UseLowerTriangle,GS_UseUpperTriangle} TriSolveType;
   * To invoke this preconditioner using the XML file a diagonal inverse
   * needs to be specified. For example the following XML code creates
   * a Gauss-Seidel preconditioner called "GS-Outer" using Amesos 
-  * (a direct solver) to invert the diagonal blocks.
+  * (a direct solver) to invert the diagonal blocks. This will invert the
+  * lower triangular portion of the matrix.
   *
     \verbatim
     <ParameterList name="GS-Outer">
        <Parameter name="Type" type="string" value="Block Gauss-Seidel"/>
+       <Parameter name="Use Upper Triangle" type="bool" value="false"/>
        <Parameter name="Inverse Type" type="string" value="Amesos"/>
     </ParameterList>
     \endverbatim
+  *
+  * Or if you want to specify a different inverse factory for a particular
+  * diagonal you can use
+  *
+    \verbatim
+    <ParameterList name="GS-Outer">
+       <Parameter name="Type" type="string" value="Block Gauss-Seidel"/>
+       <Parameter name="Use Upper Triangle" type="bool" value="false"/>
+       <Parameter name="Inverse Type" type="string" value="DefaultInverse"/>
+       <Parameter name="Inverse Type 1" type="string" value="InverseOfFirstDigonalEntry"/>
+       <Parameter name="Inverse Type 3" type="string" value="InverseOfThirdDigonalEntry"/>
+    </ParameterList>
+    \endverbatim
+  *
+  * Notice that the "Inverse Type" parameter is now a default, and that you can
+  * specify each diagonal inverse on its own. The diagonal entries run from 1...N where
+  * N is the number of block rows. So the solver "InverseOfFirstDiagonalEntry" will
+  * be used for the first diagonal block, for the second "DefaultInverse" will be used,
+  * for the third "InverseOfThirdDigonalEntry" will be used, and for any further diagonal
+  * blocks "DefaultInverse" will be used.
   */
 class GaussSeidelPreconditionerFactory : public BlockPreconditionerFactory {
    public:
