@@ -251,7 +251,7 @@ static nthread_mutex_t nnti_wr_wrhash_lock;
 
 
 static portals_transport_global transport_global_data;
-static const int MIN_TIMEOUT = 1000;  /* in milliseconds */
+static const int MIN_TIMEOUT = 10;  /* in milliseconds */
 
 /**
  * @brief Initialize NNTI to use a specific transport.
@@ -1166,10 +1166,7 @@ int NNTI_ptl_wait (
     } else {
         log_debug(debug_level, "buffer op NOT complete");
 
-        if (timeout < 0)
-            timeout_per_call = MIN_TIMEOUT;
-        else
-            timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
+        timeout_per_call = MIN_TIMEOUT;
 
         while (1)   {
             if (trios_exit_now()) {
@@ -1402,10 +1399,7 @@ int NNTI_ptl_waitany (
     } else {
         log_debug(debug_level, "buffer op NOT complete (buf_list=%p)", buf_list);
 
-        if (timeout < 0)
-            timeout_per_call = MIN_TIMEOUT;
-        else
-            timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
+        timeout_per_call = MIN_TIMEOUT;
 
         while (1)   {
             if (trios_exit_now()) {
@@ -1572,10 +1566,7 @@ int NNTI_ptl_waitall (
     } else {
         log_debug(debug_level, "all buffer ops NOT complete (buf_list=%p)", buf_list);
 
-        if (timeout < 0)
-            timeout_per_call = MIN_TIMEOUT;
-        else
-            timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
+        timeout_per_call = MIN_TIMEOUT;
 
         while (1)   {
             if (trios_exit_now()) {

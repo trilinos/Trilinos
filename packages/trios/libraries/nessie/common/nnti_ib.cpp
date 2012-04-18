@@ -1433,10 +1433,7 @@ NNTI_result_t NNTI_ib_wait (
     } else {
         log_debug(debug_level, "buffer op NOT complete (reg_buf=%p)", reg_buf);
 
-        if (timeout < 0)
-            timeout_per_call = MIN_TIMEOUT;
-        else
-            timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
+        timeout_per_call = MIN_TIMEOUT;
 
         while (1)   {
             if (trios_exit_now()) {
@@ -1627,10 +1624,7 @@ NNTI_result_t NNTI_ib_waitany (
     } else {
         log_debug(debug_level, "buffer op NOT complete (buf_list=%p)", buf_list);
 
-        if (timeout < 0)
-            timeout_per_call = MIN_TIMEOUT;
-        else
-            timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
+        timeout_per_call = MIN_TIMEOUT;
 
         while (1)   {
             if (trios_exit_now()) {
@@ -1816,10 +1810,7 @@ NNTI_result_t NNTI_ib_waitall (
     } else {
         log_debug(debug_level, "all buffer ops NOT complete (buf_list=%p)", buf_list);
 
-        if (timeout < 0)
-            timeout_per_call = MIN_TIMEOUT;
-        else
-            timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
+        timeout_per_call = MIN_TIMEOUT;
 
         while (1)   {
             if (trios_exit_now()) {
