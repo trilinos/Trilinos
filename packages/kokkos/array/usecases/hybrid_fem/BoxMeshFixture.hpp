@@ -44,7 +44,7 @@
 #ifndef KOKKOS_BOXMESHFIXTURE_HPP
 #define KOKKOS_BOXMESHFIXTURE_HPP
 
-#define KOKKOS_ARRAY_BOUNDS_CHECK 1
+/* #define KOKKOS_ARRAY_BOUNDS_CHECK 1 */
 
 #include <stdexcept>
 #include <sstream>

@@ -106,9 +106,6 @@ void use_boxes( const BoxType & box_global ,
                       BoxType & box_use )
 {
   for ( size_t i = 0 ; i < 3 ; ++i ) {
-    if ( ! count( box_part ) ) {
-      throw std::runtime_error( std::string("box uses") );
-    }
 
     box_interior[i][0] =
       ( box_part[i][0] == box_global[i][0] )      ? box_part[i][0] : (

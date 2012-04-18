@@ -296,9 +296,9 @@ void driver( const char * label ,
               << "\"nodes\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\"" << std::endl ;
   }
 
-  for(int i = beg ; i < end; ++i )
+  for(int i = beg ; i < end ; i *= 2 )
   {
-    const int ix = (int) cbrt( (double) ( 1 << i ) );
+    const int ix = (int) cbrt( (double) i );
     const int iy = ix + 1 ;
     const int iz = iy + 1 ;
     const int n  = ix * iy * iz ;
