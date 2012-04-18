@@ -148,12 +148,12 @@ namespace Kokkos {
     //! Applies a sweep of coarse-grain Hybrid Gauss-Seidel
     void sweep_coarse_hybrid(Scalar dampingFactor_, size_t num_chunks, MultiVector<Scalar,Node> &X, const MultiVector<Scalar,Node> &B) const;
 
+#endif //ifdef ENABLE_ALL_OTHER_RELAXATION
     //! Does setup for Chebyshev
     void setup_chebyshev(const Scalar lambda_max, const Scalar lambda_min);
 
     //! Applies a sweep of Chebyshev iteration
     void sweep_chebyshev(MultiVector<Scalar,Node> &X, const MultiVector<Scalar,Node> &B) const;
-#endif //ifdef ENABLE_ALL_OTHER_RELAXATION
 
     //@}
 
@@ -168,10 +168,8 @@ namespace Kokkos {
     //! Update the Jacobi temporary vector size.
     bool UpdateJacobiTemp(size_t num_vectors, size_t vec_leng) const;
 
-#ifdef ENABLE_ALL_OTHER_RELAXATION
     //! Update the Chebyshev temporary vector size.
     bool UpdateChebyTemp(size_t num_vectors, size_t vec_leng) const;
-#endif //ifdef ENABLE_ALL_OTHER_RELAXATION
 
     //! My node
     RCP<Node> node_;
@@ -195,7 +193,6 @@ namespace Kokkos {
     mutable ArrayRCP<Scalar> tempJacobiVector_;
     mutable size_t lastNumJacobiVectors_;
 
-#ifdef ENABLE_ALL_OTHER_RELAXATION
     // Arrays containing temp vectors for Chebyshev
     mutable ArrayRCP<Scalar> tempChebyVectorX_;
     mutable ArrayRCP<Scalar> tempChebyVectorW_;
@@ -205,7 +202,6 @@ namespace Kokkos {
 
     // Constants for Chebyshev
     mutable Scalar lmin_,lmax_,delta_,s1_,oneOverTheta_,rho_,rho_new_,dtemp1_,dtemp2_;
-#endif //ifdef ENABLE_ALL_OTHER_RELAXATION
 
     size_t numRows_;
     bool indsInit_, valsInit_, isEmpty_;
@@ -217,11 +213,9 @@ namespace Kokkos {
   DefaultRelaxation<Scalar,Ordinal,Node>::DefaultRelaxation(const RCP<Node> &node)
   : node_(node)
   , lastNumJacobiVectors_(0)
-#ifdef ENABLE_ALL_OTHER_RELAXATION
   , lastNumChebyVectors_(0)
   , cheby_setup_done_(false)
   , first_cheby_iteration_(false)  
-#endif //ifdef ENABLE_ALL_OTHER_RELAXATION
   , indsInit_(false)
   , valsInit_(false)
   , isEmpty_(false)
@@ -334,17 +328,13 @@ namespace Kokkos {
     pbuf_numEntries_  = null;
     diagonal_         = null;
     tempJacobiVector_ = null;
-#ifdef ENABLE_ALL_OTHER_RELAXATION
     tempChebyVectorW_ = null;
     tempChebyVectorX_ = null;
-#endif //ifdef ENABLE_ALL_OTHER_RELAXATION
     indsInit_ = false;
     valsInit_ = false;
     isEmpty_  = false;
     lastNumJacobiVectors_=0;
-#ifdef ENABLE_ALL_OTHER_RELAXATION
     lastNumChebyVectors_=0;
-#endif //ifdef ENABLE_ALL_OTHER_RELAXATION
   }
 
   /**********************************************************************/
@@ -415,7 +405,6 @@ namespace Kokkos {
     return false;
   } //UpdateJacobiTemp()
 
-#ifdef ENABLE_ALL_OTHER_RELAXATION
   /**********************************************************************/
   template <class Scalar, class Ordinal, class Node>
   bool DefaultRelaxation<Scalar,Ordinal,Node>::UpdateChebyTemp(size_t num_vectors, size_t vec_leng) const{
@@ -432,6 +421,7 @@ namespace Kokkos {
   } //UpdateChebyTemp()
 
 
+#ifdef ENABLE_ALL_OTHER_RELAXATION
   /**********************************************************************/
   template <class Scalar, class Ordinal, class Node>
   void DefaultRelaxation<Scalar,Ordinal,Node>::sweep_fine_hybrid(Scalar dampingFactor_,
@@ -605,7 +595,6 @@ namespace Kokkos {
     return;
   } //sweep_jacobi()
 
-#ifdef ENABLE_ALL_OTHER_RELAXATION
   /********************************************************************/
   template <class Scalar, class Ordinal, class Node>
   void DefaultRelaxation<Scalar,Ordinal,Node>::setup_chebyshev(const Scalar lambda_max, const Scalar lambda_min){
@@ -669,6 +658,8 @@ namespace Kokkos {
       Op1D wdp;
       rbh.begin();
       wdp.numRows = numRows_;
+      wdp.begs    = rbh.template addConstBuffer<size_t>(begs1D_);
+      wdp.ends    = rbh.template addConstBuffer<size_t>(ends1D_);
       wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
       wdp.vals    = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
       wdp.x       = rbh.template addNonConstBuffer<Scalar>(X.getValuesNonConst());
@@ -710,7 +701,6 @@ namespace Kokkos {
     first_cheby_iteration_=false;
     return;
   } //sweep_chebyshev()
-#endif //ifdef ENABLE_ALL_OTHER_RELAXATION
 
 } // namespace Kokkos
 

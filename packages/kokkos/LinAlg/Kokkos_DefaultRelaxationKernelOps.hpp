@@ -315,7 +315,8 @@ namespace Kokkos {
 
   template <class Scalar, class Ordinal>
   struct DefaultChebyshevOp1 {
-    const size_t  *offsets;
+    const size_t  *begs;
+    const size_t  *ends;
     const Ordinal *inds;
     const Scalar  *vals;
     const Scalar  *diag;
@@ -338,31 +339,31 @@ namespace Kokkos {
       Scalar        vj;
 
       if(first_step){
-	if(zero_initial_guess)
-	  // x= theta^{-1} D^{-1} b
-	  xj[row]=wj[row]=bj[row] / diag[row] *oneOverTheta;
-	else{
-	  // v=Ax
-	  vj=Teuchos::ScalarTraits<Scalar>::zero();
-	  for (size_t c=offsets[row];c<offsets[row+1];c++) {
-	    vj += vals[c] * x0j[inds[c]];
-	  }
-	  // w=theta^{-1} D^{-1} (b -Ax)
-	  wj[row]=(bj[row]-vj)/diag[row]*oneOverTheta;
-	  // x+=w
-	  xj[row]+=wj[row];
-	}
+        if(zero_initial_guess)
+          // x= theta^{-1} D^{-1} b
+          xj[row]=wj[row]=bj[row] / diag[row] *oneOverTheta;
+        else{
+          // v=Ax
+          vj=Teuchos::ScalarTraits<Scalar>::zero();
+          for (size_t c=begs[row]; c<ends[row]; ++c) {
+            vj += vals[c] * x0j[inds[c]];
+          }
+          // w=theta^{-1} D^{-1} (b -Ax)
+          wj[row]=(bj[row]-vj)/diag[row]*oneOverTheta;
+          // x+=w
+          xj[row]+=wj[row];
+        }
       }
       else{
-	//v=Ax
-	vj=Teuchos::ScalarTraits<Scalar>::zero();
-	for (size_t c=offsets[row];c<offsets[row+1];c++) {
-	  vj += vals[c] * x0j[inds[c]];
-	}
-	// w=dtemp1*w +  D^{-1}*dtemp2*(b-Ax)
-	wj[row]=dtemp1*wj[row]+dtemp2*(bj[row]-vj)/diag[row];
-	// x+=w
-	xj[row]+=wj[row];
+        //v=Ax
+        vj=Teuchos::ScalarTraits<Scalar>::zero();
+        for (size_t c=begs[row]; c<ends[row]; ++c) {
+          vj += vals[c] * x0j[inds[c]];
+        }
+        // w=dtemp1*w +  D^{-1}*dtemp2*(b-Ax)
+        wj[row]=dtemp1*wj[row]+dtemp2*(bj[row]-vj)/diag[row];
+        // x+=w
+        xj[row]+=wj[row];
       }
 
       //      printf("[%3d-%d] x=%11.4e v=%11.4e w=%11.4e x0=%11.4e\n",row,first_step,xj[row],vj,wj[row],x0j[row]);

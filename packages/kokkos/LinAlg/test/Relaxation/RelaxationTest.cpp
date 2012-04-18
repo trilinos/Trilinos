@@ -161,7 +161,7 @@ namespace {
   // UNIT TESTS
   // 
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, Relaxation, Ordinal, Scalar, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix_1D, Jacobi, Ordinal, Scalar, Node )
   {
     RCP<Node> node = getNode<Node>();
     typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps DSM;
@@ -227,7 +227,180 @@ namespace {
     RHS.initializeValues(N,1,rhsdat,N);
     Scalar norms,norm0;
 
+    // Set starting vector & run Jacobi
+    Teuchos::ScalarTraits<Scalar>::seedrandom(24601);
+    DefaultArithmetic<MV>::Random(X0);
+    DefaultArithmetic<MV>::Init(RHS,0);
+    norms=-666;norm0=DefaultArithmetic<MV>::Norm2Squared(X0);
+    //for(int i=0;i<N;i++)
+    //  std::cout << "x[" << i << "] = " << std::setprecision(15) << x0dat[i] << std::endl;
+    printf("*** Jacobi ***\n");
+    for(int i=0;i<its;i++){
+      dj.sweep_jacobi((Scalar)1.0,X0,RHS);
+    }
+    norms=DefaultArithmetic<MV>::Norm2Squared(X0);
+    Scalar goodNorm = 0.07433056;
+    //Note that this is (||x_10|| / ||x_0|| )^2.
+    TEST_FLOATING_EQUALITY(norms/norm0, goodNorm, 1e-7);
+
+  } //Jacobi unit test
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix_1D, Chebyshev, Ordinal, Scalar, Node )
+  {
+    out << "Tests Chebyshev relaxation on matrix stored in \"1D\" format." << std::endl;
+    RCP<Node> node = getNode<Node>();
+    typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps DSM;
+    typedef CrsGraph<Ordinal,Node,DSM>  GRPH;
+    typedef CrsMatrix<Scalar,Ordinal,Node,DSM>  MAT;
+    typedef MultiVector<Scalar,Node> MV;
+    // generate tridiagonal matrix:
+    // [ 2 -1                   ]
+    // [-1  2  -1               ]
+    // [   -1   2  -1           ]
+    // [                        ]
+    // [                -1  2 -1]
+    // [                   -1  2]
+    if (N<2) return;
+    GRPH G(N,node);
+    MAT  A(G);
+    // allocate buffers for offsets, indices and values
+    const size_t totalNNZ = 3*N - 2;
+    ArrayRCP<size_t> offsets(N+1);
+    ArrayRCP<Ordinal>   inds(totalNNZ);
+    ArrayRCP<Scalar>    vals(totalNNZ);
+    // fill the buffers on the host
+    {
+      size_t NNZsofar = 0;
+      offsets[0] = NNZsofar;
+      inds[NNZsofar] = 0; inds[NNZsofar+1] =  1;
+      vals[NNZsofar] = 2; vals[NNZsofar+1] = -1;
+      NNZsofar += 2;
+      for (int i=1; i != N-1; ++i) {
+        offsets[i] = NNZsofar;
+        inds[NNZsofar] = i-1; inds[NNZsofar+1] = i; inds[NNZsofar+2] = i+1;
+        vals[NNZsofar] =  -1; vals[NNZsofar+1] = 2; vals[NNZsofar+2] =  -1;
+        NNZsofar += 3;
+      }
+      offsets[N-1] = NNZsofar;
+      inds[NNZsofar] = N-2; inds[NNZsofar+1] = N-1;
+      vals[NNZsofar] =  -1; vals[NNZsofar+1] = 2;
+      NNZsofar += 2;
+      offsets[N]   = NNZsofar;
+      TEUCHOS_TEST_FOR_EXCEPT(NNZsofar != totalNNZ);
+    }
+    G.set1DStructure(inds, offsets, offsets.persistingView(1,N));
+    offsets = Teuchos::null;
+    inds    = Teuchos::null;
+    A.set1DValues(vals);
+    vals    = Teuchos::null;
+    A.finalize(true);
+
+    printf("\n");
+
+    int its=10;
+
+    // Allocate Relaxation Object
+    DefaultRelaxation<Scalar,Ordinal,Node> dj(node);
+    dj.initializeStructure(G,Teuchos::View);
+    dj.initializeValues(A,Teuchos::View);
+
+    // Allocate Vectors
+    MV X0(node),RHS(node), AX(node);
+    ArrayRCP<Scalar> x0dat  = node->template allocBuffer<Scalar>(N);
+    ArrayRCP<Scalar> rhsdat  = node->template allocBuffer<Scalar>(N);
+    X0.initializeValues(N,1,x0dat,N);
+    RHS.initializeValues(N,1,rhsdat,N);
+    Scalar norms,norm0;
+
+    // Set starting vector & run Chebyshev
+    Teuchos::ScalarTraits<Scalar>::seedrandom(24601);
+    DefaultArithmetic<MV>::Random(X0);
+    DefaultArithmetic<MV>::Init(RHS,0);
+    norms=-666;norm0=DefaultArithmetic<MV>::Norm2Squared(X0);    
+    /*    FILE *f=fopen("x.dat","w");
+    for(int i=0;i<N;i++)
+      fprintf(f,"%22.16e\n",x0dat[i]);
+      fclose(f);*/      
+    printf("*** Chebyshev ***\n");
+    for(int i=0;i<its;i++){
+      // NTS: Runs 1st degree polynomials, because higher degree isn't correct
+      dj.setup_chebyshev((Scalar)2.0,(Scalar) 2.0e-6);    
+      dj.sweep_chebyshev(X0,RHS);
+    }
+    norms=DefaultArithmetic<MV>::Norm2Squared(X0);
+    printf("[%3d] ||x0|| = %22.16e\n",its,(double)norms/norm0);
+
+    x0dat = null;
+    rhsdat= null;
+  } //Chebyshev unit test
+
 #ifdef ENABLE_ALL_OTHER_RELAXATION
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, HybridRelaxation, Ordinal, Scalar, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+    typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps DSM;
+    typedef CrsGraph<Ordinal,Node,DSM>  GRPH;
+    typedef CrsMatrix<Scalar,Ordinal,Node,DSM>  MAT;
+    typedef MultiVector<Scalar,Node> MV;
+    // generate tridiagonal matrix:
+    // [ 2 -1                   ]
+    // [-1  2  -1               ]
+    // [   -1   2  -1           ]
+    // [                        ]
+    // [                -1  2 -1]
+    // [                   -1  2]
+    if (N<2) return;
+    GRPH G(N,node);
+    MAT  A(G);
+    // allocate buffers for offsets, indices and values
+    const size_t totalNNZ = 3*N - 2;
+    ArrayRCP<size_t> offsets(N+1);
+    ArrayRCP<Ordinal>   inds(totalNNZ);
+    ArrayRCP<Scalar>    vals(totalNNZ);
+    // fill the buffers on the host
+    {
+      size_t NNZsofar = 0;
+      offsets[0] = NNZsofar;
+      inds[NNZsofar] = 0; inds[NNZsofar+1] =  1;
+      vals[NNZsofar] = 2; vals[NNZsofar+1] = -1;
+      NNZsofar += 2;
+      for (int i=1; i != N-1; ++i) {
+        offsets[i] = NNZsofar;
+        inds[NNZsofar] = i-1; inds[NNZsofar+1] = i; inds[NNZsofar+2] = i+1;
+        vals[NNZsofar] =  -1; vals[NNZsofar+1] = 2; vals[NNZsofar+2] =  -1;
+        NNZsofar += 3;
+      }
+      offsets[N-1] = NNZsofar;
+      inds[NNZsofar] = N-2; inds[NNZsofar+1] = N-1;
+      vals[NNZsofar] =  -1; vals[NNZsofar+1] = 2;
+      NNZsofar += 2;
+      offsets[N]   = NNZsofar;
+      TEUCHOS_TEST_FOR_EXCEPT(NNZsofar != totalNNZ);
+    }
+    G.set1DStructure(inds, offsets, offsets.persistingView(1,N));
+    offsets = Teuchos::null;
+    inds    = Teuchos::null;
+    A.set1DValues(vals);
+    vals    = Teuchos::null;
+    A.finalize(true);
+
+    printf("\n");
+
+    int its=10;
+
+    // Allocate Relaxation Object
+    DefaultRelaxation<Scalar,Ordinal,Node> dj(node);
+    dj.initializeStructure(G,Teuchos::View);
+    dj.initializeValues(A,Teuchos::View);
+
+    // Allocate Vectors
+    MV X0(node),RHS(node), AX(node);
+    ArrayRCP<Scalar> x0dat  = node->template allocBuffer<Scalar>(N);
+    ArrayRCP<Scalar> rhsdat  = node->template allocBuffer<Scalar>(N);
+    X0.initializeValues(N,1,x0dat,N);
+    RHS.initializeValues(N,1,rhsdat,N);
+    Scalar norms,norm0;
+
     // Set starting vector & run Fine Hybrid
     Teuchos::ScalarTraits<Scalar>::seedrandom(24601);
     DefaultArithmetic<MV>::Random(X0);
@@ -265,51 +438,16 @@ namespace {
     }
     norms=DefaultArithmetic<MV>::Norm2Squared(X0);
     printf("[%3d] ||x0|| = %22.16e\n",its,(double)norms/norm0);
-#endif //ifdef ENABLE_ALL_OTHER_RELAXATION
-
-    // Set starting vector & run Jacobi
-    Teuchos::ScalarTraits<Scalar>::seedrandom(24601);
-    DefaultArithmetic<MV>::Random(X0);
-    DefaultArithmetic<MV>::Init(RHS,0);
-    norms=-666;norm0=DefaultArithmetic<MV>::Norm2Squared(X0);
-    //for(int i=0;i<N;i++)
-    //  std::cout << "x[" << i << "] = " << std::setprecision(15) << x0dat[i] << std::endl;
-    printf("*** Jacobi ***\n");
-    for(int i=0;i<its;i++){
-      dj.sweep_jacobi((Scalar)1.0,X0,RHS);
-    }
-    norms=DefaultArithmetic<MV>::Norm2Squared(X0);
-    Scalar goodNorm = 0.07433056;
-    //Note that this is (||x_10|| / ||x_0|| )^2.
-    TEST_FLOATING_EQUALITY(norms/norm0, goodNorm, 1e-7);
-
-
-#ifdef ENABLE_ALL_OTHER_RELAXATION
-    // Set starting vector & run Chebyshev
-    Teuchos::ScalarTraits<Scalar>::seedrandom(24601);
-    DefaultArithmetic<MV>::Random(X0);
-    DefaultArithmetic<MV>::Init(RHS,0);
-    norms=-666;norm0=DefaultArithmetic<MV>::Norm2Squared(X0);    
-    /*    FILE *f=fopen("x.dat","w");
-    for(int i=0;i<N;i++)
-      fprintf(f,"%22.16e\n",x0dat[i]);
-      fclose(f);*/      
-    printf("*** Chebyshev ***\n");
-    for(int i=0;i<its;i++){
-      // NTS: Runs 1st degree polynomials, because higher degree isn't correct
-      dj.setup_chebyshev((Scalar)2.0,(Scalar) 2.0e-6);    
-      dj.sweep_chebyshev(X0,RHS);
-    }
-    norms=DefaultArithmetic<MV>::Norm2Squared(X0);
-    printf("[%3d] ||x0|| = %22.16e\n",its,(double)norms/norm0);
-#endif //ifdef ENABLE_ALL_OTHER_RELAXATION
 
     x0dat = null;
     rhsdat= null;
-  }
+  } //HybridRelaxation unit test
+#endif //ifdef ENABLE_ALL_OTHER_RELAXATION
+
 
 #define ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, Relaxation, ORDINAL, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix_1D, Jacobi, ORDINAL, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix_1D, Chebyshev, ORDINAL, SCALAR, NODE )
 
 #define UNIT_TEST_SERIALNODE(ORDINAL, SCALAR) \
       ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, SerialNode )
