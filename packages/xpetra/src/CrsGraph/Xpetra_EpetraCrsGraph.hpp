@@ -214,7 +214,7 @@ namespace Xpetra {
     EpetraCrsGraph(const Teuchos::RCP<Epetra_CrsGraph> &graph) : graph_(graph) { }
 
     //! Get the underlying Epetra graph
-    RCP<const Epetra_CrsGraph> getEpetra_CrsGraph() const { return graph_; }
+    RCP< const Epetra_CrsGraph> getEpetra_CrsGraph() const { return graph_; }
     
     //@}
     

@@ -14,6 +14,7 @@ namespace Xpetra {
 
   // TODO: move that elsewhere
   RCP< const CrsGraph<int, int> > toXpetra(const Epetra_CrsGraph& graph);
+  const Epetra_CrsGraph & toEpetra(const RCP< const CrsGraph<int, int> > &graph);
   //
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
