@@ -147,6 +147,9 @@ int nssi_rpc_init(
         case NSSI_RPC_GEMINI:
             transport_id=NNTI_TRANSPORT_GEMINI;
             break;
+        case NSSI_RPC_MPI:
+            transport_id=NNTI_TRANSPORT_MPI;
+            break;
         default:
             rc = NSSI_ENOENT;
             log_error(rpc_debug_level, "the transport scheme %d does not exist", rpc_transport);

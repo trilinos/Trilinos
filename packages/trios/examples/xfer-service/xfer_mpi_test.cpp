@@ -316,8 +316,8 @@ int main(int argc, char *argv[])
     MPI_Comm_rank(comm, &splitrank);
     MPI_Comm_size(comm, &splitsize);
 
-    std::cout << "rank=" << rank << "/" << np << ", color=" << color <<
-                ", new_rank=" << splitrank << "/" << splitsize << std::endl << std::endl;
+//    std::cout << "rank=" << rank << "/" << np << ", color=" << color <<
+//                ", new_rank=" << splitrank << "/" << splitsize << std::endl << std::endl;
 
 
 

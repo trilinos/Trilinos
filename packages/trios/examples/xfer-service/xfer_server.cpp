@@ -354,7 +354,7 @@ void make_progress(bool is_idle)
  * service loop.   The client will send a request to kill the service upon completion.
  *
  */
-int xfer_server_main(MPI_Comm server_comm)
+int xfer_server_main(nssi_rpc_transport transport, MPI_Comm server_comm)
 {
     int rc = NSSI_OK;
 
@@ -385,7 +385,7 @@ int xfer_server_main(MPI_Comm server_comm)
 
 
     /* initialize the nssi service */
-    rc = nssi_service_init(NSSI_DEFAULT_TRANSPORT, NSSI_SHORT_REQUEST_SIZE, &xfer_svc);
+    rc = nssi_service_init(transport, NSSI_SHORT_REQUEST_SIZE, &xfer_svc);
     if (rc != NSSI_OK) {
         log_error(xfer_debug_level, "could not init xfer_svc: %s",
                 nssi_err_str(rc));
@@ -401,7 +401,7 @@ int xfer_server_main(MPI_Comm server_comm)
 
     // Get the Server URL
     std::string url(NSSI_URL_LEN, '\0');
-    nssi_get_url(NSSI_DEFAULT_TRANSPORT, &url[0], NSSI_URL_LEN);
+    nssi_get_url(transport, &url[0], NSSI_URL_LEN);
 
 
     // Set the maxumum number of requests to handle (-1 == infinite)
