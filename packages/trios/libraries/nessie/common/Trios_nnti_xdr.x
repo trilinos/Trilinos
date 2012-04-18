@@ -61,14 +61,14 @@ enum NNTI_transport_id_t {
     /** @brief Use Infiniband to transfer rpc requests. */
     NNTI_TRANSPORT_IB,
 
-    /** @brief Use Cray LUC to transfer rpc requests. */
-    NNTI_TRANSPORT_LUC,
-
     /** @brief Use Cray Gemini to transfer rpc requests. */
     NNTI_TRANSPORT_GEMINI,
 
     /** @brief Use Cray Gemini to transfer rpc requests. */
     NNTI_TRANSPORT_MPI,
+
+    /** @brief Use Cray LUC to transfer rpc requests. */
+    NNTI_TRANSPORT_LUC,
 
     /** @brief Use a local buffer (no remote operations). */
     NSSI_TRANSPORT_LOCAL,
@@ -80,7 +80,7 @@ enum NNTI_transport_id_t {
 /**
  * @brief The number of transport mechanisms supported by NNTI.
  */
-const NNTI_TRANSPORT_COUNT = 6;
+const NNTI_TRANSPORT_COUNT = 7;
 
 
 /**
@@ -445,8 +445,12 @@ struct NNTI_gni_rdma_addr_t {
  * @brief RDMA address used for the MPI implementation.
  */
 struct NNTI_mpi_rdma_addr_t {
-    /** @brief The match bits. */
-    NNTI_match_bits tag;
+    /** @brief The MPI tag for RTR msg. */
+    NNTI_match_bits rtr_tag;
+    /** @brief The MPI tag for RTS msg. */
+    NNTI_match_bits rts_tag;
+    /** @brief The MPI tag for data msg. */
+    NNTI_match_bits data_tag;
     /** @brief Size of the the memory buffer. */
     uint32_t        size;
 };
