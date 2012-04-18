@@ -461,7 +461,7 @@ namespace panzer {
     input.beta = 1.0;
 
     ae_tm.getAsObject<panzer::Traits::Residual>()->evaluate(input);
-    const Epetra_Vector & f = *eGlobal->f;
+    const Epetra_Vector & f = *eGlobal->get_f();
 
     std::vector<int> GIDs;
     if(myRank==0) {
@@ -486,7 +486,7 @@ namespace panzer {
 
     ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
 
-    const Epetra_CrsMatrix & A = *eGlobal->A;
+    const Epetra_CrsMatrix & A = *eGlobal->get_A();
 
     if(myRank==0) {
        dofManager->getElementGIDs(1,GIDs,"eblock-1_0"); // in eblock-1_0

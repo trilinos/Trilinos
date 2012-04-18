@@ -417,7 +417,7 @@ void solveEpetraSystem(panzer::LinearObjContainer & container)
          = Teuchos::dyn_cast<panzer::EpetraLinearObjContainer>(container);
 
    // Setup the linear solve: notice A is used directly 
-   Epetra_LinearProblem problem(&*ep_container.A,&*ep_container.x,&*ep_container.f); 
+   Epetra_LinearProblem problem(&*ep_container.get_A(),&*ep_container.get_x(),&*ep_container.get_f()); 
 
    // build the solver
    AztecOO solver(problem);
@@ -435,13 +435,13 @@ void solveEpetraSystem(panzer::LinearObjContainer & container)
    //     J*e = -r = -(f - J*0) where f = J*u
    // Therefore we have  J*e=-J*u which implies e = -u
    // thus we will scale the solution vector 
-   ep_container.x->Scale(-1.0);
+   ep_container.get_x()->Scale(-1.0);
 
    // write out linear system
    if(false) {
-      EpetraExt::RowMatrixToMatrixMarketFile("a_op.mm",*ep_container.A);
-      EpetraExt::VectorToMatrixMarketFile("x_vec.mm",*ep_container.x);
-      EpetraExt::VectorToMatrixMarketFile("b_vec.mm",*ep_container.f);
+      EpetraExt::RowMatrixToMatrixMarketFile("a_op.mm",*ep_container.get_A());
+      EpetraExt::VectorToMatrixMarketFile("x_vec.mm",*ep_container.get_x());
+      EpetraExt::VectorToMatrixMarketFile("b_vec.mm",*ep_container.get_f());
    }
 
 }

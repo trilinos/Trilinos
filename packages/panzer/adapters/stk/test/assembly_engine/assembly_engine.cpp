@@ -226,8 +226,8 @@ namespace panzer {
     //input.f->Print(std::cout);
     //input.j->Print(std::cout);
 
-    eLinearOp = Thyra::epetraLinearOp(eGlobal->A);
-    eVector = Thyra::create_Vector(eGlobal->f,eLinearOp->range());
+    eLinearOp = Thyra::epetraLinearOp(eGlobal->get_A());
+    eVector = Thyra::create_Vector(eGlobal->get_f(),eLinearOp->range());
   }
 
   TEUCHOS_UNIT_TEST(assembly_engine, basic_tpetra)

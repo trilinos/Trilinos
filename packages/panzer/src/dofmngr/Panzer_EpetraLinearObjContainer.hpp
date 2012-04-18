@@ -63,21 +63,34 @@ public:
 
    virtual void initialize() 
    {
-      if(x!=Teuchos::null) x->PutScalar(0.0);
-      if(dxdt!=Teuchos::null) dxdt->PutScalar(0.0);
-      if(f!=Teuchos::null) f->PutScalar(0.0);
-      if(A!=Teuchos::null) A->PutScalar(0.0);
+      if(get_x()!=Teuchos::null) get_x()->PutScalar(0.0);
+      if(get_dxdt()!=Teuchos::null) get_dxdt()->PutScalar(0.0);
+      if(get_f()!=Teuchos::null) get_f()->PutScalar(0.0);
+      if(get_A()!=Teuchos::null) get_A()->PutScalar(0.0);
    }
 
    //! Wipe out stored data.
    void clear()
    {
-      x = Teuchos::null;
-      dxdt = Teuchos::null;
-      f = Teuchos::null;
-      A = Teuchos::null;
+      set_x(Teuchos::null);
+      set_dxdt(Teuchos::null);
+      set_f(Teuchos::null);
+      set_A(Teuchos::null);
    }
    
+   inline void set_x(const Teuchos::RCP<Epetra_Vector> & in) { x = in; } 
+   inline const Teuchos::RCP<Epetra_Vector> get_x() const { return x; }
+
+   inline void set_dxdt(const Teuchos::RCP<Epetra_Vector> & in) { dxdt = in; } 
+   inline const Teuchos::RCP<Epetra_Vector> get_dxdt() const { return dxdt; }
+
+   inline void set_f(const Teuchos::RCP<Epetra_Vector> & in) { f = in; } 
+   inline const Teuchos::RCP<Epetra_Vector> get_f() const { return f; }
+
+   inline void set_A(const Teuchos::RCP<Epetra_CrsMatrix> & in) { A = in; } 
+   inline const Teuchos::RCP<Epetra_CrsMatrix> get_A() const { return A; }
+
+private:
    Teuchos::RCP<Epetra_Vector> x, dxdt, f;
    Teuchos::RCP<Epetra_CrsMatrix> A;
 };

@@ -213,10 +213,10 @@ namespace panzer {
     Teuchos::RCP<panzer::LinearObjContainer> loc = elof->buildLinearObjContainer();
     elof->initializeContainer(panzer::EpetraLinearObjContainer::X,*loc);
     Teuchos::RCP<panzer::EpetraLinearObjContainer> eloc = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
-    eloc->x->PutScalar(0.0);
+    eloc->get_x()->PutScalar(0.0);
     panzer::evaluateInitialCondition(fmb.getWorksets(), phx_ic_field_managers, loc, 0.0);
     
-    Teuchos::RCP<Epetra_Vector> x = eloc->x;
+    Teuchos::RCP<Epetra_Vector> x = eloc->get_x();
     for (int i=0; i < x->MyLength(); ++i)
       TEST_FLOATING_EQUALITY((*x)[i], 3.0, 1.0e-10);
 

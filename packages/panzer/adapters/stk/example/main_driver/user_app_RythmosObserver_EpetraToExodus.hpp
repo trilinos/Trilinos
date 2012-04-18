@@ -143,7 +143,7 @@ namespace user_app {
 
       const Teuchos::RCP<panzer::EpetraLinearObjContainer> epGlobalContainer
          = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ae_inargs.container_,true);
-      epGlobalContainer->x = Teuchos::rcp_const_cast<Epetra_Vector>(ep_solution);
+      epGlobalContainer->set_x(Teuchos::rcp_const_cast<Epetra_Vector>(ep_solution));
 
       // do import
       m_lof->globalToGhostContainer(*ae_inargs.container_,*ae_inargs.ghostedContainer_,panzer::LinearObjContainer::X);

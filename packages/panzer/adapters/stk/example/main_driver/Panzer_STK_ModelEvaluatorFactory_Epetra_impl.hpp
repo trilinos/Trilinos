@@ -429,7 +429,7 @@ namespace panzer_stk {
 
       Teuchos::RCP<panzer::LinearObjContainer> loc = linObjFactory->buildLinearObjContainer();
       Teuchos::RCP<panzer::EpetraLinearObjContainer> eloc = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(loc);
-      eloc->x = Teuchos::rcp_const_cast<Epetra_Vector>(ep_me->get_x_init());
+      eloc->set_x(Teuchos::rcp_const_cast<Epetra_Vector>(ep_me->get_x_init()));
       
       panzer::evaluateInitialCondition(fmb->getWorksets(), phx_ic_field_managers, loc, 0.0);
 
@@ -438,7 +438,7 @@ namespace panzer_stk {
 	Epetra_Vector ghosted_solution(*(ep_lof->getGhostedMap()));
 	Teuchos::RCP<Epetra_Import> importer = ep_lof->getGhostedImport();
 	ghosted_solution.PutScalar(0.0);
-	ghosted_solution.Import(*(eloc->x),*importer,Insert);
+	ghosted_solution.Import(*(eloc->get_x()),*importer,Insert);
 	
 	panzer_stk::write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,
 			                ghosted_solution);

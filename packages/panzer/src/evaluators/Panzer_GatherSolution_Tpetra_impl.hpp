@@ -238,16 +238,16 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<LOC> epetraContainer 
+   Teuchos::RCP<LOC> tpetraContainer 
          = Teuchos::rcp_dynamic_cast<LOC>(workset.ghostedLinContainer);
    Teuchos::RCP<typename LOC::VectorType> x;
    double seed_value = 0.0;
    if (useTimeDerivativeSolutionVector_) {
-     x = epetraContainer->dxdt;
+     x = tpetraContainer->dxdt;
      seed_value = workset.alpha;
    }
    else {
-     x = epetraContainer->x;
+     x = tpetraContainer->x;
      seed_value = workset.beta;
    }
 

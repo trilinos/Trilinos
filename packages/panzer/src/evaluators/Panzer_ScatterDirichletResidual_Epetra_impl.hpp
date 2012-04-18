@@ -136,7 +136,7 @@ preEvaluate(typename Traits::PreEvalData d)
    Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
          = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.dirichletData.ghostedCounter,true);
 
-   dirichletCounter_ = epetraContainer->x;
+   dirichletCounter_ = epetraContainer->get_x();
    TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
 }
 
@@ -153,9 +153,8 @@ evaluateFields(typename Traits::EvalData workset)
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
    Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
-         // = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.linContainer);
          = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.ghostedLinContainer);
-   Teuchos::RCP<Epetra_Vector> r = epetraContainer->f; 
+   Teuchos::RCP<Epetra_Vector> r = epetraContainer->get_f(); 
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -278,7 +277,7 @@ preEvaluate(typename Traits::PreEvalData d)
    Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
          = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.dirichletData.ghostedCounter,true);
 
-   dirichletCounter_ = epetraContainer->x;
+   dirichletCounter_ = epetraContainer->get_x();
    TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
 }
 
@@ -297,10 +296,9 @@ evaluateFields(typename Traits::EvalData workset)
    // Teuchos::RCP<Epetra_CrsMatrix> Jac = workset.jacobian_matrix;
 
    Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
-         // = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.linContainer);
          = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.ghostedLinContainer);
-   Teuchos::RCP<Epetra_Vector> r = epetraContainer->f; 
-   Teuchos::RCP<Epetra_CrsMatrix> Jac = epetraContainer->A;
+   Teuchos::RCP<Epetra_Vector> r = epetraContainer->get_f(); 
+   Teuchos::RCP<Epetra_CrsMatrix> Jac = epetraContainer->get_A();
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the

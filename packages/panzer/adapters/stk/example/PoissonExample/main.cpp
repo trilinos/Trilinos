@@ -265,7 +265,7 @@ int main(int argc,char * argv[])
          = rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(container);
 
    // Setup the linear solve: notice A is used directly 
-   Epetra_LinearProblem problem(&*ep_container->A,&*ep_container->x,&*ep_container->f); 
+   Epetra_LinearProblem problem(&*ep_container->get_A(),&*ep_container->get_x(),&*ep_container->get_f()); 
 
    // build the solver
    AztecOO solver(problem);
@@ -283,16 +283,16 @@ int main(int argc,char * argv[])
    //     J*e = -r = -(f - J*0) where f = J*u
    // Therefore we have  J*e=-J*u which implies e = -u
    // thus we will scale the solution vector 
-   ep_container->x->Scale(-1.0);
+   ep_container->get_x()->Scale(-1.0);
   
    // output data (optional)
    /////////////////////////////////////////////////////////////
 
    // write out linear system
    if(false) {
-      EpetraExt::RowMatrixToMatrixMarketFile("a_op.mm",*ep_container->A);
-      EpetraExt::VectorToMatrixMarketFile("x_vec.mm",*ep_container->x);
-      EpetraExt::VectorToMatrixMarketFile("b_vec.mm",*ep_container->f);
+      EpetraExt::RowMatrixToMatrixMarketFile("a_op.mm",*ep_container->get_A());
+      EpetraExt::VectorToMatrixMarketFile("x_vec.mm",*ep_container->get_x());
+      EpetraExt::VectorToMatrixMarketFile("b_vec.mm",*ep_container->get_f());
    }
 
    // write out solution to matrix
@@ -303,7 +303,7 @@ int main(int argc,char * argv[])
 
       // get X Epetra_Vector from ghosted container
       RCP<panzer::EpetraLinearObjContainer> ep_ghostCont = rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ghostCont);
-      panzer_stk::write_solution_data(*rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,*ep_ghostCont->x);
+      panzer_stk::write_solution_data(*rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,*ep_ghostCont->get_x());
       mesh->writeToExodus("output.exo");
    }
 
@@ -322,8 +322,7 @@ void testInitialzation(panzer::InputPhysicsBlock& ipb,
    ies.integration_order = 2;
    ies.model_id = "solid";
    ies.prefix = "";
-  
-   ipb.physics_block_id = "4";
+  ipb.physics_block_id = "4";
    ipb.eq_sets.push_back(ies);
    
    {
