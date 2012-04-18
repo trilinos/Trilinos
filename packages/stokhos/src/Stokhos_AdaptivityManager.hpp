@@ -31,6 +31,7 @@
 #ifndef STOKHOS_AdaptivityManager_HPP
 #define STOKHOS_AdaptivityManager_HPP
 
+#include "Stokhos_config.h"
 #include "Stokhos_OrthogPolyBasis.hpp"
 #include "Stokhos_ProductBasis.hpp"
 #include "Stokhos_SGOperator.hpp"
@@ -45,6 +46,10 @@
 #include "Teuchos_Array.hpp"
 
 #include <vector>
+
+#ifdef HAVE_STOKHOS_BOOST
+#include <boost/unordered_map.hpp>
+#endif
 
 namespace Stokhos {
 
@@ -160,6 +165,42 @@ namespace Stokhos {
       { return scaleOp_; }
 
    private:
+
+      /** This class builds a hash table from a Sparse3Tensor. This
+        * then replaces the Sparse3Tensor::getValue with a fast hashed
+        * version of getValue. Of course this only works with boost, and
+        * if boost is installed other wise getValue is called directly
+        */
+      class Sparse3TensorHash {
+      public:
+         Sparse3TensorHash(const Stokhos::Sparse3Tensor<int,double> & Cijk);
+   
+         double getValue(int i,int j,int k) const; 
+
+      private:
+         #ifdef HAVE_STOKHOS_BOOST
+         struct IJK {
+            int i_,j_,k_;
+            IJK(int i,int j,int k) : i_(i), j_(j), k_(k) {}
+
+            bool operator==(const IJK & ijk) const
+            { return i_==ijk.i_ && j_==ijk.j_ && k_==ijk.k_; }
+         };
+
+         struct IJKHash {
+            std::size_t operator()(const IJK & ijk) const;
+         };
+
+         boost::unordered_map<IJK,double,IJKHash> hashMap_;
+         #else
+         const Stokhos::Sparse3Tensor<int,double> & Cijk_;
+         #endif
+      };
+
+      /** Sum into a matrix constructed from <code>buildMatrixFromGraph</code>
+        * using the Sparse3TensorHash if boost is enabled Cjik tensor a matrix J_k
+        */ 
+      void sumInOperator(Epetra_CrsMatrix & A,const Sparse3TensorHash & Cijk,int k,const Epetra_CrsMatrix & J_k) const;
 
       Teuchos::RCP<const Stokhos::ProductBasis<int,double> > sg_master_basis_;
       std::vector<Teuchos::RCP<const Stokhos::ProductBasis<int,double> > > sg_basis_row_dof_;
