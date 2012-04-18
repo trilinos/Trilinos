@@ -42,15 +42,16 @@
 #ifndef KOKKOS_DEFAULTRELAXATION_HPP
 #define KOKKOS_DEFAULTRELAXATION_HPP
 
+#include <stdio.h>
+#include <stdexcept>
+
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_DataAccess.hpp>
 #include <Teuchos_Assert.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
-#include <stdexcept>
 
 #include "Kokkos_ConfigDefs.hpp"
-#include "Kokkos_DefaultKernels.hpp"
 #include "Kokkos_CrsMatrix.hpp" 
 #include "Kokkos_CrsGraph.hpp" 
 #include "Kokkos_MultiVector.hpp"
@@ -58,13 +59,13 @@
 #include "Kokkos_DefaultArithmetic.hpp"
 #include "Kokkos_DefaultRelaxationKernelOps.hpp"
 
-#include <stdio.h>
-
 namespace Kokkos {
 
   /*!
     \class DefaultRelaxation
     \brief Various relaxation methods.
+
+    Methods include Jacobi, Gauss-Seidel, and Chebyshev polynomial relaxation.
   */
 
   template <class Scalar, class Ordinal, class Node = DefaultNode::DefaultNodeType>
@@ -78,7 +79,7 @@ namespace Kokkos {
 
     //@{
 
-    //! DefaultRelaxation constuctor 
+    //! DefaultRelaxation constructor 
     DefaultRelaxation(const RCP<Node> &node = DefaultNode::getDefaultNode());
 
     //! DefaultRelaxation Destructor
@@ -98,26 +99,35 @@ namespace Kokkos {
 
     //@{
 
-    //! Initialize structure of matrix. NOT IMPLEMENTED!
-    template <class GRAPH>
-    Teuchos::DataAccess initializeStructure(GRAPH &graph, Teuchos::DataAccess cv);
+    /*! Initialize structure of matrix.
 
-    //! Initialize values of matrix.  NOT IMPLEMENTED!
+       @todo Not implemented for general sparse graphs.
+    */
+    template <class GRAPH>
+    void initializeStructure(GRAPH &graph, Teuchos::DataAccess cv);
+
+    /*! Initialize values of matrix.
+    
+       @todo Not implemented for general sparse matrices
+    */
     template <class MATRIX>
-    Teuchos::DataAccess initializeValues(MATRIX &matrix, Teuchos::DataAccess cv);
+    void initializeValues(MATRIX &matrix, Teuchos::DataAccess cv);
 
     //! Initialize structure of the matrix, using CrsGraph
     template <class SparseOps>
-    Teuchos::DataAccess initializeStructure(CrsGraph<Ordinal,Node,SparseOps> &graph, Teuchos::DataAccess cv);
+    void initializeStructure(CrsGraph<Ordinal,Node,SparseOps > &graph, Teuchos::DataAccess cv);
 
     //! Initialize values of the matrix, using CrsMatrix
     template <class SparseOps>
-    Teuchos::DataAccess initializeValues(CrsMatrix<Scalar,Ordinal,Node,SparseOps> &matrix, Teuchos::DataAccess cv);
+    void initializeValues(CrsMatrix<Scalar,Ordinal,Node,SparseOps > &matrix, Teuchos::DataAccess cv);
 
-    //! Sets the diagonal inverted for relaxation using a MultiVector
+    /*! Sets the diagonal inverted for relaxation using a MultiVector
+
+      @todo Not implemented yet.
+    */
     void setDiagonal(MultiVector<Scalar,Node> & diag);    
 
-    //! Clear all matrix structure and values.
+    //! Clear all matrix structures and values.
     void clear();
 
     //! 
@@ -131,6 +141,7 @@ namespace Kokkos {
     //! Applies a sweep of Jacobi
     void sweep_jacobi(Scalar dampingFactor_, MultiVector<Scalar,Node> &X, const MultiVector<Scalar,Node> &B) const;
 
+#ifdef ENABLE_ALL_OTHER_RELAXATION
     //! Applies a sweep of fine-grain Hybrid Gauss-Seidel
     void sweep_fine_hybrid(Scalar dampingFactor_, MultiVector<Scalar,Node> &X, const MultiVector<Scalar,Node> &B) const;
 
@@ -142,6 +153,7 @@ namespace Kokkos {
 
     //! Applies a sweep of Chebyshev iteration
     void sweep_chebyshev(MultiVector<Scalar,Node> &X, const MultiVector<Scalar,Node> &B) const;
+#endif //ifdef ENABLE_ALL_OTHER_RELAXATION
 
     //@}
 
@@ -153,30 +165,37 @@ namespace Kokkos {
     // NTS: This should eventually disappear into some other Kokkos class...
     void ExtractDiagonal();    
 
-    // Update the temp vector size
+    //! Update the Jacobi temporary vector size.
     bool UpdateJacobiTemp(size_t num_vectors, size_t vec_leng) const;
-    bool UpdateChebyTemp(size_t num_vectors, size_t vec_leng) const;
 
-    // My node
+#ifdef ENABLE_ALL_OTHER_RELAXATION
+    //! Update the Chebyshev temporary vector size.
+    bool UpdateChebyTemp(size_t num_vectors, size_t vec_leng) const;
+#endif //ifdef ENABLE_ALL_OTHER_RELAXATION
+
+    //! My node
     RCP<Node> node_;
 
     // we do this one of two ways: 
     // 1D/packed: array of offsets, pointer for ordinals, pointer for values. obviously the smallest footprint.
     ArrayRCP<const Ordinal> pbuf_inds1D_;
-    ArrayRCP<const size_t>  pbuf_offsets1D_;
-    ArrayRCP<const Scalar>  pbuf_vals1D_;
+    ArrayRCP<const size_t>  begs1D_, ends1D_;
+    ArrayRCP<Scalar>  pbuf_vals1D_;
     // 2D: array of pointers
-    ArrayRCP<const Ordinal *> pbuf_inds2D_;
-    ArrayRCP<const Scalar  *> pbuf_vals2D_;
-    ArrayRCP<size_t>          pbuf_numEntries_;
+    ArrayRCP<const ArrayRCP<Ordinal> > pbuf_inds2D_;
+    ArrayRCP<const ArrayRCP<Scalar> > pbuf_vals2D_;
+    ArrayRCP<const size_t>          pbuf_numEntries_;
+    ArrayRCP<const Ordinal *> indPtrs_;
+    ArrayRCP<Scalar  *> valPtrs_;
     
-    // Array containing matrix diagonal for easy access
+    //! Array containing matrix diagonal for easy access
     ArrayRCP<Scalar> diagonal_;
 
-    // Array containing a temp vector for Jacobi
+    //! Temporary work storage for Jacobi
     mutable ArrayRCP<Scalar> tempJacobiVector_;
     mutable size_t lastNumJacobiVectors_;
 
+#ifdef ENABLE_ALL_OTHER_RELAXATION
     // Arrays containing temp vectors for Chebyshev
     mutable ArrayRCP<Scalar> tempChebyVectorX_;
     mutable ArrayRCP<Scalar> tempChebyVectorW_;
@@ -186,10 +205,11 @@ namespace Kokkos {
 
     // Constants for Chebyshev
     mutable Scalar lmin_,lmax_,delta_,s1_,oneOverTheta_,rho_,rho_new_,dtemp1_,dtemp2_;
+#endif //ifdef ENABLE_ALL_OTHER_RELAXATION
 
     size_t numRows_;
-    bool indsInit_, valsInit_, isPacked_, isEmpty_;
-  };
+    bool indsInit_, valsInit_, isEmpty_;
+  }; //class DefaultRelaxation declaration
 
 
   /**********************************************************************/
@@ -197,15 +217,18 @@ namespace Kokkos {
   DefaultRelaxation<Scalar,Ordinal,Node>::DefaultRelaxation(const RCP<Node> &node)
   : node_(node)
   , lastNumJacobiVectors_(0)
+#ifdef ENABLE_ALL_OTHER_RELAXATION
   , lastNumChebyVectors_(0)
   , cheby_setup_done_(false)
   , first_cheby_iteration_(false)  
+#endif //ifdef ENABLE_ALL_OTHER_RELAXATION
   , indsInit_(false)
   , valsInit_(false)
-  , isPacked_(false) 
   , isEmpty_(false)
   {
+#ifdef ENABLE_ALL_OTHER_RELAXATION
     lmin_=lmax_=delta_=s1_=oneOverTheta_=rho_=rho_new_=dtemp1_=dtemp2_=Teuchos::ScalarTraits<Scalar>::zero();
+#endif //ifdef ENABLE_ALL_OTHER_RELAXATION
   }
 
   /**********************************************************************/
@@ -217,7 +240,7 @@ namespace Kokkos {
   /**********************************************************************/
   template <class Scalar, class Ordinal, class Node>
   template <class GRAPH>
-  Teuchos::DataAccess DefaultRelaxation<Scalar,Ordinal,Node>::initializeStructure(GRAPH &graph, Teuchos::DataAccess cv) {
+  void DefaultRelaxation<Scalar,Ordinal,Node>::initializeStructure(GRAPH &graph, Teuchos::DataAccess cv) {
     // not implemented for general sparse graphs
     TEUCHOS_TEST_FOR_EXCEPT(true);
   }
@@ -225,7 +248,7 @@ namespace Kokkos {
   /**********************************************************************/
   template <class Scalar, class Ordinal, class Node>
   template <class MATRIX>
-  Teuchos::DataAccess DefaultRelaxation<Scalar,Ordinal,Node>::initializeValues(MATRIX &graph, Teuchos::DataAccess cv) {
+  void DefaultRelaxation<Scalar,Ordinal,Node>::initializeValues(MATRIX &graph, Teuchos::DataAccess cv) {
     // not implemented for general sparse matrices
     TEUCHOS_TEST_FOR_EXCEPT(true);
   }
@@ -233,80 +256,67 @@ namespace Kokkos {
   /**********************************************************************/
   template <class Scalar, class Ordinal, class Node>
   template <class SparseOps>
-  Teuchos::DataAccess DefaultRelaxation<Scalar,Ordinal,Node>::initializeStructure(CrsGraph<Ordinal,Node,SparseOps> &graph, Teuchos::DataAccess cv) {
-    TEUCHOS_TEST_FOR_EXCEPTION(cv != Teuchos::View, std::runtime_error,
-        Teuchos::typeName(*this) << "::initializeStructure(): requires View access.");
-    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == true, std::runtime_error, 
-        Teuchos::typeName(*this) << "::initializeStructure(): structure already initialized.");
+  void DefaultRelaxation<Scalar,Ordinal,Node>::initializeStructure(CrsGraph<Ordinal,Node,SparseOps > &graph, Teuchos::DataAccess cv) {
+    using Teuchos::arcp;
+    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == true || valsInit_ == true, std::runtime_error, Teuchos::typeName(*this) << "::initializeStructure(): structure already initialized.");
     numRows_ = graph.getNumRows();
     if (graph.isEmpty() || numRows_ == 0) {
       isEmpty_ = true;
     }
-    else if (graph.isPacked()) {
+    else if (graph.is1DStructure()) {
       isEmpty_ = false;
-      isPacked_ = true;
-      pbuf_inds1D_    = graph.getPackedIndices();
-      pbuf_offsets1D_ = graph.getPackedOffsets();
+      ArrayRCP<Ordinal> inds;
+      ArrayRCP<size_t> begs, ends;
+      const_cast<CrsGraph<Ordinal,Node,SparseOps > &>(graph).get1DStructure( inds, begs, ends );
+      pbuf_inds1D_ = inds;
+      begs1D_ = begs;
+      ends1D_ = ends;
     }
     else {
-      isEmpty_ = false;
-      isPacked_ = false;
-      pbuf_inds2D_     = node_->template allocBuffer<const Ordinal *>(numRows_);
-      pbuf_numEntries_ = node_->template allocBuffer<size_t>(numRows_);
-      ArrayRCP<const Ordinal *> inds2Dview = node_->template viewBufferNonConst<const Ordinal *>(WriteOnly, numRows_, pbuf_inds2D_);
-      ArrayRCP<         size_t> numEntview = node_->template viewBufferNonConst<         size_t>(WriteOnly, numRows_, pbuf_numEntries_);
+      isEmpty_  = false;
+      {
+        ArrayRCP<ArrayRCP<Ordinal> > inds;
+        ArrayRCP<size_t>  sizes;
+        const_cast<CrsGraph<Ordinal,Node,SparseOps > &>(graph).get2DStructure(inds,sizes);
+        pbuf_inds2D_     = inds;
+        pbuf_numEntries_ = sizes;
+      }
+      indPtrs_    = arcp<const Ordinal *>(numRows_);
       for (size_t r=0; r < numRows_; ++r) {
-        ArrayRCP<const Ordinal> rowinds = graph.get2DIndices(r);
-        if (rowinds != null) {
-          inds2Dview[r] = rowinds.getRawPtr();
-          numEntview[r] = rowinds.size();
-        }
-        else {
-          inds2Dview[r] = NULL;
-          numEntview[r] = 0;
-        }
+        indPtrs_[r] = pbuf_inds2D_[r].getRawPtr();
       }
     }
     indsInit_ = true;
-    return Teuchos::View;
-  }
+  } //initializeStructure()
 
   /**********************************************************************/
   template <class Scalar, class Ordinal, class Node>
   template <class SparseOps>
-  Teuchos::DataAccess DefaultRelaxation<Scalar,Ordinal,Node>::initializeValues(CrsMatrix<Scalar,Ordinal,Node,SparseOps> &matrix, Teuchos::DataAccess cv) {
-    TEUCHOS_TEST_FOR_EXCEPTION(cv != Teuchos::View, std::runtime_error,
-        Teuchos::typeName(*this) << "::initializeValues(): requires View access.");
-    TEUCHOS_TEST_FOR_EXCEPTION(valsInit_ == true, std::runtime_error, 
-        Teuchos::typeName(*this) << "::initializeValues(): values already initialized.");
-    TEUCHOS_TEST_FOR_EXCEPTION(numRows_ != matrix.getNumRows() || (!isEmpty_ && isPacked_ != matrix.isPacked()), std::runtime_error,
-        Teuchos::typeName(*this) << "::initializeValues(): matrix not compatible with previously supplied graph.");
-    if (isEmpty_ || matrix.isEmpty() || numRows_ == 0) {
-      isEmpty_ = true;
-    }
-    else if (matrix.isPacked()) {
-      isEmpty_ = false;
-      pbuf_vals1D_ = matrix.getPackedValues();
-    }
-    else {
-      isEmpty_ = false;
-      pbuf_vals2D_ = node_->template allocBuffer<const Scalar *>(numRows_);
-      ArrayRCP<const Scalar *> vals2Dview = node_->template viewBufferNonConst<const Scalar *>(WriteOnly, numRows_, pbuf_vals2D_);
-      for (size_t r=0; r < numRows_; ++r) {
-        ArrayRCP<const Scalar> rowvals = matrix.get2DValues(r);
-        if (rowvals != null) {
-          vals2Dview[r] = rowvals.getRawPtr();
-        }
-        else {
-          vals2Dview[r] = NULL;
-        }
-      }
-    }
-    
+  void DefaultRelaxation<Scalar,Ordinal,Node>::initializeValues(CrsMatrix<Scalar,Ordinal,Node,SparseOps > &matrix, Teuchos::DataAccess cv) {
+    using Teuchos::arcp;
+    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false, std::runtime_error, Teuchos::typeName(*this) << "::initializeValues(): must initialize values after graph.");
+    TEUCHOS_TEST_FOR_EXCEPTION(numRows_ != matrix.getNumRows() || isEmpty_ != matrix.isEmpty() || (pbuf_inds2D_ != null && matrix.is1DStructure()) || (pbuf_inds1D_ != null && matrix.is2DStructure()), std::runtime_error, Teuchos::typeName(*this) << "::initializeValues(): matrix not compatible with previously supplied graph.");
+    if (!isEmpty_) {        
+      if (matrix.is1DStructure()) {
+        ArrayRCP<Scalar> vals;
+        const_cast<CrsMatrix<Scalar,Ordinal,Node,SparseOps > &>(matrix).get1DValues( vals );
+        pbuf_vals1D_ = vals;
+      }      
+      else {
+        {  
+          ArrayRCP<ArrayRCP<Scalar> > vals;
+          const_cast<CrsMatrix<Scalar,Ordinal,Node,SparseOps > &>(matrix).get2DValues(vals);
+          pbuf_vals2D_ = vals;
+        }      
+        valPtrs_ = arcp<Scalar *>(numRows_);
+        for (size_t r=0; r < numRows_; ++r) {
+          valPtrs_[r] = pbuf_vals2D_[r].getRawPtr();
+        }      
+      }      
+    }      
     valsInit_ = true;
     ExtractDiagonal();
-    return Teuchos::View;
-  }
+  } //initializeValues()
 
   /**********************************************************************/
   template <class Scalar, class Ordinal, class Node>
@@ -318,21 +328,23 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   void DefaultRelaxation<Scalar,Ordinal,Node>::clear() {
     pbuf_inds1D_      = null;
-    pbuf_offsets1D_   = null;
     pbuf_vals1D_      = null;
     pbuf_inds2D_      = null;
     pbuf_vals2D_      = null;
     pbuf_numEntries_  = null;
     diagonal_         = null;
     tempJacobiVector_ = null;
+#ifdef ENABLE_ALL_OTHER_RELAXATION
     tempChebyVectorW_ = null;
     tempChebyVectorX_ = null;
+#endif //ifdef ENABLE_ALL_OTHER_RELAXATION
     indsInit_ = false;
     valsInit_ = false;
-    isPacked_ = false;
     isEmpty_  = false;
     lastNumJacobiVectors_=0;
+#ifdef ENABLE_ALL_OTHER_RELAXATION
     lastNumChebyVectors_=0;
+#endif //ifdef ENABLE_ALL_OTHER_RELAXATION
   }
 
   /**********************************************************************/
@@ -364,7 +376,6 @@ namespace Kokkos {
       Op1D wdp;
       rbh.begin();
       wdp.numRows = numRows_;
-      wdp.offsets = rbh.template addConstBuffer<size_t>(pbuf_offsets1D_);
       wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
       wdp.vals    = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
       wdp.diag    = rbh.template addNonConstBuffer<Scalar>(diagonal_);
@@ -379,15 +390,16 @@ namespace Kokkos {
       rbh.begin();
       wdp.numRows = numRows_;
       wdp.numEntries = rbh.template addConstBuffer<size_t>(pbuf_numEntries_);
-      wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(pbuf_inds2D_);
-      wdp.vals_beg   = rbh.template addConstBuffer<const Scalar *>(pbuf_vals2D_);
+      wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(indPtrs_);
+      wdp.vals_beg   = rbh.template addConstBuffer<Scalar *>(valPtrs_);
       wdp.diag    = rbh.template addNonConstBuffer<Scalar>(diagonal_);
       rbh.end();
       rbh.end();
       node_->template parallel_for<Op2D>(0,numRows_,wdp);
       
     }
-  }
+  } //ExtractDiagonal()
+
   /**********************************************************************/
   template <class Scalar, class Ordinal, class Node>
   bool DefaultRelaxation<Scalar,Ordinal,Node>::UpdateJacobiTemp(size_t num_vectors, size_t vec_leng) const{
@@ -399,8 +411,9 @@ namespace Kokkos {
       return true;
     }
     return false;
-  }
+  } //UpdateJacobiTemp()
 
+#ifdef ENABLE_ALL_OTHER_RELAXATION
   /**********************************************************************/
   template <class Scalar, class Ordinal, class Node>
   bool DefaultRelaxation<Scalar,Ordinal,Node>::UpdateChebyTemp(size_t num_vectors, size_t vec_leng) const{
@@ -414,13 +427,13 @@ namespace Kokkos {
       return true;
     }
     return false;
-  }
+  } //UpdateChebyTemp()
 
 
   /**********************************************************************/
   template <class Scalar, class Ordinal, class Node>
   void DefaultRelaxation<Scalar,Ordinal,Node>::sweep_fine_hybrid(Scalar dampingFactor_,
-						 MultiVector<Scalar,Node> &X, const MultiVector<Scalar,Node> &B) const{
+                         MultiVector<Scalar,Node> &X, const MultiVector<Scalar,Node> &B) const{
     typedef DefaultFineGrainHybridGaussSeidelOp1<Scalar,Ordinal>  Op1D;
     typedef DefaultFineGrainHybridGaussSeidelOp2<Scalar,Ordinal>  Op2D;
 
@@ -433,11 +446,10 @@ namespace Kokkos {
       // This makes no sense to try to call ...
       TEUCHOS_TEST_FOR_EXCEPT(true);
     }
-    else if (isPacked_ == true) {
+    else if (begs1D_ != null) {
       Op1D wdp;
       rbh.begin();
       wdp.numRows = numRows_;
-      wdp.offsets = rbh.template addConstBuffer<size_t>(pbuf_offsets1D_);
       wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
       wdp.vals    = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
       wdp.x       = rbh.template addNonConstBuffer<Scalar>(X.getValuesNonConst());
@@ -468,12 +480,12 @@ namespace Kokkos {
       node_->template parallel_for<Op2D>(0,numRows_*numRHS,wdp);
     }
     return;
-  }
+  } //sweep_fine_hybrid()
 
   /**********************************************************************/
   template <class Scalar, class Ordinal, class Node>
   void DefaultRelaxation<Scalar,Ordinal,Node>::sweep_coarse_hybrid(Scalar dampingFactor_,size_t num_chunks,
-						 MultiVector<Scalar,Node> &X, const MultiVector<Scalar,Node> &B) const{
+                         MultiVector<Scalar,Node> &X, const MultiVector<Scalar,Node> &B) const{
     typedef DefaultCoarseGrainHybridGaussSeidelOp1<Scalar,Ordinal>  Op1D;
     typedef DefaultCoarseGrainHybridGaussSeidelOp2<Scalar,Ordinal>  Op2D;
 
@@ -487,12 +499,11 @@ namespace Kokkos {
       // This makes no sense to try to call ...
       TEUCHOS_TEST_FOR_EXCEPT(true);
     }
-    else if (isPacked_ == true) {
+    else if (begs1D_ != null) {
       Op1D wdp;
       rbh.begin();
       wdp.numRows = numRows_;
       wdp.numChunks = num_chunks;
-      wdp.offsets = rbh.template addConstBuffer<size_t>(pbuf_offsets1D_);
       wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
       wdp.vals    = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
       wdp.x       = rbh.template addNonConstBuffer<Scalar>(X.getValuesNonConst());
@@ -524,13 +535,14 @@ namespace Kokkos {
       node_->template parallel_for<Op2D>(0,num_chunks*numRHS,wdp);
     }
     return;
-  }
+  } //sweep_coarse_hybrid()
+#endif //ifdef ENABLE_ALL_OTHER_RELAXATION
 
   
   /********************************************************************/
   template <class Scalar, class Ordinal, class Node>
   void DefaultRelaxation<Scalar,Ordinal,Node>::sweep_jacobi(Scalar dampingFactor_,
-						 MultiVector<Scalar,Node> &X, const MultiVector<Scalar,Node> &B) const{
+                         MultiVector<Scalar,Node> &X, const MultiVector<Scalar,Node> &B) const{
     typedef DefaultJacobiOp1<Scalar,Ordinal>  Op1D;
     typedef DefaultJacobiOp2<Scalar,Ordinal>  Op2D;
 
@@ -551,11 +563,10 @@ namespace Kokkos {
       // This makes no sense to try to call ...
       TEUCHOS_TEST_FOR_EXCEPT(true);
     }
-    else if (isPacked_ == true) {
+    else if (begs1D_ != null) {
       Op1D wdp;
       rbh.begin();
       wdp.numRows = numRows_;
-      wdp.offsets = rbh.template addConstBuffer<size_t>(pbuf_offsets1D_);
       wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
       wdp.vals    = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
       wdp.x       = rbh.template addNonConstBuffer<Scalar>(X.getValuesNonConst());
@@ -574,8 +585,8 @@ namespace Kokkos {
       rbh.begin();
       wdp.numRows = numRows_;
       wdp.numEntries = rbh.template addConstBuffer<size_t>(pbuf_numEntries_);
-      wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(pbuf_inds2D_);
-      wdp.vals_beg   = rbh.template addConstBuffer<const Scalar *>(pbuf_vals2D_);
+      wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(indPtrs_);
+      wdp.vals_beg   = rbh.template addConstBuffer<Scalar *>(valPtrs_);
       wdp.x       = rbh.template addNonConstBuffer<Scalar>(X.getValuesNonConst());
       wdp.x0      = rbh.template addConstBuffer<Scalar>(X0.getValues());
       wdp.b       = rbh.template addConstBuffer<Scalar>(B.getValues());
@@ -588,8 +599,9 @@ namespace Kokkos {
       node_->template parallel_for<Op2D>(0,numRows_*numRHS,wdp);
     }
     return;
-  }
+  } //sweep_jacobi()
 
+#ifdef ENABLE_ALL_OTHER_RELAXATION
   /********************************************************************/
   template <class Scalar, class Ordinal, class Node>
   void DefaultRelaxation<Scalar,Ordinal,Node>::setup_chebyshev(const Scalar lambda_max, const Scalar lambda_min){
@@ -607,7 +619,7 @@ namespace Kokkos {
 
     first_cheby_iteration_=true;
     cheby_setup_done_=true;
-  }
+  } //setup_chebyshev()
 
 
   /********************************************************************/
@@ -617,7 +629,7 @@ namespace Kokkos {
     //    typedef DefaultChebyOp2<Scalar,Ordinal>  Op2D;
     
     TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
-		       Teuchos::typeName(*this) << "::sweep_jacobi(): operation not fully initialized.");
+               Teuchos::typeName(*this) << "::sweep_jacobi(): operation not fully initialized.");
     TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != B.getNumCols());
     //size_t xstride = X.getStride();
     //size_t bstride = B.getStride();
@@ -649,11 +661,10 @@ namespace Kokkos {
       // This makes no sense to try to call ...
       TEUCHOS_TEST_FOR_EXCEPT(true);
     }
-    else if (isPacked_ == true) {
+    else if (begs1D_ != null) {
       Op1D wdp;
       rbh.begin();
       wdp.numRows = numRows_;
-      wdp.offsets = rbh.template addConstBuffer<size_t>(pbuf_offsets1D_);
       wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
       wdp.vals    = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
       wdp.x       = rbh.template addNonConstBuffer<Scalar>(X.getValuesNonConst());
@@ -674,28 +685,29 @@ namespace Kokkos {
     }
     else {
       /*      Op2D wdp;
-	      rbh.begin();
-	      wdp.numRows = numRows_;
-	      wdp.numEntries = rbh.template addConstBuffer<size_t>(pbuf_numEntries_);
-	      wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(pbuf_inds2D_);
-	      wdp.vals_beg   = rbh.template addConstBuffer<const Scalar *>(pbuf_vals2D_);
-	      wdp.x       = rbh.template addNonConstBuffer<Scalar>(X.getValuesNonConst());
-	      wdp.x0      = rbh.template addConstBuffer<Scalar>(X0.getValues());
-	      wdp.b       = rbh.template addConstBuffer<Scalar>(B.getValues());
-	      wdp.diag    = rbh.template addConstBuffer<Scalar>(diagonal_);
-	      wdp.damping_factor = dampingFactor_;
-	      wdp.xstride = X.getStride();
-	      wdp.bstride = B.getStride();
-	      rbh.end();
-	      const size_t numRHS = X.getNumCols();
-	      node_->template parallel_for<Op2D>(0,numRows_*numRHS,wdp);
+          rbh.begin();
+          wdp.numRows = numRows_;
+          wdp.numEntries = rbh.template addConstBuffer<size_t>(pbuf_numEntries_);
+          wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(pbuf_inds2D_);
+          wdp.vals_beg   = rbh.template addConstBuffer<const Scalar *>(pbuf_vals2D_);
+          wdp.x       = rbh.template addNonConstBuffer<Scalar>(X.getValuesNonConst());
+          wdp.x0      = rbh.template addConstBuffer<Scalar>(X0.getValues());
+          wdp.b       = rbh.template addConstBuffer<Scalar>(B.getValues());
+          wdp.diag    = rbh.template addConstBuffer<Scalar>(diagonal_);
+          wdp.damping_factor = dampingFactor_;
+          wdp.xstride = X.getStride();
+          wdp.bstride = B.getStride();
+          rbh.end();
+          const size_t numRHS = X.getNumCols();
+          node_->template parallel_for<Op2D>(0,numRows_*numRHS,wdp);
       */
     }
     
     first_cheby_iteration_=false;
     return;
-  }
+  } //sweep_chebyshev()
+#endif //ifdef ENABLE_ALL_OTHER_RELAXATION
 
 } // namespace Kokkos
 
-#endif /* KOKKOS_DEFAULTRELAXATION_HPP */
+#endif // KOKKOS_DEFAULTRELAXATION_HPP
