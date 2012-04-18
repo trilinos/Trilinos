@@ -8,7 +8,6 @@ EXECUTABLE="testit.exe"
 
 INC_PATH="-I. -I../../src"
 CXX="g++"
-CXXFLAGS="-Wall"
 
 CXX_SOURCES="./*.cpp"
 CXX_SOURCES="${CXX_SOURCES} ../../src/impl/*.cpp"
@@ -25,13 +24,22 @@ shift 1
 case ${ARG} in
 #-------------------------------
 #----------- OPTIONS -----------
-HWLOC | hwloc ) HAVE_HWLOC=${1} ; shift 1 ;;
-MPI | mpi ) HAVE_MPI=${1} ; shift 1 ;;
-CUDA | Cuda | cuda ) HAVE_CUDA=1 ;;
 OPT | opt | O3 | -O3 ) OPTFLAGS="${OPTFLAGS} -O3" ;;
 DBG | dbg | g | -g )   OPTFLAGS="${OPTFLAGS} -g" ;;
-#-------------------------------
-#---------- COMPILERS ----------
+HWLOC | hwloc ) HAVE_HWLOC=${1} ; shift 1 ;;
+MPI | mpi )
+  HAVE_MPI=${1} ; shift 1
+  CXX="${HAVE_MPI}/bin/mpiCC"
+  INC_PATH="${INC_PATH} -I${HAVE_MPI}/include"
+  OPTFLAGS="${OPTFLAGS} -DHAVE_MPI"
+  ;;
+CUDA | Cuda | cuda ) HAVE_CUDA=1 ;;
+curie )
+  CXX="CC"
+  HAVE_MPI="/opt/cray/mpt/5.4.4/xt/gemini/mpich2-cray/73"
+  INC_PATH="${INC_PATH} -I${HAVE_MPI}/include"
+  OPTFLAGS="${OPTFLAGS} -DHAVE_MPI"
+  ;;  
 GNU | gnu | g++ )
   CXX="g++"
   CXXFLAGS="-Wall"
@@ -46,15 +54,6 @@ INTEL | intel | icc )
 *) echo 'unknown option: ' ${ARG} ; exit -1 ;;
 esac
 done
-
-#-----------------------------------------------------------------------------
-
-if [ -n "${HAVE_MPI}" ]
-then
-  CXX="${HAVE_MPI}/bin/mpiCC"
-  INC_PATH="${INC_PATH} -I${HAVE_MPI}/include"
-  OPTFLAGS="${OPTFLAGS} -DHAVE_MPI"
-fi
 
 #-----------------------------------------------------------------------------
 
