@@ -61,15 +61,16 @@ namespace Kokkos {
   struct ExtractDiagonalOp1 {
 
     // mat data
-    const size_t  *offsets;
+    size_t numRows;
+    const size_t  *begs;
+    const size_t  *ends;
     const Ordinal *inds;
     const Scalar  *vals;
     Scalar * diag;
-    size_t numRows;
 
 
     inline KERNEL_PREFIX void execute(size_t row) {
-      for (size_t c=offsets[row];c<offsets[row+1];c++) {
+      for (size_t c=begs[row]; c<ends[row]; ++c) {
         if(row==(size_t)inds[c]) {
           diag[row]=vals[c];
           break;
@@ -108,11 +109,12 @@ namespace Kokkos {
   // Jacobi for Type 1 storage.
   template <class Scalar, class Ordinal>
   struct DefaultJacobiOp1 {
-    const size_t  *offsets;
+    size_t numRows;
+    const size_t  *begs;
+    const size_t  *ends;
     const Ordinal *inds;
     const Scalar  *vals;
     const Scalar  *diag;
-    size_t numRows;
     // vector data (including multiple rhs)
     Scalar       *x;
     const Scalar *x0;
@@ -128,7 +130,7 @@ namespace Kokkos {
       const Scalar *bj  = b + rhs * bstride;
 
       Scalar tmp = bj[row];
-      for (size_t c=offsets[row];c<offsets[row+1];c++) {
+      for (size_t c=begs[row]; c<ends[row]; ++c) {
         tmp -= vals[c] * x0j[inds[c]];
       }
       xj[row]=x0j[row]+damping_factor*tmp/diag[row];

@@ -376,6 +376,8 @@ namespace Kokkos {
       Op1D wdp;
       rbh.begin();
       wdp.numRows = numRows_;
+      wdp.begs    = rbh.template addConstBuffer<size_t>(begs1D_);
+      wdp.ends    = rbh.template addConstBuffer<size_t>(ends1D_);
       wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
       wdp.vals    = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
       wdp.diag    = rbh.template addNonConstBuffer<Scalar>(diagonal_);
@@ -567,12 +569,14 @@ namespace Kokkos {
       Op1D wdp;
       rbh.begin();
       wdp.numRows = numRows_;
+      wdp.begs    = rbh.template addConstBuffer<size_t>(begs1D_);
+      wdp.ends    = rbh.template addConstBuffer<size_t>(ends1D_);
       wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
       wdp.vals    = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
+      wdp.diag    = rbh.template addConstBuffer<Scalar>(diagonal_);
       wdp.x       = rbh.template addNonConstBuffer<Scalar>(X.getValuesNonConst());
       wdp.x0      = rbh.template addConstBuffer<Scalar>(X0.getValues());
       wdp.b       = rbh.template addConstBuffer<Scalar>(B.getValues());
-      wdp.diag    = rbh.template addConstBuffer<Scalar>(diagonal_);
       wdp.damping_factor = dampingFactor_;
       wdp.xstride = X.getStride();
       wdp.bstride = B.getStride();
