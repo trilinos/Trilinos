@@ -272,12 +272,16 @@ namespace {
     DefaultArithmetic<MV>::Random(X0);
     DefaultArithmetic<MV>::Init(RHS,0);
     norms=-666;norm0=DefaultArithmetic<MV>::Norm2Squared(X0);
+    //for(int i=0;i<N;i++)
+    //  std::cout << "x[" << i << "] = " << std::setprecision(15) << x0dat[i] << std::endl;
     printf("*** Jacobi ***\n");
     for(int i=0;i<its;i++){
       dj.sweep_jacobi((Scalar)1.0,X0,RHS);
     }
     norms=DefaultArithmetic<MV>::Norm2Squared(X0);
-    printf("[%3d] ||x0|| = %22.16e\n",its,(double)norms/norm0);
+    Scalar goodNorm = 0.07433056;
+    //Note that this is (||x_10|| / ||x_0|| )^2.
+    TEST_FLOATING_EQUALITY(norms/norm0, goodNorm, 1e-7);
 
 
 #ifdef ENABLE_ALL_OTHER_RELAXATION
