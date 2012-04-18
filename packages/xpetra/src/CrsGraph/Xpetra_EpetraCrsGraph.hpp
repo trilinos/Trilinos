@@ -17,6 +17,7 @@ namespace Xpetra {
 
   // TODO: move that elsewhere
   RCP< const CrsGraph<int, int> > toXpetra(const Epetra_CrsGraph& graph);
+  const Epetra_CrsGraph & toEpetra(const RCP< const CrsGraph<int, int> > &graph);
   //
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -213,7 +214,7 @@ namespace Xpetra {
     EpetraCrsGraph(const Teuchos::RCP<Epetra_CrsGraph> &graph) : graph_(graph) { }
 
     //! Get the underlying Epetra graph
-    RCP< const Epetra_CrsGraph> getEpetra_CrsGraph() const { return graph_; }
+    RCP<const Epetra_CrsGraph> getEpetra_CrsGraph() const { return graph_; }
     
     //@}
     

@@ -7,6 +7,12 @@
 
 namespace Xpetra {
 
+  // TODO: move that elsewhere
+  const Epetra_CrsGraph & toEpetra(const RCP< const CrsGraph<int, int> > &graph) {
+    XPETRA_RCP_DYNAMIC_CAST(const EpetraCrsGraph, graph, epetraGraph, "toEpetra");
+    return *(epetraGraph->getEpetra_CrsGraph());
+  }
+
   EpetraCrsGraph::EpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype, const Teuchos::RCP< Teuchos::ParameterList > &plist)
     : graph_(Teuchos::rcp(new Epetra_CrsGraph(Copy, toEpetra(rowMap), maxNumEntriesPerRow, toEpetra(pftype)))) { }
   
@@ -76,7 +82,7 @@ namespace Xpetra {
     RCP<const Epetra_CrsGraph> const_graph = rcp(new Epetra_CrsGraph(g));
     
     RCP<Epetra_CrsGraph> graph = Teuchos::rcp_const_cast<Epetra_CrsGraph>(const_graph); //TODO: can I avoid the const_cast ?
-    return rcp ( new Xpetra::EpetraCrsGraph(graph) );
+    return rcp( new Xpetra::EpetraCrsGraph(graph) );
   }
   //
 

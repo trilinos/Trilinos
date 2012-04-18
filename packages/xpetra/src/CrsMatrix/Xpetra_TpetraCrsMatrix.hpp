@@ -53,7 +53,7 @@ namespace Xpetra {
 
     //! Constructor specifying a previously constructed graph.
     TpetraCrsMatrix(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > &graph, const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null)
-      : mtx_(Teuchos::rcp(new Tpetra::CrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps >(graph, plist))) { }
+      : mtx_(Teuchos::rcp(new Tpetra::CrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps >(toTpetra(graph), plist))) { }
 
     //! 
     virtual ~TpetraCrsMatrix() { }
