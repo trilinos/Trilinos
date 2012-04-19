@@ -1032,8 +1032,15 @@ namespace Tpetra {
   ///
   /// The resulting matrix is fill complete (in the sense of
   /// isFillComplete()) and has optimized storage (in the sense of
-  /// isStorageOptimized()).  It has the same domain and range Maps as
+  /// isStorageOptimized()).  By default, its domain Map is the domain
+  /// Map of the source matrix, and its range Map is the range Map of
   /// the source matrix.
+  ///
+  /// \warning If the target Map of the Import is a subset of the
+  ///   source Map of the Import, then you cannot use the default
+  ///   range Map.  You should instead construct a nonoverlapping
+  ///   version of the target Map and supply that as the nondefault
+  ///   value of the range Map.
   ///
   /// \param sourceMatrix [in] The source matrix from which to
   ///   import.  The source of an Import must have a nonoverlapping
@@ -1042,6 +1049,14 @@ namespace Tpetra {
   /// \param importer [in] The Import instance containing a
   ///   precomputed redistribution plan.  The source Map of the
   ///   Import must be the same as the row Map of sourceMatrix.
+  ///
+  /// \param domainMap [in] Domain Map of the returned matrix.  If
+  ///   null, we use the default, which is the domain Map of the
+  ///   source matrix.
+  ///
+  /// \param rangeMap [in] Range Map of the returned matrix.  If
+  ///   null, we use the default, which is the range Map of the
+  ///   source matrix.
   ///
   /// \param plist [in/out] Optional list of parameters.  If not
   ///   null, any missing parameters will be filled in with their
@@ -1052,11 +1067,20 @@ namespace Tpetra {
 				  const Import<typename CrsMatrixType::local_ordinal_type, 
 				               typename CrsMatrixType::global_ordinal_type, 
 				               typename CrsMatrixType::node_type>& importer,
+				  const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type, 
+				                               typename CrsMatrixType::global_ordinal_type, 
+				                               typename CrsMatrixType::node_type>& domainMap = Teuchos::null,
+				  const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type, 
+				                               typename CrsMatrixType::global_ordinal_type, 
+				                               typename CrsMatrixType::node_type>& rangeMap = Teuchos::null,
 				  const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null)
   {
     using Teuchos::as;
     using Teuchos::RCP;
     using Teuchos::rcp;
+    typedef Map<typename CrsMatrixType::local_ordinal_type, 
+      typename CrsMatrixType::global_ordinal_type, 
+      typename CrsMatrixType::node_type> map_type;
 
     // FIXME (mfh 11 Apr 2012) The current implementation of this
     // method doesn't actually fuse the Import with fillComplete().
@@ -1067,11 +1091,17 @@ namespace Tpetra {
 			      DynamicProfile, 
 			      plist));
     destMat->doImport (*sourceMatrix, importer, INSERT);
-    destMat->fillComplete (sourceMatrix->getDomainMap (),
-			   sourceMatrix->getRangeMap ());
+
+    // Use the source matrix's domain Map as the default.
+    RCP<const map_type> theDomainMap = 
+      domainMap.is_null () ? sourceMatrix->getDomainMap () : domainMap;
+    // Use the source matrix's range Map as the default.
+    RCP<const map_type> theRangeMap = 
+      rangeMap.is_null () ? sourceMatrix->getRangeMap () : rangeMap;
+
+    destMat->fillComplete (theDomainMap, theRangeMap);
     return destMat;
   }
-
 
   /// \brief Nonmember CrsMatrix constructor that fuses Export and fillComplete().
   /// \relatesalso CrsMatrix
@@ -1083,7 +1113,8 @@ namespace Tpetra {
   ///
   /// The resulting matrix is fill complete (in the sense of
   /// isFillComplete()) and has optimized storage (in the sense of
-  /// isStorageOptimized()).  It has the same domain and range Maps as
+  /// isStorageOptimized()).  By default, its domain Map is the domain
+  /// Map of the source matrix, and its range Map is the range Map of
   /// the source matrix.
   ///
   /// \param sourceMatrix [in] The source matrix from which to
@@ -1094,6 +1125,14 @@ namespace Tpetra {
   ///   precomputed redistribution plan.  The source Map of the
   ///   Export must be the same as the row Map of sourceMatrix.
   ///
+  /// \param domainMap [in] Domain Map of the returned matrix.  If
+  ///   null, we use the default, which is the domain Map of the
+  ///   source matrix.
+  ///
+  /// \param rangeMap [in] Range Map of the returned matrix.  If
+  ///   null, we use the default, which is the range Map of the
+  ///   source matrix.
+  ///
   /// \param plist [in/out] Optional list of parameters.  If not
   ///   null, any missing parameters will be filled in with their
   ///   default values.
@@ -1103,11 +1142,20 @@ namespace Tpetra {
 				  const Export<typename CrsMatrixType::local_ordinal_type, 
 				               typename CrsMatrixType::global_ordinal_type, 
 				               typename CrsMatrixType::node_type>& exporter,
+				  const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type, 
+				                               typename CrsMatrixType::global_ordinal_type, 
+				                               typename CrsMatrixType::node_type>& domainMap = Teuchos::null,
+				  const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type, 
+				                               typename CrsMatrixType::global_ordinal_type, 
+				                               typename CrsMatrixType::node_type>& rangeMap = Teuchos::null,
 				  const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null)
   {
     using Teuchos::as;
     using Teuchos::RCP;
     using Teuchos::rcp;
+    typedef Map<typename CrsMatrixType::local_ordinal_type, 
+      typename CrsMatrixType::global_ordinal_type, 
+      typename CrsMatrixType::node_type> map_type;
 
     // FIXME (mfh 11 Apr 2012) The current implementation of this
     // method doesn't actually fuse the Export with fillComplete().
@@ -1118,8 +1166,15 @@ namespace Tpetra {
 			      DynamicProfile, 
 			      plist));
     destMat->doExport (*sourceMatrix, exporter, INSERT);
-    destMat->fillComplete (sourceMatrix->getDomainMap (),
-			   sourceMatrix->getRangeMap ());
+
+    // Use the source matrix's domain Map as the default.
+    RCP<const map_type> theDomainMap = 
+      domainMap.is_null () ? sourceMatrix->getDomainMap () : domainMap;
+    // Use the source matrix's range Map as the default.
+    RCP<const map_type> theRangeMap = 
+      rangeMap.is_null () ? sourceMatrix->getRangeMap () : rangeMap;
+
+    destMat->fillComplete (theDomainMap, theRangeMap);
     return destMat;
   }
 } // namespace Tpetra
