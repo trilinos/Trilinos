@@ -53,10 +53,17 @@
 
 namespace Kokkos {
 
-  /// \class CrsMatrixHostCompute
-  /// \brief A compressed-row sparse matrix that lives in host memory.
-  /// \ingroup kokkos_crs_ops
-  ///
+  /*! @class CrsMatrixHostCompute
+      @brief A compressed-row sparse matrix that lives in host memory.
+
+      Matrix coefficients are stored in one of the following ways:
+      - The matrix data is packed into a single contiguous array. The array is of length num-total-nonzeros.  Two auxiliary arrays
+       give starting/ending indices for each row and column indices, respectively.  This is essentially the standard compressed sparse row (CSR) format.
+      This is sometimes referred to as "1D" storage elsewhere in Kokkos.
+      - Data is packed into an array of arrays.  The outer array is length number-of-rows, and each row is an array of length num-nonzeros-per-row.
+      This is sometimes referred to as "2D" storage.
+      @ingroup kokkos_crs_ops
+  */   
   template <class Scalar, 
             class Ordinal, 
             class Node,
@@ -685,9 +692,17 @@ namespace Kokkos {
   // C++0x: it would be nice if these were template aliases
 
   /** \brief Kokkos compressed-row sparse matrix class.
-      \ingroup kokkos_crs_ops
+
+      Matrix coefficients are stored in one of the following ways:
+      - The matrix data is packed into a single contiguous array. The array is of length num-total-nonzeros.  Two auxiliary arrays
+       give starting/ending indices for each row and column indices, respectively.  This is essentially the standard compressed sparse row (CSR) format.
+      This is sometimes referred to as "1D" storage elsewhere in Kokkos.
+      - Data is packed into an array of arrays.  The outer array is length number-of-rows, and each row is an array of length num-nonzeros-per-row.
+      This is sometimes referred to as "2D" storage.
 
       Default specialization is a host-bound CrsMatrixHostCompute object.
+
+      \ingroup kokkos_crs_ops
     */
   template <class Scalar,
             class Ordinal, 
