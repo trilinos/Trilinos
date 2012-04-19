@@ -63,7 +63,7 @@
 
 namespace Tpetra {
 
-	//! \brief A platform class for hybrid nodes.
+  //! \brief A platform class for hybrid nodes.
   /*!
     This class is templated on two types, those of the two underlying Nodes.
     In this way, the HybridPlatform is compiled with support for a particular 

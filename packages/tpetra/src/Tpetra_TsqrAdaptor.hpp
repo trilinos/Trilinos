@@ -131,10 +131,10 @@ namespace Tpetra {
       using Teuchos::parameterList;
 
       if (defaultParams_.is_null()) {
-	RCP<ParameterList> params = parameterList ("TSQR implementation");
-	params->set ("NodeTsqr", *(nodeTsqr_->getValidParameters ()));
-	params->set ("DistTsqr", *(distTsqr_->getValidParameters ()));
-	defaultParams_ = params;
+        RCP<ParameterList> params = parameterList ("TSQR implementation");
+        params->set ("NodeTsqr", *(nodeTsqr_->getValidParameters ()));
+        params->set ("DistTsqr", *(distTsqr_->getValidParameters ()));
+        defaultParams_ = params;
       }
       return defaultParams_;
     }
@@ -148,7 +148,7 @@ namespace Tpetra {
       using Teuchos::sublist;
 
       RCP<ParameterList> params = plist.is_null() ? 
-	parameterList (*getValidParameters ()) : plist;
+        parameterList (*getValidParameters ()) : plist;
       nodeTsqr_->setParameterList (sublist (params, "NodeTsqr"));
       distTsqr_->setParameterList (sublist (params, "DistTsqr"));
 
@@ -178,9 +178,9 @@ namespace Tpetra {
     ///   method is undefined.
     void
     factorExplicit (MV& A,
-		    MV& Q,
-		    dense_matrix_type& R,
-		    const bool forceNonnegativeDiagonal=false)
+                    MV& Q,
+                    dense_matrix_type& R,
+                    const bool forceNonnegativeDiagonal=false)
     {
       typedef Kokkos::MultiVector<scalar_type, node_type> KMV;
 
@@ -188,7 +188,7 @@ namespace Tpetra {
       KMV A_view = getNonConstView (A);
       KMV Q_view = getNonConstView (Q);
       tsqr_->factorExplicit (A_view, Q_view, R, false, 
-			     forceNonnegativeDiagonal);
+                             forceNonnegativeDiagonal);
     }
 
     /// \brief Rank-revealing decomposition
@@ -223,8 +223,8 @@ namespace Tpetra {
     /// \return Rank \f$r\f$ of R: \f$ 0 \leq r \leq ncols\f$.
     int
     revealRank (MV& Q,
-		dense_matrix_type& R,
-		const magnitude_type& tol)
+                dense_matrix_type& R,
+                const magnitude_type& tol)
     {
       typedef Kokkos::MultiVector<scalar_type, node_type> KMV;
 
@@ -277,9 +277,9 @@ namespace Tpetra {
     prepareTsqr (const MV& mv) 
     {
       if (! ready_) {
-	prepareDistTsqr (mv);
-	prepareNodeTsqr (mv);
-	ready_ = true;
+        prepareDistTsqr (mv);
+        prepareNodeTsqr (mv);
+        ready_ = true;
       }
     }
 
@@ -333,8 +333,8 @@ namespace Tpetra {
       // then unpack on exit.  For now we choose just to raise an
       // exception.
       TEUCHOS_TEST_FOR_EXCEPTION(! A.isConstantStride(), std::invalid_argument,
-				 "TSQR does not currently support Tpetra::MultiVector "
-				 "inputs that do not have constant stride.");
+                                 "TSQR does not currently support Tpetra::MultiVector "
+                                 "inputs that do not have constant stride.");
       return A.getLocalMVNonConst();
     }
   };

@@ -403,11 +403,11 @@ namespace Tpetra {
   void 
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
-		    const Teuchos::ArrayView<const Scalar> &imports,
-		    const Teuchos::ArrayView<size_t> &numPacketsPerLID,
-		    size_t constantNumPackets,
-		    Distributor & /* distor */,
-		    CombineMode CM) 
+                    const Teuchos::ArrayView<const Scalar> &imports,
+                    const Teuchos::ArrayView<size_t> &numPacketsPerLID,
+                    size_t constantNumPackets,
+                    Distributor & /* distor */,
+                    CombineMode CM) 
   {
     using Teuchos::as;
     using Teuchos::ArrayView;
@@ -551,7 +551,7 @@ namespace Tpetra {
       ArrayRCP<Scalar> avptr = arcp_const_cast<Scalar>(MVT::getValues(A.lclMV_));
       for (size_t j=0; j < numVecs; ++j) {
         ArrayRCP<Scalar> vj  =   getSubArrayRCP( vptr,j);
-	ArrayRCP<Scalar> avj = A.getSubArrayRCP(avptr,j);
+        ArrayRCP<Scalar> avj = A.getSubArrayRCP(avptr,j);
         MVT::initializeValues(a,myLen, 1, avj, myLen);
         MVT::initializeValues(v,myLen, 1,  vj, myLen);
         dots[j] = MVT::Dot((const KMV&)v,(const KMV &)a);
@@ -742,7 +742,7 @@ namespace Tpetra {
       Teuchos::Array<Scalar> lmeans(means);
       // only combine if we are a distributed MV
       reduceAll (*this->getMap ()->getComm (), REDUCE_SUM, as<int> (numVecs), 
-		 lmeans.getRawPtr (), means.getRawPtr ());
+                 lmeans.getRawPtr (), means.getRawPtr ());
     }
     // mfh 12 Apr 2012: Don't take out the cast from the ordinal type
     // to the magnitude type, since operator/ (std::complex<T>, int)
@@ -750,8 +750,8 @@ namespace Tpetra {
     const Scalar OneOverN = 
       SCT::one() / as<typename SCT::magnitudeType> (getGlobalLength ());
     for (typename Teuchos::ArrayView<Scalar>::iterator i = means.begin(); 
-	 i != means.begin() + numVecs; 
-	 ++i) {
+         i != means.begin() + numVecs; 
+         ++i) {
       (*i) = (*i) * OneOverN;
     }
   }
@@ -1103,7 +1103,7 @@ namespace Tpetra {
         node->template copyBuffers<Scalar>(getLocalLength()*numVecs, MVT::getValues(source.lclMV_), MVT::getValuesNonConst(lclMV_) );
       }
       else {
-	// We have to copy the columns one at a time.
+        // We have to copy the columns one at a time.
         for (size_t j=0; j < numVecs; ++j) {
           KOKKOS_NODE_TRACE("MultiVector::operator=()")
           node->template copyBuffers<Scalar>(getLocalLength(), source.getSubArrayRCP(MVT::getValues(source.lclMV_),j),  
@@ -1869,39 +1869,39 @@ namespace Tpetra {
       Teuchos::OSTab tab (out);
 
       if (myImageID == 0) { // >= VERB_LOW prints description()
-	out << this->description() << endl; 
+        out << this->description() << endl; 
       }
       for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
         if (myImageID == imageCtr) {
           if (vl != VERB_LOW) {
-	    // At verbosity > VERB_LOW, each process prints something.
+            // At verbosity > VERB_LOW, each process prints something.
             out << "Process " << myImageID << ":" << endl;
 
-	    Teuchos::OSTab procTab (out);
+            Teuchos::OSTab procTab (out);
             // >= VERB_MEDIUM: print the local vector length.
-	    out << "local length=" << getLocalLength();
+            out << "local length=" << getLocalLength();
             if (vl != VERB_MEDIUM) {
               // >= VERB_HIGH: print isConstantStride() and getStride()
               if (isConstantStride()) {
-		out << ", constant stride=" << getStride() << endl;
-	      }
+                out << ", constant stride=" << getStride() << endl;
+              }
               else {
-		out << ", not constant stride" << endl;
-	      }
+                out << ", not constant stride" << endl;
+              }
               if (vl == VERB_EXTREME) {
-		// VERB_EXTREME: print all the values in the multivector.
-		out << "Values:" << endl;
-		ArrayRCP<ArrayRCP<const Scalar> > X = this->get2dView();
-		for (size_t i = 0; i < getLocalLength(); ++i) {
-		  for (size_t j = 0; j < getNumVectors(); ++j) {
-		    out << X[j][i];
-		    if (j < getNumVectors() - 1) {
-		      out << " ";
-		    }
-		  } // for each column
-		  out << endl;
-		} // for each row
-	      } // if vl == VERB_EXTREME
+                // VERB_EXTREME: print all the values in the multivector.
+                out << "Values:" << endl;
+                ArrayRCP<ArrayRCP<const Scalar> > X = this->get2dView();
+                for (size_t i = 0; i < getLocalLength(); ++i) {
+                  for (size_t j = 0; j < getNumVectors(); ++j) {
+                    out << X[j][i];
+                    if (j < getNumVectors() - 1) {
+                      out << " ";
+                    }
+                  } // for each column
+                  out << endl;
+                } // for each row
+              } // if vl == VERB_EXTREME
             } // if (vl != VERB_MEDIUM)
             else { // vl == VERB_LOW
               out << endl;

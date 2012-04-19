@@ -159,9 +159,9 @@ namespace Tpetra {
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap, 
-	      size_t maxNumEntriesPerRow, 
-	      ProfileType pftype = DynamicProfile,
-	      const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
+              size_t maxNumEntriesPerRow, 
+              ProfileType pftype = DynamicProfile,
+              const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
 
     /// \brief Constructor specifying (possibly different) number of entries in each row.
     ///
@@ -181,9 +181,9 @@ namespace Tpetra {
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
-	      const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc, 
-	      ProfileType pftype = DynamicProfile,
-	      const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
+              const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc, 
+              ProfileType pftype = DynamicProfile,
+              const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
 
     /// \brief Constructor specifying column Map and fixed number of entries for each row.
     ///
@@ -208,10 +208,10 @@ namespace Tpetra {
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
-	      const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap, 
-	      size_t maxNumEntriesPerRow, 
-	      ProfileType pftype = DynamicProfile,
-	      const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
+              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap, 
+              size_t maxNumEntriesPerRow, 
+              ProfileType pftype = DynamicProfile,
+              const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
 
     /// \brief Constructor specifying column Map and number of entries in each row.
     ///
@@ -236,10 +236,10 @@ namespace Tpetra {
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
-	      const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap, 
-	      const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, 
-	      ProfileType pftype = DynamicProfile,
-	      const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
+              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap, 
+              const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, 
+              ProfileType pftype = DynamicProfile,
+              const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
 
     //! Destructor.
     virtual ~CrsGraph();

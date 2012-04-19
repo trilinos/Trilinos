@@ -66,19 +66,19 @@ namespace Tpetra {
     DistributorSendTypeEnumToString (EDistributorSendType sendType)
     {
       if (sendType == DISTRIBUTOR_ISEND) {
-	return "Isend";
+        return "Isend";
       }
       else if (sendType == DISTRIBUTOR_RSEND) {
-	return "Rsend";
+        return "Rsend";
       }
       else if (sendType == DISTRIBUTOR_SEND) {
-	return "Send";
+        return "Send";
       }
       else if (sendType == DISTRIBUTOR_SSEND) {
-	return "Ssend";
+        return "Ssend";
       }
       else {
-	TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid "
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid "
           "EDistributorSendType enum value " << sendType << ".");
       }
     }
@@ -124,7 +124,7 @@ namespace Tpetra {
     /// pattern.  You need to call one of the "gather / scatter
     /// 'constructors'" to do that.
     explicit Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-			  const Teuchos::RCP<Teuchos::ParameterList>& plist);
+                          const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
     //! Copy constructor.
     Distributor(const Distributor &distributor);
@@ -277,8 +277,8 @@ namespace Tpetra {
     template <class Packet>
     void 
     doPostsAndWaits (const ArrayView<const Packet> &exports,
-		     size_t numPackets,
-		     const ArrayView<Packet> &imports);
+                     size_t numPackets,
+                     const ArrayView<Packet> &imports);
 
     /// \brief Execute the (forward) communication plan.
     ///
@@ -301,9 +301,9 @@ namespace Tpetra {
     template <class Packet>
     void 
     doPostsAndWaits (const ArrayView<const Packet> &exports,
-		     const ArrayView<size_t> &numExportPacketsPerLID,
-		     const ArrayView<Packet> &imports,
-		     const ArrayView<size_t> &numImportPacketsPerLID);
+                     const ArrayView<size_t> &numExportPacketsPerLID,
+                     const ArrayView<Packet> &imports,
+                     const ArrayView<size_t> &numImportPacketsPerLID);
     
     /// \brief Post the data for a forward plan, but do not execute the waits yet.
     ///
@@ -330,8 +330,8 @@ namespace Tpetra {
     template <class Packet>
     void 
     doPosts (const ArrayRCP<const Packet> &exports,
-	     size_t numPackets,
-	     const ArrayRCP<Packet> &imports);
+             size_t numPackets,
+             const ArrayRCP<Packet> &imports);
 
     /// \brief Post the data for a forward plan, but do not execute the waits yet.
     ///
@@ -352,9 +352,9 @@ namespace Tpetra {
     template <class Packet>
     void 
     doPosts (const ArrayRCP<const Packet> &exports,
-	     const ArrayView<size_t> &numExportPacketsPerLID,
-	     const ArrayRCP<Packet> &imports,
-	     const ArrayView<size_t> &numImportPacketsPerLID);
+             const ArrayView<size_t> &numExportPacketsPerLID,
+             const ArrayRCP<Packet> &imports,
+             const ArrayView<size_t> &numImportPacketsPerLID);
 
     //! Wait on any outstanding nonblocking message requests to complete.
     void doWaits ();
@@ -366,8 +366,8 @@ namespace Tpetra {
     template <class Packet>
     void 
     doReversePostsAndWaits (const ArrayView<const Packet> &exports,
-			    size_t numPackets,
-			    const ArrayView<Packet> &imports);
+                            size_t numPackets,
+                            const ArrayView<Packet> &imports);
 
     /// \brief Execute the reverse communication plan.
     ///
@@ -376,9 +376,9 @@ namespace Tpetra {
     template <class Packet>
     void 
     doReversePostsAndWaits (const ArrayView<const Packet> &exports,
-			    const ArrayView<size_t> &numExportPacketsPerLID,
-			    const ArrayView<Packet> &imports,
-			    const ArrayView<size_t> &numImportPacketsPerLID);
+                            const ArrayView<size_t> &numExportPacketsPerLID,
+                            const ArrayView<Packet> &imports,
+                            const ArrayView<size_t> &numImportPacketsPerLID);
 
     /// \brief Post the data for a reverse plan, but do not execute the waits yet.
     ///
@@ -387,8 +387,8 @@ namespace Tpetra {
     template <class Packet>
     void 
     doReversePosts (const ArrayRCP<const Packet> &exports,
-		    size_t numPackets,
-		    const ArrayRCP<Packet> &imports);
+                    size_t numPackets,
+                    const ArrayRCP<Packet> &imports);
 
     /// \brief Post the data for a reverse plan, but do not execute the waits yet.
     ///
@@ -397,9 +397,9 @@ namespace Tpetra {
     template <class Packet>
     void 
     doReversePosts (const ArrayRCP<const Packet> &exports,
-		    const ArrayView<size_t> &numExportPacketsPerLID,
-		    const ArrayRCP<Packet> &imports,
-		    const ArrayView<size_t> &numImportPacketsPerLID);
+                    const ArrayView<size_t> &numExportPacketsPerLID,
+                    const ArrayRCP<Packet> &imports,
+                    const ArrayView<size_t> &numImportPacketsPerLID);
 
     //! Wait on any outstanding reverse message requests to complete.
     void doReverseWaits ();
@@ -548,9 +548,9 @@ namespace Tpetra {
     //! Compute send info from receives.
     template <class Ordinal>
     void computeSends (const ArrayView<const Ordinal> &importIDs,
-		       const ArrayView<const int> &importNodeIDs,
-		       ArrayRCP<Ordinal> &exportIDs,
-		       ArrayRCP<int> &exportNodeIDs);
+                       const ArrayView<const int> &importNodeIDs,
+                       ArrayRCP<Ordinal> &exportIDs,
+                       ArrayRCP<int> &exportNodeIDs);
 
     //! Create a distributor for the reverse communciation pattern.
     void createReverseDistributor() const;
@@ -584,7 +584,7 @@ namespace Tpetra {
     //const Packet* exportsPtr = exports.getRawPtr();
     //ArrayRCP<const Packet> exportsArcp (exportsPtr, as<size_type> (0), exports.size(), false);
     ArrayRCP<const Packet> exportsArcp (exports.getRawPtr(), as<size_type> (0), 
-					exports.size(), false);
+                                        exports.size(), false);
 
     // For some reason, neither of the options below (that use arcp)
     // compile for Packet=std::complex<double> with GCC 4.5.1.  The
@@ -592,14 +592,14 @@ namespace Tpetra {
     // construct a separate nonowning ArrayRCP.
 
     // doPosts (arcp<const Packet> (exports.getRawPtr(), 0, exports.size(), false),
-    // 	     numPackets, 
-    // 	     arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false));
+    //              numPackets, 
+    //              arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false));
     // doPosts (arcp<const Packet> (exportsPtr, 0, exports.size(), false),
-    // 	     numPackets, 
-    // 	     arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false));
+    //              numPackets, 
+    //              arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false));
     doPosts (exportsArcp,
-    	     numPackets, 
-    	     arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false));
+                 numPackets, 
+                 arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false));
     doWaits();
   }
 
@@ -632,15 +632,15 @@ namespace Tpetra {
     // ArrayRCP.
     typedef typename ArrayRCP<const Packet>::size_type size_type;
     ArrayRCP<const Packet> exportsArcp (exports.getRawPtr(), as<size_type> (0),
-					exports.size(), false);
+                                        exports.size(), false);
     // mfh 04 Apr 2012: This is the offending code.  This statement
     // would normally be in place of "exportsArcp" in the
     // doPosts() call below.
     //arcp<const Packet> (exports.getRawPtr(), 0, exports.size(), false),
     doPosts (exportsArcp, 
-	     numExportPacketsPerLID, 
-	     arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false), 
-	     numImportPacketsPerLID);
+             numExportPacketsPerLID, 
+             arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false), 
+             numImportPacketsPerLID);
     doWaits();
   }
 
@@ -648,8 +648,8 @@ namespace Tpetra {
   template <class Packet>
   void 
   Distributor::doPosts (const ArrayRCP<const Packet>& exports,
-			size_t numPackets,
-			const ArrayRCP<Packet>& imports) 
+                        size_t numPackets,
+                        const ArrayRCP<Packet>& imports) 
   {
     using Teuchos::as;
     using Teuchos::FancyOStream;
@@ -680,7 +680,7 @@ namespace Tpetra {
     OSTab tab = this->getOSTab(); // Add one tab level
     if (doPrint && myRank == 0) {
       *out << "sendType=" << DistributorSendTypeEnumToString (sendType) 
-	   << ", barrierBetween=" << doBarrier << endl;
+           << ", barrierBetween=" << doBarrier << endl;
     }
 #endif // HAVE_TEUCHOS_DEBUG
 
@@ -726,15 +726,15 @@ namespace Tpetra {
       size_t curBufferOffset = 0;
       for (size_t i = 0; i < actualNumReceives; ++i) {
         if (imagesFrom_[i] != myImageID) { 
-	  // If my process is receiving these packet(s) from another
-	  // process (not a self-receive):
-	  //
-	  // 1. Set up the persisting view (recvBuf) of the imports
-	  //    array, given the offset and size (total number of
-	  //    packets from process imagesFrom_[i]).
-	  // 2. Start the Irecv and save the resulting request.
+          // If my process is receiving these packet(s) from another
+          // process (not a self-receive):
+          //
+          // 1. Set up the persisting view (recvBuf) of the imports
+          //    array, given the offset and size (total number of
+          //    packets from process imagesFrom_[i]).
+          // 2. Start the Irecv and save the resulting request.
           ArrayRCP<Packet> recvBuf = 
-	    imports.persistingView (curBufferOffset, lengthsFrom_[i]*numPackets);
+            imports.persistingView (curBufferOffset, lengthsFrom_[i]*numPackets);
           requests_.push_back (ireceive<int, Packet> (*comm_, recvBuf, imagesFrom_[i]));
         }
         else { // Receiving from myself
@@ -776,32 +776,32 @@ namespace Tpetra {
 
         if (imagesTo_[p] != myImageID) {
           ArrayView<const Packet> tmpSend = 
-	    exports.view (startsTo_[p]*numPackets, lengthsTo_[p]*numPackets);
-	  if (sendType == DISTRIBUTOR_RSEND) {
-	    readySend<int,Packet> (*comm_, tmpSend, imagesTo_[p]);
-	  }
-	  else if (sendType == DISTRIBUTOR_ISEND) {
-	    ArrayRCP<const Packet> tmpSendBuf = 
-	      exports.persistingView (startsTo_[p] * numPackets, 
-				      lengthsTo_[p] * numPackets);
-	    requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf, imagesTo_[p]));
-	  }
-	  else if (sendType == DISTRIBUTOR_SSEND) {
-	    ssend<int, Packet> (*comm_, tmpSend.size(), 
-				tmpSend.getRawPtr(), imagesTo_[p]);
-	    
-	  } else { // if (sendType == DISTRIBUTOR_SEND) 
-	    // We've already validated sendType, so it has to be
-	    // DISTRIBUTOR_SEND.  If it's not, well, this is a
-	    // reasonable fallback.
-	    //
-	    // FIXME (mfh 23 Mar 2012) Implement a three-argument
-	    // version of send() that takes an ArrayView instead of a
-	    // raw array.
-	    send<int, Packet> (*comm_, tmpSend.size(), 
-			       tmpSend.getRawPtr(), imagesTo_[p]);
-	  }
-	}
+            exports.view (startsTo_[p]*numPackets, lengthsTo_[p]*numPackets);
+          if (sendType == DISTRIBUTOR_RSEND) {
+            readySend<int,Packet> (*comm_, tmpSend, imagesTo_[p]);
+          }
+          else if (sendType == DISTRIBUTOR_ISEND) {
+            ArrayRCP<const Packet> tmpSendBuf = 
+              exports.persistingView (startsTo_[p] * numPackets, 
+                                      lengthsTo_[p] * numPackets);
+            requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf, imagesTo_[p]));
+          }
+          else if (sendType == DISTRIBUTOR_SSEND) {
+            ssend<int, Packet> (*comm_, tmpSend.size(), 
+                                tmpSend.getRawPtr(), imagesTo_[p]);
+            
+          } else { // if (sendType == DISTRIBUTOR_SEND) 
+            // We've already validated sendType, so it has to be
+            // DISTRIBUTOR_SEND.  If it's not, well, this is a
+            // reasonable fallback.
+            //
+            // FIXME (mfh 23 Mar 2012) Implement a three-argument
+            // version of send() that takes an ArrayView instead of a
+            // raw array.
+            send<int, Packet> (*comm_, tmpSend.size(), 
+                               tmpSend.getRawPtr(), imagesTo_[p]);
+          }
+        }
         else { // "Sending" the message to myself
           selfNum = p;
         }
@@ -809,8 +809,8 @@ namespace Tpetra {
 
       if (selfMessage_) {
         std::copy (exports.begin()+startsTo_[selfNum]*numPackets, 
-		   exports.begin()+startsTo_[selfNum]*numPackets+lengthsTo_[selfNum]*numPackets, 
-		   imports.begin()+selfReceiveOffset);
+                   exports.begin()+startsTo_[selfNum]*numPackets+lengthsTo_[selfNum]*numPackets, 
+                   imports.begin()+selfReceiveOffset);
       }
     }
     else { // data are not blocked by image, use send buffer
@@ -834,25 +834,25 @@ namespace Tpetra {
           }
           ArrayView<const Packet> tmpSend = sendArray.view (0, lengthsTo_[p]*numPackets);
 
-	  if (sendType == DISTRIBUTOR_RSEND) {
-	    readySend<int,Packet> (*comm_, tmpSend, imagesTo_[p]);
-	  }
-	  else if (sendType == DISTRIBUTOR_ISEND) {
-	    ArrayRCP<const Packet> tmpSendBuf = 
-	      sendArray.persistingView (0, lengthsTo_[p] * numPackets);
-	    requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf, imagesTo_[p]));
-	  }
-	  else if (sendType == DISTRIBUTOR_SSEND) {
-	    ssend<int,Packet> (*comm_, tmpSend.size(), 
-			       tmpSend.getRawPtr(), imagesTo_[p]);
-	  }
-	  else { // if (sendType == DISTRIBUTOR_SEND) 
-	    // We've already validated sendType, so it has to be
-	    // DISTRIBUTOR_SEND.  If it's not, well, this is a
-	    // reasonable fallback.
-	    send<int,Packet> (*comm_, tmpSend.size(), 
-			      tmpSend.getRawPtr(), imagesTo_[p]);
-	  }
+          if (sendType == DISTRIBUTOR_RSEND) {
+            readySend<int,Packet> (*comm_, tmpSend, imagesTo_[p]);
+          }
+          else if (sendType == DISTRIBUTOR_ISEND) {
+            ArrayRCP<const Packet> tmpSendBuf = 
+              sendArray.persistingView (0, lengthsTo_[p] * numPackets);
+            requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf, imagesTo_[p]));
+          }
+          else if (sendType == DISTRIBUTOR_SSEND) {
+            ssend<int,Packet> (*comm_, tmpSend.size(), 
+                               tmpSend.getRawPtr(), imagesTo_[p]);
+          }
+          else { // if (sendType == DISTRIBUTOR_SEND) 
+            // We've already validated sendType, so it has to be
+            // DISTRIBUTOR_SEND.  If it's not, well, this is a
+            // reasonable fallback.
+            send<int,Packet> (*comm_, tmpSend.size(), 
+                              tmpSend.getRawPtr(), imagesTo_[p]);
+          }
         }
         else { // "Sending" the message to myself
           selfNum = p;
@@ -875,9 +875,9 @@ namespace Tpetra {
   template <class Packet>
   void 
   Distributor::doPosts (const ArrayRCP<const Packet>& exports,
-			const ArrayView<size_t>& numExportPacketsPerLID,
-			const ArrayRCP<Packet>& imports,
-			const ArrayView<size_t>& numImportPacketsPerLID) 
+                        const ArrayView<size_t>& numExportPacketsPerLID,
+                        const ArrayRCP<Packet>& imports,
+                        const ArrayView<size_t>& numImportPacketsPerLID) 
   {
     using Teuchos::as;
     using Teuchos::ireceive;
@@ -939,16 +939,16 @@ namespace Tpetra {
         }
         curLIDoffset += lengthsFrom_[i];
         if (imagesFrom_[i] != myImageID && totalPacketsFrom_i) { 
-	  // If my process is receiving these packet(s) from another
-	  // process (not a self-receive), and if there is at least
-	  // one packet to receive: 
-	  //
-	  // 1. Set up the persisting view (recvBuf) into the imports
-	  //    array, given the offset and size (total number of
-	  //    packets from process imagesFrom_[i]).
-	  // 2. Start the Irecv and save the resulting request.
+          // If my process is receiving these packet(s) from another
+          // process (not a self-receive), and if there is at least
+          // one packet to receive: 
+          //
+          // 1. Set up the persisting view (recvBuf) into the imports
+          //    array, given the offset and size (total number of
+          //    packets from process imagesFrom_[i]).
+          // 2. Start the Irecv and save the resulting request.
           ArrayRCP<Packet> recvBuf = 
-	    imports.persistingView (curBufferOffset, totalPacketsFrom_i);
+            imports.persistingView (curBufferOffset, totalPacketsFrom_i);
           requests_.push_back (ireceive<int, Packet> (*comm_, recvBuf, imagesFrom_[i]));
         }
         else { // Receiving these packet(s) from myself
@@ -1006,26 +1006,26 @@ namespace Tpetra {
 
         if (imagesTo_[p] != myImageID && packetsPerSend[p] > 0) {
           ArrayView<const Packet> tmpSend = 
-	    exports.view (sendPacketOffsets[p], packetsPerSend[p]);
-	  if (sendType == DISTRIBUTOR_RSEND) {
-	    readySend<int,Packet> (*comm_, tmpSend, imagesTo_[p]);
-	  }
-	  else if (sendType == DISTRIBUTOR_ISEND) {
-	    ArrayRCP<const Packet> tmpSendBuf = 
-	      exports.persistingView (sendPacketOffsets[p], packetsPerSend[p]);
-	    requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf, imagesTo_[p]));
-	  }
-	  else if (sendType == DISTRIBUTOR_SSEND) {
-	    ssend<int, Packet> (*comm_, tmpSend.size(), 
-				tmpSend.getRawPtr(), imagesTo_[p]);
-	  }
-	  else { // if (sendType == DISTRIBUTOR_SEND)
-	    // We've already validated sendType, so it has to be
-	    // DISTRIBUTOR_SEND.  If it's not, well, this is a
-	    // reasonable fallback.
-	    send<int, Packet> (*comm_, tmpSend.size(), 
-			       tmpSend.getRawPtr(), imagesTo_[p]);
-	  }
+            exports.view (sendPacketOffsets[p], packetsPerSend[p]);
+          if (sendType == DISTRIBUTOR_RSEND) {
+            readySend<int,Packet> (*comm_, tmpSend, imagesTo_[p]);
+          }
+          else if (sendType == DISTRIBUTOR_ISEND) {
+            ArrayRCP<const Packet> tmpSendBuf = 
+              exports.persistingView (sendPacketOffsets[p], packetsPerSend[p]);
+            requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf, imagesTo_[p]));
+          }
+          else if (sendType == DISTRIBUTOR_SSEND) {
+            ssend<int, Packet> (*comm_, tmpSend.size(), 
+                                tmpSend.getRawPtr(), imagesTo_[p]);
+          }
+          else { // if (sendType == DISTRIBUTOR_SEND)
+            // We've already validated sendType, so it has to be
+            // DISTRIBUTOR_SEND.  If it's not, well, this is a
+            // reasonable fallback.
+            send<int, Packet> (*comm_, tmpSend.size(), 
+                               tmpSend.getRawPtr(), imagesTo_[p]);
+          }
         }
         else { // "Sending" the message to myself
           selfNum = p;
@@ -1034,8 +1034,8 @@ namespace Tpetra {
 
       if (selfMessage_) {
         std::copy (exports.begin()+sendPacketOffsets[selfNum], 
-		   exports.begin()+sendPacketOffsets[selfNum]+packetsPerSend[selfNum], 
-		   imports.begin()+selfReceiveOffset);
+                   exports.begin()+sendPacketOffsets[selfNum]+packetsPerSend[selfNum], 
+                   imports.begin()+selfReceiveOffset);
       }
     }
     else { // data are not blocked by image, use send buffer
@@ -1069,21 +1069,21 @@ namespace Tpetra {
           if (numPacketsTo_p > 0) {
             ArrayView<const Packet> tmpSend = sendArray.view (0, numPacketsTo_p);
 
-	    if (sendType == DISTRIBUTOR_RSEND) {
-	      readySend<int,Packet> (*comm_,tmpSend,imagesTo_[p]);
-	    } 
-	    else if (sendType == DISTRIBUTOR_ISEND) {
-	      ArrayRCP<const Packet> tmpSendBuf = 
-		sendArray.persistingView (0, numPacketsTo_p);
-	      requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf,
-						       imagesTo_[p]));
-	    }
-	    else if (sendType == DISTRIBUTOR_SSEND) {
-	      ssend<int,Packet> (*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
-	    }
-	    else { // if (sendType == DISTRIBUTOR_SSEND)
-	      send<int,Packet> (*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
-	    }
+            if (sendType == DISTRIBUTOR_RSEND) {
+              readySend<int,Packet> (*comm_,tmpSend,imagesTo_[p]);
+            } 
+            else if (sendType == DISTRIBUTOR_ISEND) {
+              ArrayRCP<const Packet> tmpSendBuf = 
+                sendArray.persistingView (0, numPacketsTo_p);
+              requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf,
+                                                       imagesTo_[p]));
+            }
+            else if (sendType == DISTRIBUTOR_SSEND) {
+              ssend<int,Packet> (*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
+            }
+            else { // if (sendType == DISTRIBUTOR_SSEND)
+              send<int,Packet> (*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
+            }
           }
         }
         else { // "Sending" the message to myself
@@ -1125,14 +1125,14 @@ namespace Tpetra {
     // ArrayRCP.
     typedef typename ArrayRCP<const Packet>::size_type size_type;
     ArrayRCP<const Packet> exportsArcp (exports.getRawPtr(), as<size_type> (0),
-					exports.size(), false);
+                                        exports.size(), false);
     // mfh 04 Apr 2012: This is the offending code.  This statement
     // would normally be in place of "exportsArcp" in the
     // doReversePosts() call below.
     //arcp<const Packet> (exports.getRawPtr(), 0, exports.size(), false)
     doReversePosts (exportsArcp,
-    		    numPackets, 
-    		    arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false));
+                        numPackets, 
+                        arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false));
     doReverseWaits();
   }
 
@@ -1165,11 +1165,11 @@ namespace Tpetra {
     // This is why we construct a separate nonowning ArrayRCP.
     typedef typename ArrayRCP<const Packet>::size_type size_type;
     ArrayRCP<const Packet> exportsArcp (exports.getRawPtr(), as<size_type> (0), 
-					exports.size(), false);
+                                        exports.size(), false);
     doReversePosts (exportsArcp,
-		    numExportPacketsPerLID, 
-		    arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false),
-		    numImportPacketsPerLID);
+                    numExportPacketsPerLID, 
+                    arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false),
+                    numImportPacketsPerLID);
     doReverseWaits();
   }
 
@@ -1205,7 +1205,7 @@ namespace Tpetra {
       createReverseDistributor();
     }
     reverseDistributor_->doPosts (exports, numExportPacketsPerLID, 
-				  imports, numImportPacketsPerLID);
+                                  imports, numImportPacketsPerLID);
   }
 
 

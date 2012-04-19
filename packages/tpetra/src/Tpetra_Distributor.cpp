@@ -69,7 +69,7 @@ namespace Tpetra {
   {}
 
   Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-			    const Teuchos::RCP<Teuchos::ParameterList>& plist)
+                            const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : comm_(comm)
     , sendType_ (DISTRIBUTOR_SEND)
     , barrierBetween_ (true)
@@ -167,7 +167,7 @@ namespace Tpetra {
     if (doPrint && myRank == 0) {
       // Only need one process to print out parameters.
       *out << "sendType=" << DistributorSendTypeEnumToString (sendType) 
-	   << ", barrierBetween=" << barrierBetween << endl;
+           << ", barrierBetween=" << barrierBetween << endl;
     }
 #endif // HAVE_TEUCHOS_DEBUG
 
@@ -191,7 +191,7 @@ namespace Tpetra {
     if (doPrint && myRank == 0) {
       // Only need one process to print out parameters.
       *out << "sendType_=" << DistributorSendTypeEnumToString (sendType_) 
-	   << ", barrierBetween_=" << barrierBetween_ << endl;
+           << ", barrierBetween_=" << barrierBetween_ << endl;
     }
 #endif // HAVE_TEUCHOS_DEBUG
     this->setMyParamList (plist);
@@ -218,9 +218,9 @@ namespace Tpetra {
 
     RCP<ParameterList> plist = parameterList ("Tpetra::Distributor");
     plist->set ("Barrier between receives and sends", barrierBetween, 
-		"Whether to execute a barrier between receives and sends in do"
-		"[Reverse]Posts().  Required for correctness when \"Send type\""
-		"=\"Rsend\", otherwise correct but not recommended.");
+                "Whether to execute a barrier between receives and sends in do"
+                "[Reverse]Posts().  Required for correctness when \"Send type\""
+                "=\"Rsend\", otherwise correct but not recommended.");
     setStringToIntegralParameter<EDistributorSendType> ("Send type", 
       defaultSendType, "When using MPI, the variant of MPI_Send to use in "
       "do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
@@ -283,7 +283,7 @@ namespace Tpetra {
     const int myImageID = comm_->getRank();
     for (size_t i=0; i < numReceives_; ++i) {
       if (imagesFrom_[i] != myImageID) {
-	// Don't count receives for messages sent by myself to myself.
+        // Don't count receives for messages sent by myself to myself.
         if (lengthsFrom_[i] > maxReceiveLength) {
           maxReceiveLength = lengthsFrom_[i];
         }
@@ -341,8 +341,8 @@ namespace Tpetra {
 
 #ifdef HAVE_TEUCHOS_DEBUG
       if (doPrint) {
-	*out << "Proc " << myRank << ": waitAll completed " << requests_.size() 
-	     << " requests" << endl;
+        *out << "Proc " << myRank << ": waitAll completed " << requests_.size() 
+             << " requests" << endl;
       }
 
       // Make sure that waitAll() nulled out all the requests.
@@ -400,47 +400,47 @@ namespace Tpetra {
       return;
     } else { 
       if (myImageID == 0) {
-	// VERB_LOW and higher prints description() (on Proc 0 only).
-	out << this->description() << endl; 
+        // VERB_LOW and higher prints description() (on Proc 0 only).
+        out << this->description() << endl; 
       }
       if (vl == VERB_LOW) {
-	return;
+        return;
       } else {
-	// vl > VERB_LOW lets each image print its data.  We assume
-	// that all images can print to the given output stream, and
-	// execute barriers to make it more likely that the output
-	// will be in the right order.
-	for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
-	  if (myImageID == imageCtr) {
-	    out << "[Node " << myImageID << " of " << numImages << "]" << endl;
-	    out << " selfMessage: " << hasSelfMessage() << endl;
-	    out << " numSends: " << getNumSends() << endl;
-	    if (vl == VERB_HIGH || vl == VERB_EXTREME) {
-	      out << " imagesTo: " << toString(imagesTo_) << endl;
-	      out << " lengthsTo: " << toString(lengthsTo_) << endl;
-	      out << " maxSendLength: " << getMaxSendLength() << endl;
-	    }
-	    if (vl == VERB_EXTREME) {
-	      out << " startsTo: " << toString(startsTo_) << endl;
-	      out << " indicesTo: " << toString(indicesTo_) << endl;
-	    }
-	    if (vl == VERB_HIGH || vl == VERB_EXTREME) {
-	      out << " numReceives: " << getNumReceives() << endl;
-	      out << " totalReceiveLength: " << getTotalReceiveLength() << endl;
-	      out << " lengthsFrom: " << toString(lengthsFrom_) << endl;
-	      out << " startsFrom: " << toString(startsFrom_) << endl;
-	      out << " imagesFrom: " << toString(imagesFrom_) << endl;
-	    }
-	    // Last output is a flush; it leaves a space and also 
-	    // helps synchronize output.
-	    out << std::flush;
-	  } // if it's my image's turn to print
-	  // Execute barriers to give output time to synchronize.
-	  // One barrier generally isn't enough.
-	  comm_->barrier();
-	  comm_->barrier();
-	  comm_->barrier();
-	} // for each image
+        // vl > VERB_LOW lets each image print its data.  We assume
+        // that all images can print to the given output stream, and
+        // execute barriers to make it more likely that the output
+        // will be in the right order.
+        for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
+          if (myImageID == imageCtr) {
+            out << "[Node " << myImageID << " of " << numImages << "]" << endl;
+            out << " selfMessage: " << hasSelfMessage() << endl;
+            out << " numSends: " << getNumSends() << endl;
+            if (vl == VERB_HIGH || vl == VERB_EXTREME) {
+              out << " imagesTo: " << toString(imagesTo_) << endl;
+              out << " lengthsTo: " << toString(lengthsTo_) << endl;
+              out << " maxSendLength: " << getMaxSendLength() << endl;
+            }
+            if (vl == VERB_EXTREME) {
+              out << " startsTo: " << toString(startsTo_) << endl;
+              out << " indicesTo: " << toString(indicesTo_) << endl;
+            }
+            if (vl == VERB_HIGH || vl == VERB_EXTREME) {
+              out << " numReceives: " << getNumReceives() << endl;
+              out << " totalReceiveLength: " << getTotalReceiveLength() << endl;
+              out << " lengthsFrom: " << toString(lengthsFrom_) << endl;
+              out << " startsFrom: " << toString(startsFrom_) << endl;
+              out << " imagesFrom: " << toString(imagesFrom_) << endl;
+            }
+            // Last output is a flush; it leaves a space and also 
+            // helps synchronize output.
+            out << std::flush;
+          } // if it's my image's turn to print
+          // Execute barriers to give output time to synchronize.
+          // One barrier generally isn't enough.
+          comm_->barrier();
+          comm_->barrier();
+          comm_->barrier();
+        } // for each image
       }
     }
   }
@@ -474,9 +474,9 @@ namespace Tpetra {
 #endif // HAVE_TEUCHOS_DEBUG
       for (size_t i=0; i < (numSends_ + (selfMessage_ ? 1 : 0)); ++i) {
 #ifdef HAVE_TEUCHOS_DEBUG 
-	if (toNodesFromMe[imagesTo_[i]] != 0) {
-	  counting_error = true;
-	}
+        if (toNodesFromMe[imagesTo_[i]] != 0) {
+          counting_error = true;
+        }
 #endif // HAVE_TEUCHOS_DEBUG
         toNodesFromMe[imagesTo_[i]] = 1;
       }
@@ -506,7 +506,7 @@ namespace Tpetra {
       // the scatter is free).
       Array<int> counts (numProcs, 1);
       reduceAllAndScatter (*comm_, REDUCE_SUM, numProcs, &toNodesFromMe[0], 
-			   &counts[0], &numReceives_);
+                           &counts[0], &numReceives_);
     }
 
     // Now we know numReceives_, which is this process' number of
@@ -566,12 +566,12 @@ namespace Tpetra {
         send (*comm_, lengthsTo_[i], imagesTo_[i]);
       }
       else {
-	// We don't need a send in the self-message case.  If this
-	// process will send a message to itself in the communication
-	// pattern, then the last element of lengthsFrom_ and
-	// imagesFrom_ corresponds to the self-message.  Of course
-	// this process knows how long the message is, and the process
-	// ID is its own process ID.
+        // We don't need a send in the self-message case.  If this
+        // process will send a message to itself in the communication
+        // pattern, then the last element of lengthsFrom_ and
+        // imagesFrom_ corresponds to the self-message.  Of course
+        // this process knows how long the message is, and the process
+        // ID is its own process ID.
         lengthsFrom_[numReceives_-1] = lengthsTo_[i];
         imagesFrom_[numReceives_-1] = myRank;
       }

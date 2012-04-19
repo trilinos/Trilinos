@@ -126,9 +126,9 @@ namespace Tpetra {
     ///   Teuchos::OpaqueWrapper.
     ///
     MpiPlatform (const RCP<Node> &node, 
-		 const RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm)
+                 const RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm)
       : comm_ (Teuchos::createMpiComm<int> (rawMpiComm)),
-	node_ (node)
+        node_ (node)
     {}
 
     //! Destructor (virtual for memory safety of derived classes).
@@ -254,9 +254,9 @@ namespace Tpetra {
     ///   Teuchos::OpaqueWrapper.
     ///
     MpiPlatform (const RCP<Kokkos::DefaultNode::DefaultNodeType> &node, 
-		 const RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm) 
+                 const RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm) 
       : comm_ (Teuchos::createMpiComm<int> (rawMpiComm)),
-	node_ (node.is_null() ? Kokkos::DefaultNode::getDefaultNode() : node)
+        node_ (node.is_null() ? Kokkos::DefaultNode::getDefaultNode() : node)
     {}
 
     //! Destructor (virtual for memory safety of derived classes).

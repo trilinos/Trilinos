@@ -120,8 +120,8 @@ namespace Tpetra {
     ///   process, according to the row Map.
     void 
     replaceGlobalValue (GlobalOrdinal globalRow, 
-			size_t vectorIndex, 
-			const Scalar &value);
+                        size_t vectorIndex, 
+                        const Scalar &value);
 
     /// \brief Add value to existing value, using global (row) index.
     ///
@@ -133,8 +133,8 @@ namespace Tpetra {
     ///   process, according to the row Map.
     void 
     sumIntoGlobalValue (GlobalOrdinal globalRow, 
-			size_t vectorIndex, 
-			const Scalar &value);
+                        size_t vectorIndex, 
+                        const Scalar &value);
 
     /// \brief Replace value, using local (row) index.
     ///
@@ -146,8 +146,8 @@ namespace Tpetra {
     ///   according to the row Map.
     void 
     replaceLocalValue (LocalOrdinal myRow, 
-		       size_t vectorIndex, 
-		       const Scalar &value);
+                       size_t vectorIndex, 
+                       const Scalar &value);
 
     /// \brief Add value to existing value, using local (row) index.
     ///
@@ -159,8 +159,8 @@ namespace Tpetra {
     ///   according to the row Map.
     void 
     sumIntoLocalValue (LocalOrdinal myRow, 
-		       size_t vectorIndex, 
-		       const Scalar &value);
+                       size_t vectorIndex, 
+                       const Scalar &value);
 
     //! Set all values in the multivector with the given value.
     void putScalar (const Scalar &value);
@@ -272,11 +272,11 @@ namespace Tpetra {
         \param In offset - The offset into the data of <tt>(*this)</tt>.
 
         \pre <tt>subMap->getNodeNumElements() + offset < this->getLocalLength()</tt>
-	\pre The given Map must be a subset Map of this MultiVector's row Map.
+        \pre The given Map must be a subset Map of this MultiVector's row Map.
      */
     Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
     offsetView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& subMap, 
-		size_t offset) const;
+                size_t offset) const;
 
     //! \brief Return a non-const MultiVector view of a subset of rows.
     /** 
@@ -288,11 +288,11 @@ namespace Tpetra {
         \param In offset - The offset into the data of <tt>(*this)</tt>.
 
         \pre <tt>subMap->getNodeNumElements() + offset < this->getLocalLength()</tt>
-	\pre The given Map must be a subset Map of this MultiVector's row Map.
+        \pre The given Map must be a subset Map of this MultiVector's row Map.
      */
     Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
     offsetViewNonConst (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap, 
-			size_t offset);
+                        size_t offset);
 
     //! Return a Vector which is a const view of column j.
     Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
@@ -396,11 +396,11 @@ namespace Tpetra {
     //! Matrix-matrix multiplication: this = beta*this + alpha*op(A)*op(B).
     void 
     multiply (Teuchos::ETransp transA, 
-	      Teuchos::ETransp transB, 
-	      const Scalar& alpha, 
-	      const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, 
-	      const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& B, 
-	      const Scalar& beta);
+              Teuchos::ETransp transB, 
+              const Scalar& alpha, 
+              const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, 
+              const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& B, 
+              const Scalar& beta);
 
     //! Element-wise multiply of a Vector A with a MultiVector B.
     /** Forms this = scalarThis * this + scalarAB * B @ A
@@ -410,9 +410,9 @@ namespace Tpetra {
      */
     void 
     elementWiseMultiply (Scalar scalarAB, 
-			 const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, 
-			 const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& B, 
-			 Scalar scalarThis);
+                         const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, 
+                         const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& B, 
+                         Scalar scalarThis);
     //@} 
 
     //! @name Attribute access functions
@@ -477,7 +477,7 @@ namespace Tpetra {
     ///   beware.
     void 
     describe (Teuchos::FancyOStream& out, 
-	      const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+              const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
     //@}
 
@@ -527,25 +527,25 @@ namespace Tpetra {
 
     void 
     copyAndPermute (const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>& sourceObj,
-		    size_t numSameIDs,
-		    const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
-		    const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs);
+                    size_t numSameIDs,
+                    const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
+                    const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs);
 
     void 
     packAndPrepare (const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>& sourceObj,
-		    const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-		    Teuchos::Array<Scalar>& exports,
-		    const Teuchos::ArrayView<size_t>& numExportPacketsPerLID,
-		    size_t& constantNumPackets,
-		    Distributor& distor);
+                    const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+                    Teuchos::Array<Scalar>& exports,
+                    const Teuchos::ArrayView<size_t>& numExportPacketsPerLID,
+                    size_t& constantNumPackets,
+                    Distributor& distor);
 
     void 
     unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
-		      const Teuchos::ArrayView<const Scalar>& imports,
-		      const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-		      size_t constantNumPackets,
-		      Distributor& distor,
-		      CombineMode CM);
+                      const Teuchos::ArrayView<const Scalar>& imports,
+                      const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                      size_t constantNumPackets,
+                      Distributor& distor,
+                      CombineMode CM);
 
     void createViews () const;
     void createViewsNonConst (Kokkos::ReadWriteOption rwo);

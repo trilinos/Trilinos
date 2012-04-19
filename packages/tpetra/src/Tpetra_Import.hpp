@@ -116,7 +116,7 @@ namespace Tpetra {
     ///   directly to the Distributor that implements communication.
     Import (const Teuchos::RCP<const map_type>& source,
             const Teuchos::RCP<const map_type>& target,
-	    const Teuchos::RCP<Teuchos::ParameterList>& plist);
+            const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
     /// \brief Copy constructor. 
     ///
@@ -285,8 +285,8 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Import<LocalOrdinal,GlobalOrdinal,Node>::
   Import (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & source, 
-	  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & target,
-	  const Teuchos::RCP<Teuchos::ParameterList>& plist)
+          const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & target,
+          const Teuchos::RCP<Teuchos::ParameterList>& plist)
   {
     using Teuchos::rcp;
     typedef ImportExportData<LocalOrdinal,GlobalOrdinal,Node> data_type;
@@ -404,23 +404,23 @@ namespace Tpetra {
         os << "Image ID       : " << myImageID << endl;
 
         os << "permuteFromLIDs: "; os << toString (getPermuteFromLIDs()) << endl;
-	//av = getPermuteFromLIDs(); std::copy(av.begin(),av.end(),std::ostream_iterator<LocalOrdinal>(os," ")); os << "}" << endl;
+        //av = getPermuteFromLIDs(); std::copy(av.begin(),av.end(),std::ostream_iterator<LocalOrdinal>(os," ")); os << "}" << endl;
 
         os << "permuteToLIDs  : "; 
-	os << toString (getPermuteToLIDs()) << endl;
-	//av = getPermuteToLIDs();   std::copy(av.begin(),av.end(),std::ostream_iterator<LocalOrdinal>(os," ")); os << "}" << endl;
+        os << toString (getPermuteToLIDs()) << endl;
+        //av = getPermuteToLIDs();   std::copy(av.begin(),av.end(),std::ostream_iterator<LocalOrdinal>(os," ")); os << "}" << endl;
 
         os << "remoteLIDs     : "; 
-	os << toString (getRemoteLIDs()) << endl;
-	//av = getRemoteLIDs();      std::copy(av.begin(),av.end(),std::ostream_iterator<LocalOrdinal>(os," ")); os << "}" << endl;
+        os << toString (getRemoteLIDs()) << endl;
+        //av = getRemoteLIDs();      std::copy(av.begin(),av.end(),std::ostream_iterator<LocalOrdinal>(os," ")); os << "}" << endl;
 
         os << "exportLIDs     : "; 
-	os << toString (getExportLIDs()) << endl;
-	//av = getExportLIDs();      std::copy(av.begin(),av.end(),std::ostream_iterator<LocalOrdinal>(os," ")); os << "}" << endl;
+        os << toString (getExportLIDs()) << endl;
+        //av = getExportLIDs();      std::copy(av.begin(),av.end(),std::ostream_iterator<LocalOrdinal>(os," ")); os << "}" << endl;
 
         os << "exportImageIDs : "; 
-	os << toString (getExportImageIDs()) << endl;
-	//avi = getExportImageIDs();  std::copy(avi.begin(),avi.end(),std::ostream_iterator<int>(os," ")); os << "}" << endl;
+        os << toString (getExportImageIDs()) << endl;
+        //avi = getExportImageIDs();  std::copy(avi.begin(),avi.end(),std::ostream_iterator<int>(os," ")); os << "}" << endl;
 
         os << "numSameIDs     : " << getNumSameIDs() << endl;
         os << "numPermuteIDs  : " << getNumPermuteIDs() << endl;
@@ -437,14 +437,14 @@ namespace Tpetra {
     const bool printMaps = false;
     if (printMaps) {
       if (myImageID == 0) {
-	os << endl << endl << "Source Map:" << endl << std::flush; 
+        os << endl << endl << "Source Map:" << endl << std::flush; 
       }
       comm->barrier();
       os << *getSourceMap();
       comm->barrier();
 
       if (myImageID == 0) {
-	os << endl << endl << "Target Map:" << endl << std::flush; 
+        os << endl << endl << "Target Map:" << endl << std::flush; 
       }
       comm->barrier();
       os << *getTargetMap();
@@ -459,7 +459,7 @@ namespace Tpetra {
     }
     comm->barrier();
     getDistributor().describe (*(getFancyOStream (rcpFromRef (os))),
-			       Teuchos::VERB_EXTREME);
+                               Teuchos::VERB_EXTREME);
   }
 
 
@@ -572,7 +572,7 @@ namespace Tpetra {
           }
         }
         TEUCHOS_TEST_FOR_EXCEPTION( numValidRemote != totalNumRemote - numInvalidRemote, std::logic_error,
-	  "Tpetra::Import::setupExport(): After removing invalid remote GIDs and packing the valid remote "
+          "Tpetra::Import::setupExport(): After removing invalid remote GIDs and packing the valid remote "
           "GIDs, numValidRemote = " << numValidRemote << " != totalNumRemote - numInvalidRemote = "
           << totalNumRemote - numInvalidRemote << ".  Please report this bug to the Tpetra developers.");
 

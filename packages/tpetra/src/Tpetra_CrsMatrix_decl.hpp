@@ -193,9 +193,9 @@ namespace Tpetra {
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
-	       size_t maxNumEntriesPerRow, 
-	       ProfileType pftype = DynamicProfile,
-	       const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
+               size_t maxNumEntriesPerRow, 
+               ProfileType pftype = DynamicProfile,
+               const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
 
     /// \brief Constructor specifying (possibly different) number of entries in each row.
     ///
@@ -215,9 +215,9 @@ namespace Tpetra {
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
-	       const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc, 
-	       ProfileType pftype = DynamicProfile,
-	       const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
+               const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc, 
+               ProfileType pftype = DynamicProfile,
+               const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
 
     /// \brief Constructor specifying column Map and fixed number of entries for each row.
     ///
@@ -242,10 +242,10 @@ namespace Tpetra {
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
-	       const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap, 
-	       size_t maxNumEntriesPerRow, 
-	       ProfileType pftype = DynamicProfile,
-	       const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
+               const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap, 
+               size_t maxNumEntriesPerRow, 
+               ProfileType pftype = DynamicProfile,
+               const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
 
     /// \brief Constructor specifying column Map and number of entries in each row.
     ///
@@ -270,10 +270,10 @@ namespace Tpetra {
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
-	       const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap, 
-	       const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc, 
-	       ProfileType pftype = DynamicProfile,
-	       const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
+               const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap, 
+               const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc, 
+               ProfileType pftype = DynamicProfile,
+               const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
 
     /// \brief Constructor specifying a previously constructed graph.
     ///
@@ -296,7 +296,7 @@ namespace Tpetra {
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     explicit CrsMatrix (const Teuchos::RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >& graph,
-			const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
+                        const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
 
     //! Destructor.
     virtual ~CrsMatrix();
@@ -377,7 +377,7 @@ namespace Tpetra {
       void scale(const Scalar &alpha);
 
       //@}
-	  
+          
 
       //! @name Transformational Methods
       //@{ 
@@ -745,11 +745,11 @@ namespace Tpetra {
       ///   sensibly).
       void 
       unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
-			const Teuchos::ArrayView<const char> &imports,
-			const Teuchos::ArrayView<size_t> &numPacketsPerLID,
-			size_t constantNumPackets,
-			Distributor &distor,
-			CombineMode combineMode);
+                        const Teuchos::ArrayView<const char> &imports,
+                        const Teuchos::ArrayView<size_t> &numPacketsPerLID,
+                        size_t constantNumPackets,
+                        Distributor &distor,
+                        CombineMode combineMode);
       //@}
 
       //! \name Deprecated routines to be removed at some point in the future.
@@ -802,9 +802,9 @@ namespace Tpetra {
       /// is, this matrix) has a static graph.
       void 
       combineGlobalValues (const GlobalOrdinal globalRowIndex, 
-			   const Teuchos::ArrayView<const GlobalOrdinal> columnIndices,
-			   const Teuchos::ArrayView<const Scalar> values,
-			   const Tpetra::CombineMode combineMode);
+                           const Teuchos::ArrayView<const GlobalOrdinal> columnIndices,
+                           const Teuchos::ArrayView<const Scalar> values,
+                           const Tpetra::CombineMode combineMode);
 
       /// \brief Transform CrsMatrix entries by applying a binary function to them.
       ///
@@ -823,53 +823,53 @@ namespace Tpetra {
       template<class BinaryFunction>
       void
       transformGlobalValues (GlobalOrdinal globalRow, 
-			     const Teuchos::ArrayView<const GlobalOrdinal>& indices,
-			     const Teuchos::ArrayView<const Scalar>        & values,
-			     BinaryFunction f)
+                             const Teuchos::ArrayView<const GlobalOrdinal>& indices,
+                             const Teuchos::ArrayView<const Scalar>        & values,
+                             BinaryFunction f)
       {
-	typedef Scalar ST;
-	typedef LocalOrdinal LO;
-	typedef GlobalOrdinal GO;
-	typedef Node NT;
-	using Teuchos::Array;
-	using Teuchos::ArrayView;
+        typedef Scalar ST;
+        typedef LocalOrdinal LO;
+        typedef GlobalOrdinal GO;
+        typedef Node NT;
+        using Teuchos::Array;
+        using Teuchos::ArrayView;
 
-	TEUCHOS_TEST_FOR_EXCEPTION(values.size() != indices.size(), 
+        TEUCHOS_TEST_FOR_EXCEPTION(values.size() != indices.size(), 
           std::invalid_argument, "transformGlobalValues: values.size() = " 
-	  << values.size() << " != indices.size() = " << indices.size() << ".");
+          << values.size() << " != indices.size() = " << indices.size() << ".");
 
-	const LO lrow = this->getRowMap()->getLocalElement(globalRow);
+        const LO lrow = this->getRowMap()->getLocalElement(globalRow);
 
-	TEUCHOS_TEST_FOR_EXCEPTION(lrow == LOT::invalid(), std::invalid_argument, 
-	  "transformGlobalValues: The given global row index " << globalRow 
-	  << " is not owned by the calling process (rank " 
-	  << this->getRowMap()->getComm()->getRank() << ").");
+        TEUCHOS_TEST_FOR_EXCEPTION(lrow == LOT::invalid(), std::invalid_argument, 
+          "transformGlobalValues: The given global row index " << globalRow 
+          << " is not owned by the calling process (rank " 
+          << this->getRowMap()->getComm()->getRank() << ").");
 
-	RowInfo rowInfo = staticGraph_->getRowInfo(lrow);
-	if (indices.size() > 0) {
-	  if (isLocallyIndexed()) {
-	    // Convert global indices to local indices.
-	    const Map<LO, GO, NT> &colMap = *(this->getColMap());
-	    Array<LO> lindices (indices.size());
-	    typename ArrayView<const GO>::iterator gindit = indices.begin();
-	    typename Array<LO>::iterator           lindit = lindices.begin();
-	    while (gindit != indices.end()) {
-	      // No need to filter before asking the column Map to
-	      // convert GID->LID.  If the GID doesn't exist in the
-	      // column Map, the GID will be mapped to invalid(), which
-	      // will not be found in the graph.
-	      *lindit++ = colMap.getLocalElement(*gindit++);
-	    }
-	    typename Graph::SLocalGlobalViews inds_view;
-	    inds_view.linds = lindices();
-	    staticGraph_->template transformValues<LocalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), f);
-	  }
-	  else if (isGloballyIndexed()) {
-	    typename Graph::SLocalGlobalViews inds_view;
-	    inds_view.ginds = indices;
-	    staticGraph_->template transformValues<GlobalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), f);
-	  }
-	}
+        RowInfo rowInfo = staticGraph_->getRowInfo(lrow);
+        if (indices.size() > 0) {
+          if (isLocallyIndexed()) {
+            // Convert global indices to local indices.
+            const Map<LO, GO, NT> &colMap = *(this->getColMap());
+            Array<LO> lindices (indices.size());
+            typename ArrayView<const GO>::iterator gindit = indices.begin();
+            typename Array<LO>::iterator           lindit = lindices.begin();
+            while (gindit != indices.end()) {
+              // No need to filter before asking the column Map to
+              // convert GID->LID.  If the GID doesn't exist in the
+              // column Map, the GID will be mapped to invalid(), which
+              // will not be found in the graph.
+              *lindit++ = colMap.getLocalElement(*gindit++);
+            }
+            typename Graph::SLocalGlobalViews inds_view;
+            inds_view.linds = lindices();
+            staticGraph_->template transformValues<LocalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), f);
+          }
+          else if (isGloballyIndexed()) {
+            typename Graph::SLocalGlobalViews inds_view;
+            inds_view.ginds = indices;
+            staticGraph_->template transformValues<GlobalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), f);
+          }
+        }
       }
 
     protected:
@@ -1003,8 +1003,8 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   createCrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, 
-		   size_t maxNumEntriesPerRow = 0,
-		   const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null)
+                   size_t maxNumEntriesPerRow = 0,
+                   const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null)
   {
     using Teuchos::rcp;
     typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
@@ -1064,16 +1064,16 @@ namespace Tpetra {
   template<class CrsMatrixType>
   Teuchos::RCP<CrsMatrixType>
   importAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
-				  const Import<typename CrsMatrixType::local_ordinal_type, 
-				               typename CrsMatrixType::global_ordinal_type, 
-				               typename CrsMatrixType::node_type>& importer,
-				  const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type, 
-				                               typename CrsMatrixType::global_ordinal_type, 
-				                               typename CrsMatrixType::node_type> >& domainMap = Teuchos::null,
-				  const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type, 
-				                               typename CrsMatrixType::global_ordinal_type, 
-				                               typename CrsMatrixType::node_type> >& rangeMap = Teuchos::null,
-				  const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null)
+                                  const Import<typename CrsMatrixType::local_ordinal_type, 
+                                               typename CrsMatrixType::global_ordinal_type, 
+                                               typename CrsMatrixType::node_type>& importer,
+                                  const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type, 
+                                                               typename CrsMatrixType::global_ordinal_type, 
+                                                               typename CrsMatrixType::node_type> >& domainMap = Teuchos::null,
+                                  const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type, 
+                                                               typename CrsMatrixType::global_ordinal_type, 
+                                                               typename CrsMatrixType::node_type> >& rangeMap = Teuchos::null,
+                                  const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null)
   {
     using Teuchos::as;
     using Teuchos::RCP;
@@ -1087,9 +1087,9 @@ namespace Tpetra {
     // This will change in the future.
     RCP<CrsMatrixType> destMat = 
       rcp (new CrsMatrixType (importer.getTargetMap (),
-			      as<size_t> (0), 
-			      DynamicProfile, 
-			      plist));
+                              as<size_t> (0), 
+                              DynamicProfile, 
+                              plist));
     destMat->doImport (*sourceMatrix, importer, INSERT);
 
     // Use the source matrix's domain Map as the default.
@@ -1139,16 +1139,16 @@ namespace Tpetra {
   template<class CrsMatrixType>
   Teuchos::RCP<CrsMatrixType>
   exportAndFillCompleteCrsMatrix (const Teuchos::RCP<const CrsMatrixType>& sourceMatrix,
-				  const Export<typename CrsMatrixType::local_ordinal_type, 
-				               typename CrsMatrixType::global_ordinal_type, 
-				               typename CrsMatrixType::node_type>& exporter,
-				  const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type, 
-				                               typename CrsMatrixType::global_ordinal_type, 
-				                               typename CrsMatrixType::node_type> >& domainMap = Teuchos::null,
-				  const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type, 
-				                               typename CrsMatrixType::global_ordinal_type, 
-				                               typename CrsMatrixType::node_type> >& rangeMap = Teuchos::null,
-				  const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null)
+                                  const Export<typename CrsMatrixType::local_ordinal_type, 
+                                               typename CrsMatrixType::global_ordinal_type, 
+                                               typename CrsMatrixType::node_type>& exporter,
+                                  const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type, 
+                                                               typename CrsMatrixType::global_ordinal_type, 
+                                                               typename CrsMatrixType::node_type> >& domainMap = Teuchos::null,
+                                  const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type, 
+                                                               typename CrsMatrixType::global_ordinal_type, 
+                                                               typename CrsMatrixType::node_type> >& rangeMap = Teuchos::null,
+                                  const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null)
   {
     using Teuchos::as;
     using Teuchos::RCP;
@@ -1162,9 +1162,9 @@ namespace Tpetra {
     // This will change in the future.
     RCP<CrsMatrixType> destMat = 
       rcp (new CrsMatrixType (exporter.getTargetMap (),
-			      as<size_t> (0), 
-			      DynamicProfile, 
-			      plist));
+                              as<size_t> (0), 
+                              DynamicProfile, 
+                              plist));
     destMat->doExport (*sourceMatrix, exporter, INSERT);
 
     // Use the source matrix's domain Map as the default.

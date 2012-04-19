@@ -57,12 +57,12 @@ class Map;
 
 
 /*! This class provides capabilities to construct a transpose matrix of an existing Tpetra_CrsMatrix
-	  object and (optionally) redistribute it across a parallel distributed memory machine.
+    object and (optionally) redistribute it across a parallel distributed memory machine.
 */
 template <class Scalar, 
-	class LocalOrdinal=int, 
-	class GlobalOrdinal=LocalOrdinal, 
-	class Node=Kokkos::DefaultNode::DefaultNodeType, 
+        class LocalOrdinal=int, 
+        class GlobalOrdinal=LocalOrdinal, 
+        class Node=Kokkos::DefaultNode::DefaultNodeType, 
     class SpMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps >
 class RowMatrixTransposer {
     
@@ -73,7 +73,7 @@ class RowMatrixTransposer {
   //! Primary Tpetra_CrsMatrixTransposer constructor.
   /*!
     \param origMatrix An existing Tpetra_CrsMatrix object.  The Tpetra_CrsMatrix, the LHS and RHS pointers
-		       do not need to be defined before this constructor is called.
+                       do not need to be defined before this constructor is called.
 
     \return Pointer to a Tpetra_CrsMatrixTransposer object.
 
@@ -90,27 +90,27 @@ class RowMatrixTransposer {
   
   //! Generate a new Tpetra_CrsMatrix as the transpose of an Tpetra_CrsMatrix passed into the constructor.
   /*! Constructs a new Tpetra_CrsMatrix that is a copy of the Tpetra_CrsMatrix passed in to the constructor.
-		
-		\param optimizeTranspose Optimizes the storage of the newly created Transpose matrix
-		\param transposeMatrix The matrix in which the result of the tranpose operation will be put.
-		\param TransposeRowMap If this argument is defined, the transpose matrix will be distributed
-		       using this map as the row map for the transpose.	If null, the function will evenly distribute
-			   the rows of the tranpose matrix.
+                
+                \param optimizeTranspose Optimizes the storage of the newly created Transpose matrix
+                \param transposeMatrix The matrix in which the result of the tranpose operation will be put.
+                \param TransposeRowMap If this argument is defined, the transpose matrix will be distributed
+                       using this map as the row map for the transpose.        If null, the function will evenly distribute
+                           the rows of the tranpose matrix.
   */
   RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >
   createTranspose(const OptimizeOption optimizeTranspose=DoOptimizeStorage
     , Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transposeRowMap = Teuchos::null);
 
-	
+        
  private: 
-	//The original matrix to be transposed.
-	const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& origMatrix_;
-	//The matrix in which the result of the tranpose is placed.
-	RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > transposeMatrix_;
-	//Whether or not to optimize the storage of the transpose matrix.
-	OptimizeOption optimizeTranspose_;	
-	const RCP<const Teuchos::Comm<int> > comm_;
-	GlobalOrdinal indexBase_;
+        //The original matrix to be transposed.
+        const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& origMatrix_;
+        //The matrix in which the result of the tranpose is placed.
+        RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > transposeMatrix_;
+        //Whether or not to optimize the storage of the transpose matrix.
+        OptimizeOption optimizeTranspose_;        
+        const RCP<const Teuchos::Comm<int> > comm_;
+        GlobalOrdinal indexBase_;
 };
 
 

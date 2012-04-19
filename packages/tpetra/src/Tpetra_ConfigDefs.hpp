@@ -176,20 +176,20 @@ namespace Tpetra {
   /*!  \brief Tpetra::Combine Mode enumerable type */
   /*! 
     If set to Add, existing values will be summed with new values.
-		If set to Insert, new values will be inserted that don't currently exist.
-		If set to Replace, existing values will be replaced with new values.
+    If set to Insert, new values will be inserted that don't currently exist.
+    If set to Replace, existing values will be replaced with new values.
 
-		NOTE: Add and Replace are intended for modifying values that already exist,
-		but it will function correctly if those values don't already exist. (i.e.
-		zero will be inserted, and then summed with or replaced by the new value.)
-		However, performance may suffer. (The same goes for Insert.)
+    NOTE: Add and Replace are intended for modifying values that already exist,
+    but it will function correctly if those values don't already exist. (i.e.
+    zero will be inserted, and then summed with or replaced by the new value.)
+    However, performance may suffer. (The same goes for Insert.)
   */
-	enum CombineMode {
-		ADD,     /*!< Existing values will be summed with new values. */
-		INSERT,  /*!< Insert new values that don't currently exist. */
-		REPLACE, /*!< Existing values will be replaced with new values. */
-		ABSMAX   /*!< Replacment is <tt>max( abs(old_value), abs(new_value) )</tt> */
-	};
+  enum CombineMode {
+    ADD,     /*!< Existing values will be summed with new values. */
+    INSERT,  /*!< Insert new values that don't currently exist. */
+    REPLACE, /*!< Existing values will be replaced with new values. */
+    ABSMAX   /*!< Replacment is <tt>max( abs(old_value), abs(new_value) )</tt> */
+  };
 
   // import Teuchos memory management classes into Tpetra
 #ifndef __CUDACC__
