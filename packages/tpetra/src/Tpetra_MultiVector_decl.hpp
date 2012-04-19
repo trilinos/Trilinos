@@ -88,12 +88,18 @@ namespace Tpetra {
     //! MultiVector copy constructor.
     MultiVector(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source);
 
+    //! \brief Set multi-vector using user-allocated data. (view)
+    /*! This use case is not supported for all nodes. Specifically, it is not typically supported for accelerator-based nodes like Kokkos::ThrustGPUNode.
+        \post constantStride() == true 
+     */
+    MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayRCP<Scalar> &view, size_t LDA, size_t NumVectors);
+
     //! Set multi-vector values from two-dimensional array using Teuchos memory management classes. (copy)
-    /*! Post-condition: constantStride() == true */
+    /*! \post constantStride() == true */
     MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Scalar> &A, size_t LDA, size_t NumVectors);
 
     //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy)
-    /*! Post-condition: constantStride() == true */
+    /*! \post constantStride() == true */
     MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &ArrayOfPtrs, size_t NumVectors);
 
     //! MultiVector destructor.
@@ -495,13 +501,19 @@ namespace Tpetra {
     template <class T>
     Teuchos::ArrayRCP<T> getSubArrayRCP(Teuchos::ArrayRCP<T> arr, size_t j) const;
 
+    enum EPrivateViewConstructor {
+      VIEW_CONSTRUCTOR
+    };
+
     //! Advanced constructor for non-contiguous views.
     MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
-                Teuchos::ArrayRCP<Scalar> data, size_t LDA, Teuchos::ArrayView<const size_t> whichVectors);
+                Teuchos::ArrayRCP<Scalar> data, size_t LDA, Teuchos::ArrayView<const size_t> whichVectors,
+                EPrivateViewConstructor /* dummy */);
 
     //! Advanced constructor for contiguous views.
     MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
-                Teuchos::ArrayRCP<Scalar> data, size_t LDA, size_t NumVectors);
+                Teuchos::ArrayRCP<Scalar> data, size_t LDA, size_t NumVectors, 
+                EPrivateViewConstructor /* dummy */);
 
     //! @name Implementation of Tpetra::DistObject interface
     //@{

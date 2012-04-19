@@ -63,13 +63,13 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Scalar> &values)
-  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,values,values.size(),1) {
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayRCP<Scalar> &view)
+  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,view,view.size(),1) {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, Teuchos::ArrayRCP<Scalar> values)
-    : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,values,map->getNodeNumElements(),1) {
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Scalar> &values)
+  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,values,values.size(),1) {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

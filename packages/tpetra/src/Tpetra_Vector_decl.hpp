@@ -70,6 +70,11 @@ namespace Tpetra {
     //! Vector copy constructor.
     Vector(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source);
 
+    //! \brief Set multi-vector using user-allocated data. (view)
+    /*! This use case is not supported for all nodes. Specifically, it is not typically supported for accelerator-based nodes like Kokkos::ThrustGPUNode.
+     */
+    Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayRCP<Scalar> &view);
+
     //! \brief Set multi-vector values from an array using Teuchos memory management classes. (copy)
     Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Scalar> &A);
 
@@ -156,9 +161,6 @@ namespace Tpetra {
 
     typedef Kokkos::MultiVector<Scalar,Node> KMV;
     typedef Kokkos::DefaultArithmetic<KMV>   MVT;
-
-    //! Advanced constructor accepting parallel buffer view.
-    Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, Teuchos::ArrayRCP<Scalar> data);
 
   }; // class Vector
 

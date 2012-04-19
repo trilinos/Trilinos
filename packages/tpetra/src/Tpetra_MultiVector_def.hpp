@@ -47,6 +47,7 @@
 #include <Teuchos_Assert.hpp>
 #include <Teuchos_as.hpp>
 
+#include "Tpetra_ViewAccepter.hpp"
 #include "Tpetra_Vector.hpp"
 
 #ifdef DOXYGEN_USE_ONLY
@@ -105,6 +106,23 @@ namespace Tpetra {
     else {
       MVT::initializeValues(lclMV_,0,numVecs,Teuchos::null,0);
     }
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(
+                        const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, 
+                        const Teuchos::ArrayRCP<Scalar> &view, size_t LDA, size_t NumVectors)
+  : DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map), lclMV_(map->getNode()) {
+    const std::string tfecfFuncName("MultiVector(view,LDA)");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(NumVectors < 1, std::invalid_argument,
+        ": NumVectors must be strictly positive.");
+    const size_t myLen = getLocalLength();
+    using Teuchos::ArrayRCP;
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(LDA < myLen, std::invalid_argument,
+        ": LDA must be large enough to accomodate the local entries.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(view.size()) < LDA*(NumVectors-1)+myLen, std::invalid_argument,
+        ": view does not contain enough data to specify the entries in this.");
+    MVT::initializeValues(lclMV_,myLen,NumVectors, Tpetra::details::ViewAccepter<Node>::template acceptView<Scalar>(view) ,myLen);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -180,7 +198,7 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
-              Teuchos::ArrayRCP<Scalar> data, size_t LDA, Teuchos::ArrayView<const size_t> WhichVectors)
+              Teuchos::ArrayRCP<Scalar> data, size_t LDA, Teuchos::ArrayView<const size_t> WhichVectors, EPrivateViewConstructor /* dummy */)
   : DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map), lclMV_(map->getNode()), whichVectors_(WhichVectors) {
     const std::string tfecfFuncName("MultiVector(data,LDA,WhichVectors)");
     const size_t myLen = getLocalLength();
@@ -209,7 +227,7 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
-                Teuchos::ArrayRCP<Scalar> data, size_t LDA, size_t NumVectors)
+                Teuchos::ArrayRCP<Scalar> data, size_t LDA, size_t NumVectors, EPrivateViewConstructor /* dummy */)
   : DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map), lclMV_(map->getNode()) {
     const std::string tfecfFuncName("MultiVector(data,LDA,NumVector)");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(NumVectors < 1, std::invalid_argument,
@@ -1160,13 +1178,13 @@ namespace Tpetra {
     if (isConstantStride()) {
       // view goes from first entry of first vector to last entry of last vector
       ArrayRCP<Scalar> subdata = ncbuf.persistingView( offset, myStride * (numVecs-1) + newLen );
-      constViewMV = Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(subMap,subdata,myStride,numVecs) );
+      constViewMV = Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(subMap,subdata,myStride,numVecs,VIEW_CONSTRUCTOR) );
     }
     else {
       // use same which index, but with an offset start pointer
       size_t maxSubVecIndex = *std::max_element(whichVectors_.begin(), whichVectors_.end());
       ArrayRCP<Scalar> subdata = ncbuf.persistingView( offset, myStride * maxSubVecIndex + newLen );
-      constViewMV = Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(subMap,subdata,myStride,whichVectors_) );
+      constViewMV = Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(subMap,subdata,myStride,whichVectors_,VIEW_CONSTRUCTOR) );
     }
     return constViewMV;      
   }
@@ -1192,13 +1210,13 @@ namespace Tpetra {
     if (isConstantStride()) {
       // view goes from first entry of first vector to last entry of last vector
       ArrayRCP<Scalar> subdata = buf.persistingView( offset, myStride * (numVecs-1) + newLen );
-      subViewMV = Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(subMap,subdata,myStride,numVecs) );
+      subViewMV = Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(subMap,subdata,myStride,numVecs,VIEW_CONSTRUCTOR) );
     }
     else {
       // use same which index, but with an offset start pointer
       size_t maxSubVecIndex = *std::max_element(whichVectors_.begin(), whichVectors_.end());
       ArrayRCP<Scalar> subdata = buf.persistingView( offset, myStride * maxSubVecIndex + newLen );
-      subViewMV = Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(subMap,subdata,myStride,whichVectors_) );
+      subViewMV = Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(subMap,subdata,myStride,whichVectors_,VIEW_CONSTRUCTOR) );
     }
     return subViewMV;      
   }
@@ -1246,7 +1264,7 @@ namespace Tpetra {
     }
     Teuchos::RCP<CMV> constViewMV;
     constViewMV = Teuchos::rcp<CMV>(
-                    new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(), minbuf, myStride, newCols())
+                    new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(), minbuf, myStride, newCols(), VIEW_CONSTRUCTOR)
                   );
     return constViewMV;      
   }
@@ -1271,12 +1289,12 @@ namespace Tpetra {
       ArrayRCP<Scalar> subdata = ncbuf.persistingView( MVT::getStride(lclMV_) * colRng.lbound(),
                                                        MVT::getStride(lclMV_) * (numViewVecs-1) + getLocalLength() );
       return Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(),
-                                                                                  subdata,MVT::getStride(lclMV_),numViewVecs) );
+                                                                                  subdata,MVT::getStride(lclMV_),numViewVecs,VIEW_CONSTRUCTOR) );
     }
     // otherwise, use a subset of this whichVectors_ to construct new multivector
     Teuchos::Array<size_t> whchvecs( whichVectors_.begin()+colRng.lbound(), whichVectors_.begin()+colRng.ubound()+1 );
     return Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(),  
-                                                                                ncbuf,MVT::getStride(lclMV_),whchvecs) );
+                                                                                ncbuf,MVT::getStride(lclMV_),whchvecs,VIEW_CONSTRUCTOR) );
   }
 
 
@@ -1288,7 +1306,7 @@ namespace Tpetra {
     if (isConstantStride()) {
       return Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(),
                                                                                   MVT::getValuesNonConst(lclMV_),MVT::getStride(lclMV_),
-                                                                                  cols) );
+                                                                                  cols, VIEW_CONSTRUCTOR) );
     }
     // else, lookup current whichVectors_ using cols
     Teuchos::Array<size_t> newcols(cols.size());
@@ -1297,7 +1315,7 @@ namespace Tpetra {
     }
     return Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(),
                                                                                 MVT::getValuesNonConst(lclMV_),MVT::getStride(lclMV_),
-                                                                                newcols()) );
+                                                                                newcols(), VIEW_CONSTRUCTOR) );
   }
 
 
@@ -1316,14 +1334,14 @@ namespace Tpetra {
       ArrayRCP<Scalar> subdata = data.persistingView( stride * colRng.lbound(),
                                                       stride * (numViewVecs-1) + getLocalLength() );
       return Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(),
-                                                                                  subdata,stride,numViewVecs) );
+                                                                                  subdata,stride,numViewVecs,VIEW_CONSTRUCTOR) );
     }
     // otherwise, use a subset of this whichVectors_ to construct new multivector
     Teuchos::Array<size_t> whchvecs( whichVectors_.begin()+colRng.lbound(), whichVectors_.begin()+colRng.ubound()+1 );
     const size_t stride = MVT::getStride(lclMV_);
     ArrayRCP<Scalar> data = MVT::getValuesNonConst(lclMV_);
     return Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(),  
-                                                                                data,stride,whchvecs) );
+                                                                                data,stride,whchvecs,VIEW_CONSTRUCTOR) );
   }
 
 
