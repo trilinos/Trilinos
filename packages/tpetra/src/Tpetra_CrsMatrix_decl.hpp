@@ -1069,10 +1069,10 @@ namespace Tpetra {
 				               typename CrsMatrixType::node_type>& importer,
 				  const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type, 
 				                               typename CrsMatrixType::global_ordinal_type, 
-				                               typename CrsMatrixType::node_type>& domainMap = Teuchos::null,
+				                               typename CrsMatrixType::node_type> >& domainMap = Teuchos::null,
 				  const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type, 
 				                               typename CrsMatrixType::global_ordinal_type, 
-				                               typename CrsMatrixType::node_type>& rangeMap = Teuchos::null,
+				                               typename CrsMatrixType::node_type> >& rangeMap = Teuchos::null,
 				  const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null)
   {
     using Teuchos::as;
@@ -1144,10 +1144,10 @@ namespace Tpetra {
 				               typename CrsMatrixType::node_type>& exporter,
 				  const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type, 
 				                               typename CrsMatrixType::global_ordinal_type, 
-				                               typename CrsMatrixType::node_type>& domainMap = Teuchos::null,
+				                               typename CrsMatrixType::node_type> >& domainMap = Teuchos::null,
 				  const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type, 
 				                               typename CrsMatrixType::global_ordinal_type, 
-				                               typename CrsMatrixType::node_type>& rangeMap = Teuchos::null,
+				                               typename CrsMatrixType::node_type> >& rangeMap = Teuchos::null,
 				  const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null)
   {
     using Teuchos::as;
