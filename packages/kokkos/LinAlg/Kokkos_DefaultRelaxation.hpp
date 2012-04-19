@@ -607,13 +607,6 @@ namespace Kokkos {
     oneOverTheta_=1.0 / theta_;
     rho_=1.0/s1_;
 
-    std::cout << std::endl;
-    std::cout << "alpha  = " << alpha << std::endl;
-    std::cout << "beta   = " << beta << std::endl;
-    std::cout << "delta  = " << delta_ << std::endl;
-    std::cout << "theta  = " << theta_ << std::endl;
-    std::cout << "s1     = " << s1_ << std::endl;
-
     first_cheby_iteration_=true;
     cheby_setup_done_=true;
   } //setup_chebyshev()
@@ -624,14 +617,7 @@ namespace Kokkos {
   void DefaultRelaxation<Scalar,Ordinal,Node>::sweep_chebyshev(MultiVector<Scalar,Node> &X, const MultiVector<Scalar,Node> &B) const{
     typedef DefaultChebyshevOp1<Scalar,Ordinal>  Op1D;
     //    typedef DefaultChebyOp2<Scalar,Ordinal>  Op2D;
-    static int iterNumber=1;
-    Scalar xnorm;
 
-    if (first_cheby_iteration_) {
-      xnorm=DefaultArithmetic<MultiVector<Scalar,Node> >::Norm2Squared(X);
-      std::cout << "||x_0" << "|| = " << sqrt(xnorm) << std::endl;
-    }
-    
     TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
                Teuchos::typeName(*this) << "::sweep_chebyshev(): operation not fully initialized.");
     TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != B.getNumCols());
@@ -657,9 +643,6 @@ namespace Kokkos {
       dtemp2_=2*rho_new_*delta_;
       rho_=rho_new_;
     }    
-    //printf("    rho = %6.4e rho_new = %6.4e dtemp1=%6.4e dtemp2=%6.4e\n",rho_,rho_new_,dtemp1_,dtemp2_);
-
-
     
     if (isEmpty_ == true) {
       // This makes no sense to try to call ...
@@ -708,8 +691,6 @@ namespace Kokkos {
           node_->template parallel_for<Op2D>(0,numRows_*numRHS,wdp);
       */
     }
-    xnorm=DefaultArithmetic<MultiVector<Scalar,Node> >::Norm2Squared(X);
-    std::cout << "||x_" << iterNumber++ << "|| = " << sqrt(xnorm) << std::endl;
     
     first_cheby_iteration_=false;
 
