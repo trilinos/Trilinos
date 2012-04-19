@@ -196,84 +196,84 @@ namespace Tpetra {
 //
 #ifdef HAVE_TPETRA_INST_INT_LONG
 #if defined(HAVE_TPETRA_INST_DOUBLE)
-  TPETRA_CRSMATRIX_INSTANT(double,int,int,Kokkos::SerialNode)
+  TPETRA_CRSMATRIX_INSTANT(double,int,long,Kokkos::SerialNode)
   TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(double, int, long, Kokkos::SerialNode)
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(double, int, long, Kokkos::SerialNode)
 
 #if defined(HAVE_KOKKOS_TBB)
-  TPETRA_CRSMATRIX_INSTANT(double,int,int,Kokkos::TBBNode)
+  TPETRA_CRSMATRIX_INSTANT(double,int,long,Kokkos::TBBNode)
   TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(double, int, long, Kokkos::TBBNode)
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(double, int, long, Kokkos::TBBNode)
 #endif // HAVE_KOKKOS_TBB
 
 #if defined(HAVE_KOKKOS_THREADPOOL)
-  TPETRA_CRSMATRIX_INSTANT(double,int,int,Kokkos::TPINode)
+  TPETRA_CRSMATRIX_INSTANT(double,int,long,Kokkos::TPINode)
   TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(double, int, long, Kokkos::TPINode)
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(double, int, long, Kokkos::TPINode)
 #endif // HAVE_KOKKOS_THREADPOOL
 
 #if defined(HAVE_KOKKOS_OPENMP)
-  TPETRA_CRSMATRIX_INSTANT(double,int,int,Kokkos::OpenMPNode)
+  TPETRA_CRSMATRIX_INSTANT(double,int,long,Kokkos::OpenMPNode)
   TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(double, int, long, Kokkos::OpenMPNode)
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(double, int, long, Kokkos::OpenMPNode)
 #endif // HAVE_KOKKOS_OPENMP
 
 #if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
-  TPETRA_CRSMATRIX_INSTANT(double,int,int,Kokkos::ThrustGPUNode)
+  TPETRA_CRSMATRIX_INSTANT(double,int,long,Kokkos::ThrustGPUNode)
   TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(double, int, long, Kokkos::ThrustGPUNode)
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(double, int, long, Kokkos::ThrustGPUNode)
 #endif // HAVE_KOKKOS_THRUST && HAVE_KOKKOS_CUDA_DOUBLE
 #endif // DOUBLE
 
 #if defined(HAVE_TPETRA_INST_FLOAT)
-  TPETRA_CRSMATRIX_INSTANT(float,int,int,Kokkos::SerialNode)
+  TPETRA_CRSMATRIX_INSTANT(float,int,long,Kokkos::SerialNode)
   TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(float, int, long, Kokkos::SerialNode)
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(float, int, long, Kokkos::SerialNode)
 
 #if defined(HAVE_KOKKOS_TBB)
-  TPETRA_CRSMATRIX_INSTANT(float,int,int,Kokkos::TBBNode)
+  TPETRA_CRSMATRIX_INSTANT(float,int,long,Kokkos::TBBNode)
   TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(float, int, long, Kokkos::TBBNode)
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(float, int, long, Kokkos::TBBNode)
 #endif
 
 #if defined(HAVE_KOKKOS_THREADPOOL)
-  TPETRA_CRSMATRIX_INSTANT(float,int,int,Kokkos::TPINode)
+  TPETRA_CRSMATRIX_INSTANT(float,int,long,Kokkos::TPINode)
   TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(float, int, long, Kokkos::TPINode)
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(float, int, long, Kokkos::TPINode)
 #endif
 
 #if defined(HAVE_KOKKOS_OPENMP)
-  TPETRA_CRSMATRIX_INSTANT(float,int,int,Kokkos::OpenMPNode)
+  TPETRA_CRSMATRIX_INSTANT(float,int,long,Kokkos::OpenMPNode)
   TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(float, int, long, Kokkos::OpenMPNode)
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(float, int, long, Kokkos::OpenMPNode)
 #endif
 
 #if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_FLOAT)
-  TPETRA_CRSMATRIX_INSTANT(float,int,int,Kokkos::ThrustGPUNode)
+  TPETRA_CRSMATRIX_INSTANT(float,int,long,Kokkos::ThrustGPUNode)
   TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(float, int, long, Kokkos::ThrustGPUNode)
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(float, int, long, Kokkos::ThrustGPUNode)
 #endif
 #endif // FLOAT
 
 #if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
-  TPETRA_CRSMATRIX_INSTANT(std::complex<double>,int,int,Kokkos::SerialNode)
+  TPETRA_CRSMATRIX_INSTANT(std::complex<double>,int,long,Kokkos::SerialNode)
   TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(std::complex<double>, int, long, Kokkos::SerialNode)
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(std::complex<double>, int, long, Kokkos::SerialNode)
 
 #if defined(HAVE_KOKKOS_TBB)
-  TPETRA_CRSMATRIX_INSTANT(std::complex<double>,int,int,Kokkos::TBBNode)
+  TPETRA_CRSMATRIX_INSTANT(std::complex<double>,int,long,Kokkos::TBBNode)
   TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(std::complex<double>, int, long, Kokkos::TBBNode)
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(std::complex<double>, int, long, Kokkos::TBBNode)
 #endif
 
 #if defined(HAVE_KOKKOS_THREADPOOL)
-  TPETRA_CRSMATRIX_INSTANT(std::complex<double>,int,int,Kokkos::TPINode)
+  TPETRA_CRSMATRIX_INSTANT(std::complex<double>,int,long,Kokkos::TPINode)
   TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(std::complex<double>, int, long, Kokkos::TPINode)
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(std::complex<double>, int, long, Kokkos::TPINode)
 #endif
 
 #if defined(HAVE_KOKKOS_OPENMP)
-  TPETRA_CRSMATRIX_INSTANT(std::complex<double>,int,int,Kokkos::OpenMPNode)
+  TPETRA_CRSMATRIX_INSTANT(std::complex<double>,int,long,Kokkos::OpenMPNode)
   TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(std::complex<double>, int, long, Kokkos::OpenMPNode)
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(std::complex<double>, int, long, Kokkos::OpenMPNode)
 #endif
@@ -281,31 +281,31 @@ namespace Tpetra {
 // No std::complex<double> on GPU support for now.
 //
 //#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
-//  TPETRA_CRSMATRIX_INSTANT(std::complex<double>,int,int,Kokkos::ThrustGPUNode)
+//  TPETRA_CRSMATRIX_INSTANT(std::complex<double>,int,long,Kokkos::ThrustGPUNode)
 //  TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(std::complex<double>, int, long, Kokkos::ThrustGPUNode)
 //  TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(std::complex<double>, int, long, Kokkos::ThrustGPUNode)
 //#endif
 #endif // COMPLEX DOUBLE
 
 #if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
-  TPETRA_CRSMATRIX_INSTANT(std::complex<float>,int,int,Kokkos::SerialNode)
+  TPETRA_CRSMATRIX_INSTANT(std::complex<float>,int,long,Kokkos::SerialNode)
   TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(std::complex<float>, int, long, Kokkos::SerialNode)
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(std::complex<float>, int, long, Kokkos::SerialNode)
 
 #if defined(HAVE_KOKKOS_TBB)
-  TPETRA_CRSMATRIX_INSTANT(std::complex<float>,int,int,Kokkos::TBBNode)
+  TPETRA_CRSMATRIX_INSTANT(std::complex<float>,int,long,Kokkos::TBBNode)
   TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(std::complex<float>, int, long, Kokkos::TBBNode)
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(std::complex<float>, int, long, Kokkos::TBBNode)
 #endif
 
 #if defined(HAVE_KOKKOS_THREADPOOL)
-  TPETRA_CRSMATRIX_INSTANT(std::complex<float>,int,int,Kokkos::TPINode)
+  TPETRA_CRSMATRIX_INSTANT(std::complex<float>,int,long,Kokkos::TPINode)
   TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(std::complex<float>, int, long, Kokkos::TPINode)
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(std::complex<float>, int, long, Kokkos::TPINode)
 #endif
 
 #if defined(HAVE_KOKKOS_OPENMP)
-  TPETRA_CRSMATRIX_INSTANT(std::complex<float>,int,int,Kokkos::OpenMPNode)
+  TPETRA_CRSMATRIX_INSTANT(std::complex<float>,int,long,Kokkos::OpenMPNode)
   TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(std::complex<float>, int, long, Kokkos::OpenMPNode)
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(std::complex<float>, int, long, Kokkos::OpenMPNode)
 #endif
@@ -313,7 +313,7 @@ namespace Tpetra {
 // No std::complex<float> on GPU support for now.
 //
 //#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
-//  TPETRA_CRSMATRIX_INSTANT(double,int,int,Kokkos::ThrustGPUNode)
+//  TPETRA_CRSMATRIX_INSTANT(double,int,long,Kokkos::ThrustGPUNode)
 //  TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(std::complex<float>, int, long, Kokkos::ThrustGPUNode)
 //  TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(std::complex<float>, int, long, Kokkos::ThrustGPUNode)
 //#endif
