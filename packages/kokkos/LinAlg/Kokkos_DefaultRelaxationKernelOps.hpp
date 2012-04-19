@@ -338,11 +338,11 @@ namespace Kokkos {
       const Scalar *bj  = b + rhs * stride;
       Scalar        vj;
 
-      if(first_step){
-        if(zero_initial_guess)
+      if (first_step) {
+        if(zero_initial_guess) {
           // x= theta^{-1} D^{-1} b
           xj[row]=wj[row]=bj[row] / diag[row] *oneOverTheta;
-        else{
+        } else {
           // v=Ax
           vj=Teuchos::ScalarTraits<Scalar>::zero();
           for (size_t c=begs[row]; c<ends[row]; ++c) {
@@ -353,8 +353,7 @@ namespace Kokkos {
           // x+=w
           xj[row]+=wj[row];
         }
-      }
-      else{
+      } else {
         //v=Ax
         vj=Teuchos::ScalarTraits<Scalar>::zero();
         for (size_t c=begs[row]; c<ends[row]; ++c) {

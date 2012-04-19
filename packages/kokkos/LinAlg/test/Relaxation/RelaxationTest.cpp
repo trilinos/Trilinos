@@ -210,8 +210,6 @@ namespace {
     vals    = Teuchos::null;
     A.finalize(true);
 
-    printf("\n");
-
     int its=10;
 
     // Allocate Relaxation Object
@@ -234,7 +232,6 @@ namespace {
     norms=-666;norm0=DefaultArithmetic<MV>::Norm2Squared(X0);
     //for(int i=0;i<N;i++)
     //  std::cout << "x[" << i << "] = " << std::setprecision(15) << x0dat[i] << std::endl;
-    printf("*** Jacobi ***\n");
     for(int i=0;i<its;i++){
       dj.sweep_jacobi((Scalar)1.0,X0,RHS);
     }
@@ -295,8 +292,6 @@ namespace {
     vals    = Teuchos::null;
     A.finalize(true);
 
-    printf("\n");
-
     int its=10;
 
     // Allocate Relaxation Object
@@ -314,21 +309,26 @@ namespace {
 
     // Set starting vector & run Chebyshev
     Teuchos::ScalarTraits<Scalar>::seedrandom(24601);
-    DefaultArithmetic<MV>::Random(X0);
-    DefaultArithmetic<MV>::Init(RHS,0);
+    //DefaultArithmetic<MV>::Random(X0);
+    DefaultArithmetic<MV>::Init(X0,0);
+    DefaultArithmetic<MV>::Init(RHS,1);
     norms=-666;norm0=DefaultArithmetic<MV>::Norm2Squared(X0);    
+    norms=DefaultArithmetic<MV>::Norm2Squared(RHS);    
+    printf("\n[%3d] ||b|| = %22.16e\n",its,sqrt((double)norms));
     /*    FILE *f=fopen("x.dat","w");
     for(int i=0;i<N;i++)
       fprintf(f,"%22.16e\n",x0dat[i]);
       fclose(f);*/      
-    printf("*** Chebyshev ***\n");
+    dj.setup_chebyshev((Scalar)1.9594929736,(Scalar) 0.097974648681);
     for(int i=0;i<its;i++){
       // NTS: Runs 1st degree polynomials, because higher degree isn't correct
-      dj.setup_chebyshev((Scalar)2.0,(Scalar) 2.0e-6);    
+      //dj.setup_chebyshev((Scalar)2.0,(Scalar) 2.0e-6);    
       dj.sweep_chebyshev(X0,RHS);
     }
     norms=DefaultArithmetic<MV>::Norm2Squared(X0);
-    printf("[%3d] ||x0|| = %22.16e\n",its,(double)norms/norm0);
+    //printf("[%3d] ||x0|| = %22.16e\n",its,(double)norms/norm0);
+    printf("[%3d] ||x_init|| = %22.16e\n",its,sqrt((double)norm0));
+    printf("[%3d] ||x0|| = %22.16e\n",its,sqrt((double)norms));
 
     x0dat = null;
     rhsdat= null;
@@ -487,6 +487,8 @@ namespace {
         UNIT_TEST_TBBNODE( ORDINAL, SCALAR ) \
         UNIT_TEST_TPINODE( ORDINAL, SCALAR )
 
+#define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
+        UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, double)
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, double) \
         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, float) \
