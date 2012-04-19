@@ -373,6 +373,7 @@ inline void fei::Matrix_Impl<T>::setMatrixGraph(fei::SharedPtr<fei::MatrixGraph>
 template<typename T>
 inline void fei::Matrix_Impl<T>::markState()
 {
+if(changedSinceMark_)
   changedSinceMark_ = false;
 }
 
@@ -904,6 +905,7 @@ int fei::Matrix_Impl<T>::sumIn(int blockID, int connectivityID,
                        fieldsize, &(rowIndices[ioffset]),
                        &(values[ioffset]), FEI_DENSE_ROW) );
         ioffset += fieldsize;
+        changedSinceMark_ = true;
       }
     }
     else {
@@ -923,6 +925,7 @@ int fei::Matrix_Impl<T>::sumIn(int blockID, int connectivityID,
 
     CHK_ERR( sumIn(numRowIndices, rowIndices, numColIndices, colIndices,
                    values, format) );
+    changedSinceMark_ = true;
   }
 
   return(0);
@@ -998,6 +1001,7 @@ int fei::Matrix_Impl<T>::giveToMatrix(int numRows, const int* rows,
   if (numRemote < 1) {
     int err = giveToUnderlyingMatrix(numRows, rows, numCols, cols, myvalues,
                                     sumInto, FEI_DENSE_ROW);
+    changedSinceMark_ = true;
     if (err != 0) {
       FEI_OSTRINGSTREAM osstr;
       osstr << "fei::Matrix_Impl::giveToMatrix ERROR: err="<<err
@@ -1026,19 +1030,18 @@ int fei::Matrix_Impl<T>::giveToMatrix(int numRows, const int* rows,
 
       if (sumInto) {
         remote_mat->sumInRow(row, cols, rowvalues, numCols);
-        changedSinceMark_ = true;
       }
       else {
         remote_mat->putRow(row, cols, rowvalues, numCols);
-        changedSinceMark_ = true;
       }
-
     }
     else {
       CHK_ERR( giveToUnderlyingMatrix(1, &row, numCols, cols, &rowvalues,
                                       sumInto, 0) );
     }
   }
+
+  changedSinceMark_ = true;
 
   return(0);
 }
@@ -1127,6 +1130,7 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
                                            &coefs2dPtr[i*blockCols.size()],
                                            true) );
     }
+    changedSinceMark_ = true;
 
     return(0);
   }
@@ -1142,12 +1146,11 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
       FillableMat* remote_mat = getRemotelyOwnedMatrix(proc);
       if (sumInto) {
         remote_mat->sumInRow(row, cols, values[i], numCols);
-        changedSinceMark_ = true;
       }
       else {
         remote_mat->putRow(row, cols, values[i], numCols);
-        changedSinceMark_ = true;
       }
+      changedSinceMark_ = true;
       continue;
     }
 
@@ -1214,6 +1217,8 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
                                          blkColDims_ptr,
                                          coefs_2D_ptr,
                                          false) );
+
+    changedSinceMark_ = true;
   }
 
   return(0);

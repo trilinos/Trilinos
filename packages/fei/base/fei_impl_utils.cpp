@@ -251,10 +251,11 @@ void unpack_FillableMat(const std::vector<char>& buffer,
 }
 
 //----------------------------------------------------------------------------
-void unpack_CSRMat(const std::vector<char>& buffer, fei::CSRMat& mat)
+bool unpack_CSRMat(const std::vector<char>& buffer, fei::CSRMat& mat)
 {
+  bool all_zeros = true;
   if (buffer.size() < 1) {
-    return;
+    return all_zeros;
   }
 
   const int* intdata = reinterpret_cast<const int*>(&buffer[0]);
@@ -286,12 +287,13 @@ void unpack_CSRMat(const std::vector<char>& buffer, fei::CSRMat& mat)
     for(int j=0; j<rowlen; ++j) {
       int col = intdata[ioffsetcols++];
       double coef = doubledata[doffset];
-
+      if (coef != 0.0) all_zeros = false;
       srg.packedColumnIndices[doffset] = col;
       packed_coefs[doffset++] = coef;
     }
   }
   srg.rowOffsets[nrows] = nnz;
+  return all_zeros;
 }
 
 void pack_indices_coefs(const std::vector<int>& indices,

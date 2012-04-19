@@ -99,7 +99,8 @@ void unpack_FillableMat(const std::vector<char>& intdata,
                         bool clear_mat_on_entry = true,
                         bool overwrite_entries = true);
 
-void unpack_CSRMat(const std::vector<char>& buffer, fei::CSRMat& mat);
+/** return-value is true if the unpacked matrix contains nothing but zeros...*/
+bool unpack_CSRMat(const std::vector<char>& buffer, fei::CSRMat& mat);
 
 void pack_indices_coefs(const std::vector<int>& indices,
                         const std::vector<double>& coefs,
