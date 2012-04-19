@@ -125,7 +125,7 @@ preEvaluate(typename Traits::PreEvalData d)
    Teuchos::RCP<LOC> tpetraContainer 
          = Teuchos::rcp_dynamic_cast<LOC>(d.dirichletData.ghostedCounter,true);
 
-   dirichletCounter_ = tpetraContainer->x;
+   dirichletCounter_ = tpetraContainer->get_x();
    TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
 }
 
@@ -145,7 +145,7 @@ evaluateFields(typename Traits::EvalData workset)
 
    Teuchos::RCP<SGLOC> sgTpetraContainer 
          = Teuchos::rcp_dynamic_cast<SGLOC>(workset.ghostedLinContainer);
-   Teuchos::RCP<typename LOC::VectorType> r_template = (*sgTpetraContainer->begin())->f;
+   Teuchos::RCP<typename LOC::VectorType> r_template = (*sgTpetraContainer->begin())->get_f();
    Teuchos::RCP<const typename LOC::MapType> map = r_template->getMap();
 
    Teuchos::ArrayRCP<double> dc_array = dirichletCounter_->get1dViewNonConst();
@@ -193,7 +193,7 @@ evaluateFields(typename Traits::EvalData workset)
             int stochIndex = 0;
             typename SGLOC::iterator itr; 
             for(itr=sgTpetraContainer->begin();itr!=sgTpetraContainer->end();++itr,++stochIndex) {
-               Teuchos::RCP<typename LOC::VectorType> f = (*itr)->f;
+               Teuchos::RCP<typename LOC::VectorType> f = (*itr)->get_f();
     	       f->replaceLocalValue(lid,field.coeff(stochIndex));
             }
 
@@ -277,7 +277,7 @@ preEvaluate(typename Traits::PreEvalData d)
    Teuchos::RCP<LOC> tpetraContainer 
          = Teuchos::rcp_dynamic_cast<LOC>(d.dirichletData.ghostedCounter,true);
 
-   dirichletCounter_ = tpetraContainer->x;
+   dirichletCounter_ = tpetraContainer->get_x();
    TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
 }
 
@@ -297,7 +297,7 @@ evaluateFields(typename Traits::EvalData workset)
 
    Teuchos::RCP<SGLOC> sgTpetraContainer 
          = Teuchos::rcp_dynamic_cast<SGLOC>(workset.ghostedLinContainer);
-   Teuchos::RCP<typename LOC::CrsMatrixType> Jac_template = (*sgTpetraContainer->begin())->A;
+   Teuchos::RCP<typename LOC::CrsMatrixType> Jac_template = (*sgTpetraContainer->begin())->get_A();
    Teuchos::RCP<const typename LOC::MapType> map = Jac_template->getRowMap();
 
    Teuchos::ArrayRCP<double> dc_array = dirichletCounter_->get1dViewNonConst();
@@ -346,8 +346,8 @@ evaluateFields(typename Traits::EvalData workset)
             int stochIndex = 0;
             typename SGLOC::iterator itr; 
             for(itr=sgTpetraContainer->begin();itr!=sgTpetraContainer->end();++itr,++stochIndex) {
-               Teuchos::RCP<typename LOC::VectorType> r = (*itr)->f;
-               Teuchos::RCP<typename LOC::CrsMatrixType> Jac = (*itr)->A;
+               Teuchos::RCP<typename LOC::VectorType> r = (*itr)->get_f();
+               Teuchos::RCP<typename LOC::CrsMatrixType> Jac = (*itr)->get_A();
                Teuchos::ArrayRCP<double> r_array = r->get1dViewNonConst();
 
                // zero out matrix row

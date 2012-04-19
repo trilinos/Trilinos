@@ -130,9 +130,9 @@ evaluateFields(typename Traits::EvalData workset)
          = Teuchos::rcp_dynamic_cast<LOC>(workset.ghostedLinContainer);
    Teuchos::RCP<typename LOC::VectorType> x;
    if (useTimeDerivativeSolutionVector_)
-     x = tpetraContainer->dxdt;
+     x = tpetraContainer->get_dxdt();
    else
-     x = tpetraContainer->x; 
+     x = tpetraContainer->get_x(); 
 
    Teuchos::ArrayRCP<const double> x_array = x->get1dView();
  
@@ -243,11 +243,11 @@ evaluateFields(typename Traits::EvalData workset)
    Teuchos::RCP<typename LOC::VectorType> x;
    double seed_value = 0.0;
    if (useTimeDerivativeSolutionVector_) {
-     x = tpetraContainer->dxdt;
+     x = tpetraContainer->get_dxdt();
      seed_value = workset.alpha;
    }
    else {
-     x = tpetraContainer->x;
+     x = tpetraContainer->get_x();
      seed_value = workset.beta;
    }
 

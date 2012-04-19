@@ -128,7 +128,7 @@ evaluateFields(typename Traits::EvalData workset)
 
    Teuchos::RCP<LOC> tpetraContainer 
          = Teuchos::rcp_dynamic_cast<LOC>(workset.linContainer);
-   Teuchos::RCP<typename LOC::VectorType> x = tpetraContainer->x; 
+   Teuchos::RCP<typename LOC::VectorType> x = tpetraContainer->get_x(); 
    Teuchos::ArrayRCP<double> x_array = x->get1dViewNonConst();
 
    // NOTE: A reordering of these loops will likely improve performance

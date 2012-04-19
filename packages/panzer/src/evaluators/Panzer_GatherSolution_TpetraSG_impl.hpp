@@ -136,9 +136,9 @@ evaluateFields(typename Traits::EvalData workset)
 
    Teuchos::RCP<typename LOC::VectorType> x_template; // this will be used to map from GIDs --> LIDs
    if (useTimeDerivativeSolutionVector_)
-     x_template = (*sgTpetraContainer->begin())->dxdt;
+     x_template = (*sgTpetraContainer->begin())->get_dxdt();
    else
-     x_template = (*sgTpetraContainer->begin())->x; 
+     x_template = (*sgTpetraContainer->begin())->get_x(); 
  
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -177,9 +177,9 @@ evaluateFields(typename Traits::EvalData workset)
                // extract solution and time derivative vectors
                Teuchos::RCP<typename LOC::VectorType> x; 
                if (useTimeDerivativeSolutionVector_)
-                 x = (*itr)->dxdt;
+                 x = (*itr)->get_dxdt();
                else
-                 x = (*itr)->x; 
+                 x = (*itr)->get_x(); 
                Teuchos::ArrayRCP<const double> x_array = x->get1dView();
 
                field.fastAccessCoeff(stochIndex) = x_array[lid];
@@ -268,11 +268,11 @@ evaluateFields(typename Traits::EvalData workset)
    Teuchos::RCP<typename LOC::VectorType> x_template; // this will be used to map from GIDs --> LIDs
    double seed_value = 0.0;
    if (useTimeDerivativeSolutionVector_) {
-     x_template = (*sgTpetraContainer->begin())->dxdt;
+     x_template = (*sgTpetraContainer->begin())->get_dxdt();
      seed_value = workset.alpha;
    }
    else {
-     x_template = (*sgTpetraContainer->begin())->x; 
+     x_template = (*sgTpetraContainer->begin())->get_x(); 
      seed_value = workset.beta;
    }
 
@@ -319,9 +319,9 @@ evaluateFields(typename Traits::EvalData workset)
                // extract solution and time derivative vectors
                Teuchos::RCP<typename LOC::VectorType> x; 
                if (useTimeDerivativeSolutionVector_)
-                 x = (*itr)->dxdt;
+                 x = (*itr)->get_dxdt();
                else
-                 x = (*itr)->x; 
+                 x = (*itr)->get_x(); 
                Teuchos::ArrayRCP<const double> x_array = x->get1dView();
 
                field.val().fastAccessCoeff(stochIndex) = x_array[lid];

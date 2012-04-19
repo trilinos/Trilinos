@@ -125,7 +125,7 @@ evaluateFields(typename Traits::EvalData workset)
 
    Teuchos::RCP<SGLOC> sgTpetraContainer 
          = Teuchos::rcp_dynamic_cast<SGLOC>(workset.ghostedLinContainer);
-   Teuchos::RCP<typename LOC::VectorType> r_template = (*sgTpetraContainer->begin())->f;
+   Teuchos::RCP<typename LOC::VectorType> r_template = (*sgTpetraContainer->begin())->get_f();
    Teuchos::RCP<const typename LOC::MapType> map = r_template->getMap();
 
    // NOTE: A reordering of these loops will likely improve performance
@@ -160,7 +160,7 @@ evaluateFields(typename Traits::EvalData workset)
             int stochIndex = 0;
             typename SGLOC::iterator itr; 
             for(itr=sgTpetraContainer->begin();itr!=sgTpetraContainer->end();++itr,++stochIndex) {
-               Teuchos::ArrayRCP<double> f_array = (*itr)->f->get1dViewNonConst();
+               Teuchos::ArrayRCP<double> f_array = (*itr)->get_f()->get1dViewNonConst();
                f_array[lid] += field.coeff(stochIndex);
             }
          }
@@ -245,7 +245,7 @@ evaluateFields(typename Traits::EvalData workset)
 
    Teuchos::RCP<SGLOC> sgTpetraContainer 
          = Teuchos::rcp_dynamic_cast<SGLOC>(workset.ghostedLinContainer);
-   Teuchos::RCP<typename LOC::CrsMatrixType> Jac_template = (*sgTpetraContainer->begin())->A;
+   Teuchos::RCP<typename LOC::CrsMatrixType> Jac_template = (*sgTpetraContainer->begin())->get_A();
    Teuchos::RCP<const typename LOC::MapType> rMap = Jac_template->getRowMap();
    Teuchos::RCP<const typename LOC::MapType> cMap = Jac_template->getColMap();
 
@@ -283,13 +283,11 @@ evaluateFields(typename Traits::EvalData workset)
             int stochIndex = 0;
             typename SGLOC::iterator itr; 
             for(itr=sgTpetraContainer->begin();itr!=sgTpetraContainer->end();++itr,++stochIndex) {
-               Teuchos::RCP<typename LOC::VectorType> r = (*itr)->f;
-               Teuchos::RCP<typename LOC::CrsMatrixType> Jac = (*itr)->A;
+               Teuchos::RCP<typename LOC::VectorType> r = (*itr)->get_f();
+               Teuchos::RCP<typename LOC::CrsMatrixType> Jac = (*itr)->get_A();
 
                // Sum residual
                if(r!=Teuchos::null) {
-       	          // r->SumIntoMyValue(row,0,scatterField.val().coeff(stochIndex));
-       	          // (*r)[row] += scatterField.val().coeff(stochIndex);
     	          r->sumIntoLocalValue(row,scatterField.val().coeff(stochIndex));
                }
        
@@ -298,7 +296,6 @@ evaluateFields(typename Traits::EvalData workset)
                
                for(int sensIndex=0;sensIndex<scatterField.size();++sensIndex)
                   jacRow[sensIndex] = scatterField.fastAccessDx(sensIndex).coeff(stochIndex);
-               // TEUCHOS_ASSERT(scatterField.size()==(int) LIDs.size());
        
                // Sum SGJacobian
                Jac->sumIntoLocalValues(row, cLIDs, jacRow);

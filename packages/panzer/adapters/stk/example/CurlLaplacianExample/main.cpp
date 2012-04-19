@@ -451,7 +451,7 @@ void solveTpetraSystem(panzer::LinearObjContainer & container)
   typedef panzer::TpetraLinearObjContainer<double,int,int> LOC;
 
   LOC & tp_container = Teuchos::dyn_cast<LOC>(container);
-  tp_container.A->fillComplete(); // where does this go?
+  tp_container.get_A()->fillComplete(); // where does this go?
 
   // do stuff
   // Wrap the linear problem to solve in a Belos::LinearProblem
@@ -462,7 +462,7 @@ void solveTpetraSystem(panzer::LinearObjContainer & container)
   typedef Tpetra::MultiVector<double,int,int> MV;
   typedef Tpetra::Operator<double,int,int> OP;
   typedef Belos::LinearProblem<double,MV, OP> ProblemType;
-  Teuchos::RCP<ProblemType> problem(new ProblemType(tp_container.A, tp_container.x, tp_container.f));
+  Teuchos::RCP<ProblemType> problem(new ProblemType(tp_container.get_A(), tp_container.get_x(), tp_container.get_f()));
   TEUCHOS_ASSERT(problem->setProblem());
 
   typedef Belos::BlockGmresSolMgr<double,MV,OP> SolverType;
@@ -488,7 +488,7 @@ void solveTpetraSystem(panzer::LinearObjContainer & container)
   }
 
   // scale by -1
-  tp_container.x->scale(-1.0);
+  tp_container.get_x()->scale(-1.0);
 }
 
 void testInitialization(panzer::InputPhysicsBlock& ipb,

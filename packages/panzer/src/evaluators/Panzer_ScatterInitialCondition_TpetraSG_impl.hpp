@@ -126,7 +126,7 @@ evaluateFields(typename Traits::EvalData workset)
 
    Teuchos::RCP<SGLOC> sgTpetraContainer 
          = Teuchos::rcp_dynamic_cast<SGLOC>(workset.linContainer);
-   Teuchos::RCP<typename LOC::VectorType> x_template = (*sgTpetraContainer->begin())->x;
+   Teuchos::RCP<typename LOC::VectorType> x_template = (*sgTpetraContainer->begin())->get_x();
    Teuchos::RCP<const typename LOC::MapType> map = x_template->getMap();
 
    // NOTE: A reordering of these loops will likely improve performance
@@ -164,7 +164,7 @@ evaluateFields(typename Traits::EvalData workset)
             int stochIndex = 0;
             typename SGLOC::iterator itr; 
             for(itr=sgTpetraContainer->begin();itr!=sgTpetraContainer->end();++itr,++stochIndex) {
-               Teuchos::ArrayRCP<double> x_array = (*itr)->x->get1dViewNonConst();
+               Teuchos::ArrayRCP<double> x_array = (*itr)->get_x()->get1dViewNonConst();
                x_array[lid] = field.coeff(stochIndex);
             }
          }

@@ -593,31 +593,31 @@ evalModel_sg(const InArgs & inArgs,const OutArgs & outArgs) const
         RCP<EpetraLinearObjContainer> ghostedContainer = *ghsItr;
 
         // this is what roger was warning us about!!!!
-        globalContainer->x = Teuchos::rcp_const_cast<Epetra_Vector>(x_in->getCoeffPtr(coeff_ind));
+        globalContainer->set_x(Teuchos::rcp_const_cast<Epetra_Vector>(x_in->getCoeffPtr(coeff_ind)));
 
         if(!Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) { // requires residual and jacobian
-           globalContainer->f = f_out->getCoeffPtr(coeff_ind); 
-           globalContainer->A = rcp_dynamic_cast<Epetra_CrsMatrix>(W_out->getCoeffPtr(coeff_ind)); 
+           globalContainer->set_f(f_out->getCoeffPtr(coeff_ind)); 
+           globalContainer->set_A(rcp_dynamic_cast<Epetra_CrsMatrix>(W_out->getCoeffPtr(coeff_ind))); 
  
-           ghostedContainer->f->PutScalar(0.0);
-           ghostedContainer->A->PutScalar(0.0);
+           ghostedContainer->get_f()->PutScalar(0.0);
+           ghostedContainer->get_A()->PutScalar(0.0);
         }
         else if(!Teuchos::is_null(f_out) && Teuchos::is_null(W_out)) {
-           globalContainer->f = f_out->getCoeffPtr(coeff_ind); 
+           globalContainer->set_f(f_out->getCoeffPtr(coeff_ind)); 
  
            // Zero values in ghosted container objects
-           ghostedContainer->f->PutScalar(0.0);
+           ghostedContainer->get_f()->PutScalar(0.0);
         }
         else if(Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) {
 
            // this dummy nonsense is needed only for scattering dirichlet conditions
            if(Teuchos::is_null(dummy_f_))
               dummy_f_ = Teuchos::rcp(new Epetra_Vector(*(this->get_f_map())));
-           globalContainer->f = dummy_f_; 
-           globalContainer->A = rcp_dynamic_cast<Epetra_CrsMatrix>(W_out->getCoeffPtr(coeff_ind)); 
+           globalContainer->set_f(dummy_f_); 
+           globalContainer->set_A(rcp_dynamic_cast<Epetra_CrsMatrix>(W_out->getCoeffPtr(coeff_ind))); 
 
            // Zero values in ghosted container objects
-           ghostedContainer->A->PutScalar(0.0);
+           ghostedContainer->get_A()->PutScalar(0.0);
         }
      }
   }
