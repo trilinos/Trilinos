@@ -2287,14 +2287,10 @@ typedef std::complex<double> ComplexDouble;
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, Typedefs          , ORDINAL, SCALAR, NODE )
 
 #define UNIT_TEST_SERIALNODE(ORDINAL, SCALAR) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MultiVector, ViewModeConstructorTests, SerialNode ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Vector,      ViewModeConstructorTests, SerialNode ) \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, SerialNode )
 
 #ifdef HAVE_KOKKOS_TBB
 #define UNIT_TEST_TBBNODE(ORDINAL, SCALAR) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MultiVector, ViewModeConstructorTests, TBBNode ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Vector,      ViewModeConstructorTests, TBBNode ) \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, TBBNode )
 #else
 #define UNIT_TEST_TBBNODE(ORDINAL, SCALAR)
@@ -2302,8 +2298,6 @@ typedef std::complex<double> ComplexDouble;
 
 #ifdef HAVE_KOKKOS_THREADPOOL
 #define UNIT_TEST_TPINODE(ORDINAL, SCALAR) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MultiVector, ViewModeConstructorTests, TPINode ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Vector,      ViewModeConstructorTests, TPINode ) \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, TPINode )
 #else
 #define UNIT_TEST_TPINODE(ORDINAL, SCALAR)
@@ -2311,8 +2305,6 @@ typedef std::complex<double> ComplexDouble;
 
 #ifdef HAVE_KOKKOS_OPENMP
 #define UNIT_TEST_OMPNODE(ORDINAL, SCALAR) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MultiVector, ViewModeConstructorTests, OpenMPNode ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Vector,      ViewModeConstructorTests, OpenMPNode ) \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, OpenMPNode )
 #else
 #define UNIT_TEST_OMPNODE(ORDINAL, SCALAR)
@@ -2380,6 +2372,20 @@ typedef std::complex<double> ComplexDouble;
 
 #if defined(HAVE_TPETRA_INST_DOUBLE)
   UNIT_TEST_DOUBLE(int)
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MultiVector, ViewModeConstructorTests, SerialNode )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Vector,      ViewModeConstructorTests, SerialNode )
+#ifdef HAVE_KOKKOS_TBB
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MultiVector, ViewModeConstructorTests, TBBNode )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Vector,      ViewModeConstructorTests, TBBNode )
+#endif
+#ifdef HAVE_KOKKOS_THREADPOOL
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MultiVector, ViewModeConstructorTests, TPINode )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Vector,      ViewModeConstructorTests, TPINode )
+#endif
+#ifdef HAVE_KOKKOS_OPENMP
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MultiVector, ViewModeConstructorTests, OpenMPNode )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Vector,      ViewModeConstructorTests, OpenMPNode )
+#endif
 #endif
 
 #if !defined(FAST_DEVELOPMENT_BUILD)
