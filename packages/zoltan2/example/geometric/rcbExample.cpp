@@ -159,7 +159,6 @@ int main(int argc, char *argv[])
     coordVec, coordStrides, 
     weightVec, weightStrides);
 
-
   // Create a Zoltan2 partitioning problem
 
 #ifdef HAVE_ZOLTAN2_MPI                   
@@ -254,7 +253,7 @@ int main(int argc, char *argv[])
   // Check the solution.
 
   const ArrayRCP<MetricValues<scalar_t> > & metrics3 =
-    solution2.getMetrics();
+    solution3.getMetrics();
 
   if (rank == 0)
     Zoltan2::printMetrics<scalar_t>(cout, nprocs, nprocs, nprocs,
