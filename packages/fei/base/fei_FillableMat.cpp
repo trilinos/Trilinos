@@ -240,11 +240,12 @@ FillableMat::clear()
   feipoolmat::iterator
     iter = matdata_.begin(), iter_end = matdata_.end();
   for(; iter!=iter_end; ++iter) {
-    vecpool_.destroy(iter->second);
-    vecpool_.deallocate(iter->second, 1);
+    iter->second->clear();
+    //    vecpool_.destroy(iter->second);
+    //    vecpool_.deallocate(iter->second, 1);
   }
 
-  matdata_.clear();
+  //  matdata_.clear();
 }
 
 //-----------------------------------------------------------------
