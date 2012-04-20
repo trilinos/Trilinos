@@ -220,25 +220,22 @@ namespace {
     // Allocate Vectors
     MV X0(node),RHS(node), AX(node);
     ArrayRCP<Scalar> x0dat  = node->template allocBuffer<Scalar>(N);
+    for (int i=0; i<N; ++i) x0dat[i] = i;
     ArrayRCP<Scalar> rhsdat  = node->template allocBuffer<Scalar>(N);
     X0.initializeValues(N,1,x0dat,N);
     RHS.initializeValues(N,1,rhsdat,N);
     Scalar norms,norm0;
 
     // Set starting vector & run Jacobi
-    Teuchos::ScalarTraits<Scalar>::seedrandom(24601);
-    DefaultArithmetic<MV>::Random(X0);
     DefaultArithmetic<MV>::Init(RHS,0);
-    norms=-666;norm0=DefaultArithmetic<MV>::Norm2Squared(X0);
-    //for(int i=0;i<N;i++)
-    //  std::cout << "x[" << i << "] = " << std::setprecision(15) << x0dat[i] << std::endl;
+    norm0=DefaultArithmetic<MV>::Norm2Squared(X0);
     for(int i=0;i<its;i++){
       dj.sweep_jacobi((Scalar)1.0,X0,RHS);
     }
     norms=DefaultArithmetic<MV>::Norm2Squared(X0);
-    Scalar goodNorm = 0.07433056;
+    Scalar goodNorm = 0.280595;
     //Note that this is (||x_10|| / ||x_0|| )^2.
-    TEST_FLOATING_EQUALITY(norms/norm0, goodNorm, 1e-7);
+    TEST_FLOATING_EQUALITY(norms/norm0, goodNorm, 1e-6);
 
   } //Jacobi unit test
 
