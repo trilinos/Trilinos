@@ -4,6 +4,8 @@ rem Call this script and pass in the base directory for the dashboard
 rem save state before changing anything
 setlocal
 
+set TDD_CTEST_TEST_TYPE=Nightly
+
 set BASEDIR=%~1
 
 rem Setting the path to have git on it.
