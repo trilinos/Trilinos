@@ -268,8 +268,48 @@ void UniqueGlobalIndexer<LocalOrdinalT>::getCoordinates(LocalOrdinalT localEleme
    };
 }
 
+template <typename LocalOrdinalT>
+BlockUniqueGlobalIndexer<LocalOrdinalT>::BlockUniqueGlobalIndexer(int blocks,int rank,int procCount)
+   : procRank_(rank)
+{
+   TEUCHOS_TEST_FOR_EXCEPTION(procCount!=2,std::runtime_error,"unit_test::BlockUniqueGlobalIndexer runs on only two processors!");
+}
+
+template <typename LocalOrdinalT>
+void BlockUniqueGlobalIndexer<LocalOrdinalT>::getElementBlockIds(std::vector<std::string> & elementBlockIds) const 
+{
+   elementBlockIds.clear();
+   elementBlockIds.push_back("block_0");
+}
+
+template <typename LocalOrdinalT>
+const std::vector<LocalOrdinalT> & BlockUniqueGlobalIndexer<LocalOrdinalT>::getElementBlock(const std::string & blockId) const
+{
+   TEUCHOS_TEST_FOR_EXCEPTION(blockId!="block_0",std::runtime_error,
+                      "Can't find block ID \"" << blockId << "\" in unit_test::BlockUniqueGlobalIndexer");
+
+   if(elements_==Teuchos::null) { 
+      elements_ = Teuchos::rcp(new std::vector<LocalOrdinalT>);
+      switch(procRank_) {
+      case 0:
+         elements_->push_back(0);
+         break;
+      case 1:
+         elements_->push_back(1);
+         break;
+      default:
+         TEUCHOS_ASSERT(false);
+      }
+   }
+
+   return *elements_;
+}
+
 template class UniqueGlobalIndexer<int>;
 template class UniqueGlobalIndexer<short>;
+
+template class BlockUniqueGlobalIndexer<int>;
+template class BlockUniqueGlobalIndexer<short>;
 
 
 } // end unit test

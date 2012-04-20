@@ -335,13 +335,19 @@ const Teuchos::RCP<Epetra_CrsGraph> EpetraLinearObjFactory<Traits,LocalOrdinalT>
 template <typename Traits,typename LocalOrdinalT>
 const Teuchos::RCP<Epetra_Import> EpetraLinearObjFactory<Traits,LocalOrdinalT>::getGhostedImport() const
 {
-   return Teuchos::rcp(new Epetra_Import(*getGhostedMap(),*getMap()));
+   if(importer_==Teuchos::null)
+      importer_ = Teuchos::rcp(new Epetra_Import(*getGhostedMap(),*getMap()));
+
+   return importer_;
 }
 
 template <typename Traits,typename LocalOrdinalT>
 const Teuchos::RCP<Epetra_Export> EpetraLinearObjFactory<Traits,LocalOrdinalT>::getGhostedExport() const
 {
-   return Teuchos::rcp(new Epetra_Export(*getGhostedMap(),*getMap()));
+   if(exporter_==Teuchos::null)
+      exporter_ = Teuchos::rcp(new Epetra_Export(*getGhostedMap(),*getMap()));
+
+   return exporter_;
 }
 
 // "Build" functions

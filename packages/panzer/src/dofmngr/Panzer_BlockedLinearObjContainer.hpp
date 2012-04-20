@@ -40,71 +40,55 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_EpetraLinearObjContainer_hpp__
-#define __Panzer_EpetraLinearObjContainer_hpp__
+#ifndef __Panzer_BlockedLinearObjContainer_hpp__
+#define __Panzer_BlockedLinearObjContainer_hpp__
 
 #include "Panzer_config.hpp"
 
-#include <map>
-
-// Epetra includes
-#include "Epetra_Vector.h"
-#include "Epetra_CrsMatrix.h"
-
-#include "Panzer_LinearObjFactory.hpp"
-
 #include "Teuchos_RCP.hpp"
+#include "Panzer_LinearObjContainer.hpp"
 
-#include "Thyra_VectorBase.hpp"
-#include "Thyra_LinearOpBase.hpp"
+#include "Thyra_PhysicallyBlockedLinearOpBase.hpp"
+#include "Thyra_ProductVectorBase.hpp"
+
+#include <boost/unordered_map.hpp>
 
 namespace panzer {
 
-class EpetraLinearObjContainer : public LinearObjContainer {
+/** Linear object container for Block operators, this
+  * always assumes the matrix is square.
+  */
+template <typename BaseContainerType>
+class BlockedLinearObjContainer : public LinearObjContainer {
 public:
-   typedef LinearObjContainer::Members Members;
+   typedef Thyra::VectorBase<double> VectorType;
+   typedef Thyra::LinearOpBase<double> CrsMatrixType;
 
-   typedef Epetra_Vector VectorType;
-   typedef Epetra_CrsMatrix CrsMatrixType;
+   //! Make sure row and column spaces match up 
+   bool checkCompatibility() const;
 
-   virtual void initialize() 
-   {
-      if(get_x()!=Teuchos::null) get_x()->PutScalar(0.0);
-      if(get_dxdt()!=Teuchos::null) get_dxdt()->PutScalar(0.0);
-      if(get_f()!=Teuchos::null) get_f()->PutScalar(0.0);
-      if(get_A()!=Teuchos::null) get_A()->PutScalar(0.0);
-   }
+   virtual void initialize();
+   virtual void clear();
 
-   //! Wipe out stored data.
-   void clear()
-   {
-      set_x(Teuchos::null);
-      set_dxdt(Teuchos::null);
-      set_f(Teuchos::null);
-      set_A(Teuchos::null);
-   }
-   
-   inline void set_x(const Teuchos::RCP<Epetra_Vector> & in) { x = in; } 
-   inline const Teuchos::RCP<Epetra_Vector> get_x() const { return x; }
+   inline void set_x(const Teuchos::RCP<VectorType> & in) { x = in; }
+   inline Teuchos::RCP<VectorType> get_x() const { return x; }
 
-   inline void set_dxdt(const Teuchos::RCP<Epetra_Vector> & in) { dxdt = in; } 
-   inline const Teuchos::RCP<Epetra_Vector> get_dxdt() const { return dxdt; }
+   inline void set_dxdt(const Teuchos::RCP<VectorType> & in) { dxdt = in; }
+   inline Teuchos::RCP<VectorType> get_dxdt() const { return dxdt; }
 
-   inline void set_f(const Teuchos::RCP<Epetra_Vector> & in) { f = in; } 
-   inline const Teuchos::RCP<Epetra_Vector> get_f() const { return f; }
+   inline void set_f(const Teuchos::RCP<VectorType> & in) { f = in; }
+   inline Teuchos::RCP<VectorType> get_f() const { return f; }
 
-   inline void set_A(const Teuchos::RCP<Epetra_CrsMatrix> & in) { A = in; } 
-   inline const Teuchos::RCP<Epetra_CrsMatrix> get_A() const { return A; }
-
-   // For use with thyra, used by BlockedLinearObjContainer
-   void set_A_th(const Teuchos::RCP<Thyra::LinearOpBase<double> > & in);
-   const Teuchos::RCP<Thyra::LinearOpBase<double> > get_A_th() const;
+   inline void set_A(const Teuchos::RCP<CrsMatrixType> & in) { A = in; }
+   inline Teuchos::RCP<CrsMatrixType> get_A() const { return A; }
 
 private:
-   Teuchos::RCP<Epetra_Vector> x, dxdt, f;
-   Teuchos::RCP<Epetra_CrsMatrix> A;
+   Teuchos::RCP<VectorType> x, dxdt, f;
+   Teuchos::RCP<CrsMatrixType> A;
 };
 
 }
+
+#include "Panzer_BlockedLinearObjContainer_impl.hpp"
 
 #endif

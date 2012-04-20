@@ -40,69 +40,27 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_EpetraLinearObjContainer_hpp__
-#define __Panzer_EpetraLinearObjContainer_hpp__
+#ifndef __Panzer_LinearObjContainer_hpp__
+#define __Panzer_LinearObjContainer_hpp__
 
 #include "Panzer_config.hpp"
 
-#include <map>
-
-// Epetra includes
-#include "Epetra_Vector.h"
-#include "Epetra_CrsMatrix.h"
-
-#include "Panzer_LinearObjFactory.hpp"
-
 #include "Teuchos_RCP.hpp"
-
-#include "Thyra_VectorBase.hpp"
-#include "Thyra_LinearOpBase.hpp"
+#include "Teuchos_dyn_cast.hpp"
 
 namespace panzer {
 
-class EpetraLinearObjContainer : public LinearObjContainer {
+// **********************************************************************************************
+// *********************** LINEAR OBJ CONTAINER *************************************************
+// **********************************************************************************************
+
+class LinearObjContainer {
 public:
-   typedef LinearObjContainer::Members Members;
+   virtual ~LinearObjContainer() {}
 
-   typedef Epetra_Vector VectorType;
-   typedef Epetra_CrsMatrix CrsMatrixType;
+   typedef enum { X=0x1, DxDt=0x2, F=0x4, Mat=0x8} Members;
 
-   virtual void initialize() 
-   {
-      if(get_x()!=Teuchos::null) get_x()->PutScalar(0.0);
-      if(get_dxdt()!=Teuchos::null) get_dxdt()->PutScalar(0.0);
-      if(get_f()!=Teuchos::null) get_f()->PutScalar(0.0);
-      if(get_A()!=Teuchos::null) get_A()->PutScalar(0.0);
-   }
-
-   //! Wipe out stored data.
-   void clear()
-   {
-      set_x(Teuchos::null);
-      set_dxdt(Teuchos::null);
-      set_f(Teuchos::null);
-      set_A(Teuchos::null);
-   }
-   
-   inline void set_x(const Teuchos::RCP<Epetra_Vector> & in) { x = in; } 
-   inline const Teuchos::RCP<Epetra_Vector> get_x() const { return x; }
-
-   inline void set_dxdt(const Teuchos::RCP<Epetra_Vector> & in) { dxdt = in; } 
-   inline const Teuchos::RCP<Epetra_Vector> get_dxdt() const { return dxdt; }
-
-   inline void set_f(const Teuchos::RCP<Epetra_Vector> & in) { f = in; } 
-   inline const Teuchos::RCP<Epetra_Vector> get_f() const { return f; }
-
-   inline void set_A(const Teuchos::RCP<Epetra_CrsMatrix> & in) { A = in; } 
-   inline const Teuchos::RCP<Epetra_CrsMatrix> get_A() const { return A; }
-
-   // For use with thyra, used by BlockedLinearObjContainer
-   void set_A_th(const Teuchos::RCP<Thyra::LinearOpBase<double> > & in);
-   const Teuchos::RCP<Thyra::LinearOpBase<double> > get_A_th() const;
-
-private:
-   Teuchos::RCP<Epetra_Vector> x, dxdt, f;
-   Teuchos::RCP<Epetra_CrsMatrix> A;
+   virtual void initialize() = 0;
 };
 
 }

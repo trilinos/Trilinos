@@ -50,20 +50,12 @@
 #include "Phalanx_Evaluator_Derived.hpp"
 
 #include "Panzer_CloneableEvaluator.hpp"
+#include "Panzer_LinearObjContainer.hpp"
 
 #include "boost/mpl/placeholders.hpp"
 using namespace boost::mpl::placeholders;
 
 namespace panzer {
-
-class LinearObjContainer {
-public:
-   virtual ~LinearObjContainer() {}
-
-   typedef enum { X=0x1, DxDt=0x2, F=0x4, Mat=0x8} Members;
-
-   virtual void initialize() = 0;
-};
 
 /** Abstract factory that builds the linear algebra 
   * objects required for the assembly including the 
