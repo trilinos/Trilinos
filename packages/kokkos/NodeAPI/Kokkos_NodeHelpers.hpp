@@ -108,8 +108,8 @@ namespace Kokkos {
   /// // If T is a template parameter in this scope, you need the "template"
   /// // keyword when invoking ReadyBufferHelper template methods.  You don't
   /// // need it if T is a concrete type in this scope.
-  /// Op wdp (rbh.template addConstBuffer<T> (x.getRawPtr ()),
-  ///         rbh.template addNonConstBuffer<T> (y.getRawPtr ()),
+  /// Op wdp (rbh.template addConstBuffer<T> (x),
+  ///         rbh.template addNonConstBuffer<T> (y),
   ///         n);
   /// rbh.end (); // Done adding compute buffers
   ///
@@ -123,77 +123,85 @@ namespace Kokkos {
   /// \endcode
   template <class Node>
   class ReadyBufferHelper {
-    public:
-      /*! The node via which buffers are being readied. */
-      ReadyBufferHelper(RCP<Node> node);
+  public:
+    /*! The node via which buffers are being readied. */
+    ReadyBufferHelper(RCP<Node> node);
 
-      /*! Destructor. */
-      virtual ~ReadyBufferHelper();
+    /*! Destructor. */
+    virtual ~ReadyBufferHelper();
 
-      /*! Begin the ready-buffer transaction. */
-      void begin();
+    //! Tell this object that you are ready to start adding buffers.
+    void begin();
 
-      /*! Add a const buffer. */
-      template <class T>
-      const T* addConstBuffer(ArrayRCP<const T> buff);
+    //! Add a const buffer, and return its raw pointer.
+    template <class T>
+    const T* addConstBuffer(ArrayRCP<const T> buff);
 
-      /*! Add a non-const buffer. */
-      template <class T>
-      T* addNonConstBuffer(ArrayRCP<T> buff);
+    //! Add a non-const buffer, and return its raw pointer.
+    template <class T>
+    T* addNonConstBuffer(ArrayRCP<T> buff);
 
-      /*! End the ready-buffer transaction. */
-      void end();
+    //! Tell this object that you are done adding buffers.
+    void end();
 
-
-    protected:
-      RCP<Node> node_;
-      Array< ArrayRCP<const char> >  cbufs_;
-      Array< ArrayRCP<      char> > ncbufs_;
+  protected:
+    //! The Kokkos Node instance for which to add buffers.
+    RCP<Node> node_;
+    //! List of compute buffers that were added with addConstBuffer().
+    Array<ArrayRCP<const char> >  cbufs_;
+    //! List of compute buffers that were added with addNonConstBuffer().
+    Array<ArrayRCP<      char> > ncbufs_;
   };
 
   template <class Node>
-  ReadyBufferHelper<Node>::ReadyBufferHelper(RCP<Node> node)
-  : node_(node) {
-  }
+  ReadyBufferHelper<Node>::ReadyBufferHelper (RCP<Node> node)
+    : node_(node)
+  {}
 
   template <class Node>
-  ReadyBufferHelper<Node>::~ReadyBufferHelper() {
-  }
+  ReadyBufferHelper<Node>::~ReadyBufferHelper()
+  {}
 
   template <class Node>
   void ReadyBufferHelper<Node>::begin() {
-    cbufs_.clear();
-    ncbufs_.clear();
+    cbufs_.clear ();
+    ncbufs_.clear ();
   }
 
   template <class Node>
   template <class T>
-  const T* ReadyBufferHelper<Node>::addConstBuffer(ArrayRCP<const T> buff) {
-    cbufs_.push_back( arcp_reinterpret_cast<const char>(buff) );
-    return buff.get();
+  const T* ReadyBufferHelper<Node>::addConstBuffer (ArrayRCP<const T> buff) {
+    cbufs_.push_back (arcp_reinterpret_cast<const char> (buff));
+    return buff.get ();
   }
 
   template <class Node>
   template <class T>
-  T* ReadyBufferHelper<Node>::addNonConstBuffer(ArrayRCP<T> buff) {
-    cbufs_.push_back( arcp_reinterpret_cast<char>(buff) );
-    return buff.get();
+  T* ReadyBufferHelper<Node>::addNonConstBuffer (ArrayRCP<T> buff) {
+    cbufs_.push_back (arcp_reinterpret_cast<char> (buff));
+    return buff.get ();
   }
 
   template <class Node>
-  void ReadyBufferHelper<Node>::end() {
-    node_->readyBuffers(cbufs_(), ncbufs_());
+  void ReadyBufferHelper<Node>::end () {
+    node_->readyBuffers (cbufs_ (), ncbufs_ ());
   }
 
+  /// \class ArrayOfViewsHelper
+  /// \brief Helper class for getting an array of views.
   template <class Node>
   class ArrayOfViewsHelper {
-    public:
-      template <class T>
-      static ArrayRCP<ArrayRCP<T> > getArrayOfNonConstViews(const RCP<Node> &node, ReadWriteOption rw, const ArrayRCP<ArrayRCP<T> > &arrayOfBuffers);
-    private:
-      /*! Cannot allocate object; all static */
-      ArrayOfViewsHelper();
-      ~ArrayOfViewsHelper();
+  public:
+    //! Invoke the Node's viewBufferNonConst() method to get an array of views.
+    template <class T>
+    static ArrayRCP<ArrayRCP<T> >
+    getArrayOfNonConstViews (const RCP<Node> &node,
+                             ReadWriteOption rw,
+                             const ArrayRCP<ArrayRCP<T> > &arrayOfBuffers);
+  private:
+    /*! Cannot allocate object; all static */
+    ArrayOfViewsHelper();
+    ~ArrayOfViewsHelper();
   };
 
   template <class Node>
@@ -213,16 +221,16 @@ namespace Kokkos {
     return arrayofviews;
   }
 
-  /* A trivial implementation of ArrayOfViewsHelper, for CPU-only nodes. */
+  //! A trivial implementation of ArrayOfViewsHelper, for CPU-only nodes.
   template <class Node>
   class ArrayOfViewsHelperTrivialImpl {
-    public:
-      template <class T>
-      static ArrayRCP<ArrayRCP<T> > getArrayOfNonConstViews(const RCP<Node> &node, ReadWriteOption rw, const ArrayRCP<ArrayRCP<T> > &arrayOfBuffers);
-    private:
-      /*! Cannot allocate object; all static */
-      ArrayOfViewsHelperTrivialImpl();
-      ~ArrayOfViewsHelperTrivialImpl();
+  public:
+    template <class T>
+    static ArrayRCP<ArrayRCP<T> > getArrayOfNonConstViews(const RCP<Node> &node, ReadWriteOption rw, const ArrayRCP<ArrayRCP<T> > &arrayOfBuffers);
+  private:
+    /*! Cannot allocate object; all static */
+    ArrayOfViewsHelperTrivialImpl();
+    ~ArrayOfViewsHelperTrivialImpl();
   };
 
   template <class Node>
