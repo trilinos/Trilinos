@@ -9,6 +9,7 @@ echo
 
 export TDD_GIT_EXE=/Users/bmpersc/bin/eg
 export TDD_PARALLEL_LEVEL=2
+export TDD_CTEST_TEST_TYPE=Nightly
 
 # Trilinos settings:
 #
