@@ -47,9 +47,9 @@
 
 #include "Epetra_Vector.h"
 #include "EpetraExt_ModelEvaluator.h"
-#include "NOX_Epetra_Observer.H"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
+#include "NOX_Epetra_Observer.H"
 
 namespace Piro {
 namespace Epetra {

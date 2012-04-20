@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
 
       RCP<Teuchos::ParameterList> piroParams =
          rcp(new Teuchos::ParameterList("Piro Parameters"));
-      Teuchos::updateParametersFromXmlFile(inputFile, piroParams.get());
+      Teuchos::updateParametersFromXmlFile(inputFile, piroParams.ptr());
 
       // Use these two objects to construct a Piro solved application 
       //   EpetraExt::ModelEvaluator is  base class of all Piro::Epetra solvers

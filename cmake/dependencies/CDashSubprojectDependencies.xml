@@ -657,7 +657,7 @@
     <Dependency name="Ifpack" type="ILO"/>
     <Dependency name="ML" type="ILO"/>
     <Dependency name="Belos" type="ILO"/>
-    <Dependency name="Stratimikos" type="ILO"/>
+    <Dependency name="Stratimikos" type="LR"/>
     <Dependency name="Anasazi" type="ILO"/>
     <Dependency name="Teko" type="ILO"/>
     <Dependency name="TriKota" type="LO"/>
@@ -851,7 +851,7 @@
     <Dependency name="Ifpack" type="ILO"/>
     <Dependency name="ML" type="ILO"/>
     <Dependency name="Belos" type="ILO"/>
-    <Dependency name="Stratimikos" type="ILO"/>
+    <Dependency name="Stratimikos" type="ILR"/>
     <Dependency name="Anasazi" type="ILO"/>
     <Dependency name="Teko" type="ILO"/>
     <Dependency name="TriKota" type="ILO"/>

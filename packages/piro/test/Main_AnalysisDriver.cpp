@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
 
       // BEGIN Builder
       Teuchos::ParameterList appParams("Application Parameters");
-      Teuchos::updateParametersFromXmlFile(inputFile, &appParams);
+      Teuchos::updateParametersFromXmlFile(inputFile, Teuchos::ptr(&appParams));
 
       Teuchos::ParameterList piroParams = appParams.sublist("Piro");
       Teuchos::ParameterList& analysisParams = appParams.sublist("Analysis");
