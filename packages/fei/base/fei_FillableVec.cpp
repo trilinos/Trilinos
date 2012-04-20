@@ -100,14 +100,14 @@ FillableVec::size() const
 bool
 FillableVec::hasEntry(int index) const
 {
-  feipoolmap::const_iterator iter = find(index);
+  feipoolmap::const_iterator iter = vecdata_.find(index);
   return iter != vecdata_.end();
 }
 
 double
 FillableVec::getEntry(int index) const
 {
-  feipoolmap::const_iterator iter = find(index);
+  feipoolmap::const_iterator iter = vecdata_.find(index);
   if (iter == vecdata_.end()) {
     throw std::runtime_error("FillableVec::getEntry: index not found.");
   }
@@ -118,7 +118,7 @@ FillableVec::getEntry(int index) const
 void
 FillableVec::removeEntry(int index)
 {
-  feipoolmap::iterator iter = find(index);
+  feipoolmap::iterator iter = vecdata_.find(index);
   if (iter != vecdata_.end()) {
     vecdata_.erase(iter);
   }

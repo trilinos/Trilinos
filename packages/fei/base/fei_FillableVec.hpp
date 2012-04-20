@@ -46,8 +46,7 @@
 
 #include "fei_macros.hpp"
 #include "fei_Pool_alloc.hpp"
-#include <vector>
-#include <utility>
+#include <map>
 
 namespace fei {
 
@@ -82,7 +81,9 @@ class FillableVec {
 
   void clear();
 
-  typedef std::vector< std::pair<int, double> > feipoolmap;
+  typedef
+    std::map<int,double,std::less<int>,
+     fei_Pool_alloc<std::pair<const int,double> > > feipoolmap;
 
   typedef feipoolmap::iterator iterator;
   typedef feipoolmap::const_iterator const_iterator;
@@ -92,24 +93,6 @@ class FillableVec {
 
   const_iterator begin() const {return vecdata_.begin();}
   const_iterator end() const {return vecdata_.end();}
-
-  iterator find(int index) {
-    feipoolmap::iterator iter = begin();
-    const feipoolmap::iterator end_loc = end();
-    for ( ; iter != end_loc; ++iter)
-      if ( iter->first == index )
-        return iter;
-    return iter;
-  }
-
-  const_iterator find(int index) const {
-    feipoolmap::const_iterator iter = begin();
-    const feipoolmap::const_iterator end_loc = end();
-    for ( ; iter != end_loc; ++iter)
-      if ( iter->first == index )
-        return iter;
-    return iter;
-  }
 
   bool operator==(const FillableVec& rhs) const;
 
@@ -122,29 +105,25 @@ class FillableVec {
 inline void
 FillableVec::addEntry(int index, double coef)
 {
-  feipoolmap::iterator iter = begin();
-  const feipoolmap::iterator end_loc = end();
-  for ( ; iter != end_loc; ++iter)
-    if ( iter->first == index ) {
-      iter->second += coef;
-      return;
-    }
-
-  vecdata_.push_back(std::make_pair(index, coef));
+  feipoolmap::iterator iter = vecdata_.lower_bound(index);
+  if (iter == vecdata_.end() || iter->first != index) {
+    vecdata_.insert(iter, std::make_pair(index, coef));
+  }
+  else {
+    iter->second += coef;
+  }
 }
 
 inline void
 FillableVec::putEntry(int index, double coef)
 {
-  feipoolmap::iterator iter = begin();
-  const feipoolmap::iterator end_loc = end();
-  for ( ; iter != end_loc; ++iter)
-    if ( iter->first == index ) {
-      iter->second = coef;
-      return;
-    }
-
-  vecdata_.push_back(std::make_pair(index, coef));
+  feipoolmap::iterator iter = vecdata_.lower_bound(index);
+  if (iter == vecdata_.end() || iter->first != index) {
+    vecdata_.insert(iter, std::make_pair(index, coef));
+  }
+  else {
+    iter->second = coef;
+  }
 }
 
 inline
