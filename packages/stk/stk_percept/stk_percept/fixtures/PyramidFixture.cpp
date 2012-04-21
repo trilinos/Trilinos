@@ -11,7 +11,7 @@
  * @date   June 2008
  */
 
-#include <stk_percept/fixtures/HeterogeneousFixture.hpp>
+#include <stk_percept/fixtures/PyramidFixture.hpp>
 //
 //----------------------------------------------------------------------
 
@@ -44,19 +44,11 @@ namespace stk{
     typedef shards::ShellQuadrilateral<4>  ShellQuad4;
     typedef shards::ShellTriangle<3>       ShellTriangle3;
 
-    HeterogeneousFixture::HeterogeneousFixture( stk::ParallelMachine comm, bool doCommit ) :
+    PyramidFixture::PyramidFixture( stk::ParallelMachine comm, bool doCommit ) :
       m_spatial_dimension(3)
       , m_metaData(m_spatial_dimension, stk::mesh::fem::entity_rank_names(m_spatial_dimension) )
       , m_bulkData( stk::mesh::fem::FEMMetaData::get_meta_data(m_metaData) , comm )
-      , m_block_hex(        m_metaData.declare_part< Hex8 >(  "block_1" ))
-      , m_block_wedge(      m_metaData.declare_part< Wedge6 >( "block_2" ))
-      , m_block_tet(        m_metaData.declare_part< Tet4 >( "block_3" ))
       , m_block_pyramid(    m_metaData.declare_part< Pyramid4 >( "block_4" ))
-
-#if HET_FIX_INCLUDE_EXTRA_ELEM_TYPES
-      , m_block_quad_shell( m_metaData.declare_part< ShellQuad4 >( "block_5" ))
-      , m_block_tri_shell(  m_metaData.declare_part< ShellTriangle3 >( "block_6" ))
-#endif
 
       , m_elem_rank( m_metaData.element_rank() )
       , m_coordinates_field( m_metaData.declare_field< VectorFieldType >( "coordinates" ))
@@ -71,9 +63,6 @@ namespace stk{
       put_field( m_coordinates_field , stk::mesh::fem::FEMMetaData::NODE_RANK , universal );
       put_field( m_centroid_field , m_elem_rank , universal );
       put_field( m_temperature_field, stk::mesh::fem::FEMMetaData::NODE_RANK, universal );
-      put_field( m_volume_field, m_elem_rank, m_block_hex );
-      put_field( m_volume_field, m_elem_rank, m_block_wedge );
-      put_field( m_volume_field, m_elem_rank, m_block_tet );
       put_field( m_volume_field, m_elem_rank, m_block_pyramid );
 
       // Define the field-relation such that the values of the
@@ -93,97 +82,45 @@ namespace stk{
                                         );
 
       // Define element node coordinate field for all element parts
-      put_field( m_element_node_coordinates_field, m_elem_rank, m_block_hex, Hex8::node_count );
-      put_field( m_element_node_coordinates_field, m_elem_rank, m_block_wedge, Wedge6::node_count );
-      put_field( m_element_node_coordinates_field, m_elem_rank, m_block_tet, Tet4::node_count );
       put_field( m_element_node_coordinates_field, m_elem_rank, m_block_pyramid, Pyramid4::node_count );
-
-#if HET_FIX_INCLUDE_EXTRA_ELEM_TYPES
-      put_field( m_element_node_coordinates_field, m_elem_rank, m_block_quad_shell, ShellQuad4::node_count);
-      put_field( m_element_node_coordinates_field, m_elem_rank, m_block_tri_shell, ShellTriangle3::node_count );
-#endif
-
-      stk::io::put_io_part_attribute(  m_block_hex );
-      stk::io::put_io_part_attribute(  m_block_wedge );
-      stk::io::put_io_part_attribute(  m_block_tet );
       stk::io::put_io_part_attribute(  m_block_pyramid );
-
-#if HET_FIX_INCLUDE_EXTRA_ELEM_TYPES
-      stk::io::put_io_part_attribute(  m_block_quad_shell );
-      stk::io::put_io_part_attribute(  m_block_tri_shell );
-#endif
 
       if (doCommit)
         m_metaData.commit();
     }
 
-    HeterogeneousFixture::~HeterogeneousFixture()
+    PyramidFixture::~PyramidFixture()
     { }
 
     //------------------------------------------------------------------------------
     // Use case specific mesh generation data:
 
     enum { SpatialDim = 3 };
-    enum { node_count = 21 };
-    enum { number_hex = 3 };
-    enum { number_wedge = 3 };
-    enum { number_tetra = 3 };
+    enum { node_count = 7 };
     enum { number_pyramid = 2 };
-    enum { number_shell_quad = 3 };
-    enum { number_shell_tri = 3 };
 
     namespace {
 
       // Hard coded node coordinate data for all the nodes in the entire mesh
       static const double node_coord_data[ node_count ][ SpatialDim ] = {
-        { 0 , 0 , 0 } , { 1 , 0 , 0 } , { 2 , 0 , 0 } , { 3 , 0 , 0 } ,
-        { 0 , 1 , 0 } , { 1 , 1 , 0 } , { 2 , 1 , 0 } , { 3 , 1 , 0 } ,
-        { 0 , 2 , 0 } , { 1 , 2 , 0 } ,
-        { 0 , 0 , -1 } , { 1 , 0 , -1 } , { 2 , 0 , -1 } , { 3 , 0 , -1 } ,
-        { 0 , 1 , -1 } , { 1 , 1 , -1 } , { 2 , 1 , -1 } , { 3 , 1 , -1 } ,
-        { 0 , 2 , -1 } , { 1 , 2 , -1 } ,
-        { 1 , 1 , -2 } };
 
-      // Hard coded hex node ids for all the hex nodes in the entire mesh
-      static const stk::mesh::EntityId hex_node_ids[number_hex][ Hex8::node_count ] = {
-        { 1 , 2 , 12 , 11 , 5 , 6 , 16 , 15 } ,
-        { 2 , 3 , 13 , 12 , 6 , 7 , 17 , 16 } ,
-        { 3 , 4 , 14 , 13 , 7 , 8 , 18 , 17 } };
+        { 0 , 0 , -1 } , { 1 , 0 , -1 } ,  { 2 , 0 , -1 } , 
 
-      // Hard coded wedge node ids for all the wedge nodes in the entire mesh
-      static const stk::mesh::EntityId wedge_node_ids[number_wedge][ Wedge6::node_count ] = {
-        { 15 , 16 , 19 ,  5 ,  6 ,  9 } ,
-        { 10 ,  9 ,  6 , 20 , 19 , 16 } ,
-        { 16 , 17 , 20 ,  6 ,  7 , 10 } };
+        { 0 , 1 , -1 } , { 1 , 1 , -1 } , { 2 , 1 , -1 } , 
 
-      // Hard coded tetra node ids for all the tetra nodes in the entire mesh
-      static const stk::mesh::EntityId tetra_node_ids[number_tetra][ Tet4::node_count ] = {
-        { 15 , 19 , 16 , 21 } ,
-        { 19 , 20 , 16 , 21 } ,
-        { 16 , 20 , 17 , 21 } };
+        { 1 , 1 , -2 } 
+      };
 
       // Hard coded pyramid node ids for all the pyramid nodes in the entire mesh
       static const stk::mesh::EntityId pyramid_node_ids[number_pyramid][ Pyramid4::node_count ] = {
-        { 11 , 15 , 16 , 12 , 21 } ,
-        { 12 , 16 , 17 , 13 , 21 } };
-
-      // Hard coded shell quad node ids for all the shell quad nodes in the entire mesh
-      static const stk::mesh::EntityId shell_quad_node_ids[number_shell_quad][ ShellQuad4::node_count ]={
-        { 9 , 6 , 16 , 19 } ,
-        { 6 , 7 , 17 , 16 } ,
-        { 7 , 8 , 18 , 17 } };
-
-      // Hard coded shell tri node ids for all the shell tri nodes in the entire mesh
-      static const stk::mesh::EntityId shell_tri_node_ids[number_shell_tri][ ShellTriangle3::node_count ] ={
-        { 19 , 16 , 21 } ,
-        { 16 , 17 , 21 } ,
-        { 17 , 13 , 21 } };
+        { 1 , 4 , 5 , 2 , 7 } ,
+        { 2 , 5 , 6 , 3 , 7 } };
 
     }
 
     //------------------------------------------------------------------------------
 
-    void HeterogeneousFixture::populate()
+    void PyramidFixture::populate()
     {
       // Populate mesh with all node types
 
@@ -195,31 +132,9 @@ namespace stk{
 
           // For each element topology declare elements
 
-          for ( unsigned i = 0 ; i < number_hex ; ++i , ++curr_elem_id ) {
-            stk::mesh::fem::declare_element( m_bulkData, m_block_hex, curr_elem_id, hex_node_ids[i] );
-          }
-
-          for ( unsigned i = 0 ; i < number_wedge ; ++i , ++curr_elem_id ) {
-            stk::mesh::fem::declare_element( m_bulkData, m_block_wedge, curr_elem_id, wedge_node_ids[i] );
-          }
-
-          for ( unsigned i = 0 ; i < number_tetra ; ++i , ++curr_elem_id ) {
-            stk::mesh::fem::declare_element( m_bulkData, m_block_tet, curr_elem_id, tetra_node_ids[i] );
-          }
-
           for ( unsigned i = 0 ; i < number_pyramid ; ++i , ++curr_elem_id ) {
             stk::mesh::fem::declare_element( m_bulkData, m_block_pyramid, curr_elem_id, pyramid_node_ids[i] );
           }
-
-#if HET_FIX_INCLUDE_EXTRA_ELEM_TYPES
-          for ( unsigned i = 0 ; i < number_shell_quad ; ++i , ++curr_elem_id ) {
-            stk::mesh::fem::declare_element( m_bulkData, m_block_quad_shell, curr_elem_id, shell_quad_node_ids[i]);
-          }
-
-          for ( unsigned i = 0 ; i < number_shell_tri ; ++i , ++curr_elem_id ) {
-            stk::mesh::fem::declare_element( m_bulkData, m_block_tri_shell, curr_elem_id, shell_tri_node_ids[i] );
-          }
-#endif
 
           // For all nodes assign nodal coordinates
           for ( unsigned i = 0 ; i < node_count ; ++i ) {
@@ -236,7 +151,7 @@ namespace stk{
     }
 
     // Verify mesh for 6 different parts
-    bool verifyMesh( const HeterogeneousFixture & mesh )
+    bool verifyMesh( const PyramidFixture & mesh )
     {
       bool result = true;
 
@@ -250,15 +165,7 @@ namespace stk{
 
       typedef std::pair<stk::mesh::Part*, unsigned> PartNodeCountPair;
       std::vector<PartNodeCountPair> part_and_node_counts;
-      part_and_node_counts.push_back(PartNodeCountPair(&mesh.m_block_hex, Hex8::node_count));
-      part_and_node_counts.push_back(PartNodeCountPair(&mesh.m_block_wedge, Wedge6::node_count));
-      part_and_node_counts.push_back(PartNodeCountPair(&mesh.m_block_tet, Tet4::node_count));
       part_and_node_counts.push_back(PartNodeCountPair(&mesh.m_block_pyramid, Pyramid4::node_count));
-
-#if HET_FIX_INCLUDE_EXTRA_ELEM_TYPES
-      part_and_node_counts.push_back(PartNodeCountPair(&mesh.m_block_quad_shell, ShellQuad4::node_count));
-      part_and_node_counts.push_back(PartNodeCountPair(&mesh.m_block_tri_shell, ShellTriangle3::node_count));
-#endif
 
       // Verify that entities in each part are set up correctly.
       // Use a PartVector iterator for parts_to_check and call

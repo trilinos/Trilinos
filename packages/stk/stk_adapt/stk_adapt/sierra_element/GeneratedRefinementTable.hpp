@@ -275,6 +275,29 @@ template<> RefTopoX RefinementTopologyExtra< shards:: Wedge<15>  > :: refinement
 
 };
 
+template<> RefTopoX RefinementTopologyExtra< shards:: Pyramid<5>  > :: refinement_topology = {
+  {	0,	0,	0,	0,	1,	{-1,	-1,	0} },
+  {	1,	0,	1,	0,	1,	{1,	-1,	0} },
+  {	2,	0,	2,	0,	1,	{1,	1,	0} },
+  {	3,	0,	3,	0,	1,	{-1,	1,	0} },
+  {	4,	0,	4,	0,	1,	{0,	0,	1} },
+  {	5,	1,	0,	0,	1,	{0,	-1,	0} },
+  {	6,	1,	1,	0,	1,	{1,	0,	0} },
+  {	7,	1,	2,	0,	1,	{0,	1,	0} },
+  {	8,	1,	3,	0,	1,	{-1,	0,	0} },
+  {	9,	1,	4,	0,	1,	{-0.5,	-0.5,	0.5} },
+  {	10,	1,	5,	0,	1,	{0.5,	-0.5,	0.5} },
+  {	11,	1,	6,	0,	1,	{0.5,	0.5,	0.5} },
+  {	12,	1,	7,	0,	1,	{-0.5,	0.5,	0.5} },
+  {	13,	2,	4,	0,	1,	{0,	0,	0} } 
+};
+
+// FIXME: note from 
+//Note 13 Node Pyramid Refinement not yet complete.
+
+template<> RefTopoX RefinementTopologyExtra< shards:: Pyramid<13>  > :: refinement_topology = {};
+
+
 template<> RefTopoX RefinementTopologyExtra< shards:: Line<3>  > :: refinement_topology = {
   {	0,	0,	0,	0,	1,	{-1,	0,	0} },
   {	1,	0,	1,	0,	1,	{1,	0,	0} },

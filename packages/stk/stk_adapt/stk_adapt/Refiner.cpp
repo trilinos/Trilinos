@@ -77,248 +77,142 @@ namespace stk {
       m_allocated = true;
       UniformRefinerPatternBase* bp;
       switch(refine_type)
-      {
-        case LINE2_LINE2_2:
         {
-          bp = (UniformRefinerPatternBase*) new Line2_Line2_2(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
+        case LINE2_LINE2_2: 
+          bp = (UniformRefinerPatternBase*) new Line2_Line2_2(eMesh); 
           break;
-        }
-        case BEAM2_BEAM2_2:
-        {
-          bp = (UniformRefinerPatternBase*) new Beam2_Beam2_2(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
+        case BEAM2_BEAM2_2: 
+          bp = (UniformRefinerPatternBase*) new Beam2_Beam2_2(eMesh); 
           break;
-        }
         case SHELLLINE2_SHELLLINE2_2:
-        {
           bp = (UniformRefinerPatternBase*) new ShellLine2_ShellLine2_2(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case SHELLLINE3_SHELLLINE3_2:
-        {
           bp = (UniformRefinerPatternBase*) new ShellLine3_ShellLine3_2(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case QUAD4_QUAD4_4_OLD:
-        {
           bp = (UniformRefinerPatternBase*) new Quad4_Quad4_4_Old(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case QUAD4_QUAD4_4:
-        {
           bp = (UniformRefinerPatternBase*) new Quad4_Quad4_4(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case QUAD4_QUAD4_4_SIERRA:
-        {
           bp = (UniformRefinerPatternBase*) new Quad4_Quad4_4_Sierra(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case TRI3_TRI3_4:
-        {
           bp = (UniformRefinerPatternBase*) new Tri3_Tri3_4(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case SHELLTRI3_SHELLTRI3_4:
-        {
           bp = (UniformRefinerPatternBase*) new ShellTri3_ShellTri3_4(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case SHELLTRI6_SHELLTRI6_4:
-        {
           bp = (UniformRefinerPatternBase*) new ShellTri6_ShellTri6_4(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case SHELLQUAD4_SHELLQUAD4_4:
-        {
           bp = (UniformRefinerPatternBase*) new ShellQuad4_ShellQuad4_4(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case SHELLQUAD8_SHELLQUAD8_4:
-        {
           bp = (UniformRefinerPatternBase*) new ShellQuad8_ShellQuad8_4(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case TET4_TET4_8:
-        {
           bp = (UniformRefinerPatternBase*) new Tet4_Tet4_8(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case HEX8_HEX8_8:
-        {
           bp = (UniformRefinerPatternBase*) new Hex8_Hex8_8(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case WEDGE6_WEDGE6_8:
-        {
           bp = (UniformRefinerPatternBase*) new Wedge6_Wedge6_8(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
+        case PYRAMID5_PYRAMID5_10:
+          bp = (UniformRefinerPatternBase*) new Pyramid5_Pyramid5_10(eMesh);
+          break;
         case LINE3_LINE3_2:
-        {
           bp = (UniformRefinerPatternBase*) new Line3_Line3_2(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case BEAM3_BEAM3_2:
-        {
           bp = (UniformRefinerPatternBase*) new Beam3_Beam3_2(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case TRI6_TRI6_4:
-        {
           bp = (UniformRefinerPatternBase*) new Tri6_Tri6_4(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case QUAD9_QUAD9_4:
-        {
           bp = (UniformRefinerPatternBase*) new Quad9_Quad9_4(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case QUAD8_QUAD8_4:
-        {
           bp = (UniformRefinerPatternBase*) new Quad8_Quad8_4(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case HEX27_HEX27_8:
-        {
           bp = (UniformRefinerPatternBase*) new Hex27_Hex27_8(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case HEX20_HEX20_8:
-        {
           bp = (UniformRefinerPatternBase*) new Hex20_Hex20_8(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case TET10_TET10_8:
-        {
           bp = (UniformRefinerPatternBase*) new Tet10_Tet10_8(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case WEDGE15_WEDGE15_8:
-        {
           bp = (UniformRefinerPatternBase*) new Wedge15_Wedge15_8(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case WEDGE18_WEDGE18_8:
-        {
           bp = (UniformRefinerPatternBase*) new Wedge18_Wedge18_8(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
+        case PYRAMID13_PYRAMID13_10:
+          bp = (UniformRefinerPatternBase*) new Pyramid13_Pyramid13_10(eMesh);
+          break;
         case QUAD4_QUAD9_1:
-        {
           bp = (UniformRefinerPatternBase*) new Quad4_Quad9_1(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case QUAD4_QUAD8_1:
-        {
           bp = (UniformRefinerPatternBase*) new Quad4_Quad8_1(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case BEAM2_BEAM3_1:
-        {
           bp = (UniformRefinerPatternBase*) new Beam2_Beam3_1(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case SHELLQUAD4_SHELLQUAD8_1:
-        {
           bp = (UniformRefinerPatternBase*) new ShellQuad4_ShellQuad8_1(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case TRI3_TRI6_1:
-        {
           bp = (UniformRefinerPatternBase*) new Tri3_Tri6_1(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case TET4_TET10_1:
-        {
           bp = (UniformRefinerPatternBase*) new Tet4_Tet10_1(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case HEX8_HEX27_1:
-        {
           bp = (UniformRefinerPatternBase*) new Hex8_Hex27_1(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case HEX8_HEX20_1:
-        {
           bp = (UniformRefinerPatternBase*) new Hex8_Hex20_1(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case WEDGE6_WEDGE15_1:
-        {
           bp = (UniformRefinerPatternBase*) new Wedge6_Wedge15_1(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case WEDGE6_WEDGE18_1:
-        {
           bp = (UniformRefinerPatternBase*) new Wedge6_Wedge18_1(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
+        case PYRAMID5_PYRAMID13_1:
+          bp = (UniformRefinerPatternBase*) new Pyramid5_Pyramid13_1(eMesh);
+          break;
         case QUAD4_TRI3_2:
-        {
           bp = (UniformRefinerPatternBase*) new Quad4_Tri3_2(eMesh);
-          bp->setSubPatterns(m_breakPattern,eMesh);
           break;
-        }
         case QUAD4_TRI3_4:
-        {
           bp = (UniformRefinerPatternBase*) new Quad4_Tri3_4(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case QUAD4_TRI3_6:
-        {
           bp = (UniformRefinerPatternBase*) new Quad4_Tri3_6(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case HEX8_TET4_24:
-        {
           bp = (UniformRefinerPatternBase*) new Hex8_Tet4_24(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
           break;
-        }
         case HEX8_TET4_6_12:
-        {
           bp = (UniformRefinerPatternBase*) new Hex8_Tet4_6_12(eMesh);
-          bp->setSubPatterns(m_breakPattern, eMesh);
+          break;
+        default:
+          throw std::runtime_error("Refiner::Refiner Unrecognized refinement pattern");
           break;
         }
-      }
+
+      bp->setSubPatterns(m_breakPattern, eMesh);
       
       m_proc_rank_field = proc_rank_field;
     }
@@ -420,6 +314,7 @@ namespace stk {
       //m_eMesh.getBulkData()->modification_begin();
       std::string oldPartName = breakPattern->getOldElementsPartName()+toString(rank);
       mesh::Part *oldPart = m_eMesh.getFEM_meta_data()->get_part(oldPartName);
+
 #define DEBUG_REMOVE_OLD_PARTS 0
 
       if (DEBUG_REMOVE_OLD_PARTS) std::cout << "tmp addOldElementsToPart:: oldPartName= " << oldPartName << std::endl;
@@ -444,7 +339,6 @@ namespace stk {
       for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
           if (on_locally_owned_part(**k) && fromPartsSelector(**k) )
-            //if ( on_locally_owned_part(**k) )
             {
               stk::mesh::Bucket & bucket = **k ;
               const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
@@ -470,7 +364,7 @@ namespace stk {
                     {
                       elems.push_back(&element);
                       ++nele;
-                      //std::cout << "tmp adding to oldParts = " << element << std::endl;
+                      if (DEBUG_REMOVE_OLD_PARTS) std::cout << "tmp adding to oldParts = " << element << std::endl;
                     }
                 }
             }
@@ -479,7 +373,7 @@ namespace stk {
 
       for (unsigned ielem=0; ielem < elems.size(); ielem++)
         {
-          //std::cout << "tmp addOldElementsToPart element = " << *elems[ielem] << std::endl;
+          if (DEBUG_REMOVE_OLD_PARTS) std::cout << "tmp addOldElementsToPart element = " << *elems[ielem] << std::endl;
           m_eMesh.getBulkData()->change_entity_parts( *elems[ielem], add_parts, remove_parts );
         }
 
@@ -988,6 +882,22 @@ namespace stk {
             /**/                                                TRACE_PRINT("Refiner: registerNeedNewNode count_only(true) ranks[irank]==ranks[0]... done ");
 
             unsigned num_elem_needed = num_elem_not_ghost * m_breakPattern[irank]->getNumNewElemPerElem();
+
+            // FIXME TMP
+            if (CHECK_DEBUG)
+              { 
+                unsigned nele_col=0;
+                for (unsigned icolor = 0; icolor < elementColors.size(); icolor++)
+                  {
+                    nele_col += elementColors[icolor].size();
+                  }
+                std::cout << "tmp Refiner::doBreak: irank= " << irank << " ranks[irank]= " << ranks[irank] << " bp= [" 
+                          << m_breakPattern[irank]->getFromTopoPartName() << " ==> "
+                          << m_breakPattern[irank]->getToTopoPartName() << "] num_elem_needed= " << num_elem_needed 
+                          << " num_elem_not_ghost= " << num_elem_not_ghost
+                          << " nelementColors= " << nele_col << " elementColors.size()= " << elementColors.size()
+                          << std::endl;
+              }
 
             if (0 && num_elem_not_ghost != num_elem_not_ghost_0)
               {
@@ -3629,10 +3539,13 @@ namespace stk {
     ///   originalPartName -> originalPartName_uo_1000    The original part holds the elements to be converted, and is renamed to be the "old" part
     ///   originalPartName_urpconv -> originalPartName    The new part has the same name as the original part with urpconv appended, which
     ///                                                      is then changed back to the original part name
+    ///   fromPartName -> fromPartName+"_uo_1000"
+    ///   toPartName_urpconv -> toPartName
     ///
     /// So, after the renaming, the original part name holds the new elements, and the original elements are
     ///   in the part with the original name appended with _uo_1000.  These parts are ignored on subsequent input.
     ///
+#define DEBUG_RENAME_NEW_PARTS 0
     void Refiner::
     renameNewParts(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern)
     {
@@ -3641,42 +3554,79 @@ namespace stk {
       stk::mesh::PartVector toParts = breakPattern->getToParts();
       stk::mesh::PartVector fromParts = breakPattern->getFromParts();
       
-      if (0)
+      if (DEBUG_RENAME_NEW_PARTS)
         {
           for (unsigned i_part = 0; i_part < toParts.size(); i_part++)
             {
-              std::cout << "tmp toParts[i_part]->name() = " << toParts[i_part]->name()
-                        << " fromParts[i_part]->name() = " << fromParts[i_part]->name()  << std::endl;
+              std::cout << "tmp toParts[i_part]->name() = " << toParts[i_part]->name() << std::endl;
             }
-
+          for (unsigned i_part = 0; i_part < fromParts.size(); i_part++)
+            {
+              std::cout << " fromParts[i_part]->name() = " << fromParts[i_part]->name()  << std::endl;
+            }
         }
       
-      for (unsigned i_part = 0; i_part < toParts.size(); i_part++)
+      if (fromParts.size() == toParts.size())
         {
-          
-          if (0) std::cout << "tmp before: fromPartName= " << fromParts[i_part]->name() << " toPartName= " << toParts[i_part]->name() << std::endl;
-
-          std::string * toPartName_p = const_cast<std::string *> (&toParts[i_part]->name());
-          std::string toPartName = toParts[i_part]->name();
-          if (toParts[i_part]->name() == fromParts[i_part]->name())
+          for (unsigned i_part = 0; i_part < toParts.size(); i_part++)
             {
-              continue;
+              if (DEBUG_RENAME_NEW_PARTS) std::cout << "tmp before: fromPartName= " << fromParts[i_part]->name() 
+                                                    << " toPartName= " << toParts[i_part]->name() << std::endl;
+
+              std::string * toPartName_p = const_cast<std::string *> (&toParts[i_part]->name());
+              std::string toPartName = toParts[i_part]->name();
+              if (toParts[i_part]->name() == fromParts[i_part]->name())
+                {
+                  continue;
+                }
+              std::string fromPartName = toPartName;
+              int len = fromPartName.length();
+              int clen = breakPattern->getAppendConvertString().length();
+              fromPartName.erase(len - clen, clen);
+              //mesh::Part *fromPart = m_eMesh.getNonConstPart(fromPartName);
+              mesh::Part *fromPart = fromParts[i_part];
+              VERIFY_OP_ON(fromPart, !=, 0, std::string("Refiner::renameNewParts null fromPart found, fromPart= ")+fromPartName);
+              std::string * fromPartName_p = const_cast<std::string *> (&fromPart->name());
+              *toPartName_p = fromPartName;
+              *fromPartName_p = fromPartName + breakPattern->getAppendOriginalString();
+
+              if (DEBUG_RENAME_NEW_PARTS) {
+                std::cout << "tmp  after: fromPartName= " << fromParts[i_part]->name() << " toPartName= " << toParts[i_part]->name() << std::endl;
+                std::cout << "tmp P[" << m_eMesh.getRank() << "] fromPartName: " << fromPartName << " part= " << toParts[i_part]->name()
+                          << " old part name = " << fromPart->name()
+                          << std::endl;
+              }
             }
-          std::string fromPartName = toPartName;
-          int len = fromPartName.length();
-          int clen = breakPattern->getAppendConvertString().length();
-          fromPartName.erase(len - clen, clen);
-          mesh::Part *fromPart = m_eMesh.getNonConstPart(fromPartName);
-          std::string * fromPartName_p = const_cast<std::string *> (&fromPart->name());
-          *toPartName_p = fromPartName;
-          *fromPartName_p = fromPartName + breakPattern->getAppendOriginalString();
+        }
+      else
+        {
+          for (unsigned i_part = 0; i_part < fromParts.size(); i_part++)
+            {
+              if (DEBUG_RENAME_NEW_PARTS) std::cout << "tmp before: fromPartName= " << fromParts[i_part]->name() << std::endl;
+              std::string * fromPartName_p = const_cast<std::string *> (&fromParts[i_part]->name());
+              *fromPartName_p = fromParts[i_part]->name() + breakPattern->getAppendOriginalString();
+              if (DEBUG_RENAME_NEW_PARTS) {
+                std::cout << "tmp  after: fromPartName= " << fromParts[i_part]->name() << std::endl;
+              }
+            }
 
-          if (0) std::cout << "tmp  after: fromPartName= " << fromParts[i_part]->name() << " toPartName= " << toParts[i_part]->name() << std::endl;
+          for (unsigned i_part = 0; i_part < toParts.size(); i_part++)
+            {
+              if (DEBUG_RENAME_NEW_PARTS) std::cout << "tmp before: toPartName= " << toParts[i_part]->name() << std::endl;
 
-          if (0)
-            std::cout << "tmp P[" << m_eMesh.getRank() << "] fromPartName: " << fromPartName << " part= " << toParts[i_part]->name()
-                      << " old part name = " << fromPart->name()
-                      << std::endl;
+              std::string * toPartName_p = const_cast<std::string *> (&toParts[i_part]->name());
+              std::string toPartName = toParts[i_part]->name();
+              if (toPartName.find(breakPattern->getAppendConvertString()) == std::string::npos)
+                continue;
+              int len = toPartName.length();
+              int clen = breakPattern->getAppendConvertString().length();
+              toPartName.erase(len - clen, clen);
+              *toPartName_p = toPartName;
+
+              if (DEBUG_RENAME_NEW_PARTS) {
+                std::cout << "tmp  after: toPartName= " << toParts[i_part]->name() << std::endl;
+              }
+            }
         }
     }
 

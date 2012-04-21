@@ -6,8 +6,8 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#ifndef stk_percept_HeterogeneousFixture_hpp
-#define stk_percept_HeterogeneousFixture_hpp
+#ifndef stk_percept_PyramidFixture_hpp
+#define stk_percept_PyramidFixture_hpp
 
 #include <Shards_BasicTopologies.hpp>
 
@@ -50,13 +50,13 @@ namespace stk {
      *  copied from stk_mesh and modified
      */
 
-    class HeterogeneousFixture {
+    class PyramidFixture {
     public:
 
 
-      ~HeterogeneousFixture();
+      ~PyramidFixture();
 
-      HeterogeneousFixture( stk::ParallelMachine comm, bool doCommit = true);
+      PyramidFixture( stk::ParallelMachine comm, bool doCommit = true);
 
       void populate();
 
@@ -64,14 +64,7 @@ namespace stk {
       stk::mesh::fem::FEMMetaData m_metaData;
       stk::mesh::BulkData m_bulkData;
 
-      stk::mesh::Part & m_block_hex;
-      stk::mesh::Part & m_block_wedge;
-      stk::mesh::Part & m_block_tet;
       stk::mesh::Part & m_block_pyramid;
-#if HET_FIX_INCLUDE_EXTRA_ELEM_TYPES
-      stk::mesh::Part & m_block_quad_shell;
-      stk::mesh::Part & m_block_tri_shell;
-#endif
       const stk::mesh::EntityRank m_elem_rank;
 
       VectorFieldType & m_coordinates_field;
@@ -81,7 +74,7 @@ namespace stk {
       ElementNodePointerFieldType & m_element_node_coordinates_field;
     };
 
-    bool verifyMesh( const HeterogeneousFixture & mesh );
+    bool verifyMesh( const PyramidFixture & mesh );
 
   } //namespace percept
 } //namespace stk

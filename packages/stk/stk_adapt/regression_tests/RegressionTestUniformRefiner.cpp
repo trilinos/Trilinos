@@ -49,6 +49,7 @@
 #include <stk_percept/fixtures/Fixture.hpp>
 #include <stk_percept/fixtures/BeamFixture.hpp>
 #include <stk_percept/fixtures/HeterogeneousFixture.hpp>
+#include <stk_percept/fixtures/PyramidFixture.hpp>
 #include <stk_percept/fixtures/QuadFixture.hpp>
 #include <stk_percept/fixtures/WedgeFixture.hpp>
 
@@ -85,6 +86,73 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, pyramid_mesh_enrich)
+      {
+        EXCEPTWATCH;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        // start_demo_heterogeneous_mesh_enrich
+
+        //const unsigned p_rank = stk::parallel_machine_rank( MPI_COMM_WORLD);
+        const unsigned p_size = stk::parallel_machine_size( MPI_COMM_WORLD);
+
+        if (p_size <= 1)
+          {
+            // create the mesh
+            {
+              stk::percept::PyramidFixture mesh(MPI_COMM_WORLD, false);
+              mesh.m_metaData.commit();
+              mesh.populate();
+
+              bool isCommitted = true;
+              percept::PerceptMesh em1(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
+              
+              //em1.printInfo("hetero_enrich", 4);
+
+              em1.saveAs(input_files_loc+"pyramid_enrich_0.e");
+              em1.close();
+            }
+
+            std::string input_mesh = input_files_loc+"pyramid_enrich_0.e";
+            if (p_size > 1)
+              {
+                RunEnvironment::doLoadBalance(pm, input_mesh);
+              }
+
+            // enrich the mesh
+            if (1)
+              {
+                percept::PerceptMesh eMesh1(3);
+
+                eMesh1.open(input_files_loc+"pyramid_enrich_0.e");
+                //eMesh1.printInfo("hetero_enrich_2", 4);
+
+                URP_Heterogeneous_Enrich_3D break_pattern(eMesh1);
+                //int scalarDimension = 0; // a scalar
+                stk::mesh::FieldBase* proc_rank_field = 0;      //eMesh1.addField("proc_rank", eMesh.element_rank(), scalarDimension);
+                eMesh1.commit();
+                //eMesh1.printInfo("hetero_enrich_2", 4);
+
+                UNIFORM_REFINER breaker(eMesh1, break_pattern, proc_rank_field);
+
+                //breaker.setRemoveOldElements(false);
+                breaker.setIgnoreSideSets(true);
+                breaker.doBreak();
+
+                eMesh1.saveAs(output_files_loc+"pyramid_enrich_1.e");
+                eMesh1.saveAs(input_files_loc+"pyramid_quadratic_refine_0.e");
+                eMesh1.close();
+              }
+          }
+        // end_demo
+      }
 
       //======================================================================================================================
       //======================================================================================================================
@@ -306,6 +374,9 @@ namespace stk
             Wedge6_Wedge6_8          :: printRefinementTopoX_Table(file);
             Wedge15_Wedge15_8        :: printRefinementTopoX_Table(file);
 
+            //Pyramid5_Pyramid5_10     :: printRefinementTopoX_Table(file);
+            //Pyramid13_Pyramid13_10   :: printRefinementTopoX_Table(file);
+
             // Not supported by Sierra
             // Wedge18_Wedge18_8        :: printRefinementTopoX_Table(file);
 
@@ -318,6 +389,7 @@ namespace stk
             Hex27_Hex27_8            :: printRefinementTopoX_Table(file);
             Hex20_Hex20_8            :: printRefinementTopoX_Table(file);
             Tet10_Tet10_8            :: printRefinementTopoX_Table(file);
+
 #endif
             file << "#endif" << std::endl;
           }
@@ -2378,6 +2450,7 @@ namespace stk
 
       }
 
+
       //======================================================================================================================
       //======================================================================================================================
       //======================================================================================================================
@@ -2399,15 +2472,6 @@ namespace stk
             // create the mesh
             {
               stk::percept::HeterogeneousFixture mesh(MPI_COMM_WORLD, false);
-              stk::io::put_io_part_attribute(  mesh.m_block_hex );
-              stk::io::put_io_part_attribute(  mesh.m_block_wedge );
-              stk::io::put_io_part_attribute(  mesh.m_block_tet );
-
-#if HET_FIX_INCLUDE_EXTRA_ELEM_TYPES
-              stk::io::put_io_part_attribute(  mesh.m_block_pyramid );
-              stk::io::put_io_part_attribute(  mesh.m_block_quad_shell );
-              stk::io::put_io_part_attribute(  mesh.m_block_tri_shell );
-#endif
 
               mesh.m_metaData.commit();
               mesh.populate();
@@ -2456,6 +2520,70 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, pyramid_mesh)
+      {
+        EXCEPTWATCH;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        // start_demo_heterogeneous_mesh
+
+        //const unsigned p_rank = stk::parallel_machine_rank( MPI_COMM_WORLD);
+        const unsigned p_size = stk::parallel_machine_size( MPI_COMM_WORLD);
+
+        if (p_size <= 1)
+          {
+            // create the mesh
+            {
+              stk::percept::PyramidFixture mesh(MPI_COMM_WORLD, false);
+
+              mesh.m_metaData.commit();
+              mesh.populate();
+
+              bool isCommitted = true;
+              percept::PerceptMesh em1(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
+
+              em1.saveAs(input_files_loc+"pyramid_0.e");
+              em1.close();
+            }
+
+            std::string input_mesh = input_files_loc+"pyramid_0.e";
+            if (p_size > 1)
+              {
+                RunEnvironment::doLoadBalance(pm, input_mesh);
+              }
+
+            // refine the mesh
+            if (1)
+              {
+                percept::PerceptMesh eMesh1(3);
+
+                eMesh1.open(input_files_loc+"pyramid_0.e");
+
+                //URP_Heterogeneous_3D break_pattern(eMesh1);
+                Pyramid5_Pyramid5_10 break_pattern(eMesh1);
+                int scalarDimension = 0; // a scalar
+                stk::mesh::FieldBase* proc_rank_field = eMesh1.addField("proc_rank", eMesh1.element_rank(), scalarDimension);
+                eMesh1.commit();
+
+                UNIFORM_REFINER breaker(eMesh1, break_pattern, proc_rank_field);
+
+                //breaker.setRemoveOldElements(false);
+                breaker.setIgnoreSideSets(true);
+                breaker.doBreak();
+
+                eMesh1.saveAs(output_files_loc+"pyramid_1.e");
+                eMesh1.close();
+              }
+          }
+        //exit(1);
+        // end_demo
+      }
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
 
 #if 0
       STKUNIT_UNIT_TEST(regr_uniformRefiner, beam_refine)
@@ -2673,15 +2801,6 @@ namespace stk
             // create the mesh
             {
               stk::percept::HeterogeneousFixture mesh(MPI_COMM_WORLD, false);
-              stk::io::put_io_part_attribute(  mesh.m_block_hex );
-              stk::io::put_io_part_attribute(  mesh.m_block_wedge );
-              stk::io::put_io_part_attribute(  mesh.m_block_tet );
-
-#if HET_FIX_INCLUDE_EXTRA_ELEM_TYPES
-              stk::io::put_io_part_attribute(  mesh.m_block_pyramid );
-              stk::io::put_io_part_attribute(  mesh.m_block_quad_shell );
-              stk::io::put_io_part_attribute(  mesh.m_block_tri_shell );
-#endif
 
               mesh.m_metaData.commit();
               mesh.populate();

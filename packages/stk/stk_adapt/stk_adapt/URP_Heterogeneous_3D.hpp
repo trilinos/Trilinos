@@ -42,6 +42,9 @@ namespace stk {
             m_bp.push_back(new  UniformRefinerPattern<shards::Tetrahedron<4>,   shards::Tetrahedron<4>,   8, SierraPort > (eMesh, block_names));
             m_bp.push_back(new  UniformRefinerPattern<shards::Hexahedron<8>,    shards::Hexahedron<8>,    8, SierraPort > (eMesh, block_names));
             m_bp.push_back(new  UniformRefinerPattern<shards::Wedge<6>,         shards::Wedge<6>,         8, SierraPort > (eMesh, block_names));
+
+            m_bp.push_back(new  UniformRefinerPattern<shards::Pyramid<5>,       shards::Pyramid<5>,      10, SierraPort > (eMesh, block_names));
+
             m_bp.push_back(new  UniformRefinerPattern<shards::Hexahedron<27>,   shards::Hexahedron<27>,   8, SierraPort > (eMesh, block_names));
             m_bp.push_back(new  UniformRefinerPattern<shards::Hexahedron<20>,   shards::Hexahedron<20>,   8, SierraPort > (eMesh, block_names));
             m_bp.push_back(new  UniformRefinerPattern<shards::Tetrahedron<10>,  shards::Tetrahedron<10>,  8, SierraPort > (eMesh, block_names));
