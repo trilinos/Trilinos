@@ -50,91 +50,122 @@
 #include "BelosStatusTestResNorm.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosMultiVecTraits.hpp"
+#include "Teuchos_as.hpp"
 
-/*! 
+/*!
   \class Belos::StatusTestImpResNorm
-  \brief An implementation of StatusTest using an implicit residual norm test with a check
-  for loss of accuracy.
+  \brief Convergence test using the implicit residual norm(s), with an
+    explicit residual norm(s) check for loss of accuracy if necessary.
 
-  The form of the test is
-   \f[
-   \frac{\|r_i\|}{\sigma_i} \le \tau
-   \f]
-   where 
-   <ul>
-   <li> \f$r_i\f$ is the i-th residual vector, implicitly computed by the iteration,
-   <li> \f$\|r_i\|\f$ is the i-th residual norm determined by the enum NormType  (1-norm, 2-norm or inf-norm), 
-   <li> \f$\sigma_i\f$ is the i-th scale factor that can be passed in as a precomputed number of the templated type, 
-   or can be selected from by the enum ScaleType (norm of RHS, norm of initial residual).
-   <li> \f$\tau\f$ is the tolerance that is passed in as a number of the templated type to the constructor.  
-   The value of \f$\tau\f$ can be reset using the setTolerance() method.
-   </ul>
+  This test passes when a quorum of residual vectors (for all
+  right-hand sides) passes a residual norm test.  For residual vector
+  \f$r_i\f$, the form of the test is \f$\|r_i\| / \sigma_i \le
+  \tau\f$, where \f$\tau\f$ is the convergence tolerance set in the
+  constructor or by setTolerance().  The default quorum consists of
+  all the vectors, but you can set the number of vectors that must
+  pass before the whole test passes, either by the constructor
+  argument or by calling setQuorum().
 
+  The default residual vector norm (the norm used in the numerator of
+  the test, and applied to the current residual vectors) is the
+  2-norm, but you can change the norm type (1-norm, 2-norm, or
+  infinity norm) using defineResForm().  The default scaling factor
+  \f$\sigma_i\f$ for residual vector i is the 2-norm of the initial
+  residual vector, but you can change this using defineScaleForm().
+  The norm used for the scaling factors may be different than the norm
+  used for the current residual vectors.  Furthermore, each residual
+  vector may use a different scaling factor \f$\sigma_i\f$.
+
+  This test starts by using the "implicit" residual norm, otherwise
+  called the "recursive" or "native" residual norm.  It comes from the
+  iterative method's projected problem, unlike the "explicit" residual
+  norm, which comes from explicitly computing \f$R = B - A * X\f$.
+  Once the implicit residual norm reaches the convergence tolerance,
+  this test then checks the explicit residual norm to make sure that
+  it has reached the convergence tolerance as well.
+
+  We say that there is a "potential loss of accuracy" when we first
+  detect that the implicit residual norm(s) have met the desired
+  original convergence tolerance, but the explicit residual norm(s)
+  have not.  We don't actually call this a "loss of accuracy" (in the
+  sense of getLOADetected() returning true) unless we tried to remedy
+  this situation, but couldn't fix it.  Upon detecting a potential
+  loss of accuracy, this test tells the solver to "iterate a few more
+  steps" by making the "current" residual tolerance (the value of
+  getCurrTolerance()) smaller, and forcing the implicit residual
+  norm(s) to meet the current tolerance before moving on to test the
+  explicit norm(s).  If that doesn't work, this test declares a loss
+  of accuracy.
 */
 
 namespace Belos {
 
 template <class ScalarType, class MV, class OP>
 class StatusTestImpResNorm: public StatusTestResNorm<ScalarType,MV,OP> {
+public:
+  //! The type of the magnitude (absolute value) of a ScalarType.
+  typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
 
- public:
-
-  // Convenience typedefs
-  typedef Teuchos::ScalarTraits<ScalarType> SCT;
-  typedef typename SCT::magnitudeType MagnitudeType;
-  typedef MultiVecTraits<ScalarType,MV>  MVT;
-
-  //! @name Constructors/destructors.
-  //@{ 
-  //! Constructor
-  /*! The constructor takes a single argument specifying the tolerance (\f$\tau\f$).  
-    If none of the form definition methods are called, we use \f$\|r\|_2/\|r^{(0)}\|_2 \le \tau\f$ 
-    as the stopping criterion, where \f$\|r\|_2\f$ uses the least costly form of the 2-norm of 
-    residual available from the iterative method and \f$\|r^{(0)}\|_2\f$ is the corresponding norm 
-    of the initial residual.  The least costly form of the 2-norm depends on the chosen iterative 
-    method.  Most Krylov methods produce the preconditioned residual vector in a form that would be 
-    exact in infinite precision arithmetic.  This vector may be different from the true residual 
-    either because left scaling or preconditioning was used, or because round-off error has 
-    introduced significant error, or both.
-
-    You can also state the number of vectors that must pass the convergence criteria before the 
-    status test passes by using the \c quorum argument.
-  */
-  StatusTestImpResNorm( MagnitudeType Tolerance, int quorum = -1, bool showMaxResNormOnly = false );
-
-  //! Destructor
-  virtual ~StatusTestImpResNorm();
+private:
+  //! @name Abbreviations for method implementations
+  //@{
+  typedef Teuchos::ScalarTraits<ScalarType> STS;
+  typedef Teuchos::ScalarTraits<MagnitudeType> STM;
+  typedef MultiVecTraits<ScalarType,MV> MVT;
   //@}
 
+public:
+  //! @name Constructors and destructor.
+  //@{
+
+  /// \brief Constructor
+  ///
+  /// \param Tolerance [in] Convergence tolerance \f$\tau\f$.
+  ///
+  /// \param quorum [in] The number of vectors in the problem that
+  ///   must pass the convergence criteria before this StatusTest
+  ///   passes.  -1 means that all residuals must pass.
+  ///
+  /// \param showMaxResNormOnly [in] Whether only the maximum residual
+  ///   norm (of all vectors) is displayed when the print() method is
+  ///   called.
+  StatusTestImpResNorm (MagnitudeType Tolerance,
+                        int quorum = -1,
+                        bool showMaxResNormOnly = false);
+
+  //! Destructor (virtual for memory safety).
+  virtual ~StatusTestImpResNorm();
+
+  //@}
   //! @name Form and parameter definition methods.
-  //@{ 
+  //@{
 
   //! Define form of the residual, its norm and optional weighting vector.
   /*! This method defines the form of \f$\|r\|\f$.  We specify:
     <ul>
-    <li> The norm to be used on the residual (this may be different than the norm used in 
-    DefineScaleForm()).
+    <li> The norm to be used on the residual (this may be different than the norm used in
+    defineScaleForm()).
     </ul>
   */
   int defineResForm( NormType TypeOfNorm);
-  
+
   //! Define form of the scaling, its norm, its optional weighting vector, or, alternatively, define an explicit value.
   /*! This method defines the form of how the residual is scaled (if at all).  It operates in two modes:
     <ol>
     <li> User-provided scaling value:
-    <ul> 
+    <ul>
     <li> Set argument TypeOfScaling to UserProvided.
     <li> Set ScaleValue to a non-zero value that the residual norm will be divided by.
     <li> TypeOfNorm argument will be ignored.
-    <li> Sample use:  Define ScaleValue = \f$\|A\|_{\infty}\f$ where \f$ A \f$ is the matrix 
+    <li> Sample use:  Define ScaleValue = \f$\|A\|_{\infty}\f$ where \f$ A \f$ is the matrix
     of the linear problem.
     </ul>
-    
+
     <li> Use a supported Scaling Form:
     <ul>
-    <li> Define TypeOfScaling to be the norm of the right hand side, the initial residual vector, 
+    <li> Define TypeOfScaling to be the norm of the right hand side, the initial residual vector,
     or to none.
-    <li> Define norm to be used on the scaling vector (this may be different than the norm used 
+    <li> Define norm to be used on the scaling vector (this may be different than the norm used
     in DefineResForm()).
     </ul>
     </ol>
@@ -142,25 +173,34 @@ class StatusTestImpResNorm: public StatusTestResNorm<ScalarType,MV,OP> {
   int defineScaleForm( ScaleType TypeOfScaling, NormType TypeOfNorm, MagnitudeType ScaleValue = Teuchos::ScalarTraits<MagnitudeType>::one());
 
   //! Set the value of the tolerance
-  /*! We allow the tolerance to be reset for cases where, in the process of testing the residual, 
+  /*! We allow the tolerance to be reset for cases where, in the process of testing the residual,
     we find that the initial tolerance was too tight or too lax.
   */
-  int setTolerance(MagnitudeType tolerance) {tolerance_ = tolerance; return(0);}
+  int setTolerance (MagnitudeType tolerance) {
+    tolerance_ = tolerance;
+    return 0;
+  }
 
   //! Sets the number of residuals that must pass the convergence test before Passed is returned.
   //! \note If \c quorum=-1 then all residuals must pass the convergence test before Passed is returned.
-  int setQuorum(int quorum) {quorum_ = quorum; return(0);}
+  int setQuorum (int quorum) {
+    quorum_ = quorum;
+    return 0;
+  }
 
   //! Set whether the only maximum residual norm is displayed when the print() method is called
-  int setShowMaxResNormOnly(bool showMaxResNormOnly) {showMaxResNormOnly_ = showMaxResNormOnly; return(0);}
+  int setShowMaxResNormOnly (bool showMaxResNormOnly) {
+    showMaxResNormOnly_ = showMaxResNormOnly;
+    return 0;
+  }
 
   //@}
 
   //! @name Status methods
-  //@{ 
+  //@{
   //! Check convergence status: Passed, Failed, or Undefined.
-  /*! This method checks to see if the convergence criteria are met.  
-    Depending on how the residual test is constructed this method will return 
+  /*! This method checks to see if the convergence criteria are met.
+    Depending on how the residual test is constructed this method will return
     the appropriate status type.
 
     \return StatusType: Passed, Failed, or Undefined.
@@ -172,25 +212,25 @@ class StatusTestImpResNorm: public StatusTestResNorm<ScalarType,MV,OP> {
   //@}
 
   //! @name Reset methods
-  //@{ 
- 
+  //@{
+
   //! Resets the internal configuration to the initial state.
   void reset();
 
   //@}
 
   //! @name Print methods
-  //@{ 
+  //@{
 
   //! Output formatted description of stopping test to output stream.
   void print(std::ostream& os, int indent = 0) const;
 
   //! Print message for each status specific to this stopping test.
-  void printStatus(std::ostream& os, StatusType type) const; 
+  void printStatus(std::ostream& os, StatusType type) const;
   //@}
 
   //! @name Methods to access data members.
-  //@{ 
+  //@{
 
   //! Returns the current solution estimate that was computed for the most recent residual test.
   Teuchos::RCP<MV> getSolution() { return curSoln_; }
@@ -204,13 +244,29 @@ class StatusTestImpResNorm: public StatusTestResNorm<ScalarType,MV,OP> {
 
   //! Returns the vector containing the indices of the residuals that passed the test.
   std::vector<int> convIndices() { return ind_; }
-  
-  ///! Returns the value of the tolerance, \f$ \tau \f$, set in the constructor.
-  MagnitudeType getTolerance() const {return(tolerance_);};
-  
-  //! Returns the current value of the tolerance which may be modified if there is a loss of accuracy.
-  MagnitudeType getCurrTolerance() const {return(currTolerance_);};
-  
+
+  /// \brief "Original" convergence tolerance \f$\tau\f$ as set by user.
+  ///
+  /// This value is the convergence tolerance as set by the user in
+  /// the constructor, or by the setTolerance() method.  See this
+  /// class' main documentation and the documentation of
+  /// getCurrTolerance() for an explanation of the difference between
+  /// the "original" and "current" tolerances.
+  MagnitudeType getTolerance () const {
+    return tolerance_;
+  }
+
+  /// \brief Current convergence tolerance; may be changed to prevent loss of accuracy.
+  ///
+  /// The difference between "original" tolerance (the value of
+  /// getTolerance()) and "current" tolerance (the value of this
+  /// method) relates to the idea of "loss of accuracy."  See this
+  /// class' main documentation for details.  We do not allow users to
+  /// set the "current" tolerance.
+  MagnitudeType getCurrTolerance () const {
+    return currTolerance_;
+  }
+
   //! Returns the test value, \f$ \frac{\|r\|}{\sigma} \f$, computed in most recent call to CheckStatus.
   const std::vector<MagnitudeType>* getTestValue() const {return(&testvector_);};
 
@@ -252,7 +308,7 @@ class StatusTestImpResNorm: public StatusTestResNorm<ScalarType,MV,OP> {
  protected:
 
  private:
- 
+
   //! @name Private methods.
   //@{
   /** \brief Description of current residual form */
@@ -268,7 +324,7 @@ class StatusTestImpResNorm: public StatusTestResNorm<ScalarType,MV,OP> {
     {
       // Insert division sign.
       oss << "/ ";
-      
+
       // Determine output string for scaling, if there is any.
       if (scaletype_==UserProvided)
         oss << " (User Scale)";
@@ -283,14 +339,14 @@ class StatusTestImpResNorm: public StatusTestResNorm<ScalarType,MV,OP> {
           oss << " RHS ";
         oss << ")";
       }
-    } 
+    }
 
     return oss.str();
   }
 
   //! @name Private data members.
-  //@{ 
-  
+  //@{
+
   //! Current tolerance used to determine convergence and the default tolerance set by user.
   MagnitudeType tolerance_, currTolerance_;
 
@@ -299,13 +355,13 @@ class StatusTestImpResNorm: public StatusTestResNorm<ScalarType,MV,OP> {
 
   //! Determines if the entries for all of the residuals are shown or just the max.
   bool showMaxResNormOnly_;
- 
+
   //! Type of norm to use on residual (OneNorm, TwoNorm, or InfNorm).
   NormType resnormtype_;
-  
+
   //! Type of scaling to use (Norm of RHS, Norm of Initial Residual, None or User provided)
   ScaleType scaletype_;
-  
+
   //! Type of norm to use on the scaling (OneNorm, TwoNorm, or InfNorm)
   NormType scalenormtype_;
 
@@ -314,7 +370,7 @@ class StatusTestImpResNorm: public StatusTestResNorm<ScalarType,MV,OP> {
 
   //! Scaling vector.
   std::vector<MagnitudeType> scalevector_;
-  
+
   //! Residual norm vector.
   std::vector<MagnitudeType> resvector_;
 
@@ -322,14 +378,14 @@ class StatusTestImpResNorm: public StatusTestResNorm<ScalarType,MV,OP> {
   std::vector<MagnitudeType> testvector_;
 
   //! Current solution vector
-  Teuchos::RCP<MV> curSoln_; 
+  Teuchos::RCP<MV> curSoln_;
 
   //! Vector containing the indices for the vectors that passed the test.
   std::vector<int> ind_;
-  
+
   //! Status
   StatusType status_;
-  
+
   //! The current blocksize of the linear system being solved.
   int curBlksz_;
 
@@ -361,12 +417,13 @@ class StatusTestImpResNorm: public StatusTestResNorm<ScalarType,MV,OP> {
 };
 
 template <class ScalarType, class MV, class OP>
-StatusTestImpResNorm<ScalarType,MV,OP>::StatusTestImpResNorm( MagnitudeType Tolerance, int quorum, bool showMaxResNormOnly )
+StatusTestImpResNorm<ScalarType,MV,OP>::
+StatusTestImpResNorm (MagnitudeType Tolerance, int quorum, bool showMaxResNormOnly)
   : tolerance_(Tolerance),
     currTolerance_(Tolerance),
     quorum_(quorum),
     showMaxResNormOnly_(showMaxResNormOnly),
-    resnormtype_(TwoNorm),	
+    resnormtype_(TwoNorm),
     scaletype_(NormOfInitRes),
     scalenormtype_(TwoNorm),
     scalevalue_(1.0),
@@ -384,11 +441,11 @@ StatusTestImpResNorm<ScalarType,MV,OP>::StatusTestImpResNorm( MagnitudeType Tole
 }
 
 template <class ScalarType, class MV, class OP>
-StatusTestImpResNorm<ScalarType,MV,OP>::~StatusTestImpResNorm() 
+StatusTestImpResNorm<ScalarType,MV,OP>::~StatusTestImpResNorm()
 {}
 
 template <class ScalarType, class MV, class OP>
-void StatusTestImpResNorm<ScalarType,MV,OP>::reset() 
+void StatusTestImpResNorm<ScalarType,MV,OP>::reset()
 {
   status_ = Undefined;
   curBlksz_ = 0;
@@ -404,48 +461,54 @@ void StatusTestImpResNorm<ScalarType,MV,OP>::reset()
 
 template <class ScalarType, class MV, class OP>
 int StatusTestImpResNorm<ScalarType,MV,OP>::defineResForm( NormType TypeOfNorm )
-{    
-  TEUCHOS_TEST_FOR_EXCEPTION(firstcallDefineResForm_==false,StatusTestError,
-	"StatusTestResNorm::defineResForm(): The residual form has already been defined.");
-  firstcallDefineResForm_ = false;
-    
-  resnormtype_ = TypeOfNorm;
-    
-  return(0);
-}
-
-template <class ScalarType, class MV, class OP> 
-int StatusTestImpResNorm<ScalarType,MV,OP>::defineScaleForm(ScaleType TypeOfScaling, NormType TypeOfNorm,
-                                                         MagnitudeType ScaleValue )
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(firstcallDefineScaleForm_==false,StatusTestError,
-	"StatusTestResNorm::defineScaleForm(): The scaling type has already been defined.");
-  firstcallDefineScaleForm_ = false;
-    
-  scaletype_ = TypeOfScaling;
-  scalenormtype_ = TypeOfNorm;
-  scalevalue_ = ScaleValue;
-    
+  TEUCHOS_TEST_FOR_EXCEPTION(firstcallDefineResForm_==false,StatusTestError,
+        "StatusTestResNorm::defineResForm(): The residual form has already been defined.");
+  firstcallDefineResForm_ = false;
+
+  resnormtype_ = TypeOfNorm;
+
   return(0);
 }
 
 template <class ScalarType, class MV, class OP>
-StatusType StatusTestImpResNorm<ScalarType,MV,OP>::checkStatus( Iteration<ScalarType,MV,OP>* iSolver )
+int StatusTestImpResNorm<ScalarType,MV,OP>::defineScaleForm(ScaleType TypeOfScaling, NormType TypeOfNorm,
+                                                         MagnitudeType ScaleValue )
 {
-  MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
-  const LinearProblem<ScalarType,MV,OP>& lp = iSolver->getProblem();
+  TEUCHOS_TEST_FOR_EXCEPTION(firstcallDefineScaleForm_==false,StatusTestError,
+        "StatusTestResNorm::defineScaleForm(): The scaling type has already been defined.");
+  firstcallDefineScaleForm_ = false;
+
+  scaletype_ = TypeOfScaling;
+  scalenormtype_ = TypeOfNorm;
+  scalevalue_ = ScaleValue;
+
+  return(0);
+}
+
+template <class ScalarType, class MV, class OP>
+StatusType StatusTestImpResNorm<ScalarType,MV,OP>::
+checkStatus (Iteration<ScalarType,MV,OP>* iSolver)
+{
+  using Teuchos::as;
+  using Teuchos::RCP;
+
+  const MagnitudeType zero = STM::zero ();
+  const LinearProblem<ScalarType,MV,OP>& lp = iSolver->getProblem ();
+
   // Compute scaling term (done once for each block that's being solved)
   if (firstcallCheckStatus_) {
-    StatusType status = firstCallCheckStatusSetup(iSolver);
-    if(status==Failed) {
+    StatusType status = firstCallCheckStatusSetup (iSolver);
+    if (status == Failed) {
       status_ = Failed;
-      return(status_);
+      return status_;
     }
   }
-  //
-  // This section computes the norm of the residual vector
-  //
-  if ( curLSNum_ != lp.getLSNumber() ) {
+
+  // mfh 23 Apr 2012: I don't know exactly what this code does.  It
+  // has something to do with picking the block of right-hand sides
+  // which we're currently checking.
+  if (curLSNum_ != lp.getLSNumber ()) {
     //
     // We have moved on to the next rhs block
     //
@@ -454,51 +517,70 @@ StatusType StatusTestImpResNorm<ScalarType,MV,OP>::checkStatus( Iteration<Scalar
     curBlksz_ = (int)curLSIdx_.size();
     int validLS = 0;
     for (int i=0; i<curBlksz_; ++i) {
-      if (curLSIdx_[i] > -1 && curLSIdx_[i] < numrhs_) 
-	validLS++;
+      if (curLSIdx_[i] > -1 && curLSIdx_[i] < numrhs_)
+        validLS++;
     }
-    curNumRHS_ = validLS; 
+    curNumRHS_ = validLS;
     curSoln_ = Teuchos::null;
-    //
   } else {
     //
     // We are in the same rhs block, return if we are converged
     //
-    if (status_==Passed) { return status_; }
+    if (status_ == Passed) {
+      return status_;
+    }
   }
+
   //
-  // get the native residual norms from the solver for this block of right-hand sides.
-  // If the residual is returned in multivector form, use the resnormtype to compute the residual norms.
-  // Otherwise the native residual is assumed to be stored in the resvector_.
+  // Get the "native" residual norms from the solver for this block of
+  // right-hand sides.  If the solver's getNativeResiduals() method
+  // actually returns a multivector, compute the norms of the columns
+  // of the multivector explicitly.  Otherwise, we assume that
+  // resvector_ contains the norms.
+  //
+  // Note that "compute the norms explicitly" doesn't necessarily mean
+  // the "explicit" residual norms (in the sense discussed in this
+  // class' documentation).  These are just some vectors returned by
+  // the solver.  Some Krylov methods, like CG, compute a residual
+  // vector "recursively."  This is an "implicit residual" in the
+  // sense of this class' documentation.  It equals the explicit
+  // residual in exact arithmetic, but due to rounding error, it is
+  // usually different than the explicit residual.
+  //
+  // FIXME (mfh 23 Apr 2012) This method does _not_ respect the
+  // OrthoManager used by the solver.
   //
   std::vector<MagnitudeType> tmp_resvector( curBlksz_ );
-  Teuchos::RCP<const MV> residMV = iSolver->getNativeResiduals( &tmp_resvector );     
-  if ( residMV != Teuchos::null ) { 
-    tmp_resvector.resize( MVT::GetNumberVecs( *residMV ) );
-    MVT::MvNorm( *residMV, tmp_resvector, resnormtype_ );    
+  RCP<const MV> residMV = iSolver->getNativeResiduals (&tmp_resvector);
+  if (! residMV.is_null ()) {
+    // We got a multivector back.  Compute the norms explicitly.
+    tmp_resvector.resize (MVT::GetNumberVecs (*residMV));
+    MVT::MvNorm (*residMV, tmp_resvector, resnormtype_);
     typename std::vector<int>::iterator p = curLSIdx_.begin();
     for (int i=0; p<curLSIdx_.end(); ++p, ++i) {
       // Check if this index is valid
-      if (*p != -1)  
-	resvector_[*p] = tmp_resvector[i]; 
+      if (*p != -1) {
+        resvector_[*p] = tmp_resvector[i];
+      }
     }
   } else {
     typename std::vector<int>::iterator p = curLSIdx_.begin();
     for (int i=0; p<curLSIdx_.end(); ++p, ++i) {
       // Check if this index is valid
-      if (*p != -1)
-	resvector_[*p] = tmp_resvector[i];
+      if (*p != -1) {
+        resvector_[*p] = tmp_resvector[i];
+      }
     }
   }
   //
-  // Compute the new linear system residuals for testing.
-  // (if any of them don't meet the tolerance or are NaN, then we exit with that status)
+  // Scale the unscaled residual norms we computed or obtained above.
   //
-  if ( scalevector_.size() > 0 ) {
+  if (scalevector_.size () > 0) {
+    // There are per-vector scaling factors to apply.
     typename std::vector<int>::iterator p = curLSIdx_.begin();
     for (; p<curLSIdx_.end(); ++p) {
       // Check if this index is valid
-      if (*p != -1) {     
+      if (*p != -1) {
         // Scale the vector accordingly
         if ( scalevector_[ *p ] != zero ) {
           // Don't intentionally divide by zero.
@@ -509,125 +591,158 @@ StatusType StatusTestImpResNorm<ScalarType,MV,OP>::checkStatus( Iteration<Scalar
       }
     }
   }
-  else {
+  else { // There are no per-vector scaling factors.
     typename std::vector<int>::iterator p = curLSIdx_.begin();
     for (; p<curLSIdx_.end(); ++p) {
       // Check if this index is valid
-      if (*p != -1)     
+      if (*p != -1) {
         testvector_[ *p ] = resvector_[ *p ] / scalevalue_;
+      }
     }
-  }	
+  }
 
-  // Check status of new linear system residuals and see if we have the quorum.
+  // Count how many scaled residual norms (in testvector_) pass, using
+  // the current tolerance (currTolerance_) rather than the original
+  // tolerance (tolerance_).  If at least quorum_ of them pass, we
+  // have a quorum for the whole test to pass.
+  //
+  // We also check here whether any of the scaled residual norms is
+  // NaN, and throw an exception in that case.
   int have = 0;
   ind_.resize( curLSIdx_.size() );
   std::vector<int> lclInd( curLSIdx_.size() );
   typename std::vector<int>::iterator p = curLSIdx_.begin();
   for (int i=0; p<curLSIdx_.end(); ++p, ++i) {
     // Check if this index is valid
-    if (*p != -1) {     
-      // Check if any of the residuals are larger than the tolerance.
+    if (*p != -1) {
       if (testvector_[ *p ] > currTolerance_) {
-        // do nothing.
-      } else if (testvector_[ *p ] <= currTolerance_) { 
+        // The current residual norm doesn't pass.  Do nothing.
+      } else if (testvector_[ *p ] <= currTolerance_) {
         ind_[have] = *p;
         lclInd[have] = i;
-        have++;
+        have++; // Yay, the current residual norm passes!
       } else {
-        // Throw an std::exception if a NaN is found.
+        // Throw an std::exception if the current residual norm is
+        // NaN.  We know that it's NaN because it is not less than,
+        // equal to, or greater than the current tolerance.  This is
+        // only possible if either the residual norm or the current
+        // tolerance is NaN; we assume the former.  We also mark the
+        // test as failed, in case you want to catch the exception.
         status_ = Failed;
-        TEUCHOS_TEST_FOR_EXCEPTION(true,StatusTestError,"StatusTestResNorm::checkStatus(): NaN has been detected.");
+        TEUCHOS_TEST_FOR_EXCEPTION(true, StatusTestError, "Belos::"
+          "StatusTestImpResNorm::checkStatus(): One or more of the current "
+          "implicit residual norms is NaN.");
       }
     }
-  } 
+  }
+  // "have" is the number of residual norms that passed.
   ind_.resize(have);
   lclInd.resize(have);
-  
+
   // Now check the exact residuals
-  if (have) { // At least one RHS implicit residual has converged
-    Teuchos::RCP<MV> cur_update = iSolver->getCurrentUpdate();
-    curSoln_ = lp.updateSolution( cur_update );
-    Teuchos::RCP<MV> cur_res = MVT::Clone( *curSoln_, MVT::GetNumberVecs( *curSoln_) );
-    lp.computeCurrResVec( &*cur_res, &*curSoln_ );
-    tmp_resvector.resize( MVT::GetNumberVecs( *cur_res ) );
-    std::vector<MagnitudeType> tmp_testvector( have );
-    MVT::MvNorm( *cur_res, tmp_resvector, resnormtype_ );
-    
+  if (have) { // At least one residual norm has converged.
+    //
+    // Compute the explicit residual norm(s) from the current solution update.
+    //
+    RCP<MV> cur_update = iSolver->getCurrentUpdate ();
+    curSoln_ = lp.updateSolution (cur_update);
+    RCP<MV> cur_res = MVT::Clone (*curSoln_, MVT::GetNumberVecs (*curSoln_));
+    lp.computeCurrResVec (&*cur_res, &*curSoln_);
+    tmp_resvector.resize (MVT::GetNumberVecs (*cur_res));
+    std::vector<MagnitudeType> tmp_testvector (have);
+    MVT::MvNorm (*cur_res, tmp_resvector, resnormtype_);
+
+    // Scale the explicit residual norm(s), just like the implicit norm(s).
     if ( scalevector_.size() > 0 ) {
       for (int i=0; i<have; ++i) {
-	// Scale the vector accordingly
-	if ( scalevector_[ ind_[i] ] != zero ) {
-	  // Don't intentionally divide by zero.
-	  tmp_testvector[ i ] = tmp_resvector[ lclInd[i] ] / scalevector_[ ind_[i] ] / scalevalue_;
-	} else {
-	  tmp_testvector[ i ] = tmp_resvector[ lclInd[i] ] / scalevalue_;
-	}
+        // Scale the vector accordingly
+        if ( scalevector_[ ind_[i] ] != zero ) {
+          // Don't intentionally divide by zero.
+          tmp_testvector[ i ] = tmp_resvector[ lclInd[i] ] / scalevector_[ ind_[i] ] / scalevalue_;
+        } else {
+          tmp_testvector[ i ] = tmp_resvector[ lclInd[i] ] / scalevalue_;
+        }
       }
     }
     else {
       for (int i=0; i<have; ++i) {
-	tmp_testvector[ i ] = tmp_resvector[ lclInd[i] ] / scalevalue_;
+        tmp_testvector[ i ] = tmp_resvector[ lclInd[i] ] / scalevalue_;
       }
-    }	
+    }
 
-    // Check if we want to keep the linear system and try to reduce the residual more.
+    //
+    // Check whether the explicit residual norms also pass the
+    // convergence test.  If not, check whether we want to try
+    // iterating a little more to force both implicit and explicit
+    // residual norms to pass.
+    //
     int have2 = 0;
-    for (int i=0; i<have; ++i) {
-      // FIXME (mfh 28 Mar 2012) This looks like it might be broken.
-      // Third branch will drop currTolerance_, and then iteration
-      // hits the second branch below.  It could be that the explicit
-      // residual now meets the original tolerance, but the diff is
-      // bigger than the new, _smaller_ tolerance, so the check
-      // unfairly reports loss of accuracy.  Andy S. plans some
-      // experiments to see if this is really happening, but I do
-      // suspect that the check below should use the original
-      // tolerance, not the new tolerance.  (Explicit residual should
-      // only have to meet the original tolerance.)
-      //
+    for (int i = 0; i < have; ++i) {
       // testvector_ contains the implicit (i.e., recursive, computed
-      // by the algorithm) (possibly scaled) residuals.
+      // by the algorithm) (possibly scaled) residuals.  All of these
+      // pass the convergence test.
       //
       // tmp_testvector contains the explicit (i.e., ||B-AX||)
-      // (possibly scaled) residuals.
-      MagnitudeType diff = Teuchos::ScalarTraits<MagnitudeType>::magnitude( testvector_[ ind_[i] ]-tmp_testvector[ i ] );
-      // FIXME (mfh 28 Mar 2012) For the first branch below, the
-      // explicit residual (tmp_testvector[i]) should only have to
-      // meet the _original_ tolerance, not the new tolerance.  We're
-      // only checking this because the implicit residual has already
-      // met the current tolerance.
-      if (tmp_testvector[ i ] <= currTolerance_) { 
-	// If my explicit residual norm is <= the convergence
-	// tolerance, this RHS has converged.
+      // (possibly scaled) residuals.  We're checking whether these
+      // pass as well.  The explicit residual norms only have to meet
+      // the _original_ tolerance (tolerance_), not the current
+      // tolerance (currTolerance_).
+      if (tmp_testvector[i] <= tolerance_) {
         ind_[have2] = ind_[i];
-        have2++;
+        have2++; // This right-hand side has converged.
       }
-      else if (diff > currTolerance_) {
-	// Otherwise, if the absolute difference between the explicit
-	// and implicit residuals is bigger than the convergence
-	// tolerance, report a loss of accuracy, but mark this RHS
-	// converged.  Note that currTolerance_ may have been changed
-	// by the third branch below.
-        lossDetected_ = true;
-        ind_[have2] = ind_[i];
-        have2++;
-      } 
       else {
-	// Otherwise, the explicit and implicit residuals are pretty
-	// close together, and the implicit residual has converged,
-	// but the explicit residual hasn't converged.  Reduce the
-	// convergence tolerance by some formula related to the diff.
-        currTolerance_ = currTolerance_ - 1.5*diff;
-        while (currTolerance_ < 0.0) currTolerance_ += 0.1*diff;
-      }  
+        // Absolute difference between the current explicit and
+        // implicit residual norm.
+        const MagnitudeType diff = STM::magnitude (testvector_[ind_[i]] - tmp_testvector[i]);
+        if (diff > currTolerance_) {
+          // If the above difference is bigger than the current
+          // convergence tolerance, report a loss of accuracy, but
+          // mark this right-hand side converged.  (The latter tells
+          // users not to iterate further on this right-hand side,
+          // since it probably won't do much good.)  Note that the
+          // current tolerance may have been changed by the branch
+          // below in a previous call to this method.
+          lossDetected_ = true;
+          ind_[have2] = ind_[i];
+          have2++; // Count this right-hand side as converged.
+        }
+        else {
+          // Otherwise, the explicit and implicit residuals are pretty
+          // close together, and the implicit residual has converged,
+          // but the explicit residual hasn't converged.  Reduce the
+          // convergence tolerance by some formula related to the
+          // difference, and keep iterating.
+          //
+          // mfh 23 Apr 2012: I have no idea why the currTolerance_
+          // update formula is done the way it's done below.  It
+          // doesn't make sense to me.  It definitely makes the
+          // current tolerance smaller, though, which is what we want.
 
+          // We define these constants in this way, rather than simply
+          // writing 1.5 resp. 0.1, to ensure no rounding error from
+          // translating from float to MagnitudeType.  Remember that
+          // 0.1 doesn't have an exact representation in binary finite
+          // floating-point arithmetic.
+          const MagnitudeType onePointFive = as<MagnitudeType>(3) / as<MagnitudeType> (2);
+          const MagnitudeType oneTenth = STM::one () / as<MagnitudeType> (10);
+
+          currTolerance_ = currTolerance_ - onePointFive * diff;
+          while (currTolerance_ < STM::zero ()) {
+            currTolerance_ += oneTenth * diff;
+          }
+        }
+      }
     }
     have = have2;
     ind_.resize(have);
   }
 
+  // Check whether we've met the quorum of vectors necessary for the
+  // whole test to pass.
   int need = (quorum_ == -1) ? curNumRHS_: quorum_;
   status_ = (have >= need) ? Passed : Failed;
-  
+
   // Return the current status
   return status_;
 }
@@ -665,7 +780,7 @@ void StatusTestImpResNorm<ScalarType,MV,OP>::print(std::ostream& os, int indent)
 }
 
 template <class ScalarType, class MV, class OP>
-void StatusTestImpResNorm<ScalarType,MV,OP>::printStatus(std::ostream& os, StatusType type) const 
+void StatusTestImpResNorm<ScalarType,MV,OP>::printStatus(std::ostream& os, StatusType type) const
 {
   os << std::left << std::setw(13) << std::setfill('.');
   switch (type) {
@@ -688,11 +803,12 @@ void StatusTestImpResNorm<ScalarType,MV,OP>::printStatus(std::ostream& os, Statu
 }
 
 template <class ScalarType, class MV, class OP>
-StatusType StatusTestImpResNorm<ScalarType,MV,OP>::firstCallCheckStatusSetup( Iteration<ScalarType,MV,OP>* iSolver )
+StatusType StatusTestImpResNorm<ScalarType,MV,OP>::
+firstCallCheckStatusSetup (Iteration<ScalarType,MV,OP>* iSolver)
 {
   int i;
-  MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
-  MagnitudeType one = Teuchos::ScalarTraits<MagnitudeType>::one();
+  const MagnitudeType zero = STM::zero ();
+  const MagnitudeType one = STM::one ();
   const LinearProblem<ScalarType,MV,OP>& lp = iSolver->getProblem();
   // Compute scaling term (done once for each block that's being solved)
   if (firstcallCheckStatus_) {
@@ -723,7 +839,7 @@ StatusType StatusTestImpResNorm<ScalarType,MV,OP>::firstCallCheckStatusSetup( It
       numrhs_ = MVT::GetNumberVecs( *(lp.getRHS()) );
     }
 
-    resvector_.resize( numrhs_ ); 
+    resvector_.resize( numrhs_ );
     testvector_.resize( numrhs_ );
 
     curLSNum_ = lp.getLSNumber();
