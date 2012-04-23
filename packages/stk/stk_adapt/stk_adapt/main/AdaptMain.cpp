@@ -638,10 +638,12 @@ namespace stk {
       int remove_original_elements_save = remove_original_elements;
       int delete_parents_save = delete_parents;
 
-      int streaming_pass_start = -1;
+      // FIXME - starting from -1 pass is bogus
 #if STK_ADAPT_HAVE_YAML_CPP
+      int streaming_pass_start = streaming_size ? -1 : 0;
       int streaming_pass_end = streaming_size ? SerializeNodeRegistry::MaxPass : 0;
 #else
+      int streaming_pass_start = 0;
       int streaming_pass_end = 0;
 #endif
 

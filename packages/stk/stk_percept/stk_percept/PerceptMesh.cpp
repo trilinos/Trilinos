@@ -2398,6 +2398,14 @@ namespace stk {
           inodes = cell_topo_data->side[iSubDimOrd].node;
         }
 
+      // if number of nodes on each side doesn't match, return (this can happen with wedge and pyramid)
+      if (nSubDimNodes > side_nodes.size())
+        {
+          returnedIndex = -1;
+          returnedPolarity = 1;
+          return;
+        }
+
       int found_node_offset = -1;
       for (unsigned jnode = 0; jnode < nSubDimNodes; jnode++)
         {
@@ -2411,6 +2419,7 @@ namespace stk {
                   if (knode >= side_nodes.size())
                     {
                       std::cout << "err 1005\n";
+                      exit(1);
                     }
                   stk::mesh::Entity *elem_nodes_jnode = elem_nodes[inodes[jnode]].entity();
                   stk::mesh::Entity *side_nodes_knode = side_nodes[ knode ].entity();

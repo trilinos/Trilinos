@@ -12,6 +12,8 @@
 namespace stk {
   namespace adapt {
 
+#define DEBUG_Pyramid5_Pyramid5_10 0
+
     // Some explanation: Pyramid refinement pattern creates a heterogeneous mesh, so we create two
     //   sub-patterns to deal with the two different resulting topologies (pyramid and tet).  A third
     //   (parent) pattern is created to refer to the two sub-patterns, akin to URP_Heterogeneous_3D.
@@ -136,11 +138,11 @@ namespace stk {
       {
         for (unsigned ii=0; ii < bp->getFromParts().size(); ii++)
           {
-            std::cout << "tmp ii, fromParts= " << ii << " " << bp->getFromParts()[ii]->name() << std::endl;
+            std::cout << "tmp Pyramid5_Pyramid5_10 ii, fromParts= " << ii << " " << bp->getFromParts()[ii]->name() << std::endl;
           }
         for (unsigned ii=0; ii < bp->getToParts().size(); ii++)
           {
-            std::cout << "tmp ii, toParts= " << ii << " " << bp->getToParts()[ii]->name() << std::endl;
+            std::cout << "tmp Pyramid5_Pyramid5_10 ii, toParts= " << ii << " " << bp->getToParts()[ii]->name() << std::endl;
           }
       }
 
@@ -160,9 +162,15 @@ namespace stk {
         bool sameTopology = false;
         //setNeededParts(eMesh, block_names, sameTopology);
         m_bp[0]->setNeededParts(eMesh, block_names, sameTopology); // force a new part for pyramids
-        std::cout << "tmp printParts m_bp[0]= " ; printParts(m_bp[0]);
+        if (DEBUG_Pyramid5_Pyramid5_10) 
+          {
+            std::cout << "tmp Pyramid5_Pyramid5_10 printParts m_bp[0]= " ; printParts(m_bp[0]);
+          }
         m_bp[1]->setNeededParts(eMesh, block_names, sameTopology);
-        std::cout << "tmp printParts m_bp[1]= " ; printParts(m_bp[1]);
+        if (DEBUG_Pyramid5_Pyramid5_10)
+          {
+            std::cout << "tmp Pyramid5_Pyramid5_10 printParts m_bp[1]= " ; printParts(m_bp[1]);
+          }
 
         for (int ibp=0; ibp < 2; ibp++)
           {
@@ -183,7 +191,11 @@ namespace stk {
                   }
               }
           }
-        std::cout << "tmp printParts this= " ;        printParts(this);
+        if (DEBUG_Pyramid5_Pyramid5_10)
+          {
+            std::cout << "tmp Pyramid5_Pyramid5_10 printParts this= " ; 
+            printParts(this);
+          }
 
         m_face_breaker =  new UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > (eMesh, block_names) ;
         m_face_breaker_tri = new UniformRefinerPattern<shards::Triangle<3>, shards::Triangle<3>, 4, SierraPort > (eMesh, block_names);
