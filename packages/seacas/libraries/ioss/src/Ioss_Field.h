@@ -46,7 +46,7 @@ namespace Ioss {
 
   class Field {
   public:
-    enum BasicType {INVALID = -1, REAL, INTEGER, INT64, COMPLEX, STRING, CHARACTER};
+    enum BasicType {INVALID = -1, REAL=1, INTEGER=4, INT32=4, INT64=8, COMPLEX, STRING, CHARACTER};
     enum RoleType {INTERNAL, MESH, ATTRIBUTE, COMMUNICATION, INFORMATION, REDUCTION, TRANSIENT};
 
     Field();

@@ -43,6 +43,7 @@
 #include <Ioss_DBUsage.h>
 #include <Ioss_DataSize.h>
 #include <Ioss_SurfaceSplit.h>
+#include <Ioss_PropertyManager.h>
 
 #include <vector>
 
@@ -140,6 +141,7 @@ namespace Ioss {
       virtual int maximum_symbol_length() const {return 0;} // Default is unlimited...
       char get_field_separator() {return fieldSuffixSeparator;}
       void set_field_separator(const char separator) {fieldSuffixSeparator = separator;}
+      void set_lower_case_variable_names(bool true_false) const {lowerCaseVariableNames = true_false;}
       void set_surface_split_type(Ioss::SurfaceSplitType split_type) {splitType = split_type;}
       Ioss::SurfaceSplitType get_surface_split_type() const {return splitType;}
 
@@ -215,7 +217,8 @@ namespace Ioss {
     protected:
 
       DatabaseIO(Region *region, const std::string& filename,
-		 Ioss::DatabaseUsage db_usage, MPI_Comm communicator);
+		 Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
+		 const Ioss::PropertyManager &properties);
 
       /*!
        * Utility function that may be used by derived classes.
@@ -227,6 +230,8 @@ namespace Ioss {
       void set_common_side_topology() const;
       ElementTopology *commonSideTopology;
 
+      Ioss::PropertyManager properties;
+      
       /*!
        * Filename that this Database is connected with.  Derived
        * DatabaseIO classes may need to change this if the passed  in
@@ -276,6 +281,8 @@ namespace Ioss {
       // * Do not use node global_id_order map ever
       // * If a serial input mesh file, don't do any id mapping
       mutable bool nodeGlobalIdBackwardCompatibility;
+      
+      mutable bool lowerCaseVariableNames;
       
       // List of element blocks that should be omitted from this model.
       // Surfaces will take this into account while splitting;

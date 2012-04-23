@@ -97,7 +97,8 @@ namespace Ioex {
   {
   public:
     DatabaseIO(Ioss::Region *region, const std::string& filename,
-	       Ioss::DatabaseUsage db_usage, MPI_Comm communicator);
+	       Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
+	       const Ioss::PropertyManager &properties);
     ~DatabaseIO();
 
     // Check to see if database state is ok...

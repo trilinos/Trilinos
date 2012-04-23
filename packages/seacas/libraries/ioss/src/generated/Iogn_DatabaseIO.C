@@ -53,14 +53,16 @@ namespace Iogn {
 
   Ioss::DatabaseIO* IOFactory::make_IO(const std::string& filename,
 				       Ioss::DatabaseUsage db_usage,
-				       MPI_Comm communicator) const
-  { return new DatabaseIO(NULL, filename, db_usage, communicator); }
+				       MPI_Comm communicator,
+				       const Ioss::PropertyManager &properties) const
+  { return new DatabaseIO(NULL, filename, db_usage, communicator, properties); }
 
   // ========================================================================
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string& filename,
 			 Ioss::DatabaseUsage db_usage,
-			 MPI_Comm communicator) :
-    Ioss::DatabaseIO(region, filename, db_usage, communicator), 
+			 MPI_Comm communicator,
+			 const Ioss::PropertyManager &properties) :
+    Ioss::DatabaseIO(region, filename, db_usage, communicator, properties), 
     m_generatedMesh(NULL),  spatialDimension(3), nodeCount(0),
     elementCount(0), nodeBlockCount(0),
     elementBlockCount(0), nodesetCount(0), sidesetCount(0),

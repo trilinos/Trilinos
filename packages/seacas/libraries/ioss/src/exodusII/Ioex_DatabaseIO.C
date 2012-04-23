@@ -121,7 +121,7 @@ namespace {
 
   const char *complex_suffix[] = {".re", ".im"};
 
-  const char *Version() {return "Ioex_DatabaseIO.C 2011/04/14 gdsjaar";}
+  const char *Version() {return "Ioex_DatabaseIO.C 2012/04/19 gdsjaar";}
 
   bool type_match(const std::string& type, const char *substring);
   int64_t extract_id(const std::string &name_id);
@@ -368,8 +368,9 @@ namespace {
 
 namespace Ioex {
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string& filename,
-			 Ioss::DatabaseUsage db_usage, MPI_Comm communicator) :
-    Ioss::DatabaseIO(region, filename, db_usage, communicator),
+			 Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
+			 const Ioss::PropertyManager &props) :
+    Ioss::DatabaseIO(region, filename, db_usage, communicator, props),
     exodusFilePtr(-1), databaseTitle(""), exodusMode(EX_CLOBBER),
     maximumNameLength(32), spatialDimension(0),
     nodeCount(0), edgeCount(0), faceCount(0), elementCount(0),
@@ -404,6 +405,33 @@ namespace Ioex {
       }
     }
 
+    // See if any properties that need to be handled prior to opening database...
+    if (properties.exists("FILE_TYPE")) {
+      std::string type = properties.get("FILE_TYPE").get_string();
+      if (type == "netcdf4") {
+	exodusMode |= EX_NETCDF4;
+      }
+    }
+    if (properties.exists("INTEGER_SIZE_DB")) {
+      int isize = properties.get("INTEGER_SIZE_DB").get_int();
+      if (isize == 8) {
+	exodusMode |= EX_ALL_INT64_DB;
+      }
+    }
+    
+    if (properties.exists("INTEGER_SIZE_API")) {
+      int isize = properties.get("INTEGER_SIZE_API").get_int();
+      if (isize == 8) {
+	exodusMode |= EX_ALL_INT64_API;
+	set_int_byte_size_api(Ioss::USE_INT64_API);
+      }
+    }
+    
+    if (properties.exists("LOGGING")) {
+      int logging = properties.get("LOGGING").get_int();
+      set_logging(logging != 0);
+    }
+    
     // Don't open output files until they are actually going to be
     // written to.  This is needed for proper support of the topology
     // files and auto restart so we don't overwrite a file with data we
@@ -571,6 +599,17 @@ namespace Ioex {
 	  maximumNameLength = max_name_length;
 	}
       }
+
+      // Check properties handled post-create/open...
+      if (properties.exists("COMPRESSION_LEVEL")) {
+	int comp_level = properties.get("COMPRESSION_LEVEL").get_int();
+	ex_set_option(exodusFilePtr, EX_OPT_COMPRESSION_LEVEL, comp_level);
+      }
+      if (properties.exists("COMPRESSION_SHUFFLE")) {
+	int shuffle = properties.get("COMPRESSION_SHUFFLE").get_int();
+	ex_set_option(exodusFilePtr, EX_OPT_COMPRESSION_SHUFFLE, shuffle);
+      }
+
     }
     assert(exodusFilePtr >= 0);
     fileExists = true;
@@ -6363,7 +6402,8 @@ namespace Ioex {
 	  // Add to VariableNameMap so can determine exodusII index given a
 	  // Sierra field name.  exodusII index is just 'i+1'
 	  for (int i=0; i < nvar; i++) {
-	    Ioss::Utils::fixup_name(names[i]);
+	    if (lowerCaseVariableNames)
+	      Ioss::Utils::fixup_name(names[i]);
 	    variables.insert(VNMValuePair(std::string(names[i]),   i+1));
 	  }
 
@@ -6992,7 +7032,6 @@ namespace Ioex {
 	    block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, storage,
 					 Ioss::Field::ATTRIBUTE, my_element_count, index));
 	  
-#if 0
 	    if (myProcessor == 0) {
 	      IOSS_WARNING << "For element block '" << block->name()
 			   << "' of type '" << type << "'\n\tthere were "
@@ -7001,7 +7040,6 @@ namespace Ioex {
 			   << " known. The extra attributes can be accessed\n\tas the field '"
 			   << att_name << "' with " << unknown_attributes << " components.\n\n";
 	    }
-#endif
 	  }
 	}
 
