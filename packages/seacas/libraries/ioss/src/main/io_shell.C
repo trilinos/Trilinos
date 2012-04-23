@@ -46,6 +46,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <exodusII.h>
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -75,13 +76,16 @@ namespace {
 
   struct Globals
   {
-    bool debug;
-    bool do_transform_fields;
-    bool ints_64_bit;
+    std::string working_directory;
     double maximum_time;
     double minimum_time;
     int  surface_split_type;
-    std::string working_directory;
+    int  compression_level;
+    bool debug;
+    bool do_transform_fields;
+    bool ints_64_bit;
+    bool netcdf4;
+    bool shuffle;
   };
 
   void show_usage(const std::string &prog);
@@ -161,6 +165,9 @@ int main(int argc, char *argv[])
   globals.minimum_time = 0.0;
   globals.surface_split_type = 1;
   globals.ints_64_bit = false;
+  globals.netcdf4 = false;
+  globals.compression_level = 0;
+  globals.shuffle = false;
   
   codename = argv[0];
   size_t ind = codename.find_last_of("/", codename.size());
@@ -209,6 +216,18 @@ int main(int argc, char *argv[])
     else if (std::strcmp("--64", argv[i]) == 0) {
       i++;
       globals.ints_64_bit = true;
+    }
+    else if (std::strcmp("--netcdf4", argv[i]) == 0) {
+      i++;
+      globals.netcdf4 = true;
+    }
+    else if (std::strcmp("--shuffle", argv[i]) == 0) {
+      i++;
+      globals.shuffle = true;
+    }
+    else if (std::strcmp("--compress", argv[i]) == 0) {
+      i++;
+      globals.compression_level = std::strtol(argv[i++], NULL, 10);
     }
     else if (std::strcmp("--debug", argv[i]) == 0) {
       i++;
@@ -350,18 +369,31 @@ namespace {
     //========================================================================
     // OUTPUT ...
     //========================================================================
+    Ioss::PropertyManager properties;
+    if (globals.ints_64_bit) {
+      properties.add(Ioss::Property("INTEGER_SIZE_DB",  8));
+      properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
+    }
+
+    if (globals.compression_level > 0 || globals.shuffle) {
+      properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
+      properties.add(Ioss::Property("COMPRESSION_LEVEL", globals.compression_level));
+      properties.add(Ioss::Property("COMPRESSION_SHUFFLE", globals.shuffle));
+    }
+      
+    if (globals.netcdf4) {
+      properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
+    }
+    
+    if (globals.debug)
+      properties.add(Ioss::Property("LOGGING", 1));
+
     Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(output_type, outfile, Ioss::WRITE_RESTART,
-						    (MPI_Comm)MPI_COMM_WORLD);
+						    (MPI_Comm)MPI_COMM_WORLD, properties);
     if (dbo == NULL || !dbo->ok(true)) {
       std::exit(EXIT_FAILURE);
     }
 
-    if (globals.ints_64_bit)
-      dbo->set_int_byte_size_api(Ioss::USE_INT64_API);
-
-    if (globals.debug)
-      dbo->set_logging(true);
-    
     // NOTE: 'output_region' owns 'dbo' pointer at this time
     Ioss::Region output_region(dbo, "region_2");
 
@@ -969,7 +1001,6 @@ namespace {
       assert(isize == oge->get_field(field_name).get_size());
     }
 
-    assert(data.size() >= isize);
     if (field_name == "mesh_model_coordinates_x") return;
     if (field_name == "mesh_model_coordinates_y") return;
     if (field_name == "mesh_model_coordinates_z") return;
@@ -977,6 +1008,13 @@ namespace {
     if (field_name == "element_side_raw") return;
     if (field_name == "ids_raw") return;
     if (field_name == "node_connectivity_status") return;
+
+    if (data.size() < isize) {
+      std::cerr << "Field: " << field_name << "\tIsize = " << isize << "\tdata size = " << data.size() << "\n";
+      data.resize(isize);
+    }
+
+    assert(data.size() >= isize);
     ige->get_field_data(field_name, &data[0], isize);
     oge->put_field_data(field_name, &data[0], isize);
   }
