@@ -49,6 +49,6 @@
 #include "Panzer_BlockedEpetraLinearObjFactory_impl.hpp"
 
 template class panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>;
-template class panzer::BlockedEpetraLinearObjFactory<panzer::Traits,short>;
+// template class panzer::BlockedEpetraLinearObjFactory<panzer::Traits,short>;
 
 #endif

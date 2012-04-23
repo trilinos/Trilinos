@@ -56,7 +56,7 @@
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_CellData.hpp"
 #include "Panzer_EpetraLinearObjContainer.hpp"
-#include "Panzer_BlockedLinearObjContainer.hpp"
+#include "Panzer_BlockedEpetraLinearObjContainer.hpp"
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_PauseToAttach.hpp"
 
@@ -98,7 +98,7 @@ Teuchos::RCP<const Epetra_CrsMatrix> getSubBlock(int i,int j,const Thyra::Linear
 
 TEUCHOS_UNIT_TEST(tBlockedLinearObjFactory, intializeContainer_epetra)
 {
-   panzer::BlockedLinearObjContainer<EpetraLinearObjContainer> container;
+   panzer::BlockedEpetraLinearObjContainer container;
 
    TEST_ASSERT(container.checkCompatibility());
 }
@@ -118,7 +118,7 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, epetra_factory_tests)
    // pauseToAttach();
 
    typedef LinearObjContainer LOC;
-   typedef BlockedLinearObjContainer<EpetraLinearObjContainer> BLOC;
+   typedef BlockedEpetraLinearObjContainer BLOC;
 
    int numBlocks = 3;
    int myRank = eComm->MyPID();
@@ -273,7 +273,7 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
  
-   typedef BlockedLinearObjContainer<EpetraLinearObjContainer> BLOC;
+   typedef BlockedEpetraLinearObjContainer BLOC;
 
    RCP<panzer::UniqueGlobalIndexer<int,int> > indexer 
          = rcp(new panzer::unit_test::UniqueGlobalIndexer<int>(myRank,numProc));
@@ -458,7 +458,7 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, node_cell)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
  
-   typedef BlockedLinearObjContainer<EpetraLinearObjContainer> BLOC;
+   typedef BlockedEpetraLinearObjContainer BLOC;
 
    RCP<panzer::UniqueGlobalIndexer<int,int> > indexer_node
          = rcp(new panzer::unit_test::UniqueGlobalIndexer<int>(myRank,numProc));

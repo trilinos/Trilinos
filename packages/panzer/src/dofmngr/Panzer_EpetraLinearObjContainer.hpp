@@ -96,10 +96,6 @@ public:
    inline void set_A(const Teuchos::RCP<Epetra_CrsMatrix> & in) { A = in; } 
    inline const Teuchos::RCP<Epetra_CrsMatrix> get_A() const { return A; }
 
-   // For use with thyra, used by BlockedLinearObjContainer
-   void set_A_th(const Teuchos::RCP<Thyra::LinearOpBase<double> > & in);
-   const Teuchos::RCP<Thyra::LinearOpBase<double> > get_A_th() const;
-
 private:
    Teuchos::RCP<Epetra_Vector> x, dxdt, f;
    Teuchos::RCP<Epetra_CrsMatrix> A;

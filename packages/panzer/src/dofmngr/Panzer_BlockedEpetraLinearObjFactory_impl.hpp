@@ -68,7 +68,7 @@ template <typename Traits,typename LocalOrdinalT>
 BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,
                                                                                    const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,std::pair<int,int> > > & blkProvider,
                                                                                    const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > > & gidProviders)
-   : blockProvider_(blkProvider), comm_(comm)
+   : blockProvider_(blkProvider), blockedDOFManager_(Teuchos::null), comm_(comm)
 { 
    gidProviders_ = gidProviders;
 
@@ -82,7 +82,7 @@ BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::BlockedEpetraLinearObjFacto
 template <typename Traits,typename LocalOrdinalT>
 BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,
                                                                                    const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > & gidProvider)
-   : blockProvider_(gidProvider), comm_(comm)
+   : blockProvider_(gidProvider), blockedDOFManager_(gidProvider), comm_(comm)
 { 
    for(std::size_t i=0;i<gidProvider->getFieldDOFManagers().size();i++)
       gidProviders_.push_back(gidProvider->getFieldDOFManagers()[i]);
@@ -97,7 +97,7 @@ BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::BlockedEpetraLinearObjFacto
 template <typename Traits,typename LocalOrdinalT>
 BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
                                                                                    const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > & gidProvider)
-   : blockProvider_(gidProvider), comm_(Teuchos::null)
+   : blockProvider_(gidProvider), blockedDOFManager_(gidProvider), comm_(Teuchos::null)
 { 
    comm_ = Teuchos::rcp(new Epetra_MpiComm(*(comm->getRawMpiComm())));
 
@@ -121,7 +121,13 @@ BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::~BlockedEpetraLinearObjFact
 template <typename Traits,typename LocalOrdinalT>
 Teuchos::RCP<LinearObjContainer> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::buildLinearObjContainer() const
 {
-   Teuchos::RCP<BlockedLinearObjContainer<EpetraLinearObjContainer> > container = Teuchos::rcp(new BlockedLinearObjContainer<EpetraLinearObjContainer>);
+   std::vector<Teuchos::RCP<const Epetra_Map> > blockMaps;
+   std::size_t blockDim = gidProviders_.size();
+   for(std::size_t i=0;i<blockDim;i++)
+      blockMaps.push_back(getMap(i));
+
+   Teuchos::RCP<BlockedEpetraLinearObjContainer > container = Teuchos::rcp(new BlockedEpetraLinearObjContainer);
+   container->setMapsForBlocks(blockMaps);
 
    return container;
 }
@@ -129,7 +135,13 @@ Teuchos::RCP<LinearObjContainer> BlockedEpetraLinearObjFactory<Traits,LocalOrdin
 template <typename Traits,typename LocalOrdinalT>
 Teuchos::RCP<LinearObjContainer> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::buildGhostedLinearObjContainer() const
 {
-   Teuchos::RCP<BlockedLinearObjContainer<EpetraLinearObjContainer> > container = Teuchos::rcp(new BlockedLinearObjContainer<EpetraLinearObjContainer>);
+   std::vector<Teuchos::RCP<const Epetra_Map> > blockMaps;
+   std::size_t blockDim = gidProviders_.size();
+   for(std::size_t i=0;i<blockDim;i++)
+      blockMaps.push_back(getMap(i));
+
+   Teuchos::RCP<BlockedEpetraLinearObjContainer > container = Teuchos::rcp(new BlockedEpetraLinearObjContainer);
+   container->setMapsForBlocks(blockMaps);
 
    return container;
 }
@@ -141,7 +153,7 @@ void BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::globalToGhostContainer
    using Teuchos::is_null;
 
    typedef LinearObjContainer LOC;
-   typedef BlockedLinearObjContainer<EpetraLinearObjContainer> BLOC;
+   typedef BlockedEpetraLinearObjContainer BLOC;
    const BLOC & b_in = Teuchos::dyn_cast<const BLOC>(in); 
    BLOC & b_out = Teuchos::dyn_cast<BLOC>(out); 
   
@@ -164,7 +176,7 @@ void BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::ghostToGlobalContainer
    using Teuchos::is_null;
 
    typedef LinearObjContainer LOC;
-   typedef BlockedLinearObjContainer<EpetraLinearObjContainer> BLOC;
+   typedef BlockedEpetraLinearObjContainer BLOC;
    const BLOC & b_in = Teuchos::dyn_cast<const BLOC>(in); 
    BLOC & b_out = Teuchos::dyn_cast<BLOC>(out); 
 
@@ -186,7 +198,7 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                              const LinearObjContainer & globalBCRows,
                              LinearObjContainer & ghostedObjs) const
 {
-   typedef BlockedLinearObjContainer<EpetraLinearObjContainer> BLOC;
+   typedef BlockedEpetraLinearObjContainer BLOC;
 
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;
@@ -296,7 +308,7 @@ template <typename Traits,typename LocalOrdinalT>
 void BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 initializeContainer(int mem,LinearObjContainer & loc) const
 {
-   typedef BlockedLinearObjContainer<EpetraLinearObjContainer> BLOC;
+   typedef BlockedEpetraLinearObjContainer BLOC;
 
    BLOC & bloc = Teuchos::dyn_cast<BLOC>(loc);
    initializeContainer(mem,bloc);
@@ -306,7 +318,7 @@ template <typename Traits,typename LocalOrdinalT>
 void BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 initializeGhostedContainer(int mem,LinearObjContainer & loc) const
 {
-   typedef BlockedLinearObjContainer<EpetraLinearObjContainer> BLOC;
+   typedef BlockedEpetraLinearObjContainer BLOC;
 
    BLOC & bloc = Teuchos::dyn_cast<BLOC>(loc);
    initializeGhostedContainer(mem,bloc);
@@ -317,9 +329,9 @@ initializeGhostedContainer(int mem,LinearObjContainer & loc) const
 
 template <typename Traits,typename LocalOrdinalT>
 void BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
-initializeContainer(int mem,BlockedLinearObjContainer<EpetraLinearObjContainer> & loc) const
+initializeContainer(int mem,BlockedEpetraLinearObjContainer & loc) const
 {
-   typedef BlockedLinearObjContainer<EpetraLinearObjContainer> BLOC;
+   typedef BlockedEpetraLinearObjContainer BLOC;
 
    loc.clear();
 
@@ -338,9 +350,9 @@ initializeContainer(int mem,BlockedLinearObjContainer<EpetraLinearObjContainer> 
 
 template <typename Traits,typename LocalOrdinalT>
 void BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
-initializeGhostedContainer(int mem,BlockedLinearObjContainer<EpetraLinearObjContainer> & loc) const
+initializeGhostedContainer(int mem,BlockedEpetraLinearObjContainer & loc) const
 {
-   typedef BlockedLinearObjContainer<EpetraLinearObjContainer> BLOC;
+   typedef BlockedEpetraLinearObjContainer BLOC;
 
    loc.clear();
 

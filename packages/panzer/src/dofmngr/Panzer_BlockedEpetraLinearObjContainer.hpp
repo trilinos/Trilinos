@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_BlockedLinearObjContainer_hpp__
-#define __Panzer_BlockedLinearObjContainer_hpp__
+#ifndef __Panzer_BlockedEpetraLinearObjContainer_hpp__
+#define __Panzer_BlockedEpetraLinearObjContainer_hpp__
 
 #include "Panzer_config.hpp"
 
@@ -51,6 +51,8 @@
 #include "Thyra_PhysicallyBlockedLinearOpBase.hpp"
 #include "Thyra_ProductVectorBase.hpp"
 
+#include "Epetra_Map.h"
+
 #include <boost/unordered_map.hpp>
 
 namespace panzer {
@@ -58,8 +60,7 @@ namespace panzer {
 /** Linear object container for Block operators, this
   * always assumes the matrix is square.
   */
-template <typename BaseContainerType>
-class BlockedLinearObjContainer : public LinearObjContainer {
+class BlockedEpetraLinearObjContainer : public LinearObjContainer {
 public:
    typedef Thyra::VectorBase<double> VectorType;
    typedef Thyra::LinearOpBase<double> CrsMatrixType;
@@ -69,6 +70,12 @@ public:
 
    virtual void initialize();
    virtual void clear();
+
+   void setMapsForBlocks(const std::vector<Teuchos::RCP<const Epetra_Map> > & blockMaps)
+   { blockMaps_ = blockMaps; }
+
+   Teuchos::RCP<const Epetra_Map> getMapForBlock(std::size_t i) const
+   { return blockMaps_[i]; }
 
    inline void set_x(const Teuchos::RCP<VectorType> & in) { x = in; }
    inline Teuchos::RCP<VectorType> get_x() const { return x; }
@@ -85,10 +92,10 @@ public:
 private:
    Teuchos::RCP<VectorType> x, dxdt, f;
    Teuchos::RCP<CrsMatrixType> A;
+
+   std::vector<Teuchos::RCP<const Epetra_Map> > blockMaps_;
 };
 
 }
-
-#include "Panzer_BlockedLinearObjContainer_impl.hpp"
 
 #endif

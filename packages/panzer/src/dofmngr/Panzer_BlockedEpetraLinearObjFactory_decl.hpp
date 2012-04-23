@@ -55,10 +55,12 @@
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_EpetraLinearObjContainer.hpp"
-#include "Panzer_BlockedLinearObjContainer.hpp"
+#include "Panzer_BlockedEpetraLinearObjContainer.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
-#include "Panzer_GatherOrientation.hpp"
 #include "Panzer_CloneableEvaluator.hpp"
+
+#include "Panzer_GatherOrientation.hpp"
+#include "Panzer_GatherSolution_BlockedEpetra.hpp"
 
 #include "Thyra_BlockedLinearOpBase.hpp"
 #include "Thyra_ProductVectorBase.hpp"
@@ -117,13 +119,12 @@ public:
    //! Use preconstructed gather evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator > buildGather() const
-   { return Teuchos::null; }
+   { return Teuchos::rcp(new GatherSolution_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(blockedDOFManager_)); }
 
    //! Use preconstructed gather evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator > buildGatherOrientation() const
-   // { return Teuchos::rcp(new GatherOrientation<EvalT,Traits,LocalOrdinalT,std::pair<int,int> >(blockProvider_)); }
-   { return Teuchos::null; }
+   { return Teuchos::rcp(new GatherOrientation<EvalT,Traits,LocalOrdinalT,std::pair<int,int> >(blockProvider_)); }
 
    //! Use preconstructed dirichlet scatter evaluators
    template <typename EvalT>
@@ -149,7 +150,7 @@ public:
      * \note This will overwrite everything in the container and zero out values
      *       not requested.
      */
-   void initializeContainer(int mem,BlockedLinearObjContainer<EpetraLinearObjContainer> & loc) const;
+   void initializeContainer(int mem,BlockedEpetraLinearObjContainer & loc) const;
 
    /** Initialize container with a specific set of member values.
      *
@@ -163,7 +164,7 @@ public:
      * \note This will overwrite everything in the container and zero out values
      *       not requested.
      */
-   void initializeGhostedContainer(int mem,BlockedLinearObjContainer<EpetraLinearObjContainer> & loc) const;
+   void initializeGhostedContainer(int mem,BlockedEpetraLinearObjContainer & loc) const;
 
 /*************** Thyra based methods *******************/
 
@@ -232,6 +233,7 @@ protected:
    void makeRoomForBlocks(std::size_t blockCnt);
 
    Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,std::pair<int,int> > > blockProvider_;
+   Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > blockedDOFManager_;
    std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > > gidProviders_;
 
   

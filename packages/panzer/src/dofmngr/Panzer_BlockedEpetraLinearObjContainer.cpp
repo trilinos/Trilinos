@@ -40,17 +40,18 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_BlockedLinearObjContainer_impl_hpp__
-#define __Panzer_BlockedLinearObjContainer_impl_hpp__
+#include "Panzer_BlockedEpetraLinearObjContainer.hpp"
 
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_ProductVectorSpaceBase.hpp"
+#include "Thyra_get_Epetra_Operator.hpp"
+
+#include "Epetra_CrsMatrix.h"
 
 namespace panzer {
 
 //! Make sure row and column spaces match up 
-template <typename BaseContainerType>
-bool BlockedLinearObjContainer<BaseContainerType>::
+bool BlockedEpetraLinearObjContainer::
 checkCompatibility() const
 {
    using Thyra::VectorSpaceBase;
@@ -90,8 +91,7 @@ checkCompatibility() const
    return x_matches && dxdt_matches && f_matches;
 }
 
-template <typename BaseContainerType>
-void BlockedLinearObjContainer<BaseContainerType>::
+void BlockedEpetraLinearObjContainer::
 initialize()
 {
    using Thyra::LinearOpBase;
@@ -109,23 +109,20 @@ initialize()
       RCP<const ProductVectorSpaceBase<double> > range = Amat->productRange();
       RCP<const ProductVectorSpaceBase<double> > domain = Amat->productDomain();
 
-      // loop over block entries: using a BaseContainerType
-      // to intialize the matrix
-      BaseContainerType baseContainer;
+      // loop over block entries
       for(int i=0;i<range->numBlocks();i++) {
          for(int j=0;j<domain->numBlocks();j++) {
             RCP<LinearOpBase<double> > block = Amat->getNonconstBlock(i,j);
             if(block!=Teuchos::null) {
-               baseContainer.set_A_th(block);
-               baseContainer.initialize();
+               RCP<Epetra_Operator> e_block = Thyra::get_Epetra_Operator(*block);
+               rcp_dynamic_cast<Epetra_CrsMatrix>(e_block,true)->PutScalar(0.0);
             }   
          }
       }
    }
 }
 
-template <typename BaseContainerType>
-void BlockedLinearObjContainer<BaseContainerType>::
+void BlockedEpetraLinearObjContainer::
 clear()
 {
    set_x(Teuchos::null);
@@ -135,5 +132,3 @@ clear()
 }
 
 }
-
-#endif
