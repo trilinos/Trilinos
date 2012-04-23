@@ -124,6 +124,8 @@ int RestrictedMultiVectorWrapper::restrict_comm(Teuchos::RCP<Epetra_MultiVector>
     input_mv_->ExtractView(&A,&LDA);
     restricted_mv_ = Teuchos::rcp(new Epetra_MultiVector(View,*ResMap_,A,LDA,input_mv_->NumVectors()));
   }
+
+  return 0;
 }/*end restrict_comm*/
 
 }
