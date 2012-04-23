@@ -91,15 +91,6 @@ namespace {
 			     int dimension, int dim_dim, int str_dim);
   template <typename T>
   int output_names(const std::vector<T> &entities, int exoid, ex_entity_type nc_type);
-
-  void compress_variable(int exoid, int varid)
-  {
-#if defined(USE_NETCDF4)
-    const int DEFLATE_LEVEL = 5; // 0 (no compression) to 9 (max compression)
-    const int COMPRESS = 1;      // 1 to compress, 0 to not compress
-    nc_def_var_deflate(exoid, varid, NC_SHUFFLE, COMPRESS, DEFLATE_LEVEL);
-#endif
-  }
 }
 
 #define stringify(X) #X
@@ -728,7 +719,7 @@ int Internals::put_metadata(const Mesh &mesh,
       }
       return (EX_FATAL);
     }
-    compress_variable(exodusFilePtr, varid);
+    ex_compress_variable(exodusFilePtr, varid, 1);
   }
 
   if (mesh.nodeblocks[0].attributeCount > 0) {
@@ -810,7 +801,7 @@ int Internals::put_metadata(const Mesh &mesh,
       }
       return (EX_FATAL);
     }
-    compress_variable(exodusFilePtr, varid);
+    ex_compress_variable(exodusFilePtr, varid, 1);
   }
 
   size_t face_count = 0;
@@ -1264,7 +1255,7 @@ int Internals::put_metadata(const std::vector<ElemBlock> &blocks)
 	ex_err(routine, errmsg, status);
 	return (EX_FATAL);
       }
-      compress_variable(exodusFilePtr, connid);
+      ex_compress_variable(exodusFilePtr, connid, 1);
     
       // store element type as attribute of connectivity variable
       status=nc_put_att_text(exodusFilePtr, connid, ATT_NAME_ELB,
@@ -1364,7 +1355,7 @@ int Internals::put_metadata(const std::vector<ElemBlock> &blocks)
 	ex_err(routine, errmsg, status);
 	return (EX_FATAL);
       }
-      compress_variable(exodusFilePtr, varid);
+      ex_compress_variable(exodusFilePtr, varid, 2);
 
       // Attribute name array...
       dims[0] = numattrdim;
@@ -2148,7 +2139,7 @@ int Internals::put_metadata(const std::vector<NodeSet> &nodesets)
       }
       return(EX_FATAL);
     }
-    compress_variable(exodusFilePtr, varid);
+    ex_compress_variable(exodusFilePtr, varid, 1);
 
     // Create variable for distribution factors if required
     if (nodesets[i].dfCount > 0) {
@@ -2183,7 +2174,7 @@ int Internals::put_metadata(const std::vector<NodeSet> &nodesets)
 	  return(EX_FATAL);
 	}
       }
-      compress_variable(exodusFilePtr, varid);
+      ex_compress_variable(exodusFilePtr, varid, 2);
     }
     if (nodesets[i].attributeCount > 0) {
       int numattrdim;
@@ -2985,7 +2976,7 @@ int Internals::put_metadata(const std::vector<SideSet> &sidesets)
       }
       return(EX_FATAL);
     }
-    compress_variable(exodusFilePtr, varid);
+    ex_compress_variable(exodusFilePtr, varid, 1);
 
     // create side list variable for side set
     status=nc_def_var(exodusFilePtr, VAR_SIDE_SS(cur_num_side_sets+1),
@@ -3005,7 +2996,7 @@ int Internals::put_metadata(const std::vector<SideSet> &sidesets)
       }
       return(EX_FATAL);
     }
-    compress_variable(exodusFilePtr, varid);
+    ex_compress_variable(exodusFilePtr, varid, 1);
 
     // Create variable for distribution factors if required
     if (sidesets[i].dfCount > 0) {
@@ -3047,7 +3038,7 @@ int Internals::put_metadata(const std::vector<SideSet> &sidesets)
 	return(EX_FATAL);
       }
     }
-    compress_variable(exodusFilePtr, varid);
+    ex_compress_variable(exodusFilePtr, varid, 2);
   }
   return EX_NOERR;
 }
@@ -3114,7 +3105,7 @@ namespace {
 	return (EX_FATAL);
       }
     }
-    compress_variable(exodusFilePtr, *varid);
+    ex_compress_variable(exodusFilePtr, *varid, 1);
     return EX_NOERR;
   }
 
@@ -3147,7 +3138,7 @@ namespace {
 	ex_err(routine, errmsg, status);
 	return (EX_FATAL);
       }
-      compress_variable(exodusFilePtr, varid);
+      ex_compress_variable(exodusFilePtr, varid, 1);
     } 
     return EX_NOERR;
   }
@@ -3183,7 +3174,7 @@ namespace {
 	  ex_err(routine, errmsg, status);
 	  return (EX_FATAL);
 	}
-	compress_variable(exodusFilePtr, varid);
+	ex_compress_variable(exodusFilePtr, varid, 1);
 	i++;
       }
     }
@@ -3274,7 +3265,7 @@ namespace {
 	    ex_err(routine,errmsg,status);
 	    return(EX_FATAL);
 	  }
-	  compress_variable(exodusFilePtr, varid);
+	  ex_compress_variable(exodusFilePtr, varid, 2);
 	}
 
 	if (dimension > 1) {
@@ -3286,7 +3277,7 @@ namespace {
 	    ex_err(routine,errmsg,status);
 	    return(EX_FATAL);
 	  }
-	  compress_variable(exodusFilePtr, varid);
+	  ex_compress_variable(exodusFilePtr, varid, 1);
 	}
 
 	if (dimension > 2) {
@@ -3298,7 +3289,7 @@ namespace {
 	    ex_err(routine,errmsg,status);
 	    return(EX_FATAL);
 	  }
-	  compress_variable(exodusFilePtr, varid);
+	  ex_compress_variable(exodusFilePtr, varid, 2);
 	}
       } else {
 	// node coordinate arrays:  -- all stored together (old method)2
@@ -3362,7 +3353,6 @@ namespace {
       ex_err(routine,errmsg,status);
       return(EX_FATAL);
     }
-    compress_variable(exoid, varid);
 
     // id array:
     int ids_type  = get_type(exoid, EX_IDS_INT64_DB);
@@ -3374,7 +3364,6 @@ namespace {
       ex_err(routine,errmsg,status);
       return(EX_FATAL);
     }
-    compress_variable(exoid, varid);
 
     // store property name as attribute of property array variable
     status=nc_put_att_text(exoid, varid, ATT_PROP_NAME, 3, "ID");
