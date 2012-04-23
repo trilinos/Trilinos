@@ -174,6 +174,13 @@ void test_host( comm::Machine machine , std::istream & input )
       HybridFEM::Implicit::driver<double,Kokkos::Host>( "Host" , machine , count_begin , count_end , count_run );
       break ;
     }
+    else if ( std::string("query") == which ) {
+      std::cout << "P" << comm::rank( machine )
+                << ": host core count = " 
+                << Kokkos::Host::detect_core_count()
+                << std::endl ;
+      break ;
+    }
     else {
       if ( 0 == comm::rank( machine ) ) {
         std::cout << "host partition" << std::endl

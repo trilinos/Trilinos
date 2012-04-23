@@ -42,8 +42,10 @@ int main( int argc , char ** argv )
     test_cuda( machine , input );
 #endif
   }
-  else {
-    std::cout << "command line = (host|cuda)" << std::endl ;
+  else if ( 0 == comm::rank( machine ) ) {
+    std::cout << "Expecting command line:" << std::endl
+              << "  host <options>" << std::endl
+              << "  cuda <options>" << std::endl ;
   }
 
   comm::Machine::finalize();

@@ -75,7 +75,7 @@ public:
   /*--------------------------------*/
 
   struct SelectDevice {
-    const int cuda_device_id ;
+    int cuda_device_id ;
     SelectDevice() : cuda_device_id(0) {}
     explicit SelectDevice( int id ) : cuda_device_id( id ) {}
   };

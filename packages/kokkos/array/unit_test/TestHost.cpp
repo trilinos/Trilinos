@@ -72,6 +72,11 @@ class host : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
+    std::cout << "Kokkos::Host node_count("
+              << Kokkos::Host::detect_node_count()
+              << ") X node_core_count("
+              << Kokkos::Host::detect_node_core_count()
+              << ")" << std::endl ;
     Kokkos::Host::initialize( Kokkos::Host::SetThreadCount( 4 ) );
   }
 

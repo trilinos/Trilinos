@@ -70,7 +70,7 @@ void test_Host(int beg, int end, int runs,int threads)
     Kokkos::Host::finalize();
   }
   else {
-    Kokkos::Host::initialize( Kokkos::Host::DetectAndUseAllCores() );
+    Kokkos::Host::initialize( Kokkos::Host::DetectAndUseCores() );
     threads = Kokkos::Host::detect_core_count();
     std::cout << std::endl << "\"Host with detected sequential threads = \" , " << threads << std::endl ;
     MiniImplTherm< float , Kokkos::Host >::driver( "Host-float" , beg , end , runs );

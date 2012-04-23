@@ -24,6 +24,8 @@ void test_cuda( comm::Machine machine , std::istream & input )
   const size_t comm_size = comm::size( machine );
   const size_t dev_size  = Kokkos::Cuda::detect_device_count();
 
+  Kokkos::Cuda::SelectDevice select_device(0);
+
   for(;;) {
     std::string which ; input >> which ;
 
@@ -34,20 +36,24 @@ void test_cuda( comm::Machine machine , std::istream & input )
             << " < mpi-comm-size " << comm_size ;
         throw std::runtime_error(msg.str());
       }
-      Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( comm_rank ) );
+      select_device = Kokkos::Cuda::SelectDevice( comm_rank );
     }
     else if ( std::string("device=zero") == which ) {
-      Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
+      select_device = Kokkos::Cuda::SelectDevice(0);
     }
     else if ( std::string("fixture") == which ) {
       size_t fixture[3] = { 10 , 20 , 50 };
       input >> fixture[0] >> fixture[1] >> fixture[2] ;
+
+      Kokkos::Cuda::initialize( select_device );
       test_box_fixture<Kokkos::Cuda>( machine , fixture[0] , fixture[1] , fixture[2] );
       break ;
     }
     else if ( std::string("implicit") == which ) {
       size_t count_begin = 20 , count_end = 200 , count_run = 1 ;
       input >> count_begin >> count_end >> count_run ;
+
+      Kokkos::Cuda::initialize( select_device );
       HybridFEM::Implicit::driver<double,Kokkos::Cuda>( "Cuda" , machine , count_begin , count_end , count_run );
       break ;
     }

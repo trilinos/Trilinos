@@ -73,7 +73,7 @@ public:
 
   /*--------------------------------*/
 
-  struct DetectAndUseAllCores {};
+  struct DetectAndUseCores {};
 
   struct SetThreadCount {
     const size_t thread_count ;
@@ -87,9 +87,13 @@ public:
    *  dispatching work; however, resources are consumed
    *  even when no work is being done.
    */
-  static void initialize( const DetectAndUseAllCores );
-
   static void initialize( const SetThreadCount );
+
+  /** \brief  Use every available core.
+   *  If host process is pinned to a NUMA node then use all of that node.
+   *  If host process is not pinned then use all NUMA nodes.
+   */
+  static void initialize( const DetectAndUseCores );
 
   static void finalize();
 
@@ -127,6 +131,14 @@ public:
    *          return the core count, otherwise return zero.
    */
   static size_type detect_core_count();
+
+  /** \brief  Detect number of NUMA nodes */
+  static size_type detect_node_count();
+
+  /** \brief  Detect number of cores per NUMA node */
+  static size_type detect_node_core_count();
+
+  static size_type detect_memory_page_size();
 };
 
 /*--------------------------------------------------------------------------*/
