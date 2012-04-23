@@ -286,25 +286,22 @@ namespace {
     // test invalid use cases (thrown exceptions)
     //
     // null arrayrcp
-    TEST_THROW( MV mv(map,null_arcp,LDA,numLocal),                                   std::invalid_argument )
+    TEST_THROW( Tpetra::createMultiVectorFromView(map,null_arcp,LDA,numLocal),                                   std::invalid_argument )
     // too small arrayrcp
-    TEST_THROW( MV mv(map,user_arcp.persistingView(0, (numVecs-1)*LDA + numLocal - 1),LDA,numVecs), std::invalid_argument )
+    TEST_THROW( Tpetra::createMultiVectorFromView(map,user_arcp.persistingView(0, (numVecs-1)*LDA + numLocal - 1),LDA,numVecs), std::invalid_argument )
     // invalid number of columns
-    TEST_THROW( MV mv(map,user_arcp,LDA,0),                                          std::invalid_argument )
-    // invalid stride
-    // cgb: this is problematic to test, as LDA is size_t, which could be unsigned
-    // TEST_THROW( MV mv(map,user_arcp,-1,numVecs), std::runtime_error )
+    TEST_THROW( Tpetra::createMultiVectorFromView(map,user_arcp,LDA,0),                                          std::invalid_argument )
     // stride too small for number of rows
-    TEST_THROW( MV mv(map,user_arcp.persistingView(0,(numVecs-1)*numLocal+numVecs),numLocal-1,numVecs), std::invalid_argument )
+    TEST_THROW( Tpetra::createMultiVectorFromView(map,user_arcp.persistingView(0,(numVecs-1)*numLocal+numVecs),numLocal-1,numVecs), std::invalid_argument )
 
     ///////////////////////////////////////////////////////
     // test valid use case
     // check that the constructed multivector uses a view
-    MV mv(map, user_arcp, LDA, numVecs);
-    TEST_EQUALITY( mv.get1dView().getRawPtr(),         user_arcp.getRawPtr() )
-    TEST_EQUALITY( mv.get1dViewNonConst().getRawPtr(), user_arcp.getRawPtr() )
-    TEST_EQUALITY( mv.getData(0).getRawPtr(),          user_arcp.getRawPtr() )
-    TEST_EQUALITY( mv.getDataNonConst(0).getRawPtr(),  user_arcp.getRawPtr() )
+    RCP<MV> mv = Tpetra::createMultiVectorFromView(map, user_arcp, LDA, numVecs);
+    TEST_EQUALITY( mv->get1dView().getRawPtr(),         user_arcp.getRawPtr() )
+    TEST_EQUALITY( mv->get1dViewNonConst().getRawPtr(), user_arcp.getRawPtr() )
+    TEST_EQUALITY( mv->getData(0).getRawPtr(),          user_arcp.getRawPtr() )
+    TEST_EQUALITY( mv->getDataNonConst(0).getRawPtr(),  user_arcp.getRawPtr() )
   }
 
 
@@ -327,18 +324,18 @@ namespace {
     // test invalid use cases (thrown exceptions)
     //
     // null arrayrcp
-    TEST_THROW( Vec vec(map,null_arcp),               std::invalid_argument )
+    TEST_THROW( Tpetra::createVectorFromView(map,null_arcp),               std::invalid_argument )
     // too small arrayrcp
-    TEST_THROW( Vec vec(map,user_arcp.persistingView(0,numLocal-1)), std::invalid_argument )
+    TEST_THROW( Tpetra::createVectorFromView(map,user_arcp.persistingView(0,numLocal-1)), std::invalid_argument )
 
     ///////////////////////////////////////////////////////
     // test valid use case
     // check that the constructed multivector uses a view
-    Vec vec(map, user_arcp);
-    TEST_EQUALITY( vec.get1dView().getRawPtr(),         user_arcp.getRawPtr() )
-    TEST_EQUALITY( vec.get1dViewNonConst().getRawPtr(), user_arcp.getRawPtr() )
-    TEST_EQUALITY( vec.getData(0).getRawPtr(),          user_arcp.getRawPtr() )
-    TEST_EQUALITY( vec.getDataNonConst(0).getRawPtr(),  user_arcp.getRawPtr() )
+    RCP<Vec> vec = Tpetra::createVectorFromView(map, user_arcp);
+    TEST_EQUALITY( vec->get1dView().getRawPtr(),         user_arcp.getRawPtr() )
+    TEST_EQUALITY( vec->get1dViewNonConst().getRawPtr(), user_arcp.getRawPtr() )
+    TEST_EQUALITY( vec->getData(0).getRawPtr(),          user_arcp.getRawPtr() )
+    TEST_EQUALITY( vec->getDataNonConst(0).getRawPtr(),  user_arcp.getRawPtr() )
   }
 
 

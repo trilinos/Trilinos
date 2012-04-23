@@ -191,6 +191,14 @@ namespace Tpetra {
     ABSMAX   /*!< Replacment is <tt>max( abs(old_value), abs(new_value) )</tt> */
   };
 
+  enum EPrivateComputeViewConstructor {
+    COMPUTE_VIEW_CONSTRUCTOR
+  };
+
+  enum EPrivateHostViewConstructor {
+    HOST_VIEW_CONSTRUCTOR
+  };
+
   // import Teuchos memory management classes into Tpetra
 #ifndef __CUDACC__
   using Teuchos::ArrayRCP;

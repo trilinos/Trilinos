@@ -56,7 +56,7 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal=int, class GlobalOrdinal=LocalOrdinal, class Node=Kokkos::DefaultNode::DefaultNodeType>
   class Vector : public MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 
-    // need this so that MultiVector::operator() can call Vector's private constructor
+    // need this so that MultiVector::operator() can call Vector's private view constructor
     friend class MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 
   public:
@@ -65,18 +65,13 @@ namespace Tpetra {
     //@{ 
 
     //! Sets all vector entries to zero.
-    explicit Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut=true);
+    explicit Vector(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut=true);
 
     //! Vector copy constructor.
     Vector(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source);
 
-    //! \brief Set multi-vector using user-allocated data. (view)
-    /*! This use case is not supported for all nodes. Specifically, it is not typically supported for accelerator-based nodes like Kokkos::ThrustGPUNode.
-     */
-    Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayRCP<Scalar> &view);
-
-    //! \brief Set multi-vector values from an array using Teuchos memory management classes. (copy)
-    Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Scalar> &A);
+    //! \brief Set vector values from an existing array (copy)
+    Vector(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const ArrayView<const Scalar> &A);
 
     //! Destructor.  
     virtual ~Vector();
@@ -113,7 +108,7 @@ namespace Tpetra {
 
     using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dCopy; // overloading, not hiding
     //! Return multi-vector values in user-provided two-dimensional array (using Teuchos memory management classes).
-    void get1dCopy(Teuchos::ArrayView<Scalar> A) const;
+    void get1dCopy(ArrayView<Scalar> A) const;
 
     //@}
 
@@ -159,6 +154,20 @@ namespace Tpetra {
 
     protected:
 
+    template <class S,class LO,class GO,class N>
+    friend RCP< Vector<S,LO,GO,N> > 
+    createVectorFromView(const RCP<const Map<LO,GO,N> > &,const ArrayRCP<S> &);
+
+    // view constructor, sitting on user allocated data, only for CPU nodes
+    // and his non-member constructor friend
+    Vector(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const ArrayRCP<Scalar> &view, EPrivateHostViewConstructor /* dummy */);
+
+    //! Advanced constructor accepting parallel buffer view, used by MultiVector to break off Vector objects
+    Vector(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const ArrayRCP<Scalar> & data);
+
+    //! Advanced constructor accepting parallel buffer view, used by MultiVector to break off Vector objects
+    Vector(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const ArrayRCP<Scalar> & data, EPrivateComputeViewConstructor /* dummy */);
+
     typedef Kokkos::MultiVector<Scalar,Node> KMV;
     typedef Kokkos::DefaultArithmetic<KMV>   MVT;
 
@@ -174,6 +183,25 @@ namespace Tpetra {
   {
     const bool DO_INIT_TO_ZERO = true;
     return rcp( new Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,DO_INIT_TO_ZERO) );
+  }
+
+  //! \brief Non-member function to create a Vector with view semantics using user-allocated data.
+  /*! This use case is not supported for all nodes. Specifically, it is not typically supported for accelerator-based nodes like Kokkos::ThrustGPUNode.
+      \relatesalso Vector
+   */
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP< Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
+  createVectorFromView(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, 
+                       const ArrayRCP<Scalar> &view) 
+  {
+    return rcp(
+      // this is a protected constructor, but we are friends 
+      new Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(
+        map,
+        // this will fail to compile for unsupported node types
+        Tpetra::details::ViewAccepter<Node>::template acceptView<Scalar>(view),
+        HOST_VIEW_CONSTRUCTOR)
+    );
   }
 
 } // namespace Tpetra
