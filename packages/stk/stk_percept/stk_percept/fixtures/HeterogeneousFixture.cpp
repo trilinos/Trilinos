@@ -44,7 +44,10 @@ namespace stk{
     typedef shards::ShellQuadrilateral<4>  ShellQuad4;
     typedef shards::ShellTriangle<3>       ShellTriangle3;
 
-    HeterogeneousFixture::HeterogeneousFixture( stk::ParallelMachine comm, bool doCommit ) :
+    typedef shards::Quadrilateral<4>  Quad4;
+    typedef shards::Triangle<3>       Triangle3;
+
+    HeterogeneousFixture::HeterogeneousFixture( stk::ParallelMachine comm, bool doCommit, bool do_sidesets ) :
       m_spatial_dimension(3)
       , m_metaData(m_spatial_dimension, stk::mesh::fem::entity_rank_names(m_spatial_dimension) )
       , m_bulkData( stk::mesh::fem::FEMMetaData::get_meta_data(m_metaData) , comm )
@@ -57,6 +60,8 @@ namespace stk{
       , m_block_quad_shell( m_metaData.declare_part< ShellQuad4 >( "block_5" ))
       , m_block_tri_shell(  m_metaData.declare_part< ShellTriangle3 >( "block_6" ))
 #endif
+      , m_sideset_quad(0), m_sideset_quad_subset(0)
+      , m_sideset_tri(0), m_sideset_tri_subset(0)
 
       , m_elem_rank( m_metaData.element_rank() )
       , m_coordinates_field( m_metaData.declare_field< VectorFieldType >( "coordinates" ))
@@ -113,6 +118,23 @@ namespace stk{
       stk::io::put_io_part_attribute(  m_block_tri_shell );
 #endif
 
+      if (do_sidesets)
+        {
+          m_sideset_quad_subset = &m_metaData.declare_part(std::string("surface_wedge5_quad2d2_1"), m_metaData.face_rank());
+          m_sideset_quad =        &m_metaData.declare_part(std::string("surface_1"), m_metaData.face_rank());
+          stk::mesh::fem::set_cell_topology< Quad4 >(*m_sideset_quad_subset);
+          stk::io::put_io_part_attribute(*m_sideset_quad_subset);
+          stk::io::put_io_part_attribute(*m_sideset_quad);
+          m_metaData.declare_part_subset(*m_sideset_quad, *m_sideset_quad_subset);
+
+          m_sideset_tri_subset = &m_metaData.declare_part(std::string("surface_wedge5_tri2d2_1"), m_metaData.face_rank());
+          m_sideset_tri =        &m_metaData.declare_part(std::string("surface_2"), m_metaData.face_rank());
+          stk::mesh::fem::set_cell_topology< Triangle3 >(*m_sideset_tri_subset);
+          stk::io::put_io_part_attribute(*m_sideset_tri_subset);
+          stk::io::put_io_part_attribute(*m_sideset_tri);
+          m_metaData.declare_part_subset(*m_sideset_tri, *m_sideset_tri_subset);
+        }
+
       if (doCommit)
         m_metaData.commit();
     }
@@ -131,6 +153,8 @@ namespace stk{
     enum { number_pyramid = 2 };
     enum { number_shell_quad = 3 };
     enum { number_shell_tri = 3 };
+    enum { number_quad = 3 };
+    enum { number_tri = 2 };
 
     namespace {
 
@@ -179,6 +203,33 @@ namespace stk{
         { 16 , 17 , 21 } ,
         { 17 , 13 , 21 } };
 
+      // NOTE: some quad, tri's for wedge sideset testing
+      // Hard coded quad node ids for all the quad nodes in the entire mesh
+      static const stk::mesh::EntityId quad_node_ids[number_quad][ Quad4::node_count ] = {
+        { 5, 9, 19, 15},
+        { 7, 17, 20, 10 },
+        { 10, 20, 19, 9}
+      };
+
+      // wedge element id, side id
+      static const stk::mesh::EntityId quad_node_side_ids[number_quad][ 2 ] = {
+        {4, 2},
+        {6, 1},
+        {5, 0}
+      };
+
+      // Hard coded tri node ids for all the tri nodes in the entire mesh
+      static const stk::mesh::EntityId tri_node_ids[number_tri][ Triangle3::node_count ] = {
+        { 5, 6, 9}, 
+        { 6, 10, 9}
+      };
+
+      // wedge element id, side id
+      static const stk::mesh::EntityId tri_node_side_ids[number_quad][ 2 ] = {
+        {4, 4},
+        {5, 3}
+      };
+
     }
 
     //------------------------------------------------------------------------------
@@ -195,12 +246,14 @@ namespace stk{
 
           // For each element topology declare elements
 
+          stk::mesh::Entity *wedges[number_wedge];
+
           for ( unsigned i = 0 ; i < number_hex ; ++i , ++curr_elem_id ) {
             stk::mesh::fem::declare_element( m_bulkData, m_block_hex, curr_elem_id, hex_node_ids[i] );
           }
 
           for ( unsigned i = 0 ; i < number_wedge ; ++i , ++curr_elem_id ) {
-            stk::mesh::fem::declare_element( m_bulkData, m_block_wedge, curr_elem_id, wedge_node_ids[i] );
+            wedges[i] = &stk::mesh::fem::declare_element( m_bulkData, m_block_wedge, curr_elem_id, wedge_node_ids[i] );
           }
 
           for ( unsigned i = 0 ; i < number_tetra ; ++i , ++curr_elem_id ) {
@@ -220,6 +273,30 @@ namespace stk{
             stk::mesh::fem::declare_element( m_bulkData, m_block_tri_shell, curr_elem_id, shell_tri_node_ids[i] );
           }
 #endif
+
+          if (m_sideset_quad)
+            {
+              for ( unsigned i = 0 ; i < number_quad ; ++i , ++curr_elem_id ) {
+                std::cout << "quad i= " << i << std::endl;
+                stk::mesh::fem::declare_element_side( m_bulkData, 
+                                                      curr_elem_id, //side_id,
+                                                      *wedges[quad_node_side_ids[i][0] - 4], // element,
+                                                      quad_node_side_ids[i][1],   //j_side, // local_side_ord,
+                                                      m_sideset_quad_subset);
+              }
+            }
+
+          if (m_sideset_tri)
+            {
+              for ( unsigned i = 0 ; i < number_tri ; ++i , ++curr_elem_id ) {
+                std::cout << "tri i= " << i << std::endl;
+                stk::mesh::fem::declare_element_side( m_bulkData, 
+                                                      curr_elem_id, //side_id,
+                                                      *wedges[tri_node_side_ids[i][0] - 4], // element,
+                                                      tri_node_side_ids[i][1],   //j_side, // local_side_ord,
+                                                      m_sideset_tri_subset);
+              }
+            }
 
           // For all nodes assign nodal coordinates
           for ( unsigned i = 0 ; i < node_count ; ++i ) {

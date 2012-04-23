@@ -56,7 +56,7 @@ namespace stk {
 
       ~PyramidFixture();
 
-      PyramidFixture( stk::ParallelMachine comm, bool doCommit = true);
+      PyramidFixture( stk::ParallelMachine comm, bool doCommit = true, bool do_sidesets = false);
 
       void populate();
 
@@ -65,6 +65,11 @@ namespace stk {
       stk::mesh::BulkData m_bulkData;
 
       stk::mesh::Part & m_block_pyramid;
+      stk::mesh::Part * m_sideset_quad;
+      stk::mesh::Part * m_sideset_quad_subset;
+      stk::mesh::Part * m_sideset_tri;
+      stk::mesh::Part * m_sideset_tri_subset;
+
       const stk::mesh::EntityRank m_elem_rank;
 
       VectorFieldType & m_coordinates_field;

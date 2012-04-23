@@ -39,17 +39,21 @@ namespace stk{
     typedef shards::Hexahedron<8>          Hex8;
     typedef shards::Wedge<6>               Wedge6;
     typedef shards::Tetrahedron<4>         Tet4;
-    typedef shards::Pyramid<5>             Pyramid4;
+    typedef shards::Pyramid<5>             Pyramid5;
 
     typedef shards::ShellQuadrilateral<4>  ShellQuad4;
     typedef shards::ShellTriangle<3>       ShellTriangle3;
 
-    PyramidFixture::PyramidFixture( stk::ParallelMachine comm, bool doCommit ) :
+    typedef shards::Quadrilateral<4>  Quad4;
+    typedef shards::Triangle<3>       Triangle3;
+
+    PyramidFixture::PyramidFixture( stk::ParallelMachine comm, bool doCommit, bool do_sidesets ) :
       m_spatial_dimension(3)
       , m_metaData(m_spatial_dimension, stk::mesh::fem::entity_rank_names(m_spatial_dimension) )
       , m_bulkData( stk::mesh::fem::FEMMetaData::get_meta_data(m_metaData) , comm )
-      , m_block_pyramid(    m_metaData.declare_part< Pyramid4 >( "block_4" ))
-
+      , m_block_pyramid(    m_metaData.declare_part< Pyramid5 >( "block_4" ))
+      , m_sideset_quad(0), m_sideset_quad_subset(0)
+      , m_sideset_tri(0), m_sideset_tri_subset(0)
       , m_elem_rank( m_metaData.element_rank() )
       , m_coordinates_field( m_metaData.declare_field< VectorFieldType >( "coordinates" ))
       , m_centroid_field(    m_metaData.declare_field< VectorFieldType >( "centroid" ))
@@ -60,9 +64,26 @@ namespace stk{
       // Define where fields exist on the mesh:
       stk::mesh::Part & universal = m_metaData.universal_part();
 
+      if (do_sidesets)
+        {
+          m_sideset_quad_subset = &m_metaData.declare_part(std::string("surface_pyramid5_quad2d2_1"), m_metaData.face_rank());
+          m_sideset_quad =        &m_metaData.declare_part(std::string("surface_1"), m_metaData.face_rank());
+          stk::mesh::fem::set_cell_topology< Quad4 >(*m_sideset_quad_subset);
+          stk::io::put_io_part_attribute(*m_sideset_quad_subset);
+          stk::io::put_io_part_attribute(*m_sideset_quad);
+          m_metaData.declare_part_subset(*m_sideset_quad, *m_sideset_quad_subset);
+
+          m_sideset_tri_subset = &m_metaData.declare_part(std::string("surface_pyramid5_tri2d2_1"), m_metaData.face_rank());
+          m_sideset_tri =        &m_metaData.declare_part(std::string("surface_2"), m_metaData.face_rank());
+          stk::mesh::fem::set_cell_topology< Triangle3 >(*m_sideset_tri_subset);
+          stk::io::put_io_part_attribute(*m_sideset_tri_subset);
+          stk::io::put_io_part_attribute(*m_sideset_tri);
+          m_metaData.declare_part_subset(*m_sideset_tri, *m_sideset_tri_subset);
+        }
       put_field( m_coordinates_field , stk::mesh::fem::FEMMetaData::NODE_RANK , universal );
       put_field( m_centroid_field , m_elem_rank , universal );
       put_field( m_temperature_field, stk::mesh::fem::FEMMetaData::NODE_RANK, universal );
+
       put_field( m_volume_field, m_elem_rank, m_block_pyramid );
 
       // Define the field-relation such that the values of the
@@ -82,7 +103,7 @@ namespace stk{
                                         );
 
       // Define element node coordinate field for all element parts
-      put_field( m_element_node_coordinates_field, m_elem_rank, m_block_pyramid, Pyramid4::node_count );
+      put_field( m_element_node_coordinates_field, m_elem_rank, m_block_pyramid, Pyramid5::node_count );
       stk::io::put_io_part_attribute(  m_block_pyramid );
 
       if (doCommit)
@@ -98,6 +119,8 @@ namespace stk{
     enum { SpatialDim = 3 };
     enum { node_count = 7 };
     enum { number_pyramid = 2 };
+    enum { number_quad = 2 };
+    enum { number_tri = 6 };
 
     namespace {
 
@@ -112,9 +135,24 @@ namespace stk{
       };
 
       // Hard coded pyramid node ids for all the pyramid nodes in the entire mesh
-      static const stk::mesh::EntityId pyramid_node_ids[number_pyramid][ Pyramid4::node_count ] = {
+      static const stk::mesh::EntityId pyramid_node_ids[number_pyramid][ Pyramid5::node_count ] = {
         { 1 , 4 , 5 , 2 , 7 } ,
         { 2 , 5 , 6 , 3 , 7 } };
+
+      // Hard coded quad node ids for all the quad nodes in the entire mesh
+      static const stk::mesh::EntityId quad_node_ids[number_quad][ Quad4::node_count ] = {
+        { 1 , 4 , 5 , 2  } ,
+        { 2 , 5 , 6 , 3  } };
+
+      // Hard coded tri node ids for all the tri nodes in the entire mesh
+      static const stk::mesh::EntityId tri_node_ids[number_tri][ Triangle3::node_count ] = {
+        { 1 , 7 , 2 },
+        { 4, 7, 1 },
+        { 5, 7, 4 },
+        { 6, 7, 5 },
+        { 3, 7, 6 },
+        { 2, 7, 3 }
+        };
 
     }
 
@@ -132,9 +170,44 @@ namespace stk{
 
           // For each element topology declare elements
 
+          stk::mesh::Entity *pyramids[2];
           for ( unsigned i = 0 ; i < number_pyramid ; ++i , ++curr_elem_id ) {
-            stk::mesh::fem::declare_element( m_bulkData, m_block_pyramid, curr_elem_id, pyramid_node_ids[i] );
+            pyramids[i] = &stk::mesh::fem::declare_element( m_bulkData, m_block_pyramid, curr_elem_id, pyramid_node_ids[i] );
           }
+
+          if (m_sideset_quad)
+            {
+              for ( unsigned i = 0 ; i < number_quad ; ++i , ++curr_elem_id ) {
+                stk::mesh::fem::declare_element_side( m_bulkData, 
+                                                      curr_elem_id, //side_id,
+                                                      *pyramids[i], // element,
+                                                      4,            //j_side, // local_side_ord,
+                                                      m_sideset_quad_subset);
+              }
+            }
+
+          if (m_sideset_tri)
+            {
+              unsigned j_side=0;
+              for ( unsigned i = 0 ; i < 3 ; ++i , ++curr_elem_id ) {
+                if (i == 2) ++j_side;
+                stk::mesh::fem::declare_element_side( m_bulkData, 
+                                                      curr_elem_id, //side_id,
+                                                      *pyramids[0], // element,
+                                                      j_side,            //j_side, // local_side_ord,
+                                                      m_sideset_tri_subset);
+                ++j_side;
+              }
+              j_side=1;
+              for ( unsigned i = 0 ; i < 3 ; ++i , ++curr_elem_id ) {
+                stk::mesh::fem::declare_element_side( m_bulkData, 
+                                                      curr_elem_id, //side_id,
+                                                      *pyramids[1], // element,
+                                                      j_side,            //j_side, // local_side_ord,
+                                                      m_sideset_tri_subset);
+                ++j_side;
+              }
+            }
 
           // For all nodes assign nodal coordinates
           for ( unsigned i = 0 ; i < node_count ; ++i ) {
@@ -165,7 +238,7 @@ namespace stk{
 
       typedef std::pair<stk::mesh::Part*, unsigned> PartNodeCountPair;
       std::vector<PartNodeCountPair> part_and_node_counts;
-      part_and_node_counts.push_back(PartNodeCountPair(&mesh.m_block_pyramid, Pyramid4::node_count));
+      part_and_node_counts.push_back(PartNodeCountPair(&mesh.m_block_pyramid, Pyramid5::node_count));
 
       // Verify that entities in each part are set up correctly.
       // Use a PartVector iterator for parts_to_check and call

@@ -91,63 +91,62 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      STKUNIT_UNIT_TEST(regr_uniformRefiner, pyramid_mesh_enrich)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, pyramid_mesh)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
 
         stk::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        // start_demo_heterogeneous_mesh_enrich
+        // start_demo_heterogeneous_mesh
 
         //const unsigned p_rank = stk::parallel_machine_rank( MPI_COMM_WORLD);
         const unsigned p_size = stk::parallel_machine_size( MPI_COMM_WORLD);
+
+        bool do_sidesets = true;
 
         if (p_size <= 1)
           {
             // create the mesh
             {
-              stk::percept::PyramidFixture mesh(MPI_COMM_WORLD, false);
+              bool doCommit = false;
+              stk::percept::PyramidFixture mesh(MPI_COMM_WORLD, doCommit, do_sidesets);
               mesh.m_metaData.commit();
               mesh.populate();
 
               bool isCommitted = true;
               percept::PerceptMesh em1(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
-              
-              //em1.printInfo("hetero_enrich", 4);
 
-              em1.saveAs(input_files_loc+"pyramid_enrich_0.e");
+              em1.saveAs(input_files_loc+"pyramid_0.e");
               em1.close();
             }
 
-            std::string input_mesh = input_files_loc+"pyramid_enrich_0.e";
+            std::string input_mesh = input_files_loc+"pyramid_0.e";
             if (p_size > 1)
               {
                 RunEnvironment::doLoadBalance(pm, input_mesh);
               }
 
-            // enrich the mesh
+            // refine the mesh
             if (1)
               {
                 percept::PerceptMesh eMesh1(3);
 
-                eMesh1.open(input_files_loc+"pyramid_enrich_0.e");
-                //eMesh1.printInfo("hetero_enrich_2", 4);
+                eMesh1.open(input_files_loc+"pyramid_0.e");
 
-                URP_Heterogeneous_Enrich_3D break_pattern(eMesh1);
-                //int scalarDimension = 0; // a scalar
-                stk::mesh::FieldBase* proc_rank_field = 0;      //eMesh1.addField("proc_rank", eMesh.element_rank(), scalarDimension);
+                //URP_Heterogeneous_3D break_pattern(eMesh1);
+                Pyramid5_Pyramid5_10 break_pattern(eMesh1);
+                int scalarDimension = 0; // a scalar
+                stk::mesh::FieldBase* proc_rank_field = eMesh1.addField("proc_rank", eMesh1.element_rank(), scalarDimension);
                 eMesh1.commit();
-                //eMesh1.printInfo("hetero_enrich_2", 4);
 
                 UNIFORM_REFINER breaker(eMesh1, break_pattern, proc_rank_field);
 
                 //breaker.setRemoveOldElements(false);
-                breaker.setIgnoreSideSets(true);
+                breaker.setIgnoreSideSets(!do_sidesets);
                 breaker.doBreak();
 
-                eMesh1.saveAs(output_files_loc+"pyramid_enrich_1.e");
-                eMesh1.saveAs(input_files_loc+"pyramid_quadratic_refine_0.e");
+                eMesh1.saveAs(output_files_loc+"pyramid_1.e");
                 eMesh1.close();
               }
           }
@@ -2520,7 +2519,7 @@ namespace stk
       //======================================================================================================================
       //======================================================================================================================
 
-      STKUNIT_UNIT_TEST(regr_uniformRefiner, pyramid_mesh)
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, heterogeneous_mesh_sidesets)
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
@@ -2536,7 +2535,7 @@ namespace stk
           {
             // create the mesh
             {
-              stk::percept::PyramidFixture mesh(MPI_COMM_WORLD, false);
+              stk::percept::HeterogeneousFixture mesh(MPI_COMM_WORLD, false, true);
 
               mesh.m_metaData.commit();
               mesh.populate();
@@ -2544,11 +2543,13 @@ namespace stk
               bool isCommitted = true;
               percept::PerceptMesh em1(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
 
-              em1.saveAs(input_files_loc+"pyramid_0.e");
+              //em1.printInfo("heterogeneous", 4);
+
+              em1.saveAs(input_files_loc+"heterogeneous_sideset_0.e");
               em1.close();
             }
 
-            std::string input_mesh = input_files_loc+"pyramid_0.e";
+            std::string input_mesh = input_files_loc+"heterogeneous_sideset_0.e";
             if (p_size > 1)
               {
                 RunEnvironment::doLoadBalance(pm, input_mesh);
@@ -2559,10 +2560,9 @@ namespace stk
               {
                 percept::PerceptMesh eMesh1(3);
 
-                eMesh1.open(input_files_loc+"pyramid_0.e");
+                eMesh1.open(input_files_loc+"heterogeneous_sideset_0.e");
 
-                //URP_Heterogeneous_3D break_pattern(eMesh1);
-                Pyramid5_Pyramid5_10 break_pattern(eMesh1);
+                URP_Heterogeneous_3D break_pattern(eMesh1);
                 int scalarDimension = 0; // a scalar
                 stk::mesh::FieldBase* proc_rank_field = eMesh1.addField("proc_rank", eMesh1.element_rank(), scalarDimension);
                 eMesh1.commit();
@@ -2573,13 +2573,81 @@ namespace stk
                 breaker.setIgnoreSideSets(true);
                 breaker.doBreak();
 
-                eMesh1.saveAs(output_files_loc+"pyramid_1.e");
+                eMesh1.saveAs(output_files_loc+"heterogeneous_sideset_1.e");
                 eMesh1.close();
               }
           }
-        //exit(1);
         // end_demo
       }
+
+
+      //======================================================================================================================
+      //======================================================================================================================
+      //======================================================================================================================
+
+      STKUNIT_UNIT_TEST(regr_uniformRefiner, pyramid_mesh_enrich)
+      {
+        EXCEPTWATCH;
+        MPI_Barrier( MPI_COMM_WORLD );
+
+        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+
+        // start_demo_heterogeneous_mesh_enrich
+
+        //const unsigned p_rank = stk::parallel_machine_rank( MPI_COMM_WORLD);
+        const unsigned p_size = stk::parallel_machine_size( MPI_COMM_WORLD);
+
+        if (p_size <= 1)
+          {
+            // create the mesh
+            {
+              stk::percept::PyramidFixture mesh(MPI_COMM_WORLD, false);
+              mesh.m_metaData.commit();
+              mesh.populate();
+
+              bool isCommitted = true;
+              percept::PerceptMesh em1(&mesh.m_metaData, &mesh.m_bulkData, isCommitted);
+              
+              //em1.printInfo("hetero_enrich", 4);
+
+              em1.saveAs(input_files_loc+"pyramid_enrich_0.e");
+              em1.close();
+            }
+
+            std::string input_mesh = input_files_loc+"pyramid_enrich_0.e";
+            if (p_size > 1)
+              {
+                RunEnvironment::doLoadBalance(pm, input_mesh);
+              }
+
+            // enrich the mesh
+            if (1)
+              {
+                percept::PerceptMesh eMesh1(3);
+
+                eMesh1.open(input_files_loc+"pyramid_enrich_0.e");
+                //eMesh1.printInfo("hetero_enrich_2", 4);
+
+                URP_Heterogeneous_Enrich_3D break_pattern(eMesh1);
+                //int scalarDimension = 0; // a scalar
+                stk::mesh::FieldBase* proc_rank_field = 0;      //eMesh1.addField("proc_rank", eMesh.element_rank(), scalarDimension);
+                eMesh1.commit();
+                //eMesh1.printInfo("hetero_enrich_2", 4);
+
+                UNIFORM_REFINER breaker(eMesh1, break_pattern, proc_rank_field);
+
+                //breaker.setRemoveOldElements(false);
+                breaker.setIgnoreSideSets(true);
+                breaker.doBreak();
+
+                eMesh1.saveAs(output_files_loc+"pyramid_enrich_1.e");
+                eMesh1.saveAs(input_files_loc+"pyramid_quadratic_refine_0.e");
+                eMesh1.close();
+              }
+          }
+        // end_demo
+      }
+
 
       //======================================================================================================================
       //======================================================================================================================
