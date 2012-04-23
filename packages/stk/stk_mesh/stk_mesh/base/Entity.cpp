@@ -54,10 +54,26 @@ std::string print_entity_key(const Entity* entity)
   }
 }
 
+
+
+
 //
 //----------------------------------------------------------------------
 
 #ifdef SIERRA_MIGRATION
+
+
+std::string Entity::TypeToString (Entity::ObjectTypeEnum type) {
+    if(type == NODE      ) return "NODE";
+    if(type == EDGE      ) return "EDGE";
+    if(type == FACE      ) return "FACE";
+    if(type == ELEMENT   ) return "ELMENT";
+    if(type == CONSTRAINT) return "CONSTRANT";
+    if(type == BASE_CLASS) return "BASE_CLASS";
+    return "UNKNOWN";
+
+  }
+
 
 // ---------------------------------------------------------------------
 

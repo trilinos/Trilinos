@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 #include <iosfwd>
+#include <string>
 
 #include <stk_mesh/base/Types.hpp>
 
@@ -229,6 +230,9 @@ private:
   enum ObjectTypeEnum {
     NODE = 0, EDGE = 1, FACE = 2, ELEMENT = 3, CONSTRAINT = 4, NUM_TYPES = 5, BASE_CLASS = 0x00ff
   };
+  static std::string TypeToString (ObjectTypeEnum type);
+
+		       
 
   template <class SharedAttr>
   void init_fmwk(
