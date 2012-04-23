@@ -53,8 +53,8 @@
 #endif
 
 /* EXODUS II version number */
-#define EX_API_VERS 5.16f
-#define EX_API_VERS_NODOT 516
+#define EX_API_VERS 5.18f
+#define EX_API_VERS_NODOT 518
 #define EX_VERS EX_API_VERS
 #define NEMESIS_API_VERSION		EX_API_VERS
 #define NEMESIS_API_VERSION_NODOT	EX_API_VERS_NODOT
@@ -170,7 +170,17 @@ extern "C" {
 
   typedef enum ex_inquiry ex_inquiry;
   
-  /*   properties               */
+  /* Options */
+  enum ex_option_type {
+    EX_OPT_MAX_NAME_LENGTH = 1,
+    EX_OPT_COMPRESSION_TYPE,     /* Currently not used. GZip by default */
+    EX_OPT_COMPRESSION_LEVEL,    /* 0 (disabled/fastest) ... 9 (best/slowest) */
+    EX_OPT_COMPRESSION_SHUFFLE,  /* 0 (disabled); 1 (enabled) */
+    EX_OPT_INTEGER_SIZE_API,     /* See *_INT64_* values above */
+    EX_OPT_INTEGER_SIZE_DB /* (query only) */
+  };
+  typedef enum ex_option_type ex_option_type;
+  
   enum ex_entity_type {
     EX_NODAL       = 14,          /**< nodal "block" for variables*/
     EX_NODE_BLOCK  = 14,          /**< alias for EX_NODAL         */
@@ -648,12 +658,15 @@ extern "C" {
   EXODUS_EXPORT int ex_inquire(int exoid, int inquiry, void_int*, float*, char*);
   EXODUS_EXPORT int64_t ex_inquire_int(int exoid, int inquiry);
   EXODUS_EXPORT int ex_int64_status(int exoid);
+  EXODUS_EXPORT int ex_set_int64_status(int exoid, int mode);
 
   /** Note that the max name length setting is global at this time; not specific
    * to a particular database; however, the exoid option is passed to give
    * flexibility in the future to implement this on a database-by-database basis.
    */
   EXODUS_EXPORT int ex_set_max_name_length(int exoid, int length);
+
+  EXODUS_EXPORT int ex_set_option(int exoid, ex_option_type option, int option_value);
 
   /*  Write Node Edge Face or Element Number Map */
   EXODUS_EXPORT int ex_put_num_map(int exoid,
@@ -1672,27 +1685,6 @@ ex_put_elem_cmap(int  exoid,	/* NetCDF/Exodus file ID */
   extern int exerrval;     /**< shared error return value                */
   extern int exoptval;     /**< error reporting flag (default is quiet)  */
 
-  /**
-   * For output databases, the maximum length of any entity, variable,
-   * property, attribute, or coordinate name to be written (not
-   * including the NULL terminator). If a name is longer than this
-   * value, a warning message will be output to stderr and the name
-   * will be truncated.  Must be set (via call to
-   * 'ex_set_max_name_length(exoid, int len)' prior to calling ex_create.
-   *
-   * For input databases, the size of the name arrays that the client
-   * code will be passing to API routines that retrieve names (not
-   * including the NULL terminator). This defaults to 32 for
-   * compatibility with older clients. The value used at the time of
-   * creation of the database can be queried by ex_inquire with the
-   * EX_INQ_DB_MAX_NAME_LENGTH argument. The current value for this
-   * variable can be queried with EX_INQ_CUR_MAX_NAME_LENGTH argument.
-   *
-   * Note that this is a global setting for all databases. If you are
-   * accessing multiple databases, they will all use the same value.
-   */
-  extern int ex_max_name_length; 
-				    
   char* ex_name_of_object(ex_entity_type obj_type);
   ex_entity_type ex_var_type_to_ex_entity_type(char var_type);
 

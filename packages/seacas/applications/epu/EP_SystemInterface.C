@@ -77,9 +77,9 @@ Excn::SystemInterface::SystemInterface()
     cwd_(""), rootDirectory_(), subDirectory_(""), basename_(""),
     raidOffset_(0), raidCount_(0), processorCount_(1), startPart_(0), partCount_(-1),
     debugLevel_(0), screenWidth_(0),
-    stepMin_(1), stepMax_(INT_MAX), stepInterval_(1), subcycle_(-1), cycle_(-1),
+    stepMin_(1), stepMax_(INT_MAX), stepInterval_(1), subcycle_(-1), cycle_(-1), compressData_(0),
     sumSharedNodes_(false), addProcessorId_(false), mapIds_(true), omitNodesets_(false), omitSidesets_(false),
-    largeModel_(false), append_(false), intIs64Bit_(false), compressData_(false)
+    largeModel_(false), append_(false), intIs64Bit_(false)
 {
   enroll_options();
 }
@@ -150,9 +150,9 @@ void Excn::SystemInterface::enroll_options()
 		  "The output database will be written in the 64-bit integer mode",
 		  NULL);
 
-  options_.enroll("compress_data", GetLongOption::NoValue,
+  options_.enroll("compress_data", GetLongOption::MandatoryValue,
 		  "The output database will be written using compression (netcdf-4 mode only)",
-		  NULL);
+		  0);
 
   options_.enroll("steps", GetLongOption::MandatoryValue,
 		  "Specify subset of timesteps to transfer to output file.\n"
@@ -401,8 +401,11 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     intIs64Bit_ = true;
   }
 
-  if (options_.retrieve("compress_data")) {
-    compressData_ = true;
+  {
+    const char *temp = options_.retrieve("compress_data");
+    if (temp != NULL) {
+      compressData_ = strtol(temp, NULL, 10);
+    }
   }
 
   if (options_.retrieve("sum_shared_nodes")) {

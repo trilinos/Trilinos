@@ -586,7 +586,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     put_global_info(global);
     get_put_coordinate_frames(ExodusFile(0), ExodusFile::output(), float_or_double);
 
-    Internals<INT> exodus(ExodusFile::output(), ExodusFile::max_name_length(), interface.compress_data());
+    Internals<INT> exodus(ExodusFile::output(), ExodusFile::max_name_length());
 
     if (interface.append()) {
       bool matches = exodus.check_meta_data(global, glob_blocks, glob_nsets, glob_ssets, comm_data);

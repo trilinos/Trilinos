@@ -280,7 +280,7 @@ int ex_put_loadbal_param(int   exoid,
 
       return (EX_FATAL);
     }
-    ex_compress_variable(exoid, varid);
+    ex_compress_variable(exoid, varid, 1);
 
   } /* End "if (num_int_elems > 0)" */
 
@@ -335,7 +335,7 @@ int ex_put_loadbal_param(int   exoid,
 
       return (EX_FATAL);
     }
-    ex_compress_variable(exoid, varid);
+    ex_compress_variable(exoid, varid, 1);
 
   } /* End "if (num_bor_elems > 0)" */
 
@@ -365,7 +365,7 @@ int ex_put_loadbal_param(int   exoid,
 
       return (EX_FATAL);
     }
-    ex_compress_variable(exoid, varid);
+    ex_compress_variable(exoid, varid, 1);
 
   } /* End "if (num_int_nodes > 0)" */
 
@@ -395,7 +395,7 @@ int ex_put_loadbal_param(int   exoid,
 
       return (EX_FATAL);
     }
-    ex_compress_variable(exoid, varid);
+    ex_compress_variable(exoid, varid, 1);
 
   } /* End "if (num_bor_nodes > 0)" */
 
@@ -425,7 +425,7 @@ int ex_put_loadbal_param(int   exoid,
 
       return (EX_FATAL);
     }
-    ex_compress_variable(exoid, varid);
+    ex_compress_variable(exoid, varid, 1);
 
   } /* End "if (num_ext_nodes > 0)" */
 
@@ -456,7 +456,7 @@ int ex_put_loadbal_param(int   exoid,
 
       return (EX_FATAL);
     }
-    ex_compress_variable(exoid, varid);
+    ex_compress_variable(exoid, varid, 1);
 
     /* Add the status vector */
     if ((status = nc_def_var(exoid, VAR_N_COMM_STAT, NC_INT, 1, dimid, &varid)) != NC_NOERR) {
@@ -500,7 +500,7 @@ int ex_put_loadbal_param(int   exoid,
 
       return (EX_FATAL);
     }
-    ex_compress_variable(exoid, varid);
+    ex_compress_variable(exoid, varid, 1);
 
     if ((status = nc_def_var(exoid, VAR_E_COMM_STAT, NC_INT, 1, dimid, &varid)) != NC_NOERR) {
       exerrval = status;

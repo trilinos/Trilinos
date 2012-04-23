@@ -255,6 +255,7 @@ int ex_put_num_map ( int exoid,
       sprintf(errmsg, "Error: failed to define map %s in file id %d", vmap, exoid);
       ex_err("ex_put_num_map",errmsg,exerrval);
     }
+    ex_compress_variable(exoid, varid, 1);
 
     if ((status = nc_enddef(exoid)) != NC_NOERR ) { /* exit define mode */
       sprintf( errmsg, "Error: failed to complete definition for file id %d", exoid );

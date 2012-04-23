@@ -204,7 +204,7 @@ int ex_put_sets (int   exoid,
 	}
 	goto error_ret;            /* exit define mode and return */
       }
-      ex_compress_variable(exoid, varid);
+      ex_compress_variable(exoid, varid, 1);
       
       if (extraptr) {
 	if ((status = nc_def_var(exoid, extraptr, int_size, 1, dims, &varid)) != NC_NOERR) {
@@ -222,7 +222,7 @@ int ex_put_sets (int   exoid,
 	  }
 	  goto error_ret;         /* exit define mode and return */
 	}
-	ex_compress_variable(exoid, varid);
+	ex_compress_variable(exoid, varid, 1);
       }
 
       /* Create distribution factors variable if required */
@@ -268,7 +268,7 @@ int ex_put_sets (int   exoid,
 	  }
 	  goto error_ret;            /* exit define mode and return */
 	}
-	ex_compress_variable(exoid, varid);
+	ex_compress_variable(exoid, varid, 2);
       }
     }
 

@@ -44,6 +44,7 @@
  */
 
 #include <iostream>
+#include <unistd.h>
 #include "EJ_index_sort.h"
 
 #define EX_QSORT_CUTOFF 12

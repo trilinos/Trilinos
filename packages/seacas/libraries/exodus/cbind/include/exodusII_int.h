@@ -623,6 +623,19 @@ typedef enum ex_coordinate_frame_type ex_coordinate_frame_type;
 
 /* Internal structure declarations */
 
+struct file_item {
+  int                   file_id;
+  nc_type               netcdf_type_code;
+  int                   int64_status;
+  int                   maximum_name_length;
+  unsigned int          compression_level:4;     /* 0 (disabled) to 9 (maximum) compression level; netcdf-4 only */
+  unsigned int          user_compute_wordsize:1; /* 0 for 4 byte or 1 for 8 byte reals */
+  unsigned int          shuffle:1;               /* 1 true, 0 false */                   
+  unsigned int          file_type:2;             /* 0 - classic, 1 -- 64 bit classic, 2 --netcdf4,  3 --netcdf4 classic */
+
+  struct file_item*     next;
+};
+
 struct elem_blk_parm
 {
   char elem_type[33];
@@ -688,10 +701,12 @@ extern struct obj_stats* exoII_fam;
 extern struct obj_stats* exoII_nm;
 
 
+struct file_item* ex_find_file_item(int exoid);
 struct obj_stats *ex_get_stat_ptr  ( int exoid, struct obj_stats** obj_ptr);
+
 void ex_rm_stat_ptr  (int exoid, struct obj_stats** obj_ptr);
 
-void ex_compress_variable(int exoid, int varid);
+void ex_compress_variable(int exoid, int varid, int type);
 int ex_id_lkup  (int exoid, ex_entity_type id_type, int64_t num);
 int ex_check_file_type(const char *path, int *type);
 int ex_get_dimension(int exoid, const char *dimtype, const char *label,
@@ -733,4 +748,26 @@ int ex_get_idx(int      neid,	 /* NetCDF/Exodus file ID */
 	       int64_t *index,	 /* array of length 2 to hold results */
 	       int      pos		 /* position of this proc/cmap in index */
 	       );
+
+  /**
+   * For output databases, the maximum length of any entity, variable,
+   * property, attribute, or coordinate name to be written (not
+   * including the NULL terminator). If a name is longer than this
+   * value, a warning message will be output to stderr and the name
+   * will be truncated.  Must be set (via call to
+   * 'ex_set_max_name_length(exoid, int len)' prior to calling ex_create.
+   *
+   * For input databases, the size of the name arrays that the client
+   * code will be passing to API routines that retrieve names (not
+   * including the NULL terminator). This defaults to 32 for
+   * compatibility with older clients. The value used at the time of
+   * creation of the database can be queried by ex_inquire with the
+   * EX_INQ_DB_MAX_NAME_LENGTH argument. The current value for this
+   * variable can be queried with EX_INQ_CUR_MAX_NAME_LENGTH argument.
+   *
+   * Note that this is a global setting for all databases. If you are
+   * accessing multiple databases, they will all use the same value.
+   */
+  extern int ex_default_max_name_length; 
+				    
 #endif

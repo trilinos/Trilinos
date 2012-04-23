@@ -100,15 +100,13 @@ namespace {
   int define_netcdf_vars(int exoid, const char *type, size_t count, const char *dim_num,
 			 const char *stat_var, const char *id_var, const char *name_var);
 
-  void compress_variable(int exoid, int varid);
-
   template <typename INT>
   int put_array(int exoid, const char *var_type, const std::vector<INT> &array);
 
   int put_id_array(int exoid, const char *var_type,  const std::vector<ex_entity_id> &array);
 
   int define_coordinate_vars(int exodusFilePtr, int64_t nodes, int node_dim,
-			     int dimension, int dim_dim, int str_dim, bool compress);
+			     int dimension, int dim_dim, int str_dim);
 }
 			 
 Excn::Redefine::Redefine(int exoid)
@@ -467,7 +465,7 @@ int Excn::Internals<INT>::put_metadata(const Mesh &mesh,
 	}
 	return (EX_FATAL);
       }
-      if (compressData) compress_variable(exodusFilePtr, varid);
+      ex_compress_variable(exodusFilePtr, varid, 1);
     }
   }
 
@@ -503,7 +501,7 @@ int Excn::Internals<INT>::put_metadata(const Mesh &mesh,
 	}
 	return (EX_FATAL);
       }
-      if (compressData) compress_variable(exodusFilePtr, varid);
+      ex_compress_variable(exodusFilePtr, varid, 1);
     }
   }
 
@@ -524,7 +522,7 @@ int Excn::Internals<INT>::put_metadata(const Mesh &mesh,
 				DIM_NUM_SS, VAR_SS_STAT, VAR_SS_IDS, VAR_NAME_SS);
   }
 
-  status = define_coordinate_vars(exodusFilePtr, mesh.nodeCount, numnoddim, mesh.dimensionality, numdimdim, namestrdim, compressData);
+  status = define_coordinate_vars(exodusFilePtr, mesh.nodeCount, numnoddim, mesh.dimensionality, numdimdim, namestrdim);
   if (status != EX_NOERR)
     return EX_FATAL;
   
@@ -648,7 +646,7 @@ int Excn::Internals<INT>::put_metadata(const std::vector<Block> &blocks)
 	ex_err(routine, errmsg, status);
 	return (EX_FATAL);
       }
-      if (compressData) compress_variable(exodusFilePtr, varid);
+      ex_compress_variable(exodusFilePtr, varid, 2);
 
       // Attribute name array...
       dims[0] = numattrdim;
@@ -680,7 +678,7 @@ int Excn::Internals<INT>::put_metadata(const std::vector<Block> &blocks)
       ex_err(routine, errmsg, status);
       return (EX_FATAL);
     }
-    if (compressData) compress_variable(exodusFilePtr, connid);
+    ex_compress_variable(exodusFilePtr, connid, 1);
 
     // store element type as attribute of connectivity variable
     status=nc_put_att_text(exodusFilePtr, connid, ATT_NAME_ELB,
@@ -816,7 +814,7 @@ int Excn::Internals<INT>::put_metadata(const std::vector<NodeSet<INT> > &nodeset
       }
       return(EX_FATAL);
     }
-    if (compressData) compress_variable(exodusFilePtr, varid);
+    ex_compress_variable(exodusFilePtr, varid, 1);
 
     // Create variable for distribution factors if required
     if (nodesets[i].dfCount > 0) {
@@ -850,7 +848,7 @@ int Excn::Internals<INT>::put_metadata(const std::vector<NodeSet<INT> > &nodeset
 	  }
 	  return(EX_FATAL);
 	}
-	if (compressData) compress_variable(exodusFilePtr, varid);
+	ex_compress_variable(exodusFilePtr, varid, 2);
       }
     }
   }
@@ -967,7 +965,7 @@ int Excn::Internals<INT>::put_metadata(const std::vector<SideSet<INT> > &sideset
       }
       return(EX_FATAL);
     }
-    if (compressData) compress_variable(exodusFilePtr, varid);
+    ex_compress_variable(exodusFilePtr, varid, 1);
 
     // create side list variable for side set
     status=nc_def_var(exodusFilePtr, VAR_SIDE_SS(cur_num_side_sets+1),
@@ -987,7 +985,7 @@ int Excn::Internals<INT>::put_metadata(const std::vector<SideSet<INT> > &sideset
       }
       return(EX_FATAL);
     }
-    if (compressData) compress_variable(exodusFilePtr, varid);
+    ex_compress_variable(exodusFilePtr, varid, 1);
 
     // Create variable for distribution factors if required
     if (sidesets[i].dfCount > 0) {
@@ -1028,7 +1026,7 @@ int Excn::Internals<INT>::put_metadata(const std::vector<SideSet<INT> > &sideset
 	}
 	return(EX_FATAL);
       }
-      if (compressData) compress_variable(exodusFilePtr, varid);
+      ex_compress_variable(exodusFilePtr, varid, 2);
     }
   }
   return EX_NOERR;
@@ -1132,7 +1130,7 @@ namespace {
   }
   
   int define_coordinate_vars(int exodusFilePtr, int64_t nodes, int node_dim, int dimension, int dim_dim,
-			     int str_dim, bool compressData)
+			     int str_dim)
   {
     const char *routine = "Ioex_Internals.C, define_coordinate_vars";
     char errmsg[MAX_ERR_LENGTH];
@@ -1153,7 +1151,7 @@ namespace {
 	    ex_err(routine,errmsg,status);
 	    return(EX_FATAL);
 	  }
-	  if (compressData) compress_variable(exodusFilePtr, varid);
+	  ex_compress_variable(exodusFilePtr, varid, 2);
 	}
 
 	if (dimension > 1) {
@@ -1165,7 +1163,7 @@ namespace {
 	    ex_err(routine,errmsg,status);
 	    return(EX_FATAL);
 	  }
-	  if (compressData) compress_variable(exodusFilePtr, varid);
+	  ex_compress_variable(exodusFilePtr, varid, 2);
 	}
 
 	if (dimension > 2) {
@@ -1177,7 +1175,7 @@ namespace {
 	    ex_err(routine,errmsg,status);
 	    return(EX_FATAL);
 	  }
-	  if (compressData) compress_variable(exodusFilePtr, varid);
+	  ex_compress_variable(exodusFilePtr, varid, 2);
 	}
       } else {
 	// node coordinate arrays:  -- all stored together (old method)2
@@ -1191,7 +1189,7 @@ namespace {
 	  ex_err(routine,errmsg,status);
 	  return(EX_FATAL);
 	}
-	if (compressData) compress_variable(exodusFilePtr, varid);
+	ex_compress_variable(exodusFilePtr, varid, 2);
       }
     }
 
@@ -1280,13 +1278,5 @@ namespace {
     return EX_NOERR;
   }
 
-  void compress_variable(int exoid, int varid)
-  {
-#if defined(USE_NETCDF4)
-    const int DEFLATE_LEVEL = 5;
-    const int COMPRESS = 1;
-    nc_def_var_deflate(exoid, varid, NC_SHUFFLE, COMPRESS, DEFLATE_LEVEL);
-#endif
-  }
 }
 

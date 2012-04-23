@@ -329,7 +329,7 @@ int ex_put_concat_sets (int   exoid,
       }
       goto error_ret;            /* exit define mode and return */
     }
-    ex_compress_variable(exoid, temp);
+    ex_compress_variable(exoid, temp, 1);
 
     /* create extra list variable for set  (only for edge, face and side sets) */
     if (extraptr) {
@@ -349,7 +349,7 @@ int ex_put_concat_sets (int   exoid,
 	}
 	goto error_ret;         /* exit define mode and return */
       }
-      ex_compress_variable(exoid, temp);
+      ex_compress_variable(exoid, temp, 1);
     }
 
     /*  define dimension for number of dist factors per set */
@@ -413,7 +413,7 @@ int ex_put_concat_sets (int   exoid,
 	}
 	goto error_ret;            /* exit define mode and return */
       }
-      ex_compress_variable(exoid, temp);
+      ex_compress_variable(exoid, temp, 2);
     } /* end define dist factors */
   }
 

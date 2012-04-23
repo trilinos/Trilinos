@@ -217,7 +217,7 @@ int ex_put_variable_param (int exoid,
 	ex_err("ex_put_variable_param",errmsg,exerrval);
 	goto error_ret;          /* exit define mode and return */
       }
-    ex_compress_variable(exoid, varid);
+    ex_compress_variable(exoid, varid, 2);
   }
 
   else if (obj_type == EX_NODAL) {
@@ -264,7 +264,7 @@ int ex_put_variable_param (int exoid,
 	ex_err("ex_put_variable_param",errmsg,exerrval);
 	goto error_ret;          /* exit define mode and return */
       }
-      ex_compress_variable(exoid, varid);
+      ex_compress_variable(exoid, varid, 2);
     } else { /* New way */
       int i;
       for (i = 1; i <= num_vars; i++) {
@@ -279,7 +279,7 @@ int ex_put_variable_param (int exoid,
 	  ex_err("ex_put_variable_param",errmsg,exerrval);
 	  goto error_ret;          /* exit define mode and return */
 	}
-	ex_compress_variable(exoid, varid);
+	ex_compress_variable(exoid, varid, 2);
       }
     }
 

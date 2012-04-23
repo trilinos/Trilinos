@@ -98,14 +98,13 @@ namespace Excn {
     class Internals
     {
     public:
-      Internals(int exoid, int maximum_name_length, bool compress_data)
+      Internals(int exoid, int maximum_name_length)
 	: exodusFilePtr(exoid),
 	nodeMapVarID(),
 	elementMapVarID(),
 	commIndexVar(0),
 	elemCommIndexVar(0),
-	maximumNameLength(maximum_name_length),
-	compressData(compress_data)
+	maximumNameLength(maximum_name_length)
 	  {}
 
 	int write_meta_data(const Mesh &mesh,
@@ -139,7 +138,6 @@ namespace Excn {
 	int commIndexVar;
 	int elemCommIndexVar;
 	int maximumNameLength; 
-	bool compressData;
     };
 }
 #endif /* SEACAS_Internals_h */

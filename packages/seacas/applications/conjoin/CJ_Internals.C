@@ -366,6 +366,7 @@ int Excn::Internals::put_metadata(const Mesh &mesh,
       }
       return (EX_FATAL);
     }
+    ex_compress_variable(exodusFilePtr, varid, 1);
   }
 
   if (mesh.elementCount > 0) {
@@ -398,6 +399,7 @@ int Excn::Internals::put_metadata(const Mesh &mesh,
       }
       return (EX_FATAL);
     }
+    ex_compress_variable(exodusFilePtr, varid, 1);
   }
 
   if (mesh.blockCount > 0) {
@@ -698,6 +700,7 @@ int Excn::Internals::put_metadata(const std::vector<Block> &blocks)
 	ex_err(routine, errmsg, status);
 	return (EX_FATAL);
       }
+      ex_compress_variable(exodusFilePtr, varid, 2);
 
       // Attribute name array...
       dims[0] = numattrdim;
@@ -729,6 +732,7 @@ int Excn::Internals::put_metadata(const std::vector<Block> &blocks)
       ex_err(routine, errmsg, status);
       return (EX_FATAL);
     }
+    ex_compress_variable(exodusFilePtr, connid, 1);
 
     // store element type as attribute of connectivity variable
     status=nc_put_att_text(exodusFilePtr, connid, ATT_NAME_ELB,
@@ -870,6 +874,7 @@ int Excn::Internals::put_metadata(const std::vector<NodeSet> &nodesets)
       }
       return(EX_FATAL);
     }
+    ex_compress_variable(exodusFilePtr, varid, 1);
 
     // Create variable for distribution factors if required
     if (nodesets[i].dfCount > 0) {
@@ -903,6 +908,7 @@ int Excn::Internals::put_metadata(const std::vector<NodeSet> &nodesets)
 	  }
 	  return(EX_FATAL);
 	}
+	ex_compress_variable(exodusFilePtr, varid, 2);
       }
     }
   }
@@ -1027,6 +1033,7 @@ int Excn::Internals::put_metadata(const std::vector<SideSet> &sidesets)
       }
       return(EX_FATAL);
     }
+    ex_compress_variable(exodusFilePtr, varid, 1);
 
     // create side list variable for side set
     status=nc_def_var(exodusFilePtr, VAR_SIDE_SS(cur_num_side_sets+1),
@@ -1046,6 +1053,7 @@ int Excn::Internals::put_metadata(const std::vector<SideSet> &sidesets)
       }
       return(EX_FATAL);
     }
+    ex_compress_variable(exodusFilePtr, varid, 1);
 
     // Create variable for distribution factors if required
     if (sidesets[i].dfCount > 0) {
@@ -1086,6 +1094,7 @@ int Excn::Internals::put_metadata(const std::vector<SideSet> &sidesets)
 	}
 	return(EX_FATAL);
       }
+      ex_compress_variable(exodusFilePtr, varid, 2);
     }
   }
   return EX_NOERR;
@@ -1184,6 +1193,7 @@ namespace {
 	    return(EX_FATAL);
 	  }
 	}
+	ex_compress_variable(exodusFilePtr, varid, 1);
 
 	if (dimension > 1) {
 	  status=nc_def_var(exodusFilePtr, VAR_COORD_Y, nc_flt_code(exodusFilePtr), 1, dim, &varid);
@@ -1195,6 +1205,7 @@ namespace {
 	    return(EX_FATAL);
 	  }
 	}
+	ex_compress_variable(exodusFilePtr, varid, 1);
 
 	if (dimension > 2) {
 	  status=nc_def_var(exodusFilePtr, VAR_COORD_Z, nc_flt_code(exodusFilePtr), 1, dim, &varid);
@@ -1206,6 +1217,8 @@ namespace {
 	    return(EX_FATAL);
 	  }
 	}
+	ex_compress_variable(exodusFilePtr, varid, 1);
+
       } else {
 	// node coordinate arrays:  -- all stored together (old method)2
 	dim[0] = dim_dim;

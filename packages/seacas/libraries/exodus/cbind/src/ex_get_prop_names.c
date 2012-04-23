@@ -108,6 +108,7 @@ int ex_get_prop_names (int    exoid,
   char var_name[12];
   size_t att_len;
   nc_type att_type;
+  int api_name_size = ex_inquire_int(exoid, EX_INQ_MAX_READ_NAME_LENGTH);
 
   char errmsg[MAX_ERR_LENGTH];
 
@@ -181,7 +182,7 @@ int ex_get_prop_names (int    exoid,
       return (EX_FATAL);
     }
 
-    if (att_len-1 <= ex_max_name_length) {
+    if (att_len-1 <= api_name_size) {
       /* Client has large enough char string to hold text... */
       if ((status = nc_get_att_text(exoid, propid, ATT_PROP_NAME, prop_names[i])) != NC_NOERR) {
 	exerrval = status;

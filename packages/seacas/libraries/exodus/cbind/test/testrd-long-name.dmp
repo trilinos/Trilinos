@@ -12,6 +12,7 @@ num_elem =   7
 num_elem_blk =   7
 num_node_sets =   2
 num_side_sets =   5
+after ex_inquire, error =   0
 
 after ex_get_coord, error =   0
 x coords = 
@@ -121,9 +122,11 @@ after ex_get_coord_names, error =   0
 x coord name = 'X coordinate name that is padded to be longer than 32 characters'
 y coord name = 'Y coordinate name that is padded to be longer than 32 characters'
 z coord name = 'Z coordinate name that is padded to be longer than 32 characters'
+ after ex_get_attr_param, error = 0
 num nodal attributes = 2
  after ex_get_attr_names, error = 0
 nodal attribute 0 = 'Node_attr_1'
+ after ex_get_one_attr, error = 0
   0.0
   1.0
   1.0
@@ -158,6 +161,7 @@ nodal attribute 0 = 'Node_attr_1'
  10.0
  10.0
 nodal attribute 1 = 'Node_attr_2'
+ after ex_get_one_attr, error = 0
   0.0
   0.0
   1.0
@@ -392,9 +396,11 @@ dist factors for node set 20
  3.00
  4.00
  5.00
+ after ex_get_attr_param, error = 0
 num nodeset attributes for nodeset 20 = 1
  after ex_get_attr_names, error = 0
 nodeset attribute 0 = 'Nodeset_attribute'
+ after ex_get_one_attr, error = 0
   0.0
   1.0
   1.0
@@ -419,6 +425,7 @@ dist factors for node set 21
  1.10
  2.10
  3.10
+ after ex_get_attr_param, error = 0
 num nodeset attributes for nodeset 21 = 0
 
 after ex_inquire, error = 0

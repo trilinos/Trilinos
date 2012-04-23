@@ -673,7 +673,7 @@ F2C(exgcon) (int *idexo,
 
   *ierr = 0;                    /* default no error */
 
-  slen = ex_max_name_length;    /* max string size */
+  slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
   if (coord_nameslen < slen) {
     slen = coord_nameslen;
   }
@@ -982,7 +982,7 @@ F2C(exgean) (int *idexo,
 
   *ierr = 0;                    /* default no errror */
 
-  slen = ex_max_name_length;    /* max str size */
+  slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
   if (nameslen < slen) {
     slen = nameslen;
   }
@@ -1133,7 +1133,7 @@ F2C(exgnams) (int *idexo,
 
   *ierr = 0;                    /* default no errror */
 
-  slen = ex_max_name_length;    /* max str size */
+  slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
   if (nameslen < slen) {
     slen = nameslen;
   }
@@ -1244,7 +1244,7 @@ F2C(exgpn) (int *idexo,
 
   *ierr = 0;
 
-  slen = ex_max_name_length;    /* max str size */
+  slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
   if (prop_nameslen < slen) {
     slen = prop_nameslen;
   }
@@ -1369,7 +1369,7 @@ F2C(exgp) (int *idexo,
 
   *ierr = 0;
 
-  slen = ex_max_name_length;    /* max str size */
+  slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
   if (prop_namelen < slen) {
     slen = prop_namelen;
   }
@@ -1403,7 +1403,7 @@ F2C(exgpa) (int *idexo,
 
   *ierr = 0;
 
-  slen = ex_max_name_length;    /* max str size */
+  slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
   if (prop_namelen < slen) {
     slen = prop_namelen;
   }
@@ -1985,7 +1985,7 @@ F2C(exgvan) (int *idexo,
 
   *ierr = 0;                    /* default no errror */
 
-  slen = ex_max_name_length;    /* max str size */
+  slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
   if (var_nameslen < slen) {
     slen = var_nameslen;
   }
@@ -2733,7 +2733,7 @@ F2C(exgvnm) (int *idexo,
   int             slen;
   *ierr = 0;                    /* default no errror */
 
-  slen = ex_max_name_length;    /* max str size */
+  slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
   if (var_namelen < slen) {
     slen = var_namelen;
   }

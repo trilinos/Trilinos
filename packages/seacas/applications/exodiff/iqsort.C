@@ -32,6 +32,7 @@
 // 
 #include "iqsort.h"
 #include "smart_assert.h"
+#include <unistd.h>
 
 namespace {
   void swap_(int v[], int i, int j);

@@ -311,7 +311,7 @@ int ex_put_truth_table (int  exoid,
 	      ex_err(routine,errmsg,exerrval);
 	      goto error_ret;  /* exit define mode and return */
 	    }
-	    ex_compress_variable(exoid, varid);
+	    ex_compress_variable(exoid, varid, 2);
 	  }
 	}
       }  /* if */

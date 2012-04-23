@@ -151,6 +151,7 @@ int ex_put_partial_id_map (int  exoid,
       }
       goto error_ret;         /* exit define mode and return */
     }
+    ex_compress_variable(exoid, mapid, 1);
     
 
     /* leave define mode  */

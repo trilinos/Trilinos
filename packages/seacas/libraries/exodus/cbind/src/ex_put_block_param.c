@@ -352,7 +352,7 @@ int ex_put_block_param( int         exoid,
       ex_err("ex_put_block",errmsg,exerrval);
       goto error_ret;         /* exit define mode and return */
     }
-    ex_compress_variable(exoid, varid);
+    ex_compress_variable(exoid, varid, 2);
 
     /* inquire previously defined dimensions  */
     if ((status = nc_inq_dimid(exoid, DIM_STR_NAME, &strdim)) != NC_NOERR) {
@@ -476,7 +476,7 @@ int ex_put_block_param( int         exoid,
       ex_err("ex_put_block",errmsg,exerrval);
       goto error_ret;         /* exit define mode and return */
     }
-    ex_compress_variable(exoid, connid);
+    ex_compress_variable(exoid, connid, 1);
   }
   /* store element type as attribute of connectivity variable */
   if ((status = nc_put_att_text(exoid, connid, ATT_NAME_ELB, strlen(block.topology)+1, 

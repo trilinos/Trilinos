@@ -97,7 +97,7 @@ void SystemInterface::enroll_options()
   
   options_.enroll("gvar", GetLongOption::MandatoryValue,
 		  "Comma-separated list of global variables to be output or ALL or NONE.",
-		  0);
+		  "ALL");
 
   options_.enroll("evar", GetLongOption::MandatoryValue,
 		  "(NI) Comma-separated list of element variables to be output or ALL or NONE.\n"
@@ -154,7 +154,9 @@ bool SystemInterface::parse_options(int argc, char **argv)
   {
     const char *temp = options_.retrieve("field_suffix");
     if (strcmp("none", temp) == 0) {
-      fieldSuffix_ = 0;
+      // This is ASCII 1 which means it won't be found so
+      // vector/tensor won't be recognized by default.
+      fieldSuffix_ = 1; 
     } else {
       fieldSuffix_ = temp[0];
     }

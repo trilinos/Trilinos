@@ -432,9 +432,15 @@ int cpy_coord_def(int in_id,int out_id,int rec_dim_id,char *var_nm,
     /* Define according to the EXODUS file's IO_word_size */
     nbr_dim = 1;
     nc_def_var(out_id, VAR_COORD_X, nc_flt_code(out_id), nbr_dim, dim_out_id, &var_out_id);
-    nc_def_var(out_id, VAR_COORD_Y, nc_flt_code(out_id), nbr_dim, dim_out_id, &var_out_id);
-    if (spatial_dim == 3)
+    ex_compress_variable(out_id, var_out_id, 2);
+    if (spatial_dim > 1) {
+      nc_def_var(out_id, VAR_COORD_Y, nc_flt_code(out_id), nbr_dim, dim_out_id, &var_out_id);
+      ex_compress_variable(out_id, var_out_id, 2);
+    }
+    if (spatial_dim > 2) {
       nc_def_var(out_id, VAR_COORD_Z, nc_flt_code(out_id), nbr_dim, dim_out_id, &var_out_id);
+      ex_compress_variable(out_id, var_out_id, 2);
+    }
   }
 
   if (in_large == 1 && out_large == 0) {
@@ -531,8 +537,10 @@ int cpy_var_def(int in_id,int out_id,int rec_dim_id,char *var_nm)
 
   if ((var_type == NC_FLOAT) || (var_type == NC_DOUBLE)) {
     nc_def_var(out_id, var_nm, nc_flt_code(out_id), nbr_dim, dim_out_id, &var_out_id);
+    ex_compress_variable(out_id, var_out_id, 2);
   } else {
     nc_def_var(out_id, var_nm, var_type,            nbr_dim, dim_out_id, &var_out_id);
+    ex_compress_variable(out_id, var_out_id, 1);
   }
 
   /* Free the space holding the dimension IDs */

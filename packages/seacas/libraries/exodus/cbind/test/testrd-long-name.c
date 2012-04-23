@@ -137,7 +137,7 @@ int main (int argc, char **argv)
     int max_all_name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH);
     int max_use_name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
     printf ("This file can use at most %d-character names\n", max_all_name_length);
-    printf ("This maximum name length used is %d-character names\n", max_use_name_length);
+    printf ("The maximum name length used is %d-character names\n", max_use_name_length);
 
     max_name_length = max_use_name_length;
     ex_set_max_name_length(exoid, max_name_length);

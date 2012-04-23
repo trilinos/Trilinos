@@ -394,6 +394,7 @@ int ex_create_int (const char *path,
     ex_err("ex_create",errmsg,exerrval);
     return (EX_FATAL);
   }
+  ex_compress_variable(exoid, dimid, 2);
 
   {
     int int64_db_status = int64_status & EX_ALL_INT64_DB;

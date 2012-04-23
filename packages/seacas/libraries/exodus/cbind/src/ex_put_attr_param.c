@@ -202,7 +202,7 @@ int ex_put_attr_param (int   exoid,
     ex_err("ex_put_attr_param",errmsg,exerrval);
     goto error_ret;         /* exit define mode and return */
   }
-  ex_compress_variable(exoid, varid);
+  ex_compress_variable(exoid, varid, 2);
   
   /* inquire previously defined dimensions  */
   if ((status = nc_inq_dimid(exoid, DIM_STR_NAME, &strdim)) != NC_NOERR) {

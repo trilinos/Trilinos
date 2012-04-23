@@ -521,13 +521,25 @@ static int ex_inquire_internal (int      exoid,
     break;
 
   case EX_INQ_MAX_READ_NAME_LENGTH:
-    /* Returns the user-specified maximum size of names that will be
-     * returned to the user by any of the ex_get_ routines.  If the
-     * name is longer than this value, it will be truncated. The
-     * default if not set by the client is 32 characters. The value
-     * does not include the trailing null.
-     */
-    *ret_int = ex_max_name_length;
+    {
+      /* Returns the user-specified maximum size of names that will be
+       * returned to the user by any of the ex_get_ routines.  If the
+       * name is longer than this value, it will be truncated. The
+       * default if not set by the client is 32 characters. The value
+       * does not include the trailing null.
+       */
+      struct file_item* file = ex_find_file_item(exoid);
+
+      if (!file ) {
+	exerrval = EX_BADFILEID;
+	sprintf(errmsg,"Error: unknown file id %d for ex_inquire_int().",exoid);
+	ex_err("ex_intquire",errmsg,exerrval);
+	*ret_int = 0;
+      }
+      else {
+	*ret_int = file->maximum_name_length;
+      }
+    }
     break;
 
   case EX_INQ_TITLE:

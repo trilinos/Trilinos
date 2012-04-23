@@ -181,15 +181,15 @@ int ex_put_all_var_param_ext ( int   exoid,
     
     dims[0] = time_dim;
     dims[1] = dimid;
-    if ((status = nc_def_var (exoid, VAR_GLO_VAR, nc_flt_code(exoid), 2, dims, &varid)) != NC_NOERR)
-      {
-	exerrval = status;
-	sprintf(errmsg,
-		"Error: failed to define global variables in file id %d",
-		exoid);
-	ex_err("ex_put_all_var_param_ext",errmsg,exerrval);
-	goto error_ret;          /* exit define mode and return */
-      }
+    if ((status = nc_def_var (exoid, VAR_GLO_VAR, nc_flt_code(exoid), 2, dims, &varid)) != NC_NOERR) {
+      exerrval = status;
+      sprintf(errmsg,
+	      "Error: failed to define global variables in file id %d",
+	      exoid);
+      ex_err("ex_put_all_var_param_ext",errmsg,exerrval);
+      goto error_ret;          /* exit define mode and return */
+    }
+    ex_compress_variable(exoid, varid, 2);
 
     /* Now define global variable name variable */
     if (define_variable_name_variable(exoid, VAR_NAME_GLO_VAR, dimid, "global") != NC_NOERR)
@@ -231,15 +231,15 @@ int ex_put_all_var_param_ext ( int   exoid,
 	dims[0] = time_dim;
 	dims[1] = num_nod_dim;
 	if ((status = nc_def_var(exoid, VAR_NOD_VAR_NEW(i),
-				 nc_flt_code(exoid), 2, dims, &varid)) != NC_NOERR)
-	  {
-	    exerrval = status;
-	    sprintf(errmsg,
-		    "Error: failed to define nodal variable %d in file id %d",
-		    i, exoid);
-	    ex_err("ex_put_var_param",errmsg,exerrval);
-	    goto error_ret;          /* exit define mode and return */
-	  }
+				 nc_flt_code(exoid), 2, dims, &varid)) != NC_NOERR) {
+	  exerrval = status;
+	  sprintf(errmsg,
+		  "Error: failed to define nodal variable %d in file id %d",
+		  i, exoid);
+	  ex_err("ex_put_var_param",errmsg,exerrval);
+	  goto error_ret;          /* exit define mode and return */
+	}
+	ex_compress_variable(exoid, varid, 2);
       }
     }
 
@@ -551,6 +551,7 @@ static int define_truth_table(ex_entity_type obj_type, int exoid, int num_ent, i
               return status;
             }
           }
+	  ex_compress_variable(exoid, varid, 2);
         }
       }  /* if */
       k++; /* increment truth table pointer */

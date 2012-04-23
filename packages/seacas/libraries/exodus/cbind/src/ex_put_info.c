@@ -135,6 +135,7 @@ int ex_put_info (int   exoid,
       ex_err("ex_put_info",errmsg,exerrval);
       goto error_ret;         /* exit define mode and return */
     }
+    ex_compress_variable(exoid, varid, 3);
 
     /*   leave define mode  */
     if ((status = nc_enddef (exoid)) != NC_NOERR) {

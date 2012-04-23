@@ -84,7 +84,7 @@ namespace Excn {
       bool omit_sidesets() const {return omitSidesets_;}
       bool int64() const {return intIs64Bit_;}
       void set_int64() const {intIs64Bit_=true;}
-      bool compress_data() const {return compressData_;}
+      int  compress_data() const {return compressData_;}
       
       StringIdVector global_var_names() const {return globalVarNames_;}
       StringIdVector node_var_names() const {return nodeVarNames_;}
@@ -135,6 +135,7 @@ namespace Excn {
       int stepInterval_;
       int subcycle_;
       int cycle_;
+      int compressData_;
       bool sumSharedNodes_;
       bool addProcessorId_;
       bool mapIds_;
@@ -143,7 +144,6 @@ namespace Excn {
       bool largeModel_;
       bool append_;
       mutable bool intIs64Bit_;
-      bool compressData_;
       
       StringIdVector globalVarNames_;
       StringIdVector nodeVarNames_;

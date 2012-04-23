@@ -138,6 +138,7 @@ int ex_put_map (int  exoid,
     }
     goto error_ret;         /* exit define mode and return */
   }
+  ex_compress_variable(exoid, mapid, 1);
 
   /* leave define mode  */
   if ((status = nc_enddef (exoid)) != NC_NOERR)

@@ -315,7 +315,7 @@ file ID %d",
 
       return (EX_FATAL);
     }
-    ex_compress_variable(exoid, varid);
+    ex_compress_variable(exoid, varid, 1);
 
     if ((status = nc_def_var(exoid, VAR_N_COMM_PROC, NC_INT, 1, n_dimid, &varid)) != NC_NOERR) {
       exerrval = status;
@@ -328,7 +328,7 @@ file ID %d",
 
       return (EX_FATAL);
     }
-    ex_compress_variable(exoid, varid);
+    ex_compress_variable(exoid, varid, 1);
 
   } /* End "if (num_n_comm_maps > 0)" */
 
@@ -388,7 +388,7 @@ file ID %d",
 
       return (EX_FATAL);
     }
-    ex_compress_variable(exoid, varid);
+    ex_compress_variable(exoid, varid, 1);
 
     if ((status = nc_def_var(exoid, VAR_E_COMM_PROC, NC_INT, 1, e_dimid, &varid)) != NC_NOERR) {
       exerrval = status;
@@ -401,7 +401,7 @@ file ID %d",
 
       return (EX_FATAL);
     }
-    ex_compress_variable(exoid, varid);
+    ex_compress_variable(exoid, varid, 1);
 
     if ((status = nc_def_var(exoid, VAR_E_COMM_SIDS, bulk_type, 1, e_dimid, &varid)) != NC_NOERR) {
       exerrval = status;
@@ -414,7 +414,7 @@ file ID %d",
 
       return (EX_FATAL);
     }
-    ex_compress_variable(exoid, varid);
+    ex_compress_variable(exoid, varid, 1);
 
   } /* End "if (num_e_comm_maps > 0)" */
 

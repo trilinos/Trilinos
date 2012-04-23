@@ -121,7 +121,8 @@ int ex_get_variable_name (int   exoid,
   /* read the variable name */
   {
     int db_name_size = ex_inquire_int(exoid, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH);
-    int name_size = db_name_size < ex_max_name_length ? db_name_size : ex_max_name_length;
+    int api_name_size = ex_inquire_int(exoid, EX_INQ_MAX_READ_NAME_LENGTH);
+    int name_size = db_name_size < api_name_size ? db_name_size : api_name_size;
 
     status = ex_get_name_internal(exoid, varid, var_num-1, var_name, name_size, obj_type, "ex_get_variable_name");
     if (status != NC_NOERR) {

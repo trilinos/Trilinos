@@ -180,7 +180,7 @@ ex_look_up_var(int exoid, ex_entity_type var_type, int var_index, ex_entity_id o
 	ex_err("ex_put_var",errmsg,exerrval);
 	goto error_ret;
       }
-      ex_compress_variable(exoid, *varid);
+      ex_compress_variable(exoid, *varid, 2);
 
       /*    leave define mode  */
       if ((status = nc_enddef (exoid)) != NC_NOERR) {

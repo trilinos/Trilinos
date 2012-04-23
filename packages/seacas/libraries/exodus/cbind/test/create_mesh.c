@@ -57,7 +57,6 @@
 
 typedef double realtyp;
 
-int mymode = EX_MAPS_INT64_DB|EX_MAPS_INT64_API|EX_BULK_INT64_DB|EX_BULK_INT64_API|EX_IDS_INT64_API|EX_IDS_INT64_DB;
 typedef int64_t INT;
 
 INT
@@ -163,7 +162,10 @@ void parse_input(
         INT     *num_timesteps, 
         char    *device_name,
         char    *file_name,
-        int     *exodus
+        int     *exodus,
+	int     *compression_level,
+	int     *shuffle,
+	int     *int64bit
 );
 
 void write_exo_mesh(
@@ -180,7 +182,10 @@ void write_exo_mesh(
         realtyp   *x,
         realtyp   *y, 
         realtyp   *z, 
-        INT     *connect
+        INT     *connect,
+	int     compression_level,
+	int     shuffle,
+	int     int64bit
 );
 
 void create_node_map (INT len_map, INT len_connect, INT *domain_connect, INT *node_map,
@@ -211,6 +216,9 @@ main( int argc, char *argv[] ) {
   INT   num_element_fields =    DEFAULT_NUM_FIELDS;
   INT   num_timesteps =         DEFAULT_NUM_TIMESTEPS;
   INT   num_nodes;
+  int   compression_level = 0;
+  int   shuffle = 0;
+  int   int64bit = 0;
   size_t size;
   
   realtyp *x;
@@ -223,7 +231,7 @@ main( int argc, char *argv[] ) {
   parse_input(argc, argv, &debug, &map_origin,
               &num_elements, &num_domains, &num_nodal_fields,
               &num_global_fields, &num_element_fields, &num_timesteps, 
-              device_name,file_name, &exodus);
+              device_name,file_name, &exodus, &compression_level, &shuffle, &int64bit);
         
   /* Create Coordinates and Connectivity Array */
   num_elements_1d = icbrt(num_elements);
@@ -263,7 +271,10 @@ main( int argc, char *argv[] ) {
                    x,
                    y,
                    z,
-                   connect
+                   connect,
+		   compression_level,
+		   shuffle,
+		   int64bit
                    );
   }
 
@@ -290,13 +301,25 @@ void parse_input(
                  INT  *num_timesteps, 
                  char *device_name,
                  char *file_name,
-                 int  *exodus
+                 int  *exodus,
+		 int  *compression_level,
+		 int  *shuffle,
+		 int  *int64bit
                  ) {
   int arg = 0;  /* Argument index.      */
 
   while ( ++arg < argc ) {
     if ( strcmp( "-c", argv[arg] ) == 0 ) {
       if ( ++arg < argc ) *num_nodal_fields = atoi( argv[arg] );
+    }
+    else if ( strcmp( "-compress", argv[arg] ) == 0 ) {
+      if ( ++arg < argc ) *compression_level = atoi( argv[arg] );
+    }
+    else if ( strcmp( "-shuffle", argv[arg] ) == 0 ) {
+      *shuffle = 1;
+    }
+    else if ( strcmp( "-64", argv[arg] ) == 0 ) {
+      *int64bit = 1;
     }
     else if ( strcmp( "-nv", argv[arg] ) == 0 ) {
       if ( ++arg < argc ) *num_nodal_fields = atoi( argv[arg] );
@@ -371,6 +394,9 @@ void parse_input(
       printf( "               elements/file = elements/number_of_domains.      \n" );
       printf( "               Default: %d                                      \n", DEFAULT_NUM_ELEMENTS);
       printf( "-p domains     number of domains. Default: %d                   \n", DEFAULT_NUM_DOMAINS   );
+      printf( "-compress val  set compression to level 'val' [0..9]            \n" );
+      printf( "-shuffle       enable hdf5-shuffle                              \n" );
+      printf( "-64            enable 64-bit integers                           \n" );
       printf( "-u             display help/usage information.                  \n" );
 
       exit( 0 );
@@ -451,7 +477,10 @@ void write_exo_mesh(
                     realtyp *x,
                     realtyp *y,
 		    realtyp *z,    
-                    INT *connect
+                    INT *connect,
+		    int compression_level,
+		    int shuffle,
+		    int int64bit
                     ) {
   int CPU_word_size=sizeof(realtyp);
   int IO_word_size=sizeof(realtyp);
@@ -476,6 +505,10 @@ void write_exo_mesh(
     /* create the EXODUSII file */
     get_file_name(file_name, "e", i, num_domains, NULL, temporary_name);
 
+    int mymode = EX_MAPS_INT64_API|EX_BULK_INT64_API|EX_IDS_INT64_API;
+    if (int64bit) {
+      mymode |= EX_MAPS_INT64_DB|EX_BULK_INT64_DB|EX_IDS_INT64_DB;
+    }
     exoid = ex_create (temporary_name, EX_CLOBBER|mymode, &CPU_word_size, &IO_word_size);
 
     if (exoid < 0) {
@@ -483,6 +516,9 @@ void write_exo_mesh(
       exit(-1);
     }
 
+    ex_set_option(exoid, EX_OPT_COMPRESSION_LEVEL, compression_level);
+    ex_set_option(exoid, EX_OPT_COMPRESSION_SHUFFLE, shuffle);
+    
     if (num_domains > 1) {
       /* Determine local number of elements */
       if (num_elements < num_domains) 
@@ -599,7 +635,7 @@ void write_exo_mesh(
     }
 #if 1
     {
-      INT ids[1] = {10000000000};
+      INT ids[1] = {100000};
       INT num_elem_per_block[1];
       char *names[1] = {"hex"};
       INT num_node_per_elem[1];
@@ -624,9 +660,9 @@ void write_exo_mesh(
     }
 
     if (num_domains > 1) {
-      err = ex_put_elem_conn (exoid, 10000000000, loc_connect);
+      err = ex_put_elem_conn (exoid, 100000, loc_connect);
     } else {
-      err = ex_put_elem_conn (exoid, 10000000000, connect);
+      err = ex_put_elem_conn (exoid, 100000, connect);
     }
 
     if (err) {
@@ -755,7 +791,7 @@ void write_exo_mesh(
           }
         }
         for (j=0; j<num_element_fields; j++) {
-          err = ex_put_var (exoid, t+1, EX_ELEM_BLOCK, j+1, 10000000000, loc_num_elements, x);
+          err = ex_put_var (exoid, t+1, EX_ELEM_BLOCK, j+1, 100000, loc_num_elements, x);
           if (err) {
             fprintf(stderr, "after ex_put_element_var, error = %d\n", err);
             ex_close (exoid);

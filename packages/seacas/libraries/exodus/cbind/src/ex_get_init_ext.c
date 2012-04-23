@@ -104,7 +104,7 @@ int ex_get_init_ext (int   exoid,
   }
 
   /* Check title length to avoid overrunning clients memory space; include trailing null */
-  if (title_len > MAX_LINE_LENGTH+1) {
+  if (title_len > MAX_LINE_LENGTH) {
     char *title = malloc(title_len+1);
     if ((status = nc_get_att_text(exoid, NC_GLOBAL, ATT_TITLE, title)) == NC_NOERR) {
       strncpy(info->title, title, MAX_LINE_LENGTH+1);

@@ -245,7 +245,7 @@ int ex_open_int (const char  *path,
 	/* If the DIM_STR_NAME variable does not exist on the database, we need to add it now. */
 	if(stat_dim != NC_NOERR) {
 	  /* Not found; set to default value of 32+1. */
-	  int max_name = ex_max_name_length < 32 ? 32 : ex_max_name_length;
+	  int max_name = ex_default_max_name_length < 32 ? 32 : ex_default_max_name_length;
 	  nc_def_dim(exoid, DIM_STR_NAME, max_name+1, &dim_str_name);
 	}
 	nc_enddef (exoid);

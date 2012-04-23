@@ -299,7 +299,8 @@ int ex_put_init_ext (int   exoid,
 
   /* create name string length dimension */
   {
-    int max_name = ex_max_name_length < 32 ? 32 : ex_max_name_length;
+    int max_name = ex_inquire_int(exoid, EX_INQ_MAX_READ_NAME_LENGTH);
+    if (max_name < ex_default_max_name_length) max_name = ex_default_max_name_length;
     if ((status=nc_def_dim (exoid, DIM_STR_NAME, max_name+1, &dim_str_name)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
@@ -449,7 +450,7 @@ int ex_put_init_ext (int   exoid,
             ex_err("ex_put_init_ext",errmsg,exerrval);
             goto error_ret;         /* exit define mode and return */
           }
-	ex_compress_variable(exoid, temp);
+	ex_compress_variable(exoid, temp, 2);
       }
     
       if (model->num_dim > 1) {
@@ -461,7 +462,7 @@ int ex_put_init_ext (int   exoid,
             ex_err("ex_put_init_ext",errmsg,exerrval);
             goto error_ret;         /* exit define mode and return */
           }
-	ex_compress_variable(exoid, temp);
+	ex_compress_variable(exoid, temp, 2);
       }
 
       if (model->num_dim > 2) {
@@ -473,7 +474,7 @@ int ex_put_init_ext (int   exoid,
             ex_err("ex_put_init_ext",errmsg,exerrval);
             goto error_ret;         /* exit define mode and return */
           }
-	ex_compress_variable(exoid, temp);
+	ex_compress_variable(exoid, temp, 2);
       }
     } else {
       /* node coordinate arrays: -- all stored together (old method) */

@@ -284,6 +284,10 @@ bool Excn::ExodusFile::create_output(const SystemInterface& si, int cycle)
 			&cpuWordSize_, &ioWordSize_, &version);
   } else {
     mode |= EX_CLOBBER;
+    if (si.compress_data() > 0) {
+      // Force netcdf-4 if compression is specified...
+      mode |= EX_NETCDF4;
+    }
     std::cout << "Output:   '" << outputFilename_ << "'" << std::endl;
     outputId_ = ex_create(outputFilename_.c_str(), mode,
 			  &cpuWordSize_, &ioWordSize_);
@@ -293,12 +297,17 @@ bool Excn::ExodusFile::create_output(const SystemInterface& si, int cycle)
     return false;
   }
 
+  if (si.compress_data() > 0) {
+    ex_set_option(outputId_, EX_OPT_COMPRESSION_LEVEL, si.compress_data());
+    ex_set_option(outputId_, EX_OPT_COMPRESSION_SHUFFLE, 1);
+  }
+
   // EPU Can add a name of "processor_id_epu" which is 16 characters long.
   // Make sure maximumNameLength_ is at least that long...
   
   if (maximumNameLength_ < 16)
     maximumNameLength_ = 16;
-  ex_set_max_name_length(outputId_, maximumNameLength_);
+  ex_set_option(outputId_, EX_OPT_MAX_NAME_LENGTH, maximumNameLength_);
 
   int int_size = si.int64() ? 8 : 4;
   std::cout << "IO Word sizes: "

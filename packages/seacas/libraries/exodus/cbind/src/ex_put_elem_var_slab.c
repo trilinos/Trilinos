@@ -222,6 +222,7 @@ int ex_put_elem_var_slab (int   exoid,
 	ex_err("ex_put_elem_var_slab", errmsg, exerrval);
 	goto error_ret;
       }
+      ex_compress_variable(exoid, varid, 2);
 
 
       /*    leave define mode  */

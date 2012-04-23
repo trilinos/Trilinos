@@ -378,7 +378,7 @@ int ex_put_loadbal_param_cc(int   exoid,
 
       return (EX_FATAL);
     }
-    ex_compress_variable(exoid, varid);
+    ex_compress_variable(exoid, varid, 1);
 
     /* and the index variable */
     if ((status = nc_def_var(exoid, VAR_ELEM_MAP_INT_IDX, index_type, 1,
@@ -420,7 +420,7 @@ int ex_put_loadbal_param_cc(int   exoid,
 
       return (EX_FATAL);
     }
-    ex_compress_variable(exoid, varid);
+    ex_compress_variable(exoid, varid, 1);
 
     /* and the index variable */
     if ((status = nc_def_var(exoid, VAR_ELEM_MAP_BOR_IDX, index_type, 1,
@@ -463,7 +463,7 @@ int ex_put_loadbal_param_cc(int   exoid,
 
       return (EX_FATAL);
     }
-    ex_compress_variable(exoid, varid);
+    ex_compress_variable(exoid, varid, 1);
 
     /* and the index variable */
     if ((status = nc_def_var(exoid, VAR_NODE_MAP_INT_IDX, index_type, 1,
@@ -506,7 +506,7 @@ int ex_put_loadbal_param_cc(int   exoid,
 
       return (EX_FATAL);
     }
-    ex_compress_variable(exoid, varid);
+    ex_compress_variable(exoid, varid, 1);
 
     /* and the index variable */
     if ((status = nc_def_var(exoid, VAR_NODE_MAP_BOR_IDX, index_type, 1,
@@ -549,7 +549,7 @@ int ex_put_loadbal_param_cc(int   exoid,
 
       return (EX_FATAL);
     }
-    ex_compress_variable(exoid, varid);
+    ex_compress_variable(exoid, varid, 1);
 
     /* and the index variable */
     if ((status = nc_def_var(exoid, VAR_NODE_MAP_EXT_IDX, index_type, 1,

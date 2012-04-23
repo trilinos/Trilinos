@@ -276,6 +276,7 @@ int ex_put_concat_all_blocks (int    exoid,
       ex_err("ex_put_concat_all_blocks",errmsg,exerrval);		\
       goto error_ret;         /* exit define mode and return */		\
     }									\
+    ex_compress_variable(exoid, temp, 2);                               \
 									\
     /* Attribute names... */						\
     dims[0] = VADIM1;							\
@@ -308,6 +309,7 @@ int ex_put_concat_all_blocks (int    exoid,
       ex_err("ex_put_concat_all_blocks",errmsg,exerrval);		\
       goto error_ret;         /* exit define mode and return */		\
     }									\
+    ex_compress_variable(exoid, connid, 1);                             \
   }
 
 
@@ -588,6 +590,7 @@ int ex_put_concat_all_blocks (int    exoid,
 	    ex_err( "ex_put_concat_all_blocks", errmsg, exerrval );
 	    goto error_ret; /* exit define mode and return */
 	  }
+	  ex_compress_variable(exoid, temp, 1);	\
 	}
       }
     }

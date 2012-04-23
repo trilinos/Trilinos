@@ -65,32 +65,28 @@
 #define NC_FLOAT_WORDSIZE 4
 #define NC_DOUBLE_WORDSIZE 8
 
-struct file_item {
-  int                   file_id;
-  nc_type               netcdf_type_code;
-  int                   user_compute_wordsize;
-  int                   int64_status;
-  struct file_item*     next;
-};
+static struct file_item* file_list = NULL;
 
-struct file_item* file_list = NULL;
-
-#define FIND_FILE(ptr,id) { ptr = file_list;                    \
-                            while(ptr) {                        \
-                              if( ptr->file_id == id ) break;   \
-                              ptr = ptr->next;                  \
-                            }                                   \
-                          }
+struct file_item* ex_find_file_item(int exoid)
+{
+  struct file_item *ptr = file_list;
+  while (ptr) {						\
+    if( ptr->file_id == exoid ) break;				\
+    ptr = ptr->next;						\
+  }								\
+  return ptr;
+}
 
 int ex_conv_ini( int  exoid,
 		 int* comp_wordsize,
 		 int* io_wordsize,
 		 int  file_wordsize,
-		 int  int64_status )
+		 int  int64_status)
 {
   char errmsg[MAX_ERR_LENGTH];
   struct file_item* new_file;
-
+  int filetype = 0;
+  
   /*! ex_conv_ini() initializes the floating point conversion process.
    *
    * \param exoid                an integer uniquely identifying the file of interest.
@@ -172,11 +168,24 @@ int ex_conv_ini( int  exoid,
     int64_status &= valid_int64;
   }
   
+  /* Verify filetype 
+   *  0 -- classic format   (NC_FORMAT_CLASSIC -1)
+   *  1 -- 64 bit classic   (NC_FORMAT_64BIT   -1)
+   *  2 -- netcdf4          (NC_FORMAT_NETCDF4 -1)
+   *  3 -- netcdf4 classic  (NC_FORMAT_NETCDF4_CLASSIC -1)
+   */
+  
+  nc_inq_format(exoid, &filetype);
+     
   new_file = malloc(sizeof(struct file_item));
 
   new_file->file_id = exoid;
-  new_file->user_compute_wordsize = *comp_wordsize;
+  new_file->user_compute_wordsize = *comp_wordsize == 4 ? 0 : 1;
   new_file->int64_status = int64_status;
+  new_file->maximum_name_length = ex_default_max_name_length;
+  new_file->compression_level = 0;
+  new_file->shuffle = 0;
+  new_file->file_type = filetype-1;
   
   new_file->next = file_list;
   file_list = new_file;
@@ -243,14 +252,12 @@ nc_type nc_flt_code( int exoid )
    *
    * "exoid" is some integer which uniquely identifies the file of interest.
    */
-
-  char errmsg[MAX_ERR_LENGTH];
-  struct file_item* file;
+  struct file_item* file = ex_find_file_item(exoid);
 
   exerrval = 0; /* clear error code */
-  FIND_FILE( file, exoid );
 
   if (!file ) {
+    char errmsg[MAX_ERR_LENGTH];
     exerrval = EX_BADFILEID;
     sprintf(errmsg,"Error: unknown file id %d for nc_flt_code().",exoid);
     ex_err("nc_flt_code",errmsg,exerrval);
@@ -277,20 +284,105 @@ int ex_int64_status(int exoid)
         EX_BULK_INT64_API    
         EX_ALL_INT64_API   (EX_MAPS_INT64_API|EX_IDS_INT64_API|EX_BULK_INT64_API)
   */
-
-  char errmsg[MAX_ERR_LENGTH];
-  struct file_item* file;
+  struct file_item* file = ex_find_file_item(exoid);
 
   exerrval = 0; /* clear error code */
-  FIND_FILE( file, exoid );
 
   if (!file ) {
+    char errmsg[MAX_ERR_LENGTH];
     exerrval = EX_BADFILEID;
     sprintf(errmsg,"Error: unknown file id %d for ex_int64_status().",exoid);
     ex_err("ex_int64_status",errmsg,exerrval);
     return 0;
   }
   return file->int64_status;
+}
+
+int ex_set_int64_status(int exoid, int mode)
+{
+  /* ex_set_int64_status() sets the value of the INT64_API flags
+     which specify how integer types are passed/returned as int64 types in the API
+     
+     Mode can be one of:
+        0                  All are passed as int32_t values.
+        EX_MAPS_INT64_API  All maps (id, order, ...) passed as int64_t values
+        EX_IDS_INT64_API   All entity ids (sets, blocks, maps) are passed as int64_t values
+        EX_BULK_INT64_API    
+        EX_ALL_INT64_API   (EX_MAPS_INT64_API|EX_IDS_INT64_API|EX_BULK_INT64_API)
+  */
+
+  int api_mode = 0;
+  int db_mode = 0;
+
+  struct file_item* file = ex_find_file_item(exoid);
+  
+  exerrval = 0; /* clear error code */
+
+  if (!file ) {
+    char errmsg[MAX_ERR_LENGTH];
+    exerrval = EX_BADFILEID;
+    sprintf(errmsg,"Error: unknown file id %d for ex_int64_status().",exoid);
+    ex_err("ex_int64_status",errmsg,exerrval);
+    return 0;
+  }
+
+  /* Strip of all non-INT64_API values */
+  api_mode = mode & EX_ALL_INT64_API;
+  db_mode = file->int64_status & EX_ALL_INT64_DB;
+  
+  file->int64_status = api_mode | db_mode;
+  return file->int64_status;
+}
+
+int ex_set_option(int exoid, ex_option_type option, int option_value)
+{
+  struct file_item* file = ex_find_file_item(exoid);
+  if (!file ) {
+    char errmsg[MAX_ERR_LENGTH];
+    exerrval = EX_BADFILEID;
+    sprintf(errmsg,"Error: unknown file id %d for ex_set_option().",exoid);
+    ex_err("ex_set_option",errmsg,exerrval);
+    return EX_FATAL;
+  }
+  
+  exerrval = 0; /* clear error code */
+
+  switch (option) {
+  case EX_OPT_MAX_NAME_LENGTH:
+    file->maximum_name_length = option_value;
+    break;
+  case EX_OPT_COMPRESSION_TYPE:     /* Currently not used. GZip by default */
+    break;
+  case EX_OPT_COMPRESSION_LEVEL:    /* 0 (disabled/fastest) ... 9 (best/slowest) */
+    /* Check whether file type supports compression... */
+    if (file->file_type == 2 || file->file_type == 3) {
+      int value = option_value;
+      if (value > 9) value = 9;
+      if (value < 0) value = 0;
+      file->compression_level = value;
+    }
+    else {
+      file->compression_level = 0;
+    }      
+    break;
+  case EX_OPT_COMPRESSION_SHUFFLE:  /* 0 (disabled); 1 (enabled) */
+    file->shuffle = option_value != 0 ? 1 : 0;
+    break;
+  case EX_OPT_INTEGER_SIZE_API:     /* See *_INT64_* values above */
+    ex_set_int64_status(exoid, option_value);
+    break;
+  case EX_OPT_INTEGER_SIZE_DB: /* (query only) */
+    break;
+  default:
+    {
+      char errmsg[MAX_ERR_LENGTH];
+      exerrval = EX_FATAL;
+      sprintf(errmsg,"Error: invalid option %d for ex_set_option().",option);
+      ex_err("ex_set_option",errmsg,exerrval);
+      return EX_FATAL;
+    }
+  }
+  return EX_NOERR;
 }
 
 int ex_comp_ws( int exoid )
@@ -301,19 +393,18 @@ int ex_comp_ws( int exoid )
  * the conversion facility for this file id (exoid).
  * \param exoid  integer which uniquely identifies the file of interest.
 */
-
-  char errmsg[MAX_ERR_LENGTH];
-  struct file_item* file;
+  struct file_item* file = ex_find_file_item(exoid);
 
   exerrval = 0; /* clear error code */
-  FIND_FILE( file, exoid );
 
   if (!file ) {
+    char errmsg[MAX_ERR_LENGTH];
     exerrval = EX_BADFILEID;
     sprintf(errmsg,"Error: unknown file id %d",exoid);
     ex_err("ex_comp_ws",errmsg,exerrval);
     return(EX_FATAL);
   }
-  return file->user_compute_wordsize;
+  /* Stored as 0 for 4-byte; 1 for 8-byte */
+  return (file->user_compute_wordsize+1)*4;
 }
 

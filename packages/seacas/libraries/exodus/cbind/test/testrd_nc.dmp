@@ -12,6 +12,8 @@ num_node_sets =   2
 num_side_sets =   5
 
 after ex_get_coord, error =   0
+
+after ex_get_coord (x), error =   0
 x coords = 
   0.0
   1.0
@@ -46,6 +48,8 @@ x coords =
   0.0
  10.0
  10.0
+
+after ex_get_coord (y), error =   0
 y coords = 
   0.0
   0.0
@@ -80,6 +84,8 @@ y coords =
   0.0
   0.0
  10.0
+
+after ex_get_coord (z), error =   0
 z coords = 
   0.0
   0.0

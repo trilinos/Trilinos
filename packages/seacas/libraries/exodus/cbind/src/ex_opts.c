@@ -37,7 +37,7 @@
 #include "exodusII_int.h"
 
 /*! \cond INTERNAL */
-int ex_max_name_length = 32; /* For default compatibility with older clients */
+int ex_default_max_name_length = 32; /* For default compatibility with older clients */
 
 #if defined(VERBOSE)
 int exoptval = EX_VERBOSE;   /* loud mode: set EX_VERBOSE */

@@ -197,7 +197,7 @@ int ex_put_n_var (int   exoid,
 		ex_err("ex_put_n_var",errmsg,exerrval);			\
 		goto error_ret;						\
 	      }								\
-	    ex_compress_variable(exoid, varid);                         \
+	    ex_compress_variable(exoid, varid, 2);			\
 									\
 	    /*    leave define mode  */					\
 									\
