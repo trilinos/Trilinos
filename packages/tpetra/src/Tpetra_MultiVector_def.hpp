@@ -57,7 +57,7 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(
-        const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, 
+        const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, 
         size_t NumVectors, 
         bool zeroOut  /* default is true */
   ) 
@@ -67,8 +67,8 @@ namespace Tpetra {
         "Tpetra::MultiVector::MultiVector(): NumVectors must be strictly positive.");
     const size_t myLen = getLocalLength();
     if (myLen > 0) {
-      Teuchos::RCP<Node> node = map->getNode();
-      Teuchos::ArrayRCP<Scalar> data = node->template allocBuffer<Scalar>(myLen*NumVectors);
+      RCP<Node> node = map->getNode();
+      ArrayRCP<Scalar> data = node->template allocBuffer<Scalar>(myLen*NumVectors);
       MVT::initializeValues(lclMV_,myLen,NumVectors,data,myLen);
       if (zeroOut) {
         MVT::Init(lclMV_, Teuchos::ScalarTraits<Scalar>::zero());
@@ -83,19 +83,19 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source) 
   : DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>(source), lclMV_(MVT::getNode(source.lclMV_)) {
     // copy data from the source MultiVector into this multivector
-    Teuchos::RCP<Node> node = MVT::getNode(source.lclMV_);
+    RCP<Node> node = MVT::getNode(source.lclMV_);
     const LocalOrdinal myLen = getLocalLength();
     const size_t numVecs = source.getNumVectors();
     if (myLen > 0) {
       // allocate data
-      Teuchos::ArrayRCP<Scalar> data = node->template allocBuffer<Scalar>(myLen*numVecs);
+      ArrayRCP<Scalar> data = node->template allocBuffer<Scalar>(myLen*numVecs);
       MVT::initializeValues(lclMV_,myLen,numVecs,data,myLen);
       // copy data
       {
-        Teuchos::ArrayRCP<Scalar> dstdata = data;
-        Teuchos::ArrayRCP<const Scalar> srcdata = MVT::getValues(source.lclMV_);
+        ArrayRCP<Scalar> dstdata = data;
+        ArrayRCP<const Scalar> srcdata = MVT::getValues(source.lclMV_);
         for (size_t j = 0; j < numVecs; ++j) {
-          Teuchos::ArrayRCP<const Scalar> srcj = source.getSubArrayRCP(srcdata,j);
+          ArrayRCP<const Scalar> srcj = source.getSubArrayRCP(srcdata,j);
           KOKKOS_NODE_TRACE("MultiVector::MultiVector(MV)")
           node->template copyBuffers<Scalar>(myLen,srcj,dstdata);
           dstdata += myLen;
@@ -107,80 +107,46 @@ namespace Tpetra {
     }
   }
 
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(
-                        const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, 
-                        const Teuchos::ArrayView<const Scalar> &A, size_t LDA, 
-                        size_t NumVectors)
+                        const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, 
+                        const ArrayRCP<Scalar> &view, size_t LDA, size_t NumVectors,
+                        EPrivateHostViewConstructor /* dummy */)
   : DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map), lclMV_(map->getNode()) {
-    const std::string tfecfFuncName("MultiVector(A,LDA)");
+    const std::string tfecfFuncName("MultiVector(view,LDA,NumVector)");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(NumVectors < 1, std::invalid_argument,
         ": NumVectors must be strictly positive.");
     const size_t myLen = getLocalLength();
-    using Teuchos::ArrayRCP;
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(LDA < myLen, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(LDA < myLen, std::invalid_argument,
         ": LDA must be large enough to accomodate the local entries.");
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(A.size()) < LDA*(NumVectors-1)+myLen, std::runtime_error,
-        ": A does not contain enough data to specify the entries in this.");
-#endif
-    if (myLen > 0) {
-      Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
-      Teuchos::ArrayRCP<Scalar> mydata = node->template allocBuffer<Scalar>(myLen*NumVectors);
-      MVT::initializeValues(lclMV_,myLen,NumVectors,mydata,myLen);
-      KOKKOS_NODE_TRACE("MultiVector::MultiVector(1D)")
-      Teuchos::ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly,myLen*NumVectors,mydata);
-      typename Teuchos::ArrayView<const Scalar>::iterator srcit = A.begin();
-      for (size_t j = 0; j < NumVectors; ++j) {
-        std::copy(srcit,srcit+myLen,myview);
-        srcit += LDA;
-        myview += myLen;
-      }
-      mydata = Teuchos::null;
-      myview = Teuchos::null;
-    }
-    else {
-      MVT::initializeValues(lclMV_,0,NumVectors,Teuchos::null,0);
-    }
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(view.size()) < LDA*(NumVectors-1)+myLen, std::invalid_argument,
+        ": view does not contain enough data to specify the entries in this.");
+    MVT::initializeValues(lclMV_,myLen,NumVectors,view,myLen);
   }
 
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, 
-                                                                   const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &ArrayOfPtrs, 
-                                                                   size_t NumVectors)
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(
+                        const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
+                        ArrayRCP<Scalar> data, size_t LDA, size_t NumVectors, 
+                        EPrivateComputeViewConstructor /* dummy */)
   : DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map), lclMV_(map->getNode()) {
-    const std::string tfecfFuncName("MultiVector(ArrayOfPtrs)");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(NumVectors < 1 || NumVectors != Teuchos::as<size_t>(ArrayOfPtrs.size()), std::runtime_error,
-        ": ArrayOfPtrs.size() must be strictly positive and as large as ArrayOfPtrs.");
+    const std::string tfecfFuncName("MultiVector(data,LDA,NumVector)");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(NumVectors < 1, std::invalid_argument,
+        ": NumVectors must be strictly positive.");
     const size_t myLen = getLocalLength();
-    if (myLen > 0) {
-      Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
-      Teuchos::ArrayRCP<Scalar> mydata = node->template allocBuffer<Scalar>(myLen*NumVectors);
-      MVT::initializeValues(lclMV_,myLen,NumVectors,mydata,myLen);
-      KOKKOS_NODE_TRACE("MultiVector::MultiVector(2D)")
-      Teuchos::ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly,myLen*NumVectors,mydata);
-      for (size_t j = 0; j < NumVectors; ++j) {
 #ifdef HAVE_TPETRA_DEBUG
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(ArrayOfPtrs[j].size()) != getLocalLength(), std::runtime_error,
-          ": ArrayOfPtrs[" << j << "].size() (== " << ArrayOfPtrs[j].size() << 
-          ") is not equal to getLocalLength() (== " << getLocalLength());
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(data.size()) < LDA*(NumVectors-1)+myLen, std::runtime_error,
+        ": data does not contain enough data to specify the entries in this.");
 #endif
-        typename Teuchos::ArrayView<const Scalar>::iterator src = ArrayOfPtrs[j].begin();
-        std::copy(src,src+myLen,myview);
-        myview += myLen;
-      }
-      myview = Teuchos::null;
-      mydata = Teuchos::null;
-    }
-    else {
-      MVT::initializeValues(lclMV_,0,NumVectors,Teuchos::null,0);
-    }
+    MVT::initializeValues(lclMV_,myLen,NumVectors,data,LDA);
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
-              Teuchos::ArrayRCP<Scalar> data, size_t LDA, Teuchos::ArrayView<const size_t> WhichVectors)
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
+              ArrayRCP<Scalar> data, size_t LDA, ArrayView<const size_t> WhichVectors, EPrivateComputeViewConstructor /* dummy */)
   : DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map), lclMV_(map->getNode()), whichVectors_(WhichVectors) {
     const std::string tfecfFuncName("MultiVector(data,LDA,WhichVectors)");
     const size_t myLen = getLocalLength();
@@ -208,18 +174,72 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
-                Teuchos::ArrayRCP<Scalar> data, size_t LDA, size_t NumVectors)
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(
+                        const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, 
+                        const ArrayView<const Scalar> &A, size_t LDA, 
+                        size_t NumVectors)
   : DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map), lclMV_(map->getNode()) {
-    const std::string tfecfFuncName("MultiVector(data,LDA,NumVector)");
+    const std::string tfecfFuncName("MultiVector(A,LDA)");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(NumVectors < 1, std::invalid_argument,
         ": NumVectors must be strictly positive.");
-    const LocalOrdinal myLen = getLocalLength();
+    const size_t myLen = getLocalLength();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(LDA < myLen, std::runtime_error,
+        ": LDA must be large enough to accomodate the local entries.");
 #ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(data.size()) < LDA*(NumVectors-1)+myLen, std::runtime_error,
-        ": data does not contain enough data to specify the entries in this.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(A.size()) < LDA*(NumVectors-1)+myLen, std::runtime_error,
+        ": A does not contain enough data to specify the entries in this.");
 #endif
-    MVT::initializeValues(lclMV_,myLen,NumVectors,data,LDA);
+    if (myLen > 0) {
+      RCP<Node> node = MVT::getNode(lclMV_);
+      ArrayRCP<Scalar> mydata = node->template allocBuffer<Scalar>(myLen*NumVectors);
+      MVT::initializeValues(lclMV_,myLen,NumVectors,mydata,myLen);
+      KOKKOS_NODE_TRACE("MultiVector::MultiVector(1D)")
+      ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly,myLen*NumVectors,mydata);
+      typename ArrayView<const Scalar>::iterator srcit = A.begin();
+      for (size_t j = 0; j < NumVectors; ++j) {
+        std::copy(srcit,srcit+myLen,myview);
+        srcit += LDA;
+        myview += myLen;
+      }
+      mydata = Teuchos::null;
+      myview = Teuchos::null;
+    }
+    else {
+      MVT::initializeValues(lclMV_,0,NumVectors,Teuchos::null,0);
+    }
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, 
+                                                                   const ArrayView<const ArrayView<const Scalar> > &ArrayOfPtrs, 
+                                                                   size_t NumVectors)
+  : DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map), lclMV_(map->getNode()) {
+    const std::string tfecfFuncName("MultiVector(ArrayOfPtrs)");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(NumVectors < 1 || NumVectors != Teuchos::as<size_t>(ArrayOfPtrs.size()), std::runtime_error,
+        ": ArrayOfPtrs.size() must be strictly positive and as large as ArrayOfPtrs.");
+    const size_t myLen = getLocalLength();
+    if (myLen > 0) {
+      RCP<Node> node = MVT::getNode(lclMV_);
+      ArrayRCP<Scalar> mydata = node->template allocBuffer<Scalar>(myLen*NumVectors);
+      MVT::initializeValues(lclMV_,myLen,NumVectors,mydata,myLen);
+      KOKKOS_NODE_TRACE("MultiVector::MultiVector(2D)")
+      ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly,myLen*NumVectors,mydata);
+      for (size_t j = 0; j < NumVectors; ++j) {
+#ifdef HAVE_TPETRA_DEBUG
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(ArrayOfPtrs[j].size()) != getLocalLength(), std::runtime_error,
+          ": ArrayOfPtrs[" << j << "].size() (== " << ArrayOfPtrs[j].size() << 
+          ") is not equal to getLocalLength() (== " << getLocalLength());
+#endif
+        typename ArrayView<const Scalar>::iterator src = ArrayOfPtrs[j].begin();
+        std::copy(src,src+myLen,myview);
+        myview += myLen;
+      }
+      myview = Teuchos::null;
+      mydata = Teuchos::null;
+    }
+    else {
+      MVT::initializeValues(lclMV_,0,NumVectors,Teuchos::null,0);
+    }
   }
 
 
@@ -262,7 +282,7 @@ namespace Tpetra {
   {
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
     // rcp_dynamic_cast gives us superior cast failure output to dynamic_cast.
-    Teuchos::RCP<const MV> A = Teuchos::rcp_dynamic_cast<const MV> (Teuchos::rcpFromRef (sourceObj), true);
+    RCP<const MV> A = Teuchos::rcp_dynamic_cast<const MV> (Teuchos::rcpFromRef (sourceObj), true);
 
     // This method is called in DistObject::doTransfer().  By that
     // point, we've already constructed an Import or Export object
@@ -277,16 +297,14 @@ namespace Tpetra {
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::copyAndPermute(
                           const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> & sourceObj,
                           size_t numSameIDs,
-                          const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
-                          const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs) {
-    using Teuchos::ArrayView;
-    using Teuchos::ArrayRCP;
+                          const ArrayView<const LocalOrdinal> &permuteToLIDs,
+                          const ArrayView<const LocalOrdinal> &permuteFromLIDs) {
     const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &sourceMV = dynamic_cast<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &>(sourceObj);
     typename ArrayView<const LocalOrdinal>::iterator pTo, pFrom;
     // any other error will be caught by Teuchos
     TEUCHOS_TEST_FOR_EXCEPTION(permuteToLIDs.size() != permuteFromLIDs.size(), std::runtime_error,
         "Tpetra::MultiVector::copyAndPermute(): permuteToLIDs and permuteFromLIDs must have the same size.");
-    Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
+    RCP<Node> node = MVT::getNode(lclMV_);
     const size_t numCols = getNumVectors();
 
     // Copy the vectors one at a time.  This works whether or not the
@@ -322,16 +340,13 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::packAndPrepare(
           const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> & sourceObj,
-          const Teuchos::ArrayView<const LocalOrdinal> &exportLIDs,
-          Teuchos::Array<Scalar> &exports,
-          const Teuchos::ArrayView<size_t> &numExportPacketsPerLID,
+          const ArrayView<const LocalOrdinal> &exportLIDs,
+          Array<Scalar> &exports,
+          const ArrayView<size_t> &numExportPacketsPerLID,
           size_t& constantNumPackets,
           Distributor & /* distor */ ) 
   {
     using Teuchos::as;
-    using Teuchos::Array;
-    using Teuchos::ArrayView;
-    using Teuchos::ArrayRCP;
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
 
     const MV& sourceMV = dynamic_cast<const MV&> (sourceObj);
@@ -384,16 +399,14 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void 
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-  unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
-		    const Teuchos::ArrayView<const Scalar> &imports,
-		    const Teuchos::ArrayView<size_t> &numPacketsPerLID,
-		    size_t constantNumPackets,
-		    Distributor & /* distor */,
-		    CombineMode CM) 
+  unpackAndCombine (const ArrayView<const LocalOrdinal> &importLIDs,
+                    const ArrayView<const Scalar> &imports,
+                    const ArrayView<size_t> &numPacketsPerLID,
+                    size_t constantNumPackets,
+                    Distributor & /* distor */,
+                    CombineMode CM) 
   {
     using Teuchos::as;
-    using Teuchos::ArrayView;
-    using Teuchos::ArrayRCP;
     typedef Teuchos::ScalarTraits<Scalar> SCT;
 
     const std::string tfecfFuncName("unpackAndCombine()");
@@ -503,9 +516,8 @@ namespace Tpetra {
   void 
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   dot (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, 
-       const Teuchos::ArrayView<Scalar> &dots) const 
+       const ArrayView<Scalar> &dots) const 
   {
-    using Teuchos::ArrayRCP;
     using Teuchos::arcp_const_cast;
 
     const std::string tfecfFuncName("dot()");
@@ -533,14 +545,14 @@ namespace Tpetra {
       ArrayRCP<Scalar> avptr = arcp_const_cast<Scalar>(MVT::getValues(A.lclMV_));
       for (size_t j=0; j < numVecs; ++j) {
         ArrayRCP<Scalar> vj  =   getSubArrayRCP( vptr,j);
-	ArrayRCP<Scalar> avj = A.getSubArrayRCP(avptr,j);
+        ArrayRCP<Scalar> avj = A.getSubArrayRCP(avptr,j);
         MVT::initializeValues(a,myLen, 1, avj, myLen);
         MVT::initializeValues(v,myLen, 1,  vj, myLen);
         dots[j] = MVT::Dot((const KMV&)v,(const KMV &)a);
       }
     }
     if (this->isDistributed()) {
-      Teuchos::Array<Scalar> ldots(dots);
+      Array<Scalar> ldots(dots);
       Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,Teuchos::as<int>(numVecs),ldots.getRawPtr(),dots.getRawPtr());
     }
   }
@@ -548,9 +560,8 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2(
-                  const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const {
+                  const ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const {
     using Teuchos::ScalarTraits;
-    using Teuchos::ArrayView;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     const size_t numVecs = this->getNumVectors();
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(norms.size()) != numVecs, std::runtime_error,
@@ -560,7 +571,7 @@ namespace Tpetra {
     }
     else {
       KMV v(MVT::getNode(lclMV_));
-      Teuchos::ArrayRCP<Scalar> vi;
+      ArrayRCP<Scalar> vi;
       for (size_t i=0; i < numVecs; ++i) {
         vi = Teuchos::arcp_const_cast<Scalar>( MVT::getValues(lclMV_,whichVectors_[i]) );
         MVT::initializeValues(v,MVT::getNumRows(lclMV_), 1, vi, MVT::getStride(lclMV_));
@@ -568,7 +579,7 @@ namespace Tpetra {
       }
     }
     if (this->isDistributed()) {
-      Teuchos::Array<Mag> lnorms(norms);
+      Array<Mag> lnorms(norms);
       Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,Teuchos::as<int>(numVecs),lnorms.getRawPtr(),norms.getRawPtr());
     }
     for (typename ArrayView<Mag>::iterator n = norms.begin(); n != norms.begin()+numVecs; ++n) {
@@ -580,11 +591,9 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted(
           const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights,
-          const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const {
+          const ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const {
     const std::string tfecfFuncName("normWeighted()");
     using Teuchos::ScalarTraits;
-    using Teuchos::ArrayView;
-    using Teuchos::ArrayRCP;
     using Teuchos::arcp_const_cast;
     typedef ScalarTraits<Scalar> SCT;
     typedef typename SCT::magnitudeType Mag;
@@ -631,7 +640,7 @@ namespace Tpetra {
       }
     }
     if (this->isDistributed()) {
-      Teuchos::Array<Mag> lnorms(norms);
+      Array<Mag> lnorms(norms);
       Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,Teuchos::as<int>(numVecs),lnorms.getRawPtr(),norms.getRawPtr());
     }
     for (typename ArrayView<Mag>::iterator n = norms.begin(); n != norms.begin()+numVecs; ++n) {
@@ -642,7 +651,7 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm1(
-                  const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const {
+                  const ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const {
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
     const size_t numVecs = this->getNumVectors();
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(norms.size()) != numVecs, std::runtime_error,
@@ -652,7 +661,7 @@ namespace Tpetra {
     }
     else {
       KMV v(MVT::getNode(lclMV_));
-      Teuchos::ArrayRCP<Scalar> vj;
+      ArrayRCP<Scalar> vj;
       for (size_t j=0; j < numVecs; ++j) {
         vj = Teuchos::arcp_const_cast<Scalar>( MVT::getValues(lclMV_,whichVectors_[j]) );
         MVT::initializeValues(v,MVT::getNumRows(lclMV_), 1, vj, MVT::getStride(lclMV_));
@@ -660,7 +669,7 @@ namespace Tpetra {
       }
     }
     if (this->isDistributed()) {
-      Teuchos::Array<Mag> lnorms(norms);
+      Array<Mag> lnorms(norms);
       Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,Teuchos::as<int>(numVecs),lnorms.getRawPtr(),norms.getRawPtr());
     }
   }
@@ -668,7 +677,7 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normInf(
-        const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const {
+        const ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const {
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
     const size_t numVecs = this->getNumVectors();
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(norms.size()) != numVecs, std::runtime_error,
@@ -678,7 +687,7 @@ namespace Tpetra {
     }
     else {
       KMV v(MVT::getNode(lclMV_));
-      Teuchos::ArrayRCP<Scalar> vj;
+      ArrayRCP<Scalar> vj;
       for (size_t j=0; j < numVecs; ++j) {
         vj = Teuchos::arcp_const_cast<Scalar>( MVT::getValues(lclMV_,whichVectors_[j]) );
         MVT::initializeValues(v,MVT::getNumRows(lclMV_), 1, vj, MVT::getStride(lclMV_));
@@ -686,18 +695,21 @@ namespace Tpetra {
       }
     }
     if (this->isDistributed()) {
-      Teuchos::Array<Mag> lnorms(norms);
+      Array<Mag> lnorms(norms);
       Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_MAX,Teuchos::as<int>(numVecs),lnorms.getRawPtr(),norms.getRawPtr());
     }
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::meanValue(const Teuchos::ArrayView<Scalar> &means) const
+  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::meanValue(const ArrayView<Scalar> &means) const
   {
-    typedef Teuchos::ScalarTraits<Scalar> SCT;
-    using Teuchos::ArrayRCP;
+    using Teuchos::as;
     using Teuchos::arcp_const_cast;
+    using Teuchos::reduceAll;
+    using Teuchos::REDUCE_SUM;
+    typedef Teuchos::ScalarTraits<Scalar> SCT;
+
     const size_t numVecs = getNumVectors();
     const size_t myLen   = getLocalLength();
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(means.size()) != numVecs, std::runtime_error,
@@ -717,13 +729,20 @@ namespace Tpetra {
       }
     }
     if (this->isDistributed()) {
-      Teuchos::Array<Scalar> lmeans(means);
+      Array<Scalar> lmeans(means);
       // only combine if we are a distributed MV
-      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,Teuchos::as<int>(numVecs),lmeans.getRawPtr(),means.getRawPtr());
+      reduceAll (*this->getMap ()->getComm (), REDUCE_SUM, as<int> (numVecs), 
+                 lmeans.getRawPtr (), means.getRawPtr ());
     }
-    const Scalar OneOverN = Teuchos::ScalarTraits<Scalar>::one() / getGlobalLength();
-    for (typename Teuchos::ArrayView<Scalar>::iterator i = means.begin(); i != means.begin()+numVecs; ++i) {
-      (*i) = (*i)*OneOverN;
+    // mfh 12 Apr 2012: Don't take out the cast from the ordinal type
+    // to the magnitude type, since operator/ (std::complex<T>, int)
+    // isn't necessarily defined.
+    const Scalar OneOverN = 
+      SCT::one() / as<typename SCT::magnitudeType> (getGlobalLength ());
+    for (typename ArrayView<Scalar>::iterator i = means.begin(); 
+         i != means.begin() + numVecs; 
+         ++i) {
+      (*i) = (*i) * OneOverN;
     }
   }
 
@@ -736,7 +755,7 @@ namespace Tpetra {
     else {
       const size_t numVecs = this->getNumVectors();
       KMV v(MVT::getNode(lclMV_));
-      Teuchos::ArrayRCP<Scalar> vj;
+      ArrayRCP<Scalar> vj;
       for (size_t j=0; j < numVecs; ++j) {
         vj = MVT::getValuesNonConst(lclMV_,whichVectors_[j]);
         MVT::initializeValues(v,MVT::getNumRows(lclMV_), 1, vj, MVT::getStride(lclMV_));
@@ -754,7 +773,7 @@ namespace Tpetra {
     }
     else {
       KMV v(MVT::getNode(lclMV_));
-      Teuchos::ArrayRCP<Scalar> vj;
+      ArrayRCP<Scalar> vj;
       for (size_t j=0; j < numVecs; ++j) {
         vj = MVT::getValuesNonConst(lclMV_,whichVectors_[j]);
         MVT::initializeValues(v,MVT::getNumRows(lclMV_), 1, vj, MVT::getStride(lclMV_));
@@ -767,7 +786,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void 
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-  replaceMap (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map) 
+  replaceMap (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map) 
   {
 #ifdef HAVE_TEUCHOS_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(!this->getMap()->isCompatible(*map), 
@@ -792,7 +811,7 @@ namespace Tpetra {
     }
     else {
       KMV v(MVT::getNode(lclMV_));
-      Teuchos::ArrayRCP<Scalar> vj;
+      ArrayRCP<Scalar> vj;
       for (size_t j=0; j < numVecs; ++j) {
         vj = Teuchos::arcp_const_cast<Scalar>( MVT::getValues(lclMV_,whichVectors_[j]) );
         MVT::initializeValues(v,MVT::getNumRows(lclMV_), 1, vj, MVT::getStride(lclMV_));
@@ -803,9 +822,8 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::scale(Teuchos::ArrayView<const Scalar> alphas)
+  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::scale(ArrayView<const Scalar> alphas)
   {
-    using Teuchos::ArrayRCP;
     const size_t numVecs = this->getNumVectors();
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(alphas.size()) != numVecs, std::runtime_error,
         "Tpetra::MultiVector::scale(alphas): alphas.size() must be as large as the number of vectors in *this.");
@@ -829,7 +847,6 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::scale(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) {
     const std::string tfecfFuncName("scale(alpha,A)");
-    using Teuchos::ArrayRCP;
     using Teuchos::arcp_const_cast;
     const size_t numVecs = getNumVectors(),
                  myLen   = getLocalLength();
@@ -866,7 +883,6 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::reciprocal(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) {
     const std::string tfecfFuncName("reciprocal()");
-    using Teuchos::ArrayRCP;
     using Teuchos::arcp_const_cast;
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*A.getMap()), std::runtime_error,
@@ -909,7 +925,6 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::abs(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) {
     const std::string tfecfFuncName("abs()");
-    using Teuchos::ArrayRCP;
     using Teuchos::arcp_const_cast;
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*A.getMap()), std::runtime_error,
@@ -950,7 +965,6 @@ namespace Tpetra {
     // this = beta*this + alpha*A
     // must support case where &this == &A
     // can't short circuit on alpha==0.0 or beta==0.0, because 0.0*NaN != 0.0
-    using Teuchos::ArrayRCP;
     using Teuchos::arcp_const_cast;
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*A.getMap()), std::runtime_error,
@@ -989,7 +1003,6 @@ namespace Tpetra {
                       const Scalar &beta,  const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, 
                       const Scalar &gamma) {
     const std::string tfecfFuncName("update()");
-    using Teuchos::ArrayRCP;
     using Teuchos::arcp_const_cast;
     // this = alpha*A + beta*B + gamma*this
     // must support case where &this == &A or &this == &B
@@ -1031,18 +1044,18 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::ArrayRCP<const Scalar>
+  ArrayRCP<const Scalar>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getData(size_t j) const {
-    Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
+    RCP<Node> node = MVT::getNode(lclMV_);
     KOKKOS_NODE_TRACE("MultiVector::getData()")
     return node->template viewBuffer<Scalar>( getLocalLength(), getSubArrayRCP(MVT::getValues(lclMV_),j) );
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::ArrayRCP<Scalar>
+  ArrayRCP<Scalar>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getDataNonConst(size_t j) {
-    Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
+    RCP<Node> node = MVT::getNode(lclMV_);
     KOKKOS_NODE_TRACE("MultiVector::getDataNonConst()")
     return node->template viewBufferNonConst<Scalar>(Kokkos::ReadWrite, getLocalLength(), getSubArrayRCP(MVT::getValuesNonConst(lclMV_),j) );
   }
@@ -1065,7 +1078,7 @@ namespace Tpetra {
 #endif
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(source.getNumVectors() != getNumVectors(), std::invalid_argument,
           ": MultiVectors must have the same number of vectors.");
-      Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
+      RCP<Node> node = MVT::getNode(lclMV_);
       const size_t numVecs = getNumVectors();
       if (isConstantStride() && source.isConstantStride() && getLocalLength()==getStride() && source.getLocalLength()==source.getStride()) {
         // Both multivectors' data are stored contiguously, so we can
@@ -1074,7 +1087,7 @@ namespace Tpetra {
         node->template copyBuffers<Scalar>(getLocalLength()*numVecs, MVT::getValues(source.lclMV_), MVT::getValuesNonConst(lclMV_) );
       }
       else {
-	// We have to copy the columns one at a time.
+        // We have to copy the columns one at a time.
         for (size_t j=0; j < numVecs; ++j) {
           KOKKOS_NODE_TRACE("MultiVector::operator=()")
           node->template copyBuffers<Scalar>(getLocalLength(), source.getSubArrayRCP(MVT::getValues(source.lclMV_),j),  
@@ -1087,14 +1100,14 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::subCopy(const Teuchos::ArrayView<const size_t> &cols) const {
+  RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::subCopy(const ArrayView<const size_t> &cols) const {
     TEUCHOS_TEST_FOR_EXCEPTION(cols.size() < 1, std::runtime_error,
         "Tpetra::MultiVector::subCopy(cols): cols must contain at least one column.");
     size_t numCopyVecs = cols.size();
     const bool zeroData = false;
-    Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
-    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > mv; 
+    RCP<Node> node = MVT::getNode(lclMV_);
+    RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > mv; 
     // mv is allocated with constant stride
     mv = Teuchos::rcp( new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(),numCopyVecs,zeroData) );
     // copy data from *this into mv
@@ -1108,14 +1121,14 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
+  RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::subCopy(const Teuchos::Range1D &colRng) const {
     TEUCHOS_TEST_FOR_EXCEPTION(colRng.size() == 0, std::runtime_error,
         "Tpetra::MultiVector::subCopy(Range1D): range must include at least one vector.");
     size_t numCopyVecs = colRng.size();
     const bool zeroData = false;
-    Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
-    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > mv; 
+    RCP<Node> node = MVT::getNode(lclMV_);
+    RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > mv; 
     // mv is allocated with constant stride
     mv = Teuchos::rcp( new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(),numCopyVecs,zeroData) );
     // copy data from *this into mv
@@ -1129,8 +1142,8 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::offsetView(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap, size_t offset) const 
+  RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::offsetView(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap, size_t offset) const 
   {
     typedef const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> CMV;
     TEUCHOS_TEST_FOR_EXCEPTION( subMap->getNodeNumElements() + offset > this->getLocalLength(), std::runtime_error,
@@ -1138,32 +1151,31 @@ namespace Tpetra {
     const size_t numVecs = this->getNumVectors(),
                 myStride = MVT::getStride(lclMV_),
                   newLen = subMap->getNodeNumElements();
-    using Teuchos::ArrayRCP;
     // this is const, so the lclMV_ is const, so that we can only get const buffers
     // we will cast away the const; this is okay, because 
     //   a) the constructor doesn't modify the data, and 
     //   b) we are encapsulating in a const MV before returning
     ArrayRCP<const Scalar> cbuf = MVT::getValues(lclMV_);
     ArrayRCP<Scalar>      ncbuf = Teuchos::arcp_const_cast<Scalar>(cbuf);
-    Teuchos::RCP<CMV> constViewMV;
+    RCP<CMV> constViewMV;
     if (isConstantStride()) {
       // view goes from first entry of first vector to last entry of last vector
       ArrayRCP<Scalar> subdata = ncbuf.persistingView( offset, myStride * (numVecs-1) + newLen );
-      constViewMV = Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(subMap,subdata,myStride,numVecs) );
+      constViewMV = Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(subMap,subdata,myStride,numVecs,COMPUTE_VIEW_CONSTRUCTOR) );
     }
     else {
       // use same which index, but with an offset start pointer
       size_t maxSubVecIndex = *std::max_element(whichVectors_.begin(), whichVectors_.end());
       ArrayRCP<Scalar> subdata = ncbuf.persistingView( offset, myStride * maxSubVecIndex + newLen );
-      constViewMV = Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(subMap,subdata,myStride,whichVectors_) );
+      constViewMV = Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(subMap,subdata,myStride,whichVectors_,COMPUTE_VIEW_CONSTRUCTOR) );
     }
     return constViewMV;      
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::offsetViewNonConst(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap, size_t offset)
+  RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::offsetViewNonConst(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap, size_t offset)
   {
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
     TEUCHOS_TEST_FOR_EXCEPTION( subMap->getNodeNumElements() + offset > this->getLocalLength(), std::runtime_error,
@@ -1171,32 +1183,30 @@ namespace Tpetra {
     const size_t numVecs = this->getNumVectors(),
                 myStride = MVT::getStride(lclMV_),
                   newLen = subMap->getNodeNumElements();
-    using Teuchos::ArrayRCP;
     // this is const, so the lclMV_ is const, so that we can only get const buffers
     // we will cast away the const; this is okay, because 
     //   a) the constructor doesn't modify the data, and 
     //   b) we are encapsulating in a const MV before returning
     ArrayRCP<Scalar> buf = MVT::getValuesNonConst(lclMV_);
-    Teuchos::RCP<MV> subViewMV;
+    RCP<MV> subViewMV;
     if (isConstantStride()) {
       // view goes from first entry of first vector to last entry of last vector
       ArrayRCP<Scalar> subdata = buf.persistingView( offset, myStride * (numVecs-1) + newLen );
-      subViewMV = Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(subMap,subdata,myStride,numVecs) );
+      subViewMV = Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(subMap,subdata,myStride,numVecs,COMPUTE_VIEW_CONSTRUCTOR) );
     }
     else {
       // use same which index, but with an offset start pointer
       size_t maxSubVecIndex = *std::max_element(whichVectors_.begin(), whichVectors_.end());
       ArrayRCP<Scalar> subdata = buf.persistingView( offset, myStride * maxSubVecIndex + newLen );
-      subViewMV = Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(subMap,subdata,myStride,whichVectors_) );
+      subViewMV = Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(subMap,subdata,myStride,whichVectors_,COMPUTE_VIEW_CONSTRUCTOR) );
     }
     return subViewMV;      
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::subView(const Teuchos::ArrayView<const size_t> &cols) const {
-    using Teuchos::ArrayRCP;
+  RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::subView(const ArrayView<const size_t> &cols) const {
     typedef const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> CMV;
     TEUCHOS_TEST_FOR_EXCEPTION(cols.size() == 0, std::runtime_error,
         "Tpetra::MultiVector::subView(ArrayView): range must include at least one vector.");
@@ -1212,7 +1222,7 @@ namespace Tpetra {
     // adjust the indices appropriately; shift so that smallest index is 0
     ArrayRCP<const Scalar> cbuf = MVT::getValues(lclMV_);
     ArrayRCP<Scalar>      ncbuf = Teuchos::arcp_const_cast<Scalar>(cbuf);
-    Teuchos::Array<size_t> newCols(numViewCols);
+    Array<size_t> newCols(numViewCols);
     size_t minInd = Teuchos::OrdinalTraits<size_t>::max(),
            maxInd = Teuchos::OrdinalTraits<size_t>::zero();
     if (isConstantStride()) {
@@ -1233,21 +1243,20 @@ namespace Tpetra {
     for (size_t j=0; j < numViewCols; ++j) {
       newCols[j] -= minInd;
     }
-    Teuchos::RCP<CMV> constViewMV;
+    RCP<CMV> constViewMV;
     constViewMV = Teuchos::rcp<CMV>(
-                    new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(), minbuf, myStride, newCols())
+                    new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(), minbuf, myStride, newCols(), COMPUTE_VIEW_CONSTRUCTOR)
                   );
     return constViewMV;      
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
+  RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::subView(const Teuchos::Range1D &colRng) const {
     TEUCHOS_TEST_FOR_EXCEPTION(colRng.size() == 0, std::runtime_error,
         "Tpetra::MultiVector::subView(Range1D): range must include at least one vector.");
     size_t numViewVecs = colRng.size();
-    using Teuchos::ArrayRCP;
     // this is const, so the lclMV_ is const, so that we can only get const buffers
     // we will cast away the const; this is okay, because 
     //   a) the constructor doesn't modify the data, and 
@@ -1260,43 +1269,42 @@ namespace Tpetra {
       ArrayRCP<Scalar> subdata = ncbuf.persistingView( MVT::getStride(lclMV_) * colRng.lbound(),
                                                        MVT::getStride(lclMV_) * (numViewVecs-1) + getLocalLength() );
       return Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(),
-                                                                                  subdata,MVT::getStride(lclMV_),numViewVecs) );
+                                                                                  subdata,MVT::getStride(lclMV_),numViewVecs,COMPUTE_VIEW_CONSTRUCTOR) );
     }
     // otherwise, use a subset of this whichVectors_ to construct new multivector
-    Teuchos::Array<size_t> whchvecs( whichVectors_.begin()+colRng.lbound(), whichVectors_.begin()+colRng.ubound()+1 );
+    Array<size_t> whchvecs( whichVectors_.begin()+colRng.lbound(), whichVectors_.begin()+colRng.ubound()+1 );
     return Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(),  
-                                                                                ncbuf,MVT::getStride(lclMV_),whchvecs) );
+                                                                                ncbuf,MVT::getStride(lclMV_),whchvecs,COMPUTE_VIEW_CONSTRUCTOR) );
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::subViewNonConst(const Teuchos::ArrayView<const size_t> &cols) {
+  RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::subViewNonConst(const ArrayView<const size_t> &cols) {
     TEUCHOS_TEST_FOR_EXCEPTION(cols.size() == 0, std::runtime_error,
         "Tpetra::MultiVector::subViewNonConst(ArrayView): range must include at least one vector.");
     if (isConstantStride()) {
       return Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(),
                                                                                   MVT::getValuesNonConst(lclMV_),MVT::getStride(lclMV_),
-                                                                                  cols) );
+                                                                                  cols, COMPUTE_VIEW_CONSTRUCTOR) );
     }
     // else, lookup current whichVectors_ using cols
-    Teuchos::Array<size_t> newcols(cols.size());
+    Array<size_t> newcols(cols.size());
     for (size_t j=0; j < Teuchos::as<size_t>(cols.size()); ++j) {
       newcols[j] = whichVectors_[cols[j]];
     }
     return Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(),
                                                                                 MVT::getValuesNonConst(lclMV_),MVT::getStride(lclMV_),
-                                                                                newcols()) );
+                                                                                newcols(), COMPUTE_VIEW_CONSTRUCTOR) );
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
+  RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::subViewNonConst(const Teuchos::Range1D &colRng) {
     TEUCHOS_TEST_FOR_EXCEPTION(colRng.size() == 0, std::runtime_error,
         "Tpetra::MultiVector::subViewNonConst(Range1D): range must include at least one vector.");
     size_t numViewVecs = colRng.size();
-    using Teuchos::ArrayRCP;
     // resulting MultiVector is constant stride only if *this is 
     if (isConstantStride()) {
       // view goes from first entry of first vector to last entry of last vector
@@ -1305,19 +1313,19 @@ namespace Tpetra {
       ArrayRCP<Scalar> subdata = data.persistingView( stride * colRng.lbound(),
                                                       stride * (numViewVecs-1) + getLocalLength() );
       return Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(),
-                                                                                  subdata,stride,numViewVecs) );
+                                                                                  subdata,stride,numViewVecs,COMPUTE_VIEW_CONSTRUCTOR) );
     }
     // otherwise, use a subset of this whichVectors_ to construct new multivector
-    Teuchos::Array<size_t> whchvecs( whichVectors_.begin()+colRng.lbound(), whichVectors_.begin()+colRng.ubound()+1 );
+    Array<size_t> whchvecs( whichVectors_.begin()+colRng.lbound(), whichVectors_.begin()+colRng.ubound()+1 );
     const size_t stride = MVT::getStride(lclMV_);
     ArrayRCP<Scalar> data = MVT::getValuesNonConst(lclMV_);
     return Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(),  
-                                                                                data,stride,whchvecs) );
+                                                                                data,stride,whchvecs,COMPUTE_VIEW_CONSTRUCTOR) );
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
+  RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getVector(size_t j) const {
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( vectorIndexOutOfRange(j), std::runtime_error,
@@ -1325,42 +1333,41 @@ namespace Tpetra {
 #endif
     // this is const, so lclMV_ is const, so we get const buff
     // it is safe to cast away the const because we will wrap it in a const Vector below
-    Teuchos::ArrayRCP<Scalar> ncbuff;
+    ArrayRCP<Scalar> ncbuff;
     if (getLocalLength() > 0) {
-      Teuchos::ArrayRCP<const Scalar> cbuff = getSubArrayRCP(MVT::getValues(lclMV_),j);
+      ArrayRCP<const Scalar> cbuff = getSubArrayRCP(MVT::getValues(lclMV_),j);
       ncbuff = Teuchos::arcp_const_cast<Scalar>(cbuff);
     }
     return Teuchos::rcp<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(
-              new Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(),ncbuff)
+              new Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(),ncbuff,COMPUTE_VIEW_CONSTRUCTOR)
            );
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
+  RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getVectorNonConst(size_t j) {
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( vectorIndexOutOfRange(j), std::runtime_error,
         "Tpetra::MultiVector::getVectorNonConst(j): index j (== " << j << ") exceeds valid column range for this multivector.");
 #endif
-    Teuchos::ArrayRCP<Scalar> ncbuff;
+    ArrayRCP<Scalar> ncbuff;
     if (getLocalLength() > 0) {
       ncbuff = getSubArrayRCP(MVT::getValuesNonConst(lclMV_),j);
     }
-    return Teuchos::rcp(new Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(),ncbuff));
+    return Teuchos::rcp(new Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(),ncbuff,COMPUTE_VIEW_CONSTRUCTOR));
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dCopy(Teuchos::ArrayView<Scalar> A, size_t LDA) const
+  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dCopy(ArrayView<Scalar> A, size_t LDA) const
   {
     const std::string tfecfFuncName("get1dCopy(A,LDA)");
-    using Teuchos::ArrayRCP;
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(LDA < getLocalLength(), std::runtime_error,
       ": specified stride is not large enough for local vector length.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(A.size()) < LDA*(getNumVectors()-1)+getLocalLength(), std::runtime_error,
       ": specified stride/storage is not large enough for the number of vectors.");
-    Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
+    RCP<Node> node = MVT::getNode(lclMV_);
     const size_t myStride = MVT::getStride(lclMV_),
                   numCols = getNumVectors(),
                   myLen   = getLocalLength();
@@ -1368,7 +1375,7 @@ namespace Tpetra {
       ArrayRCP<const Scalar> mydata = MVT::getValues(lclMV_);
       KOKKOS_NODE_TRACE("MultiVector::getVectorNonConst()")
       ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(myStride*(numCols-1)+myLen,mydata);
-      typename Teuchos::ArrayView<Scalar>::iterator Aptr = A.begin();
+      typename ArrayView<Scalar>::iterator Aptr = A.begin();
       for (size_t j=0; j<numCols; j++) {
         ArrayRCP<const Scalar> myviewj = getSubArrayRCP(myview,j);
         std::copy(myviewj,myviewj+myLen,Aptr);
@@ -1381,24 +1388,24 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get2dCopy(Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > ArrayOfPtrs) const
+  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get2dCopy(ArrayView<const ArrayView<Scalar> > ArrayOfPtrs) const
   {
     const std::string tfecfFuncName("get2dCopy(ArrayOfPtrs)");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(ArrayOfPtrs.size()) != getNumVectors(), std::runtime_error,
         ": Array of pointers must contain as many pointers as the MultiVector has rows.");
-    Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
+    RCP<Node> node = MVT::getNode(lclMV_);
     const size_t numCols = getNumVectors(),
                    myLen = getLocalLength();
     if (myLen > 0) {
-      Teuchos::ArrayRCP<const Scalar> mybuff = MVT::getValues(lclMV_);
+      ArrayRCP<const Scalar> mybuff = MVT::getValues(lclMV_);
       KOKKOS_NODE_TRACE("MultiVector::get2dCopy()")
-      Teuchos::ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(mybuff.size(), mybuff);
+      ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(mybuff.size(), mybuff);
       for (size_t j=0; j<numCols; ++j) {
 #ifdef HAVE_TPETRA_DEBUG
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<size_t>(ArrayOfPtrs[j].size()) != getLocalLength(), std::runtime_error,
             ": The ArrayView provided in ArrayOfPtrs[" << j << "] was not large enough to contain the local entries.");
 #endif
-        Teuchos::ArrayRCP<const Scalar> myviewj = getSubArrayRCP(myview,j);
+        ArrayRCP<const Scalar> myviewj = getSubArrayRCP(myview,j);
         std::copy(myviewj,myviewj+myLen,ArrayOfPtrs[j].begin());
       }
       myview = Teuchos::null;
@@ -1408,40 +1415,40 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::ArrayRCP<const Scalar> MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dView() const
+  ArrayRCP<const Scalar> MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dView() const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(!isConstantStride(), std::runtime_error,
       "Tpetra::MultiVector::get1dView() requires that this MultiVector have constant stride.");
-    Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
+    RCP<Node> node = MVT::getNode(lclMV_);
       KOKKOS_NODE_TRACE("MultiVector::get1dView()")
     return node->template viewBuffer<Scalar>( getStride()*(getNumVectors()-1)+getLocalLength(), MVT::getValues(lclMV_) );
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::ArrayRCP<Scalar> MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dViewNonConst()
+  ArrayRCP<Scalar> MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dViewNonConst()
   {
     TEUCHOS_TEST_FOR_EXCEPTION(!isConstantStride(), std::runtime_error,
       "Tpetra::MultiVector::get1dViewNonConst(): requires that this MultiVector have constant stride.");
-    Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
+    RCP<Node> node = MVT::getNode(lclMV_);
       KOKKOS_NODE_TRACE("MultiVector::get1dViewNonConst()")
     return node->template viewBufferNonConst<Scalar>( Kokkos::ReadWrite, getStride()*(getNumVectors()-1)+getLocalLength(), MVT::getValuesNonConst(lclMV_) );
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >
+  ArrayRCP<ArrayRCP<Scalar> >
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get2dViewNonConst()
   {
-    Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
-    Teuchos::ArrayRCP< Teuchos::ArrayRCP<Scalar> > views = Teuchos::arcp<Teuchos::ArrayRCP<Scalar> >(getNumVectors());
+    RCP<Node> node = MVT::getNode(lclMV_);
+    ArrayRCP< ArrayRCP<Scalar> > views = Teuchos::arcp<ArrayRCP<Scalar> >(getNumVectors());
     if (isConstantStride()) {
       const size_t myStride = MVT::getStride(lclMV_),
                     numCols = getNumVectors(),
                     myLen   = getLocalLength();
       if (myLen > 0) {
         KOKKOS_NODE_TRACE("MultiVector::get2dViewNonConst()")
-        Teuchos::ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(Kokkos::ReadWrite,myStride*(numCols-1)+myLen,MVT::getValuesNonConst(lclMV_));
+        ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(Kokkos::ReadWrite,myStride*(numCols-1)+myLen,MVT::getValuesNonConst(lclMV_));
         for (size_t j=0; j<numCols; ++j) {
           views[j] = myview.persistingView(0,myLen);
           myview += myStride;
@@ -1455,7 +1462,7 @@ namespace Tpetra {
                      myLen  = MVT::getNumRows(lclMV_);
       if (myLen > 0) {
         KOKKOS_NODE_TRACE("MultiVector::get2dViewNonConst()")
-        Teuchos::ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(Kokkos::ReadWrite,myStride*(numCols-1)+myLen,MVT::getValuesNonConst(lclMV_));
+        ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(Kokkos::ReadWrite,myStride*(numCols-1)+myLen,MVT::getValuesNonConst(lclMV_));
         for (size_t j=0; j<myCols; ++j) {
           views[j] = myview.persistingView(whichVectors_[j]*myStride,myLen);
         }
@@ -1466,18 +1473,18 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > 
+  ArrayRCP<ArrayRCP<const Scalar> > 
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get2dView() const
   {
-    Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
-    Teuchos::ArrayRCP< Teuchos::ArrayRCP<const Scalar> > views = Teuchos::arcp<Teuchos::ArrayRCP<const Scalar> >(getNumVectors());
+    RCP<Node> node = MVT::getNode(lclMV_);
+    ArrayRCP< ArrayRCP<const Scalar> > views = Teuchos::arcp<ArrayRCP<const Scalar> >(getNumVectors());
     if (isConstantStride()) {
       const size_t myStride = MVT::getStride(lclMV_),
                     numCols = getNumVectors(),
                     myLen   = getLocalLength();
       if (myLen > 0) {
         KOKKOS_NODE_TRACE("MultiVector::get2dView()")
-        Teuchos::ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(myStride*(numCols-1)+myLen,MVT::getValues(lclMV_));
+        ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(myStride*(numCols-1)+myLen,MVT::getValues(lclMV_));
         for (size_t j=0; j<numCols; ++j) {
           views[j] = myview.persistingView(0,myLen);
           myview += myStride;
@@ -1491,7 +1498,7 @@ namespace Tpetra {
                      myLen  = MVT::getNumRows(lclMV_);
       if (myLen > 0) {
         KOKKOS_NODE_TRACE("MultiVector::get2dView()")
-        Teuchos::ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(myStride*(numCols-1)+myLen,MVT::getValues(lclMV_));
+        ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(myStride*(numCols-1)+myLen,MVT::getValues(lclMV_));
         for (size_t j=0; j<myCols; ++j) {
           views[j] = myview.persistingView(whichVectors_[j]*myStride,myLen);
         }
@@ -1512,9 +1519,6 @@ namespace Tpetra {
     using Teuchos::null;
     using Teuchos::ScalarTraits;  // traits
     using Teuchos::as;
-    using Teuchos::RCP;           // data structures
-    using Teuchos::Array;
-    using Teuchos::ArrayView;
     using Teuchos::rcp;           // initializers for data structures
 
     // This routine performs a variety of matrix-matrix multiply operations, interpreting
@@ -1610,7 +1614,7 @@ namespace Tpetra {
     Atmp = null;
     Btmp = null;
 
-    Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
+    RCP<Node> node = MVT::getNode(lclMV_);
     // If *this was not strided, copy the data from the strided version and then delete it
     if (isConstantStride() == false) {
       // *this is not strided, we must put data from Ctmp into *this
@@ -1632,7 +1636,6 @@ namespace Tpetra {
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::elementWiseMultiply(Scalar scalarAB, const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, Scalar scalarThis)
   {
     const std::string tfecfFuncName("elementWiseMultiply()");
-    using Teuchos::ArrayRCP;
     using Teuchos::arcp_const_cast;
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( !this->getMap()->isCompatible(*A.getMap()) || !this->getMap()->isCompatible(*B.getMap()), std::runtime_error,
@@ -1660,14 +1663,12 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::reduce() {
-    using Teuchos::ArrayRCP;
-    using Teuchos::ArrayView;
     // this should be called only for "local" MultiVectors (!isDistributed())
     TEUCHOS_TEST_FOR_EXCEPTION(this->isDistributed() == true, std::runtime_error,
         "Tpetra::MultiVector::reduce() should only be called for non-distributed MultiVectors.");
-    Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getMap()->getComm();
+    RCP<const Teuchos::Comm<int> > comm = this->getMap()->getComm();
     if (comm->getSize() == 1) return;
-    Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
+    RCP<Node> node = MVT::getNode(lclMV_);
     // sum the data across all multivectors
     // need to have separate packed buffers for send and receive
     // if we're packed, we'll just set the receive buffer as our data, the send as a copy
@@ -1676,7 +1677,7 @@ namespace Tpetra {
     const size_t myStride = MVT::getStride(lclMV_),
                  numCols  = MVT::getNumCols(lclMV_),
                  myLen    = MVT::getNumRows(lclMV_);
-    Teuchos::Array<Scalar> sourceBuffer(numCols*myLen), tmparr(0);
+    Array<Scalar> sourceBuffer(numCols*myLen), tmparr(0);
     bool packed = isConstantStride() && (myStride == myLen);
     KOKKOS_NODE_TRACE("MultiVector::reduce()")
     ArrayRCP<Scalar> bufView = node->template viewBufferNonConst<Scalar>(
@@ -1777,10 +1778,10 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   template <class T>
-  Teuchos::ArrayRCP<T> MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getSubArrayRCP(Teuchos::ArrayRCP<T> arr, size_t j) const {
+  ArrayRCP<T> MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getSubArrayRCP(ArrayRCP<T> arr, size_t j) const {
     const size_t stride = MVT::getStride(lclMV_),
                   myLen = getLocalLength();
-    Teuchos::ArrayRCP<T> ret;
+    ArrayRCP<T> ret;
     if (isConstantStride()) {
       ret = arr.persistingView(j*stride,myLen);
     }
@@ -1818,8 +1819,6 @@ namespace Tpetra {
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
     using std::endl;
     using std::setw;
-    using Teuchos::ArrayRCP;
-    using Teuchos::RCP;
     using Teuchos::VERB_DEFAULT;
     using Teuchos::VERB_NONE;
     using Teuchos::VERB_LOW;
@@ -1840,39 +1839,39 @@ namespace Tpetra {
       Teuchos::OSTab tab (out);
 
       if (myImageID == 0) { // >= VERB_LOW prints description()
-	out << this->description() << endl; 
+        out << this->description() << endl; 
       }
       for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
         if (myImageID == imageCtr) {
           if (vl != VERB_LOW) {
-	    // At verbosity > VERB_LOW, each process prints something.
+            // At verbosity > VERB_LOW, each process prints something.
             out << "Process " << myImageID << ":" << endl;
 
-	    Teuchos::OSTab procTab (out);
+            Teuchos::OSTab procTab (out);
             // >= VERB_MEDIUM: print the local vector length.
-	    out << "local length=" << getLocalLength();
+            out << "local length=" << getLocalLength();
             if (vl != VERB_MEDIUM) {
               // >= VERB_HIGH: print isConstantStride() and getStride()
               if (isConstantStride()) {
-		out << ", constant stride=" << getStride() << endl;
-	      }
+                out << ", constant stride=" << getStride() << endl;
+              }
               else {
-		out << ", not constant stride" << endl;
-	      }
+                out << ", not constant stride" << endl;
+              }
               if (vl == VERB_EXTREME) {
-		// VERB_EXTREME: print all the values in the multivector.
-		out << "Values:" << endl;
-		ArrayRCP<ArrayRCP<const Scalar> > X = this->get2dView();
-		for (size_t i = 0; i < getLocalLength(); ++i) {
-		  for (size_t j = 0; j < getNumVectors(); ++j) {
-		    out << X[j][i];
-		    if (j < getNumVectors() - 1) {
-		      out << " ";
-		    }
-		  } // for each column
-		  out << endl;
-		} // for each row
-	      } // if vl == VERB_EXTREME
+                // VERB_EXTREME: print all the values in the multivector.
+                out << "Values:" << endl;
+                ArrayRCP<ArrayRCP<const Scalar> > X = this->get2dView();
+                for (size_t i = 0; i < getLocalLength(); ++i) {
+                  for (size_t j = 0; j < getNumVectors(); ++j) {
+                    out << X[j][i];
+                    if (j < getNumVectors() - 1) {
+                      out << " ";
+                    }
+                  } // for each column
+                  out << endl;
+                } // for each row
+              } // if vl == VERB_EXTREME
             } // if (vl != VERB_MEDIUM)
             else { // vl == VERB_LOW
               out << endl;
@@ -1888,8 +1887,6 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   createViews() const 
   {
-    using Teuchos::ArrayRCP;
-    using Teuchos::RCP;
 
     TPETRA_EFFICIENCY_WARNING(! cview_.is_null (), std::runtime_error,
       "::createViews(): The const view "
@@ -1914,8 +1911,6 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   createViewsNonConst (Kokkos::ReadWriteOption rwo) 
   {
-    using Teuchos::ArrayRCP;
-    using Teuchos::RCP;
 
     TPETRA_EFFICIENCY_WARNING(! ncview_.is_null (), std::runtime_error,
       "::createViewsNonConst(): The nonconst view "

@@ -105,15 +105,13 @@ public:
 
   /*--------------------------------*/
 
-  static size_t detect_memory_page_size();
-
   template < typename ValueType >
   static 
   size_t preferred_alignment( size_t parallel_length )
-  { 
-    const size_t page = detect_memory_page_size();
+  {
+    const size_t page = Host::detect_memory_page_size();
     if ( 0 == page % sizeof(ValueType) ) {
-      const size_t align = detect_memory_page_size() / sizeof(ValueType);
+      const size_t align = page / sizeof(ValueType);
       const size_t rem   = parallel_length % align ;
       if ( rem ) parallel_length += align - rem ;
     }

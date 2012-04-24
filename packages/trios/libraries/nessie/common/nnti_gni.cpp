@@ -512,7 +512,7 @@ static int buffer_send(
 
 
 static gni_transport_global transport_global_data;
-static const int MIN_TIMEOUT = 100;  /* in milliseconds */
+static const int MIN_TIMEOUT = 10;  /* in milliseconds */
 
 static log_level nnti_cq_debug_level;
 static log_level nnti_event_debug_level;
@@ -1041,11 +1041,6 @@ NNTI_result_t NNTI_gni_connect (
 
     elapsed_time=0;
     timeout_per_call = MIN_TIMEOUT;
-//    if (timeout < 0)
-//        timeout_per_call = MIN_TIMEOUT;
-//    else
-//        timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
-
 
     s = socket(AF_INET, SOCK_STREAM, 0);
     if (s < 0) {
@@ -1749,10 +1744,7 @@ NNTI_result_t NNTI_gni_wait (
         log_debug(nnti_event_debug_level, "buffer op NOT complete (reg_buf=%p)", reg_buf);
 //        reset_op_state(reg_buf);
 
-        if (timeout < 0)
-            timeout_per_call = MIN_TIMEOUT;
-        else
-            timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
+        timeout_per_call = MIN_TIMEOUT;
 
         while (1)   {
             if (trios_exit_now()) {
@@ -1983,10 +1975,7 @@ NNTI_result_t NNTI_gni_waitany (
         log_debug(nnti_event_debug_level, "buffer op NOT complete (buf_list=%p)", buf_list);
 //        reset_op_state(reg_buf);
 
-        if (timeout < 0)
-            timeout_per_call = MIN_TIMEOUT;
-        else
-            timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
+        timeout_per_call = MIN_TIMEOUT;
 
         while (1)   {
             if (trios_exit_now()) {
@@ -2181,10 +2170,7 @@ NNTI_result_t NNTI_gni_waitall (
         log_debug(nnti_event_debug_level, "all buffer ops NOT complete");
 //        reset_op_state(reg_buf);
 
-        if (timeout < 0)
-            timeout_per_call = MIN_TIMEOUT;
-        else
-            timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
+        timeout_per_call = MIN_TIMEOUT;
 
         while (1)   {
             if (trios_exit_now()) {
@@ -3102,7 +3088,8 @@ static int process_event(
 
 //    wc->inst_id = wr->wc.inst_id;
 
-    wr=gni_mem_hdl->wr_queue.front();
+//    wr=gni_mem_hdl->wr_queue.front();
+    wr=first_incomplete_wr(gni_mem_hdl);
     assert(wr);
 
     log_debug(nnti_debug_level, "event_buf=%p; wr=%p; wr->last_op=%d", event_buf, wr, wr->last_op);

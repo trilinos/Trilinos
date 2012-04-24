@@ -1,19 +1,26 @@
 
+/* #define KOKKOS_ARRAY_BOUNDS_CHECK 1 */
+
 #include <iostream>
 #include <stdexcept>
 #include <limits>
 #include <utility>
 #include <BoxMeshPartition.hpp>
 #include <BoxMeshFixture.hpp>
+#include <TestBoxMeshFixture.hpp>
+#include <Implicit.hpp>
 
 #include <Kokkos_Host.hpp>
-
-#include <TestBoxMeshFixture.hpp>
 
 #include <Kokkos_Host_macros.hpp>
 #include <ParallelDataMap_macros.hpp>
 #include <TestBoxMeshFixture_macros.hpp>
+#include <Implicit_macros.hpp>
+#include <SparseLinearSystem_macros.hpp>
+#include <SparseLinearSystemFill_macros.hpp>
 #include <Kokkos_Clear_macros.hpp>
+
+#include <SparseLinearSystem_Host.hpp>
 
 //----------------------------------------------------------------------------
 
@@ -139,12 +146,51 @@ void test_box_partition( bool print )
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-void test_host( comm::Machine machine )
+void test_host( comm::Machine machine , std::istream & input )
 {
-  if ( 1 == comm::size( machine ) ) {
-    test_box_partition( false );
+  for(;;) {
+    std::string which ; input >> which ;
+
+    if ( std::string("nthread") == which ) {
+      size_t nthread = 1 ;
+      input >> nthread ;
+      Kokkos::Host::initialize( Kokkos::Host::SetThreadCount(nthread) );
+    }
+    else if ( std::string("partition") == which ) {
+      if ( 0 == comm::rank( machine ) ) {
+        test_box_partition( false );
+      }
+      break ;
+    }
+    else if ( std::string("fixture") == which ) {
+      size_t fixture[3] = { 10 , 20 , 50 };
+      input >> fixture[0] >> fixture[1] >> fixture[2] ;
+      test_box_fixture<Kokkos::Host>( machine , fixture[0] , fixture[1] , fixture[2] );
+      break ;
+    }
+    else if ( std::string("implicit") == which ) {
+      size_t count_begin = 20 , count_end = 200 , count_run = 1 ;
+      input >> count_begin >> count_end >> count_run ;
+      HybridFEM::Implicit::driver<double,Kokkos::Host>( "Host" , machine , count_begin , count_end , count_run );
+      break ;
+    }
+    else if ( std::string("query") == which ) {
+      std::cout << "P" << comm::rank( machine )
+                << ": host core count = " 
+                << Kokkos::Host::detect_core_count()
+                << std::endl ;
+      break ;
+    }
+    else {
+      if ( 0 == comm::rank( machine ) ) {
+        std::cout << "host partition" << std::endl
+                  << "host nthread N fixture NX NY NZ" << std::endl
+                  << "host nthread N implicit Nbegin Nend Nrun" << std::endl ;
+      }
+      break ;
+    }
   }
 
-  test_box_fixture<Kokkos::Host>( machine , 100 , 200 , 300 );
+  Kokkos::Host::finalize();
 }
 

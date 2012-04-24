@@ -12,9 +12,7 @@ export TDD_PARALLEL_LEVEL=2
 # Trilinos settings:
 #
 
-#export TDD_CTEST_TEST_TYPE=Nightly
-#export TDD_CTEST_TEST_TYPE=Continuous
-#export TDD_CTEST_TEST_TYPE=Experimental
+export TDD_CTEST_TEST_TYPE=Nightly
 
 #export CTEST_DO_SUBMIT=FALSE
 #export CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE

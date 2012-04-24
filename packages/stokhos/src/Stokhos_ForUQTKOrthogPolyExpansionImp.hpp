@@ -573,7 +573,7 @@ sinh(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& s,
     timesEqual(t, -1.0);
     exp(s, a);
     exp(t, t);
-    minusEqual(s, t);
+    this->minusEqual(s, t);
     divideEqual(s, 2.0);
   }
   else {
@@ -595,7 +595,7 @@ cosh(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     timesEqual(t, -1.0);
     exp(c, a);
     exp(t, t);
-    plusEqual(c, t);
+    this->plusEqual(c, t);
     divideEqual(c, 2.0);
   }
   else {
@@ -619,7 +619,7 @@ tanh(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& t,
     exp(s, s);
     exp(c, a);
     this->minus(t, c, s);
-    plusEqual(c, s);
+    this->plusEqual(c, s);
     divideEqual(t, c);
   }
   else {

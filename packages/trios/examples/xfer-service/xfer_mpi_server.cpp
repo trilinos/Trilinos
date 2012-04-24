@@ -379,8 +379,8 @@ int xfer_mpi_server_main(MPI_Comm server_comm)
         int seed = req_buf[1];
         int validate = req_buf[2];
 
-        log_debug(debug_level, "Server Received Request (tag=%d, len=%d, seed=%d, validate=%d)",
-                status.MPI_TAG, len, seed, validate);
+        log_debug(debug_level, "Server Received Request (source=%d, tag=%d, len=%d, seed=%d, validate=%d)",
+                status.MPI_SOURCE, status.MPI_TAG, len, seed, validate);
 
         switch (status.MPI_TAG) {
 

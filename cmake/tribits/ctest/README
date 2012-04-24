@@ -199,13 +199,11 @@ the variable <Project>_REPOSITORY_LOCATION.
 D.2) Testing the outer cron driver script:
 ------------------------------------------
 
-To test this script manually, so something like:
+To test this script manually, you must move into the driver scripts directory
+and run from there:
 
-  $ cd <somebasedir>
-  $ mkdir MOCK_DASHBOARD_DRIVER
-  $ cd MOCK_DASHBOARD_DRIVER
+  $ cd <DRIVERS_BASE_DIR>
   $ env \
-      TDD_DASHBOARD_ROOT=$PWD \
       <PROJECT_NAME>_PACKAGES=Teuchos \
       TDD_IN_TESTING_MODE=ON \
       TDD_CTEST_TEST_TYPE=Experimental \
@@ -215,14 +213,14 @@ To test this script manually, so something like:
       CTEST_DO_SUBMIT=FALSE  \
       CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
       CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
-      <yourdirverssroucedir>/cron_driver_somemachine.sh
+      ./cron_driver_somemachine.sh
 
 Once you are done with the initial run, you can test it out
 interactively in a rapid, iterative process by setting up the
 following additionial environment variables:
 
+  $ cd <DRIVERS_BASE_DIR>
   $ env \
-      TDD_DASHBOARD_ROOT=$PWD \
       <Project>_PACKAGES=Teuchos \
       CTEST_DO_UPDATES=FALSE \
       CTEST_DO_SUBMIT=FALSE \
@@ -235,12 +233,16 @@ following additionial environment variables:
       TDD_FORCE_INNER_CMAKE_INSTALL=0 \
       CTEST_EXPLICITLY_ENABLE_IMPLICITLY_ENABLED_PACKAGES=TRUE \
       CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
-      <yourdirverssroucedir>/cron_driver_somemachine.sh
+      ./cron_driver_somemachine.sh
 
 (of course you must use set commands on Windows).
 
 NOTES:
 
+(*) Set <Project>_PACKAGES=Teuchos to whatever your project name is and
+    some upstream package.  For Trilinos, this would be something like
+    Trilinos_PACKAGES=Teuchos.  For another project you would use its
+    project name and one of its upstream packages.
 (*) Set TDD_FORCE_CMAKE_INSTALL=0 to skip global CMake reinstall.
 (*) Set TDD_FORCE_INNER_CMAKE_INSTALL=0 to skip tests that install
     the inner CMake/CTest used by individual builds.

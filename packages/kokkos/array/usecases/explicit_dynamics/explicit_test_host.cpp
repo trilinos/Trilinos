@@ -63,7 +63,7 @@ void test_Host( int beg, int end, int runs, int threads){
     Kokkos::Host::initialize( Kokkos::Host::SetThreadCount( threads ) );
   }
   else {
-    Kokkos::Host::initialize( Kokkos::Host::DetectAndUseAllCores() );
+    Kokkos::Host::initialize( Kokkos::Host::DetectAndUseCores() );
     threads = Kokkos::Host::detect_core_count();
   }
 

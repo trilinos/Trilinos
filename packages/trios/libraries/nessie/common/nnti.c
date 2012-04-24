@@ -26,6 +26,9 @@
 #if defined(HAVE_TRIOS_GEMINI)
 #include "nnti_gni.h"
 #endif
+#if defined(HAVE_TRIOS_MPI)
+#include "nnti_mpi.h"
+#endif
 
 #include "Trios_logger.h"
 
@@ -133,6 +136,24 @@ NNTI_result_t NNTI_init (
         available_transports[trans_id].ops.nnti_waitany_fn           = NNTI_gni_waitany;
         available_transports[trans_id].ops.nnti_waitall_fn           = NNTI_gni_waitall;
         available_transports[trans_id].ops.nnti_fini_fn              = NNTI_gni_fini;
+    }
+#endif
+#if defined(HAVE_TRIOS_MPI)
+    if (trans_id == NNTI_TRANSPORT_MPI) {
+        available_transports[trans_id].initialized                   = 1;
+        available_transports[trans_id].ops.nnti_init_fn              = NNTI_mpi_init;
+        available_transports[trans_id].ops.nnti_get_url_fn           = NNTI_mpi_get_url;
+        available_transports[trans_id].ops.nnti_connect_fn           = NNTI_mpi_connect;
+        available_transports[trans_id].ops.nnti_disconnect_fn        = NNTI_mpi_disconnect;
+        available_transports[trans_id].ops.nnti_register_memory_fn   = NNTI_mpi_register_memory;
+        available_transports[trans_id].ops.nnti_unregister_memory_fn = NNTI_mpi_unregister_memory;
+        available_transports[trans_id].ops.nnti_send_fn              = NNTI_mpi_send;
+        available_transports[trans_id].ops.nnti_put_fn               = NNTI_mpi_put;
+        available_transports[trans_id].ops.nnti_get_fn               = NNTI_mpi_get;
+        available_transports[trans_id].ops.nnti_wait_fn              = NNTI_mpi_wait;
+        available_transports[trans_id].ops.nnti_waitany_fn           = NNTI_mpi_waitany;
+        available_transports[trans_id].ops.nnti_waitall_fn           = NNTI_mpi_waitall;
+        available_transports[trans_id].ops.nnti_fini_fn              = NNTI_mpi_fini;
     }
 #endif
 

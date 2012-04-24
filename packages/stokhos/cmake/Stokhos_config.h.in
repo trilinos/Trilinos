@@ -50,3 +50,6 @@
 
 /* Define if GLPK is enabled */
 #cmakedefine HAVE_STOKHOS_GLPK
+
+/* Define if Boost is enabled */
+#cmakedefine HAVE_STOKHOS_BOOST

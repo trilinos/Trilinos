@@ -46,6 +46,7 @@
 #include <impl/Kokkos_MemoryView.hpp>
 #include <Kokkos_Value.hpp>
 #include <Kokkos_MultiVector.hpp>
+#include <Kokkos_Array.hpp>
 #include <Kokkos_MDArray.hpp>
 #include <Kokkos_CrsArray.hpp>
 
@@ -58,6 +59,7 @@
 #include <TestMemoryManagement.hpp>
 #include <TestValue.hpp>
 #include <TestMultiVector.hpp>
+#include <TestArray.hpp>
 #include <TestMDArray.hpp>
 #include <TestMDArrayIndexMap.hpp>
 #include <TestCrsArray.hpp>
@@ -72,6 +74,11 @@ class host : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
+    std::cout << "Kokkos::Host node_count("
+              << Kokkos::Host::detect_node_count()
+              << ") X node_core_count("
+              << Kokkos::Host::detect_node_core_count()
+              << ")" << std::endl ;
     Kokkos::Host::initialize( Kokkos::Host::SetThreadCount( 4 ) );
   }
 
@@ -120,6 +127,18 @@ TEST_F( host, mdarray_view_int) {
 TEST_F( host, mdarray_index_map) {
   TestMDArrayIndexMap< Kokkos::Host >();
 }
+
+TEST_F( host, array_view_double) {
+  TestArray< double, Kokkos::Host >();
+}
+
+TEST_F( host, array_view_int) {
+  TestArray< int, Kokkos::Host >();
+}
+
+// TEST_F( host, array_index_map) {
+//   TestArrayIndexMap< Kokkos::Host >();
+// }
 
 TEST_F( host, long_reduce) {
   TestReduce< long ,   Kokkos::Host >( 1000000 );

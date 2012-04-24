@@ -35,6 +35,59 @@
 #include "EpetraExt_BlockVector.h"
 #include "EpetraExt_RowMatrixOut.h"
 
+#ifdef HAVE_STOKHOS_BOOST
+#include <boost/functional/hash.hpp>
+#endif
+
+#ifdef HAVE_STOKHOS_BOOST // we have boost, use the hash Stokhos, use the hash!
+std::size_t Stokhos::AdaptivityManager::Sparse3TensorHash::IJKHash::
+operator()(const Stokhos::AdaptivityManager::Sparse3TensorHash::IJK & ijk) const
+{
+   std::size_t seed=0;
+   boost::hash_combine(seed,ijk.i_);
+   boost::hash_combine(seed,ijk.j_);
+   boost::hash_combine(seed,ijk.k_);
+   return seed;
+}
+
+Stokhos::AdaptivityManager::Sparse3TensorHash::Sparse3TensorHash(const Stokhos::Sparse3Tensor<int,double> & Cijk)
+{
+   typedef Stokhos::Sparse3Tensor<int,double>::k_iterator k_iterator;
+   typedef Stokhos::Sparse3Tensor<int,double>::kj_iterator kj_iterator;
+   typedef Stokhos::Sparse3Tensor<int,double>::kji_iterator kji_iterator;
+
+   for(k_iterator k_it = Cijk.k_begin();k_it!=Cijk.k_end();k_it++) {
+      int k = *k_it;
+      for(kj_iterator j_it = Cijk.j_begin(k_it);j_it!=Cijk.j_end(k_it);j_it++) {
+         int j = *j_it;
+         for(kji_iterator i_it = Cijk.i_begin(j_it);i_it!=Cijk.i_end(j_it);i_it++) {
+            int i = *i_it;
+            hashMap_[IJK(i,j,k)] = i_it.value();
+         }
+      }
+   }
+}
+
+double Stokhos::AdaptivityManager::Sparse3TensorHash::getValue(int i,int j,int k) const
+{
+   boost::unordered_map<IJK,double>::const_iterator itr;
+   itr = hashMap_.find(IJK(i,j,k));
+
+   if(itr==hashMap_.end()) return 0.0;
+
+   return itr->second;
+}
+#else // no BOOST, just default to the slow thing
+Stokhos::AdaptivityManager::Sparse3TensorHash::Sparse3TensorHash(const Stokhos::Sparse3Tensor<int,double> & Cijk)
+      : Cijk_(Cijk)
+{ }
+
+double Stokhos::AdaptivityManager::Sparse3TensorHash::getValue(int i,int j,int k) const
+{
+   return Cijk_.getValue(i,j,k);
+}
+#endif
+
 Stokhos::AdaptivityManager::AdaptivityManager(
          const Teuchos::RCP<const Stokhos::ProductBasis<int,double> >& sg_master_basis,
          const std::vector<Teuchos::RCP<const Stokhos::ProductBasis<int,double> > > & sg_basis_row_dof,
@@ -81,6 +134,9 @@ setupOperator(Epetra_CrsMatrix & A,const Sparse3Tensor<int,double> & Cijk,Stokho
 {
    typedef Stokhos::Sparse3Tensor<int,double> Cijk_type;
 
+   // build the sparse hash only once
+   Sparse3TensorHash hashLookup(Cijk);
+
    // Zero out matrix
    A.PutScalar(0.0);
 
@@ -103,13 +159,24 @@ setupOperator(Epetra_CrsMatrix & A,const Sparse3Tensor<int,double> & Cijk,Stokho
  						    true);
 
       // add in matrix k
-      sumInOperator(A,Cijk,k,*block);
+      sumInOperator(A,hashLookup,k,*block);
    }
 }
 
 void
 Stokhos::AdaptivityManager::
 sumInOperator(Epetra_CrsMatrix & A,const Stokhos::Sparse3Tensor<int,double> & Cijk,int k,const Epetra_CrsMatrix & J_k) const
+{
+   // this allows the simple interface of taking a Sparse3Tensor but immediately computes
+   // the sparse hash (if boost is enabled)
+  
+   Sparse3TensorHash hashLookup(Cijk);
+   sumInOperator(A,hashLookup,k,J_k);
+}
+
+void
+Stokhos::AdaptivityManager::
+sumInOperator(Epetra_CrsMatrix & A,const Stokhos::AdaptivityManager::Sparse3TensorHash & Cijk,int k,const Epetra_CrsMatrix & J_k) const
 {
    TEUCHOS_ASSERT(J_k.NumMyRows() == int(sg_basis_row_dof_.size()));
    TEUCHOS_ASSERT(J_k.NumMyCols() == int(sg_basis_col_dof_.size()));

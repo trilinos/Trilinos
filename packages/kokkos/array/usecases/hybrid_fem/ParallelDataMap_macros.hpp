@@ -133,5 +133,79 @@ public:
 
 //----------------------------------------------------------------------------
 
-}
+template< typename ValueType >
+struct PackArray< MultiVector< ValueType , KOKKOS_MACRO_DEVICE > , void >
+{
+  typedef KOKKOS_MACRO_DEVICE                         device_type ;
+  typedef KOKKOS_MACRO_DEVICE::size_type              size_type ;
+  typedef MultiVector< ValueType , device_type >      array_type ;
+  typedef Impl::MemoryView< ValueType , device_type > buffer_type ;
+
+private:
+
+  buffer_type  output ;
+  array_type   input ;
+  size_type    base ;
+
+public:
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const size_type i ) const
+  { output[i] = input(base+i); }
+
+  inline
+  static
+  void pack( const buffer_type & arg_output ,
+             const size_type     arg_begin ,
+             const size_type     arg_count ,
+             const array_type  & arg_input )
+  {
+    PackArray op ;
+    op.output = arg_output ;
+    op.input  = arg_input ;
+    op.base   = arg_begin ;
+    parallel_for( arg_count , op );
+  }
+};
+
+template< typename ValueType >
+struct UnpackArray< MultiVector< ValueType , KOKKOS_MACRO_DEVICE > , void >
+{
+  typedef KOKKOS_MACRO_DEVICE                         device_type ;
+  typedef KOKKOS_MACRO_DEVICE::size_type              size_type ;
+  typedef MultiVector< ValueType , device_type >      array_type ;
+  typedef Impl::MemoryView< ValueType , device_type > buffer_type ;
+
+private:
+
+  array_type   output ;
+  buffer_type  input ;
+  size_type    base ;
+
+public:
+
+  inline
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()( const size_type i ) const
+  { output(base+i) = input[i]; }
+
+  inline
+  static
+  void unpack( const array_type  & arg_output ,
+               const buffer_type & arg_input ,
+               const size_type     arg_begin ,
+               const size_type     arg_count )
+  {
+    UnpackArray op ;
+    op.output = arg_output ;
+    op.input  = arg_input ;
+    op.base   = arg_begin ;
+    parallel_for( arg_count , op );
+  }
+};
+
+//----------------------------------------------------------------------------
+
+} /* namespace Kokkos */
 

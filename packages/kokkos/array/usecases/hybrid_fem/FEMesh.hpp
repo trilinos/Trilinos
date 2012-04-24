@@ -57,6 +57,8 @@
 #include <ParallelComm.hpp>
 #include <ParallelDataMap.hpp>
 
+namespace HybridFEM {
+
 //----------------------------------------------------------------------------
 /** \brief  Finite element mesh fixture for hybrid parallel performance tests.
  */
@@ -78,6 +80,8 @@ struct FEMesh {
 };
 
 //----------------------------------------------------------------------------
+
+} /* namespace HybridFEM */
 
 #endif /* #ifndef KOKKOS_FEMESH_HPP */
 

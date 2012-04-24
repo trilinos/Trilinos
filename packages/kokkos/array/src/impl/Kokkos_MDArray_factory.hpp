@@ -53,10 +53,10 @@ namespace Impl {
 //----------------------------------------------------------------------------
 
 /** \brief Mirror with view optimization */
-template< typename ValueType , class Device >
-struct Factory< MDArray< ValueType , Device > , Impl::MirrorUseView >
+template< typename ValueType , class DeviceOutput >
+struct Factory< MDArray< ValueType , DeviceOutput > , Impl::MirrorUseView >
 {
-  typedef MDArray< ValueType , Device > output_type ;
+  typedef MDArray< ValueType , DeviceOutput > output_type ;
 
   static inline
   const output_type & create( const output_type & input ) { return input ; }

@@ -60,7 +60,6 @@ namespace {
 class HostMemoryImpl {
 public:
   Impl::MemoryInfoSet m_allocations ;
-  const size_t        m_page_size ;
 
   HostMemoryImpl();
   ~HostMemoryImpl();
@@ -70,7 +69,6 @@ public:
 
 HostMemoryImpl::HostMemoryImpl()
   : m_allocations()
-  , m_page_size( host_internal_page_size() )
 {}
 
 HostMemoryImpl & HostMemoryImpl::singleton()
@@ -171,11 +169,6 @@ void MemoryManager< Host >::enable_memory_view_tracking()
   }
   m_memory_view_tracking = true ;
 }
-
-/*--------------------------------------------------------------------------*/
-
-size_t MemoryManager< Host >::detect_memory_page_size()
-{ return HostMemoryImpl::singleton().m_page_size ; }
 
 /*--------------------------------------------------------------------------*/
 

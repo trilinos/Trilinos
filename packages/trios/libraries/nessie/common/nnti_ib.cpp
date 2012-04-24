@@ -119,8 +119,8 @@ typedef struct {
     uint16_t      peer_lid;
     uint32_t      peer_req_qpn;
 
-    conn_qp          req_qp;
-    conn_qp          data_qp;
+    conn_qp       req_qp;
+    conn_qp       data_qp;
 
     ib_connection_state state;
 
@@ -336,7 +336,7 @@ static void close_all_conn(void);
 
 
 static ib_transport_global transport_global_data;
-static const int MIN_TIMEOUT = 1000;  /* in milliseconds */
+static const int MIN_TIMEOUT = 10;  /* in milliseconds */
 
 
 /**
@@ -459,6 +459,9 @@ NNTI_result_t NNTI_ib_init (
 
         nthread_mutex_init(&nnti_conn_peer_lock, NTHREAD_MUTEX_NORMAL);
         nthread_mutex_init(&nnti_conn_qpn_lock, NTHREAD_MUTEX_NORMAL);
+        nthread_mutex_init(&nnti_wr_wrhash_lock, NTHREAD_MUTEX_RECURSIVE);
+        nthread_mutex_init(&nnti_buf_bufhash_lock, NTHREAD_MUTEX_RECURSIVE);
+
 
         log_debug(nnti_debug_level, "my_url=%s", my_url);
 
@@ -1104,6 +1107,8 @@ NNTI_result_t NNTI_ib_send (
                       wr->sq_wr.wr.rdma.rkey,
             (void *)  wr->sq_wr.wr.rdma.remote_addr);
 
+    nthread_lock(&nnti_wr_wrhash_lock);
+
     trios_start_timer(call_time);
     if (ibv_post_send(wr->qp, &wr->sq_wr, &bad_wr)) {
         log_error(nnti_debug_level, "failed to post send: %s", strerror(errno));
@@ -1113,6 +1118,8 @@ NNTI_result_t NNTI_ib_send (
 
     ib_mem_hdl->wr_queue.push_back(wr);
     insert_wr_wrhash(wr);
+
+    nthread_unlock(&nnti_wr_wrhash_lock);
 
     return(rc);
 }
@@ -1201,10 +1208,16 @@ NNTI_result_t NNTI_ib_put (
     wr->ack_sq_wr.imm_data  =hash6432shift((uint64_t)dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.buf);
 #endif
 
+    wr->last_op=IB_OP_PUT_INITIATOR;
+    wr->length=src_length;
+    wr->offset=src_offset;
+
     log_debug(nnti_debug_level, "putting to (%s, qp=%p, qpn=%lu)",
             dest_buffer_hdl->buffer_owner.url,
             wr->qp,
             wr->qpn);
+
+    nthread_lock(&nnti_wr_wrhash_lock);
 
     trios_start_timer(call_time);
     if (ibv_post_send(wr->qp, &wr->sq_wr, &bad_wr)) {
@@ -1217,12 +1230,10 @@ NNTI_result_t NNTI_ib_put (
     send_ack(wr);
 #endif
 
-    wr->last_op=IB_OP_PUT_INITIATOR;
-    wr->length=src_length;
-    wr->offset=src_offset;
-
     ib_mem_hdl->wr_queue.push_back(wr);
     insert_wr_wrhash(wr);
+
+    nthread_unlock(&nnti_wr_wrhash_lock);
 
     return(rc);
 }
@@ -1311,10 +1322,16 @@ NNTI_result_t NNTI_ib_get (
     wr->ack_sq_wr.imm_data  =hash6432shift((uint64_t)src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.buf);
 #endif
 
+    wr->last_op=IB_OP_GET_INITIATOR;
+    wr->length=src_length;
+    wr->offset=dest_offset;
+
     log_debug(nnti_debug_level, "getting from (%s, qp=%p, qpn=%lu)",
             src_buffer_hdl->buffer_owner.url,
             wr->qp,
             wr->qpn);
+
+    nthread_lock(&nnti_wr_wrhash_lock);
 
     trios_start_timer(call_time);
     if (ibv_post_send(wr->qp, &wr->sq_wr, &bad_wr)) {
@@ -1327,14 +1344,12 @@ NNTI_result_t NNTI_ib_get (
     send_ack(wr);
 #endif
 
-    wr->last_op=IB_OP_GET_INITIATOR;
-    wr->length=src_length;
-    wr->offset=dest_offset;
-
 //    print_wr(wr);
 
     ib_mem_hdl->wr_queue.push_back(wr);
     insert_wr_wrhash(wr);
+
+    nthread_unlock(&nnti_wr_wrhash_lock);
 
 //    print_wr(wr);
 
@@ -1382,10 +1397,15 @@ NNTI_result_t NNTI_ib_wait (
 
     trios_start_timer(total_time);
 
-    log_debug(debug_level, "enter");
+    log_debug(debug_level, "enter (reg_buf=%p)", reg_buf);
 
     assert(reg_buf);
     assert(status);
+
+    if (logging_debug(debug_level)) {
+        fprint_NNTI_buffer(logger_get_file(), "reg_buf",
+                "start of NNTI_ib_wait", reg_buf);
+    }
 
     q_hdl     =&transport_global_data.req_queue;
     assert(q_hdl);
@@ -1413,10 +1433,7 @@ NNTI_result_t NNTI_ib_wait (
     } else {
         log_debug(debug_level, "buffer op NOT complete (reg_buf=%p)", reg_buf);
 
-        if (timeout < 0)
-            timeout_per_call = MIN_TIMEOUT;
-        else
-            timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
+        timeout_per_call = MIN_TIMEOUT;
 
         while (1)   {
             if (trios_exit_now()) {
@@ -1607,10 +1624,7 @@ NNTI_result_t NNTI_ib_waitany (
     } else {
         log_debug(debug_level, "buffer op NOT complete (buf_list=%p)", buf_list);
 
-        if (timeout < 0)
-            timeout_per_call = MIN_TIMEOUT;
-        else
-            timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
+        timeout_per_call = MIN_TIMEOUT;
 
         while (1)   {
             if (trios_exit_now()) {
@@ -1796,10 +1810,7 @@ NNTI_result_t NNTI_ib_waitall (
     } else {
         log_debug(debug_level, "all buffer ops NOT complete (buf_list=%p)", buf_list);
 
-        if (timeout < 0)
-            timeout_per_call = MIN_TIMEOUT;
-        else
-            timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
+        timeout_per_call = MIN_TIMEOUT;
 
         while (1)   {
             if (trios_exit_now()) {
@@ -2223,12 +2234,20 @@ static const NNTI_buffer_t *decode_event_buffer(
 
     log_debug(nnti_debug_level, "enter");
 
-    if ((wait_buf != NULL) && (wait_buf->transport_private != NULL) && (((ib_memory_handle *)wait_buf->transport_private)->type == REQUEST_BUFFER)) {
-        event_buf=wait_buf;
+    if (wc->opcode==IBV_WC_RECV) {
+        log_debug(nnti_debug_level, "wc->opcode is IBV_WC_RECV, so wc.wr_id is the request buffer index.");
+
+        event_buf=transport_global_data.req_queue.reg_buf;
         ib_mem_hdl=(ib_memory_handle *)event_buf->transport_private;
         assert(ib_mem_hdl);
 
-        log_debug(nnti_debug_level, "the wait buffer is a REQUEST BUFFER, so wc.wr_id is the request buffer index.");
+    } else if (wc->opcode==IBV_WC_SEND) {
+        log_debug(nnti_debug_level, "wc->opcode is IBV_WC_SEND, so wc.wr_id is wr hash (IB_OP_SEND_REQUEST).");
+
+        wr = get_wr_wrhash(wc->wr_id);
+        assert(wr);
+        event_buf=wr->reg_buf;
+
     } else {
         if (wc->imm_data == 0) {
             // This is not a request buffer and I am the initiator, so wc.wr_id is the hash of the work request
@@ -2285,7 +2304,7 @@ int process_event(
 
     wr = decode_work_request(wc);
     if (wr == NULL) {
-        wr=ib_mem_hdl->wr_queue.front();
+        wr=first_incomplete_wr(ib_mem_hdl);
     }
     assert(wr);
 
@@ -3160,6 +3179,7 @@ static int new_client_connection(
     att.qp_context       = c;
     att.send_cq          = transport_global_data.req_cq;
     att.recv_cq          = transport_global_data.req_cq;
+    att.srq              = transport_global_data.req_srq;
     att.cap.max_recv_wr  = transport_global_data.qp_count;
     att.cap.max_send_wr  = transport_global_data.qp_count;
     att.cap.max_recv_sge = 1;
@@ -3322,6 +3342,7 @@ static NNTI_result_t insert_conn_peer(const NNTI_peer_t *peer, ib_connection *co
     }
 
     nthread_lock(&nnti_conn_peer_lock);
+    assert(connections_by_peer.find(key) == connections_by_peer.end());
     connections_by_peer[key] = conn;   // add to connection map
     nthread_unlock(&nnti_conn_peer_lock);
 
@@ -3929,12 +3950,16 @@ static NNTI_result_t poll_comp_channel(
 
     log_debug(nnti_debug_level, "completion channel poll complete - %d event(s) waiting", my_pollfd.revents);
 
+try_again:
     if (ibv_get_cq_event(comp_channel, &ev_cq, &ev_ctx) == 0) {
         log_debug(nnti_debug_level, "got event from comp_channel for cq=%p", ev_cq);
         ibv_ack_cq_events(ev_cq, 1);
         log_debug(nnti_debug_level, "ACKed event on cq=%p", ev_cq);
         rc = NNTI_OK;
     } else {
+        if (errno == EAGAIN) {
+            goto try_again;
+        }
         log_error(nnti_debug_level, "ibv_get_cq_event failed (ev_cq==%p): %s",
                 ev_cq, strerror(errno));
         rc = NNTI_EIO;

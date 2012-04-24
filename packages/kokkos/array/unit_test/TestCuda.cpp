@@ -67,6 +67,7 @@ extern void test_device_cuda_value();
 extern void test_device_cuda_multi_vector();
 extern void test_device_cuda_crsarray();
 extern void test_device_cuda_mdarray();
+extern void test_device_cuda_array();
 extern void test_device_cuda_index_map();
 extern void test_device_cuda_reduce();
 extern void test_device_cuda_multi_reduce();
@@ -84,6 +85,11 @@ TEST_F( cuda, value )
 TEST_F( cuda, multi_vector )
 {
   test_device_cuda_multi_vector();
+}
+
+TEST_F( cuda, array )
+{
+  test_device_cuda_crsarray();
 }
 
 TEST_F( cuda, crsarray )

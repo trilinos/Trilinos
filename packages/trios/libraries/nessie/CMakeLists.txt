@@ -42,6 +42,7 @@ APPEND_SET(NOINSTHEADERS
   common/nnti.h
   common/nnti_gni.h
   common/nnti_ib.h
+  common/nnti_mpi.h
   common/nnti_internal.h
   common/nnti_ptls.h
   common/nnti_utils.h
@@ -73,17 +74,32 @@ APPEND_SET(SOURCES
   common/nssi_xdr.cpp
 )
 
+SET(TRIOS_SUPPORTED_NETWORK_FOUND 0)
 IF (${PACKAGE_NAME}_ENABLE_Portals OR ${PACKAGE_NAME}_ENABLE_CrayPortals)
   APPEND_SET(SOURCES common/nnti_ptls.cpp)
-ELSEIF (${PACKAGE_NAME}_ENABLE_CrayPortals)
-  APPEND_SET(SOURCES common/nnti_ptls.cpp)
-ELSEIF (${PACKAGE_NAME}_ENABLE_InfiniBand)
+  SET(TRIOS_SUPPORTED_NETWORK_FOUND 1)
+ENDIF ()
+#IF (${PACKAGE_NAME}_ENABLE_CrayPortals)
+#  APPEND_SET(SOURCES common/nnti_ptls.cpp)
+#  SET(TRIOS_SUPPORTED_NETWORK_FOUND 1)
+#ENDIF ()
+IF (${PACKAGE_NAME}_ENABLE_InfiniBand)
   APPEND_SET(SOURCES common/nnti_ib.cpp)
-ELSEIF (${PACKAGE_NAME}_ENABLE_LUC)
+  SET(TRIOS_SUPPORTED_NETWORK_FOUND 1)
+ENDIF ()
+IF (${PACKAGE_NAME}_ENABLE_LUC)
   APPEND_SET(SOURCES common/nnti_luc.cpp)
-ELSEIF (${PACKAGE_NAME}_ENABLE_Gemini)
+  SET(TRIOS_SUPPORTED_NETWORK_FOUND 1)
+ENDIF ()
+IF (${PACKAGE_NAME}_ENABLE_Gemini)
   APPEND_SET(SOURCES common/nnti_gni.cpp)
-ELSE ()
+  SET(TRIOS_SUPPORTED_NETWORK_FOUND 1)
+ENDIF ()
+IF (${PACKAGE_NAME}_ENABLE_MPI)
+  APPEND_SET(SOURCES common/nnti_mpi.cpp)
+  SET(TRIOS_SUPPORTED_NETWORK_FOUND 1)
+ENDIF ()
+IF (NOT TRIOS_SUPPORTED_NETWORK_FOUND)
    message(FATAL "Did not find a supported network protocol. ")
 ENDIF ()
 

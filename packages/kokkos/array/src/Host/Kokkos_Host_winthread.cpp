@@ -52,14 +52,11 @@
 #include <windows.h>
 #include <process.h>
 
-/*--------------------------------------------------------------------------*/
-
-namespace Kokkos {
-namespace Impl {
-
 //----------------------------------------------------------------------------
 // Driver for each created pthread
 
+namespace Kokkos {
+namespace Impl {
 namespace {
 
 unsigned WINAPI host_multicore_winthread_driver( void * arg )
@@ -96,11 +93,18 @@ ThreadLockWindows & ThreadLockWindows::singleton()
 { static ThreadLockWindows self ; return self ; }
 
 } // namespace <>
+} // namespace Kokkos
+} // namespace Impl
 
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Impl {
+
 // Spawn this thread
 
-bool host_multicore_thread_spawn( HostMulticoreThread * thread )
+bool HostInternal::spawn( HostThread * thread )
 {
   unsigned Win32ThreadID = 0 ;
 
@@ -111,13 +115,15 @@ bool host_multicore_thread_spawn( HostMulticoreThread * thread )
 }
 
 //----------------------------------------------------------------------------
-// Mutually exclusive locking and unlocking
 
-void host_multicore_thread_lock()
-{ ThreadLockWindows::singleton().lock(); }
+void HostWorkerBlock::execute_on_thread( HostThread & this_thread ) const
+{
+  ThreadLockWindows & lock = ThreadLockWindows::singleton();
+  lock.lock();
+  lock.unlock();
 
-void host_multicore_thread_unlock()
-{ ThreadLockWindows::singleton().unlock(); }
+  this_thread.barrier();
+}
 
 //----------------------------------------------------------------------------
 // Performance critical function: thread waits while value == *state
@@ -130,8 +136,55 @@ void HostMulticoreThread::wait( const HostMulticoreThread::State flag )
   }
 }
 
+} // namespace Impl
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-} // namespace Impl
+namespace Kokkos {
+
+bool Host::sleep()
+{
+  Impl::HostInternal & h = Impl::HostInternal::singleton();
+  ThreadLockWindows & lock = ThreadLockWindows::singleton();
+
+  const bool is_ready   = NULL == h.m_worker ;
+        bool is_blocked = & h.m_worker_block == h.m_worker ;
+
+  if ( is_ready ) {
+    ThreadLockWindows::singleton().lock();
+
+    h.m_worker = & h.m_worker_block ;
+
+    Impl::HostThread::activate( h.m_thread + 1 ,
+                                h.m_thread + h.m_thread_count );
+
+    is_blocked = true ;
+  }
+
+  return is_blocked ;
+}
+
+bool Host::wake()
+{
+  Impl::HostInternal & h = Impl::HostInternal::singleton();
+
+  const bool is_blocked = & h.m_worker_block != h.m_worker ;
+        bool is_ready   = NULL == h.m_worker ;
+
+  if ( is_blocked ) {
+    ThreadLockWindows::singleton().unlock();
+
+    h.m_thread->barrier();
+
+    h.m_worker = NULL ;
+
+    is_ready = true ;
+  }
+
+  return is_ready ;
+}
+
 } // namespace Kokkos
 

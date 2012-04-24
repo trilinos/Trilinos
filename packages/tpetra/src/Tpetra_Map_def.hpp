@@ -58,7 +58,7 @@ namespace {
   //! True if localValue is true on all processes in the communicator, else false.
   bool 
   allProcsTrue (const Teuchos::Comm<int>& comm,
-		const bool localValue)
+                const bool localValue)
   {
     using Teuchos::outArg;
     using Teuchos::REDUCE_MIN;
@@ -111,10 +111,10 @@ namespace {
   template<class Map>
   bool
   areMyGidsLocallyContiguous (typename Map::global_ordinal_type& myMinGid,
-			      typename Map::global_ordinal_type& myMaxGid,
-			      typename Teuchos::ArrayView<const typename Map::global_ordinal_type>::size_type& myLastInitContigArrayIndex,
-			      const Teuchos::ArrayView<const typename Map::global_ordinal_type>& myGids,
-			      const Teuchos::Ptr<typename Map::node_type>& node)
+                              typename Map::global_ordinal_type& myMaxGid,
+                              typename Teuchos::ArrayView<const typename Map::global_ordinal_type>::size_type& myLastInitContigArrayIndex,
+                              const Teuchos::ArrayView<const typename Map::global_ordinal_type>& myGids,
+                              const Teuchos::Ptr<typename Map::node_type>& node)
   {
     using Teuchos::Array;
     using Teuchos::ArrayView;
@@ -138,26 +138,26 @@ namespace {
       maxGid = prevGid;
 
       for (size_type k = 1; k < myGids.size(); ++k) {
-	const GO curGid = myGids[k];
-	// We've phrased the comparison so that GO may be either
-	// signed or unsigned.  Remember that GIDs need not be sorted,
-	// and may have repeated entries (which are still counted as
-	// contiguous).
-	if (! contiguous (prevGid, curGid)) {
-	  locallyContiguous = false;
-	} 
-	else {
-	  lastContigInd = k;
-	}
-	prevGid = curGid;
+        const GO curGid = myGids[k];
+        // We've phrased the comparison so that GO may be either
+        // signed or unsigned.  Remember that GIDs need not be sorted,
+        // and may have repeated entries (which are still counted as
+        // contiguous).
+        if (! contiguous (prevGid, curGid)) {
+          locallyContiguous = false;
+        } 
+        else {
+          lastContigInd = k;
+        }
+        prevGid = curGid;
 
-	// Update the min and max GID.
-	if (curGid < minGid) {
-	  minGid = curGid;
-	}
-	if (curGid > maxGid) {
-	  maxGid = curGid;
-	}
+        // Update the min and max GID.
+        if (curGid < minGid) {
+          minGid = curGid;
+        }
+        if (curGid > maxGid) {
+          maxGid = curGid;
+        }
       }
     }
     myMinGid = minGid;
@@ -222,13 +222,13 @@ namespace {
   template<class Map>
   bool
   areGidsGloballyContiguous (Teuchos::ArrayRCP<typename Map::global_ordinal_type>& allMinGids,
-			     Teuchos::ArrayRCP<typename Map::global_ordinal_type>& allMaxGids,
-			     typename Map::global_ordinal_type& myMinGid,
-			     typename Map::global_ordinal_type& myMaxGid,
-			     typename Teuchos::ArrayView<const typename Map::global_ordinal_type>::size_type& myLastInitContigArrayIndex,
-			     const Teuchos::ArrayView<const typename Map::global_ordinal_type>& myGids,
-			     const Teuchos::Ptr<const Teuchos::Comm<int> >& comm,
-			     const Teuchos::Ptr<typename Map::node_type>& node)
+                             Teuchos::ArrayRCP<typename Map::global_ordinal_type>& allMaxGids,
+                             typename Map::global_ordinal_type& myMinGid,
+                             typename Map::global_ordinal_type& myMaxGid,
+                             typename Teuchos::ArrayView<const typename Map::global_ordinal_type>::size_type& myLastInitContigArrayIndex,
+                             const Teuchos::ArrayView<const typename Map::global_ordinal_type>& myGids,
+                             const Teuchos::Ptr<const Teuchos::Comm<int> >& comm,
+                             const Teuchos::Ptr<typename Map::node_type>& node)
   {
     using Teuchos::arcp;
     using Teuchos::Array;
@@ -251,7 +251,7 @@ namespace {
     // Are my GIDs (locally) contiguous?  Also, get other info.
     const bool locallyContiguous = 
       areMyGidsLocallyContiguous (myMinGid, myMaxGid, 
-				  myLastInitContigArrayIndex, myGids, node);
+                                  myLastInitContigArrayIndex, myGids, node);
 
     // Are all processes' GIDs locally contiguous?  That is a
     // necessary but not sufficient condition for them to be globally
@@ -277,8 +277,8 @@ namespace {
       gatherAll<int,GO> (*comm, 2, &myMinMax, 2, &allMinMax[0]);
       // Unpack into separate mins and maxes arrays.
       for (size_type k = 0; k < numProcs; ++k) {
-	allMinGids[k] = allMinMax[2*k];
-	allMaxGids[k] = allMinMax[2*k+1];
+        allMinGids[k] = allMinMax[2*k];
+        allMaxGids[k] = allMinMax[2*k+1];
       }
       // Set the iteration guard (see public documentation).
       allMinGids[numProcs] = allMaxGids[numProcs-1] + as<GO> (1);
@@ -296,13 +296,13 @@ namespace {
       // We know there is at least one process in the communicator.
       GO prevMaxGid = allMaxGids[0];
       for (size_type k = 1; k < allMinGids.size(); ++k) {
-	const GO curMinGid = allMinGids[k];
-	const GO curMaxGid = allMaxGids[k];
-	if (prevMaxGid != curMinGid && prevMaxGid != curMinGid + as<GO>(1)) {
-	  globallyContiguous = false;
-	  break;
-	}
-	prevMaxGid = curMaxGid;
+        const GO curMinGid = allMinGids[k];
+        const GO curMaxGid = allMaxGids[k];
+        if (prevMaxGid != curMinGid && prevMaxGid != curMinGid + as<GO>(1)) {
+          globallyContiguous = false;
+          break;
+        }
+        prevMaxGid = curMaxGid;
       }
     }
     return globallyContiguous;
@@ -533,9 +533,9 @@ namespace Tpetra {
        */
       global_size_t global_sum;
       reduceAll<int,global_size_t> (*comm_, 
-				    REDUCE_SUM, 
-				    as<global_size_t> (numLocalElements_in), 
-				    outArg (global_sum));
+                                    REDUCE_SUM, 
+                                    as<global_size_t> (numLocalElements_in), 
+                                    outArg (global_sum));
       /* there are three errors we should be detecting:
          - numGlobalElements != invalid() and it is incorrect/invalid
          - numLocalElements invalid (<0)
@@ -591,7 +591,7 @@ namespace Tpetra {
         }
         else {
           TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, errPrefix 
-	    << "Should never get here!  localChecks = " << localChecks[0] << "," 
+            << "Should never get here!  localChecks = " << localChecks[0] << "," 
             << localChecks[1] << " and globalChecks = " << globalChecks[0] 
             << "," << globalChecks[1] << ".  Please report this bug to the "
             "Tpetra developers.");
@@ -664,7 +664,7 @@ namespace Tpetra {
       int localChecks[2], globalChecks[2];
 
       /* Compute the global number of elements.
-	 We are doing this because exactly ONE of the following is true:
+         We are doing this because exactly ONE of the following is true:
          * the user didn't specify it, and we need it
          * the user _did_ specify it, but we need to 
          ** validate it against the sum of the local sizes, and
@@ -1101,22 +1101,22 @@ namespace Tpetra {
       // necessarily mean the Map is distributed.
       char localRep = 0;
       if (numGlobalElements_ == Teuchos::as<global_size_t>(numLocalElements_)) {
-	// The number of local elements on this process equals the
-	// number of global elements.
-	//
-	// NOTE (mfh 22 Nov 2011) Does this still work if there were
-	// duplicates in the global ID list on input (the third Map
-	// constructor), so that the number of local elements (which
-	// are not duplicated) on this process could be less than the
-	// number of global elements, even if this process owns all
-	// the elements?
+        // The number of local elements on this process equals the
+        // number of global elements.
+        //
+        // NOTE (mfh 22 Nov 2011) Does this still work if there were
+        // duplicates in the global ID list on input (the third Map
+        // constructor), so that the number of local elements (which
+        // are not duplicated) on this process could be less than the
+        // number of global elements, even if this process owns all
+        // the elements?
         localRep = 1;
       }
       char allLocalRep;
       Teuchos::reduceAll<int>(*comm_,Teuchos::REDUCE_MIN,localRep,outArg(allLocalRep));
       if (allLocalRep != 1) {
-	// At least one process does not own all the elements.
-	// This makes the Map a distributed Map.
+        // At least one process does not own all the elements.
+        // This makes the Map a distributed Map.
         global = true;
       }
     }

@@ -168,6 +168,20 @@ void deep_copy( const MultiVector< ValueType , DeviceDst > & dst ,
   }
 }
 
+template< typename ValueType , class DeviceDst , class DeviceSrc >
+inline
+void deep_copy( const MultiVector< ValueType , DeviceDst > & dst ,
+                const MultiVector< ValueType , DeviceSrc > & src ,
+                const size_t count )
+{
+  typedef MultiVector< ValueType , DeviceDst > dst_type ;
+  typedef MultiVector< ValueType , DeviceSrc > src_type ;
+
+  if ( dst.operator!=( src ) ) {
+    Impl::Factory<dst_type,src_type>::deep_copy( dst , src , count );
+  }
+}
+
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------

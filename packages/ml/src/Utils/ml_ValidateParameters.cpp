@@ -381,7 +381,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
 
   /* Unlisted Options */ 
   PL->set("ML debug mode",false);
-  setStringToIntegralParameter<int>("default values","SA","Internal Option",tuple<string>("SA","DD","DD-ML","maxwell","NSSA","RefMaxwell"),PL);
+  setStringToIntegralParameter<int>("default values","SA","Internal Option",tuple<string>("SA","DD","DD-ML","maxwell","NSSA","RefMaxwell","DD-ML-LU"),PL);
   PL->set("ML validate parameter list",true);
   setIntParameter("ML validate depth",0,"Internal option to control validation depth",PL,intParam);
   PL->set("ResetList",true); 

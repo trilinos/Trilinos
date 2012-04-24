@@ -53,7 +53,7 @@
 namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut) 
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut) 
     : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,1,zeroOut) {
   }
 
@@ -63,13 +63,22 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Scalar> &values)
-  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,values,values.size(),1) {
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(
+                              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, 
+                              const ArrayRCP<Scalar> &view, EPrivateHostViewConstructor /* dummy */)
+  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,view,view.size(),1,HOST_VIEW_CONSTRUCTOR) {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, Teuchos::ArrayRCP<Scalar> values)
-    : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,values,map->getNodeNumElements(),1) {
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(
+                              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, 
+                              const ArrayRCP<Scalar> &view, EPrivateComputeViewConstructor /* dummy */)
+  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,view,view.size(),1,COMPUTE_VIEW_CONSTRUCTOR) {
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const ArrayView<const Scalar> &values)
+  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,values,values.size(),1) {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -96,7 +105,7 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dCopy(Teuchos::ArrayView<Scalar> A) const {
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dCopy(ArrayView<Scalar> A) const {
     size_t lda = this->getLocalLength();
     this->get1dCopy(A,lda);
   }
@@ -124,14 +133,19 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Scalar Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::meanValue() const {
+    using Teuchos::as;
     using Teuchos::outArg;
     typedef Teuchos::ScalarTraits<Scalar> SCT;
+
     Scalar sum = MVT::Sum(this->lclMV_);
     if (this->isDistributed()) {
       Scalar lsum = sum;
       Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lsum,outArg(sum));
     }
-    return sum / this->getGlobalLength();
+    // mfh 12 Apr 2012: Don't take out the cast from the ordinal type
+    // to the magnitude type, since operator/ (std::complex<T>, int)
+    // isn't necessarily defined.
+    return sum / as<typename SCT::magnitudeType> (this->getGlobalLength ());
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -214,7 +228,7 @@ namespace Tpetra {
     using Teuchos::VERB_EXTREME;
     Teuchos::EVerbosityLevel vl = verbLevel;
     if (vl == VERB_DEFAULT) vl = VERB_LOW;
-    Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getMap()->getComm();
+    RCP<const Teuchos::Comm<int> > comm = this->getMap()->getComm();
     const int myImageID = comm->getRank(),
               numImages = comm->getSize();
     size_t width = 1;
@@ -233,9 +247,9 @@ namespace Tpetra {
             if (vl != VERB_MEDIUM) {
               // VERB_HIGH and higher prints isConstantStride() and stride()
               if (vl == VERB_EXTREME && this->getLocalLength() > 0) {
-                Teuchos::RCP<Node> node = this->lclMV_.getNode();
+                RCP<Node> node = this->lclMV_.getNode();
                 KOKKOS_NODE_TRACE("Vector::describe()")
-                Teuchos::ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(
+                ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(
                                                                this->getLocalLength(), 
                                                                MVT::getValues(this->lclMV_) );
                 // VERB_EXTREME prints values

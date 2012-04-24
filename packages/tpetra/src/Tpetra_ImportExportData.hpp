@@ -68,7 +68,7 @@ namespace Tpetra {
     /// \param source [in] Source Map of the Import or Export
     /// \param target [in] Target Map of the Import or Export
     ImportExportData (const Teuchos::RCP<const map_type>& source, 
-		      const Teuchos::RCP<const map_type>& target);
+                      const Teuchos::RCP<const map_type>& target);
 
     /// \brief Constructor with ParameterList for Distributor
     ///
@@ -76,8 +76,8 @@ namespace Tpetra {
     /// \param target [in] Target Map of the Import or Export
     /// \param plist [in/out] List of parameters for the Distributor
     ImportExportData (const Teuchos::RCP<const map_type>& source, 
-		      const Teuchos::RCP<const map_type>& target,
-		      const Teuchos::RCP<Teuchos::ParameterList>& plist);
+                      const Teuchos::RCP<const map_type>& target,
+                      const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
     ~ImportExportData();
 
@@ -120,7 +120,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::
   ImportExportData (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
-		    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target)
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target)
   : numSameIDs_ (0)
   , source_ (source)
   , target_ (target)
@@ -131,8 +131,8 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::
   ImportExportData (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
-		    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
-		    const Teuchos::RCP<Teuchos::ParameterList>& plist)
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
+                    const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : numSameIDs_ (0)
   , source_ (source)
   , target_ (target)
