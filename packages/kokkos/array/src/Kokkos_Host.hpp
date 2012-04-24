@@ -187,6 +187,11 @@ template<> struct HostMapped<Host> { typedef Host type ; };
 #include <Host/Kokkos_Host_MultiVector.hpp>
 #endif
 
+#if   defined( KOKKOS_ARRAY_HPP ) && \
+    ! defined( KOKKOS_HOST_ARRAY_HPP )
+#include <Host/Kokkos_Host_Array.hpp>
+#endif
+
 #if   defined( KOKKOS_MDARRAY_HPP ) && \
     ! defined( KOKKOS_HOST_MDARRAY_HPP )
 #include <Host/Kokkos_Host_MDArray.hpp>

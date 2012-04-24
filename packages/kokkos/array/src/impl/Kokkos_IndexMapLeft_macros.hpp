@@ -58,7 +58,8 @@ namespace Kokkos {
 namespace Impl {
 
 /** 
- *  Compile time dimension, except for leading dimension.
+ *  Only the first dimension defined at runtime.
+ *  All remaining dimensions defined at compile-time.
  */
 template< unsigned Rank , unsigned N1 , unsigned N2 , unsigned N3 ,
           unsigned N4 ,   unsigned N5 , unsigned N6 , unsigned N7 >
@@ -278,8 +279,9 @@ public:
 };
 
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
-/** \brief  Runtime dimensioned */
+/** \brief  All dimensions defined at runtime. */
 template<>
 struct IndexMapLeft< KOKKOS_MACRO_DEVICE::memory_space,
                      0,  0,0,0,0,0,0,0 >

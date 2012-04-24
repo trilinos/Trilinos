@@ -136,62 +136,67 @@ HostInternalHWLOC::HostInternalHWLOC()
   hwloc_topology_init( & m_host_topology );
   hwloc_topology_load( m_host_topology );
 
-  HostInternal::m_node_count =
+  const size_t node_count =
     hwloc_get_nbobjs_by_type( m_host_topology , HWLOC_OBJ_NODE );
 
-  // Get cpuset binding of this process.
-  // This may have been bound by 'mpirun'.
+  if ( node_count ) {
+    // Get cpuset binding of this process.
+    // This may have been bound by 'mpirun'.
 
-  hwloc_cpuset_t proc_cpuset = hwloc_bitmap_alloc();
+    bool node_symmetry = true ;
+    bool page_symmetry = true ;
+    size_t page_size = 0 ;
+    size_t node_core_count = 0 ;
 
-  hwloc_get_cpubind( m_host_topology , proc_cpuset , 0 );
+    hwloc_cpuset_t proc_cpuset = hwloc_bitmap_alloc();
 
-  bool node_symmetry = true ;
-  bool page_symmetry = true ;
+    hwloc_get_cpubind( m_host_topology , proc_cpuset , 0 );
 
-  for ( size_type i = 0 ; i < HostInternal::m_node_count ; ++i ) {
+    for ( size_t i = 0 ; i < node_count ; ++i ) {
 
-    const hwloc_obj_t node =
-      hwloc_get_obj_by_type( m_host_topology , HWLOC_OBJ_NODE , i );
+      const hwloc_obj_t node =
+        hwloc_get_obj_by_type( m_host_topology , HWLOC_OBJ_NODE , i );
 
-    // If the process' cpu set is included in the node cpuset
-    // then assumed pinned to that node.
-    if ( hwloc_bitmap_isincluded( proc_cpuset , node->allowed_cpuset ) ) {
-      m_node_rank = i ;
+      // If the process' cpu set is included in the node cpuset
+      // then assumed pinned to that node.
+      if ( hwloc_bitmap_isincluded( proc_cpuset , node->allowed_cpuset ) ) {
+        m_node_rank = i ;
+      }
+
+      const unsigned count =
+        hwloc_get_nbobjs_inside_cpuset_by_type( m_host_topology ,
+                                                node->allowed_cpuset ,
+                                                HWLOC_OBJ_PU );
+                                                // HWLOC_OBJ_CORE );
+
+      if ( 0 == node_core_count ) {
+        node_core_count = count ;
+      }
+
+      node_symmetry = count == node_core_count ;
+
+      for ( unsigned j = 0 ; j < node->memory.page_types_len ; ++j ) {
+        if ( node->memory.page_types[j].count ) {
+          if ( 0 == page_size ) {
+            page_size = node->memory.page_types[j].size ;
+          }
+          page_symmetry = node->memory.page_types[j].size == page_size ;
+        }
+      }
     }
 
-    const unsigned node_core_count =
-      hwloc_get_nbobjs_inside_cpuset_by_type( m_host_topology ,
-                                              node->allowed_cpuset ,
-                                              HWLOC_OBJ_PU );
-                                              // HWLOC_OBJ_CORE );
+    hwloc_bitmap_free( proc_cpuset );
 
-    if ( 0 == HostInternal::m_node_core_count ) {
+    if ( node_symmetry && node_core_count ) {
       HostInternal::m_node_core_count = node_core_count ;
     }
 
-    node_symmetry = node_core_count == HostInternal::m_node_core_count ;
-
-    for ( unsigned j = 0 ; j < node->memory.page_types_len ; ++j ) {
-      if ( node->memory.page_types[j].count ) {
-        if ( 0 == HostInternal::m_page_size ) {
-          HostInternal::m_page_size = node->memory.page_types[j].size ;
-        }
-        page_symmetry = node->memory.page_types[j].size == HostInternal::m_page_size ;
-      }
+    if ( page_symmetry && page_size ) {
+      HostInternal::m_page_size = page_size ;
     }
-  }
 
-  if ( ! node_symmetry ) {
-    HostInternal::m_node_core_count = 0 ;
-    page_symmetry = false ;
+    HostInternal::m_node_count = node_count ;
   }
-
-  if ( ! page_symmetry ) {
-    HostInternal::m_page_size = 0 ;
-  }
-
-  hwloc_bitmap_free( proc_cpuset );
 }
 
 HostInternalHWLOC::~HostInternalHWLOC()

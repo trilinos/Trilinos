@@ -109,14 +109,26 @@ template< class T , unsigned N > struct remove_all_extents<T[N]>
 
 //----------------------------------------------------------------------------
 
-template< class T , unsigned I > struct extent         : public unsigned_< 0> {};
-template< unsigned I >           struct extent<void,I> {};
-template< class T >              struct extent<T[], 0> : public unsigned_< 0> {};
-template< class T , unsigned N > struct extent<T[N],0> : public unsigned_< N> {};
-template< class T , unsigned I > struct extent<T[], I>
-  : public unsigned_< extent<T,I-1>::value > {};
-template< class T , unsigned N , unsigned I > struct extent<T[N],I>
-  : public unsigned_< extent<T,I-1>::value > {};
+template< class T , unsigned I >
+struct extent : public unsigned_< 0> {};
+
+template< unsigned I >
+struct extent<void,I> {};
+
+template< class T >
+struct extent<T,  ~0u> : public unsigned_< 0> {};
+
+template< class T >
+struct extent<T[], 0u> : public unsigned_< 0> {};
+
+template< class T , unsigned N >
+struct extent<T[N],0u> : public unsigned_< N> {};
+
+template< class T , unsigned I >
+struct extent<T[], I> : public unsigned_< extent<T,I-1>::value > {};
+
+template< class T , unsigned N , unsigned I >
+struct extent<T[N],I> : public unsigned_< extent<T,I-1>::value > {};
 
 } // namespace Impl
 } // namespace Kokkos

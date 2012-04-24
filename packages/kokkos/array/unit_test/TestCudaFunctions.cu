@@ -48,6 +48,7 @@
 #include <impl/Kokkos_MemoryView.hpp>
 #include <Kokkos_Value.hpp>
 #include <Kokkos_MultiVector.hpp>
+#include <Kokkos_Array.hpp>
 #include <Kokkos_MDArray.hpp>
 #include <Kokkos_CrsArray.hpp>
 
@@ -66,6 +67,7 @@
 
 #include <TestMDArrayIndexMap.hpp>
 
+#include <TestArray.hpp>
 #include <TestMDArray.hpp>
 #include <TestCrsArray.hpp>
 
@@ -97,6 +99,11 @@ void test_device_cuda_multi_vector() {
 
 void test_device_cuda_crsarray() {
   TestCrsArray< Kokkos::Cuda >();
+}
+
+void test_device_cuda_array() {
+  TestArray< double, Kokkos::Cuda >();
+  TestArray< int, Kokkos::Cuda >();
 }
 
 void test_device_cuda_mdarray() {

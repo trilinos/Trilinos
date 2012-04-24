@@ -139,6 +139,10 @@ public:
 #include <Cuda/Kokkos_Cuda_MultiVector.hpp>
 #endif
 
+#if   defined( KOKKOS_ARRAY_HPP ) && \
+    ! defined( KOKKOS_CUDA_ARRAY )
+#include <Cuda/Kokkos_Cuda_Array.hpp>
+#endif
 
 #if   defined( KOKKOS_CRSARRAY_HPP ) && \
     ! defined( KOKKOS_CUDA_CRSARRAY )

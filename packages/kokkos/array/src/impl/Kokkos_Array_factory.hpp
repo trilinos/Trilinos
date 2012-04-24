@@ -41,80 +41,40 @@
 //@HEADER
 */
 
-#include <gtest/gtest.h>
+#ifndef KOKKOS_IMPL_ARRAY_FACTORY_HPP
+#define KOKKOS_IMPL_ARRAY_FACTORY_HPP
 
-#include <Kokkos_Host.hpp>
-#include <Kokkos_Cuda.hpp>
+#include <vector>
+#include <impl/Kokkos_MemoryView.hpp>
 
-namespace Test {
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
-extern void test_device_cuda_init();
+namespace Kokkos {
+namespace Impl {
 
-class cuda : public ::testing::Test {
-protected:
-  static void SetUpTestCase()
+template< class ArrayType , class DeviceOutput >
+struct Factory< Array< ArrayType , DeviceOutput > , MirrorUseView >
+{
+  typedef Array< ArrayType , DeviceOutput > output_type ;
+
+  static inline
+  const output_type & create( const output_type & input ) { return input ; }
+
+  template< class DeviceInput >
+  static inline
+  output_type create( const Array< ArrayType , DeviceInput > & input )
   {
-    Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
-  }
-  static void TearDownTestCase()
-  {
-    Kokkos::Cuda::finalize();
+    typedef Array< ArrayType , DeviceInput > input_type ;
+    return Factory< output_type , input_type >::create( input );
   }
 };
 
-extern void test_device_cuda_memory_management();
-extern void test_device_cuda_value();
-extern void test_device_cuda_multi_vector();
-extern void test_device_cuda_crsarray();
-extern void test_device_cuda_mdarray();
-extern void test_device_cuda_array();
-extern void test_device_cuda_index_map();
-extern void test_device_cuda_reduce();
-extern void test_device_cuda_multi_reduce();
+} // namespace Impl
+} // namespace Kokkos
 
-TEST_F( cuda, memory_management )
-{
-  test_device_cuda_memory_management();
-}
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
-TEST_F( cuda, value )
-{
-  test_device_cuda_value();
-}
+#endif /* #ifndef KOKKOS_IMPL_ARRAY_FACTORY_HPP */
 
-TEST_F( cuda, multi_vector )
-{
-  test_device_cuda_multi_vector();
-}
-
-TEST_F( cuda, array )
-{
-  test_device_cuda_crsarray();
-}
-
-TEST_F( cuda, crsarray )
-{
-  test_device_cuda_crsarray();
-}
-
-TEST_F( cuda, mdarray )
-{
-  test_device_cuda_mdarray();
-}
-
-TEST_F( cuda, index_map )
-{
-  test_device_cuda_index_map();
-}
-
-TEST_F( cuda, reduce )
-{
-  test_device_cuda_reduce();
-}
-
-TEST_F( cuda, multi_reduce )
-{
-  test_device_cuda_multi_reduce();
-}
-
-}

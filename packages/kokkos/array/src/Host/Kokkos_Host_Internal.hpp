@@ -87,7 +87,7 @@ protected:
 
   const HostThreadWorker<void> * volatile m_worker ;
 
-  ~HostInternal();
+  virtual ~HostInternal();
   HostInternal();
 
   bool spawn_threads();
