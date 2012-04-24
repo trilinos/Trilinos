@@ -256,7 +256,7 @@ target_buffer_queue_t target_buffers;
 
 
 static mpi_transport_global transport_global_data;
-static const int MIN_TIMEOUT = 10;  /* in milliseconds */
+static const int MIN_TIMEOUT = 0;  /* in milliseconds */
 
 /**
  * @brief Initialize NNTI to use a specific transport.
@@ -918,6 +918,15 @@ int NNTI_mpi_get (
     wr->rtr_msg.offset=src_offset;
     wr->rtr_msg.tag=dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.mpi.data_tag;
 
+    MPI_Irecv(
+            (char*)dest_buffer_hdl->payload+dest_offset,
+            src_length,
+            MPI_BYTE,
+            src_rank,
+            dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.mpi.data_tag,
+            MPI_COMM_WORLD,
+            &wr->request[GET_RECV_INDEX]);
+
     MPI_Isend(
             &wr->rtr_msg,
             sizeof(wr->rtr_msg),
@@ -929,15 +938,6 @@ int NNTI_mpi_get (
 
     wr->request_ptr=&wr->request[RTR_REQ_INDEX];
     wr->request_count=1;
-
-    MPI_Irecv(
-            (char*)dest_buffer_hdl->payload+dest_offset,
-            src_length,
-            MPI_BYTE,
-            src_rank,
-            dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.mpi.data_tag,
-            MPI_COMM_WORLD,
-            &wr->request[GET_RECV_INDEX]);
 
     log_debug(nnti_debug_level, "getting from (%s, src_rank=%d)", src_buffer_hdl->buffer_owner.url, src_rank);
 
@@ -985,6 +985,8 @@ int NNTI_mpi_wait (
 
     log_level debug_level=nnti_debug_level;
 
+    double entry_time=trios_get_time();
+
     trios_declare_timer(call_time);
     trios_declare_timer(total_time);
 
@@ -1015,6 +1017,11 @@ int NNTI_mpi_wait (
             }
 
             check_target_buffer_progress();
+            if (is_buf_op_complete(reg_buf) == TRUE) {
+                log_debug(debug_level, "buffer op completed during check_target_buffer_progress()");
+                nnti_rc = NNTI_OK;
+                break;
+            }
 
             log_debug(debug_level, "waiting on reg_buf(%p) request(%p)", reg_buf , wr->request_ptr);
 
@@ -1039,6 +1046,8 @@ int NNTI_mpi_wait (
                 }
                 /* case 2: timed out */
                 else {
+                    elapsed_time = (trios_get_time() - entry_time);
+
                     /* if the caller asked for a legitimate timeout, we need to exit */
                     if (((timeout > 0) && (elapsed_time >= timeout))) {
                         log_debug(debug_level, "MPI_Test() timed out");
@@ -1046,11 +1055,11 @@ int NNTI_mpi_wait (
                         break;
                     }
 
-                    trios_start_timer(call_time);
-                    nnti_sleep(timeout_per_call);
-                    trios_stop_timer("NNTI_mpi_wait - nnti_sleep", call_time);
-
-                    elapsed_time += timeout_per_call;
+//                    trios_start_timer(call_time);
+//                    nnti_sleep(timeout_per_call);
+//                    trios_stop_timer("NNTI_mpi_wait - nnti_sleep", call_time);
+//
+//                    elapsed_time += timeout_per_call;
 
                     /* continue if the timeout has not expired */
                     /* log_debug(debug_level, "timedout... continuing"); */
@@ -1154,6 +1163,8 @@ int NNTI_mpi_waitany (
     int elapsed_time=0;
     int timeout_per_call;
 
+    double entry_time=trios_get_time();
+
     log_level debug_level=nnti_debug_level;
 
     trios_declare_timer(call_time);
@@ -1200,15 +1211,20 @@ int NNTI_mpi_waitany (
             }
         }
 
-        if (timeout < 0)
-            timeout_per_call = MIN_TIMEOUT;
-        else
-            timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
+        timeout_per_call = MIN_TIMEOUT;
 
         while (1)   {
             if (trios_exit_now()) {
                 log_debug(debug_level, "caught abort signal");
                 return NNTI_ECANCELED;
+            }
+
+            check_target_buffer_progress();
+            if (is_any_buf_op_complete(buf_list, buf_count, which) == TRUE) {
+                log_debug(debug_level, "buffer op completed during check_target_buffer_progress() (which=%u, buf_list[%d]=%p)",
+                        *which, *which, buf_list[*which]);
+                nnti_rc = NNTI_OK;
+                break;
             }
 
             log_debug(debug_level, "waiting on buf_list(%p)", buf_list);
@@ -1232,6 +1248,8 @@ int NNTI_mpi_waitany (
                 }
                 /* case 2: timed out */
                 else {
+                    elapsed_time = (trios_get_time() - entry_time);
+
                     /* if the caller asked for a legitimate timeout, we need to exit */
                     if (((timeout > 0) && (elapsed_time >= timeout))) {
                         log_debug(debug_level, "MPI_Testany() timed out");
@@ -1239,9 +1257,9 @@ int NNTI_mpi_waitany (
                         break;
                     }
 
-                    nnti_sleep(timeout_per_call);
-
-                    elapsed_time += timeout_per_call;
+//                    nnti_sleep(timeout_per_call);
+//
+//                    elapsed_time += timeout_per_call;
 
                     /* continue if the timeout has not expired */
                     /* log_debug(debug_level, "timedout... continuing"); */
@@ -1333,6 +1351,8 @@ int NNTI_mpi_waitall (
     int elapsed_time=0;
     int timeout_per_call;
 
+    double entry_time=trios_get_time();
+
     log_level debug_level=nnti_debug_level;
 
     trios_declare_timer(call_time);
@@ -1379,15 +1399,19 @@ int NNTI_mpi_waitall (
             }
         }
 
-        if (timeout < 0)
-            timeout_per_call = MIN_TIMEOUT;
-        else
-            timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
+        timeout_per_call = MIN_TIMEOUT;
 
         while (1)   {
             if (trios_exit_now()) {
                 log_debug(debug_level, "caught abort signal");
                 return NNTI_ECANCELED;
+            }
+
+            check_target_buffer_progress();
+            if (is_all_buf_ops_complete(buf_list, buf_count) == TRUE) {
+                log_debug(debug_level, "all buffer ops completed during check_target_buffer_progress()");
+                nnti_rc = NNTI_OK;
+                break;
             }
 
             log_debug(debug_level, "waiting on buf_list(%p)", buf_list);
@@ -1413,6 +1437,8 @@ int NNTI_mpi_waitall (
                 }
                 /* case 2: timed out */
                 else {
+                    elapsed_time = (trios_get_time() - entry_time);
+
                     /* if the caller asked for a legitimate timeout, we need to exit */
                     if (((timeout > 0) && (elapsed_time >= timeout))) {
                         log_debug(debug_level, "MPI_Testall() timed out");
@@ -1420,9 +1446,9 @@ int NNTI_mpi_waitall (
                         break;
                     }
 
-                    nnti_sleep(timeout_per_call);
-
-                    elapsed_time += timeout_per_call;
+//                    nnti_sleep(timeout_per_call);
+//
+//                    elapsed_time += timeout_per_call;
 
                     /* continue if the timeout has not expired */
                     /* log_debug(debug_level, "timedout... continuing"); */
@@ -1667,7 +1693,7 @@ static int check_target_buffer_progress()
                 continue;
             }
 
-            log_debug(debug_level, "waiting on reg_buf(%p) request(%p)", reg_buf , wr->request_ptr);
+            log_debug(debug_level, "testing reg_buf(%p) request(%p)", reg_buf , wr->request_ptr);
 
             memset(&event, 0, sizeof(MPI_Status));
             done=FALSE;
