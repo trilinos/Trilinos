@@ -660,18 +660,21 @@ namespace stk {
             {
               remove_original_elements = 0;
               delete_parents = 0;
-              if (i_pass == streaming_pass_end) 
+              //! FIXME
+              // if (i_pass == streaming_pass_end) 
+              if (i_pass == 1)
                 {
                   remove_original_elements = remove_original_elements_save;
                   delete_parents = delete_parents_save;
                 }
             }
+          std::cout << "tmp srk i_pass= " << i_pass << " delete_parents= " << delete_parents << " remove_original_elements= " << remove_original_elements << std::endl;
 
           if (streaming_size)
             {
               // special cases
 
-              // read all files, get global parts info
+              // read all files, get global parts and node info
               if (i_pass == -1)
                 {
 #if STK_ADAPT_HAVE_YAML_CPP
@@ -679,10 +682,7 @@ namespace stk {
                   SerializeNodeRegistry::NodeMap nodeMap;
                   for (int iM=0; iM < M; iM++)
                     {
-                      if (streaming_size)
-                        {
-                          input_mesh = input_mesh_save+"."+toString(M)+"."+toString(iM);
-                        }
+                      input_mesh = input_mesh_save+"."+toString(M)+"."+toString(iM);
                       PerceptMesh eMesh(s_spatialDim);
                       eMesh.openReadOnly(input_mesh);
                       NodeRegistry *some_nr = 0;

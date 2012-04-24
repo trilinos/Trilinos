@@ -493,7 +493,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
 
         YAML::Emitter yaml;
         std::cout << "\nnodeRegistry.serialize_write(yaml)" << std::endl;
-        SerializeNodeRegistry::serialize_write(nodeRegistry, yaml);
+        SerializeNodeRegistry::serialize_write(nodeRegistry, yaml, 0);
         //std::cout << yaml.c_str() << std::endl;
         if (!yaml.good())
           {
@@ -543,7 +543,7 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_parallel_1_0)
         SerializeNodeRegistry::serialize_read(nrNew, file3);
         YAML::Emitter yaml3;
         std::cout << "\nnrNew.serialize_write(yaml3)" << std::endl;
-        SerializeNodeRegistry::serialize_write(nrNew, yaml3);
+        SerializeNodeRegistry::serialize_write(nrNew, yaml3, 0);
         std::cout << yaml3.c_str() << std::endl;
         
         //exit(1);

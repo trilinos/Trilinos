@@ -119,6 +119,7 @@ namespace stk {
       void pass(int streaming_pass)
       {
         std::cout << "\n\n ------ SerializeNodeRegistry ----- pass number " << streaming_pass << "\n\n" << std::endl;
+
         switch(streaming_pass)
           {
           case -1: passM1(); return;
@@ -348,6 +349,7 @@ namespace stk {
           }
       }
 
+      /// Remove nodes that are only touched by one processor, and are thus not shared
       void cullNodeMap()
       {
         NodeMap::iterator iter;
@@ -367,13 +369,9 @@ namespace stk {
       }
 
       // node, proc owner
-      void readGlobalNodesFile()
+      void readGlobalNodesFile(NodeMap& nodeMap)
       {
-        if (m_nodeMap) delete m_nodeMap;
-        m_nodeMap = new NodeMap;
-
         std::fstream file;
-        //file.open(m_globalIdFile.c_str(), std::ios_base::out | std::ios_base::trunc);
         std::string m_globalNodesFile = std::string("global_nodes.yaml")+"."+toString(M)+"."+toString(iM);
         file.open(m_globalNodesFile.c_str(), std::ios_base::in);
         if (!file.is_open())
@@ -386,7 +384,7 @@ namespace stk {
 
         try {
           while(parser.GetNextDocument(doc)) {
-            //std::cout << "\n readGlobalNodesFile doc.Type() = " << doc.Type() << " doc.Tag()= " << doc.Tag() << " doc.size= " << doc.size() << std::endl;
+            std::cout << "\n readGlobalNodesFile doc.Type() = " << doc.Type() << " doc.Tag()= " << doc.Tag() << " doc.size= " << doc.size() << std::endl;
             if (doc.Type() == YAML::NodeType::Map)
               {
                 for(YAML::Iterator iter=doc.begin();iter!=doc.end();++iter) 
@@ -397,9 +395,10 @@ namespace stk {
                     NodeMapValue procs;
                     const YAML::Node& val = iter.second();
                     val >> procs;
+                    //std::cout << "readGlobalNodesFile id= " << id << " procs= " << procs << std::endl;
                     if (procs.size() != 1) 
                       throw std::logic_error(std::string("SerializeNodeRegistry::readGlobalNodesFile procs.size is != 1, = ")+toString(procs.size()));
-                    //(*m_nodeMap)[id] = proc;
+                    nodeMap[id] = procs;
                   }
               }
             else
@@ -415,7 +414,7 @@ namespace stk {
         file.close();
       }
 
-      void passM1_0()
+      void passM1_createGlobalParts()
       {
         const stk::mesh::PartVector& parts = m_eMesh.getFEM_meta_data()->get_parts();
         for (unsigned ipart=0; ipart < parts.size(); ipart++)
@@ -450,7 +449,7 @@ namespace stk {
           }
       }
 
-      void passM1_1()
+      void passM1_createGlobalNodes()
       {
         const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( m_eMesh.node_rank() );
 
@@ -491,8 +490,8 @@ namespace stk {
 
       void passM1()
       {
-        passM1_0();
-        passM1_1();
+        passM1_createGlobalParts();
+        passM1_createGlobalNodes();
       }
 
       /**
@@ -521,16 +520,18 @@ namespace stk {
 
       void printCurrentGlobalMaxId(std::string msg="")
       {
-        if (m_debug) std::cout << "SerializeNodeRegistry["<<M<<", "<<iM<<"]::printCurrentGlobalMaxId: = " << m_id_max << " for: " << msg << std::endl;
+        //if (m_debug) 
+        std::cout << "SerializeNodeRegistry["<<M<<", "<<iM<<"]::printCurrentGlobalMaxId: = " << m_id_max << " for: " << msg << std::endl;
       }
 
       /**
-       *   pass1: refine mesh, write local NodeRegistry, set new max id from refined mesh
+       *   pass1: refine mesh, write local NodeRegistry, set new max id from refined mesh - assumes parent elements exist
+       *     
        *   (iM = 0...M)
        *   1. open file.e.M.iM, refine mesh
-       *   2. if iM==0, setCurrentGlobalMaxId to [0,0,0,0]
+       *   2. 
        *   3. getCurrentGlobalMaxId()
-       *   4. resetNewElementIds() (resets new element ids by looking at child elements only,
+       *   4. resetNewElementIds() (resets new element ids by looking at child elements only)
        *   5. write NodeRegistry in name.yaml.M.iM
        *   6. setCurrentGlobalMaxId()
        *   7. save refined mesh
@@ -538,22 +539,15 @@ namespace stk {
       void pass1()
       {
         NodeRegistry& nodeRegistry = *m_nodeRegistry;
-        writeNodeRegistry(nodeRegistry, m_nodeRegistryFile);
-
-        /*
-          if (0 == iM)
-          {
-          // create initial file, write 0's in it  for m_id_max (it should be initialized to 0, but just to be sure, we reset it here)
-          for (unsigned irank=0; irank < m_id_max.size(); irank++)
-          m_id_max[irank]=0u;
-          setCurrentGlobalMaxId();
-          }
-        */
-
         getCurrentGlobalMaxId();
         resetNewElementIds(m_eMesh);
+        resetNewNodeIds(nodeRegistry);
         setCurrentGlobalMaxId();
         printCurrentGlobalMaxId("pass1");
+
+        m_nodeMap = new NodeMap;
+        readGlobalNodesFile(*m_nodeMap);
+        writeNodeRegistry(nodeRegistry, m_nodeRegistryFile);
       }
 
       /**
@@ -582,14 +576,16 @@ namespace stk {
         PerceptMesh eMeshLocal(m_spatialDim);
         eMeshLocal.openEmpty();
 
+        m_nodeMap = new NodeMap;
         for (iM = 0; iM < M; iM++)
           {
             NodeRegistry newLocalNR(eMeshLocal);
             m_nodeRegistryFile = std::string("streaming-refine-nodeRegistry."+m_filePrefix+".yaml.")+boost::lexical_cast<std::string>(M)+"."+boost::lexical_cast<std::string>(iM);
             readNodeRegistry(newLocalNR, m_nodeRegistryFile);
-            processNodeRegistry(newLocalNR, globalNR);
+            addLocalNodeRegistryToGlobal(newLocalNR, globalNR);
+            // open each global nodes file and add to the global node map
+            readGlobalNodesFile(*m_nodeMap);
           }
-        resetIds(globalNR);  // on the in-memory global NodeRegistry
         writeNodeRegistry(globalNR, m_globalNodeRegistryFile);
         setCurrentGlobalMaxId();
         printCurrentGlobalMaxId("pass2 done");
@@ -618,22 +614,30 @@ namespace stk {
         lookupAndSetNewNodeIds(localNR, globalNR);
       }
 
+      // for each subDimEntity in local NodeRegistry, find it in the global NodeRegistry and reset ID's to the global values
       void lookupAndSetNewNodeIds(NodeRegistry& localNR, NodeRegistry& globalNR)
       {
         m_eMesh.getBulkData()->modification_begin();
-        SubDimCellToDataMap& map = localNR.getMap();
+        SubDimCellToDataMap& localMap = localNR.getMap();
         //SubDimCellToDataMap& globalMap = globalNR.getMap();
-        //std::cout << " tmp SerializeNodeRegistry::lookupAndSetNewNodeIds map size: " << map.size() << std::endl;
+        //std::cout << " tmp SerializeNodeRegistry::lookupAndSetNewNodeIds localMap size: " << localMap.size() << std::endl;
 
         SubDimCellToDataMap::iterator iter;
-        for (iter = map.begin(); iter != map.end(); ++iter)
+        for (iter = localMap.begin(); iter != localMap.end(); ++iter)
           {
             const SubDimCell_SDSEntityType& subDimEntity = iter->first;
             SubDimCellData& nodeId_elementOwnderId = iter->second;
+
+            // special case for "interior" subDimEntity's which are centroid nodes for quad or hex elements - 
+            //   by definition they aren't shared
+            if (subDimEntity.size() == 1)
+              continue;
+
+            // lookup from global...
             SubDimCellData* global_nodeId_elementOwnderId_ptr = globalNR.getFromMapPtr(subDimEntity);
             if (!global_nodeId_elementOwnderId_ptr)
               {
-                std::cout << "SerializeNodeRegistry::lookupAndSetNewNodeIds couldn't find subDimEntity= " << subDimEntity;
+                std::cout << "M[" << iM << "] SerializeNodeRegistry::lookupAndSetNewNodeIds couldn't find subDimEntity= " << subDimEntity;
                 for (unsigned kk=0; kk < subDimEntity.size(); kk++)
                   {
                     std::cout << " [" << subDimEntity[kk]->identifier() << "] ";
@@ -691,7 +695,12 @@ namespace stk {
       {
         YAML::Emitter yaml;
         if (m_debug) std::cout << "\nnodeRegistry.serialize_write(yaml) to file= " << filename << std::endl;
-        serialize_write(nodeRegistry, yaml);
+        // old way was to not use the node map to filter and so we wrote the whole interior and boundary map
+        const bool do_filter_for_shared_nodes = true;
+        if (do_filter_for_shared_nodes)
+          serialize_write(nodeRegistry, yaml, m_nodeMap);
+        else
+          serialize_write(nodeRegistry, yaml, 0);
         if (!yaml.good())
           {
             std::cout << "Emitter error: " << yaml.good() << " " <<yaml.GetLastError() << "\n";
@@ -718,23 +727,23 @@ namespace stk {
         serialize_read(nodeRegistry, file);
       }
 
-      void processNodeRegistry(NodeRegistry& newLocalNR, NodeRegistry& globalNR)
+      void addLocalNodeRegistryToGlobal(NodeRegistry& newLocalNR, NodeRegistry& globalNR)
       {
         SubDimCellToDataMap::iterator iter;
-        SubDimCellToDataMap& map = newLocalNR.getMap();
+        SubDimCellToDataMap& localMap = newLocalNR.getMap();
         SubDimCellToDataMap& globalMap = globalNR.getMap();
-        //std::cout << " tmp SerializeNodeRegistry::processNodeRegistry map size: " << map.size() << std::endl;
+        //std::cout << " tmp SerializeNodeRegistry::processNodeRegistry localMap size: " << localMap.size() << std::endl;
 
         // key.serialized = { nodeid_0,... : set<EntityId> }
         // value.serialized = { {new_nid0, new_nid1,...}:vector<EntityId>, {elem_own[rank, ele_id]:EntityKey} }
 
-        for (iter = map.begin(); iter != map.end(); ++iter)
+        for (iter = localMap.begin(); iter != localMap.end(); ++iter)
           {
             const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
             SubDimCellData& nodeId_elementOwnderId = (*iter).second;
             if (m_debug) 
               {
-                std::cout << "SerializeNodeRegistry::processNodeRegistry inserting map entry = " << subDimEntity ;
+                std::cout << "SerializeNodeRegistry::processNodeRegistry inserting localMap entry = " << subDimEntity ;
                 for (unsigned kk=0; kk < subDimEntity.size(); kk++)
                   {
                     std::cout << " [" << subDimEntity[kk]->identifier() << "] ";
@@ -745,45 +754,6 @@ namespace stk {
             globalMap[subDimEntity] = nodeId_elementOwnderId;
           }        
         if (m_debug) std::cout << "SerializeNodeRegistry::processNodeRegistry globalMap size= " << globalMap.size() << std::endl;
-      }
-
-      /// Using the current global max id, in a simple id-server manner, generate new id's and assign to 
-      ///   the shared nodes.
-      void resetIds(NodeRegistry& nodeRegistry) 
-      {
-        nodeRegistry.getMesh().getBulkData()->modification_begin();
-
-        SubDimCellToDataMap::iterator iter;
-        SubDimCellToDataMap& map = nodeRegistry.getMap();
-        //std::cout << " tmp SerializeNodeRegistry::resetIds map size: " << map.size() << std::endl;
-
-        // key.serialized = { nodeid_0,... : set<EntityId> }
-        // value.serialized = { {new_nid0, new_nid1,...}:vector<EntityId>, {elem_own[rank, ele_id]:EntityKey} }
-
-        for (iter = map.begin(); iter != map.end(); ++iter)
-          {
-            //const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
-            SubDimCellData& nodeId_elementOwnderId = (*iter).second;
-            NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
-            unsigned nnodes = nodeIds_onSE.size();
-            for (unsigned inode=0; inode < nnodes; inode++)
-              {
-                stk::mesh::EntityId id_new = m_id_max[0]+1;
-                m_id_max[0] = id_new;
-                nodeIds_onSE.m_entity_id_vector[inode] = id_new;
-
-                stk::mesh::Entity * node = nodeRegistry.getMesh().getBulkData()->get_entity(0, id_new);
-                //key.insert(const_cast<stk::mesh::Entity*>(&element) );
-                VERIFY_OP_ON(node, ==, 0, "SerializeNodeRegistry::resetIds found existing node with proposed new id");
-                if (!node)
-                  {
-                    stk::mesh::PartVector parts(1, &nodeRegistry.getMesh().getFEM_meta_data()->universal_part());
-                    node = &nodeRegistry.getMesh().getBulkData()->declare_entity(0, id_new, parts);
-                  }
-                nodeIds_onSE[inode] = node;
-              }
-          }
-        nodeRegistry.getMesh().getBulkData()->modification_end();
       }
 
       ///Note: we read and write to a file instead of storing in memory to allow stk_adapt_exe to be called on a 
@@ -890,7 +860,8 @@ namespace stk {
                   for (unsigned iEntity = 0; iEntity < num_entities_in_bucket; iEntity++)
                     {
                       stk::mesh::Entity& entity = bucket[iEntity];
-                      if (eMesh.hasFamilyTree(entity) && eMesh.isChildElement(entity))
+                      //! FIXME 
+                      //if (eMesh.hasFamilyTree(entity) && eMesh.isChildElement(entity))
                         {
                           stk::mesh::EntityId id = m_id_max[irank] + 1;
                           m_id_max[irank] = id;
@@ -905,8 +876,43 @@ namespace stk {
         eMesh.getBulkData()->modification_begin();
       }
 
+      /// Using the current global max id, in a simple id-server manner, generate new id's and assign to 
+      ///   the shared nodes.
+      void resetNewNodeIds(NodeRegistry& nodeRegistry) 
+      {
+        nodeRegistry.getMesh().getBulkData()->modification_begin();
 
-      static void serialize_write(NodeRegistry& nodeRegistry, YAML::Emitter& emitter, std::string msg="")
+        SubDimCellToDataMap::iterator iter;
+        SubDimCellToDataMap& map = nodeRegistry.getMap();
+        //std::cout << " tmp SerializeNodeRegistry::resetNewNodeIds map size: " << map.size() << std::endl;
+
+        // key.serialized = { nodeid_0,... : set<EntityId> }
+        // value.serialized = { {new_nid0, new_nid1,...}:vector<EntityId>, {elem_own[rank, ele_id]:EntityKey} }
+
+        for (iter = map.begin(); iter != map.end(); ++iter)
+          {
+            //const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
+            SubDimCellData& nodeId_elementOwnderId = (*iter).second;
+            NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+            unsigned nnodes = nodeIds_onSE.size();
+            for (unsigned inode=0; inode < nnodes; inode++)
+              {
+                stk::mesh::EntityId id_old = nodeIds_onSE.m_entity_id_vector[inode];
+                stk::mesh::EntityId id_old_check = nodeIds_onSE[inode]->identifier();
+                VERIFY_OP_ON(id_old_check, ==, id_old, "SerializeNodeRegistry::resetNewNodeIds ");
+                
+                stk::mesh::EntityId id_new = m_id_max[0]+1;
+                m_id_max[0] = id_new;
+                nodeIds_onSE.m_entity_id_vector[inode] = id_new;
+
+                nodeRegistry.getMesh().getBulkData()->change_entity_id(id_new, *nodeIds_onSE[inode]);
+              }
+          }
+        nodeRegistry.getMesh().getBulkData()->modification_end();
+      }
+
+
+      static void serialize_write(NodeRegistry& nodeRegistry, YAML::Emitter& emitter, NodeMap *nodeMapFilter = 0, std::string msg="")
       {
         SubDimCellToDataMap::iterator iter;
         SubDimCellToDataMap& map = nodeRegistry.getMap();
@@ -924,6 +930,29 @@ namespace stk {
           {
             const SubDimCell_SDSEntityType& subDimEntity = (*iter).first;
             SubDimCellData& nodeId_elementOwnderId = (*iter).second;
+
+            // check if all nodes are on the boundary (defined by shared nodes in the NodeMap)
+            if (nodeMapFilter)
+              {
+                // special case for "interior" subDimEntity's which are centroid nodes for quad or hex elements - 
+                //   by definition they aren't shared
+                if (subDimEntity.size() == 1)
+                  continue;
+
+                bool notFound = false;
+                for (unsigned k=0; k < subDimEntity.size(); k++)
+                  {
+                    //std::cout << " " << subDimEntity[k]->identifier() << " ";
+                    NodeMap::iterator filter_iter = nodeMapFilter->find(subDimEntity[k]->identifier());
+                    if (filter_iter == nodeMapFilter->end())
+                      {
+                        notFound = true;
+                        break;
+                      }
+                  }
+                if (notFound) 
+                  continue;
+              }
             
             //emitter << YAML::Key << subDimEntity;
             emitter << YAML::Key;       YAML_ERRCHECK;
