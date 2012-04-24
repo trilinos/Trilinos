@@ -4,6 +4,26 @@
 #                                                                             #
 ###############################################################################
 
+Release update 10.10.2 April 24, 2012
+
+1. Epetra            - Fix performance hot spot in Epetra_FEVector.
+
+2. Epetra            - Fix a checked stl bug in Epetra_FECrsMatrix.
+
+3. EpetraExt         - Use correct Epetra_MpiComm object for HDF5 class.
+
+4. EpetraExt         - Fix missing return in restrict_comm.
+
+5. Multiple Packages - Fix Clang/llvm build errors in several packages. Trilinos
+                       now builds with Clang/llvm.
+
+6. Zoltan            - Address a few compiler issues.
+
+7. Zoltan            - Fix the eigen computation for inertial matrices in
+                       rcb/rib/hsfc.
+
+-------------------------------------------------------------------------------
+
 Release update 10.10.1 February 22, 2012
 
 1. Epetra          - Removed references to Epetra_MpiSmpComm.h from
