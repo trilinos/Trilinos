@@ -523,31 +523,39 @@ template<typename metric_t>
     std::string fname, std::string osname, 
     Teuchos::RCP<MetricOutputManager<metric_t> > &mgr)
 {
-  std::ofstream *oFile=NULL;
+  typedef MetricOutputManager<metric_t> manager_t;
+  bool haveFname = (fname != Z2_UNSET);
+  bool haveStreamName = (!haveFname && (osname != Z2_UNSET));
 
-  if (iPrint && (fname != Z2_UNSET)){
-    std::string newFname;
-    addNumberToFileName(rank, fname, newFname);
-
-    try{
-      oFile = new std::ofstream;
-      oFile->open(newFname.c_str(), std::ios::out|std::ios::trunc);
-    }
-    catch(std::exception &e){
-      throw std::runtime_error(e.what());
-    }
+  if (!haveFname && !haveStreamName){
+    mgr = Teuchos::rcp(new manager_t(rank, iPrint, std::cout, true));
+    return;
   }
 
-  typedef MetricOutputManager<metric_t> manager_t;
+  if (haveFname){
+    std::ofstream *oFile = new std::ofstream;
+    if (iPrint){
+      std::string newFname;
+      addNumberToFileName(rank, fname, newFname);
+      try{
+        oFile->open(newFname.c_str(), std::ios::out|std::ios::trunc);
+      }
+      catch(std::exception &e){
+        throw std::runtime_error(e.what());
+      }
+    }
+    mgr = Teuchos::rcp(new manager_t(rank, iPrint, *oFile, true));
+    return;
+  }
 
   if (osname == std::string("std::cout"))
     mgr = Teuchos::rcp(new manager_t(rank, iPrint, std::cout, true));
   else if (osname == std::string("std::cerr"))
     mgr = Teuchos::rcp(new manager_t(rank, iPrint, std::cerr, true));
-  else if (oFile)
-    mgr = Teuchos::rcp(new manager_t(rank, iPrint, *oFile, true));
-  else
+  else if (osname == std::string("/dev/null"))
     mgr = Teuchos::rcp(new manager_t(rank, false, std::cout, true));
+  else
+    throw std::logic_error("invalid metric output stream was not caught");
 }
 
 }  // namespace Zoltan2

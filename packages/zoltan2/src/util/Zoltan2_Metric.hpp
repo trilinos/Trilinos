@@ -1333,6 +1333,71 @@ template <typename scalar_t>
 }
 
 
+/*! \brief Compute the norm of the vector of weights.
+ */
+template <typename scalar_t>
+  scalar_t normedWeight(ArrayView <scalar_t> weights, multiCriteriaNorm norm)
+{
+  size_t dim = weights.size();
+  if (dim == 0)
+    return 0.0;
+  else if (dim == 1)
+    return weights[0];
+ 
+  scalar_t nweight = 0;
+
+  switch (norm){
+    case normMinimizeTotalWeight:   /*!< 1-norm = Manhattan norm */
+
+      for (int i=0; i <dim; i++)
+        nweight += weights[i];
+
+      break;
+     
+    case normBalanceTotalMaximum:   /*!< 2-norm = sqrt of sum of squares */
+      for (int i=0; i <dim; i++)
+        nweight += (weights[i] * weights[i]);
+
+      nweight = sqrt(nweight);
+
+      break;
+
+    case normMinimizeMaximumWeight: /*!< inf-norm = maximum norm */
+
+      nweight = weights[0];
+      for (int i=1; i <dim; i++)
+        if (weights[i] > nweight)
+          nweight = weights[i];
+
+      break;
+
+    default:
+      Environment env;  // default environment
+      env.localBugAssertion(__FILE__, __LINE__, "invalid norm", false,
+        BASIC_ASSERTION);
+      break;
+  } 
+
+  return nweight;
+}
+
+template<typename lno_t, typename scalar_t>
+  scalar_t normedWeight(ArrayView<StridedData<lno_t, scalar_t> > weights, 
+     lno_t idx, multiCriteriaNorm norm)
+{
+  size_t dim = weights.size();
+  if (dim < 1)
+    return 0;
+
+  Array<scalar_t> vec(dim, 1.0);
+  for (int i=0; i < dim; i++)
+    if (weights[i].size() > 0)
+       vec[dim] = weights[i][idx];
+
+  return normedWeight(vec, norm);
+}
+
+
 
 
 

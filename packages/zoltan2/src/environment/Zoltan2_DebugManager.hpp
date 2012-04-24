@@ -98,7 +98,7 @@ class DebugManager
     inline void print(int debugLevel, const std::string &output){
 #ifndef Z2_OMIT_ALL_STATUS_MESSAGES
       if (debugLevel <= debugLevel_ && iPrint_)
-        *myOS_ << output << std::endl;
+        *myOS_ << myPID_ << ": " << output << std::endl;
 #endif
     }
 
@@ -114,7 +114,7 @@ class DebugManager
     inline void printInAllTasks(int debugLevel, const std::string &output){
 #ifndef Z2_OMIT_ALL_STATUS_MESSAGES
       if (debugLevel <= debugLevel_)
-        *myOS_ << output << std::endl;
+        *myOS_ << myPID_ << ": " << output << std::endl;
 #endif
     }
 

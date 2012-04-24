@@ -22,6 +22,11 @@
 
 namespace Zoltan2{
 
+template <typename scalar_t>
+  inline bool outsideRegion(scalar_t val, scalar_t mark, double epsilon){
+    return ((val < mark-epsilon) || (val > mark+epsilon));
+}
+
 #ifdef HAVE_ZOLTAN2_MPI
 
 /*! \brief Convert an MPI communicator to a MpiComm object.

@@ -30,12 +30,6 @@ namespace Zoltan2{
 /*! \brief The boolean parameters of interest to the RCB algorithm.
  */
 enum rcbParams {
-  rcb_fastSolution,         /*!< speed_versus_quality = speed */
-  rcb_goodSolution,         /*!< speed_versus_quality = quality */
-  rcb_balanceSolution,     /*!< speed_versus_quality = balance */
-  rcb_lowMemory,            /*!< memory_versus_speed = memory */
-  rcb_lowRunTime,           /*!< memory_versus_speed = speed */
-  rcb_balanceMemoryRunTime, /*!< memory_versus_speed = balance */
   rcb_balanceCount,            /*!< objective = balance_object_count */
   rcb_balanceWeight,          /*!< objective = balance_object_weight */
   rcb_minTotalWeight,      /*!< objective = mc_minimize_total_weight */
@@ -58,6 +52,10 @@ enum leftRightFlag{
   leftFlag = 0xfe,     /*!< 254 */
   rightFlag = 0xff     /*!< 255 */
 };
+
+// TODO: RCB has several helper methods.
+// Do we want a convention for naming algorithm methods?  Do
+// we want sub-namespaces for algorithms? 
 
 template <typename mvector_t>
   void getCutDimension( const RCP<const Environment> &env,
@@ -121,6 +119,10 @@ template <typename scalar_t>
     const ArrayView<ArrayRCP<scalar_t> > partSizes,
     ArrayRCP<double> &fractionLeft, partId_t &numPartsLeftHalf);
 
+template <typename lno_t, typename scalar_t>
+  scalar_t getCoordWeight(lno_t id, bool balanceCount,
+    multiCriteriaNorm mcnorm, ArrayView<StridedData<lno_t,scalar_t> > weights);
+
 /*! \brief Recursive coordinate bisection algorithm.
  *
  *  \param env   library configuration and problem parameters
@@ -157,42 +159,21 @@ void AlgRCB(
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::scalar_t scalar_t;
 
+  // Make a copy for global ops at the end because 
+  // we subdivide the communicator during the algorithm.
+
+  RCP<Comm<int> > problemComm = comm->duplicate();
+
   std::bitset<NUM_RCB_PARAMS> params;
 
   bool isSet;
   string strChoice;
   int intChoice;
 
-  ////////////////////////////////////////////////////////
-  // Library parameters of interest:
-  //
-  //    speed_versus_quality
-  //    memory_versus_speed
-
   if (env->doStatus())
     env->debug(DETAILED_STATUS, string("Entering AlgPartRCB"));
 
   const Teuchos::ParameterList &pl = env->getParameters();
-
-  getParameterValue<string>(pl, "memory_versus_speed", 
-    isSet, strChoice);
-
-  if (isSet && strChoice==string("memory"))
-    params.set(rcb_lowMemory);
-  else if (isSet && strChoice==string("speed"))
-    params.set(rcb_lowRunTime);
-  else
-    params.set(rcb_balanceMemoryRunTime);
-
-  getParameterValue<string>(pl, "speed_versus_quality",
-    isSet, strChoice);
-
-  if (isSet || strChoice==string("speed"))
-    params.set(rcb_fastSolution);
-  else if (isSet || strChoice==string("quality"))
-    params.set(rcb_goodSolution);
-  else 
-    params.set(rcb_balanceSolution);
 
   ////////////////////////////////////////////////////////
   // Partitioning problem parameters of interest:
@@ -301,6 +282,19 @@ void AlgRCB(
         weights[wdim] = ar;
       }
     }
+  }
+
+  if (env->doStatus() && (numGlobalCoords < 500)){
+    ostringstream oss;
+    oss << "Problem: ";
+    for (size_t i=0; i < numLocalCoords; i++){
+      oss << gnos[i] << " (";
+      for (int dim=0; dim < coordDim; dim++)
+        oss << xyz[dim][i] << " ";
+      oss << ") ";
+    }
+
+    env->debug(VERBOSE_DETAILED_STATUS, oss.str());
   }
 
   ////////////////////////////////////////////////////////
@@ -482,7 +476,6 @@ void AlgRCB(
 
     ArrayView<const gno_t> gnoList = mvector->getMap()->getNodeElementList();
     size_t localSize = mvector->getLocalLength();
-    size_t globalSize = localSize;
   
     pair<gno_t, gno_t> minMax = 
       z2LocalMinMax<gno_t>(gnoList.getRawPtr(), localSize);
@@ -491,24 +484,21 @@ void AlgRCB(
 
     if (groupSize > 1){
       try{
-        reduceAll<int, size_t>(
-          *comm, Teuchos::REDUCE_SUM, 1, &localSize, &globalSize);
-      }
-      Z2_THROW_OUTSIDE_ERROR(*env)
-  
-      try{
         reduceAll<int, gno_t>(
           *comm, Teuchos::REDUCE_MIN, 1, &localMin, &globalMin);
       }
       Z2_THROW_OUTSIDE_ERROR(*env)
     }
+
+    // Tpetra will calculate the globalSize.
+    size_t globalSize = Teuchos::OrdinalTraits<size_t>::invalid();
   
     RCP<map_t> subMap;
     try{
       subMap= rcp(new map_t(globalSize, gnoList, globalMin, comm));
     }
     Z2_THROW_OUTSIDE_ERROR(*env)
-  
+
     coordList_t *avSubList = new coordList_t [multiVectorDim];
   
     for (int dim=0; dim < multiVectorDim; dim++)
@@ -589,7 +579,7 @@ void AlgRCB(
   }
 
   objectMetrics<scalar_t, lno_t>(
-    env, comm, numGlobalParts,                  // input
+    env, problemComm, numGlobalParts,                  // input
     partSizeArrays.view(0, criteriaDim),               // input
     partId.view(0, numLocalCoords),                    // input
     objWgt.view(0, criteriaDim), mcnorm,               // input
@@ -597,6 +587,15 @@ void AlgRCB(
 
   ArrayRCP<const gno_t> gnoList = 
     arcpFromArrayView(mvector->getMap()->getNodeElementList());
+
+  if (env->doStatus() && (numGlobalCoords < 500)){
+    ostringstream oss;
+    oss << "Solution: ";
+    for (size_t i=0; i < gnoList.size(); i++)
+      oss << gnoList[i] << " (" << partId[i] << ") ";
+    
+    env->debug(VERBOSE_DETAILED_STATUS, oss.str());
+  }
 
   solution->setParts(gnoList, partId, metrics);
 }
@@ -658,7 +657,7 @@ template <typename mvector_t>
     typename mvector_t::scalar_type coordGlobalMin,
     typename mvector_t::scalar_type coordGlobalMax,
     typename mvector_t::scalar_type &cutValue,         // output
-    ArrayView<unsigned char> lrFlags,         // output
+    ArrayView<unsigned char> lrFlags,                  // output
     typename mvector_t::scalar_type &imbalance)        // output
 {
   typedef typename mvector_t::scalar_type scalar_t;
@@ -667,11 +666,23 @@ template <typename mvector_t>
   typedef typename mvector_t::node_type node_t;
   typedef StridedData<lno_t, scalar_t> input_t;
 
+  if (env->doStatus())
+    env->debug(DETAILED_STATUS, string("Entering BSPfindCut"));
+
+  bool ignoreWeight = params.test(rcb_balanceCount);
+  bool multiplePartSizeSpecs = params.test(rcb_multiplePartSizeSpecs);
+  bool rectilinearBlocks = params.test(rcb_rectilinearBlocks);
+  bool averageCuts = params.test(rcb_averageCuts);
   bool useIndices = index.size() > 0;
+
+  // A coordinate is considered to be on a cut if it is within
+  // this distance of the cut.
+  double epsilon = (coordGlobalMax - coordGlobalMin) * 10e-9;
 
   // Find the coordinate values and weights.
 
   int numAllCoords = vectors->getLocalLength();
+  int numGlobalCoords = vectors->getGlobalLength();
   int numCoords = 0;
 
   if (useIndices)
@@ -686,15 +697,20 @@ template <typename mvector_t>
       numNonUniformWeights++;
   }
 
-  set<double> differentSizes;
-  for (int i=0; i < weightDim; i++)
-    differentSizes.insert(fractionLeft[i]);
-
-  // TODO: within some epsilon
-  int numDifferentPartSizes = differentSizes.size();
-
-  if (numDifferentPartSizes > 1 && numTestCuts < 3)
+  if (multiplePartSizeSpecs && numTestCuts < 3)
     numTestCuts = 3;
+
+  if (env->doStatus()){
+    ostringstream info;
+    info << "Weight dim " << weightDim << ", Fraction left:";
+    for (int i=0; i < weightDim; i++)
+      info << " " << fractionLeft[i];
+    info << endl << "Dimension " << cutDim << " [";
+    info << coordGlobalMin << ", " << coordGlobalMax << "]";
+    info << endl << "# test cuts " << numTestCuts;
+    info << ", tolerance " << tolerance << endl;
+    env->debug(VERBOSE_DETAILED_STATUS, info.str());
+  }
 
   const scalar_t *coordValue = vectors->getData(cutDim).getRawPtr();
 
@@ -705,9 +721,11 @@ template <typename mvector_t>
     weight = arcp(info, 0, weightDim);
   }
 
-  for (int wdim = 0, widx=coordDim; wdim < weightDim; wdim++){
-    if (!uniformWeights[wdim]){
-      weight[wdim] = input_t(vectors->getData(widx++), 1);
+  if (numNonUniformWeights > 0){
+    for (int wdim = 0, widx=coordDim; wdim < weightDim; wdim++){
+      if (!uniformWeights[wdim]){
+        weight[wdim] = input_t(vectors->getData(widx++), 1);
+      }
     }
   }
 
@@ -720,7 +738,8 @@ template <typename mvector_t>
   else if (params.test(rcb_minTotalWeight))
     mcnorm = normMinimizeTotalWeight;
   
-  // Goal is globally find one cut that comes close to partSizeLeft.
+  // Goal is globally find one cut that comes close to leaving
+  // partSizeLeft*totalWeight on the left side.
 
   Epetra_SerialDenseVector partSizeLeft( 
     View, fractionLeft.getRawPtr(), weightDim);
@@ -730,9 +749,9 @@ template <typename mvector_t>
   //   min     1     2     3     max
   //
   // Space is [min, max].  
-  // Three test cuts: 1, 2 and 3.
-  // 4 regions: [min,1] [1,2] [2,3] [3,max].
-  // 5 boundaries: min, 1, 2, 3, and max.
+  // If there are three test cuts: 1, 2 and 3.
+  //   4 regions: [min,1] [1,2] [2,3] [3,max].
+  //   5 boundaries: min, 1, 2, 3, and max.
 
   int numRegions = numTestCuts + 1;
   int numBoundaries = numTestCuts + 2;
@@ -746,71 +765,74 @@ template <typename mvector_t>
   scalar_t min = coordGlobalMin;
   scalar_t max = coordGlobalMax;
   lno_t numRemaining = numCoords;
-  lno_t sanityCheck = numCoords;
+  lno_t sanityCheck = numGlobalCoords;
 
   double totalWeight = 0, totalWeightLeft=0;
   double targetLeftScalar = 0;
   double targetLeftNorm = 0;
   Epetra_SerialDenseVector targetLeftVector(weightDim);
 
-  int firstNonLeftRegion = 0;
-
   while (!done && !fail && sanityCheck--){
+
+    // Create regions into which coordinates will be placed.
 
     scalar_t diff = (max - min) / numRegions;
     boundaries[0] = min;
     for (int i=0; i < numRegions; i++)
       boundaries[i+1] = boundaries[i] + diff;
 
-    // Be sure to catch all remaining within the boundaries.
-    boundaries[endBoundary] += 1.0;
+    boundaries[endBoundary] += epsilon;
+
+    Array<scalar_t> boundarySum(numBoundaries, 0.0);// total weight on boundary
+    Array<scalar_t> regionMin(numRegions, max+1.0); // lowest value in region
+    Array<scalar_t> regionMax(numRegions, min-1.0); // highest value in region
 
     if (numRemaining > 0){
 
       // Assign each of my points to a region.
-      // lower_bound finds the first cut f, such that f >= coordValue[i].
+      // lower_bound() finds the first cut f, such that f >= coordValue[i].
       // So for now, objects that are on the cut boundary go into the
       // region on the "left" side.
 
-      if (useIndices){
-        for (size_t i=0; i < numCoords; i++){
-    
-          if (lrFlags[i] != 0) 
-            continue;
-    
-          if (numRegions > 2){
-            foundCut = std::lower_bound(boundaries.begin(), boundaries.end(), 
-                coordValue[index[i]]);
-            
-            env->localBugAssertion(__FILE__, __LINE__, "search cuts", 
-              foundCut != boundaries.end(), BASIC_ASSERTION);
-            
-            lrFlags[i] = (unsigned char)(foundCut - boundaries.begin() - 1);
-          }
-          else{
-            lrFlags[i] = (coordValue[index[i]] <= boundaries[1] ? 0 : 1);
-          }
-        }
-      }
-      else {
-        for (size_t i=0; i < numCoords; i++){
-    
-          if (lrFlags[i] != 0)
-            continue;
-    
-          if (numRegions > 2){
-      
-            foundCut = std::lower_bound(boundaries.begin(), boundaries.end(), 
-                coordValue[i]);
+      for (size_t i=0; i < numCoords; i++){
+  
+        if (lrFlags[i] != 0)    // already assigned to left or right
+          continue;
 
-            env->localBugAssertion(__FILE__, __LINE__, "search cuts", 
-              foundCut != boundaries.end(), BASIC_ASSERTION);
-            
-            lrFlags[i] = (unsigned char)(foundCut - boundaries.begin() - 1);
-          }
-          else{
-            lrFlags[i] = (coordValue[i] <= boundaries[1] ? 0 : 1);
-          }
+        int inRegion = 0;
+        int idx = (useIndices ? index[i] : i);
+        scalar_t value = coordValue[idx];
+  
+        if (numRegions > 2){
+       
+          foundCut = std::lower_bound(boundaries.begin(), boundaries.end(), 
+              value);
+          
+          env->localBugAssertion(__FILE__, __LINE__, "search cuts", 
+            foundCut != boundaries.end(), BASIC_ASSERTION);
+
+          inRegion = foundCut - boundaries.begin() - 1;        
+        }
+        else{
+          if (value <= boundaries[1])
+            inRegion = 0;
+          else
+            inRegion = 1;
+        }
+
+        lrFlags[i] = (unsigned char)inRegion;
+
+        if (averageCuts){
+          if (value < regionMin[inRegion])
+            regionMin[inRegion] = value;
+          if (value > regionMax[inRegion])
+            regionMax[inRegion] = value;
+        }
+
+        if (value >= boundaries[inRegion+1]-epsilon){  // "on" boundary
+          scalar_t w = getCoordWeight<lno_t, scalar_t>(idx, 
+            params.test(rcb_balanceCount), mcnorm, weight.view(0, weightDim));
+          boundarySum[inRegion+1] += w;
         }
       }
     }
@@ -821,7 +843,9 @@ template <typename mvector_t>
 
     // Get the global sums in each region
 
-    if (params.test(rcb_balanceCount) || numNonUniformWeights == 0){
+    scalar_t *regionSums = NULL;
+
+    if (ignoreWeight || numNonUniformWeights == 0){
 
       // Ignore weights and sum the objects in each part.
 
@@ -837,6 +861,8 @@ template <typename mvector_t>
         numNonemptyParts,
         metrics,
         weightSums);    // numParts sums of objects in each part
+
+      regionSums = weightSums.getRawPtr();   // object count sums
     }
     else{
       globalSumsByPart<scalar_t, unsigned char, lno_t>(
@@ -850,22 +876,14 @@ template <typename mvector_t>
         metrics,
         weightSums); // object sums, normed weight sums, and if
                      // weightDim>1 individual weight sums
-    }
 
-    // If the objective is to balance object count, get the
-    // object count imbalance.  Otherwise get the normed 
-    // weight imbalance.
-
-    scalar_t *values = weightSums.getRawPtr();   // object count sums
-
-    if (!params.test(rcb_balanceCount) && numNonUniformWeights > 0){
-      values += numParts;   // normed weight sums
+        regionSums =  weightSums.getRawPtr() + numParts;  // normed weight sums
     }
 
     if (totalWeight == 0){   // first time through only
 
       for (int i=0; i < numParts; i++)
-        totalWeight += values[i];
+        totalWeight += regionSums[i];
 
       partSizeLeft.Scale(totalWeight);
       targetLeftVector = partSizeLeft;
@@ -875,8 +893,18 @@ template <typename mvector_t>
       totalWeightLeft = 0;
     }
 
-    if (numDifferentPartSizes > 1){   
+    scalar_t moveRight=0.0;   // for splitting coords on boundary
+    scalar_t globalBoundarySum=0.0;
+    int leftBoundary = 0, rightBoundary = 0;
+    int rightmostLeftRegion = -1;
+    int leftmostRightRegion = numRegions;
 
+    if (params.test(rcb_multiplePartSizeSpecs)){
+
+      env->localBugAssertion(__FILE__, __LINE__, "differing part size arrays", 
+        false, BASIC_ASSERTION);
+
+#if 0
       // more complex: if we have multiple weight dimensions, the
       //   weights are non-uniform, and the part sizes requested
       //   for each each weight dimension differ, then we may not
@@ -899,17 +927,17 @@ template <typename mvector_t>
       int num = 0;
       int bestNum = -1;
   
-      // Find the first cut where the difference does not improve.
+      // Find the cut with the best balance.
 
       while (num < numParts){   // region "num"
 
         // |target-actual| if cut is after region num
 
         for (int i=0; i < weightDim; i++)
-          testVec[i] += values[num];
+          testVec[i] += regionSums[num];
   
-        testVec.Scale(-1.0);
         diffVec = testVec;
+        diffVec.Scale(-1.0);
         diffVec += targetLeftVector;
        
         scalar_t diff = diffVec.Norm2(); 
@@ -932,7 +960,8 @@ template <typename mvector_t>
       if (imbalance <= tolerance){
         cutValue = boundaries[bestNum + 1];
         min = max = cutValue;
-        firstNonLeftRegion = bestNum + 1;
+        rightmostLeftRegion = bestNum;
+        leftmostRightRegion = bestNum+1;
         done = true;
       }
       else if ((bestNum >= 0) && (bestNum <= numParts-2)){
@@ -941,11 +970,13 @@ template <typename mvector_t>
         max = boundaries[bestNum+2];  // right of next region
         if (bestNum+2 == endBoundary)
           max -= 1.0;
-        firstNonLeftRegion = bestNum;
+        rightmostLeftRegion = bestNum-1;
+        leftmostRightRegion = bestNum+2;
       }
       else{
         fail = 1;  // We can't solve this.  Norms don't have a min.
       }
+#endif
     }
     else{    // the part sizes for each weight dimension are the same
 
@@ -955,7 +986,7 @@ template <typename mvector_t>
 
       while (num < numParts){
    
-        testLeft += values[num];
+        testLeft += regionSums[num];
         if (testLeft > targetLeftScalar)
           break;
 
@@ -966,80 +997,241 @@ template <typename mvector_t>
       scalar_t diffLeftCut = targetLeftScalar - prevLeft;
       scalar_t diffRightCut = testLeft - targetLeftScalar;
 
+      leftBoundary = num;
+      rightBoundary = num+1;
+
       if (diffLeftCut < diffRightCut){
         imbalance = diffLeftCut / targetLeftScalar;
         if (imbalance <= tolerance){
-          cutValue = boundaries[num];
-          min = max = cutValue;
           done = true;
-          firstNonLeftRegion = num;
+          cutValue = boundaries[leftBoundary];
+          min = max = cutValue;
+          rightmostLeftRegion = num-1;
+          leftmostRightRegion = num;
         }
       }
       else{
         imbalance = diffRightCut / targetLeftScalar;
         if (imbalance <= tolerance){
-          cutValue = boundaries[num+1];
-          min = max = cutValue;
           done = true;
-          firstNonLeftRegion = num+1;
+          cutValue = boundaries[rightBoundary];
+          min = max = cutValue;
+          rightmostLeftRegion = num;
+          leftmostRightRegion = num+1;
         }
       }
 
-      if (!done){
-        min = boundaries[num];
-        max = boundaries[num+1];
-        if (num+1 == endBoundary)
-          max -= 1.0;
-        firstNonLeftRegion = num;
+      if (!done) {
+        if (leftBoundary != 0)
+          min = boundaries[leftBoundary];
+        if (rightBoundary != endBoundary)
+          max = boundaries[rightBoundary];
+        rightmostLeftRegion = num-1;
+        leftmostRightRegion = num+1;
+      }
+    }
+
+    if (done && averageCuts){
+      scalar_t localExtrema[2], globalExtrema[2];
+      localExtrema[0] = regionMax[rightmostLeftRegion];
+      localExtrema[1] = regionMin[leftmostRightRegion] * -1.0;
+
+      try{
+        reduceAll<int, scalar_t>(*comm, Teuchos::REDUCE_MAX, 2,
+          localExtrema, globalExtrema);
+      }
+      Z2_THROW_OUTSIDE_ERROR(*env)
+
+      scalar_t globalLeftOfCut = globalExtrema[0];
+      scalar_t globalRightOfCut = globalExtrema[1] * -1.0;
+
+      cutValue = (globalRightOfCut + globalLeftOfCut) * 0.5;
+    }
+
+    if (!done){
+
+      // Coordinates on a boundary go into the region to the
+      // left of the boundary. Maybe we can acheive balance
+      // by moving some coordinates on the boundary to the right.
+
+      scalar_t localSum = boundarySum[rightBoundary];
+
+      try{
+        reduceAll<int, scalar_t>( *comm, Teuchos::REDUCE_SUM, 1,
+          &localSum, &globalBoundarySum); 
+      }
+      Z2_THROW_OUTSIDE_ERROR(*env)
+
+      if (globalBoundarySum > 0.0){
+
+        scalar_t testLeft = totalWeightLeft;
+        for (int i=0; i < leftmostRightRegion; i++)
+          testLeft += regionSums[i];
+
+        scalar_t diffSum = 0.0; 
+        scalar_t testSum = testLeft - globalBoundarySum;
+        if (testSum < targetLeftScalar)
+          diffSum = targetLeftScalar - testSum;
+        else
+          diffSum = testSum - targetLeftScalar;
+
+        imbalance = diffSum / targetLeftScalar;
+        if (imbalance <= tolerance){
+          // Put all boundary coordinates in the right part.
+          done = true;
+          moveRight = globalBoundarySum;
+        }
+        else if (testSum < targetLeftScalar){
+          // Balance achievable if boundary coords are split.
+          if (rectilinearBlocks){
+
+            // TODO: we can't come within tolerance without
+            // spliting line of coordinates.  We could retry
+            // using a different dimension.
+
+            done = true;   
+
+            if (env->doStatus())
+              env->debug(BASIC_STATUS, 
+                string("RCB rectilinear blocks breaks imbalance tolerance"));
+          }
+          else{
+            // Put some boundary coordinates in the right part.
+            done = true;
+            moveRight = globalBoundarySum - diffSum;
+          }
+        }
+        else{
+          // Move boundary coords to right to get to balance sooner.
+          moveRight = globalBoundarySum;
+        }
+
+        if (done){
+          cutValue = boundaries[rightBoundary];
+          min = max = cutValue;
+          rightmostLeftRegion = rightBoundary-1;
+          leftmostRightRegion = rightBoundary;
+        }
       }
     }
 
     if (!fail){
 
-      for (int i=0; i < firstNonLeftRegion; i++){
-        totalWeightLeft += values[i];
+      for (int i=0; i <= rightmostLeftRegion; i++){
+        totalWeightLeft += regionSums[i];
       }
-  
-      if (useIndices){
-        for (size_t i=0; i < numCoords; i++){
-          if (lrFlags[i] != leftFlag && lrFlags[i] != rightFlag){
-            if (coordValue[index[i]] <= min){
-              lrFlags[i] = leftFlag;
-              numRemaining--;
-            }
-            else if (coordValue[index[i]] > max){
-              lrFlags[i] = rightFlag;
-              numRemaining--;
-            }
-            else{
-              lrFlags[i] = 0;   // still to be determined
-            }
-          }
-        }
-      }
-      else{
-        for (size_t i=0; i < numCoords; i++){
-          if (lrFlags[i] != leftFlag && lrFlags[i] != rightFlag){
-            if (coordValue[i] <= min){
-              lrFlags[i] = leftFlag;
-              numRemaining--;
-            }
-            else if (coordValue[i] > max){
-              lrFlags[i] = rightFlag;
-              numRemaining--;
-            }
-            else{
-              lrFlags[i] = 0;   // still to be determined
-            }
-          }
-        }
-      }
-    }
+      
+      if (moveRight > 0.0){
 
-  }    // next set of test cuts
+        // We are moving some or all coordinates which are on the right
+        // boundary of the new region over to the right.
+
+        scalar_t localBoundaryWeight = boundarySum[rightBoundary];
+
+        scalar_t localMoveRight = localBoundaryWeight;
+
+        if (moveRight < globalBoundarySum){
+ 
+          int nprocs = comm->getSize();
+          int rank = comm->getRank();
+          Array<scalar_t> scansum(nprocs+1, 0.0);
+          Teuchos::gatherAll<int, scalar_t>(*comm, 1, 
+            &localBoundaryWeight, nprocs, scansum.getRawPtr()+1);
+          for (int i=2; i<=nprocs; i++)
+            scansum[i] += scansum[i-1];
+
+          if (localBoundaryWeight > 0.0){
+
+            scalar_t sumMine = scansum[rank]; // sum of ranks preceding me
+            scalar_t diff = scansum[nprocs] - sumMine;
+            localMoveRight = 0;
+
+            if (diff <= moveRight)
+              localMoveRight = localBoundaryWeight;  // all
+            else{
+              scalar_t leftPart = diff - moveRight;
+              if (leftPart < localBoundaryWeight)
+                localMoveRight = localBoundaryWeight - leftPart;
+            }
+          }
+        }
+
+        if (localMoveRight > 0.0){
+
+          // Check coordinates in the region to the left of right boundary.
+          // If they are on the right boundary, move them to the right until 
+          // the weight adds up to localMoveRight.
+
+          bool moveAll =  (localMoveRight >= localBoundaryWeight);
+          int regionNum = rightBoundary - 1;
+
+          for (size_t i=0; i < numCoords; i++){
+            if (lrFlags[i] == regionNum){
+              lno_t idx = (useIndices ? index[i] : i);
+              if (coordValue[idx] >= boundaries[rightBoundary]-epsilon){ 
+
+                lrFlags[i] = rightFlag;
+                numRemaining--;
+
+                if (!moveAll){
+                  scalar_t w = getCoordWeight<lno_t, scalar_t>(idx, 
+                    ignoreWeight, mcnorm, weight.view(0, weightDim));
+                  localMoveRight -= w;
+                  if (localMoveRight <= 0)
+                    break;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      for (size_t i=0; i < numCoords; i++){
+        if (lrFlags[i] != leftFlag && lrFlags[i] != rightFlag){
+          if (lrFlags[i] <= rightmostLeftRegion){
+            lrFlags[i] = leftFlag;
+            numRemaining--;
+          }
+          else if (lrFlags[i] >= leftmostRightRegion){
+            lrFlags[i] = rightFlag;
+            numRemaining--;
+          }
+          else{
+            lrFlags[i] = 0;   // still to be determined
+          }
+        }
+      }
+
+      if (env->doStatus()){
+        ostringstream ossLeft;
+        ostringstream ossRight;
+        ossLeft << "left: ";
+        ossRight << "right: ";
+        for (size_t i=0; i < numCoords; i++){
+          if (lrFlags[i] == 0)
+            continue;
+          lno_t idx = (useIndices ? index[i] : i);
+          scalar_t val = coordValue[idx];
+          if (lrFlags[i] == leftFlag)
+            ossLeft << val << " ";
+          else if (lrFlags[i] == rightFlag)
+            ossRight << val << " ";
+          else 
+            env->localBugAssertion(__FILE__, __LINE__, 
+              "left/right flags", false, BASIC_ASSERTION);
+        }
+        ostringstream msg;
+        msg << ossLeft.str() << endl << ossRight.str() << endl;
+        env->debug(VERBOSE_DETAILED_STATUS, msg.str());
+      }
+    }   // if !fail
+  } 
 
   env->globalInputAssertion(__FILE__, __LINE__, "partitioning not solvable",
     done && !fail, DEBUG_MODE_ASSERTION, comm);
+
+  if (env->doStatus())
+    env->debug(DETAILED_STATUS, string("Exiting BSPfindCut"));
 }
 
 /*! \brief Divide the coordinates into a "left" half and "right" half.
@@ -1174,7 +1366,7 @@ template <typename mvector_t>
   Z2_THROW_OUTSIDE_ERROR(*env)
     
   scalar_t leftFraction = scalar_t(numLeft)/scalar_t(nGlobalObj);
-  leftNumProcs = static_cast<int>(nprocs * leftFraction);
+  leftNumProcs = static_cast<int>(floor((nprocs*leftFraction)+.5));
 
   if (leftNumProcs == 0)
     leftNumProcs++;
@@ -1614,6 +1806,31 @@ template <typename mvector_t>
       maxCoord = max;
     }
   }
+}
+
+template <typename lno_t, typename scalar_t>
+  scalar_t getCoordWeight(lno_t id, bool balanceCount, 
+    multiCriteriaNorm mcnorm, ArrayView<StridedData<lno_t, scalar_t> > weights)
+{
+  scalar_t wgtValue = 1.0;
+
+  if (!balanceCount){
+    size_t weightDim = weights.size();
+    if (weightDim > 1){
+      Array<scalar_t> coordWeights(weightDim, 1.0);
+      for (int wdim=0; wdim < weightDim; wdim++){
+        if (weights[wdim].size() > 0)
+          coordWeights[wdim] = weights[wdim][id];
+      }
+
+      wgtValue = normedWeight<scalar_t>(coordWeights.view(0,weightDim), mcnorm);
+    }
+    else if (weights[0].size() > 0){
+      wgtValue = weights[0][id];
+    }
+  }
+
+  return wgtValue;
 }
 
 }  // namespace Zoltan2
