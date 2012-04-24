@@ -320,7 +320,7 @@ int main(int argc, char *argv[]) {
   //if NumMyElements == 0, then MaxMyGID < MinMyGID.
 
   if (MyPID == 1) {
-    Map1 = new Epetra_BlockMap(-1, 0, (int*)0, (int*)0, IndexBase, Comm);
+    Map1 = new Epetra_BlockMap(-1, 0, (long long*)0, (int*)0, IndexBase, Comm);
   }
   else {
     Map1 = new Epetra_BlockMap(-1, NumMyElements, MyGlobalElements, ElementSizeList, IndexBase, Comm);
