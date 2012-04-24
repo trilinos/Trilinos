@@ -11,6 +11,8 @@ echo "Making this a shared repo in git."
 git repo-config core.sharedRepository true
 echo "Making repo group read/writable and sticky" 
 chmod -R g+rws .
+echo "Removing read/write/exec from others."
+chmod -R o-rwxs .
 echo "Changing group to $GROUP_NAME"
 chgrp -R $GROUP_NAME .
 if [ "$OWNER_NAME" != "" ] ; then
