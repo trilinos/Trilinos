@@ -71,7 +71,11 @@ main (int argc, char *argv[])
 
   typedef double scalar_type;
   typedef int local_ordinal_type;
+#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_INST_INT_LONG)
   typedef long global_ordinal_type;
+#else
+  typedef int  global_ordinal_type;
+#endif
   typedef Kokkos::SerialNode node_type;
 
   Teuchos::oblackholestream blackHole;
