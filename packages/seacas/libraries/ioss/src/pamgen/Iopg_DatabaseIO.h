@@ -75,7 +75,8 @@ namespace Iopg {
   {
   public:
     DatabaseIO(Ioss::Region *region, const std::string& filename,
-	       Ioss::DatabaseUsage db_usage, MPI_Comm communicator);
+	       Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
+	       const Ioss::PropertyManager &properties);
     ~DatabaseIO();
 
     int64_t node_global_to_local(int64_t /* global */, bool /* must_exist */) const {return 0;}

@@ -220,6 +220,8 @@ namespace Ioss {
 		 Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
 		 const Ioss::PropertyManager &properties);
 
+      Ioss::PropertyManager properties;
+
       /*!
        * Utility function that may be used by derived classes.
        * Determines whether all elements in the model have the same side
@@ -230,7 +232,6 @@ namespace Ioss {
       void set_common_side_topology() const;
       ElementTopology *commonSideTopology;
 
-      Ioss::PropertyManager properties;
       
       /*!
        * Filename that this Database is connected with.  Derived

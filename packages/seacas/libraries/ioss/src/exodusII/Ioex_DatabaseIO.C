@@ -405,13 +405,28 @@ namespace Ioex {
       }
     }
 
-    // See if any properties that need to be handled prior to opening database...
+    // See if there are any properties that need to (or can) be
+    // handled prior to opening/creating database...
+    bool compress = ((properties.exists("COMPRESSION_LEVEL") &&
+		      properties.get("COMPRESSION_SHUFFLE").get_int() > 0) ||
+		     (properties.exists("COMPRESSION_SHUFFLE") &&
+		      properties.get("COMPRESSION_SHUFFLE").get_int() > 0));
+
+    if (compress) {
+      exodusMode |= EX_NETCDF4;
+    }
+
     if (properties.exists("FILE_TYPE")) {
       std::string type = properties.get("FILE_TYPE").get_string();
-      if (type == "netcdf4") {
+      if (type == "netcdf4" || type == "netcdf-4" || type == "hdf5") {
 	exodusMode |= EX_NETCDF4;
       }
     }
+
+    if (properties.exists("MAXIMUM_NAME_LENGTH")) {
+      maximumNameLength = properties.get("MAXIMUM_NAME_LENGTH").get_int();
+    }
+
     if (properties.exists("INTEGER_SIZE_DB")) {
       int isize = properties.get("INTEGER_SIZE_DB").get_int();
       if (isize == 8) {
@@ -7031,15 +7046,6 @@ namespace Ioex {
 	    size_t index = attribute_count - unknown_attributes + 1;
 	    block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, storage,
 					 Ioss::Field::ATTRIBUTE, my_element_count, index));
-	  
-	    if (myProcessor == 0) {
-	      IOSS_WARNING << "For element block '" << block->name()
-			   << "' of type '" << type << "'\n\tthere were "
-			   << unknown_attributes << " attributes that are not known to the IO Subsystem\n\t"
-			   << "in addition to the " << attribute_count - unknown_attributes
-			   << " known. The extra attributes can be accessed\n\tas the field '"
-			   << att_name << "' with " << unknown_attributes << " components.\n\n";
-	    }
 	  }
 	}
 

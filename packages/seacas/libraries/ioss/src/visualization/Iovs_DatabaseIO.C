@@ -36,8 +36,9 @@ namespace Iovs {
                     const Ioss::Field &field, const std::string& inout);
 
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string& filename,
-                         Ioss::DatabaseUsage db_usage, MPI_Comm communicator) :
-    Ioss::DatabaseIO (region, filename, db_usage, communicator)
+                         Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
+			 const Ioss::PropertyManager &props) :
+    Ioss::DatabaseIO (region, filename, db_usage, communicator, props)
 
   {
     dbState = Ioss::STATE_UNKNOWN; 
