@@ -40,6 +40,10 @@ namespace Xpetra {
     using EpetraMultiVector::normInf;      // overloading, not hiding
     using EpetraMultiVector::normWeighted; // overloading, not hiding
     using EpetraMultiVector::meanValue;    // overloading, not hiding
+    using EpetraMultiVector::replaceGlobalValue;    // overloading, not hiding
+    using EpetraMultiVector::sumIntoGlobalValue;    // overloading, not hiding
+    using EpetraMultiVector::replaceLocalValue;    // overloading, not hiding
+    using EpetraMultiVector::sumIntoLocalValue;    // overloading, not hiding
 
     //! @name Constructor/Destructor Methods
     //@{
