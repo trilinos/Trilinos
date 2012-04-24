@@ -482,6 +482,9 @@ void AlgRCB(
     gno_t localMin = minMax.first;
     gno_t globalMin = localMin;
 
+// TODO  Siva says don't need these two reduceAll operations.
+// TODO  Use map constructor with globalSize=-1 and globalMin = 0
+// TODO  (since we created the multivector, we know the base is 0).
     if (groupSize > 1){
       try{
         reduceAll<int, gno_t>(
@@ -495,6 +498,7 @@ void AlgRCB(
   
     RCP<map_t> subMap;
     try{
+      // See TODO above.
       subMap= rcp(new map_t(globalSize, gnoList, globalMin, comm));
     }
     Z2_THROW_OUTSIDE_ERROR(*env)
@@ -1672,11 +1676,13 @@ template <typename scalar_t>
     partId_t &numPartsLeftHalf)
 {
   partId_t numParts = part1 - part0 + 1;
+  // TODO In LDRD, substitute call to machine model for
+  // TODO computation of numPartsLeftHalf below.
   numPartsLeftHalf = numParts / 2;
-  partId_t left0 = part0;
-  partId_t left1 = left0 + numPartsLeftHalf - 1;
-  partId_t right0 = left1 + 1;
-  partId_t right1 = part1;
+  partId_t left0 = part0;   // First part in left half
+  partId_t left1 = left0 + numPartsLeftHalf - 1;  // Last part in left half
+  partId_t right0 = left1 + 1;  // First part in right half
+  partId_t right1 = part1;  // Last part in right half
 
   int weightDim = partSizes.size();
   fractionLeft = arcp(new double [weightDim], 0, weightDim);

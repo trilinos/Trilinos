@@ -160,7 +160,6 @@ int main(int argc, char *argv[])
     coordVec, coordStrides, 
     weightVec, weightStrides);
 
-
   // Create a Zoltan2 partitioning problem
 
 #ifdef HAVE_ZOLTAN2_MPI                   
