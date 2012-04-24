@@ -336,7 +336,7 @@ static void close_all_conn(void);
 
 
 static ib_transport_global transport_global_data;
-static const int MIN_TIMEOUT = 10;  /* in milliseconds */
+static const int MIN_TIMEOUT = 0;  /* in milliseconds */
 
 
 /**
@@ -1390,6 +1390,8 @@ NNTI_result_t NNTI_ib_wait (
 
     log_level debug_level=nnti_debug_level;
 
+    double entry_time=trios_get_time();
+
     trios_declare_timer(call_time);
     trios_declare_timer(total_time);
 
@@ -1487,7 +1489,9 @@ retry:
                 }
                 /* case 2: timed out */
                 else if (rc==NNTI_ETIMEDOUT) {
-                    elapsed_time += timeout_per_call;
+                    elapsed_time = (trios_get_time() - entry_time);
+
+//                    elapsed_time += timeout_per_call;
 
                     /* if the caller asked for a legitimate timeout, we need to exit */
                     if (((timeout > 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
@@ -1502,7 +1506,12 @@ retry:
 
                     goto retry;
                 }
-                /* case 3: failure */
+                /* case 3: poll was interupted */
+                else if (rc==NNTI_EAGAIN) {
+                    nnti_rc = NNTI_EAGAIN;
+                    break;
+                }
+                /* case 4: failure */
                 else {
                     log_error(debug_level, "poll_comp_channel failed (cq==%p): %s",
                             cq, strerror(errno));
@@ -1586,6 +1595,8 @@ NNTI_result_t NNTI_ib_waitany (
     trios_declare_timer(total_time);
 
     struct ibv_wc wc;
+
+    double entry_time=trios_get_time();
 
     trios_start_timer(total_time);
 
@@ -1678,7 +1689,9 @@ retry:
                 }
                 /* case 2: timed out */
                 else if (rc==NNTI_ETIMEDOUT) {
-                    elapsed_time += timeout_per_call;
+                    elapsed_time = (trios_get_time() - entry_time);
+
+//                    elapsed_time += timeout_per_call;
 
                     /* if the caller asked for a legitimate timeout, we need to exit */
                     if (((timeout > 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
@@ -1693,7 +1706,12 @@ retry:
 
                     goto retry;
                 }
-                /* case 3: failure */
+                /* case 3: poll was interupted */
+                else if (rc==NNTI_EAGAIN) {
+                    nnti_rc = NNTI_EAGAIN;
+                    break;
+                }
+                /* case 4: failure */
                 else {
                     log_error(debug_level, "poll_comp_channel failed (cq==%p): %s",
                             transport_global_data.data_cq, strerror(errno));
@@ -1771,6 +1789,8 @@ NNTI_result_t NNTI_ib_waitall (
     trios_declare_timer(total_time);
 
     struct ibv_wc wc;
+
+    double entry_time=trios_get_time();
 
     trios_start_timer(total_time);
 
@@ -1864,7 +1884,9 @@ retry:
                 }
                 /* case 2: timed out */
                 else if (rc==NNTI_ETIMEDOUT) {
-                    elapsed_time += timeout_per_call;
+                    elapsed_time = (trios_get_time() - entry_time);
+
+//                  elapsed_time += timeout_per_call;
 
                     /* if the caller asked for a legitimate timeout, we need to exit */
                     if (((timeout > 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
@@ -1879,7 +1901,12 @@ retry:
 
                     goto retry;
                 }
-                /* case 3: failure */
+                /* case 3: poll was interupted */
+                else if (rc==NNTI_EAGAIN) {
+                    nnti_rc = NNTI_EAGAIN;
+                    break;
+                }
+                /* case 4: failure */
                 else {
                     log_error(debug_level, "poll_comp_channel failed (cq==%p): %s",
                             transport_global_data.data_cq, strerror(errno));
@@ -1935,6 +1962,18 @@ NNTI_result_t NNTI_ib_fini (
         const NNTI_transport_t *trans_hdl)
 {
     close_all_conn();
+
+    ibv_destroy_comp_channel(transport_global_data.data_comp_channel);
+    ibv_destroy_cq(transport_global_data.data_cq);
+    ibv_destroy_srq(transport_global_data.data_srq);
+
+    ibv_destroy_comp_channel(transport_global_data.req_comp_channel);
+    ibv_destroy_cq(transport_global_data.req_cq);
+    ibv_destroy_srq(transport_global_data.req_srq);
+
+    ibv_dealloc_pd(transport_global_data.pd);
+
+    ibv_close_device(transport_global_data.ctx);
 
     return(NNTI_OK);
 }
@@ -2381,11 +2420,11 @@ int process_event(
                 wr->last_op=IB_OP_NEW_REQUEST;
                 wr->op_state = RECV_COMPLETE;
                 if (transport_global_data.req_queue.req_received == transport_global_data.srq_count) {
-                    log_warn(debug_level, "resetting req_queue.req_received to 0");
+                    log_debug(debug_level, "resetting req_queue.req_received to 0");
                     transport_global_data.req_queue.req_received=0;
                 }
                 if (transport_global_data.req_queue.req_received != wc->wr_id) {
-                    log_warn(debug_level, "req_queue.req_received(%llu) != wc->wr_id(%llu)", transport_global_data.req_queue.req_received, wc->wr_id);
+                    log_debug(debug_level, "req_queue.req_received(%llu) != wc->wr_id(%llu)", transport_global_data.req_queue.req_received, wc->wr_id);
                 }
                 transport_global_data.req_queue.req_received++;
             }
@@ -3866,8 +3905,7 @@ static int start_connection_listener_thread()
     if (rc) {
         log_error(nnti_debug_level, "could not spawn thread");
         rc = 1;
-    }
-    else {
+    } else {
         /* Tell this thread to clean up after exit -- valgrind detected memory leak */
         rc = nthread_detach(thread);
     }
@@ -3884,7 +3922,7 @@ static struct ibv_device *get_ib_device(void)
     if (dev_count == 0)
         return NULL;
     if (dev_count > 1) {
-                log_warn(nnti_debug_level, "found %d devices, defaulting the dev_list[0] (%p)", dev_count, dev_list[0]);
+                log_debug(nnti_debug_level, "found %d devices, defaulting the dev_list[0] (%p)", dev_count, dev_list[0]);
     }
     dev = dev_list[0];
     ibv_free_device_list(dev_list);
@@ -3927,7 +3965,10 @@ static NNTI_result_t poll_comp_channel(
         int timeout)
 {
     NNTI_result_t rc=NNTI_OK;
+    int poll_rc=0;
     struct pollfd my_pollfd;
+
+    int retries_left=3;
 
     struct ibv_cq *ev_cq;
     void          *ev_ctx;
@@ -3942,10 +3983,17 @@ static NNTI_result_t poll_comp_channel(
     my_pollfd.events  = POLLIN;
     my_pollfd.revents = 0;
     log_debug(nnti_debug_level, "polling with timeout==%d", timeout);
-    if (poll(&my_pollfd, 1, timeout) == 0) {
-        log_debug(nnti_debug_level, "poll timed out: %x", my_pollfd.revents);
+    poll_rc = poll(&my_pollfd, 1, timeout);
+    if (poll_rc == 0) {
+        log_debug(nnti_debug_level, "poll timed out: %d", my_pollfd.revents);
         rc = NNTI_ETIMEDOUT;
         goto cleanup;
+    } else if (poll_rc < 0) {
+        log_error(nnti_debug_level, "poll error: poll_rc=%d (%s)", poll_rc, strerror(errno));
+        rc = NNTI_EIO;
+        goto cleanup;
+    } else {
+        log_debug(nnti_debug_level, "poll success: poll_rc=%d ; revents=%d", poll_rc, my_pollfd.revents);
     }
 
     log_debug(nnti_debug_level, "completion channel poll complete - %d event(s) waiting", my_pollfd.revents);
@@ -3958,7 +4006,13 @@ try_again:
         rc = NNTI_OK;
     } else {
         if (errno == EAGAIN) {
-            goto try_again;
+            if (retries_left > 0) {
+                retries_left--;
+                goto try_again;
+            } else {
+                rc = NNTI_EAGAIN;
+                goto cleanup;
+            }
         }
         log_error(nnti_debug_level, "ibv_get_cq_event failed (ev_cq==%p): %s",
                 ev_cq, strerror(errno));
@@ -3977,7 +4031,6 @@ cleanup:
     if (ibv_req_notify_cq(cq, 0)) {
         log_error(nnti_debug_level, "Couldn't request CQ notification: %s", strerror(errno));
         rc = NNTI_EIO;
-        goto cleanup;
     }
 
     log_debug(nnti_debug_level, "exit");
