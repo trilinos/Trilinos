@@ -14,6 +14,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tGatherSolution
+  SOURCES gather_solution.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tBasisTimesVector
   SOURCES basis_times_vector.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
