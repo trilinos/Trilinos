@@ -182,10 +182,10 @@ PerformanceData run( comm::Machine machine ,
   //------------------------------------
   // Allocate linear system coefficients and rhs:
 
-  const size_t local_owned_length = linsys_matrix.graph.row_count();
+  const size_t local_owned_length = linsys_matrix.graph.row_map.length();
 
   linsys_matrix.coefficients =
-    Kokkos::create_multivector< matrix_coefficients_type >( linsys_matrix.graph.entry_dimension(0) );
+    Kokkos::create_multivector< matrix_coefficients_type >( linsys_matrix.graph.entries.dimension(0) );
 
   linsys_rhs =
     Kokkos::create_multivector< vector_type >( local_owned_length );

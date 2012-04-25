@@ -84,14 +84,14 @@ public:
     // on the local thread, but cannot dynamically allocate
     VectorValue * const y = & m_y(0,iBlockRow);
 
-    const size_type iEntryBegin = m_A.graph.row_entry_begin(iBlockRow);
-    const size_type iEntryEnd   = m_A.graph.row_entry_end(iBlockRow);
+    const size_type iEntryBegin = m_A.graph.row_map[ iBlockRow ];
+    const size_type iEntryEnd   = m_A.graph.row_map[ iBlockRow + 1 ];
 
     // Leading dimension guaranteed contiguous for MultiVector
     for ( size_type j = 0 ; j < m_A.block.dimension() ; ++j ) { y[j] = 0 ; }
 
     for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
-      const VectorValue * const x = & m_x( 0 , m_A.graph(iEntry) );
+      const VectorValue * const x = & m_x( 0 , m_A.graph.entries(iEntry) );
       const MatrixValue * const a = & m_A.values( 0 , iEntry );
 
       Multiply< BlockSpec , void , void >::apply( m_A.block , a , x , y );
@@ -102,7 +102,7 @@ public:
                      const vector_type & x ,
                      const vector_type & y )
   {
-    parallel_for( A.graph.row_count() , Multiply(A,x,y) );
+    parallel_for( A.graph.row_map.length() , Multiply(A,x,y) );
   }
 };
 

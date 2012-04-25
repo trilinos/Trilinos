@@ -114,15 +114,15 @@ struct Factory< Kokkos::CrsArray< IndexType , Device , IndexType > ,
 
     size_t offset = 0 ;
     for ( size_t i = 0 ; i < owned_node ; ++i ) {
-      const size_t j_end = node_elem_ids.row_entry_end(i);
-            size_t j     = node_elem_ids.row_entry_begin(i);
+      const size_t j_end = node_elem_ids.row_map[i+1];
+            size_t j     = node_elem_ids.row_map[i];
 
       node_node_begin[i] = offset ;
 
       std::vector< unsigned > & work = node_node_ids[i] ;
 
       for ( ; j < j_end ; ++j ) {
-        const size_t elem_id = node_elem_ids(j,0);
+        const size_t elem_id = node_elem_ids.entries(j,0);
         for ( size_t k = 0 ; k < ElemNodeCount ; ++k ) {
           work.push_back( elem_node_ids( elem_id , k ) );
         }

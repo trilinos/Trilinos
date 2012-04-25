@@ -41,110 +41,107 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_CRSARRAY_HPP
-#define KOKKOS_CRSARRAY_HPP
+#ifndef KOKKOS_PREFIXSUM_HPP
+#define KOKKOS_PREFIXSUM_HPP
 
 #include <string>
-
-#include <Kokkos_PrefixSum.hpp>
-#include <Kokkos_Array.hpp>
+#include <impl/Kokkos_forward.hpp>
+#include <impl/Kokkos_ArrayBounds.hpp>
+#include <impl/Kokkos_StaticAssert.hpp>
 
 namespace Kokkos {
 
 //----------------------------------------------------------------------------
-/** \brief  Compressed row storage array.
- *
- *  A row has a range of entries:
- *
- *    row_map[i0] <= entry < row_map[i0+1]
- *    0 <= i1 < row_map[i0+1] - row_map[i0]
- *
- *  entries( entry ,            i2 , i3 , ... );
- *  entries( row_map[i0] + i1 , i2 , i3 , ... );
- */
+/** \brief  Prefix sum of integer values.  */
 
-template< class ArrayType , class DeviceType ,
-          typename SizeType = typename DeviceType::size_type >
-class CrsArray {
+template< typename IntType , class DeviceType >
+class PrefixSum {
 public:
-  typedef DeviceType                            device_type ;
-  typedef PrefixSum< SizeType ,  device_type >  row_map_type ;
-  typedef Array<     ArrayType , device_type >  entries_type ;
+  typedef DeviceType  device_type ;
+  typedef IntType     size_type ;
 
-  row_map_type row_map ;
-  entries_type entries ;
+  typedef PrefixSum< size_type , typename HostMapped< device_type >::type >
+          HostMirror ;
 
-  typedef CrsArray< ArrayType ,
-                    typename HostMapped< device_type >::type ,
-                    SizeType > HostMirror ;
+  /*------------------------------------------------------------------*/
+  /** \brief  Number of values  */
+  size_type length() const ;
 
+  /** \brief  Sum of values == operator[]( count() ) */
+  size_type sum() const ;
+
+  /** \brief  Begining of entries for a given row */
+  template< typename iType >
+  size_type operator[]( const iType & ) const ;
+
+  /*------------------------------------------------------------------*/
   /** \brief  Construct a NULL view */
-  CrsArray() : row_map() , entries() {}
+  PrefixSum();
 
   /** \brief  Construct a view of the array */
-  CrsArray( const CrsArray & rhs )
-    : row_map( rhs.row_map ), entries( rhs.entries ) {}
+  PrefixSum( const PrefixSum & rhs );
 
   /** \brief  Assign to a view of the rhs array.
    *          If the old view is the last view
    *          then allocated memory is deallocated.
    */
-  CrsArray & operator = ( const CrsArray & rhs )
-    { row_map = rhs.row_map ; entries = rhs.entries ; return *this ; }
+  PrefixSum & operator = ( const PrefixSum & rhs );
 
   /**  \brief  Destroy this view of the array.
    *           If the last view then allocated memory is deallocated.
    */
-  ~CrsArray() {}
+  ~PrefixSum();
+
+  /*------------------------------------------------------------------*/
+  operator bool() const ;
+
+  /** \brief  Query if view to same memory */
+  bool operator == ( const PrefixSum & ) const ;
+
+  /** \brief  Query if not view to same memory */
+  bool operator != ( const PrefixSum & ) const ;
 };
 
 //----------------------------------------------------------------------------
 
-template< class CrsArrayType , class InputType >
+template< class PrefixSumType , class InputType >
 inline
-CrsArray< typename CrsArrayType::entries_type::array_type ,
-          typename CrsArrayType::device_type ,
-          typename CrsArrayType::row_map_type::size_type >
-create_crsarray( const std::string & label ,
-                 const InputType & input )
+PrefixSum< typename PrefixSumType::size_type ,
+           typename PrefixSumType::device_type >
+create_prefixsum( const std::string & label ,
+                  const InputType & input )
 {
-  typedef CrsArray< typename CrsArrayType::entries_type::array_type ,
-                    typename CrsArrayType::device_type ,
-                    typename CrsArrayType::row_map_type::size_type >
-    output_type ;
-
-  return Impl::Factory< output_type , InputType >
-             ::create( label , input );
+  return Impl::Factory< PrefixSumType , InputType >::create( label , input );
 }
 
-template< class CrsArrayType , class InputType >
+template< class PrefixSumType , class InputType >
 inline
-CrsArray< typename CrsArrayType::entries_type::array_type ,
-          typename CrsArrayType::device_type ,
-          typename CrsArrayType::row_map_type::size_type >
-create_crsarray( const InputType & input )
+PrefixSum< typename PrefixSumType::size_type ,
+           typename PrefixSumType::device_type >
+create_prefixsum( const InputType & input )
 {
-  typedef CrsArray< typename CrsArrayType::entries_type::array_type ,
-                    typename CrsArrayType::device_type ,
-                    typename CrsArrayType::row_map_type::size_type >
-    output_type ;
-
-  return Impl::Factory< output_type , InputType >
+  return Impl::Factory< PrefixSumType , InputType >
              ::create( std::string() , input );
 }
 
 //----------------------------------------------------------------------------
 
-template< class ArrayType ,
+template< typename IntType ,
           class DeviceDst ,
-          class DeviceSrc ,
-          typename SizeType >
+          class DeviceSrc >
 inline
-void deep_copy(       CrsArray<ArrayType,DeviceDst,SizeType> & dst ,
-                const CrsArray<ArrayType,DeviceSrc,SizeType> & src )
+void deep_copy(       PrefixSum<IntType,DeviceDst> & dst ,
+                const PrefixSum<IntType,DeviceSrc> & src )
 {
-  deep_copy( dst.entries , src.entries );
-  deep_copy( dst.row_map , src.row_map );
+  typedef PrefixSum<IntType,DeviceDst> dst_type ;
+  typedef PrefixSum<IntType,DeviceSrc> src_type ;
+
+  if ( dst.operator!=(src) ) {
+
+    Impl::prefixsum_require_equal_dimension( dst.length() , src.length() );
+
+    Impl::Factory< dst_type , src_type >::deep_copy( dst , src );
+  }
 }
 
 } // namespace Kokkos
@@ -152,10 +149,10 @@ void deep_copy(       CrsArray<ArrayType,DeviceDst,SizeType> & dst ,
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#include <impl/Kokkos_CrsArray_factory.hpp>
+#include <impl/Kokkos_PrefixSum_factory.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#endif /* #ifndef KOKKOS_CRSARRAY_HPP */
+#endif /* #ifndef KOKKOS_PREFIXSUM_HPP */
 

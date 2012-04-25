@@ -122,12 +122,12 @@ void generate_matrix(
   host_values_type h_values = Kokkos::create_mirror( matrix.values );
 
   for ( size_t outer_row = 0 ; outer_row < outer_length ; ++outer_row ) {
-    const size_t outer_entry_begin = h_graph.row_entry_begin( outer_row );
-    const size_t outer_entry_end   = h_graph.row_entry_end( outer_row );
+    const size_t outer_entry_begin = h_graph.row_map[outer_row];
+    const size_t outer_entry_end   = h_graph.row_map[outer_row+1];
 
     for ( size_t outer_entry = outer_entry_begin ;
                  outer_entry < outer_entry_end ; ++outer_entry ) {
-      const size_t outer_column = h_graph(outer_entry);
+      const size_t outer_column = h_graph.entries(outer_entry);
 
       for ( size_t inner_row = 0 ; inner_row < M ; ++inner_row ) {
         for ( size_t inner_column = 0 ; inner_column <= inner_row ; ++inner_column ) {
@@ -186,8 +186,8 @@ void test_block_crs_matrix( const size_t M , const size_t N )
   host_graph_type h_graph  = Kokkos::create_mirror( matrix.graph );
 
   for ( size_t outer_row = 0 ; outer_row < outer_length ; ++outer_row ) {
-    const size_t outer_entry_begin = h_graph.row_entry_begin( outer_row );
-    const size_t outer_entry_end   = h_graph.row_entry_end( outer_row );
+    const size_t outer_entry_begin = h_graph.row_map[outer_row];
+    const size_t outer_entry_end   = h_graph.row_map[outer_row+1];
 
     for ( size_t inner_row = 0 ; inner_row < M ; ++inner_row ) {
 
@@ -196,7 +196,7 @@ void test_block_crs_matrix( const size_t M , const size_t N )
       for ( size_t outer_entry = outer_entry_begin ;
                    outer_entry < outer_entry_end ; ++outer_entry ) {
 
-        const size_t outer_column = h_graph( outer_entry );
+        const size_t outer_column = h_graph.entries( outer_entry );
 
         for ( size_t inner_column = 0 ; inner_column < M ; ++inner_column ) {
 

@@ -78,11 +78,11 @@ box_mesh_fixture_verify(
                   node_index < node_count_total ; ++node_index ) {
 
     for ( size_type
-            j = node_elem_ids.row_entry_begin( node_index ) ;
-            j < node_elem_ids.row_entry_end(   node_index ) ; ++j ) {
+            j = node_elem_ids.row_map[ node_index ] ;
+            j < node_elem_ids.row_map[ node_index + 1 ] ; ++j ) {
 
-      const size_type elem_index = node_elem_ids(j,0);
-      const size_type node_local = node_elem_ids(j,1);
+      const size_type elem_index = node_elem_ids.entries(j,0);
+      const size_type node_local = node_elem_ids.entries(j,1);
       const size_type en_id      = elem_node_ids(elem_index,node_local);
 
       if ( node_index != en_id ) {
@@ -361,7 +361,7 @@ box_mesh_fixture( const size_t proc_count ,
     node_elem_ids = Kokkos::create_mirror( mesh.node_elem_ids );
 
   for ( size_t i = 0 ; i < node_count_total ; ++i ) {
-    node_elem_work[i] = node_elem_ids.row_entry_begin(i);
+    node_elem_work[i] = node_elem_ids.row_map[i];
   }
 
   // Looping in element order insures the list of elements
@@ -372,8 +372,8 @@ box_mesh_fixture( const size_t proc_count ,
       const size_type nid = elem_node_ids(i, n);
       const size_type j = node_elem_work[nid] ; ++node_elem_work[nid] ;
 
-      node_elem_ids( j , 0 ) = i ;
-      node_elem_ids( j , 1 ) = n ;
+      node_elem_ids.entries( j , 0 ) = i ;
+      node_elem_ids.entries( j , 1 ) = n ;
     }
   }
   //------------------------------------

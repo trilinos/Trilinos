@@ -197,9 +197,9 @@ template<> struct HostMapped<Host> { typedef Host type ; };
 #include <Host/Kokkos_Host_MDArray.hpp>
 #endif
 
-#if   defined( KOKKOS_CRSARRAY_HPP ) && \
-    ! defined( KOKKOS_HOST_CRSARRAY_HPP )
-#include <Host/Kokkos_Host_CrsArray.hpp>
+#if   defined( KOKKOS_PREFIXSUM_HPP ) && \
+    ! defined( KOKKOS_HOST_PREFIXSUM_HPP )
+#include <Host/Kokkos_Host_PrefixSum.hpp>
 #endif
 
 //----------------------------------------------------------------------------

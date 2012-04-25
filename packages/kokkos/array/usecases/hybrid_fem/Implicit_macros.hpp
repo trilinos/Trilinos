@@ -510,8 +510,8 @@ struct DirichletBoundary< ScalarType , ScalarCoordType , KOKKOS_MACRO_DEVICE >
     //  that correspond to boundary conditions, and
     //  adjust the load vector accordingly
 
-    const size_type iBeg = matrix.graph.row_entry_begin(inode);
-    const size_type iEnd = matrix.graph.row_entry_end(  inode);
+    const size_type iBeg = matrix.graph.row_map[inode];
+    const size_type iEnd = matrix.graph.row_map[inode+1];
 
     const ScalarCoordType z = node_coords(inode,2);
     const bool bc_lower = z <= bc_lower_z ;
@@ -527,7 +527,8 @@ struct DirichletBoundary< ScalarType , ScalarCoordType , KOKKOS_MACRO_DEVICE >
       //  on the diagonal
 
       for( size_type i = iBeg ; i < iEnd ; i++) {
-        matrix.coefficients(i) = (int) inode == matrix.graph(i) ? 1 : 0 ;
+        matrix.coefficients(i) =
+          (int) inode == matrix.graph.entries(i) ? 1 : 0 ;
       }
     }
     else {
@@ -535,7 +536,7 @@ struct DirichletBoundary< ScalarType , ScalarCoordType , KOKKOS_MACRO_DEVICE >
       //  Clear them and adjust the load vector
 
       for( size_type i = iBeg ; i < iEnd ; i++ ) {
-        const size_type cnode = matrix.graph(i) ;
+        const size_type cnode = matrix.graph.entries(i) ;
 
         const ScalarCoordType zc = node_coords(cnode,2);
         const bool c_bc_lower = zc <= bc_lower_z ;
@@ -571,7 +572,7 @@ struct DirichletBoundary< ScalarType , ScalarCoordType , KOKKOS_MACRO_DEVICE >
     op.bc_upper_z     = bc_upper_z ;
     op.bc_lower_value = bc_lower_value ;
     op.bc_upper_value = bc_upper_value ;
-    parallel_for( linsys_matrix.graph.row_count() , op );
+    parallel_for( linsys_matrix.graph.row_map.length() , op );
   }
 };
 

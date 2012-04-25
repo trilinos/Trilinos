@@ -48,6 +48,7 @@
 #include <Kokkos_MultiVector.hpp>
 #include <Kokkos_Array.hpp>
 #include <Kokkos_MDArray.hpp>
+#include <Kokkos_PrefixSum.hpp>
 #include <Kokkos_CrsArray.hpp>
 
 #include <Kokkos_Host.hpp>

@@ -80,15 +80,15 @@ public:
   KOKKOS_MACRO_DEVICE_FUNCTION
   void operator()( size_type irow ) const
   {
-    const size_type node_elem_begin = node_elem_ids.row_entry_begin(irow);
-    const size_type node_elem_end   = node_elem_ids.row_entry_end(irow);
+    const size_type node_elem_begin = node_elem_ids.row_map[irow];
+    const size_type node_elem_end   = node_elem_ids.row_map[irow+1];
 
     //  for each element that a node belongs to 
 
     for ( size_type i = node_elem_begin ; i < node_elem_end ; i++ ) {
 
-      const size_type elem_id   = node_elem_ids( i, 0);
-      const size_type row_index = node_elem_ids( i, 1);
+      const size_type elem_id   = node_elem_ids.entries( i, 0);
+      const size_type row_index = node_elem_ids.entries( i, 1);
 
       system_rhs(irow) += elem_vectors(elem_id, row_index);
 
@@ -120,7 +120,7 @@ public:
     op.system_coeff  = matrix.coefficients ;
     op.system_rhs    = rhs ;
 
-    parallel_for( matrix.graph.row_count() , op );
+    parallel_for( matrix.graph.row_map.length() , op );
   }
 };
 

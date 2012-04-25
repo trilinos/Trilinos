@@ -85,17 +85,17 @@ public:
   __device__
   void execute_on_device() const
   {
-    const size_type blockCount = m_A.graph.row_count();
+    const size_type blockCount = m_A.graph.row_map.length();
 
     for ( size_type iBlock = blockIdx.x ;
                     iBlock < blockCount ; iBlock += gridDim.x ) {
       VectorValue y = 0 ;
 
-      const size_type iEntryEnd = m_A.graph.row_entry_end(iBlock);
-            size_type iEntry    = m_A.graph.row_entry_begin(iBlock);
+      const size_type iEntryEnd = m_A.graph.row_map[iBlock+1];
+            size_type iEntry    = m_A.graph.row_map[iBlock];
 
       for ( ; iEntry < iEntryEnd ; ++iEntry ) {
-        const VectorValue * const x = & m_x( 0 , m_A.graph(iEntry) );
+        const VectorValue * const x = & m_x( 0 , m_A.graph.entries(iEntry) );
         const MatrixValue * const a = & m_A.values( 0 , iEntry );
 
         y += Multiply< BlockSpec >::apply( m_A.block , a , x );
@@ -115,7 +115,7 @@ public:
       cuda_internal_maximum_warp_count() * Impl::CudaTraits::WarpSize ;
 
     const dim3 grid(
-      std::min( A.graph.row_count() , cuda_internal_maximum_grid_count() ) , 1 , 1 );
+      std::min( A.graph.row_map.length() , cuda_internal_maximum_grid_count() ) , 1 , 1 );
     const dim3 block = Multiply<BlockSpec>::thread_block( A.block );
 
     const size_type shmem       = Multiply<BlockSpec>::template shmem_size<vector_type>( A.block );

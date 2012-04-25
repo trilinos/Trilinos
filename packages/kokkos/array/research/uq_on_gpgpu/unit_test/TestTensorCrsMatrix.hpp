@@ -117,12 +117,12 @@ void generate_matrix(
   host_values_type h_values = Kokkos::create_mirror( matrix.values );
 
   for ( size_t outer_row = 0 ; outer_row < N*N*N ; ++outer_row ) {
-    const size_t outer_entry_begin = h_graph.row_entry_begin( outer_row );
-    const size_t outer_entry_end   = h_graph.row_entry_end( outer_row );
+    const size_t outer_entry_begin = h_graph.row_map[outer_row];
+    const size_t outer_entry_end   = h_graph.row_map[outer_row+1];
 
     for ( size_t outer_entry = outer_entry_begin ;
                  outer_entry < outer_entry_end ; ++outer_entry ) {
-      const size_t outer_column = h_graph(outer_entry);
+      const size_t outer_column = h_graph.entries(outer_entry);
 
       for ( size_t inner_entry = 0 ; inner_entry < M ; ++inner_entry ) {
         h_values(inner_entry,outer_entry) =
@@ -181,8 +181,8 @@ void test_tensor_crs_matrix( const size_t M , const size_t N , const bool print 
   generate_tensor( M , tensor_input );
 
   for ( size_t outer_row = 0 ; outer_row < length ; ++outer_row ) {
-    const size_t outer_entry_begin = h_graph.row_entry_begin( outer_row );
-    const size_t outer_entry_end   = h_graph.row_entry_end( outer_row );
+    const size_t outer_entry_begin = h_graph.row_map[outer_row];
+    const size_t outer_entry_end   = h_graph.row_map[outer_row+1];
 
     for ( size_t inner_row = 0 ; inner_row < M ; ++inner_row ) {
 
@@ -191,7 +191,7 @@ void test_tensor_crs_matrix( const size_t M , const size_t N , const bool print 
       for ( size_t outer_entry = outer_entry_begin ;
                    outer_entry < outer_entry_end ; ++outer_entry ) {
 
-        const size_t outer_column = h_graph( outer_entry );
+        const size_t outer_column = h_graph.entries( outer_entry );
 
         for ( typename std::map< index_type , IntType >::iterator
               iter =  tensor_input.begin() ;

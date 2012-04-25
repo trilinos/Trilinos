@@ -41,14 +41,12 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_HOST_CRSARRAY_HPP
-#define KOKKOS_HOST_CRSARRAY_HPP
-
-#include <Host/Kokkos_Host_IndexMap.hpp>
+#ifndef KOKKOS_HOST_PREFIXSUM_HPP
+#define KOKKOS_HOST_PREFIXSUM_HPP
 
 #include <Kokkos_Host_macros.hpp>
-#include <impl/Kokkos_CrsArray_macros.hpp>
+#include <impl/Kokkos_PrefixSum_macros.hpp>
 #include <Kokkos_Clear_macros.hpp>
 
-#endif /* #ifndef KOKKOS_HOST_CRSARRAY_HPP */
+#endif /* #ifndef KOKKOS_HOST_PREFIXSUM_HPP */
 

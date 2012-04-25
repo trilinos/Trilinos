@@ -444,7 +444,7 @@ test_product_flat_commuted_matrix(
 
   matrix.graph = Kokkos::create_crsarray<crsarray_type>( std::string("testing") , flat_graph );
 
-  const size_t flat_graph_length = matrix.graph.entry_dimension(0);
+  const size_t flat_graph_length = matrix.graph.entries.dimension(0);
 
   matrix.values =
     Kokkos::create_multivector<vector_type>( flat_graph_length );
@@ -609,7 +609,7 @@ test_product_flat_original_matrix(
 
   matrix.graph = Kokkos::create_crsarray<crsarray_type>( std::string("testing") , flat_graph );
 
-  const size_t flat_graph_length = matrix.graph.entry_dimension(0);
+  const size_t flat_graph_length = matrix.graph.entries.dimension(0);
 
   matrix.values =
     Kokkos::create_multivector<vector_type>( flat_graph_length );
