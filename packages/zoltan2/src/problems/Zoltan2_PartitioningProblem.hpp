@@ -8,7 +8,6 @@
 
 /*! \file Zoltan2_PartitioningProblem.hpp
     \brief Defines the PartitioningProblem class.
-\todo add resetParameters
 */
 
 #ifndef _ZOLTAN2_PARTITIONINGPROBLEM_HPP_
@@ -44,7 +43,6 @@ namespace Zoltan2{
  *  \todo allow unsetting of part sizes by passing in null pointers
  *  \todo add a parameter by which user tells us there are no self 
  *        edges to be removed.
- *  \todo resetParameterList
  */
 template<typename Adapter>
 class PartitioningProblem : public Problem<Adapter>
@@ -76,11 +74,6 @@ public:
 
   //! \brief Constructor where communicator is the Teuchos default.
   PartitioningProblem(Adapter *A, Teuchos::ParameterList *p) ;
-
-
-  //!  \brief Reset the parameter list.
-
-  void resetParameterList(Teuchos::ParameterList *p);
 
   //!  \brief Direct the problem to create a solution.
   //

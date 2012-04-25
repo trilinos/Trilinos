@@ -8,7 +8,6 @@
 
 /*! \file Zoltan2_Problem.hpp
     \brief Defines the Problem base class.
-\todo add resetParameters
 */
 
 #ifndef _ZOLTAN2_PROBLEM_HPP_

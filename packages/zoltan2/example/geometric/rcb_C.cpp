@@ -4,7 +4,7 @@
 // ***********************************************************************
 // @HEADER
 
-/*! \file rcb.cpp
+/*! \file rcb_C.cpp
     \brief An example of partitioning coordinates with RCB.
 */
 
@@ -18,7 +18,7 @@
 using namespace std;
 using std::vector;
 
-/*! \example rcb.cpp
+/*! \example rcb_C.cpp
     An example of the use of the RCB algorithm to partition coordinate data.
 */
 
@@ -108,8 +108,10 @@ int main(int argc, char *argv[])
   ///////////////////////////////////////////////////////////////////////
   // Create parameters for an RCB problem
 
+  double tolerance = 1.1;
+
   if (rank == 0)
-    std::cout << "Imbalance tolerance is " << 1.2 << std::endl;
+    std::cout << "Imbalance tolerance is " << tolerance << std::endl;
 
   Teuchos::ParameterList params("test params");
   params.set("debug_level", "basic_status");
@@ -118,7 +120,7 @@ int main(int argc, char *argv[])
 
   Teuchos::ParameterList &parParams = params.sublist("partitioning");
   parParams.set("algorithm", "rcb");
-  parParams.set("imbalance_tolerance", 1.2 );
+  parParams.set("imbalance_tolerance", tolerance );
   parParams.set("num_global_parts", nprocs);
 
   Teuchos::ParameterList &geoParams = parParams.sublist("geometric");
@@ -159,10 +161,11 @@ int main(int argc, char *argv[])
 
   if (rank == 0){
     scalar_t imb = solution1.getImbalance();
-    if (imb < 1.2)
+    if (imb <= tolerance)
       std::cout << "PASS: " << imb << std::endl;
     else
       std::cout << "FAIL: " << imb << std::endl;
+    std::cout << std::endl;
   }
    
   ///////////////////////////////////////////////////////////////////////
@@ -219,16 +222,18 @@ int main(int argc, char *argv[])
 
   if (rank == 0){
     scalar_t imb = solution2.getImbalance();
-    if (imb < 1.2)
+    if (imb <= tolerance)
       std::cout << "PASS: " << imb << std::endl;
     else
       std::cout << "FAIL: " << imb << std::endl;
+    std::cout << std::endl;
   }
 
-  if (localCount > 0)
+  if (localCount > 0){
     delete [] weights;
+    weights = NULL;
+  }
 
-#if 0
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
   // Try a problem with multiple weights.
@@ -242,12 +247,12 @@ int main(int argc, char *argv[])
   // Create the new weights.
 
   weights = new scalar_t [localCount*3];
-  srand(555);
+  srand(rank);
 
   for (int i=0; i < localCount*3; i+=3){
     weights[i] = 1.0 + rank / nprocs;      // weight dimension 1
     weights[i+1] = rank<nprocs/2 ? 1 : 2;  // weight dimension 2
-    weights[i+2] = rand() +.5;             // weight dimension 3
+    weights[i+2] = rand()/RAND_MAX +.5;    // weight dimension 3
   }
 
   // Create a Zoltan2 input adapter with these weights.
@@ -284,24 +289,59 @@ int main(int argc, char *argv[])
 
   // Check the solution.
 
-  const ArrayRCP<MetricValues<scalar_t> > & metrics3 =
-    solution3.getMetrics();
-
   if (rank == 0)
-    Zoltan2::printMetrics(cout, nprocs, nprocs, nprocs,
-      metrics3.view(0,metrics3.size()));
+    solution3.printMetrics(cout);
 
   if (rank == 0){
     scalar_t imb = solution3.getImbalance();
-    if (imb < 1.2)
+    if (imb <= tolerance)
       std::cout << "PASS: " << imb << std::endl;
     else
       std::cout << "FAIL: " << imb << std::endl;
+    std::cout << std::endl;
   }
 
-  if (localCount)
-    delete [] weights;
+  ///////////////////////////////////////////////////////////////////////
+  // Try the other multicriteria objectives.
 
+  bool dataHasChanged = false;    // default is true
+
+  parParams.set("objective", "multicriteria_minimize_maximum_weight");
+  problem3.resetParameters(&params);
+  problem3.solve(dataHasChanged);    
+  const Zoltan2::PartitioningSolution<inputAdapter_t> &solution3a =
+    problem3.getSolution();
+  if (rank == 0){
+    solution3a.printMetrics(cout);
+    scalar_t imb = solution3a.getImbalance();
+    if (imb <= tolerance)
+      std::cout << "PASS: " << imb << std::endl;
+    else
+      std::cout << "FAIL: " << imb << std::endl;
+    std::cout << std::endl;
+  }
+
+  parParams.set("objective", "multicriteria_balance_total_maximum");
+  problem3.resetParameters(&params);
+  problem3.solve(dataHasChanged);    
+  const Zoltan2::PartitioningSolution<inputAdapter_t> &solution3b =
+    problem3.getSolution();
+  if (rank == 0){
+    solution3b.printMetrics(cout);
+    scalar_t imb = solution3b.getImbalance();
+    if (imb <= tolerance)
+      std::cout << "PASS: " << imb << std::endl;
+    else
+      std::cout << "FAIL: " << imb << std::endl;
+    std::cout << std::endl;
+  }
+
+  if (localCount > 0){
+    delete [] weights;
+    weights = NULL;
+  }
+
+#if 0
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
   // Using part sizes, ask for some parts to be empty.
@@ -340,24 +380,29 @@ int main(int argc, char *argv[])
 
   // Check the solution.
 
-  const ArrayRCP<MetricValues<scalar_t> > & metrics4 =
-    solution4.getMetrics();
-
   if (rank == 0)
-    Zoltan2::printMetrics(cout, nprocs, nprocs, nprocs,
-      metrics4.view(0,metrics4.size()));
+    solution4.printMetrics(cout);
 
   if (rank == 0){
     scalar_t imb = solution4.getImbalance();
-    if (imb < 1.2)
+    if (imb <= tolerance)
       std::cout << "PASS: " << imb << std::endl;
     else
       std::cout << "FAIL: " << imb << std::endl;
+    std::cout << std::endl;
   }
 
   delete [] partIds;
+  partIds = NULL;
   delete [] partSizes;
+  partSizes = NULL;
 #endif
+
+  if (coords)
+    delete [] coords;
+
+  if (globalIds)
+    delete [] globalIds;
 
 #ifdef HAVE_ZOLTAN2_MPI
   MPI_Finalize();

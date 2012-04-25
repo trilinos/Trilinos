@@ -102,7 +102,7 @@ void AlltoAll(const Comm<int> &comm,
   ArrayView<const char> sendBufPtr(
     reinterpret_cast<const char *>(sendBuf.getRawPtr()), nprocs*packetSize);
 
-  for (int p=0; p < nprocs; p++){
+  for (int p=nprocs-1; p >= 0; p--){
     if (p != rank){
       try {
         Teuchos::readySend<int, char>(comm, 
@@ -112,6 +112,8 @@ void AlltoAll(const Comm<int> &comm,
     }
   }
 
+  // TODO: we can hang here on my desktop machine, with mpich2,
+  //             on 3 processes, 5 processes.  Shouldn't happen.
   if (req.size() > 0){
     try {
       Teuchos::waitAll<int>(comm, req);
@@ -229,7 +231,7 @@ void AlltoAllv(const Comm<int> &comm,
   ArrayView<const char> sendBufPtr(
     reinterpret_cast<const char *>(sendBuf.getRawPtr()), totalOut * sizeof(T));
 
-  for (int p=0; p < nprocs; p++){
+  for (int p=nprocs-1; p >= 0; p--){
     LNO packetSize = sendCount[p] * sizeof(T);
     if (p != rank && packetSize > 0){
       try{
@@ -241,6 +243,8 @@ void AlltoAllv(const Comm<int> &comm,
     offsetOut += packetSize;
   }
 
+  // TODO: we can hang here on my desktop machine, with mpich2,
+  //             on 3 processes, 5 processes.  Shouldn't happen.
   if (req.size() > 0){
     try{
       Teuchos::waitAll<int>(comm, req);

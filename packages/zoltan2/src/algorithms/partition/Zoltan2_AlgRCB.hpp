@@ -162,6 +162,7 @@ void AlgRCB(
   // Make a copy for global ops at the end because 
   // we subdivide the communicator during the algorithm.
 
+  // TODO memory leak here.
   RCP<Comm<int> > problemComm = comm->duplicate();
 
   std::bitset<NUM_RCB_PARAMS> params;
@@ -398,9 +399,9 @@ void AlgRCB(
   int groupSize = comm->getSize();
   int rank = comm->getRank();
 
-  scalar_t imbalanceReductionFactor = 1.0;
-  if (numGlobalParts > 3)
-    imbalanceReductionFactor = log(scalar_t(numGlobalParts));
+  long imbalanceReductionFactor(1);
+  long nparts = numGlobalParts;
+  while ((nparts >>= 1) != 0) imbalanceReductionFactor++;
 
   imbalanceTolerance /= imbalanceReductionFactor;
 
@@ -466,6 +467,7 @@ void AlgRCB(
     }
 
     ArrayView<const int> idView(ids, groupSize);
+    // TODO - memory leak here.
     RCP<Comm<int> > subComm = comm->createSubcommunicator(idView);
     comm = subComm;
 
