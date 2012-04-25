@@ -1,8 +1,8 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  rcb_example
-  SOURCES rcbExample.cpp
+  rcb_C
+  SOURCES rcb_C.cpp
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"

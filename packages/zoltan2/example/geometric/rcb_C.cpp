@@ -108,9 +108,8 @@ int main(int argc, char *argv[])
   ///////////////////////////////////////////////////////////////////////
   // Create parameters for an RCB problem
 
-  scalar_t tolerance = 1.2;
   if (rank == 0)
-    std::cout << "Imbalance tolerance is " << tolerance << std::endl;
+    std::cout << "Imbalance tolerance is " << 1.2 << std::endl;
 
   Teuchos::ParameterList params("test params");
   params.set("debug_level", "basic_status");
@@ -119,7 +118,7 @@ int main(int argc, char *argv[])
 
   Teuchos::ParameterList &parParams = params.sublist("partitioning");
   parParams.set("algorithm", "rcb");
-  parParams.set("imbalance_tolerance", tolerance);
+  parParams.set("imbalance_tolerance", 1.2 );
   parParams.set("num_global_parts", nprocs);
 
   Teuchos::ParameterList &geoParams = parParams.sublist("geometric");
@@ -160,13 +159,12 @@ int main(int argc, char *argv[])
 
   if (rank == 0){
     scalar_t imb = solution1.getImbalance();
-    if (imb < tolerance)
+    if (imb < 1.2)
       std::cout << "PASS: " << imb << std::endl;
     else
       std::cout << "FAIL: " << imb << std::endl;
   }
    
-#if 0
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
   // Try a problem with weights (1 dimension)
@@ -216,16 +214,12 @@ int main(int argc, char *argv[])
 
   // Check the solution.
 
-  const ArrayRCP<MetricValues<scalar_t> > & metrics2 =
-    solution2.getMetrics();
-
   if (rank == 0)
-    Zoltan2::printMetrics<scalar_t>(cout, nprocs, nprocs, nprocs,
-      metrics2.view(0,metrics2.size()));
+    solution2.printMetrics<scalar_t>(cout);
 
   if (rank == 0){
     scalar_t imb = solution2.getImbalance();
-    if (imb < tolerance)
+    if (imb < 1.2)
       std::cout << "PASS: " << imb << std::endl;
     else
       std::cout << "FAIL: " << imb << std::endl;
@@ -234,6 +228,7 @@ int main(int argc, char *argv[])
   if (localCount > 0)
     delete [] weights;
 
+#if 0
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
   // Try a problem with multiple weights.
@@ -298,7 +293,7 @@ int main(int argc, char *argv[])
 
   if (rank == 0){
     scalar_t imb = solution3.getImbalance();
-    if (imb < tolerance)
+    if (imb < 1.2)
       std::cout << "PASS: " << imb << std::endl;
     else
       std::cout << "FAIL: " << imb << std::endl;
@@ -354,7 +349,7 @@ int main(int argc, char *argv[])
 
   if (rank == 0){
     scalar_t imb = solution4.getImbalance();
-    if (imb < tolerance)
+    if (imb < 1.2)
       std::cout << "PASS: " << imb << std::endl;
     else
       std::cout << "FAIL: " << imb << std::endl;
