@@ -1282,14 +1282,15 @@ template <typename Adapter>
   ArrayRCP<char> myFlags;
   char *recvBuf = NULL;
   if (numMyFlags > 0){
-    char *recvBuf = new char [numMyFlags];
+    recvBuf = new char [numMyFlags];
     env_->localMemoryAssertion(__FILE__, __LINE__, numMyFlags, recvBuf);
     myFlags = arcp(recvBuf, 0, numMyFlags, true);
   }
 
   try{
     Teuchos::reduceAllAndScatter<int, char>(*comm_, Teuchos::REDUCE_MAX,
-      nprocs, partFlag.getRawPtr(), recvCounts.getRawPtr(), recvBuf);
+      nGlobalParts_, partFlag.getRawPtr(), 
+      recvCounts.getRawPtr(), recvBuf);
   }
   Z2_THROW_OUTSIDE_ERROR(*env_);
 

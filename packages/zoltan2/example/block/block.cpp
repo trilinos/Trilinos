@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
   // Check the solution.
 
   if (rank == 0)
-    solution.printMetrics<scalar_t>(cout);
+    solution.printMetrics(cout);
 
   if (rank == 0)
     std::cout << "PASS" << std::endl;
