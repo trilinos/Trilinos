@@ -152,7 +152,7 @@ int injection_server_main(struct injection_args &args, MPI_Comm server_comm)
 
 
     /* initialize the nssi service */
-    rc = nssi_service_init(NSSI_DEFAULT_TRANSPORT, NSSI_SHORT_REQUEST_SIZE, &injection_svc);
+    rc = nssi_service_init((nssi_rpc_transport)args.transport, NSSI_SHORT_REQUEST_SIZE, &injection_svc);
     if (rc != NSSI_OK) {
         log_error(injection_debug_level, "could not init injection_svc: %s",
                 nssi_err_str(rc));
@@ -165,7 +165,7 @@ int injection_server_main(struct injection_args &args, MPI_Comm server_comm)
 
     // Get the Server URL
     std::string url(NSSI_URL_LEN, '\0');
-    nssi_get_url(NSSI_DEFAULT_TRANSPORT, &url[0], NSSI_URL_LEN);
+    nssi_get_url((nssi_rpc_transport)args.transport, &url[0], NSSI_URL_LEN);
 
 
     // Set the maxumum number of requests to handle (-1 == infinite)
