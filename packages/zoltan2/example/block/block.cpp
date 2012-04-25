@@ -10,7 +10,8 @@
 
 #include <Zoltan2_TestHelpers.hpp>
 #include <Zoltan2_BasicIdentifierInput.hpp>
-#include <Zoltan2_Partitioning.hpp>
+#include <Zoltan2_PartitioningProblem.hpp>
+#include <Zoltan2_PartitioningSolution.hpp>
 
 using namespace std;
 
@@ -104,14 +105,9 @@ int main(int argc, char *argv[])
   ///////////////////////////////////////////////////////////////////////
   // Check the solution.
 
-  const ArrayRCP<Zoltan2::MetricValues<scalar_t> > & metrics1 =
-    solution.getMetrics();
-
   if (rank == 0)
-    Zoltan2::printMetrics<scalar_t>(cout, nprocs, nprocs, nprocs,
-      metrics1.view(0,metrics1.size()));
+    solution.printMetrics<scalar_t>(cout);
 
-   
   if (rank == 0)
     std::cout << "PASS" << std::endl;
 

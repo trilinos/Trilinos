@@ -11,7 +11,8 @@
 
 #include <Zoltan2_TestHelpers.hpp>
 #include <Zoltan2_BasicCoordinateInput.hpp>
-#include <Zoltan2_Partitioning.hpp>
+#include <Zoltan2_PartitioningSolution.hpp>
+#include <Zoltan2_PartitioningProblem.hpp>
 
 using namespace std;
 using Zoltan2::MetricValues;
@@ -111,12 +112,8 @@ int main(int argc, char *argv[])
   ///////////////////////////////////////////////////////////////////////
   // Check the solution.
 
-  const ArrayRCP<MetricValues<scalar_t> > & metrics1 =
-    solution.getMetrics();
-
   if (rank == 0)
-    Zoltan2::printMetrics<scalar_t>(cout, nprocs, nprocs, nprocs, 
-      metrics1.view(0,metrics1.size()));
+    solution.printMetrics(cout);
 
   ///////////////////////////////////////////////////////////////////////
   // Test serial partitioning.
@@ -138,11 +135,7 @@ int main(int argc, char *argv[])
     const Zoltan2::PartitioningSolution<inputAdapter_t> &serialSolution = 
       serialProblem.getSolution();
 
-    const ArrayRCP<MetricValues<scalar_t> > & metrics =
-      serialSolution.getMetrics();
-
-    Zoltan2::printMetrics<scalar_t>(cout, 2*nprocs, 2*nprocs, 2*nprocs, 
-      metrics.view(0, metrics.size()));
+    serialSolution.printMetrics(cout);
   }
 
   if (rank == 0)

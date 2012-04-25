@@ -8,14 +8,13 @@
     \brief An example of partitioning coordinates with RCB.
 */
 
-#include <Zoltan2_TestHelpers.hpp>     // for UserInputForTests
-#include <Zoltan2_Partitioning.hpp>
+#include <Zoltan2_PartitioningSolution.hpp>
+#include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_BasicCoordinateInput.hpp>
 #include <vector>
 
 using namespace std;
 using std::vector;
-using Zoltan2::MetricValues;
 
 /*! \example rcb.cpp
     An example of the use of the RCB algorithm to partition coordinate data.
@@ -23,9 +22,6 @@ using Zoltan2::MetricValues;
 
 int main(int argc, char *argv[])
 {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-
 #ifdef HAVE_ZOLTAN2_MPI                   
   MPI_Init(&argc, &argv);
   int rank, nprocs;
@@ -35,35 +31,21 @@ int main(int argc, char *argv[])
   int rank=0, nprocs=1;
 #endif
 
-  typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
-  typedef Zoltan2::BasicCoordinateInput<tMVector_t> inputAdapter_t;
+  typedef BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> myTypes;
+
+  typedef Zoltan2::BasicCoordinateInput<myTypes> inputAdapter_t;
 
   ///////////////////////////////////////////////////////////////////////
-  // Read coordinates from a file.
+  // Generate some coordinates.
 
-  std::string fname(testDataFilePath+"/USAir97.mtx");
-  outputFlag_t flags;
-  flags.set(OBJECT_COORDINATES);
 
-  Teuchos::RCP<const Teuchos::Comm<int> > tcomm =
-    Teuchos::DefaultComm<int>::getComm();
-  UserInputForTests uinput(fname, tcomm, flags);
-
-  RCP<tMVector_t> coords = uinput.getCoordinates();
-
-  size_t localCount = coords->getLocalLength();
-  int dim = coords->getNumVectors();
+  size_t localCount = 40;
+  size_t globalCount = localCount * nprocs;
+  int dim = 3;
 
   scalar_t *x=NULL, *y=NULL, *z=NULL;
-  x = coords->getDataNonConst(0).getRawPtr();
 
-  if (dim > 1){
-    y = coords->getDataNonConst(1).getRawPtr();
-    if (dim > 2)
-      z = coords->getDataNonConst(2).getRawPtr();
-  }
-
-  const gno_t *globalIds = coords->getMap()->getNodeElementList().getRawPtr();
+  const gno_t *globalIds = new gno_t [localCount];
    
   ///////////////////////////////////////////////////////////////////////
   // Create parameters for an RCB problem
@@ -115,12 +97,8 @@ int main(int argc, char *argv[])
    
   // Check the solution.
 
-  const ArrayRCP<MetricValues<scalar_t> > & metrics1 =
-    solution1.getMetrics();
-
   if (rank == 0)
-    Zoltan2::printMetrics<scalar_t>(cout, nprocs, nprocs, nprocs, 
-      metrics1.view(0,metrics1.size()));
+    solution1.printMetrics(cout);
 
   if (rank == 0){
     scalar_t imb = solution1.getImbalance();
