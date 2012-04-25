@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
   // Check the solution.
 
   if (rank == 0)
-    solution2.printMetrics<scalar_t>(cout);
+    solution2.printMetrics(cout);
 
   if (rank == 0){
     scalar_t imb = solution2.getImbalance();
@@ -288,7 +288,7 @@ int main(int argc, char *argv[])
     solution3.getMetrics();
 
   if (rank == 0)
-    Zoltan2::printMetrics<scalar_t>(cout, nprocs, nprocs, nprocs,
+    Zoltan2::printMetrics(cout, nprocs, nprocs, nprocs,
       metrics3.view(0,metrics3.size()));
 
   if (rank == 0){
@@ -344,7 +344,7 @@ int main(int argc, char *argv[])
     solution4.getMetrics();
 
   if (rank == 0)
-    Zoltan2::printMetrics<scalar_t>(cout, nprocs, nprocs, nprocs,
+    Zoltan2::printMetrics(cout, nprocs, nprocs, nprocs,
       metrics4.view(0,metrics4.size()));
 
   if (rank == 0){
