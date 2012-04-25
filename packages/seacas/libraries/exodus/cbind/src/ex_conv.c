@@ -377,7 +377,7 @@ int ex_set_option(int exoid, ex_option_type option, int option_value)
     {
       char errmsg[MAX_ERR_LENGTH];
       exerrval = EX_FATAL;
-      sprintf(errmsg,"Error: invalid option %d for ex_set_option().",option);
+      sprintf(errmsg,"Error: invalid option %d for ex_set_option().",(int)option);
       ex_err("ex_set_option",errmsg,exerrval);
       return EX_FATAL;
     }
