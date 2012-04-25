@@ -2426,6 +2426,7 @@ namespace Tpetra {
         replaceGlobalValues (globalRowIndex, columnIndices(), values());
       }
       else if (combineMode == ABSMAX) {
+        using Details::AbsMax;
         AbsMax<Scalar> f;
         this->template transformGlobalValues<AbsMax<Scalar> > (globalRowIndex,
                                                                columnIndices(),
