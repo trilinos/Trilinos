@@ -11,7 +11,9 @@
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_BasicCoordinateInput.hpp>
+#include <Zoltan2_InputTraits.hpp>
 #include <vector>
+#include <cstdlib>
 
 using namespace std;
 using std::vector;
@@ -19,6 +21,43 @@ using std::vector;
 /*! \example rcb.cpp
     An example of the use of the RCB algorithm to partition coordinate data.
 */
+
+// Zoltan2 is templated.  What data types will we use for
+// scalars (coordinate values and weights), for local ids, and
+// for global ids?
+//
+// If Zoltan2 was compiled with explicit instantiation, we will
+// use the the library's data types.  These macros are defined
+// in Zoltan2_config.h.
+
+#ifdef HAVE_ZOLTAN2_INST_FLOAT_INT_LONG
+typedef float scalar_t;
+typedef int localId_t;
+typedef long globalId_t;
+#else
+  #ifdef HAVE_ZOLTAN2_INST_DOUBLE_INT_LONG
+  typedef double scalar_t;
+  typedef int localId_t;
+  typedef long globalId_t;
+  #else
+    #ifdef HAVE_ZOLTAN2_INST_FLOAT_INT_INT
+    typedef float scalar_t;
+    typedef int localId_t;
+    typedef int globalId_t;
+    #else
+      #ifdef HAVE_ZOLTAN2_INST_DOUBLE_INT_INT
+      typedef double scalar_t;
+      typedef int localId_t;
+      typedef int globalId_t;
+      #else
+      typedef float scalar_t;
+      typedef int localId_t;
+      typedef int globalId_t;
+      #endif
+    #endif
+  #endif
+#endif
+
 
 int main(int argc, char *argv[])
 {
@@ -31,21 +70,40 @@ int main(int argc, char *argv[])
   int rank=0, nprocs=1;
 #endif
 
-  typedef BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> myTypes;
+  // TODO explain
+  typedef Zoltan2::BasicUserTypes<scalar_t, globalId_t, localId_t, globalId_t> myTypes;
 
+  // TODO explain
   typedef Zoltan2::BasicCoordinateInput<myTypes> inputAdapter_t;
 
   ///////////////////////////////////////////////////////////////////////
-  // Generate some coordinates.
-
+  // Create input data.
 
   size_t localCount = 40;
-  size_t globalCount = localCount * nprocs;
   int dim = 3;
 
-  scalar_t *x=NULL, *y=NULL, *z=NULL;
+  scalar_t *coords = new scalar_t [dim * localCount];
 
-  const gno_t *globalIds = new gno_t [localCount];
+  scalar_t *x = coords; 
+  scalar_t *y = x + localCount; 
+  scalar_t *z = y + localCount; 
+
+  // Create coordinates that range from 0 to 10.0
+
+  srand(rank);
+  scalar_t scalingFactor = 10.0 / RAND_MAX;
+
+  for (int i=0; i < localCount*dim; i++){
+    coords[i] = scalar_t(rand()) * scalingFactor;
+  }
+
+  // Create global ids for the coordinates.
+
+  globalId_t *globalIds = new globalId_t [localCount];
+  globalId_t offset = rank * localCount;
+
+  for (localId_t i=0; i < localCount; i++)
+    globalIds[i] = offset++;
    
   ///////////////////////////////////////////////////////////////////////
   // Create parameters for an RCB problem
@@ -73,7 +131,7 @@ int main(int argc, char *argv[])
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
 
-  // Create a Zoltan2 input adapter for this geometry.
+  // Create a Zoltan2 input adapter for this geometry. TODO explain
 
   inputAdapter_t ia1(localCount, globalIds, x, y, z, 1, 1, 1);
 
