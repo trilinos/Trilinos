@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include <stk_util/parallel/Parallel.hpp>
+#include <Ioss_PropertyManager.h>
 
 namespace Ioss {
   class Region;
@@ -35,6 +36,8 @@ namespace stk {
       {}
 
       ~MeshData();
+      Ioss::PropertyManager m_property_manager;
+
       Ioss::Region *m_input_region;
       Ioss::Region *m_output_region;
       stk::mesh::Selector *m_anded_selector;

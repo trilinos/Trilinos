@@ -516,7 +516,8 @@ namespace stk {
 	// If in_region is non-NULL, then user has given us a valid Ioss::Region that
 	// should be used.
 	Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(mesh_type, mesh_filename,
-							Ioss::READ_MODEL, comm);
+							Ioss::READ_MODEL, comm,
+							mesh_data.m_property_manager);
 	if (dbi == NULL || !dbi->ok()) {
 	  std::cerr  << "ERROR: Could not open database '" << mesh_filename
 		     << "' of type '" << mesh_type << "'\n";
@@ -565,7 +566,7 @@ namespace stk {
 
       Ioss::DatabaseIO *dbo = Ioss::IOFactory::create("exodusII", out_filename,
 						      Ioss::WRITE_RESULTS,
-						      comm);
+						      comm, mesh_data.m_property_manager);
       if (dbo == NULL || !dbo->ok()) {
 	std::cerr << "ERROR: Could not open results database '" << out_filename
 		  << "' of type 'exodusII'\n";
