@@ -407,6 +407,11 @@ int main(int argc,char * argv[])
    // all done!
    /////////////////////////////////////////////////////////////
 
+   if(useTpetra)
+      std::cout << "ALL PASSED: Tpetra" << endl;
+   else
+      std::cout << "ALL PASSED: Epetra" << endl;
+
    return 0;
 }
 
@@ -424,7 +429,7 @@ void solveEpetraSystem(panzer::LinearObjContainer & container)
    solver.SetAztecOption(AZ_solver,AZ_gmres); // we don't push out dirichlet conditions
    solver.SetAztecOption(AZ_precond,AZ_none);
    solver.SetAztecOption(AZ_kspace,1000);
-   solver.SetAztecOption(AZ_output,10);
+   solver.SetAztecOption(AZ_output,1);
    solver.SetAztecOption(AZ_precond,AZ_Jacobi);
 
    // solve the linear system
@@ -436,14 +441,6 @@ void solveEpetraSystem(panzer::LinearObjContainer & container)
    // Therefore we have  J*e=-J*u which implies e = -u
    // thus we will scale the solution vector 
    ep_container.get_x()->Scale(-1.0);
-
-   // write out linear system
-   if(false) {
-      EpetraExt::RowMatrixToMatrixMarketFile("a_op.mm",*ep_container.get_A());
-      EpetraExt::VectorToMatrixMarketFile("x_vec.mm",*ep_container.get_x());
-      EpetraExt::VectorToMatrixMarketFile("b_vec.mm",*ep_container.get_f());
-   }
-
 }
 
 void solveTpetraSystem(panzer::LinearObjContainer & container)
