@@ -143,6 +143,8 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdina
    // Any changes to the order should be reflected in the
    // blockGIDOffset_ map.
 
+   gids.resize(0);
+
    // loop over field block manager and grab indices
    for(std::size_t fbm=0;fbm<fieldBlockManagers_.size();fbm++) {
       std::vector<GlobalOrdinalT> fieldBlockOwned;
