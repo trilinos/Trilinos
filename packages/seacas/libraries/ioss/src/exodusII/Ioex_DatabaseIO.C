@@ -408,7 +408,7 @@ namespace Ioex {
     // See if there are any properties that need to (or can) be
     // handled prior to opening/creating database...
     bool compress = ((properties.exists("COMPRESSION_LEVEL") &&
-		      properties.get("COMPRESSION_SHUFFLE").get_int() > 0) ||
+		      properties.get("COMPRESSION_LEVEL").get_int() > 0) ||
 		     (properties.exists("COMPRESSION_SHUFFLE") &&
 		      properties.get("COMPRESSION_SHUFFLE").get_int() > 0));
 
