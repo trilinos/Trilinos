@@ -130,8 +130,12 @@ evaluateFields(typename Traits::EvalData workset)
 
    typedef BlockedEpetraLinearObjContainer BLOC;
 
+   Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
+   out.setShowProcRank(true);
+   out.setOutputToRootOnly(-1);
+
    std::vector<std::pair<int,GO> > GIDs;
-   std::vector<LO> LIDs;
+   std::vector<int> LIDs;
  
    // for convenience pull out some objects from workset
    std::string blockId = workset.block_id;
@@ -159,6 +163,7 @@ evaluateFields(typename Traits::EvalData workset)
          RCP<const Epetra_Map> x_map = blockedContainer->getMapForBlock(GIDs[i].first);
 
          LIDs[i] = x_map->LID(GIDs[i].second);
+         // TEUCHOS_ASSERT(LIDs[i]>=0);
       }
 
       // loop over the fields to be gathered
@@ -170,13 +175,17 @@ evaluateFields(typename Traits::EvalData workset)
          // grab local data for inputing
          RCP<SpmdVectorBase<double> > block_x = rcp_dynamic_cast<SpmdVectorBase<double> >(x->getNonconstVectorBlock(indexerId));
          block_x->getLocalData(ptrFromRef(local_x));
- 
+
          const std::vector<int> & elmtOffset = gidIndexer_->getGIDFieldOffsets(blockId,fieldNum);
  
          // loop over basis functions and fill the fields
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
             int offset = elmtOffset[basis];
             int lid = LIDs[offset];
+
+            // TEUCHOS_ASSERT(indexerId==GIDs[offset].first);
+            // TEUCHOS_ASSERT(lid<local_x.size() && lid>=0);
+
             (gatherFields_[fieldIndex])(worksetCellIndex,basis) = local_x[lid];
          }
       }
@@ -256,7 +265,7 @@ evaluateFields(typename Traits::EvalData workset)
    typedef BlockedEpetraLinearObjContainer BLOC;
 
    std::vector<std::pair<int,GO> > GIDs;
-   std::vector<LO> LIDs;
+   std::vector<int> LIDs;
 
    // for convenience pull out some objects from workset
    std::string blockId = workset.block_id;

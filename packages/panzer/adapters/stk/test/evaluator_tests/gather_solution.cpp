@@ -93,7 +93,10 @@ namespace panzer {
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
    #endif
 
-    const std::size_t workset_size = 4;
+    int myRank = eComm->MyPID();
+    int numProcs = eComm->NumProc();
+
+    const std::size_t workset_size = 4/numProcs;
     const std::string fieldName1_q1 = "U";
     const std::string fieldName2_q1 = "V";
     const std::string fieldName_qedge1 = "B";
@@ -132,13 +135,14 @@ namespace panzer {
     Teuchos::RCP<BlockedEpetraLinearObjFactory<panzer::Traits,int> > be_lof 
        = Teuchos::rcp(new BlockedEpetraLinearObjFactory<panzer::Traits,int>(eComm.getConst(),dofManager));
     Teuchos::RCP<LinearObjContainer> loc = be_lof->buildGhostedLinearObjContainer();
-    be_lof->initializeContainer(LinearObjContainer::X,*loc);
+    be_lof->initializeGhostedContainer(LinearObjContainer::X,*loc);
+
     Teuchos::RCP<BlockedEpetraLinearObjContainer> b_loc 
        = Teuchos::rcp_dynamic_cast<BlockedEpetraLinearObjContainer>(loc);
     Teuchos::RCP<Thyra::ProductVectorBase<double> > p_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(b_loc->get_x());
-    Thyra::assign(p_vec->getNonconstVectorBlock(0).ptr(),123.0);
-    Thyra::assign(p_vec->getNonconstVectorBlock(1).ptr(),456.0);
-    Thyra::assign(p_vec->getNonconstVectorBlock(2).ptr(),789.0);
+    Thyra::assign(p_vec->getNonconstVectorBlock(0).ptr(),123.0+myRank);
+    Thyra::assign(p_vec->getNonconstVectorBlock(1).ptr(),456.0+myRank);
+    Thyra::assign(p_vec->getNonconstVectorBlock(2).ptr(),789.0+myRank);
 
     // setup field manager, add evaluator under test
     /////////////////////////////////////////////////////////////
@@ -249,23 +253,37 @@ namespace panzer {
           fieldData1_q1(fieldName1_q1,basis_q1->functional);
        PHX::MDField<panzer::Traits::Residual::ScalarT,panzer::Cell,panzer::BASIS> 
           fieldData2_q1(fieldName2_q1,basis_qedge1->functional);
-   
+
        fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual>(fieldData1_q1);
        fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual>(fieldData2_q1);
+
+       TEST_EQUALITY(fieldData1_q1.dimension(0),4/numProcs);
+       TEST_EQUALITY(fieldData1_q1.dimension(1),4);
+       TEST_EQUALITY(fieldData2_q1.dimension(0),4/numProcs);
+       TEST_EQUALITY(fieldData2_q1.dimension(1),4);
+       TEST_EQUALITY(fieldData1_q1.size(),4*4/numProcs);
+       TEST_EQUALITY(fieldData2_q1.size(),4*4/numProcs);
    
-       for(int i=0;i<fieldData1_q1.size();i++) 
-          TEST_EQUALITY(fieldData1_q1[i],123.0);
-       for(int i=0;i<fieldData2_q1.size();i++) 
-          TEST_EQUALITY(fieldData2_q1[i],789.0);
+       for(int i=0;i<fieldData1_q1.dimension(0);i++) 
+          for(int j=0;j<fieldData1_q1.dimension(1);j++) 
+             TEST_EQUALITY(fieldData1_q1(i,j),123.0+myRank);
+
+       for(int i=0;i<fieldData2_q1.dimension(0);i++) 
+          for(int j=0;j<fieldData2_q1.dimension(1);j++) 
+             TEST_EQUALITY(fieldData2_q1(i,j),789.0+myRank);
     }
     {
        PHX::MDField<panzer::Traits::Residual::ScalarT,panzer::Cell,panzer::BASIS> 
           fieldData_qedge1(fieldName_qedge1,basis_qedge1->functional);
-   
+
        fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual>(fieldData_qedge1);
+ 
+       TEST_EQUALITY(fieldData_qedge1.dimension(0),4/numProcs);
+       TEST_EQUALITY(fieldData_qedge1.dimension(1),4);
+       TEST_EQUALITY(fieldData_qedge1.size(),4*4/numProcs);
    
        for(int i=0;i<fieldData_qedge1.size();i++) 
-          TEST_EQUALITY(fieldData_qedge1[i],456.0);
+          TEST_EQUALITY(fieldData_qedge1[i],456.0+myRank);
     }
 
     // test Jacobian fields
@@ -279,11 +297,11 @@ namespace panzer {
        fm.getFieldData<panzer::Traits::Jacobian::ScalarT,panzer::Traits::Jacobian>(fieldData2_q1);
    
        for(int i=0;i<fieldData1_q1.size();i++) {
-          TEST_EQUALITY(fieldData1_q1[i],123.0);
+          TEST_EQUALITY(fieldData1_q1[i],123.0+myRank);
           TEST_EQUALITY(fieldData1_q1[i].availableSize(),12);
        }
        for(int i=0;i<fieldData2_q1.size();i++)  {
-          TEST_EQUALITY(fieldData2_q1[i],789.0);
+          TEST_EQUALITY(fieldData2_q1[i],789.0+myRank);
           TEST_EQUALITY(fieldData2_q1[i].availableSize(),12);
        }
     }
@@ -294,7 +312,7 @@ namespace panzer {
        fm.getFieldData<panzer::Traits::Jacobian::ScalarT,panzer::Traits::Jacobian>(fieldData_qedge1);
    
        for(int i=0;i<fieldData_qedge1.size();i++) {
-          TEST_EQUALITY(fieldData_qedge1[i],456.0);
+          TEST_EQUALITY(fieldData_qedge1[i],456.0+myRank);
           TEST_EQUALITY(fieldData_qedge1[i].availableSize(),12);
        }
     }

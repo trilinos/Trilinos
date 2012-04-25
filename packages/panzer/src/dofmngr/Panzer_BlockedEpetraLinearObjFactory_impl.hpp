@@ -138,7 +138,7 @@ Teuchos::RCP<LinearObjContainer> BlockedEpetraLinearObjFactory<Traits,LocalOrdin
    std::vector<Teuchos::RCP<const Epetra_Map> > blockMaps;
    std::size_t blockDim = gidProviders_.size();
    for(std::size_t i=0;i<blockDim;i++)
-      blockMaps.push_back(getMap(i));
+      blockMaps.push_back(getGhostedMap(i));
 
    Teuchos::RCP<BlockedEpetraLinearObjContainer > container = Teuchos::rcp(new BlockedEpetraLinearObjContainer);
    container->setMapsForBlocks(blockMaps);
