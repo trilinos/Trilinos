@@ -109,6 +109,7 @@ coord_field_type & get_coordinate_field()
 
   Teuchos::RCP<Ioss::Region> input_ioss_region()  { return m_ioss_input_region; }
   Teuchos::RCP<Ioss::Region> output_ioss_region() { return m_ioss_output_region; }
+  void output_ioss_region(Teuchos::RCP<Ioss::Region>);
 
  private:
   stk::ParallelMachine                       m_comm;

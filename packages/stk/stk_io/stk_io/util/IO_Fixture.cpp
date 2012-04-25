@@ -26,6 +26,11 @@ IO_Fixture::~IO_Fixture()
   m_mesh_data.m_output_region = NULL;
 }
 
+void IO_Fixture::output_ioss_region(Teuchos::RCP<Ioss::Region> ioss_output_region) {
+  m_ioss_output_region = ioss_output_region;
+  m_mesh_data.m_output_region = m_ioss_output_region.get();
+}
+
 void IO_Fixture::create_output_mesh(
                                     const std::string & base_exodus_filename,
                                     bool  add_transient,
@@ -54,7 +59,8 @@ void IO_Fixture::create_output_mesh(
   }
 
   // NOTE: 'm_ioss_output_region' owns 'dbo' pointer at this time
-  m_ioss_output_region = Teuchos::rcp(new Ioss::Region(dbo, "results_output"));
+  const std::string name = std::string("results_output_")+base_exodus_filename; 
+  m_ioss_output_region = Teuchos::rcp(new Ioss::Region(dbo, name));
   m_mesh_data.m_output_region = m_ioss_output_region.get();
   
   /* Given the newly created Ioss::Region 'm_ioss_output_region', define the

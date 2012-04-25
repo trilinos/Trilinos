@@ -193,8 +193,8 @@ namespace stk {
      * If the 'add_all_fields' param is true, then all transient
      * stk fields will have a corresponding database field defined.
      */
-    void define_output_fields(MeshData &mesh_data,
-			      stk::mesh::fem::FEMMetaData &fem_meta,
+    void define_output_fields(const MeshData &mesh_data,
+			      const stk::mesh::fem::FEMMetaData &fem_meta,
 			      bool add_all_fields = false);
     
     /**

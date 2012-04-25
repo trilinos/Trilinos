@@ -67,7 +67,7 @@ namespace io {
  * "omitted" property is set by the application during parsing or
  * pre-mesh reading time.
  */
-bool include_entity(Ioss::GroupingEntity *entity);
+bool include_entity(const Ioss::GroupingEntity *entity);
 
 void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::fem::FEMMetaData &meta);
 
@@ -102,7 +102,7 @@ void default_part_processing(const std::vector<T*> &entities,
 //! \deprecated
 template <typename T>
 void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaData &meta,
-                             stk::mesh::EntityRank)
+                             const stk::mesh::EntityRank)
 {
   stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(meta);
   default_part_processing (entities, fem_meta);
@@ -131,8 +131,8 @@ void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaDat
 void define_output_db( Ioss::Region & io_region,
                        const mesh::BulkData& bulk_data,
                        const Ioss::Region *input_region = NULL,
-           const stk::mesh::Selector *anded_selector = NULL,
-           bool sort_stk_parts = false);
+                       const stk::mesh::Selector *anded_selector = NULL,
+                       const bool sort_stk_parts = false);
 
 
 /** Given an Ioss::Region 'io_region' which has already had its
@@ -170,22 +170,22 @@ void write_output_db( Ioss::Region & io_region ,
  * 'stk::io::set_field_role'
  */
 bool is_valid_part_field(const stk::mesh::FieldBase *field,
-                         stk::mesh::EntityRank part_type,
-                         stk::mesh::Part &part,
-                         stk::mesh::Part &universal,
-                         Ioss::Field::RoleType filter_role,
-                         bool add_all = false);
+                         const stk::mesh::EntityRank part_type,
+                         const stk::mesh::Part &part,
+                         const stk::mesh::Part &universal,
+                         const Ioss::Field::RoleType filter_role,
+                         const bool add_all = false);
 
 /** Add all stk::Fields on the specified part of the specified
  * filter_role to the specified Ioss::GroupingEntity.  Retrieves
  * all fields; calls 'is_valid_part_field'; and adds those that
  * return true.
  */
-void ioss_add_fields(stk::mesh::Part &part,
-                     stk::mesh::EntityRank part_type,
+void ioss_add_fields(const stk::mesh::Part &part,
+                     const stk::mesh::EntityRank part_type,
                      Ioss::GroupingEntity *entity,
                      const Ioss::Field::RoleType filter_role,
-                     bool add_all = false);
+                     const bool add_all = false);
 
 /**
  * For the given Ioss::GroupingEntity "entity", find all fields that

@@ -31,7 +31,7 @@
 
 namespace {
 
-  stk::mesh::EntityRank get_entity_rank(Ioss::GroupingEntity *entity,
+  stk::mesh::EntityRank get_entity_rank(const Ioss::GroupingEntity *entity,
 					const stk::mesh::MetaData &meta)
   {
     switch (entity->type()) {
@@ -49,7 +49,7 @@ namespace {
 
     case Ioss::SIDESET:
       {
-	Ioss::SideSet *sset = dynamic_cast<Ioss::SideSet*>(entity);
+	const Ioss::SideSet *sset = dynamic_cast<const Ioss::SideSet*>(entity);
 	assert(sset != NULL);
 	int my_rank = sset->max_parametric_dimension();
 	if (my_rank == 2)
@@ -64,7 +64,7 @@ namespace {
 
     case Ioss::SIDEBLOCK:
       {
-	Ioss::SideBlock *sblk = dynamic_cast<Ioss::SideBlock*>(entity);
+	const Ioss::SideBlock *sblk = dynamic_cast<const Ioss::SideBlock*>(entity);
 	assert(sblk != NULL);
 	int rank = sblk->topology()->parametric_dimension();
 	if (rank == 2)
@@ -618,10 +618,10 @@ namespace stk {
      * input or output
      */
     bool is_valid_part_field(const stk::mesh::FieldBase *field,
-			     stk::mesh::EntityRank part_type,
-			     stk::mesh::Part &part,
-			     stk::mesh::Part &universal,
-			     Ioss::Field::RoleType filter_role,
+			     const stk::mesh::EntityRank part_type,
+			     const stk::mesh::Part &part,
+			     const stk::mesh::Part &universal,
+			     const Ioss::Field::RoleType filter_role,
 			     bool add_all)
     {
       const Ioss::Field::RoleType *role = stk::io::get_field_role(*field);
@@ -868,14 +868,14 @@ namespace stk {
      *  on the specified part of the specified role * to the specified
      *  Ioss::GroupingEntity
      */
-    void ioss_add_fields(stk::mesh::Part &part,
-			 stk::mesh::EntityRank part_type,
+    void ioss_add_fields(const stk::mesh::Part &part,
+			 const stk::mesh::EntityRank part_type,
 			 Ioss::GroupingEntity *entity,
 			 const Ioss::Field::RoleType filter_role,
-			 bool add_all)
+			 const bool add_all)
     {
-      stk::mesh::MetaData & meta = mesh::MetaData::get(part);
-      stk::mesh::Part &universal = meta.universal_part();
+      const stk::mesh::MetaData & meta = mesh::MetaData::get(part);
+      const stk::mesh::Part &universal = meta.universal_part();
 
       const std::vector<mesh::FieldBase*> &fields = meta.get_fields();
 
@@ -1035,7 +1035,7 @@ namespace stk {
     // database entities and this entity is not to be used. The
     // "omitted" property is set by the application during parsing or
     // pre-mesh reading time.
-    bool include_entity(Ioss::GroupingEntity *entity)
+    bool include_entity(const Ioss::GroupingEntity *entity)
     {
       assert(entity);
 
@@ -1270,8 +1270,8 @@ namespace stk {
     void define_output_db(Ioss::Region & io_region ,
 			  const mesh::BulkData &bulk_data,
 			  const Ioss::Region *input_region,
-        const stk::mesh::Selector *anded_selector,
-        bool sort_stk_parts)
+                          const stk::mesh::Selector *anded_selector,
+                          const bool sort_stk_parts)
     {
       const mesh::MetaData & meta_data = mesh::MetaData::get(bulk_data);
 

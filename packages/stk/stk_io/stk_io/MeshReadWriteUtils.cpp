@@ -802,7 +802,7 @@ namespace stk {
     // To export the data to the database, call
     // process_output_request().
 
-    void define_output_fields(MeshData &mesh_data, stk::mesh::fem::FEMMetaData &fem_meta,
+    void define_output_fields(const MeshData &mesh_data, const stk::mesh::fem::FEMMetaData &fem_meta,
 			      bool add_all_fields)
     {
       Ioss::Region *region = mesh_data.m_output_region;
