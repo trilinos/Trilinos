@@ -9,14 +9,18 @@ OWNER_NAME=$2
 
 echo "Making this a shared repo in git."
 git repo-config core.sharedRepository true
-echo "Making repo group read/writable and sticky" 
-chmod -R g+rws .
+echo "Setting the group sticky bit on directories so new files get the parent directory group."
+find . -type d | xargs chmod g+s
+echo "Removing the group sticky bit from files."
+find . -type f | xargs chmod g-s
+echo "Making repo group readable"
+chmod -R g+r .
 echo "Removing read/write/exec from others."
 chmod -R o-rwxs .
 echo "Changing group to $GROUP_NAME"
 chgrp -R $GROUP_NAME .
 if [ "$OWNER_NAME" != "" ] ; then
-  echo "Changing default owner on . to $OWNER_NAME"
+  echo "Changing owner on the git repo to to $OWNER_NAME"
   chown -R $OWNER_NAME .
   echo "Changing default owner on config to $OWNER_NAME"
   chown $OWNER_NAME config
