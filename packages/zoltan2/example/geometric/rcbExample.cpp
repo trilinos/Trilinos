@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
     std::cout << "Imbalance tolerance is " << tolerance << std::endl;
 
   Teuchos::ParameterList params("test params");
-  params.set("debug_level", "detailed_status");
+  params.set("debug_level", "basic_status");
   params.set("debug_procs", "0");
   params.set("error_check_level", "debug_mode_assertions");
 
@@ -130,6 +130,7 @@ int main(int argc, char *argv[])
       std::cout << "FAIL: " << imb << std::endl;
   }
    
+#if 0
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
   // Try a problem with weights (1 dimension)
@@ -158,7 +159,6 @@ int main(int argc, char *argv[])
     localCount, globalIds,  
     coordVec, coordStrides, 
     weightVec, weightStrides);
-
 
   // Create a Zoltan2 partitioning problem
 
@@ -254,7 +254,7 @@ int main(int argc, char *argv[])
   // Check the solution.
 
   const ArrayRCP<MetricValues<scalar_t> > & metrics3 =
-    solution2.getMetrics();
+    solution3.getMetrics();
 
   if (rank == 0)
     Zoltan2::printMetrics<scalar_t>(cout, nprocs, nprocs, nprocs,
@@ -271,7 +271,6 @@ int main(int argc, char *argv[])
   if (localCount)
     delete [] weights;
 
-#if 0
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
   // Using part sizes, ask for some parts to be empty.
