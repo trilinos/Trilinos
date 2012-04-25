@@ -93,7 +93,7 @@ Ioss::DatabaseIO::DatabaseIO(Ioss::Region* region, const std::string& filename,
 			     MPI_Comm communicator,
 			     const Ioss::PropertyManager &props)
   : properties(props), commonSideTopology(NULL), DBFilename(filename), dbState(STATE_INVALID),
-    isParallel(false), myProcessor(0), cycleCount(0), overlayCount(0),
+    isParallel(false), isSerialParallel(false), myProcessor(0), cycleCount(0), overlayCount(0),
     fieldSuffixSeparator('_'), splitType(Ioss::SPLIT_BY_TOPOLOGIES),
     dbUsage(db_usage),dbIntSizeAPI(USE_INT32_API),
     nodeGlobalIdBackwardCompatibility(false), lowerCaseVariableNames(true),
