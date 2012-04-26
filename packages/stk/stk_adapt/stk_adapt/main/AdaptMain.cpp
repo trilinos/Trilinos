@@ -808,6 +808,8 @@ namespace stk {
                     proc_rank_field_ptr = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
                   }
 
+#if STK_ADAPT_HAVE_YAML_CPP
+                // FIXME - this is this needed? see above
                 // add global parts not found in this file
                 if (streaming_size)
                   {
@@ -815,6 +817,7 @@ namespace stk {
                     SerializeNodeRegistry snr(eMesh, some_nr, input_mesh, output_mesh, M, iM);
                     snr.declareGlobalParts();
                   }
+#endif
                 eMesh.commit();
 
                 if (print_memory_usage)

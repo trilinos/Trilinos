@@ -200,7 +200,9 @@ namespace stk
 
     };
 
+#ifndef SWIG
     std::ostream &operator<<(std::ostream& out,  Function& func);
+#endif
 
     double eval(double x, double y, double z, double t, Function& func);
     double eval2(double x, double y, double t, Function& func);

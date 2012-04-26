@@ -367,9 +367,13 @@ bool Relation::operator == ( const Relation & rhs ) const
 inline
 bool same_specification(const Relation& lhs, const Relation& rhs)
 {
+#ifdef SIERRA_MIGRATION
   return  lhs.entity_rank()     == rhs.entity_rank() &&
           lhs.getRelationType() == rhs.getRelationType() &&
           lhs.getOrdinal()      == rhs.getOrdinal();
+#else
+  return  lhs.entity_rank()     == rhs.entity_rank();
+#endif
 }
 
 } // namespace mesh

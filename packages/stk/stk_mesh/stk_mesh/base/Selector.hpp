@@ -161,7 +161,9 @@ public:
   { return apply(m_op.begin(), m_op.end(), part_range, comp); }
 
   /** \brief  Pretty print the set-expression with part names */
+#ifndef SWIG
   friend std::ostream & operator << ( std::ostream & out, const Selector & selector);
+#endif
 
   const std::vector<OpType>& get_ops() const { return m_op; }
   void set_ops(const std::vector<OpType>& ops) { m_op = ops; }
@@ -213,7 +215,9 @@ private:
 
 };
 
+#ifndef SWIG
 std::ostream & operator<<( std::ostream & out, const Selector & selector);
+#endif
 
 /** \brief .
  * \relates Selector

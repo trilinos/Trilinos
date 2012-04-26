@@ -295,7 +295,11 @@ template<> RefTopoX RefinementTopologyExtra< shards:: Pyramid<5>  > :: refinemen
 // FIXME: note from 
 //Note 13 Node Pyramid Refinement not yet complete.
 
-template<> RefTopoX RefinementTopologyExtra< shards:: Pyramid<13>  > :: refinement_topology = {};
+template<> RefTopoX RefinementTopologyExtra< shards:: Pyramid<13>  > :: refinement_topology = {
+  // bogus, just to avoid a compile error
+  {	0,	0,	0,	0,	1,	{-1,	0,	0} }
+
+};
 
 
 template<> RefTopoX RefinementTopologyExtra< shards:: Line<3>  > :: refinement_topology = {

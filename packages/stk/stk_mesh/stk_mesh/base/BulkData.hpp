@@ -581,6 +581,7 @@ void BulkData::internal_basic_part_check(const Part* part,
 #ifdef SIERRA_MIGRATION
   rank_ok = true;
 #else
+  const unsigned part_rank = part->primary_entity_rank();
   rank_ok         = ( entity_rank == part_rank ||
                       undef_rank  == part_rank );
 #endif

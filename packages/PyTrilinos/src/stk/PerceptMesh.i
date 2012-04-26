@@ -373,6 +373,7 @@ namespace std
 %feature("immutable","1")     stk::percept::HeterogeneousFixture::m_block_hex;
 %feature("immutable","1")     stk::percept::HeterogeneousFixture::m_block_wedge;
 %feature("immutable","1")     stk::percept::HeterogeneousFixture::m_block_tet;
+%feature("immutable","1")     stk::percept::HeterogeneousFixture::m_block_pyramid;
 %feature("immutable","1")     stk::percept::HeterogeneousFixture::m_coordinates_field;
 %feature("immutable","1")     stk::percept::HeterogeneousFixture::m_centroid_field;
 %feature("immutable","1")     stk::percept::HeterogeneousFixture::m_temperature_field;
@@ -387,6 +388,8 @@ namespace std
 %include GenericFunction.hpp
 
   //eval is a Python command so we need to rename it to evalFunc
+%ignore stk::percept::operator<<(std::ostream& out,  Function& func);
+
 %rename(evalFunc) *::eval(double x, double y, double z, double t, Function& func);
 %rename(evalFunc) *::eval(double x, double y, double z, double t, Teuchos::RCP<Function>& func);
 %feature("docstring") evalFunc "Evaluate the function by passing in values for x, y, z, t, and the Function. Returns a double.";

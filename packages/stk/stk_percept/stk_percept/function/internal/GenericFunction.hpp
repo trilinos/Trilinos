@@ -54,7 +54,9 @@ namespace stk
       bool m_spatialOperator;
     };
     
+#ifndef SWIG
     std::ostream &operator<<(std::ostream& out,  GenericFunction& func);
+#endif
     //class NodalOp : public GenericFunction {};
 
   }
