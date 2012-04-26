@@ -75,12 +75,12 @@ class host : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
-    std::cout << "Kokkos::Host node_count("
-              << Kokkos::Host::detect_node_count()
-              << ") X node_core_count("
-              << Kokkos::Host::detect_node_core_count()
+    const size_t node_count = Kokkos::Host::detect_node_count();
+    const size_t node_core_count = Kokkos::Host::detect_node_core_count();
+    std::cout << "Kokkos::Host node_count(" << node_count
+              << ") X node_core_count(" << node_core_count
               << ")" << std::endl ;
-    Kokkos::Host::initialize( Kokkos::Host::SetThreadCount( 4 ) );
+    Kokkos::Host::initialize( node_count , 2 );
   }
 
   static void TearDownTestCase()

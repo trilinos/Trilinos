@@ -54,11 +54,13 @@
 struct BoxType {
   size_t data[3][2] ;
 
-  inline
-  const size_t * operator[]( size_t i ) const { return data[i]; }
+  typedef size_t range_type[2] ;
 
   inline
-  size_t * operator[]( size_t i ) { return data[i]; }
+  const range_type & operator[]( size_t i ) const { return data[i]; }
+
+  inline
+  range_type & operator[]( size_t i ) { return data[i]; }
 
   inline
   bool operator == ( const BoxType & rhs ) const

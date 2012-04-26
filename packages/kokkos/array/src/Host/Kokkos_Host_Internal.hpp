@@ -90,7 +90,8 @@ protected:
   virtual ~HostInternal();
   HostInternal();
 
-  bool spawn_threads();
+  bool spawn_threads( const size_type use_node_count ,
+                      const size_type use_node_thread_count );
 
 private:
 
@@ -100,8 +101,9 @@ public:
 
   void verify_inactive( const char * const method ) const ;
 
-  void initialize( const Host::DetectAndUseCores );
-  void initialize( const Host::SetThreadCount );
+  void initialize( const size_type use_node_count ,
+                   const size_type use_node_thread_count );
+
   void finalize();
 
   virtual bool bind_to_node( const HostThread & ) const ;

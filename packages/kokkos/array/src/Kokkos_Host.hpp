@@ -72,32 +72,6 @@ public:
   };
 
   /*--------------------------------*/
-
-  struct DetectAndUseCores {};
-
-  struct SetThreadCount {
-    const size_t thread_count ;
-    SetThreadCount( size_t n ) : thread_count( n ) {}
-  };
-
-  /** \brief  Initialize the device in the 'ready to work' state.
-   *
-   *  The device is initialized in a "ready to work" state
-   *  which reduces latency / improves performance when
-   *  dispatching work; however, resources are consumed
-   *  even when no work is being done.
-   */
-  static void initialize( const SetThreadCount );
-
-  /** \brief  Use every available core.
-   *  If host process is pinned to a NUMA node then use all of that node.
-   *  If host process is not pinned then use all NUMA nodes.
-   */
-  static void initialize( const DetectAndUseCores );
-
-  static void finalize();
-
-  /*--------------------------------*/
   /** \brief  Set the device in a 'sleep' state.
    *
    *  This function sets the device in a "sleep" state
@@ -125,12 +99,32 @@ public:
   static void fence() {}
 
   /*--------------------------------*/
+  /** \brief  Finalize: terminate spawned threads */
+  static void finalize();
+
+  /*--------------------------------*/
   /* -- Device specific functions --*/
+
+  /** \brief  Initialize the device in the 'ready to work' state.
+   *
+   *  The device is initialized in a "ready to work" state
+   *  which reduces latency / improves performance when
+   *  dispatching work; however, resources are consumed
+   *  even when no work is being done.
+   *
+   *  Initialize with number of NUMA nodes
+   *  and number of threads on each NUMA node.
+   */
+  static void initialize( const size_type use_node_count ,
+                          const size_type use_node_thread_count );
 
   /** \brief  If core count detection functionality is available
    *          return the core count, otherwise return zero.
    */
   static size_type detect_core_count();
+
+  /** \brief  Detect binding to NUMA nodes */
+  static size_type detect_node_binding();
 
   /** \brief  Detect number of NUMA nodes */
   static size_type detect_node_count();
@@ -138,6 +132,7 @@ public:
   /** \brief  Detect number of cores per NUMA node */
   static size_type detect_node_core_count();
 
+  /** \brief  An alignment size for large arrays */
   static size_type detect_memory_page_size();
 };
 

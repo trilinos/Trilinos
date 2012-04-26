@@ -94,36 +94,26 @@ bool HostInternalHWLOC::bind_to_node( const HostThread & thread ) const
   bool result = true ;
 
   if ( HostInternal::m_node_count ) {
-    size_type node_rank = HostInternal::m_node_rank ;
-
-    if ( HostInternal::m_node_count <= node_rank ) {
-      // The host process is not pinned to a node, use all nodes
-
-      const size_type thread_per_node =
-        ( HostInternal::m_thread_count + HostInternal::m_node_count - 1 ) /
-          HostInternal::m_node_count ;
-    
-      node_rank = thread.rank() / thread_per_node ;
-    }
 
     const hwloc_obj_t node =
-      hwloc_get_obj_by_type( m_host_topology, HWLOC_OBJ_NODE, node_rank );
+      hwloc_get_obj_by_type( m_host_topology, HWLOC_OBJ_NODE, thread.node() );
 
-#if 1
-    result = -1 != hwloc_set_cpubind( m_host_topology ,
-                                      node->allowed_cpuset ,
-                                      HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT );
-#else
-    const hwloc_obj_t core =
-      hwloc_get_obj_inside_cpuset_by_type( m_host_topology ,
-                                           node->allowed_cpuset ,
-                                           HWLOC_OBJ_CORE ,
-                                           node_core_rank );
+    result = 0 == hwloc_set_cpubind( m_host_topology ,
+                                     node->allowed_cpuset ,
+                                     HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT );
 
-    result = -1 != hwloc_set_cpubind( m_host_topology ,
-                                      core->allowed_cpuset ,
-                                      HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT );
+#if 0
+    std::cout << ( result ? "SUCCESS " : "FAILED " )
+              << "HWLOC::bind_to_node thread["
+              << thread.rank()
+              << "] to node["
+              << thread.node()
+              << "] with PU_count["
+              << hwloc_bitmap_weight( node->allowed_cpuset )
+              << "]"
+              << std::endl ;
 #endif
+
   }
   return result ;
 };
