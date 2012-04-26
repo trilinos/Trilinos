@@ -118,11 +118,6 @@ public:
   static void initialize( const size_type use_node_count ,
                           const size_type use_node_thread_count );
 
-  /** \brief  If core count detection functionality is available
-   *          return the core count, otherwise return zero.
-   */
-  static size_type detect_core_count();
-
   /** \brief  Detect binding to NUMA nodes */
   static size_type detect_node_binding();
 

@@ -59,15 +59,24 @@ namespace Test{
 
 void test_Host( int beg, int end, int runs, int threads){
 
+  const size_t node_count = Kokkos::Host::detect_node_count();
+
   if ( 0 < threads ) {
-    Kokkos::Host::initialize( Kokkos::Host::SetThreadCount( threads ) );
+    const size_t node_thread_count = ( threads + node_count - 1 ) / node_count ;
+
+    Kokkos::Host::initialize( node_count , node_thread_count );
+
+    std::cout << std::endl << "\"Host with manually set threads = \" , "
+              << node_count * node_thread_count << std::endl ;
   }
   else {
-    Kokkos::Host::initialize( Kokkos::Host::DetectAndUseCores() );
-    threads = Kokkos::Host::detect_core_count();
-  }
+    const size_t node_thread_count = Kokkos::Host::detect_node_core_count();
 
-  std::cout << "\"Host with threads = \" , " << threads << std::endl ;
+    Kokkos::Host::initialize( node_count , node_thread_count );
+
+    std::cout << std::endl << "\"Host with detected sequential threads = \" , "
+              << node_count * node_thread_count << std::endl ;
+  }
 
   explicit_dynamics::driver<float,Kokkos::Host>("Host-float", beg, end, runs);
   explicit_dynamics::driver<double,Kokkos::Host>("Host-double", beg, end, runs);
