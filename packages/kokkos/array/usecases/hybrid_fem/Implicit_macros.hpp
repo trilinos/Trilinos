@@ -221,7 +221,8 @@ struct ElementComputation< ScalarType , ScalarCoordType , KOKKOS_MACRO_DEVICE >
   static const size_type ElementNodeCount = 8 ;
 
   typedef FEMesh< ScalarCoordType , ElementNodeCount , device_type > mesh_type ;
-  typedef Kokkos::MDArray< scalar_type , device_type > array_type ;
+  typedef Kokkos::Array< scalar_type[ElementNodeCount][ElementNodeCount] , device_type > elem_matrices_type ;
+  typedef Kokkos::Array< scalar_type[ElementNodeCount] , device_type > elem_vectors_type ;
 
   typedef ShapeFunctionEvaluation< scalar_type > shape_function_data ;
 
@@ -233,14 +234,14 @@ private:
   const shape_function_data               shape_eval ;
   typename mesh_type::elem_node_ids_type  elem_node_ids ;
   typename mesh_type::node_coords_type    node_coords ;
-  array_type                              element_matrices ;
-  array_type                              element_vectors ;
+  elem_matrices_type                      element_matrices ;
+  elem_vectors_type                       element_vectors ;
   scalar_type                             coeff_K ;
   scalar_type                             coeff_Q ;
 
   ElementComputation( const mesh_type   & arg_mesh ,
-                      const array_type  & arg_element_matrices , 
-                      const array_type  & arg_element_vectors ,
+                      const elem_matrices_type  & arg_element_matrices , 
+                      const elem_vectors_type   & arg_element_vectors ,
                       const scalar_type   arg_coeff_K ,
                       const scalar_type   arg_coeff_Q )
   : shape_eval()
@@ -255,8 +256,8 @@ private:
 public:
 
   static void apply( const mesh_type  & mesh ,
-                     const array_type & elem_matrices ,
-                     const array_type & elem_vectors ,
+                     const elem_matrices_type & elem_matrices ,
+                     const elem_vectors_type  & elem_vectors ,
                      const scalar_type  elem_coeff_K ,
                      const scalar_type  elem_coeff_Q )
   {

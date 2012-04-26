@@ -55,25 +55,27 @@ struct GatherFill<
 {
   typedef KOKKOS_MACRO_DEVICE                              device_type ;
   typedef device_type::size_type                           size_type ;
+
+  static const size_type ElemNodeCount = 8 ;
+
   typedef Kokkos::CrsMatrix< ScalarType , device_type >    matrix_type ;
   typedef typename matrix_type::coefficients_type   coefficients_type ;
   typedef Kokkos::MultiVector< ScalarType , device_type >  vector_type ;
-  typedef Kokkos::MDArray< ScalarType , device_type >      elem_contrib_type ;
-  typedef Kokkos::MDArray< size_type , device_type >       elem_graph_type ;
-
-  static const size_type ElemNodeCount = 8 ;
+  typedef Kokkos::Array< ScalarType[ElemNodeCount][ElemNodeCount] , device_type >      elem_matrices_type ;
+  typedef Kokkos::Array< ScalarType[ElemNodeCount] , device_type >      elem_vectors_type ;
+  typedef Kokkos::Array< size_type[ElemNodeCount][ElemNodeCount] , device_type >       elem_graph_type ;
 
   typedef FEMesh< CoordScalarType , ElemNodeCount , device_type > mesh_type ;
   typedef typename mesh_type::node_elem_ids_type node_elem_ids_type ;
 
 private:
 
-  node_elem_ids_type node_elem_ids ;
-  elem_graph_type    elem_graph ;
-  elem_contrib_type  elem_matrices ;
-  elem_contrib_type  elem_vectors ;
-  coefficients_type  system_coeff ;
-  vector_type        system_rhs ;
+  node_elem_ids_type  node_elem_ids ;
+  elem_graph_type     elem_graph ;
+  elem_matrices_type  elem_matrices ;
+  elem_vectors_type   elem_vectors ;
+  coefficients_type   system_coeff ;
+  vector_type         system_rhs ;
 
 public:
 
@@ -108,9 +110,9 @@ public:
   static void apply( const matrix_type & matrix ,
                      const vector_type & rhs ,
                      const mesh_type   & mesh ,
-                     const elem_graph_type   & elem_graph ,
-                     const elem_contrib_type & elem_matrices ,
-                     const elem_contrib_type & elem_vectors )
+                     const elem_graph_type    & elem_graph ,
+                     const elem_matrices_type & elem_matrices ,
+                     const elem_vectors_type  & elem_vectors )
   {
     GatherFill op ;
     op.node_elem_ids = mesh.node_elem_ids ;

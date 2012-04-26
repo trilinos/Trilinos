@@ -48,7 +48,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include <Kokkos_MDArray.hpp>
+#include <Kokkos_Array.hpp>
 #include <Kokkos_MultiVector.hpp>
 #include <SparseLinearSystem.hpp>
 #include <SparseLinearSystemFill.hpp>
@@ -123,7 +123,6 @@ PerformanceData run( comm::Machine machine ,
   enum { ElementNodeCount = 8 };
   typedef double coordinate_scalar_type ;
   typedef FEMesh< coordinate_scalar_type , ElementNodeCount , device_type > mesh_type ;
-  typedef Kokkos::MDArray< scalar_type , device_type > elem_contrib_type ;
 
   //------------------------------------
   // Sparse linear system types:
@@ -195,18 +194,17 @@ PerformanceData run( comm::Machine machine ,
   //------------------------------------
   // Fill linear system
   {
-    elem_contrib_type elem_matrices ;
-    elem_contrib_type elem_vectors ;
+    typedef Kokkos::Array< scalar_type[ElementNodeCount][ElementNodeCount] , device_type > elem_matrices_type ;
+    typedef Kokkos::Array< scalar_type[ElementNodeCount] , device_type > elem_vectors_type ;
+    elem_matrices_type elem_matrices ;
+    elem_vectors_type  elem_vectors ;
 
     if ( element_count ) {
       elem_matrices =
-        Kokkos::create_mdarray< elem_contrib_type >( element_count ,
-                                                     ElementNodeCount ,
-                                                     ElementNodeCount );
+        Kokkos::create_array< elem_matrices_type >( element_count );
 
       elem_vectors =
-        Kokkos::create_mdarray< elem_contrib_type >( element_count ,
-                                                     ElementNodeCount );
+        Kokkos::create_array< elem_vectors_type >( element_count );
     }
 
     //------------------------------------

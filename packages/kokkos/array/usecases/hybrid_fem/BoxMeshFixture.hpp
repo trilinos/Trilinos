@@ -49,8 +49,8 @@
 #include <stdexcept>
 #include <sstream>
 
+#include <Kokkos_Array.hpp>
 #include <Kokkos_CrsArray.hpp>
-#include <Kokkos_MDArray.hpp>
 #include <Kokkos_MultiVector.hpp>
 
 #include <BoxMeshPartition.hpp>
@@ -249,17 +249,15 @@ box_mesh_fixture( const size_t proc_count ,
   typedef typename femesh_type::node_coords_type    node_coords_type ;
   typedef typename femesh_type::elem_node_ids_type  elem_node_ids_type ;
   typedef typename femesh_type::node_elem_ids_type  node_elem_ids_type ;
-  typedef Kokkos::MDArray< unsigned , Kokkos::Host > comm_data_array_type ;
 
   if ( node_count_total ) {
     mesh.node_coords =
-      Kokkos::create_mdarray< node_coords_type >( node_count_total , 3 );
+      Kokkos::create_array< node_coords_type >( node_count_total );
   }
 
   if ( elem_count_total ) {
     mesh.elem_node_ids =
-      Kokkos::create_mdarray< elem_node_ids_type >( elem_count_total ,
-                                                    element_node_count );
+      Kokkos::create_array< elem_node_ids_type >( elem_count_total );
   }
 
   mesh.parallel_data_map.count_interior = node_count_interior ;
@@ -269,15 +267,15 @@ box_mesh_fixture( const size_t proc_count ,
 
   if ( recv_msg_count ) {
     mesh.parallel_data_map.host_recv =
-      Kokkos::create_mdarray< comm_data_array_type >( recv_msg_count , 2 );
+      Kokkos::create_array< Kokkos::Array< unsigned[2] , Kokkos::Host > >( recv_msg_count );
   }
 
   if ( send_msg_count ) {
     mesh.parallel_data_map.host_send =
-      Kokkos::create_mdarray< comm_data_array_type >( send_msg_count , 2 );
+      Kokkos::create_array< Kokkos::Array< unsigned[2] , Kokkos::Host > >( send_msg_count );
 
     mesh.parallel_data_map.host_send_item =
-      Kokkos::create_mdarray< comm_data_array_type >( send_count );
+      Kokkos::create_array< Kokkos::Array< unsigned , Kokkos::Host > >( send_count );
   }
 
   typename node_coords_type::HostMirror node_coords =

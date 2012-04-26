@@ -73,7 +73,7 @@ struct Factory< Kokkos::CrsArray< IndexType , Device , IndexType > ,
   typedef Device                                     device_type ;
   typedef typename device_type::size_type            size_type  ;
   typedef Kokkos::CrsArray< IndexType , Device , IndexType > graph_type ;
-  typedef MDArray< size_type , device_type >         element_map_type ;
+  typedef Array< size_type[ElemNodeCount][ElemNodeCount] , device_type >         element_map_type ;
 
   typedef HybridFEM::FEMesh< CoordScalar , ElemNodeCount , Device > mesh_type ;
 
@@ -99,9 +99,7 @@ struct Factory< Kokkos::CrsArray< IndexType , Device , IndexType > ,
     const size_t total_elem = mesh.elem_node_ids.dimension(0);
 
     if ( total_elem ) {
-      elem_map = create_mdarray< element_map_type >( total_elem ,
-                                                     ElemNodeCount ,
-                                                     ElemNodeCount );
+      elem_map = create_array< element_map_type >( total_elem );
     }
 
     element_map_host_type elem_map_host = create_mirror( elem_map );

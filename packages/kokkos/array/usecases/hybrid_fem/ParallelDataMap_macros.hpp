@@ -45,20 +45,18 @@ namespace Kokkos {
 
 //----------------------------------------------------------------------------
 
-template< typename ValueType >
-struct PackArray< MDArray< ValueType , KOKKOS_MACRO_DEVICE > ,
-                  Impl::unsigned_<2> >
+template< typename ValueType , unsigned N1 >
+struct PackArray< Array< ValueType[N1] , KOKKOS_MACRO_DEVICE > , void >
 {
   typedef KOKKOS_MACRO_DEVICE                         device_type ;
   typedef KOKKOS_MACRO_DEVICE::size_type              size_type ;
-  typedef MDArray< ValueType , device_type >          array_type ;
+  typedef Array< ValueType[N1] , device_type >         array_type ;
   typedef Impl::MemoryView< ValueType , device_type > buffer_type ;
 
 private:
 
   buffer_type  output ;
   array_type   input ;
-  size_type    N1 ;
   size_type    base ;
 
 public:
@@ -72,8 +70,7 @@ public:
     }
   }
 
-  inline
-  static
+  inline static
   void pack( const buffer_type & arg_output ,
              const size_type     arg_begin ,
              const size_type     arg_count ,
@@ -82,27 +79,24 @@ public:
     PackArray op ;
     op.output = arg_output ;
     op.input  = arg_input ;
-    op.N1     = arg_input.dimension(1);
     op.base   = arg_begin ;
     parallel_for( arg_count , op );
   }
 };
 
-template< typename ValueType >
-struct UnpackArray< MDArray< ValueType , KOKKOS_MACRO_DEVICE > ,
-                    Impl::unsigned_<2> >
+template< typename ValueType , unsigned N1 >
+struct UnpackArray< Array< ValueType[N1] , KOKKOS_MACRO_DEVICE > , void >
 {
   typedef KOKKOS_MACRO_DEVICE                         device_type ;
   typedef KOKKOS_MACRO_DEVICE::size_type              size_type ;
-  typedef MDArray< ValueType , device_type >          array_type ;
-  typedef Impl::MemoryView< ValueType , device_type > buffer_type ;
+  typedef Array< ValueType , device_type >            array_type ;
+  typedef Impl::MemoryView< ValueType[N1] , device_type > buffer_type ;
 
 private:
 
   array_type   output ;
   buffer_type  input ;
   size_type    base ;
-  size_type    N1 ;
 
 public:
 
@@ -125,7 +119,6 @@ public:
     UnpackArray op ;
     op.output = arg_output ;
     op.input  = arg_input ;
-    op.N1     = arg_output.dimension(0);
     op.base   = arg_begin ;
     parallel_for( arg_count , op );
   }
