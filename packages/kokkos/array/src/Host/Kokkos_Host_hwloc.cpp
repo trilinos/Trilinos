@@ -102,6 +102,15 @@ bool HostInternalHWLOC::bind_to_node( const HostThread & thread ) const
                                      node->allowed_cpuset ,
                                      HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT );
 
+    hwloc_cpuset_t thread_cpuset = hwloc_bitmap_alloc();
+
+    hwloc_get_cpubind( m_host_topology , thread_cpuset , HWLOC_CPUBIND_THREAD );
+
+    result = result &&
+     hwloc_bitmap_isequal( thread_cpuset , node->allowed_cpuset );
+
+    hwloc_bitmap_free( thread_cpuset );
+
 #if 0
     std::cout << ( result ? "SUCCESS " : "FAILED " )
               << "HWLOC::bind_to_node thread["

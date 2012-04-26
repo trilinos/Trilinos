@@ -100,6 +100,7 @@ int main( int argc , char ** argv )
         size_t mesh_node_begin = 100 ;
         size_t mesh_node_end   = 300 ;
         size_t run        = 1 ;
+        input >> mesh_node_begin >> mesh_node_end >> run ;
         test_host_implicit( machine , host_node_count , host_node_thread_count , mesh_node_begin , mesh_node_end , run );
       }
       else {
