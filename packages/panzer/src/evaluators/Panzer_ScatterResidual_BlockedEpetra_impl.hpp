@@ -149,7 +149,7 @@ evaluateFields(typename Traits::EvalData workset)
 
    RCP<BLOC> blockedContainer = rcp_dynamic_cast<BLOC>(workset.ghostedLinContainer);
 
-   RCP<ProductVectorBase<double> > r = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer->get_f());
+   RCP<ProductVectorBase<double> > r = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer->get_f(),true);
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the

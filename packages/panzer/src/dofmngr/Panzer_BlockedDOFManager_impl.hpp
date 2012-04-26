@@ -309,7 +309,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndSharedIndices(s
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::ownedIndices(const std::vector<GlobalOrdinal> & indices,std::vector<bool> & isOwned) const
 {
-   isOwned.clear();
+   isOwned.resize(0);
 
    std::vector<std::vector<GlobalOrdinalT> > blockIndices(fieldBlockManagers_.size());
    for(std::size_t i=0;i<indices.size();i++)

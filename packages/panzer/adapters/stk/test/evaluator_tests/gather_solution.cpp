@@ -134,6 +134,7 @@ namespace panzer {
 
     Teuchos::RCP<BlockedEpetraLinearObjFactory<panzer::Traits,int> > be_lof 
        = Teuchos::rcp(new BlockedEpetraLinearObjFactory<panzer::Traits,int>(eComm.getConst(),dofManager));
+    Teuchos::RCP<LinearObjFactory<panzer::Traits> > lof = be_lof;
     Teuchos::RCP<LinearObjContainer> loc = be_lof->buildGhostedLinearObjContainer();
     be_lof->initializeGhostedContainer(LinearObjContainer::X,*loc);
 
@@ -162,8 +163,7 @@ namespace panzer {
        pl.set("DOF Names",names);
        pl.set("Indexer Names",names);
 
-       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-          = Teuchos::rcp(new panzer::GatherSolution_BlockedEpetra<panzer::Traits::Residual,panzer::Traits,int,int>(dofManager,pl));
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator = lof->buildGather<panzer::Traits::Residual>(pl);
 
        TEST_EQUALITY(evaluator->evaluatedFields().size(),2);
 
@@ -181,8 +181,7 @@ namespace panzer {
        pl.set("DOF Names",names);
        pl.set("Indexer Names",names);
 
-       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-          = Teuchos::rcp(new panzer::GatherSolution_BlockedEpetra<panzer::Traits::Residual,panzer::Traits,int,int>(dofManager,pl));
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator = lof->buildGather<panzer::Traits::Residual>(pl);
 
        TEST_EQUALITY(evaluator->evaluatedFields().size(),1);
 
@@ -202,8 +201,7 @@ namespace panzer {
        pl.set("DOF Names",names);
        pl.set("Indexer Names",names);
 
-       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-          = Teuchos::rcp(new panzer::GatherSolution_BlockedEpetra<panzer::Traits::Jacobian,panzer::Traits,int,int>(dofManager,pl));
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator = lof->buildGather<panzer::Traits::Jacobian>(pl);
 
        TEST_EQUALITY(evaluator->evaluatedFields().size(),2);
 
@@ -221,8 +219,7 @@ namespace panzer {
        pl.set("DOF Names",names);
        pl.set("Indexer Names",names);
 
-       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-          = Teuchos::rcp(new panzer::GatherSolution_BlockedEpetra<panzer::Traits::Jacobian,panzer::Traits,int,int>(dofManager,pl));
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator = lof->buildGather<panzer::Traits::Jacobian>(pl);
 
        TEST_EQUALITY(evaluator->evaluatedFields().size(),1);
 

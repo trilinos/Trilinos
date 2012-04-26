@@ -137,6 +137,7 @@ namespace panzer {
 
     Teuchos::RCP<BlockedEpetraLinearObjFactory<panzer::Traits,int> > be_lof 
        = Teuchos::rcp(new BlockedEpetraLinearObjFactory<panzer::Traits,int>(eComm.getConst(),dofManager));
+    Teuchos::RCP<LinearObjFactory<panzer::Traits> > lof = be_lof;
     Teuchos::RCP<LinearObjContainer> loc = be_lof->buildGhostedLinearObjContainer();
     be_lof->initializeGhostedContainer(LinearObjContainer::X | LinearObjContainer::F,*loc);
     loc->initialize();
@@ -174,8 +175,7 @@ namespace panzer {
        pl.set("Dependent Names", names);
        pl.set("Dependent Map", names_map);
 
-       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-          = Teuchos::rcp(new panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Residual,panzer::Traits,int,int>(dofManager,pl));
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator = lof->buildScatter<panzer::Traits::Residual>(pl);
 
        TEST_EQUALITY(evaluator->evaluatedFields().size(),1);
 
@@ -194,8 +194,7 @@ namespace panzer {
        pl.set("Dependent Names", names);
        pl.set("Dependent Map", names_map);
 
-       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-          = Teuchos::rcp(new panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Residual,panzer::Traits,int,int>(dofManager,pl));
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator = lof->buildScatter<panzer::Traits::Residual>(pl);
 
        TEST_EQUALITY(evaluator->evaluatedFields().size(),1);
 
@@ -216,8 +215,7 @@ namespace panzer {
        pl.set("DOF Names",names);
        pl.set("Indexer Names",names);
 
-       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-          = Teuchos::rcp(new panzer::GatherSolution_BlockedEpetra<panzer::Traits::Residual,panzer::Traits,int,int>(dofManager,pl));
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator = lof->buildGather<panzer::Traits::Residual>(pl);
 
        fm.registerEvaluator<panzer::Traits::Residual>(evaluator);
     }
@@ -232,8 +230,7 @@ namespace panzer {
        pl.set("DOF Names",names);
        pl.set("Indexer Names",names);
 
-       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-          = Teuchos::rcp(new panzer::GatherSolution_BlockedEpetra<panzer::Traits::Residual,panzer::Traits,int,int>(dofManager,pl));
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator = lof->buildGather<panzer::Traits::Residual>(pl);
 
        fm.registerEvaluator<panzer::Traits::Residual>(evaluator);
     }
@@ -332,6 +329,7 @@ namespace panzer {
 
     Teuchos::RCP<BlockedEpetraLinearObjFactory<panzer::Traits,int> > be_lof 
        = Teuchos::rcp(new BlockedEpetraLinearObjFactory<panzer::Traits,int>(eComm.getConst(),dofManager));
+    Teuchos::RCP<LinearObjFactory<panzer::Traits> > lof = be_lof;
     Teuchos::RCP<LinearObjContainer> loc = be_lof->buildGhostedLinearObjContainer();
     be_lof->initializeGhostedContainer(LinearObjContainer::X | LinearObjContainer::F | LinearObjContainer::Mat,*loc);
     loc->initialize();
@@ -370,8 +368,7 @@ namespace panzer {
        pl.set("Dependent Names", names);
        pl.set("Dependent Map", names_map);
 
-       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-          = Teuchos::rcp(new panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Jacobian,panzer::Traits,int,int>(dofManager,pl));
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator = lof->buildScatter<panzer::Traits::Jacobian>(pl);
 
        TEST_EQUALITY(evaluator->evaluatedFields().size(),1);
 
@@ -390,8 +387,7 @@ namespace panzer {
        pl.set("Dependent Names", names);
        pl.set("Dependent Map", names_map);
 
-       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-          = Teuchos::rcp(new panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Jacobian,panzer::Traits,int,int>(dofManager,pl));
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator = lof->buildScatter<panzer::Traits::Jacobian>(pl);
 
        TEST_EQUALITY(evaluator->evaluatedFields().size(),1);
 
@@ -412,8 +408,7 @@ namespace panzer {
        pl.set("DOF Names",names);
        pl.set("Indexer Names",names);
 
-       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-          = Teuchos::rcp(new panzer::GatherSolution_BlockedEpetra<panzer::Traits::Jacobian,panzer::Traits,int,int>(dofManager,pl));
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator = lof->buildGather<panzer::Traits::Jacobian>(pl);
 
        fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
     }
@@ -428,8 +423,7 @@ namespace panzer {
        pl.set("DOF Names",names);
        pl.set("Indexer Names",names);
 
-       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-          = Teuchos::rcp(new panzer::GatherSolution_BlockedEpetra<panzer::Traits::Jacobian,panzer::Traits,int,int>(dofManager,pl));
+       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator = lof->buildGather<panzer::Traits::Jacobian>(pl);
 
        fm.registerEvaluator<panzer::Traits::Jacobian>(evaluator);
     }
