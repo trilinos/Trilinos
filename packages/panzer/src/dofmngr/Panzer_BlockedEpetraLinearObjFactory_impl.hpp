@@ -54,6 +54,7 @@
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
+#include "Thyra_SpmdVectorBase.hpp"
 #include "Thyra_get_Epetra_Operator.hpp"
 
 using Teuchos::RCP;
@@ -425,14 +426,27 @@ template <typename Traits,typename LocalOrdinalT>
 Teuchos::RCP<Thyra::VectorBase<double> > BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getThyraDomainVector() const
 {
-   return Thyra::createMember<double>(*getThyraDomainSpace());
+   Teuchos::RCP<Thyra::VectorBase<double> > vec =
+      Thyra::createMember<double>(*getThyraDomainSpace());
+   Thyra::assign(vec.ptr(),0.0);
+
+   Teuchos::RCP<Thyra::ProductVectorBase<double> > p_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(vec);
+   for(std::size_t i=0;i<gidProviders_.size();i++) {
+      TEUCHOS_ASSERT(Teuchos::rcp_dynamic_cast<Thyra::SpmdVectorBase<double> >(p_vec->getNonconstVectorBlock(i))->spmdSpace()->localSubDim()==getMap(i)->NumMyElements());
+   }
+
+   return vec;
 }
 
 template <typename Traits,typename LocalOrdinalT>
 Teuchos::RCP<Thyra::VectorBase<double> > BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getThyraRangeVector() const
 {
-   return Thyra::createMember<double>(*getThyraRangeSpace());
+   Teuchos::RCP<Thyra::VectorBase<double> > vec =
+      Thyra::createMember<double>(*getThyraRangeSpace());
+   Thyra::assign(vec.ptr(),0.0);
+
+   return vec;
 }
 
 template <typename Traits,typename LocalOrdinalT>
@@ -466,46 +480,54 @@ template <typename Traits,typename LocalOrdinalT>
 Teuchos::RCP<Thyra::VectorSpaceBase<double> > BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getGhostedThyraDomainSpace() const
 {
-   if(domainSpace_==Teuchos::null) {
+   if(ghostedDomainSpace_==Teuchos::null) {
       // loop over all vectors and build the vector space
       std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<double> > > vsArray;
       for(std::size_t i=0;i<gidProviders_.size();i++)  
          vsArray.push_back(Thyra::create_VectorSpace(getGhostedMap(i)));
 
-      domainSpace_ = Thyra::productVectorSpace<double>(vsArray);
+      ghostedDomainSpace_ = Thyra::productVectorSpace<double>(vsArray);
    }
    
-   return domainSpace_;
+   return ghostedDomainSpace_;
 }
 
 template <typename Traits,typename LocalOrdinalT>
 Teuchos::RCP<Thyra::VectorSpaceBase<double> > BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getGhostedThyraRangeSpace() const
 {
-   if(rangeSpace_==Teuchos::null) {
+   if(ghostedRangeSpace_==Teuchos::null) {
       // loop over all vectors and build the vector space
       std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<double> > > vsArray;
       for(std::size_t i=0;i<gidProviders_.size();i++)  
          vsArray.push_back(Thyra::create_VectorSpace(getGhostedMap(i)));
 
-      rangeSpace_ = Thyra::productVectorSpace<double>(vsArray);
+      ghostedRangeSpace_ = Thyra::productVectorSpace<double>(vsArray);
    }
    
-   return rangeSpace_;
+   return ghostedRangeSpace_;
 }
 
 template <typename Traits,typename LocalOrdinalT>
 Teuchos::RCP<Thyra::VectorBase<double> > BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getGhostedThyraDomainVector() const
 {
-   return Thyra::createMember<double>(*getGhostedThyraDomainSpace());
+   Teuchos::RCP<Thyra::VectorBase<double> > vec =
+      Thyra::createMember<double>(*getGhostedThyraDomainSpace());
+   Thyra::assign(vec.ptr(),0.0);
+
+   return vec;
 }
 
 template <typename Traits,typename LocalOrdinalT>
 Teuchos::RCP<Thyra::VectorBase<double> > BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getGhostedThyraRangeVector() const
 {
-   return Thyra::createMember<double>(*getGhostedThyraRangeSpace());
+   Teuchos::RCP<Thyra::VectorBase<double> > vec =
+      Thyra::createMember<double>(*getGhostedThyraRangeSpace());
+   Thyra::assign(vec.ptr(),0.0);
+ 
+   return vec;
 }
 
 template <typename Traits,typename LocalOrdinalT>
@@ -808,8 +830,9 @@ const Teuchos::RCP<Epetra_CrsGraph> BlockedEpetraLinearObjFactory<Traits,LocalOr
 buildEpetraGhostedGraph(int i,int j) const
 {
    // build the map and allocate the space for the graph
-   Teuchos::RCP<Epetra_Map> map = getGhostedMap(i);
-   Teuchos::RCP<Epetra_CrsGraph> graph = Teuchos::rcp(new Epetra_CrsGraph(Copy,*map,0));
+   Teuchos::RCP<Epetra_Map> rowMap = getGhostedMap(i);
+   Teuchos::RCP<Epetra_Map> colMap = getGhostedMap(j);
+   Teuchos::RCP<Epetra_CrsGraph> graph = Teuchos::rcp(new Epetra_CrsGraph(Copy,*rowMap,0));
 
    std::vector<std::string> elementBlockIds;
    
@@ -828,7 +851,7 @@ buildEpetraGhostedGraph(int i,int j) const
 
       // grab elements for this block
       const std::vector<LocalOrdinalT> & elements = blockProvider_->getElementBlock(blockId); // each sub provider "should" have the
-                                                                                            // same elements in each element block
+                                                                                              // same elements in each element block
 
       // get information about number of indicies
       std::vector<int> row_gids;
@@ -844,8 +867,9 @@ buildEpetraGhostedGraph(int i,int j) const
       }
    }
 
-   // finish filling the graph
-   graph->FillComplete();
+   // finish filling the graph: Make sure the colmap and row maps coincide to 
+   //                           minimize calls to LID lookups
+   graph->FillComplete(*colMap,*rowMap);
 
    return graph;
 }
