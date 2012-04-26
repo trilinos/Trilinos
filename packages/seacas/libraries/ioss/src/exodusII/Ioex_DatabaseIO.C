@@ -6241,6 +6241,10 @@ namespace Ioex {
       // It's possible that we are a serial program outputting information
       // for later use by a parallel program.  
 
+      meta->processorCount = 0;
+      meta->processorId = 0;
+      meta->outputNemesis = false;
+	
       if (isParallel) {
 	meta->processorCount = util().parallel_size();
 	meta->processorId = myProcessor;
