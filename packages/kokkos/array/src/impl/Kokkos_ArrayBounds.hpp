@@ -111,10 +111,15 @@ void mdarray_require_equal_dimension( const MDArrayType1 & array1 ,
 
 //----------------------------------------------------------------------------
 
+void array_require_equal_dimension( size_t x , size_t y );
+
 void crsarray_require_equal_dimension(
   size_t x_row_count , size_t x_entry_count ,
   size_t y_row_count , size_t y_entry_count );
 
+void prefixsum_require_equal_dimension( size_t x , size_t y );
+
+//----------------------------------------------------------------------------
 
 } // namespace Impl
 } // namespace Kokkos

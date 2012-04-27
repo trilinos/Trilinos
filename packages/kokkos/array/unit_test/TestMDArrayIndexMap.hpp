@@ -78,6 +78,25 @@ public:
   map_left_type  m_map_left ;
   map_right_type m_map_right ;
 
+  // Fixed rank and dimension arrays:
+  Kokkos::Impl::IndexMapLeft<  memory_space , 1 > m_map_left_1 ;
+  Kokkos::Impl::IndexMapLeft<  memory_space , 2 , 2 > m_map_left_2 ;
+  Kokkos::Impl::IndexMapLeft<  memory_space , 3 , 2 , 3 > m_map_left_3 ;
+  Kokkos::Impl::IndexMapLeft<  memory_space , 4 , 2 , 3 , 4 > m_map_left_4 ;
+  Kokkos::Impl::IndexMapLeft<  memory_space , 5 , 2 , 3 , 4 , 5 > m_map_left_5 ;
+  Kokkos::Impl::IndexMapLeft<  memory_space , 6 , 2 , 3 , 4 , 5 , 6 > m_map_left_6 ;
+  Kokkos::Impl::IndexMapLeft<  memory_space , 7 , 2 , 3 , 4 , 5 , 6 , 7 > m_map_left_7 ;
+  Kokkos::Impl::IndexMapLeft<  memory_space , 8 , 2 , 3 , 4 , 5 , 6 , 7 , 8 > m_map_left_8 ;
+
+  Kokkos::Impl::IndexMapRight<  memory_space , 1 > m_map_right_1 ;
+  Kokkos::Impl::IndexMapRight<  memory_space , 2 , 2 > m_map_right_2 ;
+  Kokkos::Impl::IndexMapRight<  memory_space , 3 , 2 , 3 > m_map_right_3 ;
+  Kokkos::Impl::IndexMapRight<  memory_space , 4 , 2 , 3 , 4 > m_map_right_4 ;
+  Kokkos::Impl::IndexMapRight<  memory_space , 5 , 2 , 3 , 4 , 5 > m_map_right_5 ;
+  Kokkos::Impl::IndexMapRight<  memory_space , 6 , 2 , 3 , 4 , 5 , 6 > m_map_right_6 ;
+  Kokkos::Impl::IndexMapRight<  memory_space , 7 , 2 , 3 , 4 , 5 , 6 , 7 > m_map_right_7 ;
+  Kokkos::Impl::IndexMapRight<  memory_space , 8 , 2 , 3 , 4 , 5 , 6 , 7 , 8 > m_map_right_8 ;
+
   KOKKOS_MACRO_DEVICE_FUNCTION
   void operator()( int iwork ) const
   {

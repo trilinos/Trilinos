@@ -58,7 +58,7 @@ namespace Kokkos {
       pl.set<int>("Num Threads",0);
       node_ = rcp<TBBNode>(new TBBNode(pl));
 #elif defined(HAVE_KOKKOS_OPENMP)
-      node_ = rcp<TBBNode>(new OpenMPNode(pl));
+      node_ = rcp<OpenMPNode>(new OpenMPNode(pl));
 #else
       node_ = rcp<SerialNode>(new SerialNode(pl));
 #endif

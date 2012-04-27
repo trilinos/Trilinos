@@ -31,5 +31,11 @@ echo "3) Create initial dirs_to_emails file with default email address ..."
 
 cd $GIT_REPO_BASE_DIR
 echo "
-   .+ $DEFAULT_EMAIL
-   " >> hooks/dirs_to_emails
+.+ $DEFAULT_EMAIL
+" >> hooks/dirs_to_emails
+
+
+echo "4) Touching (creating) push.log file ..."
+
+cd $GIT_REPO_BASE_DIR
+touch push.log

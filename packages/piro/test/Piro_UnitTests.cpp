@@ -96,7 +96,7 @@ void testSensitivities(const std::string& inputFile,
 
   RCP<Teuchos::ParameterList> piroParams =
     rcp(new Teuchos::ParameterList("Piro Parameters"));
-  Teuchos::updateParametersFromXmlFile(inputFile, piroParams.get());
+  Teuchos::updateParametersFromXmlFile(inputFile, piroParams.ptr());
   setOStream(rcp(&out,false), *piroParams);
   
   // Use these two objects to construct a Piro solved application 

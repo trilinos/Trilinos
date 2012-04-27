@@ -102,7 +102,7 @@ namespace Tpetra {
     /// \param target [in] The target distribution.  This <i>must</i>
     ///   be a uniquely owned (nonoverlapping) distribution.
     Export (const Teuchos::RCP<const map_type>& source, 
-	    const Teuchos::RCP<const map_type>& target);
+            const Teuchos::RCP<const map_type>& target);
 
     /// \brief Constructor (with list of parameters)
     ///
@@ -116,7 +116,7 @@ namespace Tpetra {
     ///   directly to the Distributor that implements communication.
     Export (const Teuchos::RCP<const map_type>& source,
             const Teuchos::RCP<const map_type>& target,
-	    const Teuchos::RCP<Teuchos::ParameterList>& plist);
+            const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
     /// \brief Copy constructor. 
     ///
@@ -229,7 +229,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Export<LocalOrdinal,GlobalOrdinal,Node>::
   Export (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,   
-	  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target)
+          const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target)
   {
     using Teuchos::rcp;
     typedef ImportExportData<LocalOrdinal,GlobalOrdinal,Node> data_type;
@@ -244,8 +244,8 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Export<LocalOrdinal,GlobalOrdinal,Node>::
   Export (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,   
-	  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
-	  const Teuchos::RCP<Teuchos::ParameterList>& plist)
+          const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
+          const Teuchos::RCP<Teuchos::ParameterList>& plist)
   {
     using Teuchos::rcp;
     typedef ImportExportData<LocalOrdinal,GlobalOrdinal,Node> data_type;
@@ -406,7 +406,7 @@ namespace Tpetra {
     }
     comm->barrier();
     getDistributor().describe (*(getFancyOStream (rcpFromRef (os))),
-			       Teuchos::VERB_EXTREME);
+                               Teuchos::VERB_EXTREME);
   }
 
 
@@ -447,8 +447,8 @@ namespace Tpetra {
     for (; sourceIter != sourceGIDs.end(); ++sourceIter) {
       if (target.isNodeGlobalElement(*sourceIter)) {
         // The current process owns this GID, for both the source and
-	// the target Maps.  Determine the LIDs for this GID on both
-	// Maps and add them to the permutation lists.
+        // the target Maps.  Determine the LIDs for this GID on both
+        // Maps and add them to the permutation lists.
         ExportData_->permuteToLIDs_.push_back(  target.getLocalElement(*sourceIter));
         ExportData_->permuteFromLIDs_.push_back(source.getLocalElement(*sourceIter));
       }
@@ -541,9 +541,9 @@ namespace Tpetra {
     // exportImageIDs_ in ascending order, and apply the same
     // permutation to exportGIDs_ and exportLIDs_.
     sort3 (ExportData_->exportImageIDs_.begin(), 
-	   ExportData_->exportImageIDs_.end(), 
-	   ExportData_->exportGIDs_.begin(), 
-	   ExportData_->exportLIDs_.begin());
+           ExportData_->exportImageIDs_.end(), 
+           ExportData_->exportGIDs_.begin(), 
+           ExportData_->exportLIDs_.begin());
 
     // Construct the list of entries that calling image needs to send
     // as a result of everyone asking for what it needs to receive.

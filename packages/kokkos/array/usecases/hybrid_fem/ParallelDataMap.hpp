@@ -50,7 +50,7 @@
 #include <sstream>
 #include <stdexcept>
 
-#include <Kokkos_MDArray.hpp>
+#include <Kokkos_Array.hpp>
 #include <Kokkos_Host.hpp>
 #include <ParallelComm.hpp>
 
@@ -71,9 +71,9 @@ namespace Kokkos {
  */
 struct ParallelDataMap {
   comm::Machine               machine ;
-  MDArray< unsigned , Host >  host_recv ;
-  MDArray< unsigned , Host >  host_send ;
-  MDArray< unsigned , Host >  host_send_item ;
+  Array< unsigned[2], Host >  host_recv ;
+  Array< unsigned[2], Host >  host_send ;
+  Array< unsigned ,   Host >  host_send_item ;
   unsigned                    count_interior ;
   unsigned                    count_send ;
   unsigned                    count_owned ; // = count_interior + count_send

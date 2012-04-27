@@ -1205,7 +1205,7 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="AztecOO,Stratimikos,Tpetra,Belos,Ifpack2"/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="ForUQTK,CUDA,Thrust,Clp,GLPK"/>
+    <LIB_OPTIONAL_DEP_TPLS value="ForUQTK,CUDA,Thrust,Clp,GLPK,Boost"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
@@ -1215,7 +1215,7 @@
     <ParentPackage value=""/>
   </Package>
   <Package name="Piro" dir="packages/piro" type="SS">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,ThyraCore,ThyraEpetraAdapters,ThyraEpetraExtAdapters,Epetra,EpetraExt"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Stratimikos,ThyraCore,ThyraEpetraAdapters,ThyraEpetraExtAdapters,Epetra,EpetraExt"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="NOX,Rythmos,MOOCHO,Stokhos,OptiPack,TriKota"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>

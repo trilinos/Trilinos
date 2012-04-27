@@ -221,7 +221,8 @@ struct ElementComputation< ScalarType , ScalarCoordType , KOKKOS_MACRO_DEVICE >
   static const size_type ElementNodeCount = 8 ;
 
   typedef FEMesh< ScalarCoordType , ElementNodeCount , device_type > mesh_type ;
-  typedef Kokkos::MDArray< scalar_type , device_type > array_type ;
+  typedef Kokkos::Array< scalar_type[ElementNodeCount][ElementNodeCount] , device_type > elem_matrices_type ;
+  typedef Kokkos::Array< scalar_type[ElementNodeCount] , device_type > elem_vectors_type ;
 
   typedef ShapeFunctionEvaluation< scalar_type > shape_function_data ;
 
@@ -233,14 +234,14 @@ private:
   const shape_function_data               shape_eval ;
   typename mesh_type::elem_node_ids_type  elem_node_ids ;
   typename mesh_type::node_coords_type    node_coords ;
-  array_type                              element_matrices ;
-  array_type                              element_vectors ;
+  elem_matrices_type                      element_matrices ;
+  elem_vectors_type                       element_vectors ;
   scalar_type                             coeff_K ;
   scalar_type                             coeff_Q ;
 
   ElementComputation( const mesh_type   & arg_mesh ,
-                      const array_type  & arg_element_matrices , 
-                      const array_type  & arg_element_vectors ,
+                      const elem_matrices_type  & arg_element_matrices , 
+                      const elem_vectors_type   & arg_element_vectors ,
                       const scalar_type   arg_coeff_K ,
                       const scalar_type   arg_coeff_Q )
   : shape_eval()
@@ -255,8 +256,8 @@ private:
 public:
 
   static void apply( const mesh_type  & mesh ,
-                     const array_type & elem_matrices ,
-                     const array_type & elem_vectors ,
+                     const elem_matrices_type & elem_matrices ,
+                     const elem_vectors_type  & elem_vectors ,
                      const scalar_type  elem_coeff_K ,
                      const scalar_type  elem_coeff_Q )
   {
@@ -510,8 +511,8 @@ struct DirichletBoundary< ScalarType , ScalarCoordType , KOKKOS_MACRO_DEVICE >
     //  that correspond to boundary conditions, and
     //  adjust the load vector accordingly
 
-    const size_type iBeg = matrix.graph.row_entry_begin(inode);
-    const size_type iEnd = matrix.graph.row_entry_end(  inode);
+    const size_type iBeg = matrix.graph.row_map[inode];
+    const size_type iEnd = matrix.graph.row_map[inode+1];
 
     const ScalarCoordType z = node_coords(inode,2);
     const bool bc_lower = z <= bc_lower_z ;
@@ -527,7 +528,8 @@ struct DirichletBoundary< ScalarType , ScalarCoordType , KOKKOS_MACRO_DEVICE >
       //  on the diagonal
 
       for( size_type i = iBeg ; i < iEnd ; i++) {
-        matrix.coefficients(i) = (int) inode == matrix.graph(i) ? 1 : 0 ;
+        matrix.coefficients(i) =
+          (int) inode == matrix.graph.entries(i) ? 1 : 0 ;
       }
     }
     else {
@@ -535,7 +537,7 @@ struct DirichletBoundary< ScalarType , ScalarCoordType , KOKKOS_MACRO_DEVICE >
       //  Clear them and adjust the load vector
 
       for( size_type i = iBeg ; i < iEnd ; i++ ) {
-        const size_type cnode = matrix.graph(i) ;
+        const size_type cnode = matrix.graph.entries(i) ;
 
         const ScalarCoordType zc = node_coords(cnode,2);
         const bool c_bc_lower = zc <= bc_lower_z ;
@@ -571,7 +573,7 @@ struct DirichletBoundary< ScalarType , ScalarCoordType , KOKKOS_MACRO_DEVICE >
     op.bc_upper_z     = bc_upper_z ;
     op.bc_lower_value = bc_lower_value ;
     op.bc_upper_value = bc_upper_value ;
-    parallel_for( linsys_matrix.graph.row_count() , op );
+    parallel_for( linsys_matrix.graph.row_map.length() , op );
   }
 };
 

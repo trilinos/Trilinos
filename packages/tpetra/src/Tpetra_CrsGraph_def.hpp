@@ -62,9 +62,9 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap,
-	    size_t maxNumEntriesPerRow, 
-	    ProfileType pftype,
-	    const Teuchos::RCP<Teuchos::ParameterList>& plist)
+            size_t maxNumEntriesPerRow, 
+            ProfileType pftype,
+            const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>(rowMap)
   , rowMap_(rowMap)
   , lclGraph_(rowMap->getNodeNumElements(), rowMap->getNode())
@@ -94,10 +94,10 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap,
-	    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap,
-	    size_t maxNumEntriesPerRow, 
-	    ProfileType pftype,
-	    const Teuchos::RCP<Teuchos::ParameterList>& plist)
+            const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap,
+            size_t maxNumEntriesPerRow, 
+            ProfileType pftype,
+            const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>(rowMap)
   , rowMap_(rowMap)
   , colMap_(colMap)
@@ -128,9 +128,9 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap,
-	    const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, 
-	    ProfileType pftype,
-	    const Teuchos::RCP<Teuchos::ParameterList>& plist)
+            const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, 
+            ProfileType pftype,
+            const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>(rowMap)
   , rowMap_(rowMap)
   , lclGraph_(rowMap->getNodeNumElements(), rowMap->getNode())
@@ -171,10 +171,10 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap,
-	    const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap,
-	    const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, 
-	    ProfileType pftype,
-	    const Teuchos::RCP<Teuchos::ParameterList>& plist)
+            const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap,
+            const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, 
+            ProfileType pftype,
+            const Teuchos::RCP<Teuchos::ParameterList>& plist)
   : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>(rowMap)
   , rowMap_(rowMap)
   , colMap_(colMap)
@@ -1757,7 +1757,7 @@ namespace Tpetra {
       size_t MyNonlocals = nonlocals_.size(), MaxGlobalNonlocals;
       reduceAll (*comm, REDUCE_MAX, MyNonlocals, outArg (MaxGlobalNonlocals));
       if (MaxGlobalNonlocals == 0) {
-	return;  // no entries to share
+        return;  // no entries to share
       }
     }
 
@@ -1818,7 +1818,7 @@ namespace Tpetra {
       // gather from other nodes to form the full graph
       globalNeighbors.shapeUninitialized(numImages,numImages);
       gatherAll (*getComm(), numImages, localNeighbors.getRawPtr(), 
-		 numImages * numImages, globalNeighbors.values());
+                 numImages * numImages, globalNeighbors.values());
       // globalNeighbors at this point contains (on all images) the
       // connectivity between the images.
       // globalNeighbors(i,j) != 0 means that j sends to i/that i receives from j
@@ -1882,8 +1882,8 @@ namespace Tpetra {
       // We're using a nonowning RCP because all communication
       // will be local to this method and the scope of our data
       requests.push_back (isend<int, size_t> (*comm, 
-					      rcp (&sendSizes[s], false), 
-					      sendIDs[s]));
+                                              rcp (&sendSizes[s], false), 
+                                              sendIDs[s]));
     }
     // perform non-blocking receives: receive sizes from our senders
     Array<size_t> recvSizes (numRecvs);
@@ -1921,7 +1921,7 @@ namespace Tpetra {
       // We're using a nonowning RCP because all communication
       // will be local to this method and the scope of our data
       ArrayRCP<pair<GO,GO> > tmpSendBuf = 
-	arcp (sendBuffers[s].getRawPtr(), 0, sendBuffers[s].size(), false);
+        arcp (sendBuffers[s].getRawPtr(), 0, sendBuffers[s].size(), false);
       requests.push_back (isend<int, pair<GO,GO> > (*comm, tmpSendBuf, sendIDs[s]));
     }
     // calculate amount of storage needed for receives
@@ -1942,7 +1942,7 @@ namespace Tpetra {
       // We're using a nonowning RCP because all communication
       // will be local to this method and the scope of our data
       ArrayRCP<pair<GO,GO> > tmpRecvBuf = 
-	arcp (recvBuffers[r].getRawPtr(), 0, recvBuffers[r].size(), false);
+        arcp (recvBuffers[r].getRawPtr(), 0, recvBuffers[r].size(), false);
       requests.push_back (ireceive (*comm, tmpRecvBuf, recvIDs[r]));
     }
     // perform waits
@@ -1961,7 +1961,7 @@ namespace Tpetra {
     //       multiple entries for a particular row from different processors.
     //       it also requires restoring the data, which may make it not worth the trouble.
     for (typename Array<pair<GO,GO> >::const_iterator ij = IJRecvBuffer.begin(); 
-	 ij != IJRecvBuffer.end(); ++ij) 
+         ij != IJRecvBuffer.end(); ++ij) 
     {
       insertGlobalIndices(ij->first, tuple<GO> (ij->second));
     }
@@ -2495,11 +2495,11 @@ namespace Tpetra {
     // Create the Import instance if necessary.
     if (domainMap_ != colMap_ && (! domainMap_->isSameAs (*colMap_))) {
       if (plist.is_null () || ! plist->isSublist ("Import")) {
-	importer_ = rcp (new import_type (domainMap_, colMap_));
+        importer_ = rcp (new import_type (domainMap_, colMap_));
       }
       else {
-	RCP<ParameterList> importSublist = sublist (plist, "Import", true);
-	importer_ = rcp (new import_type (domainMap_, colMap_, importSublist));
+        RCP<ParameterList> importSublist = sublist (plist, "Import", true);
+        importer_ = rcp (new import_type (domainMap_, colMap_, importSublist));
       }
     }
     else {
@@ -2509,11 +2509,11 @@ namespace Tpetra {
     // Create the Export instance if necessary.
     if (rangeMap_ != rowMap_ && (!rangeMap_->isSameAs(*rowMap_))) {
       if (plist.is_null () || ! plist->isSublist ("Export")) {
-	exporter_ = rcp (new export_type (rowMap_, rangeMap_));
+        exporter_ = rcp (new export_type (rowMap_, rangeMap_));
       }
       else {
-	RCP<ParameterList> exportSublist = sublist (plist, "Export", true);
-	exporter_ = rcp (new export_type (rowMap_, rangeMap_, exportSublist));
+        RCP<ParameterList> exportSublist = sublist (plist, "Export", true);
+        exporter_ = rcp (new export_type (rowMap_, rangeMap_, exportSublist));
       }
     }
     else {
@@ -2548,7 +2548,7 @@ namespace Tpetra {
   void 
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   describe (Teuchos::FancyOStream &out, 
-	    const Teuchos::EVerbosityLevel verbLevel) const
+            const Teuchos::EVerbosityLevel verbLevel) const
   {
     using std::endl;
     using std::setw;
@@ -2721,11 +2721,11 @@ namespace Tpetra {
   void 
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   packAndPrepare (const DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> & source,
-		  const ArrayView<const LocalOrdinal> &exportLIDs,
-		  Array<GlobalOrdinal> &exports,
-		  const ArrayView<size_t> & numPacketsPerLID,
-		  size_t& constantNumPackets,
-		  Distributor &distor)
+                  const ArrayView<const LocalOrdinal> &exportLIDs,
+                  Array<GlobalOrdinal> &exports,
+                  const ArrayView<size_t> & numPacketsPerLID,
+                  size_t& constantNumPackets,
+                  Distributor &distor)
   {
     std::string tfecfFuncName("packAndPrepare()");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(exportLIDs.size() != numPacketsPerLID.size(), std::runtime_error,

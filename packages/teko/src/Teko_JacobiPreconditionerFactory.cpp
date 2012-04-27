@@ -169,7 +169,7 @@ void JacobiPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
       inverses.push_back(defaultInverse);
 
    // based on parameter type build a strategy
-   invOpsStrategy_ = rcp(new InvFactoryDiagStrategy(inverses));
+   invOpsStrategy_ = rcp(new InvFactoryDiagStrategy(inverses,defaultInverse));
 }
 
 } // end namspace Teko

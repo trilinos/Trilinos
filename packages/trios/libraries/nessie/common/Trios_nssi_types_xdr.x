@@ -126,11 +126,14 @@ enum nssi_rpc_transport {
     /** @brief Use Infiniband to transfer rpc requests. */
     NSSI_RPC_IB,
 
-    /** @brief Use Cray LUC to transfer rpc requests. */
-    NSSI_RPC_LUC,
-
     /** @brief Use Cray Gemini to transfer rpc requests. */
     NSSI_RPC_GEMINI,
+
+    /** @brief Use MPI to transfer rpc requests. */
+    NSSI_RPC_MPI,
+
+    /** @brief Use Cray LUC to transfer rpc requests. */
+    NSSI_RPC_LUC,
 
     /** @brief Use a local buffer (not a remote operation). */
     NSSI_RPC_LOCAL
@@ -139,7 +142,7 @@ enum nssi_rpc_transport {
 /**
  * @brief The number of RPC mechanisms supported by NSSI.
  */
-const NSSI_RPC_COUNT = 5;
+const NSSI_RPC_COUNT = 6;
 
 
 /**

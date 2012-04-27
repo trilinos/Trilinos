@@ -512,7 +512,7 @@ static int buffer_send(
 
 
 static gni_transport_global transport_global_data;
-static const int MIN_TIMEOUT = 100;  /* in milliseconds */
+static const int MIN_TIMEOUT = 0;  /* in milliseconds */
 
 static log_level nnti_cq_debug_level;
 static log_level nnti_event_debug_level;
@@ -1041,11 +1041,6 @@ NNTI_result_t NNTI_gni_connect (
 
     elapsed_time=0;
     timeout_per_call = MIN_TIMEOUT;
-//    if (timeout < 0)
-//        timeout_per_call = MIN_TIMEOUT;
-//    else
-//        timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
-
 
     s = socket(AF_INET, SOCK_STREAM, 0);
     if (s < 0) {
@@ -1616,7 +1611,8 @@ NNTI_result_t NNTI_gni_get (
     ep_hdl=conn->ep_hdl;
 #endif
 
-    GNI_EpSetEventData(ep_hdl,
+    GNI_EpSetEventData(
+            ep_hdl,
             hash6432shift((uint64_t)wr),
             hash6432shift((uint64_t)src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.buf));
 
@@ -1719,12 +1715,14 @@ NNTI_result_t NNTI_gni_wait (
     int elapsed_time = 0;
     int timeout_per_call;
 
+    double entry_time=trios_get_time();
+
     trios_declare_timer(call_time);
+
+    log_debug(nnti_ee_debug_level, "enter");
 
     assert(reg_buf);
     assert(status);
-
-    log_debug(nnti_ee_debug_level, "enter");
 
     q_hdl      =&transport_global_data.req_queue;
     gni_mem_hdl=(gni_memory_handle *)reg_buf->transport_private;
@@ -1749,10 +1747,7 @@ NNTI_result_t NNTI_gni_wait (
         log_debug(nnti_event_debug_level, "buffer op NOT complete (reg_buf=%p)", reg_buf);
 //        reset_op_state(reg_buf);
 
-        if (timeout < 0)
-            timeout_per_call = MIN_TIMEOUT;
-        else
-            timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
+        timeout_per_call = MIN_TIMEOUT;
 
         while (1)   {
             if (trios_exit_now()) {
@@ -1797,7 +1792,7 @@ NNTI_result_t NNTI_gni_wait (
 //                log_debug(nnti_event_debug_level, "calling CqWaitEvent(wait)");
                 trios_start_timer(call_time);
 //                nthread_lock(&nnti_gni_lock);
-                rc=GNI_CqWaitEvent (cq_hdl, timeout_per_call, &ev_data);
+                rc=GNI_CqWaitEvent(cq_hdl, timeout_per_call, &ev_data);
                 print_cq_event(&ev_data);
 //                nthread_unlock(&nnti_gni_lock);
                 trios_stop_timer("NNTI_gni_wait - CqWaitEvent", call_time);
@@ -1810,8 +1805,8 @@ NNTI_result_t NNTI_gni_wait (
                 nnti_rc = NNTI_OK;
             }
             /* case 2: timed out */
-            else if (rc==GNI_RC_TIMEOUT) {
-                elapsed_time += timeout_per_call;
+            else if ((rc==GNI_RC_TIMEOUT) || (rc==GNI_RC_NOT_DONE)) {
+                elapsed_time = (trios_get_time() - entry_time);
 
                 /* if the caller asked for a legitimate timeout, we need to exit */
                 if (((timeout > 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
@@ -1944,6 +1939,8 @@ NNTI_result_t NNTI_gni_waitany (
     int elapsed_time = 0;
     int timeout_per_call;
 
+    double entry_time=trios_get_time();
+
     trios_declare_timer(call_time);
 
     log_debug(nnti_ee_debug_level, "enter");
@@ -1983,10 +1980,7 @@ NNTI_result_t NNTI_gni_waitany (
         log_debug(nnti_event_debug_level, "buffer op NOT complete (buf_list=%p)", buf_list);
 //        reset_op_state(reg_buf);
 
-        if (timeout < 0)
-            timeout_per_call = MIN_TIMEOUT;
-        else
-            timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
+        timeout_per_call = MIN_TIMEOUT;
 
         while (1)   {
             if (trios_exit_now()) {
@@ -2020,8 +2014,8 @@ NNTI_result_t NNTI_gni_waitany (
                 nnti_rc = NNTI_OK;
             }
             /* case 2: timed out */
-            else if (rc==GNI_RC_TIMEOUT) {
-                elapsed_time += timeout_per_call;
+            else if ((rc==GNI_RC_TIMEOUT) || (rc==GNI_RC_NOT_DONE)) {
+                elapsed_time = (trios_get_time() - entry_time);
 
                 /* if the caller asked for a legitimate timeout, we need to exit */
                 if (((timeout > 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
@@ -2141,6 +2135,8 @@ NNTI_result_t NNTI_gni_waitall (
     int elapsed_time = 0;
     int timeout_per_call;
 
+    double entry_time=trios_get_time();
+
     trios_declare_timer(call_time);
 
     log_debug(nnti_ee_debug_level, "enter");
@@ -2181,10 +2177,7 @@ NNTI_result_t NNTI_gni_waitall (
         log_debug(nnti_event_debug_level, "all buffer ops NOT complete");
 //        reset_op_state(reg_buf);
 
-        if (timeout < 0)
-            timeout_per_call = MIN_TIMEOUT;
-        else
-            timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
+        timeout_per_call = MIN_TIMEOUT;
 
         while (1)   {
             if (trios_exit_now()) {
@@ -2218,8 +2211,8 @@ NNTI_result_t NNTI_gni_waitall (
                 nnti_rc = NNTI_OK;
             }
             /* case 2: timed out */
-            else if (rc==GNI_RC_TIMEOUT) {
-                elapsed_time += timeout_per_call;
+            else if ((rc==GNI_RC_TIMEOUT) || (rc==GNI_RC_NOT_DONE)) {
+                elapsed_time = (trios_get_time() - entry_time);
 
                 /* if the caller asked for a legitimate timeout, we need to exit */
                 if (((timeout > 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
@@ -3102,7 +3095,8 @@ static int process_event(
 
 //    wc->inst_id = wr->wc.inst_id;
 
-    wr=gni_mem_hdl->wr_queue.front();
+//    wr=gni_mem_hdl->wr_queue.front();
+    wr=first_incomplete_wr(gni_mem_hdl);
     assert(wr);
 
     log_debug(nnti_debug_level, "event_buf=%p; wr=%p; wr->last_op=%d", event_buf, wr, wr->last_op);
@@ -4473,7 +4467,7 @@ static NNTI_result_t insert_wr_wrhash(gni_work_request *wr)
     wr_by_wrhash[h] = wr;
     nthread_unlock(&nnti_wr_wrhash_lock);
 
-    log_debug(nnti_debug_level, "wrhash work request added (wr=%p)", wr);
+    log_debug(nnti_debug_level, "wrhash work request added (wr=%p ; wr.hash=%llu)", wr, (uint64_t)h);
 
     return(rc);
 }
@@ -5283,7 +5277,10 @@ static int send_req(
 
     print_raw_buf((void *)wr->post_desc.local_addr, wr->post_desc.length);
 
-    GNI_EpSetEventData(local_req_queue_attrs->req_ep_hdl, hash6432shift((uint64_t)reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf), offset);
+    GNI_EpSetEventData(
+            local_req_queue_attrs->req_ep_hdl,
+            hash6432shift((uint64_t)reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf),
+            offset);
 
 #if defined(USE_FMA) || defined(USE_MIXED)
     log_debug(nnti_debug_level, "calling PostFma(send req ep_hdl(%llu), cq_hdl(%llu), local_addr=%llu, remote_addr=%llu)",
@@ -5360,7 +5357,8 @@ static int send_req_wc(
 
     wr->peer_instance=conn->peer_instance;
 
-    GNI_EpSetEventData(ep_hdl,
+    GNI_EpSetEventData(
+            ep_hdl,
             hash6432shift((uint64_t)reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf),
             offset/sizeof(nnti_gni_work_completion));
 
@@ -5515,7 +5513,8 @@ static int send_buffer(
     ep_hdl=conn->ep_hdl;
 #endif
 
-    GNI_EpSetEventData(ep_hdl,
+    GNI_EpSetEventData(
+            ep_hdl,
             hash6432shift((uint64_t)src_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.buf),
             hash6432shift((uint64_t)dest_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.buf));
 
@@ -5593,7 +5592,8 @@ static int send_buffer_wc(
     ep_hdl=conn->ep_hdl;
 #endif
 
-    GNI_EpSetEventData(ep_hdl,
+    GNI_EpSetEventData(
+            ep_hdl,
             hash6432shift((uint64_t)src_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.buf),
             hash6432shift((uint64_t)dest_hdl->buffer_addr.NNTI_remote_addr_t_u.gni.buf));
 

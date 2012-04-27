@@ -136,7 +136,7 @@ namespace KokkosExamples {
         - \c SO is the sparse op type this::ThisType.
 
         The graph structure must be provided via initializeStructure() before the matrix values are specified to 
-        initializeValues(). The matrix values can be provided repeatadly via initializeValues() without the need
+        initializeValues(). The matrix values can be provided repeatedly via initializeValues() without the need
         to call clear().
 
         In general, both initializeStructure() and initializeValues() must be called before calling multiply() or solve().
