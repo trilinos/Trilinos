@@ -14,6 +14,7 @@
 #include <Xpetra_StridedMapFactory.hpp>
 
 #include "MueLu_TentativePFactory_decl.hpp"
+#include "MueLu_QR_Interface.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_NullspaceFactory.hpp" //FIXME
 #include "MueLu_Monitor.hpp"
@@ -56,47 +57,7 @@ namespace MueLu {
 
     FactoryMonitor m(*this, "Tentative prolongator", coarseLevel);
 
-#ifdef DEBUG_ME
-RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-fos->setOutputToRootOnly(-1);
-
- RCP<MultiVector> nstmp  = fineLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
-
-    RCP<const Teuchos::Comm<int> > comm = nstmp->getMap()->getComm();
-//fos->setProcRankAndSize(comm->getRank(),comm->getSize());
-    nstmp = Teuchos::null;
-    //sleep(1); comm->barrier();
-    // get data from fine level
-#endif
-
     RCP<Operator> A = fineLevel.Get< RCP<Operator> >("A", AFact_.get());
-
-    /*
-    RCP<Operator>    A;
-    for (int i=0; i<comm->getSize(); ++i) {
-      if (comm->getRank() == i) {
-        std::cout << "------------------ pid " << comm->getRank() << ": Getting A inside TentativePFactory() ----------------" << std::endl;
-        A = fineLevel.Get< RCP<Operator> >("A", AFact_.get());
-        std::cout << "------------------ pid " << comm->getRank() << ": done with get -------------------------------" << std::endl;
-      }
-      sleep(1); comm->barrier();
-    }
-    */
-
-    /*
-    //FIXME debugging output
-    for (int i=0; i<comm->getSize(); ++i) {
-      if (comm->getRank() == i) {
-        fos->setOutputToRootOnly(comm->getRank());
-        *fos << "================== pid " << comm->getRank() << ": fine level in TentativePFactory =================" << std::endl;
-        fineLevel.print(*fos,Teuchos::VERB_EXTREME);
-        *fos << "================= end of level description =========================" << std::endl;
-      }
-      sleep(1);comm->barrier();
-    }
-    fos->setOutputToRootOnly(-1);
-    //FIXME end of debugging output
-    */
 
     RCP<Aggregates>  aggregates = fineLevel.Get< RCP<Aggregates> >("Aggregates", aggregatesFact_.get());
     RCP<MultiVector> nullspace  = fineLevel.Get< RCP<MultiVector> >("Nullspace", nullspaceFact_.get());
@@ -110,24 +71,6 @@ fos->setOutputToRootOnly(-1);
     coarseLevel.Set("Nullspace", coarseNullspace, this);
     coarseLevel.Set("P", Ptentative, this);
   }
-//--------------------------------------
-  template
-  <class Scalar, class Storage, class LocalOrdinal>
-  class LocalQRClass{
-    public:
-      LocalQRClass(const size_t NSDim);
-      virtual ~LocalQRClass() {};
-
-      void Compute(LocalOrdinal const &myAggSize, ArrayRCP<Scalar> &localQR);
-      void ExtractQ(LocalOrdinal const &myAggSize, ArrayRCP<Scalar> &localQR);
-    private:
-      Teuchos::LAPACK<LocalOrdinal,Scalar> lapack_;
-      LocalOrdinal     workSize_;                // Length of work vectors. Must be at least dimension of nullspace.
-      LocalOrdinal     info_;                    // (out) =0: success; =i, i<0: i-th argument has illegal value
-      ArrayRCP<Scalar> tau_;
-      ArrayRCP<Scalar> work_;
-  }; //class LocalQRClass
-//--------------------------------------
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::setDomainMapOffset(GlobalOrdinal offset) {
@@ -146,8 +89,6 @@ fos->setOutputToRootOnly(-1);
                      RCP<MultiVector> & coarseNullspace, RCP<Operator> & Ptentative) const
   {
     RCP<const Teuchos::Comm<int> > comm = fineA.getRowMap()->getComm();
-
-    ///////////////////////////////////////////////////////// extract information from aggregates
 
     // number of aggregates
     GO numAggs = aggregates.GetNumAggregates();
@@ -169,8 +110,6 @@ fos->setOutputToRootOnly(-1);
     ArrayRCP< ArrayRCP<GO> > aggToRowMap(numAggs);
     aggregates.ComputeAggregateToRowMap(aggToRowMap);
 
-    ///////////////////////////////////////////////////////// build coarse DOF map for P
-
     // dimension of fine level nullspace
     const size_t NSDim = fineNullspace.getNumVectors();
 
@@ -179,7 +118,7 @@ fos->setOutputToRootOnly(-1);
 
     // build coarse level maps (= domain map of transfer operator)
     RCP<const Map > coarseMap = Teuchos::null;
-    //if (domainGidOffset_ == 0) {
+    //if (domainGidOffset_ == 0)
 
     // in general we cannot use the striding information from range map of A since the number of null spaces might have changed from fine level to intermediate levels (e.g. for structural problems from 3 to 6)
 
@@ -211,8 +150,6 @@ fos->setOutputToRootOnly(-1);
 						  domainGidOffset_
 						  );
 
-    ///////////////////////////////////////////////////////// prepare overlapping fine level null space communication
-
     // Builds overlapped nullspace.
     const RCP<const Map> nonUniqueMap = aggregates.GetDofMap(); // fetch overlapping Dofmap from Aggregates structure
 
@@ -221,39 +158,10 @@ fos->setOutputToRootOnly(-1);
     RCP<MultiVector> fineNullspaceWithOverlap = MultiVectorFactory::Build(nonUniqueMap,NSDim);
     fineNullspaceWithOverlap->doImport(fineNullspace,*importer,Xpetra::INSERT);
 
-    /*
-        sleep(1); comm->barrier();
-        if (comm->getRank() == 0)
-          std::cout << "========================\nfineA\n============================" << std::endl;
-        fineA.describe(*fos,Teuchos::VERB_EXTREME);
-        if (comm->getRank() == 0)
-          std::cout << "=============================================================" << std::endl;
-        sleep(1); comm->barrier();
-        if (comm->getRank() == 0)
-          std::cout << "========================\nuniqueMap\n============================" << std::endl;
-        uniqueMap->describe(*fos,Teuchos::VERB_EXTREME);
-        sleep(1); comm->barrier();
-        if (comm->getRank() == 0)
-          std::cout << "========================\nnon-uniqueMap\n============================" << std::endl;
-        nonUniqueMap->describe(*fos,Teuchos::VERB_EXTREME);
-        sleep(1); comm->barrier();
-        if (comm->getRank() == 0)
-          std::cout << "========================\nfine NS\n============================" << std::endl;
-        fineNullspace.describe(*fos,Teuchos::VERB_EXTREME);
-        sleep(1); comm->barrier();
-        if (comm->getRank() == 0)
-          std::cout << "========================\nfine NS with overlap\n============================" << std::endl;
-        fineNullspaceWithOverlap->describe(*fos,Teuchos::VERB_EXTREME);
-    */
-
-    //////////////////////////////////////////////////////////////////////////// prepare fine level null space -> fineNS
-
     // Pull out the nullspace vectors so that we can have random access.
     ArrayRCP< ArrayRCP<const SC> > fineNS(NSDim);
     for (size_t i=0; i<NSDim; ++i)
       fineNS[i] = fineNullspaceWithOverlap->getData(i);
-
-    //////////////////////////////////////////////////////////////////////// prepare coarse level null space -> coarseNS
 
     //Allocate storage for the coarse nullspace.
     coarseNullspace = MultiVectorFactory::Build(coarseMap,NSDim);
@@ -263,16 +171,13 @@ fos->setOutputToRootOnly(-1);
       if (coarseMap->getNodeNumElements() > 0) coarseNS[i] = coarseNullspace->getDataNonConst(i);
 
 
-    ////////////////////////////////////////////////////////////////////////////////////////////// set row map for Ptent
     //This makes the rowmap of Ptent the same as that of fineA.
     //This requires moving some parts of some local Q's to other processors
     //because aggregates can span processors.
     RCP<const Map > rowMapForPtent = fineA.getRowMap();
 
-    /////////////////////////////////////////////////////////////////////////////////////// set up tentative prolongator
     Ptentative = rcp(new CrsOperator(rowMapForPtent, NSDim, Xpetra::StaticProfile));
 
-    //////////////////////////////////////////////////////////////////////////// find ghost GIDs and set up communicator
     // prerequisites: rowMapForPtent, NSDim
 
     // Set up storage for the rows of the local Qs that belong to other processors.
@@ -315,20 +220,10 @@ fos->setOutputToRootOnly(-1);
     //importer to handle moving Q
     importer = ImportFactory::Build(ghostQMap, fineA.getRowMap());
 
-    ////////////////////////////////////////////////////////////////////// prepare variables for loacl QR decomposition
     Teuchos::LAPACK<LO,SC> lapack;
-    LocalQRClass<SC,LO,GO> qrWidget(NSDim);
+    QR_Interface<SC,LO,GO> qrWidget(NSDim);
 
-    // Allocate workspace for LAPACK QR routines.
     ArrayRCP<SC> localQR(maxAggSize*NSDim); // The submatrix of the nullspace to be orthogonalized.
-    LO           workSize = NSDim;          // Length of work. Must be at least dimension of nullspace.
-    // LAPACK may calculate better value, returned in work[0].
-    ArrayRCP<SC> work(workSize);            // (in/out) work vector
-    // FIXME DGEQRF documentation says this should be min(M,N) where B=MxN
-    ArrayRCP<SC> tau(NSDim);                // (out) scalar factors of elementary reflectors, input to DORGQR
-#ifdef OLD_QR_CODE
-    LO           info=0;                    // (out) =0: success; =i, i<0: i-th argument has illegal value
-#endif
 
     //Allocate temporary storage for the tentative prolongator.
     GO nFineDofs = nonUniqueMap->getNodeNumElements();
@@ -374,43 +269,7 @@ fos->setOutputToRootOnly(-1);
         TEUCHOS_TEST_FOR_EXCEPTION(bIsZeroNSColumn == true, Exceptions::RuntimeError, "MueLu::TentativePFactory::MakeTentative: fine level NS part has a zero column. Error.");
       } //for (LO j=0 ...
 
-#ifdef OLD_QR_CODE
-      int intFineNSDim = Teuchos::as<int>(NSDim);
-
-      if (NSDim == 1) {
-        //only one nullspace vector, so normalize by hand
-        Magnitude dtemp=0;
-        //scalar type might be complex, so take absolute value.
-        for (LO k=0; k<myAggSize; ++k) {dtemp += std::abs(localQR[k])*std::abs(localQR[k]);}
-        dtemp = Teuchos::ScalarTraits<Magnitude>::squareroot(dtemp);
-        tau[0] = localQR[0];
-        localQR[0] = dtemp;
-      } else {
-        //Perform the QR.  Upon return, R is stored explicitly, Q is stored implicitly as product
-        //of reflection matrices.
-        lapack.GEQRF( myAggSize, intFineNSDim, localQR.getRawPtr(), myAggSize,
-                      tau.getRawPtr(), work.getRawPtr(), workSize, &info );
-      }
-
-      if (info != 0) {
-        std::ostringstream tbuf;
-        tbuf << info;
-        std::string msg = "MakeTentativeWithQR: dgeqrf (LAPACK QR routine) returned error code " + tbuf.str();
-        throw(Exceptions::RuntimeError(msg));
-      }
-
-      // LAPACK may have determined a better length for the work array.  Returns it in work[0],
-      // so we cast to avoid compiler warnings.  Taking a look at the NETLIB reference implementation
-      // CGEQRF (complex), work[0] is assigned an integer, so it's safe to take the magnitude.
-      // Scalar type might be complex, so take absolute value.
-      if ( std::abs(work[0]) > workSize) {
-        workSize = (int) std::abs(work[0]);
-        work = ArrayRCP<SC>(workSize);
-      } else
-        workSize = (int) std::abs(work[0]); //TODO huh, think about this -- should it ever shrink?
-#else
       qrWidget.Compute(myAggSize, localQR);
-#endif
 
       // Extract R, the coarse nullspace.  This is stored in upper triangular part of localQR.
       // Note:  coarseNS[i][.] is the ith coarse nullspace vector, which may be counter to your intuition.
@@ -428,39 +287,8 @@ fos->setOutputToRootOnly(-1);
         }
       }
 
-      // Calculate Q, the tentative prolongator, explicitly.  This requires calling a second LAPACK routine.
-
-#ifdef OLD_QR_CODE
-      if (NSDim == 1) {
-        //again, only one nullspace vector, so calculate Q by hand
-        Magnitude dtemp = std::abs(localQR[0]);
-        localQR[0] = tau[0];
-        dtemp = 1 / dtemp;
-        for (LO i=0; i<myAggSize; ++i)
-          localQR[i] *= dtemp;
-      } else {
-        ExtractQ( lapack, myAggSize, intFineNSDim, localQR, tau, work, workSize, info );
-      }
-
-      if (info != 0) {
-        std::ostringstream tbuf;
-        tbuf << info;
-        std::string msg = "MakeTentativeWithQR: dorgqr (LAPACK auxiliary QR routine) returned error code "
-          + tbuf.str();
-        throw(Exceptions::RuntimeError(msg));
-      }
-
-      // LAPACK may have determined a better length for the work array.  Returns it in work[0],
-      // so we cast to avoid compiler warnings.
-      // Scalar type might be complex, so take absolute value.
-      if ( std::abs(work[0]) > workSize) {
-        workSize = (int) std::abs(work[0]);
-        work = ArrayRCP<SC>(workSize);
-      } else
-        workSize = (int) std::abs(work[0]); //TODO huh, think about this -- should it ever shrink?
-#else
+      // Calculate Q, the tentative prolongator.
       qrWidget.ExtractQ(myAggSize, localQR);
-#endif
 
       //Process each row in the local Q factor.  If the row is local to the current processor
       //according to the rowmap, insert it into Ptentative.  Otherwise, save it in ghostQ
@@ -514,8 +342,6 @@ fos->setOutputToRootOnly(-1);
     // ************* end of aggregate-wise QR ********************
     // ***********************************************************
 
-    //////////////////////////////////////////////////////////////// set up importer for communicating ghosted values
-
     // Import ghost parts of Q factors and insert into Ptentative.
     // First import just the global row numbers.
     RCP<Xpetra::Vector<GO,LO,GO,Node> > targetQrowNums = Xpetra::VectorFactory<GO,LO,GO,Node>::Build(rowMapForPtent);
@@ -537,7 +363,6 @@ fos->setOutputToRootOnly(-1);
     // Import using the row numbers that this processor will receive.
     importer = ImportFactory::Build(ghostQMap, reducedMap);
 
-    ///////////////////////////////////////////////////////////////////////// import ghosted values from other procs
     Array<RCP<Xpetra::Vector<GO,LO,GO,Node> > > targetQcolumns(NSDim);
     for (size_t i=0; i<NSDim; ++i) {
       targetQcolumns[i] = Xpetra::VectorFactory<GO,LO,GO,Node>::Build(reducedMap);
@@ -569,7 +394,6 @@ fos->setOutputToRootOnly(-1);
       } //if (targetQvalues->getLocalLength() > 0)
     }
 
-    ///////////////////////////////////////////////////////////////////////// complete tentative prolongator
     Ptentative->fillComplete(coarseMap,fineA.getDomainMap()); //(domain,range) of Ptentative
     
     // if available, use striding information of fine level matrix A for range map and coarseMap as domain map
@@ -581,96 +405,6 @@ fos->setOutputToRootOnly(-1);
     } else Ptentative->CreateView("stridedMaps", Ptentative->getRangeMap(), coarseMap);
 
   } //MakeTentative()
-
-#ifdef OLD_QR_CODE
-  //! Non-member templated function to handle extracting Q from QR factorization for different Scalar types.
-  template <class Scalar, class LocalOrdinal>
-  void ExtractQ(Teuchos::LAPACK<LocalOrdinal,Scalar> &lapack, LocalOrdinal myAggSize,
-                int intFineNSDim, ArrayRCP<Scalar> &localQR, ArrayRCP<Scalar> &tau,
-                ArrayRCP<Scalar> &work, LocalOrdinal &workSize, LocalOrdinal &info)
-  {
-    lapack.ORGQR(myAggSize, intFineNSDim, intFineNSDim, localQR.getRawPtr(),
-                 myAggSize, tau.getRawPtr(), work.getRawPtr(), workSize, &info );
-  }
-
-  //! Non-member specialized function to handle extracting Q from QR factorization for Scalar==complex
-  template <class LocalOrdinal>
-  void ExtractQ(Teuchos::LAPACK<LocalOrdinal, std::complex<double> > &lapack,
-                LocalOrdinal myAggSize, int intFineNSDim, ArrayRCP<std::complex<double> > &localQR,
-                ArrayRCP<std::complex<double> > &tau, ArrayRCP<std::complex<double> > &work,
-                LocalOrdinal &workSize, LocalOrdinal &info)
-  {
-    lapack.UNGQR(myAggSize, intFineNSDim, intFineNSDim, localQR.getRawPtr(),
-                 myAggSize, tau.getRawPtr(), work.getRawPtr(), workSize, &info );
-  }
-#endif
-
-  template <class Scalar, class Storage, class LocalOrdinal>
-  LocalQRClass<Scalar,Storage,LocalOrdinal>::LocalQRClass(const size_t NSDim) : workSize_(NSDim), info_(0) {
-    tau_ = ArrayRCP<Scalar>(NSDim);
-    work_ = ArrayRCP<Scalar>(NSDim);
-  }
-
-  template <class Scalar, class Storage, class LocalOrdinal>
-  void LocalQRClass<Scalar,Storage,LocalOrdinal>::Compute(LocalOrdinal const &myAggSize, ArrayRCP<Scalar> &localQR)
-  {
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
-    if (workSize_ == 1) {
-      //only one nullspace vector, so normalize by hand
-      Magnitude dtemp=0;
-      //scalar type might be complex, so take absolute value.
-      for (LocalOrdinal k=0; k<myAggSize; ++k) {dtemp += std::abs(localQR[k])*std::abs(localQR[k]);}
-      dtemp = Teuchos::ScalarTraits<Magnitude>::squareroot(dtemp);
-      tau_[0] = localQR[0];
-      localQR[0] = dtemp;
-    } else {
-      lapack_.GEQRF( myAggSize, Teuchos::as<int>(workSize_), localQR.getRawPtr(), myAggSize,
-                    tau_.getRawPtr(), work_.getRawPtr(), workSize_, &info_ );
-      if (info_ != 0) {
-        std::string msg = "LocalQRClass: dgeqrf (LAPACK QR routine) returned error code " + Teuchos::toString(info_);
-        throw(Exceptions::RuntimeError(msg));
-      }
-      // LAPACK may have determined a better length for the work array.  Returns it in work[0],
-      // so we cast to avoid compiler warnings.  Taking a look at the NETLIB reference implementation
-      // CGEQRF (complex), work[0] is assigned an integer, so it's safe to take the magnitude.
-      // Scalar type might be complex, so take absolute value.
-      if ( std::abs(work_[0]) > workSize_) {
-        workSize_ = (int) std::abs(work_[0]);
-        work_ = ArrayRCP<Scalar>(workSize_);
-      } else
-        workSize_ = (int) std::abs(work_[0]);
-    }
-  } //Compute()
-
-  template <class Scalar, class Storage, class LocalOrdinal>
-  void LocalQRClass<Scalar,Storage,LocalOrdinal>::ExtractQ(LocalOrdinal const &myAggSize, ArrayRCP<Scalar> &localQR)
-  {
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
-    if (workSize_ == 1) {
-      //again, only one nullspace vector, so calculate Q by hand
-      Magnitude dtemp = std::abs(localQR[0]);
-      localQR[0] = tau_[0];
-      dtemp = 1 / dtemp;
-      for (LocalOrdinal i=0; i<myAggSize; ++i)
-        localQR[i] *= dtemp;
-    } else {
-      lapack_.ORGQR(myAggSize, Teuchos::as<int>(workSize_), Teuchos::as<int>(workSize_), localQR.getRawPtr(),
-                   myAggSize, tau_.getRawPtr(), work_.getRawPtr(), workSize_, &info_ );
-      if (info_ != 0) {
-        std::string msg = "LocalQRClass: dorgqr (LAPACK auxiliary QR routine) returned error code " + Teuchos::toString(info_);
-        throw(Exceptions::RuntimeError(msg));
-      }
-
-      // LAPACK may have determined a better length for the work array.  Returns it in work[0],
-      // so we cast to avoid compiler warnings.
-      // Scalar type might be complex, so take absolute value.
-      if ( std::abs(work_[0]) > workSize_) {
-        workSize_ = (int) std::abs(work_[0]);
-        work_ = ArrayRCP<Scalar>(workSize_);
-      } else
-        workSize_ = (int) std::abs(work_[0]);
-    }
-  } //ExtractQ()
 
 } //namespace MueLu
 

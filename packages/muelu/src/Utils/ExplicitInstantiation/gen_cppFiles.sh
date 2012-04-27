@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for i in LO-GO-NO-LMO SC-LO-GO-NO-LMO
+for i in LO-GO-NO-LMO SC-LO-GO-NO-LMO SC-LO-GO
   do
 
   classList=$i.classList
