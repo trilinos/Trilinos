@@ -5,10 +5,6 @@
 #include <Teuchos_ArrayRCP.hpp>
 #include "MueLu_ConfigDefs.hpp"
 
-#ifdef HAVE_MUELU_STOKHOS
-#include "linear2d_diffusion_scalar_types.hpp"
-#endif
-
 namespace MueLu {
 
   /*!
