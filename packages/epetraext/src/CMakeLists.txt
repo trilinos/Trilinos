@@ -70,6 +70,7 @@ IF (${PACKAGE_NAME}_BUILD_TRANSFORM)
     transform/EpetraExt_Reindex_CrsMatrix.h
     transform/EpetraExt_Reindex_MultiVector.h
     transform/EpetraExt_Reindex_LinearProblem.h
+    transform/EpetraExt_Reindex_LinearProblem2.h
     transform/EpetraExt_SolverMap_CrsMatrix.h
     transform/EpetraExt_SolverMap_LinearProblem.h
     transform/EpetraExt_BlockAdjacencyGraph.h 
@@ -91,6 +92,7 @@ IF (${PACKAGE_NAME}_BUILD_TRANSFORM)
     transform/EpetraExt_Reindex_CrsMatrix.cpp
     transform/EpetraExt_Reindex_MultiVector.cpp
     transform/EpetraExt_Reindex_LinearProblem.cpp
+    transform/EpetraExt_Reindex_LinearProblem2.cpp
     transform/EpetraExt_SolverMap_CrsMatrix.cpp
     transform/EpetraExt_SolverMap_LinearProblem.cpp
     transform/EpetraExt_BlockAdjacencyGraph.cpp
