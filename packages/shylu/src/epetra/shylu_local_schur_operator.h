@@ -54,6 +54,8 @@
 #include <Teuchos_Time.hpp>
 #include <Teuchos_RCP.hpp>
 #include "shylu_util.h"
+#include "shylu.h"
+#include <EpetraExt_Reindex_MultiVector.h>
 
 class ShyLU_Local_Schur_Operator : public virtual Epetra_Operator
 {
@@ -61,9 +63,18 @@ class ShyLU_Local_Schur_Operator : public virtual Epetra_Operator
     public:
 
     // TODO: Change to RCPs
-    ShyLU_Local_Schur_Operator(Epetra_CrsMatrix *G, Epetra_CrsMatrix *R,
+    ShyLU_Local_Schur_Operator(
+    shylu_symbolic *ssym,   // symbolic structure
+    Epetra_CrsMatrix *G, Epetra_CrsMatrix *R,
     Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
     Epetra_Map *LocalDRowMap, int nvectors);
+
+    ~ShyLU_Local_Schur_Operator()
+    {
+        ssym_->OrigLP->SetLHS(orig_lhs_);
+        ssym_->OrigLP->SetRHS(orig_rhs_);
+        ssym_->ReIdx_LP->fwd();
+    }
 
     int SetUseTranspose(bool useTranspose);
 
@@ -96,13 +107,16 @@ class ShyLU_Local_Schur_Operator : public virtual Epetra_Operator
     Epetra_LinearProblem *LP_;
     Amesos_BaseSolver *solver_;
     Epetra_CrsMatrix *C_;
+    Epetra_MultiVector *orig_lhs_;
+    Epetra_MultiVector *orig_rhs_;
     Epetra_Map *localDRowMap_;
 
     int nvectors_;
     Teuchos::RCP<Epetra_MultiVector> temp;
     Teuchos::RCP<Epetra_MultiVector> temp2;
-    //Teuchos::RCP<Epetra_MultiVector> ltemp;
     Teuchos::RCP<Epetra_MultiVector> localX;
+    shylu_symbolic *ssym_;   // symbolic structure
+
 #ifdef TIMING_OUTPUT
     Teuchos::RCP<Teuchos::Time> matvec_time_;
     Teuchos::RCP<Teuchos::Time> localize_time_;

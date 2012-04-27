@@ -52,6 +52,7 @@
 #include "AztecOO.h"
 #include "Isorropia_EpetraProber.hpp"
 
+#include "shylu_symbolic.h"
 #include "shylu_probing_operator.h"
 #include "Ifpack_Amesos_Schur.h"
 
@@ -59,21 +60,6 @@
 
 #define MIN(a, b) (((a) < (b)) ? a : b)
 #define MAX(a, b) (((a) > (b)) ? a : b)
-
-// This is NOT just the symbolic structure, needs a better name
-typedef struct
-{
-    Teuchos::RCP<Epetra_CrsMatrix> D;        // D Matrix
-    Teuchos::RCP<Epetra_CrsMatrix> C;        // Column separator
-    Teuchos::RCP<Epetra_CrsMatrix> R;        // Row separator
-    Teuchos::RCP<Epetra_CrsMatrix> G;        // G Matrix (A22 block)
-    Teuchos::RCP<Epetra_LinearProblem> LP;   // Local problem to solve D
-    Teuchos::RCP<Amesos_BaseSolver> Solver;  // Local solver for D
-    Teuchos::RCP<Epetra_CrsGraph> Sg;        // The approximate graph of S
-                                             // Graph(S) + few diagonals
-    Teuchos::RCP<Isorropia::Epetra::Prober> prober;  // Prober for Sbar
-} shylu_symbolic;
-
 
 typedef struct
 {
@@ -139,11 +125,14 @@ int shylu_solve(shylu_symbolic *ssym, shylu_data *data, shylu_config *config,
     const Epetra_MultiVector& X, Epetra_MultiVector& Y);
 
 Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(shylu_config *config,
+    shylu_symbolic *ssym,
     Epetra_CrsMatrix *G, Epetra_CrsMatrix *R,
     Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
     Epetra_Map *localDRowMap);
 
-Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
+Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(
+    shylu_config *config,
+    shylu_symbolic *ssym,   // symbolic structure
     Epetra_CrsMatrix *G, Epetra_CrsMatrix *R,
     Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
     Epetra_Map *localDRowMap);

@@ -45,6 +45,7 @@ APPEND_SET(HEADERS
   Ifpack_ShyLU.h
   Ifpack_Amesos_Schur.h
   shylu_util.h
+  shylu_symbolic.h
   shylu.h
   shylu_probing_operator.h
   shylu_local_schur_operator.h

@@ -51,11 +51,14 @@
 
 // TODO: 1. ltemp is not needed in the all local case.
 
-ShyLU_Probing_Operator::ShyLU_Probing_Operator(Epetra_CrsMatrix *G, 
+ShyLU_Probing_Operator::ShyLU_Probing_Operator(
+    shylu_symbolic *ssym,   // symbolic structure
+    Epetra_CrsMatrix *G,
     Epetra_CrsMatrix *R,
     Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
     Epetra_Map *localDRowMap, int nvectors)
 {
+    ssym_ = ssym;
     G_ = G;
     R_ = R;
     LP_ = LP;
@@ -177,9 +180,14 @@ int ShyLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
     }
     else
     {
-        LP_->SetRHS(temp.getRawPtr());
+        //LP_->SetRHS(temp.getRawPtr());
     }
-    LP_->SetLHS(localX.getRawPtr());
+    //LP_->SetLHS(localX.getRawPtr());
+
+    //TODO: Why not just in Reset(). Check the distr path.
+    ssym_->OrigLP->SetLHS(localX.getRawPtr());
+    ssym_->OrigLP->SetRHS(temp.getRawPtr());
+    ssym_->ReIdx_LP->fwd();
     solver_->Solve();
 
 #ifdef TIMING_OUTPUT
@@ -263,14 +271,17 @@ void ShyLU_Probing_Operator::ResetTempVectors(int nvectors)
     using Teuchos::RCP;
     nvectors_ = nvectors;
     // If vectors were created already, they will be freed.
+    ltemp = Teuchos::RCP<Epetra_MultiVector>
+            (new Epetra_MultiVector(View, *(ssym_->Drhs), 0,  nvectors));
+    localX = Teuchos::RCP<Epetra_MultiVector>
+            (new Epetra_MultiVector(View, *(ssym_->Dlhs), 0,  nvectors));
+    temp2 = Teuchos::RCP<Epetra_MultiVector>
+            (new Epetra_MultiVector(View, *(ssym_->Gvec), 0,  nvectors));
     temp = RCP<Epetra_MultiVector>(new Epetra_MultiVector(C_->RowMap(),
                                      nvectors));
-    temp2 = RCP<Epetra_MultiVector>(new Epetra_MultiVector(G_->RowMap(),
-                                     nvectors));
-    ltemp = RCP<Epetra_MultiVector>(new Epetra_MultiVector(*localDRowMap_,
-                                     nvectors));
-    localX = RCP<Epetra_MultiVector>(new Epetra_MultiVector(*localDRowMap_,
-                                     nvectors));
+    ssym_->OrigLP->SetLHS(localX.getRawPtr());
+    ssym_->OrigLP->SetRHS(temp.getRawPtr());
+    ssym_->ReIdx_LP->fwd();
 }
 
 int ShyLU_Probing_Operator::ApplyInverse(const Epetra_MultiVector &X,

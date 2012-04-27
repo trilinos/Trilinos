@@ -63,6 +63,7 @@
 
 #include "shylu.h"
 #include "shylu_util.h"
+#include <EpetraExt_Reindex_LinearProblem2.h>
 
 int create_matrices
 (
@@ -474,6 +475,32 @@ int extract_matrices
         delete SRowMap;
         delete DColMap;
     }
+
+#if 0
+    if (insertValues)
+    {
+#ifdef TIMING_OUTPUT
+    Teuchos::Time ttime("transpose time");
+    ttime.start();
+#endif
+        bool MakeDataContiguous = true;
+        ssym->transposer = Teuchos::RCP<EpetraExt::RowMatrix_Transpose>(new EpetraExt::RowMatrix_Transpose(MakeDataContiguous));
+        ssym->DT = Teuchos::rcp( dynamic_cast<Epetra_CrsMatrix *>(&(*ssym->transposer)(*D)), false);
+
+#ifdef TIMING_OUTPUT
+    ttime.stop();
+    cout << "Transpose Time" << ttime.totalElapsedTime() << endl;
+    ttime.reset();
+#endif
+
+    }
+    else
+    {
+        ssym->transposer->fwd();
+        //ssym->ReIdx_LP->fwd(); // TODO: Needed ?
+    }
+#endif
+
     // A is no longer needed
     delete[] LeftIndex;
     delete[] LeftValues;
@@ -507,6 +534,10 @@ int shylu_symbolic_factor
     shylu_config *config    // i/p: library configuration
 )
 {
+#ifdef TIMING_OUTPUT
+    Teuchos::Time symtime("symbolic time");
+    symtime.start();
+#endif
     int myPID = A->Comm().MyPID();
     int n = A->NumGlobalRows();
 
@@ -658,15 +689,37 @@ int shylu_symbolic_factor
     Teuchos::RCP<Epetra_LinearProblem> LP = Teuchos::RCP<Epetra_LinearProblem> 
                                         (new Epetra_LinearProblem());
     LP->SetOperator((ssym->D).getRawPtr());
+    //LP->SetOperator((ssym->DT).getRawPtr()); // for transpose
+
+    // Create temp vectors
+    ssym->Dlhs = Teuchos::RCP<Epetra_MultiVector>
+                    (new Epetra_MultiVector(ssym->D->RowMap(), 16));
+    ssym->Drhs = Teuchos::RCP<Epetra_MultiVector>
+                    (new Epetra_MultiVector(ssym->D->RowMap(), 16));
+    ssym->Gvec = Teuchos::RCP<Epetra_MultiVector>
+                    (new Epetra_MultiVector(ssym->G->RowMap(), 16));
+
+    LP->SetRHS(ssym->Drhs.getRawPtr());
+    LP->SetLHS(ssym->Dlhs.getRawPtr());
+
+    ssym->ReIdx_LP = Teuchos::RCP<
+                    EpetraExt::ViewTransform<Epetra_LinearProblem> >
+                    (new EpetraExt::LinearProblem_Reindex2(0));
+    ssym->LP = Teuchos::RCP<Epetra_LinearProblem>(&((*(ssym->ReIdx_LP))(*LP)),
+                                        false);
 
     Teuchos::RCP<Amesos_BaseSolver> Solver = Teuchos::RCP<Amesos_BaseSolver>
-                                            (Factory.Create(SolverType, *LP));
+                                    (Factory.Create(SolverType, *(ssym->LP)));
     //config->dm.print(5, "Created the diagonal solver");
 
 #ifdef TIMING_OUTPUT
     Teuchos::Time ftime("setup time");
     ftime.start();
 #endif
+    //Solver->SetUseTranspose(true); // for transpose
+    Teuchos::ParameterList aList;
+    aList.set("TrustMe", true);
+    Solver->SetParameters(aList);
     Solver->SymbolicFactorization();
     //config->dm.print(3, "Symbolic Factorization done");
 
@@ -676,7 +729,8 @@ int shylu_symbolic_factor
     ftime.reset();
 #endif
 
-    ssym->LP = LP;
+    ssym->OrigLP = LP;
+    //ssym->LP = LP;
     ssym->Solver = Solver;
 
     if (config->schurApproxMethod == 1)
@@ -699,11 +753,20 @@ int shylu_symbolic_factor
 #endif
         ssym->prober = prober;
     }
+#ifdef TIMING_OUTPUT
+    symtime.stop();
+    cout << "Symbolic Time" << symtime.totalElapsedTime() << endl;
+    symtime.reset();
+#endif
 }
 
 int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
              shylu_config *config)
 {
+#ifdef TIMING_OUTPUT
+    Teuchos::Time fact_time("factor time");
+    fact_time.start();
+#endif
 
     Teuchos::RCP<Epetra_LinearProblem> LP = ssym->LP;
     Teuchos::RCP<Amesos_BaseSolver> Solver = ssym->Solver;
@@ -738,7 +801,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
     Teuchos::RCP<Epetra_CrsMatrix> Sbar;
 
     data->schur_op = Teuchos::RCP<ShyLU_Probing_Operator> (new
-             ShyLU_Probing_Operator((ssym->G).getRawPtr(),
+             ShyLU_Probing_Operator(ssym, (ssym->G).getRawPtr(),
              (ssym->R).getRawPtr(), (ssym->LP).getRawPtr(),
              (ssym->Solver).getRawPtr(), (ssym->C).getRawPtr(), &LocalDRowMap,
              1));
@@ -749,7 +812,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
         //Set up the probing operator
         // TODO: Change to RCPs. Call Set vectors on schur_op and remove
         // probeop
-        ShyLU_Probing_Operator probeop((ssym->G).getRawPtr(),
+        ShyLU_Probing_Operator probeop(ssym, (ssym->G).getRawPtr(),
          (ssym->R).getRawPtr(), (ssym->LP).getRawPtr(),
          (ssym->Solver).getRawPtr(), (ssym->C).getRawPtr(), &LocalDRowMap,
          nvectors);
@@ -774,12 +837,12 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
 
         // TODO: Pass the operator rather than all the matrices
         if (config->sep_type == 2)
-            Sbar = computeApproxSchur(config, (ssym->G).getRawPtr(),
+            Sbar = computeApproxSchur(config, ssym, (ssym->G).getRawPtr(),
              (ssym->R).getRawPtr(), (ssym->LP).getRawPtr(),
              (ssym->Solver).getRawPtr(), (ssym->C).getRawPtr(),
              &LocalDRowMap);
         else
-            Sbar = computeApproxWideSchur(config, (ssym->G).getRawPtr(),
+            Sbar = computeApproxWideSchur(config, ssym, (ssym->G).getRawPtr(),
              (ssym->R).getRawPtr(), (ssym->LP).getRawPtr(),
              (ssym->Solver).getRawPtr(), (ssym->C).getRawPtr(),
              &LocalDRowMap);
@@ -887,5 +950,10 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
     }
 
     //cout << " Out of factor" << endl ;
+#ifdef TIMING_OUTPUT
+    fact_time.stop();
+    cout << "Factor Time" << fact_time.totalElapsedTime() << endl;
+    fact_time.reset();
+#endif
     return 0;
 }

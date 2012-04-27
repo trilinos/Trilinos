@@ -51,17 +51,22 @@
 #include "shylu_util.h"
 
 
-ShyLU_Local_Schur_Operator::ShyLU_Local_Schur_Operator(Epetra_CrsMatrix *G, 
+ShyLU_Local_Schur_Operator::ShyLU_Local_Schur_Operator(
+    shylu_symbolic *ssym,   // symbolic structure
+    Epetra_CrsMatrix *G,
     Epetra_CrsMatrix *R,
     Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
     Epetra_Map *localDRowMap, int nvectors)
 {
+    ssym_ = ssym;
     G_ = G;
     R_ = R;
     LP_ = LP;
     solver_ = solver;
     C_ = C;
     localDRowMap_ = localDRowMap;
+    orig_lhs_ = ssym_->OrigLP->GetLHS();
+    orig_rhs_ = ssym_->OrigLP->GetRHS();
     ResetTempVectors(nvectors);
     nvectors_ = nvectors;
 
@@ -92,14 +97,11 @@ int ShyLU_Local_Schur_Operator::Apply(const Epetra_MultiVector &X,
     apply_time_->start();
 #endif
 
-    //cout << "In local schur's Apply" << endl;
-
-    int nvectors = X.NumVectors();
+    //int nvectors = X.NumVectors();
     // TODO: For local_scur_operation this will always be local !!!
     // Remove these cases or merge with schur operator.
-    bool local = (G_->Comm().NumProc() == 1);
+    //bool local = (G_->Comm().NumProc() == 1);
     int err;
-    //cout << "No of colors after probing" << nvectors << endl;
 
 #ifdef TIMING_OUTPUT
     matvec_time_->start();
@@ -114,9 +116,9 @@ int ShyLU_Local_Schur_Operator::Apply(const Epetra_MultiVector &X,
     matvec_time_->stop();
 #endif
 
-    int nrows = C_->RowMap().NumMyElements();
 
 #ifdef DEBUG
+    int nrows = C_->RowMap().NumMyElements();
     cout << "DEBUG MODE" << endl;
     ASSERT((nrows == localDRowMap_->NumGlobalElements()));
 
@@ -134,42 +136,12 @@ int ShyLU_Local_Schur_Operator::Apply(const Epetra_MultiVector &X,
     localize_time_->start();
 #endif
 
-    //int err;
-    /*int lda;
-    double *values;
-    if (!local)
-    {
-        err = temp->ExtractView(&values, &lda);
-        assert((err == 0));
-
-        // copy to local vector //TODO: OMP parallel
-        ASSERT((lda == nrows));
-
-    //#pragma omp parallel for shared(nvectors, nrows, values)
-        for (int v = 0; v < nvectors; v++)
-        {
-           for (int i = 0; i < nrows; i++)
-           {
-               err = ltemp->ReplaceMyValue(i, v, values[i+v*lda]);
-               assert((err == 0));
-           }
-        }
-    }*/
-
 #ifdef TIMING_OUTPUT
     localize_time_->stop();
     trisolve_time_->start();
 #endif
 
-    /*if (!local)
-    {
-        LP_->SetRHS(ltemp.getRawPtr());
-    }
-    else
-    {*/
-        LP_->SetRHS(temp.getRawPtr());
-    /*}*/
-    LP_->SetLHS(localX.getRawPtr());
+    // The lhs and rhs is set in ResetTempVectors()
     solver_->Solve();
 
 #ifdef TIMING_OUTPUT
@@ -177,36 +149,12 @@ int ShyLU_Local_Schur_Operator::Apply(const Epetra_MultiVector &X,
     dist_time_->start();
 #endif
 
-    /*if (!local)
-    {
-        err = localX->ExtractView(&values, &lda);
-        assert((err == 0));
-
-        //Copy back to dist vector //TODO: OMP parallel
-    //#pragma omp parallel for
-        for (int v = 0; v < nvectors; v++)
-        {
-           for (int i = 0; i < nrows; i++)
-           {
-               err = temp->ReplaceMyValue(i, v, values[i+v*lda]);
-               assert((err == 0));
-           }
-        }
-    }*/
-
 #ifdef TIMING_OUTPUT
     dist_time_->stop();
     matvec2_time_->start();
 #endif
 
-    /*if (!local)
-    {
-        R_->Multiply(false, *temp, Y);
-    }
-    else
-    {*/
-        R_->Multiply(false, *localX, Y);
-    /*}*/
+    R_->Multiply(false, *localX, Y);
 
 #ifdef TIMING_OUTPUT
     matvec2_time_->stop();
@@ -244,14 +192,16 @@ void ShyLU_Local_Schur_Operator::ResetTempVectors(int nvectors)
     using Teuchos::RCP;
     nvectors_ = nvectors;
     // If vectors were created already, they will be freed.
-    temp = RCP<Epetra_MultiVector>(new Epetra_MultiVector(C_->RowMap(),
-                                     nvectors));
-    temp2 = RCP<Epetra_MultiVector>(new Epetra_MultiVector(G_->RowMap(),
-                                     nvectors));
-    //ltemp = RCP<Epetra_MultiVector>(new Epetra_MultiVector(*localDRowMap_,
-                                     //nvectors));
-    localX = RCP<Epetra_MultiVector>(new Epetra_MultiVector(*localDRowMap_,
-                                     nvectors));
+    temp = Teuchos::RCP<Epetra_MultiVector>
+            (new Epetra_MultiVector(View, *(ssym_->Drhs), 0,  nvectors));
+    localX = Teuchos::RCP<Epetra_MultiVector>
+            (new Epetra_MultiVector(View, *(ssym_->Dlhs), 0,  nvectors));
+    temp2 = Teuchos::RCP<Epetra_MultiVector>
+            (new Epetra_MultiVector(View, *(ssym_->Gvec), 0,  nvectors));
+    ssym_->OrigLP->SetLHS(localX.getRawPtr());
+    ssym_->OrigLP->SetRHS(temp.getRawPtr());
+    ssym_->ReIdx_LP->fwd();
+
 }
 
 int ShyLU_Local_Schur_Operator::ApplyInverse(const Epetra_MultiVector &X,

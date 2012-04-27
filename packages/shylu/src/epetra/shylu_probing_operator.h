@@ -53,7 +53,9 @@
 #include <Epetra_Comm.h>
 #include <Teuchos_Time.hpp>
 #include <Teuchos_RCP.hpp>
+#include "shylu_symbolic.h"
 #include "shylu_util.h"
+
 
 class ShyLU_Probing_Operator : public virtual Epetra_Operator
 {
@@ -61,7 +63,8 @@ class ShyLU_Probing_Operator : public virtual Epetra_Operator
     public:
 
     // TODO: Change to RCPs
-    ShyLU_Probing_Operator(Epetra_CrsMatrix *G, Epetra_CrsMatrix *R,
+    ShyLU_Probing_Operator(shylu_symbolic *sym,
+    Epetra_CrsMatrix *G, Epetra_CrsMatrix *R,
     Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
     Epetra_Map *LocalDRowMap, int nvectors);
 
@@ -103,6 +106,8 @@ class ShyLU_Probing_Operator : public virtual Epetra_Operator
     Teuchos::RCP<Epetra_MultiVector> temp2;
     Teuchos::RCP<Epetra_MultiVector> ltemp;
     Teuchos::RCP<Epetra_MultiVector> localX;
+    shylu_symbolic * ssym_;   // symbolic structure
+
 #ifdef TIMING_OUTPUT
     Teuchos::RCP<Teuchos::Time> matvec_time_;
     Teuchos::RCP<Teuchos::Time> localize_time_;

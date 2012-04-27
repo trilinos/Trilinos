@@ -54,6 +54,7 @@
    which will be our approximate Schur complement.
    */
 Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(shylu_config *config,
+    shylu_symbolic *sym,
     Epetra_CrsMatrix *G, Epetra_CrsMatrix *R,
     Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
     Epetra_Map *localDRowMap)
@@ -61,7 +62,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(shylu_config *config,
     double relative_thres = config->relative_threshold;
     int nvectors = 16;
 
-    ShyLU_Probing_Operator probeop(G, R, LP, solver, C, localDRowMap,
+    ShyLU_Probing_Operator probeop(sym, G, R, LP, solver, C, localDRowMap,
                                     nvectors);
 
     // Get row map
@@ -245,6 +246,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(shylu_config *config,
 
 /* Computes the approximate Schur complement for the wide separator */
 Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
+    shylu_symbolic *ssym,   // symbolic structure
     Epetra_CrsMatrix *G, Epetra_CrsMatrix *R,
     Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
     Epetra_Map *localDRowMap)
@@ -255,24 +257,24 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
     // Need to create local G (block diagonal portion) , R, C
 
     // Get row map of G
-    Epetra_Map CrMap = C->RowMap();
-    int *c_rows = CrMap.MyGlobalElements();
-    int *c_cols = (C->ColMap()).MyGlobalElements();
+    //Epetra_Map CrMap = C->RowMap();
+    //int *c_rows = CrMap.MyGlobalElements();
+    //int *c_cols = (C->ColMap()).MyGlobalElements();
     //int c_totalElems = CrMap.NumGlobalElements();
-    int c_localElems = CrMap.NumMyElements();
-    int c_localcolElems = (C->ColMap()).NumMyElements();
+    //int c_localElems = CrMap.NumMyElements();
+    //int c_localcolElems = (C->ColMap()).NumMyElements();
 
     Epetra_Map GrMap = G->RowMap();
     int *g_rows = GrMap.MyGlobalElements();
     //int g_totalElems = GrMap.NumGlobalElements();
     int g_localElems = GrMap.NumMyElements();
 
-    Epetra_Map RrMap = R->RowMap();
-    int *r_rows = RrMap.MyGlobalElements();
-    int *r_cols = (R->ColMap()).MyGlobalElements();
+    //Epetra_Map RrMap = R->RowMap();
+    //int *r_rows = RrMap.MyGlobalElements();
+    //int *r_cols = (R->ColMap()).MyGlobalElements();
     //int r_totalElems = RrMap.NumGlobalElements();
-    int r_localElems = RrMap.NumMyElements();
-    int r_localcolElems = (R->ColMap()).NumMyElements();
+    //int r_localElems = RrMap.NumMyElements();
+    //int r_localcolElems = (R->ColMap()).NumMyElements();
 
     Epetra_SerialComm LComm;
     Epetra_Map G_localRMap (-1, g_localElems, g_rows, 0, LComm);
@@ -328,7 +330,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
     int nvectors = 16;
     /*ShyLU_Probing_Operator probeop(&localG, &localR, LP, solver, &localC,
                                         localDRowMap, nvectors);*/
-    ShyLU_Local_Schur_Operator probeop(&localG, R, LP, solver, C,
+    ShyLU_Local_Schur_Operator probeop(ssym, &localG, R, LP, solver, C,
                                         localDRowMap, nvectors);
 
 #ifdef DUMP_MATRICES
@@ -361,8 +363,8 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
     // size > maxentries as there could be fill
     // TODO: Currently the size of the two arrays can be one, Even if we switch
     // the loop below the size of the array required is nvectors. Fix it
-    double *values = new double[g_localElems];
-    int *indices = new int[g_localElems];
+    double *values = new double[nvectors];
+    int *indices = new int[nvectors];
     double *vecvalues;
     int dropped = 0;
     double *maxvalue = new double[nvectors];
@@ -373,11 +375,12 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
 
     int cindex;
     int mypid = C->Comm().MyPID();
-    Epetra_MultiVector probevec(G_localRMap, nvectors);
-    Epetra_MultiVector Scol(G_localRMap, nvectors);
+    Epetra_MultiVector probevec (G_localRMap, nvectors);
+    Epetra_MultiVector Scol (G_localRMap, nvectors);
+    probevec.PutScalar(0.0);
     for (i = 0 ; i < findex*nvectors ; i+=nvectors)
     {
-        probevec.PutScalar(0.0);
+        // Set the probevec to find block columns of S.
         for (int k = 0; k < nvectors; k++)
         {
             cindex = k+i;
@@ -396,98 +399,108 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
         app_time.stop();
 #endif
 
-        Scol.MaxValue(maxvalue);
-        for (int k = 0; k < nvectors; k++) //TODO:Need to switch these loops
+        // Reset the probevec to all zeros.
+        for (int k = 0; k < nvectors; k++)
         {
             cindex = k+i;
-            vecvalues = Scol[k];
-            //cout << "MAX" << maxvalue << endl;
-            for (int j = 0 ; j < g_localElems ; j++)
+            probevec.ReplaceGlobalValue(g_rows[cindex], k, 0.0);
+        }
+
+        Scol.MaxValue(maxvalue);
+        nentries = 0;
+        for (int j = 0 ; j < g_localElems ; j++)
+        {
+            for (int k = 0; k < nvectors; k++)
             {
-                nentries = 0; // inserting one entry in each row for now
-                if (g_rows[cindex] == g_rows[j]) // diagonal entry
+                cindex = k+i;
+                vecvalues = Scol[k];
+                if ((g_rows[cindex] == g_rows[j])  ||
+                (abs(vecvalues[j]/maxvalue[k]) > relative_thres))
+                // diagonal entry or large entry.
                 {
                     values[nentries] = vecvalues[j];
-                    indices[nentries] = g_rows[cindex];
-                    nentries++;
-                    Sbar->InsertGlobalValues(g_rows[j], nentries, values, indices);
+                    indices[nentries++] = g_rows[cindex];
                 }
-                else if (abs(vecvalues[j]/maxvalue[k]) > relative_thres)
-                {
-                    values[nentries] = vecvalues[j];
-                    indices[nentries] = g_rows[cindex];
-                    nentries++;
-                    Sbar->InsertGlobalValues(g_rows[j], nentries, values, indices);
-                }
+#ifdef SHYLU_DEBUG
                 else
                 {
                     if (vecvalues[j] != 0.0)
                     {
                         dropped++;
-                        //cout << "vecvalues[j]" << vecvalues[j] <<
-                                // " max" << maxvalue[k] << endl;
                     }
                 }
+#endif
             }
+            Sbar->InsertGlobalValues(g_rows[j], nentries, values,
+                        indices);
+            nentries = 0;
         }
     }
 
-    probeop.ResetTempVectors(1);
-
-    for ( ; i < g_localElems ; i++)
+    if (i < g_localElems)
     {
-        // TODO: Can move the next two decalarations outside the loop
-        Epetra_MultiVector probevec(G_localRMap, 1);
-        Epetra_MultiVector Scol(G_localRMap, 1);
+        nvectors = g_localElems - i;
+        probeop.ResetTempVectors(nvectors);
+        Epetra_MultiVector probevec1 (G_localRMap, nvectors);
+        Epetra_MultiVector Scol1 (G_localRMap, nvectors);
 
-        probevec.PutScalar(0.0);
-        // TODO: Can do better than this, just need to go to the column map
-        // of C, there might be null columns in C
-        probevec.ReplaceGlobalValue(g_rows[i], 0, 1.0);
+        probevec1.PutScalar(0.0);
+        for (int k = 0; k < nvectors; k++)
+        {
+            cindex = k+i;
+            // TODO: Can do better than this, just need to go to the column map
+            // of C, there might be null columns in C
+            probevec1.ReplaceGlobalValue(g_rows[cindex], k, 1.0);
+        }
 
 #ifdef TIMING_OUTPUT
         app_time.start();
 #endif
-        probeop.Apply(probevec, Scol);
+        probeop.Apply(probevec1, Scol1);
 #ifdef TIMING_OUTPUT
         app_time.stop();
 #endif
-        vecvalues = Scol[0];
-        Scol.MaxValue(maxvalue);
-        //cout << "MAX" << maxvalue << endl;
+        Scol1.MaxValue(maxvalue);
+        nentries = 0;
         for (int j = 0 ; j < g_localElems ; j++)
         {
-            nentries = 0; // inserting one entry in each row for now
-            if (g_rows[i] == g_rows[j]) // diagonal entry
+            //cout << "MAX" << maxvalue << endl;
+            for (int k = 0; k < nvectors; k++)
             {
-                values[nentries] = vecvalues[j];
-                indices[nentries] = g_rows[i];
-                nentries++;
-                Sbar->InsertGlobalValues(g_rows[j], nentries, values, indices);
+                cindex = k+i;
+                vecvalues = Scol1[k];
+                //nentries = 0; // inserting one entry in each row for now
+                if ((g_rows[cindex] == g_rows[j])  ||
+                (abs(vecvalues[j]/maxvalue[k]) > relative_thres))
+                // diagonal entry or large entry.
+                {
+                    values[nentries] = vecvalues[j];
+                    indices[nentries++] = g_rows[cindex];
+                }
+#ifdef SHYLU_DEBUG
+                else
+                {
+                    if (vecvalues[j] != 0.0)
+                    {
+                        dropped++;
+                    }
+                }
+#endif
             }
-            else if (abs(vecvalues[j]/maxvalue[0]) > relative_thres)
-            {
-                values[nentries] = vecvalues[j];
-                indices[nentries] = g_rows[i];
-                nentries++;
-                Sbar->InsertGlobalValues(g_rows[j], nentries, values, indices);
-            }
-            else
-            {
-                if (vecvalues[j] != 0.0) dropped++;
-            }
+            Sbar->InsertGlobalValues(g_rows[j], nentries, values,
+                        indices);
+            nentries = 0;
         }
     }
 
 #ifdef TIMING_OUTPUT
     ftime.stop();
-    cout << "Time in finding and dropping entries" << ftime.totalElapsedTime() << endl;
+    cout << "Time in finding and dropping entries" << ftime.totalElapsedTime()
+                     << endl;
     ftime.reset();
-#endif
-#ifdef TIMING_OUTPUT
     cout << "Time in Apply of probing" << app_time.totalElapsedTime() << endl;
-#endif
     probeop.PrintTimingInfo();
+#endif
     Sbar->FillComplete();
 
 #ifdef DUMP_MATRICES
@@ -499,7 +512,9 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
     EpetraExt::RowMatrixToMatlabFile("Schur.mat", t2S);
 #endif
 
+#ifdef SHYLU_DEBUG
     cout << "#dropped entries" << dropped << endl;
+#endif
     delete[] values;
     delete[] indices;
     delete[] values1;
@@ -657,7 +672,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing
     cout << "Created local G matrix" << endl;
 
     int nvectors = 16;
-    ShyLU_Probing_Operator probeop(&localG, &localR, LP, solver, &localC,
+    ShyLU_Probing_Operator probeop(ssym, &localG, &localR, LP, solver, &localC,
                                         localDRowMap, nvectors);
 
 #ifdef DUMP_MATRICES

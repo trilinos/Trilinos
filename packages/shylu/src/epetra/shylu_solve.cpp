@@ -112,6 +112,7 @@ static int shylu_dist_solve(
        }
     }
 
+    // TODO : Do we need to reset the lhs and rhs here ?
     ssym->LP->SetRHS(&localrhs);
     ssym->LP->SetLHS(&locallhs);
     ssym->Solver->Solve();
@@ -264,11 +265,15 @@ static int shylu_local_solve(
     Epetra_MultiVector localrhs(LocalDMap, nvectors);
     localrhs.Import(X, BdImporter, Insert);
 
-    Epetra_MultiVector locallhs(LocalDMap, nvectors); // z in ShyLU paper.
-    Epetra_MultiVector temp3(LocalDMap, nvectors); // z in ShyLU paper.
+    Epetra_MultiVector locallhs (View, *(ssym->Dlhs), 0,  nvectors); // z in
+                                                                    // paper
+    Epetra_MultiVector temp3 (View, *(ssym->Drhs), 0,  nvectors);
 
-    ssym->LP->SetRHS(&localrhs);
-    ssym->LP->SetLHS(&locallhs);
+    Epetra_MultiVector *templhs = ssym->OrigLP->GetLHS();
+    Epetra_MultiVector *temprhs = ssym->OrigLP->GetRHS();
+    ssym->OrigLP->SetRHS(&localrhs);
+    ssym->OrigLP->SetLHS(&locallhs);
+    ssym->ReIdx_LP->fwd();
     ssym->Solver->Solve();
 
     Epetra_MultiVector temp1(LocalSMap, nvectors);
@@ -339,9 +344,13 @@ static int shylu_local_solve(
     assert (err == 0);
     temp3.Update(1.0, localrhs, -1.0);
 
-    ssym->LP->SetRHS(&temp3);
-    ssym->LP->SetLHS(&locallhs);
+    ssym->OrigLP->SetRHS(&temp3);
+    ssym->OrigLP->SetLHS(&locallhs);
+    ssym->ReIdx_LP->fwd();
     ssym->Solver->Solve();
+    ssym->OrigLP->SetRHS(temprhs);
+    ssym->OrigLP->SetLHS(templhs);
+    ssym->ReIdx_LP->fwd();
 
     Epetra_Export XdExporter(LocalDMap, Y.Map());
     Y.Export(locallhs, XdExporter, Insert);
