@@ -163,13 +163,14 @@ int ML_Epetra::LevelWrap::ApplyInverse(const Epetra_MultiVector& B, Epetra_Multi
   // Sanity Checks
   if (!B.Map().SameAs(OperatorDomainMap())) return -1;
   if (!X_.Map().SameAs(OperatorRangeMap())) return -1;
+  if (!X_.Map().SameAs(B.Map())) return -1;
   if (B.NumVectors() != X_.NumVectors()) return -1;
 
   // Build new work vector X 
   Epetra_MultiVector X(X_.Map(),X_.NumVectors(),true);
   Epetra_MultiVector tmp0(X_.Map(),X_.NumVectors(),true);
-  Epetra_MultiVector tmp1(P0_->RangeMap(),X_.NumVectors(),true);
-  Epetra_MultiVector tmp2(P0_->RangeMap(),X_.NumVectors(),true);
+  Epetra_MultiVector tmp1(P0_->DomainMap(),X_.NumVectors(),true);
+  Epetra_MultiVector tmp2(P0_->DomainMap(),X_.NumVectors(),true);
   
   // Pre Smoother
   if(pre_or_post==ML_BOTH || pre_or_post==ML_PRESMOOTHER){

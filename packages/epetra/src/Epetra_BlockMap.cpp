@@ -94,7 +94,6 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobal_Elements, int Element_Size, int I
   BlockMapData_->MinMyGID_ = start_index + BlockMapData_->IndexBase_;
   BlockMapData_->MaxMyGID_ = BlockMapData_->MinMyGID_ + BlockMapData_->NumMyElements_ - 1;
   BlockMapData_->DistributedGlobal_ = IsDistributedGlobal(BlockMapData_->NumGlobalElements_, BlockMapData_->NumMyElements_);
-  BlockMapData_->OneToOne_ = DetermineIsOneToOne();
 
   EndOfConstructorOps();
 }
@@ -166,7 +165,6 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobal_Elements, int NumMy_Elements,
   else
     throw ReportError("Internal Error.  Report to Epetra developer", -99);
   
-  BlockMapData_->OneToOne_ = DetermineIsOneToOne();
 
   EndOfConstructorOps();
 }
@@ -261,7 +259,6 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobal_Elements, int NumMy_Elements,
   else
     throw ReportError("Internal Error.  Report to Epetra developer", -99);
   
-  BlockMapData_->OneToOne_ = DetermineIsOneToOne();
 
   EndOfConstructorOps();
 }
@@ -386,7 +383,6 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobal_Elements, int NumMy_Elements,
   else
     throw ReportError("Internal Error.  Report to Epetra developer", -99);
   
-  BlockMapData_->OneToOne_ = DetermineIsOneToOne();
 
   EndOfConstructorOps();
 }
@@ -667,6 +663,15 @@ int Epetra_BlockMap::ElementSize(int lid) const {
 }
 
 //==============================================================================
+bool Epetra_BlockMap::IsOneToOne() const {
+  if(!BlockMapData_->OneToOneIsDetermined_){
+    BlockMapData_->OneToOne_ = DetermineIsOneToOne();
+    BlockMapData_->OneToOneIsDetermined_ = true;
+  }
+  return(BlockMapData_->OneToOne_);
+}
+
+//==============================================================================
 void Epetra_BlockMap::GlobalToLocalSetup()
 {
   int i;
@@ -819,7 +824,7 @@ int Epetra_BlockMap::RemoteIDList(int NumIDs, const int * GIDList,
 }
 
 //==============================================================================
-bool Epetra_BlockMap::DetermineIsOneToOne()
+bool Epetra_BlockMap::DetermineIsOneToOne() const
 {
   if (Comm().NumProc() < 2) {
     return(true);
