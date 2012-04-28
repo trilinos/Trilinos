@@ -5,6 +5,9 @@
 // MueLu main header: include most common header files in one line
 #include <MueLu.hpp>
 
+#include "MueLu_SmootherFactory.hpp"
+#include "MueLu_TrilinosSmoother.hpp"
+
 // Header files defining default types for template parameters.
 // These headers must be included after other MueLu/Xpetra headers.
 //#include <MueLu_UseDefaultTypes.hpp>  // => Scalar=double, LocalOrdinal=int, GlobalOrdinal=int
@@ -92,16 +95,23 @@ int main(int argc, char *argv[]) {
   // Construct a multigrid preconditioner
   //
 
-  Scalar pceScalar;
-  mySimpleClass<Scalar> foobar(pceScalar);
+  // TODO Amesos2 chokes on PCE scalars
+  Teuchos::ParameterList coarseParamList;
+  coarseParamList.set("relaxation: type", "Symmetric Gauss-Seidel");
+  coarseParamList.set("relaxation: sweeps", (LO) 1);
+  coarseParamList.set("relaxation: damping factor", (double) 1.0);
+  RCP<SmootherPrototype> coarsePrototype     = rcp( new TrilinosSmoother("RELAXATION", coarseParamList) );
+  RCP<SmootherFactory>   coarseSolverFact      = rcp( new SmootherFactory(coarsePrototype, Teuchos::null) );
+
+  FactoryManager M;
+  M.SetFactory("CoarseSolver", coarseSolverFact);
 
   // Multigrid Hierarchy
-  //Hierarchy H(A);
-  MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> H(A);
+  Hierarchy H(A);
   H.setVerbLevel(Teuchos::VERB_HIGH);
 
   // Multigrid setup phase (using default parameters)
-  H.Setup();
+  H.Setup(M);
 
   //
   // Solve Ax = b
