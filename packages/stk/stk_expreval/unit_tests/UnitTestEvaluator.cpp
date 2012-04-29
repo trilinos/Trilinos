@@ -72,6 +72,7 @@ fail_syntax(
   return false;
 }
 
+/*
 bool
 vectest(
   const char *	expr)
@@ -88,6 +89,7 @@ vectest(
   std::cout << "fail, should have parse error" << std::endl;
   return false;
 }
+*/
 
 bool
 test_one_value(const char *expression, double gold_value)
