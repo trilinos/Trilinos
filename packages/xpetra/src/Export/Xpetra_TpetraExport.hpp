@@ -32,18 +32,18 @@ namespace Xpetra {
 
     //! Construct a Export object from the source and target Map.
     TpetraExport(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &source, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &target)
-      : export_(Teuchos::rcp(new Tpetra::Export< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(source), toTpetra(target)))) { }
+      : export_(Teuchos::rcp(new Tpetra::Export< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(source), toTpetra(target)))) {  }
 
     //! Constructor (with list of parameters).
     TpetraExport(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &source, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &target, const Teuchos::RCP< Teuchos::ParameterList > &plist)
-      : export_(Teuchos::rcp(new Tpetra::Export< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(source), toTpetra(target), plist))) { }
+      : export_(Teuchos::rcp(new Tpetra::Export< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(source), toTpetra(target), plist))) {  }
 
     //! Copy constructor.
     TpetraExport(const Export< LocalOrdinal, GlobalOrdinal, Node > &rhs)
-      : export_(Teuchos::rcp(new Tpetra::Export< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(rhs)))) { }
+      : export_(Teuchos::rcp(new Tpetra::Export< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(rhs)))) {  }
 
     //! Destructor.
-    ~TpetraExport() { }
+    ~TpetraExport() {  }
 
     //@}
 
@@ -51,37 +51,37 @@ namespace Xpetra {
     //@{
 
     //! Number of initial identical IDs.
-    size_t getNumSameIDs() const { return export_->getNumSameIDs(); }
+    size_t getNumSameIDs() const { XPETRA_MONITOR("TpetraExport::getNumSameIDs"); return export_->getNumSameIDs(); }
 
     //! Number of IDs to permute but not to communicate.
-    size_t getNumPermuteIDs() const { return export_->getNumPermuteIDs(); }
+    size_t getNumPermuteIDs() const { XPETRA_MONITOR("TpetraExport::getNumPermuteIDs"); return export_->getNumPermuteIDs(); }
 
     //! List of local IDs in the source Map that are permuted.
-    ArrayView< const LocalOrdinal > getPermuteFromLIDs() const { return export_->getPermuteFromLIDs(); }
+    ArrayView< const LocalOrdinal > getPermuteFromLIDs() const { XPETRA_MONITOR("TpetraExport::getPermuteFromLIDs"); return export_->getPermuteFromLIDs(); }
 
     //! List of local IDs in the target Map that are permuted.
-    ArrayView< const LocalOrdinal > getPermuteToLIDs() const { return export_->getPermuteToLIDs(); }
+    ArrayView< const LocalOrdinal > getPermuteToLIDs() const { XPETRA_MONITOR("TpetraExport::getPermuteToLIDs"); return export_->getPermuteToLIDs(); }
 
     //! Number of entries not on the calling process.
-    size_t getNumRemoteIDs() const { return export_->getNumRemoteIDs(); }
+    size_t getNumRemoteIDs() const { XPETRA_MONITOR("TpetraExport::getNumRemoteIDs"); return export_->getNumRemoteIDs(); }
 
     //! List of entries in the target Map to receive from other processes.
-    ArrayView< const LocalOrdinal > getRemoteLIDs() const { return export_->getRemoteLIDs(); }
+    ArrayView< const LocalOrdinal > getRemoteLIDs() const { XPETRA_MONITOR("TpetraExport::getRemoteLIDs"); return export_->getRemoteLIDs(); }
 
     //! Number of entries that must be sent by the calling process to other processes.
-    size_t getNumExportIDs() const { return export_->getNumExportIDs(); }
+    size_t getNumExportIDs() const { XPETRA_MONITOR("TpetraExport::getNumExportIDs"); return export_->getNumExportIDs(); }
 
     //! List of entries in the source Map that will be sent to other processes.
-    ArrayView< const LocalOrdinal > getExportLIDs() const { return export_->getExportLIDs(); }
+    ArrayView< const LocalOrdinal > getExportLIDs() const { XPETRA_MONITOR("TpetraExport::getExportLIDs"); return export_->getExportLIDs(); }
 
     //! List of processes to which entries will be sent.
-    ArrayView< const int > getExportImageIDs() const { return export_->getExportImageIDs(); }
+    ArrayView< const int > getExportImageIDs() const { XPETRA_MONITOR("TpetraExport::getExportImageIDs"); return export_->getExportImageIDs(); }
 
     //! The source Map used to construct this Export.
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getSourceMap() const { return toXpetra(export_->getSourceMap()); }
+    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getSourceMap() const { XPETRA_MONITOR("TpetraExport::getSourceMap"); return toXpetra(export_->getSourceMap()); }
 
     //! The target Map used to construct this Export.
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getTargetMap() const { return toXpetra(export_->getTargetMap()); }
+    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getTargetMap() const { XPETRA_MONITOR("TpetraExport::getTargetMap"); return toXpetra(export_->getTargetMap()); }
 
     //@}
 
@@ -89,7 +89,7 @@ namespace Xpetra {
     //@{
 
     //! Print the Export's data to the given output stream.
-    void print(std::ostream &os) const { export_->print(os); }
+    void print(std::ostream &os) const { XPETRA_MONITOR("TpetraExport::print"); export_->print(os); }
 
     //@}
 

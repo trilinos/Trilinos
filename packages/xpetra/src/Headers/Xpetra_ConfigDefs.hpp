@@ -75,6 +75,12 @@ namespace Xpetra {
 #define XPETRA_PRINTS_ABUSE_WARNINGS 0
 #endif
 
+#ifdef HAVE_XPETRA_MONITOR
+#define XPETRA_MONITOR(funcName)
+#else
+#define XPETRA_MONITOR(funcName)
+#endif
+
 #include <functional>
 
 #ifndef __CUDACC__

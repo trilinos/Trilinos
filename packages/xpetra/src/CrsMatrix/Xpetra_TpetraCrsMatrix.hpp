@@ -37,26 +37,26 @@ namespace Xpetra {
 
     //! Constructor specifying fixed number of entries for each row.
     TpetraCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null)
-      : mtx_(Teuchos::rcp(new Tpetra::CrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps >(toTpetra(rowMap), maxNumEntriesPerRow, toTpetra(pftype), plist))) { }
+      : mtx_(Teuchos::rcp(new Tpetra::CrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps >(toTpetra(rowMap), maxNumEntriesPerRow, toTpetra(pftype), plist))) {  }
 
     //! Constructor specifying (possibly different) number of entries in each row.
     TpetraCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null)
-      : mtx_(Teuchos::rcp(new Tpetra::CrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps >(toTpetra(rowMap), NumEntriesPerRowToAlloc, toTpetra(pftype), plist))) { }
+      : mtx_(Teuchos::rcp(new Tpetra::CrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps >(toTpetra(rowMap), NumEntriesPerRowToAlloc, toTpetra(pftype), plist))) {  }
 
     //! Constructor specifying column Map and fixed number of entries for each row.
     TpetraCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null)
-      : mtx_(Teuchos::rcp(new Tpetra::CrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps >(toTpetra(rowMap), toTpetra(colMap), maxNumEntriesPerRow, toTpetra(pftype), plist))) { }
+      : mtx_(Teuchos::rcp(new Tpetra::CrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps >(toTpetra(rowMap), toTpetra(colMap), maxNumEntriesPerRow, toTpetra(pftype), plist))) {  }
 
     //! Constructor specifying column Map and number of entries in each row.
     TpetraCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null)
-      : mtx_(Teuchos::rcp(new Tpetra::CrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps >(toTpetra(rowMap), toTpetra(colMap), NumEntriesPerRowToAlloc, toTpetra(pftype), plist))) { }
+      : mtx_(Teuchos::rcp(new Tpetra::CrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps >(toTpetra(rowMap), toTpetra(colMap), NumEntriesPerRowToAlloc, toTpetra(pftype), plist))) {  }
 
     //! Constructor specifying a previously constructed graph.
     TpetraCrsMatrix(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > &graph, const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null)
-      : mtx_(Teuchos::rcp(new Tpetra::CrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps >(toTpetra(graph), plist))) { }
+      : mtx_(Teuchos::rcp(new Tpetra::CrsMatrix< Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps >(toTpetra(graph), plist))) {  }
 
     //! Destructor.
-    virtual ~TpetraCrsMatrix() { }
+    virtual ~TpetraCrsMatrix() {  }
 
     //@}
 
@@ -64,13 +64,13 @@ namespace Xpetra {
     //@{
 
     //! Insert matrix entries, using global IDs.
-    void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &cols, const ArrayView< const Scalar > &vals) { mtx_->insertGlobalValues(globalRow, cols, vals); }
+    void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &cols, const ArrayView< const Scalar > &vals) { XPETRA_MONITOR("TpetraCrsMatrix::insertGlobalValues"); mtx_->insertGlobalValues(globalRow, cols, vals); }
 
     //! Set all matrix entries equal to scalarThis.
-    void setAllToScalar(const Scalar &alpha) { mtx_->setAllToScalar(alpha); }
+    void setAllToScalar(const Scalar &alpha) { XPETRA_MONITOR("TpetraCrsMatrix::setAllToScalar"); mtx_->setAllToScalar(alpha); }
 
     //! Scale the current values of a matrix, this = alpha*this.
-    void scale(const Scalar &alpha) { mtx_->scale(alpha); }
+    void scale(const Scalar &alpha) { XPETRA_MONITOR("TpetraCrsMatrix::scale"); mtx_->scale(alpha); }
 
     //@}
 
@@ -78,10 +78,10 @@ namespace Xpetra {
     //@{
 
     //! Signal that data entry is complete, specifying domain and range maps.
-    void fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, OptimizeOption os=DoOptimizeStorage) { mtx_->fillComplete(toTpetra(domainMap), toTpetra(rangeMap), toTpetra(os)); }
+    void fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, OptimizeOption os=DoOptimizeStorage) { XPETRA_MONITOR("TpetraCrsMatrix::fillComplete"); mtx_->fillComplete(toTpetra(domainMap), toTpetra(rangeMap), toTpetra(os)); }
 
     //! Signal that data entry is complete.
-    void fillComplete(OptimizeOption os=DoOptimizeStorage) { mtx_->fillComplete(toTpetra(os)); }
+    void fillComplete(OptimizeOption os=DoOptimizeStorage) { XPETRA_MONITOR("TpetraCrsMatrix::fillComplete"); mtx_->fillComplete(toTpetra(os)); }
 
     //@}
 
@@ -89,67 +89,67 @@ namespace Xpetra {
     //@{
 
     //! Returns the Map that describes the row distribution in this matrix.
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRowMap() const { return toXpetra(mtx_->getRowMap()); }
+    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRowMap() const { XPETRA_MONITOR("TpetraCrsMatrix::getRowMap"); return toXpetra(mtx_->getRowMap()); }
 
     //! Returns the Map that describes the column distribution in this matrix.
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getColMap() const { return toXpetra(mtx_->getColMap()); }
+    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getColMap() const { XPETRA_MONITOR("TpetraCrsMatrix::getColMap"); return toXpetra(mtx_->getColMap()); }
 
     //! Returns the CrsGraph associated with this matrix.
-    RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > getCrsGraph() const { return toXpetra(mtx_->getCrsGraph()); }
+    RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > getCrsGraph() const { XPETRA_MONITOR("TpetraCrsMatrix::getCrsGraph"); return toXpetra(mtx_->getCrsGraph()); }
 
     //! Number of global elements in the row map of this matrix.
-    global_size_t getGlobalNumRows() const { return mtx_->getGlobalNumRows(); }
+    global_size_t getGlobalNumRows() const { XPETRA_MONITOR("TpetraCrsMatrix::getGlobalNumRows"); return mtx_->getGlobalNumRows(); }
 
     //! Number of global columns in the matrix.
-    global_size_t getGlobalNumCols() const { return mtx_->getGlobalNumCols(); }
+    global_size_t getGlobalNumCols() const { XPETRA_MONITOR("TpetraCrsMatrix::getGlobalNumCols"); return mtx_->getGlobalNumCols(); }
 
     //! Returns the number of matrix rows owned on the calling node.
-    size_t getNodeNumRows() const { return mtx_->getNodeNumRows(); }
+    size_t getNodeNumRows() const { XPETRA_MONITOR("TpetraCrsMatrix::getNodeNumRows"); return mtx_->getNodeNumRows(); }
 
     //! Returns the number of columns connected to the locally owned rows of this matrix.
-    size_t getNodeNumCols() const { return mtx_->getNodeNumCols(); }
+    size_t getNodeNumCols() const { XPETRA_MONITOR("TpetraCrsMatrix::getNodeNumCols"); return mtx_->getNodeNumCols(); }
 
     //! Returns the global number of entries in this matrix.
-    global_size_t getGlobalNumEntries() const { return mtx_->getGlobalNumEntries(); }
+    global_size_t getGlobalNumEntries() const { XPETRA_MONITOR("TpetraCrsMatrix::getGlobalNumEntries"); return mtx_->getGlobalNumEntries(); }
 
     //! Returns the local number of entries in this matrix.
-    size_t getNodeNumEntries() const { return mtx_->getNodeNumEntries(); }
+    size_t getNodeNumEntries() const { XPETRA_MONITOR("TpetraCrsMatrix::getNodeNumEntries"); return mtx_->getNodeNumEntries(); }
 
     //! Returns the current number of entries on this node in the specified local row.
-    size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { return mtx_->getNumEntriesInLocalRow(localRow); }
+    size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { XPETRA_MONITOR("TpetraCrsMatrix::getNumEntriesInLocalRow"); return mtx_->getNumEntriesInLocalRow(localRow); }
 
     //! Returns the number of global diagonal entries, based on global row/column index comparisons.
-    global_size_t getGlobalNumDiags() const { return mtx_->getGlobalNumDiags(); }
+    global_size_t getGlobalNumDiags() const { XPETRA_MONITOR("TpetraCrsMatrix::getGlobalNumDiags"); return mtx_->getGlobalNumDiags(); }
 
     //! Returns the number of local diagonal entries, based on global row/column index comparisons.
-    size_t getNodeNumDiags() const { return mtx_->getNodeNumDiags(); }
+    size_t getNodeNumDiags() const { XPETRA_MONITOR("TpetraCrsMatrix::getNodeNumDiags"); return mtx_->getNodeNumDiags(); }
 
     //! Returns the maximum number of entries across all rows/columns on all nodes.
-    size_t getGlobalMaxNumRowEntries() const { return mtx_->getGlobalMaxNumRowEntries(); }
+    size_t getGlobalMaxNumRowEntries() const { XPETRA_MONITOR("TpetraCrsMatrix::getGlobalMaxNumRowEntries"); return mtx_->getGlobalMaxNumRowEntries(); }
 
     //! Returns the maximum number of entries across all rows/columns on this node.
-    size_t getNodeMaxNumRowEntries() const { return mtx_->getNodeMaxNumRowEntries(); }
+    size_t getNodeMaxNumRowEntries() const { XPETRA_MONITOR("TpetraCrsMatrix::getNodeMaxNumRowEntries"); return mtx_->getNodeMaxNumRowEntries(); }
 
     //! If matrix indices are in the local range, this function returns true. Otherwise, this function returns false.
-    bool isLocallyIndexed() const { return mtx_->isLocallyIndexed(); }
+    bool isLocallyIndexed() const { XPETRA_MONITOR("TpetraCrsMatrix::isLocallyIndexed"); return mtx_->isLocallyIndexed(); }
 
     //! If matrix indices are in the global range, this function returns true. Otherwise, this function returns false.
-    bool isGloballyIndexed() const { return mtx_->isGloballyIndexed(); }
+    bool isGloballyIndexed() const { XPETRA_MONITOR("TpetraCrsMatrix::isGloballyIndexed"); return mtx_->isGloballyIndexed(); }
 
     //! Returns true if fillComplete() has been called and the matrix is in compute mode.
-    bool isFillComplete() const { return mtx_->isFillComplete(); }
+    bool isFillComplete() const { XPETRA_MONITOR("TpetraCrsMatrix::isFillComplete"); return mtx_->isFillComplete(); }
 
     //! Returns the Frobenius norm of the matrix.
-    typename ScalarTraits< Scalar >::magnitudeType getFrobeniusNorm() const { return mtx_->getFrobeniusNorm(); }
+    typename ScalarTraits< Scalar >::magnitudeType getFrobeniusNorm() const { XPETRA_MONITOR("TpetraCrsMatrix::getFrobeniusNorm"); return mtx_->getFrobeniusNorm(); }
 
     //! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
-    void getLocalRowCopy(LocalOrdinal LocalRow, const ArrayView< LocalOrdinal > &Indices, const ArrayView< Scalar > &Values, size_t &NumEntries) const { mtx_->getLocalRowCopy(LocalRow, Indices, Values, NumEntries); }
+    void getLocalRowCopy(LocalOrdinal LocalRow, const ArrayView< LocalOrdinal > &Indices, const ArrayView< Scalar > &Values, size_t &NumEntries) const { XPETRA_MONITOR("TpetraCrsMatrix::getLocalRowCopy"); mtx_->getLocalRowCopy(LocalRow, Indices, Values, NumEntries); }
 
     //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
-    void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView< const GlobalOrdinal > &indices, ArrayView< const Scalar > &values) const { mtx_->getGlobalRowView(GlobalRow, indices, values); }
+    void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView< const GlobalOrdinal > &indices, ArrayView< const Scalar > &values) const { XPETRA_MONITOR("TpetraCrsMatrix::getGlobalRowView"); mtx_->getGlobalRowView(GlobalRow, indices, values); }
 
     //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
-    void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices, ArrayView< const Scalar > &values) const { mtx_->getLocalRowView(LocalRow, indices, values); }
+    void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices, ArrayView< const Scalar > &values) const { XPETRA_MONITOR("TpetraCrsMatrix::getLocalRowView"); mtx_->getLocalRowView(LocalRow, indices, values); }
 
     //@}
 
@@ -157,13 +157,13 @@ namespace Xpetra {
     //@{
 
     //! Computes the sparse matrix-multivector multiplication.
-    void apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X, MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y, Teuchos::ETransp mode=Teuchos::NO_TRANS, Scalar alpha=ScalarTraits< Scalar >::one(), Scalar beta=ScalarTraits< Scalar >::zero()) const { mtx_->apply(toTpetra(X), toTpetra(Y), mode, alpha, beta); }
+    void apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X, MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y, Teuchos::ETransp mode=Teuchos::NO_TRANS, Scalar alpha=ScalarTraits< Scalar >::one(), Scalar beta=ScalarTraits< Scalar >::zero()) const { XPETRA_MONITOR("TpetraCrsMatrix::apply"); mtx_->apply(toTpetra(X), toTpetra(Y), mode, alpha, beta); }
 
     //! Returns the Map associated with the domain of this operator. This will be null until fillComplete() is called.
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const { return toXpetra(mtx_->getDomainMap()); }
+    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const { XPETRA_MONITOR("TpetraCrsMatrix::getDomainMap"); return toXpetra(mtx_->getDomainMap()); }
 
     //! 
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRangeMap() const { return toXpetra(mtx_->getRangeMap()); }
+    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRangeMap() const { XPETRA_MONITOR("TpetraCrsMatrix::getRangeMap"); return toXpetra(mtx_->getRangeMap()); }
 
     //@}
 
@@ -171,10 +171,10 @@ namespace Xpetra {
     //@{
 
     //! Return a simple one-line description of this object.
-    std::string description() const { return mtx_->description(); }
+    std::string description() const { XPETRA_MONITOR("TpetraCrsMatrix::description"); return mtx_->description(); }
 
     //! Print the object with some verbosity level to an FancyOStream object.
-    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { mtx_->describe(out, verbLevel); }
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { XPETRA_MONITOR("TpetraCrsMatrix::describe"); mtx_->describe(out, verbLevel); }
 
     //@}
 

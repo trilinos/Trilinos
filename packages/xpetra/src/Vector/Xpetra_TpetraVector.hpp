@@ -64,16 +64,16 @@ namespace Xpetra {
     //@{
 
     //! Replace current value at the specified location with specified value.
-    void replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { getTpetra_Vector()->replaceGlobalValue(globalRow, value); }
+    void replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { XPETRA_MONITOR("TpetraVector::replaceGlobalValue"); getTpetra_Vector()->replaceGlobalValue(globalRow, value); }
 
     //! Adds specified value to existing value at the specified location.
-    void sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { getTpetra_Vector()->sumIntoGlobalValue(globalRow, value); }
+    void sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { XPETRA_MONITOR("TpetraVector::sumIntoGlobalValue"); getTpetra_Vector()->sumIntoGlobalValue(globalRow, value); }
 
     //! Replace current value at the specified location with specified values.
-    void replaceLocalValue(LocalOrdinal myRow, const Scalar &value) { getTpetra_Vector()->replaceLocalValue(myRow, value); }
+    void replaceLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("TpetraVector::replaceLocalValue"); getTpetra_Vector()->replaceLocalValue(myRow, value); }
 
     //! Adds specified value to existing value at the specified location.
-    void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { getTpetra_Vector()->sumIntoLocalValue(myRow, value); }
+    void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("TpetraVector::sumIntoLocalValue"); getTpetra_Vector()->sumIntoLocalValue(myRow, value); }
 
     //@}
 
@@ -81,22 +81,22 @@ namespace Xpetra {
     //@{
 
     //! Computes dot product of this Vector against input Vector x.
-    Scalar dot(const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &a) const { return getTpetra_Vector()->dot(toTpetra(a)); }
+    Scalar dot(const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &a) const { XPETRA_MONITOR("TpetraVector::dot"); return getTpetra_Vector()->dot(toTpetra(a)); }
 
     //! Return 1-norm of this Vector.
-    typename Teuchos::ScalarTraits< Scalar >::magnitudeType norm1() const { return getTpetra_Vector()->norm1(); }
+    typename Teuchos::ScalarTraits< Scalar >::magnitudeType norm1() const { XPETRA_MONITOR("TpetraVector::norm1"); return getTpetra_Vector()->norm1(); }
 
     //! Compute 2-norm of this Vector.
-    typename Teuchos::ScalarTraits< Scalar >::magnitudeType norm2() const { return getTpetra_Vector()->norm2(); }
+    typename Teuchos::ScalarTraits< Scalar >::magnitudeType norm2() const { XPETRA_MONITOR("TpetraVector::norm2"); return getTpetra_Vector()->norm2(); }
 
     //! Compute Inf-norm of this Vector.
-    typename Teuchos::ScalarTraits< Scalar >::magnitudeType normInf() const { return getTpetra_Vector()->normInf(); }
+    typename Teuchos::ScalarTraits< Scalar >::magnitudeType normInf() const { XPETRA_MONITOR("TpetraVector::normInf"); return getTpetra_Vector()->normInf(); }
 
     //! Compute Weighted 2-norm (RMS Norm) of this Vector.
-    typename Teuchos::ScalarTraits< Scalar >::magnitudeType normWeighted(const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &weights) const { return getTpetra_Vector()->normWeighted(toTpetra(weights)); }
+    typename Teuchos::ScalarTraits< Scalar >::magnitudeType normWeighted(const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &weights) const { XPETRA_MONITOR("TpetraVector::normWeighted"); return getTpetra_Vector()->normWeighted(toTpetra(weights)); }
 
     //! Compute mean (average) value of this Vector.
-    Scalar meanValue() const { return getTpetra_Vector()->meanValue(); }
+    Scalar meanValue() const { XPETRA_MONITOR("TpetraVector::meanValue"); return getTpetra_Vector()->meanValue(); }
 
     //@}
 
@@ -104,10 +104,10 @@ namespace Xpetra {
     //@{
 
     //! Return a simple one-line description of this object.
-    std::string description() const { return getTpetra_Vector()->description(); }
+    std::string description() const { XPETRA_MONITOR("TpetraVector::description"); return getTpetra_Vector()->description(); }
 
     //! Print the object with some verbosity level to an FancyOStream object.
-    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { getTpetra_Vector()->describe(out, verbLevel); }
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { XPETRA_MONITOR("TpetraVector::describe"); getTpetra_Vector()->describe(out, verbLevel); }
 
     //@}
 

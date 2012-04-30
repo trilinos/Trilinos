@@ -86,6 +86,7 @@ def buildFuncLineTpetra( functionNode ):
 
     if name != className and name != "~"+className:
         defStr += " { "
+        defStr += "XPETRA_MONITOR(\"" + className + "::" + name + "\"); "
         if len(type) > 0 and type != 'void': defStr += 'return '
         if type in conf_TypeWrapped: defStr += "toXpetra("
         defStr += conf_memberName + "->" + name
@@ -93,14 +94,16 @@ def buildFuncLineTpetra( functionNode ):
         if type in conf_TypeWrapped: defStr += ")"
         defStr += "); }"
 
-    # consructor
+    # constructor
     if name == className:
         defStr += "\n      " + ": " + conf_memberName + "(Teuchos::rcp(new " + fullClassName + "< "+templateParam+" >"
-        defStr += "(" + paramStr + "))) { }"
+        defStr += "(" + paramStr + "))) { "
+        defStr += " }"
       
-    #destructor
+    # destructor
     if name == '~'+className:
-        defStr += " { }"
+        defStr += " { "
+        defStr += " }"
         
     return descStr + defStr + "\n" + "\n";
 

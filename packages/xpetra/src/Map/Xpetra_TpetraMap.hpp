@@ -36,18 +36,18 @@ namespace Xpetra {
 
     //! Map constructor with Tpetra-defined contiguous uniform distribution.
     TpetraMap(global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalGlobal lg=GloballyDistributed, const Teuchos::RCP< Node > &node=Kokkos::DefaultNode::getDefaultNode())
-      : map_(Teuchos::rcp(new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalElements, indexBase, comm, toTpetra(lg), node))) { }
+      : map_(Teuchos::rcp(new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalElements, indexBase, comm, toTpetra(lg), node))) {  }
 
     //! Map constructor with a user-defined contiguous distribution.
     TpetraMap(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=Kokkos::DefaultNode::getDefaultNode())
-      : map_(Teuchos::rcp(new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalElements, numLocalElements, indexBase, comm, node))) { }
+      : map_(Teuchos::rcp(new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalElements, numLocalElements, indexBase, comm, node))) {  }
 
     //! Map constructor with user-defined non-contiguous (arbitrary) distribution.
     TpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView< const GlobalOrdinal > &elementList, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=Kokkos::DefaultNode::getDefaultNode())
-      : map_(Teuchos::rcp(new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalElements, elementList, indexBase, comm, node))) { }
+      : map_(Teuchos::rcp(new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalElements, elementList, indexBase, comm, node))) {  }
 
     //! Destructor.
-    ~TpetraMap() { }
+    ~TpetraMap() {  }
 
     //@}
 
@@ -55,46 +55,46 @@ namespace Xpetra {
     //@{
 
     //! The number of elements in this Map.
-    global_size_t getGlobalNumElements() const { return map_->getGlobalNumElements(); }
+    global_size_t getGlobalNumElements() const { XPETRA_MONITOR("TpetraMap::getGlobalNumElements"); return map_->getGlobalNumElements(); }
 
     //! The number of elements belonging to the calling node.
-    size_t getNodeNumElements() const { return map_->getNodeNumElements(); }
+    size_t getNodeNumElements() const { XPETRA_MONITOR("TpetraMap::getNodeNumElements"); return map_->getNodeNumElements(); }
 
     //! The index base for this Map.
-    GlobalOrdinal getIndexBase() const { return map_->getIndexBase(); }
+    GlobalOrdinal getIndexBase() const { XPETRA_MONITOR("TpetraMap::getIndexBase"); return map_->getIndexBase(); }
 
     //! The minimum local index.
-    LocalOrdinal getMinLocalIndex() const { return map_->getMinLocalIndex(); }
+    LocalOrdinal getMinLocalIndex() const { XPETRA_MONITOR("TpetraMap::getMinLocalIndex"); return map_->getMinLocalIndex(); }
 
     //! The maximum local index.
-    LocalOrdinal getMaxLocalIndex() const { return map_->getMaxLocalIndex(); }
+    LocalOrdinal getMaxLocalIndex() const { XPETRA_MONITOR("TpetraMap::getMaxLocalIndex"); return map_->getMaxLocalIndex(); }
 
     //! The minimum global index owned by this node.
-    GlobalOrdinal getMinGlobalIndex() const { return map_->getMinGlobalIndex(); }
+    GlobalOrdinal getMinGlobalIndex() const { XPETRA_MONITOR("TpetraMap::getMinGlobalIndex"); return map_->getMinGlobalIndex(); }
 
     //! The maximum global index owned by this node.
-    GlobalOrdinal getMaxGlobalIndex() const { return map_->getMaxGlobalIndex(); }
+    GlobalOrdinal getMaxGlobalIndex() const { XPETRA_MONITOR("TpetraMap::getMaxGlobalIndex"); return map_->getMaxGlobalIndex(); }
 
     //! The minimum global index over all nodes.
-    GlobalOrdinal getMinAllGlobalIndex() const { return map_->getMinAllGlobalIndex(); }
+    GlobalOrdinal getMinAllGlobalIndex() const { XPETRA_MONITOR("TpetraMap::getMinAllGlobalIndex"); return map_->getMinAllGlobalIndex(); }
 
     //! The maximum global index over all nodes.
-    GlobalOrdinal getMaxAllGlobalIndex() const { return map_->getMaxAllGlobalIndex(); }
+    GlobalOrdinal getMaxAllGlobalIndex() const { XPETRA_MONITOR("TpetraMap::getMaxAllGlobalIndex"); return map_->getMaxAllGlobalIndex(); }
 
     //! The local index corresponding to the given global index.
-    LocalOrdinal getLocalElement(GlobalOrdinal globalIndex) const { return map_->getLocalElement(globalIndex); }
+    LocalOrdinal getLocalElement(GlobalOrdinal globalIndex) const { XPETRA_MONITOR("TpetraMap::getLocalElement"); return map_->getLocalElement(globalIndex); }
 
     //! The global index corresponding to the given local index.
-    GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const { return map_->getGlobalElement(localIndex); }
+    GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const { XPETRA_MONITOR("TpetraMap::getGlobalElement"); return map_->getGlobalElement(localIndex); }
 
     //! Process IDs and corresponding local IDs for a given list of global IDs.
-    LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< LocalOrdinal > &LIDList) const { return toXpetra(map_->getRemoteIndexList(GIDList, nodeIDList, LIDList)); }
+    LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< LocalOrdinal > &LIDList) const { XPETRA_MONITOR("TpetraMap::getRemoteIndexList"); return toXpetra(map_->getRemoteIndexList(GIDList, nodeIDList, LIDList)); }
 
     //! Return the node IDs for a given list of global IDs.
-    LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const { return toXpetra(map_->getRemoteIndexList(GIDList, nodeIDList)); }
+    LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const { XPETRA_MONITOR("TpetraMap::getRemoteIndexList"); return toXpetra(map_->getRemoteIndexList(GIDList, nodeIDList)); }
 
     //! Return a view of the global indices owned by this node.
-    Teuchos::ArrayView< const GlobalOrdinal > getNodeElementList() const { return map_->getNodeElementList(); }
+    Teuchos::ArrayView< const GlobalOrdinal > getNodeElementList() const { XPETRA_MONITOR("TpetraMap::getNodeElementList"); return map_->getNodeElementList(); }
 
     //@}
 
@@ -102,22 +102,22 @@ namespace Xpetra {
     //@{
 
     //! True if the local index is valid for this Map on this node, else false.
-    bool isNodeLocalElement(LocalOrdinal localIndex) const { return map_->isNodeLocalElement(localIndex); }
+    bool isNodeLocalElement(LocalOrdinal localIndex) const { XPETRA_MONITOR("TpetraMap::isNodeLocalElement"); return map_->isNodeLocalElement(localIndex); }
 
     //! True if the global index is found in this Map on this node, else false.
-    bool isNodeGlobalElement(GlobalOrdinal globalIndex) const { return map_->isNodeGlobalElement(globalIndex); }
+    bool isNodeGlobalElement(GlobalOrdinal globalIndex) const { XPETRA_MONITOR("TpetraMap::isNodeGlobalElement"); return map_->isNodeGlobalElement(globalIndex); }
 
     //! True if this Map is distributed contiguously, else false.
-    bool isContiguous() const { return map_->isContiguous(); }
+    bool isContiguous() const { XPETRA_MONITOR("TpetraMap::isContiguous"); return map_->isContiguous(); }
 
     //! Whether this Map is globally distributed or locally replicated.
-    bool isDistributed() const { return map_->isDistributed(); }
+    bool isDistributed() const { XPETRA_MONITOR("TpetraMap::isDistributed"); return map_->isDistributed(); }
 
     //! True if and only if map is compatible with this Map.
-    bool isCompatible(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const { return map_->isCompatible(toTpetra(map)); }
+    bool isCompatible(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const { XPETRA_MONITOR("TpetraMap::isCompatible"); return map_->isCompatible(toTpetra(map)); }
 
     //! True if and only if map is identical to this Map.
-    bool isSameAs(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const { return map_->isSameAs(toTpetra(map)); }
+    bool isSameAs(const Map< LocalOrdinal, GlobalOrdinal, Node > &map) const { XPETRA_MONITOR("TpetraMap::isSameAs"); return map_->isSameAs(toTpetra(map)); }
 
     //@}
 
@@ -125,10 +125,10 @@ namespace Xpetra {
     //@{
 
     //! Get this Map's Comm object.
-    const Teuchos::RCP< const Teuchos::Comm< int > >  getComm() const { return map_->getComm(); }
+    const Teuchos::RCP< const Teuchos::Comm< int > >  getComm() const { XPETRA_MONITOR("TpetraMap::getComm"); return map_->getComm(); }
 
     //! Get this Map's Node object.
-    const Teuchos::RCP< Node >  getNode() const { return map_->getNode(); }
+    const Teuchos::RCP< Node >  getNode() const { XPETRA_MONITOR("TpetraMap::getNode"); return map_->getNode(); }
 
     //@}
 
@@ -136,10 +136,10 @@ namespace Xpetra {
     //@{
 
     //! Return a simple one-line description of this object.
-    std::string description() const { return map_->description(); }
+    std::string description() const { XPETRA_MONITOR("TpetraMap::description"); return map_->description(); }
 
     //! Print this object with the given verbosity level to the given FancyOStream.
-    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { map_->describe(out, verbLevel); }
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { XPETRA_MONITOR("TpetraMap::describe"); map_->describe(out, verbLevel); }
 
     //@}
 

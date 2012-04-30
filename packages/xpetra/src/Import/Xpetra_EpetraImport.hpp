@@ -52,10 +52,10 @@ namespace Xpetra {
     //@{
 
     //! Number of initial identical IDs.
-    size_t getNumSameIDs() const { return import_->NumSameIDs(); }
+    size_t getNumSameIDs() const { XPETRA_MONITOR("EpetraImport::getNumSameIDs"); return import_->NumSameIDs(); }
 
     //! Number of IDs to permute but not to communicate.
-    size_t getNumPermuteIDs() const { return import_->NumPermuteIDs(); }
+    size_t getNumPermuteIDs() const { XPETRA_MONITOR("EpetraImport::getNumPermuteIDs"); return import_->NumPermuteIDs(); }
 
     //! List of local IDs in the source Map that are permuted.
     ArrayView< const LocalOrdinal > getPermuteFromLIDs() const;
@@ -79,10 +79,10 @@ namespace Xpetra {
     ArrayView< const int > getExportImageIDs() const;
 
     //! The Source Map used to construct this Import object.
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getSourceMap() const { return toXpetra(import_->SourceMap()); }
+    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getSourceMap() const { XPETRA_MONITOR("EpetraImport::getSourceMap"); return toXpetra(import_->SourceMap()); }
 
     //! The Target Map used to construct this Import object.
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getTargetMap() const { return toXpetra(import_->TargetMap()); }
+    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getTargetMap() const { XPETRA_MONITOR("EpetraImport::getTargetMap"); return toXpetra(import_->TargetMap()); }
 
     //@}
 
