@@ -376,6 +376,16 @@ public:
          return itr->second;
    }
 
+   /** Return if the orientations have been set to required.
+     */
+   bool getOrientationsRequired() const
+   { return requireOrientations_; }
+
+   /** Enable computation of the orientations.
+     */
+   void setOrientationsRequired(bool ro) 
+   { requireOrientations_ = ro; }
+
 protected:
   
    /** This routine calls the <code>addField</code> method on the fieldBlockManager adding all
@@ -443,6 +453,8 @@ protected:
      * This uses lazy evaluation for construction.
      */
    mutable std::map<std::string,TupleToVectorPairMap> gidFieldOffsets_closure_;
+
+   bool requireOrientations_;
 };
 
 }

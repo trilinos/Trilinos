@@ -59,12 +59,12 @@ namespace panzer {
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::BlockedDOFManager()
-   : fieldsRegistered_(false), maxSubFieldNum_(-1)
+   : fieldsRegistered_(false), maxSubFieldNum_(-1), requireOrientations_(false)
 { }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::BlockedDOFManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm)
-   : fieldsRegistered_(false), maxSubFieldNum_(-1)
+   : fieldsRegistered_(false), maxSubFieldNum_(-1), requireOrientations_(false)
 {
    setConnManager(connMngr,mpiComm);
 }
@@ -159,7 +159,25 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdina
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementOrientation(LocalOrdinalT localElmtId,std::vector<double> & gidsOrientation) const
 {
-   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"BlockedDOFManager::getElementOrientation not implemented yet!");
+   // WARNING: there is an assumed ordering being used here it
+   // corresponds directly to the blockGIDOffset_ map and (as
+   // a result) the getBlockGIDOffset function. However for 
+   // the sake of speed this conversion is implicit. 
+   //  
+   // Any changes to the order should be reflected in the
+   // blockGIDOffset_ map.
+
+   gidsOrientation.resize(0);
+
+   // loop over field block manager and grab indices
+   for(std::size_t fbm=0;fbm<fieldBlockManagers_.size();fbm++) {
+      std::vector<double> blkOrientation;
+
+      fieldBlockManagers_[fbm]->getElementOrientation(localElmtId,blkOrientation);
+
+      for(std::size_t i=0;i<blkOrientation.size();i++) 
+         gidsOrientation.push_back(blkOrientation[i]);
+   }
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
@@ -642,7 +660,8 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(const 
 
    // build global unknowns for each field block
    for(std::size_t fb=0;fb<fieldBlockManagers_.size();fb++) {
-      std::cout << "building field block fb = " << fb << std::endl;
+      // std::cout << "building field block fb = " << fb << std::endl;
+      fieldBlockManagers_[fb]->setOrientationsRequired(getOrientationsRequired());
       fieldBlockManagers_[fb]->buildGlobalUnknowns(geomPattern_);
    }
 
