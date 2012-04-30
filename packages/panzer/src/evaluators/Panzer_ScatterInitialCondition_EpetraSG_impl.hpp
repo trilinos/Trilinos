@@ -128,7 +128,7 @@ evaluateFields(typename Traits::EvalData workset)
 
    Teuchos::RCP<SGEpetraLinearObjContainer> sgEpetraContainer 
          = Teuchos::rcp_dynamic_cast<SGEpetraLinearObjContainer>(workset.linContainer);
-   Teuchos::RCP<Epetra_Vector> x_template = (*sgEpetraContainer->begin())->x;
+   Teuchos::RCP<Epetra_Vector> x_template = (*sgEpetraContainer->begin())->get_x();
    const Epetra_BlockMap & map = x_template->Map();
 
    // NOTE: A reordering of these loops will likely improve performance
@@ -166,7 +166,7 @@ evaluateFields(typename Traits::EvalData workset)
             int stochIndex = 0;
             panzer::SGEpetraLinearObjContainer::iterator itr; 
             for(itr=sgEpetraContainer->begin();itr!=sgEpetraContainer->end();++itr,++stochIndex)
-               (*(*itr)->x)[lid] = field.coeff(stochIndex);
+               (*(*itr)->get_x())[lid] = field.coeff(stochIndex);
          }
       }
    }

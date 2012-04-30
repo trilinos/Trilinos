@@ -247,7 +247,7 @@ namespace panzer {
     Teuchos::RCP<panzer::LinearObjContainer> loc = elof->buildLinearObjContainer();
     elof->initializeContainer(panzer::EpetraLinearObjContainer::X,*loc);
     Teuchos::RCP<panzer::EpetraLinearObjContainer> eloc = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
-    eloc->x->PutScalar(0.0);
+    eloc->get_x()->PutScalar(0.0);
 
     out << "evaluating VFM" << std::endl;
     panzer::AssemblyEngineInArgs ae_inargs(loc,loc);

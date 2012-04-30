@@ -105,19 +105,19 @@ globalToGhostContainer(const LinearObjContainer & in,
    using Teuchos::is_null;
    typedef LinearObjContainer LOC;
 
-   const ContainerType & e_in = Teuchos::dyn_cast<const ContainerType>(in); 
-   ContainerType & e_out = Teuchos::dyn_cast<ContainerType>(out); 
+   const ContainerType & t_in = Teuchos::dyn_cast<const ContainerType>(in); 
+   ContainerType & t_out = Teuchos::dyn_cast<ContainerType>(out); 
   
    // Operations occur if the GLOBAL container has the correct targets!
    // Users set the GLOBAL continer arguments
-   if ( !is_null(e_in.x) && !is_null(e_out.x) && ((mem & LOC::X)==LOC::X))
-     globalToGhostTpetraVector(*e_in.x,*e_out.x);
+   if ( !is_null(t_in.get_x()) && !is_null(t_out.get_x()) && ((mem & LOC::X)==LOC::X))
+     globalToGhostTpetraVector(*t_in.get_x(),*t_out.get_x());
   
-   if ( !is_null(e_in.dxdt) && !is_null(e_out.dxdt) && ((mem & LOC::DxDt)==LOC::DxDt))
-     globalToGhostTpetraVector(*e_in.dxdt,*e_out.dxdt);
+   if ( !is_null(t_in.get_dxdt()) && !is_null(t_out.get_dxdt()) && ((mem & LOC::DxDt)==LOC::DxDt))
+     globalToGhostTpetraVector(*t_in.get_dxdt(),*t_out.get_dxdt());
 
-   if ( !is_null(e_in.f) && !is_null(e_out.f) && ((mem & LOC::F)==LOC::F))
-      globalToGhostTpetraVector(*e_in.f,*e_out.f);
+   if ( !is_null(t_in.get_f()) && !is_null(t_out.get_f()) && ((mem & LOC::F)==LOC::F))
+      globalToGhostTpetraVector(*t_in.get_f(),*t_out.get_f());
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
@@ -130,19 +130,19 @@ ghostToGlobalContainer(const LinearObjContainer & in,
 
    typedef LinearObjContainer LOC;
 
-   const ContainerType & e_in = Teuchos::dyn_cast<const ContainerType>(in); 
-   ContainerType & e_out = Teuchos::dyn_cast<ContainerType>(out); 
+   const ContainerType & t_in = Teuchos::dyn_cast<const ContainerType>(in); 
+   ContainerType & t_out = Teuchos::dyn_cast<ContainerType>(out); 
 
   // Operations occur if the GLOBAL container has the correct targets!
   // Users set the GLOBAL continer arguments
-   if ( !is_null(e_in.x) && !is_null(e_out.x) && ((mem & LOC::X)==LOC::X))
-     ghostToGlobalTpetraVector(*e_in.x,*e_out.x);
+   if ( !is_null(t_in.get_x()) && !is_null(t_out.get_x()) && ((mem & LOC::X)==LOC::X))
+     ghostToGlobalTpetraVector(*t_in.get_x(),*t_out.get_x());
 
-   if ( !is_null(e_in.f) && !is_null(e_out.f) && ((mem & LOC::F)==LOC::F))
-     ghostToGlobalTpetraVector(*e_in.f,*e_out.f);
+   if ( !is_null(t_in.get_f()) && !is_null(t_out.get_f()) && ((mem & LOC::F)==LOC::F))
+     ghostToGlobalTpetraVector(*t_in.get_f(),*t_out.get_f());
 
-   if ( !is_null(e_in.A) && !is_null(e_out.A) && ((mem & LOC::Mat)==LOC::Mat))
-     ghostToGlobalTpetraMatrix(*e_in.A,*e_out.A);
+   if ( !is_null(t_in.get_A()) && !is_null(t_out.get_A()) && ((mem & LOC::Mat)==LOC::Mat))
+     ghostToGlobalTpetraMatrix(*t_in.get_A(),*t_out.get_A());
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
@@ -194,26 +194,27 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                              const LinearObjContainer & globalBCRows,
                              LinearObjContainer & ghostedObjs) const
 {
+   typedef Teuchos::ArrayRCP<const double>::Ordinal Ordinal;
+
    const ContainerType & t_localBCRows = Teuchos::dyn_cast<const ContainerType>(localBCRows); 
    const ContainerType & t_globalBCRows = Teuchos::dyn_cast<const ContainerType>(globalBCRows); 
    ContainerType & t_ghosted = Teuchos::dyn_cast<ContainerType>(ghostedObjs); 
 
-   TEUCHOS_ASSERT(!Teuchos::is_null(t_localBCRows.x));
-   TEUCHOS_ASSERT(!Teuchos::is_null(t_globalBCRows.x));
+   TEUCHOS_ASSERT(!Teuchos::is_null(t_localBCRows.get_x()));
+   TEUCHOS_ASSERT(!Teuchos::is_null(t_globalBCRows.get_x()));
    
    // pull out jacobian and vector
-   Teuchos::RCP<CrsMatrixType> A = t_ghosted.A;
-   Teuchos::RCP<VectorType> f = t_ghosted.f;
+   Teuchos::RCP<CrsMatrixType> A = t_ghosted.get_A();
+   Teuchos::RCP<VectorType> f = t_ghosted.get_f();
    Teuchos::ArrayRCP<double> f_array = f->get1dViewNonConst();
 
-   const VectorType & local_bcs  = *(t_localBCRows.x);
-   const VectorType & global_bcs = *(t_globalBCRows.x);
+   const VectorType & local_bcs  = *(t_localBCRows.get_x());
+   const VectorType & global_bcs = *(t_globalBCRows.get_x());
    Teuchos::ArrayRCP<const double> local_bcs_array = local_bcs.get1dView();
    Teuchos::ArrayRCP<const double> global_bcs_array = global_bcs.get1dView();
 
-
    TEUCHOS_ASSERT(local_bcs_array.size()==global_bcs_array.size());
-   for(std::size_t i=0;i<local_bcs_array.size();i++) {
+   for(Ordinal i=0;i<local_bcs_array.size();i++) {
       if(global_bcs_array[i]==0.0)
          continue;
 
@@ -279,16 +280,16 @@ initializeContainer(int mem,TpetraLinearObjContainer<ScalarT,LocalOrdinalT,Globa
    loc.clear();
 
    if((mem & LOC::X) == LOC::X)
-      loc.x = getTpetraVector();
+      loc.set_x(getTpetraVector());
 
    if((mem & LOC::DxDt) == LOC::DxDt)
-      loc.dxdt = getTpetraVector();
+      loc.set_dxdt(getTpetraVector());
     
    if((mem & LOC::F) == LOC::F)
-      loc.f = getTpetraVector();
+      loc.set_f(getTpetraVector());
 
    if((mem & LOC::Mat) == LOC::Mat)
-      loc.A = getTpetraMatrix();
+      loc.set_A(getTpetraMatrix());
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
@@ -310,16 +311,16 @@ initializeGhostedContainer(int mem,TpetraLinearObjContainer<ScalarT,LocalOrdinal
    loc.clear();
 
    if((mem & LOC::X) == LOC::X)
-      loc.x = getGhostedTpetraVector();
+      loc.set_x(getGhostedTpetraVector());
 
    if((mem & LOC::DxDt) == LOC::DxDt)
-      loc.dxdt = getGhostedTpetraVector();
+      loc.set_dxdt(getGhostedTpetraVector());
     
    if((mem & LOC::F) == LOC::F)
-      loc.f = getGhostedTpetraVector();
+      loc.set_f(getGhostedTpetraVector());
 
    if((mem & LOC::Mat) == LOC::Mat)
-      loc.A = getGhostedTpetraMatrix();
+      loc.set_A(getGhostedTpetraMatrix());
 }
 
 // "Get" functions

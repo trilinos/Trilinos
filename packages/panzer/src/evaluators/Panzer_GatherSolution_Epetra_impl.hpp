@@ -128,9 +128,9 @@ evaluateFields(typename Traits::EvalData workset)
          = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(workset.ghostedLinContainer);
    Teuchos::RCP<Epetra_Vector> x;
    if (useTimeDerivativeSolutionVector_)
-     x = epetraContainer->dxdt;
+     x = epetraContainer->get_dxdt();
    else
-     x = epetraContainer->x; 
+     x = epetraContainer->get_x(); 
  
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -237,11 +237,11 @@ evaluateFields(typename Traits::EvalData workset)
    Teuchos::RCP<Epetra_Vector> x;
    double seed_value = 0.0;
    if (useTimeDerivativeSolutionVector_) {
-     x = epetraContainer->dxdt;
+     x = epetraContainer->get_dxdt();
      seed_value = workset.alpha;
    }
    else {
-     x = epetraContainer->x;
+     x = epetraContainer->get_x();
      seed_value = workset.beta;
    }
 

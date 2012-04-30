@@ -133,9 +133,9 @@ evaluateFields(typename Traits::EvalData workset)
 
    Teuchos::RCP<Epetra_Vector> x_template; // this will be used to map from GIDs --> LIDs
    if (useTimeDerivativeSolutionVector_)
-     x_template = (*sgEpetraContainer->begin())->dxdt;
+     x_template = (*sgEpetraContainer->begin())->get_dxdt();
    else
-     x_template = (*sgEpetraContainer->begin())->x; 
+     x_template = (*sgEpetraContainer->begin())->get_x(); 
  
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -174,9 +174,9 @@ evaluateFields(typename Traits::EvalData workset)
                // extract solution and time derivative vectors
                Teuchos::RCP<Epetra_Vector> x;
                if (useTimeDerivativeSolutionVector_)
-                 x = (*itr)->dxdt;
+                 x = (*itr)->get_dxdt();
                else
-                 x = (*itr)->x; 
+                 x = (*itr)->get_x(); 
 
                field.fastAccessCoeff(stochIndex) = (*x)[lid];
             }
@@ -261,11 +261,11 @@ evaluateFields(typename Traits::EvalData workset)
    Teuchos::RCP<Epetra_Vector> x_template;
    double seed_value = 0.0;
    if (useTimeDerivativeSolutionVector_) {
-     x_template = (*sgEpetraContainer->begin())->dxdt;
+     x_template = (*sgEpetraContainer->begin())->get_dxdt();
      seed_value = workset.alpha;
    }
    else {
-     x_template = (*sgEpetraContainer->begin())->x; 
+     x_template = (*sgEpetraContainer->begin())->get_x(); 
      seed_value = workset.beta;
    }
 
@@ -312,9 +312,9 @@ evaluateFields(typename Traits::EvalData workset)
                // extract solution and time derivative vectors
                Teuchos::RCP<Epetra_Vector> x;
                if (useTimeDerivativeSolutionVector_)
-                 x = (*itr)->dxdt;
+                 x = (*itr)->get_dxdt();
                else
-                 x = (*itr)->x; 
+                 x = (*itr)->get_x(); 
 
                field.val().fastAccessCoeff(stochIndex) = (*x)[lid];
             }

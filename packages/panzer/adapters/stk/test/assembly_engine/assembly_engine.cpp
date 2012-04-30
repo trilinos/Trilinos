@@ -226,8 +226,8 @@ namespace panzer {
     //input.f->Print(std::cout);
     //input.j->Print(std::cout);
 
-    eLinearOp = Thyra::epetraLinearOp(eGlobal->A);
-    eVector = Thyra::create_Vector(eGlobal->f,eLinearOp->range());
+    eLinearOp = Thyra::epetraLinearOp(eGlobal->get_A());
+    eVector = Thyra::create_Vector(eGlobal->get_f(),eLinearOp->range());
   }
 
   TEUCHOS_UNIT_TEST(assembly_engine, basic_tpetra)
@@ -352,14 +352,14 @@ namespace panzer {
     RCP<panzer::TpetraLinearObjContainer<double,int,int> > globalCont 
        = Teuchos::rcp_dynamic_cast<panzer::TpetraLinearObjContainer<double,int,int> >(tGlobal);
 
-    globalCont->A->fillComplete();
-    Teuchos::RCP<const Tpetra::Operator<double,int,int> > baseOp = globalCont->A;
+    globalCont->get_A()->fillComplete();
+    Teuchos::RCP<const Tpetra::Operator<double,int,int> > baseOp = globalCont->get_A();
     Teuchos::RCP<const Thyra::VectorSpaceBase<double> > rangeSpace = Thyra::createVectorSpace<double>(baseOp->getRangeMap());
     Teuchos::RCP<const Thyra::VectorSpaceBase<double> > domainSpace = Thyra::createVectorSpace<double>(baseOp->getDomainMap());
 
     tLinearOp = Thyra::constTpetraLinearOp<double,int,int>(rangeSpace, domainSpace, baseOp);
     tVector = Thyra::constTpetraVector<double,int,int>(Thyra::tpetraVectorSpace<double,int,int>(baseOp->getRangeMap()).getConst(),
-                                                       globalCont->f.getConst());
+                                                       globalCont->get_f().getConst());
   }
 
   TEUCHOS_UNIT_TEST(assembly_engine, z_basic_epetra_vtpetra)

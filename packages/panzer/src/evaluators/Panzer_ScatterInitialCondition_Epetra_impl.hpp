@@ -130,7 +130,7 @@ evaluateFields(typename Traits::EvalData workset)
 
    Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
          = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(workset.linContainer);
-   Teuchos::RCP<Epetra_Vector> x = epetraContainer->x; 
+   Teuchos::RCP<Epetra_Vector> x = epetraContainer->get_x(); 
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the

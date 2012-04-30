@@ -71,21 +71,34 @@ public:
 
    virtual void initialize() 
    {
-      if(x!=Teuchos::null) x->putScalar(0.0);
-      if(dxdt!=Teuchos::null) dxdt->putScalar(0.0);
-      if(f!=Teuchos::null) f->putScalar(0.0);
-      if(A!=Teuchos::null) A->setAllToScalar(0.0);
+      if(get_x()!=Teuchos::null) get_x()->putScalar(0.0);
+      if(get_dxdt()!=Teuchos::null) get_dxdt()->putScalar(0.0);
+      if(get_f()!=Teuchos::null) get_f()->putScalar(0.0);
+      if(get_A()!=Teuchos::null) get_A()->setAllToScalar(0.0);
    }
 
    //! Wipe out stored data.
    void clear()
    {
-      x = Teuchos::null;
-      dxdt = Teuchos::null;
-      f = Teuchos::null;
-      A = Teuchos::null;
+      set_x(Teuchos::null);
+      set_dxdt(Teuchos::null);
+      set_f(Teuchos::null);
+      set_A(Teuchos::null);
    }
-   
+
+   inline void set_x(const Teuchos::RCP<VectorType> & in) { x = in; } 
+   inline const Teuchos::RCP<VectorType> get_x() const { return x; }
+
+   inline void set_dxdt(const Teuchos::RCP<VectorType> & in) { dxdt = in; } 
+   inline const Teuchos::RCP<VectorType> get_dxdt() const { return dxdt; }
+
+   inline void set_f(const Teuchos::RCP<VectorType> & in) { f = in; } 
+   inline const Teuchos::RCP<VectorType> get_f() const { return f; }
+
+   inline void set_A(const Teuchos::RCP<CrsMatrixType> & in) { A = in; } 
+   inline const Teuchos::RCP<CrsMatrixType> get_A() const { return A; }
+    
+private:
    Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > x, dxdt, f;
    Teuchos::RCP<Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > A;
 };

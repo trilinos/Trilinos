@@ -208,6 +208,10 @@ protected:
    mutable Teuchos::RCP<Epetra_CrsGraph> graph_;
    mutable Teuchos::RCP<Epetra_CrsGraph> ghostedGraph_;
 
+   // import/exporter storage
+   mutable Teuchos::RCP<Epetra_Import> importer_;
+   mutable Teuchos::RCP<Epetra_Export> exporter_;
+
    Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > gidProvider_;
 };
 

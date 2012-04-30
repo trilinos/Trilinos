@@ -126,7 +126,7 @@ evaluateFields(typename Traits::EvalData workset)
 
    Teuchos::RCP<SGEpetraLinearObjContainer> sgEpetraContainer 
          = Teuchos::rcp_dynamic_cast<SGEpetraLinearObjContainer>(workset.ghostedLinContainer);
-   Teuchos::RCP<Epetra_Vector> r_template = (*sgEpetraContainer->begin())->f;
+   Teuchos::RCP<Epetra_Vector> r_template = (*sgEpetraContainer->begin())->get_f();
    const Epetra_BlockMap & map = r_template->Map();
 
    // NOTE: A reordering of these loops will likely improve performance
@@ -161,7 +161,7 @@ evaluateFields(typename Traits::EvalData workset)
             int stochIndex = 0;
             panzer::SGEpetraLinearObjContainer::iterator itr; 
             for(itr=sgEpetraContainer->begin();itr!=sgEpetraContainer->end();++itr,++stochIndex)
-               (*(*itr)->f)[lid] += field.coeff(stochIndex);
+               (*(*itr)->get_f())[lid] += field.coeff(stochIndex);
          }
       }
    }
@@ -241,7 +241,7 @@ evaluateFields(typename Traits::EvalData workset)
 
    Teuchos::RCP<SGEpetraLinearObjContainer> sgEpetraContainer 
          = Teuchos::rcp_dynamic_cast<SGEpetraLinearObjContainer>(workset.ghostedLinContainer);
-   Teuchos::RCP<Epetra_CrsMatrix> Jac_template = (*sgEpetraContainer->begin())->A;
+   Teuchos::RCP<Epetra_CrsMatrix> Jac_template = (*sgEpetraContainer->begin())->get_A();
    const Epetra_BlockMap & rMap = Jac_template->RowMap();
    const Epetra_BlockMap & cMap = Jac_template->ColMap();
 
@@ -279,8 +279,8 @@ evaluateFields(typename Traits::EvalData workset)
             int stochIndex = 0;
             panzer::SGEpetraLinearObjContainer::iterator itr; 
             for(itr=sgEpetraContainer->begin();itr!=sgEpetraContainer->end();++itr,++stochIndex) {
-               Teuchos::RCP<Epetra_Vector> r = (*itr)->f;
-               Teuchos::RCP<Epetra_CrsMatrix> Jac = (*itr)->A;
+               Teuchos::RCP<Epetra_Vector> r = (*itr)->get_f();
+               Teuchos::RCP<Epetra_CrsMatrix> Jac = (*itr)->get_A();
 
                // Sum residual
                if(r!=Teuchos::null) {

@@ -49,8 +49,11 @@
 #include "Panzer_GatherOrientation_decl.hpp"
 #include "Panzer_GatherOrientation_impl.hpp"
 
+typedef std::pair<int,int> IntPair;
+
 PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherOrientation,int,int)
 PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherOrientation,short,int)
 PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherOrientation,char,int)
+PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherOrientation,int,IntPair)
 
 #endif

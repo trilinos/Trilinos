@@ -91,10 +91,6 @@ template <typename Traits,typename LocalOrdinalT>
 Teuchos::RCP<LinearObjContainer> EpetraLinearObjFactory<Traits,LocalOrdinalT>::buildLinearObjContainer() const
 {
    Teuchos::RCP<EpetraLinearObjContainer> container = Teuchos::rcp(new EpetraLinearObjContainer);
-   // container->x    = getEpetraVector();
-   // container->dxdt = getEpetraVector();
-   // container->f    = getEpetraVector();
-   // container->A    = getEpetraMatrix();
 
    return container;
 }
@@ -103,10 +99,6 @@ template <typename Traits,typename LocalOrdinalT>
 Teuchos::RCP<LinearObjContainer> EpetraLinearObjFactory<Traits,LocalOrdinalT>::buildGhostedLinearObjContainer() const
 {
    Teuchos::RCP<EpetraLinearObjContainer> container = Teuchos::rcp(new EpetraLinearObjContainer);
-   // container->x    = getGhostedEpetraVector();
-   // container->dxdt = getGhostedEpetraVector();
-   // container->f    = getGhostedEpetraVector();
-   // container->A    = getGhostedEpetraMatrix();
 
    return container;
 }
@@ -117,20 +109,20 @@ void EpetraLinearObjFactory<Traits,LocalOrdinalT>::globalToGhostContainer(const 
 {
    using Teuchos::is_null;
 
-   typedef EpetraLinearObjContainer ELOC;
+   typedef LinearObjContainer LOC;
    const EpetraLinearObjContainer & e_in = Teuchos::dyn_cast<const EpetraLinearObjContainer>(in); 
    EpetraLinearObjContainer & e_out = Teuchos::dyn_cast<EpetraLinearObjContainer>(out); 
   
    // Operations occur if the GLOBAL container has the correct targets!
    // Users set the GLOBAL continer arguments
-   if ( !is_null(e_in.x) && !is_null(e_out.x) && ((mem & ELOC::X)==ELOC::X))
-     globalToGhostEpetraVector(*e_in.x,*e_out.x);
+   if ( !is_null(e_in.get_x()) && !is_null(e_out.get_x()) && ((mem & LOC::X)==LOC::X))
+     globalToGhostEpetraVector(*e_in.get_x(),*e_out.get_x());
   
-   if ( !is_null(e_in.dxdt) && !is_null(e_out.dxdt) && ((mem & ELOC::DxDt)==ELOC::DxDt))
-     globalToGhostEpetraVector(*e_in.dxdt,*e_out.dxdt);
+   if ( !is_null(e_in.get_dxdt()) && !is_null(e_out.get_dxdt()) && ((mem & LOC::DxDt)==LOC::DxDt))
+     globalToGhostEpetraVector(*e_in.get_dxdt(),*e_out.get_dxdt());
 
-   if ( !is_null(e_in.f) && !is_null(e_out.f) && ((mem & ELOC::F)==ELOC::F))
-      globalToGhostEpetraVector(*e_in.f,*e_out.f);
+   if ( !is_null(e_in.get_f()) && !is_null(e_out.get_f()) && ((mem & LOC::F)==LOC::F))
+      globalToGhostEpetraVector(*e_in.get_f(),*e_out.get_f());
 }
 
 template <typename Traits,typename LocalOrdinalT>
@@ -139,20 +131,20 @@ void EpetraLinearObjFactory<Traits,LocalOrdinalT>::ghostToGlobalContainer(const 
 {
    using Teuchos::is_null;
 
-   typedef EpetraLinearObjContainer ELOC;
+   typedef LinearObjContainer LOC;
    const EpetraLinearObjContainer & e_in = Teuchos::dyn_cast<const EpetraLinearObjContainer>(in); 
    EpetraLinearObjContainer & e_out = Teuchos::dyn_cast<EpetraLinearObjContainer>(out); 
 
   // Operations occur if the GLOBAL container has the correct targets!
   // Users set the GLOBAL continer arguments
-   if ( !is_null(e_in.x) && !is_null(e_out.x) && ((mem & ELOC::X)==ELOC::X))
-     ghostToGlobalEpetraVector(*e_in.x,*e_out.x);
+   if ( !is_null(e_in.get_x()) && !is_null(e_out.get_x()) && ((mem & LOC::X)==LOC::X))
+     ghostToGlobalEpetraVector(*e_in.get_x(),*e_out.get_x());
 
-   if ( !is_null(e_in.f) && !is_null(e_out.f) && ((mem & ELOC::F)==ELOC::F))
-     ghostToGlobalEpetraVector(*e_in.f,*e_out.f);
+   if ( !is_null(e_in.get_f()) && !is_null(e_out.get_f()) && ((mem & LOC::F)==LOC::F))
+     ghostToGlobalEpetraVector(*e_in.get_f(),*e_out.get_f());
 
-   if ( !is_null(e_in.A) && !is_null(e_out.A) && ((mem & ELOC::Mat)==ELOC::Mat))
-     ghostToGlobalEpetraMatrix(*e_in.A,*e_out.A);
+   if ( !is_null(e_in.get_A()) && !is_null(e_out.get_A()) && ((mem & LOC::Mat)==LOC::Mat))
+     ghostToGlobalEpetraMatrix(*e_in.get_A(),*e_out.get_A());
 }
 
 template <typename Traits,typename LocalOrdinalT>
@@ -198,15 +190,15 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
    const EpetraLinearObjContainer & e_globalBCRows = Teuchos::dyn_cast<const EpetraLinearObjContainer>(globalBCRows); 
    EpetraLinearObjContainer & e_ghosted = Teuchos::dyn_cast<EpetraLinearObjContainer>(ghostedObjs); 
 
-   TEUCHOS_ASSERT(!Teuchos::is_null(e_localBCRows.x));
-   TEUCHOS_ASSERT(!Teuchos::is_null(e_globalBCRows.x));
+   TEUCHOS_ASSERT(!Teuchos::is_null(e_localBCRows.get_x()));
+   TEUCHOS_ASSERT(!Teuchos::is_null(e_globalBCRows.get_x()));
    
    // pull out jacobian and vector
-   Teuchos::RCP<Epetra_CrsMatrix> A = e_ghosted.A;
-   Teuchos::RCP<Epetra_Vector> f = e_ghosted.f;
+   Teuchos::RCP<Epetra_CrsMatrix> A = e_ghosted.get_A();
+   Teuchos::RCP<Epetra_Vector> f = e_ghosted.get_f();
 
-   const Epetra_Vector & local_bcs  = *(e_localBCRows.x);
-   const Epetra_Vector & global_bcs = *(e_globalBCRows.x);
+   const Epetra_Vector & local_bcs  = *(e_localBCRows.get_x());
+   const Epetra_Vector & global_bcs = *(e_globalBCRows.get_x());
 
    TEUCHOS_ASSERT(local_bcs.MyLength()==global_bcs.MyLength());
    for(int i=0;i<local_bcs.MyLength();i++) {
@@ -264,21 +256,16 @@ void EpetraLinearObjFactory<Traits,LocalOrdinalT>::initializeContainer(int mem,E
    loc.clear();
 
    if((mem & ELOC::X) == ELOC::X)
-      loc.x = getEpetraVector();
+      loc.set_x(getEpetraVector());
 
    if((mem & ELOC::DxDt) == ELOC::DxDt)
-      loc.dxdt = getEpetraVector();
+      loc.set_dxdt(getEpetraVector());
     
    if((mem & ELOC::F) == ELOC::F)
-      loc.f = getEpetraVector();
+      loc.set_f(getEpetraVector());
 
    if((mem & ELOC::Mat) == ELOC::Mat)
-      loc.A = getEpetraMatrix();
-
-   // container->x    = getGhostedEpetraVector();
-   // container->dxdt = getGhostedEpetraVector();
-   // container->f    = getGhostedEpetraVector();
-   // container->A    = getGhostedEpetraMatrix();
+      loc.set_A(getEpetraMatrix());
 }
 
 template <typename Traits,typename LocalOrdinalT>
@@ -296,16 +283,16 @@ void EpetraLinearObjFactory<Traits,LocalOrdinalT>::initializeGhostedContainer(in
    loc.clear();
 
    if((mem & ELOC::X) == ELOC::X)
-      loc.x = getGhostedEpetraVector();
+      loc.set_x(getGhostedEpetraVector());
 
    if((mem & ELOC::DxDt) == ELOC::DxDt)
-      loc.dxdt = getGhostedEpetraVector();
+      loc.set_dxdt(getGhostedEpetraVector());
     
    if((mem & ELOC::F) == ELOC::F)
-      loc.f = getGhostedEpetraVector();
+      loc.set_f(getGhostedEpetraVector());
 
    if((mem & ELOC::Mat) == ELOC::Mat)
-      loc.A = getGhostedEpetraMatrix();
+      loc.set_A(getGhostedEpetraMatrix());
 }
 
 // "Get" functions
@@ -348,13 +335,19 @@ const Teuchos::RCP<Epetra_CrsGraph> EpetraLinearObjFactory<Traits,LocalOrdinalT>
 template <typename Traits,typename LocalOrdinalT>
 const Teuchos::RCP<Epetra_Import> EpetraLinearObjFactory<Traits,LocalOrdinalT>::getGhostedImport() const
 {
-   return Teuchos::rcp(new Epetra_Import(*getGhostedMap(),*getMap()));
+   if(importer_==Teuchos::null)
+      importer_ = Teuchos::rcp(new Epetra_Import(*getGhostedMap(),*getMap()));
+
+   return importer_;
 }
 
 template <typename Traits,typename LocalOrdinalT>
 const Teuchos::RCP<Epetra_Export> EpetraLinearObjFactory<Traits,LocalOrdinalT>::getGhostedExport() const
 {
-   return Teuchos::rcp(new Epetra_Export(*getGhostedMap(),*getMap()));
+   if(exporter_==Teuchos::null)
+      exporter_ = Teuchos::rcp(new Epetra_Export(*getGhostedMap(),*getMap()));
+
+   return exporter_;
 }
 
 // "Build" functions

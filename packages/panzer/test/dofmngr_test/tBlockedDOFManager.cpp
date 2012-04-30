@@ -415,8 +415,9 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
    dofManager.buildGlobalUnknowns();
 
    // check from element block 0
+   std::vector<std::pair<int,int> > gids;
    if(myRank==0) {
-      std::vector<std::pair<int,int> > gids;
+      // std::vector<std::pair<int,int> > gids;
       dofManager.getElementGIDs(1,gids);
 
       TEST_EQUALITY(gids.size(),16);
@@ -425,7 +426,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
       for(std::size_t i=12;i<16;i++) TEST_EQUALITY(gids[i].first,2);
    }
    else if(myRank==1) {
-      std::vector<std::pair<int,int> > gids;
+      // std::vector<std::pair<int,int> > gids;
       dofManager.getElementGIDs(1,gids);
 
       TEST_EQUALITY(gids.size(),16);
@@ -436,7 +437,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
 
    // check from element block 1 
    if(myRank==0) {
-      std::vector<std::pair<int,int> > gids;
+      // std::vector<std::pair<int,int> > gids;
       dofManager.getElementGIDs(4,gids);
 
       TEST_EQUALITY(gids.size(),4);
@@ -444,7 +445,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
          TEST_EQUALITY(gids[i+0].first,2);
    }
    else if(myRank==1) {
-      std::vector<std::pair<int,int> > gids;
+      // std::vector<std::pair<int,int> > gids;
       dofManager.getElementGIDs(3,gids);
 
       TEST_EQUALITY(gids.size(),4);
@@ -454,7 +455,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
 
    // check from element block 2 
    if(myRank==0) {
-      std::vector<std::pair<int,int> > gids;
+      // std::vector<std::pair<int,int> > gids;
       dofManager.getElementGIDs(3,gids);
 
       TEST_EQUALITY(gids.size(),8);

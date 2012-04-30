@@ -216,7 +216,7 @@ namespace panzer {
                                         panzer::EpetraLinearObjContainer::Mat,*eGlobal);
     panzer::AssemblyEngineInArgs input(eGhosted,eGlobal);
 
-    RCP<Epetra_Vector> x = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(input.container_)->x;
+    RCP<Epetra_Vector> x = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(input.container_)->get_x();
 
     x->PutScalar(1.0);
     input.beta = 1.0;
@@ -230,7 +230,7 @@ namespace panzer {
     // one element with same dirichlet bc on each side, so all nodes
     // have same dirichlet bc applied to it.
 
-    RCP<Epetra_Vector> f = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(input.container_)->f;
+    RCP<Epetra_Vector> f = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(input.container_)->get_f();
     double tol = 10.0*std::numeric_limits<double>::epsilon();
     for (int i=0; i < f->MyLength(); ++i) {
       TEST_FLOATING_EQUALITY((*f)[i], -4.0, tol );
@@ -238,7 +238,7 @@ namespace panzer {
 
     // Check Jacobian values.  Should have one on diagonal and zero
     // elsewhere.
-    RCP<Epetra_CrsMatrix> jac = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(input.container_)->A;
+    RCP<Epetra_CrsMatrix> jac = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(input.container_)->get_A();
     for (int i=0; i < jac->NumMyRows(); ++i) {
       int num_indices = -1;
       double* values = NULL;

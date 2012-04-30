@@ -407,6 +407,11 @@ int main(int argc,char * argv[])
    // all done!
    /////////////////////////////////////////////////////////////
 
+   if(useTpetra)
+      std::cout << "ALL PASSED: Tpetra" << endl;
+   else
+      std::cout << "ALL PASSED: Epetra" << endl;
+
    return 0;
 }
 
@@ -417,14 +422,14 @@ void solveEpetraSystem(panzer::LinearObjContainer & container)
          = Teuchos::dyn_cast<panzer::EpetraLinearObjContainer>(container);
 
    // Setup the linear solve: notice A is used directly 
-   Epetra_LinearProblem problem(&*ep_container.A,&*ep_container.x,&*ep_container.f); 
+   Epetra_LinearProblem problem(&*ep_container.get_A(),&*ep_container.get_x(),&*ep_container.get_f()); 
 
    // build the solver
    AztecOO solver(problem);
    solver.SetAztecOption(AZ_solver,AZ_gmres); // we don't push out dirichlet conditions
    solver.SetAztecOption(AZ_precond,AZ_none);
    solver.SetAztecOption(AZ_kspace,1000);
-   solver.SetAztecOption(AZ_output,10);
+   solver.SetAztecOption(AZ_output,1);
    solver.SetAztecOption(AZ_precond,AZ_Jacobi);
 
    // solve the linear system
@@ -435,15 +440,7 @@ void solveEpetraSystem(panzer::LinearObjContainer & container)
    //     J*e = -r = -(f - J*0) where f = J*u
    // Therefore we have  J*e=-J*u which implies e = -u
    // thus we will scale the solution vector 
-   ep_container.x->Scale(-1.0);
-
-   // write out linear system
-   if(false) {
-      EpetraExt::RowMatrixToMatrixMarketFile("a_op.mm",*ep_container.A);
-      EpetraExt::VectorToMatrixMarketFile("x_vec.mm",*ep_container.x);
-      EpetraExt::VectorToMatrixMarketFile("b_vec.mm",*ep_container.f);
-   }
-
+   ep_container.get_x()->Scale(-1.0);
 }
 
 void solveTpetraSystem(panzer::LinearObjContainer & container)
@@ -451,7 +448,7 @@ void solveTpetraSystem(panzer::LinearObjContainer & container)
   typedef panzer::TpetraLinearObjContainer<double,int,int> LOC;
 
   LOC & tp_container = Teuchos::dyn_cast<LOC>(container);
-  tp_container.A->fillComplete(); // where does this go?
+  tp_container.get_A()->fillComplete(); // where does this go?
 
   // do stuff
   // Wrap the linear problem to solve in a Belos::LinearProblem
@@ -462,7 +459,7 @@ void solveTpetraSystem(panzer::LinearObjContainer & container)
   typedef Tpetra::MultiVector<double,int,int> MV;
   typedef Tpetra::Operator<double,int,int> OP;
   typedef Belos::LinearProblem<double,MV, OP> ProblemType;
-  Teuchos::RCP<ProblemType> problem(new ProblemType(tp_container.A, tp_container.x, tp_container.f));
+  Teuchos::RCP<ProblemType> problem(new ProblemType(tp_container.get_A(), tp_container.get_x(), tp_container.get_f()));
   TEUCHOS_ASSERT(problem->setProblem());
 
   typedef Belos::BlockGmresSolMgr<double,MV,OP> SolverType;
@@ -488,7 +485,7 @@ void solveTpetraSystem(panzer::LinearObjContainer & container)
   }
 
   // scale by -1
-  tp_container.x->scale(-1.0);
+  tp_container.get_x()->scale(-1.0);
 }
 
 void testInitialization(panzer::InputPhysicsBlock& ipb,

@@ -201,7 +201,7 @@ private:
 // **************************************************************
 
 #ifdef HAVE_STOKHOS
-// #include "Panzer_ScatterDirichletResidual_TpetraSG.hpp"
+#include "Panzer_ScatterDirichletResidual_TpetraSG.hpp"
 #endif
 
 // **************************************************************

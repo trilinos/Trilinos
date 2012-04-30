@@ -314,12 +314,12 @@ int main(int argc,char * argv[])
    // notice that this should be called by the assembly driver!
    // linObjFactory->ghostToGlobalContainer(*ghostCont,*container);
 
-   Teuchos::RCP<const Thyra::LinearOpBase<double> > th_A = Thyra::epetraLinearOp(container->A);
+   Teuchos::RCP<const Thyra::LinearOpBase<double> > th_A = Thyra::epetraLinearOp(container->get_A());
    Teuchos::RCP<const Thyra::VectorSpaceBase<double> > range  = th_A->range();
    Teuchos::RCP<const Thyra::VectorSpaceBase<double> > domain = th_A->domain();
 
-   Teuchos::RCP<Thyra::VectorBase<double> > th_x = Thyra::create_Vector(container->x,domain);
-   Teuchos::RCP<Thyra::VectorBase<double> > th_f = Thyra::create_Vector(container->f,range);
+   Teuchos::RCP<Thyra::VectorBase<double> > th_x = Thyra::create_Vector(container->get_x(),domain);
+   Teuchos::RCP<Thyra::VectorBase<double> > th_f = Thyra::create_Vector(container->get_f(),range);
 
    // solve with amesos
    Stratimikos::DefaultLinearSolverBuilder solverBuilder;
@@ -331,9 +331,9 @@ int main(int argc,char * argv[])
    Thyra::solve<double>(*lows, Thyra::NOTRANS, *th_f, th_x.ptr());
 
    if(false) {
-      EpetraExt::RowMatrixToMatrixMarketFile("a_op.mm",*container->A);
-      EpetraExt::VectorToMatrixMarketFile("x_vec.mm",*container->x);
-      EpetraExt::VectorToMatrixMarketFile("b_vec.mm",*container->f);
+      EpetraExt::RowMatrixToMatrixMarketFile("a_op.mm",*container->get_A());
+      EpetraExt::VectorToMatrixMarketFile("x_vec.mm",*container->get_x());
+      EpetraExt::VectorToMatrixMarketFile("b_vec.mm",*container->get_f());
    }
 
    out << "WRITE" << std::endl;
@@ -341,7 +341,7 @@ int main(int argc,char * argv[])
    // redistribute solution vector
    linObjFactory->globalToGhostContainer(*container,*ghostCont,panzer::EpetraLinearObjContainer::X | panzer::EpetraLinearObjContainer::DxDt); 
 
-   panzer_stk::write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,*ghostCont->x);
+   panzer_stk::write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,*ghostCont->get_x());
    mesh->writeToExodus("output.exo");
 
    return 0;

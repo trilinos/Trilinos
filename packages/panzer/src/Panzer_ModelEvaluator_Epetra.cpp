@@ -405,21 +405,21 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
   // introduction of the container is forcing us to cast away const on
   // arguments that should be const.  Another reason to redesign
   // LinearObjContainer layers.
-  epGlobalContainer->x = Teuchos::rcp_const_cast<Epetra_Vector>(x);
+  epGlobalContainer->set_x(Teuchos::rcp_const_cast<Epetra_Vector>(x));
   if (is_transient)
-    epGlobalContainer->dxdt = Teuchos::rcp_const_cast<Epetra_Vector>(x_dot);
+    epGlobalContainer->set_dxdt(Teuchos::rcp_const_cast<Epetra_Vector>(x_dot));
   
   if (!Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) {
 
     PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModel(f and J)");
 
     // Set the targets
-    epGlobalContainer->f = f_out;
-    epGlobalContainer->A = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_out);
+    epGlobalContainer->set_f(f_out);
+    epGlobalContainer->set_A(Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_out));
 
     // Zero values in ghosted container objects
-    epGhostedContainer->f->PutScalar(0.0);
-    epGhostedContainer->A->PutScalar(0.0);
+    epGhostedContainer->get_f()->PutScalar(0.0);
+    epGhostedContainer->get_A()->PutScalar(0.0);
 
     ae_tm_.getAsObject<panzer::Traits::Jacobian>()->evaluate(ae_inargs);
   }
@@ -427,14 +427,14 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
 
     PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModel(f)");
 
-    epGlobalContainer->f = f_out;
+    epGlobalContainer->set_f(f_out);
 
     // Zero values in ghosted container objects
-    epGhostedContainer->f->PutScalar(0.0);
+    epGhostedContainer->get_f()->PutScalar(0.0);
 
     ae_tm_.getAsObject<panzer::Traits::Residual>()->evaluate(ae_inargs);
 
-    f_out->Update(1.0, *(epGlobalContainer->f), 0.0);
+    f_out->Update(1.0, *(epGlobalContainer->get_f()), 0.0);
   }
   else if(Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) {
 
@@ -443,11 +443,11 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
     // this dummy nonsense is needed only for scattering dirichlet conditions
     if (Teuchos::is_null(dummy_f_))
       dummy_f_ = Teuchos::rcp(new Epetra_Vector(*(this->get_f_map())));
-    epGlobalContainer->f = dummy_f_; 
-    epGlobalContainer->A = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_out);
+    epGlobalContainer->set_f(dummy_f_); 
+    epGlobalContainer->set_A(Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_out));
 
     // Zero values in ghosted container objects
-    epGhostedContainer->A->PutScalar(0.0);
+    epGhostedContainer->get_A()->PutScalar(0.0);
 
     ae_tm_.getAsObject<panzer::Traits::Jacobian>()->evaluate(ae_inargs);
   }
@@ -460,10 +460,10 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
   // f comes in and the resulting dtor is called.  Need to discuss
   // with Ross.  Clearing all references here works!
 
-  epGlobalContainer->x = Teuchos::null;
-  epGlobalContainer->dxdt = Teuchos::null;
-  epGlobalContainer->f = Teuchos::null;
-  epGlobalContainer->A = Teuchos::null;
+  epGlobalContainer->set_x(Teuchos::null);
+  epGlobalContainer->set_dxdt(Teuchos::null);
+  epGlobalContainer->set_f(Teuchos::null);
+  epGlobalContainer->set_A(Teuchos::null);
 
   // forget previous containers
   ae_inargs.container_ = Teuchos::null;
@@ -593,31 +593,31 @@ evalModel_sg(const InArgs & inArgs,const OutArgs & outArgs) const
         RCP<EpetraLinearObjContainer> ghostedContainer = *ghsItr;
 
         // this is what roger was warning us about!!!!
-        globalContainer->x = Teuchos::rcp_const_cast<Epetra_Vector>(x_in->getCoeffPtr(coeff_ind));
+        globalContainer->set_x(Teuchos::rcp_const_cast<Epetra_Vector>(x_in->getCoeffPtr(coeff_ind)));
 
         if(!Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) { // requires residual and jacobian
-           globalContainer->f = f_out->getCoeffPtr(coeff_ind); 
-           globalContainer->A = rcp_dynamic_cast<Epetra_CrsMatrix>(W_out->getCoeffPtr(coeff_ind)); 
+           globalContainer->set_f(f_out->getCoeffPtr(coeff_ind)); 
+           globalContainer->set_A(rcp_dynamic_cast<Epetra_CrsMatrix>(W_out->getCoeffPtr(coeff_ind))); 
  
-           ghostedContainer->f->PutScalar(0.0);
-           ghostedContainer->A->PutScalar(0.0);
+           ghostedContainer->get_f()->PutScalar(0.0);
+           ghostedContainer->get_A()->PutScalar(0.0);
         }
         else if(!Teuchos::is_null(f_out) && Teuchos::is_null(W_out)) {
-           globalContainer->f = f_out->getCoeffPtr(coeff_ind); 
+           globalContainer->set_f(f_out->getCoeffPtr(coeff_ind)); 
  
            // Zero values in ghosted container objects
-           ghostedContainer->f->PutScalar(0.0);
+           ghostedContainer->get_f()->PutScalar(0.0);
         }
         else if(Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) {
 
            // this dummy nonsense is needed only for scattering dirichlet conditions
            if(Teuchos::is_null(dummy_f_))
               dummy_f_ = Teuchos::rcp(new Epetra_Vector(*(this->get_f_map())));
-           globalContainer->f = dummy_f_; 
-           globalContainer->A = rcp_dynamic_cast<Epetra_CrsMatrix>(W_out->getCoeffPtr(coeff_ind)); 
+           globalContainer->set_f(dummy_f_); 
+           globalContainer->set_A(rcp_dynamic_cast<Epetra_CrsMatrix>(W_out->getCoeffPtr(coeff_ind))); 
 
            // Zero values in ghosted container objects
-           ghostedContainer->A->PutScalar(0.0);
+           ghostedContainer->get_A()->PutScalar(0.0);
         }
      }
   }

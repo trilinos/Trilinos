@@ -143,6 +143,8 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdina
    // Any changes to the order should be reflected in the
    // blockGIDOffset_ map.
 
+   gids.resize(0);
+
    // loop over field block manager and grab indices
    for(std::size_t fbm=0;fbm<fieldBlockManagers_.size();fbm++) {
       std::vector<GlobalOrdinalT> fieldBlockOwned;
@@ -307,7 +309,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndSharedIndices(s
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::ownedIndices(const std::vector<GlobalOrdinal> & indices,std::vector<bool> & isOwned) const
 {
-   isOwned.clear();
+   isOwned.resize(0);
 
    std::vector<std::vector<GlobalOrdinalT> > blockIndices(fieldBlockManagers_.size());
    for(std::size_t i=0;i<indices.size();i++)

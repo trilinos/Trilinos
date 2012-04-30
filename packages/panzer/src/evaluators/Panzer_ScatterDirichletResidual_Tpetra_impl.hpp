@@ -131,7 +131,7 @@ preEvaluate(typename Traits::PreEvalData d)
    Teuchos::RCP<LOC> tpetraContainer 
          = Teuchos::rcp_dynamic_cast<LOC>(d.dirichletData.ghostedCounter,true);
 
-   dirichletCounter_ = tpetraContainer->x;
+   dirichletCounter_ = tpetraContainer->get_x();
    TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
 }
 
@@ -149,7 +149,7 @@ evaluateFields(typename Traits::EvalData workset)
 
    Teuchos::RCP<LOC> tpetraContainer 
          = Teuchos::rcp_dynamic_cast<LOC>(workset.ghostedLinContainer);
-   Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer->f; 
+   Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer->get_f(); 
 
    Teuchos::ArrayRCP<double> r_array = r->get1dViewNonConst();
    Teuchos::ArrayRCP<double> dc_array = dirichletCounter_->get1dViewNonConst();
@@ -274,7 +274,7 @@ preEvaluate(typename Traits::PreEvalData d)
    Teuchos::RCP<LOC> tpetraContainer 
          = Teuchos::rcp_dynamic_cast<LOC>(d.dirichletData.ghostedCounter,true);
 
-   dirichletCounter_ = tpetraContainer->x;
+   dirichletCounter_ = tpetraContainer->get_x();
    TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
 }
 
@@ -292,8 +292,8 @@ evaluateFields(typename Traits::EvalData workset)
 
    Teuchos::RCP<LOC> tpetraContainer 
          = Teuchos::rcp_dynamic_cast<LOC>(workset.ghostedLinContainer);
-   Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer->f; 
-   Teuchos::RCP<typename LOC::CrsMatrixType> Jac = tpetraContainer->A;
+   Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer->get_f(); 
+   Teuchos::RCP<typename LOC::CrsMatrixType> Jac = tpetraContainer->get_A();
 
    Teuchos::ArrayRCP<double> r_array = r->get1dViewNonConst();
    Teuchos::ArrayRCP<double> dc_array = dirichletCounter_->get1dViewNonConst();

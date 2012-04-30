@@ -133,7 +133,7 @@ evaluateFields(typename Traits::EvalData workset)
 
    Teuchos::RCP<LOC> tpetraContainer 
          = Teuchos::rcp_dynamic_cast<LOC>(workset.ghostedLinContainer);
-   Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer->f; 
+   Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer->get_f(); 
    Teuchos::ArrayRCP<double> r_array = r->get1dViewNonConst();
 
    // NOTE: A reordering of these loops will likely improve performance
@@ -243,8 +243,8 @@ evaluateFields(typename Traits::EvalData workset)
 
    Teuchos::RCP<LOC> tpetraContainer 
          = Teuchos::rcp_dynamic_cast<LOC>(workset.ghostedLinContainer);
-   Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer->f; 
-   Teuchos::RCP<typename LOC::CrsMatrixType> Jac = tpetraContainer->A;
+   Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer->get_f(); 
+   Teuchos::RCP<typename LOC::CrsMatrixType> Jac = tpetraContainer->get_A();
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets" may be expensive.  However the

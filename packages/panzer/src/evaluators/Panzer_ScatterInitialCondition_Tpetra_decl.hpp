@@ -170,7 +170,7 @@ private:
 // **************************************************************
 
 #ifdef HAVE_STOKHOS
-// #include "Panzer_ScatterInitialCondition_TpetraSG.hpp"
+#include "Panzer_ScatterInitialCondition_TpetraSG.hpp"
 #endif
 
 // **************************************************************
