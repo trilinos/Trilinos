@@ -6,16 +6,17 @@ namespace Xpetra {
 
   EpetraVector::EpetraVector(const Teuchos::RCP<const Map<int,int> > &map, bool zeroOut) : EpetraMultiVector(map,1,zeroOut) { }
   
-  void EpetraVector::replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { getEpetra_MultiVector()->ReplaceGlobalValue(globalRow, 0, value); }
+  void EpetraVector::replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { XPETRA_MONITOR("EpetraVector::replaceGlobalValue"); getEpetra_MultiVector()->ReplaceGlobalValue(globalRow, 0, value); }
 
-  void EpetraVector::sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { getEpetra_MultiVector()->SumIntoGlobalValue(globalRow, 0, value); }
+  void EpetraVector::sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { XPETRA_MONITOR("EpetraVector::sumIntoGlobalValue");getEpetra_MultiVector()->SumIntoGlobalValue(globalRow, 0, value); }
 
-  void EpetraVector::replaceLocalValue(LocalOrdinal myRow, const Scalar &value) { getEpetra_MultiVector()->ReplaceMyValue(myRow, 0, value); }
+  void EpetraVector::replaceLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraVector::replaceLocalValue");getEpetra_MultiVector()->ReplaceMyValue(myRow, 0, value); }
 
-  void EpetraVector::sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { getEpetra_MultiVector()->SumIntoMyValue(myRow, 0, value); }
+  void EpetraVector::sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { XPETRA_MONITOR("EpetraVector::sumIntoLocalValue");getEpetra_MultiVector()->SumIntoMyValue(myRow, 0, value); }
 
   double EpetraVector::dot(const Vector<double,int,int> &a) const { 
-       
+       XPETRA_MONITOR("EpetraVector::dot");
+
       XPETRA_DYNAMIC_CAST(const EpetraVector, a, tA, "This Xpetra::EpetraVector method only accept Xpetra::EpetraVector as input arguments.");
       //      return getEpetra_Vector()->Dot(*tA.getEpetra_Vector()); 
 
@@ -25,21 +26,23 @@ namespace Xpetra {
       return r;
     }
 
-    Teuchos::ScalarTraits<double>::magnitudeType EpetraVector::norm1() const {  double r; getEpetra_MultiVector()->Norm1(&r); return r; }
+    Teuchos::ScalarTraits<double>::magnitudeType EpetraVector::norm1() const { XPETRA_MONITOR("EpetraVector::norm1"); double r; getEpetra_MultiVector()->Norm1(&r); return r; }
 
-    Teuchos::ScalarTraits<double>::magnitudeType EpetraVector::norm2() const {  double r; getEpetra_MultiVector()->Norm2(&r); return r; }
+    Teuchos::ScalarTraits<double>::magnitudeType EpetraVector::norm2() const { XPETRA_MONITOR("EpetraVector::norm2"); double r; getEpetra_MultiVector()->Norm2(&r); return r; }
 
-    Teuchos::ScalarTraits<double>::magnitudeType EpetraVector::normInf() const {  double r; getEpetra_MultiVector()->NormInf(&r); return r; }
+    Teuchos::ScalarTraits<double>::magnitudeType EpetraVector::normInf() const { XPETRA_MONITOR("EpetraVector::normInf"); double r; getEpetra_MultiVector()->NormInf(&r); return r; }
 
     Teuchos::ScalarTraits<double>::magnitudeType EpetraVector::normWeighted(const Vector<double,int,int> &weights) const { 
+      XPETRA_MONITOR("EpetraVector::normWeighted");
       XPETRA_DYNAMIC_CAST(const EpetraVector, weights, tWeights, "This Xpetra::EpetraVector method only accept Xpetra::EpetraVector as input arguments.");
       double r; 
       getEpetra_MultiVector()->NormWeighted(*tWeights.getEpetra_MultiVector(), &r); return r; 
     }
 
-    double EpetraVector::meanValue() const {  double r; getEpetra_MultiVector()->MeanValue(&r); return r; }
+    double EpetraVector::meanValue() const { XPETRA_MONITOR("EpetraVector::meanValue"); double r; getEpetra_MultiVector()->MeanValue(&r); return r; }
 
     std::string EpetraVector::description() const { 
+      XPETRA_MONITOR("EpetraVector::description");
       // This implementation come from Epetra_Vector_def.hpp (without modification)
       std::ostringstream oss;
       oss << Teuchos::Describable::description();
@@ -49,7 +52,7 @@ namespace Xpetra {
     }
 
     void EpetraVector::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const { 
-       
+      XPETRA_MONITOR("EpetraVector::describe");
       
       if (verbLevel > Teuchos::VERB_NONE)
         getEpetra_Vector()->Print(out);

@@ -23,17 +23,22 @@ namespace Xpetra {
     : mtx_(Teuchos::rcp(new Epetra_CrsMatrix(Copy, toEpetra(graph)))) { }
 
   void EpetraCrsMatrix::insertGlobalValues(int globalRow, const ArrayView<const int> &cols, const ArrayView<const double> &vals) { 
+    XPETRA_MONITOR("EpetraCrsMatrix::insertGlobalValues");
     XPETRA_ERR_CHECK(mtx_->InsertGlobalValues(globalRow, vals.size(), vals.getRawPtr(), cols.getRawPtr())); 
   }
 
   //TODO: throw same exception as Tpetra
   void EpetraCrsMatrix::getLocalRowCopy(int LocalRow, const ArrayView<int> &Indices, const ArrayView<double> &Values, size_t &NumEntries) const { 
+    XPETRA_MONITOR("EpetraCrsMatrix::getLocalRowCopy");
+
     int numEntries=-1;
     XPETRA_ERR_CHECK(mtx_->ExtractMyRowCopy(LocalRow, Indices.size(), numEntries, Values.getRawPtr(), Indices.getRawPtr()));
     NumEntries = numEntries;
   }
 
   void EpetraCrsMatrix::getGlobalRowView(int GlobalRow, ArrayView<const int> &indices, ArrayView<const double> &values) const { 
+    XPETRA_MONITOR("EpetraCrsMatrix::getGlobalRowView");
+
     int      numEntries;
     double * eValues;
     int    * eIndices;
@@ -46,6 +51,8 @@ namespace Xpetra {
   }
 
   void EpetraCrsMatrix::getLocalRowView(int LocalRow, ArrayView<const int> &indices, ArrayView<const double> &values) const { 
+    XPETRA_MONITOR("EpetraCrsMatrix::getLocalRowView");
+
     int      numEntries;
     double * eValues;
     int    * eIndices;
@@ -58,6 +65,8 @@ namespace Xpetra {
   }
 
   void EpetraCrsMatrix::apply(const MultiVector<double,int,int> & X, MultiVector<double,int,int> &Y, Teuchos::ETransp mode, double alpha, double beta) const { 
+    XPETRA_MONITOR("EpetraCrsMatrix::apply");
+
     TEUCHOS_TEST_FOR_EXCEPTION((alpha != 1) || (beta != 0), Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrix.multiply() only accept alpha==1 and beta==0");
       
     XPETRA_DYNAMIC_CAST(const EpetraMultiVector, X, eX, "Xpetra::EpetraCrsMatrix->apply() only accept Xpetra::EpetraMultiVector as input arguments.");
@@ -73,6 +82,8 @@ namespace Xpetra {
   }
 
   std::string EpetraCrsMatrix::description() const { 
+    XPETRA_MONITOR("EpetraCrsMatrix::description");
+
     // This implementation come from Tpetra_CrsMatrix_def.hpp (without modification)
     std::ostringstream oss;
     //TODO: oss << DistObject<char, LocalOrdinal,GlobalOrdinal>::description();
@@ -93,6 +104,7 @@ namespace Xpetra {
   } 
     
   void EpetraCrsMatrix::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const { 
+    XPETRA_MONITOR("EpetraCrsMatrix::describe");
 
     // This implementation come from Tpetra_CrsMatrix_def.hpp (without modification)
     using std::endl;
@@ -250,6 +262,7 @@ namespace Xpetra {
   // TODO: use toEpetra()    
   void EpetraCrsMatrix::doImport(const DistObject<char, int, int> &source, 
                                  const Import<int, int> &importer, CombineMode CM) {
+    XPETRA_MONITOR("EpetraCrsMatrix::doImport");
 
     XPETRA_DYNAMIC_CAST(const EpetraCrsMatrix, source, tSource, "Xpetra::EpetraCrsMatrix::doImport only accept Xpetra::EpetraCrsMatrix as input arguments.");
     XPETRA_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Xpetra::EpetraCrsMatrix::doImport only accept Xpetra::EpetraImport as input arguments.");
@@ -261,6 +274,7 @@ namespace Xpetra {
 
   void EpetraCrsMatrix::doExport(const DistObject<char, int, int> &dest,
                                  const Import<int, int>& importer, CombineMode CM) {
+    XPETRA_MONITOR("EpetraCrsMatrix::doExport");
       
     XPETRA_DYNAMIC_CAST(const EpetraCrsMatrix, dest, tDest, "Xpetra::EpetraCrsMatrix::doImport only accept Xpetra::EpetraCrsMatrix as input arguments.");
     XPETRA_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Xpetra::EpetraCrsMatrix::doImport only accept Xpetra::EpetraImport as input arguments.");
@@ -272,6 +286,7 @@ namespace Xpetra {
 
   void EpetraCrsMatrix::doImport(const DistObject<char, int, int> &source,
                                  const Export<int, int>& exporter, CombineMode CM) {
+    XPETRA_MONITOR("EpetraCrsMatrix::doImport");
 
     XPETRA_DYNAMIC_CAST(const EpetraCrsMatrix, source, tSource, "Xpetra::EpetraCrsMatrix::doImport only accept Xpetra::EpetraCrsMatrix as input arguments.");
     XPETRA_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Xpetra::EpetraCrsMatrix::doImport only accept Xpetra::EpetraImport as input arguments.");
@@ -284,6 +299,7 @@ namespace Xpetra {
 
   void EpetraCrsMatrix::doExport(const DistObject<char, int, int> &dest,
                                  const Export<int, int>& exporter, CombineMode CM) {
+    XPETRA_MONITOR("EpetraCrsMatrix::doExport");
       
     XPETRA_DYNAMIC_CAST(const EpetraCrsMatrix, dest, tDest, "Xpetra::EpetraCrsMatrix::doImport only accept Xpetra::EpetraCrsMatrix as input arguments.");
     XPETRA_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Xpetra::EpetraCrsMatrix::doImport only accept Xpetra::EpetraImport as input arguments.");

@@ -180,14 +180,14 @@ namespace Xpetra {
 
 
 
-  LookupStatus EpetraMap::getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< int > &LIDList) const { return toXpetra(map_->RemoteIDList(GIDList.size(), GIDList.getRawPtr(), nodeIDList.getRawPtr(), LIDList.getRawPtr())); }
+  LookupStatus EpetraMap::getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< int > &LIDList) const { XPETRA_MONITOR("EpetraMap::getRemoteIndexList"); return toXpetra(map_->RemoteIDList(GIDList.size(), GIDList.getRawPtr(), nodeIDList.getRawPtr(), LIDList.getRawPtr())); }
     
-  LookupStatus EpetraMap::getRemoteIndexList(const Teuchos::ArrayView< const int > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const { return toXpetra(map_->RemoteIDList(GIDList.size(), GIDList.getRawPtr(), nodeIDList.getRawPtr(), 0)); }
+  LookupStatus EpetraMap::getRemoteIndexList(const Teuchos::ArrayView< const int > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const { XPETRA_MONITOR("EpetraMap::getRemoteIndexList"); return toXpetra(map_->RemoteIDList(GIDList.size(), GIDList.getRawPtr(), nodeIDList.getRawPtr(), 0)); }
     
-  Teuchos::ArrayView< const int > EpetraMap::getNodeElementList() const { return ArrayView< const int >(map_->MyGlobalElements(), map_->NumMyElements()); /* Note: this method return a const array, so it is safe to use directly the internal array. */ }
+  Teuchos::ArrayView< const int > EpetraMap::getNodeElementList() const { XPETRA_MONITOR("EpetraMap::getNodeElementList"); return ArrayView< const int >(map_->MyGlobalElements(), map_->NumMyElements()); /* Note: this method return a const array, so it is safe to use directly the internal array. */ }
 
   //typedef Kokkos::DefaultNode::DefaultNodeType Node;
-  const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> EpetraMap::getNode() const { return Kokkos::DefaultNode::getDefaultNode(); } //removed &
+  const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> EpetraMap::getNode() const { XPETRA_MONITOR("EpetraMap::getNode"); return Kokkos::DefaultNode::getDefaultNode(); } //removed &
 
 
 
@@ -195,6 +195,8 @@ namespace Xpetra {
 
 
   std::string EpetraMap::description() const {
+    XPETRA_MONITOR("EpetraMap::description"); 
+
     // This implementation come from Tpetra_Map_def.hpp (without modification)
     std::ostringstream oss;
     oss << Teuchos::Describable::description();
@@ -207,7 +209,8 @@ namespace Xpetra {
   }
 
   void EpetraMap::describe( Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
-      
+    XPETRA_MONITOR("EpetraMap::describe"); 
+          
     const Teuchos::RCP<const Teuchos::Comm<int> > comm_ = getComm();
 
     // This implementation come from Tpetra_Map_def.hpp (without modification)

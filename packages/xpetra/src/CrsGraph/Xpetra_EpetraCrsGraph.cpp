@@ -28,16 +28,22 @@ namespace Xpetra {
   //     : graph_(Teuchos::rcp(new Epetra_CrsGraph(Copy, toEpetra(rowMap), toEpetra(colMap), NumEntriesPerRowToAlloc.getRawPtr(), toEpetra(pftype)))) { }
 
   void EpetraCrsGraph::insertGlobalIndices(int globalRow, const ArrayView<const int> &indices) { 
+    XPETRA_MONITOR("EpetraCrsGraph::insertGlobalIndices"); 
+
     int* indices_rawPtr = const_cast<int*>(indices.getRawPtr()); // there is no const in the Epetra interface :(
     XPETRA_ERR_CHECK(graph_->InsertGlobalIndices(globalRow, indices.size(), indices_rawPtr)); 
   }
 
   void EpetraCrsGraph::insertLocalIndices(int localRow, const ArrayView<const int> &indices) { 
+    XPETRA_MONITOR("EpetraCrsGraph::insertLocalIndices"); 
+
     int* indices_rawPtr = const_cast<int*>(indices.getRawPtr()); // there is no const in the Epetra interface :(
     XPETRA_ERR_CHECK(graph_->InsertMyIndices(localRow, indices.size(), indices_rawPtr)); 
   }
 
   void EpetraCrsGraph::getGlobalRowView(int GlobalRow, ArrayView<const int> &Indices) const { 
+    XPETRA_MONITOR("EpetraCrsGraph::getGlobalRowView"); 
+
     int      numEntries;
     int    * eIndices;
       
@@ -48,6 +54,8 @@ namespace Xpetra {
   }
 
   void EpetraCrsGraph::getLocalRowView(int LocalRow, ArrayView<const int> &indices) const {
+    XPETRA_MONITOR("EpetraCrsGraph::getLocalRowView");
+
     int      numEntries;
     int    * eIndices;
       
@@ -58,18 +66,24 @@ namespace Xpetra {
   }
 
   void EpetraCrsGraph::fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, OptimizeOption os){ 
+    XPETRA_MONITOR("EpetraCrsGraph::fillComplete"); 
+
     graph_->FillComplete(toEpetra(domainMap), toEpetra(rangeMap)); 
     if (os == DoOptimizeStorage) graph_->OptimizeStorage();
   }
   
-  void EpetraCrsGraph::fillComplete(OptimizeOption os){ 
+  void EpetraCrsGraph::fillComplete(OptimizeOption os) { 
+    XPETRA_MONITOR("EpetraCrsGraph::fillComplete"); 
+
     graph_->FillComplete();
     if (os == DoOptimizeStorage) graph_->OptimizeStorage();
   }
 
-  std::string EpetraCrsGraph::description() const { return "NotImplemented"; }
+  std::string EpetraCrsGraph::description() const { XPETRA_MONITOR("EpetraCrsGraph::description"); return "NotImplemented"; }
   
   void EpetraCrsGraph::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
+    XPETRA_MONITOR("EpetraCrsGraph::describe");
+
     out << "EpetraCrsGraph::describe : Warning, verbosity level is ignored by this method." << std::endl;
     const Epetra_BlockMap rowmap = graph_->RowMap();
     if (rowmap.Comm().MyPID() == 0) out << "** EpetraCrsGraph **\n\nrowmap" << std::endl;
@@ -89,6 +103,7 @@ namespace Xpetra {
   // TODO: use toEpetra()    
   void EpetraCrsGraph::doImport(const DistObject<int, int, int> &source, 
                                  const Import<int, int> &importer, CombineMode CM) {
+    XPETRA_MONITOR("EpetraCrsGraph::doImport"); 
 
     XPETRA_DYNAMIC_CAST(const EpetraCrsGraph, source, tSource, "Xpetra::EpetraCrsGraph::doImport only accept Xpetra::EpetraCrsGraph as input arguments.");
     XPETRA_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Xpetra::EpetraCrsGraph::doImport only accept Xpetra::EpetraImport as input arguments.");
@@ -100,7 +115,8 @@ namespace Xpetra {
 
   void EpetraCrsGraph::doExport(const DistObject<int, int, int> &dest,
                                  const Import<int, int>& importer, CombineMode CM) {
-      
+    XPETRA_MONITOR("EpetraCrsGraph::doExport"); 
+
     XPETRA_DYNAMIC_CAST(const EpetraCrsGraph, dest, tDest, "Xpetra::EpetraCrsGraph::doImport only accept Xpetra::EpetraCrsGraph as input arguments.");
     XPETRA_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Xpetra::EpetraCrsGraph::doImport only accept Xpetra::EpetraImport as input arguments.");
 
@@ -111,6 +127,7 @@ namespace Xpetra {
 
   void EpetraCrsGraph::doImport(const DistObject<int, int, int> &source,
                                  const Export<int, int>& exporter, CombineMode CM) {
+    XPETRA_MONITOR("EpetraCrsGraph::doImport"); 
 
     XPETRA_DYNAMIC_CAST(const EpetraCrsGraph, source, tSource, "Xpetra::EpetraCrsGraph::doImport only accept Xpetra::EpetraCrsGraph as input arguments.");
     XPETRA_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Xpetra::EpetraCrsGraph::doImport only accept Xpetra::EpetraImport as input arguments.");
@@ -123,7 +140,8 @@ namespace Xpetra {
 
   void EpetraCrsGraph::doExport(const DistObject<int, int, int> &dest,
                                  const Export<int, int>& exporter, CombineMode CM) {
-      
+    XPETRA_MONITOR("EpetraCrsGraph::doExport"); 
+    
     XPETRA_DYNAMIC_CAST(const EpetraCrsGraph, dest, tDest, "Xpetra::EpetraCrsGraph::doImport only accept Xpetra::EpetraCrsGraph as input arguments.");
     XPETRA_DYNAMIC_CAST(const EpetraExport, exporter, tExporter, "Xpetra::EpetraCrsGraph::doImport only accept Xpetra::EpetraImport as input arguments.");
 

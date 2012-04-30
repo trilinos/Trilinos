@@ -6,6 +6,8 @@ Teuchos::RCP<Xpetra::DefaultPlatform::DefaultPlatformType> Xpetra::DefaultPlatfo
 namespace Xpetra {
 
   DefaultPlatform::DefaultPlatformType &DefaultPlatform::getDefaultPlatform() {
+    XPETRA_MONITOR("DefaultPlatform::getDefaultPlatform");
+
     if (!platform_.get()) {
 #ifdef HAVE_MPI
       platform_ = Teuchos::rcp(new MpiPlatform<Kokkos::DefaultNode::DefaultNodeType>(Kokkos::DefaultNode::getDefaultNode()));
