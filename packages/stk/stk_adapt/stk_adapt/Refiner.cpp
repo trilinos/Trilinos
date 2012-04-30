@@ -1013,6 +1013,9 @@ namespace stk {
 
       /**/                                                TRACE_PRINT("Refiner: modification_end...start... ");
       bulkData.modification_end();
+      // force a flush of all pending deletes, etc
+      bulkData.modification_begin();
+      bulkData.modification_end();
       /**/                                                TRACE_PRINT("Refiner: modification_end...done ");
 
       // remove pseudo elements
@@ -1065,10 +1068,11 @@ namespace stk {
       RefinementInfoByType::countCurrentNodes(m_eMesh, getRefinementInfoByType());
 
       getNodeRegistry().init_entity_repo();
+      //getNodeRegistry().clear_dangling_elements();
 
       m_nodeRegistry->dumpDB("after doBreak");
 #if CHECK_DEBUG
-      check_db("after doBreak");
+      //check_db("after doBreak");
       m_nodeRegistry->checkDB("after doBreak");
 #endif
 
@@ -1211,7 +1215,9 @@ namespace stk {
             }
         }
 
-      if (0 && node_list.size()) std::cout << "P[" << m_eMesh.getRank() << "] tmp number of dangling nodes = " << node_list.size() << " and pseudos= " << pseudos.size() << std::endl;
+      if (1 && node_list.size()) std::cout << "P[" << m_eMesh.getRank() << "] tmp number of dangling nodes = " << node_list.size() << " and pseudos= " << pseudos.size() << std::endl;
+      //!srk
+      getNodeRegistry().clear_dangling_nodes(&node_list);
 
       if (1)
         {
@@ -1237,6 +1243,7 @@ namespace stk {
 
             }
         }
+
       // check for any null entities
       //std::cout << "check for any null entities..." << std::endl;
       const vector<stk::mesh::Bucket*> & elem_buckets = m_eMesh.getBulkData()->buckets( m_eMesh.element_rank() );
@@ -3776,22 +3783,30 @@ namespace stk {
             {
 
               if (!owning_elementId)
-                throw std::logic_error("check_db_ownership_consistency:: error #1");
+                throw std::logic_error("check_db_ownership_consistency:: error #1 msg= "+msg);
 
               stk::mesh::Entity * owning_element = m_eMesh.getBulkData()->get_entity(owning_elementRank, owning_elementId);
 
               if (!owning_element)
                 {
                   std::cout << "P[" << m_eMesh.getRank() << "] "
-                            << " error check_db: msg= " << msg << " owning_elementId= " << owning_elementId << std::endl;
-                  throw std::logic_error("check_db_ownership_consistency:: error #2");
+                            << " error check_db_ownership_consistency: msg= " << msg << " owning_elementId= " << owning_elementId << std::endl;
+                  throw std::logic_error("check_db_ownership_consistency:: error #2, msg= "+msg);
                 }
+
+              if (stk::mesh::EntityLogDeleted == owning_element->log_query() )
+                {
+                  std::cout << "P[" << m_eMesh.getRank() << "] "
+                            << " error check_db_ownership_consistency: EntityLogDeleted, msg= " << msg << " owning_elementId= " << owning_elementId << std::endl;
+                  throw std::logic_error("check_db_ownership_consistency:: error #2.0, msg= "+msg);
+                }
+
 
               if (owning_element->identifier() != owning_elementId)
                 {
                   std::cout << "msg= " << msg << " check_db_ownership_consistency error element, element_1, ids= " 
                             << owning_elementId << " " << owning_element->identifier() << std::endl;
-                  throw std::logic_error("check_db_ownership_consistency:: error #1.1");
+                  throw std::logic_error("check_db_ownership_consistency:: error #1.1, msg= "+msg);
                 }
 
               if (!m_eMesh.isGhostElement(*owning_element))
@@ -3801,17 +3816,17 @@ namespace stk {
                     {
                       stk::mesh::Entity *node = nodeIds_onSE[inode];
                       if (!node)
-                        throw std::logic_error("check_db_ownership_consistency:: error #3");
+                        throw std::logic_error("check_db_ownership_consistency:: error #3, msg= "+msg);
 
                       stk::mesh::Entity * node1 = m_eMesh.getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[inode]);
                       if (!node1)
-                        throw std::logic_error("check_db_ownership_consistency:: error #3a");
+                        throw std::logic_error("check_db_ownership_consistency:: error #3a, msg= "+msg);
 
                       stk::mesh::Entity * node2 = m_eMesh.getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, node->identifier() );
                       if (!node2)
-                        throw std::logic_error("check_db_ownership_consistency:: error #3b");
+                        throw std::logic_error("check_db_ownership_consistency:: error #3b, msg= "+msg);
                       if (node != node2)
-                        throw std::logic_error("check_db_ownership_consistency:: error #3c");
+                        throw std::logic_error("check_db_ownership_consistency:: error #3c, msg= "+msg);
               
                     }
                 }

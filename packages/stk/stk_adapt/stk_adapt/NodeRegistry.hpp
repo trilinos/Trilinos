@@ -49,6 +49,8 @@
 
 #include <stk_percept/stk_mesh.hpp>
 
+#include <stk_util/environment/CPUTime.hpp>
+
 #include <stk_percept/NoMallocArray.hpp>
 #include <stk_percept/PerceptMesh.hpp>
 #include <stk_percept/Util.hpp>
@@ -343,6 +345,7 @@ namespace stk {
       static const unsigned NR_MARK = 2u;
 
     public:
+      // FIXME use unordered_set
       typedef std::set<stk::mesh::Entity *> SetOfEntities;
 
       //========================================================================================================================
@@ -396,6 +399,84 @@ namespace stk {
         for (unsigned i = 0; i < stk::percept::EntityRankEnd; i++) m_entity_repo[i].clear();
       }
       
+      void clear_dangling_nodes(SetOfEntities* nodes_to_be_deleted)
+      {
+        const bool debug = false;
+        if (debug) std::cout <<  "tmp srk NodeRegistry::clear_dangling_nodes start" << std::endl;
+        double cpu_0 = stk::cpu_time();
+
+        SubDimCellToDataMap::iterator iter;
+        SubDimCellToDataMap& map = getMap();
+
+        std::vector<SubDimCell_SDSEntityType> to_erase;
+        int num_delete=0;
+
+        for (iter = map.begin(); iter != map.end(); ++iter)
+          {
+            SubDimCellData& nodeId_elementOwnderId = (*iter).second;
+            NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+            VERIFY_OP_ON(nodeIds_onSE.size(), ==, nodeIds_onSE.m_entity_id_vector.size(), "NodeRegistry::clear_dangling_nodes id vector/size mismatch");
+            unsigned nnodes = nodeIds_onSE.size();
+            NodeIdsOnSubDimEntityType node_to_keep(0);
+            //std::vector<stk::mesh::Entity *> node_to_keep;
+            std::vector<stk::mesh::EntityId> node_id_to_keep(0);
+            for (unsigned inode=0; inode < nnodes; inode++)
+              {
+                if (!nodeIds_onSE[inode]) continue;
+                stk::mesh::EntityId id = nodeIds_onSE.m_entity_id_vector[inode];
+                stk::mesh::EntityId id_check = nodeIds_onSE[inode]->identifier();
+                VERIFY_OP_ON(id_check, ==, id, "NodeRegistry::clear_dangling_nodes id");
+
+                //if (  stk::mesh::EntityLogDeleted == nodeIds_onSE[inode]->log_query() )
+                if (nodes_to_be_deleted && nodes_to_be_deleted->find(nodeIds_onSE[inode]) != nodes_to_be_deleted->end())
+                  {
+                    ++num_delete;
+                  }
+                else if (!nodes_to_be_deleted && stk::mesh::EntityLogDeleted == nodeIds_onSE[inode]->log_query() )
+                  {
+                    ++num_delete;
+                  }
+                else
+                  {
+                    node_to_keep.push_back(nodeIds_onSE[inode]);
+                    node_id_to_keep.push_back(id);
+                  }
+              }
+            nodeIds_onSE = node_to_keep;
+            nodeIds_onSE.m_entity_id_vector = node_id_to_keep;
+            if (nodeIds_onSE.size() != nodeIds_onSE.m_entity_id_vector.size())
+              {
+                std::cout << "NodeRegistry::clear_dangling_nodes id vector/size mismatch 1 size= " << nodeIds_onSE.size() << " id.size= " << nodeIds_onSE.m_entity_id_vector.size() << std::endl;
+              }
+            VERIFY_OP_ON(nodeIds_onSE.size(), ==, nodeIds_onSE.m_entity_id_vector.size(), "NodeRegistry::clear_dangling_nodes id vector/size mismatch 1");
+
+            if (nodeIds_onSE.size() == 0)
+              to_erase.push_back(iter->first);
+
+          }
+        if (debug) std::cout << "tmp srk NodeRegistry::clear_dangling_nodes num_delete= " << num_delete <<  std::endl;
+        if (to_erase.size())
+          {
+            if (debug) std::cout << "tmp srk NodeRegistry::clear_dangling_nodes nodeIds_onSE.size() != node_to_keep.size()), to_erase= " << to_erase.size() <<  std::endl;
+            for (unsigned i=0; i < to_erase.size(); i++)
+              {
+                map.erase(to_erase[i]);
+              }
+          }
+
+        // check
+        if (1)
+          {
+            for (iter = map.begin(); iter != map.end(); ++iter)
+              {
+                SubDimCellData& nodeId_elementOwnderId = (*iter).second;
+                NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeId_elementOwnderId.get<SDC_DATA_GLOBAL_NODE_IDS>();
+                VERIFY_OP_ON(nodeIds_onSE.size(), ==, nodeIds_onSE.m_entity_id_vector.size(), "NodeRegistry::clear_dangling_nodes id vector/size mismatch after erase");
+              }
+          }
+        double cpu_1 = stk::cpu_time();
+        if (debug) std::cout <<  "tmp srk NodeRegistry::clear_dangling_nodes end, time= " << (cpu_1-cpu_0) << std::endl;
+      }
 
       void initialize()
       {
@@ -1895,22 +1976,19 @@ namespace stk {
                 //stk::mesh::EntityRank      owning_element_rank = stk::mesh::entity_rank(subDimCellData.get<SDC_DATA_OWNING_ELEMENT_KEY>());
                 NodeIdsOnSubDimEntityType& nodeIds_onSE        = subDimCellData.get<SDC_DATA_GLOBAL_NODE_IDS>();
 
-                    for (unsigned i=0; i < nodeIds_onSE.size(); i++)
-                      {
-                        stk::mesh::Entity *node = nodeIds_onSE[i];
-                        stk::mesh::EntityId nodeId = nodeIds_onSE.m_entity_id_vector[i];
-                        if (node)
-                          {
-                            VERIFY_OP_ON(node, !=, 0, "checkDB #11.1");
-                            VERIFY_OP_ON(nodeId, !=, 0, "checkDB #11.1.1");
-                            VERIFY_OP_ON(node->identifier(), ==, nodeId, "checkDB #11.2");
-                            stk::mesh::Entity *node_0 = m_eMesh.getBulkData()->get_entity(0, nodeId);
+                for (unsigned i=0; i < nodeIds_onSE.size(); i++)
+                  {
+                    stk::mesh::Entity *node = nodeIds_onSE[i];
+                    stk::mesh::EntityId nodeId = nodeIds_onSE.m_entity_id_vector[i];
+                    VERIFY_OP_ON(node, !=, 0, "checkDB #11.1");
+                    VERIFY_OP_ON(nodeId, !=, 0, "checkDB #11.1.1");
+                    VERIFY_OP_ON(node->identifier(), ==, nodeId, "checkDB #11.2");
+                    stk::mesh::Entity *node_0 = m_eMesh.getBulkData()->get_entity(0, nodeId);
                     
-                            VERIFY_OP_ON(node, ==, node_0, "checkDB #11.3");
-                            VERIFY_OP_ON(node_0->identifier(), ==, nodeId, "checkDB #11.4");
-                          }
-                      }
+                    VERIFY_OP_ON(node, ==, node_0, "checkDB #11.3");
+                    VERIFY_OP_ON(node_0->identifier(), ==, nodeId, "checkDB #11.4");
                   }
+              }
             std::cout << "NodeRegistry::checkDB end msg= " << msg << std::endl;
           }
 

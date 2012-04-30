@@ -37,6 +37,7 @@
 #include <stk_adapt/UniformRefinerPattern.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/static_assert.hpp>
+#include <Ioss_Utils.h>
 
 #include <stk_adapt/SerializeNodeRegistry.hpp>
 
@@ -514,7 +515,8 @@ namespace stk {
       int estimate_memory_usage=0;
       int streaming_size=0;
       int streaming_rank=0;
-      int streaming_pass= -1;
+      int streaming_pass_start= -2;  // FIXME - change to not start from -1 below
+      int streaming_pass_end= -2;
 
       //  Hex8_Tet4_24 (default), Quad4_Quad4_4, Qu
       std::string block_name_desc = 
@@ -587,7 +589,9 @@ namespace stk {
       run_environment.clp.setOption("streaming_rank"           , &streaming_rank     , 
                                     "INTERNAL use only by python script streaming refinement interface:\n"
                                     "  run in streaming mode - this number specifies which virtual proc this is.");
-      run_environment.clp.setOption("streaming_pass"           , &streaming_pass           , 
+      run_environment.clp.setOption("streaming_pass_start"           , &streaming_pass_start           , 
+                                    "INTERNAL use only by python script streaming refinement interface:\n");
+      run_environment.clp.setOption("streaming_pass_end"           , &streaming_pass_end           , 
                                     "INTERNAL use only by python script streaming refinement interface:\n");
       run_environment.clp.setOption("print_memory_usage"       , &print_memory_usage       , "print memory usage");
 
@@ -640,20 +644,42 @@ namespace stk {
 
       // FIXME - starting from -1 pass is bogus
 #if STK_ADAPT_HAVE_YAML_CPP
-      int streaming_pass_start = streaming_size ? -1 : 0;
-      int streaming_pass_end = streaming_size ? SerializeNodeRegistry::MaxPass : 0;
-#else
-      int streaming_pass_start = 0;
-      int streaming_pass_end = 0;
-#endif
-
-      // allow for driving this from a script
-      if (streaming_pass >= 0)
+      if ((streaming_pass_start == -2 && streaming_pass_end != -2) ||
+          (streaming_pass_start != -2 && streaming_pass_end == -2))
         {
-          streaming_pass_start = streaming_pass;
-          streaming_pass_end = streaming_pass;
+          throw std::runtime_error("must specify both streaming_pass_start and streaming_pass_end");
         }
 
+      if (streaming_pass_start != -2 && (streaming_pass_start < -1  || streaming_pass_start > SerializeNodeRegistry::MaxPass))
+        {
+          throw std::runtime_error("streaming_pass_start bad value");
+        }
+      if (streaming_pass_end != -2 && (streaming_pass_end < -1  || streaming_pass_end > SerializeNodeRegistry::MaxPass))
+        {
+          throw std::runtime_error("streaming_pass_end bad value");
+        }
+      if (streaming_pass_end != -2 && (streaming_pass_end < streaming_pass_start))
+        {
+          throw std::runtime_error("streaming_pass_start > streaming_pass_end");
+        }
+
+      if (streaming_pass_end != -2)
+        {
+          std::cout << "\n\nWARNING: running passes from command line: streaming_pass_start,end= [" << streaming_pass_start << ", " << streaming_pass_end << "]\n\n";
+        }
+
+      // allow for driving this from a script
+      if (streaming_pass_start == -2 && streaming_pass_end == -2)
+        {
+          streaming_pass_start = streaming_size ? -1 : 0;
+          streaming_pass_end = streaming_size ? SerializeNodeRegistry::MaxPass : 0;
+        }
+#else
+      streaming_pass_start = 0;
+      streaming_pass_end = 0;
+#endif
+
+      SerializeNodeRegistry::PartMap partMapGlobal;
       for (int i_pass=streaming_pass_start; i_pass <= streaming_pass_end; i_pass++)
         {
           if (streaming_size) 
@@ -682,7 +708,8 @@ namespace stk {
                   SerializeNodeRegistry::NodeMap nodeMap;
                   for (int iM=0; iM < M; iM++)
                     {
-                      input_mesh = input_mesh_save+"."+toString(M)+"."+toString(iM);
+                      //input_mesh = input_mesh_save+"."+toString(M)+"."+toString(iM);
+                      input_mesh = Ioss::Utils::decode_filename(input_mesh_save, iM, M);
                       PerceptMesh eMesh(s_spatialDim);
                       eMesh.openReadOnly(input_mesh);
                       NodeRegistry *some_nr = 0;
@@ -697,14 +724,24 @@ namespace stk {
                   continue;
                 }
 
-              //  no exodus files i/o
               if (i_pass == 2)
                 {
 #if STK_ADAPT_HAVE_YAML_CPP
-                  PerceptMesh eMesh(s_spatialDim);
-                  eMesh.openEmpty();
-                  SerializeNodeRegistry snr(eMesh, 0, input_mesh, output_mesh, M, 0);
-                  snr.pass(i_pass);
+                  {
+                    //  no exodus files i/o
+                    if (s_spatialDim == 0)
+                      {
+                        PerceptMesh eMesh(0);
+                        std::string mesh_name = Ioss::Utils::decode_filename(input_mesh_save, 0, M);
+                        eMesh.openReadOnly(mesh_name);
+                        s_spatialDim = eMesh.getSpatialDim();
+                      }
+                    PerceptMesh eMesh(s_spatialDim);
+                    eMesh.openEmpty();
+                    SerializeNodeRegistry snr(eMesh, 0, input_mesh, output_mesh, M, 0);
+                    snr.pass(i_pass);
+                  }
+
 #else
                   throw std::runtime_error("must have YAML for streaming refine");
 #endif
@@ -716,8 +753,17 @@ namespace stk {
             {
               if (streaming_size)
                 {
-                  input_mesh = input_mesh_save+"."+toString(M)+"."+toString(iM);
-                  output_mesh = output_mesh_save+"."+toString(M)+"."+toString(iM);
+                  //input_mesh = input_mesh_save+"."+toString(M)+"."+toString(iM);
+                  //output_mesh = output_mesh_save+"."+toString(M)+"."+toString(iM);
+                  input_mesh = Ioss::Utils::decode_filename(input_mesh_save, iM, M);
+                  output_mesh = Ioss::Utils::decode_filename(output_mesh_save, iM, M);
+
+                  if (i_pass == 1)
+                    {
+                      //output_mesh = output_mesh_save;
+                      output_mesh = output_mesh_save+"-pass1";
+                      output_mesh = Ioss::Utils::decode_filename(output_mesh, iM, M);
+                    }
                 }
 
               try {
@@ -737,9 +783,12 @@ namespace stk {
                     if (i_pass == 3)
                       {
 #if STK_ADAPT_HAVE_YAML_CPP
-                        std::string input_mesh_new= output_mesh_save+"."+toString(M)+"."+toString(iM);
-                        //std::string output_mesh_new= output_mesh_save+"-renumbered."+toString(M)+"."+toString(iM);
-                        std::string output_mesh_new= output_mesh_save+"."+toString(M)+"."+toString(iM);
+                        //std::string input_mesh_new= output_mesh_save+"."+toString(M)+"."+toString(iM);
+                        //std::string output_mesh_new= output_mesh_save+"."+toString(M)+"."+toString(iM);
+                        //std::string input_mesh_new = output_mesh_save;
+                        std::string input_mesh_new = output_mesh_save+"-pass1";
+                        input_mesh_new = Ioss::Utils::decode_filename(input_mesh_new, iM, M);
+                        std::string output_mesh_new = Ioss::Utils::decode_filename(output_mesh_save, iM, M);
                         eMesh.open(input_mesh_new);
                         eMesh.setStreamingSize(streaming_size);
                         NodeRegistry *some_nr0 = 0;
@@ -943,11 +992,27 @@ namespace stk {
                     if (streaming_size)
                       {
 #if STK_ADAPT_HAVE_YAML_CPP
-                        SerializeNodeRegistry snr(eMesh, &breaker.getNodeRegistry(), input_mesh, output_mesh, M, iM);
-                        snr.pass(i_pass);
+                        {
+                          SerializeNodeRegistry snr(eMesh, &breaker.getNodeRegistry(), input_mesh, output_mesh, M, iM);
+                          snr.pass(i_pass);
+                        }
+
+                        if (1 && i_pass == 0)
+                        {
+                          //input_mesh = Ioss::Utils::decode_filename(input_mesh_save, iM, M);
+                          //  PerceptMesh eMesh(s_spatialDim);
+                          //  eMesh.openReadOnly(input_mesh);
+                          NodeRegistry *some_nr = 0;
+                          SerializeNodeRegistry snr(eMesh, some_nr, input_mesh, output_mesh, M, iM);
+                          snr.m_partMap = &partMapGlobal;
+                          //snr.m_nodeMap = &nodeMap;
+                          snr.passM1_createGlobalParts();
+                        }
+
 #else
                         throw std::runtime_error("must have YAML for streaming refine");
 #endif
+
                       }
 
                     if (delete_parents)

@@ -1723,6 +1723,39 @@ namespace stk {
     }
 
     
+    static bool decipher_filename(std::string filename_in, int& my_processor, int& processor_count)
+    {
+      const bool debug=false;
+      std::string filename = filename_in;
+      std::cout << "tmp srk PerceptMesh::decipher_filename in: filename= " << filename 
+                << " processor_count= " << processor_count << " my_processor= " << my_processor << std::endl;
+
+      size_t found_dot = filename.find_last_of(".");
+      if (found_dot == std::string::npos)
+        {
+          std::cout << "warning: filename has no .procs.myproc extensions: " << std::endl;
+          return false;
+        }
+      std::string my_proc = filename.substr(found_dot+1);
+      if (debug) std::cout << "tmp srk PerceptMesh::decipher_filename: my_proc extension before zero strip= " << my_proc << std::endl;
+      // strip leading 0's
+      if (my_proc.length() > 1)
+        {
+          size_t found_z = my_proc.find_last_of("0");
+          if (found_z != std::string::npos && found_z < my_proc.length()-1)
+            my_proc = my_proc.substr(found_z+1);
+        }
+      if (debug) std::cout << "tmp srk PerceptMesh::decipher_filename: my_proc extension= " << my_proc << std::endl;
+      my_processor = boost::lexical_cast<int>(my_proc);
+      filename = filename.substr(0,found_dot);
+      found_dot = filename.find_last_of(".");
+      processor_count = boost::lexical_cast<int>(filename.substr(found_dot+1));
+      if (debug)
+        std::cout << "tmp srk PerceptMesh::decipher_filename: filename= " << filename_in
+                  << " processor_count= " << processor_count << " my_processor= " << my_processor << std::endl;
+      return true;
+    }
+
     static void percept_create_output_mesh(const std::string &filename,
                                            stk::ParallelMachine comm,
                                            stk::mesh::BulkData &bulk_data,
@@ -1745,13 +1778,14 @@ namespace stk {
 
       int my_processor = 0;
       int processor_count = 0;
-      std::cout << "PerceptMesh::percept_create_output_mesh: filename= " << filename 
+
+      if (!decipher_filename(filename, my_processor, processor_count))
+        {
+          throw std::runtime_error("bad filename passed to percept_create_output_mesh= "+filename);
+        }
+      std::cout << "tmp srk PerceptMesh::percept_create_output_mesh: filename= " << filename
                 << " processor_count= " << processor_count << " my_processor= " << my_processor << std::endl;
 
-      my_processor = boost::lexical_cast<int>(filename.substr(filename.size()-1, 1));
-      processor_count = boost::lexical_cast<int>(filename.substr(filename.size()-3, 1));
-      std::cout << "PerceptMesh::percept_create_output_mesh: filename= " << filename 
-                << " processor_count= " << processor_count << " my_processor= " << my_processor << std::endl;
       out_region->property_add(Ioss::Property("processor_count", processor_count));
       out_region->property_add(Ioss::Property("my_processor", my_processor));
 
@@ -1785,7 +1819,7 @@ namespace stk {
 
       const stk::ParallelMachine& comm = m_bulkData->parallel();
       stk::io::MeshData mesh_data;
-      std::cout << "tmp srk out_filename= " << out_filename << " m_streaming_size= " << m_streaming_size << std::endl;
+      //std::cout << "tmp srk out_filename= " << out_filename << " m_streaming_size= " << m_streaming_size << std::endl;
       if (p_size == 1 && m_streaming_size)
         percept_create_output_mesh(out_filename, comm, bulk_data, mesh_data);
       else
