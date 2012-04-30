@@ -147,6 +147,23 @@ namespace panzer_stk {
     double getInitialTime(Teuchos::ParameterList& transient_ic_params,
 			  const panzer_stk::STK_Interface& mesh) const;
 
+    /**
+      */
+    template <typename LO,typename GO>
+    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > initializeSolnWriterResponseLibrary(
+                                                                const Teuchos::RCP<panzer::WorksetContainer> & wc,
+                                                                const Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > & ugi,
+                                                                const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof,
+                                                                const Teuchos::RCP<panzer_stk::STK_Interface> & mesh) const;
+
+    /**
+      */
+    void finalizeSolnWriterResponseLibrary(panzer::ResponseLibrary<panzer::Traits> & rl,
+                                           const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
+                                           const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
+                                           const Teuchos::ParameterList & closure_models,
+                                           int workset_size, Teuchos::ParameterList & user_data) const;
+
   private:
 
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > m_physics_me;

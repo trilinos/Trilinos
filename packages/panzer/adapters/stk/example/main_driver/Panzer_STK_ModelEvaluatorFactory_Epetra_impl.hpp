@@ -81,6 +81,7 @@
 #include "Panzer_STK_RythmosObserverFactory.hpp"
 #include "Panzer_STK_ParameterListCallback.hpp"
 #include "Panzer_STK_IOClosureModel_Factory_TemplateBuilder.hpp"
+#include "Panzer_STK_ResponseAggregator_SolutionWriter.hpp"
 
 #include <vector>
 
@@ -369,9 +370,6 @@ namespace panzer_stk {
     // build solvers
     /////////////////////////////////////////////////////////////
 
-    Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof =
-      Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(linObjFactory); 
-    
     // Setup active parameters
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
     if (p.isSublist("Active Parameters")) {
@@ -399,7 +397,7 @@ namespace panzer_stk {
     }
 
     Teuchos::RCP<panzer::ModelEvaluator_Epetra> ep_me = 
-      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,m_response_library,ep_lof, p_names, global_data, is_transient));
+      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,m_response_library,linObjFactory, p_names, global_data, is_transient));
 
     // Setup initial conditions
     /////////////////////////////////////////////////////////////
@@ -433,17 +431,35 @@ namespace panzer_stk {
       
       panzer::evaluateInitialCondition(fmb->getWorksets(), phx_ic_field_managers, loc, 0.0);
 
-      // Push solution into ghosted epetra vector and then into stk for outputting
-      { 
-	Epetra_Vector ghosted_solution(*(ep_lof->getGhostedMap()));
-	Teuchos::RCP<Epetra_Import> importer = ep_lof->getGhostedImport();
-	ghosted_solution.PutScalar(0.0);
-	ghosted_solution.Import(*(eloc->get_x()),*importer,Insert);
-	
-	panzer_stk::write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(dofManager),*mesh,
-			                ghosted_solution);
+      // Write the epetra vector into the STK mesh: use response library
+      //////////////////////////////////////////////////////////////////////////
+
+      Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > solnWriter 
+          = initializeSolnWriterResponseLibrary(wkstContainer,dofManager,linObjFactory,mesh);
+
+      {
+         Teuchos::ParameterList user_data(p.sublist("User Data"));
+         user_data.set<int>("Workset Size",workset_size);
+
+         finalizeSolnWriterResponseLibrary(*solnWriter,physicsBlocks,user_cm_factory,p.sublist("Closure Models"),workset_size,user_data);
       }
 
+      // initialize the assembly container
+      panzer::AssemblyEngineInArgs ae_inargs;
+      ae_inargs.container_ = loc;
+      ae_inargs.ghostedContainer_ = linObjFactory->buildGhostedLinearObjContainer();
+      ae_inargs.alpha = 0.0;
+      ae_inargs.beta = 1.0;
+      ae_inargs.evaluate_transient_terms = false;
+
+      // initialize the ghosted container
+      linObjFactory->initializeGhostedContainer(panzer::LinearObjContainer::X,*ae_inargs.ghostedContainer_);
+
+      // do import
+      linObjFactory->globalToGhostContainer(*ae_inargs.container_,*ae_inargs.ghostedContainer_,panzer::LinearObjContainer::X);
+
+      // fill STK mesh objects
+      solnWriter->evaluateVolumeFieldManagers<panzer::Traits::Residual>(ae_inargs,*mpi_comm);
     }
    
     // Build stratimikos solver (note that this is a hard coded path to linear solver options in nox list!)
@@ -562,7 +578,7 @@ namespace panzer_stk {
     if (solver=="NOX") {
       Teuchos::RCP<const panzer_stk::NOXObserverFactory> observer_factory = 
 	p.sublist("Solver Factories").get<Teuchos::RCP<const panzer_stk::NOXObserverFactory> >("NOX Observer Factory");
-      Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = observer_factory->buildNOXObserver(mesh,dofManager,ep_lof);
+      Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = observer_factory->buildNOXObserver(mesh,dofManager,linObjFactory);
       piro_params->sublist("NOX").sublist("Solver Options").set("User Defined Pre/Post Operator", ppo);
       piro = Teuchos::rcp(new Piro::NOXSolver<double>(piro_params, thyra_me));
       // override printing to use panzer ostream
@@ -579,7 +595,7 @@ namespace panzer_stk {
          Teuchos::RCP<const panzer_stk::NOXObserverFactory> nox_observer_factory = 
    	    p.sublist("Solver Factories").get<Teuchos::RCP<const panzer_stk::NOXObserverFactory> >("NOX Observer Factory");
          
-         Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = nox_observer_factory->buildNOXObserver(mesh,dofManager,ep_lof);
+         Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = nox_observer_factory->buildNOXObserver(mesh,dofManager,linObjFactory);
          piro_params->sublist("NOX").sublist("Solver Options").set("User Defined Pre/Post Operator", ppo);
       }
 
@@ -829,6 +845,67 @@ namespace panzer_stk {
       t_init = mesh.getInitialStateTime();
 
     return t_init;
+  }
+
+  // Setup STK response library for writing out the solution fields
+  ////////////////////////////////////////////////////////////////////////
+  template<typename ScalarT>
+  template <typename LO,typename GO>
+  Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > ModelEvaluatorFactory_Epetra<ScalarT>::
+  initializeSolnWriterResponseLibrary(const Teuchos::RCP<panzer::WorksetContainer> & wc,
+                                      const Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > & ugi,
+                                      const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof,
+                                      const Teuchos::RCP<panzer_stk::STK_Interface> & mesh) const
+  {
+     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary
+        = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wc,ugi,lof));
+
+     // register solution writer response aggregator with this library
+     // this is an "Action" only response aggregator
+     panzer::ResponseAggregator_Manager<panzer::Traits> & aggMngr = stkIOResponseLibrary->getAggregatorManager();
+     panzer_stk::ResponseAggregator_SolutionWriter_Builder builder(mesh);
+     builder.setLinearObjFactory(aggMngr.getLinearObjFactory());
+     builder.setGlobalIndexer(aggMngr.getGlobalIndexer());
+     aggMngr.defineAggregatorTypeFromBuilder("Solution Writer",builder);
+
+
+     // require a particular "Solution Writer" response
+     panzer::ResponseId rid("Main Field Output","Solution Writer");
+     std::list<std::string> eTypes;
+     eTypes.push_back("Residual");
+      #ifdef HAVE_STOKHOS
+         eTypes.push_back("SGResidual");
+      #endif
+
+     // get a vector of all the element blocks : for some reason a list is used?
+     std::list<std::string> eBlocks;
+     {
+        // get all element blocks and add them to the list
+        std::vector<std::string> eBlockNames;
+        mesh->getElementBlockNames(eBlockNames);
+        for(std::size_t i=0;i<eBlockNames.size();i++)
+           eBlocks.push_back(eBlockNames[i]);
+     }
+
+     // reserve response guranteeing that we can evaluate it (assuming things are done correctly elsewhere)
+     stkIOResponseLibrary->reserveLabeledBlockAggregatedVolumeResponse("Main Field Output",rid,eBlocks,eTypes);
+    
+     return stkIOResponseLibrary;
+  }
+
+  template<typename ScalarT>
+  void ModelEvaluatorFactory_Epetra<ScalarT>::
+  finalizeSolnWriterResponseLibrary(panzer::ResponseLibrary<panzer::Traits> & rl,
+                                    const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
+                                    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
+                                    const Teuchos::ParameterList & closure_models,
+                                    int workset_size, Teuchos::ParameterList & user_data) const
+  {      
+     user_data.set<int>("Workset Size",workset_size);
+     rl.buildVolumeFieldManagersFromResponses(physicsBlocks,
+                                              cm_factory,
+                                              closure_models,
+                                              user_data);
   }
 
 }

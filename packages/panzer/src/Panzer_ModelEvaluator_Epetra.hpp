@@ -59,6 +59,7 @@ namespace panzer {
 
   template<typename, typename>  class FieldManagerBuilder;
   template<typename, typename>  class EpetraLinearObjFactory;
+  template<typename, typename>  class BlockedEpetraLinearObjFactory;
   #ifdef HAVE_STOKHOS
      template<typename, typename>  class SGEpetraLinearObjFactory;
   #endif
@@ -69,6 +70,13 @@ namespace panzer {
 
   class ModelEvaluator_Epetra : public EpetraExt::ModelEvaluator {
   public:
+
+    ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,
+                          const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
+			  const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof,
+			  const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
+			  const Teuchos::RCP<panzer::GlobalData>& global_data,
+			  bool build_transient_support);
     
     ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,
                           const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
@@ -121,7 +129,9 @@ namespace panzer {
       *
       * \note Requires lof_ to be set.
       */
-    void initializeEpetraObjs();
+    void initializeEpetraObjs(panzer::EpetraLinearObjFactory<panzer::Traits,int> & lof);
+
+    void initializeBlockedEpetraObjs(panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> & lof);
 
     /** Initialize the parameter vector object */
     void initializeParameterVector(const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
@@ -142,6 +152,9 @@ namespace panzer {
 
     //! Are their required responses in the out args? g (and soon DgDx) 
     bool required_basic_g(const OutArgs & outArgs) const;
+
+    //! for evaluation and handling of normal quantities, x,f,W, etc using a blocked epetra linear object
+    void evalModel_basic_blocked( const InArgs& inArgs, const OutArgs& outArgs ) const; 
 
     #ifdef HAVE_STOKHOS
        //! Are their required SG responses in the out args? sg
@@ -198,13 +211,13 @@ namespace panzer {
     bool build_transient_support_;
 
     // basic specific linear object objects
-    Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > lof_;
-    mutable Teuchos::RCP<EpetraLinearObjContainer> ghostedContainer_;
+    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > lof_;
+    mutable Teuchos::RCP<LinearObjContainer> ghostedContainer_;
 
     #ifdef HAVE_STOKHOS
        // sg specific linear object objects
        Teuchos::RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,int> > sg_lof_;
-       mutable Teuchos::RCP<SGEpetraLinearObjContainer> sg_ghostedContainer_;
+       mutable Teuchos::RCP<LinearObjContainer> sg_ghostedContainer_;
     #endif
   };
 

@@ -82,7 +82,7 @@ template <typename TraitsT>
 void ResponseLibrary<TraitsT>::
 initialize(const ResponseLibrary<TraitsT> & rl)
 {
-   respAggManager_ .initialize(rl.globalIndexer_,rl.linObjFactory_);
+   respAggManager_.initialize(rl.globalIndexer_,rl.linObjFactory_);
    wkstContainer_ = rl.wkstContainer_;
    globalIndexer_ = rl.globalIndexer_; 
    linObjFactory_ = rl.linObjFactory_;

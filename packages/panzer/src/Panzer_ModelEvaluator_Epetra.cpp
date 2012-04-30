@@ -44,6 +44,7 @@
 #include "Panzer_ModelEvaluator_Epetra.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_EpetraLinearObjContainer.hpp"
 #include "Panzer_SGEpetraLinearObjFactory.hpp"
 #include "Panzer_SGEpetraLinearObjContainer.hpp"
@@ -65,6 +66,51 @@
 #endif
 
 #include <sstream>
+
+panzer::ModelEvaluator_Epetra::
+ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,
+                      const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
+		      const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof,
+		      const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
+		      const Teuchos::RCP<panzer::GlobalData>& global_data,
+		      bool build_transient_support)
+  : t_init_(0.0)
+  , fmb_(fmb)
+  , responseLibrary_(rLibrary)
+  , p_names_(p_names)
+  , global_data_(global_data)
+  , build_transient_support_(build_transient_support)
+  , lof_(lof)
+  #ifdef HAVE_STOKHOS
+  , sg_lof_(Teuchos::null)
+  #endif
+{
+  using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
+
+  panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb,lof);
+  ae_tm_.buildObjects(builder);
+
+  // Setup parameters
+  this->initializeParameterVector(p_names_,global_data->pl);
+
+  // try to determine the runtime linear object factory
+
+  Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof =
+     Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(lof);
+
+  Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > b_ep_lof =
+     Teuchos::rcp_dynamic_cast<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> >(lof);
+
+  // initialize maps, x_dot_init, x0, p_init, g_map, and W_graph
+  if(ep_lof!=Teuchos::null)
+     initializeEpetraObjs(*ep_lof);
+  else if(b_ep_lof!=Teuchos::null)
+     initializeBlockedEpetraObjs(*b_ep_lof);
+  else {
+     TEUCHOS_ASSERT(false); // bad news!
+  }
+}
 
 panzer::ModelEvaluator_Epetra::
 ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,
@@ -94,7 +140,7 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >&
   this->initializeParameterVector(p_names_,global_data->pl);
 
   // initailize maps, x_dot_init, x0, p_init, g_map, and W_graph
-  initializeEpetraObjs();
+  initializeEpetraObjs(*lof);
 }
 
 #ifdef HAVE_STOKHOS
@@ -127,20 +173,17 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >&
 }
 #endif
 
-void panzer::ModelEvaluator_Epetra::initializeEpetraObjs()
+void panzer::ModelEvaluator_Epetra::initializeEpetraObjs(panzer::EpetraLinearObjFactory<panzer::Traits,int> & lof)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
  
-  TEUCHOS_TEST_FOR_EXCEPTION(lof_==Teuchos::null,std::logic_error,
-                     "panzer::ModelEvaluator_Epetra::initializeEpetraObjs: The linear object factory "
-                     "was not correctly initialized before calling initializeEpetraObjs.");
   TEUCHOS_TEST_FOR_EXCEPTION(responseLibrary_==Teuchos::null,std::logic_error,
                      "panzer::ModelEvaluator_Epetra::initializeEpetraObjs: The response library "
                      "was not correctly initialized before calling initializeEpetraObjs.");
 
-  map_x_ = lof_->getMap();
+  map_x_ = lof.getMap();
   x0_ = rcp(new Epetra_Vector(*map_x_));
   x_dot_init_ = rcp(new Epetra_Vector(*map_x_));
   x_dot_init_->PutScalar(0.0);
@@ -162,7 +205,12 @@ void panzer::ModelEvaluator_Epetra::initializeEpetraObjs()
   }
 
   // Initialize the graph for W CrsMatrix object
-  W_graph_ = lof_->getGraph();
+  W_graph_ = lof.getGraph();
+}
+
+void panzer::ModelEvaluator_Epetra::initializeBlockedEpetraObjs(panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> & lof)
+{
+   TEUCHOS_ASSERT(false);
 }
 
 void panzer::ModelEvaluator_Epetra::
@@ -347,11 +395,11 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
 
   // if neccessary build a ghosted container
   if(Teuchos::is_null(ghostedContainer_)) {
-     ghostedContainer_ = rcp_dynamic_cast<EpetraLinearObjContainer>(lof_->buildGhostedLinearObjContainer());
-     lof_->initializeGhostedContainer(panzer::EpetraLinearObjContainer::X |
-                                      panzer::EpetraLinearObjContainer::DxDt |
-                                      panzer::EpetraLinearObjContainer::F |
-                                      panzer::EpetraLinearObjContainer::Mat, *ghostedContainer_); 
+     ghostedContainer_ = lof_->buildGhostedLinearObjContainer();
+     lof_->initializeGhostedContainer(panzer::LinearObjContainer::X |
+                                      panzer::LinearObjContainer::DxDt |
+                                      panzer::LinearObjContainer::F |
+                                      panzer::LinearObjContainer::Mat, *ghostedContainer_); 
   }
 
   //
@@ -538,11 +586,11 @@ evalModel_sg(const InArgs & inArgs,const OutArgs & outArgs) const
 
   // if neccessary build a ghosted container
   if(Teuchos::is_null(sg_ghostedContainer_)) {
-     sg_ghostedContainer_ = rcp_dynamic_cast<SGEpetraLinearObjContainer>(sg_lof_->buildGhostedLinearObjContainer());
-     sg_lof_->initializeGhostedContainer(panzer::EpetraLinearObjContainer::X |
-                                         panzer::EpetraLinearObjContainer::DxDt |
-                                         panzer::EpetraLinearObjContainer::F |
-                                         panzer::EpetraLinearObjContainer::Mat, *sg_ghostedContainer_); 
+     sg_ghostedContainer_ = sg_lof_->buildGhostedLinearObjContainer();
+     sg_lof_->initializeGhostedContainer(panzer::LinearObjContainer::X |
+                                         panzer::LinearObjContainer::DxDt |
+                                         panzer::LinearObjContainer::F |
+                                         panzer::LinearObjContainer::Mat, *sg_ghostedContainer_); 
   }
 
   //
