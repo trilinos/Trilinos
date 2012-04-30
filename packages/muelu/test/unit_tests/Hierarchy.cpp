@@ -867,3 +867,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchyTestBreakCondition)
 // should be replaced by
 // TEST_EQUALITY(H.GetLevel(1)->Get< RCP<Operator> >("PreSmoother"), preSmoother);
 // testing if preSmoother->GetType() == "Ifpack: Gauss-Seidel" should be a unit test of the class IfpackSmoother
+
+
+//TODO unit test:
+// test if Hierarchy::Iterate(X,Y) works when X == Y (ie: do we need to test explicitly if X==Y and make a temporary copy inside of Iterate() ?)
