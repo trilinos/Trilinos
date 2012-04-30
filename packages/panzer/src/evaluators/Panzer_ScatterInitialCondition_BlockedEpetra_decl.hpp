@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_SCATTER_INITIAL_CONDITION_EPETRA_DECL_HPP
-#define PANZER_SCATTER_INITIAL_CONDITION_EPETRA_DECL_HPP
+#ifndef PANZER_SCATTER_INITIAL_CONDITION_BLOCKEDEPETRA_DECL_HPP
+#define PANZER_SCATTER_INITIAL_CONDITION_BLOCKEDEPETRA_DECL_HPP
 
 #include "Phalanx_ConfigDefs.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
