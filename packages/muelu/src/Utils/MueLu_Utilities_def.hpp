@@ -234,7 +234,7 @@ t0 = MPI_Wtime();
 #       else
         RCP<Epetra_CrsMatrix> epA = Op2NonConstEpetraCrs(A);
         RCP<Epetra_CrsMatrix> epB = Op2NonConstEpetraCrs(B);
-        RCP<Epetra_CrsMatrix>       epC = Op2NonConstEpetraCrs(C);
+        RCP<Epetra_CrsMatrix> epC = Op2NonConstEpetraCrs(C);
 
         //ML's multiply cannot implicitly tranpose either matrix.
         bool canUseML=true;
