@@ -29,6 +29,7 @@ namespace Xpetra {
     //! Constructor specifying the number of non-zeros for all rows.
     static Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> >
     Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, size_t NumVectors, ProfileType pftype=DynamicProfile) {
+      XPETRA_MONITOR("CrsGraphFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (map->lib() == UseTpetra)
@@ -57,6 +58,7 @@ namespace Xpetra {
     
     static RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> >
     Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, size_t NumVectors, ProfileType pftype=DynamicProfile) {
+      XPETRA_MONITOR("CrsGraphFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (map->lib() == UseTpetra)

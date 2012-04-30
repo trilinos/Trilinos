@@ -28,6 +28,7 @@ namespace Xpetra {
     
     //! Constructor specifying the number of non-zeros for all rows.
     static RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, bool zeroOut=true) {
+      XPETRA_MONITOR("VectorFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (map->lib() == UseTpetra)
@@ -55,6 +56,7 @@ namespace Xpetra {
   public:
     
     static RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, bool zeroOut=true) {
+      XPETRA_MONITOR("VectorFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (map->lib() == UseTpetra)
@@ -86,6 +88,7 @@ namespace Xpetra {
   public:
     
     static RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, bool zeroOut=true) {
+      XPETRA_MONITOR("VectorFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (map->lib() == UseTpetra)

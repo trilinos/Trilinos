@@ -27,6 +27,7 @@ namespace Xpetra {
     
     //! Constructor specifying the number of non-zeros for all rows.
     static RCP<Export<LocalOrdinal, GlobalOrdinal, Node> > Build(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &source, const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &target) {
+      XPETRA_MONITOR("ExportFactory::Build");
       TEUCHOS_TEST_FOR_EXCEPTION(source->lib() != target->lib(), Xpetra::Exceptions::RuntimeError, "");
 
 #ifdef HAVE_XPETRA_TPETRA
@@ -54,6 +55,8 @@ namespace Xpetra {
   public:
     
     static RCP<Export<LocalOrdinal, GlobalOrdinal, Node> > Build(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &source, const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &target) {
+      XPETRA_MONITOR("ExportFactory::Build");
+
       TEUCHOS_TEST_FOR_EXCEPTION(source->lib() != target->lib(), Xpetra::Exceptions::RuntimeError, "");
     
 #ifdef HAVE_XPETRA_TPETRA

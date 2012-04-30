@@ -28,6 +28,7 @@ namespace Xpetra {
     
     //! Constructor specifying the number of non-zeros for all rows.
     static Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, size_t NumVectors, bool zeroOut=true) {
+      XPETRA_MONITOR("MultiVectorFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (map->lib() == UseTpetra)
@@ -40,6 +41,7 @@ namespace Xpetra {
 
     //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy).
     static Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors) {
+      XPETRA_MONITOR("MultiVectorFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (map->lib() == UseTpetra)
@@ -67,6 +69,7 @@ namespace Xpetra {
   public:
     
     static RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, size_t NumVectors, bool zeroOut=true) {
+      XPETRA_MONITOR("MultiVectorFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (map->lib() == UseTpetra)
@@ -83,6 +86,7 @@ namespace Xpetra {
 
     //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy).
     static Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors) {
+      XPETRA_MONITOR("MultiVectorFactory::Build");
 
 #ifdef HAVE_XPETRA_TPETRA
       if (map->lib() == UseTpetra)
