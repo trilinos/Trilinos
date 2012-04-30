@@ -76,8 +76,9 @@ namespace Xpetra {
 #endif
 
 #ifdef HAVE_XPETRA_MONITOR
-#define XPETRA_MONITOR(funcName)
-#else
+#include <Teuchos_TimeMonitor.hpp>
+#define XPETRA_MONITOR(funcName) Teuchos::TimeMonitor(getNewTimer("Xpetra: "+funcName));
+  #else
 #define XPETRA_MONITOR(funcName)
 #endif
 
