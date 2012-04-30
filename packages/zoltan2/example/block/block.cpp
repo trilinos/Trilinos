@@ -8,9 +8,9 @@
     \brief An example of partitioning global ids with Block.
 */
 
-#include <Zoltan2_TestHelpers.hpp>
 #include <Zoltan2_BasicIdentifierInput.hpp>
-#include <Zoltan2_Partitioning.hpp>
+#include <Zoltan2_PartitioningProblem.hpp>
+#include <Zoltan2_PartitioningSolution.hpp>
 
 using namespace std;
 
@@ -20,11 +20,44 @@ using namespace std;
     \todo write some examples that don't use teuchos
 */
 
+// Zoltan2 is templated.  What data types will we use for
+// scalars (coordinate values and weights), for local ids, and
+// for global ids?
+//
+// If Zoltan2 was compiled with explicit instantiation, we will
+// use the the library's data types.  These macros are defined
+// in Zoltan2_config.h.
+
+#ifdef HAVE_ZOLTAN2_INST_FLOAT_INT_LONG
+typedef float scalar_t;
+typedef int localId_t;
+typedef long globalId_t;
+#else
+  #ifdef HAVE_ZOLTAN2_INST_DOUBLE_INT_LONG
+  typedef double scalar_t;
+  typedef int localId_t;
+  typedef long globalId_t;
+  #else
+    #ifdef HAVE_ZOLTAN2_INST_FLOAT_INT_INT
+    typedef float scalar_t;
+    typedef int localId_t;
+    typedef int globalId_t;
+    #else
+      #ifdef HAVE_ZOLTAN2_INST_DOUBLE_INT_INT
+      typedef double scalar_t;
+      typedef int localId_t;
+      typedef int globalId_t;
+      #else
+      typedef float scalar_t;
+      typedef int localId_t;
+      typedef int globalId_t;
+      #endif
+    #endif
+  #endif
+#endif
+
 int main(int argc, char *argv[])
 {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-
 #ifdef HAVE_ZOLTAN2_MPI
   MPI_Init(&argc, &argv);
   int rank, nprocs;
@@ -35,32 +68,30 @@ int main(int argc, char *argv[])
 #endif
 
   ///////////////////////////////////////////////////////////////////////
-  // Read coordinates from a file.
+  // Generate some input data.
 
-  std::string fname(testDataFilePath+"/USAir97.mtx");
-  outputFlag_t flags;
-  flags.set(OBJECT_COORDINATES);
+  size_t localCount = 40*(rank+1);
+  globalId_t *globalIds = new globalId_t [localCount];
 
-  typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
-  Teuchos::RCP<const Teuchos::Comm<int> > tcomm =
-    Teuchos::DefaultComm<int>::getComm();
+  if (rank==0)
+    for (int i=0, num=40; i <= nprocs ; i++, num+=40)
+      cout << "Rank " << i << " has " << num << " ids." << endl;
 
-  UserInputForTests uinput(fname, tcomm, flags);
+  globalId_t offset = 0;
+  for (int i=1; i <= rank; i++)
+    offset += 40*i;
 
-  RCP<tMVector_t> coords = uinput.getCoordinates();
-
-  size_t localCount = coords->getLocalLength();
-  //size_t globalCount = coords->getGlobalLength();
-
-  Teuchos::ArrayView<const gno_t> gnoList = 
-    coords->getMap()->getNodeElementList();
-
-  const gno_t *globalIds = gnoList.getRawPtr();
+  for (localId_t i=0; i < localCount; i++)
+    globalIds[i] = offset++;
    
   ///////////////////////////////////////////////////////////////////////
   // Create a Zoltan2 input adapter with no weights
 
-  typedef Zoltan2::BasicIdentifierInput<tMVector_t> inputAdapter_t;
+  // TODO explain
+  typedef Zoltan2::BasicUserTypes<scalar_t, globalId_t, localId_t, globalId_t> myTypes;
+
+  // TODO explain
+  typedef Zoltan2::BasicIdentifierInput<myTypes> inputAdapter_t;
 
   std::vector<const scalar_t *> noWeights;
   std::vector<int> noStrides;
@@ -71,7 +102,7 @@ int main(int argc, char *argv[])
   // Create parameters for an Block problem
 
   Teuchos::ParameterList params("test params");
-  params.set("debug_level", "detailed_status");
+  params.set("debug_level", "basic_status");
   params.set("debug_procs", "0");
   params.set("error_check_level", "debug_mode_assertions");
 
@@ -104,16 +135,11 @@ int main(int argc, char *argv[])
   ///////////////////////////////////////////////////////////////////////
   // Check the solution.
 
-  const ArrayRCP<Zoltan2::MetricValues<scalar_t> > & metrics1 =
-    solution.getMetrics();
+  if (rank == 0)
+    solution.printMetrics(cout);
 
   if (rank == 0)
-    Zoltan2::printMetrics<scalar_t>(cout, nprocs, nprocs, nprocs,
-      metrics1.view(0,metrics1.size()));
-
-   
-  if (rank == 0)
-    std::cout << "PASS" << std::endl;
+    cout << "PASS" << endl;
 
 #ifdef HAVE_ZOLTAN2_MPI
   MPI_Finalize();

@@ -222,7 +222,7 @@ public:
    *
    *   \param partList  The part assigned to gnoList[i] by the algorithm
    *      should be in partList[i].  The partList is allocated and written
-   *      by the algorithm. We save an RCP to the part list.
+   *      by the algorithm.
    *
    *   \param metrics An array of named MetricValues objects.
    *
@@ -230,6 +230,14 @@ public:
    * those representing the global Ids of that process.  But
    * all global numbers should be assigned a part by exactly one
    * process.
+   *
+   * setParts() must be called by all processes in the problem, as
+   * the part for each global identifier supplied by each process
+   * in its InputAdapter is found and saved in this PartitioningSolution.
+   *
+   * TODO - metrics are only computed if the user sets a parameter 
+   * indicating that they want metrics.  Metrics will be calculated
+   * in the Solution, not in the algorithm.
    */
   
   void setParts(ArrayRCP<const gno_t> &gnoList, ArrayRCP<partId_t> &partList,
@@ -266,9 +274,10 @@ public:
    *      \todo add more metrics
    */
   const scalar_t getImbalance() const { 
-    if (qualityMetrics_.size() == 1)
+    size_t len = qualityMetrics_.size();
+    if (len == 1)
       return qualityMetrics_[0].getMaxImbalance();   // object counts
-    else if (qualityMetrics_.size() > 1)
+    else if (len > 1)
       return qualityMetrics_[1].getMaxImbalance();   // normed object weights
     else
       return 0.0;
@@ -281,6 +290,19 @@ public:
   const ArrayRCP<MetricValues<scalar_t> > &getMetrics() const { 
     return qualityMetrics_;
   }
+
+  /*! \brief Print the array of metrics
+   *   \param os the output stream for the report.
+   */
+  void printMetrics(ostream &os) const {
+    size_t len = qualityMetrics_.size();
+    if (len)
+      Zoltan2::printMetrics<scalar_t>(os, 
+        nGlobalParts_, nGlobalParts_, nGlobalParts_ - nEmptyParts_,
+        qualityMetrics_.view(0, len));
+    else
+      os << "No metrics available." << endl;
+  };
 
   /*! \brief Get the parts belonging to a process.
    *  \param procId a process rank
@@ -348,6 +370,7 @@ private:
   RCP<const IdentifierMap<user_t> > idMap_;
 
   gno_t nGlobalParts_; // the global number of parts
+  gno_t nEmptyParts_; // number of parts in solution with no objects
   scalar_t nLocalParts_; // Fraction of one part, or number of whole parts
   int weightDim_;      // if user has no weights, this is 1
 
@@ -444,7 +467,7 @@ template <typename Adapter>
     RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<user_t> > &idMap, int userWeightDim)
     : env_(env), comm_(comm), idMap_(idMap),
-      nGlobalParts_(0), nLocalParts_(0), weightDim_(),
+      nGlobalParts_(0), nEmptyParts_(0), nLocalParts_(0), weightDim_(),
       onePartPerProc_(false), partDist_(), procDist_(), 
       pSizeUniform_(), pCompactIndex_(), pSize_(),
       gids_(), parts_(), qualityMetrics_(), procs_()
@@ -472,7 +495,7 @@ template <typename Adapter>
     ArrayView<ArrayRCP<partId_t> > reqPartIds, 
     ArrayView<ArrayRCP<scalar_t> > reqPartSizes)
     : env_(env), comm_(comm), idMap_(idMap),
-      nGlobalParts_(0), nLocalParts_(0), weightDim_(),
+      nGlobalParts_(0), nEmptyParts_(0), nLocalParts_(0), weightDim_(),
       onePartPerProc_(false), partDist_(), procDist_(), 
       pSizeUniform_(), pCompactIndex_(), pSize_(),
       gids_(), parts_(), qualityMetrics_(), procs_()
@@ -1003,21 +1026,38 @@ template <typename Adapter>
 {
   qualityMetrics_ = metrics;
 
+  // We'll flag parts that are used, for calculation of nEmptyParts_.
+  // TODO: Add a parameter where user indicates they will want
+  //   metrics.   And if that is not specified, we can skip
+  //   counting empty parts.
+
+  char *inUse = new char [nGlobalParts_];
+  env_->localMemoryAssertion(__FILE__, __LINE__, nGlobalParts_, inUse);
+  memset(inUse, 0, nGlobalParts_);
+  ArrayRCP<char> partFlag(inUse, 0, nGlobalParts_, true);
+
   // Find the owners of the global numbers.
 
   size_t len = gnoList.size();
   ArrayView<gid_t> emptyView;
-  int *tmp = new int [len];
-  env_->localMemoryAssertion(__FILE__, __LINE__, len, tmp);
-  ArrayView<int> procList(tmp, len);
+  ArrayView<int> procList;
+
+  if (len){
+    int *tmp = new int [len];
+    env_->localMemoryAssertion(__FILE__, __LINE__, len, tmp);
+    procList = ArrayView<int>(tmp, len);
+  }
 
   idMap_->gnoGlobalTranslate (gnoList.view(0,len), emptyView, procList);
 
   int remotelyOwned = 0;
   int rank = comm_->getRank();
-  for (lno_t i=0; !remotelyOwned && i < len; i++)
+  int nprocs = comm_->getSize();
+
+  for (lno_t i=0; !remotelyOwned && i < len; i++){
     if (procList[i] != rank)
       remotelyOwned = 1;
+  }
 
   int anyRemotelyOwned=0;
 
@@ -1030,8 +1070,6 @@ template <typename Adapter>
   if (anyRemotelyOwned){
 
     // Send the owners of these gnos their part assignments.
-
-    int nprocs = comm_->getSize();
   
     lno_t *tmpCount = new lno_t [nprocs];
     memset(tmpCount, 0, sizeof(lno_t) * nprocs);
@@ -1049,8 +1087,10 @@ template <typename Adapter>
       env_->localMemoryAssertion(__FILE__, __LINE__, nprocs+1, tmpOff);
       ArrayView<lno_t> offsetBuf(tmpOff, nprocs+1);
     
-      for (int i=0; i < len; i++)
+      for (int i=0; i < len; i++){
         countOutBuf[procList[i]]+=2;
+        partFlag[partList[i]] = 1;
+      }
     
       offsetBuf[0] = 0;
       for (int i=0; i < nprocs; i++)
@@ -1114,8 +1154,11 @@ template <typename Adapter>
     len = newLen;
   }
   else{
-    if (len)
+    if (len){
       delete [] procList.getRawPtr();
+      for (int i=0; i < len; i++)
+        partFlag[partList[i]] = 1;
+    }
   }
   
   if (idMap_->gnosAreGids()){
@@ -1175,10 +1218,10 @@ template <typename Adapter>
       for (lno_t part=1; part < nGlobalParts_; part++){
         int proc1 = proc2;
         proc2 = partDist_[part+1];
-        int nprocs = proc2 - proc1;
+        int numprocs = proc2 - proc1;
 
         double dNum = partCounter[part];
-        double dProcs = nprocs;
+        double dProcs = numprocs;
         
         double each = floor(dNum/dProcs);
         double extra = fmod(dNum,dProcs);
@@ -1213,6 +1256,54 @@ template <typename Adapter>
       delete [] procCounter;
     }
   }
+
+  // Globally, how many empty parts are there.  This is helpful
+  // information when looking at imbalance numbers.
+  // TODO: Add a parameter where user indicates they will want
+  //   metrics.   And if that is not specified, we can skip
+  //   counting non empty parts.
+
+  int *rcounts = new int [nprocs];
+  env_->localMemoryAssertion(__FILE__, __LINE__, nprocs, rcounts);
+  memset(rcounts, 0, sizeof(int) * nprocs);
+  ArrayRCP<int> recvCounts(rcounts, 0, nprocs, true);
+
+  if (onePartPerProc_)
+    for (int i=0; i < nprocs; i++)
+      recvCounts[i] = 1;
+  else if (procDist_.size())
+    for (int i=0; i < nprocs; i++)
+      recvCounts[i] = procDist_[i+1] - procDist_[i];
+  else
+    for (partId_t i=0; i < nGlobalParts_; i++)
+      recvCounts[partDist_[i]] = 1;
+
+  partId_t numMyFlags = recvCounts[rank];
+  ArrayRCP<char> myFlags;
+  char *recvBuf = NULL;
+  if (numMyFlags > 0){
+    recvBuf = new char [numMyFlags];
+    env_->localMemoryAssertion(__FILE__, __LINE__, numMyFlags, recvBuf);
+    myFlags = arcp(recvBuf, 0, numMyFlags, true);
+  }
+
+  try{
+    Teuchos::reduceAllAndScatter<int, char>(*comm_, Teuchos::REDUCE_MAX,
+      nGlobalParts_, partFlag.getRawPtr(), 
+      recvCounts.getRawPtr(), recvBuf);
+  }
+  Z2_THROW_OUTSIDE_ERROR(*env_);
+
+  gno_t myNumEmptyParts = 0;
+  for (int i=0; i < numMyFlags; i++)
+    if (recvBuf[i] == 0)
+      myNumEmptyParts++;
+
+  try{
+    Teuchos::reduceAll<int, gno_t>(*comm_, Teuchos::REDUCE_SUM, 
+      1, &myNumEmptyParts, &nEmptyParts_);
+  }
+  Z2_THROW_OUTSIDE_ERROR(*env_);
 }
 
 template <typename Adapter>

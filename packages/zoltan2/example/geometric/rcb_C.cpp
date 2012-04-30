@@ -8,24 +8,59 @@
     \brief An example of partitioning coordinates with RCB.
 */
 
-#include <Zoltan2_TestHelpers.hpp>     // for UserInputForTests
-#include <Zoltan2_Partitioning.hpp>
+#include <Zoltan2_PartitioningSolution.hpp>
+#include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_BasicCoordinateInput.hpp>
+#include <Zoltan2_InputTraits.hpp>
 #include <vector>
+#include <cstdlib>
 
 using namespace std;
 using std::vector;
-using Zoltan2::MetricValues;
 
 /*! \example rcb.cpp
     An example of the use of the RCB algorithm to partition coordinate data.
 */
 
+// Zoltan2 is templated.  What data types will we use for
+// scalars (coordinate values and weights), for local ids, and
+// for global ids?
+//
+// If Zoltan2 was compiled with explicit instantiation, we will
+// use the the library's data types.  These macros are defined
+// in Zoltan2_config.h.
+
+#ifdef HAVE_ZOLTAN2_INST_FLOAT_INT_LONG
+typedef float scalar_t;
+typedef int localId_t;
+typedef long globalId_t;
+#else
+  #ifdef HAVE_ZOLTAN2_INST_DOUBLE_INT_LONG
+  typedef double scalar_t;
+  typedef int localId_t;
+  typedef long globalId_t;
+  #else
+    #ifdef HAVE_ZOLTAN2_INST_FLOAT_INT_INT
+    typedef float scalar_t;
+    typedef int localId_t;
+    typedef int globalId_t;
+    #else
+      #ifdef HAVE_ZOLTAN2_INST_DOUBLE_INT_INT
+      typedef double scalar_t;
+      typedef int localId_t;
+      typedef int globalId_t;
+      #else
+      typedef float scalar_t;
+      typedef int localId_t;
+      typedef int globalId_t;
+      #endif
+    #endif
+  #endif
+#endif
+
+
 int main(int argc, char *argv[])
 {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-
 #ifdef HAVE_ZOLTAN2_MPI                   
   MPI_Init(&argc, &argv);
   int rank, nprocs;
@@ -35,42 +70,46 @@ int main(int argc, char *argv[])
   int rank=0, nprocs=1;
 #endif
 
-  typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
-  typedef Zoltan2::BasicCoordinateInput<tMVector_t> inputAdapter_t;
+  // TODO explain
+  typedef Zoltan2::BasicUserTypes<scalar_t, globalId_t, localId_t, globalId_t> myTypes;
+
+  // TODO explain
+  typedef Zoltan2::BasicCoordinateInput<myTypes> inputAdapter_t;
 
   ///////////////////////////////////////////////////////////////////////
-  // Read coordinates from a file.
+  // Create input data.
 
-  std::string fname(testDataFilePath+"/USAir97.mtx");
-  outputFlag_t flags;
-  flags.set(OBJECT_COORDINATES);
+  size_t localCount = 40;
+  int dim = 3;
 
-  Teuchos::RCP<const Teuchos::Comm<int> > tcomm =
-    Teuchos::DefaultComm<int>::getComm();
-  UserInputForTests uinput(fname, tcomm, flags);
+  scalar_t *coords = new scalar_t [dim * localCount];
 
-  RCP<tMVector_t> coords = uinput.getCoordinates();
+  scalar_t *x = coords; 
+  scalar_t *y = x + localCount; 
+  scalar_t *z = y + localCount; 
 
-  size_t localCount = coords->getLocalLength();
-  int dim = coords->getNumVectors();
+  // Create coordinates that range from 0 to 10.0
 
-  scalar_t *x=NULL, *y=NULL, *z=NULL;
-  x = coords->getDataNonConst(0).getRawPtr();
+  srand(rank);
+  scalar_t scalingFactor = 10.0 / RAND_MAX;
 
-  if (dim > 1){
-    y = coords->getDataNonConst(1).getRawPtr();
-    if (dim > 2)
-      z = coords->getDataNonConst(2).getRawPtr();
+  for (int i=0; i < localCount*dim; i++){
+    coords[i] = scalar_t(rand()) * scalingFactor;
   }
 
-  const gno_t *globalIds = coords->getMap()->getNodeElementList().getRawPtr();
+  // Create global ids for the coordinates.
+
+  globalId_t *globalIds = new globalId_t [localCount];
+  globalId_t offset = rank * localCount;
+
+  for (localId_t i=0; i < localCount; i++)
+    globalIds[i] = offset++;
    
   ///////////////////////////////////////////////////////////////////////
   // Create parameters for an RCB problem
 
-  scalar_t tolerance = 1.2;
   if (rank == 0)
-    std::cout << "Imbalance tolerance is " << tolerance << std::endl;
+    std::cout << "Imbalance tolerance is " << 1.2 << std::endl;
 
   Teuchos::ParameterList params("test params");
   params.set("debug_level", "basic_status");
@@ -79,7 +118,7 @@ int main(int argc, char *argv[])
 
   Teuchos::ParameterList &parParams = params.sublist("partitioning");
   parParams.set("algorithm", "rcb");
-  parParams.set("imbalance_tolerance", tolerance);
+  parParams.set("imbalance_tolerance", 1.2 );
   parParams.set("num_global_parts", nprocs);
 
   Teuchos::ParameterList &geoParams = parParams.sublist("geometric");
@@ -91,7 +130,7 @@ int main(int argc, char *argv[])
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
 
-  // Create a Zoltan2 input adapter for this geometry.
+  // Create a Zoltan2 input adapter for this geometry. TODO explain
 
   inputAdapter_t ia1(localCount, globalIds, x, y, z, 1, 1, 1);
 
@@ -115,22 +154,17 @@ int main(int argc, char *argv[])
    
   // Check the solution.
 
-  const ArrayRCP<MetricValues<scalar_t> > & metrics1 =
-    solution1.getMetrics();
-
   if (rank == 0)
-    Zoltan2::printMetrics<scalar_t>(cout, nprocs, nprocs, nprocs, 
-      metrics1.view(0,metrics1.size()));
+    solution1.printMetrics(cout);
 
   if (rank == 0){
     scalar_t imb = solution1.getImbalance();
-    if (imb < tolerance)
+    if (imb < 1.2)
       std::cout << "PASS: " << imb << std::endl;
     else
       std::cout << "FAIL: " << imb << std::endl;
   }
    
-#if 0
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
   // Try a problem with weights (1 dimension)
@@ -180,16 +214,12 @@ int main(int argc, char *argv[])
 
   // Check the solution.
 
-  const ArrayRCP<MetricValues<scalar_t> > & metrics2 =
-    solution2.getMetrics();
-
   if (rank == 0)
-    Zoltan2::printMetrics<scalar_t>(cout, nprocs, nprocs, nprocs,
-      metrics2.view(0,metrics2.size()));
+    solution2.printMetrics(cout);
 
   if (rank == 0){
     scalar_t imb = solution2.getImbalance();
-    if (imb < tolerance)
+    if (imb < 1.2)
       std::cout << "PASS: " << imb << std::endl;
     else
       std::cout << "FAIL: " << imb << std::endl;
@@ -198,6 +228,7 @@ int main(int argc, char *argv[])
   if (localCount > 0)
     delete [] weights;
 
+#if 0
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
   // Try a problem with multiple weights.
@@ -257,12 +288,12 @@ int main(int argc, char *argv[])
     solution3.getMetrics();
 
   if (rank == 0)
-    Zoltan2::printMetrics<scalar_t>(cout, nprocs, nprocs, nprocs,
+    Zoltan2::printMetrics(cout, nprocs, nprocs, nprocs,
       metrics3.view(0,metrics3.size()));
 
   if (rank == 0){
     scalar_t imb = solution3.getImbalance();
-    if (imb < tolerance)
+    if (imb < 1.2)
       std::cout << "PASS: " << imb << std::endl;
     else
       std::cout << "FAIL: " << imb << std::endl;
@@ -313,12 +344,12 @@ int main(int argc, char *argv[])
     solution4.getMetrics();
 
   if (rank == 0)
-    Zoltan2::printMetrics<scalar_t>(cout, nprocs, nprocs, nprocs,
+    Zoltan2::printMetrics(cout, nprocs, nprocs, nprocs,
       metrics4.view(0,metrics4.size()));
 
   if (rank == 0){
     scalar_t imb = solution4.getImbalance();
-    if (imb < tolerance)
+    if (imb < 1.2)
       std::cout << "PASS: " << imb << std::endl;
     else
       std::cout << "FAIL: " << imb << std::endl;
