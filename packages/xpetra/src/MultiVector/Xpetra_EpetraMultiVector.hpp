@@ -160,6 +160,8 @@ namespace Xpetra {
 
     //! Set multi-vector values to random numbers.
     void randomize(bool bUseXpetraImplementation = false) {
+        XPETRA_MONITOR("EpetraMultiVector::randomize");
+
         if(bUseXpetraImplementation)
             Xpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Xpetra_randomize();
         else
@@ -170,7 +172,7 @@ namespace Xpetra {
     //{@
 
     //! Access function for the Tpetra::Map this DistObject was constructed with.
-    const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { return toXpetra(vec_->Map()); }
+    const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { XPETRA_MONITOR("EpetraMultiVector::getMap"); return toXpetra(vec_->Map()); }
 
     //! Import.
     void doImport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM);
@@ -197,6 +199,8 @@ namespace Xpetra {
 
     //! Set seed for Random function.
     void setSeed(unsigned int seed) {
+      XPETRA_MONITOR("EpetraMultiVector::seedrandom");
+
       Teuchos::ScalarTraits< Scalar >::seedrandom(seed);
       vec_->SetSeed(seed);
     }

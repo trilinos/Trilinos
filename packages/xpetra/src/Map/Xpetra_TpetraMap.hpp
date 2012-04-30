@@ -192,6 +192,8 @@ namespace Xpetra {
     template <class LocalOrdinal, class GlobalOrdinal, class Node>
     Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >
     createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) { 
+      XPETRA_MONITOR("useTpetra::createLocalMapWithNode");
+
       return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm, node)));
     }
 
@@ -199,6 +201,8 @@ namespace Xpetra {
     template <class LocalOrdinal, class GlobalOrdinal>
     Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
     createContigMap(global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { 
+      XPETRA_MONITOR("useTpetra::createContigMap");
+
       return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal>(Tpetra::createContigMap<LocalOrdinal,GlobalOrdinal>(numElements, localNumElements, comm)));
     }
 
@@ -207,6 +211,7 @@ namespace Xpetra {
     Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >
     createContigMapWithNode(global_size_t numElements, size_t localNumElements, 
                             const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) { 
+      XPETRA_MONITOR("useTpetra::createContigMap");
       return rcp(new TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, localNumElements, comm, node)));
     }
   } // useTpetra namespace
@@ -217,12 +222,14 @@ namespace Xpetra {
 //!  Returns true if \c map is identical to this map. Implemented in TpetraMap::isSameAs().
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 bool operator== (const Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map1, const Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map2) { 
+  XPETRA_MONITOR("TpetraMap==TpetraMap");
   return map1.isSameAs(map2);
 }
 
 //! Returns true if \c map is not identical to this map. Implemented in TpetraMap::isSameAs().
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 bool operator!= (const Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map1, const Xpetra::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map2) { 
+  XPETRA_MONITOR("TpetraMap!=TpetraMap");
   return !map1.isSameAs(map2);
 }
 

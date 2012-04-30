@@ -142,6 +142,8 @@ namespace Xpetra {
 
     //! Return the global index for a given local index.  Note that this returns -1 if not found on this processor.  (This is different than Epetra's behavior!)
     GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const {
+      XPETRA_MONITOR("EpetraMap::getGlobalElement");
+
       GlobalOrdinal gid = map_->GID(localIndex);
       if (gid == map_->IndexBase()-1) return (-1);
       else                            return (gid);

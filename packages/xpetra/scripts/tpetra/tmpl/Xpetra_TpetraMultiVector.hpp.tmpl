@@ -44,6 +44,8 @@ $TMPL_PUBLIC_FUNCTIONS
 
     //! Set multi-vector values to random numbers.
     void randomize(bool bUseXpetraImplementation = false) {
+        XPETRA_MONITOR("TpetraMultiVector::randomize");
+
         if(bUseXpetraImplementation)
             Xpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Xpetra_randomize();
         else
@@ -53,17 +55,19 @@ $TMPL_PUBLIC_FUNCTIONS
     //{@
     // Implements DistObject interface
     
-    const Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > getMap() const { return toXpetra(vec_->getMap()); }
+    const Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > getMap() const { XPETRA_MONITOR("TpetraMultiVector::getMap"); return toXpetra(vec_->getMap()); }
     
     void doImport(const DistObject< Scalar, LocalOrdinal,GlobalOrdinal,Node> &source, const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, CombineMode CM) { 
-      
+      XPETRA_MONITOR("TpetraMultiVector::doImport");
+
       XPETRA_DYNAMIC_CAST(const TpetraMultiVectorClass, source, tSource, "Xpetra::TpetraMultiVector::doImport only accept Xpetra::TpetraMultiVector as input arguments."); //TODO: remove and use toTpetra()
       RCP< const Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tSource.getTpetra_MultiVector();
       this->getTpetra_MultiVector()->doImport(*v, toTpetra(importer), toTpetra(CM));
     }
 
     void doExport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &dest, const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, CombineMode CM) {
-            
+      XPETRA_MONITOR("TpetraMultiVector::doExport");            
+
       XPETRA_DYNAMIC_CAST(const TpetraMultiVectorClass, dest, tDest, "Xpetra::TpetraMultiVector::doImport only accept Xpetra::TpetraMultiVector as input arguments."); //TODO: remove and use toTpetra()
       RCP< const Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tDest.getTpetra_MultiVector();
       this->getTpetra_MultiVector()->doExport(*v, toTpetra(importer), toTpetra(CM)); 
@@ -71,6 +75,7 @@ $TMPL_PUBLIC_FUNCTIONS
     }
 
     void doImport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source, const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, CombineMode CM) {
+      XPETRA_MONITOR("TpetraMultiVector::doImport");
 
       XPETRA_DYNAMIC_CAST(const TpetraMultiVectorClass, source, tSource, "Xpetra::TpetraMultiVector::doImport only accept Xpetra::TpetraMultiVector as input arguments."); //TODO: remove and use toTpetra()
       RCP< const Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tSource.getTpetra_MultiVector();
@@ -79,6 +84,7 @@ $TMPL_PUBLIC_FUNCTIONS
     }
 
     void doExport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &dest, const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, CombineMode CM) {
+      XPETRA_MONITOR("TpetraMultiVector::doExport");
       
       XPETRA_DYNAMIC_CAST(const TpetraMultiVectorClass, dest, tDest, "Xpetra::TpetraMultiVector::doImport only accept Xpetra::TpetraMultiVector as input arguments."); //TODO: remove and use toTpetra()
       RCP< const Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal,Node> > v = tDest.getTpetra_MultiVector();
@@ -98,7 +104,7 @@ $TMPL_PUBLIC_FUNCTIONS
     RCP< Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_MultiVector() const { return vec_; }
 
     //! Set seed for Random function.
-    void setSeed(unsigned int seed) { Teuchos::ScalarTraits< Scalar >::seedrandom(seed); }
+    void setSeed(unsigned int seed) { XPETRA_MONITOR("TpetraMultiVector::seedrandom"); Teuchos::ScalarTraits< Scalar >::seedrandom(seed); }
  
     //@}
     
@@ -133,8 +139,10 @@ $TMPL_PUBLIC_FUNCTIONS
 namespace Xpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::elementWiseMultiply(Scalar scalarAB, const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, Scalar scalarThis) {
-    //TODO XPETRA_DYNAMIC_CAST won't take TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>
-    //TODO as an argument, hence the following typedef.
+    XPETRA_MONITOR("TpetraMultiVector::elementWiseMultiply");
+
+    // XPETRA_DYNAMIC_CAST won't take TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>
+    // as an argument, hence the following typedef.
     typedef TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> tpv;
     XPETRA_DYNAMIC_CAST(const tpv, A, tA, "Xpetra::TpetraMultiVectorMatrix->multiply() only accept Xpetra::TpetraMultiVector as input arguments.");
     XPETRA_DYNAMIC_CAST(const TpetraMultiVector, B, tB, "Xpetra::TpetraMultiVectorMatrix->multiply() only accept Xpetra::TpetraMultiVector as input arguments.");
