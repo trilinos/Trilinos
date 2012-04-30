@@ -75,10 +75,11 @@ namespace Xpetra {
 #define XPETRA_PRINTS_ABUSE_WARNINGS 0
 #endif
 
-#ifdef HAVE_XPETRA_MONITOR
+#ifdef HAVE_XPETRA_PROFILING
+#include <string>
 #include <Teuchos_TimeMonitor.hpp>
-#define XPETRA_MONITOR(funcName) Teuchos::TimeMonitor(getNewTimer("Xpetra: "+funcName));
-  #else
+#define XPETRA_MONITOR(funcName) Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("Xpetra: ") + funcName));
+#else
 #define XPETRA_MONITOR(funcName)
 #endif
 

@@ -6,3 +6,4 @@
 
 #cmakedefine HAVE_XPETRA_EPETRAEXT
 
+#cmakedefine HAVE_XPETRA_PROFILING
