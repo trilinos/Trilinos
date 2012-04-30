@@ -248,7 +248,7 @@ namespace MueLu {
     for(LocalOrdinal n=0; n<Teuchos::as<LocalOrdinal>(nodeMap->getNodeNumElements()); n++) {
       GlobalOrdinal globalblockid = (GlobalOrdinal) nodeMap->getGlobalElement(n);
 
-      GetOStream(Statistics1) << "nodeMap->getGlobalElement(" << n << ")=" << nodeMap->getGlobalElement(n) << std::endl;
+      GetOStream(Debug) << "nodeMap->getGlobalElement(" << n << ")=" << nodeMap->getGlobalElement(n) << std::endl;
 
       // TODO: have to think about this
       //TEUCHOS_TEST_FOR_EXCEPTION(GetAmalgamationInfo()->GetGlobalAmalgamationParams()->count(globalblockid)<=0, Exceptions::RuntimeError, "MueLu::Aggregates::GenerateImportDofMap: empty global block? globalblockid=" << globalblockid << ". Error.");
