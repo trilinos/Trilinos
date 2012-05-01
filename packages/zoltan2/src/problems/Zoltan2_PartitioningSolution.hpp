@@ -168,6 +168,12 @@ public:
     oneToOnePartDistribution() or getPartDistribution() describes the mapping.
  */
   const partId_t *getProcDistribution() const { return &procDist_[0]; }
+
+/*! \brief Get the number of criteria (the weight dimension).
+    \return the number of criteria for which the solution has part sizes.
+ */
+  int getNumberOfCriteria() const { return weightDim_; }
+
   
 /*! \brief Determine if balancing criteria (weight dimension) has uniform
                 part sizes.  (User can specify differing part sizes.)
@@ -888,7 +894,8 @@ template <typename Adapter>
     return;
   }
 
-  scalar_t avg = 1.0;    // size for parts that were not specified
+  // A size for parts that were not specified:
+  scalar_t avg = sum / nparts;
 
   // We are going to merge part sizes that are very close.  This takes
   // computation time now, but can save considerably in the storage of

@@ -312,7 +312,7 @@ template <typename Adapter>
     len>= 0, BASIC_ASSERTION);
 
   this->env_->localInputAssertion(__FILE__, __LINE__, "invalid criteria", 
-    criteria >= 0 && criteria < numberOfWeights_, BASIC_ASSERTION);
+    criteria >= 0 && criteria < numberOfCriteria_, BASIC_ASSERTION);
 
   if (len == 0){
     partIds_[criteria] = ArrayRCP<partId_t>();
@@ -327,17 +327,21 @@ template <typename Adapter>
   // by the PartitioningSolution, which computes global part distribution and
   // part sizes.
 
-  partId_t *z2_partIds = partIds;
-  scalar_t *z2_partSizes = partSizes;
+  partId_t *z2_partIds = NULL;
+  scalar_t *z2_partSizes = NULL;
   bool own_memory = false;
 
   if (makeCopy){
-    z2_partIds = NULL;
     z2_partIds = new partId_t [len];
-    this->env_->localMemoryAssertion(__FILE__, __LINE__, len, z2_partIds);
-    z2_partSizes = NULL;
     z2_partSizes = new scalar_t [len];
     this->env_->localMemoryAssertion(__FILE__, __LINE__, len, z2_partSizes);
+    memcpy(z2_partIds, partIds, len * sizeof(partId_t));
+    memcpy(z2_partSizes, partSizes, len * sizeof(scalar_t));
+    own_memory=true;
+  }
+  else{
+    z2_partIds = partIds;
+    z2_partSizes = partSizes;
   }
 
   partIds_[criteria] = arcp(z2_partIds, 0, len, own_memory);

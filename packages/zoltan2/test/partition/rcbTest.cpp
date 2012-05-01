@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
   // Create parameters for an RCB problem
 
   Teuchos::ParameterList params("test params");
-  params.set("debug_level", "detailed_status");
+  params.set("debug_level", "basic_status");
   params.set("debug_procs", "0");
   params.set("error_check_level", "debug_mode_assertions");
 

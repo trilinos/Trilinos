@@ -162,9 +162,9 @@ int main(int argc, char *argv[])
   if (rank == 0){
     scalar_t imb = solution1.getImbalance();
     if (imb <= tolerance)
-      std::cout << "PASS: " << imb << std::endl;
+      std::cout << "pass: " << imb << std::endl;
     else
-      std::cout << "FAIL: " << imb << std::endl;
+      std::cout << "fail: " << imb << std::endl;
     std::cout << std::endl;
   }
    
@@ -223,9 +223,9 @@ int main(int argc, char *argv[])
   if (rank == 0){
     scalar_t imb = solution2.getImbalance();
     if (imb <= tolerance)
-      std::cout << "PASS: " << imb << std::endl;
+      std::cout << "pass: " << imb << std::endl;
     else
-      std::cout << "FAIL: " << imb << std::endl;
+      std::cout << "fail: " << imb << std::endl;
     std::cout << std::endl;
   }
 
@@ -295,9 +295,9 @@ int main(int argc, char *argv[])
   if (rank == 0){
     scalar_t imb = solution3.getImbalance();
     if (imb <= tolerance)
-      std::cout << "PASS: " << imb << std::endl;
+      std::cout << "pass: " << imb << std::endl;
     else
-      std::cout << "FAIL: " << imb << std::endl;
+      std::cout << "fail: " << imb << std::endl;
     std::cout << std::endl;
   }
 
@@ -315,9 +315,9 @@ int main(int argc, char *argv[])
     solution3a.printMetrics(cout);
     scalar_t imb = solution3a.getImbalance();
     if (imb <= tolerance)
-      std::cout << "PASS: " << imb << std::endl;
+      std::cout << "pass: " << imb << std::endl;
     else
-      std::cout << "FAIL: " << imb << std::endl;
+      std::cout << "fail: " << imb << std::endl;
     std::cout << std::endl;
   }
 
@@ -330,9 +330,9 @@ int main(int argc, char *argv[])
     solution3b.printMetrics(cout);
     scalar_t imb = solution3b.getImbalance();
     if (imb <= tolerance)
-      std::cout << "PASS: " << imb << std::endl;
+      std::cout << "pass: " << imb << std::endl;
     else
-      std::cout << "FAIL: " << imb << std::endl;
+      std::cout << "fail: " << imb << std::endl;
     std::cout << std::endl;
   }
 
@@ -341,7 +341,6 @@ int main(int argc, char *argv[])
     weights = NULL;
   }
 
-#if 0
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
   // Using part sizes, ask for some parts to be empty.
@@ -352,12 +351,11 @@ int main(int argc, char *argv[])
   // ensure that we have more than one global part.
 
   parParams.set("num_global_parts", nprocs*2);
-  parParams.set("num_local_parts", 2);
 
   // Using the initial problem that did not have any weights, reset
   // parameter list, and give it some part sizes.
 
-  problem1.resetParameterList(&params);
+  problem1.resetParameters(&params);
 
   zoltan2_partId_t *partIds = new zoltan2_partId_t [2];
   scalar_t *partSizes = new scalar_t [2];
@@ -367,16 +365,31 @@ int main(int argc, char *argv[])
 
   problem1.setPartSizes(2, partIds, partSizes);
 
-  // Solve the problem.  The flag "false" indicates that we
-  // have not changed the input data, which allows the problem
-  // so skip some work when re-solving.
+  // Solve the problem.  The argument "dataHasChanged" indicates 
+  // that we have not changed the input data, which allows the problem
+  // so skip some work when re-solving. 
 
-  problem1.solve(false);
+  dataHasChanged = false;
+
+  problem1.solve(dataHasChanged);
 
   // Obtain the solution
 
   const Zoltan2::PartitioningSolution<inputAdapter_t> &solution4 =
     problem1.getSolution();
+
+  // Check it.  Part sizes should all be odd.
+
+  const zoltan2_partId_t *partAssignments = solution4.getPartList();
+
+  int numInEmptyParts = 0;
+  for (int i=0; i < localCount; i++){
+    if (partAssignments[i] % 2 == 0)
+      numInEmptyParts++;
+  }
+
+  if (rank == 0)
+    std::cout << "Request that " << nprocs << " parts be empty." <<std::endl;
 
   // Check the solution.
 
@@ -386,9 +399,9 @@ int main(int argc, char *argv[])
   if (rank == 0){
     scalar_t imb = solution4.getImbalance();
     if (imb <= tolerance)
-      std::cout << "PASS: " << imb << std::endl;
+      std::cout << "pass: " << imb << std::endl;
     else
-      std::cout << "FAIL: " << imb << std::endl;
+      std::cout << "fail: " << imb << std::endl;
     std::cout << std::endl;
   }
 
@@ -396,7 +409,6 @@ int main(int argc, char *argv[])
   partIds = NULL;
   delete [] partSizes;
   partSizes = NULL;
-#endif
 
   if (coords)
     delete [] coords;
@@ -408,5 +420,7 @@ int main(int argc, char *argv[])
   MPI_Finalize();
 #endif
 
+  if (rank == 0)
+    std::cout << "PASS" << std::endl;
 }
 

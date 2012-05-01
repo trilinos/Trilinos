@@ -45,8 +45,9 @@ enum rcbParams {
  */
 
 enum leftRightFlag{
-  leftFlag = 0xfe,     /*!< 254 */
-  rightFlag = 0xff     /*!< 255 */
+  unsetFlag = 0xfd,       /*!< 253 */
+  leftFlag = 0xfe,        /*!< 254 */
+  rightFlag = 0xff        /*!< 255 */
 };
 
 // TODO: RCB has several helper methods.
@@ -156,7 +157,7 @@ template <typename mvector_t>
         scalar_t v = val[index[0]];
         scalar_t min = v;
         scalar_t max = v;
-        for (lno_t i=0; i < numLocalCoords; i++){
+        for (lno_t i=1; i < numLocalCoords; i++){
           v = val[index[i]];
           if (v > max)
             max = v;
@@ -429,8 +430,6 @@ template <typename scalar_t>
     "partitioning not solvable - conflicting part size criteria",
     (numEmptyRight==0) || (numEmptyLeft==0), BASIC_ASSERTION);
 
-  leftRightFlag whichSide;
-
   if (numEmptyLeft > 0){
     lrf = leftFlag;
     cutValue = minCoord;
@@ -466,16 +465,17 @@ template <typename scalar_t>
  *  can be improved by moving some or all of them to the region on
  *  the right, then do so.
  */
+
 template <typename lno_t, typename gno_t, typename scalar_t>
   void testCoordinatesOnRightBoundary(
     const RCP<const Environment> &env,
-    const RCP<const Comm<int> > &comm, 
+    const RCP<Comm<int> > &comm, 
     bool rectilinearBlocks,
     scalar_t totalWeightLeft,
     scalar_t targetLeftScalar,
     int rightBoundary,
-    ArrayView<scalar_t> boundaries,
-    vector<scalar_t> &boundarySum,
+    vector<scalar_t> &boundaries,
+    ArrayView<scalar_t> boundarySum,
     ArrayView<StridedData<lno_t, scalar_t> > weights,
     multiCriteriaNorm mcnorm,
     ArrayView<const scalar_t> coords,
@@ -505,7 +505,6 @@ template <typename lno_t, typename gno_t, typename scalar_t>
   int weightDim = weights.size();
   int useIndices = index.size() > 0;
   int numLocalCoords = (useIndices ? index.size() : coords.size());
-  int numRegions = boundaries.size() - 1;
   int currentRegion = rightBoundary - 1;
 
   // Check the total weight on the left if we move some
@@ -619,7 +618,8 @@ template <typename lno_t, typename gno_t, typename scalar_t>
  *              coordinates to be included in the partitioning.
  *              If <tt>index.size()</tt> is zero, then all coordinates
  *              are included.
- *   \param fractionLeft  the size of the left part for each weight
+ *   \param fractionLeft  the size of the left part for each weight,
+ *                  the right part should measure <tt>1.0 - fractionLeft</tt>.
  *   \param uniformWeights element \c w is true if weights for weight
  *                 dimension \c w are all 1.0.
  *   \param coordGlobalMin the global minimum of coordinates in dimension
@@ -635,12 +635,15 @@ template <typename lno_t, typename gno_t, typename scalar_t>
  *        <tt>coordinate vectors[index[i]]</tt>.  Otherwise it is the
  *        flag for <tt>coordinate vectors[i]</tt>.
  *        
- *   \param totalWeightLeft on return is the total weight left of the cut.
- *   \param totalWeightRight on return is the total weight right of the cut.
+ *   \param totalWeightLeft on return is the global total weight 
+ *                  left of the cut.
+ *   \param totalWeightRight on return is the global total weight 
+ *                  right of the cut.
+ *   \param localCountLeft on return is the local number of objects
+ *                  left of the cut.
  *   \param imbalance on return is the imbalance for the 
  *              computed partitioning (0, 1).
  * 
- *  \todo need a serial method that creates n parts
  *  \todo a separate simpler function when weightDim <= 1
  *  \todo During the first global comm, ensure all procs have same values
  *           for cutDim and fractionLeft.
@@ -649,7 +652,7 @@ template <typename lno_t, typename gno_t, typename scalar_t>
 template <typename mvector_t>
   void BSPfindCut(
     const RCP<const Environment> &env,
-    const RCP<Teuchos::Comm<int> > &comm,
+    const RCP<Comm<int> > &comm,
     const std::bitset<NUM_RCB_PARAMS> &params,
     int numTestCuts,
     typename mvector_t::scalar_type tolerance,
@@ -665,6 +668,7 @@ template <typename mvector_t>
     ArrayView<unsigned char> lrFlags,                  // output
     typename mvector_t::scalar_type &totalWeightLeft,  // output
     typename mvector_t::scalar_type &totalWeightRight, // output
+    typename mvector_t::local_ordinal_type &localCountLeft, // output
     typename mvector_t::scalar_type &imbalance)        // output
 {
   if (env->doStatus())
@@ -675,7 +679,10 @@ template <typename mvector_t>
   int numAllCoords = vectors->getLocalLength();
   int numCoords = (useIndices ? index.size() : numAllCoords);
   cutValue = totalWeightLeft = totalWeightRight = imbalance = 0.0;
-  memset(lrFlags.getRawPtr(), 0, numCoords); 
+  localCountLeft = 0;
+
+  for (int i=0; i < numCoords; i++)
+    lrFlags[i] = unsetFlag;
 
   typedef typename mvector_t::scalar_type scalar_t;
   typedef typename mvector_t::local_ordinal_type lno_t;
@@ -794,7 +801,7 @@ template <typename mvector_t>
 
       for (size_t i=0; i < numCoords; i++){
   
-        if (lrFlags[i] != 0)    // already assigned to left or right
+        if (lrFlags[i] != unsetFlag)
           continue;
 
         int inRegion = 0;
@@ -911,7 +918,7 @@ template <typename mvector_t>
   
         scalar_t testDiff = diffVec.Norm2();
         
-        if (testDiff > target)
+        if (testDiff >= target)
           break;
 
         prevTestDiff = testDiff;
@@ -924,14 +931,14 @@ template <typename mvector_t>
     else{    // the part sizes for each weight dimension are the same
   
       target = targetLeftScalar;
-      scalar_t testDiff = totalWeightLeft; 
-      scalar_t prevTestDiff = testDiff;
+      testDiff = totalWeightLeft; 
+      prevTestDiff = testDiff;
       regionNum = 0;
   
       while (regionNum < numParts){
      
         testDiff += regionSums[regionNum];
-        if (testDiff > target)
+        if (testDiff >= target)
           break;
   
         prevTestDiff = testDiff;
@@ -1015,7 +1022,7 @@ template <typename mvector_t>
           totalWeightLeft, target, 
           rightBoundary, boundaries, boundarySum.view(0, numBoundaries),
           weight.view(0, weightDim), mcnorm, 
-          coords, epsilon, lrFlags.view(0, numAllCoords), indexArray,
+          coords, epsilon, lrFlags.view(0, numCoords), indexArray,
           sums,
           globalWeightMovedRight,           // output
           localCountMovedRight);            // output
@@ -1059,13 +1066,14 @@ template <typename mvector_t>
           if (lrFlags[i] <= rightmostLeftRegion){
             lrFlags[i] = leftFlag;
             numRemaining--;
+            localCountLeft++;
           }
           else if (lrFlags[i] >= leftmostRightRegion){
             lrFlags[i] = rightFlag;
             numRemaining--;
           }
           else{
-            lrFlags[i] = 0;   // still to be determined
+            lrFlags[i] = unsetFlag;   // still to be determined
           }
         }
       }
@@ -1076,7 +1084,7 @@ template <typename mvector_t>
         ossLeft << "left: ";
         ossRight << "right: ";
         for (size_t i=0; i < numCoords; i++){
-          if (lrFlags[i] == 0)
+          if (lrFlags[i] == unsetFlag)
             continue;
           lno_t idx = (useIndices ? index[i] : i);
           scalar_t val = coordValue[idx];
@@ -1135,26 +1143,28 @@ template <typename mvector_t>
 template <typename mvector_t, typename Adapter>
   void determineCut(
     const RCP<const Environment> &env,
-    const RCP<const Comm<int> > &comm,
+    const RCP<Comm<int> > &comm,
     const std::bitset<NUM_RCB_PARAMS> &params,
-    int numTestCuts, typename mvector_t::scalar_type tolerance,
-    int coordDim, const RCP<mvector_t> &vectors,
+    int numTestCuts,
+    typename mvector_t::scalar_type tolerance,
+    int coordDim, 
+    const RCP<mvector_t> &vectors,
     const ArrayView<bool> uniformWeights,
     multiCriteriaNorm mcnorm,
     const RCP<PartitioningSolution<Adapter> > &solution,
     partId_t part0, 
     partId_t part1,
-    ArrayView<unsigned char> lrflags,   // output
+    ArrayView<unsigned char> lrflags,  // output
     int &cutDimension,                  // output
     typename mvector_t::scalar_type &cutValue,   // output
     typename mvector_t::scalar_type &imbalance,  // output
     partId_t &numPartsLeftHalf,                  // output
-    typename mvector_t::scalar_t &weightLeftHalf,  // output
-    typename mvector_t::scalar_t &weightRightHalf) // output
+    typename mvector_t::scalar_type &weightLeftHalf,  // output
+    typename mvector_t::scalar_type &weightRightHalf  // output
+    )
 {
   // initialize return values
-  size_t numLocalCoords = vectors.getLocalLength();
-  memset(lrflags.getRawPtr(), 0, numLocalCoords);
+  size_t numLocalCoords = vectors->getLocalLength();
   cutDimension = 0;
   cutValue = imbalance = weightLeftHalf = weightRightHalf = 0.0;
   numPartsLeftHalf = 0;
@@ -1192,6 +1202,10 @@ template <typename mvector_t, typename Adapter>
     lrf, cutValue);                  // output
 
   if (emptyParts){
+    
+    for (lno_t i=0; i < lrflags.size(); i++)
+      lrflags[i] = lrf;
+
     imbalance = 0.0;                // perfect balance
     scalar_t totalWeight = 0.0;
     int numNonUniform = 0;
@@ -1200,21 +1214,22 @@ template <typename mvector_t, typename Adapter>
       if (!uniformWeights[i])
         numNonUniform++;
 
-    int wgt1 = vectors.size() - numNonUniform;
+    int wgt1 = vectors->getNumVectors() - numNonUniform;
 
     if (weightDim == 1){
       if (numNonUniform == 0)
         totalWeight = numLocalCoords;
-      else
+      else{
+        const scalar_t *val = vectors->getData(wgt1).getRawPtr();
         for (size_t i=0; i < numLocalCoords; i++)
-          totalWeight += vectors[wgt1][i];
+          totalWeight += val[i];
+      }
     }
     else{  // need to add up total normed weight
       Array<input_t> wgts(weightDim);
       for (int i=0; i < weightDim; i++){
         if (!uniformWeights[i]){
-          const scalar_t *val = vectors->getData(wgt1++).getRawPtr();
-          wgts[i] = new input_t(val, 1);
+          wgts[i] = input_t(vectors->getData(wgt1++), 1);
         }
       }
 
@@ -1223,15 +1238,13 @@ template <typename mvector_t, typename Adapter>
       ArrayRCP<scalar_t> weightSums;
     
       globalSumsByPart<scalar_t, unsigned char, lno_t>(
-        env, comm, lrflags, 0, 0, 
+        env, comm, lrflags, 
+        0, 0,                    // says to ignore flags
         wgts.view(0, weightDim), mcnorm,
         numParts, numNonemptyParts, metrics, weightSums);
 
       totalWeight = weightSums[1];  // sum normed weight
     }
-    
-    for (lno_t i=0; i < lrflags.size(); i++)
-      lrflags[i] = lrf;
 
     if (lrf == leftFlag){
       numPartsLeftHalf = part1 - part0 + 1;
@@ -1252,6 +1265,7 @@ template <typename mvector_t, typename Adapter>
   // halves.
 
   ArrayView<lno_t> emptyIndices;
+  lno_t localCountLeft;
 
   try{
     BSPfindCut<mvector_t>( env, comm,
@@ -1260,7 +1274,7 @@ template <typename mvector_t, typename Adapter>
       fractionLeft.view(0, weightDim), uniformWeights.view(0, weightDim),
       globalMinCoord, globalMaxCoord,
       cutValue, lrflags.view(0, numLocalCoords),
-      weightLeftHalf, weightRightHalf, imbalance);
+      weightLeftHalf, weightRightHalf, localCountLeft, imbalance);
   }
   Z2_FORWARD_EXCEPTIONS
 }
@@ -1369,18 +1383,22 @@ template <typename mvector_t, typename Adapter>
 
   if (emptyPart){  // continue only on the side that is not empty
 
-    if (lrf == leftFlag)
+    if (lrf == rightFlag)  // right is empty
       part1 = part0 + numPartsLeftHalf - 1;
     else
       part0 = part0 + numPartsLeftHalf;
 
     if (part0 == part1){
-      if (useIndices)
-        for (lno_t i=0; i < numLocalCoords; i++)
+      if (useIndices){
+        for (lno_t i=0; i < numLocalCoords; i++){
           partNum[index[i]] = part0;
-      else
-        for (lno_t i=0; i < numLocalCoords; i++)
+        }
+      }
+      else{
+        for (lno_t i=0; i < numLocalCoords; i++){
           partNum[i] = part0;
+        }
+      }
       
       imbalance = 0.0;       // perfect
       return;
@@ -1391,6 +1409,7 @@ template <typename mvector_t, typename Adapter>
   // Divide into balanced left and right halves.
 
   scalar_t totalLeft=0, totalRight=0;
+  lno_t localCountLeft=0, localCountRight=0;
   unsigned char *flags = new unsigned char [numLocalCoords];
   env->localMemoryAssertion(__FILE__, __LINE__, numLocalCoords, flags) ;
   ArrayView<unsigned char> lrflags(flags, numLocalCoords);
@@ -1402,82 +1421,72 @@ template <typename mvector_t, typename Adapter>
       fractionLeft.view(0, weightDim), uniformWeights.view(0, weightDim),
       minCoord, maxCoord,
       cutValue, lrflags.view(0, numLocalCoords),
-      totalLeft, totalRight, imbalance);
+      totalLeft, totalRight, localCountLeft, imbalance);
   }
   Z2_FORWARD_EXCEPTIONS
 
   ///////////////////////////////////////////////////////
   // Adjust indices for left half and right half
 
-  lno_t leftCount = 0;
+ localCountRight = numLocalCoords - localCountLeft;
 
-  if (totalLeft > 0.0){   // weight of coords in left half
+  if (localCountLeft){
 
-    ArrayView<lno_t> leftIndices;
-    lno_t *idx = NULL;
+    lno_t *newIndex = new lno_t [localCountLeft];
+    env->localMemoryAssertion(__FILE__, __LINE__, localCountLeft, newIndex);
+    ArrayView<lno_t> leftIndices(newIndex, localCountLeft);
 
-    if (totalRight > 0.0){
-      for (int i=0; i < numLocalCoords; i++)
+    if (useIndices){
+      for (lno_t i=0, ii=0; i < numLocalCoords; i++)
         if (lrflags[i] == leftFlag)
-          leftCount++;
-
-      idx = new lno_t [leftCount];
-      env->localMemoryAssertion(__FILE__, __LINE__, leftCount, idx);
-      leftIndices = ArrayView<lno_t>(idx, leftCount);
-
-      for (int i=0, ii=0; i < numLocalCoords; i++)
-        if (lrflags[i] == leftFlag)
-          idx[ii++] = index[i];
+          newIndex[ii++] = index[i];
     }
     else{
-      leftIndices = index;
-      leftCount = (useIndices ? index.size() : numLocalCoords);
-      delete [] lrflags.getRawPtr();
+      for (lno_t i=0, ii=0; i < numLocalCoords; i++)
+        if (lrflags[i] == leftFlag)
+          newIndex[ii++] = i;
     }
 
-    part1 = part0 + numPartsLeftHalf - 1;
+    partId_t newPart1 = part0 + numPartsLeftHalf - 1;
 
     serialRCB<mvector_t, Adapter>(env, params, numTestCuts, tolerance, 
       coordDim, vectors, leftIndices,
       uniformWeights.view(0, weightDim), solution,
-      part0, part1, partNum);
+      part0, newPart1, partNum);
 
-    if (idx)
-     delete [] idx;
+    delete [] newIndex;
   }
 
-  if (totalRight > 0.0){   // weight of coords in right half
+  if (localCountRight){
 
-    ArrayView<lno_t> rightIndices;
-    lno_t *idx = NULL;
-    lno_t rightCount = numLocalCoords - leftCount;
+    lno_t *newIndex = new lno_t [localCountRight];
+    env->localMemoryAssertion(__FILE__, __LINE__, localCountRight, newIndex);
+    ArrayView<lno_t> rightIndices(newIndex, localCountRight);
 
-    if (rightCount < numLocalCoords){
-      idx = new lno_t [rightCount];
-      env->localMemoryAssertion(__FILE__, __LINE__, rightCount, idx);
-      rightIndices = ArrayView<lno_t>(idx, rightCount);
-
-      for (int i=0, ii=0; i < numLocalCoords; i++)
-        if (lrflags[i] == rightFlag)
-          idx[ii++] = index[i];
+    if (useIndices){
+      for (lno_t i=0, ii=0; i < numLocalCoords; i++)
+        if (lrflags[i] == rightFlag){
+          newIndex[ii++] = index[i];
+        }
     }
     else{
-      rightIndices = index;
+      for (lno_t i=0, ii=0; i < numLocalCoords; i++)
+        if (lrflags[i] == rightFlag)
+          newIndex[ii++] = i;
     }
 
-    delete [] lrflags.getRawPtr();
+    partId_t newPart0 = part0 + numPartsLeftHalf;
 
-    part0 = part0 + numPartsLeftHalf;
-
-    serialRCB<mvector_t, Adapter>(env, params, numTestCuts, tolerance,
+    serialRCB<mvector_t, Adapter>(env, params, numTestCuts, tolerance, 
       coordDim, vectors, rightIndices,
       uniformWeights.view(0, weightDim), solution,
-      part0, part1, partNum);
+      newPart0, part1, partNum);
 
-    if (idx)
-     delete [] idx;
+    delete [] newIndex;
   }
 }
 
 }// namespace Zoltan2
+
 #endif
+

@@ -205,7 +205,6 @@ void AlltoAllv(const Comm<int> &comm,
       packetSize <= INT_MAX, BASIC_ASSERTION, rcp(&comm, false));
 
     if (p != rank && packetSize > 0){
-      LNO packetSize = recvCount[p] * sizeof(T);
       ArrayRCP<char> recvBufPtr(
         reinterpret_cast<char *>(recvBuf.get() + offsetIn), 
         0, packetSize, false);
@@ -231,7 +230,7 @@ void AlltoAllv(const Comm<int> &comm,
   ArrayView<const char> sendBufPtr(
     reinterpret_cast<const char *>(sendBuf.getRawPtr()), totalOut * sizeof(T));
 
-  for (int p=nprocs-1; p >= 0; p--){
+  for (int p=0; p < nprocs; p++){
     LNO packetSize = sendCount[p] * sizeof(T);
     if (p != rank && packetSize > 0){
       try{

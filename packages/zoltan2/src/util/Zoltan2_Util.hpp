@@ -133,6 +133,8 @@ template <typename Adapter, typename Extra>
     }
   }
 
+
+
   ArrayRCP<lno_t> recvCounts;
   RCP<const Environment> env = rcp(new Environment);
 
@@ -152,8 +154,7 @@ template <typename Adapter, typename Extra>
     catch (std::exception &e){
       throw std::runtime_error("alltoallv 2");
     }
-  }
-
+  } 
   return imports.size();
 }
 
