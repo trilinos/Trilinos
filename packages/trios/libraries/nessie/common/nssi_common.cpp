@@ -68,6 +68,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "Trios_timer.h"
 #include "Trios_logger.h"
 #include "Trios_signal.h"
+#include "Trios_ring_buffer.h"
 #include "Trios_nssi_xdr.h"
 
 #include "nssi_debug.h"
@@ -81,7 +82,10 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 NNTI_transport_t transports[NSSI_RPC_COUNT];
 
 static bool       rpc_initialized = FALSE;
-static nssi_rpc_encode encoding        = NSSI_DEFAULT_ENCODE;
+static nssi_rpc_encode encoding   = NSSI_DEFAULT_ENCODE;
+
+trios_ring_buffer_t send_ring;
+trios_ring_buffer_t recv_ring;
 
 
 void *memdup(void *src, int size)
@@ -181,6 +185,19 @@ int nssi_rpc_init(
             "does not exist");
             return rc;
     }
+
+    trios_ring_buffer_init(
+            &send_ring,
+            10,
+            &transports[rpc_transport],
+            NNTI_SEND_SRC,
+            NSSI_SHORT_REQUEST_SIZE);
+    trios_ring_buffer_init(
+            &recv_ring,
+            10,
+            &transports[rpc_transport],
+            NNTI_RECV_DST,
+            NSSI_SHORT_REQUEST_SIZE);
 
     initialized = TRUE;
     rpc_initialized = TRUE;
