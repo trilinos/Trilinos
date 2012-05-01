@@ -66,7 +66,7 @@ namespace user_app {
   public:
     
     NOXObserver_EpetraToExodus(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
-			       const Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> >& dof_manager,
+			       const Teuchos::RCP<panzer::UniqueGlobalIndexerBase>& dof_manager,
 			       const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof,
                                const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & response_library) :
       m_mesh(mesh),
@@ -156,7 +156,7 @@ namespace user_app {
   protected:
 
     Teuchos::RCP<panzer_stk::STK_Interface> m_mesh;
-    Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > m_dof_manager;
+    Teuchos::RCP<panzer::UniqueGlobalIndexerBase> m_dof_manager;
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > m_lof;
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > m_response_library;
 

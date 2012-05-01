@@ -63,7 +63,7 @@ namespace user_app {
   public:
     
     RythmosObserver_EpetraToExodus(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
-				   const Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> >& dof_manager,
+				   const Teuchos::RCP<panzer::UniqueGlobalIndexerBase>& dof_manager,
 				   const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof,
                                    const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & response_library) :
       m_mesh(mesh),
@@ -118,16 +118,6 @@ namespace user_app {
       // Next few lines are inefficient, but we can revisit later
       Teuchos::RCP<const Epetra_Vector> ep_solution = Thyra::get_Epetra_Vector(*(m_lof->getMap()), solution);
 
-      /*
-      Epetra_Vector ghosted_solution(*(m_lof->getGhostedMap()));
-      Teuchos::RCP<Epetra_Import> importer = m_lof->getGhostedImport();
-      ghosted_solution.PutScalar(0.0);
-      ghosted_solution.Import(*ep_solution,*importer,Insert);
-
-      panzer_stk::write_solution_data(*Teuchos::rcp_dynamic_cast<panzer::DOFManager<int,int> >(m_dof_manager),*m_mesh,
-		 	              ghosted_solution);
-      */
-
       Teuchos::MpiComm<int> comm(Teuchos::opaqueWrapper(dynamic_cast<const Epetra_MpiComm &>(ep_solution->Comm()).Comm()));
 
       // initialize the assembly container
@@ -157,7 +147,7 @@ namespace user_app {
   protected:
 
     Teuchos::RCP<panzer_stk::STK_Interface> m_mesh;
-    Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > m_dof_manager;
+    Teuchos::RCP<panzer::UniqueGlobalIndexerBase> m_dof_manager;
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > m_lof;
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > m_response_library;
 
