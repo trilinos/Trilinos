@@ -123,6 +123,34 @@ initialize()
 }
 
 void BlockedEpetraLinearObjContainer::
+initializeMatrix(double value)
+{
+   using Thyra::LinearOpBase;
+   using Thyra::PhysicallyBlockedLinearOpBase;
+   using Thyra::ProductVectorSpaceBase;
+   using Teuchos::RCP;
+   using Teuchos::rcp_dynamic_cast;
+
+   if(get_A()!=Teuchos::null) {
+      RCP<PhysicallyBlockedLinearOpBase<double> > Amat 
+            = rcp_dynamic_cast<PhysicallyBlockedLinearOpBase<double> >(get_A(),true);
+      RCP<const ProductVectorSpaceBase<double> > range = Amat->productRange();
+      RCP<const ProductVectorSpaceBase<double> > domain = Amat->productDomain();
+
+      // loop over block entries
+      for(int i=0;i<range->numBlocks();i++) {
+         for(int j=0;j<domain->numBlocks();j++) {
+            RCP<LinearOpBase<double> > block = Amat->getNonconstBlock(i,j);
+            if(block!=Teuchos::null) {
+               RCP<Epetra_Operator> e_block = Thyra::get_Epetra_Operator(*block);
+               rcp_dynamic_cast<Epetra_CrsMatrix>(e_block,true)->PutScalar(value);
+            }   
+         }
+      }
+   }
+}
+
+void BlockedEpetraLinearObjContainer::
 clear()
 {
    set_x(Teuchos::null);

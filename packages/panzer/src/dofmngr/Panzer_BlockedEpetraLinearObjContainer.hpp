@@ -71,6 +71,9 @@ public:
    virtual void initialize();
    virtual void clear();
 
+   //! Put a particular scalar in the matrix
+   void initializeMatrix(double value);
+
    void setMapsForBlocks(const std::vector<Teuchos::RCP<const Epetra_Map> > & blockMaps)
    { blockMaps_ = blockMaps; }
 

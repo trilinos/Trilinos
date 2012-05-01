@@ -44,14 +44,19 @@
 #define PANZER_MODEL_EVALUATOR_EPETRA_HPP
 
 #include "EpetraExt_ModelEvaluator.h"
+
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Comm.h"
 #include "Epetra_CrsGraph.h"
+
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_AbstractFactory.hpp"
+
 #include "Panzer_Traits.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_ParameterLibrary.hpp"
+
 #include <vector>
 #include <string>
 
@@ -131,7 +136,7 @@ namespace panzer {
       */
     void initializeEpetraObjs(panzer::EpetraLinearObjFactory<panzer::Traits,int> & lof);
 
-    void initializeBlockedEpetraObjs(panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> & lof);
+    void initializeBlockedEpetraObjs(const Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > & lof);
 
     /** Initialize the parameter vector object */
     void initializeParameterVector(const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
@@ -197,8 +202,6 @@ namespace panzer {
     // responses
     std::vector<Teuchos::RCP<Epetra_Map> > g_map_;
     
-    Teuchos::RCP<Epetra_CrsGraph>  W_graph_;
-
     /** @} */
     
     Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb_;
@@ -219,6 +222,8 @@ namespace panzer {
        Teuchos::RCP<panzer::SGEpetraLinearObjFactory<panzer::Traits,int> > sg_lof_;
        mutable Teuchos::RCP<LinearObjContainer> sg_ghostedContainer_;
     #endif
+
+    Teuchos::RCP<Teuchos::AbstractFactory<Epetra_Operator> > epetraOperatorFactory_;
   };
 
   /** From a genericly typed linear object factory try and build an epetra model evaluator.
