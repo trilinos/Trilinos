@@ -91,6 +91,7 @@ TEMPLATE_RELATIONS     = YES
 #TEMPLATE_RELATIONS     = NO
 #MAX_DOT_GRAPH_WIDTH    = 500
 HIDE_UNDOC_RELATIONS   = YES
+HAVE_DOT = NO
 #
 # Preprocessing
 #
@@ -99,10 +100,15 @@ MACRO_EXPANSION        = YES
 EXPAND_ONLY_PREDEF     = YES
 SEARCH_INCLUDES        = YES
 INCLUDE_FILE_PATTERNS  = 
-PREDEFINED             = DOXYGEN_COMPILE DOXYGEN_SHOULD_SKIP_THIS EPETRA_MPI \
-                         HAVE_MUELU_IFPACK HAVE_MUELU_IFPACK2 HAVE_MUELU_EPETRA \
-                         HAVE_MUELU_TPETRA HAVE_MUELU_EPETRAEXT HAVE_MUELU_AMESOS \
-                         HAVE_MUELU_ZOLTAN HAVE_MPI HAVE_MUELU_STOKHOS
+PREDEFINED             = DOXYGEN_COMPILE DOXYGEN_SHOULD_SKIP_THIS HAVE_MPI EPETRA_MPI \
+                         HAVE_MUELU_AMESOS HAVE_MUELU_AMESOS2 \
+                         HAVE_MUELU_BELOS \
+                         HAVE_MUELU_EPETRA HAVE_MUELU_EPETRAEXT \
+                         HAVE_MUELU_IFPACK HAVE_MUELU_IFPACK2 \
+                         HAVE_MUELU_ML \ 
+                         HAVE_MUELU_TPETRA \
+                         HAVE_MUELU_ZOLTAN \
+                         HAVE_MUELU_STOKHOS \
 #
 # What kind of documentation is generated
 #
