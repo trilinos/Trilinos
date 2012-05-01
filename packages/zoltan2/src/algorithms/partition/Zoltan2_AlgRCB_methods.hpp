@@ -1014,7 +1014,7 @@ template <typename mvector_t>
         indexArray = ArrayView<lno_t>(index.getRawPtr(), numCoords);
 
       ArrayView<const scalar_t> coords(coordValue, numAllCoords);
-      ArrayView<double> sums(regionSums, numRegions);
+      ArrayView<scalar_t> sums(regionSums, numRegions);
 
       try{
         testCoordinatesOnRightBoundary<lno_t, gno_t, scalar_t>( 
