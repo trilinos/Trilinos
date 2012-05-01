@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_EPETRA_LINEAR_OBJ_FACTORY_IMPL_HPP
-#define PANZER_EPETRA_LINEAR_OBJ_FACTORY_IMPL_HPP
+#ifndef PANZER_BLOCKED_EPETRA_LINEAR_OBJ_FACTORY_IMPL_HPP
+#define PANZER_BLOCKED_EPETRA_LINEAR_OBJ_FACTORY_IMPL_HPP
 
 #include "Panzer_UniqueGlobalIndexer.hpp"
 
