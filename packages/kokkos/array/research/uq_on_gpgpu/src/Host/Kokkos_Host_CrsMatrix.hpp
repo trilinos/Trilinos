@@ -76,13 +76,13 @@ public:
   inline
   void operator()( const size_type iRow ) const
   {
-    const size_type iEntryBegin = m_A.graph.row_entry_begin(iRow);
-    const size_type iEntryEnd   = m_A.graph.row_entry_end(iRow);
+    const size_type iEntryBegin = m_A.graph.row_map[iRow];
+    const size_type iEntryEnd   = m_A.graph.row_map[iRow+1];
 
     double sum = 0 ;
 
     for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
-      sum += m_A.values(iEntry) * m_x( m_A.graph(iEntry) );
+      sum += m_A.values(iEntry) * m_x( m_A.graph.entries(iEntry) );
     }
 
     m_y(iRow) = sum ;
@@ -92,7 +92,7 @@ public:
                      const vector_type & x ,
                      const vector_type & y )
   {
-    parallel_for( A.graph.row_count() , Multiply(A,x,y) );
+    parallel_for( A.graph.row_map.length() , Multiply(A,x,y) );
   }
 };
 

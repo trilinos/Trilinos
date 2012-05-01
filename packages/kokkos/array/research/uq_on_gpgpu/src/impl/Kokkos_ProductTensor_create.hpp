@@ -200,7 +200,7 @@ std::cout << std::endl << "CrsProductTensor" << std::endl
     // Fill arrays in coordinate order...
 
     for ( size_type iCoord = 0 ; iCoord < dimension ; ++iCoord ) {
-      coord_work[iCoord] = host_coord.row_entry_begin(iCoord);
+      coord_work[iCoord] = host_coord.row_map[iCoord];
     }
 
     for ( typename input_type::const_iterator
@@ -213,20 +213,20 @@ std::cout << std::endl << "CrsProductTensor" << std::endl
       {
         const size_type n = coord_work[i]; ++coord_work[i];
         host_value(n) = (*iter).second ;
-        host_coord(n,0) = j ;
-        host_coord(n,1) = k ;
+        host_coord.entries(n,0) = j ;
+        host_coord.entries(n,1) = k ;
       }
       if ( i != j ) {
         const size_type n = coord_work[j]; ++coord_work[j];
         host_value(n) = (*iter).second ;
-        host_coord(n,0) = i ;
-        host_coord(n,1) = k ;
+        host_coord.entries(n,0) = i ;
+        host_coord.entries(n,1) = k ;
       }
       if ( i != k && j != k ) {
         const size_type n = coord_work[k]; ++coord_work[k];
         host_value(n) = (*iter).second ;
-        host_coord(n,0) = i ;
-        host_coord(n,1) = j ;
+        host_coord.entries(n,0) = i ;
+        host_coord.entries(n,1) = j ;
       }
     }
 

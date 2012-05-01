@@ -60,58 +60,56 @@ struct Factory< CrsArray< ArrayType , Device , SizeType > ,
                 CrsArray< ArrayType , Device , SizeType > >
 {
   typedef CrsArray< ArrayType, Device, SizeType > output_type ;
-  typedef SizeType                          size_type ;
-  typedef typename output_type::value_type  value_type ;
-  typedef typename Device::memory_space     device_memory ;
-
-  typedef MemoryView< size_type , device_memory >  output_row ;
-  typedef MemoryView< value_type, device_memory >  output_data ;
-
-  static inline
-  void deep_copy( const output_type & output , const output_type & input )
-  {
-    Factory< output_row , output_row >
-      ::deep_copy( output.m_row_map, input.m_row_map , output.m_row_count + 1 );
-
-    Factory< output_data , output_data >
-      ::deep_copy( output.m_data, input.m_data , output.m_index_map.allocation_size() );
-  }
 
   static inline
   output_type create( const output_type & input )
   {
-    output_type output ;
-    output.m_row_count = input.m_row_count ;
-    output.m_index_map = input.m_index_map ;
-    output.m_row_map.allocate( output.m_row_count + 1 , std::string() );
-    output.m_data.allocate( output.m_index_map.allocation_size() , std::string() );
+    typedef typename output_type::row_map_type row_map_type ;
+    typedef typename output_type::entries_type entries_type ;
 
-    deep_copy( output , input );
+    output_type output ;
+
+    output.row_map = Factory< row_map_type , row_map_type >
+                       ::create( input.row_map );
+
+    output.entries = Factory< entries_type , entries_type >
+                       ::create( input.entries );
+
+    Factory< entries_type , entries_type >
+      ::deep_copy( output.entries , input.entries );
 
     return output ;
   }
 };
 
-template< class Device , typename SizeType >
-struct Factory< CrsArray< void , Device , SizeType > ,
-                CrsArray< void , Device , SizeType > >
+//----------------------------------------------------------------------------
+
+template< class ArrayType ,
+          class DeviceDst , class DeviceSrc , typename SizeType >
+struct Factory< CrsArray< ArrayType , DeviceDst , SizeType > ,
+                CrsArray< ArrayType , DeviceSrc , SizeType > >
 {
-  typedef CrsArray< void, Device, SizeType > output_type ;
+  typedef CrsArray< ArrayType, DeviceDst, SizeType > output_type ;
+  typedef CrsArray< ArrayType, DeviceSrc, SizeType > input_type ;
 
   static inline
-  output_type create( const output_type & input )
+  output_type create( const input_type & input )
   {
-    typedef SizeType                          size_type ;
-    typedef typename Device::memory_space  device_memory ;
-
-    typedef MemoryView< size_type , device_memory >  output_row ;
+    typedef typename output_type::row_map_type row_map_output_type ;
+    typedef typename output_type::entries_type entries_output_type ;
+    typedef typename input_type ::row_map_type row_map_input_type ;
+    typedef typename input_type ::entries_type entries_input_type ;
 
     output_type output ;
-    output.m_row_count = input.m_row_count ;
-    output.m_row_map.allocate( output.m_row_count + 1 , std::string() );
 
-    Factory< output_row , output_row >
-      ::deep_copy( output.m_row_map, input.m_row_map , output.m_row_count + 1 );
+    output.row_map = Factory< row_map_output_type , row_map_input_type >
+                       ::create( input.row_map );
+
+    output.entries = Factory< entries_output_type , entries_input_type >
+                       ::create( input.entries );
+
+    Factory< entries_output_type , entries_input_type >
+      ::deep_copy( output.entries , input.entries );
 
     return output ;
   }
@@ -133,66 +131,14 @@ struct Factory< CrsArray< ArrayType , DeviceOutput , SizeType > ,
   output_type create(
     const CrsArray< ArrayType , DeviceInput , SizeType > & input )
   {
-    typedef CrsArray< ArrayType , DeviceInput , SizeType > input_type ;
-    return Factory< output_type , input_type >::create( input );
-  }
-};
-
-//----------------------------------------------------------------------------
-
-template< class DeviceOutput , typename SizeType >
-struct Factory< CrsArray< void , DeviceOutput , SizeType > ,
-                MirrorUseView >
-{
-  typedef CrsArray< void , DeviceOutput , SizeType > output_type ;
-
-  static inline
-  const output_type & create( const output_type & input ) { return input ; }
-
-  template< class DeviceInput >
-  static inline
-  output_type create(
-    const CrsArray< void , DeviceInput , SizeType > & input )
-  {
-    typedef CrsArray< void , DeviceInput , SizeType > input_type ;
-    return Factory< output_type , input_type >::create( input );
-  }
-};
-
-//----------------------------------------------------------------------------
-
-template< class DeviceOutput , typename MapSizeType , typename InputSizeType >
-struct Factory<
-        CrsArray< void , DeviceOutput , MapSizeType > ,
-        std::vector< InputSizeType > >
-{
-  typedef CrsArray< void , DeviceOutput, MapSizeType > output_type ;
-  typedef std::vector< InputSizeType > input_type ;
-
-  static
-  output_type create( const std::string & label , const input_type & input )
-  {
-    typedef MemoryView< MapSizeType , typename DeviceOutput::memory_space > memory_output ;
-    typedef typename memory_output::HostMirror  memory_mirror ;
-
-    const size_t row_count = input.size();
+    typedef typename output_type::row_map_type row_map_type ;
+    typedef typename output_type::entries_type entries_type ;
 
     output_type output ;
-
-    output.m_row_map.allocate( row_count + 1 , label );
-    output.m_row_count = row_count ;
-
-    // If same memory space then a view:
-    memory_mirror tmp = Factory< memory_mirror , MirrorUseView >
-                          ::create( output.m_row_map , row_count + 1 );
-
-    tmp[0] = 0 ;
-    for ( size_t i = 0 ; i < row_count ; ++i ) {
-      tmp[i+1] = tmp[i] + input[i] ;
-    }
-
-    Factory< memory_output , memory_mirror >
-      ::deep_copy( output.m_row_map , tmp , row_count + 1 );
+    output.row_map = Factory< row_map_type , MirrorUseView >
+                       ::create( input.row_map );
+    output.entries = Factory< entries_type , MirrorUseView >
+                       ::create( input.entries );
 
     return output ;
   }
@@ -204,9 +150,8 @@ template< class ArrayType ,
           class DeviceOutput ,
           typename MapSizeType ,
           typename InputSizeType >
-struct Factory<
-        CrsArray< ArrayType , DeviceOutput , MapSizeType > ,
-        std::vector< InputSizeType > >
+struct Factory< CrsArray< ArrayType , DeviceOutput , MapSizeType > ,
+                std::vector< InputSizeType > >
 {
   typedef CrsArray< ArrayType , DeviceOutput, MapSizeType > output_type ;
   typedef std::vector< InputSizeType > input_type ;
@@ -214,33 +159,16 @@ struct Factory<
   static
   output_type create( const std::string & label , const input_type & input )
   {
-    typedef typename output_type::value_type          value_type ;
-    typedef typename DeviceOutput::memory_space       output_space ;
-    typedef MemoryView< MapSizeType , output_space >  output_row_type ;
-    typedef typename output_row_type::HostMirror      mirror_row_type ;
-
-    const size_t row_count = input.size();
+    typedef typename output_type::row_map_type row_map_type ;
+    typedef typename output_type::entries_type entries_type ;
 
     output_type output ;
 
-    output.m_row_map.allocate( row_count + 1 , label );
-    output.m_row_count = row_count ;
+    output.row_map = Factory< row_map_type , input_type >
+                       ::create( label , input );
 
-    // If same memory space then a view:
-    mirror_row_type tmp =
-      Factory< mirror_row_type , MirrorUseView >
-        ::create( output.m_row_map , row_count + 1 );
-
-    tmp[0] = 0 ;
-    for ( size_t i = 0 ; i < row_count ; ++i ) {
-      tmp[i+1] = tmp[i] + input[i] ;
-    }
-
-    output.m_index_map.template assign<value_type>( tmp[row_count] );
-    output.m_data.allocate( output.m_index_map.allocation_size() , label );
-
-    Factory< output_row_type , mirror_row_type >
-      ::deep_copy( output.m_row_map , tmp , row_count + 1 );
+    output.entries = Factory< entries_type , void >
+                       ::create( label , output.row_map.sum() );
 
     return output ;
   }
@@ -248,72 +176,69 @@ struct Factory<
 
 //----------------------------------------------------------------------------
 
-template< class ArrayType ,
+template< typename ValueType ,
           class DeviceOutput ,
           typename MapSizeType ,
           typename InputType >
-struct Factory< CrsArray< ArrayType , DeviceOutput , MapSizeType > ,
+struct Factory< CrsArray< ValueType , DeviceOutput , MapSizeType > ,
                 std::vector< std::vector< InputType > > >
 {
-  typedef CrsArray< ArrayType , DeviceOutput , MapSizeType > output_type ;
+  typedef CrsArray< ValueType , DeviceOutput , MapSizeType > output_type ;
   typedef std::vector< std::vector< InputType > > input_type ;
+
+  static const bool OK =
+    StaticAssert< 1 == output_type::entries_type::Rank >::value ;
 
   static
   output_type create( const std::string & label , const input_type & input )
   {
-    typedef typename DeviceOutput::memory_space memory_output ;
-    typedef typename output_type::value_type    value_type ;
+    typedef typename output_type::row_map_type   row_map_type ;
+    typedef typename output_type::entries_type   entries_type ;
+    typedef typename DeviceOutput::memory_space  memory_space ;
 
-    typedef MemoryView< MapSizeType , memory_output > row_type ;
-    typedef MemoryView< value_type ,  memory_output > data_type ;
-    typedef MemoryView< MapSizeType , Host >          host_row_type ;
-    typedef MemoryView< value_type ,  Host >          host_data_type ;
+    typedef MemoryView< MapSizeType , memory_space > data_type ;
+    typedef typename data_type::HostMirror data_mirror_type ;
 
-    const size_t row_count = input.size();
+    // Create the row map:
+
+    const size_t length = input.size();
+
+    output_type output ;
+
+    output.row_map.m_length = length ;
+    output.row_map.m_data.allocate( length + 1 , label );
+
+    data_mirror_type tmp = Factory< data_mirror_type , MirrorUseView >
+                             ::create( output.row_map.m_data , length + 1 );
+
+    output.row_map.m_sum = tmp[0] = 0 ;
+    for ( size_t i = 0 ; i < length ; ++i ) {
+      tmp[i+1] = output.row_map.m_sum += input[i].size();
+    }
+
+    Factory< data_type , data_mirror_type >
+      ::deep_copy( output.row_map.m_data , tmp , length + 1 );
+
+    // Create an populate the entries:
+
+    output.entries = Factory< entries_type , void >
+                       ::create( label , output.row_map.m_sum );
+
+    typename entries_type::HostMirror host_entries =
+      Factory< typename entries_type::HostMirror , MirrorUseView >
+        ::create( output.entries );
+
     size_t total_count = 0 ;
-    for ( size_t i = 0 ; i < row_count ; ++i ) {
-      total_count += input[i].size();
-    }
-
-    output_type crs ;
-
-    crs.m_row_count = row_count ;
-    crs.m_row_map.allocate( row_count + 1 , label );
-    crs.m_index_map.template assign<value_type>( total_count );
-    crs.m_data.allocate( crs.m_index_map.allocation_size() , label );
-
-    // If same memory space then a view:
-    host_row_type host_row =
-      Factory< host_row_type , MirrorUseView >
-        ::create( crs.m_row_map , row_count + 1 );
-
-    host_data_type host_data =
-      Factory< host_data_type , MirrorUseView >
-        ::create( crs.m_data , crs.m_index_map.allocation_size() );
-
-    host_row[0] = 0 ;
-    for ( size_t i = 0 ; i < row_count ; ++i ) {
-      host_row[i+1] = host_row[i] + input[i].size();
-    }
-
-    Factory< row_type , host_row_type >
-      ::deep_copy( crs.m_row_map , host_row , row_count + 1 );
-
-    switch( crs.entry_rank() ) {
-    case 1 :
-      total_count = 0 ;
-      for ( size_t i = 0 ; i < row_count ; ++i ) {
-        for ( size_t j = 0 ; j < input[i].size() ; ++j , ++total_count ) {
-          host_data[ total_count ] = input[i][j] ;
-        }
+    for ( size_t i = 0 ; i < length ; ++i ) {
+      for ( size_t j = 0 ; j < input[i].size() ; ++j , ++total_count ) {
+        host_entries( total_count ) = input[i][j] ;
       }
-      break ;
     }
 
-    Factory< data_type , host_data_type >
-      ::deep_copy( crs.m_data , host_data , total_count );
+    Factory< entries_type , typename entries_type::HostMirror >
+      ::deep_copy( output.entries , host_entries );
 
-    return crs ;
+    return output ;
   }
 };
 

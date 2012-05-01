@@ -82,16 +82,16 @@ public:
   size_type dimension( const iType & rank ) const
     { return m_index_map.dimension( rank ); }
 
-#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
-
   /** \brief  Because memory is contiguous this is exposed */
   inline
-  KOKKOS_MACRO_DEVICE_FUNCTION
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   value_type * ptr_on_device() const
   {
     // TBD: If memory is not contiguous and can throw then throw !
     return m_data.ptr_on_device();
   }
+
+#if defined( KOKKOS_MACRO_DEVICE_FUNCTION )
 
   template< typename iTypeP >
   inline

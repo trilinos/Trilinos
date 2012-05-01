@@ -56,7 +56,7 @@ namespace Kokkos {
  *    m_values( block.size() , m_graph.entry_count() )
  *
  *  Vectors are conformally stored as
- *    MultiVector( block.dimension() , m_graph.row_count() )
+ *    MultiVector( block.dimension() , m_graph.row_map.length() )
  */
 template< class BlockSpec , typename ValueType , class Device >
 class BlockCrsMatrix {

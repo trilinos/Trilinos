@@ -144,15 +144,15 @@ void HostInternal::verify_inactive( const char * const method ) const
 }
 
 //----------------------------------------------------------------------------
-//  Default cannot bind.
 //  The 'hwloc' implementation overloads this function
 
 bool HostInternal::bind_to_node( const HostThread & ) const
-{ return false ; }
+{ return true ; }
 
 //----------------------------------------------------------------------------
 
-bool HostInternal::spawn_threads()
+bool HostInternal::spawn_threads( const size_type use_node_count ,
+                                  const size_type use_node_thread_count )
 {
   // If the process is bound to a particular node
   // then only use cores belonging to that node.
@@ -165,19 +165,38 @@ bool HostInternal::spawn_threads()
   {
     int count = 1 ;
 
-    for ( size_type rank = 0 ; rank < m_thread_count ; ++rank ) {
+    size_type i_node ;
+    size_type i_node_end ;
 
-      m_thread[rank].m_thread_count = m_thread_count ;
-      m_thread[rank].m_thread_rank  = rank ;
-      m_thread[rank].m_fan_begin    = m_thread + count ;
+    if ( use_node_count <= 1 && m_node_rank < m_node_count ) {
+      i_node     = m_node_rank ;
+      i_node_end = m_node_rank + 1 ;
+    }
+    else {
+      i_node = 0 ;
+      i_node_end = use_node_count ;
+    }
 
-      {
-        size_type up = 1 ;
-        while ( up <= rank )                 { up <<= 1 ; }
-        while ( rank + up < m_thread_count ) { up <<= 1 ; ++count ; }
+    m_thread_count = ( i_node_end - i_node ) * use_node_thread_count ;
+
+    for ( size_type rank = 0 ; i_node < i_node_end ; ++i_node ) {
+
+      for ( size_type i_node_thread = 0 ;
+            i_node_thread < use_node_thread_count ; ++i_node_thread , ++rank ) {
+
+        m_thread[rank].m_thread_count = m_thread_count ;
+        m_thread[rank].m_thread_rank  = rank ;
+        m_thread[rank].m_thread_node  = i_node ;
+        m_thread[rank].m_fan_begin    = m_thread + count ;
+
+        {
+          size_type up = 1 ;
+          while ( up <= rank )                 { up <<= 1 ; }
+          while ( rank + up < m_thread_count ) { up <<= 1 ; ++count ; }
+        }
+
+        m_thread[rank].m_fan_end = m_thread + count ;
       }
-
-      m_thread[rank].m_fan_end = m_thread + count ;
     }
   }
 
@@ -213,49 +232,56 @@ bool HostInternal::spawn_threads()
   if ( ! ok_spawn_threads ) {
     finalize();
   }
+  else {
+    // Bind this master thread to NUMA node
+    bind_to_node( m_thread[0] );
+  }
 
   return ok_spawn_threads ;
 }
 
-void HostInternal::initialize( const Host::DetectAndUseCores )
+void HostInternal::initialize( const size_type use_node_count ,
+                               const size_type use_node_thread_count )
 {
-  if ( m_node_count ) {
-    // If pinned to a node then only use cores of that node
+  const bool ok_inactive   = 1 == m_thread_count ;
+  const bool ok_node_count = use_node_count <= m_node_count ;
+  const bool ok_node_thread_count = 
+    0 == m_node_core_count || use_node_thread_count <= m_node_core_count ;
 
-    size_t thread_count = m_node_rank < m_node_count
-                        ? m_node_core_count : m_node_count * m_node_core_count ;
+  bool ok_spawn_threads = true ;
 
-    initialize( Host::SetThreadCount( thread_count ) );
-  }
-}
-
-void HostInternal::initialize( const Host::SetThreadCount config )
-{
-  const bool ok_inactive = 1 == m_thread_count ;
-        bool ok_spawn_threads = false ;
-
-  if ( ok_inactive ) {
-    m_thread_count = 0 < config.thread_count ? config.thread_count : 1 ;
-
-    ok_spawn_threads = spawn_threads();
+  if ( ok_inactive && ok_node_count && ok_node_thread_count ) {
+    ok_spawn_threads = spawn_threads( use_node_count , use_node_thread_count );
   }
 
-  if ( ! ok_spawn_threads ) {
-    std::string msg ;
-    msg.append( "Kokkos::Host::initialize() FAILED: " );
+  if ( ! ok_inactive ||
+       ! ok_node_count ||
+       ! ok_node_thread_count ||
+       ! ok_spawn_threads )
+  {
+    std::ostringstream msg ;
+
+    msg << "Kokkos::Host::initialize() FAILED" ;
 
     if ( ! ok_inactive ) {
-      msg.append( "Device is already active" );
+      msg << " : Device is already active" ;
     }
-    else {
-      msg.append( "Spawning or cpu-binding the threads" );
+    if ( ! ok_node_count ) {
+      msg << " : use_node_count(" << use_node_count
+          << ") exceeds detect_node_count(" << m_node_count
+          << ")" ;
+    }
+    if ( ! ok_node_thread_count ) {
+      msg << " : use_node_thread_count(" << use_node_thread_count
+          << ") exceeds detect_node_core_count(" << m_node_core_count
+          << ")" ;
+    }
+    if ( ! ok_spawn_threads ) {
+      msg << " : Spawning or cpu-binding the threads" ;
     }
 
-    throw std::runtime_error( msg );
+    throw std::runtime_error( msg.str() );
   }
-
-  // Bind this master thread to NUMA node
-  bind_to_node( m_thread[0] );
 }
 
 //----------------------------------------------------------------------------
@@ -321,17 +347,15 @@ namespace Kokkos {
 void Host::finalize()
 { Impl::HostInternal::singleton().finalize(); }
 
-void Host::initialize( const Host::DetectAndUseCores config )
-{ Impl::HostInternal::singleton().initialize( config ); }
-
-void Host::initialize( const Host::SetThreadCount config )
-{ Impl::HostInternal::singleton().initialize( config ); }
-
-Host::size_type Host::detect_core_count()
+void Host::initialize( const size_type use_node_count ,
+                       const size_type use_node_thread_count )
 {
-  const Impl::HostInternal & h = Impl::HostInternal::singleton();
-  return h.m_node_count * h.m_node_core_count ;
+  Impl::HostInternal::singleton()
+       .initialize( use_node_count , use_node_thread_count );
 }
+
+Host::size_type Host::detect_node_binding()
+{ return Impl::HostInternal::singleton().m_node_rank ; }
 
 Host::size_type Host::detect_node_count()
 { return Impl::HostInternal::singleton().m_node_count ; }

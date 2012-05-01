@@ -41,88 +41,94 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_ARRAYBOUNDS_HPP
-#define KOKKOS_ARRAYBOUNDS_HPP
+#ifndef KOKKOS_CUDA_PREFIXSUM_HPP
+#define KOKKOS_CUDA_PREFIXSUM_HPP
 
-#include <cstddef>
+#include <string>
+
+#include <Cuda/Kokkos_Cuda_IndexMap.hpp>
+
+#include <Kokkos_Cuda_macros.hpp>
+#include <impl/Kokkos_PrefixSum_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
+
+// For the host mirror:
+
+#include <Kokkos_Host_macros.hpp>
+#undef KOKKOS_MACRO_DEVICE
+#define KOKKOS_MACRO_DEVICE HostMapped< Cuda >
+#include <impl/Kokkos_PrefixSum_macros.hpp>
+#include <Kokkos_Clear_macros.hpp>
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 namespace Kokkos {
 namespace Impl {
 
 //----------------------------------------------------------------------------
 
-template< typename ValueType , class MemorySpace >
-class ArrayAlignment {
-public:
-  enum { value = 1 };
+/** \brief  The hostview is identically mapped */
+
+template< typename IntType >
+struct Factory< PrefixSum< IntType , Cuda > ,
+                PrefixSum< IntType , HostMapped< Cuda > > >
+{
+  typedef PrefixSum< IntType, Cuda >              output_type ;
+  typedef PrefixSum< IntType, HostMapped<Cuda> >  input_type ;
+
+  static inline
+  void deep_copy( output_type & output , const input_type & input )
+  {
+    const size_t size_data = sizeof(IntType)*(output.m_length + 1 );
+
+    MemoryManager< Cuda >::
+      copy_to_device_from_host( output.m_data.ptr_on_device(),
+                                input.m_data.ptr_on_device(),
+                                size_data );
+    output.m_sum = input.m_sum ;
+  }
 };
 
 //----------------------------------------------------------------------------
 
-void require_less( size_t , size_t );
-
-//----------------------------------------------------------------------------
-
-void multivector_require_equal_dimension(
-  size_t length_x , size_t count_x ,
-  size_t length_y , size_t count_y );
-
-template< class MultiVectorX , class MultiVectorY >
-void multivector_require_equal_dimension( const MultiVectorX & x ,
-                                          const MultiVectorY & y )
+template< typename IntType >
+struct Factory< PrefixSum< IntType , HostMapped< Cuda > > ,
+                PrefixSum< IntType , Cuda > >
 {
-  multivector_require_equal_dimension( x.length() , x.count() ,
-                                       y.length() , y.count() );
-}
+  typedef PrefixSum< IntType, HostMapped<Cuda> > output_type ;
+  typedef PrefixSum< IntType, Cuda >             input_type ;
 
-void multivector_require_range( size_t , size_t , size_t );
+  static void deep_copy( output_type & output , const input_type & input )
+  {
+    const size_t size_data = sizeof(IntType)*(output.m_length + 1 );
 
-//----------------------------------------------------------------------------
+    MemoryManager< Cuda >::
+      copy_to_host_from_device( output.m_data.ptr_on_device(),
+                                input.m_data.ptr_on_device(),
+                                size_data );
+    output.m_sum = input.m_sum ;
+  }
 
-size_t mdarray_deduce_rank( size_t n0 , size_t n1 , size_t n2 , size_t n3 ,
-                            size_t n4 , size_t n5 , size_t n6 , size_t n7 );
+  static inline
+  output_type create( const input_type & input )
+  {
+    output_type output ;
 
-void mdarray_require_dimension(
-  size_t n_rank ,
-  size_t n0 , size_t n1 , size_t n2 , size_t n3 ,
-  size_t n4 , size_t n5 , size_t n6 , size_t n7 ,
-  size_t i_rank ,
-  size_t i0 , size_t i1 , size_t i2 , size_t i3 ,
-  size_t i4 , size_t i5 , size_t i6 , size_t i7 );
+    output.m_length = input.m_length ;
+    output.m_sum    = input.m_sum ;
+    output.m_data.allocate( output.m_length + 1 , std::string() );
 
-void mdarray_require_equal_dimension(
-  size_t n_rank , const size_t n_dims[] ,
-  size_t m_rank , const size_t m_dims[] );
+    deep_copy( output , input );
 
-template < class MDArrayType1 , class MDArrayType2 >
-inline
-void mdarray_require_equal_dimension( const MDArrayType1 & array1 ,
-                                      const MDArrayType2 & array2 )
-{
-  const size_t array1_rank = array1.rank();
-  const size_t array2_rank = array2.rank();
-  size_t array1_dims[8] = { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 };
-  size_t array2_dims[8] = { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 };
-  array1.dimensions( array1_dims );
-  array2.dimensions( array2_dims );
-  mdarray_require_equal_dimension( array1_rank, array1_dims,
-                                   array2_rank, array2_dims);
-}
-
-//----------------------------------------------------------------------------
-
-void array_require_equal_dimension( size_t x , size_t y );
-
-void crsarray_require_equal_dimension(
-  size_t x_row_count , size_t x_entry_count ,
-  size_t y_row_count , size_t y_entry_count );
-
-void prefixsum_require_equal_dimension( size_t x , size_t y );
+    return output ;
+  }
+};
 
 //----------------------------------------------------------------------------
 
 } // namespace Impl
 } // namespace Kokkos
 
-#endif /* KOKKOS_ARRAYBOUNDS_HPP */
+#endif /* #ifndef KOKKOS_CUDA_PREFIXSUM_HPP */
 

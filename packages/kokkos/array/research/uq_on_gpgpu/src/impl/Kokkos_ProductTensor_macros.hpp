@@ -375,12 +375,12 @@ public:
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type dimension() const { return m_coord.row_count(); }
+  size_type dimension() const { return m_coord.row_map.length(); }
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type entry_count() const
-  { return m_coord.entry_dimension(0); }
+  { return m_coord.entries.dimension(0); }
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
@@ -390,17 +390,17 @@ public:
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
   size_type entry_begin( size_type i ) const
-  { return m_coord.row_entry_begin(i); }
+  { return m_coord.row_map[i]; }
 
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
   size_type entry_end( size_type i ) const
-  { return m_coord.row_entry_end(i); }
+  { return m_coord.row_map[i+1]; }
 
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
   size_type coord( const size_type entry , const size_type c ) const
-  { return m_coord( entry , c ); }
+  { return m_coord.entries( entry , c ); }
 
   inline
   KOKKOS_MACRO_DEVICE_FUNCTION
