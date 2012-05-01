@@ -178,13 +178,12 @@ int main(int argc, char *argv[])
   RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
   int rank = tcomm->getRank();
 
+  meshCoordinatesTest(tcomm);
 
   testFromDataFile(tcomm);
 
   if (rank == 0)
     serialTest();
-
-  meshCoordinatesTest(tcomm);
 
   if (rank == 0)
     std::cout << "PASS" << std::endl;

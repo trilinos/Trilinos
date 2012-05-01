@@ -276,14 +276,12 @@ template<typename User>
     const ArrayRCP<const gid_t> &gids, bool idsMustBeConsecutive) 
          : env_(env), comm_(comm), myGids_(gids), gnoDist_(), gidHash_(),
            globalNumberOfIds_(0), localNumberOfIds_(0),
-           myRank_(0), numProcs_(1),
+           myRank_(comm_->getRank()), numProcs_(comm_->getSize()),
            userGidsAreTeuchosOrdinal_(false), userGidsAreConsecutive_(false), 
            userGidsAreZoltan2Gnos_(false), zoltan2GnosAreConsecutive_(false), 
            consecutiveGidsAreRequired_(idsMustBeConsecutive),
            minGlobalGno_(0), maxGlobalGno_(0)
 {
-  myRank_ = comm_->getRank();
-  numProcs_ = comm_->getSize();
   setupMap();
 }
 
@@ -1019,9 +1017,6 @@ template< typename User>
        "application global ID type is not supported yet",
        IdentifierTraits<gid_t>::is_valid_id_type() == true, BASIC_ASSERTION,
        comm_);
-
-  numProcs_ = comm_->getSize(); 
-  myRank_ = comm_->getRank(); 
 
   if (IdentifierTraits<gid_t>::isGlobalOrdinal())
     userGidsAreTeuchosOrdinal_ = true;
