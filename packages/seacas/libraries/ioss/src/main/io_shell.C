@@ -333,6 +333,8 @@ namespace {
     OUTPUT << "\t--out_type {exodus} : set output type to the argument. Default exodus\n";
     OUTPUT << "\t--64 : integers will be 64-bit for api.\n";
     OUTPUT << "\t--debug : turn on debugging output\n";
+    OUTPUT << "\t--compress {level} : specifies comrpession level [0..9]\n";
+    OUTPUT << "\t--shuffle : enable shuffle filter for use with compression\n";
     OUTPUT << "\t--Maximum_Time {time} : maximum time from input mesh to transfer to output mesh\n";
     OUTPUT << "\t--Minimum_Time {time} : minimum time from input mesh to transfer to output mesh\n";
     OUTPUT << "\t--Surface_Split_Scheme {TOPOLOGY|ELEMENT_BLOCK|NO_SPLIT} -- how to split sidesets\n";

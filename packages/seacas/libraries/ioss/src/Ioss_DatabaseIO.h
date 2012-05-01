@@ -220,6 +220,24 @@ namespace Ioss {
 		 Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
 		 const Ioss::PropertyManager &properties);
 
+      /*! 
+       * The properties member data contains properties that can be
+       * used to set database-specific options.  Examples include
+       * compression, name lengths, integer sizes, floating point
+       * sizes. By convention, the property name is all
+       * uppercase. Some existing properties recognized by the Exodus
+       * DatabaseIO class are:
+       *
+       * | Property              | Value
+       * |-----------------------|-------------------
+       * | COMPRESSION_LEVEL     | In the range [0..9]. A value of 0 indicates no compression
+       * | COMPRESSION_SHUFFLE   | (true/false) to enable/disable hdf5's shuffle compression algorithm.
+       * | FILE_TYPE             | netcdf4 
+       * | MAXIMUM_NAME_LENGTH   | Maximum length of names that will be returned/passed via api call.
+       * | INTEGER_SIZE_DB       | 4 or 8 indicating byte size of integers stored on the database.
+       * | INTEGER_SIZE_API      | 4 or 8 indicating byte size of integers used in api functions.
+       * | LOGGING               | (true/false) to enable/disable logging of field input/output
+       */
       Ioss::PropertyManager properties;
 
       /*!
