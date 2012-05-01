@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_GATHER_SOLUTION_EPETRA_IMPL_HPP
-#define PANZER_GATHER_SOLUTION_EPETRA_IMPL_HPP
+#ifndef PANZER_GATHER_SOLUTION_BLOCKED_EPETRA_IMPL_HPP
+#define PANZER_GATHER_SOLUTION_BLOCKED_EPETRA_IMPL_HPP
 
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout.hpp"
