@@ -60,11 +60,11 @@ public:
    ResponseAggregator_Manager()
       : globalIndexer_(Teuchos::null), linObjFactory_(Teuchos::null) {}
 
-   ResponseAggregator_Manager(const Teuchos::RCP<UniqueGlobalIndexer<int,int> > & ugi,
+   ResponseAggregator_Manager(const Teuchos::RCP<UniqueGlobalIndexerBase> & ugi,
                               const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof)
       : globalIndexer_(ugi), linObjFactory_(lof) {}
 
-   void initialize(const Teuchos::RCP<UniqueGlobalIndexer<int,int> > & ugi,
+   void initialize(const Teuchos::RCP<UniqueGlobalIndexerBase> & ugi,
                    const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof)
    { globalIndexer_ = ugi; linObjFactory_ = lof; }
 
@@ -115,7 +115,7 @@ public:
    Teuchos::RCP<LinearObjFactory<TraitsT> > getLinearObjFactory() const
    { return linObjFactory_; }
 
-   Teuchos::RCP<UniqueGlobalIndexer<int,int> > getGlobalIndexer() const
+   Teuchos::RCP<UniqueGlobalIndexerBase > getGlobalIndexer() const
    { return globalIndexer_; }
 
 
@@ -127,7 +127,7 @@ private:
 
    std::map<std::string,Teuchos::RCP<AggregatorManager> > aggregators_;
 
-   Teuchos::RCP<UniqueGlobalIndexer<int,int> > globalIndexer_;
+   Teuchos::RCP<UniqueGlobalIndexerBase > globalIndexer_;
    Teuchos::RCP<LinearObjFactory<TraitsT> > linObjFactory_;
 
    ResponseAggregator_Manager(const ResponseAggregator_Manager &);

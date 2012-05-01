@@ -112,13 +112,13 @@ public:
    ResponseAggregator_SolutionWriter_Builder(const Teuchos::RCP<STK_Interface> & mesh)
       : mesh_(mesh) {}
 
-   void setGlobalIndexer(const Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > & ugi)
+   void setGlobalIndexer(const Teuchos::RCP<panzer::UniqueGlobalIndexerBase> & ugi)
    { globalIndexer_ = ugi; }
 
    void setLinearObjFactory(const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof)
    { linObjFactory_ = lof; }
 
-   Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > getGlobalIndexer() const
+   Teuchos::RCP<panzer::UniqueGlobalIndexerBase> getGlobalIndexer() const
    { return globalIndexer_; }
 
    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > getLinearObjFactory() const
@@ -129,7 +129,7 @@ public:
    { return Teuchos::null; }
 
 private:
-   Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > globalIndexer_;
+   Teuchos::RCP<panzer::UniqueGlobalIndexerBase> globalIndexer_;
    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory_;
 
    Teuchos::RCP<STK_Interface> mesh_;

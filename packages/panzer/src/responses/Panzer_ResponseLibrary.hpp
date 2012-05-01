@@ -95,7 +95,7 @@ public:
    }
 
    ResponseLibrary(const Teuchos::RCP<WorksetContainer> & wc,
-                   const Teuchos::RCP<UniqueGlobalIndexer<int,int> > & ugi,
+                   const Teuchos::RCP<UniqueGlobalIndexerBase> & ugi,
                    const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof); 
 
    ResponseLibrary(const ResponseLibrary & rl);
@@ -103,7 +103,7 @@ public:
    /** Initialize the response library with the appropriate objects.
      */
    void initialize(const Teuchos::RCP<WorksetContainer> & wc,
-                   const Teuchos::RCP<UniqueGlobalIndexer<int,int> > & ugi,
+                   const Teuchos::RCP<UniqueGlobalIndexerBase> & ugi,
                    const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof); 
 
    /** Initialize the response library from a previously construct response library.
@@ -271,7 +271,7 @@ private:
    //! Maps from a "label"->(ResponseId,List of Element Blocks)
    std::map<std::string,ResponseDescriptor> labeledResponses_;
 
-   Teuchos::RCP<UniqueGlobalIndexer<int,int> > globalIndexer_;
+   Teuchos::RCP<UniqueGlobalIndexerBase> globalIndexer_;
    Teuchos::RCP<LinearObjFactory<TraitsT> > linObjFactory_;
 };
 

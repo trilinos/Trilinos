@@ -49,7 +49,7 @@ namespace panzer {
 
 template <typename TraitsT>
 ResponseLibrary<TraitsT>::ResponseLibrary(const Teuchos::RCP<WorksetContainer> & wc,
-                                          const Teuchos::RCP<UniqueGlobalIndexer<int,int> > & ugi,
+                                          const Teuchos::RCP<UniqueGlobalIndexerBase> & ugi,
                                           const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof)
    : respAggManager_(ugi,lof), wkstContainer_(wc), globalIndexer_(ugi), linObjFactory_(lof)
 {
@@ -69,7 +69,7 @@ ResponseLibrary<TraitsT>::ResponseLibrary(const ResponseLibrary<TraitsT> & rl)
 template <typename TraitsT>
 void ResponseLibrary<TraitsT>::
 initialize(const Teuchos::RCP<WorksetContainer> & wc,
-           const Teuchos::RCP<UniqueGlobalIndexer<int,int> > & ugi,
+           const Teuchos::RCP<UniqueGlobalIndexerBase> & ugi,
            const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof)
 {
    respAggManager_ .initialize(ugi,lof);

@@ -153,7 +153,7 @@ public:
     */
    virtual void aggregateResponses(Response<TraitsT> & dest,const std::list<Teuchos::RCP<const Response<TraitsT> > > & sources) const = 0;
 
-   virtual void setGlobalIndexer(const Teuchos::RCP<UniqueGlobalIndexer<int,int> > & ugi) = 0;
+   virtual void setGlobalIndexer(const Teuchos::RCP<UniqueGlobalIndexerBase> & ugi) = 0;
 
    virtual void setLinearObjFactory(const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof) = 0;
 };
@@ -163,20 +163,20 @@ class ResponseAggregator : public ResponseAggregatorBase<TraitsT> {
 public:
    virtual ~ResponseAggregator() {}
 
-   virtual void setGlobalIndexer(const Teuchos::RCP<UniqueGlobalIndexer<int,int> > & ugi)
+   virtual void setGlobalIndexer(const Teuchos::RCP<UniqueGlobalIndexerBase> & ugi)
    { globalIndexer_ = ugi; }
 
    virtual void setLinearObjFactory(const Teuchos::RCP<LinearObjFactory<TraitsT> > & lof)
    { linObjFactory_ = lof; }
 
-   Teuchos::RCP<UniqueGlobalIndexer<int,int> > getGlobalIndexer() const
+   Teuchos::RCP<UniqueGlobalIndexerBase> getGlobalIndexer() const
    { return globalIndexer_; }
 
    Teuchos::RCP<LinearObjFactory<TraitsT> > getLinearObjFactory() const
    { return linObjFactory_; }
 
 private:
-   Teuchos::RCP<UniqueGlobalIndexer<int,int> > globalIndexer_;
+   Teuchos::RCP<UniqueGlobalIndexerBase> globalIndexer_;
    Teuchos::RCP<LinearObjFactory<TraitsT> > linObjFactory_;
 };
 

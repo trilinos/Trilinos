@@ -144,13 +144,13 @@ private:
 // Specialized for panzer::Traits
 class ResponseAggregator_IPCoordinates_Builder {
 public:
-   void setGlobalIndexer(const Teuchos::RCP<UniqueGlobalIndexer<int,int> > & ugi)
+   void setGlobalIndexer(const Teuchos::RCP<UniqueGlobalIndexerBase> & ugi)
    { globalIndexer_ = ugi; }
 
    void setLinearObjFactory(const Teuchos::RCP<LinearObjFactory<panzer::Traits> > & lof)
    { linObjFactory_ = lof; }
 
-   Teuchos::RCP<UniqueGlobalIndexer<int,int> > getGlobalIndexer() const
+   Teuchos::RCP<UniqueGlobalIndexerBase> getGlobalIndexer() const
    { return globalIndexer_; }
 
    Teuchos::RCP<LinearObjFactory<panzer::Traits> > getLinearObjFactory() const
@@ -161,7 +161,7 @@ public:
    { return Teuchos::null; }
 
 private:
-   Teuchos::RCP<UniqueGlobalIndexer<int,int> > globalIndexer_;
+   Teuchos::RCP<UniqueGlobalIndexerBase> globalIndexer_;
    Teuchos::RCP<LinearObjFactory<panzer::Traits> > linObjFactory_;
 };
 
