@@ -1412,7 +1412,7 @@ template <typename mvector_t, typename Adapter>
   lno_t localCountLeft=0, localCountRight=0;
   unsigned char *flags = new unsigned char [numLocalCoords];
   env->localMemoryAssertion(__FILE__, __LINE__, numLocalCoords, flags) ;
-  ArrayView<unsigned char> lrflags(flags, numLocalCoords);
+  ArrayRCP<unsigned char> lrflags(flags, 0, numLocalCoords, true);
 
   try{
     BSPfindCut<mvector_t>( env, comm,
