@@ -132,12 +132,24 @@ A few conventions and limitations must be cited:
 
 \section int64 Integer Bulkdata Storage Details
 
-The EXODUS database can store integer bulk data and entity ids in either 32-bit or
-64-bit integer format. The data considered "bulk data" are:
+The EXODUS database can store integer bulk data, entity map data, and
+mesh entity (block/set) ids in either 32-bit or 64-bit integer format. The data
+considered "bulk data" are:
 
- - mesh object ids and number maps,
  - element, face, and edge connectivity lists,
  - element, face, edge, and node set entity lists,
+
+The entity map data is any data stored in one of the 'map' objects on
+the exodus file.  This includes:
+ - id maps
+ - number maps
+ - order maps
+ - processor node maps
+ - processor element maps.
+
+A mesh entity id is the id of any block (element block, edge block,
+...); set (node set, face set, ...), coordinate frame, and
+communication map.
 
 When an EXODUS file is created via the ex_create() function, the
 'mode' argument provides the mechanism for specifying how integer data
@@ -146,49 +158,62 @@ integer data will be stored on the database. The ex_open() function
 also provides a mechanism for specifying how integer data will be
 passed as arguments. 
 
-The mechanism uses the 'mode' argument to the ex_open() and
+The method uses the 'mode' argument to the ex_open() and
 ex_create() functions.  The mode is a 32-bit integer in which certain
-bits are turned on by or'ing certain predefined constants.  The
-constants related to the integer size (32-bit or 64-bit) specification
-are:
+bits are turned on by or'ing certain predefined constants.  
 
- - EX_MAPS_INT64_DB
- - EX_IDS_INT64_DB 
- - EX_BULK_INT64_DB
- - EX_ALL_INT64_DB 
+exoid = ex_create( EX_TEST_FILENAME,
+		   EX_CLOBBER|EX_MAPS_INT64_DB|EX_MAPS_INT64_API,
+		   &appWordSize, &diskWordSize );
 
- - EX_MAPS_INT64_API
- - EX_IDS_INT64_API 
- - EX_BULK_INT64_API
- - EX_ALL_INT64_API
+The constants related to the integer size (32-bit or 64-bit)
+specification are:
+
+- EX_MAPS_INT64_DB   -- entity map data
+- EX_IDS_INT64_DB    -- mesh entity ids
+- EX_BULK_INT64_DB   -- bulk data
+- EX_ALL_INT64_DB    -- (the above 3 or'd together)
+- EX_MAPS_INT64_API  -- entity map data
+- EX_IDS_INT64_API   -- mesh entity ids
+- EX_BULK_INT64_API  -- bulk data
+- EX_ALL_INT64_API   -- (the above 3 or'd together)
 
 The constants that end with "_DB" specify that that particular integer
 data is stored on the database as 64-bit integers; the constants that
 end with "_API" specify that that particular integer data is passed
-to/from API functions as 64-bit integers.  If the data being
-transmitted is larger than the permitted integer range (for example,
-if the data is stored on the database as 64-bit ints and the
-application specifies passing data as 32-bit ints), the api
-function will return an error.
+to/from API functions as 64-bit integers.  
+
+If the range of the data being transmitted is larger than the
+permitted integer range (for example, if the data is stored on the
+database as 64-bit ints and the application specifies passing data as
+32-bit ints), the api function will return an error.
 
 The three types of integer data whose storage can be specified are
- - maps (EX_MAPS_INT64_),
- - "bulk data" including connectivity lists and entity lists (EX_BULK_INT64_), and 
- - entity ids which are the ids of element, face, edge, and node sets
+- maps (EX_MAPS_INT64_),
+- "bulk data" including connectivity lists and entity lists (EX_BULK_INT64_), and 
+- entity ids which are the ids of element, face, edge, and node sets
    and blocks; and map ids (EX_IDS_INT64_)
 
 The function ex_int64_status(exoid) is used to determine the integer
 storage types being used for the EXODUS database 'exoid'.  It returns
 an integer which can be and'ed with the above flags to determine
-either the storage type or function parameter type. For example, if
+either the storage type or function parameter type. 
+
+For example, if
 (EX_MAPS_INT64_DB \& ex_int64_status(exoid)) is true, then map data is
 being stored as 64-bit integers for that database.
 
-\subsection int64_status Status
-
-Currently, all map routines have the 64-bit capability implemented in
-both the fortran an C API; the EX_IDS_INT64_ and EX_BULK_INT64_ are
-not yet implemented.
+It is not possible to determine the integer data size on a database
+without opening the database via an ex_open() call. However, the
+integer size specification for API functions can be changed at any
+time via the ex_set_int64_status(exoid, mode) function. The mode is
+one or more of EX_MAPS_INT64_API, EX_IDS_INT64_API, or
+EX_BULK_INT64_API, or'd together.  Any exodus function calls after
+that point will use the specified integer size. Note that a call to
+ex_set_int64_status(exoid, mode) overrides any previous setting for
+the integer sizes used in the API.  The ex_create() function is the
+only way to specify the integer sizes specification for database
+integers.
 
 \subsection int64_fortran_api Fortran API
 The fortran api is uses the same mechanism as was described above for
@@ -211,6 +236,27 @@ map-related functions in the fortran api have all been converted to
 pass 64-bit integers down to the C API which has removed some code and
 simplified those functions.
 
+
+\section Database Options (Compression, Name Length, File Type)
+
+The ex_set_option() function call is used to set various options on the
+database.  Valid values for 'option' are:
+
+|   Option Name          | Option Values
+-------------------------|---------------
+| EX_OPT_MAX_NAME_LENGTH | Maximum length of names that will be returned/passed via api call.
+| EX_OPT_COMPRESSION_TYPE | Not currently used; default is gzip
+| EX_OPT_COMPRESSION_LEVEL | In the range [0..9]. A value of 0 indicates no compression
+| EX_OPT_COMPRESSION_SHUFFLE | 1 if enabled, 0 if disabled
+| EX_OPT_INTEGER_SIZE_API | 4 or 8 indicating byte size of integers used in api functions.
+| EX_OPT_INTEGER_SIZE_DB  | Query only, returns 4 or 8 indicating byte size of integers stored on database.
+
+The compression-related options are only available on netcdf-4 files
+since the underlying hdf5 compression functionality is used for the
+implementation. The compression level indicates how much effort should
+be expended in the compression and the computational expense increases
+with higher levels; in many cases, a compression level of 1 is
+sufficient. 
 
 \defgroup ResultsData Results Data
 @{

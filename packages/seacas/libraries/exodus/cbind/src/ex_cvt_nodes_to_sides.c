@@ -39,6 +39,30 @@
 #include "exodusII.h"
 #include "exodusII_int.h"
 
+static void *safe_free(void *array)
+{
+  if (array != 0) free(array);
+  return 0;
+}
+
+static int64_t get_node(void_int *connect, size_t index, size_t int_size)
+{
+  if (int_size == sizeof(int64_t)) {
+    return ((int64_t*)connect)[index];
+  } else {
+    return ((int*)connect)[index];
+  }
+}
+
+static void put_side(void_int *side_list, size_t index, size_t value, size_t int_size)
+{
+  if (int_size == sizeof(int64_t)) {
+    ((int64_t*)side_list)[index] = value;
+  } else {
+    ((int*)side_list)[index] = value;
+  }
+}
+
 /*!
 
 The function ex_cvt_nodes_to_sides() is used to convert a side set
@@ -162,30 +186,6 @@ ex_cvt_nodes_to_sides(exoid, num_side_per_set, num_nodes_per_set,
 \endverbatim
 
  */
-
-static void *safe_free(void *array)
-{
-  if (array != 0) free(array);
-  return 0;
-}
-
-static int64_t get_node(void_int *connect, size_t index, size_t int_size)
-{
-  if (int_size == sizeof(int64_t)) {
-    return ((int64_t*)connect)[index];
-  } else {
-    return ((int*)connect)[index];
-  }
-}
-
-static void put_side(void_int *side_list, size_t index, size_t value, size_t int_size)
-{
-  if (int_size == sizeof(int64_t)) {
-    ((int64_t*)side_list)[index] = value;
-  } else {
-    ((int*)side_list)[index] = value;
-  }
-}
 
 int ex_cvt_nodes_to_sides(int exoid,
                           void_int *num_elem_per_set,

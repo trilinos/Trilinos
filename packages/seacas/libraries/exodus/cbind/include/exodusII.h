@@ -53,8 +53,8 @@
 #endif
 
 /* EXODUS II version number */
-#define EX_API_VERS 5.18f
-#define EX_API_VERS_NODOT 518
+#define EX_API_VERS 5.19f
+#define EX_API_VERS_NODOT 519
 #define EX_VERS EX_API_VERS
 #define NEMESIS_API_VERSION		EX_API_VERS
 #define NEMESIS_API_VERSION_NODOT	EX_API_VERS_NODOT
@@ -171,6 +171,12 @@ extern "C" {
   typedef enum ex_inquiry ex_inquiry;
   
   /* Options */
+  /**
+   * \defgroup FileOptions Variables controlling the compression, name size, and integer size.
+   *@{
+   */
+  /* Modes for ex_open */
+  /*! \sa ex_set_option() */
   enum ex_option_type {
     EX_OPT_MAX_NAME_LENGTH = 1,
     EX_OPT_COMPRESSION_TYPE,     /* Currently not used. GZip by default */
@@ -180,6 +186,7 @@ extern "C" {
     EX_OPT_INTEGER_SIZE_DB /* (query only) */
   };
   typedef enum ex_option_type ex_option_type;
+  /*@}*/
   
   enum ex_entity_type {
     EX_NODAL       = 14,          /**< nodal "block" for variables*/

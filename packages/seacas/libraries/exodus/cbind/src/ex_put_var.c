@@ -59,19 +59,6 @@
 #include "exodusII.h"
 #include "exodusII_int.h"
 
-/*!
- * writes the values of a single variable for one entity at one time
- * step to the database; assume the first time step and variable index
- * are 1
- * \param      exoid                   exodus file id
- * \param      time_step               time step number
- * \param      var_type                type (edge block, face block, edge set, ... )
- * \param      var_index               variable index
- * \param      obj_id                  entity block id
- * \param      num_entries_this_obj    number of entries in this block/set
- * \param      var_vals                the values to be written
- */
-
 static int
 ex_look_up_var(int exoid, ex_entity_type var_type, int var_index, ex_entity_id obj_id, 
 	       const char *VOBJID, const char *VOBJTAB, const char *DNUMOBJ,
@@ -213,6 +200,19 @@ ex_look_up_var(int exoid, ex_entity_type var_type, int var_index, ex_entity_id o
   }
   return (EX_FATAL);
 }
+
+/*!
+ * writes the values of a single variable for one entity at one time
+ * step to the database; assume the first time step and variable index
+ * are 1
+ * \param      exoid                   exodus file id
+ * \param      time_step               time step number
+ * \param      var_type                type (edge block, face block, edge set, ... )
+ * \param      var_index               variable index
+ * \param      obj_id                  entity block id
+ * \param      num_entries_this_obj    number of entries in this block/set
+ * \param      var_vals                the values to be written
+ */
 
 int ex_put_var (int   exoid,
 		int   time_step,

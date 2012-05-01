@@ -55,6 +55,8 @@
 #include "exodusII.h"
 #include "exodusII_int.h"
 
+static void *safe_free(void *array);
+
 /*!
  * This routine is designed to read the Exodus II V 2.0 side set side 
  * definition  and return the length of a ExodusI style side set node list.
@@ -62,8 +64,6 @@
  * \param           side_set_id             side set id
  * \param[out]     *side_set_node_list_len length of node list
  */
-
-static void *safe_free(void *array);
 
 int ex_get_side_set_node_list_len(int exoid,
 				  ex_entity_id side_set_id,

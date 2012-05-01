@@ -60,7 +60,6 @@
 /*!
  * writes the parameters used to describe an element/face/edge block
  * \param   exoid                   exodus file id
- * \param   blk_type                type of block (edge, face, or element)
  * \param   block                   ex_block structure describing block counts
  */
 

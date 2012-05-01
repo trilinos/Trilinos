@@ -89,16 +89,16 @@ int ex_conv_ini( int  exoid,
   
   /*! ex_conv_ini() initializes the floating point conversion process.
    *
-   * \param exoid                an integer uniquely identifying the file of interest.
+   * \param exoid         an integer uniquely identifying the file of interest.
    *
-   * \param comp_wordsize        compute floating point word size in the user's code.
+   * \param comp_wordsize compute floating point word size in the user's code.
    *                      a zero value indicates that the user is requesting the 
    *                      default float size for the machine. The appropriate 
    *                      value is chosen and returned in comp_wordsize, and used
    *                      in subsequent conversions.  a valid but inappropriate 
    *                      for this parameter cannot be detected.
    *
-   * \param io_wordsize          the desired floating point word size for a netCDF file.
+   * \param io_wordsize   the desired floating point word size for a netCDF file.
    *                      for an existing file, if this parameter doesn't match
    *                      the word size of data already stored in the file, a
    *                      fatal error is generated.  a value of 0 for an existing
@@ -108,8 +108,12 @@ int ex_conv_ini( int  exoid,
    *                      NC_FLOAT (4 bytes).  when a value of 0 is specified the
    *                      actual value used is returned in io_wordsize.
    *
-   * \param file_wordsize        floating point word size in an existing netCDF file.
+   * \param file_wordsize floating point word size in an existing netCDF file.
    *                      a value of 0 should be passed in for a new netCDF file.
+   *
+   * \param int64_status  the flags specifying how integer values should be stored
+   *                      on the database and how they should be passes through the
+   *                      api functions.  See #FileVars for more information.
    *
    * word size parameters are specified in bytes. valid values are 0, 4, and 8:
    */

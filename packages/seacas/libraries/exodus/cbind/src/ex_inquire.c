@@ -40,11 +40,7 @@
 #include "exodusII_int.h"
 
 /*!
-\fn{int ex_inquire (int   exoid,
-		    int   req_info,
-		    int  *ret_int,
-		    void *ret_float,
-		    char *ret_char)}
+\fn{int ex_inquire (int exoid, int req_info, void_int *ret_int, float *ret_float, char *ret_char)}
 
 The function ex_inquire() is used to inquire values of certain
 data entities in an exodus file. Memory must be allocated for the

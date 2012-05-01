@@ -68,8 +68,8 @@ static void *safe_free(void *array)
                       elem_blk_parms[i].elem_type,\
                       elem_blk_parms[i].num_nodes_per_elem);\
               ex_err("ex_get_side_set_node_count",errmsg,EX_MSG);\
-              return(EX_FATAL);\
-/* \endcond */
+              return(EX_FATAL);
+/*! \endcond */
 
 /*! \undoc */
 int ex_get_concat_side_set_node_count(int exoid,

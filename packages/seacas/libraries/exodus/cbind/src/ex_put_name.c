@@ -57,7 +57,9 @@
 #include <string.h>
 
 /*!
- * writes the name of the specified entity to the database.
+ * writes the name of the specified entity to the database. The entity
+ * with id `entity_id` must exist before calling ex_put_name().
+ *
  * \param  exoid          exodus file id
  * \param  obj_type       object type
  * \param  entity_id      id of entity name to write
@@ -132,6 +134,15 @@ int ex_put_name (int   exoid,
   }
 
   ent_ndx = ex_id_lkup(exoid, obj_type, entity_id);
+
+  if (exerrval == EX_LOOKUPFAIL) {   /* could not find the element block id */
+    exerrval = EX_FATAL;
+    sprintf(errmsg,
+            "Error: %s id %"PRId64" not found in file id %d",
+	    ex_name_of_object(obj_type), entity_id, exoid);
+    ex_err("ex_put_name",errmsg,exerrval);
+    return (EX_FATAL);
+  }
 
   /* If this is a null entity, then 'ent_ndx' will be negative.
    * We don't care in this routine, so make it positive and continue...
