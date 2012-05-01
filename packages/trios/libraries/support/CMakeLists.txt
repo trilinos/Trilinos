@@ -14,8 +14,9 @@ SET(NONINSTALLHEADERS "")
 SET(SOURCES "")
 SET(MODULES "")
 
-#INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/packages/trios/libraries/nessie)
 #INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/..)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/trios/libraries/nessie/common)
 
 APPEND_SET(HEADERS
   ${PACKAGE_BINARY_DIR}/Trios_config.h
@@ -102,6 +103,19 @@ APPEND_SET(SOURCES
 IF (${PACKAGE_NAME}_ENABLE_Pablo)
   APPEND_SET(SOURCES trace/SDDF.cc)
 ENDIF (${PACKAGE_NAME}_ENABLE_Pablo)
+
+
+############# Ring Buffer ##########################
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/ring_buffer)
+
+APPEND_SET(HEADERS
+  ring_buffer/Trios_ring_buffer.h
+)
+
+APPEND_SET(SOURCES
+  ring_buffer/Trios_ring_buffer.cpp
+)
 
 
 
