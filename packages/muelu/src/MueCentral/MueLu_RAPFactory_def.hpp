@@ -96,48 +96,46 @@ namespace MueLu {
       const RCP<BlockedCrsOperatorClass> bA = Teuchos::rcp_dynamic_cast<BlockedCrsOperatorClass>(A);
       if( bA != Teuchos::null) {
         RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", RFact_.get());
-        Ac = BuildRAPBlock(R, A, P, levelID);
+        Ac = BuildRAPBlock(R, A, P, levelID); // Triple matrix product for BlockedCrsOperatorClass
       } else {
-        if (implicitTranspose_) {
-          Ac = BuildRAPImplicit(A, P, levelID);
-        } else {
 
-          std::string msgType;
+        // refactoring needed >>>>>>>>
+        // the following code should be moved to his own factory
+        //
+        if ( coarseLevel.IsAvailable("A",PFact_.get()) && coarseLevel.IsAvailable("Importer",RFact_.get()) ) {
+          SubFactoryMonitor m1(*this, "Rebalancing existing Ac", levelID);
+          Ac = coarseLevel.Get< RCP<Operator> >("A", PFact_.get());
+          RCP<Operator> newAc = OperatorFactory::Build(P->getDomainMap(), Ac->getGlobalMaxNumRowEntries());
+          RCP<CrsOperator> crsOp = rcp_dynamic_cast<CrsOperator>(newAc);
+          RCP<CrsMatrix> crsMtx = crsOp->getCrsMatrix();
+          RCP<CrsOperator> origOp = rcp_dynamic_cast<CrsOperator>(Ac);
+          RCP<CrsMatrix> origMtx = origOp->getCrsMatrix();
+          RCP<const Import> permImporter = coarseLevel.Get< RCP<const Import> >("Importer",RFact_.get());
+          crsMtx->doImport(*origMtx, *permImporter,Xpetra::INSERT);
+          crsMtx = Teuchos::null;
+          newAc->fillComplete(P->getDomainMap(), P->getDomainMap());
+          Ac = newAc;
+          
+          PrintMatrixInfo(*Ac, "Ac (rebalanced)");
+          PrintLoadBalancingInfo(*Ac, "Ac (rebalanced)");
+          
+        } else if (coarseLevel.IsAvailable("A",PFact_.get())) {
+          // Ac already built by the load balancing process and no load balancing needed
+          SubFactoryMonitor m1(*this, "Ac already computed", levelID);
+          Ac = coarseLevel.Get< RCP<Operator> >("A", PFact_.get());
+        } 
+        // <<<<<<<< refactoring needed
+        
+        else {
+          // Triple matrix product
 
-          // refactoring needed >>>>>>>>
-          // the following code should be moved to his own factory
-          //
-          if ( coarseLevel.IsAvailable("A",PFact_.get()) && coarseLevel.IsAvailable("Importer",RFact_.get()) ) {
-            SubFactoryMonitor m1(*this, "Rebalancing existing Ac", levelID);
-            Ac = coarseLevel.Get< RCP<Operator> >("A", PFact_.get());
-            RCP<Operator> newAc = OperatorFactory::Build(P->getDomainMap(), Ac->getGlobalMaxNumRowEntries());
-            RCP<CrsOperator> crsOp = rcp_dynamic_cast<CrsOperator>(newAc);
-            RCP<CrsMatrix> crsMtx = crsOp->getCrsMatrix();
-            RCP<CrsOperator> origOp = rcp_dynamic_cast<CrsOperator>(Ac);
-            RCP<CrsMatrix> origMtx = origOp->getCrsMatrix();
-            RCP<const Import> permImporter = coarseLevel.Get< RCP<const Import> >("Importer",RFact_.get());
-            crsMtx->doImport(*origMtx, *permImporter,Xpetra::INSERT);
-            crsMtx = Teuchos::null;
-            newAc->fillComplete(P->getDomainMap(), P->getDomainMap());
-            Ac = newAc;
-
-            PrintMatrixInfo(*Ac, "Ac (rebalanced)");
-            PrintLoadBalancingInfo(*Ac, "Ac (rebalanced)");
-
-          } else if (coarseLevel.IsAvailable("A",PFact_.get())) {
-            // Ac already built by the load balancing process and no load balancing needed
-            SubFactoryMonitor m1(*this, "Ac already computed", levelID);
-            Ac = coarseLevel.Get< RCP<Operator> >("A", PFact_.get());
-          } 
-          // <<<<<<<< refactoring needed
-
-          else {
+          if (implicitTranspose_) {
+            // implicit version
+            Ac = BuildRAPImplicit(A, P, levelID);
+          } else {
             // explicit version
             RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", RFact_.get());
             Ac = BuildRAPExplicit(R, A, P, levelID);
-
-            PrintMatrixInfo(*Ac, "Ac (explicit)");
-            PrintLoadBalancingInfo(*Ac, "Ac (explicit)");
           }
 
         }
@@ -177,6 +175,9 @@ namespace MueLu {
       SubFactoryMonitor m2(*this, "MxM: R x (AP)", levelID);
       RAP = Utils::TwoMatrixMultiply(R, false, AP, false);
     }
+
+    PrintMatrixInfo(*RAP, "Ac (explicit)");
+    PrintLoadBalancingInfo(*RAP, "Ac (explicit)");
 
     return RAP;
   }
