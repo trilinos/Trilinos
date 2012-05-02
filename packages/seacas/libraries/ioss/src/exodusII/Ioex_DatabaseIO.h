@@ -358,6 +358,7 @@ namespace Ioex {
 
     std::string databaseTitle;
     mutable int exodusMode;
+    mutable int dbRealWordSize;
 
     mutable int maximumNameLength;
     int spatialDimension;

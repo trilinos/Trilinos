@@ -84,6 +84,7 @@ namespace {
     bool debug;
     bool do_transform_fields;
     bool ints_64_bit;
+    bool reals_32_bit;
     bool netcdf4;
     bool shuffle;
   };
@@ -165,6 +166,7 @@ int main(int argc, char *argv[])
   globals.minimum_time = 0.0;
   globals.surface_split_type = 1;
   globals.ints_64_bit = false;
+  globals.reals_32_bit = false;
   globals.netcdf4 = false;
   globals.compression_level = 0;
   globals.shuffle = false;
@@ -216,6 +218,10 @@ int main(int argc, char *argv[])
     else if (std::strcmp("--64", argv[i]) == 0) {
       i++;
       globals.ints_64_bit = true;
+    }
+    else if (std::strcmp("--float", argv[i]) == 0) {
+      i++;
+      globals.reals_32_bit = true;
     }
     else if (std::strcmp("--netcdf4", argv[i]) == 0) {
       i++;
@@ -332,6 +338,7 @@ namespace {
     OUTPUT << "\t--in_type {pamgen|generated|exodus} : set input type to the argument. Default exodus\n";
     OUTPUT << "\t--out_type {exodus} : set output type to the argument. Default exodus\n";
     OUTPUT << "\t--64 : integers will be 64-bit for api.\n";
+    OUTPUT << "\t--float : reals will be stored as floats (32-bits) on the database (output only).\n";
     OUTPUT << "\t--debug : turn on debugging output\n";
     OUTPUT << "\t--compress {level} : specifies comrpession level [0..9]\n";
     OUTPUT << "\t--shuffle : enable shuffle filter for use with compression\n";
@@ -375,6 +382,10 @@ namespace {
     if (globals.ints_64_bit) {
       properties.add(Ioss::Property("INTEGER_SIZE_DB",  8));
       properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
+    }
+
+    if (globals.reals_32_bit) {
+      properties.add(Ioss::Property("REAL_SIZE_DB",  4));
     }
 
     if (globals.compression_level > 0 || globals.shuffle) {

@@ -371,7 +371,7 @@ namespace Ioex {
 			 Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
 			 const Ioss::PropertyManager &props) :
     Ioss::DatabaseIO(region, filename, db_usage, communicator, props),
-    exodusFilePtr(-1), databaseTitle(""), exodusMode(EX_CLOBBER),
+    exodusFilePtr(-1), databaseTitle(""), exodusMode(EX_CLOBBER), dbRealWordSize(8),
     maximumNameLength(32), spatialDimension(0),
     nodeCount(0), edgeCount(0), faceCount(0), elementCount(0),
     commsetNodeCount(0), commsetElemCount(0),
@@ -427,6 +427,13 @@ namespace Ioex {
       maximumNameLength = properties.get("MAXIMUM_NAME_LENGTH").get_int();
     }
 
+    if (properties.exists("REAL_SIZE_DB")) {
+      int rsize = properties.get("REAL_SIZE_DB").get_int();
+      if (rsize == 4) {
+	dbRealWordSize = 4; // Only used for file create...
+      }
+    }
+    
     if (properties.exists("INTEGER_SIZE_DB")) {
       int isize = properties.get("INTEGER_SIZE_DB").get_int();
       if (isize == 8) {
@@ -495,7 +502,7 @@ namespace Ioex {
 	mode |= EX_ALL_INT64_DB;
       
       exodus_file_ptr = ex_create(decoded_filename.c_str(), exodusMode|mode,
-				  &cpu_word_size, &io_word_size);
+				  &cpu_word_size, &dbRealWordSize);
     }
     
     // Check for valid exodus_file_ptr (valid >= 0; invalid < 0)
@@ -581,11 +588,10 @@ namespace Ioex {
 				  &cpu_word_size, &io_word_size, &version);
 	} else {
 	  // If the first write for this file, create it...
-	  io_word_size = cpu_word_size;
 	  if (int_byte_size_api() == 8)
 	    mode |= EX_ALL_INT64_DB;
 	  exodusFilePtr = ex_create(decoded_filename.c_str(), mode,
-				    &cpu_word_size, &io_word_size);
+				    &cpu_word_size, &dbRealWordSize);
 	  if (exodusFilePtr < 0) {
 	    dbState = Ioss::STATE_INVALID;
 	    // NOTE: Code will not continue past this call...
@@ -6244,7 +6250,7 @@ namespace Ioex {
       meta->processorCount = 0;
       meta->processorId = 0;
       meta->outputNemesis = false;
-	
+
       if (isParallel) {
 	meta->processorCount = util().parallel_size();
 	meta->processorId = myProcessor;
