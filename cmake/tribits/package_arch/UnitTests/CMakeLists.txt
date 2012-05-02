@@ -51,3 +51,16 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsProcessPackagesAndDirsLists_UnitTests
       "Final UnitTests Result: num_run = 5"
       "Final UnitTests Result: PASSED"
   )
+
+
+TRIBITS_ADD_ADVANCED_TEST( TribitsAdjustPackageEnables_UnitTests
+  OVERALL_WORKING_DIRECTORY TEST_NAME
+  TEST_0 CMND ${CMAKE_COMMAND}
+    ARGS
+      -DPROJECT_NAME=${PROJECT_NAME}
+      -D${PROJECT_NAME}_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
+      -P "${CMAKE_CURRENT_SOURCE_DIR}/TribitsAdjustPackageEnables_UnitTests.cmake"
+    PASS_REGULAR_EXPRESSION_ALL
+      "Final UnitTests Result: num_run = 27"
+      "Final UnitTests Result: PASSED"
+  )

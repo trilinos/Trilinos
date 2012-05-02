@@ -66,7 +66,7 @@ INCLUDE(GlobalNullSet)
 INCLUDE(PrintNonemptyVar)
 INCLUDE(PrintVar)
 INCLUDE(RemoveGlobalDuplicates)
-
+INCLUDE(SetDefault)
 
 #
 # Function that creates error message about missing/misspelled package.
@@ -398,7 +398,6 @@ MACRO(TRIBITS_READ_SUBPACKAGE_DEPENDENCIES  PACKAGE_NAME  PACKAGE_DIR
   #
 
   SET(${SUBPACKAGE_FULLNAME}_REGRESSION_EMAIL_LIST ${${PACKAGE_NAME}_REGRESSION_EMAIL_LIST})
-  SET(${SUBPACKAGE_FULLNAME}_CHECKINS_EMAIL_LIST ${${PACKAGE_NAME}_CHECKINS_EMAIL_LIST})
 
 ENDMACRO()
 
@@ -453,7 +452,7 @@ MACRO(TRIBITS_READ_PACKAGE_DEPENDENCIES  PACKAGE_NAME  PACKAGE_DIR)
 
   TRIBITS_PREP_TO_READ_DEPENDENCIES()
 
-  # Set one regression email list for the package and all packages!
+  # Set one regression email list for the package and all subpackages!
   SET(REGRESSION_EMAIL_LIST "") # Allow to be empty
 
   # Listing of subpakages
@@ -479,16 +478,35 @@ MACRO(TRIBITS_READ_PACKAGE_DEPENDENCIES  PACKAGE_NAME  PACKAGE_DIR)
   # ToDo: Move this above so that it will be handled as part of subpackage
   # processing?
 
+  # Lower-case package name To be used with auto email naming based on base email address
   STRING(TOLOWER "${PACKAGE_NAME}" LPACKAGE)
-  SET(ADDRESS_URL_BASE "software.sandia.gov")
+  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    PRINT_VAR(REGRESSION_EMAIL_LIST)
+  ENDIF()
+ 
+  SET(REPOSITORY_NAME ${${PACKAGE_NAME}_PARENT_REPOSITORY})
 
-  IF (REGRESSION_EMAIL_LIST)
+  IF (REGRESSION_EMAIL_LIST AND NOT ${REPOSITORY_NAME}_REPOSITORY_OVERRIDE_PACKAGE_EMAIL_LIST)
     SET(${PACKAGE_NAME}_REGRESSION_EMAIL_LIST ${REGRESSION_EMAIL_LIST})
+  ELSEIF (${REPOSITORY_NAME}_REPOSITORY_EMAIL_URL_ADDRESSS_BASE)
+    SET(${PACKAGE_NAME}_REGRESSION_EMAIL_LIST
+      "${LPACKAGE}-regression@${${REPOSITORY_NAME}_REPOSITORY_EMAIL_URL_ADDRESSS_BASE}")
+  ELSEIF (${REPOSITORY_NAME}_REPOSITORY_MASTER_EMAIL_ADDRESSS)
+    SET(${PACKAGE_NAME}_REGRESSION_EMAIL_LIST
+      "${${REPOSITORY_NAME}_REPOSITORY_MASTER_EMAIL_ADDRESSS}")
+  ELSEIF (${PROJECT_NAME}_PROJECT_EMAIL_URL_ADDRESSS_BASE)
+    SET(${PACKAGE_NAME}_REGRESSION_EMAIL_LIST
+      "${LPACKAGE}-regression@${${PROJECT_NAME}_PROJECT_EMAIL_URL_ADDRESSS_BASE}")
+  ELSEIF (${PROJECT_NAME}_PROJECT_MASTER_EMAIL_ADDRESSS)
+    SET(${PACKAGE_NAME}_REGRESSION_EMAIL_LIST
+      "${${PROJECT_NAME}_PROJECT_MASTER_EMAIL_ADDRESSS}")
   ELSE()
-    SET(${PACKAGE_NAME}_REGRESSION_EMAIL_LIST "${LPACKAGE}-regression@${ADDRESS_URL_BASE}")
+    SET(${PACKAGE_NAME}_REGRESSION_EMAIL_LIST "")
   ENDIF()
 
-  SET(${PACKAGE_NAME}_CHECKINS_EMAIL_LIST "${LPACKAGE}-checkins@${ADDRESS_URL_BASE}")
+  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    PRINT_VAR(${PACKAGE_NAME}_REGRESSION_EMAIL_LIST)
+  ENDIF()
 
   #
   # B.2) Process this package's subpackages first *before* finishing this packages!
@@ -526,16 +544,93 @@ ENDMACRO()
 
 
 #
-# Macro that reads all the package dependencies
+# Get the REPO_NAME and REPO_DIR given the REPO
+#
+
+FUNCTION(TRIBITS_GET_REPO_NAME_DIR  REPO_IN  REPO_NAME_OUT  REPO_DIR_OUT)
+  #MESSAGE("TRIBITS_GET_REPO_NAME_DIR:  '${REPO_IN}'  '${REPO_NAME_OUT}'  '${REPO_DIR_OUT}'")
+  # This list of repositories is the list of directories!
+  SET(REPO_DIR ${REPO_IN})
+  # Get the Repository name
+  IF (REPO_IN STREQUAL ".")
+    # The Project and the Reposiotry are one and the same
+    SET(REPO_NAME ${PROJECT_NAME})
+  ELSE()
+    # The Repository name is the same as the repository directory
+    SET(REPO_NAME ${REPO_IN})
+  ENDIF()
+  SET(${REPO_NAME_OUT} ${REPO_NAME} PARENT_SCOPE)
+  SET(${REPO_DIR_OUT} ${REPO_DIR} PARENT_SCOPE)
+ENDFUNCTION()
+
+
+#
+# Macro that reads all the package dependencies and builds dependency graph
+#
+# Reads from the variables:
+#   ${PROJECT_NAME}_ALL_REPOSITORIES
+#   ${PROJECT_NAME}_PACKAGES
+#
+# Writes to:
+#   ${PROJECT_NAME}_SE_PACKAGES
+#   ${PROJECT_NAME}_SE_PACKAGES_DIRS	
 #
 
 MACRO(TRIBITS_READ_ALL_PACKAGE_DEPENDENCIES)
 
   MESSAGE("")
-  MESSAGE("Processing Dependencies.cmake files and building internal dependencies graph")
+  MESSAGE("Processing Project, Repository, and Package dependency files and building internal dependencies graph")
   MESSAGE("")
 
-  SET(${PROJECT_NAME}_SE_PACKAGES)
+  #
+  # A) First, process the Repository and Project dependency files
+  #
+
+  FOREACH(TIBITS_REPO ${${PROJECT_NAME}_ALL_REPOSITORIES})
+    TRIBITS_GET_REPO_NAME_DIR(${TIBITS_REPO}  REPO_NAME  REPO_DIR)
+    #PRINT_VAR(REPO_NAME)
+    #PRINT_VAR(REPO_DIR)
+    SET(REPO_DEPENDENCIES_SETUP_FILE
+      "${PROJECT_SOURCE_DIR}/${REPO_DIR}/cmake/RepositoryDependenciesSetup.cmake")
+    #PRINT_VAR(REPO_DEPENDENCIES_SETUP_FILE)
+    IF (EXISTS ${REPO_DEPENDENCIES_SETUP_FILE})
+      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+        MESSAGE("-- " "Processing ${REPO_NAME} file ${REPO_DEPENDENCIES_SETUP_FILE} ...")
+      ENDIF()
+      INCLUDE(${REPO_DEPENDENCIES_SETUP_FILE})
+      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+        PRINT_VAR(${REPO_NAME}_REPOSITORY_EMAIL_URL_ADDRESSS_BASE)
+        PRINT_VAR(${REPO_NAME}_REPOSITORY_MASTER_EMAIL_ADDRESSS)
+      ENDIF()
+    ELSE()
+      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+        MESSAGE("-- " "The ${REPO_NAME} file ${REPO_DEPENDENCIES_SETUP_FILE} does not exist! ...")
+      ENDIF()
+    ENDIF()
+  ENDFOREACH()
+
+  SET(PROJECT_DEPENDENCIES_SETUP_FILE
+    "${PROJECT_SOURCE_DIR}/cmake/ProjectDependenciesSetup.cmake")
+  IF (EXISTS ${PROJECT_DEPENDENCIES_SETUP_FILE})
+    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      MESSAGE("-- " "Processing ${PROJECT_NAME} file ${PROJECT_DEPENDENCIES_SETUP_FILE} ...")
+    ENDIF()
+    INCLUDE(${PROJECT_DEPENDENCIES_SETUP_FILE})
+    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      PRINT_VAR(${PROJECT_NAME}_PROJECT_EMAIL_URL_ADDRESSS_BASE)
+      PRINT_VAR(${PROJECT_NAME}_PROJECT_MASTER_EMAIL_ADDRESSS)
+    ENDIF()
+  ELSE()
+    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      MESSAGE("-- " "The ${PROJECT_NAME} file ${PROJECT_DEPENDENCIES_SETUP_FILE} does not exist! ...")
+    ENDIF()
+  ENDIF()
+
+  #
+  # B) Process the package dependency files, yielding the list of subpackages as well
+  #
+  
+  SET(${PROJECT_NAME}_SE_PACKAGES) # Packages and subpackages
   SET(${PROJECT_NAME}_SE_PACKAGE_DIRS)
   
   SET(PACKAGE_IDX 0)
@@ -545,7 +640,6 @@ MACRO(TRIBITS_READ_ALL_PACKAGE_DEPENDENCIES)
     #TRIBITS_ADD_OPTIONAL_PACKAGE_ENABLES(${TRIBITS_PACKAGE})
     MATH(EXPR PACKAGE_IDX "${PACKAGE_IDX}+1")
   ENDFOREACH()
-
   
   # Create a reverse se packages list for later use
   SET(${PROJECT_NAME}_REVERSE_SE_PACKAGES ${${PROJECT_NAME}_SE_PACKAGES})
@@ -565,9 +659,10 @@ MACRO(TRIBITS_READ_ALL_PACKAGE_DEPENDENCIES)
   ENDFOREACH()
  
   ADVANCED_OPTION(${PROJECT_NAME}_DUMP_PACKAGE_DEPENDENCIES
-    "Dump the package dependency information." OFF)
+    "Dump the package dependency information."
+    ${${PROJECT_NAME}_VERBOSE_CONFIGURE} )
   
-  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE OR ${PROJECT_NAME}_DUMP_PACKAGE_DEPENDENCIES)
+  IF (${PROJECT_NAME}_DUMP_PACKAGE_DEPENDENCIES)
     MESSAGE("")
     MESSAGE("Printing package dependencies ...")
     MESSAGE("")

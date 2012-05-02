@@ -749,7 +749,6 @@ FUNCTION(TRIBITS_DUMP_DEPS_XML_FILE)
 
     APPEND_STRING_VAR(DEPS_XML
       "    <EmailAddresses>\n"
-      "      <Checkin address=\"${${TRIBITS_PACKAGE}_CHECKINS_EMAIL_LIST}\"/>\n"
       "      <Regression address=\"${${TRIBITS_PACKAGE}_REGRESSION_EMAIL_LIST}\"/>\n"
       "    </EmailAddresses>\n"
       )
@@ -1559,27 +1558,6 @@ FUNCTION(TRIBITS_REPOSITORY_CONFIGURE_VERSION_HEADER_FILE
 
   ENDIF()
 
-ENDFUNCTION()
-
-
-#
-# Get the REPO_NAME and REPO_DIR given the REPO
-#
-
-FUNCTION(TRIBITS_GET_REPO_NAME_DIR  REPO_IN  REPO_NAME_OUT  REPO_DIR_OUT)
-  #MESSAGE("TRIBITS_GET_REPO_NAME_DIR:  '${REPO_IN}'  '${REPO_NAME_OUT}'  '${REPO_DIR_OUT}'")
-  # This list of repositories is the list of directories!
-  SET(REPO_DIR ${REPO_IN})
-  # Get the Repository name
-  IF (REPO_IN STREQUAL ".")
-    # The Project and the Reposiotry are one and the same
-    SET(REPO_NAME ${PROJECT_NAME})
-  ELSE()
-    # The Repository name is the same as the repository directory
-    SET(REPO_NAME ${REPO_IN})
-  ENDIF()
-  SET(${REPO_NAME_OUT} ${REPO_NAME} PARENT_SCOPE)
-  SET(${REPO_DIR_OUT} ${REPO_DIR} PARENT_SCOPE)
 ENDFUNCTION()
 
 
