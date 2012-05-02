@@ -15,6 +15,7 @@
 #include <cmath>
 #include <utility>
 #include <stdint.h>
+#include <map>
 
 #if defined( STK_HAS_MPI )
 #include <mpi.h>
@@ -679,7 +680,9 @@ namespace stk {
       streaming_pass_end = 0;
 #endif
 
+#if STK_ADAPT_HAVE_YAML_CPP
       SerializeNodeRegistry::PartMap partMapGlobal;
+#endif
       for (int i_pass=streaming_pass_start; i_pass <= streaming_pass_end; i_pass++)
         {
           if (streaming_size) 

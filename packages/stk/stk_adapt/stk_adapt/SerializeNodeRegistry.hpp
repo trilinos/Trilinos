@@ -65,7 +65,7 @@ namespace stk {
 
 #if STK_ADAPT_HAVE_YAML_CPP
 
-    /**  in the following, we are looking at one partition, iM, of M-partitioned mesh
+    /**  in the following, we are looking at one partition, m_iM, of M-partitioned mesh
      *
      */
 
@@ -75,7 +75,9 @@ namespace stk {
       std::string m_input_mesh_name;
       std::string m_output_mesh_name;
       std::string m_filePrefix;
-      int M, iM, P, iP;
+      // iM, M = pseudo processor (reads file.e.M.iM)
+      // iP, P = worker, nworker
+      int m_M, m_iM, m_P, m_iP;
       const std::vector<std::string> & m_entity_rank_names;
       std::vector<stk::mesh::EntityId> m_id_max;
       std::string m_globalIdFile;
@@ -106,7 +108,7 @@ namespace stk {
 
       SerializeNodeRegistry(PerceptMesh& eMesh, NodeRegistry* nodeRegistry, std::string input_mesh_name, std::string output_mesh_name, int M, int iM, int P=1, int iP=0) : 
         m_eMesh(eMesh), m_nodeRegistry(nodeRegistry), m_input_mesh_name(input_mesh_name), m_output_mesh_name(output_mesh_name), m_filePrefix(input_mesh_name), 
-        M(M), iM(iM), P(P), iP(iP),
+        m_M(M), m_iM(iM), m_P(P), m_iP(iP),
         m_entity_rank_names(eMesh.getFEM_meta_data()->entity_rank_names()),
         m_id_max(m_entity_rank_names.size(), 0u),  FAMILY_TREE_RANK(eMesh.element_rank() + 1u),
         m_partMap(0), m_nodeMap(0)
@@ -114,15 +116,15 @@ namespace stk {
         size_t pos = m_filePrefix.find(".");
         if (pos != std::string::npos)
           m_filePrefix = m_filePrefix.substr(0, pos);
-        m_globalIdFile = "streaming-refine-global-data."+m_filePrefix+".yaml";
-        m_nodeRegistryFile = std::string("streaming-refine-nodeRegistry."+m_filePrefix+".yaml.")+boost::lexical_cast<std::string>(M)+"."+boost::lexical_cast<std::string>(iM);
-        m_globalNodeRegistryFile = std::string("streaming-refine-nodeRegistry."+m_filePrefix+".yaml");
+        m_globalIdFile = "streaming-refine-global-data."+m_filePrefix+".yaml.P."+toString(m_P)+"."+toString(m_iP);
+        m_nodeRegistryFile = std::string("streaming-refine-nodeRegistry."+m_filePrefix+".yaml.")+toString(m_M)+"."+toString(m_iM)+"."+toString(m_P)+"."+toString(m_iP);
+        m_globalNodeRegistryFile = std::string("streaming-refine-nodeRegistry."+m_filePrefix+".yaml.P."+toString(m_P)+"."+toString(m_iP));
         m_spatialDim = eMesh.getSpatialDim();
       }
 
       void pass(int streaming_pass)
       {
-        std::cout << "\n\nM[" << iM << ", " << M << "] ------ SerializeNodeRegistry ----- pass number " << streaming_pass << "\n\n" << std::endl;
+        std::cout << "\n\nM[" << m_iM << ", " << m_M << "] P[" << m_iP << ", " << m_P << "] ------ SerializeNodeRegistry ----- pass number " << streaming_pass << "\n\n" << std::endl;
 
         switch(streaming_pass)
           {
@@ -140,14 +142,14 @@ namespace stk {
 
       /**
        *   passM1: open unrefined mesh, get Part (exodus block) information, put to global yaml file
-       *   (iM = 0...M)
+       *   (m_iM = 0...m_M)
        */
       // part primary_entity_rank, topology name
       void createGlobalPartsFile()
       {
         std::fstream file;
         //file.open(m_globalIdFile.c_str(), std::ios_base::out | std::ios_base::trunc);
-        std::string m_globalPartsFile = "global_parts.yaml";
+        std::string m_globalPartsFile = "global_parts.yaml.P."+toString(m_P)+"."+toString(m_iP);
         file.open(m_globalPartsFile.c_str(), std::ios_base::out | std::ios_base::trunc);
         if (!file.is_open())
           {
@@ -238,7 +240,7 @@ namespace stk {
 
         std::fstream file;
         //file.open(m_globalIdFile.c_str(), std::ios_base::out | std::ios_base::trunc);
-        std::string m_globalPartsFile = "global_parts.yaml";
+        std::string m_globalPartsFile = "global_parts.yaml.P."+toString(m_P)+"."+toString(m_iP);
         file.open(m_globalPartsFile.c_str(), std::ios_base::in);
         if (!file.is_open())
           {
@@ -294,7 +296,7 @@ namespace stk {
       }
       
       /** 
-       *  loop over all files (iM...)
+       *  loop over all files (m_iM...)
        *    loop over all my nodes
        *      add my proc rank to map value
        *    
@@ -314,10 +316,10 @@ namespace stk {
       void createGlobalNodesFiles()
       {
         std::fstream file;
-        for (int jM = 0; jM < M; jM++)
+        for (int jM = 0; jM < m_M; jM++)
           {
             //file.open(m_globalIdFile.c_str(), std::ios_base::out | std::ios_base::trunc);
-            std::string m_globalNodesFile = std::string("global_nodes.yaml")+"."+toString(M)+"."+toString(jM);
+            std::string m_globalNodesFile = std::string("global_nodes.yaml")+"."+toString(m_M)+"."+toString(jM)+"."+toString(m_P)+"."+toString(m_iP);
             file.open(m_globalNodesFile.c_str(), std::ios_base::out | std::ios_base::trunc);
             if (!file.is_open())
               {
@@ -376,7 +378,7 @@ namespace stk {
       void readGlobalNodesFile(NodeMap& nodeMap)
       {
         std::fstream file;
-        std::string m_globalNodesFile = std::string("global_nodes.yaml")+"."+toString(M)+"."+toString(iM);
+        std::string m_globalNodesFile = std::string("global_nodes.yaml")+"."+toString(m_M)+"."+toString(m_iM)+"."+toString(m_P)+"."+toString(m_iP);
         file.open(m_globalNodesFile.c_str(), std::ios_base::in);
         if (!file.is_open())
           {
@@ -471,7 +473,7 @@ namespace stk {
                 if (m_debug) std::cout << "createGlobalParts:: in map, after, part = " << part.name() << " data= " << pmd << std::endl;
               }
           }
-        if (iM == M-1)
+        if (m_iM == m_M - 1)
           {
             createGlobalPartsFile();
           }
@@ -495,21 +497,21 @@ namespace stk {
                   NodeMapValue& procs = (*m_nodeMap)[id];
                   if (procs.size() == 0)
                     {
-                      procs.push_back(iM);
+                      procs.push_back(m_iM);
                     }
                   else
                     {
-                      NodeMapValue::iterator it = std::find(procs.begin(), procs.end(), iM);
+                      NodeMapValue::iterator it = std::find(procs.begin(), procs.end(), m_iM);
                       if (it == procs.end())
                         {
-                          procs.push_back(iM);
+                          procs.push_back(m_iM);
                           std::sort(procs.begin(), procs.end());
                         }
                     }
                 }
             }
           }
-        if (iM == M-1)
+        if (m_iM == m_M - 1)
           {
             cullNodeMap();
             createGlobalNodesFiles();
@@ -524,15 +526,15 @@ namespace stk {
 
       /**
        *   pass0: open unrefined mesh, refine it, find max id
-       *   (iM = 0...M)
-       *   1. if iM==0, setCurrentGlobalMaxId to [0,0,0,0]
+       *   (m_iM = 0...M)
+       *   1. if m_iM==0, setCurrentGlobalMaxId to [0,0,0,0]
        *   2. getCurrentGlobalMaxId()
        *   3. find new max id from current mesh
        *   4. setCurrentGlobalMaxId()
        */
       void pass0()
       {
-        if (0 == iM)
+        if (0 == m_iM)
           {
             // create initial file, write 0's in it  for m_id_max (it should be initialized to 0, but just to be sure, we reset it here)
             for (unsigned irank=0; irank < m_id_max.size(); irank++)
@@ -549,18 +551,18 @@ namespace stk {
       void printCurrentGlobalMaxId(std::string msg="")
       {
         //if (m_debug) 
-        std::cout << "SerializeNodeRegistry["<<M<<", "<<iM<<"]::printCurrentGlobalMaxId: = " << m_id_max << " for: " << msg << std::endl;
+        std::cout << "M[" << m_iM << ", " << m_M << "] P[" << m_iP << ", " << m_P << "] SerializeNodeRegistry::printCurrentGlobalMaxId: = " << m_id_max << " for: " << msg << std::endl;
       }
 
       /**
        *   pass1: refine mesh, write local NodeRegistry, set new max id from refined mesh - assumes parent elements exist
        *     
-       *   (iM = 0...M)
-       *   1. open file.e.M.iM, refine mesh
+       *   (m_iM = 0...M)
+       *   1. open file.e.M.m_iM, refine mesh
        *   2. 
        *   3. getCurrentGlobalMaxId()
        *   4. resetNewElementIds() (resets new element ids by looking at child elements only)
-       *   5. write NodeRegistry in name.yaml.M.iM
+       *   5. write NodeRegistry in name.yaml.M.m_iM
        *   6. setCurrentGlobalMaxId()
        *   7. save refined mesh
        */
@@ -584,18 +586,18 @@ namespace stk {
 
       /**
        *   pass2 - create global NodeRegistry from each local one by "last one wins"
-       *   (single call, no loop over iM)
+       *   (single call, no loop over m_iM)
        *   1. create new (global) NodeRegistry
        *   2. getCurrentGlobalMaxId
-       *   3. loop iM
-       *      a. read NodeRegistry from name.yaml.M.iM -> input values into new NodeRegistry
+       *   3. loop m_iM
+       *      a. read NodeRegistry from name.yaml.M.m_iM -> input values into new NodeRegistry
        *   4. for each key/value pair, increment idserver, save new id in value
        *   5. write new global NodeRegistry
        *
        */
       void pass2()
       {
-        if (iM != 0) throw std::logic_error("SerializeNodeRegistry::pass2 logic error");
+        if (m_iM != 0) throw std::logic_error("SerializeNodeRegistry::pass2 logic error");
 
         getCurrentGlobalMaxId();
         //setCurrentGlobalMaxId();
@@ -609,10 +611,10 @@ namespace stk {
         eMeshLocal.openEmpty();
 
         m_nodeMap = new NodeMap;
-        for (iM = 0; iM < M; iM++)
+        for (m_iM = 0; m_iM < m_M; m_iM++)
           {
             NodeRegistry newLocalNR(eMeshLocal);
-            m_nodeRegistryFile = std::string("streaming-refine-nodeRegistry."+m_filePrefix+".yaml.")+boost::lexical_cast<std::string>(M)+"."+boost::lexical_cast<std::string>(iM);
+            m_nodeRegistryFile = std::string("streaming-refine-nodeRegistry."+m_filePrefix+".yaml.")+toString(m_M)+"."+toString(m_iM)+"."+toString(m_P)+"."+toString(m_iP);
             readNodeRegistry(newLocalNR, m_nodeRegistryFile);
             addLocalNodeRegistryToGlobal(newLocalNR, globalNR);
             // open each global nodes file and add to the global node map
@@ -626,9 +628,9 @@ namespace stk {
       /**
        *   pass 3: 
        *   1. read global NodeRegistry
-       *   2. read each refined file-ref.M.iM
+       *   2. read each refined file-ref.M.m_iM
        *   3. lookup edge/face/elem in global NodeRegistry, reset id to that found in NR
-       *   4. write refined file-ref-id.M.iM
+       *   4. write refined file-ref-id.M.m_iM
        */
       void pass3()
       {
@@ -669,7 +671,7 @@ namespace stk {
             SubDimCellData* global_nodeId_elementOwnderId_ptr = globalNR.getFromMapPtr(subDimEntity);
             if (!global_nodeId_elementOwnderId_ptr)
               {
-                std::cout << "M[" << iM << "] SerializeNodeRegistry::lookupAndSetNewNodeIds couldn't find subDimEntity= " << subDimEntity;
+                std::cout << "M[" << m_iM << "] SerializeNodeRegistry::lookupAndSetNewNodeIds couldn't find subDimEntity= " << subDimEntity;
                 for (unsigned kk=0; kk < subDimEntity.size(); kk++)
                   {
                     std::cout << " [" << subDimEntity[kk]->identifier() << "] ";
@@ -693,13 +695,13 @@ namespace stk {
                 stk::mesh::EntityId id_old = nodeIds_onSE.m_entity_id_vector[inode];
                 stk::mesh::Entity* tmp_global_node = globalNR.getMesh().getBulkData()->get_entity(0, id_new);
                 stk::mesh::Entity* local_node_to_change = m_eMesh.getBulkData()->get_entity(0, id_old);
-                if (m_debug) std::cout << "iM= " << iM << " id_new= " << id_new << " id_old= " << id_old << std::endl;
+                if (m_debug) std::cout << "m_iM= " << m_iM << " id_new= " << id_new << " id_old= " << id_old << std::endl;
                 VERIFY_OP_ON(local_node_to_change, !=, 0, "SerializeNodeRegistry::lookupAndSetNewNodeIds null local_node_to_change");
                 VERIFY_OP_ON(tmp_global_node, !=, 0, "SerializeNodeRegistry::lookupAndSetNewNodeIds null tmp_global_node");
                 VERIFY_OP_ON(tmp_global_node, ==, global_nodeIds_onSE[inode], "SerializeNodeRegistry::lookupAndSetNewNodeIds new node mistmatch");
                 if (id_new != id_old)
                   {
-                    if (m_debug) std::cout << "DIFF iM= " << iM << " id_new= " << id_new << " id_old= " << id_old << std::endl;
+                    if (m_debug) std::cout << "DIFF m_iM= " << m_iM << " id_new= " << id_new << " id_old= " << id_old << std::endl;
                     stk::mesh::Entity* local_node_new_id_check = m_eMesh.getBulkData()->get_entity(0, id_new);
                     if (!local_node_new_id_check)
                       {
