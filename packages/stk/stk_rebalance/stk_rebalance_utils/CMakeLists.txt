@@ -9,7 +9,7 @@ SET(SOURCES "")
 SET(HEADERS "")
 
 FILE(GLOB SOURCES *.cpp)
-FILE(GLOB HEADERS *.cpp)
+FILE(GLOB HEADERS *.hpp)
 
 TRIBITS_ADD_LIBRARY(
   stk_rebalance_utils

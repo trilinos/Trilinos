@@ -1177,6 +1177,11 @@ typename Array<T>::iterator
 Array<T>::erase(iterator first, iterator last)
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  if (empty()) {
+    TEUCHOS_ASSERT(first == begin());
+    TEUCHOS_ASSERT(last == end());
+    return end();
+  }
   assertNotNull();
   // Assert a valid iterator and get vector iterator
   const typename std::vector<T>::iterator raw_first = raw_position(first);
