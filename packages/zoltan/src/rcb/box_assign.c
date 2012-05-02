@@ -48,9 +48,9 @@ double          zmax,           /* upper z extent of box */
 int            *procs,          /* list of procs that box intersects */
 int            *numprocs,       /* number of processors in proc list */
 int            *parts,          /* list of parts that box intersects */
-int            *numparts)       /* number of partitions in part list */
+int            *numparts)       /* number of parts in part list */
 {
-/* Determine which partitions and processors a box intersects.
+/* Determine which parts and processors a box intersects.
    Currently assumes that partitioning has used RCB or RIB, but should be
    modified to return an error message if other method was used */
 
@@ -63,7 +63,7 @@ int            *numparts)       /* number of partitions in part list */
      int               *proc_array = NULL;  
                                 /* Array of size zz->Num_Proc; initialized
                                    to 0; entry i incremented each time 
-                                   a found partition is on processor i. 
+                                   a found part is on processor i. 
                                    Added to support 
                                    !zz->LB.Single_Proc_Per_Part. */
      int               include_procs = (procs != NULL);
@@ -110,7 +110,7 @@ int            *numparts)       /* number of partitions in part list */
           /* 
            * Degenerate geometry, transform box to the lower dimensional
            * space that the partitioning occured in.  Our new box may
-           * encompass more partitions, but it won't miss any.
+           * encompass more parts, but it won't miss any.
            */
           Zoltan_Transform_Box(box.lo, box.hi, rcb->Tran.Transformation, 
                     rcb->Tran.Permutation, rcb->Num_Dim, rcb->Tran.Target_Dim);
@@ -239,17 +239,17 @@ struct rcb_box  *boxpt,         /* extended box */
 int              include_procs, /* Flag:  Compute proc lists. */
 int              include_parts, /* Flag:  Compute part lists. */
 int             *proc_array,    /* Array of size Num_Proc; entry i is
-                                   incremented if a found partition is on 
+                                   incremented if a found part is on 
                                    proc i. */
-int             *parts,         /* partitions that box is in */
-int             *numparts,      /* current number of partitions on list */
-int              partmid)       /* 1st partition in upper half */
+int             *parts,         /* parts that box is in */
+int             *numparts,      /* current number of parts on list */
+int              partmid)       /* 1st part in upper half */
 {
      int       dim;
      double    cut;
 
-     /* end recursion when partition size is a single partition */
-     /* add partition to list of partitions */
+     /* end recursion when part size is a single part */
+     /* add part to list of parts */
 
      if (partmid <= 0) {
         add_to_list(zz, include_procs, include_parts, proc_array, 
@@ -258,12 +258,12 @@ int              partmid)       /* 1st partition in upper half */
      }
 
      /* drop box on each side of cut if it extends beyond it */
-     /* important to use >= and <= criteria since either partition may own
+     /* important to use >= and <= criteria since either part may own
         boundary */
-     /* partmid = 1st partition in upper half, loc that stores cut
-                  for this partition in treept */
-     /* dim = dimension 0,1,2 of cut for this partition */
-     /* cut = position of cut for this partition */
+     /* partmid = 1st part in upper half, loc that stores cut
+                  for this part in treept */
+     /* dim = dimension 0,1,2 of cut for this part */
+     /* cut = position of cut for this part */
 
      dim = treept[partmid].dim;
      cut = treept[partmid].cut;
@@ -284,18 +284,18 @@ struct rcb_box  *box,           /* extended box */
 int              include_procs, /* Flag:  Compute proc lists. */
 int              include_parts, /* Flag:  Compute part lists. */
 int             *proc_array,    /* Array of size Num_Proc; entry i is
-                                   incremented if a found partition is on 
+                                   incremented if a found part is on 
                                    proc i. */
-int             *parts,         /* partitions that box is in */
-int             *numparts,      /* current number of partitions on list */
-int              partmid)       /* 1st partition in upper half */
+int             *parts,         /* parts that box is in */
+int             *numparts,      /* current number of parts on list */
+int              partmid)       /* 1st part in upper half */
 {
      double p1[3], p2[3];       /* two points of the box used to test */
      volatile double min, max;  /* values for two points */
      double cut;                /* current cut */
 
-     /* end recursion when partition size is a single partition */
-     /* add partition to list of partitions */
+     /* end recursion when part size is a single part */
+     /* add part to list of parts */
      if (partmid <= 0) {
         add_to_list(zz, include_procs, include_parts, proc_array, 
                     parts, numparts, -partmid);
@@ -368,11 +368,11 @@ int              ndims,         /* partition reduced to 2 or 1 dimensions */
 int              include_procs, /* Flag:  Compute proc lists. */
 int              include_parts, /* Flag:  Compute part lists. */
 int             *proc_array,    /* Array of size Num_Proc; entry i is
-                                   incremented if a found partition is on 
+                                   incremented if a found part is on 
                                    proc i. */
-int             *parts,         /* partitions that box is in */
-int             *numparts,      /* current number of partitions on list */
-int              partmid)       /* 1st partition in upper half */
+int             *parts,         /* parts that box is in */
+int             *numparts,      /* current number of parts on list */
+int              partmid)       /* 1st part in upper half */
 {
      volatile double proj, min, max;  /* values for two points */
      double cut;                      /* current cut */
@@ -422,18 +422,18 @@ struct rcb_box  *box,           /* extended box */
 int              include_procs, /* Flag:  Compute proc lists. */
 int              include_parts, /* Flag:  Compute part lists. */
 int             *proc_array,    /* Array of size Num_Proc; entry i is
-                                   incremented if a found partition is on 
+                                   incremented if a found part is on 
                                    proc i. */
-int             *parts,         /* partitions that box is in */
-int             *numparts,      /* current number of partitions on list */
-int              partmid)       /* 1st partition in upper half */
+int             *parts,         /* parts that box is in */
+int             *numparts,      /* current number of parts on list */
+int              partmid)       /* 1st part in upper half */
 {
      double p1[2], p2[2];       /* two points of the box used to test */
      volatile double min, max;  /* values for two points */
      double cut;                /* current cut */
 
-     /* end recursion when partition size is a single partition */
-     /* add partition to list of partitions */
+     /* end recursion when part size is a single part */
+     /* add part to list of parts */
      if (partmid <= 0) {
         add_to_list(zz, include_procs, include_parts, proc_array, 
                     parts, numparts, -partmid);
@@ -491,16 +491,16 @@ struct rcb_box  *box,           /* extended box */
 int              include_procs, /* Flag:  Compute proc lists. */
 int              include_parts, /* Flag:  Compute part lists. */
 int             *proc_array,    /* Array of size Num_Proc; entry i is
-                                   incremented if a found partition is on 
+                                   incremented if a found part is on 
                                    proc i. */
-int             *parts,         /* partitions that box is in */
-int             *numparts,      /* current number of partitions on list */
-int              partmid)       /* 1st partition in upper half */
+int             *parts,         /* parts that box is in */
+int             *numparts,      /* current number of parts on list */
+int              partmid)       /* 1st part in upper half */
 {
      double cut;                /* current cut */
 
-     /* end recursion when partition size is a single partition */
-     /* add partition to list of partitions */
+     /* end recursion when part size is a single part */
+     /* add part to list of parts */
      if (partmid <= 0) {
         add_to_list(zz, include_procs, include_parts, proc_array, 
                     parts, numparts, -partmid);
@@ -523,27 +523,27 @@ void add_to_list(
   int include_procs,  /* Flag:  Compute proc lists. */
   int include_parts,  /* Flag:  Compute part lists. */
   int *proc_array,    /* Array of size Num_Proc; entry i is
-                         incremented if a found partition is on proc i. */
-  int *parts,         /* partitions that box is in */
-  int *numparts,      /* current number of partitions on list */
-  int  add_part       /* partition to be added to list */
+                         incremented if a found part is on proc i. */
+  int *parts,         /* parts that box is in */
+  int *numparts,      /* current number of parts on list */
+  int  add_part       /* part to be added to list */
 )
 {
-/* Adds partitions and processors to arrays that for the box */
-int last_proc;        /* First processor for partition add_part+1. */
-int add_proc;         /* First processor for partition add_part.   */
+/* Adds parts and processors to arrays that for the box */
+int last_proc;        /* First processor for part add_part+1. */
+int add_proc;         /* First processor for part add_part.   */
 int i;
 
      if (zz->LB.Remap) add_part = zz->LB.Remap[add_part];
 
      if (include_parts) {
-        /* Add partition to partition list */
+        /* Add part to part list */
         parts[*numparts] = add_part;
         (*numparts)++;
      }
 
      if (include_procs) {
-        /* Increment appropriate entry of proc_array for partition add_part. */
+        /* Increment appropriate entry of proc_array for part add_part. */
         add_proc = Zoltan_LB_Part_To_Proc(zz, add_part, NULL);
         proc_array[add_proc]++;
         if (!zz->LB.Single_Proc_Per_Part) {
