@@ -63,7 +63,9 @@ namespace MueLu {
           Ac = BuildRAPImplicit(A, P, levelID);
         } else {
 
-          // explicit version
+          // refactoring needed >>>>>>>>
+          // the following code should be moved to his own factory
+          //
           if ( coarseLevel.IsAvailable("A",PFact_.get()) && coarseLevel.IsAvailable("Importer",RFact_.get()) ) {
             SubFactoryMonitor m1(*this, "Rebalancing existing Ac", levelID);
             Ac = coarseLevel.Get< RCP<Operator> >("A", PFact_.get());
@@ -77,7 +79,14 @@ namespace MueLu {
             crsMtx = Teuchos::null;
             newAc->fillComplete(P->getDomainMap(), P->getDomainMap());
             Ac = newAc;
-          } else {
+          } else if (coarseLevel.IsAvailable("A",PFact_.get())) {
+            // Ac already built by the load balancing process and no load balancing needed
+            Ac = coarseLevel.Get< RCP<Operator> >("A", PFact_.get());
+          } 
+          // <<<<<<<< refactoring needed
+
+          else {
+            // explicit version
             RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", RFact_.get());
             Ac = BuildRAPExplicit(R, A, P, levelID);
           }
