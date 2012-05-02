@@ -17,6 +17,7 @@
 #include <Zoltan2_IO.hpp>
 #include <Zoltan2_Parameters.hpp>
 #include <Zoltan2_DebugManager.hpp>
+#include <Zoltan2_TimerManager.hpp>
 #include <Zoltan2_MetricOutputManager.hpp>
 
 #include <Teuchos_RCP.hpp>
@@ -46,13 +47,12 @@ class Environment{
 
 public:
 
-  typedef double timer_t;
   typedef long   memory_t;
 
   typedef Teuchos::RCP<const Teuchos::Comm<int> > Comm_t;
   typedef Teuchos::RCP<DebugManager>     DebugManager_t;
-  typedef Teuchos::RCP<MetricOutputManager<timer_t> > TimerManager_t;
   typedef Teuchos::RCP<MetricOutputManager<memory_t> > MemoryProfilerManager_t;
+  typedef Teuchos::RCP<TimerManager> Timer_t;
 
   int  myRank_;   /*!< \brief mpi rank (relative to comm_) */
 
@@ -84,6 +84,14 @@ public:
   /*! \brief Destructor
    */
   ~Environment();
+
+  /*! \brief Provide the Timer object to the Environment.
+   *
+   *  Having a Timer implies that the user asked for for timing.
+   *  The Problem creates and holds the Timer.
+   */
+
+  void setTimer(RCP<TimerManager> &timer) { timerOut_=timer; timingOn=true;}
 
 #ifdef Z2_OMIT_ALL_ERROR_CHECKING
 
@@ -317,19 +325,17 @@ public:
   void debug(MessageOutputLevel level, const char *msg) const{ 
     debugOut_->print(level, msg);}
 
-  /*! \brief  Send a message to the timing output manager.
-   *
-   *   \param msg   The message to be output. If this process
-   *          prints timing messages (as indicated by the parameter 
-   *          \c timing_profiling_procs) then the \c msg
-   *          will be output to either \c timing_output_stream
-   *         or \c timing_output_file.
-   *   \param units A string indicating the timing units.
-   *   \param val   The timing value, a double.
+  /*! \brief  Start a named timer.
    */
 
-  void timer(const char *msg, const char *units, const timer_t val) const{ 
-    timerOut_->print(msg, units, val); }
+  void timerStart(string timerName) const  {
+    if (timingOn) timerOut_->start(timerName); }
+
+  /*! \brief  Stop a named timer.
+   */
+
+  void timerStop(string timerName) const {
+    if (timingOn) timerOut_->stop(timerName); }
 
   /*! \brief  Send a message to the memory profiling output manager.
    *
@@ -358,20 +364,6 @@ public:
 
   void debug(MessageOutputLevel level, const std::string &msg) const{ 
     debugOut_->print(level, msg);}
-
-  /*! \brief  Send a message to the timing output manager.
-   *
-   *   \param msg   The message to be output. If this process
-   *          prints timing messages (as indicated by the parameter 
-   *          \c timing_profiling_procs) then the \c msg
-   *          will be output to either \c timing_output_stream
-   *         or \c timing_output_file.
-   *   \param units A string indicating the timing units.
-   *   \param val   The timing value, a double.
-   */
-
-  void timer(const std::string &msg, const std::string &units, 
-    const timer_t val) const{ timerOut_->print(msg, units, val); }
 
   /*! \brief  Send a message to the memory profiling output manager.
    *
@@ -427,7 +419,7 @@ public:
   /*! \brief Return true if timing was requested, even if this
    *    process is not printing out timing messages.
    */
-  bool doTiming() const { return timerOut_->getMetricsOn(); }
+  bool doTiming() const { return timingOn; }
 
   /*! \brief Return true if debug output was requested, even if
    *     this process is not printing out debug messages.
@@ -492,11 +484,10 @@ private:
 
   DebugManager_t debugOut_;    /*!< \brief output for status messages */
 
-  TimerManager_t timerOut_;    /*!< \brief timer output */
+  Timer_t timerOut_;             /*!< \brief timer output */
+  bool timingOn;
 
   MemoryProfilerManager_t memoryOut_;  /*!< \brief memory profiling output */
-
-  
 };
 
 /*! \brief A value to indicate a string parameter that was 

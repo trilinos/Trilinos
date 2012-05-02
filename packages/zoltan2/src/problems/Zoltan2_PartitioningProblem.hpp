@@ -183,6 +183,24 @@ public:
   void setPartSizesForCritiera(int criteria, int len, partId_t *partIds, 
     scalar_t *partSizes, bool makeCopy=true) ;
 
+  /*! \brief Reset the list of parameters
+   */
+  void resetParameters(ParameterList *params)
+  {
+    Problem<Adapter>::resetParameters(params);  // creates new environment
+    if (timer_.getRawPtr() != NULL)
+      this->env_->setTimer(timer_);
+  }
+
+  /*! \brief Get the current Environment.
+   *   Useful for testing.
+   */
+  
+  const RCP<const Environment> & getEnvironment() const 
+  {
+    return this->envConst_;
+  }
+
 private:
   void initializeProblem();
 
@@ -223,6 +241,10 @@ private:
   
   ArrayRCP<int> levelNumberParts_;
   bool hierarchical_;
+
+  // Create a Timer if the user asked for timing stats.
+
+  RCP<TimerManager> timer_;
 };
 ////////////////////////////////////////////////////////////////////////
 
@@ -235,7 +257,7 @@ template <typename Adapter>
       inputType_(InvalidAdapterType), modelType_(InvalidModel), 
       graphFlags_(), idFlags_(), coordFlags_(), algorithm_(),
       numberOfWeights_(), partIds_(), partSizes_(), 
-      numberOfCriteria_(), levelNumberParts_(), hierarchical_(false)
+      numberOfCriteria_(), levelNumberParts_(), hierarchical_(false), timer_()
 {
   initializeProblem();
 }
@@ -250,7 +272,7 @@ template <typename Adapter>
       graphFlags_(), idFlags_(), coordFlags_(), algorithm_(),
       numberOfWeights_(), 
       partIds_(), partSizes_(), numberOfCriteria_(), 
-      levelNumberParts_(), hierarchical_(false)
+      levelNumberParts_(), hierarchical_(false), timer_()
 {
   initializeProblem();
 }

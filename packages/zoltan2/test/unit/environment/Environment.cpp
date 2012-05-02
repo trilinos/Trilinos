@@ -7,6 +7,9 @@
 // ***********************************************************************
 //
 // Testing Zoltan2::Environment
+/*! \todo test timer
+*/
+
 
 #include <Zoltan2_Environment.hpp>
 #include <Zoltan2_Parameters.hpp>
@@ -144,17 +147,6 @@ int main(int argc, char *argv[])
      catch(std::exception &e){
        std::cerr << e.what() << std::endl;
        fail=3000;
-     }
-  }
-
-  if (!fail){
-     try{
-       env->timer("Timer start", "usecs", 23.23232);
-       env->timer("Timer end", "usecs", 25.23232);
-     }
-     catch(std::exception &e){
-       std::cerr << e.what() << std::endl;
-       fail=3001;
      }
   }
 
