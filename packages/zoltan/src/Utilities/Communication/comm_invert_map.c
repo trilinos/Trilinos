@@ -123,7 +123,7 @@ MPI_Comm  comm)			/* communicator */
 
     /* Note: these mallocs should never fail as prior frees are larger. */
 
-    if (max_nrecvs <= MPI_RECV_LIMIT){
+    if (MPI_RECV_LIMIT == 0 || max_nrecvs <= MPI_RECV_LIMIT){
 
       req = (MPI_Request *)ZOLTAN_MALLOC(sizeof(MPI_Request) * nrecvs);
       if (!req && nrecvs){
@@ -163,7 +163,6 @@ MPI_Comm  comm)			/* communicator */
       for (i=0; i < nsends + self_msg; i++){
         sendbuf[procs_to[i]] = lengths_to[i];
       }
-
       MPI_Alltoall(sendbuf, 1,  MPI_INT, recvbuf, 1, MPI_INT, comm);
 
       ZOLTAN_FREE(&sendbuf);
