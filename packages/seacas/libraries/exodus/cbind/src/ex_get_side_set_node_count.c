@@ -74,7 +74,7 @@ int ex_get_side_set_node_count(int exoid,
   size_t m;
   int ii, i, j; 
   int  num_side_sets, num_elem_blks, num_df, ndim;
-  size_t tot_num_elem = 0, tot_num_ss_elem = 0;
+  size_t tot_num_ss_elem = 0;
   int64_t side, elem;
   void_int *elem_blk_ids;
   void_int *ss_elem_ndx;
@@ -135,8 +135,6 @@ int ex_get_side_set_node_count(int exoid,
     return(EX_FATAL);
   }
 
-  tot_num_elem = ex_inquire_int(exoid, EX_INQ_ELEM);
-  
   /* get the dimensionality of the coordinates;  this is necessary to
      distinguish between 2d TRIs and 3d TRIs */
   ndim = ex_inquire_int(exoid, EX_INQ_DIM);
