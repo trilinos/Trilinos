@@ -232,6 +232,7 @@ int main(int argc, char *argv[])
       // get responses if there are any
       //////////////////////////////////////////////
       if(rLibrary->getLabeledResponseCount()>0) {
+         *out << "PRINTING VOLUME CONTAINERS!" << std::endl;
 
          std::vector<std::string> labels;
          rLibrary->getVolumeResponseLabels(labels);
@@ -264,6 +265,8 @@ int main(int argc, char *argv[])
             *out << "Response Value \"" << labels[i] << "\": " << *response << std::endl;
          }
       }
+      else
+         *out << "NOT PRINTING VOLUME CONTAINERS!" << std::endl;
     }
   }
   catch (std::exception& e) {

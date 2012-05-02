@@ -57,6 +57,8 @@
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_ParameterLibrary.hpp"
 
+#include "Thyra_VectorBase.hpp"
+
 #include <vector>
 #include <string>
 
@@ -182,6 +184,9 @@ namespace panzer {
          */
        void evalModel_sg_g(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const OutArgs & outArgs) const;
     #endif
+
+    void copyEpetraIntoThyra(const Epetra_MultiVector& x, const Teuchos::Ptr<Thyra::VectorBase<double> > &thyraVec) const;
+    void copyThyraIntoEpetra(const Thyra::VectorBase<double>& thyraVec, Epetra_MultiVector& x) const;
 
     // /////////////////////////////////////
     // Private member data

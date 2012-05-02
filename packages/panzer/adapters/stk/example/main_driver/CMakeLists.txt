@@ -25,7 +25,7 @@ TRIBITS_ADD_EXECUTABLE(
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(main_driver_files
-  SOURCE_FILES energy-ss.xml energy-transient.xml
+  SOURCE_FILES energy-ss.xml energy-transient.xml energy-ss-blocked.xml
   EXEDEPS main_driver
   )
 

@@ -63,6 +63,9 @@
 #include "Thyra_EpetraOperatorWrapper.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_VectorStdOps.hpp"
+#include "Thyra_ProductVectorBase.hpp"
+#include "Thyra_SpmdVectorBase.hpp"
+#include "Thyra_DefaultProductVector.hpp"
 
 #ifdef HAVE_STOKHOS
    #include "Stokhos_EpetraVectorOrthogPoly.hpp"
@@ -685,16 +688,28 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic_blocked( const InArgs& inArg
   // introduction of the container is forcing us to cast away const on
   // arguments that should be const.  Another reason to redesign
   // LinearObjContainer layers.
-  epGlobalContainer->set_x(Thyra::create_Vector(Teuchos::rcp_const_cast<Epetra_Vector>(x),b_lof->getThyraDomainSpace()));
-  if (is_transient)
-    epGlobalContainer->set_dxdt(Thyra::create_Vector(Teuchos::rcp_const_cast<Epetra_Vector>(x_dot),b_lof->getThyraDomainSpace()));
+
+  // epGlobalContainer->set_x(Thyra::create_Vector(Teuchos::rcp_const_cast<Epetra_Vector>(x),b_lof->getThyraDomainSpace()));
+  Teuchos::RCP<Thyra::VectorBase<double> > th_x = b_lof->getThyraDomainVector();
+  copyEpetraIntoThyra(*x, th_x.ptr());
+  epGlobalContainer->set_x(th_x);
+
+  if (is_transient) {
+    // epGlobalContainer->set_dxdt(Thyra::create_Vector(Teuchos::rcp_const_cast<Epetra_Vector>(x_dot),b_lof->getThyraDomainSpace()));
+
+    Teuchos::RCP<Thyra::VectorBase<double> > th_dxdt = b_lof->getThyraDomainVector();
+    copyEpetraIntoThyra(*x_dot, th_dxdt.ptr());
+    epGlobalContainer->set_dxdt(th_dxdt);
+  }
   
   if (!Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) {
 
     PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModel(f and J)");
 
     // Set the targets
-    epGlobalContainer->set_f(Thyra::create_Vector(f_out,b_lof->getThyraRangeSpace()));
+
+    Teuchos::RCP<Thyra::VectorBase<double> > th_f = b_lof->getThyraRangeVector();
+    epGlobalContainer->set_f(th_f); 
     epGlobalContainer->set_A(Teuchos::rcp_dynamic_cast<Thyra::EpetraOperatorWrapper>(W_out)->getNonconstThyraOperator());
 
     // Zero values in ghosted container objects
@@ -702,20 +717,25 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic_blocked( const InArgs& inArg
     epGhostedContainer->initializeMatrix(0.0);
 
     ae_tm_.getAsObject<panzer::Traits::Jacobian>()->evaluate(ae_inargs);
+
+    // copy thyra into Epetra: operator goes direct to memory
+    copyThyraIntoEpetra(*th_f,*f_out);
   }
   else if(!Teuchos::is_null(f_out) && Teuchos::is_null(W_out)) {
 
     PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModel(f)");
      
-    Teuchos::RCP<Thyra::VectorBase<double> > th_f_out = Thyra::create_Vector(f_out,b_lof->getThyraRangeSpace());
-    epGlobalContainer->set_f(th_f_out);
+    // Teuchos::RCP<Thyra::VectorBase<double> > th_f_out = Thyra::create_Vector(f_out,b_lof->getThyraRangeSpace());
+    Teuchos::RCP<Thyra::VectorBase<double> > th_f = b_lof->getThyraRangeVector();
+    epGlobalContainer->set_f(th_f);
 
     // Zero values in ghosted container objects
     Thyra::assign(epGhostedContainer->get_f().ptr(),0.0);
 
     ae_tm_.getAsObject<panzer::Traits::Residual>()->evaluate(ae_inargs);
 
-    Thyra::assign(th_f_out.ptr(),*epGlobalContainer->get_f());
+    // copy thyra into Epetra
+    copyThyraIntoEpetra(*th_f,*f_out);
   }
   else if(Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) {
 
@@ -725,7 +745,8 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic_blocked( const InArgs& inArg
     if (Teuchos::is_null(dummy_f_))
       dummy_f_ = Teuchos::rcp(new Epetra_Vector(*(this->get_f_map())));
 
-    epGlobalContainer->set_f(Thyra::create_Vector(dummy_f_,b_lof->getThyraRangeSpace()));
+    Teuchos::RCP<Thyra::VectorBase<double> > th_f = b_lof->getThyraRangeVector();
+    epGlobalContainer->set_f(th_f);
     epGlobalContainer->set_A(Teuchos::rcp_dynamic_cast<Thyra::EpetraOperatorWrapper>(W_out)->getNonconstThyraOperator());
 
     // Zero values in ghosted container objects
@@ -976,6 +997,86 @@ evalModel_sg_g(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const OutArg
 }
 
 #endif
+
+void panzer::ModelEvaluator_Epetra::
+copyThyraIntoEpetra(const Thyra::VectorBase<double>& thyraVec, Epetra_MultiVector& x) const
+{
+
+  using Teuchos::rcpFromRef;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::RCP;
+  using Teuchos::ArrayView;
+  using Teuchos::rcp_dynamic_cast;
+
+  const int numVecs = x.NumVectors();
+
+  TEUCHOS_TEST_FOR_EXCEPTION(numVecs != 1, std::runtime_error,
+    "epetraToThyra does not work with MV dimension != 1");
+
+  const RCP<const Thyra::ProductVectorBase<double> > prodThyraVec =
+    Thyra::castOrCreateProductVectorBase(rcpFromRef(thyraVec));
+
+  const Teuchos::ArrayView<double> epetraData(x[0], x.Map().NumMyElements());
+  // NOTE: See above!
+
+  std::size_t offset = 0;
+  const int numBlocks = prodThyraVec->productSpace()->numBlocks();
+  for (int b = 0; b < numBlocks; ++b) {
+    const RCP<const Thyra::VectorBase<double> > vec_b = prodThyraVec->getVectorBlock(b);
+    const RCP<const Thyra::SpmdVectorBase<double> > spmd_b =
+           rcp_dynamic_cast<const Thyra::SpmdVectorBase<double> >(vec_b, true);
+
+    Teuchos::ArrayRCP<const double> thyraData;
+    spmd_b->getLocalData(Teuchos::ptrFromRef(thyraData));
+
+    for (std::size_t i=0; i < thyraData.size(); ++i) {
+      epetraData[i+offset] = thyraData[i];
+    }
+    offset += thyraData.size();
+  }
+
+}
+
+
+void panzer::ModelEvaluator_Epetra::
+copyEpetraIntoThyra(const Epetra_MultiVector& x, const Teuchos::Ptr<Thyra::VectorBase<double> > &thyraVec) const
+{
+  using Teuchos::RCP;
+  using Teuchos::ArrayView;
+  using Teuchos::rcpFromPtr;
+  using Teuchos::rcp_dynamic_cast;
+
+  const int numVecs = x.NumVectors();
+
+  TEUCHOS_TEST_FOR_EXCEPTION(numVecs != 1, std::runtime_error,
+    "ModelEvaluator_Epetra::copyEpetraToThyra does not work with MV dimension != 1");
+
+  const RCP<Thyra::ProductVectorBase<double> > prodThyraVec =
+    Thyra::castOrCreateNonconstProductVectorBase(rcpFromPtr(thyraVec));
+
+  const Teuchos::ArrayView<const double> epetraData(x[0], x.Map().NumMyElements());
+  // NOTE: I tried using Epetra_MultiVector::operator()(int) to return an
+  // Epetra_Vector object but it has a defect when Reset(...) is called which
+  // results in a memory access error (see bug 4700).
+
+  std::size_t offset = 0;
+  const int numBlocks = prodThyraVec->productSpace()->numBlocks();
+  for (int b = 0; b < numBlocks; ++b) {
+    const RCP<Thyra::VectorBase<double> > vec_b = prodThyraVec->getNonconstVectorBlock(b);
+    const RCP<Thyra::SpmdVectorBase<double> > spmd_b =
+           rcp_dynamic_cast<Thyra::SpmdVectorBase<double> >(vec_b, true);
+
+    Teuchos::ArrayRCP<double> thyraData;
+    spmd_b->getNonconstLocalData(Teuchos::ptrFromRef(thyraData));
+
+    for (std::size_t i=0; i < thyraData.size(); ++i) {
+      thyraData[i] = epetraData[i+offset];
+    }
+    offset += thyraData.size();
+  }
+
+}
+
 
 Teuchos::RCP<panzer::ModelEvaluator_Epetra> 
 panzer::buildEpetraME(const Teuchos::RCP<panzer::FieldManagerBuilder<int,int> >& fmb,

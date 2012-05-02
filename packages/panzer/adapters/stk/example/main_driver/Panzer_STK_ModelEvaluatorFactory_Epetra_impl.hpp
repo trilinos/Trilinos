@@ -319,8 +319,11 @@ namespace panzer_stk {
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory;
     Teuchos::RCP<panzer::UniqueGlobalIndexerBase> globalIndexer;
 
+    bool blockedAssembly = false;
+
     if(panzer::BlockedDOFManagerFactory<int,int>::requiresBlocking(field_order)) {
        // use a blocked DOF manager
+       blockedAssembly = true;
 
        panzer::BlockedDOFManagerFactory<int,int> globalIndexerFactory;
        Teuchos::RCP<panzer::UniqueGlobalIndexer<int,std::pair<int,int> > > dofManager 
@@ -426,7 +429,7 @@ namespace panzer_stk {
 
     // Setup initial conditions
     /////////////////////////////////////////////////////////////
-    {
+    if(!blockedAssembly) {
       bool write_dot_files = false;
       std::string prefix = "Panzer_AssemblyGraph_";
       write_dot_files = p.sublist("Options").get("Write Volume Assembly Graphs",write_dot_files);
@@ -497,7 +500,8 @@ namespace panzer_stk {
 
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
     #ifdef HAVE_TEKO 
-    {
+    if(!blockedAssembly) {
+
        std::string fieldName;
 
        Teuchos::RCP<Teko::RequestHandler> reqHandler = Teuchos::rcp(new Teko::RequestHandler);
@@ -505,7 +509,7 @@ namespace panzer_stk {
           Teuchos::rcp_dynamic_cast<const panzer::DOFManager<int,int> >(globalIndexer);
 
        // add in the coordinate parameter list callback handler
-       if(determineCoordinateField(*dofs,fieldName) && dofs!=Teuchos::null) {
+       if(determineCoordinateField(*dofs,fieldName)) {
           std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > fieldPatterns;
           fillFieldPatternMap(*dofs,fieldName,fieldPatterns);
           reqHandler->addRequestCallback(Teuchos::rcp(new 
@@ -580,6 +584,8 @@ namespace panzer_stk {
 
        Teko::addTekoToStratimikosBuilder(linearSolverBuilder,reqHandler);
     }
+    else
+       Teko::addTekoToStratimikosBuilder(linearSolverBuilder);
     #endif
 
     #ifdef HAVE_MUELU
