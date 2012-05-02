@@ -9,6 +9,7 @@
 #include <Xpetra_ImportFactory_fwd.hpp>
 #include <Xpetra_Export_fwd.hpp>
 #include <Xpetra_ExportFactory_fwd.hpp>
+#include <Xpetra_Vector_fwd.hpp>
 #include <Xpetra_Operator_fwd.hpp>
 #include <Xpetra_OperatorFactory_fwd.hpp>
 

@@ -1,6 +1,8 @@
 #ifndef MUELU_REPARTITIONFACTORY_DEF_HPP
 #define MUELU_REPARTITIONFACTORY_DEF_HPP
 
+#include <iostream>
+
 #include "MueLu_RepartitionFactory_decl.hpp" // TMP JG NOTE: before other includes, otherwise I cannot test the fwd declaration in _def
 
 #ifdef HAVE_MPI
@@ -60,75 +62,75 @@ namespace MueLu {
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
 
-    //typedef Xpetra::Vector<GO,LO,GO,NO> GOVector; //TODO clean up the code below with this typedef
-
-    // ======================================================================================================
-    // Determine whether partitioning is needed.
-    // ======================================================================================================
-
-    bool doRepartition=0;
-    RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A",AFact_.get());
+    RCP<Operator> A = currentLevel.Get< RCP<Operator> >("A", AFact_.get());
     RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
-    int mypid = comm->getRank();
-    Scalar imbalance;
-    LO minNumRows;
-    GO numActiveProcesses=0;
-    if (currentLevel.GetLevelID() >= startLevel_) {
+      
+    { // scoping 
 
-      if (minRowsPerProcessor_ > 0) {
-        //Check whether any node has too few rows
+      // ======================================================================================================
+      // Determine whether partitioning is needed.
+      // ======================================================================================================
+      // TODO: Result of the test can be stored in the level to avoid doing this several time.
+      
+      // Repartitionning iff !(Test1 || Test2) && (Test3 || Test4)
+      // This is implemented with a short-circuit evaluation
+
+      // Test1: skip partitioning if level is too big   
+      std::ostringstream msg1; msg1 << std::endl << "    current level = " << currentLevel.GetLevelID() << ", first level where repartitioning can happen is " << startLevel_ << ".";
+      if (currentLevel.GetLevelID() < startLevel_) {
+        throw(MueLu::Exceptions::HaltRepartitioning("No repartitioning necessary:" + msg1.str()));
+      }
+      
+      // Test 2: check whether A is spread over more than one process.
+      // Note: using type 'int' as it is enough (comm->getSize() is an int). Test can also be done with 'bool' but numActiveProcesses is printed later
+      // TODO: this global communication can be avoided if we store the information with the matrix (it is known when matrix is created)
+      int numActiveProcesses = 0;
+      sumAll(comm, (int)((A->getNodeNumRows() > 0) ? 1 : 0), numActiveProcesses);
+      std::ostringstream msg2; msg2 << std::endl << "    # processes with rows = " << numActiveProcesses;
+      if (numActiveProcesses == 1) {
+        throw(MueLu::Exceptions::HaltRepartitioning("No repartitioning necessary:" + msg2.str()));
+      }
+      
+      bool doRepartition = false;
+      std::ostringstream msg3, msg4, *msgDoRepartition=NULL; // msgDoRepartition == msg3 or msg4 depending on Test3 and Test4 evalution
+      
+      // Test3: check whether any node has too few rows
+      // Note: (!Test2) ensures that repartitionning is not done when only 1 proc and globalNumRow < minRowsPerProcessor_
+      if (minRowsPerProcessor_ > 0) { // skip test if criteria not used
+        LO     minNumRows;
         size_t numMyRows = A->getNodeNumRows();
-        LO maxNumRows;
-        maxAll(comm, (LO)numMyRows, maxNumRows); //FIXME: this comm can be avoided just by defining maxNumRows = max of LO
-        minAll(comm, (LO)((numMyRows > 0) ? numMyRows : maxNumRows), minNumRows);
+        LO LOMAX = Teuchos::OrdinalTraits<LO>::max(); // processors without rows do not participate to minAll()
+        minAll(comm, (LO)((numMyRows > 0) ? numMyRows : LOMAX), minNumRows);
+        TEUCHOS_TEST_FOR_EXCEPTION(minNumRows >= LOMAX, Exceptions::RuntimeError, "internal error");
+        msg3 << std::endl << "    min # rows per proc = "   << minNumRows << ", min allowable = " << minRowsPerProcessor_;
         if (minNumRows < minRowsPerProcessor_) {
-          doRepartition=true; 
+          doRepartition = true;
+          msgDoRepartition = &msg3;
         }
       }
-
-      //Check whether the number of nonzeros per process is imbalanced
-      size_t numMyNnz  = A->getNodeNumEntries();
-      GO maxNnz, minNnz;
-      maxAll(comm,(GO)numMyNnz,maxNnz); //FIXME: this comm can be avoided just by defining maxNnz = max of GO
-      //min nnz over all proc (disallow any processors with 0 nnz)
-      minAll(comm, (GO)((numMyNnz > 0) ? numMyNnz : maxNnz), minNnz);
-      imbalance = ((SC) maxNnz) / minNnz;
-      if (imbalance > nnzMaxMinRatio_)
-        doRepartition=true;
-
-      //Check whether A is spread over more than one process.
-      sumAll(comm, (GO)((A->getNodeNumRows() > 0) ? 1 : 0), numActiveProcesses);
-      if (numActiveProcesses == 1)
-        doRepartition=false;
-
-    } else {
-        char msgChar[256];
-        sprintf(msgChar,"No repartitioning necessary:\n    current level = %d, first level where repartitioning can happen is %d.", currentLevel.GetLevelID(),startLevel_);
-        std::string msg(msgChar);
-        throw(MueLu::Exceptions::HaltRepartitioning(msg));
-      //return;
-    }
-
-    if (!doRepartition) {
-      std::ostringstream buf1; buf1 << imbalance;
-      std::ostringstream buf2; buf2 << nnzMaxMinRatio_;
-      std::string msg = "No repartitioning necessary:\n";
-      msg = msg + "    nonzero imbalance = " + buf1.str();
-      msg = msg + ", max allowable = " + buf2.str() + "\n";
-      std::ostringstream buf3; buf3 << minNumRows;
-      std::ostringstream buf4; buf4 << minRowsPerProcessor_;
-      msg = msg + "    min # rows per proc = " + buf3.str() + ", min allowable = " + buf4.str() + "\n";
-      std::ostringstream buf5; buf5 << numActiveProcesses;
-      msg = msg + "    # processes with rows = " + buf5.str() + "\n";
-      throw(MueLu::Exceptions::HaltRepartitioning(msg));
-    }
-    
-    GetOStream(Statistics0,0) << "Repartitioning necessary:" << std::endl;
-    GetOStream(Statistics0,0) << "    current level = " << currentLevel.GetLevelID()
-                  << ", first level where repartitioning can happen is "
-                  << startLevel_ << std::endl;
-    GetOStream(Statistics0,0) << "    nonzero imbalance = " << imbalance << ", max allowable = " << nnzMaxMinRatio_ << std::endl;
-    GetOStream(Statistics0,0) << "    min # rows per proc = " << minNumRows << ", min allowable = " << minRowsPerProcessor_ << std::endl;
+      
+      // Test4: check whether the number of nonzeros per process is imbalanced
+      if (doRepartition == false) { // skip test if we already now that we will do repartitioning
+        size_t numMyNnz  = A->getNodeNumEntries();
+        GO minNnz, maxNnz;
+        maxAll(comm, (GO)numMyNnz, maxNnz);
+        minAll(comm, (GO)((numMyNnz > 0) ? numMyNnz : maxNnz), minNnz); // min nnz over all proc (disallow any processors with 0 nnz)
+        Scalar imbalance = ((SC) maxNnz) / minNnz;
+        msg4 << std::endl << "    nonzero imbalance = " << imbalance  << ", max allowable = " << nnzMaxMinRatio_;
+        if (imbalance > nnzMaxMinRatio_) {
+          doRepartition = true;
+          msgDoRepartition = &msg4;
+        }
+      }
+      
+      if (!doRepartition) {
+        throw(MueLu::Exceptions::HaltRepartitioning("No repartitioning necessary:" + msg1.str() + msg2.str() + msg3.str() + msg4.str()));
+      }
+      
+      // print only conditions that triggered the repartitioning
+      GetOStream(Statistics0,0) << "Repartitioning necessary:" << msg1.str() << msg2.str() << msgDoRepartition->str() << std::endl;
+      
+    } // scoping
 
     // FIXME Quick way to figure out how many partitions there should be. (Same as what's done in ML.)
     // FIXME Should take into account nnz, maybe?  Perhaps only when user is using min #nnz per row threshold.
@@ -149,7 +151,7 @@ namespace MueLu {
     // ======================================================================================================
     // Length of vector "decomposition" is local number of DOFs.  Its entries are partition numbers each DOF belongs to.
 
-    RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = currentLevel.Get<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition", loadBalancer_.get());
+    RCP<GOVector> decomposition = currentLevel.Get<RCP<GOVector> >("Partition", loadBalancer_.get());
 
     // Use a hashtable to record how many local rows belong to each partition.
     RCP<Teuchos::Hashtable<GO,GO> > hashTable;
@@ -169,6 +171,7 @@ namespace MueLu {
       }
     }
     int problemPid;
+    int mypid = comm->getRank();
     maxAll(comm, (flag ? mypid : -1), problemPid);
     std::ostringstream buf; buf << problemPid;
     TEUCHOS_TEST_FOR_EXCEPTION(problemPid>-1, Exceptions::RuntimeError, "pid " + buf.str() + " encountered a partition number is that out-of-range");
@@ -188,7 +191,7 @@ namespace MueLu {
                                            comm);
    
     // Store # of local DOFs in each partition in a vector based on above map.
-    RCP<Xpetra::Vector<GO,LO,GO,NO> > localPartSizeVec = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(sourceMap,false);
+    RCP<GOVector> localPartSizeVec = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(sourceMap,false);
     ArrayRCP<GO> data;
     if (localPartSizeVec->getLocalLength() > 0)
       data = localPartSizeVec->getDataNonConst(0);
@@ -254,7 +257,7 @@ namespace MueLu {
 
     // If this pid owns a partition, globalPartSizeVec has one local entry that is the global size of said partition.
     // If this pid doesn't own a partition, globalPartSizeVec is locally empty.
-    RCP<Xpetra::Vector<GO,LO,GO,NO> > globalPartSizeVec = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(targetMap);
+    RCP<GOVector> globalPartSizeVec = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(targetMap);
     globalPartSizeVec->doExport(*localPartSizeVec,*exporter,Xpetra::ADD);
     int myPartitionSize = 0;
     ArrayRCP<const GO> constData;
@@ -267,8 +270,8 @@ namespace MueLu {
     // ======================================================================================================
     // Calculate how many PIDs (other than myself) contribute to my partition.
     // ======================================================================================================
-    RCP<Xpetra::Vector<GO,LO,GO,NO> > howManyPidsSendToThisPartitionVec = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(targetMap);
-    RCP<Xpetra::Vector<GO,LO,GO,NO> > partitionsISendTo = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(sourceMap,false);
+    RCP<GOVector> howManyPidsSendToThisPartitionVec = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(targetMap);
+    RCP<GOVector> partitionsISendTo = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(sourceMap,false);
     if (partitionsISendTo->getLocalLength() > 0)
       data = partitionsISendTo->getDataNonConst(0);
     for (int i=0; i<data.size(); ++i) {
@@ -424,7 +427,7 @@ namespace MueLu {
 
     RCP<const Import> importer = ImportFactory::Build( sourceMap,targetMap);
 
-    RCP<Xpetra::Vector<GO,LO,GO,NO> > sourceVec = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(sourceMap);
+    RCP<GOVector> sourceVec = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(sourceMap);
     ArrayRCP<GO> vectorData;
     if (sourceVec->getLocalLength() > 0) {
       vectorData = sourceVec->getDataNonConst(0);
@@ -445,7 +448,7 @@ namespace MueLu {
     }
     vectorData = Teuchos::null;
 
-    RCP<Xpetra::Vector<GO,LO,GO,NO> > targetVec = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(targetMap);
+    RCP<GOVector> targetVec = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(targetMap);
     targetVec->doImport(*sourceVec,*importer,Xpetra::INSERT);
 
     // =================================================================================================
@@ -506,10 +509,10 @@ namespace MueLu {
     RCP<SubFactoryMonitor> m1 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: Setup", currentLevel));
 
 //RCP<SubFactoryMonitor> m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: getting 'Partition'", currentLevel));
-    RCP<Xpetra::Vector<GO,LO,GO,NO> > decomposition = currentLevel.Get<RCP<Xpetra::Vector<GO,LO,GO,NO> > >("Partition", loadBalancer_.get());
+    RCP<GOVector> decomposition = currentLevel.Get<RCP<GOVector> >("Partition", loadBalancer_.get());
     // Figure out how many nnz there are per row.
 //m3 = rcp(new SubFactoryMonitor(*this, "DeterminePartitionPlacement: figuring out nnz per row", currentLevel));
-    RCP<Xpetra::Vector<GO,LO,GO,NO> > nnzPerRowVector = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(A->getRowMap(),false);
+    RCP<GOVector> nnzPerRowVector = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(A->getRowMap(),false);
     ArrayRCP<GO> nnzPerRow;
     if (nnzPerRowVector->getLocalLength() > 0)
       nnzPerRow = nnzPerRowVector->getDataNonConst(0);
