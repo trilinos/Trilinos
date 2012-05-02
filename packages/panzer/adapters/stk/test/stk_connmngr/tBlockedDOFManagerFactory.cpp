@@ -90,19 +90,20 @@ RCP<const panzer::FieldPattern> buildFieldPattern()
 // quad tests
 TEUCHOS_UNIT_TEST(tBlockedDOFManagerFactory, basic_test)
 {
-   // build global (or serial communicator)
-   #ifdef HAVE_MPI
-      stk::ParallelMachine Comm = MPI_COMM_WORLD;
-   #else
-      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
-   #endif
-
-   int numProcs = stk::parallel_machine_size(Comm);
-   int myRank = stk::parallel_machine_rank(Comm);
+//    // build global (or serial communicator)
+//    #ifdef HAVE_MPI
+//       stk::ParallelMachine Comm = MPI_COMM_WORLD;
+//    #else
+//       stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
+//    #endif
+// 
+   // int numProcs = stk::parallel_machine_size(Comm);
+   // int myRank = stk::parallel_machine_rank(Comm);
 
    typedef panzer::BlockedDOFManagerFactory<int,int> BDFii;
 
    bool result = false;
+   result = BDFii::requiresBlocking("");                     TEST_ASSERT(!result);
    result = BDFii::requiresBlocking("UX UY P");              TEST_ASSERT(!result);
    result = BDFii::requiresBlocking("blocked: UX - UY - P"); TEST_ASSERT(result);
    result = BDFii::requiresBlocking("blocked: UX UY - P");   TEST_ASSERT(result);

@@ -128,7 +128,7 @@ namespace panzer_stk {
       *
       * \returns False if no unique field is found. Otherwise True is returned.
       */
-    bool determineCoordinateField(const panzer::DOFManager<int,int> & dofManager,std::string & fieldName) const;
+    bool determineCoordinateField(const panzer::DOFManager<int,int> & globalIndexer,std::string & fieldName) const;
 
     /** Fill a STL map with the the block ids associated with the pattern for a specific field.
       *
@@ -136,7 +136,7 @@ namespace panzer_stk {
       * \param[out] fieldPatterns A map from element block IDs to field patterns associated with the fieldName
       *                           argument
       */
-    void fillFieldPatternMap(const panzer::DOFManager<int,int> & dofManager, const std::string & fieldName, 
+    void fillFieldPatternMap(const panzer::DOFManager<int,int> & globalIndexer, const std::string & fieldName, 
                              std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const;
 
     /** \brief Gets the initial time from either the input parameter list or an exodus file
@@ -149,10 +149,9 @@ namespace panzer_stk {
 
     /**
       */
-    template <typename LO,typename GO>
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > initializeSolnWriterResponseLibrary(
                                                                 const Teuchos::RCP<panzer::WorksetContainer> & wc,
-                                                                const Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO> > & ugi,
+                                                                const Teuchos::RCP<panzer::UniqueGlobalIndexerBase> & ugi,
                                                                 const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof,
                                                                 const Teuchos::RCP<panzer_stk::STK_Interface> & mesh) const;
 

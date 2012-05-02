@@ -58,6 +58,9 @@ requiresBlocking(const std::string & fieldOrder)
    // break it up on spaces
    StringTokenizer(tokens,fieldOrder," ",true);
  
+   if(tokens.size()<2) // there has to be at least 2 tokens to block
+      return false;
+
    // check the prefix - must signal "blocked"
    if(tokens[0]!="blocked:")
       return false;
