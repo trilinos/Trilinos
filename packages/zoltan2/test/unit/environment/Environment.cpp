@@ -110,9 +110,6 @@ int main(int argc, char *argv[])
   myParams.set("debug_procs", "all");   
   myParams.set("debug_output_stream", "std::cout");
 
-  myParams.set("timing_procs", "0"); 
-  myParams.set("timing_output_file", "appPerformance.txt");
-
   if (nprocs > 3)
     myParams.set("memory_profiling_procs", "0-1,3"); 
   else
@@ -192,9 +189,6 @@ int main(int argc, char *argv[])
     }
   }
 
-  if (!fail && env->doTiming() != true)
-    fail = 2006;
-
   if (!fail && env->doMemoryProfiling() != true)
     fail = 2007;
 
@@ -241,7 +235,6 @@ int main(int argc, char *argv[])
   ParameterList newParams = oldParams;
   newParams.set("error_check_level", "debug_mode_assertions");
   newParams.set("memory_versus_speed", "speed");
-  newParams.remove("timing_output_file");
   newParams.remove("memory_profiling_output_file");
   
   ParameterList &newPartParams = newParams.sublist("partitioning");
