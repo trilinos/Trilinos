@@ -70,11 +70,17 @@ namespace MueLu {
 
     //@}
   private:
+
     //! @name internal Build methods.
     //@{
-    RCP<Operator> BuildRAPExplicit(const RCP<Operator>& R, const RCP<Operator>& A, const RCP<Operator>& P, int levelID) const; //TODO: remove RCP for input args.
+    RCP<Operator> BuildRAPExplicit(const RCP<Operator>& R, const RCP<Operator>& A, const RCP<Operator>& P, int levelID) const; //TODO: remove RCP for input args. TODO: static
     RCP<Operator> BuildRAPImplicit(const RCP<Operator>& A, const RCP<Operator>& P, int levelID) const;
     RCP<Operator> BuildRAPBlock   (const RCP<Operator>& R, const RCP<Operator>& A, const RCP<Operator>& P, int levelID) const;
+    //@}
+
+    //! @name internal print methods.
+    void PrintMatrixInfo(const Operator & Ac, const std::string & msgTag) const; //TODO: static
+    void PrintLoadBalancingInfo(const Operator & Ac, const std::string & msgTag) const;
     //@}
 
     //! P Factory

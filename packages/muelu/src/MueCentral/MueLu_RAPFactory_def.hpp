@@ -34,6 +34,45 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PrintMatrixInfo(const Operator & Ac, const std::string & msgTag) const {
+    GetOStream(Statistics0, 0) << msgTag 
+                               << " # global rows = "      << Ac.getGlobalNumRows()
+                               << ", estim. global nnz = " << Ac.getGlobalNumEntries()
+                               << std::endl;
+  }
+  
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PrintLoadBalancingInfo(const Operator & Ac, const std::string & msgTag) const {
+    // TODO: provide a option to skip this (to avoid global communication)
+
+    //nonzero imbalance
+    size_t numMyNnz  = Ac.getNodeNumEntries();
+    GO maxNnz, minNnz;
+    RCP<const Teuchos::Comm<int> > comm = Ac.getRowMap()->getComm();
+    maxAll(comm,(GO)numMyNnz,maxNnz);
+    //min nnz over all proc (disallow any processors with 0 nnz)
+    minAll(comm, (GO)((numMyNnz > 0) ? numMyNnz : maxNnz), minNnz);
+    double imbalance = ((double) maxNnz) / minNnz;
+    
+    size_t numMyRows = Ac.getNodeNumRows();
+    //Check whether Ac is spread over more than one process.
+    GO numActiveProcesses=0;
+    sumAll(comm, (GO)((numMyRows > 0) ? 1 : 0), numActiveProcesses);
+    
+    //min, max, and avg # rows per proc
+    GO minNumRows, maxNumRows;
+    double avgNumRows;
+    maxAll(comm, (GO)numMyRows, maxNumRows);
+    minAll(comm, (GO)((numMyRows > 0) ? numMyRows : maxNumRows), minNumRows);
+    assert(numActiveProcesses > 0);
+    avgNumRows = Ac.getGlobalNumRows() / numActiveProcesses;
+    
+    GetOStream(Statistics1,0) << msgTag << " # processes with rows = " << numActiveProcesses << std::endl;
+    GetOStream(Statistics1,0) << msgTag << " min # rows per proc = " << minNumRows << ", max # rows per proc = " << maxNumRows << ", avg # rows per proc = " << avgNumRows << std::endl;
+    GetOStream(Statistics1,0) << msgTag << " nonzero imbalance = " << imbalance << std::endl;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &fineLevel, Level &coarseLevel) const {  //FIXME make fineLevel const!!
     typedef Xpetra::BlockedCrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsOperatorClass; // TODO move me
 
@@ -63,6 +102,8 @@ namespace MueLu {
           Ac = BuildRAPImplicit(A, P, levelID);
         } else {
 
+          std::string msgType;
+
           // refactoring needed >>>>>>>>
           // the following code should be moved to his own factory
           //
@@ -79,8 +120,13 @@ namespace MueLu {
             crsMtx = Teuchos::null;
             newAc->fillComplete(P->getDomainMap(), P->getDomainMap());
             Ac = newAc;
+
+            PrintMatrixInfo(*Ac, "Ac (rebalanced)");
+            PrintLoadBalancingInfo(*Ac, "Ac (rebalanced)");
+
           } else if (coarseLevel.IsAvailable("A",PFact_.get())) {
             // Ac already built by the load balancing process and no load balancing needed
+            SubFactoryMonitor m1(*this, "Ac already computed", levelID);
             Ac = coarseLevel.Get< RCP<Operator> >("A", PFact_.get());
           } 
           // <<<<<<<< refactoring needed
@@ -89,35 +135,10 @@ namespace MueLu {
             // explicit version
             RCP<Operator> R = coarseLevel.Get< RCP<Operator> >("R", RFact_.get());
             Ac = BuildRAPExplicit(R, A, P, levelID);
+
+            PrintMatrixInfo(*Ac, "Ac (explicit)");
+            PrintLoadBalancingInfo(*Ac, "Ac (explicit)");
           }
-
-          GetOStream(Statistics0, 0) << "Ac (explicit): # global rows = " << Ac->getGlobalNumRows()
-                                     << ", estim. global nnz = " << Ac->getGlobalNumEntries() << std::endl;
-          //nonzero imbalance
-          size_t numMyNnz  = Ac->getNodeNumEntries();
-          GO maxNnz, minNnz;
-          RCP<const Teuchos::Comm<int> > comm = Ac->getRowMap()->getComm();
-          maxAll(comm,(GO)numMyNnz,maxNnz);
-          //min nnz over all proc (disallow any processors with 0 nnz)
-          minAll(comm, (GO)((numMyNnz > 0) ? numMyNnz : maxNnz), minNnz);
-          double imbalance = ((double) maxNnz) / minNnz;
-
-          size_t numMyRows = Ac->getNodeNumRows();
-          //Check whether Ac is spread over more than one process.
-          GO numActiveProcesses=0;
-          sumAll(comm, (GO)((numMyRows > 0) ? 1 : 0), numActiveProcesses);
-
-          //min, max, and avg # rows per proc
-          GO minNumRows, maxNumRows;
-          double avgNumRows;
-          maxAll(comm, (GO)numMyRows, maxNumRows);
-          minAll(comm, (GO)((numMyRows > 0) ? numMyRows : maxNumRows), minNumRows);
-          assert(numActiveProcesses > 0);
-          avgNumRows = Ac->getGlobalNumRows() / numActiveProcesses;
-
-          GetOStream(Statistics1,0) << "Ac (explicit) # processes with rows = " << numActiveProcesses << std::endl;
-          GetOStream(Statistics1,0) << "Ac (explicit) min # rows per proc = " << minNumRows << ", max # rows per proc = " << maxNumRows << ", avg # rows per proc = " << avgNumRows << std::endl;
-          GetOStream(Statistics1,0) << "Ac (explicit) nonzero imbalance = " << imbalance << std::endl;
 
         }
       } //if( bA != Teuchos::null) ... else ...
@@ -168,7 +189,7 @@ namespace MueLu {
     RCP<Operator> AP  = Utils::TwoMatrixMultiply(A, false, P, false);
     RCP<Operator> RAP = Utils::TwoMatrixMultiply(P, true, AP, false);
 
-    GetOStream(Statistics0, 0) << "Ac (implicit): # global rows = " << RAP->getGlobalNumRows() << ", estim. global nnz = " << RAP->getGlobalNumEntries() << std::endl;
+    PrintMatrixInfo(*RAP, "Ac (implicit)");
     return RAP;
   }
 
@@ -190,7 +211,7 @@ namespace MueLu {
     RCP<BlockedCrsOperatorClass> bAP  = Utils::TwoMatrixMultiplyBlock(bA, false, bP, false, true, true);
     RCP<BlockedCrsOperatorClass> bRAP = Utils::TwoMatrixMultiplyBlock(bR, false, bAP, false, true, true);
 
-    GetOStream(Statistics0, 0) << "Ac (blocked): # global rows = " << bRAP->getGlobalNumRows() << ", estim. global nnz = " << bRAP->getGlobalNumEntries() << std::endl;
+    PrintMatrixInfo(*bRAP, "Ac (blocked)");
     return bRAP;
   }
 
