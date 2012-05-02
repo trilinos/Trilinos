@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
   MyIntGlobalElementsLL[0] = 20000+MyPID;
 
   // Create a long long Epetra_Matrix
-   Epetra_CrsMatrix A_LL(Copy, MapLL, NumNzLL);
+  Epetra_CrsMatrix A_LL(Copy, MapLL, NumNzLL);
   EPETRA_TEST_ERR(A_LL.IndicesAreGlobal(),ierr);
   EPETRA_TEST_ERR(A_LL.IndicesAreLocal(),ierr);
 
