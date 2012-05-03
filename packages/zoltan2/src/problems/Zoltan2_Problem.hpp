@@ -62,11 +62,18 @@ public:
    *  All processes in the application must call this, even if
    *  they were not all in the problem communicator.
    *  All timers are reset back to zero after this call.
+   *
+   *  Timer starts, stops and displays are ignored if Zoltan2
+   *  is compiled with Z2_OMIT_ALL_ERROR_CHECKING.
    */
+#ifdef Z2_OMIT_ALL_ERROR_CHECKING
+  void printTimers() const {return;}
+#else
   void printTimers() const
   {
     timer_->printAndResetToZero();
   }
+#endif
 
 
 protected:

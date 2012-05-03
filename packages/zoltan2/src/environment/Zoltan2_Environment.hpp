@@ -325,6 +325,13 @@ public:
   void debug(MessageOutputLevel level, const char *msg) const{ 
     debugOut_->print(level, msg);}
 
+#ifdef Z2_OMIT_ALL_ERROR_CHECKING
+
+  // These should inline to a no-op.  
+  void timerStart(string timerName) const  {return;}
+  void timerStop(string timerName) const {return;}
+
+#else
   /*! \brief  Start a named timer.
    */
 
@@ -336,6 +343,7 @@ public:
 
   void timerStop(string timerName) const {
     if (timingOn) timerOut_->stop(timerName); }
+#endif
 
   /*! \brief  Send a message to the memory profiling output manager.
    *
