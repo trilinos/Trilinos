@@ -539,9 +539,10 @@ template <typename lno_t, typename gno_t, typename scalar_t>
     totalMoveRight = globalBoundarySum;
   }
 
-  if (totalMoveRight == 0.0)
+  if (totalMoveRight == 0.0){
     env->timerStop("testCoordinatesOnRightBoundary");
     return;
+  }
 
   // We are moving some or all coordinates which are on the right
   // boundary of the new region over to the right.
