@@ -210,7 +210,6 @@ static int ex_write_map_params(int exoid, const char *map_name, const char *map_
 static void invalidate_id_status(int exoid, const char *var_stat,
 				 const char *var_id, int count, int *ids)
 {
-  int status;
   int i;
   int id_var, stat_var;
   
