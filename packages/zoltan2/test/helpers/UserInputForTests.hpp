@@ -289,11 +289,11 @@ private:
         scalar_t *x = coordinates[0].getRawPtr();
         scalar_t *y = coordinates[1].getRawPtr();
         scalar_t *z = coordinates[2].getRawPtr();
-        for (lno_t i=0; i < count; i++, x++){
+        for (lno_t i=0; i < count; i++){
           threeDimCoordinateValue(gids[i], xdim_, ydim_, zdim_, ix, iy, iz);
-          *x++ = ix;
-          *y++ = iy;
-          *z++ = iz;
+          x[i] = scalar_t(ix);
+          y[i] = scalar_t(iy);
+          z[i] = scalar_t(iz);
         }
       }
       else if (dim==2){
@@ -301,14 +301,14 @@ private:
         scalar_t *y = coordinates[1].getRawPtr();
         for (lno_t i=0; i < count; i++){
           twoDimCoordinateValue(gids[i], xdim_, ydim_, ix, iy);
-          *x++ = ix;
-          *y++ = iy;
+          x[i] = scalar_t(ix);
+          y[i] = scalar_t(iy);
         }
       }
       else{
         scalar_t *x = coordinates[0].getRawPtr();
         for (lno_t i=0; i < count; i++)
-          *x++ = gids[i];
+          x[i] = scalar_t(gids[i]);
       }
     }
 
