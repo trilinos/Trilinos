@@ -24,8 +24,7 @@ typedef Zoltan2::BasicCoordinateInput<tMVector_t> inputAdapter_t;
 
 UserInputForTests *uinput=NULL;
 
-const RCP<const tMap_t> &
-  void getMeshCoordinates(
+const RCP<const tMap_t> & getMeshCoordinates(
     const RCP<const Teuchos::Comm<int> > & comm,
     int xdim, int ydim, int zdim,
     ArrayView<ArrayRCP<const scalar_t> > coords)
@@ -49,7 +48,7 @@ const RCP<const tMap_t> &
     uinput = new UserInputForTests(xdim, ydim, zdim,
     comm, string("Identity"), flags);
 
-  RCP<tMVector_t> meshCoords = uinput.getCoordinates();
+  RCP<tMVector_t> meshCoords = uinput->getCoordinates();
 
   for (int i=0; i < dim; i++)
     coords[i] = meshCoords->getData(i);
@@ -61,7 +60,7 @@ const RCP<const tMap_t> &
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession session(&argc, &argv);
-  RCP<const Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
+  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   int rank = comm->getRank();
 
   // For now the only command line option is the global number
@@ -70,7 +69,7 @@ int main(int argc, char *argv[])
   // in the Zoltan2 parameters and the test parameters from an
   // xml file.
 
-  gno_t numGlobalCoords = 1000000;
+  gno_t numGlobalCoords = 1000;
   if (argc > 1)
     numGlobalCoords = atol(argv[1]);
 
@@ -82,15 +81,15 @@ int main(int argc, char *argv[])
 
   // Obtain coordinates.
 
-  Array<ArrayRCP<const scalar_t> > coordinates;
+  Array<ArrayRCP<const scalar_t> > coordinates(3);
 
-  const RCP<const tMap_t> &map = getMeshCoordinates(comm
-    xdim, ydim, zdim, coordinates);
+  const RCP<const tMap_t> &map = getMeshCoordinates(comm,
+    xdim, ydim, zdim, coordinates.view(0,3));
 
   // Create an input adapter.
 
   const gno_t *globalIds = map->getNodeElementList().getRawPtr();
-  size_t localCount = coordinates[i].size();
+  size_t localCount = coordinates[0].size();
 
   inputAdapter_t ia(localCount, globalIds, 
     coordinates[0].getRawPtr(),
@@ -129,7 +128,11 @@ int main(int argc, char *argv[])
     uinput = NULL;
   }
 
+  comm->barrier();
+
   problem.printTimers();
+
+  comm->barrier();
 
   problem.getSolution().printMetrics(std::cout);
 }

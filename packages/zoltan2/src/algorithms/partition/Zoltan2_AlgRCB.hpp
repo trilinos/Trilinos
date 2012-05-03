@@ -72,6 +72,8 @@ void AlgRCB(
 
   const Teuchos::ParameterList &pl = env->getParameters();
 
+  env->timerStart("RCB setup");
+
   ////////////////////////////////////////////////////////
   // Partitioning problem parameters of interest:
   //    objective
@@ -294,6 +296,8 @@ void AlgRCB(
   }
   Z2_THROW_OUTSIDE_ERROR(*env)
 
+  env->timerStop("RCB setup");
+
   ////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////
   // The algorithm
@@ -311,6 +315,8 @@ void AlgRCB(
   while ((nparts >>= 1) != 0) imbalanceReductionFactor++;
 
   imbalanceTolerance /= imbalanceReductionFactor;
+
+  env->timerStart("Parallel RCB");
 
   while (part1>part0 && groupSize>1 && sanityCheck--){
 
@@ -369,6 +375,7 @@ void AlgRCB(
 
     int *ids = NULL;
 
+    env->timerStart("Subdivide");
     if (rank < leftHalfNumProcs){
       groupSize = leftHalfNumProcs;
       ids = new int [groupSize];
@@ -443,8 +450,13 @@ void AlgRCB(
     Z2_THROW_OUTSIDE_ERROR(*env)
   
     mvector = subMvector;
+
+    env->timerStop("Subdivide");
+
     numLocalCoords = mvector->getLocalLength();
   } 
+
+  env->timerStop("Parallel RCB");
 
   env->localBugAssertion(__FILE__, __LINE__, "partitioning failure", 
     sanityCheck, BASIC_ASSERTION);
@@ -463,6 +475,8 @@ void AlgRCB(
     // int cutDimension;
     // scalar_t imbalance;
 
+    env->timerStart("Serial RCB");
+
     try{
       ArrayView<lno_t> emptyIndex;
 
@@ -473,6 +487,8 @@ void AlgRCB(
         part0, part1, partId.view(0,numLocalCoords));
     }
     Z2_FORWARD_EXCEPTIONS
+
+    env->timerStop("Serial RCB");
 
   }
   else{
@@ -523,7 +539,9 @@ void AlgRCB(
     env->debug(VERBOSE_DETAILED_STATUS, oss.str());
   }
 
+  env->timerStart("update solution");
   solution->setParts(gnoList, partId, metrics);
+  env->timerStop("update solution");
 }
 
 } // namespace Zoltan2

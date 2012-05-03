@@ -377,7 +377,11 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
   // Create the computational model.
 
+  this->env_->timerStart("create problem");
+
   createPartitioningProblem(updateInputData);
+
+  this->env_->timerStop("create problem");
 
   // TODO: If hierarchical_
 
@@ -392,6 +396,8 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
   PartitioningSolution<Adapter> *soln = NULL;
 
+  this->env_->timerStart("create solution");
+
   try{
     soln = new PartitioningSolution<Adapter>( 
       this->envConst_, problemCommConst_, idMap, numberOfWeights_, 
@@ -402,7 +408,11 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
   solution_ = rcp(soln);
 
+  this->env_->timerStop("create solution");
+
   // Call the algorithm
+
+  this->env_->timerStart("solve problem");
 
   try {
     if (algorithm_ == string("scotch")){
@@ -435,6 +445,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
 
 #endif
+  this->env_->timerStop("solve problem");
 
 }
 
