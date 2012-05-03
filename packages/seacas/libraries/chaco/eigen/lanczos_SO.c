@@ -178,7 +178,7 @@ lanczos_SO (
     double   *mkvec();		/* allocates space for a vector, dies if problem */
     double   *mkvec_ret();	/* allocates space for a vector, returns error code */
     double    dot();		/* standard dot product routine */
-    double    norm();		/* vector norm */
+    double    ch_norm();		/* vector norm */
     double    Tevec();		/* calc eigenvector of T by linear recurrence */
     double    checkeig();	/* calculate residual of eigenvector of A */
     double    lanc_seconds();	/* switcheable timer */
@@ -270,7 +270,7 @@ lanczos_SO (
     else {
 	orthogvec(r, 1, n, vwsqrt);
     }
-    beta[0] = norm(r, 1, n);
+    beta[0] = ch_norm(r, 1, n);
     q[0] = mkvec(1, n);
     setvec(q[0], 1, n, 0.0);
     setvec(bj, 1, maxj, DOUBLE_MAX);
@@ -335,7 +335,7 @@ lanczos_SO (
 	    sorthog(r, n, solist, ngood);
 	}
 	orthog_time += lanc_seconds() - time;
-	beta[j] = norm(r, 1, n);
+	beta[j] = ch_norm(r, 1, n);
 	time = lanc_seconds();
 	pause = lanpause(j, lastpause, interval, q, n, &pausemode, version, beta[j]);
 	pause_time += lanc_seconds() - time;

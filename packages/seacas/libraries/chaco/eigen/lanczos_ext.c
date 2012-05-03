@@ -96,7 +96,7 @@ lanczos_ext (
     double   *mkvec_ret();	/* mkvec() which returns error code */
     double    dot();		/* standard dot product routine */
     struct orthlink *makeorthlnk();	/* makes space for new entry in orthog. set */
-    double    norm();		/* vector norm */
+    double    ch_norm();		/* vector norm */
     double    Tevec();		/* calc eigenvector of T by linear recurrence */
     struct scanlink *mkscanlist();	/* init scan list for min ritz vecs */
     double    lanc_seconds();	/* switcheable timer */
@@ -185,14 +185,14 @@ lanczos_ext (
     if (vwsqrt != NULL) {
 	scale_diag(r, 1, n, vwsqrt);
     }
-    check = norm(r, 1, n);
+    check = ch_norm(r, 1, n);
     if (vwsqrt == NULL) {
 	orthog1(r, 1, n);
     }
     else {
 	orthogvec(r, 1, n, vwsqrt);
     }
-    check = fabs(check - norm(r, 1, n));
+    check = fabs(check - ch_norm(r, 1, n));
     if (check > 10 * numerical_zero && WARNING_EVECS > 0) {
 	strout("WARNING: In terminal propagation, rhs should have no component in the");
 	printf("         nullspace of the Laplacian, so check val %g should be negligible.\n", check);
@@ -202,7 +202,7 @@ lanczos_ext (
 		    check);
 	}
     }
-    beta[0] = norm(r, 1, n);
+    beta[0] = ch_norm(r, 1, n);
     q[0] = mkvec(1, n);
     setvec(q[0], 1, n, 0.0);
     setvec(bj, 1, maxj, DOUBLE_MAX);
@@ -272,7 +272,7 @@ lanczos_ext (
 	    sorthog(r, n, solist, ngood);
 	}
 	orthog_time += lanc_seconds() - time;
-	beta[j] = norm(r, 1, n);
+	beta[j] = ch_norm(r, 1, n);
 	time = lanc_seconds();
 	pause = lanpause(j, lastpause, interval, q, n, &pausemode, version, beta[j]);
 	pause_time += lanc_seconds() - time;

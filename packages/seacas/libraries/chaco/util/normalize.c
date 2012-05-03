@@ -3,13 +3,13 @@
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
 /* Normalizes a double n-vector over range. */
-double    normalize(double *vec, int beg, int end)
+double    ch_normalize(double *vec, int beg, int end)
 {
     int       i;
     double    scale;
-    double    norm(double *vec, int beg, int end);
+    double    ch_norm(double *vec, int beg, int end);
 
-    scale = norm(vec, beg, end);
+    scale = ch_norm(vec, beg, end);
     vec = vec + beg;
     for (i = end - beg + 1; i; i--) {
 	*vec = *vec / scale;
@@ -23,9 +23,9 @@ double    sign_normalize(double *vec, int beg, int end, int k)
 {
     int       i;
     double    scale, scale2;
-    double    norm(double *vec, int beg, int end);
+    double    ch_norm(double *vec, int beg, int end);
 
-    scale = norm(vec, beg, end);
+    scale = ch_norm(vec, beg, end);
     if (vec[k] < 0) {
 	scale2 = -scale;
     }
