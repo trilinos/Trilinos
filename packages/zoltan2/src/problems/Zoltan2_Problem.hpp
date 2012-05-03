@@ -193,7 +193,8 @@ template <typename Adapter>
     }
   }
 
-  env_->setTimer(timer_);
+  if (isSet)
+    env_->setTimer(timer_);
 }
 
 template <typename Adapter>
