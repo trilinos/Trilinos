@@ -2270,16 +2270,16 @@ int Epetra_CrsGraph::CopyAndPermuteCrsGraph(const Epetra_CrsGraph& A,
   Epetra_LongLongSerialDenseVector LL_IndicesVector;
 
   if(maxNumIndices > 0 && A.IndicesAreLocal()) {
-	  if(A.RowMap().GlobalIndicesInt())
-	  {
+    if(A.RowMap().GlobalIndicesInt())
+      {
         int_IndicesVector.Size(maxNumIndices);
         indices = reinterpret_cast<int_type*>(int_IndicesVector.Values());
-	  }
-	  else if(A.RowMap().GlobalIndicesLongLong())
-	  {
-		LL_IndicesVector.Size(maxNumIndices);
-	    indices = reinterpret_cast<int_type*>(LL_IndicesVector.Values());
-	  }
+      }
+    else if(A.RowMap().GlobalIndicesLongLong())
+      {
+	LL_IndicesVector.Size(maxNumIndices);
+	indices = reinterpret_cast<int_type*>(LL_IndicesVector.Values());
+      }
   }
 
   // Do copy first

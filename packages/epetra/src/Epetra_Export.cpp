@@ -165,26 +165,16 @@ void Epetra_Export::Construct( const Epetra_BlockMap &  sourceMap, const Epetra_
     //Make sure Export IDs are ordered by processor
     Epetra_Util util;
 
-	if(targetMap.GlobalIndicesLongLong())
-	{
-		util.Sort(true,NumExportIDs_,ExportPIDs_,0,0,1,&ExportLIDs_, 1, (long long **)&ExportGIDs);
-	}
-	else if(targetMap.GlobalIndicesInt())
-	{
-		int* ptrs[2] = {ExportLIDs_, (int*) ExportGIDs};
-		util.Sort(true,NumExportIDs_,ExportPIDs_,0,0, 2,&ptrs[0], 0, 0);
-	}
-	else
-	{
-		throw ReportError("Epetra_Import::Epetra_Import: GlobalIndices Internal Error", -1);
-	}
-
-	if(targetMap.GlobalIndicesLongLong())
-	{
-	}
-	else if(targetMap.GlobalIndicesInt())
-	{
-	}
+    if(targetMap.GlobalIndicesLongLong()) {
+      util.Sort(true,NumExportIDs_,ExportPIDs_,0,0,1,&ExportLIDs_, 1, (long long **)&ExportGIDs);
+    }
+    else if(targetMap.GlobalIndicesInt()) {
+      int* ptrs[2] = {ExportLIDs_, (int*) ExportGIDs};
+      util.Sort(true,NumExportIDs_,ExportPIDs_,0,0, 2,&ptrs[0], 0, 0);
+    }
+    else {
+      throw ReportError("Epetra_Import::Epetra_Import: GlobalIndices Internal Error", -1);
+    }
 
     Distor_ = sourceMap.Comm().CreateDistributor();
     
@@ -207,7 +197,7 @@ void Epetra_Export::Construct( const Epetra_BlockMap &  sourceMap, const Epetra_
 		LenCRemoteGIDs,
 		cRemoteGIDs);
     if (ierr) throw ReportError("Error in Epetra_Distributor.Do()", ierr);
-    int * RemoteGIDs = reinterpret_cast<int*>(cRemoteGIDs);
+    int_type * RemoteGIDs = reinterpret_cast<int_type*>(cRemoteGIDs);
 
     // Remote IDs come in as GIDs, convert to LIDs
     for (i=0; i< NumRemoteIDs_; i++) {
