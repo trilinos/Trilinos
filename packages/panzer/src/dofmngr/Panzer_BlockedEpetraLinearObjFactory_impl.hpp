@@ -306,6 +306,13 @@ adjustForDirichletConditions(const Epetra_Vector & local_bcs,
 }
 
 template <typename Traits,typename LocalOrdinalT>
+Teuchos::MpiComm<int> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+getComm() const
+{
+   return Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(dynamic_cast<const Epetra_MpiComm &>(*getEpetraComm()).Comm()));
+}
+
+template <typename Traits,typename LocalOrdinalT>
 void BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 initializeContainer(int mem,LinearObjContainer & loc) const
 {

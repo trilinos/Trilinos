@@ -13,8 +13,8 @@
             <ParameterList name="Mesh Factory Parameter List">
                 <Parameter name="X Blocks" type="int" value="1" />
                 <Parameter name="Y Blocks" type="int" value="1" />
-                <Parameter name="X Elements" type="int" value="2" />
-                <Parameter name="Y Elements" type="int" value="2" />
+                <Parameter name="X Elements" type="int" value="20" />
+                <Parameter name="Y Elements" type="int" value="20" />
                 <Parameter name="X0" type="double" value="0.0" />
                 <Parameter name="Y0" type="double" value="0.0" />
                 <Parameter name="Xf" type="double" value="1.0" />
@@ -42,6 +42,18 @@
          <Parameter name="Element Blocks" type="string" value="eblock-0_0"/>
          <Parameter name="Evaluation Types" type="string" value="Residual"/>
       </ParameterList>
+      <ParameterList name="Volume Integral2">
+         <Parameter name="Type" type="string" value="Functional"/>
+         <Parameter name="Field Name" type="string" value="Volume_Integral"/>
+         <Parameter name="Element Blocks" type="string" value="eblock-0_0"/>
+         <Parameter name="Evaluation Types" type="string" value="Residual"/>
+      </ParameterList>
+      <ParameterList name="Integration Point Coordinates">
+         <Parameter name="Type" type="string" value="IP Coordinates"/>
+         <Parameter name="Field Name" type="string" value="My IP Coordinates"/>
+         <Parameter name="Element Blocks" type="string" value="eblock-0_0"/>
+         <Parameter name="Evaluation Types" type="string" value="Residual"/>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="Block ID to Physics ID Mapping">
@@ -49,8 +61,8 @@
     </ParameterList>
 
     <ParameterList name="Assembly">
+        <Parameter name="Field Order" type="string" value="blocked: TEMPERATURE TEST_TEMPERATURE"/>
         <Parameter name="Workset Size" type="unsigned long" value="1"/>
-        <Parameter name="Field Order" type="string" value="blocked: TEMPERATURE"/>
     </ParameterList>
 
     <ParameterList name="Physics Blocks">
@@ -66,17 +78,15 @@
                 <ParameterList name="Options">
                 </ParameterList>
             </ParameterList>
-<!--
             <ParameterList name="EQ 1">
                 <Parameter name="Name" type="string" value="Energy"/> 
                 <Parameter name="Basis" type="string" value="Q1"/> 
                 <Parameter name="Integration Order" type="int" value="2"/> 
-                <Parameter name="Model ID" type="string" value="test fluid model"/> 
+                <Parameter name="Model ID" type="string" value="fluid model test"/> 
                 <Parameter name="Prefix" type="string" value="TEST_"/>
                 <ParameterList name="Options">
                 </ParameterList>
             </ParameterList>
--->
 
         </ParameterList>
 
@@ -94,6 +104,13 @@
         <ParameterList name="fluid model">
 
             <ParameterList name="SOURCE_TEMPERATURE">
+                <Parameter name="Type" type="string" value="Parameter"/>
+                <Parameter name="Value" type="double" value="1.0"/>
+            </ParameterList>
+            <ParameterList name="Heat Capacity">
+                <Parameter name="Value" type="double" value="1.0"/>
+            </ParameterList>
+            <ParameterList name="Thermal Conductivity">
                 <Parameter name="Value" type="double" value="1.0"/>
             </ParameterList>
             <ParameterList name="DENSITY">
@@ -102,10 +119,13 @@
             <ParameterList name="HEAT_CAPACITY">
                 <Parameter name="Value" type="double" value="1.0"/>
             </ParameterList>
+            <ParameterList name="Global Statistics">
+                <Parameter name="Value" type="string" value="TEMPERATURE,DENSITY"/>
+            </ParameterList>
 
         </ParameterList>
 
-        <ParameterList name="test fluid model">
+        <ParameterList name="fluid model test">
 
             <ParameterList name="SOURCE_TEST_TEMPERATURE">
                 <Parameter name="Type" type="string" value="Parameter"/>
@@ -127,6 +147,11 @@
         <ParameterList name="function data one">
 
         </ParameterList>
+
+        <ParameterList name="IP Coordinates">
+            <Parameter name="Integration Order" type="int" value="2"/> 
+        </ParameterList>
+
 
     </ParameterList>
 
@@ -154,10 +179,9 @@
             </ParameterList>
         </ParameterList>
 
-<!--
         <ParameterList>
             <Parameter name="Type" type="string" value="Dirichlet"/> 
-            <Parameter name="Sideset ID" type="string" value="top"/> 
+            <Parameter name="Sideset ID" type="string" value="bottom"/> 
             <Parameter name="Element Block ID" type="string" value="eblock-0_0"/> 
             <Parameter name="Equation Set Name" type="string" value="TEST_TEMPERATURE"/> 
             <Parameter name="Strategy" type="string" value="Constant"/>
@@ -168,7 +192,7 @@
 
         <ParameterList>
             <Parameter name="Type" type="string" value="Dirichlet"/> 
-            <Parameter name="Sideset ID" type="string" value="bottom"/> 
+            <Parameter name="Sideset ID" type="string" value="top"/> 
             <Parameter name="Element Block ID" type="string" value="eblock-0_0"/> 
             <Parameter name="Equation Set Name" type="string" value="TEST_TEMPERATURE"/> 
             <Parameter name="Strategy" type="string" value="Constant"/>
@@ -176,7 +200,6 @@
                 <Parameter name="Value" type="double" value="1.0"/>
             </ParameterList>
         </ParameterList>
--->
     
     </ParameterList>
 
@@ -185,8 +208,12 @@
     </ParameterList>
 
     <ParameterList name="Options">
-        <Parameter name="Write Volume Assembly Graphs" type="bool" value="true"/>
+        <Parameter name="Write Volume Assembly Graphs" type="bool" value="false"/>
         <Parameter name="Volume Assembly Graph Prefix" type="string" value="energy-ss_"/> 
+    </ParameterList>
+
+    <ParameterList name="Active Parameters">
+        <Parameter name="Number of Parameter Vectors" type="int" value="0"/>
     </ParameterList>
 
 <ParameterList name="Solution Control">
@@ -251,17 +278,17 @@
                 <ParameterList name="Solver Types">
                   <ParameterList name="Block GMRES">
                     <Parameter name="Convergence Tolerance" type="double" value="1e-5"/>
-                    <Parameter name="Output Frequency" type="int" value="1"/>
+                    <Parameter name="Output Frequency" type="int" value="10"/>
                     <Parameter name="Output Style" type="int" value="1"/>
                     <Parameter name="Verbosity" type="int" value="33"/>
-                    <Parameter name="Maximum Iterations" type="int" value="200"/>
+                    <Parameter name="Maximum Iterations" type="int" value="500"/>
                     <Parameter name="Block Size" type="int" value="1"/>
                     <Parameter name="Num Blocks" type="int" value="20"/>
                     <Parameter name="Flexible Gmres" type="bool" value="0"/>
                   </ParameterList>
                 </ParameterList>
                 <ParameterList name="VerboseObject">
-                  <Parameter name="Verbosity Level" type="string" value="medium"/>
+                  <Parameter name="Verbosity Level" type="string" value="extreme"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>

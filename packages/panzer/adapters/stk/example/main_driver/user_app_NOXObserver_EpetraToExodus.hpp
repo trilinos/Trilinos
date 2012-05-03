@@ -49,6 +49,7 @@
 #include "Panzer_config.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedEpetraLinearObjContainer.hpp"
 
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_ResponseAggregator_SolutionWriter.hpp"
@@ -58,6 +59,10 @@
 #include "Epetra_MpiComm.h"
 
 #include "Teuchos_DefaultMpiComm.hpp"
+#include "Teuchos_dyn_cast.hpp"
+
+#include "Thyra_DefaultProductVector.hpp"
+#include "Thyra_get_Epetra_Operator.hpp"
 
 namespace user_app {
   
@@ -67,13 +72,15 @@ namespace user_app {
     
     NOXObserver_EpetraToExodus(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
 			       const Teuchos::RCP<panzer::UniqueGlobalIndexerBase>& dof_manager,
-			       const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof,
+			       const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof,
                                const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & response_library) :
       m_mesh(mesh),
       m_dof_manager(dof_manager),
       m_lof(lof),
       m_response_library(response_library)
     { 
+      TEUCHOS_ASSERT(m_lof!=Teuchos::null);
+
       // register solution writer response aggregator with this library
       // this is an "Action" only response aggregator
       panzer::ResponseAggregator_Manager<panzer::Traits> & aggMngr = m_response_library->getAggregatorManager();
@@ -101,6 +108,9 @@ namespace user_app {
 
       // reserve response guranteeing that we can evaluate it (assuming things are done correctly elsewhere)
       response_library->reserveLabeledBlockAggregatedVolumeResponse("Main Field Output",rid,eBlocks,eTypes);
+
+      // used block LOF, or epetra LOF
+      m_isEpetraLOF = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(m_lof)!=Teuchos::null;
     }
       
     void runPreIterate(const NOX::Solver::Generic& solver)
@@ -120,13 +130,12 @@ namespace user_app {
     
     void runPostSolve(const NOX::Solver::Generic& solver)
     {
+      TEUCHOS_ASSERT(m_lof!=Teuchos::null);
+
       const NOX::Abstract::Vector& x = solver.getSolutionGroup().getX();
       const NOX::Thyra::Vector* n_th_x = dynamic_cast<const NOX::Thyra::Vector*>(&x);
       TEUCHOS_TEST_FOR_EXCEPTION(n_th_x == NULL, std::runtime_error, "Failed to dynamic_cast to NOX::Thyra::Vector!")
       const ::Thyra::VectorBase<double>& th_x = n_th_x->getThyraVector(); 
-
-      Teuchos::RCP<const Epetra_Vector> ep_x = Thyra::get_Epetra_Vector(*(m_lof->getMap()), Teuchos::rcp(&th_x, false));
-      Teuchos::MpiComm<int> comm(Teuchos::opaqueWrapper(dynamic_cast<const Epetra_MpiComm &>(ep_x->Comm()).Comm()));
 
       // initialize the assembly container
       panzer::AssemblyEngineInArgs ae_inargs;
@@ -139,9 +148,30 @@ namespace user_app {
       // initialize the ghosted container
       m_lof->initializeGhostedContainer(panzer::LinearObjContainer::X,*ae_inargs.ghostedContainer_);
 
-      const Teuchos::RCP<panzer::EpetraLinearObjContainer> epGlobalContainer
-         = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ae_inargs.container_,true);
-      epGlobalContainer->set_x(Teuchos::rcp_const_cast<Epetra_Vector>(ep_x));
+      // Teuchos::MpiComm<int> comm(Teuchos::opaqueWrapper(dynamic_cast<const Epetra_MpiComm &>(ep_x->Comm()).Comm()));
+      Teuchos::MpiComm<int> comm = m_lof->getComm();
+      if(m_isEpetraLOF) {
+         Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof
+            = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(m_lof,true);
+         Teuchos::RCP<const Epetra_Vector> ep_x = Thyra::get_Epetra_Vector(*(ep_lof->getMap()), Teuchos::rcp(&th_x, false));
+
+         // initialize the x vector
+         const Teuchos::RCP<panzer::EpetraLinearObjContainer> epGlobalContainer
+            = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(ae_inargs.container_,true);
+         epGlobalContainer->set_x(Teuchos::rcp_const_cast<Epetra_Vector>(ep_x));
+      }
+      else {
+         m_lof->initializeContainer(panzer::LinearObjContainer::X,*ae_inargs.container_);
+
+         // initialize the x vector
+         const Teuchos::RCP<panzer::BlockedEpetraLinearObjContainer> blkGlobalContainer
+            = Teuchos::rcp_dynamic_cast<panzer::BlockedEpetraLinearObjContainer>(ae_inargs.container_,true);
+         Teuchos::RCP<Thyra::VectorBase<double> > blkX = blkGlobalContainer->get_x();
+
+         std::cout << "BlkX = " << Teuchos::describe(*blkX,Teuchos::VERB_MEDIUM) << std::endl;
+
+         copyFlatThyraIntoBlockedThyra(th_x,blkX.ptr());
+      }
 
       // do import
       m_lof->globalToGhostContainer(*ae_inargs.container_,*ae_inargs.ghostedContainer_,panzer::LinearObjContainer::X);
@@ -155,11 +185,66 @@ namespace user_app {
     
   protected:
 
+    void writeToScreen(std::ostream & os,const Thyra::VectorBase<double> & src)
+    {
+      const Thyra::SpmdVectorBase<double> & spmdSrc =
+             Teuchos::dyn_cast<const Thyra::SpmdVectorBase<double> >(src);
+
+      // get access to data
+      Teuchos::ArrayRCP<const double> srcData;
+      spmdSrc.getLocalData(Teuchos::ptrFromRef(srcData));
+      os << "Local Size = " << srcData.size() << std::endl;
+      for (int i=0; i < srcData.size(); ++i) {
+         os << "   " << srcData[i] << std::endl;
+      }
+    }
+
+    //! Copy a flat vector into a product vector
+    void copyFlatThyraIntoBlockedThyra(const Thyra::VectorBase<double>& src, 
+                                       const Teuchos::Ptr<Thyra::VectorBase<double> > & dest) const
+    {
+      using Teuchos::RCP;
+      using Teuchos::ArrayView;
+      using Teuchos::rcpFromPtr;
+      using Teuchos::rcp_dynamic_cast;
+    
+      const RCP<Thyra::ProductVectorBase<double> > prodDest =
+        Thyra::castOrCreateNonconstProductVectorBase(rcpFromPtr(dest));
+
+      const Thyra::SpmdVectorBase<double> & spmdSrc =
+             Teuchos::dyn_cast<const Thyra::SpmdVectorBase<double> >(src);
+    
+      // get access to flat data
+      Teuchos::ArrayRCP<const double> srcData;
+      spmdSrc.getLocalData(Teuchos::ptrFromRef(srcData));
+    
+      std::size_t offset = 0;
+      const int numBlocks = prodDest->productSpace()->numBlocks();
+      for (int b = 0; b < numBlocks; ++b) {
+        const RCP<Thyra::VectorBase<double> > destBlk = prodDest->getNonconstVectorBlock(b);
+
+        // get access to blocked data
+        const RCP<Thyra::SpmdVectorBase<double> > spmdBlk =
+               rcp_dynamic_cast<Thyra::SpmdVectorBase<double> >(destBlk, true);
+        Teuchos::ArrayRCP<double> destData;
+        spmdBlk->getNonconstLocalData(Teuchos::ptrFromRef(destData));
+    
+        // perform copy
+        for (int i=0; i < destData.size(); ++i) {
+          destData[i] = srcData[i+offset];
+        }
+        offset += destData.size();
+      }
+    
+    }
+
+
     Teuchos::RCP<panzer_stk::STK_Interface> m_mesh;
     Teuchos::RCP<panzer::UniqueGlobalIndexerBase> m_dof_manager;
-    Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > m_lof;
+    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > m_lof;
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > m_response_library;
 
+    bool m_isEpetraLOF;
   };
 }
 

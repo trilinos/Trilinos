@@ -366,6 +366,7 @@ evaluateFields(typename Traits::EvalData workset)
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
       globalIndexer_->getElementGIDs(cellLocalId,GIDs); 
+      blockOffsets[numFieldBlocks] = GIDs.size();
 
       // caculate the local IDs for this element
       LIDs.resize(GIDs.size());

@@ -52,6 +52,8 @@
 #include "Panzer_CloneableEvaluator.hpp"
 #include "Panzer_LinearObjContainer.hpp"
 
+#include "Teuchos_DefaultMpiComm.hpp"
+
 #include "boost/mpl/placeholders.hpp"
 using namespace boost::mpl::placeholders;
 
@@ -190,6 +192,10 @@ public:
    virtual void adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                                              const LinearObjContainer & globalBCRows,
                                              LinearObjContainer & ghostedObjs) const = 0;
+
+   /** Acess to the MPI Comm used in constructing this LOF.
+     */
+   virtual Teuchos::MpiComm<int> getComm() const = 0;
 
    //! Use preconstructed scatter evaluators
    template <typename EvalT>

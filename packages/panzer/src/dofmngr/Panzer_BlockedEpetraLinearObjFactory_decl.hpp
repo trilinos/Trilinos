@@ -114,6 +114,8 @@ public:
                                              const LinearObjContainer & globalBCRows,
                                              LinearObjContainer & ghostedObjs) const;
 
+   virtual Teuchos::MpiComm<int> getComm() const;
+
    //! Use preconstructed scatter evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator> buildScatter() const

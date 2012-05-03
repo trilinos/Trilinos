@@ -105,6 +105,10 @@ public:
                                              const LinearObjContainer & globalBCRows,
                                              LinearObjContainer & ghostedObjs) const;
 
+   /** Acess to the MPI Comm used in constructing this LOF.
+     */
+   virtual Teuchos::MpiComm<int> getComm() const;
+
    //! Use preconstructed scatter evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator> buildScatter() const

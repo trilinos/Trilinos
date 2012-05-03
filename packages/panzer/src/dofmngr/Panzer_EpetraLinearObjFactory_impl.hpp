@@ -238,6 +238,13 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
    }
 }
 
+template <typename Traits,typename LocalOrdinalT>
+Teuchos::MpiComm<int> EpetraLinearObjFactory<Traits,LocalOrdinalT>::
+getComm() const
+{
+   return Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(dynamic_cast<const Epetra_MpiComm &>(*getEpetraComm()).Comm()));
+}
+
 // Functions for initalizing a container
 /////////////////////////////////////////////////////////////////////
 

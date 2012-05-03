@@ -532,7 +532,7 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
   epGlobalContainer->set_x(Teuchos::rcp_const_cast<Epetra_Vector>(x));
   if (is_transient)
     epGlobalContainer->set_dxdt(Teuchos::rcp_const_cast<Epetra_Vector>(x_dot));
-  
+
   if (!Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) {
 
     PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModel(f and J)");
@@ -689,14 +689,11 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic_blocked( const InArgs& inArg
   // arguments that should be const.  Another reason to redesign
   // LinearObjContainer layers.
 
-  // epGlobalContainer->set_x(Thyra::create_Vector(Teuchos::rcp_const_cast<Epetra_Vector>(x),b_lof->getThyraDomainSpace()));
   Teuchos::RCP<Thyra::VectorBase<double> > th_x = b_lof->getThyraDomainVector();
   copyEpetraIntoThyra(*x, th_x.ptr());
   epGlobalContainer->set_x(th_x);
 
   if (is_transient) {
-    // epGlobalContainer->set_dxdt(Thyra::create_Vector(Teuchos::rcp_const_cast<Epetra_Vector>(x_dot),b_lof->getThyraDomainSpace()));
-
     Teuchos::RCP<Thyra::VectorBase<double> > th_dxdt = b_lof->getThyraDomainVector();
     copyEpetraIntoThyra(*x_dot, th_dxdt.ptr());
     epGlobalContainer->set_dxdt(th_dxdt);
