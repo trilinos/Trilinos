@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
 
   // Test the Solution queries that are used by algorithms
 
-  if (solution->getGlobalNumberOfParts() != numGlobalParts)
+  if (solution->getGlobalNumberOfParts() != size_t(numGlobalParts))
     fail=2;
 
   if (!fail && solution->getLocalNumberOfParts() != 1)
@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
   // Test the Solution get methods that may be called by users 
   // or migration functions.
 
-  if (solution->getLocalNumberOfIds() != numIdsPerProc)
+  if (solution->getLocalNumberOfIds() != size_t(numIdsPerProc))
     fail = 11;
 
   if (!fail){

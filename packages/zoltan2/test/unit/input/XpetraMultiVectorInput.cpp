@@ -84,7 +84,7 @@ int verifyInputAdapter(
       if (!fail && stride != strides[w])
         fail = 101;
 
-      for (int v=0; !fail && v < nvals; v++){
+      for (size_t v=0; !fail && v < nvals; v++){
         if (wgt[v*stride] != weights[w][v*stride])
           fail=102;
       }

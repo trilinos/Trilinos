@@ -90,10 +90,10 @@ void testIdentifierModel(std::string fname, gno_t xdim, gno_t ydim, gno_t zdim,
   
   // Test the IdentifierModel interface
 
-  if (model->getLocalNumIdentifiers() != nLocalIds)
+  if (model->getLocalNumIdentifiers() != size_t(nLocalIds))
     fail = 2;
 
-  if (!fail && model->getGlobalNumIdentifiers() != nGlobalIds)
+  if (!fail && model->getGlobalNumIdentifiers() != size_t(nGlobalIds))
     fail = 3;
 
   // For now, MatrixInput does not implement weights

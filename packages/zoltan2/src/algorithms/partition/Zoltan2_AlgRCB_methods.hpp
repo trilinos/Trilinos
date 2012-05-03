@@ -252,10 +252,10 @@ template <typename mvector_t>
   size_t nGlobalObj = vectors->getGlobalLength();
 
   env->localBugAssertion(__FILE__, __LINE__, "migrateData input", 
-    nprocs>1 && lrflags.size()==nobj, DEBUG_MODE_ASSERTION);
+    nprocs>1 && size_t(lrflags.size())==nobj, DEBUG_MODE_ASSERTION);
 
   gno_t myNumLeft= 0, numLeft;
-  for (lno_t i=0; i < nobj; i++)
+  for (size_t i=0; i < nobj; i++)
     if (lrflags[i] == leftFlag)
       myNumLeft++;
 
@@ -292,7 +292,7 @@ template <typename mvector_t>
     int nextRightProc = rightProc0;
     int *p = procId;
   
-    for (lno_t i=0; i < nobj; i++){
+    for (size_t i=0; i < nobj; i++){
       if (lrflags[i] == leftFlag){
         if (nextLeftProc == rightProc0)
           nextLeftProc = leftProc0;
@@ -321,7 +321,7 @@ template <typename mvector_t>
 
     ArrayView<const gno_t> gnoList = vectors->getMap()->getNodeElementList();
 
-    for (lno_t i=0; i < nobj; i++){
+    for (size_t i=0; i < nobj; i++){
       int proc = procId[i];
       lno_t offset = sendOffset[proc]++;
 
@@ -378,7 +378,7 @@ template <typename lno_t, typename scalar_t>
     
   if (weightDim > 1){
     Array<scalar_t> coordWeights(weightDim, 1.0);
-    for (int wdim=0; wdim < weightDim; wdim++){
+    for (size_t wdim=0; wdim < weightDim; wdim++){
       if (weights[wdim].size() > 0)
         coordWeights[wdim] = weights[wdim][id];
     }
@@ -423,7 +423,7 @@ template <typename scalar_t>
   size_t weightDim = fractionLeft.size();
   int numEmptyRight = 0, numEmptyLeft = 0;
 
-  for (int i=0; i < weightDim; i++){
+  for (size_t i=0; i < weightDim; i++){
     if (fractionLeft[i] == 0.0)
       numEmptyLeft++;
     else if (fractionLeft[i] == 1.0)
@@ -514,7 +514,7 @@ template <typename lno_t, typename gno_t, typename scalar_t>
 
   int weightDim = weights.size();
   int useIndices = index.size() > 0;
-  int numLocalCoords = (useIndices ? index.size() : coords.size());
+  lno_t numLocalCoords = (useIndices ? index.size() : coords.size());
   int currentRegion = rightBoundary - 1;
 
   // Check the total weight on the left if we move some
@@ -583,7 +583,7 @@ template <typename lno_t, typename gno_t, typename scalar_t>
 
     bool moveAll =  (localMoveRight >= localBoundarySum);
 
-    for (size_t i=0; i < numLocalCoords; i++){
+    for (lno_t i=0; i < numLocalCoords; i++){
       if (lrFlags[i] == currentRegion){
         lno_t idx = (useIndices ? index[i] : i);
         if (coords[idx] >= boundaries[rightBoundary]-epsilon){ 
@@ -818,7 +818,7 @@ template <typename mvector_t>
       // So for now, objects that are on the cut boundary go into the
       // region on the "left" side.
 
-      for (size_t i=0; i < numCoords; i++){
+      for (lno_t i=0; i < numCoords; i++){
   
         if (lrFlags[i] != unsetFlag)
           continue;
@@ -1080,7 +1080,7 @@ template <typename mvector_t>
         totalWeightLeft += regionSums[i];
       }
 
-      for (size_t i=0; i < numCoords; i++){
+      for (lno_t i=0; i < numCoords; i++){
         if (lrFlags[i] != leftFlag && lrFlags[i] != rightFlag){
           if (lrFlags[i] <= rightmostLeftRegion){
             lrFlags[i] = leftFlag;
@@ -1102,7 +1102,7 @@ template <typename mvector_t>
         ostringstream ossRight;
         ossLeft << "left: ";
         ossRight << "right: ";
-        for (size_t i=0; i < numCoords; i++){
+        for (lno_t i=0; i < numCoords; i++){
           if (lrFlags[i] == unsetFlag)
             continue;
           lno_t idx = (useIndices ? index[i] : i);
@@ -1189,16 +1189,17 @@ template <typename mvector_t, typename Adapter>
     typename mvector_t::scalar_type &weightRightHalf  // output
     )
 {
-  // initialize return values
-  size_t numLocalCoords = vectors->getLocalLength();
-  cutDimension = 0;
-  cutValue = imbalance = weightLeftHalf = weightRightHalf = 0.0;
-  numPartsLeftHalf = 0;
-
   typedef typename mvector_t::scalar_type scalar_t;
   typedef typename mvector_t::local_ordinal_type lno_t;
   typedef typename mvector_t::global_ordinal_type gno_t;
   typedef StridedData<lno_t, scalar_t> input_t;
+
+  lno_t numLocalCoords = vectors->getLocalLength();
+
+  // initialize return values
+  cutDimension = 0;
+  cutValue = imbalance = weightLeftHalf = weightRightHalf = 0.0;
+  numPartsLeftHalf = 0;
 
   ///////////////////////////////////////////////////////
   // Pick a cut direction.
@@ -1236,7 +1237,7 @@ template <typename mvector_t, typename Adapter>
     scalar_t totalWeight = 0.0;
     int numNonUniform = 0;
 
-    for (int i=0; i < weightDim; i++)
+    for (size_t i=0; i < weightDim; i++)
       if (!uniformWeights[i])
         numNonUniform++;
 
@@ -1247,13 +1248,13 @@ template <typename mvector_t, typename Adapter>
         totalWeight = numLocalCoords;
       else{
         const scalar_t *val = vectors->getData(wgt1).getRawPtr();
-        for (size_t i=0; i < numLocalCoords; i++)
+        for (lno_t i=0; i < numLocalCoords; i++)
           totalWeight += val[i];
       }
     }
     else{  // need to add up total normed weight
       Array<input_t> wgts(weightDim);
-      for (int i=0; i < weightDim; i++){
+      for (size_t i=0; i < weightDim; i++){
         if (!uniformWeights[i]){
           wgts[i] = input_t(vectors->getData(wgt1++), 1);
         }
@@ -1347,7 +1348,7 @@ template <typename mvector_t, typename Adapter>
 
   RCP<Comm<int> > comm(new Teuchos::SerialComm<int>);  
 
-  int numLocalCoords=0;
+  lno_t numLocalCoords=0;
   bool useIndices;
 
   if (index.size() == 0){

@@ -76,15 +76,12 @@ typedef std::bitset<NUM_TEST_OUTPUT_TYPE> outputFlag_t;
 static int z2Test_read_mtx_coords(
   std::string &fname, ArrayRCP<ArrayRCP<scalar_t> > &xyz);
 
-static void oneDimCoordinateValue(
-  gno_t globalId, gno_t nx, scalar_t *x);
-
 static void twoDimCoordinateValue(
-  gno_t globalId, gno_t nx, gno_t ny, scalar_t *x, scalar_t *y);
+  gno_t globalId, gno_t nx, gno_t ny, gno_t &x, gno_t &y);
 
 static void threeDimCoordinateValue(
   gno_t globalId, gno_t nx, gno_t ny, gno_t nz,
-  scalar_t *x, scalar_t *y, scalar_t *z);
+  gno_t &x, gno_t &y, gno_t &z);
 
 /*! \brief A class that generates typical user input for testing.
  */
@@ -286,19 +283,27 @@ private:
           throw(std::bad_alloc());
         coordinates[i] = Teuchos::arcp(c, 0, count, true);
       }
+      gno_t ix, iy, iz;
     
       if (dim==3){
         scalar_t *x = coordinates[0].getRawPtr();
         scalar_t *y = coordinates[1].getRawPtr();
         scalar_t *z = coordinates[2].getRawPtr();
-        for (lno_t i=0; i < count; i++, x++, y++, z++)
-          threeDimCoordinateValue(gids[i], xdim_, ydim_, zdim_, x, y, z);
+        for (lno_t i=0; i < count; i++, x++){
+          threeDimCoordinateValue(gids[i], xdim_, ydim_, zdim_, ix, iy, iz);
+          *x++ = ix;
+          *y++ = iy;
+          *z++ = iz;
+        }
       }
       else if (dim==2){
         scalar_t *x = coordinates[0].getRawPtr();
         scalar_t *y = coordinates[1].getRawPtr();
-        for (lno_t i=0; i < count; i++, x++, y++)
-          twoDimCoordinateValue(gids[i], xdim_, ydim_, x, y);
+        for (lno_t i=0; i < count; i++){
+          twoDimCoordinateValue(gids[i], xdim_, ydim_, ix, iy);
+          *x++ = ix;
+          *y++ = iy;
+        }
       }
       else{
         scalar_t *x = coordinates[0].getRawPtr();
@@ -671,25 +676,19 @@ static int z2Test_read_mtx_coords(std::string &fname,
   return 0;
 }
 
-static void oneDimCoordinateValue(
-  gno_t globalId, gno_t nx, scalar_t *x)
-{
-  *x = globalId;
-}
-
 static void twoDimCoordinateValue(
-  gno_t globalId, gno_t nx, gno_t ny, scalar_t *x, scalar_t *y)
+  gno_t globalId, gno_t nx, gno_t ny, gno_t &x, gno_t &y)
 {
-  *x = globalId % nx;
-  *y = (globalId - *x) / nx;
+  x = globalId % nx;
+  y = (globalId - x) / nx;
 }
 
 static void threeDimCoordinateValue(
   gno_t globalId, gno_t nx, gno_t ny, gno_t nz,
-  scalar_t *x, scalar_t *y, scalar_t *z)
+  gno_t &x, gno_t &y, gno_t &z)
 {
-  *z = globalId % (nx * ny);
-  gno_t xy = globalId - *z;
+  z = globalId % (nx * ny);
+  gno_t xy = globalId - z;
   twoDimCoordinateValue(xy, nx, ny, x, y);
 }
 
@@ -704,7 +703,7 @@ template <typename lno_t, typename scalar_t>
     return;
 
   size_t dim = data.size();
-  for (int i=0; i < dim; i++){
+  for (size_t i=0; i < dim; i++){
     scalar_t *tmp = new scalar_t [length];
     if (!tmp)
        throw (std::bad_alloc());
@@ -713,7 +712,7 @@ template <typename lno_t, typename scalar_t>
 
   scalar_t scalingFactor = (max-min) / RAND_MAX;
   srand(seed);
-  for (int i=0; i < dim; i++){
+  for (size_t i=0; i < dim; i++){
     scalar_t *x = data[i].getRawPtr();
     for (lno_t j=0; j < length; j++)
       *x++ = min + (scalar_t(rand()) * scalingFactor);

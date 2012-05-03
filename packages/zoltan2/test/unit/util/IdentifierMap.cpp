@@ -212,7 +212,7 @@ template <typename IDMAP>
           std::cout << "Global info obtained from map:" << std::endl;
         if (p == rank){
           std::cout << "Rank " << p << std::endl;
-          for (LNO i=0; i < nRemoteIds; i++){
+          for (size_t i=0; i < nRemoteIds; i++){
             std::cout << "  GID: ";
             std::cout << UserIdTraits<GID>::stringify(remoteGids[i]);
             std::cout << ", GNO " << remoteGno[i];

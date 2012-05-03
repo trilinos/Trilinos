@@ -166,10 +166,10 @@ void testCoordinateModel(std::string &fname, int weightDim,
   if (model->getCoordinateDim() != coordDim)
     fail = 6;
 
-  if (!fail && model->getLocalNumCoordinates() != nLocalIds)
+  if (!fail && model->getLocalNumCoordinates() != size_t(nLocalIds))
     fail = 7;
 
-  if (!fail && model->getGlobalNumCoordinates() != nGlobalIds)
+  if (!fail && model->getGlobalNumCoordinates() != size_t(nGlobalIds))
     fail = 8;
 
   if (!fail && model->getCoordinateWeightDim() !=  weightDim)

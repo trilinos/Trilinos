@@ -225,7 +225,7 @@ void AlgRCB(
       scalar_t *tmp = new scalar_t [numGlobalParts];
       env->localMemoryAssertion(__FILE__, __LINE__, numGlobalParts, tmp) ;
     
-      for (partId_t i=0; i < numGlobalParts; i++){
+      for (size_t i=0; i < numGlobalParts; i++){
         tmp[i] = solution->getCriteriaPartSize(wdim, i);
       }
 
@@ -533,7 +533,7 @@ void AlgRCB(
   if (env->doStatus() && (numGlobalCoords < 500)){
     ostringstream oss;
     oss << "Solution: ";
-    for (size_t i=0; i < gnoList.size(); i++)
+    for (gno_t i=0; i < gnoList.size(); i++)
       oss << gnoList[i] << " (" << partId[i] << ") ";
     
     env->debug(VERBOSE_DETAILED_STATUS, oss.str());

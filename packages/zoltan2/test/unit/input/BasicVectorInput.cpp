@@ -39,10 +39,10 @@ int checkBasicVector(
   if (!fail && ia->getNumberOfWeights() != wdim)
     fail = 101;
 
-  if (!fail && ia->getLocalLength() != len)
+  if (!fail && ia->getLocalLength() != size_t(len))
     fail = 102;
 
-  if (!fail && ia->getGlobalLength() != glen)
+  if (!fail && ia->getGlobalLength() != size_t(glen))
     fail = 103;
 
   for (int v=0; !fail && v < mvdim; v++){
@@ -53,7 +53,7 @@ int checkBasicVector(
 
     size_t nvals = ia->getVector(v, idList, vals, stride);
 
-    if (nvals != len*stride)
+    if (nvals != size_t(len*stride))
       fail = 104;
 
     if (!fail && stride != correctStride)
@@ -75,7 +75,7 @@ int checkBasicVector(
 
     size_t nvals = ia->getVectorWeights(w, wgts, stride);
 
-    if (nvals != len*stride)
+    if (nvals != size_t(len*stride))
       fail = 108;
 
     if (!fail && stride != weightStrides[w])

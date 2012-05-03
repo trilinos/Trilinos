@@ -95,7 +95,7 @@ template <typename T>
 {
   if (n == 0) return true;
 
-  if (val[n-1] - val[0] + 1 != n)
+  if (val[n-1] - val[0] + 1 != T(n))
     return false;
 
   T nextval = val[0]+1;

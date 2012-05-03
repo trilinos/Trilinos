@@ -499,7 +499,7 @@ template <typename User>
     env_->localMemoryAssertion(__FILE__, __LINE__, numLocalEdges_,
       !numLocalEdges_||edArray);
 
-    for (lno_t i=0; i < numLocalVtx_; i++){
+    for (size_t i=0; i < numLocalVtx_; i++){
 
       offArray[i] = offsets[i] - nSelfEdges;
 
@@ -641,7 +641,7 @@ template <typename User>
 
       offTo[0] = 0;
 
-      for (lno_t i=0, idx=0; i < numLocalVtx_; i++){
+      for (size_t i=0, idx=0; i < numLocalVtx_; i++){
         for (lno_t j=offFrom[i]; j < offFrom[i+1]; j++){
           if (nborProc[j] >= 0){
             egidTo[idx] = egidFrom[j];

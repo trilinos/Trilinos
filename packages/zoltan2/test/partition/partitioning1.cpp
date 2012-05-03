@@ -228,7 +228,8 @@ int main(int narg, char** arg)
   size_t *globalCountPerPart = new size_t[checkNparts];
   for (size_t i = 0; i < checkNparts; i++) countPerPart[i] = 0;
   for (size_t i = 0; i < checkLength; i++) {
-    if (checkParts[i] >= checkNparts) cout << "Invalid Part:  FAIL" << endl;
+    if (size_t(checkParts[i]) >= checkNparts) 
+      cout << "Invalid Part:  FAIL" << endl;
     countPerPart[checkParts[i]]++;
   }
   Teuchos::reduceAll<int, size_t>(*comm, Teuchos::REDUCE_SUM, checkNparts,

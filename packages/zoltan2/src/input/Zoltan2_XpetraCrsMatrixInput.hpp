@@ -268,11 +268,6 @@ template <typename User>
   }
   Z2_FORWARD_EXCEPTIONS;
 
-for (int i=0; i < numNewRows; i++){
-std::cout << importList[i] << " ";
-}
-std::cout << std::endl;
-
   gno_t lsum = numNewRows;
   gno_t gsum = 0;
   reduceAll<int, gno_t>(*comm, Teuchos::REDUCE_SUM, 1, &lsum, &gsum);

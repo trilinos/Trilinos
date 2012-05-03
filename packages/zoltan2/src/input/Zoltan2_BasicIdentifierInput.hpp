@@ -135,7 +135,7 @@ template <typename User>
     weights_ = arcp(new input_t [numWeights], 0, numWeights, true);
 
     if (numIds > 0){
-      for (int i=0; i < numWeights; i++){
+      for (size_t i=0; i < numWeights; i++){
         int stride = weightStrides.size() ? weightStrides[i] : 1;
         ArrayRCP<const scalar_t> wgtV(weights[i], 0, stride*numIds, false);
         weights_[i] = input_t(wgtV, stride);

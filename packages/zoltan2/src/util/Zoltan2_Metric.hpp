@@ -1349,13 +1349,13 @@ template <typename scalar_t>
   switch (norm){
     case normMinimizeTotalWeight:   /*!< 1-norm = Manhattan norm */
 
-      for (int i=0; i <dim; i++)
+      for (size_t i=0; i <dim; i++)
         nweight += weights[i];
 
       break;
      
     case normBalanceTotalMaximum:   /*!< 2-norm = sqrt of sum of squares */
-      for (int i=0; i <dim; i++)
+      for (size_t i=0; i <dim; i++)
         nweight += (weights[i] * weights[i]);
 
       nweight = sqrt(nweight);
@@ -1365,7 +1365,7 @@ template <typename scalar_t>
     case normMinimizeMaximumWeight: /*!< inf-norm = maximum norm */
 
       nweight = weights[0];
-      for (int i=1; i <dim; i++)
+      for (size_t i=1; i <dim; i++)
         if (weights[i] > nweight)
           nweight = weights[i];
 
@@ -1390,7 +1390,7 @@ template<typename lno_t, typename scalar_t>
     return 0;
 
   Array<scalar_t> vec(dim, 1.0);
-  for (int i=0; i < dim; i++)
+  for (size_t i=0; i < dim; i++)
     if (weights[i].size() > 0)
        vec[dim] = weights[i][idx];
 

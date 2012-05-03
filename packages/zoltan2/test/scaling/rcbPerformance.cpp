@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
 
   double k = log(numGlobalCoords) / 3;
   double xdimf = exp(k) + 0.5;
-  int xdim = floor(xdimf);
+  int xdim = static_cast<int>(floor(xdimf));
   int ydim = xdim;
   int zdim = numGlobalCoords / (xdim*ydim);
 

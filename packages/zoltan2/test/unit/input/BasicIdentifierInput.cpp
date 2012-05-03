@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
   if (rank == 0)
     std::cout << "Testing " << ia.inputAdapterName() << std::endl;
 
-  if (!fail && ia.getLocalNumberOfIdentifiers() != numLocalIds){
+  if (!fail && ia.getLocalNumberOfIdentifiers() != size_t(numLocalIds)){
     fail = 4;
   }
 
@@ -73,12 +73,12 @@ int main(int argc, char *argv[])
   scalar_t const *weightsIn[2];
   int weightStridesIn[2];
 
-  if (!fail && ia.getIdentifierList(globalIdsIn) != numLocalIds)
+  if (!fail && ia.getIdentifierList(globalIdsIn) != size_t(numLocalIds))
     fail = 6;
 
   for (int w=0; !fail && w < weightDim; w++){
     if (ia.getIdentifierWeights(w, weightsIn[w], weightStridesIn[w]) <
-        numLocalIds * weightStridesIn[w])
+        size_t(numLocalIds * weightStridesIn[w]))
       fail = 20;
   }
 
