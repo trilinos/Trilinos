@@ -282,6 +282,11 @@ template <typename Adapter>
 {
   HELLO;
 
+  if (getenv("DEBUGME")){
+    std::cout << getpid() << std::endl;
+    sleep(15);
+  }
+
 #ifdef HAVE_ZOLTAN2_OVIS
   ovis_enabled(this->comm_->getRank());
 #endif
