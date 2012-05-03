@@ -135,4 +135,7 @@ int main(int argc, char *argv[])
   comm->barrier();
 
   problem.getSolution().printMetrics(std::cout);
+
+  if (rank == 0)
+    std::cout << "PASS" << std::endl;
 }
