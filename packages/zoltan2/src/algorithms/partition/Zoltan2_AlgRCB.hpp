@@ -407,29 +407,12 @@ void AlgRCB(
     ArrayView<const gno_t> gnoList = mvector->getMap()->getNodeElementList();
     size_t localSize = mvector->getLocalLength();
   
-    pair<gno_t, gno_t> minMax = 
-      z2LocalMinMax<gno_t>(gnoList.getRawPtr(), localSize);
-    gno_t localMin = minMax.first;
-    gno_t globalMin = localMin;
-
-// TODO  Siva says don't need these two reduceAll operations.
-// TODO  Use map constructor with globalSize=-1 and globalMin = 0
-// TODO  (since we created the multivector, we know the base is 0).
-    if (groupSize > 1){
-      try{
-        reduceAll<int, gno_t>(
-          *comm, Teuchos::REDUCE_MIN, 1, &localMin, &globalMin);
-      }
-      Z2_THROW_OUTSIDE_ERROR(*env)
-    }
-
     // Tpetra will calculate the globalSize.
     size_t globalSize = Teuchos::OrdinalTraits<size_t>::invalid();
   
     RCP<map_t> subMap;
     try{
-      // See TODO above.
-      subMap= rcp(new map_t(globalSize, gnoList, globalMin, comm));
+      subMap= rcp(new map_t(globalSize, gnoList, 0, comm));
     }
     Z2_THROW_OUTSIDE_ERROR(*env)
 
