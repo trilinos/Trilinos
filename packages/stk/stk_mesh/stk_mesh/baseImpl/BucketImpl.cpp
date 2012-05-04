@@ -265,6 +265,12 @@ BucketImpl::BucketImpl( BulkData & arg_mesh,
 
   //allocate space for the fields
   m_field_data = field_data_size > 0 ? new unsigned char[field_data_size] : NULL;
+  //
+  //[TODO] ALAN, TODD: to investigate if this is necessary to fix valgrind
+  //issues in the following regression test:
+  //adagio_rtest/presto/super_elem_rigid_body/super_elem_rigid_body.test|np1_explicit_reverseMPC
+  memory_zero(m_field_data, field_data_size);
+
   m_field_data_end = m_field_data + field_data_size;
 }
 
