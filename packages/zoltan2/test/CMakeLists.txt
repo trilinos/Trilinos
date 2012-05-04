@@ -8,6 +8,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/helpers)
 
 
 ADD_SUBDIRECTORIES(
+correctness
 scaling
 partition
 order

@@ -145,11 +145,14 @@ int main(int argc, char *argv[])
 
   Teuchos::CommandLineProcessor cmdp (false, false);
 
-  string inputFile, average_cuts, rectilinear_blocks;
+  string inputFile("none"), average_cuts("no"), rectilinear_blocks("no");
 
-  cmdp.setOption("inputFile", &inputFile, "file name", true);
-  cmdp.setOption("average_cuts", &average_cuts);
-  cmdp.setOption("rectilinear_blocks", &rectilinear_blocks);
+  cmdp.setOption("inputFile", &inputFile, 
+    "root of file name: \"grid20x19\" for \"grid20x19_coord.mtx\"", true);
+  cmdp.setOption("average_cuts", &average_cuts, 
+    "yes or no");
+  cmdp.setOption("rectilinear_blocks", &rectilinear_blocks, 
+    "yes or no");
 
   try{
     cmdp.parse(argc, argv);
@@ -160,13 +163,18 @@ int main(int argc, char *argv[])
     return 1;
   }
 
+  if (inputFile == string("none"))
+    return 0;
+
   bool ac = false, rb = false;
   if (average_cuts == string("yes"))
     ac = true;
   if (rectilinear_blocks == string("yes"))
     rb = true;
 
-  int fail = runRCP(comm, inputFile, ac, rb);
+  string fname(inputFile+".mtx");
+
+  int fail = runRCP(comm, fname, ac, rb);
 
   if (rank == 0 && !fail)
     std::cout << "PASS" << std::endl;

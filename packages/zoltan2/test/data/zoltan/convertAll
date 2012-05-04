@@ -4,10 +4,10 @@
 #  is in the Zoltan_Tests/converters repository.
 #
 
-fnames="brack2_3 degenerateAA ewgt hammond simple3d vwgt bug degenerate grid20x19 nograph simple drake hammond2 onedbug vwgt2"
+fnames="degenerateAA ewgt hammond simple3d vwgt bug degenerate grid20x19 nograph simple drake hammond2 onedbug vwgt2"
 suffix=_coord.mtx
 
 for fname in $fnames ; do
-  echo "perl chaco_to_mm.pl $fname.coords > $fname$suffix"
-  perl chaco_to_mm.pl $fname.coords > $fname$suffix
+  echo "chacoToDavisCoords.py $fname.coords  $fname$suffix"
+  chacoToDavisCoords.py $fname.coords  $fname$suffix
 done

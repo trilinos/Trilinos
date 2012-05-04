@@ -322,6 +322,11 @@ private:
 
   void createMatrix()
   {
+    if (getenv("DEBUGME")){
+      std::cout << getpid() << std::endl;
+      sleep(15);
+    }
+
     if (M_.is_null()){
       if (xdim_ > 0){
         buildCrsMatrix();
