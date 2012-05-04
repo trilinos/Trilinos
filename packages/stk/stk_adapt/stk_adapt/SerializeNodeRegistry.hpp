@@ -38,6 +38,7 @@
 
 #include <stk_io/IossBridge.hpp>
 #include <Ioss_NullEntity.h>
+#include <Ioss_Utils.h>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/static_assert.hpp>
@@ -70,6 +71,24 @@ namespace stk {
      */
 
     class SerializeNodeRegistry {
+
+    public:
+      typedef std::vector<stk::mesh::EntityId> IdVector;
+
+      // PartMap maps a part name to data about the part: its primary entity rank, topology name, subset parts 
+      typedef std::string TopologyName;
+      typedef std::string PartName;
+      typedef std::vector<PartName> PartSubsets;
+      typedef boost::tuple<stk::mesh::EntityRank, TopologyName, PartSubsets> PartMapData;
+      typedef std::map<PartName, PartMapData> PartMap;
+
+      typedef stk::mesh::EntityId NodeMapKey;
+      typedef int ProcRank;
+      typedef std::vector<ProcRank> SharedProcs;
+      typedef SharedProcs NodeMapValue;
+      typedef boost::unordered_map<NodeMapKey, NodeMapValue> NodeMap;
+
+    private:
       PerceptMesh& m_eMesh;
       NodeRegistry* m_nodeRegistry;
       std::string m_input_mesh_name;
@@ -77,38 +96,31 @@ namespace stk {
       std::string m_filePrefix;
       // iM, M = pseudo processor (reads file.e.M.iM)
       // iP, P = worker, nworker
-      int m_M, m_iM, m_P, m_iP;
+      int m_M, m_iM, m_W, m_iW;
+      // for W==1, [start,end] = [0,M-1]
+      //     W==2, iW==0, [M_0,M_1] = [0,M/2-1] , 
+      //           iW==1, = [M/2,M-1]
+      // etc..
+      int m_M_0, m_M_1; 
       const std::vector<std::string> & m_entity_rank_names;
-      std::vector<stk::mesh::EntityId> m_id_max;
+      IdVector m_id_max;
       std::string m_globalIdFile;
-      std::string m_nodeRegistryFile;
+      std::string m_localNodeRegistryFile;
       std::string m_globalNodeRegistryFile;
+      std::string m_globalPartsFile;
       const unsigned FAMILY_TREE_RANK;
       static const bool m_debug = false;
       int m_spatialDim;
-
-    public:
-      // PartMap maps a part name to data about the part: its primary entity rank, topology name, subset parts 
-      typedef std::string TopologyName;
-      typedef std::string PartName;
-      typedef std::vector<PartName> PartSubsets;
-      typedef boost::tuple<stk::mesh::EntityRank, TopologyName, PartSubsets> PartMapData;
-      typedef std::map<PartName, PartMapData> PartMap;
       PartMap *m_partMap;
-
-      typedef stk::mesh::EntityId NodeMapKey;
-      typedef int ProcRank;
-      typedef std::vector<ProcRank> SharedProcs;
-      typedef SharedProcs NodeMapValue;
-      typedef boost::unordered_map<NodeMapKey, NodeMapValue> NodeMap;
       NodeMap *m_nodeMap;
 
     public:
       enum { MaxPass = 3 };
 
-      SerializeNodeRegistry(PerceptMesh& eMesh, NodeRegistry* nodeRegistry, std::string input_mesh_name, std::string output_mesh_name, int M, int iM, int P=1, int iP=0) : 
+      SerializeNodeRegistry(PerceptMesh& eMesh, NodeRegistry* nodeRegistry, std::string input_mesh_name, std::string output_mesh_name, 
+                            int M, int iM, int W=1, int iW=0, int M_0=-1, int M_1=-1) : 
         m_eMesh(eMesh), m_nodeRegistry(nodeRegistry), m_input_mesh_name(input_mesh_name), m_output_mesh_name(output_mesh_name), m_filePrefix(input_mesh_name), 
-        m_M(M), m_iM(iM), m_P(P), m_iP(iP),
+        m_M(M), m_iM(iM), m_W(W), m_iW(iW), m_M_0(M_0 >= 0 ? M_0 : 0), m_M_1(M_1 >= 0 ? M_1 : M-1),
         m_entity_rank_names(eMesh.getFEM_meta_data()->entity_rank_names()),
         m_id_max(m_entity_rank_names.size(), 0u),  FAMILY_TREE_RANK(eMesh.element_rank() + 1u),
         m_partMap(0), m_nodeMap(0)
@@ -116,15 +128,16 @@ namespace stk {
         size_t pos = m_filePrefix.find(".");
         if (pos != std::string::npos)
           m_filePrefix = m_filePrefix.substr(0, pos);
-        m_globalIdFile = "streaming-refine-global-data."+m_filePrefix+".yaml.P."+toString(m_P)+"."+toString(m_iP);
-        m_nodeRegistryFile = std::string("streaming-refine-nodeRegistry."+m_filePrefix+".yaml.")+toString(m_M)+"."+toString(m_iM)+"."+toString(m_P)+"."+toString(m_iP);
-        m_globalNodeRegistryFile = std::string("streaming-refine-nodeRegistry."+m_filePrefix+".yaml.P."+toString(m_P)+"."+toString(m_iP));
+        m_globalIdFile = "global_id_data.yaml.W."+toString(m_W)+"."+toString(m_iW);
+        m_localNodeRegistryFile = std::string("local_nodeRegistry.yaml.")+toString(m_M)+"."+toString(m_iM)+"."+toString(m_W)+"."+toString(m_iW);
+        m_globalNodeRegistryFile = std::string("global_nodeRegistry.yaml.W."+toString(m_W)+"."+toString(m_iW));
+        m_globalPartsFile = "global_parts.yaml.W."+toString(m_W)+"."+toString(m_iW);
         m_spatialDim = eMesh.getSpatialDim();
       }
 
       void pass(int streaming_pass)
       {
-        std::cout << "\n\nM[" << m_iM << ", " << m_M << "] P[" << m_iP << ", " << m_P << "] ------ SerializeNodeRegistry ----- pass number " << streaming_pass << "\n\n" << std::endl;
+        std::cout << "\n\nM[" << m_iM << ", " << m_M << "] W[" << m_iW << ", " << m_W << "] ------ SerializeNodeRegistry ----- pass number " << streaming_pass << "\n\n" << std::endl;
 
         switch(streaming_pass)
           {
@@ -138,6 +151,38 @@ namespace stk {
           }
       }
 
+      void pass_init(int streaming_pass)
+      {
+        std::cout << "\n\nM[" << m_iM << ", " << m_M << "] W[" << m_iW << ", " << m_W << "] ------ SerializeNodeRegistry ----- init pass number " << streaming_pass << "\n\n" << std::endl;
+
+        switch(streaming_pass)
+          {
+          case -1: passM1_init(); return;
+          case 0: pass0_init(); return;
+            //           case 1: pass1_init(); return;
+            //           case 2: pass2_init(); return;
+            //           case 3: pass3_init(); return;
+            //           default:
+            //             throw std::logic_error("SerializeNodeRegistry::pass unknown pass");
+          }
+      }
+
+      void pass_final(int streaming_pass)
+      {
+        std::cout << "\n\nM[" << m_iM << ", " << m_M << "] W[" << m_iW << ", " << m_W << "] ------ SerializeNodeRegistry ----- final pass number " << streaming_pass << "\n\n" << std::endl;
+
+        switch(streaming_pass)
+          {
+          case -1: passM1_final(); return;
+          case 0: pass0_final(); return;
+//           case 1: pass1_final(); return;
+          case 2: pass2_final(); return;
+//           case 3: pass3_final(); return;
+//           default:
+//             throw std::logic_error("SerializeNodeRegistry::pass unknown pass");
+          }
+      }
+
       //fem::CellTopology get_cell_topology( const Part & part) const;
 
       /**
@@ -145,20 +190,24 @@ namespace stk {
        *   (m_iM = 0...m_M)
        */
       // part primary_entity_rank, topology name
-      void createGlobalPartsFile()
+      void writeGlobalPartsFile()
+      {
+        m_globalPartsFile = "global_parts.yaml.W."+toString(m_W)+"."+toString(m_iW);
+        writeGlobalPartsFile(m_globalPartsFile, *m_partMap);
+      }
+
+      void writeGlobalPartsFile(std::string fileName, PartMap& partMap)
       {
         std::fstream file;
-        //file.open(m_globalIdFile.c_str(), std::ios_base::out | std::ios_base::trunc);
-        std::string m_globalPartsFile = "global_parts.yaml.P."+toString(m_P)+"."+toString(m_iP);
-        file.open(m_globalPartsFile.c_str(), std::ios_base::out | std::ios_base::trunc);
+        file.open(fileName.c_str(), std::ios_base::out | std::ios_base::trunc);
         if (!file.is_open())
           {
-            throw std::runtime_error(std::string("SerializeNodeRegistry::createGlobalPartsFile couldn't open file ")+m_globalPartsFile);
+            throw std::runtime_error(std::string("SerializeNodeRegistry::writeGlobalPartsFile couldn't open file ")+fileName);
           }
         YAML::Emitter out;
         out << YAML::BeginMap; YAML_CHECK(out);
         PartMap::iterator iter;
-        for (iter = m_partMap->begin(); iter != m_partMap->end(); ++iter)
+        for (iter = partMap.begin(); iter != partMap.end(); ++iter)
           {
             out << YAML::Key << iter->first;  YAML_CHECK(out);
             out << YAML::Value;               YAML_CHECK(out);
@@ -238,13 +287,17 @@ namespace stk {
         if (m_partMap) delete m_partMap;
         m_partMap = new PartMap;
 
+        readGlobalPartsFile(m_globalPartsFile, *m_partMap);
+      }
+
+      // merge parts if already there
+      void readGlobalPartsFile(std::string fileName, PartMap& partMap)
+      {
         std::fstream file;
-        //file.open(m_globalIdFile.c_str(), std::ios_base::out | std::ios_base::trunc);
-        std::string m_globalPartsFile = "global_parts.yaml.P."+toString(m_P)+"."+toString(m_iP);
-        file.open(m_globalPartsFile.c_str(), std::ios_base::in);
+        file.open(fileName.c_str(), std::ios_base::in);
         if (!file.is_open())
           {
-            throw std::runtime_error(std::string("SerializeNodeRegistry::readGlobalPartsFile couldn't open file ")+m_globalPartsFile);
+            throw std::runtime_error(std::string("SerializeNodeRegistry::readGlobalPartsFile couldn't open file ")+fileName);
           }
 
         YAML::Parser parser(file);
@@ -279,7 +332,26 @@ namespace stk {
                         subsets.push_back(subset_name);
                       }
                     PartMapData pmd(rank, topo_name, subsets);
-                    (*m_partMap)[part_name] = pmd;
+                    if (0)
+                      {
+                        partMap[part_name] = pmd;
+                      }
+                    else
+                      {
+                        PartMapData& pmd_existing = partMap[part_name];
+                        pmd_existing.get<0>() = rank;
+                        pmd_existing.get<1>() = topo_name;
+                        PartSubsets& subsets_existing = pmd_existing.get<2>();
+                        //std::cout << "pmd read= " << pmd << std::endl;
+                        //std::cout << "pmd existing= " << pmd_existing << std::endl;
+                        for (unsigned isub=0; isub < subsets.size(); isub++)
+                          {
+                            if (std::find(subsets_existing.begin(), subsets_existing.end(), subsets[isub]) == subsets_existing.end())
+                              {
+                                subsets_existing.push_back(subsets[isub]);
+                              }
+                          }
+                      }
                   }
               }
             else
@@ -310,48 +382,71 @@ namespace stk {
        *  NodeMap read back in gives shared nodes mapped to owner - so, if not in map, not shared
        */
 
+      void writeNodeMap(std::string fileName, int jM, bool is_local)
+      {
+        std::fstream file;
+        file.open(fileName.c_str(), std::ios_base::out | std::ios_base::trunc);
+        if (!file.is_open())
+          {
+            throw std::runtime_error(std::string("SerializeNodeRegistry::writeNodeMap couldn't open file ")+fileName);
+          }
+        YAML::Emitter out;
+        out << YAML::BeginMap; YAML_CHECK(out);
+        NodeMap::iterator iter;
+        for (iter = m_nodeMap->begin(); iter != m_nodeMap->end(); ++iter)
+          {
+            NodeMapValue& procs = iter->second;
+            bool include_entry = true;
+            if (is_local)
+              {
+                if (procs.size() <= 1) throw std::logic_error("SerializeNodeRegistry::writeNodeMap procs.size is <=1");
+                NodeMapValue::iterator find_my_proc = std::find(procs.begin(), procs.end(), jM);
+                include_entry = include_entry && (find_my_proc != procs.end());  // shared by me 
+              }
+            if (include_entry)
+              {
+                if (procs[0] == jM)  // I own it
+                  {
+                  }
+
+                out << YAML::Key << iter->first;     YAML_CHECK(out);
+                out << YAML::Value;                  YAML_CHECK(out);
+                // not strictly necessary, but we'll leave it as a sequence to be consistent with NodeMap type
+                out << YAML::Flow;                YAML_CHECK(out);
+                out << YAML::BeginSeq;            YAML_CHECK(out);
+                if (is_local)
+                  {
+                    // put out only the owner of the node
+                    out << procs[0];                  YAML_CHECK(out);
+                  }
+                else
+                  {
+                    // put out all procs shared by this node
+                    for (unsigned ii = 0; ii < procs.size(); ii++)
+                      {
+                        out << procs[ii];                  YAML_CHECK(out);
+                      }
+                  }
+                out << YAML::EndSeq;              YAML_CHECK(out);
+              }
+          }
+        out << YAML::EndMap; YAML_CHECK(out);
+        file << out.c_str();
+        file.close();
+      }
+
       /**
        * file with all node/proc pairs to determine shared/non-shared nodes and ownership
        */
-      void createGlobalNodesFiles()
+      void createLocalNodeMapFiles(int iW)
       {
-        std::fstream file;
-        for (int jM = 0; jM < m_M; jM++)
-          {
-            //file.open(m_globalIdFile.c_str(), std::ios_base::out | std::ios_base::trunc);
-            std::string m_globalNodesFile = std::string("global_nodes.yaml")+"."+toString(m_M)+"."+toString(jM)+"."+toString(m_P)+"."+toString(m_iP);
-            file.open(m_globalNodesFile.c_str(), std::ios_base::out | std::ios_base::trunc);
-            if (!file.is_open())
-              {
-                throw std::runtime_error(std::string("SerializeNodeRegistry::createGlobalNodesFiles couldn't open file ")+m_globalNodesFile);
-              }
-            YAML::Emitter out;
-            out << YAML::BeginMap; YAML_CHECK(out);
-            NodeMap::iterator iter;
-            for (iter = m_nodeMap->begin(); iter != m_nodeMap->end(); ++iter)
-              {
-                NodeMapValue& procs = iter->second;
-                if (procs.size() <= 1) throw std::logic_error("SerializeNodeRegistry::createGlobalNodesFiles procs.size is <=1");
-                NodeMapValue::iterator find_my_proc = std::find(procs.begin(), procs.end(), jM);
-                if (find_my_proc != procs.end())  // shared by me 
-                  {
-                    if (procs[0] == jM)  // I own it
-                      {
-                      }
+        VERIFY_OP_ON(m_nodeMap, !=, 0, "SerializeNodeRegistry::createLocalNodeMapFiles m_nodeMap is null");
 
-                    out << YAML::Key << iter->first;     YAML_CHECK(out);
-                    out << YAML::Value;                  YAML_CHECK(out);
-                    // not strictly necessary, but we'll leave it as a sequence to be consistent with NodeMap type
-                    out << YAML::Flow;                YAML_CHECK(out);
-                    out << YAML::BeginSeq;            YAML_CHECK(out);
-                    // put out the owner of the node
-                    out << procs[0];                  YAML_CHECK(out);
-                    out << YAML::EndSeq;              YAML_CHECK(out);
-                  }
-              }
-            out << YAML::EndMap; YAML_CHECK(out);
-            file << out.c_str();
-            file.close();
+        for (int jM = m_M_0; jM <= m_M_1; jM++)
+          {
+            std::string localNodeMapFile = std::string("local_nodeMap.yaml")+"."+toString(m_M)+"."+toString(jM)+"."+toString(m_W)+"."+toString(iW);
+
+            writeNodeMap(localNodeMapFile, jM, true);
           }
       }
 
@@ -375,14 +470,13 @@ namespace stk {
       }
 
       // node, proc owner
-      void readGlobalNodesFile(NodeMap& nodeMap)
+      void readNodeMap(std::string fileName, NodeMap& nodeMap, bool is_local)
       {
         std::fstream file;
-        std::string m_globalNodesFile = std::string("global_nodes.yaml")+"."+toString(m_M)+"."+toString(m_iM)+"."+toString(m_P)+"."+toString(m_iP);
-        file.open(m_globalNodesFile.c_str(), std::ios_base::in);
+        file.open(fileName.c_str(), std::ios_base::in);
         if (!file.is_open())
           {
-            throw std::runtime_error(std::string("SerializeNodeRegistry::readGlobalNodesFile couldn't open file ")+m_globalNodesFile);
+            throw std::runtime_error(std::string("SerializeNodeRegistry::readNodeMap couldn't open file ")+fileName);
           }
 
         YAML::Parser parser(file);
@@ -390,7 +484,7 @@ namespace stk {
 
         try {
           while(parser.GetNextDocument(doc)) {
-            std::cout << "tmp srk readGlobalNodesFile= " << m_globalNodesFile 
+            std::cout << "tmp srk readNodeMap= " << fileName
                       << " doc.Type() = " << doc.Type() << " doc.Tag()= " << doc.Tag() << " doc.size= " << doc.size() << std::endl;
             if (doc.Type() == YAML::NodeType::Map)
               {
@@ -402,15 +496,25 @@ namespace stk {
                     NodeMapValue procs;
                     const YAML::Node& val = iter.second();
                     val >> procs;
-                    //std::cout << "readGlobalNodesFile id= " << id << " procs= " << procs << std::endl;
-                    if (procs.size() != 1) 
-                      throw std::logic_error(std::string("SerializeNodeRegistry::readGlobalNodesFile procs.size is != 1, = ")+toString(procs.size()));
-                    nodeMap[id] = procs;
+                    //std::cout << "readNodeMap id= " << id << " procs= " << procs << std::endl;
+                    if (is_local && procs.size() != 1) 
+                      throw std::logic_error(std::string("SerializeNodeRegistry::readNodeMap procs.size is != 1, = ")+toString(procs.size()));
+                    NodeMapValue& procs_existing = nodeMap[id];
+                    for (unsigned ip=0; ip < procs.size(); ip++)
+                      {
+                        if (std::find(procs_existing.begin(), procs_existing.end(), procs[ip]) == procs_existing.end())
+                          {
+                            procs_existing.push_back(procs[ip]);
+                          }
+                      }
+                    std::sort(procs_existing.begin(), procs_existing.end());
+                    //std::cout << "id, procs= " << id << " " << procs_existing << std::endl;
+                    //nodeMap[id] = procs;
                   }
               }
             else
               {
-                throw std::runtime_error("bad global_parts file");
+                throw std::runtime_error("bad nodeMap file");
               }
           }
         }
@@ -421,7 +525,55 @@ namespace stk {
         file.close();
       }
 
-      void passM1_createGlobalParts()
+      void readLocalNodeMapFile(NodeMap& nodeMap)
+      {
+        std::string localNodeMapFile = std::string("local_nodeMap.yaml")+"."+toString(m_M)+"."+toString(m_iM)+"."+toString(m_W)+"."+toString(m_iW);
+        readNodeMap(localNodeMapFile, nodeMap, true);
+      }
+
+      // creates m_partMap if null, reads in global part map from file
+      void getGlobalPartMap()
+      {
+        readGlobalPartsFile();
+      }
+
+      void setGlobalPartMap()
+      {
+        writeGlobalPartsFile();
+      }
+
+      void initializeGlobalPartMap()
+      {
+        m_partMap = new PartMap;
+        setGlobalPartMap();
+      }
+
+      void getGlobalNodeMap()
+      {
+        std::cout << "tmp srk SerializeNodeRegistry::getGlobalNodeMap, m_nodeMap= " << m_nodeMap << std::endl;
+        if (m_nodeMap) delete m_nodeMap;
+        m_nodeMap = new NodeMap;
+        std::string globalNodeMapFile = std::string("global_nodeMap.yaml")+".W."+toString(m_W)+"."+toString(m_iW);
+        readNodeMap(globalNodeMapFile, *m_nodeMap, false);
+      }
+
+      void setGlobalNodeMap()
+      {
+        std::cout << "tmp srk SerializeNodeRegistry::setGlobalNodeMap\n";
+        std::string globalNodeMapFile = std::string("global_nodeMap.yaml")+".W."+toString(m_W)+"."+toString(m_iW);
+        writeNodeMap(globalNodeMapFile, 0, false);
+      }
+
+      void initializeGlobalNodeMap()
+      {
+        std::cout << "tmp srk SerializeNodeRegistry::initializeGlobalNodeMap\n";
+        if (m_nodeMap) delete m_nodeMap;
+        m_nodeMap = new NodeMap;
+        setGlobalNodeMap();
+      }
+
+
+      void passM1_mergeGlobalParts()
       {
         const stk::mesh::PartVector& parts = m_eMesh.getFEM_meta_data()->get_parts();
         for (unsigned ipart=0; ipart < parts.size(); ipart++)
@@ -455,13 +607,13 @@ namespace stk {
             // if not yet in the map, or if already in map, choose to overwrite if this is the one with subset info
             if (inMap == m_partMap->end())
               {
-                if (m_debug) std::cout << "createGlobalParts:: not yet in map, part = " << part.name() << " data= " << pmd << std::endl;
+                if (m_debug) std::cout << "mergeGlobalParts:: not yet in map, part = " << part.name() << " data= " << pmd << std::endl;
                 (*m_partMap)[part.name()] = pmd;
               }
             else
               {
                 PartSubsets& inMapSubsets = inMap->second.get<2>();
-                if (m_debug) std::cout << "createGlobalParts:: in map, before, part = " << part.name() << " data= " << pmd << std::endl;
+                if (m_debug) std::cout << "mergeGlobalParts:: in map, before, part = " << part.name() << " data= " << pmd << std::endl;
                 for (unsigned isub=0; isub < subsets.size(); isub++)
                   {
                     PartSubsets::iterator iv = find(inMapSubsets.begin(), inMapSubsets.end(), subsets[isub]);
@@ -470,16 +622,27 @@ namespace stk {
                         inMapSubsets.push_back(subsets[isub]);
                       }
                   }
-                if (m_debug) std::cout << "createGlobalParts:: in map, after, part = " << part.name() << " data= " << pmd << std::endl;
+                if (m_debug) std::cout << "mergeGlobalParts:: in map, after, part = " << part.name() << " data= " << pmd << std::endl;
               }
           }
-        if (m_iM == m_M - 1)
+        // init/fini
+        if (m_W == 1 && m_iM == m_M_1)
           {
-            createGlobalPartsFile();
+            writeGlobalPartsFile();
           }
       }
 
-      void passM1_createGlobalNodes()
+      // open each global nodes file and add to the global node map
+      void createGlobalNodeMap()
+      {
+        m_nodeMap = new NodeMap;
+        for (m_iM = m_M_0; m_iM <= m_M_1; m_iM++)
+          {
+            readLocalNodeMapFile(*m_nodeMap);
+          }
+      }
+
+      void passM1_createLocalNodeMap()
       {
         const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( m_eMesh.node_rank() );
 
@@ -511,17 +674,155 @@ namespace stk {
                 }
             }
           }
-        if (m_iM == m_M - 1)
+        // init/fini
+        if (m_W == 1 && m_iM == m_M_1)
           {
             cullNodeMap();
-            createGlobalNodesFiles();
+            createLocalNodeMapFiles(m_iW);
+          }
+      }
+
+      static void getStreamingPiece(int M, int W, int iW, int& M_0, int& M_1)
+      {
+        VERIFY_OP_ON(W, >, 0, "AdaptMain::getStreamingPiece #0");
+        VERIFY_OP_ON(M, >, 0, "AdaptMain::getStreamingPiece #1");
+        VERIFY_OP_ON(M % W, ==, 0, "AdaptMain::getStreamingPiece: streaming_size M must be divisible by number of workers W.");
+        int len = M / W;
+        M_0 = iW*len;
+        M_1 = (iW+1)*len - 1;   // we use these as start/end, as in for(int iM = M_0; iM <= M_1; iM++)
+      }
+
+      void pass0_init()
+      {
+        std::cout << "pass0_init\n";
+        // create initial file, write 0's in it  for m_id_max (it should be initialized to 0, but just to be sure, we reset it here)
+        for (unsigned irank=0; irank < m_id_max.size(); irank++)
+          m_id_max[irank]=0u;
+        for (int jW = 0; jW < m_W; jW++)
+          {
+            std::string globalIdFile = "global_id_data.yaml.W."+toString(m_W)+"."+toString(jW);
+            std::cout << "pass0_init globalIdFile= " << globalIdFile << std::endl;
+            setCurrentGlobalMaxId(globalIdFile, m_id_max);
+          }
+      }
+
+      void pass0_final()
+      {
+        std::cout << "pass0_final, m_id_max= " << m_id_max << std::endl;
+        for (unsigned irank=0; irank < m_id_max.size(); irank++)
+          {
+            m_id_max[irank]=0u;
+          }
+        
+        // first, get the max of all
+        IdVector id_max_local_0(m_id_max.size(), 0u);
+        // now get how many each iW used
+        IdVector id_used(m_id_max.size(), 0u);
+        std::vector<IdVector> num_id_used(m_W);
+        for (int jW = 0; jW < m_W; jW++)
+          {
+            std::string globalIdFile = "global_id_data.yaml.W."+toString(m_W)+"."+toString(jW);
+            getCurrentGlobalMaxId(globalIdFile, id_max_local_0, true);
+            getCurrentGlobalMaxId(globalIdFile, id_used, false);
+            num_id_used[jW] = id_used;
+            std::cout << "pass0_final: num_id_used = " << num_id_used[jW] << std::endl;
+          }
+
+        std::vector<IdVector> id_max_new(m_W);
+        id_max_new[0] = id_max_local_0;
+        std::cout << "pass0_final: id_max_new[0] = " << id_max_new[0] << std::endl;
+        for (int jW = 1; jW < m_W; jW++)
+          {
+            id_max_new[jW].resize(m_id_max.size());
+            for (unsigned irank=0; irank < id_max_local_0.size(); irank++)
+              {
+                id_max_new[jW][irank] = id_max_new[jW-1][irank] + (num_id_used[jW-1][irank] + 1);
+              }
+            std::cout << "pass0_final: id_max_new[jW] = " << id_max_new[jW] << std::endl;
+          }
+
+        for (int jW = 0; jW < m_W; jW++)
+          {
+            std::string globalIdFileWrite = "global_id_data.yaml.W."+toString(m_W)+"."+toString(jW);
+            setCurrentGlobalMaxId(globalIdFileWrite, id_max_new[jW]);
+          }
+        //         for (int jW = 0; jW < m_W; jW++)
+        //           {
+        //             setCurrentGlobalMaxId(globalIdFile, m_id_max);
+        //           }
+        //printCurrentGlobalMaxId("pass0");
+      }
+
+      void passM1_init()
+      {
+        // init/fini
+        VERIFY_OP_ON(m_iW, ==, -1, "passM1_init #0");
+        for (m_iW = 0; m_iW < m_W; ++m_iW)
+          {
+            initializeGlobalPartMap();
+            initializeGlobalNodeMap();
+          }
+        m_iW = -1;
+      }
+
+      void passM1_final()
+      {
+        PartMap partMap;
+        for (int jW = 0; jW < m_W; jW++)
+          {
+            std::string globalPartMapFile = std::string("global_parts.yaml")+".W."+toString(m_W)+"."+toString(jW);
+            // does a merge...
+            readGlobalPartsFile(globalPartMapFile, partMap);
+          }
+        for (int jW = 0; jW < m_W; jW++)
+          {
+            std::string globalPartMapFile = std::string("global_parts.yaml")+".W."+toString(m_W)+"."+toString(jW);
+            //std::string globalPartMapFile = std::string("global_parts.yaml")+".W."+toString(m_W)+"."+toString(m_W);
+            writeGlobalPartsFile(globalPartMapFile, partMap);
+          }
+
+        m_nodeMap = new NodeMap;
+        for (int jW = 0; jW < m_W; jW++)
+          {
+            std::string globalNodeMapFile = std::string("global_nodeMap.yaml")+".W."+toString(m_W)+"."+toString(jW);
+            readNodeMap(globalNodeMapFile, *m_nodeMap, false);
+          }
+        cullNodeMap();
+        std::cout << "m_nodeMap->size() = " << m_nodeMap->size() << " m_W= " << m_W << std::endl;
+        for (int jW = 0; jW < m_W; jW++)
+          {
+            SerializeNodeRegistry::getStreamingPiece(m_M, m_W, jW, m_M_0, m_M_1);
+            createLocalNodeMapFiles(jW);
           }
       }
 
       void passM1()
       {
-        passM1_createGlobalParts();
-        passM1_createGlobalNodes();
+        for (int m_iM = m_M_0; m_iM <= m_M_1; m_iM++)
+          {
+            //input_mesh = input_mesh_save+"."+toString(M)+"."+toString(m_iM);
+            std::string input_mesh = Ioss::Utils::decode_filename(m_input_mesh_name, m_iM, m_M);
+            PerceptMesh eMesh(m_spatialDim);
+            eMesh.openReadOnly(input_mesh);
+            NodeRegistry *some_nr = 0;
+            SerializeNodeRegistry snr(eMesh, some_nr, m_input_mesh_name, m_output_mesh_name, m_M, m_iM,  m_W, m_iW, m_M_0, m_M_1);
+
+            // init/fini
+            if (m_W == 1 && m_iM == m_M_0)
+              {
+                snr.initializeGlobalPartMap();
+                snr.initializeGlobalNodeMap();
+              }
+
+            snr.getGlobalPartMap();
+            snr.passM1_mergeGlobalParts();
+            snr.setGlobalPartMap();
+            
+            snr.getGlobalNodeMap();
+            snr.passM1_createLocalNodeMap();
+            snr.setGlobalNodeMap();
+
+          }
       }
 
       /**
@@ -534,7 +835,8 @@ namespace stk {
        */
       void pass0()
       {
-        if (0 == m_iM)
+        // init/fini
+        if (m_W == 1 && m_iM == m_M_0 )
           {
             // create initial file, write 0's in it  for m_id_max (it should be initialized to 0, but just to be sure, we reset it here)
             for (unsigned irank=0; irank < m_id_max.size(); irank++)
@@ -551,7 +853,7 @@ namespace stk {
       void printCurrentGlobalMaxId(std::string msg="")
       {
         //if (m_debug) 
-        std::cout << "M[" << m_iM << ", " << m_M << "] P[" << m_iP << ", " << m_P << "] SerializeNodeRegistry::printCurrentGlobalMaxId: = " << m_id_max << " for: " << msg << std::endl;
+        std::cout << "M[" << m_iM << ", " << m_M << "] W[" << m_iW << ", " << m_W << "] SerializeNodeRegistry::printCurrentGlobalMaxId: = " << m_id_max << " for: " << msg << std::endl;
       }
 
       /**
@@ -569,19 +871,15 @@ namespace stk {
       void pass1()
       {
         NodeRegistry& nodeRegistry = *m_nodeRegistry;
-        //fixNR(nodeRegistry, "pass1 1");
         getCurrentGlobalMaxId();
-        //checkNR(nodeRegistry, "pass1 1");
         resetNewElementIds(m_eMesh, nodeRegistry);
-        //fixNR(nodeRegistry, "pass1 2");
-        //checkNR(nodeRegistry, "pass1 2");
         resetNewNodeIds(nodeRegistry);
         setCurrentGlobalMaxId();
         printCurrentGlobalMaxId("pass1");
 
         m_nodeMap = new NodeMap;
-        readGlobalNodesFile(*m_nodeMap);
-        writeNodeRegistry(nodeRegistry, m_nodeRegistryFile);
+        readLocalNodeMapFile(*m_nodeMap);
+        writeNodeRegistry(nodeRegistry, m_localNodeRegistryFile);
       }
 
       /**
@@ -597,10 +895,10 @@ namespace stk {
        */
       void pass2()
       {
-        if (m_iM != 0) throw std::logic_error("SerializeNodeRegistry::pass2 logic error");
+        if (m_iM != m_M_0) throw std::logic_error("SerializeNodeRegistry::pass2 logic error");
+        if (m_W > 1) return;  // done in pass2_final
 
         getCurrentGlobalMaxId();
-        //setCurrentGlobalMaxId();
         printCurrentGlobalMaxId("pass2 initial");
 
         PerceptMesh eMeshNew(m_spatialDim);
@@ -610,19 +908,61 @@ namespace stk {
         PerceptMesh eMeshLocal(m_spatialDim);
         eMeshLocal.openEmpty();
 
-        m_nodeMap = new NodeMap;
-        for (m_iM = 0; m_iM < m_M; m_iM++)
+        for (m_iM = m_M_0; m_iM <= m_M_1; m_iM++)
           {
             NodeRegistry newLocalNR(eMeshLocal);
-            m_nodeRegistryFile = std::string("streaming-refine-nodeRegistry."+m_filePrefix+".yaml.")+toString(m_M)+"."+toString(m_iM)+"."+toString(m_P)+"."+toString(m_iP);
-            readNodeRegistry(newLocalNR, m_nodeRegistryFile);
+            m_localNodeRegistryFile = std::string("local_nodeRegistry.yaml.")+toString(m_M)+"."+toString(m_iM)+"."+toString(m_W)+"."+toString(m_iW);
+            readNodeRegistry(newLocalNR, m_localNodeRegistryFile);
             addLocalNodeRegistryToGlobal(newLocalNR, globalNR);
-            // open each global nodes file and add to the global node map
-            readGlobalNodesFile(*m_nodeMap);
           }
+
+        createGlobalNodeMap();
+
         writeNodeRegistry(globalNR, m_globalNodeRegistryFile);
         setCurrentGlobalMaxId();
         printCurrentGlobalMaxId("pass2 done");
+      }
+
+      void pass2_final()
+      {
+//         getCurrentGlobalMaxId();
+//         printCurrentGlobalMaxId("pass2 initial");
+
+        PerceptMesh eMeshNew(m_spatialDim);
+        eMeshNew.openEmpty();
+        NodeRegistry globalNR(eMeshNew);
+
+        PerceptMesh eMeshLocal(m_spatialDim);
+        eMeshLocal.openEmpty();
+
+        m_nodeMap = new NodeMap;
+
+        int iWSave = m_iW;
+        for (int jW = 0; jW < m_W; jW++)
+          {
+            SerializeNodeRegistry::getStreamingPiece(m_M, m_W, jW, m_M_0, m_M_1);
+            m_iW = jW;
+            
+            for (m_iM = m_M_0; m_iM <= m_M_1; m_iM++)
+              {
+                NodeRegistry newLocalNR(eMeshLocal);
+                std::string localNodeRegistryFile = std::string("local_nodeRegistry.yaml.")+toString(m_M)+"."+toString(m_iM)+"."+toString(m_W)+"."+toString(jW);
+                readNodeRegistry(newLocalNR, localNodeRegistryFile);
+                addLocalNodeRegistryToGlobal(newLocalNR, globalNR);
+
+                // replacement for: createGlobalNodeMap();
+                readLocalNodeMapFile(*m_nodeMap);
+              }
+          }
+        m_iW = iWSave;
+
+        for (int jW = 0; jW < m_W; jW++)
+          {
+            std::string globalNodeRegistryFile = "global_nodeRegistry.yaml.W."+toString(m_W)+"."+toString(jW);
+            writeNodeRegistry(globalNR, globalNodeRegistryFile);
+          }
+        //setCurrentGlobalMaxId();
+        //printCurrentGlobalMaxId("pass2 done");
       }
 
       /**
@@ -643,9 +983,34 @@ namespace stk {
         NodeRegistry globalNR(eMeshGlobal);
         //NodeRegistry localNR(eMeshLocal);
         NodeRegistry localNR(eMeshGlobal);
-        readNodeRegistry(localNR, m_nodeRegistryFile);
+        readNodeRegistry(localNR, m_localNodeRegistryFile);
         readNodeRegistry(globalNR, m_globalNodeRegistryFile);
         lookupAndSetNewNodeIds(localNR, globalNR);
+      }
+
+      // single call instead of multiple loops on iM from caller - sets global parts, sets new node Ids from global nodeRegistry
+      void pass3_new()
+      {
+        for (int jM = m_M_0; jM <= m_M_1; jM++)
+          {
+            std::string input_mesh_new = m_output_mesh_name+"-pass1";
+            input_mesh_new = Ioss::Utils::decode_filename(input_mesh_new, jM, m_M);
+            std::string output_mesh_new = Ioss::Utils::decode_filename(m_output_mesh_name, jM, m_M);
+            PerceptMesh eMesh(0);
+            eMesh.open(input_mesh_new);
+            m_spatialDim = eMesh.getSpatialDim();
+            eMesh.setStreamingSize(m_M);
+            NodeRegistry *some_nr0 = 0;
+            SerializeNodeRegistry snr0(eMesh, some_nr0, m_input_mesh_name, m_output_mesh_name, m_M, jM,  m_W, m_iW, m_M_0, m_M_1);
+            snr0.getGlobalPartMap();
+            snr0.declareGlobalParts();
+            eMesh.commit();
+                        
+            NodeRegistry *some_nr = 0;
+            SerializeNodeRegistry snr(eMesh, some_nr, m_input_mesh_name, m_output_mesh_name, m_M, jM,  m_W, m_iW, m_M_0, m_M_1);
+            snr.pass(3);
+            eMesh.saveAs(output_mesh_new);
+          }
       }
 
       // for each subDimEntity in local NodeRegistry, find it in the global NodeRegistry and reset ID's to the global values
@@ -782,17 +1147,22 @@ namespace stk {
       //   single piece of the partition - useful for testing and for potentially parallelizing the global outer loop
       void getCurrentGlobalMaxId()
       {
+        getCurrentGlobalMaxId(m_globalIdFile, m_id_max, false);
+      }
+
+      void getCurrentGlobalMaxId(std::string fileName, IdVector& id_max, bool merge=false)
+      {
         // get max node, element id, dump to global file, if global file exists, read from it, use those as start values
         std::fstream file;
-        file.open(m_globalIdFile.c_str(), std::ios_base::in);  
+        file.open(fileName.c_str(), std::ios_base::in);  
         if (!file.is_open())
           {
-            throw std::runtime_error(std::string("SerializeNodeRegistry::getCurrentGlobalMaxId couldn't open file ")+m_globalIdFile);
+            throw std::runtime_error(std::string("SerializeNodeRegistry::getCurrentGlobalMaxId couldn't open file ")+fileName);
           }
             
         YAML::Parser parser(file);
         YAML::Node doc;
-
+        stk::mesh::EntityId id_max_local;
         try {
           while(parser.GetNextDocument(doc)) {
             if (m_debug) std::cout << "\n read doc.Type() = " << doc.Type() << " doc.Tag()= " << doc.Tag() << " doc.size= " << doc.size() << std::endl;
@@ -800,7 +1170,15 @@ namespace stk {
               {
                 for (unsigned irank=0; irank < m_id_max.size(); irank++)
                   {
-                    doc[m_entity_rank_names[irank]] >> m_id_max[irank];
+                    doc[m_entity_rank_names[irank]] >> id_max_local;
+                    if (merge)
+                      {
+                        id_max[irank] = std::max(id_max_local, id_max[irank]);
+                      }
+                    else
+                      {
+                        id_max[irank] = id_max_local;
+                      }
                   }
               }
             else
@@ -818,18 +1196,23 @@ namespace stk {
 
       void setCurrentGlobalMaxId()
       {
+        setCurrentGlobalMaxId(m_globalIdFile, m_id_max);
+      }
+
+      void setCurrentGlobalMaxId(std::string fileName, IdVector& id_max)
+      {
         std::fstream file;
-        file.open(m_globalIdFile.c_str(), std::ios_base::out | std::ios_base::trunc);
+        file.open(fileName.c_str(), std::ios_base::out | std::ios_base::trunc);
         if (!file.is_open())
           {
-            throw std::runtime_error(std::string("SerializeNodeRegistry::setCurrentGlobalMaxId couldn't open file ")+m_globalIdFile);
+            throw std::runtime_error(std::string("SerializeNodeRegistry::setCurrentGlobalMaxId couldn't open file ")+fileName);
           }
 
         YAML::Emitter out;
         out << YAML::BeginMap;
-        for (unsigned irank=0; irank < m_id_max.size(); irank++)
+        for (unsigned irank=0; irank < id_max.size(); irank++)
           {
-            out << YAML::Key << m_entity_rank_names[irank] << YAML::Value << m_id_max[irank];
+            out << YAML::Key << m_entity_rank_names[irank] << YAML::Value << id_max[irank];
           }
         out << YAML::EndMap;
         file << out.c_str();
@@ -1146,7 +1529,7 @@ namespace stk {
 
                   //struct NodeIdsOnSubDimEntityType : public std::vector<NodeIdsOnSubDimEntityTypeQuantum>
                   // { 
-                  //     typedef std::vector<stk::mesh::EntityId> entity_id_vector_type;
+                  //     typedef IdVector entity_id_vector_type;
 
                   stk::mesh::EntityId value_tuple_0_quantum;
                   NodeIdsOnSubDimEntityType value_tuple_0;
@@ -1257,7 +1640,8 @@ namespace stk {
 #else
     class SerializeNodeRegistry {
     public:
-      SerializeNodeRegistry(PerceptMesh& eMesh, NodeRegistry* nodeRegistry, std::string input_mesh_name, std::string output_mesh_name, int M, int iM, int P=1, int iP=0) {}
+      SerializeNodeRegistry(PerceptMesh& eMesh, NodeRegistry* nodeRegistry, std::string input_mesh_name, std::string output_mesh_name, 
+                            int M, int iM, int W=1, int iW=0, int M_0=-1, int M_1=-1) {}
     };
 #endif
 

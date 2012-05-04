@@ -225,9 +225,7 @@ namespace stk {
     LapCountType getAccumulatedLap(stk::diag::Timer& timer, bool option=false);
 
     //========================================================================================================================
-//     inline std::string toString(int v) { return boost::lexical_cast<std::string>(v); }
-//     inline std::string toString(unsigned v) { return boost::lexical_cast<std::string>(v); }
-//     inline std::string toString(double v) { return boost::lexical_cast<std::string>(v); }
+
     template<class T> 
     std::string toString(T t) { return boost::lexical_cast<std::string>(t); }
 
@@ -237,6 +235,8 @@ namespace stk {
 
 #define QUOTE(A) #A
 #define EXPAND_AND_QUOTE(A) QUOTE(A)
+
+#define PERCEPT_OUT(a) " " << QUOTE(a) << " = " << a 
 
 #define TOKENPASTE2(x,y) x ## y
 #define TOKENPASTE(x,y) TOKENPASTE2(x,y)
