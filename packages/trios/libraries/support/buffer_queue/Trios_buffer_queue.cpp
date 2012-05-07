@@ -210,7 +210,7 @@ void trios_buffer_queue_push(
     nthread_lock(&bq->mutex);
     if (bq->queue.size() < bq->max_size) {
         log_debug(bq_debug_level, "returning buffer to queue");
-        bq->queue.push_back(buffer);
+        bq->queue.push_front(buffer);
     } else {
         nnti_rc=destroy_buffer(&buffer);
         if (nnti_rc!=NNTI_OK) {
