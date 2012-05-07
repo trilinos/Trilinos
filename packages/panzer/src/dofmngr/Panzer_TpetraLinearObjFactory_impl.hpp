@@ -258,6 +258,13 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
    }
 }
 
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::MpiComm<int> TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getComm() const
+{
+   return *Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(getTeuchosComm());
+}
+
 // Functions for initalizing a container
 /////////////////////////////////////////////////////////////////////
 
