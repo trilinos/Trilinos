@@ -497,22 +497,26 @@ static int fetch_args(
             FIXRANK);
 
     /* fetch the buffer from the client */
+    trios_start_timer(call_time);
     rc=NNTI_get(
             &header->args_addr,
             0,
             encoded_args_size,
             &encoded_args_hdl,
             0);
+    trios_stop_timer("NNTI_get - long args", call_time);
     if (rc != NNTI_OK) {
         log_fatal(rpc_debug_level,
                 "could not get long args from client");
         goto cleanup;
     }
+    trios_start_timer(call_time);
     rc=NNTI_wait(
             &encoded_args_hdl,
             NNTI_GET_DST,
             -1,
             &status);
+    trios_stop_timer("NNTI_wait - long args", call_time);
     if (rc != NNTI_OK) {
         log_error(rpc_debug_level, "failed waiting for long args: %s",
                 nnti_err_str(rc));
@@ -801,12 +805,16 @@ static int send_result(const NNTI_peer_t   *caller,
             thread_id, request_id, valid_bytes, hdr_size, res_size);
 
     /* TODO: Handle the timeout case.  This probably means the client died */
+    trios_start_timer(call_time);
     rc=NNTI_send(caller, &short_res_hdl, dest_addr);
+    trios_stop_timer("NNTI_send - short result", call_time);
     if (rc != NNTI_OK) {
         log_error(rpc_debug_level, "failed sending short result: %s",
                 nnti_err_str(rc));
     }
+    trios_start_timer(call_time);
     rc=NNTI_wait(&short_res_hdl, NNTI_SEND_SRC, -1, &wait_status);
+    trios_stop_timer("NNTI_wait - short result", call_time);
     if (rc != NNTI_OK) {
         log_error(rpc_debug_level, "failed waiting for short result: %s",
                 nnti_err_str(rc));
@@ -820,11 +828,13 @@ static int send_result(const NNTI_peer_t   *caller,
         log_debug(rpc_debug_level, "thread_id(%d): waiting for client to "
             "fetch result %lu", thread_id, request_id);
 
+        trios_start_timer(call_time);
         rc=NNTI_wait(
                 &long_res_hdl,
                 NNTI_GET_SRC,
                 -1,
                 &wait_status);
+        trios_stop_timer("NNTI_wait - long result", call_time);
         if (rc != NNTI_OK) {
             log_error(rpc_debug_level, "failed waiting for client to fetch long result: %s",
                     nnti_err_str(rc));
@@ -1260,6 +1270,7 @@ extern int nssi_put_data(
     int rc = NSSI_OK;
     NNTI_buffer_t rpc_msg;
     NNTI_status_t status;
+    trios_declare_timer(call_time);
 
     if (len == 0)
         return rc;
@@ -1276,21 +1287,25 @@ extern int nssi_put_data(
         log_error(rpc_debug_level, "failed registering data: %s",
                 nnti_err_str(rc));
     }
+    trios_start_timer(call_time);
     rc=NNTI_put(
             &rpc_msg,
             0,
             len,
             data_addr,
             0);
+    trios_stop_timer("NNTI_put - put to put dest", call_time);
     if (rc != NSSI_OK) {
         log_error(rpc_debug_level, "failed putting data: %s",
                 nnti_err_str(rc));
     }
+    trios_start_timer(call_time);
     rc=NNTI_wait(
             &rpc_msg,
             NNTI_PUT_SRC,
             -1,
             &status);
+    trios_stop_timer("NNTI_wait - put to put dest", call_time);
     if (rc != NNTI_OK) {
         log_error(rpc_debug_level, "failed waiting for data: %s",
                 nnti_err_str(rc));

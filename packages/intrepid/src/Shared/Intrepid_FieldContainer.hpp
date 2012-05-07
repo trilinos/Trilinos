@@ -76,6 +76,10 @@ namespace Intrepid {
   */
   template<class Scalar, int ArrayTypeId=0>
   class FieldContainer {
+  public:
+    //! The template parameter of this class; the type of objects stored.
+    typedef Scalar scalar_type;
+
   protected:
     
     /** \brief Array to store the multi-indexed quantity 

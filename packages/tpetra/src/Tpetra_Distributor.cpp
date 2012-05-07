@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -45,7 +45,7 @@
 
 namespace Tpetra {
 
-  Array<std::string> 
+  Array<std::string>
   distributorSendTypes ()
   {
     Array<std::string> sendTypes;
@@ -56,7 +56,7 @@ namespace Tpetra {
     return sendTypes;
   }
 
-  Distributor::Distributor(const Teuchos::RCP<const Teuchos::Comm<int> > &comm) 
+  Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
     : comm_(comm)
     , sendType_ (DISTRIBUTOR_SEND)
     , barrierBetween_ (true)
@@ -66,10 +66,18 @@ namespace Tpetra {
     , maxSendLength_(0)
     , numReceives_(0)
     , totalReceiveLength_(0)
-  {}
+  {
+    using Teuchos::getFancyOStream;
+    using Teuchos::oblackholestream;
+    using Teuchos::rcp;
+
+    // Always start by making sure the Distributor won't print anything.
+    this->setVerbLevel (Teuchos::VERB_NONE);
+    this->setOStream (getFancyOStream (rcp (new oblackholestream)));
+  }
 
   Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-			    const Teuchos::RCP<Teuchos::ParameterList>& plist)
+                            const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : comm_(comm)
     , sendType_ (DISTRIBUTOR_SEND)
     , barrierBetween_ (true)
@@ -86,10 +94,19 @@ namespace Tpetra {
       "set, you can either call the one-argument constructor, or supply a "
       "nonnull but empty ParameterList.  Both of these options will set default "
       "parameters.");
+    using Teuchos::getFancyOStream;
+    using Teuchos::oblackholestream;
+    using Teuchos::rcp;
+
+    // Always start by making sure the Distributor won't print anything.
+    this->setVerbLevel (Teuchos::VERB_NONE);
+    this->setOStream (getFancyOStream (rcp (new oblackholestream)));
+    // Setting parameters may override these, if there is a
+    // "VerboseObject" sublist.
     this->setParameterList (plist);
   }
 
-  Distributor::Distributor (const Distributor & distributor) 
+  Distributor::Distributor (const Distributor & distributor)
     : comm_(distributor.comm_)
     , sendType_ (distributor.sendType_)
     , barrierBetween_ (distributor.barrierBetween_)
@@ -101,9 +118,15 @@ namespace Tpetra {
     , totalReceiveLength_(distributor.totalReceiveLength_)
     , reverseDistributor_(distributor.reverseDistributor_)
   {
+    using Teuchos::getFancyOStream;
+    using Teuchos::oblackholestream;
     using Teuchos::ParameterList;
     using Teuchos::parameterList;
     using Teuchos::RCP;
+    using Teuchos::rcp;
+
+    this->setVerbLevel (Teuchos::VERB_NONE);
+    this->setOStream (getFancyOStream (rcp (new oblackholestream)));
 
     // Clone the right-hand side's ParameterList, so that this' list
     // is decoupled from the right-hand side's list.  We don't need to
@@ -117,12 +140,12 @@ namespace Tpetra {
     }
   }
 
-  Distributor::~Distributor() 
+  Distributor::~Distributor()
   {
     // We shouldn't have any outstanding communication requests at
     // this point.
     TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
-      "Tpetra::Distributor: Destructor called with " << requests_.size() 
+      "Tpetra::Distributor: Destructor called with " << requests_.size()
       << " outstanding posts (unfulfilled communication requests).  There "
       "should be none at this point.  Please report this bug to the Tpetra "
       "developers.");
@@ -140,36 +163,13 @@ namespace Tpetra {
     using Teuchos::RCP;
     using std::endl;
 
-#ifdef HAVE_TEUCHOS_DEBUG
-    // Prepare for verbose output, if applicable.
-    Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel ();
-    RCP<FancyOStream> out = this->getOStream ();
-    const bool doPrint = out.get () && 
-      includesVerbLevel (verbLevel, Teuchos::VERB_EXTREME, true);
-    const int myRank = comm_->getRank ();
-
-    if (doPrint && myRank == 0) {
-      // Only need one process to print out parameters.
-      *out << "Distributor::setParameterList" << endl;
-    }
-    OSTab tab = this->getOSTab(); // Add one tab level
-#endif // HAVE_TEUCHOS_DEBUG
-
     RCP<const ParameterList> validParams = getValidParameters ();
     plist->validateParametersAndSetDefaults (*validParams);
 
-    const bool barrierBetween = 
+    const bool barrierBetween =
       plist->get<bool> ("Barrier between receives and sends");
-    const EDistributorSendType sendType = 
+    const EDistributorSendType sendType =
       getIntegralValue<EDistributorSendType> (*plist, "Send type");
-
-#ifdef HAVE_TEUCHOS_DEBUG
-    if (doPrint && myRank == 0) {
-      // Only need one process to print out parameters.
-      *out << "sendType=" << DistributorSendTypeEnumToString (sendType) 
-	   << ", barrierBetween=" << barrierBetween << endl;
-    }
-#endif // HAVE_TEUCHOS_DEBUG
 
     // We check this property explicitly, since we haven't yet learned
     // how to make a validator that can cross-check properties.
@@ -181,23 +181,40 @@ namespace Tpetra {
       "corresponding receives have already been posted, and the only way to "
       "guarantee that in general is with a barrier.");
 
-    // Read the sublist for verbosity settings.
-    Teuchos::readVerboseObjectSublist (&*plist, this);
+    if (plist->isSublist ("VerboseObject")) {
+      // Read the "VerboseObject" sublist for (optional) verbosity
+      // settings.  We've set defaults already in Distributor's
+      // constructor, so we don't need this sublist to exist.
+      Teuchos::readVerboseObjectSublist (&*plist, this);
+    }
 
-    // Now that we've validated the input list completely, save the results.
+    // Now that we've validated the input list, save the results.
     sendType_ = sendType;
     barrierBetween_ = barrierBetween;
+
 #ifdef HAVE_TEUCHOS_DEBUG
-    if (doPrint && myRank == 0) {
-      // Only need one process to print out parameters.
-      *out << "sendType_=" << DistributorSendTypeEnumToString (sendType_) 
-	   << ", barrierBetween_=" << barrierBetween_ << endl;
+    // Prepare for verbose output, if applicable.
+    Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel ();
+    RCP<FancyOStream> out = this->getOStream ();
+    const int myRank = comm_->getRank ();
+    // We only want one process to print verbose output here.
+    const bool doPrint = out.get () && (myRank == 0) &&
+      includesVerbLevel (verbLevel, Teuchos::VERB_EXTREME, true);
+
+    if (doPrint) {
+      *out << "Distributor::setParameterList" << endl;
+      OSTab tab = this->getOSTab(); // Add one tab level
+      *out << "sendType_=" << DistributorSendTypeEnumToString (sendType_)
+           << ", barrierBetween_=" << barrierBetween_ << endl;
     }
 #endif // HAVE_TEUCHOS_DEBUG
+
+    // ParameterListAcceptor semantics require pointer identity of the
+    // sublist passed to setParameterList(), so we save the pointer.
     this->setMyParamList (plist);
   }
 
-  Teuchos::RCP<const Teuchos::ParameterList> 
+  Teuchos::RCP<const Teuchos::ParameterList>
   Distributor::getValidParameters () const
   {
     using Teuchos::Array;
@@ -217,11 +234,11 @@ namespace Tpetra {
     sendTypeEnums.push_back (DISTRIBUTOR_SSEND);
 
     RCP<ParameterList> plist = parameterList ("Tpetra::Distributor");
-    plist->set ("Barrier between receives and sends", barrierBetween, 
-		"Whether to execute a barrier between receives and sends in do"
-		"[Reverse]Posts().  Required for correctness when \"Send type\""
-		"=\"Rsend\", otherwise correct but not recommended.");
-    setStringToIntegralParameter<EDistributorSendType> ("Send type", 
+    plist->set ("Barrier between receives and sends", barrierBetween,
+                "Whether to execute a barrier between receives and sends in do"
+                "[Reverse]Posts().  Required for correctness when \"Send type\""
+                "=\"Rsend\", otherwise correct but not recommended.");
+    setStringToIntegralParameter<EDistributorSendType> ("Send type",
       defaultSendType, "When using MPI, the variant of MPI_Send to use in "
       "do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
 
@@ -230,36 +247,36 @@ namespace Tpetra {
   }
 
 
-  size_t Distributor::getTotalReceiveLength() const 
+  size_t Distributor::getTotalReceiveLength() const
   { return totalReceiveLength_; }
 
-  size_t Distributor::getNumReceives() const 
+  size_t Distributor::getNumReceives() const
   { return numReceives_; }
 
-  bool Distributor::hasSelfMessage() const 
+  bool Distributor::hasSelfMessage() const
   { return selfMessage_; }
 
-  size_t Distributor::getNumSends() const 
+  size_t Distributor::getNumSends() const
   { return numSends_; }
 
-  size_t Distributor::getMaxSendLength() const 
+  size_t Distributor::getMaxSendLength() const
   { return maxSendLength_; }
 
-  Teuchos::ArrayView<const int> Distributor::getImagesFrom() const 
+  Teuchos::ArrayView<const int> Distributor::getImagesFrom() const
   { return imagesFrom_; }
 
-  Teuchos::ArrayView<const size_t> Distributor::getLengthsFrom() const 
+  Teuchos::ArrayView<const size_t> Distributor::getLengthsFrom() const
   { return lengthsFrom_; }
 
-  Teuchos::ArrayView<const int> Distributor::getImagesTo() const 
+  Teuchos::ArrayView<const int> Distributor::getImagesTo() const
   { return imagesTo_; }
 
-  Teuchos::ArrayView<const size_t> Distributor::getLengthsTo() const 
+  Teuchos::ArrayView<const size_t> Distributor::getLengthsTo() const
   { return lengthsTo_; }
 
-  const Teuchos::RCP<Distributor> & 
+  const Teuchos::RCP<Distributor> &
   Distributor::getReverse() const {
-    if (reverseDistributor_ == Teuchos::null) { 
+    if (reverseDistributor_ == Teuchos::null) {
       // need to create reverse distributor
       createReverseDistributor();
     }
@@ -283,7 +300,7 @@ namespace Tpetra {
     const int myImageID = comm_->getRank();
     for (size_t i=0; i < numReceives_; ++i) {
       if (imagesFrom_[i] != myImageID) {
-	// Don't count receives for messages sent by myself to myself.
+        // Don't count receives for messages sent by myself to myself.
         if (lengthsFrom_[i] > maxReceiveLength) {
           maxReceiveLength = lengthsFrom_[i];
         }
@@ -306,8 +323,8 @@ namespace Tpetra {
     reverseDistributor_->selfMessage_ = selfMessage_;
     reverseDistributor_->maxSendLength_ = maxReceiveLength;
     reverseDistributor_->totalReceiveLength_ = totalSendLength;
-    // Note: technically, I am my reverse distributor's reverse distributor, but 
-    //       we will not set this up, as it gives us an opportunity to test 
+    // Note: technically, I am my reverse distributor's reverse distributor, but
+    //       we will not set this up, as it gives us an opportunity to test
     //       that reverseDistributor is an inverse operation w.r.t. value semantics of distributors
     // Note: numExports_ was not copied
   }
@@ -326,7 +343,7 @@ namespace Tpetra {
     // Prepare for verbose output, if applicable.
     Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel ();
     RCP<FancyOStream> out = this->getOStream ();
-    const bool doPrint = out.get () && 
+    const bool doPrint = out.get () &&
       includesVerbLevel (verbLevel, Teuchos::VERB_EXTREME, true);
     const int myRank = comm_->getRank ();
 
@@ -341,8 +358,8 @@ namespace Tpetra {
 
 #ifdef HAVE_TEUCHOS_DEBUG
       if (doPrint) {
-	*out << "Proc " << myRank << ": waitAll completed " << requests_.size() 
-	     << " requests" << endl;
+        *out << "Proc " << myRank << ": waitAll completed " << requests_.size()
+             << " requests" << endl;
       }
 
       // Make sure that waitAll() nulled out all the requests.
@@ -350,7 +367,7 @@ namespace Tpetra {
       using Teuchos::CommRequest;
       using Teuchos::RCP;
       for (Array<RCP<CommRequest> >::const_iterator it = requests_.begin();
-           it != requests_.end(); ++it) 
+           it != requests_.end(); ++it)
       {
         TEUCHOS_TEST_FOR_EXCEPTION( ! is_null (*it), std::runtime_error,
           Teuchos::typeName(*this) << "::doWaits(): Communication requests "
@@ -365,7 +382,7 @@ namespace Tpetra {
   }
 
 
-  void Distributor::doReverseWaits() 
+  void Distributor::doReverseWaits()
   {
     // call doWaits() on the reverse Distributor, if it exists
     if (! reverseDistributor_.is_null()) {
@@ -398,55 +415,55 @@ namespace Tpetra {
 
     if (vl == VERB_NONE) {
       return;
-    } else { 
+    } else {
       if (myImageID == 0) {
-	// VERB_LOW and higher prints description() (on Proc 0 only).
-	out << this->description() << endl; 
+        // VERB_LOW and higher prints description() (on Proc 0 only).
+        out << this->description() << endl;
       }
       if (vl == VERB_LOW) {
-	return;
+        return;
       } else {
-	// vl > VERB_LOW lets each image print its data.  We assume
-	// that all images can print to the given output stream, and
-	// execute barriers to make it more likely that the output
-	// will be in the right order.
-	for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
-	  if (myImageID == imageCtr) {
-	    out << "[Node " << myImageID << " of " << numImages << "]" << endl;
-	    out << " selfMessage: " << hasSelfMessage() << endl;
-	    out << " numSends: " << getNumSends() << endl;
-	    if (vl == VERB_HIGH || vl == VERB_EXTREME) {
-	      out << " imagesTo: " << toString(imagesTo_) << endl;
-	      out << " lengthsTo: " << toString(lengthsTo_) << endl;
-	      out << " maxSendLength: " << getMaxSendLength() << endl;
-	    }
-	    if (vl == VERB_EXTREME) {
-	      out << " startsTo: " << toString(startsTo_) << endl;
-	      out << " indicesTo: " << toString(indicesTo_) << endl;
-	    }
-	    if (vl == VERB_HIGH || vl == VERB_EXTREME) {
-	      out << " numReceives: " << getNumReceives() << endl;
-	      out << " totalReceiveLength: " << getTotalReceiveLength() << endl;
-	      out << " lengthsFrom: " << toString(lengthsFrom_) << endl;
-	      out << " startsFrom: " << toString(startsFrom_) << endl;
-	      out << " imagesFrom: " << toString(imagesFrom_) << endl;
-	    }
-	    // Last output is a flush; it leaves a space and also 
-	    // helps synchronize output.
-	    out << std::flush;
-	  } // if it's my image's turn to print
-	  // Execute barriers to give output time to synchronize.
-	  // One barrier generally isn't enough.
-	  comm_->barrier();
-	  comm_->barrier();
-	  comm_->barrier();
-	} // for each image
+        // vl > VERB_LOW lets each image print its data.  We assume
+        // that all images can print to the given output stream, and
+        // execute barriers to make it more likely that the output
+        // will be in the right order.
+        for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
+          if (myImageID == imageCtr) {
+            out << "[Node " << myImageID << " of " << numImages << "]" << endl;
+            out << " selfMessage: " << hasSelfMessage() << endl;
+            out << " numSends: " << getNumSends() << endl;
+            if (vl == VERB_HIGH || vl == VERB_EXTREME) {
+              out << " imagesTo: " << toString(imagesTo_) << endl;
+              out << " lengthsTo: " << toString(lengthsTo_) << endl;
+              out << " maxSendLength: " << getMaxSendLength() << endl;
+            }
+            if (vl == VERB_EXTREME) {
+              out << " startsTo: " << toString(startsTo_) << endl;
+              out << " indicesTo: " << toString(indicesTo_) << endl;
+            }
+            if (vl == VERB_HIGH || vl == VERB_EXTREME) {
+              out << " numReceives: " << getNumReceives() << endl;
+              out << " totalReceiveLength: " << getTotalReceiveLength() << endl;
+              out << " lengthsFrom: " << toString(lengthsFrom_) << endl;
+              out << " startsFrom: " << toString(startsFrom_) << endl;
+              out << " imagesFrom: " << toString(imagesFrom_) << endl;
+            }
+            // Last output is a flush; it leaves a space and also
+            // helps synchronize output.
+            out << std::flush;
+          } // if it's my image's turn to print
+          // Execute barriers to give output time to synchronize.
+          // One barrier generally isn't enough.
+          comm_->barrier();
+          comm_->barrier();
+          comm_->barrier();
+        } // for each image
       }
     }
   }
 
-  void 
-  Distributor::computeReceives()
+  void
+  Distributor::computeReceives ()
   {
     using Teuchos::Array;
     using Teuchos::CommStatus;
@@ -469,14 +486,14 @@ namespace Tpetra {
     // listed in imagesTo_ at most once.
     {
       Array<size_t> toNodesFromMe (numProcs,0);
-#ifdef HAVE_TEUCHOS_DEBUG 
+#ifdef HAVE_TEUCHOS_DEBUG
       bool counting_error = false;
 #endif // HAVE_TEUCHOS_DEBUG
-      for (size_t i=0; i < (numSends_ + (selfMessage_ ? 1 : 0)); ++i) {
-#ifdef HAVE_TEUCHOS_DEBUG 
-	if (toNodesFromMe[imagesTo_[i]] != 0) {
-	  counting_error = true;
-	}
+      for (size_t i = 0; i < (numSends_ + (selfMessage_ ? 1 : 0)); ++i) {
+#ifdef HAVE_TEUCHOS_DEBUG
+        if (toNodesFromMe[imagesTo_[i]] != 0) {
+          counting_error = true;
+        }
 #endif // HAVE_TEUCHOS_DEBUG
         toNodesFromMe[imagesTo_[i]] = 1;
       }
@@ -484,7 +501,7 @@ namespace Tpetra {
       SHARED_TEST_FOR_EXCEPTION(counting_error, std::logic_error,
         "Tpetra::Distributor::computeReceives: There was an error on at least "
         "one process in counting the number of messages send by that process to "
-        "the other processs.  Please report this bug to the Tpetra developers.", 
+        "the other processs.  Please report this bug to the Tpetra developers.",
         *comm_);
 #endif // HAVE_TEUCHOS_DEBUG
 
@@ -505,20 +522,20 @@ namespace Tpetra {
       // can't be more than twice as fast as the all-reduce, even if
       // the scatter is free).
       Array<int> counts (numProcs, 1);
-      reduceAllAndScatter (*comm_, REDUCE_SUM, numProcs, &toNodesFromMe[0], 
-			   &counts[0], &numReceives_);
+      reduceAllAndScatter (*comm_, REDUCE_SUM, numProcs, &toNodesFromMe[0],
+                           &counts[0], &numReceives_);
     }
 
     // Now we know numReceives_, which is this process' number of
     // receives.  Allocate the lengthsFrom_ and imagesFrom_ arrays
     // with this number of entries.
-    lengthsFrom_.assign(numReceives_, 0);
-    imagesFrom_.assign(numReceives_, 0);
+    lengthsFrom_.assign (numReceives_, 0);
+    imagesFrom_.assign (numReceives_, 0);
 
     //
     // Ask (via nonblocking receive) each process from which we are
     // receiving how many packets we should expect from it in the
-    // communication pattern.  
+    // communication pattern.
     //
 
     // At this point, numReceives_ includes any self message that
@@ -537,7 +554,7 @@ namespace Tpetra {
     // the loop below.
     Array<RCP<CommRequest> > requests (actualNumReceives);
     Array<RCP<size_t> > lengthsFromBuffers (actualNumReceives);
-    Array<RCP<CommStatus<int> > > statuses (actualNumReceives); 
+    Array<RCP<CommStatus<int> > > statuses (actualNumReceives);
 
     // Teuchos::Comm treats a negative process ID as MPI_ANY_SOURCE
     // (receive data from any process).
@@ -557,8 +574,8 @@ namespace Tpetra {
     //
     // We assume that numSends_ and selfMessage_ have already been
     // set.  The value of numSends_ (my process' number of sends) does
-    // not include any message that it might send to itself.  
-    for (size_t i=0; i < numSends_ + (selfMessage_ ? 1 : 0); ++i) {
+    // not include any message that it might send to itself.
+    for (size_t i = 0; i < numSends_ + (selfMessage_ ? 1 : 0); ++i) {
       if (imagesTo_[i] != myRank ) {
         // Send a message to imagesTo_[i], telling that process that
         // this communication pattern will send that process
@@ -566,12 +583,12 @@ namespace Tpetra {
         send (*comm_, lengthsTo_[i], imagesTo_[i]);
       }
       else {
-	// We don't need a send in the self-message case.  If this
-	// process will send a message to itself in the communication
-	// pattern, then the last element of lengthsFrom_ and
-	// imagesFrom_ corresponds to the self-message.  Of course
-	// this process knows how long the message is, and the process
-	// ID is its own process ID.
+        // We don't need a send in the self-message case.  If this
+        // process will send a message to itself in the communication
+        // pattern, then the last element of lengthsFrom_ and
+        // imagesFrom_ corresponds to the self-message.  Of course
+        // this process knows how long the message is, and the process
+        // ID is its own process ID.
         lengthsFrom_[numReceives_-1] = lengthsTo_[i];
         imagesFrom_[numReceives_-1] = myRank;
       }
@@ -583,10 +600,10 @@ namespace Tpetra {
     // request buffers into lengthsFrom_, and set imagesFrom_ from the
     // status.
     //
-    waitAll (*comm_, requests(), statuses());
+    waitAll (*comm_, requests (), statuses ());
     for (size_t i = 0; i < actualNumReceives; ++i) {
       lengthsFrom_[i] = *lengthsFromBuffers[i];
-      imagesFrom_[i] = statuses[i]->getSourceRank(); 
+      imagesFrom_[i] = statuses[i]->getSourceRank ();
     }
 
 #ifdef HAVE_TEUCHOS_DEBUG
@@ -600,28 +617,30 @@ namespace Tpetra {
 
     // Compute indicesFrom_
     totalReceiveLength_ = std::accumulate (lengthsFrom_.begin(), lengthsFrom_.end(), 0);
-    indicesFrom_.clear();
-    indicesFrom_.reserve(totalReceiveLength_);
-    for (size_t i=0; i < totalReceiveLength_; ++i) {
+    indicesFrom_.clear ();
+    indicesFrom_.reserve (totalReceiveLength_);
+    for (size_t i = 0; i < totalReceiveLength_; ++i) {
       indicesFrom_.push_back(i);
     }
 
-    startsFrom_.clear();
-    startsFrom_.reserve(numReceives_);
-    for (size_t i=0, j = 0; i < numReceives_; ++i) {
+    startsFrom_.clear ();
+    startsFrom_.reserve (numReceives_);
+    for (size_t i = 0, j = 0; i < numReceives_; ++i) {
       startsFrom_.push_back(j);
       j += lengthsFrom_[i];
     }
 
-    if (selfMessage_) --numReceives_;
+    if (selfMessage_) {
+      --numReceives_;
+    }
 
 #ifdef HAVE_TEUCHOS_DEBUG
     comm_->barrier();
 #endif // HAVE_TEUCHOS_DEBUG
   }
 
-  size_t 
-  Distributor::createFromSends (const Teuchos::ArrayView<const int> &exportNodeIDs) 
+  size_t
+  Distributor::createFromSends (const Teuchos::ArrayView<const int> &exportNodeIDs)
   {
     using Teuchos::outArg;
     numExports_ = exportNodeIDs.size();
@@ -643,12 +662,12 @@ namespace Tpetra {
     // pattern and we can't do anything about it.  However, if they do
     // not provide an efficient pattern, we will warn them if one of
     // the following compile-time options has been set:
-    //   * HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS 
-    //   * HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS 
+    //   * HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
+    //   * HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
     //
     // If the data is contiguous, then we can post the sends in situ
     // (i.e., without needing to copy them into a send buffer).
-    // 
+    //
     // Determine contiguity. There are a number of ways to do this:
     // * If the export IDs are sorted, then all exports to a
     //   particular node must be contiguous. This is what Epetra does.
@@ -659,7 +678,7 @@ namespace Tpetra {
     // Both of these tests require O(n), where n is the number of
     // exports. However, the latter will positively identify a greater
     // portion of contiguous patterns. We will use the latter method.
-    // 
+    //
     // Check to see if values are grouped by images without gaps
     // If so, indices_to -> 0.
 
@@ -684,7 +703,7 @@ namespace Tpetra {
         // if after incrementing it is greater than one, check that the
         // previous export went to this node
         // this is a safe comparison, because starts[exportID] > 1
-        // implies that i > 1. 
+        // implies that i > 1.
         // null entries break continuity.
         // e.g.,  [ 0, 0, 0, 1, -99, 1, 2, 2, 2] is not contiguous
         if (needSendBuff==0 && starts[exportID] > 1 && exportID != exportNodeIDs[i-1]) {
@@ -793,7 +812,7 @@ namespace Tpetra {
       }
       for (Teuchos::Array<size_t>::iterator i=starts.begin()+1,
                                             im1=starts.begin();
-           i != starts.end(); ++i) 
+           i != starts.end(); ++i)
       {
         if (*i != 0) ++numSends_;
         *i += *im1;
@@ -829,15 +848,15 @@ namespace Tpetra {
       // associated with the export
       // data for export i located at sendBuffer[indicesTo[i]]
       //
-      // starts[i] once again contains the number of exports to 
+      // starts[i] once again contains the number of exports to
       // nodes 0 through i
       for (int node = numImages-1; node != 0; --node) {
         starts[node] = starts[node-1];
       }
-      starts.front() = 0;       
+      starts.front() = 0;
       starts[numImages] = numActive;
-      // 
-      // starts[node] once again contains the number of exports to 
+      //
+      // starts[node] once again contains the number of exports to
       // nodes 0 through node-1
       // i.e., the start of my data in the sendBuffer
 
@@ -847,7 +866,7 @@ namespace Tpetra {
       lengthsTo_.resize(numSends_);
 
       // for each group of sends/exports, record the destination node,
-      // the length, and the offset for this send into the 
+      // the length, and the offset for this send into the
       // send buffer (startsTo_)
       maxSendLength_ = 0;
       size_t snd = 0;

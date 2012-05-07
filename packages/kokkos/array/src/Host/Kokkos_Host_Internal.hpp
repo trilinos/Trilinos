@@ -47,24 +47,79 @@
 #include <Kokkos_Host.hpp>
 #include <Host/Kokkos_Host_Parallel.hpp>
 
+//----------------------------------------------------------------------------
+
 namespace Kokkos {
 namespace Impl {
 
-unsigned host_internal_page_size();
-unsigned host_internal_node_count();
-unsigned host_internal_core_per_node();
-bool     host_internal_bind_this_thread_to_node( unsigned node_rank );
+class HostWorkerBlock : public HostThreadWorker<void> {
+public:
+  void execute_on_thread( HostThread & ) const ;
 
-/** \brief  Spawn a thread and call the HostThread::driver()
- *          function on that thread.
+  HostWorkerBlock()  {}
+  ~HostWorkerBlock() {}
+};
+
+//----------------------------------------------------------------------------
+
+/**
+ *  Model:
+ *  The Host process is running within a NUMA multiprocessor environment.
+ *  The hardware locality (hwloc) library defines a 'node' as a collection
+ *  of processing units associated with a NUMA region.
+ *  If the Host process is pinned to a particular NUMA node we assume
+ *  that the threads of the Host process are also restricted to that node.
  */
-bool host_internal_thread_spawn( HostThread * );
+class HostInternal {
+protected:
 
-void host_internal_thread_lock();
-void host_internal_thread_unlock();
+  enum { THREAD_COUNT_MAX = 1023 };
 
-}
-}
+  typedef Host::size_type size_type ;
+
+  HostWorkerBlock  m_worker_block ;
+  size_type        m_node_rank ;       // If pinned; otherwise 'maximum'
+  size_type        m_node_count ;      // Number of nodes
+  size_type        m_node_core_count ; // Assuming all nodes are equivalent
+  size_type        m_page_size ;       // 
+  size_type        m_thread_count ;    // 
+  HostThread       m_thread[ THREAD_COUNT_MAX + 1 ];
+
+  const HostThreadWorker<void> * volatile m_worker ;
+
+  virtual ~HostInternal();
+  HostInternal();
+
+  bool spawn_threads( const size_type use_node_count ,
+                      const size_type use_node_thread_count );
+
+private:
+
+  bool spawn( HostThread * thread );
+
+public:
+
+  void verify_inactive( const char * const method ) const ;
+
+  void initialize( const size_type use_node_count ,
+                   const size_type use_node_thread_count );
+
+  void finalize();
+
+  virtual bool bind_to_node( const HostThread & ) const ;
+
+  inline void execute( const HostThreadWorker<void> & worker );
+
+  inline void execute( HostThread & thread ) const
+    { m_worker->execute_on_thread( thread ); }
+
+  static HostInternal & singleton();
+
+  friend class Kokkos::Host ;
+};
+
+} /* namespace Impl */
+} /* namespace Kokkos */
 
 #endif /* #ifndef KOKKOS_HOST_INTERNAL_HPP */
 

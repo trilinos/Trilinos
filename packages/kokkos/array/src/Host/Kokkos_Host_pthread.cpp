@@ -76,7 +76,7 @@ pthread_mutex_t host_internal_pthread_mutex = PTHREAD_MUTEX_INITIALIZER ;
 //----------------------------------------------------------------------------
 // Spawn this thread
 
-bool host_internal_thread_spawn( HostThread * thread )
+bool HostInternal::spawn( HostThread * thread )
 {
   bool result = false ;
 
@@ -98,13 +98,14 @@ bool host_internal_thread_spawn( HostThread * thread )
 }
 
 //----------------------------------------------------------------------------
-// Mutually exclusive locking and unlocking
 
-void host_internal_thread_lock()
-{ pthread_mutex_lock( & host_internal_pthread_mutex ); }
+void HostWorkerBlock::execute_on_thread( HostThread & this_thread ) const
+{
+  pthread_mutex_lock(   & host_internal_pthread_mutex );
+  pthread_mutex_unlock( & host_internal_pthread_mutex );
 
-void host_internal_thread_unlock()
-{ pthread_mutex_unlock( & host_internal_pthread_mutex ); }
+  this_thread.barrier();
+}
 
 //----------------------------------------------------------------------------
 // Performance critical function: thread waits while value == *state
@@ -117,8 +118,54 @@ void HostThread::wait( const HostThread::State flag )
   }
 }
 
+} // namespace Impl
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-} // namespace Impl
+namespace Kokkos {
+
+bool Host::sleep()
+{
+  Impl::HostInternal & h = Impl::HostInternal::singleton();
+
+  const bool is_ready   = NULL == h.m_worker ;
+        bool is_blocked = & h.m_worker_block == h.m_worker ;
+
+  if ( is_ready ) {
+    pthread_mutex_lock( & Impl::host_internal_pthread_mutex );
+
+    h.m_worker = & h.m_worker_block ;
+
+    Impl::HostThread::activate( h.m_thread + 1 ,
+                                h.m_thread + h.m_thread_count );
+
+    is_blocked = true ;
+  }
+
+  return is_blocked ;
+}
+
+bool Host::wake()
+{
+  Impl::HostInternal & h = Impl::HostInternal::singleton();
+
+  const bool is_blocked = & h.m_worker_block != h.m_worker ;
+        bool is_ready   = NULL == h.m_worker ;
+
+  if ( is_blocked ) {
+    pthread_mutex_unlock( & Impl::host_internal_pthread_mutex );
+
+    h.m_thread->barrier();
+
+    h.m_worker = NULL ;
+
+    is_ready = true ;
+  }
+
+  return is_ready ;
+}
+
 } // namespace Kokkos
 

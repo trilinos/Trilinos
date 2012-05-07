@@ -69,8 +69,8 @@ namespace Tpetra {
   /// The \c GlobalOrdinal type, if omitted, defaults to the \c
   /// LocalOrdinal type.
   template <class LocalOrdinal, 
-	    class GlobalOrdinal = LocalOrdinal, 
-	    class Node = Kokkos::DefaultNode::DefaultNodeType>
+            class GlobalOrdinal = LocalOrdinal, 
+            class Node = Kokkos::DefaultNode::DefaultNodeType>
   class Map : public Teuchos::Describable {
   public:
     //! @name Constructors and destructor
@@ -83,10 +83,10 @@ namespace Tpetra {
      *   evenly distributed across the nodes as possible.
      */
     Map (global_size_t numGlobalElements, 
-	 GlobalOrdinal indexBase, 
-	 const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
-	 LocalGlobal lg=GloballyDistributed, 
-	 const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
+         GlobalOrdinal indexBase, 
+         const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
+         LocalGlobal lg=GloballyDistributed, 
+         const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
 
     /** \brief Map constructor with a user-defined contiguous distribution.
      * 
@@ -103,10 +103,10 @@ namespace Tpetra {
      *  fails, a std::invalid_argument exception will be thrown.
      */
     Map (global_size_t numGlobalElements, 
-	 size_t numLocalElements, 
-	 GlobalOrdinal indexBase, 
-	 const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
-	 const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
+         size_t numLocalElements, 
+         GlobalOrdinal indexBase, 
+         const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
+         const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
 
     /** \brief Map constructor with user-defined non-contiguous (arbitrary) distribution.
      *  
@@ -120,10 +120,10 @@ namespace Tpetra {
      *  fails, a std::invalid_argument exception will be thrown.
      */
     Map (global_size_t numGlobalElements, 
-	 const Teuchos::ArrayView<const GlobalOrdinal> &elementList, 
-	 GlobalOrdinal indexBase, 
-	 const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
-	 const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
+         const Teuchos::ArrayView<const GlobalOrdinal> &elementList, 
+         GlobalOrdinal indexBase, 
+         const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
+         const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
 
     //! Destructor. 
     ~Map();
@@ -198,8 +198,8 @@ namespace Tpetra {
     ///   \c Export, \c Import, \c CrsGraph, and \c CrsMatrix.
     LookupStatus 
     getRemoteIndexList (const Teuchos::ArrayView<const GlobalOrdinal>& GIDList, 
-			const Teuchos::ArrayView<                int>& nodeIDList, 
-			const Teuchos::ArrayView<       LocalOrdinal>& LIDList) const;
+                        const Teuchos::ArrayView<                int>& nodeIDList, 
+                        const Teuchos::ArrayView<       LocalOrdinal>& LIDList) const;
 
     /// \brief Return the node IDs for a given list of global IDs.
     ///
@@ -215,7 +215,7 @@ namespace Tpetra {
     ///   \c Export, \c Import, \c CrsGraph, and \c CrsMatrix.
     LookupStatus 
     getRemoteIndexList (const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
-			const Teuchos::ArrayView<                int> & nodeIDList) const;
+                        const Teuchos::ArrayView<                int> & nodeIDList) const;
 
     //! Return a view of the global indices owned by this node.
     Teuchos::ArrayView<const GlobalOrdinal> getNodeElementList() const;
@@ -353,7 +353,7 @@ namespace Tpetra {
     //! Print this object with the given verbosity level to the given \c FancyOStream.
     void 
     describe (Teuchos::FancyOStream &out, 
-	      const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+              const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
     //@}
 
@@ -512,7 +512,7 @@ namespace Tpetra {
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createUniformContigMapWithNode(global_size_t numElements,
                                  const Teuchos::RCP< const Teuchos::Comm< int > > &comm, 
-				 const Teuchos::RCP< Node > &node);
+                                 const Teuchos::RCP< Node > &node);
 
   /** \brief Non-member constructor for a (potentially) non-uniformly distributed, contiguous Map with the default Kokkos Node.
 
@@ -525,8 +525,8 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal>
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
   createContigMap (global_size_t numElements, 
-		   size_t localNumElements, 
-		   const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
+                   size_t localNumElements, 
+                   const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
 
   /** \brief Non-member constructor for a (potentially) non-uniformly distributed, contiguous Map with a user-specified Kokkos Node.
 
@@ -537,9 +537,9 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createContigMapWithNode (global_size_t numElements, 
-			   size_t localNumElements, 
-			   const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
-			   const Teuchos::RCP<Node> &node);
+                           size_t localNumElements, 
+                           const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
+                           const Teuchos::RCP<Node> &node);
 
   /** \brief Non-member constructor for a non-contiguous Map with the default Kokkos Node.
 
@@ -552,7 +552,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal>
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
   createNonContigMap (const ArrayView<const GlobalOrdinal> &elementList,
-		      const RCP<const Teuchos::Comm<int> > &comm);
+                      const RCP<const Teuchos::Comm<int> > &comm);
 
   /** \brief Non-member constructor for a non-contiguous Map with a user-specified Kokkos Node.
 
@@ -563,8 +563,8 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createNonContigMapWithNode (const ArrayView<const GlobalOrdinal> &elementList,
-			      const RCP<const Teuchos::Comm<int> > &comm, 
-			      const RCP<Node> &node);
+                              const RCP<const Teuchos::Comm<int> > &comm, 
+                              const RCP<Node> &node);
 
   /** \brief Non-member constructor for a contiguous Map with user-defined weights and a user-specified Kokkos Node.
 
@@ -575,9 +575,9 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createWeightedContigMapWithNode (int thisNodeWeight, 
-				   global_size_t numElements, 
-				   const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
-				   const Teuchos::RCP<Node> &node);
+                                   global_size_t numElements, 
+                                   const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
+                                   const Teuchos::RCP<Node> &node);
 
 } // Tpetra namespace
 
@@ -585,14 +585,14 @@ namespace Tpetra {
     \relatesalso Tpetra::Map */
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 bool operator== (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, 
-		 const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2)
+                 const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2)
 { return map1.isSameAs(map2); }
 
 /** \brief Returns true if \c map is not identical to this map. Implemented in Tpetra::Map::isSameAs().
     \relatesalso Tpetra::Map */
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 bool operator!= (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, 
-		 const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2)
+                 const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2)
 { return !map1.isSameAs(map2); }
 
 #endif // TPETRA_MAP_DECL_HPP

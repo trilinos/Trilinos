@@ -50,6 +50,8 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #ifndef _TRIOS_TIMER_H_
 #define _TRIOS_TIMER_H_
 
+#include "Trios_logger.h"
+
 #include <stdio.h>
 
 #ifdef __cplusplus
@@ -86,6 +88,8 @@ extern "C" {
 
 #if defined(__STDC__) || defined(__cplusplus)
 
+extern log_level timer_debug_level;
+
     extern double trios_get_time();
     extern long trios_get_time_ns();
     extern long trios_get_time_ms();
@@ -100,11 +104,11 @@ extern "C" {
 #define trios_declare_timer(timer_var) double timer_var;
 
 #define trios_start_timer(timer) { timer = trios_get_time(); }
-#define trios_stop_timer(name, timer)  { timer = trios_get_time() - timer; log_debug(LOG_ALL, "%s Time = %10.8f", name, timer); }
+#define trios_stop_timer(name, timer)  { timer = trios_get_time() - timer; log_debug(timer_debug_level, "%s Time = %10.8f", name, timer); }
 
 #define trios_start_delay_timer(timer) { timer = trios_get_time(); }
 #define trios_stop_delay_timer(timer)  { timer = trios_get_time() - timer; }
-#define trios_log_delay_timer(name, timer)  { log_debug(LOG_ALL, "%s Time = %10.8f", name, timer); }
+#define trios_log_delay_timer(name, timer)  { log_debug(timer_debug_level, "%s Time = %10.8f", name, timer); }
 
 #else
 

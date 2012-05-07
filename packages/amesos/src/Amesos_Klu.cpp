@@ -798,6 +798,16 @@ int Amesos_Klu::Solve()
 
     OverheadTime_ = AddTime("Total Amesos overhead time", OverheadTime_, 1);
   }
+  else
+  {
+     SerialB_ = Teuchos::rcp(Problem_->GetRHS(),false) ;
+     SerialX_ = Teuchos::rcp(Problem_->GetLHS(),false) ;
+     NumVectors_ = SerialX_->NumVectors();
+    if (MyPID_ == 0) {
+      AMESOS_CHK_ERR(SerialB_->ExtractView(&SerialBvalues_,&SerialXlda_ ));
+      AMESOS_CHK_ERR(SerialX_->ExtractView(&SerialXBvalues_,&SerialXlda_ ));
+    }
+  }
 
   if ( MyPID_ == 0) {
     if ( NumVectors_ == 1 ) {

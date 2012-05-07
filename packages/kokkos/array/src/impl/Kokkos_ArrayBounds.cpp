@@ -195,6 +195,26 @@ void crsarray_require_equal_dimension(
   }
 }
 
+void array_require_equal_dimension( size_t x , size_t y )
+{
+  if ( x != y ) {
+    std::ostringstream msg ;
+    msg << "Kokkos::Impl::array_require_equal_dimension FAILED :" ;
+    msg << " " << x << " != " << y ;
+    throw std::runtime_error( msg.str() );
+  }
+}
+
+void prefixsum_require_equal_dimension( size_t x , size_t y )
+{
+  if ( x != y ) {
+    std::ostringstream msg ;
+    msg << "Kokkos::Impl::prefixsum_require_equal_dimension FAILED :" ;
+    msg << " " << x << " != " << y ;
+    throw std::runtime_error( msg.str() );
+  }
+}
+
 //----------------------------------------------------------------------------
 
 } // namespace Impl

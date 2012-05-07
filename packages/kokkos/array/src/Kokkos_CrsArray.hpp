@@ -45,122 +45,91 @@
 #define KOKKOS_CRSARRAY_HPP
 
 #include <string>
-#include <impl/Kokkos_forward.hpp>
-#include <impl/Kokkos_ArrayTraits.hpp>
-#include <impl/Kokkos_ArrayBounds.hpp>
-#include <impl/Kokkos_StaticAssert.hpp>
+
+#include <Kokkos_PrefixSum.hpp>
+#include <Kokkos_Array.hpp>
 
 namespace Kokkos {
 
 //----------------------------------------------------------------------------
 /** \brief  Compressed row storage array.
  *
- *  Define a range of entries for each row:
- *    row_entry_begin(row) <= entry < row_entry_end(row)
- *    row_entry_begin(row) == row_entry_end(row-1)
+ *  A row has a range of entries:
  *
- *  Access data member via 'operator()'
+ *    row_map[i0] <= entry < row_map[i0+1]
+ *    0 <= i1 < row_map[i0+1] - row_map[i0]
+ *
+ *  entries( entry ,            i2 , i3 , ... );
+ *  entries( row_map[i0] + i1 , i2 , i3 , ... );
  */
+
 template< class ArrayType , class DeviceType ,
           typename SizeType = typename DeviceType::size_type >
 class CrsArray {
 public:
-  typedef DeviceType  device_type ;
-  typedef SizeType    size_type ;
-  typedef ArrayType   array_type ;
+  typedef DeviceType                            device_type ;
+  typedef PrefixSum< SizeType ,  device_type >  row_map_type ;
+  typedef Array<     ArrayType , device_type >  entries_type ;
 
-  typedef typename Impl::remove_all_extents<array_type>::type  value_type ;
+  row_map_type row_map ;
+  entries_type entries ;
 
-  typedef CrsArray< array_type , typename HostMapped< device_type >::type , size_type >
-          HostMirror ;
+  typedef CrsArray< ArrayType ,
+                    typename HostMapped< device_type >::type ,
+                    SizeType > HostMirror ;
 
-  /** \brief  Rank is ( entry( row , column ) , dimensions<ValueType> ) */
-  enum { Rank = Impl::rank<array_type>::value + 1 };
-
-  /*------------------------------------------------------------------*/
-  /** \brief  Number of rows */
-  size_type row_count() const ;
-
-  /** \brief  Number of entries == row_entry_end( row_count ) */
-  size_type entry_count() const ;
-
-  /** \brief  Begining of entries for a given row */
-  template< typename iTypeRow >
-  size_type row_entry_begin( const iTypeRow & row ) const ;
-
-  /** \brief  End of entries for a given row */
-  template< typename iTypeRow >
-  size_type row_entry_end(   const iTypeRow & row ) const ;
-
-  /*------------------------------------------------------------------*/
-  /** \brief  Value for rank-1 array */
-  template< typename iTypeEntry >
-  inline
-  value_type & operator()( const iTypeEntry & entry ) const ;
-
-  /** \brief  Value for rank-2 array */
-  template< typename iTypeEntry , typename iType1 >
-  inline
-  value_type & operator()( const iTypeEntry & entry ,
-                           const iType1     & i1 ) const ;
-
-  /** \brief  Value for rank-3 array */
-  template< typename iTypeEntry , typename iType1 , typename iType2 >
-  inline
-  value_type & operator()( const iTypeEntry & entry ,
-                           const iType1     & i1 ,
-                           const iType2     & i2 ) const ;
-
-  /*------------------------------------------------------------------*/
   /** \brief  Construct a NULL view */
-  CrsArray();
+  CrsArray() : row_map() , entries() {}
 
   /** \brief  Construct a view of the array */
-  CrsArray( const CrsArray & rhs );
+  CrsArray( const CrsArray & rhs )
+    : row_map( rhs.row_map ), entries( rhs.entries ) {}
 
   /** \brief  Assign to a view of the rhs array.
    *          If the old view is the last view
    *          then allocated memory is deallocated.
    */
-  CrsArray & operator = ( const CrsArray & rhs );
+  CrsArray & operator = ( const CrsArray & rhs )
+    { row_map = rhs.row_map ; entries = rhs.entries ; return *this ; }
 
   /**  \brief  Destroy this view of the array.
    *           If the last view then allocated memory is deallocated.
    */
-  ~CrsArray();
-
-  /*------------------------------------------------------------------*/
-  /** \brief  Query if NULL view */
-  operator bool () const ;
-
-  /** \brief  Query if view to same memory */
-  bool operator == ( const CrsArray & ) const ;
-
-  /** \brief  Query if not view to same memory */
-  bool operator != ( const CrsArray & ) const ;
+  ~CrsArray() {}
 };
 
 //----------------------------------------------------------------------------
 
 template< class CrsArrayType , class InputType >
 inline
-CrsArray< typename CrsArrayType::array_type ,
+CrsArray< typename CrsArrayType::entries_type::array_type ,
           typename CrsArrayType::device_type ,
-          typename CrsArrayType::size_type >
+          typename CrsArrayType::row_map_type::size_type >
 create_crsarray( const std::string & label ,
                  const InputType & input )
 {
-  return Impl::Factory< CrsArrayType , InputType >::create( label , input );
+  typedef CrsArray< typename CrsArrayType::entries_type::array_type ,
+                    typename CrsArrayType::device_type ,
+                    typename CrsArrayType::row_map_type::size_type >
+    output_type ;
+
+  return Impl::Factory< output_type , InputType >
+             ::create( label , input );
 }
 
 template< class CrsArrayType , class InputType >
 inline
-CrsArray< typename CrsArrayType::array_type ,
+CrsArray< typename CrsArrayType::entries_type::array_type ,
           typename CrsArrayType::device_type ,
-          typename CrsArrayType::size_type >
+          typename CrsArrayType::row_map_type::size_type >
 create_crsarray( const InputType & input )
 {
-  return Impl::Factory< CrsArrayType , InputType >
+  typedef CrsArray< typename CrsArrayType::entries_type::array_type ,
+                    typename CrsArrayType::device_type ,
+                    typename CrsArrayType::row_map_type::size_type >
+    output_type ;
+
+  return Impl::Factory< output_type , InputType >
              ::create( std::string() , input );
 }
 
@@ -171,20 +140,11 @@ template< class ArrayType ,
           class DeviceSrc ,
           typename SizeType >
 inline
-void deep_copy( const CrsArray<ArrayType,DeviceDst,SizeType> & dst ,
+void deep_copy(       CrsArray<ArrayType,DeviceDst,SizeType> & dst ,
                 const CrsArray<ArrayType,DeviceSrc,SizeType> & src )
 {
-  typedef CrsArray<ArrayType,DeviceDst,SizeType> dst_type ;
-  typedef CrsArray<ArrayType,DeviceSrc,SizeType> src_type ;
-
-  if ( dst.operator!=(src) ) {
-
-    Impl::crsarray_require_equal_dimension(
-      dst.row_count() , dst.entry_dimension(0) ,
-      src.row_count() , src.entry_dimension(0) );
-
-    Impl::Factory< dst_type , src_type >::deep_copy( dst , src );
-  }
+  deep_copy( dst.entries , src.entries );
+  deep_copy( dst.row_map , src.row_map );
 }
 
 } // namespace Kokkos

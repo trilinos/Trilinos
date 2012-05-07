@@ -127,7 +127,11 @@ enum NNTI_result_t {
     NNTI_ENOTINIT,
 
     /** @brief Insufficient priveleges to perform operation. */
-    NNTI_EPERM
+    NNTI_EPERM,
+
+    /** @brief Operation was interupted, but possibly recoverable. */
+    NNTI_EAGAIN
+
 };
 
 

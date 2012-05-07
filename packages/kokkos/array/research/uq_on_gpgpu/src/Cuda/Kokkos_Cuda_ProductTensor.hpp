@@ -266,7 +266,7 @@ public:
     //------------------------------------------------------------------------
 
     const size_type nGridY =
-       std::min( A.graph.row_count() ,
+       std::min( A.graph.row_map.length() ,
                  Impl::CudaTraits::UpperBoundGridCount / nGridX );
 
     const dim3 block( WARP_SIZE , nWarp , 1 );
@@ -402,13 +402,13 @@ public:
     //   have_tensor, iA, jX, kY, tval == sparse tensor value
     // 
     for ( size_type iBlockRow = blockIdx.y ;
-                    iBlockRow < m_A.graph.row_count() ;
+                    iBlockRow < m_A.graph.row_map.length() ;
                     iBlockRow += gridDim.y ) {
 
       VectorScalar y_sum = 0 ;
 
-      const size_type iBlockEntryEnd = m_A.graph.row_entry_end(iBlockRow);
-            size_type iBlockEntry    = m_A.graph.row_entry_begin(iBlockRow);
+      const size_type iBlockEntryEnd = m_A.graph.row_map[iBlockRow+1];
+            size_type iBlockEntry    = m_A.graph.row_map[iBlockRow];
 
       for ( ; iBlockEntry < iBlockEntryEnd ; ++iBlockEntry ) {
 
@@ -416,7 +416,7 @@ public:
 
         if ( read_coeff ) {
           // Coalesced read of block for 'A' and 'x' into shared memory
-          const size_type iBlockColumn = m_A.graph(iBlockEntry);
+          const size_type iBlockColumn = m_A.graph.entries(iBlockEntry);
 
           shared_matrix_value( iCoeff ) = m_A.values( iCoeff , iBlockEntry );
           shared_vector_value( iCoeff ) = m_x( iCoeff , iBlockColumn );
@@ -459,7 +459,7 @@ public:
   typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type > matrix_type ;
   typedef MultiVector< VectorScalar , device_type>                 vector_type ;
 
-  // m_A.graph.row_count() == gridDim.y
+  // m_A.graph.row_map.length() == gridDim.y
   // m_A.block.dimension() <= gridDim.x * blockDim.y
 
   class ProductTensorLoop {
@@ -487,8 +487,8 @@ public:
 
       const size_type iyInner = threadIdx.y + blockDim.y * blockIdx.x ;
 
-      const size_type iBlockEntryEnd = m_A.graph.row_entry_end(   blockIdx.y );
-            size_type iBlockEntry    = m_A.graph.row_entry_begin( blockIdx.y );
+      const size_type iBlockEntryEnd = m_A.graph.row_map[ blockIdx.y + 1 ];
+            size_type iBlockEntry    = m_A.graph.row_map[ blockIdx.y ];
 
       const size_type iBeg = iyInner < dim ? m_A.block.entry_begin( iyInner ) : 0 ;
       const size_type iEnd = iyInner < dim ? m_A.block.entry_end(   iyInner ) : 0 ;
@@ -497,7 +497,7 @@ public:
 
       for ( ; iBlockEntry < iBlockEntryEnd ; ++iBlockEntry ) {
 
-        const size_type iBlockColumn = m_A.graph( iBlockEntry );
+        const size_type iBlockColumn = m_A.graph.entries( iBlockEntry );
 
         // Coalesced read of X and A into shared memory
 
@@ -546,7 +546,7 @@ public:
   };
 
   //------------------------------------
-  // m_A.graph.row_count() == gridDim.y
+  // m_A.graph.row_map.length() == gridDim.y
   // m_A.block.dimension() <= gridDim.x * blockDim.y
 
   class ProductTensorOnce {
@@ -574,8 +574,8 @@ public:
       // Value of 'y' for which this thread is responsible
       const size_type iyInner = threadIdx.y + blockDim.y * blockIdx.x ;
 
-      const size_type iBlockEntryEnd = m_A.graph.row_entry_end(   blockIdx.y );
-            size_type iBlockEntry    = m_A.graph.row_entry_begin( blockIdx.y );
+      const size_type iBlockEntryEnd = m_A.graph.row_map[ blockIdx.y + 1 ];
+            size_type iBlockEntry    = m_A.graph.row_map[ blockIdx.y ];
 
       int j = -1 ;
       int k = -1 ;
@@ -597,7 +597,7 @@ public:
         // Coalesced read of X and A into shared memory
 
         for ( size_type i = tid ; i < dim ; i += nid ) {
-          sh[ i ] = m_x( i , m_A.graph(iBlockEntry) );
+          sh[ i ] = m_x( i , m_A.graph.entries(iBlockEntry) );
         }
 
         for ( size_type i = tid ; i < dim ; i += nid ) {
@@ -655,7 +655,7 @@ public:
     // Fill out block dimension with X
     // Fill out graph block-row count with Y
     const dim3 dGrid( ( A.block.dimension() + dBlock.y - 1 ) / dBlock.y ,
-                      A.graph.row_count() ,
+                      A.graph.row_map.length() ,
                       1 );
 
     // Maximum required to:

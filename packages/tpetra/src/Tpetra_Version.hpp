@@ -46,7 +46,7 @@
 
 namespace Tpetra {
 
-	std::string version();
+  std::string version();
 
 } // namespace Tpetra
 

@@ -270,6 +270,7 @@ static int process_result(char *encoded_short_res_buf, nssi_request *request)
                 rc = NSSI_ENOMEM;
                 goto cleanup;
             }
+            trios_start_timer(call_time);
             rc=NNTI_register_memory(
                     &transports[request->svc->transport_id],
                     buf,
@@ -278,25 +279,30 @@ static int process_result(char *encoded_short_res_buf, nssi_request *request)
                     NNTI_GET_DST,
                     &request->svc->svc_host,
                     &encoded_long_res_hdl);
+            trios_stop_timer("NNTI_register_memory - long result", call_time);
             if (rc != NNTI_OK) {
                 log_error(debug_level, "failed registering long result: %s",
                         nnti_err_str(rc));
             }
 
             /* fetch the data from the server */
+            trios_start_timer(call_time);
             rc=NNTI_get(&header.result_addr,
                     0,
                     result_size,
                     &encoded_long_res_hdl,
                     0);
+            trios_stop_timer("NNTI_get - long result", call_time);
             if (rc != NNTI_OK) {
                 log_error(debug_level, "failed getting long result: %s",
                         nnti_err_str(rc));
             }
+            trios_start_timer(call_time);
             rc=NNTI_wait(&encoded_long_res_hdl,
                     NNTI_GET_DST,
                     -1,
                     &status);
+            trios_stop_timer("NNTI_wait - long result", call_time);
             if (rc != NNTI_OK) {
                 log_error(debug_level, "failed waiting for the long result: %s",
                         nnti_err_str(rc));
@@ -783,6 +789,8 @@ static int cleanup_long_args(
     char *buf;
     NNTI_status_t status;
 
+    trios_declare_timer(call_time);
+
     if (!req->use_long_args) {
         return(rc);
     }
@@ -792,11 +800,13 @@ static int cleanup_long_args(
     /* If we created a portal for long arguments, we need to wait
      * for the server to fetch the arguments.
      */
+    trios_start_timer(call_time);
     rc=NNTI_wait(
             &req->long_args_hdl,
             NNTI_GET_SRC,
             -1,
             &status);
+    trios_stop_timer("NNTI_wait - long args", call_time);
     if (rc != NNTI_OK) {
         log_error(rpc_debug_level, "failed waiting for service to get long args: %s",
                 nnti_err_str(rc));
@@ -1168,6 +1178,8 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
     log_level debug_level = rpc_debug_level;
     NNTI_status_t status;
 
+    trios_declare_timer(call_time);
+
     switch (req->status) {
 
     case NSSI_REQUEST_ERROR:
@@ -1190,11 +1202,13 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
         /* if the request status is not complete, we need to do some work */
         if (req->data != NULL) {
             log_debug(debug_level, "calling NNTI_wait for data_hdl");
+            trios_start_timer(call_time);
             rc=NNTI_wait(
                     &req->data_hdl,
                     (NNTI_buf_ops_t)(NNTI_GET_SRC|NNTI_PUT_DST),
                     timeout,
                     &status);
+            trios_stop_timer("NNTI_wait - data", call_time);
             if (status.result != NNTI_OK) {
                 log_info(debug_level, "NNTI_wait for data_hdl failed");
                 rc = status.result;
@@ -1203,11 +1217,13 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
             }
         }
         log_debug(debug_level, "calling NNTI_wait for result");
+        trios_start_timer(call_time);
         rc=NNTI_wait(
                 &req->short_result_hdl,
                 NNTI_RECV_DST,
                 timeout,
                 &status);
+        trios_stop_timer("NNTI_wait - short result", call_time);
         if (status.result != NNTI_OK) {
             log_info(debug_level, "NNTI_wait for result failed");
             rc = status.result;

@@ -59,6 +59,17 @@ public:
 
   inline size_type rank() const { return m_thread_rank ; }
 
+  inline size_type node() const { return m_thread_node ; }
+
+  inline
+  static void activate( HostThread * const begin , HostThread * thread )
+  {
+    // Activate end-to-begin for barrier
+    while ( begin < thread ) {
+      (--thread)->set( HostThread::ThreadActive );
+    }
+  }
+
   /** \brief  This thread waits for each fan-in thread in the barrier.
    *
    *  All threads must call this function.
@@ -133,9 +144,12 @@ public:
   std::pair< size_type , size_type >
     work_range( const size_type work_count ) const
   {
-    const size_type work_per_thread = ( work_count + m_thread_count - 1 ) / m_thread_count ;
-    const size_type work_previous   = work_per_thread * m_thread_reverse_rank ;
-    const size_type work_end        = work_count > work_previous ? work_count - work_previous : 0 ;
+    const size_type reverse_rank    = m_thread_count - ( m_thread_rank + 1 );
+    const size_type work_per_thread = ( work_count + m_thread_count - 1 )
+                                    / m_thread_count ;
+    const size_type work_previous   = work_per_thread * reverse_rank ;
+    const size_type work_end        = work_count > work_previous
+                                    ? work_count - work_previous : 0 ;
 
     return std::pair<size_type,size_type>( work_end > work_per_thread ?
                                            work_end - work_per_thread : 0 , work_end );
@@ -152,7 +166,7 @@ private:
     , m_fan_end(   NULL )
     , m_thread_count( 0 )
     , m_thread_rank( 0 )
-    , m_thread_reverse_rank( 0 )
+    , m_thread_node( 0 )
     , m_reduce( NULL )
     , m_state( 0 )
     {}
@@ -172,7 +186,7 @@ private:
   HostThread          * m_fan_end ;   ///< End of thread fan in
   unsigned              m_thread_count ;
   unsigned              m_thread_rank ;
-  unsigned              m_thread_reverse_rank ;
+  unsigned              m_thread_node ;
   const void * volatile m_reduce ;    ///< Reduction memory
   long         volatile m_state ;     ///< Thread control flag
 

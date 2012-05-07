@@ -75,7 +75,7 @@ class Epetra_BlockMapData : public Epetra_Data {
 
   const Epetra_Comm * Comm_;
 
-  Epetra_Directory* Directory_;
+  mutable Epetra_Directory* Directory_;
 
   Epetra_IntSerialDenseVector LID_;
   Epetra_IntSerialDenseVector MyGlobalElements_;
@@ -103,7 +103,8 @@ class Epetra_BlockMapData : public Epetra_Data {
   bool ConstantElementSize_;
   bool LinearMap_;
   bool DistributedGlobal_;
-  bool OneToOne_;
+  mutable bool OneToOneIsDetermined_;
+  mutable bool OneToOne_;
 
   int LastContiguousGID_;
   int LastContiguousGIDLoc_;

@@ -99,8 +99,8 @@ namespace Tpetra {
   LookupStatus 
   Directory<LocalOrdinal,GlobalOrdinal,Node>::
   getDirectoryEntries (const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
-		       const Teuchos::ArrayView<int> &nodeIDs, 
-		       const Teuchos::ArrayView<LocalOrdinal> &localIDs) const 
+                       const Teuchos::ArrayView<int> &nodeIDs, 
+                       const Teuchos::ArrayView<LocalOrdinal> &localIDs) const 
   {
     const bool computeLIDs = true;
     return getEntries (globalIDs, nodeIDs, localIDs, computeLIDs);
@@ -184,21 +184,21 @@ namespace Tpetra {
         GO GID = *gid;
         // Guess uniform distribution and start a little above it
         // TODO: replace by a binary search
-	int curimg;
-	{ // We go through all this trouble to avoid overflow and
-	  // signed / unsigned casting mistakes (that were made in
-	  // previous versions of this code).
-	  const GO one = Teuchos::OrdinalTraits<GO>::one();
-	  const GO two = one + one;
-	  const GO nOverP_GID = static_cast<GO> (nOverP);
-	  const GO lowerBound = GID / std::max(nOverP_GID, one) + two;
-	  // It's probably not OK to cast this to int in general.  It
-	  // works as long as |GID| <= the global number of entries
-	  // and nOverP is appropriately sized for int.  Trouble may
-	  // ensue if the index base has an exotic value.
-	  const int lowerBound_int = static_cast<int> (lowerBound);
-	  curimg = std::min(lowerBound_int, numImages - 1);
-	}
+        int curimg;
+        { // We go through all this trouble to avoid overflow and
+          // signed / unsigned casting mistakes (that were made in
+          // previous versions of this code).
+          const GO one = Teuchos::OrdinalTraits<GO>::one();
+          const GO two = one + one;
+          const GO nOverP_GID = static_cast<GO> (nOverP);
+          const GO lowerBound = GID / std::max(nOverP_GID, one) + two;
+          // It's probably not OK to cast this to int in general.  It
+          // works as long as |GID| <= the global number of entries
+          // and nOverP is appropriately sized for int.  Trouble may
+          // ensue if the index base has an exotic value.
+          const int lowerBound_int = static_cast<int> (lowerBound);
+          curimg = std::min(lowerBound_int, numImages - 1);
+        }
         bool found = false;
         while (curimg >= 0 && curimg < numImages) {
           if (allMinGIDs_[curimg] <= GID) {
@@ -406,10 +406,10 @@ namespace Tpetra {
     {
       typename Array<GO>::iterator ptr = importElements.begin();
       for (size_t i = 0; i < numReceives; ++i) {
-	// Each "packet" (contiguous chunk of importElements) contains
-	// a triple: (GID, process ID, LID).
-	//
-	// Convert incoming GID to Directory LID.
+        // Each "packet" (contiguous chunk of importElements) contains
+        // a triple: (GID, process ID, LID).
+        //
+        // Convert incoming GID to Directory LID.
         const LO currLID = directoryMap_->getLocalElement (*ptr++); 
         TEUCHOS_TEST_FOR_EXCEPTION(currLID == LINVALID, std::logic_error,
             Teuchos::typeName(*this) << "::generateDirectory(): logic error. Please notify the Tpetra team.");

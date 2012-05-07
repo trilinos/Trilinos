@@ -144,7 +144,7 @@ struct ShapeFunctionEvaluation {
 
     const Scalar ONE8TH = 0.125 ;
 
-    for ( int i = 0 ; i < PointCount ; ++i ) {
+    for ( unsigned i = 0 ; i < PointCount ; ++i ) {
 
       const Scalar u = 1.0 - integration.pts[i][0];
       const Scalar v = 1.0 - integration.pts[i][1];
@@ -226,8 +226,8 @@ struct ElementComp <Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
   typedef Kokkos::MDArray<ScalarCoord, device_type>  coord_array ;
   typedef ShapeFunctionEvaluation< Scalar > shape_function_data ;
 
-  static const SpatialDimension = shape_function_data::SpatialDimension ;
-  static const FunctionCount    = shape_function_data::FunctionCount ;
+  static const unsigned SpatialDimension = shape_function_data::SpatialDimension ;
+  static const unsigned FunctionCount    = shape_function_data::FunctionCount ;
 
   shape_function_data  shape_eval ;
   index_array          elem_node_ids ;
@@ -355,7 +355,7 @@ struct ElementComp <Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
     Scalar dpsidx[8], dpsidy[8], dpsidz[8];
 
     int i_grad = 0 ;
-    for(int i = 0; i < FunctionCount ; ++i , i_grad += 3 ) {
+    for( unsigned i = 0; i < FunctionCount ; ++i , i_grad += 3 ) {
       const Scalar g0 = grad_vals[i_grad+0];
       const Scalar g1 = grad_vals[i_grad+1];
       const Scalar g2 = grad_vals[i_grad+2];
@@ -365,8 +365,8 @@ struct ElementComp <Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
       dpsidz[i] = g0 * invJ[6] + g1 * invJ[7] + g2 * invJ[8];
     }
 
-    for(int m = 0; m < FunctionCount; m++) {
-      for(int n = 0; n < FunctionCount; n++) {
+    for( unsigned m = 0; m < FunctionCount; m++) {
+      for( unsigned n = 0; n < FunctionCount; n++) {
 
         elem_stiff[m][n] += weight * 
           ((dpsidx[m] * dpsidx[n]) + 
@@ -383,7 +383,7 @@ struct ElementComp <Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
                                const Scalar psi[] ,
                                Scalar elem_vec[] ) const
   {
-     for(int i=0; i< FunctionCount ; ++i) {
+     for( unsigned i=0; i< FunctionCount ; ++i) {
        elem_vec[i] += psi[i] * term ;
      }
   }
@@ -424,7 +424,7 @@ struct ElementComp <Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
     // of 'elem_vec' and 'elem_stiff' which would
     // consume more local memory and have to be reduced.
 
-    for ( int i = 0 ; i < shape_function_data::PointCount ; ++i ) {
+    for ( unsigned i = 0 ; i < shape_function_data::PointCount ; ++i ) {
 
       Scalar J[spatialDim*spatialDim] = { 0, 0, 0,  0, 0, 0,  0, 0, 0 };
 

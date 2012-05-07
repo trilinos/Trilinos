@@ -41,14 +41,40 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_HOST_CRSARRAY_HPP
-#define KOKKOS_HOST_CRSARRAY_HPP
+#ifndef KOKKOS_IMPL_ARRAY_FACTORY_HPP
+#define KOKKOS_IMPL_ARRAY_FACTORY_HPP
 
-#include <Host/Kokkos_Host_IndexMap.hpp>
+#include <vector>
+#include <impl/Kokkos_MemoryView.hpp>
 
-#include <Kokkos_Host_macros.hpp>
-#include <impl/Kokkos_CrsArray_macros.hpp>
-#include <Kokkos_Clear_macros.hpp>
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
-#endif /* #ifndef KOKKOS_HOST_CRSARRAY_HPP */
+namespace Kokkos {
+namespace Impl {
+
+template< class ArrayType , class DeviceOutput >
+struct Factory< Array< ArrayType , DeviceOutput > , MirrorUseView >
+{
+  typedef Array< ArrayType , DeviceOutput > output_type ;
+
+  static inline
+  const output_type & create( const output_type & input ) { return input ; }
+
+  template< class DeviceInput >
+  static inline
+  output_type create( const Array< ArrayType , DeviceInput > & input )
+  {
+    typedef Array< ArrayType , DeviceInput > input_type ;
+    return Factory< output_type , input_type >::create( input );
+  }
+};
+
+} // namespace Impl
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#endif /* #ifndef KOKKOS_IMPL_ARRAY_FACTORY_HPP */
 
