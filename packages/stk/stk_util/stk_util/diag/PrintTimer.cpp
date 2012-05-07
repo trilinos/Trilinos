@@ -397,7 +397,7 @@ collect_timers(
   
     const int recv_size = recv_displ[parallel_size] ;
   
-    buffer.resize(recv_size);
+    buffer.assign(recv_size, 0);
   
     {
       const char * const send_ptr = send_string.data();
