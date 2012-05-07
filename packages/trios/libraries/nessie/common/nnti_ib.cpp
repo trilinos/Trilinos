@@ -255,6 +255,14 @@ static NNTI_result_t post_recv_work_request(
 static NNTI_result_t post_ack_recv_work_request(
         NNTI_buffer_t  *reg_buf);
 #endif
+static NNTI_result_t repost_recv_work_request(
+        NNTI_buffer_t    *reg_buf,
+        ib_work_request  *wr);
+#if defined(USE_RDMA_TARGET_ACK)
+static NNTI_result_t repost_ack_recv_work_request(
+        NNTI_buffer_t    *reg_buf,
+        ib_work_request  *wr);
+#endif
 static ib_work_request *first_incomplete_wr(
         ib_memory_handle *ib_mem_hdl);
 static int8_t is_buf_op_complete(
@@ -1530,25 +1538,60 @@ retry:
     }
 
     if (nnti_rc==NNTI_OK) {
-        struct ibv_recv_wr *bad_wr;
-
-        wr=ib_mem_hdl->wr_queue.front();
-#if defined(USE_RDMA_TARGET_ACK)
-        unregister_ack(wr);
-#endif
-        ib_mem_hdl->wr_queue.pop_front();
-        del_wr_wrhash(wr);
-        free(wr);
-
-        if  (ib_mem_hdl->type == REQUEST_BUFFER) {
-            log_debug(debug_level, "re-posting srq_recv for REQUEST_BUFFER");
-            post_recv_work_request(
-                    (NNTI_buffer_t *)reg_buf,
-                    wc.wr_id,
-                    (wc.wr_id*q_hdl->req_size),
-                    q_hdl->req_size);
+//        if (gni_mem_hdl->type == REQUEST_BUFFER) {
+//            wr=ib_mem_hdl->wr_queue.front();
+//            ib_mem_hdl->wr_queue.pop_front();
+//            repost_recv_work_request((NNTI_buffer_t *)reg_buf, wr);
+//        } else if (gni_mem_hdl->type == RECEIVE_BUFFER) {
+        if (ib_mem_hdl->type == RECEIVE_BUFFER) {
+            wr=ib_mem_hdl->wr_queue.front();
+            ib_mem_hdl->wr_queue.pop_front();
+            repost_recv_work_request((NNTI_buffer_t *)reg_buf, wr);
         }
+#if defined(USE_RDMA_TARGET_ACK)
+        else if ((ib_mem_hdl->type == RDMA_TARGET_BUFFER) ||
+                 (ib_mem_hdl->type == GET_SRC_BUFFER)      ||
+                 (ib_mem_hdl->type == PUT_DST_BUFFER))     {
+            wr=ib_mem_hdl->wr_queue.front();
+            ib_mem_hdl->wr_queue.pop_front();
+            repost_ack_recv_work_request((NNTI_buffer_t *)reg_buf, wr);
+        }
+#endif
+        else {
+            wr=ib_mem_hdl->wr_queue.front();
+            ib_mem_hdl->wr_queue.pop_front();
+            del_wr_wrhash(wr);
+            free(wr);
+            if  (ib_mem_hdl->type == REQUEST_BUFFER) {
+                log_debug(debug_level, "re-posting srq_recv for REQUEST_BUFFER");
+                post_recv_work_request(
+                        (NNTI_buffer_t *)reg_buf,
+                        wc.wr_id,
+                        (wc.wr_id*q_hdl->req_size),
+                        q_hdl->req_size);
+            }
+        }
+
     }
+
+//    if (nnti_rc==NNTI_OK) {
+//        wr=ib_mem_hdl->wr_queue.front();
+//#if defined(USE_RDMA_TARGET_ACK)
+//        unregister_ack(wr);
+//#endif
+//        ib_mem_hdl->wr_queue.pop_front();
+//        del_wr_wrhash(wr);
+//        free(wr);
+//
+//        if  (ib_mem_hdl->type == REQUEST_BUFFER) {
+//            log_debug(debug_level, "re-posting srq_recv for REQUEST_BUFFER");
+//            post_recv_work_request(
+//                    (NNTI_buffer_t *)reg_buf,
+//                    wc.wr_id,
+//                    (wc.wr_id*q_hdl->req_size),
+//                    q_hdl->req_size);
+//        }
+//    }
 
     log_debug(debug_level, "exit");
 
@@ -2617,6 +2660,125 @@ static NNTI_result_t post_ack_recv_work_request(
     wr->rq_wr.wr_id  =(uint64_t)wr;
     wr->rq_wr.sg_list=&wr->sge;
     wr->rq_wr.num_sge=1;
+
+    if (ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr)) {
+        log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
+                &wr->rq_wr, bad_wr, strerror(errno));
+        return (NNTI_result_t)errno;
+    }
+
+    ib_mem_hdl->wr_queue.push_back(wr);
+
+    log_debug(nnti_debug_level, "exit (reg_buf=%p)", reg_buf);
+
+    return(NNTI_OK);
+}
+#endif
+
+static NNTI_result_t repost_recv_work_request(
+        NNTI_buffer_t  *reg_buf,
+        ib_work_request  *wr)
+{
+    struct ibv_recv_wr *bad_wr=NULL;
+
+    ib_memory_handle *ib_mem_hdl=NULL;
+
+    struct ibv_srq *srq=NULL;
+
+    log_debug(nnti_debug_level, "enter (reg_buf=%p)", reg_buf);
+
+    ib_mem_hdl=(ib_memory_handle *)reg_buf->transport_private;
+    assert(ib_mem_hdl);
+
+    assert(wr);
+
+    wr->op_state = BUFFER_INIT;
+
+    if (ib_mem_hdl->type==REQUEST_BUFFER) {
+        wr->op_state=BUFFER_INIT;
+        wr->last_op=IB_OP_NEW_REQUEST;
+
+    } else if (ib_mem_hdl->type==RECEIVE_BUFFER) {
+        wr->op_state=RDMA_WRITE_INIT;
+
+    } else if (ib_mem_hdl->type==GET_SRC_BUFFER) {
+        wr->op_state=RDMA_READ_INIT;
+
+    } else if (ib_mem_hdl->type==PUT_DST_BUFFER) {
+        wr->op_state=RDMA_WRITE_INIT;
+
+    } else if (ib_mem_hdl->type==RDMA_TARGET_BUFFER) {
+        wr->op_state=RDMA_TARGET_INIT;
+
+    }
+
+    if (ib_mem_hdl->type==REQUEST_BUFFER) {
+        srq             =transport_global_data.req_srq;
+        wr->comp_channel=transport_global_data.req_comp_channel;
+        wr->cq          =transport_global_data.req_cq;
+    } else {
+        srq             =transport_global_data.data_srq;
+        wr->comp_channel=transport_global_data.data_comp_channel;
+        wr->cq          =transport_global_data.data_cq;
+    }
+
+    if (ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr)) {
+        log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
+                &wr->rq_wr, bad_wr, strerror(errno));
+        return (NNTI_result_t)errno;
+    }
+
+    ib_mem_hdl->wr_queue.push_back(wr);
+
+    log_debug(nnti_debug_level, "exit (reg_buf=%p)", reg_buf);
+
+    return(NNTI_OK);
+}
+
+#if defined(USE_RDMA_TARGET_ACK)
+static NNTI_result_t repost_ack_recv_work_request(
+        NNTI_buffer_t    *reg_buf,
+        ib_work_request  *wr)
+{
+    struct ibv_recv_wr *bad_wr=NULL;
+    struct ibv_srq   *srq;
+
+    ib_memory_handle *ib_mem_hdl=NULL;
+
+    log_debug(nnti_debug_level, "enter (reg_buf=%p)", reg_buf);
+
+    ib_mem_hdl=(ib_memory_handle *)reg_buf->transport_private;
+    assert(ib_mem_hdl);
+
+    wr->op_state = BUFFER_INIT;
+
+    if (ib_mem_hdl->type==REQUEST_BUFFER) {
+        wr->op_state=BUFFER_INIT;
+        wr->last_op=IB_OP_NEW_REQUEST;
+
+    } else if (ib_mem_hdl->type==RECEIVE_BUFFER) {
+        wr->op_state=RDMA_WRITE_INIT;
+
+    } else if (ib_mem_hdl->type==GET_SRC_BUFFER) {
+        wr->op_state=RDMA_READ_INIT;
+
+    } else if (ib_mem_hdl->type==PUT_DST_BUFFER) {
+        wr->op_state=RDMA_WRITE_INIT;
+
+    } else if (ib_mem_hdl->type==RDMA_TARGET_BUFFER) {
+        wr->op_state=RDMA_TARGET_INIT;
+
+    }
+
+    if (ib_mem_hdl->type==REQUEST_BUFFER) {
+        srq             =transport_global_data.req_srq;
+        wr->comp_channel=transport_global_data.req_comp_channel;
+        wr->cq          =transport_global_data.req_cq;
+    } else {
+        srq             =transport_global_data.data_srq;
+        wr->comp_channel=transport_global_data.data_comp_channel;
+        wr->cq          =transport_global_data.data_cq;
+    }
 
     if (ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr)) {
         log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
