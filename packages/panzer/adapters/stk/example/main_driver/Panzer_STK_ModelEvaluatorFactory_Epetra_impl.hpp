@@ -65,6 +65,7 @@
 #include "Panzer_InitialCondition_Builder.hpp"
 #include "Panzer_ResponseUtilities.hpp"
 #include "Panzer_ModelEvaluator_Epetra.hpp"
+#include "Panzer_ModelEvaluator.hpp"
 #include "Panzer_ParameterList_ObjectBuilders.hpp"
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_String_Utilities.hpp"
@@ -98,6 +99,8 @@
 #include "Epetra_MpiComm.h"
 
 #include "EpetraExt_VectorOut.h"
+
+#include <Kokkos_DefaultNode.hpp>
 
 #ifdef HAVE_TEKO
 #include "Teko_StratimikosFactory.hpp"
@@ -424,12 +427,24 @@ namespace panzer_stk {
       }
     }
 
-    Teuchos::RCP<panzer::ModelEvaluator_Epetra> ep_me = 
-      Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,m_response_library,linObjFactory, p_names, global_data, is_transient));
 
-    // Setup initial conditions
+    // Setup solver factory
     /////////////////////////////////////////////////////////////
+
+    Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory =
+          buildLOWSFactory(blockedAssembly,globalIndexer,stkConn_manager,mesh,mpi_comm);
+
+    // Setup blocked Assembly
+    /////////////////////////////////////////////////////////////
+    Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me;
+
     if(!blockedAssembly) {
+      // Setup initial conditions
+      /////////////////////////////////////////////////////////////
+
+      Teuchos::RCP<panzer::ModelEvaluator_Epetra> ep_me = 
+          Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,m_response_library,linObjFactory, p_names, global_data, is_transient));
+
       bool write_dot_files = false;
       std::string prefix = "Panzer_AssemblyGraph_";
       write_dot_files = p.sublist("Options").get("Write Volume Assembly Graphs",write_dot_files);
@@ -488,124 +503,21 @@ namespace panzer_stk {
 
       // fill STK mesh objects
       solnWriter->evaluateVolumeFieldManagers<panzer::Traits::Residual>(ae_inargs,*mpi_comm);
+
+      // Build Thyra Model Evaluator
+      thyra_me = Thyra::epetraModelEvaluator(ep_me,lowsFactory);
+    }
+    else {
+      thyra_me = Teuchos::rcp(new panzer::ModelEvaluator<double,int,int,Kokkos::DefaultNode::DefaultNodeType>
+                  (fmb,m_response_library,linObjFactory,p_names,lowsFactory,global_data,is_transient));
     }
    
-    // Build stratimikos solver (note that this is a hard coded path to linear solver options in nox list!)
-    Teuchos::RCP<Teuchos::ParameterList> strat_params = Teuchos::rcp(new Teuchos::ParameterList);
-    std::string solver = solncntl_params.get<std::string>("Piro Solver");
-    {
-      *strat_params = solncntl_params.sublist("NOX").sublist("Direction").
-	sublist("Newton").sublist("Stratimikos Linear Solver").sublist("Stratimikos");
-    }
-
-    Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
-    #ifdef HAVE_TEKO 
-    if(!blockedAssembly) {
-
-       std::string fieldName;
-
-       Teuchos::RCP<Teko::RequestHandler> reqHandler = Teuchos::rcp(new Teko::RequestHandler);
-       Teuchos::RCP<const panzer::DOFManager<int,int> > dofs =
-          Teuchos::rcp_dynamic_cast<const panzer::DOFManager<int,int> >(globalIndexer);
-
-       // add in the coordinate parameter list callback handler
-       if(determineCoordinateField(*dofs,fieldName)) {
-          std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > fieldPatterns;
-          fillFieldPatternMap(*dofs,fieldName,fieldPatterns);
-          reqHandler->addRequestCallback(Teuchos::rcp(new 
-                panzer_stk::ParameterListCallback<int,int>(fieldName,fieldPatterns,stkConn_manager,dofs)));
-
-          Teuchos::RCP<panzer_stk::ParameterListCallback<int,int> > callback = Teuchos::rcp(new 
-                panzer_stk::ParameterListCallback<int,int>(fieldName,fieldPatterns,stkConn_manager,dofs));
-          reqHandler->addRequestCallback(callback);
-
-          bool writeCoordinates = p.sublist("Options").get("Write Coordinates",false);
-          if(writeCoordinates) {
-             // force parameterlistcallback to build coordinates
-             callback->preRequest(Teko::RequestMesg(Teuchos::rcp(new Teuchos::ParameterList())));
-             
-             // extract coordinate vectors
-             const std::vector<double> & xcoords = callback->getXCoordsVector();
-             const std::vector<double> & ycoords = callback->getYCoordsVector();
-             const std::vector<double> & zcoords = callback->getZCoordsVector();
-
-             // use epetra to write coordinates to matrix market files
-             Epetra_MpiComm ep_comm(*mpi_comm->getRawMpiComm());
-             Epetra_Map map(-1,xcoords.size(),0,ep_comm);
-
-             Teuchos::RCP<Epetra_Vector> vec;
-             switch(mesh->getDimension()) {
-             case 3:
-                vec = Teuchos::rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&zcoords[0])));
-                EpetraExt::VectorToMatrixMarketFile("zcoords.mm",*vec);
-             case 2:
-                vec = Teuchos::rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&ycoords[0])));
-                EpetraExt::VectorToMatrixMarketFile("ycoords.mm",*vec);
-             case 1:
-                vec = Teuchos::rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&xcoords[0])));
-                EpetraExt::VectorToMatrixMarketFile("xcoords.mm",*vec);
-                break;
-             default:
-                TEUCHOS_ASSERT(false);
-             }
-          }
-
-          #ifdef HAVE_MUELU
-          {
-             if(!writeCoordinates)
-                callback->preRequest(Teko::RequestMesg(Teuchos::rcp(new Teuchos::ParameterList())));
-
-             // extract coordinate vectors and conditionally modify strat_params
-             //  coordinate vectors are copied and wrapped as ArrayRCP objects
-             //  the copy is certainly avoidable
-   
-             Teuchos::ParameterList & muelu_params = strat_params->sublist("Preconditioner Types").sublist("MueLu").sublist("Operator");
-             switch(mesh->getDimension()) {
-             case 3:{
-               Teuchos::ArrayRCP<double> coords = arcp(rcp(new std::vector<double>(callback->getZCoordsVector())));
-               muelu_params.set("ZCoordinates", coords);
-             }
-             case 2:{
-               Teuchos::ArrayRCP<double> coords = arcp(rcp(new std::vector<double>(callback->getYCoordsVector())));
-               muelu_params.set("YCoordinates", coords);
-             }
-             case 1:{
-               Teuchos::ArrayRCP<double> coords = arcp(rcp(new std::vector<double>(callback->getXCoordsVector())));
-               muelu_params.set("XCoordinates", coords);
-             }
-               break;
-             default:
-               TEUCHOS_ASSERT(false);
-             }
-          }
-          #endif
-       }
-       // else write_out_the_mesg("Warning: No unique field determines the coordinates, coordinates unavailable!")   
-
-       Teko::addTekoToStratimikosBuilder(linearSolverBuilder,reqHandler);
-    }
-    else
-       Teko::addTekoToStratimikosBuilder(linearSolverBuilder);
-    #endif
-
-    #ifdef HAVE_MUELU
-    {
-      Thyra::addMueLuToStratimikosBuilder(linearSolverBuilder); // Register MueLu as a Stratimikos preconditioner strategy.
-    }
-    #endif // MUELU
-
-    linearSolverBuilder.setParameterList(strat_params);
-    Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = createLinearSolveStrategy(linearSolverBuilder);
-
-    // Build Thyra Model Evaluator
-    Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me = 
-      Thyra::epetraModelEvaluator(ep_me,lowsFactory);
-    
     m_physics_me = thyra_me;
 
     Teuchos::RCP<Teuchos::ParameterList> piro_params = Teuchos::rcp(new Teuchos::ParameterList(solncntl_params));
     Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > piro;
 
+    std::string solver = solncntl_params.get<std::string>("Piro Solver");
     if (solver=="NOX") {
       Teuchos::RCP<const panzer_stk::NOXObserverFactory> observer_factory = 
 	p.sublist("Solver Factories").get<Teuchos::RCP<const panzer_stk::NOXObserverFactory> >("NOX Observer Factory");
@@ -937,7 +849,126 @@ namespace panzer_stk {
                                               closure_models,
                                               user_data);
   }
+  
+  template<typename ScalarT>
+  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > ModelEvaluatorFactory_Epetra<ScalarT>::
+  buildLOWSFactory(bool blockedAssembly,
+                   const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
+                   const Teuchos::RCP<panzer_stk::STKConnManager> & stkConn_manager,
+                   const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
+                   const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm)
+  {
+    Teuchos::ParameterList& p = *this->getNonconstParameterList();
+    Teuchos::ParameterList & solncntl_params = p.sublist("Solution Control");
 
+    // Build stratimikos solver (note that this is a hard coded path to linear solver options in nox list!)
+    Teuchos::RCP<Teuchos::ParameterList> strat_params = Teuchos::rcp(new Teuchos::ParameterList);
+    {
+      *strat_params = solncntl_params.sublist("NOX").sublist("Direction").
+	sublist("Newton").sublist("Stratimikos Linear Solver").sublist("Stratimikos");
+    }
+
+    Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+    #ifdef HAVE_TEKO 
+    if(!blockedAssembly) {
+
+       std::string fieldName;
+
+       Teuchos::RCP<Teko::RequestHandler> reqHandler = Teuchos::rcp(new Teko::RequestHandler);
+       Teuchos::RCP<const panzer::DOFManager<int,int> > dofs =
+          Teuchos::rcp_dynamic_cast<const panzer::DOFManager<int,int> >(globalIndexer);
+
+       // add in the coordinate parameter list callback handler
+       if(determineCoordinateField(*dofs,fieldName)) {
+          std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > fieldPatterns;
+          fillFieldPatternMap(*dofs,fieldName,fieldPatterns);
+          reqHandler->addRequestCallback(Teuchos::rcp(new 
+                panzer_stk::ParameterListCallback<int,int>(fieldName,fieldPatterns,stkConn_manager,dofs)));
+
+          Teuchos::RCP<panzer_stk::ParameterListCallback<int,int> > callback = Teuchos::rcp(new 
+                panzer_stk::ParameterListCallback<int,int>(fieldName,fieldPatterns,stkConn_manager,dofs));
+          reqHandler->addRequestCallback(callback);
+
+          bool writeCoordinates = p.sublist("Options").get("Write Coordinates",false);
+          if(writeCoordinates) {
+             // force parameterlistcallback to build coordinates
+             callback->preRequest(Teko::RequestMesg(Teuchos::rcp(new Teuchos::ParameterList())));
+             
+             // extract coordinate vectors
+             const std::vector<double> & xcoords = callback->getXCoordsVector();
+             const std::vector<double> & ycoords = callback->getYCoordsVector();
+             const std::vector<double> & zcoords = callback->getZCoordsVector();
+
+             // use epetra to write coordinates to matrix market files
+             Epetra_MpiComm ep_comm(*mpi_comm->getRawMpiComm());
+             Epetra_Map map(-1,xcoords.size(),0,ep_comm);
+
+             Teuchos::RCP<Epetra_Vector> vec;
+             switch(mesh->getDimension()) {
+             case 3:
+                vec = Teuchos::rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&zcoords[0])));
+                EpetraExt::VectorToMatrixMarketFile("zcoords.mm",*vec);
+             case 2:
+                vec = Teuchos::rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&ycoords[0])));
+                EpetraExt::VectorToMatrixMarketFile("ycoords.mm",*vec);
+             case 1:
+                vec = Teuchos::rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&xcoords[0])));
+                EpetraExt::VectorToMatrixMarketFile("xcoords.mm",*vec);
+                break;
+             default:
+                TEUCHOS_ASSERT(false);
+             }
+          }
+
+          #ifdef HAVE_MUELU
+          {
+             if(!writeCoordinates)
+                callback->preRequest(Teko::RequestMesg(Teuchos::rcp(new Teuchos::ParameterList())));
+
+             // extract coordinate vectors and conditionally modify strat_params
+             //  coordinate vectors are copied and wrapped as ArrayRCP objects
+             //  the copy is certainly avoidable
+   
+             Teuchos::ParameterList & muelu_params = strat_params->sublist("Preconditioner Types").sublist("MueLu").sublist("Operator");
+             switch(mesh->getDimension()) {
+             case 3:{
+               Teuchos::ArrayRCP<double> coords = arcp(rcp(new std::vector<double>(callback->getZCoordsVector())));
+               muelu_params.set("ZCoordinates", coords);
+             }
+             case 2:{
+               Teuchos::ArrayRCP<double> coords = arcp(rcp(new std::vector<double>(callback->getYCoordsVector())));
+               muelu_params.set("YCoordinates", coords);
+             }
+             case 1:{
+               Teuchos::ArrayRCP<double> coords = arcp(rcp(new std::vector<double>(callback->getXCoordsVector())));
+               muelu_params.set("XCoordinates", coords);
+             }
+               break;
+             default:
+               TEUCHOS_ASSERT(false);
+             }
+          }
+          #endif
+       }
+       // else write_out_the_mesg("Warning: No unique field determines the coordinates, coordinates unavailable!")   
+
+       Teko::addTekoToStratimikosBuilder(linearSolverBuilder,reqHandler);
+    }
+    else
+       Teko::addTekoToStratimikosBuilder(linearSolverBuilder);
+    #endif
+
+    #ifdef HAVE_MUELU
+    {
+      Thyra::addMueLuToStratimikosBuilder(linearSolverBuilder); // Register MueLu as a Stratimikos preconditioner strategy.
+    }
+    #endif // MUELU
+
+    linearSolverBuilder.setParameterList(strat_params);
+    Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = createLinearSolveStrategy(linearSolverBuilder);
+
+    return lowsFactory;
+  }
 }
 
 #endif

@@ -217,15 +217,16 @@ int main(int argc, char *argv[])
 
       // Solution vector is returned as extra respons vector
       Teuchos::RCP<Thyra::VectorBase<double> > gx = Thyra::createMember(*physics->get_x_space());
-      for(std::size_t i=0;i<rLibrary->getLabeledResponseCount();i++)
-         outArgs.set_g(i,Teuchos::null);
-      outArgs.set_g(rLibrary->getLabeledResponseCount(),gx);
+      // for(std::size_t i=0;i<rLibrary->getLabeledResponseCount();i++)
+      //    outArgs.set_g(i,Teuchos::null);
+      outArgs.set_g(0,gx);
 
       // Now, solve the problem and return the responses
       solver->evalModel(inArgs, outArgs);
       
       //std::cout << *gx << std::endl;
 
+#if 0
       // number of responses, minus the solution vector
       TEUCHOS_ASSERT(rLibrary->getLabeledResponseCount()==Teuchos::as<std::size_t>(outArgs.Ng()-1));
       
@@ -267,6 +268,7 @@ int main(int argc, char *argv[])
       }
       else
          *out << "NOT PRINTING VOLUME CONTAINERS!" << std::endl;
+#endif
     }
   }
   catch (std::exception& e) {

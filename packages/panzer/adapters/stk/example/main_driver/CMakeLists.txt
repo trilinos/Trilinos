@@ -42,3 +42,10 @@ TRIBITS_ADD_ADVANCED_TEST(
     ARGS  --i=energy-transient.xml
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
   )
+
+TRIBITS_ADD_ADVANCED_TEST(
+  main_driver_energy-ss-blocked
+  TEST_0 EXEC main_driver 
+    ARGS  --i=energy-ss-blocked.xml
+    PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
+  )

@@ -67,6 +67,7 @@
 
 namespace Thyra {
   template<typename ScalarT> class ModelEvaluator;
+  template<typename ScalarT> class LinearOpWithSolveFactoryBase;
 }
 
 namespace panzer {
@@ -74,6 +75,8 @@ namespace panzer {
 }
 
 namespace panzer_stk {
+
+  class STKConnManager;
   
   template<typename ScalarT>
   class ModelEvaluatorFactory_Epetra : public Teuchos::ParameterListAcceptorDefaultBase {
@@ -162,6 +165,15 @@ namespace panzer_stk {
                                            const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
                                            const Teuchos::ParameterList & closure_models,
                                            int workset_size, Teuchos::ParameterList & user_data) const;
+
+    /** Build LOWS factory.
+      */
+    Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > buildLOWSFactory(bool blockedAssembly,
+                                                                                const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
+                                                                                const Teuchos::RCP<panzer_stk::STKConnManager> & stkConn_manager,
+                                                                                const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
+                                                                                const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm);
+
 
   private:
 

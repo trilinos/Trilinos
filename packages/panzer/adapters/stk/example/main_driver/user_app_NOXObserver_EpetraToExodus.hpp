@@ -161,16 +161,10 @@ namespace user_app {
          epGlobalContainer->set_x(Teuchos::rcp_const_cast<Epetra_Vector>(ep_x));
       }
       else {
-         m_lof->initializeContainer(panzer::LinearObjContainer::X,*ae_inargs.container_);
-
          // initialize the x vector
          const Teuchos::RCP<panzer::BlockedEpetraLinearObjContainer> blkGlobalContainer
             = Teuchos::rcp_dynamic_cast<panzer::BlockedEpetraLinearObjContainer>(ae_inargs.container_,true);
-         Teuchos::RCP<Thyra::VectorBase<double> > blkX = blkGlobalContainer->get_x();
-
-         std::cout << "BlkX = " << Teuchos::describe(*blkX,Teuchos::VERB_MEDIUM) << std::endl;
-
-         copyFlatThyraIntoBlockedThyra(th_x,blkX.ptr());
+         blkGlobalContainer->set_x(Teuchos::rcp_const_cast<Thyra::VectorBase<double> >(Teuchos::rcpFromRef(th_x)));
       }
 
       // do import

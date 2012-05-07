@@ -43,16 +43,30 @@
 #ifndef PANZER_MODEL_EVALUATOR_DECL_HPP
 #define PANZER_MODEL_EVALUATOR_DECL_HPP
 
+#include "Panzer_config.hpp"
+
+#include "Panzer_Traits.hpp"
+#include "Panzer_AssemblyEngine_TemplateManager.hpp"
+#include "Panzer_ParameterLibrary.hpp"
+
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_AbstractFactory.hpp"
+
+#include "Thyra_VectorBase.hpp"
+#include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_StateFuncModelEvaluatorBase.hpp"
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_CrsGraph.hpp"
-#include "Tpetra_Vector.hpp"
+#include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 
 #include <Kokkos_DefaultNode.hpp>
 
 namespace panzer {
 
-  template<typename Scalar, typename LO, typename GO, typename NODE>
+template<typename, typename>  class FieldManagerBuilder;
+template<typename> class ResponseLibrary;
+template<typename> class LinearObjFactory;
+class GlobalData;
+
+template<typename Scalar, typename LO, typename GO, typename NODE>
 class ModelEvaluator
   : public Thyra::StateFuncModelEvaluatorBase<Scalar>
 {
@@ -67,17 +81,16 @@ public:
   /** \name Constructors/Initializers/Accessors */
   //@{
 
+  ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder<LO,GO> >& fmb,
+                 const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
+		 const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof,
+		 const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
+                 const Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > & solverFactory,
+		 const Teuchos::RCP<panzer::GlobalData>& global_data,
+		 bool build_transient_support);
+
   /** \brief . */
   ModelEvaluator();
-
-  /** \brief . */
-  void set_d(const Scalar &d);
-
-  /** \brief . */
-  void set_p(const Teuchos::ArrayView<const Scalar> &p);
-
-  /** \brief . */
-  void set_x0(const Teuchos::ArrayView<const Scalar> &x0);
 
   //@}
 
@@ -86,14 +99,20 @@ public:
 
   /** \brief . */
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
+
   /** \brief . */
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const;
-  /** \brief . */
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
+
   /** \brief . */
   Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const;
+
+  /** \brief . */
+  Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
+
   /** \brief . */
   Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
+
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
 
   //@}
 
@@ -104,25 +123,46 @@ private:
 
   /** \brief . */
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
+
   /** \brief . */
-  void evalModelImpl(
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-    const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
-    ) const;
+  void evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+                     const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   //@}
 
 private: // data members
 
+  double t_init_;
+
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > x_space_;
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > f_space_;
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues_;
-  Scalar d_;
-  Teuchos::RCP<Tpetra::Vector<Scalar,LO,GO,NODE> > x0_;
-  Teuchos::Array<Scalar> p_;
-  Teuchos::RCP<const Tpetra::CrsGraph<LO,GO,NODE> > W_op_graph_;
+
   Thyra::ModelEvaluatorBase::InArgs<Scalar> prototypeInArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
+
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues_;
+
+  // parameters
+  std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > > p_space_;
+  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > p_init_;
+
+  // responses
+  std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > > g_space_;
+
+  Teuchos::RCP<panzer::FieldManagerBuilder<LO,GO> > fmb_;
+  mutable Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > responseLibrary_; // These objects are basically the same
+  mutable panzer::AssemblyEngine_TemplateManager<panzer::Traits,LO,GO> ae_tm_;     // they control and provide access to evaluate
+  std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names_;
+
+  mutable Teuchos::Array<panzer::ParamVec> parameter_vector_;
+  Teuchos::RCP<panzer::GlobalData> global_data_;
+  bool build_transient_support_;
+
+  // basic specific linear object objects
+  Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > lof_;
+  mutable Teuchos::RCP<panzer::LinearObjContainer> ghostedContainer_;
+
+  Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > solverFactory_;
 };
 
 
