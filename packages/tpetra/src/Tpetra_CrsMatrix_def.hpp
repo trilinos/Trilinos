@@ -549,17 +549,28 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::pushToLocalMatrix() {
-    std::string err("::pushToLocalMatrix(): Internal logic error. Please contact Tpetra team.");
-    TEUCHOS_TEST_FOR_EXCEPTION(lclMatrix_.isFinalized() == true, std::logic_error, typeName(*this) << err);
-    // fill local graph
+  template<class Scalar,
+           class LocalOrdinal,
+           class GlobalOrdinal,
+           class Node,
+           class LocalMatOps>
+  void
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  pushToLocalMatrix()
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(lclMatrix_.isFinalized (), std::logic_error,
+      typeName(*this) << "::pushToLocalMatrix(): This method should never be "
+      "called if the local matrix (lclMatrix_) is finalized.  "
+      "Please report this bug to the Tpetra developers.");
+
+    // Transfer ownership of the values to the local matrix.  This
+    // just copies pointers; it doesn't copy data from host to device.
     if (getProfileType() == StaticProfile) {
-      lclMatrix_.set1DValues(values1D_);
+      lclMatrix_.set1DValues (values1D_);
       values1D_ = null;
     }
     else {
-      lclMatrix_.set2DValues(values2D_);
+      lclMatrix_.set2DValues (values2D_);
       values2D_ = null;
     }
   }
@@ -567,49 +578,81 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::pullFromLocalMatrix() {
-    std::string err("::pullFromLocalMatrix(): Internal logic error. Please contact Tpetra team.");
-    TEUCHOS_TEST_FOR_EXCEPTION(lclMatrix_.isFinalized() == false, std::logic_error, typeName(*this) << err);
+  template<class Scalar,
+           class LocalOrdinal,
+           class GlobalOrdinal,
+           class Node,
+           class LocalMatOps>
+  void
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  pullFromLocalMatrix ()
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(! lclMatrix_.isFinalized (), std::logic_error,
+      typeName(*this) << "::pullFromLocalMatrix(): This method should never be "
+      "called if the local matrix (lclMatrix_) is not yet finalized.  Please "
+      "report this bug to the Tpetra developers.");
     // get new data from local matrix
-    if (lclMatrix_.is1DStructure()) {
-      lclMatrix_.get1DValues(values1D_);
+    if (lclMatrix_.is1DStructure ()) {
+      // mfh 03 May 2012: All this does is copy the pointer; it
+      // doesn't actually copy from device to host.
+      //
+      // FIXME (mfh 03 May 2012) It's confusing that this takes a
+      // pointer as an output argument.  It should return the
+      // ArrayRCP, to make clear that it's a shallow copy.
+      lclMatrix_.get1DValues (values1D_);
     }
     else {
-      lclMatrix_.get2DValues(values2D_);
+      // mfh 03 May 2012: All this does is copy the pointer; it
+      // doesn't actually copy from device to host.
+      //
+      // FIXME (mfh 03 May 2012) It's confusing that this takes a
+      // pointer as an output argument.  It should return the
+      // ArrayRCP, to make clear that it's a shallow copy.
+      lclMatrix_.get2DValues (values2D_);
     }
   }
 
-
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillLocalMatrix(OptimizeOption os) {
-    // if not static graph: fill local graph
-    if (isStaticGraph() == false) {
+  template<class Scalar,
+           class LocalOrdinal,
+           class GlobalOrdinal,
+           class Node,
+           class LocalMatOps>
+  void
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  fillLocalMatrix (OptimizeOption os)
+  {
+    if (! isStaticGraph ()) {
       myGraph_->pushToLocalGraph();
     }
-    pushToLocalMatrix();
+    pushToLocalMatrix ();
     // finalize local matrix(with os) (this will finalize local graph if not static)
     const bool optStorage = (os == DoOptimizeStorage);
-    lclMatrix_.finalize( optStorage );
+    lclMatrix_.finalize (optStorage);
     // get the data back from the local objects
-    if (isStaticGraph() == false) {
-      myGraph_->pullFromLocalGraph();
+    if (! isStaticGraph ()) {
+      myGraph_->pullFromLocalGraph ();
     }
-    pullFromLocalMatrix();
+    // mfh 03 May 2012: All this does is copy pointers; it doesn't
+    // copy from device to host.
+    pullFromLocalMatrix ();
   }
 
-
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillLocalSparseOps()
+  template<class Scalar,
+           class LocalOrdinal,
+           class GlobalOrdinal,
+           class Node,
+           class LocalMatOps>
+  void
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  fillLocalSparseOps()
   {
     lclMatOps_.initializeStructure(staticGraph_->getLocalGraph());
     lclMatOps_.initializeValues(lclMatrix_);
   }
-
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
@@ -622,51 +665,72 @@ namespace Tpetra {
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::insertLocalValues(
-                                                         LocalOrdinal localRow,
-                         const ArrayView<const LocalOrdinal> &indices,
-                         const ArrayView<const Scalar>       &values)
+  template<class Scalar,
+           class LocalOrdinal,
+           class GlobalOrdinal,
+           class Node,
+           class LocalMatOps>
+  void
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  insertLocalValues (LocalOrdinal localRow,
+                     const ArrayView<const LocalOrdinal> &indices,
+                     const ArrayView<const Scalar>       &values)
   {
     const std::string tfecfFuncName("insertLocalValues()");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isFillActive() == false,                            std::runtime_error, " requires that fill is active.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isStaticGraph() == true,                            std::runtime_error, " cannot insert indices with static graph; use replaceLocalValues() instead.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( myGraph_->isGloballyIndexed() == true,              std::runtime_error, ": graph indices are global; use insertGlobalValues().");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( hasColMap() == false,                               std::runtime_error, " cannot insert local indices without a column map.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( values.size() != indices.size(),                    std::runtime_error, ": values.size() must equal indices.size().");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( getRowMap()->isNodeLocalElement(localRow) == false, std::runtime_error, ": row does not belong to this node.");
-    if (myGraph_->indicesAreAllocated() == false) {
-      allocateValues(LocalIndices, GraphNotYetAllocated);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! isFillActive (), std::runtime_error,
+      " requires that fill is active.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isStaticGraph (),  std::runtime_error,
+      " cannot insert indices with static graph; use replaceLocalValues() instead.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(myGraph_->isGloballyIndexed(),
+      std::runtime_error, ": graph indices are global; use insertGlobalValues().");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! hasColMap (), std::runtime_error,
+      " cannot insert local indices without a column map.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(values.size() != indices.size(),
+      std::runtime_error, ": values.size() must equal indices.size().");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! getRowMap()->isNodeLocalElement(localRow), std::runtime_error,
+      ": Local row index " << localRow << " does not belong to this process.");
+    if (! myGraph_->indicesAreAllocated ()) {
+      allocateValues (LocalIndices, GraphNotYetAllocated);
     }
     // use column map to filter the entries:
     Array<LocalOrdinal> f_inds(indices);
     Array<Scalar>       f_vals(values);
     typename Graph::SLocalGlobalNCViews inds_ncview;
     inds_ncview.linds = f_inds();
-    const size_t numFilteredEntries = myGraph_->template filterIndicesAndValues<LocalIndices,Scalar>(inds_ncview, f_vals());
+    const size_t numFilteredEntries =
+      myGraph_->template filterIndicesAndValues<LocalIndices, Scalar> (inds_ncview,
+                                                                       f_vals ());
     if (numFilteredEntries > 0) {
       RowInfo rowInfo = myGraph_->getRowInfo(localRow);
       const size_t curNumEntries = rowInfo.numEntries;
       const size_t newNumEntries = curNumEntries + numFilteredEntries;
       if (newNumEntries > rowInfo.allocSize) {
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(getProfileType() == StaticProfile, std::runtime_error, ": new indices exceed statically allocated graph structure.");
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(getProfileType() == StaticProfile,
+          std::runtime_error, ": new indices exceed statically allocated graph "
+          "structure.");
         TPETRA_EFFICIENCY_WARNING(true,std::runtime_error,
-            "::insertLocalValues(): Pre-allocated space has been exceeded, requiring new allocation. To improve efficiency, suggest larger allocation.");
+          "::insertLocalValues(): Pre-allocated space has been exceeded, "
+          "requiring new allocation. To improve efficiency, suggest larger "
+          "allocation.");
         // update allocation only as much as necessary
-        rowInfo = myGraph_->template updateAllocAndValues<LocalIndices,Scalar>(rowInfo, newNumEntries, values2D_[localRow]);
+        rowInfo = myGraph_->template updateAllocAndValues<LocalIndices, Scalar> (rowInfo, newNumEntries, values2D_[localRow]);
       }
       typename Graph::SLocalGlobalViews inds_view;
       inds_view.linds = f_inds(0,numFilteredEntries);
-      myGraph_->template insertIndicesAndValues<LocalIndices,LocalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), f_vals.begin());
+      myGraph_->template insertIndicesAndValues<LocalIndices, LocalIndices> (rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), f_vals.begin());
 #ifdef HAVE_TPETRA_DEBUG
       {
-        const size_t chkNewNumEntries = myGraph_->getNumEntriesInLocalRow(localRow);
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(chkNewNumEntries != newNumEntries, std::logic_error, ": Internal logic error. Please contact Tpetra team.");
+        const size_t chkNewNumEntries = myGraph_->getNumEntriesInLocalRow (localRow);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(chkNewNumEntries != newNumEntries,
+          std::logic_error, ": Internal logic error. Please contact Tpetra team.");
       }
 #endif
     }
 #ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isLocallyIndexed() == false, std::logic_error, ": Violated stated post-conditions. Please contact Tpetra team.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! isLocallyIndexed(), std::logic_error,
+      ": At end of insertLocalValues(), this CrsMatrix is not locally indexed.  "
+      "Please report this bug to the Tpetra developers.");
 #endif
   }
 
@@ -1644,28 +1708,44 @@ namespace Tpetra {
     // allocate if unallocated
     if (! getCrsGraph()->indicesAreAllocated()) {
       // allocate global, in case we do not have a column map
+      //
+      // mfh 03 May 2012: This calls CrsGraph::allocateValues(), which
+      // in turn only calls arcp() to allocate values1D_ or values2D_;
+      // it doesn't call the Kokkos Node's allocBuffer() method to
+      // allocate compute buffers.
       allocateValues( GlobalIndices, GraphNotYetAllocated );
     }
     // Global assemble, if we need to (we certainly don't need to if
     // there's only one process).  This call only costs a single
     // all-reduce if we don't need global assembly.
     if (getComm()->getSize() > 1) {
+      // mfh 03 May 2012: This calls insertGlobalValues(), one entry
+      // at a time.  No allocation of compute buffers here.
       globalAssemble();
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(nonlocals_.size() > 0, std::runtime_error, ": cannot have non-local entries on a serial run. Invalid entry was submitted to the CrsMatrix.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(nonlocals_.size() > 0,
+        std::runtime_error, ": cannot have nonlocal entries on a serial run.  "
+        "An invalid entry (i.e., with row index not in the row Map) must have "
+        "been submitted to the CrsMatrix.");
     }
-    //
     // if we're not allowed to change a static graph, then we can't call optimizeStorage() on it.
     // then we can't call fillComplete() on the matrix with DoOptimizeStorage
     // throw a warning. this is an unfortunate late evaluation; however, we couldn't know when we received the graph
     // that the user would try to optimize the storage later on.
-    if (os == DoOptimizeStorage && isStaticGraph() && staticGraph_->isStorageOptimized() == false) {
-      TPETRA_ABUSE_WARNING(true,std::runtime_error,
-          "::fillComplete(): requested optimized storage, but static graph does not have optimized storage. Ignoring request to optimize storage.");
+    if (os == DoOptimizeStorage && isStaticGraph() && ! staticGraph_->isStorageOptimized ()) {
+      TPETRA_ABUSE_WARNING(true, std::runtime_error,
+        "::fillComplete(): You requested optimized storage by setting the "
+        "OptimizeOption argument to os=DoOptimizeStorage, but CrsMatrix "
+        "currently cannot use optimize storage when constructed with a static "
+        "graph whose storage is not already optimized.  This is because a "
+        "CrsMatrix constructed with a static CrsGraph does not own the graph "
+        "(that's why it's passed in as an RCP<const CrsGraph>), so it can't ask "
+        "the graph to optimize its storage.  Thus, we must deny your request "
+        "to optimize storage.");
       os = DoNotOptimizeStorage;
     }
-    //
+
     if (isStaticGraph()) {
       const bool domainMapsMatch = staticGraph_->getDomainMap() == getDomainMap();
       const bool rangeMapsMatch = staticGraph_->getRangeMap() == getRangeMap();
@@ -1699,13 +1779,18 @@ namespace Tpetra {
     // fill local objects; will fill and finalize local graph if appropriate
     fillLocalMatrix(os);
     fillLocalSparseOps();
-    //
+    // Now we're fill complete!
     fillComplete_ = true;
+
+    // Sanity checks at the end.
 #ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isFillActive() == true || isFillComplete() == false, std::logic_error,
-        ": Violated stated post-conditions. Please contact Tpetra team.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isFillActive(), std::logic_error,
+      ": We're at the end of fillComplete(), but isFillActive() is true.  "
+      "Please report this bug to the Tpetra developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! isFillComplete(), std::logic_error,
+      ": We're at the end of fillComplete(), but isFillActive() is true.  "
+      "Please report this bug to the Tpetra developers.");
 #endif
-    //
     checkInternalState();
   }
 

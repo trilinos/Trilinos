@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -63,9 +63,9 @@ namespace Kokkos {
       - Data is packed into an array of arrays.  The outer array is length number-of-rows, and each row is an array of length num-nonzeros-per-row.
       This is sometimes referred to as "2D" storage.
       @ingroup kokkos_crs_ops
-  */   
-  template <class Scalar, 
-            class Ordinal, 
+  */
+  template <class Scalar,
+            class Ordinal,
             class Node,
             class LocalMatOps>
   class CrsMatrixHostCompute {
@@ -79,7 +79,7 @@ namespace Kokkos {
     //! @name Constructors/Destructor
     //@{
 
-    //! Default constructor with no graph. (Must be set later.) 
+    //! Default constructor with no graph. (Must be set later.)
     CrsMatrixHostCompute();
 
     //! Constructor with a matrix-owned non-const graph
@@ -101,7 +101,7 @@ namespace Kokkos {
 
     //! Set static graph.
     void setStaticGraph(const CrsGraphHostCompute<Ordinal,Node,LocalMatOps> &graph);
-    
+
     //@}
 
     //! @name Data entry and accessor methods.
@@ -138,33 +138,33 @@ namespace Kokkos {
     bool isOptimized() const;
 
     //! Submit the values for 1D storage.
-    /** 
+    /**
           \post is1DStructure() == true
      */
     void set1DValues(ArrayRCP<Scalar> vals);
 
     //! Submit the values for 2D storage.
-    /** 
+    /**
           \post is2DStructure() == true
      */
     void set2DValues(ArrayRCP<ArrayRCP<Scalar> > vals);
 
     //! Retrieve the values for 1D storage.
-    /** 
-          If is1DStructure() == false, then 
+    /**
+          If is1DStructure() == false, then
           \post vals == null
      */
     void get1DValues(ArrayRCP<Scalar> &vals);
 
     //! Retrieve the structure for 2D storage.
-    /** 
-          If is2DStructure() == false, then 
+    /**
+          If is2DStructure() == false, then
           \post vals == null
      */
     void get2DValues(ArrayRCP<ArrayRCP<Scalar> > &inds);
 
     //! Instruct the matrix to perform any necessary manipulation, including (optionally) optimizing the storage of the matrix data.
-    /** 
+    /**
           If the matrix is associated with a matrix-owned graph, then it will be finalized as well. A static graph will not be modified.
 
           @param[in] OptimizeStorage   Permit the graph to reallocate storage on the host in order to provide optimal storage and/or performance.
@@ -178,7 +178,7 @@ namespace Kokkos {
     //@}
 
   protected:
-    //! Copy constructor (protected and not implemented) 
+    //! Copy constructor (protected and not implemented)
     CrsMatrixHostCompute(const CrsMatrixHostCompute& sources);
 
     CrsGraphHostCompute<Ordinal,Node,LocalMatOps> *myGraph_;
@@ -219,12 +219,15 @@ namespace Kokkos {
 
   //==============================================================================
   template <class Scalar, class Ordinal, class Node, class LocalMatOps>
-  void CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps>::setStaticGraph(const CrsGraphHostCompute<Ordinal,Node,LocalMatOps> &hgraph)
+  void
+  CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps>::
+  setStaticGraph (const CrsGraphHostCompute<Ordinal,Node,LocalMatOps> &hgraph)
   {
     myGraph_ = NULL;
     staticGraph_ = &hgraph;
-    TEUCHOS_TEST_FOR_EXCEPTION( staticGraph_->isFinalized() == false, std::runtime_error, 
-        Teuchos::typeName(*this) << ": construction with static graph requires that the graph is already finalized.");
+    TEUCHOS_TEST_FOR_EXCEPTION( ! staticGraph_->isFinalized (),
+      std::runtime_error, Teuchos::typeName(*this) << ": construction with "
+      "static graph requires that the graph is already finalized.");
   }
 
   //==============================================================================
@@ -314,21 +317,26 @@ namespace Kokkos {
 
   // ======= set 1d ===========
   template <class Scalar, class Ordinal, class Node, class LocalMatOps>
-  void CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps>::set1DValues(ArrayRCP<Scalar> vals)
+  void
+  CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps>::
+  set1DValues (ArrayRCP<Scalar> vals)
   {
     this->clear();
-    TEUCHOS_TEST_FOR_EXCEPTION( is1DStructure() == false, std::runtime_error, 
-        Teuchos::typeName(*this) << "::set1DValues(vals): graph must have 1D structure and must be set before matrix.");
+    TEUCHOS_TEST_FOR_EXCEPTION(! is1DStructure (), std::runtime_error,
+      Teuchos::typeName(*this) << "::set1DValues(vals): graph must have 1D "
+      "structure and must be set before matrix.");
     values1D_ = vals;
-    TEUCHOS_TEST_FOR_EXCEPTION( (size_t)values1D_.size() < getNumEntries(), std::runtime_error,
-        Teuchos::typeName(*this) << "::set1DValues(vals): inds must have as many entries as the number of entries in the associated graph, and the graph entries must be set first.");
+    TEUCHOS_TEST_FOR_EXCEPTION((size_t)values1D_.size() < getNumEntries(),
+      std::runtime_error, Teuchos::typeName(*this) << "::set1DValues(vals): "
+      "inds must have as many entries as the number of entries in the "
+      "associated graph, and the graph entries must be set first.");
   }
 
   // ======= set 2d ===========
   template <class Scalar, class Ordinal, class Node, class LocalMatOps>
   void CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps>::set2DValues(ArrayRCP<ArrayRCP<Scalar> > vals)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION( is2DStructure() == false, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION( is2DStructure() == false, std::runtime_error,
         Teuchos::typeName(*this) << "::set2DValues(vals): graph must have 2D structure and must be set before matrix.");
     TEUCHOS_TEST_FOR_EXCEPTION( (size_t)vals.size() != getNumRows(), std::runtime_error,
         Teuchos::typeName(*this) << "::set2DValues(inds): vals must have as many entries as the number of rows in the associated graph.");
@@ -339,16 +347,25 @@ namespace Kokkos {
 
   // ======= finalize ===========
   template <class Scalar, class Ordinal, class Node, class LocalMatOps>
-  void CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps>::finalize(bool OptimizeStorage)
+  void
+  CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps>::
+  finalize (bool OptimizeStorage)
   {
-    if (isFinalized_ && !(OptimizeStorage == true && staticGraph_->isOptimized() == false)) return;
+    if (isFinalized_ && ! (OptimizeStorage && ! staticGraph_->isOptimized ())) {
+      // If we've already finalized, and if we don't need to optimize
+      // the graph's storage, then we don't have to do anything.
+      return;
+    }
     // we only have something to do if we have a matrix-owned graph
     if (myGraph_ != NULL) {
-      myGraph_->template finalize<Scalar>(OptimizeStorage, values2D_, values1D_);
+      myGraph_->template finalize<Scalar> (OptimizeStorage, values2D_, values1D_);
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(OptimizeStorage == true && staticGraph_->isOptimized() == false, std::runtime_error, 
-          Teuchos::typeName(*this) << "::finalize(OptimizeStorage == true): underlying static graph is not optimized and cannot be optimized.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        OptimizeStorage && ! staticGraph_->isOptimized (),
+        std::runtime_error, Teuchos::typeName(*this) << "::finalize(Optimize"
+        "Storage == true): underlying static graph is not optimized and cannot "
+        "be optimized.");
     }
     isFinalized_ = true;
   }
@@ -362,7 +379,7 @@ namespace Kokkos {
   /// that it contains additional storage and logic for device-bound
   /// compute buffers.
   template <class Scalar,
-            class Ordinal, 
+            class Ordinal,
             class Node,
             class LocalMatOps>
   class CrsMatrixDeviceCompute : public CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps> {
@@ -393,9 +410,9 @@ namespace Kokkos {
 
     //! Set static graph.
     void setStaticGraph(const CrsGraphDeviceCompute<Ordinal,Node,LocalMatOps> &graph);
-    
+
     //! Instruct the matrix to perform any necessary manipulation, including (optionally) optimizing the storage of the matrix data.
-    /** 
+    /**
           @param[in] OptimizeStorage   Permit the matrix to reallocate storage on the host in order to provide optimal storage and/or performance.
           \post if OptimizeStorage == true, then is2DStructure() == true
      */
@@ -410,7 +427,7 @@ namespace Kokkos {
     //@}
 
   protected:
-    //! Copy constructor (protected and not implemented) 
+    //! Copy constructor (protected and not implemented)
     CrsMatrixDeviceCompute(const CrsMatrixDeviceCompute& sources);
 
     // pointers to device-based graph
@@ -446,12 +463,12 @@ namespace Kokkos {
 
   //===== destructor =====
   template <class Scalar, class Ordinal, class Node, class LocalMatOps>
-  CrsMatrixDeviceCompute<Scalar,Ordinal,Node,LocalMatOps>::~CrsMatrixDeviceCompute() 
+  CrsMatrixDeviceCompute<Scalar,Ordinal,Node,LocalMatOps>::~CrsMatrixDeviceCompute()
   {}
 
   //===== clear =====
   template <class Scalar, class Ordinal, class Node, class LocalMatOps>
-  void CrsMatrixDeviceCompute<Scalar,Ordinal,Node,LocalMatOps>::clear() { 
+  void CrsMatrixDeviceCompute<Scalar,Ordinal,Node,LocalMatOps>::clear() {
     CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps>::clear();
     pbuf_values_ = null;
   }
@@ -491,7 +508,7 @@ namespace Kokkos {
       myDeviceGraph_->template finalize<Scalar>(OptimizeStorage, this->values2D_, this->values1D_, pbuf_values_);
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(OptimizeStorage == true && this->staticGraph_->isOptimized() == false, std::runtime_error, 
+      TEUCHOS_TEST_FOR_EXCEPTION(OptimizeStorage == true && this->staticGraph_->isOptimized() == false, std::runtime_error,
           Teuchos::typeName(*this) << "::finalize(OptimizeStorage == true): underlying static graph is not optimized and cannot be optimized.");
       // static graph. no changes, but need to copy values to device.
       if (this->isEmpty()) {
@@ -540,16 +557,16 @@ namespace Kokkos {
 
 
   //=========================================================================================================================
-  // 
+  //
   // A first-touch allocation host-resident CrsMatrix
-  // 
+  //
   //=========================================================================================================================
 
   /** \brief A host-compute compressed-row sparse matrix with first-touch allocation.
       \ingroup kokkos_crs_ops
    */
-  template <class Scalar, 
-            class Ordinal, 
+  template <class Scalar,
+            class Ordinal,
             class Node,
             class LocalMatOps>
   class FirstTouchHostCrsMatrix : public CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps> {
@@ -563,7 +580,7 @@ namespace Kokkos {
     //! @name Constructors/Destructor
     //@{
 
-    //! Default constructor with no graph. (Must be set later.) 
+    //! Default constructor with no graph. (Must be set later.)
     FirstTouchHostCrsMatrix();
 
     //! Constructor with a matrix-owned non-const graph
@@ -585,14 +602,14 @@ namespace Kokkos {
 
     //! Set static graph.
     void setStaticGraph(const FirstTouchHostCrsGraph<Ordinal,Node,LocalMatOps> &graph);
-    
+
     //@}
 
     //! @name Data entry and accessor methods.
     //@{
 
     //! Instruct the matrix to perform any necessary manipulation, including (optionally) optimizing the storage of the matrix data.
-    /** 
+    /**
           If the matrix is associated with a matrix-owned graph, then it will be finalized as well. A static graph will not be modified.
 
           @param[in] OptimizeStorage   Permit the graph to reallocate storage on the host in order to provide optimal storage and/or performance.
@@ -603,7 +620,7 @@ namespace Kokkos {
     //@}
 
   protected:
-    //! Copy constructor (protected and not implemented) 
+    //! Copy constructor (protected and not implemented)
     FirstTouchHostCrsMatrix(const FirstTouchHostCrsMatrix& sources);
     // pointers to first-touch graphs
     FirstTouchHostCrsGraph<Ordinal,Node,LocalMatOps>           *myFTGraph_;
@@ -614,7 +631,7 @@ namespace Kokkos {
   //==============================================================================
   template <class Scalar, class Ordinal, class Node, class LocalMatOps>
   FirstTouchHostCrsMatrix<Scalar,Ordinal,Node,LocalMatOps>::FirstTouchHostCrsMatrix()
-  : CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps>() 
+  : CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps>()
   , myFTGraph_(NULL)
   , staticFTGraph_(NULL)
   {}
@@ -622,7 +639,7 @@ namespace Kokkos {
   //==============================================================================
   template <class Scalar, class Ordinal, class Node, class LocalMatOps>
   FirstTouchHostCrsMatrix<Scalar,Ordinal,Node,LocalMatOps>::FirstTouchHostCrsMatrix(const FirstTouchHostCrsGraph<Ordinal,Node,LocalMatOps> &graph)
-  : CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps>(graph) 
+  : CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps>(graph)
   , myFTGraph_(NULL)
   , staticFTGraph_(&graph)
   {}
@@ -630,7 +647,7 @@ namespace Kokkos {
   //==============================================================================
   template <class Scalar, class Ordinal, class Node, class LocalMatOps>
   FirstTouchHostCrsMatrix<Scalar,Ordinal,Node,LocalMatOps>::FirstTouchHostCrsMatrix(FirstTouchHostCrsGraph<Ordinal,Node,LocalMatOps> &graph)
-  : CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps>(graph) 
+  : CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps>(graph)
   , myFTGraph_(&graph)
   , staticFTGraph_(&graph)
   {}
@@ -662,7 +679,7 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node, class LocalMatOps>
   void FirstTouchHostCrsMatrix<Scalar,Ordinal,Node,LocalMatOps>::finalize(bool OptimizeStorage)
   {
-    if (this->isFinalized_ == false || 
+    if (this->isFinalized_ == false ||
        (OptimizeStorage == true && staticFTGraph_->isOptimized() == false))
     {
       if (this->myFTGraph_ != NULL) {
@@ -670,7 +687,7 @@ namespace Kokkos {
         myFTGraph_->template finalize<Scalar>(OptimizeStorage, this->values2D_, this->values1D_);
       }
       else {
-        TEUCHOS_TEST_FOR_EXCEPTION(OptimizeStorage == true && staticFTGraph_->isOptimized() == false, std::runtime_error, 
+        TEUCHOS_TEST_FOR_EXCEPTION(OptimizeStorage == true && staticFTGraph_->isOptimized() == false, std::runtime_error,
             Teuchos::typeName(*this) << "::finalize(OptimizeStorage == true): underlying static graph is not already optimized and cannot be optimized.");
       }
       this->isFinalized_ = true;
@@ -685,9 +702,9 @@ namespace Kokkos {
 
 
   //=========================================================================================================================
-  // 
+  //
   // Specializations
-  // 
+  //
   //=========================================================================================================================
   // C++0x: it would be nice if these were template aliases
 
@@ -705,7 +722,7 @@ namespace Kokkos {
       \ingroup kokkos_crs_ops
     */
   template <class Scalar,
-            class Ordinal, 
+            class Ordinal,
             class Node,
             class LocalMatOps>
   class CrsMatrix : public CrsMatrixHostCompute<Scalar,Ordinal,Node,LocalMatOps> {
@@ -734,7 +751,7 @@ namespace Kokkos {
     */
   class TBBNode;
   template <class Scalar,
-            class Ordinal, 
+            class Ordinal,
             class LocalMatOps>
   class CrsMatrix<Scalar,Ordinal,TBBNode,LocalMatOps> : public FirstTouchHostCrsMatrix<Scalar,Ordinal,TBBNode,LocalMatOps> {
   public:
@@ -761,7 +778,7 @@ namespace Kokkos {
       Specialization is a first-touch host-bound FirstTouchHostCrsMatrix object.
     */
   template <class Scalar,
-            class Ordinal, 
+            class Ordinal,
             class LocalMatOps>
   class CrsMatrix<Scalar,Ordinal,TPINode,LocalMatOps> : public FirstTouchHostCrsMatrix<Scalar,Ordinal,TPINode,LocalMatOps> {
   public:

@@ -53,62 +53,36 @@
 # ************************************************************************
 # @HEADER
 
-  
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
+
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.s903186.clang.cmake")
 
 #
-# Platform/compiler specific options for s903186 using clang
+# Set the options specific to this build case
 #
 
-MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
+SET(COMM_TYPE MPI)
+SET(BUILD_TYPE RELEASE)
+SET(BUILD_DIR_NAME MPI_OPT_DEV_CLANG_STABLE)
+SET(CTEST_TEST_TYPE Nightly)
+#SET(CTEST_TEST_TIMEOUT 900)
 
-  # Base of Trilinos/cmake/ctest then BUILD_DIR_NAME
+SET(EXTRA_EXCLUDE_PACKAGES PyTrilinos SEACAS Mesquite)
 
-  SET( CTEST_DASHBOARD_ROOT "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
+SET( EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
+  "-DNOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK=ON"
+  "-DMOOCHO_ENABLE_TESTS:BOOL=OFF"
+  "-DMOOCHO_ENABLE_EXAMPLES:BOOL=OFF"
+  "-DRythmos_ENABLE_TESTS:BOOL=OFF"
+  "-DRythmos_ENABLE_EXAMPLES:BOOL=OFF"
+  "-DFEI_ENABLE_TESTS:BOOL=OFF"
+  "-DFEI_ENABLE_EXAMPLES:BOOL=OFF"
+  "-DPiro_ENABLE_TESTS:BOOL=OFF"
+  "-DPiro_ENABLE_EXAMPLES:BOOL=OFF"
+  )
 
-  SET( CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
-  
-  SET( CTEST_BUILD_FLAGS "-j8 -i" )
+#
+# Set the rest of the system-specific options and run the dashboard build/test
+#
 
-  SET_DEFAULT( CTEST_PARALLEL_LEVEL "8" )
-
-  SET_DEFAULT( Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
-  
-  # Only turn on PyTrilinos for shared libraries
-  SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
-  
-  SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-    "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
-    "-DTrilinos_ENABLE_Fortran=OFF"
-    "-DTrilinos_ENABLE_DEPENCENCY_UNIT_TESTS:BOOL=OFF"
-    "-DBoost_INCLUDE_DIRS=/Users/trilinos/tpl/gcc/boost-1.46.1"
-    "-DNetcdf_LIBRARY_DIRS=/Users/trilinos/tpl/gcc/netcdf-4.1.3/lib"
-    "-DNetcdf_INCLUDE_DIRS=/Users/trilinos/tpl/gcc/netcdf-4.1.3/include"
-    "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
-    "-DCMAKE_VERBOSE_MAKEFILE:BOOL=TRUE"
-    "-DTPL_ENABLE_MATLAB=OFF"
-    )
-
-  SET_DEFAULT(COMPILER_VERSION "Clang-3.0")
-  
-  IF (COMM_TYPE STREQUAL MPI)
-  
-    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-      ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DTPL_ENABLE_MPI:BOOL=ON"
-      "-DMPI_BASE_DIR:PATH=/Users/trilinos/bin/clang-openmpi-1.4.5"
-      )
-  
-  ELSE()
-  
-    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-      ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/Users/trilinos/bin/clang-3.0/bin/clang++"
-      "-DCMAKE_C_COMPILER:FILEPATH=/Users/trilinos/bin/clang-3.0/bin/clang"
-      )
-  
-  ENDIF()
-
-  TRILINOS_CTEST_DRIVER()
-
-ENDMACRO()
+TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()
