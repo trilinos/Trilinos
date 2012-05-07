@@ -53,6 +53,15 @@
 
 namespace panzer {
   
+  /** \brief Data for determining cell topology and dimensionality
+
+      This class provides information about the finite elements/cells
+      and allows us to reuse all the evaluation machinery for both
+      volume and surface integrations.  When performing neumann
+      conditions, we integrate over a side but must still use all
+      basis points from the volume if we need a gradient that contains
+      a normal component to the surface being integrated over.
+  */ 
   class CellData {
     
   public:
