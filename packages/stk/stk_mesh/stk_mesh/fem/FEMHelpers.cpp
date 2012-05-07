@@ -430,9 +430,13 @@ bool element_side_polarity( const Entity & elem ,
   const PairIterRelation elem_nodes = elem.relations( FEMMetaData::NODE_RANK );
   const PairIterRelation side_nodes = side.relations( FEMMetaData::NODE_RANK );
 
-  bool good = true ;
-  for ( unsigned j = 0 ; good && j < side_top->node_count ; ++j ) {
-    good = side_nodes[j].entity() == elem_nodes[ side_map[j] ].entity();
+  const unsigned n = side_top->node_count;
+  bool good = false ;
+  for ( unsigned i = 0 ; !good && i < n ; ++i ) {
+    good = true;
+    for ( unsigned j = 0; good && j < n ; ++j ) {
+      good = side_nodes[(j+i)%n].entity() == elem_nodes[ side_map[j] ].entity();
+    }
   }
   return good ;
 }

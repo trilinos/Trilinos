@@ -282,58 +282,67 @@ namespace {
 Ioss::Region *create_output_mesh(
     const std::string &mesh_filename,
     stk::mesh::BulkData &bulk_data,
-    bool add_transient = true,
-    bool add_all_fields = false)
+    const bool skin = false)
 {
-  std::string out_filename = mesh_filename;
-
+  const bool add_all_fields = false;
   Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(
       "exodusII",
-      out_filename,
+      mesh_filename,
       Ioss::WRITE_RESULTS,
       bulk_data.parallel()
       );
   if (dbo == NULL || !dbo->ok()) {
-    std::cerr << "ERROR: Could not open results database '" << out_filename
+    std::cerr << "ERROR: Could not open results database '" << mesh_filename
       << "' of type 'exodusII'\n";
     std::exit(EXIT_FAILURE);
   }
 
   // NOTE: 'out_region' owns 'dbo' pointer at this time...
-  Ioss::Region *out_region = new Ioss::Region(dbo, "results_output");
+  const std::string name = std::string("results_output_")+mesh_filename;
+  Ioss::Region *out_region = new Ioss::Region(dbo, name);
 
   const Ioss::Region * null_in_region = NULL;
   stk::io::define_output_db(*out_region, bulk_data, null_in_region);
-  stk::io::write_output_db(*out_region,  bulk_data);
+  stk::io::write_output_db (*out_region, bulk_data);
 
-  if (add_transient) {
-    out_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
+  out_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
 
-    // Special processing for nodeblock (all nodes in model)...
-    stk::io::ioss_add_fields(stk::mesh::MetaData::get(bulk_data).universal_part(), NODE_RANK,
-        out_region->get_node_blocks()[0],
-        Ioss::Field::TRANSIENT, add_all_fields);
+  // Special processing for nodeblock (all nodes in model)...
+  const Ioss::Field::RoleType role_type = skin ? Ioss::Field::ATTRIBUTE : Ioss::Field::TRANSIENT;
+  stk::io::ioss_add_fields(stk::mesh::MetaData::get(bulk_data).universal_part(), NODE_RANK,
+                           out_region->get_node_blocks()[0], role_type, add_all_fields);
 
-    const stk::mesh::PartVector & all_parts = stk::mesh::MetaData::get(bulk_data).get_parts();
-    for ( stk::mesh::PartVector::const_iterator
-        ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
+  const stk::mesh::PartVector & all_parts = stk::mesh::MetaData::get(bulk_data).get_parts();
+  for ( stk::mesh::PartVector::const_iterator ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
+    stk::mesh::Part * const part = *ip; 
 
-      stk::mesh::Part * const part = *ip;
-
-      // Check whether this part should be output to results database.
-      if (stk::io::is_part_io_part(*part)) {
-        // Get Ioss::GroupingEntity corresponding to this part...
-        Ioss::GroupingEntity *entity = out_region->get_entity(part->name());
-        if (entity != NULL) {
-          if (entity->type() == Ioss::ELEMENTBLOCK) {
-            stk::io::ioss_add_fields(*part, part->primary_entity_rank(),
-                entity, Ioss::Field::TRANSIENT, add_all_fields);
+    // Check whether this part should be output to results database.
+    if (stk::io::is_part_io_part(*part)) {
+      // Get Ioss::GroupingEntity corresponding to this part...
+      Ioss::GroupingEntity *entity = out_region->get_entity(part->name());
+      if (entity != NULL) {
+        if (skin) {
+          const bool skin_part = part->name() == "Skin_part";
+          if(skin_part) {
+            Ioss::SideSet *sset = dynamic_cast<Ioss::SideSet*>(entity);
+            if (!sset) {
+              std::cerr << "ERROR: could not dynamic_cast entity.\n";
+              std::exit(EXIT_FAILURE);
+            }
+            for (unsigned i=0; i < sset->block_count(); i++) {
+              Ioss::SideBlock *fb = sset->get_block(i);
+              stk::io::ioss_add_fields(*part, part->primary_entity_rank(),
+                                       fb, Ioss::Field::TRANSIENT);
+            }
           }
-        }
+        } else if (entity->type() == Ioss::ELEMENTBLOCK) {
+          stk::io::ioss_add_fields(*part, part->primary_entity_rank(), 
+                                    entity, Ioss::Field::TRANSIENT, add_all_fields);
+        } 
       }
     }
-    out_region->end_mode(Ioss::STATE_DEFINE_TRANSIENT);
   }
+  out_region->end_mode(Ioss::STATE_DEFINE_TRANSIENT);
   return out_region;
 }
 
@@ -353,10 +362,11 @@ STKUNIT_UNIT_TEST( GearsDemo, skin_gear ) {
   const unsigned p_rank = fixture.bulk_data.parallel_rank();
   std::srand(p_rank); // Seed pseudo-random generator based on processor rank.
 
-  stk::mesh::Part & skin_part = fixture.meta_data.declare_part("Skin_part");
+  stk::mesh::Part & skin_part = fixture.meta_data.declare_part("Skin_part",fixture.element_rank-1);
 
   const unsigned ONE_STATE = 1;
   CartesianField & velocity_field = fixture.meta_data.declare_field<CartesianField>("velocity",ONE_STATE);
+  CartesianField & displacement = fixture.meta_data.declare_field<CartesianField>("face_displacement",ONE_STATE);
   IntField & processor_field = fixture.meta_data.declare_field<IntField>("processor_id",ONE_STATE);
 
   stk::mesh::put_field(
@@ -375,9 +385,55 @@ STKUNIT_UNIT_TEST( GearsDemo, skin_gear ) {
   // add io parts
   stk::io::put_io_part_attribute( fixture.hex_part);
   stk::io::put_io_part_attribute( fixture.wedge_part);
-  stk::io::put_io_part_attribute(skin_part);
+  stk::io::put_io_part_attribute( skin_part);
   stk::io::set_field_role(fixture.displacement_field.field_of_state(stk::mesh::StateNew), Ioss::Field::TRANSIENT);
+  stk::io::set_field_role(displacement,    Ioss::Field::TRANSIENT);
   stk::io::set_field_role(processor_field, Ioss::Field::TRANSIENT);
+
+  std::set<const stk::mesh::Part*> skin_io_parts; skin_io_parts.insert(&skin_part);
+  const stk::mesh::PartVector & parts = fixture.meta_data.get_parts();
+  for ( stk::mesh::PartVector::const_iterator ip = parts.begin(); ip != parts.end(); ++ip ) {
+    stk::mesh::Part & topo_part = **ip;
+    if(topo_part.primary_entity_rank() == fixture.element_rank-1 && std::string::npos!=topo_part.name().find("FEM_ROOT_CELL_TOPOLOGY_PART"))  {
+      std::string t;
+      if      (t.npos != topo_part.name().find("Triangle_3"))      t = "skin_wedge6_tri3_1";
+      else if (t.npos != topo_part.name().find("Triangle_6"))      t = "skin_wedge15_tri6_2";
+      else if (t.npos != topo_part.name().find("Triangle_4"))      t = "skin_wedge6_tri4_3";
+      else if (t.npos != topo_part.name().find("Quadrilateral_4")) t = "skin_hex8_quad4_4";
+      else if (t.npos != topo_part.name().find("Quadrilateral_8")) t = "skin_hex20_quad8_5";
+      else if (t.npos != topo_part.name().find("Quadrilateral_9")) t = "skin_hex27_quad9_6";
+      else { 
+        t = topo_part.name()+std::string("_Skin_part");
+        t.erase(t.find("FEM_ROOT_CELL_TOPOLOGY_PART"), sizeof("FEM_ROOT_CELL_TOPOLOGY_PART"));
+      }
+      stk::mesh::Part & topo_skin_part = fixture.meta_data.declare_part(t, fixture.element_rank-1);
+      skin_io_parts.insert(&topo_skin_part);
+      stk::io::put_io_part_attribute(topo_skin_part);
+      fixture.meta_data.declare_part_subset(topo_part, topo_skin_part);
+      fixture.meta_data.declare_part_subset(skin_part, topo_skin_part);
+      if (   t == "skin_hex8_quad4_4" || t == "skin_hex20_quad8_5") {
+        if  (t == "skin_hex8_quad4_4")   t = "skin_wedge6_quad4_4";
+        else                             t = "skin_wedge15_quad4_8";
+        stk::mesh::Part & topo_skin_part = fixture.meta_data.declare_part(t, fixture.element_rank-1);
+        skin_io_parts.insert(&topo_skin_part);
+        stk::io::put_io_part_attribute(topo_skin_part);
+        fixture.meta_data.declare_part_subset(topo_part, topo_skin_part);
+        fixture.meta_data.declare_part_subset(skin_part, topo_skin_part);
+      }
+    } 
+  }
+  stk::mesh::Selector surface_select = fixture.meta_data.locally_owned_part();
+  {
+    stk::mesh::put_field( displacement, fixture.element_rank-1, skin_part);
+    const stk::mesh::PartVector &surf_parts = skin_part.subsets();
+    for ( stk::mesh::PartVector::const_iterator ip = surf_parts.begin(); ip != surf_parts.end(); ++ip ) {
+      stk::mesh::Part & surf_part = **ip;
+      if (surf_part.primary_entity_rank() == fixture.element_rank-1) {
+        surface_select |= surf_part;
+        stk::mesh::put_field( displacement, fixture.element_rank-1, surf_part);
+      }
+    }
+  }
 
   fixture.meta_data.commit();
 
@@ -388,34 +444,11 @@ STKUNIT_UNIT_TEST( GearsDemo, skin_gear ) {
   const size_t spatial_dim = fixture.meta_data.spatial_dimension();
   stk::mesh::skin_mesh( fixture.bulk_data, spatial_dim, &skin_part);
 
-  //count the types of node, edges, faces, and elements
-  {
-    std::vector<size_t> counts ;
-    // Parallel collective call:
-    comm_mesh_counts( fixture.bulk_data , counts);
-
-    //if ( p_rank == 0 ) {
-    //  std::cout << "N_GEARS Meshing completed and verified" << std::endl ;
-
-    //  const stk::mesh::EntityRank EdgeRank = stk::mesh::fem::edge_rank(spatial_dim);
-    //  const stk::mesh::EntityRank FaceRank = stk::mesh::fem::face_rank(spatial_dim);
-    //  std::cout << "N_GEARS Global Counts:\n{\n "
-    //    << "\tnode = " << counts[NODE_RANK] << "\n"
-    //    << "\tedge = " << counts[EdgeRank] << "\n"
-    //    << "\tface = " << counts[FaceRank] << "\n"
-    //    << "\telem = " << counts[fixture.element_rank] << "\n}" << std::endl;
-    //}
-  }
-
   stk::mesh::EntityVector wedges_to_separate;
 
   find_and_shuffle_wedges_to_separate( fixture, wedges_to_separate );
 
-  //const size_t NUM_TIME_STEPS = 15000;
   const size_t NUM_TIME_STEPS = 150;
-  //const size_t NUM_TIME_STEPS = 10;
-  //const size_t NUM_TIME_STEPS = 1;
-
   const size_t separation_interval = 30;
 
   const double rotation = TWO_PI*4.0/NUM_TIME_STEPS;
@@ -424,24 +457,18 @@ STKUNIT_UNIT_TEST( GearsDemo, skin_gear ) {
   const double z = 0;
   const stk::mesh::fixtures::GearMovement gear_movement_data(rotation,x,y,z);
 
-  Ioss::Region * out_region = NULL;
+  Ioss::Region * volume_out_region = NULL;
+  Ioss::Region * surface_out_region = NULL;
 
   stk::mesh::fixtures::Gear & gear = fixture.get_gear(0);
 
   // Iterate over the time steps, updating the locations of the entities and
   // writing the current mesh state to output files.
-  const bool output_exodus_file = false;
-  //const bool output_exodus_file = true;
+  const bool output_exodus_file = true;
   for (size_t time_step = 0; time_step < NUM_TIME_STEPS; ++time_step) {
 
-    //if (p_rank == 0) {
-    //  std::cout << "timestep: " << time_step << std::endl;
-    //}
-
     // Determine if it's time to separate a wedge
-    //bool do_separate_wedge = (!wedges_to_separate.empty());
-    const bool do_separate_wedge = (!wedges_to_separate.empty()) && ((time_step %(separation_interval*(p_rank+1))) == 0);
-    //const bool do_separate_wedge = (!wedges_to_separate.empty()) && ((time_step %30) == 1);
+    const bool do_separate_wedge = !wedges_to_separate.empty() && (time_step%separation_interval == 0);
 
     if (time_step > 0) {
 
@@ -473,32 +500,62 @@ STKUNIT_UNIT_TEST( GearsDemo, skin_gear ) {
       fixture.communicate_model_fields();
     }
 
+    // update a face field 
+    stk::mesh::BucketVector face_buckets;
+    stk::mesh::BucketVector all_face_buckets = fixture.bulk_data.buckets(fixture.element_rank-1);
+    stk::mesh::get_buckets( surface_select, all_face_buckets, face_buckets);
+    for (stk::mesh::BucketVector::iterator b_itr = face_buckets.begin(); b_itr != face_buckets.end(); ++b_itr) {
+      stk::mesh::Bucket & b = **b_itr;
+      for (size_t i = 0; i < b.size(); ++i) {
+        stk::mesh::Entity& face = b[i];
+        double *elem_node_disp = field_data(displacement, face);
+        if (elem_node_disp) {
+          stk::mesh::PairIterRelation node_rels = face.node_relations();
+          const size_t num_nodes = node_rels.size();
+          for(; !node_rels.empty(); ++node_rels) {
+            const stk::mesh::Entity& node = *node_rels->entity();
+            double* node_disp = stk::mesh::field_data(fixture.displacement_field, node);
+            elem_node_disp[0] = node_disp[0];
+            elem_node_disp[1] = node_disp[1];
+            elem_node_disp[2] = node_disp[2];
+          }
+          elem_node_disp[0] /= num_nodes;
+          elem_node_disp[1] /= num_nodes;
+          elem_node_disp[2] /= num_nodes;
+        }
+      }
+    }
+   
+
+
+
     //This section writes mesh data out to an exodus file:
     if (output_exodus_file) {
       // Write the output file at the first time step and every time the mesh is modified.
-      //const bool create_output_file = do_separate_wedge || (time_step == 0);
-      //const bool create_output_file = (time_step %timesteps_between_modifications == 0);
-      const bool create_output_file = true;
+      const bool create_output_file = do_separate_wedge || !time_step;
       // Write the model to the mesh file (topology, coordinates, attributes, etc)
       if (create_output_file)  {
-        delete out_region;
-        out_region = NULL;
-
-        std::ostringstream out_filename;
-        out_filename << "mesh_" << std::setw(7) << std::setfill('0') << time_step << ".e";
-
-        out_region = create_output_mesh( out_filename.str(), fixture.bulk_data );
+        delete volume_out_region;   volume_out_region = NULL;
+        delete surface_out_region; surface_out_region = NULL;
+        std::ostringstream volume_out_filename;
+        volume_out_filename << "volume_mesh_" << std::setw(7) << std::setfill('0') << time_step << ".e";
+        volume_out_region = create_output_mesh( volume_out_filename.str(), fixture.bulk_data,  false);
+        std::ostringstream surface_out_filename;
+        surface_out_filename << "surface_mesh_" << std::setw(7) << std::setfill('0') << time_step << ".e";
+        surface_out_region = create_output_mesh( surface_out_filename.str(), fixture.bulk_data,  true);
       }
 
       stk::io::MeshData mesh;
-      mesh.m_output_region=out_region;
-      
+      mesh.m_output_region=volume_out_region;
+      stk::io::process_output_request(mesh, fixture.bulk_data, time_step/60.0, skin_io_parts);
+      mesh.m_output_region = NULL;
+      mesh.m_output_region=surface_out_region;
       stk::io::process_output_request(mesh, fixture.bulk_data, time_step/60.0);
       mesh.m_output_region = NULL;
     }
   }
 
-  delete out_region;
-  out_region = NULL;
+  delete volume_out_region;  volume_out_region = NULL;
+  delete surface_out_region; surface_out_region = NULL;
 }
 

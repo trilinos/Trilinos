@@ -396,7 +396,8 @@ void put_field_data(stk::mesh::BulkData &bulk, stk::mesh::Part &part,
 
 void internal_process_output_request(stk::io::MeshData &mesh_data,
                                      stk::mesh::BulkData &bulk,
-                                     int step)
+                                     int step,
+                                     const std::set<const stk::mesh::Part*> &exclude)
 {
   Ioss::Region *region = mesh_data.m_output_region;
   region->begin_state(step);
@@ -415,7 +416,7 @@ void internal_process_output_request(stk::io::MeshData &mesh_data,
     stk::mesh::Part * const part = *ip;
 
     // Check whether this part should be output to results database.
-    if (stk::io::is_part_io_part(*part)) {
+    if (stk::io::is_part_io_part(*part) && !exclude.count(part)) {
       // Get Ioss::GroupingEntity corresponding to this part...
       Ioss::GroupingEntity *entity = region->get_entity(part->name());
       if (entity != NULL && entity->type() != Ioss::SIDESET) {
@@ -620,13 +621,14 @@ void create_output_mesh(const std::string &filename,
 // ========================================================================
 int process_output_request(MeshData &mesh_data,
                            stk::mesh::BulkData &bulk,
-                           double time)
+                           double time,
+                           const std::set<const stk::mesh::Part*> &exclude)
 {
   Ioss::Region *region = mesh_data.m_output_region;
   region->begin_mode(Ioss::STATE_TRANSIENT);
 
   int out_step = region->add_state(time);
-  internal_process_output_request(mesh_data, bulk, out_step);
+  internal_process_output_request(mesh_data, bulk, out_step,exclude);
 
   region->end_mode(Ioss::STATE_TRANSIENT);
 

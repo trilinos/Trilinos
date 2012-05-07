@@ -10,6 +10,7 @@
 #define STK_IO_MESHREADWRITEUTILS_HPP
 #include <string>
 #include <vector>
+#include <set>
 #include <stk_util/parallel/Parallel.hpp>
 #include <Ioss_PropertyManager.h>
 
@@ -229,7 +230,8 @@ namespace stk {
      */
     int process_output_request(MeshData &mesh_data,
 			       stk::mesh::BulkData &bulk,
-			       double time);
+			       double time,
+                               const std::set<const stk::mesh::Part*> &exclude=std::set<const stk::mesh::Part*>());
     /**
      * Method to query a MeshData for the number of element blocks and the
      * number of elements in each. MeshData is input, std:vector is output
