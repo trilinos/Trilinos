@@ -104,6 +104,9 @@ public:
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const;
 
   /** \brief . */
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int i) const;
+
+  /** \brief . */
   Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const;
 
   /** \brief . */
@@ -127,6 +130,18 @@ private:
   /** \brief . */
   void evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                      const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
+
+  //! Evaluate a simple model, meaning a residual and a jacobian, no fancy stochastic galerkin or multipoint
+  void evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+                           const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
+
+  //! Construct a simple response dicatated by this set of out args
+  void evalModelImpl_basic_g(panzer::AssemblyEngineInArgs & ae_inargs,
+                             const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+                             const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
+
+  //! Does this set of out args require a simple response?
+  bool required_basic_g(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   //@}
 

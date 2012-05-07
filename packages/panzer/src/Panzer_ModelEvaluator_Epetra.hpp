@@ -66,7 +66,6 @@ namespace panzer {
 
   template<typename, typename>  class FieldManagerBuilder;
   template<typename, typename>  class EpetraLinearObjFactory;
-  template<typename, typename>  class BlockedEpetraLinearObjFactory;
   #ifdef HAVE_STOKHOS
      template<typename, typename>  class SGEpetraLinearObjFactory;
   #endif
@@ -138,8 +137,6 @@ namespace panzer {
       */
     void initializeEpetraObjs(panzer::EpetraLinearObjFactory<panzer::Traits,int> & lof);
 
-    void initializeBlockedEpetraObjs(const Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > & lof);
-
     /** Initialize the parameter vector object */
     void initializeParameterVector(const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
 				   const Teuchos::RCP<panzer::ParamLib>& parameter_library);
@@ -159,9 +156,6 @@ namespace panzer {
 
     //! Are their required responses in the out args? g (and soon DgDx) 
     bool required_basic_g(const OutArgs & outArgs) const;
-
-    //! for evaluation and handling of normal quantities, x,f,W, etc using a blocked epetra linear object
-    void evalModel_basic_blocked( const InArgs& inArgs, const OutArgs& outArgs ) const; 
 
     #ifdef HAVE_STOKHOS
        //! Are their required SG responses in the out args? sg

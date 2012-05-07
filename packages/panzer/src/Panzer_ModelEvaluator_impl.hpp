@@ -44,6 +44,7 @@
 #define PANZER_MODEL_EVALUATOR_IMPL_HPP
 
 #include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_ArrayRCP.hpp"
 
 #include "Panzer_config.hpp"
 #include "Panzer_Traits.hpp"
@@ -57,6 +58,8 @@
 #include "Panzer_GlobalData.hpp"
 
 #include "Thyra_TpetraThyraWrappers.hpp"
+#include "Thyra_SpmdVectorBase.hpp"
+#include "Thyra_DefaultSpmdVectorSpace.hpp"
 
 #include "Tpetra_CrsMatrix.hpp"
 
@@ -98,6 +101,14 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder<LO,GO> >& fmb,
   // this->initializeParameterVector(p_names_,global_data->pl);
 
   //
+  // Setup responses
+  //
+
+  // setup scalar responses
+  for (std::size_t i=0;i<responseLibrary_->getLabeledResponseCount();i++)
+    g_space_.push_back(Thyra::defaultSpmdVectorSpace<Scalar>(1));
+
+  //
   // Create the structure for the problem
   //
 
@@ -108,6 +119,7 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder<LO,GO> >& fmb,
   
   MEB::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
+  outArgs.set_Np_Ng(p_init_.size(), g_space_.size());
   outArgs.setSupports(MEB::OUT_ARG_f);
   outArgs.setSupports(MEB::OUT_ARG_W_op);
   prototypeOutArgs_ = outArgs;
@@ -162,6 +174,15 @@ panzer::ModelEvaluator<Scalar,LO,GO,NODE>::get_f_space() const
 }
 
 template<typename Scalar, typename LO, typename GO, typename NODE>
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
+panzer::ModelEvaluator<Scalar,LO,GO,NODE>::get_g_space(int i) const
+{
+  TEUCHOS_ASSERT(i>=0 && i<g_space_.size());
+
+  return g_space_[i];
+}
+
+template<typename Scalar, typename LO, typename GO, typename NODE>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
 panzer::ModelEvaluator<Scalar,LO,GO,NODE>::createInArgs() const
 {
@@ -209,6 +230,14 @@ void panzer::ModelEvaluator<Scalar,LO,GO,NODE>::
 evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
               const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
+   evalModelImpl_basic(inArgs,outArgs); 
+}
+
+template <typename Scalar, typename LO, typename GO, typename NODE>
+void panzer::ModelEvaluator<Scalar,LO,GO,NODE>::
+evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+                    const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
+{
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
   using Teuchos::Array;
@@ -234,9 +263,10 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   //
   const RCP<Thyra::VectorBase<Scalar> > f_out = outArgs.get_f();
   const RCP<Thyra::LinearOpBase<Scalar> > W_out = outArgs.get_W_op();
+  bool requiredResponses = required_basic_g(outArgs);
 
   // see if the user wants us to do anything
-  if(Teuchos::is_null(f_out) && Teuchos::is_null(W_out)) {
+  if(Teuchos::is_null(f_out) && Teuchos::is_null(W_out) && !requiredResponses) {
      return;
   }
 
@@ -324,6 +354,10 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     ae_tm_.template getAsObject<panzer::Traits::Jacobian>()->evaluate(ae_inargs);
   }
 
+  // evaluate responses...uses the stored assembly arguments and containers
+  if(requiredResponses)
+     evalModelImpl_basic_g(ae_inargs,inArgs,outArgs);
+
   // Holding a rcp to f produces a seg fault in Rythmos when the next
   // f comes in and the resulting dtor is called.  Need to discuss
   // with Ross.  Clearing all references here works!
@@ -338,5 +372,52 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   ae_inargs.ghostedContainer_ = Teuchos::null;
 }
 
+template <typename Scalar, typename LO, typename GO, typename NODE>
+void panzer::ModelEvaluator<Scalar,LO,GO,NODE>::
+evalModelImpl_basic_g(panzer::AssemblyEngineInArgs & ae_inargs,
+                      const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+                      const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
+{
+   // optional sanity check
+   // TEUCHOS_ASSERT(required_basic_g(outArgs));
+
+   // build a teuchos comm from an mpi comm
+   Teuchos::MpiComm<int> tComm = lof_->getComm();
+
+   // evaluator responses
+   responseLibrary_->evaluateVolumeFieldManagers<panzer::Traits::Residual>(ae_inargs,tComm);
+
+   std::vector<Teuchos::RCP<const Response<panzer::Traits> > > responses;
+   responseLibrary_->getLabeledVolumeResponses(responses);
+
+   // loop over all albeld responses
+   for(std::size_t i=0;i<responses.size();i++) {
+      // grab SPMD vector to get direct acess to data
+      Teuchos::RCP<Thyra::SpmdVectorBase<double> > vec 
+         = Teuchos::rcp_dynamic_cast<Thyra::SpmdVectorBase<double> >(outArgs.get_g(i),true);
+
+
+      if(vec!=Teuchos::null) {
+         Teuchos::ArrayRCP<double> vec_data; 
+         vec->getNonconstLocalData(Teuchos::ptrFromRef(vec_data));
+
+         TEUCHOS_ASSERT(vec_data.size()==1);
+
+         vec_data[0] = responses[i]->getValue();
+      }
+   }
+}
+
+template <typename Scalar, typename LO, typename GO, typename NODE>
+bool panzer::ModelEvaluator<Scalar,LO,GO,NODE>::
+required_basic_g(const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
+{
+   // determine if any of the outArgs are not null!
+   bool activeGArgs = false;
+   for(int i=0;i<outArgs.Ng();i++) 
+      activeGArgs |= (outArgs.get_g(i)!=Teuchos::null); 
+
+   return activeGArgs;
+}
 
 #endif

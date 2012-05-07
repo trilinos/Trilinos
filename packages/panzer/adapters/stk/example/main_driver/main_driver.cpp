@@ -212,28 +212,22 @@ int main(int argc, char *argv[])
 
       // Set outputs
       Thyra::ModelEvaluatorBase::OutArgs<double> outArgs = solver->createOutArgs();
-      // int num_g = outArgs.Ng();
-      // assert (num_g == 1);  // for now only solution is returned
 
       // Solution vector is returned as extra respons vector
       Teuchos::RCP<Thyra::VectorBase<double> > gx = Thyra::createMember(*physics->get_x_space());
-      // for(std::size_t i=0;i<rLibrary->getLabeledResponseCount();i++)
-      //    outArgs.set_g(i,Teuchos::null);
-      outArgs.set_g(0,gx);
+      for(std::size_t i=0;i<rLibrary->getLabeledResponseCount();i++)
+         outArgs.set_g(i,Teuchos::null);
+      outArgs.set_g(rLibrary->getLabeledResponseCount(),gx);
 
       // Now, solve the problem and return the responses
       solver->evalModel(inArgs, outArgs);
-      
-      //std::cout << *gx << std::endl;
 
-#if 0
       // number of responses, minus the solution vector
       TEUCHOS_ASSERT(rLibrary->getLabeledResponseCount()==Teuchos::as<std::size_t>(outArgs.Ng()-1));
       
       // get responses if there are any
       //////////////////////////////////////////////
       if(rLibrary->getLabeledResponseCount()>0) {
-         *out << "PRINTING VOLUME CONTAINERS!" << std::endl;
 
          std::vector<std::string> labels;
          rLibrary->getVolumeResponseLabels(labels);
@@ -248,10 +242,9 @@ int main(int argc, char *argv[])
          // set up response out args
          for(int i=0;i<respOutArgs.Ng();i++) {
 	   Teuchos::RCP<Thyra::VectorBase<double> > response = Thyra::createMember(*physics->get_g_space(i));
-            respOutArgs.set_g(i,response);
+           respOutArgs.set_g(i,response);
          }
    
-         *out << "Lets print volume containers!" << std::endl;
          rLibrary->printVolumeContainers(*out);
    
          // Now, solve the problem and return the responses
@@ -266,9 +259,6 @@ int main(int argc, char *argv[])
             *out << "Response Value \"" << labels[i] << "\": " << *response << std::endl;
          }
       }
-      else
-         *out << "NOT PRINTING VOLUME CONTAINERS!" << std::endl;
-#endif
     }
   }
   catch (std::exception& e) {
