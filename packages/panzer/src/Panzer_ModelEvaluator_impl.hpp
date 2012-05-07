@@ -56,6 +56,7 @@
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_GlobalData.hpp"
+#include "Panzer_ResponseLibrary.hpp"
 
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
@@ -115,6 +116,12 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder<LO,GO> >& fmb,
   MEB::InArgsSetup<Scalar> inArgs;
   inArgs.setModelEvalDescription(this->description());
   inArgs.setSupports(MEB::IN_ARG_x);
+  if(build_transient_support_) {
+    inArgs.setSupports(MEB::IN_ARG_x_dot,true);
+    inArgs.setSupports(MEB::IN_ARG_t,true);
+    inArgs.setSupports(MEB::IN_ARG_alpha,true);
+    inArgs.setSupports(MEB::IN_ARG_beta,true);
+  }
   prototypeInArgs_ = inArgs;
   
   MEB::OutArgsSetup<Scalar> outArgs;
@@ -145,6 +152,19 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder<LO,GO> >& fmb,
   Teuchos::RCP<Thyra::VectorBase<double> > x_nom = Thyra::createMember(x_space_);
   Thyra::assign(x_nom.ptr(),0.0);
   nomInArgs.set_x(x_nom);
+  if(build_transient_support_) {
+    nomInArgs.setSupports(MEB::IN_ARG_x_dot,true);
+    nomInArgs.setSupports(MEB::IN_ARG_t,true);
+    nomInArgs.setSupports(MEB::IN_ARG_alpha,true);
+    nomInArgs.setSupports(MEB::IN_ARG_beta,true);
+
+    Teuchos::RCP<Thyra::VectorBase<double> > x_dot_nom = Thyra::createMember(x_space_);
+    Thyra::assign(x_dot_nom.ptr(),0.0);
+    nomInArgs.set_x_dot(x_dot_nom);
+    nomInArgs.set_t(t_init_);
+    nomInArgs.set_alpha(0.0); // these have no meaning initially!
+    nomInArgs.set_beta(0.0);
+  }
   nominalValues_ = nomInArgs;
   
 }
@@ -251,8 +271,7 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   // fill.
   bool is_transient = false;
   if (inArgs.supports(MEB::IN_ARG_x_dot ))
-    // is_transient = !Teuchos::is_null(inArgs.get_x_dot());
-    TEUCHOS_ASSERT(false);
+    is_transient = !Teuchos::is_null(inArgs.get_x_dot());
 
   // Make sure construction built in transient support
   TEUCHOS_TEST_FOR_EXCEPTION(is_transient && !build_transient_support_, std::runtime_error,
@@ -277,7 +296,7 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   if(Teuchos::is_null(ghostedContainer_)) {
      ghostedContainer_ = lof_->buildGhostedLinearObjContainer();
      lof_->initializeGhostedContainer(panzer::LinearObjContainer::X |
-                                      // panzer::LinearObjContainer::DxDt |
+                                      panzer::LinearObjContainer::DxDt |
                                       panzer::LinearObjContainer::F |
                                       panzer::LinearObjContainer::Mat, *ghostedContainer_); 
   }
@@ -285,6 +304,7 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   //
   // Get the input arguments
   //
+  RCP<const Thyra::VectorBase<Scalar> > x_dot; // possibly empty, but otherwise uses x_dot
   const RCP<const Thyra::VectorBase<Scalar> > x = inArgs.get_x();
   panzer::AssemblyEngineInArgs ae_inargs;
   ae_inargs.container_ = lof_->buildLinearObjContainer(); // we use a new global container
@@ -292,6 +312,13 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   ae_inargs.alpha = 0.0;
   ae_inargs.beta = 1.0;
   ae_inargs.evaluate_transient_terms = false;
+  if (is_transient) {
+    x_dot = inArgs.get_x_dot();
+    ae_inargs.alpha = inArgs.get_alpha();
+    ae_inargs.beta = inArgs.get_beta();
+    ae_inargs.time = inArgs.get_t();
+    ae_inargs.evaluate_transient_terms = true;
+  }
   
   // here we are building a container, this operation is fast, simply allocating a struct
   const RCP<panzer::BlockedEpetraLinearObjContainer> epGlobalContainer = 
@@ -313,6 +340,8 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   // arguments that should be const.  Another reason to redesign
   // LinearObjContainer layers.
   epGlobalContainer->set_x(Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(x));
+  if (is_transient)
+    epGlobalContainer->set_dxdt(Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(x_dot));
 
   if (!Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) {
 

@@ -68,10 +68,7 @@ namespace user_app {
 			 const Teuchos::RCP<panzer::UniqueGlobalIndexerBase> & dof_manager,
 			 const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof) const
     {
-      Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof
-         = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(lof);
-
-      Teuchos::RCP<user_app::RythmosObserver_EpetraToExodus> observer = Teuchos::rcp(new user_app::RythmosObserver_EpetraToExodus(mesh,dof_manager,ep_lof,stkIOResponseLibrary_));
+      Teuchos::RCP<user_app::RythmosObserver_EpetraToExodus> observer = Teuchos::rcp(new user_app::RythmosObserver_EpetraToExodus(mesh,dof_manager,lof,stkIOResponseLibrary_));
       return observer;
     }
 
