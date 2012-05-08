@@ -77,7 +77,7 @@ void AlltoAll(const Comm<int> &comm,
       packetSize <= INT_MAX, BASIC_ASSERTION, rcp(&comm, false));
   
   RCP<CommRequest> r;
-  Array<RCP<CommRequest> > req(nprocs-1);
+  Array<RCP<CommRequest> > req;
 
   for (int p=0; p < nprocs; p++){
     if (p != rank){
@@ -102,7 +102,7 @@ void AlltoAll(const Comm<int> &comm,
   ArrayView<const char> sendBufPtr(
     reinterpret_cast<const char *>(sendBuf.getRawPtr()), nprocs*packetSize);
 
-  for (int p=nprocs-1; p >= 0; p--){
+  for (int p=0; p < nprocs; p++){
     if (p != rank){
       try {
         Teuchos::readySend<int, char>(comm, 
@@ -193,7 +193,8 @@ void AlltoAllv(const Comm<int> &comm,
   // Post receives
 
   RCP<CommRequest> r;
-  Array<RCP<CommRequest> > req(nprocs-1);
+  Array<RCP<CommRequest> > req;
+
 
   offsetIn = 0;
 
