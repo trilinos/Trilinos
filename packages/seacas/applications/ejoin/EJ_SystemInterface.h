@@ -57,6 +57,7 @@ class SystemInterface
   bool omit_sidesets() const {return omitSidesets_;}
   bool convert_nodes_to_nodesets(int part_number) const;
   bool disable_field_recognition() const {return disableFieldRecognition_;}
+  bool ints64bit() const {return ints64bit_;}
   
   int step_min() const {return stepMin_;}
   int step_max() const {return stepMax_;}
@@ -119,6 +120,7 @@ class SystemInterface
   bool matchElemIds_;
   bool matchElemXYZ_;
   bool disableFieldRecognition_;
+  bool ints64bit_;
   
   std::string elementStatusVariable_;
   std::string nodalStatusVariable_;

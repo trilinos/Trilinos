@@ -34,7 +34,8 @@
 
 #include "EJ_CodeTypes.h"
 
+template <typename INT>
 void match_node_xyz(RegionVector &part_mesh, double tolerance,
-		    IdMap &global_node_map, IdMap &local_node_map);
+		    std::vector<INT> &global_node_map, std::vector<INT> &local_node_map);
 
 #endif
