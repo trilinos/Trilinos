@@ -47,20 +47,20 @@
 #include "side_set.h"
 #include "exodusII.h"
 #include "stringx.h"
-#include "Specifications.h"
 #include "util.h"
+#include "ED_SystemInterface.h"
 
 using namespace std;
 
 namespace {
-  float   inquire_float(int exo_file_id,  int request);
   void read_vars(int file_id, EXOTYPE flag, const char *type,
 		 int num_vars, vector<string> &varlist);
 
 }
     
 
-string ExoII_Read::File_Name(const char* fname)
+template <typename INT>
+string ExoII_Read<INT>::File_Name(const char* fname)
 {
   SMART_ASSERT(Check_State());
   
@@ -72,7 +72,8 @@ string ExoII_Read::File_Name(const char* fname)
   return "";
 }
 
-string ExoII_Read::Open_File(const char* fname)
+template <typename INT>
+string ExoII_Read<INT>::Open_File(const char* fname)
 {
   SMART_ASSERT(Check_State());
   
@@ -85,8 +86,11 @@ string ExoII_Read::Open_File(const char* fname)
   
   int ws = 0, comp_ws = 8;
   float dum = 0.0;
-  int err = ex_open(file_name.c_str(), EX_READ,
-                    &comp_ws, &ws, &dum);
+  int mode = EX_READ;
+  if (sizeof(INT) == 8) {
+    mode |= EX_ALL_INT64_API;
+  }
+  int err = ex_open(file_name.c_str(), mode, &comp_ws, &ws, &dum);
   if (err < 0) {
     ostringstream oss;
     oss << "ERROR: Couldn't open file \"" << file_name << "\".";
@@ -110,7 +114,8 @@ string ExoII_Read::Open_File(const char* fname)
   return "";
 }
 
-void ExoII_Read::Get_Init_Data()
+template <typename INT>
+void ExoII_Read<INT>::Get_Init_Data()
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(file_id >= 0);
@@ -121,8 +126,8 @@ void ExoII_Read::Get_Init_Data()
   
   char title_buff[MAX_LINE_LENGTH+1];
   
-  int num_nodes_t = 0;
-  int num_elmts_t = 0;
+  INT num_nodes_t = 0;
+  INT num_elmts_t = 0;
   int err = ex_get_init(file_id, title_buff, &dimension, &num_nodes_t,
                         &num_elmts_t, &num_elmt_blocks, &num_node_sets,
                         &num_side_sets);
@@ -135,7 +140,7 @@ void ExoII_Read::Get_Init_Data()
     exit(1);
   }
   title = title_buff;
-  if (err > 0 && !specs.quiet_flag)
+  if (err > 0 && !interface.quiet_flag)
     std::cout << "ExoII_Read::Get_Init_Data(): WARNING: was issued, number = "
 	      << err << std::endl;
   if (dimension < 1 || dimension > 3 || num_elmt_blocks < 0 || num_node_sets < 0 || num_side_sets < 0) {
@@ -151,16 +156,12 @@ void ExoII_Read::Get_Init_Data()
     exit(1);
   }
   
-  db_version   = inquire_float(file_id, EX_INQ_DB_VERS);
-  api_version  = inquire_float(file_id, EX_INQ_API_VERS);
   int num_qa   = ex_inquire_int(file_id,   EX_INQ_QA);
   int num_info = ex_inquire_int(file_id,   EX_INQ_INFO);
   
-  if (db_version < 0.0 || api_version < 0.0 || num_qa < 0 || num_info < 0) {
+  if (num_qa < 0 || num_info < 0) {
     std::cout << "ExoII_Read::Get_Init_Data(): ERROR: inquire data appears corrupt:"
 	      << std::endl
-	      << "         db_version = "  << db_version  << std::endl
-	      << "         api_version = " << api_version << std::endl
 	      << "         num_qa = "      << num_qa      << std::endl
 	      << "         num_info = "    << num_info    << std::endl
 	      << " ... Aborting..." << std::endl;
@@ -187,8 +188,8 @@ void ExoII_Read::Get_Init_Data()
   
   if (eblocks) delete [] eblocks;  eblocks = 0;
   if (num_elmt_blocks > 0) {
-    eblocks = new Exo_Block[num_elmt_blocks];    SMART_ASSERT(eblocks != 0);
-    std::vector<int> ids(num_elmt_blocks);
+    eblocks = new Exo_Block<INT>[num_elmt_blocks];    SMART_ASSERT(eblocks != 0);
+    std::vector<INT> ids(num_elmt_blocks);
     
     err = ex_get_ids(file_id, EX_ELEM_BLOCK, TOPTR(ids));
     
@@ -211,7 +212,7 @@ void ExoII_Read::Get_Init_Data()
       e_count += eblocks[b].Size();
     }
     
-    if (e_count != num_elmts && !specs.quiet_flag) {
+    if (e_count != num_elmts && !interface.quiet_flag) {
       std::cout << "ExoII_Read::Get_Init_Data(): WARNING: Total number of elements "
 		<< num_elmts << " does not equal the sum of the number of elements "
 		<< "in each block " << e_count << std::endl;
@@ -232,8 +233,8 @@ void ExoII_Read::Get_Init_Data()
   
   if (nsets) delete [] nsets;  nsets = 0;
   if (num_node_sets > 0) {
-    nsets = new Node_Set[num_node_sets];         SMART_ASSERT(nsets != 0);
-    std::vector<int> ids(num_node_sets);
+    nsets = new Node_Set<INT>[num_node_sets];         SMART_ASSERT(nsets != 0);
+    std::vector<INT> ids(num_node_sets);
     
     err = ex_get_ids(file_id, EX_NODE_SET, TOPTR(ids));
 
@@ -257,8 +258,8 @@ void ExoII_Read::Get_Init_Data()
   
   if (ssets) delete [] ssets;  ssets = 0;
   if (num_side_sets) {
-    ssets = new Side_Set[num_side_sets];         SMART_ASSERT(ssets != 0);
-    std::vector<int> ids(num_side_sets);
+    ssets = new Side_Set<INT>[num_side_sets];         SMART_ASSERT(ssets != 0);
+    std::vector<INT> ids(num_side_sets);
     
     err = ex_get_ids(file_id, EX_SIDE_SET, TOPTR(ids));
 
@@ -359,7 +360,8 @@ void ExoII_Read::Get_Init_Data()
 
 
 // Simple check that a file can be opened.
-int ExoII_Read::File_Exists(const char* fname)
+template <typename INT>
+int ExoII_Read<INT>::File_Exists(const char* fname)
 {
   if (!fname) return 0;
   if (std::strlen(fname) == 0) return 0;
@@ -370,28 +372,6 @@ int ExoII_Read::File_Exists(const char* fname)
 }
 
 namespace {
-  float inquire_float(int exo_file_id, int request)
-  {
-    SMART_ASSERT(exo_file_id >= 0);
-    int   get_int = 0;
-    float get_flt = 0.0;
-    char  get_str[MAX_LINE_LENGTH+1];
-
-    int err = ex_inquire(exo_file_id, request, &get_int, &get_flt, get_str);
-
-    if (err < 0) {
-      std::cout << "ExoII_Read::inquire_float(): ERROR " << err
-		<< ": ex_inquire failed!  Aborting..." << std::endl;
-      exit(1);
-    }
-
-    if (err > 0)
-      std::cout << "ExoII_Read::inquire_float(): WARNING: " << err
-		<< " issued by ex_inquire call!" << std::endl;
-
-    return get_flt;
-  }
-
   void read_vars(int file_id, EXOTYPE flag, const char *type,
 		 int num_vars, vector<string> &varlist)
   {
@@ -405,7 +385,7 @@ namespace {
 		  << " variable names!  Aborting..." << std::endl;
 	exit(1);
       }
-      else if (err > 0 && !specs.quiet_flag)
+      else if (err > 0 && !interface.quiet_flag)
 	std::cout << "ExoII_Read::Get_Init_Data(): WARNING: Exodus issued warning "
 		  << "\"" << err << "\" on call to ex_get_var_names()!" << std::endl;
       for (int vg = 0; vg < num_vars; ++vg) {
@@ -432,3 +412,5 @@ namespace {
     }
   }
 }
+template class ExoII_Read<int>;
+template class ExoII_Read<int64_t>;

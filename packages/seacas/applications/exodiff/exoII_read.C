@@ -45,9 +45,11 @@
 #include <string>
 #include <sstream>
 
+
 using namespace std;
 
-ExoII_Read::ExoII_Read()
+template <typename INT>
+ExoII_Read<INT>::ExoII_Read()
   : file_id(-1),                 // value of -1 indicates file not open
     num_nodes(0),
     dimension(0),
@@ -69,10 +71,12 @@ ExoII_Read::ExoII_Read()
     times(0),
     cur_time(0),
     results(0),
-    global_vals(0)
+    global_vals(0),
+    global_vals2(0)
 { }
 
-ExoII_Read::ExoII_Read(const char* fname)
+template <typename INT>
+ExoII_Read<INT>::ExoII_Read(const char* fname)
   : file_name(fname),
     file_id(-1),                 // value of -1 indicates file not open
     num_nodes(0),
@@ -95,10 +99,12 @@ ExoII_Read::ExoII_Read(const char* fname)
     times(0),
     cur_time(0),
     results(0),
-    global_vals(0)
+    global_vals(0),
+    global_vals2(0)
 { }
 
-ExoII_Read::~ExoII_Read()
+template <typename INT>
+ExoII_Read<INT>::~ExoII_Read()
 {
   try {
     SMART_ASSERT(Check_State());
@@ -122,6 +128,7 @@ ExoII_Read::~ExoII_Read()
       delete [] results;
     }
     delete [] global_vals;
+    delete [] global_vals2;
     delete [] node_map;
     delete [] elmt_map;
     delete [] elmt_order;
@@ -129,7 +136,8 @@ ExoII_Read::~ExoII_Read()
   }
 }
 
-string ExoII_Read::Close_File()
+template <typename INT>
+string ExoII_Read<INT>::Close_File()
 {
   SMART_ASSERT(Check_State());
   
@@ -155,7 +163,8 @@ string ExoII_Read::Close_File()
 
 // **********************  Access functions  ************************ //
 
-string ExoII_Read::Coordinate_Name(unsigned i) const
+template <typename INT>
+string ExoII_Read<INT>::Coordinate_Name(unsigned i) const
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(i < 3);
@@ -166,63 +175,72 @@ string ExoII_Read::Coordinate_Name(unsigned i) const
     return "";
 }
 
-double ExoII_Read::Time(int time_num) const
+template <typename INT>
+double ExoII_Read<INT>::Time(int time_num) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(time_num > 0 && time_num <= num_times);
+  SMART_ASSERT(time_num > 0 && time_num <= num_times)(time_num)(num_times);
   return times[time_num-1];
 }
 
-const string& ExoII_Read::Global_Var_Name(int index) const
+template <typename INT>
+const string& ExoII_Read<INT>::Global_Var_Name(int index) const
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(index >= 0 && (unsigned)index < global_vars.size());
   return global_vars[index];
 }
 
-const string& ExoII_Read::Nodal_Var_Name(int index) const
+template <typename INT>
+const string& ExoII_Read<INT>::Nodal_Var_Name(int index) const
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(index >= 0 && (unsigned)index < nodal_vars.size());
   return nodal_vars[index];
 }
 
-const string& ExoII_Read::Elmt_Var_Name(int index) const
+template <typename INT>
+const string& ExoII_Read<INT>::Elmt_Var_Name(int index) const
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(index >= 0 && (unsigned)index < elmt_vars.size());
   return elmt_vars[index];
 }
 
-const string& ExoII_Read::Elmt_Att_Name(int index) const
+template <typename INT>
+const string& ExoII_Read<INT>::Elmt_Att_Name(int index) const
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(index >= 0 && (unsigned)index < elmt_atts.size());
   return elmt_atts[index];
 }
 
-const string& ExoII_Read::NS_Var_Name(int index) const
+template <typename INT>
+const string& ExoII_Read<INT>::NS_Var_Name(int index) const
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(index >= 0 && (unsigned)index < ns_vars.size());
   return ns_vars[index];
 }
 
-const string& ExoII_Read::SS_Var_Name(int index) const
+template <typename INT>
+const string& ExoII_Read<INT>::SS_Var_Name(int index) const
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(index >= 0 && (unsigned)index < ss_vars.size());
   return ss_vars[index];
 }
 
-Exo_Block* ExoII_Read::Get_Elmt_Block_by_Index(int block_index) const
+template <typename INT>
+Exo_Block<INT>* ExoII_Read<INT>::Get_Elmt_Block_by_Index(int block_index) const
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(block_index >= 0 && block_index < num_elmt_blocks);
   return &eblocks[block_index];
 }
 
-Exo_Block* ExoII_Read::Get_Elmt_Block_by_Id(int id) const
+template <typename INT>
+Exo_Block<INT>* ExoII_Read<INT>::Get_Elmt_Block_by_Id(size_t id) const
 {
   SMART_ASSERT(Check_State());
   for (int i=0; i < num_elmt_blocks; i++) {
@@ -233,7 +251,8 @@ Exo_Block* ExoII_Read::Get_Elmt_Block_by_Id(int id) const
   return NULL;
 }
 
-Exo_Entity* ExoII_Read::Get_Entity_by_Index(EXOTYPE type, int block_index) const
+template <typename INT>
+Exo_Entity* ExoII_Read<INT>::Get_Entity_by_Index(EXOTYPE type, int block_index) const
 {
   SMART_ASSERT(Check_State());
   
@@ -252,7 +271,8 @@ Exo_Entity* ExoII_Read::Get_Entity_by_Index(EXOTYPE type, int block_index) const
   }
 }
 
-Exo_Entity* ExoII_Read::Get_Entity_by_Id(EXOTYPE type, int id) const
+template <typename INT>
+Exo_Entity* ExoII_Read<INT>::Get_Entity_by_Id(EXOTYPE type, size_t id) const
 {
   SMART_ASSERT(Check_State());
   switch (type) {
@@ -283,7 +303,8 @@ Exo_Entity* ExoII_Read::Get_Entity_by_Id(EXOTYPE type, int id) const
   return NULL;
 }
 
-Node_Set* ExoII_Read::Get_Node_Set_by_Id(int set_id) const
+template <typename INT>
+Node_Set<INT>* ExoII_Read<INT>::Get_Node_Set_by_Id(size_t set_id) const
 {
   SMART_ASSERT(Check_State());
   for (int i=0; i < num_node_sets; i++) {
@@ -294,7 +315,8 @@ Node_Set* ExoII_Read::Get_Node_Set_by_Id(int set_id) const
   return NULL;
 }
 
-Side_Set* ExoII_Read::Get_Side_Set_by_Id(int set_id) const
+template <typename INT>
+Side_Set<INT>* ExoII_Read<INT>::Get_Side_Set_by_Id(size_t set_id) const
 {
   SMART_ASSERT(Check_State());
   for (int i=0; i < num_side_sets; i++) {
@@ -305,7 +327,8 @@ Side_Set* ExoII_Read::Get_Side_Set_by_Id(int set_id) const
   return NULL;
 }
 
-string ExoII_Read::Load_Elmt_Block_Description(int block_index) const
+template <typename INT>
+string ExoII_Read<INT>::Load_Elmt_Block_Description(int block_index) const
 {
   SMART_ASSERT(Check_State());
   if (!Open()) return "ERROR:  Must open file before loading blocks!";
@@ -319,7 +342,8 @@ string ExoII_Read::Load_Elmt_Block_Description(int block_index) const
   return "";
 }
 
-string ExoII_Read::Load_Elmt_Block_Descriptions() const
+template <typename INT>
+string ExoII_Read<INT>::Load_Elmt_Block_Descriptions() const
 {
   SMART_ASSERT(Check_State());
   if (!Open()) return "ERROR:  Must open file before loading blocks!";
@@ -333,7 +357,8 @@ string ExoII_Read::Load_Elmt_Block_Descriptions() const
   return "";
 }
 
-string ExoII_Read::Free_Elmt_Block(int block_index) const
+template <typename INT>
+string ExoII_Read<INT>::Free_Elmt_Block(int block_index) const
 {
   SMART_ASSERT(Check_State());
   
@@ -347,7 +372,8 @@ string ExoII_Read::Free_Elmt_Block(int block_index) const
   return "";
 }
 
-string ExoII_Read::Free_Elmt_Blocks() const
+template <typename INT>
+string ExoII_Read<INT>::Free_Elmt_Blocks() const
 {
   SMART_ASSERT(Check_State());
   
@@ -360,10 +386,11 @@ string ExoII_Read::Free_Elmt_Blocks() const
   return "";
 }
 
-string ExoII_Read::Give_Connectivity(int block_index,
-                                     int& num_e,
-                                     int& npe,
-                                     int*& new_conn)
+template <typename INT>
+string ExoII_Read<INT>::Give_Connectivity(int block_index,
+					  size_t& num_e,
+					  size_t& npe,
+					  INT*& new_conn)
 {
   SMART_ASSERT(block_index >= 0 && block_index < num_elmt_blocks);
   
@@ -371,14 +398,16 @@ string ExoII_Read::Give_Connectivity(int block_index,
 }
   
 
-int ExoII_Read::Block_Id(int block_index) const
+template <typename INT>
+size_t ExoII_Read<INT>::Block_Id(int block_index) const
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(block_index >= 0 && block_index < num_elmt_blocks);
   return eblocks[block_index].Id();
 }
 
-int ExoII_Read::Block_Index(int block_id) const
+template <typename INT>
+int ExoII_Read<INT>::Block_Index(size_t block_id) const
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(block_id >= 0);
@@ -388,7 +417,8 @@ int ExoII_Read::Block_Index(int block_id) const
   return -1;
 }
 
-int ExoII_Read::Node_Set_Index(int id) const
+template <typename INT>
+int ExoII_Read<INT>::Node_Set_Index(size_t id) const
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(id >= 0);
@@ -398,7 +428,8 @@ int ExoII_Read::Node_Set_Index(int id) const
   return -1;
 }
 
-int ExoII_Read::Side_Set_Index(int id) const
+template <typename INT>
+int ExoII_Read<INT>::Side_Set_Index(size_t id) const
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(id >= 0);
@@ -408,7 +439,8 @@ int ExoII_Read::Side_Set_Index(int id) const
   return -1;
 }
 
-string ExoII_Read::Load_Node_Map()
+template <typename INT>
+string ExoII_Read<INT>::Load_Node_Map()
 {
   SMART_ASSERT(Check_State());
   
@@ -419,7 +451,7 @@ string ExoII_Read::Load_Node_Map()
   
   if (num_nodes == 0) return "WARNING:  There are no nodes!";
   
-  node_map = new int[ num_nodes ];  SMART_ASSERT(node_map != 0);
+  node_map = new INT[ num_nodes ];  SMART_ASSERT(node_map != 0);
   
   ex_opts(0);  // Temporarily turn off error reporting in case map isn't stored.
   int err = ex_get_node_num_map(file_id, node_map);
@@ -436,7 +468,8 @@ string ExoII_Read::Load_Node_Map()
   return "";
 }
 
-string ExoII_Read::Free_Node_Map()
+template <typename INT>
+string ExoII_Read<INT>::Free_Node_Map()
 {
   SMART_ASSERT(Check_State());
   
@@ -446,7 +479,8 @@ string ExoII_Read::Free_Node_Map()
   return "";
 }
 
-string ExoII_Read::Load_Elmt_Map()
+template <typename INT>
+string ExoII_Read<INT>::Load_Elmt_Map()
 {
   SMART_ASSERT(Check_State());
   
@@ -457,7 +491,7 @@ string ExoII_Read::Load_Elmt_Map()
   
   if (num_elmts == 0) return "WARNING:  There are no elements!";
   
-  elmt_map = new int[ num_elmts ];  SMART_ASSERT(elmt_map != 0);
+  elmt_map = new INT[ num_elmts ];  SMART_ASSERT(elmt_map != 0);
   
   ex_opts(0);  // Temporarily turn off error reporting in case map isn't stored.
   int err = ex_get_elem_num_map(file_id, elmt_map);
@@ -474,7 +508,8 @@ string ExoII_Read::Load_Elmt_Map()
   return "";
 }
 
-string ExoII_Read::Free_Elmt_Map()
+template <typename INT>
+string ExoII_Read<INT>::Free_Elmt_Map()
 {
   SMART_ASSERT(Check_State());
   
@@ -484,7 +519,8 @@ string ExoII_Read::Free_Elmt_Map()
   return "";
 }
 
-string ExoII_Read::Load_Elmt_Order()
+template <typename INT>
+string ExoII_Read<INT>::Load_Elmt_Order()
 {
   SMART_ASSERT(Check_State());
   
@@ -495,7 +531,7 @@ string ExoII_Read::Load_Elmt_Order()
   
   if (num_elmts == 0) return "WARNING:  There are no elements!";
   
-  elmt_order = new int[ num_elmts ];  SMART_ASSERT(elmt_order != 0);
+  elmt_order = new INT[ num_elmts ];  SMART_ASSERT(elmt_order != 0);
   
   ex_opts(0);  // Temporarily turn off error reporting in case map isn't stored.
   int err = ex_get_map(file_id, elmt_order);
@@ -512,7 +548,8 @@ string ExoII_Read::Load_Elmt_Order()
   return "";
 }
 
-string ExoII_Read::Free_Elmt_Order()
+template <typename INT>
+string ExoII_Read<INT>::Free_Elmt_Order()
 {
   SMART_ASSERT(Check_State());
   
@@ -522,7 +559,8 @@ string ExoII_Read::Free_Elmt_Order()
   return "";
 }
 
-void ExoII_Read::Free_All_Maps()
+template <typename INT>
+void ExoII_Read<INT>::Free_All_Maps()
 {
   SMART_ASSERT(Check_State());
   
@@ -532,7 +570,8 @@ void ExoII_Read::Free_All_Maps()
 }
 
 
-string ExoII_Read::Load_Nodal_Coordinates()
+template <typename INT>
+string ExoII_Read<INT>::Load_Nodal_Coordinates()
 {
   SMART_ASSERT(Check_State());
   
@@ -569,13 +608,15 @@ string ExoII_Read::Load_Nodal_Coordinates()
   return "";
 }
 
-void ExoII_Read::Free_Nodal_Coordinates()
+template <typename INT>
+void ExoII_Read<INT>::Free_Nodal_Coordinates()
 {
   SMART_ASSERT(Check_State());
   delete [] nodes;  nodes = 0;
 }
 
-string ExoII_Read::Load_Nodal_Results(int time_step_num, int var_index)
+template <typename INT>
+string ExoII_Read<INT>::Load_Nodal_Results(int time_step_num, int var_index)
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(time_step_num > 0 && time_step_num <= num_times);
@@ -624,7 +665,52 @@ string ExoII_Read::Load_Nodal_Results(int time_step_num, int var_index)
   return "";
 }
 
-void ExoII_Read::Free_Nodal_Results()
+template <typename INT>
+const double* ExoII_Read<INT>::Get_Nodal_Results(int t1, int t2, double proportion, int var_index) const // Interpolated results.
+{
+  static double *st_results  = NULL;
+  static double *st_results2 = NULL;
+
+  SMART_ASSERT(Check_State());
+  SMART_ASSERT(t1 > 0 && t1 <= num_times);
+  SMART_ASSERT(t2 > 0 && t2 <= num_times);
+  SMART_ASSERT(var_index >= 0 && (unsigned)var_index < nodal_vars.size());
+  
+  if (!Open()) return NULL;
+
+  if (!st_results) {
+    st_results = new double[num_nodes];
+  }
+
+  int err = ex_get_var(file_id, t1, EX_NODAL, var_index+1, 0, num_nodes, st_results);
+  if (err < 0) {
+    std::cout << "ExoII_Read::Get_Nodal_Results(): ERROR: Failed to get "
+	      << "nodal variable values!  Aborting..." << std::endl;
+    exit(1);
+  }
+
+  if (t1 != t2) {
+    if (!st_results2) {
+      st_results2 = new double[num_nodes];
+    }
+
+    int err = ex_get_var(file_id, t2, EX_NODAL, var_index+1, 0, num_nodes, st_results2);
+    if (err < 0) {
+      std::cout << "ExoII_Read::Load_Nodal_Results(): ERROR: Failed to get "
+		<< "nodal variable values!  Aborting..." << std::endl;
+      exit(1);
+    }
+    
+    // Interpolate the values...
+    for (size_t i=0; i < num_nodes; i++) {
+      st_results[i] = proportion * st_results[i] + (1.0 - proportion) * st_results2[i];
+    }
+  }
+  return st_results;
+}
+
+template <typename INT>
+void ExoII_Read<INT>::Free_Nodal_Results()
 {
   SMART_ASSERT(Check_State());
   if (results)
@@ -634,7 +720,8 @@ void ExoII_Read::Free_Nodal_Results()
     }
 }
 
-const double* ExoII_Read::Get_Nodal_Results(int var_index) const
+template <typename INT>
+const double* ExoII_Read<INT>::Get_Nodal_Results(int var_index) const
 {
   SMART_ASSERT(Check_State());
   if (cur_time == 0) return 0;
@@ -643,7 +730,8 @@ const double* ExoII_Read::Get_Nodal_Results(int var_index) const
   return results[var_index];
 }
 
-string ExoII_Read::Load_Global_Results(int time_step_num)
+template <typename INT>
+string ExoII_Read<INT>::Load_Global_Results(int time_step_num)
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(time_step_num > 0 && time_step_num <= num_times);
@@ -680,7 +768,58 @@ string ExoII_Read::Load_Global_Results(int time_step_num)
   return "";
 }
 
-int ExoII_Read::Side_Set_Id(int set_index) const
+template <typename INT>
+string ExoII_Read<INT>::Load_Global_Results(int t1, int t2, double proportion)
+{
+  SMART_ASSERT(Check_State());
+  SMART_ASSERT(t1 > 0 && t2 <= num_times);
+  SMART_ASSERT(t2 > 0 && t2 <= num_times);
+  
+  if (!Open()) return "WARNING:  File not open!";
+  if (global_vars.size() == 0)
+    return "WARNING:  No global variables! (doing nothing)";
+  
+  if (!global_vals) {
+    global_vals = new double[global_vars.size()];
+    SMART_ASSERT(global_vals != 0);
+  }
+    
+  if (t2 != t1 && !global_vals2) {
+    global_vals2 = new double[global_vars.size()];
+    SMART_ASSERT(global_vals2 != 0);
+  }
+    
+  if (global_vals)
+    for (unsigned j = 0; j < global_vars.size(); ++j)
+      global_vals[j] = 0.0;
+  
+  int err = ex_get_glob_vars(file_id, t1, global_vars.size(), global_vals);
+  
+  if (err < 0) {
+      std::cout << "ExoII_Read::Load_Global_Results(): ERROR: Failed to get "
+           << "global variable values!  Aborting..." << std::endl;
+    exit(1);
+  }
+
+  if (t2 != t1) {
+    err = ex_get_glob_vars(file_id, t2, global_vars.size(), global_vals2);
+    if (err < 0) {
+      std::cout << "ExoII_Read::Load_Global_Results(): ERROR: Failed to get "
+		<< "global variable values!  Aborting..." << std::endl;
+      exit(1);
+    }
+
+    // Do the interpolation...
+    for (size_t j=0; j < global_vars.size(); j++) {
+      global_vals[j] = proportion * global_vals[j] + (1.0 - proportion) * global_vals2[j];
+    }
+  }
+
+  return "";
+}
+
+template <typename INT>
+size_t ExoII_Read<INT>::Side_Set_Id(int set_index) const
 {
   SMART_ASSERT(Check_State());
   
@@ -689,7 +828,8 @@ int ExoII_Read::Side_Set_Id(int set_index) const
   return ssets[set_index].Id();
 }
 
-Side_Set* ExoII_Read::Get_Side_Set_by_Index(int side_set_index) const
+template <typename INT>
+Side_Set<INT>* ExoII_Read<INT>::Get_Side_Set_by_Index(int side_set_index) const
 {
   SMART_ASSERT(Check_State());
   
@@ -699,7 +839,8 @@ Side_Set* ExoII_Read::Get_Side_Set_by_Index(int side_set_index) const
 }
 
 
-Node_Set* ExoII_Read::Get_Node_Set_by_Index(int set_index) const
+template <typename INT>
+Node_Set<INT>* ExoII_Read<INT>::Get_Node_Set_by_Index(int set_index) const
 {
   SMART_ASSERT(Check_State());
   
@@ -713,14 +854,15 @@ Node_Set* ExoII_Read::Get_Node_Set_by_Index(int set_index) const
 
 // This function converts an Exodus global element number (1-offset) into
 // its block index (0-offset) and block element index (0-offset).
-string ExoII_Read::Global_to_Block_Local(int global_elmt_num,
-                                          int& block_index,
-                                          int& local_elmt_index) const
+template <typename INT>
+string ExoII_Read<INT>::Global_to_Block_Local(size_t global_elmt_num,
+					      int& block_index,
+					      size_t& local_elmt_index) const
 {
   SMART_ASSERT(Check_State());
   
   if (!Open()) return "ERROR:  File not open!";
-  if (global_elmt_num < 1 || global_elmt_num > (int)num_elmts) {
+  if (global_elmt_num < 1 || global_elmt_num > num_elmts) {
     ostringstream oss;
     oss << "ERROR:  global_elmt_num = " << global_elmt_num
         << " is out of bounds [1, " << num_elmts << "]!";
@@ -729,7 +871,7 @@ string ExoII_Read::Global_to_Block_Local(int global_elmt_num,
   
   block_index = 0;
   
-  int total = 0;
+  size_t total = 0;
   while (total + eblocks[block_index].Size() < global_elmt_num)
     total += eblocks[block_index++].Size();
   
@@ -738,7 +880,8 @@ string ExoII_Read::Global_to_Block_Local(int global_elmt_num,
   return "";
 }
 
-void ExoII_Read::Display_Stats(std::ostream& s) const
+template <typename INT>
+void ExoII_Read<INT>::Display_Stats(std::ostream& s) const
 {
   SMART_ASSERT(Check_State());
   
@@ -869,7 +1012,8 @@ void ExoII_Read::Display_Stats(std::ostream& s) const
   }
 }
 
-void ExoII_Read::Display(std::ostream& s) const
+template <typename INT>
+void ExoII_Read<INT>::Display(std::ostream& s) const
 {
   SMART_ASSERT(Check_State());
   
@@ -1017,7 +1161,8 @@ void ExoII_Read::Display(std::ostream& s) const
   }
 }
 
-void ExoII_Read::Display_Maps(std::ostream& s) const
+template <typename INT>
+void ExoII_Read<INT>::Display_Maps(std::ostream& s) const
 {
   SMART_ASSERT(Check_State());
   
@@ -1043,7 +1188,8 @@ void ExoII_Read::Display_Maps(std::ostream& s) const
   }
 }
 
-int ExoII_Read::Elmt_Block_Index(int eblock_id) const
+template <typename INT>
+int ExoII_Read<INT>::Elmt_Block_Index(size_t eblock_id) const
 {
   SMART_ASSERT(Check_State());
   for (int b = 0; b < num_elmt_blocks; ++b)
@@ -1052,7 +1198,8 @@ int ExoII_Read::Elmt_Block_Index(int eblock_id) const
   return -1;
 }
 
-int ExoII_Read::NSet_Index(int nset_id) const
+template <typename INT>
+int ExoII_Read<INT>::NSet_Index(size_t nset_id) const
 {
   SMART_ASSERT(Check_State());
   for (int n = 0; n < num_node_sets; ++n)
@@ -1061,7 +1208,8 @@ int ExoII_Read::NSet_Index(int nset_id) const
   return -1;
 }
 
-int ExoII_Read::SSet_Index(int sset_id) const
+template <typename INT>
+int ExoII_Read<INT>::SSet_Index(size_t sset_id) const
 {
   SMART_ASSERT(Check_State());
   for (int s = 0; s < num_side_sets; ++s)
@@ -1070,7 +1218,8 @@ int ExoII_Read::SSet_Index(int sset_id) const
   return -1;
 }
 
-int ExoII_Read::Check_State() const
+template <typename INT>
+int ExoII_Read<INT>::Check_State() const
 {
   SMART_ASSERT(file_id         >= -1);
   SMART_ASSERT(dimension       >= 0);
@@ -1099,3 +1248,6 @@ int ExoII_Read::Check_State() const
 
   return 1;
 }
+
+template class ExoII_Read<int>;
+template class ExoII_Read<int64_t>;
