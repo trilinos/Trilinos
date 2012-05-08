@@ -972,6 +972,7 @@ namespace stk {
        *   3. lookup edge/face/elem in global NodeRegistry, reset id to that found in NR
        *   4. write refined file-ref-id.M.m_iM
        */
+    private:
       void pass3()
       {
         PerceptMesh eMeshGlobal(m_spatialDim);
@@ -988,6 +989,7 @@ namespace stk {
         lookupAndSetNewNodeIds(localNR, globalNR);
       }
 
+    public:
       // single call instead of multiple loops on iM from caller - sets global parts, sets new node Ids from global nodeRegistry
       void pass3_new()
       {
@@ -1009,6 +1011,7 @@ namespace stk {
             NodeRegistry *some_nr = 0;
             SerializeNodeRegistry snr(eMesh, some_nr, m_input_mesh_name, m_output_mesh_name, m_M, jM,  m_W, m_iW, m_M_0, m_M_1);
             snr.pass(3);
+            std::cout << "tmp srk debug SerializeNodeRegistry: " << PERCEPT_OUT(m_M) << PERCEPT_OUT(jM) << PERCEPT_OUT(m_W) << PERCEPT_OUT(m_iW) << PERCEPT_OUT(m_M_0) << PERCEPT_OUT(m_M_1) << " output_mesh_new= " << output_mesh_new << std::endl;
             eMesh.saveAs(output_mesh_new);
           }
       }
