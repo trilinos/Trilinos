@@ -252,8 +252,20 @@
                 </ParameterList>
               </ParameterList>
             </ParameterList>
-            <Parameter name="Preconditioner Type" type="string" value="Ifpack"/>
+            <Parameter name="Preconditioner Type" type="string" value="Teko"/>
             <ParameterList name="Preconditioner Types">
+
+              <ParameterList name="Teko">
+                <Parameter name="Inverse Type" type="string" value="Jac"/>
+                <Parameter name="Write Block Operator" type="bool" value="false"/>
+                <ParameterList name="Inverse Factory Library">
+                  <ParameterList name="Jac">
+                    <Parameter name="Type" type="string" value="Block Jacobi"/>
+                    <Parameter name="Inverse Type" type="string" value="Ifpack"/>
+                  </ParameterList>
+                </ParameterList>
+              </ParameterList>
+
               <ParameterList name="Ifpack">
                 <Parameter name="Overlap" type="int" value="1"/>
                 <Parameter name="Prec Type" type="string" value="ILU"/>
