@@ -821,14 +821,15 @@ buildEpetraGraph(int i,int j) const
 
    // build the map and allocate the space for the graph and
    // grab the ghosted graph
-   RCP<Epetra_Map> map = getMap(i);
-   RCP<Epetra_CrsGraph> graph  = rcp(new Epetra_CrsGraph(Copy,*map,0));
+   RCP<Epetra_Map> map_i = getMap(i);
+   RCP<Epetra_Map> map_j = getMap(j);
+   RCP<Epetra_CrsGraph> graph  = rcp(new Epetra_CrsGraph(Copy,*map_j,0));
    RCP<Epetra_CrsGraph> oGraph = getGhostedGraph(i,j);
 
    // perform the communication to finish building graph
    RCP<Epetra_Export> exporter = getGhostedExport(i);
    graph->Export( *oGraph, *exporter, Insert );
-   graph->FillComplete();
+   graph->FillComplete(*map_j,*map_i);
    return graph;
 }
 
