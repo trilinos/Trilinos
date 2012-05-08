@@ -51,6 +51,7 @@ int Excn::ExodusFile::cpuWordSize_ = 0;
 std::string Excn::ExodusFile::outputFilename_;
 bool Excn::ExodusFile::keepOpen_ = false;
 int Excn::ExodusFile::maximumNameLength_ = 32;
+int Excn::ExodusFile::exodusMode_ = 0;
 
 namespace {
   int get_free_descriptor_count();
@@ -66,7 +67,7 @@ Excn::ExodusFile::ExodusFile(size_t which)
     int cpu_word_size = cpuWordSize_;
     int io_wrd_size  = ioWordSize_;
     fileids_[which] = ex_open(filenames_[which].c_str(),
-				  EX_READ, &cpu_word_size,
+				  EX_READ|exodusMode_, &cpu_word_size,
 				  &io_wrd_size, &version);
     if (fileids_[which] < 0) {
       std::cerr << "Cannot open file '" << filenames_[which]
@@ -133,6 +134,10 @@ bool Excn::ExodusFile::initialize(const SystemInterface& si)
   filenames_.resize(si.inputFiles_.size());
   fileids_.resize(si.inputFiles_.size());
   
+  int int_byte_size_api = 4;
+  if (si.ints_64_bit())
+    int_byte_size_api = 8;
+  
   int overall_max_name_length = 0;
   for(size_t p = 0; p < si.inputFiles_.size(); p++) {
     std::string name = si.inputFiles_[p];
@@ -161,17 +166,24 @@ bool Excn::ExodusFile::initialize(const SystemInterface& si)
 
       ioWordSize_ = io_wrd_size;
       cpuWordSize_ = io_wrd_size;
+
+      if (ex_int64_status(exoid & EX_ALL_INT64_DB) || si.ints_64_bit()) {
+	exodusMode_ = EX_ALL_INT64_API;
+      }
     }
 
     if (keepOpen_ || p == 0) {
       int io_wrd_size   = 0;
+      int mode = EX_READ | exodusMode_;
+
       fileids_[p] = ex_open(filenames_[p].c_str(),
-			    EX_READ, &cpuWordSize_,
+			    mode, &cpuWordSize_,
 			    &io_wrd_size, &version);
       if (fileids_[p] < 0) {
 	std::cerr << "Cannot open file '" << filenames_[p] << "'" << std::endl;
 	return false;
       }
+
       SMART_ASSERT(ioWordSize_ == io_wrd_size)(ioWordSize_)(io_wrd_size);
     }
     
@@ -191,7 +203,9 @@ bool Excn::ExodusFile::create_output(const SystemInterface& si)
 {
   outputFilename_ = si.outputName_;
 
-  int mode = EX_CLOBBER;
+  int mode = EX_CLOBBER | exodusMode_;
+  if (si.ints_64_bit())
+    mode |= EX_ALL_INT64_DB;
   
   std::cout << "Output:   '" << outputFilename_ << "'" << std::endl;
   outputId_ = ex_create(outputFilename_.c_str(), mode,

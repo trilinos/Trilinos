@@ -33,6 +33,7 @@
 #define SEACAS_Internals_h
 
 #include <vector>
+#include <CJ_ExodusEntity.h>
 
   /*!
    * This set of classes provides a thin wrapper around the exodusII
@@ -66,12 +67,8 @@
    * <li> ne_put_cmap_params(),
    * </ul>
    */
+
 namespace Excn {
-  class Mesh;
-  class Block;
-  class NodeSet;
-  class SideSet;
-  class CommunicationMetaData;
   
   class Redefine
     {
@@ -88,24 +85,31 @@ namespace Excn {
     public:
       explicit Internals(int exoid, int maximum_name_length);
 
-      int write_meta_data(const Mesh &mesh,
+      template <typename INT>
+      int write_meta_data(const Mesh<INT> &mesh,
 			  const std::vector<Block>   &blocks,
-			  const std::vector<NodeSet> &nodesets,
-			  const std::vector<SideSet> &sidesets,
+			  const std::vector<NodeSet<INT> > &nodesets,
+			  const std::vector<SideSet<INT> > &sidesets,
 			  const CommunicationMetaData &comm);
 
     private:
-      int put_metadata(const Mesh &mesh,
+      template <typename INT>
+      int put_metadata(const Mesh<INT> &mesh,
 		       const CommunicationMetaData &comm);
       int put_metadata(const std::vector<Block> &blocks);
-      int put_metadata(const std::vector<NodeSet> &nodesets);
-      int put_metadata(const std::vector<SideSet> &sidesets);
+      template <typename INT>
+      int put_metadata(const std::vector<NodeSet<INT> > &nodesets);
+      template <typename INT>
+      int put_metadata(const std::vector<SideSet<INT> > &sidesets);
 
-      int put_non_define_data(const Mesh &mesh,
+      template <typename INT>
+      int put_non_define_data(const Mesh<INT> &mesh,
 			      const CommunicationMetaData &comm);
       int put_non_define_data(const std::vector<Block> &blocks);
-      int put_non_define_data(const std::vector<NodeSet> &nodesets);
-      int put_non_define_data(const std::vector<SideSet> &sidesets);
+      template <typename INT>
+      int put_non_define_data(const std::vector<NodeSet<INT> > &nodesets);
+      template <typename INT>
+      int put_non_define_data(const std::vector<SideSet<INT> > &sidesets);
 
       int exodusFilePtr;
       int nodeMapVarID[3];
