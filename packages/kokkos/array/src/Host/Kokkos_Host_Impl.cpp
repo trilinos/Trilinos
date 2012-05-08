@@ -69,11 +69,12 @@ HostInternal::~HostInternal()
 
 HostInternal::HostInternal()
   : m_worker_block()
-  , m_node_rank( std::numeric_limits<size_type>::max() )
-  , m_node_count( 0 )
-  , m_node_core_count( 0 )
+  , m_node_rank( 0 )
+  , m_node_count( 1 )
+  , m_node_pu_count( 0 )
   , m_page_size( 16 /* default alignment */ )
   , m_thread_count( 1 )
+  , m_node_thread_count( 1 )
 {
   m_worker = NULL ;
 
@@ -165,29 +166,21 @@ bool HostInternal::spawn_threads( const size_type use_node_count ,
   {
     int count = 1 ;
 
-    size_type i_node ;
-    size_type i_node_end ;
+    m_node_thread_count = use_node_thread_count ;
+    m_thread_count      = use_node_thread_count * use_node_count ;
 
-    if ( use_node_count <= 1 && m_node_rank < m_node_count ) {
-      i_node     = m_node_rank ;
-      i_node_end = m_node_rank + 1 ;
-    }
-    else {
-      i_node = 0 ;
-      i_node_end = use_node_count ;
-    }
+    for ( size_type rank = 0 , i = 0 ; i < use_node_count ; ++i ) {
 
-    m_thread_count = ( i_node_end - i_node ) * use_node_thread_count ;
-
-    for ( size_type rank = 0 ; i_node < i_node_end ; ++i_node ) {
+      const size_type i_node = ( i + m_node_rank ) % m_node_count ;
 
       for ( size_type i_node_thread = 0 ;
             i_node_thread < use_node_thread_count ; ++i_node_thread , ++rank ) {
 
-        m_thread[rank].m_thread_count = m_thread_count ;
-        m_thread[rank].m_thread_rank  = rank ;
-        m_thread[rank].m_thread_node  = i_node ;
-        m_thread[rank].m_fan_begin    = m_thread + count ;
+        m_thread[rank].m_thread_count     = m_thread_count ;
+        m_thread[rank].m_thread_rank      = rank ;
+        m_thread[rank].m_thread_node      = i_node ;
+        m_thread[rank].m_thread_node_rank = i_node_thread ;
+        m_thread[rank].m_fan_begin        = m_thread + count ;
 
         {
           size_type up = 1 ;
@@ -246,11 +239,14 @@ void HostInternal::initialize( const size_type use_node_count ,
   const bool ok_inactive   = 1 == m_thread_count ;
   const bool ok_node_count = use_node_count <= m_node_count ;
   const bool ok_node_thread_count = 
-    0 == m_node_core_count || use_node_thread_count <= m_node_core_count ;
+    0 == m_node_pu_count || use_node_thread_count <= m_node_pu_count ;
 
   bool ok_spawn_threads = true ;
 
-  if ( ok_inactive && ok_node_count && ok_node_thread_count ) {
+  if ( ok_inactive &&
+       ok_node_count &&
+       ok_node_thread_count &&
+       1 < use_node_count * use_node_thread_count ) {
     ok_spawn_threads = spawn_threads( use_node_count , use_node_thread_count );
   }
 
@@ -273,7 +269,7 @@ void HostInternal::initialize( const size_type use_node_count ,
     }
     if ( ! ok_node_thread_count ) {
       msg << " : use_node_thread_count(" << use_node_thread_count
-          << ") exceeds detect_node_core_count(" << m_node_core_count
+          << ") exceeds detect_node_pu_count(" << m_node_pu_count
           << ")" ;
     }
     if ( ! ok_spawn_threads ) {
@@ -311,6 +307,7 @@ void HostInternal::finalize()
   m_thread->m_fan_begin    = NULL ;
   m_thread->m_fan_end      = NULL ;
 
+  m_node_thread_count = 1 ;
   m_thread_count = 1 ;
 }
 
@@ -354,14 +351,11 @@ void Host::initialize( const size_type use_node_count ,
        .initialize( use_node_count , use_node_thread_count );
 }
 
-Host::size_type Host::detect_node_binding()
-{ return Impl::HostInternal::singleton().m_node_rank ; }
-
 Host::size_type Host::detect_node_count()
 { return Impl::HostInternal::singleton().m_node_count ; }
 
 Host::size_type Host::detect_node_core_count()
-{ return Impl::HostInternal::singleton().m_node_core_count ; }
+{ return Impl::HostInternal::singleton().m_node_pu_count ; }
 
 Host::size_type Host::detect_memory_page_size()
 { return Impl::HostInternal::singleton().m_page_size ; }
