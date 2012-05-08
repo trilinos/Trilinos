@@ -267,7 +267,8 @@ GetLongOption::setcell(Cell *c, char *valtoken, char *nexttoken, const char *nam
 	 return 0;
       }
       else {
-	 if ( nexttoken != 0 && nexttoken[0] != optmarker ) {
+	// KLUGE for exodiff "-steps -1" parsing.  need to do a better way...
+	if ( nexttoken != 0 && (nexttoken[0] != optmarker || (nexttoken[0] == optmarker && nexttoken[1] == '1') )) {
 	    c->value = nexttoken;
 	    return 1;
 	 }
