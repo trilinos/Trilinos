@@ -178,7 +178,6 @@ static int process_result(char *encoded_short_res_buf, nssi_request *request)
 {
 
     int rc = NSSI_OK;  /* return code */
-    int hdr_size;
     uint32_t result_size;
     nssi_result_header header;
     void *decoded_result = NULL;
@@ -204,8 +203,6 @@ static int process_result(char *encoded_short_res_buf, nssi_request *request)
 
     /* initialize the header */
     memset(&header, 0, sizeof(nssi_result_header));
-
-    log_debug(debug_level,"Create memory for decoded header, size=%d", hdr_size);
 
     xdrmem_create(&hdr_xdrs,
             encoded_short_res_buf,
