@@ -415,14 +415,15 @@ evaluateFields(typename Traits::EvalData workset)
                   continue;
 
                // check hash table for jacobian sub block
-               Teuchos::RCP<Epetra_CrsMatrix> subJac = jacEpetraBlocks[std::make_pair(blockRowIndex,blockColIndex)];
+               std::pair<int,int> blockIndex = std::make_pair(blockRowIndex,blockColIndex);
+               Teuchos::RCP<Epetra_CrsMatrix> subJac = jacEpetraBlocks[blockIndex];
 
                // if you didn't find one before, add it to the hash table
                if(subJac==Teuchos::null) {
                   Teuchos::RCP<Epetra_Operator> eOp
-                     = Thyra::get_Epetra_Operator(*Jac->getNonconstBlock(blockRowIndex,blockColIndex)); 
+                     = Thyra::get_Epetra_Operator(*Jac->getNonconstBlock(blockIndex.first,blockIndex.second)); 
                   subJac = rcp_dynamic_cast<Epetra_CrsMatrix>(eOp,true);
-                  jacEpetraBlocks[std::make_pair(blockRowIndex,blockColIndex)] = subJac;
+                  jacEpetraBlocks[blockIndex] = subJac;
                }
 
                int numEntries = 0;
@@ -456,14 +457,15 @@ evaluateFields(typename Traits::EvalData workset)
                   continue;
 
                // check hash table for jacobian sub block
-               Teuchos::RCP<Epetra_CrsMatrix> subJac = jacEpetraBlocks[std::make_pair(blockRowIndex,blockColIndex)];
+               std::pair<int,int> blockIndex = std::make_pair(blockRowIndex,blockColIndex);
+               Teuchos::RCP<Epetra_CrsMatrix> subJac = jacEpetraBlocks[blockIndex];
 
                // if you didn't find one before, add it to the hash table
                if(subJac==Teuchos::null) {
                   Teuchos::RCP<Epetra_Operator> eOp
-                     = Thyra::get_Epetra_Operator(*Jac->getNonconstBlock(blockRowIndex,blockColIndex)); 
+                     = Thyra::get_Epetra_Operator(*Jac->getNonconstBlock(blockIndex.first,blockIndex.second)); 
                   subJac = rcp_dynamic_cast<Epetra_CrsMatrix>(eOp,true);
-                  jacEpetraBlocks[std::make_pair(blockRowIndex,blockColIndex)] = subJac;
+                  jacEpetraBlocks[blockIndex] = subJac;
                }
 
                // Sum Jacobian

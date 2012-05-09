@@ -676,7 +676,8 @@ ghostToGlobalEpetraVector(int i,const Epetra_Vector & in,Epetra_Vector & out) co
    // do the global distribution
    RCP<Epetra_Export> exporter = getGhostedExport(i);
    out.PutScalar(0.0);
-   out.Export(in,*exporter,Add);
+   int err = out.Export(in,*exporter,Add);
+   TEUCHOS_ASSERT_EQUALITY(err,0);
 }
 
 template <typename Traits,typename LocalOrdinalT>
@@ -688,7 +689,8 @@ ghostToGlobalEpetraMatrix(int blockRow,const Epetra_CrsMatrix & in,Epetra_CrsMat
    // do the global distribution
    RCP<Epetra_Export> exporter = getGhostedExport(blockRow);
    out.PutScalar(0.0);
-   out.Export(in,*exporter,Add);
+   int err = out.Export(in,*exporter,Add);
+   TEUCHOS_ASSERT_EQUALITY(err,0);
 }
 
 template <typename Traits,typename LocalOrdinalT>
@@ -700,7 +702,8 @@ globalToGhostEpetraVector(int i,const Epetra_Vector & in,Epetra_Vector & out) co
    // do the global distribution
    RCP<Epetra_Import> importer = getGhostedImport(i);
    out.PutScalar(0.0);
-   out.Import(in,*importer,Insert);
+   int err = out.Import(in,*importer,Insert);
+   TEUCHOS_ASSERT_EQUALITY(err,0);
 }
 
 // get the map from the matrix
@@ -823,13 +826,15 @@ buildEpetraGraph(int i,int j) const
    // grab the ghosted graph
    RCP<Epetra_Map> map_i = getMap(i);
    RCP<Epetra_Map> map_j = getMap(j);
-   RCP<Epetra_CrsGraph> graph  = rcp(new Epetra_CrsGraph(Copy,*map_j,0));
+   RCP<Epetra_CrsGraph> graph  = rcp(new Epetra_CrsGraph(Copy,*map_i,0));
    RCP<Epetra_CrsGraph> oGraph = getGhostedGraph(i,j);
 
    // perform the communication to finish building graph
    RCP<Epetra_Export> exporter = getGhostedExport(i);
-   graph->Export( *oGraph, *exporter, Insert );
+   int err = graph->Export( *oGraph, *exporter, Insert );
+   TEUCHOS_ASSERT_EQUALITY(err,0);
    graph->FillComplete(*map_j,*map_i);
+  
    return graph;
 }
 
@@ -866,12 +871,12 @@ buildEpetraGhostedGraph(int i,int j) const
       std::vector<int> col_gids;
 
       // loop over the elemnts
-      for(std::size_t i=0;i<elements.size();i++) {
+      for(std::size_t elmt=0;elmt<elements.size();elmt++) {
 
-         rowProvider->getElementGIDs(elements[i],row_gids);
-         colProvider->getElementGIDs(elements[i],col_gids);
-         for(std::size_t j=0;j<row_gids.size();j++)
-            graph->InsertGlobalIndices(row_gids[j],col_gids.size(),&col_gids[0]);
+         rowProvider->getElementGIDs(elements[elmt],row_gids);
+         colProvider->getElementGIDs(elements[elmt],col_gids);
+         for(std::size_t row=0;row<row_gids.size();row++)
+            graph->InsertGlobalIndices(row_gids[row],col_gids.size(),&col_gids[0]);
       }
    }
 
@@ -887,7 +892,9 @@ Teuchos::RCP<Epetra_CrsMatrix> BlockedEpetraLinearObjFactory<Traits,LocalOrdinal
 getEpetraMatrix(int i,int j) const
 {
    Teuchos::RCP<Epetra_CrsGraph> eGraph = getGraph(i,j);
-   return Teuchos::rcp(new Epetra_CrsMatrix(Copy, *eGraph));
+   Teuchos::RCP<Epetra_CrsMatrix> mat = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *eGraph));
+   TEUCHOS_ASSERT(mat->Filled());
+   return mat;
 }
 
 template <typename Traits,typename LocalOrdinalT>
@@ -895,7 +902,9 @@ Teuchos::RCP<Epetra_CrsMatrix> BlockedEpetraLinearObjFactory<Traits,LocalOrdinal
 getGhostedEpetraMatrix(int i,int j) const
 {
    Teuchos::RCP<Epetra_CrsGraph> eGraph = getGhostedGraph(i,j); 
-   return Teuchos::rcp(new Epetra_CrsMatrix(Copy, *eGraph));
+   Teuchos::RCP<Epetra_CrsMatrix> mat = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *eGraph));
+   TEUCHOS_ASSERT(mat->Filled());
+   return mat;
 }
 
 template <typename Traits,typename LocalOrdinalT>

@@ -228,6 +228,9 @@ public:
    //! get exporter for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<const Epetra_Comm> getEpetraComm() const;
 
+   Teuchos::RCP<Epetra_CrsMatrix> getEpetraMatrix(int i,int j) const;
+   Teuchos::RCP<Epetra_CrsMatrix> getGhostedEpetraMatrix(int i,int j) const;
+
 protected:
 /*************** Generic methods/members *******************/
 
@@ -262,9 +265,6 @@ protected:
                                      const Epetra_Vector & global_bcs,
                                      const Teuchos::Ptr<Epetra_Vector> & f,
                                      const Teuchos::Ptr<Epetra_CrsMatrix> & A) const;
-
-   Teuchos::RCP<Epetra_CrsMatrix> getEpetraMatrix(int i,int j) const;
-   Teuchos::RCP<Epetra_CrsMatrix> getGhostedEpetraMatrix(int i,int j) const;
 
    void ghostToGlobalEpetraVector(int i,const Epetra_Vector & in,Epetra_Vector & out) const;
    void ghostToGlobalEpetraMatrix(int blockRow,const Epetra_CrsMatrix & in,Epetra_CrsMatrix & out) const;
