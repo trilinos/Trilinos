@@ -85,6 +85,8 @@ static bool       rpc_initialized = FALSE;
 static nssi_rpc_encode encoding   = NSSI_DEFAULT_ENCODE;
 
 #ifdef USE_BUFFER_QUEUE
+#define BQ_MIN   50
+#define BQ_MAX 1000
 trios_buffer_queue_t send_bq;
 trios_buffer_queue_t recv_bq;
 #endif
@@ -190,16 +192,16 @@ int nssi_rpc_init(
 #ifdef USE_BUFFER_QUEUE
     trios_buffer_queue_init(
             &send_bq,
-            50,
-            1000,
+            BQ_MIN,
+            BQ_MAX,
             TRUE,
             &transports[rpc_transport],
             NNTI_SEND_SRC,
             NSSI_SHORT_REQUEST_SIZE);
     trios_buffer_queue_init(
             &recv_bq,
-            50,
-            1000,
+            BQ_MIN,
+            BQ_MAX,
             TRUE,
             &transports[rpc_transport],
             NNTI_RECV_DST,
