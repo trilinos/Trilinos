@@ -2057,6 +2057,7 @@ void separate_surface_element_sides(Ioss::IntVector &element,
 	side_map[name_topo] = 999;
       }
     }
+    (void)my_side_count;
   }
 }
 
