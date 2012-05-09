@@ -54,7 +54,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "Trios_logger.h"
 #include "Trios_threads.h"
 #include "Trios_timer.h"
-#include "Trios_buffer_queue.h"
+#include "buffer_queue.h"
 #include "Trios_nssi_rpc.h"
 #include "Trios_nssi_xdr.h"
 

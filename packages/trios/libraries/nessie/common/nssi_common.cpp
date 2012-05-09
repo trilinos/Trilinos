@@ -68,7 +68,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "Trios_timer.h"
 #include "Trios_logger.h"
 #include "Trios_signal.h"
-#include "Trios_buffer_queue.h"
+#include "buffer_queue.h"
 #include "Trios_nssi_xdr.h"
 
 #include "nssi_debug.h"

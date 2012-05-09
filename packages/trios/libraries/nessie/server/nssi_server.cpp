@@ -107,7 +107,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "Trios_trace.h"
 #include "Trios_threads.h"
 #include "Trios_nssi_rpc.h"
-#include "Trios_buffer_queue.h"
+#include "buffer_queue.h"
 
 
 #include "nssi_debug.h"

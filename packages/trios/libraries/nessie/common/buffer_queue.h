@@ -37,7 +37,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 *************************************************************************/
 /*-------------------------------------------------------------------------*/
-/**  @file Trios_buffer_queue.h
+/**  @file buffer_queue.h
  *
  *   @brief API for a circular list of NNTI_buffer_t.
  *

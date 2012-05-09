@@ -40,7 +40,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "Trios_config.h"
 
 #include "Trios_logger.h"
-#include "Trios_buffer_queue.h"
+#include "buffer_queue.h"
 
 #include "assert.h"
 #include "string.h"
