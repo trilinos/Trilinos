@@ -554,7 +554,7 @@ static void config_get_from_env(
         nnti_gni_config *c);
 
 static gni_transport_global transport_global_data;
-static const int MIN_TIMEOUT = 0;  /* in milliseconds */
+static const int MIN_TIMEOUT = 1;  /* in milliseconds.  must be >0 for GNI_CqVectorWaitEvent(). */
 
 static log_level nnti_cq_debug_level;
 static log_level nnti_event_debug_level;
@@ -2074,7 +2074,6 @@ NNTI_result_t NNTI_gni_waitany (
             //            log_debug(nnti_event_debug_level, "calling CqWaitEvent(wait)");
             trios_start_timer(call_time);
             //            nthread_lock(&nnti_gni_lock);
-//            rc=GNI_CqWaitEvent (cq_hdl, timeout_per_call, &ev_data);
             rc=GNI_CqVectorWaitEvent (&transport_global_data.cq_list[0], 2, timeout_per_call, &ev_data, &which_cq);
             print_cq_event(&ev_data);
             //            nthread_unlock(&nnti_gni_lock);
@@ -2302,13 +2301,12 @@ NNTI_result_t NNTI_gni_waitall (
             //            log_debug(nnti_event_debug_level, "calling CqWaitEvent(wait)");
             trios_start_timer(call_time);
             //            nthread_lock(&nnti_gni_lock);
-//            rc=GNI_CqWaitEvent (cq_hdl, timeout_per_call, &ev_data);
             rc=GNI_CqVectorWaitEvent (&transport_global_data.cq_list[0], 2, timeout_per_call, &ev_data, &which_cq);
             print_cq_event(&ev_data);
             //            nthread_unlock(&nnti_gni_lock);
             trios_stop_timer("NNTI_gni_waitall - CqVectorWaitEvent", call_time);
             log_debug(nnti_event_debug_level, "CqVectorWaitEvent(wait) complete - which_cq=%lu, cq_list[%lu]=%llu",
-                    which_cq, which_cq, transport_global_data.cq_list[which_cq]);
+                    (unsigned long)which_cq, (unsigned long)which_cq, (unsigned long long)transport_global_data.cq_list[which_cq]);
             if (rc!=GNI_RC_SUCCESS) log_debug(nnti_debug_level, "CqVectorWaitEvent() failed: %d", rc);
 
             /* case 1: success */
