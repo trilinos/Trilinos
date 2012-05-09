@@ -6432,7 +6432,7 @@ static NNTI_result_t get_ipaddr(
 static void config_init(nnti_gni_config *c)
 {
     c->use_alps_ptag                    =true;
-    c->use_wr_pool                      =true;
+    c->use_wr_pool                      =false;
     c->use_rdma_target_ack              =true;
     c->use_rdma_events                  =true;
     c->use_rdma_fence                   =false;
