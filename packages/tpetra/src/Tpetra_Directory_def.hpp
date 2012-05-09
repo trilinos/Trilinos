@@ -68,7 +68,7 @@ namespace Tpetra {
       // If map_ is contiguously allocated, we can construct the 
       // directory from the minMyGID value from each process.
       if (map_->isContiguous ()) {
-	RCP<Comm<int> > comm = map_->getComm ();
+	RCP<const Comm<int> > comm = map_->getComm ();
         // Make room for the min GID on each proc, plus one entry at
         // the end for the max cap.
         allMinGIDs_.resize (comm->getSize () + 1);
@@ -343,7 +343,7 @@ namespace Tpetra {
     const GO minAllGID = map_->getMinAllGlobalIndex();
     const GO maxAllGID = map_->getMaxAllGlobalIndex();
 
-    RCP<Comm<int> > comm = map_->getComm ();
+    RCP<const Comm<int> > comm = map_->getComm ();
 
     // The "Directory Map" (see below) will have a range of elements
     // from the minimum to the maximum GID of the user Map, and a
