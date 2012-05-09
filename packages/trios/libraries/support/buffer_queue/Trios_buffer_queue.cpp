@@ -43,7 +43,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "Trios_buffer_queue.h"
 
 #include "assert.h"
-
+#include "string.h"
 
 log_level bq_debug_level = LOG_UNDEFINED;
 
