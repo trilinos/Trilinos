@@ -79,11 +79,15 @@ namespace Tpetra {
   ///   operations.  It must implement the \ref kokkos_node_api
   ///   "Kokkos Node API."  The default \c Node type depends on your
   ///   build options.
+  ///
+  /// Map concepts
+  /// ============
   /// 
-  /// <b>Local vs. Global</b>
+  /// Local and global indices
+  /// ------------------------
   ///
   /// The distinction between local and global indices and types might
-  /// confuse new Tpetra users.  <it>Global</it> indices represent the
+  /// confuse new Tpetra users.  _Global_ indices represent the
   /// elements of a distributed object (such as rows or columns of a
   /// CrsMatrix, or rows of a MultiVector) uniquely over the entire
   /// object, which may be distributed over multiple processes.
@@ -104,6 +108,32 @@ namespace Tpetra {
   /// solve problems with more than \f$2^{31}\f$ unknowns, but a
   /// 32-bit integer LocalOrdinal type to save bandwidth in sparse
   /// matrix-vector multiply.
+  ///
+  /// Contiguous or noncontiguous
+  /// ---------------------------
+  ///
+  /// A Map is _contiguous_ when each process' list of global IDs
+  /// forms an interval and is strictly increasing, and the globally
+  /// minimum global ID equals the index base.  Map optimizes for the
+  /// contiguous case.  In particular, noncontiguous Maps require
+  /// communication in order to figure out which process owns a
+  /// particular global ID (getRemoteIndexList()).
+  ///
+  /// Globally distributed or locally replicated
+  /// ------------------------------------------
+  ///
+  /// "Globally distributed" means that _all_ of the following are
+  /// true:
+  ///
+  /// 1. The map's communicator has more than one process.
+  ///
+  /// 2. There is at least one process in the map's communicator,
+  ///    whose local number of elements does not equal the number of
+  ///    global elements.  (That is, not all the elements are
+  ///    replicated over all the processes.)
+  ///
+  /// If at least one of the above are not true, then the map is
+  /// "locally replicated."  (The two are mutually exclusive.)
   template <class LocalOrdinal, 
             class GlobalOrdinal = LocalOrdinal, 
             class Node = Kokkos::DefaultNode::DefaultNodeType>
@@ -114,16 +144,21 @@ namespace Tpetra {
 
     /** \brief Constructor with Tpetra-defined contiguous uniform distribution.
      *
-     * This constructor produces a Map with the elements distributed
-     * among processes in the given communicator, so that the subsets
-     * of global elements are nonoverlapping, contiguous, and as
-     * evenly distributed across the processes as possible.
+     * This constructor produces a Map with the given number of
+     * elements distributed among processes in the given communicator,
+     * so that the subsets of global elements are nonoverlapping,
+     * contiguous, and as evenly distributed across the processes as
+     * possible.
      *
      * \param numGlobalElements [in] Number of elements in the Map
      *   (over all processes)
      *
-     * \param indexBase [in] The starting (smallest) global ID in the
-     *   Map.  If you don't know what this should be, use zero.
+     * \param indexBase [in] The base of both local and global indices
+     *   in the Map.  C and C++ programmers would normally use zero,
+     *   and Fortran programmers (if you are using Tpetra from
+     *   Fortran) would use one.  For this Map constructor, the index
+     *   base will also be the smallest global ID in the Map.  (If you
+     *   don't know what this should be, use zero.)
      *
      * \param comm [in] Communicator over which to distribute the
      *   elements.
@@ -143,10 +178,9 @@ namespace Tpetra {
     /** \brief Constructor with a user-defined contiguous distribution.
      * 
      * If N is the sum of numLocalElements over all processes, then
-     * this constructor produces a Map with global elements
-     * [indexBase, indexBase+1, ..., N-1+indexBase] split into
-     * nonoverlapping contiguous subsets over the processes in the
-     * given communicator.
+     * this constructor produces a nonoverlapping Map distributed over
+     * the processes in the given communicator, with numLocalElements
+     * contiguous elements on the calling process.
      *  
      * \param numGlobalElements [in] If numGlobalElements ==
      *   Teuchos::OrdinalTraits<global_size_t>::invalid(), the number
@@ -161,8 +195,12 @@ namespace Tpetra {
      * \param numLocalElements [in] Number of elements that the
      *   calling process will own in the Map.
      *
-     * \param indexBase [in] The starting (smallest) global ID in the
-     *   Map.  If you don't know what this should be, use zero.
+     * \param indexBase [in] The base of both local and global indices
+     *   in the Map.  C and C++ programmers would normally use zero,
+     *   and Fortran programmers (if you are using Tpetra from
+     *   Fortran) would use one.  For this Map constructor, the index
+     *   base will also be the smallest global ID in the Map.  (If you
+     *   don't know what this should be, use zero.)
      *
      * \param comm [in] Communicator over which to distribute the
      *   elements.
@@ -200,7 +238,11 @@ namespace Tpetra {
      * \param elementList [in] List of global IDs owned by the calling
      *   process.
      *
-     * \param indexBase [in] ???
+     * \param indexBase [in] The base of both local and global indices
+     *   in the Map.  C and C++ programmers would normally use zero,
+     *   and Fortran programmers (if you are using Tpetra from
+     *   Fortran) would use one.  (If you don't know what this should
+     *   be, use zero.)
      *
      * \param comm [in] Communicator over which to distribute the
      *   elements.
@@ -238,45 +280,53 @@ namespace Tpetra {
       return Teuchos::OrdinalTraits<LocalOrdinal>::zero(); 
     }
 
-    /// \brief The maximum local index.
+    /// \brief The maximum local index on the calling process.
     ///
-    /// If getNodeNumElements() == 0, this returns -1 (assuming that
-    /// LocalOrdinal is a signed integer type).
+    /// If getNodeNumElements() == 0, this returns
+    /// Teuchos::OrdinalTraits<LO>::invalid().
     inline LocalOrdinal getMaxLocalIndex() const {
       using Teuchos::as;
       typedef LocalOrdinal LO;
-      // This typecast sequence ensures that we return -1 if
-      // getNodeNumElements() == 0, rather than some huge positive
-      // number (which could happen if we first subtracted 1, then
-      // converted from size_t to LO).
-      return as<LO> (getNodeNumElements ()) - as<LO> (1);
+
+      if (getNodeNumElements () == 0) {
+	return Teuchos::OrdinalTraits<LO>::invalid ();
+      }
+      else {
+	// NOTE (mfh 08 May 2012) Local indices always have zero as
+	// their index base.
+	return as<LO> (getNodeNumElements ()) - as<LO> (1);
+      }
     }
 
-    //! The minimum global index owned by this node.
+    //! The inimum global index owned by the calling process.
     inline GlobalOrdinal getMinGlobalIndex() const { return minMyGID_; }
 
-    //! The maximum global index owned by this node
+    //! The maximum global index owned by the calling process.
     inline GlobalOrdinal getMaxGlobalIndex() const { return maxMyGID_; }
 
-    //! The minimum global index over all nodes.
+    //! The minimum global index over all processes in the communicator.
     inline GlobalOrdinal getMinAllGlobalIndex() const { return minAllGID_; }
 
-    //! The maximum global index over all nodes.
+    //! The maximum global index over all processes in the communicator.
     inline GlobalOrdinal getMaxAllGlobalIndex() const { return maxAllGID_; }
 
     /// \brief The local index corresponding to the given global index.  
     ///
-    /// If the given global index is not owned by this node, return
-    /// <tt>Teuchos::OrdinalTraits<LocalOrdinal>::invalid()</tt>.
-    LocalOrdinal getLocalElement(GlobalOrdinal globalIndex) const;
+    /// If the given global index is not owned by this process, return
+    /// Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
+    LocalOrdinal getLocalElement (GlobalOrdinal globalIndex) const;
 
     /// \brief The global index corresponding to the given local index.
     ///
-    /// If the given local index is not valid for this node, return
-    /// <tt>Teuchos::OrdinalTraits<GlobalOrdinal>::invalid()</tt>.
-    GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const;
+    /// If the given local index is not valid on the calling process,
+    /// return Teuchos::OrdinalTraits<GlobalOrdinal>::invalid().
+    GlobalOrdinal getGlobalElement (LocalOrdinal localIndex) const;
 
-    /// \brief Process IDs and corresponding local IDs for a given list of global IDs.
+    /// \brief Return the process IDs and corresponding local IDs for a given list of global IDs.
+    ///
+    /// This operation should always be called as a collective over
+    /// all processes in the communicator.  For a distributed
+    /// noncontiguous Map, this operation requires communication.
     ///
     /// \pre nodeIDList.size() == GIDList.size()
     /// \pre LIDList.size() == GIDList.size()
@@ -285,9 +335,8 @@ namespace Tpetra {
     ///   not present in the directory.  Otherwise, return
     ///   AllIDsPresent.
     ///
-    /// \note For a distributed noncontiguous Map, this operation
-    ///   requires communication.  This is crucial technology used in
-    ///   \c Export, \c Import, \c CrsGraph, and \c CrsMatrix.
+    /// \note This is crucial technology used in \c Export, \c Import,
+    ///   \c CrsGraph, and \c CrsMatrix.
     LookupStatus 
     getRemoteIndexList (const Teuchos::ArrayView<const GlobalOrdinal>& GIDList, 
                         const Teuchos::ArrayView<                int>& nodeIDList, 

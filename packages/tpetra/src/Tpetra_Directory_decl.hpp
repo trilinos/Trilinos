@@ -59,10 +59,11 @@ namespace Tpetra {
   /// parameters of Map.
   ///
   /// \tparam LocalOrdinal Same as Map's \c LocalOrdinal template
-  ///   parameter.
+  ///   parameter.  The type of local IDs.
   ///
   /// \tparam GlobalOrdinal Same as Map's \c GlobalOrdinal template
-  ///   parameter.  Defaults to the same type as LocalOrdinal.
+  ///   parameter.  The type of global IDs.  Defaults to the same type
+  ///   as LocalOrdinal.
   ///
   /// \tparam Node Same as Map's \c Node template parameter.  Defaults
   ///   to the default Kokkos Node type.
@@ -219,19 +220,16 @@ namespace Tpetra {
     /// Map.
     Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > directoryMap_;
 
-    //! The communicator over which the Directory is distributed.
-    Teuchos::RCP<const Teuchos::Comm<int> > comm_;
-
-    /// \brief Minimum global ID for each node in the communicator.
+    /// \brief Minimum global ID for each process in the communicator.
     ///
     /// This array is only valid if the user's Map (\c map_) is
     /// distributed and contiguous.  Otherwise, it remains empty.  It
     /// is allocated in the constructor if necessary.
     ///
-    /// This array has comm_->getSize()+1 entries.  Entry i contains
-    /// the minimum global identifier (GID) of process i in the
-    /// communicator comm_.  The last entry contains the maximum GID
-    /// in the directory.  
+    /// This array has map_->getComm ()->getSize ()+1 entries.  Entry
+    /// i contains the minimum global identifier (GID) of process i in
+    /// map_'s communicator.  The last entry contains the maximum GID
+    /// in the directory.
     ///
     /// The directory uses this array to map from GID to process ID,
     /// when the GIDs are distributed contiguously in increasing order
@@ -239,29 +237,28 @@ namespace Tpetra {
     /// compute the mapping locally, without communication, for any
     /// given GID, whether or not it is owned by the local process.
     ///
-    /// \note This is a potential memory bottleneck if the number of
-    ///   processes P is large and the allowed memory usage per
-    ///   process is small.  However, remember that for reasonable
-    ///   performance, if N is the global number of entries, then your
-    ///   code should have N / P >> 1.  Thus, this array is small
-    ///   compared with your application's data, assuming that you
-    ///   aren't creating a lot of Maps.
-    std::vector<GlobalOrdinal> allMinGIDs_; 
+    /// \note To implementers: This is a potential memory bottleneck
+    ///   if the number of processes P is large and the allowed memory
+    ///   usage per process is small.  This should only be a problem
+    ///   if \f$N/P \gg P\f$, where N is the global number of
+    ///   elements.  In this case, it would be better 
+    Teuchos::Array<GlobalOrdinal> allMinGIDs_; 
 
     /// Array of the same length as the local number of entries in
     /// directoryMap_.  This array is only allocated and used if the
     /// user's map is distributed and noncontiguous.
-    std::vector<int> nodeIDs_;
+    Teuchos::Array<int> nodeIDs_;
     /// Array of the same length as the local number of entries in
     /// directoryMap_.  This array is only allocated and used if the
     /// user's map is distributed and noncontiguous.
-    std::vector<LocalOrdinal> LIDs_;
+    Teuchos::Array<LocalOrdinal> LIDs_;
 
     //! Copy constructor: declared private but not defined on purpose.
-    Directory (const Directory<LocalOrdinal,GlobalOrdinal,Node> &directory);
+    Directory (const Directory<LocalOrdinal,GlobalOrdinal,Node>& directory);
 
     //! Assignment operator: declared private but not defined on purpose.
-    Directory<LocalOrdinal,GlobalOrdinal,Node> & operator = (const Directory<LocalOrdinal,GlobalOrdinal,Node> &source);
+    Directory<LocalOrdinal,GlobalOrdinal,Node>& 
+    operator= (const Directory<LocalOrdinal,GlobalOrdinal,Node>& source);
 
     /// \brief Common code for both versions of \c getDirectoryEntries().
     ///

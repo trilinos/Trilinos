@@ -53,29 +53,35 @@
 
 namespace Tpetra {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Directory<LocalOrdinal,GlobalOrdinal,Node>::Directory(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map_in)
-  : map_(map_in) 
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  Directory<LocalOrdinal, GlobalOrdinal, Node>::
+  Directory (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map_in)
+    : map_ (map_in)
   {
-    // initialize Comm instance
-    comm_ = map_->getComm();
+    using Teuchos::Comm;
+    using Teuchos::gatherAll;
+    using Teuchos::RCP;
+    typedef GlobalOrdinal GO;
 
     // A directory is not necessary for a non-global ES.
-    if (map_->isDistributed()) {
+    if (map_->isDistributed ()) {
       // If map_ is contiguously allocated, we can construct the 
-      // directory from the minMyGID value from each image.
-      if (map_->isContiguous()) {
+      // directory from the minMyGID value from each process.
+      if (map_->isContiguous ()) {
+	RCP<Comm<int> > comm = map_->getComm ();
         // Make room for the min GID on each proc, plus one entry at
         // the end for the max cap.
-        allMinGIDs_.resize(comm_->getSize() + 1);
+        allMinGIDs_.resize (comm->getSize () + 1);
         // Get my process' min GID.
-        GlobalOrdinal minMyGID = map_->getMinGlobalIndex();
+        GlobalOrdinal minMyGID = map_->getMinGlobalIndex ();
         // Gather all of the min GIDs into the first getSize() entries
         // of allMinGIDs_.
-        Teuchos::gatherAll<int,GlobalOrdinal>(*comm_,1,&minMyGID,comm_->getSize(),&allMinGIDs_.front());
+        gatherAll<int,GO> (*comm, 1, &minMyGID, comm->getSize (), 
+			   allMinGIDs_.getRawPtr ());
         // Put the max cap at the end.  Adding one lets us write loops
         // over GIDs with the traditional strict less-than bound.
-        allMinGIDs_.back() = map_->getMaxAllGlobalIndex() + Teuchos::OrdinalTraits<GlobalOrdinal>::one();
+        allMinGIDs_.back() = map_->getMaxAllGlobalIndex() + 
+	  Teuchos::OrdinalTraits<GlobalOrdinal>::one();
       }
       // Otherwise we have to generate the directory using MPI calls.
       else {
@@ -118,6 +124,8 @@ namespace Tpetra {
     using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
     using Teuchos::as;
+    using Teuchos::Comm;
+    using Teuchos::RCP;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
 
@@ -128,37 +136,39 @@ namespace Tpetra {
     // all have the same size, before modifying any output arguments.
     TEUCHOS_TEST_FOR_EXCEPTION(nodeIDs.size() != globalIDs.size(), 
       std::invalid_argument, Teuchos::typeName(*this) << "::getEntries(): Output" 
-      " buffers are not allocated properly.  nodeIDs.size() = " << nodeIDs.size()
+      " arrays do not have the right sizes.  nodeIDs.size() = " << nodeIDs.size()
       << " != globalIDs.size() = " << globalIDs.size() << ".");
     if (computeLIDs) {
       TEUCHOS_TEST_FOR_EXCEPTION(localIDs.size() != globalIDs.size(), 
         std::invalid_argument, Teuchos::typeName(*this) << "::getEntries(): "
-        "Output buffers are not allocated properly.  localIDs.size() = " 
+        "Output array do not have the right sizes.  localIDs.size() = " 
         << localIDs.size() << " != globalIDs.size() = " << globalIDs.size() 
         << ".");
     }
 
     // Initially, fill nodeIDs and localIDs (if applicable) with
-    // invalid values.  The "invalid" process ID is -1; the invalid
-    // LO comes from OrdinalTraits.
+    // invalid values.  The "invalid" process ID is -1 (this means the
+    // same thing as MPI_ANY_SOURCE to Teuchos, so it's an "invalid"
+    // process ID); the invalid local ID comes from OrdinalTraits.
     std::fill (nodeIDs.begin(), nodeIDs.end(), -1);
     if (computeLIDs) {
       std::fill (localIDs.begin(), localIDs.end(), LINVALID);
     }
 
-    const int numImages  = comm_->getSize();
-    const int myImageID  = comm_->getRank();
-    const size_t numEntries = globalIDs.size();
-    const global_size_t nOverP = map_->getGlobalNumElements() / numImages;
+    RCP<Comm<int> > comm       = map_->getComm ();
+    const int       numProcs   = comm->getSize ();
+    const int       myRank     = comm->getRank ();
+    const size_t    numEntries = globalIDs.size ();
+    const global_size_t nOverP = map_->getGlobalNumElements () / numProcs;
 
-    if (! map_->isDistributed()) {
-      // Easiest case: Map is serial or locally replicated. 
+    if (! map_->isDistributed ()) {
+      // Easiest case: Map is on one process or is locally replicated. 
       typename ArrayView<int>::iterator procIter = nodeIDs.begin();
       typename ArrayView<LO>::iterator lidIter = localIDs.begin();
       typename ArrayView<const GO>::iterator gidIter;
       for (gidIter = globalIDs.begin(); gidIter != globalIDs.end(); ++gidIter) {
         if (map_->isNodeGlobalElement (*gidIter)) {
-          *procIter++ = myImageID;
+          *procIter++ = myRank;
           if (computeLIDs) {
             *lidIter++ = map_->getLocalElement (*gidIter);
           }
@@ -173,18 +183,18 @@ namespace Tpetra {
         }
       }
     }
-    else if (map_->isContiguous()) {
+    else if (map_->isContiguous ()) {
       // Next easiest case: Map is distributed but allocated contiguously.
-      typename ArrayView<int>::iterator imgptr = nodeIDs.begin();
-      typename ArrayView<LO>::iterator lidptr = localIDs.begin();
-      typename ArrayView<const GO>::iterator gid;
-      for (gid = globalIDs.begin(); gid != globalIDs.end(); ++gid) {
+      typename ArrayView<int>::iterator procIter = nodeIDs.begin();
+      typename ArrayView<LO>::iterator lidIter = localIDs.begin();
+      typename ArrayView<const GO>::iterator gidIter;
+      for (gidIter = globalIDs.begin(); gidIter != globalIDs.end(); ++gidIter) {
         LO LID = LINVALID; // Assume not found until proven otherwise
         int image = -1;
-        GO GID = *gid;
+        GO GID = *gidIter;
         // Guess uniform distribution and start a little above it
         // TODO: replace by a binary search
-        int curimg;
+        int curRank;
         { // We go through all this trouble to avoid overflow and
           // signed / unsigned casting mistakes (that were made in
           // previous versions of this code).
@@ -197,49 +207,50 @@ namespace Tpetra {
           // and nOverP is appropriately sized for int.  Trouble may
           // ensue if the index base has an exotic value.
           const int lowerBound_int = static_cast<int> (lowerBound);
-          curimg = std::min(lowerBound_int, numImages - 1);
+          curRank = std::min (lowerBound_int, numProcs - 1);
         }
         bool found = false;
-        while (curimg >= 0 && curimg < numImages) {
-          if (allMinGIDs_[curimg] <= GID) {
-            if (GID < allMinGIDs_[curimg + 1]) {
+        while (curRank >= 0 && curRank < numProcs) {
+          if (allMinGIDs_[curRank] <= GID) {
+            if (GID < allMinGIDs_[curRank + 1]) {
               found = true;
               break;
             }
             else {
-              curimg++;
+              curRank++;
             }
           }
           else {
-            curimg--;
+            curRank--;
           }
         }
         if (found) {
-          image = curimg;
-          LID = Teuchos::as<LO>(GID - allMinGIDs_[image]);
+          image = curRank;
+          LID = as<LO> (GID - allMinGIDs_[image]);
         }
         else {
           res = IDNotPresent;
         }
-        *imgptr++ = image;
+        *procIter++ = image;
         if (computeLIDs) {
-          *lidptr++ = LID;
+          *lidIter++ = LID;
         }
       }
     }
     else {
-      // General Case: Map is distributed and allocated arbitrarily
-      // Here we need to set up an actual directory structure
-      int packetSize = 2;
-      if (computeLIDs) {
-        packetSize = 3;
-      }
+      // General Case: Map is distributed and allocated arbitrarily.
+      // Here we need to set up an actual directory structure.
+      
+      // If we're computing LIDs, we also have to include them in each
+      // packet, along with the GID and process ID.
+      const int packetSize = computeLIDs ? 3 : 2;
 
-      Distributor distor(comm_);
+      // For data distribution, we use: Surprise!  A Distributor!
+      Distributor distor (comm);
 
-      // Get directory locations for the requested list of entries
-      Array<int> dirImages(numEntries);
-      res = directoryMap_->getRemoteIndexList(globalIDs, dirImages());
+      // Get directory locations for the requested list of entries.
+      Array<int> dirImages (numEntries);
+      res = directoryMap_->getRemoteIndexList (globalIDs, dirImages ());
       // Check for unfound globalIDs and set corresponding nodeIDs to -1
       size_t numMissing = 0;
       if (res == IDNotPresent) {
@@ -256,14 +267,14 @@ namespace Tpetra {
 
       ArrayRCP<GO> sendGIDs; 
       ArrayRCP<int> sendImages;
-      distor.createFromRecvs(globalIDs, dirImages(), sendGIDs, sendImages);
-      size_t numSends = sendGIDs.size();
+      distor.createFromRecvs (globalIDs, dirImages (), sendGIDs, sendImages);
+      const size_t numSends = sendGIDs.size ();
 
       //    global_size_t >= GO
       //    global_size_t >= size_t >= int
       //    global_size_t >= size_t >= LO
-      // Therefore, we can safely stored all of these in a global_size_t
-      Array<global_size_t> exports(packetSize*numSends);
+      // Therefore, we can safely store all of these in a global_size_t
+      Array<global_size_t> exports (packetSize*numSends);
       {
         LO curLID;
         typename Array<global_size_t>::iterator ptr = exports.begin();
@@ -322,6 +333,8 @@ namespace Tpetra {
     using Teuchos::rcp;
     using Teuchos::Array;
     using Teuchos::ArrayView;
+    using Teuchos::Comm;
+    using Teuchos::RCP;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef Map<LO, GO, Node> map_type;
@@ -330,14 +343,22 @@ namespace Tpetra {
     const GO minAllGID = map_->getMinAllGlobalIndex();
     const GO maxAllGID = map_->getMaxAllGlobalIndex();
 
-    // DirectoryMap will have a range of elements from the minimum to the maximum
-    // GID of the user Map, and an indexBase of minAllGID from the user Map
+    RCP<Comm<int> > comm = map_->getComm ();
+
+    // The "Directory Map" (see below) will have a range of elements
+    // from the minimum to the maximum GID of the user Map, and a
+    // minimum GID of minAllGID from the user Map.
     const global_size_t numGlobalEntries = maxAllGID - minAllGID + 1;
 
-    // We can't afford to store the whole directory on each node, so
-    // create a uniform contiguous Map that describes how we will
-    // distribute the directory over processes.
-    directoryMap_ = rcp (new map_type (numGlobalEntries, minAllGID, comm_, GloballyDistributed, map_->getNode()));
+    // We can't afford to replicate the whole directory on each
+    // process, so create the "Directory Map", a uniform contiguous
+    // Map that describes how we will distribute the directory over
+    // processes.
+    //
+    // FIXME (mfh 08 May 2012) Here we're setting minAllGID to be the
+    // index base.  The index base should be separate from the minimum
+    // GID.
+    directoryMap_ = rcp (new map_type (numGlobalEntries, minAllGID, comm, GloballyDistributed, map_->getNode()));
 
     // The number of Directory elements that my process owns.
     const size_t dir_numMyEntries = directoryMap_->getNodeNumElements();
@@ -356,10 +377,10 @@ namespace Tpetra {
     // Get list of process IDs that own the directory entries for the
     // Map GIDs.  These will be the targets of the sends that the
     // Distributor will do.
-    const int myImageID = comm_->getRank();
-    const size_t numMyEntries = map_->getNodeNumElements();
-    Array<int> sendImageIDs(numMyEntries);
-    ArrayView<const GO> myGlobalEntries = map_->getNodeElementList();
+    const int myRank = comm->getRank ();
+    const size_t numMyEntries = map_->getNodeNumElements ();
+    Array<int> sendImageIDs (numMyEntries);
+    ArrayView<const GO> myGlobalEntries = map_->getNodeElementList ();
     // An ID not present in this lookup indicates that it lies outside
     // of the range [minAllGID,maxAllGID] (from map_).  this means
     // something is wrong with map_, our fault.
@@ -374,7 +395,7 @@ namespace Tpetra {
     // of (GID, process ID, LID).  We're sending the entries to the
     // processes that the Directory Map says should own them, which is
     // why we called directoryMap_->getRemoteIndexList() above.
-    Distributor distor (comm_);      
+    Distributor distor (comm);      
     const size_t numReceives = distor.createFromSends (sendImageIDs);
 
     // NOTE (mfh 21 Mar 2012) The following code assumes that 
@@ -390,7 +411,7 @@ namespace Tpetra {
       typename Array<GO>::iterator ptr = exportEntries.begin();
       for (size_t i=0; i < numMyEntries; ++i) {
         *ptr++ = myGlobalEntries[i];
-        *ptr++ = as<GO>(myImageID);
+        *ptr++ = as<GO>(myRank);
         *ptr++ = as<GO>(i);
       }
     }
@@ -410,9 +431,12 @@ namespace Tpetra {
         // a triple: (GID, process ID, LID).
         //
         // Convert incoming GID to Directory LID.
-        const LO currLID = directoryMap_->getLocalElement (*ptr++); 
+	const GO currGID = *ptr++;
+        const LO currLID = directoryMap_->getLocalElement (currGID); 
         TEUCHOS_TEST_FOR_EXCEPTION(currLID == LINVALID, std::logic_error,
-            Teuchos::typeName(*this) << "::generateDirectory(): logic error. Please notify the Tpetra team.");
+          Teuchos::typeName(*this) << "::generateDirectory(): Incoming global "
+          "ID " << currGID << " does not have a corresponding local ID in the "
+          "Directory Map.  Please report this bug to the Tpetra developers.");
         nodeIDs_[currLID] = *ptr++;
         LIDs_[currLID] = *ptr++;
       }
