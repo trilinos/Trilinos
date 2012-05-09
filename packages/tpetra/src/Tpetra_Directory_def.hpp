@@ -155,7 +155,7 @@ namespace Tpetra {
       std::fill (localIDs.begin(), localIDs.end(), LINVALID);
     }
 
-    RCP<Comm<int> > comm       = map_->getComm ();
+    RCP<const Comm<int> > comm = map_->getComm ();
     const int       numProcs   = comm->getSize ();
     const int       myRank     = comm->getRank ();
     const size_t    numEntries = globalIDs.size ();
