@@ -301,10 +301,9 @@ typedef std::deque<gni_work_request *>::iterator wr_queue_iter_t;
 
 typedef struct {
     gni_buffer_type  type;
-
     gni_mem_handle_t mem_hdl;
-
     wr_queue_t       wr_queue;
+    uint32_t         ref_count;
 } gni_memory_handle;
 
 typedef struct {
@@ -1224,6 +1223,7 @@ NNTI_result_t NNTI_gni_register_memory (
     NNTI_result_t rc=NNTI_OK;
     trios_declare_timer(call_time);
 
+    NNTI_buffer_t     *old_buf=NULL;
     gni_memory_handle *gni_mem_hdl=NULL;
 
     assert(trans_hdl);
@@ -1235,8 +1235,17 @@ NNTI_result_t NNTI_gni_register_memory (
 
     log_debug(nnti_ee_debug_level, "enter");
 
-    gni_mem_hdl=new gni_memory_handle();
-    assert(gni_mem_hdl);
+    old_buf=get_buf_bufhash(hash6432shift((uint64_t)buffer));
+    if (old_buf==NULL) {
+        gni_mem_hdl=new gni_memory_handle();
+        assert(gni_mem_hdl);
+        gni_mem_hdl->ref_count=1;
+    } else {
+        gni_mem_hdl=(gni_memory_handle*)old_buf->transport_private;
+        gni_mem_hdl->ref_count++;
+    }
+
+    log_debug(nnti_ee_debug_level, "gni_mem_hdl->ref_count==%lu", gni_mem_hdl->ref_count);
 
     reg_buf->transport_id      = trans_hdl->id;
     reg_buf->buffer_owner      = trans_hdl->me;
@@ -1248,57 +1257,46 @@ NNTI_result_t NNTI_gni_register_memory (
     log_debug(nnti_debug_level, "rpc_buffer->payload_size=%ld",
             reg_buf->payload_size);
 
-    if (ops == NNTI_RECV_QUEUE) {
-        gni_request_queue_handle *q_hdl=&transport_global_data.req_queue;
+    if (gni_mem_hdl->ref_count==1) {
+        if (ops == NNTI_RECV_QUEUE) {
+            gni_request_queue_handle *q_hdl=&transport_global_data.req_queue;
 
-        gni_mem_hdl->type   =REQUEST_BUFFER;
-//        gni_mem_hdl->last_op=GNI_OP_NEW_REQUEST;
+            gni_mem_hdl->type   =REQUEST_BUFFER;
+            //        gni_mem_hdl->last_op=GNI_OP_NEW_REQUEST;
 
-        memset(q_hdl, 0, sizeof(gni_request_queue_handle));
+            memset(q_hdl, 0, sizeof(gni_request_queue_handle));
 
-        q_hdl->reg_buf=reg_buf;
+            q_hdl->reg_buf=reg_buf;
 
-        server_req_queue_init(
-                q_hdl,
-                buffer,
-                element_size,
-                num_elements);
+            server_req_queue_init(
+                    q_hdl,
+                    buffer,
+                    element_size,
+                    num_elements);
 
-        reg_buf->payload_size=q_hdl->req_size;
+            reg_buf->payload_size=q_hdl->req_size;
 
-    } else if (ops == NNTI_RECV_DST) {
-        gni_mem_hdl->type    =RECEIVE_BUFFER;
-//        gni_mem_hdl->op_state=RDMA_WRITE_INIT;
+        } else if (ops == NNTI_RECV_DST) {
+            gni_mem_hdl->type    =RECEIVE_BUFFER;
+        } else if (ops == NNTI_SEND_SRC) {
+            gni_mem_hdl->type=SEND_BUFFER;
+        } else if (ops == NNTI_GET_DST) {
+            gni_mem_hdl->type    =GET_DST_BUFFER;
+        } else if (ops == NNTI_GET_SRC) {
+            gni_mem_hdl->type    =GET_SRC_BUFFER;
+        } else if (ops == NNTI_PUT_SRC) {
+            gni_mem_hdl->type    =PUT_SRC_BUFFER;
+        } else if (ops == NNTI_PUT_DST) {
+            gni_mem_hdl->type    =PUT_DST_BUFFER;
+        } else if (ops == (NNTI_GET_SRC|NNTI_PUT_DST)) {
+            gni_mem_hdl->type    =RDMA_TARGET_BUFFER;
+        } else {
+            gni_mem_hdl->type=UNKNOWN_BUFFER;
+        }
 
-    } else if (ops == NNTI_SEND_SRC) {
-        gni_mem_hdl->type=SEND_BUFFER;
-
-    } else if (ops == NNTI_GET_DST) {
-        gni_mem_hdl->type    =GET_DST_BUFFER;
-//        gni_mem_hdl->op_state=RDMA_READ_INIT;
-
-    } else if (ops == NNTI_GET_SRC) {
-        gni_mem_hdl->type    =GET_SRC_BUFFER;
-//        gni_mem_hdl->op_state=RDMA_READ_INIT;
-
-    } else if (ops == NNTI_PUT_SRC) {
-        gni_mem_hdl->type    =PUT_SRC_BUFFER;
-//        gni_mem_hdl->op_state=RDMA_WRITE_INIT;
-
-    } else if (ops == NNTI_PUT_DST) {
-        gni_mem_hdl->type    =PUT_DST_BUFFER;
-//        gni_mem_hdl->op_state=RDMA_WRITE_INIT;
-
-    } else if (ops == (NNTI_GET_SRC|NNTI_PUT_DST)) {
-        gni_mem_hdl->type    =RDMA_TARGET_BUFFER;
-//        gni_mem_hdl->op_state=RDMA_TARGET_INIT;
-
-    } else {
-        gni_mem_hdl->type=UNKNOWN_BUFFER;
-    }
-
-    if (ops != NNTI_RECV_QUEUE) {
-        rc=register_memory(gni_mem_hdl, buffer, element_size);
+        if (ops != NNTI_RECV_QUEUE) {
+            rc=register_memory(gni_mem_hdl, buffer, element_size);
+        }
     }
 
     if ((ops == NNTI_RECV_QUEUE) || (ops == NNTI_RECV_DST)) {
@@ -1329,17 +1327,19 @@ NNTI_result_t NNTI_gni_register_memory (
         }
     }
 
-    insert_buf_bufhash(reg_buf);
+
+    if (gni_mem_hdl->ref_count==1) {
+        insert_buf_bufhash(reg_buf);
+        log_debug(nnti_debug_level, "gni_mem_hdl->type==%llu",
+                (uint64_t)gni_mem_hdl->type);
+        log_debug(nnti_debug_level, "reg_buf.buf.hash==%llu",
+                (uint64_t)hash6432shift(reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf));
+    }
 
     if (logging_debug(nnti_debug_level)) {
         fprint_NNTI_buffer(logger_get_file(), "reg_buf",
                 "end of NNTI_gni_register_memory", reg_buf);
     }
-
-    log_debug(nnti_debug_level, "gni_mem_hdl->type==%llu",
-            (uint64_t)gni_mem_hdl->type);
-    log_debug(nnti_debug_level, "reg_buf.buf.hash==%llu",
-            (uint64_t)hash6432shift(reg_buf->buffer_addr.NNTI_remote_addr_t_u.gni.buf));
 
     log_debug(nnti_ee_debug_level, "exit");
     return(rc);
@@ -1368,46 +1368,52 @@ NNTI_result_t NNTI_gni_unregister_memory (
     }
 
     gni_mem_hdl=(gni_memory_handle *)reg_buf->transport_private;
-
     assert(gni_mem_hdl);
+    gni_mem_hdl->ref_count--;
 
-    if (gni_mem_hdl->type==REQUEST_BUFFER) {
-        server_req_queue_destroy(
-                &transport_global_data.req_queue);
+    log_debug(nnti_ee_debug_level, "gni_mem_hdl->ref_count==%lu", gni_mem_hdl->ref_count);
 
-    } else {
-        unregister_memory(gni_mem_hdl);
-    }
+    if (gni_mem_hdl->ref_count==0) {
+        log_debug(nnti_ee_debug_level, "gni_mem_hdl->ref_count is 0.  release all resources.");
 
-    del_buf_bufhash(reg_buf);
+        if (gni_mem_hdl->type==REQUEST_BUFFER) {
+            server_req_queue_destroy(
+                    &transport_global_data.req_queue);
 
-    while (!gni_mem_hdl->wr_queue.empty()) {
-        gni_work_request *wr=gni_mem_hdl->wr_queue.front();
-        log_debug(nnti_debug_level, "removing pending wr=%p", wr);
-        gni_mem_hdl->wr_queue.pop_front();
-        del_wr_wrhash(wr);
-        if (config.use_wr_pool) {
-            if (wr->is_initiator==TRUE) {
-                wr_pool_initiator_push(wr);
-            } else {
-                wr_pool_target_push(wr);
-            }
         } else {
-            unregister_wc(wr);
-            free(wr);
+            unregister_memory(gni_mem_hdl);
         }
+
+        del_buf_bufhash(reg_buf);
+
+        while (!gni_mem_hdl->wr_queue.empty()) {
+            gni_work_request *wr=gni_mem_hdl->wr_queue.front();
+            log_debug(nnti_debug_level, "removing pending wr=%p", wr);
+            gni_mem_hdl->wr_queue.pop_front();
+            del_wr_wrhash(wr);
+            if (config.use_wr_pool) {
+                if (wr->is_initiator==TRUE) {
+                    wr_pool_initiator_push(wr);
+                } else {
+                    wr_pool_target_push(wr);
+                }
+            } else {
+                unregister_wc(wr);
+                free(wr);
+            }
+        }
+
+
+        if (gni_mem_hdl) delete gni_mem_hdl;
+
+        reg_buf->transport_id      = NNTI_TRANSPORT_NULL;
+        GNI_SET_MATCH_ANY(&reg_buf->buffer_owner);
+        reg_buf->ops               = (NNTI_buf_ops_t)0;
+        //    GNI_SET_MATCH_ANY(&reg_buf->peer);
+        reg_buf->payload_size      = 0;
+        reg_buf->payload           = 0;
+        reg_buf->transport_private = 0;
     }
-
-
-    if (gni_mem_hdl) delete gni_mem_hdl;
-
-    reg_buf->transport_id      = NNTI_TRANSPORT_NULL;
-    GNI_SET_MATCH_ANY(&reg_buf->buffer_owner);
-    reg_buf->ops               = (NNTI_buf_ops_t)0;
-//    GNI_SET_MATCH_ANY(&reg_buf->peer);
-    reg_buf->payload_size      = 0;
-    reg_buf->payload           = 0;
-    reg_buf->transport_private = 0;
 
     log_debug(nnti_ee_debug_level, "exit");
 

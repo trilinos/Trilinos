@@ -181,10 +181,9 @@ typedef std::deque<ib_work_request *>::iterator wr_queue_iter_t;
 
 typedef struct {
     ib_buffer_type type;
-
     struct ibv_mr *mr;
-
     wr_queue_t     wr_queue;
+    uint32_t       ref_count;
 } ib_memory_handle;
 
 typedef struct {
@@ -835,9 +834,9 @@ NNTI_result_t NNTI_ib_register_memory (
 
     uint32_t cqe_num;
 
-
     struct ibv_recv_wr *bad_wr=NULL;
 
+    NNTI_buffer_t     *old_buf=NULL;
     ib_memory_handle *ib_mem_hdl=NULL;
 
     assert(trans_hdl);
@@ -849,8 +848,17 @@ NNTI_result_t NNTI_ib_register_memory (
 
 //    if (ops==NNTI_PUT_SRC) print_xfer_buf(buffer, element_size);
 
-    ib_mem_hdl=new ib_memory_handle();
-    assert(ib_mem_hdl);
+    old_buf=get_buf_bufhash(hash6432shift((uint64_t)buffer));
+    if (old_buf==NULL) {
+        ib_mem_hdl=new ib_memory_handle();
+        assert(ib_mem_hdl);
+        ib_mem_hdl->ref_count=1;
+    } else {
+        ib_mem_hdl=(ib_memory_handle*)old_buf->transport_private;
+        ib_mem_hdl->ref_count++;
+    }
+
+    log_debug(nnti_debug_level, "ib_mem_hdl->ref_count==%lu", ib_mem_hdl->ref_count);
 
     memset(reg_buf, 0, sizeof(NNTI_buffer_t));
 
@@ -860,137 +868,130 @@ NNTI_result_t NNTI_ib_register_memory (
     reg_buf->payload_size      = element_size;
     reg_buf->payload           = (uint64_t)buffer;
     reg_buf->transport_private = (uint64_t)ib_mem_hdl;
-//    if (peer != NULL) {
-//        reg_buf->peer = *peer;
-//    } else {
-//        IB_SET_MATCH_ANY(&reg_buf->peer);
-//    }
-
-//    memset(&reg_buf->buffer_addr.NNTI_remote_addr_t_u.ib, 0, sizeof(reg_buf->buffer_addr.NNTI_remote_addr_t_u.ib));
 
     log_debug(nnti_debug_level, "rpc_buffer->payload_size=%ld",
             reg_buf->payload_size);
 
-    if (ops == NNTI_RECV_QUEUE) {
-        ib_request_queue_handle *q_hdl=&transport_global_data.req_queue;
+    if (ib_mem_hdl->ref_count==1) {
+        if (ops == NNTI_RECV_QUEUE) {
+            ib_request_queue_handle *q_hdl=&transport_global_data.req_queue;
 
-        ib_mem_hdl->type=REQUEST_BUFFER;
+            ib_mem_hdl->type=REQUEST_BUFFER;
 
-        q_hdl->reg_buf=reg_buf;
+            q_hdl->reg_buf=reg_buf;
 
-        q_hdl->req_buffer  =buffer;
-        q_hdl->req_size    =element_size;
-        q_hdl->req_count   =num_elements;
-        q_hdl->req_received=0;
+            q_hdl->req_buffer  =buffer;
+            q_hdl->req_size    =element_size;
+            q_hdl->req_count   =num_elements;
+            q_hdl->req_received=0;
 
-        reg_buf->payload_size=q_hdl->req_size;
+            reg_buf->payload_size=q_hdl->req_size;
 
-        cqe_num=q_hdl->req_count;
-        if (cqe_num >= transport_global_data.srq_count) {
-            cqe_num = transport_global_data.srq_count;
+            cqe_num=q_hdl->req_count;
+            if (cqe_num >= transport_global_data.srq_count) {
+                cqe_num = transport_global_data.srq_count;
+            }
+
+            register_memory(
+                    ib_mem_hdl,
+                    buffer,
+                    num_elements*element_size,
+                    IBV_ACCESS_LOCAL_WRITE);
+
+            for (int i=0;i<cqe_num;i++) {
+                post_recv_work_request(
+                        reg_buf,
+                        i,
+                        (i*q_hdl->req_size),
+                        q_hdl->req_size);
+            }
+
+        } else if (ops == NNTI_RECV_DST) {
+            ib_mem_hdl->type=RECEIVE_BUFFER;
+
+            register_memory(
+                    ib_mem_hdl,
+                    buffer,
+                    element_size,
+                    (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
+
+        } else if (ops == NNTI_SEND_SRC) {
+            ib_mem_hdl->type=SEND_BUFFER;
+
+            register_memory(
+                    ib_mem_hdl,
+                    buffer,
+                    element_size,
+                    (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
+
+        } else if (ops == NNTI_GET_DST) {
+            ib_mem_hdl->type=GET_DST_BUFFER;
+
+            register_memory(
+                    ib_mem_hdl,
+                    buffer,
+                    element_size,
+                    (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
+
+        } else if (ops == NNTI_GET_SRC) {
+            ib_mem_hdl->type=GET_SRC_BUFFER;
+
+            register_memory(
+                    ib_mem_hdl,
+                    buffer,
+                    element_size,
+                    (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
+
+        } else if (ops == NNTI_PUT_SRC) {
+            //        print_xfer_buf(buffer, element_size);
+
+            ib_mem_hdl->type=PUT_SRC_BUFFER;
+
+            register_memory(
+                    ib_mem_hdl,
+                    buffer,
+                    element_size,
+                    (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
+
+            //        print_xfer_buf(buffer, element_size);
+
+        } else if (ops == NNTI_PUT_DST) {
+            ib_mem_hdl->type=PUT_DST_BUFFER;
+
+            register_memory(
+                    ib_mem_hdl,
+                    buffer,
+                    element_size,
+                    (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
+
+        } else if (ops == (NNTI_GET_SRC|NNTI_PUT_DST)) {
+            ib_mem_hdl->type=RDMA_TARGET_BUFFER;
+
+            register_memory(
+                    ib_mem_hdl,
+                    buffer,
+                    element_size,
+                    (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
+
+        } else {
+            ib_mem_hdl->type=UNKNOWN_BUFFER;
         }
+    }
 
-        register_memory(
-                ib_mem_hdl,
-                buffer,
-                num_elements*element_size,
-                IBV_ACCESS_LOCAL_WRITE);
-
-        for (int i=0;i<cqe_num;i++) {
-            post_recv_work_request(
-                    reg_buf,
-                    i,
-                    (i*q_hdl->req_size),
-                    q_hdl->req_size);
-        }
-
-    } else if (ops == NNTI_RECV_DST) {
-        ib_mem_hdl->type=RECEIVE_BUFFER;
-
-        register_memory(
-                ib_mem_hdl,
-                buffer,
-                element_size,
-                (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
-
+    if (ops == NNTI_RECV_DST) {
         post_recv_work_request(
                 reg_buf,
                 -1,
                 0,
                 element_size);
+    }
 
-    } else if (ops == NNTI_SEND_SRC) {
-        ib_mem_hdl->type=SEND_BUFFER;
-
-        register_memory(
-                ib_mem_hdl,
-                buffer,
-                element_size,
-                (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
-
-    } else if (ops == NNTI_GET_DST) {
-        ib_mem_hdl->type=GET_DST_BUFFER;
-
-        register_memory(
-                ib_mem_hdl,
-                buffer,
-                element_size,
-                (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
-
-    } else if (ops == NNTI_GET_SRC) {
-        ib_mem_hdl->type=GET_SRC_BUFFER;
-
-        register_memory(
-                ib_mem_hdl,
-                buffer,
-                element_size,
-                (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
-
-        if (config.use_rdma_target_ack) {
+    if (config.use_rdma_target_ack) {
+        if ((ib_mem_hdl->type == RDMA_TARGET_BUFFER) ||
+            (ib_mem_hdl->type == GET_SRC_BUFFER) ||
+            (ib_mem_hdl->type == PUT_DST_BUFFER)) {
             post_ack_recv_work_request(reg_buf);
         }
-
-    } else if (ops == NNTI_PUT_SRC) {
-//        print_xfer_buf(buffer, element_size);
-
-        ib_mem_hdl->type=PUT_SRC_BUFFER;
-
-        register_memory(
-                ib_mem_hdl,
-                buffer,
-                element_size,
-                (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
-
-//        print_xfer_buf(buffer, element_size);
-
-    } else if (ops == NNTI_PUT_DST) {
-        ib_mem_hdl->type=PUT_DST_BUFFER;
-
-        register_memory(
-                ib_mem_hdl,
-                buffer,
-                element_size,
-                (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
-
-        if (config.use_rdma_target_ack) {
-            post_ack_recv_work_request(reg_buf);
-        }
-
-    } else if (ops == (NNTI_GET_SRC|NNTI_PUT_DST)) {
-        ib_mem_hdl->type=RDMA_TARGET_BUFFER;
-
-        register_memory(
-                ib_mem_hdl,
-                buffer,
-                element_size,
-                (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
-
-        if (config.use_rdma_target_ack) {
-            post_ack_recv_work_request(reg_buf);
-        }
-
-    } else {
-        ib_mem_hdl->type=UNKNOWN_BUFFER;
     }
 
     reg_buf->buffer_addr.transport_id                     = NNTI_TRANSPORT_IB;
@@ -998,7 +999,9 @@ NNTI_result_t NNTI_ib_register_memory (
     reg_buf->buffer_addr.NNTI_remote_addr_t_u.ib.buf      = (uint64_t)ib_mem_hdl->mr->addr;
     reg_buf->buffer_addr.NNTI_remote_addr_t_u.ib.key      = ib_mem_hdl->mr->rkey;
 
-    insert_buf_bufhash(reg_buf);
+    if (ib_mem_hdl->ref_count==1) {
+        insert_buf_bufhash(reg_buf);
+    }
 
     if (logging_debug(nnti_debug_level)) {
         fprint_NNTI_buffer(logger_get_file(), "reg_buf",
@@ -1029,41 +1032,48 @@ NNTI_result_t NNTI_ib_unregister_memory (
     }
 
     ib_mem_hdl=(ib_memory_handle *)reg_buf->transport_private;
-
     assert(ib_mem_hdl);
+    ib_mem_hdl->ref_count--;
 
-    unregister_memory(ib_mem_hdl);
+    log_debug(nnti_debug_level, "ib_mem_hdl->ref_count==%lu", ib_mem_hdl->ref_count);
 
-    del_buf_bufhash(reg_buf);
+    if (ib_mem_hdl->ref_count==0) {
+        log_debug(nnti_debug_level, "ib_mem_hdl->ref_count is 0.  release all resources.");
+        unregister_memory(ib_mem_hdl);
 
-    while (!ib_mem_hdl->wr_queue.empty()) {
-        ib_work_request *wr=ib_mem_hdl->wr_queue.front();
-        log_debug(nnti_debug_level, "removing pending wr=%p", wr);
-        ib_mem_hdl->wr_queue.pop_front();
-        del_wr_wrhash(wr);
-        if (config.use_wr_pool) {
-            if (wr->ack_mr!=NULL) {
-                wr_pool_rdma_push(wr);
+        del_buf_bufhash(reg_buf);
+
+        while (!ib_mem_hdl->wr_queue.empty()) {
+            ib_work_request *wr=ib_mem_hdl->wr_queue.front();
+            log_debug(nnti_debug_level, "removing pending wr=%p", wr);
+            ib_mem_hdl->wr_queue.pop_front();
+            del_wr_wrhash(wr);
+            if (config.use_wr_pool) {
+                if (wr->ack_mr!=NULL) {
+                    wr_pool_rdma_push(wr);
+                } else {
+                    wr_pool_sendrecv_push(wr);
+                }
             } else {
-                wr_pool_sendrecv_push(wr);
+                if (config.use_rdma_target_ack) {
+                    unregister_ack(wr);
+                }
+                free(wr);
             }
-        } else {
-            if (config.use_rdma_target_ack) {
-                unregister_ack(wr);
-            }
-            free(wr);
         }
+
+        if (ib_mem_hdl) delete ib_mem_hdl;
+
+        reg_buf->transport_id      = NNTI_TRANSPORT_NULL;
+        IB_SET_MATCH_ANY(&reg_buf->buffer_owner);
+        reg_buf->ops               = (NNTI_buf_ops_t)0;
+        //    IB_SET_MATCH_ANY(&reg_buf->peer);
+        reg_buf->payload_size      = 0;
+        reg_buf->payload           = 0;
+        reg_buf->transport_private = 0;
     }
 
-    if (ib_mem_hdl) delete ib_mem_hdl;
-
-    reg_buf->transport_id      = NNTI_TRANSPORT_NULL;
-    IB_SET_MATCH_ANY(&reg_buf->buffer_owner);
-    reg_buf->ops               = (NNTI_buf_ops_t)0;
-//    IB_SET_MATCH_ANY(&reg_buf->peer);
-    reg_buf->payload_size      = 0;
-    reg_buf->payload           = 0;
-    reg_buf->transport_private = 0;
+    log_debug(nnti_debug_level, "exit");
 
     return(rc);
 }
