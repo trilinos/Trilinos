@@ -36,51 +36,40 @@
 Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 *************************************************************************/
-/*
- * injection_client.h
+/*-------------------------------------------------------------------------*/
+/**  @file buffer_queue.h
  *
- *  Created on: Nov 14, 2011
- *      Author: thkorde
+ *   @brief API for a circular list of NNTI_buffer_t.
+ *
+ *   @author Todd Kordenbrock (thkorde\@sandia.gov).
+ *
  */
 
-#ifndef INJECTION_CLIENT_H_
-#define INJECTION_CLIENT_H_
-
-#include <string>
-#include <limits.h>
-
-#include "Trios_logger.h"
+#ifndef _TRIOS_BUFFER_QUEUE_H_
+#define _TRIOS_BUFFER_QUEUE_H_
 
 
+#include "Trios_config.h"
 
-enum IO_METHODS {
-    INJECTION_EMPTY_REQUEST_SYNC,
-    INJECTION_EMPTY_REQUEST_ASYNC
-};
+#include "Trios_threads.h"
 
+#include "nnti.h"
 
-/**
- * Options and arguments passed to the client driver.
- */
-struct injection_args {
-        bool client_flag;
-        bool server_flag;
-        int transport;
-        std::string transport_name;
-        int io_method;
-        std::string server_url;
-        std::string url_file;
-        std::string io_method_name;
-        log_level debug_level;
-        std::string logfile;
-        int num_trials;
-        int num_reqs;
-        std::string result_file;
-        std::string result_file_mode;
-        int timeout;
-        int delay;
-        int num_retries;
-};
+#include <deque>
+
+typedef std::deque<NNTI_buffer_t *>  buffer_queue_t;
+
+typedef struct trios_buffer_queue {
+    nthread_mutex_t   mutex;
+    buffer_queue_t    queue;
+    uint32_t          current_size;
+    uint32_t          initial_size;
+    uint32_t          max_size;
+    uint8_t           create_on_fly;
+    NNTI_transport_t *trans_hdl;
+    NNTI_buf_ops_t    op;
+    uint32_t          buffer_size;
+} trios_buffer_queue_t;
 
 
 #ifdef __cplusplus
@@ -89,17 +78,27 @@ extern "C" {
 
 #if defined(__STDC__) || defined(__cplusplus)
 
+    extern int trios_buffer_queue_init(
+            trios_buffer_queue_t *bq,
+            uint32_t              initial_size,
+            uint32_t              max_size,
+            uint8_t               create_on_fly,
+            NNTI_transport_t     *trans_hdl,
+            NNTI_buf_ops_t        op,
+            uint32_t              buffer_size);
+    extern NNTI_buffer_t *trios_buffer_queue_pop(
+            trios_buffer_queue_t *bq);
+    extern void trios_buffer_queue_push(
+            trios_buffer_queue_t *bq,
+            NNTI_buffer_t       *buffer);
+    extern int trios_buffer_queue_fini(
+            trios_buffer_queue_t *bq);
 
-
-#else /* K&R C */
 #endif
-
-
 
 
 #ifdef __cplusplus
 }
 #endif
 
-
-#endif /* INJECTION_CLIENT_H_ */
+#endif

@@ -36,7 +36,7 @@
 Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 *************************************************************************/
-/**  @file injection-server.cpp
+/**  @file multicast-server.cpp
  *
  *   @brief Example data transfer server.
  *
@@ -44,9 +44,9 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
  */
 
 /**
- * @defgroup injection_server Data Transfer Server
+ * @defgroup multicast_server Data Transfer Server
  *
- * @ingroup injection_example
+ * @ingroup multicast_example
  *
  * @{
  */
@@ -59,7 +59,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 #include "nssi_debug.h"
 
-#include "injection_test.h"
+#include "multicast_test.h"
 
 #include <iostream>
 #include <string>
@@ -71,12 +71,15 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include <string.h>
 #include <stdlib.h>
 
-#include <injection_service_args.h>
+#include <multicast_service_args.h>
 
 
-log_level injection_debug_level = LOG_UNDEFINED;
+log_level multicast_debug_level = LOG_UNDEFINED;
 
 
+/* prototype for a function to initialize buffers */
+extern void multicast_init_data_array(const unsigned int seed, data_array_t *array);
+extern int multicast_compare_data_arrays(const data_array_t *arr1, const data_array_t *arr2);
 
 /**
  * @brief Emulate a read operation where the bulk data is sent using
@@ -94,7 +97,7 @@ log_level injection_debug_level = LOG_UNDEFINED;
  * @param data_addr   The remote memory descriptor for the data (not used).
  * @param res_addr    The remote memory descriptor for the result.
  */
-int injection_empty_request_srvr(
+int multicast_empty_request_srvr(
         const unsigned long request_id,
         const NNTI_peer_t *caller,
         const void *args,
@@ -102,10 +105,104 @@ int injection_empty_request_srvr(
         const NNTI_buffer_t *res_addr)
 {
     int rc;
-    log_level debug_level = injection_debug_level;
+    log_level debug_level = multicast_debug_level;
 
     /* process array (nothing to do) */
-    log_debug(debug_level, "starting injection_empty_request_srvr");
+    log_debug(debug_level, "starting multicast_empty_request_srvr");
+
+    rc = nssi_send_result(caller, request_id, NSSI_OK, NULL, res_addr);
+
+    return rc;
+}
+
+int multicast_get_srvr(
+        const unsigned long request_id,
+        const NNTI_peer_t *caller,
+        const multicast_get_args *args,
+        const NNTI_buffer_t *data_addr,
+        const NNTI_buffer_t *res_addr)
+{
+    int rc;
+    log_level debug_level = multicast_debug_level;
+
+    const int len = args->len;
+    const long int seed = args->seed;
+    const bool validate = args->validate;
+
+    int nbytes = len*sizeof(data_t);
+
+    /* process array (nothing to do) */
+    log_debug(debug_level, "starting multicast_get_srvr");
+
+    /* allocate space for the incoming buffer */
+    data_array_t array;
+    array.data_array_t_len = len;
+    array.data_array_t_val = (data_t *)malloc(nbytes);
+
+    log_debug(debug_level, "getting data from client (%s)", caller->url);
+
+    /* now we need to fetch the data from the client */
+    rc = nssi_get_data(caller, array.data_array_t_val, nbytes, data_addr);
+    if (rc != NSSI_OK) {
+        log_warn(debug_level, "could not fetch data from client");
+        return rc;
+    }
+
+    /* Validate the array */
+    if (validate && (rc == 0)) {
+        data_array_t tmp_array;
+        tmp_array.data_array_t_len = len;
+        tmp_array.data_array_t_val = (data_t *)malloc(nbytes);
+
+        multicast_init_data_array(seed, &tmp_array);
+        rc = multicast_compare_data_arrays(&tmp_array, &array);
+
+        if (rc != 0) {
+            log_warn(debug_level, "Unable to validate array");
+        }
+
+        free(tmp_array.data_array_t_val);
+    }
+
+    rc = nssi_send_result(caller, request_id, NSSI_OK, NULL, res_addr);
+
+    return rc;
+}
+
+int multicast_put_srvr(
+        const unsigned long request_id,
+        const NNTI_peer_t *caller,
+        const multicast_put_args *args,
+        const NNTI_buffer_t *data_addr,
+        const NNTI_buffer_t *res_addr)
+{
+    int rc;
+    log_level debug_level = multicast_debug_level;
+
+    const bool validate = args->validate;
+    const int seed = args->seed;
+
+    int nbytes = args->len*sizeof(data_t);
+
+    /* process array (nothing to do) */
+    log_debug(debug_level, "starting multicast_put_srvr");
+
+    /* allocate space for the outgoing buffer */
+    data_array_t array;
+    array.data_array_t_len = args->len;
+    array.data_array_t_val = (data_t *)malloc(nbytes);
+
+    /* if we need to validate the array, it needs to be initialized */
+    if (validate) {
+        multicast_init_data_array(seed, &array);
+    }
+
+    /* now we need to put the data to the client */
+    rc = nssi_put_data(caller, array.data_array_t_val, nbytes, data_addr, -1);
+    if (rc != NSSI_OK) {
+        log_warn(debug_level, "could not put data to client");
+        return rc;
+    }
 
     rc = nssi_send_result(caller, request_id, NSSI_OK, NULL, res_addr);
 
@@ -116,25 +213,25 @@ int injection_empty_request_srvr(
 
 void make_progress(bool is_idle)
 {
-    log_debug(injection_debug_level, "current_time(%llu) is_idle(%llu)", (uint64_t)trios_get_time_ms(), (uint64_t)is_idle);
+    log_debug(multicast_debug_level, "current_time(%llu) is_idle(%llu)", (uint64_t)trios_get_time_ms(), (uint64_t)is_idle);
 
     return;
 }
 
 
 /**
- * @brief The NSSI injection-server.
+ * @brief The NSSI multicast-server.
  *
  * NSSI has already been initialized and the client already knows the URL of the
  * server.  This function simply registers the server methods and starts the
  * service loop.   The client will send a request to kill the service upon completion.
  *
  */
-int injection_server_main(struct injection_args &args, MPI_Comm server_comm)
+int multicast_server_main(struct multicast_args &args, MPI_Comm server_comm)
 {
     int rc = NSSI_OK;
 
-    nssi_service injection_svc;
+    nssi_service multicast_svc;
     log_level debug_level;
     int server_rank;
 
@@ -148,19 +245,21 @@ int injection_server_main(struct injection_args &args, MPI_Comm server_comm)
     const char *log_str=NULL;
 
 
-    memset(&injection_svc, 0, sizeof(nssi_service));
+    memset(&multicast_svc, 0, sizeof(nssi_service));
 
 
     /* initialize the nssi service */
-    rc = nssi_service_init((nssi_rpc_transport)args.transport, NSSI_SHORT_REQUEST_SIZE, &injection_svc);
+    rc = nssi_service_init((nssi_rpc_transport)args.transport, NSSI_SHORT_REQUEST_SIZE, &multicast_svc);
     if (rc != NSSI_OK) {
-        log_error(injection_debug_level, "could not init injection_svc: %s",
+        log_error(multicast_debug_level, "could not init multicast_svc: %s",
                 nssi_err_str(rc));
         return -1;
     }
 
     // register callbacks for the service methods
-    NSSI_REGISTER_SERVER_STUB(INJECTION_EMPTY_REQUEST_OP, injection_empty_request_srvr, void, void);
+    NSSI_REGISTER_SERVER_STUB(MULTICAST_EMPTY_REQUEST_OP, multicast_empty_request_srvr, void, void);
+    NSSI_REGISTER_SERVER_STUB(MULTICAST_GET_OP, multicast_get_srvr, multicast_get_args, void);
+    NSSI_REGISTER_SERVER_STUB(MULTICAST_PUT_OP, multicast_put_srvr, multicast_put_args, void);
 
 
     // Get the Server URL
@@ -169,27 +268,27 @@ int injection_server_main(struct injection_args &args, MPI_Comm server_comm)
 
 
     // Set the maxumum number of requests to handle (-1 == infinite)
-    injection_svc.max_reqs = -1;
-    //        injection_svc.progress_callback=(uint64_t)make_progress;
-    //        injection_svc.progress_callback_timeout=100;
+    multicast_svc.max_reqs = -1;
+    //        multicast_svc.progress_callback=(uint64_t)make_progress;
+    //        multicast_svc.progress_callback_timeout=100;
 
-    log_debug(injection_debug_level, "Starting Server: url = %s", url.c_str());
+    log_debug(multicast_debug_level, "Starting Server: url = %s", url.c_str());
 
     // Tell the NSSI server to output log data
-    //rpc_debug_level = injection_debug_level;
+    //rpc_debug_level = multicast_debug_level;
 
     // start processing requests, the client will send a request to exit when done
-    rc = nssi_service_start(&injection_svc, num_threads);
+    rc = nssi_service_start(&multicast_svc, num_threads);
     if (rc != NSSI_OK) {
-        log_info(injection_debug_level, "exited injection_svc: %s",
+        log_info(multicast_debug_level, "exited multicast_svc: %s",
                 nssi_err_str(rc));
     }
 
     sleep(5);
 
-    /* shutdown the injection_svc */
-    log_debug(injection_debug_level, "shutting down service library");
-    nssi_service_fini(&injection_svc);
+    /* shutdown the multicast_svc */
+    log_debug(multicast_debug_level, "shutting down service library");
+    nssi_service_fini(&multicast_svc);
 
 
     return rc;

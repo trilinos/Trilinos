@@ -37,14 +37,14 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 *************************************************************************/
 /*
- * injection_client.h
+ * multicast_client.h
  *
  *  Created on: Nov 14, 2011
  *      Author: thkorde
  */
 
-#ifndef INJECTION_CLIENT_H_
-#define INJECTION_CLIENT_H_
+#ifndef MULTICAST_CLIENT_H_
+#define MULTICAST_CLIENT_H_
 
 #include <string>
 #include <limits.h>
@@ -54,22 +54,27 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 
 enum IO_METHODS {
-    INJECTION_EMPTY_REQUEST_SYNC,
-    INJECTION_EMPTY_REQUEST_ASYNC
+    MULTICAST_EMPTY_REQUEST_SYNC,
+    MULTICAST_EMPTY_REQUEST_ASYNC,
+    MULTICAST_GET_SYNC,
+    MULTICAST_GET_ASYNC,
+    MULTICAST_PUT_SYNC,
+    MULTICAST_PUT_ASYNC
 };
 
 
 /**
  * Options and arguments passed to the client driver.
  */
-struct injection_args {
+struct multicast_args {
         bool client_flag;
         bool server_flag;
         int transport;
         std::string transport_name;
+        int len;
         int io_method;
-        std::string server_url;
-        std::string url_file;
+        std::string server_url[2];
+        std::string url_file[2];
         std::string io_method_name;
         log_level debug_level;
         std::string logfile;
@@ -80,6 +85,7 @@ struct injection_args {
         int timeout;
         int delay;
         int num_retries;
+        bool validate_flag;
 };
 
 
@@ -102,4 +108,4 @@ extern "C" {
 #endif
 
 
-#endif /* INJECTION_CLIENT_H_ */
+#endif /* MULTICAST_CLIENT_H_ */

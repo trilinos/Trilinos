@@ -37,7 +37,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 *************************************************************************/
 /*
- * injection_service_test.cpp
+ * multicast_service_test.cpp
  *
  *  Created on: Nov 14, 2011
  *      Author: thkorde
@@ -52,9 +52,9 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_oblackholestream.hpp"
 
-#include <injection_service_args.h>
-#include "injection_test.h"
-#include "injection_debug.h"
+#include <multicast_service_args.h>
+#include "multicast_test.h"
+#include "multicast_debug.h"
 
 
 #include <mpi.h>
@@ -67,8 +67,8 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 
 // Prototypes for client and server codes
-int injection_server_main(struct injection_args &args, MPI_Comm server_comm);
-int injection_client_main (struct injection_args &args, nssi_service &injection_svc, MPI_Comm client_comm);
+int multicast_server_main(struct multicast_args &args, MPI_Comm server_comm);
+int multicast_client_main (struct multicast_args &args, nssi_service* multicast_svc, MPI_Comm client_comm);
 
 
 /* -------------- private methods -------------------*/
@@ -76,7 +76,7 @@ int injection_client_main (struct injection_args &args, nssi_service &injection_
 
 int print_args(
         std::ostream &out,
-        const struct injection_args &args,
+        const struct multicast_args &args,
         const char *prefix)
 {
     if (args.client_flag && args.server_flag)
@@ -93,6 +93,8 @@ int print_args(
         out << prefix << " \tio-method        = " << args.io_method_name << std::endl;
         out << prefix << " \tnum-trials        = " << args.num_trials << std::endl;
         out << prefix << " \tnum-reqs         = " << args.num_reqs << std::endl;
+        out << prefix << " \tlen              = " << args.len << std::endl;
+        out << prefix << " \tvalidate         = " << ((args.validate_flag)?"true":"false") << std::endl;
         out << prefix << " \tresult-file      = " <<
                 (args.result_file.empty()?"<stdout>":args.result_file) << std::endl;
         out << prefix << " \tresult-file-mode = " << args.result_file_mode << std::endl;
@@ -113,7 +115,7 @@ int main(int argc, char *argv[])
     int np=1, rank=0;
     int splitrank, splitsize;
     int rc = 0;
-    nssi_service injection_svc;
+    nssi_service multicast_svc[2];
 
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -124,13 +126,17 @@ int main(int argc, char *argv[])
     Teuchos::oblackholestream blackhole;
     std::ostream &out = ( rank == 0 ? std::cout : blackhole );
 
-    struct injection_args args;
+    struct multicast_args args;
 
-    const int num_io_methods = 2;
+    const int num_io_methods = 6;
     const int io_method_vals[] = {
-            INJECTION_EMPTY_REQUEST_SYNC, INJECTION_EMPTY_REQUEST_ASYNC};
+            MULTICAST_EMPTY_REQUEST_SYNC, MULTICAST_EMPTY_REQUEST_ASYNC,
+            MULTICAST_GET_SYNC,           MULTICAST_GET_ASYNC,
+            MULTICAST_PUT_SYNC,           MULTICAST_PUT_ASYNC};
     const char * io_method_names[] = {
-            "empty-request-sync", "empty-request-async"};
+            "empty-request-sync", "empty-request-async",
+            "get-sync",           "get-async",
+            "put-sync",           "put-async"};
 
     const int num_nssi_transports = 4;
     const int nssi_transport_vals[] = {
@@ -149,19 +155,23 @@ int main(int argc, char *argv[])
     // Initialize arguments
     args.transport=NSSI_DEFAULT_TRANSPORT;
     args.delay = 1;
-    args.io_method = INJECTION_EMPTY_REQUEST_SYNC;
+    args.io_method = MULTICAST_EMPTY_REQUEST_SYNC;
     args.debug_level = LOG_WARN;
     args.num_trials = 1;
     args.num_reqs = 1;
+    args.len = 1;
     args.result_file_mode = "a";
     args.result_file = "";
-    args.url_file = "";
+    args.url_file[0] = "";
+    args.url_file[1] = "";
     args.logfile = "";
     args.client_flag = true;
     args.server_flag = true;
     args.timeout = 500;
     args.num_retries = 5;
-    args.server_url = "";
+    args.validate_flag = true;
+    args.server_url[0] = "";
+    args.server_url[1] = "";
 
     bool success = true;
 
@@ -194,21 +204,30 @@ int main(int argc, char *argv[])
         parser.setOption("timeout", &args.timeout, "time(ms) to wait for server to respond" );
         parser.setOption("server", "no-server", &args.server_flag, "Run the server" );
         parser.setOption("client", "no-client", &args.client_flag, "Run the client");
+        parser.setOption("len", &args.len, "The number of structures in an input buffer");
         parser.setOption("debug",(int*)(&args.debug_level), "Debug level");
         parser.setOption("logfile", &args.logfile, "log file");
         parser.setOption("num-trials", &args.num_trials, "Number of trials (experiments)");
         parser.setOption("num-reqs", &args.num_reqs, "Number of reqs/trial");
         parser.setOption("result-file", &args.result_file, "Where to store results");
         parser.setOption("result-file-mode", &args.result_file_mode, "Write mode for the result");
-        parser.setOption("server-url", &args.server_url, "URL client uses to find the server");
-        parser.setOption("server-url-file", &args.url_file, "File that has URL client uses to find server");
+        parser.setOption("server-url-1", &args.server_url[0], "URL client uses to find the server 1");
+        parser.setOption("server-url-2", &args.server_url[1], "URL client uses to find the server 2");
+        parser.setOption("server-url-file-1", &args.url_file[0], "File that has URL client uses to find server 1");
+        parser.setOption("server-url-file-2", &args.url_file[1], "File that has URL client uses to find server 2");
+        parser.setOption("validate", "no-validate", &args.validate_flag, "Validate the data");
 
         // Set an enumeration command line option for the io_method
 
         parser.setOption("io-method", &args.io_method, num_io_methods, io_method_vals, io_method_names,
                 "I/O Methods for the example: \n"
                 "\t\t\tempty-request-sync : Send an empty request - synchronous\n"
-                "\t\t\tempty-request-async: Send an empty request - asynchronous");
+                "\t\t\tempty-request-async: Send an empty request - asynchronous\n"
+                "\t\t\tget-sync : Servers pull data from client - synchronous\n"
+                "\t\t\tget-async: Servers pull data from client - asynchronous\n"
+                "\t\t\tput-sync : Servers push data from client - synchronous\n"
+                "\t\t\tput-async: Servers push data from client - asynchronous"
+                );
 
         // Set an enumeration command line option for the io_method
         parser.setOption("transport", &args.transport, num_nssi_transports, nssi_transport_vals, nssi_transport_names,
@@ -306,7 +325,7 @@ int main(int argc, char *argv[])
     // Communicator used for both client and server (may split if using client and server)
     MPI_Comm comm;
 
-    log_debug(debug_level, "%d: Starting injection-service test", rank);
+    log_debug(debug_level, "%d: Starting multicast-service test", rank);
 
     /**
      * Since this test can be run as a server, client, or both, we need to play some fancy
@@ -315,14 +334,14 @@ int main(int argc, char *argv[])
      * running by itself.
      */
     if (args.client_flag && args.server_flag) {
-        if (np < 2) {
-            log_error(debug_level, "Must use at least 2 MPI processes for client and server mode");
+        if (np < 3) {
+            log_error(debug_level, "Must use at least 3 MPI processes for client and server mode");
             MPI_Abort(MPI_COMM_WORLD, -1);
         }
 
         // Split the communicators. Processors with color=0 are servers.
 
-        int color = (rank == 0) ? 0 : 1; // only one server
+        int color = ((rank == 0)||(rank == 1)) ? 0 : 1; // two server
         MPI_Comm_split(MPI_COMM_WORLD, color, rank, &comm);
 
         MPI_Comm_rank(comm, &splitrank);
@@ -347,9 +366,9 @@ int main(int argc, char *argv[])
      * the server, or NULL (as we did for the client).  This is a recommended value.  Use the
      * \ref nssi_get_url function to find the actual value.
      */
-    if (args.server_flag && !args.server_url.empty()) {
+    if (args.server_flag && !args.server_url[rank].empty()) {
         // use the server URL as suggested URL
-        nssi_rpc_init((nssi_rpc_transport)args.transport, NSSI_DEFAULT_ENCODE, args.server_url.c_str());
+        nssi_rpc_init((nssi_rpc_transport)args.transport, NSSI_DEFAULT_ENCODE, args.server_url[rank].c_str());
     }
     else {
         nssi_rpc_init((nssi_rpc_transport)args.transport, NSSI_DEFAULT_ENCODE, NULL);
@@ -360,56 +379,92 @@ int main(int argc, char *argv[])
     nssi_get_url((nssi_rpc_transport)args.transport, &my_url[0], NSSI_URL_LEN);
 
     // Broadcast the server URL to all the clients
-    args.server_url.resize(NSSI_URL_LEN, '\0');
+    args.server_url[0].resize(NSSI_URL_LEN, '\0');
+    args.server_url[1].resize(NSSI_URL_LEN, '\0');
     if (args.server_flag && args.client_flag) {
-        args.server_url = my_url;
-        MPI_Bcast(&args.server_url[0], args.server_url.size(), MPI_CHAR, 0, MPI_COMM_WORLD);
+        args.server_url[0] = my_url;
+        MPI_Bcast(&args.server_url[0][0], args.server_url[0].size(), MPI_CHAR, 0, MPI_COMM_WORLD);
+        args.server_url[1] = my_url;
+        MPI_Bcast(&args.server_url[1][0], args.server_url[1].size(), MPI_CHAR, 1, MPI_COMM_WORLD);
     }
 
     else if (!args.server_flag && args.client_flag){
-        if (args.server_url.empty()) {
+        if (args.server_url[0].empty()) {
 
             // check to see if we're supposed to get the URL from a file
-            if (!args.url_file.empty()) {
+            if (!args.url_file[0].empty()) {
                 // Fetch the server URL from a file
                 sleep(1);
-                log_debug(debug_level, "Reading from file %s", args.url_file.c_str());
-                std::ifstream urlfile (args.url_file.c_str());
+                log_debug(debug_level, "Reading from file %s", args.url_file[0].c_str());
+                std::ifstream urlfile (args.url_file[0].c_str());
                 if (urlfile.is_open()) {
                     if (urlfile.good())
-                        getline(urlfile, args.server_url);
+                        getline(urlfile, args.server_url[0]);
                 }
                 else {
-                    log_error(debug_level, "Failed to open server_url_file=%s", args.url_file.c_str());
+                    log_error(debug_level, "Failed to open server_url_file=%s", args.url_file[0].c_str());
                     exit(1);
                 }
                 urlfile.close();
-                log_debug(debug_level, "URL = %s", args.server_url.c_str());
+                log_debug(debug_level, "URL = %s", args.server_url[0].c_str());
             }
             else {
-                log_error(debug_level, "Need to set --server-url=[ADDR] or --server-url-file=[PATH]");
+                log_error(debug_level, "Need to set --server-url-1=[ADDR] or --server-url-file-1=[PATH]");
+            }
+        }
+        if (args.server_url[1].empty()) {
+
+            // check to see if we're supposed to get the URL from a file
+            if (!args.url_file[1].empty()) {
+                // Fetch the server URL from a file
+                sleep(1);
+                log_debug(debug_level, "Reading from file %s", args.url_file[1].c_str());
+                std::ifstream urlfile (args.url_file[1].c_str());
+                if (urlfile.is_open()) {
+                    if (urlfile.good())
+                        getline(urlfile, args.server_url[1]);
+                }
+                else {
+                    log_error(debug_level, "Failed to open server_url_file=%s", args.url_file[1].c_str());
+                    exit(1);
+                }
+                urlfile.close();
+                log_debug(debug_level, "URL = %s", args.server_url[1].c_str());
+            }
+            else {
+                log_error(debug_level, "Need to set --server-url-1=[ADDR] or --server-url-file-1=[PATH]");
             }
         }
     }
 
     else if (args.server_flag && !args.client_flag) {
-        args.server_url = my_url;
-
+        args.server_url[0] = my_url;
         // If the url_file value is set, write the url to a file
-        if (!args.url_file.empty()) {
-            std::ofstream urlfile (args.url_file.c_str());
+        if (!args.url_file[0].empty()) {
+            std::ofstream urlfile (args.url_file[0].c_str());
             if (urlfile.is_open()) {
-                urlfile << args.server_url.c_str() << std::endl;
+                urlfile << args.server_url[0].c_str() << std::endl;
             }
             urlfile.close();
-            log_debug(debug_level, "Wrote url to file %s", args.url_file.c_str());
+            log_debug(debug_level, "Wrote url to file %s", args.url_file[0].c_str());
+        }
+
+        args.server_url[1] = my_url;
+        // If the url_file value is set, write the url to a file
+        if (!args.url_file[1].empty()) {
+            std::ofstream urlfile (args.url_file[1].c_str());
+            if (urlfile.is_open()) {
+                urlfile << args.server_url[1].c_str() << std::endl;
+            }
+            urlfile.close();
+            log_debug(debug_level, "Wrote url to file %s", args.url_file[1].c_str());
         }
     }
 
 
 
-    // Set the debug level for the injection service.
-    injection_debug_level = args.debug_level;
+    // Set the debug level for the multicast service.
+    multicast_debug_level = args.debug_level;
 
     // Print the arguments after they've all been set.
     args.io_method_name = io_method_names[args.io_method];
@@ -417,19 +472,19 @@ int main(int argc, char *argv[])
 
 
     //------------------------------------------------------------------------------
-    /** If we're running this job with a server, the server always executes on node 0.
-     *  In this example, the server is a single process.
+    /** If we're running this job with a server, the server always executes on nodes 0 and 1.
+     *  In this example, the server is two process.
      */
-    if (args.server_flag && (rank == 0)) {
-        rc = injection_server_main(args, comm);
+    if (args.server_flag && ((rank == 0)|(rank == 1))) {
+        rc = multicast_server_main(args, comm);
         log_debug(debug_level, "Server is finished");
     }
 
     // ------------------------------------------------------------------------------
-     /**  The parallel client will execute this branch.  The root node, node 0, of the client connects
+     /**  The parallel client will execute this branch.  The root node, nodes 0 and 1, of the client connects
       *   connects with the server, using the \ref nssi_get_service function.  Then the root
       *   broadcasts the service description to the other clients before starting the main
-      *   loop of the client code by calling \ref injection_client_main.
+      *   loop of the client code by calling \ref multicast_client_main.
       */
     else {
         int i;
@@ -448,11 +503,23 @@ int main(int argc, char *argv[])
             // connect to remote server
             for (i=0; i < args.num_retries; i++) {
                 log_debug(debug_level, "Try to connect to server: attempt #%d", i);
-                rc=nssi_get_service((nssi_rpc_transport)args.transport, args.server_url.c_str(), args.timeout, &injection_svc);
+                rc=nssi_get_service((nssi_rpc_transport)args.transport, args.server_url[0].c_str(), args.timeout, &multicast_svc[0]);
                 if (rc == NSSI_OK)
                     break;
                 else if (rc != NSSI_ETIMEDOUT) {
-                    log_error(injection_debug_level, "could not get svc description: %s",
+                    log_error(multicast_debug_level, "could not get svc description: %s",
+                            nssi_err_str(rc));
+                    break;
+                }
+            }
+            // connect to remote server
+            for (i=0; i < args.num_retries; i++) {
+                log_debug(debug_level, "Try to connect to server: attempt #%d", i);
+                rc=nssi_get_service((nssi_rpc_transport)args.transport, args.server_url[1].c_str(), args.timeout, &multicast_svc[1]);
+                if (rc == NSSI_OK)
+                    break;
+                else if (rc != NSSI_ETIMEDOUT) {
+                    log_error(multicast_debug_level, "could not get svc description: %s",
                             nssi_err_str(rc));
                     break;
                 }
@@ -465,20 +532,21 @@ int main(int argc, char *argv[])
             if (client_rank == 0) log_debug(debug_level, "Connected to service on attempt %d\n", i);
 
             // Broadcast the service description to the other clients
-            //log_debug(injection_debug_level, "Bcasting svc to other clients");
-            //MPI_Bcast(&injection_svc, sizeof(nssi_service), MPI_BYTE, 0, comm);
+            //log_debug(multicast_debug_level, "Bcasting svc to other clients");
+            //MPI_Bcast(&multicast_svc, sizeof(nssi_service), MPI_BYTE, 0, comm);
 
             log_debug(debug_level, "Starting client main");
             // Start the client code
-            injection_client_main(args, injection_svc, comm);
+            multicast_client_main(args, &multicast_svc[0], comm);
 
 
             MPI_Barrier(comm);
 
             // Tell one of the clients to kill the server
             if (client_rank == 0) {
-                log_debug(debug_level, "%d: Halting injection service", rank);
-                rc = nssi_kill(&injection_svc, 0, 5000);
+                log_debug(debug_level, "%d: Halting multicast service", rank);
+                rc = nssi_kill(&multicast_svc[0], 0, 5000);
+                rc = nssi_kill(&multicast_svc[1], 0, 5000);
             }
         }
 

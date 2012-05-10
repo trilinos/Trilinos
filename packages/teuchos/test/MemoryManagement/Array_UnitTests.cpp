@@ -449,6 +449,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayViewIter_const, T )
 }
 
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, erase_empty, T )
+{
+  ECHO(std::vector<T> v);
+  TEST_NOTHROW(v.erase(v.begin(), v.end()));
+  ECHO(Array<T> a);
+  TEST_NOTHROW(a.erase(a.begin(), a.end()));
+}
+
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, structuralChangeArrayView, T )
 {
   Array<T> a = generateArray<T>(n);
@@ -515,6 +524,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, structuralChangeArrayView_const, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayView_subview_const, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayViewIter, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayViewIter_const, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, erase_empty, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, structuralChangeArrayView, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, structuralChangeArrayView_const, T ) \
   DEBUG_UNIT_TEST_GROUP( T )

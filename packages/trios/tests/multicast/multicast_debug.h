@@ -37,69 +37,17 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 *************************************************************************/
 /*
- * injection_client.h
+ * multicast_debug.h
  *
  *  Created on: Nov 14, 2011
  *      Author: thkorde
  */
 
-#ifndef INJECTION_CLIENT_H_
-#define INJECTION_CLIENT_H_
-
-#include <string>
-#include <limits.h>
+#ifndef MULTICAST_DEBUG_H_
+#define MULTICAST_DEBUG_H_
 
 #include "Trios_logger.h"
 
+extern log_level multicast_debug_level;
 
-
-enum IO_METHODS {
-    INJECTION_EMPTY_REQUEST_SYNC,
-    INJECTION_EMPTY_REQUEST_ASYNC
-};
-
-
-/**
- * Options and arguments passed to the client driver.
- */
-struct injection_args {
-        bool client_flag;
-        bool server_flag;
-        int transport;
-        std::string transport_name;
-        int io_method;
-        std::string server_url;
-        std::string url_file;
-        std::string io_method_name;
-        log_level debug_level;
-        std::string logfile;
-        int num_trials;
-        int num_reqs;
-        std::string result_file;
-        std::string result_file_mode;
-        int timeout;
-        int delay;
-        int num_retries;
-};
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#if defined(__STDC__) || defined(__cplusplus)
-
-
-
-#else /* K&R C */
-#endif
-
-
-
-
-#ifdef __cplusplus
-}
-#endif
-
-
-#endif /* INJECTION_CLIENT_H_ */
+#endif /* MULTICAST_CLIENT_H_ */

@@ -24,7 +24,7 @@ enabling it at configure time.
 
 The second column is the top level directory of the subpackage, just like
 packages have. This is where you will put all the code and cmake files for the
-subpackage.
+subpackage. This path should be relative the the package's path.
 
 The third column is the classification of the subpackage. Just like packages,
 subpackages can be declared to be primary stable(PS), secondary stable(SS) or
@@ -62,8 +62,7 @@ for all the subpackages that have been declared, including processing their
 dependencies.
 
 Finally  add a call to "PACKAGE_DEF()" which will define the package like the
-call to "PACKAGE(...)" did. At this point everything else in the CMakeLists.txt
-file can stay the same.
+call to "PACKAGE(...)" did. 
 
 Remove any add_subdirectory calls for the directories that are now
 subpackages.
@@ -97,4 +96,4 @@ CMakeLists.txt. This step is easy to miss as the subpackages will likely still
 configure without this. However, without this certain parts of the package
 architecture will not work, such as the export system.
 
-
+Everything else in the CMakeLists.txt file can stay the same.

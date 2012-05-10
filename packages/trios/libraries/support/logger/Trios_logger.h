@@ -42,7 +42,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
  *   @brief Method prototypes for the logger API.
  *
  *   The logger API is a simple API for logging events to a file
- *   (or to stderr or stdio)
+ *   (or to stderr or stdout)
  *
  *   @author Ron Oldfield (raoldfi\@sandia.gov).
  *   $Revision: 1014 $.
@@ -72,60 +72,34 @@ extern "C" {
 #	define TRUE (1)
 #endif
 
+//#define DISABLE_DEBUG_LOGGING
+
+#if defined(DISABLE_DEBUG_LOGGING)
+
+#define logging_debug(level) (0)
+#define log_debug(level, ...)
+
+#else
+
 /**
  * @brief Boolean function that returns TRUE if we are logging
- *        error statements.
+ *        debug statements.
  */
-#define logging_fatal(level) \
-        (((level == LOG_UNDEFINED) && (default_log_level >= LOG_FATAL)) \
-        || ((level != LOG_UNDEFINED) && (level >= LOG_FATAL)))
-
+#define logging_debug(level) \
+        (((level == LOG_UNDEFINED) && (default_log_level >= LOG_DEBUG)) \
+        || ((level != LOG_UNDEFINED) && (level >= LOG_DEBUG)))
 
 /**
- * @brief Inline function that outputs a FATAL
+ * @brief Inline function that outputs a DEBUG
  * message to the log file.
  *
  * @param level   The log level to use.
  * @param args    A formatted message (like printf).
  */
-#define log_fatal(level, ...) if (logging_fatal(level)) \
-                log_output("FATAL",__FUNCTION__,__FILE__,__LINE__, ## __VA_ARGS__ )
+#define log_debug(level, ...) if (logging_debug(level)) \
+                log_output("DEBUG",__FUNCTION__,__FILE__,__LINE__, ## __VA_ARGS__)
 
-/**
- * @brief Boolean function that returns TRUE if we are logging
- *        error statements.
- */
-#define logging_error(level) \
-        (((level == LOG_UNDEFINED) && (default_log_level >= LOG_ERROR)) \
-        || ((level != LOG_UNDEFINED) && (level >= LOG_ERROR)))
-
-/**
- * @brief Inline function that outputs an ERROR
- * message to the log file.
- *
- * @param level   The log level to use.
- * @param args    A formatted message (like printf).
- */
-#define log_error(level, ...) if (logging_error(level)) \
-                log_output("ERROR",__FUNCTION__,__FILE__,__LINE__, ## __VA_ARGS__)
-
-/**
- * @brief Boolean function that returns TRUE if we are logging
- *        warning statements.
- */
-#define logging_warn(level) \
-        (((level == LOG_UNDEFINED) && (default_log_level >= LOG_WARN)) \
-        || ((level != LOG_UNDEFINED) && (level >= LOG_WARN)))
-
-/**
- * @brief Inline function that outputs a WARN
- * message to the log file.
- *
- * @param level   The log level to use.
- * @param args    A formatted message (like printf).
- */
-#define log_warn(level, ...) if (logging_warn(level)) \
-                log_output("WARN",__FUNCTION__,__FILE__,__LINE__, ## __VA_ARGS__)
+#endif
 
 /**
  * @brief Boolean function that returns TRUE if we are logging
@@ -147,21 +121,58 @@ extern "C" {
 
 /**
  * @brief Boolean function that returns TRUE if we are logging
- *        debug statements.
+ *        warning statements.
  */
-#define logging_debug(level) \
-        (((level == LOG_UNDEFINED) && (default_log_level >= LOG_DEBUG)) \
-        || ((level != LOG_UNDEFINED) && (level >= LOG_DEBUG)))
+#define logging_warn(level) \
+        (((level == LOG_UNDEFINED) && (default_log_level >= LOG_WARN)) \
+        || ((level != LOG_UNDEFINED) && (level >= LOG_WARN)))
 
 /**
- * @brief Inline function that outputs a DEBUG
+ * @brief Inline function that outputs a WARN
  * message to the log file.
  *
  * @param level   The log level to use.
  * @param args    A formatted message (like printf).
  */
-#define log_debug(level, ...) if (logging_debug(level)) \
-                log_output("DEBUG",__FUNCTION__,__FILE__,__LINE__, ## __VA_ARGS__)
+#define log_warn(level, ...) if (logging_warn(level)) \
+                log_output("WARN",__FUNCTION__,__FILE__,__LINE__, ## __VA_ARGS__)
+
+/**
+ * @brief Boolean function that returns TRUE if we are logging
+ *        error statements.
+ */
+#define logging_error(level) \
+        (((level == LOG_UNDEFINED) && (default_log_level >= LOG_ERROR)) \
+        || ((level != LOG_UNDEFINED) && (level >= LOG_ERROR)))
+
+/**
+ * @brief Inline function that outputs an ERROR
+ * message to the log file.
+ *
+ * @param level   The log level to use.
+ * @param args    A formatted message (like printf).
+ */
+#define log_error(level, ...) if (logging_error(level)) \
+                log_output("ERROR",__FUNCTION__,__FILE__,__LINE__, ## __VA_ARGS__)
+
+/**
+ * @brief Boolean function that returns TRUE if we are logging
+ *        error statements.
+ */
+#define logging_fatal(level) \
+        (((level == LOG_UNDEFINED) && (default_log_level >= LOG_FATAL)) \
+        || ((level != LOG_UNDEFINED) && (level >= LOG_FATAL)))
+
+
+/**
+ * @brief Inline function that outputs a FATAL
+ * message to the log file.
+ *
+ * @param level   The log level to use.
+ * @param args    A formatted message (like printf).
+ */
+#define log_fatal(level, ...) if (logging_fatal(level)) \
+                log_output("FATAL",__FUNCTION__,__FILE__,__LINE__, ## __VA_ARGS__ )
 
 enum log_level {
         LOG_UNDEFINED = -1,
@@ -180,7 +191,6 @@ extern log_level default_log_level;
 /* the functions */
 
 #if defined(__STDC__) || defined(__cplusplus)
-
 
 extern int logger_init(const log_level debug_level, const char *file);
 extern int logger_not_initialized(void);

@@ -70,6 +70,8 @@ bool StratimikosFactory::isCompatible(const Thyra::LinearOpSourceBase<double> &f
 {
    using Teuchos::outArg;
 
+   TEUCHOS_ASSERT(false); // what you doing?
+
    Teuchos::RCP<const Epetra_Operator> epetraFwdOp;
    Thyra::EOpTransp epetraFwdOpTransp;
    Thyra::EApplyEpetraOpAs epetraFwdOpApplyAs;
@@ -117,6 +119,101 @@ void StratimikosFactory::initializePrec(
   const Thyra::ESupportSolveUse supportSolveUse
   ) const
 {
+  Teuchos::RCP<const LinearOpBase<double> > fwdOp = fwdOpSrc->getOp();
+
+  if(epetraFwdOpViewExtractor_->isCompatible(*fwdOp))
+     initializePrec_Epetra(fwdOpSrc,prec,supportSolveUse);
+  else
+     initializePrec_Thyra(fwdOpSrc,prec,supportSolveUse);
+}
+
+void StratimikosFactory::initializePrec_Thyra(
+  const Teuchos::RCP<const Thyra::LinearOpSourceBase<double> > &fwdOpSrc,
+  Thyra::PreconditionerBase<double> *prec,
+  const Thyra::ESupportSolveUse supportSolveUse
+  ) const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::implicit_cast;
+  using Thyra::LinearOpBase;
+
+  Teuchos::Time totalTimer(""), timer("");
+  totalTimer.start(true);
+
+  const RCP<Teuchos::FancyOStream> out = this->getOStream();
+  const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+
+  bool mediumVerbosity = (out.get() && implicit_cast<int>(verbLevel) > implicit_cast<int>(Teuchos::VERB_LOW));
+
+  Teuchos::OSTab tab(out);
+  if(mediumVerbosity)
+    *out << "\nEntering Teko::StratimikosFactory::initializePrec_Thyra(...) ...\n";
+
+  Teuchos::RCP<const LinearOpBase<double> > fwdOp = fwdOpSrc->getOp();
+
+  // Get the concrete preconditioner object
+  StratimikosFactoryPreconditioner & defaultPrec 
+        = Teuchos::dyn_cast<StratimikosFactoryPreconditioner>(*prec);
+  Teuchos::RCP<LinearOpBase<double> > prec_Op = defaultPrec.getNonconstUnspecifiedPrecOp();
+
+  // Permform initialization if needed
+  const bool startingOver = (prec_Op == Teuchos::null);
+  if(startingOver) {
+    // start over
+    invLib_ = Teuchos::null;
+    invFactory_ = Teuchos::null;
+
+    if(mediumVerbosity)
+      *out << "\nCreating the initial Teko Operator object...\n";
+
+    timer.start(true);
+
+    // build library, and set request handler (user defined!)
+    invLib_  = Teko::InverseLibrary::buildFromParameterList(paramList_->sublist("Inverse Factory Library"));
+    invLib_->setRequestHandler(reqHandler_);
+
+    // build preconditioner factory
+    invFactory_ = invLib_->getInverseFactory(paramList_->get<std::string>("Inverse Type"));
+
+    timer.stop();
+    if(mediumVerbosity)
+      Teuchos::OSTab(out).o() <<"> Creation time = "<<timer.totalElapsedTime()<<" sec\n";
+  }
+
+  if(mediumVerbosity)
+    *out << "\nComputing the preconditioner ...\n";
+
+  if(prec_Op==Teuchos::null)
+     prec_Op = Teko::buildInverse(*invFactory_,fwdOp);
+  else
+     Teko::rebuildInverse(*invFactory_,fwdOp,prec_Op);
+
+  // construct preconditioner
+  timer.stop();
+
+  if(mediumVerbosity)
+    Teuchos::OSTab(out).o() <<"=> Preconditioner construction time = "<<timer.totalElapsedTime()<<" sec\n";
+
+
+  // Initialize the preconditioner
+  defaultPrec.initializeUnspecified( prec_Op);
+  defaultPrec.incrIter();
+  totalTimer.stop();
+
+  if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
+    *out << "\nTotal time in Teko::StratimikosFactory = "<<totalTimer.totalElapsedTime()<<" sec\n";
+  if(mediumVerbosity)
+    *out << "\nLeaving Teko::StratimikosFactory::initializePrec_Thyra(...) ...\n";
+}
+
+void StratimikosFactory::initializePrec_Epetra(
+  const Teuchos::RCP<const Thyra::LinearOpSourceBase<double> > &fwdOpSrc,
+  Thyra::PreconditionerBase<double> *prec,
+  const Thyra::ESupportSolveUse supportSolveUse
+  ) const
+{
   using Teuchos::outArg;
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -133,14 +230,14 @@ void StratimikosFactory::initializePrec(
 
   Teuchos::OSTab tab(out);
   if(mediumVerbosity)
-    *out << "\nEntering Teko::StratimikosFactory::initializePrec(...) ...\n";
+    *out << "\nEntering Teko::StratimikosFactory::initializePrec_Epetra(...) ...\n";
 
   Teuchos::RCP<const LinearOpBase<double> > fwdOp = fwdOpSrc->getOp();
 #ifdef _DEBUG
   TEUCHOS_TEST_FOR_EXCEPT(fwdOp.get()==NULL);
   TEUCHOS_TEST_FOR_EXCEPT(prec==NULL);
 #endif
-
+ 
   //
   // Unwrap and get the forward Epetra_Operator object
   //

@@ -28,16 +28,11 @@
 void test_host_query( comm::Machine machine )
 {
   const size_t node_count = Kokkos::Host::detect_node_count();
-  const size_t node_rank  = Kokkos::Host::detect_node_binding();
 
   std::cout << "P" << comm::rank( machine )
             << ": Host node_count = " << node_count
             << " , node_core_count = "
             << Kokkos::Host::detect_node_core_count();
-
-  if ( node_rank < node_count ) {
-    std::cout << " , node_binding = " << node_rank ;
-  }
 
   std::cout << std::endl ;
 }

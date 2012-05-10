@@ -61,6 +61,8 @@ public:
 
   inline size_type node() const { return m_thread_node ; }
 
+  inline size_type node_rank() const { return m_thread_node_rank ; }
+
   inline
   static void activate( HostThread * const begin , HostThread * thread )
   {
@@ -167,6 +169,7 @@ private:
     , m_thread_count( 0 )
     , m_thread_rank( 0 )
     , m_thread_node( 0 )
+    , m_thread_node_rank( 0 )
     , m_reduce( NULL )
     , m_state( 0 )
     {}
@@ -187,6 +190,7 @@ private:
   unsigned              m_thread_count ;
   unsigned              m_thread_rank ;
   unsigned              m_thread_node ;
+  unsigned              m_thread_node_rank ;
   const void * volatile m_reduce ;    ///< Reduction memory
   long         volatile m_state ;     ///< Thread control flag
 

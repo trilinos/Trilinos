@@ -95,6 +95,22 @@ public:
 
   //@}
 
+  /** Setup an thyra preconditioner (most likely blocked)
+    */
+  void initializePrec_Thyra(
+    const Teuchos::RCP<const Thyra::LinearOpSourceBase<double> > &fwdOp,
+    Thyra::PreconditionerBase<double> *prec,
+    const Thyra::ESupportSolveUse supportSolveUse
+    ) const;
+
+  /** Setup an epetra preconditioner.
+    */
+  void initializePrec_Epetra(
+    const Teuchos::RCP<const Thyra::LinearOpSourceBase<double> > &fwdOp,
+    Thyra::PreconditionerBase<double> *prec,
+    const Thyra::ESupportSolveUse supportSolveUse
+    ) const;
+
   /** Access to the application communication request handling mechnism
     */
   void setRequestHandler(const Teuchos::RCP<Teko::RequestHandler> & rh)

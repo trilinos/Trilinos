@@ -217,6 +217,23 @@ NNTI_result_t NNTI_fini (
 /** @} */
 
 
+
+
+#if defined(HAVE_TRIOS_PORTALS) || defined(HAVE_TRIOS_CRAYPORTALS)
+#define NNTI_DEFAULT_TRANSPORT NNTI_TRANSPORT_PORTALS
+#elif defined(HAVE_TRIOS_INFINIBAND)
+#define NNTI_DEFAULT_TRANSPORT NNTI_TRANSPORT_IB
+#elif defined(HAVE_TRIOS_GEMINI)
+#define NNTI_DEFAULT_TRANSPORT NNTI_TRANSPORT_GEMINI
+#elif defined(HAVE_TRIOS_MPI)
+#define NNTI_DEFAULT_TRANSPORT NNTI_TRANSPORT_MPI
+#else
+#define NSSI_DEFAULT_TRANSPORT NSSI_RPC_LOCAL
+#endif
+
+
+
+
 /**
  * @brief Return TRUE if transport 't' has been successfully initialized.
  */
