@@ -53,35 +53,6 @@ namespace Sacado {
   //! Namespace for expression templated vector classes
   namespace ETV {
 
-#ifdef HAVE_STOKHOS_THRUST
-    template<int k, class HT, class TT>
-    KERNEL_PREFIX
-    typename thrust::access_traits<
-      typename thrust::tuple_element<k, thrust::detail::cons<HT, TT> >::type
-      >::const_type
-    get(const thrust::detail::cons<HT, TT>& a) { 
-      return thrust::get<k>(a); 
-    }
-    template<int k, class HT, class TT>
-    KERNEL_PREFIX
-    typename thrust::access_traits<
-      typename thrust::tuple_element<k, thrust::detail::cons<HT, TT> >::type
-      >::non_const_type
-    get(thrust::detail::cons<HT, TT>& a) { 
-      return thrust::get<k>(a); 
-    }
-#endif
-    
-    template <int k, typename T> KERNEL_PREFIX T& 
-    get(T* a) { return a[k]; }
-    template <int k, typename T> KERNEL_PREFIX const T& 
-    get(const T* a) { return a[k]; }
-
-    template <int k, int N, typename T> KERNEL_PREFIX T& 
-    get(T a[N]) { return a[k]; }
-    template <int k, int N, typename T> KERNEL_PREFIX const T& 
-    get(const T a[N]) { return a[k]; }
-
     //! Wrapper for a generic expression template
     /*!
      * This template class serves as a wrapper for all expression
