@@ -45,7 +45,7 @@
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
 #include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_Map_decl.hpp"
+#include "Tpetra_DirectoryImpl_decl.hpp"
 
 namespace Tpetra {
 
@@ -113,11 +113,26 @@ namespace Tpetra {
   ///   already exists.  \c Epetra_Directory is an abstract interface
   ///   with one implementation (\c Epetra_BasicDirectory); \c
   ///   Tpetra::Directory is a concrete implementation.
+  ///
+  /// \note (mfh 10 May 2012) To Tpetra developers: The current design
+  ///   of Directory is suboptimal.  Currently, the Directory has to
+  ///   ask the Map what kind of Map it is (e.g., globally
+  ///   distributed? contiguous?) in order to figure out how to
+  ///   represent its data.  This is suboptimal, because the Map
+  ///   already knows what kind of Map it is, based on which Map
+  ///   constructor was invoked.  Thus, it should be the Map that
+  ///   specifies which kind of Directory to create.  I've broken up
+  ///   Directory into an interface and an implementation
+  ///   (Details::Directory and its subclasses) in preparation for
+  ///   making this change.
   template<class LocalOrdinal, 
            class GlobalOrdinal = LocalOrdinal, 
            class Node = Kokkos::DefaultNode::DefaultNodeType>
   class Directory : public Teuchos::Describable {
   public:
+    //! Type of the Map specialization to give to the constructor.
+    typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+
     //! @name Constructors/Destructor.
     //@{ 
 
@@ -127,24 +142,30 @@ namespace Tpetra {
     ///
     /// \note This constructor is invoked by Map's constructor, using
     ///   the Map's <tt>this</tt> pointer as the input argument.
-    explicit Directory(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map);
+    explicit Directory (const Teuchos::RCP<const map_type>& map);
 
     //! Destructor.
-    ~Directory();
+    ~Directory ();
 
     //@}
+    //! @name Implementation of Teuchos::Describable.
+    //@{ 
 
+    //! A one-line human-readable description of this object.
+    std::string description () const;
+
+    //@}
     //! @name Query methods.
     //@{ 
 
-    /// \brief Given a GID list, return the list of their owning process IDs.
+    /// \brief Given a global ID list, return the list of their owning process IDs.
     ///
     /// Given a list \c globalIDs of global identifiers (GIDs), return
     /// the corresponding list \c nodeIDs of the process ranks which
     /// own those GIDs.  Tpetra uses this to figure out the locations
     /// of nonlocal Map entries.
     ///
-    /// \param globalIDs [in] List of GIDs to look up.
+    /// \param globalIDs [in] List of global IDs to look up.
     ///
     /// \param nodeIDs [out] On input, an array view with the same
     ///   number of entries as \c globalIDs.  On output, nodeIDs[i] is
@@ -153,15 +174,18 @@ namespace Tpetra {
     ///   owned by any process in the Directory's communicator),
     ///   nodeIDs[i] is -1.
     ///
-    /// \return If at least one GID was not present in the directory,
-    ///   return IDNotPresent.  Otherwise, return AllIDsPresent.
+    /// \return If at least one global ID was not present in the
+    ///   directory, return IDNotPresent.  Otherwise, return
+    ///   AllIDsPresent.
     ///
     /// \note If <tt>nodeIDs.size() != globalIDs.size()</tt>, then
     ///   this method throws a \c std::runtime_error exception.
-    LookupStatus getDirectoryEntries(const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
-                                     const Teuchos::ArrayView<int> &nodeIDs) const;
+    LookupStatus 
+    getDirectoryEntries (const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs, 
+			 const Teuchos::ArrayView<int>& nodeIDs) const;
 
-    /// \brief Given a GID list, return a list of their owning process IDs and their corresponding LIDs.
+    /// \brief Given a global ID list, return a list of their owning
+    ///   process IDs and their corresponding local IDs.
     ///
     /// Given a list \c globalIDs of global identifiers (GIDs), return
     /// the corresponding list \c nodeIDs of the process ranks which
@@ -169,7 +193,7 @@ namespace Tpetra {
     /// (LIDs).  Tpetra uses this to figure out the locations of
     /// nonlocal Map entries.
     ///
-    /// \param globalIDs [in] List of GIDs to look up.
+    /// \param globalIDs [in] List of global IDs to look up.
     ///
     /// \param nodeIDs [out] On input, an array view with the same
     ///   number of entries as \c globalIDs.  On output, nodeIDs[i] is
@@ -185,111 +209,39 @@ namespace Tpetra {
     ///   present in the directory, then <tt>localIDs[i] ==
     ///   Teuchos::OrdinalTraits<LocalOrdinal>::invalid()</tt>.
     ///
-    /// \return If at least one GID was not present in the directory,
-    ///   return IDNotPresent.  Otherwise, return AllIDsPresent.
+    /// \return If at least one global ID was not present in the
+    ///   directory, return IDNotPresent.  Otherwise, return
+    ///   AllIDsPresent.
     ///
     /// \note If <tt>nodeIDs.size() != globalIDs.size()</tt> or 
     ///   <tt>localIDs.size() != globalIDs.size()</tt>, then
     ///   this method throws a \c std::runtime_error exception.
-    LookupStatus getDirectoryEntries(const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
-                                     const Teuchos::ArrayView<int> &nodeIDs, 
-                                     const Teuchos::ArrayView<LocalOrdinal> &localIDs) const;
+    LookupStatus 
+    getDirectoryEntries (const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs, 
+			 const Teuchos::ArrayView<int>& nodeIDs, 
+			 const Teuchos::ArrayView<LocalOrdinal>& localIDs) const;
     //@}
     
   private:
-    //! The Map with which this Directory was created.
-    Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > map_;
+    /// \brief Type of the (base class) implementation of this object.
+    ///
+    /// \note To implementers: Directory has different
+    ///   implementations, depending on characteristics of the input
+    ///   Map (e.g., locally replicated or globally distributed,
+    ///   contiguous or noncontiguous).
+    typedef Details::Directory<LocalOrdinal, GlobalOrdinal, Node> base_type;
 
-    /// \brief This Directory's Map which describes the distribution of its data.
-    ///
-    /// This Map is only instantiated if the user's Map (\c map_) is
-    /// distributed and noncontiguous.  Otherwise, it remains null.
-    /// It is instantiated in \c generateDirectory(), which is invoked
-    /// by the constructor if necessary.
-    ///
-    /// We can't afford to store the whole directory redundantly on
-    /// each process, so we distribute it.  This Map describes the
-    /// distribution of the Directory.  It is a uniform contiguous map
-    /// to prevent infinite recursion (since Map's constructor creates
-    /// a Directory for the general case of a noncontiguous map).  The
-    /// data which this Map distributes are nodeIDs_ and LIDs_: the
-    /// process IDs and local IDs.  The "keys" or indices of this Map
-    /// are the global IDs.  Thus, this Map has a range of elements
-    /// from the minimum to the maximum GID of the user's Map, and its
-    /// indexBase is the minimum GID over all processes in the user's
-    /// Map.
-    Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > directoryMap_;
-
-    /// \brief Minimum global ID for each process in the communicator.
-    ///
-    /// This array is only valid if the user's Map (\c map_) is
-    /// distributed and contiguous.  Otherwise, it remains empty.  It
-    /// is allocated in the constructor if necessary.
-    ///
-    /// This array has map_->getComm ()->getSize ()+1 entries.  Entry
-    /// i contains the minimum global identifier (GID) of process i in
-    /// map_'s communicator.  The last entry contains the maximum GID
-    /// in the directory.
-    ///
-    /// The directory uses this array to map from GID to process ID,
-    /// when the GIDs are distributed contiguously in increasing order
-    /// over the processes.  This array allows the directory to
-    /// compute the mapping locally, without communication, for any
-    /// given GID, whether or not it is owned by the local process.
-    ///
-    /// \note To implementers: This is a potential memory bottleneck
-    ///   if the number of processes P is large and the allowed memory
-    ///   usage per process is small.  This should only be a problem
-    ///   if \f$N/P \gg P\f$, where N is the global number of
-    ///   elements.  In this case, it would be better 
-    Teuchos::Array<GlobalOrdinal> allMinGIDs_; 
-
-    /// Array of the same length as the local number of entries in
-    /// directoryMap_.  This array is only allocated and used if the
-    /// user's map is distributed and noncontiguous.
-    Teuchos::Array<int> nodeIDs_;
-    /// Array of the same length as the local number of entries in
-    /// directoryMap_.  This array is only allocated and used if the
-    /// user's map is distributed and noncontiguous.
-    Teuchos::Array<LocalOrdinal> LIDs_;
+    //! Implementation of this object.
+    Teuchos::RCP<const base_type> impl_;
 
     //! Copy constructor: declared private but not defined on purpose.
-    Directory (const Directory<LocalOrdinal,GlobalOrdinal,Node>& directory);
+    Directory (const Directory<LocalOrdinal, GlobalOrdinal, Node>& directory);
 
     //! Assignment operator: declared private but not defined on purpose.
-    Directory<LocalOrdinal,GlobalOrdinal,Node>& 
-    operator= (const Directory<LocalOrdinal,GlobalOrdinal,Node>& source);
-
-    /// \brief Common code for both versions of \c getDirectoryEntries().
-    ///
-    /// \param globalIDs [in] The global IDs to look up.
-    /// \param nodeIDs [out] The process IDs corresponding to the
-    ///   given global IDs.
-    /// \param localIDs [out] If computeLIDs is true, fill with the
-    ///   local IDs corresponding to the given global IDs.
-    /// \param computeLIDs [in] Whether to fill in localIDs.
-    ///
-    /// \return If at least one GID was not present in the directory,
-    ///   return IDNotPresent.  Otherwise, return AllIDsPresent.
-    ///
-    /// \note If <tt>nodeIDs.size() != globalIDs.size()</tt>, or if
-    ///   computeLIDs is true and <tt>localIDs.size() !=
-    ///   globalIDs.size()</tt>, then this method throws a \c
-    ///   std::runtime_error exception.
-    LookupStatus getEntries(const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
-                            const Teuchos::ArrayView<int> &nodeIDs, 
-                            const Teuchos::ArrayView<LocalOrdinal> &localIDs, 
-                            bool computeLIDs) const;
-
-    /// \brief Set up directory, if the user's Map is distributed and noncontiguous.
-    ///
-    /// This method is called in the constructor, and is only called
-    /// if the user's Map is distributed and noncontiguous.  It sets
-    /// up directoryMap_, nodeIDs_, and LIDs_.
-    void generateDirectory();
+    Directory<LocalOrdinal, GlobalOrdinal, Node>& 
+    operator= (const Directory<LocalOrdinal, GlobalOrdinal, Node>& source);
 
   }; // class Directory
-
 } // namespace Tpetra
 
 #endif // TPETRA_DIRECTORY_DECL_HPP
