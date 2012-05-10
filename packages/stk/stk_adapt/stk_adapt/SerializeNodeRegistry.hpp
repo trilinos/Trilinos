@@ -592,7 +592,7 @@ namespace stk {
                 continue;
               }
 
-            fem::CellTopology topo = m_eMesh.getFEM_meta_data()->get_cell_topology(part);
+            stk::mesh::fem::CellTopology topo = m_eMesh.getFEM_meta_data()->get_cell_topology(part);
             TopologyName topo_name = "null";
             if (topo.getCellTopologyData()) topo_name = topo.getName();
             //std::cout << "part, topo= " << part.name() << " " << topo_name << std::endl;
