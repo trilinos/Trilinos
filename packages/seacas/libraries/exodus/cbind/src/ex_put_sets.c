@@ -116,7 +116,7 @@ int ex_put_sets (int   exoid,
     }
     
     for (i=0; i < set_count; i++) {
-      if (sets_to_define[i] == 0 || sets[i].num_entry == 0)
+      if (sets_to_define[i] == 0)
 	continue;
       
       /*   NOTE: ex_inc_file_item finds the current number of sets defined
@@ -124,6 +124,9 @@ int ex_put_sets (int   exoid,
       cur_num_sets=ex_inc_file_item(exoid, ex_get_counter_list(sets[i].type));
       set_id_ndx = cur_num_sets + 1;
       sets_to_define[i] = set_id_ndx;
+      
+      if (sets[i].num_entry == 0)
+	continue;
       
       /* setup pointers based on set_type */
       if (sets[i].type == EX_NODE_SET) {
