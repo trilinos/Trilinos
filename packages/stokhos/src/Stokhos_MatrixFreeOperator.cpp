@@ -77,7 +77,6 @@ MatrixFreeOperator(
   include_mean = params->get("Include Mean", true);
   only_use_linear = params->get("Only Use Linear Terms", false);
   use_block_apply = params->get("Use Block Apply", true);
-  std::cout << "use block apply = " << use_block_apply << std::endl;
 
   // Compute maximum number of mat-vec's needed
   if (!include_mean && index(k_begin) == 0)
