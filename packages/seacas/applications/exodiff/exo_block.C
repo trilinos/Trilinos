@@ -57,7 +57,7 @@ Exo_Block<INT>::Exo_Block(int file_id, size_t exo_block_id)
     conn(NULL)
 {
   SMART_ASSERT(file_id >= 0);
-  SMART_ASSERT(exo_block_id > EX_INVALID_ID);
+  SMART_ASSERT((int)exo_block_id > EX_INVALID_ID);
   
   initialize(file_id, exo_block_id);
 }

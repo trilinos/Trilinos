@@ -458,7 +458,7 @@ void Compute_Partial_Maps(INT*& node_map, INT*& elmt_map,
       mid_x = 0.0; mid_y = 0.0; mid_z = 0.0;
 
       for (size_t j = 0; j < num_nodes_per_elmt; ++j) {
-        SMART_ASSERT(conn1[j] >= 1 && conn1[j] <= num_nodes1);
+        SMART_ASSERT(conn1[j] >= 1 && conn1[j] <= (INT)num_nodes1);
         mid_x += x1_f[conn1[j]-1];
         if (dim > 1) mid_y += y1_f[conn1[j]-1];
         if (dim > 2) mid_z += z1_f[conn1[j]-1];

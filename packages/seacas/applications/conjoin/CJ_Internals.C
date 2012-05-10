@@ -123,9 +123,9 @@ int Excn::Internals::write_meta_data(const Mesh<INT> &mesh,
 				     const std::vector<SideSet<INT> > &sidesets,
 				     const CommunicationMetaData &comm)
 {
-  SMART_ASSERT((INT)blocks.size()   == mesh.blockCount);
-  SMART_ASSERT((INT)nodesets.size() == mesh.nodesetCount);
-  SMART_ASSERT((INT)sidesets.size() == mesh.sidesetCount);
+  SMART_ASSERT(blocks.size()   == mesh.blockCount);
+  SMART_ASSERT(nodesets.size() == mesh.nodesetCount);
+  SMART_ASSERT(sidesets.size() == mesh.sidesetCount);
   
   // May need to reorder the element blocks based on the 'offset_'
   // member. An element block contains the elements from 'offset_+1'
@@ -241,7 +241,7 @@ int Excn::Internals::write_meta_data(const Mesh<INT> &mesh,
 
       for (size_t i=0; i < mesh.blockCount; i++) {
 	if (blocks[i].attributeCount > 0) {
-	  SMART_ASSERT(blocks[i].attributeCount == (int)blocks[i].attributeNames.size());
+	  SMART_ASSERT(blocks[i].attributeCount == blocks[i].attributeNames.size());
 	  for (size_t j=0; j < blocks[i].attributeCount; j++) {
 	    std::memset(names[j], '\0', name_size+1);
 	    if (blocks[i].attributeNames[j].size() > 0) {

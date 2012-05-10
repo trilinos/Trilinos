@@ -85,7 +85,7 @@ Exo_Entity::Exo_Entity(int file_id, size_t id)
     numAttr(0)
 {
   SMART_ASSERT(file_id > 0);
-  SMART_ASSERT(id > EX_INVALID_ID);}
+  SMART_ASSERT((int)id > EX_INVALID_ID);}
 
 
 Exo_Entity::Exo_Entity(int file_id, size_t id, size_t nnodes)
@@ -100,7 +100,7 @@ Exo_Entity::Exo_Entity(int file_id, size_t id, size_t nnodes)
     numAttr(0)
 {
   SMART_ASSERT(file_id > 0);
-  SMART_ASSERT(id > EX_INVALID_ID);
+  SMART_ASSERT((int)id > EX_INVALID_ID);
   SMART_ASSERT(nnodes >= 0);
 }
 
@@ -141,7 +141,7 @@ void Exo_Entity::initialize(int file_id, size_t id)
 
 bool Exo_Entity::is_valid_var(size_t var_index) const
 {
-  SMART_ASSERT(var_index >= 0 && var_index < numVars);
+  SMART_ASSERT(var_index >= 0 && (int)var_index < numVars);
   if (truth_ == NULL) {
     get_truth_table();
   }
@@ -156,7 +156,7 @@ string Exo_Entity::Load_Results(int time_step, int var_index)
   if (fileId < 0) return "ERROR:  Invalid file id!";
   if (id_ == EX_INVALID_ID) return "ERROR:  Must initialize block parameters first!";
   SMART_ASSERT(var_index >= 0 && var_index < numVars);
-  SMART_ASSERT(time_step >= 1 && time_step <= get_num_timesteps(fileId));
+  SMART_ASSERT(time_step >= 1 && time_step <= (int)get_num_timesteps(fileId));
   
   if (time_step != currentStep) {
     Free_Results();
@@ -208,8 +208,8 @@ string Exo_Entity::Load_Results(int t1, int t2, double proportion, int var_index
   if (fileId < 0) return "ERROR:  Invalid file id!";
   if (id_ == EX_INVALID_ID) return "ERROR:  Must initialize block parameters first!";
   SMART_ASSERT(var_index >= 0 && var_index < numVars);
-  SMART_ASSERT(t1 >= 1 && t1 <= get_num_timesteps(fileId));
-  SMART_ASSERT(t2 >= 1 && t2 <= get_num_timesteps(fileId));
+  SMART_ASSERT(t1 >= 1 && t1 <= (int)get_num_timesteps(fileId));
+  SMART_ASSERT(t2 >= 1 && t2 <= (int)get_num_timesteps(fileId));
   
   if (t1 != currentStep) {
     Free_Results();

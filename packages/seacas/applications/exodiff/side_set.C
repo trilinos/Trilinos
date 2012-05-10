@@ -61,7 +61,7 @@ Side_Set<INT>::Side_Set(int file_id, size_t id)
     sideIndex(0),
     dist_factors(0)
 {
-  SMART_ASSERT(id != EX_INVALID_ID);
+  SMART_ASSERT((int)id != EX_INVALID_ID);
 }
 
 template <typename INT>

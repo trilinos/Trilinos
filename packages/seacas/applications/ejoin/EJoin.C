@@ -831,7 +831,7 @@ namespace {
 	    // loc_node = the position of part-global node 'connectivity[i]' in the local [0..num_node)
 	    // local_node_map[node_offset+loc_node] gives the position of this node in the global list
 	    size_t loc_node = part_mesh[p]->node_global_to_local(connectivity[i], true)-1;
-	    SMART_ASSERT(node_offset+loc_node < (int)local_node_map.size());
+	    SMART_ASSERT(node_offset+loc_node < local_node_map.size());
 	    ssize_t gpos = local_node_map[node_offset+loc_node];
 	    if (gpos >= 0) 
 	      connectivity[i] = gpos+1;

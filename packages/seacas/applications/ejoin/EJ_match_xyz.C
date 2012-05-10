@@ -276,7 +276,7 @@ namespace {
 	match++;
 	if (dmin > dismax) dismax = dmin;
 	j_inrange[node_dmin] *= -1;
-	SMART_ASSERT(jnod < local_node_map.size());
+	SMART_ASSERT(jnod < (INT)local_node_map.size());
 	if (inod < jnod)
 	  local_node_map[jnod] = inod;
 	else

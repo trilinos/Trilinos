@@ -1164,15 +1164,9 @@ namespace {
 
 	  if (glob_blocks[b].nodesPerElement == 0)
 	    glob_blocks[b].nodesPerElement = block_param.num_nodes_per_entry;
-	  else
-	    SMART_ASSERT(glob_blocks[b].nodesPerElement == block_param.num_nodes_per_entry)
-	      (b)(glob_blocks[b].nodesPerElement)(block_param.num_nodes_per_entry);
 
 	  if (glob_blocks[b].attributeCount == 0)
 	    glob_blocks[b].attributeCount  = block_param.num_attribute;
-	  else
-	    SMART_ASSERT(glob_blocks[b].attributeCount == block_param.num_attribute)
-	      (b)(glob_blocks[b].attributeCount)(block_param.num_attribute);
 	  
 	  glob_blocks[b].position_  = b;
 	  strncpy(glob_blocks[b].elType,   block_param.topology, MAX_STR_LENGTH);
@@ -1501,7 +1495,6 @@ namespace {
       if (!is_contiguous) {
 	int repeat_found = 0;
 	size_t id_last = id_pos[0].first;
-	SMART_ASSERT(id_last == global_element_map[id_pos[0].second].first);
 	
 	for (size_t i=1; i < global->elementCount; i++) {
 	  if (id_pos[i].first == id_last) {
