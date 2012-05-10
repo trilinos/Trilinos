@@ -40,7 +40,11 @@ ENDIF()
 
 SET(TESTNAMES
    empty-request-sync
-   empty-request-async)
+   empty-request-async
+   get-sync
+   get-async
+   put-sync
+   put-async)
 
 
 foreach (testname ${TESTNAMES})
@@ -56,5 +60,5 @@ foreach (testname ${TESTNAMES})
     NAME MulticastTest_${testname}
     ARGS "${DEFAULT_ARGS} ${EXTRA_TEST_ARGS}"
     COMM serial mpi
-    NUM_MPI_PROCS 2)
+    NUM_MPI_PROCS 3)
 endforeach()
