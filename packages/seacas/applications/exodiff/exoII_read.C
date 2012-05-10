@@ -694,7 +694,7 @@ const double* ExoII_Read<INT>::Get_Nodal_Results(int t1, int t2, double proporti
       st_results2 = new double[num_nodes];
     }
 
-    int err = ex_get_var(file_id, t2, EX_NODAL, var_index+1, 0, num_nodes, st_results2);
+    err = ex_get_var(file_id, t2, EX_NODAL, var_index+1, 0, num_nodes, st_results2);
     if (err < 0) {
       std::cout << "ExoII_Read::Load_Nodal_Results(): ERROR: Failed to get "
 		<< "nodal variable values!  Aborting..." << std::endl;

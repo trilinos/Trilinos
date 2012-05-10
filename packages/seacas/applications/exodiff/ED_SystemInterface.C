@@ -792,11 +792,24 @@ bool SystemInterface::parse_options(int argc, char **argv)
 	ss_var[k]   = default_tol;
 	ns_var[k]   = default_tol;
       }
-  
-    {
-      const char *temp = options_.retrieve("file");
-      if (temp) {
-	command_file = temp;
+  }
+
+  {
+    const char *temp = options_.retrieve("file");
+    if (temp) {
+      command_file = temp;
+      if (!summary_flag && !File_Exists(command_file)) {
+	std::cerr << "exodiff: Can't open file \"" << command_file << "\"." << std::endl;
+	exit(1);
+      }
+
+      // Command file exists, parse contents...
+      Parse_Command_File();
+    }
+    else {
+      const char *t2 = options_.retrieve("f");
+      if (t2) {
+	command_file = t2;
 	if (!summary_flag && !File_Exists(command_file)) {
 	  std::cerr << "exodiff: Can't open file \"" << command_file << "\"." << std::endl;
 	  exit(1);
@@ -806,30 +819,18 @@ bool SystemInterface::parse_options(int argc, char **argv)
 	Parse_Command_File();
       }
       else {
-	const char *t2 = options_.retrieve("f");
-	if (t2) {
-	  command_file = t2;
-	  if (!summary_flag && !File_Exists(command_file)) {
-	    std::cerr << "exodiff: Can't open file \"" << command_file << "\"." << std::endl;
-	    exit(1);
-	  }
-
-	  // Command file exists, parse contents...
-	  Parse_Command_File();
-	}
-	else {
-	  glob_var_do_all_flag = true;
-	  node_var_do_all_flag = true;
-	  elmt_var_do_all_flag = true;
-	  elmt_att_do_all_flag = true;
-	  ns_var_do_all_flag = true;
-	  ss_var_do_all_flag = true;
-	}
+	glob_var_do_all_flag = true;
+	node_var_do_all_flag = true;
+	elmt_var_do_all_flag = true;
+	elmt_att_do_all_flag = true;
+	ns_var_do_all_flag = true;
+	ss_var_do_all_flag = true;
       }
     }
-    return true;
   }
+  return true;
 }
+
 void SystemInterface::Parse_Command_File()
 {
   int default_tol_specified = 0;
