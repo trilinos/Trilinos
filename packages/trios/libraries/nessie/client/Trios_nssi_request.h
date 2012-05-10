@@ -149,11 +149,8 @@ extern "C" {
                 /** @brief Handle for the buffer where the data reside.  */
                 NNTI_buffer_t data_hdl;
                 /** @brief Handle for the buffer where the short result will be put.  */
-#ifdef USE_BUFFER_QUEUE
                 NNTI_buffer_t *short_result_hdl;
-#else
-                NNTI_buffer_t short_result_hdl;
-#endif
+                NNTI_buffer_t short_result;
 
                 /** @brief A callback function used by the wait() function when
                  *         a request is complete.

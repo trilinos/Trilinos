@@ -76,6 +76,9 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "nnti.h"
 
 
+bool config_use_buffer_queue=false;
+static void config_get_from_env(void);
+
 
 /* --------------------- Private methods ------------------- */
 
@@ -84,12 +87,11 @@ NNTI_transport_t transports[NSSI_RPC_COUNT];
 static bool       rpc_initialized = FALSE;
 static nssi_rpc_encode encoding   = NSSI_DEFAULT_ENCODE;
 
-#ifdef USE_BUFFER_QUEUE
 #define BQ_MIN   50
 #define BQ_MAX 1000
 trios_buffer_queue_t send_bq;
 trios_buffer_queue_t recv_bq;
-#endif
+
 
 void *memdup(void *src, int size)
 {
@@ -189,24 +191,25 @@ int nssi_rpc_init(
             return rc;
     }
 
-#ifdef USE_BUFFER_QUEUE
-    trios_buffer_queue_init(
-            &send_bq,
-            BQ_MIN,
-            BQ_MAX,
-            TRUE,
-            &transports[rpc_transport],
-            NNTI_SEND_SRC,
-            NSSI_SHORT_REQUEST_SIZE);
-    trios_buffer_queue_init(
-            &recv_bq,
-            BQ_MIN,
-            BQ_MAX,
-            TRUE,
-            &transports[rpc_transport],
-            NNTI_RECV_DST,
-            NSSI_SHORT_REQUEST_SIZE);
-#endif
+    config_get_from_env();
+    if (config_use_buffer_queue) {
+        trios_buffer_queue_init(
+                &send_bq,
+                BQ_MIN,
+                BQ_MAX,
+                TRUE,
+                &transports[rpc_transport],
+                NNTI_SEND_SRC,
+                NSSI_SHORT_REQUEST_SIZE);
+        trios_buffer_queue_init(
+                &recv_bq,
+                BQ_MIN,
+                BQ_MAX,
+                TRUE,
+                &transports[rpc_transport],
+                NNTI_RECV_DST,
+                NSSI_SHORT_REQUEST_SIZE);
+    }
 
     initialized = TRUE;
     rpc_initialized = TRUE;
@@ -269,12 +272,12 @@ int nssi_rpc_fini(const nssi_rpc_transport rpc_transport)
 {
     int rc;
 
-#ifdef USE_BUFFER_QUEUE
-    trios_buffer_queue_fini(
-            &send_bq);
-    trios_buffer_queue_fini(
-            &recv_bq);
-#endif
+    if (config_use_buffer_queue) {
+        trios_buffer_queue_fini(
+                &send_bq);
+        trios_buffer_queue_fini(
+                &recv_bq);
+    }
 
     /* initialize the transport mechanism */
     rc = NNTI_fini(&transports[rpc_transport]);
@@ -301,4 +304,22 @@ int nssi_rpc_fini(const nssi_rpc_transport rpc_transport)
     }
 
     return NSSI_OK;
+}
+
+static void config_get_from_env(void)
+{
+    char *env_str=NULL;
+
+    if ((env_str=getenv("TRIOS_NNTI_USE_BUFFER_QUEUE")) != NULL) {
+        if ((!strcasecmp(env_str, "TRUE")) ||
+            (!strcmp(env_str, "1"))) {
+            log_debug(rpc_debug_level, "setting config_use_buffer_queue to TRUE");
+            config_use_buffer_queue=true;
+        } else {
+            log_debug(rpc_debug_level, "setting config_use_buffer_queue to FALSE");
+            config_use_buffer_queue=false;
+        }
+    } else {
+        log_debug(rpc_debug_level, "TRIOS_NNTI_USE_BUFFER_QUEUE is undefined.  using config_use_buffer_queue default");
+    }
 }
