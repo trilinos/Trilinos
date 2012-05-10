@@ -87,7 +87,7 @@ public:
 		 const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
                  const Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > & solverFactory,
 		 const Teuchos::RCP<panzer::GlobalData>& global_data,
-		 bool build_transient_support);
+		 bool build_transient_support,double t_init);
 
   /** \brief . */
   ModelEvaluator();

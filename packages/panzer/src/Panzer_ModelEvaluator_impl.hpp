@@ -74,8 +74,9 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder<LO,GO> >& fmb,
                const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
                const Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > & solverFactory,
                const Teuchos::RCP<panzer::GlobalData>& global_data,
-               bool build_transient_support)
-  : t_init_(0.0)
+               bool build_transient_support,
+               double t_init)
+  : t_init_(t_init)
   , fmb_(fmb)
   , responseLibrary_(rLibrary)
   , p_names_(p_names)

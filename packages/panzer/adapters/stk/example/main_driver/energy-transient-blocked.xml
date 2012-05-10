@@ -29,7 +29,7 @@
             <ParameterList name="TEMPERATURE">
                 <Parameter name="Value" type="double" value="0.0"/>
             </ParameterList>
-            <ParameterList name="TEST TEMPERATURE">
+            <ParameterList name="TEST_TEMPERATURE">
                 <Parameter name="Value" type="double" value="0.0"/>
             </ParameterList>
         </ParameterList>

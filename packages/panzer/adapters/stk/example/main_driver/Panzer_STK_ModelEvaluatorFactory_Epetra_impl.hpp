@@ -434,43 +434,59 @@ namespace panzer_stk {
     Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory =
           buildLOWSFactory(blockedAssembly,globalIndexer,stkConn_manager,mesh,mpi_comm);
 
-    // Setup blocked Assembly
+    // Setup physics model evaluator
     /////////////////////////////////////////////////////////////
+
+    double t_init = 0.0;
+
     Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me;
-
+    Teuchos::RCP<panzer::ModelEvaluator_Epetra> ep_me;
     if(!blockedAssembly) {
-      // Setup initial conditions
-      /////////////////////////////////////////////////////////////
+      ep_me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,m_response_library,linObjFactory, p_names, global_data, is_transient));
+      if (is_transient) {
+        t_init = this->getInitialTime(p.sublist("Initial Conditions").sublist("Transient Parameters"), *mesh);
+        ep_me->set_t_init(t_init);
+      }
 
-      Teuchos::RCP<panzer::ModelEvaluator_Epetra> ep_me = 
-          Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,m_response_library,linObjFactory, p_names, global_data, is_transient));
+      // Build Thyra Model Evaluator
+      thyra_me = Thyra::epetraModelEvaluator(ep_me,lowsFactory);
+    }
+    else {
+      thyra_me = Teuchos::rcp(new panzer::ModelEvaluator<double,int,int,Kokkos::DefaultNode::DefaultNodeType>
+                  (fmb,m_response_library,linObjFactory,p_names,lowsFactory,global_data,is_transient,t_init));
+    }
 
+    // Setup initial conditions
+    /////////////////////////////////////////////////////////////
+
+    {
       bool write_dot_files = false;
       std::string prefix = "Panzer_AssemblyGraph_";
       write_dot_files = p.sublist("Options").get("Write Volume Assembly Graphs",write_dot_files);
       prefix = p.sublist("Options").get("Volume Assembly Graph Prefix",prefix);
       
-      double t_init = 0.0;
-
-      if (is_transient) {
-	t_init = this->getInitialTime(p.sublist("Initial Conditions").sublist("Transient Parameters"), *mesh);
-	ep_me->set_t_init(t_init);
-      }
-
       std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > > phx_ic_field_managers;
       panzer::setupInitialConditionFieldManagers(*wkstContainer,
-						 physicsBlocks,
-						 user_cm_factory,
-						 p.sublist("Initial Conditions"),
-						 *linObjFactory,
-						 p.sublist("User Data"),
-						 write_dot_files,
-						 prefix,
-						 phx_ic_field_managers);
+                                                 physicsBlocks,
+                                                 user_cm_factory,
+                                                 p.sublist("Initial Conditions"),
+                                                 *linObjFactory,
+                                                 p.sublist("User Data"),
+                                                 write_dot_files,
+                                                 prefix,
+                                                 phx_ic_field_managers);
 
       Teuchos::RCP<panzer::LinearObjContainer> loc = linObjFactory->buildLinearObjContainer();
-      Teuchos::RCP<panzer::EpetraLinearObjContainer> eloc = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(loc);
-      eloc->set_x(Teuchos::rcp_const_cast<Epetra_Vector>(ep_me->get_x_init()));
+      if(!blockedAssembly) {
+        Teuchos::RCP<panzer::EpetraLinearObjContainer> eloc = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(loc);
+        eloc->set_x(Teuchos::rcp_const_cast<Epetra_Vector>(ep_me->get_x_init()));
+      }
+      else {
+        Teuchos::RCP<panzer::BlockedEpetraLinearObjContainer> bloc = Teuchos::rcp_dynamic_cast<panzer::BlockedEpetraLinearObjContainer>(loc);
+        
+        Thyra::ModelEvaluatorBase::InArgs<double> nomValues = thyra_me->getNominalValues();
+        bloc->set_x(Teuchos::rcp_const_cast<Thyra::VectorBase<double> >(nomValues.get_x()));
+      }
       
       panzer::evaluateInitialCondition(fmb->getWorksets(), phx_ic_field_managers, loc, 0.0);
 
@@ -504,12 +520,6 @@ namespace panzer_stk {
       // fill STK mesh objects
       solnWriter->evaluateVolumeFieldManagers<panzer::Traits::Residual>(ae_inargs,*mpi_comm);
 
-      // Build Thyra Model Evaluator
-      thyra_me = Thyra::epetraModelEvaluator(ep_me,lowsFactory);
-    }
-    else {
-      thyra_me = Teuchos::rcp(new panzer::ModelEvaluator<double,int,int,Kokkos::DefaultNode::DefaultNodeType>
-                  (fmb,m_response_library,linObjFactory,p_names,lowsFactory,global_data,is_transient));
     }
    
     m_physics_me = thyra_me;
