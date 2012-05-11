@@ -54,7 +54,7 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.brain.gcc-4.6.1.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.brain.gcc-4.6.3.cmake")
 
 #
 # Set the options specific to this build case
@@ -63,7 +63,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.brain.gcc-4.6.1.cmake
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
 SET(BUILD_DIR_NAME CONTINUOUS_MPI_OPT_DEV)
-SET(COMPILER_VERSION "GCC-4.6.1")
+SET(COMPILER_VERSION "GCC-4.6.3")
 SET(CTEST_TEST_TYPE Continuous)
 
 #SET(CTEST_TEST_TIMEOUT 900)
@@ -81,14 +81,14 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_DATA_DIR:STRING=$ENV{TRILINOSDATADIRECTORY}"
   "-DTPL_ENABLE_Pthread:BOOL=ON"
   "-DNOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK=ON"
-  "-DMPI_BASE_DIR:PATH=$ENV{HOME}/tpls/gcc/4.6.1/openmpi/1.4.3"
-  "-DNetcdf_INCLUDE_DIRS=$ENV{HOME}/tpls/gcc/4.6.1/netcdf/4.1.3/include"
-  "-DNetcdf_LIBRARY_DIRS=$ENV{HOME}/tpls/gcc/4.6.1/netcdf/4.1.3/lib"
-  "-DBoost_INCLUDE_DIRS=$ENV{HOME}/tpls/gcc/4.6.1/boost/1.46.1/include"
+  "-DMPI_BASE_DIR:PATH=$ENV{HOME}/tpls/gcc/4.6.3/openmpi/1.4.3"
+  "-DNetcdf_INCLUDE_DIRS=$ENV{HOME}/tpls/gcc/4.6.3/netcdf/4.1.3/include"
+  "-DNetcdf_LIBRARY_DIRS=$ENV{HOME}/tpls/gcc/4.6.3/netcdf/4.1.3/lib"
+  "-DBoost_INCLUDE_DIRS=$ENV{HOME}/tpls/gcc/4.6.3/boost/1.46.1/include"
   )
 
 # Put MPI in the LD_LIBRARY_PATH for testing.
-SET(ENV{LD_LIBRARY_PATH} "$ENV{HOME}/tpls/gcc/4.6.1/openmpi/1.4.3/lib:$ENV{LD_LIBRARY_PATH}")
+SET(ENV{LD_LIBRARY_PATH} "$ENV{HOME}/tpls/gcc/4.6.3/openmpi/1.4.3/lib:$ENV{LD_LIBRARY_PATH}")
 
 #
 # Set the rest of the system-specific options and run the dashboard build/test
