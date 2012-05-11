@@ -46,7 +46,7 @@
 #include <Tpetra_ConfigDefs.hpp>
 #include <Tpetra_Distributor.hpp>
 #include <Tpetra_Map.hpp>
-#include <Tpetra_DirectoryImpl_def.hpp>
+#include <Tpetra_DirectoryImpl.hpp>
 
 #ifdef DOXYGEN_USE_ONLY
 #  include "Tpetra_Directory_decl.hpp"
