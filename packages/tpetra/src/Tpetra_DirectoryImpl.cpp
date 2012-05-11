@@ -62,6 +62,10 @@
 namespace Tpetra {
   namespace Details {
 
+#ifndef TPETRA_DIRECTORY_IMPL_INSTANT
+#  error "The TPETRA_DIRECTORY_IMPL_INSTANT macro didn't get defined!"
+#endif // TPETRA_DIRECTORY_IMPL_INSTANT
+
     TPETRA_DIRECTORY_IMPL_INSTANT(int,int,Kokkos::SerialNode)
 #if defined(HAVE_KOKKOS_TBB)
     TPETRA_DIRECTORY_IMPL_INSTANT(int,int,Kokkos::TBBNode)
