@@ -548,11 +548,10 @@ namespace Tpetra {
 //
 // Must be expanded from within the Tpetra::Details namespace!
 //
-#define TPETRA_DIRECTORY_IMPL_INSTANT(LO,GO,NODE) \
-  \
-  template class Directory< LO , GO , NODE >; \
-  template class ReplicatedDirectory< LO , GO , NODE >; \
-  template class DistributedContiguousDirectory< LO , GO , NODE >; \
-  template class DistributedNoncontiguousDirectory< LO , GO , NODE >; \
+#define TPETRA_DIRECTORY_IMPL_INSTANT(LO,GO,NODE)		      \
+  template<> class Directory< LO , GO , NODE >;			      \
+  template<> class ReplicatedDirectory< LO , GO , NODE >;	      \
+  template<> class DistributedContiguousDirectory< LO , GO , NODE >;  \
+  template<> class DistributedNoncontiguousDirectory< LO , GO , NODE >;
 
 #endif // __Tpetra_DirectoryImpl_def_hpp
