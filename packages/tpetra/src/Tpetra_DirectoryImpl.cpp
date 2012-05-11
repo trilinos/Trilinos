@@ -60,10 +60,11 @@
 #endif
 
 namespace Tpetra {
+  namespace Details {
 
-  TPETRA_DIRECTORY_IMPL_INSTANT(int,int,Kokkos::SerialNode)
+    TPETRA_DIRECTORY_IMPL_INSTANT(int,int,Kokkos::SerialNode)
 #if defined(HAVE_KOKKOS_TBB)
-  TPETRA_DIRECTORY_IMPL_INSTANT(int,int,Kokkos::TBBNode)
+    TPETRA_DIRECTORY_IMPL_INSTANT(int,int,Kokkos::TBBNode)
 #endif
 #if defined(HAVE_KOKKOS_THREADPOOL)
     TPETRA_DIRECTORY_IMPL_INSTANT(int,int,Kokkos::TPINode)
@@ -76,9 +77,9 @@ namespace Tpetra {
 #endif
 
 #ifdef HAVE_TPETRA_INST_INT_LONG
-  TPETRA_DIRECTORY_IMPL_INSTANT(int,long,Kokkos::SerialNode)
+    TPETRA_DIRECTORY_IMPL_INSTANT(int,long,Kokkos::SerialNode)
 #if defined(HAVE_KOKKOS_TBB)
-  TPETRA_DIRECTORY_IMPL_INSTANT(int,long,Kokkos::TBBNode)
+    TPETRA_DIRECTORY_IMPL_INSTANT(int,long,Kokkos::TBBNode)
 #endif
 #if defined(HAVE_KOKKOS_THREADPOOL)
     TPETRA_DIRECTORY_IMPL_INSTANT(int,long,Kokkos::TPINode)
@@ -91,6 +92,7 @@ namespace Tpetra {
 #endif
 #endif // <int,long>
 
+  } // namespace Details
 } // namespace Tpetra
 
 #endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
