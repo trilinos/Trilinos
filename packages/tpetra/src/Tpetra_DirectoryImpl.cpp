@@ -59,8 +59,6 @@
 #  include <Kokkos_ThrustGPUNode.hpp>
 #endif
 
-#include "Tpetra_Directory_def.hpp"
-
 namespace Tpetra {
 
   TPETRA_DIRECTORY_IMPL_INSTANT(int,int,Kokkos::SerialNode)
