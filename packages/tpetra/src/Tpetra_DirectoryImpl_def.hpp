@@ -553,6 +553,6 @@ namespace Tpetra {
   template class Directory< LO , GO , NODE >; \
   template class ReplicatedDirectory< LO , GO , NODE >; \
   template class DistributedContiguousDirectory< LO , GO , NODE >; \
-  template class DistributedNoncontiguousDirectory< LO , GO , NODE >;
+  template class DistributedNoncontiguousDirectory< LO , GO , NODE >; \
 
 #endif // __Tpetra_DirectoryImpl_def_hpp
