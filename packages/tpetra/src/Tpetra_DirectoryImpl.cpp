@@ -59,6 +59,8 @@
 #  include <Kokkos_ThrustGPUNode.hpp>
 #endif
 
+#include "Tpetra_DirectoryImpl_def.hpp"
+
 namespace Tpetra {
   namespace Details {
 
