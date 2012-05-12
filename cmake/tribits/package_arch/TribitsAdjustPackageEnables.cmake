@@ -660,8 +660,8 @@ MACRO(TRIBITS_READ_ALL_PACKAGE_DEPENDENCIES)
  
   ADVANCED_OPTION(${PROJECT_NAME}_DUMP_PACKAGE_DEPENDENCIES
     "Dump the package dependency information."
-    ${${PROJECT_NAME}_VERBOSE_CONFIGURE} )
-  
+    "${${PROJECT_NAME}_VERBOSE_CONFIGURE}" )
+
   IF (${PROJECT_NAME}_DUMP_PACKAGE_DEPENDENCIES)
     MESSAGE("")
     MESSAGE("Printing package dependencies ...")
@@ -1627,7 +1627,7 @@ ENDMACRO()
 # to the final set that will be used to enable packages
 #
 
-MACRO(TRIBITS_ADJUST_PACKAGE_ENABLES  DO_PROCESS_MPI_ENABLES)
+MACRO(TRIBITS_ADJUST_PACKAGE_ENABLES)
 
   IF (${PROJECT_NAME}_UNENABLE_ENABLED_PACKAGES)
     MESSAGE("")
@@ -1760,43 +1760,38 @@ MACRO(TRIBITS_ADJUST_PACKAGE_ENABLES  DO_PROCESS_MPI_ENABLES)
     TRIBITS_POSTPROCESS_OPTIONAL_PACKAGE_ENABLES(${TRIBITS_PACKAGE})
   ENDFOREACH()
 
-  ASSERT_DEFINED(DO_PROCESS_MPI_ENABLES)
-  IF (DO_PROCESS_MPI_ENABLES)
-
-    MESSAGE("")
-    MESSAGE("Enabling all remaining required TPLs for current set of"
-      " enabled packages ...")
-    MESSAGE("")
-    FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_SE_PACKAGES})
-      TRIBITS_ENABLE_REQUIRED_TPLS(${TRIBITS_PACKAGE})
-    ENDFOREACH()
+  MESSAGE("")
+  MESSAGE("Enabling all remaining required TPLs for current set of"
+    " enabled packages ...")
+  MESSAGE("")
+  FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_SE_PACKAGES})
+    TRIBITS_ENABLE_REQUIRED_TPLS(${TRIBITS_PACKAGE})
+  ENDFOREACH()
   
-    MESSAGE("")
-    MESSAGE("Enabling all optional package TPL support for currently"
-      " enabled TPLs ...")
-    MESSAGE("")
-    FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_SE_PACKAGES})
-      TRIBITS_POSTPROCESS_OPTIONAL_TPL_ENABLES(${TRIBITS_PACKAGE})
-    ENDFOREACH()
+  MESSAGE("")
+  MESSAGE("Enabling all optional package TPL support for currently"
+    " enabled TPLs ...")
+  MESSAGE("")
+  FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_SE_PACKAGES})
+    TRIBITS_POSTPROCESS_OPTIONAL_TPL_ENABLES(${TRIBITS_PACKAGE})
+  ENDFOREACH()
   
-    MESSAGE("")
-    MESSAGE("Enabling TPLs based on <TRIBITS_PACKAGE>_ENABLE_<TPL>=ON if TPL is not explicitly disabled ...")
-    MESSAGE("")
-    FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_SE_PACKAGES})
-      TRIBITS_ENABLE_OPTIONAL_TPLS(${TRIBITS_PACKAGE})
-    ENDFOREACH()
-    # NOTE: We need to do this after the above optional package TPL support
-    # logic so that the TPL will be turned on for this package only as requested
-    # in bug 4298.
+  MESSAGE("")
+  MESSAGE("Enabling TPLs based on <TRIBITS_PACKAGE>_ENABLE_<TPL>=ON if TPL is not explicitly disabled ...")
+  MESSAGE("")
+  FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_SE_PACKAGES})
+    TRIBITS_ENABLE_OPTIONAL_TPLS(${TRIBITS_PACKAGE})
+  ENDFOREACH()
+  # NOTE: We need to do this after the above optional package TPL support
+  # logic so that the TPL will be turned on for this package only as requested
+  # in bug 4298.
 
-    MESSAGE("")
-    MESSAGE("Set cache entries for optional packages/TPLs and tests/examples for packages actually enabled ...")
-    MESSAGE("")
-    FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_SE_PACKAGES})
-      TRIBITS_ADD_OPTIONAL_PACKAGE_ENABLES(${TRIBITS_PACKAGE})
-    ENDFOREACH()
-
-  ENDIF()
+  MESSAGE("")
+  MESSAGE("Set cache entries for optional packages/TPLs and tests/examples for packages actually enabled ...")
+  MESSAGE("")
+  FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_SE_PACKAGES})
+    TRIBITS_ADD_OPTIONAL_PACKAGE_ENABLES(${TRIBITS_PACKAGE})
+  ENDFOREACH()
   
   MESSAGE("")
   MESSAGE("Enabling all packages not yet enabled that have at least one subpackage enabled ...")

@@ -57,6 +57,7 @@
 INCLUDE(TribitsConstants)
 INCLUDE(TribitsProcessExtraExternalRepositoriesLists)
 INCLUDE(TribitsProcessPackagesAndDirsLists)
+INCLUDE(TribitsProcessTplsLists)
 INCLUDE(TribitsAdjustPackageEnables)
 INCLUDE(TribitsSetupMPI)
 INCLUDE(TribitsTestCategories)
@@ -511,156 +512,6 @@ MACRO(TRIBITS_REPOSITORY_DEFINE_PACKAGING_RUNNER  REPO_NAME)
     # Set back the callback macros to empty to ensure that nonone calls them
     CREATE_EMPTY_TRIBITS_REPOSITORY_DEFINE_PACKAGING()
   ENDIF()
-ENDMACRO()
-
-
-#
-# Macro that processes the list of TPLs
-#
-
-MACRO(TRIBITS_PROCESS_TPLS_LISTS  REPOSITORY_NAME  REPOSITORY_DIR)
-
-  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE("TRIBITS_PROCESS_TPLS_LISTS:  '${REPOSITORY_NAME}'  '${REPOSITORY_DIR}'")
-  ENDIF()
-
-  #SET(TRIBITS_PROCESS_TPLS_LISTS_DEBUG ON)
-  SET(TRIBITS_PROCESS_TPLS_LISTS_DEBUG OFF)
-
-  SET(TPL_NAME_OFFSET 0)
-  SET(TPL_FINDMOD_OFFSET 1)
-  SET(TPL_CLASSIFICATION_OFFSET 2)
-  SET(TPL_NUM_COLUMNS 3)
-
-  LIST(LENGTH ${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS
-    ${REPOSITORY_NAME}_CURR_NUM_TPLS_FULL)
-  MATH(EXPR ${REPOSITORY_NAME}_CURR_NUM_TPLS
-    "${${REPOSITORY_NAME}_CURR_NUM_TPLS_FULL}/${TPL_NUM_COLUMNS}")
-
-  IF (${REPOSITORY_NAME}_CURR_NUM_TPLS GREATER 0)
-
-    MATH(EXPR ${REPOSITORY_NAME}_LAST_TPL_IDX
-      "${${REPOSITORY_NAME}_CURR_NUM_TPLS}-1")
-  
-    FOREACH(TPL_IDX RANGE ${${REPOSITORY_NAME}_LAST_TPL_IDX})
-
-      IF (TRIBITS_PROCESS_TPLS_LISTS_DEBUG)
-        PRINT_VAR(TPL_IDX)
-      ENDIF()
- 
-      # Get fields for this TPL
-  
-      MATH(EXPR TPL_NAME_IDX
-        "${TPL_IDX}*${TPL_NUM_COLUMNS}+${TPL_NAME_OFFSET}")
-      LIST(GET ${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS ${TPL_NAME_IDX}
-        TPL_NAME)
-      IF (TRIBITS_PROCESS_TPLS_LISTS_DEBUG)
-        PRINT_VAR(TPL_NAME)
-      ENDIF()
-  
-      MATH(EXPR TPL_FINDMOD_IDX
-        "${TPL_IDX}*${TPL_NUM_COLUMNS}+${TPL_FINDMOD_OFFSET}")
-      LIST(GET ${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS ${TPL_FINDMOD_IDX}
-        TPL_FINDMOD)
-      IF (TRIBITS_PROCESS_TPLS_LISTS_DEBUG)
-        PRINT_VAR(TPL_FINDMOD)
-      ENDIF()
-  
-      MATH(EXPR TPL_CLASSIFICATION_IDX
-        "${TPL_IDX}*${TPL_NUM_COLUMNS}+${TPL_CLASSIFICATION_OFFSET}")
-      LIST(GET ${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS ${TPL_CLASSIFICATION_IDX}
-        TPL_CLASSIFICATION)
-      IF (TRIBITS_PROCESS_TPLS_LISTS_DEBUG)
-        PRINT_VAR(TPL_CLASSIFICATION)
-      ENDIF()
-  
-      # Update TPLS list
-  
-      LIST(APPEND ${PROJECT_NAME}_TPLS ${TPL_NAME})
-  
-      # Set ${TPL_NAME}_CLASSIFICATION
-  
-      IF (TPL_CLASSIFICATION STREQUAL PS
-        OR TPL_CLASSIFICATION STREQUAL SS
-        OR TPL_CLASSIFICATION STREQUAL TS
-        OR TPL_CLASSIFICATION STREQUAL EX
-        )
-      ELSE()
-        MESSAGE(FATAL_ERROR "Error the TPL classification '${TPL_CLASSIFICATION}'"
-          " for the TPL ${TPL_NAME} is not a valid classification." )
-      ENDIF()
-  
-      IF (NOT ${TPL_NAME}_CLASSIFICATION) # Allow for testing override
-        SET(${TPL_NAME}_CLASSIFICATION ${TPL_CLASSIFICATION})
-      ENDIF()
-  
-      # Set ${TPL_NAME}_FINDMOD
-
-      #PRINT_VAR(REPOSITORY_DIR)
-
-      IF ("${REPOSITORY_DIR}" STREQUAL "." OR IS_ABSOLUTE ${TPL_FINDMOD})
-        SET(REPOSITORY_DIR_AND_SEP "")
-      ELSE()
-        SET(REPOSITORY_DIR_AND_SEP "${REPOSITORY_DIR}/")
-      ENDIF()
-      #PRINT_VAR(REPOSITORY_DIR_AND_SEP)
-
-      SET(TPL_FINDMOD "${REPOSITORY_DIR_AND_SEP}${TPL_FINDMOD}")
-      #PRINT_VAR(TPL_FINDMOD)
-
-      SET(TPL_FINDMOD_STD_NAME "FindTPL${TPL_NAME}.cmake")
-
-      IF (TPL_FINDMOD)
-        STRING(REGEX MATCH ".+/$" FINDMOD_IS_DIR "${TPL_FINDMOD}")
-        #PRINT_VAR(FINDMOD_IS_DIR)
-        IF (FINDMOD_IS_DIR)
-          SET(${TPL_NAME}_FINDMOD "${TPL_FINDMOD}${TPL_FINDMOD_STD_NAME}")
-        ELSE()
-          SET(${TPL_NAME}_FINDMOD ${TPL_FINDMOD})
-        ENDIF()
-      ELSE()
-        SET(${TPL_NAME}_FINDMOD ${TPL_FINDMOD_STD_NAME})
-      ENDIF()
-
-      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        PRINT_VAR(${TPL_NAME}_FINDMOD)
-      ENDIF()
-  
-      # Set the enable cache variable for ${TPL_NAME}
-  
-      MULTILINE_SET(DOCSTR
-        "Enable support for the TPL ${TPL_NAME} in all supported ${PROJECT_NAME} packages."
-        "  This can be set to 'ON', 'OFF', or left empty ''."
-        )
-      SET_CACHE_ON_OFF_EMPTY( TPL_ENABLE_${TPL_NAME} "" ${DOCSTR} )
-  
-      # 2008/11/25: rabartl: Above, we use the prefix TPL_ instead of
-      # ${PROJECT_NAME}_ in order to make it clear that external TPLs are
-      # different from packages so users don't get confused and
-      # think that the project actually includes some TPL when it does not!
-  
-    ENDFOREACH()
-
-  ENDIF()
-  
-  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    PRINT_VAR(${PROJECT_NAME}_TPLS)
-  ENDIF()
-
-  # Get the final length
-
-  LIST(LENGTH ${PROJECT_NAME}_TPLS ${PROJECT_NAME}_NUM_TPLS)
-  PRINT_VAR(${PROJECT_NAME}_NUM_TPLS)
-  
-  # Create a reverse list for later use
-  
-  IF (${PROJECT_NAME}_TPLS)
-    SET(${PROJECT_NAME}_REVERSE_TPLS ${${PROJECT_NAME}_TPLS})
-    LIST(REVERSE ${PROJECT_NAME}_REVERSE_TPLS)
-  ELSE()
-    SET(${PROJECT_NAME}_REVERSE_TPLS)
-  ENDIF()
-
 ENDMACRO()
 
 
@@ -1157,8 +1008,7 @@ MACRO(TRIBITS_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES)
   TRIBITS_PRINT_ENABLED_TPL_LIST(
     "\nExplicitly disabled TPLs on input (by user or by default)" OFF FALSE)
 
-  SET(DO_PROCESS_MPI_ENABLES ON) # Should not be needed but CMake is not working!
-  TRIBITS_ADJUST_PACKAGE_ENABLES(TRUE)
+  TRIBITS_ADJUST_PACKAGE_ENABLES()
 
   TRIBITS_PRINT_ENABLED_PACKAGE_LIST(
     "\nFinal set of enabled packages" ON FALSE)
