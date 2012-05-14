@@ -202,6 +202,13 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
 }
 
 template <typename Traits,typename LocalOrdinalT>
+Teuchos::MpiComm<int> SGEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+getComm() const
+{
+   return epetraFact_->getComm();
+}
+
+template <typename Traits,typename LocalOrdinalT>
 void SGEpetraLinearObjFactory<Traits,LocalOrdinalT>
 ::initializeContainer(int mem,LinearObjContainer & loc) const
 {

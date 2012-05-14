@@ -198,20 +198,20 @@ TEUCHOS_UNIT_TEST(tSGEpetraLinearObjFactory, initializeContainer)
    // make sure all "sub-containers" are epetra containers
    panzer::SGEpetraLinearObjContainer::const_iterator itr;
    for(itr=sgContainer->begin();itr!=sgContainer->end();++itr) {
-      TEST_ASSERT((*itr)->x!=Teuchos::null);
-      TEST_ASSERT((*itr)->dxdt!=Teuchos::null);
-      TEST_EQUALITY((*itr)->f,Teuchos::null);
-      TEST_EQUALITY((*itr)->A,Teuchos::null);
-      TEST_EQUALITY((*itr)->x->MyLength(),(int) ownedIndices.size());
-      TEST_EQUALITY((*itr)->dxdt->MyLength(),(int) ownedIndices.size());
+      TEST_ASSERT((*itr)->get_x()!=Teuchos::null);
+      TEST_ASSERT((*itr)->get_dxdt()!=Teuchos::null);
+      TEST_EQUALITY((*itr)->get_f(),Teuchos::null);
+      TEST_EQUALITY((*itr)->get_A(),Teuchos::null);
+      TEST_EQUALITY((*itr)->get_x()->MyLength(),(int) ownedIndices.size());
+      TEST_EQUALITY((*itr)->get_dxdt()->MyLength(),(int) ownedIndices.size());
    }
    for(itr=sgGhostedContainer->begin();itr!=sgGhostedContainer->end();++itr) {
-      TEST_ASSERT((*itr)->x!=Teuchos::null);
-      TEST_ASSERT((*itr)->dxdt!=Teuchos::null);
-      TEST_EQUALITY((*itr)->f,Teuchos::null);
-      TEST_EQUALITY((*itr)->A,Teuchos::null);
-      TEST_EQUALITY((*itr)->x->MyLength(),(int) ownedAndSharedIndices.size());
-      TEST_EQUALITY((*itr)->dxdt->MyLength(),(int) ownedAndSharedIndices.size());
+      TEST_ASSERT((*itr)->get_x()!=Teuchos::null);
+      TEST_ASSERT((*itr)->get_dxdt()!=Teuchos::null);
+      TEST_EQUALITY((*itr)->get_f(),Teuchos::null);
+      TEST_EQUALITY((*itr)->get_A(),Teuchos::null);
+      TEST_EQUALITY((*itr)->get_x()->MyLength(),(int) ownedAndSharedIndices.size());
+      TEST_EQUALITY((*itr)->get_dxdt()->MyLength(),(int) ownedAndSharedIndices.size());
    }
 
    la_factory->initializeContainer(ELOC::Mat | ELOC::F,*container);
@@ -219,20 +219,20 @@ TEUCHOS_UNIT_TEST(tSGEpetraLinearObjFactory, initializeContainer)
 
    // make sure all "sub-containers" are epetra containers
    for(itr=sgContainer->begin();itr!=sgContainer->end();++itr) {
-      TEST_ASSERT((*itr)->f!=Teuchos::null);
-      TEST_ASSERT((*itr)->A!=Teuchos::null);
-      TEST_EQUALITY((*itr)->x,Teuchos::null);
-      TEST_EQUALITY((*itr)->dxdt,Teuchos::null);
-      TEST_EQUALITY((*itr)->f->MyLength(),(int) ownedIndices.size());
-      TEST_EQUALITY((*itr)->A->NumMyRows(),(int) ownedIndices.size());
+      TEST_ASSERT((*itr)->get_f()!=Teuchos::null);
+      TEST_ASSERT((*itr)->get_A()!=Teuchos::null);
+      TEST_EQUALITY((*itr)->get_x(),Teuchos::null);
+      TEST_EQUALITY((*itr)->get_dxdt(),Teuchos::null);
+      TEST_EQUALITY((*itr)->get_f()->MyLength(),(int) ownedIndices.size());
+      TEST_EQUALITY((*itr)->get_A()->NumMyRows(),(int) ownedIndices.size());
    }
    for(itr=sgGhostedContainer->begin();itr!=sgGhostedContainer->end();++itr) {
-      TEST_ASSERT((*itr)->f!=Teuchos::null);
-      TEST_ASSERT((*itr)->A!=Teuchos::null);
-      TEST_EQUALITY((*itr)->x,Teuchos::null);
-      TEST_EQUALITY((*itr)->dxdt,Teuchos::null);
-      TEST_EQUALITY((*itr)->f->MyLength(),(int) ownedAndSharedIndices.size());
-      TEST_EQUALITY((*itr)->A->NumMyRows(),(int) ownedAndSharedIndices.size());
+      TEST_ASSERT((*itr)->get_f()!=Teuchos::null);
+      TEST_ASSERT((*itr)->get_A()!=Teuchos::null);
+      TEST_EQUALITY((*itr)->get_x(),Teuchos::null);
+      TEST_EQUALITY((*itr)->get_dxdt(),Teuchos::null);
+      TEST_EQUALITY((*itr)->get_f()->MyLength(),(int) ownedAndSharedIndices.size());
+      TEST_EQUALITY((*itr)->get_A()->NumMyRows(),(int) ownedAndSharedIndices.size());
    }
 
 }
