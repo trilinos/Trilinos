@@ -45,6 +45,10 @@
 #include "Teuchos_TableColumn.hpp"
 #include "Teuchos_TableFormat.hpp"
 #include <functional>
+#ifdef HAVE_TEUCHOS_YAML_CPP
+#  include <yaml-cpp/yaml.h>
+#endif // HAVE_TEUCHOS_YAML_CPP
+
 
 namespace Teuchos {
   /**
@@ -935,11 +939,11 @@ namespace Teuchos {
 
   void TimeMonitor::
   summarizeToYaml (Ptr<const Comm<int> > comm,
-                   std::ostream &out=std::cout,
-                   const bool alwaysWriteLocal=false,
-                   const bool writeGlobalStats=true,
-                   const bool writeZeroTimers=true,
-                   const ECounterSetOp setOp=Intersection)
+                   std::ostream &out,
+                   const bool alwaysWriteLocal,
+                   const bool writeGlobalStats,
+                   const bool writeZeroTimers,
+                   const ECounterSetOp setOp)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
       "summarizeToYaml not yet implemented");
@@ -947,14 +951,19 @@ namespace Teuchos {
 
 
   void TimeMonitor::
-  summarizeToYaml (std::ostream &out=std::cout,
-                   const bool alwaysWriteLocal=false,
-                   const bool writeGlobalStats=true,
-                   const bool writeZeroTimers=true,
-                   const ECounterSetOp setOp=Intersection)
+  summarizeToYaml (std::ostream &out,
+                   const bool alwaysWriteLocal,
+                   const bool writeGlobalStats,
+                   const bool writeZeroTimers,
+                   const ECounterSetOp setOp)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-      "summarizeToYaml not yet implemented");
+    // The default communicator.  If Trilinos was built with MPI
+    // enabled, this should be MPI_COMM_WORLD.  Otherwise, this should
+    // be a "serial" (no MPI, one "process") communicator.
+    RCP<const Comm<int> > comm = getDefaultComm();
+
+    summarizeToYaml (comm.ptr(), out, alwaysWriteLocal,
+                     writeGlobalStats, writeZeroTimers, setOp);
   }
 
 } // namespace Teuchos
