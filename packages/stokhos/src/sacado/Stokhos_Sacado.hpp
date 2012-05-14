@@ -44,5 +44,6 @@
 #include "Sacado_ETPCE_OrthogPoly.hpp"
 #include "Sacado_ETV_Vector.hpp"
 #include "Sacado_ETV_Vector2.hpp"
+#include "Sacado_MP_Vector.hpp"
 
 #endif // STOKHOS_SACADO_HPP 

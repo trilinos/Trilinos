@@ -236,6 +236,7 @@ SET(SOURCES ${SOURCES}
 # Sacado
 IF (Stokhos_ENABLE_Sacado)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos)
   SET(HEADERS ${HEADERS}
     sacado/Stokhos_Sacado.hpp
     sacado/Stokhos_Sacado_MathFunctions.hpp
@@ -255,6 +256,10 @@ IF (Stokhos_ENABLE_Sacado)
     sacado/Sacado_ETV_Vector2.hpp
     sacado/Sacado_ETV_Vector2Imp.hpp
     sacado/Sacado_ETV_Vector2Traits.hpp
+    sacado/kokkos/Sacado_MP_Vector.hpp
+    sacado/kokkos/Sacado_MP_VectorImp.hpp
+    sacado/kokkos/Sacado_MP_VectorOps.hpp
+    sacado/kokkos/Sacado_MP_VectorTraits.hpp
     )
   SET(SOURCES ${SOURCES}
     sacado/Sacado_PCE_OrthogPoly.cpp

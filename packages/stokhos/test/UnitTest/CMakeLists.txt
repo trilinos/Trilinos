@@ -237,6 +237,14 @@ IF(Stokhos_ENABLE_Sacado)
     )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SacadoMPVectorUnitTest
+    SOURCES Stokhos_SacadoMPVectorUnitTest.cpp
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     SacadoPCESerializationTests
     SOURCES Stokhos_SacadoPCESerializationTests.cpp ${UTILS_SOURCES}
     ARGS 
@@ -266,6 +274,24 @@ IF(Stokhos_ENABLE_Sacado)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     SacadoVectorCommTests
     SOURCES Stokhos_SacadoVectorCommTests.cpp ${UTILS_SOURCES}
+    ARGS 
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SacadoMPVectorSerializationTests
+    SOURCES Stokhos_SacadoMPVectorSerializationTests.cpp ${UTILS_SOURCES}
+    ARGS 
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SacadoMPVectorCommTests
+    SOURCES Stokhos_SacadoMPVectorCommTests.cpp ${UTILS_SOURCES}
     ARGS 
     COMM serial mpi
     NUM_MPI_PROCS 1
