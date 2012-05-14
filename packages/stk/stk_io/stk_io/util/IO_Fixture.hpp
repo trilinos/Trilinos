@@ -100,7 +100,7 @@ class IO_Fixture
     return m_mesh_data;
   }
 
-coord_field_type & get_coordinate_field()
+  coord_field_type & get_coordinate_field()
   {
     coord_field_type * coord_field = meta_data().get_field<coord_field_type>("coordinates");
     ThrowRequire( coord_field != NULL);

@@ -59,10 +59,10 @@ void IO_Fixture::create_output_mesh(
   }
 
   // NOTE: 'm_ioss_output_region' owns 'dbo' pointer at this time
-  const std::string name = std::string("results_output_")+base_exodus_filename; 
+  const std::string name = std::string("results_output_")+base_exodus_filename;
   m_ioss_output_region = Teuchos::rcp(new Ioss::Region(dbo, name));
   m_mesh_data.m_output_region = m_ioss_output_region.get();
-  
+
   /* Given the newly created Ioss::Region 'm_ioss_output_region', define the
    * model corresponding to the stk::mesh 'bulk_data'.  If the
    * optional 'input_region' is passed as an argument, then

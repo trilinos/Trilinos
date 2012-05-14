@@ -551,7 +551,7 @@ namespace stk {
 			    MeshData &mesh_data)
     {
       Ioss::Region *out_region = NULL;
-    
+
       std::string out_filename = filename;
       if (filename.empty()) {
 	out_filename = "default_output_mesh";
@@ -662,7 +662,7 @@ namespace stk {
 	Ioss::NodeBlock *nb = node_blocks[0];
 	internal_process_input_request(nb, fem_meta.node_rank(), bulk);
       }
-      
+
       void input_elementblock_fields(Ioss::Region &region, stk::mesh::BulkData &bulk)
       {
 	const stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(bulk);
@@ -673,7 +673,7 @@ namespace stk {
 	  }
 	}
       }
-      
+
       void input_nodeset_fields(Ioss::Region &region, stk::mesh::BulkData &bulk)
       {
 	const stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(bulk);
@@ -684,13 +684,13 @@ namespace stk {
 	  }
 	}
       }
-      
+
       void input_sideset_fields(Ioss::Region &region, stk::mesh::BulkData &bulk)
       {
 	const stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(bulk);
 	if (fem_meta.spatial_dimension() <= fem_meta.side_rank())
 	  return;
-  
+
 	const Ioss::SideSetContainer& side_sets = region.get_sidesets();
 	for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
 	    it != side_sets.end(); ++it) {
@@ -715,7 +715,7 @@ namespace stk {
 	stk::io::define_io_fields(nb, Ioss::Field::TRANSIENT,
 				  fem_meta.universal_part(), fem_meta.node_rank());
       }
-      
+
       void define_input_elementblock_fields(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta)
       {
 	const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
@@ -728,7 +728,7 @@ namespace stk {
 	  }
 	}
       }
-      
+
       void define_input_nodeset_fields(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta)
       {
 	const Ioss::NodeSetContainer& nodesets = region.get_nodesets();
@@ -741,12 +741,12 @@ namespace stk {
 	  }
 	}
       }
-      
+
       void define_input_sideset_fields(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta)
       {
 	if (fem_meta.spatial_dimension() <= fem_meta.side_rank())
 	  return;
-  
+
 	const Ioss::SideSetContainer& side_sets = region.get_sidesets();
 	for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
 	    it != side_sets.end(); ++it) {
@@ -766,7 +766,7 @@ namespace stk {
       }
 
     }
-    
+
     // ========================================================================
     // Iterate over all Ioss entities in the input mesh database and
     // define a stk_field for all transient fields found.  The stk
@@ -864,7 +864,7 @@ namespace stk {
     {
       if (step <= 0)
 	return;
-	
+
       Ioss::Region *region = mesh_data.m_input_region;
       if (region) {
 	bulk.modification_begin();
@@ -889,7 +889,7 @@ namespace stk {
     // ========================================================================
     template <typename INT>
     void get_element_block_sizes(MeshData &mesh_data,
-                                 std::vector<INT>& el_blocks) 
+                                 std::vector<INT>& el_blocks)
     {
       Ioss::Region *io = mesh_data.m_input_region;
       const Ioss::ElementBlockContainer& elem_blocks = io->get_element_blocks();

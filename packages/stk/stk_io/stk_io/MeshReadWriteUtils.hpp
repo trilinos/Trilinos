@@ -128,7 +128,7 @@ namespace stk {
      *
      */
     void define_input_fields(MeshData &mesh_data, stk::mesh::fem::FEMMetaData &meta_data);
-    
+
     /**
      * For all transient input fields defined either manually or via
      * the define_input_fields() function, read the data at the
@@ -188,7 +188,7 @@ namespace stk {
      * corresponding database field. The database field will have the
      * same name as the stk field.  A transient field will be defined
      * if the stk::io::is_valid_part_field() returns true.  This can
-     * be set via a call to stk::io::set_field_role(). 
+     * be set via a call to stk::io::set_field_role().
      *
      * If the 'add_all_fields' param is true, then all transient
      * stk fields will have a corresponding database field defined.
@@ -196,7 +196,7 @@ namespace stk {
     void define_output_fields(const MeshData &mesh_data,
 			      const stk::mesh::fem::FEMMetaData &fem_meta,
 			      bool add_all_fields = false);
-    
+
     /**
      * Add a transient step to the mesh database at time 'time' and
      * output the data for all defined fields to the database.
