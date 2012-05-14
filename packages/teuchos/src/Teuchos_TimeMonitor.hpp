@@ -91,7 +91,7 @@
  *
  * Note that the name of the timer can be formated with stream inserts.
  * For example, we can define a time monitor for a function as follows:
- 
+
  \code
 
  template<typename Scalar>
@@ -112,7 +112,7 @@
  Teuchos::TimeMonitor::summarize(std::cout);
 
  \endcode
- 
+
 */
 #define TEUCHOS_FUNC_TIME_MONITOR( FUNCNAME ) \
   TEUCHOS_FUNC_TIME_MONITOR_DIFF( FUNCNAME, main )
@@ -165,7 +165,7 @@ public:
 
   /** \name Constructor/Destructor */
   //@{
- 
+
   /// \brief Constructor: starts the timer.
   ///
   /// \param timer [in/out] Reference to the timer to be wrapped.
@@ -175,7 +175,7 @@ public:
   /// \param reset [in] If true, reset the timer before starting it.
   ///   Default behavior is not to reset the timer.
   TimeMonitor (Time& timer, bool reset=false);
-  
+
   //! Destructor: stops the timer.
   ~TimeMonitor();
   //@}
@@ -259,7 +259,7 @@ public:
   /// the sum of the call counts over all processes for that timing.
   /// (We compute it a bit differently to help prevent overflow.)  The
   /// "MeanOverCallCounts" is <i>not</i> comparable with the min, max,
-  /// or "MeanOverProcs".  
+  /// or "MeanOverProcs".
   ///
   /// We report with both versions of the mean timing the mean call
   /// count over processes.  This may be fractional, which is one
@@ -305,9 +305,9 @@ public:
   ///   in the communicator.
   static void
   computeGlobalTimerStatistics (stat_map_type& statData,
-				std::vector<std::string>& statNames,
-				Ptr<const Comm<int> > comm,
-				const ECounterSetOp setOp=Intersection);
+                                std::vector<std::string>& statNames,
+                                Ptr<const Comm<int> > comm,
+                                const ECounterSetOp setOp=Intersection);
 
   /// \brief Compute global timer statistics for all timers on all (MPI) processes.
   ///
@@ -316,7 +316,7 @@ public:
   /// not want to provide a communicator explicitly.  This method
   /// "does the right thing" in that case.  Specifically:
   /// - If Trilinos was not built with MPI support, this method
-  ///   assumes a serial "communicator" containing one process.  
+  ///   assumes a serial "communicator" containing one process.
   /// - If Trilinos was built with MPI support and MPI has been
   ///   initialized (via \c MPI_Init() or one of the wrappers in
   ///   Epetra or Teuchos), this method uses MPI_COMM_WORLD as the
@@ -339,8 +339,8 @@ public:
   ///   takes a communicator as an input argument.
   static void
   computeGlobalTimerStatistics (stat_map_type& statData,
-				std::vector<std::string>& statNames,
-				const ECounterSetOp setOp=Intersection);
+                                std::vector<std::string>& statNames,
+                                const ECounterSetOp setOp=Intersection);
 
   /// \brief Print summary statistics for all timers on the given communicator.
   ///
@@ -400,13 +400,13 @@ public:
   ///   called as a collective by all processes in the communicator.
   ///   This method will <i>only</i> perform communication if \c
   ///   writeGlobalStats is true.
-  static void 
+  static void
   summarize (Ptr<const Comm<int> > comm,
-             std::ostream &out=std::cout, 
-	     const bool alwaysWriteLocal=false,
-	     const bool writeGlobalStats=true,
-	     const bool writeZeroTimers=true,
-	     const ECounterSetOp setOp=Intersection);
+             std::ostream &out=std::cout,
+             const bool alwaysWriteLocal=false,
+             const bool writeGlobalStats=true,
+             const bool writeZeroTimers=true,
+             const ECounterSetOp setOp=Intersection);
 
   /// \brief Print summary statistics for all timers on all (MPI) processes.
   ///
@@ -424,12 +424,37 @@ public:
   ///   want to use \c summarize() on a subcommunicator, please use
   ///   the overloaded version above that takes a communicator as an
   ///   input argument.
-  static void 
-  summarize (std::ostream& out=std::cout, 
-	     const bool alwaysWriteLocal=false,
-	     const bool writeGlobalStats=true,
-	     const bool writeZeroTimers=true,
-	     const ECounterSetOp setOp=Intersection);
+  static void
+  summarize (std::ostream& out=std::cout,
+             const bool alwaysWriteLocal=false,
+             const bool writeGlobalStats=true,
+             const bool writeZeroTimers=true,
+             const ECounterSetOp setOp=Intersection);
+
+  /// \brief Just like summarize(), but with YAML-format output.
+  ///
+  /// <a href="yaml.org">YAML</a> stands for Yet Another Markup
+  /// Language.  It is a standard format for human-readable,
+  /// machine-parseable, hierarchically organized data.
+  static void
+  summarizeToYaml (Ptr<const Comm<int> > comm,
+                   std::ostream &out=std::cout,
+                   const bool alwaysWriteLocal=false,
+                   const bool writeGlobalStats=true,
+                   const bool writeZeroTimers=true,
+                   const ECounterSetOp setOp=Intersection);
+
+  /// \brief Just like summarize(), but with YAML-format output.
+  ///
+  /// <a href="yaml.org">YAML</a> stands for Yet Another Markup
+  /// Language.  It is a standard format for human-readable,
+  /// machine-parseable, hierarchically organized data.
+  static void
+  summarizeToYaml (std::ostream &out=std::cout,
+                   const bool alwaysWriteLocal=false,
+                   const bool writeGlobalStats=true,
+                   const bool writeZeroTimers=true,
+                   const ECounterSetOp setOp=Intersection);
   //@}
 
 };
