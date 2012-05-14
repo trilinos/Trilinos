@@ -937,33 +937,77 @@ namespace Teuchos {
   }
 
 
+#ifdef HAVE_TEUCHOS_YAML_CPP
   void TimeMonitor::
-  summarizeToYaml (Ptr<const Comm<int> > comm,
-                   std::ostream &out,
-                   const bool alwaysWriteLocal,
-                   const bool writeGlobalStats,
-                   const bool writeZeroTimers,
-                   const ECounterSetOp setOp)
+  summarizeToYaml (Ptr<const Comm<int> > comm, std::ostream &out)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-      "summarizeToYaml not yet implemented");
+    // const bool writeGlobalStats = true;
+    // const bool writeZeroTimers = true;
+    // const bool alwaysWriteLocal = false;
+    const ECounterSetOp setOp = Intersection;
+
+    stat_map_type statData;
+    std::vector<std::string> statNames;
+    computeGlobalTimerStatistics (statData, statNames, setOp);
+
+    const int numProcs = comm->getSize();
+    const int myRank = comm->getRank();
+
+    if (myRank == 0) {
+      YAML::Emitter emi;
+      emi << YAML::BeginDoc; // Begin YAML output
+      emi << "Teuchos::TimeMonitor timing results";
+      emi << YAML::BeginMap // Begin timing results map
+          << YAML::Key << "Number of processes"
+          << YAML::Value << numProcs
+          << YAML::Key << "Global timer statistics"
+          << YAML::Value;
+      // For each timer name, print all its statistics.
+      emi << YAML::BeginMap; // Begin timer names
+      for (stat_map_type::const_iterator statDataIter = statData.begin();
+           statDataIter != statData.end(); ++statDataIter) {
+        // Key: Timer's name
+        emi << YAML::Key << statDataIter->first;
+        // Value: The timer's statistics, as a map.
+        emi << YAML::Value << YAML::BeginMap; // Begin current timer's statistics
+        for (std::vector<std::string>::size_type statInd = 0;
+             statInd < statNames.size (); ++statInd) {
+          // Key: current statistic's name.
+          emi << YAML::Key << statNames[statInd]
+              << YAML::Value;
+          // Value is a map: "Time (s)" => time in seconds for current
+          // statistic, "Call count" => call count for current statistic.
+          const double curTime = (statDataIter->second)[statInd].first;
+          const double curCallCount = (statDataIter->second)[statInd].second;
+          emi << YAML::BeginMap
+              << YAML::Key << "Time (s)"
+              << YAML::Value << curTime
+              << YAML::Key << "Call count"
+              << YAML::Value << curCallCount
+              << YAML::EndMap;
+        }
+        emi << YAML::EndMap; // End current timer's statistics
+      }
+      emi << YAML::EndMap; // End timer names
+      emi << YAML::EndMap; // End timing results map
+      emi << YAML::EndDoc; // End YAML output
+
+      // Write YAML output to the given output stream.
+      out << emi.c_str ();
+    }
   }
 
 
   void TimeMonitor::
-  summarizeToYaml (std::ostream &out,
-                   const bool alwaysWriteLocal,
-                   const bool writeGlobalStats,
-                   const bool writeZeroTimers,
-                   const ECounterSetOp setOp)
+  summarizeToYaml (std::ostream &out)
   {
     // The default communicator.  If Trilinos was built with MPI
     // enabled, this should be MPI_COMM_WORLD.  Otherwise, this should
     // be a "serial" (no MPI, one "process") communicator.
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Comm<int> > comm = getDefaultComm ();
 
-    summarizeToYaml (comm.ptr(), out, alwaysWriteLocal,
-                     writeGlobalStats, writeZeroTimers, setOp);
+    summarizeToYaml (comm.ptr (), out);
   }
+#endif // HAVE_TEUCHOS_YAML_CPP
 
 } // namespace Teuchos

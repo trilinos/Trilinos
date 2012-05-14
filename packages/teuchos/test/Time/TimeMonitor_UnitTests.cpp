@@ -61,22 +61,23 @@ namespace {
     }
   }
 
-
   // Slowly compute the n-th Fibonacci number.  This gives timers
-  // something to time.  Be careful not to make n too large, or
-  // you'll run out of stack space.
-  int 
-  fib (const int n) 
+  // something to time.  Be careful not to make n too large, or you'll
+  // run out of stack space.
+  int
+  fib (const int n)
   {
-    if (n <= 0)
+    if (n <= 0) {
       return 0;
-    else if (n == 1)
+    } else if (n == 1) {
       return 1;
-    else
-      // You should never compute the n-th Fibonacci number like
-      // this.  This is exponentially slow in n.  The point of using
-      // a slow algorithm like this is to exercise timers.
-      return fib(n-1) + fib(n-2);
+    }
+    else {
+      // You should never compute the n-th Fibonacci number like this.
+      // This is exponentially slow in n.  The point of using a slow
+      // algorithm like this is to exercise timers.
+      return fib (n-1) + fib (n-2);
+    }
   }
 
   // Do a number of arithmetic operations proportional to n^3, in
@@ -88,11 +89,13 @@ namespace {
     const double inc = 1 / static_cast<double> (n);
     double x = 1.0;
 
-    for (size_t i = 0; i < n; ++i)
-      for (size_t j = 0; j < n; ++j)
-	for (size_t k = 0; k < n; ++k)
-	  x = x + inc;
-
+    for (size_t i = 0; i < n; ++i) {
+      for (size_t j = 0; j < n; ++j) {
+        for (size_t k = 0; k < n; ++k) {
+          x = x + inc;
+        }
+      }
+    }
     return x;
   }
 
@@ -100,8 +103,6 @@ namespace {
 
 
 namespace Teuchos {
-
-
   //
   // Basic TimeMonitor test: create and exercise a timer on all (MPI)
   // processes, and make sure that TimeMonitor::summarize() reports it.
@@ -115,10 +116,28 @@ namespace Teuchos {
     // Echo summarize() output to the FancyOStream out (which is a
     // standard unit test argument).  Output should only appear in
     // show-all-test-details mode.
-    out << oss.str() << std::endl;
+    out << oss.str () << std::endl;
 
-    const size_t substr_i = oss.str().find ("FUNC_TIME_MONITOR1");
+    // Make sure that the timer's name shows up in the output.
+    const size_t substr_i = oss.str ().find ("FUNC_TIME_MONITOR1");
     TEST_INEQUALITY(substr_i, std::string::npos);
+
+#ifdef HAVE_TEUCHOS_YAML_CPP
+    { // Repeat test for YAML output.
+      std::ostringstream yamlOss;
+      TimeMonitor::summarizeToYaml (yamlOss);
+
+      // Echo output to the FancyOStream out (which is a standard unit
+      // test argument).  Output should only appear in "show all test
+      // details" mode.
+      out << yamlOss.str () << std::endl;
+
+      // Make sure that the timer's name shows up in the output.
+      const size_t yaml_substr_i = yamlOss.str ().find ("FUNC_TIME_MONITOR1");
+      TEST_INEQUALITY(yaml_substr_i, std::string::npos);
+    }
+#endif // HAVE_TEUCHOS_YAML_CPP
+
 
     // This sets up for the next unit test.
     TimeMonitor::clearCounters ();
@@ -169,8 +188,9 @@ namespace Teuchos {
     {
       int mpiHasBeenInitialized = 0;
       MPI_Initialized (&mpiHasBeenInitialized);
-      if (! mpiHasBeenInitialized)
-	comm = Teuchos::DefaultComm<int>::getDefaultSerialComm (null);
+      if (! mpiHasBeenInitialized) {
+        comm = Teuchos::DefaultComm<int>::getDefaultSerialComm (null);
+      }
     }
 #endif // HAVE_MPI
 
@@ -181,10 +201,12 @@ namespace Teuchos {
     // Timer B only gets created on Proc 0.
     RCP<Time> timerA = TimeMonitor::getNewCounter ("Timer A");
     RCP<Time> timerB;
-    if (myRank == 0)
+    if (myRank == 0) {
       timerB = TimeMonitor::getNewCounter ("Timer B");
-    else
+    }
+    else {
       timerB = null; // True anyway, but I want to make this explicit.
+    }
 
     // The actual number of operations in the loop is proportional to
     // the cube of the loop length.  Adjust the quantities below as
@@ -194,49 +216,46 @@ namespace Teuchos {
     const size_t timerB_loopLength = 200;
 
     // Timer A gets a call count of 3.
-    for (size_t k = 0; k < 3; ++k)
-      {
-	TimeMonitor monitorA (*timerA);
-	slowLoop (size_t (timerA_loopLength));
-      }
-    if (myRank == 0)
-      { // Timer B gets a call count of 1.
-	TimeMonitor monitorB (*timerB);
-	slowLoop (size_t (timerB_loopLength));
-      }
+    for (size_t k = 0; k < 3; ++k) {
+      TimeMonitor monitorA (*timerA);
+      slowLoop (size_t (timerA_loopLength));
+    }
+    if (myRank == 0) { // Timer B gets a call count of 1 on Proc 0.
+      TimeMonitor monitorB (*timerB);
+      slowLoop (size_t (timerB_loopLength));
+    }
 
     const bool alwaysWriteLocal = false; // the default
     const bool writeGlobalStats = true;  // the default
     const bool writeZeroTimers = true;  // the default
-    TimeMonitor::summarize (oss, alwaysWriteLocal, writeGlobalStats, 
-			    writeZeroTimers, Intersection);
+    TimeMonitor::summarize (oss, alwaysWriteLocal, writeGlobalStats,
+                            writeZeroTimers, Intersection);
 
     // Echo summarize() output to the FancyOStream out (which is a
     // standard unit test argument).  Output should only appear in
     // show-all-test-details mode.
     out << std::endl << "Testing intersection of timers:" << std::endl
-	<< oss.str() << std::endl;
+        << oss.str() << std::endl;
 
     // Since setOp == Intersection, only Timer A should be reported,
     // unless there is only one (MPI) process.
     size_t substr_i = oss.str().find ("Timer A");
     TEST_INEQUALITY(substr_i, std::string::npos);
-    if (numProcs > 1)
-      {
-	substr_i = oss.str().find ("Timer B");
-	TEST_EQUALITY(substr_i, std::string::npos);
-      }
+    if (numProcs > 1) {
+      substr_i = oss.str().find ("Timer B");
+      TEST_EQUALITY(substr_i, std::string::npos);
+    }
 
     // Now call summarize(), but ask for a union of timers.
     std::ostringstream ossUnion;
-    TimeMonitor::summarize (ossUnion, alwaysWriteLocal, writeGlobalStats, 
-			    writeZeroTimers, Union);
+    TimeMonitor::summarize (ossUnion, alwaysWriteLocal, writeGlobalStats,
+                            writeZeroTimers, Union);
 
     // Echo summarize() output to the FancyOStream out (which is a
     // standard unit test argument).  Output should only appear in
     // show-all-test-details mode.
     out << std::endl << "Testing union of timers:" << std::endl
-	<< ossUnion.str() << std::endl;
+        << ossUnion.str() << std::endl;
 
     // Since setOp == Union, both Timer A and Timer B should be
     // reported.
@@ -247,7 +266,7 @@ namespace Teuchos {
 
     // This sets up for the next unit test.
     TimeMonitor::clearCounters ();
-  }  
+  }
 
   //
   // Test whether the option to filter out zero timers works, for the
@@ -274,11 +293,10 @@ namespace Teuchos {
     const size_t timerB_loopLength = 250;
 
     // Timer A gets a call count of 3.
-    for (size_t k = 0; k < 3; ++k)
-      {
-	TimeMonitor monitorA (*timerA);
-	slowLoop (size_t (timerA_loopLength));
-      }
+    for (size_t k = 0; k < 3; ++k) {
+      TimeMonitor monitorA (*timerA);
+      slowLoop (size_t (timerA_loopLength));
+    }
     // Timer B gets a call count of 1.
     {
       TimeMonitor monitorB (*timerB);
@@ -288,8 +306,8 @@ namespace Teuchos {
     const bool alwaysWriteLocal = false; // the default
     const bool writeGlobalStats = true;  // the default
     const bool writeZeroTimers = false;  // NOT the default
-    TimeMonitor::summarize (oss, alwaysWriteLocal, writeGlobalStats, 
-			    writeZeroTimers);
+    TimeMonitor::summarize (oss, alwaysWriteLocal, writeGlobalStats,
+                            writeZeroTimers);
 
     // Echo summarize() output to the FancyOStream out (which is a
     // standard unit test argument).  Output should only appear in
@@ -327,8 +345,9 @@ namespace Teuchos {
     {
       int mpiHasBeenInitialized = 0;
       MPI_Initialized (&mpiHasBeenInitialized);
-      if (! mpiHasBeenInitialized)
-	comm = Teuchos::DefaultComm<int>::getDefaultSerialComm (null);
+      if (! mpiHasBeenInitialized) {
+        comm = Teuchos::DefaultComm<int>::getDefaultSerialComm (null);
+      }
     }
 #endif // HAVE_MPI
 
@@ -354,15 +373,13 @@ namespace Teuchos {
     const size_t timerA_loopLength = 200;
     const size_t timerB_loopLength = 500;
 
-    if (myRank == 0)
-      {
-	// Timer A gets a call count of 3 on Proc 0.
-	for (int k = 0; k < 3; ++k)
-	  {
-	    TimeMonitor monitorA (*timerA);
-	    slowLoop (size_t (timerA_loopLength));
-	  }
+    if (myRank == 0) {
+      // Timer A gets a call count of 3 on Proc 0.
+      for (int k = 0; k < 3; ++k) {
+        TimeMonitor monitorA (*timerA);
+        slowLoop (size_t (timerA_loopLength));
       }
+    }
 
     // Timer B gets a call count of 1 on all procs.
     {
@@ -373,8 +390,8 @@ namespace Teuchos {
     const bool alwaysWriteLocal = false; // the default
     const bool writeGlobalStats = true;  // the default
     const bool writeZeroTimers = false;  // NOT the default
-    TimeMonitor::summarize (oss, alwaysWriteLocal, writeGlobalStats, 
-			    writeZeroTimers, Union);
+    TimeMonitor::summarize (oss, alwaysWriteLocal, writeGlobalStats,
+                            writeZeroTimers, Union);
 
     // Echo summarize() output to the FancyOStream out (which is a
     // standard unit test argument).  Output should only appear in

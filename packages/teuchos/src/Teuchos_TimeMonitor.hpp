@@ -431,34 +431,21 @@ public:
              const bool writeZeroTimers=true,
              const ECounterSetOp setOp=Intersection);
 
-  /// \brief Just like summarize(), but with YAML-format output.
+#ifdef HAVE_TEUCHOS_YAML_CPP
+  /// \brief Like summarize(), but with YAML-format output.
   ///
-  /// <a href="yaml.org">YAML</a> stands for Yet Another Markup
+  /// <a href="yaml.org">YAML</a> stands for YAML Ain't Markup
   /// Language.  It is a standard format for human-readable,
   /// machine-parseable, hierarchically organized data.
   ///
   /// \warning This interface may change without warning.
-  static void
-  summarizeToYaml (Ptr<const Comm<int> > comm,
-                   std::ostream& out=std::cout,
-                   const bool alwaysWriteLocal=false,
-                   const bool writeGlobalStats=true,
-                   const bool writeZeroTimers=true,
-                   const ECounterSetOp setOp=Intersection);
+  static void summarizeToYaml (Ptr<const Comm<int> > comm, std::ostream& out);
 
-  /// \brief Just like summarize(), but with YAML-format output.
-  ///
-  /// <a href="yaml.org">YAML</a> stands for Yet Another Markup
-  /// Language.  It is a standard format for human-readable,
-  /// machine-parseable, hierarchically organized data.
+  /// \brief Like summarize(), but with YAML-format output and default communicator.
   ///
   /// \warning This interface may change without warning.
-  static void
-  summarizeToYaml (std::ostream &out=std::cout,
-                   const bool alwaysWriteLocal=false,
-                   const bool writeGlobalStats=true,
-                   const bool writeZeroTimers=true,
-                   const ECounterSetOp setOp=Intersection);
+  static void summarizeToYaml (std::ostream& out);
+#endif // HAVE_TEUCHOS_YAML_CPP
   //@}
 
 };
