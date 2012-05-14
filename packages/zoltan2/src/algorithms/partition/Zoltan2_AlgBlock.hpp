@@ -167,20 +167,20 @@ void AlgBlock(
   Array<scalar_t> part_sizes(numGlobalParts);
 
   if (!solution->criteriaHasUniformPartSizes(0))
-    for (int i=0; i<numGlobalParts; i++)
+    for (unsigned int i=0; i<numGlobalParts; i++)
       part_sizes[i] = solution->getCriteriaPartSize(0, i);
   else
-    for (int i=0; i<numGlobalParts; i++)
+    for (unsigned int i=0; i<numGlobalParts; i++)
       part_sizes[i] = 1.0 / numGlobalParts;
 
-  for (int i=1; i<numGlobalParts; i++)
+  for (unsigned int i=1; i<numGlobalParts; i++)
     part_sizes[i] += part_sizes[i-1];
 
   // TODO assertion that last part sizes is about equal to 1.0
 
   if (env->doStatus()){
     ostringstream oss("Part sizes: ");
-    for (int i=0; i < numGlobalParts; i++)
+    for (unsigned int i=0; i < numGlobalParts; i++)
       oss << part_sizes[i] << " ";
     oss << "\n";
     oss << std::endl << "Weights : ";
@@ -201,7 +201,7 @@ void AlgBlock(
     /* wtsum is now sum of all lower-ordered object */
     /* determine new partition number for this object,
        using the "center of gravity" */
-    while (part<numGlobalParts-1 && 
+    while (unsigned(part)<numGlobalParts-1 && 
            (wtsum+0.5*gnoWeight) > part_sizes[part]*globalTotalWeight)
       part++;
     gnoPart[i] = part;

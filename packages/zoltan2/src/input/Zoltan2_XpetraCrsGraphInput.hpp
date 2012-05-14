@@ -457,7 +457,7 @@ template <typename User>
   }
 
   offs[0] = 0;
-  for (lno_t v=0; v < nvtx; v++){
+  for (size_t v=0; v < nvtx; v++){
     ArrayView<const lno_t> nbors;
     graph_->getLocalRowView(v, nbors);
     offs[v+1] = offs[v] + nbors.size();

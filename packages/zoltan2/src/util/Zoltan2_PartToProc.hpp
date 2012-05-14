@@ -51,12 +51,12 @@ void partToProc(
   bool &oneToOne, vector<int> &partDist, vector<partId_t> &procDist)
 {
   int nprocs = comm->getSize();
-  size_t vals[4] = {haveNumGlobalParts, haveNumLocalParts,
+  ssize_t vals[4] = {haveNumGlobalParts, haveNumLocalParts,
       numGlobalParts, numLocalParts};
-  size_t reducevals[4];
-  size_t sumHaveGlobal=0, sumHaveLocal=0;
-  size_t sumGlobal=0, sumLocal=0;
-  size_t maxGlobal=0, maxLocal=0;
+  ssize_t reducevals[4];
+  ssize_t sumHaveGlobal=0, sumHaveLocal=0;
+  ssize_t sumGlobal=0, sumLocal=0;
+  ssize_t maxGlobal=0, maxLocal=0;
 
   partDist.clear();
   procDist.clear();
@@ -64,7 +64,7 @@ void partToProc(
   if (doCheck){
 
     try{
-      reduceAll<int, size_t>(*comm, Teuchos::REDUCE_SUM, 4, vals, reducevals);
+      reduceAll<int, ssize_t>(*comm, Teuchos::REDUCE_SUM, 4, vals, reducevals);
     }
     Z2_THROW_OUTSIDE_ERROR(*env);
 
@@ -102,7 +102,7 @@ void partToProc(
       vals[0] = numGlobalParts;
       vals[1] = numLocalParts;
       try{
-        reduceAll<int, size_t>(
+        reduceAll<int, ssize_t>(
           *comm, Teuchos::REDUCE_MAX, 2, vals, reducevals);
       }
       Z2_THROW_OUTSIDE_ERROR(*env);

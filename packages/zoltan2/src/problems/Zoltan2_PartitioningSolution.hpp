@@ -168,6 +168,12 @@ public:
     oneToOnePartDistribution() or getPartDistribution() describes the mapping.
  */
   const partId_t *getProcDistribution() const { return &procDist_[0]; }
+
+/*! \brief Get the number of criteria (the weight dimension).
+    \return the number of criteria for which the solution has part sizes.
+ */
+  int getNumberOfCriteria() const { return weightDim_; }
+
   
 /*! \brief Determine if balancing criteria (weight dimension) has uniform
                 part sizes.  (User can specify differing part sizes.)
@@ -888,7 +894,8 @@ template <typename Adapter>
     return;
   }
 
-  scalar_t avg = 1.0;    // size for parts that were not specified
+  // A size for parts that were not specified:
+  scalar_t avg = sum / nparts;
 
   // We are going to merge part sizes that are very close.  This takes
   // computation time now, but can save considerably in the storage of
@@ -1054,7 +1061,7 @@ template <typename Adapter>
   int rank = comm_->getRank();
   int nprocs = comm_->getSize();
 
-  for (lno_t i=0; !remotelyOwned && i < len; i++){
+  for (size_t i=0; !remotelyOwned && i < len; i++){
     if (procList[i] != rank)
       remotelyOwned = 1;
   }
@@ -1087,7 +1094,7 @@ template <typename Adapter>
       env_->localMemoryAssertion(__FILE__, __LINE__, nprocs+1, tmpOff);
       ArrayView<lno_t> offsetBuf(tmpOff, nprocs+1);
     
-      for (int i=0; i < len; i++){
+      for (size_t i=0; i < len; i++){
         countOutBuf[procList[i]]+=2;
         partFlag[partList[i]] = 1;
       }
@@ -1096,7 +1103,7 @@ template <typename Adapter>
       for (int i=0; i < nprocs; i++)
         offsetBuf[i+1] = offsetBuf[i] + countOutBuf[i];
     
-      for (int i=0; i < len; i++){
+      for (size_t i=0; i < len; i++){
         int p = procList[i];
         int off = offsetBuf[p];
         outBuf[off] = gnoList[i];
@@ -1156,7 +1163,7 @@ template <typename Adapter>
   else{
     if (len){
       delete [] procList.getRawPtr();
-      for (int i=0; i < len; i++)
+      for (size_t i=0; i < len; i++)
         partFlag[partList[i]] = 1;
     }
   }
@@ -1195,7 +1202,7 @@ template <typename Adapter>
     if (procDist_.size() > 0){    // parts are not split across procs
 
       int procId;
-      for (lno_t i=0; i < len; i++){
+      for (size_t i=0; i < len; i++){
         partToProcsMap(parts[i], procs[i], procId);
       }
     }

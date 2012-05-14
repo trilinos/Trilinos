@@ -371,7 +371,7 @@ struct XpetraTraits<Tpetra::CrsGraph<lno_t, gno_t, node_t> >
     if (numElts && sizeof(gno_t) != sizeof(size_t)){
       size_t *vals = new size_t [numElts];
       nnz_size_t = arcp(vals, 0, numElts, true);
-      for (int i=0; i < numElts; i++){
+      for (size_t i=0; i < numElts; i++){
         vals[i] = static_cast<size_t>(nnz[i]);
       }
     }

@@ -56,7 +56,7 @@ ArrayRCP<gno_t> roundRobinMap(
   gno_t base = m->getMinAllGlobalIndex();
   gno_t max = m->getMaxAllGlobalIndex();
   size_t globalrows = m->getGlobalNumElements();
-  if (globalrows != max - base + 1){
+  if (globalrows != size_t(max - base + 1)){
     TEST_FAIL_AND_EXIT(*comm, 0, 
       string("Map is invalid for test - fix test"), 1);
   }

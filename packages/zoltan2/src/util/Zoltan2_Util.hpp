@@ -89,7 +89,7 @@ template <typename Adapter, typename Extra>
   //
   const int *procList         = solution.getProcList();
 
-  int localSend = ((xtraInfo.size() == localNumIds) ? 1 : 0);
+  int localSend = ((size_t(xtraInfo.size()) == localNumIds) ? 1 : 0);
   int globalSend =0;
   reduceAll<int, int>(*comm, Teuchos::REDUCE_SUM, 1, &localSend, &globalSend);
 
@@ -104,7 +104,7 @@ template <typename Adapter, typename Extra>
       counts[partList[i]]++;
 
   Array<lno_t> offsets(numProcs+1, 0);
-  for (size_t i=1; i <= numProcs; i++){
+  for (int i=1; i <= numProcs; i++){
     offsets[i] = offsets[i-1] + counts[i-1];
   }
 
@@ -133,6 +133,8 @@ template <typename Adapter, typename Extra>
     }
   }
 
+
+
   ArrayRCP<lno_t> recvCounts;
   RCP<const Environment> env = rcp(new Environment);
 
@@ -152,8 +154,7 @@ template <typename Adapter, typename Extra>
     catch (std::exception &e){
       throw std::runtime_error("alltoallv 2");
     }
-  }
-
+  } 
   return imports.size();
 }
 

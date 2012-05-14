@@ -21,9 +21,10 @@
  *   \li a Xpetra::MultiVector
  *   \li a Epetra_CrsMatrix (if built with double, int, int)
  *   \li a Epetra_CrsGraph  (if built with double, int, int)
- *   \li the coordinates  (matrix market input only)
+ *   \li the coordinates 
  *
- *  \todo compute coordinates for the x,y,z problems.
+ * \todo document flag
+ *
  *  \todo for very large files, each process reads in part of the file
  */
 
@@ -74,6 +75,13 @@ typedef std::bitset<NUM_TEST_OUTPUT_TYPE> outputFlag_t;
 
 static int z2Test_read_mtx_coords(
   std::string &fname, ArrayRCP<ArrayRCP<scalar_t> > &xyz);
+
+static void twoDimCoordinateValue(
+  gno_t globalId, gno_t nx, gno_t ny, gno_t &x, gno_t &y);
+
+static void threeDimCoordinateValue(
+  gno_t globalId, gno_t nx, gno_t ny, gno_t nz,
+  gno_t &x, gno_t &y, gno_t &z);
 
 /*! \brief A class that generates typical user input for testing.
  */
@@ -235,18 +243,81 @@ private:
       rcp(new Tpetra::Map<lno_t, gno_t>(
         params.GetNumGlobalElements(), 0, tcomm_));
 
-    try{
-      M_ = MueLu::Gallery::CreateCrsMatrix<scalar_t, lno_t, gno_t, 
-        Tpetra::Map<lno_t, gno_t>, Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> >
-          (params.GetMatrixType(), map, params.GetParameterList()); 
-    }
-    catch (std::exception &e) {    // Probably not enough memory
-      TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());
+    if (flags_.test(OBJECT_DATA)){
+
+      try{
+        M_ = MueLu::Gallery::CreateCrsMatrix<scalar_t, lno_t, gno_t, 
+          Tpetra::Map<lno_t, gno_t>, 
+          Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> >(params.GetMatrixType(),
+             map, params.GetParameterList()); 
+      }
+      catch (std::exception &e) {    // Probably not enough memory
+        TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());
+      }
+  
+      RCP<const xcrsMatrix_t> xm = 
+        Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
+      xM_ = rcp_const_cast<xcrsMatrix_t>(xm);
     }
 
-    RCP<const xcrsMatrix_t> xm = 
-      Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
-    xM_ = rcp_const_cast<xcrsMatrix_t>(xm);
+    if (!flags_.test(OBJECT_COORDINATES))
+      return;
+
+    // Compute the coordinates for the matrix rows.
+    
+    ArrayView<const gno_t> gids = map->getNodeElementList();
+    lno_t count = gids.size();
+    int dim = 3;
+    size_t pos = mtype_.find("2D");
+    if (pos != string::npos)
+      dim = 2;
+    else if (mtype_ == string("Laplace1D") || mtype_ == string("Identity"))
+      dim = 1;
+
+    Array<ArrayRCP<scalar_t> > coordinates(dim);
+
+    if (count > 0){
+      for (int i=0; i < dim; i++){
+        scalar_t *c = new scalar_t [count];
+        if (!c)
+          throw(std::bad_alloc());
+        coordinates[i] = Teuchos::arcp(c, 0, count, true);
+      }
+      gno_t ix, iy, iz;
+    
+      if (dim==3){
+        scalar_t *x = coordinates[0].getRawPtr();
+        scalar_t *y = coordinates[1].getRawPtr();
+        scalar_t *z = coordinates[2].getRawPtr();
+        for (lno_t i=0; i < count; i++){
+          threeDimCoordinateValue(gids[i], xdim_, ydim_, zdim_, ix, iy, iz);
+          x[i] = scalar_t(ix);
+          y[i] = scalar_t(iy);
+          z[i] = scalar_t(iz);
+        }
+      }
+      else if (dim==2){
+        scalar_t *x = coordinates[0].getRawPtr();
+        scalar_t *y = coordinates[1].getRawPtr();
+        for (lno_t i=0; i < count; i++){
+          twoDimCoordinateValue(gids[i], xdim_, ydim_, ix, iy);
+          x[i] = scalar_t(ix);
+          y[i] = scalar_t(iy);
+        }
+      }
+      else{
+        scalar_t *x = coordinates[0].getRawPtr();
+        for (lno_t i=0; i < count; i++)
+          x[i] = scalar_t(gids[i]);
+      }
+    }
+
+    Array<ArrayView<const scalar_t> > coordView(dim);
+    if (count > 0)
+      for (int i=0; i < dim; i++)
+        coordView[i] = coordinates[i].view(0,count);
+
+    xyz_ = rcp(new tMVector_t(map, coordView.view(0, dim), dim));
   }
 
   void createMatrix()
@@ -297,8 +368,6 @@ public:
     if (!flags_.any())
       flags_.set(OBJECT_DATA);     // the default operation
 
-    if (flags_.test(OBJECT_COORDINATES))
-      std::cout << "Coordinates for meshes not supported yet" << std::endl;
     ecomm_ = Xpetra::toEpetra(c);
   }
 #else
@@ -328,8 +397,6 @@ public:
     if (!flags_.any())
       flags_.set(OBJECT_DATA);     // the default operation
 
-    if (flags_.test(OBJECT_COORDINATES))
-      std::cout << "Coordinates for meshes not supported yet" << std::endl;
   }
 #endif
   
@@ -607,4 +674,47 @@ static int z2Test_read_mtx_coords(std::string &fname,
   }
   
   return 0;
+}
+
+static void twoDimCoordinateValue(
+  gno_t globalId, gno_t nx, gno_t ny, gno_t &x, gno_t &y)
+{
+  x = globalId % nx;
+  y = (globalId - x) / nx;
+}
+
+static void threeDimCoordinateValue(
+  gno_t globalId, gno_t nx, gno_t ny, gno_t nz,
+  gno_t &x, gno_t &y, gno_t &z)
+{
+  z = globalId % (nx * ny);
+  gno_t xy = globalId - z;
+  twoDimCoordinateValue(xy, nx, ny, x, y);
+}
+
+/*! \brief helper function to generate random data.
+ */
+template <typename lno_t, typename scalar_t>
+  void getRandomData(unsigned int seed, lno_t length, 
+    scalar_t min, scalar_t max,
+    ArrayView<ArrayRCP<scalar_t > > data)
+{
+  if (length < 1)
+    return;
+
+  size_t dim = data.size();
+  for (size_t i=0; i < dim; i++){
+    scalar_t *tmp = new scalar_t [length];
+    if (!tmp)
+       throw (std::bad_alloc());
+    data[i] = Teuchos::arcp(tmp, 0, length, true);
+  }
+
+  scalar_t scalingFactor = (max-min) / RAND_MAX;
+  srand(seed);
+  for (size_t i=0; i < dim; i++){
+    scalar_t *x = data[i].getRawPtr();
+    for (lno_t j=0; j < length; j++)
+      *x++ = min + (scalar_t(rand()) * scalingFactor);
+  }
 }

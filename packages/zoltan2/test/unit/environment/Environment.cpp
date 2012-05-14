@@ -7,6 +7,9 @@
 // ***********************************************************************
 //
 // Testing Zoltan2::Environment
+/*! \todo test timer
+*/
+
 
 #include <Zoltan2_Environment.hpp>
 #include <Zoltan2_Parameters.hpp>
@@ -107,9 +110,6 @@ int main(int argc, char *argv[])
   myParams.set("debug_procs", "all");   
   myParams.set("debug_output_stream", "std::cout");
 
-  myParams.set("timing_procs", "0"); 
-  myParams.set("timing_output_file", "appPerformance.txt");
-
   if (nprocs > 3)
     myParams.set("memory_profiling_procs", "0-1,3"); 
   else
@@ -144,17 +144,6 @@ int main(int argc, char *argv[])
      catch(std::exception &e){
        std::cerr << e.what() << std::endl;
        fail=3000;
-     }
-  }
-
-  if (!fail){
-     try{
-       env->timer("Timer start", "usecs", 23.23232);
-       env->timer("Timer end", "usecs", 25.23232);
-     }
-     catch(std::exception &e){
-       std::cerr << e.what() << std::endl;
-       fail=3001;
      }
   }
 
@@ -199,9 +188,6 @@ int main(int argc, char *argv[])
         fail = 2005;
     }
   }
-
-  if (!fail && env->doTiming() != true)
-    fail = 2006;
 
   if (!fail && env->doMemoryProfiling() != true)
     fail = 2007;
@@ -249,7 +235,6 @@ int main(int argc, char *argv[])
   ParameterList newParams = oldParams;
   newParams.set("error_check_level", "debug_mode_assertions");
   newParams.set("memory_versus_speed", "speed");
-  newParams.remove("timing_output_file");
   newParams.remove("memory_profiling_output_file");
   
   ParameterList &newPartParams = newParams.sublist("partitioning");

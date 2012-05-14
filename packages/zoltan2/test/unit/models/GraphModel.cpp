@@ -131,29 +131,29 @@ void checkModel(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
   gno_t nGlobalRows =  M->getGlobalNumRows();
   gno_t nGlobalNonZeros = M->getGlobalNumEntries();
 
-  if (model->getLocalNumVertices() != nLocalRows)
+  if (model->getLocalNumVertices() != size_t(nLocalRows))
     fail = 1;
   TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumVertices", 1)
 
-  if (model->getGlobalNumVertices() != nGlobalRows)
+  if (model->getGlobalNumVertices() != size_t(nGlobalRows))
     fail = 1;
   TEST_FAIL_AND_EXIT(*comm, !fail, "getGlobalNumVertices", 1)
 
   if (noSelfEdges){
-    if (model->getGlobalNumEdges() >  nGlobalNonZeros)
+    if (model->getGlobalNumEdges() >  size_t(nGlobalNonZeros))
       fail = 1;
     TEST_FAIL_AND_EXIT(*comm, !fail, "getGlobalNumEdges", 1)
 
-    if (model->getLocalNumEdges() > nLocalNonZeros)
+    if (model->getLocalNumEdges() > size_t(nLocalNonZeros))
       fail = 1;
     TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumEdges", 1)
   }
   else{
-    if (model->getGlobalNumEdges() !=  nGlobalNonZeros)
+    if (model->getGlobalNumEdges() !=  size_t(nGlobalNonZeros))
       fail = 1;
     TEST_FAIL_AND_EXIT(*comm, !fail, "getGlobalNumEdges", 1)
 
-    if (model->getLocalNumEdges() != nLocalNonZeros)
+    if (model->getLocalNumEdges() != size_t(nLocalNonZeros))
       fail = 1;
     TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumEdges", 1)
   }
@@ -190,7 +190,7 @@ void checkModel(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
   TEST_FAIL_AND_EXIT(*comm, !fail, "getEdgeList", 1)
 
   lno_t numLocalEdges = 0;
-  for (lno_t i=0; i < numEdges; i++){
+  for (size_t i=0; i < numEdges; i++){
     if (procIds[i] == rank)
       numLocalEdges++;
   }
@@ -224,7 +224,7 @@ void checkModel(RCP<const Tpetra::CrsMatrix<scalar_t, lno_t, gno_t> > &M,
   }
   TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalEdgeList", 1)
 
-  if (numLocalEdges != numLocalNeighbors)
+  if (size_t(numLocalEdges) != numLocalNeighbors)
     fail = 1;
 
   TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalEdgeList size", 1)
@@ -277,7 +277,7 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
   // Do a round robin migration so that global IDs are not consecutive.
 
   Array<gno_t> myNewRows;
-  for (int i=rank; i < Mconsec->getGlobalNumRows(); i+=nprocs)
+  for (size_t i=rank; i < Mconsec->getGlobalNumRows(); i+=nprocs)
     myNewRows.push_back(i);
 
   RCP<const tcrsMatrix_t> Mnonconsec = 
@@ -308,7 +308,7 @@ int main(int argc, char *argv[])
   
   mtxFiles.push_back(testDataFilePath+string("/simple.mtx"));
 
-  for (int fileNum=0; fileNum < mtxFiles.size(); fileNum++){
+  for (size_t fileNum=0; fileNum < mtxFiles.size(); fileNum++){
     if (rank==0)
       std::cout << mtxFiles[fileNum] << std::endl;
     testGraphModel(mtxFiles[fileNum], 0, 0, 0, comm);

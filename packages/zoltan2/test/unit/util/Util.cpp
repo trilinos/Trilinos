@@ -70,7 +70,7 @@ void convertSolutionToImportListTest(RCP<const Comm<int> > &comm)
 
   size_t numGlobalParts = solution->getGlobalNumberOfParts();
 
-  TEST_FAIL_AND_EXIT(*comm, (numGlobalParts == 3 * numProcs),
+  TEST_FAIL_AND_EXIT(*comm, (numGlobalParts == size_t(3 * numProcs)),
     "numGlobalParts", 1);
 
   zoltan2_partId_t *partList = new zoltan2_partId_t [localNumObjects];
@@ -99,7 +99,7 @@ void convertSolutionToImportListTest(RCP<const Comm<int> > &comm)
 
   int fail = 0;
 
-  for (lno_t i=0; !fail && i < numNewObjects; i++){
+  for (size_t i=0; !fail && i < numNewObjects; i++){
     gno_t mapsToPart = myImports[i] % numGlobalParts;
     if (mapsToPart < myMinPart || mapsToPart > myMaxPart)
       fail = 1;

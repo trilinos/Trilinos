@@ -8,7 +8,6 @@
 
 /*! \file Zoltan2_PartitioningProblem.hpp
     \brief Defines the PartitioningProblem class.
-\todo add resetParameters
 */
 
 #ifndef _ZOLTAN2_PARTITIONINGPROBLEM_HPP_
@@ -44,7 +43,6 @@ namespace Zoltan2{
  *  \todo allow unsetting of part sizes by passing in null pointers
  *  \todo add a parameter by which user tells us there are no self 
  *        edges to be removed.
- *  \todo resetParameterList
  */
 template<typename Adapter>
 class PartitioningProblem : public Problem<Adapter>
@@ -76,11 +74,6 @@ public:
 
   //! \brief Constructor where communicator is the Teuchos default.
   PartitioningProblem(Adapter *A, Teuchos::ParameterList *p) ;
-
-
-  //!  \brief Reset the parameter list.
-
-  void resetParameterList(Teuchos::ParameterList *p);
 
   //!  \brief Direct the problem to create a solution.
   //
@@ -190,6 +183,24 @@ public:
   void setPartSizesForCritiera(int criteria, int len, partId_t *partIds, 
     scalar_t *partSizes, bool makeCopy=true) ;
 
+  /*! \brief Reset the list of parameters
+   */
+  void resetParameters(ParameterList *params)
+  {
+    Problem<Adapter>::resetParameters(params);  // creates new environment
+    if (timer_.getRawPtr() != NULL)
+      this->env_->setTimer(timer_);
+  }
+
+  /*! \brief Get the current Environment.
+   *   Useful for testing.
+   */
+  
+  const RCP<const Environment> & getEnvironment() const 
+  {
+    return this->envConst_;
+  }
+
 private:
   void initializeProblem();
 
@@ -230,6 +241,10 @@ private:
   
   ArrayRCP<int> levelNumberParts_;
   bool hierarchical_;
+
+  // Create a Timer if the user asked for timing stats.
+
+  RCP<TimerManager> timer_;
 };
 ////////////////////////////////////////////////////////////////////////
 
@@ -242,7 +257,7 @@ template <typename Adapter>
       inputType_(InvalidAdapterType), modelType_(InvalidModel), 
       graphFlags_(), idFlags_(), coordFlags_(), algorithm_(),
       numberOfWeights_(), partIds_(), partSizes_(), 
-      numberOfCriteria_(), levelNumberParts_(), hierarchical_(false)
+      numberOfCriteria_(), levelNumberParts_(), hierarchical_(false), timer_()
 {
   initializeProblem();
 }
@@ -257,7 +272,7 @@ template <typename Adapter>
       graphFlags_(), idFlags_(), coordFlags_(), algorithm_(),
       numberOfWeights_(), 
       partIds_(), partSizes_(), numberOfCriteria_(), 
-      levelNumberParts_(), hierarchical_(false)
+      levelNumberParts_(), hierarchical_(false), timer_()
 {
   initializeProblem();
 }
@@ -266,6 +281,11 @@ template <typename Adapter>
   void PartitioningProblem<Adapter>::initializeProblem()
 {
   HELLO;
+
+  if (getenv("DEBUGME")){
+    std::cout << getpid() << std::endl;
+    sleep(15);
+  }
 
 #ifdef HAVE_ZOLTAN2_OVIS
   ovis_enabled(this->comm_->getRank());
@@ -319,7 +339,7 @@ template <typename Adapter>
     len>= 0, BASIC_ASSERTION);
 
   this->env_->localInputAssertion(__FILE__, __LINE__, "invalid criteria", 
-    criteria >= 0 && criteria < numberOfWeights_, BASIC_ASSERTION);
+    criteria >= 0 && criteria < numberOfCriteria_, BASIC_ASSERTION);
 
   if (len == 0){
     partIds_[criteria] = ArrayRCP<partId_t>();
@@ -334,17 +354,21 @@ template <typename Adapter>
   // by the PartitioningSolution, which computes global part distribution and
   // part sizes.
 
-  partId_t *z2_partIds = partIds;
-  scalar_t *z2_partSizes = partSizes;
+  partId_t *z2_partIds = NULL;
+  scalar_t *z2_partSizes = NULL;
   bool own_memory = false;
 
   if (makeCopy){
-    z2_partIds = NULL;
     z2_partIds = new partId_t [len];
-    this->env_->localMemoryAssertion(__FILE__, __LINE__, len, z2_partIds);
-    z2_partSizes = NULL;
     z2_partSizes = new scalar_t [len];
     this->env_->localMemoryAssertion(__FILE__, __LINE__, len, z2_partSizes);
+    memcpy(z2_partIds, partIds, len * sizeof(partId_t));
+    memcpy(z2_partSizes, partSizes, len * sizeof(scalar_t));
+    own_memory=true;
+  }
+  else{
+    z2_partIds = partIds;
+    z2_partSizes = partSizes;
   }
 
   partIds_[criteria] = arcp(z2_partIds, 0, len, own_memory);
@@ -358,7 +382,11 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
   // Create the computational model.
 
+  this->env_->timerStart("create problem");
+
   createPartitioningProblem(updateInputData);
+
+  this->env_->timerStop("create problem");
 
   // TODO: If hierarchical_
 
@@ -373,6 +401,8 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
   PartitioningSolution<Adapter> *soln = NULL;
 
+  this->env_->timerStart("create solution");
+
   try{
     soln = new PartitioningSolution<Adapter>( 
       this->envConst_, problemCommConst_, idMap, numberOfWeights_, 
@@ -383,7 +413,11 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
   solution_ = rcp(soln);
 
+  this->env_->timerStop("create solution");
+
   // Call the algorithm
+
+  this->env_->timerStart("solve problem");
 
   try {
     if (algorithm_ == string("scotch")){
@@ -416,6 +450,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
 
 #endif
+  this->env_->timerStop("solve problem");
 
 }
 

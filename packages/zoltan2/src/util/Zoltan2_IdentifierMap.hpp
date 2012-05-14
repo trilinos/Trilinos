@@ -276,14 +276,12 @@ template<typename User>
     const ArrayRCP<const gid_t> &gids, bool idsMustBeConsecutive) 
          : env_(env), comm_(comm), myGids_(gids), gnoDist_(), gidHash_(),
            globalNumberOfIds_(0), localNumberOfIds_(0),
-           myRank_(0), numProcs_(1),
+           myRank_(comm_->getRank()), numProcs_(comm_->getSize()),
            userGidsAreTeuchosOrdinal_(false), userGidsAreConsecutive_(false), 
            userGidsAreZoltan2Gnos_(false), zoltan2GnosAreConsecutive_(false), 
            consecutiveGidsAreRequired_(idsMustBeConsecutive),
            minGlobalGno_(0), maxGlobalGno_(0)
 {
-  myRank_ = comm_->getRank();
-  numProcs_ = comm_->getSize();
   setupMap();
 }
 
@@ -439,7 +437,8 @@ template< typename User>
           gid_t tmp = Teuchos::as<gid_t>(gno[i]);
           lno[i] = IdentifierTraits<gid_t>::difference(myGids_[0], tmp);
           env_->localInputAssertion(__FILE__, __LINE__, "invalid global number",
-            (lno[i] >= 0) && (lno[i] < localNumberOfIds_), BASIC_ASSERTION);
+            (lno[i] >= 0) && (lno[i] < lno_t(localNumberOfIds_)), 
+            BASIC_ASSERTION);
         }
       }
       else{
@@ -476,7 +475,7 @@ template< typename User>
 {
   typedef typename Teuchos::Hashtable<double, lno_t> id2index_hash_t;
 
-  size_t len=in_gid.size();
+  gno_t len=in_gid.size();
 
   if (len == 0){
     return;
@@ -498,7 +497,7 @@ template< typename User>
     gno_t *gnos = gnoDist_.getRawPtr();
     gno_t *final = gnos + numProcs_ + 1;
 
-    for (size_t i=0; i < len; i++){
+    for (gno_t i=0; i < len; i++){
       gno_t gno = Teuchos::as<gno_t>(in_gid[i]);
       if (!skipGno)
         out_gno[i] = gno;
@@ -652,7 +651,7 @@ template< typename User>
   typename std::map<double, std::vector<lno_t> >::iterator next; 
 
   if (len > 0){
-    for (lno_t i=0; i < len; i++){
+    for (gno_t i=0; i < len; i++){
       double uniqueKey(IdentifierTraits<gid_t>::key(in_gid[i]));
       next = gidIndices.find(uniqueKey);
       if (next == gidIndices.end()){
@@ -846,7 +845,7 @@ template< typename User>
     ArrayView<gid_t> out_gid,
     ArrayView<int> out_proc) const
 {
-  size_t len=in_gno.size();
+  gno_t len=in_gno.size();
 
   if (len == 0){
     return;
@@ -873,7 +872,7 @@ template< typename User>
     Z2_FORWARD_EXCEPTIONS;
 
     if (!skipGid)
-      for (lno_t i=0; i < len; i++)
+      for (gno_t i=0; i < len; i++)
         out_gid[i] = gids[i];
 
     return;
@@ -888,10 +887,10 @@ template< typename User>
   bool remote = false;
   int rank = comm_->getRank();
 
-  for (size_t i=0; i < len; i++){
+  for (gno_t i=0; i < len; i++){
 
     env_->localInputAssertion(__FILE__, __LINE__, "invalid global number", 
-      in_gno[i] < globalNumberOfIds_, BASIC_ASSERTION);
+      in_gno[i] < gno_t(globalNumberOfIds_), BASIC_ASSERTION);
 
     gno_t *ub = std::upper_bound(gnos, final, in_gno[i]);
 
@@ -945,13 +944,13 @@ template< typename User>
   env_->localMemoryAssertion(__FILE__, __LINE__, numProcs_+1, tmpOff);
   ArrayRCP<lno_t> offsetBuf(tmpOff, 0, numProcs_+1, true);
 
-  for (int i=0; i < len; i++)
+  for (gno_t i=0; i < len; i++)
     countOutBuf[out_proc[i]]++;
 
   for (int i=0; i < numProcs_; i++)
     offsetBuf[i+1] = offsetBuf[i] + countOutBuf[i];
 
-  for (int i=0; i < len; i++){
+  for (gno_t i=0; i < len; i++){
     int p = out_proc[i];
     int off = offsetBuf[p];
     indexList[off] = i;
@@ -1007,7 +1006,7 @@ template< typename User>
 
   // copy in to right place in gid list
 
-  for (int i=0; i < len; i++){
+  for (gno_t i=0; i < len; i++){
     out_gid[indexList[i]] = gidInBuf[i];
   }
 }
@@ -1019,9 +1018,6 @@ template< typename User>
        "application global ID type is not supported yet",
        IdentifierTraits<gid_t>::is_valid_id_type() == true, BASIC_ASSERTION,
        comm_);
-
-  numProcs_ = comm_->getSize(); 
-  myRank_ = comm_->getRank(); 
 
   if (IdentifierTraits<gid_t>::isGlobalOrdinal())
     userGidsAreTeuchosOrdinal_ = true;

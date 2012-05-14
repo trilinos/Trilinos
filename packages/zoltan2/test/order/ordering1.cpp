@@ -63,7 +63,7 @@ int validatePerm(size_t n, z2TestLO *perm)
     count[i]=0;
 
   for (i=0; i<n; i++){
-    if ((perm[i]<0) || (perm[i]>=n))
+    if ((perm[i]<0) || (perm[i]>=z2TestLO(n)))
       status = -1;
     else
       count[perm[i]]++;

@@ -41,7 +41,7 @@ int AlgRandom(
   lno_t *perm;
   perm = (lno_t *) (solution->getPermutationRCP().getRawPtr());
   if (perm){
-    for (lno_t i=0; i<n; i++){
+    for (size_t i=0; i<n; i++){
       perm[i] = i;
     }
   }

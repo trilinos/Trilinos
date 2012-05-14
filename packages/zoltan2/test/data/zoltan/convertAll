@@ -1,0 +1,13 @@
+#!/bin/bash
+#
+#  The script to convert Chaco coordinates to "mtx" coordinates
+#  is in the Zoltan_Tests/converters repository.
+#
+
+fnames="degenerateAA ewgt hammond simple3d vwgt bug degenerate grid20x19 nograph simple drake hammond2 onedbug vwgt2"
+suffix=_coord.mtx
+
+for fname in $fnames ; do
+  echo "chacoToDavisCoords.py $fname.coords  $fname$suffix"
+  chacoToDavisCoords.py $fname.coords  $fname$suffix
+done

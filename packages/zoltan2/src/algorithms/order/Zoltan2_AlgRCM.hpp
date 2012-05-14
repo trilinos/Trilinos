@@ -34,7 +34,7 @@ int AlgRCM(
   const size_t nVtx = model->getLocalNumVertices();
   lno_t *perm;
   perm = (lno_t *) (solution->getPermutationRCP().getRawPtr());
-  for (lno_t i=0; i<nVtx; i++){
+  for (size_t i=0; i<nVtx; i++){
     perm[i] = -1;
   }
 
@@ -54,8 +54,8 @@ int AlgRCM(
 
   // Do BFS from root
   std::queue<lno_t> Q;
-  lno_t count = 0; // CM label, reversed later
-  lno_t next = 0;
+  size_t count = 0; // CM label, reversed later
+  size_t next = 0;
 
   while (count < nVtx-1){ // Some vertex remains unlabelled
 
@@ -91,7 +91,7 @@ int AlgRCM(
   bool reverse = true; // TODO: Make parameter
   if (reverse) {
     lno_t temp;
-    for (lno_t i=0; i < nVtx/2; ++i) {
+    for (size_t i=0; i < nVtx/2; ++i) {
       // Swap (perm[i], perm[nVtx-i])
       temp = perm[i];
       perm[i] = perm[nVtx-1-i];

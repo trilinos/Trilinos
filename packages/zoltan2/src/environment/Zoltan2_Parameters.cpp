@@ -311,7 +311,7 @@ void createAllParameters(Teuchos::ParameterList &pList)
 
   pList.set<string>(parameterName, "0", docString.str(), intRangeValidatorP);
 
-  ////////// topLevel/timing_procs
+  ////////// topLevel/timing_procs            // TODO we don't need this
   parameterName = string("timing_procs");
 
   docString.str("");

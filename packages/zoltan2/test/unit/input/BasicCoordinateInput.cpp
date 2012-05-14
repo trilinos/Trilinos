@@ -42,7 +42,7 @@ int checkBasicCoordinate(
   if (!fail && ia->getNumberOfWeights() != nWeights)
     fail = 101;
 
-  if (!fail && ia->getLocalNumberOfCoordinates() != len)
+  if (!fail && ia->getLocalNumberOfCoordinates() != size_t(len))
     fail = 102;
 
   for (int x=0; !fail && x < nCoords; x++){
@@ -52,7 +52,7 @@ int checkBasicCoordinate(
 
     size_t nvals = ia->getCoordinates(x, idList, vals, stride);
 
-    if (nvals != len*stride)
+    if (nvals != size_t(len*stride))
       fail = 104;
 
     scalar_t *coordVal = xyz + x;
@@ -72,7 +72,7 @@ int checkBasicCoordinate(
 
     size_t nvals = ia->getCoordinateWeights(w, wgts, stride);
 
-    if (nvals != len)
+    if (nvals != size_t(len))
       fail = 108;
 
     scalar_t *weightVal = weights + len*w;

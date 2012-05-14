@@ -83,7 +83,7 @@ Environment::Environment( Teuchos::ParameterList &problemParams,
   myRank_(comm->getRank()), numProcs_(comm->getSize()), comm_(comm), 
   errorCheckLevel_(BASIC_ASSERTION),
   unvalidatedParams_(problemParams), params_(problemParams),
-  debugOut_(), timerOut_(), memoryOut_()
+  debugOut_(), timerOut_(), timingOn(false), memoryOut_()
 {
   commitParameters();
 }
@@ -91,7 +91,7 @@ Environment::Environment( Teuchos::ParameterList &problemParams,
 Environment::Environment():
   myRank_(0), numProcs_(1), comm_(), errorCheckLevel_(BASIC_ASSERTION),
   unvalidatedParams_("emptyList"), params_("emptyList"), 
-  debugOut_(), timerOut_(), memoryOut_()
+  debugOut_(), timerOut_(), timingOn(false), memoryOut_()
 {
   comm_ = Teuchos::DefaultComm<int>::getComm();
   myRank_ = comm_->getRank();
@@ -167,39 +167,7 @@ void Environment::commitParameters()
     debugOut_ = rcp(new DebugManager(myRank_, false, std::cout, NO_STATUS));
   }
 
-  // Set up for timing output.
-  //   We don't use "level".  You either print timing info or you don't.
-  //   By default: If no output stream is specified, we don't output
-  //       timing info.  If an output stream is specified but no
-  //       output procs, node zero only does the output.
-
-  string &f1 = params_.get<string>("timing_output_file", Z2_UNSET);
-  string &os1 = params_.get<string>("timing_output_stream", Z2_UNSET);
-
-  if (f1 != Z2_UNSET || os1 != Z2_UNSET){
-    bool iPrint = (myRank_ == 0);   // default
-    const Array<int> *reporters = 
-      params_.getPtr<Array<int> >("timing_procs");
-    if (reporters)
-      iPrint = IsInRangeList(myRank_, *reporters);
-
-    try{
-      makeMetricOutputManager<double>(myRank_, iPrint, f1, os1, timerOut_);
-    }
-    catch (std::exception &e){
-      std::ostringstream oss;
-      oss << myRank_ << ": unable to create timing output manager";
-      oss << " (" << e.what() << ")";
-      throw std::runtime_error(oss.str());
-    }
-  }
-  else{
-    // Says no processes output timing metrics.
-    timerOut_ = 
-      rcp(new MetricOutputManager<double>(myRank_, false, std::cout, false));
-  }
-
-  // Set up for memory usage output.  Same defaults as timing output.
+  // Set up for memory usage output. 
   
   string &f2 = params_.get<string>("memory_profiling_output_file", Z2_UNSET);
   string &os2 = params_.get<string>("memory_profiling_output_stream", Z2_UNSET);
