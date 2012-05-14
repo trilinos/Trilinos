@@ -61,7 +61,8 @@ namespace Teuchos {
     values.push_back (Union);
     const std::string defaultName ("Performance counter set operation");
 
-    return stringToIntegralParameterEntryValidator (strings, docs, values, defaultName);
+    return stringToIntegralParameterEntryValidator (strings (), docs (),
+                                                    values (), defaultName);
   }
 
   namespace {
