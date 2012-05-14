@@ -84,7 +84,7 @@ namespace Teuchos {
    *     u     & \text{otherwise}. \\
    *   \end{cases}
    * \f]
-   * and 
+   * and
    * \f[
    *   k = \begin{cases}
    *     i         & \text{if $u > v$}, \\
@@ -97,37 +97,37 @@ namespace Teuchos {
    * the index (k) returned is the index of the first NaN.
    */
   template<class Ordinal, class ScalarType, class IndexType>
-  class MaxLoc : 
+  class MaxLoc :
     public ValueTypeReductionOp<Ordinal, std::pair<ScalarType, IndexType> > {
   public:
-    void 
+    void
     reduce (const Ordinal count,
-	    const std::pair<ScalarType, IndexType> inBuffer[],
-	    std::pair<ScalarType, IndexType> inoutBuffer[]) const;
+            const std::pair<ScalarType, IndexType> inBuffer[],
+            std::pair<ScalarType, IndexType> inoutBuffer[]) const;
   };
 
   template<class Ordinal>
   class MaxLoc<Ordinal, double, int> :
     public ValueTypeReductionOp<Ordinal, std::pair<double, int> > {
   public:
-    void 
+    void
     reduce (const Ordinal count,
-	    const std::pair<double, int> inBuffer[],
-	    std::pair<double, int> inoutBuffer[]) const
+            const std::pair<double, int> inBuffer[],
+            std::pair<double, int> inoutBuffer[]) const
     {
       for (Ordinal ind = 0; ind < count; ++ind) {
-	const std::pair<double, int>& in = inBuffer[ind];
-	std::pair<double, int>& inout = inoutBuffer[ind];
+        const std::pair<double, int>& in = inBuffer[ind];
+        std::pair<double, int>& inout = inoutBuffer[ind];
 
-	if (in.first > inout.first) {
-	  inout.first = in.first;
-	  inout.second = in.second;
-	} else if (in.first < inout.first) {
-	  // Don't need to do anything; inout has the values.
-	} else { // equal, or at least one is NaN.
-	  inout.first = in.first;
-	  inout.second = std::min (in.second, inout.second);
-	}
+        if (in.first > inout.first) {
+          inout.first = in.first;
+          inout.second = in.second;
+        } else if (in.first < inout.first) {
+          // Don't need to do anything; inout has the values.
+        } else { // equal, or at least one is NaN.
+          inout.first = in.first;
+          inout.second = std::min (in.second, inout.second);
+        }
       }
     }
   };
@@ -160,37 +160,37 @@ namespace Teuchos {
    * well-defined results even if the array contains a NaN.
    */
   template<class Ordinal, class ScalarType, class IndexType>
-  class MinLoc : 
+  class MinLoc :
     public ValueTypeReductionOp<Ordinal, std::pair<ScalarType, IndexType> > {
   public:
-    void 
+    void
     reduce (const Ordinal count,
-	    const std::pair<ScalarType, IndexType> inBuffer[],
-	    std::pair<ScalarType, IndexType> inoutBuffer[]) const;
+            const std::pair<ScalarType, IndexType> inBuffer[],
+            std::pair<ScalarType, IndexType> inoutBuffer[]) const;
   };
 
   template<class Ordinal>
   class MinLoc<Ordinal, double, int> :
     public ValueTypeReductionOp<Ordinal, std::pair<double, int> > {
   public:
-    void 
+    void
     reduce (const Ordinal count,
-	    const std::pair<double, int> inBuffer[],
-	    std::pair<double, int> inoutBuffer[]) const
+            const std::pair<double, int> inBuffer[],
+            std::pair<double, int> inoutBuffer[]) const
     {
       for (Ordinal ind = 0; ind < count; ++ind) {
-	const std::pair<double, int>& in = inBuffer[ind];
-	std::pair<double, int>& inout = inoutBuffer[ind];
+        const std::pair<double, int>& in = inBuffer[ind];
+        std::pair<double, int>& inout = inoutBuffer[ind];
 
-	if (in.first < inout.first) {
-	  inout.first = in.first;
-	  inout.second = in.second;
-	} else if (in.first > inout.first) {
-	  // Don't need to do anything; inout has the values.
-	} else { // equal, or at least one is NaN.
-	  inout.first = in.first;
-	  inout.second = std::min (in.second, inout.second);
-	}
+        if (in.first < inout.first) {
+          inout.first = in.first;
+          inout.second = in.second;
+        } else if (in.first > inout.first) {
+          // Don't need to do anything; inout has the values.
+        } else { // equal, or at least one is NaN.
+          inout.first = in.first;
+          inout.second = std::min (in.second, inout.second);
+        }
       }
     }
   };
@@ -201,7 +201,7 @@ namespace Teuchos {
   // that timer, total number of calls to that timer).
   typedef std::map<std::string, std::pair<double, int> > timer_map_t;
 
-  TimeMonitor::TimeMonitor (Time& timer, bool reset) 
+  TimeMonitor::TimeMonitor (Time& timer, bool reset)
     : PerformanceMonitorBase<Time>(timer, reset)
   {
     if (!isRecursiveCall()) counter().start(reset);
@@ -211,11 +211,11 @@ namespace Teuchos {
     if (!isRecursiveCall()) counter().stop();
   }
 
-  void 
+  void
   TimeMonitor::zeroOutTimers()
   {
     const Array<RCP<Time> > timers = counters();
-  
+
     // In debug mode, loop first to check whether any of the timers
     // are running, before resetting them.  This ensures that this
     // method satisfies the strong exception guarantee (either it
@@ -230,14 +230,14 @@ namespace Teuchos {
       // TimeMonitor.  Calling zeroOutTimers() when a timer is
       // running is not TimeMonitor's fault.
       TEUCHOS_TEST_FOR_EXCEPTION(timer.isRunning(), std::runtime_error,
-				 "The timer i = " << i << " with name \"" 
-				 << timer.name() << "\" is currently running and may not "
-				 "be reset.");
+                                 "The timer i = " << i << " with name \""
+                                 << timer.name() << "\" is currently running and may not "
+                                 "be reset.");
     }
 #endif // TEUCHOS_DEBUG
 
-    for (Array<RCP<Time> >::const_iterator it = timers.begin(); 
-	 it != timers.end(); ++it) {
+    for (Array<RCP<Time> >::const_iterator it = timers.begin();
+         it != timers.end(); ++it) {
       (*it)->reset ();
     }
   }
@@ -246,7 +246,7 @@ namespace Teuchos {
   // its contained routines to file scope.
   namespace {
     // \brief Return an "empty" local timer datum.
-    // 
+    //
     // "Empty" means the datum has zero elapsed time and zero call
     // count.  This function does not actually create a timer.
     //
@@ -272,7 +272,7 @@ namespace Teuchos {
     // pairwise.
     void
     collectLocalTimerData (timer_map_t& localData,
-			   ArrayView<const RCP<Time> > localCounters)
+                           ArrayView<const RCP<Time> > localCounters)
     {
       using std::make_pair;
       typedef timer_map_t::const_iterator const_iter_t;
@@ -280,22 +280,22 @@ namespace Teuchos {
 
       timer_map_t theLocalData;
       for (ArrayView<const RCP<Time> >::const_iterator it = localCounters.begin();
-	   it != localCounters.end(); ++it) {
-	const std::string& name = (*it)->name();
-	const double timing = (*it)->totalElapsedTime();
-	const int numCalls = (*it)->numCalls();
+           it != localCounters.end(); ++it) {
+        const std::string& name = (*it)->name();
+        const double timing = (*it)->totalElapsedTime();
+        const int numCalls = (*it)->numCalls();
 
-	// Merge timers with duplicate labels, by summing their
-	// total elapsed times and call counts.
-	iter_t loc = theLocalData.find (name);
-	if (loc == theLocalData.end()) {
-	  // Use loc as an insertion location hint.
-	  theLocalData.insert (loc, make_pair (name, make_pair (timing, numCalls)));
-	}
-	else {
-	  loc->second.first += timing;
-	  loc->second.second += numCalls;
-	}
+        // Merge timers with duplicate labels, by summing their
+        // total elapsed times and call counts.
+        iter_t loc = theLocalData.find (name);
+        if (loc == theLocalData.end()) {
+          // Use loc as an insertion location hint.
+          theLocalData.insert (loc, make_pair (name, make_pair (timing, numCalls)));
+        }
+        else {
+          loc->second.first += timing;
+          loc->second.second += numCalls;
+        }
       }
       // This avoids copying the map, and also makes this method
       // satisfy the strong exception guarantee.
@@ -309,11 +309,11 @@ namespace Teuchos {
     filterZeroData (timer_map_t& timerData)
     {
       timer_map_t newTimerData;
-      for (timer_map_t::const_iterator it = timerData.begin(); 
-	   it != timerData.end(); ++it) {
-	if (it->second.second > 0) {
-	  newTimerData[it->first] = it->second;
-	}
+      for (timer_map_t::const_iterator it = timerData.begin();
+           it != timerData.end(); ++it) {
+        if (it->second.second > 0) {
+          newTimerData[it->first] = it->second;
+        }
       }
       timerData.swap (newTimerData);
     }
@@ -337,9 +337,9 @@ namespace Teuchos {
     ///   localTimerNames output.
     void
     collectLocalTimerDataAndNames (timer_map_t& localTimerData,
-				   Array<std::string>& localTimerNames,
-				   ArrayView<const RCP<Time> > localTimers,
-				   const bool writeZeroTimers)
+                                   Array<std::string>& localTimerNames,
+                                   ArrayView<const RCP<Time> > localTimers,
+                                   const bool writeZeroTimers)
     {
       // Collect and sort local timer data by timer names.
       collectLocalTimerData (localTimerData, localTimers);
@@ -349,15 +349,15 @@ namespace Teuchos {
       // set of global names, then that timer has a nonzero call count
       // on at least one MPI process.
       if (! writeZeroTimers) {
-	filterZeroData (localTimerData);
+        filterZeroData (localTimerData);
       }
 
       // Extract the set of local timer names.  The std::map keeps
       // them sorted alphabetically.
       localTimerNames.reserve (localTimerData.size());
-      for (timer_map_t::const_iterator it = localTimerData.begin(); 
-	   it != localTimerData.end(); ++it) {
-	localTimerNames.push_back (it->first);
+      for (timer_map_t::const_iterator it = localTimerData.begin();
+           it != localTimerData.end(); ++it) {
+        localTimerNames.push_back (it->first);
       }
     }
 
@@ -397,12 +397,12 @@ namespace Teuchos {
     ///   timers over all processes in the communicator.
     void
     collectGlobalTimerData (timer_map_t& globalTimerData,
-			    Array<std::string>& globalTimerNames,
-			    timer_map_t& localTimerData,
-			    Array<std::string>& localTimerNames,
-			    Ptr<const Comm<int> > comm,
-			    const bool alwaysWriteLocal,
-			    const ECounterSetOp setOp)
+                            Array<std::string>& globalTimerNames,
+                            timer_map_t& localTimerData,
+                            Array<std::string>& localTimerNames,
+                            Ptr<const Comm<int> > comm,
+                            const bool alwaysWriteLocal,
+                            const ECounterSetOp setOp)
     {
       // There may be some global timers that are not local timers on
       // the calling MPI process(es).  In that case, if
@@ -428,23 +428,23 @@ namespace Teuchos {
 
 #ifdef TEUCHOS_DEBUG
       {
-	// Sanity check that all processes have the name number of
-	// global timer names.
-	const timer_map_t::size_type myNumGlobalNames = globalTimerNames.size();
-	timer_map_t::size_type minNumGlobalNames = 0;
-	timer_map_t::size_type maxNumGlobalNames = 0;
-	reduceAll (*comm, REDUCE_MIN, myNumGlobalNames, 
-		   outArg (minNumGlobalNames));
-	reduceAll (*comm, REDUCE_MAX, myNumGlobalNames, 
-		   outArg (maxNumGlobalNames));
-	TEUCHOS_TEST_FOR_EXCEPTION(minNumGlobalNames != maxNumGlobalNames,
-          std::logic_error, "Min # global timer names = " << minNumGlobalNames 
-	  << " != max # global timer names = " << maxNumGlobalNames
-	  << ".  Please report this bug to the Teuchos developers.");
-	TEUCHOS_TEST_FOR_EXCEPTION(myNumGlobalNames != minNumGlobalNames,
-	  std::logic_error, "My # global timer names = " << myNumGlobalNames 
-	  << " != min # global timer names = " << minNumGlobalNames
-	  << ".  Please report this bug to the Teuchos developers.");
+        // Sanity check that all processes have the name number of
+        // global timer names.
+        const timer_map_t::size_type myNumGlobalNames = globalTimerNames.size();
+        timer_map_t::size_type minNumGlobalNames = 0;
+        timer_map_t::size_type maxNumGlobalNames = 0;
+        reduceAll (*comm, REDUCE_MIN, myNumGlobalNames,
+                   outArg (minNumGlobalNames));
+        reduceAll (*comm, REDUCE_MAX, myNumGlobalNames,
+                   outArg (maxNumGlobalNames));
+        TEUCHOS_TEST_FOR_EXCEPTION(minNumGlobalNames != maxNumGlobalNames,
+          std::logic_error, "Min # global timer names = " << minNumGlobalNames
+          << " != max # global timer names = " << maxNumGlobalNames
+          << ".  Please report this bug to the Teuchos developers.");
+        TEUCHOS_TEST_FOR_EXCEPTION(myNumGlobalNames != minNumGlobalNames,
+          std::logic_error, "My # global timer names = " << myNumGlobalNames
+          << " != min # global timer names = " << minNumGlobalNames
+          << ".  Please report this bug to the Teuchos developers.");
       }
 #endif // TEUCHOS_DEBUG
 
@@ -465,73 +465,73 @@ namespace Teuchos {
       // entries in globalTimerNames.
       timer_map_t::iterator globalMapIter = globalTimerData.begin();
       timer_map_t::iterator localMapIter;
-      for (Array<string>::const_iterator it = globalTimerNames.begin(); 
-	   it != globalTimerNames.end(); ++it) {
-	const std::string& globalName = *it;
-	localMapIter = localTimerData.find (globalName);
+      for (Array<string>::const_iterator it = globalTimerNames.begin();
+           it != globalTimerNames.end(); ++it) {
+        const std::string& globalName = *it;
+        localMapIter = localTimerData.find (globalName);
 
-	if (localMapIter == localTimerData.end()) {
-	  if (alwaysWriteLocal) {
-	    // If there are some global timers that are not local
-	    // timers, and if we want to print local timers, we insert
-	    // a local timer datum with zero elapsed time and zero
-	    // call count into localTimerData as well.  This will
-	    // ensure that both global and local timer columns in the
-	    // output table have the same number of rows.
-	    //
-	    // We really only need to do this on Proc 0, which is the
-	    // only process that currently may print local timers.
-	    // However, we do it on all processes, just in case
-	    // someone later wants to modify this function to print
-	    // out local timer data for some process other than Proc
-	    // 0.  This extra computation won't affect the cost along
-	    // the critical path, for future computations in which
-	    // Proc 0 participates.
-	    localMapIter = localTimerData.insert (localMapIter, makeEmptyTimerDatum (globalName));
+        if (localMapIter == localTimerData.end()) {
+          if (alwaysWriteLocal) {
+            // If there are some global timers that are not local
+            // timers, and if we want to print local timers, we insert
+            // a local timer datum with zero elapsed time and zero
+            // call count into localTimerData as well.  This will
+            // ensure that both global and local timer columns in the
+            // output table have the same number of rows.
+            //
+            // We really only need to do this on Proc 0, which is the
+            // only process that currently may print local timers.
+            // However, we do it on all processes, just in case
+            // someone later wants to modify this function to print
+            // out local timer data for some process other than Proc
+            // 0.  This extra computation won't affect the cost along
+            // the critical path, for future computations in which
+            // Proc 0 participates.
+            localMapIter = localTimerData.insert (localMapIter, makeEmptyTimerDatum (globalName));
 
-	    // Make sure the missing global name gets added to the
-	    // list of local names.  We'll re-sort the list of local
-	    // names below.
-	    localTimerNames.push_back (globalName);
-	  }
-	  // There's a global timer that's not a local timer.  Add it
-	  // to our pre-merge version of the global timer data so that
-	  // we can safely merge the global timer data later.
-	  globalMapIter = globalTimerData.insert (globalMapIter, makeEmptyTimerDatum (globalName));
-	}
-	else {
-	  // We have this global timer name in our local timer list.
-	  // Fill in our pre-merge version of the global timer data
-	  // with our local data.
-	  globalMapIter = globalTimerData.insert (globalMapIter, std::make_pair (globalName, localMapIter->second));
-	}
+            // Make sure the missing global name gets added to the
+            // list of local names.  We'll re-sort the list of local
+            // names below.
+            localTimerNames.push_back (globalName);
+          }
+          // There's a global timer that's not a local timer.  Add it
+          // to our pre-merge version of the global timer data so that
+          // we can safely merge the global timer data later.
+          globalMapIter = globalTimerData.insert (globalMapIter, makeEmptyTimerDatum (globalName));
+        }
+        else {
+          // We have this global timer name in our local timer list.
+          // Fill in our pre-merge version of the global timer data
+          // with our local data.
+          globalMapIter = globalTimerData.insert (globalMapIter, std::make_pair (globalName, localMapIter->second));
+        }
       }
 
       if (alwaysWriteLocal) {
-	// Re-sort the list of local timer names, since we may have
-	// inserted "missing" names above.
-	std::sort (localTimerNames.begin(), localTimerNames.end());
+        // Re-sort the list of local timer names, since we may have
+        // inserted "missing" names above.
+        std::sort (localTimerNames.begin(), localTimerNames.end());
       }
 
 #ifdef TEUCHOS_DEBUG
       {
-	// Sanity check that all processes have the name number of
-	// global timers.
-	const timer_map_t::size_type myNumGlobalTimers = globalTimerData.size();
-	timer_map_t::size_type minNumGlobalTimers = 0;
-	timer_map_t::size_type maxNumGlobalTimers = 0;
-	reduceAll (*comm, REDUCE_MIN, myNumGlobalTimers, 
-		   outArg (minNumGlobalTimers));
-	reduceAll (*comm, REDUCE_MAX, myNumGlobalTimers, 
-		   outArg (maxNumGlobalTimers));
-	TEUCHOS_TEST_FOR_EXCEPTION(minNumGlobalTimers != maxNumGlobalTimers,
-				   std::logic_error, "Min # global timers = " << minNumGlobalTimers 
-				   << " != max # global timers = " << maxNumGlobalTimers
-				   << ".  Please report this bug to the Teuchos developers.");
-	TEUCHOS_TEST_FOR_EXCEPTION(myNumGlobalTimers != minNumGlobalTimers,
-				   std::logic_error, "My # global timers = " << myNumGlobalTimers 
-				   << " != min # global timers = " << minNumGlobalTimers
-				   << ".  Please report this bug to the Teuchos developers.");
+        // Sanity check that all processes have the name number of
+        // global timers.
+        const timer_map_t::size_type myNumGlobalTimers = globalTimerData.size();
+        timer_map_t::size_type minNumGlobalTimers = 0;
+        timer_map_t::size_type maxNumGlobalTimers = 0;
+        reduceAll (*comm, REDUCE_MIN, myNumGlobalTimers,
+                   outArg (minNumGlobalTimers));
+        reduceAll (*comm, REDUCE_MAX, myNumGlobalTimers,
+                   outArg (maxNumGlobalTimers));
+        TEUCHOS_TEST_FOR_EXCEPTION(minNumGlobalTimers != maxNumGlobalTimers,
+                                   std::logic_error, "Min # global timers = " << minNumGlobalTimers
+                                   << " != max # global timers = " << maxNumGlobalTimers
+                                   << ".  Please report this bug to the Teuchos developers.");
+        TEUCHOS_TEST_FOR_EXCEPTION(myNumGlobalTimers != minNumGlobalTimers,
+                                   std::logic_error, "My # global timers = " << myNumGlobalTimers
+                                   << " != min # global timers = " << minNumGlobalTimers
+                                   << ".  Please report this bug to the Teuchos developers.");
       }
 #endif // TEUCHOS_DEBUG
     }
@@ -575,9 +575,9 @@ namespace Teuchos {
     ///   that all processes have the same keys stored in this map.
     void
     computeGlobalTimerStats (stat_map_type& statData,
-			     std::vector<std::string>& statNames,
-			     Ptr<const Comm<int> > comm,
-			     const timer_map_t& globalTimerData)
+                             std::vector<std::string>& statNames,
+                             Ptr<const Comm<int> > comm,
+                             const timer_map_t& globalTimerData)
     {
       const int numTimers = static_cast<int> (globalTimerData.size());
       const int numProcs = comm->getSize();
@@ -587,9 +587,9 @@ namespace Teuchos {
       // the global timer names are in the map.
       Array<std::pair<double, int> > timingsAndCallCounts;
       timingsAndCallCounts.reserve (numTimers);
-      for (timer_map_t::const_iterator it = globalTimerData.begin(); 
-	   it != globalTimerData.end(); ++it) {
-	timingsAndCallCounts.push_back (it->second);
+      for (timer_map_t::const_iterator it = globalTimerData.begin();
+           it != globalTimerData.end(); ++it) {
+        timingsAndCallCounts.push_back (it->second);
       }
 
       // For each timer name, compute the min timing and its
@@ -598,8 +598,8 @@ namespace Teuchos {
       // be used.
       Array<std::pair<double, int> > minTimingsAndCallCounts (numTimers);
       if (numTimers > 0) {
-	reduceAll (*comm, MinLoc<int, double, int>(), numTimers, 
-		   &timingsAndCallCounts[0], &minTimingsAndCallCounts[0]);
+        reduceAll (*comm, MinLoc<int, double, int>(), numTimers,
+                   &timingsAndCallCounts[0], &minTimingsAndCallCounts[0]);
       }
 
       // For each timer name, compute the max timing and its
@@ -608,15 +608,15 @@ namespace Teuchos {
       // be used.
       Array<std::pair<double, int> > maxTimingsAndCallCounts (numTimers);
       if (numTimers > 0) {
-	reduceAll (*comm, MaxLoc<int, double, int>(), numTimers, 
-		   &timingsAndCallCounts[0], &maxTimingsAndCallCounts[0]);
+        reduceAll (*comm, MaxLoc<int, double, int>(), numTimers,
+                   &timingsAndCallCounts[0], &maxTimingsAndCallCounts[0]);
       }
 
       // For each timer name, compute the mean-over-processes timing,
       // the mean call count, and the mean-over-call-counts timing.
       // The mean call count is reported as a double to allow a
       // fractional value.
-      // 
+      //
       // Each local timing is really the total timing over all local
       // invocations.  The number of local invocations is the call
       // count.  Thus, the mean-over-call-counts timing is the sum of
@@ -627,30 +627,30 @@ namespace Teuchos {
       Array<double> meanOverProcsTimings (numTimers);
       Array<double> meanCallCounts (numTimers);
       {
-	// When summing, first scale by the number of processes.  This
-	// avoids unnecessary overflow, and also gives us the mean
-	// call count automatically.
-	Array<double> scaledTimings (numTimers);
-	Array<double> scaledCallCounts (numTimers);
-	const double P = static_cast<double> (numProcs);
-	for (int k = 0; k < numTimers; ++k) {
-	  const double timing = timingsAndCallCounts[k].first;
-	  const double callCount = static_cast<double> (timingsAndCallCounts[k].second);
+        // When summing, first scale by the number of processes.  This
+        // avoids unnecessary overflow, and also gives us the mean
+        // call count automatically.
+        Array<double> scaledTimings (numTimers);
+        Array<double> scaledCallCounts (numTimers);
+        const double P = static_cast<double> (numProcs);
+        for (int k = 0; k < numTimers; ++k) {
+          const double timing = timingsAndCallCounts[k].first;
+          const double callCount = static_cast<double> (timingsAndCallCounts[k].second);
 
-	  scaledTimings[k] = timing / P;
-	  scaledCallCounts[k] = callCount / P;
-	}
-	if (numTimers > 0) {
-	  reduceAll (*comm, REDUCE_SUM, numTimers, &scaledTimings[0], 
-		     &meanOverProcsTimings[0]);
-	  reduceAll (*comm, REDUCE_SUM, numTimers, &scaledCallCounts[0], 
-		     &meanCallCounts[0]);
-	}
-	// We don't have to undo the scaling for the mean timings;
-	// just divide by the scaled call count.
-	for (int k = 0; k < numTimers; ++k) {
-	  meanOverCallCountsTimings[k] = meanOverProcsTimings[k] / meanCallCounts[k];
-	}
+          scaledTimings[k] = timing / P;
+          scaledCallCounts[k] = callCount / P;
+        }
+        if (numTimers > 0) {
+          reduceAll (*comm, REDUCE_SUM, numTimers, &scaledTimings[0],
+                     &meanOverProcsTimings[0]);
+          reduceAll (*comm, REDUCE_SUM, numTimers, &scaledCallCounts[0],
+                     &meanCallCounts[0]);
+        }
+        // We don't have to undo the scaling for the mean timings;
+        // just divide by the scaled call count.
+        for (int k = 0; k < numTimers; ++k) {
+          meanOverCallCountsTimings[k] = meanOverProcsTimings[k] / meanCallCounts[k];
+        }
       }
 
       // Reformat the data into the map of statistics.  Be sure that
@@ -666,16 +666,16 @@ namespace Teuchos {
       stat_map_type::iterator statIter = statData.end();
       timer_map_t::const_iterator it = globalTimerData.begin();
       for (int k = 0; it != globalTimerData.end(); ++k, ++it) {
-	std::vector<std::pair<double, double> > curData (4);
-	curData[0] = minTimingsAndCallCounts[k];
-	curData[1] = std::make_pair (meanOverProcsTimings[k], meanCallCounts[k]);
-	curData[2] = maxTimingsAndCallCounts[k];
-	curData[3] = std::make_pair (meanOverCallCountsTimings[k], meanCallCounts[k]);
+        std::vector<std::pair<double, double> > curData (4);
+        curData[0] = minTimingsAndCallCounts[k];
+        curData[1] = std::make_pair (meanOverProcsTimings[k], meanCallCounts[k]);
+        curData[2] = maxTimingsAndCallCounts[k];
+        curData[3] = std::make_pair (meanOverCallCountsTimings[k], meanCallCounts[k]);
 
-	// statIter gives an insertion location hint that makes each
-	// insertion O(1), since we remember the location of the last
-	// insertion.
-	statIter = statData.insert (statIter, std::make_pair (it->first, curData));
+        // statIter gives an insertion location hint that makes each
+        // insertion O(1), since we remember the location of the last
+        // insertion.
+        statIter = statData.insert (statIter, std::make_pair (it->first, curData));
       }
     }
 
@@ -696,7 +696,7 @@ namespace Teuchos {
     /// need in order to do so anyway.  Thus, if Trilinos was built
     /// with MPI and MPI has not yet been initialized, this method
     /// returns a "serial" communicator.
-    RCP<const Comm<int> > 
+    RCP<const Comm<int> >
     getDefaultComm ()
     {
       // The default communicator.  If Trilinos was built with MPI
@@ -708,12 +708,12 @@ namespace Teuchos {
 
 #ifdef HAVE_MPI
       {
-	int mpiHasBeenStarted = 0;
-	MPI_Initialized (&mpiHasBeenStarted);
-	if (! mpiHasBeenStarted) {
-	  // Make pComm a new "serial communicator."
-	  comm = rcp_implicit_cast<const Comm<int> > (rcp (new SerialComm<int> ()));
-	}
+        int mpiHasBeenStarted = 0;
+        MPI_Initialized (&mpiHasBeenStarted);
+        if (! mpiHasBeenStarted) {
+          // Make pComm a new "serial communicator."
+          comm = rcp_implicit_cast<const Comm<int> > (rcp (new SerialComm<int> ()));
+        }
       }
 #endif // HAVE_MPI
       return comm;
@@ -724,37 +724,37 @@ namespace Teuchos {
 
   void
   TimeMonitor::computeGlobalTimerStatistics (stat_map_type& statData,
-					     std::vector<std::string>& statNames,
-					     Ptr<const Comm<int> > comm,
-					     const ECounterSetOp setOp)
+                                             std::vector<std::string>& statNames,
+                                             Ptr<const Comm<int> > comm,
+                                             const ECounterSetOp setOp)
   {
     // Collect local timer data and names.  Filter out timers with
     // zero call counts if writeZeroTimers is false.
     timer_map_t localTimerData;
     Array<std::string> localTimerNames;
     const bool writeZeroTimers = false;
-    collectLocalTimerDataAndNames (localTimerData, localTimerNames, 
-				   counters(), writeZeroTimers);
+    collectLocalTimerDataAndNames (localTimerData, localTimerNames,
+                                   counters(), writeZeroTimers);
     // Merge the local timer data and names into global timer data and
     // names.
     timer_map_t globalTimerData;
     Array<std::string> globalTimerNames;
     const bool alwaysWriteLocal = false;
-    collectGlobalTimerData (globalTimerData, globalTimerNames, 
-			    localTimerData, localTimerNames,
-			    comm, alwaysWriteLocal, setOp);
+    collectGlobalTimerData (globalTimerData, globalTimerNames,
+                            localTimerData, localTimerNames,
+                            comm, alwaysWriteLocal, setOp);
     // Compute statistics on the data.
     computeGlobalTimerStats (statData, statNames, comm, globalTimerData);
   }
 
 
-  void 
+  void
   TimeMonitor::summarize (Ptr<const Comm<int> > comm,
-			  std::ostream& out,
-			  const bool alwaysWriteLocal,
-			  const bool writeGlobalStats,
-			  const bool writeZeroTimers,
-			  const ECounterSetOp setOp)
+                          std::ostream& out,
+                          const bool alwaysWriteLocal,
+                          const bool writeGlobalStats,
+                          const bool writeZeroTimers,
+                          const ECounterSetOp setOp)
   {
     //
     // We can't just call computeGlobalTimerStatistics(), since
@@ -769,7 +769,7 @@ namespace Teuchos {
     timer_map_t localTimerData;
     Array<std::string> localTimerNames;
     collectLocalTimerDataAndNames (localTimerData, localTimerNames,
-				   counters(), writeZeroTimers);
+                                   counters(), writeZeroTimers);
 
     // If we're computing global statistics, merge the local timer
     // data and names into global timer data and names, and compute
@@ -780,14 +780,14 @@ namespace Teuchos {
     stat_map_type statData;
     std::vector<std::string> statNames;
     if (writeGlobalStats) {
-      collectGlobalTimerData (globalTimerData, globalTimerNames, 
-			      localTimerData, localTimerNames,
-			      comm, alwaysWriteLocal, setOp);
+      collectGlobalTimerData (globalTimerData, globalTimerNames,
+                              localTimerData, localTimerNames,
+                              comm, alwaysWriteLocal, setOp);
       // Compute statistics on the data, but only if the communicator
       // contains more than one process.  Otherwise, statistics don't
       // make sense and we don't print them (see below).
-      if (numProcs > 1) { 
-	computeGlobalTimerStats (statData, statNames, comm, globalTimerData);
+      if (numProcs > 1) {
+        computeGlobalTimerStats (statData, statNames, comm, globalTimerData);
       }
     }
 
@@ -837,9 +837,9 @@ namespace Teuchos {
       Array<double> localTimings;
       Array<double> localNumCalls;
       for (timer_map_t::const_iterator it = localTimerData.begin();
-	   it != localTimerData.end(); ++it) {
-	localTimings.push_back (it->second.first);
-	localNumCalls.push_back (static_cast<double> (it->second.second));
+           it != localTimerData.end(); ++it) {
+        localTimings.push_back (it->second.first);
+        localNumCalls.push_back (static_cast<double> (it->second.second));
       }
       TableColumn timeAndCalls (localTimings, localNumCalls, precision, true);
       tableColumns.append (timeAndCalls);
@@ -852,44 +852,44 @@ namespace Teuchos {
       // display the timings and call counts.  If there's more than 1
       // process, do display statistics.
       if (numProcs == 1) {
-	// Extract timings and the call counts from globalTimerData.
-	Array<double> globalTimings;
-	Array<double> globalNumCalls;
-	for (timer_map_t::const_iterator it = globalTimerData.begin();
-	     it != globalTimerData.end(); ++it) {
-	  globalTimings.push_back (it->second.first);
-	  globalNumCalls.push_back (static_cast<double> (it->second.second));
-	}
-	// Print the table column.
-	titles.append ("Global time (num calls)");
-	TableColumn timeAndCalls (globalTimings, globalNumCalls, precision, true);
-	tableColumns.append (timeAndCalls);
-	columnWidths.append (format().computeRequiredColumnWidth (titles.back(), timeAndCalls));
+        // Extract timings and the call counts from globalTimerData.
+        Array<double> globalTimings;
+        Array<double> globalNumCalls;
+        for (timer_map_t::const_iterator it = globalTimerData.begin();
+             it != globalTimerData.end(); ++it) {
+          globalTimings.push_back (it->second.first);
+          globalNumCalls.push_back (static_cast<double> (it->second.second));
+        }
+        // Print the table column.
+        titles.append ("Global time (num calls)");
+        TableColumn timeAndCalls (globalTimings, globalNumCalls, precision, true);
+        tableColumns.append (timeAndCalls);
+        columnWidths.append (format().computeRequiredColumnWidth (titles.back(), timeAndCalls));
       }
       else { // numProcs > 1
-	// Print a table column for each statistic.  statNames and
-	// each value in statData use the same ordering, so we can
-	// iterate over valid indices of statNames to display the
-	// statistics in the right order.
-	const timer_map_t::size_type numGlobalTimers = globalTimerData.size();
-	for (std::vector<std::string>::size_type statInd = 0; statInd < statNames.size(); ++statInd) {
-	  // Extract lists of timings and their call counts for the
-	  // current statistic.
-	  Array<double> statTimings (numGlobalTimers);
-	  Array<double> statCallCounts (numGlobalTimers);
-	  stat_map_type::const_iterator it = statData.begin();
-	  for (int k = 0; it != statData.end(); ++it, ++k) {
-	    statTimings[k] = (it->second[statInd]).first;
-	    statCallCounts[k] = (it->second[statInd]).second;
-	  }
-	  // Print the table column.
-	  const std::string& statisticName = statNames[statInd];
-	  const std::string titleString = statisticName;
-	  titles.append (titleString);
-	  TableColumn timeAndCalls (statTimings, statCallCounts, precision, true);
-	  tableColumns.append (timeAndCalls);
-	  columnWidths.append (format().computeRequiredColumnWidth (titles.back(), timeAndCalls));
-	}
+        // Print a table column for each statistic.  statNames and
+        // each value in statData use the same ordering, so we can
+        // iterate over valid indices of statNames to display the
+        // statistics in the right order.
+        const timer_map_t::size_type numGlobalTimers = globalTimerData.size();
+        for (std::vector<std::string>::size_type statInd = 0; statInd < statNames.size(); ++statInd) {
+          // Extract lists of timings and their call counts for the
+          // current statistic.
+          Array<double> statTimings (numGlobalTimers);
+          Array<double> statCallCounts (numGlobalTimers);
+          stat_map_type::const_iterator it = statData.begin();
+          for (int k = 0; it != statData.end(); ++it, ++k) {
+            statTimings[k] = (it->second[statInd]).first;
+            statCallCounts[k] = (it->second[statInd]).second;
+          }
+          // Print the table column.
+          const std::string& statisticName = statNames[statInd];
+          const std::string titleString = statisticName;
+          titles.append (titleString);
+          TableColumn timeAndCalls (statTimings, statCallCounts, precision, true);
+          tableColumns.append (timeAndCalls);
+          columnWidths.append (format().computeRequiredColumnWidth (titles.back(), timeAndCalls));
+        }
       }
     }
 
@@ -897,32 +897,32 @@ namespace Teuchos {
     format().setColumnWidths (columnWidths);
     if (myRank == 0) {
       std::ostringstream theTitle;
-      theTitle << "TimeMonitor results over " << numProcs << " processor" 
-	       << (numProcs > 1 ? "s" : "");
+      theTitle << "TimeMonitor results over " << numProcs << " processor"
+               << (numProcs > 1 ? "s" : "");
       format().writeWholeTable (out, theTitle.str(), titles, tableColumns);
     }
   }
 
-  void 
+  void
   TimeMonitor::summarize (std::ostream &out,
-			  const bool alwaysWriteLocal,
-			  const bool writeGlobalStats,
-			  const bool writeZeroTimers,
-			  const ECounterSetOp setOp)
+                          const bool alwaysWriteLocal,
+                          const bool writeGlobalStats,
+                          const bool writeZeroTimers,
+                          const ECounterSetOp setOp)
   {
     // The default communicator.  If Trilinos was built with MPI
     // enabled, this should be MPI_COMM_WORLD.  Otherwise, this should
     // be a "serial" (no MPI, one "process") communicator.
     RCP<const Comm<int> > comm = getDefaultComm();
 
-    summarize (comm.ptr(), out, alwaysWriteLocal, 
-	       writeGlobalStats, writeZeroTimers, setOp);
+    summarize (comm.ptr(), out, alwaysWriteLocal,
+               writeGlobalStats, writeZeroTimers, setOp);
   }
 
-  void 
+  void
   TimeMonitor::computeGlobalTimerStatistics (stat_map_type& statData,
-					     std::vector<std::string>& statNames,
-					     const ECounterSetOp setOp)
+                                             std::vector<std::string>& statNames,
+                                             const ECounterSetOp setOp)
   {
     // The default communicator.  If Trilinos was built with MPI
     // enabled, this should be MPI_COMM_WORLD.  Otherwise, this should
@@ -932,5 +932,29 @@ namespace Teuchos {
     computeGlobalTimerStatistics (statData, statNames, comm.ptr(), setOp);
   }
 
+
+  void TimeMonitor::
+  summarizeToYaml (Ptr<const Comm<int> > comm,
+                   std::ostream &out=std::cout,
+                   const bool alwaysWriteLocal=false,
+                   const bool writeGlobalStats=true,
+                   const bool writeZeroTimers=true,
+                   const ECounterSetOp setOp=Intersection)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+      "summarizeToYaml not yet implemented");
+  }
+
+
+  void TimeMonitor::
+  summarizeToYaml (std::ostream &out=std::cout,
+                   const bool alwaysWriteLocal=false,
+                   const bool writeGlobalStats=true,
+                   const bool writeZeroTimers=true,
+                   const ECounterSetOp setOp=Intersection)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+      "summarizeToYaml not yet implemented");
+  }
 
 } // namespace Teuchos
