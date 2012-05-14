@@ -2,7 +2,7 @@
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 #
-# Platform/compiler specific options for brain.sandia.gov using gcc 4.6.1
+# Platform/compiler specific options for brain.sandia.gov using gcc 4.6.3
 #
 
 MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
@@ -10,10 +10,10 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.brain.common.cmake")
 
   # Set up the compiler environment.
-  SET(brain_GCC_ROOT "$ENV{HOME}/compilers/gcc/4.6.1")
+  SET(brain_GCC_ROOT "$ENV{HOME}/compilers/gcc/4.6.3")
   SET(ENV{LD_LIBRARY_PATH} "${brain_GCC_ROOT}/lib64:$ENV{LD_LIBRARY_PATH}")
   
-  SET_DEFAULT(COMPILER_VERSION "GCC-4.6.1")
+  SET_DEFAULT(COMPILER_VERSION "GCC-4.6.3")
   
   IF (COMM_TYPE STREQUAL MPI)
   
@@ -21,7 +21,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
       "-DTPL_ENABLE_MPI:BOOL=ON"
-      "-DMPI_BASE_DIR=$ENV{HOME}/tpls/gcc/4.6.1/openmpi/1.4.3"
+      "-DMPI_BASE_DIR=$ENV{HOME}/tpls/gcc/4.6.3/openmpi/1.4.3"
       )
   
   ELSE()

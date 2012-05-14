@@ -32,22 +32,34 @@
 
 
 
+//#define USE_WR_POOL
+//#undef USE_WR_POOL
+//
+//
+///* if undefined, the ACK message is NOT sent to the RDMA target when
+// * the RDMA op is complete.  this creates one-sided semantics for RDMA
+// * ops.  in this mode, the target has no idea when the RDMA op is
+// * complete and what data was addressed.  NNTI_wait() returns NNTI_EINVAL
+// * if passed a target buffer.
+// */
+//#undef USE_RDMA_TARGET_ACK
+///* if defined, the RDMA initiator will send an ACK message to the RDMA
+// * target when the RDMA op is complete.  the target process must wait
+// * on the target buffer in order to get the ACK.  this creates two-sided
+// * semantics for RDMA ops.   in this mode, when the wait returns the
+// * the RDMA op is complete and status indicates what data was addressed.
+// */
+//#define USE_RDMA_TARGET_ACK
 
-/* if undefined, the ACK message is NOT sent to the RDMA target when
- * the RDMA op is complete.  this creates one-sided semantics for RDMA
- * ops.  in this mode, the target has no idea when the RDMA op is
- * complete and what data was addressed.  NNTI_wait() returns NNTI_EINVAL
- * if passed a target buffer.
- */
-#undef USE_RDMA_TARGET_ACK
-/* if defined, the RDMA initiator will send an ACK message to the RDMA
- * target when the RDMA op is complete.  the target process must wait
- * on the target buffer in order to get the ACK.  this creates two-sided
- * semantics for RDMA ops.   in this mode, when the wait returns the
- * the RDMA op is complete and status indicates what data was addressed.
- */
-#define USE_RDMA_TARGET_ACK
 
+
+typedef struct {
+
+    bool use_wr_pool;
+
+    bool use_rdma_target_ack;
+
+} nnti_ib_config;
 
 
 /**
@@ -147,13 +159,11 @@ typedef struct {
     uint32_t                 qpn;
     uint32_t                 peer_qpn;
 
-#if defined(USE_RDMA_TARGET_ACK)
     struct ibv_send_wr ack_sq_wr;
     struct ibv_recv_wr ack_rq_wr;
     struct ibv_sge     ack_sge;
     struct ibv_mr     *ack_mr;
     ib_rdma_ack        ack;
-#endif
 
     /* this is a copy of the last work completion that arrived for this buffer */
     struct ibv_wc    last_wc;
@@ -171,10 +181,9 @@ typedef std::deque<ib_work_request *>::iterator wr_queue_iter_t;
 
 typedef struct {
     ib_buffer_type type;
-
     struct ibv_mr *mr;
-
     wr_queue_t     wr_queue;
+    uint32_t       ref_count;
 } ib_memory_handle;
 
 typedef struct {
@@ -228,14 +237,12 @@ static int register_memory(
         enum ibv_access_flags access);
 static int unregister_memory(
         ib_memory_handle *hdl);
-#if defined(USE_RDMA_TARGET_ACK)
 static int register_ack(
         ib_work_request *wr);
 static int unregister_ack(
         ib_work_request *wr);
 static void send_ack (
         ib_work_request *wr);
-#endif
 static NNTI_result_t setup_data_channel(void);
 static NNTI_result_t setup_request_channel(void);
 static ib_work_request *decode_work_request(
@@ -251,10 +258,14 @@ static NNTI_result_t post_recv_work_request(
         int64_t         wr_id,
         uint64_t        offset,
         uint64_t        length);
-#if defined(USE_RDMA_TARGET_ACK)
 static NNTI_result_t post_ack_recv_work_request(
         NNTI_buffer_t  *reg_buf);
-#endif
+static NNTI_result_t repost_recv_work_request(
+        NNTI_buffer_t    *reg_buf,
+        ib_work_request  *wr);
+static NNTI_result_t repost_ack_recv_work_request(
+        NNTI_buffer_t    *reg_buf,
+        ib_work_request  *wr);
 static ib_work_request *first_incomplete_wr(
         ib_memory_handle *ib_mem_hdl);
 static int8_t is_buf_op_complete(
@@ -329,7 +340,20 @@ static ib_work_request *get_wr_wrhash(const uint32_t bufhash);
 static ib_work_request *del_wr_wrhash(ib_work_request *);
 static void print_wrhash_map(void);
 
+static NNTI_result_t wr_pool_init(uint32_t pool_size);
+static ib_work_request *wr_pool_rdma_pop(void);
+static ib_work_request *wr_pool_sendrecv_pop(void);
+static void wr_pool_rdma_push(ib_work_request *wr);
+static void wr_pool_sendrecv_push(ib_work_request *wr);
+static NNTI_result_t wr_pool_fini(void);
+
 static void close_all_conn(void);
+
+static void config_init(
+        nnti_ib_config *c);
+static void config_get_from_env(
+        nnti_ib_config *c);
+
 //static void print_wr(ib_work_request *wr);
 //static void print_xfer_buf(void *buf, uint32_t size);
 //static void print_ack_buf(ib_rdma_ack *ack);
@@ -407,6 +431,16 @@ typedef std::map<uint32_t, ib_work_request *>::iterator wr_by_wrhash_iter_t;
 typedef std::pair<uint32_t, ib_work_request *> wr_by_wrhash_t;
 static nthread_mutex_t nnti_wr_wrhash_lock;
 
+typedef std::deque<ib_work_request *>           wr_pool_t;
+typedef std::deque<ib_work_request *>::iterator wr_pool_iter_t;
+static nthread_mutex_t nnti_wr_pool_lock;
+
+static wr_pool_t rdma_wr_pool;
+static wr_pool_t sendrecv_wr_pool;
+
+
+static nnti_ib_config config;
+
 
 
 
@@ -462,6 +496,10 @@ NNTI_result_t NNTI_ib_init (
         nthread_mutex_init(&nnti_wr_wrhash_lock, NTHREAD_MUTEX_RECURSIVE);
         nthread_mutex_init(&nnti_buf_bufhash_lock, NTHREAD_MUTEX_RECURSIVE);
 
+        nthread_mutex_init(&nnti_wr_pool_lock, NTHREAD_MUTEX_NORMAL);
+
+        config_init(&config);
+        config_get_from_env(&config);
 
         log_debug(nnti_debug_level, "my_url=%s", my_url);
 
@@ -557,6 +595,14 @@ NNTI_result_t NNTI_ib_init (
         setup_request_channel();
         setup_data_channel();
 
+        if (config.use_wr_pool) {
+            rc=wr_pool_init(100);
+            if (rc!=NNTI_OK) {
+                log_error(nnti_debug_level, "wr_pool_init(): %d", rc);
+                goto cleanup;
+            }
+        }
+
         init_server_listen_socket();
         start_connection_listener_thread();
 
@@ -575,6 +621,7 @@ NNTI_result_t NNTI_ib_init (
         initialized = TRUE;
     }
 
+cleanup:
     log_debug(nnti_debug_level, "exit");
 
     return(NNTI_OK);
@@ -787,9 +834,9 @@ NNTI_result_t NNTI_ib_register_memory (
 
     uint32_t cqe_num;
 
-
     struct ibv_recv_wr *bad_wr=NULL;
 
+    NNTI_buffer_t     *old_buf=NULL;
     ib_memory_handle *ib_mem_hdl=NULL;
 
     assert(trans_hdl);
@@ -801,8 +848,17 @@ NNTI_result_t NNTI_ib_register_memory (
 
 //    if (ops==NNTI_PUT_SRC) print_xfer_buf(buffer, element_size);
 
-    ib_mem_hdl=new ib_memory_handle();
-    assert(ib_mem_hdl);
+    old_buf=get_buf_bufhash(hash6432shift((uint64_t)buffer));
+    if (old_buf==NULL) {
+        ib_mem_hdl=new ib_memory_handle();
+        assert(ib_mem_hdl);
+        ib_mem_hdl->ref_count=1;
+    } else {
+        ib_mem_hdl=(ib_memory_handle*)old_buf->transport_private;
+        ib_mem_hdl->ref_count++;
+    }
+
+    log_debug(nnti_debug_level, "ib_mem_hdl->ref_count==%lu", ib_mem_hdl->ref_count);
 
     memset(reg_buf, 0, sizeof(NNTI_buffer_t));
 
@@ -812,137 +868,130 @@ NNTI_result_t NNTI_ib_register_memory (
     reg_buf->payload_size      = element_size;
     reg_buf->payload           = (uint64_t)buffer;
     reg_buf->transport_private = (uint64_t)ib_mem_hdl;
-//    if (peer != NULL) {
-//        reg_buf->peer = *peer;
-//    } else {
-//        IB_SET_MATCH_ANY(&reg_buf->peer);
-//    }
-
-//    memset(&reg_buf->buffer_addr.NNTI_remote_addr_t_u.ib, 0, sizeof(reg_buf->buffer_addr.NNTI_remote_addr_t_u.ib));
 
     log_debug(nnti_debug_level, "rpc_buffer->payload_size=%ld",
             reg_buf->payload_size);
 
-    if (ops == NNTI_RECV_QUEUE) {
-        ib_request_queue_handle *q_hdl=&transport_global_data.req_queue;
+    if (ib_mem_hdl->ref_count==1) {
+        if (ops == NNTI_RECV_QUEUE) {
+            ib_request_queue_handle *q_hdl=&transport_global_data.req_queue;
 
-        ib_mem_hdl->type=REQUEST_BUFFER;
+            ib_mem_hdl->type=REQUEST_BUFFER;
 
-        q_hdl->reg_buf=reg_buf;
+            q_hdl->reg_buf=reg_buf;
 
-        q_hdl->req_buffer  =buffer;
-        q_hdl->req_size    =element_size;
-        q_hdl->req_count   =num_elements;
-        q_hdl->req_received=0;
+            q_hdl->req_buffer  =buffer;
+            q_hdl->req_size    =element_size;
+            q_hdl->req_count   =num_elements;
+            q_hdl->req_received=0;
 
-        reg_buf->payload_size=q_hdl->req_size;
+            reg_buf->payload_size=q_hdl->req_size;
 
-        cqe_num=q_hdl->req_count;
-        if (cqe_num >= transport_global_data.srq_count) {
-            cqe_num = transport_global_data.srq_count;
+            cqe_num=q_hdl->req_count;
+            if (cqe_num >= transport_global_data.srq_count) {
+                cqe_num = transport_global_data.srq_count;
+            }
+
+            register_memory(
+                    ib_mem_hdl,
+                    buffer,
+                    num_elements*element_size,
+                    IBV_ACCESS_LOCAL_WRITE);
+
+            for (int i=0;i<cqe_num;i++) {
+                post_recv_work_request(
+                        reg_buf,
+                        i,
+                        (i*q_hdl->req_size),
+                        q_hdl->req_size);
+            }
+
+        } else if (ops == NNTI_RECV_DST) {
+            ib_mem_hdl->type=RECEIVE_BUFFER;
+
+            register_memory(
+                    ib_mem_hdl,
+                    buffer,
+                    element_size,
+                    (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
+
+        } else if (ops == NNTI_SEND_SRC) {
+            ib_mem_hdl->type=SEND_BUFFER;
+
+            register_memory(
+                    ib_mem_hdl,
+                    buffer,
+                    element_size,
+                    (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
+
+        } else if (ops == NNTI_GET_DST) {
+            ib_mem_hdl->type=GET_DST_BUFFER;
+
+            register_memory(
+                    ib_mem_hdl,
+                    buffer,
+                    element_size,
+                    (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
+
+        } else if (ops == NNTI_GET_SRC) {
+            ib_mem_hdl->type=GET_SRC_BUFFER;
+
+            register_memory(
+                    ib_mem_hdl,
+                    buffer,
+                    element_size,
+                    (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
+
+        } else if (ops == NNTI_PUT_SRC) {
+            //        print_xfer_buf(buffer, element_size);
+
+            ib_mem_hdl->type=PUT_SRC_BUFFER;
+
+            register_memory(
+                    ib_mem_hdl,
+                    buffer,
+                    element_size,
+                    (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
+
+            //        print_xfer_buf(buffer, element_size);
+
+        } else if (ops == NNTI_PUT_DST) {
+            ib_mem_hdl->type=PUT_DST_BUFFER;
+
+            register_memory(
+                    ib_mem_hdl,
+                    buffer,
+                    element_size,
+                    (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
+
+        } else if (ops == (NNTI_GET_SRC|NNTI_PUT_DST)) {
+            ib_mem_hdl->type=RDMA_TARGET_BUFFER;
+
+            register_memory(
+                    ib_mem_hdl,
+                    buffer,
+                    element_size,
+                    (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
+
+        } else {
+            ib_mem_hdl->type=UNKNOWN_BUFFER;
         }
+    }
 
-        register_memory(
-                ib_mem_hdl,
-                buffer,
-                num_elements*element_size,
-                IBV_ACCESS_LOCAL_WRITE);
-
-        for (int i=0;i<cqe_num;i++) {
-            post_recv_work_request(
-                    reg_buf,
-                    i,
-                    (i*q_hdl->req_size),
-                    q_hdl->req_size);
-        }
-
-    } else if (ops == NNTI_RECV_DST) {
-        ib_mem_hdl->type=RECEIVE_BUFFER;
-
-        register_memory(
-                ib_mem_hdl,
-                buffer,
-                element_size,
-                (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
-
+    if (ops == NNTI_RECV_DST) {
         post_recv_work_request(
                 reg_buf,
                 -1,
                 0,
                 element_size);
+    }
 
-    } else if (ops == NNTI_SEND_SRC) {
-        ib_mem_hdl->type=SEND_BUFFER;
-
-        register_memory(
-                ib_mem_hdl,
-                buffer,
-                element_size,
-                (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
-
-    } else if (ops == NNTI_GET_DST) {
-        ib_mem_hdl->type=GET_DST_BUFFER;
-
-        register_memory(
-                ib_mem_hdl,
-                buffer,
-                element_size,
-                (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
-
-    } else if (ops == NNTI_GET_SRC) {
-        ib_mem_hdl->type=GET_SRC_BUFFER;
-
-        register_memory(
-                ib_mem_hdl,
-                buffer,
-                element_size,
-                (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
-
-#if defined(USE_RDMA_TARGET_ACK)
-        post_ack_recv_work_request(reg_buf);
-#endif
-
-    } else if (ops == NNTI_PUT_SRC) {
-//        print_xfer_buf(buffer, element_size);
-
-        ib_mem_hdl->type=PUT_SRC_BUFFER;
-
-        register_memory(
-                ib_mem_hdl,
-                buffer,
-                element_size,
-                (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
-
-//        print_xfer_buf(buffer, element_size);
-
-    } else if (ops == NNTI_PUT_DST) {
-        ib_mem_hdl->type=PUT_DST_BUFFER;
-
-        register_memory(
-                ib_mem_hdl,
-                buffer,
-                element_size,
-                (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
-
-#if defined(USE_RDMA_TARGET_ACK)
-        post_ack_recv_work_request(reg_buf);
-#endif
-
-    } else if (ops == (NNTI_GET_SRC|NNTI_PUT_DST)) {
-        ib_mem_hdl->type=RDMA_TARGET_BUFFER;
-
-        register_memory(
-                ib_mem_hdl,
-                buffer,
-                element_size,
-                (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
-
-#if defined(USE_RDMA_TARGET_ACK)
-        post_ack_recv_work_request(reg_buf);
-#endif
-
-    } else {
-        ib_mem_hdl->type=UNKNOWN_BUFFER;
+    if (config.use_rdma_target_ack) {
+        if ((ib_mem_hdl->type == RDMA_TARGET_BUFFER) ||
+            (ib_mem_hdl->type == GET_SRC_BUFFER) ||
+            (ib_mem_hdl->type == PUT_DST_BUFFER)) {
+            post_ack_recv_work_request(reg_buf);
+        }
     }
 
     reg_buf->buffer_addr.transport_id                     = NNTI_TRANSPORT_IB;
@@ -950,7 +999,9 @@ NNTI_result_t NNTI_ib_register_memory (
     reg_buf->buffer_addr.NNTI_remote_addr_t_u.ib.buf      = (uint64_t)ib_mem_hdl->mr->addr;
     reg_buf->buffer_addr.NNTI_remote_addr_t_u.ib.key      = ib_mem_hdl->mr->rkey;
 
-    insert_buf_bufhash(reg_buf);
+    if (ib_mem_hdl->ref_count==1) {
+        insert_buf_bufhash(reg_buf);
+    }
 
     if (logging_debug(nnti_debug_level)) {
         fprint_NNTI_buffer(logger_get_file(), "reg_buf",
@@ -981,33 +1032,48 @@ NNTI_result_t NNTI_ib_unregister_memory (
     }
 
     ib_mem_hdl=(ib_memory_handle *)reg_buf->transport_private;
-
     assert(ib_mem_hdl);
+    ib_mem_hdl->ref_count--;
 
-    unregister_memory(ib_mem_hdl);
+    log_debug(nnti_debug_level, "ib_mem_hdl->ref_count==%lu", ib_mem_hdl->ref_count);
 
-    del_buf_bufhash(reg_buf);
+    if (ib_mem_hdl->ref_count==0) {
+        log_debug(nnti_debug_level, "ib_mem_hdl->ref_count is 0.  release all resources.");
+        unregister_memory(ib_mem_hdl);
 
-    while (!ib_mem_hdl->wr_queue.empty()) {
-        ib_work_request *wr=ib_mem_hdl->wr_queue.front();
-        log_debug(nnti_debug_level, "removing pending wr=%p", wr);
-#if defined(USE_RDMA_TARGET_ACK)
-        unregister_ack(wr);
-#endif
-        ib_mem_hdl->wr_queue.pop_front();
-        del_wr_wrhash(wr);
-        free(wr);
+        del_buf_bufhash(reg_buf);
+
+        while (!ib_mem_hdl->wr_queue.empty()) {
+            ib_work_request *wr=ib_mem_hdl->wr_queue.front();
+            log_debug(nnti_debug_level, "removing pending wr=%p", wr);
+            ib_mem_hdl->wr_queue.pop_front();
+            del_wr_wrhash(wr);
+            if (config.use_wr_pool) {
+                if (wr->ack_mr!=NULL) {
+                    wr_pool_rdma_push(wr);
+                } else {
+                    wr_pool_sendrecv_push(wr);
+                }
+            } else {
+                if (config.use_rdma_target_ack) {
+                    unregister_ack(wr);
+                }
+                free(wr);
+            }
+        }
+
+        if (ib_mem_hdl) delete ib_mem_hdl;
+
+        reg_buf->transport_id      = NNTI_TRANSPORT_NULL;
+        IB_SET_MATCH_ANY(&reg_buf->buffer_owner);
+        reg_buf->ops               = (NNTI_buf_ops_t)0;
+        //    IB_SET_MATCH_ANY(&reg_buf->peer);
+        reg_buf->payload_size      = 0;
+        reg_buf->payload           = 0;
+        reg_buf->transport_private = 0;
     }
 
-    if (ib_mem_hdl) delete ib_mem_hdl;
-
-    reg_buf->transport_id      = NNTI_TRANSPORT_NULL;
-    IB_SET_MATCH_ANY(&reg_buf->buffer_owner);
-    reg_buf->ops               = (NNTI_buf_ops_t)0;
-//    IB_SET_MATCH_ANY(&reg_buf->peer);
-    reg_buf->payload_size      = 0;
-    reg_buf->payload           = 0;
-    reg_buf->transport_private = 0;
+    log_debug(nnti_debug_level, "exit");
 
     return(rc);
 }
@@ -1042,7 +1108,11 @@ NNTI_result_t NNTI_ib_send (
 
     ib_mem_hdl=(ib_memory_handle *)msg_hdl->transport_private;
     assert(ib_mem_hdl);
-    wr=(ib_work_request *)calloc(1, sizeof(ib_work_request));
+    if (config.use_wr_pool) {
+        wr=wr_pool_sendrecv_pop();
+    } else {
+        wr=(ib_work_request *)calloc(1, sizeof(ib_work_request));
+    }
     assert(wr);
 
     wr->conn = get_conn_peer(peer_hdl);
@@ -1155,7 +1225,15 @@ NNTI_result_t NNTI_ib_put (
 
     ib_mem_hdl=(ib_memory_handle *)src_buffer_hdl->transport_private;
     assert(ib_mem_hdl);
-    wr=(ib_work_request *)calloc(1, sizeof(ib_work_request));
+    if (config.use_wr_pool) {
+        if (config.use_rdma_target_ack) {
+            wr=wr_pool_rdma_pop();
+        } else {
+            wr=wr_pool_sendrecv_pop();
+        }
+    } else {
+        wr=(ib_work_request *)calloc(1, sizeof(ib_work_request));
+    }
     assert(wr);
 
     wr->conn = get_conn_peer(&dest_buffer_hdl->buffer_owner);
@@ -1186,27 +1264,29 @@ NNTI_result_t NNTI_ib_put (
     wr->sq_wr.wr_id     =hash6432shift((uint64_t)wr);
     wr->sq_wr.imm_data  =hash6432shift((uint64_t)dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.buf);
 
-#if defined(USE_RDMA_TARGET_ACK)
-    wr->ack.op    =IB_OP_PUT_TARGET;
-    wr->ack.offset=dest_offset;
-    wr->ack.length=src_length;
+    if (config.use_rdma_target_ack) {
+        wr->ack.op    =IB_OP_PUT_TARGET;
+        wr->ack.offset=dest_offset;
+        wr->ack.length=src_length;
 
-    register_ack(wr);
-    wr->ack_sge.addr  =(uint64_t)wr->ack_mr->addr;
-    wr->ack_sge.length=wr->ack_mr->length;
-    wr->ack_sge.lkey  =wr->ack_mr->lkey;
+        if (!config.use_wr_pool) {
+            register_ack(wr);
+        }
+        wr->ack_sge.addr  =(uint64_t)wr->ack_mr->addr;
+        wr->ack_sge.length=wr->ack_mr->length;
+        wr->ack_sge.lkey  =wr->ack_mr->lkey;
 
-    wr->ack_sq_wr.sg_list=&wr->ack_sge;
-    wr->ack_sq_wr.num_sge=1;
+        wr->ack_sq_wr.sg_list=&wr->ack_sge;
+        wr->ack_sq_wr.num_sge=1;
 
-    wr->ack_sq_wr.wr.rdma.rkey       =dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.ack_key;
-    wr->ack_sq_wr.wr.rdma.remote_addr=dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.ack_buf;
+        wr->ack_sq_wr.wr.rdma.rkey       =dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.ack_key;
+        wr->ack_sq_wr.wr.rdma.remote_addr=dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.ack_buf;
 
-    wr->ack_sq_wr.opcode    =IBV_WR_RDMA_WRITE_WITH_IMM;
-    wr->ack_sq_wr.send_flags=IBV_SEND_SIGNALED|IBV_SEND_FENCE;
-    wr->ack_sq_wr.wr_id     =hash6432shift((uint64_t)wr);
-    wr->ack_sq_wr.imm_data  =hash6432shift((uint64_t)dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.buf);
-#endif
+        wr->ack_sq_wr.opcode    =IBV_WR_RDMA_WRITE_WITH_IMM;
+        wr->ack_sq_wr.send_flags=IBV_SEND_SIGNALED|IBV_SEND_FENCE;
+        wr->ack_sq_wr.wr_id     =hash6432shift((uint64_t)wr);
+        wr->ack_sq_wr.imm_data  =hash6432shift((uint64_t)dest_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.buf);
+    }
 
     wr->last_op=IB_OP_PUT_INITIATOR;
     wr->length=src_length;
@@ -1226,9 +1306,9 @@ NNTI_result_t NNTI_ib_put (
     }
     trios_stop_timer("NNTI_ib_put - ibv_post_send", call_time);
 
-#if defined(USE_RDMA_TARGET_ACK)
-    send_ack(wr);
-#endif
+    if (config.use_rdma_target_ack) {
+        send_ack(wr);
+    }
 
     ib_mem_hdl->wr_queue.push_back(wr);
     insert_wr_wrhash(wr);
@@ -1269,7 +1349,15 @@ NNTI_result_t NNTI_ib_get (
 
     ib_mem_hdl=(ib_memory_handle *)dest_buffer_hdl->transport_private;
     assert(ib_mem_hdl);
-    wr=(ib_work_request *)calloc(1, sizeof(ib_work_request));
+    if (config.use_wr_pool) {
+        if (config.use_rdma_target_ack) {
+            wr=wr_pool_rdma_pop();
+        } else {
+            wr=wr_pool_sendrecv_pop();
+        }
+    } else {
+        wr=(ib_work_request *)calloc(1, sizeof(ib_work_request));
+    }
     assert(wr);
 
     wr->conn = get_conn_peer(&src_buffer_hdl->buffer_owner);
@@ -1300,27 +1388,29 @@ NNTI_result_t NNTI_ib_get (
     wr->sq_wr.wr_id     =hash6432shift((uint64_t)wr);
     wr->sq_wr.imm_data  =hash6432shift((uint64_t)src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.buf);
 
-#if defined(USE_RDMA_TARGET_ACK)
-    wr->ack.op    =IB_OP_GET_TARGET;
-    wr->ack.offset=src_offset;
-    wr->ack.length=src_length;
+    if (config.use_rdma_target_ack) {
+        wr->ack.op    =IB_OP_GET_TARGET;
+        wr->ack.offset=src_offset;
+        wr->ack.length=src_length;
 
-    register_ack(wr);
-    wr->ack_sge.addr  =(uint64_t)wr->ack_mr->addr;
-    wr->ack_sge.length=wr->ack_mr->length;
-    wr->ack_sge.lkey  =wr->ack_mr->lkey;
+        if (!config.use_wr_pool) {
+            register_ack(wr);
+        }
+        wr->ack_sge.addr  =(uint64_t)wr->ack_mr->addr;
+        wr->ack_sge.length=wr->ack_mr->length;
+        wr->ack_sge.lkey  =wr->ack_mr->lkey;
 
-    wr->ack_sq_wr.sg_list=&wr->ack_sge;
-    wr->ack_sq_wr.num_sge=1;
+        wr->ack_sq_wr.sg_list=&wr->ack_sge;
+        wr->ack_sq_wr.num_sge=1;
 
-    wr->ack_sq_wr.wr.rdma.rkey       =src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.ack_key;
-    wr->ack_sq_wr.wr.rdma.remote_addr=src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.ack_buf;
+        wr->ack_sq_wr.wr.rdma.rkey       =src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.ack_key;
+        wr->ack_sq_wr.wr.rdma.remote_addr=src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.ack_buf;
 
-    wr->ack_sq_wr.opcode    =IBV_WR_RDMA_WRITE_WITH_IMM;
-    wr->ack_sq_wr.send_flags=IBV_SEND_SIGNALED|IBV_SEND_FENCE;
-    wr->ack_sq_wr.wr_id     =hash6432shift((uint64_t)wr);
-    wr->ack_sq_wr.imm_data  =hash6432shift((uint64_t)src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.buf);
-#endif
+        wr->ack_sq_wr.opcode    =IBV_WR_RDMA_WRITE_WITH_IMM;
+        wr->ack_sq_wr.send_flags=IBV_SEND_SIGNALED|IBV_SEND_FENCE;
+        wr->ack_sq_wr.wr_id     =hash6432shift((uint64_t)wr);
+        wr->ack_sq_wr.imm_data  =hash6432shift((uint64_t)src_buffer_hdl->buffer_addr.NNTI_remote_addr_t_u.ib.buf);
+    }
 
     wr->last_op=IB_OP_GET_INITIATOR;
     wr->length=src_length;
@@ -1340,9 +1430,9 @@ NNTI_result_t NNTI_ib_get (
     }
     trios_stop_timer("NNTI_ib_get - ibv_post_send", call_time);
 
-#if defined(USE_RDMA_TARGET_ACK)
-    send_ack(wr);
-#endif
+    if (config.use_rdma_target_ack) {
+        send_ack(wr);
+    }
 
 //    print_wr(wr);
 
@@ -1420,14 +1510,14 @@ NNTI_result_t NNTI_ib_wait (
     comp_channel=wr->comp_channel;
     cq          =wr->cq;
 
-#if !defined(USE_RDMA_TARGET_ACK)
-    if ((remote_op==NNTI_GET_SRC) || (remote_op==NNTI_PUT_DST) || (remote_op==(NNTI_GET_SRC|NNTI_PUT_DST))) {
-        memset(status, 0, sizeof(NNTI_status_t));
-        status->op     = remote_op;
-        status->result = NNTI_EINVAL;
-        return(NNTI_EINVAL);
+    if (!config.use_rdma_target_ack) {
+        if ((remote_op==NNTI_GET_SRC) || (remote_op==NNTI_PUT_DST) || (remote_op==(NNTI_GET_SRC|NNTI_PUT_DST))) {
+            memset(status, 0, sizeof(NNTI_status_t));
+            status->op     = remote_op;
+            status->result = NNTI_EINVAL;
+            return(NNTI_EINVAL);
+        }
     }
-#endif
 
     if (is_buf_op_complete(reg_buf) == TRUE) {
         log_debug(debug_level, "buffer op already complete (reg_buf=%p)", reg_buf);
@@ -1530,24 +1620,38 @@ retry:
     }
 
     if (nnti_rc==NNTI_OK) {
-        struct ibv_recv_wr *bad_wr;
-
-        wr=ib_mem_hdl->wr_queue.front();
-#if defined(USE_RDMA_TARGET_ACK)
-        unregister_ack(wr);
-#endif
-        ib_mem_hdl->wr_queue.pop_front();
-        del_wr_wrhash(wr);
-        free(wr);
-
-        if  (ib_mem_hdl->type == REQUEST_BUFFER) {
-            log_debug(debug_level, "re-posting srq_recv for REQUEST_BUFFER");
-            post_recv_work_request(
-                    (NNTI_buffer_t *)reg_buf,
-                    wc.wr_id,
-                    (wc.wr_id*q_hdl->req_size),
-                    q_hdl->req_size);
+        if (ib_mem_hdl->type == REQUEST_BUFFER) {
+            wr=ib_mem_hdl->wr_queue.front();
+            ib_mem_hdl->wr_queue.pop_front();
+            repost_recv_work_request((NNTI_buffer_t *)reg_buf, wr);
+        } else if (ib_mem_hdl->type == RECEIVE_BUFFER) {
+            wr=ib_mem_hdl->wr_queue.front();
+            ib_mem_hdl->wr_queue.pop_front();
+            repost_recv_work_request((NNTI_buffer_t *)reg_buf, wr);
         }
+        else if ((ib_mem_hdl->type == RDMA_TARGET_BUFFER) ||
+                (ib_mem_hdl->type == GET_SRC_BUFFER)      ||
+                (ib_mem_hdl->type == PUT_DST_BUFFER))     {
+            if (config.use_rdma_target_ack) {
+                wr=ib_mem_hdl->wr_queue.front();
+                ib_mem_hdl->wr_queue.pop_front();
+                repost_ack_recv_work_request((NNTI_buffer_t *)reg_buf, wr);
+            }
+        }
+        else {
+            wr=ib_mem_hdl->wr_queue.front();
+            ib_mem_hdl->wr_queue.pop_front();
+            del_wr_wrhash(wr);
+            if (config.use_wr_pool) {
+                wr_pool_sendrecv_push(wr);
+            } else {
+                if (config.use_rdma_target_ack) {
+                    unregister_ack(wr);
+                }
+                free(wr);
+            }
+        }
+
     }
 
     log_debug(debug_level, "exit");
@@ -1602,14 +1706,14 @@ NNTI_result_t NNTI_ib_waitany (
 
     log_debug(debug_level, "enter");
 
-#if !defined(USE_RDMA_TARGET_ACK)
-    if ((remote_op==NNTI_GET_SRC) || (remote_op==NNTI_PUT_DST) || (remote_op==(NNTI_GET_SRC|NNTI_PUT_DST))) {
-        memset(status, 0, sizeof(NNTI_status_t));
-        status->op     = remote_op;
-        status->result = NNTI_EINVAL;
-        return(NNTI_EINVAL);
+    if (!config.use_rdma_target_ack) {
+        if ((remote_op==NNTI_GET_SRC) || (remote_op==NNTI_PUT_DST) || (remote_op==(NNTI_GET_SRC|NNTI_PUT_DST))) {
+            memset(status, 0, sizeof(NNTI_status_t));
+            status->op     = remote_op;
+            status->result = NNTI_EINVAL;
+            return(NNTI_EINVAL);
+        }
     }
-#endif
 
     assert(buf_list);
     assert(buf_count > 0);
@@ -1724,24 +1828,45 @@ retry:
 
     create_status(buf_list[*which], remote_op, nnti_rc, status);
 
-    if (nnti_rc==NNTI_OK) {
-        struct ibv_recv_wr *bad_wr;
-
-        ib_mem_hdl=(ib_memory_handle *)buf_list[*which]->transport_private;
-        assert(ib_mem_hdl);
-        wr=ib_mem_hdl->wr_queue.front();
-        assert(wr);
-#if defined(USE_RDMA_TARGET_ACK)
-        unregister_ack(wr);
-#endif
-        ib_mem_hdl->wr_queue.pop_front();
-        del_wr_wrhash(wr);
-        free(wr);
-    }
-
     if (logging_debug(debug_level)) {
         fprint_NNTI_status(logger_get_file(), "status",
                 "end of NNTI_ib_waitany", status);
+    }
+
+    if (nnti_rc==NNTI_OK) {
+        ib_mem_hdl=(ib_memory_handle *)buf_list[*which]->transport_private;
+
+        if (ib_mem_hdl->type == REQUEST_BUFFER) {
+            wr=ib_mem_hdl->wr_queue.front();
+            ib_mem_hdl->wr_queue.pop_front();
+            repost_recv_work_request((NNTI_buffer_t *)buf_list[*which], wr);
+        } else if (ib_mem_hdl->type == RECEIVE_BUFFER) {
+            wr=ib_mem_hdl->wr_queue.front();
+            ib_mem_hdl->wr_queue.pop_front();
+            repost_recv_work_request((NNTI_buffer_t *)buf_list[*which], wr);
+        }
+        else if ((ib_mem_hdl->type == RDMA_TARGET_BUFFER) ||
+                (ib_mem_hdl->type == GET_SRC_BUFFER)      ||
+                (ib_mem_hdl->type == PUT_DST_BUFFER))     {
+            if (config.use_rdma_target_ack) {
+                wr=ib_mem_hdl->wr_queue.front();
+                ib_mem_hdl->wr_queue.pop_front();
+                repost_ack_recv_work_request((NNTI_buffer_t *)buf_list[*which], wr);
+            }
+        }
+        else {
+            wr=ib_mem_hdl->wr_queue.front();
+            ib_mem_hdl->wr_queue.pop_front();
+            del_wr_wrhash(wr);
+            if (config.use_wr_pool) {
+                wr_pool_sendrecv_push(wr);
+            } else {
+                if (config.use_rdma_target_ack) {
+                    unregister_ack(wr);
+                }
+                free(wr);
+            }
+        }
     }
 
 cleanup:
@@ -1796,16 +1921,16 @@ NNTI_result_t NNTI_ib_waitall (
 
     log_debug(debug_level, "enter");
 
-#if !defined(USE_RDMA_TARGET_ACK)
-    if ((remote_op==NNTI_GET_SRC) || (remote_op==NNTI_PUT_DST) || (remote_op==(NNTI_GET_SRC|NNTI_PUT_DST))) {
-        for (int i=0;i<buf_count;i++) {
-            memset(status[i], 0, sizeof(NNTI_status_t));
-            status[i]->op     = remote_op;
-            status[i]->result = NNTI_EINVAL;
+    if (!config.use_rdma_target_ack) {
+        if ((remote_op==NNTI_GET_SRC) || (remote_op==NNTI_PUT_DST) || (remote_op==(NNTI_GET_SRC|NNTI_PUT_DST))) {
+            for (int i=0;i<buf_count;i++) {
+                memset(status[i], 0, sizeof(NNTI_status_t));
+                status[i]->op     = remote_op;
+                status[i]->result = NNTI_EINVAL;
+            }
+            return(NNTI_EINVAL);
         }
-        return(NNTI_EINVAL);
     }
-#endif
 
     assert(buf_list);
     assert(buf_count > 0);
@@ -1922,23 +2047,39 @@ retry:
         create_status(buf_list[i], remote_op, nnti_rc, status[i]);
 
         if (nnti_rc==NNTI_OK) {
-            struct ibv_recv_wr *bad_wr;
-
             ib_mem_hdl=(ib_memory_handle *)buf_list[i]->transport_private;
-            assert(ib_mem_hdl);
-            wr=ib_mem_hdl->wr_queue.front();
-            assert(wr);
-#if defined(USE_RDMA_TARGET_ACK)
-            unregister_ack(wr);
-#endif
-            ib_mem_hdl->wr_queue.pop_front();
-            del_wr_wrhash(wr);
-            free(wr);
-        }
 
-        if (logging_debug(debug_level)) {
-            fprint_NNTI_status(logger_get_file(), "status[i]",
-                    "end of NNTI_ib_waitall", status[i]);
+            if (ib_mem_hdl->type == REQUEST_BUFFER) {
+                wr=ib_mem_hdl->wr_queue.front();
+                ib_mem_hdl->wr_queue.pop_front();
+                repost_recv_work_request((NNTI_buffer_t *)buf_list[i], wr);
+            } else if (ib_mem_hdl->type == RECEIVE_BUFFER) {
+                wr=ib_mem_hdl->wr_queue.front();
+                ib_mem_hdl->wr_queue.pop_front();
+                repost_recv_work_request((NNTI_buffer_t *)buf_list[i], wr);
+            }
+            else if ((ib_mem_hdl->type == RDMA_TARGET_BUFFER) ||
+                    (ib_mem_hdl->type == GET_SRC_BUFFER)      ||
+                    (ib_mem_hdl->type == PUT_DST_BUFFER))     {
+                if (config.use_rdma_target_ack) {
+                    wr=ib_mem_hdl->wr_queue.front();
+                    ib_mem_hdl->wr_queue.pop_front();
+                    repost_ack_recv_work_request((NNTI_buffer_t *)buf_list[i], wr);
+                }
+            }
+            else {
+                wr=ib_mem_hdl->wr_queue.front();
+                ib_mem_hdl->wr_queue.pop_front();
+                del_wr_wrhash(wr);
+                if (config.use_wr_pool) {
+                    wr_pool_sendrecv_push(wr);
+                } else {
+                    if (config.use_rdma_target_ack) {
+                        unregister_ack(wr);
+                    }
+                    free(wr);
+                }
+            }
         }
     }
 
@@ -1961,7 +2102,17 @@ cleanup:
 NNTI_result_t NNTI_ib_fini (
         const NNTI_transport_t *trans_hdl)
 {
+    NNTI_result_t rc=NNTI_OK;;
+
     close_all_conn();
+
+    if (config.use_wr_pool) {
+        rc=wr_pool_fini();
+        if (rc!=NNTI_OK) {
+            log_error(nnti_debug_level, "wr_pool_fini() failed: %d", rc);
+            rc=NNTI_EINVAL;
+        }
+    }
 
     ibv_destroy_comp_channel(transport_global_data.data_comp_channel);
     ibv_destroy_cq(transport_global_data.data_cq);
@@ -2139,7 +2290,6 @@ static int register_memory(
     return (rc);
 }
 
-#if defined(USE_RDMA_TARGET_ACK)
 static int register_ack(ib_work_request *wr)
 {
     NNTI_result_t rc=NNTI_OK; /* return code */
@@ -2174,7 +2324,6 @@ static int register_ack(ib_work_request *wr)
 
     return (rc);
 }
-#endif
 
 static int unregister_memory(ib_memory_handle *hdl)
 {
@@ -2197,7 +2346,6 @@ static int unregister_memory(ib_memory_handle *hdl)
     return (rc);
 }
 
-#if defined(USE_RDMA_TARGET_ACK)
 static int unregister_ack(ib_work_request *wr)
 {
     NNTI_result_t rc=NNTI_OK; /* return code */
@@ -2219,9 +2367,7 @@ static int unregister_ack(ib_work_request *wr)
 
     return (rc);
 }
-#endif
 
-#if defined(USE_RDMA_TARGET_ACK)
 static void send_ack (
         ib_work_request *wr)
 {
@@ -2247,7 +2393,6 @@ static void send_ack (
 
     return;
 }
-#endif
 
 static ib_work_request *decode_work_request(
         const struct ibv_wc *wc)
@@ -2369,19 +2514,18 @@ int process_event(
                 log_debug(debug_level, "RDMA write event - wc==%p, event_buf==%p, op_state==%d", wc, event_buf, wr->op_state);
                 if (wr->op_state==RDMA_WRITE_INIT) {
                     log_debug(debug_level, "RDMA write (initiator) completion - wc==%p, event_buf==%p", wc, event_buf);
-#if defined(USE_RDMA_TARGET_ACK)
-                    wr->op_state=RDMA_WRITE_NEED_ACK;
-#else
-                    wr->op_state = RDMA_WRITE_COMPLETE;
-#endif
+                    if (config.use_rdma_target_ack) {
+                        wr->op_state=RDMA_WRITE_NEED_ACK;
+                    } else {
+                        wr->op_state = RDMA_WRITE_COMPLETE;
+                    }
                 }
-#if defined(USE_RDMA_TARGET_ACK)
-                else if (wr->op_state==RDMA_WRITE_NEED_ACK) {
+                else if ((config.use_rdma_target_ack) &&
+                        (wr->op_state==RDMA_WRITE_NEED_ACK)) {
                     log_debug(debug_level, "RDMA write ACK (initiator) completion - wc==%p, event_buf==%p", wc, event_buf);
                     wr->last_op=IB_OP_PUT_INITIATOR;
                     wr->op_state = RDMA_WRITE_COMPLETE;
                 }
-#endif
             }
 //            if (wr->op_state == RDMA_WRITE_COMPLETE) {
 //                print_xfer_buf((void *)wr->reg_buf->payload, wr->reg_buf->payload_size);
@@ -2393,22 +2537,21 @@ int process_event(
                 log_debug(debug_level, "RDMA read event - wc==%p, event_buf==%p, op_state==%d", wc, event_buf, wr->op_state);
                 if (wr->op_state==RDMA_READ_INIT) {
                     log_debug(debug_level, "RDMA read (initiator) completion - wc==%p, event_buf==%p", wc, event_buf);
-#if defined(USE_RDMA_TARGET_ACK)
-                    wr->op_state=RDMA_READ_NEED_ACK;
-#else
-                    wr->op_state = RDMA_READ_COMPLETE;
-#endif
+                    if (config.use_rdma_target_ack) {
+                        wr->op_state=RDMA_READ_NEED_ACK;
+                    } else {
+                        wr->op_state = RDMA_READ_COMPLETE;
+                    }
                 }
             }
-#if defined(USE_RDMA_TARGET_ACK)
-            else if (wc->opcode==IBV_WC_RDMA_WRITE) {
+            else if ((config.use_rdma_target_ack) &&
+                    (wc->opcode==IBV_WC_RDMA_WRITE)) {
                 if (wr->op_state==RDMA_READ_NEED_ACK) {
                     log_debug(debug_level, "RDMA read ACK (initiator) completion - wc==%p, event_buf==%p", wc, event_buf);
                     wr->last_op=IB_OP_GET_INITIATOR;
                     wr->op_state = RDMA_READ_COMPLETE;
                 }
             }
-#endif
 //            if (wr->op_state == RDMA_READ_COMPLETE) {
 //                print_xfer_buf((void *)wr->reg_buf->payload, wr->reg_buf->payload_size);
 //                print_ack_buf(&wr->ack);
@@ -2462,9 +2605,9 @@ int process_event(
             if (wc->opcode==IBV_WC_RECV_RDMA_WITH_IMM) {
                 log_debug(debug_level, "RDMA target completion - wc==%p, event_buf==%p", wc, event_buf);
                 wr->op_state = RDMA_TARGET_COMPLETE;
-#if defined(USE_RDMA_TARGET_ACK)
-                wr->last_op=wr->ack.op;
-#endif
+                if (config.use_rdma_target_ack) {
+                    wr->last_op=wr->ack.op;
+                }
             }
 //            if (wr->op_state == RDMA_TARGET_COMPLETE) {
 //                print_xfer_buf((void *)wr->reg_buf->payload, wr->reg_buf->payload_size);
@@ -2494,7 +2637,15 @@ static NNTI_result_t post_recv_work_request(
     ib_mem_hdl=(ib_memory_handle *)reg_buf->transport_private;
     assert(ib_mem_hdl);
 
-    wr=(ib_work_request *)calloc(1, sizeof(ib_work_request));
+    if (ib_mem_hdl->type==REQUEST_BUFFER) {
+        wr=(ib_work_request *)calloc(1, sizeof(ib_work_request));
+    } else {
+        if (config.use_wr_pool) {
+            wr=wr_pool_sendrecv_pop();
+        } else {
+            wr=(ib_work_request *)calloc(1, sizeof(ib_work_request));
+        }
+    }
     assert(wr);
     wr->reg_buf = reg_buf;
     wr->offset  = offset;
@@ -2555,7 +2706,6 @@ static NNTI_result_t post_recv_work_request(
     return(NNTI_OK);
 }
 
-#if defined(USE_RDMA_TARGET_ACK)
 static NNTI_result_t post_ack_recv_work_request(
         NNTI_buffer_t  *reg_buf)
 {
@@ -2570,7 +2720,11 @@ static NNTI_result_t post_ack_recv_work_request(
     ib_mem_hdl=(ib_memory_handle *)reg_buf->transport_private;
     assert(ib_mem_hdl);
 
-    wr=(ib_work_request *)calloc(1, sizeof(ib_work_request));
+    if (config.use_wr_pool) {
+        wr=wr_pool_rdma_pop();
+    } else {
+        wr=(ib_work_request *)calloc(1, sizeof(ib_work_request));
+    }
     assert(wr);
     wr->reg_buf = reg_buf;
 
@@ -2604,7 +2758,9 @@ static NNTI_result_t post_ack_recv_work_request(
         wr->cq          =transport_global_data.data_cq;
     }
 
-    register_ack(wr);
+    if (!config.use_wr_pool) {
+        register_ack(wr);
+    }
 
     reg_buf->buffer_addr.NNTI_remote_addr_t_u.ib.ack_size = wr->ack_mr->length;
     reg_buf->buffer_addr.NNTI_remote_addr_t_u.ib.ack_buf  = (uint64_t)wr->ack_mr->addr;
@@ -2630,7 +2786,123 @@ static NNTI_result_t post_ack_recv_work_request(
 
     return(NNTI_OK);
 }
-#endif
+
+static NNTI_result_t repost_recv_work_request(
+        NNTI_buffer_t  *reg_buf,
+        ib_work_request  *wr)
+{
+    struct ibv_recv_wr *bad_wr=NULL;
+
+    ib_memory_handle *ib_mem_hdl=NULL;
+
+    struct ibv_srq *srq=NULL;
+
+    log_debug(nnti_debug_level, "enter (reg_buf=%p)", reg_buf);
+
+    ib_mem_hdl=(ib_memory_handle *)reg_buf->transport_private;
+    assert(ib_mem_hdl);
+
+    assert(wr);
+
+    wr->op_state = BUFFER_INIT;
+
+    if (ib_mem_hdl->type==REQUEST_BUFFER) {
+        wr->op_state=BUFFER_INIT;
+        wr->last_op=IB_OP_NEW_REQUEST;
+
+    } else if (ib_mem_hdl->type==RECEIVE_BUFFER) {
+        wr->op_state=RDMA_WRITE_INIT;
+
+    } else if (ib_mem_hdl->type==GET_SRC_BUFFER) {
+        wr->op_state=RDMA_READ_INIT;
+
+    } else if (ib_mem_hdl->type==PUT_DST_BUFFER) {
+        wr->op_state=RDMA_WRITE_INIT;
+
+    } else if (ib_mem_hdl->type==RDMA_TARGET_BUFFER) {
+        wr->op_state=RDMA_TARGET_INIT;
+
+    }
+
+    if (ib_mem_hdl->type==REQUEST_BUFFER) {
+        srq             =transport_global_data.req_srq;
+        wr->comp_channel=transport_global_data.req_comp_channel;
+        wr->cq          =transport_global_data.req_cq;
+    } else {
+        srq             =transport_global_data.data_srq;
+        wr->comp_channel=transport_global_data.data_comp_channel;
+        wr->cq          =transport_global_data.data_cq;
+    }
+
+    if (ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr)) {
+        log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
+                &wr->rq_wr, bad_wr, strerror(errno));
+        return (NNTI_result_t)errno;
+    }
+
+    ib_mem_hdl->wr_queue.push_back(wr);
+
+    log_debug(nnti_debug_level, "exit (reg_buf=%p)", reg_buf);
+
+    return(NNTI_OK);
+}
+
+static NNTI_result_t repost_ack_recv_work_request(
+        NNTI_buffer_t    *reg_buf,
+        ib_work_request  *wr)
+{
+    struct ibv_recv_wr *bad_wr=NULL;
+    struct ibv_srq   *srq;
+
+    ib_memory_handle *ib_mem_hdl=NULL;
+
+    log_debug(nnti_debug_level, "enter (reg_buf=%p)", reg_buf);
+
+    ib_mem_hdl=(ib_memory_handle *)reg_buf->transport_private;
+    assert(ib_mem_hdl);
+
+    wr->op_state = BUFFER_INIT;
+
+    if (ib_mem_hdl->type==REQUEST_BUFFER) {
+        wr->op_state=BUFFER_INIT;
+        wr->last_op=IB_OP_NEW_REQUEST;
+
+    } else if (ib_mem_hdl->type==RECEIVE_BUFFER) {
+        wr->op_state=RDMA_WRITE_INIT;
+
+    } else if (ib_mem_hdl->type==GET_SRC_BUFFER) {
+        wr->op_state=RDMA_READ_INIT;
+
+    } else if (ib_mem_hdl->type==PUT_DST_BUFFER) {
+        wr->op_state=RDMA_WRITE_INIT;
+
+    } else if (ib_mem_hdl->type==RDMA_TARGET_BUFFER) {
+        wr->op_state=RDMA_TARGET_INIT;
+
+    }
+
+    if (ib_mem_hdl->type==REQUEST_BUFFER) {
+        srq             =transport_global_data.req_srq;
+        wr->comp_channel=transport_global_data.req_comp_channel;
+        wr->cq          =transport_global_data.req_cq;
+    } else {
+        srq             =transport_global_data.data_srq;
+        wr->comp_channel=transport_global_data.data_comp_channel;
+        wr->cq          =transport_global_data.data_cq;
+    }
+
+    if (ibv_post_srq_recv(srq, &wr->rq_wr, &bad_wr)) {
+        log_error(nnti_debug_level, "failed to post SRQ recv (rq_wr=%p ; bad_wr=%p): %s",
+                &wr->rq_wr, bad_wr, strerror(errno));
+        return (NNTI_result_t)errno;
+    }
+
+    ib_mem_hdl->wr_queue.push_back(wr);
+
+    log_debug(nnti_debug_level, "exit (reg_buf=%p)", reg_buf);
+
+    return(NNTI_OK);
+}
 
 static int8_t is_wr_complete(
         const ib_work_request *wr)
@@ -2830,22 +3102,28 @@ static void create_status(
         status->start  = (uint64_t)reg_buf->payload;
         switch (wr->last_op) {
             case IB_OP_PUT_INITIATOR:
-#if defined(USE_RDMA_TARGET_ACK)
-            case IB_OP_GET_TARGET:
-#endif
             case IB_OP_SEND_REQUEST:
             case IB_OP_SEND_BUFFER:
                 create_peer(&status->src, transport_global_data.listen_name, transport_global_data.listen_addr, transport_global_data.listen_port);
                 create_peer(&status->dest, conn->peer_name, conn->peer_addr, conn->peer_port);
                 break;
+            case IB_OP_GET_TARGET:
+                if (config.use_rdma_target_ack) {
+                    create_peer(&status->src, transport_global_data.listen_name, transport_global_data.listen_addr, transport_global_data.listen_port);
+                    create_peer(&status->dest, conn->peer_name, conn->peer_addr, conn->peer_port);
+                }
+                break;
             case IB_OP_GET_INITIATOR:
-#if defined(USE_RDMA_TARGET_ACK)
-            case IB_OP_PUT_TARGET:
-#endif
             case IB_OP_NEW_REQUEST:
             case IB_OP_RECEIVE:
                 create_peer(&status->src, conn->peer_name, conn->peer_addr, conn->peer_port);
                 create_peer(&status->dest, transport_global_data.listen_name, transport_global_data.listen_addr, transport_global_data.listen_port);
+                break;
+            case IB_OP_PUT_TARGET:
+                if (config.use_rdma_target_ack) {
+                    create_peer(&status->src, conn->peer_name, conn->peer_addr, conn->peer_port);
+                    create_peer(&status->dest, transport_global_data.listen_name, transport_global_data.listen_addr, transport_global_data.listen_port);
+                }
                 break;
         }
         switch (wr->last_op) {
@@ -2865,13 +3143,13 @@ static void create_status(
                 status->offset = wr->offset;
                 status->length = wr->length;
                 break;
-#if defined(USE_RDMA_TARGET_ACK)
             case IB_OP_GET_TARGET:
             case IB_OP_PUT_TARGET:
-                status->offset = wr->ack.offset;
-                status->length = wr->ack.length;
+                if (config.use_rdma_target_ack) {
+                    status->offset = wr->ack.offset;
+                    status->length = wr->ack.length;
+                }
                 break;
-#endif
         }
     }
 }
@@ -3680,6 +3958,211 @@ static void print_wrhash_map()
     }
 }
 
+static NNTI_result_t wr_pool_register(
+        ib_work_request *wr)
+{
+    NNTI_result_t rc=NNTI_OK; /* return code */
+
+    trios_declare_timer(callTime);
+
+    struct ibv_mr *mr=NULL;
+
+    uint32_t len;
+
+    log_debug(nnti_debug_level, "enter");
+
+    len = sizeof(wr->ack);
+
+    trios_start_timer(callTime);
+    mlock(&wr->ack, len);
+    munlock(&wr->ack, len);
+    trios_stop_timer("mlock", callTime);
+
+    trios_start_timer(callTime);
+    mr = ibv_reg_mr(
+            transport_global_data.pd,
+            &wr->ack,
+            len,
+            (ibv_access_flags)(IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE));
+    if (!mr) {
+        log_error(nnti_debug_level, "failed to register memory region");
+        perror("errno");
+        return NNTI_EIO;
+    }
+    trios_stop_timer("register", callTime);
+
+    wr->ack_mr=mr;
+
+    log_debug(nnti_debug_level, "exit (mr==%p, addr %p, length %lu, lkey %x, rkey %x)...", mr, mr->addr, mr->length, mr->lkey, mr->rkey);
+
+    return (rc);
+}
+static NNTI_result_t wr_pool_deregister(
+        ib_work_request *wr)
+{
+    NNTI_result_t rc=NNTI_OK; /* return code */
+    int i=0;
+    int ibv_rc=0;
+    trios_declare_timer(callTime);
+
+    log_debug(nnti_debug_level, "enter");
+
+    if (wr->ack_mr!=NULL) {
+        trios_start_timer(callTime);
+        ibv_rc=ibv_dereg_mr(wr->ack_mr);
+        if (ibv_rc != 0) {
+            log_error(nnti_debug_level, "deregistering the ACK buffer failed");
+        }
+        trios_stop_timer("deregister", callTime);
+        wr->ack_mr=NULL;
+    } else {
+        log_debug(nnti_debug_level, "exit wr(%p) - not registered", wr);
+        return(NNTI_OK);
+    }
+
+    log_debug(nnti_debug_level, "exit");
+
+    return(NNTI_OK);
+}
+static NNTI_result_t wr_pool_init(uint32_t pool_size)
+{
+    NNTI_result_t  rc=NNTI_OK;
+    uint32_t i;
+    ib_work_request *wr=NULL;
+
+    log_debug(nnti_debug_level, "enter");
+
+    for (i=0;i<pool_size;i++) {
+        wr=(ib_work_request *)calloc(1, sizeof(ib_work_request));
+        assert(wr);
+        rc=wr_pool_register(wr);
+        if (rc!=NNTI_OK) {
+            log_error(nnti_debug_level, "failed to register target work request: rc=%d", rc);
+            goto cleanup;
+        }
+        wr_pool_rdma_push(wr);
+
+        wr=(ib_work_request *)calloc(1, sizeof(ib_work_request));
+        assert(wr);
+        wr_pool_sendrecv_push(wr);
+    }
+
+cleanup:
+    log_debug(nnti_debug_level, "exit");
+
+    return(rc);
+}
+static ib_work_request *wr_pool_rdma_pop(void)
+{
+    NNTI_result_t  rc=NNTI_OK;
+    uint32_t i;
+    ib_work_request *wr=NULL;
+
+    log_debug(nnti_debug_level, "enter");
+
+    nthread_lock(&nnti_wr_pool_lock);
+    if (!rdma_wr_pool.empty()) {
+        wr=rdma_wr_pool.front();
+        rdma_wr_pool.pop_front();
+    }
+    nthread_unlock(&nnti_wr_pool_lock);
+
+    log_debug(nnti_debug_level, "exit");
+
+    return(wr);
+}
+static ib_work_request *wr_pool_sendrecv_pop(void)
+{
+    NNTI_result_t  rc=NNTI_OK;
+    uint32_t i;
+    ib_work_request *wr=NULL;
+
+    log_debug(nnti_debug_level, "enter");
+
+    nthread_lock(&nnti_wr_pool_lock);
+    if (!sendrecv_wr_pool.empty()) {
+        wr=sendrecv_wr_pool.front();
+        sendrecv_wr_pool.pop_front();
+    }
+    nthread_unlock(&nnti_wr_pool_lock);
+
+    log_debug(nnti_debug_level, "exit");
+
+    return(wr);
+}
+static void wr_pool_rdma_push(ib_work_request *wr)
+{
+    NNTI_result_t  rc=NNTI_OK;
+    uint32_t i;
+
+    log_debug(nnti_debug_level, "enter");
+
+    wr->last_op            =0;
+    wr->is_last_op_complete=FALSE;
+    wr->op_state           =BUFFER_INIT;
+
+    nthread_lock(&nnti_wr_pool_lock);
+    rdma_wr_pool.push_front(wr);
+    nthread_unlock(&nnti_wr_pool_lock);
+
+    log_debug(nnti_debug_level, "exit");
+
+    return;
+}
+static void wr_pool_sendrecv_push(ib_work_request *wr)
+{
+    NNTI_result_t  rc=NNTI_OK;
+    uint32_t i;
+
+    log_debug(nnti_debug_level, "enter");
+
+    wr->last_op            =0;
+    wr->is_last_op_complete=FALSE;
+    wr->op_state           =BUFFER_INIT;
+
+    nthread_lock(&nnti_wr_pool_lock);
+    sendrecv_wr_pool.push_front(wr);
+    nthread_unlock(&nnti_wr_pool_lock);
+
+    log_debug(nnti_debug_level, "exit");
+
+    return;
+}
+static NNTI_result_t wr_pool_fini(void)
+{
+    NNTI_result_t  rc=NNTI_OK;
+    uint32_t i;
+    ib_work_request *wr=NULL;
+
+    log_debug(nnti_debug_level, "enter");
+
+    nthread_lock(&nnti_wr_pool_lock);
+    while (!rdma_wr_pool.empty()) {
+        wr=rdma_wr_pool.front();
+        rdma_wr_pool.pop_front();
+        assert(wr);
+        rc=wr_pool_deregister(wr);
+        if (rc!=NNTI_OK) {
+            log_error(nnti_debug_level, "failed to deregister target work request: rc=%d", rc);
+            goto cleanup;
+        }
+        free(wr);
+    }
+    while (!sendrecv_wr_pool.empty()) {
+        wr=sendrecv_wr_pool.front();
+        sendrecv_wr_pool.pop_front();
+        assert(wr);
+        free(wr);
+    }
+
+cleanup:
+    nthread_unlock(&nnti_wr_pool_lock);
+
+    log_debug(nnti_debug_level, "exit");
+
+    return(rc);
+}
+
 static void close_all_conn(void)
 {
     log_level debug_level = nnti_debug_level;
@@ -3810,15 +4293,6 @@ static NNTI_result_t check_listen_socket_for_new_connections()
         char         *peer_hostname = strdup(inet_ntoa(ssin.sin_addr));
         NNTI_ip_addr  peer_addr  = ssin.sin_addr.s_addr;
         NNTI_tcp_port peer_port  = ntohs(ssin.sin_port);
-
-        // we don't need allocate heap space for the peer struct
-//        peer=(NNTI_peer_t *)malloc(sizeof(NNTI_peer_t));
-//        log_debug(nnti_debug_level, "malloc returned peer=%p.", peer);
-//        if (peer == NULL) {
-//            log_error(nnti_debug_level, "malloc returned NULL.  out of memory?: %s", strerror(errno));
-//            rc=NNTI_ENOMEM;
-//            goto cleanup;
-//        }
 
         conn = (ib_connection *)calloc(1, sizeof(ib_connection));
         log_debug(nnti_debug_level, "calloc returned conn=%p.", conn);
@@ -4063,6 +4537,42 @@ static void print_ib_conn(ib_connection *c)
 
     log_debug(debug_level, "c->disconnect_requested=%d", c->disconnect_requested);
 
+}
+
+static void config_init(nnti_ib_config *c)
+{
+    c->use_wr_pool        =false;
+    c->use_rdma_target_ack=true;
+}
+
+static void config_get_from_env(nnti_ib_config *c)
+{
+    char *env_str=NULL;
+
+    if ((env_str=getenv("TRIOS_NNTI_USE_WR_POOL")) != NULL) {
+        if ((!strcasecmp(env_str, "TRUE")) ||
+            (!strcmp(env_str, "1"))) {
+            log_debug(nnti_debug_level, "setting c->use_wr_pool to TRUE");
+            c->use_wr_pool=true;
+        } else {
+            log_debug(nnti_debug_level, "setting c->use_wr_pool to FALSE");
+            c->use_wr_pool=false;
+        }
+    } else {
+        log_debug(nnti_debug_level, "TRIOS_NNTI_USE_WR_POOL is undefined.  using c->use_wr_pool default");
+    }
+    if ((env_str=getenv("TRIOS_NNTI_USE_RDMA_TARGET_ACK")) != NULL) {
+        if ((!strcasecmp(env_str, "TRUE")) ||
+            (!strcmp(env_str, "1"))) {
+            log_debug(nnti_debug_level, "setting c->use_rdma_target_ack to TRUE");
+            c->use_rdma_target_ack=true;
+        } else {
+            log_debug(nnti_debug_level, "setting c->use_rdma_target_ack to FALSE");
+            c->use_rdma_target_ack=false;
+        }
+    } else {
+        log_debug(nnti_debug_level, "TRIOS_NNTI_USE_RDMA_TARGET_ACK is undefined.  using c->use_rdma_target_ack default");
+    }
 }
 
 //static void print_wr(ib_work_request *wr)

@@ -177,6 +177,81 @@ public:
   }
 };
 
+template<>
+class MMultiply<
+  CrsMatrix< double , Kokkos::Cuda > ,
+  Kokkos::MultiVector< double , Kokkos::Cuda > ,
+  Kokkos::MultiVector< double , Kokkos::Cuda > >
+{
+public:
+  typedef Kokkos::Cuda                         device_type ;
+  typedef device_type::size_type               size_type ;
+  typedef MultiVector< double , device_type >  vector_type ;
+  typedef CrsMatrix< double , device_type >    matrix_type ;
+
+  //--------------------------------------------------------------------------
+
+  static void apply( const matrix_type & A ,
+                     const std::vector<vector_type> & x ,
+                     const std::vector<vector_type> & y )
+  {
+    CudaSparseSingleton & s = CudaSparseSingleton::singleton();
+    const double alpha = 1 , beta = 0 ;
+    const int n = A.graph.row_map.length();
+    // const int nz = A.graph.entry_count();
+    const size_t ncol = x.size();
+
+    // Copy columns of x into a contiguous multivector
+    vector_type xx = Kokkos::create_multivector<vector_type>(n, ncol);
+    vector_type yy = Kokkos::create_multivector<vector_type>(n, ncol);
+    for (size_t col=0; col<ncol; col++) {
+      vector_type xx_view(xx, col);
+      Kokkos::deep_copy(xx_view, x[col]);
+    }
+
+    // Sparse matrix-times-multivector
+    cusparseStatus_t status =
+      cusparseDcsrmm( s.handle ,
+		      CUSPARSE_OPERATION_NON_TRANSPOSE ,
+		      n , ncol , n , 
+		      alpha ,
+		      s.descra ,
+		      A.values.ptr_on_device() ,
+		      A.graph.row_map.ptr_on_device() ,
+		      A.graph.entries.ptr_on_device() ,
+		      xx.ptr_on_device() , 
+		      n , 
+		      beta ,
+		      yy.ptr_on_device() ,
+		      n );
+    
+    if ( CUSPARSE_STATUS_SUCCESS != status ) {
+      throw std::runtime_error( std::string("ERROR - cusparseDcsrmv " ) );
+    }
+    
+    // Copy columns out of continguous multivector
+    for (size_t col=0; col<ncol; col++) {
+      vector_type yy_view(yy, col);
+      Kokkos::deep_copy(y[col], yy_view);
+    }
+  }
+};
+
+template< typename MatrixValue>
+class MatrixMarketWriter<MatrixValue,Kokkos::Cuda>
+{
+public:
+  typedef Host                                      device_type ;
+  typedef device_type::size_type                    size_type ;
+  typedef CrsMatrix< MatrixValue , device_type >    matrix_type ;
+
+  MatrixMarketWriter() {}
+  ~MatrixMarketWriter() {}
+
+  static void write(const matrix_type & A ,
+		    const std::string& filename) {}
+};
+
 //----------------------------------------------------------------------------
 
 } // namespace Impl

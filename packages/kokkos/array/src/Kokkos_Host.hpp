@@ -118,10 +118,7 @@ public:
   static void initialize( const size_type use_node_count ,
                           const size_type use_node_thread_count );
 
-  /** \brief  Detect binding to NUMA nodes */
-  static size_type detect_node_binding();
-
-  /** \brief  Detect number of NUMA nodes */
+  /** \brief  Detect number of admissible NUMA nodes */
   static size_type detect_node_count();
 
   /** \brief  Detect number of cores per NUMA node */

@@ -1,6 +1,6 @@
 
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../../../Version.cmake")
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.brain.gcc-4.6.1.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.brain.gcc-4.6.3.cmake")
 
 #
 # Set the options specific to this build case
@@ -9,7 +9,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.brain.gcc-4.6.1.cmake
 SET(COMM_TYPE SERIAL)
 SET(BUILD_TYPE DEBUG)
 SET(BUILD_DIR_NAME "SERIAL_DEBUG_CXX11_DEV")
-SET(COMPILER_VERSION "GCC-4.6.1-CXX11")
+SET(COMPILER_VERSION "GCC-4.6.3-CXX11")
 SET(CTEST_TEST_TYPE EXPERIMENTAL)
 
 SET( EXTRA_CONFIGURE_OPTIONS

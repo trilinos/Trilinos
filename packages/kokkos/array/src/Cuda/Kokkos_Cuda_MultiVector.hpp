@@ -64,7 +64,9 @@ public:
                          const MultiVector< ValueType , Cuda > & src )
   {
     const Cuda::size_type alloc_size =
-      dst.m_stride * dst.m_count * sizeof(ValueType );
+      dst.m_count == 1 ? 
+        dst.m_length * sizeof(ValueType) : 
+        dst.m_stride * dst.m_count * sizeof(ValueType );
 
     MemoryManager< Cuda >::
       copy_to_device_from_device( dst.m_ptr_on_device ,
@@ -93,8 +95,10 @@ struct Factory< MultiVector< ValueType , Cuda > ,
 
   static void deep_copy( const dst_type & dst , const src_type & src )
   {
-    const Cuda::size_type size =
-      dst.m_stride * dst.m_count * sizeof(ValueType);
+    const Cuda::size_type size = 
+      dst.m_count == 1 ? 
+        dst.m_length * sizeof(ValueType) : 
+        dst.m_stride * dst.m_count * sizeof(ValueType);
 
     // Require src.m_stride == dst.m_stride
     // Require src.m_count  == dst.m_count 

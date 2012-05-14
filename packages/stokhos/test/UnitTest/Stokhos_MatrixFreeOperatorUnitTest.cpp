@@ -40,6 +40,12 @@
 #include "EpetraExt_BlockUtility.h"
 #include "Stokhos_UnitTestHelpers.hpp"
 
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#else
+#include "Epetra_SerialComm.h"
+#endif
+
 namespace MatrixFreeOperatorUnitTest {
 
   struct UnitTestSetup {

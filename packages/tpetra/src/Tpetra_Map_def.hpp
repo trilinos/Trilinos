@@ -336,35 +336,45 @@ namespace Tpetra {
   : comm_(comm_in)
   , node_(node_in) 
   {
-    // The user wants us to distribute the elements across the nodes
-    // so that they are
-    // - non-overlapping
-    // - contiguous
-    // - as evenly distributed as possible
     using Teuchos::as;
+    using Teuchos::broadcast;
+    using Teuchos::OrdinalTraits;
     using Teuchos::outArg;
-    const global_size_t GST0 = Teuchos::OrdinalTraits<global_size_t>::zero();
-    const global_size_t GST1 = Teuchos::OrdinalTraits<global_size_t>::one();
-    const global_size_t GSTI = Teuchos::OrdinalTraits<global_size_t>::invalid();
-    const GlobalOrdinal G1 = Teuchos::OrdinalTraits<GlobalOrdinal>::one();
+    using Teuchos::typeName;
+    typedef GlobalOrdinal GO;
 
-    std::string errPrefix = Teuchos::typeName(*this) + 
-      "::constructor(numGlobal,indexBase,comm,lOrG): ";
+    // Distribute the elements across the processes in the given
+    // communicator so that global IDs (GIDs) are
+    //
+    // - Nonoverlapping (only one process owns each GID)
+    // - Contiguous (the sequence of GIDs is nondecreasing, and no two
+    //   adjacent GIDs differ by more than one)
+    // - As evenly distributed as possible (the numbers of GIDs on two
+    //   different processes do not differ by more than one)
+
+    const global_size_t GST0 = OrdinalTraits<global_size_t>::zero();
+    const global_size_t GST1 = OrdinalTraits<global_size_t>::one();
+    const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
+    const GO G1 = OrdinalTraits<GO>::one();
+
+    std::string errPrefix = typeName (*this) + 
+      " constructor (numGlobalElements, indexBase, comm, lOrG, node): ";
 
     if (lOrG == GloballyDistributed) {
       const int numImages = comm_->getSize();
       const int myImageID = comm_->getRank();
 
-      // This constructor requires that the given number of global
-      // elements (numGlobalElements) be valid, since this constructor
-      // doesn't compute it.  All processes in the given communicator
-      // must provide the same numGlobalElements and indexBase values.
-      // (We check this by broadcasting Rank 0's values and comparing
-      // with the local values.)
+      // This particular Map constructor requires that the given
+      // number of global elements (numGlobalElements) be valid; it
+      // does not compute that number, as other Map constructors do.
+      // All processes in the given communicator must provide the same
+      // numGlobalElements and indexBase values.  (We check this by
+      // broadcasting Rank 0's values and comparing with the local
+      // values.)
       global_size_t rootNGE = numGlobalElements_in;
       GlobalOrdinal rootIB  = indexBase_in;
-      Teuchos::broadcast<int,global_size_t>(*comm_,0,&rootNGE);
-      Teuchos::broadcast<int,GlobalOrdinal>(*comm_,0,&rootIB);
+      Teuchos::broadcast<int,global_size_t> (*comm_, 0, &rootNGE);
+      Teuchos::broadcast<int,GlobalOrdinal> (*comm_, 0, &rootIB);
       int localChecks[2], globalChecks[2];
       localChecks[0] = -1;   // fail or pass
       localChecks[1] = 0;    // fail reason

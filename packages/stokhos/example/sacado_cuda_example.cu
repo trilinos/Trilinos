@@ -56,6 +56,9 @@
 #include "Stokhos_CUDAQuadOrthogPolyExpansion.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
+template <> 
+Teuchos::RCP<Sacado::ETPCE::OrthogPolyImpl<float, Stokhos::CUDAStorage<int,float> >::expansion_type> Sacado::ETPCE::OrthogPolyImpl<float, Stokhos::CUDAStorage<int,float> >::const_expansion_ = Teuchos::null;
+
 // The function to compute the polynomial chaos expansion of,
 // written as a template function.
 // Currently the constants don't work when run on a GPU
@@ -94,9 +97,12 @@ int main(int argc, char **argv)
       basis->computeTripleProductTensor(basis->size());
 
     // Expansion method
+    Teuchos::RCP<Teuchos::ParameterList> params =
+      Teuchos::rcp(new Teuchos::ParameterList);
+    params->set("Use Quadrature for Times", true);
     Teuchos::RCP<Stokhos::QuadOrthogPolyExpansion<int,float,StdStorage> > expn =
       Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,float,StdStorage>(
-		     basis, Cijk, quad, true));
+		     basis, Cijk, quad, params));
 
     // Polynomial expansions
     pce_type u(expn), v(expn);
