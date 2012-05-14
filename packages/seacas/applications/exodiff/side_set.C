@@ -74,8 +74,6 @@ Side_Set<INT>::Side_Set(int file_id, size_t id, size_t ns, size_t ndf)
     dist_factors(0)
 {
   SMART_ASSERT(id > 0);
-  SMART_ASSERT(ns >= 0);
-  SMART_ASSERT(ndf >= 0);
 }
 
 template <typename INT>
@@ -216,8 +214,6 @@ template <typename INT>
 int Side_Set<INT>::Check_State() const
 {
   SMART_ASSERT(id_ >= EX_INVALID_ID);
-  SMART_ASSERT(numEntity >= 0);
-  SMART_ASSERT(num_dist_factors >= 0);
   
   SMART_ASSERT( !( id_ == EX_INVALID_ID && numEntity > 0 ) );
   SMART_ASSERT( !( id_ == EX_INVALID_ID && num_dist_factors > 0 ) );

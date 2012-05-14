@@ -101,7 +101,6 @@ Exo_Entity::Exo_Entity(int file_id, size_t id, size_t nnodes)
 {
   SMART_ASSERT(file_id > 0);
   SMART_ASSERT((int)id > EX_INVALID_ID);
-  SMART_ASSERT(nnodes >= 0);
 }
 
 Exo_Entity::~Exo_Entity()
@@ -121,7 +120,6 @@ Exo_Entity::~Exo_Entity()
 int Exo_Entity::Check_State() const
 {
   SMART_ASSERT(id_ >= EX_INVALID_ID);
-  SMART_ASSERT(numEntity >= 0);
   
   SMART_ASSERT( !( id_ == EX_INVALID_ID && numEntity > 0 ) );
   return 1;
@@ -141,7 +139,7 @@ void Exo_Entity::initialize(int file_id, size_t id)
 
 bool Exo_Entity::is_valid_var(size_t var_index) const
 {
-  SMART_ASSERT(var_index >= 0 && (int)var_index < numVars);
+  SMART_ASSERT((int)var_index < numVars);
   if (truth_ == NULL) {
     get_truth_table();
   }

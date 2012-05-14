@@ -2668,7 +2668,7 @@ namespace {
     double* local_values = &values[0];
     for (size_t j = 0; j < entity_count; j++) {
       size_t global_loc = local_set.elemOrderMap[j];
-      SMART_ASSERT(global_loc >= 0 && global_loc < glob_entity_count);
+      SMART_ASSERT(global_loc < glob_entity_count);
       global_values[global_loc] = local_values[j];
     }
   }
@@ -2682,7 +2682,7 @@ namespace {
     float* local_values = &values[0];
     for (size_t j = 0; j < entity_count; j++) {
       size_t global_loc = local_set.elemOrderMap[j];
-      SMART_ASSERT(global_loc >= 0 && global_loc < glob_entity_count);
+      SMART_ASSERT(global_loc < glob_entity_count);
       global_values[global_loc] = local_values[j];
     }
   }
@@ -2702,7 +2702,7 @@ namespace {
     double* local_values = &values[0];
     for (size_t j = 0; j < entity_count; j++) {
       size_t global_loc = local_set.nodeOrderMap[j];
-      SMART_ASSERT(global_loc >= 0 && global_loc < glob_entity_count);
+      SMART_ASSERT(global_loc < glob_entity_count);
       global_values[global_loc] = local_values[j];
     }
   }
@@ -2716,7 +2716,7 @@ namespace {
     float* local_values = &values[0];
     for (size_t j = 0; j < entity_count; j++) {
       size_t global_loc = local_set.nodeOrderMap[j];
-      SMART_ASSERT(global_loc >= 0 && global_loc < glob_entity_count);
+      SMART_ASSERT(global_loc < glob_entity_count);
       global_values[global_loc] = local_values[j];
     }
   }

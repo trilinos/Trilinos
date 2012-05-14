@@ -75,7 +75,6 @@ Exo_Block<INT>::Exo_Block(int file_id,
 {
   SMART_ASSERT(id > 0);
   SMART_ASSERT(elmt_type != "");
-  SMART_ASSERT(num_e >= 0);
   SMART_ASSERT(num_npe > 0);
 }
 
@@ -191,7 +190,7 @@ int Exo_Block<INT>::Check_State() const
 {
   SMART_ASSERT(id_ >= EX_INVALID_ID);
   SMART_ASSERT( !( id_ == EX_INVALID_ID && elmt_type != "" ) );
-  SMART_ASSERT( !( id_ == EX_INVALID_ID && numEntity >= 0 ) );
+  SMART_ASSERT( !( id_ == EX_INVALID_ID ) );
   SMART_ASSERT( !( id_ == EX_INVALID_ID && num_nodes_per_elmt >= 0 ) );
   SMART_ASSERT( !( id_ == EX_INVALID_ID && conn ) );
   

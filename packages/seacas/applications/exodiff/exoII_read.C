@@ -410,7 +410,6 @@ template <typename INT>
 int ExoII_Read<INT>::Block_Index(size_t block_id) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(block_id >= 0);
   for (int b = 0; b < num_elmt_blocks; ++b)
     if (eblocks[b].Id() == block_id)
       return b;
@@ -421,7 +420,6 @@ template <typename INT>
 int ExoII_Read<INT>::Node_Set_Index(size_t id) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(id >= 0);
   for (int b = 0; b < num_node_sets; ++b)
     if (nsets[b].Id() == id)
       return b;
@@ -432,7 +430,6 @@ template <typename INT>
 int ExoII_Read<INT>::Side_Set_Index(size_t id) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(id >= 0);
   for (int b = 0; b < num_side_sets; ++b)
     if (ssets[b].Id() == id)
       return b;
