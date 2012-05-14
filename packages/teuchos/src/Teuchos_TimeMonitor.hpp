@@ -436,9 +436,11 @@ public:
   /// <a href="yaml.org">YAML</a> stands for Yet Another Markup
   /// Language.  It is a standard format for human-readable,
   /// machine-parseable, hierarchically organized data.
+  ///
+  /// \warning This interface may change without warning.
   static void
   summarizeToYaml (Ptr<const Comm<int> > comm,
-                   std::ostream &out=std::cout,
+                   std::ostream& out=std::cout,
                    const bool alwaysWriteLocal=false,
                    const bool writeGlobalStats=true,
                    const bool writeZeroTimers=true,
@@ -449,6 +451,8 @@ public:
   /// <a href="yaml.org">YAML</a> stands for Yet Another Markup
   /// Language.  It is a standard format for human-readable,
   /// machine-parseable, hierarchically organized data.
+  ///
+  /// \warning This interface may change without warning.
   static void
   summarizeToYaml (std::ostream &out=std::cout,
                    const bool alwaysWriteLocal=false,
