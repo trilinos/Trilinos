@@ -68,6 +68,36 @@
 
 #include <boost/unordered_map.hpp>
 
+template<typename EvalT,typename Traits,typename LO,typename GO>
+panzer::ScatterDirichletResidual_BlockedEpetra<EvalT, Traits,LO,GO>::
+ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
+                                       const Teuchos::ParameterList& p)
+{ 
+  std::string scatterName = p.get<std::string>("Scatter Name");
+  Teuchos::RCP<PHX::FieldTag> scatterHolder = 
+    Teuchos::rcp(new PHX::Tag<ScalarT>(scatterName,Teuchos::rcp(new PHX::MDALayout<Dummy>(0))));
+
+  // get names to be evaluated
+  const std::vector<std::string>& names = 
+    *(p.get< Teuchos::RCP< std::vector<std::string> > >("Dependent Names"));
+
+  Teuchos::RCP<PHX::DataLayout> dl = 
+    p.get< Teuchos::RCP<panzer::PureBasis> >("Basis")->functional;
+
+  // build the vector of fields that this is dependent on
+  for (std::size_t eq = 0; eq < names.size(); ++eq) {
+    PHX::MDField<ScalarT,Cell,NODE> scatterField = PHX::MDField<ScalarT,Cell,NODE>(names[eq],dl);
+
+    // tell the field manager that we depend on this field
+    this->addDependentField(scatterField);
+  }
+
+  // this is what this evaluator provides
+  this->addEvaluatedField(*scatterHolder);
+
+  this->setName(scatterName+" Scatter Residual");
+}
+
 // **********************************************************************
 // Specialization: Residual
 // **********************************************************************
