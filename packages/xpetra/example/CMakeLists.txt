@@ -15,3 +15,5 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES MueLu_MatrixDriverTests.cpp
   DEPLIBS muelu-xpetra muelu-utils muelu
   )
+
+ADD_SUBDIRECTORY(Simple)
