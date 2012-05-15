@@ -90,7 +90,7 @@ EpetraLinearObjFactory<Traits,LocalOrdinalT>::~EpetraLinearObjFactory()
 template <typename Traits,typename LocalOrdinalT>
 Teuchos::RCP<LinearObjContainer> EpetraLinearObjFactory<Traits,LocalOrdinalT>::buildLinearObjContainer() const
 {
-   Teuchos::RCP<EpetraLinearObjContainer> container = Teuchos::rcp(new EpetraLinearObjContainer);
+   Teuchos::RCP<EpetraLinearObjContainer> container = Teuchos::rcp(new EpetraLinearObjContainer(getMap(),getMap()));
 
    return container;
 }
@@ -98,7 +98,7 @@ Teuchos::RCP<LinearObjContainer> EpetraLinearObjFactory<Traits,LocalOrdinalT>::b
 template <typename Traits,typename LocalOrdinalT>
 Teuchos::RCP<LinearObjContainer> EpetraLinearObjFactory<Traits,LocalOrdinalT>::buildGhostedLinearObjContainer() const
 {
-   Teuchos::RCP<EpetraLinearObjContainer> container = Teuchos::rcp(new EpetraLinearObjContainer);
+   Teuchos::RCP<EpetraLinearObjContainer> container = Teuchos::rcp(new EpetraLinearObjContainer(getGhostedMap(),getGhostedMap()));
 
    return container;
 }

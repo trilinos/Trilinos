@@ -51,21 +51,37 @@
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 
-#include "Panzer_LinearObjFactory.hpp"
+#include "Panzer_LinearObjFactory.hpp" 
+#include "Panzer_ThyraObjContainer.hpp"
 
 #include "Teuchos_RCP.hpp"
 
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_LinearOpBase.hpp"
+#include "Thyra_EpetraLinearOp.hpp"
+#include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_get_Epetra_Operator.hpp"
 
 namespace panzer {
 
-class EpetraLinearObjContainer : public LinearObjContainer {
+class EpetraLinearObjContainer : public LinearObjContainer
+                               , public ThyraObjContainer<double> {
+
+   EpetraLinearObjContainer();
+
 public:
    typedef LinearObjContainer::Members Members;
 
    typedef Epetra_Vector VectorType;
    typedef Epetra_CrsMatrix CrsMatrixType;
+
+   EpetraLinearObjContainer(const Teuchos::RCP<const Epetra_Map> & domain,
+                            const Teuchos::RCP<const Epetra_Map> & range)
+      : domainMap(domain), rangeMap(range) 
+   {
+      domainSpace = Thyra::create_VectorSpace(domainMap);
+      rangeSpace = Thyra::create_VectorSpace(rangeMap);
+   }
 
    virtual void initialize() 
    {
@@ -96,7 +112,31 @@ public:
    inline void set_A(const Teuchos::RCP<Epetra_CrsMatrix> & in) { A = in; } 
    inline const Teuchos::RCP<Epetra_CrsMatrix> get_A() const { return A; }
 
+   virtual void set_x_th(const Teuchos::RCP<Thyra::VectorBase<double> > & in) 
+   { x = Thyra::get_Epetra_Vector(*domainMap,in); }
+   virtual Teuchos::RCP<Thyra::VectorBase<double> > get_x_th() const 
+   { return Thyra::create_Vector(x,domainSpace); }
+
+   virtual void set_dxdt_th(const Teuchos::RCP<Thyra::VectorBase<double> > & in)
+   { dxdt = Thyra::get_Epetra_Vector(*domainMap,in); }
+   virtual Teuchos::RCP<Thyra::VectorBase<double> > get_dxdt_th() const 
+   { return Thyra::create_Vector(dxdt,domainSpace); }
+
+   virtual void set_f_th(const Teuchos::RCP<Thyra::VectorBase<double> > & in)
+   { f = Thyra::get_Epetra_Vector(*rangeMap,in); }
+   virtual Teuchos::RCP<Thyra::VectorBase<double> > get_f_th() const 
+   { return Thyra::create_Vector(f,rangeSpace); }
+
+   virtual void set_A_th(const Teuchos::RCP<Thyra::LinearOpBase<double> > & in) 
+   { A = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*in),true); }
+   virtual Teuchos::RCP<Thyra::LinearOpBase<double> > get_A_th() const
+   { return Thyra::nonconstEpetraLinearOp(A); }
+
 private:
+   Teuchos::RCP<const Epetra_Map> domainMap;
+   Teuchos::RCP<const Epetra_Map> rangeMap;
+   Teuchos::RCP<const Thyra::VectorSpaceBase<double> > domainSpace;
+   Teuchos::RCP<const Thyra::VectorSpaceBase<double> > rangeSpace;
    Teuchos::RCP<Epetra_Vector> x, dxdt, f;
    Teuchos::RCP<Epetra_CrsMatrix> A;
 };
