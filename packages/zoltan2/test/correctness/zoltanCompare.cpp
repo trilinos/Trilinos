@@ -23,7 +23,7 @@ using Teuchos::Comm;
 // A few of the RCB tests done by Zoltan in nightly testing.
 //
 
-#define NUMTESTS 20
+#define NUMTESTS 19
 
 static int testNumProcs[NUMTESTS] = {
 2,2,
@@ -38,10 +38,10 @@ static string testArgs[NUMTESTS*3] = {
 "simple", "no", "no",
 "vwgt2", "no", "no",
 
-"onedbug", "no", "no",
-"drake", "no", "no",
-"bug", "no", "no",
 "vwgt", "no", "no",
+"bug", "no", "no",
+"drake", "no", "no",
+"onedbug", "no", "no",
 
 "ewgt", "no", "no", 
 "grid20x19", "no", "no", 
@@ -53,10 +53,10 @@ static string testArgs[NUMTESTS*3] = {
 
 "brack2_3", "no", "no",
 
+"hammond2", "no", "no",
 "degenerateAA", "no", "no",
 "degenerate", "no", "no",
 "degenerate", "no", "yes",
-"hammond2", "no", "no",
 
 "hammond", "no", "no"
 };
@@ -197,8 +197,11 @@ int runRCB(const RCP<const Comm<int> > &comm,
     return 1;
   }
 
-  if (rank == 0)
+  if (rank == 0){
     problem->getSolution().printMetrics(cout);
+  }
+
+  problem->printTimers();
 
   return 0;
 }

@@ -138,8 +138,6 @@ template <typename mvector_t>
   typedef typename mvector_t::scalar_type scalar_t;
   typedef typename mvector_t::local_ordinal_type lno_t;
 
-  env->timerStart("getCutDimension");
-
   int nprocs = comm->getSize();
   bool useIndices = index.size() > 0;
   lno_t numLocalCoords = 0;
@@ -215,7 +213,6 @@ template <typename mvector_t>
       maxCoord = max;
     }
   }
-  env->timerStop("getCutDimension");
 }
 
 /*! \brief Migrate coordinates and weights to new processes.
@@ -244,8 +241,6 @@ template <typename mvector_t>
   typedef typename mvector_t::scalar_type scalar_t;
   typedef typename mvector_t::local_ordinal_type lno_t;
   typedef typename mvector_t::global_ordinal_type gno_t;
-
-  env->timerStart("migrateData");
 
   int nprocs = comm->getSize();
   size_t nobj = vectors->getLocalLength();
@@ -364,8 +359,6 @@ template <typename mvector_t>
   Z2_FORWARD_EXCEPTIONS
 
   vectors = rcp_const_cast<mvector_t>(newMultiVector);
-
-  env->timerStop("migrateData");
 }
 
 template <typename lno_t, typename scalar_t>
@@ -481,8 +474,6 @@ template <typename lno_t, typename gno_t, typename scalar_t>
 
   globalWeightMovedRight = 0.0;
 
-  env->timerStart("testCoordinatesOnRightBoundary");
-
   scalar_t localBoundarySum = localSums[cutLocation];
 
   scalar_t total = totalWeightLeft;
@@ -552,8 +543,6 @@ template <typename lno_t, typename gno_t, typename scalar_t>
       &globalWeightMovedRight);
   }
   Z2_THROW_OUTSIDE_ERROR(*env)
-
-  env->timerStop("testCoordinatesOnRightBoundary");
 
   return;
 }
@@ -629,12 +618,6 @@ template <typename mvector_t>
 {
   if (env->doStatus())
     env->debug(DETAILED_STATUS, string("Entering BSPfindCut"));
-
-  int nprocs = comm->getSize();
-  if (nprocs > 1)
-    env->timerStart("BSPfindCut");
-  else
-    env->timerStart("BSPfindCut - serial");
 
   // initialize output
   bool useIndices = index.size() > 0;
@@ -1056,11 +1039,6 @@ template <typename mvector_t>
 
   if (env->doStatus())
     env->debug(DETAILED_STATUS, string("Exiting BSPfindCut"));
-
-  if (nprocs > 1)
-    env->timerStop("BSPfindCut");
-  else
-    env->timerStop("BSPfindCut - serial");
 
   return;
 }

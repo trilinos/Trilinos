@@ -72,8 +72,6 @@ void AlgRCB(
 
   const Teuchos::ParameterList &pl = env->getParameters();
 
-  env->timerStart("RCB setup");
-
   ////////////////////////////////////////////////////////
   // Partitioning problem parameters of interest:
   //    objective
@@ -296,8 +294,6 @@ void AlgRCB(
   }
   Z2_THROW_OUTSIDE_ERROR(*env)
 
-  env->timerStop("RCB setup");
-
   ////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////
   // The algorithm
@@ -375,7 +371,6 @@ void AlgRCB(
 
     int *ids = NULL;
 
-    env->timerStart("Subdivide");
     if (rank < leftHalfNumProcs){
       groupSize = leftHalfNumProcs;
       ids = new int [groupSize];
@@ -433,8 +428,6 @@ void AlgRCB(
     Z2_THROW_OUTSIDE_ERROR(*env)
   
     mvector = subMvector;
-
-    env->timerStop("Subdivide");
 
     numLocalCoords = mvector->getLocalLength();
     numGlobalCoords = mvector->getGlobalLength();
@@ -523,9 +516,7 @@ void AlgRCB(
     env->debug(VERBOSE_DETAILED_STATUS, oss.str());
   }
 
-  env->timerStart("update solution");
   solution->setParts(gnoList, partId, metrics);
-  env->timerStop("update solution");
 }
 
 } // namespace Zoltan2
