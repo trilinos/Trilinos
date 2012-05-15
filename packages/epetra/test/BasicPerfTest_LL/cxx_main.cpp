@@ -741,7 +741,7 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
   for (i=0; i<numMyElements; i++) 
     elementSizes[i] = sizes[ptMap.GID(i)%nsizes]; // cycle through sizes array
 
-  map = new Epetra_BlockMap((long long)-1, numMyElements, ptMap.MyGlobalElements(), elementSizes.Values(),
+  map = new Epetra_BlockMap((long long)-1, numMyElements, ptMap.MyGlobalElements_LL(), elementSizes.Values(),
 			    ptMap.IndexBase(), ptMap.Comm());
 
   int profile = 0; if (StaticProfile) profile = numPoints;

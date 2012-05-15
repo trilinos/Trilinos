@@ -42,7 +42,7 @@
 
 #include "checkmap.h"
 int checkmap(Epetra_Map & Map, int NumGlobalElements, int NumMyElements, 
-	     int *MyGlobalElements, int IndexBase, Epetra_Comm& Comm,
+	     long long *MyGlobalElements, int IndexBase, Epetra_Comm& Comm,
 	     bool DistributedGlobal)
 {
   int i, ierr=0, forierr = 0;
@@ -82,7 +82,7 @@ int checkmap(Epetra_Map & Map, int NumGlobalElements, int NumMyElements,
   int MaxLID = Map.MaxLID();
   EPETRA_TEST_ERR(MaxLID!=NumMyElements-1,ierr);
 
-  int MaxMyGID = (Comm.MyPID()+1)*NumMyElements-1+IndexBase;
+  long long MaxMyGID = (Comm.MyPID()+1)*NumMyElements-1+IndexBase;
   if (Comm.MyPID()>2) MaxMyGID+=3;
   if (!DistributedGlobal) MaxMyGID = NumMyElements-1+IndexBase;
   EPETRA_TEST_ERR(Map.MaxMyGID()!=MaxMyGID,ierr);
@@ -93,12 +93,12 @@ int checkmap(Epetra_Map & Map, int NumGlobalElements, int NumMyElements,
 
   EPETRA_TEST_ERR(Map.MinLID()!=0,ierr);
 
-  int MinMyGID = Comm.MyPID()*NumMyElements+IndexBase;
+  long long MinMyGID = Comm.MyPID()*NumMyElements+IndexBase;
   if (Comm.MyPID()>2) MinMyGID+=3;
   if (!DistributedGlobal) MinMyGID = 0;
   EPETRA_TEST_ERR(Map.MinMyGID()!=MinMyGID,ierr);
   
-  int * MyGlobalElements1 = new int[NumMyElements];
+  long long * MyGlobalElements1 = new long long[NumMyElements];
   EPETRA_TEST_ERR(Map.MyGlobalElements(MyGlobalElements1)!=0,ierr);
 
   forierr = 0;
@@ -121,7 +121,7 @@ int checkmap(Epetra_Map & Map, int NumGlobalElements, int NumMyElements,
 
   EPETRA_TEST_ERR(Map.NumMyPoints()!=NumMyElements,ierr);
 
-  int MaxMyGID2 = Map.GID(Map.LID(MaxMyGID));
+  long long MaxMyGID2 = Map.GID(Map.LID(MaxMyGID));
   EPETRA_TEST_ERR(MaxMyGID2 != MaxMyGID,ierr);
   int MaxLID2 = Map.LID(Map.GID(MaxLID));
   EPETRA_TEST_ERR(MaxLID2 != MaxLID,ierr);
@@ -151,8 +151,8 @@ int checkmap(Epetra_Map & Map, int NumGlobalElements, int NumMyElements,
   else NumElePerProc = MinNumEleOnProc;
   if (NumElePerProc > 0) {
     TotalNumEle = NumElePerProc*NumProc;
-    int * MyGIDlist = new int[NumElePerProc];
-    int * GIDlist = new int[TotalNumEle];
+    long long * MyGIDlist = new long long[NumElePerProc];
+    long long * GIDlist = new long long[TotalNumEle];
     int * PIDlist = new int[TotalNumEle];
     int * LIDlist = new int[TotalNumEle];
     for (i=0; i<NumElePerProc; i++)
@@ -185,7 +185,7 @@ int checkmap(Epetra_Map & Map, int NumGlobalElements, int NumMyElements,
 
   if (Map.LinearMap()) {
 
-    int * GIDList = new int[3];
+    long long * GIDList = new long long[3];
     int * PIDList = new int[3];
     int * LIDList = new int[3];
     int MyPID = Map.Comm().MyPID();

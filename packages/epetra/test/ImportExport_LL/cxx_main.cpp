@@ -607,7 +607,7 @@ int combine_mode_test(Epetra_Comm& Comm)
   vec_target.PutValue(0);
 
   //set vec_source's contents so that entry[i] == GID[i].
-  int* GIDs = map_source.MyGlobalElements();
+  long long* GIDs = map_source.MyGlobalElements_LL();
   for(int i=0; i<map_source.NumMyElements(); ++i) {
     vec_source[i] = GIDs[i];
   }
@@ -618,7 +618,7 @@ int combine_mode_test(Epetra_Comm& Comm)
 
   vec_target.Import(vec_source, importer, Insert);
 
-  GIDs = map_target.MyGlobalElements();
+  GIDs = map_target.MyGlobalElements_LL();
   int test_failed = 0;
 
   //the test passes if the i-th entry in vec_target equals either 0 or

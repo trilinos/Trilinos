@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
 
   int NumMyElements = 10000;
   int NumMyElements1 = NumMyElements; // Used for local map
-  int NumGlobalElements = NumMyElements*NumProc+EPETRA_MIN(NumProc,3);
+  long long NumGlobalElements = NumMyElements*NumProc+EPETRA_MIN(NumProc,3);
   if (MyPID < 3) NumMyElements++;
   int IndexBase = 0;
   bool DistributedGlobal = (NumGlobalElements>NumMyElements);
@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
 
   try {
     if (verbose) cout << "Checking Epetra_Map(-2, IndexBase, Comm)" << endl;
-    Map = new Epetra_Map(-2, IndexBase, Comm);
+    Map = new Epetra_Map((long long)-2, IndexBase, Comm);
   }
   catch (int Error) {
     if (Error!=-1) {
@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
 
   try {
     if (verbose) cout << "Checking Epetra_Map(2, 3, IndexBase, Comm)" << endl;
-    Map = new Epetra_Map(2, 3, IndexBase, Comm);
+    Map = new Epetra_Map((long long)2, 3, IndexBase, Comm);
   }
   catch (int Error) {
     if (Error!=-4) {
@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
   // Test User-defined arbitrary distribution constructor
   // Generate Global Element List.  Do in reverse for fun!
 
-  int * MyGlobalElements = new int[NumMyElements];
+  long long * MyGlobalElements = new long long[NumMyElements];
   int MaxMyGID = (Comm.MyPID()+1)*NumMyElements-1+IndexBase;
   if (Comm.MyPID()>2) MaxMyGID+=3;
   for (int i = 0; i<NumMyElements; i++) MyGlobalElements[i] = MaxMyGID-i;
@@ -218,10 +218,10 @@ int main(int argc, char *argv[]) {
   Epetra_Map* SmallMap = 0;
   if (verbose1) {
     // Build a small map for test cout.  Use 10 elements from current map
-    int* MyEls = Map->MyGlobalElements();
+    long long* MyEls = Map->MyGlobalElements_LL();
     int IndBase = Map->IndexBase();
     int MyLen = EPETRA_MIN(10+Comm.MyPID(),Map->NumMyElements());
-    SmallMap = new Epetra_Map(-1, MyLen, MyEls, IndBase, Comm);
+    SmallMap = new Epetra_Map((long long)-1, MyLen, MyEls, IndBase, Comm);
   }
 
   delete [] MyGlobalElements;
@@ -235,7 +235,7 @@ int main(int argc, char *argv[]) {
   if (verbose && ierr==0) cout << "Checked OK\n\n" <<endl;
 
   // Test LocalMap constructor
-  Epetra_LocalMap* LocalMap = new Epetra_LocalMap(NumMyElements1, IndexBase, Comm);
+  Epetra_LocalMap* LocalMap = new Epetra_LocalMap((long long)NumMyElements1, IndexBase, Comm);
   if (verbose) cout << "Checking Epetra_LocalMap(NumMyElements1, IndexBase, Comm)" << endl;
   ierr = checkmap(*LocalMap, NumMyElements1, NumMyElements1, 0, IndexBase, Comm, false);
 
@@ -273,7 +273,7 @@ int main(int argc, char *argv[]) {
 
 int checkMapDataClass(Epetra_Comm& Comm, int verbose) {
 	int returnierr = 0;
-	int NumGlobalElements = 1000;
+	long long NumGlobalElements = 1000;
 	int IndexBase = 0;
 
 	Epetra_Map m1(NumGlobalElements, IndexBase, Comm);
