@@ -53,45 +53,9 @@
 # ************************************************************************
 # @HEADER
 
+INCLUDE(TribitsTplDeclareLibraries)
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.brain.gcc-4.6.3.cmake")
-
-#
-# Set the options specific to this build case
-#
-
-SET(COMM_TYPE MPI)
-SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME CONTINUOUS_MPI_OPT_DEV)
-SET(COMPILER_VERSION "GCC-4.6.3")
-SET(CTEST_TEST_TYPE Continuous)
-
-#SET(CTEST_TEST_TIMEOUT 900)
-
-SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
-#Stokhos is explicitly disabled below to prevent the package from being
-#implicitly enabled.  Sundance depends on Stokhos.
-#SET(EXTRA_EXCLUDE_PACKAGES Phalanx Stokhos Sundance)
-#SET_DEFAULT(Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE Continuous)
-
-SET(Trilinos_PACKAGES Zoltan2)
-
-SET( EXTRA_CONFIGURE_OPTIONS
-  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF"
-  "-DTrilinos_DATA_DIR:STRING=$ENV{TRILINOSDATADIRECTORY}"
-  "-DTPL_ENABLE_Pthread:BOOL=ON"
-  "-DNOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK=ON"
-  "-DMPI_BASE_DIR:PATH=$ENV{HOME}/tpls/gcc/4.6.3/openmpi/1.4.3"
-  "-DNetcdf_INCLUDE_DIRS=$ENV{HOME}/tpls/gcc/4.6.3/netcdf/4.1.3/include"
-  "-DNetcdf_LIBRARY_DIRS=$ENV{HOME}/tpls/gcc/4.6.3/netcdf/4.1.3/lib"
-  "-DBoost_INCLUDE_DIRS=$ENV{HOME}/tpls/gcc/4.6.3/boost/1.46.1/include"
+TRIBITS_TPL_DECLARE_LIBRARIES( yaml-cpp
+  REQUIRED_HEADERS yaml-cpp/yaml.h
+  REQUIRED_LIBS_NAMES yaml-cpp
   )
-
-# Put MPI in the LD_LIBRARY_PATH for testing.
-SET(ENV{LD_LIBRARY_PATH} "$ENV{HOME}/tpls/gcc/4.6.3/openmpi/1.4.3/lib:$ENV{LD_LIBRARY_PATH}")
-
-#
-# Set the rest of the system-specific options and run the dashboard build/test
-#
-
-TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()

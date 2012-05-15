@@ -209,6 +209,9 @@ namespace Stokhos {
     //! Flag indicating whether transpose was selected
     bool useTranspose;
 
+    //! Flag indicating whether to use block Epetra_MultiVector apply
+    bool use_block_apply;
+
     //! Number of terms in expansion
     int expansion_size;
 

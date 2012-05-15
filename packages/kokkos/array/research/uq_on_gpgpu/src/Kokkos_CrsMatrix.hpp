@@ -75,6 +75,27 @@ void multiply( const CrsMatrix<MatrixValueType,Device> & A ,
   Impl::Multiply<matrix_type,vector_type,vector_type>::apply( A , x , y );
 }
 
+template< typename MatrixValueType ,
+          typename VectorValueType ,
+          class Device >
+void multiply( const CrsMatrix<MatrixValueType,Device> & A ,
+               const std::vector< MultiVector<VectorValueType,Device> >   & x ,
+               const std::vector< MultiVector<VectorValueType,Device> >   & y )
+{
+  typedef CrsMatrix<MatrixValueType,Device>    matrix_type ;
+  typedef MultiVector<VectorValueType,Device>  vector_type ;
+
+  Impl::MMultiply<matrix_type,vector_type,vector_type>::apply( A , x , y );
+}
+
+template< typename MatrixValueType ,
+          class Device >
+void write_matrix_market(const CrsMatrix<MatrixValueType,Device> & A ,
+			 const std::string& filename)
+{
+  Impl::MatrixMarketWriter<MatrixValueType,Device>::write(A, filename);
+}
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 

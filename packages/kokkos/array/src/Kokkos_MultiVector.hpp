@@ -182,6 +182,26 @@ void deep_copy( const MultiVector< ValueType , DeviceDst > & dst ,
   }
 }
 
+//----------------------------------------------------------------------------
+
+template< typename ValueType , class Device >
+inline
+void update( const ValueType & alpha , 
+             const MultiVector< ValueType , Device > & x ,
+             const ValueType & beta ,
+             const MultiVector< ValueType , Device > & y )
+{
+  typedef MultiVector< ValueType , Device > multivec_type ;
+
+  if ( x.operator!=( y ) ) {
+    Impl::multivector_require_equal_dimension( x.length() , x.count() ,
+                                               y.length() , y.count() );
+  }
+
+  Impl::Update<multivec_type>::run( alpha , x , beta, y );
+}
+
+
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------

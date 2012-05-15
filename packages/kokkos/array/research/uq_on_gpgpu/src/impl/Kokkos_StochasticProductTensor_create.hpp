@@ -159,7 +159,7 @@ private:
 
   void populate_tensor()
   {
-    const double  tolerance( 1e-14 );
+    const double  tolerance( 1e-12 );
     const double  scaling( std::sqrt( (double)( 1 << m_variable_count )));
 
     // Integration rule required for integration of triple product of 
