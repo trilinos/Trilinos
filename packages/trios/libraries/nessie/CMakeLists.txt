@@ -49,6 +49,7 @@ APPEND_SET(NOINSTHEADERS
   common/nssi_debug.h
   common/nssi_opcodes.h
   common/nssi_trace.h
+  common/buffer_queue.h
 )
 
 APPEND_SET(HEADERS
@@ -72,6 +73,7 @@ APPEND_SET(SOURCES
   common/nssi_common.cpp
   common/nssi_debug.c
   common/nssi_xdr.cpp
+  common/buffer_queue.cpp
 )
 
 SET(TRIOS_SUPPORTED_NETWORK_FOUND 0)

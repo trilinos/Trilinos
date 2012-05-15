@@ -78,11 +78,12 @@ protected:
   typedef Host::size_type size_type ;
 
   HostWorkerBlock  m_worker_block ;
-  size_type        m_node_rank ;       // If pinned; otherwise 'maximum'
-  size_type        m_node_count ;      // Number of nodes
-  size_type        m_node_core_count ; // Assuming all nodes are equivalent
+  size_type        m_node_rank ;       //
+  size_type        m_node_count ;      //
+  size_type        m_node_pu_count ;   // Assuming all nodes are equivalent
   size_type        m_page_size ;       // 
   size_type        m_thread_count ;    // 
+  size_type        m_node_thread_count ; // 
   HostThread       m_thread[ THREAD_COUNT_MAX + 1 ];
 
   const HostThreadWorker<void> * volatile m_worker ;

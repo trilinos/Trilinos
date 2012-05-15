@@ -65,6 +65,8 @@ enum IO_METHODS {
 struct injection_args {
         bool client_flag;
         bool server_flag;
+        int transport;
+        std::string transport_name;
         int io_method;
         std::string server_url;
         std::string url_file;

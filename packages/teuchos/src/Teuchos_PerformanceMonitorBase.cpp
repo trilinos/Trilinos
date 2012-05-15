@@ -46,6 +46,24 @@
 
 namespace Teuchos {
 
+  RCP<StringToIntegralParameterEntryValidator<ECounterSetOp> >
+  makeECounterSetOpValidator ()
+  {
+    Array<std::string> strings;
+    Array<std::string> docs;
+    Array<ECounterSetOp> values;
+
+    strings.push_back ("Intersection");
+    docs.push_back ("Compute intersection of counter names over processes");
+    values.push_back (Intersection);
+    strings.push_back ("Union");
+    docs.push_back ("Compute union of counter names over processes");
+    values.push_back (Union);
+    const std::string defaultName ("Performance counter set operation");
+
+    return stringToIntegralParameterEntryValidator<ECounterSetOp> (strings (), docs (), values (), defaultName);
+  }
+
   namespace {
 
     // Pack the given array of strings into a single string with an
@@ -60,7 +78,7 @@ namespace Teuchos {
     //
     // \param offsets [out] Array of offsets, of length one more than
     //   the number of strings in the \c strings array.  Thus, the
-    //   offsets array always has positive length.  
+    //   offsets array always has positive length.
     //
     // \param strings [in] The array of strings to pack.  It may have
     //   zero length.  In that case, on output, the offsets array will
@@ -71,9 +89,9 @@ namespace Teuchos {
     // have a size_type typedef.  Instead, it uses size_t for that
     // purpose.
     void
-    packStringsForSend (std::string& packedString, 
-			Array<size_t>& offsets,
-			const Array<std::string>& strings)
+    packStringsForSend (std::string& packedString,
+                        Array<size_t>& offsets,
+                        const Array<std::string>& strings)
     {
       using std::cerr;
       using std::endl;
@@ -86,35 +104,35 @@ namespace Teuchos {
       size_t totalLength = 0;
       Array<size_t>::size_type offsetsIndex = 0;
       for (Array<string>::const_iterator it = strings.begin();
-	   it != strings.end(); ++it, ++offsetsIndex)
-	{
-	  offsets[offsetsIndex] = totalLength;
-	  totalLength += it->size();
-	}
+           it != strings.end(); ++it, ++offsetsIndex)
+        {
+          offsets[offsetsIndex] = totalLength;
+          totalLength += it->size();
+        }
       offsets[offsetsIndex] = totalLength;
 
       // Pack the array of strings into the packed string.
       packedString.resize (totalLength);
       string::iterator packedStringIter = packedString.begin();
-      for (Array<string>::const_iterator it = strings.begin(); 
-	   it != strings.end(); ++it)
-	packedStringIter = std::copy (it->begin(), it->end(), packedStringIter);
+      for (Array<string>::const_iterator it = strings.begin();
+           it != strings.end(); ++it)
+        packedStringIter = std::copy (it->begin(), it->end(), packedStringIter);
 
       if (debug)
-	{
-	  std::ostringstream out;
-	  RCP<const Comm<int> > pComm = DefaultComm<int>::getComm ();
-	  out << "Proc " << pComm->getRank() << ": in pack: offsets = [";
-	  for (Array<size_t>::const_iterator it = offsets.begin(); 
-	       it != offsets.end(); ++it)
-	    {
-	      out << *it;
-	      if (it + 1 != offsets.end())
-		out << ", ";
-	    }
-	  out << "], packedString = " << packedString << endl;
-	  cerr << out.str();
-	}
+        {
+          std::ostringstream out;
+          RCP<const Comm<int> > pComm = DefaultComm<int>::getComm ();
+          out << "Proc " << pComm->getRank() << ": in pack: offsets = [";
+          for (Array<size_t>::const_iterator it = offsets.begin();
+               it != offsets.end(); ++it)
+            {
+              out << *it;
+              if (it + 1 != offsets.end())
+                out << ", ";
+            }
+          out << "], packedString = " << packedString << endl;
+          cerr << out.str();
+        }
     }
 
     // \brief Send an array of strings.
@@ -126,20 +144,20 @@ namespace Teuchos {
     // it is not empty).
     void
     sendStrings (const Comm<int>& comm, // in
-		 const Array<std::string>& strings, // in
-		 const int destRank) // in
+                 const Array<std::string>& strings, // in
+                 const int destRank) // in
     {
       // Pack the string array into the packed string, and compute
       // offsets.
       std::string packedString;
       Array<size_t> offsets;
       packStringsForSend (packedString, offsets, strings);
-      TEUCHOS_TEST_FOR_EXCEPTION(offsets.size() == 0, std::logic_error, 
-			 "packStringsForSend() returned a zero-length offsets "
-			 "array on MPI Proc " << comm.getRank() << ", to be "
-			 "sent to Proc " << destRank << ".  The offsets array "
-			 "should always have positive length.  Please report "
-			 "this bug to the Teuchos developers.");
+      TEUCHOS_TEST_FOR_EXCEPTION(offsets.size() == 0, std::logic_error,
+                         "packStringsForSend() returned a zero-length offsets "
+                         "array on MPI Proc " << comm.getRank() << ", to be "
+                         "sent to Proc " << destRank << ".  The offsets array "
+                         "should always have positive length.  Please report "
+                         "this bug to the Teuchos developers.");
 
       // Send the count of offsets.
       send (comm, offsets.size(), destRank);
@@ -157,65 +175,65 @@ namespace Teuchos {
       // offsets array) not to expect anything.
       const int stringSendCount = static_cast<int> (packedString.size());
       if (stringSendCount > 0)
-	send (comm, stringSendCount, &packedString[0], destRank);
+        send (comm, stringSendCount, &packedString[0], destRank);
     }
 
     void
     unpackStringsAfterReceive (Array<std::string>& strings,
-			       const std::string& packedString,
-			       const Array<size_t> offsets)
+                               const std::string& packedString,
+                               const Array<size_t> offsets)
     {
       const bool debug = false;
       if (debug)
-	{
-	  using std::cerr;
-	  using std::endl;
+        {
+          using std::cerr;
+          using std::endl;
 
-	  std::ostringstream out;
-	  RCP<const Comm<int> > pComm = DefaultComm<int>::getComm ();
-	  out << "Proc " << pComm->getRank() << ": in unpack: offsets = [";
-	  for (Array<size_t>::const_iterator it = offsets.begin(); 
-	       it != offsets.end(); ++it)
-	    {
-	      out << *it;
-	      if (it + 1 != offsets.end())
-		out << ", ";
-	    }
-	  out << "], packedString = " << packedString << endl;
-	  cerr << out.str();
-	}
-      TEUCHOS_TEST_FOR_EXCEPTION(offsets.size() == 0, std::logic_error, 
-			 "The offsets array has length zero, which does not "
-			 "make sense.  Even when sending / receiving zero "
-			 "strings, the offsets array should have one entry "
-			 "(namely, zero).");
+          std::ostringstream out;
+          RCP<const Comm<int> > pComm = DefaultComm<int>::getComm ();
+          out << "Proc " << pComm->getRank() << ": in unpack: offsets = [";
+          for (Array<size_t>::const_iterator it = offsets.begin();
+               it != offsets.end(); ++it)
+            {
+              out << *it;
+              if (it + 1 != offsets.end())
+                out << ", ";
+            }
+          out << "], packedString = " << packedString << endl;
+          cerr << out.str();
+        }
+      TEUCHOS_TEST_FOR_EXCEPTION(offsets.size() == 0, std::logic_error,
+                         "The offsets array has length zero, which does not "
+                         "make sense.  Even when sending / receiving zero "
+                         "strings, the offsets array should have one entry "
+                         "(namely, zero).");
       const Array<size_t>::size_type numStrings = offsets.size() - 1;
       strings.resize (numStrings);
       for (Array<size_t>::size_type k = 0; k < numStrings; ++k)
-	{ // Exclusive index range in the packed string in which to
-	  // find the current string.
-	  const size_t start = offsets[k];
-	  const size_t end = offsets[k+1];
-	  strings[k] = packedString.substr (start, end - start);
-	}
+        { // Exclusive index range in the packed string in which to
+          // find the current string.
+          const size_t start = offsets[k];
+          const size_t end = offsets[k+1];
+          strings[k] = packedString.substr (start, end - start);
+        }
     }
 
     // Function corresponding to \c sendStrings() that receives an
     // array of strings (Array<std::string>) in packed form.
     void
     receiveStrings (const Comm<int>& comm,
-		    const int sourceRank,
-		    Array<std::string>& strings)
+                    const int sourceRank,
+                    Array<std::string>& strings)
     {
       // Receive the number of offsets.  There should always be at
       // least 1 offset.
       Array<size_t>::size_type numOffsets = 0;
       receive (comm, sourceRank, &numOffsets);
-      TEUCHOS_TEST_FOR_EXCEPTION(numOffsets == 0, std::logic_error, 
-			 "Invalid number of offsets numOffsets=" << numOffsets 
-			 << " received on MPI Rank " << comm.getRank() 
-			 << " from Rank " << sourceRank << ".  Please report "
-			 "this bug to the Teuchos developers.");
+      TEUCHOS_TEST_FOR_EXCEPTION(numOffsets == 0, std::logic_error,
+                         "Invalid number of offsets numOffsets=" << numOffsets
+                         << " received on MPI Rank " << comm.getRank()
+                         << " from Rank " << sourceRank << ".  Please report "
+                         "this bug to the Teuchos developers.");
 
       // Receive the array of offsets.
       Array<size_t> offsets (numOffsets);
@@ -228,19 +246,19 @@ namespace Teuchos {
       std::string packedString (offsets.back(), ' ');
       const int stringRecvCount = static_cast<int> (offsets.back());
       if (stringRecvCount > 0)
-	{
-	  receive (comm, sourceRank, stringRecvCount, &packedString[0]);
-	  unpackStringsAfterReceive (strings, packedString, offsets);
-	}
+        {
+          receive (comm, sourceRank, stringRecvCount, &packedString[0]);
+          unpackStringsAfterReceive (strings, packedString, offsets);
+        }
     }
 
 
     void
     broadcastStringsHelper (const Comm<int>& comm,
-			    const int myRank,
-			    const int left,
-			    const int right,
-			    Array<std::string>& globalNames)
+                            const int myRank,
+                            const int left,
+                            const int right,
+                            Array<std::string>& globalNames)
     {
       // If left >= right, there is only one process, so we don't need
       // to do anything.
@@ -249,33 +267,33 @@ namespace Teuchos {
       // right] into [left, mid-1] and [mid, right].  Send from left
       // to mid, and recurse on the two subintervals.
       if (left >= right)
-	return;
+        return;
       else
-	{
-	  const int mid = left + (right - left + 1) / 2;
+        {
+          const int mid = left + (right - left + 1) / 2;
 
-	  // This could be optimized further on the sending rank, by
-	  // prepacking the strings so that they don't have to be
-	  // packed more than once.
-	  if (myRank == left)
-	    sendStrings (comm, globalNames, mid);
-	  else if (myRank == mid)
-	    receiveStrings (comm, left, globalNames);
+          // This could be optimized further on the sending rank, by
+          // prepacking the strings so that they don't have to be
+          // packed more than once.
+          if (myRank == left)
+            sendStrings (comm, globalNames, mid);
+          else if (myRank == mid)
+            receiveStrings (comm, left, globalNames);
 
-	  // Recurse on [left, mid-1] or [mid, right], depending on myRank.
-	  if (myRank >= left && myRank <= mid-1)
-	    broadcastStringsHelper (comm, myRank, left, mid-1, globalNames);
-	  else if (myRank >= mid && myRank <= right)
-	    broadcastStringsHelper (comm, myRank, mid, right, globalNames);
-	  else
-	    return; // Don't recurse if not participating.
-	}
+          // Recurse on [left, mid-1] or [mid, right], depending on myRank.
+          if (myRank >= left && myRank <= mid-1)
+            broadcastStringsHelper (comm, myRank, left, mid-1, globalNames);
+          else if (myRank >= mid && myRank <= right)
+            broadcastStringsHelper (comm, myRank, mid, right, globalNames);
+          else
+            return; // Don't recurse if not participating.
+        }
     }
 
 
     void
     broadcastStrings (const Comm<int>& comm,
-		      Array<std::string>& globalNames)
+                      Array<std::string>& globalNames)
     {
       const int myRank = comm.getRank();
       const int left = 0;
@@ -293,7 +311,7 @@ namespace Teuchos {
     // operator which computes the set union resp. intersection of two
     // sets: the "left" process' intermediate reduction result (global
     // counter names), and the "mid" process' local counter names.
-    // 
+    //
     // \param comm [in] Communicator for which \c
     //   mergeCounterNamesHelper() was called.
     //
@@ -320,13 +338,13 @@ namespace Teuchos {
     //   of counter names, else if Union, compute the set union of
     //   counter names.
     void
-    mergeCounterNamesPair (const Comm<int>& comm, 
-			   const int myRank,
-			   const int left,
-			   const int mid,
-			   const Array<std::string>& localNames,
-			   Array<std::string>& globalNames,
-			   const ECounterSetOp setOp)
+    mergeCounterNamesPair (const Comm<int>& comm,
+                           const int myRank,
+                           const int left,
+                           const int mid,
+                           const Array<std::string>& localNames,
+                           Array<std::string>& globalNames,
+                           const ECounterSetOp setOp)
     {
       using std::cerr;
       using std::endl;
@@ -335,56 +353,56 @@ namespace Teuchos {
       const bool debug = false;
 
       if (myRank == left)
-	{ // Receive names from the other process, and merge its names
-	  // with the names on this process.
-	  Array<string> otherNames;
-	  receiveStrings (comm, mid, otherNames);
+        { // Receive names from the other process, and merge its names
+          // with the names on this process.
+          Array<string> otherNames;
+          receiveStrings (comm, mid, otherNames);
 
-	  if (debug)
-	    {
-	      // Buffering locally in an ostringstream before writing to
-	      // the shared stderr sometimes helps avoid interleaved
-	      // debugging output.
-	      std::ostringstream out;
-	      out << "Proc " << myRank << ": in mergePair: otherNames = [";
-	      for (Array<std::string>::const_iterator it = otherNames.begin(); 
-		   it != otherNames.end(); ++it)
-		{
-		  out << "\"" << *it << "\"";
-		  if (it + 1 != otherNames.end())
-		    out << ", ";
-		}
-	      out << "]" << endl;
-	      cerr << out.str();
-	    }
+          if (debug)
+            {
+              // Buffering locally in an ostringstream before writing to
+              // the shared stderr sometimes helps avoid interleaved
+              // debugging output.
+              std::ostringstream out;
+              out << "Proc " << myRank << ": in mergePair: otherNames = [";
+              for (Array<std::string>::const_iterator it = otherNames.begin();
+                   it != otherNames.end(); ++it)
+                {
+                  out << "\"" << *it << "\"";
+                  if (it + 1 != otherNames.end())
+                    out << ", ";
+                }
+              out << "]" << endl;
+              cerr << out.str();
+            }
 
-	  // Assume that both globalNames and otherNames are sorted.
-	  // Compute the set intersection / union as specified by the
-	  // enum.
-	  Array<string> newNames;
-	  if (setOp == Intersection)
-	    std::set_intersection (globalNames.begin(), globalNames.end(),
-				   otherNames.begin(), otherNames.end(),
-				   std::back_inserter (newNames));
-	  else if (setOp == Union)
-	    std::set_union (globalNames.begin(), globalNames.end(),
-			    otherNames.begin(), otherNames.end(),
-			    std::back_inserter (newNames));
-	  else
-	    TEUCHOS_TEST_FOR_EXCEPTION(setOp != Intersection && setOp != Union,
-			       std::logic_error,
-			       "Invalid set operation enum value.  Please "
-			       "report this bug to the Teuchos developers.");
-	  globalNames.swap (newNames);
-	}
+          // Assume that both globalNames and otherNames are sorted.
+          // Compute the set intersection / union as specified by the
+          // enum.
+          Array<string> newNames;
+          if (setOp == Intersection)
+            std::set_intersection (globalNames.begin(), globalNames.end(),
+                                   otherNames.begin(), otherNames.end(),
+                                   std::back_inserter (newNames));
+          else if (setOp == Union)
+            std::set_union (globalNames.begin(), globalNames.end(),
+                            otherNames.begin(), otherNames.end(),
+                            std::back_inserter (newNames));
+          else
+            TEUCHOS_TEST_FOR_EXCEPTION(setOp != Intersection && setOp != Union,
+                               std::logic_error,
+                               "Invalid set operation enum value.  Please "
+                               "report this bug to the Teuchos developers.");
+          globalNames.swap (newNames);
+        }
       else if (myRank == mid)
-	sendStrings (comm, localNames, left);
+        sendStrings (comm, localNames, left);
       else
-	TEUCHOS_TEST_FOR_EXCEPTION(myRank != left && myRank != mid, 
-			   std::logic_error,
-			   "myRank=" << myRank << " is neither left=" << left
-			   << " nor mid=" << mid << ".  Please report this "
-			   "bug to the Teuchos developers.");
+        TEUCHOS_TEST_FOR_EXCEPTION(myRank != left && myRank != mid,
+                           std::logic_error,
+                           "myRank=" << myRank << " is neither left=" << left
+                           << " nor mid=" << mid << ".  Please report this "
+                           "bug to the Teuchos developers.");
     }
 
     // Recursive helper function for \c mergeCounterNames().
@@ -396,13 +414,13 @@ namespace Teuchos {
     // MPI_Reduce(), we hand-roll the reduction using a binary tree
     // via recursion.  We don't need an all-reduce in this case.)
     void
-    mergeCounterNamesHelper (const Comm<int>& comm, 
-			     const int myRank,
-			     const int left,
-			     const int right, // inclusive range [left, right]
-			     const Array<std::string>& localNames,
-			     Array<std::string>& globalNames,
-			     const ECounterSetOp setOp)
+    mergeCounterNamesHelper (const Comm<int>& comm,
+                             const int myRank,
+                             const int left,
+                             const int right, // inclusive range [left, right]
+                             const Array<std::string>& localNames,
+                             Array<std::string>& globalNames,
+                             const ECounterSetOp setOp)
     {
       // Correctness proof:
       //
@@ -429,51 +447,51 @@ namespace Teuchos {
       // (the (intersection, union) of an empty set of sets is the
       // empty set).
       if (left > right)
-	return;
+        return;
       else if (left == right)
-	{
-	  Array<string> newNames;
-	  newNames.reserve (localNames.size());
-	  std::copy (localNames.begin(), localNames.end(), 
-		     std::back_inserter (newNames));
-	  globalNames.swap (newNames);
-	}
+        {
+          Array<string> newNames;
+          newNames.reserve (localNames.size());
+          std::copy (localNames.begin(), localNames.end(),
+                     std::back_inserter (newNames));
+          globalNames.swap (newNames);
+        }
       else
-	{ // You're sending messages across the network, so don't
-	  // bother to optimize away a few branches here.
-	  //
-	  // Recurse on [left, mid-1] or [mid, right], depending on myRank.
-	  const int mid = left + (right - left + 1) / 2;
-	  if (myRank >= left && myRank <= mid-1)
-	    mergeCounterNamesHelper (comm, myRank, left, mid-1, 
-				     localNames, globalNames, setOp);
-	  else if (myRank >= mid && myRank <= right)
-	    mergeCounterNamesHelper (comm, myRank, mid, right,
-				     localNames, globalNames, setOp);
-	  else
-	    return; // Don't call mergeCounterNamesPair() if not participating.
+        { // You're sending messages across the network, so don't
+          // bother to optimize away a few branches here.
+          //
+          // Recurse on [left, mid-1] or [mid, right], depending on myRank.
+          const int mid = left + (right - left + 1) / 2;
+          if (myRank >= left && myRank <= mid-1)
+            mergeCounterNamesHelper (comm, myRank, left, mid-1,
+                                     localNames, globalNames, setOp);
+          else if (myRank >= mid && myRank <= right)
+            mergeCounterNamesHelper (comm, myRank, mid, right,
+                                     localNames, globalNames, setOp);
+          else
+            return; // Don't call mergeCounterNamesPair() if not participating.
 
-	  // Combine the results of the recursive step.
-	  if (myRank == left || myRank == mid)
-	    mergeCounterNamesPair (comm, myRank, left, mid, 
-				   localNames, globalNames, setOp);
-	}
+          // Combine the results of the recursive step.
+          if (myRank == left || myRank == mid)
+            mergeCounterNamesPair (comm, myRank, left, mid,
+                                   localNames, globalNames, setOp);
+        }
     }
 
   } // namespace (anonymous)
 
   void
-  mergeCounterNames (const Comm<int>& comm, 
-		     const Array<std::string>& localNames,
-		     Array<std::string>& globalNames,
-		     const ECounterSetOp setOp)
+  mergeCounterNames (const Comm<int>& comm,
+                     const Array<std::string>& localNames,
+                     Array<std::string>& globalNames,
+                     const ECounterSetOp setOp)
   {
     const int myRank = comm.getRank();
     const int left = 0;
     const int right = comm.getSize() - 1;
     Array<std::string> theGlobalNames;
-    mergeCounterNamesHelper (comm, myRank, left, right, 
-			     localNames, theGlobalNames, setOp);
+    mergeCounterNamesHelper (comm, myRank, left, right,
+                             localNames, theGlobalNames, setOp);
 
     // Proc 0 has the list of counter names.  Now broadcast it back to
     // all the procs.

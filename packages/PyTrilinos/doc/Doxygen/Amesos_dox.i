@@ -845,6 +845,111 @@ Amesos_Control::SetControlParameters(const Teuchos::ParameterList
 &ParameterList) ";
 
 
+// File: classAmesos__CSparse.xml
+%feature("docstring") Amesos_CSparse "
+
+Amesos_CSparse: Interface to the CSparse package.
+
+Siva Rajamanickam
+
+C++ includes: Amesos_CSparse.h ";
+
+%feature("docstring")  Amesos_CSparse::Amesos_CSparse "Amesos_CSparse::Amesos_CSparse(const Epetra_LinearProblem
+&LinearProblem)
+
+Constructor. ";
+
+%feature("docstring")  Amesos_CSparse::~Amesos_CSparse "Amesos_CSparse::~Amesos_CSparse()
+
+Destructor. ";
+
+%feature("docstring")  Amesos_CSparse::SymbolicFactorization "int
+Amesos_CSparse::SymbolicFactorization()
+
+Performs SymbolicFactorization on the matrix A. ";
+
+%feature("docstring")  Amesos_CSparse::NumericFactorization "int
+Amesos_CSparse::NumericFactorization()
+
+Performs NumericFactorization on the matrix A. ";
+
+%feature("docstring")  Amesos_CSparse::Solve "int
+Amesos_CSparse::Solve()
+
+Solves A X = B (or AT X = B) ";
+
+%feature("docstring")  Amesos_CSparse::GetProblem "const
+Epetra_LinearProblem* Amesos_CSparse::GetProblem() const
+
+Get a pointer to the Problem. ";
+
+%feature("docstring")  Amesos_CSparse::MatrixShapeOK "bool
+Amesos_CSparse::MatrixShapeOK() const
+
+Returns true if CSparse can handle this matrix shape.
+
+Returns true if the matrix shape is one that CSparse can handle.
+CSparse only works with square matrices. ";
+
+%feature("docstring")  Amesos_CSparse::SetUseTranspose "int
+Amesos_CSparse::SetUseTranspose(bool UseTranspose)
+
+SetUseTranpose()
+
+If SetUseTranspose() is set to true, $A^T X = B$ is computed. ";
+
+%feature("docstring")  Amesos_CSparse::UseTranspose "bool
+Amesos_CSparse::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Amesos_CSparse::Comm "const Epetra_Comm&
+Amesos_CSparse::Comm() const
+
+Returns a pointer to the Epetra_Comm communicator associated with this
+matrix. ";
+
+%feature("docstring")  Amesos_CSparse::SetParameters "int
+Amesos_CSparse::SetParameters(Teuchos::ParameterList &ParameterList)
+
+Set parameters from the input parameters list, returns 0 if
+successful. ";
+
+%feature("docstring")  Amesos_CSparse::NumSymbolicFact "int
+Amesos_CSparse::NumSymbolicFact() const
+
+Returns the number of symbolic factorizations performed by this
+object. ";
+
+%feature("docstring")  Amesos_CSparse::NumNumericFact "int
+Amesos_CSparse::NumNumericFact() const
+
+Returns the number of numeric factorizations performed by this object.
+";
+
+%feature("docstring")  Amesos_CSparse::NumSolve "int
+Amesos_CSparse::NumSolve() const
+
+Returns the number of solves performed by this object. ";
+
+%feature("docstring")  Amesos_CSparse::PrintTiming "void
+Amesos_CSparse::PrintTiming() const
+
+Prints timing information. ";
+
+%feature("docstring")  Amesos_CSparse::PrintStatus "void
+Amesos_CSparse::PrintStatus() const
+
+Prints information about the factorization and solution phases. ";
+
+%feature("docstring")  Amesos_CSparse::GetTiming "void
+Amesos_CSparse::GetTiming(Teuchos::ParameterList &TimingParameterList)
+const
+
+Extracts timing information from the current solver and places it in
+the parameter list. ";
+
+
 // File: classAmesos__Dscpack.xml
 %feature("docstring") Amesos_Dscpack "
 
@@ -3994,10 +4099,10 @@ Epetra_RowMatrix &A) ";
 %feature("docstring") SLUData "";
 
 
-// File: namespace@19.xml
+// File: namespace@11.xml
 
 
-// File: namespace@9.xml
+// File: namespace@21.xml
 
 
 // File: namespaceSLU.xml
@@ -4025,6 +4130,12 @@ Epetra_RowMatrix &A) ";
 
 
 // File: Amesos__Control_8h.xml
+
+
+// File: Amesos__CSparse_8cpp.xml
+
+
+// File: Amesos__CSparse_8h.xml
 
 
 // File: Amesos__Dscpack_8cpp.xml

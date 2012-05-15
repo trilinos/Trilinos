@@ -46,9 +46,10 @@ change the mappings.
 4) Set group ownership
 
   $ cd GIT_REPO_BASE_DIR
-  $ THIS_DIR/setup-shared-repo.sh GROUP_NAME [OWNER_NAME]
+  $ THIS_DIR/setup-shared-repo.sh GROUP_NAME
 
-  NOTE: The above setup-shared-repo.sh will make sure that anyone can
-  modify the repo in the given group.  Also, if OWNER_NAME is given,
-  then the owner of the directory and all of the files will be
-  changed.
+  NOTE: The above setup-shared-repo.sh will make sure that anyone in
+  the group GROUP_NAME can modify the repo.  If 'eg publish -g
+  GROUP_NAME ...' was used, then it should not be strictly necessary
+  to run setup-shared-repo.sh but if there is any question about the
+  state of the repo it is a good idea to run this script.

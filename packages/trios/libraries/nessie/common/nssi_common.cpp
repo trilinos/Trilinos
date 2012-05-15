@@ -68,6 +68,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "Trios_timer.h"
 #include "Trios_logger.h"
 #include "Trios_signal.h"
+#include "buffer_queue.h"
 #include "Trios_nssi_xdr.h"
 
 #include "nssi_debug.h"
@@ -81,8 +82,14 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 NNTI_transport_t transports[NSSI_RPC_COUNT];
 
 static bool       rpc_initialized = FALSE;
-static nssi_rpc_encode encoding        = NSSI_DEFAULT_ENCODE;
+static nssi_rpc_encode encoding   = NSSI_DEFAULT_ENCODE;
 
+#ifdef USE_BUFFER_QUEUE
+#define BQ_MIN   50
+#define BQ_MAX 1000
+trios_buffer_queue_t send_bq;
+trios_buffer_queue_t recv_bq;
+#endif
 
 void *memdup(void *src, int size)
 {
@@ -182,6 +189,25 @@ int nssi_rpc_init(
             return rc;
     }
 
+#ifdef USE_BUFFER_QUEUE
+    trios_buffer_queue_init(
+            &send_bq,
+            BQ_MIN,
+            BQ_MAX,
+            TRUE,
+            &transports[rpc_transport],
+            NNTI_SEND_SRC,
+            NSSI_SHORT_REQUEST_SIZE);
+    trios_buffer_queue_init(
+            &recv_bq,
+            BQ_MIN,
+            BQ_MAX,
+            TRUE,
+            &transports[rpc_transport],
+            NNTI_RECV_DST,
+            NSSI_SHORT_REQUEST_SIZE);
+#endif
+
     initialized = TRUE;
     rpc_initialized = TRUE;
 
@@ -242,6 +268,13 @@ int nssi_get_url(
 int nssi_rpc_fini(const nssi_rpc_transport rpc_transport)
 {
     int rc;
+
+#ifdef USE_BUFFER_QUEUE
+    trios_buffer_queue_fini(
+            &send_bq);
+    trios_buffer_queue_fini(
+            &recv_bq);
+#endif
 
     /* initialize the transport mechanism */
     rc = NNTI_fini(&transports[rpc_transport]);
