@@ -65,10 +65,6 @@ namespace Teuchos
   /// the global set of timers.
   enum ECounterSetOp { Intersection, Union };
 
-  //! Make a ParameterList Validator instance for the ECounterSetOp enum.
-  RCP<StringToIntegralParameterEntryValidator<ECounterSetOp> >
-  makeECounterSetOpValidator ();
-
   /// \brief Merge counter names over all processors.
   ///
   /// Different MPI processes may have created different sets of

@@ -46,24 +46,6 @@
 
 namespace Teuchos {
 
-  RCP<StringToIntegralParameterEntryValidator<ECounterSetOp> >
-  makeECounterSetOpValidator ()
-  {
-    Array<std::string> strings;
-    Array<std::string> docs;
-    Array<ECounterSetOp> values;
-
-    strings.push_back ("Intersection");
-    docs.push_back ("Compute intersection of counter names over processes");
-    values.push_back (Intersection);
-    strings.push_back ("Union");
-    docs.push_back ("Compute union of counter names over processes");
-    values.push_back (Union);
-    const std::string defaultName ("Performance counter set operation");
-
-    return stringToIntegralParameterEntryValidator<ECounterSetOp> (strings (), docs (), values (), defaultName);
-  }
-
   namespace {
 
     // Pack the given array of strings into a single string with an

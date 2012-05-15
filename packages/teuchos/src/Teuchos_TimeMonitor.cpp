@@ -937,10 +937,10 @@ namespace Teuchos {
   }
 
 
-#ifdef HAVE_TEUCHOS_YAML_CPP
   void TimeMonitor::
   summarizeToYaml (Ptr<const Comm<int> > comm, std::ostream &out)
   {
+#ifdef HAVE_TEUCHOS_YAML_CPP
     // const bool writeGlobalStats = true;
     // const bool writeZeroTimers = true;
     // const bool alwaysWriteLocal = false;
@@ -995,8 +995,10 @@ namespace Teuchos {
       // Write YAML output to the given output stream.
       out << emi.c_str ();
     }
+#else  // Don't HAVE_TEUCHOS_YAML_CPP
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Teuchos::TimeMonitor: YAML output currently requires building Trilinos with the yaml-cpp library.  Please download and install yaml-cpp from http://code.google.com/p/yaml-cpp/.  Then, enable yaml-cpp support when building Trilinos: 1. Set the CMake Boolean option TPL_ENABLE_yaml-cpp to ON.  2. Set the CMake option yaml-cpp_INCLUDE_DIRS to the path of the yaml-cpp include files (not including the yaml-cpp directory in include/).  3. Set the CMake option yaml-cpp_LIBRARY_DIRS to the location of the yaml-cpp library.  4. Clear the CMake cache if necesssary.  5. Run CMake again and rebuild Trilinos.");
+#endif // HAVE_TEUCHOS_YAML_CPP
   }
-
 
   void TimeMonitor::
   summarizeToYaml (std::ostream &out)
@@ -1008,6 +1010,154 @@ namespace Teuchos {
 
     summarizeToYaml (comm.ptr (), out);
   }
-#endif // HAVE_TEUCHOS_YAML_CPP
+
+  // Default value is false.  We'll set to true once
+  // setReportParameters() completes successfully.
+  bool TimeMonitor::setParams_ = false;
+
+  // We have to declare all of these here in order to avoid linker errors.
+  TimeMonitor::ETimeMonitorReportFormat TimeMonitor::reportFormat_ =
+             TimeMonitor::REPORT_FORMAT_TABLE;
+  ECounterSetOp TimeMonitor::setOp_ = Intersection;
+  bool TimeMonitor::alwaysWriteLocal_ = false;
+  bool TimeMonitor::writeGlobalStats_ = true;
+  bool TimeMonitor::writeZeroTimers_ = true;
+
+  void
+  TimeMonitor::setReportFormatParameter (ParameterList& plist)
+  {
+    const std::string name ("Report format");
+    const std::string defaultValue ("Table");
+    const std::string docString ("Output format for report of timer statistics");
+    Array<std::string> strings;
+    Array<std::string> docs;
+    Array<ETimeMonitorReportFormat> values;
+
+    strings.push_back ("YAML");
+    docs.push_back ("YAML (see yaml.org) format");
+    values.push_back (REPORT_FORMAT_YAML);
+    strings.push_back ("Table");
+    docs.push_back ("Tabular format via Teuchos::TableFormat");
+    values.push_back (REPORT_FORMAT_TABLE);
+
+    setStringToIntegralParameter<ETimeMonitorReportFormat> (name, defaultValue,
+                                                            docString,
+                                                            strings (), docs (),
+                                                            values (), &plist);
+  }
+
+  void
+  TimeMonitor::setSetOpParameter (ParameterList& plist)
+  {
+    const std::string name ("How to merge timer sets");
+    const std::string defaultValue ("Intersection");
+    const std::string docString ("How to merge differing sets of timers "
+                                 "across processes");
+    Array<std::string> strings;
+    Array<std::string> docs;
+    Array<ECounterSetOp> values;
+
+    strings.push_back ("Intersection");
+    docs.push_back ("Compute intersection of timer sets over processes");
+    values.push_back (Intersection);
+    strings.push_back ("Union");
+    docs.push_back ("Compute union of timer sets over processes");
+    values.push_back (Union);
+
+    setStringToIntegralParameter<ECounterSetOp> (name, defaultValue, docString,
+                                                 strings (), docs (), values (),
+                                                 &plist);
+  }
+
+  RCP<const ParameterList>
+  TimeMonitor::getValidReportParameters ()
+  {
+    // Our implementation favors recomputation over persistent
+    // storage.  That is, we simply recreate the list every time we
+    // need it.
+    RCP<ParameterList> plist = parameterList ("TimeMonitor::report");
+
+    const bool alwaysWriteLocal = false;
+    const bool writeGlobalStats = true;
+    const bool writeZeroTimers = true;
+
+    setReportFormatParameter (*plist);
+    setSetOpParameter (*plist);
+    plist->set ("alwaysWriteLocal", alwaysWriteLocal,
+                "Always output local timers' values on Proc 0");
+    plist->set ("writeGlobalStats", writeGlobalStats, "Always output global "
+                "statistics, even if there is only one process in the "
+                "communicator");
+    plist->set ("writeZeroTimers", writeZeroTimers, "Generate output for "
+                "timers that have never been called");
+    return rcp_const_cast<const ParameterList> (plist);
+  }
+
+  void
+  TimeMonitor::setReportParameters (const RCP<ParameterList>& params)
+  {
+    ETimeMonitorReportFormat reportFormat = REPORT_FORMAT_TABLE;
+    ECounterSetOp setOp = Intersection;
+    bool alwaysWriteLocal = false;
+    bool writeGlobalStats = true;
+    bool writeZeroTimers = true;
+
+    if (params.is_null ()) {
+      // If we've set parameters before, leave their current values.
+      // Otherwise, set defaults (below).
+      if (setParams_) {
+        return;
+      }
+    }
+    else { // params is nonnull.  Let's read it!
+      params->validateParametersAndSetDefaults (*getValidReportParameters ());
+
+      reportFormat = getIntegralValue<ETimeMonitorReportFormat> (*params, "Report format");
+      setOp = getIntegralValue<ECounterSetOp> (*params, "How to merge timer sets");
+      alwaysWriteLocal = params->get<bool> ("alwaysWriteLocal");
+      writeGlobalStats = params->get<bool> ("writeGlobalStats");
+      writeZeroTimers = params->get<bool> ("writeZeroTimers");
+    }
+    // Defer setting state until here, to ensure the strong exception
+    // guarantee for this method (either it throws with no externally
+    // visible state changes, or it returns normally).
+    reportFormat_ = reportFormat;
+    setOp_ = setOp;
+    alwaysWriteLocal_ = alwaysWriteLocal;
+    writeGlobalStats_ = writeGlobalStats;
+    writeZeroTimers_ = writeZeroTimers;
+
+    setParams_ = true; // Yay, we successfully set parameters!
+  }
+
+  void
+  TimeMonitor::report (Ptr<const Comm<int> > comm,
+                       std::ostream& out,
+                       const RCP<ParameterList>& params)
+  {
+    setReportParameters (params);
+
+    if (reportFormat_ == REPORT_FORMAT_YAML) {
+      summarizeToYaml (comm, out);
+    }
+    else if (reportFormat_ == REPORT_FORMAT_TABLE) {
+      summarize (comm, out, alwaysWriteLocal_, writeGlobalStats_,
+                 writeZeroTimers_, setOp_);
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "TimeMonitor::report: "
+        "Invalid report format.  This should never happen; ParameterList "
+        "validation should have caught this.  Please report this bug to the "
+        "Teuchos developers.");
+    }
+  }
+
+  void
+  TimeMonitor::report (std::ostream& out,
+                       const RCP<ParameterList>& params)
+  {
+    RCP<const Comm<int> > comm = getDefaultComm ();
+    report (comm.ptr (), out, params);
+  }
 
 } // namespace Teuchos

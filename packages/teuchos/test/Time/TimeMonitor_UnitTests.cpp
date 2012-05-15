@@ -124,8 +124,14 @@ namespace Teuchos {
 
 #ifdef HAVE_TEUCHOS_YAML_CPP
     { // Repeat test for YAML output.
+      using Teuchos::ParameterList;
+      using Teuchos::parameterList;
+      using Teuchos::RCP;
+
       std::ostringstream yamlOss;
-      TimeMonitor::summarizeToYaml (yamlOss);
+      RCP<ParameterList> reportParams = parameterList ("TimeMonitor::report");
+      reportParams->set ("Report format", "YAML");
+      TimeMonitor::report (yamlOss, reportParams);
 
       // Echo output to the FancyOStream out (which is a standard unit
       // test argument).  Output should only appear in "show all test
