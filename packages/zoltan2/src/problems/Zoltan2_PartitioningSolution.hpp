@@ -1368,13 +1368,14 @@ template <typename Adapter>
   int numProcs                = comm_->getSize();
   size_t localNumIds          = gids_.size();
 
+  // How many to each process?
   Array<lno_t> counts(numProcs, 0);
-  if (procDist_.size())
+  if (onePartPerProc_)
     for (size_t i=0; i < localNumIds; i++)
-      counts[procDist_[i]]++;
-  else
+      counts[parts_[i]]++;
+  else 
     for (size_t i=0; i < localNumIds; i++)
-      counts[partDist_[i]]++;
+      counts[procs_[i]]++;
 
   Array<lno_t> offsets(numProcs+1, 0);
   for (int i=1; i <= numProcs; i++){
@@ -1387,23 +1388,22 @@ template <typename Adapter>
   if (numExtra > 0)
     numericInfo.resize(localNumIds);
 
-
-  if (procDist_.size()){
+  if (onePartPerProc_){
     for (size_t i=0; i < localNumIds; i++){
-      lno_t idx = offsets[procDist_[i]];
+      lno_t idx = offsets[parts_[i]];
       gidList[idx] = gids_[i];
       if (numExtra > 0)
         numericInfo[idx] = xtraInfo[i];
-      offsets[procDist_[i]] = idx + 1;
+      offsets[parts_[i]] = idx + 1;
     }
   }
-  else{
+  else {
     for (size_t i=0; i < localNumIds; i++){
-      lno_t idx = offsets[partDist_[i]];
+      lno_t idx = offsets[procs_[i]];
       gidList[idx] = gids_[i];
       if (numExtra > 0)
         numericInfo[idx] = xtraInfo[i];
-      offsets[partDist_[i]] = idx + 1;
+      offsets[procs_[i]] = idx + 1;
     }
   }
 

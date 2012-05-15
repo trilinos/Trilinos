@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
   try{
     uinput = 
       rcp(new uinput_t(
-        testDataFilePath,std::string("USAir97"), comm, true));
+        testDataFilePath,std::string("simple"), comm, true));
   }
   catch(std::exception &e){
     TEST_FAIL_AND_EXIT(*comm, 0, string("input ")+e.what(), 1);
