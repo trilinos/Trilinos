@@ -31,9 +31,9 @@ namespace stk
 
     class SimpleSearcher : public Searcher
     {
-      FieldFunction *m_fieldFunction;
+      stk::mesh::BulkData *m_bulk;
     public:
-      SimpleSearcher(FieldFunction *ff);
+      SimpleSearcher(stk::mesh::BulkData *bulk);
 
       virtual ~SimpleSearcher() {}
 

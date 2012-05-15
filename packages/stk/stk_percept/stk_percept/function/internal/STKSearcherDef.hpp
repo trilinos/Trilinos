@@ -12,7 +12,7 @@ namespace stk
   {
 
     template<int SpatialDim>
-    STKSearcher<SpatialDim>::STKSearcher(FieldFunction *ff) : m_fieldFunction(ff), m_boxes()
+    STKSearcher<SpatialDim>::STKSearcher(stk::mesh::BulkData *bulk) : m_bulk(bulk), m_boxes()
     {
     }
 
@@ -20,8 +20,8 @@ namespace stk
     void
     STKSearcher<SpatialDim>::setupSearch()
     {
-      mesh::fem::FEMMetaData& metaData = stk::mesh::fem::FEMMetaData::get(*(m_fieldFunction->getField()));
-      mesh::BulkData& bulkData = *m_fieldFunction->getBulkData();
+      mesh::fem::FEMMetaData& metaData = stk::mesh::fem::FEMMetaData::get(*m_bulk);
+      mesh::BulkData& bulkData = *m_bulk;
       VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
       PerceptMesh meshUtil(&metaData, &bulkData);
 
@@ -47,8 +47,8 @@ namespace stk
                                          unsigned& found_it, const mesh::Entity *hint_element )
     {
       //return 0;
-      mesh::fem::FEMMetaData& metaData = stk::mesh::fem::FEMMetaData::get(*(m_fieldFunction->getField()));
-      mesh::BulkData& bulkData = *m_fieldFunction->getBulkData();
+      mesh::fem::FEMMetaData& metaData = stk::mesh::fem::FEMMetaData::get(*m_bulk);
+      mesh::BulkData& bulkData = *m_bulk;
 
       //VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
 
@@ -97,7 +97,7 @@ namespace stk
                 std::cout << "relation[ " << i << "]= {" << relation[i].first << "} --> { " << relation[i].second << "}" << std::endl;
               mesh::Entity *element = bulkData.get_entity(metaData.element_rank(), relation[i].second.ident);
               //bool loop_break = ... intentionally ignoring return value
-              isIn(*element, m_fieldFunction->getField(), bulkData);
+              isIn(*element, bulkData);
               if (0 || EXTRA_PRINT) std::cout << "STKSearcher::findElement: found it= " << isIn.m_found_it << std::endl;
               if (isIn.m_found_it)
                 {

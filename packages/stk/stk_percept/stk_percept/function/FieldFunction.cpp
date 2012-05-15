@@ -131,13 +131,13 @@ namespace stk
           switch (m_searchType)
             {
             case SIMPLE_SEARCH:
-              m_searcher = new SimpleSearcher(this);
+              m_searcher = new SimpleSearcher(m_bulkData);
               break;
             case STK_SEARCH:
               {
                 //int spDim = last_dimension(input_phy_points);
                 if (spatialDim == 3)
-                  m_searcher = new STKSearcher<3>(this);
+                  m_searcher = new STKSearcher<3>(m_bulkData);
                 else
                   {
                     //m_searcher = new STKSearcher<2>(this);

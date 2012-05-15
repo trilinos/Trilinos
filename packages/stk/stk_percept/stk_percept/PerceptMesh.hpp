@@ -115,6 +115,10 @@ namespace stk {
       //PerceptMesh( stk::ParallelMachine comm =  MPI_COMM_WORLD );
       PerceptMesh(size_t spatialDimension = 3u, stk::ParallelMachine comm =  MPI_COMM_WORLD );
 
+      /// Create a Mesh object that doesn't own its constituent FEMMetaData and BulkData, pointers to which are adopted
+      /// by this constructor.
+      PerceptMesh(const stk::mesh::fem::FEMMetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted=true);
+
       /// reads and commits mesh, editing disabled
       void
       openReadOnly(const std::string& in_filename);
@@ -185,8 +189,101 @@ namespace stk {
       int
       getNumberElementsLocallyOwned();
 
-      void printEntity(std::ostream& out, const stk::mesh::Entity& entity, stk::mesh::FieldBase* field=0);
+      unsigned getRank() { return getBulkData()->parallel_rank(); }
+      unsigned getParallelRank() { return getBulkData()->parallel_rank(); }
+      unsigned getParallelSize() { return getBulkData()->parallel_size(); }
+
+      void printEntity(const stk::mesh::Entity& entity, stk::mesh::FieldBase* field=0) { printEntity(std::cout, entity, field); };
       std::string printEntityCompact(const stk::mesh::Entity& entity, stk::mesh::FieldBase* field=0);
+
+      stk::mesh::BulkData * getBulkData();
+      stk::mesh::fem::FEMMetaData * getFEM_meta_data();
+
+      mesh::Part* getNonConstPart(const std::string& part_name);
+
+      // entity data setter/getters
+      double get_field_data(const stk::mesh::FieldBase *field, const mesh::Entity* entity, unsigned ordinal=0)
+      {
+        double *val= field_data_entity(field,*entity);
+        return val ? val[ordinal] : 0.0;
+      }
+      void set_field_data(double value, const stk::mesh::FieldBase *field, const mesh::Entity* entity, unsigned ordinal=0 )
+      {
+        double *val= field_data_entity(field,*entity);
+        if( val) val[ordinal] = value;
+      }
+
+      double get_node_field_data(stk::mesh::FieldBase *field, const mesh::EntityId node_id, unsigned ordinal=0)
+      {
+        double *val = node_field_data(field, node_id);
+        return val ? val[ordinal] : 0.0;
+      }
+      void set_node_field_data(double value, stk::mesh::FieldBase *field, const mesh::EntityId node_id, unsigned ordinal=0)
+      {
+        double *val = node_field_data(field, node_id);
+        if( val) val[ordinal] = value;
+      }
+
+      stk::mesh::Entity *get_node(const mesh::EntityId node_id) 
+      {
+        return getBulkData()->get_entity(node_rank(), node_id);
+      }
+
+      stk::mesh::Entity *get_element(const mesh::EntityId element_id) 
+      {
+        return getBulkData()->get_entity(element_rank(), element_id);
+      }
+
+      stk::mesh::Entity *get_entity( mesh::EntityRank rank, const mesh::EntityId id) 
+      {
+        return getBulkData()->get_entity(rank, id);
+      }
+
+      /// find node closest to given point
+      stk::mesh::Entity *get_node(double x, double y, double z=0, double t=0) ;
+
+      /// find element that contains or is closest to given point
+      stk::mesh::Entity *get_element(double x, double y, double z=0, double t=0) ;
+
+
+      //========================================================================================================================
+      /// low-level interfaces
+
+      //PerceptMesh(const stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted=true);
+
+      ~PerceptMesh() ;
+      void init( stk::ParallelMachine comm  =  MPI_COMM_WORLD, bool no_alloc=false );      // FIXME - make private
+      void destroy();       // FIXME - make private
+
+      const mesh::Part*
+      getPart(const std::string& part_name) ;
+
+      void printEntity(std::ostream& out, const stk::mesh::Entity& entity, stk::mesh::FieldBase* field=0);
+
+      // allow setting spatial dim after creation (for compatability with new FEMMetaData)
+      void setSpatialDim(int sd);
+
+      // streaming refine mesh
+      void setStreamingSize(int streaming_size) { m_streaming_size= streaming_size; }
+      int getStreamingSize() { return m_streaming_size; }
+
+      /// reads the given file into a temporary model and prints info about it
+      void dump(const std::string& file="");
+      void dumpElements(const std::string& partName = "");
+      void dumpElementsCompact();
+
+      bool isGhostElement(const stk::mesh::Entity& element)
+      {
+        //throw std::runtime_error("not impl"); // FIXME
+        bool isGhost = element.owner_rank() != getRank();
+        return isGhost;
+      }
+
+      // checks if this entity has a duplicate (ie all nodes are the same)
+      bool
+      check_entity_duplicate(stk::mesh::Entity& entity);
+
+      void delete_side_sets();
 
       /// add some fields that are useful for debugging or for exporting meshes to Mesquite - must be
       ///   done before commit()
@@ -205,45 +302,6 @@ namespace stk {
                                       std::string nodal_global_id_name="GLOBAL_ID", 
                                       std::string nodal_proc_id_name="PROCESSOR_ID", 
                                       std::string nodal_local_id_name="LOCAL_ID");
-
-      //========================================================================================================================
-      /// low-level interfaces
-      /// Create a Mesh object that doesn't own its constituent FEMMetaData and BulkData, pointers to which are adopted
-      /// by this constructor.
-      PerceptMesh(const stk::mesh::fem::FEMMetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted=true);
-      //PerceptMesh(const stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted=true);
-
-      ~PerceptMesh() ;
-      void init( stk::ParallelMachine comm  =  MPI_COMM_WORLD, bool no_alloc=false );      // FIXME - make private
-      void destroy();       // FIXME - make private
-
-      // allow setting spatial dim after creation (for compatability with new FEMMetaData)
-      void setSpatialDim(int sd);
-
-      // streaming refine mesh
-      void setStreamingSize(int streaming_size) { m_streaming_size= streaming_size; }
-      int getStreamingSize() { return m_streaming_size; }
-
-      /// reads the given file into a temporary model and prints info about it
-      void dump(const std::string& file="");
-      void dumpElements(const std::string& partName = "");
-      void dumpElementsCompact();
-
-      unsigned getRank() { return getBulkData()->parallel_rank(); }
-      unsigned getParallelRank() { return getBulkData()->parallel_rank(); }
-      unsigned getParallelSize() { return getBulkData()->parallel_size(); }
-      bool isGhostElement(const stk::mesh::Entity& element)
-      {
-        //throw std::runtime_error("not impl"); // FIXME
-        bool isGhost = element.owner_rank() != getRank();
-        return isGhost;
-      }
-
-      // checks if this entity has a duplicate (ie all nodes are the same)
-      bool
-      check_entity_duplicate(stk::mesh::Entity& entity);
-
-      void delete_side_sets();
 
       /**
        * A family tree relation holds the parent/child relations for a refined mesh.  
@@ -267,449 +325,37 @@ namespace stk {
        *    where we are looking for the family tree of the element associated with it being a parent).
        * 
        */
-      unsigned getFamilyTreeRelationIndex(FamiltyTreeLevel level, const stk::mesh::Entity& element)
-      {
-        const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
-        stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
-        if (level == FAMILY_TREE_LEVEL_0)
-          {
-            // only one level, so we return 0 as the index
-            if (element_to_family_tree_relations.size() <= 1) return 0;
-
-            // check both family trees to see if element is parent or not
-            stk::mesh::Entity *family_tree_0 = element_to_family_tree_relations[0].entity();
-            stk::mesh::Entity *family_tree_1 = element_to_family_tree_relations[1].entity();
-
-            // NOTE: reversed index - when looking for FAMILY_TREE_LEVEL_0, we are looking for the family tree associated
-            //   with this element when viewed as a child, not a parent.
-            if ( (family_tree_0->relations(element.entity_rank())[FAMILY_TREE_PARENT]).entity() == &element) return 1;
-            else if ( (family_tree_1->relations(element.entity_rank())[FAMILY_TREE_PARENT]).entity() == &element) return 0;
-            else
-              {
-                std::cout << "element_to_family_tree_relations[0].entity()->identifier() = " << element_to_family_tree_relations[0].entity()->identifier() 
-                          << "element_to_family_tree_relations[1].entity()->identifier() = " << element_to_family_tree_relations[1].entity()->identifier() << std::endl;
-                std::cout << "element_to_family_tree_relations.size() = " << element_to_family_tree_relations.size() << std::endl;
-                throw std::logic_error("PerceptMesh:: getFamilyTreeRelationIndex logic error 1");
-              }
-          }
-        else if (level == FAMILY_TREE_LEVEL_1)
-          {
-            if (element_to_family_tree_relations.size() <= 1) 
-              {
-                throw std::logic_error("PerceptMesh:: getFamilyTreeRelationIndex logic error 2");
-              }
-            // check both family trees to see if element is parent or not
-            stk::mesh::Entity *family_tree_0 = element_to_family_tree_relations[0].entity();
-            stk::mesh::Entity *family_tree_1 = element_to_family_tree_relations[1].entity();
-
-            if ( (family_tree_0->relations(element.entity_rank())[FAMILY_TREE_PARENT]).entity() == &element) return 0;
-            else if ( (family_tree_1->relations(element.entity_rank())[FAMILY_TREE_PARENT]).entity() == &element) return 1;
-            else
-              {
-                std::cout << "element_to_family_tree_relations[0].entity()->identifier() = " << element_to_family_tree_relations[0].entity()->identifier() 
-                          << "element_to_family_tree_relations[1].entity()->identifier() = " << element_to_family_tree_relations[1].entity()->identifier() << std::endl;
-                std::cout << "element_to_family_tree_relations.size() = " << element_to_family_tree_relations.size() << std::endl;
-                throw std::logic_error("PerceptMesh:: getFamilyTreeRelationIndex logic error 3");
-              }
-          }
-        return 0;
-      }
+      unsigned getFamilyTreeRelationIndex(FamiltyTreeLevel level, const stk::mesh::Entity& element);
 
       /// the element is not a parent of the 0'th family_tree relation
-
-      bool isChildElement( const stk::mesh::Entity& element, bool check_for_family_tree=true)
-      {
-        const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
-        stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
-        if (element_to_family_tree_relations.size()==0 )
-          {
-            if (check_for_family_tree)
-              {
-                std::cout << "isChildElement:: no FAMILY_TREE_RANK relations: element= " << element << std::endl;
-                printEntity(std::cout, element);
-                throw std::runtime_error("isChildElement:: no FAMILY_TREE_RANK relations: element");
-              }
-            else
-              {
-                return false;
-              }
-          }
-        // in this case, we specifically look at only the 0'th familty tree relation 
-        unsigned element_ft_level_0 = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, element);
-        stk::mesh::Entity *family_tree = element_to_family_tree_relations[element_ft_level_0].entity();
-        stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(element.entity_rank());
-        stk::mesh::Entity *parent = family_tree_relations[FAMILY_TREE_PARENT].entity();
-        if (&element == parent)
-          {
-            if (element_to_family_tree_relations[FAMILY_TREE_PARENT].identifier() != 0)
-              {
-                throw std::runtime_error("isChildElement:: bad identifier in isChildElement");
-              }
-            return false;
-          }
-        else
-          return true;
-      }
+      bool isChildElement( const stk::mesh::Entity& element, bool check_for_family_tree=true);
 
       // either has no family tree or is a child
-      bool isLeafElement( const stk::mesh::Entity& element)
-      {
-        const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
-        stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
-        if (element_to_family_tree_relations.size()==0 )
-          {
-            return true;
-          }
-        else
-          {
-            return isChildElement(element, true);
-          }
-      }
+      bool isLeafElement( const stk::mesh::Entity& element);
 
       /// the element is not a parent of any family tree relation
-      bool isChildElementLeaf( const stk::mesh::Entity& element, bool check_for_family_tree=true)
-      {
-        const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
-        stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
-        if (element_to_family_tree_relations.size()==0 )
-          {
-            if (check_for_family_tree)
-              {
-                std::cout << "isChildElementLeaf:: no FAMILY_TREE_RANK relations: element= " << element << std::endl;
-                printEntity(std::cout, element);
-                throw std::runtime_error("isChildElementLeaf:: no FAMILY_TREE_RANK relations: element");
-              }
-            else
-              {
-                return false;
-              }
-          }
-        if (element_to_family_tree_relations.size() > 2)
-          throw std::logic_error(std::string("isChildElementLeaf:: too many relations = ")+toString(element_to_family_tree_relations.size()));
+      bool isChildElementLeaf( const stk::mesh::Entity& element, bool check_for_family_tree=true);
 
-        if (element_to_family_tree_relations.size() == 1)
-          return isChildElement(element, check_for_family_tree);
-        else
-          {
-            unsigned element_ft_level_1 = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_1, element);
-
-            stk::mesh::Entity *family_tree = element_to_family_tree_relations[element_ft_level_1].entity();
-            stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(element.entity_rank());
-            if (family_tree_relations.size() == 0)
-              {
-                throw std::logic_error(std::string("isChildElementLeaf:: family_tree_relations size=0 = "));
-              }
-            stk::mesh::Entity *parent = family_tree_relations[FAMILY_TREE_PARENT].entity();
-            if (&element == parent)
-              {
-                if (element_to_family_tree_relations[FAMILY_TREE_PARENT].identifier() != 0)
-                  {
-                    throw std::runtime_error("isChildElementLeaf:: bad identifier ");
-                  }
-                return false;
-              }
-            return true;
-          }
-      }
-
-      bool hasFamilyTree(const stk::mesh::Entity& element)
-      {
-        const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
-        stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
-        if (element_to_family_tree_relations.size()==0 )
-          {
-            return false;
-          }
-        return true;
-      }
+      bool hasFamilyTree(const stk::mesh::Entity& element);
 
       /// if the element is a parent at any level, return true
-      bool isParentElement( const stk::mesh::Entity& element, bool check_for_family_tree=true)
-      {
-        const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
-        stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
-        if (element_to_family_tree_relations.size()==0 )
-          {
-            if (check_for_family_tree)
-              {
-                std::cout << "isParentElement:: no FAMILY_TREE_RANK relations: element= " << element << std::endl;
-                printEntity(std::cout, element);
-                throw std::runtime_error("isParentElement:: no FAMILY_TREE_RANK relations: element");
-              }
-            else
-              {
-                // has no family tree, can't be a parent
-                return false;
-              }
-          }
-        if (element_to_family_tree_relations.size() > 2)
-          throw std::logic_error(std::string("isParentElement:: too many relations = ")+toString(element_to_family_tree_relations.size()));
-
-        bool isParent = false;
-        for (unsigned i_ft_rel = 0; i_ft_rel < element_to_family_tree_relations.size(); i_ft_rel++)
-          {
-            stk::mesh::Entity *family_tree = element_to_family_tree_relations[i_ft_rel].entity();
-            stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(element.entity_rank());
-            if (family_tree_relations.size() == 0)
-              {
-                std::cout << "isParentElement:: family_tree_relations size=0, i_ft_rel= " << i_ft_rel 
-                          << " family_tree_relations.size() = " << family_tree_relations.size()
-                          << std::endl;
-                throw std::logic_error(std::string("isParentElement:: family_tree_relations size=0 = "));
-              }
-            stk::mesh::Entity *parent = family_tree_relations[FAMILY_TREE_PARENT].entity();
-            if (&element == parent)
-              {
-                if (element_to_family_tree_relations[FAMILY_TREE_PARENT].identifier() != 0)
-                  {
-                    throw std::runtime_error("isParentElement:: bad identifier ");
-                  }
-                isParent = true;
-                break;
-              }
-          }
-        return isParent;
-      }
+      bool isParentElement( const stk::mesh::Entity& element, bool check_for_family_tree=true);
 
       /// is element a parent at the leaf level (either there is only one level, and it's a parent, or
       ///    if more than one, the element is a child and a parent and its children have no children)
-      bool isParentElementLeaf( const stk::mesh::Entity& element, bool check_for_family_tree=true)
-      {
-        const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
-        stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
-        if (element_to_family_tree_relations.size()==0 )
-          {
-            if (check_for_family_tree)
-              {
-                std::cout << "isParentElementLeaf:: no FAMILY_TREE_RANK relations: element= " << element << std::endl;
-                printEntity(std::cout, element);
-                throw std::runtime_error("isParentElementLeaf:: no FAMILY_TREE_RANK relations: element");
-              }
-            else
-              {
-                return false;
-              }
-          }
-
-        if (element_to_family_tree_relations.size() > 2)
-          throw std::logic_error(std::string("isParentElementLeaf:: too many relations = ")+toString(element_to_family_tree_relations.size()));
-
-        if (!isParentElement(element, check_for_family_tree))
-          return false;
-
-        unsigned element_ft_level = 0;
-        if (element_to_family_tree_relations.size() == 1)
-          {
-            //return isParentElement(element, check_for_family_tree);
-            element_ft_level = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, element);
-          }
-        else
-          {
-            element_ft_level = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_1, element);
-          }
-
-        stk::mesh::Entity *family_tree = element_to_family_tree_relations[element_ft_level].entity();
-        stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(element.entity_rank());
-        if (family_tree_relations.size() == 0)
-          {
-            throw std::logic_error(std::string("isParentElementLeaf:: family_tree_relations size=0 = "));
-          }
-        for (unsigned ichild = 1; ichild < family_tree_relations.size(); ichild++)
-          {
-            stk::mesh::Entity *child = family_tree_relations[ichild].entity();
-            if (isParentElement(*child, check_for_family_tree))
-              {
-                // means this element is a grandparent
-                return false;
-              }
-          }
-        return true;
-      }
+      bool isParentElementLeaf( const stk::mesh::Entity& element, bool check_for_family_tree=true);
 
       /// is element a parent at level 2 (meaning that it is both a child and a parent)
-      bool isParentElementLevel2( const stk::mesh::Entity& element, bool check_for_family_tree=true)
-      {
-        const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
-        stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
-        if (element_to_family_tree_relations.size()==0 )
-          {
-            if (check_for_family_tree)
-              {
-                std::cout << "isParentElementLevel2:: no FAMILY_TREE_RANK relations: element= " << element << std::endl;
-                printEntity(std::cout, element);
-                throw std::runtime_error("isParentElementLevel2:: no FAMILY_TREE_RANK relations: element");
-              }
-            else
-              {
-                return false;
-              }
-          }
-
-        if (element_to_family_tree_relations.size() > 2)
-          throw std::logic_error(std::string("isParentElementLevel2:: too many relations = ")+toString(element_to_family_tree_relations.size()));
-
-        if (element_to_family_tree_relations.size() == 1)
-          return false;
-
-        unsigned element_ft_level_1 = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_1, element);
-        stk::mesh::Entity *family_tree = element_to_family_tree_relations[element_ft_level_1].entity();
-        stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(element.entity_rank());
-        if (family_tree_relations.size() == 0)
-          {
-            throw std::logic_error(std::string("isParentElementLevel2:: family_tree_relations size=0 = "));
-          }
-        stk::mesh::Entity *parent = family_tree_relations[FAMILY_TREE_PARENT].entity();
-        if (parent == &element)
-          return true;
-        return false;
-        
-      }
+      bool isParentElementLevel2( const stk::mesh::Entity& element, bool check_for_family_tree=true);
 
       /// is element a child with siblings with no nieces or nephews (siblings with children)
       ///  (alternative would be "is child and is parent not a grandparent")
-      bool isChildWithoutNieces( const stk::mesh::Entity& element, bool check_for_family_tree=true)
-      {
-        const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
-        stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
-        if (element_to_family_tree_relations.size()==0 )
-          {
-            if (check_for_family_tree)
-              {
-                std::cout << "isChildWithoutNieces:: no FAMILY_TREE_RANK relations: element= " << element << std::endl;
-                printEntity(std::cout, element);
-                throw std::runtime_error("isChildWithoutNieces:: no FAMILY_TREE_RANK relations: element");
-              }
-            else
-              {
-                return false;
-              }
-          }
-
-        if (element_to_family_tree_relations.size() > 2)
-          throw std::logic_error(std::string("isChildWithoutNieces:: too many relations = ")+toString(element_to_family_tree_relations.size()));
-
-        if (!isChildElement(element, check_for_family_tree))
-          return false;
-
-        if (element_to_family_tree_relations.size() == 2)
-          return false;
-
-        unsigned element_ft_level_0 = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, element);
-        stk::mesh::Entity *family_tree = element_to_family_tree_relations[element_ft_level_0].entity();
-        stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(element.entity_rank());
-        if (family_tree_relations.size() == 0)
-          {
-            throw std::logic_error(std::string("isChildWithoutNieces:: family_tree_relations size=0 = "));
-          }
-        //stk::mesh::Entity *parent = family_tree_relations[FAMILY_TREE_PARENT].entity();
-        for (unsigned ichild = 1; ichild < family_tree_relations.size(); ichild++)
-          {
-            stk::mesh::Entity *child = family_tree_relations[ichild].entity();
-            if (isParentElement(*child, check_for_family_tree))
-              {
-                return false;
-              }
-          }
-        return true;
-      }
+      bool isChildWithoutNieces( const stk::mesh::Entity& element, bool check_for_family_tree=true);
 
       // return false if we couldn't get the children
-      bool getChildren( const stk::mesh::Entity& element, std::vector<stk::mesh::Entity*>& children, bool check_for_family_tree=true, bool only_if_element_is_parent_leaf=false)
-      {
-        children.resize(0);
-        const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
-        stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
-        if (element_to_family_tree_relations.size()==0 )
-          {
-            if (check_for_family_tree)
-              {
-                std::cout << "PerceptMesh::getChildren:: no FAMILY_TREE_RANK relations: element= " << element << std::endl;
-                printEntity(std::cout, element);
-                throw std::runtime_error("PerceptMesh::getChildren:: no FAMILY_TREE_RANK relations: element");
-              }
-            else
-              {
-                return false;
-              }
-          }
+      bool getChildren( const stk::mesh::Entity& element, std::vector<stk::mesh::Entity*>& children, bool check_for_family_tree=true, bool only_if_element_is_parent_leaf=false);
 
-        if (element_to_family_tree_relations.size() > 2)
-          throw std::logic_error(std::string("PerceptMesh::getChildren:: too many relations = ")+toString(element_to_family_tree_relations.size()));
-
-        if (!isParentElement(element, check_for_family_tree))
-          return false;
-
-        if (only_if_element_is_parent_leaf && !isParentElementLeaf(element, check_for_family_tree))
-          return false;
-
-        unsigned element_ft_level_0 = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, element);
-        stk::mesh::Entity *family_tree = element_to_family_tree_relations[element_ft_level_0].entity();
-        stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(element.entity_rank());
-        if (family_tree_relations.size() == 0)
-          {
-            throw std::logic_error(std::string("getChildren:: family_tree_relations size=0 = "));
-          }
-
-        for (unsigned ichild = 1; ichild < family_tree_relations.size(); ichild++)
-          {
-            stk::mesh::Entity *child = family_tree_relations[ichild].entity();
-            children.push_back(child);
-          }
-        return true;
-      }
-
-      void printParentChildInfo(const stk::mesh::Entity& element, bool check_for_family_tree=true)
-      {
-        const unsigned FAMILY_TREE_RANK = element_rank() + 1u;
-        stk::mesh::PairIterRelation element_to_family_tree_relations = element.relations(FAMILY_TREE_RANK);
-        std::cout << "printParentChildInfo:: element_to_family_tree_relations.size() = " << element_to_family_tree_relations.size() << std::endl;
-        if (element_to_family_tree_relations.size() == 0)
-          {
-            return;
-          }
-
-        if (element_to_family_tree_relations.size() > 2)
-          throw std::logic_error(std::string("printParentChildInfo:: too many relations = ")+toString(element_to_family_tree_relations.size()));
-
-        bool b_isChildElement = isChildElement(element, check_for_family_tree);
-        bool b_isParentElement = isParentElement(element, check_for_family_tree);
-        bool b_isChildWithoutNieces = isChildWithoutNieces(element, check_for_family_tree);
-        bool b_isParentElementLeaf = isParentElementLeaf(element, check_for_family_tree);
-
-        for (unsigned i_ft_rel = 0; i_ft_rel < element_to_family_tree_relations.size(); i_ft_rel++)
-          {
-            stk::mesh::Entity *family_tree = element_to_family_tree_relations[i_ft_rel].entity();
-            stk::mesh::PairIterRelation family_tree_relations = family_tree->relations(element.entity_rank());
-            if (family_tree_relations.size() == 0)
-              {
-                std::cout << "printParentChildInfo:: family_tree_relations size=0, i_ft_rel= " << i_ft_rel 
-                          << " family_tree_relations.size() = " << family_tree_relations.size()
-                          << std::endl;
-                throw std::logic_error(std::string("printParentChildInfo:: family_tree_relations size=0 = "));
-              }
-            unsigned ft_index = 0;
-            if (i_ft_rel==0) 
-              ft_index = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, element);
-            else
-              ft_index = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_1, element);
-
-            stk::mesh::Entity *parent = family_tree_relations[FAMILY_TREE_PARENT].entity();
-            std::cout << "printParentChildInfo: tree level {0,1} = " << i_ft_rel << " parent= " << parent->identifier() << " children= ";
-            for (unsigned ichild = 1; ichild < family_tree_relations.size(); ichild++)
-              {
-                stk::mesh::Entity *child = family_tree_relations[ichild].entity();
-                std::cout << child->identifier() << " ";
-              }
-            std::cout << std::endl;
-          }
-        std::cout << "printParentChildInfo: "
-                  << " b_isChildElement= " << b_isChildElement
-                  << " b_isParentElement= " << b_isParentElement
-                  << " b_isChildWithoutNieces= " << b_isChildWithoutNieces
-                  << " b_isParentElementLeaf= " << b_isParentElementLeaf;
-        std::cout << std::endl;
-
-      }
+      void printParentChildInfo(const stk::mesh::Entity& element, bool check_for_family_tree=true);
 
       static inline
       stk::mesh::EntityRank fem_entity_rank( unsigned int t ) {
@@ -753,11 +399,6 @@ namespace stk {
 
       void createEntities(stk::mesh::EntityRank entityRank, int count, std::vector<stk::mesh::Entity *>& requested_entities);
 
-      const mesh::Part*
-      getPart(const std::string& part_name) ;
-
-      mesh::Part*
-      getNonConstPart(const std::string& part_name);
 
       static double * field_data(const stk::mesh::FieldBase *field, const stk::mesh::Bucket & bucket, unsigned *stride=0);
       static double * field_data(const stk::mesh::FieldBase *field, const mesh::Entity& node, unsigned *stride=0);
@@ -776,9 +417,6 @@ namespace stk {
 
 
       double * node_field_data(stk::mesh::FieldBase *field, const mesh::EntityId node_id);
-
-      stk::mesh::BulkData * getBulkData();
-      stk::mesh::fem::FEMMetaData * getFEM_meta_data();
 
       static BasisTypeRCP getBasis(shards::CellTopology& topo);
       static void setupBasisTable();
