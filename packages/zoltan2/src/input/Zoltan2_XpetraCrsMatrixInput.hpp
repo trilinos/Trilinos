@@ -16,7 +16,7 @@
 #include <Zoltan2_MatrixInput.hpp>
 #include <Zoltan2_StridedData.hpp>
 #include <Zoltan2_XpetraTraits.hpp>
-#include <Zoltan2_Util.hpp>
+#include <Zoltan2_PartitioningSolution.hpp>
 
 #include <Xpetra_CrsMatrix.hpp>
 
@@ -66,12 +66,15 @@ public:
 
   /*! \brief Constructor   
    *    \param inmatrix The users Epetra, Tpetra, or Xpetra CrsMatrix object 
-   *    \param coordDim Some algorithms can use row or column geometric
+   *    \param coordDim Some algorithms can use row geometric
    *            information if it is available.  If coordinates will be
    *            supplied in setRowCoordinates() 
    *            then provide the dimension of the coordinates here.
+   *    \param weightDim If row weights will be provided in setRowWeights(),
+   *        the set \c weightDim to the number of weights per row.
    */
-  XpetraCrsMatrixInput(const RCP<const User> &inmatrix, int coordDim=0);
+  XpetraCrsMatrixInput(const RCP<const User> &inmatrix, int coordDim=0, 
+    int weightDim=0);
 
   /*! \brief Specify geometric coordinates for matrix rows.
    *    \param dim  A value between zero and one less that the \c coordDim
@@ -88,6 +91,30 @@ public:
    *   \endcode
    */
   void setRowCoordinates(int dim, const scalar_t *coordVal, int stride);
+
+  /*! \brief Specify a weight for each row.
+   *    \param dim  A value between zero and one less that the \c weightDim 
+   *                  argument to the constructor.
+   *    \param weightVal A pointer to the weights for this dimension.
+   *    \stride          A stride to be used in reading the values.  The
+   *        dimension \c dim weight for row \k should be found at
+   *        <tt>weightVal[k*stride]</tt>.
+   *
+   * The order of weights should correspond to the order of rows
+   * returned by
+   *   \code
+   *       theMatrix->getRowMap()->getNodeElementList();
+   *   \endcode
+   */
+
+  void setRowWeights(int dim, const scalar_t *weightVal, int stride);
+
+  /*! \brief Specify whether or not row weights for a dimension should be
+              the count of row non zeros.
+   *    \param dim If true, Zoltan2 will automatically us the number of
+   *         non zeros in an row as the row's weight for dimension \c dim.
+   */
+  void setRowWeightIsNumberOfNonZeros(int dim);
 
   /*! \brief Access to Xpetra-wrapped user matrix. 
    */
@@ -144,6 +171,25 @@ public:
     return nrows;
   }
 
+  int getRowWeightDimension() const
+  {
+    return weightDim_;
+  }
+
+  size_t getRowWeights(int dim,
+     const scalar_t *&weights, int &stride) const
+  {
+    env_->localInputAssertion(__FILE__, __LINE__,
+      "invalid weight dimension",
+      dim >= 0 && dim < weightDim_, BASIC_ASSERTION);
+
+    size_t length;
+    rowWeights_[dim].getStridedList(length, weights, stride);
+    return length;
+  }
+
+  bool getRowWeightIsNumberOfNonZeros(int dim) const { return numNzWeight_[dim];}
+
   int getCoordinateDimension() const {return coordinateDim_;}
 
   size_t getRowCoordinates(int dim,
@@ -181,6 +227,9 @@ private:
   int coordinateDim_;
   ArrayRCP<StridedData<lno_t, scalar_t> > rowCoords_;
 
+  int weightDim_;
+  ArrayRCP<StridedData<lno_t, scalar_t> > rowWeights_;
+  ArrayRCP<bool> numNzWeight_;
 };
 
 /////////////////////////////////////////////////////////////////
@@ -189,11 +238,12 @@ private:
 
 template <typename User>
   XpetraCrsMatrixInput<User>::XpetraCrsMatrixInput(
-    const RCP<const User> &inmatrix, int coordDim):
+    const RCP<const User> &inmatrix, int coordDim, int weightDim):
       env_(rcp(new Environment)),
       inmatrix_(inmatrix), matrix_(), rowMap_(), colMap_(), base_(),
       offset_(), columnIds_(),
-      coordinateDim_(coordDim), rowCoords_()
+      coordinateDim_(coordDim), rowCoords_(),
+      weightDim_(weightDim), rowWeights_(), numNzWeight_()
 {
   typedef StridedData<lno_t,scalar_t> input_t;
   matrix_ = XpetraTraits<User>::convertToXpetra(inmatrix);
@@ -223,6 +273,13 @@ template <typename User>
 
   if (coordinateDim_ > 0)
     rowCoords_ = arcp(new input_t [coordinateDim_], 0, coordinateDim_, true);
+
+  if (weightDim_ > 0){
+    rowWeights_ = arcp(new input_t [weightDim_], 0, weightDim_, true);
+    numNzWeight_ = arcp(new bool [weightDim_], 0, weightDim_, true);
+    for (int i=0; i < weightDim_; i++)
+      numNzWeight_[i] = false;
+  }
 }
 
 // TODO (from 3/21/12 mtg):  Consider changing interface to take an XpetraMultivector
@@ -240,6 +297,32 @@ template <typename User>
 
   ArrayRCP<const scalar_t> coordV(coordVal, 0, nvtx, false);
   rowCoords_[dim] = input_t(coordV, stride);
+}
+
+template <typename User>
+  void XpetraCrsMatrixInput<User>::setRowWeights(int dim,
+    const scalar_t *weightVal, int stride)
+{
+  typedef StridedData<lno_t,scalar_t> input_t;
+
+  env_->localInputAssertion(__FILE__, __LINE__,
+    "invalid row weight dimension",
+    dim >= 0 && dim < weightDim_, BASIC_ASSERTION);
+
+  size_t nvtx = getLocalNumRows();
+
+  ArrayRCP<const scalar_t> weightV(weightVal, 0, nvtx, false);
+  rowWeights_[dim] = input_t(weightV, stride);
+}
+
+template <typename User>
+  void XpetraCrsMatrixInput<User>::setRowWeightIsNumberOfNonZeros(int dim)
+{
+  env_->localInputAssertion(__FILE__, __LINE__,
+    "invalid row weight dimension",
+    dim >= 0 && dim < weightDim_, BASIC_ASSERTION);
+
+  numNzWeight_[dim] = true;
 }
 
 template <typename User>
@@ -263,8 +346,8 @@ template <typename User>
   const RCP<const Comm<int> > comm = matrix_->getRowMap()->getComm();
 
   try{
-    numNewRows = convertSolutionToImportList<Adapter, lno_t>(
-      solution, dummyIn, importList, dummyOut);
+    numNewRows = solution.convertSolutionToImportList(
+      0, dummyIn, importList, dummyOut);
   }
   Z2_FORWARD_EXCEPTIONS;
 

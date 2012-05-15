@@ -68,6 +68,7 @@ void AlltoAll(const Comm<int> &comm,
   }
 
 #ifdef HAVE_ZOLTAN2_MPI
+
   // Post receives
 
   size_t packetSize = sizeof(T) * count;
@@ -77,8 +78,12 @@ void AlltoAll(const Comm<int> &comm,
       packetSize <= INT_MAX, BASIC_ASSERTION, rcp(&comm, false));
   
   RCP<CommRequest> r;
-  Array<RCP<CommRequest> > req(nprocs-1);
+  Array<RCP<CommRequest> > req;
 
+  ArrayView<const char> sendBufPtr(
+    reinterpret_cast<const char *>(sendBuf.getRawPtr()), nprocs*packetSize);
+
+#if 1
   for (int p=0; p < nprocs; p++){
     if (p != rank){
       ArrayRCP<char> recvBufPtr(
@@ -99,10 +104,7 @@ void AlltoAll(const Comm<int> &comm,
 
   // Do ready sends.
 
-  ArrayView<const char> sendBufPtr(
-    reinterpret_cast<const char *>(sendBuf.getRawPtr()), nprocs*packetSize);
-
-  for (int p=nprocs-1; p >= 0; p--){
+  for (int p=0; p < nprocs; p++){
     if (p != rank){
       try {
         Teuchos::readySend<int, char>(comm, 
@@ -112,14 +114,63 @@ void AlltoAll(const Comm<int> &comm,
     }
   }
 
+  //
   // TODO: we can hang here on my desktop machine, with mpich2,
   //             on 3 processes, 5 processes.  Shouldn't happen.
+  //     Hanging in a sched_yield.  Try no threads.
+  //
   if (req.size() > 0){
     try {
       Teuchos::waitAll<int>(comm, req);
     }
     Z2_THROW_OUTSIDE_ERROR(env);
   }
+#else
+
+    for (int pRight=1,pLeft=nprocs-1; pRight < nprocs; pRight++,pLeft--){
+      int sendTo = (rank + pRight) % nprocs;
+      int recvFrom = (rank + pLeft) % nprocs;
+
+      // Post receive for recvFrom
+
+      ArrayRCP<char> recvBufPtr(
+        reinterpret_cast<char *>(recvBuf.get() + (recvFrom*count)),
+        0, packetSize, false);
+      try{
+        r  = Teuchos::ireceive<int, char>(comm, recvBufPtr, recvFrom);
+      }
+      Z2_THROW_OUTSIDE_ERROR(env);
+    
+      req.push_back(r);
+
+      // Send okToGo to recvFrom
+
+      RCP<int> okToGo(new int);
+      
+      try{
+        r = Teuchos::isend<int, int>(comm, okToGo, recvFrom);
+      }
+      Z2_THROW_OUTSIDE_ERROR(env);
+
+      // Await okToGo from sendTo
+
+      // This hangs as well.
+      try{
+        Teuchos::receive<int, int>(comm, sendTo, okToGo.getRawPtr());
+      }
+      Z2_THROW_OUTSIDE_ERROR(env);
+
+      // Send to sendTo
+
+      try{
+        Teuchos::readySend<int, char>(comm, 
+          sendBufPtr.view(sendTo*packetSize, packetSize), sendTo);
+      }
+      Z2_THROW_OUTSIDE_ERROR(env);
+    }
+
+    Teuchos::barrier<int>(comm);
+#endif
 #endif
 }
 
@@ -193,7 +244,8 @@ void AlltoAllv(const Comm<int> &comm,
   // Post receives
 
   RCP<CommRequest> r;
-  Array<RCP<CommRequest> > req(nprocs-1);
+  Array<RCP<CommRequest> > req;
+
 
   offsetIn = 0;
 

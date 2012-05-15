@@ -24,7 +24,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS 
-   "--inputFile=simple.mtx"
+   "--inputFile=simple"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )

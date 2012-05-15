@@ -250,8 +250,8 @@ template <typename User>
   const RCP<const Comm<int> > comm = map_->getComm(); 
 
   try{
-    numNewRows = convertSolutionToImportList<Adapter, lno_t>(
-      solution, dummyIn, importList, dummyOut);
+    numNewRows = solution.convertSolutionToImportList(
+      0, dummyIn, importList, dummyOut);
   }
   Z2_FORWARD_EXCEPTIONS;
 

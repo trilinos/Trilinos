@@ -112,6 +112,47 @@ public:
   virtual size_t getRowListView(const gid_t *&rowIds, 
     const lno_t *&offsets, const gid_t *& colIds) const = 0;
 
+  /*! \brief Returns the dimension (0 or greater) of row weights.
+
+      Row weights may be used when partitioning matrix rows.
+      If no weights are provided, and rowWeightIsNumberOfNonZeros()
+      is \c false, then it is assumed rows are equally weighted.
+   */
+  virtual int getRowWeightDimension() const = 0;
+
+  /*! \brief  Provide a pointer to the row weights, if any.
+
+      \param weightDim ranges from zero to one less than
+                   getRowWeightDimension().
+      \param weights is the list of weights of the given dimension for
+           the rows returned in getRowListView().  If weights for
+           this dimension are to be uniform for all rows in the
+           global problem, the \c weights should be a NULL pointer.
+       \param stride The k'th weight is located at weights[stride*k]
+      \return The number of weights listed, which should be at least
+                  the local number of rows times the stride for
+                  non-uniform weights, zero otherwise.
+
+      Zoltan2 does not copy your data.  The data pointed to by weights
+      must remain valid for the lifetime of this InputAdapter.
+   */
+
+  virtual size_t getRowWeights(int weightDim,
+     const scalar_t *&weights, int &stride) const = 0;
+
+  /*! \brief Is the row weight for a dimension the number of row non-zeros?
+   *   \param dim a value between zero and getRowWeightDimension() that
+   *     specifies the weight dimension that will be equal to the
+   *      number of row non-zeros.
+   *
+   *  If you wish for Zoltan2 to automatically assign for one of
+   *  the weight dimensions for each row 
+   *  a weight that is equal to the number of non-zeros in the row,
+   *  then return true here.  Otherwise return false.
+   */
+
+  virtual bool getRowWeightIsNumberOfNonZeros(int dim) const = 0;
+
   /*! \brief Returns the dimension of the geometry, if any.
    *
    *  Some algorithms can use geometric row or column coordinate

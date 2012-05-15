@@ -516,8 +516,8 @@ template <typename User>
   const RCP<const Comm<int> > comm = graph_->getComm();
 
   try{
-    numNewVtx = convertSolutionToImportList<Adapter, lno_t>(
-      solution, dummyIn, importList, dummyOut);
+    numNewVtx = solution.convertSolutionToImportList(
+      0, dummyIn, importList, dummyOut);
   }
   Z2_FORWARD_EXCEPTIONS;
 

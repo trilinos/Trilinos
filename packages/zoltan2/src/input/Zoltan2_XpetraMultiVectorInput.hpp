@@ -258,8 +258,8 @@ template <typename User>
 
   try{
     // Get an import list
-    numNewRows = convertSolutionToImportList<Adapter, lno_t>(
-      solution, dummyIn, importList, dummyOut);
+    numNewRows = solution.convertSolutionToImportList(
+      0, dummyIn, importList, dummyOut);
   }
   Z2_FORWARD_EXCEPTIONS;
 
