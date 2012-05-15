@@ -17,7 +17,6 @@
 #include <Zoltan2_IdentifierMap.hpp>
 #include <Zoltan2_Solution.hpp>
 #include <Zoltan2_Metric.hpp>
-#include <Zoltan2_PartToProc.hpp>
 #include <Zoltan2_GetParameter.hpp>
 
 #include <cmath>
@@ -250,7 +249,8 @@ public:
     ArrayRCP<MetricValues<scalar_t> > &metrics);
   
   ////////////////////////////////////////////////////////////////////
-  // Results that may be queried by the user or by migration methods.
+  // Results that may be queried by the user, by migration methods,
+  // or by metric calculation methods.
   // We return raw pointers so users don't have to learn about our
   // pointer wrappers.
 
@@ -275,6 +275,42 @@ public:
                 synonomous with process IDs.
    */
   const int *getProcList() const { return procs_.getRawPtr();}
+
+  /*! \brief Create an import list from the export list.
+   *
+   *  \param numExtra The amount of related information of type
+   *            \c Extra that you would like to associate with the data.
+   *  \param xtraInfo  The extra information related to your global Ids.
+   *       The information for the <tt>k-th</tt> global ID would begin at
+   *       <tt> xtraInfo[k*numExtra]</tt> and end before
+   *       <tt> xtraInfo[(k+1)*numExtra]</tt>.
+   *  \param imports on return is the list of global Ids assigned to
+   *        this process under the Solution.
+   *  \param newXtraInfo on return is the extra information associated
+   *     with the global Ids in the import list.
+   *
+   * The list returned in getPartList() is an export list, detailing
+   * to which part each object should be moved.  This method provides
+   * a new list, listing the global IDs of the objects to be imported
+   * to my part or parts.
+   *
+   * Because this method does global communication, it can also
+   * send useful data related to the global IDs.  For example, if the global IDs
+   * represent matrix rows, the extra data could be the number of non zeros
+   * in the row.
+   *
+   * \todo A version which takes the export part numbers and returns the
+   *            import part numbers in addition to the global IDs.  Although
+   *            this can be done with the extra data, it might be better
+   *            to do it explicitly.
+   */
+
+  template <typename Extra>
+    size_t convertSolutionToImportList(
+      int numExtra,
+      ArrayRCP<Extra> &xtraInfo,
+      ArrayRCP<typename Adapter::gid_t> &imports,
+      ArrayRCP<Extra> &newXtraInfo) const;
 
   /*! \brief Returns the imbalance of the solution.
    *      \todo add more metrics
@@ -356,6 +392,9 @@ public:
   }
 
 private:
+  void partToProc(bool doCheck, bool haveNumLocalParts, bool haveNumGlobalParts,
+    scalar_t numLocalParts, gno_t numGlobalParts);
+
   void procToPartsMap(int procId, double &numParts, partId_t &partMin, 
     partId_t &partMax) const;
 
@@ -455,6 +494,7 @@ private:
   ArrayRCP<partId_t> parts_;      // part number assigned to gids_[i]
 
   ArrayRCP<MetricValues<scalar_t> > qualityMetrics_;
+  bool haveSolution_;
 
   ////////////////////////////////////////////////////////////////
   // The solution calculates this from the part assignments,
@@ -476,7 +516,7 @@ template <typename Adapter>
       nGlobalParts_(0), nEmptyParts_(0), nLocalParts_(0), weightDim_(),
       onePartPerProc_(false), partDist_(), procDist_(), 
       pSizeUniform_(), pCompactIndex_(), pSize_(),
-      gids_(), parts_(), qualityMetrics_(), procs_()
+      gids_(), parts_(), qualityMetrics_(), haveSolution_(false), procs_()
 {
   weightDim_ = (userWeightDim ? userWeightDim : 1); 
 
@@ -504,7 +544,7 @@ template <typename Adapter>
       nGlobalParts_(0), nEmptyParts_(0), nLocalParts_(0), weightDim_(),
       onePartPerProc_(false), partDist_(), procDist_(), 
       pSizeUniform_(), pCompactIndex_(), pSize_(),
-      gids_(), parts_(), qualityMetrics_(), procs_()
+      gids_(), parts_(), qualityMetrics_(), haveSolution_(false), procs_()
 {
   weightDim_ = (userWeightDim ? userWeightDim : 1); 
 
@@ -543,10 +583,10 @@ template <typename Adapter>
   }
 
   try{
-    partToProc(env_, comm_, true, 
-      haveLocalNumParts, haveGlobalNumParts, 
-      static_cast<partId_t>(nLocalParts_), static_cast<partId_t>(nGlobalParts_),
-      onePartPerProc_, partDist_, procDist_);
+    // Sets onePartPerProc_, partDist_, and procDist_
+
+    partToProc(true, haveLocalNumParts, haveGlobalNumParts, 
+      nLocalParts_, nGlobalParts_);
   }
   Z2_FORWARD_EXCEPTIONS
 
@@ -1311,6 +1351,83 @@ template <typename Adapter>
       1, &myNumEmptyParts, &nEmptyParts_);
   }
   Z2_THROW_OUTSIDE_ERROR(*env_);
+
+  haveSolution_ = true;
+}
+
+template <typename Adapter>
+  template <typename Extra>
+    size_t PartitioningSolution<Adapter>::convertSolutionToImportList(
+      int numExtra, ArrayRCP<Extra> &xtraInfo,
+      ArrayRCP<typename Adapter::gid_t> &imports,       // output
+      ArrayRCP<Extra> &newXtraInfo) const               // output
+{
+  env_->localInputAssertion(__FILE__, __LINE__, "no solution yet",
+    haveSolution_, BASIC_ASSERTION);
+
+  int numProcs                = comm_->getSize();
+  size_t localNumIds          = gids_.size();
+
+  Array<lno_t> counts(numProcs, 0);
+  if (procDist_)
+    for (size_t i=0; i < localNumIds; i++)
+      counts[procDist_[i]]++;
+  else
+    for (size_t i=0; i < localNumIds; i++)
+      counts[partDist_[i]]++;
+
+  Array<lno_t> offsets(numProcs+1, 0);
+  for (int i=1; i <= numProcs; i++){
+    offsets[i] = offsets[i-1] + counts[i-1];
+  }
+
+  Array<gid_t> gidList(localNumIds);
+  Array<Extra> numericInfo;
+
+  if (numExtra > 0)
+    numericInfo.resize(localNumIds);
+
+
+  if (procDist_){
+    for (size_t i=0; i < localNumIds; i++){
+      lno_t idx = offsets[procDist_[i]];
+      gidList[idx] = gids_[i];
+      if (numExtra > 0)
+        numericInfo[idx] = xtraInfo[i];
+      offsets[procDist_[i]] = idx + 1;
+    }
+  }
+  else{
+    for (size_t i=0; i < localNumIds; i++){
+      lno_t idx = offsets[partDist_[i]];
+      gidList[idx] = gids_[i];
+      if (numExtra > 0)
+        numericInfo[idx] = xtraInfo[i];
+      offsets[partDist_[i]] = idx + 1;
+    }
+  }
+
+  ArrayRCP<lno_t> recvCounts;
+  RCP<const Environment> env = rcp(new Environment);
+
+  try{
+    AlltoAllv<gid_t, lno_t>(*comm_, *env_, gidList.view(0,localNumIds),
+      counts.view(0, numProcs), imports, recvCounts);
+  }
+  catch (std::exception &e){
+    throw std::runtime_error("alltoallv 1");
+  }
+
+  if (numExtra > 0){
+    try{
+      AlltoAllv<Extra, lno_t>(*comm_, *env_, xtraInfo.view(0, localNumIds),
+        counts.view(0, numProcs), newXtraInfo, recvCounts);
+    }
+    catch (std::exception &e){
+      throw std::runtime_error("alltoallv 2");
+    }
+  }
+  return imports.size();
 }
 
 template <typename Adapter>
@@ -1395,6 +1512,195 @@ template <typename Adapter>
   return theSame;
 }
 
+/*! \brief  Compute the assignment of parts to processes.
+ *    \param doCheck  if true, do a global check to reconcile the
+ *       numLocalParts and numGlobalParts values on all processes.
+ *       If false, we assume numLocalParts and numGlobalParts are
+ *       the same across processes.
+ *   \param haveNumLocalParts true if this process set the num_local_parts
+ *         parameter, false otherwise
+ *   \param numLocalParts the number of local parts specified for this
+ *        process as a parameter, if any
+ *   \param haveNumGlobalParts true if this process set the num_global_parts
+ *         parameter, false otherwise
+ *   \param numGlobalParts the number of global parts specified by this
+ *        process as a parameter, if any
+ */
+
+template <typename Adapter>
+  void PartitioningSolution<Adapter>::partToProc(
+    bool doCheck, bool haveNumLocalParts, bool haveNumGlobalParts,
+    scalar_t numLocalParts, gno_t numGlobalParts) 
+{
+  int nprocs = comm_->getSize();
+  ssize_t vals[4] = {haveNumGlobalParts, haveNumLocalParts,
+      numGlobalParts, numLocalParts};
+  ssize_t reducevals[4];
+  ssize_t sumHaveGlobal=0, sumHaveLocal=0;
+  ssize_t sumGlobal=0, sumLocal=0;
+  ssize_t maxGlobal=0, maxLocal=0;
+
+  partDist_.clear();
+  procDist_.clear();
+
+  if (doCheck){
+
+    try{
+      reduceAll<int, ssize_t>(*comm_, Teuchos::REDUCE_SUM, 4, vals, reducevals);
+    }
+    Z2_THROW_OUTSIDE_ERROR(*env_);
+
+    sumHaveGlobal = reducevals[0];
+    sumHaveLocal = reducevals[1];
+    sumGlobal = reducevals[2];
+    sumLocal = reducevals[3];
+
+    env_->localInputAssertion(__FILE__, __LINE__,
+      "Either all procs specify num_global/local_parts or none do",
+      (sumHaveGlobal == 0 || sumHaveGlobal == nprocs) &&
+      (sumHaveLocal == 0 || sumHaveLocal == nprocs), 
+      BASIC_ASSERTION);
+  }
+  else{
+    if (haveNumLocalParts)
+      sumLocal = numLocalParts * nprocs;
+    if (haveNumGlobalParts)
+      sumGlobal = numGlobalParts * nprocs;
+
+    sumHaveGlobal = haveNumGlobalParts ? nprocs : 0;
+    sumHaveLocal = haveNumLocalParts ? nprocs : 0;
+
+    maxLocal = numLocalParts;
+    maxGlobal = numGlobalParts;
+  }
+
+  if (!haveNumLocalParts && !haveNumGlobalParts){
+    onePartPerProc_ = true;   // default if user did not specify
+    return;
+  }
+
+  if (haveNumGlobalParts){
+    if (doCheck){
+      vals[0] = numGlobalParts;
+      vals[1] = numLocalParts;
+      try{
+        reduceAll<int, ssize_t>(
+          *comm_, Teuchos::REDUCE_MAX, 2, vals, reducevals);
+      }
+      Z2_THROW_OUTSIDE_ERROR(*env_);
+  
+      maxGlobal = reducevals[0];
+      maxLocal = reducevals[1];
+  
+      env_->localInputAssertion(__FILE__, __LINE__,
+        "Value for num_global_parts is different on different processes.",
+        maxGlobal * nprocs == sumGlobal, BASIC_ASSERTION);
+    }
+
+    if (sumLocal){
+      env_->localInputAssertion(__FILE__, __LINE__,
+        "Sum of num_local_parts does not equal requested num_global_parts",
+        sumLocal == numGlobalParts, BASIC_ASSERTION);
+
+      if (sumLocal == nprocs && maxLocal == 1){
+        onePartPerProc_ = true;   // user specified one part per proc
+        return;
+      }
+    }
+    else{
+      if (maxGlobal == nprocs){
+        onePartPerProc_ = true;   // user specified num parts is num procs
+        return;
+      }
+    }
+  }
+
+  // If we are here, we do not have #parts == #procs.
+
+  if (sumHaveLocal == nprocs){
+    //
+    // We will go by the number of local parts specified.
+    //
+
+    try{
+      procDist_.resize(nprocs+1);
+    }
+    catch (std::exception &e){
+      throw(std::bad_alloc());
+    }
+
+    int *procArray = &procDist_[0];
+
+    try{
+      partId_t tmp = partId_t(numLocalParts);
+      gatherAll<int, partId_t>(*comm_, 1, &tmp, nprocs, procArray + 1); 
+    }
+    Z2_THROW_OUTSIDE_ERROR(*env_);
+
+    procArray[0] = 0;
+
+    for (int proc=0; proc < nprocs; proc++)
+      procArray[proc+1] += procArray[proc];
+  }
+  else{
+    //
+    // We will allocate global number of parts to the processes.
+    //
+    double fParts = numGlobalParts;
+    double fProcs = nprocs;
+
+    if (fParts < fProcs){
+
+      try{
+        partDist_.resize(size_t(fParts+1));
+      }
+      catch (std::exception &e){
+        throw(std::bad_alloc());
+      }
+
+      int *partArray = &partDist_[0];
+
+      double each = floor(fProcs / fParts);
+      double extra = fmod(fProcs, fParts);
+      partDist_[0] = 0;     
+
+      for (partId_t part=0; part < numGlobalParts; part++){
+        int numOwners = int(each + ((part<extra) ? 1 : 0));
+        partArray[part+1] = partArray[part] + numOwners;
+      }
+
+      env_->globalBugAssertion(__FILE__, __LINE__, "#parts != #procs", 
+        partDist_[numGlobalParts] == nprocs, COMPLEX_ASSERTION, comm_);
+    }
+    else if (fParts > fProcs){ 
+
+      try{
+        procDist_.resize(size_t(fProcs+1));
+      }
+      catch (std::exception &e){
+        throw(std::bad_alloc());
+      }
+
+      int *procArray = &procDist_[0];
+
+      double each = floor(fParts / fProcs);
+      double extra = fmod(fParts, fProcs);
+      procArray[0] = 0;     
+
+      for (int proc=0; proc < nprocs; proc++){
+        partId_t numParts = partId_t(each + ((proc<extra) ? 1 : 0));
+        procArray[proc+1] = procArray[proc] + numParts;
+      }
+
+      env_->globalBugAssertion(__FILE__, __LINE__, "#parts != #procs", 
+        procDist_[nprocs] == numGlobalParts, COMPLEX_ASSERTION, comm_);
+    }
+    else{
+      env_->globalBugAssertion(__FILE__, __LINE__, 
+        "should never get here", 1, COMPLEX_ASSERTION, comm_);
+    }
+  }
+}
 
 }  // namespace Zoltan2
 

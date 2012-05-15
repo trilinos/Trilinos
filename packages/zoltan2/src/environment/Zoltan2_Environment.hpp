@@ -28,7 +28,8 @@
 
 namespace Zoltan2 {
 
-/*!  \brief The parameters, debug and profiling output objects, and error checking methods.
+/*!  \brief The user parameters, debug, timing and memory profiling output objects, 
+            and error checking methods.
 
   This is object is passed to almost every method in the library. It
   has the problem parameters and the configuration information that governs
@@ -38,9 +39,6 @@ namespace Zoltan2 {
   The environment holds the application's default communicator.  Note that 
   this communicator may differ from the problem communicator for any
   given problem.
-
-  \todo The Environment could make it easier for algorithms to get parameter
-    values without having to navigate Teuchos::ParameterLists and sublists.
 */
 
 class Environment{
@@ -354,6 +352,8 @@ public:
    *       \c memory_profiling_output_stream or \c memory_profiling_output_file.
    *   \param units A string indicating the memory_profiling units.
    *   \param val   The memory_profiling value, a long.
+   *  \todo: change this so the user just gives us a message, we get
+   *        total memory in use by the process and log it.
    */
 
   void memory(const char *msg, const char *units, const memory_t val) const{ 

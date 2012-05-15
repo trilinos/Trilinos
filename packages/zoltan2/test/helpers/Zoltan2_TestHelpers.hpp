@@ -14,6 +14,15 @@ typedef Kokkos::DefaultNode::DefaultNodeType node_t;
   std::string testDataFilePath(".");
 #endif
 
+// The path to the Zoltan1 test directory.  We use
+// some of their data for testing.
+
+#ifdef Z1_TEST_DIR
+  std::string zoltanTestDirectory(PATH_NAME(Z1_TEST_DIR));
+#else
+  std::string zoltanTestDirectory(".");
+#endif
+
 //
 // If Tpetra is compiled with explicit instantiation,
 // then we will use these types in our tests.

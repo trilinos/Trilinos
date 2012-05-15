@@ -13,15 +13,6 @@
 #include <Tpetra_Vector.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 
-//#include <Zoltan2_Memory.hpp>  KDD User app wouldn't include our memory mgr.
-
-#ifdef SHOW_ZOLTAN2_LINUX_MEMORY
-extern "C"{
-static char *meminfo=NULL;
-extern void Zoltan_get_linux_meminfo(char *msg, char **result);
-}
-#endif
-
 using Teuchos::RCP;
 using namespace std;
 
@@ -133,17 +124,6 @@ int main(int narg, char** arg)
   cmdp.parse(narg, arg);
 
 
-#ifdef SHOW_ZOLTAN2_LINUX_MEMORY
-  if (me == 0){
-    Zoltan_get_linux_meminfo("Before creating matrix", &meminfo);
-    if (meminfo){
-      std::cout << "Rank " << me << ": " << meminfo << std::endl;
-      free(meminfo);
-      meminfo=NULL;
-    }
-  }
-#endif
-
   RCP<UserInputForTests> uinput;
 
   if (inputFile != ""){ // Input file specified; read a matrix
@@ -171,17 +151,6 @@ int main(int narg, char** arg)
          << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << endl
          << "NumProcs = " << comm->getSize() << endl;
 
-#ifdef SHOW_ZOLTAN2_LINUX_MEMORY
-  if (me == 0){
-    Zoltan_get_linux_meminfo("After creating matrix", &meminfo);
-    if (meminfo){
-      std::cout << "Rank " << me << ": " << meminfo << std::endl;
-      free(meminfo);
-      meminfo=NULL;
-    }
-  }
-#endif
-
   ////// Create a vector to use with the matrix.
   RCP<Vector> origVector, origProd;
   origProd   = Tpetra::createVector<Scalar,z2TestLO,z2TestGO>(
@@ -199,18 +168,6 @@ int main(int narg, char** arg)
 
   ////// Create and solve ordering problem
   Zoltan2::OrderingProblem<SparseMatrixAdapter> problem(&adapter, &params);
-
-#ifdef SHOW_ZOLTAN2_LINUX_MEMORY
-  if (me == 0){
-    Zoltan_get_linux_meminfo("After creating problem", &meminfo);
-    if (meminfo){
-      std::cout << "Rank " << me << ": " << meminfo << std::endl;
-      free(meminfo);
-      meminfo=NULL;
-    }
-  }
-#endif
-
   cout << "Going to solve" << endl;
   problem.solve();
 

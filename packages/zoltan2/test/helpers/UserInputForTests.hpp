@@ -799,6 +799,7 @@ void UserInputForTests::getChacoGraph(FILE *fptr, string fname)
   gno_t base = 0;
   ArrayRCP<const size_t> rowSizes;
   int fail = 0;
+  bool haveEdges = true;
 
   if (rank == 0){
 
@@ -815,9 +816,17 @@ void UserInputForTests::getChacoGraph(FILE *fptr, string fname)
     delete [] nonConstName;
 #endif
 
+    // There are Zoltan2 test graphs that have no edges.
+
+    if (start == NULL)
+      haveEdges = false;
+
     if (verbose_){
       std::cout << "UserInputForTests, " << nvtxs << " vertices,";
-      std::cout << start[nvtxs] << " edges,";
+      if (haveEdges)
+        std::cout << start[nvtxs] << " edges,";
+      else
+        std::cout << "no edges,";
       std::cout << vwgt_dim << " vertex weights, ";
       std::cout << ewgt_dim << " edge weights" << std::endl;
     }
@@ -830,21 +839,29 @@ void UserInputForTests::getChacoGraph(FILE *fptr, string fname)
       throw std::runtime_error("Unable to read chaco file");
     }
 
-    if (start)
+    if (haveEdges)
       nedges = start[nvtxs];
 
     nzPerRow = new size_t [nvtxs];
     if (!nzPerRow)
       throw std::bad_alloc();
     rowSizes = arcp(nzPerRow, 0, nvtxs, true);
-    for (int i=0; i < nvtxs; i++){
-      nzPerRow[i] = start[i+1] - start[i];
-      if (nzPerRow[i] > maxRowLen)
-        maxRowLen = nzPerRow[i];
+
+    if (haveEdges){
+      for (int i=0; i < nvtxs; i++){
+        nzPerRow[i] = start[i+1] - start[i];
+        if (nzPerRow[i] > maxRowLen)
+          maxRowLen = nzPerRow[i];
+      }
+    }
+    else{
+      memset(nzPerRow, 0, sizeof(size_t) * nvtxs);
     }
 
-    free(start);
-    start = NULL;
+    if (haveEdges){
+      free(start);
+      start = NULL;
+    }
   
     // Make sure base gid is zero.
 
@@ -872,6 +889,8 @@ void UserInputForTests::getChacoGraph(FILE *fptr, string fname)
   if (graphCounts[0] == 0)
     throw std::runtime_error("Unable to read chaco file");
 
+  haveEdges = (graphCounts[1] > 0);
+
   RCP<tcrsMatrix_t> fromMatrix;
   RCP<const map_t> fromMap;
 
@@ -883,28 +902,28 @@ void UserInputForTests::getChacoGraph(FILE *fptr, string fname)
     fromMatrix = 
       rcp(new tcrsMatrix_t(fromMap, rowSizes, Tpetra::StaticProfile));
 
-    gno_t *edgeIds = new gno_t [nedges];
-    if (nedges && !edgeIds)
-      throw std::bad_alloc();
-    for (int i=0; i < nedges; i++)
-       edgeIds[i] = adj[i];
+    if (haveEdges){
 
-    if (nedges){
+      gno_t *edgeIds = new gno_t [nedges];
+      if (nedges && !edgeIds)
+        throw std::bad_alloc();
+      for (int i=0; i < nedges; i++)
+         edgeIds[i] = adj[i];
+  
       free(adj);
       adj = NULL; 
-    }
-    gno_t *nextId = edgeIds;
-    Array<scalar_t> values(maxRowLen, 1.0);
 
-    for (gno_t i=0; i < nvtxs; i++){
-      if (nzPerRow[i] > 0){
-        ArrayView<const gno_t> rowNz(nextId, nzPerRow[i]);
-        fromMatrix->insertGlobalValues(i, rowNz, values.view(0,nzPerRow[i]));
-        nextId += nzPerRow[i];
+      gno_t *nextId = edgeIds;
+      Array<scalar_t> values(maxRowLen, 1.0);
+  
+      for (gno_t i=0; i < nvtxs; i++){
+        if (nzPerRow[i] > 0){
+          ArrayView<const gno_t> rowNz(nextId, nzPerRow[i]);
+          fromMatrix->insertGlobalValues(i, rowNz, values.view(0,nzPerRow[i]));
+          nextId += nzPerRow[i];
+        }
       }
-    }
-
-    if (nedges){
+  
       delete [] edgeIds;
       edgeIds = NULL;
     }
@@ -982,7 +1001,7 @@ void UserInputForTests::getChacoGraph(FILE *fptr, string fname)
 
   // Edge weights, if any
 
-  if (ewgt_dim > 0){
+  if (haveEdges && ewgt_dim > 0){
 
     ArrayRCP<scalar_t> weightBuf;
     ArrayView<const scalar_t> *wgts = new ArrayView<const scalar_t> [ewgt_dim];
@@ -1018,7 +1037,9 @@ void UserInputForTests::getChacoGraph(FILE *fptr, string fname)
 
     RCP<tMVector_t> toEdgeWeights = rcp(new tMVector_t(toMap, ewgt_dim));
 
-    toEdgeWeights->doImport(*fromEdgeWeights, *importer, Tpetra::INSERT);
+    RCP<import_t> edgeImporter = rcp(new import_t(fromMap, toMap));
+
+    toEdgeWeights->doImport(*fromEdgeWeights, *edgeImporter, Tpetra::INSERT);
 
     edgWeights_ = toEdgeWeights;
   }
