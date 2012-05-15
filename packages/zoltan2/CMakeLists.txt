@@ -2,10 +2,10 @@ INCLUDE(TribitsPackageMacros)
 INCLUDE(TribitsAddOptionAndDefine)
 
 # Path to test and example data directory
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DZ2_DATA_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/test/data\"")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DZ2_DATA_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/test/data/\"")
 
 # Path to Zoltan1 test directory
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DZ1_TEST_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/../../packages/zoltan/test\"")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DZ1_TEST_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/../../packages/zoltan/test/\"")
 
 #
 # A) Define the package

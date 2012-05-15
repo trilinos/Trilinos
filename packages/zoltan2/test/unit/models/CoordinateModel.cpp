@@ -39,13 +39,10 @@ void testCoordinateModel(std::string &fname, int weightDim,
 
   typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> mv_t;
 
-  outputFlag_t flags;
-  flags.set(OBJECT_COORDINATES);
-
   RCP<UserInputForTests> uinput;
 
   try{
-    uinput = rcp(new UserInputForTests(fname, comm, flags));
+    uinput = rcp(new UserInputForTests(testDataFilePath, fname, comm, true));
   }
   catch(std::exception &e){
     fail=1;
@@ -234,39 +231,32 @@ int main(int argc, char *argv[])
     Teuchos::DefaultComm<int>::getComm();
 
   int rank = comm->getRank();
-
-  std::string nullString;
-  std::vector<std::string> mtxFiles;
-  
-  mtxFiles.push_back(testDataFilePath+std::string("/simple.mtx"));
+  string fname("commanche_dual");   // reader will seek coord file
   bool wishConsecutiveIds = true;
 
-  for (unsigned int fileNum=0; fileNum < mtxFiles.size(); fileNum++){
-
-    if (rank == 0){
-      std::cout << std::endl << mtxFiles[fileNum];
-      std::cout << ", without consecutive IDs, no weights" << std::endl;
-    }
-    testCoordinateModel(mtxFiles[fileNum], 0, comm, !wishConsecutiveIds);
-
-    if (rank == 0){
-      std::cout << std::endl << mtxFiles[fileNum];
-      std::cout << ", with consecutive IDs, no weights" << std::endl;
-    }
-    testCoordinateModel(mtxFiles[fileNum], 0, comm,  wishConsecutiveIds);
-
-    if (rank == 0){
-      std::cout << std::endl << mtxFiles[fileNum];
-      std::cout << ", without consecutive IDs, dim 1 weights" << std::endl;
-    }
-    testCoordinateModel(mtxFiles[fileNum], 1, comm, !wishConsecutiveIds);
-
-    if (rank == 0){
-      std::cout << std::endl << mtxFiles[fileNum];
-      std::cout << ", with consecutive IDs, dim 2 weights " << std::endl;
-    }
-    testCoordinateModel(mtxFiles[fileNum], 2, comm,  wishConsecutiveIds);
+  if (rank == 0){
+    std::cout << std::endl << fname;
+    std::cout << ", without consecutive IDs, no weights" << std::endl;
   }
+  testCoordinateModel(fname, 0, comm, !wishConsecutiveIds);
+
+  if (rank == 0){
+    std::cout << std::endl << fname;
+    std::cout << ", with consecutive IDs, no weights" << std::endl;
+  }
+  testCoordinateModel(fname, 0, comm,  wishConsecutiveIds);
+
+  if (rank == 0){
+    std::cout << std::endl << fname;
+    std::cout << ", without consecutive IDs, dim 1 weights" << std::endl;
+  }
+  testCoordinateModel(fname, 1, comm, !wishConsecutiveIds);
+
+  if (rank == 0){
+    std::cout << std::endl << fname;
+    std::cout << ", with consecutive IDs, dim 2 weights " << std::endl;
+  }
+  testCoordinateModel(fname, 2, comm,  wishConsecutiveIds);
 
   if (rank==0) std::cout << "PASS" << std::endl;
 

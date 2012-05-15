@@ -1369,7 +1369,7 @@ template <typename Adapter>
   size_t localNumIds          = gids_.size();
 
   Array<lno_t> counts(numProcs, 0);
-  if (procDist_)
+  if (procDist_.size())
     for (size_t i=0; i < localNumIds; i++)
       counts[procDist_[i]]++;
   else
@@ -1388,7 +1388,7 @@ template <typename Adapter>
     numericInfo.resize(localNumIds);
 
 
-  if (procDist_){
+  if (procDist_.size()){
     for (size_t i=0; i < localNumIds; i++){
       lno_t idx = offsets[procDist_[i]];
       gidList[idx] = gids_[i];

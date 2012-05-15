@@ -18,7 +18,6 @@
 #include <Teuchos_DefaultComm.hpp>
 
 using std::string;
-using Teuchos::ParameterList;
 using Teuchos::ParameterEntry;
 using Teuchos::RCP;
 using Teuchos::Comm;
@@ -172,7 +171,7 @@ int main(int argc, char *argv[])
     fail = 2003;
 
   if (!fail){
-    const ParameterList &pl1 = env->getParameters();
+    const Teuchos::ParameterList &pl1 = env->getParameters();
     const ParameterEntry *dl = pl1.getEntryPtr("debug_level");
   
     if (!dl){
@@ -212,7 +211,7 @@ int main(int argc, char *argv[])
 
   if (rank==0){
     std::cout << "\nA test parameter list" << std::endl;
-    const ParameterList &envParams = env->getParameters();
+    const Teuchos::ParameterList &envParams = env->getParameters();
     try{
       envParams.print();
     }
@@ -230,14 +229,14 @@ int main(int argc, char *argv[])
   // add some new parameters and create a new Environment.
 
   RCP<const Comm<int> > oldComm = env->comm_;
-  const ParameterList &oldParams = env->getUnvalidatedParameters();
+  const Teuchos::ParameterList &oldParams = env->getUnvalidatedParameters();
   
-  ParameterList newParams = oldParams;
+  Teuchos::ParameterList newParams = oldParams;
   newParams.set("error_check_level", "debug_mode_assertions");
   newParams.set("memory_versus_speed", "speed");
   newParams.remove("memory_profiling_output_file");
   
-  ParameterList &newPartParams = newParams.sublist("partitioning");
+  Teuchos::ParameterList &newPartParams = newParams.sublist("partitioning");
   newPartParams.set("imbalance_tolerance", "1.05");
   newPartParams.set("algorithm", "phg");
   newPartParams.set("objective", "minimize_cut_edge_weight");
@@ -263,7 +262,7 @@ int main(int argc, char *argv[])
 
   if (!fail && rank==0){
     std::cout << "\nA few changes/additions to the list" << std::endl;
-    const ParameterList &envParams = newEnv->getParameters();
+    const Teuchos::ParameterList &envParams = newEnv->getParameters();
     try{
       envParams.print();
     }

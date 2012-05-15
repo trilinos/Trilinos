@@ -62,7 +62,7 @@ using std::string;
  *
  *  Given:
  *  \li The name of matrix market file in the data directory, or
- *  \li The name of a test data file in the Zoltan1 test directory, or
+ *  \li The name of a chaco file in the Zoltan1 test directory, or
  *  \li x, y and z dimensions and a problem type
  *
  *  Retrieve the data in any of the following forms:
@@ -184,6 +184,8 @@ public:
 
 private:
 
+  bool verbose_;
+
   const RCP<const Comm<int> > tcomm_;
 
   RCP<tcrsMatrix_t> M_; 
@@ -198,8 +200,6 @@ private:
   RCP<Epetra_CrsMatrix> eM_; 
   RCP<Epetra_CrsGraph> eG_; 
 #endif
-
-  bool verbose_;
 
   // Read a Matrix Market file into M_
   // using Tpetra::MatrixMarket::Reader.
@@ -231,11 +231,11 @@ private:
 
 UserInputForTests::UserInputForTests(string path, string testData, 
   const RCP<const Comm<int> > &c, bool debugInfo):
+    verbose_(debugInfo),
     tcomm_(c), M_(), xM_(), xyz_(), vtxWeights_(), edgWeights_()
 #ifdef HAVE_EPETRA_DATA_TYPES
-    ,ecomm_(), eM_(), eG_(),
+    ,ecomm_(), eM_(), eG_()
 #endif
-    verbose_(debugInfo)
 {
   bool zoltan1 = false;
   string::size_type loc = path.find("/data/");  // Zoltan2 data
@@ -254,11 +254,11 @@ UserInputForTests::UserInputForTests(string path, string testData,
 
 UserInputForTests::UserInputForTests(int x, int y, int z, 
   string matrixType, const RCP<const Comm<int> > &c, bool debugInfo):
+    verbose_(debugInfo),
     tcomm_(c), M_(), xM_(), xyz_(), vtxWeights_(), edgWeights_()
 #ifdef HAVE_EPETRA_DATA_TYPES
-    ,ecomm_(), eM_(), eG_() ,
+    ,ecomm_(), eM_(), eG_() 
 #endif
-    verbose_(debugInfo)
 {
   if (matrixType.size() == 0){
     int dim = 0;
@@ -486,7 +486,7 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
   // Open the coordinate file.
 
   fname.str("");
-  fname << path << "/" << testData << "_coords.mtx";
+  fname << path << "/" << testData << "_coord.mtx";
 
   int coordDim = 0;
   ArrayRCP<ArrayRCP<scalar_t> > xyz;

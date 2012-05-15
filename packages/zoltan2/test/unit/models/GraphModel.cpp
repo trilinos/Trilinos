@@ -254,9 +254,9 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
   UserInputForTests *input;
 
   if (fname.size() > 0)
-    input = new UserInputForTests(fname, comm);
+    input = new UserInputForTests(testDataFilePath, fname, comm, true);
   else
-    input = new UserInputForTests(xdim,ydim,zdim,comm);
+    input = new UserInputForTests(xdim,ydim,zdim,string(""), comm, true);
 
   RCP<tcrsMatrix_t> M = input->getTpetraCrsMatrix();
 
@@ -302,17 +302,12 @@ int main(int argc, char *argv[])
 
   int rank = comm->getRank();
 
-  string nullString;
+  string fname("commanche_dual");
 
-  vector<string> mtxFiles;
-  
-  mtxFiles.push_back(testDataFilePath+string("/simple.mtx"));
+  if (rank==0)
+    std::cout << fname << std::endl;
 
-  for (size_t fileNum=0; fileNum < mtxFiles.size(); fileNum++){
-    if (rank==0)
-      std::cout << mtxFiles[fileNum] << std::endl;
-    testGraphModel(mtxFiles[fileNum], 0, 0, 0, comm);
-  }
+  testGraphModel(fname, 0, 0, 0, comm);
 
   if (rank==0)
     std::cout << "PASS" << std::endl;

@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   int rank = comm->getRank();
 
-  Teuchos::RCP<Teuchos::FancyOStream> out = 
+  Teuchos::RCP<Teuchos::FancyOStream> outStream = 
     Teuchos::VerboseObjectBase::getDefaultOStream();
   Teuchos::EVerbosityLevel v=Teuchos::VERB_EXTREME;
 
@@ -104,7 +104,8 @@ int main(int argc, char *argv[])
   RCP<uinput_t> uinput;
 
   try{
-    uinput = rcp(new uinput_t(testDataFilePath+std::string("/simple.mtx"), comm));
+    uinput = 
+      rcp(new uinput_t(testDataFilePath,std::string("USAir97"), comm, true));
   }
   catch(std::exception &e){
     TEST_FAIL_AND_EXIT(*comm, 0, string("input ")+e.what(), 1);
@@ -130,9 +131,10 @@ int main(int argc, char *argv[])
     }
   
     if (rank== 0)
-      std::cout << "Original Tpetra matrix" << std::endl;
-  
-    M->describe(*out,v);
+      std::cout << "Original Tpetra matrix " << M->getGlobalNumRows()
+        << " x " << M->getGlobalNumCols() << std::endl;
+
+    M->describe(*outStream,v);
 
     RCP<const xtmap_t> xmap(new xtmap_t(M->getRowMap()));
 
@@ -154,7 +156,7 @@ int main(int argc, char *argv[])
     if (rank== 0)
       std::cout << "Migrated Tpetra matrix" << std::endl;
   
-    newM->describe(*out,v);
+    newM->describe(*outStream,v);
   }
 
   // XpetraTraits<Tpetra::CrsGraph<scalar_t, lno_t, gno_t, node_t> > 
@@ -173,9 +175,9 @@ int main(int argc, char *argv[])
       std::cout << "Original Tpetra graph" << std::endl;
   
     Teuchos::RCP<Teuchos::FancyOStream>
-      out = Teuchos::VerboseObjectBase::getDefaultOStream();
+      outStream = Teuchos::VerboseObjectBase::getDefaultOStream();
     Teuchos::EVerbosityLevel v=Teuchos::VERB_EXTREME;
-    G->describe(*out,v);
+    G->describe(*outStream,v);
   
     RCP<const xtmap_t> xmap(new xtmap_t(G->getRowMap()));
     ArrayRCP<gno_t> newRowIds = roundRobinMap(xmap);
@@ -196,7 +198,7 @@ int main(int argc, char *argv[])
     if (rank== 0)
       std::cout << "Migrated Tpetra graph" << std::endl;
   
-    newG->describe(*out,v);
+    newG->describe(*outStream,v);
   }
 
   // XpetraTraits<Tpetra::Vector<scalar_t, lno_t, gno_t, node_t>> 
@@ -214,7 +216,7 @@ int main(int argc, char *argv[])
     if (rank== 0)
       std::cout << "Original Tpetra vector" << std::endl;
   
-    V->describe(*out,v);
+    V->describe(*outStream,v);
   
     RCP<const xtmap_t> xmap(new xtmap_t(V->getMap()));
     ArrayRCP<gno_t> newRowIds = roundRobinMap(xmap);
@@ -235,7 +237,7 @@ int main(int argc, char *argv[])
     if (rank== 0)
       std::cout << "Migrated Tpetra vector" << std::endl;
   
-    newV->describe(*out,v);
+    newV->describe(*outStream,v);
   }
 
   // XpetraTraits<Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t>> 
@@ -253,7 +255,7 @@ int main(int argc, char *argv[])
     if (rank== 0)
       std::cout << "Original Tpetra multivector" << std::endl;
   
-    MV->describe(*out,v);
+    MV->describe(*outStream,v);
   
     RCP<const xtmap_t> xmap(new xtmap_t(MV->getMap()));
     ArrayRCP<gno_t> newRowIds = roundRobinMap(xmap);
@@ -274,7 +276,7 @@ int main(int argc, char *argv[])
     if (rank== 0)
       std::cout << "Migrated Tpetra multivector" << std::endl;
   
-    newMV->describe(*out,v);
+    newMV->describe(*outStream,v);
   }
 
   /////////////////////////////////////////////////////////////////
@@ -299,7 +301,7 @@ int main(int argc, char *argv[])
     if (rank== 0)
       std::cout << "Original Xpetra matrix" << std::endl;
   
-    M->describe(*out,v);
+    M->describe(*outStream,v);
   
     ArrayRCP<gno_t> newRowIds = roundRobinMap(M->getRowMap());
   
@@ -319,7 +321,7 @@ int main(int argc, char *argv[])
     if (rank== 0)
       std::cout << "Migrated Xpetra matrix" << std::endl;
   
-    newM->describe(*out,v);
+    newM->describe(*outStream,v);
   }
 
   // XpetraTraits<Xpetra::CrsGraph<scalar_t, lno_t, gno_t, node_t> > 
@@ -338,9 +340,9 @@ int main(int argc, char *argv[])
       std::cout << "Original Xpetra graph" << std::endl;
   
     Teuchos::RCP<Teuchos::FancyOStream>
-      out = Teuchos::VerboseObjectBase::getDefaultOStream();
+      outStream = Teuchos::VerboseObjectBase::getDefaultOStream();
     Teuchos::EVerbosityLevel v=Teuchos::VERB_EXTREME;
-    G->describe(*out,v);
+    G->describe(*outStream,v);
   
     ArrayRCP<gno_t> newRowIds = roundRobinMap(G->getRowMap());
   
@@ -360,7 +362,7 @@ int main(int argc, char *argv[])
     if (rank== 0)
       std::cout << "Migrated Xpetra graph" << std::endl;
   
-    newG->describe(*out,v);
+    newG->describe(*outStream,v);
   }
 
   // XpetraTraits<Xpetra::Vector<scalar_t, lno_t, gno_t, node_t>> 
@@ -378,7 +380,7 @@ int main(int argc, char *argv[])
     if (rank== 0)
       std::cout << "Original Xpetra vector" << std::endl;
   
-    V->describe(*out,v);
+    V->describe(*outStream,v);
   
     ArrayRCP<gno_t> newRowIds = roundRobinMap(V->getMap());
   
@@ -398,7 +400,7 @@ int main(int argc, char *argv[])
     if (rank== 0)
       std::cout << "Migrated Xpetra vector" << std::endl;
   
-    newV->describe(*out,v);
+    newV->describe(*outStream,v);
   }
 
   // XpetraTraits<Xpetra::MultiVector<scalar_t, lno_t, gno_t, node_t>> 
@@ -416,7 +418,7 @@ int main(int argc, char *argv[])
     if (rank== 0)
       std::cout << "Original Xpetra multivector" << std::endl;
   
-    MV->describe(*out,v);
+    MV->describe(*outStream,v);
   
     ArrayRCP<gno_t> newRowIds = roundRobinMap(MV->getMap());
   
@@ -436,7 +438,7 @@ int main(int argc, char *argv[])
     if (rank== 0)
       std::cout << "Migrated Xpetra multivector" << std::endl;
   
-    newMV->describe(*out,v);
+    newMV->describe(*outStream,v);
   }
 
 #ifdef HAVE_EPETRA_DATA_TYPES
@@ -459,7 +461,8 @@ int main(int argc, char *argv[])
   RCP<uinput_t> euinput;
 
   try{
-    euinput = rcp(new uinput_t(testDataFilePath+std::string("/simple.mtx"), comm));
+    euinput = 
+      rcp(new uinput_t(testDataFilePath,std::string("USAir97"), comm, true));
   }
   catch(std::exception &e){
     TEST_FAIL_AND_EXIT(*comm, 0, string("epetra input ")+e.what(), 1);

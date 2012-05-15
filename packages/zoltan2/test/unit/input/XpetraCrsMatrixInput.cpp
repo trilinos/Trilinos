@@ -111,14 +111,12 @@ int main(int argc, char *argv[])
   // Create object that can give us test Tpetra, Xpetra
   // and Epetra matrices for testing.
 
-  outputFlag_t flags;
-  flags.set(OBJECT_DATA);
   RCP<uinput_t> uinput;
 
   try{
     uinput = 
       rcp(new uinput_t(
-        testDataFilePath+std::string("/simple.mtx"), comm, flags));
+        testDataFilePath,std::string("USAir97"), comm, true));
   }
   catch(std::exception &e){
     TEST_FAIL_AND_EXIT(*comm, 0, string("input ")+e.what(), 1);
