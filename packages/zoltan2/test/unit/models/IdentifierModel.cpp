@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
 
   int rank = comm->getRank();
 
-  string fname("commanche_dual");
+  string fname("simple");
 
   bool wishConsecutiveIds = true;
 

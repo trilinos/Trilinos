@@ -231,7 +231,7 @@ int main(int argc, char *argv[])
     Teuchos::DefaultComm<int>::getComm();
 
   int rank = comm->getRank();
-  string fname("commanche_dual");   // reader will seek coord file
+  string fname("simple");   // reader will seek coord file
   bool wishConsecutiveIds = true;
 
   if (rank == 0){
