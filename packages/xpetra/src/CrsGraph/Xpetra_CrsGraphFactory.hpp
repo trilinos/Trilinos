@@ -1,5 +1,5 @@
-#ifndef XPETRA_CRSGRAPH_FACTORY_HPP
-#define XPETRA_CRSGRAPH_FACTORY_HPP
+#ifndef XPETRA_CRSGRAPHFACTORY_HPP
+#define XPETRA_CRSGRAPHFACTORY_HPP
 
 #include "Xpetra_ConfigDefs.hpp"
 
@@ -78,5 +78,5 @@ namespace Xpetra {
 
 }
 
-#define XPETRA_CRSGRAPH_FACTORY_SHORT
+#define XPETRA_CRSGRAPHFACTORY_SHORT
 #endif
