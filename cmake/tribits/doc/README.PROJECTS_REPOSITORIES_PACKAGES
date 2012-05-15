@@ -151,6 +151,13 @@ These are the variables that are available once each Repository is defined:
     CMake code, for example in packages, refer to this by the raw name like
     RepoX_SOURCE_DIR.  This makes such CMake code independent of where the
     Repository is in relation to the Project.
+  ${REPOSITORY_NAME}_NO_IMPLICIT_PACKAGE_ENABLE:
+    If set to true, then the packages in Repository ${REPOSITORY_NAME} will
+    not be implicitly enabled in any of the package adjustment logic.
+  ${REPOSITORY_NAME}_NO_IMPLICIT_PACKAGE_ENABLE_EXCEPT:
+    List of packages in the Repository ${REPOSITORY_NAME} that will be allowed
+    to be implicitly enabled.  Only checked if
+    ${REPOSITORY_NAME}_NO_IMPLICIT_PACKAGE_ENABLE is true.
 
 There are also lists of repositories:
 
