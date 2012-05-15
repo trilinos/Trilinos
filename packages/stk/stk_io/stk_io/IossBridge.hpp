@@ -29,12 +29,12 @@
 #include <Ioss_ElementTopology.h>
 
 namespace Ioss {
-  class Region;
-  class GroupingEntity;
-  class EntityBlock;
-  class SideSet;
-  class Field;
-  class ElementTopology;
+class Region;
+class GroupingEntity;
+class EntityBlock;
+class SideSet;
+class Field;
+class ElementTopology;
 }
 
 class CellTopologyData;
@@ -91,7 +91,7 @@ void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &me
  */
 template <typename T>
 void default_part_processing(const std::vector<T*> &entities,
-			     stk::mesh::fem::FEMMetaData &fem_meta)
+                             stk::mesh::fem::FEMMetaData &fem_meta)
 {
   for(size_t i=0; i < entities.size(); i++) {
     T* entity = entities[i];
@@ -144,7 +144,7 @@ void define_output_db( Ioss::Region & io_region,
  */
 void write_output_db( Ioss::Region & io_region ,
                       const mesh::BulkData& bulk,
-		      const stk::mesh::Selector *anded_selector = NULL);
+                      const stk::mesh::Selector *anded_selector = NULL);
 
 
 //----------------------------------------------------------------------
@@ -255,7 +255,7 @@ void field_data_to_ioss(const stk::mesh::FieldBase *field,
                         std::vector<stk::mesh::Entity*> &entities,
                         Ioss::GroupingEntity *io_entity,
                         const std::string &io_fld_name,
-			Ioss::Field::RoleType filter_role);
+                        Ioss::Field::RoleType filter_role);
 
 
 /** Returns the stk::mesh::Field which contains the distribution
@@ -324,7 +324,7 @@ void initialize_spatial_dimension(mesh::MetaData &meta, size_t spatial_dimension
 
 void get_io_field_type(const stk::mesh::FieldBase *field,
                        const stk::mesh::FieldRestriction &res,
-		       std::pair<std::string, Ioss::Field::BasicType> *result);
+                       std::pair<std::string, Ioss::Field::BasicType> *result);
 /**
  * \}
  */

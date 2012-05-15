@@ -22,14 +22,14 @@
 #include <assert.h>
 
 namespace {
-  template<typename T, typename U>
+template<typename T, typename U>
 int my_assert(T a, T b, U msg) {
-    if (a != b) {
-      std::cerr << "\tERROR: '" << msg << "' assertion failed: " << a << " is not equal to " << b << "\n";
-      return 1;
-    }
-    return 0;
+  if (a != b) {
+    std::cerr << "\tERROR: '" << msg << "' assertion failed: " << a << " is not equal to " << b << "\n";
+    return 1;
   }
+  return 0;
+}
 }
 
 namespace {
@@ -59,7 +59,7 @@ int testElement(const std::string &name)
   const CellTopologyData *cell_data = stk::io::map_topology_ioss_to_cell(element);
   if (cell_data == NULL) {
     std::cerr << "\tERROR: Could not find a shards CellTopology corresponding to the Ioss::ElementTopology element '"
-	      << name << "'.";
+              << name << "'.";
     // Must return since we have a NULL pointer and can't do further tests...
     return 1;
   }
@@ -70,8 +70,8 @@ int testElement(const std::string &name)
   Ioss::ElementTopology *new_element = Ioss::ElementTopology::factory(new_name);
   if (element->name() != new_element->name()) {
     std::cerr << "\tERROR: New name = '" << new_element->name()
-	      << "' doesn't match old name '" << element->name()
-	      << "'\n";
+              << "' doesn't match old name '" << element->name()
+              << "'\n";
     errors++;
   }
 
@@ -84,29 +84,29 @@ int testElement(const std::string &name)
   // 1. An Ioss Node has 1 node per element; a shards Node has 0 nodes per element...
 
   errors += my_assert(cell.getNodeCount(),
-		      static_cast<unsigned>(element->number_nodes()),
-		      "node count");
+                      static_cast<unsigned>(element->number_nodes()),
+                      "node count");
   errors += my_assert(cell.getVertexCount(),
-		      static_cast<unsigned>(element->number_corner_nodes()),
-		      "vertex count");
+                      static_cast<unsigned>(element->number_corner_nodes()),
+                      "vertex count");
 
   // NOTE: CellTopology and Ioss disagree on parametric dimension.
   int add_to = element->spatial_dimension() != element->parametric_dimension() && element->is_element() ? 1 : 0;
   errors += my_assert(cell.getDimension(),
-		      static_cast<unsigned>(element->parametric_dimension()+add_to),
-		      "parametric dimension");
+                      static_cast<unsigned>(element->parametric_dimension()+add_to),
+                      "parametric dimension");
   errors += my_assert(cell.getEdgeCount(),
-		      static_cast<unsigned>(element->number_edges()),
-		      "edge count");
-  
+                      static_cast<unsigned>(element->number_edges()),
+                      "edge count");
+
   // NOTE: Ioss counts edges and faces as boundaries for shell elements
   int add_boundary = 0;
   if (add_to == 1 && element->spatial_dimension() == 3 && element->parametric_dimension() == 2)
     add_boundary = cell.getEdgeCount();
 
   errors += my_assert(cell.getSideCount() + add_boundary,
-		      static_cast<unsigned>(element->number_boundaries()),
-		      "boundary count");
+                      static_cast<unsigned>(element->number_boundaries()),
+                      "boundary count");
 
 
   // Check face topologies for all elements...
@@ -114,55 +114,55 @@ int testElement(const std::string &name)
     if (cell.getDimension() == 3) {
       int face_count = element->number_faces();
       for (int i=0; i < face_count; i++) {
-	Ioss::ElementTopology *face = element->face_type(i+1);
-	const CellTopologyData *cell_face = cell.getCellTopologyData(cell.getDimension()-1,i);
-	errors += my_assert(face->name(),
-			    stk::io::map_topology_cell_to_ioss(cell_face,face->spatial_dimension()),
-			    "face type");
+        Ioss::ElementTopology *face = element->face_type(i+1);
+        const CellTopologyData *cell_face = cell.getCellTopologyData(cell.getDimension()-1,i);
+        errors += my_assert(face->name(),
+                            stk::io::map_topology_cell_to_ioss(cell_face,face->spatial_dimension()),
+                            "face type");
 
-	Ioss::IntVector fcon = element->face_connectivity(i+1);
-	size_t node_count = fcon.size();
-	for (size_t j=0; j < node_count; j++) {
-	  std::ostringstream msg;
-	  msg << "face node connectivity for node " << j << " on face " << i;
-	  errors += my_assert(fcon[j],
-			      static_cast<int>(cell.getNodeMap(cell.getDimension()-1, i, j)),
-			      msg.str());
-	}
+        Ioss::IntVector fcon = element->face_connectivity(i+1);
+        size_t node_count = fcon.size();
+        for (size_t j=0; j < node_count; j++) {
+          std::ostringstream msg;
+          msg << "face node connectivity for node " << j << " on face " << i;
+          errors += my_assert(fcon[j],
+                              static_cast<int>(cell.getNodeMap(cell.getDimension()-1, i, j)),
+                              msg.str());
+        }
       }
 
       int edge_count = element->number_edges();
       for (int i=0; i < edge_count; i++) {
 
-	Ioss::IntVector fcon = element->edge_connectivity(i+1);
-	size_t node_count = fcon.size();
-	for (size_t j=0; j < node_count; j++) {
-	  std::ostringstream msg;
-	  msg << "edge node connectivity for node " << j << " on edge " << i;
-	  errors += my_assert(fcon[j],
-			      static_cast<int>(cell.getNodeMap(cell.getDimension()-2, i, j)),
-			      msg.str());
-	}
+        Ioss::IntVector fcon = element->edge_connectivity(i+1);
+        size_t node_count = fcon.size();
+        for (size_t j=0; j < node_count; j++) {
+          std::ostringstream msg;
+          msg << "edge node connectivity for node " << j << " on edge " << i;
+          errors += my_assert(fcon[j],
+                              static_cast<int>(cell.getNodeMap(cell.getDimension()-2, i, j)),
+                              msg.str());
+        }
       }
     }
     else if (cell.getDimension() == 2) {
       int edge_count = element->number_edges();
       for (int i=0; i < edge_count; i++) {
-	Ioss::ElementTopology *edge = element->edge_type(i+1);
-	const CellTopologyData *cell_edge = cell.getCellTopologyData(cell.getDimension()-1,i);
-	errors += my_assert(edge->name(),
-			    stk::io::map_topology_cell_to_ioss(cell_edge, edge->spatial_dimension()),
-			    "edge type");
+        Ioss::ElementTopology *edge = element->edge_type(i+1);
+        const CellTopologyData *cell_edge = cell.getCellTopologyData(cell.getDimension()-1,i);
+        errors += my_assert(edge->name(),
+                            stk::io::map_topology_cell_to_ioss(cell_edge, edge->spatial_dimension()),
+                            "edge type");
 
-	Ioss::IntVector econ = element->edge_connectivity(i+1);
-	size_t node_count = econ.size();
-	for (size_t j=0; j < node_count; j++) {
-	  std::ostringstream msg;
-	  msg << "edge node connectivity for node " << j << " on edge " << i;
-	  errors += my_assert(econ[j],
-			      static_cast<int>(cell.getNodeMap(cell.getDimension()-1, i, j)),
-			      msg.str());
-	}
+        Ioss::IntVector econ = element->edge_connectivity(i+1);
+        size_t node_count = econ.size();
+        for (size_t j=0; j < node_count; j++) {
+          std::ostringstream msg;
+          msg << "edge node connectivity for node " << j << " on edge " << i;
+          errors += my_assert(econ[j],
+                              static_cast<int>(cell.getNodeMap(cell.getDimension()-1, i, j)),
+                              msg.str());
+        }
       }
 
     }
@@ -195,7 +195,7 @@ STKUNIT_UNIT_TEST(UnitTestTopology, testUnit)
     }
     else {
       if (current_error > 0)
-	std::cerr << "\t\tIGNORING " << elements[i] << " ERRORS...\n";
+        std::cerr << "\t\tIGNORING " << elements[i] << " ERRORS...\n";
     }
   }
   STKUNIT_ASSERT(errors == 0);
