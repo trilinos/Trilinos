@@ -23,12 +23,13 @@ using Teuchos::Comm;
 // A few of the RCB tests done by Zoltan in nightly testing.
 //
 
-#define NUMTESTS 19
+#define NUMTESTS 20
 
 static int testNumProcs[NUMTESTS] = {
 2,2,
 3,3,3,3,
 4,4,4,4,4,4,4,
+5,
 6,6,6,6,
 8
 };
@@ -49,6 +50,8 @@ static string testArgs[NUMTESTS*3] = {
 "nograph", "no", "no", 
 "simple", "no", "no", 
 "simple", "yes", "no",
+
+"brack2_3", "no", "no",
 
 "degenerateAA", "no", "no",
 "degenerate", "no", "no",
@@ -249,15 +252,20 @@ int main(int argc, char *argv[])
     fail = runRCB(comm, inputFile, ac, rb, nprocs);
   }
   else{         // do all the Zoltan tests
+    int numRan = 0;
     for (int i=0,ii=0; i < NUMTESTS; i++, ii+=3){
       int numProcs = testNumProcs[i];
       if ((nprocs == 1) || (nprocs == numProcs)){
+        numRan++;
         ac = (testArgs[ii+1] == string("yes"));
         rb = (testArgs[ii+2] == string("yes"));
         fail = runRCB(comm, testArgs[ii], ac, rb, numProcs);
         // For now do only one problem.  MPI bug on s861036.
         break;
       }
+    }
+    if (numRan == 0){
+      fail = runRCB(comm, "grid20x19", "yes", "yes", nprocs);
     }
   }
   
