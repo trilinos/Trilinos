@@ -776,6 +776,7 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 	indices[numIndices++] = colID;
     }
 			
+// Won't compile until Epetra_VbrMatrix is modified.
 //TODO    A->BeginInsertGlobalValues(rowID, numIndices, indices);
 		
     for (j=0; j < numIndices; j++) {
