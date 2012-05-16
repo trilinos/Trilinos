@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -50,8 +50,8 @@
 #include <stdexcept>
 
 #include "Kokkos_ConfigDefs.hpp"
-#include "Kokkos_CrsMatrix.hpp" 
-#include "Kokkos_CrsGraph.hpp" 
+#include "Kokkos_CrsMatrix.hpp"
+#include "Kokkos_CrsGraph.hpp"
 #include "Kokkos_MultiVector.hpp"
 #include "Kokkos_NodeHelpers.hpp"
 #include "Kokkos_DefaultArithmetic.hpp"
@@ -61,13 +61,18 @@
 
 namespace Kokkos {
 
-  /** \brief Default implementation of sparse matrix-vector multiplication and solve routines, for host-based nodes.
-      \ingroup kokkos_crs_ops
-    */
+  /// \class DefaultHostSparseOps
+  /// \brief Default implementation of sparse matrix-vector multiply
+  ///   and solve routines, for host-based Kokkos Node types.
+  /// \ingroup kokkos_crs_ops
+  ///
+  /// \tparam Scalar The type of entries of the sparse matrix.
+  /// \tparam Ordinal The type of (local) indices of the sparse matrix.
+  /// \tparam Node The Kokkos Node type.
   template <class Scalar, class Ordinal, class Node>
   class DefaultHostSparseOps {
   public:
-    //@{ 
+    //@{
     //! @name Typedefs and structs
 
     //! The type of the individual entries of the sparse matrix.
@@ -104,8 +109,8 @@ namespace Kokkos {
 
     //@}
     //! @name Accessor routines.
-    //@{ 
-    
+    //@{
+
     //! The Kokkos Node with which this object was instantiated.
     RCP<Node> getNode() const;
 
@@ -127,7 +132,7 @@ namespace Kokkos {
     //@{
 
     /// \brief Y := alpha * Op(A) * X.
-    /// 
+    ///
     /// Apply the local sparse matrix A (or its transpose or conjugate
     /// transpose) to a multivector X, overwriting Y with the result.
     /// Op(A) means A, the transpose of A, or the conjugate transpose
@@ -140,8 +145,22 @@ namespace Kokkos {
     /// \tparam RangeScalar The type of entries in the output
     ///   multivector Y.  This may differ from the type of entries in
     ///   A or in X.
+    ///
+    /// \param trans [in] Whether to apply the matrix, its transpose,
+    ///   or its conjugate transpose (if applicable).
+    ///
+    /// \param alpha [in] Scalar constant \f$\alpha\f$ by which to
+    ///   multiply the result: \f$Y := \alpha A X\f$.
+    ///
+    /// \param X [in] Input multivector.
+    ///
+    /// \param Y [out] Result multivector.
     template <class DomainScalar, class RangeScalar>
-    void multiply(Teuchos::ETransp trans, RangeScalar alpha, const MultiVector<DomainScalar,Node> &X, MultiVector<RangeScalar,Node> &Y) const;
+    void
+    multiply (Teuchos::ETransp trans,
+              RangeScalar alpha,
+              const MultiVector<DomainScalar,Node> &X,
+              MultiVector<RangeScalar,Node> &Y) const;
 
     /// \brief Y := Y + alpha * Op(A) * X.
     ///
@@ -157,9 +176,23 @@ namespace Kokkos {
     /// \tparam RangeScalar The type of entries in the output
     ///   multivector Y.  This may differ from the type of entries in
     ///   A or in X.
+    ///
+    /// \param trans [in] Whether to apply the matrix, its transpose,
+    ///   or its conjugate transpose (if applicable).
+    ///
+    /// \param alpha [in] Scalar constant \f$\alpha\f$ by which to
+    ///   multiply the result: \f$Y := Y + \alpha A X\f$.
+    ///
+    /// \param X [in] Input multivector.
+    ///
+    /// \param Y [in/out] Result multivector.
     template <class DomainScalar, class RangeScalar>
-    void multiply(Teuchos::ETransp trans, 
-                  RangeScalar alpha, const MultiVector<DomainScalar,Node> &X, RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const;
+    void
+    multiply (Teuchos::ETransp trans,
+              RangeScalar alpha,
+              const MultiVector<DomainScalar,Node> &X,
+              RangeScalar beta,
+              MultiVector<RangeScalar,Node> &Y) const;
 
     /// \brief Solve Y = Op(A) X for X, where we assume A is triangular.
     ///
@@ -174,11 +207,28 @@ namespace Kokkos {
     /// \tparam RangeScalar The type of entries in the output
     ///   multivector Y.  This may differ from the type of entries in
     ///   A or in X.
+    ///
+    /// \param trans [in] Whether to solve with the matrix, its
+    ///   transpose, or its conjugate transpose (if applicable).
+    ///
+    /// \param uplo [in] UPPER_TRI if the matrix is upper triangular,
+    ///   else LOWER_TRI if the matrix is lower triangular.
+    ///
+    /// \param diag [in] UNIT_DIAG if the matrix has unit diagonal,
+    ///   else NON_UNIT_DIAG.
+    ///
+    /// \param Y [in] Input multivector.
+    ///
+    /// \param X [out] Result multivector.
     template <class DomainScalar, class RangeScalar>
-    void solve(Teuchos::ETransp trans, Teuchos::EUplo uplo, Teuchos::EDiag diag, 
-               const MultiVector<DomainScalar,Node> &Y, MultiVector<RangeScalar,Node> &X) const;
+    void
+    solve (Teuchos::ETransp trans,
+           Teuchos::EUplo uplo,
+           Teuchos::EDiag diag,
+           const MultiVector<DomainScalar,Node> &Y,
+           MultiVector<RangeScalar,Node> &X) const;
 
-    //! Left-scales a matrix by a vector
+    //! Left-scale the matrix by the given vector.
     template <class VectorScalar>
     void leftScale(const MultiVector<VectorScalar,Node> &X);
 
@@ -188,10 +238,10 @@ namespace Kokkos {
     //! Copy constructor (protected and unimplemented)
     DefaultHostSparseOps(const DefaultHostSparseOps& source);
 
-    //! The Kokkos Node with which this object was instantiated.
+    //! The Kokkos Node instance given to this object's constructor.
     RCP<Node> node_;
 
-    // we do this one of two ways: 
+    // we do this one of two ways:
     // 1D/packed: arrays of offsets, array of ordinals, array of values.
     ArrayRCP<const Ordinal> inds1D_;
     ArrayRCP<const size_t>  begs1D_, ends1D_;
@@ -209,7 +259,7 @@ namespace Kokkos {
 
   template<class Scalar, class Ordinal, class Node>
   DefaultHostSparseOps<Scalar,Ordinal,Node>::DefaultHostSparseOps(const RCP<Node> &node)
-  : node_(node) 
+  : node_(node)
   {
     // Make sure that users only specialize DefaultHostSparseOps for
     // Kokkos Node types that are host Nodes (vs. device Nodes, such
@@ -224,7 +274,7 @@ namespace Kokkos {
 
   template <class Scalar, class Ordinal, class Node>
   RCP<Node> DefaultHostSparseOps<Scalar,Ordinal,Node>::getNode() const {
-    return node_; 
+    return node_;
   }
 
   template <class Scalar, class Ordinal, class Node>
@@ -247,7 +297,7 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   void DefaultHostSparseOps<Scalar,Ordinal,Node>::initializeStructure(const CrsGraphHostCompute<Ordinal,Node,DefaultHostSparseOps<void,Ordinal,Node> > &graph) {
     using Teuchos::arcp;
-    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == true || valsInit_ == true, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == true || valsInit_ == true, std::runtime_error,
         Teuchos::typeName(*this) << "::initializeStructure(): structure already initialized.");
     numRows_ = graph.getNumRows();
     if (graph.isEmpty() || numRows_ == 0) {
@@ -283,9 +333,9 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   void DefaultHostSparseOps<Scalar,Ordinal,Node>::initializeValues(const CrsMatrixHostCompute<Scalar,Ordinal,Node,DefaultHostSparseOps<void,Ordinal,Node> > &matrix) {
     using Teuchos::arcp;
-    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::initializeValues(): must initialize values after graph.");
-    TEUCHOS_TEST_FOR_EXCEPTION(numRows_ != matrix.getNumRows() || isEmpty_ != matrix.isEmpty() || 
+    TEUCHOS_TEST_FOR_EXCEPTION(numRows_ != matrix.getNumRows() || isEmpty_ != matrix.isEmpty() ||
                        (inds2D_ != null && matrix.is1DStructure()) || (inds1D_ != null && matrix.is2DStructure()),
                        std::runtime_error, Teuchos::typeName(*this) << "::initializeValues(): matrix not compatible with previously supplied graph.");
     if (!isEmpty_) {
@@ -313,9 +363,9 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   template <class DomainScalar, class RangeScalar>
   void DefaultHostSparseOps<Scalar,Ordinal,Node>::solve(
-                      Teuchos::ETransp trans, Teuchos::EUplo uplo, Teuchos::EDiag diag, 
+                      Teuchos::ETransp trans, Teuchos::EUplo uplo, Teuchos::EDiag diag,
                       const MultiVector<DomainScalar,Node> &Y,
-                            MultiVector<RangeScalar,Node> &X) const 
+                            MultiVector<RangeScalar,Node> &X) const
   {
     typedef DefaultSparseSolveOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1D;
     typedef DefaultSparseSolveOp2<Scalar,Ordinal,DomainScalar,RangeScalar>  Op2D;
@@ -419,10 +469,10 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   template <class DomainScalar, class RangeScalar>
   void DefaultHostSparseOps<Scalar,Ordinal,Node>::multiply(
-                                Teuchos::ETransp trans, 
+                                Teuchos::ETransp trans,
                                 RangeScalar alpha,
-                                const MultiVector<DomainScalar,Node> &X, 
-                                MultiVector<RangeScalar,Node> &Y) const 
+                                const MultiVector<DomainScalar,Node> &X,
+                                MultiVector<RangeScalar,Node> &Y) const
   {
     // the 1 parameter to the template means that beta is ignored and the output multivector enjoys overwrite semantics
     typedef DefaultSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar, 1>  Op1D;
@@ -521,9 +571,9 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   template <class DomainScalar, class RangeScalar>
   void DefaultHostSparseOps<Scalar,Ordinal,Node>::multiply(
-                                Teuchos::ETransp trans, 
-                                RangeScalar alpha, const MultiVector<DomainScalar,Node> &X, 
-                                RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const 
+                                Teuchos::ETransp trans,
+                                RangeScalar alpha, const MultiVector<DomainScalar,Node> &X,
+                                RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const
   {
     // the 0 parameter means that beta is considered, and the output multivector enjoys accumulate semantics
     typedef DefaultSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar, 0>  Op1D;
@@ -535,7 +585,7 @@ namespace Kokkos {
     TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
     ReadyBufferHelper<Node> rbh(node_);
     if (isEmpty_ == true) {
-      // Y <= alpha * 0 * X + beta * Y 
+      // Y <= alpha * 0 * X + beta * Y
       //   <= beta * Y
       // NOTE: this neglects NaNs in X, which don't satisfy 0*NaN == 0
       //       however, X and Y may be of different size, and we need entries to determine how to mix those potential NaNs in X into Y
@@ -626,7 +676,7 @@ namespace Kokkos {
 
   template <class Scalar, class Ordinal, class Node>
   template <class VectorScalar>
-  void DefaultHostSparseOps<Scalar,Ordinal,Node>::leftScale(const MultiVector<VectorScalar,Node> &X) 
+  void DefaultHostSparseOps<Scalar,Ordinal,Node>::leftScale(const MultiVector<VectorScalar,Node> &X)
   {
     typedef DefaultSparseScaleOp1<Scalar,Ordinal,VectorScalar>  Op1D;
     typedef DefaultSparseScaleOp2<Scalar,Ordinal,VectorScalar>  Op2D;
@@ -644,7 +694,7 @@ namespace Kokkos {
       wdp.vals    = rbh.template addNonConstBuffer<Scalar>(vals1D_);
       wdp.x       = rbh.template addConstBuffer<VectorScalar>(X.getValues());
       rbh.end();
-      node_->template parallel_for<Op1D>(0,numRows_,wdp);	
+      node_->template parallel_for<Op1D>(0,numRows_,wdp);
     }
     else {
       Op2D wdp;
@@ -667,7 +717,7 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   class DefaultDeviceSparseOps {
   public:
-    //@{ 
+    //@{
     //! @name Typedefs and structs
 
     //! The type of the individual entries of the sparse matrix.
@@ -701,8 +751,8 @@ namespace Kokkos {
 
     //@}
     //! @name Accessor routines.
-    //@{ 
-    
+    //@{
+
     //! The Kokkos Node with which this object was instantiated.
     RCP<Node> getNode() const;
 
@@ -724,7 +774,7 @@ namespace Kokkos {
     //@{
 
     /// \brief Y := alpha * Op(A) * X.
-    /// 
+    ///
     /// Apply the local sparse matrix A (or its transpose or conjugate
     /// transpose) to a multivector X, overwriting Y with the result.
     /// Op(A) means A, the transpose of A, or the conjugate transpose
@@ -755,7 +805,7 @@ namespace Kokkos {
     ///   multivector Y.  This may differ from the type of entries in
     ///   A or in X.
     template <class DomainScalar, class RangeScalar>
-    void multiply(Teuchos::ETransp trans, 
+    void multiply(Teuchos::ETransp trans,
                   RangeScalar alpha, const MultiVector<DomainScalar,Node> &X, RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const;
 
     /// \brief Solve Y = Op(A) X for X, where we assume A is triangular.
@@ -772,7 +822,7 @@ namespace Kokkos {
     ///   multivector Y.  This may differ from the type of entries in
     ///   A or in X.
     template <class DomainScalar, class RangeScalar>
-    void solve(Teuchos::ETransp trans, Teuchos::EUplo uplo, Teuchos::EDiag diag, 
+    void solve(Teuchos::ETransp trans, Teuchos::EUplo uplo, Teuchos::EDiag diag,
                const MultiVector<DomainScalar,Node> &Y, MultiVector<RangeScalar,Node> &X) const;
 
 
@@ -789,7 +839,7 @@ namespace Kokkos {
     //! The Kokkos Node with which this object was instantiated.
     RCP<Node> node_;
 
-    // we do this one of two ways: 
+    // we do this one of two ways:
     // 1D: array of offsets, pointer for ordinals, pointer for values.
     ArrayRCP<const size_t>  pbuf_offsets1D_;
     ArrayRCP<const Ordinal> pbuf_inds1D_;
@@ -801,7 +851,7 @@ namespace Kokkos {
 
   template<class Scalar, class Ordinal, class Node>
   DefaultDeviceSparseOps<Scalar,Ordinal,Node>::DefaultDeviceSparseOps(const RCP<Node> &node)
-  : node_(node) 
+  : node_(node)
   {
     clear();
   }
@@ -811,8 +861,8 @@ namespace Kokkos {
   }
 
   template <class Scalar, class Ordinal, class Node>
-  RCP<Node> DefaultDeviceSparseOps<Scalar,Ordinal,Node>::getNode() const { 
-    return node_; 
+  RCP<Node> DefaultDeviceSparseOps<Scalar,Ordinal,Node>::getNode() const {
+    return node_;
   }
 
   template <class Scalar, class Ordinal, class Node>
@@ -828,7 +878,7 @@ namespace Kokkos {
 
   template <class Scalar, class Ordinal, class Node>
   void DefaultDeviceSparseOps<Scalar,Ordinal,Node>::initializeStructure(const CrsGraphDeviceCompute<Ordinal,Node,DefaultDeviceSparseOps<void,Ordinal,Node> > &graph) {
-    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == true || valsInit_ == true, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == true || valsInit_ == true, std::runtime_error,
         Teuchos::typeName(*this) << "::initializeStructure(): structure already initialized.");
     numRows_ = graph.getNumRows();
     if (graph.isEmpty() || numRows_ == 0) {
@@ -846,7 +896,7 @@ namespace Kokkos {
 
   template <class Scalar, class Ordinal, class Node>
   void DefaultDeviceSparseOps<Scalar,Ordinal,Node>::initializeValues(const CrsMatrixDeviceCompute<Scalar,Ordinal,Node,DefaultDeviceSparseOps<void,Ordinal,Node> > &matrix) {
-    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false, std::runtime_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(indsInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::initializeValues(): must initialize values after graph.");
     TEUCHOS_TEST_FOR_EXCEPTION(numRows_ != matrix.getNumRows() || isEmpty_ != matrix.isEmpty(), std::runtime_error,
         Teuchos::typeName(*this) << "::initializeValues(): matrix not compatible with previously supplied graph.");
@@ -862,7 +912,7 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   template <class DomainScalar, class RangeScalar>
   void DefaultDeviceSparseOps<Scalar,Ordinal,Node>::solve(
-                      Teuchos::ETransp trans, Teuchos::EUplo uplo, Teuchos::EDiag diag, 
+                      Teuchos::ETransp trans, Teuchos::EUplo uplo, Teuchos::EDiag diag,
                       const MultiVector<DomainScalar,Node> &Y,
                             MultiVector<RangeScalar,Node> &X) const {
     typedef DefaultSparseSolveOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1D;
@@ -929,9 +979,9 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   template <class DomainScalar, class RangeScalar>
   void DefaultDeviceSparseOps<Scalar,Ordinal,Node>::multiply(
-                                Teuchos::ETransp trans, 
+                                Teuchos::ETransp trans,
                                 RangeScalar alpha,
-                                const MultiVector<DomainScalar,Node> &X, 
+                                const MultiVector<DomainScalar,Node> &X,
                                 MultiVector<RangeScalar,Node> &Y) const {
     // the 1 parameter to the template means that beta is ignored and the output multivector enjoys overwrite semantics
     typedef DefaultSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar, 1>  Op1D;
@@ -991,8 +1041,8 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   template <class DomainScalar, class RangeScalar>
   void DefaultDeviceSparseOps<Scalar,Ordinal,Node>::multiply(
-                                Teuchos::ETransp trans, 
-                                RangeScalar alpha, const MultiVector<DomainScalar,Node> &X, 
+                                Teuchos::ETransp trans,
+                                RangeScalar alpha, const MultiVector<DomainScalar,Node> &X,
                                 RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const {
     // the 0 parameter means that beta is considered, and the output multivector enjoys accumulate semantics
     typedef DefaultSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar, 0>  Op1D;
@@ -1002,7 +1052,7 @@ namespace Kokkos {
     TEUCHOS_TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
     ReadyBufferHelper<Node> rbh(node_);
     if (isEmpty_ == true) {
-      // Y <= alpha * 0 * X + beta * Y 
+      // Y <= alpha * 0 * X + beta * Y
       //   <= beta * Y
       // NOTE: this neglects NaNs in X, which don't satisfy 0*NaN == 0
       //       however, X and Y may be of different size, and we need entries to determine how to mix those potential NaNs in X into Y
@@ -1077,7 +1127,7 @@ namespace Kokkos {
     rbh.end();
     const size_t numRHS = X.getNumCols();
     node_->template parallel_for<Op1D>(0,numRows_*numRHS,wdp);
-    
+
     return;
   }
 
@@ -1085,7 +1135,7 @@ namespace Kokkos {
 
 
 
-  /** \example CrsMatrix_DefaultMultiplyTests.hpp 
+  /** \example CrsMatrix_DefaultMultiplyTests.hpp
     * This is an example that unit tests and demonstrates the implementation requirements for the DefaultSparseOps class.
     */
 
