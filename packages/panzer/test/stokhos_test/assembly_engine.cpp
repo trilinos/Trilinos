@@ -280,28 +280,28 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
   ae_tm.getAsObject<panzer::Traits::SGJacobian>()->evaluate(sg_input);
 
   out << "Determ Solution" << std::endl;
-  e_global->A->Print(out);
-  e_global->f->Print(out);
+  e_global->get_A()->Print(out);
+  e_global->get_f()->Print(out);
 
   out << "SG Solution" << std::endl;
-  (*sgeGlobal->begin())->A->Print(out);
-  (*sgeGlobal->begin())->f->Print(out);
+  (*sgeGlobal->begin())->get_A()->Print(out);
+  (*sgeGlobal->begin())->get_f()->Print(out);
 
   double diff,exact;
 
   // test residuals
   {
-     (*sgeGlobal->begin())->f->Update(-1.0,*e_global->f,1.0);
-     e_global->f->Norm2(&exact);
-     (*sgeGlobal->begin())->f->Norm2(&diff);
+     (*sgeGlobal->begin())->get_f()->Update(-1.0,*e_global->get_f(),1.0);
+     e_global->get_f()->Norm2(&exact);
+     (*sgeGlobal->begin())->get_f()->Norm2(&diff);
      TEST_ASSERT(diff/exact < 1e-15);
   }
 
   // test jacobian
   {
-     Epetra_Vector x(e_global->A->RowMap());
-     Epetra_Vector y1(e_global->A->RowMap());
-     Epetra_Vector y2(e_global->A->RowMap());
+     Epetra_Vector x(e_global->get_A()->RowMap());
+     Epetra_Vector y1(e_global->get_A()->RowMap());
+     Epetra_Vector y2(e_global->get_A()->RowMap());
 
      // test a bunch of vectors
      for(int i=0;i<10;i++) {
@@ -309,8 +309,8 @@ TEUCHOS_UNIT_TEST(field_manager_builder, basic)
         y1.PutScalar(0);
         y2.PutScalar(0);
 
-        e_global->A->Apply(x,y1);
-        (*sgeGlobal->begin())->A->Apply(x,y2);
+        e_global->get_A()->Apply(x,y1);
+        (*sgeGlobal->begin())->get_A()->Apply(x,y2);
 
         y2.Update(-1.0,y1,1.0);
         y1.Norm2(&exact);

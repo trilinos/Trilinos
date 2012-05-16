@@ -59,6 +59,26 @@
 
 #include "Epetra_Map.h"
 
+template<typename EvalT,typename Traits,typename LO,typename GO>
+panzer::GatherSolution_BlockedEpetra<EvalT, Traits,LO,GO>::
+GatherSolution_BlockedEpetra(
+  const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
+  const Teuchos::ParameterList& p)
+{ 
+  const std::vector<std::string>& names = 
+    *(p.get< Teuchos::RCP< std::vector<std::string> > >("DOF Names"));
+
+  Teuchos::RCP<panzer::PureBasis> basis = 
+    p.get< Teuchos::RCP<panzer::PureBasis> >("Basis");
+
+  for (std::size_t fd = 0; fd < names.size(); ++fd) {
+    PHX::MDField<ScalarT,Cell,NODE> field = PHX::MDField<ScalarT,Cell,NODE>(names[fd],basis->functional);
+    this->addEvaluatedField(field);
+  }
+
+  this->setName("Gather Solution");
+}
+
 // **********************************************************************
 // Specialization: Residual
 // **********************************************************************
