@@ -462,7 +462,7 @@ int main(int argc, char *argv[])
 
   try{
     euinput = 
-      rcp(new uinput_t(testDataFilePath,std::string("USAir97"), comm, true));
+      rcp(new uinput_t(testDataFilePath,std::string("simple"), comm, true));
   }
   catch(std::exception &e){
     TEST_FAIL_AND_EXIT(*comm, 0, string("epetra input ")+e.what(), 1);
