@@ -250,6 +250,11 @@ int main(int argc, char *argv[]) {
     RCP<PermutedTransferFactory> permPFactory, permRFactory;
     RCP<MultiVectorTransferFactory> mvTransFact;
     if (useExplicitR) {
+
+#if defined(HAVE_TEUCHOS_LONG_LONG_INT)
+      // for long long
+      AcfactFinal = Acfact;
+#else
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
       //Operator used to transfer coordinates to coarse grid
       RCP<RFactory> Rtentfact = rcp( new TransPFactory(PtentFact) ); //for projecting coordinates
@@ -266,6 +271,7 @@ int main(int argc, char *argv[]) {
 #else
       AcfactFinal = Acfact;
 #endif
+#endif // TEUCHOS_LONG_LONG_INT
     } else {
   
         H->SetImplicitTranspose(true);
