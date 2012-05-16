@@ -149,6 +149,7 @@ int runRCB(const RCP<const Comm<int> > &comm,
 
   Teuchos::ParameterList &parParams = params.sublist("partitioning");
   parParams.set("algorithm", "rcb");
+  parParams.set("objective", "multicriteria_balance_total_maximum");
   if (rank == 0)
     std::cout << "algorithm = rcb" << std::endl;
 
@@ -173,6 +174,14 @@ int runRCB(const RCP<const Comm<int> > &comm,
     geoParams.set("average_cuts", "yes");
     if (rank == 0)
       std::cout << "average_cuts = yes" << std::endl;
+  }
+
+  if (rank == 0){
+    std::cout << "coordinate dimension: " << coordDim << std::endl;
+    std::cout << "weight dimension: " << weightDim << std::endl;
+    if (weightDim > 1)
+      std::cout << 
+        "objective: multicriteria_balance_total_maximum (2-norm)" << std::endl;
   }
 
   // Create the problem.
@@ -222,6 +231,7 @@ int main(int argc, char *argv[])
 
   int fail=0;
 
+#ifdef HAVE_ZOLTAN2_ZOLTAN
   if (argc > 1){
    
     Teuchos::CommandLineProcessor cmdp (false, false);
@@ -271,6 +281,7 @@ int main(int argc, char *argv[])
       fail = runRCB(comm, "grid20x19", "yes", "yes", nprocs);
     }
   }
+#endif
   
   if (rank == 0 && !fail)
     std::cout << "PASS" << std::endl;
