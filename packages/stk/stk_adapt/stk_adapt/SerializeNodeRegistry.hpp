@@ -579,7 +579,7 @@ namespace stk {
         for (unsigned ipart=0; ipart < parts.size(); ipart++)
           {
             //const Part& part = *parts[ipart];
-            Part& part = *parts[ipart];
+            stk::mesh::Part& part = *parts[ipart];
             if (stk::mesh::is_auto_declared_part(part))
               {
                 continue;

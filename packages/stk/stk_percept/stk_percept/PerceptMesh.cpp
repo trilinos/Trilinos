@@ -27,6 +27,9 @@
 #include <Intrepid_HGRAD_HEX_C1_FEM.hpp>
 #include <Intrepid_CellTools.hpp>
 
+#include <stk_percept/function/internal/SimpleSearcher.hpp>
+#include <stk_percept/function/internal/STKSearcher.hpp>
+
 // FIXME
 
 #include <stk_percept/Intrepid_HGRAD_WEDGE_C2_Serendipity_FEM.hpp>
@@ -86,7 +89,8 @@ namespace stk {
       m_dontCheckState(false),
       m_filename(),
       m_comm(comm),
-      m_streaming_size(0)
+      m_streaming_size(0),
+      m_searcher(0)
     {
       init( m_comm);
     }
@@ -845,7 +849,8 @@ namespace stk {
         m_dontCheckState(false),
         m_filename(),
         m_comm(),
-        m_streaming_size(0)
+        m_streaming_size(0),
+        m_searcher(0)
     {
       if (!bulkData)
         throw std::runtime_error("PerceptMesh::PerceptMesh: must pass in non-null bulkData");
@@ -1337,12 +1342,97 @@ namespace stk {
     /// find node closest to given point
     stk::mesh::Entity *PerceptMesh::get_node(double x, double y, double z, double t) 
     {
-      return 0;
+      stk::mesh::FieldBase &coord_field = *getCoordinatesField();
+      double sum_min = std::numeric_limits<double>::max();
+      stk::mesh::Entity *node_min = 0;
+
+      const std::vector<stk::mesh::Bucket*> & buckets = getBulkData()->buckets( node_rank() );
+
+      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        {
+          //if (selector(**k))
+          {
+            stk::mesh::Bucket & bucket = **k ;
+            const unsigned num_elements_in_bucket = bucket.size();
+
+            for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+              {
+                stk::mesh::Entity& node = bucket[iElement];
+                double * node_coord_data = (double*)stk::mesh::field_data( coord_field , node);
+                //for (int ii=0; ii < getSpatialDim(); ii++)
+                double sum=0.0;
+                sum += square(node_coord_data[0] - x);
+                sum += square(node_coord_data[1] - y);
+                if(getSpatialDim() == 3)
+                  {
+                    sum += square(node_coord_data[2] - z);
+                  }
+                if (sum < sum_min) 
+                  {
+                    sum_min = sum;
+                    node_min = &node;
+                  }
+              }
+          }
+        }
+      return node_min;
     }
 
     /// find element that contains or is closest to given point
     stk::mesh::Entity *PerceptMesh::get_element(double x, double y, double z, double t) 
     {
+      if (!m_searcher)
+        {
+          FieldFunction::SearchType m_searchType = FieldFunction::SIMPLE_SEARCH;
+          switch (m_searchType)
+            {
+            case FieldFunction::SIMPLE_SEARCH:
+              m_searcher = new SimpleSearcher(m_bulkData);
+              break;
+            case FieldFunction::STK_SEARCH:
+              {
+                //int spDim = last_dimension(input_phy_points);
+                if (getSpatialDim() == 3)
+                  m_searcher = new STKSearcher<3>(m_bulkData);
+                else
+                  {
+                    //m_searcher = new STKSearcher<2>(this);
+                    throw std::runtime_error("STK_SEARCH not ready for 2D, use SIMPLE_SEARCH");
+                  }
+              }
+              break;
+            default:
+              throw std::runtime_error("FieldFunction::operator() unknown search type");
+              break;
+            }
+          //std::cout << "setupSearch..." << std::endl;
+          m_searcher->setupSearch();
+          //std::cout << "setupSearch...done" << std::endl;
+        }
+
+      static MDArray input_phy_points_one(1,getSpatialDim());
+      static MDArray output_field_values_one(1,getSpatialDim());
+      static MDArray found_parametric_coordinates_one(1, getSpatialDim());
+      input_phy_points_one(0,0) = x;
+      input_phy_points_one(0,1) = y;
+      if (getSpatialDim()==3) input_phy_points_one(0,2) = z;
+
+      unsigned found_it = 0;
+      const stk::mesh::Entity *found_element = 0;
+      stk::mesh::Entity *m_cachedElement = 0;
+      {
+        EXCEPTWATCH;
+        //if (m_searchType==STK_SEARCH) std::cout << "find" << std::endl;
+        found_element = m_searcher->findElement(input_phy_points_one, found_parametric_coordinates_one, found_it, m_cachedElement);
+        //if (m_searchType==STK_SEARCH)                std::cout << "find..done found_it=" << found_it << std::endl;
+      }
+
+      // if found element on the local owned part, evaluate
+      if (found_it)
+        {
+          return const_cast<stk::mesh::Entity*>(found_element);
+        }
+
       return 0;
     }
 

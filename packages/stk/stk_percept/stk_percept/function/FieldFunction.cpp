@@ -3,6 +3,8 @@
 
 #include <stk_percept/function/internal/SimpleSearcher.hpp>
 #include <stk_percept/function/internal/STKSearcher.hpp>
+#include <stk_percept/function/internal/STKSearcherDef.hpp>
+#include <stk_percept/function/internal/BuildBoundingBoxesDef.hpp>
 #include <stk_percept/ParallelUtil.hpp>
 
 namespace stk
@@ -141,6 +143,7 @@ namespace stk
                 else
                   {
                     //m_searcher = new STKSearcher<2>(this);
+                    throw std::runtime_error("STK_SEARCH not ready for 2D, use SIMPLE_SEARCH");
                   }
               }
               break;

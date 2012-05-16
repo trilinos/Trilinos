@@ -650,6 +650,7 @@ namespace stk {
       int m_iW = 0;
       int m_M_0 = 0;
       int m_M_1 = 0;
+#if STK_ADAPT_HAVE_YAML_CPP
       if (streaming_size)
         {
           m_M = streaming_size;
@@ -658,12 +659,13 @@ namespace stk {
           SerializeNodeRegistry::getStreamingPiece(m_M, m_W, m_iW, m_M_0, m_M_1);
         }
       std::cout << "tmp srk AdaptMain: " << PERCEPT_OUT(streaming_size) << PERCEPT_OUT(streaming_W) << PERCEPT_OUT(streaming_iW) << PERCEPT_OUT(m_M) << PERCEPT_OUT(m_W) << PERCEPT_OUT(m_iW) << PERCEPT_OUT(m_M_0) << PERCEPT_OUT(m_M_1) << std::endl;
-
-      int remove_original_elements_save = remove_original_elements;
-      int delete_parents_save = delete_parents;
+#endif
 
       // FIXME - starting from -1 pass is bogus
 #if STK_ADAPT_HAVE_YAML_CPP
+      int remove_original_elements_save = remove_original_elements;
+      int delete_parents_save = delete_parents;
+
       if ((streaming_pass_start == -2 && streaming_pass_end != -2) ||
           (streaming_pass_start != -2 && streaming_pass_end == -2))
         {
@@ -717,6 +719,7 @@ namespace stk {
       for (int i_pass=streaming_pass_start; i_pass <= streaming_pass_end; i_pass++)
         {
 
+#if STK_ADAPT_HAVE_YAML_CPP
           if (streaming_size) 
             {
 
@@ -740,6 +743,7 @@ namespace stk {
                 }
             }
           std::cout << "tmp srk i_pass= " << i_pass << " delete_parents= " << delete_parents << " remove_original_elements= " << remove_original_elements << std::endl;
+#endif
 
           if (do_normal_pass)
             {
@@ -1105,6 +1109,7 @@ namespace stk {
 
             } // do_normal_pass
 
+#if STK_ADAPT_HAVE_YAML_CPP
           // fini pass
           if (m_W > 1 && m_iW == m_W)
             {
@@ -1114,6 +1119,7 @@ namespace stk {
               SerializeNodeRegistry snr(eMesh, 0, input_mesh, output_mesh, m_M, 0,  m_W, m_iW, m_M_0, m_M_1);
               snr.pass_final(i_pass);
             }
+#endif
 
         } // i_pass
 

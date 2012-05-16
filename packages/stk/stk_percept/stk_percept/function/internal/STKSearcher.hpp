@@ -47,7 +47,7 @@ namespace stk
 
       STKSearcher(stk::mesh::BulkData *bulk);
 
-      virtual ~STKSearcher() {}
+      virtual ~STKSearcher();
 
       void setupSearch();
 
@@ -69,6 +69,6 @@ namespace stk
   }
 }
 
-#include "STKSearcherDef.hpp"
+//#include "STKSearcherDef.hpp"
 
 #endif

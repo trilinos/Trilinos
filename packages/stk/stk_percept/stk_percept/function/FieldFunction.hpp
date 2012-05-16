@@ -67,7 +67,7 @@ namespace stk
       static bool m_parallelEval;
 
       enum SearchType { SIMPLE_SEARCH, STK_SEARCH };
-      
+    
       //========================================================================================================================
       // high-level interface
       FieldFunction(const char *name, mesh::FieldBase *field, PerceptMesh& mesh, 

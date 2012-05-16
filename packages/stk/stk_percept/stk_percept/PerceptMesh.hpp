@@ -43,6 +43,7 @@
 
 #include <stk_percept/SameRankRelation.hpp>
 
+#include <stk_percept/function/internal/SimpleSearcher.hpp>
 
 // if this is set, use stk_mesh relations to hold parent/child information, else use special data structures for this
 #define PERCEPT_USE_FAMILY_TREE 1
@@ -242,9 +243,8 @@ namespace stk {
       /// find node closest to given point
       stk::mesh::Entity *get_node(double x, double y, double z=0, double t=0) ;
 
-      /// find element that contains or is closest to given point
+      /// find element that contains given point
       stk::mesh::Entity *get_element(double x, double y, double z=0, double t=0) ;
-
 
       //========================================================================================================================
       /// low-level interfaces
@@ -571,6 +571,8 @@ namespace stk {
 
       // normally 0, unless using streaming refine
       int                                   m_streaming_size;
+
+      Searcher *                            m_searcher;
 
       void checkStateSpec(const std::string& function, bool cond1=true, bool cond2=true, bool cond3=true);
 

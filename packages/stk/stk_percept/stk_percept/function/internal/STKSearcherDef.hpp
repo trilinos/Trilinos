@@ -17,6 +17,9 @@ namespace stk
     }
 
     template<int SpatialDim>
+    STKSearcher<SpatialDim>::~STKSearcher() {}
+
+    template<int SpatialDim>
     void
     STKSearcher<SpatialDim>::setupSearch()
     {
