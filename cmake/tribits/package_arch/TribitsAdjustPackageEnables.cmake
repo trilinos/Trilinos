@@ -579,7 +579,7 @@ ENDFUNCTION()
 MACRO(TRIBITS_READ_ALL_PACKAGE_DEPENDENCIES)
 
   MESSAGE("")
-  MESSAGE("Processing Project, Repository, and Package dependency files and building internal dependencies graph")
+  MESSAGE("Processing Project, Repository, and Package dependency files and building internal dependencies graph ...")
   MESSAGE("")
 
   #
@@ -1820,4 +1820,28 @@ MACRO(TRIBITS_ADJUST_PACKAGE_ENABLES)
     TRIBITS_POSTPROCESS_PACKAGE_WITH_SUBPACKAGES_ENABLES(${TRIBITS_PACKAGE})
   ENDFOREACH()
 
+ENDMACRO()
+
+
+#
+# Macro that post-modifies the list of enabled packages to disable packages
+# that are to be excluded based on the Repository explicit include list.
+#
+# This function is used in TribitsCTestDriverCore.cmake to exclude packages
+# implicitly disabled a repository given by certain logic.  Based on this
+# logic, we don't want to disable packages that were explicitly turned on an
+# have tests enabled.
+#
+
+MACRO(TRIBITS_APPLY_REPOSITORY_NO_IMPLICIT_PACKAGE_ENABLE_DISABLE)
+  FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES})
+    IF (${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} AND NOT ${TRIBITS_PACKAGE}_ENABLE_TESTS)
+      TRIBITS_REPOSITORY_IMLICIT_PACKAGE_ENABLE_IS_ALLOWED("" ${TRIBITS_PACKAGE}
+        ALLOW_IMPLICIT_ENABLE
+        )
+      IF (NOT ALLOW_IMPLICIT_ENABLE)
+        SET(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} OFF)
+      ENDIF()
+    ENDIF()
+  ENDFOREACH()
 ENDMACRO()

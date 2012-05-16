@@ -1199,6 +1199,16 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   SET(DO_PROCESS_MPI_ENABLES FALSE) # Should not be needed but CMake is messing up
   TRIBITS_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES() # Sets ${PROJECT_NAME}_NUM_ENABLED_PACKAGES
 
+  MESSAGE(
+    "\n***"
+    "\n*** Disabling packages to be excluded from being implicitly enabled on a repository basis ..."
+    "\n***"
+    )
+
+  TRIBITS_APPLY_REPOSITORY_NO_IMPLICIT_PACKAGE_ENABLE_DISABLE()  
+
+  TRIBITS_PRINT_ENABLED_PACKAGE_LIST(
+    "\nFinal set of packages to be explicitly processed by CTest/CDash" ON FALSE)
   
   MESSAGE(
     "\n***"
