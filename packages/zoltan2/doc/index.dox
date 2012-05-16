@@ -31,8 +31,8 @@ Partitioning functionality that is available now is:
 Serial ordering available now is:
 
 <ul>
-<li> RCM
-<li> AMD
+<li> \ref rcmPage for RCM ordering.
+<li> \ref amdPage for AMD ordering.
 <li> Increasing degree
 <li> Natural (identity permutation)
 <li> Random
