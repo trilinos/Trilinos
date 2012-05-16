@@ -18,6 +18,8 @@
 #include <MueLu_MatrixFactory.hpp>
 #include <MueLu_GalleryParameters.hpp>
 
+#include <Kokkos_DefaultNode.hpp>
+
 //#include <Xpetra_EpetraUtils.hpp>
 #ifdef HAVE_ZOLTAN2_MPI
 #include <Epetra_MpiComm.h>
@@ -465,7 +467,8 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
   std::ostringstream fname;
   fname << path << "/" << testData << ".mtx";
 
-  RCP<default_node_t> dnode;
+  RCP<Kokkos::DefaultNode::DefaultNodeType> dnode 
+    = Kokkos::DefaultNode::getDefaultNode();
 
   if (verbose_ && tcomm_->getRank() == 0)
     std::cout << "UserInputForTests, Read: " << 
