@@ -417,8 +417,6 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
   // Call the algorithm
 
-  this->env_->timerStart("solve problem");
-
   try {
     if (algorithm_ == string("scotch")){
       AlgPTScotch<Adapter>(this->envConst_, problemComm_,
@@ -450,8 +448,6 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
 
 #endif
-  this->env_->timerStop("solve problem");
-
 }
 
 template <typename Adapter>

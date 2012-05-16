@@ -72,8 +72,6 @@ void AlgRCB(
 
   const Teuchos::ParameterList &pl = env->getParameters();
 
-  env->timerStart("RCB setup");
-
   ////////////////////////////////////////////////////////
   // Partitioning problem parameters of interest:
   //    objective
@@ -200,7 +198,7 @@ void AlgRCB(
     for (size_t i=0; i < numLocalCoords; i++){
       oss << gnos[i] << " (";
       for (int dim=0; dim < coordDim; dim++)
-        oss << xyz[dim][i] << " ";
+        oss << (xyz[dim])[i] << " ";
       oss << ") ";
     }
 
@@ -296,8 +294,6 @@ void AlgRCB(
   }
   Z2_THROW_OUTSIDE_ERROR(*env)
 
-  env->timerStop("RCB setup");
-
   ////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////
   // The algorithm
@@ -318,7 +314,7 @@ void AlgRCB(
 
   env->timerStart("Parallel RCB");
 
-  while (part1>part0 && groupSize>1 && sanityCheck--){
+  while (part1>part0 && groupSize>1 && numGlobalCoords>0 && sanityCheck--){
 
     ////////////////////////////////////////////////////////
     // Which coordinates are left and which are right?
@@ -375,7 +371,6 @@ void AlgRCB(
 
     int *ids = NULL;
 
-    env->timerStart("Subdivide");
     if (rank < leftHalfNumProcs){
       groupSize = leftHalfNumProcs;
       ids = new int [groupSize];
@@ -434,9 +429,8 @@ void AlgRCB(
   
     mvector = subMvector;
 
-    env->timerStop("Subdivide");
-
     numLocalCoords = mvector->getLocalLength();
+    numGlobalCoords = mvector->getGlobalLength();
   } 
 
   env->timerStop("Parallel RCB");
@@ -522,9 +516,7 @@ void AlgRCB(
     env->debug(VERBOSE_DETAILED_STATUS, oss.str());
   }
 
-  env->timerStart("update solution");
   solution->setParts(gnoList, partId, metrics);
-  env->timerStop("update solution");
 }
 
 } // namespace Zoltan2

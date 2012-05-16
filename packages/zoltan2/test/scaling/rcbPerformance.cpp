@@ -29,8 +29,6 @@ const RCP<const tMap_t> & getMeshCoordinates(
     int xdim, int ydim, int zdim,
     ArrayView<ArrayRCP<const scalar_t> > coords)
 {
-  outputFlag_t flags;
-  flags.set(OBJECT_COORDINATES);
   int dim = 3;
   if (zdim == 0){
     dim--;
@@ -40,13 +38,13 @@ const RCP<const tMap_t> & getMeshCoordinates(
 
   if (dim == 3)
     uinput = new UserInputForTests(xdim, ydim, zdim, 
-    comm, string("Laplace3D"), flags);
+    string("Laplace3D"), comm, true);
   else if (dim == 2)
     uinput = new UserInputForTests(xdim, ydim, zdim, 
-    comm, string("Laplace2D"), flags);
+    string("Laplace2D"), comm, true);
   else
     uinput = new UserInputForTests(xdim, ydim, zdim,
-    comm, string("Identity"), flags);
+    string("Identity"), comm, true);
 
   RCP<tMVector_t> meshCoords = uinput->getCoordinates();
 

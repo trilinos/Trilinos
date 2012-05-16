@@ -50,9 +50,9 @@ void testIdentifierModel(std::string fname, gno_t xdim, gno_t ydim, gno_t zdim,
   
   UserInputForTests *input;
   if (fname.size() > 0)
-    input = new UserInputForTests(fname, comm);
+    input = new UserInputForTests(testDataFilePath, fname, comm, true);
   else
-    input = new UserInputForTests(xdim,ydim,zdim,comm);
+    input = new UserInputForTests(xdim,ydim,zdim,string(""),comm, true);
 
   RCP<tcrsMatrix_t > M = input->getTpetraCrsMatrix();
   lno_t nLocalIds = M->getNodeNumRows();
@@ -147,27 +147,21 @@ int main(int argc, char *argv[])
 
   int rank = comm->getRank();
 
-  std::string nullString;
-  std::vector<std::string> mtxFiles;
-  
-  mtxFiles.push_back(testDataFilePath+string("/simple.mtx"));
+  string fname("simple");
 
   bool wishConsecutiveIds = true;
 
-  for (unsigned int fileNum=0; fileNum < mtxFiles.size(); fileNum++){
-
-    if (rank == 0){
-      std::cout << mtxFiles[fileNum];
-      std::cout << ", consecutive IDs not requested" << std::endl;
-    }
-    testIdentifierModel(mtxFiles[fileNum], 0,0,0,comm, !wishConsecutiveIds);
-
-    if (rank == 0){
-      std::cout << mtxFiles[fileNum];
-      std::cout << ", consecutive IDs are requested" << std::endl;
-    }
-    testIdentifierModel(mtxFiles[fileNum], 0,0,0,comm,  wishConsecutiveIds);
+  if (rank == 0){
+    std::cout << fname;
+    std::cout << ", consecutive IDs not requested" << std::endl;
   }
+  testIdentifierModel(fname, 0,0,0,comm, !wishConsecutiveIds);
+
+  if (rank == 0){
+    std::cout << fname;
+    std::cout << ", consecutive IDs are requested" << std::endl;
+  }
+  testIdentifierModel(fname, 0,0,0,comm,  wishConsecutiveIds);
 
   if (rank==0) std::cout << "PASS" << std::endl;
 

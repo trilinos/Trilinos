@@ -96,15 +96,11 @@ int main(int argc, char *argv[])
   // Get some coordinates
 
   typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> mv_t;
-
-  outputFlag_t flags;
-  flags.set(OBJECT_COORDINATES);
-
   RCP<UserInputForTests> uinput;
-  std::string fname = testDataFilePath+std::string("/simple.mtx");
+  std::string fname("simple");
 
   try{
-    uinput = rcp(new UserInputForTests(fname, comm, flags));
+    uinput = rcp(new UserInputForTests(testDataFilePath, fname, comm, true));
   }
   catch(std::exception &e){
     fail=1;

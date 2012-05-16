@@ -13,6 +13,7 @@
 #define _ZOLTAN2_ENVIRONMENT_CPP_
 
 #include <Zoltan2_Environment.hpp>
+#include <Zoltan2_Util.hpp>
 
 #include <Teuchos_StandardParameterEntryValidators.hpp>
 #include <Teuchos_RCP.hpp>
@@ -172,6 +173,23 @@ void Environment::commitParameters()
   string &f2 = params_.get<string>("memory_profiling_output_file", Z2_UNSET);
   string &os2 = params_.get<string>("memory_profiling_output_stream", Z2_UNSET);
 
+
+  if (f2 != Z2_UNSET || os2 != Z2_UNSET){
+    long numKbytes = 0;
+    if (myRank_ == 0)
+      numKbytes = getProcessKilobytes();
+
+    Teuchos::broadcast<int, long>(*comm_, 0, 1, &numKbytes);
+
+    if (numKbytes == 0){
+      // This is not a Linux system with proc/pid/statm.
+      f2 = Z2_UNSET;
+      os2 = Z2_UNSET;
+      debugOut_->print(BASIC_ASSERTION, 
+        "Warning: memory profiling requests but not available.");
+    }
+  }
+  
   if (f2 != Z2_UNSET || os2 != Z2_UNSET){
     bool iPrint = (myRank_ == 0);   // default
     const Array<int> *reporters = 

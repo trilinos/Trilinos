@@ -3,6 +3,7 @@
 
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
+#include <Zoltan2_Util.hpp>
 
 typedef zoltan2_partId_t partId_t;
 
@@ -52,13 +53,6 @@ void AlgPTScotch(
 #include "scotch.h"
 #else
 #include "ptscotch.h"
-#endif
-
-#ifdef SHOW_ZOLTAN2_LINUX_MEMORY
-extern "C"{
-static char *z2_meminfo=NULL;
-extern void Zoltan_get_linux_meminfo(char *msg, char **result);
-}
 #endif
 
 #ifdef SHOW_ZOLTAN2_SCOTCH_MEMORY
@@ -291,10 +285,6 @@ void AlgPTScotch(
   // TODO - metrics
 #ifdef SHOW_ZOLTAN2_SCOTCH_MEMORY
   int me = env->comm_->getRank();
-#else
-#ifdef SHOW_ZOLTAN2_LINUX_MEMORY
-  int me = env->comm_->getRank();
-#endif
 #endif
 
 #ifdef HAVE_SCOTCH_ZOLTAN2_GETMEMORYMAX
@@ -324,16 +314,7 @@ void AlgPTScotch(
 
   solution->setParts(gnos, partList, metrics);
 
-#ifdef SHOW_ZOLTAN2_LINUX_MEMORY
-  if (me==0){
-    Zoltan_get_linux_meminfo("After creating solution", &z2_meminfo);
-    if (z2_meminfo){
-      std::cout << "Rank " << me << ": " << z2_meminfo << std::endl;
-      free(z2_meminfo);
-      z2_meminfo=NULL;
-    }
-  }
-#endif
+  env->memory("After creating solution", "Kbytes", getProcessKilobytes());
 
   //if (me == 0) cout << " done." << endl;
   // Clean up Zoltan2

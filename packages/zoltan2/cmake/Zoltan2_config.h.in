@@ -69,4 +69,5 @@
  */
 #cmakedefine HAVE_ZOLTAN2_INST_DOUBLE_INT_INT
 
-
+/* define if original Zoltan is included */
+#cmakedefine HAVE_ZOLTAN2_ZOLTAN

@@ -9,7 +9,6 @@
 using namespace std;
 using Teuchos::Comm;
 using Teuchos::RCP;
-using Teuchos::ParameterList;
 
 int main(int argc, char **argv)
 {
@@ -59,8 +58,8 @@ int main(int argc, char **argv)
 
   adapter_t adapter(numMyIdentifiers, myIds, weightValues, weightStrides);
 
-  ParameterList params("test parameters");
-  ParameterList &partitioningParams = params.sublist("partitioning");
+  Teuchos::ParameterList params("test parameters");
+  Teuchos::ParameterList &partitioningParams = params.sublist("partitioning");
   partitioningParams.set("num_local_parts", 1);
   partitioningParams.set("algorithm", "block");
   partitioningParams.set("approach", "partition");

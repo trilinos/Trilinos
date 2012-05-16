@@ -78,7 +78,7 @@ template <typename T>
         osFile_->close();
     };
 
-    /*! \brief Return the output stream for debug/status messages.
+    /*! \brief Return the output stream for  messages.
      */
     inline std::ostream *getOStream() const { return os_; }
 

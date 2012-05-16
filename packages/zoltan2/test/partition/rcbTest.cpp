@@ -31,11 +31,8 @@ typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> myTypes_t;
 
 void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm)
 {
-  std::string fname(testDataFilePath+"/USAir97.mtx");
-  outputFlag_t flags;
-  flags.set(OBJECT_COORDINATES);
-
-  UserInputForTests uinput(fname, comm, flags);
+  std::string fname("simple");
+  UserInputForTests uinput(testDataFilePath, fname, comm, true);
 
   RCP<tMVector_t> coords = uinput.getCoordinates();
 
@@ -92,7 +89,7 @@ void serialTest()
   ArrayRCP<gno_t> globalIds(ids, 0, numCoords, true);
 
   Array<ArrayRCP<scalar_t> > randomCoords(3);
-  getRandomData<lno_t, scalar_t>(555, numCoords, 0, 10, 
+  UserInputForTests::getRandomData(555, numCoords, 0, 10, 
     randomCoords.view(0,3));
 
   typedef Zoltan2::BasicCoordinateInput<myTypes_t> inputAdapter_t;
@@ -131,10 +128,7 @@ void meshCoordinatesTest(const RCP<const Teuchos::Comm<int> > & comm)
   int xdim = 40;
   int ydim = 60;
   int zdim = 20;
-  outputFlag_t flags;
-  flags.set(OBJECT_COORDINATES);
-  UserInputForTests uinput(xdim, ydim, zdim, comm, string("Laplace3D"), 
-    flags);
+  UserInputForTests uinput(xdim, ydim, zdim, string("Laplace3D"), comm, true);
 
   RCP<tMVector_t> coords = uinput.getCoordinates();
 
