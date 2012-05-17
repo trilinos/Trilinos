@@ -13,7 +13,7 @@ typedef Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node> MapFactory;
 typedef Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsGraph;
 #endif
 
-#ifdef XPETRA_CRSGRAPH_FACTORY_SHORT
+#ifdef XPETRA_CRSGRAPHFACTORY_SHORT
 typedef Xpetra::CrsGraphFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsGraphFactory;
 #endif
 

@@ -1,5 +1,5 @@
-#ifndef XPETRA_DEFAULT_PLATFORM_HPP
-#define XPETRA_DEFAULT_PLATFORM_HPP
+#ifndef XPETRA_DEFAULTPLATFORM_HPP
+#define XPETRA_DEFAULTPLATFORM_HPP
 
 #include <Kokkos_DefaultNode.hpp>
 #include "Xpetra_ConfigDefs.hpp"
@@ -41,4 +41,4 @@ namespace Xpetra {
 
 } // namespace Xpetra
 
-#endif // XPETRA_DEFAULT_PLATFORM_HPP
+#endif // XPETRA_DEFAULTPLATFORM_HPP
