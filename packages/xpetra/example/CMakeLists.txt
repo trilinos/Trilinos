@@ -16,4 +16,4 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DEPLIBS muelu-xpetra muelu-utils muelu
   )
 
-#ADD_SUBDIRECTORY(Simple)
+ADD_SUBDIRECTORY(Simple)
