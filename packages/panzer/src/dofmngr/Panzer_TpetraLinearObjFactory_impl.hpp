@@ -49,6 +49,9 @@
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
+#include "Thyra_TpetraVectorSpace.hpp"
+#include "Thyra_TpetraLinearOp.hpp"
+
 using Teuchos::RCP;
 
 namespace panzer {
@@ -81,7 +84,7 @@ Teuchos::RCP<LinearObjContainer>
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 buildLinearObjContainer() const
 {
-   Teuchos::RCP<ContainerType> container = Teuchos::rcp(new ContainerType);
+   Teuchos::RCP<ContainerType> container = Teuchos::rcp(new ContainerType(getMap(),getMap()));
 
    return container;
 }
@@ -91,7 +94,7 @@ Teuchos::RCP<LinearObjContainer>
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 buildGhostedLinearObjContainer() const
 {
-   Teuchos::RCP<ContainerType> container = Teuchos::rcp(new ContainerType);
+   Teuchos::RCP<ContainerType> container = Teuchos::rcp(new ContainerType(getGhostedMap(),getGhostedMap()));
 
    return container;
 }
@@ -263,6 +266,39 @@ Teuchos::MpiComm<int> TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,Global
 getComm() const
 {
    return *Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(getTeuchosComm());
+}
+
+//! Get the domain space
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > 
+TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getThyraDomainSpace() const
+{
+   if(domainSpace_==Teuchos::null);
+      domainSpace_ = Thyra::tpetraVectorSpace<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getMap());
+
+   return domainSpace_;
+}
+
+//! Get the range space
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > 
+TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getThyraRangeSpace() const
+{
+   if(rangeSpace_==Teuchos::null);
+      rangeSpace_ = Thyra::tpetraVectorSpace<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getMap());
+
+   return rangeSpace_;
+}
+
+//! Get a matrix operator
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<Thyra::LinearOpBase<ScalarT> > 
+TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getThyraMatrix() const
+{
+   return Thyra::tpetraLinearOp<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getThyraRangeSpace(),getThyraDomainSpace(),getTpetraMatrix());
 }
 
 // Functions for initalizing a container

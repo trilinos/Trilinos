@@ -245,6 +245,36 @@ getComm() const
    return Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(dynamic_cast<const Epetra_MpiComm &>(*getEpetraComm()).Comm()));
 }
 
+template <typename Traits,typename LocalOrdinalT>
+Teuchos::RCP<const Thyra::VectorSpaceBase<double> > 
+EpetraLinearObjFactory<Traits,LocalOrdinalT>::
+getThyraDomainSpace() const
+{
+   if(domainSpace_==Teuchos::null);
+      domainSpace_ = Thyra::create_VectorSpace(getMap());
+
+   return domainSpace_;
+}
+
+template <typename Traits,typename LocalOrdinalT>
+Teuchos::RCP<const Thyra::VectorSpaceBase<double> > 
+EpetraLinearObjFactory<Traits,LocalOrdinalT>::
+getThyraRangeSpace() const
+{
+   if(rangeSpace_==Teuchos::null);
+      rangeSpace_ = Thyra::create_VectorSpace(getMap());
+
+   return rangeSpace_;
+}
+
+template <typename Traits,typename LocalOrdinalT>
+Teuchos::RCP<Thyra::LinearOpBase<double> > 
+EpetraLinearObjFactory<Traits,LocalOrdinalT>::
+getThyraMatrix() const
+{
+   return Thyra::nonconstEpetraLinearOp(getEpetraMatrix());
+}
+
 // Functions for initalizing a container
 /////////////////////////////////////////////////////////////////////
 

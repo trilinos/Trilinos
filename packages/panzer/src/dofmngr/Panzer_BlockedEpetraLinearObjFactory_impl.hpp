@@ -398,7 +398,7 @@ makeRoomForBlocks(std::size_t blockCnt)
 /////////////////////////////////////////////////////////////////////
 
 template <typename Traits,typename LocalOrdinalT>
-Teuchos::RCP<Thyra::VectorSpaceBase<double> > BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+Teuchos::RCP<const Thyra::VectorSpaceBase<double> > BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getThyraDomainSpace() const
 {
    if(domainSpace_==Teuchos::null) {
@@ -414,7 +414,7 @@ getThyraDomainSpace() const
 }
 
 template <typename Traits,typename LocalOrdinalT>
-Teuchos::RCP<Thyra::VectorSpaceBase<double> > BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+Teuchos::RCP<const Thyra::VectorSpaceBase<double> > BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getThyraRangeSpace() const
 {
    if(rangeSpace_==Teuchos::null) {
@@ -457,7 +457,7 @@ getThyraRangeVector() const
 }
 
 template <typename Traits,typename LocalOrdinalT>
-Teuchos::RCP<Thyra::BlockedLinearOpBase<double> > BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+Teuchos::RCP<Thyra::LinearOpBase<double> > BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getThyraMatrix() const
 {
    Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<double> > blockedOp = Thyra::defaultBlockedLinearOp<double>();

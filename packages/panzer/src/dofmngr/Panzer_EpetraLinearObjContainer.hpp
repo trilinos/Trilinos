@@ -99,7 +99,7 @@ public:
       set_f(Teuchos::null);
       set_A(Teuchos::null);
    }
-   
+
    inline void set_x(const Teuchos::RCP<Epetra_Vector> & in) { x = in; } 
    inline const Teuchos::RCP<Epetra_Vector> get_x() const { return x; }
 
@@ -112,25 +112,28 @@ public:
    inline void set_A(const Teuchos::RCP<Epetra_CrsMatrix> & in) { A = in; } 
    inline const Teuchos::RCP<Epetra_CrsMatrix> get_A() const { return A; }
 
+   void initializeMatrix(double value)
+   { A->PutScalar(value); }
+
    virtual void set_x_th(const Teuchos::RCP<Thyra::VectorBase<double> > & in) 
-   { x = Thyra::get_Epetra_Vector(*domainMap,in); }
+   { x = (in==Teuchos::null) ? Teuchos::null : Thyra::get_Epetra_Vector(*domainMap,in); }
    virtual Teuchos::RCP<Thyra::VectorBase<double> > get_x_th() const 
-   { return Thyra::create_Vector(x,domainSpace); }
+   { return (x==Teuchos::null) ? Teuchos::null : Thyra::create_Vector(x,domainSpace); }
 
    virtual void set_dxdt_th(const Teuchos::RCP<Thyra::VectorBase<double> > & in)
-   { dxdt = Thyra::get_Epetra_Vector(*domainMap,in); }
+   { dxdt = (in==Teuchos::null) ? Teuchos::null : Thyra::get_Epetra_Vector(*domainMap,in); }
    virtual Teuchos::RCP<Thyra::VectorBase<double> > get_dxdt_th() const 
-   { return Thyra::create_Vector(dxdt,domainSpace); }
+   { return (dxdt==Teuchos::null) ? Teuchos::null : Thyra::create_Vector(dxdt,domainSpace); }
 
    virtual void set_f_th(const Teuchos::RCP<Thyra::VectorBase<double> > & in)
-   { f = Thyra::get_Epetra_Vector(*rangeMap,in); }
+   { f = (in==Teuchos::null) ? Teuchos::null : Thyra::get_Epetra_Vector(*rangeMap,in); }
    virtual Teuchos::RCP<Thyra::VectorBase<double> > get_f_th() const 
-   { return Thyra::create_Vector(f,rangeSpace); }
+   { return (f==Teuchos::null) ? Teuchos::null : Thyra::create_Vector(f,rangeSpace); }
 
    virtual void set_A_th(const Teuchos::RCP<Thyra::LinearOpBase<double> > & in) 
-   { A = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*in),true); }
+   { A = (in==Teuchos::null) ? Teuchos::null : Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*in),true); }
    virtual Teuchos::RCP<Thyra::LinearOpBase<double> > get_A_th() const
-   { return Thyra::nonconstEpetraLinearOp(A); }
+   { return (A==Teuchos::null) ? Teuchos::null : Thyra::nonconstEpetraLinearOp(A); }
 
 private:
    Teuchos::RCP<const Epetra_Map> domainMap;

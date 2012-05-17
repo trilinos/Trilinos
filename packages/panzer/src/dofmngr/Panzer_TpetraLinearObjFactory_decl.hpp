@@ -62,6 +62,7 @@
 #include "Panzer_GatherSolution_Tpetra.hpp"
 #include "Panzer_GatherOrientation.hpp"
 #include "Panzer_CloneableEvaluator.hpp"
+#include "Panzer_ThyraObjFactory.hpp"
 
 #include"Kokkos_DefaultNode.hpp"
 
@@ -71,7 +72,8 @@
 namespace panzer {
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT=Kokkos::DefaultNode::DefaultNodeType>
-class TpetraLinearObjFactory : public LinearObjFactory<Traits> {
+class TpetraLinearObjFactory : public LinearObjFactory<Traits> 
+                             , public ThyraObjFactory<ScalarT> {
 public:
    typedef TpetraLinearObjContainer<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> ContainerType;
    typedef Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> VectorType;
@@ -141,6 +143,17 @@ public:
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator> buildScatterInitialCondition() const
    { return Teuchos::rcp(new ScatterInitialCondition_Tpetra<EvalT,Traits,LocalOrdinalT,GlobalOrdinalT,NodeT>(gidProvider_)); }
+
+/*************** From ThyraObjFactory *******************/
+
+   //! Get the domain space
+   virtual Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > getThyraDomainSpace() const;
+
+   //! Get the range space
+   virtual Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > getThyraRangeSpace() const;
+
+   //! Get a matrix operator
+   virtual Teuchos::RCP<Thyra::LinearOpBase<ScalarT> > getThyraMatrix() const;
 
 /*************** Generic helper functions for container setup *******************/
    
@@ -224,6 +237,9 @@ protected:
    mutable Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinalT,GlobalOrdinalT,NodeT> > ghostedGraph_;
 
    Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > gidProvider_;
+
+   mutable Teuchos::RCP<const Thyra::VectorSpaceBase<double> > rangeSpace_;
+   mutable Teuchos::RCP<const Thyra::VectorSpaceBase<double> > domainSpace_;
 };
 
 }

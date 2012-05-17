@@ -64,6 +64,7 @@
 #include "Panzer_ScatterResidual_BlockedEpetra.hpp"
 #include "Panzer_ScatterDirichletResidual_BlockedEpetra.hpp"
 #include "Panzer_ScatterInitialCondition_BlockedEpetra.hpp"
+#include "Panzer_ThyraObjFactory.hpp"
 
 #include "Thyra_BlockedLinearOpBase.hpp"
 #include "Thyra_ProductVectorBase.hpp"
@@ -74,7 +75,8 @@
 namespace panzer {
 
 template <typename Traits,typename LocalOrdinalT>
-class BlockedEpetraLinearObjFactory : public LinearObjFactory<Traits> {
+class BlockedEpetraLinearObjFactory : public LinearObjFactory<Traits>
+                                    , public ThyraObjFactory<double> {
 public:
 
    BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,
@@ -174,10 +176,10 @@ public:
 /*************** Thyra based methods *******************/
 
    //! Get the domain vector space (x and dxdt)
-   Teuchos::RCP<Thyra::VectorSpaceBase<double> > getThyraDomainSpace() const;
+   Teuchos::RCP<const Thyra::VectorSpaceBase<double> > getThyraDomainSpace() const;
 
    //! Get the range vector space (f)
-   Teuchos::RCP<Thyra::VectorSpaceBase<double> > getThyraRangeSpace() const;
+   Teuchos::RCP<const Thyra::VectorSpaceBase<double> > getThyraRangeSpace() const;
 
    //! Get a domain vector
    Teuchos::RCP<Thyra::VectorBase<double> > getThyraDomainVector() const;
@@ -186,7 +188,7 @@ public:
    Teuchos::RCP<Thyra::VectorBase<double> > getThyraRangeVector() const;
 
    //! Get a Thyra operator
-   Teuchos::RCP<Thyra::BlockedLinearOpBase<double> > getThyraMatrix() const;
+   Teuchos::RCP<Thyra::LinearOpBase<double> > getThyraMatrix() const;
 
    // and now the ghosted versions
 

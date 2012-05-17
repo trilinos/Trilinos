@@ -49,7 +49,6 @@
 #include "Panzer_config.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_LinearObjFactory.hpp"
-#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_AssemblyEngine.hpp"
 #include "Panzer_AssemblyEngine_InArgs.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
@@ -57,6 +56,8 @@
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_ResponseLibrary.hpp"
+#include "Panzer_ThyraObjContainer.hpp"
+#include "Panzer_ThyraObjFactory.hpp"
 
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
@@ -93,6 +94,8 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder<LO,GO> >& fmb,
   using Thyra::createMember;
   typedef Thyra::ModelEvaluatorBase MEB;
   typedef Teuchos::ScalarTraits<Scalar> ST;
+
+  TEUCHOS_ASSERT(lof_!=Teuchos::null);
 
   panzer::AssemblyEngine_TemplateBuilder<LO,GO> builder(fmb,lof);
   ae_tm_.buildObjects(builder);
@@ -137,11 +140,10 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder<LO,GO> >& fmb,
   //
   
   // dynamic cast to blocked LOF for now
-  RCP<BlockedEpetraLinearObjFactory<panzer::Traits,LO> > blof =
-     rcp_dynamic_cast<BlockedEpetraLinearObjFactory<panzer::Traits,LO> >(lof,true);
+  RCP<const ThyraObjFactory<Scalar> > tof = rcp_dynamic_cast<const ThyraObjFactory<Scalar> >(lof,true);
 
-  x_space_ = blof->getThyraDomainSpace();
-  f_space_ = blof->getThyraRangeSpace();
+  x_space_ = tof->getThyraDomainSpace();
+  f_space_ = tof->getThyraRangeSpace();
 
   //
   // Setup nominal values
@@ -232,10 +234,10 @@ Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 panzer::ModelEvaluator<Scalar,LO,GO,NODE>::
 create_W_op() const
 {
-  Teuchos::RCP<BlockedEpetraLinearObjFactory<panzer::Traits,LO> > blof =
-     Teuchos::rcp_dynamic_cast<BlockedEpetraLinearObjFactory<panzer::Traits,LO> >(lof_,true);
+  Teuchos::RCP<const ThyraObjFactory<Scalar> > tof 
+     = Teuchos::rcp_dynamic_cast<const ThyraObjFactory<Scalar> >(lof_,true);
 
-  return blof->getThyraMatrix();
+  return tof->getThyraMatrix();
 }
 
 template <typename Scalar, typename LO, typename GO, typename NODE>
@@ -322,16 +324,16 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   }
   
   // here we are building a container, this operation is fast, simply allocating a struct
-  const RCP<panzer::BlockedEpetraLinearObjContainer> epGlobalContainer = 
-    Teuchos::rcp_dynamic_cast<panzer::BlockedEpetraLinearObjContainer>(ae_inargs.container_);
+  const RCP<panzer::ThyraObjContainer<double> > thGlobalContainer = 
+    Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(ae_inargs.container_);
 
-  TEUCHOS_ASSERT(!Teuchos::is_null(epGlobalContainer));
+  TEUCHOS_ASSERT(!Teuchos::is_null(thGlobalContainer));
 
   // Ghosted container objects are zeroed out below only if needed for
   // a particular calculation.  This makes it more efficient than
   // zeroing out all objects in the container here.
-  const RCP<panzer::BlockedEpetraLinearObjContainer> epGhostedContainer = 
-    Teuchos::rcp_dynamic_cast<panzer::BlockedEpetraLinearObjContainer>(ae_inargs.ghostedContainer_);
+  const RCP<panzer::ThyraObjContainer<double> > thGhostedContainer = 
+    Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(ae_inargs.ghostedContainer_);
   
   // Set the solution vector (currently all targets require solution).
   // In the future we may move these into the individual cases below.
@@ -340,21 +342,21 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   // introduction of the container is forcing us to cast away const on
   // arguments that should be const.  Another reason to redesign
   // LinearObjContainer layers.
-  epGlobalContainer->set_x(Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(x));
+  thGlobalContainer->set_x_th(Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(x));
   if (is_transient)
-    epGlobalContainer->set_dxdt(Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(x_dot));
+    thGlobalContainer->set_dxdt_th(Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(x_dot));
 
   if (!Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) {
 
     PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModel(f and J)");
 
     // Set the targets
-    epGlobalContainer->set_f(f_out);
-    epGlobalContainer->set_A(W_out);
+    thGlobalContainer->set_f_th(f_out);
+    thGlobalContainer->set_A_th(W_out);
 
     // Zero values in ghosted container objects
-    Thyra::assign(epGhostedContainer->get_f().ptr(),0.0);
-    epGhostedContainer->initializeMatrix(0.0);
+    Thyra::assign(thGhostedContainer->get_f_th().ptr(),0.0);
+    thGhostedContainer->initializeMatrix(0.0);
 
     ae_tm_.template getAsObject<panzer::Traits::Jacobian>()->evaluate(ae_inargs);
   }
@@ -362,10 +364,10 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
     PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModel(f)");
 
-    epGlobalContainer->set_f(f_out);
+    thGlobalContainer->set_f_th(f_out);
 
     // Zero values in ghosted container objects
-    Thyra::assign(epGhostedContainer->get_f().ptr(),0.0);
+    Thyra::assign(thGhostedContainer->get_f_th().ptr(),0.0);
 
     ae_tm_.template getAsObject<panzer::Traits::Residual>()->evaluate(ae_inargs);
   }
@@ -375,11 +377,11 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
     // this dummy nonsense is needed only for scattering dirichlet conditions
     RCP<Thyra::VectorBase<Scalar> > dummy_f = Thyra::createMember(f_space_);
-    epGlobalContainer->set_f(dummy_f); 
-    epGlobalContainer->set_A(W_out);
+    thGlobalContainer->set_f_th(dummy_f); 
+    thGlobalContainer->set_A_th(W_out);
 
     // Zero values in ghosted container objects
-    epGhostedContainer->initializeMatrix(0.0);
+    thGhostedContainer->initializeMatrix(0.0);
 
     ae_tm_.template getAsObject<panzer::Traits::Jacobian>()->evaluate(ae_inargs);
   }
@@ -392,10 +394,10 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   // f comes in and the resulting dtor is called.  Need to discuss
   // with Ross.  Clearing all references here works!
 
-  epGlobalContainer->set_x(Teuchos::null);
-  epGlobalContainer->set_dxdt(Teuchos::null);
-  epGlobalContainer->set_f(Teuchos::null);
-  epGlobalContainer->set_A(Teuchos::null);
+  thGlobalContainer->set_x_th(Teuchos::null);
+  thGlobalContainer->set_dxdt_th(Teuchos::null);
+  thGlobalContainer->set_f_th(Teuchos::null);
+  thGlobalContainer->set_A_th(Teuchos::null);
 
   // forget previous containers
   ae_inargs.container_ = Teuchos::null;

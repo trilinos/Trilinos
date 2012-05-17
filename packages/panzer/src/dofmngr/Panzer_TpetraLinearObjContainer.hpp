@@ -51,14 +51,20 @@
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
+#include "Thyra_TpetraThyraWrappers.hpp"
+
 #include "Panzer_LinearObjFactory.hpp"
+#include "Panzer_ThyraObjContainer.hpp"
 
 #include "Teuchos_RCP.hpp"
 
 namespace panzer {
 
 template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT=Kokkos::DefaultNode::DefaultNodeType>
-class TpetraLinearObjContainer : public LinearObjContainer {
+class TpetraLinearObjContainer : public LinearObjContainer
+                               , public ThyraObjContainer<ScalarT> {
+   TpetraLinearObjContainer();
+
 public:
    typedef LinearObjContainer::Members Members;
 
@@ -68,6 +74,13 @@ public:
    typedef Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> MapType;
    typedef Tpetra::Import<LocalOrdinalT,GlobalOrdinalT,NodeT> ImportType;
    typedef Tpetra::Export<LocalOrdinalT,GlobalOrdinalT,NodeT> ExportType;
+
+   TpetraLinearObjContainer(const Teuchos::RCP<const Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > & domain,
+                            const Teuchos::RCP<const Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > & range)
+   {
+      domainSpace = Thyra::createVectorSpace<ScalarT>(domain);
+      rangeSpace = Thyra::createVectorSpace<ScalarT>(range);
+   }
 
    virtual void initialize() 
    {
@@ -97,8 +110,36 @@ public:
 
    inline void set_A(const Teuchos::RCP<CrsMatrixType> & in) { A = in; } 
    inline const Teuchos::RCP<CrsMatrixType> get_A() const { return A; }
+
+   void initializeMatrix(ScalarT value)
+   { A->setAllToScalar(value); }
+
+   virtual void set_x_th(const Teuchos::RCP<Thyra::VectorBase<ScalarT> > & in) 
+   { x = (in==Teuchos::null) ? Teuchos::null : TOE::getTpetraVector(in); } 
+   virtual Teuchos::RCP<Thyra::VectorBase<ScalarT> > get_x_th() const 
+   { return (x==Teuchos::null) ? Teuchos::null : Thyra::createVector(x,domainSpace); }
+
+   virtual void set_dxdt_th(const Teuchos::RCP<Thyra::VectorBase<ScalarT> > & in)
+   { dxdt = (in==Teuchos::null) ? Teuchos::null : TOE::getTpetraVector(in); } 
+   virtual Teuchos::RCP<Thyra::VectorBase<ScalarT> > get_dxdt_th() const 
+   { return (dxdt==Teuchos::null) ? Teuchos::null : Thyra::createVector(dxdt,domainSpace); }
+
+   virtual void set_f_th(const Teuchos::RCP<Thyra::VectorBase<ScalarT> > & in)
+   { f = (in==Teuchos::null) ? Teuchos::null : TOE::getTpetraVector(in); } 
+   virtual Teuchos::RCP<Thyra::VectorBase<ScalarT> > get_f_th() const 
+   { return (f==Teuchos::null) ? Teuchos::null : Thyra::createVector(f,rangeSpace); }
+
+   virtual void set_A_th(const Teuchos::RCP<Thyra::LinearOpBase<ScalarT> > & in) 
+   { A = (in==Teuchos::null) ? Teuchos::null : Teuchos::rcp_dynamic_cast<CrsMatrixType>(TOE::getTpetraOperator(in),true); }
+   virtual Teuchos::RCP<Thyra::LinearOpBase<ScalarT> > get_A_th() const
+   { return (A==Teuchos::null) ? Teuchos::null : Thyra::createLinearOp<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(A,rangeSpace,domainSpace); }
     
 private:
+   typedef Thyra::TpetraOperatorVectorExtraction<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> TOE;
+
+   Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > domainSpace;
+   Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > rangeSpace;
+
    Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > x, dxdt, f;
    Teuchos::RCP<Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > A;
 };

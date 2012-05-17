@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_ThyraObjContainer_hpp__
-#define __Panzer_ThyraObjContainer_hpp__
+#ifndef __Panzer_ThyraObjFactory_hpp__
+#define __Panzer_ThyraObjFactory_hpp__
 
 #include "Panzer_config.hpp"
 
@@ -49,31 +49,26 @@
 #include "Teuchos_dyn_cast.hpp"
 
 namespace Thyra {
-   template <typename ScalarT> class VectorBase;
+   template <typename ScalarT> class VectorSpaceBase;
    template <typename ScalarT> class LinearOpBase;
 }
 
 namespace panzer {
 
 template <typename ScalarT>
-class ThyraObjContainer {
+class ThyraObjFactory {
 public:
-   virtual ~ThyraObjContainer() {}
+   virtual ~ThyraObjFactory() {}
+   
+   //! Get the domain space
+   virtual Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > getThyraDomainSpace() const = 0;
 
-   //! Put a particular scalar in the matrix
-   virtual void initializeMatrix(ScalarT value) = 0;
+   //! Get the range space
+   virtual Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > getThyraRangeSpace() const = 0;
 
-   virtual void set_x_th(const Teuchos::RCP<Thyra::VectorBase<ScalarT> > & in) = 0;
-   virtual Teuchos::RCP<Thyra::VectorBase<ScalarT> > get_x_th() const = 0;
+   //! Get a matrix operator
+   virtual Teuchos::RCP<Thyra::LinearOpBase<ScalarT> > getThyraMatrix() const = 0;
 
-   virtual void set_dxdt_th(const Teuchos::RCP<Thyra::VectorBase<ScalarT> > & in) = 0;
-   virtual Teuchos::RCP<Thyra::VectorBase<ScalarT> > get_dxdt_th() const = 0;
-
-   virtual void set_f_th(const Teuchos::RCP<Thyra::VectorBase<ScalarT> > & in) = 0;
-   virtual Teuchos::RCP<Thyra::VectorBase<ScalarT> > get_f_th() const = 0;
-
-   virtual void set_A_th(const Teuchos::RCP<Thyra::LinearOpBase<ScalarT> > & in) = 0;
-   virtual Teuchos::RCP<Thyra::LinearOpBase<ScalarT> > get_A_th() const = 0;
 };
 
 }

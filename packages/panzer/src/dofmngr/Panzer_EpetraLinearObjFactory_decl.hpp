@@ -61,6 +61,7 @@
 #include "Panzer_GatherSolution_Epetra.hpp"
 #include "Panzer_GatherOrientation.hpp"
 #include "Panzer_CloneableEvaluator.hpp"
+#include "Panzer_ThyraObjFactory.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"
@@ -68,7 +69,8 @@
 namespace panzer {
 
 template <typename Traits,typename LocalOrdinalT>
-class EpetraLinearObjFactory : public LinearObjFactory<Traits> {
+class EpetraLinearObjFactory : public LinearObjFactory<Traits>
+                             , public ThyraObjFactory<double> {
 public:
 
    EpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,
@@ -108,6 +110,15 @@ public:
    /** Acess to the MPI Comm used in constructing this LOF.
      */
    virtual Teuchos::MpiComm<int> getComm() const;
+
+   //! Get the domain space
+   Teuchos::RCP<const Thyra::VectorSpaceBase<double> > getThyraDomainSpace() const;
+
+   //! Get the range space
+   Teuchos::RCP<const Thyra::VectorSpaceBase<double> > getThyraRangeSpace() const;
+
+   //! Get a matrix operator
+   Teuchos::RCP<Thyra::LinearOpBase<double> > getThyraMatrix() const;
 
    //! Use preconstructed scatter evaluators
    template <typename EvalT>
@@ -217,6 +228,9 @@ protected:
    mutable Teuchos::RCP<Epetra_Export> exporter_;
 
    Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > gidProvider_;
+
+   mutable Teuchos::RCP<const Thyra::VectorSpaceBase<double> > rangeSpace_;
+   mutable Teuchos::RCP<const Thyra::VectorSpaceBase<double> > domainSpace_;
 };
 
 }
