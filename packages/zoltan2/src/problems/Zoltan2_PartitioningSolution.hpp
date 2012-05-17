@@ -681,42 +681,62 @@ template <typename Adapter>
 
   int nprocs = comm_->getSize();
   int rank = comm_->getRank();
-  Array<long> sendCount(nprocs, 0);
-  ArrayRCP<long> recvCount;
-  ArrayRCP<scalar_t> recvSizes;
-  ArrayRCP<partId_t> recvIds;
 
   for (int w=0; w < wdim; w++){
     if (pSizeUniform_[w]) continue;
     
-    // Send all ids and sizes to rank 0
+    // Send all ids and sizes to one process.
+    // (There is no simple gather method in Teuchos.)
 
-    long len = ids[w].size();
-    sendCount[0] = len;
-
-    try{
-      AlltoAllv<partId_t, long>(*comm_, *env_, ids[w].view(0, len),
-        sendCount.view(0, nprocs), recvIds, recvCount);
-    }
-    Z2_FORWARD_EXCEPTIONS
-
-    try{
-      AlltoAllv<scalar_t, long>(*comm_, *env_, sizes[w].view(0, len),
-        sendCount.view(0, nprocs), recvSizes, recvCount);
-    }
-    Z2_FORWARD_EXCEPTIONS
+    partId_t length = ids[w].size();
+    partId_t *allLength = new partId_t [nprocs];
+    Teuchos::gatherAll<int, partId_t>(*comm_, 1, &length, 
+      nprocs, allLength);
 
     if (rank == 0){
+      int total = 0;
+      for (int i=0; i < nprocs; i++)
+        total += allLength[i];
+
+      partId_t *partNums = new partId_t [total];
+      scalar_t *partSizes = new scalar_t [total];
+
+      ArrayView<partId_t> idArray(partNums, total);
+      ArrayView<scalar_t> sizeArray(partSizes, total);
+
+      for (int p=1; p < nprocs; p++){
+        if (allLength[p] > 0){
+          Teuchos::receive<int, partId_t>(*comm_, p,
+            allLength[p], partNums);
+          Teuchos::receive<int, scalar_t>(*comm_, p,
+            allLength[p], partSizes);
+          partNums += allLength[p];
+          partSizes += allLength[p];
+        }
+      }
+
+      delete [] allLength;
+
       try{
-        gno_t numVals = recvIds.size();
-        computePartSizes(w, recvIds.view(0,numVals), 
-          recvSizes.view(0,numVals));
+        computePartSizes(w, idArray, sizeArray);
       }
       Z2_FORWARD_EXCEPTIONS
-    }
 
-    broadcastPartSizes(w);
-  } 
+      delete [] idArray.getRawPtr();
+      delete [] sizeArray.getRawPtr();
+
+      broadcastPartSizes(w);
+    } 
+    else{
+      delete [] allLength;
+      if (length > 0){
+        Teuchos::send<int, partId_t>(*comm_, length, ids[w].getRawPtr(), 0);
+        Teuchos::send<int, scalar_t>(*comm_, length, sizes[w].getRawPtr(), 0);
+      }
+
+      broadcastPartSizes(w);
+    }
+  }
 }
 
 template <typename Adapter>

@@ -69,6 +69,8 @@ template <typename T>
   // Must use Zoltan2::AlltoAll because T may not be a valid
   //   Teuchos packet type.
 
+comm.barrier();
+
   try{
     AlltoAll<T,int>(comm, env, sendBufMin.view(0,nprocs), 1, recvBufMin);
   }
@@ -370,6 +372,9 @@ struct IdentifierTraits<char> {
    return z2AreConsecutive(val, n); }
 };
 
+#if 0
+// This can be replaced when there are SerializationTraits for unsigned char.
+// We need it in Zoltan2_AlltoAll.hpp.
 template<>
 struct IdentifierTraits<unsigned char> {
   typedef unsigned char T;
@@ -395,6 +400,7 @@ struct IdentifierTraits<unsigned char> {
   static bool areConsecutive(const T *val, size_t n){ 
    return z2AreConsecutive(val, n); }
 };
+#endif
 
 template<>
 struct IdentifierTraits<short> {
@@ -422,6 +428,9 @@ struct IdentifierTraits<short> {
   return z2AreConsecutive(val, n); }
 };
 
+#if 0
+// This can be replaced when there are SerializationTraits for unsigned short.
+// We need it in Zoltan2_AlltoAll.hpp.
 template<>
 struct IdentifierTraits<unsigned short> {
   typedef unsigned short T;
@@ -447,6 +456,7 @@ struct IdentifierTraits<unsigned short> {
   static bool areConsecutive(const T *val, size_t n){ 
   return z2AreConsecutive(val, n); }
 };
+#endif
 
 template<>
 struct IdentifierTraits<int> {

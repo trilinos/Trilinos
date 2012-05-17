@@ -40,8 +40,8 @@ namespace Zoltan2
  * limitation of integer offsets and counters in collective operations.
  * In other words, LNO can be a 64-bit integer.
  *
- * \todo We need to know the reasonable limit of receives to post, and
- *         post no more than that number at a time.
+ * We post one receive at a time.  So this is slow, but will not encounter
+ * MPI resource limits for very large applications.
  */
 
 template <typename T, typename LNO>
@@ -57,120 +57,47 @@ void AlltoAll(const Comm<int> &comm,
   if (count == 0) return;   // count is the same on all procs
 
   LNO n = nprocs * count;
-  T *ptr = new T [n]; 
-  env.globalMemoryAssertion(__FILE__, __LINE__, n, ptr, rcp(&comm, false));
-  recvBuf = Teuchos::arcp<T>(ptr, 0, n);
+  T *rptr = new T [n]; 
+  env.globalMemoryAssertion(__FILE__, __LINE__, n, rptr, rcp(&comm, false));
+  recvBuf = Teuchos::arcp<T>(rptr, 0, n);
+
+  const T *sptr = sendBuf.getRawPtr();
 
   // Do self messages
 
   for (LNO i=0, offset = rank*count; i < count; i++, offset++){
-    recvBuf.get()[offset] = sendBuf.getRawPtr()[offset];
+    rptr[offset] = sptr[offset];
   }
 
 #ifdef HAVE_ZOLTAN2_MPI
+  // Perform nprocs-1 point-to-point sends and receives.
 
-  // Post receives
-
-  size_t packetSize = sizeof(T) * count;
-
+  size_t packetSize = count * sizeof(T);
   env.globalInputAssertion(__FILE__, __LINE__,
       "message size exceeds MPI limit (sizes, offsets, counts are ints) ",
       packetSize <= INT_MAX, BASIC_ASSERTION, rcp(&comm, false));
+
+  Array<ArrayRCP<const T> > sendArray(nprocs);
+  for (int p=0; p < nprocs; p++){
+    sendArray[p] = arcp(sptr + p*count, 0, count, false);
+  }
   
-  RCP<CommRequest> r;
-  Array<RCP<CommRequest> > req;
+  for (int p=1; p < nprocs; p++){
+    int recvFrom = (rank + nprocs - p) % nprocs;
+    int sendTo = (rank + p) % nprocs;
 
-  ArrayView<const char> sendBufPtr(
-    reinterpret_cast<const char *>(sendBuf.getRawPtr()), nprocs*packetSize);
-
-#if 1
-  for (int p=0; p < nprocs; p++){
-    if (p != rank){
-      ArrayRCP<char> recvBufPtr(
-        reinterpret_cast<char *>(recvBuf.get() + p*count), 
-        0, packetSize, false);
-      try{
-        r  = Teuchos::ireceive<int, char>(comm, recvBufPtr, p);
-      }
-      Z2_THROW_OUTSIDE_ERROR(env);
-    
-      req.push_back(r);
+    try{  // Non blocking send
+      Teuchos::isend<int, T>(comm, sendArray[sendTo], sendTo);
     }
-  }
+    Z2_THROW_OUTSIDE_ERROR(env);
 
-  // Wait until all are posted
-
-  Teuchos::barrier(comm);
-
-  // Do ready sends.
-
-  for (int p=0; p < nprocs; p++){
-    if (p != rank){
-      try {
-        Teuchos::readySend<int, char>(comm, 
-          sendBufPtr.view(p*packetSize, packetSize), p);
-      } 
-      Z2_THROW_OUTSIDE_ERROR(env);
-    }
-  }
-
-  //
-  // TODO: we can hang here on my desktop machine, with mpich2,
-  //             on 3 processes, 5 processes.  Shouldn't happen.
-  //     Hanging in a sched_yield.  Try no threads.
-  //
-  if (req.size() > 0){
-    try {
-      Teuchos::waitAll<int>(comm, req);
+    try{  // blocking receive for msg just send to me
+      Teuchos::receive<int, T>(comm, recvFrom, count, rptr + recvFrom*count);
     }
     Z2_THROW_OUTSIDE_ERROR(env);
   }
-#else
 
-    for (int pRight=1,pLeft=nprocs-1; pRight < nprocs; pRight++,pLeft--){
-      int sendTo = (rank + pRight) % nprocs;
-      int recvFrom = (rank + pLeft) % nprocs;
-
-      // Post receive for recvFrom
-
-      ArrayRCP<char> recvBufPtr(
-        reinterpret_cast<char *>(recvBuf.get() + (recvFrom*count)),
-        0, packetSize, false);
-      try{
-        r  = Teuchos::ireceive<int, char>(comm, recvBufPtr, recvFrom);
-      }
-      Z2_THROW_OUTSIDE_ERROR(env);
-    
-      req.push_back(r);
-
-      // Send okToGo to recvFrom
-
-      RCP<int> okToGo(new int);
-      
-      try{
-        r = Teuchos::isend<int, int>(comm, okToGo, recvFrom);
-      }
-      Z2_THROW_OUTSIDE_ERROR(env);
-
-      // Await okToGo from sendTo
-
-      // This hangs as well.
-      try{
-        Teuchos::receive<int, int>(comm, sendTo, okToGo.getRawPtr());
-      }
-      Z2_THROW_OUTSIDE_ERROR(env);
-
-      // Send to sendTo
-
-      try{
-        Teuchos::readySend<int, char>(comm, 
-          sendBufPtr.view(sendTo*packetSize, packetSize), sendTo);
-      }
-      Z2_THROW_OUTSIDE_ERROR(env);
-    }
-
-    Teuchos::barrier<int>(comm);
-#endif
+  comm.barrier();
 #endif
 }
 
@@ -214,94 +141,76 @@ void AlltoAllv(const Comm<int> &comm,
   }
   Z2_FORWARD_EXCEPTIONS;
 
-  size_t totalIn=0, totalOut=0, offsetIn=0, offsetOut=0;
+  size_t *offsetIn = new size_t [nprocs+1];
+  size_t *offsetOut = new size_t [nprocs+1];
+  
+  offsetIn[0] = offsetOut[0] = 0;
+
+  size_t maxMsg=0;
 
   for (int i=0; i < nprocs; i++){
-    totalIn += recvCount[i];
-    totalOut += sendCount[i];
-    if (i < rank){
-      offsetIn += recvCount[i];
-      offsetOut += sendCount[i];
-    }
+    offsetIn[i+1] = offsetIn[i] + recvCount[i];
+    offsetOut[i+1] = offsetOut[i] + sendCount[i];
+    if (recvCount[i] > maxMsg)
+      maxMsg = recvCount[i];
+    if (sendCount[i] > maxMsg)
+      maxMsg = recvCount[i];
   }
 
-  T *ptr = NULL;
+  env.globalInputAssertion(__FILE__, __LINE__,
+    "message size exceeds MPI limit (sizes, offsets, counts are ints) ",
+    maxMsg <= INT_MAX, BASIC_ASSERTION, rcp(&comm, false));
+
+  size_t totalIn = offsetIn[nprocs];
+
+  T *rptr = NULL;
   if (totalIn){
-    ptr = new T [totalIn]; 
+    rptr = new T [totalIn]; 
   }
-  env.globalMemoryAssertion(__FILE__, __LINE__, totalIn, !totalIn||ptr, 
+  env.globalMemoryAssertion(__FILE__, __LINE__, totalIn, !totalIn||rptr, 
     rcp(&comm, false));
 
-  recvBuf = Teuchos::arcp<T>(ptr, 0, totalIn, true);
+  recvBuf = Teuchos::arcp<T>(rptr, 0, totalIn, true);
+
+  const T *sptr = sendBuf.getRawPtr();
 
   // Copy self messages
 
-  memcpy(recvBuf.get() + offsetIn,
-         sendBuf.getRawPtr() + offsetOut,
-         sizeof(T) * recvCount[rank]);
+  memcpy(rptr + offsetIn[rank], sptr + offsetOut[rank], 
+    sizeof(T) * recvCount[rank]);
+
+  if (nprocs < 2)
+    return;
 
 #ifdef HAVE_ZOLTAN2_MPI
-  // Post receives
 
-  RCP<CommRequest> r;
-  Array<RCP<CommRequest> > req;
-
-
-  offsetIn = 0;
-
+  Array<ArrayRCP<const T> > sendArray(nprocs);
   for (int p=0; p < nprocs; p++){
-    LNO packetSize = recvCount[p] * sizeof(T);
-
-    env.globalInputAssertion(__FILE__, __LINE__,
-      "message size exceeds MPI limit (sizes, offsets, counts are ints) ",
-      packetSize <= INT_MAX, BASIC_ASSERTION, rcp(&comm, false));
-
-    if (p != rank && packetSize > 0){
-      ArrayRCP<char> recvBufPtr(
-        reinterpret_cast<char *>(recvBuf.get() + offsetIn), 
-        0, packetSize, false);
-
-      try{
-        r  = Teuchos::ireceive<int, char>(comm, recvBufPtr, p);
-      }
-      Z2_THROW_OUTSIDE_ERROR(env);
-    
-      req.push_back(r);
-    }
-    offsetIn += recvCount[p];
+    if (sendCount[p] > 0)
+      sendArray[p] = arcp(sptr + offsetOut[p], 0, sendCount[p], false);
   }
 
-  // Wait till all are posted
+  for (int p=1; p < nprocs; p++){
+    int recvFrom = (rank + nprocs - p) % nprocs;
+    int sendTo = (rank + p) % nprocs;
 
-  Teuchos::barrier(comm);
-
-  // Do all ready sends
-
-  offsetOut = 0;
-
-  ArrayView<const char> sendBufPtr(
-    reinterpret_cast<const char *>(sendBuf.getRawPtr()), totalOut * sizeof(T));
-
-  for (int p=0; p < nprocs; p++){
-    LNO packetSize = sendCount[p] * sizeof(T);
-    if (p != rank && packetSize > 0){
-      try{
-        Teuchos::readySend<int, char>(comm, 
-          sendBufPtr.view(offsetOut, packetSize), p);
+    if (sendCount[sendTo] > 0){
+      try{  // non blocking send
+        Teuchos::isend<int, T>(comm, sendArray[sendTo], sendTo);
       }
       Z2_THROW_OUTSIDE_ERROR(env);
     }
-    offsetOut += packetSize;
+
+    if (recvCount[recvFrom] > 0){
+      try{  // blocking receive for message just sent to me
+        Teuchos::receive<int, T>(comm, recvFrom, recvCount[recvFrom], 
+           rptr + offsetIn[recvFrom]);
+      }
+      Z2_THROW_OUTSIDE_ERROR(env);
+    }
   }
 
-  // TODO: we can hang here on my desktop machine, with mpich2,
-  //             on 3 processes, 5 processes.  Shouldn't happen.
-  if (req.size() > 0){
-    try{
-      Teuchos::waitAll<int>(comm, req);
-    }
-    Z2_THROW_OUTSIDE_ERROR(env);
-  }
+  comm.barrier();
 #endif
 }
 
