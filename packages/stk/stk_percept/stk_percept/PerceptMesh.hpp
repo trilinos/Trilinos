@@ -240,14 +240,83 @@ namespace stk {
         return getBulkData()->get_entity(rank, id);
       }
 
-      /// find node closest to given point
+      /// find node closest to given point - in parallel, check return for null (if null, closest node is on another proc)
       stk::mesh::Entity *get_node(double x, double y, double z=0, double t=0) ;
 
-      /// find element that contains given point
+      /// find element that contains given point - in parallel, check return for null (if null, element containing point is on another proc)
       stk::mesh::Entity *get_element(double x, double y, double z=0, double t=0) ;
 
+      static bool mesh_difference(PerceptMesh& mesh1, PerceptMesh& mesh2,
+                                  std::string msg,
+                                  bool print=true, bool print_all_field_diffs=false);
+
+      static bool mesh_difference(stk::mesh::fem::FEMMetaData& metaData_1,
+                                  stk::mesh::fem::FEMMetaData& metaData_2,
+                                  stk::mesh::BulkData& bulkData_1,
+                                  stk::mesh::BulkData& bulkData_2,
+                                  std::string msg,
+                                  bool print=true, bool print_all_field_diffs=false);
+
+      VectorFieldType* getCoordinatesField() {
+        // this should have been set by a previous internal call to setCoordinatesField
+        return m_coordinatesField;
+      }
+
+      stk::mesh::EntityRank node_rank() const
+      {
+        return m_metaData->node_rank();
+      }
+
+      /** \brief Returns the edge rank which changes depending on spatial dimension
+       */
+      stk::mesh::EntityRank edge_rank() const
+      {
+        return m_metaData->edge_rank();
+      }
+
+      /** \brief Returns the face rank which changes depending on spatial dimension
+       */
+      stk::mesh::EntityRank face_rank() const
+      {
+        return m_metaData->face_rank();
+      }
+
+      /** \brief Returns the side rank which changes depending on spatial dimension
+       */
+      stk::mesh::EntityRank side_rank() const
+      {
+        return m_metaData->side_rank();
+      }
+
+      /** \brief Returns the element rank which is always equal to spatial dimension
+       */
+      stk::mesh::EntityRank element_rank() const
+      {
+        return m_metaData->element_rank();
+      }
+
+      /// set the current data in fields to the given time or Exodus step (if time supplied, finds the closest step to
+      /// that time (no interpolation yet)
+      void readBulkDataAtTime(double time);
+      void readBulkDataAtStep(int step);
+
+      /// return the current state of the Exodus database, 0 if not loaded yet (steps are 1-based in Exodus)
+      int getCurrentDatabaseStep();
+      double getCurrentDatabaseTime();
+
+      /// return the step number closest to specified time, thus readBulkDataAtTime(time) is equivalent to
+      ///   readBulkDataAtStep(getDatabaseStepAtTime(time))
+      int getDatabaseStepAtTime(double time);
+      /// return the state time associated with given step
+      double getDatabaseTimeAtStep(int step);
+      /// return the number of steps in the database
+      int getDatabaseTimestepCount();
+      
       //========================================================================================================================
       /// low-level interfaces
+#ifndef SWIG
+
+      stk::mesh::Entity *get_closest_node(double x, double y, double z=0, double t=0, double *sum_min_ret=0) ;
 
       //PerceptMesh(const stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted=true);
 
@@ -362,38 +431,6 @@ namespace stk {
         return  t < EntityRankEnd ? stk::mesh::EntityRank(t) : stk::mesh::InvalidEntityRank ;
       }
 
-      stk::mesh::EntityRank node_rank() const
-      {
-        return m_metaData->node_rank();
-      }
-
-      /** \brief Returns the edge rank which changes depending on spatial dimension
-       */
-      stk::mesh::EntityRank edge_rank() const
-      {
-        return m_metaData->edge_rank();
-      }
-
-      /** \brief Returns the face rank which changes depending on spatial dimension
-       */
-      stk::mesh::EntityRank face_rank() const
-      {
-        return m_metaData->face_rank();
-      }
-
-      /** \brief Returns the side rank which changes depending on spatial dimension
-       */
-      stk::mesh::EntityRank side_rank() const
-      {
-        return m_metaData->side_rank();
-      }
-
-      /** \brief Returns the element rank which is always equal to spatial dimension
-       */
-      stk::mesh::EntityRank element_rank() const
-      {
-        return m_metaData->element_rank();
-      }
 
       stk::mesh::Entity & createOrGetNode(stk::mesh::EntityId nid, double* x=0);
 
@@ -452,11 +489,6 @@ namespace stk {
       static void findMinMaxEdgeLength(const mesh::Bucket &bucket,  stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
                                        Intrepid::FieldContainer<double>& elem_min_edge_length, Intrepid::FieldContainer<double>& elem_max_edge_length);
 
-      VectorFieldType* getCoordinatesField() {
-        // this should have been set by a previous internal call to setCoordinatesField
-        return m_coordinatesField;
-      }
-
       static void
       element_side_nodes( const mesh::Entity & elem , int local_side_id, stk::mesh::EntityRank side_entity_rank, std::vector<mesh::Entity *>& side_node_entities );
 
@@ -490,17 +522,6 @@ namespace stk {
 
       const stk::mesh::PartVector& get_io_omitted_parts() { return m_io_omitted_parts; }
       void set_io_omitted_parts(stk::mesh::PartVector& io_omitted_parts) { m_io_omitted_parts = io_omitted_parts; }
-
-      static bool mesh_difference(PerceptMesh& mesh1, PerceptMesh& mesh2,
-                                  std::string msg,
-                                  bool print=true, bool print_all_field_diffs=false);
-
-      static bool mesh_difference(stk::mesh::fem::FEMMetaData& metaData_1,
-                                  stk::mesh::fem::FEMMetaData& metaData_2,
-                                  stk::mesh::BulkData& bulkData_1,
-                                  stk::mesh::BulkData& bulkData_2,
-                                  std::string msg,
-                                  bool print=true, bool print_all_field_diffs=false);
 
 
     private:
@@ -542,6 +563,7 @@ namespace stk {
 
       //static void transformMesh(GenericFunction& coordinate_transform);
 
+#endif // SWIG
 
     private:
       //stk::mesh::fem::FEMMetaData *         m_fem_meta_data;
@@ -573,6 +595,9 @@ namespace stk {
       int                                   m_streaming_size;
 
       Searcher *                            m_searcher;
+
+      int                                   m_exodusStep;
+      double                                m_exodusTime;
 
       void checkStateSpec(const std::string& function, bool cond1=true, bool cond2=true, bool cond3=true);
 

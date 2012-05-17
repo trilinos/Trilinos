@@ -30,6 +30,10 @@
 #include <stk_percept/function/internal/SimpleSearcher.hpp>
 #include <stk_percept/function/internal/STKSearcher.hpp>
 
+#include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/environment/WallTime.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>
+
 // FIXME
 
 #include <stk_percept/Intrepid_HGRAD_WEDGE_C2_Serendipity_FEM.hpp>
@@ -1339,8 +1343,22 @@ namespace stk {
     }
 
 
+    stk::mesh::Entity *PerceptMesh::get_node(double x, double y, double z, double t)
+    {
+      double sum_min_local = 0.0;
+      stk::mesh::Entity *node = get_closest_node(x,y,z,t, &sum_min_local);
+      if (getParallelSize() == 1) return node;
+
+      double sum_min_global = sum_min_local;
+      stk::all_reduce( getBulkData()->parallel() , ReduceMin<1>( & sum_min_global ) );
+      if (sum_min_local == sum_min_global)
+        return node;
+      else
+        return 0;
+    }
+
     /// find node closest to given point
-    stk::mesh::Entity *PerceptMesh::get_node(double x, double y, double z, double t) 
+    stk::mesh::Entity *PerceptMesh::get_closest_node(double x, double y, double z, double t, double *sum_min_ret) 
     {
       stk::mesh::FieldBase &coord_field = *getCoordinatesField();
       double sum_min = std::numeric_limits<double>::max();
@@ -1375,6 +1393,7 @@ namespace stk {
               }
           }
         }
+      if (sum_min_ret) *sum_min_ret = std::sqrt(sum_min);
       return node_min;
     }
 
@@ -1599,6 +1618,72 @@ namespace stk {
           return;
         }
 
+      int step = 1;
+
+      if (getDatabaseTimestepCount() == 0)
+        step = 0;
+
+      readBulkDataAtStep(step);
+    }
+    
+    int PerceptMesh::getCurrentDatabaseStep()
+    {
+      return m_exodusStep;
+    }
+    double PerceptMesh::getCurrentDatabaseTime()
+    {
+      return m_exodusTime;
+    }
+
+    int PerceptMesh::getDatabaseTimestepCount()
+    {
+      Ioss::Region * region = m_iossRegion;
+      int timestep_count = region->get_property("state_count").get_int();
+      return timestep_count;
+    }
+
+    double PerceptMesh::getDatabaseTimeAtStep(int step)
+    {
+      Ioss::Region * region = m_iossRegion;
+      int timestep_count = region->get_property("state_count").get_int();
+      //std::cout << "tmp timestep_count= " << timestep_count << std::endl;
+      //Util::pause(true, "tmp timestep_count");
+
+      if (step <= 0 || step > timestep_count)
+        throw std::runtime_error("step is out of range for PerceptMesh::getDatabaseTimeAtStep, step="+toString(step)+" timestep_count= "+toString(timestep_count));
+
+      double state_time = region->get_state_time(step);
+      return state_time;
+    }
+
+    int PerceptMesh::getDatabaseStepAtTime(double time)
+    {
+      Ioss::Region * region = m_iossRegion;
+      int step_count = region->get_property("state_count").get_int();
+      double delta_min = 1.0e30;
+      int    step_min  = 0;
+      for (int istep = 0; istep < step_count; istep++) {
+        double state_time = region->get_state_time(istep+1);
+        double delta = state_time - time;
+        if (delta < 0.0) delta = -delta;
+        if (delta < delta_min) {
+          delta_min = delta;
+          step_min  = istep;
+          if (delta == 0.0) break;
+        }
+      }
+      return step_min+1;
+    }
+
+    void PerceptMesh::readBulkDataAtStep(int step)
+    {
+      std::cout << "PerceptMesh::readBulkDataAtStep() " << std::endl;
+      if (m_fixture || m_isAdopted)
+        {
+          std::cout << "PerceptMesh::readBulkDataAtStep() m_fixture " << std::endl;
+          return;
+        }
+
       Ioss::Region& in_region = *m_iossRegion;
       //----------------------------------
       // Process Bulkdata for all Entity Types. Subsetting is possible.
@@ -1611,15 +1696,30 @@ namespace stk {
       stk::io::populate_bulk_data(bulk_data, mesh_data);
 
       int timestep_count = in_region.get_property("state_count").get_int();
-      //std::cout << "tmp timestep_count= " << timestep_count << std::endl;
+      std::cout << "tmp timestep_count= " << timestep_count << std::endl;
       //Util::pause(true, "tmp timestep_count");
 
+      if (step <= 0 || step > timestep_count)
+        throw std::runtime_error("step is out of range for PerceptMesh::readBulkDataAtStep, step="+toString(step)+" timestep_count= "+toString(timestep_count));
       // FIXME
-      if (timestep_count == 0)
-        stk::io::process_input_request(mesh_data, bulk_data, 0);
-      else
-        stk::io::process_input_request(mesh_data, bulk_data, 1);
+      m_exodusStep = step;
+      m_exodusTime = getDatabaseTimeAtStep(step);
+      stk::io::process_input_request(mesh_data, bulk_data, step);
+    }
 
+    void PerceptMesh::readBulkDataAtTime(double time)
+    {
+      std::cout << "PerceptMesh::readBulkDataAtTime() " << std::endl;
+      if (m_fixture || m_isAdopted)
+        {
+          std::cout << "PerceptMesh::readBulkDataAtTime() m_fixture " << std::endl;
+          return;
+        }
+
+      int step = getDatabaseStepAtTime(time);
+
+      // Exodus steps are 1-based;
+      readBulkDataAtStep(step);
     }
 
     /// Convenience method to read a model's meta data, create some new fields, commit meta data then read the bulk data

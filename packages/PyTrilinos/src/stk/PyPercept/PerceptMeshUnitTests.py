@@ -1,5 +1,6 @@
 import sys
-sys.path.append("/scratch/srkenno/Trilinos-BUILDS/build11-090711/packages/PyTrilinos/src/stk/PyPercept")
+#sys.path.append("/scratch/srkenno/Trilinos-BUILDS/build11-090711/packages/PyTrilinos/src/stk/PyPercept")
+sys.path.insert(0,"/scratch/srkenno/Trilinos-BUILDS/build-PyPercept-scratch-srkenno-code/packages/PyTrilinos/src/stk/PyPercept")
 
 from mpi4py import MPI
 from PerceptMesh import *
@@ -161,6 +162,108 @@ class PerceptMeshUnitTests(unittest.TestCase):
     #  diff_msg = "diff report after mod: "
     #  diff = PerceptMesh.mesh_difference(eMesh_1, eMesh_2, diff_msg, True)
     #  self.assertTrue(diff)
+
+    # new tests of simplified high-level PerceptMesh interface
+    def test_high_level_interface(self):
+      self.fixture_setup()
+      p_size = parallel_machine_size(self.pm)
+
+      if p_size <= 2:
+        eMesh = PerceptMesh(2)
+        eMesh.open("quad_fixture.e")
+
+        vectorDimension = 0
+        eMesh.addField("coords_mag_field", FEMMetaData.NODE_RANK, vectorDimension)
+        eMesh.commit()
+
+        f_coords = eMesh.getField("coordinates")
+        coords_mag_field = eMesh.getField("coords_mag_field")
+
+        ff_coords = FieldFunction("ff_coords", f_coords, eMesh, 2, 2)
+        #evalVec3Print(0.1,0.1,0.1,0.0,ff_coords)
+
+        coords_mag_sf = StringFunction("sqrt(x*x + y*y )" , "coords_mag_sf", 2, 1)
+        x = 0.123
+        y = 0.234
+        vv = sqrt(x*x + y*y )
+        v1 = evalFunc2(x,y,0,coords_mag_sf)
+        print "vv = ", vv, "== v1 = ", v1
+        self.assertEqual(vv, v1)
+
+        coords_mag_field_function = FieldFunction("coords_mag_field_function", coords_mag_field, eMesh, 2, 1)
+
+        coords_mag_field_function.interpolateFrom(coords_mag_sf)
+
+        eMesh.saveAs("./quad_fixture_with_coords_mag.e")
+
+        ff_coords.addAlias("mc")
+
+        sfcm = StringFunction("sqrt(mc[0]*mc[0]+mc[1]*mc[1]+mc[2]*mc[2])", "sfcm", 3, 1)
+
+        add_newlines = True
+        eMesh.printInfo("quad fixture", 2, add_newlines)
+
+        self.assertTrue(eMesh.getSpatialDim() == 2)
+        self.assertTrue(eMesh.getNumberElements() == 12*12)
+        self.assertTrue(eMesh.getNumberNodes() == 13*13)
+
+        self.assertTrue(eMesh.getParallelSize() == p_size)
+
+        self.assertTrue(eMesh.getBulkData() != 0)
+        self.assertTrue(eMesh.getFEM_meta_data() != 0)
+
+        # // entity data setter/getters
+        node = eMesh.get_node(1)
+        self.assertTrue(node != 0)
+        cm1 = eMesh.get_field_data(coords_mag_field, node)
+        co1 = [0,0]
+        co1[0] = eMesh.get_field_data(f_coords, node, 0)
+        co1[1] = eMesh.get_field_data(f_coords, node, 1)
+        print "cm1= ", cm1, " co1= ", co1
+        eMesh.set_field_data(123.0, f_coords, node, 0)
+        co1[0] = eMesh.get_field_data(f_coords, node, 0)
+        print " co1= ", co1
+        
+        element = eMesh.get_element(1)
+        self.assertTrue(element != 0)
+
+        element1 = eMesh.get_entity(eMesh.element_rank(), 1)
+        self.assertTrue(element == element1)
+        
+        #/// find node closest to given point
+        node = eMesh.get_node(0,0)
+        self.assertTrue(node != 0)
+
+        #/// find element that contains given point
+        element = eMesh.get_element(0.01, 0.01)
+        self.assertTrue(element != 0)
+        
+
+
+        #self.assertFalse(diff)
+
+    # 
+    def test_time_dep_interface(self):
+      p_size = parallel_machine_size(self.pm)
+
+      if p_size <= 2:
+        eMesh = PerceptMesh(2)
+        eMesh.open("time-dep.e")
+        eMesh.commit()
+
+        Tnd_field = eMesh.getField("Tnd")
+
+        # // entity data setter/getters
+        eMesh.readBulkDataAtTime(0.0)
+        node = eMesh.get_node(2,2)
+        self.assertTrue(node != 0)
+        t0 = eMesh.get_field_data(Tnd_field, node)
+        self.assertTrue(t0 == 0.0)
+        eMesh.readBulkDataAtTime(1.0)
+        t1 = eMesh.get_field_data(Tnd_field, node)
+        self.assertTrue(t1 == 11.0)
+        
+        print "t0= " , t0, " t1= " , t1
 
 
 if __name__ == "__main__":

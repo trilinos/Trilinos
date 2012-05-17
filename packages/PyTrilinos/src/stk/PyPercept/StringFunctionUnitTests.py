@@ -1,7 +1,8 @@
 import sys
 #sys.path.append("/Users/kgmerk/projects/trilinos/build_make/packages/PyTrilinos/src/PyTrilinos")
 #sys.path.append("/scratch/srkenno/Trilinos-BUILDS/build11-090711/packages/PyTrilinos/src/stk/PyPercept")
-sys.path.append("/scratch/srkenno/stk_geom/src/build4-091411/packages/PyTrilinos/src/stk/PyPercept")
+#sys.path.append("/scratch/srkenno/stk_geom/src/build4-091411/packages/PyTrilinos/src/stk/PyPercept")
+sys.path.append("/scratch/srkenno/Trilinos-BUILDS/build-PyPercept-scratch-srkenno-code/packages/PyTrilinos/src/stk/PyPercept")
 from math import *
 from numpy import *
 import unittest

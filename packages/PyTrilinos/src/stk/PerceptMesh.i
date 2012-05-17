@@ -392,6 +392,8 @@ namespace std
 
 %rename(evalFunc) *::eval(double x, double y, double z, double t, Function& func);
 %rename(evalFunc) *::eval(double x, double y, double z, double t, Teuchos::RCP<Function>& func);
+%rename(evalFunc2) *::eval2(double x, double y, double t, Function& func);
+%rename(evalFunc2) *::eval2(double x, double y, double t, Teuchos::RCP<Function>& func);
 %feature("docstring") evalFunc "Evaluate the function by passing in values for x, y, z, t, and the Function. Returns a double.";
 %include Function.hpp
 
