@@ -32,6 +32,7 @@
 
 #include "Teuchos_Array.hpp"
 #include "Stokhos_Sacado.hpp"
+#include "Stokhos_Sacado_Kokkos.hpp"
 #include "Sacado_Fad_DFad.hpp"
 #include "Sacado_mpl_apply.hpp"
 #include "Sacado_Random.hpp"
@@ -333,29 +334,30 @@ bool testNestedSerialization(Teuchos::Array<VecType>& x,
 	std::string(#Vec) + " Nested Empty All", out);			\
   }
 
-namespace VecTest {
-  Sacado::Random<double> rnd;
-  typedef Stokhos::StandardStorage<int,double> storage_type;
-  typedef Sacado::Fad::DFad<double> fad_type;
-  typedef Sacado::MP::Vector<double,storage_type> vec_type;
-  UnitTestSetup<vec_type, fad_type> setup;
-  VEC_SERIALIZATION_TESTS(vec_type, fad_type, Vector)
-}
+// namespace VecTest {
+//   Sacado::Random<double> rnd;
+//   typedef Stokhos::StandardStorage<int,double> storage_type;
+//   typedef Sacado::Fad::DFad<double> fad_type;
+//   typedef Sacado::MP::Vector<double,storage_type> vec_type;
+//   UnitTestSetup<vec_type, fad_type> setup;
+//   VEC_SERIALIZATION_TESTS(vec_type, fad_type, Vector)
+// }
 
-namespace StaticVecTest {
-  Sacado::Random<double> rnd;
-  typedef Stokhos::StaticStandardStorage<int,double,100> storage_type;
-  typedef Sacado::Fad::DFad<double> fad_type;
-  typedef Sacado::MP::Vector<double,storage_type> vec_type;
-  UnitTestSetup<vec_type, fad_type> setup;
-  VEC_SERIALIZATION_TESTS(vec_type, fad_type, StaticVector)
-}
+// namespace StaticVecTest {
+//   Sacado::Random<double> rnd;
+//   typedef Stokhos::StaticStandardStorage<int,double,100> storage_type;
+//   typedef Sacado::Fad::DFad<double> fad_type;
+//   typedef Sacado::MP::Vector<double,storage_type> vec_type;
+//   UnitTestSetup<vec_type, fad_type> setup;
+//   VEC_SERIALIZATION_TESTS(vec_type, fad_type, StaticVector)
+// }
 
 namespace StaticFixedVecTest {
   Sacado::Random<double> rnd;
-  typedef Stokhos::StaticFixedStandardStorage<int,double,100> storage_type;
+  typedef Kokkos::Host node_type;
+  typedef Stokhos::StaticFixedStorage<int,double,100,node_type> storage_type;
   typedef Sacado::Fad::DFad<double> fad_type;
-  typedef Sacado::MP::Vector<double,storage_type> vec_type;
+  typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
   UnitTestSetup<vec_type, fad_type> setup;
   VEC_SERIALIZATION_TESTS(vec_type, fad_type, StaticFixedVector)
 }

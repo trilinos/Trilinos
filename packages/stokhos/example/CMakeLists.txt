@@ -339,14 +339,26 @@ IF(Stokhos_ENABLE_Sacado)
     DEPLIBS stokhos
     )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    sacado_mpvector_example
-    SOURCES sacado_mpvector_example.cpp
-    ARGS -v
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    DEPLIBS stokhos
-    )
+  IF(Stokhos_ENABLE_Kokkos AND Kokkos_ENABLE_Array)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      sacado_mpvector_example
+      SOURCES sacado_mpvector_example.cpp
+      ARGS -v
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      DEPLIBS stokhos
+      )
+
+    IF (Stokhos_ENABLE_CUDA)
+      CUDA_COMPILE(CUDA_SOURCES sacado_cuda_mpvector_example.cu)
+      TRIBITS_ADD_EXECUTABLE(
+	sacado_cuda_mpvector_example
+	SOURCES ${CUDA_SOURCES}
+	COMM serial mpi
+	DEPLIBS stokhos
+	)
+    ENDIF()
+  ENDIF()
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     division_example

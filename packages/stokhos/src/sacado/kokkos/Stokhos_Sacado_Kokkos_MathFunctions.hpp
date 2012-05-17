@@ -1,11 +1,13 @@
+// $Id$ 
+// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
-//                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
+//                           Sacado Package
+//                 Copyright (2006) Sandia Corporation
 // 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 // 
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
@@ -21,28 +23,25 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
+// Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
+// (etphipp@sandia.gov).
 // 
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_SACADO_HPP
-#define STOKHOS_SACADO_HPP
+#ifndef STOKHOS_SACADO_KOKKOS_MATHFUNCTIONS_HPP
+#define STOKHOS_SACADO_KOKKOS_MATHFUNCTIONS_HPP
 
-// We need to define math functions first for nested AD types
-#include "Sacado_MathFunctions.hpp"
-#include "Stokhos_Sacado_MathFunctions.hpp"
+// Host specialization
+#include "Kokkos_Host.hpp"
+#include "Kokkos_Host_macros.hpp"
+#include "Stokhos_Sacado_Kokkos_MathFunctions_impl.hpp"
+#include "Kokkos_Clear_macros.hpp"
 
-// Stokhos headers
-#include "Stokhos.hpp"
+// Cuda specialization
+#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Cuda_macros.hpp"
+#include "Stokhos_Sacado_Kokkos_MathFunctions_impl.hpp"
+#include "Kokkos_Clear_macros.hpp"
 
-// Sacado overloaded operators for Stokhos
-#include "Stokhos_StandardStorage.hpp"
-#include "Stokhos_StaticStandardStorage.hpp"
-#include "Stokhos_StaticFixedStandardStorage.hpp"
-#include "Sacado_PCE_OrthogPoly.hpp"
-#include "Sacado_ETPCE_OrthogPoly.hpp"
-#include "Sacado_ETV_Vector.hpp"
-#include "Sacado_ETV_Vector2.hpp"
-
-#endif // STOKHOS_SACADO_HPP 
+#endif // STOKHOS_STATIC_ARRAY_TRAITS_HPP

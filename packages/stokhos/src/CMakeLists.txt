@@ -236,7 +236,6 @@ SET(SOURCES ${SOURCES}
 # Sacado
 IF (Stokhos_ENABLE_Sacado)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos)
   SET(HEADERS ${HEADERS}
     sacado/Stokhos_Sacado.hpp
     sacado/Stokhos_Sacado_MathFunctions.hpp
@@ -256,15 +255,28 @@ IF (Stokhos_ENABLE_Sacado)
     sacado/Sacado_ETV_Vector2.hpp
     sacado/Sacado_ETV_Vector2Imp.hpp
     sacado/Sacado_ETV_Vector2Traits.hpp
-    sacado/kokkos/Sacado_MP_Vector.hpp
-    sacado/kokkos/Sacado_MP_VectorImp.hpp
-    sacado/kokkos/Sacado_MP_VectorOps.hpp
-    sacado/kokkos/Sacado_MP_VectorTraits.hpp
     )
   SET(SOURCES ${SOURCES}
     sacado/Sacado_PCE_OrthogPoly.cpp
     sacado/Sacado_ETPCE_OrthogPoly.cpp
     )
+  IF (Stokhos_ENABLE_Kokkos AND Kokkos_ENABLE_Array)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/impl)
+    SET(HEADERS ${HEADERS}
+      sacado/kokkos/Stokhos_Sacado_Kokkos.hpp
+      sacado/kokkos/Stokhos_StaticArrayTraits.hpp
+      sacado/kokkos/Stokhos_StaticFixedStorage.hpp
+      sacado/kokkos/Sacado_MP_Vector.hpp
+      sacado/kokkos/Sacado_MP_VectorTraits.hpp
+      sacado/kokkos/Stokhos_Sacado_Kokkos_MathFunctions.hpp
+      sacado/kokkos/impl/Stokhos_StaticArrayTraits_impl.hpp
+      sacado/kokkos/impl/Stokhos_StaticFixedStorage_impl.hpp
+      sacado/kokkos/impl/Sacado_MP_Vector_impl.hpp
+      sacado/kokkos/impl/Sacado_MP_Vector_ops.hpp
+      sacado/kokkos/impl/Stokhos_Sacado_Kokkos_MathFunctions_impl.hpp
+    )
+  ENDIF()
 ENDIF()
 
 # NOX

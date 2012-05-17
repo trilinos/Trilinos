@@ -47,39 +47,60 @@
 //             Trilinos/packages/stokhos/example/hermite_example.cpp
 //     using the Sacado overloaded operators.
 
-#include <iostream>
+#include "stdio.h"
 #include "Stokhos_Sacado_Kokkos.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 // The function to compute the polynomial chaos expansion of,
 // written as a template function
 template <class ScalarType>
-inline ScalarType simple_function(const ScalarType& u) {
+__host__ __device__
+ScalarType simple_function(const ScalarType& u) {
   return 1.0/(std::pow(std::log(u),2.0) + 1.0);
 }
 
 // Typename of PC expansion type
-typedef Kokkos::Host node_type;
-typedef Sacado::MP::Vector<Stokhos::StaticFixedStorage<int,double,10,node_type>,node_type > vec_type;
+typedef Kokkos::Cuda node_type;
+typedef Sacado::MP::Vector<Stokhos::StaticFixedStorage<int,double,10,node_type>, node_type> vec_type;
+
+__global__ void kernel() 
+{
+  // Polynomial expansions
+  const int sz = 10;
+  vec_type u(sz, 0.0), v(sz, 0.0);
+  for (int i=0; i<sz; i++) {
+    u.fastAccessCoeff(i) = 0.1 * (i+1);
+  }
+
+  v = simple_function(u);
+
+  // Print u and v
+  printf("u = [ ");
+  for (int i=0; i<sz; i++)
+    printf("%g ", u.coeff(i));
+  printf("]\n");
+
+  printf("v = [ ");
+  for (int i=0; i<sz; i++)
+    printf("%g ", v.coeff(i));
+  printf("]\n");
+
+  // std::cout << "v = 1.0 / (log(u)^2 + 1):" << std::endl;
+  // std::cout << "\tu = " << u << std::endl;
+  // std::cout << "\tv = " << v << std::endl;
+  
+}
 
 int main(int argc, char **argv)
 {
   try {
 
-    // Polynomial expansions
-    const int sz = 10;
-    vec_type u(sz, 0.0);
-    for (int i=0; i<sz; i++) {
-      u.fastAccessCoeff(i) = 0.1 * (i+1);
+    {
+      TEUCHOS_FUNC_TIME_MONITOR("Device PCE calculation");
+      kernel<<<1,2>>>();
+      cudaDeviceReset();
     }
 
-    // Compute PCE expansion of function
-    vec_type v = simple_function(u);
-
-    // Print u and v
-    std::cout << "v = 1.0 / (log(u)^2 + 1):" << std::endl;
-    std::cout << "\tu = " << u << std::endl;
-    std::cout << "\tv = " << v << std::endl;
-    
   }
   catch (std::exception& e) {
     std::cout << e.what() << std::endl;

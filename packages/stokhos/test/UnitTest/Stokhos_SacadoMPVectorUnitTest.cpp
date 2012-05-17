@@ -31,7 +31,7 @@
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Stokhos_Sacado.hpp"
+#include "Stokhos_Sacado_Kokkos.hpp"
 
 template<class ValueType, class VectorType>
 bool compareVecs(const VectorType& a1, 
@@ -429,25 +429,26 @@ struct UnitTestSetup {
 								\
   SAXPY_UNIT_TEST(VEC)
 
-namespace VecTest {
-  typedef Stokhos::StandardStorage<int,double> storage_type;
-  typedef Sacado::MP::Vector<double,storage_type> vec_type;
-  typedef UnitTestSetup<vec_type> UTS;
-  UTS setup;
-  VECTOR_UNIT_TESTS(Vector)
-}
+// namespace VecTest {
+//   typedef Stokhos::StandardStorage<int,double> storage_type;
+//   typedef Sacado::MP::Vector<double,storage_type> vec_type;
+//   typedef UnitTestSetup<vec_type> UTS;
+//   UTS setup;
+//   VECTOR_UNIT_TESTS(Vector)
+// }
 
-namespace StaticVecTest {
-  typedef Stokhos::StaticStandardStorage<int,double,7> storage_type;
-  typedef Sacado::MP::Vector<double,storage_type> vec_type;
-  typedef UnitTestSetup<vec_type> UTS;
-  UTS setup;
-  VECTOR_UNIT_TESTS(StaticVector)
-}
+// namespace StaticVecTest {
+//   typedef Stokhos::StaticStandardStorage<int,double,7> storage_type;
+//   typedef Sacado::MP::Vector<double,storage_type> vec_type;
+//   typedef UnitTestSetup<vec_type> UTS;
+//   UTS setup;
+//   VECTOR_UNIT_TESTS(StaticVector)
+// }
 
 namespace StaticFixedVecTest {
-  typedef Stokhos::StaticFixedStandardStorage<int,double,7> storage_type;
-  typedef Sacado::MP::Vector<double,storage_type> vec_type;
+  typedef Kokkos::Host node_type;
+  typedef Stokhos::StaticFixedStorage<int,double,7,node_type> storage_type;
+  typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
   typedef UnitTestSetup<vec_type> UTS;
   UTS setup;
   VECTOR_UNIT_TESTS(StaticFixedVector)

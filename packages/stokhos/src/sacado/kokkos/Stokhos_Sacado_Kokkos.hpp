@@ -26,23 +26,19 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_SACADO_HPP
-#define STOKHOS_SACADO_HPP
+#ifndef STOKHOS_SACADO_KOKKOS_HPP
+#define STOKHOS_SACADO_KOKKOS_HPP
 
-// We need to define math functions first for nested AD types
-#include "Sacado_MathFunctions.hpp"
-#include "Stokhos_Sacado_MathFunctions.hpp"
+#include "Stokhos_ConfigDefs.h"
 
-// Stokhos headers
-#include "Stokhos.hpp"
+#ifdef HAVE_STOKHOS_KOKKOS
 
-// Sacado overloaded operators for Stokhos
-#include "Stokhos_StandardStorage.hpp"
-#include "Stokhos_StaticStandardStorage.hpp"
-#include "Stokhos_StaticFixedStandardStorage.hpp"
-#include "Sacado_PCE_OrthogPoly.hpp"
-#include "Sacado_ETPCE_OrthogPoly.hpp"
-#include "Sacado_ETV_Vector.hpp"
-#include "Sacado_ETV_Vector2.hpp"
+#include "Stokhos_Sacado_Kokkos_MathFunctions.hpp"
 
-#endif // STOKHOS_SACADO_HPP 
+#include "Stokhos_StaticFixedStorage.hpp"
+
+#include "Sacado_MP_Vector.hpp"
+
+#endif // HAVE_STOKHOS_KOKKOS
+
+#endif // STOKHOS_SACADO_KOKKOS_HPP 

@@ -33,10 +33,6 @@
 
 #ifdef HAVE_STOKHOS_SACADO
 
-#include "Sacado_Traits.hpp"
-#include "Sacado_mpl_apply.hpp"
-#include "Sacado_dummy_arg.hpp"
-
 #include <ostream>	// for std::ostream
 
 namespace Sacado {
@@ -58,8 +54,11 @@ namespace Sacado {
      * any expression class.  If not, an expression class is free to change
      * the implementation through partial specialization.
      */
-    template <typename T> class Expr {
+    template <typename T, typename node> class Expr {
     public:
+
+      //! Node type
+      typedef node node_type;
 
       //! Typename of derived object, returned by derived()
       /*!
@@ -73,40 +72,33 @@ namespace Sacado {
        * This assumes a CRTP pattern where T is infact derived from
        * Expr<T>.  This will only compile if this infact the case.
        */
-      const derived_type& derived() const {
-	return static_cast<const derived_type&>(*this);
-      }
+      const derived_type& derived() const;
 
     };
 
     //! Vectorized evaluation class
-    template <typename T, typename Storage> 
-    class Vector : public Expr< Vector<T,Storage> > {
+    template <typename Storage, typename Node> 
+    class Vector : public Expr< Vector<Storage,Node>, Node > {
     public:
-
-      //! Typename of values
-      typedef T value_type;
-
-      //! Typename of scalar's (which may be different from T)
-      typedef typename ScalarType<T>::type scalar_type;
-
-      //! Typename of ordinals
-      typedef int ordinal_type;
 
       //! Typename of storage class
       typedef Storage storage_type;
 
+      //! Node type
+      typedef Node node_type;
+
+      typedef typename storage_type::value_type value_type;
+      typedef typename storage_type::ordinal_type ordinal_type;
       typedef typename storage_type::pointer pointer;
       typedef typename storage_type::const_pointer const_pointer;
       typedef typename storage_type::reference reference;
       typedef typename storage_type::const_reference const_reference;
 
+      //! Typename of scalar's (which may be different from T)
+      typedef typename ScalarType<value_type>::type scalar_type;     
+
       //! Turn Vector into a meta-function class usable with mpl::apply
-      template <typename S> 
-      struct apply {
-	typedef typename Sacado::mpl::apply<Storage,ordinal_type,S>::type storage_type;
-	typedef Vector<S,storage_type> type;
-      };
+      template <typename S> struct apply {};
 
       //! Number of arguments
       static const int num_args = 1;
@@ -133,35 +125,33 @@ namespace Sacado {
       Vector(const Vector& x);
 
       //! Copy constructor from any Expression object
-      template <typename S> Vector(const Expr<S>& x);
+      template <typename S> Vector(const Expr<S,node_type>& x);
 
       //! Destructor
       ~Vector() {}
 
       //! Initialize coefficients to value
-      void init(const T& v) { s.init(v); }
+      void init(const value_type& v);
 
       //! Initialize coefficients to an array of values
-      void init(const T* v) { s.init(v); }
+      void init(const value_type* v);
 
       //! Initialize coefficients from an Vector with different storage
-      template <typename S>
-      void init(const Vector<T,S>& v) { 
-	s.init(v.s.coeff(), v.s.size()); 
-      }
+      template <typename S, typename N>
+      void init(const Vector<S,N>& v);
 
       //! Load coefficients to an array of values
-      void load(T* v) { s.load(v); }
+      void load(value_type* v);
 
       //! Load coefficients into an Vector with different storage
-      template <typename S>
-      void load(Vector<T,S>& v) { s.load(v.s.coeff()); }
+      template <typename S, typename N>
+      void load(Vector<S,N>& v);
 
       //! Reset size
       /*!
        * Coefficients are preserved.  
        */
-      void reset(ordinal_type sz);
+      void reset(ordinal_type sz_new);
 
       //! Prepare vector for writing 
       /*!
@@ -173,19 +163,11 @@ namespace Sacado {
        * shared and this method is not called, any changes to the coefficients
        * by coeff() or fastAccessCoeff() may change other vector objects.
        */
-      void copyForWrite() {  }
+      void copyForWrite();
 
       //! Returns whether two ETV objects have the same values
       template <typename S>
-      bool isEqualTo(const Expr<S>& xx) const {
-	const typename Expr<S>::derived_type& x = xx.derived();
-	typedef IsEqual<value_type> IE;
-	if (x.size() != this->size()) return false;
-	bool eq = true;
-	for (int i=0; i<this->size(); i++)
-	  eq = eq && IE::eval(x.coeff(i), this->coeff(i));
-	return eq;
-      }
+      bool isEqualTo(const Expr<S,node_type>& xx) const;
 
       /*!
        * @name Assignment operators
@@ -200,7 +182,7 @@ namespace Sacado {
 
       //! Assignment with any expression right-hand-side
       template <typename S> 
-      Vector& operator=(const Expr<S>& x);
+      Vector& operator=(const Expr<S,node_type>& x);
 
       //@}
 
@@ -214,10 +196,10 @@ namespace Sacado {
       //@{
 
       //! Returns value
-      const_reference val() const { return s[0]; }
+      const_reference val() const;
 
       //! Returns value
-      reference val() { return s[0]; }
+      reference val();
 
       //@}
 
@@ -227,26 +209,25 @@ namespace Sacado {
       //@{
 
       //! Returns size of polynomial
-      ordinal_type size() const { return s.size();}
+      ordinal_type size() const;
 
       //! Returns true if polynomial has size >= sz
-      bool hasFastAccess(ordinal_type sz) const { return s.size()>=sz;}
+      bool hasFastAccess(ordinal_type sz) const;
 
       //! Returns Hermite coefficient array
-      const_pointer coeff() const { return s.coeff();}
+      const_pointer coeff() const;
 
       //! Returns Hermite coefficient array
-      pointer coeff() { return s.coeff();}
+      pointer coeff();
 
       //! Returns degree \c i term with bounds checking
-      value_type coeff(ordinal_type i) const { 
-	return i<s.size() ? s[i] : s[0]; }
+      value_type coeff(ordinal_type i) const;
     
       //! Returns degree \c i term without bounds checking
-      reference fastAccessCoeff(ordinal_type i) { return s[i];}
+      reference fastAccessCoeff(ordinal_type i);
 
       //! Returns degree \c i term without bounds checking
-      value_type fastAccessCoeff(ordinal_type i) const { return s[i];}
+      value_type fastAccessCoeff(ordinal_type i) const;
     
       //@}
 
@@ -269,49 +250,91 @@ namespace Sacado {
 
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S> 
-      Vector& operator += (const Expr<S>& x) {
-	*this = *this + x;
-	return *this;
-      }
+      Vector& operator += (const Expr<S,node_type>& x);
 
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S> 
-      Vector& operator -= (const Expr<S>& x) {
-	*this = *this - x;
-	return *this;
-      }
+      Vector& operator -= (const Expr<S,node_type>& x);
   
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S> 
-      Vector& operator *= (const Expr<S>& x) {
-	*this = *this * x;
-	return *this;
-      }
+      Vector& operator *= (const Expr<S,node_type>& x);
 
       //! Division-assignment operator with Expr right-hand-side
       template <typename S> 
-      Vector& operator /= (const Expr<S>& x) {
-	*this = *this / x;
-	return *this;
-      }
+      Vector& operator /= (const Expr<S,node_type>& x);
 
       //@}
 
-      std::string name() const { return "x"; }
-
-    protected:
-
-      Storage s;
+      std::string name() const;
 
     }; // class Vector
+
+    //! Type for storing nodes in expression graph
+    /*!
+     * Since expression nodes are returned by value in the overloaded
+     * operators, we can't store them by reference in general.
+     */
+    template <typename T> struct const_expr_ref {
+      typedef const T type;
+    };
+
+    //! Type for storing nodes in expression graph
+    /*!
+     * Specialization for leaf-nodes, which can be stored by reference
+     * since they are an argument to the expression.
+     */
+    template <typename S, typename N> struct const_expr_ref< Vector<S,N> > {
+      typedef const Vector<S,N>& type;
+    };
+
+    template <typename T, typename node> class UnaryPlusOp {};
+    template <typename T, typename node> class UnaryMinusOp {};
+    template <typename T, typename node> class ExpOp {};
+    template <typename T, typename node> class LogOp {};
+    template <typename T, typename node> class Log10Op {};
+    template <typename T, typename node> class SqrtOp {};
+    template <typename T, typename node> class CosOp {};
+    template <typename T, typename node> class SinOp {};
+    template <typename T, typename node> class TanOp {};
+    template <typename T, typename node> class ACosOp {};
+    template <typename T, typename node> class ASinOp {};
+    template <typename T, typename node> class ATanOp {};
+    template <typename T, typename node> class CoshOp {};
+    template <typename T, typename node> class SinhOp {};
+    template <typename T, typename node> class TanhOp {};
+    template <typename T, typename node> class ACoshOp {};
+    template <typename T, typename node> class ASinhOp {};
+    template <typename T, typename node> class ATanhOp {};
+    template <typename T, typename node> class AbsOp {};
+    template <typename T, typename node> class FAbsOp {};
+
+    template <typename T1, typename T2, typename node> class AdditionOp {};
+    template <typename T1, typename T2, typename node> class SubtractionOp {};
+    template <typename T1, typename T2, typename node> class MultiplicationOp {};
+    template <typename T1, typename T2, typename node> class DivisionOp {};
+    template <typename T1, typename T2, typename node> class Atan2Op {};
+    template <typename T1, typename T2, typename node> class PowerOp {};
+    template <typename T1, typename T2, typename node> class MaxOp {};
+    template <typename T1, typename T2, typename node> class MinOp {};
 
   } // namespace MP
 
 } // namespace Sacado
 
 #include "Sacado_MP_VectorTraits.hpp"
-#include "Sacado_MP_VectorImp.hpp"
-#include "Sacado_MP_VectorOps.hpp"
+
+// Host specialization
+#include "Kokkos_Host.hpp"
+#include "Kokkos_Host_macros.hpp"
+#include "Sacado_MP_Vector_impl.hpp"
+#include "Kokkos_Clear_macros.hpp"
+
+// Cuda specialization
+#include "Kokkos_Cuda.hpp"
+#include "Kokkos_Cuda_macros.hpp"
+#include "Sacado_MP_Vector_impl.hpp"
+#include "Kokkos_Clear_macros.hpp"
 
 #endif // HAVE_STOKHOS_SACADO
 
