@@ -32,16 +32,20 @@ namespace Zoltan2
  *  \param  recvBuf  On return, recvBuf has been allocated and contains
  *                   the packets sent to this process by others.
  *
- * The data type T for the objects must be a type for which assignment
- * is defined. This includes built-in fundamental data types plus 
- * std::pair<T1,T2>. It does not include std::vector<T>.
+ * The data type T must be a type for which SerializationTraits are defined
+ * in Teuchos.
  *
  * AlltoAll uses only point-to-point messages.  This is to avoid the MPI 
  * limitation of integer offsets and counters in collective operations.
- * In other words, LNO can be a 64-bit integer.
+ * In other words, LNO can be a 64-bit integer.  However each point to
+ * point message size must fit in an int.
  *
- * We post one receive at a time.  So this is slow, but will not encounter
- * MPI resource limits for very large applications.
+ * It also avoids non-scalable MPI data structures that are associated
+ * with collective operations.
+ *
+ * So this is slow, but will not encounter MPI resource limits for very 
+ * large applications, some of which have already been encountered by
+ * Zoltan users.
  */
 
 template <typename T, typename LNO>
@@ -91,7 +95,7 @@ void AlltoAll(const Comm<int> &comm,
     }
     Z2_THROW_OUTSIDE_ERROR(env);
 
-    try{  // blocking receive for msg just send to me
+    try{  // blocking receive for msg just sent to me
       Teuchos::receive<int, T>(comm, recvFrom, count, rptr + recvFrom*count);
     }
     Z2_THROW_OUTSIDE_ERROR(env);
@@ -111,18 +115,6 @@ void AlltoAll(const Comm<int> &comm,
  *                   the packets sent to this process by others.
  *  \param  recvCount On return, The number of Ts received from process p 
  *                     will be in recvCount[p].
- *
- * The data type T for the objects must be a type for which assignment
- * is defined. This includes built-in fundamental data types plus 
- * std::pair<T1,T2>. It does not include std::vector<T>.
- *
- * AlltoAllv uses only point-to-point messages.  This is to avoid the MPI 
- * limitation of integer offsets and counters in collective operations.
- * In other words, LNO can be a 64-bit integer.  (But the size of a single
- * message must still fit in an int.)
- *
- * \todo We need to know the reasonable limit of receives to post, and
- *         post no more than that number at a time.
  */
 
 template <typename T, typename LNO>
@@ -367,13 +359,10 @@ template <typename T, typename LNO>
  *  \param  vLen     If all vectors are the same length, set vLen to the
  *                  length of the vectors to make AlltoAllv more efficient.
  *
- * The vectors need not be the same length. The data type T must be a type 
- * which is valid for the AlltoAllv<T, LNO> (above) where sendBuf is
- * ArrayView<const T> rather than ArrayView<const std::vector<T> >.
+ * The vectors need not be the same length.
  *
  * This was written to better understand Teuchos communication, but it
- * may be useful as well. It has the same advantages described in the
- * documentation on AlltoAll.
+ * may be useful as well. 
  */
 
 template <typename T, typename LNO>
