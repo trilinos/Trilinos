@@ -14,7 +14,7 @@ namespace MueLu {
     Used in the computation of the tentative prolongator during smoothed aggregation.
     Allows for specializations for Scalar types such as std::complex<double> and PCE.
   */
-  template <class Scalar, class Storage, class LocalOrdinal>
+  template <class Scalar, class LocalOrdinal>
   class QR_Interface {
 
     public:
@@ -60,8 +60,8 @@ namespace MueLu {
   /*!
     @brief Specialization for polynomial chaos expansion (PCE) scalar types.
   */
-  template <class Scalar, class Storage, class LocalOrdinal, class GlobalOrdinal>
-  class QR_Interface< Sacado::PCE::OrthogPoly<Scalar, Storage>, LocalOrdinal, GlobalOrdinal> {
+  template <class Scalar, class Storage, class LocalOrdinal>
+  class QR_Interface< Sacado::PCE::OrthogPoly<Scalar, Storage>, LocalOrdinal > {
     public:
       //! @name Constructors/Destructors.
       //@{

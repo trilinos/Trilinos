@@ -27,14 +27,14 @@ namespace MueLu {
                  myAggSize, tau.getRawPtr(), work.getRawPtr(), workSize, &info );
   }
 
-  template <class Scalar, class Storage, class LocalOrdinal>
-  QR_Interface<Scalar,Storage,LocalOrdinal>::QR_Interface(const size_t NSDim) : workSize_(NSDim), info_(0) {
+  template <class Scalar, class LocalOrdinal>
+  QR_Interface<Scalar,LocalOrdinal>::QR_Interface(const size_t NSDim) : workSize_(NSDim), info_(0) {
     tau_ = ArrayRCP<Scalar>(NSDim);
     work_ = ArrayRCP<Scalar>(NSDim);
   }
 
-  template <class Scalar, class Storage, class LocalOrdinal>
-  void QR_Interface<Scalar,Storage,LocalOrdinal>::Compute(LocalOrdinal const &myAggSize, ArrayRCP<Scalar> &localQR)
+  template <class Scalar, class LocalOrdinal>
+  void QR_Interface<Scalar,LocalOrdinal>::Compute(LocalOrdinal const &myAggSize, ArrayRCP<Scalar> &localQR)
   {
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
     if (workSize_ == 1) {
@@ -64,8 +64,8 @@ namespace MueLu {
     }
   } //Compute()
 
-  template <class Scalar, class Storage, class LocalOrdinal>
-  void QR_Interface<Scalar,Storage,LocalOrdinal>::ExtractQ(LocalOrdinal const &myAggSize, ArrayRCP<Scalar> &localQR)
+  template <class Scalar, class LocalOrdinal>
+  void QR_Interface<Scalar,LocalOrdinal>::ExtractQ(LocalOrdinal const &myAggSize, ArrayRCP<Scalar> &localQR)
   {
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
     if (workSize_ == 1) {
@@ -98,14 +98,14 @@ namespace MueLu {
 
 #if defined(HAVE_MUELU_STOKHOS) and defined(MUELU_SCALAR_IS_PCE_TYPE)
   //Specialization for polynomial chaos expansion (PCE) scalar types.
-  template <class Scalar, class Storage, class LocalOrdinal, class GlobalOrdinal>
-  QR_Interface< Sacado::PCE::OrthogPoly<Scalar, Storage>, LocalOrdinal, GlobalOrdinal>::QR_Interface(const size_t NSDim) : workSize_(NSDim), info_(0) {
+  template <class Scalar, class Storage, class LocalOrdinal>
+  QR_Interface< Sacado::PCE::OrthogPoly<Scalar, Storage>, LocalOrdinal>::QR_Interface(const size_t NSDim) : workSize_(NSDim), info_(0) {
         tau_ = ArrayRCP<Scalar>(NSDim);
         work_ = ArrayRCP<Scalar>(NSDim);
       }
 
-  template <class Scalar, class Storage, class LocalOrdinal, class GlobalOrdinal>
-  void QR_Interface< Sacado::PCE::OrthogPoly<Scalar, Storage>, LocalOrdinal, GlobalOrdinal>::Compute(LocalOrdinal const &myAggSize, ArrayRCP<Sacado::PCE::OrthogPoly<Scalar, Storage> > &localQR) {
+  template <class Scalar, class Storage, class LocalOrdinal>
+  void QR_Interface< Sacado::PCE::OrthogPoly<Scalar, Storage>, LocalOrdinal>::Compute(LocalOrdinal const &myAggSize, ArrayRCP<Sacado::PCE::OrthogPoly<Scalar, Storage> > &localQR) {
         if (localQR.size() > localQR_.size())
           localQR_.resize(localQR.size());
         //convert pce to pod scalar
@@ -133,8 +133,8 @@ namespace MueLu {
         workSize_ = (int) std::abs(work_[0]);
       } //Compute
 
-  template <class Scalar, class Storage, class LocalOrdinal, class GlobalOrdinal>
-  void QR_Interface< Sacado::PCE::OrthogPoly<Scalar, Storage>, LocalOrdinal, GlobalOrdinal>::ExtractQ(LocalOrdinal const &myAggSize, ArrayRCP<Sacado::PCE::OrthogPoly<Scalar, Storage> > &localQR) {
+  template <class Scalar, class Storage, class LocalOrdinal>
+  void QR_Interface< Sacado::PCE::OrthogPoly<Scalar, Storage>, LocalOrdinal>::ExtractQ(LocalOrdinal const &myAggSize, ArrayRCP<Sacado::PCE::OrthogPoly<Scalar, Storage> > &localQR) {
         //call nonmember function (perhaps specialized)
         //Note: localQR_ already contains the proper data because of prior call to Compute, so there is no need to resize or copy.
         //      If Compute is called twice in a row, all bets are off.

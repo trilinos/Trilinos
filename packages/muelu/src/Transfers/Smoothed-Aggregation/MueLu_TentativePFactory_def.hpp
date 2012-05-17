@@ -221,7 +221,7 @@ namespace MueLu {
     importer = ImportFactory::Build(ghostQMap, fineA.getRowMap());
 
     Teuchos::LAPACK<LO,SC> lapack;
-    QR_Interface<SC,LO,GO> qrWidget(NSDim);
+    QR_Interface<SC,LO> qrWidget(NSDim);
 
     ArrayRCP<SC> localQR(maxAggSize*NSDim); // The submatrix of the nullspace to be orthogonalized.
 
