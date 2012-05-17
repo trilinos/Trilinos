@@ -393,7 +393,7 @@ public:
 
 private:
   void partToProc(bool doCheck, bool haveNumLocalParts, bool haveNumGlobalParts,
-    scalar_t numLocalParts, gno_t numGlobalParts);
+    int numLocalParts, int numGlobalParts);
 
   void procToPartsMap(int procId, double &numParts, partId_t &partMin, 
     partId_t &partMax) const;
@@ -559,6 +559,7 @@ template <typename Adapter>
   // Did the caller define num_global_parts and/or num_local_parts?
 
   size_t haveGlobalNumParts=0, haveLocalNumParts=0;
+  int numLocal=0, numGlobal=0;
 
   const ParameterList *params = NULL;
   if (env_->hasPartitioningParameters()){
@@ -566,19 +567,19 @@ template <typename Adapter>
     const ParameterList &partitioningParams = allParams.sublist("partitioning");
     params = &partitioningParams;
 
-    const double *entry1 = params->getPtr<double>(string("num_global_parts"));
-    const double *entry2 = params->getPtr<double>(string("num_local_parts"));
+    const int *entry1 = params->getPtr<int>(string("num_global_parts"));
+    const int *entry2 = params->getPtr<int>(string("num_local_parts"));
   
     if (entry1){
       haveGlobalNumParts = 1;
-      double val = *entry1;
-      nGlobalParts_ = size_t(val);
+      numGlobal = *entry1;
+      nGlobalParts_ = gno_t(numGlobal);
     }
   
     if (entry2){
       haveLocalNumParts = 1;
-      double val = *entry2;
-      nLocalParts_ = scalar_t(val);
+      numLocal = *entry2;
+      nLocalParts_ = scalar_t(numLocal);
     }
   }
 
@@ -586,7 +587,7 @@ template <typename Adapter>
     // Sets onePartPerProc_, partDist_, and procDist_
 
     partToProc(true, haveLocalNumParts, haveGlobalNumParts, 
-      nLocalParts_, nGlobalParts_);
+      numLocal, numGlobal);
   }
   Z2_FORWARD_EXCEPTIONS
 
@@ -704,6 +705,13 @@ template <typename Adapter>
       ArrayView<partId_t> idArray(partNums, total);
       ArrayView<scalar_t> sizeArray(partSizes, total);
 
+      if (length > 0){
+        for (int i=0; i < length; i++){
+          *partNums++ = ids[w][i];
+          *partSizes++ = sizes[w][i];
+        }
+      }
+
       for (int p=1; p < nprocs; p++){
         if (allLength[p] > 0){
           Teuchos::receive<int, partId_t>(*comm_, p,
@@ -724,8 +732,6 @@ template <typename Adapter>
 
       delete [] idArray.getRawPtr();
       delete [] sizeArray.getRawPtr();
-
-      broadcastPartSizes(w);
     } 
     else{
       delete [] allLength;
@@ -733,9 +739,9 @@ template <typename Adapter>
         Teuchos::send<int, partId_t>(*comm_, length, ids[w].getRawPtr(), 0);
         Teuchos::send<int, scalar_t>(*comm_, length, sizes[w].getRawPtr(), 0);
       }
-
-      broadcastPartSizes(w);
     }
+
+    broadcastPartSizes(w);
   }
 }
 
@@ -1550,15 +1556,15 @@ template <typename Adapter>
 template <typename Adapter>
   void PartitioningSolution<Adapter>::partToProc(
     bool doCheck, bool haveNumLocalParts, bool haveNumGlobalParts,
-    scalar_t numLocalParts, gno_t numGlobalParts) 
+    int numLocalParts, int numGlobalParts) 
 {
   int nprocs = comm_->getSize();
-  ssize_t vals[4] = {haveNumGlobalParts, haveNumLocalParts,
-      numGlobalParts, numLocalParts};
   ssize_t reducevals[4];
   ssize_t sumHaveGlobal=0, sumHaveLocal=0;
   ssize_t sumGlobal=0, sumLocal=0;
   ssize_t maxGlobal=0, maxLocal=0;
+  ssize_t vals[4] = {haveNumGlobalParts, haveNumLocalParts,
+      numGlobalParts, numLocalParts};
 
   partDist_.clear();
   procDist_.clear();
