@@ -13,7 +13,7 @@ ADD_SUBDIRECTORIES(
 # BasicPerfTest
 # Utils
 # CrsGraph
-# CrsMatrix
+  CrsMatrix
 # BlockCrsGraph
 # BlockMap
 # BlockMultiVector
