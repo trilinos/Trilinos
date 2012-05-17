@@ -139,7 +139,7 @@ TEUCHOS_UNIT_TEST(response_assembly, test)
      setupData.worksets_ = rcp(new std::vector<panzer::Workset>);
      setupData.worksets_->push_back(*workset);
 
-     panzer::Traits::PED preEvalData;
+     panzer::GlobalEvaluationDataContainer preEvalData;
 
      fm.postRegistrationSetup(setupData);
      fm.writeGraphvizFile();

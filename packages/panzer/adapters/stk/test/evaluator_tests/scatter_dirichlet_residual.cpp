@@ -247,9 +247,13 @@ namespace panzer {
     panzer::Traits::SetupData sd;
     fm.postRegistrationSetup(sd);
 
-    panzer::Traits::PED ped;
-    ped.dirichletData.ghostedCounter = dd_loc;
-    fm.preEvaluate<panzer::Traits::Residual>(ped);
+    // panzer::Traits::PED ped;
+    // ped.dirichletData.ghostedCounter = dd_loc;
+    // fm.preEvaluate<panzer::Traits::Residual>(ped);
+    panzer::GlobalEvaluationDataContainer gedc;
+    gedc.addDataObject("Dirichlet Counter",dd_loc);
+    fm.preEvaluate<panzer::Traits::Residual>(gedc);
+
 
     // run tests
     /////////////////////////////////////////////////////////////
@@ -484,9 +488,12 @@ namespace panzer {
     panzer::Traits::SetupData sd;
     fm.postRegistrationSetup(sd);
 
-    panzer::Traits::PED ped;
-    ped.dirichletData.ghostedCounter = dd_loc;
-    fm.preEvaluate<panzer::Traits::Jacobian>(ped);
+    // panzer::Traits::PED ped;
+    // ped.dirichletData.ghostedCounter = dd_loc;
+    // fm.preEvaluate<panzer::Traits::Jacobian>(ped);
+    panzer::GlobalEvaluationDataContainer gedc;
+    gedc.addDataObject("Dirichlet Counter",dd_loc);
+    fm.preEvaluate<panzer::Traits::Jacobian>(gedc);
 
     // run tests
     /////////////////////////////////////////////////////////////

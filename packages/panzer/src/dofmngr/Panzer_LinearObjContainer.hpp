@@ -45,6 +45,8 @@
 
 #include "Panzer_config.hpp"
 
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
+
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_dyn_cast.hpp"
 
@@ -54,7 +56,7 @@ namespace panzer {
 // *********************** LINEAR OBJ CONTAINER *************************************************
 // **********************************************************************************************
 
-class LinearObjContainer {
+class LinearObjContainer : public GlobalEvaluationData {
 public:
    virtual ~LinearObjContainer() {}
 

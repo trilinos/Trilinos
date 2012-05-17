@@ -164,12 +164,12 @@ namespace panzer {
     fm->writeGraphvizFile<panzer::Traits::Residual>("resi-eval-graph.dot");
 
     std::vector<panzer::Workset> & worksets = *volume_worksets["eblock-0_0"];
+    GlobalEvaluationDataContainer preEvalData;
+    fm->preEvaluate<panzer::Traits::Residual>(preEvalData);
     for(std::size_t ws=0;ws<worksets.size();ws++) {
-       Traits::PED preEvalData;
-       fm->preEvaluate<panzer::Traits::Residual>(preEvalData);
        fm->evaluateFields<panzer::Traits::Residual>(worksets[ws]);
-       fm->postEvaluate<panzer::Traits::Residual>(0);
     }
+    fm->postEvaluate<panzer::Traits::Residual>(0);
 
     if(mesh->isWritable()) 
        mesh->writeToExodus("x-coord.exo");
@@ -253,12 +253,12 @@ namespace panzer {
     fm->writeGraphvizFile<panzer::Traits::Residual>("resi-eval-graph.dot");
 
     std::vector<panzer::Workset> & worksets = *volume_worksets["eblock-0_0"];
+    GlobalEvaluationDataContainer preEvalData;
+    fm->preEvaluate<panzer::Traits::Residual>(preEvalData);
     for(std::size_t ws=0;ws<worksets.size();ws++) {
-       Traits::PED preEvalData;
-       fm->preEvaluate<panzer::Traits::Residual>(preEvalData);
        fm->evaluateFields<panzer::Traits::Residual>(worksets[ws]);
-       fm->postEvaluate<panzer::Traits::Residual>(0);
     }
+    fm->postEvaluate<panzer::Traits::Residual>(0);
 
     if(mesh->isWritable()) 
        mesh->writeToExodus("x-coord-cell.exo");

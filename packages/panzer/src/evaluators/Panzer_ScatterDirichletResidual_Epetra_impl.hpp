@@ -134,7 +134,7 @@ preEvaluate(typename Traits::PreEvalData d)
 {
    // extract dirichlet counter from container
    Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
-         = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.dirichletData.ghostedCounter,true);
+         = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject("Dirichlet Counter"),true);
 
    dirichletCounter_ = epetraContainer->get_x();
    TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
@@ -275,7 +275,7 @@ preEvaluate(typename Traits::PreEvalData d)
 {
    // extract dirichlet counter from container
    Teuchos::RCP<EpetraLinearObjContainer> epetraContainer 
-         = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.dirichletData.ghostedCounter,true);
+         = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject("Dirichlet Counter"),true);
 
    dirichletCounter_ = epetraContainer->get_x();
    TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));

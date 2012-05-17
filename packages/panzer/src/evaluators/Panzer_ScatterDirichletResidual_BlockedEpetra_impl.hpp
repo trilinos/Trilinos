@@ -172,7 +172,7 @@ preEvaluate(typename Traits::PreEvalData d)
 
    // extract dirichlet counter from container
    Teuchos::RCP<BLOC> blockContainer 
-         = Teuchos::rcp_dynamic_cast<BLOC>(d.dirichletData.ghostedCounter,true);
+         = Teuchos::rcp_dynamic_cast<BLOC>(d.getDataObject("Dirichlet Counter"),true);
 
    dirichletCounter_ = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(blockContainer->get_x(),true);
    TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
@@ -343,7 +343,7 @@ preEvaluate(typename Traits::PreEvalData d)
 
    // extract dirichlet counter from container
    Teuchos::RCP<BLOC> blockContainer 
-         = Teuchos::rcp_dynamic_cast<BLOC>(d.dirichletData.ghostedCounter,true);
+         = Teuchos::rcp_dynamic_cast<BLOC>(d.getDataObject("Dirichlet Counter"),true);
 
    dirichletCounter_ = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(blockContainer->get_x(),true);
    TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));

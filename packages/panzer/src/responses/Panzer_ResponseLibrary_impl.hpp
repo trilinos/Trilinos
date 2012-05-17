@@ -331,7 +331,8 @@ evaluateVolumeFieldManagers(const panzer::AssemblyEngineInArgs & ae_in,
      const std::string & eBlock = fm_itr->first;
      Teuchos::RCP< PHX::FieldManager<TraitsT> > fm = fm_itr->second;
  
-     typename TraitsT::PED preEvalData;
+     // typename TraitsT::PED preEvalData;
+     GlobalEvaluationDataContainer preEvalData;
      fm->template preEvaluate<EvalT>(preEvalData);
 
      // loop over all worksets
@@ -379,7 +380,8 @@ evaluateVolumeFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<
     Teuchos::RCP< PHX::FieldManager<panzer::Traits> > fm = volFieldManagers_[eBlock];
 
     if(fm!=Teuchos::null) {
-       Traits::PED preEvalData;
+       // Traits::PED preEvalData;
+       GlobalEvaluationDataContainer preEvalData;
 
        fm->preEvaluate<EvalT>(preEvalData);
    

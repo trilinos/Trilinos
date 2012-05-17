@@ -71,6 +71,7 @@
 // Include User Data Types
 #include "Phalanx_Allocator_Contiguous.hpp"
 #include "Panzer_Workset.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 // Debugging information
 #include "Phalanx_TypeStrings.hpp"
@@ -173,6 +174,7 @@ namespace panzer {
 
     typedef panzer::Workset& EvalData;
 
+/*
     struct PED {
        struct DirichletData {
           //! Stores information about which global indices were set as dirichlet conditions
@@ -180,6 +182,8 @@ namespace panzer {
        } dirichletData;
     };
     typedef PED& PreEvalData;
+*/
+    typedef GlobalEvaluationDataContainer& PreEvalData;
 
     typedef void* PostEvalData;
 
