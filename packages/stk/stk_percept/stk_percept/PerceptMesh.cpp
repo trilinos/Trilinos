@@ -1611,6 +1611,7 @@ namespace stk {
 
     void PerceptMesh::readBulkData()
     {
+#if 1
       //std::cout << "PerceptMesh::readBulkData() " << std::endl;
       if (m_fixture || m_isAdopted)
         {
@@ -1624,6 +1625,36 @@ namespace stk {
         step = 0;
 
       readBulkDataAtStep(step);
+#else
+      //std::cout << "PerceptMesh::readBulkData() " << std::endl;
+      if (m_fixture || m_isAdopted)
+        {
+          //std::cout << "PerceptMesh::readBulkData() m_fixture " << std::endl;
+          return;
+        }
+
+      Ioss::Region& in_region = *m_iossRegion;
+      //----------------------------------
+      // Process Bulkdata for all Entity Types. Subsetting is possible.
+      //stk::mesh::BulkData bulk_data(meta_data, comm);
+      stk::mesh::BulkData& bulk_data = *m_bulkData;
+
+      // Read the model (topology, coordinates, attributes, etc)
+      // from the mesh-file into the mesh bulk data.
+      stk::io::MeshData& mesh_data = *m_iossMeshData;
+      stk::io::populate_bulk_data(bulk_data, mesh_data);
+
+      int timestep_count = in_region.get_property("state_count").get_int();
+      std::cout << "tmp timestep_count= " << timestep_count << std::endl;
+      //Util::pause(true, "tmp timestep_count");
+
+      // FIXME
+      if (timestep_count == 0)
+        stk::io::process_input_request(mesh_data, bulk_data, 0);
+      else
+        stk::io::process_input_request(mesh_data, bulk_data, 1);
+
+#endif
     }
     
     int PerceptMesh::getCurrentDatabaseStep()
@@ -1649,10 +1680,12 @@ namespace stk {
       //std::cout << "tmp timestep_count= " << timestep_count << std::endl;
       //Util::pause(true, "tmp timestep_count");
 
-      if (step <= 0 || step > timestep_count)
-        throw std::runtime_error("step is out of range for PerceptMesh::getDatabaseTimeAtStep, step="+toString(step)+" timestep_count= "+toString(timestep_count));
+      if ((timestep_count > 0 && step <= 0) || (step > timestep_count))
+        {
+          throw std::runtime_error("step is out of range for PerceptMesh::getDatabaseTimeAtStep, step="+toString(step)+" timestep_count= "+toString(timestep_count));
+        }
 
-      double state_time = region->get_state_time(step);
+      double state_time = timestep_count > 0 ? region->get_state_time(step) : 0.0;
       return state_time;
     }
 
@@ -1677,6 +1710,7 @@ namespace stk {
 
     void PerceptMesh::readBulkDataAtStep(int step)
     {
+      EXCEPTWATCH;
       std::cout << "PerceptMesh::readBulkDataAtStep() " << std::endl;
       if (m_fixture || m_isAdopted)
         {
@@ -1699,8 +1733,11 @@ namespace stk {
       std::cout << "tmp timestep_count= " << timestep_count << std::endl;
       //Util::pause(true, "tmp timestep_count");
 
-      if (step <= 0 || step > timestep_count)
-        throw std::runtime_error("step is out of range for PerceptMesh::readBulkDataAtStep, step="+toString(step)+" timestep_count= "+toString(timestep_count));
+      if ((timestep_count > 0 && step <= 0) || (step > timestep_count))
+        {
+          std::cout << "step is out of range for PerceptMesh::readBulkDataAtStep, step="+toString(step)+" timestep_count= "+toString(timestep_count) << std::endl;
+          throw std::runtime_error("step is out of range for PerceptMesh::readBulkDataAtStep, step="+toString(step)+" timestep_count= "+toString(timestep_count));
+        }
       // FIXME
       m_exodusStep = step;
       m_exodusTime = getDatabaseTimeAtStep(step);
