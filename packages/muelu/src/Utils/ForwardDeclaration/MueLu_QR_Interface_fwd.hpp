@@ -2,7 +2,7 @@
 #define MUELU_QR_INTERFACE_FWD_HPP
 
 namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  template <class Scalar, class LocalOrdinal>
   class QR_Interface;
 }
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for i in Non-Templated LO-GO-NO-LMO SC-LO-GO-NO-LMO SC-LO-GO
+for i in Non-Templated LO-GO-NO-LMO SC-LO-GO-NO-LMO SC-LO-GO SC-LO
   do
 
   classList=$i.classList
