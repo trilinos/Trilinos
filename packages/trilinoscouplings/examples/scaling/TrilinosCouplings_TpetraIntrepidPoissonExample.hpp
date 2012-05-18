@@ -33,11 +33,37 @@
 
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
+/// \namespace EpetraIntrepidPoissonExample
+/// \brief Epetra version of the Intrepid Poisson test problem example.
+///
+/// The Intrepid Poisson test problem uses Pamgen to construct a 3-D
+/// mesh (a simple rectangular prism with hex elements) in parallel,
+/// Sacado automatic differentiation to construct a right-hand side of
+/// the PDE corresponding to a given exact solution, and Intrepid to
+/// build a discretization.
+///
+/// We provide two variants of the Intrepid Poisson test: one that
+/// fills Epetra objects, and one that fills Tpetra objects.  The two
+/// variants do exactly the same things otherwise, so you can use them
+/// to compare the performance of Epetra and Tpetra fill.
+///
+/// This namespace contains the Tpetra variant.  It defines typedefs
+/// which you can use when writing a main() driver to run the test.
+/// The makeMatrixAndRightHandSide() function does all the work.  You
+/// can use the exactResidualNorm() function to test correctness of
+/// the discretization.  In particular, if the continuous exact
+/// solution was chosen from the space of finite element polynomials,
+/// the exact solution of the discrete linear system AX=B should match
+/// the continuous exact solution exactly, modulo rounding error when
+/// assembling the discretization.
+///
+/// The solveWithBelos() function solves the given linear system using
+/// a Belos iterative solver.  You can provide a left and/or right
+/// preconditioner if you want.
 namespace TpetraIntrepidPoissonExample {
 
 //
