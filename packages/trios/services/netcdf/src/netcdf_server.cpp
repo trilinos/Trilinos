@@ -815,7 +815,7 @@ int nc_open_stub(
     const char *path = args->path;
     const int omode = args->mode;
     size_t chunksizehint = args->chunksizehint;
-    int ncid;
+    int ncid=-1;
     nc_open_res res;  /* this is what we send back to the client */
     MPI_Info mpiHints = MPI_INFO_NULL;
 
@@ -842,6 +842,7 @@ int nc_open_stub(
     Start_Timer(callTime);
     if ((rc = ncmpi_open(MPI_COMM_WORLD, path, omode, mpiHints, &ncid)) != NC_NOERR) {
         log_error(debug_level, "Error opening file \"%s\": %s", path, ncmpi_strerror(rc));
+        res.root_group.ncid = -1;
         goto cleanup;
     }
     Stop_Timer("open", callTime);
@@ -892,6 +893,8 @@ int nc_def_dim_stub(
     const size_t len = args->len;
     int dimid; /* result */
 
+    log_debug(netcdf_debug_level, "enter");
+
     double callTime;
     Start_Timer(callTime);
     /* call actual netcdf function */
@@ -905,6 +908,8 @@ int nc_def_dim_stub(
 
     log_debug(netcdf_debug_level, "finished nc_def_dim(ncid=%d, name=%s, len=%d, dimid=%d)",
             ncid, name, len, dimid);
+
+    log_debug(netcdf_debug_level, "exit");
 
     return rc;
 }
@@ -922,6 +927,8 @@ int nc_def_var_stub(
         const NNTI_buffer_t *data_addr,
         const NNTI_buffer_t *res_addr)
 {
+    log_debug(netcdf_debug_level, "enter");
+
     log_debug(netcdf_debug_level, "calling nc_def_var");
 
     int rc = NC_NOERR;
@@ -948,6 +955,8 @@ int nc_def_var_stub(
     /* send the ncipd and return code back to client */
     rc = nssi_send_result(caller, request_id, rc, &varid, res_addr);
 
+    log_debug(netcdf_debug_level, "exit");
+
     return rc;
 }
 
@@ -958,6 +967,8 @@ int ncmpi_inq_type(
         MPI_Offset *sizep)
 {
     int rc = NC_NOERR;
+
+    log_debug(netcdf_debug_level, "enter");
 
     switch (xtype) {
 
@@ -996,6 +1007,8 @@ int ncmpi_inq_type(
         break;
     }
 
+    log_debug(netcdf_debug_level, "exit");
+
     return rc;
 }
 
@@ -1016,6 +1029,8 @@ int nc_get_att_stub(
     nc_type xtype;
     MPI_Offset len, nbytes, typesize;
     void *attbuf = NULL;
+
+    log_debug(netcdf_debug_level, "enter");
 
     /* get the len and type of the attribute buffer */
     rc = ncmpi_inq_att(ncid, varid, name, &xtype, &len);
@@ -1081,6 +1096,9 @@ cleanup:
     rc = nssi_send_result(caller, request_id, rc, NULL, res_addr);
 
     if (attbuf) free(attbuf);
+
+    log_debug(netcdf_debug_level, "exit");
+
     return rc;
 }
 
@@ -1100,6 +1118,8 @@ int nc_put_att_stub(
     const arg_type atype = args->atype;
     const ssize_t len = args->data.data_len;
     const char *data = args->data.data_val;
+
+    log_debug(netcdf_debug_level, "enter");
 
 
     /* atype (arg type) identifies the function to call */
@@ -1231,7 +1251,9 @@ int nc_put_att_stub(
 
 
     /* send result back to client */
-        rc = nssi_send_result(caller, request_id, rc, NULL, res_addr);
+    rc = nssi_send_result(caller, request_id, rc, NULL, res_addr);
+
+    log_debug(netcdf_debug_level, "exit");
 
     return rc;
 }
@@ -1276,6 +1298,8 @@ int nc_put_vars_stub(
     int count = 1, ccount = 1;
     void *buf=NULL;
 
+
+    log_debug(netcdf_debug_level, "enter");
 
     log_debug(debug_level, "calling nc_put_vars_stub(%d, atype=%d)", ncid, atype);
 
@@ -1571,6 +1595,8 @@ cleanup:
 
     Stop_Timer("put var", callTime);
 
+    log_debug(netcdf_debug_level, "exit");
+
     return rc;
 }
 
@@ -1613,6 +1639,8 @@ int nc_get_vars_stub(
     int count = 1, ccount=0;
     void *buf = malloc(len);
 
+
+    log_debug(netcdf_debug_level, "enter");
 
     log_debug(debug_level, "calling nc_get_vars_stub(%d, atype=%d)", ncid, atype);
 
@@ -1779,6 +1807,8 @@ cleanup:
     if (start_copy) free(start_copy);
     if (stride_copy) free(stride_copy);
 
+    log_debug(netcdf_debug_level, "exit");
+
     return rc;
 }
 
@@ -1796,6 +1826,8 @@ int nc_redef_stub(
 {
     int rc = NC_NOERR;
 
+    log_debug(netcdf_debug_level, "enter");
+
     log_debug(netcdf_debug_level, "calling nc_redef(%d)", *ncidp);
 
     flush_aggregated_chunks(*ncidp);
@@ -1808,6 +1840,8 @@ int nc_redef_stub(
 
     /* send the ncipd and return code back to client */
     rc = nssi_send_result(caller, request_id, rc, NULL, res_addr);
+
+    log_debug(netcdf_debug_level, "exit");
 
     return rc;
 }
@@ -1824,6 +1858,8 @@ int nc_enddef_stub(
 {
     int rc = NC_NOERR;
 
+    log_debug(netcdf_debug_level, "enter");
+
     log_debug(netcdf_debug_level, "calling nc_enddef(%d)", *ncidp);
 
     enddef_time=MPI_Wtime();
@@ -1839,6 +1875,8 @@ int nc_enddef_stub(
 
     Start_Timer(callTime);
 
+    log_debug(netcdf_debug_level, "exit");
+
     return rc;
 }
 
@@ -1850,6 +1888,8 @@ int nc_close_stub(
         const NNTI_buffer_t *res_addr)
 {
     int rc = NC_NOERR;
+
+    log_debug(netcdf_debug_level, "enter");
 
     log_debug(netcdf_debug_level, "calling nc_close(%d)", *ncidp);
 
@@ -1890,6 +1930,8 @@ int nc_close_stub(
                 enddef_time-create_time, close1_time-enddef_time, close2_time-enddef_time, close1_time-create_time, close2_time-create_time);
     }
 
+    log_debug(netcdf_debug_level, "exit");
+
     return rc;
 }
 
@@ -1901,6 +1943,8 @@ int nc_sync_stub(
         const NNTI_buffer_t *res_addr)
 {
     int rc = NC_NOERR;
+
+    log_debug(netcdf_debug_level, "enter");
 
     log_debug(netcdf_debug_level, "calling nc_sync(%d)", *ncidp);
 
@@ -1924,6 +1968,8 @@ int nc_sync_stub(
     /* send result to client */
     rc = nssi_send_result(caller, request_id, rc, NULL, res_addr);
 
+    log_debug(netcdf_debug_level, "exit");
+
     return rc;
 }
 
@@ -1936,6 +1982,8 @@ int nc_begin_indep_stub(
 {
     int rc = NC_NOERR;
 
+    log_debug(netcdf_debug_level, "enter");
+
     log_debug(netcdf_debug_level, "calling nc_begin_indep_data(%d)", *ncidp);
 
     double callTime;
@@ -1945,6 +1993,8 @@ int nc_begin_indep_stub(
 
     /* send result to client */
     rc = nssi_send_result(caller, request_id, rc, NULL, res_addr);
+
+    log_debug(netcdf_debug_level, "exit");
 
     return rc;
 }
@@ -1957,6 +2007,8 @@ int nc_end_indep_stub(
         const NNTI_buffer_t *res_addr)
 {
     int rc = NC_NOERR;
+
+    log_debug(netcdf_debug_level, "enter");
 
     log_debug(netcdf_debug_level, "calling nc_end_indep_data(%d)", *ncidp);
 
@@ -1975,6 +2027,40 @@ int nc_end_indep_stub(
 
     /* send result to client */
     rc = nssi_send_result(caller, request_id, rc, NULL, res_addr);
+
+    log_debug(netcdf_debug_level, "exit");
+
+    return rc;
+}
+
+/**
+ * @brief Create a netcdf dataset.
+ *
+ * This is the server-side stub that uses nc_create to create
+ * a netcdf dataset.  It returns the
+ */
+int nc_set_fill_stub(
+        const unsigned long request_id,
+        const NNTI_peer_t *caller,
+        const nc_set_fill_args *args,
+        const NNTI_buffer_t *data_addr,
+        const NNTI_buffer_t *res_addr)
+{
+    int rc = NC_NOERR;
+    int rank, np;
+    const int ncid     = args->ncid;
+    const int new_mode = args->new_fill_mode;
+    nc_set_fill_res res;  /* this is what we send back to the client */
+
+    log_level debug_level = netcdf_debug_level;
+
+    log_debug(netcdf_debug_level, "enter");
+
+    rc=ncmpi_set_fill(ncid, new_mode, &res.old_fill_mode);
+
+    rc = nssi_send_result(caller, request_id, rc, &res, res_addr);
+
+    log_debug(netcdf_debug_level, "exit");
 
     return rc;
 }
@@ -1998,6 +2084,7 @@ int netcdf_server_init()
     NSSI_REGISTER_SERVER_STUB(NETCDF_CLOSE_OP, nc_close_stub, int, void);
     NSSI_REGISTER_SERVER_STUB(NETCDF_BEGIN_INDEP_OP, nc_begin_indep_stub, int, void);
     NSSI_REGISTER_SERVER_STUB(NETCDF_END_INDEP_OP, nc_end_indep_stub, int, void);
+    NSSI_REGISTER_SERVER_STUB(NETCDF_SET_FILL_OP, nc_set_fill_stub, nc_set_fill_args, nc_set_fill_res);
 
     return 0;
 }
@@ -2030,7 +2117,7 @@ static void generate_contact_info(char *myid)
     log_level debug_level = netcdf_debug_level;
     debug_level = LOG_ALL;
 
-    log_debug(debug_level, "enter");
+    log_debug(netcdf_debug_level, "enter");
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     log_debug(debug_level, "rank (%d)", rank);
@@ -2067,7 +2154,7 @@ static void generate_contact_info(char *myid)
         rename(contact_path, contact_file);
         free(all_urls);
     }
-    log_debug(debug_level, "exit");
+    log_debug(netcdf_debug_level, "exit");
 }
 
 
@@ -2181,10 +2268,10 @@ int main(int argc, char **argv)
 
     /* initialize and enable logging */
     if (args_info.logfile.empty()) {
+        logger_init((log_level)args_info.verbose, NULL);
+    } else {
         sprintf(logfile, "%s.%04d", args_info.logfile.c_str(), rank);
         logger_init((log_level)args_info.verbose, logfile);
-    } else {
-        logger_init((log_level)args_info.verbose, NULL);
     }
     netcdf_debug_level=(log_level)(log_level)args_info.verbose;
     debug_level = (log_level)args_info.verbose;
