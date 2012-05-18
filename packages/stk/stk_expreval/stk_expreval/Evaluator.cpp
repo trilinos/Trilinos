@@ -47,6 +47,9 @@ enum Opcode {
   OPCODE_ARGUMENT,
 
   OPCODE_TIERNARY,
+
+
+
   OPCODE_MULTIPLY,
   OPCODE_DIVIDE,
   OPCODE_MODULUS,
@@ -67,6 +70,7 @@ enum Opcode {
   OPCODE_LOGICAL_OR,
 
   OPCODE_EXPONENIATION,
+
   OPCODE_ASSIGN
 };
 
@@ -307,6 +311,9 @@ parseExpression(
   LexemVector::const_iterator assign_it = to;		// First = at paren_level 0 for assignment
   LexemVector::const_iterator term_it = to;		// Last + or - at paren_level 0 for adding or subtracting
   LexemVector::const_iterator factor_it = to;		// Last * or / at paren_level 0 for multiplying or dividing
+  LexemVector::const_iterator expon_it = to;            // Last ^ for exponenation
+
+
   LexemVector::const_iterator relation_it = to;		// Last relational at paren_level 0 for relational operator
   LexemVector::const_iterator logical_it = to;		// Last logical at paren_level 0 for logical operator
   LexemVector::const_iterator question_it = to;		// Last tiernary at paren_level 0 for tiernary operator
@@ -369,6 +376,11 @@ parseExpression(
       break;
 
     case TOKEN_EXPONENTIATION:
+      if (paren_level == 0) // && expon_it == to)
+	expon_it = it;
+      break;
+
+
     case TOKEN_MULTIPLY:
     case TOKEN_DIVIDE:
     case TOKEN_PERCENT:
@@ -398,7 +410,7 @@ parseExpression(
 	// After any of these, we are a unary operator, not a term
 	if (it == from || it == assign_it + 1
 	    || it == term_it + 1 || it == factor_it + 1
-	    || it == last_unary_it + 1)
+	    || it == last_unary_it + 1 || it == expon_it + 1)
 	{ // Unary operator
 	  if (unary_it == to) // First unary operator?
 	    unary_it = it;
@@ -454,6 +466,11 @@ parseExpression(
   // Unary
   if (unary_it != to)
     return parseUnary(eval, from, unary_it, to);
+
+  if (expon_it != to) 
+    return parseFactor(eval, from, expon_it, to);
+
+
 
   // Parenthetical
   if (lparen_open_it != to) {
