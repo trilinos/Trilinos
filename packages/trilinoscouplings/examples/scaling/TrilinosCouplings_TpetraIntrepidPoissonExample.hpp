@@ -37,8 +37,10 @@
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
-/// \namespace EpetraIntrepidPoissonExample
-/// \brief Epetra version of the Intrepid Poisson test problem example.
+
+namespace TrilinosCouplings {
+/// \namespace TpetraIntrepidPoissonExample
+/// \brief Tpetra version of the Intrepid Poisson test problem example.
 ///
 /// The Intrepid Poisson test problem uses Pamgen to construct a 3-D
 /// mesh (a simple rectangular prism with hex elements) in parallel,
@@ -231,5 +233,6 @@ solveWithBelos (bool& converged,
                 const Teuchos::RCP<const operator_type>& M_right=null);
 
 } // namespace TpetraIntrepidPoissonExample
+} // namespace TrilinosCouplings
 
 #endif // __TrilinosCouplings_TpetraIntrepidPoissonExample_hpp

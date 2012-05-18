@@ -31,6 +31,7 @@
 #include "TrilinosCouplings_IntrepidPoissonExample_SolveWithBelos.hpp"
 #include "TrilinosCouplings_EpetraIntrepidPoissonExample.hpp"
 
+namespace TrilinosCouplings {
 namespace EpetraIntrepidPoissonExample {
 
 void
@@ -52,3 +53,4 @@ solveWithBelos (bool& converged,
 }
 
 } // namespace EpetraIntrepidPoissonExample
+} // namespace TrilinosCouplings

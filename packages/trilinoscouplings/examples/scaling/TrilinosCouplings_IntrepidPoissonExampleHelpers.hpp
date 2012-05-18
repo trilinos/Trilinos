@@ -43,7 +43,27 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <string>
 
+
 namespace TrilinosCouplings {
+/// \namespace IntrepidPoissonExample
+/// \brief Intrepid Poisson test problem example: common functionality.
+///
+/// The Intrepid Poisson test problem uses Pamgen to construct a 3-D
+/// mesh (a simple rectangular prism with hex elements) in parallel,
+/// Sacado automatic differentiation to construct a right-hand side of
+/// the PDE corresponding to a given exact solution, and Intrepid to
+/// build a discretization.
+///
+/// We provide two variants of the Intrepid Poisson test: one that
+/// fills Epetra objects, and one that fills Tpetra objects.  The two
+/// variants do exactly the same things otherwise, so you can use them
+/// to compare the performance of Epetra and Tpetra fill.
+///
+/// This namespace contains functions which both variants can share,
+/// because they do not depend on Epetra or Tpetra.  You can include
+/// this file in your main() test driver in order to set up and read
+/// in command-line arguments, and prepare the Pamgen mesh
+/// specification.
 namespace IntrepidPoissonExample {
 
 /// \brief Make a Pamgen mesh specification for the Poisson test problem.
@@ -80,6 +100,14 @@ setCommandLineArgumentDefaults (int& nx,
                                 bool& verbose,
                                 bool& debug);
 
+/// \brief Prepare for parsing command-line arguments.
+///
+/// This sets up command-line options for the given arguments, which
+/// correspond to the arguments of setCommandLineArgumentDefaults.
+/// This function reads in the default values of the arguments on
+/// input.  When the command-line arguments are parsed (by
+/// parseCommandLineArguments()), their values will be overwritten
+/// with the values specified on the command line.
 void
 setUpCommandLineArguments (Teuchos::CommandLineProcessor& cmdp,
                            int& nx,

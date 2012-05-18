@@ -37,6 +37,7 @@
 #include "Teuchos_ScalarTraits.hpp"
 
 
+namespace TrilinosCouplings {
 /// \namespace EpetraIntrepidPoissonExample
 /// \brief Epetra version of the Intrepid Poisson test problem example.
 ///
@@ -177,5 +178,6 @@ solveWithBelos (bool& converged,
                 const Teuchos::RCP<const operator_type>& M_right=null);
 
 } // namespace EpetraIntrepidPoissonExample
+} // namespace TrilinosCouplings
 
 #endif // __TrilinosCouplings_EpetraIntrepidPoissonExample_hpp

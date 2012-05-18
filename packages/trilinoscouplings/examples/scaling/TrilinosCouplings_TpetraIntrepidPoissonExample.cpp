@@ -32,6 +32,7 @@
 #include "TrilinosCouplings_TpetraIntrepidPoissonExample.hpp"
 
 
+namespace TrilinosCouplings {
 namespace TpetraIntrepidPoissonExample {
 
 /**********************************************************************************/
@@ -1343,5 +1344,5 @@ evaluateExactSolutionGrad (ArrayOut&      exactSolutionGradValues,
   }
 }
 
-
 } // namespace TpetraIntrepidPoissonExample
+} // namespace TrilinosCouplings

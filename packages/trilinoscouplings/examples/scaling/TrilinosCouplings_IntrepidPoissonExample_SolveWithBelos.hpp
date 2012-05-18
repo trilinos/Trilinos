@@ -39,12 +39,16 @@
 #include "BelosPseudoBlockCGSolMgr.hpp"
 
 
+namespace TrilinosCouplings {
 namespace IntrepidPoissonExample {
 
 /// \brief Solve the linear system(s) AX=B with Belos.
 ///
 /// This is a generic solve function: you can use any scalar,
-/// multivector, and operator types that Belos supports.
+/// multivector, and operator types that Belos supports.  We in turn
+/// use this as the implementation of solveWithBelos() functions for a
+/// specific Scalar, multivector, and operator type combination.  This
+/// hopefully increases parallelism in the build.
 ///
 /// \tparam ST The type of entries in the matrix and vectors.  For
 ///   Epetra objects, this is always double.  For Tpetra objects, this
@@ -153,5 +157,6 @@ solveWithBelos (bool& converged,
 }
 
 } // namespace IntrepidPoissonExample
+} // namespace TrilinosCouplings
 
 #endif // __TrilinosCouplings_IntrepidPoissonExample_SolveWithBelos_hpp

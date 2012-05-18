@@ -33,6 +33,7 @@
 #include "Epetra_IntVector.h"
 
 
+namespace TrilinosCouplings {
 namespace EpetraIntrepidPoissonExample {
 
 /**********************************************************************************/
@@ -1491,5 +1492,5 @@ evaluateExactSolutionGrad (ArrayOut&      exactSolutionGradValues,
   }
 }
 
-
 } // namespace EpetraIntrepidPoissonExample
+} // namespace TrilinosCouplings
