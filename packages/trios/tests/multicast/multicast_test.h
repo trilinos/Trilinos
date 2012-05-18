@@ -43,8 +43,8 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
  *      Author: thkorde
  */
 
-#ifndef MULTICAST_CLIENT_H_
-#define MULTICAST_CLIENT_H_
+#ifndef MULTICAST_TEST_H_
+#define MULTICAST_TEST_H_
 
 #include <string>
 #include <limits.h>
@@ -108,4 +108,4 @@ extern "C" {
 #endif
 
 
-#endif /* MULTICAST_CLIENT_H_ */
+#endif /* MULTICAST_TEST_H_ */
