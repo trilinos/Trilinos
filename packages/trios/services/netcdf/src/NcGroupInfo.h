@@ -191,6 +191,9 @@ public:
     /** Return the length of a dimension. */
     int inq_dimlen(const int dimid, size_t *lengthp);
 
+    /** Return the dimid of the dimension named 'name' */
+    int inq_dimid (const char *name, int *dimid);
+
     int inq_unlimdimid(int *unlimdimidp);
 
 
