@@ -89,7 +89,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 
 extern NNTI_transport_t transports[NSSI_RPC_COUNT];
-extern bool config_use_buffer_queue;
+extern nssi_config_t nssi_config;
 
 extern trios_buffer_queue_t send_bq;
 extern trios_buffer_queue_t recv_bq;
@@ -441,7 +441,7 @@ int nssi_get_service(
     /*------ Initialize variables and buffers ------*/
     memset(&req_header, 0, sizeof(nssi_request_header));
 
-    if (config_use_buffer_queue) {
+    if (nssi_config.use_buffer_queue) {
         short_req_hdl=trios_buffer_queue_pop(&send_bq);
         assert(short_req_hdl);
 
@@ -567,7 +567,7 @@ int nssi_get_service(
     }
 
 cleanup:
-    if (config_use_buffer_queue) {
+    if (nssi_config.use_buffer_queue) {
         trios_buffer_queue_push(&send_bq, short_req_hdl);
         short_req_hdl=NULL;
 
@@ -1280,7 +1280,7 @@ cleanup:
         req->callback(req);
     }
 
-    if (config_use_buffer_queue) {
+    if (nssi_config.use_buffer_queue) {
         trios_buffer_queue_push(&recv_bq, req->short_result_hdl);
         req->short_result_hdl=NULL;
     } else {
@@ -1604,7 +1604,7 @@ int nssi_call_rpc(
     /* set the opcode for the request header */
     header.opcode = opcode;
 
-    if (config_use_buffer_queue) {
+    if (nssi_config.use_buffer_queue) {
         short_req_hdl=trios_buffer_queue_pop(&send_bq);
     } else {
         /* allocate memory for the short request buffer */
@@ -1660,7 +1660,7 @@ int nssi_call_rpc(
         log_debug(rpc_debug_level, "Registered long args buffer");
     }
 
-    if (config_use_buffer_queue) {
+    if (nssi_config.use_buffer_queue) {
         request->short_result_hdl=trios_buffer_queue_pop(&recv_bq);
     } else {
         request->short_result_hdl=&request->short_result;
@@ -1761,7 +1761,7 @@ cleanup:
     log_debug(rpc_debug_level, "thread_id(%llu): finished nssi_call_rpc (req.opcode=%d, req.id=%d)",
             nthread_self(), request->opcode, request->id);
 
-    if (config_use_buffer_queue) {
+    if (nssi_config.use_buffer_queue) {
         trios_buffer_queue_push(&send_bq, short_req_hdl);
         short_req_hdl=NULL;
     } else {
@@ -1778,7 +1778,7 @@ cleanup:
         if (data_size > 0) {
             NNTI_unregister_memory(&request->data_hdl);
         }
-        if (config_use_buffer_queue) {
+        if (nssi_config.use_buffer_queue) {
             trios_buffer_queue_push(&recv_bq, request->short_result_hdl);
             request->short_result_hdl=NULL;
         } else {

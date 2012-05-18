@@ -119,7 +119,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 
 extern NNTI_transport_t transports[NSSI_RPC_COUNT];
-extern bool config_use_buffer_queue;
+extern nssi_config_t nssi_config;
 
 extern trios_buffer_queue_t send_bq;
 extern trios_buffer_queue_t recv_bq;
@@ -651,7 +651,7 @@ static int send_result(const NNTI_peer_t   *caller,
     /* allocated an xdr memory stream for the short result buffer */
     assert(res_buf_size > 0);
 
-    if (config_use_buffer_queue) {
+    if (nssi_config.use_buffer_queue) {
         short_res_hdl=trios_buffer_queue_pop(&send_bq);
         assert(short_res_hdl);
     } else {
@@ -863,7 +863,7 @@ cleanup:
         free(buf);
     }
 
-    if (config_use_buffer_queue) {
+    if (nssi_config.use_buffer_queue) {
         trios_buffer_queue_push(&send_bq, short_res_hdl);
     } else {
         buf=NNTI_BUFFER_C_POINTER(short_res_hdl);
