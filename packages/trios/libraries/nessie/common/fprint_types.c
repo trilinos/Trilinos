@@ -290,6 +290,12 @@ void fprint_NNTI_remote_addr(
                 fprintf(fp, "%s    wc_mem_hdl = (%llu, %llu),\n",
                         subprefix, addr->NNTI_remote_addr_t_u.gni.wc_mem_hdl.qword1, addr->NNTI_remote_addr_t_u.gni.wc_mem_hdl.qword2);
                 break;
+            case NSSI_RPC_MPI:
+                fprintf(fp, "%s    rtr_tag    = %llu,\n", subprefix, (unsigned long long)addr->NNTI_remote_addr_t_u.mpi.rtr_tag);
+                fprintf(fp, "%s    rts_tag    = %llu,\n", subprefix, (unsigned long long)addr->NNTI_remote_addr_t_u.mpi.rts_tag);
+                fprintf(fp, "%s    data_tag   = %llu,\n", subprefix, (unsigned long long)addr->NNTI_remote_addr_t_u.mpi.data_tag);
+                fprintf(fp, "%s    size       = %llu,\n", subprefix, (unsigned long long)addr->NNTI_remote_addr_t_u.mpi.size);
+                break;
         }
 
 
@@ -345,6 +351,9 @@ void fprint_NNTI_peer(
                 fprintf(fp, "%s    addr    = %llu,\n", subprefix, (unsigned long long)addr->peer.NNTI_remote_process_t_u.gni.addr);
                 fprintf(fp, "%s    port    = %llu,\n", subprefix, (unsigned long long)addr->peer.NNTI_remote_process_t_u.gni.port);
                 fprintf(fp, "%s    inst_id = %llu,\n", subprefix, (unsigned long long)addr->peer.NNTI_remote_process_t_u.gni.inst_id);
+                break;
+            case NSSI_RPC_MPI:
+                fprintf(fp, "%s    rank    = %llu,\n", subprefix, (unsigned long long)addr->peer.NNTI_remote_process_t_u.mpi.rank);
                 break;
         }
 

@@ -73,7 +73,7 @@ struct Factory< Kokkos::CrsArray< IndexType , Device , IndexType > ,
   typedef Device                                     device_type ;
   typedef typename device_type::size_type            size_type  ;
   typedef Kokkos::CrsArray< IndexType , Device , IndexType > graph_type ;
-  typedef MDArray< size_type , device_type >         element_map_type ;
+  typedef Array< size_type[ElemNodeCount][ElemNodeCount] , device_type >         element_map_type ;
 
   typedef HybridFEM::FEMesh< CoordScalar , ElemNodeCount , Device > mesh_type ;
 
@@ -99,9 +99,7 @@ struct Factory< Kokkos::CrsArray< IndexType , Device , IndexType > ,
     const size_t total_elem = mesh.elem_node_ids.dimension(0);
 
     if ( total_elem ) {
-      elem_map = create_mdarray< element_map_type >( total_elem ,
-                                                     ElemNodeCount ,
-                                                     ElemNodeCount );
+      elem_map = create_array< element_map_type >( total_elem );
     }
 
     element_map_host_type elem_map_host = create_mirror( elem_map );
@@ -114,15 +112,15 @@ struct Factory< Kokkos::CrsArray< IndexType , Device , IndexType > ,
 
     size_t offset = 0 ;
     for ( size_t i = 0 ; i < owned_node ; ++i ) {
-      const size_t j_end = node_elem_ids.row_entry_end(i);
-            size_t j     = node_elem_ids.row_entry_begin(i);
+      const size_t j_end = node_elem_ids.row_map[i+1];
+            size_t j     = node_elem_ids.row_map[i];
 
       node_node_begin[i] = offset ;
 
       std::vector< unsigned > & work = node_node_ids[i] ;
 
       for ( ; j < j_end ; ++j ) {
-        const size_t elem_id = node_elem_ids(j,0);
+        const size_t elem_id = node_elem_ids.entries(j,0);
         for ( size_t k = 0 ; k < ElemNodeCount ; ++k ) {
           work.push_back( elem_node_ids( elem_id , k ) );
         }

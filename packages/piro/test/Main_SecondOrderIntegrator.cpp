@@ -54,8 +54,8 @@
 #include "Piro_ConfigDefs.hpp"
 
 #include "Piro_Epetra_VelocityVerletSolver.hpp"
-#include "Piro_Epetra_TrapezoidRuleSolver.hpp"
 #include "Piro_Epetra_NOXSolver.hpp"
+#include "Piro_Epetra_TrapezoidRuleSolver.hpp"
 
 
 int main(int argc, char *argv[]) {
@@ -107,14 +107,13 @@ int main(int argc, char *argv[]) {
 
       RCP<Teuchos::ParameterList> piroParams =
          rcp(new Teuchos::ParameterList("Piro Parameters"));
-      Teuchos::updateParametersFromXmlFile(inputFile, piroParams.get());
+      Teuchos::updateParametersFromXmlFile(inputFile, piroParams.ptr());
 
       // Use these two objects to construct a Piro solved application 
       //   EpetraExt::ModelEvaluator is  base class of all Piro::Epetra solvers
       RCP<EpetraExt::ModelEvaluator> piro;
 
       std::string& solver = piroParams->get("Piro Solver","NOX");
-#ifdef Piro_ENABLE_NOX
       RCP<NOX::Epetra::Observer> observer = rcp(new ObserveSolution_Epetra());
 
       if (solver=="NOX") {
@@ -129,7 +128,6 @@ int main(int argc, char *argv[]) {
                        piroParams, Model, observer));
       }
       else
-#endif
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
           "Error: Unknown Piro Solver : " << solver);
 

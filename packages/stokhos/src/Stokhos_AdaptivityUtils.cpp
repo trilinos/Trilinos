@@ -198,6 +198,12 @@ Teuchos::RCP<Epetra_CrsGraph> Stokhos::adapt_utils::buildAdaptedGraph(
 
    Teuchos::RCP<Epetra_CrsGraph> graph = Teuchos::rcp(new Epetra_CrsGraph(Copy,*rowMap,0));
 
+   Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
+   if(kExpOrder<0)
+      Cijk = masterBasis->computeTripleProductTensor(masterBasis->size());
+   else
+      Cijk = masterBasis->computeTripleProductTensor(kExpOrder);
+
    // iterate over nonzero structure of graph
    int maxNNZ = determGraph.MaxNumNonzeros();
    std::vector<int> determGraphCols(maxNNZ);
@@ -215,7 +221,7 @@ Teuchos::RCP<Epetra_CrsGraph> Stokhos::adapt_utils::buildAdaptedGraph(
          int lCID = determGraph.LCID(gCID);
          int colOffsetIndex = myColGidOffsets[lCID];
 
-         Stokhos::BasisInteractionGraph interactGraph(*masterBasis,*per_dof_row_basis[lRID],
+         Stokhos::BasisInteractionGraph interactGraph(*masterBasis,*Cijk,*per_dof_row_basis[lRID],
                                                                    *per_dof_col_basis[lCID],
                                                                    onlyUseLinear,kExpOrder);
          for(std::size_t basisRow=0;basisRow<interactGraph.rowCount();basisRow++) {

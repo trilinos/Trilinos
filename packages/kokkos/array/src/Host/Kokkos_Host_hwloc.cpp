@@ -42,6 +42,10 @@
 */
 
 /*--------------------------------------------------------------------------*/
+
+#include <iostream>
+#include <limits>
+
 /* Kokkos interfaces */
 
 #include <Kokkos_Host.hpp>
@@ -64,136 +68,242 @@
 namespace Kokkos {
 namespace Impl {
 
-namespace {
-
-class Host_hwloc {
+class HostInternalHWLOC : public HostInternal {
 private:
 
-  hwloc_topology_t  m_host_topology ;
-  unsigned          m_node_count ;
-  unsigned          m_core_per_node ;
-  unsigned          m_page_size ;
+  hwloc_topology_t m_host_topology ;
+  unsigned         m_node_core_count ;    // Cores per node
+  unsigned         m_node_core_pu_count ; // Processing units per core per node
 
-  ~Host_hwloc();
-  Host_hwloc();
-  Host_hwloc( const Host_hwloc & );
-  Host_hwloc & operator = ( const Host_hwloc & );
+  // Map rank within node to core and pu
+  std::pair<unsigned,unsigned>
+  core_pu_rank( const unsigned rank , const unsigned size ) const
+  {
+    // Threads per core:
+    // cores[ 0    .. base ) have 'core_thread_base_count' threads
+    // cores[ base .. end  ) have 'core_thread_base_count + 1' threads
+
+    // How many cores will be used:
+    const size_t core_use_count = std::min( m_node_core_count , size );
+
+    // Minimum number of threads per core
+    const size_t core_thread_base_count = size / core_use_count ;
+
+    // Number of cores which have the minimum number of threads
+    const size_t core_thread_base = core_use_count - size % core_use_count ;
+
+    size_t node_core_rank = 0 ;
+    size_t node_core_pu_rank = 0 ;
+
+    for ( size_t node_thread_rank = 0 ; ; ) {
+
+      const size_t core_thread_count =
+        node_core_rank < core_thread_base ? core_thread_base_count
+                                          : core_thread_base_count + 1 ;
+
+      if ( rank < node_thread_rank + core_thread_count ) {
+        // Use this core
+        node_core_pu_rank = ( rank - node_thread_rank ) % m_node_core_pu_count ;
+        break ;
+      }
+
+      node_thread_rank += core_thread_count ;
+      ++node_core_rank ;
+    }
+
+    return std::pair<unsigned,unsigned>( node_core_rank , node_core_pu_rank );
+  }
 
 public:
 
-  static const Host_hwloc & singleton();
+  ~HostInternalHWLOC();
+  HostInternalHWLOC();
 
-  inline
-  unsigned page_size() const
-  { return m_page_size ; }
-
-  inline
-  unsigned node_count() const
-  { return m_node_count ; }
-
-  inline
-  unsigned core_per_node() const
-  { return m_core_per_node ; }
-
-  inline
-  bool cpubind( unsigned node_rank ) const
-  {
-    const hwloc_obj_t node =
-      hwloc_get_obj_by_type( m_host_topology, HWLOC_OBJ_NODE, node_rank );
-
-    return -1 != hwloc_set_cpubind( m_host_topology , node->allowed_cpuset ,
-                                    HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT );
-  }
+  bool bind_to_node( const HostThread & thread ) const ;
 };
 
-Host_hwloc::Host_hwloc()
-{
-  m_node_count    = 0 ;
-  m_core_per_node = 0 ;
-  m_page_size     = 0 ;
+//----------------------------------------------------------------------------
 
+HostInternal & HostInternal::singleton()
+{
+  static HostInternalHWLOC self ; return self ;
+}
+
+//----------------------------------------------------------------------------
+
+bool HostInternalHWLOC::bind_to_node( const HostThread & thread ) const
+{
+  bool result = true ;
+
+  if ( m_node_core_count ) { // Detected homogeneous nodes
+
+    // Which node -> core -> processing unit
+
+    const std::pair<unsigned,unsigned> rank =
+      core_pu_rank( thread.node_rank() , HostInternal::m_node_thread_count );
+
+    const hwloc_obj_t node =
+      hwloc_get_obj_by_type( m_host_topology, HWLOC_OBJ_NODE, thread.node() );
+
+    const hwloc_obj_t core =
+      hwloc_get_obj_inside_cpuset_by_type( m_host_topology ,
+                                           node->allowed_cpuset ,
+                                           HWLOC_OBJ_CORE , rank.first );
+
+    const hwloc_obj_t pu =
+      hwloc_get_obj_inside_cpuset_by_type( m_host_topology ,
+                                           core->allowed_cpuset ,
+                                           HWLOC_OBJ_PU , rank.second );
+
+    result = 0 == hwloc_set_cpubind( m_host_topology ,
+                                     pu->allowed_cpuset ,
+                                     HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT );
+
+    if ( result ) {
+
+      hwloc_cpuset_t thread_cpuset = hwloc_bitmap_alloc();
+
+      hwloc_get_cpubind( m_host_topology, thread_cpuset, HWLOC_CPUBIND_THREAD );
+
+      result = hwloc_bitmap_isequal( thread_cpuset , pu->allowed_cpuset );
+
+      hwloc_bitmap_free( thread_cpuset );
+    }
+
+#if 0
+    std::cout << ( result ? "SUCCESS " : "FAILED " )
+              << "HWLOC::bind_to_node thread["
+              << thread.rank()
+              << "] to node[" << thread.node()
+              << "].core[" << rank.first
+              << "].pu[" << rank.second
+              << "]"
+              << std::endl ;
+#endif
+
+  }
+  return result ;
+};
+
+//----------------------------------------------------------------------------
+
+HostInternalHWLOC::HostInternalHWLOC()
+  : HostInternal()
+  , m_host_topology()
+  , m_node_core_count( 0 )
+  , m_node_core_pu_count( 0 )
+{
   hwloc_topology_init( & m_host_topology );
   hwloc_topology_load( m_host_topology );
 
-  const int hwloc_depth =
-    hwloc_get_type_depth( m_host_topology , HWLOC_OBJ_NODE );
+  const size_t node_count =
+    hwloc_get_nbobjs_by_type( m_host_topology , HWLOC_OBJ_NODE );
 
-  if ( HWLOC_TYPE_DEPTH_UNKNOWN != hwloc_depth ) {
+  if ( node_count ) {
+    // Get cpuset binding of this process.
+    // This may have been bound by 'mpirun'.
 
-    m_node_count =
-      hwloc_get_nbobjs_by_depth( m_host_topology , hwloc_depth );
+    bool node_symmetry = true ;
+    bool page_symmetry = true ;
+    size_t page_size = 0 ;
+    size_t node_core_count = 0 ;
+    size_t node_core_pu_count = 0 ;
+    size_t node_rank = std::numeric_limits<size_t>::max();
 
-    bool ok = 0 < m_node_count ;
+    hwloc_cpuset_t proc_cpuset = hwloc_bitmap_alloc();
 
-    for ( unsigned i = 0 ; i < m_node_count && ok ; ++i ) {
+    hwloc_get_cpubind( m_host_topology , proc_cpuset , 0 );
+
+    // Is this process bound to a particular NUMA node?
+    // This may have been done by 'mpirun'.
+    // If so then restrict this device to that NUMA node.
+
+    for ( size_t i = 0 ; i < node_count && node_count < node_rank ; ++i ) {
 
       const hwloc_obj_t node =
         hwloc_get_obj_by_type( m_host_topology , HWLOC_OBJ_NODE , i );
 
-      const unsigned count = hwloc_bitmap_weight( node->allowed_cpuset );
+      // If the process' cpu set is included in the node cpuset
+      // then assumed pinned to that node.
+      if ( hwloc_bitmap_isincluded( proc_cpuset , node->allowed_cpuset ) ) {
+        node_rank = i ;
+      }
+    }
 
-      if ( 0 == m_core_per_node ) { m_core_per_node = count ; }
+    const bool bound_proc = node_rank < node_count ;
 
-      ok = count == m_core_per_node ;
+    HostInternal::m_node_rank  = bound_proc ? node_rank : 0 ;
+    HostInternal::m_node_count = node_count ;
 
-      bool homogeneous_page_size = true ;
+    for ( unsigned i = 0 ; i < node_count ; ++i ) {
 
-      unsigned page_size = 0 ;
+      const hwloc_obj_t node =
+        hwloc_get_obj_by_type( m_host_topology , HWLOC_OBJ_NODE , i );
 
-      for ( unsigned j = 0 ; homogeneous_page_size &&
-                             j < node->memory.page_types_len ; ++j ) {
+      const size_t core_count =
+        hwloc_get_nbobjs_inside_cpuset_by_type( m_host_topology ,
+                                                node->allowed_cpuset ,
+                                                HWLOC_OBJ_CORE );
+
+      if ( 0 == node_core_count ) { node_core_count = core_count ; }
+
+      if ( core_count != node_core_count ) { node_symmetry = false ; }
+
+      for ( size_t j = 0 ; j < core_count ; ++j ) {
+
+        const hwloc_obj_t core =
+          hwloc_get_obj_inside_cpuset_by_type( m_host_topology ,
+                                               node->allowed_cpuset ,
+                                               HWLOC_OBJ_CORE , j );
+
+        const size_t pu_count =
+          hwloc_get_nbobjs_inside_cpuset_by_type( m_host_topology ,
+                                                  core->allowed_cpuset ,
+                                                  HWLOC_OBJ_PU );
+
+        if ( 0 == node_core_pu_count ) { node_core_pu_count = pu_count ; }
+
+        if ( pu_count != node_core_pu_count ) { node_symmetry = false ; }
+      }
+
+      for ( unsigned j = 0 ; j < node->memory.page_types_len ; ++j ) {
         if ( node->memory.page_types[j].count ) {
           if ( 0 == page_size ) {
             page_size = node->memory.page_types[j].size ;
           }
-          homogeneous_page_size = node->memory.page_types[j].size == page_size ;
+          page_symmetry = node->memory.page_types[j].size == page_size ;
         }
       }
-
-      if ( homogeneous_page_size ) { m_page_size = page_size ; }
     }
 
-    if ( ! ok ) {
-      m_core_per_node = 0 ;
-      m_node_count    = 0 ;
-      m_page_size     = 0 ;
+    hwloc_bitmap_free( proc_cpuset );
+
+    if ( node_symmetry && node_core_count ) {
+
+      m_node_core_count    = node_core_count ;
+      m_node_core_pu_count = node_core_pu_count ;
+
+      HostInternal::m_node_pu_count = node_core_count * node_core_pu_count ;
+    }
+    else {
+      std::cerr << "Kokkos::Host WARNING: multicore CPUs are not symmetric"
+                << std::endl ;
+    }
+
+    if ( page_symmetry && page_size ) {
+      HostInternal::m_page_size = page_size ;
     }
   }
 }
 
-Host_hwloc::~Host_hwloc()
+HostInternalHWLOC::~HostInternalHWLOC()
 {
   hwloc_topology_destroy( m_host_topology );
 }
 
-const Host_hwloc & Host_hwloc::singleton()
-{
-  static Host_hwloc self ;
-  return self ;
-}
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
 
-} // namespace <>
-} // namespace Impl
-} // namespace Kokkos
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace Kokkos {
-namespace Impl {
-
-unsigned host_internal_page_size()
-{ return Host_hwloc::singleton().page_size(); }
-
-unsigned host_internal_node_count()
-{ return Host_hwloc::singleton().node_count(); }
-
-unsigned host_internal_core_per_node()
-{ return Host_hwloc::singleton().core_per_node(); }
-
-bool host_internal_bind_this_thread_to_node( unsigned node_rank )
-{ return Host_hwloc::singleton().cpubind( node_rank ); }
-
-} // namespace Impl
-} // namespace Kokkos
+} /* namespace Impl */
+} /* namespace Kokkos */
 

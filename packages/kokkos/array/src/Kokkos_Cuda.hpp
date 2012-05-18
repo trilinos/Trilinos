@@ -75,7 +75,7 @@ public:
   /*--------------------------------*/
 
   struct SelectDevice {
-    const int cuda_device_id ;
+    int cuda_device_id ;
     SelectDevice() : cuda_device_id(0) {}
     explicit SelectDevice( int id ) : cuda_device_id( id ) {}
   };
@@ -139,10 +139,14 @@ public:
 #include <Cuda/Kokkos_Cuda_MultiVector.hpp>
 #endif
 
+#if   defined( KOKKOS_ARRAY_HPP ) && \
+    ! defined( KOKKOS_CUDA_ARRAY_HPP )
+#include <Cuda/Kokkos_Cuda_Array.hpp>
+#endif
 
-#if   defined( KOKKOS_CRSARRAY_HPP ) && \
-    ! defined( KOKKOS_CUDA_CRSARRAY )
-#include <Cuda/Kokkos_Cuda_CrsArray.hpp>
+#if   defined( KOKKOS_PREFIXSUM_HPP ) && \
+    ! defined( KOKKOS_CUDA_PREFIXSUM_HPP )
+#include <Cuda/Kokkos_Cuda_PrefixSum.hpp>
 #endif
 
 #if   defined( KOKKOS_MDARRAY_HPP ) && \

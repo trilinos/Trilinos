@@ -1,6 +1,8 @@
 
 # Secondary Stable MPI build with GCC 4.6.1
 
+SET(${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION  ON  CACHE  BOOL  "")
+
 # Must turn off this option so that Panzer/Drekar can work with Intrepid
 SET(Intrepid_ENABLE_DEBUG_INF_CHECK OFF CACHE BOOL "")
 

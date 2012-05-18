@@ -375,7 +375,7 @@ public:
   /** \brief Convert an Array to an <tt>std::string</tt> */
   inline std::string toString() const;
 
-  /** \brief Return true if Array has been compiled with boundschecking on. */ 
+  /** \brief Return true if Array has been compiled with boundschecking on. */
   inline static bool hasBoundsChecking();
 
   /** \brief Return a raw pointer to beginning of array or NULL if unsized. */
@@ -400,70 +400,70 @@ public:
 
   //@}
 
-  //! @name Views 
+  //! @name Views
   //@{
 
-	/** \brief Return non-const view of a contiguous range of elements.
-	 *
-	 * <b>Preconditions:</b><ul>
+        /** \brief Return non-const view of a contiguous range of elements.
+         *
+         * <b>Preconditions:</b><ul>
    * <li><tt>0 <= offset && offset + size <= this->size()</tt>
-	 * </ul>
-	 *
-	 * <b>Postconditions:</b><ul>
+         * </ul>
+         *
+         * <b>Postconditions:</b><ul>
    * <li><tt>returnVal.size() == size</tt>
-	 * </ul>
+         * </ul>
    *
    * NOTE: A <tt>size==0</tt> view of even an empty Array is allowed and
    * returns a <tt>null</tt> view.
    */
-	inline ArrayView<T> view( size_type offset, size_type size );
+        inline ArrayView<T> view( size_type offset, size_type size );
 
-	/** \brief Return const view of a contiguous range of elements.
-	 *
-	 * <b>Preconditions:</b><ul>
+        /** \brief Return const view of a contiguous range of elements.
+         *
+         * <b>Preconditions:</b><ul>
    * <li><tt>0 <= offset && offset + size <= this->size()</tt>
-	 * </ul>
-	 *
-	 * <b>Postconditions:</b><ul>
+         * </ul>
+         *
+         * <b>Postconditions:</b><ul>
    * <li><tt>returnVal.size() == size</tt>
-	 * </ul>
+         * </ul>
    *
    * NOTE: A <tt>size==0</tt> view of even an empty Array is allowed and
    * returns a <tt>null</tt> view.
    */
-	inline ArrayView<const T> view( size_type offset, size_type size ) const;
+        inline ArrayView<const T> view( size_type offset, size_type size ) const;
 
-	/** \brief Return a non-const view of a contiguous range of elements (calls
+        /** \brief Return a non-const view of a contiguous range of elements (calls
    * view(offset,size)).
    */
-	inline ArrayView<T> operator()( size_type offset, size_type size );
+        inline ArrayView<T> operator()( size_type offset, size_type size );
 
-	/** \brief Return a non-const view of a contiguous range of elements (calls
+        /** \brief Return a const view of a contiguous range of elements (calls
    * view(offset,size)).
    */
-	inline ArrayView<const T> operator()( size_type offset, size_type size ) const;
+        inline ArrayView<const T> operator()( size_type offset, size_type size ) const;
 
-	/** \brief Return an non-const ArrayView of *this.
+        /** \brief Return an non-const ArrayView of *this.
    *
    * NOTE: This will return a null ArrayView if this->size() == 0.
    */
-	inline ArrayView<T> operator()();
+        inline ArrayView<T> operator()();
 
-	/** \brief Return an const ArrayView of *this.
+        /** \brief Return an const ArrayView of *this.
    *
    * NOTE: This will return a null ArrayView if this->size() == 0.
    */
-	inline ArrayView<const T> operator()() const;
+        inline ArrayView<const T> operator()() const;
 
   /** \brief Perform an implicit conversion to a non-const ArrayView (calls
    * operator()()).
    */
-	inline operator ArrayView<T>();
+        inline operator ArrayView<T>();
 
   /** \brief Perform an implicit conversion to a non-const ArrayView (calls
    * operator()()).
    */
-	inline operator ArrayView<const T>() const;
+        inline operator ArrayView<const T>() const;
 
   //@}
 
@@ -486,7 +486,7 @@ private:
 
   inline typename std::vector<T>::iterator
   raw_position( iterator position );
-  
+
   inline void assertIndex(int i) const;
 
   inline void assertNotNull() const;
@@ -567,14 +567,14 @@ ArrayRCP<const T> arcpFromArray( const Array<T> &a )
 /** \brief Write an Array to an ostream.
  *
  * This prints arrays in the form:
- 
+
  \verbatim
 
  { 1.0, 2.0, 3.0 }
 
  \endverbatim
 
- * \relates Array 
+ * \relates Array
  */
 template<typename T>
 std::ostream& operator<<(std::ostream& os, const Array<T>& array);
@@ -617,7 +617,7 @@ std::string toString(const Array<T>& array);
  * thrown with a decent error message attached.
  *
  * The formating of the std::string <tt>arrayStr</tt> must look like:
-   
+
  \verbatim
 
  {  val[0], val[1], val[2], val[3], ..., val[n-1] }
@@ -654,13 +654,13 @@ std::string toString(const Array<T>& array);
  * <tt>Array<double></tt> object or an <tt>Array<int></tt> object, then
  * general formating such as <tt>{100,3530000,...}</tt> should be used.
  * This templated function is unable to deal std::complex type conversion issues.
- * 
+ *
  * \relates Array.
  */
 template<typename T>
 Array<T> fromStringToArray(const std::string& arrayStr);
 
-/** \brief A wrapper around the \c fromStringToArray function 
+/** \brief A wrapper around the \c fromStringToArray function
  * which allows the operator>> to be used on Arrays.
  *
  * \relates Array
@@ -671,8 +671,8 @@ std::istringstream& operator>> (std::istringstream& in, Array<T>& array){
   return in;
 }
 
-/** \brief Extracts data from an istringstream object 
- * \note This templated function is necessary for the proper extraction of 
+/** \brief Extracts data from an istringstream object
+ * \note This templated function is necessary for the proper extraction of
  *       data by the \c fromStringToArray function.
  * \relates Array.
  */
@@ -682,9 +682,9 @@ void extractDataFromISS( std::istringstream& iss, T& data )
   iss >> data; // Assumes type has operator>>(...) defined!
 }
 
-/** \brief Extracts std::string data from an istringstream object 
+/** \brief Extracts std::string data from an istringstream object
  * \note This function overloads the templated \c extractDataFromISS function
-         and is necessary for the proper extraction of std::string objects 
+         and is necessary for the proper extraction of std::string objects
          by the \c fromStringToArray function.
  * \relates Array.
  */
@@ -699,11 +699,11 @@ void extractDataFromISS( std::istringstream& iss, std::string& data )
 
 /**
  * \brief Get the format that is used for the specialization of the TypeName
- * traits class for Array. 
+ * traits class for Array.
  *
  * The string returned will contain only one
- * "*" character. The "*" character should then be replaced with the actual 
- * template type of the array. 
+ * "*" character. The "*" character should then be replaced with the actual
+ * template type of the array.
  * \relates Array.
  */
 inline
@@ -729,7 +729,7 @@ std::string getArrayTypeNameTraitsFormat(){
 template<typename T>
 class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<Array<T> > {
 public:
-  static std::string name(){ 
+  static std::string name(){
     std::string formatString = getArrayTypeNameTraitsFormat();
     size_t starPos = formatString.find("*");
     std::string prefix = formatString.substr(0,starPos);
@@ -1104,7 +1104,7 @@ void Array<T>::pop_back()
 
 
 // 2009/11/13:: rabartl: After moving to a full RCPNode tracing and lookup
-// model, I had to how modifying functions like insert(...) and erase(...) 
+// model, I had to how modifying functions like insert(...) and erase(...)
 // work which have active iterators controled by the client and yet need to
 // allow the structure of the container change.  The way these troublesome
 // functions work is that first the raw std::vector iterator is extracted.
@@ -1177,6 +1177,11 @@ typename Array<T>::iterator
 Array<T>::erase(iterator first, iterator last)
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  if (empty()) {
+    TEUCHOS_ASSERT(first == begin());
+    TEUCHOS_ASSERT(last == end());
+    return end();
+  }
   assertNotNull();
   // Assert a valid iterator and get vector iterator
   const typename std::vector<T>::iterator raw_first = raw_position(first);
@@ -1243,7 +1248,7 @@ std::string Array<T>::toString() const
 template<typename T> inline
 bool Array<T>::hasBoundsChecking()
 {
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK  
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   return true;
 #else
   return false;

@@ -111,9 +111,9 @@ namespace Tpetra {
   /// by all images.  Replicated local objects handle these
   /// situations.
   template <class Packet, 
-	    class LocalOrdinal = int, 
-	    class GlobalOrdinal = LocalOrdinal, 
-	    class Node = Kokkos::DefaultNode::DefaultNodeType>
+            class LocalOrdinal = int, 
+            class GlobalOrdinal = LocalOrdinal, 
+            class Node = Kokkos::DefaultNode::DefaultNodeType>
   class DistObject : virtual public Teuchos::Describable {
   public:
     //! @name Constructors and destructor
@@ -135,26 +135,26 @@ namespace Tpetra {
     //! Import using an Import object ("forward mode").
     void 
     doImport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source, 
-	      const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, 
-	      CombineMode CM);
+              const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, 
+              CombineMode CM);
 
     //! Export using an Export object ("forward mode").
     void 
     doExport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &dest, 
-	      const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, 
-	      CombineMode CM);
+              const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, 
+              CombineMode CM);
 
     //! Import using an Export object ("reverse mode").
     void 
     doImport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source,
-	      const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, 
-	      CombineMode CM);
+              const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, 
+              CombineMode CM);
 
     //! Export using an Import object ("reverse mode").
     void 
     doExport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& dest,
-	      const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, 
-	      CombineMode CM);
+              const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, 
+              CombineMode CM);
 
     //@}
     //! @name Attribute accessor methods
@@ -201,7 +201,7 @@ namespace Tpetra {
     /// \c DistObject may override it.
     virtual void 
     describe (Teuchos::FancyOStream &out, 
-	      const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+              const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
     //@} 
 
   protected:
@@ -242,14 +242,14 @@ namespace Tpetra {
     ///   redistribution.
     virtual void 
     doTransfer (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &source,
-		CombineMode CM,
-		size_t numSameIDs,
-		const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
-		const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs,
-		const Teuchos::ArrayView<const LocalOrdinal> &remoteLIDs,
-		const Teuchos::ArrayView<const LocalOrdinal> &exportLIDs,
-		Distributor &distor,
-		ReverseOption revOp);
+                CombineMode CM,
+                size_t numSameIDs,
+                const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
+                const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs,
+                const Teuchos::ArrayView<const LocalOrdinal> &remoteLIDs,
+                const Teuchos::ArrayView<const LocalOrdinal> &exportLIDs,
+                Distributor &distor,
+                ReverseOption revOp);
 
     /// \name Methods implemented by subclasses and used by \c doTransfer().
     /// 
@@ -288,9 +288,9 @@ namespace Tpetra {
     ///   object.
     virtual void 
     copyAndPermute (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source,
-		    size_t numSameIDs,
-		    const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
-		    const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs) = 0;
+                    size_t numSameIDs,
+                    const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
+                    const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs) = 0;
 
     /// \brief Perform any packing or preparation required for communication.
     ///
@@ -315,11 +315,11 @@ namespace Tpetra {
     /// \param distor [in] The Distributor object we are using.
     virtual void 
     packAndPrepare (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source,
-		    const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-		    Teuchos::Array<Packet>& exports,
-		    const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-		    size_t& constantNumPackets,
-		    Distributor &distor) = 0;
+                    const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+                    Teuchos::Array<Packet>& exports,
+                    const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                    size_t& constantNumPackets,
+                    Distributor &distor) = 0;
 
     /// \brief Perform any unpacking and combining after communication.
     ///
@@ -342,11 +342,11 @@ namespace Tpetra {
     ///   imported entries with existing entries.
     virtual void 
     unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
-		      const Teuchos::ArrayView<const Packet> &imports,
-		      const Teuchos::ArrayView<size_t> &numPacketsPerLID,
-		      size_t constantNumPackets,
-		      Distributor &distor,
-		      CombineMode CM) = 0;
+                      const Teuchos::ArrayView<const Packet> &imports,
+                      const Teuchos::ArrayView<size_t> &numPacketsPerLID,
+                      size_t constantNumPackets,
+                      Distributor &distor,
+                      CombineMode CM) = 0;
     //@} 
     
     /// \brief Hook for creating a const view.
@@ -457,7 +457,7 @@ namespace Tpetra {
   void 
   DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
   describe (Teuchos::FancyOStream &out, 
-	    const Teuchos::EVerbosityLevel verbLevel) const 
+            const Teuchos::EVerbosityLevel verbLevel) const 
   {
     using Teuchos::rcpFromRef;
     using std::endl;
@@ -469,8 +469,8 @@ namespace Tpetra {
       out << this->description () << endl;
       Teuchos::OSTab tab (rcpFromRef (out));
       out << "Export buffer size (in packets): " << exports_.size() << endl
-	  << "Import buffer size (in packets): " << imports_.size() << endl
-	  << "Map over which this object is distributed:" << endl;
+          << "Import buffer size (in packets): " << imports_.size() << endl
+          << "Map over which this object is distributed:" << endl;
       map_->describe (out, vl);
     }
   }
@@ -479,8 +479,8 @@ namespace Tpetra {
   void 
   DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
   doImport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A, 
-	    const Import<LocalOrdinal,GlobalOrdinal,Node> & importer, 
-	    CombineMode CM) 
+            const Import<LocalOrdinal,GlobalOrdinal,Node> & importer, 
+            CombineMode CM) 
   {
     TEUCHOS_TEST_FOR_EXCEPTION(*getMap() != *importer.getTargetMap(), 
       std::invalid_argument, "doImport: The target DistObject's Map is not "
@@ -496,16 +496,16 @@ namespace Tpetra {
     const view_type permuteToLIDs   = importer.getPermuteToLIDs();
     const view_type permuteFromLIDs = importer.getPermuteFromLIDs();
     this->doTransfer (A, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, 
-		      remoteLIDs, exportLIDs, importer.getDistributor (), 
-		      DoForward);
+                      remoteLIDs, exportLIDs, importer.getDistributor (), 
+                      DoForward);
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void 
   DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
   doExport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A, 
-	    const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter, 
-	    CombineMode CM) 
+            const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter, 
+            CombineMode CM) 
   {
     TEUCHOS_TEST_FOR_EXCEPTION(   *getMap() != *exporter.getTargetMap(), std::invalid_argument, 
       "doExport: The target DistObject's Map is not identical to the Export's target Map.");
@@ -519,15 +519,15 @@ namespace Tpetra {
     view_type permuteToLIDs   = exporter.getPermuteToLIDs();
     view_type permuteFromLIDs = exporter.getPermuteFromLIDs();
     doTransfer (A, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs, 
-		exportLIDs, exporter.getDistributor (), DoForward);
+                exportLIDs, exporter.getDistributor (), DoForward);
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void 
   DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
   doImport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A,
-	    const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter, 
-	    CombineMode CM) 
+            const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter, 
+            CombineMode CM) 
   {
     TEUCHOS_TEST_FOR_EXCEPTION(  * getMap() != *exporter.getSourceMap(), std::invalid_argument,
       "doImport (with Export): The target DistObject's Map is not identical to the Export's source Map.");
@@ -541,15 +541,15 @@ namespace Tpetra {
     view_type permuteToLIDs   = exporter.getPermuteFromLIDs();
     view_type permuteFromLIDs = exporter.getPermuteToLIDs();
     doTransfer (A, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs, 
-		exportLIDs, exporter.getDistributor (), DoReverse);
+                exportLIDs, exporter.getDistributor (), DoReverse);
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void 
   DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
   doExport (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A,
-	    const Import<LocalOrdinal,GlobalOrdinal,Node> & importer, 
-	    CombineMode CM) 
+            const Import<LocalOrdinal,GlobalOrdinal,Node> & importer, 
+            CombineMode CM) 
   {
     TEUCHOS_TEST_FOR_EXCEPTION( *getMap() != *importer.getSourceMap(), 
       std::invalid_argument, "doExport (with Import): The target object's Map "
@@ -565,7 +565,7 @@ namespace Tpetra {
     view_type permuteToLIDs   = importer.getPermuteFromLIDs();
     view_type permuteFromLIDs = importer.getPermuteToLIDs();
     doTransfer (A, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs, 
-		exportLIDs, importer.getDistributor (), DoReverse);
+                exportLIDs, importer.getDistributor (), DoReverse);
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -578,14 +578,14 @@ namespace Tpetra {
   void 
   DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::
   doTransfer (const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>& source,
-	      CombineMode CM,
-	      size_t numSameIDs, 
-	      const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs, 
-	      const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs,
-	      const Teuchos::ArrayView<const LocalOrdinal>& remoteLIDs,    
-	      const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-	      Distributor &distor, 
-	      ReverseOption revOp) 
+              CombineMode CM,
+              size_t numSameIDs, 
+              const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs, 
+              const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs,
+              const Teuchos::ArrayView<const LocalOrdinal>& remoteLIDs,    
+              const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+              Distributor &distor, 
+              ReverseOption revOp) 
   {
     using Teuchos::as;
 
@@ -598,15 +598,15 @@ namespace Tpetra {
     Kokkos::ReadWriteOption rwo = Kokkos::ReadWrite;
     if (CM == INSERT || CM == REPLACE) {
       const size_t numIDsToWrite = 
-	numSameIDs + permuteToLIDs.size() + remoteLIDs.size();
+        numSameIDs + permuteToLIDs.size() + remoteLIDs.size();
       if (numIDsToWrite == this->getMap()->getNodeNumElements()) {
-	// We're overwriting all of our local data in the destination
-	// object, so a write-only view suffices.
-	//
-	// FIXME (mfh 10 Apr 2012) This doesn't make sense for a
-	// CrsMatrix with a dynamic graph.  INSERT mode could mean
-	// that we're adding new entries to the object, but we don't
-	// want to get rid of the old ones.
+        // We're overwriting all of our local data in the destination
+        // object, so a write-only view suffices.
+        //
+        // FIXME (mfh 10 Apr 2012) This doesn't make sense for a
+        // CrsMatrix with a dynamic graph.  INSERT mode could mean
+        // that we're adding new entries to the object, but we don't
+        // want to get rid of the old ones.
         rwo = Kokkos::WriteOnly;
       }
     }
@@ -648,7 +648,7 @@ namespace Tpetra {
     // come back nonzero.  Otherwise, the source will fill the
     // numExportPacketsPerLID_ array.
     packAndPrepare (source, exportLIDs, exports_, numExportPacketsPerLID_(), 
-		    constantNumPackets, distor);
+                    constantNumPackets, distor);
 
     // We don't need the source's data anymore, so it can let go of
     // its views.  On a discrete accelerator, this frees host memory,
@@ -662,54 +662,54 @@ namespace Tpetra {
       // resize the buffer accordingly.
       const size_t rbufLen = remoteLIDs.size() * constantNumPackets;
       if (as<size_t> (imports_.size()) != rbufLen) {
-	imports_.resize (rbufLen);
+        imports_.resize (rbufLen);
       }
     }
     if ((isDistributed() && revOp == DoReverse) || 
-	(source.isDistributed() && revOp == DoForward)) {
+        (source.isDistributed() && revOp == DoForward)) {
       // call one of the doPostsAndWaits functions
       if (revOp == DoReverse) {
         if (constantNumPackets == 0) { //variable num-packets-per-LID:
           distor.doReversePostsAndWaits (numExportPacketsPerLID_().getConst(), 1,
-					 numImportPacketsPerLID_());
+                                         numImportPacketsPerLID_());
           size_t totalImportPackets = 0;
           for (Array_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
             totalImportPackets += numImportPacketsPerLID_[i];
           }
           imports_.resize(totalImportPackets);
           distor.doReversePostsAndWaits (exports_().getConst(),
-					 numExportPacketsPerLID_(),
-					 imports_(), 
-					 numImportPacketsPerLID_());
+                                         numExportPacketsPerLID_(),
+                                         imports_(), 
+                                         numImportPacketsPerLID_());
         }
         else {
           distor.doReversePostsAndWaits (exports_().getConst(),
-					 constantNumPackets,
-					 imports_());
+                                         constantNumPackets,
+                                         imports_());
         }
       }
       else { // revOp == DoForward
         if (constantNumPackets == 0) { //variable num-packets-per-LID:
           distor.doPostsAndWaits (numExportPacketsPerLID_().getConst(), 1,
-				  numImportPacketsPerLID_());
+                                  numImportPacketsPerLID_());
           size_t totalImportPackets = 0;
           for (Array_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
             totalImportPackets += numImportPacketsPerLID_[i];
           }
           imports_.resize(totalImportPackets);
           distor.doPostsAndWaits (exports_().getConst(), 
-				  numExportPacketsPerLID_(),
-				  imports_(), 
-				  numImportPacketsPerLID_());
+                                  numExportPacketsPerLID_(),
+                                  imports_(), 
+                                  numImportPacketsPerLID_());
         }
         else {
           distor.doPostsAndWaits (exports_().getConst(), 
-				  constantNumPackets, 
-				  imports_());
+                                  constantNumPackets, 
+                                  imports_());
         }
       }
       unpackAndCombine (remoteLIDs, imports_(), numImportPacketsPerLID_(), 
-			constantNumPackets, distor, CM);
+                        constantNumPackets, distor, CM);
     }
     this->releaseViews();
   }

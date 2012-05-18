@@ -44,6 +44,9 @@
 #ifndef KOKKOS_HOST_CRSMATRIX_HPP
 #define KOKKOS_HOST_CRSMATRIX_HPP
 
+#include <fstream>
+#include <iomanip>
+
 namespace Kokkos {
 namespace Impl {
 
@@ -76,13 +79,13 @@ public:
   inline
   void operator()( const size_type iRow ) const
   {
-    const size_type iEntryBegin = m_A.graph.row_entry_begin(iRow);
-    const size_type iEntryEnd   = m_A.graph.row_entry_end(iRow);
+    const size_type iEntryBegin = m_A.graph.row_map[iRow];
+    const size_type iEntryEnd   = m_A.graph.row_map[iRow+1];
 
     double sum = 0 ;
 
     for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
-      sum += m_A.values(iEntry) * m_x( m_A.graph(iEntry) );
+      sum += m_A.values(iEntry) * m_x( m_A.graph.entries(iEntry) );
     }
 
     m_y(iRow) = sum ;
@@ -92,7 +95,95 @@ public:
                      const vector_type & x ,
                      const vector_type & y )
   {
-    parallel_for( A.graph.row_count() , Multiply(A,x,y) );
+    parallel_for( A.graph.row_map.length() , Multiply(A,x,y) );
+  }
+};
+
+template< typename MatrixValue , typename VectorValue >
+class MMultiply<
+  CrsMatrix< MatrixValue , Host > ,
+  Kokkos::MultiVector< VectorValue , Host > ,
+  Kokkos::MultiVector< VectorValue , Host > >
+{
+public:
+  typedef Host                                      device_type ;
+  typedef device_type::size_type                    size_type ;
+  typedef MultiVector< VectorValue , device_type >  vector_type ;
+  typedef CrsMatrix< MatrixValue , device_type >    matrix_type ;
+  typedef VectorValue                               value_type ;
+
+  const matrix_type  m_A ;
+  const std::vector<vector_type>  m_x ;
+  const std::vector<vector_type>  m_y ;
+
+  MMultiply( const matrix_type & A ,
+            const std::vector<vector_type> & x ,
+            const std::vector<vector_type> & y )
+  : m_A( A )
+  , m_x( x )
+  , m_y( y )
+  {
+  }
+
+  //--------------------------------------------------------------------------
+
+  inline
+  void operator()( const size_type iRow ) const
+  {
+    const size_type iEntryBegin = m_A.graph.row_map[iRow];
+    const size_type iEntryEnd   = m_A.graph.row_map[iRow+1];
+    const size_t num_vecs = m_x.size();
+    
+    std::vector<double> sum(num_vecs, 0);
+
+    for ( size_type iEntry = iEntryBegin ; iEntry < iEntryEnd ; ++iEntry ) {
+      double a = m_A.values(iEntry);
+      for (size_t col=0; col<num_vecs; col++) 
+	sum[col] += a * m_x[col]( m_A.graph.entries(iEntry) );
+    }
+    
+    for (size_t col=0; col<num_vecs; col++)
+      m_y[col](iRow) = sum[col] ;
+  }
+
+  static void apply( const matrix_type & A ,
+                     const std::vector<vector_type> & x ,
+                     const std::vector<vector_type> & y )
+  {
+    parallel_for( A.graph.row_map.length() , MMultiply(A,x,y) );
+  }
+};
+
+template< typename MatrixValue>
+class MatrixMarketWriter<MatrixValue,Host>
+{
+public:
+  typedef Host                                      device_type ;
+  typedef device_type::size_type                    size_type ;
+  typedef CrsMatrix< MatrixValue , device_type >    matrix_type ;
+
+  static void write(const matrix_type & A ,
+		    const std::string& filename) {
+    std::ofstream file(filename.c_str());
+    file.precision(16);
+    file.setf(std::ios::scientific);
+
+    const size_type nRow = A.graph.row_count();
+    
+    // Write banner
+    file << "%%MatrixMarket matrix coordinate real general" << std::endl;
+    file << nRow << " " << nRow << " " << A.graph.entry_count() << std::endl;
+
+    for (size_type row=0; row<nRow; ++row) {
+      size_type entryBegin = A.graph.row_entry_begin(row);
+      size_type entryEnd = A.graph.row_entry_end(row);
+      for (size_type entry=entryBegin; entry<entryEnd; ++entry) {
+	file << row+1 << " " << A.graph.column(entry)+1 << " " 
+	     << std::setw(22) << A.values(entry) << std::endl;
+      }
+    }
+
+    file.close();
   }
 };
 

@@ -44,9 +44,9 @@
 
 namespace Tpetra {
 
-	std::string version() {
-		return("Tpetra in Trilinos " TRILINOS_VERSION_STRING);
-	}
+  std::string version() {
+    return("Tpetra in Trilinos " TRILINOS_VERSION_STRING);
+  }
 
 } // namespace Tpetra
 

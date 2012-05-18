@@ -45,14 +45,16 @@
 
 /*! \file Teuchos_TimeMonitor.hpp
  *
- * \brief Scope protection wrapper for a Teuchos::Time object.
+ * \brief Scope protection wrapper for Teuchos::Time, with timer reporting functionality.
  *
  * The \c TimeMonitor class wraps a nonconst reference to a \c
  * Teuchos::Time timer object.  TimeMonitor's constructor starts the
  * timer, and its destructor stops the timer.  This ensures scope
  * safety of timers, so that no matter how a scope is exited (whether
  * the normal way or when an exception is thrown), a timer started in
- * the scope is stopped when the scope is left.
+ * the scope is stopped when the scope is left.  TimeMonitor also
+ * tracks each process' set of timers, and can compute global timer
+ * statistics.
  */
 
 /** \example TimeMonitor/cxx_main.cpp
@@ -89,30 +91,25 @@
 
 /** \brief Defines a timer for a specific function.
  *
- * Note that the name of the timer can be formated with stream inserts.
- * For example, we can define a time monitor for a function as follows:
- 
- \code
+ Note that the name of the timer can be formated with stream inserts.
+ For example, we can define a time monitor for a function as follows:
 
+ \code
  template<typename Scalar>
  void foo()
  {
- TEUCHOS_FUNC_TIME_MONITOR(
- "foo<"<<Teuchos::ScalarTraits<Scalar>::name()<<">()"
- );
- ...
+   TEUCHOS_FUNC_TIME_MONITOR(
+     "foo<" << Teuchos::ScalarTraits<Scalar>::name () << ">()"
+     );
+   ...
  }
-
  \endcode
 
- * The timer can then be printed at the end of the program using
-
+ The timer can then be printed at the end of the program using any of
+ various class methods, including summarize():
  \code
-
- Teuchos::TimeMonitor::summarize(std::cout);
-
+ Teuchos::TimeMonitor::summarize ();
  \endcode
- 
 */
 #define TEUCHOS_FUNC_TIME_MONITOR( FUNCNAME ) \
   TEUCHOS_FUNC_TIME_MONITOR_DIFF( FUNCNAME, main )
@@ -144,28 +141,25 @@ typedef std::map<std::string, std::vector<std::pair<double, double> > > stat_map
 /// stopped when the scope is left.
 ///
 /// This class also keeps track of the set of all timers as class (not
-/// instance) data.  It has a class method, \c summarize(), for
-/// printing out global statistics (like the min, mean, and max over
-/// all processes in the communicator).  The \c summarize() method
-/// works correctly even if some processes have different timers than
+/// instance) data.  It has class methods, \c summarize() and \c
+/// report(), for printing out global statistics (like the min, mean,
+/// and max over all processes in the communicator).  These methods
+/// work correctly even if some processes have different timers than
 /// other processes.  You may also use \c
 /// computeGlobalTimerStatistics() to compute the same global
 /// statistics, if you wish to use them in your program or output them
-/// in a different format than that of \c summarize().
+/// in a different format than that of these methods.
 ///
 /// \warning This class must only be used to time functions that are
-///   called only within the main program.  It may <i>not</i> be used in
+///   called only within the main program.  It may _not_ be used in
 ///   pre-program setup or post-program teardown!
-///
-/// \note Teuchos::TimeMonitor uses the \c Teuchos::Time class internally.
-///
 class TEUCHOS_LIB_DLL_EXPORT TimeMonitor : public PerformanceMonitorBase<Time>
 {
 public:
 
   /** \name Constructor/Destructor */
   //@{
- 
+
   /// \brief Constructor: starts the timer.
   ///
   /// \param timer [in/out] Reference to the timer to be wrapped.
@@ -175,15 +169,16 @@ public:
   /// \param reset [in] If true, reset the timer before starting it.
   ///   Default behavior is not to reset the timer.
   TimeMonitor (Time& timer, bool reset=false);
-  
+
   //! Destructor: stops the timer.
   ~TimeMonitor();
   //@}
 
-  /** \name Static functions */
-  //@{
-
-  /// \brief Return a new timer with the given name.
+  /// \brief Return a new timer with the given name (class method).
+  ///
+  /// Call getNewCounter() or this method if you want to create a new
+  /// named timer, and you would like TimeMonitor to track the timer
+  /// for later computation of global statistics over processes.
   ///
   /// This method wraps \c getNewCounter() (inherited from the base
   /// class) for backwards compatibiity.
@@ -196,9 +191,7 @@ public:
   /// This method only affects \c Time objects created by \c
   /// getNewCounter() or \c getNewTimer().
   ///
-  /// <b>Preconditions:</b><ul>
-  /// <li>None of the timers must currently be running.
-  /// </ul>
+  /// \pre None of the timers must currently be running.
   static void zeroOutTimers();
 
   /// \brief Compute global timer statistics for all timers on the given communicator.
@@ -259,7 +252,7 @@ public:
   /// the sum of the call counts over all processes for that timing.
   /// (We compute it a bit differently to help prevent overflow.)  The
   /// "MeanOverCallCounts" is <i>not</i> comparable with the min, max,
-  /// or "MeanOverProcs".  
+  /// or "MeanOverProcs".
   ///
   /// We report with both versions of the mean timing the mean call
   /// count over processes.  This may be fractional, which is one
@@ -305,9 +298,9 @@ public:
   ///   in the communicator.
   static void
   computeGlobalTimerStatistics (stat_map_type& statData,
-				std::vector<std::string>& statNames,
-				Ptr<const Comm<int> > comm,
-				const ECounterSetOp setOp=Intersection);
+                                std::vector<std::string>& statNames,
+                                Ptr<const Comm<int> > comm,
+                                const ECounterSetOp setOp=Intersection);
 
   /// \brief Compute global timer statistics for all timers on all (MPI) processes.
   ///
@@ -316,7 +309,7 @@ public:
   /// not want to provide a communicator explicitly.  This method
   /// "does the right thing" in that case.  Specifically:
   /// - If Trilinos was not built with MPI support, this method
-  ///   assumes a serial "communicator" containing one process.  
+  ///   assumes a serial "communicator" containing one process.
   /// - If Trilinos was built with MPI support and MPI has been
   ///   initialized (via \c MPI_Init() or one of the wrappers in
   ///   Epetra or Teuchos), this method uses MPI_COMM_WORLD as the
@@ -339,8 +332,8 @@ public:
   ///   takes a communicator as an input argument.
   static void
   computeGlobalTimerStatistics (stat_map_type& statData,
-				std::vector<std::string>& statNames,
-				const ECounterSetOp setOp=Intersection);
+                                std::vector<std::string>& statNames,
+                                const ECounterSetOp setOp=Intersection);
 
   /// \brief Print summary statistics for all timers on the given communicator.
   ///
@@ -400,13 +393,13 @@ public:
   ///   called as a collective by all processes in the communicator.
   ///   This method will <i>only</i> perform communication if \c
   ///   writeGlobalStats is true.
-  static void 
+  static void
   summarize (Ptr<const Comm<int> > comm,
-             std::ostream &out=std::cout, 
-	     const bool alwaysWriteLocal=false,
-	     const bool writeGlobalStats=true,
-	     const bool writeZeroTimers=true,
-	     const ECounterSetOp setOp=Intersection);
+             std::ostream &out=std::cout,
+             const bool alwaysWriteLocal=false,
+             const bool writeGlobalStats=true,
+             const bool writeZeroTimers=true,
+             const ECounterSetOp setOp=Intersection);
 
   /// \brief Print summary statistics for all timers on all (MPI) processes.
   ///
@@ -424,14 +417,138 @@ public:
   ///   want to use \c summarize() on a subcommunicator, please use
   ///   the overloaded version above that takes a communicator as an
   ///   input argument.
-  static void 
-  summarize (std::ostream& out=std::cout, 
-	     const bool alwaysWriteLocal=false,
-	     const bool writeGlobalStats=true,
-	     const bool writeZeroTimers=true,
-	     const ECounterSetOp setOp=Intersection);
+  static void
+  summarize (std::ostream& out=std::cout,
+             const bool alwaysWriteLocal=false,
+             const bool writeGlobalStats=true,
+             const bool writeZeroTimers=true,
+             const ECounterSetOp setOp=Intersection);
+
+  /// \brief Report timer statistics to the given output stream.
+  ///
+  /// This is like summarize(), but gives you more control over the
+  /// output format.  To get the default parameters, either call
+  /// getValidReportParameters(), or call this method with params
+  /// nonnull but empty (it will fill in default parameters).
+  ///
+  /// \param comm [in] Communicator whose process(es) will participate
+  ///   in the gathering of timer statistics.  This is a \c Ptr and
+  ///   not an \c RCP, because \c RCP would suggest that \c
+  ///   TimeMonitor were keeping the communicator around after return
+  ///   of this method.  \c Ptr suggests instead that \c TimeMonitor
+  ///   will only reference the communicator during this method.  If
+  ///   you have an \c RCP, you can turn it into a \c Ptr by calling
+  ///   its \c ptr() method:
+  ///   \code
+  ///   RCP<const Comm<int> > myComm = ...;
+  ///   TimeMonitor::summarize (myComm.ptr());
+  ///   \endcode
+  ///
+  /// \param out [out] Output stream to which to write.  This will
+  ///   only be used on the process with rank 0 in the communicator.
+  ///
+  /// \param params [in/out] Parameters to control output format and
+  ///   which statistics to generate.  If null, we use default
+  ///   parameters if this method was not yet called with params
+  ///   nonnull, otherwise we use the previous set of parameters.  If
+  ///   nonnull, we read the given parameters, filling in defaults,
+  ///   and use the resulting parameters for all subsequent calls to
+  ///   report() (until new parameters are set).
+  static void
+  report (Ptr<const Comm<int> > comm,
+          std::ostream& out,
+          const RCP<ParameterList>& params=null);
+
+  /// \brief Report timer statistics to the given output stream.
+  ///
+  /// This is like the 3-argument version of report(), but with
+  /// default communicator.
+  static void
+  report (std::ostream& out,
+          const RCP<ParameterList>& params=null);
+
+  //! Default parameters (with validators) for report().
+  static RCP<const ParameterList> getValidReportParameters ();
+
+ private:
+  /// \brief Like summarize(), but with YAML-format output.
+  ///
+  /// <a href="yaml.org">YAML</a> stands for YAML Ain't Markup
+  /// Language.  It is a standard format for human-readable,
+  /// machine-parseable, hierarchically organized data.
+  ///
+  /// \warning This is an experimental interface.  It may change or
+  ///   disappear without warning.
+  static void summarizeToYaml (Ptr<const Comm<int> > comm, std::ostream& out);
+
+  /// \brief Like summarize(), but with YAML-format output and default communicator.
+  ///
+  /// \warning This is an experimental interface.  It may change or
+  ///   disappear without warning.
+  static void summarizeToYaml (std::ostream& out);
+
+  /// \brief Valid output formats for report().
+  ///
+  /// \warning This is an implementation detail of TimeMonitor.  It is
+  ///   subject to change at any time without notice.
+  enum ETimeMonitorReportFormat {
+    REPORT_FORMAT_YAML,
+    REPORT_FORMAT_TABLE
+  };
+
+  /// \brief Add the "Report format" parameter to plist.
+  ///
+  /// \note Call this in getValidReportParameters() to set a default
+  ///   value and validator for this parameter.
+  static void setReportFormatParameter (ParameterList& plist);
+
+  /// \brief Add the "How to merge timer sets" parameter to plist.
+  ///
+  /// \note Call this in getValidReportParameters() to set a default
+  ///   value and validator for this parameter.
+  static void setSetOpParameter (ParameterList& plist);
+
+  /// \brief Set parameters for report().  Call only from report().
+  ///
+  /// If this method completes successfully, it sets setParams_ to
+  /// true as a flag.
+  ///
+  /// \param params [in/out] Parameters for report().  This may be
+  ///   null, in which case we use defaults or the last set of
+  ///   parameters.
+  ///
+  /// \warning This method is not thread safe, in the sense that it
+  ///   does not set the class data atomically.  Behavior when calling
+  ///   this method from multiple threads is undefined.  Calling this
+  ///   routine with different parameter lists from different threads
+  ///   will certainly not accomplish what you want to accomplish.
+  static void setReportParameters (const RCP<ParameterList>& params);
+
+  //! Parameters for the report() class method.
+  //@{
+
+  //! Current output format for report().  Set via setReportParameters().
+  static ETimeMonitorReportFormat reportFormat_;
+
+  //! Whether report() should use the intersection or union of timers over processes.
+  static ECounterSetOp setOp_;
+
+  //! Whether report() should always report Proc 0's local timer results.
+  static bool alwaysWriteLocal_;
+
+  /// Whether report() should always compute global timer statistics.
+  /// This requires communication equivalent to O(1) all-reduces.
+  static bool writeGlobalStats_;
+
+  //! Whether report() should report timers with zero call counts.
+  static bool writeZeroTimers_;
   //@}
 
+  /// \brief Whether setReportParameters() completed successfully.
+  ///
+  /// \note Keeping this helps us avoid keeping the whole
+  ///   ParameterList around.
+  static bool setParams_;
 };
 
 

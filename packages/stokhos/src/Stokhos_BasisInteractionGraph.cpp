@@ -40,7 +40,12 @@ Stokhos::BasisInteractionGraph::BasisInteractionGraph(const BasisInteractionGrap
 Stokhos::BasisInteractionGraph::BasisInteractionGraph(const Stokhos::OrthogPolyBasis<int,double> & max_basis,bool onlyUseLinear,int porder)
    : onlyUseLinear_(onlyUseLinear)
 { 
-   initialize(max_basis,porder); 
+   using Teuchos::RCP;
+
+   if(porder<0)
+      porder = max_basis.size();
+   RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk = max_basis.computeTripleProductTensor(porder);
+   initialize(max_basis,*Cijk,porder); 
 }
 
 Stokhos::BasisInteractionGraph::BasisInteractionGraph(const Stokhos::ProductBasis<int,double> & masterBasis,
@@ -48,24 +53,50 @@ Stokhos::BasisInteractionGraph::BasisInteractionGraph(const Stokhos::ProductBasi
                                                       const Stokhos::ProductBasis<int,double> & colBasis,bool onlyUseLinear,int porder)
    : onlyUseLinear_(onlyUseLinear)
 {
-   initialize(masterBasis,rowBasis,colBasis,porder);
+   using Teuchos::RCP;
+
+   if(porder<0)
+      porder = masterBasis.size();
+   RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk = masterBasis.computeTripleProductTensor(porder);
+   initialize(masterBasis,*Cijk,rowBasis,colBasis,porder);
 }
 
-void Stokhos::BasisInteractionGraph::initialize(const Stokhos::OrthogPolyBasis<int,double> & max_basis,int porder)
+Stokhos::BasisInteractionGraph::BasisInteractionGraph(const Stokhos::OrthogPolyBasis<int,double> & max_basis,
+                                                      const Stokhos::Sparse3Tensor<int,double> & Cijk,
+                                                      bool onlyUseLinear,int porder)
+   : onlyUseLinear_(onlyUseLinear)
+{ 
+   initialize(max_basis,Cijk,porder); 
+}
+
+Stokhos::BasisInteractionGraph::BasisInteractionGraph(const Stokhos::ProductBasis<int,double> & masterBasis,
+                                                      const Stokhos::Sparse3Tensor<int,double> & Cijk,
+                                                      const Stokhos::ProductBasis<int,double> & rowBasis,
+                                                      const Stokhos::ProductBasis<int,double> & colBasis,bool onlyUseLinear,int porder)
+   : onlyUseLinear_(onlyUseLinear)
+{
+   using Teuchos::RCP;
+
+   initialize(masterBasis,Cijk,rowBasis,colBasis,porder);
+}
+
+void Stokhos::BasisInteractionGraph::initialize(const Stokhos::OrthogPolyBasis<int,double> & max_basis,
+                                                const Stokhos::Sparse3Tensor<int,double> & Cijk,
+                                                int porder)
 {
    using Teuchos::RCP;
    typedef Stokhos::Sparse3Tensor<int,double> Cijk_type;
 
-   // max it out if defaulted
-   if(porder<0)
-      porder = max_basis.size();
+   // // max it out if defaulted
+   // if(porder<0)
+   //    porder = max_basis.size();
 
-   RCP<Stokhos::Sparse3Tensor<int,double> > Cijk = max_basis.computeTripleProductTensor(porder);
+   // RCP<Stokhos::Sparse3Tensor<int,double> > Cijk = max_basis.computeTripleProductTensor(porder);
 
-   Cijk_type::k_iterator k_end = Cijk->k_end();
+   Cijk_type::k_iterator k_end = Cijk.k_end();
    if (onlyUseLinear_) {
       int dim = max_basis.dimension();
-      k_end = Cijk->find_k(dim+1);
+      k_end = Cijk.find_k(dim+1);
    }
 
    vecLookup_.resize(max_basis.size()); // defines number of rows
@@ -73,10 +104,10 @@ void Stokhos::BasisInteractionGraph::initialize(const Stokhos::OrthogPolyBasis<i
 
    // Loop over Cijk entries including a non-zero in the graph at
    // indices (i,j) if there is any k for which Cijk is non-zero
-   for(Cijk_type::k_iterator k_it=Cijk->k_begin(); k_it!=k_end; ++k_it) {
-      for(Cijk_type::kj_iterator j_it = Cijk->j_begin(k_it); j_it != Cijk->j_end(k_it); ++j_it) {
+   for(Cijk_type::k_iterator k_it=Cijk.k_begin(); k_it!=k_end; ++k_it) {
+      for(Cijk_type::kj_iterator j_it = Cijk.j_begin(k_it); j_it != Cijk.j_end(k_it); ++j_it) {
          int j = index(j_it);
-         for(Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it); i_it != Cijk->i_end(j_it); ++i_it) {
+         for(Cijk_type::kji_iterator i_it = Cijk.i_begin(j_it); i_it != Cijk.i_end(j_it); ++i_it) {
             int i = index(i_it);
             vecLookup_[i].push_back(j);
          }
@@ -85,11 +116,12 @@ void Stokhos::BasisInteractionGraph::initialize(const Stokhos::OrthogPolyBasis<i
 }
 
 void Stokhos::BasisInteractionGraph::initialize(const Stokhos::ProductBasis<int,double> & masterBasis,
+                                                const Stokhos::Sparse3Tensor<int,double> & Cijk,
                                                 const Stokhos::ProductBasis<int,double> & rowBasis,
                                                 const Stokhos::ProductBasis<int,double> & colBasis,int porder)
 {
    // for determining if their is an interaction or not
-   Stokhos::BasisInteractionGraph masterBig(masterBasis,onlyUseLinear_,porder);
+   Stokhos::BasisInteractionGraph masterBig(masterBasis,Cijk,onlyUseLinear_,porder);
 
    vecLookup_.resize(rowBasis.size()); // defines number of rows
 

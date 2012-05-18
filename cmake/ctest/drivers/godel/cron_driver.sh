@@ -9,6 +9,7 @@ echo
 
 export TDD_GIT_EXE=/home/trilinos/install/bin/eg
 export TDD_PARALLEL_LEVEL=4
+export TDD_CTEST_TEST_TYPE=Nightly
 
 # Trilinos settings:
 #

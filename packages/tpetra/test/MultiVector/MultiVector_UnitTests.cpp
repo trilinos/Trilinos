@@ -266,6 +266,80 @@ namespace {
 
 
   ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MultiVector, ViewModeConstructorTests, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+    typedef Tpetra::MultiVector<double,int,int,Node> MV;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm and node
+    RCP<const Comm<int> > comm = getDefaultComm();
+    // create a Map
+    const size_t numLocal = 13;
+    const size_t numVecs  = 7;
+    const size_t LDA      = 17;
+    RCP<const Map<int,int,Node> > map = createContigMapWithNode<int,int>(INVALID,numLocal,comm,node);
+    // arcp with 7*17 entries valid for a multivector of 7 columns with stride 17 and any row size less than that (e.g., 13)
+    ArrayRCP<double> null_arcp = null,
+                     user_arcp = Teuchos::arcp<double>( (numVecs-1)*LDA+numLocal );
+
+    /////////////////////////////////////////////
+    // test invalid use cases (thrown exceptions)
+    //
+    // null arrayrcp
+    TEST_THROW( Tpetra::createMultiVectorFromView(map,null_arcp,LDA,numLocal),                                   std::invalid_argument )
+    // too small arrayrcp
+    TEST_THROW( Tpetra::createMultiVectorFromView(map,user_arcp.persistingView(0, (numVecs-1)*LDA + numLocal - 1),LDA,numVecs), std::invalid_argument )
+    // invalid number of columns
+    TEST_THROW( Tpetra::createMultiVectorFromView(map,user_arcp,LDA,0),                                          std::invalid_argument )
+    // stride too small for number of rows
+    TEST_THROW( Tpetra::createMultiVectorFromView(map,user_arcp.persistingView(0,(numVecs-1)*numLocal+numVecs),numLocal-1,numVecs), std::invalid_argument )
+
+    ///////////////////////////////////////////////////////
+    // test valid use case
+    // check that the constructed multivector uses a view
+    RCP<MV> mv = Tpetra::createMultiVectorFromView(map, user_arcp, LDA, numVecs);
+    TEST_EQUALITY( mv->get1dView().getRawPtr(),         user_arcp.getRawPtr() )
+    TEST_EQUALITY( mv->get1dViewNonConst().getRawPtr(), user_arcp.getRawPtr() )
+    TEST_EQUALITY( mv->getData(0).getRawPtr(),          user_arcp.getRawPtr() )
+    TEST_EQUALITY( mv->getDataNonConst(0).getRawPtr(),  user_arcp.getRawPtr() )
+  }
+
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Vector, ViewModeConstructorTests, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+    typedef Tpetra::Vector<double,int,int,Node> Vec;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm and node
+    RCP<const Comm<int> > comm = getDefaultComm();
+    // create a Map
+    const size_t numLocal = 13;
+    RCP<const Map<int,int,Node> > map = createContigMapWithNode<int,int>(INVALID,numLocal,comm,node);
+    // arcp with N entries valid only for a vector with at least N local entries
+    ArrayRCP<double> null_arcp = null,
+                     user_arcp = Teuchos::arcp<double>(numLocal);
+
+    /////////////////////////////////////////////
+    // test invalid use cases (thrown exceptions)
+    //
+    // null arrayrcp
+    TEST_THROW( Tpetra::createVectorFromView(map,null_arcp),               std::invalid_argument )
+    // too small arrayrcp
+    TEST_THROW( Tpetra::createVectorFromView(map,user_arcp.persistingView(0,numLocal-1)), std::invalid_argument )
+
+    ///////////////////////////////////////////////////////
+    // test valid use case
+    // check that the constructed multivector uses a view
+    RCP<Vec> vec = Tpetra::createVectorFromView(map, user_arcp);
+    TEST_EQUALITY( vec->get1dView().getRawPtr(),         user_arcp.getRawPtr() )
+    TEST_EQUALITY( vec->get1dViewNonConst().getRawPtr(), user_arcp.getRawPtr() )
+    TEST_EQUALITY( vec->getData(0).getRawPtr(),          user_arcp.getRawPtr() )
+    TEST_EQUALITY( vec->getDataNonConst(0).getRawPtr(),  user_arcp.getRawPtr() )
+  }
+
+
+  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, basic, Ordinal, Scalar , Node )
   {
     RCP<Node> node = getNode<Node>();
@@ -2295,6 +2369,20 @@ typedef std::complex<double> ComplexDouble;
 
 #if defined(HAVE_TPETRA_INST_DOUBLE)
   UNIT_TEST_DOUBLE(int)
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MultiVector, ViewModeConstructorTests, SerialNode )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Vector,      ViewModeConstructorTests, SerialNode )
+#ifdef HAVE_KOKKOS_TBB
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MultiVector, ViewModeConstructorTests, TBBNode )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Vector,      ViewModeConstructorTests, TBBNode )
+#endif
+#ifdef HAVE_KOKKOS_THREADPOOL
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MultiVector, ViewModeConstructorTests, TPINode )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Vector,      ViewModeConstructorTests, TPINode )
+#endif
+#ifdef HAVE_KOKKOS_OPENMP
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MultiVector, ViewModeConstructorTests, OpenMPNode )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Vector,      ViewModeConstructorTests, OpenMPNode )
+#endif
 #endif
 
 #if !defined(FAST_DEVELOPMENT_BUILD)

@@ -16,28 +16,47 @@
 #include <SparseLinearSystem_Cuda.hpp>
 
 //----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
 
-void test_cuda( comm::Machine machine )
+void test_cuda_query( comm::Machine machine )
 {
-  // Big question: selection of Cuda defines for parallel processes?
-
   const size_t comm_rank = comm::rank( machine );
-  const size_t comm_size = comm::size( machine );
-  const size_t dev_size  = Kokkos::Cuda::detect_device_count();
-
+  const size_t dev_count = Kokkos::Cuda::detect_device_count();
   std::cout << "P" << comm_rank
-            << ": test_cuda { comm_size = " << comm_size
-            << " dev_size = " << dev_size 
-            << " }" << std::endl ;
-
-  if ( comm_size <= dev_size ) {
-    Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( comm_rank ) );
-    test_box_fixture<Kokkos::Cuda>( machine , 50 , 100 , 200 );
-    Kokkos::Cuda::finalize();
-  }
-
-  HybridFEM::Implicit::driver<double,Kokkos::Cuda>( "Cuda" , machine , 0 , 0 , 0 );
-
+            << ": Cuda device_count = "
+            << Kokkos::Cuda::detect_device_count()
+            << std::endl ;
 }
 
+void test_cuda_fixture( comm::Machine machine ,
+                        size_t nx , size_t ny , size_t nz )
+{
+  const size_t comm_rank = comm::rank( machine );
+  const size_t comm_size = comm::size( machine );
+  const size_t dev_count = Kokkos::Cuda::detect_device_count();
+  const size_t dev_rank =
+    dev_count && dev_count <= comm_size ? comm_rank % dev_count : 0 ;
+
+  Kokkos::Cuda::SelectDevice select_device( dev_rank );
+  Kokkos::Cuda::initialize( select_device );
+  test_box_fixture<Kokkos::Cuda>( machine , nx , ny , nz );
+  Kokkos::Cuda::finalize();
+}
+
+void test_cuda_implicit( comm::Machine machine , 
+                         size_t node_count_begin ,
+                         size_t node_count_end ,
+                         size_t count_run )
+{
+  const size_t comm_rank = comm::rank( machine );
+  const size_t comm_size = comm::size( machine );
+  const size_t dev_count = Kokkos::Cuda::detect_device_count();
+  const size_t dev_rank =
+    dev_count && dev_count <= comm_size ? comm_rank % dev_count : 0 ;
+
+  Kokkos::Cuda::SelectDevice select_device( dev_rank );
+  Kokkos::Cuda::initialize( select_device );
+  HybridFEM::Implicit::driver<double,Kokkos::Cuda>( "Cuda" , machine , node_count_begin , node_count_end , count_run );
+  Kokkos::Cuda::finalize();
+}
+
+//----------------------------------------------------------------------------

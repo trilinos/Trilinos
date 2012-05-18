@@ -63,7 +63,7 @@ class host : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
-    Kokkos::Host::initialize( Kokkos::Host::SetThreadCount( 8 ) );
+    Kokkos::Host::initialize( 1 , 8 );
   }
   
   static void TearDownTestCase()

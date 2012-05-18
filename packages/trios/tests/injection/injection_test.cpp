@@ -89,6 +89,7 @@ int print_args(
     out << prefix << " \tserver-url       = " << args.server_url << std::endl;
 
     if (args.client_flag) {
+        out << prefix << " \ttransport        = " << args.transport_name << std::endl;
         out << prefix << " \tio-method        = " << args.io_method_name << std::endl;
         out << prefix << " \tnum-trials        = " << args.num_trials << std::endl;
         out << prefix << " \tnum-reqs         = " << args.num_reqs << std::endl;
@@ -131,8 +132,22 @@ int main(int argc, char *argv[])
     const char * io_method_names[] = {
             "empty-request-sync", "empty-request-async"};
 
+    const int num_nssi_transports = 4;
+    const int nssi_transport_vals[] = {
+            NSSI_RPC_PTL,
+            NSSI_RPC_IB,
+            NSSI_RPC_GEMINI,
+            NSSI_RPC_MPI};
+    const char * nssi_transport_names[] = {
+            "ptl",
+            "ib",
+            "gni",
+            "mpi"
+    };
+
 
     // Initialize arguments
+    args.transport=NSSI_DEFAULT_TRANSPORT;
     args.delay = 1;
     args.io_method = INJECTION_EMPTY_REQUEST_SYNC;
     args.debug_level = LOG_WARN;
@@ -195,6 +210,14 @@ int main(int argc, char *argv[])
                 "\t\t\tempty-request-sync : Send an empty request - synchronous\n"
                 "\t\t\tempty-request-async: Send an empty request - asynchronous");
 
+        // Set an enumeration command line option for the io_method
+        parser.setOption("transport", &args.transport, num_nssi_transports, nssi_transport_vals, nssi_transport_names,
+                "NSSI transports (not all are available on every platform): \n"
+                "\t\t\tportals : Cray or Schutt\n"
+                "\t\t\tinfiniband : libibverbs\n"
+                "\t\t\tgemini : Cray\n"
+                "\t\t\tmpi : isend/irecv implementation\n"
+                );
 
 
 
@@ -326,15 +349,15 @@ int main(int argc, char *argv[])
      */
     if (args.server_flag && !args.server_url.empty()) {
         // use the server URL as suggested URL
-        nssi_rpc_init(NSSI_DEFAULT_TRANSPORT, NSSI_DEFAULT_ENCODE, args.server_url.c_str());
+        nssi_rpc_init((nssi_rpc_transport)args.transport, NSSI_DEFAULT_ENCODE, args.server_url.c_str());
     }
     else {
-        nssi_rpc_init(NSSI_DEFAULT_TRANSPORT, NSSI_DEFAULT_ENCODE, NULL);
+        nssi_rpc_init((nssi_rpc_transport)args.transport, NSSI_DEFAULT_ENCODE, NULL);
     }
 
     // Get the Server URL
     std::string my_url(NSSI_URL_LEN, '\0');
-    nssi_get_url(NSSI_DEFAULT_TRANSPORT, &my_url[0], NSSI_URL_LEN);
+    nssi_get_url((nssi_rpc_transport)args.transport, &my_url[0], NSSI_URL_LEN);
 
     // Broadcast the server URL to all the clients
     args.server_url.resize(NSSI_URL_LEN, '\0');
@@ -425,7 +448,7 @@ int main(int argc, char *argv[])
             // connect to remote server
             for (i=0; i < args.num_retries; i++) {
                 log_debug(debug_level, "Try to connect to server: attempt #%d", i);
-                rc=nssi_get_service(NSSI_DEFAULT_TRANSPORT, args.server_url.c_str(), args.timeout, &injection_svc);
+                rc=nssi_get_service((nssi_rpc_transport)args.transport, args.server_url.c_str(), args.timeout, &injection_svc);
                 if (rc == NSSI_OK)
                     break;
                 else if (rc != NSSI_ETIMEDOUT) {
@@ -473,7 +496,7 @@ int main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
 
     // Clean up nssi_rpc
-    rc = nssi_rpc_fini(NSSI_DEFAULT_TRANSPORT);
+    rc = nssi_rpc_fini((nssi_rpc_transport)args.transport);
     if (rc != NSSI_OK)
         log_error(debug_level, "Error in nssi_rpc_fini");
 

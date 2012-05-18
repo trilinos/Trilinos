@@ -96,15 +96,15 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
       "-DTPL_ENABLE_MPI:BOOL=ON"
-      "-DMPI_BASE_DIR:PATH=/Users/bmpersc/bin/clang-openmpi-1.4.5"
+      "-DMPI_BASE_DIR:PATH=/Users/trilinos/bin/clang-openmpi-1.4.5"
       )
   
   ELSE()
   
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/Users/bmpersc/bin/clang-3.0/bin/clang++"
-      "-DCMAKE_C_COMPILER:FILEPATH=/Users/bmpersc/bin/clang-3.0/bin/clang"
+      "-DCMAKE_CXX_COMPILER:FILEPATH=/Users/trilinos/bin/clang-3.0/bin/clang++"
+      "-DCMAKE_C_COMPILER:FILEPATH=/Users/trilinos/bin/clang-3.0/bin/clang"
       )
   
   ENDIF()

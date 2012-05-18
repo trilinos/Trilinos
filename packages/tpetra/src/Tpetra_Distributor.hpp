@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -62,23 +62,23 @@ namespace Tpetra {
     };
 
     // Convert an EDistributorSendType enum value to a string.
-    std::string 
+    std::string
     DistributorSendTypeEnumToString (EDistributorSendType sendType)
     {
       if (sendType == DISTRIBUTOR_ISEND) {
-	return "Isend";
+        return "Isend";
       }
       else if (sendType == DISTRIBUTOR_RSEND) {
-	return "Rsend";
+        return "Rsend";
       }
       else if (sendType == DISTRIBUTOR_SEND) {
-	return "Send";
+        return "Send";
       }
       else if (sendType == DISTRIBUTOR_SSEND) {
-	return "Ssend";
+        return "Ssend";
       }
       else {
-	TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid "
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid "
           "EDistributorSendType enum value " << sendType << ".");
       }
     }
@@ -95,16 +95,16 @@ namespace Tpetra {
   /// needed for subclasses of \c DistObject (such as CrsMatrix and
   /// MultiVector) to do data redistribution (Import and Export)
   /// operations.
-  class Distributor : 
-    public Teuchos::Describable, 
+  class Distributor :
+    public Teuchos::Describable,
     public Teuchos::ParameterListAcceptorDefaultBase,
     public Teuchos::VerboseObject<Distributor> {
   public:
 
     //! @name Constructor/Destructor
-    //@{ 
+    //@{
 
-    /// \brief Construct the Distributor using the specified communicator.
+    /// \brief Construct using the specified communicator and default parameters.
     ///
     /// \param comm [in] Communicator used by the Distributor.
     ///
@@ -124,7 +124,7 @@ namespace Tpetra {
     /// pattern.  You need to call one of the "gather / scatter
     /// 'constructors'" to do that.
     explicit Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-			  const Teuchos::RCP<Teuchos::ParameterList>& plist);
+                          const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
     //! Copy constructor.
     Distributor(const Distributor &distributor);
@@ -133,20 +133,38 @@ namespace Tpetra {
     virtual ~Distributor();
 
     //@}
-
     //! @name Implementation of ParameterListAcceptorDefaultBase
-    //@{ 
-    
-    //! Set Distributor parameters.
+    //@{
+
+    /// \brief Set Distributor parameters.
+    ///
+    /// See the documentation of getValidParameters() for the current
+    /// list of parameters understood by Distributor.
     void setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
-    //! List of valid Distributor parameters.
+    /// \brief List of valid Distributor parameters.
+    ///
+    /// Current parameters include:
+    ///
+    /// - "Barrier between receives and sends" (bool): Whether to
+    ///   execute a barrier between receives and sends in
+    ///   do[Reverse]Posts(). n A barrier is required for correctness
+    ///   when the "Send type" parameter is "Rsend".  Otherwise, a
+    ///   barrier is correct and may be useful for debugging, but not
+    ///   recommended, since it introduces useless synchronization.
+    ///
+    /// - "Send type" (std::string): When using MPI, the variant of
+    ///   MPI_Send to use in do[Reverse]Posts().  Valid values include
+    ///   "Isend", "Rsend", "Send", and "Ssend".
+    ///
+    /// - "VerboseObject" (sublist): Optional sublist for controlling
+    ///   behavior of Distributor as a Teuchos::VerboseObject.  This
+    ///   is currently useful only for debugging.
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters () const;
 
     //@}
-
     //! \name Gather/Scatter Constructors
-    //@{ 
+    //@{
 
     /// \brief Set up Distributor using list of node IDs to which this node will send.
     ///
@@ -181,7 +199,7 @@ namespace Tpetra {
     /// miniapp shows an annotated and simplified version of this
     /// process for that special case.
     ///
-    /// \param remoteIDs [in] List of remote IDs wanted. 
+    /// \param remoteIDs [in] List of remote IDs wanted.
     ///
     /// \param remoteNodeIDs [in] List of the nodes that will send the
     ///   remote IDs listed in \remoteIDs. Node IDs less than zero are
@@ -200,15 +218,15 @@ namespace Tpetra {
     /// the Distributor, which is why they are passed in a nonconst
     /// reference to an ArrayRCP.  They may be null on entry.
     template <class Ordinal>
-    void createFromRecvs(const ArrayView<const Ordinal> &remoteIDs, 
-                         const ArrayView<const int> &remoteNodeIDs, 
-                               ArrayRCP<Ordinal> &exportIDs, 
+    void createFromRecvs(const ArrayView<const Ordinal> &remoteIDs,
+                         const ArrayView<const int> &remoteNodeIDs,
+                               ArrayRCP<Ordinal> &exportIDs,
                                ArrayRCP<int> &exportNodeIDs);
 
     //@}
 
     //! @name Attribute Accessor Methods
-    //@{ 
+    //@{
 
     //! The number of nodes from which we will receive data, not include this node ("myself").
     size_t getNumReceives() const;
@@ -243,7 +261,7 @@ namespace Tpetra {
     //@}
 
     //! @name Reverse Communication Methods
-    //@{ 
+    //@{
 
     //! \brief Returns a Distributor with a reverse plan of this Distributor's plan
     /*! This method creates the reverse Distributor the first time the function
@@ -254,7 +272,7 @@ namespace Tpetra {
     //@}
 
     //! @name Execute Distributor Plan Methods
-    //@{ 
+    //@{
 
     /// \brief Execute the (forward) communication plan.
     ///
@@ -275,10 +293,10 @@ namespace Tpetra {
     ///   accomodate the data exported (sent) to us.  On exit,
     ///   contains the values exported to us.
     template <class Packet>
-    void 
+    void
     doPostsAndWaits (const ArrayView<const Packet> &exports,
-		     size_t numPackets,
-		     const ArrayView<Packet> &imports);
+                     size_t numPackets,
+                     const ArrayView<Packet> &imports);
 
     /// \brief Execute the (forward) communication plan.
     ///
@@ -299,12 +317,12 @@ namespace Tpetra {
     /// \param numImportPacketsPerLID [in] The number of packets for
     ///   each import LID (i.e., each LID to be received).
     template <class Packet>
-    void 
+    void
     doPostsAndWaits (const ArrayView<const Packet> &exports,
-		     const ArrayView<size_t> &numExportPacketsPerLID,
-		     const ArrayView<Packet> &imports,
-		     const ArrayView<size_t> &numImportPacketsPerLID);
-    
+                     const ArrayView<size_t> &numExportPacketsPerLID,
+                     const ArrayView<Packet> &imports,
+                     const ArrayView<size_t> &numImportPacketsPerLID);
+
     /// \brief Post the data for a forward plan, but do not execute the waits yet.
     ///
     /// Call this overload when you have the same number of Packets
@@ -328,16 +346,16 @@ namespace Tpetra {
     ///   completion of \c doWaits(), this buffer contains the values
     ///   exported to us.
     template <class Packet>
-    void 
+    void
     doPosts (const ArrayRCP<const Packet> &exports,
-	     size_t numPackets,
-	     const ArrayRCP<Packet> &imports);
+             size_t numPackets,
+             const ArrayRCP<Packet> &imports);
 
     /// \brief Post the data for a forward plan, but do not execute the waits yet.
     ///
     /// Call this overload when you have possibly different numbers of
     /// Packets for each LID to send or receive.
-    /// 
+    ///
     /// \param exports [in] Same as in the three-argument version of
     ///   \c doPosts().
     ///
@@ -350,11 +368,11 @@ namespace Tpetra {
     /// \param numImportPacketsPerLID [in] Same as in the
     ///   four-argument version of \c doPostsAndWaits().
     template <class Packet>
-    void 
+    void
     doPosts (const ArrayRCP<const Packet> &exports,
-	     const ArrayView<size_t> &numExportPacketsPerLID,
-	     const ArrayRCP<Packet> &imports,
-	     const ArrayView<size_t> &numImportPacketsPerLID);
+             const ArrayView<size_t> &numExportPacketsPerLID,
+             const ArrayRCP<Packet> &imports,
+             const ArrayView<size_t> &numImportPacketsPerLID);
 
     //! Wait on any outstanding nonblocking message requests to complete.
     void doWaits ();
@@ -364,49 +382,49 @@ namespace Tpetra {
     /// This method takes the same arguments as the three-argument
     /// version of \c doPostsAndWaits().
     template <class Packet>
-    void 
+    void
     doReversePostsAndWaits (const ArrayView<const Packet> &exports,
-			    size_t numPackets,
-			    const ArrayView<Packet> &imports);
+                            size_t numPackets,
+                            const ArrayView<Packet> &imports);
 
     /// \brief Execute the reverse communication plan.
     ///
     /// This method takes the same arguments as the four-argument
     /// version of \c doPostsAndWaits().
     template <class Packet>
-    void 
+    void
     doReversePostsAndWaits (const ArrayView<const Packet> &exports,
-			    const ArrayView<size_t> &numExportPacketsPerLID,
-			    const ArrayView<Packet> &imports,
-			    const ArrayView<size_t> &numImportPacketsPerLID);
+                            const ArrayView<size_t> &numExportPacketsPerLID,
+                            const ArrayView<Packet> &imports,
+                            const ArrayView<size_t> &numImportPacketsPerLID);
 
     /// \brief Post the data for a reverse plan, but do not execute the waits yet.
     ///
     /// This method takes the same arguments as the three-argument
     /// version of \c doPosts().
     template <class Packet>
-    void 
+    void
     doReversePosts (const ArrayRCP<const Packet> &exports,
-		    size_t numPackets,
-		    const ArrayRCP<Packet> &imports);
+                    size_t numPackets,
+                    const ArrayRCP<Packet> &imports);
 
     /// \brief Post the data for a reverse plan, but do not execute the waits yet.
     ///
     /// This method takes the same arguments as the four-argument
     /// version of \c doPosts().
     template <class Packet>
-    void 
+    void
     doReversePosts (const ArrayRCP<const Packet> &exports,
-		    const ArrayView<size_t> &numExportPacketsPerLID,
-		    const ArrayRCP<Packet> &imports,
-		    const ArrayView<size_t> &numImportPacketsPerLID);
+                    const ArrayView<size_t> &numExportPacketsPerLID,
+                    const ArrayRCP<Packet> &imports,
+                    const ArrayView<size_t> &numImportPacketsPerLID);
 
     //! Wait on any outstanding reverse message requests to complete.
     void doReverseWaits ();
 
     //@}
 
-    //! @name Overridden from Teuchos::Describable 
+    //! @name Overridden from Teuchos::Describable
     //@{
 
     //! A simple one-line description of this object.
@@ -496,7 +514,7 @@ namespace Tpetra {
     /// currently uses this in both overloads of \c doPosts() to test
     /// whether data are laid out by process).
     Array<size_t> indicesTo_;
-    
+
     /// \brief The number of messages received by my process from other processes.
     ///
     /// This does <i>not</i> count self receives.  If selfMessage_ is
@@ -516,7 +534,7 @@ namespace Tpetra {
     /// communicator.
     size_t totalReceiveLength_;
 
-    // imagesFrom_, startsFrom_ and lengthsFrom_ each have size 
+    // imagesFrom_, startsFrom_ and lengthsFrom_ each have size
     //   numReceives_ + selfMessage_
     Array<size_t> lengthsFrom_;
     Array<int> imagesFrom_;
@@ -542,34 +560,53 @@ namespace Tpetra {
     /// later reuse.  This is why it is declared "mutable".
     mutable RCP<Distributor> reverseDistributor_;
 
-    //! Compute receive info from sends.
-    void computeReceives();
+    /// \brief Compute receive info from sends.
+    ///
+    /// This method computes numReceives_, lengthsFrom_, imagesFrom_,
+    /// totalReceiveLength_, indicesFrom_, and startsFrom_.
+    ///
+    /// \note This method currently ignores the sendType_ and
+    ///   barrierBetween_ parameters, and always uses ireceive() /
+    ///   send() for communication of the process IDs from which our
+    ///   process is receiving and their corresponding receive packet
+    ///   counts.
+    void computeReceives ();
 
-    //! Compute send info from receives.
+    /// \brief Compute send (GID,PID) pairs from receive (GID,PID) pairs.
+    ///
+    /// GID means "global ID" and PID means "process ID" (rank, in MPI
+    /// terms).
+    ///
+    /// \param importIDs [in] GIDs to receive by my process.
+    /// \param importNodeIDs [in] Process IDs from which to receive by
+    ///   my process.
+    /// \param exportIDs [out] GIDs to send by my process.
+    /// \param exportNodeIDs [out] Process IDs to which to send by my
+    ///   process.
     template <class Ordinal>
     void computeSends (const ArrayView<const Ordinal> &importIDs,
-		       const ArrayView<const int> &importNodeIDs,
-		       ArrayRCP<Ordinal> &exportIDs,
-		       ArrayRCP<int> &exportNodeIDs);
+                       const ArrayView<const int> &importNodeIDs,
+                       ArrayRCP<Ordinal> &exportIDs,
+                       ArrayRCP<int> &exportNodeIDs);
 
-    //! Create a distributor for the reverse communciation pattern.
+    //! Create a distributor for the reverse communication pattern.
     void createReverseDistributor() const;
 
   }; // class Distributor
 
 
   template <class Packet>
-  void Distributor::doPostsAndWaits(
-      const ArrayView<const Packet>& exports,
-      size_t numPackets,
-      const ArrayView<Packet>& imports) 
+  void Distributor::
+  doPostsAndWaits (const ArrayView<const Packet>& exports,
+                   size_t numPackets,
+                   const ArrayView<Packet>& imports)
   {
     using Teuchos::as;
     using Teuchos::arcp;
     using Teuchos::ArrayRCP;
 
     TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
-      Teuchos::typeName(*this) << "::doPostsAndWaits(): There are " 
+      Teuchos::typeName(*this) << "::doPostsAndWaits(): There are "
       << requests_.size() << " outstanding nonblocking messages pending.  It is "
       "incorrect to call doPostsAndWaits with posts outstanding.");
 
@@ -583,8 +620,8 @@ namespace Tpetra {
     typedef typename ArrayRCP<const Packet>::size_type size_type;
     //const Packet* exportsPtr = exports.getRawPtr();
     //ArrayRCP<const Packet> exportsArcp (exportsPtr, as<size_type> (0), exports.size(), false);
-    ArrayRCP<const Packet> exportsArcp (exports.getRawPtr(), as<size_type> (0), 
-					exports.size(), false);
+    ArrayRCP<const Packet> exportsArcp (exports.getRawPtr(), as<size_type> (0),
+                                        exports.size(), false);
 
     // For some reason, neither of the options below (that use arcp)
     // compile for Packet=std::complex<double> with GCC 4.5.1.  The
@@ -592,30 +629,30 @@ namespace Tpetra {
     // construct a separate nonowning ArrayRCP.
 
     // doPosts (arcp<const Packet> (exports.getRawPtr(), 0, exports.size(), false),
-    // 	     numPackets, 
-    // 	     arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false));
+    //              numPackets,
+    //              arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false));
     // doPosts (arcp<const Packet> (exportsPtr, 0, exports.size(), false),
-    // 	     numPackets, 
-    // 	     arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false));
+    //              numPackets,
+    //              arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false));
     doPosts (exportsArcp,
-    	     numPackets, 
-    	     arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false));
+             numPackets,
+             arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false));
     doWaits();
   }
 
   template <class Packet>
-  void Distributor::doPostsAndWaits(
-      const ArrayView<const Packet>& exports,
-      const ArrayView<size_t> &numExportPacketsPerLID,
-      const ArrayView<Packet> &imports,
-      const ArrayView<size_t> &numImportPacketsPerLID)
+  void Distributor::
+  doPostsAndWaits (const ArrayView<const Packet>& exports,
+                   const ArrayView<size_t> &numExportPacketsPerLID,
+                   const ArrayView<Packet> &imports,
+                   const ArrayView<size_t> &numImportPacketsPerLID)
   {
     using Teuchos::arcp;
     using Teuchos::ArrayRCP;
     using Teuchos::as;
 
     TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
-      Teuchos::typeName(*this) << "::doPostsAndWaits(): There are " 
+      Teuchos::typeName(*this) << "::doPostsAndWaits(): There are "
       << requests_.size() << " outstanding nonblocking messages pending.  It is "
       "incorrect to call doPostsAndWaits with posts outstanding.");
 
@@ -632,24 +669,24 @@ namespace Tpetra {
     // ArrayRCP.
     typedef typename ArrayRCP<const Packet>::size_type size_type;
     ArrayRCP<const Packet> exportsArcp (exports.getRawPtr(), as<size_type> (0),
-					exports.size(), false);
+                                        exports.size(), false);
     // mfh 04 Apr 2012: This is the offending code.  This statement
     // would normally be in place of "exportsArcp" in the
     // doPosts() call below.
     //arcp<const Packet> (exports.getRawPtr(), 0, exports.size(), false),
-    doPosts (exportsArcp, 
-	     numExportPacketsPerLID, 
-	     arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false), 
-	     numImportPacketsPerLID);
+    doPosts (exportsArcp,
+             numExportPacketsPerLID,
+             arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false),
+             numImportPacketsPerLID);
     doWaits();
   }
 
 
   template <class Packet>
-  void 
-  Distributor::doPosts (const ArrayRCP<const Packet>& exports,
-			size_t numPackets,
-			const ArrayRCP<Packet>& imports) 
+  void Distributor::
+  doPosts (const ArrayRCP<const Packet>& exports,
+           size_t numPackets,
+           const ArrayRCP<Packet>& imports)
   {
     using Teuchos::as;
     using Teuchos::FancyOStream;
@@ -662,6 +699,9 @@ namespace Tpetra {
     using Teuchos::ssend;
     using Teuchos::typeName;
     using std::endl;
+
+    // Run-time configurable parameters that come from the input
+    // ParameterList set by setParameterList().
     const EDistributorSendType sendType = sendType_;
     const bool doBarrier = barrierBetween_;
 
@@ -669,22 +709,23 @@ namespace Tpetra {
     // Prepare for verbose output, if applicable.
     Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel ();
     RCP<FancyOStream> out = this->getOStream ();
-    const bool doPrint = out.get () && 
+    const bool doPrint = out.get () && (comm_->getRank () == 0) &&
       includesVerbLevel (verbLevel, Teuchos::VERB_EXTREME, true);
-    const int myRank = comm_->getRank ();
 
-    if (doPrint && myRank == 0) {
+    if (doPrint) {
       // Only need one process to print out parameters.
       *out << "Distributor::doPosts" << endl;
     }
-    OSTab tab = this->getOSTab(); // Add one tab level
-    if (doPrint && myRank == 0) {
-      *out << "sendType=" << DistributorSendTypeEnumToString (sendType) 
-	   << ", barrierBetween=" << doBarrier << endl;
+    // Add one tab level.  We declare this outside the doPrint scopes
+    // so that the tab persists until the end of this method.
+    OSTab tab = this->getOSTab();
+    if (doPrint) {
+      *out << "sendType=" << DistributorSendTypeEnumToString (sendType)
+           << ", barrierBetween=" << doBarrier << endl;
     }
 #endif // HAVE_TEUCHOS_DEBUG
 
-    TEUCHOS_TEST_FOR_EXCEPTION(sendType == DISTRIBUTOR_RSEND && ! doBarrier, 
+    TEUCHOS_TEST_FOR_EXCEPTION(sendType == DISTRIBUTOR_RSEND && ! doBarrier,
       std::logic_error, "Ready send implementation requires a barrier between "
       "posting receives and posting ready sends.  This should have been checked "
       "before.  Please report this bug to the Tpetra developers.");
@@ -693,10 +734,11 @@ namespace Tpetra {
     size_t selfReceiveOffset = 0;
 
 #ifdef HAVE_TEUCHOS_DEBUG
+    // Each message has the same number of packets.
     const size_t totalNumImportPackets = totalReceiveLength_ * numPackets;
-    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t>(imports.size()) != totalNumImportPackets, 
-      std::runtime_error, typeName(*this) << "::doPosts(): imports must be "
-      "large enough to store the imported data.  imports.size() = " 
+    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t> (imports.size ()) != totalNumImportPackets,
+      std::runtime_error, typeName (*this) << "::doPosts(): imports must be "
+      "large enough to store the imported data.  imports.size() = "
       << imports.size() << ", but total number of import packets = "
       << totalNumImportPackets << ".");
 #endif // HAVE_TEUCHOS_DEBUG
@@ -725,16 +767,16 @@ namespace Tpetra {
     {
       size_t curBufferOffset = 0;
       for (size_t i = 0; i < actualNumReceives; ++i) {
-        if (imagesFrom_[i] != myImageID) { 
-	  // If my process is receiving these packet(s) from another
-	  // process (not a self-receive):
-	  //
-	  // 1. Set up the persisting view (recvBuf) of the imports
-	  //    array, given the offset and size (total number of
-	  //    packets from process imagesFrom_[i]).
-	  // 2. Start the Irecv and save the resulting request.
-          ArrayRCP<Packet> recvBuf = 
-	    imports.persistingView (curBufferOffset, lengthsFrom_[i]*numPackets);
+        if (imagesFrom_[i] != myImageID) {
+          // If my process is receiving these packet(s) from another
+          // process (not a self-receive):
+          //
+          // 1. Set up the persisting view (recvBuf) of the imports
+          //    array, given the offset and size (total number of
+          //    packets from process imagesFrom_[i]).
+          // 2. Start the Irecv and save the resulting request.
+          ArrayRCP<Packet> recvBuf =
+            imports.persistingView (curBufferOffset, lengthsFrom_[i]*numPackets);
           requests_.push_back (ireceive<int, Packet> (*comm_, recvBuf, imagesFrom_[i]));
         }
         else { // Receiving from myself
@@ -775,42 +817,42 @@ namespace Tpetra {
         }
 
         if (imagesTo_[p] != myImageID) {
-          ArrayView<const Packet> tmpSend = 
-	    exports.view (startsTo_[p]*numPackets, lengthsTo_[p]*numPackets);
-	  if (sendType == DISTRIBUTOR_RSEND) {
-	    readySend<int,Packet> (*comm_, tmpSend, imagesTo_[p]);
-	  }
-	  else if (sendType == DISTRIBUTOR_ISEND) {
-	    ArrayRCP<const Packet> tmpSendBuf = 
-	      exports.persistingView (startsTo_[p] * numPackets, 
-				      lengthsTo_[p] * numPackets);
-	    requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf, imagesTo_[p]));
-	  }
-	  else if (sendType == DISTRIBUTOR_SSEND) {
-	    ssend<int, Packet> (*comm_, tmpSend.size(), 
-				tmpSend.getRawPtr(), imagesTo_[p]);
-	    
-	  } else { // if (sendType == DISTRIBUTOR_SEND) 
-	    // We've already validated sendType, so it has to be
-	    // DISTRIBUTOR_SEND.  If it's not, well, this is a
-	    // reasonable fallback.
-	    //
-	    // FIXME (mfh 23 Mar 2012) Implement a three-argument
-	    // version of send() that takes an ArrayView instead of a
-	    // raw array.
-	    send<int, Packet> (*comm_, tmpSend.size(), 
-			       tmpSend.getRawPtr(), imagesTo_[p]);
-	  }
-	}
+          ArrayView<const Packet> tmpSend =
+            exports.view (startsTo_[p]*numPackets, lengthsTo_[p]*numPackets);
+          if (sendType == DISTRIBUTOR_RSEND) {
+            readySend<int,Packet> (*comm_, tmpSend, imagesTo_[p]);
+          }
+          else if (sendType == DISTRIBUTOR_ISEND) {
+            ArrayRCP<const Packet> tmpSendBuf =
+              exports.persistingView (startsTo_[p] * numPackets,
+                                      lengthsTo_[p] * numPackets);
+            requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf, imagesTo_[p]));
+          }
+          else if (sendType == DISTRIBUTOR_SSEND) {
+            ssend<int, Packet> (*comm_, tmpSend.size(),
+                                tmpSend.getRawPtr(), imagesTo_[p]);
+
+          } else { // if (sendType == DISTRIBUTOR_SEND)
+            // We've already validated sendType, so it has to be
+            // DISTRIBUTOR_SEND.  If it's not, well, this is a
+            // reasonable fallback.
+            //
+            // FIXME (mfh 23 Mar 2012) Implement a three-argument
+            // version of send() that takes an ArrayView instead of a
+            // raw array.
+            send<int, Packet> (*comm_, tmpSend.size(),
+                               tmpSend.getRawPtr(), imagesTo_[p]);
+          }
+        }
         else { // "Sending" the message to myself
           selfNum = p;
         }
       }
 
       if (selfMessage_) {
-        std::copy (exports.begin()+startsTo_[selfNum]*numPackets, 
-		   exports.begin()+startsTo_[selfNum]*numPackets+lengthsTo_[selfNum]*numPackets, 
-		   imports.begin()+selfReceiveOffset);
+        std::copy (exports.begin()+startsTo_[selfNum]*numPackets,
+                   exports.begin()+startsTo_[selfNum]*numPackets+lengthsTo_[selfNum]*numPackets,
+                   imports.begin()+selfReceiveOffset);
       }
     }
     else { // data are not blocked by image, use send buffer
@@ -822,7 +864,7 @@ namespace Tpetra {
           p -= numBlocks;
         }
 
-        if (imagesTo_[p] != myImageID) { 
+        if (imagesTo_[p] != myImageID) {
           typename ArrayView<const Packet>::iterator srcBegin, srcEnd;
           size_t sendArrayOffset = 0;
           size_t j = startsTo_[p];
@@ -834,25 +876,25 @@ namespace Tpetra {
           }
           ArrayView<const Packet> tmpSend = sendArray.view (0, lengthsTo_[p]*numPackets);
 
-	  if (sendType == DISTRIBUTOR_RSEND) {
-	    readySend<int,Packet> (*comm_, tmpSend, imagesTo_[p]);
-	  }
-	  else if (sendType == DISTRIBUTOR_ISEND) {
-	    ArrayRCP<const Packet> tmpSendBuf = 
-	      sendArray.persistingView (0, lengthsTo_[p] * numPackets);
-	    requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf, imagesTo_[p]));
-	  }
-	  else if (sendType == DISTRIBUTOR_SSEND) {
-	    ssend<int,Packet> (*comm_, tmpSend.size(), 
-			       tmpSend.getRawPtr(), imagesTo_[p]);
-	  }
-	  else { // if (sendType == DISTRIBUTOR_SEND) 
-	    // We've already validated sendType, so it has to be
-	    // DISTRIBUTOR_SEND.  If it's not, well, this is a
-	    // reasonable fallback.
-	    send<int,Packet> (*comm_, tmpSend.size(), 
-			      tmpSend.getRawPtr(), imagesTo_[p]);
-	  }
+          if (sendType == DISTRIBUTOR_RSEND) {
+            readySend<int,Packet> (*comm_, tmpSend, imagesTo_[p]);
+          }
+          else if (sendType == DISTRIBUTOR_ISEND) {
+            ArrayRCP<const Packet> tmpSendBuf =
+              sendArray.persistingView (0, lengthsTo_[p] * numPackets);
+            requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf, imagesTo_[p]));
+          }
+          else if (sendType == DISTRIBUTOR_SSEND) {
+            ssend<int,Packet> (*comm_, tmpSend.size(),
+                               tmpSend.getRawPtr(), imagesTo_[p]);
+          }
+          else { // if (sendType == DISTRIBUTOR_SEND)
+            // We've already validated sendType, so it has to be
+            // DISTRIBUTOR_SEND.  If it's not, well, this is a
+            // reasonable fallback.
+            send<int,Packet> (*comm_, tmpSend.size(),
+                              tmpSend.getRawPtr(), imagesTo_[p]);
+          }
         }
         else { // "Sending" the message to myself
           selfNum = p;
@@ -873,11 +915,11 @@ namespace Tpetra {
   }
 
   template <class Packet>
-  void 
-  Distributor::doPosts (const ArrayRCP<const Packet>& exports,
-			const ArrayView<size_t>& numExportPacketsPerLID,
-			const ArrayRCP<Packet>& imports,
-			const ArrayView<size_t>& numImportPacketsPerLID) 
+  void Distributor::
+  doPosts (const ArrayRCP<const Packet>& exports,
+           const ArrayView<size_t>& numExportPacketsPerLID,
+           const ArrayRCP<Packet>& imports,
+           const ArrayView<size_t>& numImportPacketsPerLID)
   {
     using Teuchos::as;
     using Teuchos::ireceive;
@@ -885,10 +927,36 @@ namespace Tpetra {
     using Teuchos::readySend;
     using Teuchos::send;
     using Teuchos::ssend;
+#ifdef HAVE_TEUCHOS_DEBUG
+    using std::endl;
+#endif // HAVE_TEUCHOS_DEBUG
+
+    // Run-time configurable parameters that come from the input
+    // ParameterList set by setParameterList().
     const EDistributorSendType sendType = sendType_;
     const bool doBarrier = barrierBetween_;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(sendType == DISTRIBUTOR_RSEND && ! doBarrier, 
+#ifdef HAVE_TEUCHOS_DEBUG
+    // Prepare for verbose output, if applicable.
+    Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel ();
+    RCP<Teuchos::FancyOStream> out = this->getOStream ();
+    const bool doPrint = out.get () && (comm_->getRank () == 0) &&
+      includesVerbLevel (verbLevel, Teuchos::VERB_EXTREME, true);
+
+    if (doPrint) {
+      // Only need one process to print out parameters.
+      *out << "Distributor::doPosts" << endl;
+    }
+    // Add one tab level.  We declare this outside the doPrint scopes
+    // so that the tab persists until the end of this method.
+    Teuchos::OSTab tab = this->getOSTab();
+    if (doPrint) {
+      *out << "sendType=" << DistributorSendTypeEnumToString (sendType)
+           << ", barrierBetween=" << doBarrier << endl;
+    }
+#endif // HAVE_TEUCHOS_DEBUG
+
+    TEUCHOS_TEST_FOR_EXCEPTION(sendType == DISTRIBUTOR_RSEND && ! doBarrier,
       std::logic_error, "Ready send implementation requires a barrier between "
       "posting receives and posting ready sends.  This should have been checked "
       "before.  Please report this bug to the Tpetra developers.");
@@ -897,15 +965,16 @@ namespace Tpetra {
     size_t selfReceiveOffset = 0;
 
 #ifdef HAVE_TEUCHOS_DEBUG
+    // Different messages may have different numbers of packets.
     size_t totalNumImportPackets = 0;
     for (int ii = 0; ii < numImportPacketsPerLID.size(); ++ii) {
       totalNumImportPackets += numImportPacketsPerLID[ii];
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t>(imports.size()) != totalNumImportPackets, 
-      std::runtime_error, Teuchos::typeName(*this) << "::doPosts(): The imports "
-      "array argument must be large enough to store the imported data.  imports."
-      "size() = " << imports.size() << ", but the total number of packets is " 
-      << totalNumImportPackets << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t> (imports.size ()) != totalNumImportPackets,
+      std::runtime_error, Teuchos::typeName (*this) << "::doPosts(): The "
+      "imports array argument must be large enough to store the imported "
+      "data.  imports.size() = " << imports.size() << ", but the total number "
+      "of packets is " << totalNumImportPackets << ".");
 #endif // HAVE_TEUCHOS_DEBUG
 
     // Distributor uses requests_.size() as the number of outstanding
@@ -938,17 +1007,17 @@ namespace Tpetra {
           totalPacketsFrom_i += numImportPacketsPerLID[curLIDoffset+j];
         }
         curLIDoffset += lengthsFrom_[i];
-        if (imagesFrom_[i] != myImageID && totalPacketsFrom_i) { 
-	  // If my process is receiving these packet(s) from another
-	  // process (not a self-receive), and if there is at least
-	  // one packet to receive: 
-	  //
-	  // 1. Set up the persisting view (recvBuf) into the imports
-	  //    array, given the offset and size (total number of
-	  //    packets from process imagesFrom_[i]).
-	  // 2. Start the Irecv and save the resulting request.
-          ArrayRCP<Packet> recvBuf = 
-	    imports.persistingView (curBufferOffset, totalPacketsFrom_i);
+        if (imagesFrom_[i] != myImageID && totalPacketsFrom_i) {
+          // If my process is receiving these packet(s) from another
+          // process (not a self-receive), and if there is at least
+          // one packet to receive:
+          //
+          // 1. Set up the persisting view (recvBuf) into the imports
+          //    array, given the offset and size (total number of
+          //    packets from process imagesFrom_[i]).
+          // 2. Start the Irecv and save the resulting request.
+          ArrayRCP<Packet> recvBuf =
+            imports.persistingView (curBufferOffset, totalPacketsFrom_i);
           requests_.push_back (ireceive<int, Packet> (*comm_, recvBuf, imagesFrom_[i]));
         }
         else { // Receiving these packet(s) from myself
@@ -995,7 +1064,7 @@ namespace Tpetra {
     size_t selfNum = 0;
     size_t selfIndex = 0;
 
-    if (indicesTo_.empty()) { 
+    if (indicesTo_.empty()) {
       // Data are already blocked (laid out) by process, so we don't
       // need a separate send buffer (besides the exports array).
       for (size_t i = 0; i < numBlocks; ++i) {
@@ -1005,27 +1074,27 @@ namespace Tpetra {
         }
 
         if (imagesTo_[p] != myImageID && packetsPerSend[p] > 0) {
-          ArrayView<const Packet> tmpSend = 
-	    exports.view (sendPacketOffsets[p], packetsPerSend[p]);
-	  if (sendType == DISTRIBUTOR_RSEND) {
-	    readySend<int,Packet> (*comm_, tmpSend, imagesTo_[p]);
-	  }
-	  else if (sendType == DISTRIBUTOR_ISEND) {
-	    ArrayRCP<const Packet> tmpSendBuf = 
-	      exports.persistingView (sendPacketOffsets[p], packetsPerSend[p]);
-	    requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf, imagesTo_[p]));
-	  }
-	  else if (sendType == DISTRIBUTOR_SSEND) {
-	    ssend<int, Packet> (*comm_, tmpSend.size(), 
-				tmpSend.getRawPtr(), imagesTo_[p]);
-	  }
-	  else { // if (sendType == DISTRIBUTOR_SEND)
-	    // We've already validated sendType, so it has to be
-	    // DISTRIBUTOR_SEND.  If it's not, well, this is a
-	    // reasonable fallback.
-	    send<int, Packet> (*comm_, tmpSend.size(), 
-			       tmpSend.getRawPtr(), imagesTo_[p]);
-	  }
+          ArrayView<const Packet> tmpSend =
+            exports.view (sendPacketOffsets[p], packetsPerSend[p]);
+          if (sendType == DISTRIBUTOR_RSEND) {
+            readySend<int,Packet> (*comm_, tmpSend, imagesTo_[p]);
+          }
+          else if (sendType == DISTRIBUTOR_ISEND) {
+            ArrayRCP<const Packet> tmpSendBuf =
+              exports.persistingView (sendPacketOffsets[p], packetsPerSend[p]);
+            requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf, imagesTo_[p]));
+          }
+          else if (sendType == DISTRIBUTOR_SSEND) {
+            ssend<int, Packet> (*comm_, tmpSend.size(),
+                                tmpSend.getRawPtr(), imagesTo_[p]);
+          }
+          else { // if (sendType == DISTRIBUTOR_SEND)
+            // We've already validated sendType, so it has to be
+            // DISTRIBUTOR_SEND.  If it's not, well, this is a
+            // reasonable fallback.
+            send<int, Packet> (*comm_, tmpSend.size(),
+                               tmpSend.getRawPtr(), imagesTo_[p]);
+          }
         }
         else { // "Sending" the message to myself
           selfNum = p;
@@ -1033,9 +1102,9 @@ namespace Tpetra {
       }
 
       if (selfMessage_) {
-        std::copy (exports.begin()+sendPacketOffsets[selfNum], 
-		   exports.begin()+sendPacketOffsets[selfNum]+packetsPerSend[selfNum], 
-		   imports.begin()+selfReceiveOffset);
+        std::copy (exports.begin()+sendPacketOffsets[selfNum],
+                   exports.begin()+sendPacketOffsets[selfNum]+packetsPerSend[selfNum],
+                   imports.begin()+selfReceiveOffset);
       }
     }
     else { // data are not blocked by image, use send buffer
@@ -1054,7 +1123,7 @@ namespace Tpetra {
           p -= numBlocks;
         }
 
-        if (imagesTo_[p] != myImageID) { 
+        if (imagesTo_[p] != myImageID) {
           typename ArrayView<const Packet>::iterator srcBegin, srcEnd;
           size_t sendArrayOffset = 0;
           size_t j = startsTo_[p];
@@ -1069,21 +1138,21 @@ namespace Tpetra {
           if (numPacketsTo_p > 0) {
             ArrayView<const Packet> tmpSend = sendArray.view (0, numPacketsTo_p);
 
-	    if (sendType == DISTRIBUTOR_RSEND) {
-	      readySend<int,Packet> (*comm_,tmpSend,imagesTo_[p]);
-	    } 
-	    else if (sendType == DISTRIBUTOR_ISEND) {
-	      ArrayRCP<const Packet> tmpSendBuf = 
-		sendArray.persistingView (0, numPacketsTo_p);
-	      requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf,
-						       imagesTo_[p]));
-	    }
-	    else if (sendType == DISTRIBUTOR_SSEND) {
-	      ssend<int,Packet> (*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
-	    }
-	    else { // if (sendType == DISTRIBUTOR_SSEND)
-	      send<int,Packet> (*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
-	    }
+            if (sendType == DISTRIBUTOR_RSEND) {
+              readySend<int,Packet> (*comm_,tmpSend,imagesTo_[p]);
+            }
+            else if (sendType == DISTRIBUTOR_ISEND) {
+              ArrayRCP<const Packet> tmpSendBuf =
+                sendArray.persistingView (0, numPacketsTo_p);
+              requests_.push_back (isend<int, Packet> (*comm_, tmpSendBuf,
+                                                       imagesTo_[p]));
+            }
+            else if (sendType == DISTRIBUTOR_SSEND) {
+              ssend<int,Packet> (*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
+            }
+            else { // if (sendType == DISTRIBUTOR_SSEND)
+              send<int,Packet> (*comm_, tmpSend.size(), tmpSend.getRawPtr(), imagesTo_[p]);
+            }
           }
         }
         else { // "Sending" the message to myself
@@ -1104,12 +1173,11 @@ namespace Tpetra {
     }
   }
 
-
   template <class Packet>
-  void Distributor::doReversePostsAndWaits(
-      const ArrayView<const Packet>& exports,
-      size_t numPackets,
-      const ArrayView<Packet>& imports) 
+  void Distributor::
+  doReversePostsAndWaits (const ArrayView<const Packet>& exports,
+                          size_t numPackets,
+                          const ArrayView<Packet>& imports)
   {
     using Teuchos::as;
 
@@ -1125,30 +1193,30 @@ namespace Tpetra {
     // ArrayRCP.
     typedef typename ArrayRCP<const Packet>::size_type size_type;
     ArrayRCP<const Packet> exportsArcp (exports.getRawPtr(), as<size_type> (0),
-					exports.size(), false);
+                                        exports.size(), false);
     // mfh 04 Apr 2012: This is the offending code.  This statement
     // would normally be in place of "exportsArcp" in the
     // doReversePosts() call below.
     //arcp<const Packet> (exports.getRawPtr(), 0, exports.size(), false)
     doReversePosts (exportsArcp,
-    		    numPackets, 
-    		    arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false));
-    doReverseWaits();
+                    numPackets,
+                    arcp<Packet> (imports.getRawPtr (), 0, imports.size (), false));
+    doReverseWaits ();
   }
 
   template <class Packet>
-  void Distributor::doReversePostsAndWaits(
-       const ArrayView<const Packet>& exports,
-       const ArrayView<size_t> &numExportPacketsPerLID,
-       const ArrayView<Packet> &imports,
-       const ArrayView<size_t> &numImportPacketsPerLID)
+  void Distributor::
+  doReversePostsAndWaits (const ArrayView<const Packet>& exports,
+                          const ArrayView<size_t> &numExportPacketsPerLID,
+                          const ArrayView<Packet> &imports,
+                          const ArrayView<size_t> &numImportPacketsPerLID)
   {
     using Teuchos::as;
     using Teuchos::arcp;
     using Teuchos::ArrayRCP;
 
     TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
-      Teuchos::typeName(*this) << "::doReversePostsAndWaits(): There are " 
+      Teuchos::typeName(*this) << "::doReversePostsAndWaits(): There are "
       << requests_.size() << " outstanding nonblocking messages pending.  It is "
       "incorrect to call doReversePostsAndWaits with posts outstanding.");
 
@@ -1164,87 +1232,91 @@ namespace Tpetra {
     // versions of GCC.  The issue only arises with the exports array.
     // This is why we construct a separate nonowning ArrayRCP.
     typedef typename ArrayRCP<const Packet>::size_type size_type;
-    ArrayRCP<const Packet> exportsArcp (exports.getRawPtr(), as<size_type> (0), 
-					exports.size(), false);
+    ArrayRCP<const Packet> exportsArcp (exports.getRawPtr (), as<size_type> (0),
+                                        exports.size (), false);
     doReversePosts (exportsArcp,
-		    numExportPacketsPerLID, 
-		    arcp<Packet> (imports.getRawPtr(), 0, imports.size(), false),
-		    numImportPacketsPerLID);
-    doReverseWaits();
+                    numExportPacketsPerLID,
+                    arcp<Packet> (imports.getRawPtr (), 0, imports.size (), false),
+                    numImportPacketsPerLID);
+    doReverseWaits ();
   }
 
-
   template <class Packet>
-  void Distributor::doReversePosts(
-      const ArrayRCP<const Packet>& exports,
-      size_t numPackets,
-      const ArrayRCP<Packet>& imports) 
+  void Distributor::
+  doReversePosts (const ArrayRCP<const Packet>& exports,
+                  size_t numPackets,
+                  const ArrayRCP<Packet>& imports)
   {
     // FIXME (mfh 29 Mar 2012) WHY?
-    TEUCHOS_TEST_FOR_EXCEPTION(!indicesTo_.empty(),std::runtime_error,
-      Teuchos::typeName(*this) << "::doReversePosts(): Can only do reverse comm "
-      "when original data are blocked by image.");
-    if (reverseDistributor_ == null) {
-      createReverseDistributor();
+    TEUCHOS_TEST_FOR_EXCEPTION(! indicesTo_.empty (), std::runtime_error,
+      Teuchos::typeName (*this) << "::doReversePosts(): Can only do reverse "
+      "communication when original data are blocked by process.");
+    if (reverseDistributor_.is_null ()) {
+      createReverseDistributor ();
     }
     reverseDistributor_->doPosts (exports, numPackets, imports);
   }
 
   template <class Packet>
-  void Distributor::doReversePosts(
-      const ArrayRCP<const Packet>& exports,
-      const ArrayView<size_t>& numExportPacketsPerLID,
-      const ArrayRCP<Packet>& imports,
-      const ArrayView<size_t>& numImportPacketsPerLID) 
+  void Distributor::
+  doReversePosts (const ArrayRCP<const Packet>& exports,
+                  const ArrayView<size_t>& numExportPacketsPerLID,
+                  const ArrayRCP<Packet>& imports,
+                  const ArrayView<size_t>& numImportPacketsPerLID)
   {
     // FIXME (mfh 29 Mar 2012) WHY?
-    TEUCHOS_TEST_FOR_EXCEPTION(!indicesTo_.empty(),std::runtime_error,
-      Teuchos::typeName(*this) << "::doReversePosts(): Can only do reverse comm "
-      "when original data are blocked by image.");
-    if (reverseDistributor_ == null) {
-      createReverseDistributor();
+    TEUCHOS_TEST_FOR_EXCEPTION(! indicesTo_.empty (), std::runtime_error,
+      Teuchos::typeName (*this) << "::doReversePosts(): Can only do reverse "
+      "communication when original data are blocked by process.");
+    if (reverseDistributor_.is_null ()) {
+      createReverseDistributor ();
     }
-    reverseDistributor_->doPosts (exports, numExportPacketsPerLID, 
-				  imports, numImportPacketsPerLID);
+    reverseDistributor_->doPosts (exports, numExportPacketsPerLID,
+                                  imports, numImportPacketsPerLID);
   }
 
-
-  // note: assumes that size_t >= Ordinal
-  //////////////////////////////////////////////////////////////////////////////////////////
   template <class OrdinalType>
-  void Distributor::computeSends(
-      const ArrayView<const OrdinalType> & importIDs,
-      const ArrayView<const int> & importNodeIDs,
-            ArrayRCP<OrdinalType> & exportIDs,
-            ArrayRCP<int> & exportNodeIDs)
+  void Distributor::
+  computeSends (const ArrayView<const OrdinalType> & importIDs,
+                const ArrayView<const int> & importNodeIDs,
+                ArrayRCP<OrdinalType> & exportIDs,
+                ArrayRCP<int> & exportNodeIDs)
   {
+    // NOTE (mfh 19 Apr 2012): There was a note on this code saying:
+    // "assumes that size_t >= Ordinal".  The code certainly does
+    // assume that sizeof(size_t) >= sizeof(OrdinalType) as well as
+    // sizeof(size_t) >= sizeof(int).  This is because it casts the
+    // OrdinalType elements of importIDs (along with their
+    // corresponding process IDs, as int) to size_t, and does a
+    // doPostsAndWaits<size_t>() to send the packed data.
     using Teuchos::as;
 
-    int myImageID = comm_->getRank();
-
+    const int myRank = comm_->getRank();
     const size_t numImports = importNodeIDs.size();
-    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t> (importIDs.size()) < numImports, 
+    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t> (importIDs.size ()) < numImports,
       std::invalid_argument, "Tpetra::Distributor::computeSends: importNodeIDs."
-      "size() = " << importNodeIDs.size() << " != importIDs.size() = " 
-      << importIDs.size() << ".");
+      "size() = " << importNodeIDs.size () << " != importIDs.size() = "
+      << importIDs.size () << ".");
 
     Array<size_t> importObjs (2*numImports);
-    // Pack pairs (importIDs[i], my process ID) into importObjs.
+    // Pack pairs (importIDs[i], my process ID) to send into importObjs.
     for (size_t i = 0; i < numImports; ++i ) {
-      importObjs[2*i]   = as<size_t>(importIDs[i]);
-      importObjs[2*i+1] = as<size_t>(myImageID);
+      importObjs[2*i]   = as<size_t> (importIDs[i]);
+      importObjs[2*i+1] = as<size_t> (myRank);
     }
-
+    //
+    // Use a temporary Distributor to send the (importIDs[i], myRank)
+    // pairs to importNodeIDs[i].
+    //
     size_t numExports;
-    Distributor tempPlan(comm_);
-    numExports = tempPlan.createFromSends(importNodeIDs);
+    Distributor tempPlan (comm_);
+    numExports = tempPlan.createFromSends (importNodeIDs);
     if (numExports > 0) {
-      exportIDs = arcp<OrdinalType>(numExports);
-      exportNodeIDs = arcp<int>(numExports);
+      exportIDs = arcp<OrdinalType> (numExports);
+      exportNodeIDs = arcp<int> (numExports);
     }
-
-    Array<size_t> exportObjs(tempPlan.getTotalReceiveLength()*2);
-    tempPlan.doPostsAndWaits<size_t>(importObjs(),2,exportObjs());
+    Array<size_t> exportObjs (tempPlan.getTotalReceiveLength () * 2);
+    tempPlan.doPostsAndWaits<size_t> (importObjs (), 2, exportObjs ());
 
     // Unpack received (GID, PID) pairs into exportIDs resp. exportNodeIDs.
     for (size_t i = 0; i < numExports; ++i) {
@@ -1253,29 +1325,28 @@ namespace Tpetra {
     }
   }
 
-
-  //////////////////////////////////////////////////////////////////////////////////////////
   template <class OrdinalType>
-  void Distributor::createFromRecvs(
-      const ArrayView<const OrdinalType> &remoteIDs, 
-      const ArrayView<const int> &remoteImageIDs, 
-            ArrayRCP<OrdinalType> &exportGIDs, 
-            ArrayRCP<int> &exportNodeIDs)
+  void Distributor::
+  createFromRecvs (const ArrayView<const OrdinalType> &remoteIDs,
+                   const ArrayView<const int> &remoteImageIDs,
+                   ArrayRCP<OrdinalType> &exportGIDs,
+                   ArrayRCP<int> &exportNodeIDs)
   {
     using Teuchos::outArg;
     using Teuchos::reduceAll;
-    {
-      const int myImageID = comm_->getRank();
-      int err_node = (remoteIDs.size() != remoteImageIDs.size()) ? myImageID : -1;
-      int gbl_err;
-      reduceAll (*comm_, Teuchos::REDUCE_MAX, err_node, outArg (gbl_err));
-      TEUCHOS_TEST_FOR_EXCEPTION(gbl_err != -1, std::runtime_error,
-          Teuchos::typeName(*this) << "::createFromRecvs(): lists of remote IDs "
-          "and remote process IDs must have the same size (error on process " 
-          << gbl_err << ").");
-    }
+
+    const int myRank = comm_->getRank();
+    const int errProc =
+      (remoteIDs.size () != remoteImageIDs.size ()) ? myRank : -1;
+    int maxErrProc = -1;
+    reduceAll (*comm_, Teuchos::REDUCE_MAX, errProc, outArg (maxErrProc));
+    TEUCHOS_TEST_FOR_EXCEPTION(maxErrProc != -1, std::runtime_error,
+      Teuchos::typeName (*this) << "::createFromRecvs(): lists of remote IDs "
+      "and remote process IDs must have the same size on all participating "
+      "processes.  Maximum process ID with error: " << maxErrProc << ".");
+
     computeSends (remoteIDs, remoteImageIDs, exportGIDs, exportNodeIDs);
-    (void) createFromSends (exportNodeIDs());
+    (void) createFromSends (exportNodeIDs ());
   }
 
 } // namespace Tpetra

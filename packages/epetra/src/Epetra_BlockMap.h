@@ -515,7 +515,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   //! Access function for Epetra_Comm communicator.
   const Epetra_Comm & Comm() const {return(*BlockMapData_->Comm_);}
 
-  bool IsOneToOne() const {return(BlockMapData_->OneToOne_);}
+  bool IsOneToOne() const;
 
   //! Assignment Operator
   Epetra_BlockMap & operator=(const Epetra_BlockMap & map);
@@ -538,7 +538,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
  private: // These need to be accessible to derived map classes.
   
   void GlobalToLocalSetup();
-  bool DetermineIsOneToOne();
+  bool DetermineIsOneToOne() const;
   bool IsDistributedGlobal(int NumGlobalElements, int NumMyElements) const;
   void CheckValidNGE(int NumGlobalElements);
   void EndOfConstructorOps();

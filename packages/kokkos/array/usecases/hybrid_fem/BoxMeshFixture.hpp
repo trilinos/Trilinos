@@ -44,13 +44,13 @@
 #ifndef KOKKOS_BOXMESHFIXTURE_HPP
 #define KOKKOS_BOXMESHFIXTURE_HPP
 
-#define KOKKOS_ARRAY_BOUNDS_CHECK 1
+/* #define KOKKOS_ARRAY_BOUNDS_CHECK 1 */
 
 #include <stdexcept>
 #include <sstream>
 
+#include <Kokkos_Array.hpp>
 #include <Kokkos_CrsArray.hpp>
-#include <Kokkos_MDArray.hpp>
 #include <Kokkos_MultiVector.hpp>
 
 #include <BoxMeshPartition.hpp>
@@ -78,11 +78,11 @@ box_mesh_fixture_verify(
                   node_index < node_count_total ; ++node_index ) {
 
     for ( size_type
-            j = node_elem_ids.row_entry_begin( node_index ) ;
-            j < node_elem_ids.row_entry_end(   node_index ) ; ++j ) {
+            j = node_elem_ids.row_map[ node_index ] ;
+            j < node_elem_ids.row_map[ node_index + 1 ] ; ++j ) {
 
-      const size_type elem_index = node_elem_ids(j,0);
-      const size_type node_local = node_elem_ids(j,1);
+      const size_type elem_index = node_elem_ids.entries(j,0);
+      const size_type node_local = node_elem_ids.entries(j,1);
       const size_type en_id      = elem_node_ids(elem_index,node_local);
 
       if ( node_index != en_id ) {
@@ -249,17 +249,15 @@ box_mesh_fixture( const size_t proc_count ,
   typedef typename femesh_type::node_coords_type    node_coords_type ;
   typedef typename femesh_type::elem_node_ids_type  elem_node_ids_type ;
   typedef typename femesh_type::node_elem_ids_type  node_elem_ids_type ;
-  typedef Kokkos::MDArray< unsigned , Kokkos::Host > comm_data_array_type ;
 
   if ( node_count_total ) {
     mesh.node_coords =
-      Kokkos::create_mdarray< node_coords_type >( node_count_total , 3 );
+      Kokkos::create_array< node_coords_type >( node_count_total );
   }
 
   if ( elem_count_total ) {
     mesh.elem_node_ids =
-      Kokkos::create_mdarray< elem_node_ids_type >( elem_count_total ,
-                                                    element_node_count );
+      Kokkos::create_array< elem_node_ids_type >( elem_count_total );
   }
 
   mesh.parallel_data_map.count_interior = node_count_interior ;
@@ -269,15 +267,15 @@ box_mesh_fixture( const size_t proc_count ,
 
   if ( recv_msg_count ) {
     mesh.parallel_data_map.host_recv =
-      Kokkos::create_mdarray< comm_data_array_type >( recv_msg_count , 2 );
+      Kokkos::create_array< Kokkos::Array< unsigned[2] , Kokkos::Host > >( recv_msg_count );
   }
 
   if ( send_msg_count ) {
     mesh.parallel_data_map.host_send =
-      Kokkos::create_mdarray< comm_data_array_type >( send_msg_count , 2 );
+      Kokkos::create_array< Kokkos::Array< unsigned[2] , Kokkos::Host > >( send_msg_count );
 
     mesh.parallel_data_map.host_send_item =
-      Kokkos::create_mdarray< comm_data_array_type >( send_count );
+      Kokkos::create_array< Kokkos::Array< unsigned , Kokkos::Host > >( send_count );
   }
 
   typename node_coords_type::HostMirror node_coords =
@@ -361,7 +359,7 @@ box_mesh_fixture( const size_t proc_count ,
     node_elem_ids = Kokkos::create_mirror( mesh.node_elem_ids );
 
   for ( size_t i = 0 ; i < node_count_total ; ++i ) {
-    node_elem_work[i] = node_elem_ids.row_entry_begin(i);
+    node_elem_work[i] = node_elem_ids.row_map[i];
   }
 
   // Looping in element order insures the list of elements
@@ -372,8 +370,8 @@ box_mesh_fixture( const size_t proc_count ,
       const size_type nid = elem_node_ids(i, n);
       const size_type j = node_elem_work[nid] ; ++node_elem_work[nid] ;
 
-      node_elem_ids( j , 0 ) = i ;
-      node_elem_ids( j , 1 ) = n ;
+      node_elem_ids.entries( j , 0 ) = i ;
+      node_elem_ids.entries( j , 1 ) = n ;
     }
   }
   //------------------------------------

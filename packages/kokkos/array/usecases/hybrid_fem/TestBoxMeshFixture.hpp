@@ -94,8 +94,7 @@ void verify_parallel(
   const size_t recv_begin = mesh.parallel_data_map.count_owned ;
   const size_t recv_count = mesh.parallel_data_map.count_receive ;
 
-  typedef Kokkos::PackArray< node_coords_type ,
-                             Kokkos::Impl::unsigned_<2> > pack_type ;
+  typedef Kokkos::PackArray< node_coords_type > pack_type ;
 
   pack_type::pack( exchange.buffer(), send_begin, send_count, mesh.node_coords );
 

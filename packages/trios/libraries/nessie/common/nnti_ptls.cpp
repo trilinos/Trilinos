@@ -185,6 +185,9 @@ static int process_event(
         const ptl_event_t    *event);
 static NNTI_result_t post_recv_work_request(
         NNTI_buffer_t *reg_buf);
+static NNTI_result_t repost_recv_work_request(
+        NNTI_buffer_t        *reg_buf,
+        portals_work_request *wr);
 static int is_wr_complete(
         portals_work_request *wr);
 static portals_work_request *first_incomplete_wr(
@@ -251,7 +254,7 @@ static nthread_mutex_t nnti_wr_wrhash_lock;
 
 
 static portals_transport_global transport_global_data;
-static const int MIN_TIMEOUT = 1000;  /* in milliseconds */
+static const int MIN_TIMEOUT = 10;  /* in milliseconds */
 
 /**
  * @brief Initialize NNTI to use a specific transport.
@@ -1166,10 +1169,7 @@ int NNTI_ptl_wait (
     } else {
         log_debug(debug_level, "buffer op NOT complete");
 
-        if (timeout < 0)
-            timeout_per_call = MIN_TIMEOUT;
-        else
-            timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
+        timeout_per_call = MIN_TIMEOUT;
 
         while (1)   {
             if (trios_exit_now()) {
@@ -1204,6 +1204,7 @@ int NNTI_ptl_wait (
             log_debug(debug_level, "\tmd.max_size  = %d", event.md.max_size);
             log_debug(debug_level, "\tmd.threshold = %d", event.md.threshold);
             log_debug(debug_level, "\tmd.user_ptr  = %p", event.md.user_ptr);
+            log_debug(debug_level, "}");
 
 
             /* case 1: success */
@@ -1259,16 +1260,6 @@ int NNTI_ptl_wait (
 
     create_status(reg_buf, remote_op, nnti_rc, status);
 
-    if (nnti_rc == NNTI_OK) {
-        ptls_mem_hdl=(portals_memory_handle *)reg_buf->transport_private;
-        assert(ptls_mem_hdl);
-        wr=ptls_mem_hdl->wr_queue.front();
-        assert(wr);
-        ptls_mem_hdl->wr_queue.pop_front();
-        del_wr_wrhash(wr);
-        free(wr);
-    }
-
     if (logging_debug(debug_level)) {
         fprint_NNTI_status(logger_get_file(), "status",
                 "end of NNTI_ptl_wait", status);
@@ -1286,7 +1277,7 @@ int NNTI_ptl_wait (
         /* if we've processed all we can on this queue, reset */
         if (q_hdl->queue_count[index] >= q_hdl->reqs_per_queue) {
 
-            log_debug(LOG_ALL, "Resetting MD on queue[%d]", index);
+            log_debug(debug_level, "Resetting MD on queue[%d]", index);
 
             /* Unlink the ME (also unlinks the MD) */
             nthread_lock(&nnti_ptl_lock);
@@ -1331,8 +1322,47 @@ int NNTI_ptl_wait (
         }
     }
 
-    if ((nnti_rc==NNTI_OK) && (ptls_mem_hdl->type == REQUEST_BUFFER)) {
-        post_recv_work_request((NNTI_buffer_t *)reg_buf);
+//    if (nnti_rc == NNTI_OK) {
+//        ptls_mem_hdl=(portals_memory_handle *)reg_buf->transport_private;
+//        assert(ptls_mem_hdl);
+//        wr=ptls_mem_hdl->wr_queue.front();
+//        assert(wr);
+//        ptls_mem_hdl->wr_queue.pop_front();
+//        del_wr_wrhash(wr);
+//        free(wr);
+//    }
+//
+//    if ((nnti_rc==NNTI_OK) && (ptls_mem_hdl->type == REQUEST_BUFFER)) {
+//        post_recv_work_request((NNTI_buffer_t *)reg_buf);
+//    }
+    if (nnti_rc==NNTI_OK) {
+        ptls_mem_hdl=(portals_memory_handle *)reg_buf->transport_private;
+        assert(ptls_mem_hdl);
+        wr=ptls_mem_hdl->wr_queue.front();
+        assert(wr);
+        ptls_mem_hdl->wr_queue.pop_front();
+
+        switch (ptls_mem_hdl->type) {
+            case REQUEST_BUFFER:
+            case RECEIVE_BUFFER:
+#if defined(USE_RDMA_TARGET_ACK)
+            case GET_SRC_BUFFER:
+            case PUT_DST_BUFFER:
+            case RDMA_TARGET_BUFFER:
+#endif
+                repost_recv_work_request((NNTI_buffer_t *)reg_buf, wr);
+                break;
+            case SEND_BUFFER:
+            case GET_DST_BUFFER:
+            case PUT_SRC_BUFFER:
+                del_wr_wrhash(wr);
+                free(wr);
+                break;
+            case UNKNOWN_BUFFER:
+            default:
+                log_error(nnti_debug_level, "unknown buffer type(%llu).", ptls_mem_hdl->type);
+                break;
+        }
     }
 
 cleanup:
@@ -1401,10 +1431,7 @@ int NNTI_ptl_waitany (
     } else {
         log_debug(debug_level, "buffer op NOT complete (buf_list=%p)", buf_list);
 
-        if (timeout < 0)
-            timeout_per_call = MIN_TIMEOUT;
-        else
-            timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
+        timeout_per_call = MIN_TIMEOUT;
 
         while (1)   {
             if (trios_exit_now()) {
@@ -1493,19 +1520,48 @@ int NNTI_ptl_waitany (
 
     create_status(buf_list[*which], remote_op, nnti_rc, status);
 
-    if (nnti_rc == NNTI_OK) {
+    if (logging_debug(debug_level)) {
+        fprint_NNTI_status(logger_get_file(), "status",
+                "end of NNTI_ptl_wait", status);
+    }
+
+//    if (nnti_rc == NNTI_OK) {
+//        ptls_mem_hdl=(portals_memory_handle *)buf_list[*which]->transport_private;
+//        assert(ptls_mem_hdl);
+//        wr=ptls_mem_hdl->wr_queue.front();
+//        assert(wr);
+//        ptls_mem_hdl->wr_queue.pop_front();
+//        del_wr_wrhash(wr);
+//        free(wr);
+//    }
+    if (nnti_rc==NNTI_OK) {
         ptls_mem_hdl=(portals_memory_handle *)buf_list[*which]->transport_private;
         assert(ptls_mem_hdl);
         wr=ptls_mem_hdl->wr_queue.front();
         assert(wr);
         ptls_mem_hdl->wr_queue.pop_front();
-        del_wr_wrhash(wr);
-        free(wr);
-    }
 
-    if (logging_debug(debug_level)) {
-        fprint_NNTI_status(logger_get_file(), "status",
-                "end of NNTI_ptl_wait", status);
+        switch (ptls_mem_hdl->type) {
+            case REQUEST_BUFFER:
+            case RECEIVE_BUFFER:
+#if defined(USE_RDMA_TARGET_ACK)
+            case GET_SRC_BUFFER:
+            case PUT_DST_BUFFER:
+            case RDMA_TARGET_BUFFER:
+#endif
+                repost_recv_work_request((NNTI_buffer_t *)buf_list[*which], wr);
+                break;
+            case SEND_BUFFER:
+            case GET_DST_BUFFER:
+            case PUT_SRC_BUFFER:
+                del_wr_wrhash(wr);
+                free(wr);
+                break;
+            case UNKNOWN_BUFFER:
+            default:
+                log_error(nnti_debug_level, "unknown buffer type(%llu).", ptls_mem_hdl->type);
+                break;
+        }
     }
 
 cleanup:
@@ -1571,10 +1627,7 @@ int NNTI_ptl_waitall (
     } else {
         log_debug(debug_level, "all buffer ops NOT complete (buf_list=%p)", buf_list);
 
-        if (timeout < 0)
-            timeout_per_call = MIN_TIMEOUT;
-        else
-            timeout_per_call = (timeout < MIN_TIMEOUT)? MIN_TIMEOUT : timeout;
+        timeout_per_call = MIN_TIMEOUT;
 
         while (1)   {
             if (trios_exit_now()) {
@@ -1666,19 +1719,49 @@ int NNTI_ptl_waitall (
     for (int i=0;i<buf_count;i++) {
         create_status(buf_list[i], remote_op, nnti_rc, status[i]);
 
-        if (nnti_rc == NNTI_OK) {
-            ptls_mem_hdl=(portals_memory_handle *)buf_list[i]->transport_private;
-            assert(ptls_mem_hdl);
-            wr=ptls_mem_hdl->wr_queue.front();
-            assert(wr);
-            ptls_mem_hdl->wr_queue.pop_front();
-            del_wr_wrhash(wr);
-            free(wr);
-        }
-
         if (logging_debug(debug_level)) {
             fprint_NNTI_status(logger_get_file(), "status[i]",
                     "end of NNTI_ptl_wait", status[i]);
+        }
+
+//        if (nnti_rc == NNTI_OK) {
+//            ptls_mem_hdl=(portals_memory_handle *)buf_list[i]->transport_private;
+//            assert(ptls_mem_hdl);
+//            wr=ptls_mem_hdl->wr_queue.front();
+//            assert(wr);
+//            ptls_mem_hdl->wr_queue.pop_front();
+//            del_wr_wrhash(wr);
+//            free(wr);
+//        }
+
+        ptls_mem_hdl=(portals_memory_handle *)buf_list[i]->transport_private;
+        assert(ptls_mem_hdl);
+        wr=ptls_mem_hdl->wr_queue.front();
+        assert(wr);
+        ptls_mem_hdl->wr_queue.pop_front();
+
+        if (nnti_rc==NNTI_OK) {
+            switch (ptls_mem_hdl->type) {
+                case REQUEST_BUFFER:
+                case RECEIVE_BUFFER:
+#if defined(USE_RDMA_TARGET_ACK)
+                case GET_SRC_BUFFER:
+                case PUT_DST_BUFFER:
+                case RDMA_TARGET_BUFFER:
+#endif
+                    repost_recv_work_request((NNTI_buffer_t *)buf_list[i], wr);
+                    break;
+                case SEND_BUFFER:
+                case GET_DST_BUFFER:
+                case PUT_SRC_BUFFER:
+                    del_wr_wrhash(wr);
+                    free(wr);
+                    break;
+                case UNKNOWN_BUFFER:
+                default:
+                    log_error(nnti_debug_level, "unknown buffer type(%llu).", ptls_mem_hdl->type);
+                    break;
+            }
         }
     }
 
@@ -1965,35 +2048,35 @@ static int process_event(
                     goto cleanup;
             }
             break;
-            case RDMA_TARGET_BUFFER:
-                switch (event->type) {
-                    case PTL_EVENT_PUT_START:
-                        log_debug(debug_level, "got PTL_EVENT_PUT_START  - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
-                                ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
-                        wr->op_state.put_target.put_start = TRUE;
-                        break;
-                    case PTL_EVENT_PUT_END:
-                        log_debug(debug_level, "got PTL_EVENT_PUT_END    - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
-                                ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
-                        wr->op_state.put_target.put_end = TRUE;
-                        break;
-                    case PTL_EVENT_GET_START:
-                        log_debug(debug_level, "got PTL_EVENT_GET_START  - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
-                                ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
-                        wr->op_state.get_target.get_start = TRUE;
-                        break;
-                    case PTL_EVENT_GET_END:
-                        log_debug(debug_level, "got PTL_EVENT_GET_END    - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
-                                ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
-                        wr->op_state.get_target.get_end = TRUE;
-                        break;
-                    default:
-                        log_error(debug_level, "unrecognized event type: %d - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
-                                event->type, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
-                        rc = NNTI_EINVAL;
-                        goto cleanup;
-                }
-                break;
+        case RDMA_TARGET_BUFFER:
+            switch (event->type) {
+                case PTL_EVENT_PUT_START:
+                    log_debug(debug_level, "got PTL_EVENT_PUT_START  - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
+                            ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                    wr->op_state.put_target.put_start = TRUE;
+                    break;
+                case PTL_EVENT_PUT_END:
+                    log_debug(debug_level, "got PTL_EVENT_PUT_END    - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
+                            ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                    wr->op_state.put_target.put_end = TRUE;
+                    break;
+                case PTL_EVENT_GET_START:
+                    log_debug(debug_level, "got PTL_EVENT_GET_START  - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
+                            ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                    wr->op_state.get_target.get_start = TRUE;
+                    break;
+                case PTL_EVENT_GET_END:
+                    log_debug(debug_level, "got PTL_EVENT_GET_END    - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
+                            ptls_mem_hdl->eq_h, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                    wr->op_state.get_target.get_end = TRUE;
+                    break;
+                default:
+                    log_error(debug_level, "unrecognized event type: %d - event arrived on eq %d - initiator = (%4llu, %4llu, %4d)",
+                            event->type, (unsigned long long)event->initiator.nid,(unsigned long long)event->initiator.pid, event->link);
+                    rc = NNTI_EINVAL;
+                    goto cleanup;
+            }
+            break;
     }
 
     if (event->ni_fail_type != PTL_NI_OK) {
@@ -2020,6 +2103,26 @@ static NNTI_result_t post_recv_work_request(
     wr=(portals_work_request *)calloc(1, sizeof(portals_work_request));
     assert(wr);
     wr->reg_buf = reg_buf;
+
+    memset(&wr->op_state, 0, sizeof(ptl_op_state_t));
+
+    ptls_mem_hdl->wr_queue.push_back(wr);
+
+    log_debug(nnti_debug_level, "exit (reg_buf=%p)", reg_buf);
+
+    return(NNTI_OK);
+}
+
+static NNTI_result_t repost_recv_work_request(
+        NNTI_buffer_t        *reg_buf,
+        portals_work_request *wr)
+{
+    portals_memory_handle *ptls_mem_hdl=NULL;
+
+    log_debug(nnti_debug_level, "enter (reg_buf=%p)", reg_buf);
+
+    ptls_mem_hdl=(portals_memory_handle *)reg_buf->transport_private;
+    assert(ptls_mem_hdl);
 
     memset(&wr->op_state, 0, sizeof(ptl_op_state_t));
 

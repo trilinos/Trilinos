@@ -72,28 +72,6 @@ public:
   };
 
   /*--------------------------------*/
-
-  struct DetectAndUseAllCores {};
-
-  struct SetThreadCount {
-    const size_t thread_count ;
-    SetThreadCount( size_t n ) : thread_count( n ) {}
-  };
-
-  /** \brief  Initialize the device in the 'ready to work' state.
-   *
-   *  The device is initialized in a "ready to work" state
-   *  which reduces latency / improves performance when
-   *  dispatching work; however, resources are consumed
-   *  even when no work is being done.
-   */
-  static void initialize( const DetectAndUseAllCores );
-
-  static void initialize( const SetThreadCount );
-
-  static void finalize();
-
-  /*--------------------------------*/
   /** \brief  Set the device in a 'sleep' state.
    *
    *  This function sets the device in a "sleep" state
@@ -121,12 +99,33 @@ public:
   static void fence() {}
 
   /*--------------------------------*/
+  /** \brief  Finalize: terminate spawned threads */
+  static void finalize();
+
+  /*--------------------------------*/
   /* -- Device specific functions --*/
 
-  /** \brief  If core count detection functionality is available
-   *          return the core count, otherwise return zero.
+  /** \brief  Initialize the device in the 'ready to work' state.
+   *
+   *  The device is initialized in a "ready to work" state
+   *  which reduces latency / improves performance when
+   *  dispatching work; however, resources are consumed
+   *  even when no work is being done.
+   *
+   *  Initialize with number of NUMA nodes
+   *  and number of threads on each NUMA node.
    */
-  static size_type detect_core_count();
+  static void initialize( const size_type use_node_count ,
+                          const size_type use_node_thread_count );
+
+  /** \brief  Detect number of admissible NUMA nodes */
+  static size_type detect_node_count();
+
+  /** \brief  Detect number of cores per NUMA node */
+  static size_type detect_node_core_count();
+
+  /** \brief  An alignment size for large arrays */
+  static size_type detect_memory_page_size();
 };
 
 /*--------------------------------------------------------------------------*/
@@ -175,14 +174,19 @@ template<> struct HostMapped<Host> { typedef Host type ; };
 #include <Host/Kokkos_Host_MultiVector.hpp>
 #endif
 
+#if   defined( KOKKOS_ARRAY_HPP ) && \
+    ! defined( KOKKOS_HOST_ARRAY_HPP )
+#include <Host/Kokkos_Host_Array.hpp>
+#endif
+
 #if   defined( KOKKOS_MDARRAY_HPP ) && \
     ! defined( KOKKOS_HOST_MDARRAY_HPP )
 #include <Host/Kokkos_Host_MDArray.hpp>
 #endif
 
-#if   defined( KOKKOS_CRSARRAY_HPP ) && \
-    ! defined( KOKKOS_HOST_CRSARRAY_HPP )
-#include <Host/Kokkos_Host_CrsArray.hpp>
+#if   defined( KOKKOS_PREFIXSUM_HPP ) && \
+    ! defined( KOKKOS_HOST_PREFIXSUM_HPP )
+#include <Host/Kokkos_Host_PrefixSum.hpp>
 #endif
 
 //----------------------------------------------------------------------------

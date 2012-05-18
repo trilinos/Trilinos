@@ -57,39 +57,92 @@
 namespace Kokkos {
 namespace Impl {
 
+//----------------------------------------------------------------------------
 
-template< unsigned Rank , unsigned N1 ,
-          unsigned N2   , unsigned N3 ,
-          unsigned N4   , unsigned N5 ,
-          unsigned N6   , unsigned N7 >
+template<>
 struct IndexMapRight< KOKKOS_MACRO_DEVICE::memory_space ,
-          Rank , N1 , N2 , N3 , N4 , N5 , N6 , N7 >
+                      1 , 0 , 0 , 0 , 0 , 0 , 0 , 0 >
 {
 public:
 
   typedef KOKKOS_MACRO_DEVICE::size_type size_type ;
 
 private:
-  static const unsigned NSize =
-    Rank <= 1 ? 1 : N1 * (
-    Rank <= 2 ? 1 : N2 * (
-    Rank <= 3 ? 1 : N3 * (
-    Rank <= 4 ? 1 : N4 * (
-    Rank <= 5 ? 1 : N5 * (
-    Rank <= 6 ? 1 : N6 * (
-    Rank <= 7 ? 1 : N7 ))))));
 
   size_type N0 ;
 
-  static const unsigned S6 = 7 < Rank ? N7 : 1 ;
-  static const unsigned S5 = 6 < Rank ? N6 * S6 : 1 ;
-  static const unsigned S4 = 5 < Rank ? N5 * S5 : 1 ;
-  static const unsigned S3 = 4 < Rank ? N4 * S4 : 1 ;
-  static const unsigned S2 = 3 < Rank ? N3 * S3 : 1 ;
-  static const unsigned S1 = 2 < Rank ? N2 * S2 : 1 ;
-  static const unsigned S0 = 1 < Rank ? N1 * S1 : 1 ;
+public:
+
+  static const unsigned Rank = 1 ;
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type rank() const { return Rank ; }
+
+  template< typename iType >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type dimension( const iType & ordinal ) const
+  { return 0 == ordinal ? N0 : 0 ; }
+
+  template< typename iType >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  void dimensions( iType * const dims ) const
+  { dims[0] = N0 ; }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type size() const { return N0 ; }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type allocation_size() const { return size(); }
+
+  //------------------------------
+
+  template < typename iType0 >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type offset( const iType0 & i0 ) const
+  {
+    enum { InputRank = 1 };
+
+    KOKKOS_MACRO_CHECK(
+      mdarray_require_dimension( Rank, N0, 0, 0, 0, 0, 0, 0, 0,
+                            InputRank, i0, 0, 0, 0, 0, 0, 0, 0 ) );
+
+    return i0 ;
+  }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  IndexMapRight() : N0(0) {}
+
+  template< typename ValueType >
+  inline
+  void assign( size_t n0 ) { N0 = n0 ; }
+};
+
+//----------------------------------------------------------------------------
+
+template< unsigned N1 >
+struct IndexMapRight< KOKKOS_MACRO_DEVICE::memory_space ,
+                      2 , N1 , 0 , 0 , 0 , 0 , 0 , 0 >
+{
+public:
+
+  typedef KOKKOS_MACRO_DEVICE::size_type size_type ;
+
+private:
+
+  static const size_type S0 = N1 ;
+
+  size_type N0 ;
 
 public:
+
+  static const unsigned Rank = 2 ;
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
@@ -100,9 +153,8 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   size_type dimension( const iType & ordinal ) const
   {
-    KOKKOS_MACRO_CHECK( require_less( ordinal , Rank ) );
-    const size_type d[] = { N0, N1, N2, N3, N4, N5, N6, N7 };
-    return d[ordinal];
+    return 0 == ordinal ? N0 : (
+           1 == ordinal ? N1 : 0 );
   }
 
   template< typename iType >
@@ -110,13 +162,548 @@ public:
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   void dimensions( iType * const dims ) const
   {
-    const size_type d[] = { N0, N1, N2, N3, N4, N5, N6, N7 };
-    for ( size_type i = 0 ; i < Rank ; ++i ) { dims[i] = d[i] ; }
+    dims[0] = N0 ;
+    dims[1] = N1 ;
   }
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type size() const { return N0 * NSize ; }
+  size_type size() const { return N0 * S0 ; }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type allocation_size() const { return size(); }
+
+  //------------------------------
+
+  template < typename iType0 , typename iType1 >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type offset( const iType0 & i0 , const iType1 & i1 ) const
+  {
+    enum { InputRank = 2 };
+
+    KOKKOS_MACRO_CHECK(
+      mdarray_require_dimension( Rank, N0, N1, 0, 0, 0, 0, 0, 0,
+                            InputRank, i0, i1, 0, 0, 0, 0, 0, 0 ) );
+
+    return i1 + S0 * i0 ;
+  }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  IndexMapRight() : N0(0) {}
+
+  template< typename ValueType >
+  inline
+  void assign( size_t n0 ) { N0 = n0 ; }
+};
+
+//----------------------------------------------------------------------------
+
+template< unsigned N1 , unsigned N2 >
+struct IndexMapRight< KOKKOS_MACRO_DEVICE::memory_space ,
+                      3 , N1 , N2 , 0 , 0 , 0 , 0 , 0 >
+{
+public:
+
+  typedef KOKKOS_MACRO_DEVICE::size_type size_type ;
+
+private:
+
+  static const size_type S1 = N2 ;
+  static const size_type S0 = N1 * S1 ;
+
+  size_type N0 ;
+
+public:
+
+  static const size_type Rank = 3 ;
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type rank() const { return Rank ; }
+
+  template< typename iType >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type dimension( const iType & ordinal ) const
+  {
+    return 0 == ordinal ? N0 : (
+           1 == ordinal ? N1 : (
+           2 == ordinal ? N2 : 0 ));
+  }
+
+  template< typename iType >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  void dimensions( iType * const dims ) const
+  {
+    dims[0] = N0 ;
+    dims[1] = N1 ;
+    dims[2] = N2 ;
+  }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type size() const { return N0 * S0 ; }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type allocation_size() const { return size(); }
+
+  //------------------------------
+
+  template < typename iType0 , typename iType1 ,
+             typename iType2 >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type offset( const iType0 & i0 , const iType1 & i1 ,
+                    const iType2 & i2 ) const
+  {
+    enum { InputRank = 3 };
+
+    KOKKOS_MACRO_CHECK(
+      mdarray_require_dimension( Rank, N0, N1, N2, 0, 0, 0, 0, 0,
+                            InputRank, i0, i1, i2, 0, 0, 0, 0, 0 ) );
+
+    return i2 + S1 * i1 + S0 * i0 ;
+  }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  IndexMapRight() : N0(0) {}
+
+  template< typename ValueType >
+  inline
+  void assign( size_t n0 ) { N0 = n0 ; }
+};
+
+//----------------------------------------------------------------------------
+
+template< unsigned N1 , unsigned N2 , unsigned N3 >
+struct IndexMapRight< KOKKOS_MACRO_DEVICE::memory_space ,
+                      4 , N1 , N2 , N3 , 0 , 0 , 0 , 0 >
+{
+public:
+
+  typedef KOKKOS_MACRO_DEVICE::size_type size_type ;
+
+private:
+
+  static const size_type S2 = N3 ;
+  static const size_type S1 = N2 * S2 ;
+  static const size_type S0 = N1 * S1 ;
+
+  size_type N0 ;
+
+public:
+
+  static const size_type Rank = 4 ;
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type rank() const { return Rank ; }
+
+  template< typename iType >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type dimension( const iType & ordinal ) const
+  {
+    return 0 == ordinal ? N0 : (
+           1 == ordinal ? N1 : (
+           2 == ordinal ? N2 : (
+           3 == ordinal ? N3 : 0 )));
+  }
+
+  template< typename iType >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  void dimensions( iType * const dims ) const
+  {
+    dims[0] = N0 ;
+    dims[1] = N1 ;
+    dims[2] = N2 ;
+    dims[3] = N3 ;
+  }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type size() const { return N0 * S0 ; }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type allocation_size() const { return size(); }
+
+  //------------------------------
+
+  template < typename iType0 , typename iType1 ,
+             typename iType2 , typename iType3 >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type offset( const iType0 & i0 , const iType1 & i1 ,
+                    const iType2 & i2 , const iType3 & i3 ) const
+  {
+    enum { InputRank = 4 };
+
+    KOKKOS_MACRO_CHECK(
+      mdarray_require_dimension( Rank, N0, N1, N2, N3, 0, 0, 0, 0,
+                            InputRank, i0, i1, i2, i3, 0, 0, 0, 0 ) );
+
+    return i3 + S2 * i2 + S1 * i1 + S0 * i0 ;
+  }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  IndexMapRight() : N0(0) {}
+
+  template< typename ValueType >
+  inline
+  void assign( size_t n0 ) { N0 = n0 ; }
+};
+
+//----------------------------------------------------------------------------
+
+template< unsigned N1 , unsigned N2 , unsigned N3 , unsigned N4 >
+struct IndexMapRight< KOKKOS_MACRO_DEVICE::memory_space ,
+                      5 , N1 , N2 , N3 , N4 , 0 , 0 , 0 >
+{
+public:
+
+  typedef KOKKOS_MACRO_DEVICE::size_type size_type ;
+
+private:
+
+  static const size_type S3 = N4 ;
+  static const size_type S2 = N3 * S3 ;
+  static const size_type S1 = N2 * S2 ;
+  static const size_type S0 = N1 * S1 ;
+
+  size_type N0 ;
+
+public:
+
+  static const size_type Rank = 5 ;
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type rank() const { return Rank ; }
+
+  template< typename iType >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type dimension( const iType & ordinal ) const
+  {
+    return 0 == ordinal ? N0 : (
+           1 == ordinal ? N1 : (
+           2 == ordinal ? N2 : (
+           3 == ordinal ? N3 : (
+           4 == ordinal ? N4 : 0 ))));
+  }
+
+  template< typename iType >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  void dimensions( iType * const dims ) const
+  {
+    dims[0] = N0 ;
+    dims[1] = N1 ;
+    dims[2] = N2 ;
+    dims[3] = N3 ;
+    dims[4] = N4 ;
+  }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type size() const { return N0 * S0 ; }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type allocation_size() const { return size(); }
+
+  //------------------------------
+
+  template < typename iType0 , typename iType1 ,
+             typename iType2 , typename iType3 ,
+             typename iType4 , typename iType5 ,
+             typename iType6 , typename iType7 >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type offset( const iType0 & i0 , const iType1 & i1 ,
+                    const iType2 & i2 , const iType3 & i3 ,
+                    const iType4 & i4 ) const
+  {
+    enum { InputRank = 5 };
+
+    KOKKOS_MACRO_CHECK(
+      mdarray_require_dimension( Rank, N0, N1, N2, N3, N4, 0, 0, 0,
+                            InputRank, i0, i1, i2, i3, i4, 0, 0, 0 ) );
+
+    return i4 + S3 * i3 + S2 * i2 + S1 * i1 + S0 * i0 ;
+  }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  IndexMapRight() : N0(0) {}
+
+  template< typename ValueType >
+  inline
+  void assign( size_t n0 ) { N0 = n0 ; }
+};
+
+//----------------------------------------------------------------------------
+
+template< unsigned N1 , unsigned N2 , unsigned N3 ,
+          unsigned N4 , unsigned N5 >
+struct IndexMapRight< KOKKOS_MACRO_DEVICE::memory_space ,
+                      6 , N1 , N2 , N3 , N4 , N5 , 0 , 0 >
+{
+public:
+
+  typedef KOKKOS_MACRO_DEVICE::size_type size_type ;
+
+private:
+
+  static const size_type S4 = N5 ;
+  static const size_type S3 = N4 * S4 ;
+  static const size_type S2 = N3 * S3 ;
+  static const size_type S1 = N2 * S2 ;
+  static const size_type S0 = N1 * S1 ;
+
+  size_type N0 ;
+
+public:
+
+  static const size_type Rank = 6 ;
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type rank() const { return Rank ; }
+
+  template< typename iType >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type dimension( const iType & ordinal ) const
+  {
+    return 0 == ordinal ? N0 : (
+           1 == ordinal ? N1 : (
+           2 == ordinal ? N2 : (
+           3 == ordinal ? N3 : (
+           4 == ordinal ? N4 : (
+           5 == ordinal ? N5 : 0 )))));
+  }
+
+  template< typename iType >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  void dimensions( iType * const dims ) const
+  {
+    dims[0] = N0 ;
+    dims[1] = N1 ;
+    dims[2] = N2 ;
+    dims[3] = N3 ;
+    dims[4] = N4 ;
+    dims[5] = N5 ;
+  }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type size() const { return N0 * S0 ; }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type allocation_size() const { return size(); }
+
+  //------------------------------
+
+  template < typename iType0 , typename iType1 ,
+             typename iType2 , typename iType3 ,
+             typename iType4 , typename iType5 >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type offset( const iType0 & i0 , const iType1 & i1 ,
+                    const iType2 & i2 , const iType3 & i3 ,
+                    const iType4 & i4 , const iType5 & i5 ) const
+  {
+    enum { InputRank = 6 };
+
+    KOKKOS_MACRO_CHECK(
+      mdarray_require_dimension( Rank, N0, N1, N2, N3, N4, N5, 0, 0,
+                            InputRank, i0, i1, i2, i3, i4, i5, 0, 0 ) );
+
+    return i5 + S4 * i4 + S3 * i3 + S2 * i2 + S1 * i1 + S0 * i0 ;
+  }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  IndexMapRight() : N0(0) {}
+
+  template< typename ValueType >
+  inline
+  void assign( size_t n0 ) { N0 = n0 ; }
+};
+
+//----------------------------------------------------------------------------
+
+template< unsigned N1 , unsigned N2 , unsigned N3 ,
+          unsigned N4 , unsigned N5 , unsigned N6 >
+struct IndexMapRight< KOKKOS_MACRO_DEVICE::memory_space ,
+                      7 , N1 , N2 , N3 , N4 , N5 , N6 , 0 >
+{
+public:
+
+  typedef KOKKOS_MACRO_DEVICE::size_type size_type ;
+
+private:
+
+  static const size_type S5 = N6 ;
+  static const size_type S4 = N5 * S5 ;
+  static const size_type S3 = N4 * S4 ;
+  static const size_type S2 = N3 * S3 ;
+  static const size_type S1 = N2 * S2 ;
+  static const size_type S0 = N1 * S1 ;
+
+  size_type N0 ;
+
+public:
+
+  static const size_type Rank = 7 ;
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type rank() const { return Rank ; }
+
+  template< typename iType >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type dimension( const iType & ordinal ) const
+  {
+    return 0 == ordinal ? N0 : (
+           1 == ordinal ? N1 : (
+           2 == ordinal ? N2 : (
+           3 == ordinal ? N3 : (
+           4 == ordinal ? N4 : (
+           5 == ordinal ? N5 : (
+           6 == ordinal ? N6 : 0 ))))));
+  }
+
+  template< typename iType >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  void dimensions( iType * const dims ) const
+  {
+    dims[0] = N0 ;
+    dims[1] = N1 ;
+    dims[2] = N2 ;
+    dims[3] = N3 ;
+    dims[4] = N4 ;
+    dims[5] = N5 ;
+    dims[6] = N6 ;
+  }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type size() const { return N0 * S0 ; }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type allocation_size() const { return size(); }
+
+  //------------------------------
+
+  template < typename iType0 , typename iType1 ,
+             typename iType2 , typename iType3 ,
+             typename iType4 , typename iType5 ,
+             typename iType6 >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type offset( const iType0 & i0 , const iType1 & i1 ,
+                    const iType2 & i2 , const iType3 & i3 ,
+                    const iType4 & i4 , const iType5 & i5 ,
+                    const iType6 & i6 ) const
+  {
+    enum { InputRank = 7 };
+
+    KOKKOS_MACRO_CHECK(
+      mdarray_require_dimension( Rank, N0, N1, N2, N3, N4, N5, N6, 0,
+                            InputRank, i0, i1, i2, i3, i4, i5, i6, 0 ) );
+
+    return i6 + S5 * i5 + S4 * i4 + S3 * i3 + S2 * i2 + S1 * i1 + S0 * i0 ;
+  }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  IndexMapRight() : N0(0) {}
+
+  template< typename ValueType >
+  inline
+  void assign( size_t n0 ) { N0 = n0 ; }
+};
+
+//----------------------------------------------------------------------------
+
+template< unsigned N1 , unsigned N2 , unsigned N3 ,
+          unsigned N4 , unsigned N5 , unsigned N6 , unsigned N7 >
+struct IndexMapRight< KOKKOS_MACRO_DEVICE::memory_space ,
+                      8 , N1 , N2 , N3 , N4 , N5 , N6 , N7 >
+{
+public:
+
+  typedef KOKKOS_MACRO_DEVICE::size_type size_type ;
+
+private:
+
+  static const size_type S6 = N7 ;
+  static const size_type S5 = N6 * S6 ;
+  static const size_type S4 = N5 * S5 ;
+  static const size_type S3 = N4 * S4 ;
+  static const size_type S2 = N3 * S3 ;
+  static const size_type S1 = N2 * S2 ;
+  static const size_type S0 = N1 * S1 ;
+
+  size_type N0 ;
+
+public:
+
+  static const size_type Rank = 8 ;
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type rank() const { return Rank ; }
+
+  template< typename iType >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type dimension( const iType & ordinal ) const
+  {
+    return 0 == ordinal ? N0 : (
+           1 == ordinal ? N1 : (
+           2 == ordinal ? N2 : (
+           3 == ordinal ? N3 : (
+           4 == ordinal ? N4 : (
+           5 == ordinal ? N5 : (
+           6 == ordinal ? N6 : (
+           7 == ordinal ? N7 : 0 )))))));
+  }
+
+  template< typename iType >
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  void dimensions( iType * const dims ) const
+  {
+    dims[0] = N0 ;
+    dims[1] = N1 ;
+    dims[2] = N2 ;
+    dims[3] = N3 ;
+    dims[4] = N4 ;
+    dims[5] = N5 ;
+    dims[6] = N6 ;
+    dims[7] = N7 ;
+  }
+
+  inline
+  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+  size_type size() const { return N0 * S0 ; }
 
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
@@ -144,122 +731,6 @@ public:
     return i7 + S6 * i6 + S5 * i5 + S4 * i4 + S3 * i3 + S2 * i2 + S1 * i1 + S0 * i0 ;
   }
 
-  template < typename iType0 , typename iType1 ,
-             typename iType2 , typename iType3 ,
-             typename iType4 , typename iType5 ,
-             typename iType6 >
-  inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type offset( const iType0 & i0 , const iType1 & i1 ,
-                    const iType2 & i2 , const iType3 & i3 ,
-                    const iType4 & i4 , const iType5 & i5 ,
-                    const iType6 & i6 ) const
-  {
-    enum { InputRank = 7 };
-
-    KOKKOS_MACRO_CHECK(
-      mdarray_require_dimension( Rank, N0, N1, N2, N3, N4, N5, N6, 0,
-                            InputRank, i0, i1, i2, i3, i4, i5, i6, 0 ) );
-
-    return i6 + S5 * i5 + S4 * i4 + S3 * i3 + S2 * i2 + S1 * i1 + S0 * i0 ;
-  }
-
-  template < typename iType0 , typename iType1 ,
-             typename iType2 , typename iType3 ,
-             typename iType4 , typename iType5 >
-  inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type offset( const iType0 & i0 , const iType1 & i1 ,
-                    const iType2 & i2 , const iType3 & i3 ,
-                    const iType4 & i4 , const iType5 & i5 ) const
-  {
-    enum { InputRank = 6 };
-
-    KOKKOS_MACRO_CHECK(
-      mdarray_require_dimension( Rank, N0, N1, N2, N3, N4, N5, 0, 0,
-                            InputRank, i0, i1, i2, i3, i4, i5, 0, 0 ) );
-
-    return i5 + S4 * i4 + S3 * i3 + S2 * i2 + S1 * i1 + S0 * i0 ;
-  }
-
-  template < typename iType0 , typename iType1 ,
-             typename iType2 , typename iType3 ,
-             typename iType4 >
-  inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type offset( const iType0 & i0 , const iType1 & i1 ,
-                    const iType2 & i2 , const iType3 & i3 ,
-                    const iType4 & i4 ) const
-  {
-    enum { InputRank = 5 };
-
-    KOKKOS_MACRO_CHECK(
-      mdarray_require_dimension( Rank, N0, N1, N2, N3, N4, 0, 0, 0,
-                            InputRank, i0, i1, i2, i3, i4, 0, 0, 0 ) );
-
-    return i4 + S3 * i3 + S2 * i2 + S1 * i1 + S0 * i0 ;
-  }
-
-  template < typename iType0 , typename iType1 ,
-             typename iType2 , typename iType3 >
-  inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type offset( const iType0 & i0 , const iType1 & i1 ,
-                    const iType2 & i2 , const iType3 & i3 ) const
-  {
-    enum { InputRank = 4 };
-
-    KOKKOS_MACRO_CHECK(
-      mdarray_require_dimension( Rank, N0, N1, N2, N3, 0, 0, 0, 0,
-                            InputRank, i0, i1, i2, i3, 0, 0, 0, 0 ) );
-
-    return i3 + S2 * i2 + S1 * i1 + S0 * i0 ;
-  }
-
-  template < typename iType0 , typename iType1 ,
-             typename iType2 >
-  inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type offset( const iType0 & i0 , const iType1 & i1 ,
-                    const iType2 & i2 ) const
-  {
-    enum { InputRank = 3 };
-
-    KOKKOS_MACRO_CHECK(
-      mdarray_require_dimension( Rank, N0, N1, N2, 0, 0, 0, 0, 0,
-                            InputRank, i0, i1, i2, 0, 0, 0, 0, 0 ) );
-
-    return i2 + S1 * i1 + S0 * i0 ;
-  }
-
-  template < typename iType0 , typename iType1 >
-  inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type offset( const iType0 & i0 , const iType1 & i1 ) const
-  {
-    enum { InputRank = 2 };
-
-    KOKKOS_MACRO_CHECK(
-      mdarray_require_dimension( Rank, N0, N1, 0, 0, 0, 0, 0, 0,
-                            InputRank, i0, i1, 0, 0, 0, 0, 0, 0 ) );
-
-    return i1 + S0 * i0 ;
-  }
-
-  template< typename iType0 >
-  inline
-  KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-  size_type offset( const iType0 & i0 ) const
-  {
-    enum { InputRank = 1 };
-
-    KOKKOS_MACRO_CHECK(
-      mdarray_require_dimension( Rank, N0, 0, 0, 0, 0, 0, 0, 0,
-                            InputRank, i0, 0, 0, 0, 0, 0, 0, 0 ) );
-
-    return i0 ;
-  }
-
   inline
   KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
   IndexMapRight() : N0(0) {}
@@ -270,7 +741,8 @@ public:
 };
 
 //----------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------
+/* Runtime defined rank and dimensions */
 template<>
 class IndexMapRight< KOKKOS_MACRO_DEVICE::memory_space,
                      0, 0,0,0,0,0,0,0 > {

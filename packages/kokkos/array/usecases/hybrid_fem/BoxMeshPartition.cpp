@@ -105,27 +105,30 @@ void use_boxes( const BoxType & box_global ,
                       BoxType & box_interior ,
                       BoxType & box_use )
 {
-  for ( size_t i = 0 ; i < 3 ; ++i ) {
-    if ( ! count( box_part ) ) {
-      throw std::runtime_error( std::string("box uses") );
+  if ( 0 == count( box_part ) ) {
+    box_interior = box_part ;
+    box_use      = box_part ;
+  }
+  else {
+    for ( size_t i = 0 ; i < 3 ; ++i ) {
+
+      box_interior[i][0] =
+        ( box_part[i][0] == box_global[i][0] )      ? box_part[i][0] : (
+        ( box_part[i][0] + ghost < box_part[i][1] ) ? box_part[i][0] + ghost : 
+                                                      box_part[i][1] );
+
+      box_interior[i][1] =
+        ( box_part[i][1] == box_global[i][1] )      ? box_part[i][1] : (
+        ( box_part[i][0] + ghost < box_part[i][1] ) ? box_part[i][1] - ghost :
+                                                      box_part[i][0] );
+
+      box_use[i][0] = 
+        ( box_part[i][0] > ghost + box_global[i][0] ) ? box_part[i][0] - ghost :
+                                                        box_global[i][0] ;
+      box_use[i][1] = 
+        ( box_part[i][1] + ghost < box_global[i][1] ) ? box_part[i][1] + ghost :
+                                                        box_global[i][1] ;
     }
-
-    box_interior[i][0] =
-      ( box_part[i][0] == box_global[i][0] )      ? box_part[i][0] : (
-      ( box_part[i][0] + ghost < box_part[i][1] ) ? box_part[i][0] + ghost : 
-                                                    box_part[i][1] );
-
-    box_interior[i][1] =
-      ( box_part[i][1] == box_global[i][1] )      ? box_part[i][1] : (
-      ( box_part[i][0] + ghost < box_part[i][1] ) ? box_part[i][1] - ghost :
-                                                    box_part[i][0] );
-
-    box_use[i][0] = 
-      ( box_part[i][0] > ghost + box_global[i][0] ) ? box_part[i][0] - ghost :
-                                                      box_global[i][0] ;
-    box_use[i][1] = 
-      ( box_part[i][1] + ghost < box_global[i][1] ) ? box_part[i][1] + ghost :
-                                                      box_global[i][1] ;
   }
 }
 

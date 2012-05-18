@@ -107,6 +107,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "Trios_trace.h"
 #include "Trios_threads.h"
 #include "Trios_nssi_rpc.h"
+#include "buffer_queue.h"
 
 
 #include "nssi_debug.h"
@@ -118,6 +119,11 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 
 extern NNTI_transport_t transports[NSSI_RPC_COUNT];
+
+#ifdef USE_BUFFER_QUEUE
+extern trios_buffer_queue_t send_bq;
+extern trios_buffer_queue_t recv_bq;
+#endif
 
 // TODO: Replace these with the threadpool rank
 int FIXRANK = 0;
@@ -497,22 +503,26 @@ static int fetch_args(
             FIXRANK);
 
     /* fetch the buffer from the client */
+    trios_start_timer(call_time);
     rc=NNTI_get(
             &header->args_addr,
             0,
             encoded_args_size,
             &encoded_args_hdl,
             0);
+    trios_stop_timer("NNTI_get - long args", call_time);
     if (rc != NNTI_OK) {
         log_fatal(rpc_debug_level,
                 "could not get long args from client");
         goto cleanup;
     }
+    trios_start_timer(call_time);
     rc=NNTI_wait(
             &encoded_args_hdl,
             NNTI_GET_DST,
             -1,
             &status);
+    trios_stop_timer("NNTI_wait - long args", call_time);
     if (rc != NNTI_OK) {
         log_error(rpc_debug_level, "failed waiting for long args: %s",
                 nnti_err_str(rc));
@@ -593,7 +603,8 @@ static int send_result(const NNTI_peer_t   *caller,
     uint32_t remaining;
     uint32_t valid_bytes;
     char *buf=NULL;
-    NNTI_buffer_t short_res_hdl;
+    NNTI_buffer_t short_res;
+    NNTI_buffer_t *short_res_hdl=&short_res;
     NNTI_buffer_t long_res_hdl;
     NNTI_status_t wait_status;
     nssi_result_header header;
@@ -608,7 +619,6 @@ static int send_result(const NNTI_peer_t   *caller,
 
     /* initialize the result header */
     memset(&header, 0, sizeof(nssi_result_header));
-    //NNTI_INIT_BUFFER(&header.result_addr);
 
     /* --- HANDLE ERROR CASE --- */
 
@@ -641,6 +651,10 @@ static int send_result(const NNTI_peer_t   *caller,
     /* allocated an xdr memory stream for the short result buffer */
     assert(res_buf_size > 0);
 
+#ifdef USE_BUFFER_QUEUE
+    short_res_hdl=trios_buffer_queue_pop(&send_bq);
+    assert(short_res_hdl);
+#else
     buf=(char *)malloc(res_buf_size);
     memset(buf, 0, res_buf_size);  // address valgrind uninitialized error
     if (!buf)   {
@@ -655,16 +669,17 @@ static int send_result(const NNTI_peer_t   *caller,
             1,
             NNTI_SEND_SRC,
             caller,
-            &short_res_hdl);
+            short_res_hdl);
     if (rc != NNTI_OK) {
         log_error(rpc_debug_level, "failed registering short result: %s",
                 nnti_err_str(rc));
     }
+#endif
 
     xdrmem_create(
             &hdr_xdrs,
-            NNTI_BUFFER_C_POINTER(&short_res_hdl),
-            NNTI_BUFFER_SIZE(&short_res_hdl),
+            NNTI_BUFFER_C_POINTER(short_res_hdl),
+            NNTI_BUFFER_SIZE(short_res_hdl),
             XDR_ENCODE);
 
     /* If the result fits in the short result buffer, send it with the header */
@@ -801,12 +816,16 @@ static int send_result(const NNTI_peer_t   *caller,
             thread_id, request_id, valid_bytes, hdr_size, res_size);
 
     /* TODO: Handle the timeout case.  This probably means the client died */
-    rc=NNTI_send(caller, &short_res_hdl, dest_addr);
+    trios_start_timer(call_time);
+    rc=NNTI_send(caller, short_res_hdl, dest_addr);
+    trios_stop_timer("NNTI_send - short result", call_time);
     if (rc != NNTI_OK) {
         log_error(rpc_debug_level, "failed sending short result: %s",
                 nnti_err_str(rc));
     }
-    rc=NNTI_wait(&short_res_hdl, NNTI_SEND_SRC, -1, &wait_status);
+    trios_start_timer(call_time);
+    rc=NNTI_wait(short_res_hdl, NNTI_SEND_SRC, -1, &wait_status);
+    trios_stop_timer("NNTI_wait - short result", call_time);
     if (rc != NNTI_OK) {
         log_error(rpc_debug_level, "failed waiting for short result: %s",
                 nnti_err_str(rc));
@@ -820,11 +839,13 @@ static int send_result(const NNTI_peer_t   *caller,
         log_debug(rpc_debug_level, "thread_id(%d): waiting for client to "
             "fetch result %lu", thread_id, request_id);
 
+        trios_start_timer(call_time);
         rc=NNTI_wait(
                 &long_res_hdl,
                 NNTI_GET_SRC,
                 -1,
                 &wait_status);
+        trios_stop_timer("NNTI_wait - long result", call_time);
         if (rc != NNTI_OK) {
             log_error(rpc_debug_level, "failed waiting for client to fetch long result: %s",
                     nnti_err_str(rc));
@@ -842,13 +863,17 @@ cleanup:
         free(buf);
     }
 
-    buf=NNTI_BUFFER_C_POINTER(&short_res_hdl);
-    rc=NNTI_unregister_memory(&short_res_hdl);
+#ifdef USE_BUFFER_QUEUE
+    trios_buffer_queue_push(&send_bq, short_res_hdl);
+#else
+    buf=NNTI_BUFFER_C_POINTER(short_res_hdl);
+    rc=NNTI_unregister_memory(short_res_hdl);
     if (rc != NNTI_OK) {
         log_error(rpc_debug_level, "failed unregistering short result: %s",
                 nnti_err_str(rc));
     }
     free(buf);
+#endif
 
     log_debug(rpc_debug_level, "thread_id(%d): result %lu sent", thread_id, request_id);
 
@@ -1260,6 +1285,7 @@ extern int nssi_put_data(
     int rc = NSSI_OK;
     NNTI_buffer_t rpc_msg;
     NNTI_status_t status;
+    trios_declare_timer(call_time);
 
     if (len == 0)
         return rc;
@@ -1276,21 +1302,25 @@ extern int nssi_put_data(
         log_error(rpc_debug_level, "failed registering data: %s",
                 nnti_err_str(rc));
     }
+    trios_start_timer(call_time);
     rc=NNTI_put(
             &rpc_msg,
             0,
             len,
             data_addr,
             0);
+    trios_stop_timer("NNTI_put - put to put dest", call_time);
     if (rc != NSSI_OK) {
         log_error(rpc_debug_level, "failed putting data: %s",
                 nnti_err_str(rc));
     }
+    trios_start_timer(call_time);
     rc=NNTI_wait(
             &rpc_msg,
             NNTI_PUT_SRC,
             -1,
             &status);
+    trios_stop_timer("NNTI_wait - put to put dest", call_time);
     if (rc != NNTI_OK) {
         log_error(rpc_debug_level, "failed waiting for data: %s",
                 nnti_err_str(rc));
@@ -1398,9 +1428,6 @@ int nssi_service_init(
 
     /* initialize the service descriptors */
     memset(service, 0, sizeof(nssi_service));
-
-//    NNTI_INIT_PEER(&service->svc_host);
-//    NNTI_INIT_BUFFER(&service->req_addr);
 
     service->transport_id = transports[rpc_transport].id;
     /* use XDR to encode control messages */

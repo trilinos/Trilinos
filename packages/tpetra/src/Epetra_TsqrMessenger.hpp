@@ -99,14 +99,14 @@ namespace TSQR {
       bool haveMpiComm = false;
       
       RCP< const Epetra_MpiComm > pMpiComm = 
-	rcp_dynamic_cast< const Epetra_MpiComm > (pComm, false);
+        rcp_dynamic_cast< const Epetra_MpiComm > (pComm, false);
       if (pMpiComm.get() == NULL) 
-	haveMpiComm = false;
+        haveMpiComm = false;
       else
-	{
-	  rawMpiComm = pMpiComm->Comm();
-	  haveMpiComm = true;
-	}
+        {
+          rawMpiComm = pMpiComm->Comm();
+          haveMpiComm = true;
+        }
       return std::make_pair (rawMpiComm, haveMpiComm);
     }
 #endif // EPETRA_MPI
@@ -131,24 +131,24 @@ namespace TSQR {
       // wraps trivial communication.
       std::pair< MPI_Comm, bool > results = extractRawMpiComm (pComm);
       if (results.second == true)
-	{
-	  typedef TSQR::MPI::MpiMessenger< Datum > mess_type;
+        {
+          typedef TSQR::MPI::MpiMessenger< Datum > mess_type;
 
-	  RCP< mess_type > pMess (new mess_type (results.first));
-	  RCP< base_mess_type > pMessBase = 
-	    rcp_implicit_cast< base_mess_type > (pMess);
-	  return pMessBase;
-	}
+          RCP< mess_type > pMess (new mess_type (results.first));
+          RCP< base_mess_type > pMessBase = 
+            rcp_implicit_cast< base_mess_type > (pMess);
+          return pMessBase;
+        }
       else
 #endif // EPETRA_MPI
-	{
-	  typedef TSQR::TrivialMessenger< Datum > mess_type;
-	  
-	  RCP< mess_type > pMess (new mess_type);
-	  RCP< base_mess_type > pMessBase = 
-	    rcp_implicit_cast< base_mess_type > (pMess);
-	  return pMessBase;
-	}
+        {
+          typedef TSQR::TrivialMessenger< Datum > mess_type;
+          
+          RCP< mess_type > pMess (new mess_type);
+          RCP< base_mess_type > pMessBase = 
+            rcp_implicit_cast< base_mess_type > (pMess);
+          return pMessBase;
+        }
     }
 
   } // namespace Epetra

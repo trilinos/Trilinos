@@ -47,14 +47,14 @@
 #ifdef Piro_ENABLE_NOX
 #include "Piro_Epetra_NOXSolver.hpp"
 #include "Piro_Epetra_LOCASolver.hpp"
+#include "Piro_Epetra_VelocityVerletSolver.hpp"
+#include "Piro_Epetra_TrapezoidRuleSolver.hpp"
 #endif
 
 #ifdef Piro_ENABLE_Rythmos
 #include "Piro_Epetra_RythmosSolver.hpp"
 #endif
 
-#include "Piro_Epetra_TrapezoidRuleSolver.hpp"
-#include "Piro_Epetra_VelocityVerletSolver.hpp"
 
 
 Teuchos::RCP<EpetraExt::ModelEvaluator> 
@@ -96,19 +96,6 @@ createSolver(Teuchos::RCP<Teuchos::ParameterList> piroParams,
 			  piroParams, model, observer, saveEigData, 
 			  locaStatusTest));
   }
-#endif
-
-#ifdef Piro_ENABLE_Rythmos
-  if (name == "Rythmos") {
-    found = true;
-    typedef Piro::Epetra::RythmosSolver::Scalar Scalar;
-    Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer =
-      piroParams->get< Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > >(
-	"Observer", Teuchos::null);
-    return Teuchos::rcp(new Piro::Epetra::RythmosSolver(
-			  piroParams, model, observer));
-  }
-#endif
 
   if (name == "Trapezoid Rule") {
     found = true;
@@ -127,6 +114,19 @@ createSolver(Teuchos::RCP<Teuchos::ParameterList> piroParams,
     return Teuchos::rcp(new Piro::Epetra::VelocityVerletSolver(
 			  piroParams, model, observer));
   }
+#endif
+
+#ifdef Piro_ENABLE_Rythmos
+  if (name == "Rythmos") {
+    found = true;
+    typedef Piro::Epetra::RythmosSolver::Scalar Scalar;
+    Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer =
+      piroParams->get< Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > >(
+	"Observer", Teuchos::null);
+    return Teuchos::rcp(new Piro::Epetra::RythmosSolver(
+			  piroParams, model, observer));
+  }
+#endif
 
   TEUCHOS_TEST_FOR_EXCEPTION(!found, Teuchos::Exceptions::InvalidParameter,
 		     std::endl << "Error!  Piro::Epetra::Factory():  " <<

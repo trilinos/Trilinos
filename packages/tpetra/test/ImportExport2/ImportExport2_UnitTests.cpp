@@ -414,6 +414,8 @@ namespace {
       typedef CrsMatrix<Scalar, Ordinal> crs_type;
       RCP<crs_type> A_tgt2 = 
 	Tpetra::importAndFillCompleteCrsMatrix<crs_type> (src_mat, importer, 
+							  Teuchos::null, 
+							  Teuchos::null,
 							  crsMatPlist);
 
       // Make sure that A_tgt2's row Map is the same as tgt_map, and

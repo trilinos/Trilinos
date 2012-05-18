@@ -6,7 +6,7 @@
 %Kokkos provides two main capabilities for Trilinos. The first is an abstract
 programming interface (API) for handling memory and specifying work for
 shared-memory parallel nodes (the \ref kokkos_node_api "Kokkos Node API"). The second is a collection
-of local (i.e., not distributed) distributed linear algebra classes and the kernels
+of local (i.e., not distributed) linear algebra classes and the kernels
 needed to realized their functionality in parallel (the %Kokkos Linear Algebra kernels library). In addition to providing 
 basic data structures and kernels, %Kokkos also specifies APIs for extension via user-provided kernels (see, e.g., the \ref kokkos_crs_ops "Kokkos Compressed-Row Sparse API").
 
@@ -37,13 +37,14 @@ code re-use between Trilinos packages and to ease experimentation for kernel res
     collection of vectors.
   - Arithmetic interfaces:
     - Kokkos::DefaultArithmetic: Provides basic functionality for 
-    perfoming arithmetic of multivectors.
+    performing arithmetic of multivectors.
     - Kokkos::DefaultHostSparseOps, Kokkos::DefaultDeviceSparseOps: Provides basic functionality for 
     computing multiplication and solve of a sparse matrix against a multivector.
   
 \subsection kokkos_trilinos Building Kokkos and using it in Trilinos
 
-Kokkos can be used as a stand-alone package. However, its primary use case is via the functionality provided to other packages, such as Tpetra, Tifpack and Isorropia.
+Kokkos can be used as a stand-alone package. However, its primary use case is via the functionality provided to other packages, such as Tpetra,
+Ifpack2 and Isorropia.
 
 See \ref kokkos_cuda_support "Kokkos CUDA Support" for instructions on building with support for NVIDIA CUDA GPUs.
 

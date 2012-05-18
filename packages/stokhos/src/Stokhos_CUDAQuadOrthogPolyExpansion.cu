@@ -439,17 +439,41 @@ timesEqual(
     // Copy c coefficients into temporary array
     thrust::device_vector<float> t(c.coeff(), c.coeff()+p);
     pointer tc = t.data();
+
+    typename Cijk_type::i_iterator i_begin = Cijk->i_begin();
+    typename Cijk_type::i_iterator i_end = Cijk->i_end();
+    if (pc < Cijk->num_i())
+      i_end = Cijk->find_i(pc);
+    int k_lim = p;
+    int j_lim = xp;
+    const_pointer kc = tc;
+    const_pointer jc = xc;
+    if (xp < p) {
+      k_lim = xp;
+      j_lim = p;
+      kc = xc;
+      jc = tc;
+    }
+
     float tmp, cijk;
-    int i,j;
-    for (int k=0; k<pc; k++) {
+    int i,j,k;
+    for (typename Cijk_type::i_iterator i_it=i_begin; i_it!=i_end; ++i_it) {
+      i = index(i_it);
       tmp = float(0.0);
-      int n = Cijk->num_values(k);
-      for (int l=0; l<n; l++) {
-	Cijk->value(k,l,i,j,cijk);
-	if (i < p && j < xp)
-	  tmp += cijk*tc[i]*xc[j];
+      for (typename Cijk_type::ik_iterator k_it = Cijk->k_begin(i_it); 
+	   k_it != Cijk->k_end(i_it); ++k_it) {
+	k = index(k_it);
+	if (k < k_lim) {
+	  for (typename Cijk_type::ikj_iterator j_it = Cijk->j_begin(k_it);
+	       j_it != Cijk->j_end(k_it); ++j_it) {
+	    j = index(j_it);
+	    cijk = value(j_it);
+	    if (j < j_lim)
+	      tmp += cijk*kc[k]*jc[j];
+	  }
+	}
       }
-      cc[k] = tmp / basis->norm_squared(k);
+      cc[i] = tmp / basis->norm_squared(i);
     }
   }
   else if (p > 1) {
@@ -641,17 +665,40 @@ times(Stokhos::OrthogPolyApprox<int, float, CUDAStorage<int,float> >& c,
   pointer cc = c.coeff();
 
   if (pa > 1 && pb > 1) {
+    typename Cijk_type::i_iterator i_begin = Cijk->i_begin();
+    typename Cijk_type::i_iterator i_end = Cijk->i_end();
+    if (pc < Cijk->num_i())
+      i_end = Cijk->find_i(pc);
+    int k_lim = pa;
+    int j_lim = pb;
+    const_pointer kc = ca;
+    const_pointer jc = cb;
+    if (pb < pa) {
+      k_lim = pb;
+      j_lim = pa;
+      kc = cb;
+      jc = ca;
+    }
+
     float tmp, cijk;
-    int i,j;
-    for (int k=0; k<pc; k++) {
+    int i,j,k;
+    for (typename Cijk_type::i_iterator i_it=i_begin; i_it!=i_end; ++i_it) {
+      i = index(i_it);
       tmp = float(0.0);
-      int n = Cijk->num_values(k);
-      for (int l=0; l<n; l++) {
-    	Cijk->value(k,l,i,j,cijk);
-	if (i < pa && j < pb)
-	  tmp += cijk*ca[i]*cb[j];
+      for (typename Cijk_type::ik_iterator k_it = Cijk->k_begin(i_it); 
+	   k_it != Cijk->k_end(i_it); ++k_it) {
+	k = index(k_it);
+	if (k < k_lim) {
+	  for (typename Cijk_type::ikj_iterator j_it = Cijk->j_begin(k_it);
+	       j_it != Cijk->j_end(k_it); ++j_it) {
+	    j = index(j_it);
+	    cijk = value(j_it);
+	    if (j < j_lim)
+	      tmp += cijk*kc[k]*jc[j];
+	  }
+	}
       }
-      cc[k] = tmp / basis->norm_squared(k);
+      cc[i] = tmp / basis->norm_squared(i);
     }
   }
   else if (pa > 1) {

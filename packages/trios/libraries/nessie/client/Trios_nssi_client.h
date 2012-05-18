@@ -476,7 +476,7 @@ extern "C" {
             uint32_t data_size,
             void *results,
             nssi_size result_size, /* size in bytes of the result */
-            nssi_request **requests);
+            nssi_request *requests);
 
     extern int nssi_multicast_rpc_sync(
             const nssi_service *svcs,
