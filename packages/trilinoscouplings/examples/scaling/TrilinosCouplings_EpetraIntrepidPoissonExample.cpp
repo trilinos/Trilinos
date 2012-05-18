@@ -29,10 +29,11 @@
 // @HEADER
 
 #include <Sacado.hpp>
-#include "TrilinosCouplings_TpetraIntrepidPoissonExample.hpp"
+#include "TrilinosCouplings_EpetraIntrepidPoissonExample.hpp"
+#include "Epetra_IntVector.h"
 
 
-namespace TpetraIntrepidPoissonExample {
+namespace EpetraIntrepidPoissonExample {
 
 /**********************************************************************************/
 /******** FUNCTION DECLARATIONS FOR EXACT SOLUTION AND SOURCE TERMS ***************/
@@ -139,8 +140,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             Teuchos::RCP<multivector_type>& B,
                             Teuchos::RCP<multivector_type>& X_exact,
                             Teuchos::RCP<multivector_type>& X,
-                            const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                            const Teuchos::RCP<Node>& node,
+                            const Epetra_Comm& comm,
                             const std::string& meshInput,
                             const Teuchos::RCP<Teuchos::FancyOStream>& out,
                             const Teuchos::RCP<Teuchos::FancyOStream>& err,
@@ -151,7 +151,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   using Teuchos::rcp_implicit_cast;
 
   RCP<vector_type> b, x_exact, x;
-  makeMatrixAndRightHandSide (A, b, x_exact, x, comm, node, meshInput,
+  makeMatrixAndRightHandSide (A, b, x_exact, x, comm, meshInput,
                               out, err, verbose, debug);
 
   B = rcp_implicit_cast<multivector_type> (b);
@@ -164,8 +164,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             Teuchos::RCP<vector_type>& B,
                             Teuchos::RCP<vector_type>& X_exact,
                             Teuchos::RCP<vector_type>& X,
-                            const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                            const Teuchos::RCP<Node>& node,
+                            const Epetra_Comm& comm,
                             const std::string& meshInput,
                             const Teuchos::RCP<Teuchos::FancyOStream>& out,
                             const Teuchos::RCP<Teuchos::FancyOStream>& err,
@@ -173,7 +172,8 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             const bool debug)
 {
   using namespace Intrepid;
-  using Tpetra::global_size_t;
+  using Teuchos::arcp;
+  using Teuchos::arcp_const_cast;
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
@@ -183,6 +183,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::rcpFromRef;
   using Teuchos::TimeMonitor;
   using std::endl;
   typedef Teuchos::ArrayView<LO>::size_type size_type;
@@ -191,15 +192,10 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   (void) verbose;
   (void) debug;
 
-  //
-  // mfh 19 Apr 2012: If you want to change the template parameters of
-  // these typedefs, modify the typedefs (ST, LO, GO, Node) near the
-  // top of this file.
-  //
-  typedef Tpetra::Map<LO, GO, Node>         map_type;
-  typedef Tpetra::Export<LO, GO, Node>      export_type;
-  typedef Tpetra::Import<LO, GO, Node>      import_type;
-  typedef Tpetra::CrsGraph<LO, GO, Node>    sparse_graph_type;
+  typedef Epetra_Map      map_type;
+  typedef Epetra_Export   export_type;
+  typedef Epetra_Import   import_type;
+  typedef Epetra_CrsGraph sparse_graph_type;
 
   // Number of independent variables fixed at 3
   typedef Sacado::Fad::SFad<ST, 3>     Fad3;
@@ -207,8 +203,8 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   typedef Intrepid::RealSpaceTools<ST> IntrepidRSTools;
   typedef Intrepid::CellTools<ST>      IntrepidCTools;
 
-  const int numProcs = comm->getSize ();
-  const int myRank = comm->getRank ();
+  const int numProcs = comm.MyPID ();
+  const int myRank = comm.NumProc ();
 
   *out << "makeMatrixAndRightHandSide:" << endl;
   Teuchos::OSTab tab (out);
@@ -533,7 +529,8 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
         ++oidx;
       }
     }
-    globalMapG = rcp (new map_type (-1, ownedGIDs (), 0, comm, node));
+    globalMapG = rcp (new map_type (-1, static_cast<int> (ownedGIDs ().size ()),
+                                    ownedGIDs ().getRawPtr (), 0, comm));
   }
 
   /**********************************************************************************/
@@ -554,10 +551,11 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     }
 
     //Generate overlapped Map for nodes.
-    overlappedMapG = rcp (new map_type (-1, overlappedGIDs (), 0, comm, node));
+    overlappedMapG = rcp (new map_type (-1, static_cast<int> (overlappedGIDs ().size ()),
+                                        overlappedGIDs ().getRawPtr (), 0, comm));
 
-    // Build Tpetra Export from overlapped to owned Map.
-    exporter = rcp (new export_type (overlappedMapG, globalMapG));
+    // Build Epetra_Export from overlapped to owned Map.
+    exporter = rcp (new export_type (*overlappedMapG, *globalMapG));
   }
 
   /**********************************************************************************/
@@ -573,9 +571,9 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   {
     TimeMonitor timerBuildOverlapGraphL (*timerBuildOverlapGraph);
 
-    // Construct Tpetra::CrsGraph objects.
-    overlappedGraph = rcp (new sparse_graph_type (overlappedMapG, 0));
-    ownedGraph = rcp (new sparse_graph_type (globalMapG, 0));
+    // Construct Epetra_CrsGraph objects.
+    overlappedGraph = rcp (new sparse_graph_type (Copy, *overlappedMapG, 0));
+    ownedGraph = rcp (new sparse_graph_type (Copy, *globalMapG, 0));
 
     // Define desired workset size and count how many worksets
     // there are on this process's mesh block.
@@ -607,30 +605,48 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
         for (int cellRow = 0; cellRow < numFieldsG; cellRow++){
 
           int localRow  = elemToNode(cell, cellRow);
-          //globalRow for Tpetra Graph
-          global_size_t globalRowT = as<global_size_t> (globalNodeIds[localRow]);
+          //globalRow for Epetra_CrsGraph
+          int globalRowT = as<int> (globalNodeIds[localRow]);
 
           // "CELL VARIABLE" loop for the workset cell: cellCol is
           // relative to the cell DoF numbering
           for (int cellCol = 0; cellCol < numFieldsG; ++cellCol) {
             int localCol  = elemToNode (cell, cellCol);
             int globalCol = as<int> (globalNodeIds[localCol]);
-            //create ArrayView globalCol object for Tpetra
+            //create ArrayView globalCol object for Epetra
             ArrayView<int> globalColAV = arrayView (&globalCol, 1);
 
-            //Update Tpetra overlap Graph
-            overlappedGraph->insertGlobalIndices (globalRowT, globalColAV);
+            //Update Epetra overlap Graph
+            const int err =
+              overlappedGraph->InsertGlobalIndices (globalRowT,
+                                                    as<int> (globalColAV.size ()),
+                                                    globalColAV.getRawPtr ());
+            // Positive err isn't necessarily an error, but negative
+            // err always is.
+            TEUCHOS_TEST_FOR_EXCEPTION(err < 0, std::runtime_error,
+              "Epetra_CrsGraph::InsertGlobalIndices on global row "
+              << globalRowT << " on process " << myRank
+              << " failed with error code " << err << ".");
           }// *** cell col loop ***
         }// *** cell row loop ***
       }// *** workset cell loop **
     }// *** workset loop ***
 
     // Fill-complete overlapping distribution Graph.
-    overlappedGraph->fillComplete ();
+    int err = overlappedGraph->FillComplete ();
+    TEUCHOS_TEST_FOR_EXCEPTION(err < 0, std::runtime_error,
+      "Epetra_CrsGraph::FillComplete on overlapped graph on process "
+      << myRank << " failed with error code " << err << ".");
 
     // Export to owned distribution Graph, and fill-complete the latter.
-    ownedGraph->doExport (*overlappedGraph, *exporter, Tpetra::INSERT);
-    ownedGraph->fillComplete ();
+    err = ownedGraph->Export (*overlappedGraph, *exporter, Insert);
+    TEUCHOS_TEST_FOR_EXCEPTION(err < 0, std::runtime_error,
+      "Epetra_CrsGraph::Export from overlapped to owned graph on process "
+      << myRank << " failed with error code " << err << ".");
+    err = ownedGraph->FillComplete ();
+    TEUCHOS_TEST_FOR_EXCEPTION(err < 0, std::runtime_error,
+      "Epetra_CrsGraph::FillComplete on owned graph on process "
+      << myRank << " failed with error code " << err << ".");
   }
 
   *out << "Constructing stiffness matrix and vectors" << endl;
@@ -646,21 +662,27 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   // Owned distribution objects: their names start with gl_.
   //
   RCP<sparse_matrix_type> gl_StiffMatrix =
-    rcp (new sparse_matrix_type (ownedGraph.getConst ()));
-  RCP<vector_type> gl_rhsVector = rcp (new vector_type (globalMapG));
+    rcp (new sparse_matrix_type (Copy, *ownedGraph));
+  RCP<vector_type> gl_rhsVector = rcp (new vector_type (*globalMapG));
   // We compute the exact solution vector when we make v, and v has
   // the owned distribution, so we only need an owned distribution
   // version of the exact solution vector.
-  RCP<vector_type> gl_exactSolVector = rcp (new vector_type (globalMapG));
+  RCP<vector_type> gl_exactSolVector = rcp (new vector_type (*globalMapG));
 
   //
   // Overlapped distribution objects: their names don't start with gl_.
   //
   RCP<sparse_matrix_type> StiffMatrix =
-    rcp (new sparse_matrix_type (overlappedGraph.getConst ()));
-  StiffMatrix->setAllToScalar (STS::zero ());
-  RCP<vector_type> rhsVector = rcp (new vector_type (overlappedMapG));
-  rhsVector->putScalar (STS::zero ());
+    rcp (new sparse_matrix_type (Copy, *overlappedGraph));
+  int err = StiffMatrix->PutScalar (STS::zero ());
+  TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error,
+    "Epetra_CrsMatrix::PutScalar on overlapped matrix on process "
+    << myRank << " failed with error code " << err << ".");
+  RCP<vector_type> rhsVector = rcp (new vector_type (*overlappedMapG));
+  err = rhsVector->PutScalar (STS::zero ());
+  TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error,
+    "Epetra_MultiVector::PutScalar on process "
+    << myRank << " failed with error code " << err << ".");
 
   /**********************************************************************************/
   /************************** DIRICHLET BC SETUP ************************************/
@@ -683,8 +705,11 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     }
     // v: Vector for use in applying Dirichlet BCs.
     // v uses the owned (nonoverlapped) distribution.
-    v = rcp (new vector_type (globalMapG, true));
-    v->putScalar (STS::zero ());
+    v = rcp (new vector_type (*globalMapG, true));
+    err = v.PutScalar (STS::zero ());
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error,
+      "Epetra_MultiVector::PutScalar on process "
+      << myRank << " failed with error code " << err << ".");
 
     // Set v to boundary values on Dirichlet nodes.  While we're
     // iterating through all the nodes that this process can see
@@ -706,10 +731,20 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
           // We assume that the exact solution is defined on the
           // boundary, and evaluate the exact solution function to get
           // boundary values.
-          v->replaceLocalValue (iOwned, exactSolution (x,y,z));
+          const ST val = exactSolution (x, y, z);
+          err = v->ReplaceMyValues (1, &val, &iOwned);
+          TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error,
+            "Epetra_Vector::ReplaceMyValues on local row " << iOwned
+            << " on process " << myRank << " failed with error code "
+            << err << ".");
         } // if node inode is on the boundary
 
-        gl_exactSolVector->replaceLocalValue (iOwned, exactSolution (x,y,z));
+        const ST val = exactSolution (x, y, z);
+        err = gl_exactSolVector->ReplaceMyValues (1, &val, &iOwned);
+        TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error,
+          "Epetra_Vector::ReplaceMyValues on local row " << iOwned
+          << " on process " << myRank << " failed with error code "
+          << err << ".");
         ++iOwned;
       } // if node inode is owned by my process
     } // for each node inode that my process can see
@@ -885,7 +920,12 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
           ArrayView<ST> sourceTermContributionAV =
             arrayView (&sourceTermContribution, 1);
 
-          rhsVector->sumIntoGlobalValue (globalRow, sourceTermContribution);
+          err = rhsVector->SumIntoGlobalValues (1, sourceTermContributionAV.getRawPtr (),
+                                                &globalRow);
+          TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error,
+            "Epetra_Vector::SumIntoGlobalValues on global row " << globalRow
+            << " on process " << myRank << " failed with error code "
+            << err << ".");
 
           // "CELL VARIABLE" loop for the workset cell: cellCol is
           // relative to the cell DoF numbering.
@@ -897,9 +937,15 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
               worksetStiffMatrix (worksetCellOrdinal, cellRow, cellCol);
             ArrayView<ST> operatorMatrixContributionAV =
               arrayView<ST> (&operatorMatrixContribution, 1);
+            err = StiffMatrix->SumIntoGlobalValues (globalRow,
+                                                    as<int> (operatorMatrixContributionAV.size ()),
+                                                    operatorMatrixContributionAV.getRawPtr (),
+                                                    globalColAV.getRawPtr ());
+            TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error,
+              "Epetra_CrsMatrix::SumIntoGlobalValues on global row "
+              << globalRow << " on process " << myRank << " failed with "
+              "error code " << err << ".");
 
-            StiffMatrix->sumIntoGlobalValues (globalRow, globalColAV,
-                                              operatorMatrixContributionAV);
           }// *** cell col loop ***
         }// *** cell row loop ***
       }// *** workset cell loop **
@@ -917,14 +963,32 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     TimeMonitor::getNewTimer ("Export from overlapped to owned");
   {
     TimeMonitor timerAssembMultProcL (*timerAssembMultProc);
-    gl_StiffMatrix->setAllToScalar (STS::zero ());
-    gl_StiffMatrix->doExport (*StiffMatrix, *exporter, Tpetra::ADD);
-    // If target of export has static graph, no need to do
-    // setAllToScalar(0.0); export will clobber values.
-    gl_StiffMatrix->fillComplete ();
+    err = gl_StiffMatrix->PutScalar (STS::zero ());
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error,
+      "Epetra_CrsMatrix::PutScalar on process " << myRank << " failed with "
+      "error code " << err << ".");
 
-    gl_rhsVector->putScalar (STS::zero ());
-    gl_rhsVector->doExport (*rhsVector, *exporter, Tpetra::ADD);
+    err = gl_StiffMatrix->Export (*StiffMatrix, *exporter, InsertAdd);
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error,
+      "Epetra_CrsMatrix::Export on process " << myRank << " failed with "
+      "error code " << err << ".");
+
+    // If target of export has static graph, no need to do
+    // PutScalar(0.0); export will clobber values.
+    err = gl_StiffMatrix->FillComplete ();
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error,
+      "Epetra_CrsMatrix::FillComplete on process " << myRank
+       << "failed with error code " << err << ".");
+
+    err = gl_rhsVector->PutScalar (STS::zero ());
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error,
+      "Epetra_Vector::PutScalar on process " << myRank << " failed with "
+      "error code " << err << ".");
+
+    err = gl_rhsVector->Export (*rhsVector, *exporter, Add);
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error,
+      "Epetra_Vector::Export on process " << myRank << " failed with "
+      "error code " << err << ".");
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -940,13 +1004,22 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
     // Apply owned stiffness matrix to v: rhs := A*v
     RCP<multivector_type> rhsDir =
-      rcp (new multivector_type (globalMapG, true));
-    gl_StiffMatrix->apply (*v.getConst (), *rhsDir);
-    // Update right-hand side
-    gl_rhsVector->update (as<ST> (-STS::one ()), *rhsDir, STS::one ());
+      rcp (new multivector_type (*globalMapG, 1, true));
+    err = gl_StiffMatrix->Apply (*v.getConst (), *rhsDir);
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error,
+      "Epetra_Operator::Apply with global stiffness matrix on process "
+      << myRank << " failed with error code " << err << ".");
 
-    // Get a const view of the vector's local data.
-    ArrayRCP<const ST> vArrayRCP = v->getData (0);
+    // Update right-hand side
+    err = gl_rhsVector->Update (as<ST> (-STS::one ()), *rhsDir, STS::one ());
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error,
+      "Epetra_MultiVector::Apply with global right-hand side vector on "
+      "process " << myRank << " failed with error code " << err << ".");
+
+    // Epetra_(Multi)Vector's operator[] returns a raw pointer to the
+    // (multi)vector's local data.  Wrap it in a nonowning ArrayRCP.
+    ArrayRCP<const ST> vArrayRCP =
+      arcp_const_cast<const ST> (arcp<ST> ((*v)[0], 0, v->MyLength (), false));
 
     // Adjust rhs due to Dirichlet boundary conditions.
     for (int inode = 0; inode < numNodes; ++inode) {
@@ -954,95 +1027,150 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
         if (nodeOnBoundary (inode)) {
           // Get global node ID
           const GO gni = as<GO> (globalNodeIds[inode]);
-          const LO lidT = globalMapG->getLocalElement (gni);
+          const LO lidT = globalMapG->LID (gni);
           ST v_valT = vArrayRCP[lidT];
-          gl_rhsVector->replaceGlobalValue (gni, v_valT);
+          err = gl_rhsVector->ReplaceGlobalValues (1, &v_valT, &gni);
+          TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error,
+            "Epetra_Vector::ReplaceGlobalValues with global right-hand side "
+            "vector on process " << myRank << " failed with error code "
+            << err << ".");
         }
       }
     }
 
     // Zero out rows and columns of stiffness matrix corresponding to
     // Dirichlet edges and add one to diagonal.  The following is the
-    // Tpetra analog of Apply_OAZToMatrix().
+    // "pure Epetra" analog of Apply_OAZToMatrix().
     //
-    // Reenable changes to the values and structure of the global
-    // stiffness matrix.
-    gl_StiffMatrix->resumeFill ();
+    // Epetra_CrsMatrix, unlike Tpetra::CrsMatrix, doesn't require a
+    // "resumeFill" call before modifying values.
+    //gl_StiffMatrix->resumeFill ();
 
     // Find the local column numbers to nuke
-    RCP<const map_type> ColMap = gl_StiffMatrix->getColMap ();
+    RCP<const map_type> ColMap = rcpFromRef (gl_StiffMatrix->ColMap ());
     RCP<const map_type> globalMap =
-      rcp (new map_type (gl_StiffMatrix->getGlobalNumCols (), 0, comm,
-                         Tpetra::GloballyDistributed, node));
+      rcp (new map_type (gl_StiffMatrix->NumGlobalCols (), 0, comm));
 
     // Create the exporter from this process' column Map to the global
     // 1-1 column map. (???)
     RCP<const export_type> bdyExporter =
-      rcp (new export_type (ColMap, globalMap));
+      rcp (new export_type (*ColMap, *globalMap));
     // Create a vector of global column indices to which we will export
-    RCP<Tpetra::Vector<int, LO, GO, Node> > globColsToZeroT =
-      rcp (new Tpetra::Vector<int, LO, GO, Node> (globalMap));
+    RCP<Epetra_IntVector> globColsToZeroT =
+      rcp (new Epetra_IntVector (*globalMap));
     // Create a vector of local column indices from which we will export
-    RCP<Tpetra::Vector<int, LO, GO, Node> > myColsToZeroT =
-      rcp (new Tpetra::Vector<int, LO, GO, Node> (ColMap));
-    myColsToZeroT->putScalar (0);
+    RCP<Epetra_IntVector> myColsToZeroT = rcp (new Epetra_IntVector (*ColMap));
+    err = myColsToZeroT->PutValue (0);
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error,
+      "Epetra_IntVector::PutValue failed with error code " << err << ".");
 
     // Flag (set to 1) all local columns corresponding to the local
     // rows specified.
     for (int i = 0; i < numBCNodes; ++i) {
-      const GO globalRow = gl_StiffMatrix->getRowMap ()->getGlobalElement (BCNodes[i]);
-      const LO localCol = gl_StiffMatrix->getColMap ()->getLocalElement (globalRow);
-      // Tpetra::Vector<int, ...> works just like
-      // Tpetra::Vector<double, ...>.  Epetra has a separate
-      // Epetra_IntVector class for ints.
-      myColsToZeroT->replaceLocalValue (localCol, 1);
+      const GO globalRow = gl_StiffMatrix->RowMap ().GID (BCNodes[i]);
+      const LO localCol = gl_StiffMatrix->ColMap ().LID (globalRow);
+      // Epetra_IntVector has an operator[] which takes an LID.
+      (*myColsToZeroT)[localCol] = 1;
     }
 
     // Export to the global column map.
-    globColsToZeroT->doExport (*myColsToZeroT, *bdyExporter, Tpetra::ADD);
+    err = globColsToZeroT->Export (*myColsToZeroT, *bdyExporter, Add);
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error,
+      "Epetra_IntVector::Export failed with error code " << err << ".");
+
     // Import from the global column map to the local column map.
-    myColsToZeroT->doImport (*globColsToZeroT, *bdyExporter, Tpetra::INSERT);
+    err = myColsToZeroT->Import (*globColsToZeroT, *bdyExporter, Insert);
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error,
+      "Epetra_IntVector::Import (with exporter) failed with error code "
+      << err << ".");
 
     Array<ST> values;
     Array<int> indices;
-    ArrayRCP<const int> myColsToZeroArrayRCP = myColsToZeroT->getData(0);
+    // Epetra_IntVector's Values() method returns a raw pointer to the
+    // (multi)vector's local data.  Wrap it in a nonowning ArrayRCP.
+    ArrayRCP<const int> myColsToZeroArrayRCP =
+      arcp_const_cast<const int> (arcp<int> (myColsToZeroT->Values (), 0,
+                                             v->MyLength (), false));
     size_t NumEntries = 0;
 
     // Zero the columns corresponding to Dirichlet BCs.
-    for (LO i = 0; i < gl_StiffMatrix->getNodeNumRows (); ++i) {
-      NumEntries = gl_StiffMatrix->getNumEntriesInLocalRow (i);
+    for (LO i = 0; i < gl_StiffMatrix->NumMyRows (); ++i) {
+      err = gl_StiffMatrix->NumMyRowEntries (i, &NumEntries);
+      TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error,
+        "Epetra_RowMatrix::NumMyRowEntries on process " << myRank
+        << " and local row " << i << "failed with error code "
+        << err << ".");
+
       values.resize (NumEntries);
       indices.resize (NumEntries);
-      gl_StiffMatrix->getLocalRowCopy (i, indices (), values (), NumEntries);
+      err = gl_StiffMatrix->ExtractMyRowCopy (i, NumEntries, NumEntries,
+                                              values ().getRawPtr (),
+                                              indices ().getRawPtr ());
+      TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error,
+        "Epetra_RowMatrix::NumMyRowEntries on process " << myRank
+        << " and local row " << i << "failed with error code "
+        << err << ".");
+
       for (int j = 0; j < NumEntries; ++j) {
         if (myColsToZeroArrayRCP[indices[j]] == 1)
           values[j] = STS::zero ();
       }
-      gl_StiffMatrix->replaceLocalValues (i, indices (), values ());
+      err = gl_StiffMatrix->ReplaceMyValues (i, as<int> (values ().size ()),
+                                             values ().getRawPtr (),
+                                             indices ().getRawPtr ());
+      TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error,
+        "Epetra_CrsMatrix::ReplaceMyValues on process " << myRank
+        << " and local row " << i << "failed with error code "
+        << err << ".");
     } // for each (local) row of the global stiffness matrix
 
     // Zero the rows and add ones to diagonal.
     for (int i = 0; i < numBCNodes; ++i) {
-      NumEntries = gl_StiffMatrix->getNumEntriesInLocalRow (BCNodes[i]);
+      err = gl_StiffMatrix->NumMyRowEntries (BCNodes[i], &NumEntries);
+      TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error,
+        "Epetra_RowMatrix::NumMyRowEntries on process " << myRank
+        << " and local row " << BCNodes[i] << "failed with error code "
+        << err << ".");
+
       indices.resize (NumEntries);
       values.resize (NumEntries);
-      gl_StiffMatrix->getLocalRowCopy (BCNodes[i], indices (), values (), NumEntries);
-      const GO globalRow = gl_StiffMatrix->getRowMap ()->getGlobalElement (BCNodes[i]);
-      const LO localCol = gl_StiffMatrix->getColMap ()->getLocalElement (globalRow);
+      err = gl_StiffMatrix->ExtractMyRowCopy (BCNodes[i], NumEntries,
+                                              NumEntries,
+                                              values ().getRawPtr (),
+                                              indices ().getRawPtr ());
+      TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error,
+        "Epetra_RowMatrix::ExtractMyRowCopy on process " << myRank
+        << " and local row " << BCNodes[i] << "failed with error code "
+        << err << ".");
+
+      const GO globalRow = gl_StiffMatrix->RowMap ().GID (BCNodes[i]);
+      const LO localCol = gl_StiffMatrix->ColMap ().LID (globalRow);
       for (int j = 0; j < NumEntries; ++j) {
         values[j] = STS::zero ();
         if (indices[j] == localCol) {
           values[j] = STS::one ();
         }
       } // for each entry in the current row
-      gl_StiffMatrix->replaceLocalValues (BCNodes[i], indices (), values ());
+      err = gl_StiffMatrix->ReplaceMyValues (BCNodes[i],
+                                             as<int> (values ().size ()),
+                                             values ().getRawPtr (),
+                                             indices ().getRawPtr ());
+      TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error,
+        "Epetra_CrsMatrix::ReplaceMyValues on process " << myRank
+        << " and local row " << BCNodes[i] << "failed with error code "
+        << err << ".");
+
     } // for each BC node
   }
 
-  *out << "Calling fillComplete() on owned-Map stiffness matrix" << endl;
+  //*out << "Calling fillComplete() on owned-Map stiffness matrix" << endl;
 
-  // We're done modifying the owned stiffness matrix.
-  gl_StiffMatrix->fillComplete ();
+  // We're done modifying the owned stiffness matrix.  Epetra allows
+  // modifications to values (not structure) after calling
+  // FillComplete(), so we didn't have to call "resumeFill" above, and
+  // we don't need to call FillComplete() again here (in fact, it's
+  // not allowed to call FillComplete() more than once).
+  // gl_StiffMatrix->FillComplete ();
 
   //
   // We're done with assembly, so we can delete the mesh.
@@ -1052,8 +1180,11 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   Delete_Pamgen_Mesh ();
 
   // Create vector to store approximate solution, and set initial guess.
-  RCP<vector_type> gl_approxSolVector = rcp (new vector_type (globalMapG));
-  gl_approxSolVector->putScalar (STS::zero ());
+  RCP<vector_type> gl_approxSolVector = rcp (new vector_type (*globalMapG));
+  err = gl_approxSolVector->PutScalar (STS::zero ());
+  TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error,
+    "Epetra_Vector::PutScalar on process " << myRank
+    "failed with error code " << err << ".");
 
   // Store the output pointers.
   A = gl_StiffMatrix;
@@ -1072,12 +1203,29 @@ exactResidualNorm (const Teuchos::RCP<const sparse_matrix_type>& A,
   using Teuchos::rcp;
   typedef Teuchos::ScalarTraits<ST> STS;
   typedef STS::magnitudeType MT;
+  typedef Teuchos::ScalarTraits<MT> STM;
 
-  RCP<vector_type> R = rcp (new vector_type (*B)); // R := B
-  // R := 1.0*R - 1.0*A*X_exact.
-  A->apply (*X_exact, *R, Teuchos::NO_TRANS, -STS::one(), STS::one());
+  RCP<vector_type> R = rcp (new vector_type (B->Map ()));
+  // R := A*X_exact
+  int err = A->Apply (*X_exact, *R);
+  TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "exactResidualNorm: "
+    "Epetra_Operator::Apply failed with error code " << err << ".");
 
-  return std::make_pair (R->norm2 (), B->norm2 ());
+  // R := -1*R + 1*B == B - A*X_exact
+  err = R->Update (-STS::one(), *B, STS::one());
+  TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "exactResidualNorm: "
+    "Epetra_MultiVector::Update failed with error code " << err << ".");
+
+  MT R_norm = STM::zero();
+  MT B_norm = STM::zero();
+  err = R->Norm2 (&R_norm);
+  TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "exactResidualNorm: "
+    "Epetra_MultiVector::Norm2 failed with error code " << err << ".");
+  err = B->Norm2 (&B_norm);
+  TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "exactResidualNorm: "
+    "Epetra_MultiVector::Norm2 failed with error code " << err << ".");
+
+  return std::make_pair (R_norm, B_norm);
 }
 
 /**********************************************************************************/
@@ -1344,4 +1492,4 @@ evaluateExactSolutionGrad (ArrayOut&      exactSolutionGradValues,
 }
 
 
-} // namespace TpetraIntrepidPoissonExample
+} // namespace EpetraIntrepidPoissonExample
