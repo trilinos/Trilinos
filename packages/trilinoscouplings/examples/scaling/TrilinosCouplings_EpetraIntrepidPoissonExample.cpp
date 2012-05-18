@@ -28,7 +28,34 @@
 // ************************************************************************
 // @HEADER
 
+// TrilinosCouplings includes
+#include <TrilinosCouplings_config.h>
+
+// Intrepid includes
+#include <Intrepid_FunctionSpaceTools.hpp>
+#include <Intrepid_CellTools.hpp>
+#include <Intrepid_ArrayTools.hpp>
+#include <Intrepid_HGRAD_HEX_C1_FEM.hpp>
+#include <Intrepid_RealSpaceTools.hpp>
+#include <Intrepid_DefaultCubatureFactory.hpp>
+#include <Intrepid_Utils.hpp>
+
+// Teuchos includes
+//#include <Teuchos_TimeMonitor.hpp>
+
+// Shards includes
+#include <Shards_CellTopology.hpp>
+
+// Pamgen includes
+#include <create_inline_mesh.h>
+#include <im_exodusII_l.h>
+#include <im_ne_nemesisI_l.h>
+#include <pamgen_extras.h>
+
+// Sacado includes
 #include <Sacado.hpp>
+
+// My includes
 #include "TrilinosCouplings_EpetraIntrepidPoissonExample.hpp"
 #include "Epetra_IntVector.h"
 
@@ -599,7 +626,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
       //"WORKSET CELL" loop: local cell ordinal is relative to numElems
       for (int cell = worksetBegin; cell < worksetEnd; ++cell) {
         // Compute cell ordinal relative to the current workset
-        int worksetCellOrdinal = cell - worksetBegin;
+        //int worksetCellOrdinal = cell - worksetBegin;
 
         // "CELL EQUATION" loop for the workset cell: cellRow is
         // relative to the cell DoF numbering

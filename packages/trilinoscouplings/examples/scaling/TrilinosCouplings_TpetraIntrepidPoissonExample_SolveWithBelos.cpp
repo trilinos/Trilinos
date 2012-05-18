@@ -30,6 +30,7 @@
 
 #include "TrilinosCouplings_IntrepidPoissonExample_SolveWithBelos.hpp"
 #include "TrilinosCouplings_TpetraIntrepidPoissonExample.hpp"
+#include <BelosTpetraAdapter.hpp>
 
 
 namespace TrilinosCouplings {

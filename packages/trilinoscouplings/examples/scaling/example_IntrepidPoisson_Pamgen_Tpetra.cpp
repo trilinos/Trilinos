@@ -69,7 +69,7 @@ main (int argc, char *argv[])
 {
   using namespace TrilinosCouplings; // Yes, this means I'm lazy.
 
-  using TpetraIntrepidExample::exactResidualNorm;
+  using TpetraIntrepidPoissonExample::exactResidualNorm;
   using TpetraIntrepidPoissonExample::makeMatrixAndRightHandSide;
   using IntrepidPoissonExample::makeMeshInput;
   using IntrepidPoissonExample::setCommandLineArgumentDefaults;
@@ -96,7 +96,7 @@ main (int argc, char *argv[])
   Teuchos::oblackholestream blackHole;
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
   const int myRank = mpiSession.getRank ();
-  const int numProcs = mpiSession.getNProc ();
+  //const int numProcs = mpiSession.getNProc ();
 
   // Get the default communicator and Kokkos Node instance
   RCP<const Comm<int> > comm =

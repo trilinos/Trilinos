@@ -98,7 +98,7 @@ namespace IntrepidPoissonExample {
 /// \param M_right [in] If nonnull, a right preconditioner that the
 ///   iterative method may use.  If null, the iterative method will
 ///   not use a right preconditioner.
-template<class ST, MV, OP>
+template<class ST, class MV, class OP>
 void
 solveWithBelos (bool& converged,
                 int& numItersPerformed,
@@ -128,7 +128,7 @@ solveWithBelos (bool& converged,
     "be nonnull.");
   const int numColsB = MVT::GetNumberVecs (*B);
   const int numColsX = MVT::GetNumberVecs (*X);
-  TEUCHOS_TEST_FOR_EXCEPTION(numCols != numColsX, std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION(numColsB != numColsX, std::invalid_argument,
     "solveWithBelos: X and B must have the same number of columns.  X has "
     << numColsX << " columns, but B has " << numColsB << " columns.");
 

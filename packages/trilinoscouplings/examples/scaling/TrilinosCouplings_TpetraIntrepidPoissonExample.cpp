@@ -28,7 +28,34 @@
 // ************************************************************************
 // @HEADER
 
+// TrilinosCouplings includes
+#include <TrilinosCouplings_config.h>
+
+// Intrepid includes
+#include <Intrepid_FunctionSpaceTools.hpp>
+#include <Intrepid_CellTools.hpp>
+#include <Intrepid_ArrayTools.hpp>
+#include <Intrepid_HGRAD_HEX_C1_FEM.hpp>
+#include <Intrepid_RealSpaceTools.hpp>
+#include <Intrepid_DefaultCubatureFactory.hpp>
+#include <Intrepid_Utils.hpp>
+
+// Teuchos includes
+//#include <Teuchos_TimeMonitor.hpp>
+
+// Shards includes
+#include <Shards_CellTopology.hpp>
+
+// Pamgen includes
+#include <create_inline_mesh.h>
+#include <im_exodusII_l.h>
+#include <im_ne_nemesisI_l.h>
+#include <pamgen_extras.h>
+
+// Sacado includes
 #include <Sacado.hpp>
+
+// My includes
 #include "TrilinosCouplings_TpetraIntrepidPoissonExample.hpp"
 
 
@@ -601,7 +628,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
       //"WORKSET CELL" loop: local cell ordinal is relative to numElems
       for (int cell = worksetBegin; cell < worksetEnd; ++cell) {
         // Compute cell ordinal relative to the current workset
-        int worksetCellOrdinal = cell - worksetBegin;
+        //int worksetCellOrdinal = cell - worksetBegin;
 
         // "CELL EQUATION" loop for the workset cell: cellRow is
         // relative to the cell DoF numbering
@@ -1010,12 +1037,12 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     size_t NumEntries = 0;
 
     // Zero the columns corresponding to Dirichlet BCs.
-    for (LO i = 0; i < gl_StiffMatrix->getNodeNumRows (); ++i) {
+    for (LO i = 0; i < as<int> (gl_StiffMatrix->getNodeNumRows ()); ++i) {
       NumEntries = gl_StiffMatrix->getNumEntriesInLocalRow (i);
       values.resize (NumEntries);
       indices.resize (NumEntries);
       gl_StiffMatrix->getLocalRowCopy (i, indices (), values (), NumEntries);
-      for (int j = 0; j < NumEntries; ++j) {
+      for (int j = 0; j < as<int> (NumEntries); ++j) {
         if (myColsToZeroArrayRCP[indices[j]] == 1)
           values[j] = STS::zero ();
       }
@@ -1030,7 +1057,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
       gl_StiffMatrix->getLocalRowCopy (BCNodes[i], indices (), values (), NumEntries);
       const GO globalRow = gl_StiffMatrix->getRowMap ()->getGlobalElement (BCNodes[i]);
       const LO localCol = gl_StiffMatrix->getColMap ()->getLocalElement (globalRow);
-      for (int j = 0; j < NumEntries; ++j) {
+      for (int j = 0; j < as<int> (NumEntries); ++j) {
         values[j] = STS::zero ();
         if (indices[j] == localCol) {
           values[j] = STS::one ();
