@@ -130,3 +130,25 @@ IF(Trilinos_ENABLE_AztecOO AND
     )
 ENDIF()
 
+# mfh 18 May 2012
+#
+# Just build this executable; don't run it as a test (yet).
+#
+# Intrepid has required dependencies on Teuchos, Shards, and Sacado,
+# so we don't have to name those packages explicitly here.
+# Belos and Tpetra also both have required dependencies on Teuchos.
+IF(Trilinos_ENABLE_Belos AND
+   Trilinos_ENABLE_Intrepid AND
+   Trilinos_ENABLE_Pamgen AND
+   Trilinos_ENABLE_Tpetra)
+  TRIBITS_ADD_EXECUTABLE(
+    example_IntrepidPoisson_Pamgen_Tpetra
+    SOURCES example_IntrepidPoisson_Pamgen_Tpetra.cpp
+      TrilinosCouplings_IntrepidPoissonExampleHelpers.cpp
+      TrilinosCouplings_TpetraIntrepidPoissonExample.cpp
+      TrilinosCouplings_TpetraIntrepidPoissonExample_SolveWithBelos.cpp
+    COMM serial mpi
+    DEPLIBS belos intrepid pamgen tpetra
+    ADD_DIR_TO_NAME
+    )
+ENDIF()
