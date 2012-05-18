@@ -142,8 +142,8 @@ IF(Trilinos_ENABLE_Belos AND
    Trilinos_ENABLE_Pamgen AND
    Trilinos_ENABLE_Tpetra)
   TRIBITS_ADD_EXECUTABLE(
-    example_IntrepidPoisson_Pamgen_Tpetra
-    SOURCES example_IntrepidPoisson_Pamgen_Tpetra.cpp
+    IntrepidPoisson_Pamgen_Tpetra
+    SOURCES IntrepidPoisson_Pamgen_Tpetra_main.cpp
       TrilinosCouplings_IntrepidPoissonExampleHelpers.cpp
       TrilinosCouplings_TpetraIntrepidPoissonExample.cpp
       TrilinosCouplings_TpetraIntrepidPoissonExample_SolveWithBelos.cpp
