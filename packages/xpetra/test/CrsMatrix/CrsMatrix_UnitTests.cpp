@@ -11,12 +11,6 @@
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
-#ifdef HAVE_MPI
-#  include "Epetra_MpiComm.h"
-#  include "mpi.h"
-#endif
-#  include "Epetra_SerialComm.h"
-
 #include <Xpetra_ConfigDefs.hpp>
 
 #ifdef HAVE_XPETRA_EPETRAEXT
