@@ -32,8 +32,7 @@ namespace Zoltan2
  *  \param  recvBuf  On return, recvBuf has been allocated and contains
  *                   the packets sent to this process by others.
  *
- * The data type T must be a type for which SerializationTraits are defined
- * in Teuchos.
+ * The data type T must be a type for which assignment is defined.
  *
  * AlltoAll uses only point-to-point messages.  This is to avoid the MPI 
  * limitation of integer offsets and counters in collective operations.
@@ -81,9 +80,12 @@ void AlltoAll(const Comm<int> &comm,
       "message size exceeds MPI limit (sizes, offsets, counts are ints) ",
       packetSize <= INT_MAX, BASIC_ASSERTION, rcp(&comm, false));
 
-  Array<ArrayRCP<const T> > sendArray(nprocs);
+  const char *sbuf = reinterpret_cast<const char *>(sptr);
+  char *rbuf = reinterpret_cast<char *>(rptr);
+
+  Array<ArrayRCP<const char> > sendArray(nprocs);
   for (int p=0; p < nprocs; p++){
-    sendArray[p] = arcp(sptr + p*count, 0, count, false);
+    sendArray[p] = arcp(sbuf + p*packetSize, 0, packetSize, false);
   }
   
   for (int p=1; p < nprocs; p++){
@@ -91,12 +93,12 @@ void AlltoAll(const Comm<int> &comm,
     int sendTo = (rank + p) % nprocs;
 
     try{  // Non blocking send
-      Teuchos::isend<int, T>(comm, sendArray[sendTo], sendTo);
+      Teuchos::isend<int, char>(comm, sendArray[sendTo], sendTo);
     }
     Z2_THROW_OUTSIDE_ERROR(env);
 
     try{  // blocking receive for msg just sent to me
-      Teuchos::receive<int, T>(comm, recvFrom, count, rptr + recvFrom*count);
+      Teuchos::receive<int, char>(comm, recvFrom, packetSize, rbuf + recvFrom*packetSize);
     }
     Z2_THROW_OUTSIDE_ERROR(env);
   }
@@ -141,8 +143,8 @@ void AlltoAllv(const Comm<int> &comm,
   size_t maxMsg=0;
 
   for (int i=0; i < nprocs; i++){
-    offsetIn[i+1] = offsetIn[i] + recvCount[i];
-    offsetOut[i+1] = offsetOut[i] + sendCount[i];
+    offsetIn[i+1] = offsetIn[i] + (recvCount[i]*sizeof(T));
+    offsetOut[i+1] = offsetOut[i] + (sendCount[i]*sizeof(T));
     if (recvCount[i] > maxMsg)
       maxMsg = recvCount[i];
     if (sendCount[i] > maxMsg)
@@ -151,20 +153,20 @@ void AlltoAllv(const Comm<int> &comm,
 
   env.globalInputAssertion(__FILE__, __LINE__,
     "message size exceeds MPI limit (sizes, offsets, counts are ints) ",
-    maxMsg <= INT_MAX, BASIC_ASSERTION, rcp(&comm, false));
+    maxMsg*sizeof(T) <= INT_MAX, BASIC_ASSERTION, rcp(&comm, false));
 
   size_t totalIn = offsetIn[nprocs];
 
-  T *rptr = NULL;
+  char *rptr = NULL;
   if (totalIn){
-    rptr = new T [totalIn]; 
+    rptr = new char [totalIn]; 
   }
   env.globalMemoryAssertion(__FILE__, __LINE__, totalIn, !totalIn||rptr, 
     rcp(&comm, false));
 
-  recvBuf = Teuchos::arcp<T>(rptr, 0, totalIn, true);
+  recvBuf = Teuchos::arcp<T>(reinterpret_cast<T *>(rptr), 0, totalIn/sizeof(T), true);
 
-  const T *sptr = sendBuf.getRawPtr();
+  const char *sptr = reinterpret_cast<const char *>(sendBuf.getRawPtr());
 
   // Copy self messages
 
@@ -176,10 +178,10 @@ void AlltoAllv(const Comm<int> &comm,
 
 #ifdef HAVE_ZOLTAN2_MPI
 
-  Array<ArrayRCP<const T> > sendArray(nprocs);
+  Array<ArrayRCP<const char> > sendArray(nprocs);
   for (int p=0; p < nprocs; p++){
     if (sendCount[p] > 0)
-      sendArray[p] = arcp(sptr + offsetOut[p], 0, sendCount[p], false);
+      sendArray[p] = arcp(sptr + offsetOut[p], 0, sendCount[p]*sizeof(T), false);
   }
 
   for (int p=1; p < nprocs; p++){
@@ -188,14 +190,14 @@ void AlltoAllv(const Comm<int> &comm,
 
     if (sendCount[sendTo] > 0){
       try{  // non blocking send
-        Teuchos::isend<int, T>(comm, sendArray[sendTo], sendTo);
+        Teuchos::isend<int, char>(comm, sendArray[sendTo], sendTo);
       }
       Z2_THROW_OUTSIDE_ERROR(env);
     }
 
     if (recvCount[recvFrom] > 0){
       try{  // blocking receive for message just sent to me
-        Teuchos::receive<int, T>(comm, recvFrom, recvCount[recvFrom], 
+        Teuchos::receive<int, char>(comm, recvFrom, recvCount[recvFrom]*sizeof(T),
            rptr + offsetIn[recvFrom]);
       }
       Z2_THROW_OUTSIDE_ERROR(env);
