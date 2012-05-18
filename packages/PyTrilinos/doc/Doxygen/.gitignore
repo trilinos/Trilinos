@@ -8,6 +8,7 @@
 .deps/Komplex_dox.Pi
 .deps/ML_dox.Pi
 .deps/NOX_dox.Pi
+.deps/Percept_dox.Pi
 .deps/Teuchos_dox.Pi
 .deps/TriUtils_dox.Pi
 Amesos
@@ -20,5 +21,6 @@ IFPACK
 Komplex
 ML
 NOX
+Percept
 Teuchos
 TriUtils

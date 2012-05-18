@@ -176,6 +176,9 @@ namespace std
 
 %feature("autodoc", 1);
 
+// Include Percept documentation
+%include "Percept_dox.i"
+
 //from Teuchos
 %include Teuchos_RCPDecl.hpp
 %template(RCPFunction) Teuchos::RCP<stk::percept::Function>;
@@ -331,6 +334,8 @@ namespace std
 %feature("docstring") PerceptMesh "Create a PerceptMesh.";
 %feature("docstring") GMeshSpec "Specify the mesh to be created by passing in a string, e.g. '3x3x3|bbox:0,0,0,1,1,1'.";
 %feature("docstring") newMesh "Create a new mesh object by passing in a GMeshSpec.";
+
+
 %include PerceptMesh.hpp
 
 //from stk_percept/function/internal
@@ -501,3 +506,6 @@ WEDGE6_WEDGE6_8";
   void __basePatterns__() {  //here we add a dummy function for documentation purposes
   }
 }
+
+
+
