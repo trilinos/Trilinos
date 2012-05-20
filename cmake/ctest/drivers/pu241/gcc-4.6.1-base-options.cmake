@@ -36,11 +36,8 @@ ENDIF()
 # To avoid problem with EpetraExt_inout_test failure in optimized code for hybrid build
 SET(Epetra_ENABLE_Fortran OFF CACHE BOOL "")
 
-# Turn on shared libraries because we need to save on the size of the executables
-SET(BUILD_SHARED_LIBS ON CACHE BOOL "")
-
-# Turn off BinUtils by default so we can do shared libraries
-SET(TPL_ENABLE_BinUtils OFF CACHE BOOL "")
+# This compiler supports BinUtils
+SET(TPL_ENABLE_BinUtils ON CACHE BOOL "")
 
 # Point to basic CASL-related TPLs related to the GCC C/C++ 4.6.1 compiler
 # SET(PVMLibraries_LIBRARY_DIRS /opt/gcc-4.6.1/tpls/pvm3/lib/LINUX64 CACHE FILEPATH "")
