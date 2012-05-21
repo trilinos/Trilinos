@@ -954,8 +954,8 @@ namespace Tpetra {
       RCP<const Graph> staticGraph_;
       RCP<      Graph>     myGraph_;
 
-      Kokkos::CrsMatrix<Scalar,LocalOrdinal,Node,LocalMatOps> lclMatrix_;
-      typename LocalMatOps::template rebind<Scalar>::other    lclMatOps_;
+      typename LocalMatOps::template matrix<Scalar,LocalOrdinal,Node>::other  lclMatrix_;
+      typename LocalMatOps::template rebind<Scalar>::other                    lclMatOps_;
 
       // matrix values. before allocation, both are null.
       // after allocation, one is null.

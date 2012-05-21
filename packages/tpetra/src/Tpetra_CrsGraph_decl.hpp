@@ -738,7 +738,8 @@ namespace Tpetra {
       RCP<Export<LocalOrdinal,GlobalOrdinal,Node> > exporter_;
 
       // local data, stored in a Kokkos::CrsGraph. only initialized after fillComplete()
-      Kokkos::CrsGraph<LocalOrdinal,Node,LocalMatOps> lclGraph_;
+      typename LocalMatOps::template graph<LocalOrdinal,Node>::other lclGraph_;
+      
 
       // Local and Global Counts
       // nodeNumEntries_ and nodeNumAllocated_ are required to be always consistent

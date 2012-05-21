@@ -51,9 +51,10 @@
 
 int main() {
 
-  typedef Kokkos::DefaultNode::DefaultNodeType                 Node;
-  typedef KokkosExamples::DummySparseKernel<Node>         SparseOps;
-  typedef Kokkos::CrsGraph <       int,Node,SparseOps>        Graph;
+  typedef Kokkos::DefaultNode::DefaultNodeType                        Node;
+  typedef KokkosExamples::DummySparseKernel<double,int,Node>     SparseOps;
+  typedef typename SparseOps::template graph<int,double>::type       Graph;
+  // HERE: FINISH
   typedef Kokkos::CrsMatrix<double,int,Node,SparseOps>    DoubleMat;
   typedef Kokkos::CrsMatrix< float,int,Node,SparseOps>     FloatMat;
   typedef Kokkos::MultiVector<double,Node>                DoubleVec;
