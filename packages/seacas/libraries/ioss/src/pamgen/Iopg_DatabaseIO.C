@@ -2015,14 +2015,12 @@ void separate_surface_element_sides(Ioss::IntVector &element,
     const Ioss::ElementTopology *common_ftopo = NULL;
     const Ioss::ElementTopology *topo = NULL; // Topology of current side
     int current_side = -1;
-    int my_side_count = 0;
 
     for (size_t iel = 0; iel < element.size(); iel++) {
       int elem_id = element[iel];
       if (block == NULL || !block->contains(elem_id)) {
 	block = region->get_element_block(elem_id);
 	assert(block != NULL);
-	my_side_count = block->topology()->number_boundaries();
 
 	// NULL if hetero sides on element
 	common_ftopo = block->topology()->boundary_type(0);
@@ -2033,7 +2031,6 @@ void separate_surface_element_sides(Ioss::IntVector &element,
 
       if (common_ftopo == NULL && sides[iel] != current_side) {
 	current_side = sides[iel];
-	assert(current_side > 0 && current_side <= my_side_count);
 	topo = block->topology()->boundary_type(sides[iel]);
 	assert(topo != NULL);
       }
@@ -2057,7 +2054,6 @@ void separate_surface_element_sides(Ioss::IntVector &element,
 	side_map[name_topo] = 999;
       }
     }
-    (void)my_side_count;
   }
 }
 

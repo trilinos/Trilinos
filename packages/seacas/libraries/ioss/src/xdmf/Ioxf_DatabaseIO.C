@@ -1046,19 +1046,8 @@ namespace Ioxf {
     // and add suffix to base 'field_name'.  Look up index
     // of this name in 'elementVariables' map
     int comp_count = var_type->component_count();
-    int var_index=0;
     for (int i=0; i < comp_count; i++) {
       std::string var_name = var_type->label_name(field.get_name(), i+1, fieldSuffixSeparator);
-      DatabaseIO *new_this = const_cast<DatabaseIO*>(this);
-
-      if (type[0] == 'E')
-	var_index = new_this->elementVariables[var_name];
-      else if (type[0] == 'M')
-	var_index = new_this->nodesetVariables[var_name];
-      else if (type[0] == 'S')
-	var_index = new_this->sidesetVariables[var_name];
-
-      assert(var_index > 0);
 
       // Transfer from 'variables' array.  Note that the
       // 'reorderElementMap has '1..numel' ids in it, but the 'temp'
