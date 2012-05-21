@@ -68,9 +68,17 @@ namespace sg_utils {
                              const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > & expansion,
                              panzer::Traits::SGResidual::ScalarT & value)
    { 
-      TEUCHOS_ASSERT(!Teuchos::is_null(expansion)); // fail if expansion is null
+      value = 0.0; // initialize value
 
-      value = 0.0;
+      // if expansion is null, do something sensible
+      if(Teuchos::is_null(expansion)) {
+         if(in_vector.size()>0)
+            value = in_vector[0];
+         return;
+      }
+
+      TEUCHOS_ASSERT(!Teuchos::is_null(expansion)); // fail if expansion is null: should never happen
+
       value.reset(expansion); // jamb in expansion here
       value.copyForWrite();
 
@@ -88,7 +96,16 @@ namespace sg_utils {
                              const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > & expansion,
                              panzer::Traits::SGJacobian::ScalarT & value)
    { 
-      TEUCHOS_ASSERT(!Teuchos::is_null(expansion)); // fail if expansion is null
+      value = 0.0; // initialize value
+
+      // if expansion is null, do something sensible
+      if(Teuchos::is_null(expansion)) {
+         if(in_vector.size()>0)
+            value = in_vector[0];
+         return;
+      }
+
+      TEUCHOS_ASSERT(!Teuchos::is_null(expansion)); // fail if expansion is null: should never happen
 
       value = 0.0;
       value.val().reset(expansion); // jamb in expansion here
