@@ -22,7 +22,7 @@ class PerceptMeshUnitTests(unittest.TestCase):
        gmesh_spec = "4x4x" + str((4*p_size)) + "|bbox:0,0,0,1,1,1"
        eMesh.newMesh(GMeshSpec(gmesh_spec))
        eMesh.commit()
-       eMesh.saveAs("hex_fixture.e")
+       eMesh.saveAs("./exodus_files/hex_fixture.e")
 
     def fixture_setup_1(self):
 
@@ -37,7 +37,7 @@ class PerceptMeshUnitTests(unittest.TestCase):
          
          eMesh = PerceptMesh(fixture.meta_data, fixture.bulk_data)
          eMesh.printInfo("quad fixture", 2)
-         eMesh.saveAs("quad_fixture.e")
+         eMesh.saveAs("./exodus_files/quad_fixture.e")
        
        if p_size <= 2:
          n = 12
@@ -50,7 +50,7 @@ class PerceptMeshUnitTests(unittest.TestCase):
 
          eMesh = PerceptMesh(fixture.meta_data, fixture.bulk_data)
          eMesh.printInfo("quad fixture no sidesets", 2)
-         eMesh.saveAs("quad_fixture_no_sidesets.e")
+         eMesh.saveAs("./exodus_files/quad_fixture_no_sidesets.e")
 
     def fixture_setup(self): 
        if self.is_setup == 1:
@@ -124,13 +124,13 @@ class PerceptMeshUnitTests(unittest.TestCase):
 
       if p_size <= 2:
         eMesh_0 = PerceptMesh(2)
-        eMesh_0.openReadOnly("quad_fixture.e")
-        eMesh_0.saveAs("quad_fixture_readwrite.e")
+        eMesh_0.openReadOnly("./exodus_files/quad_fixture.e")
+        eMesh_0.saveAs("./exodus_files/quad_fixture_readwrite.e")
 
         eMesh_1 = PerceptMesh(2)
         eMesh_2 = PerceptMesh(2)
-        eMesh_1.openReadOnly("quad_fixture_readwrite.e")
-        eMesh_2.openReadOnly("quad_fixture.e")
+        eMesh_1.openReadOnly("./exodus_files/quad_fixture_readwrite.e")
+        eMesh_2.openReadOnly("./exodus_files/quad_fixture.e")
 
       if p_size == 1:
         add_newlines = False
@@ -170,7 +170,7 @@ class PerceptMeshUnitTests(unittest.TestCase):
 
       if p_size <= 2:
         eMesh = PerceptMesh(2)
-        eMesh.open("quad_fixture.e")
+        eMesh.open("./exodus_files/quad_fixture.e")
 
         vectorDimension = 0
         eMesh.addField("coords_mag_field", FEMMetaData.NODE_RANK, vectorDimension)
@@ -194,7 +194,7 @@ class PerceptMeshUnitTests(unittest.TestCase):
 
         coords_mag_field_function.interpolateFrom(coords_mag_sf)
 
-        eMesh.saveAs("./quad_fixture_with_coords_mag.e")
+        eMesh.saveAs("./exodus_files/quad_fixture_with_coords_mag.e")
 
         ff_coords.addAlias("mc")
 
@@ -248,18 +248,18 @@ class PerceptMeshUnitTests(unittest.TestCase):
 
       if p_size <= 2:
         eMesh = PerceptMesh(2)
-        eMesh.open("time-dep.e")
+        eMesh.open("./exodus_files/time-dep.e")
         eMesh.commit()
 
         Tnd_field = eMesh.getField("Tnd")
 
         # // entity data setter/getters
-        eMesh.readBulkDataAtTime(0.0)
+        eMesh.readDatabaseAtTime(0.0)
         node = eMesh.get_node(2,2)
         self.assertTrue(node != 0)
         t0 = eMesh.get_field_data(Tnd_field, node)
         self.assertTrue(t0 == 0.0)
-        eMesh.readBulkDataAtTime(1.0)
+        eMesh.readDatabaseAtTime(1.0)
         t1 = eMesh.get_field_data(Tnd_field, node)
         self.assertTrue(t1 == 11.0)
         

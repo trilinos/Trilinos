@@ -297,15 +297,15 @@ namespace stk {
 
       /// set the current data in fields to the given time or Exodus step (if time supplied, finds the closest step to
       /// that time (no interpolation yet)
-      void readBulkDataAtTime(double time);
-      void readBulkDataAtStep(int step);
+      void readDatabaseAtTime(double time);
+      void readDatabaseAtStep(int step);
 
       /// return the current state of the Exodus database, 0 if not loaded yet (steps are 1-based in Exodus)
       int getCurrentDatabaseStep();
       double getCurrentDatabaseTime();
 
-      /// return the step number closest to specified time, thus readBulkDataAtTime(time) is equivalent to
-      ///   readBulkDataAtStep(getDatabaseStepAtTime(time))
+      /// return the step number closest to specified time, thus readDatabaseAtTime(time) is equivalent to
+      ///   readDatabaseAtStep(getDatabaseStepAtTime(time))
       int getDatabaseStepAtTime(double time);
       /// return the state time associated with given step
       double getDatabaseTimeAtStep(int step);

@@ -1624,7 +1624,7 @@ namespace stk {
       if (getDatabaseTimestepCount() == 0)
         step = 0;
 
-      readBulkDataAtStep(step);
+      readDatabaseAtStep(step);
 #else
       //std::cout << "PerceptMesh::readBulkData() " << std::endl;
       if (m_fixture || m_isAdopted)
@@ -1708,13 +1708,13 @@ namespace stk {
       return step_min+1;
     }
 
-    void PerceptMesh::readBulkDataAtStep(int step)
+    void PerceptMesh::readDatabaseAtStep(int step)
     {
       EXCEPTWATCH;
-      std::cout << "PerceptMesh::readBulkDataAtStep() " << std::endl;
+      std::cout << "PerceptMesh::readDatabaseAtStep() " << std::endl;
       if (m_fixture || m_isAdopted)
         {
-          std::cout << "PerceptMesh::readBulkDataAtStep() m_fixture " << std::endl;
+          std::cout << "PerceptMesh::readDatabaseAtStep() m_fixture " << std::endl;
           return;
         }
 
@@ -1735,8 +1735,8 @@ namespace stk {
 
       if ((timestep_count > 0 && step <= 0) || (step > timestep_count))
         {
-          std::cout << "step is out of range for PerceptMesh::readBulkDataAtStep, step="+toString(step)+" timestep_count= "+toString(timestep_count) << std::endl;
-          throw std::runtime_error("step is out of range for PerceptMesh::readBulkDataAtStep, step="+toString(step)+" timestep_count= "+toString(timestep_count));
+          std::cout << "step is out of range for PerceptMesh::readDatabaseAtStep, step="+toString(step)+" timestep_count= "+toString(timestep_count) << std::endl;
+          throw std::runtime_error("step is out of range for PerceptMesh::readDatabaseAtStep, step="+toString(step)+" timestep_count= "+toString(timestep_count));
         }
       // FIXME
       m_exodusStep = step;
@@ -1744,19 +1744,19 @@ namespace stk {
       stk::io::process_input_request(mesh_data, bulk_data, step);
     }
 
-    void PerceptMesh::readBulkDataAtTime(double time)
+    void PerceptMesh::readDatabaseAtTime(double time)
     {
-      std::cout << "PerceptMesh::readBulkDataAtTime() " << std::endl;
+      std::cout << "PerceptMesh::readDatabaseAtTime() " << std::endl;
       if (m_fixture || m_isAdopted)
         {
-          std::cout << "PerceptMesh::readBulkDataAtTime() m_fixture " << std::endl;
+          std::cout << "PerceptMesh::readDatabaseAtTime() m_fixture " << std::endl;
           return;
         }
 
       int step = getDatabaseStepAtTime(time);
 
       // Exodus steps are 1-based;
-      readBulkDataAtStep(step);
+      readDatabaseAtStep(step);
     }
 
     /// Convenience method to read a model's meta data, create some new fields, commit meta data then read the bulk data

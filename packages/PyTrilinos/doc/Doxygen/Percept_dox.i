@@ -593,6 +593,43 @@ codomain_dimensions=Dimensions(), unsigned integration_order=0) ";
 &v) ";
 
 
+// File: classCPPArray.xml
+%feature("docstring") CPPArray "";
+
+%feature("docstring")  CPPArray::dimension "const unsigned CPPArray<
+D0, D1, D2, T >::dimension(const unsigned d) const ";
+
+%feature("docstring")  CPPArray::rank "const unsigned CPPArray< D0,
+D1, D2, T >::rank() const ";
+
+%feature("docstring")  CPPArray::dimension "const unsigned CPPArray<
+D0, D1, D2, T >::dimension(const unsigned d) ";
+
+%feature("docstring")  CPPArray::rank "const unsigned CPPArray< D0,
+D1, D2, T >::rank() const ";
+
+%feature("docstring")  CPPArray::CPPArray "CPPArray< D0, D1, D2, T
+>::CPPArray() ";
+
+%feature("docstring")  CPPArray::init "void CPPArray< D0, D1, D2, T
+>::init() ";
+
+%feature("docstring")  CPPArray::dimension "const unsigned CPPArray<
+D0, D1, D2, T >::dimension(const unsigned d) const ";
+
+%feature("docstring")  CPPArray::rank "const unsigned CPPArray< D0,
+D1, D2, T >::rank() const ";
+
+%feature("docstring")  CPPArray::CPPArray "CPPArray< D0, D1, D2, T
+>::CPPArray() ";
+
+%feature("docstring")  CPPArray::dimension "const unsigned CPPArray<
+D0, D1, D2, T >::dimension(const unsigned d) const ";
+
+%feature("docstring")  CPPArray::rank "const unsigned CPPArray< D0,
+D1, D2, T >::rank() const ";
+
+
 // File: classstk_1_1percept_1_1IntrepidManager_1_1CubaturePoints.xml
 %feature("docstring") stk::percept::IntrepidManager::CubaturePoints "
 
@@ -634,6 +671,10 @@ stk::percept::IntrepidManager::CubatureWeights::CubatureWeights "stk::percept::I
 %feature("docstring")  stk::percept::Dimensions::Dimensions "stk::percept::Dimensions::Dimensions(int i0, int i1) ";
 
 %feature("docstring")  stk::percept::Dimensions::Dimensions "stk::percept::Dimensions::Dimensions(int i0, int i1, int i2) ";
+
+
+// File: classElementFunctor.xml
+%feature("docstring") ElementFunctor "";
 
 
 // File: classstk_1_1percept_1_1ElementOp.xml
@@ -805,6 +846,16 @@ each cell: ";
 
 // File: structstk_1_1percept_1_1unit__tests_1_1FindMapItem2.xml
 %feature("docstring") stk::percept::unit_tests::FindMapItem2 "";
+
+
+// File: classFlux__.xml
+%feature("docstring") Flux_ "";
+
+%feature("docstring")  Flux_::Flux_ "Flux_< Mu, Mu2, Temperature
+>::Flux_(Mu mu, Mu2 mu2, Temperature temperature) ";
+
+%feature("docstring")  Flux_::Flux_ "Flux_< Mu, Mu2, Temperature
+>::Flux_(Mu mu, Mu2 mu2, Temperature temperature) ";
 
 
 // File: classstk_1_1percept_1_1Function.xml
@@ -1129,6 +1180,10 @@ Jacobian's sign by testing it at all the cubature points ";
 %feature("docstring")  stk::percept::GMeshSpec::GMeshSpec "stk::percept::GMeshSpec::GMeshSpec(const std::string &name) ";
 
 
+// File: classGRAD.xml
+%feature("docstring") GRAD "";
+
+
 // File: classstk_1_1percept_1_1HasConstValue.xml
 %feature("docstring") stk::percept::HasConstValue "";
 
@@ -1177,6 +1232,10 @@ stk::percept::HeterogeneousFixture::HeterogeneousFixture "stk::percept::Heteroge
 comm, bool doCommit=true, bool do_sidesets=false) ";
 
 %feature("docstring")  stk::percept::HeterogeneousFixture::populate "void stk::percept::HeterogeneousFixture::populate() ";
+
+
+// File: classHex__.xml
+%feature("docstring") Hex_ "";
 
 
 // File: classstk_1_1adapt_1_1IAdapter.xml
@@ -1278,6 +1337,10 @@ Following these examples we show the prototype for the operations that
 are performed on these predicates.
 
 C++ includes: IElementBasedAdapterPredicate.hpp ";
+
+
+// File: structInit.xml
+%feature("docstring") Init "";
 
 
 // File: classstk_1_1percept_1_1IntrepidManager_1_1Integral.xml
@@ -1506,6 +1569,10 @@ stk::percept::IntrepidManager::JacobianInverse::JacobianInverse "stk::percept::I
 %feature("docstring")
 stk::percept::l2NormOpScalarFunction::l2NormOpScalarFunction "stk::percept::l2NormOpScalarFunction::l2NormOpScalarFunction(Function
 &f) ";
+
+
+// File: classLine__.xml
+%feature("docstring") Line_ "";
 
 
 // File: classstk_1_1percept_1_1LN__NormOp.xml
@@ -1798,6 +1865,26 @@ stk::percept::minMaxAve::registerValue(unsigned id, double val) ";
 stk::percept::minMaxAve::finish(stk::mesh::BulkData &mesh) ";
 
 %feature("docstring")  stk::percept::minMaxAve::setStandardRanges "void stk::percept::minMaxAve::setStandardRanges() ";
+
+
+// File: classMu2__.xml
+%feature("docstring") Mu2_ "";
+
+%feature("docstring")  Mu2_::Mu2_ "Mu2_< Temperature
+>::Mu2_(Temperature temperature) ";
+
+%feature("docstring")  Mu2_::Mu2_ "Mu2_< Temperature
+>::Mu2_(Temperature temperature) ";
+
+
+// File: classMu__.xml
+%feature("docstring") Mu_ "";
+
+%feature("docstring")  Mu_::Mu_ "Mu_< Temperature >::Mu_(Temperature
+temperature) ";
+
+%feature("docstring")  Mu_::Mu_ "Mu_< Temperature >::Mu_(Temperature
+temperature) ";
 
 
 // File: classstk_1_1percept_1_1MultipleFieldFunction.xml
@@ -2380,6 +2467,10 @@ DATA_TYPE > &observer) ";
 stk::percept::Observer< DATA_TYPE >::notify(DATA_TYPE *data)=0 ";
 
 
+// File: classOnePointRule.xml
+%feature("docstring") OnePointRule "";
+
+
 // File: classstk_1_1percept_1_1ParallelMachineFinalize.xml
 %feature("docstring") stk::percept::ParallelMachineFinalize "";
 
@@ -2598,13 +2689,13 @@ Returns the side rank which changes depending on spatial dimension. ";
 Returns the element rank which is always equal to spatial dimension.
 ";
 
-%feature("docstring")  stk::percept::PerceptMesh::readBulkDataAtTime "void stk::percept::PerceptMesh::readBulkDataAtTime(double time)
+%feature("docstring")  stk::percept::PerceptMesh::readDatabaseAtTime "void stk::percept::PerceptMesh::readDatabaseAtTime(double time)
 
 set the current data in fields to the given time or Exodus step (if
 time supplied, finds the closest step to that time (no interpolation
 yet) ";
 
-%feature("docstring")  stk::percept::PerceptMesh::readBulkDataAtStep "void stk::percept::PerceptMesh::readBulkDataAtStep(int step) ";
+%feature("docstring")  stk::percept::PerceptMesh::readDatabaseAtStep "void stk::percept::PerceptMesh::readDatabaseAtStep(int step) ";
 
 %feature("docstring")
 stk::percept::PerceptMesh::getCurrentDatabaseStep "int
@@ -2622,8 +2713,8 @@ stk::percept::PerceptMesh::getDatabaseStepAtTime "int
 stk::percept::PerceptMesh::getDatabaseStepAtTime(double time)
 
 return the step number closest to specified time, thus
-readBulkDataAtTime(time) is equivalent to
-readBulkDataAtStep(getDatabaseStepAtTime(time)) ";
+readDatabaseAtTime(time) is equivalent to
+readDatabaseAtStep(getDatabaseStepAtTime(time)) ";
 
 %feature("docstring")
 stk::percept::PerceptMesh::getDatabaseTimeAtStep "double
@@ -3924,6 +4015,10 @@ void stk::percept::Searcher::setupSearch() ";
 stk::percept::Searcher::~Searcher() ";
 
 
+// File: classSENS.xml
+%feature("docstring") SENS "";
+
+
 // File: classstk_1_1adapt_1_1SerializeNodeRegistry.xml
 %feature("docstring") stk::adapt::SerializeNodeRegistry "";
 
@@ -4013,6 +4108,16 @@ Shape::area(void)=0 ";
 
 %feature("docstring")  Shape::perimeter "virtual double
 Shape::perimeter(void)=0 ";
+
+
+// File: classShape__.xml
+%feature("docstring") Shape_ "";
+
+%feature("docstring")  Shape_::Shape_ "Shape_< ElementType
+>::Shape_(ElementType element_type) ";
+
+%feature("docstring")  Shape_::Shape_ "Shape_< ElementType
+>::Shape_(ElementType element_type) ";
 
 
 // File: classstk_1_1percept_1_1ShardsInterfaceTable.xml
@@ -4268,6 +4373,42 @@ SDSEntityType > >::hashCode() ";
 %feature("docstring") stk::adapt::SubDimCellCompare "";
 
 
+// File: classstk_1_1utils_1_1SweepMesher.xml
+%feature("docstring") stk::utils::SweepMesher "
+
+A simple utility to product tensor product (line, quad, hex) meshes by
+sweeping as well as non-tensor product mesh by breaking into sub-
+elements (tri, tet, wedge, pyramid).
+
+Steve Kennon, Brian Carnes, Kevin Copps  Usage: initialize with a
+simple pair of node, element arrays, such as
+
+double coords[][3] = { {0,0,0}, {1,0,0}, {2,2,0}, {0,3,0}, {0,0,1},
+{1,0,1}, {2,2,1}, {0,3,1} };
+
+unsigned quad4Elems[] = { 0,1,2,3, 4,5,6,7 };
+
+SweepMesher tp; tp.initNodes(coords, 8); tp.initElems(elemType, // one
+of enum's defined below quad4Elems, 2);
+
+Then use sweep to create a hex mesh (this example breaks a quad to
+create two Tri's, then creates a mixed hex/wedge mesh)
+
+boost::array< double, 3> dir = {0,0,1}; std::vector<Transform *>
+xforms(1, &TransformDir( dir ) );
+
+// break one of the quads into tris unsigned quadElemIndex = 1;
+tp2.breakElem<SweepMesher::ET_Quad4,
+SweepMesher::ET_Tri3>(quadElemIndex); std::cout << \"after
+break\\\\n\"; tp2.dump();
+
+// sweep to make a hex mesh boost::array< double, 3> dir1 =
+{0,0,2.345}; xforms[0] = &TransformDir(dir1); tp2.sweep(
+SweepMesher::ET_Quad4, SweepMesher::ET_Hex8, xforms);
+
+C++ includes: SweepMesher.hpp ";
+
+
 // File: classstk_1_1percept_1_1SweepMesher.xml
 %feature("docstring") stk::percept::SweepMesher "";
 
@@ -4422,44 +4563,26 @@ stk::percept::SweepMesher::stkMeshCreateBulkAfterMetaCommit(stk::ParallelMachine
 stk::percept::SweepMesher::writeSTKMesh(const char *filename) ";
 
 
-// File: classstk_1_1utils_1_1SweepMesher.xml
-%feature("docstring") stk::utils::SweepMesher "
+// File: classTCoeff.xml
+%feature("docstring") TCoeff "";
 
-A simple utility to product tensor product (line, quad, hex) meshes by
-sweeping as well as non-tensor product mesh by breaking into sub-
-elements (tri, tet, wedge, pyramid).
+%feature("docstring")  TCoeff::TCoeff "TCoeff::TCoeff() ";
 
-Steve Kennon, Brian Carnes, Kevin Copps  Usage: initialize with a
-simple pair of node, element arrays, such as
-
-double coords[][3] = { {0,0,0}, {1,0,0}, {2,2,0}, {0,3,0}, {0,0,1},
-{1,0,1}, {2,2,1}, {0,3,1} };
-
-unsigned quad4Elems[] = { 0,1,2,3, 4,5,6,7 };
-
-SweepMesher tp; tp.initNodes(coords, 8); tp.initElems(elemType, // one
-of enum's defined below quad4Elems, 2);
-
-Then use sweep to create a hex mesh (this example breaks a quad to
-create two Tri's, then creates a mixed hex/wedge mesh)
-
-boost::array< double, 3> dir = {0,0,1}; std::vector<Transform *>
-xforms(1, &TransformDir( dir ) );
-
-// break one of the quads into tris unsigned quadElemIndex = 1;
-tp2.breakElem<SweepMesher::ET_Quad4,
-SweepMesher::ET_Tri3>(quadElemIndex); std::cout << \"after
-break\\\\n\"; tp2.dump();
-
-// sweep to make a hex mesh boost::array< double, 3> dir1 =
-{0,0,2.345}; xforms[0] = &TransformDir(dir1); tp2.sweep(
-SweepMesher::ET_Quad4, SweepMesher::ET_Hex8, xforms);
-
-C++ includes: SweepMesher.hpp ";
+%feature("docstring")  TCoeff::TCoeff "TCoeff::TCoeff() ";
 
 
 // File: classstk_1_1percept_1_1IntrepidManager_1_1temp.xml
 %feature("docstring") stk::percept::IntrepidManager::temp "";
+
+
+// File: classTemperature__.xml
+%feature("docstring") Temperature_ "";
+
+%feature("docstring")  Temperature_::Temperature_ "Temperature_<
+TCoeff, Shape >::Temperature_(TCoeff t, Shape shape) ";
+
+%feature("docstring")  Temperature_::Temperature_ "Temperature_<
+TCoeff, Shape >::Temperature_(TCoeff t, Shape shape) ";
 
 
 // File: classstk_1_1adapt_1_1TestLocalRefiner.xml
@@ -8915,10 +9038,10 @@ stk::adapt::Elem::StdMeshObjTopologies::getRefinementEdgePermutation "const UInt
 Elem::CellTopology &cell_topology, UInt permutation_ordinal) ";
 
 
-// File: namespacestk_1_1adapt_1_1Elem_1_1@187.xml
-
-
 // File: namespacestk_1_1adapt_1_1Elem_1_1@193.xml
+
+
+// File: namespacestk_1_1adapt_1_1Elem_1_1@199.xml
 
 
 // File: namespacestk_1_1adapt_1_1Elem_1_1StdMeshObjTopologies.xml
@@ -11255,6 +11378,25 @@ NMA1 &x) ";
 // File: ConstantFunction_8hpp.xml
 
 
+// File: CPPArray_8hpp.xml
+
+
+// File: CPPArray__unit_81_8cpp.xml
+%feature("docstring")  main "int main() ";
+
+
+// File: CPPArray__unit_81_8hpp.xml
+%feature("docstring")  init "static void init(double val[2], int
+dim[1]) ";
+
+
+// File: CPPArray__unit_8cpp.xml
+%feature("docstring")  init "static void init(double val[2], int
+dim[1]) ";
+
+%feature("docstring")  main "int main() ";
+
+
 // File: Dimensions_8cpp.xml
 
 
@@ -11425,6 +11567,10 @@ NMA1 &x) ";
 %feature("docstring")  main "int main() ";
 
 
+// File: main_8cpp.xml
+%feature("docstring")  main "int main() ";
+
+
 // File: main1_8cpp.xml
 %feature("docstring")  main "int main(int argc, char **argv) ";
 
@@ -11488,6 +11634,10 @@ NMA1 &x) ";
 
 
 // File: Observable_8hpp.xml
+
+
+// File: old-shape_8hpp.xml
+%feature("docstring")  main "int main() ";
 
 
 // File: OptionMask_8hpp.xml
