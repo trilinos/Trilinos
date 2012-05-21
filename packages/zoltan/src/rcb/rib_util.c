@@ -52,7 +52,7 @@ int            i, ierr = 0;
     Zoltan_Initialize_Transformation(&(rib->Tran));
 
     rib->Tree_Ptr = (struct rib_tree *)
-              ZOLTAN_MALLOC(zz->LB.Num_Global_Parts* sizeof(struct rib_tree));
+              ZOLTAN_CALLOC(zz->LB.Num_Global_Parts, sizeof(struct rib_tree));
     if (rib->Tree_Ptr == NULL) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       Zoltan_RIB_Free_Structure(zz);

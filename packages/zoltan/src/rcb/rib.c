@@ -768,7 +768,7 @@ EndReporting:
 					memory in MPI_Allgatherv */
 
     treetmp = (struct rib_tree *)
-	       ZOLTAN_MALLOC(zz->LB.Num_Global_Parts* sizeof(struct rib_tree));
+	       ZOLTAN_MALLOC(zz->LB.Num_Global_Parts * sizeof(struct rib_tree));
     displ = (int *) ZOLTAN_MALLOC(2 * zz->Num_Proc * sizeof(int));
     if (!displ || !treetmp) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");

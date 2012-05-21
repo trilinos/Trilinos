@@ -59,7 +59,7 @@ int i, ierr = 0;
     Zoltan_Initialize_Transformation(&(rcb->Tran));
 
     rcb->Tree_Ptr = (struct rcb_tree *)
-      ZOLTAN_MALLOC(zz->LB.Num_Global_Parts * sizeof(struct rcb_tree));
+      ZOLTAN_CALLOC(zz->LB.Num_Global_Parts, sizeof(struct rcb_tree));
     rcb->Box = (struct rcb_box *) ZOLTAN_MALLOC(sizeof(struct rcb_box));
     if (rcb->Tree_Ptr == NULL || rcb->Box == NULL) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
