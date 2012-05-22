@@ -67,14 +67,14 @@ namespace stk {
       PerceptMesh& eMesh, 
       VectorFieldType* nodal_hessian_field)
     {
-      const int spatial_dim = eMesh.getSpatialDim();
+      const int spatial_dim = eMesh.get_spatial_dim();
 
       stk::mesh::Selector selector = 
-	eMesh.getFEM_meta_data()->locally_owned_part() | 
-	eMesh.getFEM_meta_data()->globally_shared_part();
+	eMesh.get_fem_meta_data()->locally_owned_part() | 
+	eMesh.get_fem_meta_data()->globally_shared_part();
 
       std::vector<stk::mesh::Bucket*> buckets;
-      stk::mesh::get_buckets( selector, eMesh.getBulkData()->buckets( eMesh.node_rank() ), buckets );
+      stk::mesh::get_buckets( selector, eMesh.get_bulk_data()->buckets( eMesh.node_rank() ), buckets );
       
       for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) {
 
@@ -86,7 +86,7 @@ namespace stk {
 
 	  stk::mesh::Entity& node = bucket[i];
 
-	  const double *coords = stk::mesh::field_data( *eMesh.getCoordinatesField() , node);
+	  const double *coords = stk::mesh::field_data( *eMesh.get_coordinates_field() , node);
 	  double *hess = stk::mesh::field_data( *nodal_hessian_field , node);
 	    
 	  exact_hessian(hess_id, coords, hess, spatial_dim);
@@ -151,7 +151,7 @@ namespace stk {
     {
       int mark=0;
 
-      const int spatial_dim = m_eMesh.getSpatialDim();
+      const int spatial_dim = m_eMesh.get_spatial_dim();
 
       std::vector<double> hessian(spatial_dim*spatial_dim, 0.0);
 

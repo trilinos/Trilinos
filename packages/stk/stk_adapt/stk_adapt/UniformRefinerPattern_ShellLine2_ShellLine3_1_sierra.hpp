@@ -17,7 +17,7 @@ namespace stk {
       UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  URP<shards::ShellLine<2>, shards::ShellLine<3>  >(eMesh)
       {
         m_primaryEntityRank = m_eMesh.edge_rank();
-        if (m_eMesh.getSpatialDim() == 1)
+        if (m_eMesh.get_spatial_dim() == 1)
           m_primaryEntityRank = eMesh.element_rank();
 
         setNeededParts(eMesh, block_names, false);  // different topologies
@@ -31,7 +31,7 @@ namespace stk {
         EXCEPTWATCH;
         bp = std::vector<UniformRefinerPatternBase *>(1u, 0);
 
-        if (eMesh.getSpatialDim() == 1)
+        if (eMesh.get_spatial_dim() == 1)
           {
             bp[0] = this;
           }
@@ -45,7 +45,7 @@ namespace stk {
       {
         needed_entities.resize(1);
         //needed_entities[0].first = m_eMesh.edge_rank(); 
-        needed_entities[0].first = (m_eMesh.getSpatialDim() == 1 ? m_eMesh.element_rank() : m_eMesh.edge_rank());
+        needed_entities[0].first = (m_eMesh.get_spatial_dim() == 1 ? m_eMesh.element_rank() : m_eMesh.edge_rank());
         setToOne(needed_entities);
       }
 

@@ -17,7 +17,7 @@ namespace stk {
       UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  URP<shards::ShellLine<2>, shards::ShellLine<2>  >(eMesh)
       {
         m_primaryEntityRank = m_eMesh.edge_rank();
-        if (m_eMesh.getSpatialDim() == 1)
+        if (m_eMesh.get_spatial_dim() == 1)
           m_primaryEntityRank = eMesh.element_rank();
 
         setNeededParts(eMesh, block_names, true);
@@ -55,13 +55,13 @@ namespace stk {
         double coord_x[3];
         for (int iedge = 0; iedge < 1; iedge++)
           {
-            //double * mp = midPoint(EDGE_COORD(iedge,0), EDGE_COORD(iedge,1), eMesh.getSpatialDim(), coord_x);
-            //double * mp = midPoint(FACE_COORD(iedge,0), FACE_COORD(iedge,1), eMesh.getSpatialDim(), coord_x);
-            double * mp = midPoint(VERT_COORD(0), VERT_COORD(1), eMesh.getSpatialDim(), coord_x);
+            //double * mp = midPoint(EDGE_COORD(iedge,0), EDGE_COORD(iedge,1), eMesh.get_spatial_dim(), coord_x);
+            //double * mp = midPoint(FACE_COORD(iedge,0), FACE_COORD(iedge,1), eMesh.get_spatial_dim(), coord_x);
+            double * mp = midPoint(VERT_COORD(0), VERT_COORD(1), eMesh.get_spatial_dim(), coord_x);
 
             if (!EDGE_N(iedge))
               {
-                std::cout << "P[" << eMesh.getRank() << " nid ## = 0  " << std::endl;
+                std::cout << "P[" << eMesh.get_rank() << " nid ## = 0  " << std::endl;
               }
 
             eMesh.createOrGetNode(EDGE_N(iedge), mp);
@@ -131,40 +131,40 @@ namespace stk {
             stk::mesh::Entity& newElement = *(*element_pool);
 
 #if 0
-            if (proc_rank_field && proc_rank_field->rank() == m_eMesh.edge_rank()) //&& m_eMesh.getSpatialDim()==1)
+            if (proc_rank_field && proc_rank_field->rank() == m_eMesh.edge_rank()) //&& m_eMesh.get_spatial_dim()==1)
               {
                 double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
-                //fdata[0] = double(m_eMesh.getRank());
+                //fdata[0] = double(m_eMesh.get_rank());
                 fdata[0] = double(newElement.owner_rank());
               }
 #endif
-            stk::mesh::FieldBase * proc_rank_field_edge = m_eMesh.getField("proc_rank_edge");
+            stk::mesh::FieldBase * proc_rank_field_edge = m_eMesh.get_field("proc_rank_edge");
             if (proc_rank_field_edge)
               {
                 double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field_edge) , newElement );
                 fdata[0] = double(newElement.owner_rank());
                 //fdata[0] = 1234.56;
                 if (0)
-                std::cout << "P[" << m_eMesh.getRank() << "] tmp set proc_rank_field_edge to value = " << newElement.owner_rank() 
+                std::cout << "P[" << m_eMesh.get_rank() << "] tmp set proc_rank_field_edge to value = " << newElement.owner_rank() 
                           << " for side element = " << newElement.identifier()
                           << std::endl;
               }
 
-            //eMesh.getBulkData()->change_entity_parts( newElement, add_parts, remove_parts );
+            //eMesh.get_bulk_data()->change_entity_parts( newElement, add_parts, remove_parts );
 
             change_entity_parts(eMesh, element, newElement);
 
             {
               if (!elems[ielem].get<0>())
                 {
-                  std::cout << "P[" << eMesh.getRank() << " nid = 0  " << std::endl;
+                  std::cout << "P[" << eMesh.get_rank() << " nid = 0  " << std::endl;
                   exit(1);
                 }
 
             }
 
-            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<0>()), 0);
-            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<1>()), 1);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<0>()), 0);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<1>()), 1);
 
             set_parent_child_relations(eMesh, element, newElement, ielem);
 

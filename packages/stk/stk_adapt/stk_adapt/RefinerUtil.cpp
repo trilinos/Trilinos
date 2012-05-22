@@ -299,9 +299,9 @@ BlockNamesType RefinerUtil::correctBlockNamesForPartPartConsistency(percept::Per
   if (blocks[eMesh.element_rank()].size() == 0)
     return blocks;
 
-  stk::mesh::EntityRank subDimRank = (eMesh.getSpatialDim() == 3 ? eMesh.face_rank() : eMesh.edge_rank());
+  stk::mesh::EntityRank subDimRank = (eMesh.get_spatial_dim() == 3 ? eMesh.face_rank() : eMesh.edge_rank());
 
-  mesh::PartVector all_parts = eMesh.getFEM_meta_data()->get_parts();
+  mesh::PartVector all_parts = eMesh.get_fem_meta_data()->get_parts();
   for (mesh::PartVector::iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
   {
     mesh::Part *  part = *i_part ;

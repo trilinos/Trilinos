@@ -19,10 +19,10 @@ class LocalFixture:
     self.num_z = num_z
     config_mesh = str(self.num_x) + "x" + str(self.num_y) + "x" + str(self.num_z) + "|bbox:-0.5,-0.5,-0.5,0.5,0.5,0.5"
 
-    self.eMesh.newMesh(GMeshSpec(config_mesh))
+    self.eMesh.new_mesh(GMeshSpec(config_mesh))
     self.eMesh.commit()
-    self.metaData = self.eMesh.getFEM_meta_data()
-    self.bulkData = self.eMesh.getBulkData()
+    self.metaData = self.eMesh.get_fem_meta_data()
+    self.bulkData = self.eMesh.get_bulk_data()
     self.coords_field = self.metaData.get_field("coordinates")
     self.sfx = StringFunction("x", "sfx", Dimensions(3), Dimensions(1))
     self.sfx_res = ConstantFunction(0.0, "sfx_res")
@@ -108,7 +108,7 @@ class NormUnitTests(unittest.TestCase):
        self.assertAlmostEqual(1.0, result)
 
        print "TEST.norm.volume: writing gmesh_hex8_original_out.e .."
-       eMesh.saveAs("./gmesh_hex8_original_out.e")
+       eMesh.save_as("./gmesh_hex8_original_out.e")
        print "TEST.norm.volume: writing gmesh_hex8_original_out.e done"
 
        rmx = rotationMatrix(0, 30)
@@ -118,7 +118,7 @@ class NormUnitTests(unittest.TestCase):
        rm = rmx*rm
 
        print "TEST.norm.volume: writing gmesh_hex8_rotated_out.e .."
-       eMesh.saveAs("./gmesh_hex8_rotated_out.e")
+       eMesh.save_as("./gmesh_hex8_rotated_out.e")
        print "TEST.norm.volume: writing gmesh_hex8_rotated_out.e done"
 
        scx = pi 

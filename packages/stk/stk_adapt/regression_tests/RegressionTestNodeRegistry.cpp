@@ -136,12 +136,12 @@ namespace stk
             eMesh.open(input_files_loc+"break_test._.quad._.square._.square_quad4.e");
             eMesh.commit();
 
-            //eMesh.printInfo("square_quad4 before dist");
-            //eMesh.saveAs("./cube_hex9-orig.e");
+            //eMesh.print_info("square_quad4 before dist");
+            //eMesh.save_as("./cube_hex9-orig.e");
 
-            //unsigned p_size = eMesh.getParallelSize();
-            unsigned p_rank = eMesh.getRank();
-            Util::setRank(eMesh.getRank());
+            //unsigned p_size = eMesh.get_parallel_size();
+            unsigned p_rank = eMesh.get_rank();
+            Util::setRank(eMesh.get_rank());
         
             if (p_size != 3) // FIXME
               return;
@@ -166,17 +166,17 @@ namespace stk
                   unsigned elem_num_ghost = 5;  // edge #2
                   unsigned elem_20 = 20;
 
-                  stk::mesh::Entity* element_local_p = eMesh.getBulkData()->get_entity(eMesh.element_rank(), elem_num_local);
-                  stk::mesh::Entity* element_ghost_p = eMesh.getBulkData()->get_entity(eMesh.element_rank(), elem_num_ghost);
+                  stk::mesh::Entity* element_local_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local);
+                  stk::mesh::Entity* element_ghost_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_ghost);
                   if (p_rank == 2)
                     {
-                      element_local_p = eMesh.getBulkData()->get_entity(eMesh.element_rank(), elem_num_ghost);
-                      element_ghost_p = eMesh.getBulkData()->get_entity(eMesh.element_rank(), elem_num_local);
+                      element_local_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_ghost);
+                      element_ghost_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local);
                     }
                   if (p_rank == 0)
                     {
-                      element_local_p = eMesh.getBulkData()->get_entity(eMesh.element_rank(), elem_20);
-                      element_ghost_p = eMesh.getBulkData()->get_entity(eMesh.element_rank(), elem_20);
+                      element_local_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_20);
+                      element_ghost_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_20);
                     }
 
                   dw() << "P["<<p_rank<<"] elem_num_local = " << elem_num_local << DWENDL;
@@ -239,11 +239,11 @@ namespace stk
                   if (0)
                     {
                       MPI_Barrier( MPI_COMM_WORLD );
-                      std::cout << "P["<< eMesh.getRank() 
+                      std::cout << "P["<< eMesh.get_rank() 
                                 <<"] ========================================================================================================================" << std::endl;
                       nodeRegistry.checkDB();
                       MPI_Barrier( MPI_COMM_WORLD );
-                      std::cout << "P["<< eMesh.getRank() 
+                      std::cout << "P["<< eMesh.get_rank() 
 
                                 <<"] ========================================================================================================================" << std::endl;
                     }
@@ -261,7 +261,7 @@ namespace stk
                       //if (!nodeIds_onSE[0])
                       //  throw std::logic_error("nodeRegistry_regr.parallel_2 logic err3");
 
-                      stk::mesh::Entity*  node   = eMesh.getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[0]);
+                      stk::mesh::Entity*  node   = eMesh.get_bulk_data()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[0]);
 
                       //EXPECT_EQ(nodeIds_onSE.m_entity_id_vector[0], 42u);
                       EXPECT_EQ(nodeIds_onSE.m_entity_id_vector[0], 41u);
@@ -274,7 +274,7 @@ namespace stk
                 }
                 //std::cout << "P[" << p_rank << "] exiting " << std::endl;
                 //Util::pause(true);
-                //eMesh.saveAs("./cube_hex9.e");
+                //eMesh.save_as("./cube_hex9.e");
                 if (0)
                   {
                     MPI_Barrier( MPI_COMM_WORLD );
@@ -310,12 +310,12 @@ namespace stk
 
             eMesh.commit();
 
-            //eMesh.printInfo("square_quad4 before dist");
-            //eMesh.saveAs("./cube_hex9-orig.e");
+            //eMesh.print_info("square_quad4 before dist");
+            //eMesh.save_as("./cube_hex9-orig.e");
 
-            //unsigned p_size = eMesh.getParallelSize();
-            unsigned p_rank = eMesh.getRank();
-            Util::setRank(eMesh.getRank());
+            //unsigned p_size = eMesh.get_parallel_size();
+            unsigned p_rank = eMesh.get_rank();
+            Util::setRank(eMesh.get_rank());
         
             if (p_size != 3) // FIXME
               return;
@@ -344,17 +344,17 @@ namespace stk
                   unsigned elem_num_local_proc_1 = elem_num_local;
                   unsigned elem_num_local_proc_2 = elem_num_ghost;
 
-                  stk::mesh::Entity* element_local_p = eMesh.getBulkData()->get_entity(eMesh.element_rank(), elem_num_local_proc_1);
-                  stk::mesh::Entity* element_ghost_p = eMesh.getBulkData()->get_entity(eMesh.element_rank(), elem_num_local_proc_2);
+                  stk::mesh::Entity* element_local_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local_proc_1);
+                  stk::mesh::Entity* element_ghost_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local_proc_2);
                   if (p_rank == 2)
                     {
-                      element_local_p = eMesh.getBulkData()->get_entity(eMesh.element_rank(), elem_num_local_proc_2);
-                      element_ghost_p = eMesh.getBulkData()->get_entity(eMesh.element_rank(), elem_num_local_proc_1);
+                      element_local_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local_proc_2);
+                      element_ghost_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local_proc_1);
                     }
                   if (p_rank == 0)
                     {
-                      element_local_p = eMesh.getBulkData()->get_entity(eMesh.element_rank(), elem_num_local_proc_0);
-                      element_ghost_p = eMesh.getBulkData()->get_entity(eMesh.element_rank(), elem_num_local_proc_0);
+                      element_local_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local_proc_0);
+                      element_ghost_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local_proc_0);
                     }
 
                   dw() << "P["<<p_rank<<"] elem_num_local = " << elem_num_local << DWENDL;
@@ -418,11 +418,11 @@ namespace stk
                   if (0)
                     {
                       MPI_Barrier( MPI_COMM_WORLD );
-                      std::cout << "P["<< eMesh.getRank() 
+                      std::cout << "P["<< eMesh.get_rank() 
                                 <<"] ========================================================================================================================" << std::endl;
                       nodeRegistry.checkDB();
                       MPI_Barrier( MPI_COMM_WORLD );
-                      std::cout << "P["<< eMesh.getRank() 
+                      std::cout << "P["<< eMesh.get_rank() 
 
                                 <<"] ========================================================================================================================" << std::endl;
                     }
@@ -438,7 +438,7 @@ namespace stk
                       NodeIdsOnSubDimEntityType& nodeIds_onSE = *(nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_ranks[0].first, iSubDimOrd));
                       if (!nodeIds_onSE[0])
                         throw std::logic_error("nodeRegistry_regr.parallel_2 logic err1");
-                      stk::mesh::Entity*  node   = eMesh.getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE[0]->identifier());
+                      stk::mesh::Entity*  node   = eMesh.get_bulk_data()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE[0]->identifier());
 
                       //EXPECT_EQ(nodeId, 42u);
                       // should be the same node on each proc
@@ -453,7 +453,7 @@ namespace stk
                           if (!nodeIds_onSE_1[0])
                             throw std::logic_error("nodeRegistry_regr.parallel_2 logic err2");
 
-                          stk::mesh::Entity*  node_1   = eMesh.getBulkData()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE_1[0]->identifier());
+                          stk::mesh::Entity*  node_1   = eMesh.get_bulk_data()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE_1[0]->identifier());
 
                           std::cout << "P[" << p_rank << "] nodeId_1 = " << nodeIds_onSE_1 << " node_1= " << node_1 << std::endl;
 
@@ -494,7 +494,7 @@ namespace stk
                 }
                 //std::cout << "P[" << p_rank << "] exiting " << std::endl;
                 //Util::pause(true);
-                //eMesh.saveAs("./cube_hex9.e");
+                //eMesh.save_as("./cube_hex9.e");
                 if (0)
                   {
                     MPI_Barrier( MPI_COMM_WORLD );

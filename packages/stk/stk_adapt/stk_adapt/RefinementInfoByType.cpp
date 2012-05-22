@@ -101,13 +101,13 @@ namespace stk {
 
     void RefinementInfoByType::countCurrentNodes(stk::percept::PerceptMesh& eMesh, std::vector< RefinementInfoByType >& refinementInfoByType)
     {
-      mesh::Selector selector(eMesh.getFEM_meta_data()->locally_owned_part());
+      mesh::Selector selector(eMesh.get_fem_meta_data()->locally_owned_part());
       std::vector<unsigned> count ;
-      stk::mesh::count_entities( selector, *eMesh.getBulkData(), count );
+      stk::mesh::count_entities( selector, *eMesh.get_bulk_data(), count );
       
       unsigned nnodes = count[0];
 
-      stk::ParallelMachine pm = eMesh.getBulkData()->parallel();
+      stk::ParallelMachine pm = eMesh.get_bulk_data()->parallel();
       stk::all_reduce( pm, stk::ReduceSum<1>( &nnodes ) );
 
       for (unsigned i = 0; i < refinementInfoByType.size(); i++)

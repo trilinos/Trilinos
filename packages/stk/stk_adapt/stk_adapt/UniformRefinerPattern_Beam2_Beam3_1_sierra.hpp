@@ -96,7 +96,7 @@ namespace stk {
             {
               if (!elems[ielem][0])
                 {
-                  std::cout << "P[" << eMesh.getRank() << " nid = 0  " << std::endl;
+                  std::cout << "P[" << eMesh.get_rank() << " nid = 0  " << std::endl;
                   exit(1);
                 }
 
@@ -105,7 +105,7 @@ namespace stk {
               {
                 stk::mesh::EntityId eid = elems[ielem][inode];
                 stk::mesh::Entity& node = eMesh.createOrGetNode(eid);
-                eMesh.getBulkData()->declare_relation(newElement, node, inode);
+                eMesh.get_bulk_data()->declare_relation(newElement, node, inode);
               }
 
             set_parent_child_relations(eMesh, element, newElement, ielem);

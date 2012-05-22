@@ -31,7 +31,7 @@ namespace stk {
         // list all types of known break patterns to be used here
         m_bp.resize(0);
 
-        int spatialDim = eMesh.getSpatialDim();
+        int spatialDim = eMesh.get_spatial_dim();
 
         // refine
 

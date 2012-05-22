@@ -168,7 +168,7 @@ namespace stk {
 
       if (parent_to_family_tree_relations.size() == 0 || (parent_to_family_tree_relations.size() == 1 && eMesh.isChildElement(parent_elem) ) )
         {
-          stk::mesh::PartVector add(1, &eMesh.getFEM_meta_data()->universal_part());
+          stk::mesh::PartVector add(1, &eMesh.get_fem_meta_data()->universal_part());
 
           // explanation: we want to avoid the above use of BulkData::generate_new_entities due to the parallel comm required, so we
           //   use the parent_id for the familty_tree_id.
@@ -200,15 +200,15 @@ namespace stk {
           unsigned FT_SHIFT = 0u;
           family_tree_id += FT_SHIFT;
 
-          family_tree = & eMesh.getBulkData()->declare_entity(FAMILY_TREE_RANK, family_tree_id, add);
+          family_tree = & eMesh.get_bulk_data()->declare_entity(FAMILY_TREE_RANK, family_tree_id, add);
 
           // make the parent be the first relation; children are at the end
           // from->to
 #if DEBUG_MULTI_LEVEL
           std::cout << "tmp super->parent " << family_tree->identifier() << " -> " << parent_elem.identifier() << " " << parent_elem << std::endl;
 #endif
-          eMesh.getBulkData()->declare_relation(*family_tree, parent_elem, FAMILY_TREE_PARENT);
-          //eMesh.getBulkData()->declare_relation( parent_elem, *family_tree, ptft_size-1);
+          eMesh.get_bulk_data()->declare_relation(*family_tree, parent_elem, FAMILY_TREE_PARENT);
+          //eMesh.get_bulk_data()->declare_relation( parent_elem, *family_tree, ptft_size-1);
           parent_to_family_tree_relations = parent_elem.relations(FAMILY_TREE_RANK);
 
 #if DEBUG_MULTI_LEVEL
@@ -285,7 +285,7 @@ namespace stk {
             }
         }
 
-      eMesh.getBulkData()->declare_relation(*family_tree, newElement, ordinal + 1);  // the + 1 here is to give space for the parent
+      eMesh.get_bulk_data()->declare_relation(*family_tree, newElement, ordinal + 1);  // the + 1 here is to give space for the parent
 
       // add all the nodes for ghosting purposes
       /** Explanation: child elements can be created in the aura that have nodes in the aura but aren't shared
@@ -314,7 +314,7 @@ namespace stk {
                 }
               if (!found)
                 {
-                  eMesh.getBulkData()->declare_relation(*family_tree, *parent_elem_nodes[i].entity(), ft_nodes.size());
+                  eMesh.get_bulk_data()->declare_relation(*family_tree, *parent_elem_nodes[i].entity(), ft_nodes.size());
                 }
             }
 
@@ -339,7 +339,7 @@ namespace stk {
                 }
               if (!found)
                 {
-                  eMesh.getBulkData()->declare_relation(*family_tree, *child_elem_nodes[i].entity(), ft_nodes.size());
+                  eMesh.get_bulk_data()->declare_relation(*family_tree, *child_elem_nodes[i].entity(), ft_nodes.size());
                 }
             }
 
@@ -366,7 +366,7 @@ namespace stk {
                     }
                   if (!found)
                     {
-                      eMesh.getBulkData()->declare_relation(*family_tree, *ft_level_0_nodes[i].entity(), ft_nodes.size());
+                      eMesh.get_bulk_data()->declare_relation(*family_tree, *ft_level_0_nodes[i].entity(), ft_nodes.size());
                     }
                 }
             }
@@ -390,7 +390,7 @@ namespace stk {
 //         {
 //           return;
 //         }
-      const stk::mesh::FieldVector & fields = eMesh.getFEM_meta_data()->get_fields();
+      const stk::mesh::FieldVector & fields = eMesh.get_fem_meta_data()->get_fields();
       unsigned nfields = fields.size();
       for (unsigned ifld = 0; ifld < nfields; ifld++)
         {
@@ -496,7 +496,7 @@ namespace stk {
         {
           isShell = true;
         }
-      int spatialDim = eMesh.getSpatialDim();
+      int spatialDim = eMesh.get_spatial_dim();
       if (spatialDim == 3 && isShell && side_elem->entity_rank() == eMesh.edge_rank())
         {
           element_nsides = (unsigned) element_topo.getEdgeCount();
@@ -531,7 +531,7 @@ namespace stk {
             {
               stk::mesh::Entity *to_rel = rels[0].entity();
               stk::mesh::RelationIdentifier to_id = rels[0].identifier();
-              bool del = eMesh.getBulkData()->destroy_relation( *to_rel, *side_elem, to_id);
+              bool del = eMesh.get_bulk_data()->destroy_relation( *to_rel, *side_elem, to_id);
               if (!del)
                 throw std::logic_error("connectSides:: destroy_relation failed");
             }
@@ -556,7 +556,7 @@ namespace stk {
                 }
             }
 
-          eMesh.getBulkData()->declare_relation(*element, *side_elem, k_element_side);
+          eMesh.get_bulk_data()->declare_relation(*element, *side_elem, k_element_side);
           return true;
         }
       else

@@ -30,13 +30,13 @@ namespace stk {
                                                                                                     m_edge_breaker(0)
       {
         m_primaryEntityRank = m_eMesh.face_rank();
-        if (m_eMesh.getSpatialDim() == 2)
+        if (m_eMesh.get_spatial_dim() == 2)
           m_primaryEntityRank = eMesh.element_rank();
 
         setNeededParts(eMesh, block_names, true);
         Elem::StdMeshObjTopologies::bootstrap();
 
-        if (m_eMesh.getSpatialDim() == 2)
+        if (m_eMesh.get_spatial_dim() == 2)
           {
             m_edge_breaker =  new RefinerPattern<shards::Line<2>, shards::Line<2>, -1 > (eMesh, block_names) ;
           }
@@ -53,10 +53,10 @@ namespace stk {
         EXCEPTWATCH;
         bp = std::vector<UniformRefinerPatternBase *>(2u, 0);
 
-        if (eMesh.getSpatialDim() == 2)
+        if (eMesh.get_spatial_dim() == 2)
           {
             bp[0] = this;
-            if (m_eMesh.getSpatialDim() == 2)
+            if (m_eMesh.get_spatial_dim() == 2)
               {
                 bp[1] = m_edge_breaker;
               }
@@ -112,7 +112,7 @@ namespace stk {
 
         shards::CellTopology cell_topo(cell_topo_data);
         //const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK); /NLM
-        VectorFieldType* coordField = eMesh.getCoordinatesField();
+        VectorFieldType* coordField = eMesh.get_coordinates_field();
 
         unsigned num_edges_marked=0;
         for (int iedge = 0; iedge < 3; iedge++)
@@ -210,7 +210,7 @@ namespace stk {
                     edge_len_squared = 
                       (coord_0[0] - coord_1[0])*(coord_0[0] - coord_1[0])+
                       (coord_0[1] - coord_1[1])*(coord_0[1] - coord_1[1])+
-                      (eMesh.getSpatialDim() == 2 ? 0 : 
+                      (eMesh.get_spatial_dim() == 2 ? 0 : 
                        (coord_0[2] - coord_1[2])*(coord_0[2] - coord_1[2]) );
 
                     if (edge_len_squared > max_edge_length)
@@ -327,7 +327,7 @@ namespace stk {
 
         shards::CellTopology cell_topo(cell_topo_data);
         const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
-        //VectorFieldType* coordField = eMesh.getCoordinatesField();
+        //VectorFieldType* coordField = eMesh.get_coordinates_field();
 
         std::vector<stk::mesh::Part*> add_parts;
         std::vector<stk::mesh::Part*> remove_parts;
@@ -374,26 +374,26 @@ namespace stk {
             if (proc_rank_field)
               {
                 double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
-                //fdata[0] = double(m_eMesh.getRank());
+                //fdata[0] = double(m_eMesh.get_rank());
                 if (fdata)
                   fdata[0] = double(newElement.owner_rank());
               }
 
-            //eMesh.getBulkData()->change_entity_parts( newElement, add_parts, remove_parts );
+            //eMesh.get_bulk_data()->change_entity_parts( newElement, add_parts, remove_parts );
             change_entity_parts(eMesh, element, newElement);
 
             {
               if (!elems[ielem].get<0>())
                 {
-                  std::cout << "P[" << eMesh.getRank() << "] nid = 0 << " << std::endl;
+                  std::cout << "P[" << eMesh.get_rank() << "] nid = 0 << " << std::endl;
                   //exit(1);
                 }
             }
 
             // 3 nodes of the new tris
-            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<0>()), 0);
-            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<1>()), 1);
-            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<2>()), 2);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<0>()), 0);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<1>()), 1);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<2>()), 2);
 
             set_parent_child_relations(eMesh, element, newElement, ielem);
 

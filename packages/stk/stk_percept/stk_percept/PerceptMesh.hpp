@@ -122,30 +122,26 @@ namespace stk {
 
       /// reads and commits mesh, editing disabled
       void
-      openReadOnly(const std::string& in_filename);
+      open_read_only(const std::string& in_filename);
 
       /// reads but doesn't commit mesh, enabling edit
       void
       open(const std::string& in_filename);
 
-      /// opens an empty mesh, with a commit
-      void
-      openEmpty();
-
       /// creates a new mesh using the GeneratedMesh fixture with spec @param gmesh_spec, Read Only mode, no edits allowed
       void
-      newMeshReadOnly(const GMeshSpec gmesh_spec);
+      new_mesh_read_only(const GMeshSpec gmesh_spec);
 
       /// creates a new mesh using the GeneratedMesh fixture with spec @param gmesh_spec
       void
-      newMesh(const GMeshSpec gmesh_spec);
+      new_mesh(const GMeshSpec gmesh_spec);
 
       /// add a field to the mesh
       stk::mesh::FieldBase *
-      addField(const std::string& name, const unsigned entity_rank, int vectorDimension=0, const std::string part_name="universal_part");
+      add_field(const std::string& name, const unsigned entity_rank, int vectorDimension=0, const std::string part_name="universal_part");
 
       stk::mesh::FieldBase *
-      getField(const std::string& name);
+      get_field(const std::string& name);
 
       /// commits mesh  - any operations done on a non-committed mesh, except to add fields will throw an exception
       void
@@ -158,7 +154,7 @@ namespace stk {
 
       /// commits mesh if not committed and saves it in new file
       void
-      saveAs(const std::string& out_filename);
+      save_as(const std::string& out_filename);
 
       /// closes this mesh to further changes
       void
@@ -166,41 +162,41 @@ namespace stk {
 
       /// print number of parts and fields, and info on each
       void
-      printInfo(std::ostream& stream, std::string header="", int print_level=0, bool do_endl=true);
+      print_info(std::ostream& stream, std::string header="", int print_level=0, bool do_endl=true);
 
       /// print number of parts and fields, and info on each
       void
-      printInfo(std::string header="", int print_level = 0, bool do_endl=true);
+      print_info(std::string header="", int print_level = 0, bool do_endl=true);
 
       void
-      printFields(std::string header="");
+      print_fields(std::string header="");
 
       int
-      getSpatialDim();
+      get_spatial_dim();
 
       int
-      getNumberElements();
+      get_number_elements();
 
       int
-      getNumberNodes();
+      get_number_nodes();
 
       int
-      getNumberEdges();
+      get_number_edges();
 
       int
-      getNumberElementsLocallyOwned();
+      get_number_elements_locally_owned();
 
-      unsigned getRank() { return getBulkData()->parallel_rank(); }
-      unsigned getParallelRank() { return getBulkData()->parallel_rank(); }
-      unsigned getParallelSize() { return getBulkData()->parallel_size(); }
+      unsigned get_rank() { return get_bulk_data()->parallel_rank(); }
+      unsigned get_parallel_rank() { return get_bulk_data()->parallel_rank(); }
+      unsigned get_parallel_size() { return get_bulk_data()->parallel_size(); }
 
-      void printEntity(const stk::mesh::Entity& entity, stk::mesh::FieldBase* field=0) { printEntity(std::cout, entity, field); };
-      std::string printEntityCompact(const stk::mesh::Entity& entity, stk::mesh::FieldBase* field=0);
+      void print_entity(const stk::mesh::Entity& entity, stk::mesh::FieldBase* field=0) { print_entity(std::cout, entity, field); };
+      std::string print_entity_compact(const stk::mesh::Entity& entity, stk::mesh::FieldBase* field=0);
 
-      stk::mesh::BulkData * getBulkData();
-      stk::mesh::fem::FEMMetaData * getFEM_meta_data();
+      stk::mesh::BulkData * get_bulk_data();
+      stk::mesh::fem::FEMMetaData * get_fem_meta_data();
 
-      mesh::Part* getNonConstPart(const std::string& part_name);
+      mesh::Part* get_part(const std::string& part_name) { return get_non_const_part(part_name); }
 
       // entity data setter/getters
       double get_field_data(const stk::mesh::FieldBase *field, const mesh::Entity* entity, unsigned ordinal=0)
@@ -227,17 +223,17 @@ namespace stk {
 
       stk::mesh::Entity *get_node(const mesh::EntityId node_id) 
       {
-        return getBulkData()->get_entity(node_rank(), node_id);
+        return get_bulk_data()->get_entity(node_rank(), node_id);
       }
 
       stk::mesh::Entity *get_element(const mesh::EntityId element_id) 
       {
-        return getBulkData()->get_entity(element_rank(), element_id);
+        return get_bulk_data()->get_entity(element_rank(), element_id);
       }
 
       stk::mesh::Entity *get_entity( mesh::EntityRank rank, const mesh::EntityId id) 
       {
-        return getBulkData()->get_entity(rank, id);
+        return get_bulk_data()->get_entity(rank, id);
       }
 
       /// find node closest to given point - in parallel, check return for null (if null, closest node is on another proc)
@@ -257,7 +253,7 @@ namespace stk {
                                   std::string msg,
                                   bool print=true, bool print_all_field_diffs=false);
 
-      VectorFieldType* getCoordinatesField() {
+      VectorFieldType* get_coordinates_field() {
         // this should have been set by a previous internal call to setCoordinatesField
         return m_coordinatesField;
       }
@@ -297,24 +293,30 @@ namespace stk {
 
       /// set the current data in fields to the given time or Exodus step (if time supplied, finds the closest step to
       /// that time (no interpolation yet)
-      void readDatabaseAtTime(double time);
-      void readDatabaseAtStep(int step);
+      void read_database_at_time(double time);
+      void read_database_at_step(int step);
 
       /// return the current state of the Exodus database, 0 if not loaded yet (steps are 1-based in Exodus)
-      int getCurrentDatabaseStep();
-      double getCurrentDatabaseTime();
+      int get_current_database_step();
+      double get_current_database_time();
 
-      /// return the step number closest to specified time, thus readDatabaseAtTime(time) is equivalent to
-      ///   readDatabaseAtStep(getDatabaseStepAtTime(time))
-      int getDatabaseStepAtTime(double time);
+      /// return the step number closest to specified time, thus read_database_at_time(time) is equivalent to
+      ///   read_database_at_step(get_database_step_at_time(time))
+      int get_database_step_at_time(double time);
       /// return the state time associated with given step
-      double getDatabaseTimeAtStep(int step);
+      double get_database_time_at_step(int step);
       /// return the number of steps in the database
-      int getDatabaseTimestepCount();
+      int get_database_time_step_count();
       
       //========================================================================================================================
       /// low-level interfaces
 #ifndef SWIG
+
+      mesh::Part* get_non_const_part(const std::string& part_name);
+
+      /// opens an empty mesh, with a commit
+      void
+      openEmpty();
 
       stk::mesh::Entity *get_closest_node(double x, double y, double z=0, double t=0, double *sum_min_ret=0) ;
 
@@ -327,7 +329,7 @@ namespace stk {
       const mesh::Part*
       getPart(const std::string& part_name) ;
 
-      void printEntity(std::ostream& out, const stk::mesh::Entity& entity, stk::mesh::FieldBase* field=0);
+      void print_entity(std::ostream& out, const stk::mesh::Entity& entity, stk::mesh::FieldBase* field=0);
 
       // allow setting spatial dim after creation (for compatability with new FEMMetaData)
       void setSpatialDim(int sd);
@@ -344,7 +346,7 @@ namespace stk {
       bool isGhostElement(const stk::mesh::Entity& element)
       {
         //throw std::runtime_error("not impl"); // FIXME
-        bool isGhost = element.owner_rank() != getRank();
+        bool isGhost = element.owner_rank() != get_rank();
         return isGhost;
       }
 

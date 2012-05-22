@@ -35,27 +35,27 @@ namespace stk {
       ScalarFieldType* elem_ratio_field,
       const double &global_error_tol)
     {
-      const int spatial_dim = eMesh.getSpatialDim();
+      const int spatial_dim = eMesh.get_spatial_dim();
       double local_error_tol = global_error_tol;
       
       static bool first_run = true;
 
-      stk::mesh::Part * activeElementsPart = eMesh.getNonConstPart("refine_active_elements_part");
+      stk::mesh::Part * activeElementsPart = eMesh.get_non_const_part("refine_active_elements_part");
 
       stk::mesh::Selector selector = first_run  ? 
-	eMesh.getFEM_meta_data()->locally_owned_part() : 
-	( eMesh.getFEM_meta_data()->locally_owned_part() & (*activeElementsPart) );
+	eMesh.get_fem_meta_data()->locally_owned_part() : 
+	( eMesh.get_fem_meta_data()->locally_owned_part() & (*activeElementsPart) );
 
       first_run = false;
 
       std::vector<unsigned> count ;
-      stk::mesh::count_entities( selector, *eMesh.getBulkData(), count );
+      stk::mesh::count_entities( selector, *eMesh.get_bulk_data(), count );
 
       const double num_elems = (double) count[eMesh.element_rank()];
       local_error_tol /= sqrt(num_elems);
 
       std::vector<stk::mesh::Bucket*> buckets;
-      stk::mesh::get_buckets( selector, eMesh.getBulkData()->buckets( eMesh.element_rank() ), buckets );
+      stk::mesh::get_buckets( selector, eMesh.get_bulk_data()->buckets( eMesh.element_rank() ), buckets );
       
       for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) {
 
@@ -77,7 +77,7 @@ namespace stk {
 	  stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 	  for (unsigned inode=0; inode < elem_nodes.size(); inode++) {
 	    stk::mesh::Entity *node = elem_nodes[inode].entity();
-	    double *coords = stk::mesh::field_data( *eMesh.getCoordinatesField() , *node);
+	    double *coords = stk::mesh::field_data( *eMesh.get_coordinates_field() , *node);
 	    
 	    for (int d=0; d<spatial_dim; d++) {
 	      centroid[d] += coords[d];

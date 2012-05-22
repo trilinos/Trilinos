@@ -39,10 +39,10 @@ namespace stk
         {
           const FieldFunction *field_function_const = dynamic_cast<const FieldFunction *>(&integrand);
           FieldFunction *field_function = const_cast<FieldFunction *>(field_function_const);
-          PerceptMesh meshUtil(const_cast<mesh::fem::FEMMetaData *>(&MetaData::get(field_function->getBulkData())), field_function->getBulkData());
+          PerceptMesh meshUtil(const_cast<mesh::fem::FEMMetaData *>(&MetaData::get(field_function->get_bulk_data())), field_function->get_bulk_data());
 #if 0
-          NoOpScalar no_op(integrand, field_function->getField());
-          meshUtil.elementOpLoop(no_op , field_function->getField());
+          NoOpScalar no_op(integrand, field_function->get_field());
+          meshUtil.elementOpLoop(no_op , field_function->get_field());
 #endif
         }
     }
@@ -53,9 +53,9 @@ namespace stk
     {
       const FieldFunction *field_function_const = dynamic_cast<const FieldFunction *>(&integrand);
       FieldFunction *field_function = const_cast<FieldFunction *>(field_function_const);
-      PerceptMesh meshUtil(const_cast<mesh::fem::FEMMetaData *>(&MetaData::get(field_function->getBulkData())), field_function->getBulkData());
+      PerceptMesh meshUtil(const_cast<mesh::fem::FEMMetaData *>(&MetaData::get(field_function->get_bulk_data())), field_function->get_bulk_data());
       IntegratedOp general_integrand(integrand, TURBO_NONE);
-      meshUtil.elementOpLoop(general_integrand , field_function->getField());
+      meshUtil.elementOpLoop(general_integrand , field_function->get_field());
     }
 #endif
 

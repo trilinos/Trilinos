@@ -46,7 +46,7 @@ namespace stk {
       CellTopology cell_topo(cell_topo_data);
       const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
 
-      //VectorFieldType* coordField = m_eMesh.getCoordinatesField();
+      //VectorFieldType* coordField = m_eMesh.get_coordinates_field();
 
       for (unsigned ineed_ent=0; ineed_ent < needed_entity_ranks.size(); ineed_ent++)
         {
@@ -128,7 +128,7 @@ namespace stk {
     {
       ElementUnrefineCollection elements_to_unref;
 
-      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( m_eMesh.element_rank() );
+      const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( m_eMesh.element_rank() );
 
       for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
         {
@@ -157,7 +157,7 @@ namespace stk {
                     for (unsigned inode=0; inode < elem_nodes.size(); inode++)
                       {
                         stk::mesh::Entity *node = elem_nodes[inode].entity();
-                        double *coord = stk::mesh::field_data( *m_eMesh.getCoordinatesField(), *node );
+                        double *coord = stk::mesh::field_data( *m_eMesh.get_coordinates_field(), *node );
                         //if (coord[0] > 2.1 || coord[1] > 2.1)
                         if (coord[0] > 1.0001 || coord[1] > 1.0001)
                           {
@@ -169,7 +169,7 @@ namespace stk {
                       {
                         elements_to_unref.insert(&element);
                         //std::cout << "tmp unref element id= " << element.identifier() << std::endl;
-                        //m_eMesh.printEntity(std::cout, element);
+                        //m_eMesh.print_entity(std::cout, element);
                       }
                   }
               }

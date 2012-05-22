@@ -41,7 +41,7 @@ namespace stk
 //       }
       //MultipleFieldFunction() : FieldFunction() {}
 
-      // addFields(std::vector<Field *> ffs) ...
+      // add_fields(std::vector<Field *> ffs) ...
 
 #if 0
       computeAllFieldValues()

@@ -111,7 +111,7 @@ namespace stk {
     int PerceptMesquiteMesh::get_geometric_dimension(
                                                      Mesquite::MsqError &/*err*/)
     {
-      return m_eMesh->getSpatialDim();
+      return m_eMesh->get_spatial_dim();
     }
 
     //============================================================================
@@ -123,7 +123,7 @@ namespace stk {
     size_t PerceptMesquiteMesh::get_total_vertex_count(
                                                        Mesquite::MsqError &/*err*/) const
     {
-      return (size_t) m_eMesh->getNumberNodes();
+      return (size_t) m_eMesh->get_number_nodes();
     }
 
     bool PerceptMesquiteMesh::select_bucket(stk::mesh::Bucket& bucket) const
@@ -157,10 +157,10 @@ namespace stk {
     size_t PerceptMesquiteMesh::get_total_element_count(
                                                         Mesquite::MsqError &/*err*/) const
     {
-      //return (size_t) m_eMesh->getNumberElements();
+      //return (size_t) m_eMesh->get_number_elements();
       size_t num_elem=0;
 
-      const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh->getBulkData()->buckets( m_eMesh->element_rank() );
+      const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->element_rank() );
       unsigned buckets_size = buckets.size();
       if (DEBUG_PRINT) std::cout << "tmp srk buckets_size= " << buckets_size << std::endl;
 
@@ -204,7 +204,7 @@ namespace stk {
       //int index = 0;
       vertices.clear();
   
-      const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh->getBulkData()->buckets( m_eMesh->node_rank() );
+      const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->node_rank() );
 
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
@@ -233,7 +233,7 @@ namespace stk {
     {
       elements.clear();
 
-      const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh->getBulkData()->buckets( m_eMesh->element_rank() );
+      const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->element_rank() );
       unsigned buckets_size = buckets.size();
       if (DEBUG_PRINT) std::cout << "tmp srk buckets_size= " << buckets_size << std::endl;
       
@@ -256,7 +256,7 @@ namespace stk {
                     stk::mesh::Entity& element = bucket[ientity];
                     if (DEBUG_PRINT) {
                       std::cout << "tmp srk printing entity: ";
-                      m_eMesh->printEntity(std::cout, element, m_eMesh->getCoordinatesField() );
+                      m_eMesh->print_entity(std::cout, element, m_eMesh->get_coordinates_field() );
                     }
                     if (m_eMesh->hasFamilyTree(element) && m_eMesh->isParentElement(element, false))
                       continue;
@@ -426,10 +426,10 @@ namespace stk {
           return;
         }
         //set coordinates to the vertex's position.
-        stk::mesh::FieldBase* field = m_eMesh->getCoordinatesField();
+        stk::mesh::FieldBase* field = m_eMesh->get_coordinates_field();
         double *f_data = PerceptMesh::field_data(field, *node_ptr);
 
-        coordinates[i].set(f_data[0], f_data[1], (m_eMesh->getSpatialDim() == 2 ? 0 : f_data[2]) );
+        coordinates[i].set(f_data[0], f_data[1], (m_eMesh->get_spatial_dim() == 2 ? 0 : f_data[2]) );
       }
     }
 
@@ -454,12 +454,12 @@ namespace stk {
         return;
       }
 
-      stk::mesh::FieldBase* field = m_eMesh->getCoordinatesField();
+      stk::mesh::FieldBase* field = m_eMesh->get_coordinates_field();
       double *f_data = PerceptMesh::field_data(field, *node_ptr);
 
       f_data[0] = coordinates[0];
       f_data[1] = coordinates[1];
-      if (m_eMesh->getSpatialDim() == 3 ) 
+      if (m_eMesh->get_spatial_dim() == 3 ) 
         f_data[2] =  coordinates[2];
 
     }
@@ -693,7 +693,7 @@ namespace stk {
           if (DEBUG_PRINT) {
             std::cout << "tmp srk in elements_get_attached_vertices, nodes.size= " << nodes.size() 
                       << " elem= ";
-            m_eMesh->printEntity(std::cout, *element_ptr, m_eMesh->getCoordinatesField() );
+            m_eMesh->print_entity(std::cout, *element_ptr, m_eMesh->get_coordinates_field() );
           }
 
           for (unsigned inode=0; inode < nodes.size(); inode++)
@@ -1106,7 +1106,7 @@ namespace stk {
                   Array3 coords_save;
                   coords_save[0] = coords[0];
                   coords_save[1] = coords[1];
-                  coords_save[2] = (m_eMesh->getSpatialDim() == 2 ? 0 : coords[2]);
+                  coords_save[2] = (m_eMesh->get_spatial_dim() == 2 ? 0 : coords[2]);
                   m_nodeCoords[node_ptr] = coords_save;
                 }
               else
@@ -1114,7 +1114,7 @@ namespace stk {
                   Array3 &coords_save = m_nodeCoords[node_ptr];
                   coords_save[0] = coords[0];
                   coords_save[1] = coords[1];
-                  coords_save[2] = (m_eMesh->getSpatialDim() == 2 ? 0 : coords[2]);
+                  coords_save[2] = (m_eMesh->get_spatial_dim() == 2 ? 0 : coords[2]);
                 }
             }
         }
@@ -1233,7 +1233,7 @@ namespace stk {
                   Array3 &coords_save = m_nodeCoords[node_ptr];
                   coords[0] = coords_save[0];
                   coords[1] = coords_save[1];
-                  if (m_eMesh->getSpatialDim() == 3) 
+                  if (m_eMesh->get_spatial_dim() == 3) 
                     coords[2] = coords_save[2];
                   else
                     coords[2] = 0;

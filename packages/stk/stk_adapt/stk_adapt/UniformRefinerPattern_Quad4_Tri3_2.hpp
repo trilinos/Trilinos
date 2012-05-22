@@ -18,7 +18,7 @@ namespace stk {
        {
          EXCEPTWATCH;
          m_primaryEntityRank = eMesh.face_rank();
-         if (m_eMesh.getSpatialDim() == 2)
+         if (m_eMesh.get_spatial_dim() == 2)
            m_primaryEntityRank = eMesh.element_rank();
 
          setNeededParts(eMesh, block_names, false);
@@ -30,7 +30,7 @@ namespace stk {
       void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
       {
         needed_entities.resize(0);
-        //needed_entities[0] = (m_eMesh.getSpatialDim() == 2 ? m_eMesh.element_rank() :  m_eMesh.face_rank());
+        //needed_entities[0] = (m_eMesh.get_spatial_dim() == 2 ? m_eMesh.element_rank() :  m_eMesh.face_rank());
         setToOne(needed_entities);
       }
 
@@ -66,7 +66,7 @@ namespace stk {
 
         add_parts = m_toParts;
         
-        //std::cout << "P["<< m_eMesh.getRank() << "] add_parts = " << add_parts << std::endl;
+        //std::cout << "P["<< m_eMesh.get_rank() << "] add_parts = " << add_parts << std::endl;
 
         //stk::mesh::EntityRank my_rank = m_primaryEntityRank;
 
@@ -108,15 +108,15 @@ namespace stk {
             {
               if (!elems[ielem].get<0>())
                 {
-                  std::cout << "P[" << eMesh.getRank() << " nid = 0 << " << std::endl;
+                  std::cout << "P[" << eMesh.get_rank() << " nid = 0 << " << std::endl;
                   exit(1);
                 }
 
             }
 
-            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<0>()), 0);
-            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<1>()), 1);
-            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<2>()), 2);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<0>()), 0);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<1>()), 1);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<2>()), 2);
 
             set_parent_child_relations(eMesh, element, newElement, ielem);
 

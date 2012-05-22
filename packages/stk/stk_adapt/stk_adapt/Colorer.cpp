@@ -49,7 +49,7 @@ namespace stk {
       vector< ColorerNodeSetType > node_colors(MAX_COLORS+1); 
       ColorerElementSetType all_elements; 
 
-      mesh::Selector selector(eMesh.getFEM_meta_data()->universal_part());
+      mesh::Selector selector(eMesh.get_fem_meta_data()->universal_part());
       if (fromParts) 
         {
           if (0)
@@ -65,7 +65,7 @@ namespace stk {
           selector = mesh::selectUnion(*fromParts);
         }
 
-      stk::mesh::BulkData& bulkData = *eMesh.getBulkData();
+      stk::mesh::BulkData& bulkData = *eMesh.get_bulk_data();
       unsigned ncolor = 0;
       int nelem = 0;
       unsigned num_max_colors = MAX_COLORS;

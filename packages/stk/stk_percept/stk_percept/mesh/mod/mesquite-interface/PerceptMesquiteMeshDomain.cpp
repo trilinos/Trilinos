@@ -39,11 +39,11 @@ namespace stk {
 
       if (!m_meshGeometry) return;
       stk::mesh::Entity* node_ptr = reinterpret_cast<stk::mesh::Entity *>(entity_handle);
-      stk::mesh::FieldBase* field = m_eMesh->getCoordinatesField();
+      stk::mesh::FieldBase* field = m_eMesh->get_coordinates_field();
       double *f_data = PerceptMesh::field_data(field, *node_ptr);
 
       double f_data_save[3] = {f_data[0], f_data[1], 0};
-      if (m_eMesh->getSpatialDim() > 2) f_data_save[2] = f_data[2];
+      if (m_eMesh->get_spatial_dim() > 2) f_data_save[2] = f_data[2];
 
 //       if (node_ptr->identifier() == 584)
 //         {
@@ -52,7 +52,7 @@ namespace stk {
 
       f_data[0] = coordinate[0];
       f_data[1] = coordinate[1];
-      if (m_eMesh->getSpatialDim() > 2) 
+      if (m_eMesh->get_spatial_dim() > 2) 
         f_data[2] = coordinate[2];
 
       static std::vector<stk::mesh::Entity *> nodes(1);
@@ -60,7 +60,7 @@ namespace stk {
       m_meshGeometry->snap_points_to_geometry(m_eMesh, nodes);
       coordinate[0] = f_data[0];
       coordinate[1] = f_data[1];
-      if (m_eMesh->getSpatialDim() > 2)
+      if (m_eMesh->get_spatial_dim() > 2)
         coordinate[2] = f_data[2];
 
       //if (node_ptr->identifier() == 584)
@@ -82,7 +82,7 @@ namespace stk {
 
       f_data[0] = f_data_save[0];
       f_data[1] = f_data_save[1];
-      if (m_eMesh->getSpatialDim() > 2)
+      if (m_eMesh->get_spatial_dim() > 2)
         f_data[2] = f_data_save[2];
 
     }
@@ -107,10 +107,10 @@ namespace stk {
       coordinate[0] = 0.0;
       coordinate[1] = 0.0;
       coordinate[2] = 1.0;
-      if (m_eMesh->getSpatialDim() == 3)
+      if (m_eMesh->get_spatial_dim() == 3)
         {
           stk::mesh::Entity* node_ptr = reinterpret_cast<stk::mesh::Entity *>(entity_handle);
-          //stk::mesh::FieldBase* field = m_eMesh->getCoordinatesField();
+          //stk::mesh::FieldBase* field = m_eMesh->get_coordinates_field();
           //double *f_data = PerceptMesh::field_data(field, *node_ptr);
           if (!m_meshGeometry)
             {
@@ -131,7 +131,7 @@ namespace stk {
       // FIXME srk
       coordinate[0] = 0.0;
       coordinate[1] = 0.0;
-      if (m_eMesh->getSpatialDim() > 2)
+      if (m_eMesh->get_spatial_dim() > 2)
         {
           coordinate[2] = 0.0;
         }
@@ -203,11 +203,11 @@ namespace stk {
       // this could be more efficient if the MeshGeometry interface supported an
       // auxiliary coordinate (e.g. the "position" arg)
       stk::mesh::Entity* node_ptr = reinterpret_cast<stk::mesh::Entity *>(handle);
-      stk::mesh::FieldBase* field = m_eMesh->getCoordinatesField();
+      stk::mesh::FieldBase* field = m_eMesh->get_coordinates_field();
       double *f_data = PerceptMesh::field_data(field, *node_ptr);
       if (!m_meshGeometry)
         {
-          for (int isd=0; isd < m_eMesh->getSpatialDim(); isd++)
+          for (int isd=0; isd < m_eMesh->get_spatial_dim(); isd++)
             {
               closest[isd] = f_data[isd];
               normal[isd]=0;  // FIXME
@@ -218,10 +218,10 @@ namespace stk {
 
       // save coordinates, set to "position", project, copy to closest, set back to saved
       double save_coords[3] = {f_data[0], f_data[1], 0};
-      if (m_eMesh->getSpatialDim() > 2) save_coords[2] = f_data[2];
+      if (m_eMesh->get_spatial_dim() > 2) save_coords[2] = f_data[2];
       f_data[0] = position[0];
       f_data[1] = position[1];
-      if (m_eMesh->getSpatialDim() > 2) 
+      if (m_eMesh->get_spatial_dim() > 2) 
         f_data[2] = position[2];
 
       static std::vector<stk::mesh::Entity *> nodes(1);
@@ -230,14 +230,14 @@ namespace stk {
 
       closest[0] = f_data[0];
       closest[1] = f_data[1];
-      if (m_eMesh->getSpatialDim() > 2) 
+      if (m_eMesh->get_spatial_dim() > 2) 
         closest[2] = f_data[2];
       
       // FIXME srk
       normal[0] = 0;
       normal[1] = 0;
       normal[2] = 1;
-      if (m_eMesh->getSpatialDim() > 2) 
+      if (m_eMesh->get_spatial_dim() > 2) 
         {
           std::vector<double> norm(3,0.0);
           m_meshGeometry->normal_at(m_eMesh, node_ptr, norm);
@@ -261,7 +261,7 @@ namespace stk {
 
       f_data[0] = save_coords[0];
       f_data[1] = save_coords[1];
-      if (m_eMesh->getSpatialDim() > 2) 
+      if (m_eMesh->get_spatial_dim() > 2) 
         f_data[2] = save_coords[2];
     }
                                 
@@ -272,7 +272,7 @@ namespace stk {
       if (m_meshGeometry)
         dof = m_meshGeometry->classify_node(node, curveOrSurfaceEvaluator);
       else
-        dof = m_eMesh->getSpatialDim();
+        dof = m_eMesh->get_spatial_dim();
       return dof;
     }
 

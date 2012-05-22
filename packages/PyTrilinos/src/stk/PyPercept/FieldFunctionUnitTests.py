@@ -35,11 +35,11 @@ class FieldFunctionUnitTests(unittest.TestCase):
    
     def test_fieldFunction_demo_1_0_0(self):
        eMesh = PerceptMesh(3)
-       eMesh.newMesh(GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"))
+       eMesh.new_mesh(GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"))
        eMesh.commit()
-       eMesh.printInfo("fieldFunction_demo_1_0_0", 2)
+       eMesh.print_info("fieldFunction_demo_1_0_0", 2)
 
-       f_coords = eMesh.getField("coordinates")
+       f_coords = eMesh.get_field("coordinates")
 
        ff_coords = FieldFunction("ff_coords", f_coords, eMesh, 3, 3)
        x = 0.123
@@ -50,7 +50,7 @@ class FieldFunctionUnitTests(unittest.TestCase):
        evalVec3Print(x, y, z, time, ff_coords)
 
     def test_fieldFunction_read_print(self):
-       printInfo = 0
+       print_info = 0
 
        x = 3
        y = 3
@@ -58,18 +58,18 @@ class FieldFunctionUnitTests(unittest.TestCase):
        config_mesh = str(x) + "x" + str(y) + "x" + str(z) + "|bbox:0,0,0,1,1,1"
 
        eMesh = PerceptMesh()
-       eMesh.newMeshReadOnly(GMeshSpec(config_mesh))
+       eMesh.new_meshReadOnly(GMeshSpec(config_mesh))
 
-       metaData = eMesh.getFEM_meta_data()
+       metaData = eMesh.get_fem_meta_data()
        
        parts = metaData.get_parts()       
        nparts = len(parts)
        
-       if printInfo == 1:
+       if print_info == 1:
           print "Number of parts = ", nparts
        fields = metaData.get_fields()
        nfields = len(fields)
-       if printInfo == 1:
+       if print_info == 1:
           print "Number of fields = ", nfields      
           for i in range(nfields):
              field = fields[i] 
@@ -82,10 +82,10 @@ class FieldFunctionUnitTests(unittest.TestCase):
        print "gms= end"
 
        eMesh = PerceptMesh()
-       eMesh.newMesh(GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"))
+       eMesh.new_mesh(GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"))
        eMesh.commit()
 
-       f_coords = eMesh.getField("coordinates")
+       f_coords = eMesh.get_field("coordinates")
        ff_coords = FieldFunction("ff_coords", f_coords, eMesh, 3, 3)
 
        x = 0.123
@@ -96,14 +96,14 @@ class FieldFunctionUnitTests(unittest.TestCase):
 
     def test_fieldFunction_demo_2(self):   
        eMesh = PerceptMesh()
-       eMesh.newMesh(GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"))
+       eMesh.new_mesh(GMeshSpec("3x3x3|bbox:0,0,0,1,1,1"))
 
        vectorDimension = 0
-       eMesh.addField("coords_mag_field", FEMMetaData.NODE_RANK, vectorDimension)
+       eMesh.add_field("coords_mag_field", FEMMetaData.NODE_RANK, vectorDimension)
        eMesh.commit()
 
-       f_coords = eMesh.getField("coordinates")
-       coords_mag_field = eMesh.getField("coords_mag_field")
+       f_coords = eMesh.get_field("coordinates")
+       coords_mag_field = eMesh.get_field("coords_mag_field")
 
        ff_coords = FieldFunction("ff_coords", f_coords, eMesh, 3, 3)
        evalVec3Print(0.1,0.1,0.1,0.0,ff_coords)
@@ -121,7 +121,7 @@ class FieldFunctionUnitTests(unittest.TestCase):
 
        coords_mag_field_function.interpolateFrom(coords_mag_sf)
 
-       eMesh.saveAs("./cubehex8_withCoordMag_out.e")
+       eMesh.save_as("./cubehex8_withCoordMag_out.e")
 
        ff_coords.addAlias("mc")
        
@@ -134,17 +134,17 @@ class FieldFunctionUnitTests(unittest.TestCase):
        config_mesh = str(num_x) + "x" + str(num_y) + "x" + str(num_z) + "|bbox:0,0,0,1,1,1"
 
        eMesh = PerceptMesh()
-       eMesh.newMesh(GMeshSpec(config_mesh))
+       eMesh.new_mesh(GMeshSpec(config_mesh))
        vectorDimension = 0
-       eMesh.addField("coords_mag_field", FEMMetaData.NODE_RANK, vectorDimension)
+       eMesh.add_field("coords_mag_field", FEMMetaData.NODE_RANK, vectorDimension)
        eMesh.commit()
 
-       #p_rank = eMesh.getBulkData().parallel_rank()
+       #p_rank = eMesh.get_bulk_data().parallel_rank()
        #setRank(p_rank)        
           #from Util 
-       f_coords = eMesh.getField("coordinates")
+       f_coords = eMesh.get_field("coordinates")
 
-       coords_mag_field = eMesh.getField("coords_mag_field")
+       coords_mag_field = eMesh.get_field("coords_mag_field")
        #VERIFY_OP_ON      Here the unit test does something
        
        ff_coords = FieldFunction("ff_coords", f_coords, eMesh, 3, 3, FieldFunction.SIMPLE_SEARCH)
@@ -192,11 +192,11 @@ class FieldFunctionUnitTests(unittest.TestCase):
        config_mesh = str(num_x) + "x" + str(num_y) + "x" + str(num_z) + "|bbox:0,0,0,1,1,1"
 
        eMesh = PerceptMesh()
-       eMesh.newMesh(GMeshSpec(config_mesh))
+       eMesh.new_mesh(GMeshSpec(config_mesh))
        vectorDimension = 0
-       eMesh.addField("coords_mag_field", FEMMetaData.NODE_RANK, vectorDimension)
+       eMesh.add_field("coords_mag_field", FEMMetaData.NODE_RANK, vectorDimension)
        eMesh.commit()
-       f_coords = eMesh.getField("coordinates")
+       f_coords = eMesh.get_field("coordinates")
        ff_coords = FieldFunction("ff_coords", f_coords, eMesh, Dimensions(3), Dimensions(3), FieldFunction.SIMPLE_SEARCH)
        val1 = evalVec3(0.2, 0.3, 0.4, 0.0, ff_coords)
        print "val1= ", val1
@@ -254,16 +254,16 @@ class FieldFunctionUnitTests(unittest.TestCase):
        config_mesh = str(num_x) + "x" + str(num_y) + "x" + str(num_z) + "|bbox:0,0,0,1,1,1"
 
        eMesh = PerceptMesh()
-       eMesh.newMesh(GMeshSpec(config_mesh))
+       eMesh.new_mesh(GMeshSpec(config_mesh))
        eMesh.commit()
 
-       f_coords = eMesh.getField("coordinates") 
+       f_coords = eMesh.get_field("coordinates") 
        
        ff_coords = FieldFunction("ff_coords", f_coords, eMesh, Dimensions(3), Dimensions(3), FieldFunction.SIMPLE_SEARCH)
 
        val1 = evalVec3Print(0.2,0.3,0.4,0.0,ff_coords)
 
-       bulkData = eMesh.getBulkData()
+       bulkData = eMesh.get_bulk_data()
 
        try:
           val10 = evalPrintVec3(1.2, 1.3, 1.4, 0.0, ff_coords)
@@ -290,13 +290,13 @@ class FieldFunctionUnitTests(unittest.TestCase):
        config_mesh = str(num_x) + "x" + str(num_y) + "x" + str(num_z) + "|bbox:0,0,0,1,1,1"
 
        eMesh = PerceptMesh()
-       eMesh.newMesh(GMeshSpec(config_mesh))
+       eMesh.new_mesh(GMeshSpec(config_mesh))
        eMesh.commit()
 
        #FIXME
-       #p_size = eMesh.getBulkData->parallel_size()
+       #p_size = eMesh.get_bulk_data->parallel_size()
 
-       f_coords = eMesh.getField("coordinates")
+       f_coords = eMesh.get_field("coordinates")
 
        for iSearchType in range(2):
           if iSearchType == 0:

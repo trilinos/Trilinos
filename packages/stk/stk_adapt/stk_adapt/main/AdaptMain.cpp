@@ -134,22 +134,22 @@ namespace stk {
       
       static void process_estimate(MemorySizeType tot_mem, PerceptMesh& eMesh, std::vector<RefinementInfoByType>& refInfo, std::string memory_multipliers_file, std::string input_file)
       {
-        //const stk::ParallelMachine& comm = eMesh.getBulkData()->parallel();
+        //const stk::ParallelMachine& comm = eMesh.get_bulk_data()->parallel();
 
         // this is a data gather pass
         if (tot_mem)
           {
             /*
-              mesh::Selector sel_locally_owned(eMesh.getFEM_meta_data()->locally_owned_part());
-              mesh::Selector sel_globally_shared(eMesh.getFEM_meta_data()->globally_shared_part());
-              mesh::Selector sel_universal(eMesh.getFEM_meta_data()->universal_part());
+              mesh::Selector sel_locally_owned(eMesh.get_fem_meta_data()->locally_owned_part());
+              mesh::Selector sel_globally_shared(eMesh.get_fem_meta_data()->globally_shared_part());
+              mesh::Selector sel_universal(eMesh.get_fem_meta_data()->universal_part());
           
               std::vector<unsigned> count ;
-              stk::mesh::count_entities( sel_universal, *eMesh.getBulkData(), count );
+              stk::mesh::count_entities( sel_universal, *eMesh.get_bulk_data(), count );
       
               unsigned nnodes = count[0];
 
-              stk::ParallelMachine pm = eMesh.getBulkData()->parallel();
+              stk::ParallelMachine pm = eMesh.get_bulk_data()->parallel();
               stk::all_reduce( pm, stk::ReduceSum<1>( &nnodes ) );
             */
             MemoryMultipliers memMults;
@@ -159,7 +159,7 @@ namespace stk {
             RefinementInfoByType::countCurrentNodes(eMesh, refInfo);
             MemorySizeType estMem = memMults.estimate_memory(refInfo);
             //std::cout << "tmp srk tot_mem = " << MegaByte(tot_mem) << " estMem= " << MegaByte(estMem) << std::endl;
-            if (eMesh.getRank() == 0)
+            if (eMesh.get_rank() == 0)
               {
                 std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 << " memory[MB]= " << MegaByte(tot_mem) 
                           << " estMem[MB]= " << MegaByte(estMem) 
@@ -180,7 +180,7 @@ namespace stk {
             RefinementInfoByType::countCurrentNodes(eMesh, refInfo);
             MemorySizeType estMem = memMults.estimate_memory(refInfo);
             //std::cout << "tmp srk tot_mem = " << MegaByte(tot_mem) << " estMem= " << MegaByte(estMem) << std::endl;
-            if (eMesh.getRank() == 0)
+            if (eMesh.get_rank() == 0)
               {
                 std::cout << "MemEst: num_nodes= " << memMults.num_nodes << " num_tet4= " << memMults.num_tet4 << " num_hex8= " << memMults.num_hex8 << " memory[MB]= " << MegaByte(tot_mem) 
                           << " estMem[MB]= " << MegaByte(estMem) 
@@ -271,7 +271,7 @@ namespace stk {
       vector<stk::mesh::Entity *> new_elements;
       vector<stk::mesh::Entity *> new_nodes;
       
-      eMesh.getBulkData()->modification_begin();
+      eMesh.get_bulk_data()->modification_begin();
 
       std::cout << "creating " << n_elements << " elements..." <<std::endl;
       eMesh.createEntities( eMesh.element_rank(), n_elements, new_elements);
@@ -298,7 +298,7 @@ namespace stk {
             {
               stk::mesh::Entity& node = *new_nodes[i_node];
 
-              eMesh.getBulkData()->declare_relation(element, node, j_node);
+              eMesh.get_bulk_data()->declare_relation(element, node, j_node);
               
               i_node++;
               if (i_node >= n_nodes-1)
@@ -307,7 +307,7 @@ namespace stk {
         }
 
       std::cout << " doing modification_end ... " << std::endl;
-      eMesh.getBulkData()->modification_end();
+      eMesh.get_bulk_data()->modification_end();
       std::cout << " done modification_end ... " << std::endl;
       
 
@@ -712,7 +712,7 @@ namespace stk {
           PerceptMesh eMesh(0);
           std::string mesh_name = Ioss::Utils::decode_filename(input_mesh_save, 0, m_M);
           eMesh.open(mesh_name);
-          s_spatialDim = eMesh.getSpatialDim();
+          s_spatialDim = eMesh.get_spatial_dim();
           VERIFY_OP_ON(s_spatialDim, >=, 2, "AdaptMain bad spatial_dim");
         }
       
@@ -837,9 +837,9 @@ namespace stk {
                     if (do_normal_pass)
                       {
                         eMesh.open(input_mesh);
-                        if (!s_spatialDim) s_spatialDim = eMesh.getSpatialDim();
+                        if (!s_spatialDim) s_spatialDim = eMesh.get_spatial_dim();
 
-                        Util::setRank(eMesh.getRank());
+                        Util::setRank(eMesh.get_rank());
 
                         Teuchos::RCP<UniformRefinerPatternBase> pattern;
 
@@ -849,7 +849,7 @@ namespace stk {
                             BlockNamesType block_names(stk::percept::EntityRankEnd+1u);
                             if (block_name_inc.length())
                               {
-                                block_names = RefinerUtil::getBlockNames(block_name_inc, eMesh.getRank(), eMesh);
+                                block_names = RefinerUtil::getBlockNames(block_name_inc, eMesh.get_rank(), eMesh);
                                 if (1)
                                   {
                                     eMesh.commit();
@@ -881,7 +881,7 @@ namespace stk {
                         stk::mesh::FieldBase* proc_rank_field_ptr = 0;
                         if (proc_rank_field)
                           {
-                            proc_rank_field_ptr = eMesh.addField("proc_rank", eMesh.element_rank(), scalarDimension);
+                            proc_rank_field_ptr = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
                           }
 
 #if STK_ADAPT_HAVE_YAML_CPP
@@ -897,7 +897,7 @@ namespace stk {
                         eMesh.commit();
 
                         if (print_memory_usage)
-                          memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.getBulkData(), 0, "after file open");
+                          memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.get_bulk_data(), 0, "after file open");
 
                         if (test_memory_nodes && test_memory_elements)
                           {
@@ -906,11 +906,11 @@ namespace stk {
                             test_memory(eMesh, test_memory_elements, test_memory_nodes);
 
                             if (print_memory_usage)
-                              memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.getBulkData(), 0, "after test memory");
+                              memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.get_bulk_data(), 0, "after test memory");
 
                             if (estimate_memory_usage && !query_only)
                               {
-                                MemorySizeType tot_mem = memory_dump(false, run_environment.m_comm, *eMesh.getBulkData(), 0, "after test memory");
+                                MemorySizeType tot_mem = memory_dump(false, run_environment.m_comm, *eMesh.get_bulk_data(), 0, "after test memory");
 
                                 //std::cout << "MemEst: num_nodes= " << test_memory_nodes << " num_tet4=0 hum_hex8= " << test_memory_elements << " memory= " << MegaByte(tot_mem) << std::endl;
                                 //MemoryMultipliers::process_estimate(tot_mem, eMesh, breaker.getRefinementInfoByType(), memory_multipliers_file);
@@ -940,19 +940,19 @@ namespace stk {
                         // FIXME
                         if (0)
                           {
-                            eMesh.saveAs("outtmp.e");
+                            eMesh.save_as("outtmp.e");
                             exit(1);
                           }
         
                         if (print_info)
                           {
-                            eMesh.printInfo("convert", print_info);
+                            eMesh.print_info("convert", print_info);
                           }
 
                         // FIXME
                         if (0)
                           {
-                            eMesh.printInfo("before convert", 2);
+                            eMesh.print_info("before convert", 2);
                             exit(1);
                           }
 
@@ -980,14 +980,14 @@ namespace stk {
 
                             for (int iBreak = 0; iBreak < number_refines; iBreak++)
                               {
-                                if (!eMesh.getRank())
+                                if (!eMesh.get_rank())
                                   {
                                     std::cout << "Refinement pass # " << (iBreak+1) << " start..." << std::endl;
                                   }
                                 //breaker.setPassNumber(iBreak);
                                 breaker.doBreak();
                                 //RefinementInfoByType::countCurrentNodes(eMesh, breaker.getRefinementInfoByType());
-                                if (!eMesh.getRank())
+                                if (!eMesh.get_rank())
                                   {
                                     std::cout << std::endl;
                                     int ib = iBreak;
@@ -997,13 +997,13 @@ namespace stk {
                                   }
                                 if (print_memory_usage)
                                   {
-                                    memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.getBulkData(), &breaker.getNodeRegistry(),
+                                    memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.get_bulk_data(), &breaker.getNodeRegistry(),
                                                 std::string("after refine pass: ")+toString(iBreak));
                                   }
 
                                 if (estimate_memory_usage && !query_only)
                                   {
-                                    MemorySizeType tot_mem = memory_dump(false, run_environment.m_comm, *eMesh.getBulkData(), &breaker.getNodeRegistry(),
+                                    MemorySizeType tot_mem = memory_dump(false, run_environment.m_comm, *eMesh.get_bulk_data(), &breaker.getNodeRegistry(),
                                                                          std::string("after refine pass: ")+toString(iBreak));
                                     std::cout << "P[" << p_rank << "] tmp srk tot_mem= " << MegaByte(tot_mem) << std::endl;
                                     MemoryMultipliers::process_estimate(tot_mem, eMesh, breaker.getRefinementInfoByType(), memory_multipliers_file, input_mesh);
@@ -1045,12 +1045,12 @@ namespace stk {
 
                             stk::percept::pout() << "P[" << p_rank << "] AdaptMain::  saving mesh... \n";
                             std::cout << "P[" << p_rank << "]  AdaptMain:: saving mesh... " << std::endl;
-                            eMesh.saveAs(output_mesh);
+                            eMesh.save_as(output_mesh);
                             stk::percept::pout() << "P[" << p_rank << "] AdaptMain:: ... mesh saved\n";
                             std::cout << "P[" << p_rank << "]  AdaptMain:: mesh saved" << std::endl;
 
                             if (print_memory_usage)
-                              memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.getBulkData(), &breaker.getNodeRegistry(), "after final save mesh");
+                              memory_dump(print_memory_usage, run_environment.m_comm, *eMesh.get_bulk_data(), &breaker.getNodeRegistry(), "after final save mesh");
 
                           } // doRefineMesh
                       } // do_normal_pass

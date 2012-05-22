@@ -415,12 +415,12 @@ namespace stk
     void IntrepidManager::FieldValues::operator()(const stk::mesh::Entity& element, MDArray& transformed_basis_values, mesh::FieldBase* field)
     {
       ComputeFieldValues cfv;
-      cfv.getFieldValues(element, transformed_basis_values, field, *this);
+      cfv.get_fieldValues(element, transformed_basis_values, field, *this);
     }
     void IntrepidManager::FieldValues::operator()(const stk::mesh::Entity& element, MDArray& transformed_basis_values, mesh::FieldBase* field, MDArray& output_field_values)
     {
       ComputeFieldValues cfv;
-      cfv.getFieldValues(element, transformed_basis_values, field, output_field_values);
+      cfv.get_fieldValues(element, transformed_basis_values, field, output_field_values);
     }
 
     //------------------------------------------------------------------------------------------------------------------------

@@ -189,7 +189,7 @@ namespace stk {
     void Util::setFlag(int which_flag, bool val) { s_flag[which_flag]=val; }
     bool Util::getFlag(int which_flag) { return s_flag[which_flag]; }
     void Util::setRank(int rank){ s_p_rank=rank; }
-    int Util::getRank() { return s_p_rank; }
+    int Util::get_rank() { return s_p_rank; }
 
     void Util::setDoPause(bool enableOrDisablePause)
     {

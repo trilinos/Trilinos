@@ -72,9 +72,9 @@ namespace stk
 
       PerceptMesh mesh1(3, run_environment.m_comm);
       PerceptMesh mesh2(3, run_environment.m_comm);
-      mesh1.openReadOnly(file_name1);
+      mesh1.open_read_only(file_name1);
       std::cout << "read in file1: " << file_name1 << std::endl;
-      mesh2.openReadOnly(file_name2);
+      mesh2.open_read_only(file_name2);
       std::cout << "read in file2: " << file_name2 << std::endl;
 
       PerceptMesh::mesh_difference(mesh1, mesh2, "diff", true, true);

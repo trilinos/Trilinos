@@ -76,7 +76,7 @@ namespace stk
                     SearchType searchType = SIMPLE_SEARCH,
                     unsigned integration_order = 0);
 
-      mesh::FieldBase *getField();
+      mesh::FieldBase *get_field();
       void interpolateFrom(Function& function);
 
       //virtual void value(MDArray& in, MDArray& out, double time_value_optional=0.0);
@@ -107,7 +107,7 @@ namespace stk
       void helper(MDArray& input_phy_points, MDArray& output_field_values,
                   const BucketOrEntity& bucket_or_element, const MDArray& parametric_coordinates, double time_value_optional);
 
-      mesh::BulkData *getBulkData();
+      mesh::BulkData *get_bulk_data();
 
       //void setBulkData(mesh::BulkData *bulk) { m_bulkData = bulk; }
       bool getFoundOnLocalOwnedPart() { return m_found_on_local_owned_part; }

@@ -328,7 +328,7 @@ namespace stk {
         const CellTopologyData * const cell_topo_data = shards::getCellTopologyData< shards::Tetrahedron<4> >();
 
         shards::CellTopology cell_topo(cell_topo_data);
-        //VectorFieldType* coordField = eMesh.getCoordinatesField();
+        //VectorFieldType* coordField = eMesh.get_coordinates_field();
 
         unsigned num_edges_marked=0;
         for (int iedge = 0; iedge < 6; iedge++)
@@ -390,7 +390,7 @@ namespace stk {
                 double * node_coords[4];
                 for (int inode=0; inode < 4; inode++)
                   {
-                    node_coords[inode] = stk::mesh::field_data( *eMesh.getCoordinatesField() , *tet_elem_nodes[inode] );
+                    node_coords[inode] = stk::mesh::field_data( *eMesh.get_coordinates_field() , *tet_elem_nodes[inode] );
                     if (0) std::cout << "tmp RP node_coords= " 
                                      << node_coords[inode][0] << " "
                                      << node_coords[inode][1] << " "
@@ -409,7 +409,7 @@ namespace stk {
                   {
                     for (int inode=0; inode < 4; inode++)
                       {
-                        node_coords[inode] = stk::mesh::field_data( *eMesh.getCoordinatesField() , *tet_elem_nodes[inode] );
+                        node_coords[inode] = stk::mesh::field_data( *eMesh.get_coordinates_field() , *tet_elem_nodes[inode] );
                         std::cout << "tmp RefPatt::createNewElements node_coords after= " 
                                   << node_coords[inode][0] << " "
                                   << node_coords[inode][1] << " "
@@ -491,20 +491,20 @@ namespace stk {
 
             // compute centroid and temp_edge_nodes
             double * node_coords[10];  // all node coords in order, vertices {0-3}, edges {4-9}
-            double * centroid_coord = stk::mesh::field_data( *eMesh.getCoordinatesField() , *centroid_node);
+            double * centroid_coord = stk::mesh::field_data( *eMesh.get_coordinates_field() , *centroid_node);
             for (int dim=0; dim < 3; dim++) centroid_coord[dim] = 0.0;
             for (int inode=0; inode < 4; inode++)
               {
-                double * coord = stk::mesh::field_data( *eMesh.getCoordinatesField() , *tet_elem_nodes[inode] );
+                double * coord = stk::mesh::field_data( *eMesh.get_coordinates_field() , *tet_elem_nodes[inode] );
                 for (int dim=0; dim < 3; dim++) centroid_coord[dim] += coord[dim]/4.;
                 node_coords[inode] = coord;
               }
             int jnode = 4;
             for (int iedge=0; iedge < 6; iedge++)
               {
-                double * coord0 = stk::mesh::field_data( *eMesh.getCoordinatesField() , *tet_elem_nodes[tbl_tet_edge_nodes[iedge][0]] );
-                double * coord1 = stk::mesh::field_data( *eMesh.getCoordinatesField() , *tet_elem_nodes[tbl_tet_edge_nodes[iedge][1]] );
-                double * temp_node_coord = stk::mesh::field_data( *eMesh.getCoordinatesField() , *temp_edge_nodes[iedge] );
+                double * coord0 = stk::mesh::field_data( *eMesh.get_coordinates_field() , *tet_elem_nodes[tbl_tet_edge_nodes[iedge][0]] );
+                double * coord1 = stk::mesh::field_data( *eMesh.get_coordinates_field() , *tet_elem_nodes[tbl_tet_edge_nodes[iedge][1]] );
+                double * temp_node_coord = stk::mesh::field_data( *eMesh.get_coordinates_field() , *temp_edge_nodes[iedge] );
                 node_coords[jnode++] = temp_node_coord;
                 for (int dim=0; dim < 3; dim++) temp_node_coord[dim] = 0.5*(coord0[dim] + coord1[dim]);
               }
@@ -526,7 +526,7 @@ namespace stk {
 
         shards::CellTopology cell_topo(cell_topo_data);
         const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
-        //VectorFieldType* coordField = eMesh.getCoordinatesField();
+        //VectorFieldType* coordField = eMesh.get_coordinates_field();
 
         std::vector<stk::mesh::Part*> add_parts;
         std::vector<stk::mesh::Part*> remove_parts;
@@ -580,26 +580,26 @@ namespace stk {
             if (proc_rank_field)
               {
                 double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
-                //fdata[0] = double(m_eMesh.getRank());
+                //fdata[0] = double(m_eMesh.get_rank());
                 fdata[0] = double(newElement.owner_rank());
               }
 
-            //eMesh.getBulkData()->change_entity_parts( newElement, add_parts, remove_parts );
+            //eMesh.get_bulk_data()->change_entity_parts( newElement, add_parts, remove_parts );
             change_entity_parts(eMesh, element, newElement);
 
             {
               if (!elems[ielem].get<0>())
                 {
-                  std::cout << "P[" << eMesh.getRank() << "] nid = 0 << " << std::endl;
+                  std::cout << "P[" << eMesh.get_rank() << "] nid = 0 << " << std::endl;
                   //exit(1);
                 }
             }
 
             // 4 nodes of the new tets
-            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<0>()), 0);
-            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<1>()), 1);
-            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<2>()), 2);
-            eMesh.getBulkData()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<3>()), 3);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<0>()), 0);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<1>()), 1);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<2>()), 2);
+            eMesh.get_bulk_data()->declare_relation(newElement, eMesh.createOrGetNode(elems[ielem].get<3>()), 3);
 
             set_parent_child_relations(eMesh, element, newElement, ielem);
 

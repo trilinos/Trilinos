@@ -160,7 +160,7 @@ int MeshGeometry::classify_bucket_internal(const stk::mesh::Bucket& bucket, size
 
 void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh)
 {
-  BulkData& bulkData = *eMesh->getBulkData();
+  BulkData& bulkData = *eMesh->get_bulk_data();
 
   const std::vector<Bucket*> & buckets = bulkData.buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
 
@@ -304,10 +304,10 @@ void MeshGeometry::snap_node
   size_t evaluator_idx
 )
 {
-  VectorFieldType* coordField = eMesh->getCoordinatesField();
+  VectorFieldType* coordField = eMesh->get_coordinates_field();
 
   /*
-  Part* new_nodes_part = eMesh->getNonConstPart("refine_new_nodes_part");
+  Part* new_nodes_part = eMesh->get_non_const_part("refine_new_nodes_part");
   Selector new_nodes_part_selector;
   if (new_nodes_part) new_nodes_part_selector = Selector(*new_nodes_part);
   */
@@ -445,7 +445,7 @@ void MeshGeometry::normal_at
   std::vector<double>& normal
 )
 {
-  VectorFieldType* coordField = eMesh->getCoordinatesField();
+  VectorFieldType* coordField = eMesh->get_coordinates_field();
 
   {
 
@@ -484,7 +484,7 @@ void MeshGeometry::snap_nodes
   size_t evaluator_idx
 )
 {
-  //VectorFieldType* coordField = eMesh->getCoordinatesField();
+  //VectorFieldType* coordField = eMesh->get_coordinates_field();
   const unsigned num_nodes_in_bucket = bucket.size();
 
   //std::string str = geomKernel->get_attribute(evaluator_idx);
@@ -502,7 +502,7 @@ bool MeshGeometry::contains_dbg_node
   Bucket &bucket
 )
 {
-  VectorFieldType* coordField = eMesh->getCoordinatesField();
+  VectorFieldType* coordField = eMesh->get_coordinates_field();
   const unsigned num_nodes_in_bucket = bucket.size();
 
   for (unsigned iNode = 0; iNode < num_nodes_in_bucket; iNode++)

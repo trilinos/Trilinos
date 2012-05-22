@@ -193,7 +193,7 @@ namespace stk
               integrated_LN_op.setAccumulationType(IntegratedOp::ACCUMULATE_MAX);
             }
 
-            //eMesh.printInfo("Norm");
+            //eMesh.print_info("Norm");
             if (m_turboOpt == TURBO_NONE || m_turboOpt == TURBO_ELEMENT)
               {
                 eMesh.elementOpLoop(integrated_LN_op, 0, &mesh::fem::FEMMetaData::get(m_bulkData).locally_owned_part());
@@ -209,7 +209,7 @@ namespace stk
 
             if (Power == -1)
               {
-                MaxOfNodeValues maxOfNodeValues(eMesh.getSpatialDim(), integrand);
+                MaxOfNodeValues maxOfNodeValues(eMesh.get_spatial_dim(), integrand);
                 eMesh.nodalOpLoop(maxOfNodeValues);
                 for (unsigned iDim = 0; iDim < local.size(); iDim++)
                   local[iDim] = std::max(local[iDim], maxOfNodeValues.maxVal[iDim]);

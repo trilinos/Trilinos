@@ -20,7 +20,7 @@ namespace stk
                   unsigned integration_order) :
 
       Function(name, Dimensions(domain_dimension), Dimensions(codomain_dimension), integration_order),
-      m_my_field(field), m_bulkData(mesh.getBulkData()),
+      m_my_field(field), m_bulkData(mesh.get_bulk_data()),
       m_cachedElement(0), m_searcher(0),
       m_cached_topo_key(0), m_cached_basis(0), m_searchType(searchType)
                                 //, m_parallelEval(true)
@@ -29,7 +29,7 @@ namespace stk
 
     bool FieldFunction::m_parallelEval=true;
 
-    mesh::FieldBase *FieldFunction::getField() {return m_my_field; }
+    mesh::FieldBase *FieldFunction::get_field() {return m_my_field; }
 
     void FieldFunction::interpolateFrom(Function& function)
     {
@@ -70,7 +70,7 @@ namespace stk
                                  SearchType searchType,
                                  unsigned integration_order) :
       Function(name, domain_dimensions, codomain_dimensions, integration_order),
-      m_my_field(field), m_bulkData(eMesh.getBulkData()), m_cachedElement(0), m_searcher(0),
+      m_my_field(field), m_bulkData(eMesh.get_bulk_data()), m_cachedElement(0), m_searcher(0),
       m_cached_topo_key(0), m_cached_basis(0), m_searchType(searchType)
     {
     }
@@ -81,7 +81,7 @@ namespace stk
         delete m_searcher;
     }
 
-    mesh::BulkData *FieldFunction::getBulkData() {return m_bulkData; }
+    mesh::BulkData *FieldFunction::get_bulk_data() {return m_bulkData; }
 
 
 
@@ -229,7 +229,7 @@ namespace stk
 
               if (0 || EXTRA_PRINT)
                 {
-                  if (Util::getFlag(9828)) std::cout << "P[" << Util::getRank() << "] FieldFunction::operator() found_it = " << found_it << std::endl;
+                  if (Util::getFlag(9828)) std::cout << "P[" << Util::get_rank() << "] FieldFunction::operator() found_it = " << found_it << std::endl;
                 }
 
               // if found element on the local owned part, evaluate
@@ -261,7 +261,7 @@ namespace stk
                 {
                   if (!m_parallelEval)
                     {
-                      std::cout << "P[" << Util::getRank() << "] FieldFunction::operator() found_it = " << found_it << " points= "
+                      std::cout << "P[" << Util::get_rank() << "] FieldFunction::operator() found_it = " << found_it << " points= "
                                 << input_phy_points_one
                                 << std::endl;
 
@@ -308,9 +308,9 @@ namespace stk
 
                   stk_percept_global_lex_min( m_bulkData->parallel(), output_field_values.size(), &output_field_values_local[0], &output_field_values[0]);
 #if 0
-                  if (Util::getFlag(9828)) std::cout <<  "P[" << Util::getRank() << "] ofv.size= " << output_field_values.size() << std::endl;
-                  if (Util::getFlag(9828)) std::cout <<  "P[" << Util::getRank() << "] ofv_l.size= " << output_field_values_local.size() << std::endl;
-                  if (1 && Util::getFlag(9828)) std::cout <<  "P[" << Util::getRank() << "] ofv= "
+                  if (Util::getFlag(9828)) std::cout <<  "P[" << Util::get_rank() << "] ofv.size= " << output_field_values.size() << std::endl;
+                  if (Util::getFlag(9828)) std::cout <<  "P[" << Util::get_rank() << "] ofv_l.size= " << output_field_values_local.size() << std::endl;
+                  if (1 && Util::getFlag(9828)) std::cout <<  "P[" << Util::get_rank() << "] ofv= "
                                                      << output_field_values[0] << " "
                                                      << output_field_values[1] << " "
                                                      << output_field_values[2] << " "

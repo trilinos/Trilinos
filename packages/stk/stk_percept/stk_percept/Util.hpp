@@ -122,7 +122,7 @@ namespace stk {
       static void setFlag(int which_flag, bool val);
       static bool getFlag(int which_flag);
       static void setRank(int rank);
-      static int getRank();
+      static int get_rank();
       static void debug_stop();
       static void replace(std::string &str, const std::string &find_what, const std::string &replace_with);
 

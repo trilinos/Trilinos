@@ -121,7 +121,7 @@ namespace stk {
                             int M, int iM, int W=1, int iW=0, int M_0=-1, int M_1=-1) : 
         m_eMesh(eMesh), m_nodeRegistry(nodeRegistry), m_input_mesh_name(input_mesh_name), m_output_mesh_name(output_mesh_name), m_filePrefix(input_mesh_name), 
         m_M(M), m_iM(iM), m_W(W), m_iW(iW), m_M_0(M_0 >= 0 ? M_0 : 0), m_M_1(M_1 >= 0 ? M_1 : M-1),
-        m_entity_rank_names(eMesh.getFEM_meta_data()->entity_rank_names()),
+        m_entity_rank_names(eMesh.get_fem_meta_data()->entity_rank_names()),
         m_id_max(m_entity_rank_names.size(), 0u),  FAMILY_TREE_RANK(eMesh.element_rank() + 1u),
         m_partMap(0), m_nodeMap(0)
       {
@@ -132,7 +132,7 @@ namespace stk {
         m_localNodeRegistryFile = std::string("local_nodeRegistry.yaml.")+toString(m_M)+"."+toString(m_iM)+"."+toString(m_W)+"."+toString(m_iW);
         m_globalNodeRegistryFile = std::string("global_nodeRegistry.yaml.W."+toString(m_W)+"."+toString(m_iW));
         m_globalPartsFile = "global_parts.yaml.W."+toString(m_W)+"."+toString(m_iW);
-        m_spatialDim = eMesh.getSpatialDim();
+        m_spatialDim = eMesh.get_spatial_dim();
       }
 
       void pass(int streaming_pass)
@@ -241,13 +241,13 @@ namespace stk {
             PartName part_name = iter->first;
             stk::mesh::EntityRank part_rank = iter->second.get<0>();
             TopologyName topo_name = iter->second.get<1>();
-            const stk::mesh::Part* c_part = m_eMesh.getFEM_meta_data()->get_part(part_name);
+            const stk::mesh::Part* c_part = m_eMesh.get_fem_meta_data()->get_part(part_name);
             stk::mesh::Part *part = const_cast<stk::mesh::Part *>(c_part);
             if (!part)
               {
-                part = &m_eMesh.getFEM_meta_data()->declare_part(part_name, part_rank);
+                part = &m_eMesh.get_fem_meta_data()->declare_part(part_name, part_rank);
                 stk::io::put_io_part_attribute(*part);
-                stk::mesh::fem::CellTopology topo = m_eMesh.getFEM_meta_data()->get_cell_topology(topo_name);
+                stk::mesh::fem::CellTopology topo = m_eMesh.get_fem_meta_data()->get_cell_topology(topo_name);
                 if (!topo.getCellTopologyData())
                   {
                     std::cout << "bad cell topo SerializeNodeRegistry::declareGlobalParts topo_name= " << topo_name << std::endl;
@@ -260,7 +260,7 @@ namespace stk {
         for (iter = m_partMap->begin(); iter != m_partMap->end(); ++iter)
           {
             PartName part_name = iter->first;
-            const stk::mesh::Part* c_part = m_eMesh.getFEM_meta_data()->get_part(part_name);
+            const stk::mesh::Part* c_part = m_eMesh.get_fem_meta_data()->get_part(part_name);
             stk::mesh::Part *part = const_cast<stk::mesh::Part *>(c_part);
             if (!part)
               {
@@ -269,14 +269,14 @@ namespace stk {
             PartSubsets subsets = iter->second.get<2>();
             for (unsigned isub=0; isub < subsets.size(); isub++)
               {
-                const stk::mesh::Part* c_subset = m_eMesh.getFEM_meta_data()->get_part(subsets[isub]);
+                const stk::mesh::Part* c_subset = m_eMesh.get_fem_meta_data()->get_part(subsets[isub]);
                 stk::mesh::Part *subset = const_cast<stk::mesh::Part *>(c_subset);
                 
                 if (!subset)
                   {
                     throw std::runtime_error(std::string("no subset part found SerializeNodeRegistry::declareGlobalParts: subset part= ")+subsets[isub]);
                   }                
-                m_eMesh.getFEM_meta_data()->declare_part_subset(*part, *subset);
+                m_eMesh.get_fem_meta_data()->declare_part_subset(*part, *subset);
               }
           }
       }
@@ -575,7 +575,7 @@ namespace stk {
 
       void passM1_mergeGlobalParts()
       {
-        const stk::mesh::PartVector& parts = m_eMesh.getFEM_meta_data()->get_parts();
+        const stk::mesh::PartVector& parts = m_eMesh.get_fem_meta_data()->get_parts();
         for (unsigned ipart=0; ipart < parts.size(); ipart++)
           {
             //const Part& part = *parts[ipart];
@@ -592,7 +592,7 @@ namespace stk {
                 continue;
               }
 
-            stk::mesh::fem::CellTopology topo = m_eMesh.getFEM_meta_data()->get_cell_topology(part);
+            stk::mesh::fem::CellTopology topo = m_eMesh.get_fem_meta_data()->get_cell_topology(part);
             TopologyName topo_name = "null";
             if (topo.getCellTopologyData()) topo_name = topo.getName();
             //std::cout << "part, topo= " << part.name() << " " << topo_name << std::endl;
@@ -644,7 +644,7 @@ namespace stk {
 
       void passM1_createLocalNodeMap()
       {
-        const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh.getBulkData()->buckets( m_eMesh.node_rank() );
+        const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( m_eMesh.node_rank() );
 
         for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
           {
@@ -803,7 +803,7 @@ namespace stk {
             //input_mesh = input_mesh_save+"."+toString(M)+"."+toString(m_iM);
             std::string input_mesh = Ioss::Utils::decode_filename(m_input_mesh_name, m_iM, m_M);
             PerceptMesh eMesh(m_spatialDim);
-            eMesh.openReadOnly(input_mesh);
+            eMesh.open_read_only(input_mesh);
             NodeRegistry *some_nr = 0;
             SerializeNodeRegistry snr(eMesh, some_nr, m_input_mesh_name, m_output_mesh_name, m_M, m_iM,  m_W, m_iW, m_M_0, m_M_1);
 
@@ -1000,7 +1000,7 @@ namespace stk {
             std::string output_mesh_new = Ioss::Utils::decode_filename(m_output_mesh_name, jM, m_M);
             PerceptMesh eMesh(0);
             eMesh.open(input_mesh_new);
-            m_spatialDim = eMesh.getSpatialDim();
+            m_spatialDim = eMesh.get_spatial_dim();
             eMesh.setStreamingSize(m_M);
             NodeRegistry *some_nr0 = 0;
             SerializeNodeRegistry snr0(eMesh, some_nr0, m_input_mesh_name, m_output_mesh_name, m_M, jM,  m_W, m_iW, m_M_0, m_M_1);
@@ -1012,14 +1012,14 @@ namespace stk {
             SerializeNodeRegistry snr(eMesh, some_nr, m_input_mesh_name, m_output_mesh_name, m_M, jM,  m_W, m_iW, m_M_0, m_M_1);
             snr.pass(3);
             std::cout << "tmp srk debug SerializeNodeRegistry: " << PERCEPT_OUT(m_M) << PERCEPT_OUT(jM) << PERCEPT_OUT(m_W) << PERCEPT_OUT(m_iW) << PERCEPT_OUT(m_M_0) << PERCEPT_OUT(m_M_1) << " output_mesh_new= " << output_mesh_new << std::endl;
-            eMesh.saveAs(output_mesh_new);
+            eMesh.save_as(output_mesh_new);
           }
       }
 
       // for each subDimEntity in local NodeRegistry, find it in the global NodeRegistry and reset ID's to the global values
       void lookupAndSetNewNodeIds(NodeRegistry& localNR, NodeRegistry& globalNR)
       {
-        m_eMesh.getBulkData()->modification_begin();
+        m_eMesh.get_bulk_data()->modification_begin();
         SubDimCellToDataMap& localMap = localNR.getMap();
         //SubDimCellToDataMap& globalMap = globalNR.getMap();
         //std::cout << " tmp SerializeNodeRegistry::lookupAndSetNewNodeIds localMap size: " << localMap.size() << std::endl;
@@ -1061,8 +1061,8 @@ namespace stk {
               {
                 stk::mesh::EntityId id_new = global_nodeIds_onSE.m_entity_id_vector[inode];
                 stk::mesh::EntityId id_old = nodeIds_onSE.m_entity_id_vector[inode];
-                stk::mesh::Entity* tmp_global_node = globalNR.getMesh().getBulkData()->get_entity(0, id_new);
-                stk::mesh::Entity* local_node_to_change = m_eMesh.getBulkData()->get_entity(0, id_old);
+                stk::mesh::Entity* tmp_global_node = globalNR.getMesh().get_bulk_data()->get_entity(0, id_new);
+                stk::mesh::Entity* local_node_to_change = m_eMesh.get_bulk_data()->get_entity(0, id_old);
                 if (m_debug) std::cout << "m_iM= " << m_iM << " id_new= " << id_new << " id_old= " << id_old << std::endl;
                 VERIFY_OP_ON(local_node_to_change, !=, 0, "SerializeNodeRegistry::lookupAndSetNewNodeIds null local_node_to_change");
                 VERIFY_OP_ON(tmp_global_node, !=, 0, "SerializeNodeRegistry::lookupAndSetNewNodeIds null tmp_global_node");
@@ -1070,15 +1070,15 @@ namespace stk {
                 if (id_new != id_old)
                   {
                     if (m_debug) std::cout << "DIFF m_iM= " << m_iM << " id_new= " << id_new << " id_old= " << id_old << std::endl;
-                    stk::mesh::Entity* local_node_new_id_check = m_eMesh.getBulkData()->get_entity(0, id_new);
+                    stk::mesh::Entity* local_node_new_id_check = m_eMesh.get_bulk_data()->get_entity(0, id_new);
                     if (!local_node_new_id_check)
                       {
-                        m_eMesh.getBulkData()->change_entity_id(id_new, *local_node_to_change);
+                        m_eMesh.get_bulk_data()->change_entity_id(id_new, *local_node_to_change);
                       }
                   }
               }
           }
-        m_eMesh.getBulkData()->modification_end();
+        m_eMesh.get_bulk_data()->modification_end();
       }
 
       void writeNodeRegistry(NodeRegistry& nodeRegistry, std::string filename)
@@ -1227,7 +1227,7 @@ namespace stk {
         for (unsigned irank=0; irank < m_id_max.size(); irank++)
           {
             // bucket loop
-            const std::vector<stk::mesh::Bucket*> & buckets = eMesh.getBulkData()->buckets( irank );
+            const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( irank );
 
             for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
               {
@@ -1256,7 +1256,7 @@ namespace stk {
           {
             if (irank == FAMILY_TREE_RANK) continue;
             // bucket loop
-            const std::vector<stk::mesh::Bucket*> & buckets = eMesh.getBulkData()->buckets( irank );
+            const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( irank );
             std::vector<EntityPair > id_change;
 
             for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
@@ -1282,23 +1282,23 @@ namespace stk {
                 }
               }
 
-            eMesh.getBulkData()->modification_begin();
+            eMesh.get_bulk_data()->modification_begin();
 
             for (unsigned ii=0; ii< id_change.size(); ii++)
               {
-                stk::mesh::Entity *entity = eMesh.getBulkData()->get_entity(irank, id_change[ii].first);
+                stk::mesh::Entity *entity = eMesh.get_bulk_data()->get_entity(irank, id_change[ii].first);
                 VERIFY_OP_ON(entity, !=, 0, "SerializeNodeRegistry::resetNewElementIds");
                 VERIFY_OP_ON(entity->identifier(), ==, id_change[ii].first, "SerializeNodeRegistry::resetNewElementIds bad00");
                 stk::mesh::EntityId id_new = id_change[ii].second;
                 //stk::mesh::EntityId id_old = entity->identifier();
-                eMesh.getBulkData()->change_entity_id(id_new, *entity);
+                eMesh.get_bulk_data()->change_entity_id(id_new, *entity);
               }
           }
       }
 
       void checkNR(NodeRegistry& nodeRegistry, std::string msg="") 
       {
-        nodeRegistry.getMesh().getBulkData()->modification_begin();
+        nodeRegistry.getMesh().get_bulk_data()->modification_begin();
 
         SubDimCellToDataMap::iterator iter;
         SubDimCellToDataMap& map = nodeRegistry.getMap();
@@ -1327,19 +1327,19 @@ namespace stk {
 
                     VERIFY_OP_ON(id_old_check, ==, id_old, "SerializeNodeRegistry::checkNR id_old");
 
-                    stk::mesh::Entity *node = nodeRegistry.getMesh().getBulkData()->get_entity(0, id_old);
+                    stk::mesh::Entity *node = nodeRegistry.getMesh().get_bulk_data()->get_entity(0, id_old);
                     VERIFY_OP_ON(node, !=, 0, "SerializeNodeRegistry::checkNR node is null");
                     VERIFY_OP_ON(node, ==, nodeIds_onSE[inode], "SerializeNodeRegistry::checkNR node is not same");
                   }
               }
           }
         std::cout << " tmp SerializeNodeRegistry::checkNR done msg= " << msg << " map size: " << map.size() << std::endl;
-        nodeRegistry.getMesh().getBulkData()->modification_end();
+        nodeRegistry.getMesh().get_bulk_data()->modification_end();
       }
 
       void fixNR(NodeRegistry& nodeRegistry, std::string msg="") 
       {
-        nodeRegistry.getMesh().getBulkData()->modification_begin();
+        nodeRegistry.getMesh().get_bulk_data()->modification_begin();
         SubDimCellToDataMap::iterator iter;
         SubDimCellToDataMap& map = nodeRegistry.getMap();
         std::cout << " tmp SerializeNodeRegistry::fixNR msg= " << msg << " map size: " << map.size() << std::endl;
@@ -1353,12 +1353,12 @@ namespace stk {
             for (unsigned inode=0; inode < nnodes; inode++)
               {
                 stk::mesh::EntityId id = nodeIds_onSE.m_entity_id_vector[inode];
-                stk::mesh::Entity *node = nodeRegistry.getMesh().getBulkData()->get_entity(0, id);
+                stk::mesh::Entity *node = nodeRegistry.getMesh().get_bulk_data()->get_entity(0, id);
                 VERIFY_OP_ON(node, !=, 0, "SerializeNodeRegistry::fixNR node is null "+toString(id));
                 nodeIds_onSE[inode] = node;
               }
           }
-        nodeRegistry.getMesh().getBulkData()->modification_end();
+        nodeRegistry.getMesh().get_bulk_data()->modification_end();
         std::cout << " tmp SerializeNodeRegistry::fixNR done msg= " << msg << " map size: " << map.size() << std::endl;
       }
 
@@ -1366,7 +1366,7 @@ namespace stk {
       ///   the shared nodes.
       void resetNewNodeIds(NodeRegistry& nodeRegistry) 
       {
-        nodeRegistry.getMesh().getBulkData()->modification_begin();
+        nodeRegistry.getMesh().get_bulk_data()->modification_begin();
 
         SubDimCellToDataMap::iterator iter;
         SubDimCellToDataMap& map = nodeRegistry.getMap();
@@ -1407,7 +1407,7 @@ namespace stk {
                 m_id_max[0] = id_new;
                 nodeIds_onSE.m_entity_id_vector[inode] = id_new;
 
-                nodeRegistry.getMesh().getBulkData()->change_entity_id(id_new, *nodeIds_onSE[inode]);
+                nodeRegistry.getMesh().get_bulk_data()->change_entity_id(id_new, *nodeIds_onSE[inode]);
 
                 stk::mesh::EntityId id_new_check = nodeIds_onSE[inode]->identifier();
                 VERIFY_OP_ON(id_new_check, ==, id_new, "SerializeNodeRegistry::resetNewNodeIds id_new");
@@ -1416,7 +1416,7 @@ namespace stk {
                 VERIFY_OP_ON(id_new_check, ==, id_new, "SerializeNodeRegistry::resetNewNodeIds id_new 2");
               }
           }
-        nodeRegistry.getMesh().getBulkData()->modification_end();
+        nodeRegistry.getMesh().get_bulk_data()->modification_end();
       }
 
 
@@ -1502,7 +1502,7 @@ namespace stk {
       static void serialize_read(NodeRegistry& nodeRegistry, std::ifstream& file_in,  std::string msg="", bool force_have_node=false)
       {
         PerceptMesh& eMesh = nodeRegistry.getMesh();
-        eMesh.getBulkData()->modification_begin();
+        eMesh.get_bulk_data()->modification_begin();
 
         YAML::Parser parser(file_in);
         YAML::Node doc;
@@ -1555,7 +1555,7 @@ namespace stk {
                   for(YAML::Iterator itk=keySeq.begin();itk!=keySeq.end();++itk) {
                     *itk >> key_quantum;
                     if (DEBUG_YAML) std::cout << "s_r key_quantum= " << key_quantum << std::endl;
-                    SDSEntityType node = eMesh.getBulkData()->get_entity(0, key_quantum);
+                    SDSEntityType node = eMesh.get_bulk_data()->get_entity(0, key_quantum);
                     //key.insert(const_cast<stk::mesh::Entity*>(&element) );
                     if (!node)
                       {
@@ -1563,8 +1563,8 @@ namespace stk {
                           throw std::runtime_error("NodeRegistry::serialize_read: null node returned from get_entity");
                         else
                           {
-                            stk::mesh::PartVector parts(1, &eMesh.getFEM_meta_data()->universal_part());
-                            node = &eMesh.getBulkData()->declare_entity(0, static_cast<stk::mesh::EntityId>(key_quantum), parts);
+                            stk::mesh::PartVector parts(1, &eMesh.get_fem_meta_data()->universal_part());
+                            node = &eMesh.get_bulk_data()->declare_entity(0, static_cast<stk::mesh::EntityId>(key_quantum), parts);
                           }
                       }
                   
@@ -1597,15 +1597,15 @@ namespace stk {
 
                         //stk::mesh::EntityId owning_elementId = stk::mesh::entity_id(data.get<SDC_DATA_OWNING_ELEMENT_KEY>());
                         nodeIds_onSE.m_entity_id_vector.push_back(value_tuple_0_quantum);
-                        stk::mesh::Entity *entity = eMesh.getBulkData()->get_entity(0, value_tuple_0_quantum);
+                        stk::mesh::Entity *entity = eMesh.get_bulk_data()->get_entity(0, value_tuple_0_quantum);
                         if (!entity)
                           {
                             if (force_have_node)
                               throw std::runtime_error("NodeRegistry::serialize_read: null node returned from get_entity 2");
                             else
                               {
-                                stk::mesh::PartVector parts(1, &eMesh.getFEM_meta_data()->universal_part());
-                                entity = &eMesh.getBulkData()->declare_entity(0, static_cast<stk::mesh::EntityId>(value_tuple_0_quantum), 
+                                stk::mesh::PartVector parts(1, &eMesh.get_fem_meta_data()->universal_part());
+                                entity = &eMesh.get_bulk_data()->declare_entity(0, static_cast<stk::mesh::EntityId>(value_tuple_0_quantum), 
                                                                               parts);
                               }
                           }
@@ -1634,7 +1634,7 @@ namespace stk {
           throw std::runtime_error(std::string("yaml parsing error: ")+e.what());
         }
 
-        eMesh.getBulkData()->modification_end();
+        eMesh.get_bulk_data()->modification_end();
       }
 
 
