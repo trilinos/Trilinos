@@ -148,9 +148,9 @@ int main(int argc, char *argv[])
 
   if (!fail){
      try{
-       env->memory("Memory info", "MB", 55);
-       env->memory("Memory info next", "MB", 55);
-       env->memory("Memory info after", "MB", 55);
+       env->memory("Memory info");
+       env->memory("Memory info next");
+       env->memory("Memory info after");
      }
      catch(std::exception &e){
        std::cerr << e.what() << std::endl;
