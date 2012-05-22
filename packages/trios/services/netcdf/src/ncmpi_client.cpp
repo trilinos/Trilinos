@@ -60,9 +60,9 @@ extern "C"
 int ncmpi_fini(void)
 {
     int rc = NC_NOERR;
-    extern int nc_fini(void);
+    extern int netcdf_client_fini(void);
 
-    rc=nc_fini();
+    rc=netcdf_client_fini();
 
     return rc;
 }
