@@ -44,8 +44,8 @@
 #ifndef KOKKOS_DUMMY_SPARSE_KERNEL_CLASS_HPP
 #define KOKKOS_DUMMY_SPARSE_KERNEL_CLASS_HPP
 
-#include <Kokkos_CrsMatrix.hpp>
-#include <Kokkos_CrsGraph.hpp>
+#include <Kokkos_CrsMatrixBase.hpp>
+#include <Kokkos_CrsGraphBase.hpp>
 #include <Kokkos_MultiVector.hpp>
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_BLAS_types.hpp>
@@ -55,6 +55,31 @@
 ///   as outlined in the \ref kokkos_crs_ops "Kokkos CRS API".
 
 namespace KokkosExamples {
+
+  //! \class DummyCrsGraph 
+  /** This is based off Kokkos::CrsGraphBase to ease our obligations.
+   */
+  template <class Node>
+  class DummyCrsGraph : public Kokkos::CrsGraphBase<int,Node> {
+  public:
+    DummyCrsGraph(size_t numrows, const Teuchos::RCP<Node> &node) : Kokkos::CrsGraphBase<int,Node>(numrows,node) {}
+    size_t getNumEntries() const {return 0;}
+    bool isEmpty() const {return false;}
+    bool isFinalized() const {return true;}
+    void setStructure(const Teuchos::ArrayRCP<const size_t>&, const Teuchos::ArrayRCP<const int>&) {}
+  };
+
+  //! \class DummyCrsMatrix 
+  /** This is based off Kokkos::CrsMatrixBase to ease our obligations.
+   */
+  template <class Node>
+  class DummyCrsMatrix : public Kokkos::CrsMatrixBase<double,int,Node> {
+  public:
+    DummyCrsMatrix(const Teuchos::RCP<const DummyCrsGraph<Node> > &graph) : Kokkos::CrsMatrixBase<double,int,Node>(graph) {}
+    void setValues(const Teuchos::ArrayRCP<const double> &) {}
+    bool isFinalized() const {return true;}
+  };
+
 
   /// \class DummySparseKernel
   /// \ingroup kokkos_crs_ops
@@ -78,27 +103,39 @@ namespace KokkosExamples {
     /// \brief The type of entries of the sparse matrix.
     ///
     /// This is \c void only because this is a stub implementation.
-    /// In a real implementation, ScalarType would normally either be
+    /// In a real implementation, scalar_type would normally either be
     /// a fixed type (like \c double) or a template parameter of your
     /// class.
-    typedef void  ScalarType;
+    typedef void  scalar_type;
     /// \brief The type of (local) indices of the sparse matrix.
     ///
     /// This is \c void only because this is a stub implementation.
-    /// In a real implementation, OrdinalType would normally either be
+    /// In a real implementation, ordinal_type would normally either be
     /// a fixed type (like \c int) or a template parameter of your
     /// class.
-    typedef void OrdinalType;
+    typedef void ordinal_type;
     //! The Kokos Node type.
-    typedef Node    NodeType;
+    typedef Node    node_type;
     //! The type of this object: \c typeof(*this)
-    typedef DummySparseKernel<Node> ThisType;
+    typedef DummySparseKernel<Node> sparse_ops_type;
+
+    /** \brief Typedef for local graph class */
+    template <class O, class N>
+    struct graph {
+      typedef DummyCrsGraph<N> graph_type;
+    };
+
+    /** \brief Typedef for local matrix class */
+    template <class S, class O, class N>
+    struct matrix {
+      typedef DummyCrsMatrix<N> matrix_type;
+    };
 
     /// \brief Rebind struct, for specifying type information for a different scalar.
     ///
     /// This typedef lets you tell us where to find sparse kernels for
     /// sparse matrices with entries of scalar type T.  T may be
-    /// different than ScalarType.
+    /// different than scalar_type.
     ///
     /// One point of this typedef is that sometimes you may have
     /// noptimized kernels for some scalar types T (such as float or
@@ -129,7 +166,7 @@ namespace KokkosExamples {
 
     /// \brief Kokkos Node accessor.
     ///
-    /// Return the Kokkos Node instance of type this::NodeType given
+    /// Return the Kokkos Node instance of type this::node_type given
     /// to the constructor.
     Teuchos::RCP<Node> getNode() const {return node_;}
 
@@ -137,95 +174,22 @@ namespace KokkosExamples {
     //! @name Initialization of structure
     //@{
 
-    /** \brief Initialize the structure of the sparse matrix.
+    /** \brief Initialize the kernels with the graph and matrix.
 
         This is the mechanism by which the user specifies the
-        structure for the sparse matrix.  The structure always come
-        via a Kokkos::CrsGraph<O,N,SO> instance, where
+        structure and values for the sparse matrix ops.  
 
-        - \c O is the ordinal type this::OrdinalType,
-        - \c N is the node type this::NodeType, and
-        - \c SO is the sparse op type this::ThisType.
-
-        You must first provide the graph structure via
-        initializeStructure() before you can provide the matrix values
-        to initializeValues(). After calling initializeStructure(),
-        the clear() method must be called before you can call
-        initializeStructure() again.
-
-        In general, both initializeStructure() and initializeValues()
-        must be called before calling multiply() or solve().
-
-        Note that your implementation of this method is not obligated
-        to represent the sparse matrix's structure in the same way
-        that Kokkos::CrsGraph does.  That is just an entry format.
-        Your implementation may choose either to make a deep copy of
-        the input data (and possibly change the storage format), or
-        simply to view it (by copying the ArrayRCPs).
+        setGraphAndMatrix() must be called before calling multiply() or solve().
 
         After initializeStructure() completes, the caller is
-        responsible for deciding what to do with the original
-        Kokkos::CrsGraph.  Since your implementation may choose just
+        responsible for deciding what to do with the graph and matrix objects.
+        Since your implementation may choose just
         to view the original CrsGraph data instead of making a deep
         copy, callers should not change the Kokkos::CrsGraph after
-        calling this method, unless they first call clear().
+        calling this method.
       */
-    template<class Ordinal>
-    void
-    initializeStructure (const Kokkos::CrsGraph<Ordinal,Node,DummySparseKernel<Node> > & /* graph */) {}
-
-    /** \brief Initialize the values of the sparse matrix.
-
-        This is the mechanism by which the user specifies the values
-        for the sparse matrix.  The values always come via a
-        Kokkos::CrsMatrix<S,O,N,SO> instance, where
-
-        - \c S is the scalar type this::ScalarType
-        - \c O is the ordinal type this::OrdinalType,
-        - \c N is the node type this::NodeType, and
-        - \c SO is the sparse op type this::ThisType.
-
-        You must first provide the graph structure via
-        initializeStructure() before you can provide the matrix values
-        to initializeValues().  You may provide the matrix values
-        repeatedly via multiple calls to initializeValues() without
-        needing to call clear() in between.
-
-        In general, both initializeStructure() and initializeValues()
-        must be called before calling multiply() or solve().
-
-        Note that your implementation of this method is not obligated
-        to represent the sparse matrix's entries in the same way that
-        Kokkos::CrsMatrix does.  That is just an entry format.  Your
-        implementation may choose either to make a deep copy of the
-        input data (and possibly change the storage format), or simply
-        to view it (by copying the ArrayRCPs).  For example, you might
-        choose to copy the graph structure and values from their input
-        compressed sparse row format into jagged diagonal storage.
-
-        After initializeValues() completes, the caller is responsible
-        for deciding what to do with the original Kokkos::CrsMatrix.
-        Since your implementation may choose just to view the original
-        CrsGraph data instead of making a deep copy, callers should
-        not change the Kokkos::CrsMatrix after calling this method,
-        unless they first call clear().
-    */
-    template<class Scalar, class Ordinal>
-    void
-    initializeValues (const Kokkos::CrsMatrix<Scalar,Ordinal,Node,DummySparseKernel<Node> > & /* matrix */) {}
-
-    /// \brief Clear the graph and matrix data.
-    ///
-    /// If you have already called initializeStructure(), you must
-    /// first call clear() before you may call initializeStructure()
-    /// again.
-    ///
-    /// After calling clear(), no significant data (including
-    /// persisting references) will be preserved, save for the pointer
-    /// to the Kokkos Node instance.  You must then call
-    /// initializeStructure() and initializeValues() (in that order)
-    /// again before you may call multiply() or solve().
-    void clear () {}
+    void setGraphAndMatrix(const Teuchos::RCP<DummyCrsGraph<Node> > &graph,
+                           const Teuchos::RCP<DummyCrsMatrix<Node> > &node) {};
 
     //@}
     //! @name Computational methods

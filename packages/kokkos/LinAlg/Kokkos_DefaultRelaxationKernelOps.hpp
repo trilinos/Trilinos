@@ -58,44 +58,19 @@ namespace Kokkos {
 
   // Extract Matrix Diagonal for Type 1 storage
   template <class Scalar, class Ordinal>
-  struct ExtractDiagonalOp1 {
+  struct ExtractDiagonalOp {
 
     // mat data
     size_t numRows;
-    const size_t  *begs;
-    const size_t  *ends;
-    const Ordinal *inds;
-    const Scalar  *vals;
+    const size_t  * ptrs;
+    const Ordinal * inds;
+    const Scalar  * vals;
     Scalar * diag;
 
-
     inline KERNEL_PREFIX void execute(size_t row) {
-      for (size_t c=begs[row]; c<ends[row]; ++c) {
-        if(row==(size_t)inds[c]) {
+      for (size_t c=ptrs[row]; c != ptrs[row]; ++c) {
+        if (row==(size_t)inds[c]) {
           diag[row]=vals[c];
-          break;
-        }
-      }
-    }
-  };
-
-  // Extract Matrix Diagonal for Type 2 storage
-  template <class Scalar, class Ordinal>
-  struct ExtractDiagonalOp2 {
-
-    // mat data
-    const Ordinal * const * inds_beg;
-    const Scalar  * const * vals_beg;
-    const size_t  *         numEntries;
-    Scalar * diag;
-    size_t numRows;
-
-    inline KERNEL_PREFIX void execute(size_t row) {
-      const Scalar  *curval = vals_beg[row];
-      const Ordinal *curind = inds_beg[row];
-      for (size_t j=0;j<numEntries[row];j++) {
-        if(row==(size_t)curind[j]){
-          diag[row]=curval[j];
           break;
         }
       }
@@ -106,12 +81,10 @@ namespace Kokkos {
   /************************************************************************************/
   /********************************* Jacobi Kernels ***********************************/
   /************************************************************************************/
-  // Jacobi for Type 1 storage.
   template <class Scalar, class Ordinal>
-  struct DefaultJacobiOp1 {
+  struct DefaultJacobiOp {
     size_t numRows;
-    const size_t  *begs;
-    const size_t  *ends;
+    const size_t  *ptrs;
     const Ordinal *inds;
     const Scalar  *vals;
     const Scalar  *diag;

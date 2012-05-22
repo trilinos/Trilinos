@@ -115,9 +115,6 @@ namespace Tpetra {
     using Teuchos::rcp;
 
     try {
-      // FIXME (mfh 02 Apr 2012) For now, we just pass the parameter
-      // list straight into the CrsGraph constructor.  Later, we may
-      // make the CrsGraph parameter list a sublist.
       myGraph_ = rcp (new Graph (rowMap, maxNumEntriesPerRow, pftype, plist));
     }
     catch (std::exception &e) {
@@ -125,8 +122,6 @@ namespace Tpetra {
         typeName(*this) << "::CrsMatrix(): caught exception while allocating "
         "CrsGraph object: " << std::endl << e.what ());
     }
-    // FIXME (mfh 11 Apr 2012) Somebody explain to me why we're
-    // setting the static graph, when this matrix has a dynamic graph.
     staticGraph_ = myGraph_;
     lclMatrix_.setOwnedGraph(myGraph_->getLocalGraphNonConst());
 
@@ -157,9 +152,6 @@ namespace Tpetra {
     using Teuchos::rcp;
 
     try {
-      // FIXME (mfh 02 Apr 2012) For now, we just pass the parameter
-      // list straight into the CrsGraph constructor.  Later, we may
-      // make the CrsGraph parameter list a sublist.
       myGraph_ = rcp (new Graph (rowMap, NumEntriesPerRowToAlloc, pftype, plist));
     }
     catch (std::exception &e) {
@@ -167,8 +159,6 @@ namespace Tpetra {
           typeName(*this) << "::CrsMatrix(): caught exception while allocating CrsGraph object: "
           << std::endl << e.what() << std::endl);
     }
-    // FIXME (mfh 11 Apr 2012) Somebody explain to me why we're
-    // setting the static graph, when this matrix has a dynamic graph.
     staticGraph_ = myGraph_;
     lclMatrix_.setOwnedGraph(myGraph_->getLocalGraphNonConst());
 
@@ -195,9 +185,6 @@ namespace Tpetra {
     using Teuchos::rcp;
 
     try {
-      // FIXME (mfh 02 Apr 2012) For now, we just pass the parameter
-      // list straight into the CrsGraph constructor.  Later, we may
-      // make the CrsGraph parameter list a sublist.
       myGraph_ = rcp (new Graph (rowMap, colMap, maxNumEntriesPerRow, pftype, plist));
     }
     catch (std::exception &e) {
@@ -205,8 +192,6 @@ namespace Tpetra {
         typeName(*this) << "::CrsMatrix(): caught exception while allocating "
         "CrsGraph object: " << std::endl << e.what ());
     }
-    // FIXME (mfh 11 Apr 2012) Somebody explain to me why we're
-    // setting the static graph, when this matrix has a dynamic graph.
     staticGraph_ = myGraph_;
     lclMatrix_.setOwnedGraph(myGraph_->getLocalGraphNonConst());
 
@@ -233,9 +218,6 @@ namespace Tpetra {
     using Teuchos::rcp;
 
     try {
-      // FIXME (mfh 02 Apr 2012) For now, we just pass the parameter
-      // list straight into the CrsGraph constructor.  Later, we may
-      // make the CrsGraph parameter list a sublist.
       myGraph_ = rcp (new Graph (rowMap, colMap, NumEntriesPerRowToAlloc,
                                  pftype, plist));
     }
@@ -244,8 +226,6 @@ namespace Tpetra {
         typeName(*this) << "::CrsMatrix(): caught exception while allocating "
         "CrsGraph object: " << std::endl << e.what ());
     }
-    // FIXME (mfh 11 Apr 2012) Somebody explain to me why we're
-    // setting the static graph, when this matrix has a dynamic graph.
     staticGraph_ = myGraph_;
     lclMatrix_.setOwnedGraph(myGraph_->getLocalGraphNonConst());
 
@@ -289,10 +269,7 @@ namespace Tpetra {
     // See comment in constructor implementation above.
     sameScalarMultiplyOp_ = createCrsMatrixMultiplyOp<Scalar>( rcp(this,false).getConst() );
     // the graph has entries, and the matrix should have entries as well, set to zero. no need or point in lazy allocating in this case.
-    // first argument doesn't actually matter, because the graph is allocated.
-    //
-    // FIXME (mfh 25 Apr 2012) What does the last sentence in the
-    // comment above mean?
+    // first argument LocalIndices is ignored; the graph is already allocated (local or global, we don't care here)
     allocateValues (LocalIndices, GraphAlreadyAllocated);
     resumeFill();
     checkInternalState();
@@ -527,12 +504,9 @@ namespace Tpetra {
     // If the graph is unallocated, then it had better be a
     // matrix-owned graph.
     //
-    // FIXME (mfh 14 Mar 2012): Is this really a bug?  Perhaps the
-    // CrsMatrix constructor that takes a CrsGraph should check
-    // whether the graph's indices are allocated.
     TEUCHOS_TEST_FOR_EXCEPTION(! staticGraph_->indicesAreAllocated() && myGraph_.is_null(),
       std::logic_error, "allocateValues: The static graph says that its indices "
-      "are not allocated, but the graph is now owned by the matrix.  Please "
+      "are not allocated, but the graph is not owned by the matrix.  Please "
                                "report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
 
@@ -541,8 +515,6 @@ namespace Tpetra {
     }
     // ask graph to allocate our values, with the same structure
     // this will allocate values2D_ one way or the other
-    //
-    // FIXME (mfh 14 Mar 2012) What does the above comment mean?
     staticGraph_->template allocateValues<Scalar>(values1D_, values2D_);
   }
 
@@ -1532,11 +1504,9 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Teuchos::as<typename Array<int>::size_type>(numSends) != sendIDs.size(),
         std::logic_error, ": internal logic error. Contact Tpetra team.");
 
+    // 
     // don't need this data anymore
-    //
-    // FIXME (mfh 14 Mar 2012) Calling clear() need not necessarily
-    // free memory.  The standard idiom for this is to std::swap the
-    // object with an empty object x, and let x fall out of scope.
+    // clear it before we start allocating a bunch of new memory
     nonlocals_.clear();
 
     //////////////////////////////////////////////////////////////////////////////////////
@@ -1970,11 +1940,9 @@ namespace Tpetra {
 
     // we must have a static graph
     //
-    // FIXME (mfh 11 Apr 2012) This so-called "static graph" could be
     // a dynamic graph, depending on which constructor was used.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( staticGraph_ == null,                                             std::logic_error, err);
-    // mfh 11 Apr 2012: myGraph == null means that the matrix has a
-    // static graph.
+    // myGraph == null means that the matrix has a static graph.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( myGraph_ != null && myGraph_ != staticGraph_,                     std::logic_error, err);
     // if matrix is fill complete, then graph must be fill complete
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( fillComplete_ == true && staticGraph_->isFillComplete() == false, std::logic_error, err);

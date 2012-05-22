@@ -61,10 +61,9 @@
 namespace Kokkos {
 
   template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar, int NO_BETA_AND_OVERWRITE>
-  struct DefaultSparseMultiplyOp1 {
+  struct DefaultSparsePackedMult {
     // mat data
-    const size_t  *begs;
-    const size_t  *ends;
+    const size_t  *ptrs;
     const Ordinal *inds;
     const Scalar  *vals;
     // matvec params
@@ -76,13 +75,20 @@ namespace Kokkos {
     size_t xstride, ystride;
 
     inline KERNEL_PREFIX void execute(size_t i) {
+      // TODO: Mike doesn't like this mod instruction; forgoing it would require eliminating the outer loop over number of columns
+      //     : or switching the instrutions below: rhs = i/numRows, row = i - numRows*rhs
+      //     : check it out
       const size_t row = i % numRows;
       const size_t rhs = (i - row) / numRows;
       RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       const DomainScalar *xj = x + rhs * xstride;
       RangeScalar        *yj = y + rhs * ystride;
-      for (size_t c=begs[row]; c != ends[row]; ++c) {
-        tmp += (RangeScalar)vals[c] * (RangeScalar)xj[inds[c]];
+      const Scalar  *v = vals + ptrs[row];
+      const Ordinal *i = inds + ptrs[row];
+                   *ie = inds + ptrs[row+1];
+      while (i != ie) 
+      {
+        tmp += (RangeScalar)(*v++) * (RangeScalar)xj[*i++];
       }
       if (NO_BETA_AND_OVERWRITE) {
         yj[row] = (RangeScalar)alpha * tmp;
@@ -94,11 +100,44 @@ namespace Kokkos {
     }
   };
 
+//  template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar, int NO_BETA_AND_OVERWRITE>
+//  struct DefaultSparseMultiplyOp1 {
+//    // mat data
+//    const size_t  *begs;
+//    const size_t  *ends;
+//    const Ordinal *inds;
+//    const Scalar  *vals;
+//    // matvec params
+//    RangeScalar        alpha, beta;
+//    size_t numRows;
+//    // mv data
+//    const DomainScalar  *x;
+//    RangeScalar         *y;
+//    size_t xstride, ystride;
+//
+//    inline KERNEL_PREFIX void execute(size_t i) {
+//      const size_t row = i % numRows;
+//      const size_t rhs = (i - row) / numRows;
+//      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
+//      const DomainScalar *xj = x + rhs * xstride;
+//      RangeScalar        *yj = y + rhs * ystride;
+//      for (size_t c=begs[row]; c != ends[row]; ++c) {
+//        tmp += (RangeScalar)vals[c] * (RangeScalar)xj[inds[c]];
+//      }
+//      if (NO_BETA_AND_OVERWRITE) {
+//        yj[row] = (RangeScalar)alpha * tmp;
+//      }
+//      else {
+//        RangeScalar tmp2 = beta * yj[row];
+//        yj[row] = (RangeScalar)(alpha * tmp + tmp2);
+//      }
+//    }
+//  };
+
   template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar, int NO_BETA_AND_OVERWRITE>
-  struct DefaultSparseTransposeMultiplyOp1 {
+  struct DefaultSparsePackedTransposeMult {
     // mat data
-    const size_t  *begs;
-    const size_t  *ends;
+    const size_t  *ptrs;
     const Ordinal *inds;
     const Scalar  *vals;
     // matvec params
@@ -124,87 +163,127 @@ namespace Kokkos {
         }
       }
       for (size_t row=0; row < numRows; ++row) {
-        for (size_t c=begs[row]; c != ends[row]; ++c) {
-          yj[inds[c]] += (RangeScalar)(alpha * Teuchos::ScalarTraits<RangeScalar>::conjugate(vals[c]) * (RangeScalar)xj[row]);
+        const Scalar  *v = vals + ptrs[row];
+        const Ordinal *i = inds + ptrs[row];
+                     *ie = inds + ptrs[row+1];
+        while (i != ie) {
+          yj[*i++] += (RangeScalar)(alpha * Teuchos::ScalarTraits<RangeScalar>::conjugate(*v++) * (RangeScalar)xj[row]);
         }
       }
     }
   };
 
-
-  template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar, int NO_BETA_AND_OVERWRITE>
-  struct DefaultSparseMultiplyOp2 {
-    // mat data
-    const Ordinal * const * inds_beg;
-    const Scalar  * const * vals_beg;
-    const size_t  *         numEntries;
-    // matvec params
-    RangeScalar        alpha, beta;
-    size_t numRows;
-    // mv data
-    const DomainScalar  *x;
-    RangeScalar         *y;
-    size_t xstride, ystride;
-
-    inline KERNEL_PREFIX void execute(size_t i) {
-      const size_t row = i % numRows;
-      const size_t rhs = (i - row) / numRows;
-      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
-      const DomainScalar *xj = x + rhs * xstride;
-      RangeScalar        *yj = y + rhs * ystride;
-      const Scalar  *curval = vals_beg[row];
-      const Ordinal *curind = inds_beg[row];
-      for (size_t j=0; j != numEntries[row]; ++j) {
-        tmp += (RangeScalar)curval[j] * (RangeScalar)xj[curind[j]];
-      }
-      if (NO_BETA_AND_OVERWRITE) {
-        yj[row] = (RangeScalar)alpha * tmp;
-      }
-      else {
-        RangeScalar tmp2 = beta * yj[row];
-        yj[row] = (RangeScalar)(alpha * tmp + tmp2);
-      }
-    }
-  };
-
-
-  template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar, int NO_BETA_AND_OVERWRITE>
-  struct DefaultSparseTransposeMultiplyOp2 {
-    // mat data
-    const Ordinal * const * inds_beg;
-    const Scalar  * const * vals_beg;
-    const size_t  *         numEntries;
-    // matvec params
-    RangeScalar        alpha, beta;
-    size_t numRows, numCols;
-    // mv data
-    const DomainScalar  *x;
-    RangeScalar         *y;
-    size_t xstride, ystride;
-
-    inline KERNEL_PREFIX void execute(size_t i) {
-      // multiply entire matrix for rhs i
-      const size_t rhs = i;
-      const RangeScalar RANGE_ZERO = Teuchos::ScalarTraits<RangeScalar>::zero();
-      const DomainScalar *xj = x + rhs * xstride;
-      RangeScalar        *yj = y + rhs * ystride;
-      for (size_t row=0; row < numCols; ++row) {
-        if (NO_BETA_AND_OVERWRITE) {
-          yj[row] = RANGE_ZERO;
-        }
-        else {
-          yj[row] = (RangeScalar)(yj[row] * beta);
-        }
-      }
-      for (size_t row=0; row < numRows; ++row) {
-        const Scalar  *rowval = vals_beg[row];
-        const Ordinal *rowind = inds_beg[row];
-        for (size_t j=0; j != numEntries[row]; ++j) {
-          yj[rowind[j]] += (RangeScalar)(alpha * Teuchos::ScalarTraits<RangeScalar>::conjugate(rowval[j]) * (RangeScalar)xj[row]);
-        }
-      }
-    }
-  };
+//  template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar, int NO_BETA_AND_OVERWRITE>
+//  struct DefaultSparseTransposeMultiplyOp1 {
+//    // mat data
+//    const size_t  *begs;
+//    const size_t  *ends;
+//    const Ordinal *inds;
+//    const Scalar  *vals;
+//    // matvec params
+//    RangeScalar        alpha, beta;
+//    size_t numRows, numCols;
+//    // mv data
+//    const DomainScalar  *x;
+//    RangeScalar         *y;
+//    size_t xstride, ystride;
+//
+//    inline KERNEL_PREFIX void execute(size_t i) {
+//      // multiply entire matrix for rhs i
+//      const size_t rhs = i;
+//      const DomainScalar *xj = x + rhs * xstride;
+//      const RangeScalar RANGE_ZERO = Teuchos::ScalarTraits<RangeScalar>::zero();
+//      RangeScalar        *yj = y + rhs * ystride;
+//      for (size_t row=0; row < numCols; ++row) {
+//        if (NO_BETA_AND_OVERWRITE) {
+//          yj[row] = RANGE_ZERO;
+//        }
+//        else {
+//          yj[row] = (RangeScalar)(yj[row] * beta);
+//        }
+//      }
+//      for (size_t row=0; row < numRows; ++row) {
+//        for (size_t c=begs[row]; c != ends[row]; ++c) {
+//          yj[inds[c]] += (RangeScalar)(alpha * Teuchos::ScalarTraits<RangeScalar>::conjugate(vals[c]) * (RangeScalar)xj[row]);
+//        }
+//      }
+//    }
+//  };
+//
+//
+//  template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar, int NO_BETA_AND_OVERWRITE>
+//  struct DefaultSparseMultiplyOp2 {
+//    // mat data
+//    const Ordinal * const * inds_beg;
+//    const Scalar  * const * vals_beg;
+//    const size_t  *         numEntries;
+//    // matvec params
+//    RangeScalar        alpha, beta;
+//    size_t numRows;
+//    // mv data
+//    const DomainScalar  *x;
+//    RangeScalar         *y;
+//    size_t xstride, ystride;
+//
+//    inline KERNEL_PREFIX void execute(size_t i) {
+//      const size_t row = i % numRows;
+//      const size_t rhs = (i - row) / numRows;
+//      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
+//      const DomainScalar *xj = x + rhs * xstride;
+//      RangeScalar        *yj = y + rhs * ystride;
+//      const Scalar  *curval = vals_beg[row];
+//      const Ordinal *curind = inds_beg[row];
+//      for (size_t j=0; j != numEntries[row]; ++j) {
+//        tmp += (RangeScalar)curval[j] * (RangeScalar)xj[curind[j]];
+//      }
+//      if (NO_BETA_AND_OVERWRITE) {
+//        yj[row] = (RangeScalar)alpha * tmp;
+//      }
+//      else {
+//        RangeScalar tmp2 = beta * yj[row];
+//        yj[row] = (RangeScalar)(alpha * tmp + tmp2);
+//      }
+//    }
+//  };
+//
+//
+//  template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar, int NO_BETA_AND_OVERWRITE>
+//  struct DefaultSparseTransposeMultiplyOp2 {
+//    // mat data
+//    const Ordinal * const * inds_beg;
+//    const Scalar  * const * vals_beg;
+//    const size_t  *         numEntries;
+//    // matvec params
+//    RangeScalar        alpha, beta;
+//    size_t numRows, numCols;
+//    // mv data
+//    const DomainScalar  *x;
+//    RangeScalar         *y;
+//    size_t xstride, ystride;
+//
+//    inline KERNEL_PREFIX void execute(size_t i) {
+//      // multiply entire matrix for rhs i
+//      const size_t rhs = i;
+//      const RangeScalar RANGE_ZERO = Teuchos::ScalarTraits<RangeScalar>::zero();
+//      const DomainScalar *xj = x + rhs * xstride;
+//      RangeScalar        *yj = y + rhs * ystride;
+//      for (size_t row=0; row < numCols; ++row) {
+//        if (NO_BETA_AND_OVERWRITE) {
+//          yj[row] = RANGE_ZERO;
+//        }
+//        else {
+//          yj[row] = (RangeScalar)(yj[row] * beta);
+//        }
+//      }
+//      for (size_t row=0; row < numRows; ++row) {
+//        const Scalar  *rowval = vals_beg[row];
+//        const Ordinal *rowind = inds_beg[row];
+//        for (size_t j=0; j != numEntries[row]; ++j) {
+//          yj[rowind[j]] += (RangeScalar)(alpha * Teuchos::ScalarTraits<RangeScalar>::conjugate(rowval[j]) * (RangeScalar)xj[row]);
+//        }
+//      }
+//    }
+//  };
 
 } // namespace Kokkos
 
