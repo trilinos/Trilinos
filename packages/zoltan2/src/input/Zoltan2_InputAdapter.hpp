@@ -18,6 +18,8 @@
 namespace Zoltan2 {
 
 /*! \brief An enum to identify general types of input adapters.
+ *
+ *  If you change this, update inputAdapterTypeName().
  */
 enum InputAdapterType {
   InvalidAdapterType = 0,    /*!< \brief unused value */
@@ -68,7 +70,44 @@ public:
    *   zero, then it is assumed that all objects are equally weighted.
    */ 
   virtual int getNumberOfWeightsPerObject() const = 0;
+
+  /*! \brief Returns the name of the input adapter
+   */
+  static string inputAdapterTypeName(InputAdapterType iaType);
 };
+
+string InputAdapter::inputAdapterTypeName(InputAdapterType iaType)
+{
+  string typeName;
+  switch (iaType){
+    case InvalidAdapterType:
+      typeName = string("invalid");
+      break;
+    case IdentifierAdapterType:
+      typeName = string("identifier");
+      break;
+    case VectorAdapterType:
+      typeName = string("vector");
+      break;
+    case CoordinateAdapterType:
+      typeName = string("coordinate");
+      break;
+    case GraphAdapterType:
+      typeName = string("graph");
+      break;
+    case MeshAdapterType:
+      typeName = string("mesh");
+      break;
+    case MatrixAdapterType:
+      typeName = string("matrix");
+      break;
+    default:
+      typeName = string("unknown");
+      break;
+  }
+
+  return typeName;
+}
   
   
 }  //namespace Zoltan2

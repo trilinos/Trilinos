@@ -21,6 +21,7 @@ INCLUDE_DIRECTORIES(${ZOLTAN_SRC}/driver)
 ENDIF()
 
 ADD_SUBDIRECTORIES(
+scaling
 correctness
 order
 partition

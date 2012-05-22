@@ -18,7 +18,7 @@
 
 namespace Zoltan2
 {
-/*! \brief MetricOutputManager handles output of timing, memory use and other values
+/*! \brief MetricOutputManager handles output of profiling messages.
 
    The template parameter is the data type of the value that is being measured.
    An Environment has a MetricOutputManager for timing and one for
@@ -26,11 +26,6 @@ namespace Zoltan2
 
    Parameters governing may be output:
 
-     \li \c timing_level
-     \li \c timing_procs
-     \li \c timing_output_stream
-     \li \c timing_output_file
-     \li \c memory_profiling_level
      \li \c memory_profiling_procs
      \li \c memory_profiling_output_stream
      \li \c memory_profiling_output_file

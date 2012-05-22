@@ -14,6 +14,7 @@
 #define _ZOLTAN2_ENVIRONMENT_HPP_
 
 #include <Zoltan2_config.h>
+#include <Zoltan2_Util.hpp>
 #include <Zoltan2_IO.hpp>
 #include <Zoltan2_Parameters.hpp>
 #include <Zoltan2_DebugManager.hpp>
@@ -73,9 +74,8 @@ public:
   /*! \brief Default Constructor
    *
    *    The default constructor uses the Teuchos default communicator,
-   *    BASIC_STATUS for debug_level, and NO_STATUS for timing_level and
-   *    memory_profiling_level.  It has error_check_level BASIC_ASSERTION.
-   *    It has no other parameters.
+   *    BASIC_STATUS for debug_level, and does not timing or memory profiling.
+   *    It has error_check_level BASIC_ASSERTION. It has no other parameters.
    */
   Environment();
 
@@ -343,21 +343,23 @@ public:
     if (timingOn) timerOut_->stop(timerName); }
 #endif
 
-  /*! \brief  Send a message to the memory profiling output manager.
+  /*! \brief Print a message and the kilobytes in use by this process.
    *
    *   \param msg   The message to be output. If this process
    *          is one that prints memory profiling messages
    *          (as indicated by the parameter \c memory_profiling_procs), 
-   *          the \c msg will be output to either the
+   *          the \c msg (along with kilobytes currently allocated to
+   *          this process) will issued.  The output target is either the
    *       \c memory_profiling_output_stream or \c memory_profiling_output_file.
-   *   \param units A string indicating the memory_profiling units.
-   *   \param val   The memory_profiling value, a long.
-   *  \todo: change this so the user just gives us a message, we get
-   *        total memory in use by the process and log it.
+   *          If neither was set, it goes to std::cout.
+   *
+   * Memory profiling is only supported on Linux nodes that have /proc/statm.
+   * If this is an unsupported node, the call does nothing.
    */
 
-  void memory(const char *msg, const char *units, const memory_t val) const{ 
-    memoryOut_->print(msg, units, val); }
+  void memory(const char *msg) const
+    {if (!memoryOut_.is_null())
+       memoryOut_->print(msg, "KB", getProcessKilobytes());}
 
   /*! \brief  Send a message to the debug output manager.
    *
@@ -373,19 +375,23 @@ public:
   void debug(MessageOutputLevel level, const std::string &msg) const{ 
     debugOut_->print(level, msg);}
 
-  /*! \brief  Send a message to the memory profiling output manager.
+  /*! \brief Print a message and the kilobytes in use by this process.
    *
    *   \param msg   The message to be output. If this process
    *          is one that prints memory profiling messages
    *          (as indicated by the parameter \c memory_profiling_procs), 
-   *          the \c msg will be output to either the
+   *          the \c msg (along with kilobytes currently allocated to
+   *          this process) will issued.  The output target is either the
    *       \c memory_profiling_output_stream or \c memory_profiling_output_file.
-   *   \param units A string indicating the memory_profiling units.
-   *   \param val   The memory_profiling value, a long.
+   *          If neither was set, it goes to std::cout.
+   *
+   * Memory profiling is only supported on Linux nodes that have /proc/statm.
+   * If this is an unsupported node, the call does nothing.
    */
 
-  void memory(const std::string &msg, const std::string &units, 
-    const memory_t val) const{ memoryOut_->print(msg, units, val); }
+  void memory(const std::string &msg) const
+    {if (!memoryOut_.is_null())
+      memoryOut_->print(msg, "KB", getProcessKilobytes());}
 
   /*! \brief Returns true if the parameter list has the named sublist.
    */

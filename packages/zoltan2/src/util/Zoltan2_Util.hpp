@@ -13,7 +13,7 @@
 #ifndef ZOLTAN2_UTIL_HPP
 #define ZOLTAN2_UTIL_HPP
 
-#include <Teuchos_OpaqueWrapper.hpp>
+#include <Zoltan2_Standards.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
 namespace Zoltan2{
@@ -27,19 +27,14 @@ template <typename scalar_t>
 
 #ifdef HAVE_ZOLTAN2_MPI
 
-/*! \brief Convert an MPI communicator to a MpiComm object.
- */
+RCP<Teuchos::MpiComm<int> > MPI2Teuchos(const MPI_Comm &comm);
 
-template <typename Ordinal>
-  RCP<MpiComm<Ordinal> >
-    getTeuchosMpiComm(const MPI_Comm &comm)
-{
-  RCP<Teuchos::OpaqueWrapper<MPI_Comm> >handle = 
-    Teuchos::opaqueWrapper<MPI_Comm>(comm);
-  RCP<MpiComm<Ordinal> > tcommPtr(new MpiComm<Ordinal>(handle));
+RCP<const Teuchos::MpiComm<int> > MPI2TeuchosConst(const MPI_Comm &comm);
 
-  return tcommPtr;
-}
+MPI_Comm Teuchos2MPI(const RCP<Comm<int> > &comm);
+
+MPI_Comm TeuchosConst2MPI(const RCP<const Comm<int> > &comm);
+
 #endif
 
 } // namespace Zoltan2

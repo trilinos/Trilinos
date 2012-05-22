@@ -186,7 +186,7 @@ void Environment::commitParameters()
       f2 = Z2_UNSET;
       os2 = Z2_UNSET;
       debugOut_->print(BASIC_ASSERTION, 
-        "Warning: memory profiling requests but not available.");
+        "Warning: memory profiling requested but not available.");
     }
   }
   

@@ -282,6 +282,8 @@ template <typename Adapter>
 {
   HELLO;
 
+  this->env_->debug(DETAILED_STATUS, "PartitioningProblem::initializeProblem");
+
   if (getenv("DEBUGME")){
     std::cout << getpid() << std::endl;
     sleep(15);
@@ -300,15 +302,7 @@ template <typename Adapter>
 
   // TPLs may want an MPI communicator
 
-  Comm<int> *c = problemComm_.getRawPtr();
-  Teuchos::MpiComm<int> *mc = dynamic_cast<Teuchos::MpiComm<int> *>(c);
-  if (mc){
-    RCP<const mpiWrapper_t> wrappedComm = mc->getRawMpiComm();
-    mpiComm_ = (*wrappedComm.getRawPtr())();
-  }
-  else{
-    mpiComm_ = MPI_COMM_SELF;   // or would this be an error?
-  }
+  mpiComm_ = Teuchos2MPI(problemComm_);
 
 #endif
 
@@ -329,6 +323,15 @@ template <typename Adapter>
 
   partIds_ = arcp(noIds, 0, numberOfCriteria_, true);
   partSizes_ = arcp(noSizes, 0, numberOfCriteria_, true);
+
+  if (this->env_->doStatus()){
+    ostringstream msg;
+    msg << problemComm_->getSize() << " procs,"
+      << numberOfWeights_ << " user-defined weights, "
+      << InputAdapter::inputAdapterTypeName(inputType_)
+      << " input adapter type.\n";
+    this->env_->debug(DETAILED_STATUS, msg.str());
+  }
 }
 
 template <typename Adapter>
@@ -454,6 +457,9 @@ template <typename Adapter>
 void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 {
   HELLO;
+  this->env_->debug(DETAILED_STATUS, 
+    "PartitioningProblem::createPartitioningProblem");
+
   using std::string;
   using Teuchos::ParameterList;
 
