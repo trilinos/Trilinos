@@ -322,7 +322,7 @@ static int rib_fn(
 
   start_time = Zoltan_Time(zz->Timer);
   ierr = Zoltan_RIB_Build_Structure(zz, &pdotnum, &dotmax, wgtflag, overalloc,
-                                    use_ids);
+                                    use_ids, gen_tree);
   if (ierr < 0) {
     ZOLTAN_PRINT_ERROR(proc, yo, 
       "Error returned from Zoltan_RIB_Build_Structure.");
@@ -454,9 +454,11 @@ static int rib_fn(
   root = 0;
   old_set = 1;
   ierr = Zoltan_LB_Proc_To_Part(zz, proc, &np, &fp);
-  for (i = fp; i < (fp + np); i++) {
-    treept[i].parent = 0;
-    treept[i].left_leaf = 0;
+  if (treept) {
+    for (i = fp; i < (fp + np); i++) {
+      treept[i].parent = 0;
+      treept[i].left_leaf = 0;
+    }
   }
   if (zz->Tflops_Special) {
     proclower = 0;
@@ -556,7 +558,7 @@ static int rib_fn(
        have no parts in them from the processors remaining to 
        be partitioned. */
 
-    if (partmid > 0 && partmid == fp) {
+    if (treept && partmid > 0 && partmid == fp) {
       treept[partmid].cm[0] = cm[0];
       treept[partmid].cm[1] = cm[1];
       treept[partmid].cm[2] = cm[2];
@@ -798,11 +800,8 @@ EndReporting:
     ZOLTAN_FREE(&displ);
     ZOLTAN_FREE(&treetmp);
   }
-  else {
-    treept[0].right_leaf = -1;
-  }
 
-  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+  if (treept && zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
     print_rib_tree(zz, np, fp, &(treept[fp]));
 
   end_time = Zoltan_Time(zz->Timer);
@@ -1112,18 +1111,20 @@ double start_time=0., end_time;
       ierr = ZOLTAN_FATAL;
       goto End;
     }
-    treept[partmid].cm[0] = cm[0];
-    treept[partmid].cm[1] = cm[1];
-    treept[partmid].cm[2] = cm[2];
-    treept[partmid].ev[0] = evec[0];
-    treept[partmid].ev[1] = evec[1];
-    treept[partmid].ev[2] = evec[2];
-    treept[partmid].cut = valuehalf;
-    treept[partmid].parent = old_set ? -(root+1) : root+1;
-    /* The following two will get overwritten when the information
-       is assembled if this is not a terminal cut */
-    treept[partmid].left_leaf = -partlower;
-    treept[partmid].right_leaf = -partmid;
+    if (treept) {
+      treept[partmid].cm[0] = cm[0];
+      treept[partmid].cm[1] = cm[1];
+      treept[partmid].cm[2] = cm[2];
+      treept[partmid].ev[0] = evec[0];
+      treept[partmid].ev[1] = evec[1];
+      treept[partmid].ev[2] = evec[2];
+      treept[partmid].cut = valuehalf;
+      treept[partmid].parent = old_set ? -(root+1) : root+1;
+      /* The following two will get overwritten when the information
+         is assembled if this is not a terminal cut */
+      treept[partmid].left_leaf = -partlower;
+      treept[partmid].right_leaf = -partmid;
+    }
 
     root = partmid;
 

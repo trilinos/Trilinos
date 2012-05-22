@@ -240,6 +240,9 @@ int Zoltan_RCB(
     Zoltan_Assign_Param_Vals(zz->Params, RCB_params, zz->Debug_Level, zz->Proc,
                          zz->Debug_Proc);
 
+    /* Need to keep the tree if reuse or reuse_dir, so turn gen_tree on. */
+    if (reuse || reuse_dir) gen_tree = 1;
+
     /* Initializations in case of early exit. */
     *num_import = -1;
     *num_export = -1;  /* We don't compute the export map. */
@@ -486,7 +489,7 @@ static int rcb_fn(
 
   start_time = Zoltan_Time(zz->Timer);
   ierr = Zoltan_RCB_Build_Structure(zz, &pdotnum, &dotmax, wgtflag, overalloc,
-                                    use_ids);
+                                    use_ids, gen_tree);
 
   if (ierr < 0) {
     ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from Zoltan_RCB_Build_Structure.");
@@ -568,10 +571,8 @@ static int rcb_fn(
     dotlist = NULL;
   }
 
-  /* if reuse is turned on, turn on gen_tree since it is needed. */
   /* Also, if this is not first time through, send dots to previous proc. */
   if (reuse) {
-    gen_tree = 1;
     dotpt  = &rcb->Dots; 
     pt[1] = pt[2] = 0;
 
@@ -712,11 +713,9 @@ static int rcb_fn(
   }
 
 
-  /* if reuse_dir is turned on, turn on gen_tree since it is needed. */
   /* Also, if this is not first time through, set lock_direction to reuse
      the directions determined previously */
   if (reuse_dir) {
-     gen_tree = 1;
      if (treept[0].dim != -1)
         lock_direction = 1;
   }
@@ -743,9 +742,11 @@ static int rcb_fn(
   root = 0;
   old_set = 1;
   ierr = Zoltan_LB_Proc_To_Part(zz, proc, &np, &fp);
-  for (i = fp; i < (fp + np); i++) {
-    treept[i].parent = 0;
-    treept[i].left_leaf = 0;
+  if (treept) {
+    for (i = fp; i < (fp + np); i++) {
+      treept[i].parent = 0;
+      treept[i].left_leaf = 0;
+    }
   }
   if (zz->Tflops_Special) {
     proclower = 0;
@@ -977,7 +978,7 @@ static int rcb_fn(
        only removing low-numbered processors (proclower to procmid-1) that
        have no parts in them from the processors remaining to 
        be partitioned. */
-    if (partmid > 0 && partmid == fp) {
+    if (treept && partmid > 0 && partmid == fp) {
       treept[partmid].dim = dim;
       treept[partmid].cut = valuehalf;
       treept[partmid].parent = old_set ? -(root+1) : root+1;
@@ -1224,11 +1225,8 @@ EndReporting:
     ZOLTAN_FREE(&displ);
     ZOLTAN_FREE(&treetmp);
   }
-  else {
-    treept[0].dim = -1;
-  }
 
-  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+  if (treept && zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
     print_rcb_tree(zz, np, fp, &(treept[fp]));
 
   end_time = Zoltan_Time(zz->Timer);
@@ -1747,13 +1745,15 @@ static int serial_rcb(
     }
 
     /* By now, we have the right values for the best cut. */
-    treept[partmid].dim = dim;
-    treept[partmid].cut = valuehalf;
-    treept[partmid].parent = old_set ? -(root+1) : root+1;
-    /* The following two will get overwritten when the information is
-       assembled if this is not a terminal cut */
-    treept[partmid].left_leaf = -partlower;
-    treept[partmid].right_leaf = -partmid;
+    if (gen_tree) {
+      treept[partmid].dim = dim;
+      treept[partmid].cut = valuehalf;
+      treept[partmid].parent = old_set ? -(root+1) : root+1;
+      /* The following two will get overwritten when the information is
+         assembled if this is not a terminal cut */
+      treept[partmid].left_leaf = -partlower;
+      treept[partmid].right_leaf = -partmid;
+    }
 
     root = partmid;
 

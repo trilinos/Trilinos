@@ -67,7 +67,7 @@ typedef struct RCB_Struct {
   ZZ_Transform Tran;        /* transformation for degenerate geometry */
 } RCB_STRUCT;
 
-extern int Zoltan_RCB_Build_Structure(ZZ *, int *, int *, int, double, int);
+extern int Zoltan_RCB_Build_Structure(ZZ *, int *, int *, int, double, int,int);
 extern void Zoltan_RCB_Print_Structure(ZZ *zz, int howMany);
 
 #ifdef __cplusplus
