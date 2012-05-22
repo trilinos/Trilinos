@@ -36,10 +36,36 @@ namespace stk {
       {}
 
       ~MeshData();
+
+      /*! 
+       * The `m_property_manager` member data contains properties that
+       * can be used to set database-specific options in the
+       * Ioss::DatabaseIO class.  Examples include compression, name
+       * lengths, integer sizes, floating point sizes. By convention,
+       * the property name is all uppercase. Some existing properties
+       * recognized by the Exodus Ioex::DatabaseIO class are:
+       *
+       * | Property              | Value
+       * |-----------------------|-------------------
+       * | COMPRESSION_LEVEL     | In the range [0..9]. A value of 0 indicates no compression
+       * | COMPRESSION_SHUFFLE   | (true/false) to enable/disable hdf5's shuffle compression algorithm.
+       * | FILE_TYPE             | netcdf4 
+       * | MAXIMUM_NAME_LENGTH   | Maximum length of names that will be returned/passed via api call.
+       * | INTEGER_SIZE_DB       | 4 or 8 indicating byte size of integers stored on the database.
+       * | INTEGER_SIZE_API      | 4 or 8 indicating byte size of integers used in api functions.
+       * | LOGGING               | (true/false) to enable/disable logging of field input/output
+       */
       Ioss::PropertyManager m_property_manager;
 
       Ioss::Region *m_input_region;
       Ioss::Region *m_output_region;
+
+      /*!
+       * An optional selector used for filtering entities on the
+       * output database. This can be used for specifying
+       * active/inactive entities.  If present, then this selector is
+       * *anded* with the normal selectors use for output
+       */
       stk::mesh::Selector *m_anded_selector;
 
     private:
