@@ -103,9 +103,9 @@ namespace Kokkos {
        @todo Not implemented for general sparse graphs.
     */
     template <class UNSUPPORTED_GRAPH, class UNSUPPORTED_MATRIX>
-    void initializeStructure(Teuchos::DataAccess cv, 
-                             const Teuchos::RCP<const UNSUPPORTED_GRAPH>  &graph, 
-                             const Teuchos::RCP<const UNSUPPORTED_MATRIX> &matrix);
+    void initializeData(Teuchos::DataAccess cv, 
+                        const Teuchos::RCP<const UNSUPPORTED_GRAPH>  &graph, 
+                        const Teuchos::RCP<const UNSUPPORTED_MATRIX> &matrix);
 
     //! Initialize the data
     void initializeData(Teuchos::DataAccess cv, 
@@ -169,7 +169,7 @@ namespace Kokkos {
     // packed: array of offsets, ordinals, values. obviously the smallest footprint.
     ArrayRCP<const Ordinal> inds_;
     ArrayRCP<const size_t>  ptrs_;
-    ArrayRCP<Scalar>        vals_;
+    ArrayRCP<const Scalar>  vals_;
     
     //! Array containing matrix diagonal for easy access
     ArrayRCP<Scalar> diagonal_;
@@ -323,7 +323,7 @@ namespace Kokkos {
     if(num_vectors > lastNumJacobiVectors_){
       tempJacobiVector_= null;
       lastNumJacobiVectors_=num_vectors;
-      tempJacobiVector_ = node_->template allocBuffer<Scalar>(vec_leng*lastNumJacobiVectors_); 
+      tempJacobiVector_ = arcp<Scalar>(vec_leng*lastNumJacobiVectors_); 
       return true;
     }
     return false;
@@ -336,9 +336,9 @@ namespace Kokkos {
     if(num_vectors > lastNumChebyVectors_){
       tempChebyVectorW_= null;
       tempChebyVectorX_= null;
-      lastNumChebyVectors_=num_vectors;
-      tempChebyVectorW_ = node_->template allocBuffer<Scalar>(numRows_*lastNumChebyVectors_);
-      tempChebyVectorX_ = node_->template allocBuffer<Scalar>(vec_leng*lastNumChebyVectors_); 
+      lastNumChebyVectors_ = num_vectors;
+      tempChebyVectorW_ = arcp<Scalar>(numRows_*lastNumChebyVectors_);
+      tempChebyVectorX_ = arcp<Scalar>(vec_leng*lastNumChebyVectors_); 
       return true;
     }
     return false;
@@ -350,9 +350,7 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   void DefaultRelaxation<Scalar,Ordinal,Node>::sweep_fine_hybrid(Scalar dampingFactor_,
                          MultiVector<Scalar,Node> &X, const MultiVector<Scalar,Node> &B) const{
-    typedef DefaultFineGrainHybridGaussSeidelOp1<Scalar,Ordinal>  Op1D;
-    typedef DefaultFineGrainHybridGaussSeidelOp2<Scalar,Ordinal>  Op2D;
-
+    typedef DefaultFineGrainHybridGaussSeidelOp<Scalar,Ordinal>  Op;
 
     TEUCHOS_TEST_FOR_EXCEPTION(isInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::sweep_fine_hybrid(): operation not fully initialized.");
@@ -362,29 +360,13 @@ namespace Kokkos {
       // This makes no sense to try to call ...
       TEUCHOS_TEST_FOR_EXCEPT(true);
     }
-    else if (begs1D_ != null) {
-      Op1D wdp;
-      rbh.begin();
-      wdp.numRows = numRows_;
-      wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
-      wdp.vals    = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
-      wdp.x       = rbh.template addNonConstBuffer<Scalar>(X.getValuesNonConst());
-      wdp.b       = rbh.template addConstBuffer<Scalar>(B.getValues());
-      wdp.diag    = rbh.template addConstBuffer<Scalar>(diagonal_);
-      wdp.damping_factor = dampingFactor_;
-      wdp.xstride = X.getStride();
-      wdp.bstride = B.getStride();
-      rbh.end();
-      const size_t numRHS = X.getNumCols();
-      node_->template parallel_for<Op1D>(0,numRows_*numRHS,wdp);
-    }
     else {
-      Op2D wdp;
+      Op wdp;
       rbh.begin();
       wdp.numRows = numRows_;
-      wdp.numEntries = rbh.template addConstBuffer<size_t>(pbuf_numEntries_);
-      wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(pbuf_inds2D_);
-      wdp.vals_beg   = rbh.template addConstBuffer<const Scalar *>(pbuf_vals2D_);
+      wdp.ptrs    = rbh.template addConstBuffer<size_t>(ptrs_);
+      wdp.inds    = rbh.template addConstBuffer<Ordinal>(inds_);
+      wdp.vals    = rbh.template addConstBuffer<Scalar>(vals_);
       wdp.x       = rbh.template addNonConstBuffer<Scalar>(X.getValuesNonConst());
       wdp.b       = rbh.template addConstBuffer<Scalar>(B.getValues());
       wdp.diag    = rbh.template addConstBuffer<Scalar>(diagonal_);
@@ -393,7 +375,7 @@ namespace Kokkos {
       wdp.bstride = B.getStride();
       rbh.end();
       const size_t numRHS = X.getNumCols();
-      node_->template parallel_for<Op2D>(0,numRows_*numRHS,wdp);
+      node_->template parallel_for<Op>(0,numRows_*numRHS,wdp);
     }
     return;
   } //sweep_fine_hybrid()
@@ -402,9 +384,7 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   void DefaultRelaxation<Scalar,Ordinal,Node>::sweep_coarse_hybrid(Scalar dampingFactor_,size_t num_chunks,
                          MultiVector<Scalar,Node> &X, const MultiVector<Scalar,Node> &B) const{
-    typedef DefaultCoarseGrainHybridGaussSeidelOp1<Scalar,Ordinal>  Op1D;
-    typedef DefaultCoarseGrainHybridGaussSeidelOp2<Scalar,Ordinal>  Op2D;
-
+    typedef DefaultCoarseGrainHybridGaussSeidelOp<Scalar,Ordinal>  Op;
 
     TEUCHOS_TEST_FOR_EXCEPTION(isInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::sweep_coarse_hybrid(): operation not fully initialized.");
@@ -415,31 +395,13 @@ namespace Kokkos {
       // This makes no sense to try to call ...
       TEUCHOS_TEST_FOR_EXCEPT(true);
     }
-    else if (begs1D_ != null) {
-      Op1D wdp;
-      rbh.begin();
-      wdp.numRows = numRows_;
-      wdp.numChunks = num_chunks;
-      wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
-      wdp.vals    = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
-      wdp.x       = rbh.template addNonConstBuffer<Scalar>(X.getValuesNonConst());
-      wdp.b       = rbh.template addConstBuffer<Scalar>(B.getValues());
-      wdp.diag    = rbh.template addConstBuffer<Scalar>(diagonal_);
-      wdp.damping_factor = dampingFactor_;
-      wdp.xstride = X.getStride();
-      wdp.bstride = B.getStride();
-      rbh.end();
-      const size_t numRHS = X.getNumCols();
-      node_->template parallel_for<Op1D>(0,num_chunks*numRHS,wdp);
-    }
     else {
-      Op2D wdp;
+      Op wdp;
       rbh.begin();
       wdp.numRows = numRows_;
       wdp.numChunks = num_chunks;
-      wdp.numEntries = rbh.template addConstBuffer<size_t>(pbuf_numEntries_);
-      wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(pbuf_inds2D_);
-      wdp.vals_beg   = rbh.template addConstBuffer<const Scalar *>(pbuf_vals2D_);
+      wdp.inds    = rbh.template addConstBuffer<Ordinal>(inds_);
+      wdp.vals    = rbh.template addConstBuffer<Scalar>(vals_);
       wdp.x       = rbh.template addNonConstBuffer<Scalar>(X.getValuesNonConst());
       wdp.b       = rbh.template addConstBuffer<Scalar>(B.getValues());
       wdp.diag    = rbh.template addConstBuffer<Scalar>(diagonal_);
@@ -448,7 +410,7 @@ namespace Kokkos {
       wdp.bstride = B.getStride();
       rbh.end();
       const size_t numRHS = X.getNumCols();
-      node_->template parallel_for<Op2D>(0,num_chunks*numRHS,wdp);
+      node_->template parallel_for<Op>(0,num_chunks*numRHS,wdp);
     }
     return;
   } //sweep_coarse_hybrid()
@@ -459,9 +421,7 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   void DefaultRelaxation<Scalar,Ordinal,Node>::sweep_jacobi(Scalar dampingFactor_,
                          MultiVector<Scalar,Node> &X, const MultiVector<Scalar,Node> &B) const{
-    typedef DefaultJacobiOp1<Scalar,Ordinal>  Op1D;
-    typedef DefaultJacobiOp2<Scalar,Ordinal>  Op2D;
-
+    typedef DefaultJacobiOp<Scalar,Ordinal>  Op;
 
     TEUCHOS_TEST_FOR_EXCEPTION(isInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::sweep_jacobi(): operation not fully initialized.");
@@ -479,42 +439,23 @@ namespace Kokkos {
       // This makes no sense to try to call ...
       TEUCHOS_TEST_FOR_EXCEPT(true);
     }
-    else if (begs1D_ != null) {
-      Op1D wdp;
-      rbh.begin();
-      wdp.numRows = numRows_;
-      wdp.begs    = rbh.template addConstBuffer<size_t>(begs1D_);
-      wdp.ends    = rbh.template addConstBuffer<size_t>(ends1D_);
-      wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
-      wdp.vals    = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
-      wdp.diag    = rbh.template addConstBuffer<Scalar>(diagonal_);
-      wdp.x       = rbh.template addNonConstBuffer<Scalar>(X.getValuesNonConst());
-      wdp.x0      = rbh.template addConstBuffer<Scalar>(X0.getValues());
-      wdp.b       = rbh.template addConstBuffer<Scalar>(B.getValues());
-      wdp.damping_factor = dampingFactor_;
-      wdp.xstride = X.getStride();
-      wdp.bstride = B.getStride();
-      rbh.end();
-      const size_t numRHS = X.getNumCols();
-      node_->template parallel_for<Op1D>(0,numRows_*numRHS,wdp);
-    }
     else {
-      Op2D wdp;
+      Op wdp;
       rbh.begin();
       wdp.numRows = numRows_;
-      wdp.numEntries = rbh.template addConstBuffer<size_t>(pbuf_numEntries_);
-      wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(indPtrs_);
-      wdp.vals_beg   = rbh.template addConstBuffer<Scalar *>(valPtrs_);
+      wdp.ptrs    = rbh.template addConstBuffer<size_t>(ptrs_);
+      wdp.inds    = rbh.template addConstBuffer<Ordinal>(inds_);
+      wdp.vals    = rbh.template addConstBuffer<Scalar>(vals_);
+      wdp.diag    = rbh.template addConstBuffer<Scalar>(diagonal_);
       wdp.x       = rbh.template addNonConstBuffer<Scalar>(X.getValuesNonConst());
       wdp.x0      = rbh.template addConstBuffer<Scalar>(X0.getValues());
       wdp.b       = rbh.template addConstBuffer<Scalar>(B.getValues());
-      wdp.diag    = rbh.template addConstBuffer<Scalar>(diagonal_);
       wdp.damping_factor = dampingFactor_;
       wdp.xstride = X.getStride();
       wdp.bstride = B.getStride();
       rbh.end();
       const size_t numRHS = X.getNumCols();
-      node_->template parallel_for<Op2D>(0,numRows_*numRHS,wdp);
+      node_->template parallel_for<Op>(0,numRows_*numRHS,wdp);
     }
     return;
   } //sweep_jacobi()
@@ -541,8 +482,7 @@ namespace Kokkos {
   /********************************************************************/
   template <class Scalar, class Ordinal, class Node>
   void DefaultRelaxation<Scalar,Ordinal,Node>::sweep_chebyshev(MultiVector<Scalar,Node> &X, const MultiVector<Scalar,Node> &B) const{
-    typedef DefaultChebyshevOp1<Scalar,Ordinal>  Op1D;
-    //    typedef DefaultChebyOp2<Scalar,Ordinal>  Op2D;
+    typedef DefaultChebyshevOp<Scalar,Ordinal>  Op;
 
     TEUCHOS_TEST_FOR_EXCEPTION(isInit_ == false, std::runtime_error,
                Teuchos::typeName(*this) << "::sweep_chebyshev(): operation not fully initialized.");
@@ -574,14 +514,13 @@ namespace Kokkos {
       // This makes no sense to try to call ...
       TEUCHOS_TEST_FOR_EXCEPT(true);
     }
-    else if (begs1D_ != null) {
-      Op1D wdp;
+    else {
+      Op wdp;
       rbh.begin();
       wdp.numRows = numRows_;
-      wdp.begs    = rbh.template addConstBuffer<size_t>(begs1D_);
-      wdp.ends    = rbh.template addConstBuffer<size_t>(ends1D_);
-      wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
-      wdp.vals    = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
+      wdp.ptrs    = rbh.template addConstBuffer<size_t>(ptrs_);
+      wdp.inds    = rbh.template addConstBuffer<Ordinal>(inds_);
+      wdp.vals    = rbh.template addConstBuffer<Scalar>(vals_);
       wdp.x       = rbh.template addNonConstBuffer<Scalar>(X.getValuesNonConst());
       wdp.x0      = rbh.template addConstBuffer<Scalar>(tempChebyVectorX_);
       wdp.w       = rbh.template addNonConstBuffer<Scalar>(tempChebyVectorW_);
@@ -596,26 +535,7 @@ namespace Kokkos {
       
       rbh.end();    
       const size_t numRHS = X.getNumCols();
-      node_->template parallel_for<Op1D>(0,numRows_*numRHS,wdp);
-    }
-    else {
-      /*      Op2D wdp;
-          rbh.begin();
-          wdp.numRows = numRows_;
-          wdp.numEntries = rbh.template addConstBuffer<size_t>(pbuf_numEntries_);
-          wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(pbuf_inds2D_);
-          wdp.vals_beg   = rbh.template addConstBuffer<const Scalar *>(pbuf_vals2D_);
-          wdp.x       = rbh.template addNonConstBuffer<Scalar>(X.getValuesNonConst());
-          wdp.x0      = rbh.template addConstBuffer<Scalar>(X0.getValues());
-          wdp.b       = rbh.template addConstBuffer<Scalar>(B.getValues());
-          wdp.diag    = rbh.template addConstBuffer<Scalar>(diagonal_);
-          wdp.damping_factor = dampingFactor_;
-          wdp.xstride = X.getStride();
-          wdp.bstride = B.getStride();
-          rbh.end();
-          const size_t numRHS = X.getNumCols();
-          node_->template parallel_for<Op2D>(0,numRows_*numRHS,wdp);
-      */
+      node_->template parallel_for<Op>(0,numRows_*numRHS,wdp);
     }
     
     first_cheby_iteration_=false;

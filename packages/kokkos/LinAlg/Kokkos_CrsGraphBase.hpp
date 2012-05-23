@@ -105,7 +105,7 @@ namespace Kokkos {
      */
     virtual bool isEmpty() const = 0;
 
-    //! Indicatest that the graph has been finalized.
+    //! Indicates that the graph has been finalized.
     virtual bool isFinalized() const = 0;
 
     //! \brief Allocate and initialize the storage for a sparse graph.
@@ -128,14 +128,14 @@ namespace Kokkos {
     /// \brief Finalize storage for the graph.
     ///
     /// Instruct the graph to perform any necessary manipulation.
-    virtual void finalize(Teuchos::ParameterList &params);
+    virtual void finalize(const RCP<Teuchos::ParameterList> &params);
 
     /* Finalize storage for the graph and matrix.
        This one cannot be made virtual without introducing a dynamic cast down to the concrete class. 
        We'll rely strictly on generic programming here.
        But it should look like this:
-         void finalizeGraphAndMatrix(Matrix &mat, Teuchos::ParameterList &params);
-         void finalizeMatrix(Matrix &mat, Teuchos::ParameterList &params) const;
+         void finalizeGraphAndMatrix(Matrix &mat, const RCP<Teuchos::ParameterList> &params);
+         void finalizeMatrix(Matrix &mat, const RCP<Teuchos::ParameterList> &params) const;
     */
 
     //@}
@@ -193,7 +193,7 @@ namespace Kokkos {
 
   // ======= default implementation is empty ===========
   template <class Ordinal, class Node>
-  void CrsGraphBase<Ordinal,Node>::finalize(Teuchos::ParameterList &params)
+  void CrsGraphBase<Ordinal,Node>::finalize(const RCP<Teuchos::ParameterList> &params)
   { }
 
 } // namespace Kokkos

@@ -64,8 +64,6 @@
 namespace {
 
   using Kokkos::MultiVector;
-  using Kokkos::CrsMatrix;
-  using Kokkos::CrsGraph;
   using Kokkos::DefaultArithmetic;
   using Kokkos::DefaultKernels;
   using Kokkos::SerialNode;
@@ -156,11 +154,11 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, SparseMultiply, Ordinal, Scalar, Node )
   {
     RCP<Node> node = getNode<Node>();
-    typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps DSM;
-    typedef CrsGraph<Ordinal,Node,DSM>                             GRPH;
-    typedef CrsMatrix<Scalar,Ordinal,Node,DSM>                      MAT;
-    typedef MultiVector<Scalar,Node>                                 MV;
-    typedef Teuchos::ScalarTraits<Scalar>                            ST;
+    typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps          DSM;
+    typedef typename DSM::template matrix<Scalar,Ordinal,Node>::matrix_type  MAT;
+    typedef typename DSM::template graph<Ordinal,Node>::graph_type          GRPH;
+    typedef MultiVector<Scalar,Node>                                          MV;
+    typedef Teuchos::ScalarTraits<Scalar>                                     ST;
     const Scalar ONE = ST::one(),
                 ZERO = ST::zero();
     // generate tridiagonal matrix:
@@ -171,8 +169,8 @@ namespace {
     // [                -1  3 -1]
     // [                   -1  2]
     if (N<2) return;
-    GRPH G(N,node);
-    MAT  A(G);
+    RCP<GRPH> G = rcp(new GRPH (N,node) );
+    RCP<MAT>  A = rcp(new MAT  (G) );
     // allocate buffers for offsets, indices and values
     const size_t totalNNZ = 3*N - 2;
     ArrayRCP<size_t> offsets(N+1);
@@ -198,16 +196,15 @@ namespace {
       offsets[N]   = NNZsofar;
       TEUCHOS_TEST_FOR_EXCEPT(NNZsofar != totalNNZ);
     }
-    G.set1DStructure(inds, offsets, offsets.persistingView(1,N));
+    G->setStructure(offsets, inds);
     offsets = Teuchos::null;
     inds    = Teuchos::null;
-    A.set1DValues(vals);
+    A->setValues(vals);
     vals    = Teuchos::null;
-    A.finalize(true);
-    typename DSM::template rebind<Scalar>::other dsm(node);
+    A->finalize(Teuchos::parameterList());
+    typename DSM::template rebind<Scalar>::other_type dsm(node);
     out << "Testing with sparse ops: " << Teuchos::typeName(dsm) << std::endl;
-    dsm.initializeStructure(G);
-    dsm.initializeValues(A);
+    dsm.setGraphAndMatrix(G,A);
 
     ArrayRCP<Scalar> xdat, axdat;
     xdat  = node->template allocBuffer<Scalar>(N);

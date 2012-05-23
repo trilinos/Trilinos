@@ -105,6 +105,9 @@ namespace Kokkos {
     //! Whether the matrix has been finalized.
     virtual bool isFinalized() const = 0;
 
+    //! Finalize the matrix.
+    virtual void finalize(const RCP<Teuchos::ParameterList> &params);
+
     //! \brief Allocate and initialize the storage for the matrix values.
     /**
         \pre numEntries.size() == getNumRows()
