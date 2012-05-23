@@ -262,8 +262,9 @@ namespace stk {
         }
 
       //entity_vector.reserve(getNumNewElemPerElem());
-      unsigned nchild = getNumNewElemPerElem();
-      if (numChild) nchild = *numChild;
+      //
+      //unsigned nchild = getNumNewElemPerElem();
+      //if (numChild) nchild = *numChild;
 
 #if DEBUG_MULTI_LEVEL
       std::cout << "tmp parent_to_family_tree_relations_size_0 = " << parent_to_family_tree_relations_size_0 << " parent_to_family_tree_relations_size_1= " << parent_to_family_tree_relations_size_1 << std::endl;

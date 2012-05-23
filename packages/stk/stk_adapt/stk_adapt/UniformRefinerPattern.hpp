@@ -1269,7 +1269,7 @@ namespace stk {
 
         unsigned num_child = ref_topo.num_child();
         unsigned iChildStart = 0;
-        unsigned iChildEnd = num_child-1;
+        //unsigned iChildEnd = num_child-1;
         // SPECIAL CASE ALERT 
         if (fromTopoKey == topo_key_pyramid5)
           {
@@ -1277,7 +1277,7 @@ namespace stk {
             if (toTopoKey == topo_key_tet4)
               {
                 iChildStart = 6;
-                iChildEnd = 9;
+                //iChildEnd = 9;
               }
           }
         else
@@ -2172,7 +2172,7 @@ namespace stk {
         for (unsigned childNodeIdx = 0; childNodeIdx < num_child_nodes; childNodeIdx++)
           {
             bool found = false;
-            bool on_edge = false;
+            //bool on_edge = false;
             bool on_vertex = false;
             if (childNodeIdx < FromTopology::vertex_count)
               {
@@ -2201,7 +2201,7 @@ namespace stk {
 
                     if (childNodeIdx == edge_nodes[2])  // FIXME
                       {
-                        on_edge = true;
+                        //on_edge = true;
                         found = true;
                         param_coord[0] = (ref_topo_x[edge_nodes[0]].parametric_coordinates[0]+ref_topo_x[edge_nodes[1]].parametric_coordinates[0])/2.;
                         param_coord[1] = (ref_topo_x[edge_nodes[0]].parametric_coordinates[1]+ref_topo_x[edge_nodes[1]].parametric_coordinates[1])/2.;
@@ -2738,7 +2738,7 @@ namespace stk {
               {
                 std::cout << "i_part = " << i_part << " m_fromParts= " << m_fromParts[i_part]->name() << std::endl;
               }
-            bool found_in_another_part = false;
+            //bool found_in_another_part = false;
 
             stk::mesh::PartVector all_parts = eMesh.get_fem_meta_data()->get_parts();
             for (mesh::PartVector::iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
@@ -2748,7 +2748,7 @@ namespace stk {
                 if (old_owning_elem.bucket().member(*part))
                   {
                     std::cout << "found_in_another_part part name= " << part->name() << std::endl;
-                    found_in_another_part = true;
+                    //found_in_another_part = true;
                   }
               }
 

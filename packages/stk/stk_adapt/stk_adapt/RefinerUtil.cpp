@@ -61,10 +61,10 @@ BlockNamesType RefinerUtil::getBlockNames(std::string& block_name, unsigned proc
       {
         std::string n1 = (last_one ? names : names.substr(0, ipos) );
         bool inc = true;
-        bool exc = false;
+        //bool exc = false;
         if ('-' == n1[0]) 
         {
-          exc = true;
+          //exc = true;
           inc = false;
         }
         else if ('+' == n1[0])
@@ -180,10 +180,10 @@ BlockNamesType RefinerUtil::getBlockNames(std::string& block_name, unsigned proc
       std::string n1 = (last_one ? names : names.substr(0, ipos) );
 
       bool inc = true;
-      bool exc = false;
+      //bool exc = false;
       if ('-' == n1[0]) 
       {
-        exc = true;
+        //exc = true;
         inc = false;
       }
       else if ('+' == n1[0])
@@ -243,10 +243,10 @@ BlockNamesType RefinerUtil::getBlockNames(std::string& block_name, unsigned proc
         std::string n1 = (last_one ? names : names.substr(0, ipos) );
 
         bool inc = true;
-        bool exc = false;
+        //bool exc = false;
         if ('-' == n1[0]) 
         {
-          exc = true;
+          //exc = true;
           inc = false;
         }
         else if ('+' == n1[0])

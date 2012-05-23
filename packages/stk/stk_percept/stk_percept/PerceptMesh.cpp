@@ -3970,11 +3970,11 @@ namespace stk {
                         << std::endl;
               throw std::logic_error(std::string("printParentChildInfo:: family_tree_relations size=0 = "));
             }
-          unsigned ft_index = 0;
-          if (i_ft_rel==0) 
-            ft_index = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, element);
-          else
-            ft_index = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_1, element);
+          //unsigned ft_index = 0;
+          //if (i_ft_rel==0) 
+          //  ft_index = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_0, element);
+          //else
+          //  ft_index = getFamilyTreeRelationIndex(FAMILY_TREE_LEVEL_1, element);
 
           stk::mesh::Entity *parent = family_tree_relations[FAMILY_TREE_PARENT].entity();
           std::cout << "printParentChildInfo: tree level {0,1} = " << i_ft_rel << " parent= " << parent->identifier() << " children= ";

@@ -53,7 +53,7 @@ namespace stk {
       q.run_common( mesh, pmesh, domain, settings, err ); MSQ_ERRRTN(err);
       q.remove_quality_assessor( 0, err ); MSQ_ERRRTN(err);
       const QualityAssessor::Assessor* inv_b = inv_check.get_results( &barrier );
-      const bool use_barrier = (0 == inv_b->get_invalid_element_count());
+      //const bool use_barrier = (0 == inv_b->get_invalid_element_count());
       std::cout << "tmp srk PMMShapeSizeOrientImprover::run_wrapper get_invalid_element_count= " 
                 << inv_b->get_invalid_element_count() << std::endl;
   
@@ -63,15 +63,15 @@ namespace stk {
       TShapeSizeOrientB1 mu_ob;
   
       // Select which target metrics to use
-      TMetric *mu_p, *mu_op;
-      if (use_barrier) {
-        mu_p = &mu_b;
-        mu_op = &mu_ob;
-      }
-      else {
-        mu_p = &mu;
-        mu_op = &mu_o;
-      }
+      //TMetric *mu_p, *mu_op;
+      //if (use_barrier) {
+      //  mu_p = &mu_b;
+      //  mu_op = &mu_ob;
+      //}
+      //else {
+      //  mu_p = &mu;
+      //  mu_op = &mu_o;
+      //}
   
       // Set up target and weight calculators
       std::string altCoordName = "msq_jacobi_temp_coords"; // FIXME

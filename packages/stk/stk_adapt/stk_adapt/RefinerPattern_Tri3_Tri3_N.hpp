@@ -193,11 +193,11 @@ namespace stk {
                     stk::mesh::Entity * node_0 = elem_nodes[cell_topo_data->edge[iedge].node[0]];
                     stk::mesh::Entity * node_1 = elem_nodes[cell_topo_data->edge[iedge].node[1]];
 
-                    bool reverse = false;
+                    //bool reverse = false;
                     // ensure edge_len is computed identically, independent of edge orientation
                     if (node_0->identifier() > node_1->identifier())
                       {
-                        reverse = true;
+                        //reverse = true;
                         stk::mesh::Entity *node_temp = node_0;
                         node_0 = node_1;
                         node_1 = node_temp;

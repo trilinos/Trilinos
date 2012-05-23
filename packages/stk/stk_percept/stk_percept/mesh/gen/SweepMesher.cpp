@@ -581,7 +581,7 @@ namespace stk
               //const unsigned expected_num_edges = 0;
               // const unsigned expected_num_faces = 0;
   
-              bool result = true;
+              //bool result = true;
               std::vector<unsigned> entity_counts;
               stk::mesh::Selector selector(part);
               stk::mesh::count_entities( selector, bulkData , entity_counts );
@@ -596,7 +596,7 @@ namespace stk
                   (entity_counts[m_metaData->element_rank()] != expected_num_elems)
                   ) {
                 std::cerr<< "Error, the  entity counts are incorrect!" << std::endl;
-                result = false;
+                //result = false;
 
               }
             }

@@ -400,6 +400,7 @@ namespace stk {
       bool isInt = false;
       try {
         nref = boost::lexical_cast<int>(number_refines);
+        (void)nref;
         isInt = true;
       }
       catch( ... ) 

@@ -331,29 +331,29 @@ namespace stk {
               unsigned ix1 = NX;
               unsigned iy0 = 0;
               unsigned iy1 = NY;
-              unsigned ixp = 0;
-              unsigned iyp = 0;
+              //unsigned ixp = 0;
+              //unsigned iyp = 0;
               switch(i_side)
                 {
                 case 0:
                   iy0 = 0;
                   iy1 = 1;
-                  ixp = 1;
+                  //ixp = 1;
                   break;
                 case 1:
                   ix0 = NX-1;
                   ix1 = ix0+1;
-                  iyp = 1;
+                  //iyp = 1;
                   break;
                 case 2:
                   iy0 = NY-1;
                   iy1 = iy0+1;
-                  ixp = 1;
+                  //ixp = 1;
                   break;
                 case 3:
                   ix0 = 0;
                   ix1 = 1;
-                  iyp = 1;
+                  //iyp = 1;
                   break;
                 }
               for (unsigned ix = ix0; ix < ix1; ix++)
