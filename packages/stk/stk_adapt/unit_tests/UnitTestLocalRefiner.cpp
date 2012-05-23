@@ -988,7 +988,7 @@ namespace stk {
             breaker.setAlwaysInitializeNodeRegistry(false);
             breaker.doBreak();
 
-            //eMesh.dumpElementsCompact();
+            //eMesh.dump_elements_compact();
 
             //eMesh.print_info("local tri mesh refined", 2);
             save_or_diff(eMesh, output_files_loc+"local_tri_N_1_1_"+post_fix[p_size]+".e");
@@ -1053,7 +1053,7 @@ namespace stk {
                 breaker.doBreak();
               }
 
-            //eMesh.dumpElementsCompact();
+            //eMesh.dump_elements_compact();
 
             //eMesh.print_info("local tri mesh refined", 2);
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_2_1_"+post_fix[p_size]+".e");
@@ -1121,7 +1121,7 @@ namespace stk {
                 eMesh.save_as(output_files_loc+"local_tri_N_3_1_1_ipass"+toString(ipass)+"_"+post_fix[p_size]+".e");
               }
 
-            //eMesh.dumpElementsCompact();
+            //eMesh.dump_elements_compact();
 
             //eMesh.print_info("local tri mesh refined", 2);
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_1_1_"+post_fix[p_size]+".e");
@@ -1194,7 +1194,7 @@ namespace stk {
                 eMesh.save_as(output_files_loc+"local_tri_N_3_2_1_ipass"+toString(ipass)+"_"+post_fix[p_size]+".e");
               }
 
-            //eMesh.dumpElementsCompact();
+            //eMesh.dump_elements_compact();
 
             //eMesh.print_info("local tri mesh refined", 2);
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_2_1_"+post_fix[p_size]+".e");
@@ -1227,7 +1227,7 @@ namespace stk {
                     eMesh.save_as(output_files_loc+"local_tri_N_3_2_1_ipass"+toString(ipass)+"_"+post_fix[p_size]+".e");
                   }
 
-                //eMesh.dumpElementsCompact();
+                //eMesh.dump_elements_compact();
 
                 // FIXME FIXME FIXME
                 breaker.deleteParentElements();
@@ -1292,7 +1292,7 @@ namespace stk {
                 breaker.doBreak();
               }
 
-            //eMesh.dumpElementsCompact();
+            //eMesh.dump_elements_compact();
 
             //eMesh.print_info("local tri mesh refined", 2);
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_2_"+post_fix[p_size]+".e");
@@ -1363,7 +1363,7 @@ namespace stk {
             breaker.doBreak();
 
             eMesh.print_info("local tri mesh refined", print_infoLevel);
-            //eMesh.dumpElements();
+            //eMesh.dump_elements();
             save_or_diff(eMesh, output_files_loc+"local_tri_N_1.e");
 
             //breaker.unrefineAll();
@@ -1428,7 +1428,7 @@ namespace stk {
                 eMesh.save_as(output_files_loc+"local_tri_N_3_1_IEdgeAdapter_1_ipass"+toString(ipass)+"_"+post_fix[p_size]+".e");
               }
 
-            //eMesh.dumpElementsCompact();
+            //eMesh.dump_elements_compact();
 
             //eMesh.print_info("local tri mesh refined", 2);
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_1_IEdgeAdapter_1_"+post_fix[p_size]+".e");
@@ -1503,7 +1503,7 @@ namespace stk {
                 eMesh.save_as(output_files_loc+"local_tri_N_3_1_IElementAdapter_1_ipass"+toString(ipass)+"_"+post_fix[p_size]+".e");
               }
 
-            //eMesh.dumpElementsCompact();
+            //eMesh.dump_elements_compact();
 
             //eMesh.print_info("local tri mesh refined", 2);
             //save_or_diff(eMesh, output_files_loc+"local_tri_N_3_1_IElementAdapter_1_"+post_fix[p_size]+".e");

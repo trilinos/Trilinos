@@ -31,6 +31,7 @@ namespace stk
       std::vector<VecOfString > m_array_2; // rank two
       //...
     public:
+      MDArrayString() : m_rank(1) { m_array_1.resize(0); }
       MDArrayString(int dim) : m_rank(1) { m_array_1.resize(dim); }
       MDArrayString(int dim0, int dim1) : m_rank(2) 
       { 
@@ -40,6 +41,41 @@ namespace stk
             m_array_2[j].resize(dim1);
           }
       }
+      void resize(int dim)
+      {
+        m_rank = 1;
+        m_array_1.resize(dim);
+      }
+      void resize(int dim0, int dim1)
+      {
+        m_rank = 2;
+        m_array_2.resize(dim0); 
+        for (int j = 0; j < dim0; j++)
+          {
+            m_array_2[j].resize(dim1);
+          }
+
+      }
+      const int rank() const { return m_rank; }
+
+      void setValues(std::string *data)
+      {
+        if (m_rank == 1)
+          {
+            for (unsigned j = 0; j < m_array_1.size(); j++)
+              m_array_1[j] = data[j];
+          }
+        else if (m_rank == 2)
+          {
+            unsigned k = 0;
+            for (unsigned i = 0; i < m_array_2.size(); i++)
+              for (unsigned j = 0; j < m_array_2[0].size(); j++)
+                {
+                  m_array_2[i][j] = data[k++];
+                }
+          }
+      }
+
       //MDArrayString(std::string array[][]) : m_rank(2) 
       std::string& operator()(int i1) { 
         if (m_rank==2) throw std::runtime_error("MDArrayString:: rank 2 but asking for 1 dim");

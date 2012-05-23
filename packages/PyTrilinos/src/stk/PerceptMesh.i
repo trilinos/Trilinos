@@ -9,8 +9,8 @@ Case 1: Norm of the difference of an Exact Solution and a Mesh Field
 
 pMesh = PerceptMesh() #Create a PerceptMesh database
 #Specify the geometric hex mesh to be a 3x3x3 box between 0,0,0 and 2,2,2
-pMesh.newMesh(GMeshSpec('3x3x3|bbox:0,0,0,2,2,2')) 
-field = pMesh.addField('coordinates', 1) #Add a coordinates field
+pMesh.new_mesh(GMeshSpec('3x3x3|bbox:0,0,0,2,2,2')) 
+field = pMesh.add_field('coordinates', 1) #Add a coordinates field
 pMesh.commit() #Commits the mesh to the mesh database
 
 input_array = numpy.array([1.0, 0.5, 0.5]) #Create numpy arrays to be evaluated 
@@ -34,9 +34,9 @@ norm = L1Norm(pMesh.getBulkData()) #Create a norm object to evaluate the norm of
 value = norm.evaluate(ff) #Evaluate the norm
 diffnorm = norm.evaluate(sf_diff) #Evaluate the norm of the difference of the exact solution and the mesh field
 
-#Now use a helper function to evaluate the norm: evalNorm(bulkData, Function, int) 
-value1 = evalNorm(pMesh.getBulkData(), ff, 1) 
-diffnorm1 = evalNorm(pMesh.getBulkData(), sf_diff, 1)
+#Now use a helper function to evaluate the norm: eval_norm(bulkData, Function, int) 
+value1 = eval_norm(pMesh.getBulkData(), ff, 1) 
+diffnorm1 = eval_norm(pMesh.getBulkData(), sf_diff, 1)
 
 #################################################################################################################
 
@@ -80,7 +80,7 @@ ff_0 = Field_Function(pMesh_0)
 ff_1 = Field_Function(pMesh_1)
 diff = StringFunction('ff_0 - ff_1')
 
-diffnorm = evalNorm(pMesh.getBulkData, diff, 2)
+diffnorm = eval_norm(pMesh.getBulkData, diff, 2)
 print 'diffnorm = ', diffnorm
 
 #################################################################################################################
@@ -313,6 +313,120 @@ namespace std
   $result = SWIG_Python_AppendOutput($result, (PyObject*) temp_array);
 }
 
+%module outarg
+
+%typemap(argout) stk::percept::MDArray &MDOutVal {
+  int numdims = $1->rank();
+  int dimensions[5];
+  for (int i = 0; i < numdims; i++)
+  {
+    dimensions[i] = $1->dimension(i);  
+  }  
+  PyArrayObject* temp_array = (PyArrayObject*) PyArray_FromDims(numdims, dimensions, PyArray_DOUBLE);
+  double* buffer = (double*) temp_array->data;
+  Teuchos::ArrayRCP<double> rcp = $1->getData();
+  double* md_temp = rcp.access_private_ptr(); 
+  for (int i=0; i < $1->size(); i++) 
+  {
+    buffer[i] = md_temp[i];
+  }
+  $result = SWIG_Python_AppendOutput($result, (PyObject*)  temp_array);
+  //$result =  (PyObject*) temp_array;
+}
+
+void stk::percept::Function::value(MDArray& domain, MDArray& MDOutVal, double time_value_optional=0.0);
+
+%typemap(in) stk::percept::MDArrayString & (stk::percept::MDArrayString mdarray) {
+	if (!PyArray_Check($input)) {
+		PyErr_SetString(PyExc_TypeError, "ERROR: input must be numpy array");
+		SWIG_fail;
+	}
+	PyArrayObject* array = (PyArrayObject*) $input;
+  if (PyArray_TYPE(array) != NPY_STRING) {
+    PyErr_SetString(PyExc_TypeError, "ERROR: input must be numpy array of type string");
+    SWIG_fail;
+  }
+	int nd = array->nd;
+  bool debug = false;
+  if(debug) std::cout << "nd= " << nd <<  std::endl;
+  // FIXME
+  if (nd > 2) {
+    PyErr_SetString(PyExc_TypeError, "ERROR: array dimensions must be less than or equal to 2");
+		SWIG_fail;
+	}
+	if (nd == 1) {
+		int dim1 = array->dimensions[0];
+    if(debug) std::cout << "dim1= " << array->dimensions[0]
+    <<  std::endl;
+    mdarray.resize(array->dimensions[0]);
+    int itemsize = PyArray_ITEMSIZE(array);
+    if(debug) std::cout << "dim1= " << array->dimensions[0]
+       <<  std::endl;
+    //		mdarray.setValues((std::string*) array->data );
+    MDArrayString tmp(dim1);
+    char buf[itemsize+1];
+    for (int i1=0; i1 < dim1; i1++)
+    {
+       // void* PyArray_GETPTR2(PyObject* obj, <npy_intp> i, <npy_intp> j)
+       char *str = (char *)PyArray_GETPTR1(array, i1);
+       for (int ii=0; ii < itemsize; ii++) buf[ii] = str[ii];
+       buf[itemsize] = '\0';
+       if(debug) std::cout << "str= " << buf
+                      <<     std::endl;
+       mdarray(i1) = buf;
+    }
+    if(debug) std::cout << "dim1= " << array->dimensions[0]
+       <<  std::endl;
+		$1 = &mdarray;
+	}
+	else if (nd == 2) {
+		int dim1 = array->dimensions[0];
+		int dim2 = array->dimensions[1];
+    if(debug) std::cout << "dim1,2= " << dim1 << " " << dim2
+    <<  std::endl;
+		mdarray.resize(dim1, dim2);
+    int itemsize = PyArray_ITEMSIZE(array);
+    if(debug) std::cout << "dim1,2= " << dim1 << " " << dim2
+    << " itemsize = " << itemsize
+    <<  std::endl;
+    
+    MDArrayString tmp(dim1,dim2);
+    char buf[itemsize+1];
+    for (int i1=0; i1 < dim1; i1++)
+    for (int i2=0; i2 < dim2; i2++)
+    {
+       // void* PyArray_GETPTR2(PyObject* obj, <npy_intp> i, <npy_intp> j)
+       char *str = (char *)PyArray_GETPTR2(array, i1, i2);
+       for (int ii=0; ii < itemsize; ii++) buf[ii] = str[ii];
+       buf[itemsize] = '\0';
+       if(debug) std::cout << "str= " << buf
+                      <<     std::endl;
+       mdarray(i1,i2) = buf;
+    }
+    //		mdarray.setValues((std::string*) array->data );
+    if(debug) std::cout << "dim1,2= " << dim1 << " " << dim2
+    <<  std::endl;
+		$1 = &mdarray;
+	}
+/*
+  else if (nd == 3) {
+    int dim1 = array->dimensions[0];
+    int dim2 = array->dimensions[1];
+    int dim3 = array->dimensions[2];
+    mdarray.resize(dim1, dim2, dim3);
+    mdarray.setValues((std::string*) array->data );
+    $1 = &mdarray;
+  }
+*/
+}
+
+%typemap(typecheck) stk::percept::MDArrayString& {
+  void *vptr = 0;
+  int res1 = SWIG_ConvertPtr($input, &vptr, $*descriptor, 0);
+  int res2 = PyArray_Check($input);
+  $1 = (SWIG_CheckState(res1) || res2);
+}
+
 // from stk_percept
 
 %include stk_percept/Name.hpp
@@ -333,7 +447,7 @@ namespace std
 
 %feature("docstring") PerceptMesh "Create a PerceptMesh.";
 %feature("docstring") GMeshSpec "Specify the mesh to be created by passing in a string, e.g. '3x3x3|bbox:0,0,0,1,1,1'.";
-%feature("docstring") newMesh "Create a new mesh object by passing in a GMeshSpec.";
+%feature("docstring") new_mesh "Create a new mesh object by passing in a GMeshSpec.";
 
 
 %include PerceptMesh.hpp
@@ -392,15 +506,16 @@ namespace std
 %ignore stk::percept::GenericFunction::getNewCodomain() const;
 %include GenericFunction.hpp
 
-  //eval is a Python command so we need to rename it to evalFunc
+  //eval is a Python command so we need to rename it to eval_func
 %ignore stk::percept::operator<<(std::ostream& out,  Function& func);
 
-%rename(evalFunc) *::eval(double x, double y, double z, double t, Function& func);
-%rename(evalFunc) *::eval(double x, double y, double z, double t, Teuchos::RCP<Function>& func);
-%rename(evalFunc2) *::eval2(double x, double y, double t, Function& func);
-%rename(evalFunc2) *::eval2(double x, double y, double t, Teuchos::RCP<Function>& func);
-%feature("docstring") evalFunc "Evaluate the function by passing in values for x, y, z, t, and the Function. Returns a double.";
+%rename(eval_func) *::eval(double x, double y, double z, double t, Function& func);
+%rename(eval_func) *::eval(double x, double y, double z, double t, Teuchos::RCP<Function>& func);
+%rename(eval_func2) *::eval2(double x, double y, double t, Function& func);
+%rename(eval_func2) *::eval2(double x, double y, double t, Teuchos::RCP<Function>& func);
+%feature("docstring") eval_func "Evaluate the function by passing in values for x, y, z, t, and the Function. Returns a double.";
 %include Function.hpp
+
 
 %feature("docstring") FieldFunction "Create a field function by passing in a name, a field base, a PerceptMesh and input and output dimensions.";
 %feature("docstring") evaluate "Evaluate the function with the given array.  Returns an array."
@@ -437,7 +552,7 @@ namespace std
 };
 
 //from stk_percept/norm
-%feature("docstring") evalNorm "Evaluate the norm by passing in a bulkData, a Function, and a 1 or 2 for L1 or L2 norm. Returns a double.";
+//%feature("docstring") eval_norm "Evaluate the norm by passing in a bulkData, a Function, and a 1 or 2 for L1 or L2 norm. Returns a double.";
 %include Norm.hpp
 
 %feature("docstring") Norm "Create a Norm object by passing in a bulkData.";

@@ -156,7 +156,7 @@ namespace stk {
       void
       save_as(const std::string& out_filename);
 
-      /// closes this mesh to further changes
+      /// closes this mesh, deleting its data
       void
       close();
 
@@ -168,6 +168,7 @@ namespace stk {
       void
       print_info(std::string header="", int print_level = 0, bool do_endl=true);
 
+      /// print the fields defined on the mesh
       void
       print_fields(std::string header="");
 
@@ -186,78 +187,92 @@ namespace stk {
       int
       get_number_elements_locally_owned();
 
+      /// parallel rank
       unsigned get_rank() { return get_bulk_data()->parallel_rank(); }
       unsigned get_parallel_rank() { return get_bulk_data()->parallel_rank(); }
       unsigned get_parallel_size() { return get_bulk_data()->parallel_size(); }
 
+      /// print a node, edge, element, etc; optionally pass in a field to dump data associated with the entity
       void print_entity(const stk::mesh::Entity& entity, stk::mesh::FieldBase* field=0) { print_entity(std::cout, entity, field); };
+      /// shorter output for print_entity
       std::string print_entity_compact(const stk::mesh::Entity& entity, stk::mesh::FieldBase* field=0);
 
+      /// print elements on the given part
+      void dump_elements(const std::string& partName = "");
+      /// compact print of elements on the given part
+      void dump_elements_compact(const std::string& partName = "");
+
+      /// get the low-level bulk data pointer from stk_mesh
       stk::mesh::BulkData * get_bulk_data();
+      /// get the low-level meta data pointer from stk_mesh
       stk::mesh::fem::FEMMetaData * get_fem_meta_data();
 
+      /// get a pointer to a stk_mesh Part with the given name
       mesh::Part* get_part(const std::string& part_name) { return get_non_const_part(part_name); }
 
       // entity data setter/getters
+      /// get the value of a field on the given entity; if a vector field, pass in the index of the vector required (ordinal)
       double get_field_data(const stk::mesh::FieldBase *field, const mesh::Entity* entity, unsigned ordinal=0)
       {
         double *val= field_data_entity(field,*entity);
         return val ? val[ordinal] : 0.0;
       }
+      /// set the value of a field on the given entity; if a vector field, pass in the index of the vector required (ordinal)
       void set_field_data(double value, const stk::mesh::FieldBase *field, const mesh::Entity* entity, unsigned ordinal=0 )
       {
         double *val= field_data_entity(field,*entity);
         if( val) val[ordinal] = value;
       }
 
+      /// get the value of a field on the given node; if a vector field, pass in the index of the vector required (ordinal)
       double get_node_field_data(stk::mesh::FieldBase *field, const mesh::EntityId node_id, unsigned ordinal=0)
       {
         double *val = node_field_data(field, node_id);
         return val ? val[ordinal] : 0.0;
       }
+      /// set the value of a field on the given node; if a vector field, pass in the index of the vector required (ordinal)
       void set_node_field_data(double value, stk::mesh::FieldBase *field, const mesh::EntityId node_id, unsigned ordinal=0)
       {
         double *val = node_field_data(field, node_id);
         if( val) val[ordinal] = value;
       }
 
+      /// get a pointer to a node with given id
       stk::mesh::Entity *get_node(const mesh::EntityId node_id) 
       {
         return get_bulk_data()->get_entity(node_rank(), node_id);
       }
 
+      /// get a pointer to an element with given id
       stk::mesh::Entity *get_element(const mesh::EntityId element_id) 
       {
         return get_bulk_data()->get_entity(element_rank(), element_id);
       }
 
+      /// get a pointer to an entity with given id
       stk::mesh::Entity *get_entity( mesh::EntityRank rank, const mesh::EntityId id) 
       {
         return get_bulk_data()->get_entity(rank, id);
       }
 
-      /// find node closest to given point - in parallel, check return for null (if null, closest node is on another proc)
+      /// find and return pointer to node closest to given point - in parallel, check return for null (if null, closest node is on another proc)
       stk::mesh::Entity *get_node(double x, double y, double z=0, double t=0) ;
 
-      /// find element that contains given point - in parallel, check return for null (if null, element containing point is on another proc)
+      /// find and return pointer to element that contains given point - in parallel, check return for null (if null, element containing point is on another proc)
       stk::mesh::Entity *get_element(double x, double y, double z=0, double t=0) ;
 
+      /// return true if the two meshes are different; if @param print is true, print diffs; set print_all_field_diffs to get more output
       static bool mesh_difference(PerceptMesh& mesh1, PerceptMesh& mesh2,
                                   std::string msg,
                                   bool print=true, bool print_all_field_diffs=false);
 
-      static bool mesh_difference(stk::mesh::fem::FEMMetaData& metaData_1,
-                                  stk::mesh::fem::FEMMetaData& metaData_2,
-                                  stk::mesh::BulkData& bulkData_1,
-                                  stk::mesh::BulkData& bulkData_2,
-                                  std::string msg,
-                                  bool print=true, bool print_all_field_diffs=false);
-
+      /// return a pointer to the field containing node coordinates
       VectorFieldType* get_coordinates_field() {
         // this should have been set by a previous internal call to setCoordinatesField
         return m_coordinatesField;
       }
 
+      /// return the rank of a node
       stk::mesh::EntityRank node_rank() const
       {
         return m_metaData->node_rank();
@@ -291,13 +306,16 @@ namespace stk {
         return m_metaData->element_rank();
       }
 
-      /// set the current data in fields to the given time or Exodus step (if time supplied, finds the closest step to
-      /// that time (no interpolation yet)
+      /// set the current data in fields to the given Exodus step by reading from the database
       void read_database_at_time(double time);
+
+      /// set the current data in fields to the given Exodus time by reading from the database
+      /// (finds the closest step to the given time (no interpolation yet))
       void read_database_at_step(int step);
 
       /// return the current state of the Exodus database, 0 if not loaded yet (steps are 1-based in Exodus)
       int get_current_database_step();
+      /// return the current state of the Exodus database (time associated with current step)
       double get_current_database_time();
 
       /// return the step number closest to specified time, thus read_database_at_time(time) is equivalent to
@@ -311,6 +329,15 @@ namespace stk {
       //========================================================================================================================
       /// low-level interfaces
 #ifndef SWIG
+
+      /// return true if the two meshes are different; if @param print is true, print diffs; set print_all_field_diffs to get more output
+      static bool mesh_difference(stk::mesh::fem::FEMMetaData& metaData_1,
+                                  stk::mesh::fem::FEMMetaData& metaData_2,
+                                  stk::mesh::BulkData& bulkData_1,
+                                  stk::mesh::BulkData& bulkData_2,
+                                  std::string msg,
+                                  bool print=true, bool print_all_field_diffs=false);
+
 
       mesh::Part* get_non_const_part(const std::string& part_name);
 
@@ -340,8 +367,6 @@ namespace stk {
 
       /// reads the given file into a temporary model and prints info about it
       void dump(const std::string& file="");
-      void dumpElements(const std::string& partName = "");
-      void dumpElementsCompact();
 
       bool isGhostElement(const stk::mesh::Entity& element)
       {

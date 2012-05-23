@@ -37,14 +37,14 @@ class UseCases(unittest.TestCase):
         coords_mag_field = eMesh.get_field("coords_mag_field")   # get the field we just created
 
         ff_coords = FieldFunction("ff_coords", f_coords, eMesh, 3, 3)  # define a field function
-        evalVec3Print(0.1,0.1,0.1,0.0,ff_coords)  # evaluate and print the field function a point {0.1, 0.1, 0.1} time=0.0
+        eval_vec3_print(0.1,0.1,0.1,0.0,ff_coords)  # evaluate and print the field function a point {0.1, 0.1, 0.1} time=0.0
 
         coords_mag_sf = StringFunction("sqrt(x*x + y*y + z*z)" , "coords_mag_sf", 3, 1)  # define coordinate magnitude function
         x = 0.123
         y = 0.234
         z = 0.345
         vv = sqrt(x*x + y*y + z*z)
-        v1 = evalFunc(x,y,z,0,coords_mag_sf)
+        v1 = eval_func(x,y,z,0,coords_mag_sf)
         print "vv = ", vv, "== v1 = ", v1
         self.assertEqual(vv, v1)               # ensure correctness of string function
 
@@ -57,7 +57,7 @@ class UseCases(unittest.TestCase):
         eMesh.save_as("./cubehex8_withCoordMag_out.e")
 
         # demonstrate how to usa an alias
-        ff_coords.addAlias("mc")
+        ff_coords.add_alias("mc")
 
         sfcm = StringFunction("sqrt(mc[0]*mc[0]+mc[1]*mc[1]+mc[2]*mc[2])", "sfcm", 3, 1)
 

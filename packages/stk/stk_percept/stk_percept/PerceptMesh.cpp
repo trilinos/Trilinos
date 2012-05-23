@@ -391,7 +391,7 @@ namespace stk {
 
                 if (0)
                 {
-                  dumpElements(part.name());
+                  dump_elements(part.name());
                 }
               }
             }
@@ -2042,8 +2042,8 @@ namespace stk {
 
       if (p_rank == 0) std::cout << "PerceptMesh:: saving "<< out_filename << std::endl;
       
-      //std::cout << "tmp dumpElements PerceptMesh::writeModel: " << out_filename << std::endl;
-      //dumpElements();
+      //std::cout << "tmp dump_elements PerceptMesh::writeModel: " << out_filename << std::endl;
+      //dump_elements();
 
       checkForPartsToAvoidWriting();
      
@@ -2120,7 +2120,7 @@ namespace stk {
     }
 
     void PerceptMesh::
-    dumpElements(const std::string& partName)
+    dump_elements(const std::string& partName)
     {
       const stk::mesh::PartVector & parts = get_fem_meta_data()->get_parts();
       unsigned nparts = parts.size();
@@ -2140,7 +2140,7 @@ namespace stk {
 
           for (unsigned irank=1; irank < element_rank(); irank++)
             {
-              std::cout << "tmp PerceptMesh::dumpElements: part = " << part.name() << " rank= " << irank << std::endl;
+              std::cout << "tmp PerceptMesh::dump_elements: part = " << part.name() << " rank= " << irank << std::endl;
 
               const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( irank );
 
@@ -2165,9 +2165,17 @@ namespace stk {
     }
 
     void PerceptMesh::
-    dumpElementsCompact()
+    dump_elements_compact(const std::string& partName)
     {
       MPI_Barrier( get_bulk_data()->parallel() );
+      stk::mesh::Selector selector;
+      if (partName.size() > 0)
+        {
+          stk::mesh::Part *part = get_non_const_part(partName);
+          if (part)
+            selector = stk::mesh::Selector(*part);
+        }
+
       for (unsigned irank = 0u; irank < get_parallel_size(); irank++)
         {
           if (get_rank() == irank) 
@@ -2182,13 +2190,16 @@ namespace stk {
                   for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
                     {
                       stk::mesh::Bucket & bucket = **k ;
-                      const unsigned num_elements_in_bucket = bucket.size();
-
-                      for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+                      if (selector(bucket))
                         {
-                          stk::mesh::Entity& element = bucket[iElement];
+                          const unsigned num_elements_in_bucket = bucket.size();
 
-                          out << print_entity_compact( element ) << "\n";
+                          for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+                            {
+                              stk::mesh::Entity& element = bucket[iElement];
+
+                              out << print_entity_compact( element ) << "\n";
+                            }
                         }
                     }
                 }

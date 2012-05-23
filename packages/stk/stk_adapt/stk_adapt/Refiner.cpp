@@ -958,8 +958,8 @@ namespace stk {
           m_nodeRegistry->interpolateFields();
           //std::cout << "tmp interpolateFields...done " << std::endl;
         }
-      //std::cout << "tmp dumpElements 1" << std::endl;
-      // m_eMesh.dumpElements();
+      //std::cout << "tmp dump_elements 1" << std::endl;
+      // m_eMesh.dump_elements();
 #endif
       /**/                                                TRACE_PRINT("Refiner: addToExistingParts [etc.] ...done ");
 
@@ -968,8 +968,8 @@ namespace stk {
       m_eMesh.adapt_parent_to_child_relations().clear();
       /***********************/                           TRACE_PRINT("Refiner: fixElementSides1...done ");
 
-      //std::cout << "tmp dumpElements 2" << std::endl;
-      //m_eMesh.dumpElements();
+      //std::cout << "tmp dump_elements 2" << std::endl;
+      //m_eMesh.dump_elements();
 
 #if CHECK_DEBUG
       std::cout << "m_doRemove= " << m_doRemove << std::endl;
@@ -1028,8 +1028,8 @@ namespace stk {
           bulkData.modification_end();
         }
 
-      //std::cout << "tmp dumpElements 3" << std::endl;
-      //m_eMesh.dumpElements();
+      //std::cout << "tmp dump_elements 3" << std::endl;
+      //m_eMesh.dump_elements();
 
 #if defined( STK_ADAPT_HAS_GEOMETRY )
       if (m_geomSnap)

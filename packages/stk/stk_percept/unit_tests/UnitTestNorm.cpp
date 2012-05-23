@@ -431,7 +431,7 @@ void TEST_norm_string_function_turbo_verify_correctness(TurboOption turboOpt)
   /// the function to be integrated:  sqrt(Integral[x^2, dxdydz]) =?= sqrt(x^3/3 @ [-0.5, 0.5]) ==> sqrt(0.25/3)
   //StringFunction sfx("x", Name("sfx"), Dimensions(3), Dimensions(1) );
 
-  ff_coords.addAlias("mc");
+  ff_coords.add_alias("mc");
   //StringFunction sfcm("sqrt(mc[0]*mc[0]+mc[1]*mc[1]+mc[2]*mc[2])", Name("sfcm"), Dimensions(3), Dimensions(1));
   StringFunction sfx_mc("mc[0]", Name("sfx_mc"), Dimensions(3), Dimensions(1) );
   StringFunction sfx_mc1("mc[0]", Name("sfx_mc1"), Dimensions(3), Dimensions(1) );
@@ -607,7 +607,7 @@ void TEST_norm_string_function_turbo_timings(TurboOption turboOpt)
   /// the function to be integrated:  sqrt(Integral[x^2, dxdydz]) =?= sqrt(x^3/3 @ [-0.5, 0.5]) ==> sqrt(0.25/3)
   StringFunction sfx("x", Name("sfx"), Dimensions(3), Dimensions(1) );
 
-  ff_coords.addAlias("mc");
+  ff_coords.add_alias("mc");
   //StringFunction sfcm("sqrt(mc[0]*mc[0]+mc[1]*mc[1]+mc[2]*mc[2])", Name("sfcm"), Dimensions(3), Dimensions(1));
   StringFunction sfx_mc("mc[0]", Name("sfx_mc"), Dimensions(3), Dimensions(1) );
 

@@ -2,7 +2,8 @@ import sys
 #sys.path.append("/Users/kgmerk/projects/trilinos/build_make/packages/PyTrilinos/src/PyTrilinos")
 #sys.path.append("/scratch/srkenno/Trilinos-BUILDS/build11-090711/packages/PyTrilinos/src/stk/PyPercept")
 #sys.path.append("/scratch/srkenno/stk_geom/src/build4-091411/packages/PyTrilinos/src/stk/PyPercept")
-sys.path.append("/scratch/srkenno/Trilinos-BUILDS/build-PyPercept-scratch-srkenno-code/packages/PyTrilinos/src/stk/PyPercept")
+#sys.path.append("/scratch/srkenno/Trilinos-BUILDS/build-PyPercept-scratch-srkenno-code/packages/PyTrilinos/src/stk/PyPercept")
+sys.path.insert(0,"/scratch/srkenno/Trilinos-BUILDS/build-PyPercept-scratch-srkenno-code/packages/PyTrilinos/src/stk/PyPercept")
 from math import *
 from numpy import *
 import unittest
@@ -36,10 +37,10 @@ class StringFunctionUnitTests(unittest.TestCase):
       input_array = array([x, y, z])
       
       time = 0.0
-      output_array = sf.evaluate(input_array, time)
+      output_array = sf.value(input_array, time)
       print output_array
 
-      evalPrint(x, y, z, time, sf)
+      eval_print(x, y, z, time, sf)
 
     def test_stringFunction_xy_basic_1(self):
        sfx = StringFunction("x")
@@ -52,11 +53,11 @@ class StringFunctionUnitTests(unittest.TestCase):
        t = 0.0
        xy = x-y
 
-       evalPrint(1,2,3,0, sfxy)
-       vx = evalFunc(x, y, z, t, sfx)
+       eval_print(1,2,3,0, sfxy)
+       vx = eval_func(x, y, z, t, sfx)
        print "x = ", x, "vx = ", vx
-       vy = evalFunc(x, y, z, t, sfy)
-       vxy = evalFunc(x, y, z, t, sfxy)
+       vy = eval_func(x, y, z, t, sfy)
+       vxy = eval_func(x, y, z, t, sfxy)
        
        print "y = ", y, "vy = ", vy
        print "xy = ", xy, "vxy = ", vxy
@@ -82,12 +83,12 @@ class StringFunctionUnitTests(unittest.TestCase):
        t = 0.0
        xy = x-y
 
-       evalPrint(1,2,3,0, sfxy)
-       vx = evalFunc(x,y,z,t, sfx)
+       eval_print(1,2,3,0, sfxy)
+       vx = eval_func(x,y,z,t, sfx)
        print "x = ", x, "vx = ", vx
-       vy = evalFunc(x, y, z, t, sfy)
+       vy = eval_func(x, y, z, t, sfy)
        print "y = ", y, "vy = ", vy
-       vxy = evalFunc(x, y, z, t, sfxy)
+       vxy = eval_func(x, y, z, t, sfxy)
        print "xy = ", xy, "vxy = ", vxy
           
        self.assertEqual(x, vx)
@@ -106,12 +107,12 @@ class StringFunctionUnitTests(unittest.TestCase):
        t = 0.0
        xy = x-y
 
-       evalPrint(1,2,3,0, sfxy)
-       vx = evalFunc(x,y,z,t, sfx)
+       eval_print(1,2,3,0, sfxy)
+       vx = eval_func(x,y,z,t, sfx)
        print "x = ", x, "vx = ", vx
-       vy = evalFunc(x, y, z, t, sfy)
+       vy = eval_func(x, y, z, t, sfy)
        print "y = ", y, "vy = ", vy
-       vxy = evalFunc(x, y, z, t, sfxy)
+       vxy = eval_func(x, y, z, t, sfxy)
        print "xy = ", xy, "vxy = ", vxy
 
        self.assertEqual(x, vx)
@@ -119,13 +120,13 @@ class StringFunctionUnitTests(unittest.TestCase):
        self.assertEqual(xy, vxy)
 
        print "sfembedded = ...", sfembedded
-       evalPrint(1,2,3,0,sfembedded)
-       print "sfembedded = ", evalFunc(x,y,z,t,sfembedded)
+       eval_print(1,2,3,0,sfembedded)
+       print "sfembedded = ", eval_func(x,y,z,t,sfembedded)
 
-       vxy1 = evalFunc(x,y,z,t,sfembedded)
-       sfembedded.addAlias("sfalias")
+       vxy1 = eval_func(x,y,z,t,sfembedded)
+       sfembedded.add_alias("sfalias")
        sftestalias = StringFunction("sfalias", "sftestalias")
-       vxy2 = evalFunc(x,y,z,t,sftestalias)
+       vxy2 = eval_func(x,y,z,t,sftestalias)
        print "sftestalias = ", vxy2
 
     def test_stringFunction_vector_valued(self):
@@ -137,13 +138,13 @@ class StringFunctionUnitTests(unittest.TestCase):
        didCatch = 0
        try:
           sfv0 = StringFunction("v[0]=x; v[1]=y; v[2]=z; x", "sfv", Dimensions(1,4), Dimensions(1,3))
-          evalVec3Print(1,2,3,0, sfv0)
+          eval_vec3_print(1,2,3,0, sfv0)
        except:
           didCatch = 1
           print "TEST::function::stringFunctionVector: expected to catch this since dom/codomain dimensions should be rank-1"
        sfv = StringFunction("v[0]=x*y*z; v[1]=y; v[2]=z; x", "sfv", Dimensions(3), Dimensions(3))
-       evalVec3Print(1.234, 2.345e-3, 3.456e+5, 0.0, sfv)
-       vec = evalVec3(x,y,z,t,sfv)
+       eval_vec3_print(1.234, 2.345e-3, 3.456e+5, 0.0, sfv)
+       vec = eval_vec3(x,y,z,t,sfv)
        print "x = ", x
        print "y = ", y
        print "z = ", z
@@ -168,13 +169,13 @@ class StringFunctionUnitTests(unittest.TestCase):
 
          sfxy2 = sfx - sfy
          xy = x - y
-         vxy = evalFunc(x,y,z,t,sfxy)
-         vxy2 = evalFunc(x,y,z,t,sfxy2)
+         vxy = eval_func(x,y,z,t,sfxy)
+         vxy2 = eval_func(x,y,z,t,sfxy2)
 
          sfx1 = StringFunction("x")
          sfy2 = StringFunction("y")
-         vx = evalFunc(x,y,z,t, sfx1)
-         vy = evalFunc(x,y,z,t, sfy2)
+         vx = eval_func(x,y,z,t, sfx1)
+         vy = eval_func(x,y,z,t, sfy2)
 
          print "vxy2 = ", vxy2, " == vxy = ", vxy
          print "xy = ", xy, " == vxy = ", vxy
@@ -188,8 +189,8 @@ class StringFunctionUnitTests(unittest.TestCase):
 
          sfxy_minus = sfx - sfy
          xy_minus = x - y
-         vxy_minus = evalFunc(x,y,z,t,sfxy_minus)
-         vxy1_minus = evalFunc(x,y,z,t,sfxy_minus)
+         vxy_minus = eval_func(x,y,z,t,sfxy_minus)
+         vxy1_minus = eval_func(x,y,z,t,sfxy_minus)
          print "xy_minus = ", xy_minus, " == vxy_minus = ", vxy_minus
          print "xy_minus = ", xy_minus, " == vxy1_minus = ", vxy1_minus
 
@@ -198,8 +199,8 @@ class StringFunctionUnitTests(unittest.TestCase):
 
          sfxy_plus = sfx + sfy
          xy_plus = x + y
-         vxy_plus = evalFunc(x,y,z,t,sfxy_plus)
-         vxy1_plus = evalFunc(x,y,z,t,sfxy_plus)
+         vxy_plus = eval_func(x,y,z,t,sfxy_plus)
+         vxy1_plus = eval_func(x,y,z,t,sfxy_plus)
          print "xy_plus = ", xy_plus, " == vxy_plus = ", vxy_plus
          print "xy_plus = ", xy_plus, " == vxy1_plus = ", vxy1_plus
 
@@ -208,8 +209,8 @@ class StringFunctionUnitTests(unittest.TestCase):
 
          sfxy_mult = sfx * sfy
          xy_mult = x * y
-         vxy_mult = evalFunc(x,y,z,t,sfxy_mult)
-         vxy1_mult = evalFunc(x,y,z,t,sfxy_mult)
+         vxy_mult = eval_func(x,y,z,t,sfxy_mult)
+         vxy1_mult = eval_func(x,y,z,t,sfxy_mult)
          print "xy_mult = ", xy_mult, " == vxy_mult = ", vxy_mult
          print "xy_mult = ", xy_mult, " == vxy1_mult = ", vxy1_mult
 
@@ -218,8 +219,8 @@ class StringFunctionUnitTests(unittest.TestCase):
 
          sfxy_div = sfx / sfy
          xy_div = x / y
-         vxy_div = evalFunc(x,y,z,t,sfxy_div)
-         vxy1_div = evalFunc(x,y,z,t,sfxy_div)
+         vxy_div = eval_func(x,y,z,t,sfxy_div)
+         vxy1_div = eval_func(x,y,z,t,sfxy_div)
          print "xy_div = ", xy_div, " == vxy_div = ", vxy_div
          print "xy_div = ", xy_div, " == vxy1_div = ", vxy1_div
 
@@ -235,11 +236,14 @@ class StringFunctionUnitTests(unittest.TestCase):
 
          sfxy = StringFunction("x-y")
          dsfxy_y = StringFunction("-1")
-         dy = [["y"]]
+         dy = array([["y"]])
+         #input_array = array([x, y, z])
+         print "dy= " , dy , " dy.ndim= " , dy.ndim, " dy.dtype= " , dy.dtype, " dy.itemsize= ", dy.itemsize , " dy.size= " , dy.size
+         #sys.exit(1)
          dsfxy_y_1 = sfxy.derivative_test(dy)
          
-         dvxy = evalFunc(x,y,z,t,dsfxy_y_1)
-         dvxy1 = evalFunc(x,y,z,t,dsfxy_y)
+         dvxy = eval_func(x,y,z,t,dsfxy_y_1)
+         dvxy1 = eval_func(x,y,z,t,dsfxy_y)
          print "dvxy = ", dvxy, " == dvxy1 = ", dvxy1
          print "-1.0 = -1 == dvxy = ", dvxy 
 
@@ -254,23 +258,26 @@ class StringFunctionUnitTests(unittest.TestCase):
          z = xyzt[2]
          t = xyzt[3]
 
+         print "here 1"
          eps = 1.e-6
          eps_loc = eps*(fabs(x)+fabs(y)+fabs(z)+fabs(t))/4.0
 
          sfxy = StringFunction("x-y")
          dsfxy_grad = StringFunction("v[0]=1; v[1]= -1; v[2]=0", "test", Dimensions(3), Dimensions(3))
-         dxyz = [["x"],["y"],["z"]] #new simpler user-interface 
+         dxyz = array([["x"],["y"],["z"]])    #new simpler user-interface 
+         #dxyz = array([["x","y","z"]])    #new simpler user-interface 
+         print "dxyz.shape= " , dxyz.shape
 
-         grad = ["1","-1","0"]
-         sfxy.setGradientStrings(grad)
+         grad = array(["1","-1","0"])
+         sfxy.set_gradient_strings(grad)
          dsfxy_grad_1 = sfxy.derivative_test(dxyz)
          dsfxy_grad_fd = sfxy.derivative_test_fd(dxyz, eps_loc)
          dsfxy_grad_2 = sfxy.derivative(dxyz)
 
-         dvxy1 = evalVec3(x,y,z,t,dsfxy_grad_1)
-         dvxy_fd = evalVec3(x,y,z,t,dsfxy_grad_fd)
-         dvxy2 = evalVec3(x,y,z,t,dsfxy_grad_2)
-         dvxy = evalVec3(x,y,z,y,dsfxy_grad)
+         dvxy1 = eval_vec3(x,y,z,t,dsfxy_grad_1)
+         dvxy_fd = eval_vec3(x,y,z,t,dsfxy_grad_fd)
+         dvxy2 = eval_vec3(x,y,z,t,dsfxy_grad_2)
+         dvxy = eval_vec3(x,y,z,y,dsfxy_grad)
 
          i = 0
          while i < 3:
@@ -291,17 +298,18 @@ class StringFunctionUnitTests(unittest.TestCase):
          eps = 1.e-10
          eps_loc = eps*(fabs(x)+fabs(y)+fabs(z)+fabs(t))/4.0
          sf = StringFunction(" sin(x*y*z*z) " )
-         grad = ["y*z*z*cos(x*y*z*z)", "x*z*z*cos(x*y*z*z)", "2*x*y*z*cos(x*y*z*z)"]
+         grad = array(["y*z*z*cos(x*y*z*z)", "x*z*z*cos(x*y*z*z)", "2*x*y*z*cos(x*y*z*z)"])
          gradv = "v[0]="+grad[0]+"; v[1]="+grad[1]+" ; v[2]="+grad[2]+";"
          dsf_grad = StringFunction(gradv, "test", Dimensions(3), Dimensions(3))
-         dxyz = ["x","y","z"]   
-         sf.setGradientStrings(grad)
+         #dxyz = array([["x","y","z"]])
+         dxyz = array([["x"],["y"],["z"]])    #new simpler user-interface 
+         sf.set_gradient_strings(grad)
          dsf_grad_fd = sf.derivative_test_fd(dxyz, eps_loc)
          dsf_grad_2 = sf.derivative(dxyz)
 
-         dv_fd = evalVec3(x,y,z,t,dsf_grad_fd)
-         dv2 = evalVec3(x,y,z,t,dsf_grad_2)
-         dv = evalVec3(x,y,z,t,dsf_grad)
+         dv_fd = eval_vec3(x,y,z,t,dsf_grad_fd)
+         dv2 = eval_vec3(x,y,z,t,dsf_grad_2)
+         dv = eval_vec3(x,y,z,t,dsf_grad)
 
          i = 0
          while i < 3:
@@ -314,7 +322,8 @@ class StringFunctionUnitTests(unittest.TestCase):
 
     def test_stringFunction_multiplePoints(self):
        points = zeros(shape=(4,3))
-       output_expect = zeros(shape=(4,3))
+       output = zeros(shape=(4,1))
+       output_expect = zeros(shape=(4,1))
 
        sf1 = StringFunction("x+y*z")
        i = 0
@@ -326,14 +335,14 @@ class StringFunctionUnitTests(unittest.TestCase):
          points[i][0] = x
          points[i][1] = y
          points[i][2] = z
-         vx = evalFunc(x,y,z,t,sf1)
+         vx = eval_func(x,y,z,t,sf1)
          output_expect[i][0] = vx 
          print "x+y*z = ", x+y*z, " == vx = ", vx
          self.assertEqual((x+y*z), vx)
          i = i + 1
 
        sf2 = StringFunction(str(sf1.getFunctionString()), "sf2", Dimensions(3), Dimensions(1))
-       output = sf2.evaluate(points, 0.0)
+       output = sf2.value(points, output, 0.0)
        
        i = 0 
        while i < 4:
@@ -353,7 +362,7 @@ class StringFunctionUnitTests(unittest.TestCase):
 
        sf1 = StringFunction("x+y")
        ve = x + y
-       v = evalFunc(x,y,z,t,sf1)
+       v = eval_func(x,y,z,t,sf1)
        print "x = ", x, "y = ", y, "v = ", v, "ve = ", ve
 
        EXPR_TO_TEST1 = "(exp(x)+log(x)+log10(x)+pow(x,y)+sqrt(x)+erfc(x)+erf(x)+acos(x)+asin(x)+atan(x)+atan2(x,z)+cos(x)+cosh(x)+sin(x)+sinh(x)+tan(x)+tanh(x)+abs(y)+fabs(y))"
@@ -366,7 +375,7 @@ class StringFunctionUnitTests(unittest.TestCase):
        def DO_SF_STKUNIT_UNIT_TEST(expr,x,y,z,t):
          
          sf = StringFunction(expr)
-         v_loc = evalFunc(x,y,z,t,sf)
+         v_loc = eval_func(x,y,z,t,sf)
          if isinf(v_loc):       #this is kind of wierd but Python doesn't handle infinite values like C++ and otherwise generates OverflowError
            ve_loc = v_loc
          else:   
@@ -414,7 +423,7 @@ class StringFunctionUnitTests(unittest.TestCase):
          val = 0.0
          for it in range(numIt):
            try:
-             val = val + evalFunc(x,y,z,t,sf)
+             val = val + eval_func(x,y,z,t,sf)
            except:
              pass
   

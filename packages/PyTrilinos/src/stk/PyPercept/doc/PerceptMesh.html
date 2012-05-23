@@ -19,8 +19,8 @@ Case&nbsp;1:&nbsp;Norm&nbsp;of&nbsp;the&nbsp;difference&nbsp;of&nbsp;an&nbsp;Exa
 &nbsp;<br>
 pMesh&nbsp;=&nbsp;<a href="#PerceptMesh">PerceptMesh</a>()&nbsp;#Create&nbsp;a&nbsp;<a href="#PerceptMesh">PerceptMesh</a>&nbsp;database<br>
 #Specify&nbsp;the&nbsp;geometric&nbsp;hex&nbsp;mesh&nbsp;to&nbsp;be&nbsp;a&nbsp;3x3x3&nbsp;box&nbsp;between&nbsp;0,0,0&nbsp;and&nbsp;2,2,2<br>
-pMesh.newMesh(<a href="#GMeshSpec">GMeshSpec</a>('3x3x3|bbox:0,0,0,2,2,2'))&nbsp;<br>
-field&nbsp;=&nbsp;pMesh.addField('coordinates',&nbsp;1)&nbsp;#Add&nbsp;a&nbsp;coordinates&nbsp;field<br>
+pMesh.new_mesh(<a href="#GMeshSpec">GMeshSpec</a>('3x3x3|bbox:0,0,0,2,2,2'))&nbsp;<br>
+field&nbsp;=&nbsp;pMesh.add_field('coordinates',&nbsp;1)&nbsp;#Add&nbsp;a&nbsp;coordinates&nbsp;field<br>
 pMesh.commit()&nbsp;#Commits&nbsp;the&nbsp;mesh&nbsp;to&nbsp;the&nbsp;mesh&nbsp;database<br>
 &nbsp;<br>
 input_array&nbsp;=&nbsp;numpy.array([1.0,&nbsp;0.5,&nbsp;0.5])&nbsp;#Create&nbsp;numpy&nbsp;arrays&nbsp;to&nbsp;be&nbsp;evaluated&nbsp;<br>
@@ -44,9 +44,9 @@ norm&nbsp;=&nbsp;<a href="#L1Norm">L1Norm</a>(pMesh.getBulkData())&nbsp;#Create&
 value&nbsp;=&nbsp;norm.evaluate(ff)&nbsp;#Evaluate&nbsp;the&nbsp;norm<br>
 diffnorm&nbsp;=&nbsp;norm.evaluate(sf_diff)&nbsp;#Evaluate&nbsp;the&nbsp;norm&nbsp;of&nbsp;the&nbsp;difference&nbsp;of&nbsp;the&nbsp;exact&nbsp;solution&nbsp;and&nbsp;the&nbsp;mesh&nbsp;field<br>
 &nbsp;<br>
-#Now&nbsp;use&nbsp;a&nbsp;helper&nbsp;function&nbsp;to&nbsp;evaluate&nbsp;the&nbsp;norm:&nbsp;evalNorm(bulkData,&nbsp;<a href="#Function">Function</a>,&nbsp;int)&nbsp;<br>
-value1&nbsp;=&nbsp;evalNorm(pMesh.getBulkData(),&nbsp;ff,&nbsp;1)&nbsp;<br>
-diffnorm1&nbsp;=&nbsp;evalNorm(pMesh.getBulkData(),&nbsp;sf_diff,&nbsp;1)<br>
+#Now&nbsp;use&nbsp;a&nbsp;helper&nbsp;function&nbsp;to&nbsp;evaluate&nbsp;the&nbsp;norm:&nbsp;eval_norm(bulkData,&nbsp;<a href="#Function">Function</a>,&nbsp;int)&nbsp;<br>
+value1&nbsp;=&nbsp;eval_norm(pMesh.getBulkData(),&nbsp;ff,&nbsp;1)&nbsp;<br>
+diffnorm1&nbsp;=&nbsp;eval_norm(pMesh.getBulkData(),&nbsp;sf_diff,&nbsp;1)<br>
 &nbsp;<br>
 #################################################################################################################<br>
 &nbsp;<br>
@@ -90,7 +90,7 @@ ff_0&nbsp;=&nbsp;Field_Function(pMesh_0)<br>
 ff_1&nbsp;=&nbsp;Field_Function(pMesh_1)<br>
 diff&nbsp;=&nbsp;<a href="#StringFunction">StringFunction</a>('ff_0&nbsp;-&nbsp;ff_1')<br>
 &nbsp;<br>
-diffnorm&nbsp;=&nbsp;evalNorm(pMesh.getBulkData,&nbsp;diff,&nbsp;2)<br>
+diffnorm&nbsp;=&nbsp;eval_norm(pMesh.getBulkData,&nbsp;diff,&nbsp;2)<br>
 print&nbsp;'diffnorm&nbsp;=&nbsp;',&nbsp;diffnorm<br>
 &nbsp;<br>
 #################################################################################################################</tt></p>
@@ -546,10 +546,10 @@ Data and other attributes defined here:<br>
 
 <hr>
 Methods inherited from <a href="PerceptMesh.html#Function">Function</a>:<br>
-<dl><dt><a name="ConstantFunction-addAlias"><strong>addAlias</strong></a>(self, *args)</dt><dd><tt><a href="#ConstantFunction-addAlias">addAlias</a>(self,&nbsp;char&nbsp;alias)&nbsp;-&gt;&nbsp;<a href="#Function">Function</a><br>
+<dl><dt><a name="ConstantFunction-add_alias"><strong>add_alias</strong></a>(self, *args)</dt><dd><tt><a href="#ConstantFunction-add_alias">add_alias</a>(self,&nbsp;char&nbsp;alias)&nbsp;-&gt;&nbsp;<a href="#Function">Function</a><br>
 &nbsp;<br>
 <a href="#Function">Function</a>&nbsp;*<br>
-stk::percept::<a href="#Function">Function</a>::<a href="#ConstantFunction-addAlias">addAlias</a>(const&nbsp;char&nbsp;*alias)<br>
+stk::percept::<a href="#Function">Function</a>::<a href="#ConstantFunction-add_alias">add_alias</a>(const&nbsp;char&nbsp;*alias)<br>
 &nbsp;<br>
 allow&nbsp;this&nbsp;function&nbsp;to&nbsp;have&nbsp;one&nbsp;or&nbsp;more&nbsp;aliases</tt></dd></dl>
 
@@ -593,12 +593,17 @@ dims)</tt></dd></dl>
 &nbsp;<br>
 void&nbsp;stk::percept::<a href="#Function">Function</a>::<a href="#ConstantFunction-setIntegrationOrder">setIntegrationOrder</a>(unsigned&nbsp;iord)</tt></dd></dl>
 
-<dl><dt><a name="ConstantFunction-value"><strong>value</strong></a>(self, *args)</dt><dd><tt><a href="#ConstantFunction-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;codomain,&nbsp;double&nbsp;time_value_optional&nbsp;=&nbsp;0.0)<br>
-<a href="#ConstantFunction-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;codomain)<br>
+<dl><dt><a name="ConstantFunction-value"><strong>value</strong></a>(self, *args)</dt><dd><tt><a href="#ConstantFunction-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;MDOutVal,&nbsp;double&nbsp;time_value_optional&nbsp;=&nbsp;0.0)<br>
+<a href="#ConstantFunction-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;MDOutVal)<br>
+<a href="#ConstantFunction-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;double&nbsp;time_value_optional&nbsp;=&nbsp;0.0)&nbsp;-&gt;&nbsp;<a href="#MDArray">MDArray</a><br>
+<a href="#ConstantFunction-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain)&nbsp;-&gt;&nbsp;<a href="#MDArray">MDArray</a><br>
 &nbsp;<br>
-void<br>
-stk::percept::<a href="#Function">Function</a>::<a href="#ConstantFunction-value">value</a>(<a href="#MDArray">MDArray</a>&nbsp;&amp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;&amp;codomain,<br>
-double&nbsp;time_value_optional=0.0)</tt></dd></dl>
+<a href="#MDArray">MDArray</a><br>
+stk::percept::<a href="#Function">Function</a>::<a href="#ConstantFunction-value">value</a>(<a href="#MDArray">MDArray</a>&nbsp;&amp;domain,&nbsp;double<br>
+time_value_optional=0.0)<br>
+&nbsp;<br>
+this&nbsp;version&nbsp;creates&nbsp;a&nbsp;dummy&nbsp;output&nbsp;and&nbsp;returns&nbsp;it&nbsp;based&nbsp;on&nbsp;the<br>
+codomain-dimensions&nbsp;specified&nbsp;at&nbsp;construction</tt></dd></dl>
 
 <hr>
 Static methods inherited from <a href="PerceptMesh.html#Function">Function</a>:<br>
@@ -610,7 +615,7 @@ Static methods inherited from <a href="PerceptMesh.html#Function">Function</a>:<
 
 <hr>
 Data and other attributes inherited from <a href="PerceptMesh.html#Function">Function</a>:<br>
-<dl><dt><strong>Identity</strong> = &lt;PerceptMesh.Function; proxy of &lt;Swig Object of type 'stk::percept::Function *' at 0x54d2390&gt; &gt;</dl>
+<dl><dt><strong>Identity</strong> = &lt;PerceptMesh.Function; proxy of &lt;Swig Object of type 'stk::percept::Function *' at 0x163103c0&gt; &gt;</dl>
 
 <hr>
 Methods inherited from <a href="PerceptMesh.html#GenericFunction">GenericFunction</a>:<br>
@@ -709,10 +714,10 @@ Data and other attributes defined here:<br>
 
 <hr>
 Methods inherited from <a href="PerceptMesh.html#Function">Function</a>:<br>
-<dl><dt><a name="ConstantFunctionVec-addAlias"><strong>addAlias</strong></a>(self, *args)</dt><dd><tt><a href="#ConstantFunctionVec-addAlias">addAlias</a>(self,&nbsp;char&nbsp;alias)&nbsp;-&gt;&nbsp;<a href="#Function">Function</a><br>
+<dl><dt><a name="ConstantFunctionVec-add_alias"><strong>add_alias</strong></a>(self, *args)</dt><dd><tt><a href="#ConstantFunctionVec-add_alias">add_alias</a>(self,&nbsp;char&nbsp;alias)&nbsp;-&gt;&nbsp;<a href="#Function">Function</a><br>
 &nbsp;<br>
 <a href="#Function">Function</a>&nbsp;*<br>
-stk::percept::<a href="#Function">Function</a>::<a href="#ConstantFunctionVec-addAlias">addAlias</a>(const&nbsp;char&nbsp;*alias)<br>
+stk::percept::<a href="#Function">Function</a>::<a href="#ConstantFunctionVec-add_alias">add_alias</a>(const&nbsp;char&nbsp;*alias)<br>
 &nbsp;<br>
 allow&nbsp;this&nbsp;function&nbsp;to&nbsp;have&nbsp;one&nbsp;or&nbsp;more&nbsp;aliases</tt></dd></dl>
 
@@ -756,12 +761,17 @@ dims)</tt></dd></dl>
 &nbsp;<br>
 void&nbsp;stk::percept::<a href="#Function">Function</a>::<a href="#ConstantFunctionVec-setIntegrationOrder">setIntegrationOrder</a>(unsigned&nbsp;iord)</tt></dd></dl>
 
-<dl><dt><a name="ConstantFunctionVec-value"><strong>value</strong></a>(self, *args)</dt><dd><tt><a href="#ConstantFunctionVec-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;codomain,&nbsp;double&nbsp;time_value_optional&nbsp;=&nbsp;0.0)<br>
-<a href="#ConstantFunctionVec-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;codomain)<br>
+<dl><dt><a name="ConstantFunctionVec-value"><strong>value</strong></a>(self, *args)</dt><dd><tt><a href="#ConstantFunctionVec-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;MDOutVal,&nbsp;double&nbsp;time_value_optional&nbsp;=&nbsp;0.0)<br>
+<a href="#ConstantFunctionVec-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;MDOutVal)<br>
+<a href="#ConstantFunctionVec-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;double&nbsp;time_value_optional&nbsp;=&nbsp;0.0)&nbsp;-&gt;&nbsp;<a href="#MDArray">MDArray</a><br>
+<a href="#ConstantFunctionVec-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain)&nbsp;-&gt;&nbsp;<a href="#MDArray">MDArray</a><br>
 &nbsp;<br>
-void<br>
-stk::percept::<a href="#Function">Function</a>::<a href="#ConstantFunctionVec-value">value</a>(<a href="#MDArray">MDArray</a>&nbsp;&amp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;&amp;codomain,<br>
-double&nbsp;time_value_optional=0.0)</tt></dd></dl>
+<a href="#MDArray">MDArray</a><br>
+stk::percept::<a href="#Function">Function</a>::<a href="#ConstantFunctionVec-value">value</a>(<a href="#MDArray">MDArray</a>&nbsp;&amp;domain,&nbsp;double<br>
+time_value_optional=0.0)<br>
+&nbsp;<br>
+this&nbsp;version&nbsp;creates&nbsp;a&nbsp;dummy&nbsp;output&nbsp;and&nbsp;returns&nbsp;it&nbsp;based&nbsp;on&nbsp;the<br>
+codomain-dimensions&nbsp;specified&nbsp;at&nbsp;construction</tt></dd></dl>
 
 <hr>
 Static methods inherited from <a href="PerceptMesh.html#Function">Function</a>:<br>
@@ -773,7 +783,7 @@ Static methods inherited from <a href="PerceptMesh.html#Function">Function</a>:<
 
 <hr>
 Data and other attributes inherited from <a href="PerceptMesh.html#Function">Function</a>:<br>
-<dl><dt><strong>Identity</strong> = &lt;PerceptMesh.Function; proxy of &lt;Swig Object of type 'stk::percept::Function *' at 0x54d2390&gt; &gt;</dl>
+<dl><dt><strong>Identity</strong> = &lt;PerceptMesh.Function; proxy of &lt;Swig Object of type 'stk::percept::Function *' at 0x163103c0&gt; &gt;</dl>
 
 <hr>
 Methods inherited from <a href="PerceptMesh.html#GenericFunction">GenericFunction</a>:<br>
@@ -1326,10 +1336,10 @@ stk::percept::<a href="#FieldFunction">FieldFunction</a>::~<a href="#FieldFuncti
 
 <hr>
 Methods inherited from <a href="PerceptMesh.html#Function">Function</a>:<br>
-<dl><dt><a name="FieldFunction-addAlias"><strong>addAlias</strong></a>(self, *args)</dt><dd><tt><a href="#FieldFunction-addAlias">addAlias</a>(self,&nbsp;char&nbsp;alias)&nbsp;-&gt;&nbsp;<a href="#Function">Function</a><br>
+<dl><dt><a name="FieldFunction-add_alias"><strong>add_alias</strong></a>(self, *args)</dt><dd><tt><a href="#FieldFunction-add_alias">add_alias</a>(self,&nbsp;char&nbsp;alias)&nbsp;-&gt;&nbsp;<a href="#Function">Function</a><br>
 &nbsp;<br>
 <a href="#Function">Function</a>&nbsp;*<br>
-stk::percept::<a href="#Function">Function</a>::<a href="#FieldFunction-addAlias">addAlias</a>(const&nbsp;char&nbsp;*alias)<br>
+stk::percept::<a href="#Function">Function</a>::<a href="#FieldFunction-add_alias">add_alias</a>(const&nbsp;char&nbsp;*alias)<br>
 &nbsp;<br>
 allow&nbsp;this&nbsp;function&nbsp;to&nbsp;have&nbsp;one&nbsp;or&nbsp;more&nbsp;aliases</tt></dd></dl>
 
@@ -1373,12 +1383,17 @@ dims)</tt></dd></dl>
 &nbsp;<br>
 void&nbsp;stk::percept::<a href="#Function">Function</a>::<a href="#FieldFunction-setIntegrationOrder">setIntegrationOrder</a>(unsigned&nbsp;iord)</tt></dd></dl>
 
-<dl><dt><a name="FieldFunction-value"><strong>value</strong></a>(self, *args)</dt><dd><tt><a href="#FieldFunction-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;codomain,&nbsp;double&nbsp;time_value_optional&nbsp;=&nbsp;0.0)<br>
-<a href="#FieldFunction-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;codomain)<br>
+<dl><dt><a name="FieldFunction-value"><strong>value</strong></a>(self, *args)</dt><dd><tt><a href="#FieldFunction-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;MDOutVal,&nbsp;double&nbsp;time_value_optional&nbsp;=&nbsp;0.0)<br>
+<a href="#FieldFunction-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;MDOutVal)<br>
+<a href="#FieldFunction-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;double&nbsp;time_value_optional&nbsp;=&nbsp;0.0)&nbsp;-&gt;&nbsp;<a href="#MDArray">MDArray</a><br>
+<a href="#FieldFunction-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain)&nbsp;-&gt;&nbsp;<a href="#MDArray">MDArray</a><br>
 &nbsp;<br>
-void<br>
-stk::percept::<a href="#Function">Function</a>::<a href="#FieldFunction-value">value</a>(<a href="#MDArray">MDArray</a>&nbsp;&amp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;&amp;codomain,<br>
-double&nbsp;time_value_optional=0.0)</tt></dd></dl>
+<a href="#MDArray">MDArray</a><br>
+stk::percept::<a href="#Function">Function</a>::<a href="#FieldFunction-value">value</a>(<a href="#MDArray">MDArray</a>&nbsp;&amp;domain,&nbsp;double<br>
+time_value_optional=0.0)<br>
+&nbsp;<br>
+this&nbsp;version&nbsp;creates&nbsp;a&nbsp;dummy&nbsp;output&nbsp;and&nbsp;returns&nbsp;it&nbsp;based&nbsp;on&nbsp;the<br>
+codomain-dimensions&nbsp;specified&nbsp;at&nbsp;construction</tt></dd></dl>
 
 <hr>
 Static methods inherited from <a href="PerceptMesh.html#Function">Function</a>:<br>
@@ -1390,7 +1405,7 @@ Static methods inherited from <a href="PerceptMesh.html#Function">Function</a>:<
 
 <hr>
 Data and other attributes inherited from <a href="PerceptMesh.html#Function">Function</a>:<br>
-<dl><dt><strong>Identity</strong> = &lt;PerceptMesh.Function; proxy of &lt;Swig Object of type 'stk::percept::Function *' at 0x54d2390&gt; &gt;</dl>
+<dl><dt><strong>Identity</strong> = &lt;PerceptMesh.Function; proxy of &lt;Swig Object of type 'stk::percept::Function *' at 0x163103c0&gt; &gt;</dl>
 
 <hr>
 Methods inherited from <a href="PerceptMesh.html#GenericFunction">GenericFunction</a>:<br>
@@ -1518,10 +1533,10 @@ Methods defined here:<br>
 
 <dl><dt><strong>__setattr__</strong> <em>lambda</em> self, name, value</dt></dl>
 
-<dl><dt><a name="Function-addAlias"><strong>addAlias</strong></a>(self, *args)</dt><dd><tt><a href="#Function-addAlias">addAlias</a>(self,&nbsp;char&nbsp;alias)&nbsp;-&gt;&nbsp;<a href="#Function">Function</a><br>
+<dl><dt><a name="Function-add_alias"><strong>add_alias</strong></a>(self, *args)</dt><dd><tt><a href="#Function-add_alias">add_alias</a>(self,&nbsp;char&nbsp;alias)&nbsp;-&gt;&nbsp;<a href="#Function">Function</a><br>
 &nbsp;<br>
 <a href="#Function">Function</a>&nbsp;*<br>
-stk::percept::<a href="#Function">Function</a>::<a href="#Function-addAlias">addAlias</a>(const&nbsp;char&nbsp;*alias)<br>
+stk::percept::<a href="#Function">Function</a>::<a href="#Function-add_alias">add_alias</a>(const&nbsp;char&nbsp;*alias)<br>
 &nbsp;<br>
 allow&nbsp;this&nbsp;function&nbsp;to&nbsp;have&nbsp;one&nbsp;or&nbsp;more&nbsp;aliases</tt></dd></dl>
 
@@ -1565,12 +1580,17 @@ dims)</tt></dd></dl>
 &nbsp;<br>
 void&nbsp;stk::percept::<a href="#Function">Function</a>::<a href="#Function-setIntegrationOrder">setIntegrationOrder</a>(unsigned&nbsp;iord)</tt></dd></dl>
 
-<dl><dt><a name="Function-value"><strong>value</strong></a>(self, *args)</dt><dd><tt><a href="#Function-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;codomain,&nbsp;double&nbsp;time_value_optional&nbsp;=&nbsp;0.0)<br>
-<a href="#Function-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;codomain)<br>
+<dl><dt><a name="Function-value"><strong>value</strong></a>(self, *args)</dt><dd><tt><a href="#Function-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;MDOutVal,&nbsp;double&nbsp;time_value_optional&nbsp;=&nbsp;0.0)<br>
+<a href="#Function-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;MDOutVal)<br>
+<a href="#Function-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;double&nbsp;time_value_optional&nbsp;=&nbsp;0.0)&nbsp;-&gt;&nbsp;<a href="#MDArray">MDArray</a><br>
+<a href="#Function-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain)&nbsp;-&gt;&nbsp;<a href="#MDArray">MDArray</a><br>
 &nbsp;<br>
-void<br>
-stk::percept::<a href="#Function">Function</a>::<a href="#Function-value">value</a>(<a href="#MDArray">MDArray</a>&nbsp;&amp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;&amp;codomain,<br>
-double&nbsp;time_value_optional=0.0)</tt></dd></dl>
+<a href="#MDArray">MDArray</a><br>
+stk::percept::<a href="#Function">Function</a>::<a href="#Function-value">value</a>(<a href="#MDArray">MDArray</a>&nbsp;&amp;domain,&nbsp;double<br>
+time_value_optional=0.0)<br>
+&nbsp;<br>
+this&nbsp;version&nbsp;creates&nbsp;a&nbsp;dummy&nbsp;output&nbsp;and&nbsp;returns&nbsp;it&nbsp;based&nbsp;on&nbsp;the<br>
+codomain-dimensions&nbsp;specified&nbsp;at&nbsp;construction</tt></dd></dl>
 
 <hr>
 Static methods defined here:<br>
@@ -1582,7 +1602,7 @@ Static methods defined here:<br>
 
 <hr>
 Data and other attributes defined here:<br>
-<dl><dt><strong>Identity</strong> = &lt;PerceptMesh.Function; proxy of &lt;Swig Object of type 'stk::percept::Function *' at 0x54d2390&gt; &gt;</dl>
+<dl><dt><strong>Identity</strong> = &lt;PerceptMesh.Function; proxy of &lt;Swig Object of type 'stk::percept::Function *' at 0x163103c0&gt; &gt;</dl>
 
 <dl><dt><strong>__swig_destroy__</strong> = &lt;built-in function delete_Function&gt;<dd><tt>delete_Function(<a href="#Function">Function</a>&nbsp;self)</tt></dl>
 
@@ -2191,7 +2211,8 @@ Data and other attributes defined here:<br>
 <td width="100%">Methods defined here:<br>
 <dl><dt><strong>__getattr__</strong> <em>lambda</em> self, name</dt></dl>
 
-<dl><dt><a name="MDArrayString-__init__"><strong>__init__</strong></a>(self, *args)</dt><dd><tt><a href="#MDArrayString-__init__">__init__</a>(self,&nbsp;int&nbsp;dim)&nbsp;-&gt;&nbsp;<a href="#MDArrayString">MDArrayString</a><br>
+<dl><dt><a name="MDArrayString-__init__"><strong>__init__</strong></a>(self, *args)</dt><dd><tt><a href="#MDArrayString-__init__">__init__</a>(self)&nbsp;-&gt;&nbsp;<a href="#MDArrayString">MDArrayString</a><br>
+<a href="#MDArrayString-__init__">__init__</a>(self,&nbsp;int&nbsp;dim)&nbsp;-&gt;&nbsp;<a href="#MDArrayString">MDArrayString</a><br>
 <a href="#MDArrayString-__init__">__init__</a>(self,&nbsp;int&nbsp;dim0,&nbsp;int&nbsp;dim1)&nbsp;-&gt;&nbsp;<a href="#MDArrayString">MDArrayString</a><br>
 &nbsp;<br>
 stk::percept::<a href="#MDArrayString">MDArrayString</a>::<a href="#MDArrayString">MDArrayString</a>(int&nbsp;dim0,&nbsp;int&nbsp;dim1)</tt></dd></dl>
@@ -2204,6 +2225,22 @@ stk::percept::<a href="#MDArrayString">MDArrayString</a>::<a href="#MDArrayStrin
 &nbsp;<br>
 int<br>
 stk::percept::<a href="#MDArrayString">MDArrayString</a>::<a href="#MDArrayString-dimension">dimension</a>(int&nbsp;i1)</tt></dd></dl>
+
+<dl><dt><a name="MDArrayString-rank"><strong>rank</strong></a>(self)</dt><dd><tt><a href="#MDArrayString-rank">rank</a>(self)&nbsp;-&gt;&nbsp;int<br>
+&nbsp;<br>
+const&nbsp;int<br>
+stk::percept::<a href="#MDArrayString">MDArrayString</a>::<a href="#MDArrayString-rank">rank</a>()&nbsp;const</tt></dd></dl>
+
+<dl><dt><a name="MDArrayString-resize"><strong>resize</strong></a>(self, *args)</dt><dd><tt><a href="#MDArrayString-resize">resize</a>(self,&nbsp;int&nbsp;dim)<br>
+<a href="#MDArrayString-resize">resize</a>(self,&nbsp;int&nbsp;dim0,&nbsp;int&nbsp;dim1)<br>
+&nbsp;<br>
+void<br>
+stk::percept::<a href="#MDArrayString">MDArrayString</a>::<a href="#MDArrayString-resize">resize</a>(int&nbsp;dim0,&nbsp;int&nbsp;dim1)</tt></dd></dl>
+
+<dl><dt><a name="MDArrayString-setValues"><strong>setValues</strong></a>(self, *args)</dt><dd><tt><a href="#MDArrayString-setValues">setValues</a>(self,&nbsp;string&nbsp;data)<br>
+&nbsp;<br>
+void<br>
+stk::percept::<a href="#MDArrayString">MDArrayString</a>::<a href="#MDArrayString-setValues">setValues</a>(std::string&nbsp;*data)</tt></dd></dl>
 
 <hr>
 Data descriptors defined here:<br>
@@ -2264,10 +2301,10 @@ Data and other attributes defined here:<br>
 
 <hr>
 Methods inherited from <a href="PerceptMesh.html#Function">Function</a>:<br>
-<dl><dt><a name="MaxOfNodeValues-addAlias"><strong>addAlias</strong></a>(self, *args)</dt><dd><tt><a href="#MaxOfNodeValues-addAlias">addAlias</a>(self,&nbsp;char&nbsp;alias)&nbsp;-&gt;&nbsp;<a href="#Function">Function</a><br>
+<dl><dt><a name="MaxOfNodeValues-add_alias"><strong>add_alias</strong></a>(self, *args)</dt><dd><tt><a href="#MaxOfNodeValues-add_alias">add_alias</a>(self,&nbsp;char&nbsp;alias)&nbsp;-&gt;&nbsp;<a href="#Function">Function</a><br>
 &nbsp;<br>
 <a href="#Function">Function</a>&nbsp;*<br>
-stk::percept::<a href="#Function">Function</a>::<a href="#MaxOfNodeValues-addAlias">addAlias</a>(const&nbsp;char&nbsp;*alias)<br>
+stk::percept::<a href="#Function">Function</a>::<a href="#MaxOfNodeValues-add_alias">add_alias</a>(const&nbsp;char&nbsp;*alias)<br>
 &nbsp;<br>
 allow&nbsp;this&nbsp;function&nbsp;to&nbsp;have&nbsp;one&nbsp;or&nbsp;more&nbsp;aliases</tt></dd></dl>
 
@@ -2311,12 +2348,17 @@ dims)</tt></dd></dl>
 &nbsp;<br>
 void&nbsp;stk::percept::<a href="#Function">Function</a>::<a href="#MaxOfNodeValues-setIntegrationOrder">setIntegrationOrder</a>(unsigned&nbsp;iord)</tt></dd></dl>
 
-<dl><dt><a name="MaxOfNodeValues-value"><strong>value</strong></a>(self, *args)</dt><dd><tt><a href="#MaxOfNodeValues-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;codomain,&nbsp;double&nbsp;time_value_optional&nbsp;=&nbsp;0.0)<br>
-<a href="#MaxOfNodeValues-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;codomain)<br>
+<dl><dt><a name="MaxOfNodeValues-value"><strong>value</strong></a>(self, *args)</dt><dd><tt><a href="#MaxOfNodeValues-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;MDOutVal,&nbsp;double&nbsp;time_value_optional&nbsp;=&nbsp;0.0)<br>
+<a href="#MaxOfNodeValues-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;MDOutVal)<br>
+<a href="#MaxOfNodeValues-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;double&nbsp;time_value_optional&nbsp;=&nbsp;0.0)&nbsp;-&gt;&nbsp;<a href="#MDArray">MDArray</a><br>
+<a href="#MaxOfNodeValues-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain)&nbsp;-&gt;&nbsp;<a href="#MDArray">MDArray</a><br>
 &nbsp;<br>
-void<br>
-stk::percept::<a href="#Function">Function</a>::<a href="#MaxOfNodeValues-value">value</a>(<a href="#MDArray">MDArray</a>&nbsp;&amp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;&amp;codomain,<br>
-double&nbsp;time_value_optional=0.0)</tt></dd></dl>
+<a href="#MDArray">MDArray</a><br>
+stk::percept::<a href="#Function">Function</a>::<a href="#MaxOfNodeValues-value">value</a>(<a href="#MDArray">MDArray</a>&nbsp;&amp;domain,&nbsp;double<br>
+time_value_optional=0.0)<br>
+&nbsp;<br>
+this&nbsp;version&nbsp;creates&nbsp;a&nbsp;dummy&nbsp;output&nbsp;and&nbsp;returns&nbsp;it&nbsp;based&nbsp;on&nbsp;the<br>
+codomain-dimensions&nbsp;specified&nbsp;at&nbsp;construction</tt></dd></dl>
 
 <hr>
 Static methods inherited from <a href="PerceptMesh.html#Function">Function</a>:<br>
@@ -2328,7 +2370,7 @@ Static methods inherited from <a href="PerceptMesh.html#Function">Function</a>:<
 
 <hr>
 Data and other attributes inherited from <a href="PerceptMesh.html#Function">Function</a>:<br>
-<dl><dt><strong>Identity</strong> = &lt;PerceptMesh.Function; proxy of &lt;Swig Object of type 'stk::percept::Function *' at 0x54d2390&gt; &gt;</dl>
+<dl><dt><strong>Identity</strong> = &lt;PerceptMesh.Function; proxy of &lt;Swig Object of type 'stk::percept::Function *' at 0x163103c0&gt; &gt;</dl>
 
 <hr>
 Methods inherited from <a href="PerceptMesh.html#GenericFunction">GenericFunction</a>:<br>
@@ -2640,6 +2682,8 @@ add&nbsp;a&nbsp;field&nbsp;to&nbsp;the&nbsp;mesh</tt></dd></dl>
 void<br>
 stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-close">close</a>()<br>
 &nbsp;<br>
+closes&nbsp;this&nbsp;mesh,&nbsp;deleting&nbsp;its&nbsp;data<br>
+&nbsp;<br>
 closes&nbsp;this&nbsp;mesh&nbsp;to&nbsp;further&nbsp;changes</tt></dd></dl>
 
 <dl><dt><a name="PerceptMesh-commit"><strong>commit</strong></a>(self)</dt><dd><tt><a href="#PerceptMesh-commit">commit</a>(self)<br>
@@ -2649,6 +2693,24 @@ stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-comm
 &nbsp;<br>
 commits&nbsp;mesh&nbsp;-&nbsp;any&nbsp;operations&nbsp;done&nbsp;on&nbsp;a&nbsp;non-committed&nbsp;mesh,&nbsp;except&nbsp;to<br>
 add&nbsp;fields&nbsp;will&nbsp;throw&nbsp;an&nbsp;exception</tt></dd></dl>
+
+<dl><dt><a name="PerceptMesh-dump_elements"><strong>dump_elements</strong></a>(self, partName<font color="#909090">=''</font>)</dt><dd><tt><a href="#PerceptMesh-dump_elements">dump_elements</a>(self,&nbsp;string&nbsp;partName&nbsp;=&nbsp;"")<br>
+<a href="#PerceptMesh-dump_elements">dump_elements</a>(self)<br>
+&nbsp;<br>
+void<br>
+stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-dump_elements">dump_elements</a>(const&nbsp;std::string<br>
+&amp;partName="")<br>
+&nbsp;<br>
+print&nbsp;elements&nbsp;on&nbsp;the&nbsp;given&nbsp;part</tt></dd></dl>
+
+<dl><dt><a name="PerceptMesh-dump_elements_compact"><strong>dump_elements_compact</strong></a>(self, partName<font color="#909090">=''</font>)</dt><dd><tt><a href="#PerceptMesh-dump_elements_compact">dump_elements_compact</a>(self,&nbsp;string&nbsp;partName&nbsp;=&nbsp;"")<br>
+<a href="#PerceptMesh-dump_elements_compact">dump_elements_compact</a>(self)<br>
+&nbsp;<br>
+void<br>
+stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-dump_elements_compact">dump_elements_compact</a>(const&nbsp;std::string<br>
+&amp;partName="")<br>
+&nbsp;<br>
+compact&nbsp;print&nbsp;of&nbsp;elements&nbsp;on&nbsp;the&nbsp;given&nbsp;part</tt></dd></dl>
 
 <dl><dt><a name="PerceptMesh-edge_rank"><strong>edge_rank</strong></a>(self)</dt><dd><tt><a href="#PerceptMesh-edge_rank">edge_rank</a>(self)&nbsp;-&gt;&nbsp;EntityRank<br>
 &nbsp;<br>
@@ -2670,12 +2732,16 @@ Returns&nbsp;the&nbsp;face&nbsp;rank&nbsp;which&nbsp;changes&nbsp;depending&nbsp
 
 <dl><dt><a name="PerceptMesh-get_bulk_data"><strong>get_bulk_data</strong></a>(self)</dt><dd><tt><a href="#PerceptMesh-get_bulk_data">get_bulk_data</a>(self)&nbsp;-&gt;&nbsp;<a href="#BulkData">BulkData</a><br>
 &nbsp;<br>
-stk::mesh::<a href="#BulkData">BulkData</a>&nbsp;*&nbsp;stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-get_bulk_data">get_bulk_data</a>()</tt></dd></dl>
+stk::mesh::<a href="#BulkData">BulkData</a>&nbsp;*&nbsp;stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-get_bulk_data">get_bulk_data</a>()<br>
+&nbsp;<br>
+get&nbsp;the&nbsp;low-level&nbsp;bulk&nbsp;data&nbsp;pointer&nbsp;from&nbsp;stk_mesh</tt></dd></dl>
 
 <dl><dt><a name="PerceptMesh-get_coordinates_field"><strong>get_coordinates_field</strong></a>(self)</dt><dd><tt><a href="#PerceptMesh-get_coordinates_field">get_coordinates_field</a>(self)&nbsp;-&gt;&nbsp;VectorFieldType<br>
 &nbsp;<br>
 VectorFieldType*<br>
-stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-get_coordinates_field">get_coordinates_field</a>()</tt></dd></dl>
+stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-get_coordinates_field">get_coordinates_field</a>()<br>
+&nbsp;<br>
+return&nbsp;a&nbsp;pointer&nbsp;to&nbsp;the&nbsp;field&nbsp;containing&nbsp;node&nbsp;coordinates</tt></dd></dl>
 
 <dl><dt><a name="PerceptMesh-get_current_database_step"><strong>get_current_database_step</strong></a>(self)</dt><dd><tt><a href="#PerceptMesh-get_current_database_step">get_current_database_step</a>(self)&nbsp;-&gt;&nbsp;int<br>
 &nbsp;<br>
@@ -2688,7 +2754,10 @@ return&nbsp;the&nbsp;current&nbsp;state&nbsp;of&nbsp;the&nbsp;Exodus&nbsp;databa
 <dl><dt><a name="PerceptMesh-get_current_database_time"><strong>get_current_database_time</strong></a>(self)</dt><dd><tt><a href="#PerceptMesh-get_current_database_time">get_current_database_time</a>(self)&nbsp;-&gt;&nbsp;double<br>
 &nbsp;<br>
 double<br>
-stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-get_current_database_time">get_current_database_time</a>()</tt></dd></dl>
+stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-get_current_database_time">get_current_database_time</a>()<br>
+&nbsp;<br>
+return&nbsp;the&nbsp;current&nbsp;state&nbsp;of&nbsp;the&nbsp;Exodus&nbsp;database&nbsp;(time&nbsp;associated&nbsp;with<br>
+current&nbsp;step)</tt></dd></dl>
 
 <dl><dt><a name="PerceptMesh-get_database_step_at_time"><strong>get_database_step_at_time</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-get_database_step_at_time">get_database_step_at_time</a>(self,&nbsp;double&nbsp;time)&nbsp;-&gt;&nbsp;int<br>
 &nbsp;<br>
@@ -2721,8 +2790,9 @@ return&nbsp;the&nbsp;number&nbsp;of&nbsp;steps&nbsp;in&nbsp;the&nbsp;database</t
 stk::mesh::Entity&nbsp;*&nbsp;stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-get_element">get_element</a>(double&nbsp;x,<br>
 double&nbsp;y,&nbsp;double&nbsp;z=0,&nbsp;double&nbsp;t=0)<br>
 &nbsp;<br>
-find&nbsp;element&nbsp;that&nbsp;contains&nbsp;given&nbsp;point&nbsp;-&nbsp;in&nbsp;parallel,&nbsp;check&nbsp;return&nbsp;for<br>
-null&nbsp;(if&nbsp;null,&nbsp;element&nbsp;containing&nbsp;point&nbsp;is&nbsp;on&nbsp;another&nbsp;proc)<br>
+find&nbsp;and&nbsp;return&nbsp;pointer&nbsp;to&nbsp;element&nbsp;that&nbsp;contains&nbsp;given&nbsp;point&nbsp;-&nbsp;in<br>
+parallel,&nbsp;check&nbsp;return&nbsp;for&nbsp;null&nbsp;(if&nbsp;null,&nbsp;element&nbsp;containing&nbsp;point&nbsp;is<br>
+on&nbsp;another&nbsp;proc)<br>
 &nbsp;<br>
 find&nbsp;element&nbsp;that&nbsp;contains&nbsp;or&nbsp;is&nbsp;closest&nbsp;to&nbsp;given&nbsp;point</tt></dd></dl>
 
@@ -2730,12 +2800,16 @@ find&nbsp;element&nbsp;that&nbsp;contains&nbsp;or&nbsp;is&nbsp;closest&nbsp;to&n
 &nbsp;<br>
 stk::mesh::Entity*<br>
 stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-get_entity">get_entity</a>(mesh::EntityRank&nbsp;rank,&nbsp;const<br>
-mesh::EntityId&nbsp;id)</tt></dd></dl>
+mesh::EntityId&nbsp;id)<br>
+&nbsp;<br>
+get&nbsp;a&nbsp;pointer&nbsp;to&nbsp;an&nbsp;entity&nbsp;with&nbsp;given&nbsp;id</tt></dd></dl>
 
 <dl><dt><a name="PerceptMesh-get_fem_meta_data"><strong>get_fem_meta_data</strong></a>(self)</dt><dd><tt><a href="#PerceptMesh-get_fem_meta_data">get_fem_meta_data</a>(self)&nbsp;-&gt;&nbsp;<a href="#FEMMetaData">FEMMetaData</a><br>
 &nbsp;<br>
 stk::mesh::fem::<a href="#FEMMetaData">FEMMetaData</a>&nbsp;*<br>
-stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-get_fem_meta_data">get_fem_meta_data</a>()</tt></dd></dl>
+stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-get_fem_meta_data">get_fem_meta_data</a>()<br>
+&nbsp;<br>
+get&nbsp;the&nbsp;low-level&nbsp;meta&nbsp;data&nbsp;pointer&nbsp;from&nbsp;stk_mesh</tt></dd></dl>
 
 <dl><dt><a name="PerceptMesh-get_field"><strong>get_field</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-get_field">get_field</a>(self,&nbsp;string&nbsp;name)&nbsp;-&gt;&nbsp;<a href="#FieldBase">FieldBase</a><br>
 &nbsp;<br>
@@ -2747,7 +2821,10 @@ std::string&nbsp;&amp;name)</tt></dd></dl>
 &nbsp;<br>
 double&nbsp;stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-get_field_data">get_field_data</a>(const<br>
 stk::mesh::<a href="#FieldBase">FieldBase</a>&nbsp;*field,&nbsp;const&nbsp;mesh::Entity&nbsp;*entity,&nbsp;unsigned<br>
-ordinal=0)</tt></dd></dl>
+ordinal=0)<br>
+&nbsp;<br>
+get&nbsp;the&nbsp;value&nbsp;of&nbsp;a&nbsp;field&nbsp;on&nbsp;the&nbsp;given&nbsp;entity;&nbsp;if&nbsp;a&nbsp;vector&nbsp;field,&nbsp;pass<br>
+in&nbsp;the&nbsp;index&nbsp;of&nbsp;the&nbsp;vector&nbsp;required&nbsp;(ordinal)</tt></dd></dl>
 
 <dl><dt><a name="PerceptMesh-get_node"><strong>get_node</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-get_node">get_node</a>(self,&nbsp;EntityId&nbsp;node_id)&nbsp;-&gt;&nbsp;Entity<br>
 <a href="#PerceptMesh-get_node">get_node</a>(self,&nbsp;double&nbsp;x,&nbsp;double&nbsp;y,&nbsp;double&nbsp;z&nbsp;=&nbsp;0,&nbsp;double&nbsp;t&nbsp;=&nbsp;0)&nbsp;-&gt;&nbsp;Entity<br>
@@ -2757,15 +2834,18 @@ ordinal=0)</tt></dd></dl>
 stk::mesh::Entity&nbsp;*&nbsp;stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-get_node">get_node</a>(double&nbsp;x,<br>
 double&nbsp;y,&nbsp;double&nbsp;z=0,&nbsp;double&nbsp;t=0)<br>
 &nbsp;<br>
-find&nbsp;node&nbsp;closest&nbsp;to&nbsp;given&nbsp;point&nbsp;-&nbsp;in&nbsp;parallel,&nbsp;check&nbsp;return&nbsp;for&nbsp;null<br>
-(if&nbsp;null,&nbsp;closest&nbsp;node&nbsp;is&nbsp;on&nbsp;another&nbsp;proc)</tt></dd></dl>
+find&nbsp;and&nbsp;return&nbsp;pointer&nbsp;to&nbsp;node&nbsp;closest&nbsp;to&nbsp;given&nbsp;point&nbsp;-&nbsp;in&nbsp;parallel,<br>
+check&nbsp;return&nbsp;for&nbsp;null&nbsp;(if&nbsp;null,&nbsp;closest&nbsp;node&nbsp;is&nbsp;on&nbsp;another&nbsp;proc)</tt></dd></dl>
 
 <dl><dt><a name="PerceptMesh-get_node_field_data"><strong>get_node_field_data</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-get_node_field_data">get_node_field_data</a>(self,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field,&nbsp;EntityId&nbsp;node_id,&nbsp;unsigned&nbsp;int&nbsp;ordinal&nbsp;=&nbsp;0)&nbsp;-&gt;&nbsp;double<br>
 <a href="#PerceptMesh-get_node_field_data">get_node_field_data</a>(self,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field,&nbsp;EntityId&nbsp;node_id)&nbsp;-&gt;&nbsp;double<br>
 &nbsp;<br>
 double<br>
 stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-get_node_field_data">get_node_field_data</a>(stk::mesh::<a href="#FieldBase">FieldBase</a><br>
-*field,&nbsp;const&nbsp;mesh::EntityId&nbsp;node_id,&nbsp;unsigned&nbsp;ordinal=0)</tt></dd></dl>
+*field,&nbsp;const&nbsp;mesh::EntityId&nbsp;node_id,&nbsp;unsigned&nbsp;ordinal=0)<br>
+&nbsp;<br>
+get&nbsp;the&nbsp;value&nbsp;of&nbsp;a&nbsp;field&nbsp;on&nbsp;the&nbsp;given&nbsp;node;&nbsp;if&nbsp;a&nbsp;vector&nbsp;field,&nbsp;pass&nbsp;in<br>
+the&nbsp;index&nbsp;of&nbsp;the&nbsp;vector&nbsp;required&nbsp;(ordinal)</tt></dd></dl>
 
 <dl><dt><a name="PerceptMesh-get_number_edges"><strong>get_number_edges</strong></a>(self)</dt><dd><tt><a href="#PerceptMesh-get_number_edges">get_number_edges</a>(self)&nbsp;-&gt;&nbsp;int<br>
 &nbsp;<br>
@@ -2795,12 +2875,16 @@ unsigned&nbsp;stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#Pe
 <dl><dt><a name="PerceptMesh-get_part"><strong>get_part</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-get_part">get_part</a>(self,&nbsp;string&nbsp;part_name)&nbsp;-&gt;&nbsp;<a href="#Part">Part</a><br>
 &nbsp;<br>
 mesh::<a href="#Part">Part</a>*&nbsp;stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-get_part">get_part</a>(const&nbsp;std::string<br>
-&amp;part_name)</tt></dd></dl>
+&amp;part_name)<br>
+&nbsp;<br>
+get&nbsp;a&nbsp;pointer&nbsp;to&nbsp;a&nbsp;stk_mesh&nbsp;<a href="#Part">Part</a>&nbsp;with&nbsp;the&nbsp;given&nbsp;name</tt></dd></dl>
 
 <dl><dt><a name="PerceptMesh-get_rank"><strong>get_rank</strong></a>(self)</dt><dd><tt><a href="#PerceptMesh-get_rank">get_rank</a>(self)&nbsp;-&gt;&nbsp;unsigned&nbsp;int<br>
 &nbsp;<br>
 unsigned<br>
-stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-get_rank">get_rank</a>()</tt></dd></dl>
+stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-get_rank">get_rank</a>()<br>
+&nbsp;<br>
+parallel&nbsp;rank</tt></dd></dl>
 
 <dl><dt><a name="PerceptMesh-get_spatial_dim"><strong>get_spatial_dim</strong></a>(self)</dt><dd><tt><a href="#PerceptMesh-get_spatial_dim">get_spatial_dim</a>(self)&nbsp;-&gt;&nbsp;int<br>
 &nbsp;<br>
@@ -2832,7 +2916,9 @@ gmesh_spec:&nbsp;&nbsp;Read:&nbsp;&nbsp;Only&nbsp;mode,&nbsp;no&nbsp;edits&nbsp;
 
 <dl><dt><a name="PerceptMesh-node_rank"><strong>node_rank</strong></a>(self)</dt><dd><tt><a href="#PerceptMesh-node_rank">node_rank</a>(self)&nbsp;-&gt;&nbsp;EntityRank<br>
 &nbsp;<br>
-stk::mesh::EntityRank&nbsp;stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-node_rank">node_rank</a>()&nbsp;const</tt></dd></dl>
+stk::mesh::EntityRank&nbsp;stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-node_rank">node_rank</a>()&nbsp;const<br>
+&nbsp;<br>
+return&nbsp;the&nbsp;rank&nbsp;of&nbsp;a&nbsp;node</tt></dd></dl>
 
 <dl><dt><a name="PerceptMesh-open"><strong>open</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-open">open</a>(self,&nbsp;string&nbsp;in_filename)<br>
 &nbsp;<br>
@@ -2859,13 +2945,17 @@ stk::mesh::Entity&nbsp;&amp;entity,&nbsp;stk::mesh::<a href="#FieldBase">FieldBa
 <a href="#PerceptMesh-print_entity_compact">print_entity_compact</a>(self,&nbsp;Entity&nbsp;entity)&nbsp;-&gt;&nbsp;string<br>
 &nbsp;<br>
 std::string&nbsp;stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-print_entity_compact">print_entity_compact</a>(const<br>
-stk::mesh::Entity&nbsp;&amp;entity,&nbsp;stk::mesh::<a href="#FieldBase">FieldBase</a>&nbsp;*field=0)</tt></dd></dl>
+stk::mesh::Entity&nbsp;&amp;entity,&nbsp;stk::mesh::<a href="#FieldBase">FieldBase</a>&nbsp;*field=0)<br>
+&nbsp;<br>
+shorter&nbsp;output&nbsp;for&nbsp;print_entity</tt></dd></dl>
 
 <dl><dt><a name="PerceptMesh-print_fields"><strong>print_fields</strong></a>(self, header<font color="#909090">=''</font>)</dt><dd><tt><a href="#PerceptMesh-print_fields">print_fields</a>(self,&nbsp;string&nbsp;header&nbsp;=&nbsp;"")<br>
 <a href="#PerceptMesh-print_fields">print_fields</a>(self)<br>
 &nbsp;<br>
 void<br>
-stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-print_fields">print_fields</a>(std::string&nbsp;header="")</tt></dd></dl>
+stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-print_fields">print_fields</a>(std::string&nbsp;header="")<br>
+&nbsp;<br>
+print&nbsp;the&nbsp;fields&nbsp;defined&nbsp;on&nbsp;the&nbsp;mesh</tt></dd></dl>
 
 <dl><dt><a name="PerceptMesh-print_info"><strong>print_info</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-print_info">print_info</a>(self,&nbsp;std::ostream&nbsp;stream,&nbsp;string&nbsp;header&nbsp;=&nbsp;"",&nbsp;int&nbsp;print_level&nbsp;=&nbsp;0,&nbsp;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;bool&nbsp;do_endl&nbsp;=&nbsp;True)<br>
@@ -2886,16 +2976,19 @@ print&nbsp;number&nbsp;of&nbsp;parts&nbsp;and&nbsp;fields,&nbsp;and&nbsp;info&nb
 <dl><dt><a name="PerceptMesh-read_database_at_step"><strong>read_database_at_step</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-read_database_at_step">read_database_at_step</a>(self,&nbsp;int&nbsp;step)<br>
 &nbsp;<br>
 void<br>
-stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-read_database_at_step">read_database_at_step</a>(int&nbsp;step)</tt></dd></dl>
+stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-read_database_at_step">read_database_at_step</a>(int&nbsp;step)<br>
+&nbsp;<br>
+set&nbsp;the&nbsp;current&nbsp;data&nbsp;in&nbsp;fields&nbsp;to&nbsp;the&nbsp;given&nbsp;Exodus&nbsp;time&nbsp;by&nbsp;reading<br>
+from&nbsp;the&nbsp;database&nbsp;(finds&nbsp;the&nbsp;closest&nbsp;step&nbsp;to&nbsp;the&nbsp;given&nbsp;time&nbsp;(no<br>
+interpolation&nbsp;yet))</tt></dd></dl>
 
 <dl><dt><a name="PerceptMesh-read_database_at_time"><strong>read_database_at_time</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-read_database_at_time">read_database_at_time</a>(self,&nbsp;double&nbsp;time)<br>
 &nbsp;<br>
 void<br>
 stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-read_database_at_time">read_database_at_time</a>(double&nbsp;time)<br>
 &nbsp;<br>
-set&nbsp;the&nbsp;current&nbsp;data&nbsp;in&nbsp;fields&nbsp;to&nbsp;the&nbsp;given&nbsp;time&nbsp;or&nbsp;Exodus&nbsp;step&nbsp;(if<br>
-time&nbsp;supplied,&nbsp;finds&nbsp;the&nbsp;closest&nbsp;step&nbsp;to&nbsp;that&nbsp;time&nbsp;(no&nbsp;interpolation<br>
-yet)</tt></dd></dl>
+set&nbsp;the&nbsp;current&nbsp;data&nbsp;in&nbsp;fields&nbsp;to&nbsp;the&nbsp;given&nbsp;Exodus&nbsp;step&nbsp;by&nbsp;reading<br>
+from&nbsp;the&nbsp;database</tt></dd></dl>
 
 <dl><dt><a name="PerceptMesh-reopen"><strong>reopen</strong></a>(self, temp_file_name<font color="#909090">='percept_tmp.e'</font>)</dt><dd><tt><a href="#PerceptMesh-reopen">reopen</a>(self,&nbsp;string&nbsp;temp_file_name&nbsp;=&nbsp;"percept_tmp.e")<br>
 <a href="#PerceptMesh-reopen">reopen</a>(self)<br>
@@ -2920,14 +3013,20 @@ commits&nbsp;mesh&nbsp;if&nbsp;not&nbsp;committed&nbsp;and&nbsp;saves&nbsp;it&nb
 &nbsp;<br>
 void&nbsp;stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-set_field_data">set_field_data</a>(double&nbsp;value,&nbsp;const<br>
 stk::mesh::<a href="#FieldBase">FieldBase</a>&nbsp;*field,&nbsp;const&nbsp;mesh::Entity&nbsp;*entity,&nbsp;unsigned<br>
-ordinal=0)</tt></dd></dl>
+ordinal=0)<br>
+&nbsp;<br>
+set&nbsp;the&nbsp;value&nbsp;of&nbsp;a&nbsp;field&nbsp;on&nbsp;the&nbsp;given&nbsp;entity;&nbsp;if&nbsp;a&nbsp;vector&nbsp;field,&nbsp;pass<br>
+in&nbsp;the&nbsp;index&nbsp;of&nbsp;the&nbsp;vector&nbsp;required&nbsp;(ordinal)</tt></dd></dl>
 
 <dl><dt><a name="PerceptMesh-set_node_field_data"><strong>set_node_field_data</strong></a>(self, *args)</dt><dd><tt><a href="#PerceptMesh-set_node_field_data">set_node_field_data</a>(self,&nbsp;double&nbsp;value,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field,&nbsp;EntityId&nbsp;node_id,&nbsp;unsigned&nbsp;int&nbsp;ordinal&nbsp;=&nbsp;0)<br>
 <a href="#PerceptMesh-set_node_field_data">set_node_field_data</a>(self,&nbsp;double&nbsp;value,&nbsp;<a href="#FieldBase">FieldBase</a>&nbsp;field,&nbsp;EntityId&nbsp;node_id)<br>
 &nbsp;<br>
 void&nbsp;stk::percept::<a href="#PerceptMesh">PerceptMesh</a>::<a href="#PerceptMesh-set_node_field_data">set_node_field_data</a>(double&nbsp;value,<br>
 stk::mesh::<a href="#FieldBase">FieldBase</a>&nbsp;*field,&nbsp;const&nbsp;mesh::EntityId&nbsp;node_id,&nbsp;unsigned<br>
-ordinal=0)</tt></dd></dl>
+ordinal=0)<br>
+&nbsp;<br>
+set&nbsp;the&nbsp;value&nbsp;of&nbsp;a&nbsp;field&nbsp;on&nbsp;the&nbsp;given&nbsp;node;&nbsp;if&nbsp;a&nbsp;vector&nbsp;field,&nbsp;pass&nbsp;in<br>
+the&nbsp;index&nbsp;of&nbsp;the&nbsp;vector&nbsp;required&nbsp;(ordinal)</tt></dd></dl>
 
 <dl><dt><a name="PerceptMesh-side_rank"><strong>side_rank</strong></a>(self)</dt><dd><tt><a href="#PerceptMesh-side_rank">side_rank</a>(self)&nbsp;-&gt;&nbsp;EntityRank<br>
 &nbsp;<br>
@@ -2940,15 +3039,7 @@ Static methods defined here:<br>
 <dl><dt><a name="PerceptMesh-mesh_difference"><strong>mesh_difference</strong></a>(*args)</dt><dd><tt><a href="#PerceptMesh-mesh_difference">mesh_difference</a>(<a href="#PerceptMesh">PerceptMesh</a>&nbsp;mesh1,&nbsp;<a href="#PerceptMesh">PerceptMesh</a>&nbsp;mesh2,&nbsp;string&nbsp;msg,&nbsp;bool&nbsp;_print&nbsp;=&nbsp;True,&nbsp;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;bool&nbsp;print_all_field_diffs&nbsp;=&nbsp;False)&nbsp;-&gt;&nbsp;bool<br>
 <a href="#PerceptMesh-mesh_difference">mesh_difference</a>(<a href="#PerceptMesh">PerceptMesh</a>&nbsp;mesh1,&nbsp;<a href="#PerceptMesh">PerceptMesh</a>&nbsp;mesh2,&nbsp;string&nbsp;msg,&nbsp;bool&nbsp;_print&nbsp;=&nbsp;True)&nbsp;-&gt;&nbsp;bool<br>
-<a href="#PerceptMesh-mesh_difference">mesh_difference</a>(<a href="#PerceptMesh">PerceptMesh</a>&nbsp;mesh1,&nbsp;<a href="#PerceptMesh">PerceptMesh</a>&nbsp;mesh2,&nbsp;string&nbsp;msg)&nbsp;-&gt;&nbsp;bool<br>
-<a href="#PerceptMesh-mesh_difference">mesh_difference</a>(<a href="#FEMMetaData">FEMMetaData</a>&nbsp;metaData_1,&nbsp;<a href="#FEMMetaData">FEMMetaData</a>&nbsp;metaData_2,&nbsp;<a href="#BulkData">BulkData</a>&nbsp;bulkData_1,&nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="#BulkData">BulkData</a>&nbsp;bulkData_2,&nbsp;string&nbsp;msg,&nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;bool&nbsp;_print&nbsp;=&nbsp;True,&nbsp;bool&nbsp;print_all_field_diffs&nbsp;=&nbsp;False)&nbsp;-&gt;&nbsp;bool<br>
-<a href="#PerceptMesh-mesh_difference">mesh_difference</a>(<a href="#FEMMetaData">FEMMetaData</a>&nbsp;metaData_1,&nbsp;<a href="#FEMMetaData">FEMMetaData</a>&nbsp;metaData_2,&nbsp;<a href="#BulkData">BulkData</a>&nbsp;bulkData_1,&nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="#BulkData">BulkData</a>&nbsp;bulkData_2,&nbsp;string&nbsp;msg,&nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;bool&nbsp;_print&nbsp;=&nbsp;True)&nbsp;-&gt;&nbsp;bool<br>
-<a href="#PerceptMesh-mesh_difference">mesh_difference</a>(<a href="#FEMMetaData">FEMMetaData</a>&nbsp;metaData_1,&nbsp;<a href="#FEMMetaData">FEMMetaData</a>&nbsp;metaData_2,&nbsp;<a href="#BulkData">BulkData</a>&nbsp;bulkData_1,&nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="#BulkData">BulkData</a>&nbsp;bulkData_2,&nbsp;string&nbsp;msg)&nbsp;-&gt;&nbsp;bool</tt></dd></dl>
+<a href="#PerceptMesh-mesh_difference">mesh_difference</a>(<a href="#PerceptMesh">PerceptMesh</a>&nbsp;mesh1,&nbsp;<a href="#PerceptMesh">PerceptMesh</a>&nbsp;mesh2,&nbsp;string&nbsp;msg)&nbsp;-&gt;&nbsp;bool</tt></dd></dl>
 
 <hr>
 Data descriptors defined here:<br>
@@ -3347,10 +3438,10 @@ Data and other attributes defined here:<br>
 
 <dl><dt><a name="RCPFunction-access_private_ptr"><strong>access_private_ptr</strong></a>(self)</dt><dd><tt><a href="#RCPFunction-access_private_ptr">access_private_ptr</a>(self)&nbsp;-&gt;&nbsp;<a href="#Function">Function</a></tt></dd></dl>
 
-<dl><dt><a name="RCPFunction-addAlias"><strong>addAlias</strong></a>(self, *args)</dt><dd><tt><a href="#RCPFunction-addAlias">addAlias</a>(self,&nbsp;char&nbsp;alias)&nbsp;-&gt;&nbsp;<a href="#Function">Function</a><br>
+<dl><dt><a name="RCPFunction-add_alias"><strong>add_alias</strong></a>(self, *args)</dt><dd><tt><a href="#RCPFunction-add_alias">add_alias</a>(self,&nbsp;char&nbsp;alias)&nbsp;-&gt;&nbsp;<a href="#Function">Function</a><br>
 &nbsp;<br>
 <a href="#Function">Function</a>&nbsp;*<br>
-stk::percept::<a href="#Function">Function</a>::<a href="#RCPFunction-addAlias">addAlias</a>(const&nbsp;char&nbsp;*alias)<br>
+stk::percept::<a href="#Function">Function</a>::<a href="#RCPFunction-add_alias">add_alias</a>(const&nbsp;char&nbsp;*alias)<br>
 &nbsp;<br>
 allow&nbsp;this&nbsp;function&nbsp;to&nbsp;have&nbsp;one&nbsp;or&nbsp;more&nbsp;aliases</tt></dd></dl>
 
@@ -3474,12 +3565,17 @@ stk::percept::<a href="#GenericFunction">GenericFunction</a>::<a href="#RCPFunct
 
 <dl><dt><a name="RCPFunction-total_count"><strong>total_count</strong></a>(self)</dt><dd><tt><a href="#RCPFunction-total_count">total_count</a>(self)&nbsp;-&gt;&nbsp;int</tt></dd></dl>
 
-<dl><dt><a name="RCPFunction-value"><strong>value</strong></a>(self, *args)</dt><dd><tt><a href="#RCPFunction-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;codomain,&nbsp;double&nbsp;time_value_optional&nbsp;=&nbsp;0.0)<br>
-<a href="#RCPFunction-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;codomain)<br>
+<dl><dt><a name="RCPFunction-value"><strong>value</strong></a>(self, *args)</dt><dd><tt><a href="#RCPFunction-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;MDOutVal,&nbsp;double&nbsp;time_value_optional&nbsp;=&nbsp;0.0)<br>
+<a href="#RCPFunction-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;MDOutVal)<br>
+<a href="#RCPFunction-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;double&nbsp;time_value_optional&nbsp;=&nbsp;0.0)&nbsp;-&gt;&nbsp;<a href="#MDArray">MDArray</a><br>
+<a href="#RCPFunction-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain)&nbsp;-&gt;&nbsp;<a href="#MDArray">MDArray</a><br>
 &nbsp;<br>
-void<br>
-stk::percept::<a href="#Function">Function</a>::<a href="#RCPFunction-value">value</a>(<a href="#MDArray">MDArray</a>&nbsp;&amp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;&amp;codomain,<br>
-double&nbsp;time_value_optional=0.0)</tt></dd></dl>
+<a href="#MDArray">MDArray</a><br>
+stk::percept::<a href="#Function">Function</a>::<a href="#RCPFunction-value">value</a>(<a href="#MDArray">MDArray</a>&nbsp;&amp;domain,&nbsp;double<br>
+time_value_optional=0.0)<br>
+&nbsp;<br>
+this&nbsp;version&nbsp;creates&nbsp;a&nbsp;dummy&nbsp;output&nbsp;and&nbsp;returns&nbsp;it&nbsp;based&nbsp;on&nbsp;the<br>
+codomain-dimensions&nbsp;specified&nbsp;at&nbsp;construction</tt></dd></dl>
 
 <dl><dt><a name="RCPFunction-weak_count"><strong>weak_count</strong></a>(self)</dt><dd><tt><a href="#RCPFunction-weak_count">weak_count</a>(self)&nbsp;-&gt;&nbsp;int</tt></dd></dl>
 
@@ -3961,11 +4057,12 @@ void<br>
 stk::percept::<a href="#StringFunction">StringFunction</a>::<a href="#StringFunction-resolve">resolve</a>(stk::expreval::VariableMap::iterator<br>
 &amp;var_it)</tt></dd></dl>
 
-<dl><dt><a name="StringFunction-setGradientStrings"><strong>setGradientStrings</strong></a>(self, *args)</dt><dd><tt><a href="#StringFunction-setGradientStrings">setGradientStrings</a>(self,&nbsp;string&nbsp;gstring,&nbsp;int&nbsp;len)<br>
+<dl><dt><a name="StringFunction-set_gradient_strings"><strong>set_gradient_strings</strong></a>(self, *args)</dt><dd><tt><a href="#StringFunction-set_gradient_strings">set_gradient_strings</a>(self,&nbsp;string&nbsp;gstring,&nbsp;int&nbsp;len)<br>
+<a href="#StringFunction-set_gradient_strings">set_gradient_strings</a>(self,&nbsp;<a href="#MDArrayString">MDArrayString</a>&nbsp;gstring)<br>
 &nbsp;<br>
 void<br>
-stk::percept::<a href="#StringFunction">StringFunction</a>::<a href="#StringFunction-setGradientStrings">setGradientStrings</a>(std::string<br>
-gstring[3],&nbsp;int&nbsp;len)</tt></dd></dl>
+stk::percept::<a href="#StringFunction">StringFunction</a>::<a href="#StringFunction-set_gradient_strings">set_gradient_strings</a>(<a href="#MDArrayString">MDArrayString</a><br>
+&amp;gstring)</tt></dd></dl>
 
 <hr>
 Data and other attributes defined here:<br>
@@ -3977,10 +4074,10 @@ Data and other attributes defined here:<br>
 
 <hr>
 Methods inherited from <a href="PerceptMesh.html#Function">Function</a>:<br>
-<dl><dt><a name="StringFunction-addAlias"><strong>addAlias</strong></a>(self, *args)</dt><dd><tt><a href="#StringFunction-addAlias">addAlias</a>(self,&nbsp;char&nbsp;alias)&nbsp;-&gt;&nbsp;<a href="#Function">Function</a><br>
+<dl><dt><a name="StringFunction-add_alias"><strong>add_alias</strong></a>(self, *args)</dt><dd><tt><a href="#StringFunction-add_alias">add_alias</a>(self,&nbsp;char&nbsp;alias)&nbsp;-&gt;&nbsp;<a href="#Function">Function</a><br>
 &nbsp;<br>
 <a href="#Function">Function</a>&nbsp;*<br>
-stk::percept::<a href="#Function">Function</a>::<a href="#StringFunction-addAlias">addAlias</a>(const&nbsp;char&nbsp;*alias)<br>
+stk::percept::<a href="#Function">Function</a>::<a href="#StringFunction-add_alias">add_alias</a>(const&nbsp;char&nbsp;*alias)<br>
 &nbsp;<br>
 allow&nbsp;this&nbsp;function&nbsp;to&nbsp;have&nbsp;one&nbsp;or&nbsp;more&nbsp;aliases</tt></dd></dl>
 
@@ -4014,12 +4111,17 @@ dims)</tt></dd></dl>
 &nbsp;<br>
 void&nbsp;stk::percept::<a href="#Function">Function</a>::<a href="#StringFunction-setIntegrationOrder">setIntegrationOrder</a>(unsigned&nbsp;iord)</tt></dd></dl>
 
-<dl><dt><a name="StringFunction-value"><strong>value</strong></a>(self, *args)</dt><dd><tt><a href="#StringFunction-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;codomain,&nbsp;double&nbsp;time_value_optional&nbsp;=&nbsp;0.0)<br>
-<a href="#StringFunction-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;codomain)<br>
+<dl><dt><a name="StringFunction-value"><strong>value</strong></a>(self, *args)</dt><dd><tt><a href="#StringFunction-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;MDOutVal,&nbsp;double&nbsp;time_value_optional&nbsp;=&nbsp;0.0)<br>
+<a href="#StringFunction-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;MDOutVal)<br>
+<a href="#StringFunction-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain,&nbsp;double&nbsp;time_value_optional&nbsp;=&nbsp;0.0)&nbsp;-&gt;&nbsp;<a href="#MDArray">MDArray</a><br>
+<a href="#StringFunction-value">value</a>(self,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;domain)&nbsp;-&gt;&nbsp;<a href="#MDArray">MDArray</a><br>
 &nbsp;<br>
-void<br>
-stk::percept::<a href="#Function">Function</a>::<a href="#StringFunction-value">value</a>(<a href="#MDArray">MDArray</a>&nbsp;&amp;domain,&nbsp;<a href="#MDArray">MDArray</a>&nbsp;&amp;codomain,<br>
-double&nbsp;time_value_optional=0.0)</tt></dd></dl>
+<a href="#MDArray">MDArray</a><br>
+stk::percept::<a href="#Function">Function</a>::<a href="#StringFunction-value">value</a>(<a href="#MDArray">MDArray</a>&nbsp;&amp;domain,&nbsp;double<br>
+time_value_optional=0.0)<br>
+&nbsp;<br>
+this&nbsp;version&nbsp;creates&nbsp;a&nbsp;dummy&nbsp;output&nbsp;and&nbsp;returns&nbsp;it&nbsp;based&nbsp;on&nbsp;the<br>
+codomain-dimensions&nbsp;specified&nbsp;at&nbsp;construction</tt></dd></dl>
 
 <hr>
 Static methods inherited from <a href="PerceptMesh.html#Function">Function</a>:<br>
@@ -4031,7 +4133,7 @@ Static methods inherited from <a href="PerceptMesh.html#Function">Function</a>:<
 
 <hr>
 Data and other attributes inherited from <a href="PerceptMesh.html#Function">Function</a>:<br>
-<dl><dt><strong>Identity</strong> = &lt;PerceptMesh.Function; proxy of &lt;Swig Object of type 'stk::percept::Function *' at 0x54d2390&gt; &gt;</dl>
+<dl><dt><strong>Identity</strong> = &lt;PerceptMesh.Function; proxy of &lt;Swig Object of type 'stk::percept::Function *' at 0x163103c0&gt; &gt;</dl>
 
 <hr>
 Methods inherited from <a href="PerceptMesh.html#GenericFunction">GenericFunction</a>:<br>
@@ -5243,15 +5345,7 @@ get(Entity&nbsp;entity)&nbsp;-&gt;&nbsp;<a href="#FEMMetaData">FEMMetaData</a><b
  <dl><dt><a name="-PerceptMesh_mesh_difference"><strong>PerceptMesh_mesh_difference</strong></a>(*args)</dt><dd><tt>mesh_difference(<a href="#PerceptMesh">PerceptMesh</a>&nbsp;mesh1,&nbsp;<a href="#PerceptMesh">PerceptMesh</a>&nbsp;mesh2,&nbsp;string&nbsp;msg,&nbsp;bool&nbsp;_print&nbsp;=&nbsp;True,&nbsp;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;bool&nbsp;print_all_field_diffs&nbsp;=&nbsp;False)&nbsp;-&gt;&nbsp;bool<br>
 mesh_difference(<a href="#PerceptMesh">PerceptMesh</a>&nbsp;mesh1,&nbsp;<a href="#PerceptMesh">PerceptMesh</a>&nbsp;mesh2,&nbsp;string&nbsp;msg,&nbsp;bool&nbsp;_print&nbsp;=&nbsp;True)&nbsp;-&gt;&nbsp;bool<br>
-mesh_difference(<a href="#PerceptMesh">PerceptMesh</a>&nbsp;mesh1,&nbsp;<a href="#PerceptMesh">PerceptMesh</a>&nbsp;mesh2,&nbsp;string&nbsp;msg)&nbsp;-&gt;&nbsp;bool<br>
-mesh_difference(<a href="#FEMMetaData">FEMMetaData</a>&nbsp;metaData_1,&nbsp;<a href="#FEMMetaData">FEMMetaData</a>&nbsp;metaData_2,&nbsp;<a href="#BulkData">BulkData</a>&nbsp;bulkData_1,&nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="#BulkData">BulkData</a>&nbsp;bulkData_2,&nbsp;string&nbsp;msg,&nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;bool&nbsp;_print&nbsp;=&nbsp;True,&nbsp;bool&nbsp;print_all_field_diffs&nbsp;=&nbsp;False)&nbsp;-&gt;&nbsp;bool<br>
-mesh_difference(<a href="#FEMMetaData">FEMMetaData</a>&nbsp;metaData_1,&nbsp;<a href="#FEMMetaData">FEMMetaData</a>&nbsp;metaData_2,&nbsp;<a href="#BulkData">BulkData</a>&nbsp;bulkData_1,&nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="#BulkData">BulkData</a>&nbsp;bulkData_2,&nbsp;string&nbsp;msg,&nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;bool&nbsp;_print&nbsp;=&nbsp;True)&nbsp;-&gt;&nbsp;bool<br>
-<a href="#-PerceptMesh_mesh_difference">PerceptMesh_mesh_difference</a>(<a href="#FEMMetaData">FEMMetaData</a>&nbsp;metaData_1,&nbsp;<a href="#FEMMetaData">FEMMetaData</a>&nbsp;metaData_2,&nbsp;<a href="#BulkData">BulkData</a>&nbsp;bulkData_1,&nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="#BulkData">BulkData</a>&nbsp;bulkData_2,&nbsp;string&nbsp;msg)&nbsp;-&gt;&nbsp;bool</tt></dd></dl>
+<a href="#-PerceptMesh_mesh_difference">PerceptMesh_mesh_difference</a>(<a href="#PerceptMesh">PerceptMesh</a>&nbsp;mesh1,&nbsp;<a href="#PerceptMesh">PerceptMesh</a>&nbsp;mesh2,&nbsp;string&nbsp;msg)&nbsp;-&gt;&nbsp;bool</tt></dd></dl>
  <dl><dt><a name="-PerceptMesh_swigregister"><strong>PerceptMesh_swigregister</strong></a>(...)</dt></dl>
  <dl><dt><a name="-QuadFixture_3_get_entity_rank_names"><strong>QuadFixture_3_get_entity_rank_names</strong></a>(*args)</dt><dd><tt><a href="#-QuadFixture_3_get_entity_rank_names">QuadFixture_3_get_entity_rank_names</a>(unsigned&nbsp;int&nbsp;dim)&nbsp;-&gt;&nbsp;<a href="#vectors">vectors</a></tt></dd></dl>
  <dl><dt><a name="-QuadFixture_3_swigregister"><strong>QuadFixture_3_swigregister</strong></a>(...)</dt></dl>
@@ -5306,12 +5400,18 @@ mesh_difference(<a href="#FEMMetaData">FEMMetaData</a>&nbsp;metaData_1,&nbsp;<a 
  <dl><dt><a name="-edge_rank"><strong>edge_rank</strong></a>(*args)</dt><dd><tt><a href="#-edge_rank">edge_rank</a>(mesh::MetaData&nbsp;meta)&nbsp;-&gt;&nbsp;mesh::EntityRank</tt></dd></dl>
  <dl><dt><a name="-element_rank"><strong>element_rank</strong></a>(*args)</dt><dd><tt><a href="#-element_rank">element_rank</a>(mesh::MetaData&nbsp;meta)&nbsp;-&gt;&nbsp;mesh::EntityRank</tt></dd></dl>
  <dl><dt><a name="-entity_rank_names"><strong>entity_rank_names</strong></a>(*args)</dt><dd><tt><a href="#-entity_rank_names">entity_rank_names</a>(size_t&nbsp;spatial_dimension)&nbsp;-&gt;&nbsp;<a href="#vectors">vectors</a></tt></dd></dl>
- <dl><dt><a name="-evalFunc"><strong>evalFunc</strong></a>(*args)</dt><dd><tt><a href="#-evalFunc">evalFunc</a>(double&nbsp;x,&nbsp;double&nbsp;y,&nbsp;double&nbsp;z,&nbsp;double&nbsp;t,&nbsp;<a href="#Function">Function</a>&nbsp;func)&nbsp;-&gt;&nbsp;double</tt></dd></dl>
- <dl><dt><a name="-evalFunc2"><strong>evalFunc2</strong></a>(*args)</dt><dd><tt><a href="#-evalFunc2">evalFunc2</a>(double&nbsp;x,&nbsp;double&nbsp;y,&nbsp;double&nbsp;t,&nbsp;<a href="#Function">Function</a>&nbsp;func)&nbsp;-&gt;&nbsp;double</tt></dd></dl>
- <dl><dt><a name="-evalPrint"><strong>evalPrint</strong></a>(*args)</dt><dd><tt><a href="#-evalPrint">evalPrint</a>(double&nbsp;x,&nbsp;double&nbsp;y,&nbsp;double&nbsp;z,&nbsp;double&nbsp;t,&nbsp;<a href="#Function">Function</a>&nbsp;func)</tt></dd></dl>
- <dl><dt><a name="-evalPrint2"><strong>evalPrint2</strong></a>(*args)</dt><dd><tt><a href="#-evalPrint2">evalPrint2</a>(double&nbsp;x,&nbsp;double&nbsp;y,&nbsp;double&nbsp;t,&nbsp;<a href="#Function">Function</a>&nbsp;func)</tt></dd></dl>
- <dl><dt><a name="-evalVec3"><strong>evalVec3</strong></a>(*args)</dt><dd><tt><a href="#-evalVec3">evalVec3</a>(double&nbsp;x,&nbsp;double&nbsp;y,&nbsp;double&nbsp;z,&nbsp;double&nbsp;t,&nbsp;<a href="#Function">Function</a>&nbsp;func)&nbsp;-&gt;&nbsp;<a href="#MDArray">MDArray</a></tt></dd></dl>
- <dl><dt><a name="-evalVec3Print"><strong>evalVec3Print</strong></a>(*args)</dt><dd><tt><a href="#-evalVec3Print">evalVec3Print</a>(double&nbsp;x,&nbsp;double&nbsp;y,&nbsp;double&nbsp;z,&nbsp;double&nbsp;t,&nbsp;<a href="#Function">Function</a>&nbsp;func)</tt></dd></dl>
+ <dl><dt><a name="-eval_func"><strong>eval_func</strong></a>(*args)</dt><dd><tt><a href="#-eval_func">eval_func</a>(double&nbsp;x,&nbsp;double&nbsp;y,&nbsp;double&nbsp;z,&nbsp;double&nbsp;t,&nbsp;<a href="#Function">Function</a>&nbsp;func)&nbsp;-&gt;&nbsp;double<br>
+<a href="#-eval_func">eval_func</a>(double&nbsp;x,&nbsp;double&nbsp;y,&nbsp;double&nbsp;z,&nbsp;double&nbsp;t,&nbsp;<a href="#RCPFunction">RCPFunction</a>&nbsp;func)&nbsp;-&gt;&nbsp;double</tt></dd></dl>
+ <dl><dt><a name="-eval_func2"><strong>eval_func2</strong></a>(*args)</dt><dd><tt><a href="#-eval_func2">eval_func2</a>(double&nbsp;x,&nbsp;double&nbsp;y,&nbsp;double&nbsp;t,&nbsp;<a href="#Function">Function</a>&nbsp;func)&nbsp;-&gt;&nbsp;double<br>
+<a href="#-eval_func2">eval_func2</a>(double&nbsp;x,&nbsp;double&nbsp;y,&nbsp;double&nbsp;t,&nbsp;<a href="#RCPFunction">RCPFunction</a>&nbsp;func)&nbsp;-&gt;&nbsp;double</tt></dd></dl>
+ <dl><dt><a name="-eval_print"><strong>eval_print</strong></a>(*args)</dt><dd><tt><a href="#-eval_print">eval_print</a>(double&nbsp;x,&nbsp;double&nbsp;y,&nbsp;double&nbsp;z,&nbsp;double&nbsp;t,&nbsp;<a href="#Function">Function</a>&nbsp;func)<br>
+<a href="#-eval_print">eval_print</a>(double&nbsp;x,&nbsp;double&nbsp;y,&nbsp;double&nbsp;z,&nbsp;double&nbsp;t,&nbsp;<a href="#RCPFunction">RCPFunction</a>&nbsp;func)</tt></dd></dl>
+ <dl><dt><a name="-eval_print2"><strong>eval_print2</strong></a>(*args)</dt><dd><tt><a href="#-eval_print2">eval_print2</a>(double&nbsp;x,&nbsp;double&nbsp;y,&nbsp;double&nbsp;t,&nbsp;<a href="#Function">Function</a>&nbsp;func)<br>
+<a href="#-eval_print2">eval_print2</a>(double&nbsp;x,&nbsp;double&nbsp;y,&nbsp;double&nbsp;t,&nbsp;<a href="#RCPFunction">RCPFunction</a>&nbsp;func)</tt></dd></dl>
+ <dl><dt><a name="-eval_vec3"><strong>eval_vec3</strong></a>(*args)</dt><dd><tt><a href="#-eval_vec3">eval_vec3</a>(double&nbsp;x,&nbsp;double&nbsp;y,&nbsp;double&nbsp;z,&nbsp;double&nbsp;t,&nbsp;<a href="#Function">Function</a>&nbsp;func)&nbsp;-&gt;&nbsp;<a href="#MDArray">MDArray</a><br>
+<a href="#-eval_vec3">eval_vec3</a>(double&nbsp;x,&nbsp;double&nbsp;y,&nbsp;double&nbsp;z,&nbsp;double&nbsp;t,&nbsp;<a href="#RCPFunction">RCPFunction</a>&nbsp;func)&nbsp;-&gt;&nbsp;<a href="#MDArray">MDArray</a></tt></dd></dl>
+ <dl><dt><a name="-eval_vec3_print"><strong>eval_vec3_print</strong></a>(*args)</dt><dd><tt><a href="#-eval_vec3_print">eval_vec3_print</a>(double&nbsp;x,&nbsp;double&nbsp;y,&nbsp;double&nbsp;z,&nbsp;double&nbsp;t,&nbsp;<a href="#Function">Function</a>&nbsp;func)<br>
+<a href="#-eval_vec3_print">eval_vec3_print</a>(double&nbsp;x,&nbsp;double&nbsp;y,&nbsp;double&nbsp;z,&nbsp;double&nbsp;t,&nbsp;<a href="#RCPFunction">RCPFunction</a>&nbsp;func)</tt></dd></dl>
  <dl><dt><a name="-face_rank"><strong>face_rank</strong></a>(*args)</dt><dd><tt><a href="#-face_rank">face_rank</a>(mesh::MetaData&nbsp;meta)&nbsp;-&gt;&nbsp;mesh::EntityRank</tt></dd></dl>
  <dl><dt><a name="-field_data_from_ioss"><strong>field_data_from_ioss</strong></a>(*args)</dt><dd><tt><a href="#-field_data_from_ioss">field_data_from_ioss</a>(<a href="#FieldBase">FieldBase</a>&nbsp;field,&nbsp;std::vector&lt;(p.stk::mesh::Entity,std::allocator&lt;(p.stk::mesh::Entity)&gt;)&gt;&nbsp;entities,&nbsp;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;GroupingEntity&nbsp;io_entity,&nbsp;<br>

@@ -92,7 +92,7 @@ namespace stk
         std::cout << "P[" << eMesh.get_rank() << "] "
                   << "before write ff_pressure = " << eval(x,y,z,time, ff_pressure) << std::endl;
 
-        //evalPrint(x, y, z, time, ff_pressure);
+        //eval_print(x, y, z, time, ff_pressure);
 
         double pval = eval(x, y, z, time, ff_pressure);
         EXPECT_DOUBLE_EQ(pval, pressure_value);
@@ -117,7 +117,7 @@ namespace stk
         //if (1 || eMesh.get_rank()== 0) eMesh.print_fields("Pressure");
      
         FieldFunction ff_pressure_1("ff_pressure", pressure_field, eMesh, 3, 1);
-        ff_pressure_1.addAlias("P");
+        ff_pressure_1.add_alias("P");
         StringFunction sf_pressure("P");
         std::cout << "P[" << eMesh.get_rank() << "] "
                   << "after read ff_pressure = " << eval(x,y,z,time, ff_pressure_1) << std::endl;
@@ -130,7 +130,7 @@ namespace stk
         
         std::cout << "P[" << eMesh.get_rank() << "] "
                   << "sf_pressure = " << eval(x,y,z,time, sf_pressure) << std::endl;
-        //!evalPrint(x,y,z,time, sf_error);
+        //!eval_print(x,y,z,time, sf_error);
         std::cout << "P[" << eMesh.get_rank() << "] "
                   << "sf_error = " << eval(x,y,z,time, sf_error) << std::endl;
         double val_cpp = EXACT_SOL - pressure_value;
@@ -165,7 +165,7 @@ namespace stk
         FieldFunction ff_coords("ff_coords", f_coords, eMesh, 3, 3);
 
         // here we could evaluate this field function
-        evalVec3Print(x, y, z, time, ff_coords);
+        eval_vec3_print(x, y, z, time, ff_coords);
 
         // get the pressure field
         mesh::FieldBase* pressure_field = eMesh.get_field("pressure");
@@ -178,7 +178,7 @@ namespace stk
         //double * pdata = eMesh.node_field_data(pressure_field, 1);
 
         FieldFunction ff_pressure("ff_pressure", pressure_field, eMesh, 3, 1);
-        ff_pressure.addAlias("P");
+        ff_pressure.add_alias("P");
         StringFunction sf_pressure("P");
 
         // a point-source at the origin
@@ -187,7 +187,7 @@ namespace stk
         StringFunction sf_exact_solution(EXPAND_AND_QUOTE(EXACT_SOL), Name("sf_exact_solution"), 3, 1);
         StringFunction sf_error = sf_exact_solution - sf_pressure;
         
-        evalPrint(x,y,z,time, sf_error);
+        eval_print(x,y,z,time, sf_error);
         double val_cpp = EXACT_SOL - pressure_value;
         double val_sf  = eval(x,y,z,time, sf_error);
         EXPECT_DOUBLE_EQ(val_sf, val_cpp);

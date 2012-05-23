@@ -1,5 +1,6 @@
 import sys
-sys.path.append("/scratch/srkenno/Trilinos-BUILDS/build11-090711/packages/PyTrilinos/src/stk/PyPercept")
+#sys.path.append("/scratch/srkenno/Trilinos-BUILDS/build11-090711/packages/PyTrilinos/src/stk/PyPercept")
+sys.path.insert(0,"/scratch/srkenno/Trilinos-BUILDS/build-PyPercept-scratch-srkenno-code/packages/PyTrilinos/src/stk/PyPercept")
 
 from mpi4py import MPI
 from PerceptMesh import *
@@ -79,7 +80,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       fixture.generate_mesh()
       breaker.setRemoveOldElements(False)
       breaker.doBreak()
-      eMesh.dumpElementsCompact()
+      eMesh.dump_elements_compact()
 
   def test_break_tri_to_tri_sierra_1_test(self):
     pm = MPI.COMM_WORLD
@@ -100,7 +101,7 @@ class UniformRefinerUnitTests(unittest.TestCase):
       fixture.generate_mesh()
       breaker.setRemoveOldElements(False)
       breaker.doBreak()
-      eMesh.dumpElementsCompact()
+      eMesh.dump_elements_compact()
 
   def test_break_quad_to_quad_sierra(self):
     fixture_setup()

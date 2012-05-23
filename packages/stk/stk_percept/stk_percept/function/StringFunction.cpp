@@ -54,11 +54,21 @@ namespace stk
       m_have_bucket = false;
     }
 
-    void StringFunction::setGradientStrings(std::string gstring[3], int len)
+    void StringFunction::set_gradient_strings(std::string gstring[3], int len)
     {
       m_gradient_string = "";
       for (int i = 0; i < len; i++)
         m_gradient_string += "v["+boost::lexical_cast<std::string>(i)+"]= "+gstring[i]+";";
+    }
+
+    void 
+    StringFunction::set_gradient_strings(MDArrayString& gstring)
+    {
+      if (gstring.rank() != 1) throw std::runtime_error("set_gradient_strings takes a rank 1 matrix (i.e. a vector) of strings (MDArrayString)");
+      int len = gstring.dimension(0);
+      m_gradient_string = "";
+      for (int i = 0; i < len; i++)
+        m_gradient_string += "v["+boost::lexical_cast<std::string>(i)+"]= "+gstring(i)+";";
     }
 
     // new StringFunction = lhs OP rhs
@@ -180,27 +190,28 @@ namespace stk
       }
 #endif      
 
-
+      bool debug=true;
       std::string fstr = m_func_string;
       // FIXME this is just for a simple test and only works for linear functions
       int outputDim = deriv_spec.dimension(0);
       static std::string s_xyzt[] = {"x", "y", "z", "t"};
       std::string out_str;
+      //if (debug) std::cout << "deriv_spec= " << deriv_spec << std::endl;
       for (int iresult = 0; iresult < deriv_spec.dimension(0); iresult++)
         {
           fstr = m_func_string;
           for (int jderiv = 0; jderiv < deriv_spec.dimension(1); jderiv++)
             {
-              //std::cout << "deriv_spec= " << deriv_spec(iresult, jderiv)  << " fstr= " << fstr << std::endl;
+              if (debug) std::cout << "deriv_spec= " << deriv_spec(iresult, jderiv)  << " fstr= " << fstr << std::endl;
               char xyzt = deriv_spec(iresult, jderiv)[0];
               std::replace( fstr.begin(), fstr.end(), xyzt, '1' );
-              //std::cout << "xyzt= " << xyzt << " fstr= " << fstr << std::endl;
+              if (debug) std::cout << "xyzt= " << xyzt << " fstr= " << fstr << std::endl;
             }
           for (int jderiv = 0; jderiv < 4; jderiv++)
             {
               char xyzt = s_xyzt[jderiv][0];
               std::replace( fstr.begin(), fstr.end(), xyzt, '0' );
-              //std::cout << "xyzt= " << xyzt << " fstr= " << fstr << std::endl;
+              if (debug) std::cout << "xyzt= " << xyzt << " fstr= " << fstr << std::endl;
             }
           if (deriv_spec.dimension(0) > 1)
             {
@@ -213,7 +224,7 @@ namespace stk
         }
       std::string fname = getName();
       std::string new_name = "deriv_"+fname;
-      //std::cout << "fname= " << fname << " new_name= " << new_name << " out_str= " << out_str << std::endl;
+      if (debug) std::cout << "fname= " << fname << " new_name= " << new_name << " out_str= " << out_str << std::endl;
       //Util::pause(true, "tmp:: StringFunction::derivative");
       return Teuchos::rcp(new StringFunction(out_str.c_str(), Name(new_name), Dimensions(3), Dimensions(outputDim) ));
     }

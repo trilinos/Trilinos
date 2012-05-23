@@ -61,7 +61,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_demo_1_0_0)
 
   // here we could evaluate this field function
   double x=0.123, y=0.234, z=0.345, time=0.0;
-  evalVec3Print(x, y, z, time, ff_coords);
+  eval_vec3_print(x, y, z, time, ff_coords);
   // end_demo
 
 }
@@ -180,7 +180,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_demo_1)
 
   // here we could evaluate this field function
   double x=0.123, y=0.234, z=0.345, time=0.0;
-  evalVec3Print(x, y, z, time, ff_coords);
+  eval_vec3_print(x, y, z, time, ff_coords);
   // end_demo
 
 }
@@ -207,7 +207,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_demo_2)
 
   // create a field function from the existing coordinates field
   FieldFunction ff_coords("ff_coords", f_coords, eMesh,  3, 3);
-  evalVec3Print(0.1,0.1,0.1,0.0, ff_coords);
+  eval_vec3_print(0.1,0.1,0.1,0.0, ff_coords);
 
   // create a StringFunction to define the magnitude of the coordinates
   StringFunction coords_mag_sf( "sqrt(x*x + y*y + z*z)" , Name("coords_mag_sf"), 3, 1);
@@ -229,7 +229,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_demo_2)
   // start_demo_fieldFunction_3
 
   // tell Percept that we want to refer to the ff_coords FieldFunction by a simple alias "mc"
-  ff_coords.addAlias("mc");
+  ff_coords.add_alias("mc");
 
   // define a new StringFunction that does the same thing as coords_mag_sf, evaluates the coordinate magnitudes
   StringFunction sfcm("sqrt(mc[0]*mc[0]+mc[1]*mc[1]+mc[2]*mc[2])", Name("sfcm"), 3, 1);
@@ -276,7 +276,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_readMesh_createField_interpolateFrom)
     if (p_rank == 0)
     {
       std::cout << "TEST::function::fieldFunction_readMesh_createField_interpolateFrom eval ff_coords=" << std::endl;
-      evalVec3Print(0.1, 0.2, 0.3, 0.0, ff_coords);
+      eval_vec3_print(0.1, 0.2, 0.3, 0.0, ff_coords);
     }
   }
 
@@ -297,13 +297,13 @@ STKUNIT_UNIT_TEST(function, fieldFunction_readMesh_createField_interpolateFrom)
   }
 
   try {
-    ff_coords.addAlias("mc");
+    ff_coords.add_alias("mc");
     StringFunction sfcm("sqrt(mc[0]*mc[0]+mc[1]*mc[1]+mc[2]*mc[2])", Name("sfcm"), Dimensions(3), Dimensions(1));
 
     double tol1 = 1.e-12;
 
     {
-      MDArray vv = evalVec3(0.1, 0.2, 0.3, 0.0, ff_coords);
+      MDArray vv = eval_vec3(0.1, 0.2, 0.3, 0.0, ff_coords);
 
       STKUNIT_ASSERT_NEAR(vv(0), 0.1, tol1);
       STKUNIT_ASSERT_NEAR(vv(1), 0.2, tol1);
@@ -372,7 +372,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_multiplePoints)
 
   FieldFunction ff_coords("ff_coords", f_coords, eMesh,
                           Dimensions(3), Dimensions(3), FieldFunction::SIMPLE_SEARCH );
-  MDArray val1 = evalVec3(0.2, 0.3, 0.4, 0.0, ff_coords);
+  MDArray val1 = eval_vec3(0.2, 0.3, 0.4, 0.0, ff_coords);
   std::cout << "val1= \n" << val1 << std::endl;
 
   MDArray points(NPTS, 3);
@@ -393,7 +393,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_multiplePoints)
 
     //std::cout << "field_op: ipts= " << ipts << std::endl;
 
-    MDArray vec = evalVec3(x, y, z, t, ff_coords);
+    MDArray vec = eval_vec3(x, y, z, t, ff_coords);
     STKUNIT_EXPECT_NEAR(vec(0), x, fabs(1.e-5*x));
     STKUNIT_EXPECT_NEAR(vec(1), y, fabs(1.e-5*y));
     STKUNIT_EXPECT_NEAR(vec(2), z, fabs(1.e-5*z));
@@ -444,7 +444,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_point_eval_verify)
                           Dimensions(3), Dimensions(3), FieldFunction::SIMPLE_SEARCH );
 
   /// here we evaluate this field function
-  MDArray val1 = evalVec3(0.2, 0.3, 0.4, 0.0, ff_coords);
+  MDArray val1 = eval_vec3(0.2, 0.3, 0.4, 0.0, ff_coords);
   //std::cout << "eval = \n" << val1 << std::endl;
 
   stk::mesh::BulkData& bulkData = *eMesh.get_bulk_data();
@@ -453,7 +453,7 @@ STKUNIT_UNIT_TEST(function, fieldFunction_point_eval_verify)
   bool didCatch = false;
   try {
     // evaluate a point that is known to be outside the domain
-    MDArray val10 = evalVec3(1.2, 1.3, 1.4, 0.0, ff_coords);
+    MDArray val10 = eval_vec3(1.2, 1.3, 1.4, 0.0, ff_coords);
   }
   catch ( const std::exception & X ) {
     std::cout << "  expected to catch this exception: " << X.what() << std::endl;
@@ -521,8 +521,8 @@ STKUNIT_UNIT_TEST(function, fieldFunction_point_eval_timing)
 
     // The first point that is evaluated fires the setup of the stk::search data structure (oct-tree, bih-tree)
     double t1st =  stk::wall_time();
-    MDArray val11 = evalVec3(0.2, 0.3, 0.4, 0.0, ff_coords);
-    val11 = evalVec3(0.2, 0.3, 0.4, 0.0, ff_coords);
+    MDArray val11 = eval_vec3(0.2, 0.3, 0.4, 0.0, ff_coords);
+    val11 = eval_vec3(0.2, 0.3, 0.4, 0.0, ff_coords);
     t1st = stk::wall_dtime(t1st);
 
     // timings

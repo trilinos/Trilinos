@@ -369,7 +369,7 @@ namespace stk {
             breaker.doBreak();
             //MPI_Barrier( MPI_COMM_WORLD );
 
-            //eMesh.dumpElementsCompact();
+            //eMesh.dump_elements_compact();
 
             //MPI_Barrier( MPI_COMM_WORLD );
             //exit(123);
@@ -419,7 +419,7 @@ namespace stk {
             UniformRefiner breaker(eMesh, break_tri_to_tri_4, proc_rank_field);
             breaker.setRemoveOldElements(false);
             breaker.doBreak();
-            //eMesh.dumpElementsCompact();
+            //eMesh.dump_elements_compact();
 
             //MPI_Barrier( MPI_COMM_WORLD );
             //exit(123);

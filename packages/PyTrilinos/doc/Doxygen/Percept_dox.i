@@ -919,8 +919,18 @@ domain_dimensions=Dimensions(), Dimensions
 codomain_dimensions=Dimensions(), unsigned integration_order=0) ";
 
 %feature("docstring")  stk::percept::Function::value "void
-stk::percept::Function::value(MDArray &domain, MDArray &codomain,
-double time_value_optional=0.0) ";
+stk::percept::Function::value(MDArray &domain, MDArray &MDOutVal,
+double time_value_optional=0.0)
+
+this version uses the MDOutVal argument as a predefined array to
+ensure the python returned value is properly sized ";
+
+%feature("docstring")  stk::percept::Function::value "MDArray
+stk::percept::Function::value(MDArray &domain, double
+time_value_optional=0.0)
+
+this version creates a dummy output and returns it based on the
+codomain-dimensions specified at construction ";
 
 %feature("docstring")  stk::percept::Function::derivative "virtual
 Teuchos::RCP<Function >
@@ -933,8 +943,8 @@ derivative to take and how many derivatives. For example, ";
 %feature("docstring")  stk::percept::Function::derivativeAtPoint "void stk::percept::Function::derivativeAtPoint(MDArrayString
 &deriv_spec, MDArray &domain, MDArray &codomain, double time=0.0) ";
 
-%feature("docstring")  stk::percept::Function::addAlias "Function *
-stk::percept::Function::addAlias(const char *alias)
+%feature("docstring")  stk::percept::Function::add_alias "Function *
+stk::percept::Function::add_alias(const char *alias)
 
 allow this function to have one or more aliases ";
 
@@ -1635,9 +1645,23 @@ Function &integrand) ";
 // File: classstk_1_1percept_1_1MDArrayString.xml
 %feature("docstring") stk::percept::MDArrayString "";
 
+%feature("docstring")  stk::percept::MDArrayString::MDArrayString "stk::percept::MDArrayString::MDArrayString() ";
+
 %feature("docstring")  stk::percept::MDArrayString::MDArrayString "stk::percept::MDArrayString::MDArrayString(int dim) ";
 
 %feature("docstring")  stk::percept::MDArrayString::MDArrayString "stk::percept::MDArrayString::MDArrayString(int dim0, int dim1) ";
+
+%feature("docstring")  stk::percept::MDArrayString::resize "void
+stk::percept::MDArrayString::resize(int dim) ";
+
+%feature("docstring")  stk::percept::MDArrayString::resize "void
+stk::percept::MDArrayString::resize(int dim0, int dim1) ";
+
+%feature("docstring")  stk::percept::MDArrayString::rank "const int
+stk::percept::MDArrayString::rank() const ";
+
+%feature("docstring")  stk::percept::MDArrayString::setValues "void
+stk::percept::MDArrayString::setValues(std::string *data) ";
 
 %feature("docstring")  stk::percept::MDArrayString::dimension "int
 stk::percept::MDArrayString::dimension(int i1) ";
@@ -2565,6 +2589,8 @@ commits mesh if not committed and saves it in new file ";
 %feature("docstring")  stk::percept::PerceptMesh::close "void
 stk::percept::PerceptMesh::close()
 
+closes this mesh, deleting its data
+
 closes this mesh to further changes ";
 
 %feature("docstring")  stk::percept::PerceptMesh::print_info "void
@@ -2580,7 +2606,9 @@ print_level=0, bool do_endl=true)
 print number of parts and fields, and info on each ";
 
 %feature("docstring")  stk::percept::PerceptMesh::print_fields "void
-stk::percept::PerceptMesh::print_fields(std::string header=\"\") ";
+stk::percept::PerceptMesh::print_fields(std::string header=\"\")
+
+print the fields defined on the mesh ";
 
 %feature("docstring")  stk::percept::PerceptMesh::get_spatial_dim "int stk::percept::PerceptMesh::get_spatial_dim() ";
 
@@ -2596,7 +2624,9 @@ stk::percept::PerceptMesh::get_number_elements_locally_owned "int
 stk::percept::PerceptMesh::get_number_elements_locally_owned() ";
 
 %feature("docstring")  stk::percept::PerceptMesh::get_rank "unsigned
-stk::percept::PerceptMesh::get_rank() ";
+stk::percept::PerceptMesh::get_rank()
+
+parallel rank ";
 
 %feature("docstring")  stk::percept::PerceptMesh::get_parallel_rank "unsigned stk::percept::PerceptMesh::get_parallel_rank() ";
 
@@ -2604,67 +2634,114 @@ stk::percept::PerceptMesh::get_rank() ";
 
 %feature("docstring")  stk::percept::PerceptMesh::print_entity "void
 stk::percept::PerceptMesh::print_entity(const stk::mesh::Entity
-&entity, stk::mesh::FieldBase *field=0) ";
+&entity, stk::mesh::FieldBase *field=0)
+
+print a node, edge, element, etc; optionally pass in a field to dump
+data associated with the entity ";
 
 %feature("docstring")  stk::percept::PerceptMesh::print_entity_compact
 "std::string stk::percept::PerceptMesh::print_entity_compact(const
-stk::mesh::Entity &entity, stk::mesh::FieldBase *field=0) ";
+stk::mesh::Entity &entity, stk::mesh::FieldBase *field=0)
 
-%feature("docstring")  stk::percept::PerceptMesh::get_bulk_data "stk::mesh::BulkData * stk::percept::PerceptMesh::get_bulk_data() ";
+shorter output for print_entity ";
+
+%feature("docstring")  stk::percept::PerceptMesh::dump_elements "void
+stk::percept::PerceptMesh::dump_elements(const std::string
+&partName=\"\")
+
+print elements on the given part ";
+
+%feature("docstring")
+stk::percept::PerceptMesh::dump_elements_compact "void
+stk::percept::PerceptMesh::dump_elements_compact(const std::string
+&partName=\"\")
+
+compact print of elements on the given part ";
+
+%feature("docstring")  stk::percept::PerceptMesh::get_bulk_data "stk::mesh::BulkData * stk::percept::PerceptMesh::get_bulk_data()
+
+get the low-level bulk data pointer from stk_mesh ";
 
 %feature("docstring")  stk::percept::PerceptMesh::get_fem_meta_data "stk::mesh::fem::FEMMetaData *
-stk::percept::PerceptMesh::get_fem_meta_data() ";
+stk::percept::PerceptMesh::get_fem_meta_data()
+
+get the low-level meta data pointer from stk_mesh ";
 
 %feature("docstring")  stk::percept::PerceptMesh::get_part "mesh::Part* stk::percept::PerceptMesh::get_part(const std::string
-&part_name) ";
+&part_name)
+
+get a pointer to a stk_mesh Part with the given name ";
 
 %feature("docstring")  stk::percept::PerceptMesh::get_field_data "double stk::percept::PerceptMesh::get_field_data(const
 stk::mesh::FieldBase *field, const mesh::Entity *entity, unsigned
-ordinal=0) ";
+ordinal=0)
+
+get the value of a field on the given entity; if a vector field, pass
+in the index of the vector required (ordinal) ";
 
 %feature("docstring")  stk::percept::PerceptMesh::set_field_data "void stk::percept::PerceptMesh::set_field_data(double value, const
 stk::mesh::FieldBase *field, const mesh::Entity *entity, unsigned
-ordinal=0) ";
+ordinal=0)
+
+set the value of a field on the given entity; if a vector field, pass
+in the index of the vector required (ordinal) ";
 
 %feature("docstring")  stk::percept::PerceptMesh::get_node_field_data
 "double
 stk::percept::PerceptMesh::get_node_field_data(stk::mesh::FieldBase
-*field, const mesh::EntityId node_id, unsigned ordinal=0) ";
+*field, const mesh::EntityId node_id, unsigned ordinal=0)
+
+get the value of a field on the given node; if a vector field, pass in
+the index of the vector required (ordinal) ";
 
 %feature("docstring")  stk::percept::PerceptMesh::set_node_field_data
 "void stk::percept::PerceptMesh::set_node_field_data(double value,
 stk::mesh::FieldBase *field, const mesh::EntityId node_id, unsigned
-ordinal=0) ";
+ordinal=0)
+
+set the value of a field on the given node; if a vector field, pass in
+the index of the vector required (ordinal) ";
 
 %feature("docstring")  stk::percept::PerceptMesh::get_node "stk::mesh::Entity* stk::percept::PerceptMesh::get_node(const
-mesh::EntityId node_id) ";
+mesh::EntityId node_id)
+
+get a pointer to a node with given id ";
 
 %feature("docstring")  stk::percept::PerceptMesh::get_element "stk::mesh::Entity* stk::percept::PerceptMesh::get_element(const
-mesh::EntityId element_id) ";
+mesh::EntityId element_id)
+
+get a pointer to an element with given id ";
 
 %feature("docstring")  stk::percept::PerceptMesh::get_entity "stk::mesh::Entity*
 stk::percept::PerceptMesh::get_entity(mesh::EntityRank rank, const
-mesh::EntityId id) ";
+mesh::EntityId id)
+
+get a pointer to an entity with given id ";
 
 %feature("docstring")  stk::percept::PerceptMesh::get_node "stk::mesh::Entity * stk::percept::PerceptMesh::get_node(double x,
 double y, double z=0, double t=0)
 
-find node closest to given point - in parallel, check return for null
-(if null, closest node is on another proc) ";
+find and return pointer to node closest to given point - in parallel,
+check return for null (if null, closest node is on another proc) ";
 
 %feature("docstring")  stk::percept::PerceptMesh::get_element "stk::mesh::Entity * stk::percept::PerceptMesh::get_element(double x,
 double y, double z=0, double t=0)
 
-find element that contains given point - in parallel, check return for
-null (if null, element containing point is on another proc)
+find and return pointer to element that contains given point - in
+parallel, check return for null (if null, element containing point is
+on another proc)
 
 find element that contains or is closest to given point ";
 
 %feature("docstring")
 stk::percept::PerceptMesh::get_coordinates_field "VectorFieldType*
-stk::percept::PerceptMesh::get_coordinates_field() ";
+stk::percept::PerceptMesh::get_coordinates_field()
 
-%feature("docstring")  stk::percept::PerceptMesh::node_rank "stk::mesh::EntityRank stk::percept::PerceptMesh::node_rank() const ";
+return a pointer to the field containing node coordinates ";
+
+%feature("docstring")  stk::percept::PerceptMesh::node_rank "stk::mesh::EntityRank stk::percept::PerceptMesh::node_rank() const
+
+return the rank of a node ";
 
 %feature("docstring")  stk::percept::PerceptMesh::edge_rank "stk::mesh::EntityRank stk::percept::PerceptMesh::edge_rank() const
 
@@ -2687,13 +2764,16 @@ Returns the element rank which is always equal to spatial dimension.
 stk::percept::PerceptMesh::read_database_at_time "void
 stk::percept::PerceptMesh::read_database_at_time(double time)
 
-set the current data in fields to the given time or Exodus step (if
-time supplied, finds the closest step to that time (no interpolation
-yet) ";
+set the current data in fields to the given Exodus step by reading
+from the database ";
 
 %feature("docstring")
 stk::percept::PerceptMesh::read_database_at_step "void
-stk::percept::PerceptMesh::read_database_at_step(int step) ";
+stk::percept::PerceptMesh::read_database_at_step(int step)
+
+set the current data in fields to the given Exodus time by reading
+from the database (finds the closest step to the given time (no
+interpolation yet)) ";
 
 %feature("docstring")
 stk::percept::PerceptMesh::get_current_database_step "int
@@ -2704,7 +2784,10 @@ return the current state of the Exodus database, 0 if not loaded yet
 
 %feature("docstring")
 stk::percept::PerceptMesh::get_current_database_time "double
-stk::percept::PerceptMesh::get_current_database_time() ";
+stk::percept::PerceptMesh::get_current_database_time()
+
+return the current state of the Exodus database (time associated with
+current step) ";
 
 %feature("docstring")
 stk::percept::PerceptMesh::get_database_step_at_time "int
@@ -2727,9 +2810,7 @@ stk::percept::PerceptMesh::get_database_time_step_count()
 return the number of steps in the database ";
 
 %feature("docstring")  stk::percept::PerceptMesh::get_non_const_part "stk::mesh::Part * stk::percept::PerceptMesh::get_non_const_part(const
-std::string &part_name)
-
-low-level interfaces ";
+std::string &part_name) ";
 
 %feature("docstring")  stk::percept::PerceptMesh::openEmpty "void
 stk::percept::PerceptMesh::openEmpty()
@@ -2777,13 +2858,6 @@ Parameters:
 -----------
 
 file:  and print some info about the file to stdout ";
-
-%feature("docstring")  stk::percept::PerceptMesh::dumpElements "void
-stk::percept::PerceptMesh::dumpElements(const std::string
-&partName=\"\") ";
-
-%feature("docstring")  stk::percept::PerceptMesh::dumpElementsCompact
-"void stk::percept::PerceptMesh::dumpElementsCompact() ";
 
 %feature("docstring")  stk::percept::PerceptMesh::isGhostElement "bool stk::percept::PerceptMesh::isGhostElement(const stk::mesh::Entity
 &element) ";
@@ -4304,9 +4378,14 @@ int codomain_dimension=1, unsigned integration_order=0) ";
 "std::string stk::percept::StringFunction::getFunctionString() ";
 
 %feature("docstring")
-stk::percept::StringFunction::setGradientStrings "void
-stk::percept::StringFunction::setGradientStrings(std::string
+stk::percept::StringFunction::set_gradient_strings "void
+stk::percept::StringFunction::set_gradient_strings(std::string
 gstring[3], int len) ";
+
+%feature("docstring")
+stk::percept::StringFunction::set_gradient_strings "void
+stk::percept::StringFunction::set_gradient_strings(MDArrayString
+&gstring) ";
 
 %feature("docstring")  stk::percept::StringFunction::derivative "Teuchos::RCP< Function >
 stk::percept::StringFunction::derivative(MDArrayString &deriv_spec)
@@ -10284,24 +10363,45 @@ set cell topology for the part block_hex_20 ";
 %feature("docstring")  stk::percept::interface_table::join "std::string stk::percept::join(std::string str1, std::string str2) ";
 
 %feature("docstring")  stk::percept::interface_table::eval "double
+stk::percept::eval(double x, double y, double z, double t,
+Teuchos::RCP< Function > &func) ";
+
+%feature("docstring")  stk::percept::interface_table::eval_print "void stk::percept::eval_print(double x, double y, double z, double t,
+Teuchos::RCP< Function > &func) ";
+
+%feature("docstring")  stk::percept::interface_table::eval_print2 "void stk::percept::eval_print2(double x, double y, double t,
+Teuchos::RCP< Function > &func) ";
+
+%feature("docstring")  stk::percept::interface_table::eval_vec3 "MDArray stk::percept::eval_vec3(double x, double y, double z, double
+t, Teuchos::RCP< Function > &func) ";
+
+%feature("docstring")  stk::percept::interface_table::eval_vec3_print
+"void stk::percept::eval_vec3_print(double x, double y, double z,
+double t, Teuchos::RCP< Function > &func) ";
+
+%feature("docstring")  stk::percept::interface_table::eval "double
 stk::percept::eval(double x, double y, double z, double t, Function
 &func) ";
 
 %feature("docstring")  stk::percept::interface_table::eval2 "double
+stk::percept::eval2(double x, double y, double t, Teuchos::RCP<
+Function > &func) ";
+
+%feature("docstring")  stk::percept::interface_table::eval2 "double
 stk::percept::eval2(double x, double y, double t, Function &func) ";
 
-%feature("docstring")  stk::percept::interface_table::evalPrint "void
-stk::percept::evalPrint(double x, double y, double z, double t,
+%feature("docstring")  stk::percept::interface_table::eval_print "void stk::percept::eval_print(double x, double y, double z, double t,
 Function &func) ";
 
-%feature("docstring")  stk::percept::interface_table::evalPrint2 "void stk::percept::evalPrint2(double x, double y, double t, Function
+%feature("docstring")  stk::percept::interface_table::eval_print2 "void stk::percept::eval_print2(double x, double y, double t, Function
 &func) ";
 
-%feature("docstring")  stk::percept::interface_table::evalVec3 "MDArray stk::percept::evalVec3(double x, double y, double z, double t,
-Function &func) ";
-
-%feature("docstring")  stk::percept::interface_table::evalVec3Print "void stk::percept::evalVec3Print(double x, double y, double z, double
+%feature("docstring")  stk::percept::interface_table::eval_vec3 "MDArray stk::percept::eval_vec3(double x, double y, double z, double
 t, Function &func) ";
+
+%feature("docstring")  stk::percept::interface_table::eval_vec3_print
+"void stk::percept::eval_vec3_print(double x, double y, double z,
+double t, Function &func) ";
 
 %feature("docstring")  stk::percept::interface_table::first_dimensions
 "static void stk::percept::first_dimensions(MDArray &arr, int
@@ -10596,7 +10696,7 @@ function to do the actual output of the field. ";
 stk::percept::regression_tests::STKUNIT_UNIT_TEST "stk::percept::regression_tests::STKUNIT_UNIT_TEST(perceptMesh,
 open_new_close_PerceptMesh)
 
-evalPrint(x,y,z,time, sf_error); ";
+eval_print(x,y,z,time, sf_error); ";
 
 %feature("docstring")
 stk::percept::regression_tests::STKUNIT_UNIT_TEST "stk::percept::regression_tests::STKUNIT_UNIT_TEST(perceptMesh,

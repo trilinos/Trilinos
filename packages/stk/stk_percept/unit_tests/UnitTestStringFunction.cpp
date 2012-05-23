@@ -48,7 +48,7 @@ STKUNIT_UNIT_TEST(function, stringFunction_xy_basic)
   std::cout << result(0) << std::endl;   // this will print the result of -1.111
 
   // now do it more easily with a helper function
-  evalPrint(x,y,z,time, sfxy);           // helper function that will evaluate sfxy at (1.234,2.345,0,0) and print result of -1.111
+  eval_print(x,y,z,time, sfxy);           // helper function that will evaluate sfxy at (1.234,2.345,0,0) and print result of -1.111
   // end_demo
 }
 
@@ -66,7 +66,7 @@ STKUNIT_UNIT_TEST(function, stringFunction_xy_basic_1)
   double xy = x-y;
 
   //StringFunction sfxy1== sfx-sfy;
-  evalPrint(1,2,3,0, sfxy);
+  eval_print(1,2,3,0, sfxy);
   double vx = eval(x, y, z, t, sfx);
   std::cout << "x = " << x << " vx= " << vx << std::endl;
   STKUNIT_EXPECT_DOUBLE_EQ(vx, x);
@@ -124,7 +124,7 @@ STKUNIT_UNIT_TEST(function, stringFunction_xy_basic_2)
   double t = 0;
   double xy = x-y;
   //StringFunction sfxy1== sfx-sfy;
-  evalPrint(1,2,3,0, sfxy);
+  eval_print(1,2,3,0, sfxy);
   double vx = eval(x, y, z, t, sfx);
   std::cout << "x = " << x << " vx= " << vx << std::endl;
   STKUNIT_EXPECT_DOUBLE_EQ(vx, x);
@@ -152,7 +152,7 @@ STKUNIT_UNIT_TEST(function, stringFunction_test_alias)
   double t = 0;
   double xy = x-y;
   //StringFunction sfxy1== sfx-sfy;
-  evalPrint(1,2,3,0, sfxy);
+  eval_print(1,2,3,0, sfxy);
   double vx = eval(x, y, z, t, sfx);
   std::cout << "x = " << x << " vx= " << vx << std::endl;
   STKUNIT_EXPECT_DOUBLE_EQ(vx, x);
@@ -163,13 +163,13 @@ STKUNIT_UNIT_TEST(function, stringFunction_test_alias)
 
   // embedded function
   std::cout << "sfembedded = ..." << sfembedded << std::endl;
-  evalPrint(1,2,3,0, sfembedded);
+  eval_print(1,2,3,0, sfembedded);
   std::cout << "sfembedded = " << eval(x, y, z, t, sfembedded) << std::endl;
 
   double vxy1 = eval(x, y, z, t, sfembedded);
   STKUNIT_EXPECT_DOUBLE_EQ(vxy1, xy);
 
-  sfembedded.addAlias("sfalias");
+  sfembedded.add_alias("sfalias");
   StringFunction sftestalias("sfalias", Name("sftestalias"));
   double vxy2 = eval(x, y, z, t, sftestalias);
   std::cout << "sftestalias = " << eval(x, y, z, t, sftestalias) << std::endl;
@@ -191,7 +191,7 @@ STKUNIT_UNIT_TEST(function, stringFunction_vector_valued)
   bool didCatch = false;
   try {
     StringFunction sfv0("v[0]=x; v[1]=y; v[2]=z; x", Name("sfv"), Dimensions(1,4), Dimensions(1,3) );
-    evalVec3Print(1,2,3,0, sfv0);
+    eval_vec3_print(1,2,3,0, sfv0);
   }
   catch (...)
   {
@@ -201,8 +201,8 @@ STKUNIT_UNIT_TEST(function, stringFunction_vector_valued)
   STKUNIT_EXPECT_TRUE(didCatch);
 
   StringFunction sfv("v[0]=x*y*z; v[1]=y; v[2]=z; x", Name("sfv"), Dimensions(3), Dimensions(3) );
-  evalVec3Print(1.234, 2.345e-3, 3.456e+5, 0., sfv);
-  MDArray vec = evalVec3(x, y, z, t, sfv);
+  eval_vec3_print(1.234, 2.345e-3, 3.456e+5, 0., sfv);
+  MDArray vec = eval_vec3(x, y, z, t, sfv);
   std::cout << " x = " << x
             << " y = " << y
             << " z = " << z
@@ -350,15 +350,15 @@ STKUNIT_UNIT_TEST(function, stringFunction_derivative_1)
     MDArrayString dxyz(3,1);
     dxyz(0,0)="x"; dxyz(1,0)="y"; dxyz(2,0)="z";
     std::string grad[] = {"1","-1","0"};
-    sfxy.setGradientStrings(grad, 3);
+    sfxy.set_gradient_strings(grad, 3);
     Teuchos::RCP<Function> dsfxy_grad_1  = sfxy.derivative_test(dxyz);
     Teuchos::RCP<Function> dsfxy_grad_fd = sfxy.derivative_test_fd(dxyz, eps_loc);
     Teuchos::RCP<Function> dsfxy_grad_2  = sfxy.derivative(dxyz);
 
-    MDArray dvxy1   = evalVec3(x, y, z, t, *dsfxy_grad_1);
-    MDArray dvxy_fd = evalVec3(x, y, z, t, *dsfxy_grad_fd);
-    MDArray dvxy2   = evalVec3(x, y, z, t, *dsfxy_grad_2);
-    MDArray dvxy    = evalVec3(x, y, z, t, dsfxy_grad);
+    MDArray dvxy1   = eval_vec3(x, y, z, t, *dsfxy_grad_1);
+    MDArray dvxy_fd = eval_vec3(x, y, z, t, *dsfxy_grad_fd);
+    MDArray dvxy2   = eval_vec3(x, y, z, t, *dsfxy_grad_2);
+    MDArray dvxy    = eval_vec3(x, y, z, t, dsfxy_grad);
 
     // the two different functions should give the same result
     for (int ii = 0; ii < 3; ii++)
@@ -400,13 +400,13 @@ STKUNIT_UNIT_TEST(function, stringFunction_derivative_2)
     StringFunction dsf_grad(gradv.c_str(), Name("test"), Dimensions(3), Dimensions(3) );
     MDArrayString dxyz(3,1);
     dxyz(0,0)="x"; dxyz(1,0)="y"; dxyz(2,0)="z";
-    sf.setGradientStrings(grad, 3);
+    sf.set_gradient_strings(grad, 3);
     Teuchos::RCP<Function> dsf_grad_fd = sf.derivative_test_fd(dxyz, eps_loc);
     Teuchos::RCP<Function> dsf_grad_2  = sf.derivative(dxyz);
 
-    MDArray dv_fd = evalVec3(x, y, z, t, *dsf_grad_fd);
-    MDArray dv2   = evalVec3(x, y, z, t, *dsf_grad_2);
-    MDArray dv    = evalVec3(x, y, z, t, dsf_grad);
+    MDArray dv_fd = eval_vec3(x, y, z, t, *dsf_grad_fd);
+    MDArray dv2   = eval_vec3(x, y, z, t, *dsf_grad_2);
+    MDArray dv    = eval_vec3(x, y, z, t, dsf_grad);
 
     // the two different functions should give the same result
     for (int ii = 0; ii < 3; ii++)
