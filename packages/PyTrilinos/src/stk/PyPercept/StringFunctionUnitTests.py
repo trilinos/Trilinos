@@ -154,7 +154,45 @@ class StringFunctionUnitTests(unittest.TestCase):
        self.assertEqual(vec[1], (y))
        self.assertEqual(vec[2], (z))
 
+    def test_stringFunction_constants(self):
+       x = 1.234
+       y = 5.678
+       z = 3.456
+       t = 0.0
+       myC = 4.5678
+
+       # dummy return value sf_myC, but could be used in table printing, or other pythonic uses
+       sf_myC = StringFunction(str(myC), "myC", Dimensions(3), Dimensions(1)); 
+
+       # alternative
+       # sf_myC = StringFunction("4.5678", "myC", Dimensions(3), Dimensions(1));
+
+       # this string function refers to the other through "myC"
+       sfv = StringFunction("x+myC", "sfv", Dimensions(3), Dimensions(1))
+      
+       #eval_print(x,y,z, 0.0, sfv)
+       vec = eval_func(x,y,z,t,sfv)
+       print "x = ", x
+       print "y = ", y
+       print "z = ", z
+       print "constants test val = ", vec, " expected = ", (myC + x)
+         
+       self.assertEqual(vec, (myC + x))
+
+       # more...
+       myConstants = {"C":1.234,"rho":1.e-5}
+       sf_myC1 = []
+       for cname, cvalue in myConstants.items():   # note: this could become a python function
+           sf_myC1.append( StringFunction(str(cvalue),cname,Dimensions(3),Dimensions(1)) )
        
+       sfv1 = StringFunction("x + C*rho", "sfv1", Dimensions(3), Dimensions(1))
+      
+       #eval_print(x,y,z, 0.0, sfv1)
+       vec = eval_func(x,y,z,t,sfv1)
+       expected = (x + myConstants["C"]*myConstants["rho"])
+       print "constants test val1 = ", vec, " expected = ", expected
+         
+       self.assertEqual(vec, expected)
 
     def test_stringFunction_arithmetic_ops(self):
        for xyzt in self.testpoints:
