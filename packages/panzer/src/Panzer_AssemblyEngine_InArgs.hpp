@@ -55,7 +55,7 @@ namespace panzer {
   class LinearObjContainer;
 
   class AssemblyEngineInArgs {
-    public:
+  public:
 
     AssemblyEngineInArgs(const Teuchos::RCP<panzer::LinearObjContainer> & ghostedContainer,
                          const Teuchos::RCP<panzer::LinearObjContainer> & container)
@@ -82,6 +82,31 @@ namespace panzer {
     double time;
     bool evaluate_transient_terms;
 
+    /** Add a global evaluation data object to be used in all FieldManager
+      * evaluate calls.
+      *
+      * \param[in] key Key to pair with global evaluation data object
+      * \param[in] ged Pointer to global evaluation data object
+      */
+    void addGlobalEvaluationData(const std::string & key,const Teuchos::RCP<GlobalEvaluationData> & ged)
+    {
+       TEUCHOS_TEST_FOR_EXCEPTION(ged_map.find(key)!=ged_map.end(),std::logic_error,
+                                  "AssemblyEngine::addGlobalEvaluationData: Method cannot over write existing "
+                                  "data object with key \"" + key + "\"");
+  
+       ged_map[key] = ged;
+    }
+
+    //! Using internal map fill the global evaluation data container object
+    void fillGlobalEvaluationDataContainer(GlobalEvaluationDataContainer & gedc) const
+    {
+       std::map<std::string,Teuchos::RCP<GlobalEvaluationData> >::const_iterator itr;
+       for(itr=ged_map.begin();itr!=ged_map.end();++itr)
+          gedc.addDataObject(itr->first,itr->second);
+    }
+
+  private:
+    std::map<std::string,Teuchos::RCP<GlobalEvaluationData> > ged_map;
   };
 
 }

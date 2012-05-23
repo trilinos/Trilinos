@@ -103,6 +103,9 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
   const std::vector< Teuchos::RCP<std::vector<panzer::Workset> > >& 
     worksets = m_field_manager_builder->getWorksets();
 
+  GlobalEvaluationDataContainer gedc;
+  in.fillGlobalEvaluationDataContainer(gedc);
+
   // Loop over element blocks
   for (std::size_t block = 0; block < worksets.size(); ++block) {
 
@@ -111,10 +114,7 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
     Teuchos::RCP< PHX::FieldManager<panzer::Traits> > fm = 
 	m_field_manager_builder->getVolumeFieldManagers()[block];
 
-    // Traits::PED preEvalData;
-    GlobalEvaluationDataContainer preEvalData;
-
-    fm->template preEvaluate<EvalT>(preEvalData);
+    fm->template preEvaluate<EvalT>(gedc);
 
     // Loop over worksets in this element block
     for (std::size_t i = 0; i < w.size(); ++i) {
@@ -193,6 +193,8 @@ evaluateBCs(const panzer::BCType bc_type,
             const Teuchos::RCP<LinearObjContainer> preEval_loc)
 {
   panzer::GlobalEvaluationDataContainer gedc;
+
+  in.fillGlobalEvaluationDataContainer(gedc);
   gedc.addDataObject("Dirichlet Counter",preEval_loc);
 
   {
@@ -252,11 +254,6 @@ evaluateBCs(const panzer::BCType bc_type,
 	  
 	  panzer::Workset& workset = 
 	    const_cast<panzer::Workset&>(wkst_it->second); 
-
-          // run prevaluate
-          // Traits::PED preEvalData;
-          // preEvalData.dirichletData.ghostedCounter = preEval_loc;
-          // local_side_fm.template preEvaluate<EvalT>(preEvalData);
 
           // run prevaluate
           local_side_fm.template preEvaluate<EvalT>(gedc);
