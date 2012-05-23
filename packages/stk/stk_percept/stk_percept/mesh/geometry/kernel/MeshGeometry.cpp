@@ -162,6 +162,52 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh)
 {
   BulkData& bulkData = *eMesh->get_bulk_data();
 
+  std::vector<Entity*> nodes;
+  stk::mesh::get_entities(bulkData, stk::mesh::fem::FEMMetaData::NODE_RANK, nodes);
+
+  VectorFieldType* coordField = eMesh->getCoordinatesField();
+  for(int i=nodes.size()-1; i>-1; i--)
+  {
+    Entity *cur_node = nodes[i];
+    Bucket &node_bucket = cur_node->bucket();
+    std::vector<int> evaluators;
+    size_t s;
+    for (s=0; s<geomEvaluators.size(); s++)
+    {
+      if(geomEvaluators[s]->mMesh(node_bucket))
+        evaluators.push_back(s);
+    }
+    
+    double * coords = stk::mesh::field_data(*coordField , *cur_node);
+    double orig_pos[3] = {coords[0], coords[1], coords[2]};
+    double smallest_dist_sq = 9999999.9;
+    double best_pos[3];
+    for(s=0; s<evaluators.size(); s++)
+    {
+      coords[0] = orig_pos[0];
+      coords[1] = orig_pos[1];
+      coords[2] = orig_pos[2];
+      snap_node(eMesh, *cur_node, evaluators[s]);
+      double diff[3];
+      diff[0] = orig_pos[0] - coords[0];
+      diff[1] = orig_pos[1] - coords[1];
+      diff[2] = orig_pos[2] - coords[2];
+      double dist_sq = diff[0]*diff[0] + diff[1]*diff[1] + diff[2]*diff[2];
+      if(dist_sq < smallest_dist_sq)
+      {
+        smallest_dist_sq = dist_sq;
+        best_pos[0] = coords[0];
+        best_pos[1] = coords[1];
+        best_pos[2] = coords[2];
+      }
+    }
+    coords[0] = best_pos[0];
+    coords[1] = best_pos[1];
+    coords[2] = best_pos[2];
+  }
+
+#if 0
+  BulkData& bulkData = *eMesh->getBulkData();
   const std::vector<Bucket*> & buckets = bulkData.buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
 
   for ( std::vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
@@ -199,9 +245,8 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh)
       //printf( "ERROR: A bucket found without a geometric evaluator.\n" );
       break;
     }
-
-
   }
+#endif
 }
 
 void MeshGeometry::normal_at(PerceptMesh* eMesh, stk::mesh::Entity * node, std::vector<double>& normal)
