@@ -307,11 +307,11 @@ namespace stk {
       }
 
       /// set the current data in fields to the given Exodus step by reading from the database
-      void read_database_at_time(double time);
+      void read_database_at_step(int step);
 
       /// set the current data in fields to the given Exodus time by reading from the database
       /// (finds the closest step to the given time (no interpolation yet))
-      void read_database_at_step(int step);
+      void read_database_at_time(double time);
 
       /// return the current state of the Exodus database, 0 if not loaded yet (steps are 1-based in Exodus)
       int get_current_database_step();
