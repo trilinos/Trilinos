@@ -88,7 +88,6 @@ void DiagonalScalarProd<Scalar>::scalarProdsImpl(
 
   using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef Ordinal Ordinal;
 
   const Ordinal m = X.domain()->dim();
 

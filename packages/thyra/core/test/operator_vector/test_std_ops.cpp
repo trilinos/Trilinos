@@ -67,7 +67,6 @@ bool run_std_ops_tests(
   using Teuchos::OSTab;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
-  typedef Thyra::Ordinal Index;
 
   const RCP<Teuchos::FancyOStream> out =
     rcp(new Teuchos::FancyOStream(rcp(out_arg,false)));
