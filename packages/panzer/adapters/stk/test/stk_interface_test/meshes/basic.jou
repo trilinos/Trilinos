@@ -44,5 +44,8 @@ sideset 5 curve 5
 sideset 6 curve 6
 sideset 7 curve 7
 
+nodeset 1 Node 1
+nodeset 2 Node 6
+
 set large exodus file off 
 export mesh "basic.gen" dimension 2 overwrite
