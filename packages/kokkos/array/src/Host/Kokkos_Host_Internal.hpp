@@ -78,41 +78,50 @@ protected:
   typedef Host::size_type size_type ;
 
   HostWorkerBlock  m_worker_block ;
-  size_type        m_node_rank ;       //
-  size_type        m_node_count ;      //
-  size_type        m_node_pu_count ;   // Assuming all nodes are equivalent
-  size_type        m_page_size ;       // 
-  size_type        m_thread_count ;    // 
-  size_type        m_node_thread_count ; // 
-  HostThread       m_thread[ THREAD_COUNT_MAX + 1 ];
+  size_type        m_node_rank ;     // Rank of the process' NUMA node
+  size_type        m_node_count ;    // Count of NUMA nodes
+  size_type        m_node_pu_count ; // Assuming all nodes are equivalent
+  size_type        m_page_size ;     // 
+  size_type        m_thread_count ;  // Number of threads
+  size_type        m_gang_count ;    // Number of NUMA nodes used
+  size_type        m_worker_count ;  // Number of threads per NUMA node
+  HostThread       m_master_thread ;
+  HostThread     * m_thread[ HostThread::max_thread_count ];
 
   const HostThreadWorker<void> * volatile m_worker ;
 
   virtual ~HostInternal();
+
+  virtual bool bind_thread( const HostThread & thread ) const ;
+
   HostInternal();
+
+private:
 
   bool spawn_threads( const size_type use_node_count ,
                       const size_type use_node_thread_count );
 
-private:
+  void activate();
 
-  bool spawn( HostThread * thread );
+  bool spawn( const size_t );
+
+  bool initialize_thread( const size_type thread_rank, HostThread & thread );
+
+  void clear_thread( const size_type thread_rank );
 
 public:
 
   void verify_inactive( const char * const method ) const ;
+
 
   void initialize( const size_type use_node_count ,
                    const size_type use_node_thread_count );
 
   void finalize();
 
-  virtual bool bind_to_node( const HostThread & ) const ;
-
   inline void execute( const HostThreadWorker<void> & worker );
 
-  inline void execute( HostThread & thread ) const
-    { m_worker->execute_on_thread( thread ); }
+  void driver( const size_t );
 
   static HostInternal & singleton();
 

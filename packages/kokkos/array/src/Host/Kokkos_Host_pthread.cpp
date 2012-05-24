@@ -65,7 +65,10 @@ namespace {
 
 void * host_internal_pthread_driver( void * arg )
 {
-  ((HostThread *) arg)->driver();
+  HostInternal & pool = HostInternal::singleton();
+
+  pool.driver( reinterpret_cast<size_t>( arg ) );
+
   return NULL ;
 }
 
@@ -76,7 +79,7 @@ pthread_mutex_t host_internal_pthread_mutex = PTHREAD_MUTEX_INITIALIZER ;
 //----------------------------------------------------------------------------
 // Spawn this thread
 
-bool HostInternal::spawn( HostThread * thread )
+bool HostInternal::spawn( const size_t thread_rank )
 {
   bool result = false ;
 
@@ -86,10 +89,12 @@ bool HostInternal::spawn( HostThread * thread )
        0 == pthread_attr_setscope(       & attr, PTHREAD_SCOPE_SYSTEM ) ||
        0 == pthread_attr_setdetachstate( & attr, PTHREAD_CREATE_DETACHED ) ) {
 
+    void * const arg = reinterpret_cast<void*>( thread_rank );
+
     pthread_t pt ;
 
     result =
-      0 == pthread_create( & pt, & attr, host_internal_pthread_driver, thread );
+      0 == pthread_create( & pt, & attr, host_internal_pthread_driver, arg );
   }
 
   pthread_attr_destroy( & attr );
@@ -138,8 +143,7 @@ bool Host::sleep()
 
     h.m_worker = & h.m_worker_block ;
 
-    Impl::HostThread::activate( h.m_thread + 1 ,
-                                h.m_thread + h.m_thread_count );
+    h.activate();
 
     is_blocked = true ;
   }
@@ -157,7 +161,7 @@ bool Host::wake()
   if ( is_blocked ) {
     pthread_mutex_unlock( & Impl::host_internal_pthread_mutex );
 
-    h.m_thread->barrier();
+    h.m_master_thread.barrier();
 
     h.m_worker = NULL ;
 

@@ -44,8 +44,8 @@
 /*--------------------------------------------------------------------------*/
 /* Kokkos interfaces */
 
-#include <Kokkos_HostMulticore.hpp>
-#include <HostMulticore/Kokkos_HostMulticore_Internal.hpp>
+#include <Kokkos_Host.hpp>
+#include <Host/Kokkos_Host_Internal.hpp>
 
 /*--------------------------------------------------------------------------*/
 /* Windows libraries */
@@ -59,9 +59,12 @@ namespace Kokkos {
 namespace Impl {
 namespace {
 
-unsigned WINAPI host_multicore_winthread_driver( void * arg )
+unsigned WINAPI host_internal_winthread_driver( void * arg )
 {
-  ((HostMulticoreThread *) arg)->driver();
+  HostInternal & pool = HostInternal::singleton();
+
+  pool.driver( reinterpret_cast<size_t>( arg ) );
+
   return 0 ;
 }
 
@@ -104,12 +107,14 @@ namespace Impl {
 
 // Spawn this thread
 
-bool HostInternal::spawn( HostThread * thread )
+bool HostInternal::spawn( const size_t thread_rank )
 {
+  void * const arg = reinterpret_cast<void*>( thread_rank );
+
   unsigned Win32ThreadID = 0 ;
 
   HANDLE handle =
-    _beginthreadex(0,0,host_multicore_winthread_driver,(void*)thread, 0, & Win32ThreadID );
+    _beginthreadex(0,0,host_internal_winthread_driver,arg,0, & Win32ThreadID );
 
   return ! handle ;
 }
