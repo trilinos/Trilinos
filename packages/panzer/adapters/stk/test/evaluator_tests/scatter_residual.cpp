@@ -238,6 +238,10 @@ namespace panzer {
     panzer::Traits::SetupData sd;
     fm.postRegistrationSetup(sd);
 
+    panzer::GlobalEvaluationDataContainer gedc;
+    gedc.addDataObject("Solution Gather Container",loc);
+    fm.preEvaluate<panzer::Traits::Residual>(gedc);
+
     // run tests
     /////////////////////////////////////////////////////////////
 
@@ -430,6 +434,10 @@ namespace panzer {
 
     panzer::Traits::SetupData sd;
     fm.postRegistrationSetup(sd);
+
+    panzer::GlobalEvaluationDataContainer gedc;
+    gedc.addDataObject("Solution Gather Container",loc);
+    fm.preEvaluate<panzer::Traits::Jacobian>(gedc);
 
     // run tests
     /////////////////////////////////////////////////////////////

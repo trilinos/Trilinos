@@ -59,6 +59,8 @@ class Epetra_CrsMatrix;
 
 namespace panzer {
 
+class EpetraLinearObjContainer;
+
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 class UniqueGlobalIndexer; //forward declaration
 
@@ -98,6 +100,8 @@ public:
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
+
+  void preEvaluate(typename Traits::PreEvalData d);
   
   void evaluateFields(typename Traits::EvalData d);
 
@@ -117,6 +121,9 @@ private:
 
   Teuchos::RCP<std::vector<std::string> > indexerNames_;
   bool useTimeDerivativeSolutionVector_;
+  std::string globalDataKey_; // what global data does this fill?
+
+  Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer_;
 
   GatherSolution_Epetra();
 };
@@ -139,6 +146,8 @@ public:
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
+
+  void preEvaluate(typename Traits::PreEvalData d);
   
   void evaluateFields(typename Traits::EvalData d);
 
@@ -158,6 +167,10 @@ private:
 
   Teuchos::RCP<std::vector<std::string> > indexerNames_;
   bool useTimeDerivativeSolutionVector_;
+  bool disableSensitivities_;
+  std::string globalDataKey_; // what global data does this fill?
+
+  Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer_;
 
   GatherSolution_Epetra();
 };

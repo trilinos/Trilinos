@@ -59,6 +59,8 @@ class Epetra_CrsMatrix;
 
 namespace panzer {
 
+class BlockedEpetraLinearObjContainer;
+
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 class UniqueGlobalIndexer; //forward declaration
 
@@ -123,10 +125,13 @@ public:
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
   
+  void preEvaluate(typename Traits::PreEvalData d);
+
   void evaluateFields(typename Traits::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new GatherSolution_BlockedEpetra<panzer::Traits::Residual,Traits,LO,GO>(gidIndexer_,pl)); }
+
   
 private:
 
@@ -142,6 +147,9 @@ private:
 
   Teuchos::RCP<std::vector<std::string> > indexerNames_;
   bool useTimeDerivativeSolutionVector_;
+  std::string globalDataKey_; // what global data does this fill?
+
+  Teuchos::RCP<const BlockedEpetraLinearObjContainer> blockedContainer_;
 
   GatherSolution_BlockedEpetra();
 };
@@ -164,6 +172,8 @@ public:
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
+
+  void preEvaluate(typename Traits::PreEvalData d);
   
   void evaluateFields(typename Traits::EvalData d);
 
@@ -184,6 +194,10 @@ private:
 
   Teuchos::RCP<std::vector<std::string> > indexerNames_;
   bool useTimeDerivativeSolutionVector_;
+  bool disableSensitivities_;
+  std::string globalDataKey_; // what global data does this fill?
+
+  Teuchos::RCP<const BlockedEpetraLinearObjContainer> blockedContainer_;
 
   GatherSolution_BlockedEpetra();
 };

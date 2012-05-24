@@ -252,6 +252,7 @@ namespace panzer {
     // fm.preEvaluate<panzer::Traits::Residual>(ped);
     panzer::GlobalEvaluationDataContainer gedc;
     gedc.addDataObject("Dirichlet Counter",dd_loc);
+    gedc.addDataObject("Solution Gather Container",loc);
     fm.preEvaluate<panzer::Traits::Residual>(gedc);
 
 
@@ -493,6 +494,7 @@ namespace panzer {
     // fm.preEvaluate<panzer::Traits::Jacobian>(ped);
     panzer::GlobalEvaluationDataContainer gedc;
     gedc.addDataObject("Dirichlet Counter",dd_loc);
+    gedc.addDataObject("Solution Gather Container",loc);
     fm.preEvaluate<panzer::Traits::Jacobian>(gedc);
 
     // run tests

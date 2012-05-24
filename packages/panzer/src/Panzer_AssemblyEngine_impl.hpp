@@ -104,6 +104,7 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
     worksets = m_field_manager_builder->getWorksets();
 
   GlobalEvaluationDataContainer gedc;
+  gedc.addDataObject("Solution Gather Container",in.ghostedContainer_);
   in.fillGlobalEvaluationDataContainer(gedc);
 
   // Loop over element blocks
@@ -194,8 +195,9 @@ evaluateBCs(const panzer::BCType bc_type,
 {
   panzer::GlobalEvaluationDataContainer gedc;
 
-  in.fillGlobalEvaluationDataContainer(gedc);
   gedc.addDataObject("Dirichlet Counter",preEval_loc);
+  gedc.addDataObject("Solution Gather Container",in.ghostedContainer_);
+  in.fillGlobalEvaluationDataContainer(gedc);
 
   {
     const std::map<panzer::BC, 

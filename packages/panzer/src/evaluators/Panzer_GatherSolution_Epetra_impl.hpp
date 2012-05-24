@@ -64,8 +64,9 @@ panzer::GatherSolution_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
 GatherSolution_Epetra(
   const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
   const Teuchos::ParameterList& p)
-  : globalIndexer_(indexer),
-    useTimeDerivativeSolutionVector_(false)
+  : globalIndexer_(indexer)
+  , useTimeDerivativeSolutionVector_(false)
+  , globalDataKey_("Solution Gather Container")
 { 
   const std::vector<std::string>& names = 
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("DOF Names"));
@@ -85,6 +86,9 @@ GatherSolution_Epetra(
   if (p.isType<bool>("Use Time Derivative Solution Vector"))
     useTimeDerivativeSolutionVector_ = p.get<bool>("Use Time Derivative Solution Vector");
 
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
+
   this->setName("Gather Solution");
 }
 
@@ -94,14 +98,12 @@ void panzer::GatherSolution_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
 postRegistrationSetup(typename Traits::SetupData d, 
 		      PHX::FieldManager<Traits>& fm)
 {
-  // globalIndexer_ = d.globalIndexer_;
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_->size());
 
   fieldIds_.resize(gatherFields_.size());
 
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
     // get field ID from DOF manager
-    //std::string fieldName = gatherFields_[fd].fieldTag().name();
     const std::string& fieldName = (*indexerNames_)[fd];
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
 
@@ -110,6 +112,15 @@ postRegistrationSetup(typename Traits::SetupData d,
   }
 
   indexerNames_ = Teuchos::null;  // Don't need this anymore
+}
+
+// **********************************************************************
+template<typename Traits,typename LO,typename GO>
+void panzer::GatherSolution_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
+preEvaluate(typename Traits::PreEvalData d)
+{
+   // extract linear object container
+   epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject(globalDataKey_),true);
 }
 
 // **********************************************************************
@@ -172,9 +183,12 @@ panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
 GatherSolution_Epetra(
   const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
   const Teuchos::ParameterList& p)
-  : globalIndexer_(indexer),
-    useTimeDerivativeSolutionVector_(false)
+  : globalIndexer_(indexer)
+  , useTimeDerivativeSolutionVector_(false)
+  , disableSensitivities_(false)
+  , globalDataKey_("Solution Gather Container")
 { 
+
   const std::vector<std::string>& names = 
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("DOF Names"));
 
@@ -193,7 +207,17 @@ GatherSolution_Epetra(
   if (p.isType<bool>("Use Time Derivative Solution Vector"))
     useTimeDerivativeSolutionVector_ = p.get<bool>("Use Time Derivative Solution Vector");
 
-  this->setName("Gather Solution");
+  if (p.isType<bool>("Disable Sensitivities"))
+    disableSensitivities_ = p.get<bool>("Use Time Derivative Solution Vector");
+
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
+
+  // print out convenience
+  if(disableSensitivities_)
+     this->setName("Gather Solution (No Sensitivities)");
+  else
+     this->setName("Gather Solution");
 }
 
 // **********************************************************************
@@ -209,7 +233,6 @@ postRegistrationSetup(typename Traits::SetupData d,
 
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
     // get field ID from DOF manager
-    //std::string fieldName = gatherFields_[fd].fieldTag().name();
     const std::string& fieldName = (*indexerNames_)[fd];
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
 
@@ -218,6 +241,15 @@ postRegistrationSetup(typename Traits::SetupData d,
   }
 
   indexerNames_ = Teuchos::null;  // Don't need this anymore
+}
+
+// **********************************************************************
+template<typename Traits,typename LO,typename GO>
+void panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
+preEvaluate(typename Traits::PreEvalData d)
+{
+   // extract linear object container
+   epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject(globalDataKey_),true);
 }
 
 // **********************************************************************
@@ -244,6 +276,12 @@ evaluateFields(typename Traits::EvalData workset)
      x = epetraContainer->get_x();
      seed_value = workset.beta;
    }
+
+   // turn off sensitivies: this may be faster if we don't expand the term
+   // but I suspect not because anywhere it is used the full complement of
+   // sensitivies will be needed anyway.
+   if(disableSensitivities_)
+      seed_value = 0.0;
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the

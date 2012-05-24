@@ -325,14 +325,15 @@ evaluateVolumeFieldManagers(const panzer::AssemblyEngineInArgs & ae_in,
 {
    int idx = Sacado::mpl::find<TypeSeq,EvalT>::value;
 
+   GlobalEvaluationDataContainer preEvalData;
+   preEvalData.addDataObject("Solution Gather Container",ae_in.ghostedContainer_);
+
    // std::map<std::string,Teuchos::RCP<PHX::FieldManager<TraitsT> > >::iterator fm_itr;
    typename std::map<std::string,Teuchos::RCP<PHX::FieldManager<TraitsT> > >::iterator fm_itr;
    for(fm_itr=volFieldManagers_.begin();fm_itr!=volFieldManagers_.end();fm_itr++) {
      const std::string & eBlock = fm_itr->first;
      Teuchos::RCP< PHX::FieldManager<TraitsT> > fm = fm_itr->second;
  
-     // typename TraitsT::PED preEvalData;
-     GlobalEvaluationDataContainer preEvalData;
      fm->template preEvaluate<EvalT>(preEvalData);
 
      // loop over all worksets
@@ -372,6 +373,9 @@ evaluateVolumeFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<
 {
   int idx = Sacado::mpl::find<TypeSeq,EvalT>::value;
 
+  GlobalEvaluationDataContainer preEvalData;
+  preEvalData.addDataObject("Solution Gather Container",ae_in.ghostedContainer_);
+
   std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >::const_iterator itr;
   for(itr=worksets.begin();itr!=worksets.end();++itr) {
     const std::string & eBlock = itr->first;
@@ -380,9 +384,6 @@ evaluateVolumeFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<
     Teuchos::RCP< PHX::FieldManager<panzer::Traits> > fm = volFieldManagers_[eBlock];
 
     if(fm!=Teuchos::null) {
-       // Traits::PED preEvalData;
-       GlobalEvaluationDataContainer preEvalData;
-
        fm->preEvaluate<EvalT>(preEvalData);
    
        // Loop over worksets in this element block

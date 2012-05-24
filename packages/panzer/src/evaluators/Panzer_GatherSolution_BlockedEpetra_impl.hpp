@@ -90,6 +90,7 @@ GatherSolution_BlockedEpetra(
   const Teuchos::ParameterList& p)
   : gidIndexer_(indexer)
   , useTimeDerivativeSolutionVector_(false)
+  , globalDataKey_("Solution Gather Container")
 { 
   const std::vector<std::string>& names = 
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("DOF Names"));
@@ -108,6 +109,9 @@ GatherSolution_BlockedEpetra(
 
   if (p.isType<bool>("Use Time Derivative Solution Vector"))
     useTimeDerivativeSolutionVector_ = p.get<bool>("Use Time Derivative Solution Vector");
+
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
 
   this->setName("Gather Solution");
 }
@@ -137,6 +141,17 @@ postRegistrationSetup(typename Traits::SetupData d,
 // **********************************************************************
 template<typename Traits,typename LO,typename GO>
 void panzer::GatherSolution_BlockedEpetra<panzer::Traits::Residual, Traits,LO,GO>::
+preEvaluate(typename Traits::PreEvalData d)
+{
+   typedef BlockedEpetraLinearObjContainer BLOC;
+
+   // extract linear object container
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const BLOC>(d.getDataObject(globalDataKey_),true);
+}
+
+// **********************************************************************
+template<typename Traits,typename LO,typename GO>
+void panzer::GatherSolution_BlockedEpetra<panzer::Traits::Residual, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
    using Teuchos::RCP;
@@ -161,14 +176,14 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<BLOC> blockedContainer 
-         = Teuchos::rcp_dynamic_cast<BLOC>(workset.ghostedLinContainer);
+   // Teuchos::RCP<BLOC> blockedContainer 
+   //       = Teuchos::rcp_dynamic_cast<BLOC>(workset.ghostedLinContainer);
 
    Teuchos::RCP<ProductVectorBase<double> > x;
    if (useTimeDerivativeSolutionVector_)
-     x = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer->get_dxdt());
+     x = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_dxdt());
    else
-     x = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer->get_x()); 
+     x = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_x()); 
 
    // gather operation for each cell in workset
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
@@ -180,7 +195,7 @@ evaluateFields(typename Traits::EvalData workset)
       LIDs.resize(GIDs.size());
       for(std::size_t i=0;i<GIDs.size();i++) {
          // used for doing local ID lookups
-         RCP<const Epetra_Map> x_map = blockedContainer->getMapForBlock(GIDs[i].first);
+         RCP<const Epetra_Map> x_map = blockedContainer_->getMapForBlock(GIDs[i].first);
 
          LIDs[i] = x_map->LID(GIDs[i].second);
          // TEUCHOS_ASSERT(LIDs[i]>=0);
@@ -223,6 +238,8 @@ GatherSolution_BlockedEpetra(
   const Teuchos::ParameterList& p)
   : gidIndexer_(indexer)
   , useTimeDerivativeSolutionVector_(false)
+  , disableSensitivities_(false)
+  , globalDataKey_("Solution Gather Container")
 { 
   const std::vector<std::string>& names = 
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("DOF Names"));
@@ -242,7 +259,17 @@ GatherSolution_BlockedEpetra(
   if (p.isType<bool>("Use Time Derivative Solution Vector"))
     useTimeDerivativeSolutionVector_ = p.get<bool>("Use Time Derivative Solution Vector");
 
-  this->setName("Gather Solution");
+  if (p.isType<bool>("Disable Sensitivities"))
+    disableSensitivities_ = p.get<bool>("Use Time Derivative Solution Vector");
+
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
+
+  // print out convenience
+  if(disableSensitivities_)
+     this->setName("Gather Solution (No Sensitivities)");
+  else
+     this->setName("Gather Solution");
 }
 
 // **********************************************************************
@@ -268,6 +295,16 @@ postRegistrationSetup(typename Traits::SetupData d,
   indexerNames_ = Teuchos::null;  // Don't need this anymore
 }
 
+template<typename Traits,typename LO,typename GO>
+void panzer::GatherSolution_BlockedEpetra<panzer::Traits::Jacobian, Traits,LO,GO>::
+preEvaluate(typename Traits::PreEvalData d)
+{
+   typedef BlockedEpetraLinearObjContainer BLOC;
+
+   // extract linear object container
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const BLOC>(d.getDataObject(globalDataKey_),true);
+}
+
 // **********************************************************************
 template<typename Traits,typename LO,typename GO>
 void panzer::GatherSolution_BlockedEpetra<panzer::Traits::Jacobian, Traits,LO,GO>::
@@ -291,19 +328,25 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   Teuchos::RCP<BLOC> blockedContainer 
-         = Teuchos::rcp_dynamic_cast<BLOC>(workset.ghostedLinContainer);
+   // Teuchos::RCP<BLOC> blockedContainer 
+   //       = Teuchos::rcp_dynamic_cast<BLOC>(workset.ghostedLinContainer);
 
    double seed_value = 0.0;
    Teuchos::RCP<ProductVectorBase<double> > x;
    if (useTimeDerivativeSolutionVector_) {
-     x = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer->get_dxdt());
+     x = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_dxdt());
      seed_value = workset.alpha;
    }
    else {
-     x = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer->get_x()); 
+     x = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_x()); 
      seed_value = workset.beta;
    }
+
+   // turn off sensitivies: this may be faster if we don't expand the term
+   // but I suspect not because anywhere it is used the full complement of
+   // sensitivies will be needed anyway.
+   if(disableSensitivities_)
+      seed_value = 0.0;
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -320,7 +363,7 @@ evaluateFields(typename Traits::EvalData workset)
       LIDs.resize(GIDs.size());
       for(std::size_t i=0;i<GIDs.size();i++) {
          // used for doing local ID lookups
-         RCP<const Epetra_Map> x_map = blockedContainer->getMapForBlock(GIDs[i].first);
+         RCP<const Epetra_Map> x_map = blockedContainer_->getMapForBlock(GIDs[i].first);
 
          LIDs[i] = x_map->LID(GIDs[i].second);
       }
