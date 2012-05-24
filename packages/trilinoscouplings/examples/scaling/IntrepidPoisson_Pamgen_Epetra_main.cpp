@@ -32,7 +32,8 @@
     \author Created by P. Bochev, D. Ridzal, K. Peterson,
             D. Hensinger, C. Siefert.  Converted to Tpetra by
             I. Kalashnikova (ikalash@sandia.gov).  Modified by Mark
-            Hoemmen (mhoemme@sandia.gov).
+            Hoemmen (mhoemme@sandia.gov) and back-ported to Epetra for
+            a fair comparison with Tpetra.
 
     \remark Use the "--help" command-line argument for usage info.
 
@@ -58,9 +59,18 @@
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "TrilinosCouplings_TpetraIntrepidPoissonExample.hpp"
+#include "Epetra_Comm.h"
+#ifdef EPETRA_MPI
+#  include "mpi.h"
+#  include "Epetra_MpiComm.h"
+#else
+#  include "Epetra_SerialComm.h"
+#endif // EPETRA_MPI
+
+#include "TrilinosCouplings_EpetraIntrepidPoissonExample.hpp"
 #include "TrilinosCouplings_IntrepidPoissonExampleHelpers.hpp"
 
 
@@ -69,29 +79,30 @@ main (int argc, char *argv[])
 {
   using namespace TrilinosCouplings; // Yes, this means I'm lazy.
 
-  using TpetraIntrepidPoissonExample::exactResidualNorm;
-  using TpetraIntrepidPoissonExample::makeMatrixAndRightHandSide;
+  using EpetraIntrepidPoissonExample::exactResidualNorm;
+  using EpetraIntrepidPoissonExample::makeMatrixAndRightHandSide;
   using IntrepidPoissonExample::makeMeshInput;
   using IntrepidPoissonExample::setCommandLineArgumentDefaults;
   using IntrepidPoissonExample::setUpCommandLineArguments;
   using IntrepidPoissonExample::parseCommandLineArguments;
-  using Tpetra::DefaultPlatform;
-  using Teuchos::Comm;
+  //using Tpetra::DefaultPlatform;
+  //using Teuchos::Comm;
   using Teuchos::outArg;
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::rcp_implicit_cast;
   using Teuchos::rcpFromRef;
   using Teuchos::getFancyOStream;
   using Teuchos::FancyOStream;
   using std::endl;
   // Pull in typedefs from the IntrepidExample namespace.
-  typedef TpetraIntrepidPoissonExample::ST ST;
-  typedef TpetraIntrepidPoissonExample::Node Node;
+  typedef EpetraIntrepidPoissonExample::ST ST;
+  //typedef EpetraIntrepidPoissonExample::Node Node;
   typedef Teuchos::ScalarTraits<ST> STS;
   typedef STS::magnitudeType MT;
-  typedef TpetraIntrepidPoissonExample::sparse_matrix_type sparse_matrix_type;
-  typedef TpetraIntrepidPoissonExample::vector_type vector_type;
+  typedef EpetraIntrepidPoissonExample::sparse_matrix_type sparse_matrix_type;
+  typedef EpetraIntrepidPoissonExample::vector_type vector_type;
 
   Teuchos::oblackholestream blackHole;
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
@@ -99,9 +110,12 @@ main (int argc, char *argv[])
   //const int numProcs = mpiSession.getNProc ();
 
   // Get the default communicator and Kokkos Node instance
-  RCP<const Comm<int> > comm =
-    DefaultPlatform::getDefaultPlatform ().getComm ();
-  RCP<Node> node = DefaultPlatform::getDefaultPlatform ().getNode ();
+  RCP<Epetra_Comm> comm;
+#ifdef EPETRA_MPI
+  comm = rcp_implicit_cast<Epetra_Comm> (rcp (new Epetra_MpiComm (MPI_COMM_WORLD)));
+#else
+  comm = rcp_implicit_cast<Epetra_Comm> (rcp (new Epetra_SerialComm));
+#endif // EPETRA_MPI
 
   // Did the user specify --help at the command line to print help
   // with command-line arguments?
@@ -181,7 +195,7 @@ main (int argc, char *argv[])
 
   RCP<sparse_matrix_type> A;
   RCP<vector_type> B, X_exact, X;
-  makeMatrixAndRightHandSide (A, B, X_exact, X, comm, node, meshInput,
+  makeMatrixAndRightHandSide (A, B, X_exact, X, comm, meshInput,
                               out, err, verbose, debug);
 
   const std::vector<MT> norms = exactResidualNorm (A, B, X_exact);

@@ -100,8 +100,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             Teuchos::RCP<vector_type>& B,
                             Teuchos::RCP<vector_type>& X_exact,
                             Teuchos::RCP<vector_type>& X,
-                            const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                            const Teuchos::RCP<Node>& node,
+                            const Teuchos::RCP<const Epetra_Comm>& comm,
                             const std::string& meshInput,
                             const Teuchos::RCP<Teuchos::FancyOStream>& out,
                             const Teuchos::RCP<Teuchos::FancyOStream>& err,
@@ -114,16 +113,15 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             Teuchos::RCP<multivector_type>& B,
                             Teuchos::RCP<multivector_type>& X_exact,
                             Teuchos::RCP<multivector_type>& X,
-                            const Epetra_Comm& comm,
+                            const Teuchos::RCP<const Epetra_Comm>& comm,
                             const std::string& meshInput,
                             const Teuchos::RCP<Teuchos::FancyOStream>& out,
                             const Teuchos::RCP<Teuchos::FancyOStream>& err,
                             const bool verbose = false,
                             const bool debug = false);
 
-//! Return ||B - A*X_exact||_2, ||B||.
-std::pair<Teuchos::ScalarTraits<ST>::magnitudeType,
-          Teuchos::ScalarTraits<ST>::magnitudeType>
+//! Return \f$\|B - A X_{\text{exact}}\|_2\f$, \f$\|B\|\f$, and \f$\|A\|_F\f$.
+std::vector<Teuchos::ScalarTraits<ST>::magnitudeType>
 exactResidualNorm (const Teuchos::RCP<const sparse_matrix_type>& A,
                    const Teuchos::RCP<const vector_type>& B,
                    const Teuchos::RCP<const vector_type>& X_exact);

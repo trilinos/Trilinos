@@ -152,3 +152,26 @@ IF(Trilinos_ENABLE_Belos AND
     ADD_DIR_TO_NAME
     )
 ENDIF()
+
+# mfh 24 May 2012
+#
+# Just build this executable; don't run it as a test (yet).
+#
+# Intrepid has required dependencies on Teuchos, Shards, and Sacado,
+# so we don't have to name those packages explicitly here.
+# Belos both also have required dependencies on Teuchos.
+IF(Trilinos_ENABLE_Belos AND
+   Trilinos_ENABLE_Intrepid AND
+   Trilinos_ENABLE_Pamgen AND
+   Trilinos_ENABLE_Epetra)
+  TRIBITS_ADD_EXECUTABLE(
+    IntrepidPoisson_Pamgen_Epetra
+    SOURCES IntrepidPoisson_Pamgen_Epetra_main.cpp
+      TrilinosCouplings_IntrepidPoissonExampleHelpers.cpp
+      TrilinosCouplings_EpetraIntrepidPoissonExample.cpp
+      TrilinosCouplings_EpetraIntrepidPoissonExample_SolveWithBelos.cpp
+    COMM serial mpi
+    DEPLIBS belos intrepid pamgen epetra
+    ADD_DIR_TO_NAME
+    )
+ENDIF()

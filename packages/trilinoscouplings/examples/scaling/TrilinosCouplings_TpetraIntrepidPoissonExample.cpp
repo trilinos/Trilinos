@@ -1090,8 +1090,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   X = gl_approxSolVector;
 }
 
-std::pair<Teuchos::ScalarTraits<ST>::magnitudeType,
-          Teuchos::ScalarTraits<ST>::magnitudeType>
+std::vector<Teuchos::ScalarTraits<ST>::magnitudeType>
 exactResidualNorm (const Teuchos::RCP<const sparse_matrix_type>& A,
                    const Teuchos::RCP<const vector_type>& B,
                    const Teuchos::RCP<const vector_type>& X_exact)
@@ -1105,7 +1104,11 @@ exactResidualNorm (const Teuchos::RCP<const sparse_matrix_type>& A,
   // R := 1.0*R - 1.0*A*X_exact.
   A->apply (*X_exact, *R, Teuchos::NO_TRANS, -STS::one(), STS::one());
 
-  return std::make_pair (R->norm2 (), B->norm2 ());
+  std::vector<MT> results (3);
+  results[0] = R->norm2 ();
+  results[1] = B->norm2 ();
+  results[3] = A->getFrobeniusNorm ();
+  return results;
 }
 
 /**********************************************************************************/
@@ -1143,6 +1146,8 @@ materialTensor (Scalar material[][3],
     const Scalar two = one + one;
     const Scalar four = two + two;
     const Scalar eight = four + four;
+    (void) four;
+    (void) eight;
 
     if (false) {
       material[0][0] = one;
