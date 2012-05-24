@@ -246,7 +246,10 @@ void panzer::PhysicsBlock::buildAndRegisterGatherScatterEvaluatorsForType(PHX::F
        }
     }
 
-    eqstm.getAsObject<EvalT>()->buildAndRegisterGatherScatterEvaluators(fm, providedDOFs,lof,user_data);
+    //eqstm.getAsObject<EvalT>()->buildAndRegisterGatherScatterEvaluators(fm, providedDOFs,lof,user_data);
+    eqstm.getAsObject<EvalT>()->buildAndRegisterGatherAndOrientationsEvaluators(fm, providedDOFs,lof,user_data);
+    eqstm.getAsObject<EvalT>()->buildAndRegisterDOFProjectionsToIPEvaluators(fm, providedDOFs,lof,user_data);
+    eqstm.getAsObject<EvalT>()->buildAndRegisterScatterEvaluators(fm, providedDOFs,lof,user_data);
 
   }
 }

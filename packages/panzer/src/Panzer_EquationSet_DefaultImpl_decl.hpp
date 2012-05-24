@@ -71,11 +71,28 @@ namespace panzer {
 						       const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
 						       const Teuchos::ParameterList& user_data) const = 0;
 
+    /*
     virtual void buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 							 const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
                                                          const LinearObjFactory<panzer::Traits> & lof,
 							 const Teuchos::ParameterList& user_data) const;
+    */
+
+    virtual void buildAndRegisterGatherAndOrientationsEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+								 const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
+								 const LinearObjFactory<panzer::Traits> & lof,
+								 const Teuchos::ParameterList& user_data) const;
     
+    virtual void buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+							      const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
+							      const LinearObjFactory<panzer::Traits> & lof,
+							      const Teuchos::ParameterList& user_data) const;
+    
+    virtual void buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+						   const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
+						   const LinearObjFactory<panzer::Traits> & lof,
+						   const Teuchos::ParameterList& user_data) const;
+
     virtual void buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 							const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
 							const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
