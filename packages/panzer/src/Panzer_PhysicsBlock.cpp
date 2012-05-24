@@ -210,7 +210,7 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       }
 
       //eval_type->buildAndRegisterGatherScatterEvaluators(fm, providedDOFs, lof, user_data);
-      eval_type->buildAndRegisterGatherAndOrientationsEvaluators(fm, providedDOFs, lof, user_data);
+      eval_type->buildAndRegisterGatherAndOrientationEvaluators(fm, providedDOFs, lof, user_data);
       eval_type->buildAndRegisterDOFProjectionsToIPEvaluators(fm, providedDOFs, lof, user_data);
       eval_type->buildAndRegisterScatterEvaluators(fm, providedDOFs, lof, user_data);
     }
