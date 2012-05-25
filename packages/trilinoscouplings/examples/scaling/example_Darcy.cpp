@@ -42,13 +42,13 @@
                        div v + \phi = f  in Omega
                        v+ A grad \phi = 0  in Omega
                        Dirichlet BC: \phi given  on Gamma
-                       
-                       Omega is the box [0,1]^3             
-            
-            where f is derived from a prescribed solution 
-            
+
+                       Omega is the box [0,1]^3
+
+            where f is derived from a prescribed solution
+
             \phi(x,y,z)=-sin^2(\pi x)*sin^2(\pi y)*sin^2(\pi z)
-            
+
             or other, discontinuous solution, aka "patch test"
 
 
@@ -152,7 +152,7 @@ using namespace ML_Epetra;
 struct fecomp{
   bool operator () ( topo_entity* x,  topo_entity*  y )const
   {
-    if(x->sorted_local_node_ids < y->sorted_local_node_ids)return true;    
+    if(x->sorted_local_node_ids < y->sorted_local_node_ids)return true;
     return false;
   }
 };
@@ -161,11 +161,11 @@ struct fecomp{
 template<class ArrayOut, class ArrayIn>
 void evaluateMaterialTensor(ArrayOut &        matTensorValues,
                              const ArrayIn &   evaluationPoints);
-			     
+
 template<class ArrayOut, class ArrayIn>
 void evaluateMaterialTensorInv(ArrayOut &        matTensorValues,
                              const ArrayIn &   evaluationPoints);
-			     
+
 template<typename Scalar>
 void materialTensor(Scalar material[][3], const Scalar& x, const Scalar& y, const Scalar& z);
 
@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
       std::cout <<"                             and material parameters for each block \nn";
       exit(1);
    }
-  
+
  if (MyPID == 0) {
   std::cout \
     << "===============================================================================\n" \
@@ -248,7 +248,7 @@ int main(int argc, char *argv[]) {
   std::vector < int > edge_comm_procs;
 
   int dim = 3;
-  
+
 // ************************************ GET INPUTS **************************************
 
 //what problem do we solve?
@@ -271,7 +271,7 @@ int main(int argc, char *argv[]) {
      if (MyPID == 0) {
       std::cout << "\nReading parameter list from the XML file \""<<xmlInFileName<<"\" ...\n\n";
      }
-      Teuchos::updateParametersFromXmlFile(xmlInFileName,&inputList);
+     Teuchos::updateParametersFromXmlFile(xmlInFileName, Teuchos::ptr (&inputList));
      if (MyPID == 0) {
       inputList.print(std::cout,2,true,true);
       std::cout << "\n";
@@ -285,7 +285,7 @@ int main(int argc, char *argv[]) {
 
   // Get pamgen mesh definition
     std::string meshInput = Teuchos::getParameter<std::string>(inputList,"meshInput");
- 
+
 
 // *********************************** CELL TOPOLOGY **********************************
 
@@ -293,7 +293,7 @@ int main(int argc, char *argv[]) {
     typedef shards::CellTopology    CellTopology;
     CellTopology hex_8(shards::getCellTopologyData<shards::Hexahedron<8> >() );
 
-   // Get dimensions 
+   // Get dimensions
     int numNodesPerElem = hex_8.getNodeCount();
     int numEdgesPerElem = hex_8.getEdgeCount();
     int numFacesPerElem = hex_8.getSideCount();
@@ -343,7 +343,7 @@ int main(int argc, char *argv[]) {
 
     long long maxInt = 9223372036854775807LL;
     Create_Pamgen_Mesh(meshInput.c_str(), dim, rank, numProcs, maxInt);
-    
+
    // Get local mesh size info
     char title[100];
     long long numDim;
@@ -354,7 +354,7 @@ int main(int argc, char *argv[]) {
     long long numSideSets;
     int id = 0;
 
-    im_ex_get_init_l(id, title, &numDim, &numNodes, 
+    im_ex_get_init_l(id, title, &numDim, &numNodes,
                                 &numElems, &numElemBlk, &numNodeSets,
                                 &numSideSets);
   // Get global mesh size info
@@ -383,12 +383,12 @@ int main(int argc, char *argv[]) {
 
     for(long long i = 0; i < numElemBlk; i ++){
       element_types[i] = new char [MAX_STR_LENGTH + 1];
-      error += im_ex_get_elem_block_l(id, 
-				      block_ids[i], 
-				      element_types[i],
-				      (long long*)&(elements[i]),
-				      (long long*)&(nodes_per_element[i]), 
-				      (long long*)&(element_attributes[i]));
+      error += im_ex_get_elem_block_l(id,
+                                      block_ids[i],
+                                      element_types[i],
+                                      (long long*)&(elements[i]),
+                                      (long long*)&(nodes_per_element[i]),
+                                      (long long*)&(element_attributes[i]));
     }
 
     /*connectivity*/
@@ -412,21 +412,21 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> muVal(numElems);
     for(long long b = 0; b < numElemBlk; b++){
       for(long long el = 0; el < elements[b]; el++){
-	for (int j=0; j<numNodesPerElem; j++) {
-	  elemToNode(telct,j) = elmt_node_linkage[b][el*numNodesPerElem + j]-1;
-	}
-	//    muVal(telct) = mu[b];     
-	telct ++;
+        for (int j=0; j<numNodesPerElem; j++) {
+          elemToNode(telct,j) = elmt_node_linkage[b][el*numNodesPerElem + j]-1;
+        }
+        //    muVal(telct) = mu[b];
+        telct ++;
       }
     }
- 
+
    // Read node coordinates and place in field container
     FieldContainer<double> nodeCoord(numNodes,dim);
     double * nodeCoordx = new double [numNodes];
     double * nodeCoordy = new double [numNodes];
     double * nodeCoordz = new double [numNodes];
     im_ex_get_coord_l(id,nodeCoordx,nodeCoordy,nodeCoordz);
-    for (int i=0; i<numNodes; i++) {          
+    for (int i=0; i<numNodes; i++) {
       nodeCoord(i,0)=nodeCoordx[i];
       nodeCoord(i,1)=nodeCoordy[i];
       nodeCoord(i,2)=nodeCoordz[i];
@@ -440,15 +440,15 @@ int main(int argc, char *argv[]) {
     long long num_border_elems;
     long long num_node_comm_maps;
     long long num_elem_comm_maps;
-    im_ne_get_loadbal_param_l( id, 
-			       &num_internal_nodes,
-			       &num_border_nodes, 
-			       &num_external_nodes,
-			       &num_internal_elems, 
-			       &num_border_elems,
-			       &num_node_comm_maps,
-			       &num_elem_comm_maps,
-			       0/*unused*/ );
+    im_ne_get_loadbal_param_l( id,
+                               &num_internal_nodes,
+                               &num_border_nodes,
+                               &num_external_nodes,
+                               &num_internal_elems,
+                               &num_border_elems,
+                               &num_node_comm_maps,
+                               &num_elem_comm_maps,
+                               0/*unused*/ );
 
     if(num_node_comm_maps > 0){
       node_comm_proc_ids   = new long long  [num_node_comm_maps];
@@ -456,27 +456,27 @@ int main(int argc, char *argv[]) {
       node_cmap_ids        = new long long  [num_node_comm_maps];
       comm_node_ids        = new long long* [num_node_comm_maps];
       comm_node_proc_ids   = new long long* [num_node_comm_maps];
-  
+
       long long *  elem_cmap_ids        = new long long [num_elem_comm_maps];
       long long *  elem_cmap_elem_cnts  = new long long [num_elem_comm_maps];
 
 
-      if ( im_ne_get_cmap_params_l( id, 
-				  node_cmap_ids,
-				  (long long*)node_cmap_node_cnts, 
-				  elem_cmap_ids,
-				  (long long*)elem_cmap_elem_cnts, 
-				  0/*not used proc_id*/ ) < 0 )++error;
-      
+      if ( im_ne_get_cmap_params_l( id,
+                                  node_cmap_ids,
+                                  (long long*)node_cmap_node_cnts,
+                                  elem_cmap_ids,
+                                  (long long*)elem_cmap_elem_cnts,
+                                  0/*not used proc_id*/ ) < 0 )++error;
+
       for(long long j = 0; j < num_node_comm_maps; j++) {
-	comm_node_ids[j]       = new long long [node_cmap_node_cnts[j]];
-	comm_node_proc_ids[j]  = new long long [node_cmap_node_cnts[j]];
-	if ( im_ne_get_node_cmap_l( id, 
-				  node_cmap_ids[j], 
-				  comm_node_ids[j], 
-				  comm_node_proc_ids[j],
-				  0/*not used proc_id*/ ) < 0 )++error;
-	node_comm_proc_ids[j] = comm_node_proc_ids[j][0];
+        comm_node_ids[j]       = new long long [node_cmap_node_cnts[j]];
+        comm_node_proc_ids[j]  = new long long [node_cmap_node_cnts[j]];
+        if ( im_ne_get_node_cmap_l( id,
+                                  node_cmap_ids[j],
+                                  comm_node_ids[j],
+                                  comm_node_proc_ids[j],
+                                  0/*not used proc_id*/ ) < 0 )++error;
+        node_comm_proc_ids[j] = comm_node_proc_ids[j][0];
       }
     }
 
@@ -486,13 +486,13 @@ int main(int argc, char *argv[]) {
     bool * nodeIsOwned = new bool[numNodes];
 
     calc_global_node_ids(globalNodeIds,
-			 nodeIsOwned,
-			 numNodes,
-			 num_node_comm_maps,
-			 node_cmap_node_cnts,
-			 node_comm_proc_ids,
-			 comm_node_ids,
-			 rank);    
+                         nodeIsOwned,
+                         numNodes,
+                         num_node_comm_maps,
+                         node_cmap_node_cnts,
+                         node_comm_proc_ids,
+                         comm_node_ids,
+                         rank);
   // Count owned nodes
     int numOwnedNodes=0;
     for(int i=0;i<numNodes;i++)
@@ -517,60 +517,60 @@ int main(int argc, char *argv[]) {
       if(nodes_per_element[b] == 4){
       }
       else if (nodes_per_element[b] == 8){
-	//loop over all elements and push their edges onto a set if they are not there already
-	for(long long el = 0; el < elements[b]; el++){
-	  std::set< topo_entity *, fecomp > ::iterator fit;
-	  for (int i=0; i < numEdgesPerElem; i++){
-	    topo_entity * teof = new topo_entity;
-	    for(int j = 0; j < numNodesPerEdge;j++){
-	      teof->add_node(elmt_node_linkage[b][el*numNodesPerElem + refEdgeToNode(i,j)],globalNodeIds);
-	    }
-	    teof->sort();
-	    fit = edge_set.find(teof);
-	    if(fit == edge_set.end()){
-	      teof->local_id = edge_vector.size();
-	      edge_set.insert(teof);
-	      elemToEdge(elct,i)= edge_vector.size();
-	      edge_vector.push_back(teof);
-	    }
-	    else{
-	      elemToEdge(elct,i) = (*fit)->local_id;
-	      delete teof;
-	    }
-	  }
-	  for (int i=0; i < numFacesPerElem; i++){
-	    topo_entity * teof = new topo_entity;
-	    for(int j = 0; j < numNodesPerFace;j++){
-	      teof->add_node(elmt_node_linkage[b][el*numNodesPerElem + refFaceToNode(i,j)],globalNodeIds);
-	    }
-	    teof->sort();
-	    fit = face_set.find(teof);
-	    if(fit == face_set.end()){
-	      teof->local_id = face_vector.size();
-	      face_set.insert(teof);
-	      elemToFace(elct,i)= face_vector.size();
-	      face_vector.push_back(teof);
-	    }
-	    else{
-	      elemToFace(elct,i) = (*fit)->local_id;
-	      delete teof;
-	    }
-	  }
-	  elct ++;
-	}
+        //loop over all elements and push their edges onto a set if they are not there already
+        for(long long el = 0; el < elements[b]; el++){
+          std::set< topo_entity *, fecomp > ::iterator fit;
+          for (int i=0; i < numEdgesPerElem; i++){
+            topo_entity * teof = new topo_entity;
+            for(int j = 0; j < numNodesPerEdge;j++){
+              teof->add_node(elmt_node_linkage[b][el*numNodesPerElem + refEdgeToNode(i,j)],globalNodeIds);
+            }
+            teof->sort();
+            fit = edge_set.find(teof);
+            if(fit == edge_set.end()){
+              teof->local_id = edge_vector.size();
+              edge_set.insert(teof);
+              elemToEdge(elct,i)= edge_vector.size();
+              edge_vector.push_back(teof);
+            }
+            else{
+              elemToEdge(elct,i) = (*fit)->local_id;
+              delete teof;
+            }
+          }
+          for (int i=0; i < numFacesPerElem; i++){
+            topo_entity * teof = new topo_entity;
+            for(int j = 0; j < numNodesPerFace;j++){
+              teof->add_node(elmt_node_linkage[b][el*numNodesPerElem + refFaceToNode(i,j)],globalNodeIds);
+            }
+            teof->sort();
+            fit = face_set.find(teof);
+            if(fit == face_set.end()){
+              teof->local_id = face_vector.size();
+              face_set.insert(teof);
+              elemToFace(elct,i)= face_vector.size();
+              face_vector.push_back(teof);
+            }
+            else{
+              elemToFace(elct,i) = (*fit)->local_id;
+              delete teof;
+            }
+          }
+          elct ++;
+        }
       }
     }
-    
+
    // Edge to Node connectivity
     FieldContainer<int> edgeToNode(edge_vector.size(), numNodesPerEdge);
     for(unsigned ect = 0; ect != edge_vector.size(); ect++){
       std::list<long long>::iterator elit;
       int nct = 0;
       for(elit  = edge_vector[ect]->local_node_ids.begin();
-	  elit != edge_vector[ect]->local_node_ids.end();
-	  elit ++){
-	edgeToNode(ect,nct) = *elit-1;
-	nct++;
+          elit != edge_vector[ect]->local_node_ids.end();
+          elit ++){
+        edgeToNode(ect,nct) = *elit-1;
+        nct++;
       }
     }
 
@@ -580,10 +580,10 @@ int main(int argc, char *argv[]) {
       std::list<long long>::iterator flit;
       int nct = 0;
       for(flit  = face_vector[fct]->local_node_ids.begin();
-	  flit != face_vector[fct]->local_node_ids.end();
-	  flit ++){
-	faceToNode(fct,nct) = *flit-1;
-	nct++;
+          flit != face_vector[fct]->local_node_ids.end();
+          flit ++){
+        faceToNode(fct,nct) = *flit-1;
+        nct++;
       }
     }
 
@@ -595,13 +595,13 @@ int main(int argc, char *argv[]) {
        for (int iface = 0; iface < numFacesPerElem; iface++){
          if (!faceDone(elemToFace(ielem,iface))){
            for (int iedge = 0; iedge < numEdgesPerFace; iedge++){
-              faceToEdge(elemToFace(ielem,iface),iedge) = 
+              faceToEdge(elemToFace(ielem,iface),iedge) =
                            elemToEdge(ielem,refFaceToEdge(iface,iedge));
               faceDone(elemToFace(ielem,iface))=1;
            }
          }
        }
-    }   
+    }
 
     int numEdges = edge_vector.size();
     int numFaces = face_vector.size();
@@ -610,22 +610,22 @@ int main(int argc, char *argv[]) {
     std::string doing_type;
     doing_type = "EDGES";
     calc_global_ids(edge_vector,
-	       comm_node_ids,
-	       node_comm_proc_ids, 
-	       node_cmap_node_cnts,
-	       num_node_comm_maps,
-	       rank,
-	       doing_type);
+               comm_node_ids,
+               node_comm_proc_ids,
+               node_cmap_node_cnts,
+               num_node_comm_maps,
+               rank,
+               doing_type);
 
 
     doing_type = "FACES";
     calc_global_ids(face_vector,
-	       comm_node_ids,
-	       node_comm_proc_ids, 
-	       node_cmap_node_cnts,
-	       num_node_comm_maps,
-	       rank,
-	       doing_type);
+               comm_node_ids,
+               node_comm_proc_ids,
+               node_cmap_node_cnts,
+               num_node_comm_maps,
+               rank,
+               doing_type);
 
   // Build list of owned global edge ids
     long long * globalEdgeIds = new long long[numEdges];
@@ -681,23 +681,23 @@ int main(int argc, char *argv[]) {
    // Define global epetra maps
     Epetra_Map globalMapG(-1,numOwnedNodes,ownedGIDs,0,Comm);
     Epetra_Map globalMapC(-1,numOwnedEdges,ownedEdgeIds,0,Comm);
-    Epetra_Map globalMapD(-1,numOwnedFaces,ownedFaceIds,0,Comm); 
-    
+    Epetra_Map globalMapD(-1,numOwnedFaces,ownedFaceIds,0,Comm);
+
    //define a global map of a joint variable [faces, nodes]\in hdiv x hgrad
-   //this is what we need to construct whole system. 
+   //this is what we need to construct whole system.
    //also, here we need to define how we address facial and nodal values in joint vector
    //so we form a new map, for joint vector
    int jointLocalVarSize = numOwnedFaces + numOwnedNodes;
-   
+
    int * ownedFaceNodeIds = new int[jointLocalVarSize];
    for (int i=0; i<numOwnedFaces; i++)
            ownedFaceNodeIds[i]=ownedFaceIds[i];
-   
+
    for (int i=numOwnedFaces; i<jointLocalVarSize; i++)
-           ownedFaceNodeIds[i]=ownedGIDs[i-numOwnedFaces]+numFacesGlobal;   
-    
-   Epetra_Map globalMapJoint(-1,jointLocalVarSize,ownedFaceNodeIds,0,Comm);   
-   
+           ownedFaceNodeIds[i]=ownedGIDs[i-numOwnedFaces]+numFacesGlobal;
+
+   Epetra_Map globalMapJoint(-1,jointLocalVarSize,ownedFaceNodeIds,0,Comm);
+
 
  // Print mesh size information
   if (MyPID == 0) {
@@ -707,7 +707,7 @@ int main(int argc, char *argv[]) {
     std::cout << "    Number of Faces: " << numFacesGlobal << " \n\n";
   }
 
-#ifdef DUMP_DATA 
+#ifdef DUMP_DATA
    // Output element to face connectivity
    std::stringstream e2nfname;
       e2nfname << "elem2node";
@@ -720,11 +720,11 @@ int main(int argc, char *argv[]) {
     for (int i=0; i<numElems; i++) {
       for (int l=0; l<numFacesPerElem; l++) {
          el2fout << globalFaceIds[elemToFace(i,l)] << "  ";
-      } 
+      }
       el2fout << "\n";
       for (int m=0; m<numNodesPerElem; m++) {
         el2nout << globalNodeIds[elemToNode(i,m)] << "  ";
-      } 
+      }
       el2nout << "\n";
     }
     el2fout.close();
@@ -743,10 +743,10 @@ int main(int argc, char *argv[]) {
      if (faceIsOwned[k]){
        for (int i=0; i<numEdgesPerFace; i++) {
            f2edout << globalEdgeIds[faceToEdge(k,i)] << "  ";
-       } 
+       }
        for (int j=0; j<numNodesPerFace; j++) {
            f2nout << globalNodeIds[faceToNode(k,j)] << "  ";
-       } 
+       }
        f2edout << "\n";
        f2nout << "\n";
       }
@@ -820,9 +820,9 @@ int main(int argc, char *argv[]) {
     std::cout << "Getting cubature ... \n\n";
   }
 
-    DefaultCubatureFactory<double>  cubFactory;                                   
+    DefaultCubatureFactory<double>  cubFactory;
     int cubDegree = 2;
-    Teuchos::RCP<Cubature<double> > hexCub = cubFactory.create(hex_8, cubDegree); 
+    Teuchos::RCP<Cubature<double> > hexCub = cubFactory.create(hex_8, cubDegree);
 
     int cubDim       = hexCub->getDimension();
     int numCubPoints = hexCub->getNumPoints();
@@ -854,7 +854,7 @@ int main(int argc, char *argv[]) {
 
 // ************************************** BASIS ***************************************
 
-   // Define basis 
+   // Define basis
   if (MyPID == 0) {
     std::cout << "Getting basis ... \n\n";
   }
@@ -867,10 +867,10 @@ int main(int argc, char *argv[]) {
     int numFieldsG = hexHGradBasis.getCardinality();
 
   // Evaluate basis at cubature points
-     FieldContainer<double> hexDVals(numFieldsD, numCubPoints, spaceDim); 
-     FieldContainer<double> hexDivs(numFieldsD, numCubPoints); 
-     FieldContainer<double> hexGVals(numFieldsG, numCubPoints); 
-     FieldContainer<double> hexGrads(numFieldsG, numCubPoints, spaceDim); 
+     FieldContainer<double> hexDVals(numFieldsD, numCubPoints, spaceDim);
+     FieldContainer<double> hexDivs(numFieldsD, numCubPoints);
+     FieldContainer<double> hexGVals(numFieldsG, numCubPoints);
+     FieldContainer<double> hexGrads(numFieldsG, numCubPoints, spaceDim);
 
      hexHDivBasis.getValues(hexDVals, cubPoints, OPERATOR_VALUE);
      hexHDivBasis.getValues(hexDivs, cubPoints, OPERATOR_DIV);
@@ -881,9 +881,9 @@ int main(int argc, char *argv[]) {
    /*************************BUILD INCIDENCE MATRIX***********************************/
    /**********************************************************************************/
    Epetra_FECrsMatrix DCurl(Copy, globalMapD, 4);
-   Epetra_FECrsMatrix DGrad(Copy, globalMapC, 2);   
+   Epetra_FECrsMatrix DGrad(Copy, globalMapC, 2);
 
-   // Edge to node incidence matrix  
+   // Edge to node incidence matrix
    double vals[2];
    vals[0]=-1.0; vals[1]=1.0;
    for (int j=0; j<numEdges; j++){
@@ -896,9 +896,9 @@ int main(int argc, char *argv[]) {
      }
    }
 
-   DGrad.GlobalAssemble(false); 
-   DGrad.FillComplete(globalMapG,globalMapC); 
-   
+   DGrad.GlobalAssemble(false);
+   DGrad.FillComplete(globalMapG,globalMapC);
+
    // Edge to face incidence matrix
    FieldContainer<bool> faceDone2(numFaces);
    for (int i=0; i<numElems; i++){
@@ -918,19 +918,19 @@ int main(int argc, char *argv[]) {
                  vals[m]=1.0;}
               else vals[m]=-1.0;
 
-            // This is a convoluted way to account for edge orientations that 
+            // This is a convoluted way to account for edge orientations that
             // may be incorrect on the local processor because the edge is
             // not owned by the local processor.
              int edgeIndex = -1;
              if (!edgeIsOwned[faceToEdge(iface,m)]){
                  for (int l=0; l<numEdgesPerElem; l++){
-                    if (faceToEdge(iface,m)==elemToEdge(i,l)) 
+                    if (faceToEdge(iface,m)==elemToEdge(i,l))
                        edgeIndex=l;
                 }
              }
                if (edgeIndex != -1 && edgeIndex < 8){
                  if (edgeIndex < 4 && faceIsOwned[elemToFace(i,4)]){
-                   vals[m]=-1.0*vals[m];                 
+                   vals[m]=-1.0*vals[m];
                  }
                  else if (edgeIndex > 3 && faceIsOwned[elemToFace(i,5)]){
                    vals[m]=-1.0*vals[m];
@@ -950,8 +950,8 @@ int main(int argc, char *argv[]) {
 
 
    if(MyPID==0) {std::cout << "Building incidence matrices                 "
-			   << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
-   
+                           << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
+
 
    // Build Face-Node Incidence Matrix
    Epetra_CrsMatrix DGrad1(DGrad);
@@ -1008,7 +1008,7 @@ int main(int argc, char *argv[]) {
                                               bndyFaceJacobians,
                                               iface, hex_8);
 
-         
+
            bndyFaceToFace(elemToFace(ielem,iface))=ibface;
            ibface++;
          }
@@ -1022,59 +1022,59 @@ int main(int argc, char *argv[]) {
   if (MyPID == 0) {
     std::cout << "Building mass and stiffness matrices ... \n\n";
   }
-  
-  
+
+
  // Settings and data structures for mass and stiffness matrices
-    int numCells = 1; 
-    
-   // Containers for nodes, edge and face signs 
+    int numCells = 1;
+
+   // Containers for nodes, edge and face signs
     FieldContainer<double> hexNodes(numCells, numNodesPerElem, spaceDim);
     FieldContainer<double> hexEdgeSigns(numCells, numFieldsC);
     FieldContainer<double> hexFaceSigns(numCells, numFieldsD);
-    
+
    // Containers for Jacobian
     FieldContainer<double> hexJacobian(numCells, numCubPoints, spaceDim, spaceDim);
     FieldContainer<double> hexJacobInv(numCells, numCubPoints, spaceDim, spaceDim);
     FieldContainer<double> hexJacobDet(numCells, numCubPoints);
-    
+
     FieldContainer<double> weightedMeasure(numCells, numCubPoints);
 
    // Containers for element HDIV mass matrix
     FieldContainer<double> massMatrixD(numCells, numFieldsD, numFieldsD);
     FieldContainer<double> hexDValsTransformed(numCells, numFieldsD, numCubPoints, spaceDim);
     FieldContainer<double> hexDValsTransformedWeighted(numCells, numFieldsD, numCubPoints, spaceDim);
-     FieldContainer<double> hexDValsTransformedMatrAinv(numCells, numFieldsD, numCubPoints, spaceDim);   
-     
+     FieldContainer<double> hexDValsTransformedMatrAinv(numCells, numFieldsD, numCubPoints, spaceDim);
+
    // Containers for element HDIV stiffness matrix
     FieldContainer<double> stiffMatrixD(numCells, numFieldsD, numFieldsD);
     FieldContainer<double> hexDivsTransformed(numCells, numFieldsD, numCubPoints);
     FieldContainer<double> hexDivsTransformedWeighted(numCells, numFieldsD, numCubPoints);
-    
+
    // Containers for element HDIV stiffness matrix
     FieldContainer<double> stiffMatrixG(numCells, numFieldsG, numFieldsG);
    // Containers for element HDIV stiffness matrix
     FieldContainer<double> massMatrixG(numCells, numFieldsG, numFieldsG);
-    
+
     FieldContainer<double> hexGValsTransformed(numCells, numFieldsG, numCubPoints);
     FieldContainer<double> hexGValsTransformedWeighted(numCells, numFieldsG, numCubPoints);
-    
+
     FieldContainer<double> hexGradsTransformed(numCells, numFieldsG, numCubPoints, spaceDim);
     FieldContainer<double> hexGradsTransformedWeighted(numCells, numFieldsG, numCubPoints, spaceDim);
     FieldContainer<double> hexGradsTransformedMatrA(numCells, numFieldsG, numCubPoints, spaceDim);
     FieldContainer<double> hexGradsTransformedWeightedMatrA(numCells, numFieldsG, numCubPoints, spaceDim);
-    
+
    // Containers for element GRAD(HGRAD) x HDIV matrix
     FieldContainer<double> stiffMatrixDG(numCells, numFieldsD, numFieldsG);
     FieldContainer<double> stiffMatrixDG2(numCells, numFieldsD, numFieldsG);
-    
+
    // Containers for element HDIV x GRAD(HGRAD) matrix (not really necessary, it is a transpose of stiffMatrixDG)
     FieldContainer<double> stiffMatrixGD(numCells, numFieldsG, numFieldsD);
-    FieldContainer<double> stiffMatrixGD2(numCells, numFieldsG, numFieldsD); 
-	
+    FieldContainer<double> stiffMatrixGD2(numCells, numFieldsG, numFieldsD);
+
    // Containers for right hand side vectors
     FieldContainer<double> rhsDatah(numCells, numCubPoints);
     FieldContainer<double> hD(numCells, numFieldsD);
-    FieldContainer<double> kD(numCells, numFieldsG);    
+    FieldContainer<double> kD(numCells, numFieldsG);
     FieldContainer<double> gDBoundary(numCells, numFieldsD);
     FieldContainer<double> refGaussPoints(numFacePoints,spaceDim);
     FieldContainer<double> worksetGaussPoints(numCells,numFacePoints,spaceDim);
@@ -1088,26 +1088,26 @@ int main(int argc, char *argv[]) {
 
     // Container for cubature points in physical space
     FieldContainer<double> physCubPoints(numCells,numCubPoints, cubDim);
-    
-    FieldContainer<double> worksetMaterialVals (numCells, numCubPoints, spaceDim, spaceDim); 
-    FieldContainer<double> worksetMaterialValsInv (numCells, numCubPoints, spaceDim, spaceDim);     
-    
+
+    FieldContainer<double> worksetMaterialVals (numCells, numCubPoints, spaceDim, spaceDim);
+    FieldContainer<double> worksetMaterialValsInv (numCells, numCubPoints, spaceDim, spaceDim);
+
    // Global matrices arrays in Epetra format
-  
+
    //THIS MATRIX IS FOR PRECONDITIONING
     Epetra_FECrsMatrix StiffG(Copy, globalMapG, numFieldsG);
 
     //last agr here is not that important, epetra will extend storage if needed
-    Epetra_FECrsMatrix jointMatrix(Copy, globalMapJoint, numFieldsD);   
+    Epetra_FECrsMatrix jointMatrix(Copy, globalMapJoint, numFieldsD);
 
     Epetra_FEVector rhsD(globalMapD);
-    
-    Epetra_FEVector jointVector(globalMapJoint);     
-    
+
+    Epetra_FEVector jointVector(globalMapJoint);
+
     //this vector is only for output
-    Epetra_FEVector jointVectorGIDs(globalMapJoint);   
-  
-    
+    Epetra_FEVector jointVectorGIDs(globalMapJoint);
+
+
 #ifdef DUMP_DATA
     std::stringstream fSignfname;
       fSignfname << "faceSigns";
@@ -1153,7 +1153,7 @@ int main(int argc, char *argv[]) {
           if (elemToNode(k,refEdgeToNode(j,0))==edgeToNode(elemToEdge(k,j),0) &&
               elemToNode(k,refEdgeToNode(j,1))==edgeToNode(elemToEdge(k,j),1))
               hexEdgeSigns(0,j) = 1.0;
-          else 
+          else
               hexEdgeSigns(0,j) = -1.0;
        }
 
@@ -1182,38 +1182,38 @@ int main(int argc, char *argv[]) {
        CellTools::setJacobianDet(hexJacobDet, hexJacobian );
 
        ////////////////////////////////////////////////////////
-       
+
        // transform integration points to physical points
 
        CellTools::mapToPhysicalFrame(physCubPoints, cubPoints, hexNodes, hex_8);
-       
-       
+
+
       // get A at cubature points
        evaluateMaterialTensor (worksetMaterialVals, physCubPoints);
-      // get A^{-1} at cubature points       
+      // get A^{-1} at cubature points
        evaluateMaterialTensorInv (worksetMaterialValsInv, physCubPoints);
-       
+
 // ************************** Compute element HDiv mass matrices *******************************
 
      // compute weighted measure
       fst::computeCellMeasure<double>(weightedMeasure, hexJacobDet, cubWeights);
-      
-     // transform to physical coordinates 
+
+     // transform to physical coordinates
       fst::HDIVtransformVALUE<double>(hexDValsTransformed, hexJacobian, hexJacobDet,
                                    hexDVals);
 
      // multiply by weighted measure
       fst::multiplyMeasure<double>(hexDValsTransformedWeighted,
                                    weightedMeasure, hexDValsTransformed);
-				   
+
    // Compute A*Dvals
       fst::tensorMultiplyDataField<double>(hexDValsTransformedMatrAinv,                                                     worksetMaterialValsInv, hexDValsTransformed);
-						     
+
      // integrate to compute element mass matrix
       fst::integrate<double>(massMatrixD,
                              hexDValsTransformedMatrAinv, hexDValsTransformedWeighted,
                              COMP_BLAS);
-			     
+
      // apply face signs
       fst::applyLeftFieldSigns<double>(massMatrixD, hexFaceSigns);
       fst::applyRightFieldSigns<double>(massMatrixD, hexFaceSigns);
@@ -1225,14 +1225,14 @@ int main(int argc, char *argv[]) {
             int colIndex = globalFaceIds[elemToFace(k,col)];
             double val = massMatrixD(0,row,col);
             jointMatrix.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-	}
+        }
       }
 
 
 
 // ************************ Compute element HDiv stiffness matrices *****************************
 
-      // transform to physical coordinates 
+      // transform to physical coordinates
       fst::HDIVtransformDIV<double>(hexDivsTransformed, hexJacobDet,
                                     hexDivs);
 
@@ -1254,8 +1254,8 @@ int main(int argc, char *argv[]) {
         for (int col = 0; col < numFieldsD; col++){
             int rowIndex = globalFaceIds[elemToFace(k,row)];
             int colIndex = globalFaceIds[elemToFace(k,col)];
-            double val = stiffMatrixD(0,row,col);   
-            jointMatrix.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);	    
+            double val = stiffMatrixD(0,row,col);
+            jointMatrix.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
          }
       }
 
@@ -1271,25 +1271,25 @@ int main(int argc, char *argv[]) {
 
      // Compute A*Hgrads
       fst::tensorMultiplyDataField<double>(hexGradsTransformedWeightedMatrA,                                                     worksetMaterialVals, hexGradsTransformedWeighted);
-      
+
      // integrate to compute element stiff matrix
       fst::integrate<double>(stiffMatrixG,
                              hexGradsTransformed, hexGradsTransformedWeightedMatrA, COMP_BLAS);
-      
+
       // assemble into global matrix
       for (int row = 0; row < numFieldsG; row++){
-	int rowIndex,colIndex;
+        int rowIndex,colIndex;
         for (int col = 0; col < numFieldsG; col++){
             rowIndex = globalNodeIds[elemToNode(k,row)];
             colIndex = globalNodeIds[elemToNode(k,col)];
             double val = stiffMatrixG(0,row,col);
             StiffG.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-	    rowIndex+=numFacesGlobal; colIndex+=numFacesGlobal;    
-            jointMatrix.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);	    
+            rowIndex+=numFacesGlobal; colIndex+=numFacesGlobal;
+            jointMatrix.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
          }
       }
 
-  
+
 // **************** Compute element HGrad mass matrices *******************************
 
      // transform to physical coordinates
@@ -1298,107 +1298,107 @@ int main(int argc, char *argv[]) {
      // multiply values with weighted measure
       fst::multiplyMeasure<double>(hexGValsTransformedWeighted,
                                    weightedMeasure, hexGValsTransformed);
-      
+
      // integrate to compute element stiff matrix
       fst::integrate<double>(massMatrixG,
                              hexGValsTransformed, hexGValsTransformedWeighted, COMP_BLAS);
 
       // assemble into global matrix
       for (int row = 0; row < numFieldsG; row++){
-	int rowIndex,colIndex;
+        int rowIndex,colIndex;
         for (int col = 0; col < numFieldsG; col++){
             rowIndex = globalNodeIds[elemToNode(k,row)];
             colIndex = globalNodeIds[elemToNode(k,col)];
             double val = massMatrixG(0,row,col);
-	    //do we need this for preconditioning too?
+            //do we need this for preconditioning too?
             //StiffG.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-	    rowIndex+=numFacesGlobal; colIndex+=numFacesGlobal;    
-            jointMatrix.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);	    
+            rowIndex+=numFacesGlobal; colIndex+=numFacesGlobal;
+            jointMatrix.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
          }
       }
-  
-  
+
+
   // *********************** Compute element Div x GRAD(HGrad) matrices **********************
      // Compute A*Hgrads
       fst::tensorMultiplyDataField<double>(hexGradsTransformedWeightedMatrA,                                                     worksetMaterialVals, hexGradsTransformedWeighted);
-      
+
       fst::integrate<double>(stiffMatrixDG,
                               hexDValsTransformedMatrAinv,hexGradsTransformedWeightedMatrA, COMP_BLAS);
-      
+
      // apply face signs
       fst::applyLeftFieldSigns<double>(stiffMatrixDG, hexFaceSigns);
 
       // assemble into global matrix
       for (int row = 0; row < numFieldsD; row++){
-	int rowIndex,colIndex;
+        int rowIndex,colIndex;
         for (int col = 0; col < numFieldsG; col++){
             rowIndex = globalFaceIds[elemToFace(k,row)];
             colIndex = globalNodeIds[elemToNode(k,col)];
-            double val = stiffMatrixDG(0,row,col); 
-	    colIndex+=numFacesGlobal;   
+            double val = stiffMatrixDG(0,row,col);
+            colIndex+=numFacesGlobal;
             jointMatrix.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-	}
+        }
       }
-      
+
       /////////////and now matrix divs by gvals
       fst::integrate<double>(stiffMatrixDG2,
                               hexDivsTransformed,hexGValsTransformedWeighted, COMP_BLAS);
-      
+
      // apply face signs
       fst::applyLeftFieldSigns<double>(stiffMatrixDG2, hexFaceSigns);
 
       // assemble into global matrix
       for (int row = 0; row < numFieldsD; row++){
-	int rowIndex,colIndex;
+        int rowIndex,colIndex;
         for (int col = 0; col < numFieldsG; col++){
             rowIndex = globalFaceIds[elemToFace(k,row)];
             colIndex = globalNodeIds[elemToNode(k,col)];
-            double val = stiffMatrixDG2(0,row,col);     
-	    colIndex+=numFacesGlobal;    
-            jointMatrix.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);	
+            double val = stiffMatrixDG2(0,row,col);
+            colIndex+=numFacesGlobal;
+            jointMatrix.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
 
-	}
+        }
       }
 // ************************** Compute element GRAD(HGrad) x Div matrices *************
 
       fst::integrate<double>(stiffMatrixGD,
                               hexGradsTransformed,hexDValsTransformedWeighted, COMP_BLAS);
-			      
+
      // apply face signs
       fst::applyRightFieldSigns<double>(stiffMatrixGD, hexFaceSigns);
 
       // assemble into global matrix
       for (int row = 0; row < numFieldsG; row++){
-	int rowIndex,colIndex;
+        int rowIndex,colIndex;
         for (int col = 0; col < numFieldsD; col++){
             rowIndex = globalNodeIds[elemToNode(k,row)];
             colIndex = globalFaceIds[elemToFace(k,col)];
             double val = stiffMatrixGD(0,row,col);
-	    rowIndex+=numFacesGlobal;
-	    jointMatrix.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);		    
+            rowIndex+=numFacesGlobal;
+            jointMatrix.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
          }
       }
-      
-      
+
+
       fst::integrate<double>(stiffMatrixGD2,
                               hexGValsTransformed,hexDivsTransformedWeighted, COMP_BLAS);
-			      
+
      // apply face signs
       fst::applyRightFieldSigns<double>(stiffMatrixGD2, hexFaceSigns);
 
       // assemble into global matrix
       for (int row = 0; row < numFieldsG; row++){
-	int rowIndex,colIndex;
+        int rowIndex,colIndex;
         for (int col = 0; col < numFieldsD; col++){
             rowIndex = globalNodeIds[elemToNode(k,row)];
             colIndex = globalFaceIds[elemToFace(k,col)];
             double val = stiffMatrixGD2(0,row,col);
-	    rowIndex+=numFacesGlobal;
-	    jointMatrix.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);		    
+            rowIndex+=numFacesGlobal;
+            jointMatrix.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
          }
       }
 
-    
+
 // ******************************* Build right hand side ************************************
 
 
@@ -1410,7 +1410,7 @@ int main(int argc, char *argv[]) {
           double x = physCubPoints(0,nPt,0);
           double y = physCubPoints(0,nPt,1);
           double z = physCubPoints(0,nPt,2);
-	  	  
+
           rhsDatah(0,nPt) = evalF(x,y,z);
 
        }
@@ -1421,7 +1421,7 @@ int main(int argc, char *argv[]) {
 
      // apply signs
       fst::applyFieldSigns<double>(hD, hexFaceSigns);
-      
+
     // assemble into global vector
      for (int row = 0; row < numFieldsD; row++){
            int rowIndex = globalFaceIds[elemToFace(k,row)];
@@ -1429,11 +1429,11 @@ int main(int argc, char *argv[]) {
            rhsD.SumIntoGlobalValues(1, &rowIndex, &val);
            jointVector.SumIntoGlobalValues(1, &rowIndex, &val);
      }
-     
+
      // integrate (f,\phi_hat) term
       fst::integrate<double>(kD, rhsDatah, hexGValsTransformedWeighted,
-                             COMP_BLAS);      
-      
+                             COMP_BLAS);
+
     // assemble into global vector
      for (int row = 0; row < numFieldsG; row++){
            int rowIndex = globalNodeIds[elemToNode(k,row)] + numFacesGlobal;
@@ -1442,21 +1442,21 @@ int main(int argc, char *argv[]) {
      }
 
  } // *** end element loop ***
- 
- 
- 
+
+
+
    for(int i=0;i<jointVector.MyLength();i++){
      int id=jointVector.Map().GID(i);
-     jointVectorGIDs[0][i]=id; 
+     jointVectorGIDs[0][i]=id;
    }
-// Assemble over multiple processors, if necessary  
+// Assemble over multiple processors, if necessary
    StiffG.GlobalAssemble(); StiffG.FillComplete();
 
    rhsD.GlobalAssemble();
    jointMatrix.GlobalAssemble();  jointMatrix.FillComplete();
-   jointVector.GlobalAssemble();   
-   jointVectorGIDs.GlobalAssemble(); 
-   
+   jointVector.GlobalAssemble();
+   jointVectorGIDs.GlobalAssemble();
+
 
 
   // Adjust matrices and rhs due to boundary conditions
@@ -1467,14 +1467,14 @@ int main(int argc, char *argv[]) {
            numBCNodes++;
          }
     }
-    
+
     int indbc=0;
     int indOwned=0;
-     
+
     // Vector for use in applying BCs
     Epetra_MultiVector v(globalMapJoint,true);
-    v.PutScalar(0.0);    
-     
+    v.PutScalar(0.0);
+
     int * BCNodes = new int [numBCNodes];
     indbc=0;
     indOwned=0;
@@ -1483,21 +1483,21 @@ int main(int argc, char *argv[]) {
        if (nodeOnBoundary(i)){
           BCNodes[indbc]=indOwned+numOwnedFaces;
           indbc++;
-	  double x = nodeCoordx[i]; double y = nodeCoordy[i]; double z = nodeCoordz[i];
-	  v[0][indOwned+numOwnedFaces]= evalPhi(x,y,z);
+          double x = nodeCoordx[i]; double y = nodeCoordy[i]; double z = nodeCoordz[i];
+          v[0][indOwned+numOwnedFaces]= evalPhi(x,y,z);
          }
         indOwned++;
        }
-    }   
-    
+    }
+
     //now multiply VectorBConly by full matrix
     Epetra_MultiVector rhsDir(globalMapJoint,true);
     jointMatrix.Apply(v,rhsDir);
-     
+
     //now subtract
     // Update right-hand side
     jointVector.Update(-1.0,rhsDir,1.0);
-    
+
     //now substitute vals corresponding to BC rows into RHS
     indbc=0;
     indOwned=0;
@@ -1505,17 +1505,17 @@ int main(int argc, char *argv[]) {
       if (nodeIsOwned[i]){
        if (nodeOnBoundary(i)){
           indbc++;
-	  double x = nodeCoordx[i]; double y = nodeCoordy[i]; double z = nodeCoordz[i];
-	  jointVector[0][indOwned+numOwnedFaces]= evalPhi(x,y,z);
+          double x = nodeCoordx[i]; double y = nodeCoordy[i]; double z = nodeCoordz[i];
+          jointVector[0][indOwned+numOwnedFaces]= evalPhi(x,y,z);
          }
         indOwned++;
        }
-    }  
-     
+    }
+
     ML_Epetra::Apply_OAZToMatrix(BCNodes, numBCNodes, jointMatrix);
-     
+
     delete [] BCNodes;
-    
+
 
 
 #ifdef DUMP_DATA
@@ -1525,10 +1525,10 @@ int main(int argc, char *argv[]) {
    EpetraExt::RowMatrixToMatlabFile("d0.dat",DGrad);
    EpetraExt::RowMatrixToMatlabFile("stiffGp.dat",StiffG);
    EpetraExt::MultiVectorToMatrixMarketFile("rhsDp.dat",rhsD,0,0,false);
-   
-   EpetraExt::RowMatrixToMatlabFile("jointMatrixDarcy1.dat",jointMatrix);   
-   EpetraExt::MultiVectorToMatrixMarketFile("jointVectorDarcy1.dat",jointVector,0,0,false);  
-   EpetraExt::MultiVectorToMatrixMarketFile("jointVectorGIDsDarcy1.dat",jointVectorGIDs,0,0,false); 
+
+   EpetraExt::RowMatrixToMatlabFile("jointMatrixDarcy1.dat",jointMatrix);
+   EpetraExt::MultiVectorToMatrixMarketFile("jointVectorDarcy1.dat",jointVector,0,0,false);
+   EpetraExt::MultiVectorToMatrixMarketFile("jointVectorGIDsDarcy1.dat",jointVectorGIDs,0,0,false);
    {
    char str2[80];
    sprintf(str2,"myvector_%d.dat",MyPID);
@@ -1536,7 +1536,7 @@ int main(int argc, char *argv[]) {
      for(int i=0;i<jointVector.MyLength();i++)
          fprintf(f,"%d %22.16e\n",jointVector.Map().GID(i),jointVector[0][i]);
    fclose(f);
-   }   
+   }
 #endif
 
 
@@ -1549,8 +1549,8 @@ int main(int argc, char *argv[]) {
      tvec[0][i]=globalMapD.GID(i);
    for(int i=0;i<globalMapG.NumMyElements();i++)
      tvec[1][i]=globalMapG.GID(i)+numFacesGlobal;
-   RCP<Teko::Epetra::BlockedEpetraOperator> BlockOp=rcp(new Teko::Epetra::BlockedEpetraOperator(tvec,rcp(&jointMatrix,false)));   
-   
+   RCP<Teko::Epetra::BlockedEpetraOperator> BlockOp=rcp(new Teko::Epetra::BlockedEpetraOperator(tvec,rcp(&jointMatrix,false)));
+
    // Grab diagonal blocks
    RCP<const Epetra_CrsMatrix> A00=rcp_dynamic_cast<const Epetra_CrsMatrix>(BlockOp->GetBlock(0,0));
    RCP<const Epetra_CrsMatrix> A11=rcp_dynamic_cast<const Epetra_CrsMatrix>(BlockOp->GetBlock(1,1));
@@ -1565,13 +1565,13 @@ int main(int argc, char *argv[]) {
    List_Coarse.set("smoother: type","Chebyshev");
    List_Coarse.set("smoother: sweeps",2);
    List_Coarse.set("coarse: max size",1000);
- 
+
    Teuchos::ParameterList List11,List11c,List22,List22c;
-   ML_Epetra::UpdateList(List_Coarse,List11,true); 
+   ML_Epetra::UpdateList(List_Coarse,List11,true);
    List11.set("smoother: type","do-nothing");
    List11.set("smoother: sweeps",0);
-   ML_Epetra::UpdateList(List_Coarse,List22,true); 
-   ML_Epetra::UpdateList(List_Coarse,List11c,true); 
+   ML_Epetra::UpdateList(List_Coarse,List22,true);
+   ML_Epetra::UpdateList(List_Coarse,List11c,true);
 #ifdef HAVE_ML_ZOLTAN
    List11c.set("aggregation: type","Uncoupled");
    List11c.set("repartition: enable",1);
@@ -1579,7 +1579,7 @@ int main(int argc, char *argv[]) {
    List11c.set("repartition: max min ratio",1.4);
    List11c.set("repartition: min per proc",1000);
 #endif
-   ML_Epetra::UpdateList(List_Coarse,List22c,true); 
+   ML_Epetra::UpdateList(List_Coarse,List22c,true);
 #ifdef HAVE_ML_ZOLTAN
    List22c.set("aggregation: type","Uncoupled");
    List22c.set("repartition: enable",1);
@@ -1603,13 +1603,13 @@ int main(int argc, char *argv[]) {
    RCP<GradDivPreconditioner> Prec0=rcp(new GradDivPreconditioner(*A00,FaceNode,DCurl,DGrad,StiffG,ListHdiv));
 
 
-   // Make H(Grad) preconditioner A11 
+   // Make H(Grad) preconditioner A11
    Teuchos::ParameterList ListHgrad;
    ML_Epetra::SetDefaults("SA",ListHgrad);
    ListHgrad.set("smoother: sweeps",2);
    ListHgrad.set("smoother: type","Chebyshev");
    ListHgrad.set("coarse: type","Amesos-KLU");
-   ListHgrad.set("coarse: max size",1000);  
+   ListHgrad.set("coarse: max size",1000);
    ListHgrad.set("ML output",10);
    ListHgrad.set("ML label","Poisson solver");
    ListHgrad.set("aggregation: threshold",0.01);
@@ -1629,23 +1629,23 @@ int main(int argc, char *argv[]) {
 
    // Build the linear ops with the Apply/ApplyInverse switcheroo
    RCP<const EpetraLinearOp> invD0=epetraLinearOp(Prec0, NOTRANS,EPETRA_OP_APPLY_APPLY_INVERSE);
-   RCP<const EpetraLinearOp> invD1=epetraLinearOp(Prec1, NOTRANS,EPETRA_OP_APPLY_APPLY_INVERSE);		  
+   RCP<const EpetraLinearOp> invD1=epetraLinearOp(Prec1, NOTRANS,EPETRA_OP_APPLY_APPLY_INVERSE);
 
    // Build the full preconditioner
    JacobiPreconditionerFactory precFact(rcp(new Teko::StaticInvDiagStrategy(invD0,invD1)));
-   Teko::Epetra::EpetraBlockPreconditioner FullPrec(rcpFromRef(precFact)); 
-   FullPrec.buildPreconditioner(BlockOp); 
+   Teko::Epetra::EpetraBlockPreconditioner FullPrec(rcpFromRef(precFact));
+   FullPrec.buildPreconditioner(BlockOp);
 
 
   //set up linear system
   Epetra_FEVector xx(globalMapJoint);
   xx.PutScalar(0.0);
-  
-  Epetra_LinearProblem Problem(&jointMatrix,&xx,&jointVector); 
+
+  Epetra_LinearProblem Problem(&jointMatrix,&xx,&jointVector);
   Epetra_Time Time2(jointMatrix.Comm());
-  
-  AztecOO solver(Problem);  
-  
+
+  AztecOO solver(Problem);
+
   // tell AztecOO to use this preconditioner, then solve
   solver.SetPrecOperator(&FullPrec);
   //solver.SetAztecOption(AZ_solver, AZ_gmres);
@@ -1654,61 +1654,61 @@ int main(int argc, char *argv[]) {
 
   //solve linear system
   solver.Iterate(1000, 1e-8);
-  
+
   Epetra_FEVector globalSoln(globalMapJoint);
   globalSoln = xx;
   //or
   //Epetra_MultiVector globalSoln = *lhs;
-  
+
   // note: solution map will be same globalJointMap!
-  
-  
+
+
   // Get exact solution at nodes, keep the order of soln same as in jointMap
   double * exactSoln = new double [numOwnedNodes];
-  
+
   for (int nn = 0; nn<numOwnedNodes; nn++) {
     int globId = ownedGIDs[nn];
-	for (int search = 0; search<numNodes; search++){
-	  if ((nodeIsOwned[search])&&(globalNodeIds[search]==globId)){
-	    int ind=search;
-	    double x = nodeCoordx[ind];
-	    double y = nodeCoordy[ind];;
-	    double z = nodeCoordz[ind];;
-	    double exactu = evalPhi(x,y,z);
-	    exactSoln[nn]=exactu;
-	    search=numNodes+1;
-	  }
-	}
+        for (int search = 0; search<numNodes; search++){
+          if ((nodeIsOwned[search])&&(globalNodeIds[search]==globId)){
+            int ind=search;
+            double x = nodeCoordx[ind];
+            double y = nodeCoordy[ind];;
+            double z = nodeCoordz[ind];;
+            double exactu = evalPhi(x,y,z);
+            exactSoln[nn]=exactu;
+            search=numNodes+1;
+          }
+        }
   }
-  
+
 
   //primitive max error check, no measures, just max of Error over all nodes
   double maxerr=0,maxerrGlobal=0;
    for (int i=numOwnedFaces; i<jointLocalVarSize; i++)
      maxerr=max(abs(exactSoln[i-numOwnedFaces]-globalSoln[0][i]),maxerr);
-   
+
    Comm.MaxAll(&maxerr,&maxerrGlobal,1);
    if(!Comm.MyPID())
      std::cout << "Max Error over all nodes: "<<maxerrGlobal<<endl;
-	
-#ifdef DUMP_DATA	
-     EpetraExt::MultiVectorToMatrixMarketFile("solnVectorDarcy.dat",globalSoln,0,0,false);             
+
+#ifdef DUMP_DATA
+     EpetraExt::MultiVectorToMatrixMarketFile("solnVectorDarcy.dat",globalSoln,0,0,false);
 #endif
     // ********  Calculate Error in Solution ***************
    // Import solution onto current processor
-     
+
      Epetra_Map  solnMap(numFacesGlobal+numNodesGlobal, numFacesGlobal+numNodesGlobal, 0, Comm);
      Epetra_Import  solnImporter(solnMap, globalMapJoint);
      Epetra_FEVector  uCoeff(solnMap);
      uCoeff.Import(globalSoln, solnImporter, Insert);
-     
+
      double L2err_u = 0.0;
      double HDiverr_u = 0.0;
      double Linferr_u = 0.0;
      double L2errTot_u = 0.0;
      double HDiverrTot_u = 0.0;
      double LinferrTot_u = 0.0;
-     
+
      double L2err_phi = 0.0;
      double H1err_phi = 0.0;
      double L2errTot_phi = 0.0;
@@ -1740,14 +1740,14 @@ int main(int argc, char *argv[]) {
      hexHDivBasis.getValues(uhDVals, cubPointsErr, OPERATOR_VALUE);
      hexHDivBasis.getValues(uhDivs, cubPointsErr, OPERATOR_DIV);
 
-     
-     FieldContainer<double> phihGVals(numFieldsG, numCubPointsErr); 
-     FieldContainer<double> phihGValsTrans(numCells,numFieldsG, numCubPointsErr); 
-     FieldContainer<double> phihGrads(numFieldsG, numCubPointsErr, spaceDim); 
-     FieldContainer<double> phihGradsTrans(numCells, numFieldsG, numCubPointsErr, spaceDim); 
+
+     FieldContainer<double> phihGVals(numFieldsG, numCubPointsErr);
+     FieldContainer<double> phihGValsTrans(numCells,numFieldsG, numCubPointsErr);
+     FieldContainer<double> phihGrads(numFieldsG, numCubPointsErr, spaceDim);
+     FieldContainer<double> phihGradsTrans(numCells, numFieldsG, numCubPointsErr, spaceDim);
      hexHGradBasis.getValues(phihGVals, cubPointsErr, OPERATOR_VALUE);
      hexHGradBasis.getValues(phihGrads, cubPointsErr, OPERATOR_GRAD);
-     
+
 
    // Loop over elements
     for (int k=0; k<numElems; k++){
@@ -1756,10 +1756,10 @@ int main(int argc, char *argv[]) {
       double HDiverrElem_u = 0.0;
       double uExact1, uExact2, uExact3;
       double divuExact;
-      
+
       double L2errElem_phi = 0.0;
       double H1errElem_phi = 0.0;
-      double phiExact; 
+      double phiExact;
       double gradphiExact1, gradphiExact2, gradphiExact3;
 
      // physical cell coordinates
@@ -1794,11 +1794,11 @@ int main(int argc, char *argv[]) {
       // transform basis values to physical coordinates
        fst::HDIVtransformVALUE<double>(uhDValsTrans, hexJacobianE, hexJacobDetE, uhDVals);
        fst::HDIVtransformDIV<double>(uhDivsTrans, hexJacobDetE, uhDivs);
-       
-      // transform basis values to physical coordinates 
+
+      // transform basis values to physical coordinates
        fst::HGRADtransformVALUE<double>(phihGValsTrans, phihGVals);
        fst::HGRADtransformGRAD<double>(phihGradsTrans, hexJacobInvE, phihGrads);
-       
+
       // compute weighted measure
        fst::computeCellMeasure<double>(weightedMeasureE, hexJacobDetE, cubWeightsErr);
 
@@ -1811,27 +1811,27 @@ int main(int argc, char *argv[]) {
           double z = physCubPointsE(0,nPt,2);
           evalu(uExact1, uExact2, uExact3, x, y, z);
           divuExact = evalDivu(x, y, z);
-	  phiExact = evalPhi(x, y, z);
-	  evalGradPhi(gradphiExact1, gradphiExact2, gradphiExact3, x, y, z);
+          phiExact = evalPhi(x, y, z);
+          evalGradPhi(gradphiExact1, gradphiExact2, gradphiExact3, x, y, z);
 
          // calculate approximate solution and divs
           double uApprox1 = 0.0;
           double uApprox2 = 0.0;
           double uApprox3 = 0.0;
           double divuApprox = 0.0;
-	  
-	  double phiApprox = 0.;
-	  double gradphiApprox1 = 0.;
-	  double gradphiApprox2 = 0.;	  
-	  double gradphiApprox3 = 0.;
-	  
+
+          double phiApprox = 0.;
+          double gradphiApprox1 = 0.;
+          double gradphiApprox2 = 0.;
+          double gradphiApprox3 = 0.;
+
           for (int i = 0; i < numFieldsD; i++){
              int rowIndex = globalFaceIds[elemToFace(k,i)];
 
-	     //was rowIndex
-	     double uh1 = uCoeff.Values()[rowIndex];
-	     
-	     uApprox1 += uh1*uhDValsTrans(0,i,nPt,0)*hexFaceSigns(0,i);
+             //was rowIndex
+             double uh1 = uCoeff.Values()[rowIndex];
+
+             uApprox1 += uh1*uhDValsTrans(0,i,nPt,0)*hexFaceSigns(0,i);
              uApprox2 += uh1*uhDValsTrans(0,i,nPt,1)*hexFaceSigns(0,i);
              uApprox3 += uh1*uhDValsTrans(0,i,nPt,2)*hexFaceSigns(0,i);
              divuApprox += uh1*uhDivsTrans(0,i,nPt)*hexFaceSigns(0,i);
@@ -1846,36 +1846,36 @@ int main(int argc, char *argv[]) {
           L2errElem_u+=(uExact3 - uApprox3)*(uExact3 - uApprox3)*weightedMeasureE(0,nPt);
           HDiverrElem_u+=((divuExact - divuApprox)*(divuExact - divuApprox))
                      *weightedMeasureE(0,nPt);
-		
-		     
+
+
           L2err_u+=L2errElem_u;
-          HDiverr_u+=HDiverrElem_u;		     
-		     
-		     
+          HDiverr_u+=HDiverrElem_u;
+
+
           for (int i = 0; i < numFieldsG; i++){
             int rowIndex = globalNodeIds[elemToNode(k,i)];
 
             double phih1 = uCoeff.Values()[rowIndex+numFacesGlobal];
 
-            phiApprox += phih1*phihGValsTrans(0,i,nPt); 
-            gradphiApprox1 += phih1*phihGradsTrans(0,i,nPt,0); 
-            gradphiApprox2 += phih1*phihGradsTrans(0,i,nPt,1); 
-            gradphiApprox3 += phih1*phihGradsTrans(0,i,nPt,2); 
+            phiApprox += phih1*phihGValsTrans(0,i,nPt);
+            gradphiApprox1 += phih1*phihGradsTrans(0,i,nPt,0);
+            gradphiApprox2 += phih1*phihGradsTrans(0,i,nPt,1);
+            gradphiApprox3 += phih1*phihGradsTrans(0,i,nPt,2);
           }
-      
-	// evaluate the error at cubature points
-	
-	//GET IT! later
-	  //Linferr_phi = max(Linferr_phi, abs(phiExact - phiApprox));
-      
-	  L2errElem_phi+=(phiExact - phiApprox)*(phiExact - phiApprox)*weightedMeasureE(0,nPt);
-	  H1errElem_phi+=((gradphiExact1 - gradphiApprox1)*(gradphiExact1 - gradphiApprox1))
-	    *weightedMeasureE(0,nPt);
-	  H1errElem_phi+=((gradphiExact2 - gradphiApprox2)*(gradphiExact2 - gradphiApprox2))
-	    *weightedMeasureE(0,nPt);
-	  H1errElem_phi+=((gradphiExact3 - gradphiApprox3)*(gradphiExact3 - gradphiApprox3))
-	    *weightedMeasureE(0,nPt);		     
-		     
+
+        // evaluate the error at cubature points
+
+        //GET IT! later
+          //Linferr_phi = max(Linferr_phi, abs(phiExact - phiApprox));
+
+          L2errElem_phi+=(phiExact - phiApprox)*(phiExact - phiApprox)*weightedMeasureE(0,nPt);
+          H1errElem_phi+=((gradphiExact1 - gradphiApprox1)*(gradphiExact1 - gradphiApprox1))
+            *weightedMeasureE(0,nPt);
+          H1errElem_phi+=((gradphiExact2 - gradphiApprox2)*(gradphiExact2 - gradphiApprox2))
+            *weightedMeasureE(0,nPt);
+          H1errElem_phi+=((gradphiExact3 - gradphiApprox3)*(gradphiExact3 - gradphiApprox3))
+            *weightedMeasureE(0,nPt);
+
         }
 
        L2err_phi+=L2errElem_phi;
@@ -1901,8 +1901,8 @@ int main(int argc, char *argv[]) {
 
  // delete mesh
  Delete_Pamgen_Mesh();
- 
- 
+
+
 
  //clean up
   for(long long b = 0; b < numElemBlk; b++){
@@ -1925,14 +1925,14 @@ int main(int argc, char *argv[]) {
    delete [] edgeIsOwned;
    delete [] globalFaceIds;
    delete [] faceIsOwned;
-   
+
    delete [] ownedGIDs;
    delete [] exactSoln;
    delete [] ownedFaceIds;
    delete [] ownedEdgeIds;
    delete [] ownedFaceNodeIds;
-   
-   
+
+
    if(num_node_comm_maps > 0){
       delete [] node_comm_proc_ids;
       delete [] node_cmap_node_cnts;
@@ -1954,9 +1954,9 @@ template<typename Scalar>
 void materialTensor(Scalar material[][3], const Scalar& x, const Scalar& y, const Scalar& z) {
 
   Scalar kappa=evalKappa(x,y,z);
-  
-  
-  
+
+
+
   material[0][0] = kappa;
   material[0][1] = 0.;
   material[0][2] = 0.;
@@ -1968,16 +1968,16 @@ void materialTensor(Scalar material[][3], const Scalar& x, const Scalar& y, cons
   material[2][0] = 0.;
   material[2][1] = 0.;
   material[2][2] = kappa;
-  
+
 }
 
 template<typename Scalar>
 void materialTensorInv(Scalar material[][3], const Scalar& x, const Scalar& y, const Scalar& z) {
 
   Scalar kappa=evalKappa(x,y,z);
-  
+
   kappa=1./kappa;
-  
+
   material[0][0] = kappa;
   material[0][1] = 0.;
   material[0][2] = 0.;
@@ -1989,9 +1989,9 @@ void materialTensorInv(Scalar material[][3], const Scalar& x, const Scalar& y, c
   material[2][0] = 0.;
   material[2][1] = 0.;
   material[2][2] = kappa;
-  
-  
-  
+
+
+
 }
 
 
@@ -2061,24 +2061,24 @@ Scalar evalKappa(const Scalar& x, const Scalar& y, const Scalar& z){
 #ifdef SMOOTH
   kappa=1.;
 #endif
-  
-  
+
+
 #ifdef PATCH
   if((y>=0)&&(y<=.2)) kappa=16;
-  if((y>.2)&&(y<=.4)) kappa=6;  
+  if((y>.2)&&(y<=.4)) kappa=6;
   if((y>.4)&&(y<=.6)) kappa=1;
   if((y>.6)&&(y<=.8)) kappa=10;
   if((y>.8)&&(y<=1.0)) kappa=2;
 #endif
-  
+
   return kappa;
 }
 
 template<typename Scalar>
 Scalar evalF(const Scalar& x, const Scalar& y, const Scalar& z){
-  
+
   //patch test
-#ifdef PATCH  
+#ifdef PATCH
   return 1 - x;
 #endif
   //smooth solution
@@ -2099,7 +2099,7 @@ template<typename Scalar>
 Scalar evalPhi(const Scalar& x, const Scalar& y, const Scalar& z){
 
   //patch test
-#ifdef PATCH   
+#ifdef PATCH
   return 1 - x;
 #endif
 
@@ -2112,19 +2112,19 @@ Scalar evalPhi(const Scalar& x, const Scalar& y, const Scalar& z){
 
 // Calculates divergence of exact solution u
 template<typename Scalar> Scalar evalDivu(Scalar & x, Scalar & y, Scalar & z){
-   
+
   //patch test
-#ifdef PATCH  
+#ifdef PATCH
   return 0.0;
-#endif   
-  //smooth solution 
+#endif
+  //smooth solution
 #ifdef SMOOTH
   Scalar a;
   double pi =  3.1415926535897932384626433;
   a = 2*pi*pi*cos(2*pi*x)*sin(pi*y)*sin(pi*y)*sin(pi*z)*sin(pi*z);
   a += 2*pi*pi*cos(2*pi*y)*sin(pi*x)*sin(pi*x)*sin(pi*z)*sin(pi*z);
   a += 2*pi*pi*cos(2*pi*z)*sin(pi*y)*sin(pi*y)*sin(pi*x)*sin(pi*x);
-  return a; 
+  return a;
 #endif
 }
 
@@ -2132,21 +2132,21 @@ template<typename Scalar> Scalar evalDivu(Scalar & x, Scalar & y, Scalar & z){
 template<typename Scalar> int evalu(Scalar & uExact0, Scalar & uExact1, Scalar & uExact2, Scalar & x, Scalar & y, Scalar & z){
 
    //patch test
-   
-#ifdef PATCH   
+
+#ifdef PATCH
    uExact0 = evalKappa(x,y,z);
    uExact1 = 0.0;
    uExact2 = 0.0;
-#endif   
+#endif
 
-#ifdef SMOOTH    
+#ifdef SMOOTH
    //smooth solution
    double pi =  3.1415926535897932384626433;
    uExact0 = pi*sin(2*pi*x)*sin(pi*y)*sin(pi*y)*sin(pi*z)*sin(pi*z);
    uExact1 = pi*sin(2*pi*y)*sin(pi*x)*sin(pi*x)*sin(pi*z)*sin(pi*z);
    uExact2 = pi*sin(2*pi*z)*sin(pi*y)*sin(pi*y)*sin(pi*x)*sin(pi*x);
-#endif    
-    
+#endif
+
    return 0;
 }
 
@@ -2154,20 +2154,20 @@ template<typename Scalar> int evalu(Scalar & uExact0, Scalar & uExact1, Scalar &
 template<typename Scalar> int evalGradPhi(Scalar & phiGExact0, Scalar & phiGExact1, Scalar & phiGExact2, Scalar & x, Scalar & y, Scalar & z){
 
    //patch test
-   
-#ifdef PATCH   
+
+#ifdef PATCH
    phiGExact0 = -1.;
    phiGExact1 = 0.0;
    phiGExact2 = 0.0;
-#endif   
+#endif
 
-#ifdef SMOOTH    
+#ifdef SMOOTH
    //smooth solution
    double pi =  3.1415926535897932384626433;
    phiGExact0 = -pi*sin(2*pi*x)*sin(pi*y)*sin(pi*y)*sin(pi*z)*sin(pi*z);
    phiGExact1 = -pi*sin(2*pi*y)*sin(pi*x)*sin(pi*x)*sin(pi*z)*sin(pi*z);
    phiGExact2 = -pi*sin(2*pi*z)*sin(pi*y)*sin(pi*y)*sin(pi*x)*sin(pi*x);
-#endif    
-    
+#endif
+
    return 0;
 }

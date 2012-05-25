@@ -137,7 +137,7 @@ main (int argc, char *argv[])
 #ifdef HAVE_MPI
   *out << "PARALLEL executable" << endl;
 #else
-  out << "SERIAL executable" << endl;
+  *out << "SERIAL executable" << endl;
 #endif
 
 /**********************************************************************************/
