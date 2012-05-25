@@ -217,7 +217,6 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
 // *******************************************************************
 void panzer::PhysicsBlock::
 buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-					     const LinearObjFactory<panzer::Traits> & lof,
 					     const Teuchos::ParameterList& user_data) const
 {
   using namespace std;
@@ -245,7 +244,7 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
          }
       }
 
-      eval_type->buildAndRegisterDOFProjectionsToIPEvaluators(fm, providedDOFs, lof, user_data);
+      eval_type->buildAndRegisterDOFProjectionsToIPEvaluators(fm, providedDOFs, user_data);
     }
   }
 }

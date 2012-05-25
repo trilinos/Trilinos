@@ -188,7 +188,6 @@ template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
 buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 					     const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
-					     const LinearObjFactory<panzer::Traits> & lof,
 					     const Teuchos::ParameterList& user_data) const
 {
   using Teuchos::ParameterList;
