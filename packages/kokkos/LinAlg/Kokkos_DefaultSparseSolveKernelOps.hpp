@@ -79,65 +79,86 @@ namespace Kokkos {
     // mv data
     DomainScalar  *x;
     const RangeScalar *y;
-    size_t xstride, ystride;
+    size_t numRHS, xstride, ystride;
 
-    inline KERNEL_PREFIX void execute(size_t i) {
-      // solve rhs i for lhs i
-      const size_t rhs = i;
-      DomainScalar      *xj = x + rhs * xstride;
-      const RangeScalar *yj = y + rhs * ystride;
+    inline KERNEL_PREFIX void execute() {
+      // solve for X in A * X = Y
       // 
       // upper triangular requires backwards substition, solving in reverse order
       // must unroll the last iteration, because decrement results in wrap-around
       // 
       if (upper && unitDiag) {
         // upper + unit
-        xj[numRows-1] = (DomainScalar)yj[numRows-1];
+        for (size_t j=0; j<numRHS; ++j) x[j*xstride+numRows-1] = (DomainScalar)y[j*ystride+numRows-1];
         for (size_t r=2; r < numRows+1; ++r) {
           const size_t row = numRows - r; // for row=numRows-2 to 0 step -1
-          const size_t begin = ptrs[row], end = ptrs[row+1];
-          xj[row] = (DomainScalar)yj[row];
-          for (size_t c=begin; c != end; ++c) {
-            xj[row] -= (DomainScalar)vals[c] * xj[inds[c]];
+          const Ordinal *i = inds+ptrs[row],
+                       *ie = inds+ptrs[row+1];
+          const Scalar  *v = vals+ptrs[row];
+          for (size_t j=0; j<numRHS; ++j) x[j*xstride+row] = (DomainScalar)y[j*ystride+row];
+          while (i != ie) {
+            const Ordinal ind = *i++;
+            const Scalar  val = *v++;
+            for (size_t j=0; j<numRHS; ++j) x[j*xstride+row] -= (DomainScalar)val * x[j*xstride+ind];
           }
         }
       }
       else if (upper && !unitDiag) {
         // upper + non-unit
-        xj[numRows-1] = (DomainScalar)( yj[numRows-1] / (RangeScalar)vals[ptrs[numRows-1]] );
+        DomainScalar diag = vals[ptrs[numRows-1]];
+        for (size_t j=0; j<numRHS; ++j) x[j*xstride+numRows-1] = (DomainScalar)( y[j*ystride+numRows-1] / diag );
         for (size_t r=2; r < numRows+1; ++r) {
           const size_t row = numRows - r; // for row=numRows-2 to 0 step -1
-          const size_t diag = ptrs[row], end = ptrs[row+1];
-          const DomainScalar dval = (DomainScalar)vals[diag];
-          xj[row] = (DomainScalar)yj[row];
-          for (size_t c=diag+1; c != end; ++c) {
-            xj[row] -= (DomainScalar)vals[c] * xj[inds[c]];
+          const Ordinal *i = inds+ptrs[row],
+                       *ie = inds+ptrs[row+1];
+          const Scalar  *v = vals+ptrs[row];
+          // capture and skip the diag
+          ++i;
+          diag = *v++;
+          //
+          for (size_t j=0; j<numRHS; ++j) x[j*xstride+row] = (DomainScalar) y[j*ystride+row];
+          while (i != ie) {
+            const Ordinal ind = *i++;
+            const Scalar  val = *v++;
+            for (size_t j=0; j<numRHS; ++j) x[j*xstride+row] -= (DomainScalar) val * x[j*xstride+ind];
           }
-          xj[row] /= dval;
+          for (size_t j=0; j<numRHS; ++j) x[j*xstride+row] /= diag;
         }
       }
       else if (!upper && unitDiag) {
         // lower + unit
-        xj[0] = (DomainScalar)yj[0];
+        for (size_t j=0; j<numRHS; ++j) x[j*xstride] = (DomainScalar) y[j*ystride];
         for (size_t row=1; row < numRows; ++row) {
-          const size_t begin = ptrs[row], end = ptrs[row+1];
-          xj[row] = (DomainScalar)yj[row];
-          for (size_t c=begin; c != end; ++c) {
-            xj[row] -= (DomainScalar)vals[c] * xj[inds[c]];
+          const Ordinal *i = inds+ptrs[row],
+                       *ie = inds+ptrs[row+1];
+          const Scalar  *v = vals+ptrs[row];
+          for (size_t j=0; j<numRHS; ++j) x[j*xstride+row] = (DomainScalar) y[j*ystride+row];
+          while (i != ie) {
+            const Ordinal ind = *i++;
+            const Scalar  val = *v++;
+            for (size_t j=0; j<numRHS; ++j) x[j*xstride+row] -= (DomainScalar) val * x[j*xstride+ind];
           }
         }
       }
       else if (!upper && !unitDiag) {
         // lower + non-unit
-        xj[0] = (DomainScalar)( yj[0] / (RangeScalar)vals[0] );
+        DomainScalar diag = vals[0];
+        for (size_t j=0; j<numRHS; ++j) x[j*xstride] = (DomainScalar)( y[j*ystride] / (RangeScalar)diag );
         for (size_t row=1; row < numRows; ++row) {
-          const size_t begin = ptrs[row], diag = ptrs[row+1]-1;
-          const DomainScalar dval = vals[diag];
-          xj[row] = (DomainScalar)yj[row];
-          for (size_t c=begin; c != diag; ++c) {
-            xj[row] -= (DomainScalar)vals[c] * xj[inds[c]];
+          const Ordinal *i = inds+ptrs[row],
+                       *ie = inds+ptrs[row+1];
+          const Scalar  *v = vals+ptrs[row];
+          // capture and skip the diag
+          --ie;
+          diag = *--v;
+          //
+          for (size_t j=0; j<numRHS; ++j) x[j*xstride+row] = (DomainScalar) y[j*ystride+row];
+          while (i != ie) {
+            const Ordinal ind = *i++;
+            const Scalar  val = *v++;
+            for (size_t j=0; j<numRHS; ++j) x[j*xstride+row] -= (DomainScalar) val * x[j*xstride+ind];
           }
-          xj[row] /= dval;
+          for (size_t j=0; j<numRHS; ++j) x[j*xstride+row] /= diag;
         }
       }
     }
@@ -155,72 +176,88 @@ namespace Kokkos {
     // mv data
     DomainScalar  *x;
     const RangeScalar *y;
-    size_t xstride, ystride;
+    size_t numRHS, xstride, ystride;
 
-    inline KERNEL_PREFIX void execute(size_t i) {
-      // solve rhs i for lhs i
-      const size_t rhs = i;
-      DomainScalar      *xj = x + rhs * xstride;
-      const RangeScalar *yj = y + rhs * ystride;
+    inline KERNEL_PREFIX void execute() {
+      // solve for X in A^H * X = Y
       // 
       // put y into x and solve system in-situ
       // this is copy-safe, in the scenario that x and y point to the same location.
       //
-      for (size_t row=0; row < numRows; ++row) {
-        xj[row] = yj[row];
+      for (size_t rhs=0; rhs < numRHS; ++rhs) {
+        for (size_t row=0; row < numRows; ++row) {
+          x[rhs*xstride+row] = y[rhs*xstride+row];
+        }
       }
       // 
       if (upper && unitDiag) {
         // upper + unit
-        size_t beg, endplusone;
         for (size_t row=0; row < numRows-1; ++row) {
-          beg = ptrs[row]; 
-          endplusone = ptrs[row+1];
-          for (size_t j=beg; j < endplusone; ++j) {
-            xj[inds[j]] -= (DomainScalar)vals[j] * xj[row];
+          const Ordinal *i = inds+ptrs[row],
+                       *ie = inds+ptrs[row+1];
+          const Scalar  *v = vals+ptrs[row];
+          while (i != ie) {
+            const Ordinal ind = *i++;
+            const Scalar  val = *v++;
+            for (size_t j=0; j<numRHS; ++j) x[j*xstride+ind] -= (DomainScalar)val * x[j*xstride+row];
           }
         }
       }
       else if (upper && !unitDiag) {
         // upper + non-unit; diag is first element in row
-        size_t diag, endplusone;
-        DomainScalar dval;
+        DomainScalar diag;
         for (size_t row=0; row < numRows-1; ++row) {
-          diag = ptrs[row]; 
-          endplusone = ptrs[row+1];
-          dval = (DomainScalar)vals[diag];
-          xj[row] /= dval;
-          for (size_t j=diag+1; j < endplusone; ++j) {
-            xj[inds[j]] -= (DomainScalar)vals[j] * xj[row];
+          const Ordinal *i = inds+ptrs[row],
+                       *ie = inds+ptrs[row+1];
+          const Scalar  *v = vals+ptrs[row];
+          // capture and skip the diag
+          ++i;
+          diag = *++v;
+          //
+          for (size_t j=0; j<numRHS; ++j) x[j*xstride+row] /= diag;
+          while (i != ie) {
+            const Ordinal ind = *i++;
+            const Scalar  val = *v++;
+            for (size_t j=0; j<numRHS; ++j) x[j*xstride+ind] -= (DomainScalar)val * x[j*xstride+row];
           }
         }
-        diag = ptrs[numRows-1];
-        dval = (DomainScalar)vals[diag];
-        xj[numRows-1] /= dval;
+        diag = vals[ptrs[numRows-1]];
+        for (size_t j=0; j<numRHS; ++j) x[j*xstride+numRows-1] /= diag;
       }
       else if (!upper && unitDiag) {
         // lower + unit
         for (size_t row=numRows-1; row > 0; --row) {
-          size_t beg = ptrs[row], endplusone = ptrs[row+1];
-          for (size_t j=beg; j < endplusone; ++j) {
-            xj[inds[j]] -= (DomainScalar)vals[j] * xj[row];
+          const Ordinal *i = inds+ptrs[row],
+                       *ie = inds+ptrs[row+1];
+          const Scalar  *v = vals+ptrs[row];
+          while (i != ie) {
+            const Ordinal ind = *i++;
+            const Scalar  val = *v++;
+            for (size_t j=0; j<numRHS; ++j) x[j*xstride+ind] -= (DomainScalar)val * x[j*xstride+row];
           }
         }
       }
       else if (!upper && !unitDiag) {
         // lower + non-unit; diag is last element in row
-        DomainScalar dval;
+        DomainScalar diag;
         for (size_t row=numRows-1; row > 0; --row) {
-          size_t beg = ptrs[row], diag = ptrs[row+1]-1;
-          dval = (DomainScalar)vals[diag];
-          xj[row] /= dval;
-          for (size_t j=beg; j < diag; ++j) {
-            xj[inds[j]] -= (DomainScalar)vals[j] * xj[row];
+          const Ordinal *i = inds+ptrs[row],
+                       *ie = inds+ptrs[row+1];
+          const Scalar  *v = vals+ptrs[row];
+          // capture and skip the diag
+          --ie;
+          diag = *--v;
+          //
+          for (size_t j=0; j<numRHS; ++j) x[j*xstride+row] /= diag;
+          while (i != ie) {
+            const Ordinal ind = *i++;
+            const Scalar  val = *v++;
+            for (size_t j=0; j<numRHS; ++j) x[j*xstride+ind] -= (DomainScalar)val * x[j*xstride+row];
           }
         }
         // last row
-        dval = (DomainScalar)vals[0];
-        xj[0] /= dval;
+        diag = (DomainScalar)vals[0];
+        for (size_t j=0; j<numRHS; ++j) x[j*xstride] /= diag;
       }
     }
   };

@@ -56,7 +56,6 @@
 #include "Kokkos_MultiVector.hpp"
 #include "Kokkos_NodeHelpers.hpp"
 #include "Kokkos_DefaultArithmetic.hpp"
-#include "Kokkos_DefaultSparseScaleKernelOps.hpp"
 #include "Kokkos_DefaultSparseSolveKernelOps.hpp"
 #include "Kokkos_DefaultSparseMultiplyKernelOps.hpp"
 
@@ -74,7 +73,6 @@ namespace Kokkos {
   {
     public:
       DefaultCrsGraph(size_t numRows, const RCP<Node> &node);
-      size_t getNumEntries() const;
       bool isEmpty() const;
       bool isFinalized() const;
       void setStructure(const ArrayRCP<const size_t>  &ptrs,
@@ -86,10 +84,10 @@ namespace Kokkos {
       void finalizeGraphAndMatrix(DefaultCrsMatrix<Scalar,Ordinal,Node> &mat, const RCP<Teuchos::ParameterList> &params);
       inline ArrayRCP<const size_t> getPointers() const;
       inline ArrayRCP<const Ordinal> getIndices() const;
+      inline bool isInitialized() const;
     private:
       ArrayRCP<const size_t>  ptrs_;
       ArrayRCP<const Ordinal> inds_;
-      size_t numEntries_;
       bool isInitialized_, isEmpty_, isFinalized_;
   };
 
@@ -105,30 +103,21 @@ namespace Kokkos {
       DefaultCrsMatrix(const RCP<const DefaultCrsGraph<Ordinal,Node> > &graph);
       void setValues(const ArrayRCP<const Scalar> &vals);
       inline ArrayRCP<const Scalar> getValues() const;
-      void finalize(const RCP<Teuchos::ParameterList> &params);
-      bool isFinalized() const;
+      inline bool isInitialized() const;
     private:
-      ArrayRCP<const Scalar> values_;
-      bool isInitialized_, isFinalized_;
       ArrayRCP<const Scalar> vals_;
+      bool isInitialized_;
   };
 
   template <class Ordinal, class Node>
   DefaultCrsGraph<Ordinal,Node>::DefaultCrsGraph(size_t numRows, const RCP<Node> &node)
   : CrsGraphBase<Ordinal,Node>(numRows,node)
-  , numEntries_(0)
   , isInitialized_(false)
   , isEmpty_(false)
   , isFinalized_(false)
   {
     // Make sure that users only specialize for Kokkos Node types that are host Nodes (vs. device Nodes, such as GPU Nodes)
     Teuchos::CompileTimeAssert<Node::isHostNode == false> cta; (void)cta;
-  }
-
-  template <class Ordinal, class Node>
-  size_t DefaultCrsGraph<Ordinal,Node>::getNumEntries() const
-  {
-    return numEntries_;
   }
 
   template <class Ordinal, class Node>
@@ -149,7 +138,8 @@ namespace Kokkos {
                       const ArrayRCP<const Ordinal> &inds)
   {
     std::string tfecfFuncName("setStructure(ptrs,inds)");
-    size_t numrows = this->getNumRows();
+    const size_t numrows = this->getNumRows();
+    const size_t numEntries = ptrs[numrows];
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         (size_t)ptrs.size() != numrows+1 
         || ptrs[0] != 0
@@ -160,8 +150,7 @@ namespace Kokkos {
         isInitialized_ == true,
         std::runtime_error, " matrix has already been initialized"
     )
-    if (numrows == 0 || numEntries_ == 0) isEmpty_ = true;
-    numEntries_ = ptrs[numrows];
+    if (numrows == 0 || numEntries == 0) isEmpty_ = true;
     ptrs_ = ptrs;
     inds_ = inds;
     isInitialized_ = true;
@@ -185,8 +174,6 @@ namespace Kokkos {
         mat.isInitialized() == false,
         std::runtime_error, " matrix not initialized yet."
     )
-    // this doesn't really do anything except set flags, enforce semantics
-    mat.finalize(params);
   }
 
   template <class Ordinal, class Node>
@@ -197,17 +184,8 @@ namespace Kokkos {
   { 
     // not much to do here
     std::string tfecfFuncName("finalizeGraphAndMatrix(matrix,params)");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        isInitialized_ == false,
-        std::runtime_error, " graph not initialized yet."
-    )
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        mat.isInitialized() == false,
-        std::runtime_error, " matrix not initialized yet."
-    )
-    isFinalized_ = true;
-    // this doesn't really do anything except set flags, enforce semantics
-    mat.finalize(params);
+    this->finalize(params);
+    this->template finalizeMatrix(mat,params);
   }
 
   template <class Ordinal, class Node>
@@ -222,11 +200,16 @@ namespace Kokkos {
     return inds_;
   }
 
+  template <class Ordinal, class Node>
+  bool DefaultCrsGraph<Ordinal,Node>::isInitialized() const
+  {
+    return isInitialized_;
+  }
+
   template <class Scalar, class Ordinal, class Node>
   DefaultCrsMatrix<Scalar,Ordinal,Node>::DefaultCrsMatrix(const RCP<const DefaultCrsGraph<Ordinal,Node> > &graph)
   : CrsMatrixBase<Scalar,Ordinal,Node>(graph) 
   , isInitialized_(false)
-  , isFinalized_(false)
   {
     // Make sure that users only specialize for Kokkos Node types that are host Nodes (vs. device Nodes, such as GPU Nodes)
     Teuchos::CompileTimeAssert<Node::isHostNode == false> cta; (void)cta;
@@ -240,10 +223,6 @@ namespace Kokkos {
         isInitialized_ == true,
         std::runtime_error, " matrix is already initialized."
     )
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        (size_t)vals.size() != this->getNumEntries(),      
-        std::runtime_error, " provided values are not congruent with graph structure."
-    )
     vals_ = vals;
     isInitialized_ = true;
   }
@@ -253,23 +232,9 @@ namespace Kokkos {
   { return vals_; }
 
   template <class Scalar, class Ordinal, class Node>
-  bool DefaultCrsMatrix<Scalar,Ordinal,Node>::isFinalized() const
-  { return isFinalized_; }
-
-  template <class Scalar, class Ordinal, class Node>
-  void DefaultCrsMatrix<Scalar,Ordinal,Node>::finalize(const RCP<Teuchos::ParameterList> &params) 
-  { 
-    // not much to do here
-    std::string tfecfFuncName("finalize(params)");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        isInitialized_ == false,
-        std::runtime_error, " matrix not initialized yet."
-    )
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        isFinalized_ == true,
-        std::runtime_error, " matrix was already finalized."
-    )
-    isFinalized_ = true;
+  bool DefaultCrsMatrix<Scalar,Ordinal,Node>::isInitialized() const
+  {
+    return isInitialized_;
   }
 
   /// \class DefaultHostSparseOps
@@ -433,8 +398,8 @@ namespace Kokkos {
     /// \param uplo [in] UPPER_TRI if the matrix is upper triangular,
     ///   else LOWER_TRI if the matrix is lower triangular.
     ///
-    /// \param diag [in] UNIT_DIAG if the matrix has unit diagonal,
-    ///   else NON_UNIT_DIAG.
+    /// \param diag [in] UNIT_DIAG if the matrix has an implicit unit diagonal,
+    ///   else NON_UNIT_DIAG (diagonal entries are explicitly stored in the matrix).
     ///
     /// \param Y [in] Input multivector.
     ///
@@ -446,17 +411,6 @@ namespace Kokkos {
            Teuchos::EDiag diag,
            const MultiVector<DomainScalar,Node> &Y,
            MultiVector<RangeScalar,Node> &X) const;
-
-    /* Commented these out for now; the ability to change the data 
-       means that the values can't be stored const; need to wait and see
-       what the impact of that is */
-    // //! Left-scale the matrix by the given vector.
-    // template <class VectorScalar>
-    // void leftScale(const MultiVector<VectorScalar,Node> &X);
-
-    // //! Right-scale the matrix by the given vector.
-    // template <class VectorScalar>
-    // void rightScale(const MultiVector<VectorScalar,Node> &X);
 
     //@}
 
@@ -575,8 +529,9 @@ namespace Kokkos {
         wdp.upper    = (uplo == Teuchos::UPPER_TRI ? true : false);
         wdp.xstride = X.getStride();
         wdp.ystride = Y.getStride();
-        const size_t numRHS = X.getNumCols();
-        node_->template parallel_for<Op>(0,numRHS,wdp);
+        wdp.numRHS  = X.getNumCols();
+        // no parallel for you
+        wdp.execute();
       }
       else {
         TOp wdp;
@@ -593,6 +548,7 @@ namespace Kokkos {
         wdp.xstride = X.getStride();
         wdp.ystride = Y.getStride();
         wdp.numRHS  = X.getNumCols();
+        // no parallel for you
         wdp.execute();
       }
     }

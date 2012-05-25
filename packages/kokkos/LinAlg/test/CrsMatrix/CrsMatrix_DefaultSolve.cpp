@@ -64,8 +64,6 @@
 namespace {
 
   using Kokkos::MultiVector;
-  using Kokkos::CrsMatrix;
-  using Kokkos::CrsGraph;
   using Kokkos::DefaultArithmetic;
   using Kokkos::DefaultKernels;
   using Kokkos::SerialNode;
@@ -153,96 +151,161 @@ namespace {
   // UNIT TESTS
   // 
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, Scale, Ordinal, Scalar, Node )
+#define TEST_DATA_FOR_ONES(dat) {                                               \
+    ArrayRCP<const Scalar> view = node->template viewBuffer<Scalar>(N,dat);     \
+    Scalar err = ZERO;                                                          \
+    for (int i=0; i<N; ++i) {                                                   \
+      err += ST::magnitude(ONE - view[i]);                                    \
+    }                                                                           \
+    TEST_EQUALITY_CONST(err, ZERO);                                             \
+  }                                                                             
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, SparseSolveIdentity, Ordinal, Scalar, Node )
   {
     RCP<Node> node = getNode<Node>();
-    typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps DSM;
-    typedef CrsGraph<Ordinal,Node,DSM>                             GRPH;
-    typedef CrsMatrix<Scalar,Ordinal,Node,DSM>                      MAT;
-    typedef MultiVector<Scalar,Node>                                 MV;
-    typedef Teuchos::ScalarTraits<Scalar>                            ST;
+    typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps          DSM;
+    typedef typename DSM::template matrix<Scalar,Ordinal,Node>::matrix_type  MAT;
+    typedef typename DSM::template graph<Ordinal,Node>::graph_type          GRPH;
+    typedef MultiVector<Scalar,Node>                                          MV;
+    typedef Teuchos::ScalarTraits<Scalar>                                     ST;
     const Scalar ONE = ST::one(),
                 ZERO = ST::zero();
     // generate tridiagonal matrix:
-    // [ 2 -1                   ]
-    // [-1  3  -1               ]
-    // [   -1   3  -1           ]
-    // [                        ]
-    // [                -1  3 -1]
-    // [                   -1  2]
+    // [ 1 0           ]
+    // [   1 0         ]
+    // [     1 0       ]
+    // [         . .   ]
+    // [            1 0]
+    // [              1]
     if (N<2) return;
-    GRPH G(N,node);
-    MAT  A(G);
+    RCP<GRPH> G = rcp(new GRPH (N,node) );
+    RCP<MAT>  A = rcp(new MAT  (G) );
     // allocate buffers for offsets, indices and values
-    const size_t totalNNZ = 3*N - 2;
+    const size_t totalNNZ = 2*N-1;
     ArrayRCP<size_t> offsets(N+1);
     ArrayRCP<Ordinal>   inds(totalNNZ);
     ArrayRCP<Scalar>    vals(totalNNZ);
     // fill the buffers on the host
     {
-      size_t NNZsofar = 0;
-      offsets[0] = NNZsofar;
-      inds[NNZsofar] = 0; inds[NNZsofar+1] =  1;
-      vals[NNZsofar] = 2; vals[NNZsofar+1] = -1;
-      NNZsofar += 2;
-      for (int i=1; i != N-1; ++i) {
-        offsets[i] = NNZsofar;
-        inds[NNZsofar] = i-1; inds[NNZsofar+1] = i; inds[NNZsofar+2] = i+1;
-        vals[NNZsofar] =  -1; vals[NNZsofar+1] = 3; vals[NNZsofar+2] =  -1;
-        NNZsofar += 3;
+      size_t num = 0;
+      for (int i=0; i < N-1; ++i) {
+        offsets[i] = num;
+        inds[num] = i; inds[num+1] = i+1;
+        vals[num] = 1; vals[num+1] = 0;
+        num += 2;
       }
-      offsets[N-1] = NNZsofar;
-      inds[NNZsofar] = N-2; inds[NNZsofar+1] = N-1;
-      vals[NNZsofar] =  -1; vals[NNZsofar+1] = 2;
-      NNZsofar += 2;
-      offsets[N]   = NNZsofar;
-      TEUCHOS_TEST_FOR_EXCEPT(NNZsofar != totalNNZ);
+      inds[num] = N-1;
+      vals[num] = 1;
+      offsets[N] = num+1;
     }
-    G.set1DStructure(inds, offsets, offsets.persistingView(1,N));
+    G->setStructure(offsets, inds);
     offsets = Teuchos::null;
     inds    = Teuchos::null;
-    A.set1DValues(vals);
+    A->setValues(vals);
     vals    = Teuchos::null;
-    A.finalize(true);
-    typename DSM::template rebind<Scalar>::other dsm(node);
+    G->finalizeGraphAndMatrix(*A,null);
+    typename DSM::template rebind<Scalar>::other_type dsm(node);
     out << "Testing with sparse ops: " << Teuchos::typeName(dsm) << std::endl;
-    dsm.initializeStructure(G);
-    dsm.initializeValues(A);
+    dsm.setGraphAndMatrix(G,A);
 
-    ArrayRCP<Scalar> xdat, axdat;
-    xdat  = node->template allocBuffer<Scalar>(N);
-    axdat = node->template allocBuffer<Scalar>(N);
-    MV X(node), AX(node);
-    X.initializeValues( N,1, xdat,N);
-    AX.initializeValues(N,1,axdat,N);
-
-    // Scale by x, unscale by x and test the multiply.
-    DefaultArithmetic<MV>::Init( X,2);
-    dsm.leftScale(X);
-    DefaultArithmetic<MV>::Init( X,0.5);
-    dsm.leftScale(X);
-
-    DefaultArithmetic<MV>::Init( X,1.0);
-    dsm.multiply(Teuchos::NO_TRANS,ONE,X,AX);
-
-    // AX should be all ones
-    {
-      ArrayRCP<const Scalar> axview = node->template viewBuffer<Scalar>(N,axdat);
-      Scalar err = ZERO;
-      for (int i=0; i<N; ++i) {
-        err += ST::magnitude(ONE - axview[i]);
-      }
-      TEST_EQUALITY_CONST(err, ZERO);
-    }
-
-    xdat = null;
-    axdat = null;
+    // A is the identity, which allows us to easily test transpose and non-transpose, upper and lower tri
+    ArrayRCP<Scalar> ydat, x1dat, x2dat, x3dat, x4dat;
+    ydat  = node->template allocBuffer<Scalar>(N);
+    x1dat = node->template allocBuffer<Scalar>(N);
+    x2dat = node->template allocBuffer<Scalar>(N);
+    x3dat = node->template allocBuffer<Scalar>(N);
+    x4dat = node->template allocBuffer<Scalar>(N);
+    MV Y(node), X1(node), X2(node), X3(node), X4(node); 
+    Y.initializeValues(N,1, ydat,N);
+    X1.initializeValues(N,1,x1dat,N);
+    X2.initializeValues(N,1,x2dat,N);
+    X3.initializeValues(N,1,x3dat,N);
+    X4.initializeValues(N,1,x4dat,N);
+    // solve A*X=Y
+    DefaultArithmetic<MV>::Init(Y,1);
+    dsm.solve(Teuchos::NO_TRANS,Teuchos::UPPER_TRI,Teuchos::NON_UNIT_DIAG,Y,X1);
+    TEST_DATA_FOR_ONES(x1dat)
+    dsm.solve(Teuchos::NO_TRANS,Teuchos::LOWER_TRI,Teuchos::NON_UNIT_DIAG,Y,X2);
+    TEST_DATA_FOR_ONES(x2dat)
+    dsm.solve(Teuchos::CONJ_TRANS,Teuchos::UPPER_TRI,Teuchos::NON_UNIT_DIAG,Y,X3);
+    TEST_DATA_FOR_ONES(x3dat)
+    dsm.solve(Teuchos::CONJ_TRANS,Teuchos::LOWER_TRI,Teuchos::NON_UNIT_DIAG,Y,X4);
+    TEST_DATA_FOR_ONES(x4dat)
   }
 
-#include "CrsMatrix_DefaultMultiplyTests.hpp"
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, SparseSolveImplicitIdentity, Ordinal, Scalar, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+    typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps          DSM;
+    typedef typename DSM::template matrix<Scalar,Ordinal,Node>::matrix_type  MAT;
+    typedef typename DSM::template graph<Ordinal,Node>::graph_type          GRPH;
+    typedef MultiVector<Scalar,Node>                                          MV;
+    typedef Teuchos::ScalarTraits<Scalar>                                     ST;
+    const Scalar ONE = ST::one(),
+                ZERO = ST::zero();
+    // generate tridiagonal matrix:
+    // [ 1 0           ]
+    // [   1 0         ]
+    // [     1 0       ]
+    // [         . .   ]
+    // [            1 0]
+    // [              1]
+    // but don't store the diagonal
+    if (N<2) return;
+    RCP<GRPH> G = rcp(new GRPH (N,node) );
+    RCP<MAT>  A = rcp(new MAT  (G) );
+    // allocate buffers for offsets, indices and values
+    const size_t totalNNZ = N-1;
+    ArrayRCP<size_t> offsets(N+1);
+    ArrayRCP<Ordinal>   inds(totalNNZ);
+    ArrayRCP<Scalar>    vals(totalNNZ);
+    // fill the buffers on the host
+    {
+      size_t num = 0;
+      for (int i=0; i < N-1; ++i) {
+        offsets[i] = i;
+        vals[i] = 0;
+        inds[i] = i;
+      }
+      offsets[N] = N-1;
+    }
+    G->setStructure(offsets, inds);
+    offsets = Teuchos::null;
+    inds    = Teuchos::null;
+    A->setValues(vals);
+    vals    = Teuchos::null;
+    G->finalizeGraphAndMatrix(*A,null);
+    typename DSM::template rebind<Scalar>::other_type dsm(node);
+    out << "Testing with sparse ops: " << Teuchos::typeName(dsm) << std::endl;
+    dsm.setGraphAndMatrix(G,A);
+
+    // A is the identity, which allows us to easily test transpose and non-transpose, upper and lower tri
+    ArrayRCP<Scalar> ydat, x1dat, x2dat, x3dat, x4dat;
+    ydat  = node->template allocBuffer<Scalar>(N);
+    x1dat = node->template allocBuffer<Scalar>(N);
+    x2dat = node->template allocBuffer<Scalar>(N);
+    x3dat = node->template allocBuffer<Scalar>(N);
+    x4dat = node->template allocBuffer<Scalar>(N);
+    MV Y(node), X1(node), X2(node), X3(node), X4(node); 
+    Y.initializeValues(N,1, ydat,N);
+    X1.initializeValues(N,1,x1dat,N);
+    X2.initializeValues(N,1,x2dat,N);
+    X3.initializeValues(N,1,x3dat,N);
+    X4.initializeValues(N,1,x4dat,N);
+    // solve A*X=Y
+    DefaultArithmetic<MV>::Init(Y,1);
+    dsm.solve(Teuchos::NO_TRANS,Teuchos::UPPER_TRI,Teuchos::UNIT_DIAG,Y,X1);
+    TEST_DATA_FOR_ONES(x1dat)
+    dsm.solve(Teuchos::NO_TRANS,Teuchos::LOWER_TRI,Teuchos::UNIT_DIAG,Y,X2);
+    TEST_DATA_FOR_ONES(x2dat)
+    dsm.solve(Teuchos::CONJ_TRANS,Teuchos::UPPER_TRI,Teuchos::UNIT_DIAG,Y,X3);
+    TEST_DATA_FOR_ONES(x3dat)
+    dsm.solve(Teuchos::CONJ_TRANS,Teuchos::LOWER_TRI,Teuchos::UNIT_DIAG,Y,X4);
+    TEST_DATA_FOR_ONES(x4dat)
+  }
 
 #define ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix,        Scale, ORDINAL, SCALAR, NODE ) 
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix,        SparseSolveIdentity, ORDINAL, SCALAR, NODE )
 
 #define UNIT_TEST_SERIALNODE(ORDINAL, SCALAR) \
       ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, SerialNode )
@@ -272,8 +335,10 @@ namespace {
         UNIT_TEST_SERIALNODE( ORDINAL, SCALAR ) \
         UNIT_TEST_TBBNODE( ORDINAL, SCALAR ) \
         UNIT_TEST_TPINODE( ORDINAL, SCALAR ) \
+        UNIT_TEST_THRUSTGPUNODE( ORDINAL, SCALAR )
 
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
+        UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, int) \
         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, float)
 
      UNIT_TEST_GROUP_ORDINAL(int)

@@ -115,42 +115,47 @@ namespace Kokkos {
     size_t numRHS, xstride, ystride;
 
     inline void execute() {
-      /* compute y[row] for each rhs
-         Y[row,:] = (A^T)[row,:] * Y
-                  = A[:,row]^T * X
-         i.e., find the column of A, "transpose" it, then hit MultiVector X with this
-
-          vals[k] are row R for k in [ptrs[R], ptrs[R+1])
-       */
-      const Scalar  *v = vals;
-      const Ordinal *i = inds,
-                   *ie = inds + ptrs[numRows];
       if (NO_BETA_AND_OVERWRITE) {
-        for (size_t j=0; j<numRHS; ++j) y[j*ystride+row] = Teuchos::ScalarTraits<RangeScalar>::zero();
+        for (size_t j=0; j<numRHS; ++j) {
+          Scalar *yp = y+j*ystride;
+          for (size_t row=0; row<numRows; ++row) {
+            yp[row] = Teuchos::ScalarTraits<RangeScalar>::zero();
+          }
+        }
       }
       else {
-        for (size_t j=0; j<numRHS; ++j) y[j*ystride+row] *= beta;
+        for (size_t j=0; j<numRHS; ++j) {
+          Scalar *yp = y+j*ystride;
+          for (size_t row=0; row<numRows; ++row) {
+            yp[row] *= beta;
+          }
+        }
       }
       // save the extra multiplication if possible
-      size_t nnzRow = 0, curNNZ = 0;
       if (alpha == Teuchos::ScalarTraits<RangeScalar>::one()) {
-        while (i != ie) 
-        {
-          while (curNNZ >= ptrs[nnzRow+1]) ++nnzRow;
-          const  Scalar val = Teuchos::ScalarTraits<RangeScalar>::conjugate(*v++);
-          const Ordinal ind = *i++;
-          for (size_t j=0; j<numRHS; ++j) y[j*ystride+row] += (RangeScalar)val * (RangeScalar)x[j*xstride+nnzRow];
-          ++curNNZ;
+        for (size_t colAt=0; colAt < numRows; ++colAt) {
+          const Scalar  *v = vals + ptrs[colAt];
+          const Ordinal *i = inds + ptrs[colAt],
+                       *ie = inds + ptrs[colAt+1];
+          // sparse outer product: AT[:,colAt] * X[ind
+          while (i != ie) {
+            const  Scalar val = Teuchos::ScalarTraits<RangeScalar>::conjugate(*v++);
+            const Ordinal ind = *i++;
+            for (size_t j=0; j<numRHS; ++j) y[j*ystride+ind] = (RangeScalar)val * (RangeScalar)x[j*xstride+colAt];
+          }
         }
       }
       else { // alpha != one
-        while (i != ie) 
-        {
-          while (curNNZ >= ptrs[nnzRow+1]) ++nnzRow;
-          const  Scalar val = Teuchos::ScalarTraits<RangeScalar>::conjugate(*v++);
-          const Ordinal ind = *i++;
-          for (size_t j=0; j<numRHS; ++j) y[j*ystride+row] += alpha * (RangeScalar)val * (RangeScalar)x[j*xstride+nnzRow];
-          ++curNNZ;
+        for (size_t colAt=0; colAt < numRows; ++colAt) {
+          const Scalar  *v = vals + ptrs[colAt];
+          const Ordinal *i = inds + ptrs[colAt],
+                       *ie = inds + ptrs[colAt+1];
+          // sparse outer product: AT[:,colAt] * X[ind
+          while (i != ie) {
+            const  Scalar val = Teuchos::ScalarTraits<RangeScalar>::conjugate(*v++);
+            const Ordinal ind = *i++;
+            for (size_t j=0; j<numRHS; ++j) y[j*ystride+ind] = alpha * (RangeScalar)val * (RangeScalar)x[j*xstride+colAt];
+          }
         }
       }
     }

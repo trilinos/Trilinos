@@ -95,9 +95,6 @@ namespace Kokkos {
     //! Return the number of rows in the graph.
     size_t getNumRows() const;
 
-    //! Return the number of entries in the graph.
-    virtual size_t getNumEntries() const = 0;
-
     //! Indicates that the graph has no rows or no entries.
     /**
       \note This is different from not having been finalized.
@@ -176,7 +173,7 @@ namespace Kokkos {
       const ArrayView<const size_t> &numEntriesPerRow,
       ArrayRCP<size_t> &ptrs, ArrayRCP<Ordinal> &inds) const
   {
-    std::string tfecfFuncName("allocStorage( in(numEntriesPerRow), in(ptrs), in(inds) )");
+    std::string tfecfFuncName("allocStorage( in(numEntriesPerRow), out(ptrs), out(inds) )");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         (size_t)numEntriesPerRow.size() != (size_t)getNumRows(),
         std::runtime_error, " number of rows doesn't match.")

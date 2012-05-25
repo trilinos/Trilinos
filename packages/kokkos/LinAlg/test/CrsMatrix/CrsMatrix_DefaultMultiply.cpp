@@ -201,7 +201,7 @@ namespace {
     inds    = Teuchos::null;
     A->setValues(vals);
     vals    = Teuchos::null;
-    A->finalize(Teuchos::parameterList());
+    G->finalizeGraphAndMatrix(*A,null);
     typename DSM::template rebind<Scalar>::other_type dsm(node);
     out << "Testing with sparse ops: " << Teuchos::typeName(dsm) << std::endl;
     dsm.setGraphAndMatrix(G,A);

@@ -1722,6 +1722,7 @@ namespace Tpetra {
       // FIXME (mfh 19 Mar 2012) Why can't we allow the Maps to be
       // different objects, but semantically the same (in the sense of
       // isSameAs())?
+      // (cgb 24 May 2012) We can/should. We can fix now or wait for a user to complain.
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! domainMapsMatch || ! rangeMapsMatch,
         std::runtime_error, ": domain map and range map do not match maps in "
         "existing graph, and the graph cannot be changed because it was given "

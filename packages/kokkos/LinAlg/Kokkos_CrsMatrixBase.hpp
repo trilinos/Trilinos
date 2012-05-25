@@ -92,9 +92,6 @@ namespace Kokkos {
     //! Return the number of rows in the matrix.
     size_t getNumRows() const;
 
-    //! Return the number of entries in the matrix.
-    virtual size_t getNumEntries() const;
-
     //! Indicates that the matrix has no rows or no entries.
     /**
       \note This is different from not having been finalized.
@@ -102,21 +99,18 @@ namespace Kokkos {
      */
     virtual bool isEmpty() const;
 
-    //! Whether the matrix has been finalized.
-    virtual bool isFinalized() const = 0;
-
-    //! Finalize the matrix.
-    virtual void finalize(const RCP<Teuchos::ParameterList> &params);
-
     //! \brief Allocate and initialize the storage for the matrix values.
     /**
+        This is used by Tpetra.
         \pre numEntries.size() == getNumRows()
      */
-    virtual ArrayRCP<Scalar> allocStorage() const;
+    virtual ArrayRCP<Scalar> allocStorage(const ArrayView<const size_t> &numEntriesPerRow) const;
 
     //! Submit the matrix values.
     /**
         Must be congruous, with respect to the associated graph.
+
+        This is used by Tpetra.
      */
     virtual void setValues(const ArrayRCP<const Scalar> &vals) = 0;
 
@@ -149,23 +143,19 @@ namespace Kokkos {
     return graph_->getNumRows();
   }
 
-  // ======= numentries ===========
-  template <class Scalar, class Ordinal, class Node>
-  size_t CrsMatrixBase<Scalar,Ordinal,Node>::getNumEntries() const {
-    return graph_->getNumEntries();
-  }
-
   // ======= default implementation calls graph, using a method that doesn't exist on the base graph class ===========
   template <class Scalar, class Ordinal, class Node>
-  ArrayRCP<Scalar> CrsMatrixBase<Scalar,Ordinal,Node>::allocStorage() const
+  ArrayRCP<Scalar> CrsMatrixBase<Scalar,Ordinal,Node>::allocStorage(const ArrayView<const size_t> &numEntriesPerRow) const
   { 
-    const size_t numEntries = graph_->getNumEntries();
+    std::string tfecfFuncName("allocStorage( in(numEntriesPerRow) )");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        (size_t)numEntriesPerRow.size() != (size_t)getNumRows(),
+        std::runtime_error, " number of rows doesn't match.")
+    const size_t totalNumEntries = std::accumulate( numEntriesPerRow.begin(), numEntriesPerRow.end(), (size_t)0 );
+    // alloc inds
     ArrayRCP<Scalar> vals;
-    if (numEntries) 
-    { 
-      vals = arcp<Scalar>(numEntries);
-      std::fill( vals.begin(), vals.end(), Teuchos::ScalarTraits<Scalar>::zero() );
-    }
+    if (totalNumEntries > 0) vals = arcp<Scalar>(totalNumEntries);
+    std::fill( vals.begin(), vals.end(), Teuchos::ScalarTraits<Scalar>::zero() );
     return vals;
   }
 

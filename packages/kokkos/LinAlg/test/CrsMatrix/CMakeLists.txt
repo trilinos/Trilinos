@@ -9,10 +9,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(  CrsMatrix_DefaultMultiply
   DEPLIBS kokkos kokkoslinalg kokkosnodeapi
 ) 
 
-INCLUDE(TribitsAddExecutableAndTest)   
-TRIBITS_ADD_EXECUTABLE_AND_TEST(  CrsMatrix_Scale
+TRIBITS_ADD_EXECUTABLE_AND_TEST(  CrsMatrix_DefaultSolve  
   SOURCES 
-    CrsMatrix_Scale.cpp  
+    CrsMatrix_DefaultSolve.cpp  
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 1
@@ -20,15 +19,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(  CrsMatrix_Scale
   DEPLIBS kokkos kokkoslinalg kokkosnodeapi
 ) 
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST( CrsMatrix_UnitTests 
-  SOURCES   
-    CrsMatrix_UnitTests.cpp 
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  STANDARD_PASS_OUTPUT
-  DEPLIBS kokkos kokkoslinalg kokkosnodeapi
-) 
+# not the most important thing at the moment, will come back to it
+# TRIBITS_ADD_EXECUTABLE_AND_TEST( CrsMatrix_UnitTests 
+#   SOURCES   
+#     CrsMatrix_UnitTests.cpp 
+#     ${TEUCHOS_STD_UNIT_TEST_MAIN}
+#   COMM serial mpi
+#   NUM_MPI_PROCS 1
+#   STANDARD_PASS_OUTPUT
+#   DEPLIBS kokkos kokkoslinalg kokkosnodeapi
+# ) 
 
 #IF (Kokkos_ENABLE_ThreadPool) 
 #  TRIBITS_ADD_EXECUTABLE_AND_TEST( CrsMatrix_FirstTouchTPI

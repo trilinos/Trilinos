@@ -68,7 +68,7 @@
     const size_t numRows = 5;
     RCP<GRPH> G = rcp( new GRPH(numRows,node) );
     RCP<MAT>  A = rcp( new MAT(G) );
-    A->finalize(Teuchos::parameterList());
+    G->finalizeGraphAndMatrix(*A,null);
     out << "\n**\n** Can't submit the data twice\n**\n";
     {
       typename DSM::template rebind<Scalar>::other_type dsm(node);
