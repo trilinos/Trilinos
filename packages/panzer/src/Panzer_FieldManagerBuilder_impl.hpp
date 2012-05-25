@@ -102,7 +102,9 @@ void panzer::FieldManagerBuilder<LO,GO>::setupVolumeFieldManagers(WorksetContain
     
     // use the physics block to register evaluators
     pb->buildAndRegisterEquationSetEvaluators(*fm, user_data);
-    pb->buildAndRegisterGatherScatterEvaluators(*fm,lo_factory, user_data);
+    pb->buildAndRegisterGatherAndOrientationEvaluators(*fm,lo_factory, user_data);
+    pb->buildAndRegisterDOFProjectionsToIPEvaluators(*fm,lo_factory, user_data);
+    pb->buildAndRegisterScatterEvaluators(*fm,lo_factory, user_data);
     pb->buildAndRegisterClosureModelEvaluators(*fm, cm_factory, closure_models, user_data);
 
     // build the setup data using passed in information
