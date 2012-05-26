@@ -300,7 +300,6 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket2)
   k2 = buckets2.begin();
 
   Bucket& b2 = **k2;
-  BucketIterator bitr2 = b2.begin();
 
   //define a new meta and bulkdata
   std::vector<std::string> entity_names(10);
@@ -395,9 +394,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testEntityComm)
 
   add_part4.push_back ( &partLeft_1 );
 
-  int  size , rank;
-  rank = stk::parallel_machine_rank( pm );
-  size = stk::parallel_machine_size( pm );
+  //int rank = stk::parallel_machine_rank( pm );
+  // int size = stk::parallel_machine_size( pm );
   PartVector tmp(1);
 
   bulk.modification_begin();
