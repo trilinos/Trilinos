@@ -111,6 +111,7 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildUncommitedMesh(stk::Pa
    // build element blocks
    registerElementBlocks(*mesh,*meshData);
    registerSidesets(*mesh,*meshData);
+   registerNodesets(*mesh,*meshData);
 
    mesh->addPeriodicBCs(periodicBCVec_);
 
@@ -261,6 +262,29 @@ void STK_ExodusReaderFactory::registerSidesets(STK_Interface & mesh,stk::io::Mes
          // only add subset parts that have no topology
          if(ss_ct!=0) 
             mesh.addSideset(part->name(),ss_ct);
+      }
+   }
+}
+
+void STK_ExodusReaderFactory::registerNodesets(STK_Interface & mesh,stk::io::MeshData & meshData) const
+{
+   using Teuchos::RCP;
+
+   RCP<stk::mesh::fem::FEMMetaData> metaData = mesh.getMetaData();
+   const stk::mesh::PartVector & parts = metaData->get_parts();
+
+   stk::mesh::PartVector::const_iterator partItr;
+   for(partItr=parts.begin();partItr!=parts.end();++partItr) {
+      const stk::mesh::Part * part = *partItr;
+      const CellTopologyData * ct = metaData->get_cell_topology(*part).getCellTopologyData();
+
+      // if a side part ==> this is a sideset: now storage is recursive
+      // on part contains all sub parts with consistent topology
+      if(part->primary_entity_rank()==mesh.getNodeRank() && ct==0) {
+
+         // only add subset parts that have no topology
+         if(part->name()!=STK_Interface::nodesString)
+            mesh.addNodeset(part->name());
       }
    }
 }

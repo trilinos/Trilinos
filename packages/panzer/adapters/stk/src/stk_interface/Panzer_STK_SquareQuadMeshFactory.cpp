@@ -109,8 +109,11 @@ void SquareQuadMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::P
    mesh.buildSubcells();
    mesh.buildLocalElementIDs();
 
-   // now that edges are built, sidets can be added
+   // now that edges are built, sidsets can be added
    addSideSets(mesh);
+
+   // add nodesets
+   addNodeSets(mesh);
 }
 
 //! From ParameterListAcceptor
@@ -207,6 +210,9 @@ void SquareQuadMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK
    mesh.addSideset("right",side_ctd);
    mesh.addSideset("top",side_ctd);
    mesh.addSideset("bottom",side_ctd);
+
+   // add nodesets
+   mesh.addNodeset("lower_left");
 }
 
 void SquareQuadMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_Interface & mesh) const
@@ -388,6 +394,27 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
          if(edge->owner_rank()==machRank_)
             mesh.addEntityToSideset(*edge,top);
       }
+   }
+
+   mesh.endModification();
+}
+
+void SquareQuadMeshFactory::addNodeSets(STK_Interface & mesh) const
+{
+   mesh.beginModification();
+
+   // get all part vectors
+   stk::mesh::Part * lower_left = mesh.getNodeset("lower_left");
+
+   std::vector<stk::mesh::Entity*> localElmts;
+   mesh.getMyElements(localElmts);
+
+   Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
+   if(machRank_==0) 
+   {
+      // add zero node to lower_left node set
+      stk::mesh::Entity * node = bulkData->get_entity(mesh.getNodeRank(),1);
+      mesh.addEntityToNodeset(*node,lower_left);
    }
 
    mesh.endModification();

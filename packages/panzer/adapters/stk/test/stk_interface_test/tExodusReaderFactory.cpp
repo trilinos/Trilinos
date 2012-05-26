@@ -82,7 +82,6 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, basic_test)
    for(std::size_t i=0;i<facts.size();i++) {
       {
          // read from file and build mesh
-         // STK_ExodusReaderFactory fact("meshes/basic.gen");
          Teuchos::RCP<STK_Interface> mesh = facts[i]->buildUncommitedMesh(MPI_COMM_WORLD);
          facts[i]->completeMeshConstruction(*mesh,MPI_COMM_WORLD);
       
@@ -111,6 +110,15 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, basic_test)
          out << "Sides: ";
          for(std::size_t i=0;i<sidesets.size();i++)  
             out << "\"" << sidesets[i] << "\" ";
+         out << std::endl;
+
+         // check node sets
+         std::vector<std::string> nodesets;
+         mesh->getNodesetNames(nodesets);
+         TEST_EQUALITY((int) nodesets.size(),2);
+         out << "Nodesets: ";
+         for(std::size_t i=0;i<nodesets.size();i++)  
+            out << "\"" << nodesets[i] << "\" ";
          out << std::endl;
       
          TEST_EQUALITY(mesh->getSideRank(),mesh->getEdgeRank());
@@ -142,6 +150,15 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, basic_test)
          out << "Sides: ";
          for(std::size_t i=0;i<sidesets.size();i++)  
             out << "\"" << sidesets[i] << "\" ";
+         out << std::endl;
+
+         // check node sets
+         std::vector<std::string> nodesets;
+         mesh->getNodesetNames(nodesets);
+         TEST_EQUALITY((int) nodesets.size(),2);
+         out << "Nodesets: ";
+         for(std::size_t i=0;i<nodesets.size();i++)  
+            out << "\"" << nodesets[i] << "\" ";
          out << std::endl;
    
          mesh->writeToExodus("meshes/outputcheck2.gen");

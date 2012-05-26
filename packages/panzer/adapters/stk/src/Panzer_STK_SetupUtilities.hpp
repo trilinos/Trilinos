@@ -153,6 +153,31 @@ void getIdsAndVertices(const panzer_stk::STK_Interface& mesh,
 			 std::vector<std::size_t>& localIds,
 			 ArrayT& vertices);
 
+/** This function loops over the passed in set of entities and looks
+ * at there related elements. It is then determined which elements
+ * belong in the requested element block, and what the local ID of 
+ * the entitiy is.
+ *
+ * \param[in] mesh STK mesh interface
+ * \param[in] blockId Requested element block identifier
+ * \param[in] entities Set of subcell entities where
+ *                  there is assumed part membership (induced or not)
+ *                  in the requested element block.
+ * \param[out] localEntityIds On output this will contain the local entity ids. 
+ *             Assumed that on input <code>entities.size()==0</code>
+ * \param[out] elements On output this will contain the elements associated
+ *             with each entity in the requested block. Assumed that on input
+ *             <code>elements.size()==0</code>
+ *
+ * \note Some elements may be repeated in the lists, however the
+ *       local entity ID should be distinct for each of those.
+ */
+void getSubcellElements(const panzer_stk::STK_Interface & mesh,
+	 	        const std::string & blockId, 
+		        const std::vector<stk::mesh::Entity*> & entities,
+		        std::vector<std::size_t> & localEntityIds, 
+		        std::vector<stk::mesh::Entity*> & elements);
+
 /** This function loops over the passed in set of "Sides" and looks
  * at there related elements. It is then determined which elements
  * belong in the requested element block, and what the local ID of 
@@ -176,6 +201,31 @@ void getSideElements(const panzer_stk::STK_Interface & mesh,
 		       const std::string & blockId, 
 		       const std::vector<stk::mesh::Entity*> & sides,
 		       std::vector<std::size_t> & localSideIds, 
+		       std::vector<stk::mesh::Entity*> & elements);
+
+/** This function loops over the passed in set of "Nodes" and looks
+ * at there related elements. It is then determined which elements
+ * belong in the requested element block, and what the local ID of 
+ * the node is.
+ *
+ * \param[in] mesh STK mesh interface
+ * \param[in] blockId Requested element block identifier
+ * \param[in] nodes Set of nodes (entities of dimension 0) where
+ *                  there is assumed part membership (induced or not)
+ *                  in the requested element block.
+ * \param[out] localNodeIds On output this will contain the local node ids. 
+ *             Assumed that on input <code>node.size()==0</code>
+ * \param[out] elements On output this will contain the elements associated
+ *             with each node in the requested block. Assumed that on input
+ *             <code>elements.size()==0</code>
+ *
+ * \note Some elements may be repeated in the lists, however the
+ *       local node ID should be distinct for each of those.
+ */
+void getNodeElements(const panzer_stk::STK_Interface & mesh,
+		       const std::string & blockId, 
+		       const std::vector<stk::mesh::Entity*> & nodes,
+		       std::vector<std::size_t> & localNodeIds, 
 		       std::vector<stk::mesh::Entity*> & elements);
 }
 }

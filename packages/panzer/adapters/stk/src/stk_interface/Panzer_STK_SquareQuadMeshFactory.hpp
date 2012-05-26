@@ -95,6 +95,7 @@ protected:
    std::pair<int,int> determineYElemSizeAndStart(int yBlock,unsigned int size,unsigned int rank) const;
 
    void addSideSets(STK_Interface & mesh) const;
+   void addNodeSets(STK_Interface & mesh) const;
 
    // search through relations for the one matching the ID
    const stk::mesh::Relation * getRelationByID(unsigned ID,stk::mesh::PairIterRelation edges) const;

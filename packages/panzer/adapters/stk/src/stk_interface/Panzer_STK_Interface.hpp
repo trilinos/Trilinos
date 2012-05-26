@@ -120,6 +120,10 @@ public:
      */
    void addSideset(const std::string & name,const CellTopologyData * ctData);
 
+   /** Add a node set with a string name
+     */
+   void addNodeset(const std::string & name);
+
    /** Add a solution field
      */ 
    void addSolutionField(const std::string & fieldName,const std::string & blockId);
@@ -163,6 +167,10 @@ public:
    /** Addes an entity to a specified side set.
      */
    void addEntityToSideset(stk::mesh::Entity & entity,stk::mesh::Part * sideset);
+
+   /** Addes an entity to a specified node set.
+     */
+   void addEntityToNodeset(stk::mesh::Entity & entity,stk::mesh::Part * nodeset);
 
    // Methods to interrogate the mesh topology and structure
    //////////////////////////////////////////
@@ -211,6 +219,16 @@ public:
      * \param[in,out] sides Vector of entities containing the requested sides.
      */
    void getMySides(const std::string & sideName,const std::string & blockName,std::vector<stk::mesh::Entity*> & sides) const;
+
+   /** Get Entities corresponding to the node set requested. This also limits the entities
+     * to be in a particular element block. The Entites in the vector should be ofdimension
+     * <code>0</code>.
+     *
+     * \param[in] nodesetName Name of side set
+     * \param[in] blockName Name of block
+     * \param[in,out] sides Vector of entities containing the requested sides.
+     */
+   void getMyNodes(const std::string & sideName,const std::string & blockName,std::vector<stk::mesh::Entity*> & nodes) const;
 
    // Utility functions
    //////////////////////////////////////////
@@ -270,6 +288,15 @@ public:
      */
    void getSidesetNames(std::vector<std::string> & name) const;
 
+   /** Get a vector containing the names of the node sets.
+     * This function always returns the current set of node sets
+     * in lexiographic order (uses the sorting built into the std::map).
+     * This method can only be called after <code>initialize</code>.
+     *
+     * \param[in,out] names Vector of names of the element blocks.
+     */
+   void getNodesetNames(std::vector<std::string> & name) const;
+
    //! get the block count
    stk::mesh::Part * getElementBlockPart(const std::string & name) const
    { 
@@ -284,6 +311,13 @@ public:
 
    stk::mesh::Part * getSideset(const std::string & name) const
    { return sidesets_.find(name)->second; }
+
+   //! get the side set count
+   std::size_t getNumNodesets() const
+   { return nodesets_.size(); }
+
+   stk::mesh::Part * getNodeset(const std::string & name) const
+   { return nodesets_.find(name)->second; }
 
    //! get the global counts for the entity of specified rank
    std::size_t getEntityCounts(unsigned entityRank) const;
@@ -534,6 +568,7 @@ protected:
 
    std::map<std::string, stk::mesh::Part*> elementBlocks_;   // Element blocks
    std::map<std::string, stk::mesh::Part*> sidesets_; // Side sets 
+   std::map<std::string, stk::mesh::Part*> nodesets_; // Node sets 
    std::map<std::string, Teuchos::RCP<shards::CellTopology> > elementBlockCT_;
 
    // for storing/accessing nodes

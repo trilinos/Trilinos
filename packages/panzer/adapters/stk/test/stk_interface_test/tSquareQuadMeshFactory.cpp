@@ -50,6 +50,7 @@
 #include "Panzer_STK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
+#include "Panzer_STK_SetupUtilities.hpp"
 
 #include "Shards_BasicTopologies.hpp"
 
@@ -660,6 +661,47 @@ void entityVecToGIDVec(const std::vector<stk::mesh::Entity*> & eVec,
       gidVec[i] = eVec[i]->identifier();
 
    std::sort(gidVec.begin(),gidVec.end());
+}
+
+TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, sideset_nodeset)
+{
+   int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+
+   RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+   pl->set("X Blocks",2);
+   pl->set("Y Blocks",3);
+   pl->set("X Elements",20);
+   pl->set("Y Elements",4);
+
+   SquareQuadMeshFactory factory; 
+   factory.setParameterList(pl);
+   RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+
+   std::vector<std::string> sidesets, nodesets;
+
+   mesh->getSidesetNames(sidesets);
+   mesh->getNodesetNames(nodesets);
+
+   TEST_EQUALITY(sidesets.size(),4);
+   TEST_EQUALITY(nodesets.size(),1);
+
+   std::vector<stk::mesh::Entity *> nodes;
+   mesh->getMyNodes("lower_left","eblock-0_0",nodes); 
+   if(rank==0) {
+      std::vector<std::size_t> localNodeIds;
+      std::vector<stk::mesh::Entity*> elements;
+
+      TEST_EQUALITY(nodes.size(),1);
+      workset_utils::getNodeElements(*mesh,"eblock-0_0",nodes,localNodeIds,elements);
+
+      TEST_EQUALITY(localNodeIds.size(),1);
+      TEST_EQUALITY(elements.size(),1);
+      TEST_EQUALITY(elements[0]->identifier(),1);
+      TEST_EQUALITY(localNodeIds[0],0);
+   }
+   else {
+      TEST_EQUALITY(nodes.size(),0);
+   }
 }
 
 TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, element_counts)

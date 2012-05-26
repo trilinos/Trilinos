@@ -111,6 +111,19 @@ void STK_Interface::addSideset(const std::string & name,const CellTopologyData *
    sidesets_.insert(std::make_pair(name,sideset));
 }
 
+void STK_Interface::addNodeset(const std::string & name)
+{
+   TEUCHOS_ASSERT(not initialized_);
+   TEUCHOS_ASSERT(dimension_!=0);
+
+   stk::mesh::Part * nodeset = metaData_->get_part(name);
+   if(nodeset==NULL) {
+      const CellTopologyData * ctData = shards::getCellTopologyData<shards::Node>();
+      nodeset = &metaData_->declare_part(name,stk::mesh::fem::CellTopology(ctData)); 
+   }
+   nodesets_.insert(std::make_pair(name,nodeset));
+}
+
 void STK_Interface::addSolutionField(const std::string & fieldName,const std::string & blockId) 
 {
    TEUCHOS_ASSERT(not initialized_);
@@ -186,6 +199,14 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
       {
          std::map<std::string, stk::mesh::Part*>::iterator itr;
          for(itr=sidesets_.begin();itr!=sidesets_.end();++itr) 
+            if(!stk::io::is_part_io_part(*itr->second))
+               stk::io::put_io_part_attribute(*itr->second); // this can only be called once per part
+      }
+
+      // add node sets
+      {
+         std::map<std::string, stk::mesh::Part*>::iterator itr;
+         for(itr=nodesets_.begin();itr!=nodesets_.end();++itr) 
             if(!stk::io::is_part_io_part(*itr->second))
                stk::io::put_io_part_attribute(*itr->second); // this can only be called once per part
       }
@@ -280,6 +301,14 @@ void STK_Interface::addEntityToSideset(stk::mesh::Entity & entity,stk::mesh::Par
    sidesetV.push_back(sideset);
 
    bulkData_->change_entity_parts(entity,sidesetV);
+}
+
+void STK_Interface::addEntityToNodeset(stk::mesh::Entity & entity,stk::mesh::Part * nodeset)
+{
+   std::vector<stk::mesh::Part*> nodesetV;
+   nodesetV.push_back(nodeset);
+
+   bulkData_->change_entity_parts(entity,nodesetV);
 }
 
 void STK_Interface::addElement(const Teuchos::RCP<ElementDescriptor> & ed,stk::mesh::Part * block)
@@ -583,6 +612,23 @@ void STK_Interface::getMySides(const std::string & sideName,const std::string & 
    stk::mesh::get_selected_entities(ownedBlock,bulkData_->buckets(getSideRank()),sides);
 }
 
+void STK_Interface::getMyNodes(const std::string & nodesetName,const std::string & blockName,std::vector<stk::mesh::Entity*> & nodes) const
+{
+   stk::mesh::Part * nodePart = getNodeset(nodesetName);
+   stk::mesh::Part * elmtPart = getElementBlockPart(blockName);
+   TEUCHOS_TEST_FOR_EXCEPTION(nodePart==0,SidesetException,
+                      "Unknown node set \"" << nodesetName << "\"");
+   TEUCHOS_TEST_FOR_EXCEPTION(elmtPart==0,ElementBlockException,
+                      "Unknown element block \"" << blockName << "\"");
+
+   stk::mesh::Selector nodeset = *nodePart;
+   stk::mesh::Selector block = *elmtPart;
+   stk::mesh::Selector ownedBlock = metaData_->locally_owned_part() & block & nodeset;
+
+   // grab elements
+   stk::mesh::get_selected_entities(ownedBlock,bulkData_->buckets(getNodeRank()),nodes);
+}
+
 void STK_Interface::getElementBlockNames(std::vector<std::string> & names) const
 {
    // TEUCHOS_ASSERT(initialized_); // all blocks must have been added
@@ -605,6 +651,16 @@ void STK_Interface::getSidesetNames(std::vector<std::string> & names) const
    std::map<std::string, stk::mesh::Part*>::const_iterator sideItr;   // Element blocks
    for(sideItr=sidesets_.begin();sideItr!=sidesets_.end();++sideItr) 
       names.push_back(sideItr->first);
+}
+
+void STK_Interface::getNodesetNames(std::vector<std::string> & names) const
+{
+   names.clear();
+
+   // fill vector with automagically ordered string values
+   std::map<std::string, stk::mesh::Part*>::const_iterator nodeItr;   // Element blocks
+   for(nodeItr=nodesets_.begin();nodeItr!=nodesets_.end();++nodeItr) 
+      names.push_back(nodeItr->first);
 }
 
 std::size_t STK_Interface::elementLocalId(stk::mesh::Entity * elmt) const
@@ -754,10 +810,11 @@ bool STK_Interface::validBlockId(const std::string & blockId) const
 
 void STK_Interface::print(std::ostream & os) const
 {
-   std::vector<std::string> blockNames, sidesetNames;
+   std::vector<std::string> blockNames, sidesetNames, nodesetNames;
 
    getElementBlockNames(blockNames);
    getSidesetNames(sidesetNames);
+   getNodesetNames(nodesetNames);
 
    os << "STK Mesh data:\n";
    os << "   Spatial dim = " << getDimension() << "\n";
@@ -784,6 +841,10 @@ void STK_Interface::print(std::ostream & os) const
    os << "   Sidesets = ";
    for(std::size_t i=0;i<sidesetNames.size();i++) 
       os << "\"" << sidesetNames[i] << "\" ";
+   os << "\n";
+   os << "   Nodesets = ";
+   for(std::size_t i=0;i<nodesetNames.size();i++) 
+      os << "\"" << nodesetNames[i] << "\" ";
    os << std::endl;
 
    // print out periodic boundary conditions
@@ -799,10 +860,11 @@ void STK_Interface::print(std::ostream & os) const
 
 void STK_Interface::printMetaData(std::ostream & os) const
 {
-   std::vector<std::string> blockNames, sidesetNames;
+   std::vector<std::string> blockNames, sidesetNames, nodesetNames;
 
    getElementBlockNames(blockNames);
    getSidesetNames(sidesetNames);
+   getNodesetNames(nodesetNames);
 
    os << "STK Meta data:\n";
    os << "   Element blocks = ";
@@ -812,6 +874,10 @@ void STK_Interface::printMetaData(std::ostream & os) const
    os << "   Sidesets = ";
    for(std::size_t i=0;i<sidesetNames.size();i++) 
       os << "\"" << sidesetNames[i] << "\" ";
+   os << "\n";
+   os << "   Nodesets = ";
+   for(std::size_t i=0;i<nodesetNames.size();i++) 
+      os << "\"" << nodesetNames[i] << "\" ";
    os << std::endl;
 
    // print out periodic boundary conditions

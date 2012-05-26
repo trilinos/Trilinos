@@ -257,37 +257,55 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
 
 namespace workset_utils { 
 
-void getSideElements(const panzer_stk::STK_Interface & mesh,
-                     const std::string & blockId, 
-                     const std::vector<stk::mesh::Entity*> & sides,
-                     std::vector<std::size_t> & localSideIds, 
-                     std::vector<stk::mesh::Entity*> & elements)
+void getSubcellElements(const panzer_stk::STK_Interface & mesh,
+	 	        const std::string & blockId, 
+		        const std::vector<stk::mesh::Entity*> & entities,
+		        std::vector<std::size_t> & localEntityIds, 
+		        std::vector<stk::mesh::Entity*> & elements)
 {
   // for verifying that an element is in specified block
   stk::mesh::Part * blockPart = mesh.getElementBlockPart(blockId);
   stk::mesh::EntityRank elementRank = mesh.getElementRank();
   
-  // loop over each side extracting elements and local side ID that
+  // loop over each entitiy extracting elements and local entity ID that
   // are containted in specified block.
-  std::vector<stk::mesh::Entity*>::const_iterator sideItr;
-  for(sideItr=sides.begin();sideItr!=sides.end();++sideItr) {
-    stk::mesh::Entity * side = *sideItr;
+  std::vector<stk::mesh::Entity*>::const_iterator entityItr;
+  for(entityItr=entities.begin();entityItr!=entities.end();++entityItr) {
+    stk::mesh::Entity * entity = *entityItr;
     
-    stk::mesh::PairIterRelation relations = side->relations(elementRank);
+    stk::mesh::PairIterRelation relations = entity->relations(elementRank);
 
     for(std::size_t e=0;e<relations.size();++e) {
       stk::mesh::Entity * element = relations[e].entity();
-      std::size_t sideId = relations[e].identifier();
+      std::size_t entityId = relations[e].identifier();
 	
       // is this element in requested block
       bool inBlock = element->bucket().member(*blockPart);
       if(inBlock) {
         // add element and Side ID to output vectors
         elements.push_back(element);
-        localSideIds.push_back(sideId);
+        localEntityIds.push_back(entityId);
       }
     }
   }
+}
+
+void getSideElements(const panzer_stk::STK_Interface & mesh,
+                     const std::string & blockId, 
+                     const std::vector<stk::mesh::Entity*> & sides,
+                     std::vector<std::size_t> & localSideIds, 
+                     std::vector<stk::mesh::Entity*> & elements)
+{
+   getSubcellElements(mesh,blockId,sides,localSideIds,elements);
+}
+
+void getNodeElements(const panzer_stk::STK_Interface & mesh,
+                     const std::string & blockId, 
+                     const std::vector<stk::mesh::Entity*> & nodes,
+                     std::vector<std::size_t> & localNodeIds, 
+                     std::vector<stk::mesh::Entity*> & elements)
+{
+   getSubcellElements(mesh,blockId,nodes,localNodeIds,elements);
 }
 
 }
