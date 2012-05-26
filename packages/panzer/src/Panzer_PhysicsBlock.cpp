@@ -180,9 +180,9 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
 // *******************************************************************
 void panzer::PhysicsBlock::
-buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-                                        const LinearObjFactory<panzer::Traits> & lof,
-					const Teuchos::ParameterList& user_data) const
+buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+					       const LinearObjFactory<panzer::Traits> & lof,
+					       const Teuchos::ParameterList& user_data) const
 {
   using namespace std;
   using namespace panzer;
@@ -209,7 +209,78 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
          }
       }
 
-      eval_type->buildAndRegisterGatherScatterEvaluators(fm, providedDOFs, lof, user_data);
+      eval_type->buildAndRegisterGatherAndOrientationEvaluators(fm, providedDOFs, lof, user_data);
+    }
+  }
+}
+
+// *******************************************************************
+void panzer::PhysicsBlock::
+buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+					     const Teuchos::ParameterList& user_data) const
+{
+  using namespace std;
+  using namespace panzer;
+  using namespace Teuchos;
+
+  // Loop over equation set template managers
+  vector< RCP<EquationSet_TemplateManager<panzer::Traits> > >::const_iterator 
+    eq_set = m_equation_sets.begin();
+  for (;eq_set != m_equation_sets.end(); ++eq_set) {
+
+    std::vector<StrBasisPair> providedDOFs;
+
+    // Loop over evaluation types
+    EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
+    EquationSet_TemplateManager<panzer::Traits>::iterator eval_type =
+      eqstm.begin();
+    for (; eval_type != eqstm.end(); ++eval_type) {
+
+      if(providedDOFs.size()==0) {
+         Teuchos::RCP<IntegrationRule> intRule = eval_type->getIntegrationRule();
+         for(std::size_t i=0;i<m_provided_dofs.size();i++) {
+            Teuchos::RCP<panzer::BasisIRLayout> basis = Teuchos::rcp(new panzer::BasisIRLayout(m_provided_dofs[i].second,*intRule));
+            providedDOFs.push_back(std::make_pair(m_provided_dofs[i].first,basis));
+         }
+      }
+
+      eval_type->buildAndRegisterDOFProjectionsToIPEvaluators(fm, providedDOFs, user_data);
+    }
+  }
+}
+
+// *******************************************************************
+void panzer::PhysicsBlock::
+buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+				  const LinearObjFactory<panzer::Traits> & lof,
+				  const Teuchos::ParameterList& user_data) const
+{
+  using namespace std;
+  using namespace panzer;
+  using namespace Teuchos;
+
+  // Loop over equation set template managers
+  vector< RCP<EquationSet_TemplateManager<panzer::Traits> > >::const_iterator 
+    eq_set = m_equation_sets.begin();
+  for (;eq_set != m_equation_sets.end(); ++eq_set) {
+
+    std::vector<StrBasisPair> providedDOFs;
+
+    // Loop over evaluation types
+    EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
+    EquationSet_TemplateManager<panzer::Traits>::iterator eval_type =
+      eqstm.begin();
+    for (; eval_type != eqstm.end(); ++eval_type) {
+
+      if(providedDOFs.size()==0) {
+         Teuchos::RCP<IntegrationRule> intRule = eval_type->getIntegrationRule();
+         for(std::size_t i=0;i<m_provided_dofs.size();i++) {
+            Teuchos::RCP<panzer::BasisIRLayout> basis = Teuchos::rcp(new panzer::BasisIRLayout(m_provided_dofs[i].second,*intRule));
+            providedDOFs.push_back(std::make_pair(m_provided_dofs[i].first,basis));
+         }
+      }
+
+      eval_type->buildAndRegisterScatterEvaluators(fm, providedDOFs, lof, user_data);
     }
   }
 }

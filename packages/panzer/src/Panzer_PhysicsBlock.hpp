@@ -94,9 +94,16 @@ namespace panzer {
     void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 					       const Teuchos::ParameterList& user_data) const;
 
-    void buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-                                                 const panzer::LinearObjFactory<panzer::Traits> & lof,
-						 const Teuchos::ParameterList& user_data) const;
+    void buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+							const panzer::LinearObjFactory<panzer::Traits> & lof,
+							const Teuchos::ParameterList& user_data) const;
+
+    void buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+						      const Teuchos::ParameterList& user_data) const;
+
+    void buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+					   const panzer::LinearObjFactory<panzer::Traits> & lof,
+					   const Teuchos::ParameterList& user_data) const;
 
     void buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 						const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
@@ -121,9 +128,18 @@ namespace panzer {
 						      const Teuchos::ParameterList& user_data) const;
 
     template<typename EvalT>
-    void buildAndRegisterGatherScatterEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
-                                                        const LinearObjFactory<panzer::Traits> & lof,
-							const Teuchos::ParameterList& user_data) const;
+    void buildAndRegisterGatherAndOrientationEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
+							       const LinearObjFactory<panzer::Traits> & lof,
+							       const Teuchos::ParameterList& user_data) const;
+
+    template<typename EvalT>
+    void buildAndRegisterDOFProjectionsToIPEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
+							     const Teuchos::ParameterList& user_data) const;
+
+    template<typename EvalT>
+    void buildAndRegisterScatterEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
+						  const LinearObjFactory<panzer::Traits> & lof,
+						  const Teuchos::ParameterList& user_data) const;
 
     template<typename EvalT>
     void buildAndRegisterClosureModelEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
@@ -222,9 +238,9 @@ void panzer::PhysicsBlock::buildAndRegisterEquationSetEvaluatorsForType(PHX::Fie
 }
 
 template<typename EvalT>
-void panzer::PhysicsBlock::buildAndRegisterGatherScatterEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
-                                                                          const LinearObjFactory<panzer::Traits> & lof,
-									  const Teuchos::ParameterList& user_data) const
+void panzer::PhysicsBlock::buildAndRegisterGatherAndOrientationEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
+										 const LinearObjFactory<panzer::Traits> & lof,
+										 const Teuchos::ParameterList& user_data) const
 {
   using std::vector;
   using Teuchos::RCP;
@@ -246,7 +262,66 @@ void panzer::PhysicsBlock::buildAndRegisterGatherScatterEvaluatorsForType(PHX::F
        }
     }
 
-    eqstm.getAsObject<EvalT>()->buildAndRegisterGatherScatterEvaluators(fm, providedDOFs,lof,user_data);
+    eqstm.getAsObject<EvalT>()->buildAndRegisterGatherAndOrientationEvaluators(fm, providedDOFs,lof,user_data);
+
+  }
+}
+
+template<typename EvalT>
+void panzer::PhysicsBlock::buildAndRegisterDOFProjectionsToIPEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
+									       const Teuchos::ParameterList& user_data) const
+{
+  using std::vector;
+  using Teuchos::RCP;
+  using panzer::EquationSet_TemplateManager;
+
+  // Loop over equation set template managers
+  vector< RCP<EquationSet_TemplateManager<panzer::Traits> > >::const_iterator 
+    eq_set = m_equation_sets.begin();
+  for (;eq_set != m_equation_sets.end(); ++eq_set) {
+    std::vector<StrBasisPair> providedDOFs;
+
+    EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
+
+    if(providedDOFs.size()==0) {
+       Teuchos::RCP<IntegrationRule> intRule = eqstm.getAsObject<EvalT>()->getIntegrationRule();
+       for(std::size_t i=0;i<m_provided_dofs.size();i++) {
+          Teuchos::RCP<panzer::BasisIRLayout> basis = Teuchos::rcp(new panzer::BasisIRLayout(m_provided_dofs[i].second,*intRule));
+          providedDOFs.push_back(std::make_pair(m_provided_dofs[i].first,basis));
+       }
+    }
+
+    eqstm.getAsObject<EvalT>()->buildAndRegisterDOFProjectionsToIPEvaluators(fm, providedDOFs,user_data);
+
+  }
+}
+
+template<typename EvalT>
+void panzer::PhysicsBlock::buildAndRegisterScatterEvaluatorsForType(PHX::FieldManager<panzer::Traits>& fm,
+								    const LinearObjFactory<panzer::Traits> & lof,
+								    const Teuchos::ParameterList& user_data) const
+{
+  using std::vector;
+  using Teuchos::RCP;
+  using panzer::EquationSet_TemplateManager;
+
+  // Loop over equation set template managers
+  vector< RCP<EquationSet_TemplateManager<panzer::Traits> > >::const_iterator 
+    eq_set = m_equation_sets.begin();
+  for (;eq_set != m_equation_sets.end(); ++eq_set) {
+    std::vector<StrBasisPair> providedDOFs;
+
+    EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
+
+    if(providedDOFs.size()==0) {
+       Teuchos::RCP<IntegrationRule> intRule = eqstm.getAsObject<EvalT>()->getIntegrationRule();
+       for(std::size_t i=0;i<m_provided_dofs.size();i++) {
+          Teuchos::RCP<panzer::BasisIRLayout> basis = Teuchos::rcp(new panzer::BasisIRLayout(m_provided_dofs[i].second,*intRule));
+          providedDOFs.push_back(std::make_pair(m_provided_dofs[i].first,basis));
+       }
+    }
+
+    eqstm.getAsObject<EvalT>()->buildAndRegisterScatterEvaluators(fm, providedDOFs,lof,user_data);
 
   }
 }

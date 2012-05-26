@@ -289,7 +289,9 @@ buildVolumeFieldManagersFromResponses(
   
       // use the physics block to register evaluators
       pb->buildAndRegisterEquationSetEvaluators(*fm, user_data);
-      pb->buildAndRegisterGatherScatterEvaluators(*fm,*linObjFactory_, tmp_user_data);
+      pb->buildAndRegisterGatherAndOrientationEvaluators(*fm,*linObjFactory_, tmp_user_data);
+      pb->buildAndRegisterDOFProjectionsToIPEvaluators(*fm, tmp_user_data);
+      pb->buildAndRegisterScatterEvaluators(*fm,*linObjFactory_, tmp_user_data);
       pb->buildAndRegisterClosureModelEvaluators(*fm, cm_factory, closure_models, user_data);
       if(closure_models.isSublist(response_model_name))
          pb->buildAndRegisterClosureModelEvaluators(*fm, cm_factory, response_model_name, closure_models, user_data);

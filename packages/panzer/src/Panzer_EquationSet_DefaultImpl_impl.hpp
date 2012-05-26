@@ -105,20 +105,14 @@ setupDOFs(int equation_dimension)
 // ***********************************************************************
 template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
-buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-					const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
-                                        const LinearObjFactory<panzer::Traits> & lof,
-					const Teuchos::ParameterList& user_data) const
+buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+					       const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
+					       const LinearObjFactory<panzer::Traits> & lof,
+					       const Teuchos::ParameterList& user_data) const
 {
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
-
-  // this turns off the scatter contribution, and does
-  // only the gather
-  bool ignoreScatter = false;
-  if(user_data.isParameter("Ignore Scatter")) 
-     ignoreScatter = user_data.get<bool>("Ignore Scatter");
 
   // ********************
   // DOFs (unknowns)
@@ -134,92 +128,6 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGather<EvalT>(p);
     
     fm.template registerEvaluator<EvalT>(op);
-  }
-
-  if(!ignoreScatter) {
-     // Scatter
-     RCP<std::map<std::string,std::string> > names_map =
-       rcp(new std::map<std::string,std::string>);
-   
-     TEUCHOS_ASSERT(m_dof_names->size() == m_residual_names->size());
-   
-     for (std::size_t i = 0; i < m_dof_names->size(); ++i)
-       names_map->insert(std::make_pair((*m_residual_names)[i],(*m_dof_names)[i]));
-   
-     {
-       ParameterList p("Scatter");
-       p.set("Scatter Name", this->m_scatter_name);
-       p.set("Basis", this->m_pure_basis.getConst());
-       p.set("Dependent Names", this->m_residual_names);
-       p.set("Dependent Map", names_map);
-   
-       RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatter<EvalT>(p);
-         // rcp(new panzer::ScatterResidual_Epetra<EvalT,panzer::Traits>(p));
-       
-       fm.template registerEvaluator<EvalT>(op);
-     }
-     
-     // Require variables
-     {
-       PHX::Tag<typename EvalT::ScalarT> tag(this->m_scatter_name, 
-   					  Teuchos::rcp(new PHX::MDALayout<Dummy>(0)));
-       fm.template requireField<EvalT>(tag);
-     }
-  }
-
-  // DOFs: Scalar value @ basis --> Scalar value @ IP 
-  for (std::vector<std::string>::const_iterator dof_name = this->m_dof_names->begin();
-       dof_name != this->m_dof_names->end(); ++dof_name) {
-    ParameterList p;
-    p.set("Name", *dof_name);
-    p.set("Basis", this->m_basis); 
-    p.set("IR", this->m_int_rule);
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
-      rcp(new panzer::DOF<EvalT,panzer::Traits>(p));
-    
-    fm.template registerEvaluator<EvalT>(op);
-  }
-
-  // Gradients of DOFs: Scalar value @ basis --> Vector value @ IP
-  if(this->m_pure_basis->supportsGrad()) {
-    TEUCHOS_ASSERT(this->m_dof_names->size() == this->m_dof_gradient_names->size());
-
-    std::vector<std::string>::const_iterator dof_name = this->m_dof_names->begin();
-    std::vector<std::string>::const_iterator dof_grad_name = this->m_dof_gradient_names->begin();
-    for (;dof_grad_name != this->m_dof_gradient_names->end(); ++dof_grad_name,++dof_name) {
-      ParameterList p;
-      p.set("Name", *dof_name);
-      p.set("Gradient Name", *dof_grad_name);
-      p.set("Basis", this->m_basis); 
-      p.set("IR", this->m_int_rule);
-      
-      RCP< PHX::Evaluator<panzer::Traits> > op = 
-	rcp(new panzer::DOFGradient<EvalT,panzer::Traits>(p));
-
-      fm.template registerEvaluator<EvalT>(op);
-    }
-  }
-
-
-  // Curl of DOFs: Vector value @ basis --> Vector value @ IP (3D) or Scalar value @ IP (2D)
-  if(this->m_pure_basis->supportsCurl()) {
-    TEUCHOS_ASSERT(this->m_dof_names->size() == this->m_dof_curl_names->size());
- 
-    std::vector<std::string>::const_iterator dof_name = this->m_dof_names->begin();
-    std::vector<std::string>::const_iterator dof_curl_name = this->m_dof_curl_names->begin();
-    for (;dof_curl_name != this->m_dof_curl_names->end(); ++dof_curl_name,++dof_name) {
-      ParameterList p;
-      p.set("Name", *dof_name);
-      p.set("Curl Name", *dof_curl_name);
-      p.set("Basis", this->m_basis); 
-      p.set("IR", this->m_int_rule);
-      
-      RCP< PHX::Evaluator<panzer::Traits> > op = 
-	rcp(new panzer::DOFCurl<EvalT,panzer::Traits>(p));
-
-      fm.template registerEvaluator<EvalT>(op);
-    }
   }
 
   // **************************
@@ -257,20 +165,6 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     
     fm.template registerEvaluator<EvalT>(op);
   }
-  
-  // Time derivative of DOFs: Scalar value @ basis --> Scalar value @ IP 
-  for (std::vector<std::string>::const_iterator dof_name = this->m_dof_time_derivative_names->begin();
-       dof_name != this->m_dof_time_derivative_names->end(); ++dof_name) {
-    ParameterList p;
-    p.set("Name", *dof_name);
-    p.set("Basis", this->m_basis); 
-    p.set("IR", this->m_int_rule);
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
-      rcp(new panzer::DOF<EvalT,panzer::Traits>(p));
-    
-    fm.template registerEvaluator<EvalT>(op);
-  }
 
   // **************************
   // Orientation terms
@@ -290,6 +184,139 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 }
 
 // ***********************************************************************
+template <typename EvalT>
+void panzer::EquationSet_DefaultImpl<EvalT>::
+buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+					     const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
+					     const Teuchos::ParameterList& user_data) const
+{
+  using Teuchos::ParameterList;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  
+  // DOFs: Scalar value @ basis --> Scalar value @ IP 
+  for (std::vector<std::string>::const_iterator dof_name = this->m_dof_names->begin();
+       dof_name != this->m_dof_names->end(); ++dof_name) {
+    ParameterList p;
+    p.set("Name", *dof_name);
+    p.set("Basis", this->m_basis); 
+    p.set("IR", this->m_int_rule);
+    
+    RCP< PHX::Evaluator<panzer::Traits> > op = 
+      rcp(new panzer::DOF<EvalT,panzer::Traits>(p));
+    
+    fm.template registerEvaluator<EvalT>(op);
+  }
+
+  // Gradients of DOFs: Scalar value @ basis --> Vector value @ IP
+  if(this->m_pure_basis->supportsGrad()) {
+    TEUCHOS_ASSERT(this->m_dof_names->size() == this->m_dof_gradient_names->size());
+
+    std::vector<std::string>::const_iterator dof_name = this->m_dof_names->begin();
+    std::vector<std::string>::const_iterator dof_grad_name = this->m_dof_gradient_names->begin();
+    for (;dof_grad_name != this->m_dof_gradient_names->end(); ++dof_grad_name,++dof_name) {
+      ParameterList p;
+      p.set("Name", *dof_name);
+      p.set("Gradient Name", *dof_grad_name);
+      p.set("Basis", this->m_basis); 
+      p.set("IR", this->m_int_rule);
+      
+      RCP< PHX::Evaluator<panzer::Traits> > op = 
+	rcp(new panzer::DOFGradient<EvalT,panzer::Traits>(p));
+
+      fm.template registerEvaluator<EvalT>(op);
+    }
+  }
+
+  // Curl of DOFs: Vector value @ basis --> Vector value @ IP (3D) or Scalar value @ IP (2D)
+  if(this->m_pure_basis->supportsCurl()) {
+    TEUCHOS_ASSERT(this->m_dof_names->size() == this->m_dof_curl_names->size());
+ 
+    std::vector<std::string>::const_iterator dof_name = this->m_dof_names->begin();
+    std::vector<std::string>::const_iterator dof_curl_name = this->m_dof_curl_names->begin();
+    for (;dof_curl_name != this->m_dof_curl_names->end(); ++dof_curl_name,++dof_name) {
+      ParameterList p;
+      p.set("Name", *dof_name);
+      p.set("Curl Name", *dof_curl_name);
+      p.set("Basis", this->m_basis); 
+      p.set("IR", this->m_int_rule);
+      
+      RCP< PHX::Evaluator<panzer::Traits> > op = 
+	rcp(new panzer::DOFCurl<EvalT,panzer::Traits>(p));
+
+      fm.template registerEvaluator<EvalT>(op);
+    }
+  }
+
+  // Time derivative of DOFs: Scalar value @ basis --> Scalar value @ IP 
+  for (std::vector<std::string>::const_iterator dof_name = this->m_dof_time_derivative_names->begin();
+       dof_name != this->m_dof_time_derivative_names->end(); ++dof_name) {
+    ParameterList p;
+    p.set("Name", *dof_name);
+    p.set("Basis", this->m_basis); 
+    p.set("IR", this->m_int_rule);
+    
+    RCP< PHX::Evaluator<panzer::Traits> > op = 
+      rcp(new panzer::DOF<EvalT,panzer::Traits>(p));
+    
+    fm.template registerEvaluator<EvalT>(op);
+  }
+
+}
+
+// ***********************************************************************
+template <typename EvalT>
+void panzer::EquationSet_DefaultImpl<EvalT>::
+buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+				  const std::vector<std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > > & dofs,
+				  const LinearObjFactory<panzer::Traits> & lof,
+				  const Teuchos::ParameterList& user_data) const
+{
+  using Teuchos::ParameterList;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  // this turns off the scatter contribution, and does
+  // only the gather
+  bool ignoreScatter = false;
+  if(user_data.isParameter("Ignore Scatter")) 
+     ignoreScatter = user_data.get<bool>("Ignore Scatter");
+
+  if(!ignoreScatter) {
+     // Scatter
+     RCP<std::map<std::string,std::string> > names_map =
+       rcp(new std::map<std::string,std::string>);
+   
+     TEUCHOS_ASSERT(m_dof_names->size() == m_residual_names->size());
+   
+     for (std::size_t i = 0; i < m_dof_names->size(); ++i)
+       names_map->insert(std::make_pair((*m_residual_names)[i],(*m_dof_names)[i]));
+   
+     {
+       ParameterList p("Scatter");
+       p.set("Scatter Name", this->m_scatter_name);
+       p.set("Basis", this->m_pure_basis.getConst());
+       p.set("Dependent Names", this->m_residual_names);
+       p.set("Dependent Map", names_map);
+   
+       RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatter<EvalT>(p);
+         // rcp(new panzer::ScatterResidual_Epetra<EvalT,panzer::Traits>(p));
+       
+       fm.template registerEvaluator<EvalT>(op);
+     }
+     
+     // Require variables
+     {
+       PHX::Tag<typename EvalT::ScalarT> tag(this->m_scatter_name, 
+   					  Teuchos::rcp(new PHX::MDALayout<Dummy>(0)));
+       fm.template requireField<EvalT>(tag);
+     }
+  }
+
+}
+
+// ***********************************************************************
+
 template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
 buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
