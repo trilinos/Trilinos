@@ -47,7 +47,6 @@
 
 #include <Teuchos_TestForException.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_ParameterList.hpp>
 #include <numeric>
 
 namespace Kokkos {
@@ -76,34 +75,18 @@ namespace Kokkos {
     //@{
 
     //! Default constuctor.
-    CrsGraphBase(size_t numRows, const RCP<Node> &node);
+    CrsGraphBase(size_t numRows, const RCP<Node> &node, const RCP<ParameterList> &params);
 
     //! Destructor.
     virtual ~CrsGraphBase();
 
     //@}
-    //! @name Accessor routines.
-    //@{
 
-    //! Node accessor.
-    RCP<Node> getNode() const;
-
-    //@}
     //! @name Data entry and accessor methods.
     //@{
 
     //! Return the number of rows in the graph.
     size_t getNumRows() const;
-
-    //! Indicates that the graph has no rows or no entries.
-    /**
-      \note This is different from not having been finalized.
-      \post If isFinalized() == false, then isEmpty() is not valid, but will \c false.
-     */
-    virtual bool isEmpty() const = 0;
-
-    //! Indicates that the graph has been finalized.
-    virtual bool isFinalized() const = 0;
 
     //! \brief Allocate and initialize the storage for a sparse graph.
     /**
@@ -122,43 +105,26 @@ namespace Kokkos {
     virtual void setStructure(const ArrayRCP<const size_t>  &ptrs,
                               const ArrayRCP<const Ordinal> &inds) = 0;
 
-    /// \brief Finalize storage for the graph.
-    ///
-    /// Instruct the graph to perform any necessary manipulation.
-    virtual void finalize(const RCP<Teuchos::ParameterList> &params);
-
-    /* Finalize storage for the graph and matrix.
-       This one cannot be made virtual without introducing a dynamic cast down to the concrete class. 
-       We'll rely strictly on generic programming here.
-       But it should look like this:
-         void finalizeGraphAndMatrix(Matrix &mat, const RCP<Teuchos::ParameterList> &params);
-         void finalizeMatrix(Matrix &mat, const RCP<Teuchos::ParameterList> &params) const;
-    */
-
     //@}
 
   private:
     RCP<Node> node_;
     size_t numRows_;
+    RCP<ParameterList> params_;
   };
 
 
   //==============================================================================
   template <class Ordinal, class Node>
-  CrsGraphBase<Ordinal,Node>::CrsGraphBase(size_t numRows, const RCP<Node> &node) 
+  CrsGraphBase<Ordinal,Node>::CrsGraphBase(size_t numRows, const RCP<Node> &node, const RCP<ParameterList> &params) 
   : node_(node)
   , numRows_(numRows)
+  , params_(params)
   {}
 
   //==============================================================================
   template <class Ordinal, class Node>
   CrsGraphBase<Ordinal,Node>::~CrsGraphBase() {
-  }
-
-  // ======= node ===========
-  template <class Ordinal, class Node>
-  RCP<Node> CrsGraphBase<Ordinal,Node>::getNode() const {
-    return node_;
   }
 
   // ======= numrows ===========
@@ -187,11 +153,6 @@ namespace Kokkos {
     ptrs[0] = 0;
     std::partial_sum( numEntriesPerRow.begin(), numEntriesPerRow.end(), ptrs.begin()+1 );
   }
-
-  // ======= default implementation is empty ===========
-  template <class Ordinal, class Node>
-  void CrsGraphBase<Ordinal,Node>::finalize(const RCP<Teuchos::ParameterList> &params)
-  { }
 
 } // namespace Kokkos
 

@@ -164,8 +164,9 @@ namespace {
   {
     RCP<Node> node = getNode<Node>();
     typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps          DSM;
-    typedef typename DSM::template matrix<Scalar,Ordinal,Node>::matrix_type  MAT;
-    typedef typename DSM::template graph<Ordinal,Node>::graph_type          GRPH;
+    typedef typename DSM::template bind_scalar<Scalar>::other_type           OPS;
+    typedef typename OPS::template matrix<Scalar,Ordinal,Node>::matrix_type  MAT;
+    typedef typename OPS::template graph<Ordinal,Node>::graph_type          GRPH;
     typedef MultiVector<Scalar,Node>                                          MV;
     typedef Teuchos::ScalarTraits<Scalar>                                     ST;
     const Scalar ONE = ST::one(),
@@ -178,8 +179,8 @@ namespace {
     // [            1 0]
     // [              1]
     if (N<2) return;
-    RCP<GRPH> G = rcp(new GRPH (N,node) );
-    RCP<MAT>  A = rcp(new MAT  (G) );
+    RCP<GRPH> G = rcp(new GRPH (N,node,null) );
+    RCP<MAT>  A = rcp(new MAT  (G,null) );
     // allocate buffers for offsets, indices and values
     const size_t totalNNZ = 2*N-1;
     ArrayRCP<size_t> offsets(N+1);
@@ -203,8 +204,8 @@ namespace {
     inds    = Teuchos::null;
     A->setValues(vals);
     vals    = Teuchos::null;
-    G->finalizeGraphAndMatrix(*A,null);
-    typename DSM::template rebind<Scalar>::other_type dsm(node);
+    OPS::finalizeGraphAndMatrix(*G,*A,null);
+    OPS dsm(node);
     out << "Testing with sparse ops: " << Teuchos::typeName(dsm) << std::endl;
     dsm.setGraphAndMatrix(G,A);
 
@@ -237,8 +238,9 @@ namespace {
   {
     RCP<Node> node = getNode<Node>();
     typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps          DSM;
-    typedef typename DSM::template matrix<Scalar,Ordinal,Node>::matrix_type  MAT;
-    typedef typename DSM::template graph<Ordinal,Node>::graph_type          GRPH;
+    typedef typename DSM::template bind_scalar<Scalar>::other_type           OPS;
+    typedef typename OPS::template matrix<Scalar,Ordinal,Node>::matrix_type  MAT;
+    typedef typename OPS::template graph<Ordinal,Node>::graph_type          GRPH;
     typedef MultiVector<Scalar,Node>                                          MV;
     typedef Teuchos::ScalarTraits<Scalar>                                     ST;
     const Scalar ONE = ST::one(),
@@ -252,8 +254,8 @@ namespace {
     // [              1]
     // but don't store the diagonal
     if (N<2) return;
-    RCP<GRPH> G = rcp(new GRPH (N,node) );
-    RCP<MAT>  A = rcp(new MAT  (G) );
+    RCP<GRPH> G = rcp(new GRPH (N,node,null) );
+    RCP<MAT>  A = rcp(new MAT  (G,null) );
     // allocate buffers for offsets, indices and values
     const size_t totalNNZ = N-1;
     ArrayRCP<size_t> offsets(N+1);
@@ -274,8 +276,8 @@ namespace {
     inds    = Teuchos::null;
     A->setValues(vals);
     vals    = Teuchos::null;
-    G->finalizeGraphAndMatrix(*A,null);
-    typename DSM::template rebind<Scalar>::other_type dsm(node);
+    OPS::finalizeGraphAndMatrix(*G,*A,null);
+    OPS dsm(node);
     out << "Testing with sparse ops: " << Teuchos::typeName(dsm) << std::endl;
     dsm.setGraphAndMatrix(G,A);
 

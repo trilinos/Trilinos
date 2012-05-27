@@ -56,17 +56,19 @@
 
 namespace KokkosExamples {
 
+  using Teuchos::RCP;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ParameterList;
+
   //! \class DummyCrsGraph 
   /** This is based off Kokkos::CrsGraphBase to ease our obligations.
    */
   template <class Node>
   class DummyCrsGraph : public Kokkos::CrsGraphBase<int,Node> {
   public:
-    DummyCrsGraph(size_t numrows, const Teuchos::RCP<Node> &node) : Kokkos::CrsGraphBase<int,Node>(numrows,node) {}
-    size_t getNumEntries() const {return 0;}
-    bool isEmpty() const {return false;}
-    bool isFinalized() const {return true;}
-    void setStructure(const Teuchos::ArrayRCP<const size_t>&, const Teuchos::ArrayRCP<const int>&) {}
+    DummyCrsGraph(size_t numrows, const RCP<Node> &node, const RCP<ParameterList> &params) : Kokkos::CrsGraphBase<int,Node>(numrows,node,params) {}
+    ~DummyCrsGraph();
+    void setStructure(const ArrayRCP<const size_t>&, const ArrayRCP<const int>&) {}
   };
 
   //! \class DummyCrsMatrix 
@@ -75,11 +77,9 @@ namespace KokkosExamples {
   template <class Node>
   class DummyCrsMatrix : public Kokkos::CrsMatrixBase<double,int,Node> {
   public:
-    DummyCrsMatrix(const Teuchos::RCP<const DummyCrsGraph<Node> > &graph) : Kokkos::CrsMatrixBase<double,int,Node>(graph) {}
-    void setValues(const Teuchos::ArrayRCP<const double> &) {}
-    bool isFinalized() const {return true;}
+    DummyCrsMatrix(const RCP<const DummyCrsGraph<Node> > &graph, const RCP<ParameterList> &params) : Kokkos::CrsMatrixBase<double,int,Node>(graph) {}
+    void setValues(const ArrayRCP<const double> &) {}
   };
-
 
   /// \class DummySparseKernel
   /// \ingroup kokkos_crs_ops
@@ -146,8 +146,8 @@ namespace KokkosExamples {
     /// types).  This typedef lets you provide a "fall-back"
     /// implementation of sparse kernels.
     template <class T>
-    struct rebind {
-      typedef DummySparseKernel<Node> other;
+    struct bind_scalar {
+      typedef DummySparseKernel<Node> other_type;
     };
 
     //@}
@@ -155,7 +155,7 @@ namespace KokkosExamples {
     //@{
 
     //! Constructor accepting and retaining a Kokkos Node instance.
-    DummySparseKernel(const Teuchos::RCP<Node> & node) : node_(node) {}
+    DummySparseKernel(const RCP<Node> & node) : node_(node) {}
 
     //! Destructor.
     ~DummySparseKernel() {}
@@ -168,7 +168,7 @@ namespace KokkosExamples {
     ///
     /// Return the Kokkos Node instance of type this::node_type given
     /// to the constructor.
-    Teuchos::RCP<Node> getNode() const {return node_;}
+    RCP<Node> getNode() const {return node_;}
 
     //@}
     //! @name Initialization of structure
@@ -188,8 +188,8 @@ namespace KokkosExamples {
         copy, callers should not change the Kokkos::CrsGraph after
         calling this method.
       */
-    void setGraphAndMatrix(const Teuchos::RCP<DummyCrsGraph<Node> > &graph,
-                           const Teuchos::RCP<DummyCrsMatrix<Node> > &node) {};
+    void setGraphAndMatrix(const RCP<DummyCrsGraph<Node> > &graph,
+                           const RCP<DummyCrsMatrix<Node> > &node) {};
 
     //@}
     //! @name Computational methods
@@ -301,7 +301,7 @@ namespace KokkosExamples {
     DummySparseKernel(const DummySparseKernel& source);
 
     //! The Kokkos Node instance given to this object's constructor.
-    Teuchos::RCP<Node> node_;
+    RCP<Node> node_;
   };
 
   /** \example DummySparseKernelDriver.cpp

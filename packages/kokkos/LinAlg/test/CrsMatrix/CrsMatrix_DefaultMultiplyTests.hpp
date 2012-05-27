@@ -49,11 +49,12 @@
   {
     RCP<Node> node = getNode<Node>();
     typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps          DSM;
-    typedef typename DSM::template matrix<Scalar,Ordinal,Node>::matrix_type  MAT;
-    typedef typename DSM::template graph<Ordinal,Node>::graph_type          GRPH;
+    typedef typename DSM::template bind_scalar<Scalar>::other_type           OPS;
+    typedef typename OPS::template matrix<Scalar,Ordinal,Node>::matrix_type  MAT;
+    typedef typename OPS::template graph<Ordinal,Node>::graph_type          GRPH;
     typedef MultiVector<Scalar,Node>                                          MV;
     typedef Teuchos::ScalarTraits<Scalar>                                     ST;
-    typename DSM::template rebind<Scalar>::other_type dsm(node);
+    OPS dsm(node);
     TEST_EQUALITY(dsm.getNode(), node);
   }
 
@@ -61,17 +62,18 @@
   {
     RCP<Node> node = getNode<Node>();
     typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps          DSM;
-    typedef typename DSM::template matrix<Scalar,Ordinal,Node>::matrix_type  MAT;
-    typedef typename DSM::template graph<Ordinal,Node>::graph_type          GRPH;
+    typedef typename DSM::template bind_scalar<Scalar>::other_type           OPS;
+    typedef typename OPS::template matrix<Scalar,Ordinal,Node>::matrix_type  MAT;
+    typedef typename OPS::template graph<Ordinal,Node>::graph_type          GRPH;
     typedef MultiVector<Scalar,Node>                                          MV;
     typedef Teuchos::ScalarTraits<Scalar>                                     ST;
     const size_t numRows = 5;
-    RCP<GRPH> G = rcp( new GRPH(numRows,node) );
-    RCP<MAT>  A = rcp( new MAT(G) );
-    G->finalizeGraphAndMatrix(*A,null);
+    RCP<GRPH> G = rcp( new GRPH(numRows,node,null) );
+    RCP<MAT>  A = rcp( new MAT(G,null) );
+    OPS::finalizeGraphAndMatrix(*G,*A,null);
     out << "\n**\n** Can't submit the data twice\n**\n";
     {
-      typename DSM::template rebind<Scalar>::other_type dsm(node);
+      OPS dsm(node);
       dsm.setGraphAndMatrix(G,A);
       TEST_THROW( dsm.setGraphAndMatrix(G,A), std::runtime_error );
     }

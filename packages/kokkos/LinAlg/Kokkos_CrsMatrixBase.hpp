@@ -76,7 +76,8 @@ namespace Kokkos {
     //@{
 
     //! Constructor
-    CrsMatrixBase(const RCP<const CrsGraphBase<Ordinal,Node> > &graph);
+    CrsMatrixBase(const RCP<const CrsGraphBase<Ordinal,Node> > &graph,
+                  const RCP<ParameterList> &params);
 
     //! CrsMatrixBase Destructor
     virtual ~CrsMatrixBase();
@@ -86,29 +87,17 @@ namespace Kokkos {
     //! @name Data entry and accessor methods.
     //@{
 
-    //! Node accessor.
-    RCP<Node> getNode() const;
-
-    //! Return the number of rows in the matrix.
-    size_t getNumRows() const;
-
-    //! Indicates that the matrix has no rows or no entries.
-    /**
-      \note This is different from not having been finalized.
-      \post If isFinalized() == false, then isEmpty() is not valid, but will \c false.
-     */
-    virtual bool isEmpty() const;
-
     //! \brief Allocate and initialize the storage for the matrix values.
     /**
         This is used by Tpetra.
+
         \pre numEntries.size() == getNumRows()
      */
     virtual ArrayRCP<Scalar> allocStorage(const ArrayView<const size_t> &numEntriesPerRow) const;
 
     //! Submit the matrix values.
     /**
-        Must be congruous, with respect to the associated graph.
+        Must be congruous with the associated graph.
 
         This is used by Tpetra.
      */
@@ -118,29 +107,21 @@ namespace Kokkos {
 
   private:
     RCP<const CrsGraphBase<Ordinal,Node> > graph_;
+    RCP<ParameterList> params_;
   };
 
   //==============================================================================
   template <class Scalar, class Ordinal, class Node>
-  CrsMatrixBase<Scalar,Ordinal,Node>::CrsMatrixBase(const RCP<const CrsGraphBase<Ordinal,Node> > &graph)
+  CrsMatrixBase<Scalar,Ordinal,Node>::CrsMatrixBase(
+      const RCP<const CrsGraphBase<Ordinal,Node> > &graph,
+      const RCP<ParameterList> &params)
   : graph_(graph)
+  , params_(params)
   {}
 
   //==============================================================================
   template <class Scalar, class Ordinal, class Node>
   CrsMatrixBase<Scalar,Ordinal,Node>::~CrsMatrixBase() {
-  }
-
-  // ======= node ===========
-  template <class Scalar, class Ordinal, class Node>
-  RCP<Node> CrsMatrixBase<Scalar,Ordinal,Node>::getNode() const {
-    return graph_->getNode();
-  }
-
-  // ======= numrows ===========
-  template <class Scalar, class Ordinal, class Node>
-  size_t CrsMatrixBase<Scalar,Ordinal,Node>::getNumRows() const {
-    return graph_->getNumRows();
   }
 
   // ======= default implementation calls graph, using a method that doesn't exist on the base graph class ===========
@@ -149,7 +130,7 @@ namespace Kokkos {
   { 
     std::string tfecfFuncName("allocStorage( in(numEntriesPerRow) )");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        (size_t)numEntriesPerRow.size() != (size_t)getNumRows(),
+        (size_t)numEntriesPerRow.size() != (size_t)graph_->getNumRows(),
         std::runtime_error, " number of rows doesn't match.")
     const size_t totalNumEntries = std::accumulate( numEntriesPerRow.begin(), numEntriesPerRow.end(), (size_t)0 );
     // alloc inds
@@ -157,13 +138,6 @@ namespace Kokkos {
     if (totalNumEntries > 0) vals = arcp<Scalar>(totalNumEntries);
     std::fill( vals.begin(), vals.end(), Teuchos::ScalarTraits<Scalar>::zero() );
     return vals;
-  }
-
-  // ======= just ask the graph for default implementation ===========
-  template <class Scalar, class Ordinal, class Node>
-  bool CrsMatrixBase<Scalar,Ordinal,Node>::isEmpty() const
-  {
-    return graph_->isEmpty();
   }
 
 } // namespace Kokkos
