@@ -57,8 +57,8 @@
 #ifdef HAVE_KOKKOS_THREADPOOL
 #include "Kokkos_TPINode.hpp"
 #endif
-#ifdef HAVE_KOKKOS_THRUST
-#include "Kokkos_ThrustGPUNode.hpp"
+#ifdef HAVE_KOKKOS_OPENMP
+#include "Kokkos_OpenMPNode.hpp"
 #endif
 
 namespace {
@@ -82,9 +82,9 @@ namespace {
   using Kokkos::TPINode;
   RCP<TPINode> tpinode;
 #endif
-#ifdef HAVE_KOKKOS_THRUST
-  using Kokkos::ThrustGPUNode;
-  RCP<ThrustGPUNode> thrustnode;
+#ifdef HAVE_KOKKOS_OPENMP
+  using Kokkos::OpenMPNode;
+  RCP<OMPNode> ompnode;
 #endif
 
   int N = 1000;
@@ -134,19 +134,6 @@ namespace {
   }
 #endif
 
-#ifdef HAVE_KOKKOS_THRUST
-  template <>
-  RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
-    if (thrustnode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      pl.set<int>("Verbose",1);
-      thrustnode = rcp(new ThrustGPUNode(pl));
-    }
-    return thrustnode;
-  }
-#endif
-
   //
   // UNIT TESTS
   // 
@@ -160,7 +147,7 @@ namespace {
     TEST_EQUALITY_CONST(err, ZERO);                                             \
   }                                                                             
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, SparseSolveIdentity, Ordinal, Scalar, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, SparseSolveIdentityLower, Ordinal, Scalar, Node )
   {
     RCP<Node> node = getNode<Node>();
     typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps          DSM;
@@ -171,7 +158,141 @@ namespace {
     typedef Teuchos::ScalarTraits<Scalar>                                     ST;
     const Scalar ONE = ST::one(),
                 ZERO = ST::zero();
-    // generate tridiagonal matrix:
+    // generate lower triangular identity matrix:
+    // [ 1           ]
+    // [ 0 1         ]
+    // [   0 1       ]
+    // [     . .     ]
+    // [        0 1  ]
+    // [          0 1]
+    if (N<2) return;
+    RCP<GRPH> G = rcp(new GRPH (N,node,null) );
+    RCP<MAT>  A = rcp(new MAT  (G,null) );
+    // allocate buffers for ptrs, indices and values
+    const size_t totalNNZ = 2*N-1;
+    ArrayRCP<size_t>    ptrs(N+1);
+    ArrayRCP<Ordinal>   inds(totalNNZ);
+    ArrayRCP<Scalar>    vals(totalNNZ);
+    // fill the buffers on the host
+    {
+      size_t num = 0;
+      ptrs[0] = num;
+      inds[num] = 0;
+      vals[num] = 1;
+      num += 1;
+      for (int i=1; i < N; ++i) {
+        ptrs[i] = num;
+        inds[num] = i-1; inds[num+1] = i;
+        vals[num] = 0; vals[num+1] = 1;
+        num += 2;
+      }
+      ptrs[N] = num;
+    }
+    G->setStructure(ptrs, inds);
+    ptrs = Teuchos::null;
+    inds = Teuchos::null;
+    A->setValues(vals);
+    vals = Teuchos::null;
+    OPS::finalizeGraphAndMatrix(*G,*A,null);
+    OPS dsm(node);
+    out << "Testing with sparse ops: " << Teuchos::typeName(dsm) << std::endl;
+    dsm.setGraphAndMatrix(G,A);
+
+    // A is the identity, which allows us to easily test transpose and non-transpose, upper and lower tri
+    ArrayRCP<Scalar> ydat, x1dat, x3dat;
+    ydat  = node->template allocBuffer<Scalar>(N);
+    x1dat = node->template allocBuffer<Scalar>(N);
+    x3dat = node->template allocBuffer<Scalar>(N);
+    MV Y(node), X1(node), X3(node);
+    Y.initializeValues(N,1, ydat,N);
+    X1.initializeValues(N,1,x1dat,N);
+    X3.initializeValues(N,1,x3dat,N);
+    // solve A*X=Y
+    DefaultArithmetic<MV>::Init(Y,1);
+    dsm.solve(Teuchos::NO_TRANS,Teuchos::LOWER_TRI,Teuchos::NON_UNIT_DIAG,Y,X1);
+    TEST_DATA_FOR_ONES(x1dat)
+    dsm.solve(Teuchos::CONJ_TRANS,Teuchos::LOWER_TRI,Teuchos::NON_UNIT_DIAG,Y,X3);
+    TEST_DATA_FOR_ONES(x3dat)
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, SparseSolveImplicitIdentityLower, Ordinal, Scalar, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+    typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps          DSM;
+    typedef typename DSM::template bind_scalar<Scalar>::other_type           OPS;
+    typedef typename OPS::template matrix<Scalar,Ordinal,Node>::matrix_type  MAT;
+    typedef typename OPS::template graph<Ordinal,Node>::graph_type          GRPH;
+    typedef MultiVector<Scalar,Node>                                          MV;
+    typedef Teuchos::ScalarTraits<Scalar>                                     ST;
+    const Scalar ONE = ST::one(),
+                ZERO = ST::zero();
+    // generate lower triangular identity matrix:
+    // [ 1           ]
+    // [ 0 1         ]
+    // [   0 1       ]
+    // [     . .     ]
+    // [        0 1  ]
+    // [          0 1]
+    // but don't store the diagonal
+    if (N<2) return;
+    RCP<GRPH> G = rcp(new GRPH (N,node,null) );
+    RCP<MAT>  A = rcp(new MAT  (G,null) );
+    // allocate buffers for ptrs, indices and values
+    const size_t totalNNZ = N-1;
+    ArrayRCP<size_t> ptrs(N+1);
+    ArrayRCP<Ordinal>   inds(totalNNZ);
+    ArrayRCP<Scalar>    vals(totalNNZ);
+    // fill the buffers on the host
+    {
+      size_t num = 0;
+      ptrs[0] = num;
+      for (int i=1; i < N; ++i) {
+        ptrs[i] = num;
+        inds[num] = i-1;
+        vals[num] = 0;
+        num += 1;
+      }
+      ptrs[N] = num;
+    }
+    G->setStructure(ptrs, inds);
+    ptrs = Teuchos::null;
+    inds = Teuchos::null;
+    A->setValues(vals);
+    vals = Teuchos::null;
+    OPS::finalizeGraphAndMatrix(*G,*A,null);
+    OPS dsm(node);
+    out << "Testing with sparse ops: " << Teuchos::typeName(dsm) << std::endl;
+    dsm.setGraphAndMatrix(G,A);
+
+    // A is the identity, which allows us to easily test transpose and non-transpose, upper and lower tri
+    ArrayRCP<Scalar> ydat, x1dat, x3dat;
+    ydat  = node->template allocBuffer<Scalar>(N);
+    x1dat = node->template allocBuffer<Scalar>(N);
+    x3dat = node->template allocBuffer<Scalar>(N);
+    MV Y(node), X1(node), X3(node);
+    Y.initializeValues(N,1, ydat,N);
+    X1.initializeValues(N,1,x1dat,N);
+    X3.initializeValues(N,1,x3dat,N);
+    // solve A*X=Y
+    DefaultArithmetic<MV>::Init(Y,1);
+    dsm.solve(Teuchos::NO_TRANS,Teuchos::LOWER_TRI,Teuchos::UNIT_DIAG,Y,X1);
+    TEST_DATA_FOR_ONES(x1dat)
+    dsm.solve(Teuchos::CONJ_TRANS,Teuchos::LOWER_TRI,Teuchos::UNIT_DIAG,Y,X3);
+    TEST_DATA_FOR_ONES(x3dat)
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, SparseSolveIdentityUpper, Ordinal, Scalar, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+    typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps          DSM;
+    typedef typename DSM::template bind_scalar<Scalar>::other_type           OPS;
+    typedef typename OPS::template matrix<Scalar,Ordinal,Node>::matrix_type  MAT;
+    typedef typename OPS::template graph<Ordinal,Node>::graph_type          GRPH;
+    typedef MultiVector<Scalar,Node>                                          MV;
+    typedef Teuchos::ScalarTraits<Scalar>                                     ST;
+    const Scalar ONE = ST::one(),
+                ZERO = ST::zero();
+    // generate upper triangular identity matrix:
     // [ 1 0           ]
     // [   1 0         ]
     // [     1 0       ]
@@ -181,60 +302,54 @@ namespace {
     if (N<2) return;
     RCP<GRPH> G = rcp(new GRPH (N,node,null) );
     RCP<MAT>  A = rcp(new MAT  (G,null) );
-    // allocate buffers for offsets, indices and values
+    // allocate buffers for ptrs, indices and values
     const size_t totalNNZ = 2*N-1;
-    ArrayRCP<size_t> offsets(N+1);
+    ArrayRCP<size_t> ptrs(N+1);
     ArrayRCP<Ordinal>   inds(totalNNZ);
     ArrayRCP<Scalar>    vals(totalNNZ);
     // fill the buffers on the host
     {
       size_t num = 0;
       for (int i=0; i < N-1; ++i) {
-        offsets[i] = num;
+        ptrs[i] = num;
         inds[num] = i; inds[num+1] = i+1;
         vals[num] = 1; vals[num+1] = 0;
         num += 2;
       }
+      ptrs[N-1] = num;
       inds[num] = N-1;
       vals[num] = 1;
-      offsets[N] = num+1;
+      num += 1;
+      ptrs[N] = num;
     }
-    G->setStructure(offsets, inds);
-    offsets = Teuchos::null;
-    inds    = Teuchos::null;
+    G->setStructure(ptrs, inds);
+    ptrs = Teuchos::null;
+    inds = Teuchos::null;
     A->setValues(vals);
-    vals    = Teuchos::null;
+    vals = Teuchos::null;
     OPS::finalizeGraphAndMatrix(*G,*A,null);
     OPS dsm(node);
     out << "Testing with sparse ops: " << Teuchos::typeName(dsm) << std::endl;
     dsm.setGraphAndMatrix(G,A);
 
     // A is the identity, which allows us to easily test transpose and non-transpose, upper and lower tri
-    ArrayRCP<Scalar> ydat, x1dat, x2dat, x3dat, x4dat;
+    ArrayRCP<Scalar> ydat, x1dat, x3dat;
     ydat  = node->template allocBuffer<Scalar>(N);
     x1dat = node->template allocBuffer<Scalar>(N);
-    x2dat = node->template allocBuffer<Scalar>(N);
     x3dat = node->template allocBuffer<Scalar>(N);
-    x4dat = node->template allocBuffer<Scalar>(N);
-    MV Y(node), X1(node), X2(node), X3(node), X4(node); 
+    MV Y(node), X1(node), X3(node);
     Y.initializeValues(N,1, ydat,N);
     X1.initializeValues(N,1,x1dat,N);
-    X2.initializeValues(N,1,x2dat,N);
     X3.initializeValues(N,1,x3dat,N);
-    X4.initializeValues(N,1,x4dat,N);
     // solve A*X=Y
     DefaultArithmetic<MV>::Init(Y,1);
     dsm.solve(Teuchos::NO_TRANS,Teuchos::UPPER_TRI,Teuchos::NON_UNIT_DIAG,Y,X1);
     TEST_DATA_FOR_ONES(x1dat)
-    dsm.solve(Teuchos::NO_TRANS,Teuchos::LOWER_TRI,Teuchos::NON_UNIT_DIAG,Y,X2);
-    TEST_DATA_FOR_ONES(x2dat)
     dsm.solve(Teuchos::CONJ_TRANS,Teuchos::UPPER_TRI,Teuchos::NON_UNIT_DIAG,Y,X3);
     TEST_DATA_FOR_ONES(x3dat)
-    dsm.solve(Teuchos::CONJ_TRANS,Teuchos::LOWER_TRI,Teuchos::NON_UNIT_DIAG,Y,X4);
-    TEST_DATA_FOR_ONES(x4dat)
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, SparseSolveImplicitIdentity, Ordinal, Scalar, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, SparseSolveImplicitIdentityUpper, Ordinal, Scalar, Node )
   {
     RCP<Node> node = getNode<Node>();
     typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps          DSM;
@@ -245,7 +360,7 @@ namespace {
     typedef Teuchos::ScalarTraits<Scalar>                                     ST;
     const Scalar ONE = ST::one(),
                 ZERO = ST::zero();
-    // generate tridiagonal matrix:
+    // generate upper triangular identity matrix:
     // [ 1 0           ]
     // [   1 0         ]
     // [     1 0       ]
@@ -256,58 +371,55 @@ namespace {
     if (N<2) return;
     RCP<GRPH> G = rcp(new GRPH (N,node,null) );
     RCP<MAT>  A = rcp(new MAT  (G,null) );
-    // allocate buffers for offsets, indices and values
+    // allocate buffers for ptrs, indices and values
     const size_t totalNNZ = N-1;
-    ArrayRCP<size_t> offsets(N+1);
+    ArrayRCP<size_t> ptrs(N+1);
     ArrayRCP<Ordinal>   inds(totalNNZ);
     ArrayRCP<Scalar>    vals(totalNNZ);
     // fill the buffers on the host
     {
       size_t num = 0;
       for (int i=0; i < N-1; ++i) {
-        offsets[i] = i;
+        ptrs[i] = num;
+        inds[i] = i+1;
         vals[i] = 0;
-        inds[i] = i;
+        num += 1;
       }
-      offsets[N] = N-1;
+      ptrs[N-1] = num;
+      ptrs[N]   = num;
     }
-    G->setStructure(offsets, inds);
-    offsets = Teuchos::null;
-    inds    = Teuchos::null;
+    G->setStructure(ptrs, inds);
+    ptrs = Teuchos::null;
+    inds = Teuchos::null;
     A->setValues(vals);
-    vals    = Teuchos::null;
+    vals = Teuchos::null;
     OPS::finalizeGraphAndMatrix(*G,*A,null);
     OPS dsm(node);
     out << "Testing with sparse ops: " << Teuchos::typeName(dsm) << std::endl;
     dsm.setGraphAndMatrix(G,A);
 
     // A is the identity, which allows us to easily test transpose and non-transpose, upper and lower tri
-    ArrayRCP<Scalar> ydat, x1dat, x2dat, x3dat, x4dat;
+    ArrayRCP<Scalar> ydat, x1dat, x3dat;
     ydat  = node->template allocBuffer<Scalar>(N);
     x1dat = node->template allocBuffer<Scalar>(N);
-    x2dat = node->template allocBuffer<Scalar>(N);
     x3dat = node->template allocBuffer<Scalar>(N);
-    x4dat = node->template allocBuffer<Scalar>(N);
-    MV Y(node), X1(node), X2(node), X3(node), X4(node); 
+    MV Y(node), X1(node), X3(node);
     Y.initializeValues(N,1, ydat,N);
     X1.initializeValues(N,1,x1dat,N);
-    X2.initializeValues(N,1,x2dat,N);
     X3.initializeValues(N,1,x3dat,N);
-    X4.initializeValues(N,1,x4dat,N);
     // solve A*X=Y
     DefaultArithmetic<MV>::Init(Y,1);
     dsm.solve(Teuchos::NO_TRANS,Teuchos::UPPER_TRI,Teuchos::UNIT_DIAG,Y,X1);
     TEST_DATA_FOR_ONES(x1dat)
-    dsm.solve(Teuchos::NO_TRANS,Teuchos::LOWER_TRI,Teuchos::UNIT_DIAG,Y,X2);
-    TEST_DATA_FOR_ONES(x2dat)
     dsm.solve(Teuchos::CONJ_TRANS,Teuchos::UPPER_TRI,Teuchos::UNIT_DIAG,Y,X3);
     TEST_DATA_FOR_ONES(x3dat)
-    dsm.solve(Teuchos::CONJ_TRANS,Teuchos::LOWER_TRI,Teuchos::UNIT_DIAG,Y,X4);
-    TEST_DATA_FOR_ONES(x4dat)
   }
 
 #define ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix,        SparseSolveIdentity, ORDINAL, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix,          SparseSolveIdentityLower, ORDINAL, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix,          SparseSolveIdentityUpper, ORDINAL, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix,  SparseSolveImplicitIdentityLower, ORDINAL, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix,  SparseSolveImplicitIdentityUpper, ORDINAL, SCALAR, NODE )
 
 #define UNIT_TEST_SERIALNODE(ORDINAL, SCALAR) \
       ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, SerialNode )
@@ -319,6 +431,13 @@ namespace {
 #define UNIT_TEST_TBBNODE(ORDINAL, SCALAR)
 #endif
 
+#ifdef HAVE_KOKKOS_OPENMP
+#define UNIT_TEST_OPENMPNODE(ORDINAL, SCALAR) \
+      ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, OpenMPNode )
+#else
+#define UNIT_TEST_OPENMPNODE(ORDINAL, SCALAR)
+#endif
+
 #ifdef HAVE_KOKKOS_THREADPOOL
 #define UNIT_TEST_TPINODE(ORDINAL, SCALAR) \
       ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, TPINode )
@@ -326,18 +445,11 @@ namespace {
 #define UNIT_TEST_TPINODE(ORDINAL, SCALAR)
 #endif
 
-#ifdef HAVE_KOKKOS_THRUST
-#define UNIT_TEST_THRUSTGPUNODE(ORDINAL, SCALAR) \
-      ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, ThrustGPUNode )
-#else
-#define UNIT_TEST_THRUSTGPUNODE(ORDINAL, SCALAR)
-#endif
-
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
         UNIT_TEST_SERIALNODE( ORDINAL, SCALAR ) \
         UNIT_TEST_TBBNODE( ORDINAL, SCALAR ) \
-        UNIT_TEST_TPINODE( ORDINAL, SCALAR ) \
-        UNIT_TEST_THRUSTGPUNODE( ORDINAL, SCALAR )
+        UNIT_TEST_OPENMPNODE( ORDINAL, SCALAR ) \
+        UNIT_TEST_TPINODE( ORDINAL, SCALAR )
 
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, int) \

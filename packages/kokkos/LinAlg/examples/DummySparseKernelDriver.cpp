@@ -68,13 +68,13 @@ int main() {
 
   // create the graph G
   const size_t numRows = 5;
-  Teuchos::RCP<const Graph> G = Teuchos::rcp(new Graph(numRows,node,null));
+  Teuchos::RCP<Graph> G = Teuchos::rcp(new Graph(numRows,node,Teuchos::null));
 
   // create a double-valued matrix dM using the graph G
-  Teuchos::RCP<DMatrix> dM = Teuchos::rcp(new DMatrix(G,null));
+  Teuchos::RCP<DMatrix> dM = Teuchos::rcp(new DMatrix(G,Teuchos::null));
   DoubleOps doubleKernel(node);
   // initialize it with G and dM
-  DoubleOps::finalizeGraphAndMatrix(*G,*dM,null);
+  DoubleOps::finalizeGraphAndMatrix(*G,*dM,Teuchos::null);
   doubleKernel.setGraphAndMatrix(G,dM);
   // create double-valued vectors and initialize them
   DoubleVec dx(node), dy(node);
@@ -84,11 +84,11 @@ int main() {
   doubleKernel.solve( Teuchos::NO_TRANS, Teuchos::UPPER_TRI, Teuchos::UNIT_DIAG, dy, dx);
 
   // create a float-valued matrix fM using the graph G
-  Teuchos::RCP<FMatrix> fM = Teuchos::rcp(new FMatrix(G,null));
+  Teuchos::RCP<FMatrix> fM = Teuchos::rcp(new FMatrix(G,Teuchos::null));
   // create a double-valued sparse kernel using the rebind functionality
   FloatOps floatKernel(node);
   // initialize it with G and fM
-  FloatOps::finalizeGraphAndMatrix(*G,*fM,null);
+  FloatOps::finalizeMatrix(*G,*fM,Teuchos::null);
   floatKernel.setGraphAndMatrix(G,fM);
   // create float-valued vectors and initialize them
   FloatVec fx(node), fy(node);

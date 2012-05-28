@@ -103,14 +103,12 @@ namespace Kokkos {
        @todo Not implemented for general sparse graphs.
     */
     template <class UNSUPPORTED_GRAPH, class UNSUPPORTED_MATRIX>
-    void initializeData(Teuchos::DataAccess cv, 
-                        const Teuchos::RCP<const UNSUPPORTED_GRAPH>  &graph, 
-                        const Teuchos::RCP<const UNSUPPORTED_MATRIX> &matrix);
+    void initializeData(const RCP<const UNSUPPORTED_GRAPH > &graph, 
+                        const RCP<const UNSUPPORTED_MATRIX> &matrix);
 
     //! Initialize the data
-    void initializeData(Teuchos::DataAccess cv, 
-                        const Teuchos::RCP<const DefaultCrsGraph<Ordinal,Node> > &graph, 
-                        const Teuchos::RCP<const DefaultCrsMatrix<Scalar,Ordinal,Node> > &matrix);
+    void initializeData(const RCP<const DefaultCrsGraph<Ordinal,Node>         > &graph, 
+                        const RCP<const DefaultCrsMatrix<Scalar,Ordinal,Node> > &matrix);
 
     /*! Sets the diagonal inverted for relaxation using a MultiVector
 
@@ -170,7 +168,7 @@ namespace Kokkos {
     ArrayRCP<const Ordinal> inds_;
     ArrayRCP<const size_t>  ptrs_;
     ArrayRCP<const Scalar>  vals_;
-    
+
     //! Array containing matrix diagonal for easy access
     ArrayRCP<Scalar> diagonal_;
 
@@ -216,9 +214,8 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   template <class UNSUPPORTED_GRAPH, class UNSUPPORTED_MATRIX>
   void DefaultRelaxation<Scalar,Ordinal,Node>::initializeData(
-                        Teuchos::DataAccess cv, 
-                        const Teuchos::RCP<const UNSUPPORTED_GRAPH> &graph,
-                        const Teuchos::RCP<const UNSUPPORTED_MATRIX> &matrix) 
+                        const RCP<const UNSUPPORTED_GRAPH > &graph,
+                        const RCP<const UNSUPPORTED_MATRIX> &matrix) 
   {
     // not implemented for general graphs and matrices
     TEUCHOS_TEST_FOR_EXCEPT(true);
@@ -227,28 +224,23 @@ namespace Kokkos {
   /**********************************************************************/
   template <class Scalar, class Ordinal, class Node>
   void DefaultRelaxation<Scalar,Ordinal,Node>::initializeData(
-                Teuchos::DataAccess cv, 
-                const Teuchos::RCP<const DefaultCrsGraph<Ordinal,Node>         > &graph, 
-                const Teuchos::RCP<const DefaultCrsMatrix<Scalar,Ordinal,Node> > &matrix)
+                const RCP<const DefaultCrsGraph<Ordinal,Node>         > &graph, 
+                const RCP<const DefaultCrsMatrix<Scalar,Ordinal,Node> > &matrix)
   {
     std::string tfecfFuncName("initializeData()");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         isInit_ == true,
         std::runtime_error, " structure already initialized."
     )
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        graph.getNumRows() != matrix.getNumRows(),
-        std::runtime_error, " graph and matrix are not congruent."
-    )
-    numRows_ = graph.getNumRows();
-    if (graph.isEmpty() || numRows_ == 0) {
+    numRows_ = graph->getNumRows();
+    if (graph->isEmpty() || numRows_ == 0) {
       isEmpty_ = true;
     }
     else {
       isEmpty_ = false;
-      ptrs_ = graph.getPointers();
-      inds_ = graph.getIndices();
-      vals_ = matrix.getValues();
+      ptrs_ = graph->getPointers();
+      inds_ = graph->getIndices();
+      vals_ = matrix->getValues();
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
           inds_.size() != vals_.size(),
           std::runtime_error, " graph and matrix are not congruent."

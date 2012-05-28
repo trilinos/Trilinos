@@ -67,7 +67,7 @@ namespace KokkosExamples {
   class DummyCrsGraph : public Kokkos::CrsGraphBase<int,Node> {
   public:
     DummyCrsGraph(size_t numrows, const RCP<Node> &node, const RCP<ParameterList> &params) : Kokkos::CrsGraphBase<int,Node>(numrows,node,params) {}
-    ~DummyCrsGraph();
+    ~DummyCrsGraph() {}
     void setStructure(const ArrayRCP<const size_t>&, const ArrayRCP<const int>&) {}
   };
 
@@ -77,7 +77,8 @@ namespace KokkosExamples {
   template <class Node>
   class DummyCrsMatrix : public Kokkos::CrsMatrixBase<double,int,Node> {
   public:
-    DummyCrsMatrix(const RCP<const DummyCrsGraph<Node> > &graph, const RCP<ParameterList> &params) : Kokkos::CrsMatrixBase<double,int,Node>(graph) {}
+    DummyCrsMatrix(const RCP<const DummyCrsGraph<Node> > &graph, const RCP<ParameterList> &params) : Kokkos::CrsMatrixBase<double,int,Node>(graph,params) {}
+    ~DummyCrsMatrix() {}
     void setValues(const ArrayRCP<const double> &) {}
   };
 
@@ -173,6 +174,15 @@ namespace KokkosExamples {
     //@}
     //! @name Initialization of structure
     //@{
+
+    //! Finalize a graph
+    inline static void finalizeGraph(DummyCrsGraph<Node> &graph, const RCP<ParameterList> &params) {}
+
+    //! Finalize the matrix of an already-finalized graph.
+    inline static void finalizeMatrix(const DummyCrsGraph<Node> &graph, DummyCrsMatrix<Node> &matrix, const RCP<ParameterList> &params) {}
+    
+    //! Finalize a graph and a matrix.
+    inline static void finalizeGraphAndMatrix(DummyCrsGraph<Node> &graph, DummyCrsMatrix<Node> &matrix, const RCP<ParameterList> &params) {}
 
     /** \brief Initialize the kernels with the graph and matrix.
 

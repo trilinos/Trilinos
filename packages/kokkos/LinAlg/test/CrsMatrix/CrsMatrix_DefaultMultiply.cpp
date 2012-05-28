@@ -57,8 +57,8 @@
 #ifdef HAVE_KOKKOS_THREADPOOL
 #include "Kokkos_TPINode.hpp"
 #endif
-#ifdef HAVE_KOKKOS_THRUST
-#include "Kokkos_ThrustGPUNode.hpp"
+#ifdef HAVE_KOKKOS_OPENMP
+#include "Kokkos_OpenMPNode.hpp"
 #endif
 
 namespace {
@@ -82,9 +82,9 @@ namespace {
   using Kokkos::TPINode;
   RCP<TPINode> tpinode;
 #endif
-#ifdef HAVE_KOKKOS_THRUST
-  using Kokkos::ThrustGPUNode;
-  RCP<ThrustGPUNode> thrustnode;
+#ifdef HAVE_KOKKOS_OPENMP
+  using Kokkos::OpenMPNode;
+  RCP<OMPNode> ompnode;
 #endif
 
   int N = 1000;
@@ -134,19 +134,6 @@ namespace {
   }
 #endif
 
-#ifdef HAVE_KOKKOS_THRUST
-  template <>
-  RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
-    if (thrustnode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      pl.set<int>("Verbose",1);
-      thrustnode = rcp(new ThrustGPUNode(pl));
-    }
-    return thrustnode;
-  }
-#endif
-
   //
   // UNIT TESTS
   // 
@@ -172,36 +159,36 @@ namespace {
     if (N<2) return;
     RCP<GRPH> G = rcp(new GRPH (N,node,null) );
     RCP<MAT>  A = rcp(new MAT  (G,null) );
-    // allocate buffers for offsets, indices and values
+    // allocate buffers for ptrs, indices and values
     const size_t totalNNZ = 3*N - 2;
-    ArrayRCP<size_t> offsets(N+1);
+    ArrayRCP<size_t> ptrs(N+1);
     ArrayRCP<Ordinal>   inds(totalNNZ);
     ArrayRCP<Scalar>    vals(totalNNZ);
     // fill the buffers on the host
     {
       size_t NNZsofar = 0;
-      offsets[0] = NNZsofar;
+      ptrs[0] = NNZsofar;
       inds[NNZsofar] = 0; inds[NNZsofar+1] =  1;
       vals[NNZsofar] = 2; vals[NNZsofar+1] = -1;
       NNZsofar += 2;
       for (int i=1; i != N-1; ++i) {
-        offsets[i] = NNZsofar;
+        ptrs[i] = NNZsofar;
         inds[NNZsofar] = i-1; inds[NNZsofar+1] = i; inds[NNZsofar+2] = i+1;
         vals[NNZsofar] =  -1; vals[NNZsofar+1] = 3; vals[NNZsofar+2] =  -1;
         NNZsofar += 3;
       }
-      offsets[N-1] = NNZsofar;
+      ptrs[N-1] = NNZsofar;
       inds[NNZsofar] = N-2; inds[NNZsofar+1] = N-1;
       vals[NNZsofar] =  -1; vals[NNZsofar+1] = 2;
       NNZsofar += 2;
-      offsets[N]   = NNZsofar;
+      ptrs[N]   = NNZsofar;
       TEUCHOS_TEST_FOR_EXCEPT(NNZsofar != totalNNZ);
     }
-    G->setStructure(offsets, inds);
-    offsets = Teuchos::null;
-    inds    = Teuchos::null;
+    G->setStructure(ptrs, inds);
+    ptrs = Teuchos::null;
+    inds = Teuchos::null;
     A->setValues(vals);
-    vals    = Teuchos::null;
+    vals = Teuchos::null;
     OPS::finalizeGraphAndMatrix(*G,*A,null);
     OPS dsm(node);
     out << "Testing with sparse ops: " << Teuchos::typeName(dsm) << std::endl;
@@ -214,6 +201,7 @@ namespace {
     X.initializeValues( N,1, xdat,N);
     AX.initializeValues(N,1,axdat,N);
     DefaultArithmetic<MV>::Init( X,1);
+    // AX = A*X
     dsm.multiply(Teuchos::NO_TRANS,ONE,X,AX);
     // AX should be all ones
     {
@@ -225,14 +213,18 @@ namespace {
       TEST_EQUALITY_CONST(err, ZERO);
     }
     // do that same multiplication, testing alpha=-1 and beta=1 accumulation
+    // AX = AX - A*X = A*X - A*X = 0
     dsm.multiply(Teuchos::NO_TRANS,-ONE,X,ONE,AX);
     // AX should be zero
     {
       ArrayRCP<const Scalar> axview = node->template viewBuffer<Scalar>(N,axdat);
-      Scalar err = ZERO;
+      ArrayRCP<const Scalar> xview = node->template viewBuffer<Scalar>(N,xdat);
+      Scalar err = ZERO, nrm = ZERO;
       for (int i=0; i<N; ++i) {
         err += ST::magnitude(axview[i]);
+        nrm += ST::magnitude(xview[i]);
       }
+      TEST_INEQUALITY_CONST(nrm, ZERO);
       TEST_EQUALITY_CONST(err, ZERO);
     }
     xdat = null;
@@ -256,6 +248,13 @@ namespace {
 #define UNIT_TEST_TBBNODE(ORDINAL, SCALAR)
 #endif
 
+#ifdef HAVE_KOKKOS_OPENMP
+#define UNIT_TEST_OPENMPNODE(ORDINAL, SCALAR) \
+      ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, OpenMPNode )
+#else
+#define UNIT_TEST_OPENMPNODE(ORDINAL, SCALAR)
+#endif
+
 #ifdef HAVE_KOKKOS_THREADPOOL
 #define UNIT_TEST_TPINODE(ORDINAL, SCALAR) \
       ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, TPINode )
@@ -263,18 +262,11 @@ namespace {
 #define UNIT_TEST_TPINODE(ORDINAL, SCALAR)
 #endif
 
-#ifdef HAVE_KOKKOS_THRUST
-#define UNIT_TEST_THRUSTGPUNODE(ORDINAL, SCALAR) \
-      ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, ThrustGPUNode )
-#else
-#define UNIT_TEST_THRUSTGPUNODE(ORDINAL, SCALAR)
-#endif
-
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
         UNIT_TEST_SERIALNODE( ORDINAL, SCALAR ) \
         UNIT_TEST_TBBNODE( ORDINAL, SCALAR ) \
-        UNIT_TEST_TPINODE( ORDINAL, SCALAR ) \
-        UNIT_TEST_THRUSTGPUNODE( ORDINAL, SCALAR )
+        UNIT_TEST_OPENMPNODE( ORDINAL, SCALAR ) \
+        UNIT_TEST_TPINODE( ORDINAL, SCALAR )
 
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, int) \

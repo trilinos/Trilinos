@@ -148,16 +148,15 @@ namespace Kokkos {
           const Ordinal *i = inds+ptrs[row],
                        *ie = inds+ptrs[row+1];
           const Scalar  *v = vals+ptrs[row];
-          // capture and skip the diag
+          // skip the diag
           --ie;
-          diag = *--v;
-          //
           for (size_t j=0; j<numRHS; ++j) x[j*xstride+row] = (DomainScalar) y[j*ystride+row];
           while (i != ie) {
             const Ordinal ind = *i++;
             const Scalar  val = *v++;
             for (size_t j=0; j<numRHS; ++j) x[j*xstride+row] -= (DomainScalar) val * x[j*xstride+ind];
           }
+          diag = *v;
           for (size_t j=0; j<numRHS; ++j) x[j*xstride+row] /= diag;
         }
       }
@@ -212,7 +211,7 @@ namespace Kokkos {
           const Scalar  *v = vals+ptrs[row];
           // capture and skip the diag
           ++i;
-          diag = *++v;
+          diag = *v++;
           //
           for (size_t j=0; j<numRHS; ++j) x[j*xstride+row] /= diag;
           while (i != ie) {
@@ -245,8 +244,8 @@ namespace Kokkos {
                        *ie = inds+ptrs[row+1];
           const Scalar  *v = vals+ptrs[row];
           // capture and skip the diag
+          diag = v[ie-i-1];
           --ie;
-          diag = *--v;
           //
           for (size_t j=0; j<numRHS; ++j) x[j*xstride+row] /= diag;
           while (i != ie) {
