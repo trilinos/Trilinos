@@ -92,7 +92,7 @@ protected:
 
   virtual ~HostInternal();
 
-  virtual bool bind_thread( const HostThread & thread ) const ;
+  virtual bool bind_thread( const size_type thread_rank ) const ;
 
   HostInternal();
 

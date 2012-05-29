@@ -80,7 +80,7 @@ public:
   ~HostInternalHWLOC();
   HostInternalHWLOC();
 
-  bool bind_thread( const HostThread & thread ) const ;
+  bool bind_thread( const HostInternal::size_type thread_rank ) const ;
 };
 
 //----------------------------------------------------------------------------
@@ -92,7 +92,8 @@ HostInternal & HostInternal::singleton()
 
 //----------------------------------------------------------------------------
 
-bool HostInternalHWLOC::bind_thread( const HostThread & thread ) const
+bool HostInternalHWLOC::bind_thread(
+  const HostInternal::size_type thread_rank ) const
 {
   bool result = true ;
 
@@ -112,15 +113,18 @@ bool HostInternalHWLOC::bind_thread( const HostThread & thread ) const
 
     // Which node -> core -> processing unit
 
+    const unsigned gang_rank   = thread_rank / HostInternal::m_worker_count ;
+    const unsigned worker_rank = thread_rank % HostInternal::m_worker_count ;
+
     const unsigned node_rank =
-      ( thread.gang_rank() + m_node_rank ) % HostInternal::m_gang_count ;
+      ( gang_rank + HostInternal::m_node_rank ) % HostInternal::m_gang_count ;
 
     const unsigned core_rank = 
-      thread.worker_rank() < core_base_worker_count ?
-      thread.worker_rank() / min_worker_per_core :
-      core_base + ( thread.worker_rank() - core_base_worker_count ) / max_worker_per_core ;
+      worker_rank < core_base_worker_count ?
+      worker_rank / min_worker_per_core :
+      core_base + ( worker_rank - core_base_worker_count ) / max_worker_per_core ;
 
-    const unsigned pu_rank = thread.worker_rank() % m_node_core_pu_count ;
+    const unsigned pu_rank = worker_rank % m_node_core_pu_count ;
 
     const hwloc_obj_t node =
       hwloc_get_obj_by_type( m_host_topology, HWLOC_OBJ_NODE, node_rank );
@@ -155,9 +159,9 @@ bool HostInternalHWLOC::bind_thread( const HostThread & thread ) const
 #if 0
     std::cout << ( result ? "SUCCESS " : "FAILED " )
               << "HWLOC::bind_thread thread[ "
-              << thread.rank()
-              << " @ " << thread.gang_rank()
-              << "." << thread.worker_rank()
+              << thread_rank
+              << " @ " << gang_rank
+              << "." << worker_rank
               << " ] to node[" << node_rank
               << "].core[" << core_rank
               << "].pu[" << pu_rank

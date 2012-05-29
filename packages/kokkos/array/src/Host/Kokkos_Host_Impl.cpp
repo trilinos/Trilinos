@@ -181,7 +181,8 @@ bool HostInternal::initialize_thread(
   return true ;
 }
 
-bool HostInternal::bind_thread( const HostThread & thread ) const
+bool HostInternal::bind_thread(
+  const HostInternal::size_type thread_rank ) const
 {
   return true ;
 }
@@ -191,7 +192,7 @@ void HostInternal::clear_thread( const HostThread::size_type thread_rank )
   m_thread[ thread_rank ] = 0 ;
 
   // Inform master thread:
-  m_master_thread.set( HostThread::ThreadActive );
+  m_master_thread.set( HostThread::ThreadTerminating );
 }
 
 //----------------------------------------------------------------------------
@@ -210,6 +211,8 @@ void HostInternal::finalize()
       m_thread[ m_thread_count ]->set( HostThread::ThreadTerminating );
 
       m_master_thread.wait( HostThread::ThreadInactive );
+
+      // Is in the 'ThreadTerminating" state
     }
   }
 
@@ -221,6 +224,7 @@ void HostInternal::finalize()
   m_master_thread.m_gang_count   = 1 ;
   m_master_thread.m_worker_rank  = 0 ;
   m_master_thread.m_worker_count = 1 ;
+  m_master_thread.set( HostThread::ThreadActive );
 
   for ( unsigned i = 0 ; i < HostThread::max_fan_count ; ++i ) {
     m_master_thread.m_fan[i] = 0 ;
@@ -232,18 +236,18 @@ void HostInternal::finalize()
 
 void HostInternal::driver( const size_t thread_rank )
 {
-  HostThread this_thread ;
+  // Bind this thread to a unique processing unit
+  // with all members of a gang in the same NUMA region.
 
-  // Initialize thread ranks and fan-in relationships:
+  if ( bind_thread( thread_rank ) ) {
 
-  if ( initialize_thread( thread_rank , this_thread ) ) {
+    HostThread this_thread ;
 
-    // Bind this thread to a unique processing unit
-    // with all members of a gang in the same NUMA region.
+    // Initialize thread ranks and fan-in relationships:
 
-    if ( bind_thread( this_thread ) ) {
+    if ( initialize_thread( thread_rank , this_thread ) ) {
 
-      // Inform master thread initialization & binding is successfull.
+      // Inform master thread binding & initialization is successfull.
       m_master_thread.set( HostThread::ThreadActive );
 
       try {
@@ -269,11 +273,11 @@ void HostInternal::driver( const size_t thread_rank )
         std::terminate();
       }
     }
-
-    // Notify master process that thread has terminated:
-
-    clear_thread( thread_rank );
   }
+
+  // Notify master process that thread has terminated:
+
+  clear_thread( thread_rank );
 }
 
 //----------------------------------------------------------------------------
@@ -309,7 +313,8 @@ bool HostInternal::spawn_threads( const size_type gang_count ,
   m_thread_count = gang_count * worker_count ;
   m_worker       = & m_worker_block ;
 
-  bool ok_spawn_threads = true ;
+  // Bind the process thread as thread_rank == 0
+  bool ok_spawn_threads = bind_thread( 0 );
 
   // Spawn threads from last-to-first so that the
   // fan-in barrier thread relationships can be established.
@@ -333,11 +338,9 @@ bool HostInternal::spawn_threads( const size_type gang_count ,
 
   m_worker = NULL ;
 
+  // All threads spawned, initialize the master-thread fan-in
   ok_spawn_threads =
     ok_spawn_threads && initialize_thread( 0 , m_master_thread );
-
-  ok_spawn_threads =
-    ok_spawn_threads && bind_thread( m_master_thread );
 
   if ( ! ok_spawn_threads ) {
     finalize();
