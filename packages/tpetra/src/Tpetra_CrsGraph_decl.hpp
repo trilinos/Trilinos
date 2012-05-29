@@ -47,7 +47,6 @@
 
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
-#include <Kokkos_CrsGraph.hpp>
 #include <Kokkos_NodeHelpers.hpp>
 
 #include "Tpetra_ConfigDefs.hpp"
@@ -158,10 +157,10 @@ namespace Tpetra {
     /// \param plist [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-    CrsGraph (const Teuchos::RCP<const map_type>& rowMap, 
+    CrsGraph (const RCP<const map_type>& rowMap, 
               size_t maxNumEntriesPerRow, 
               ProfileType pftype = DynamicProfile,
-              const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
+              const RCP<ParameterList>& plist = null);
 
     /// \brief Constructor specifying (possibly different) number of entries in each row.
     ///
@@ -183,7 +182,7 @@ namespace Tpetra {
     CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
               const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc, 
               ProfileType pftype = DynamicProfile,
-              const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
+              const RCP<ParameterList>& plist = null);
 
     /// \brief Constructor specifying column Map and fixed number of entries for each row.
     ///
@@ -211,7 +210,7 @@ namespace Tpetra {
               const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap, 
               size_t maxNumEntriesPerRow, 
               ProfileType pftype = DynamicProfile,
-              const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
+              const RCP<ParameterList>& plist = null);
 
     /// \brief Constructor specifying column Map and number of entries in each row.
     ///
@@ -239,7 +238,7 @@ namespace Tpetra {
               const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap, 
               const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, 
               ProfileType pftype = DynamicProfile,
-              const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
+              const RCP<ParameterList>& plist = null);
 
     //! Destructor.
     virtual ~CrsGraph();
@@ -250,11 +249,10 @@ namespace Tpetra {
     //@{ 
 
     //! Set the given list of parameters (must be nonnull).
-    void setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist);
+    void setParameterList (const RCP<ParameterList>& plist);
 
     //! Default parameter list suitable for validation.
-    Teuchos::RCP<const Teuchos::ParameterList>
-    getValidParameters () const;
+    RCP<const ParameterList> getValidParameters () const;
 
     //@}
 
@@ -335,7 +333,7 @@ namespace Tpetra {
           \post <tt>isFillComplete() == true<tt>
           \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>. See isStorageOptimized() for consequences.
        */ 
-      void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, OptimizeOption os = DoOptimizeStorage);
+      void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, const RCP<ParameterList> &params = null);
 
       /*! \brief Signal that data entry is complete. 
 
@@ -350,7 +348,7 @@ namespace Tpetra {
           \post <tt>isFillComplete() == true<tt>
           \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>. See isStorageOptimized() for consequences.
        */
-      void fillComplete(OptimizeOption os = DoOptimizeStorage);
+      void fillComplete(const RCP<ParameterList> &params);
 
       //@}
 
@@ -628,6 +626,12 @@ namespace Tpetra {
       //! Deprecated. Get a persisting const view of the elements in a specified local row of the graph.
       TPETRA_DEPRECATED ArrayRCP<const LocalOrdinal> getLocalRowView(LocalOrdinal LocalRow) const;
 
+      //! \brief Signal that data entry is complete, specifying domain and range maps. 
+      TPETRA_DEPRECATED void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, OptimizeOption os = DoOptimizeStorage);
+
+      //! \brief Signal that data entry is complete. 
+      TPETRA_DEPRECATED void fillComplete(OptimizeOption os = DoOptimizeStorage);
+
       //@}
 
     private:
@@ -641,6 +645,8 @@ namespace Tpetra {
       operator= (const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> &rhs);
 
     protected:
+      typedef typename LocalMatOps::template graph<LocalOrdinal,Node>::graph_type local_graph_type;
+      
       // these structs are conveniences, to cut down on the number of
       // arguments to some of the methods below.
       struct SLocalGlobalViews {
@@ -659,15 +665,12 @@ namespace Tpetra {
       void allocateIndices (ELocalGlobal lg);
 
       template<class T>
-      void 
-      allocateValues (ArrayRCP<T> &values1D, ArrayRCP<ArrayRCP<T> > &values2D) const;
+      void allocateValues (ArrayRCP<T> &values1D, ArrayRCP<ArrayRCP<T> > &values2D) const;
 
       template<ELocalGlobal lg>
-      RowInfo 
-      updateAlloc (RowInfo rowinfo, size_t allocSize);
+      RowInfo updateAlloc (RowInfo rowinfo, size_t allocSize);
       template<ELocalGlobal lg, class T> 
-      RowInfo 
-      updateAllocAndValues (RowInfo rowinfo, size_t allocSize, ArrayRCP<T> &rowVals);
+      RowInfo updateAllocAndValues (RowInfo rowinfo, size_t allocSize, ArrayRCP<T> &rowVals);
       //
       // Local versus global indices
       //
@@ -679,24 +682,19 @@ namespace Tpetra {
       // insert/suminto/replace
       //
       template<ELocalGlobal lg>
-      size_t 
-      filterIndices (const SLocalGlobalNCViews &inds) const;
+      size_t filterIndices (const SLocalGlobalNCViews &inds) const;
 
       template<ELocalGlobal lg, class T>
-      size_t 
-      filterIndicesAndValues (const SLocalGlobalNCViews &inds, const ArrayView<T> &vals) const;
+      size_t filterIndicesAndValues (const SLocalGlobalNCViews &inds, const ArrayView<T> &vals) const;
 
       template<ELocalGlobal lg, ELocalGlobal I> 
-      size_t
-      insertIndices (RowInfo rowInfo, const SLocalGlobalViews &newInds);
+      size_t insertIndices (RowInfo rowInfo, const SLocalGlobalViews &newInds);
 
       template<ELocalGlobal lg, ELocalGlobal I, class IterO, class IterN> 
-      void
-      insertIndicesAndValues (RowInfo rowInfo, const SLocalGlobalViews &newInds, IterO rowVals, IterN newVals);
+      void insertIndicesAndValues (RowInfo rowInfo, const SLocalGlobalViews &newInds, IterO rowVals, IterN newVals);
 
       template<ELocalGlobal lg, class IterO, class IterN, class BinaryFunction> 
-      void 
-      transformValues (RowInfo rowInfo, const SLocalGlobalViews &inds, IterO rowVals, IterN newVals, BinaryFunction f) const;
+      void transformValues (RowInfo rowInfo, const SLocalGlobalViews &inds, IterO rowVals, IterN newVals, BinaryFunction f) const;
       //
       // Sorting and merging
       //
@@ -724,11 +722,9 @@ namespace Tpetra {
       size_t                          findLocalIndex(RowInfo rowinfo, LocalOrdinal ind) const;
       size_t                          findGlobalIndex(RowInfo rowinfo, GlobalOrdinal ind) const;
       // local Kokkos objects
-      void pushToLocalGraph();
-      void pullFromLocalGraph();
-      void fillLocalGraph(OptimizeOption os);
-      const Kokkos::CrsGraph<LocalOrdinal,Node,LocalMatOps> & getLocalGraph() const;
-      Kokkos::CrsGraph<LocalOrdinal,Node,LocalMatOps>       & getLocalGraphNonConst();
+      void fillLocalGraph(const RCP<ParameterList> &params);
+      const RCP<const local_graph_type> & getLocalGraph() const;
+      const RCP<local_graph_type> & getLocalGraphNonConst();
       // debugging
       void checkInternalState() const;
 
@@ -738,8 +734,7 @@ namespace Tpetra {
       RCP<Export<LocalOrdinal,GlobalOrdinal,Node> > exporter_;
 
       // local data, stored in a Kokkos::CrsGraph. only initialized after fillComplete()
-      typename LocalMatOps::template graph<LocalOrdinal,Node>::other lclGraph_;
-      
+      RCP<local_graph_type> lclGraph_;
 
       // Local and Global Counts
       // nodeNumEntries_ and nodeNumAllocated_ are required to be always consistent
@@ -769,13 +764,13 @@ namespace Tpetra {
       ArrayRCP< LocalOrdinal>                     lclInds1D_;
       //! gblInds1D_ are the indices for all rows
       ArrayRCP<GlobalOrdinal>                     gblInds1D_;
-      // offset to the beg and end entries of each row. only used for 1D (Static) allocation.
-      // i.e., indices for row R are lclInds1D_[i] for i in [b,e) where b = rowBegs_[R] and e = rowEnds_[R]
-      // for a packed (optimized) allocation, we will typically have &rowBegs_[R]+1 == &rowEnds_[R]
-      // these are null for 2D (Dynamic) allocations
-      // the allocation size is computed by looking at the difference between rowBegs_[r+1] and rowBegs_[r]
-      // rowBegs_ therefore has length N+1, while rowEnds_ has length N
-      ArrayRCP<size_t> rowBegs_, rowEnds_;
+      // offset to the beg entries of each row. only used for 1D (Static) allocation.
+      // i.e., indices for row R are lclInds1D_[i] for i in [b,e) where b = rowPtrs_[R] and e = rowPtrs_[R+1]
+      // only the first numEntries_[R] of these are valid
+      // both of these are null for 2D (Dynamic) allocations
+      // rowPtrs_ has length N+1, while numEntries_ has length N
+      // TODO: it is possible that making these size_t is overkill; revisit
+      ArrayRCP<size_t> rowPtrs_, numEntries_;
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       //
       // 2D/Dynamic structures. 
