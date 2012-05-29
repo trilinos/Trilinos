@@ -1,4 +1,4 @@
-/*------------------------------------------------------------------------*/
+ /*------------------------------------------------------------------------*/
 /*                 Copyright 2010, 2011 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
@@ -68,6 +68,23 @@ void process_surface_entity(Ioss::SideSet *sset, stk::mesh::fem::FEMMetaData &fe
                              *sb_part, side_node_count);
       }
     }
+  }
+}
+
+  size_t get_entities(stk::mesh::Part &part,
+		      const stk::mesh::BulkData &bulk,
+		      std::vector<stk::mesh::Entity*> &entities,
+		      const stk::mesh::Selector *anded_selector)
+  {
+    stk::mesh::MetaData & meta = stk::mesh::MetaData::get(part);
+    stk::mesh::EntityRank type = stk::io::part_primary_entity_rank(part);
+    
+    stk::mesh::Selector own = meta.locally_owned_part();
+    stk::mesh::Selector selector = part & own;
+    if (anded_selector) selector &= *anded_selector;
+    
+    get_selected_entities(selector, bulk.buckets(type), entities);
+    return entities.size();
   }
 }
 
@@ -345,10 +362,27 @@ void process_sidesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
 void put_field_data(stk::mesh::BulkData &bulk, stk::mesh::Part &part,
                     stk::mesh::EntityRank part_type,
                     Ioss::GroupingEntity *io_entity,
-                    Ioss::Field::RoleType filter_role)
+                    Ioss::Field::RoleType filter_role,
+		    const stk::mesh::Selector *anded_selector=NULL)
 {
   std::vector<stk::mesh::Entity*> entities;
-  stk::io::get_entity_list(io_entity, part_type, bulk, entities);
+  if (io_entity->type() == Ioss::SIDEBLOCK) {
+    // Temporary Kluge to handle sideblocks which contain internally generated sides
+    // where the "ids" field on the io_entity doesn't work to get the correct side...
+    // NOTE: Could use this method for all entity types, but then need to correctly 
+    // specify whether shared entities are included/excluded (See IossBridge version).
+    size_t num_sides = get_entities(part, bulk, entities, anded_selector);
+    if (num_sides != (size_t)io_entity->get_property("entity_count").get_int()) {
+      std::ostringstream msg ;
+      msg << " INTERNAL_ERROR: Number of sides on part " << part.name() << " (" << num_sides
+	  << ") does not match number of sides in the associated Ioss SideBlock named "
+	  << io_entity->name() << " (" << io_entity->get_property("entity_count").get_int()
+	  << ").";
+        throw std::runtime_error( msg.str() );
+    }
+  } else {
+    stk::io::get_entity_list(io_entity, part_type, bulk, entities);
+  }
 
   const stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(bulk);
   const std::vector<stk::mesh::FieldBase*> &fields = fem_meta.get_fields();
@@ -360,16 +394,18 @@ void put_field_data(stk::mesh::BulkData &bulk, stk::mesh::Part &part,
   }
 }
 
-void internal_process_output_request(Ioss::Region &region,
+void internal_process_output_request(stk::io::MeshData &mesh_data,
                                      stk::mesh::BulkData &bulk,
                                      int step)
 {
-  region.begin_state(step);
+  Ioss::Region *region = mesh_data.m_output_region;
+  region->begin_state(step);
   const stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(bulk);
 
   // Special processing for nodeblock (all nodes in model)...
   put_field_data(bulk, fem_meta.universal_part(), fem_meta.node_rank(),
-                 region.get_node_blocks()[0], Ioss::Field::Field::TRANSIENT);
+                 region->get_node_blocks()[0], Ioss::Field::Field::TRANSIENT,
+		 mesh_data.m_anded_selector);
 
   // Now handle all non-nodeblock parts...
   const stk::mesh::PartVector & all_parts = fem_meta.get_parts();
@@ -381,15 +417,15 @@ void internal_process_output_request(Ioss::Region &region,
     // Check whether this part should be output to results database.
     if (stk::io::is_part_io_part(*part)) {
       // Get Ioss::GroupingEntity corresponding to this part...
-      Ioss::GroupingEntity *entity = region.get_entity(part->name());
+      Ioss::GroupingEntity *entity = region->get_entity(part->name());
       if (entity != NULL && entity->type() != Ioss::SIDESET) {
         put_field_data(bulk, *part, stk::io::part_primary_entity_rank(*part),
-                       entity, Ioss::Field::Field::TRANSIENT);
+                       entity, Ioss::Field::Field::TRANSIENT,
+		       mesh_data.m_anded_selector);
       }
     }
   }
-  region.end_state(step);
-}
+  region->end_state(step);
 }
 
 namespace stk {
@@ -590,7 +626,7 @@ int process_output_request(MeshData &mesh_data,
   region->begin_mode(Ioss::STATE_TRANSIENT);
 
   int out_step = region->add_state(time);
-  internal_process_output_request(*region, bulk, out_step);
+  internal_process_output_request(mesh_data, bulk, out_step);
 
   region->end_mode(Ioss::STATE_TRANSIENT);
 

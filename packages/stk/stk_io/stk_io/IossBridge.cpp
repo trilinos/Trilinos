@@ -943,12 +943,12 @@ void get_entity_list(Ioss::GroupingEntity *io_entity,
 {
   std::vector<INT> ids ;
   io_entity->get_field_data("ids", ids);
-
+  
   size_t count = ids.size();
   entities.reserve(count);
 
   for(size_t i=0; i<count; ++i) {
-	entities.push_back(bulk.get_entity( part_type, ids[i] ));
+    entities.push_back(bulk.get_entity( part_type, ids[i] ));
   }
 }
 
@@ -958,9 +958,9 @@ void get_entity_list(Ioss::GroupingEntity *io_entity,
                      std::vector<stk::mesh::Entity*> &entities)
 {
   if (db_api_int_size(io_entity) == 4) {
-	get_entity_list(io_entity, part_type, bulk, entities, (int)0);
+    get_entity_list(io_entity, part_type, bulk, entities, (int)0);
   } else {
-	get_entity_list(io_entity, part_type, bulk, entities, (int64_t)0);
+    get_entity_list(io_entity, part_type, bulk, entities, (int64_t)0);
   }
 }
 
@@ -1357,7 +1357,6 @@ void write_side_data_to_ioss( Ioss::GroupingEntity & io ,
   std::vector<mesh::Entity *> sides ;
   size_t num_sides = get_entities(*part, bulk_data, sides, false, anded_selector);
 
-  std::vector<INT> side_ids; side_ids.reserve(num_sides);
   std::vector<INT> elem_side_ids; elem_side_ids.reserve(num_sides*2);
 
   stk::mesh::EntityRank elem_rank = element_rank(meta_data);
@@ -1388,22 +1387,19 @@ void write_side_data_to_ioss( Ioss::GroupingEntity & io ,
       throw std::runtime_error(oss.str());
     }
 
-    side_ids.push_back(side.identifier());
     elem_side_ids.push_back(rel->entity()->identifier());
     elem_side_ids.push_back(rel->identifier() + 1) ; // Ioss is 1-based, mesh is 0-based.
   }
 
-  const size_t num_ids_written = io.put_field_data("ids", side_ids);
   const size_t num_side_written = io.put_field_data("element_side",elem_side_ids);
 
-  if ( num_sides != num_ids_written || num_sides != num_side_written ) {
+  if ( num_sides != num_side_written ) {
     std::ostringstream msg ;
 
     msg << "stk::io::write_side_data_to_ioss FAILED for " ;
     msg << io.name();
     msg << " in Ioss::GroupingEntity::put_field_data:" ;
     msg << " num_sides = " << num_sides ;
-    msg << " , num_ids_written = " << num_ids_written ;
     msg << " , num_side_written = " << num_side_written ;
     throw std::runtime_error( msg.str() );
   }

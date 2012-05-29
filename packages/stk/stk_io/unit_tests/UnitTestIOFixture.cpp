@@ -169,17 +169,21 @@ STKUNIT_UNIT_TEST( IOFixture, active_and_all )
   ++time_step;
 
   fixture.output_ioss_region(active_output_ioss_region);
+  fixture.mesh_data().m_anded_selector = &active_selector;
   fixture.add_timestep_to_output_mesh( time_step );
 
   fixture.output_ioss_region(universal_output_ioss_region);
+  fixture.mesh_data().m_anded_selector = &universal_selector;
   fixture.add_timestep_to_output_mesh( time_step );
 
   ++time_step;
 
   fixture.output_ioss_region(active_output_ioss_region);
+  fixture.mesh_data().m_anded_selector = &active_selector;
   fixture.add_timestep_to_output_mesh( time_step );
 
   fixture.output_ioss_region(universal_output_ioss_region);
+  fixture.mesh_data().m_anded_selector = &universal_selector;
   fixture.add_timestep_to_output_mesh( time_step );
   // Since correctness can only be established by running SEACAS tools, correctness
   // checking is left to the test XML.
