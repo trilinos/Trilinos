@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -184,6 +184,7 @@ bool HostInternal::initialize_thread(
 bool HostInternal::bind_thread(
   const HostInternal::size_type thread_rank ) const
 {
+  (void) thread_rank; // Prevent compiler warning for unused argument
   return true ;
 }
 
@@ -247,7 +248,7 @@ void HostInternal::driver( const size_t thread_rank )
 
     if ( initialize_thread( thread_rank , this_thread ) ) {
 
-      // Inform master thread binding & initialization is successfull.
+      // Inform master thread that binding and initialization succeeded.
       m_master_thread.set( HostThread::ThreadActive );
 
       try {
@@ -263,11 +264,17 @@ void HostInternal::driver( const size_t thread_rank )
         }
       }
       catch( const std::exception & x ) {
+        // mfh 29 May 2012: Doesn't calling std::terminate() seem a
+        // little violent?  On the other hand, C++ doesn't define how
+        // to transport exceptions between threads (until C++11).
+        // Since this is a worker thread, it would be hard to tell the
+        // master thread what happened.
         std::cerr << "Thread " << thread_rank << " uncaught exception : "
                   << x.what() << std::endl ;
         std::terminate();
       }
       catch( ... ) {
+        // mfh 29 May 2012: See note above on std::terminate().
         std::cerr << "Thread " << thread_rank << " uncaught exception"
                   << std::endl ;
         std::terminate();
@@ -359,7 +366,7 @@ void HostInternal::initialize( const size_type gang_count ,
 
   // Only try to spawn threads if input is valid.
 
-  const bool ok_spawn_threads = 
+  const bool ok_spawn_threads =
     ( ok_inactive &&
       ok_gang_count && ok_worker_count &&
       1 < gang_count * worker_count )
