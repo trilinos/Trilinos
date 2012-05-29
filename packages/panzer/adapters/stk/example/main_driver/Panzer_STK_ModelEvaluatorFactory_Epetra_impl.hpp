@@ -202,6 +202,7 @@ namespace panzer_stk {
     // Build mesh factory and uncommitted mesh
     Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory = this->buildSTKMeshFactory(mesh_params);
     Teuchos::RCP<panzer_stk::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(*(mpi_comm->getRawMpiComm()));
+    m_mesh = mesh;
     
     // setup physical mappings and boundary conditions
     std::map<std::string,std::string> block_ids_to_physics_ids;
@@ -350,6 +351,8 @@ namespace panzer_stk {
 
     TEUCHOS_ASSERT(globalIndexer!=Teuchos::null);
     TEUCHOS_ASSERT(linObjFactory!=Teuchos::null);
+    m_global_indexer = globalIndexer;
+    m_lin_obj_factory = linObjFactory;
 
     // Add mesh objects to user data to make available to user ctors
     /////////////////////////////////////////////////////////////
@@ -524,6 +527,7 @@ namespace panzer_stk {
    
     m_physics_me = thyra_me;
 
+/*
     Teuchos::RCP<Teuchos::ParameterList> piro_params = Teuchos::rcp(new Teuchos::ParameterList(solncntl_params));
     Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > piro;
 
@@ -565,7 +569,8 @@ namespace panzer_stk {
     }
 
     m_rome_me = piro;
-
+*/
+    m_global_data = global_data;
   }
 
   //! build STK mesh from a mesh parameter list
@@ -666,15 +671,81 @@ namespace panzer_stk {
   template<typename ScalarT>
   Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > ModelEvaluatorFactory_Epetra<ScalarT>::getResponseOnlyModelEvaluator()
   {
+    /*
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(m_rome_me), std::runtime_error,
 		       "Objects are not built yet!  Please call buildObjects() member function.");
     return m_rome_me;
+    */
+
+    if(m_rome_me==Teuchos::null)
+       m_rome_me = buildResponseOnlyModelEvaluator(m_physics_me,m_global_data);
+ 
+    return m_rome_me;
+  }
+
+  template<typename ScalarT>
+  Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > ModelEvaluatorFactory_Epetra<ScalarT>::
+  buildResponseOnlyModelEvaluator(const Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > & thyra_me,
+ 		                  const Teuchos::RCP<panzer::GlobalData>& global_data) 
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(m_lin_obj_factory), std::runtime_error,
+		       "Objects are not built yet!  Please call buildObjects() member function.");
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(m_global_indexer), std::runtime_error,
+		       "Objects are not built yet!  Please call buildObjects() member function.");
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(m_mesh), std::runtime_error,
+		       "Objects are not built yet!  Please call buildObjects() member function.");
+
+    Teuchos::ParameterList& p = *this->getNonconstParameterList();
+    Teuchos::ParameterList & solncntl_params = p.sublist("Solution Control");
+    Teuchos::RCP<Teuchos::ParameterList> piro_params = Teuchos::rcp(new Teuchos::ParameterList(solncntl_params));
+    Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > piro;
+
+    std::string solver = solncntl_params.get<std::string>("Piro Solver");
+    Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me_db
+       = Teuchos::rcp_dynamic_cast<Thyra::ModelEvaluatorDefaultBase<double> >(thyra_me);
+    if (solver=="NOX") {
+      Teuchos::RCP<const panzer_stk::NOXObserverFactory> observer_factory = 
+	p.sublist("Solver Factories").get<Teuchos::RCP<const panzer_stk::NOXObserverFactory> >("NOX Observer Factory");
+      Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = observer_factory->buildNOXObserver(m_mesh,m_global_indexer,m_lin_obj_factory);
+      piro_params->sublist("NOX").sublist("Solver Options").set("User Defined Pre/Post Operator", ppo);
+      piro = Teuchos::rcp(new Piro::NOXSolver<double>(piro_params, 
+                                            Teuchos::rcp_dynamic_cast<Thyra::ModelEvaluatorDefaultBase<double> >(thyra_me_db)));
+      // override printing to use panzer ostream
+      piro_params->sublist("NOX").sublist("Printing").set<Teuchos::RCP<std::ostream> >("Output Stream",global_data->os);
+      piro_params->sublist("NOX").sublist("Printing").set<Teuchos::RCP<std::ostream> >("Error Stream",global_data->os);
+      piro_params->sublist("NOX").sublist("Printing").set<int>("Output Processor",global_data->os->getOutputToRootOnly());
+    }
+    else if (solver=="Rythmos") {
+      Teuchos::RCP<const panzer_stk::RythmosObserverFactory> observer_factory = 
+	p.sublist("Solver Factories").get<Teuchos::RCP<const panzer_stk::RythmosObserverFactory> >("Rythmos Observer Factory");
+
+      // install the nox observer
+      if(observer_factory->useNOXObserver()) {
+         Teuchos::RCP<const panzer_stk::NOXObserverFactory> nox_observer_factory = 
+   	    p.sublist("Solver Factories").get<Teuchos::RCP<const panzer_stk::NOXObserverFactory> >("NOX Observer Factory");
+         
+         Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = nox_observer_factory->buildNOXObserver(m_mesh,m_global_indexer,m_lin_obj_factory);
+         piro_params->sublist("NOX").sublist("Solver Options").set("User Defined Pre/Post Operator", ppo);
+      }
+
+      // override printing to use panzer ostream
+      piro_params->sublist("NOX").sublist("Printing").set<Teuchos::RCP<std::ostream> >("Output Stream",global_data->os);
+      piro_params->sublist("NOX").sublist("Printing").set<Teuchos::RCP<std::ostream> >("Error Stream",global_data->os);
+      piro_params->sublist("NOX").sublist("Printing").set<int>("Output Processor",global_data->os->getOutputToRootOnly());
+
+      piro = Teuchos::rcp(new Piro::RythmosSolver<double>(piro_params, thyra_me_db, observer_factory->buildRythmosObserver(m_mesh,m_global_indexer,m_lin_obj_factory)));
+    } 
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+			 "Error: Unknown Piro Solver : " << solver);
+    }
+    return piro;
   }
 
   template<typename ScalarT>
   Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > ModelEvaluatorFactory_Epetra<ScalarT>::getResponseLibrary()
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(m_rome_me), std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(m_response_library), std::runtime_error,
 		       "Objects are not built yet!  Please call buildObjects() member function.");
 
     return m_response_library;

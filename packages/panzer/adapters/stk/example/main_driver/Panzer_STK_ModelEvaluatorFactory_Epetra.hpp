@@ -72,6 +72,8 @@ namespace Thyra {
 
 namespace panzer {
   class GlobalData;
+  class UniqueGlobalIndexerBase;
+  template <typename> class LinearObjFactory;
 }
 
 namespace panzer_stk {
@@ -108,6 +110,9 @@ namespace panzer_stk {
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > getPhysicsModelEvaluator();
     
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > getResponseOnlyModelEvaluator();
+    Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > buildResponseOnlyModelEvaluator(
+                                  const Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > & thyra_me,
+ 		                  const Teuchos::RCP<panzer::GlobalData>& global_data);
 
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > getResponseLibrary();
 
@@ -182,6 +187,11 @@ namespace panzer_stk {
 
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > m_response_library;
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > m_physics_blocks;
+
+    Teuchos::RCP<panzer_stk::STK_Interface> m_mesh;
+    Teuchos::RCP<panzer::UniqueGlobalIndexerBase> m_global_indexer;
+    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > m_lin_obj_factory;
+    Teuchos::RCP<panzer::GlobalData> m_global_data;
   };
 
 }
