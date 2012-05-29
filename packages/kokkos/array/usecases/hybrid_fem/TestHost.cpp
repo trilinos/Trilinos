@@ -9,6 +9,7 @@
 #include <BoxMeshFixture.hpp>
 #include <TestBoxMeshFixture.hpp>
 #include <Implicit.hpp>
+#include <NonLinear.hpp>
 
 #include <Kokkos_Host.hpp>
 
@@ -16,6 +17,7 @@
 #include <ParallelDataMap_macros.hpp>
 #include <TestBoxMeshFixture_macros.hpp>
 #include <Implicit_macros.hpp>
+#include <NonLinear_macros.hpp>
 #include <SparseLinearSystem_macros.hpp>
 #include <SparseLinearSystemFill_macros.hpp>
 #include <Kokkos_Clear_macros.hpp>
@@ -37,6 +39,8 @@ void test_host_query( comm::Machine machine )
   std::cout << std::endl ;
 }
 
+//----------------------------------------------------------------------------
+
 void test_host_fixture( comm::Machine machine ,
                         size_t numa_node_count ,
                         size_t numa_node_thread_count ,
@@ -46,6 +50,8 @@ void test_host_fixture( comm::Machine machine ,
   test_box_fixture<Kokkos::Host>( machine , nx , ny , nz );
   Kokkos::Host::finalize();
 }
+
+//----------------------------------------------------------------------------
 
 void test_host_implicit( comm::Machine machine , 
                          size_t numa_node_count ,
@@ -58,5 +64,21 @@ void test_host_implicit( comm::Machine machine ,
   HybridFEM::Implicit::driver<double,Kokkos::Host>( "Host" , machine , node_count_begin , node_count_end , count_run );
   Kokkos::Host::finalize();
 }
+
+//----------------------------------------------------------------------------
+
+void test_host_nonlinear( comm::Machine machine , 
+                          size_t numa_node_count ,
+                          size_t numa_node_thread_count ,
+                          size_t node_count_begin ,
+                          size_t node_count_end ,
+                          size_t count_run )
+{
+  Kokkos::Host::initialize( numa_node_count , numa_node_thread_count );
+  HybridFEM::NonLinear::driver<double,Kokkos::Host>( "Host" , machine , node_count_begin , node_count_end , count_run );
+  Kokkos::Host::finalize();
+}
+
+//----------------------------------------------------------------------------
 
 

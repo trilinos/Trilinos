@@ -55,6 +55,7 @@ namespace Impl {
 template< class Scalar , class DeviceType , class > struct Dot ;
 template< class Scalar , class DeviceType > struct WAXPBY ;
 template< class Scalar , class DeviceType > struct AXPBY ;
+template< class Scalar , class DeviceType > struct FILL ;
 template< class AType , class XType , class YType > struct Multiply ;
 
 } /* namespace Impl */
@@ -95,6 +96,13 @@ void waxpby( const ParallelDataMap & data_map ,
   else {
     Impl::WAXPBY<Scalar,Device>::apply( data_map.count_owned , alpha , x , beta , y , w );
   }
+}
+
+template< typename Scalar , class Device >
+void fill( const double alpha ,
+           const MultiVector< Scalar , Device > & w )
+{
+  Impl::FILL<Scalar,Device>::apply( w.length() , alpha , w );
 }
 
 //----------------------------------------------------------------------------
@@ -236,7 +244,7 @@ void cgsolve(
     ++iteration ;
   }
 
-  iter_time = iteration ? wall_clock.seconds() / iteration : 0 ;
+  iter_time = wall_clock.seconds();
 }
 
 //----------------------------------------------------------------------------
