@@ -168,7 +168,7 @@ namespace Excn {
   typedef std::pair<int,int> Side;
   template <typename INT> struct SideSet
   {
-    SideSet() : id(0), sideCount(0), dfCount(0), offset_(-1), position_(-1), name_("") {}
+    SideSet() : id(0), sideCount(0), dfCount(0), offset_(0), position_(0), name_("") {}
     
     int64_t id;
     size_t sideCount;
