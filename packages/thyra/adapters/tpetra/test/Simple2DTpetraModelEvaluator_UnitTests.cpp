@@ -102,7 +102,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Simple2DTpetraModelEvaluator, eval, Scalar )
   typedef Teuchos::ScalarTraits<ScalarMag> SMT;
   using Thyra::VectorBase;
   using Thyra::LinearOpBase;
-  typedef Thyra::ModelEvaluatorBase MEB;
   typedef Thyra::TpetraOperatorVectorExtraction<Scalar,int> ConverterT;
 
   RCP<Simple2DTpetraModelEvaluator<Scalar> > model = simple2DTpetraModelEvaluator<Scalar>();

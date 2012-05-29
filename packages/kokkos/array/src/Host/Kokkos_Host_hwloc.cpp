@@ -75,51 +75,12 @@ private:
   unsigned         m_node_core_count ;    // Cores per node
   unsigned         m_node_core_pu_count ; // Processing units per core per node
 
-  // Map rank within node to core and pu
-  std::pair<unsigned,unsigned>
-  core_pu_rank( const unsigned rank , const unsigned size ) const
-  {
-    // Threads per core:
-    // cores[ 0    .. base ) have 'core_thread_base_count' threads
-    // cores[ base .. end  ) have 'core_thread_base_count + 1' threads
-
-    // How many cores will be used:
-    const size_t core_use_count = std::min( m_node_core_count , size );
-
-    // Minimum number of threads per core
-    const size_t core_thread_base_count = size / core_use_count ;
-
-    // Number of cores which have the minimum number of threads
-    const size_t core_thread_base = core_use_count - size % core_use_count ;
-
-    size_t node_core_rank = 0 ;
-    size_t node_core_pu_rank = 0 ;
-
-    for ( size_t node_thread_rank = 0 ; ; ) {
-
-      const size_t core_thread_count =
-        node_core_rank < core_thread_base ? core_thread_base_count
-                                          : core_thread_base_count + 1 ;
-
-      if ( rank < node_thread_rank + core_thread_count ) {
-        // Use this core
-        node_core_pu_rank = ( rank - node_thread_rank ) % m_node_core_pu_count ;
-        break ;
-      }
-
-      node_thread_rank += core_thread_count ;
-      ++node_core_rank ;
-    }
-
-    return std::pair<unsigned,unsigned>( node_core_rank , node_core_pu_rank );
-  }
-
 public:
 
   ~HostInternalHWLOC();
   HostInternalHWLOC();
 
-  bool bind_to_node( const HostThread & thread ) const ;
+  bool bind_thread( const HostInternal::size_type thread_rank ) const ;
 };
 
 //----------------------------------------------------------------------------
@@ -131,29 +92,54 @@ HostInternal & HostInternal::singleton()
 
 //----------------------------------------------------------------------------
 
-bool HostInternalHWLOC::bind_to_node( const HostThread & thread ) const
+bool HostInternalHWLOC::bind_thread(
+  const HostInternal::size_type thread_rank ) const
 {
   bool result = true ;
 
-  if ( m_node_core_count ) { // Detected homogeneous nodes
+  if ( 0 < m_node_core_count ) {
+
+    // How many cores will be used:
+    const unsigned max_worker_per_core =
+      ( HostInternal::m_worker_count + m_node_core_count - 1 ) / m_node_core_count ;
+
+    const unsigned min_worker_per_core =
+      1 == max_worker_per_core ? 1 : max_worker_per_core - 1 ;
+
+    const unsigned core_base =
+      m_node_core_count * max_worker_per_core - HostInternal::m_worker_count ;
+
+    const unsigned core_base_worker_count = core_base * min_worker_per_core ;
 
     // Which node -> core -> processing unit
 
-    const std::pair<unsigned,unsigned> rank =
-      core_pu_rank( thread.node_rank() , HostInternal::m_node_thread_count );
+    const unsigned gang_rank   = thread_rank / HostInternal::m_worker_count ;
+    const unsigned worker_rank = thread_rank % HostInternal::m_worker_count ;
+
+    const unsigned node_rank =
+      ( gang_rank + HostInternal::m_node_rank ) % HostInternal::m_gang_count ;
+
+    const unsigned core_rank = 
+      worker_rank < core_base_worker_count ?
+      worker_rank / min_worker_per_core :
+      core_base + ( worker_rank - core_base_worker_count ) / max_worker_per_core ;
+
+    const unsigned pu_rank = worker_rank % m_node_core_pu_count ;
 
     const hwloc_obj_t node =
-      hwloc_get_obj_by_type( m_host_topology, HWLOC_OBJ_NODE, thread.node() );
+      hwloc_get_obj_by_type( m_host_topology, HWLOC_OBJ_NODE, node_rank );
 
     const hwloc_obj_t core =
       hwloc_get_obj_inside_cpuset_by_type( m_host_topology ,
                                            node->allowed_cpuset ,
-                                           HWLOC_OBJ_CORE , rank.first );
+                                           HWLOC_OBJ_CORE ,
+                                           core_rank );
 
     const hwloc_obj_t pu =
       hwloc_get_obj_inside_cpuset_by_type( m_host_topology ,
                                            core->allowed_cpuset ,
-                                           HWLOC_OBJ_PU , rank.second );
+                                           HWLOC_OBJ_PU ,
+                                           pu_rank );
 
     result = 0 == hwloc_set_cpubind( m_host_topology ,
                                      pu->allowed_cpuset ,
@@ -172,18 +158,21 @@ bool HostInternalHWLOC::bind_to_node( const HostThread & thread ) const
 
 #if 0
     std::cout << ( result ? "SUCCESS " : "FAILED " )
-              << "HWLOC::bind_to_node thread["
-              << thread.rank()
-              << "] to node[" << thread.node()
-              << "].core[" << rank.first
-              << "].pu[" << rank.second
+              << "HWLOC::bind_thread thread[ "
+              << thread_rank
+              << " @ " << gang_rank
+              << "." << worker_rank
+              << " ] to node[" << node_rank
+              << "].core[" << core_rank
+              << "].pu[" << pu_rank
               << "]"
               << std::endl ;
 #endif
 
   }
+
   return result ;
-};
+}
 
 //----------------------------------------------------------------------------
 
@@ -255,6 +244,14 @@ HostInternalHWLOC::HostInternalHWLOC()
           hwloc_get_obj_inside_cpuset_by_type( m_host_topology ,
                                                node->allowed_cpuset ,
                                                HWLOC_OBJ_CORE , j );
+
+#if 0
+        if ( hwloc_bitmap_isincluded( proc_cpuset , core->allowed_cpuset ) ) {
+          std::cout << "HWLOC: process is bound to node[" << i << "]"
+                    << ".core[" << j << "]"
+                    << std::endl ;
+        }
+#endif
 
         const size_t pu_count =
           hwloc_get_nbobjs_inside_cpuset_by_type( m_host_topology ,

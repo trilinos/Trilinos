@@ -59,43 +59,58 @@ public:
 
   inline size_type rank() const { return m_thread_rank ; }
 
-  inline size_type node() const { return m_thread_node ; }
+  inline size_type gang_rank() const { return m_gang_rank ; }
 
-  inline size_type node_rank() const { return m_thread_node_rank ; }
+  inline size_type worker_rank() const { return m_worker_rank ; }
+
+  //----------------------------------------------------------------------
+  /** \brief  Compute a range of work for this thread's rank */
 
   inline
-  static void activate( HostThread * const begin , HostThread * thread )
+  std::pair< size_type , size_type >
+    work_range( const size_type work_count ) const
   {
-    // Activate end-to-begin for barrier
-    while ( begin < thread ) {
-      (--thread)->set( HostThread::ThreadActive );
-    }
+    const size_type reverse_rank    = m_thread_count - ( m_thread_rank + 1 );
+    const size_type work_per_thread = ( work_count + m_thread_count - 1 )
+                                      / m_thread_count ;
+    const size_type work_previous   = work_per_thread * reverse_rank ;
+    const size_type work_end        = work_count > work_previous
+                                    ? work_count - work_previous : 0 ;
+
+    return std::pair<size_type,size_type>(
+      ( work_end > work_per_thread ?
+        work_end - work_per_thread : 0 ) , work_end );
   }
 
+  //----------------------------------------------------------------------
   /** \brief  This thread waits for each fan-in thread in the barrier.
    *
-   *  All threads must call this function.
+   *  A parallel work function must call either barrier or reduce
+   *  on all threads at the end of the work function.
    *  Entry condition: in the Active   state
    *  Exit  condition: in the Inactive state
    */
   void barrier()
   {
-    HostThread * const thread_beg = m_fan_begin ;
-    HostThread *       thread     = m_fan_end ;
+    // The 'wait' function repeatedly polls the 'thread' state
+    // which may reside in a different NUMA region.
+    // Thus the fan is intra-node followed by inter-node
+    // to minimize inter-node memory access.
 
-    while ( thread_beg < thread ) {
-      (--thread)->wait( HostThread::ThreadActive );
+    for ( unsigned i = 0 ; i < m_fan_count ; ++i ) {
+      m_fan[i]->wait( HostThread::ThreadActive );
     }
 
     if ( m_thread_rank ) {
-      // If this is not the root thread then it was activated.
       set( HostThread::ThreadInactive );
     }
   }
 
+  //----------------------------------------------------------------------
   /** \brief  This thread participates in the fan-in reduction.
    *
-   *  All threads must call this function.
+   *  A parallel work function must call either barrier or reduce
+   *  on all threads at the end of the work function.
    *  Entry condition: in the Active   state
    *  Exit  condition: in the Inactive state
    */
@@ -112,21 +127,17 @@ public:
     // 3) Release source thread's reduction data and
     //    set the source thread's state to 'Inactive' state.
 
-    HostThread * const thread_beg    = m_fan_begin ;
-    HostThread *       thread_source = m_fan_end ;
+    for ( unsigned i = 0 ; i < m_fan_count ; ++i ) {
+      // Wait until the source thread is finished with its work
+      // and enters the reducing state.
+      // Join the source thread's reduction data into this thread.
+      // Release the source thread.
 
-    while ( thread_beg < thread_source ) {
-      --thread_source ;
+      m_fan[i]->wait( HostThread::ThreadActive );
 
-      // Wait until the source thread is finished with its work.
-      thread_source->wait( HostThread::ThreadActive );
+      ReduceTraits::join( update, *((const value_type *) m_fan[i]->m_reduce) );
 
-      // Join the source thread's reduction
-      ReduceTraits::join( update ,
-                          *((const value_type *) thread_source->m_reduce ) );
-
-      thread_source->m_reduce = NULL ;
-      thread_source->set( HostThread::ThreadInactive );
+      m_fan[i]->set( HostThread::ThreadInactive );
     }
 
     if ( m_thread_rank ) {
@@ -139,44 +150,19 @@ public:
       m_reduce = & update ;
       set(  HostThread::ThreadReducing );
       wait( HostThread::ThreadReducing );
+      m_reduce = NULL ;
     }
   }
 
-  inline
-  std::pair< size_type , size_type >
-    work_range( const size_type work_count ) const
-  {
-    const size_type reverse_rank    = m_thread_count - ( m_thread_rank + 1 );
-    const size_type work_per_thread = ( work_count + m_thread_count - 1 )
-                                    / m_thread_count ;
-    const size_type work_previous   = work_per_thread * reverse_rank ;
-    const size_type work_end        = work_count > work_previous
-                                    ? work_count - work_previous : 0 ;
-
-    return std::pair<size_type,size_type>( work_end > work_per_thread ?
-                                           work_end - work_per_thread : 0 , work_end );
-  }
-
-  void driver();
+  //----------------------------------------------------------------------
 
 private:
 
-  ~HostThread() {}
-
-  HostThread()
-    : m_fan_begin( NULL )
-    , m_fan_end(   NULL )
-    , m_thread_count( 0 )
-    , m_thread_rank( 0 )
-    , m_thread_node( 0 )
-    , m_thread_node_rank( 0 )
-    , m_reduce( NULL )
-    , m_state( 0 )
-    {}
+  ~HostThread();
+  HostThread();
 
   /** \brief States of a worker thread */
-  enum State { ThreadNull = 0    ///<  Does not exist
-             , ThreadTerminating ///<  Exists, termination in progress
+  enum State { ThreadTerminating ///<  Exists, termination in progress
              , ThreadInactive    ///<  Exists, waiting for work
              , ThreadActive      ///<  Exists, performing work
              , ThreadReducing    ///<  Exists, waiting for reduction
@@ -185,12 +171,17 @@ private:
   void set(  const State flag ) { m_state = flag ; }
   void wait( const State flag );
 
-  HostThread          * m_fan_begin ; ///< Begin of thread fan in
-  HostThread          * m_fan_end ;   ///< End of thread fan in
-  unsigned              m_thread_count ;
+  static const unsigned max_fan_count = 16 ;
+  static const unsigned max_thread_count = 1 << max_fan_count ;
+
+  HostThread         *  m_fan[ max_fan_count ] ;
+  unsigned              m_fan_count ;
   unsigned              m_thread_rank ;
-  unsigned              m_thread_node ;
-  unsigned              m_thread_node_rank ;
+  unsigned              m_thread_count ;
+  unsigned              m_gang_rank ;
+  unsigned              m_gang_count ;
+  unsigned              m_worker_rank ;
+  unsigned              m_worker_count ;
   const void * volatile m_reduce ;    ///< Reduction memory
   long         volatile m_state ;     ///< Thread control flag
 
