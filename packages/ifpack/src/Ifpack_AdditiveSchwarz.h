@@ -74,6 +74,7 @@
 #ifdef IFPACK_SUBCOMM_CODE
 #include "EpetraExt_Reindex_CrsMatrix.h"
 #include "EpetraExt_Reindex_MultiVector.h"
+#include "Teuchos_Time.hpp"
 #endif
 #ifdef IFPACK_NODE_AWARE_CODE
 #include "EpetraExt_OperatorOut.h"
@@ -609,11 +610,23 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
   else
   {
 #ifdef IFPACK_SUBCOMM_CODE
+    Teuchos::Time subdomainFilterTimer("subdomain filter timer");
+    subdomainFilterTimer.start(true);
+
     if (NumMpiProcsPerSubdomain_ > 1) {
       LocalizedMatrix_ = Teuchos::rcp(new Ifpack_SubdomainFilter(Matrix_, SubdomainId_));
     } else {
       LocalizedMatrix_ = Teuchos::rcp(new Ifpack_LocalFilter(Matrix_));
     }
+
+    subdomainFilterTimer.stop();
+
+    if (Comm().MyPID() == 0) {
+        std::cout << "\nTIME TO BUILD SUBDOMAIN FILTER: "
+                  << subdomainFilterTimer.totalElapsedTime()
+                  << "\n";
+    }
+
 #else
 #   ifdef IFPACK_NODE_AWARE_CODE
     Ifpack_NodeFilter *tt = new Ifpack_NodeFilter(Matrix_,nodeID); //FIXME
@@ -674,6 +687,10 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
   // and then reindex it with EpetraExt.
   // The reindexing is done here because this feature is only implemented in Amesos_Klu,
   // and it is desired to have reindexing with other direct solvers in the Amesos package
+
+  Teuchos::Time reindexingTimer("reindex timer");
+  reindexingTimer.start(true);
+
   SubdomainCrsMatrix_.reset(new Epetra_CrsMatrix(Copy, MatrixPtr->RowMatrixRowMap(), -1));
   Teuchos::RCP<Epetra_Import> tempImporter = Teuchos::rcp(new Epetra_Import(SubdomainCrsMatrix_->Map(), MatrixPtr->Map()));
   SubdomainCrsMatrix_->Import(*MatrixPtr, *tempImporter, Insert);
@@ -694,6 +711,12 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
   RangeVectorReindexer_.reset(new EpetraExt::MultiVector_Reindex(*tempRangeMap_));
 
   ReindexedCrsMatrix_.reset(&((*SubdomainMatrixReindexer_)(*SubdomainCrsMatrix_)), false);
+
+  reindexingTimer.stop();
+  if (Comm().MyPID() == 0) {
+      std::cout << "\nTIME TO REINDEX MATRIX: "
+                << reindexingTimer.totalElapsedTime() << "\n";
+  }
   
   MatrixPtr = &*ReindexedCrsMatrix_;
 
