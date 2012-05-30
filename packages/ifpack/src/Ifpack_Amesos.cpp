@@ -168,6 +168,7 @@ int Ifpack_Amesos::Initialize()
   if (Solver_ == Teuchos::null) 
   {
     // try to create KLU, it is generally enabled
+    Label_ = "Amesos_Klu";
     Solver_ = Teuchos::rcp( Factory.Create("Amesos_Klu",*Problem_) );
   }
   if (Solver_ == Teuchos::null)
@@ -186,6 +187,7 @@ int Ifpack_Amesos::Initialize()
            << ")" << endl;
       FirstTime = false;
     }
+    Label_ = "Amesos_Lapack";
     Solver_ = Teuchos::rcp( Factory.Create("Amesos_Lapack",*Problem_) );
   }
   // if empty, give up.
