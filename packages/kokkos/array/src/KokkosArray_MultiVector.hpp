@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -55,18 +55,19 @@
 namespace KokkosArray {
 
 //----------------------------------------------------------------------------
-/** \brief  Multivector allocated and mapped
- *          onto a compute device.
- *
- *  The first rank corresponds to the parallel work index.
- *  The second rank selects one vector of the multivector.
- *
- *  No assumptions should be made as to the mapping, contiguity, or strides
- *  of the storage of these multivectors.  The mapping will vary according to the
- *  underlying device.  The usage model is for algorithms to be parameterized
- *  with respect to the type of the mapped multivector and thus achieve portability
- *  across compute devices.
- */
+/// \class MultiVector
+/// \brief View of a collection of one or more vectors, allocated and mapped onto a compute device.
+///
+/// The first rank corresponds to the parallel work index.
+/// The second rank selects one vector of the multivector.
+/// All vectors in the multivector have the same length (number of entries).
+///
+/// No assumptions should be made as to the mapping, contiguity, or
+/// strides of the storage of these multivectors.  The mapping will
+/// vary according to the underlying device.  The usage model is for
+/// algorithms to be parameterized with respect to the type of the
+/// mapped multivector and thus achieve portability across compute
+/// devices.
 template< typename ValueType , class DeviceType >
 class MultiVector {
 public:
@@ -84,10 +85,18 @@ public:
   size_type count() const ;
 
   /*------------------------------------------------------------------*/
-  /** \brief  Query value */
+
+  /// \brief Get the value at work index iP and vector index iV.
+  ///
+  /// \warning For a DeviceType which is not a host device, this
+  ///   method should only be called in a compute kernel.
   template< typename iTypeP , typename iTypeV >
   value_type & operator()( const iTypeP & iP , const iTypeV & iV ) const ;
 
+  /// \brief Fetch the value at work index iP (if there is only one vector).
+  ///
+  /// \warning For a DeviceType which is not a host device, this
+  ///   method should only be called in a compute kernel.
   template< typename iTypeP >
   value_type & operator()( const iTypeP & iP ) const ;
 
@@ -110,10 +119,11 @@ public:
   ~MultiVector();
 
   /*------------------------------------------------------------------*/
-  /** \brief View to a single vector */
 
+  /// \brief Constructor producing a view of a single vector in rhs.
   MultiVector( const MultiVector & rhs , size_type iV );
 
+  /// \brief Constructor producing a view of a contiguous range of vectors in rhs.
   MultiVector( const MultiVector & rhs , size_type iVbeg , size_type iVend );
 
   /*------------------------------------------------------------------*/
@@ -186,7 +196,7 @@ void deep_copy( const MultiVector< ValueType , DeviceDst > & dst ,
 
 template< typename ValueType , class Device >
 inline
-void update( const ValueType & alpha , 
+void update( const ValueType & alpha ,
              const MultiVector< ValueType , Device > & x ,
              const ValueType & beta ,
              const MultiVector< ValueType , Device > & y )
