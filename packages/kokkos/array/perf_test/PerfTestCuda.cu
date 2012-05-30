@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -44,33 +44,33 @@
 #include <iostream>
 #include <iomanip>
 
-#include <Kokkos_MDArray.hpp>
-#include <Kokkos_MultiVector.hpp>
-#include <Kokkos_Value.hpp>
+#include <KokkosArray_MDArray.hpp>
+#include <KokkosArray_MultiVector.hpp>
+#include <KokkosArray_Value.hpp>
 
-#include <Kokkos_Host.hpp>
-#include <Kokkos_Cuda.hpp>
+#include <KokkosArray_Host.hpp>
+#include <KokkosArray_Cuda.hpp>
 
-#include <Kokkos_Cuda_macros.hpp>
+#include <KokkosArray_Cuda_macros.hpp>
 #include <PerfTestHexGrad.hpp>
 #include <PerfTestGramSchmidt.hpp>
 #include <PerfTestDriver.hpp>
-#include <Kokkos_Clear_macros.hpp>
+#include <KokkosArray_Clear_macros.hpp>
 
 namespace Test {
 
 void test_device_cuda_init() {
-  Kokkos::Cuda::initialize();
+  KokkosArray::Cuda::initialize();
 }
 
 void test_cuda_hexgrad(int exp_beg, int exp_end)
 {
-  run_test_hexgrad< Kokkos::Cuda>( exp_beg , exp_end );
+  run_test_hexgrad< KokkosArray::Cuda>( exp_beg , exp_end );
 }
 
 void test_cuda_gramschmidt(int exp_beg, int exp_end)
 {
-  Test::run_test_gramschmidt< Kokkos::Cuda>( exp_beg , exp_end );
+  Test::run_test_gramschmidt< KokkosArray::Cuda>( exp_beg , exp_end );
 }
 
 } // namespace Test

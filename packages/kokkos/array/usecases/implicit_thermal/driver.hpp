@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 //
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -88,11 +88,11 @@ static void run(int x, int y, int z, PerformanceData & perf )
   typedef KOKKOS_MACRO_DEVICE    device_type;
   typedef device_type::size_type index_type ;
 
-  typedef Kokkos::MDArray<Scalar,     device_type>  scalar_array_d;
-  typedef Kokkos::MDArray<index_type, device_type>  index_array_d;
+  typedef KokkosArray::MDArray<Scalar,     device_type>  scalar_array_d;
+  typedef KokkosArray::MDArray<index_type, device_type>  index_array_d;
 
-  typedef Kokkos::MultiVector<Scalar,     device_type>  scalar_vector_d;
-  typedef Kokkos::MultiVector<index_type, device_type>  index_vector_d;
+  typedef KokkosArray::MultiVector<Scalar,     device_type>  scalar_vector_d;
+  typedef KokkosArray::MultiVector<index_type, device_type>  index_vector_d;
 
   typedef typename scalar_array_d::HostMirror  scalar_array_h ;
   typedef typename index_array_d ::HostMirror  index_array_h ;
@@ -121,14 +121,14 @@ static void run(int x, int y, int z, PerformanceData & perf )
   //------------------------------
   // Generate mesh and corresponding sparse matrix graph
 
-  Kokkos::Impl::Timer wall_clock ;
+  KokkosArray::Impl::Timer wall_clock ;
 
   const BoxMeshFixture< double , device_type > mesh( x , y , z );
 
   mesh.init_dirichlet_z( dirichlet_flag_d , dirichlet_value_d );
 
   elem_graph_col_d =
-    Kokkos::create_mdarray< index_array_d >(
+    KokkosArray::create_mdarray< index_array_d >(
       mesh.h_mesh.elem_node_ids.dimension(0) ,
       mesh.h_mesh.elem_node_ids.dimension(1) ,
       mesh.h_mesh.elem_node_ids.dimension(1) );
@@ -145,11 +145,11 @@ static void run(int x, int y, int z, PerformanceData & perf )
 
   // Copy sparse matrix graph to device
 
-  A_row_d = Kokkos::create_multivector< index_array_d >("A_row_d",A_row_h.length());
-  A_col_d = Kokkos::create_multivector< index_array_d >("A_col_d",A_col_h.length());
+  A_row_d = KokkosArray::create_multivector< index_array_d >("A_row_d",A_row_h.length());
+  A_col_d = KokkosArray::create_multivector< index_array_d >("A_col_d",A_col_h.length());
 
-  Kokkos::deep_copy(A_row_d, A_row_h);
-  Kokkos::deep_copy(A_col_d, A_col_h);
+  KokkosArray::deep_copy(A_row_d, A_row_h);
+  KokkosArray::deep_copy(A_col_d, A_col_h);
 
   device_type::fence();
 
@@ -158,19 +158,19 @@ static void run(int x, int y, int z, PerformanceData & perf )
   //------------------------------
   // Allocate device memory for linear system and element contributions.
 
-  A = Kokkos::create_multivector< scalar_vector_d > ("A",A_col_h.length());
-  b = Kokkos::create_multivector< scalar_vector_d > ("b",mesh.node_count);
-  X = Kokkos::create_multivector< scalar_vector_d > ("X",mesh.node_count);
+  A = KokkosArray::create_multivector< scalar_vector_d > ("A",A_col_h.length());
+  b = KokkosArray::create_multivector< scalar_vector_d > ("b",mesh.node_count);
+  X = KokkosArray::create_multivector< scalar_vector_d > ("X",mesh.node_count);
 
-  elem_stiffness =  Kokkos::create_mdarray< scalar_array_d > (mesh.elem_count, 8, 8);
-  elem_load      =  Kokkos::create_mdarray< scalar_array_d > (mesh.elem_count, 8);
+  elem_stiffness =  KokkosArray::create_mdarray< scalar_array_d > (mesh.elem_count, 8, 8);
+  elem_load      =  KokkosArray::create_mdarray< scalar_array_d > (mesh.elem_count, 8);
 
   wall_clock.reset();
 
   typedef ElementComp< Scalar , double , device_type > ElementFunctor ;
   typedef CRSMatrixGatherFill<Scalar, device_type> GatherFillFunctor ;
 
-  Kokkos::parallel_for( mesh.elem_count,
+  KokkosArray::parallel_for( mesh.elem_count,
     ElementFunctor( mesh.d_mesh.elem_node_ids ,
                     mesh.d_mesh.node_coords ,
                     elem_stiffness, elem_load ,
@@ -185,7 +185,7 @@ static void run(int x, int y, int z, PerformanceData & perf )
 
   wall_clock.reset();
 
-  Kokkos::parallel_for( mesh.node_count,
+  KokkosArray::parallel_for( mesh.node_count,
     GatherFillFunctor( A, b, A_row_d, A_col_d,
                        mesh.d_mesh.node_elem_offset ,
                        mesh.d_mesh.node_elem_ids,
@@ -201,7 +201,7 @@ static void run(int x, int y, int z, PerformanceData & perf )
 
   //------------------------------
 
-  Kokkos::parallel_for(mesh.node_count ,
+  KokkosArray::parallel_for(mesh.node_count ,
     Dirichlet<Scalar , device_type>(A, A_row_d ,A_col_d, b,
                                     dirichlet_flag_d , dirichlet_value_d ) );
 
@@ -215,9 +215,9 @@ static void run(int x, int y, int z, PerformanceData & perf )
 
 #if  PRINT_SAMPLE_OF_SOLUTION
 
-  scalar_vector_h X_h = Kokkos::create_mirror( X );
+  scalar_vector_h X_h = KokkosArray::create_mirror( X );
 
-  Kokkos::deep_copy( X_h , X );
+  KokkosArray::deep_copy( X_h , X );
 
   for ( int i = 0 ; i < (int) mesh.node_count_z ; ++i ) {
     const int ix = mesh.node_count_x - 1 ;
@@ -243,7 +243,7 @@ static void run(int x, int y, int z, PerformanceData & perf )
 static void driver( const char * label , int beg , int end , int runs )
 {
   std::cout << std::endl ;
-  std::cout << "\"MiniImplTherm with Kokkos " << label << "\"" << std::endl;
+  std::cout << "\"MiniImplTherm with KokkosArray " << label << "\"" << std::endl;
   std::cout << "\"Size\" ,     \"Setup\" ,    \"Element\" ,  \"Element\" , \"Fill\" ,   \"Fill\" ,  \"Solve\"" << std::endl
             << "\"elements\" , \"millisec\" , \"millisec\" , \"flops\" , \"millisec\" , \"flops\" , \"Mflop/sec\"" << std::endl ;
 

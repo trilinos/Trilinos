@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -51,7 +51,7 @@
 #include <sstream>
 #include <iostream>
 
-#include <impl/Kokkos_Preprocessing_macros.hpp>
+#include <impl/KokkosArray_Preprocessing_macros.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -64,9 +64,9 @@ class TestMultiVector< T, KOKKOS_MACRO_DEVICE >
 {
 public:
   typedef KOKKOS_MACRO_DEVICE device ;
-  typedef Kokkos::Host        host ;
+  typedef KokkosArray::Host        host ;
 
-  typedef Kokkos::MultiVector< T , device > dView ;
+  typedef KokkosArray::MultiVector< T , device > dView ;
   typedef typename dView::HostMirror hView ;
 
   TestMultiVector() { run_test(); }
@@ -83,8 +83,8 @@ public:
     ASSERT_FALSE(hy);
     ASSERT_FALSE(hz);
 
-    dx = Kokkos::create_multivector<dView> ( "dx" , LENGTH , 2 );
-    dy = Kokkos::create_multivector<dView> ( "dy" , LENGTH , 2 );
+    dx = KokkosArray::create_multivector<dView> ( "dx" , LENGTH , 2 );
+    dy = KokkosArray::create_multivector<dView> ( "dy" , LENGTH , 2 );
 
     ASSERT_TRUE(dx);
     ASSERT_TRUE(dy);
@@ -95,17 +95,17 @@ public:
     ASSERT_EQ( dy.length() , LENGTH );
     ASSERT_EQ( dy.count() , (device::size_type) 2 );
 
-    hx = Kokkos::create_mirror( dx );
-    hy = Kokkos::create_mirror( dy );
+    hx = KokkosArray::create_mirror( dx );
+    hy = KokkosArray::create_mirror( dy );
 
     for ( size_t i = 0 ; i < LENGTH ; ++i ) {
       hx(i,0) = i ;
       hx(i,1) = 2 * i ;
     }
 
-    Kokkos::deep_copy( dx , hx );
-    Kokkos::deep_copy( dy , dx );
-    Kokkos::deep_copy( hy , dy );
+    KokkosArray::deep_copy( dx , hx );
+    KokkosArray::deep_copy( dy , dx );
+    KokkosArray::deep_copy( hy , dy );
 
     for ( size_t i = 0 ; i < LENGTH ; ++i ) {
       ASSERT_EQ( hx(i,0) , hy(i,0) );

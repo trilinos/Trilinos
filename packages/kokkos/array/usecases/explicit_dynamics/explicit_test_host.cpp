@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -45,43 +45,43 @@
 #include <iomanip>
 #include <sys/time.h>
 
-#include <Kokkos_Value.hpp>
-#include <Kokkos_MultiVector.hpp>
-#include <Kokkos_MDArray.hpp>
+#include <KokkosArray_Value.hpp>
+#include <KokkosArray_MultiVector.hpp>
+#include <KokkosArray_MDArray.hpp>
 
-#include <Kokkos_Host.hpp>
+#include <KokkosArray_Host.hpp>
 
-#include <Kokkos_Host_macros.hpp>
+#include <KokkosArray_Host_macros.hpp>
 #include <explicit_dynamics_app.hpp>
-#include <Kokkos_Clear_macros.hpp>
+#include <KokkosArray_Clear_macros.hpp>
 
 namespace Test{
 
 void test_Host( int beg, int end, int runs, int threads){
 
-  const size_t node_count = Kokkos::Host::detect_node_count();
+  const size_t node_count = KokkosArray::Host::detect_node_count();
 
   if ( 0 < threads ) {
     const size_t node_thread_count = ( threads + node_count - 1 ) / node_count ;
 
-    Kokkos::Host::initialize( node_count , node_thread_count );
+    KokkosArray::Host::initialize( node_count , node_thread_count );
 
     std::cout << std::endl << "\"Host with manually set threads = \" , "
               << node_count * node_thread_count << std::endl ;
   }
   else {
-    const size_t node_thread_count = Kokkos::Host::detect_node_core_count();
+    const size_t node_thread_count = KokkosArray::Host::detect_node_core_count();
 
-    Kokkos::Host::initialize( node_count , node_thread_count );
+    KokkosArray::Host::initialize( node_count , node_thread_count );
 
     std::cout << std::endl << "\"Host with detected sequential threads = \" , "
               << node_count * node_thread_count << std::endl ;
   }
 
-  explicit_dynamics::driver<float,Kokkos::Host>("Host-float", beg, end, runs);
-  explicit_dynamics::driver<double,Kokkos::Host>("Host-double", beg, end, runs);
+  explicit_dynamics::driver<float,KokkosArray::Host>("Host-float", beg, end, runs);
+  explicit_dynamics::driver<double,KokkosArray::Host>("Host-double", beg, end, runs);
 
-  Kokkos::Host::finalize();
+  KokkosArray::Host::finalize();
 }//test_host
 
 }// namespace

@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 //
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -221,9 +221,9 @@ struct ElementComputation< ScalarType , ScalarCoordType , KOKKOS_MACRO_DEVICE >
   static const size_type ElementNodeCount = 8 ;
 
   typedef FEMesh< ScalarCoordType , ElementNodeCount , device_type > mesh_type ;
-  typedef Kokkos::Array< scalar_type[ElementNodeCount][ElementNodeCount] , device_type > elem_matrices_type ;
-  typedef Kokkos::Array< scalar_type[ElementNodeCount] , device_type > elem_vectors_type ;
-  typedef Kokkos::MultiVector< scalar_type , device_type > value_vector_type ;
+  typedef KokkosArray::Array< scalar_type[ElementNodeCount][ElementNodeCount] , device_type > elem_matrices_type ;
+  typedef KokkosArray::Array< scalar_type[ElementNodeCount] , device_type > elem_vectors_type ;
+  typedef KokkosArray::MultiVector< scalar_type , device_type > value_vector_type ;
 
   typedef ShapeFunctionEvaluation< scalar_type > shape_function_data ;
 
@@ -489,7 +489,7 @@ struct DirichletSolution< ScalarType , ScalarCoordType , KOKKOS_MACRO_DEVICE >
 
   static const size_type ElementNodeCount = 8 ;
 
-  typedef Kokkos::MultiVector< ScalarType , device_type >  vector_type ;
+  typedef KokkosArray::MultiVector< ScalarType , device_type >  vector_type ;
 
   typedef FEMesh< ScalarCoordType , ElementNodeCount , device_type > mesh_type ;
 
@@ -548,8 +548,8 @@ struct DirichletResidual< ScalarType , ScalarCoordType , KOKKOS_MACRO_DEVICE >
 
   static const size_type ElementNodeCount = 8 ;
 
-  typedef Kokkos::CrsMatrix< ScalarType , device_type >    matrix_type ;
-  typedef Kokkos::MultiVector< ScalarType , device_type >  vector_type ;
+  typedef KokkosArray::CrsMatrix< ScalarType , device_type >    matrix_type ;
+  typedef KokkosArray::MultiVector< ScalarType , device_type >  vector_type ;
 
   typedef FEMesh< ScalarCoordType , ElementNodeCount , device_type > mesh_type ;
 

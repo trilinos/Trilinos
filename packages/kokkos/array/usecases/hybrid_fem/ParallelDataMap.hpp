@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -50,11 +50,11 @@
 #include <sstream>
 #include <stdexcept>
 
-#include <Kokkos_Array.hpp>
-#include <Kokkos_Host.hpp>
+#include <KokkosArray_Array.hpp>
+#include <KokkosArray_Host.hpp>
 #include <ParallelComm.hpp>
 
-namespace Kokkos {
+namespace KokkosArray {
 
 //----------------------------------------------------------------------------
 /** \brief  Parallel distributed data mapping
@@ -86,7 +86,7 @@ template< class ArrayType , class Rank = void > struct UnpackArray ;
 template< class ValueType , class Device , class DataMap >
 class AsyncExchange ;
 
-} // namespace Kokkos
+} // namespace KokkosArray
 
 //----------------------------------------------------------------------------
 // Application call procedure:
@@ -103,16 +103,16 @@ class AsyncExchange ;
 
 #ifdef HAVE_MPI
 
-namespace Kokkos {
+namespace KokkosArray {
 
 template< class ValueType , class Device >
-class AsyncExchange< ValueType, Device , Kokkos::ParallelDataMap > {
+class AsyncExchange< ValueType, Device , KokkosArray::ParallelDataMap > {
 public:
 
   typedef Device                                              device_type ;
-  typedef Kokkos::ParallelDataMap                             data_map_type ;
-  typedef Kokkos::Impl::MemoryView< ValueType , device_type > buffer_dev_type ;
-  typedef Kokkos::Impl::MemoryView< ValueType , Host >        buffer_host_type ;
+  typedef KokkosArray::ParallelDataMap                             data_map_type ;
+  typedef KokkosArray::Impl::MemoryView< ValueType , device_type > buffer_dev_type ;
+  typedef KokkosArray::Impl::MemoryView< ValueType , Host >        buffer_host_type ;
 
 private:
 
@@ -157,7 +157,7 @@ public:
   {
     // Copy send buffer from the device to host memory for sending
 
-    Kokkos::Impl::Factory< buffer_host_type , buffer_dev_type >
+    KokkosArray::Impl::Factory< buffer_host_type , buffer_dev_type >
       ::deep_copy( host_send_buffer , dev_buffer ,
                    data_map.count_send * chunk_size );
 
@@ -256,7 +256,7 @@ public:
 
     // Touching device:
 
-    Kokkos::Impl::Factory< buffer_dev_type , buffer_host_type >
+    KokkosArray::Impl::Factory< buffer_dev_type , buffer_host_type >
       ::deep_copy( dev_buffer , host_recv_buffer , 
                    data_map.count_receive * chunk_size );
   }

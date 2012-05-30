@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -45,11 +45,11 @@
 #define SPARSELINEARSYSTEM_HPP
 
 #include <cmath>
-#include <impl/Kokkos_Timer.hpp>
-#include <Kokkos_MultiVector.hpp>
-#include <Kokkos_CrsArray.hpp>
+#include <impl/KokkosArray_Timer.hpp>
+#include <KokkosArray_MultiVector.hpp>
+#include <KokkosArray_CrsArray.hpp>
 
-namespace Kokkos {
+namespace KokkosArray {
 namespace Impl {
 
 template< class Scalar , class DeviceType , class > struct Dot ;
@@ -59,12 +59,12 @@ template< class Scalar , class DeviceType > struct FILL ;
 template< class AType , class XType , class YType > struct Multiply ;
 
 } /* namespace Impl */
-} /* namespace Kokkos */
+} /* namespace KokkosArray */
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-namespace Kokkos {
+namespace KokkosArray {
 
 //----------------------------------------------------------------------------
 
@@ -223,7 +223,7 @@ void cgsolve(
   normr     = sqrt( old_rdot );
   iteration = 0 ;
 
-  Kokkos::Impl::Timer wall_clock ;
+  KokkosArray::Impl::Timer wall_clock ;
 
   while ( tolerance < normr && iteration < maximum_iteration ) {
 
@@ -249,7 +249,7 @@ void cgsolve(
 
 //----------------------------------------------------------------------------
 
-} // namespace Kokkos
+} // namespace KokkosArray
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

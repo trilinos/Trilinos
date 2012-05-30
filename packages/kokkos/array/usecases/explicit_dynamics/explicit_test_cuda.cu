@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -45,16 +45,16 @@
 #include <iomanip>
 #include <sys/time.h>
 
-#include <Kokkos_Value.hpp>
-#include <Kokkos_MultiVector.hpp>
-#include <Kokkos_MDArray.hpp>
+#include <KokkosArray_Value.hpp>
+#include <KokkosArray_MultiVector.hpp>
+#include <KokkosArray_MDArray.hpp>
 
-#include <Kokkos_Host.hpp>
-#include <Kokkos_Cuda.hpp>
+#include <KokkosArray_Host.hpp>
+#include <KokkosArray_Cuda.hpp>
 
-#include <Kokkos_Cuda_macros.hpp>
+#include <KokkosArray_Cuda_macros.hpp>
 #include <explicit_dynamics_app.hpp>
-#include <Kokkos_Clear_macros.hpp>
+#include <KokkosArray_Clear_macros.hpp>
 
 __global__ void dummy_kernel(){}
 
@@ -62,18 +62,18 @@ namespace Test{
 
 void test_Cuda(int beg, int end, int runs){
 
-  Kokkos::Cuda::initialize();
+  KokkosArray::Cuda::initialize();
 
   cudaFuncSetCacheConfig(dummy_kernel, cudaFuncCachePreferL1);
   dummy_kernel<<<1, 1>>>();
 
-  std::cout << "Kokkos Cuda: " << std::endl;
+  std::cout << "KokkosArray Cuda: " << std::endl;
 
 
-  explicit_dynamics::driver<float,Kokkos::Cuda>("Cuda-float", beg, end, runs);
-  explicit_dynamics::driver<double,Kokkos::Cuda>("Cuda-double", beg, end, runs);
+  explicit_dynamics::driver<float,KokkosArray::Cuda>("Cuda-float", beg, end, runs);
+  explicit_dynamics::driver<double,KokkosArray::Cuda>("Cuda-double", beg, end, runs);
 
-  Kokkos::Cuda::finalize();
+  KokkosArray::Cuda::finalize();
 }
 
 }// namespace

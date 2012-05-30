@@ -76,8 +76,8 @@ fi
 CXX_SOURCES="main.cpp TestHost.cpp"
 CXX_SOURCES="${CXX_SOURCES} ${WORK_PATH}/impl/*.cpp"
 CXX_SOURCES="${CXX_SOURCES} ${SRC_PATH}/impl/*.cpp"
-CXX_SOURCES="${CXX_SOURCES} ${SRC_PATH}/Host/Kokkos_Host_Impl.cpp"
-CXX_SOURCES="${CXX_SOURCES} ${SRC_PATH}/Host/Kokkos_Host_MemoryManager.cpp"
+CXX_SOURCES="${CXX_SOURCES} ${SRC_PATH}/Host/KokkosArray_Host_Impl.cpp"
+CXX_SOURCES="${CXX_SOURCES} ${SRC_PATH}/Host/KokkosArray_Host_MemoryManager.cpp"
 
 #-----------------------------------------------------------------------------
 
@@ -93,11 +93,11 @@ then
 
   echo "LD_LIBRARY_PATH must include ${HWLOC_LIB_PATH}"
 
-  CXX_SOURCES="${CXX_SOURCES} ${SRC_PATH}/Host/Kokkos_Host_hwloc.cpp"
+  CXX_SOURCES="${CXX_SOURCES} ${SRC_PATH}/Host/KokkosArray_Host_hwloc.cpp"
   LIB="${LIB} -L${HWLOC_LIB_PATH} -lhwloc"
   INC_PATH="${INC_PATH} -I${HAVE_HWLOC}/include"
 else
-  CXX_SOURCES="${CXX_SOURCES} ${SRC_PATH}/Host/Kokkos_Host_hwloc_unavailable.cpp"
+  CXX_SOURCES="${CXX_SOURCES} ${SRC_PATH}/Host/KokkosArray_Host_hwloc_unavailable.cpp"
 fi
 
 #-----------------------------------------------------------------------------
@@ -107,10 +107,10 @@ HAVE_PTHREAD=1
 
 if [ -n "${HAVE_PTHREAD}" ] ;
 then
-  CXX_SOURCES="${CXX_SOURCES} ${SRC_PATH}/Host/Kokkos_Host_pthread.cpp"
+  CXX_SOURCES="${CXX_SOURCES} ${SRC_PATH}/Host/KokkosArray_Host_pthread.cpp"
   LIB="${LIB} -lpthread"
 else
-  CXX_SOURCES="${CXX_SOURCES} ${SRC_PATH}/Host/Kokkos_Host_nothread.cpp"
+  CXX_SOURCES="${CXX_SOURCES} ${SRC_PATH}/Host/KokkosArray_Host_nothread.cpp"
 fi
 
 #-----------------------------------------------------------------------------

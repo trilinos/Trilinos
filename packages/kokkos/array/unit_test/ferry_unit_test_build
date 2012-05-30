@@ -40,7 +40,7 @@ set GCC_FLAGS="-Wall -Werror -O3 ${INC_PATH}"
 
 icpc $GCC_FLAGS -c ${GCC_SOURCES}
 
-icpc $GCC_FLAGS -offload-build -o unit_test.exe Kokkos_ArrayBounds.o Kokkos_DeviceTBB.o UnitTestTPIStub.o Kokkos_MemoryInfo.o UnitTestFerry.o Kokkos_DeviceFerry.o Kokkos_ViewTracker.o UnitTestMain.o Kokkos_DeviceHost.o UnitTestCudaStub.o UnitTestTBBStub.o ${LIB} -offload-ldopts:"-L${TBBROOT}/lib/mic -ltbb -ltbbmalloc"
+icpc $GCC_FLAGS -offload-build -o unit_test.exe KokkosArray_ArrayBounds.o KokkosArray_DeviceTBB.o UnitTestTPIStub.o KokkosArray_MemoryInfo.o UnitTestFerry.o KokkosArray_DeviceFerry.o KokkosArray_ViewTracker.o UnitTestMain.o KokkosArray_DeviceHost.o UnitTestCudaStub.o UnitTestTBBStub.o ${LIB} -offload-ldopts:"-L${TBBROOT}/lib/mic -ltbb -ltbbmalloc"
 
 rm -f *.o *.a ThreadPool_config.h
 

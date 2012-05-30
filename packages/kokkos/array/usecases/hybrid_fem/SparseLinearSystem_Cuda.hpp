@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -46,9 +46,9 @@
 
 #include <cusparse.h>
 #include <SparseLinearSystem.hpp>
-#include <Kokkos_Cuda.hpp>
+#include <KokkosArray_Cuda.hpp>
 
-namespace Kokkos {
+namespace KokkosArray {
 namespace Impl {
 
 
@@ -166,7 +166,7 @@ public:
 };
 
 } /* namespace Impl */
-} /* namespace Kokkos */
+} /* namespace KokkosArray */
 
 
 #endif /* #ifndef SPARSELINEARSYSTEM_CUDA_HPP */

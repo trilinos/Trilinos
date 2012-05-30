@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -61,19 +61,19 @@
 // Shards includes
 #include "Shards_CellTopology.hpp"
 
-#include <Kokkos_DeviceHost.hpp>
-#include <Kokkos_DeviceHost_MDArrayView.hpp>
-#include <Kokkos_DeviceHost_MultiVectorView.hpp>
-#include <Kokkos_DeviceHost_ValueView.hpp>
+#include <KokkosArray_DeviceHost.hpp>
+#include <KokkosArray_DeviceHost_MDArrayView.hpp>
+#include <KokkosArray_DeviceHost_MultiVectorView.hpp>
+#include <KokkosArray_DeviceHost_ValueView.hpp>
 
-#include <Kokkos_DeviceCuda.hpp>
-#include <Kokkos_DeviceCuda_MDArrayView.hpp>
-#include <Kokkos_DeviceCuda_MultiVectorView.hpp>
-#include <Kokkos_DeviceCuda_ValueView.hpp>
-#include <Kokkos_DeviceCuda_ParallelFor.hpp>
-#include <Kokkos_DeviceCuda_ParallelReduce.hpp>
+#include <KokkosArray_DeviceCuda.hpp>
+#include <KokkosArray_DeviceCuda_MDArrayView.hpp>
+#include <KokkosArray_DeviceCuda_MultiVectorView.hpp>
+#include <KokkosArray_DeviceCuda_ValueView.hpp>
+#include <KokkosArray_DeviceCuda_ParallelFor.hpp>
+#include <KokkosArray_DeviceCuda_ParallelReduce.hpp>
 
-#include <Kokkos_DeviceCuda_macros.hpp>
+#include <KokkosArray_DeviceCuda_macros.hpp>
 #include <Jacobian.hpp>
 #include <Transform.hpp>
 #include <TransformValue.hpp>
@@ -84,15 +84,15 @@
 #include <Invert.hpp>
 #include <Determinant.hpp>
 #include <Poisson_Driver.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
+#include <KokkosArray_DeviceClear_macros.hpp>
 
 namespace Test {
 
 
 void poisson_cuda(int beg , int end)
 {
-	Kokkos::DeviceCuda::initialize();
-	Test::poisson_run< Kokkos::DeviceCuda>(beg , end);
+	KokkosArray::DeviceCuda::initialize();
+	Test::poisson_run< KokkosArray::DeviceCuda>(beg , end);
 };
 
 } // namespace Test

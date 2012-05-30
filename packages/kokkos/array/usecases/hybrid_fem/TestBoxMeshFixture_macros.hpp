@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -45,14 +45,14 @@ namespace TestFEMesh {
 
 template< typename coordinate_scalar_type >
 struct VerifyUnpack<
-  Kokkos::Array< coordinate_scalar_type[3] , KOKKOS_MACRO_DEVICE > >
+  KokkosArray::Array< coordinate_scalar_type[3] , KOKKOS_MACRO_DEVICE > >
 {
   typedef KOKKOS_MACRO_DEVICE              device_type ;
   typedef typename device_type::size_type  size_type ;
   typedef size_type                        value_type ;
-  typedef Kokkos::Impl::MemoryView< coordinate_scalar_type , device_type > buffer_type ;
+  typedef KokkosArray::Impl::MemoryView< coordinate_scalar_type , device_type > buffer_type ;
 
-  typedef Kokkos::Array< coordinate_scalar_type[3] , device_type > array_type ;
+  typedef KokkosArray::Array< coordinate_scalar_type[3] , device_type > array_type ;
 
 private:
 
@@ -106,7 +106,7 @@ public:
     op.node_coords = arg_node_coords ;
     op.buffer      = arg_buffer ;
     op.node_begin  = arg_node_begin ;
-    return Kokkos::parallel_reduce( arg_node_count , op );
+    return KokkosArray::parallel_reduce( arg_node_count , op );
   }
 };
 
