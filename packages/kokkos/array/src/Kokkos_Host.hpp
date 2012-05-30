@@ -112,11 +112,16 @@ public:
    *  dispatching work; however, resources are consumed
    *  even when no work is being done.
    *
-   *  Initialize with number of NUMA nodes
-   *  and number of threads on each NUMA node.
+   *  Initialize with the number of thread gangs
+   *  and number of thread workers per gang.
+   *  All worker threads of a gang will occupy the same NUMA node.
+   *  The total number of threads = gang_count * worker_count .
+   *
+   *  Required: gang_count   <= node_count
+   *  Required: worker_count <= node_core_count OR node_core_count == 0
    */
-  static void initialize( const size_type use_node_count ,
-                          const size_type use_node_thread_count );
+  static void initialize( const size_type gang_count ,
+                          const size_type worker_count );
 
   /** \brief  Detect number of admissible NUMA nodes */
   static size_type detect_node_count();

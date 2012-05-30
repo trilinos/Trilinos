@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -64,6 +64,38 @@ namespace Impl {
 
 //----------------------------------------------------------------------------
 
+HostThread::~HostThread()
+{
+  m_fan_count    = 0 ;
+  m_thread_rank  = std::numeric_limits<unsigned>::max();
+  m_thread_count = 0 ;
+  m_gang_rank    = std::numeric_limits<unsigned>::max();
+  m_gang_count   = 0 ;
+  m_worker_rank  = std::numeric_limits<unsigned>::max();
+  m_worker_count = 0 ;
+  m_reduce       = 0 ;
+
+  for ( unsigned i = 0 ; i < max_fan_count ; ++i ) { m_fan[i] = 0 ; }
+}
+
+HostThread::HostThread()
+{
+  m_fan_count    = 0 ;
+  m_thread_rank  = std::numeric_limits<unsigned>::max();
+  m_thread_count = 0 ;
+  m_gang_rank    = std::numeric_limits<unsigned>::max();
+  m_gang_count   = 0 ;
+  m_worker_rank  = std::numeric_limits<unsigned>::max();
+  m_worker_count = 0 ;
+  m_reduce       = 0 ;
+  m_state        = ThreadActive ;
+
+  for ( unsigned i = 0 ; i < max_fan_count ; ++i ) { m_fan[i] = 0 ; }
+}
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
 HostInternal::~HostInternal()
 {}
 
@@ -74,55 +106,185 @@ HostInternal::HostInternal()
   , m_node_pu_count( 0 )
   , m_page_size( 16 /* default alignment */ )
   , m_thread_count( 1 )
-  , m_node_thread_count( 1 )
+  , m_gang_count( 1 )
+  , m_worker_count( 1 )
 {
   m_worker = NULL ;
 
   // Master thread:
-  m_thread[0].m_thread_count = 1 ;
-  m_thread[0].m_thread_rank  = 0 ;
-  m_thread[0].m_fan_begin     = NULL ;
-  m_thread[0].m_fan_end       = NULL ;
+  m_thread[0] = & m_master_thread ;
+
+  m_master_thread.m_fan_count    = 0 ;
+  m_master_thread.m_thread_rank  = 0 ;
+  m_master_thread.m_thread_count = 1 ;
+  m_master_thread.m_gang_rank    = 0 ;
+  m_master_thread.m_gang_count   = 1 ;
+  m_master_thread.m_worker_rank  = 0 ;
+  m_master_thread.m_worker_count = 1 ;
+
+  for ( unsigned i = 0 ; i < HostThread::max_fan_count ; ++i ) {
+    m_master_thread.m_fan[i] = 0 ;
+  }
+}
+
+//----------------------------------------------------------------------------
+
+bool HostInternal::initialize_thread(
+  const HostInternal::size_type thread_rank ,
+  HostThread & thread )
+{
+  const unsigned gang_rank   = thread_rank / m_worker_count ;
+  const unsigned worker_rank = thread_rank % m_worker_count ;
+
+  thread.m_thread_rank  = thread_rank ;
+  thread.m_thread_count = m_thread_count ;
+  thread.m_worker_rank  = worker_rank ;
+  thread.m_worker_count = m_worker_count ;
+  thread.m_gang_rank    = gang_rank ;
+  thread.m_gang_count   = m_gang_count ;
+
+  {
+    size_type fan_count = 0 ;
+
+    // Intranode reduction:
+    for ( size_type n = 1 ; worker_rank + n < m_worker_count ; n <<= 1 ) {
+
+      if ( n & worker_rank ) break ;
+
+      HostThread * const th = m_thread[ thread_rank + n ];
+
+      if ( 0 == th ) return false ;
+
+      thread.m_fan[ fan_count++ ] = th ;
+    }
+
+    if ( worker_rank == 0 ) {
+
+      // Internode reduction:
+      for ( size_type n = 1 ; gang_rank + n < m_gang_count ; n <<= 1 ) {
+
+        if ( n & gang_rank ) break ;
+
+        HostThread * const th = m_thread[ thread_rank + n * m_worker_count ];
+
+        if ( 0 == th ) return false ;
+
+        thread.m_fan[ fan_count++ ] = th ;
+      }
+    }
+
+    thread.m_fan_count = fan_count ;
+  }
+
+  m_thread[ thread_rank ] = & thread ;
+
+  return true ;
+}
+
+bool HostInternal::bind_thread(
+  const HostInternal::size_type thread_rank ) const
+{
+  (void) thread_rank; // Prevent compiler warning for unused argument
+  return true ;
+}
+
+void HostInternal::clear_thread( const HostThread::size_type thread_rank )
+{
+  m_thread[ thread_rank ] = 0 ;
+
+  // Inform master thread:
+  m_master_thread.set( HostThread::ThreadTerminating );
+}
+
+//----------------------------------------------------------------------------
+
+void HostInternal::finalize()
+{
+  verify_inactive("finalize()");
+
+  // Release and clear worker threads:
+  while ( 1 < m_thread_count ) {
+    --m_thread_count ;
+
+    if ( m_thread[ m_thread_count ] ) {
+      m_master_thread.set( HostThread::ThreadInactive );
+
+      m_thread[ m_thread_count ]->set( HostThread::ThreadTerminating );
+
+      m_master_thread.wait( HostThread::ThreadInactive );
+
+      // Is in the 'ThreadTerminating" state
+    }
+  }
+
+  // Reset master thread:
+  m_master_thread.m_fan_count    = 0 ;
+  m_master_thread.m_thread_rank  = 0 ;
+  m_master_thread.m_thread_count = 1 ;
+  m_master_thread.m_gang_rank    = 0 ;
+  m_master_thread.m_gang_count   = 1 ;
+  m_master_thread.m_worker_rank  = 0 ;
+  m_master_thread.m_worker_count = 1 ;
+  m_master_thread.set( HostThread::ThreadActive );
+
+  for ( unsigned i = 0 ; i < HostThread::max_fan_count ; ++i ) {
+    m_master_thread.m_fan[i] = 0 ;
+  }
 }
 
 //----------------------------------------------------------------------------
 // Driver for each created thread
 
-void HostThread::driver()
+void HostInternal::driver( const size_t thread_rank )
 {
-  try {
-    const HostInternal & pool = HostInternal::singleton();
+  // Bind this thread to a unique processing unit
+  // with all members of a gang in the same NUMA region.
 
-    //------------------------------------
-    // this_thread is in the Active state.
-    // The master thread is waiting for this_thread to leave the Active state.
-    //------------------------------------
-    // Migrate myself to the proper NUMA node and run
+  if ( bind_thread( thread_rank ) ) {
 
-    if ( pool.bind_to_node( *this ) ) {
+    HostThread this_thread ;
 
-      while ( ThreadActive == m_state ) {
+    // Initialize thread ranks and fan-in relationships:
 
-        // When the work is complete the state will be Inactive or Terminate
-        pool.execute( *this );
+    if ( initialize_thread( thread_rank , this_thread ) ) {
 
-        // If this_thread is in the Inactive state then wait for activation.
-        wait( ThreadInactive );
+      // Inform master thread that binding and initialization succeeded.
+      m_master_thread.set( HostThread::ThreadActive );
+
+      try {
+        // Work loop:
+
+        while ( HostThread::ThreadActive == this_thread.m_state ) {
+
+          // When the work is complete the state will be Inactive or Terminate
+          m_worker->execute_on_thread( this_thread );
+
+          // If this_thread is in the Inactive state then wait for activation.
+          this_thread.wait( HostThread::ThreadInactive );
+        }
+      }
+      catch( const std::exception & x ) {
+        // mfh 29 May 2012: Doesn't calling std::terminate() seem a
+        // little violent?  On the other hand, C++ doesn't define how
+        // to transport exceptions between threads (until C++11).
+        // Since this is a worker thread, it would be hard to tell the
+        // master thread what happened.
+        std::cerr << "Thread " << thread_rank << " uncaught exception : "
+                  << x.what() << std::endl ;
+        std::terminate();
+      }
+      catch( ... ) {
+        // mfh 29 May 2012: See note above on std::terminate().
+        std::cerr << "Thread " << thread_rank << " uncaught exception"
+                  << std::endl ;
+        std::terminate();
       }
     }
+  }
 
-    set( ThreadNull );
-  }
-  catch( const std::exception & x ) {
-    std::cerr << "Thread " << m_thread_rank << " uncaught exception : "
-              << x.what() << std::endl ;
-    std::terminate();
-  }
-  catch( ... ) {
-    std::cerr << "Thread " << m_thread_rank << " uncaught exception"
-              << std::endl ;
-    std::terminate();
-  }
+  // Notify master process that thread has terminated:
+
+  clear_thread( thread_rank );
 }
 
 //----------------------------------------------------------------------------
@@ -145,114 +307,75 @@ void HostInternal::verify_inactive( const char * const method ) const
 }
 
 //----------------------------------------------------------------------------
-//  The 'hwloc' implementation overloads this function
 
-bool HostInternal::bind_to_node( const HostThread & ) const
-{ return true ; }
-
-//----------------------------------------------------------------------------
-
-bool HostInternal::spawn_threads( const size_type use_node_count ,
-                                  const size_type use_node_thread_count )
+bool HostInternal::spawn_threads( const size_type gang_count ,
+                                  const size_type worker_count )
 {
   // If the process is bound to a particular node
   // then only use cores belonging to that node.
   // Otherwise use all nodes and all their cores.
 
-  bool ok_spawn_threads = true ;
+  m_gang_count   = gang_count ;
+  m_worker_count = worker_count ;
+  m_thread_count = gang_count * worker_count ;
+  m_worker       = & m_worker_block ;
 
-  // Initialize thread rank and fan-in / fan-out span of threads
+  // Bind the process thread as thread_rank == 0
+  bool ok_spawn_threads = bind_thread( 0 );
 
-  {
-    int count = 1 ;
+  // Spawn threads from last-to-first so that the
+  // fan-in barrier thread relationships can be established.
 
-    m_node_thread_count = use_node_thread_count ;
-    m_thread_count      = use_node_thread_count * use_node_count ;
+  for ( size_type rank = m_thread_count ; ok_spawn_threads && 0 < --rank ; ) {
 
-    for ( size_type rank = 0 , i = 0 ; i < use_node_count ; ++i ) {
+    m_master_thread.set( HostThread::ThreadInactive );
 
-      const size_type i_node = ( i + m_node_rank ) % m_node_count ;
+    // Spawn thread executing the 'driver' function.
+    ok_spawn_threads = spawn( rank );
 
-      for ( size_type i_node_thread = 0 ;
-            i_node_thread < use_node_thread_count ; ++i_node_thread , ++rank ) {
+    if ( ok_spawn_threads ) {
 
-        m_thread[rank].m_thread_count     = m_thread_count ;
-        m_thread[rank].m_thread_rank      = rank ;
-        m_thread[rank].m_thread_node      = i_node ;
-        m_thread[rank].m_thread_node_rank = i_node_thread ;
-        m_thread[rank].m_fan_begin        = m_thread + count ;
+      // Thread spawned, wait for thread to activate:
+      m_master_thread.wait( HostThread::ThreadInactive );
 
-        {
-          size_type up = 1 ;
-          while ( up <= rank )                 { up <<= 1 ; }
-          while ( rank + up < m_thread_count ) { up <<= 1 ; ++count ; }
-        }
-
-        m_thread[rank].m_fan_end = m_thread + count ;
-      }
+      // Check if the thread initialized and bound correctly:
+      ok_spawn_threads = HostThread::ThreadActive == m_master_thread.m_state ;
     }
   }
 
-  //------------------------------------
-  // Spawn threads in reverse order for barrier
-  {
-    m_worker = & m_worker_block ;
+  m_worker = NULL ;
 
-    // Create threads last-to-first for start up fan-in barrier
-
-    for ( size_type rank = m_thread_count ; ok_spawn_threads && 1 < rank ; ) {
-
-      HostThread * const thread = m_thread + --rank ;
-
-      thread->set( HostThread::ThreadActive );
-
-      if ( spawn( thread ) ) {
-        thread->wait( HostThread::ThreadActive );
-
-        ok_spawn_threads = HostThread::ThreadInactive == thread->m_state ;
-      }
-      else {
-        thread->set( HostThread::ThreadNull );
-        ok_spawn_threads = false ;
-      }
-    }
-
-    m_worker = NULL ;
-  }
-
-  //------------------------------------
+  // All threads spawned, initialize the master-thread fan-in
+  ok_spawn_threads =
+    ok_spawn_threads && initialize_thread( 0 , m_master_thread );
 
   if ( ! ok_spawn_threads ) {
     finalize();
-  }
-  else {
-    // Bind this master thread to NUMA node
-    bind_to_node( m_thread[0] );
   }
 
   return ok_spawn_threads ;
 }
 
-void HostInternal::initialize( const size_type use_node_count ,
-                               const size_type use_node_thread_count )
+void HostInternal::initialize( const size_type gang_count ,
+                               const size_type worker_count )
 {
-  const bool ok_inactive   = 1 == m_thread_count ;
-  const bool ok_node_count = use_node_count <= m_node_count ;
-  const bool ok_node_thread_count = 
-    0 == m_node_pu_count || use_node_thread_count <= m_node_pu_count ;
+  const bool ok_inactive     = 1 == m_thread_count ;
+  const bool ok_gang_count   = gang_count <= m_node_count ;
+  const bool ok_worker_count = ( 0 == m_node_pu_count ||
+                                 worker_count <= m_node_pu_count );
 
-  bool ok_spawn_threads = true ;
+  // Only try to spawn threads if input is valid.
 
-  if ( ok_inactive &&
-       ok_node_count &&
-       ok_node_thread_count &&
-       1 < use_node_count * use_node_thread_count ) {
-    ok_spawn_threads = spawn_threads( use_node_count , use_node_thread_count );
-  }
+  const bool ok_spawn_threads =
+    ( ok_inactive &&
+      ok_gang_count && ok_worker_count &&
+      1 < gang_count * worker_count )
+    ? spawn_threads( gang_count , worker_count )
+    : true ;
 
   if ( ! ok_inactive ||
-       ! ok_node_count ||
-       ! ok_node_thread_count ||
+       ! ok_gang_count ||
+       ! ok_worker_count ||
        ! ok_spawn_threads )
   {
     std::ostringstream msg ;
@@ -262,13 +385,13 @@ void HostInternal::initialize( const size_type use_node_count ,
     if ( ! ok_inactive ) {
       msg << " : Device is already active" ;
     }
-    if ( ! ok_node_count ) {
-      msg << " : use_node_count(" << use_node_count
+    if ( ! ok_gang_count ) {
+      msg << " : gang_count(" << gang_count
           << ") exceeds detect_node_count(" << m_node_count
           << ")" ;
     }
-    if ( ! ok_node_thread_count ) {
-      msg << " : use_node_thread_count(" << use_node_thread_count
+    if ( ! ok_worker_count ) {
+      msg << " : worker_count(" << worker_count
           << ") exceeds detect_node_pu_count(" << m_node_pu_count
           << ")" ;
     }
@@ -282,36 +405,12 @@ void HostInternal::initialize( const size_type use_node_count ,
 
 //----------------------------------------------------------------------------
 
-void HostInternal::finalize()
+void HostInternal::activate()
 {
-  verify_inactive("finalize()");
-
-  // Release and clear worker threads:
-  while ( 1 < m_thread_count ) {
-    HostThread * const thread = m_thread + --m_thread_count ;
-
-    if ( HostThread::ThreadInactive == thread->m_state ) {
-      thread->set(  HostThread::ThreadTerminating );
-      thread->wait( HostThread::ThreadTerminating );
-    }
-
-    thread->m_thread_count = 0 ;
-    thread->m_thread_rank  = 0 ;
-    thread->m_fan_begin    = NULL ;
-    thread->m_fan_end      = NULL ;
+  for ( size_type i = m_thread_count ; 1 < i ; ) {
+    m_thread[--i]->set( HostThread::ThreadActive );
   }
-
-  // Reset master thread:
-  m_thread->m_thread_count = 1 ;
-  m_thread->m_thread_rank  = 0 ;
-  m_thread->m_fan_begin    = NULL ;
-  m_thread->m_fan_end      = NULL ;
-
-  m_node_thread_count = 1 ;
-  m_thread_count = 1 ;
 }
-
-//----------------------------------------------------------------------------
 
 inline
 void HostInternal::execute( const HostThreadWorker<void> & worker )
@@ -320,10 +419,10 @@ void HostInternal::execute( const HostThreadWorker<void> & worker )
 
   m_worker = & worker ;
 
-  HostThread::activate( m_thread + 1 , m_thread + m_thread_count );
+  activate();
 
-  // This thread is the root thread of the pool.
-  worker.execute_on_thread( m_thread[0] );
+  // Will finalize with a barrier.
+  worker.execute_on_thread( m_master_thread );
 
   m_worker = NULL ;
 }
@@ -344,11 +443,10 @@ namespace Kokkos {
 void Host::finalize()
 { Impl::HostInternal::singleton().finalize(); }
 
-void Host::initialize( const size_type use_node_count ,
-                       const size_type use_node_thread_count )
+void Host::initialize( const size_type gang_count ,
+                       const size_type worker_count )
 {
-  Impl::HostInternal::singleton()
-       .initialize( use_node_count , use_node_thread_count );
+  Impl::HostInternal::singleton().initialize( gang_count , worker_count );
 }
 
 Host::size_type Host::detect_node_count()
