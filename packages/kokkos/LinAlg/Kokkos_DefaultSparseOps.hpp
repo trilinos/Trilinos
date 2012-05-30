@@ -254,11 +254,11 @@ namespace Kokkos {
     //@{
 
     //! \brief Allocate and initialize the storage for the matrix values.
-    static ArrayRCP<size_t> allocRowPtrs(const ArrayView<const size_t> &rowPtrs) const;
+    static ArrayRCP<size_t> allocRowPtrs(const ArrayView<const size_t> &rowPtrs);
 
     //! \brief Allocate and initialize the storage for a sparse graph.
     template <class T> 
-    static ArrayRCP<T> allocStorage(const ArrayView<const size_t> &ptrs) const;
+    static ArrayRCP<T> allocStorage(const ArrayView<const size_t> &ptrs);
 
     //! Finalize a graph
     static void finalizeGraph(DefaultCrsGraph<Ordinal,Node> &graph, const RCP<ParameterList> &params);
