@@ -47,7 +47,6 @@
 
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
-#include <Kokkos_NodeHelpers.hpp>
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_RowGraph.hpp"
@@ -596,12 +595,12 @@ namespace Tpetra {
       //! Get an ArrayRCP of the row-offsets.
       /*!  The returned buffer exists in host-memory.
        */
-      ArrayRCP<const size_t> getRowPointers() const;
+      ArrayRCP<const size_t> getNodeRowPtrs() const;
 
       //! Get an ArrayRCP of the packed column-indices.
       /*!  The returned buffer exists in host-memory.
        */
-      ArrayRCP<const LocalOrdinal> getPackedIndices() const;
+      ArrayRCP<const LocalOrdinal> getNodePackedIndices() const;
 
       //@}
 

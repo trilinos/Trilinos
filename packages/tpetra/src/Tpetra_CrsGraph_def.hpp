@@ -375,7 +375,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   bool CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::isStorageOptimized() const
   {
-    bool isOpt = (ends_ == null);
+    bool isOpt = (numRowEntries_ == null);
 #ifdef HAVE_TPETRA_DEBUG
     std::string tfecfFuncName("isStorageOptimized()");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( (isOpt == true) && (getProfileType() == DynamicProfile), std::logic_error,
@@ -548,10 +548,10 @@ namespace Tpetra {
     indicesAreLocal_  = (lg == LocalIndices);
     indicesAreGlobal_ = (lg == GlobalIndices);
     nodeNumAllocated_ = 0;
-    if (numAllocPerRow_ == null && numRows_ > 0) {
+    if (numAllocPerRow_ == null && getNodeNumRows() > 0) {
       // this wastes memory, temporarily, but it simplifies the code and interfaces to follow
       // TODO: it is a candidate for change
-      numAllocPerRow_ = arcp<size_t>(numRows_);
+      numAllocPerRow_ = arcp<size_t>(numRows);
       std::fill(numAllocPerRow_.begin(), numAllocPerRow_.end(), numAllocForAllRows_);
     }
     if (getProfileType() == StaticProfile) {
@@ -560,10 +560,10 @@ namespace Tpetra {
       //
       // have the graph do this for us, with thread appropriate allocation if possible
       // not important for globals, because we never multiply out of them, but we might as well use the code that we have
-      rowPtrs_ = LclMatOps::template allocRowPtrs( numAllocPerRow_() );
-      if (lg == LocalIndices) lclInds1D_ = LclMatOps::template allocStorage< LocalOrdinal>( rowPtrs_() );
-      else                    gblInds1D_ = LclMatOps::template allocStorage<GlobalOrdinal>( rowPtrs_() );
-      nodeNumAllocated_ = rowPtrs_[numRows_];
+      rowPtrs_ = LocalMatOps::template allocRowPtrs( numAllocPerRow_() );
+      if (lg == LocalIndices) lclInds1D_ = LocalMatOps::template allocStorage< LocalOrdinal>( rowPtrs_() );
+      else                    gblInds1D_ = LocalMatOps::template allocStorage<GlobalOrdinal>( rowPtrs_() );
+      nodeNumAllocated_ = rowPtrs_[numRows];
     }
     else {
       //
@@ -590,7 +590,7 @@ namespace Tpetra {
         }
       }
     }
-    if (numRows_ > 0) {
+    if (numRows > 0) {
       numRowEntries_ = arcp<size_t>(numRows);
       std::fill( numRowEntries_.begin(), numRowEntries_.end(), (size_t)0 );
     }
@@ -618,7 +618,7 @@ namespace Tpetra {
         std::runtime_error, ": graph indices must be allocated in a static profile."
     );
     ArrayRCP<T> values1D;
-    values1D = LclMatOps::template allocStorage<Scalar>( rowPtrs_() );
+    values1D = LocalMatOps::template allocStorage<T>( rowPtrs_() );
     return values1D;
   }
 
@@ -1431,9 +1431,9 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  ArrayRCP<const size_t> CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getNodeRowBegs() const
+  ArrayRCP<const size_t> CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getNodeRowPtrs() const
   {
-    return rowBegs_;
+    return rowPtrs_;
   }
 
 
@@ -1684,8 +1684,8 @@ namespace Tpetra {
     clearGlobalConstants();
     //
     RowInfo sizeInfo = getRowInfo(lrow);
-    if (sizeInfo.allocSize > 0 && numEntriesPerRow_ != null) {
-      numEntriesPerRow_[lrow] = 0;
+    if (sizeInfo.allocSize > 0 && numRowEntries_ != null) {
+      numRowEntries_[lrow] = 0;
     }
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(getNumEntriesInLocalRow(lrow) != 0 || indicesAreAllocated() == false || isLocallyIndexed() == false, std::logic_error,
@@ -1952,7 +1952,7 @@ namespace Tpetra {
 #endif
     clearGlobalConstants();
     lclGraph_ = null;
-    lclGraph_ = rcp( new local_graph_type(rowMap->getNodeNumElements(), rowMap->getNode()) );
+    lclGraph_ = rcp( new local_graph_type(rowMap_->getNodeNumElements(), rowMap_->getNode()) );
     setSorted(true);
     lowerTriangular_  = false;
     upperTriangular_  = false;
@@ -1968,7 +1968,7 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillComplete(const RCP<ParameterList> &params);
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillComplete(const RCP<ParameterList> &params)
   {
     fillComplete(rowMap_,rowMap_,params);
   }
@@ -2038,31 +2038,48 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillLocalGraph(const RCP<ParameterList> &params)
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillLocalGraph(const RCP<ParameterList> &lclparams)
   {
-    // FINISH: do packed allocation, copy, allocate lclGraph_, hand to lclGraph_
-    if (getProfileType() == StaticProfile) {
-      lclGraph_.setStructure (rowPtrs_, lclInds1D_);
-      // This relinquishes ownership of the pointers.  Now lclGraph_
-      // owns the pointers.
-      lclInds1D_ = null;
-      rowPtrs_   = null;
+    const size_t numRows = getNodeNumRows();
+    ArrayRCP<LocalOrdinal> inds;
+    ArrayRCP<size_t>       ptrs;
+    if (getProfileType() == DynamicProfile) {
+      // 2d -> 1d packed
+      ptrs = LocalMatOps::template allocRowPtrs( rowNumEntries_() );
+      inds = LocalMatOps::template allocStorage<LocalOrdinal>( ptrs() );
+      for (size_t row=0; row < numRows_; ++row) {
+        std::copy( inds2D_[row].begin(), inds+ptrs[row], inds+ptrs[row+1] );
+      }
     }
-    else {
-      lclGraph_.set2DStructure(lclInds2D_,numEntriesPerRow_);
-      // This relinquishes ownership of the pointers.  Now lclGraph_
-      // owns the pointers.
+    else if (getProfileType() == StaticProfile) {
+      // 1d non-packed -> 1d packed
+      if (nodeNumEntries_ != nodeNumAllocated_) {
+        ptrs = LocalMatOps::template allocRowPtrs( rowNumEntries_() );
+        inds = LocalMatOps::template allocStorage<LocalOrdinal>( ptrs() );
+        for (size_t row=0; row < numRows_; ++row) {
+          std::copy( lclInds1D_+rowPtrs_[row], inds+ptrs[row], inds+ptrs[row+1] );
+        }
+      }
+      else {
+        inds = lclInds1D_;
+        ptrs = rowPtrs_;
+      }
+    }
+    // can we ditch the old allocations for the packed one?
+    if ( lclparams->get("Optimize Storage",true) ) {
       lclInds2D_ = null;
-      numEntriesPerRow_ = null;
+      numRowEntries_ = null;
+      // keep the new stuff
+      lclInds1D_ = inds;
+      rowPtrs_ = ptrs;
+      nodeNumAllocated_ = nodeNumEntries_;
     }
-    nodeNumAllocated_ = 0;
-    nodeNumEntries_   = 0;
+    // hand the packed values to the graph
+    lclGraph_->setStructure(ptrs,inds);
+    ptrs = null;
+    inds = null;
     // finalize local graph
-    const bool optStorage = (os == DoOptimizeStorage);
-    lclGraph_.finalize( optStorage );
-    LocalMatOps::finalizeGraph(*lclGraph_,params);
-    // get the data back from the local objects
-    pullFromLocalGraph();
+    LocalMatOps::finalizeGraph(*lclGraph_,lclparams);
   }
 
 
@@ -2165,10 +2182,10 @@ namespace Tpetra {
           lclInds1D_ = arcp_reinterpret_cast<LocalOrdinal>(gblInds1D_).persistingView(0,nodeNumAllocated_);
         }
         else {
-          lclInds1D_ = LclMatOps::template allocStorage<LocalOrdinal>( rowPtrs_() );
+          lclInds1D_ = LocalMatOps::template allocStorage<LocalOrdinal>( rowPtrs_() );
         }
         for (size_t r=0; r < getNodeNumRows(); ++r) {
-          const size_t offset   = rowBegs_[r],
+          const size_t offset   = rowPtrs_[r],
                        numentry = numRowEntries_[r];
           for (size_t j=0; j<numentry; ++j) {
             GlobalOrdinal gid = gblInds1D_[offset + j];
@@ -2766,6 +2783,9 @@ namespace Tpetra {
                                     const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap,
                                     OptimizeOption os)
   {
+    RCP<ParameterList> params = parameterList();
+    if (os == DoOptimizeStorage) params->set<bool>("Optimize Storage",true);
+    else                         params->set<bool>("Optimize Storage",false);
     fillComplete(domainMap,rangeMap,parameterList());
   }
 

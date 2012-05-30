@@ -49,7 +49,6 @@
 
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
-#include <Kokkos_CrsMatrix.hpp>
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_RowMatrix.hpp"
@@ -164,10 +163,11 @@ namespace Tpetra {
   class CrsMatrix : public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
                     public DistObject<char, LocalOrdinal,GlobalOrdinal,Node> {
   public:
-    typedef Scalar        scalar_type;
-    typedef LocalOrdinal  local_ordinal_type;
-    typedef GlobalOrdinal global_ordinal_type;
-    typedef Node          node_type;
+    typedef Scalar                                scalar_type;
+    typedef LocalOrdinal                          local_ordinal_type;
+    typedef GlobalOrdinal                         global_ordinal_type;
+    typedef Node                                  node_type;
+    typedef Map<LocalOrdinal,GlobalOrdinal,Node>  map_type;
     // backwards compatibility defines both of these
     typedef LocalMatOps   mat_vec_type;
     typedef LocalMatOps   mat_solve_type;
@@ -409,9 +409,10 @@ namespace Tpetra {
 
           \post <tt>isFillActive() == false<tt>
           \post <tt>isFillComplete() == true<tt>
-          \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>. See isStorageOptimized() for consequences.
        */ 
-      void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, OptimizeOption os = DoOptimizeStorage);
+      void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, 
+                        const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, 
+                        const RCP<ParameterList> &params);
 
       /*! \brief Signal that data entry is complete. 
 
@@ -424,9 +425,8 @@ namespace Tpetra {
 
           \post <tt>isFillActive() == false<tt>
           \post <tt>isFillComplete() == true<tt>
-          \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>. See isStorageOptimized() for consequences.
        */
-      void fillComplete(OptimizeOption os = DoOptimizeStorage);
+      void fillComplete(const RCP<ParameterList> &params);
 
       //@}
 
@@ -781,6 +781,12 @@ namespace Tpetra {
       TPETRA_DEPRECATED 
       void solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const;
 
+      //! Deprecated. Now takes a ParameterList.
+      TPETRA_DEPRECATED void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, OptimizeOption os = DoOptimizeStorage);
+
+      //! Deprecated. Now takes a ParameterList.
+      TPETRA_DEPRECATED void fillComplete(OptimizeOption os = DoOptimizeStorage);
+
       //@}
 
     private:
@@ -880,6 +886,9 @@ namespace Tpetra {
       typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>       MV;
       typedef Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>             V;
       typedef CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>  Graph;
+      typedef typename LocalMatOps::bind_scalar<Scalar>::other_type                      SparseOps;
+      typedef typename SparseOps::template graph<LocalOrdinal,Node>::graph_type          local_graph_type;
+      typedef typename SparseOps::template matrix<Scalar,LocalOrdinal,Node>::matrix_type local_matrix_type;
       // Enums
       enum GraphAllocationStatus {
         GraphAlreadyAllocated,
@@ -941,9 +950,7 @@ namespace Tpetra {
       ArrayView<const Scalar>    getView(RowInfo rowinfo) const;
       ArrayView<      Scalar>    getViewNonConst(RowInfo rowinfo);
       // local Kokkos objects
-      void pushToLocalMatrix();
-      void pullFromLocalMatrix();
-      void fillLocalMatrix(OptimizeOption os);
+      void fillLocalMatrix(const RCP<ParameterList> &params);
       void fillLocalSparseOps();
       // debugging
       void checkInternalState() const;
@@ -954,8 +961,8 @@ namespace Tpetra {
       RCP<const Graph> staticGraph_;
       RCP<      Graph>     myGraph_;
 
-      typename LocalMatOps::template matrix<Scalar,LocalOrdinal,Node>::other  lclMatrix_;
-      typename LocalMatOps::template rebind<Scalar>::other                    lclMatOps_;
+      RCP<SparseOps>         lclMatOps_;
+      RCP<local_matrix_type> lclMatrix_;
 
       // matrix values. before allocation, both are null.
       // after allocation, one is null.
