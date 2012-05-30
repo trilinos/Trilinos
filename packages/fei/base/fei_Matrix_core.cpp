@@ -95,12 +95,18 @@ fei::Matrix_core::Matrix_core(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
     throw std::runtime_error("fei::Matrix_core constructed with NULL fei::MatrixGraph");
   }
 
-  eqnComm_.reset(new fei::EqnComm(comm_, numLocalEqns));
+  vecSpace_ = matrixGraph->getRowSpace();
+
+  if (vecSpace_->initCompleteAlreadyCalled()) {
+    vecSpace_->getGlobalIndexOffsets(globalOffsets_);
+    eqnComm_.reset(new fei::EqnComm(comm_, numLocalEqns, globalOffsets_));
+  }
+  else {
+    eqnComm_.reset(new fei::EqnComm(comm_, numLocalEqns));
+  }
 
   localProc_ = fei::localProc(comm_);
   numProcs_ = fei::numProcs(comm_);
-
-  vecSpace_ = matrixGraph->getRowSpace();
 
   setName("dbg");
 

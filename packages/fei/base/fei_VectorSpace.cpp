@@ -190,6 +190,7 @@ fei::VectorSpace::VectorSpace(MPI_Comm comm, const char* name)
     lastLocalOffset_(-1),
     eqnNumbers_(),
     newInitData_(false),
+    initCompleteAlreadyCalled_(false),
     name_(),
     dbgprefix_("VecSpc: "),
     checkSharedIDs_(false)
@@ -711,7 +712,7 @@ int fei::VectorSpace::initComplete()
   }
 
   newInitData_ = false;
-
+  initCompleteAlreadyCalled_ = true;
   return(0);
 }
 

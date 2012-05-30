@@ -256,6 +256,11 @@ namespace fei {
         @return error-code 0 if successful
     */
     int initComplete();
+
+    /** Return true if initComplete() has already been called.
+    */
+    bool initCompleteAlreadyCalled() const { return initCompleteAlreadyCalled_; }
+
     //@}
 
     //@{ \name Attribute query methods
@@ -799,6 +804,7 @@ namespace fei {
     std::vector<int> eqnNumbers_;
 
     bool newInitData_;
+    bool initCompleteAlreadyCalled_;
 
     std::string name_;
     std::string dbgprefix_;
