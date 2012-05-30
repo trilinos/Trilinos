@@ -87,14 +87,6 @@ namespace Kokkos {
     //! @name Data entry and accessor methods.
     //@{
 
-    //! \brief Allocate and initialize the storage for the matrix values.
-    /**
-        This is used by Tpetra.
-
-        \pre numEntries.size() == getNumRows()
-     */
-    virtual ArrayRCP<Scalar> allocStorage(const ArrayView<const size_t> &numEntriesPerRow) const;
-
     //! Submit the matrix values.
     /**
         Must be congruous with the associated graph.
@@ -122,22 +114,6 @@ namespace Kokkos {
   //==============================================================================
   template <class Scalar, class Ordinal, class Node>
   CrsMatrixBase<Scalar,Ordinal,Node>::~CrsMatrixBase() {
-  }
-
-  // ======= default implementation calls graph, using a method that doesn't exist on the base graph class ===========
-  template <class Scalar, class Ordinal, class Node>
-  ArrayRCP<Scalar> CrsMatrixBase<Scalar,Ordinal,Node>::allocStorage(const ArrayView<const size_t> &numEntriesPerRow) const
-  { 
-    std::string tfecfFuncName("allocStorage( in(numEntriesPerRow) )");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        (size_t)numEntriesPerRow.size() != (size_t)graph_->getNumRows(),
-        std::runtime_error, " number of rows doesn't match.")
-    const size_t totalNumEntries = std::accumulate( numEntriesPerRow.begin(), numEntriesPerRow.end(), (size_t)0 );
-    // alloc inds
-    ArrayRCP<Scalar> vals;
-    if (totalNumEntries > 0) vals = arcp<Scalar>(totalNumEntries);
-    std::fill( vals.begin(), vals.end(), Teuchos::ScalarTraits<Scalar>::zero() );
-    return vals;
   }
 
 } // namespace Kokkos

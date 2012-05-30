@@ -253,6 +253,13 @@ namespace Kokkos {
     //! @name Initialization of graph and matrix
     //@{
 
+    //! \brief Allocate and initialize the storage for the matrix values.
+    static ArrayRCP<size_t> allocRowPtrs(const ArrayView<const size_t> &rowPtrs) const;
+
+    //! \brief Allocate and initialize the storage for a sparse graph.
+    template <class T> 
+    static ArrayRCP<T> allocStorage(const ArrayView<const size_t> &ptrs) const;
+
     //! Finalize a graph
     static void finalizeGraph(DefaultCrsGraph<Ordinal,Node> &graph, const RCP<ParameterList> &params);
 
@@ -683,6 +690,34 @@ namespace Kokkos {
     }
     return;
   }
+
+
+  // ======= pointer allocation ===========
+  template <class Scalar, class Ordinal, class Node>
+  ArrayRCP<size_t> 
+  DefaultHostSparseOps<Scalar,Ordinal,Node>::allocRowPtrs(const ArrayView<const size_t> &numEntriesPerRow) 
+  {
+    const size_t totalNumEntries = std::accumulate( numEntriesPerRow.begin(), numEntriesPerRow.end(), (size_t)0 );
+    ArrayRCP<size_t> ptrs = arcp<size_t>( numEntriesPerRow.size() + 1 );
+    ptrs[0] = 0;
+    std::partial_sum( numEntriesPerRow.begin(), numEntriesPerRow.end(), ptrs.begin()+1 );
+    return ptrs;
+  }
+
+  // ======= other allocation ===========
+  template <class Scalar, class Ordinal, class Node>
+  template <class T>
+  ArrayRCP<T> 
+  DefaultHostSparseOps<Scalar,Ordinal,Node>::allocStorage(const ArrayView<const size_t> &rowPtrs)
+  { 
+    const size_t totalNumEntries = *rowPtrs.end();
+    // alloc data
+    ArrayRCP<T> vals;
+    if (totalNumEntries > 0) vals = arcp<T>(totalNumEntries);
+    std::fill( vals.begin(), vals.end(), Teuchos::ScalarTraits<T>::zero() );
+    return vals;
+  }
+
 
   /** \example CrsMatrix_DefaultMultiplyTests.hpp
     * This is an example that unit tests and demonstrates the implementation requirements for the DefaultSparseOps class.

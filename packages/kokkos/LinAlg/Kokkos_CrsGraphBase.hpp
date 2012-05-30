@@ -88,13 +88,6 @@ namespace Kokkos {
     //! Return the number of rows in the graph.
     size_t getNumRows() const;
 
-    //! \brief Allocate and initialize the storage for a sparse graph.
-    /**
-        \pre numEntries.size() == getNumRows()
-     */
-    virtual void allocStorage(const ArrayView<const size_t> &numEntries,
-                              ArrayRCP<size_t> &ptrs, ArrayRCP<Ordinal> &inds) const;
-
     /// \brief Submit the indices and offset for the graph.
     /**
           \pre indices for row \c r are inds[r], where \f$r \in [b,e)\f$, where \f$b = ptrs[r]\f$ and \f$e = ptrs[r-1]\f$
@@ -131,27 +124,6 @@ namespace Kokkos {
   template <class Ordinal, class Node>
   size_t CrsGraphBase<Ordinal,Node>::getNumRows() const {
     return numRows_;
-  }
-
-  // ======= numrows ===========
-  template <class Ordinal, class Node>
-  void CrsGraphBase<Ordinal,Node>::allocStorage(
-      const ArrayView<const size_t> &numEntriesPerRow,
-      ArrayRCP<size_t> &ptrs, ArrayRCP<Ordinal> &inds) const
-  {
-    std::string tfecfFuncName("allocStorage( in(numEntriesPerRow), out(ptrs), out(inds) )");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        (size_t)numEntriesPerRow.size() != (size_t)getNumRows(),
-        std::runtime_error, " number of rows doesn't match.")
-    const size_t totalNumEntries = std::accumulate( numEntriesPerRow.begin(), numEntriesPerRow.end(), (size_t)0 );
-    // alloc inds
-    if (totalNumEntries > 0) inds = arcp<Ordinal>(totalNumEntries);
-    else                     inds = null;
-    std::fill( inds.begin(), inds.end(), Teuchos::OrdinalTraits<Ordinal>::zero() );
-    // alloc ptrs and set them
-    ptrs = arcp<size_t>( getNumRows()+1 );
-    ptrs[0] = 0;
-    std::partial_sum( numEntriesPerRow.begin(), numEntriesPerRow.end(), ptrs.begin()+1 );
   }
 
 } // namespace Kokkos
