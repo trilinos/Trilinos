@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -51,49 +51,74 @@
 
 namespace KokkosArray {
 
-//----------------------------------------------------------------------------
-/** \brief  Plain-old-data value allocated on a compute device.
- */
+/// \class Value
+/// \brief View of a single value allocated on a compute device.
+///
+/// \tparam ValueType The type of the value.  Must be a "plain old
+///   data" type.
+/// \tparam DeviceType Type of the compute device.
+///
+/// This class wraps a single datum of type ValueType.  That datum's
+/// memory lives in the compute device's memory.  Depending on the
+/// type of compute device, that may mean that the host processor
+/// can't access the value directly (without first copying to a host
+/// mirror Value).
 template< typename ValueType , class DeviceType >
 class Value {
 public:
   typedef ValueType  value_type ;
   typedef DeviceType device_type ;
 
+  /// \brief The type of a Value that resides in host memory.
+  ///
+  /// If you want to read on the host a Value stored on a compute
+  /// device, you'll need to do a deep_copy from the compute device's
+  /// Value to a Value of this type.  A Value of this type is stored
+  /// on the host, and its raw value can be accessed directly via its
+  /// operator* method (see below).
   typedef Value< value_type , void /* Host */ > HostMirror ;
 
-  /*------------------------------------------------------------------*/
-  /** \brief  Access value */
+  /// \brief Access the value directly.
+  ///
+  /// \warning If this is not a host Value (i.e., if the DeviceType is
+  ///   not a host device), then this method may only be called in a
+  ///   compute kernel.  If this is a host Value, then you may call
+  ///   this method either inside or outside of a compute kernel.
   value_type & operator* () const ;
 
-  /*------------------------------------------------------------------*/
-  /** \brief  Construct a NULL view */
+  //! Construct a NULL view (a view of no value).
   Value();
 
-  /** \brief  Construct a view of the array */
+  //! Construct a view of the given value.
   Value( const Value & rhs );
 
-  /** \brief  Assign to a view of the rhs.
-   *          If the old view is the last view
-   *          then allocated memory is deallocated.
-   */
+  /// \brief Replace this Value's view with a view of rhs.
+  ///
+  /// If this Value is the last view, then allocated memory is
+  /// deallocated.
   Value & operator = ( const Value & rhs );
 
-  /**  \brief  Destroy this view of the value.
-   *           If the last view then allocated memory is deallocated.
-   */
+  /// \brief Destroy this view of the value.
+  ///
+  /// If this is the last view, then allocated memory is deallocated.
   ~Value();
 
-  /*------------------------------------------------------------------*/
-  /** \brief  Allow the Value to be a parallel reduce
-   *          'finalize functor' that assigns the reduced value
-   *          on the device.
-   */
+  /// \brief In a kernel, assign rhs to the value stored in *this.
+  ///
+  /// This method allows the Value to work as a parallel reduce
+  /// 'finalize functor' that assigns the reduced value on the device.
+  ///
+  /// \warning If the DeviceType is not a host device, then this
+  ///   method may only be called in a compute kernel, unless the
+  ///   device type's memory is accessible from the host.
   void operator()( const value_type & rhs ) const ;
 };
 
 //----------------------------------------------------------------------------
 
+/// \fn create_value()
+/// \brief Nonmember constructor of a Value.
+/// \tparam Type Specialization of Value (see above).
 template< class Type >
 inline
 Value< typename Type::value_type , typename Type::device_type >
@@ -103,6 +128,9 @@ create_value()
   return Impl::Factory<type,void>::create();
 }
 
+/// \fn create_value()
+/// \brief Nonmember constructor of a Value, with a label.
+/// \tparam Type Specialization of Value (see above).
 template< class Type >
 inline
 Value< typename Type::value_type , typename Type::device_type >
@@ -115,6 +143,8 @@ create_value( const std::string & label )
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
+/// \brief Copy a raw ValueType (a plain old datum) to a Value.
+/// \relatesalso Value
 template< typename ValueType , class DeviceDst >
 inline
 void deep_copy( const Value<ValueType,DeviceDst> & dst ,
@@ -125,6 +155,8 @@ void deep_copy( const Value<ValueType,DeviceDst> & dst ,
   Impl::Factory<dst_type,src_type>::deep_copy( dst , src );
 }
 
+/// \brief Copy a Value to a raw ValueType (a plain old datum) in host memory.
+/// \relatesalso Value
 template< typename ValueType , class DeviceSrc >
 inline
 void deep_copy( ValueType & dst ,
@@ -135,6 +167,10 @@ void deep_copy( ValueType & dst ,
   Impl::Factory<dst_type,src_type>::deep_copy( dst , src );
 }
 
+/// \brief Copy a Value to another Value.
+/// \relatesalso Value
+///
+/// The two Values may have different device types.
 template< typename ValueType , class DeviceDst , class DeviceSrc >
 void deep_copy( const Value< ValueType , DeviceDst > & dst ,
                 const Value< ValueType , DeviceSrc > & src )
