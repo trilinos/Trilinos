@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -50,11 +50,13 @@
 
 namespace KokkosArray {
 
+/// \class Cuda
+/// \brief KokkosArray device that uses CUDA to run on GPUs.
 class Cuda {
 public:
-  /*--------------------------------*/
-  /* required type declarations and functions for a device */
-  
+  //! \name Type declarations that all KokkosArray devices must provide.
+  //@{
+
   typedef Cuda          memory_space ;
   typedef unsigned int  size_type ;
 
@@ -71,8 +73,6 @@ public:
   struct IndexMap {
     typedef Impl::IndexMapLeft<memory_space,Rank,N1,N2,N3,N4,N5,N6,N7> type ;
   };
-  
-  /*--------------------------------*/
 
   struct SelectDevice {
     int cuda_device_id ;
@@ -80,43 +80,51 @@ public:
     explicit SelectDevice( int id ) : cuda_device_id( id ) {}
   };
 
-  static void initialize( const SelectDevice = SelectDevice() );
+  //@}
+  //! \name Functions that all KokkosArray devices must implement.
+  //@{
 
-  static void finalize();
-
-  /*--------------------------------*/
-  /** \brief  Set the device in a 'sleep' state.
+  /** \brief  Set the device in a "sleep" state.
    *
-   *  This function sets the device in a "sleep" state
-   *  in which it is not ready for work and should
-   *  consume less resources.
+   * This function sets the device in a "sleep" state in which it is
+   * not ready for work.  This may consume less resources than if the
+   * device were in an "awake" state, but it may also take time to
+   * bring the device from a sleep state to be ready for work.
    *
-   *  Return 'true' if the device is in the 'sleep' state.
-   *  Return 'false' if the device is actively working and
-   *  could not enter the 'sleep' state.
+   * \return True if the device is in the "sleep" state, else false if
+   *   the device is actively working and could not enter the "sleep"
+   *   state.
    */
   static bool sleep();
 
-  /** \brief  Wake the device from the 'sleep' state so
-   *          it is ready for work.
-   *
-   *  Return 'true' if the device is in the 'ready' state.
-   *  Return 'false' if the device is actively working.
-   */
+  /// \brief Wake the device from the 'sleep' state so it is ready for work.
+  ///
+  /// \return True if the device is in the "ready" state, else "false"
+  ///  if the device is actively working (which also means that it's
+  ///  awake).
   static bool wake();
 
-  /** \brief  The parallel_for or parallel_reduce dispatch of a
-   *          functor may return before the functor completes.
-   *          Wait until all dispatched functors complete.
-   */
+  /// \brief Wait until all dispatched functors complete.
+  ///
+  /// The parallel_for or parallel_reduce dispatch of a functor may
+  /// return asynchronously, before the functor completes.  This
+  /// method does not return until all dispatched functors on this
+  /// device have completed.
   static void fence();
 
-  /*--------------------------------*/
-  /* -- Device specific functions --*/
+  //! Free any resources being consumed by the device.
+  static void finalize();
+
+  //@}
+  //! \name Device-specific functions
+  //@{
+
+  //! Initialize, telling the CUDA run-time library which device to use.
+  static void initialize( const SelectDevice = SelectDevice() );
 
   static size_type detect_device_count();
 
-  /*--------------------------------*/
+  //@}
 };
 
 } // namespace KokkosArray
