@@ -175,12 +175,12 @@ void Environment::commitParameters()
   
 #ifndef Z2_OMIT_ALL_PROFILING
   string &f2 = 
-    params_.get<string>("memory_profiling_output_file", Z2_UNSET_STRING);
+    params_.get<string>("memory_output_file", Z2_UNSET_STRING);
   int &os2 = 
-    params_.get<int>("memory_profiling_output_stream", NUM_OUTPUT_STREAMS);
+    params_.get<int>("memory_output_stream", NUM_OUTPUT_STREAMS);
 
   const Array<int> *reporters2 = 
-    params_.getPtr<Array<int> >("memory_profiling_procs");
+    params_.getPtr<Array<int> >("memory_procs");
 
   bool doMemory = true;
 

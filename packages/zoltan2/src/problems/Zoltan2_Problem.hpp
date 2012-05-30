@@ -72,7 +72,8 @@ public:
 #else
   void printTimers() const
   {
-    timer_->printAndResetToZero();
+    if (!timer_.is_null())
+      timer_->printAndResetToZero();
   }
 #endif
 
@@ -230,7 +231,7 @@ template <typename Adapter>
   // We assume the timing output parameters have not changed,
   // and carry on with the same timer.
 
-  if (timer_.getRawPtr() != NULL)
+  if (!timer_.is_null())
     env_->setTimer(timer_);
 }
 

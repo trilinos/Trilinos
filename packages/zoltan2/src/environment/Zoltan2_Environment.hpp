@@ -404,10 +404,10 @@ public:
    *
    *   \param msg   The message to be output. If this process
    *          is one that prints memory profiling messages
-   *          (as indicated by the parameter \c memory_profiling_procs), 
+   *          (as indicated by the parameter \c memory_procs), 
    *          the \c msg (along with kilobytes currently allocated to
    *          this process) will issued.  The output target is either the
-   *       \c memory_profiling_output_stream or \c memory_profiling_output_file.
+   *       \c memory_output_stream or \c memory_output_file.
    *          If neither was set, it goes to std::cout.
    *
    * Memory profiling is only supported on Linux nodes that 

@@ -15,6 +15,8 @@
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 
+#include <Teuchos_CommandLineProcessor.hpp>
+
 #include <vector>
 
 using std::vector;
@@ -27,6 +29,7 @@ using Teuchos::rcp;
 using Teuchos::Comm;
 using Teuchos::ArrayView;
 using Teuchos::ArrayRCP;
+using Teuchos::CommandLineProcessor;
 
 typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
 typedef Tpetra::Map<lno_t, gno_t, node_t> tMap_t;
@@ -221,12 +224,18 @@ int main(int argc, char *argv[])
   int numTestCuts = 1;
   int weightDim = 0;
   string objective("balance_object_weight");
+  string timingType("no_timers");
+  string memoryOn("memoryOn");
+  string memoryOff("memoryOff");
+  bool doMemory=false;
 
-  Teuchos::CommandLineProcessor commandLine(false, true);
+  CommandLineProcessor commandLine(false, true);
   commandLine.setOption("size", &numGlobalCoords, 
     "Approximate number of global coordinates.");
   commandLine.setOption("testCuts", &numTestCuts, 
     "Number of test cuts to make when looking for bisector.");
+  commandLine.setOption("weightDim", &weightDim, 
+    "Number of weights per coordinate, zero implies uniform weights.");
   commandLine.setOption("weightDim", &weightDim, 
     "Number of weights per coordinate, zero implies uniform weights.");
 
@@ -238,7 +247,27 @@ int main(int argc, char *argv[])
 
   commandLine.setOption("objective", &objective,  doc.c_str());
 
-  commandLine.parse(argc, argv);
+  commandLine.setOption("timers", &timingType,
+    "no_timers, micro_timers, macro_timers, both_timers");
+
+  commandLine.setOption(memoryOn.c_str(), memoryOff.c_str(), &doMemory,
+    "do memory profiling");
+
+  CommandLineProcessor::EParseCommandLineReturn rc = 
+    commandLine.parse(argc, argv);
+
+  if (rc != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL){
+    if (rc == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED){
+      if (rank==0)
+        cout << "PASS" << endl;
+      return 1;
+    }
+    else{
+      if (rank==0)
+        cout << "FAIL" << endl;
+      return 0;
+    }
+  }
 
   gno_t globalSize = static_cast<gno_t>(numGlobalCoords);
 
@@ -251,7 +280,8 @@ int main(int argc, char *argv[])
     int wt = 0;
     scalar_t scale = 1.0;
     for (int i=0; i < weightDim; i++){
-      weights[i] = makeWeights(comm, numLocalCoords, weightTypes(wt++), scale, rank);
+      weights[i] = 
+        makeWeights(comm, numLocalCoords, weightTypes(wt++), scale, rank);
       if (wt == numWeightTypes){
         wt = 0;
         scale++;
@@ -289,11 +319,16 @@ int main(int argc, char *argv[])
   // Parameters
 
   Teuchos::ParameterList params;
-  std::ostringstream fname;
-//  fname << "timers_" << nprocs << "_" << globalCount << ".txt";
-//  params.set("timer_output_file" , fname.str());
-  params.set("timer_output_stream" , "std::cout");
-  params.set("timer_type" , "macro_timers");
+
+  if (timingType != "no_timers"){
+    params.set("timer_output_stream" , "std::cout");
+    params.set("timer_type" , timingType);
+  }
+
+  if (doMemory){
+    params.set("memory_output_stream" , "std::cout");
+    params.set("memory_procs" , "0");
+  }
 
   params.set("debug_output_stream" , "std::cout");
   params.set("debug_procs" , "0");
@@ -326,4 +361,7 @@ int main(int argc, char *argv[])
     problem.getSolution().printMetrics(cout);
     cout << "PASS" << endl;
   }
+
+  return 0;
 }
+

@@ -26,9 +26,9 @@ namespace Zoltan2
 
    Parameters governing may be output:
 
-     \li \c memory_profiling_procs
-     \li \c memory_profiling_output_stream
-     \li \c memory_profiling_output_file
+     \li \c memory_procs
+     \li \c memory_output_stream
+     \li \c memory_output_file
 
    For more information see at their definitions in
    createAllParameters() in Zoltan2_Parameters.cpp.

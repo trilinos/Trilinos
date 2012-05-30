@@ -110,11 +110,11 @@ int main(int argc, char *argv[])
   myParams.set("debug_output_stream", "std::cout");
 
   if (nprocs > 3)
-    myParams.set("memory_profiling_procs", "0-1,3"); 
+    myParams.set("memory_procs", "0-1,3"); 
   else
-    myParams.set("memory_profiling_procs", "0"); 
+    myParams.set("memory_procs", "0"); 
 
-  myParams.set("memory_profiling_output_file", "memInfo.txt");
+  myParams.set("memory_output_file", "memInfo.txt");
 
   myParams.set("speed_versus_quality", "speed");
   myParams.set("memory_versus_speed", "memory");
@@ -234,7 +234,7 @@ int main(int argc, char *argv[])
   Teuchos::ParameterList newParams = oldParams;
   newParams.set("error_check_level", "debug_mode_assertions");
   newParams.set("memory_versus_speed", "speed");
-  newParams.remove("memory_profiling_output_file");
+  newParams.remove("memory_output_file");
   
   Teuchos::ParameterList &newPartParams = newParams.sublist("partitioning");
   newPartParams.set("imbalance_tolerance", "1.05");

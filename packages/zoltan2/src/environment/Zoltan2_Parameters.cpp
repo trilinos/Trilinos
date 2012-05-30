@@ -297,8 +297,8 @@ void createAllParameters(Teuchos::ParameterList &pList)
   pList.set<string>(parameterName, "cout", docString.str(),
     str2intValidatorP);
 
-  ////////// topLevel/memory_profiling_output_stream
-  parameterName = string("memory_profiling_output_stream");
+  ////////// topLevel/memory_output_stream
+  parameterName = string("memory_output_stream");
 
   str2intValidatorP =
     rcp(new str2intValidator(ostreamStrings, ostreamIntegrals, parameterName));
@@ -339,8 +339,8 @@ void createAllParameters(Teuchos::ParameterList &pList)
 
   pList.set<string>(parameterName, "/dev/null", docString.str(), fnameValidatorP);
 
-  ////////// topLevel/memory_profiling_output_file
-  parameterName = string("memory_profiling_output_file");
+  ////////// topLevel/memory_output_file
+  parameterName = string("memory_output_file");
 
   docString.str("");
   fnameValidatorP->printDoc(
@@ -366,8 +366,8 @@ void createAllParameters(Teuchos::ParameterList &pList)
 
   pList.set<string>(parameterName, "0", docString.str(), intRangeValidatorP);
 
-  ////////// topLevel/memory_profiling_procs
-  parameterName = string("memory_profiling_procs");
+  ////////// topLevel/memory_procs
+  parameterName = string("memory_procs");
 
   docString.str("");
   intRangeValidatorP->printDoc(

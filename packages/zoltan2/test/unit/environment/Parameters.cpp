@@ -99,16 +99,16 @@ int main(int argc, char *argv[])
   all.set("debug_level", "basic_status");
 
   all.set("debug_procs", "1,2,5-10,2");
-  all.set("memory_profiling_procs", "1,2,3,4,all");
+  all.set("memory_procs", "1,2,3,4,all");
 
   all.set("debug_output_stream", "std::cerr");
   all.set("timer_output_stream", "std::cout");
-  all.set("memory_profiling_output_stream", "/dev/null");
+  all.set("memory_output_stream", "/dev/null");
 
 
   all.set("debug_output_file", "/home/me/debug.txt");
   all.set("timer_output_file", "/home/me/performance.txt");
-  all.set("memory_profiling_output_file", "/home/me/memoryUsed.txt");
+  all.set("memory_output_file", "/home/me/memoryUsed.txt");
 
   all.set("speed_versus_quality", "speed");
   all.set("memory_versus_speed", "memory");
@@ -164,8 +164,8 @@ int main(int argc, char *argv[])
   Zoltan2::printIntegralRangeList(std::cout, a1);
   std::cout << std::endl;
 
-  a1 = all.get<rangeList_t>("memory_profiling_procs");
-  std::cout << "memory_profiling_procs translation: ";
+  a1 = all.get<rangeList_t>("memory_procs");
+  std::cout << "memory_procs translation: ";
   Zoltan2::printIntegralRangeList(std::cout, a1);
   std::cout << std::endl;
 
