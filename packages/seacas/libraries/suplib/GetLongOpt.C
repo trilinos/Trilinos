@@ -1,6 +1,7 @@
 /* S Manoharan. Advanced Computer Research Institute. Lyon. France */
 #include <GetLongOpt.h>
 #include <string.h>
+#include <sstream>
 
 GetLongOption::GetLongOption(const char optmark)
   : table(NULL), ustring(NULL), pname(NULL), last(NULL),
@@ -101,6 +102,7 @@ GetLongOption::parse(int argc, char * const *argv)
       enum { NoMatch, ExactMatch, PartialMatch, MultipleMatch}
       matchStatus = NoMatch;
 
+      std::ostringstream errmsg;
       Cell *pc = 0;	// pointer to the partially-matched cell
       for ( t = table; t != 0; t = t->next ) {
 	 if ( strncmp(t->option, token, (tmptoken - token)) == 0 ) {
@@ -124,14 +126,14 @@ GetLongOption::parse(int argc, char * const *argv)
 		 if (matchStatus == PartialMatch) {
 		   // First time, print the message header and the first
 		   // matched duplicate...
-		   std::cerr << "ERROR: " << pname
-			     << ": Multiple matches found for option '"
-			     << optmarker << strtok(token,"= ") << "'.\n";
-		   std::cerr << "\t" << optmarker << pc->option << ": "
-			<< pc->description << "\n";
+		   errmsg << "ERROR: " << pname
+			  << ": Multiple matches found for option '"
+			  << optmarker << strtok(token,"= ") << "'.\n";
+		   errmsg << "\t" << optmarker << pc->option << ": "
+			  << pc->description << "\n";
 		 }
-		 std::cerr << "\t" << optmarker << t->option  << ": "
-		      <<  t->description << "\n";
+		 errmsg << "\t" << optmarker << t->option  << ": "
+			<<  t->description << "\n";
 		 matchStatus = MultipleMatch;
 	       }
 	    }
@@ -151,7 +153,8 @@ GetLongOption::parse(int argc, char * const *argv)
 	 return -1;		/* no match */
       }
       else if ( matchStatus == MultipleMatch ) {
-	 return -1;		/* no match */
+	std::cerr << errmsg.str();
+	return -1;		/* no match */
       }
 
    } /* end while */
@@ -300,4 +303,3 @@ GetLongOption::usage(std::ostream &outfile) const
    }
    outfile.flush();
 }
-
