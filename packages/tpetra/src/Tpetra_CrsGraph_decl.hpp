@@ -594,16 +594,14 @@ namespace Tpetra {
       //@{
 
       //! Get an ArrayRCP of the row-offsets.
-      /*! Returns null if optimizeStorage() hasn't been called.
-          The returned buffer exists in host-memory.
+      /*!  The returned buffer exists in host-memory.
        */
-      ArrayRCP<const size_t>       getNodeRowBegs() const;
+      ArrayRCP<const size_t> getRowPointers() const;
 
       //! Get an ArrayRCP of the packed column-indices.
-      /*! Returns null if optimizeStorage() hasn't been called.
-          The returned buffer exists in host-memory.
+      /*!  The returned buffer exists in host-memory.
        */
-      ArrayRCP<const LocalOrdinal> getNodePackedIndices() const;
+      ArrayRCP<const LocalOrdinal> getPackedIndices() const;
 
       //@}
 
@@ -664,12 +662,14 @@ namespace Tpetra {
 
       void allocateIndices (ELocalGlobal lg);
 
-      template<class T>
-      void allocateValues (ArrayRCP<T> &values1D, ArrayRCP<ArrayRCP<T> > &values2D) const;
+      template <class T>
+      ArrayRCP<T> allocateValues1D () const;
+      template <class T>
+      ArrayRCP<ArrayRCP<T> > allocateValues2D () const;
 
-      template<ELocalGlobal lg>
+      template <ELocalGlobal lg>
       RowInfo updateAlloc (RowInfo rowinfo, size_t allocSize);
-      template<ELocalGlobal lg, class T> 
+      template <ELocalGlobal lg, class T> 
       RowInfo updateAllocAndValues (RowInfo rowinfo, size_t allocSize, ArrayRCP<T> &rowVals);
       //
       // Local versus global indices
@@ -766,11 +766,11 @@ namespace Tpetra {
       ArrayRCP<GlobalOrdinal>                     gblInds1D_;
       // offset to the beg entries of each row. only used for 1D (Static) allocation.
       // i.e., indices for row R are lclInds1D_[i] for i in [b,e) where b = rowPtrs_[R] and e = rowPtrs_[R+1]
-      // only the first numEntries_[R] of these are valid
+      // only the first numRowEntries_[R] of these are valid
       // both of these are null for 2D (Dynamic) allocations
-      // rowPtrs_ has length N+1, while numEntries_ has length N
+      // rowPtrs_ has length N+1, while numRowEntries_ has length N
       // TODO: it is possible that making these size_t is overkill; revisit
-      ArrayRCP<size_t> rowPtrs_, numEntries_;
+      ArrayRCP<size_t> rowPtrs_;
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       //
       // 2D/Dynamic structures. 
@@ -780,8 +780,9 @@ namespace Tpetra {
       ArrayRCP<ArrayRCP< LocalOrdinal> > lclInds2D_;
       //! <tt>gblInds2D_[r]</tt> are the indices for row \c r. 
       ArrayRCP<ArrayRCP<GlobalOrdinal> > gblInds2D_;
+
       //! The number valid entries in the row.
-      ArrayRCP<size_t>       numEntriesPerRow_;
+      ArrayRCP<size_t>       numRowEntries_;
 
       // TODO: these might be useful in the future
       // ArrayRCP< typedef ArrayRCP<const GlobalOrdinal>::iterator > gRowPtrs_;
