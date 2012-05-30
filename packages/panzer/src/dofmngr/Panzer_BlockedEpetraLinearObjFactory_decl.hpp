@@ -233,6 +233,12 @@ public:
    Teuchos::RCP<Epetra_CrsMatrix> getEpetraMatrix(int i,int j) const;
    Teuchos::RCP<Epetra_CrsMatrix> getGhostedEpetraMatrix(int i,int j) const;
 
+   //! how many block rows
+   int getBlockRowCount() const;
+
+   //! how many block columns
+   int getBlockColCount() const;
+
 protected:
 /*************** Generic methods/members *******************/
 

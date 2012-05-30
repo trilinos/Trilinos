@@ -914,6 +914,20 @@ getEpetraComm() const
    return comm_;
 }
 
+template <typename Traits,typename LocalOrdinalT>
+int BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+getBlockRowCount() const
+{
+   return gidProviders_.size();
+}
+
+template <typename Traits,typename LocalOrdinalT>
+int BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
+getBlockColCount() const
+{
+   return gidProviders_.size();
+}
+
 }
 
 #endif

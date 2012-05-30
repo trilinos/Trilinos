@@ -118,6 +118,18 @@ namespace panzer_stk {
 
     const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & getPhysicsBlocks() const;
 
+    //! Get mesh object used to build model evaluator
+    Teuchos::RCP<panzer_stk::STK_Interface> getMesh() const 
+    { return m_mesh; }
+
+    //! Get global indexer used to build model evaluator
+    Teuchos::RCP<panzer::UniqueGlobalIndexerBase> getGlobalIndexer() const 
+    { return m_global_indexer; }
+
+    //! Get linear object factory used to build model evaluator
+    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > getLinearObjFactory() const
+    { return m_lin_obj_factory; }
+
   protected:
     void addVolumeResponses(panzer::ResponseLibrary<panzer::Traits> & rLibrary,
                             const panzer_stk::STK_Interface & mesh,const Teuchos::ParameterList & pl) const;
