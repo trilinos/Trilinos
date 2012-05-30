@@ -19,8 +19,6 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::Comm;
 
-#ifdef HAVE_ZOLTAN2_ZOLTAN
-
 //
 // A few of the RCB tests done by Zoltan in nightly testing.
 //
@@ -305,17 +303,3 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-#else
-
-int main(int argc, char *argv[])
-{
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  int rank = comm->getRank();
-  
-  if (rank == 0 )
-    std::cout << "PASS" << std::endl;
-  
-  return 0;
-}
-#endif

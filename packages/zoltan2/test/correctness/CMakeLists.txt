@@ -9,15 +9,11 @@ INCLUDE(TribitsAddExecutableAndTest)
 ## in the same input data and run some of
 ## the same tests that Zoltan runs.
 
-IF (HAVE_${PACKAGE_NAME}_ZOLTAN)
-
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   zoltanCompare
   SOURCES zoltanCompare.cpp
-  NUM_MPI_PROCS 2-8
-  COMM mpi
+  NUM_MPI_PROCS 4
+  COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
-
-ENDIF()
