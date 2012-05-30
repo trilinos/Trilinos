@@ -121,9 +121,15 @@ public:
   /*------------------------------------------------------------------*/
 
   /// \brief Constructor producing a view of a single vector in rhs.
+  ///
+  /// \param iV [in] Index of the vector of rhs to view.
   MultiVector( const MultiVector & rhs , size_type iV );
 
   /// \brief Constructor producing a view of a contiguous range of vectors in rhs.
+  ///
+  /// \param iVbeg [in] Index of the first vector in the range.
+  /// \param iVend [in] Exclusive index of the last vector in the range.
+  ///   (For example, for the range 0, 1, ... N-1, iVbeg=0 and iVend=N.)
   MultiVector( const MultiVector & rhs , size_type iVbeg , size_type iVend );
 
   /*------------------------------------------------------------------*/
