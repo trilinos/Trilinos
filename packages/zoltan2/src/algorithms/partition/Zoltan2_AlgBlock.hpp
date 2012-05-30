@@ -62,8 +62,7 @@ void AlgBlock(
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::scalar_t scalar_t;
 
-  if (env->doStatus())
-    env->debug(DETAILED_STATUS, string("Entering AlgBlock"));
+  env->debug(DETAILED_STATUS, string("Entering AlgBlock"));
 
   int rank = env->myRank_;
   int nprocs = env->numProcs_;
@@ -196,6 +195,8 @@ void AlgBlock(
   Array<scalar_t> partTotal(numGlobalParts, 0);
   ArrayRCP<partId_t> gnoPart= arcp(new partId_t [numGnos], 0, numGnos);
 
+  env->memory("Block algorithm memory");
+
   for (size_t i=0; i<numGnos; i++){
     scalar_t gnoWeight = (uniformWeights ? 1.0 : wgtList[0][i]);
     /* wtsum is now sum of all lower-ordered object */
@@ -230,8 +231,7 @@ void AlgBlock(
 
   solution->setParts(gnos, gnoPart, metrics);
 
-  if (env->doStatus())
-    env->debug(DETAILED_STATUS, string("Exiting AlgBlock"));
+  env->debug(DETAILED_STATUS, string("Exiting AlgBlock"));
 }
 
 }   // namespace Zoltan2

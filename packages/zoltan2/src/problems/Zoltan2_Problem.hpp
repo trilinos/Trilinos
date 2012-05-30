@@ -17,6 +17,7 @@
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_CoordinateModel.hpp>
+#include <Zoltan2_TimerManager.hpp>
 
 using std::cout;
 using std::endl;
@@ -118,7 +119,7 @@ protected:
   RCP<TimerManager> timer_;
 
 private:
-  void setupProblemEnvironment();
+  void setupProblemEnvironment(ParameterList *pl);
 
 };
 
@@ -128,14 +129,13 @@ template <typename Adapter>
   Problem<Adapter>::Problem( Adapter *input, ParameterList *params,
     MPI_Comm comm) : inputAdapter_(input), baseInputAdapter_(),
       graphModel_(), identifierModel_(), baseModel_(),
-      params_(RCP<ParameterList>(params,false)), 
-      comm_(), env_(), envConst_(), timer_()
+      params_(), comm_(), env_(), envConst_(), timer_()
 {
   HELLO;
   RCP<Teuchos::OpaqueWrapper<MPI_Comm> > wrapper = 
     Teuchos::opaqueWrapper(comm);
   comm_ = rcp<const Comm<int> >(new Teuchos::MpiComm<int>(wrapper));
-  setupProblemEnvironment();
+  setupProblemEnvironment(params);
 }
 #endif
 
@@ -144,68 +144,91 @@ template <typename Adapter>
     inputAdapter_(input), 
     baseInputAdapter_(dynamic_cast<base_adapter_t *>(input)),
     graphModel_(), identifierModel_(), baseModel_(),
-    params_(RCP<ParameterList>(params,false)), comm_(), env_(), envConst_(),
-    timer_()
+    params_(), comm_(), env_(), envConst_(), timer_()
 {
   HELLO;
   comm_ = DefaultComm<int>::getComm();
-  setupProblemEnvironment();
+  setupProblemEnvironment(params);
 }
 
-
 template <typename Adapter>
-  void Problem<Adapter>::setupProblemEnvironment()
+  void Problem<Adapter>::setupProblemEnvironment(ParameterList *params)
 {
   baseInputAdapter_ = dynamic_cast<base_adapter_t *>(inputAdapter_);
 
-  env_ = rcp(new Environment(*params_, 
-    Teuchos::DefaultComm<int>::getComm()));
+  env_ = rcp(new Environment(*params, Teuchos::DefaultComm<int>::getComm()));
   envConst_ = rcp_const_cast<const Environment>(env_);
 
-  // Give a timer to the Environment of requested.
-  bool isSet;
-  string entryValue;
+  ParameterList &processedParameters = env_->getParametersNonConst();
+  params_ = rcp<ParameterList>(&processedParameters, false);
 
-  getParameterValue<string>(*params_, "timing_output_stream", isSet,
-    entryValue);
+#ifndef Z2_OMIT_ALL_PROFILING
+  ParameterList pl = *params_;
 
-  if (isSet){
-    if (entryValue == std::string("std::cout"))
-      timer_ = rcp(new TimerManager(comm_, &cout));
-    else if (entryValue == std::string("std::cerr"))
-      timer_ = rcp(new TimerManager(comm_, &cerr));
+  // Give a timer to the Environment if requested.
+  bool haveType=false, haveStream=false, haveFile=false;
+  int choice;
+
+  getParameterValue<int>(pl, "timer_type", haveType, choice);
+  if (!haveType)
+    choice = MACRO_TIMERS;   // default timer type
+
+  TimerType tt = static_cast<TimerType>(choice);
+
+  string fname;
+  getParameterValue<string>(pl, "timer_output_file", haveFile, fname);
+
+  if (haveFile){
+    std::ofstream *dbgFile = new std::ofstream;
+    if (comm_->getRank()==0){
+      // Using Teuchos::TimeMonitor, node 0 prints global timing info.
+      try{
+        dbgFile->open(fname.c_str(), std::ios::out|std::ios::trunc);
+      }
+      catch(std::exception &e){
+        throw std::runtime_error(e.what());
+      }
+    }
+    timer_ = rcp(new TimerManager(comm_, dbgFile, tt));
   }
   else{
-    getParameterValue<string>(*params_, "timing_output_file",
-      isSet, entryValue);
-    if (isSet){
-      std::ofstream *dbgFile = new std::ofstream;
-      if (comm_->getRank()==0){
-        // Using Teuchos::TimeMonitor, node 0 prints global timing info.
-        try{
-          dbgFile->open(entryValue.c_str(), std::ios::out|std::ios::trunc);
-        }
-        catch(std::exception &e){
-          throw std::runtime_error(e.what());
-        }
+    getParameterValue<int>(pl, "timer_output_stream", haveStream, choice);
+
+    if (!haveStream)
+      choice = COUT_STREAM;  // default output stream
+
+    OSType outputStream = static_cast<OSType>(choice);
+
+    if (haveStream || haveType){
+      if (outputStream == COUT_STREAM)
+        timer_ = rcp(new TimerManager(comm_, &cout, tt));
+      else if (outputStream == CERR_STREAM)
+        timer_ = rcp(new TimerManager(comm_, &cerr, tt));
+      else if (outputStream == NULL_STREAM){
+        std::ofstream *of = NULL;
+        timer_ = rcp(new TimerManager(comm_, of, tt));
       }
-      timer_ = rcp(new TimerManager(comm_, dbgFile));
     }
   }
 
-  if (isSet)
+  if (haveType || haveStream || haveFile)
     env_->setTimer(timer_);
+  
+#endif
+
 }
 
 template <typename Adapter>
   void Problem<Adapter>::resetParameters(ParameterList *params)
 {
-  env_ = 
-    rcp(new Environment(*params, Teuchos::DefaultComm<int>::getComm()));
+  env_ = rcp(new Environment(*params, Teuchos::DefaultComm<int>::getComm()));
   envConst_ = rcp_const_cast<const Environment>(env_);
-  params_ = rcp<ParameterList>(params,false);
 
-  // We assume the timing output parameters have not changed.
+  ParameterList &processedParameters = env_->getParametersNonConst();
+  params_ = rcp<ParameterList>(&processedParameters, false);
+
+  // We assume the timing output parameters have not changed,
+  // and carry on with the same timer.
 
   if (timer_.getRawPtr() != NULL)
     env_->setTimer(timer_);

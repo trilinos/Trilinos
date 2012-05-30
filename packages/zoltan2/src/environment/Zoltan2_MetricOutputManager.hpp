@@ -68,7 +68,8 @@ template <typename T>
      */
     ~MetricOutputManager() 
     {
-      os_->flush();
+      if (os_)
+        os_->flush();
       if (osFile_)
         osFile_->close();
     };

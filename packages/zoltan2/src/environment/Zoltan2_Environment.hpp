@@ -46,7 +46,7 @@ class Environment{
 
 public:
 
-  typedef long   memory_t;
+  typedef long   memory_t;     /*!< \brief data type for Kilobytes */
 
   typedef Teuchos::RCP<const Teuchos::Comm<int> > Comm_t;
   typedef Teuchos::RCP<DebugManager>     DebugManager_t;
@@ -89,7 +89,7 @@ public:
    *  The Problem creates and holds the Timer.
    */
 
-  void setTimer(RCP<TimerManager> &timer) { timerOut_=timer; timingOn=true;}
+  void setTimer(RCP<TimerManager> &timer) { timerOut_=timer; timingOn_=true;}
 
 #ifdef Z2_OMIT_ALL_ERROR_CHECKING
 
@@ -320,27 +320,84 @@ public:
    *   \param msg   The message to be output.
    */
 
+#ifdef Z2_OMIT_ALL_STATUS_MESSAGES
+  void debug(MessageOutputLevel level, const char *msg) const{ return;}
+  void debug(MessageOutputLevel level, const std::string msg) const{ return;}
+#else
   void debug(MessageOutputLevel level, const char *msg) const{ 
     debugOut_->print(level, msg);}
+  void debug(MessageOutputLevel level, const std::string &msg) const{ 
+    debugOut_->print(level, msg);}
+#endif
 
-#ifdef Z2_OMIT_ALL_ERROR_CHECKING
+#ifdef Z2_OMIT_ALL_PROFILING
 
-  // These should inline to a no-op.  
-  void timerStart(string timerName) const  {return;}
-  void timerStop(string timerName) const {return;}
+  void timerStart(const char * timerName) const  {return;}
+  void timerStart(const string &timerName) const  {return;}
+  void timerStart(const char * timerName, int) const  {return;}
+  void timerStart(const string &timerName, int) const  {return;}
+
+  void timerStop(const char * timerName) const {return;}
+  void timerStop(const string &timerName) const {return;}
+  void timerStop(const char * timerName, int) const {return;}
+  void timerStop(const string &timerName, int) const {return;}
 
 #else
   /*! \brief  Start a named timer.
    */
 
-  void timerStart(string timerName) const  {
-    if (timingOn) timerOut_->start(timerName); }
+  void timerStart(TimerType tt, const char *timerName) const  {
+    if (timingOn_) timerOut_->start(tt, timerName); }
+
+  void timerStart(TimerType tt, const string &timerName) const  {
+    if (timingOn_) timerOut_->start(tt, timerName); }
+
+  /*! \brief  Start a named timer, with a number as part of the name.
+   */
+  void timerStart(TimerType tt, const char *timerName, int num) const  {
+    if (timingOn_){
+      ostringstream oss;
+      oss << timerName << " " << num;
+      timerOut_->start(tt, oss.str()); 
+    }
+  }
+
+  void timerStart(TimerType tt, const string &timerName, int num) const  {
+    if (timingOn_){
+      ostringstream oss;
+      oss << timerName << " " << num;
+      timerOut_->start(tt, oss.str()); 
+    }
+  }
 
   /*! \brief  Stop a named timer.
    */
 
-  void timerStop(string timerName) const {
-    if (timingOn) timerOut_->stop(timerName); }
+  void timerStop(TimerType tt, const char *timerName) const {
+    if (timingOn_) timerOut_->stop(tt, timerName); }
+
+  void timerStop(TimerType tt, const string &timerName) const {
+    if (timingOn_) timerOut_->stop(tt, timerName); }
+
+  /*! \brief  Stop a named timer, with a number as part of the name.
+   */
+
+  void timerStop(TimerType tt, const char *timerName, int num) const {
+    if (timingOn_){
+      ostringstream oss;
+      oss << timerName << " " << num;
+      timerOut_->stop(tt, oss.str()); 
+    }
+  }
+
+  void timerStop(TimerType tt, const string &timerName, int num) const {
+    if (timingOn_){
+      ostringstream oss;
+      oss << timerName << " " << num;
+      timerOut_->stop(tt, oss.str()); 
+    }
+  }
+  
 #endif
 
   /*! \brief Print a message and the kilobytes in use by this process.
@@ -353,45 +410,24 @@ public:
    *       \c memory_profiling_output_stream or \c memory_profiling_output_file.
    *          If neither was set, it goes to std::cout.
    *
-   * Memory profiling is only supported on Linux nodes that have /proc/statm.
-   * If this is an unsupported node, the call does nothing.
+   * Memory profiling is only supported on Linux nodes that 
+   * have /proc/pid/statm.  If this is an unsupported node, the call 
+   * does nothing.
    */
 
+#ifdef Z2_OMIT_ALL_PROFILING
+  void memory(const char *msg) const {return;}
+
+  void memory(const std::string &msg) const {return; }
+#else
   void memory(const char *msg) const
-    {if (!memoryOut_.is_null())
+    {if (memoryOn_)
        memoryOut_->print(msg, "KB", getProcessKilobytes());}
 
-  /*! \brief  Send a message to the debug output manager.
-   *
-   *   \param level  If \c level does not exceed the \c debug_level
-   *          parameter set by the user, then if this process is one that 
-   *          prints debug messages (as indicated by the parameter 
-   *          \c debug_profiling_procs) then the \c msg
-   *          will be output to either \c debug_output_stream
-   *          or \c debug_output_file.
-   *   \param msg   The message to be output.
-   */
-
-  void debug(MessageOutputLevel level, const std::string &msg) const{ 
-    debugOut_->print(level, msg);}
-
-  /*! \brief Print a message and the kilobytes in use by this process.
-   *
-   *   \param msg   The message to be output. If this process
-   *          is one that prints memory profiling messages
-   *          (as indicated by the parameter \c memory_profiling_procs), 
-   *          the \c msg (along with kilobytes currently allocated to
-   *          this process) will issued.  The output target is either the
-   *       \c memory_profiling_output_stream or \c memory_profiling_output_file.
-   *          If neither was set, it goes to std::cout.
-   *
-   * Memory profiling is only supported on Linux nodes that have /proc/statm.
-   * If this is an unsupported node, the call does nothing.
-   */
-
   void memory(const std::string &msg) const
-    {if (!memoryOut_.is_null())
+    {if (memoryOn_)
       memoryOut_->print(msg, "KB", getProcessKilobytes());}
+#endif
 
   /*! \brief Returns true if the parameter list has the named sublist.
    */
@@ -433,17 +469,21 @@ public:
   /*! \brief Return true if timing was requested, even if this
    *    process is not printing out timing messages.
    */
-  bool doTiming() const { return timingOn; }
+  bool doTiming() const { return timingOn_; }
 
   /*! \brief Return true if debug output was requested, even if
    *     this process is not printing out debug messages.
    */
+#ifdef Z2_OMIT_ALL_STATUS_MESSAGES
+  bool doStatus() const { return false;}
+#else
   bool doStatus() const { return debugOut_->getDebugLevel() > NO_STATUS;}
+#endif
 
   /*! \brief Return true if memory usage output was requested, even if
    *     this process is not printing out memory used messages.
    */
-  bool doMemoryProfiling() const { return memoryOut_->getMetricsOn(); }
+  bool doMemoryProfiling() const { return memoryOn_;}
 
   /*! \brief Returns a const reference to the user's original list.
    *
@@ -499,15 +539,16 @@ private:
   DebugManager_t debugOut_;    /*!< \brief output for status messages */
 
   Timer_t timerOut_;             /*!< \brief timer output */
-  bool timingOn;
+  bool timingOn_;
 
   MemoryProfilerManager_t memoryOut_;  /*!< \brief memory profiling output */
+  bool memoryOn_;
 };
 
 /*! \brief A value to indicate a string parameter that was 
               not set by the user.
  */
-#define Z2_UNSET std::string("notSet")
+#define Z2_UNSET_STRING std::string("notSet")
 
 //////////////////////////////////////////////////////////////////////
 // Templated namespace definitions used by the class
@@ -517,20 +558,23 @@ private:
  *  \param rank  the MPI rank of the calling process in the application
  *  \param iPrint   true if this process should print metric information
  *  \param fname    name of file to which output is to be appended, or
- *                      or Z2_UNSET
- *  \param osname   "std::cout", "std::cerr", "/dev/null", or Z2_UNSET
+ *                      or Z2_UNSET_STRING
+ *  \param ost     output stream type
  *  \param mgr     on return, a pointer to the created output manager
  *
  * The template parameter is the data type of the entity being measured.
  */
 template<typename metric_t>
   void makeMetricOutputManager(int rank, bool iPrint, 
-    std::string fname, std::string osname, 
+    std::string fname, int ost,
     Teuchos::RCP<MetricOutputManager<metric_t> > &mgr)
 {
   typedef MetricOutputManager<metric_t> manager_t;
-  bool haveFname = (fname != Z2_UNSET);
-  bool haveStreamName = (!haveFname && (osname != Z2_UNSET));
+
+  OSType os = static_cast<OSType>(ost);
+
+  bool haveFname = (fname != Z2_UNSET_STRING);
+  bool haveStreamName = (os != NUM_OUTPUT_STREAMS);
 
   if (!haveFname && !haveStreamName){
     mgr = Teuchos::rcp(new manager_t(rank, iPrint, std::cout, true));
@@ -553,11 +597,11 @@ template<typename metric_t>
     return;
   }
 
-  if (osname == std::string("std::cout"))
+  if (os == COUT_STREAM)
     mgr = Teuchos::rcp(new manager_t(rank, iPrint, std::cout, true));
-  else if (osname == std::string("std::cerr"))
+  else if (os == CERR_STREAM)
     mgr = Teuchos::rcp(new manager_t(rank, iPrint, std::cerr, true));
-  else if (osname == std::string("/dev/null"))
+  else if (os == NULL_STREAM)
     mgr = Teuchos::rcp(new manager_t(rank, false, std::cout, true));
   else
     throw std::logic_error("invalid metric output stream was not caught");

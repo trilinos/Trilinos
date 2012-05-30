@@ -27,6 +27,15 @@
 #include <Zoltan2_config.h>
 
 //////////////////////////////////////////
+// Omit time consuming actions?
+
+#ifdef Z2_OMIT_ALL_OPTIONAL_ACTIONS
+#define Z2_OMIT_ALL_STATUS_MESSAGES
+#define Z2_OMIT_ALL_PROFILING
+#define Z2_OMIT_ALL_ERROR_CHECKING
+#endif
+
+//////////////////////////////////////////
 // Frequently used Trilinos symbols
 
 #define global_size_t size_t

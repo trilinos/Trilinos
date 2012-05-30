@@ -31,24 +31,30 @@ namespace Zoltan2 {
  *  \param rank  the MPI rank of the calling process in the application
  *  \param iPrint   true if this process should output information
  *  \param fname    name of file to which output is to be appended, or
- *                      or Z2_UNSET
- *  \param osname   "std::cout", "std::cerr", "/dev/null", or Z2_UNSET
+ *                      or Z2_UNSET_STRING
+ *  \param ost     output stream type
  *  \param mgr     on return, a pointer to the created output manager
  */
 
 void makeDebugManager(int rank, bool iPrint,
-  int level, std::string fname, std::string osname,
+  int level, std::string fname, int ost,
   Teuchos::RCP<DebugManager> &mgr)
 {
   MessageOutputLevel lvl = static_cast<MessageOutputLevel>(level);
+  OSType os = static_cast<OSType>(ost);
 
-  bool haveFname = (fname != Z2_UNSET);
-  bool haveStreamName = (!haveFname && (osname != Z2_UNSET));
+  bool haveFname = (fname != Z2_UNSET_STRING);
+  bool haveStreamName = (os != NUM_OUTPUT_STREAMS);
+  bool haveLevel = (lvl != NUM_STATUS_OUTPUT_LEVELS);
 
-  if (!haveFname && !haveStreamName){
-    mgr = Teuchos::rcp(new DebugManager(rank, iPrint, std::cout, lvl));
+  if (!haveFname && !haveStreamName && !haveLevel) {
+    // The default if the user didn't specify anything.
+    mgr = Teuchos::rcp(new DebugManager(rank, iPrint, std::cout, BASIC_STATUS));
     return;
   }
+
+  if (!haveLevel)
+    lvl = BASIC_STATUS;
 
   if (haveFname){
     std::ofstream *dbgFile = new std::ofstream;
@@ -66,11 +72,11 @@ void makeDebugManager(int rank, bool iPrint,
     return;
   }
 
-  if (osname == std::string("std::cout"))
+  if (os == COUT_STREAM)
     mgr = Teuchos::rcp(new DebugManager(rank, iPrint, std::cout, lvl));
-  else if (osname == std::string("std::cerr"))
+  else if (os == CERR_STREAM)
     mgr = Teuchos::rcp(new DebugManager(rank, iPrint, std::cerr, lvl));
-  else if (osname == std::string("/dev/null"))
+  else if (os == NULL_STREAM)
     mgr = Teuchos::rcp(new DebugManager(rank, false, std::cout, lvl));
   else   // should never happen
     throw std::logic_error("invalid debug output stream was not caught");
@@ -84,7 +90,7 @@ Environment::Environment( Teuchos::ParameterList &problemParams,
   myRank_(comm->getRank()), numProcs_(comm->getSize()), comm_(comm), 
   errorCheckLevel_(BASIC_ASSERTION),
   unvalidatedParams_(problemParams), params_(problemParams),
-  debugOut_(), timerOut_(), timingOn(false), memoryOut_()
+  debugOut_(), timerOut_(), timingOn_(false), memoryOut_(), memoryOn_(false)
 {
   commitParameters();
 }
@@ -92,7 +98,7 @@ Environment::Environment( Teuchos::ParameterList &problemParams,
 Environment::Environment():
   myRank_(0), numProcs_(1), comm_(), errorCheckLevel_(BASIC_ASSERTION),
   unvalidatedParams_("emptyList"), params_("emptyList"), 
-  debugOut_(), timerOut_(), timingOn(false), memoryOut_()
+  debugOut_(), timerOut_(), timingOn_(false), memoryOut_(), memoryOn_(false)
 {
   comm_ = Teuchos::DefaultComm<int>::getComm();
   myRank_ = comm_->getRank();
@@ -130,8 +136,8 @@ void Environment::commitParameters()
   
     params_.validateParametersAndSetDefaults(validParams);
 
-    // For all of the true/false, yes/no, 0/1 string parameters, 
-    // convert them to integers zero or one.  I would have
+    // For all of the string to integer parameters, convert
+    // them to the integer.  I would have
     // expected validateAndModify() to do this.
   
     convertStringToInt(params_);
@@ -141,40 +147,45 @@ void Environment::commitParameters()
 
   // Set up for debugging/status output.
   //   By default: if no output stream is specified, then node zero
-  //       outputs BASIC_STATUS.
+  //       outputs BASIC_STATUS to std::cout.
 
-  int &level = params_.get<int>("debug_level", BASIC_STATUS);
+#ifndef Z2_OMIT_ALL_STATUS_MESSAGES
+  int &level = params_.get<int>("debug_level", NUM_STATUS_OUTPUT_LEVELS);
+  string &fname = params_.get<string>("debug_output_file", Z2_UNSET_STRING);
+  int &os = params_.get<int>("debug_output_stream", NUM_OUTPUT_STREAMS);
 
-  if (level > NO_STATUS){
-    bool iPrint = (myRank_ == 0);   // default
-    const Array<int> *reporters = 
-      params_.getPtr<Array<int> >("debug_procs");
-    if (reporters)
-      iPrint = IsInRangeList(myRank_, *reporters);
-    string &fname = params_.get<string>("debug_output_file", Z2_UNSET);
-    string &osname = params_.get<string>("debug_output_stream", Z2_UNSET);
+  bool iPrint = (myRank_ == 0);   // default
+  const Array<int> *reporters = 
+    params_.getPtr<Array<int> >("debug_procs");
+  if (reporters)
+    iPrint = IsInRangeList(myRank_, *reporters);
 
-    try{
-      makeDebugManager(myRank_, iPrint, level, fname, osname, debugOut_);
-    }
-    catch (std::exception &e){
-      std::ostringstream oss;
-      oss << myRank_ << ": unable to create debug output manager";
-      oss << " (" << e.what() << ")";
-      throw std::runtime_error(oss.str());
-    }
+  try{
+    makeDebugManager(myRank_, iPrint, level, fname, os, debugOut_);
   }
-  else{
-    debugOut_ = rcp(new DebugManager(myRank_, false, std::cout, NO_STATUS));
+  catch (std::exception &e){
+    std::ostringstream oss;
+    oss << myRank_ << ": unable to create debug output manager";
+    oss << " (" << e.what() << ")";
+    throw std::runtime_error(oss.str());
   }
+#endif
 
   // Set up for memory usage output. 
   
-  string &f2 = params_.get<string>("memory_profiling_output_file", Z2_UNSET);
-  string &os2 = params_.get<string>("memory_profiling_output_stream", Z2_UNSET);
+#ifndef Z2_OMIT_ALL_PROFILING
+  string &f2 = 
+    params_.get<string>("memory_profiling_output_file", Z2_UNSET_STRING);
+  int &os2 = 
+    params_.get<int>("memory_profiling_output_stream", NUM_OUTPUT_STREAMS);
 
+  const Array<int> *reporters2 = 
+    params_.getPtr<Array<int> >("memory_profiling_procs");
 
-  if (f2 != Z2_UNSET || os2 != Z2_UNSET){
+  bool doMemory = true;
+
+  if (f2 != Z2_UNSET_STRING || os2 != NUM_OUTPUT_STREAMS || reporters2 != NULL){
+    // user indicated they want memory usage information
     long numKbytes = 0;
     if (myRank_ == 0)
       numKbytes = getProcessKilobytes();
@@ -183,19 +194,22 @@ void Environment::commitParameters()
 
     if (numKbytes == 0){
       // This is not a Linux system with proc/pid/statm.
-      f2 = Z2_UNSET;
-      os2 = Z2_UNSET;
-      debugOut_->print(BASIC_ASSERTION, 
-        "Warning: memory profiling requested but not available.");
+      f2 = Z2_UNSET_STRING;
+      os2 = NUM_OUTPUT_STREAMS;
+      reporters2 = NULL;
+      this->debug(BASIC_STATUS, 
+        string("Warning: memory profiling requested but not available."));
+      doMemory = false;   // can't do it
     }
   }
-  
-  if (f2 != Z2_UNSET || os2 != Z2_UNSET){
+  else{
+    doMemory = false;   // not requested
+  }
+
+  if (doMemory){
     bool iPrint = (myRank_ == 0);   // default
-    const Array<int> *reporters = 
-      params_.getPtr<Array<int> >("memory_profiling_procs");
-    if (reporters)
-      iPrint = IsInRangeList(myRank_, *reporters);
+    if (reporters2)
+      iPrint = IsInRangeList(myRank_, *reporters2);
 
     try{
       makeMetricOutputManager<long>(myRank_, iPrint, f2, os2, memoryOut_);
@@ -206,15 +220,17 @@ void Environment::commitParameters()
       oss << " (" << e.what() << ")";
       throw std::runtime_error(oss.str());
     }
-  }
-  else{
-    // Says no processes output memory usage metrics.
-    memoryOut_ = 
-      rcp(new MetricOutputManager<long>(myRank_, false, std::cout, false));
-  }
 
+    memoryOn_ = true;
+  }
+#endif
+
+#ifdef Z2_OMIT_ALL_ERROR_CHECKING
+  errorCheckLevel_ = NO_ASSERTIONS;
+#else
   errorCheckLevel_ = static_cast<AssertionLevel>( 
     params_.get<int>("error_check_level", BASIC_ASSERTION));
+#endif
 }
   
 bool Environment::hasSublist(const Teuchos::ParameterList &pl, 

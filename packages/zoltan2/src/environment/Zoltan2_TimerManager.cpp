@@ -15,12 +15,22 @@
 namespace Zoltan2{
 
 TimerManager::TimerManager(const RCP<const Comm<int> > &comm, 
-  std::ofstream *os):
-  comm_(comm), myOS_(NULL), fileOS_(os), timers(), timerMap(), stopHint(-1) {}
+  std::ofstream *os, TimerType tt):
+  comm_(comm), myOS_(NULL), fileOS_(os), ttype_(tt), 
+  timers(), timerMap(), stopHint(-1) 
+{
+  if (fileOS_ == NULL)
+    ttype_ = NO_TIMERS;
+}
 
 TimerManager::TimerManager(const RCP<const Comm<int> > &comm, 
-  std::ostream *os):
-  comm_(comm), myOS_(os), fileOS_(NULL), timers(), timerMap(), stopHint(-1) {}
+  std::ostream *os, TimerType tt):
+  comm_(comm), myOS_(os), fileOS_(NULL), ttype_(tt),
+  timers(), timerMap(), stopHint(-1) 
+{
+  if (myOS_ == NULL)
+    ttype_ = NO_TIMERS;
+}
 
 TimerManager::~TimerManager()
 {
@@ -30,8 +40,13 @@ TimerManager::~TimerManager()
   }
 }
 
-void TimerManager::stop(const string &name)
+void TimerManager::stop(TimerType tt, const string &name)
 {
+  if ((ttype_ == NO_TIMERS) ||
+      (ttype_ == MACRO_TIMERS && tt != MACRO_TIMERS) ||
+      (ttype_ == MICRO_TIMERS && tt != MICRO_TIMERS)    )
+    return;
+
   if (stopHint>0 && timers[stopHint]->name() == name){
     timers[stopHint]->stop();
     stopHint--;
@@ -51,8 +66,13 @@ void TimerManager::stop(const string &name)
   }
 }
 
-void TimerManager::start(const string &name)
+void TimerManager::start(TimerType tt, const string &name)
 {
+  if ((ttype_ == NO_TIMERS) ||
+      (ttype_ == MACRO_TIMERS && tt != MACRO_TIMERS) ||
+      (ttype_ == MICRO_TIMERS && tt != MICRO_TIMERS)    )
+    return;
+
   std::map<string, int>::iterator curr = timerMap.find(name);
   int index = -1;
   if (curr == timerMap.end()){

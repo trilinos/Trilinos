@@ -306,6 +306,8 @@ template <typename User>
   }
 
   gnosConst_ = arcp_const_cast<const gno_t>(gnos_);
+
+  env_->memory("After construction of coordinate model");
 }
 
 ////////////////////////////////////////////////////////////////
@@ -489,6 +491,8 @@ template <typename User>
   }
 
   gnosConst_ = arcp_const_cast<const gno_t>(gnos_);
+
+  env_->memory("After construction of coordinate model");
 }
 
 ////////////////////////////////////////////////////////////////

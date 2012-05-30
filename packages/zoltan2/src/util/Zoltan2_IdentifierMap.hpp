@@ -282,7 +282,11 @@ template<typename User>
            consecutiveGidsAreRequired_(idsMustBeConsecutive),
            minGlobalGno_(0), maxGlobalGno_(0)
 {
+  env->memory("Initial memory in use");
+
   setupMap();
+
+  env->memory("After user IDs mapped");
 }
 
 // TODO many of these should be inline

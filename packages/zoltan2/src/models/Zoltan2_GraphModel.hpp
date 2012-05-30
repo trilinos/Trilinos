@@ -226,6 +226,7 @@ public:
      numNearLocalEdges_(0)
   {
     initializeData(modelFlags);
+    env_->memory("After construction of graph model");
   }
 
   //!  Destructor

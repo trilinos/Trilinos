@@ -7,8 +7,7 @@
 /*! \file rcbPerformance.cpp
     \brief A test that can do large scale problems and time them.
 
-    Optional arguments:
-       number-of-coordinates number-of-test-cuts weight-dim objective
+    Geometry is a uniform mesh.
 */
 
 #include <Zoltan2_TestHelpers.hpp>
@@ -41,6 +40,7 @@ enum weightTypes{
 };
 
 ArrayRCP<scalar_t> makeWeights(
+  const RCP<const Teuchos::Comm<int> > & comm,
   lno_t len, weightTypes how, scalar_t scale, int rank)
 {
   scalar_t *wgts = new scalar_t [len];
@@ -56,7 +56,7 @@ ArrayRCP<scalar_t> makeWeights(
   }
   else if (how == roundRobin){
     for (int i=0; i < 10; i++){
-      scalar_t val = i + 10;
+      scalar_t val = (i + 10)*scale;
       for (int j=i; j < len; j += 10)
          weights[j] = val;
     }
@@ -209,46 +209,49 @@ const RCP<tMVector_t> getMeshCoordinates(
 
 int main(int argc, char *argv[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
+  Teuchos::GlobalMPISession session(&argc, &argv, NULL);
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   int rank = comm->getRank();
-  int nprocs = comm->getSize();
 
-  // Two optional command line arguments: 
-  //  number of coordinates, number test cuts
-  // Eventually when our parameters are xml-ized we will read
-  // in the Zoltan2 parameters and the test parameters from an
-  // xml file.
+  if (rank==0)
+    cout << "Number of processes: " << rank << endl;
 
-  gno_t numGlobalCoords = 1000;
+  // Default values
+  double numGlobalCoords = 1000;
   int numTestCuts = 1;
   int weightDim = 0;
   string objective("balance_object_weight");
 
-  if (argc > 1){
-    numGlobalCoords = atol(argv[1]);
-    if (argc > 2){
-      numTestCuts = atoi(argv[2]);
-      if (argc > 3){
-        weightDim = atoi(argv[3]);
-        if (argc > 4)
-          objective = string(argv[4]);
-      }
-    }
-  }
+  Teuchos::CommandLineProcessor commandLine(false, true);
+  commandLine.setOption("size", &numGlobalCoords, 
+    "Approximate number of global coordinates.");
+  commandLine.setOption("testCuts", &numTestCuts, 
+    "Number of test cuts to make when looking for bisector.");
+  commandLine.setOption("weightDim", &weightDim, 
+    "Number of weights per coordinate, zero implies uniform weights.");
 
-  // Obtain coordinates.
+  string doc("\"balance_object_count\": ignore weights\n");
+  doc.append("\"balance_object_weight\": balance on first weight\n");
+  doc.append("\"multicriteria_minimize_total_weight\": given multiple weights, balance their total.\n");
+  doc.append("\"multicriteria_minimize_maximum_weight\": given multiple weights, balance the maximum for each coordinate.\n");
+  doc.append("\"multicriteria_balance_total_maximum\": given multiple weights, balance the L2 norm of the weights.\n");
 
-  RCP<tMVector_t> coordinates = getMeshCoordinates(comm, numGlobalCoords);
+  commandLine.setOption("objective", &objective,  doc.c_str());
+
+  commandLine.parse(argc, argv);
+
+  gno_t globalSize = static_cast<gno_t>(numGlobalCoords);
+
+  RCP<tMVector_t> coordinates = getMeshCoordinates(comm, globalSize);
   size_t numLocalCoords = coordinates->getLocalLength();
 
-  Array<ArrayRCP<scalar_t> > weights;
+  Array<ArrayRCP<scalar_t> > weights(weightDim);
 
   if (weightDim > 0){
     int wt = 0;
     scalar_t scale = 1.0;
     for (int i=0; i < weightDim; i++){
-      weights[i] = makeWeights(numLocalCoords, weightTypes(wt++), scale, rank);
+      weights[i] = makeWeights(comm, numLocalCoords, weightTypes(wt++), scale, rank);
       if (wt == numWeightTypes){
         wt = 0;
         scale++;
@@ -262,7 +265,6 @@ int main(int argc, char *argv[])
   const gno_t *globalIds = ids.getRawPtr();
   
   size_t localCount = coordinates->getLocalLength();
-  size_t globalCount = coordinates->getGlobalLength();
   RCP<inputAdapter_t> ia;
   
   if (weightDim == 0){
@@ -288,9 +290,13 @@ int main(int argc, char *argv[])
 
   Teuchos::ParameterList params;
   std::ostringstream fname;
-  fname << "timers_" << nprocs << "_" << globalCount << ".txt";
-  params.set("timing_output_file" , fname.str());
-  params.set("timing_procs" , 0);
+//  fname << "timers_" << nprocs << "_" << globalCount << ".txt";
+//  params.set("timer_output_file" , fname.str());
+  params.set("timer_output_stream" , "std::cout");
+  params.set("timer_type" , "macro_timers");
+
+  params.set("debug_output_stream" , "std::cout");
+  params.set("debug_procs" , "0");
 
   Teuchos::ParameterList &parParams = params.sublist("partitioning");
   parParams.set("algorithm", "rcb");
@@ -302,7 +308,7 @@ int main(int argc, char *argv[])
   geoParams.set("bisection_num_test_cuts", numTestCuts);
 
   if (rank==0)
-    cout << "bisection_num_test_cuts " << numTestCuts << endl;
+    cout << "bisection_num_test_cuts: " << numTestCuts << endl;
 
   // Create a problem, solve it, and display the quality.
 

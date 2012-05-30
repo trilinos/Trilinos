@@ -385,11 +385,11 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
   // Create the computational model.
 
-  this->env_->timerStart("create problem");
+  this->env_->timerStart(MACRO_TIMERS, "create problem");
 
   createPartitioningProblem(updateInputData);
 
-  this->env_->timerStop("create problem");
+  this->env_->timerStop(MACRO_TIMERS, "create problem");
 
   // TODO: If hierarchical_
 
@@ -404,7 +404,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
   PartitioningSolution<Adapter> *soln = NULL;
 
-  this->env_->timerStart("create solution");
+  this->env_->timerStart(MACRO_TIMERS, "create solution");
 
   try{
     soln = new PartitioningSolution<Adapter>( 
@@ -416,7 +416,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
   solution_ = rcp(soln);
 
-  this->env_->timerStop("create solution");
+  this->env_->timerStop(MACRO_TIMERS, "create solution");
 
   // Call the algorithm
 

@@ -70,16 +70,21 @@ void printListDocumentation( const Teuchos::ParameterList &pl, std::ostream &os,
  *
  *  Each assertion in the code must have a level. Tests for
  *  logic errors should always be level DEBUG_MODE_ASSERTION.
- *  Quick tests are BASIC, longer tests for common errors are
- *  COMPLEX, and tests for unlikely errors are only done in DEBUG_MODE.
+ *  Quick tests are BASIC, longer tests for input errors are
+ *  COMPLEX.
+ *
  *  The user sets the assertion level with the parameter \c error_check_level.
+ *
+ *  If compiled with \b Z2_OMIT_ALL_ERROR_CHECKING, error checks don't happen.
  */
 
 enum AssertionLevel {
-  BASIC_ASSERTION,    /*!< \brief checks that should always be done (user input) */
-  COMPLEX_ASSERTION,  /*!< \brief checks that take extra time (validate a graph) */
-  DEBUG_MODE_ASSERTION, /*!< \brief done when checking everything incl logic errors */
-  NUM_ASSERTION_LEVELS};
+  NO_ASSERTIONS,   /*!< \brief no assertion checks will be done */
+  BASIC_ASSERTION, /*!< \brief fast typical checks for valid arguments */
+  COMPLEX_ASSERTION,  /*!< \brief more involved, like validate a graph */
+  DEBUG_MODE_ASSERTION, /*!< \brief checks for logic errors */
+  NUM_ASSERTION_LEVELS
+};
 
 /*! \brief The amount of debugging or status output to print.
  *
@@ -87,29 +92,46 @@ enum AssertionLevel {
  *  user specfies the level desired with the \c debug_level parameter.
  *
  *  If Zoltan2 is compiled with \b Z2_OMIT_ALL_STATUS_MESSAGES, no
- *  messages will be displayed, \c debug_level is ignored,
- *  and status message code is ifdef'd out.
+ *  messages will be processed. 
  */
  
 enum MessageOutputLevel {
-  NO_STATUS,                 /*!< \brief don't display status/debug messages */
-  BASIC_STATUS,              /*!< \brief the status at each high level step */
-  DETAILED_STATUS, /*!< \brief include sub-steps, plus each method's entry and exit */
-  VERBOSE_DETAILED_STATUS,   /*!< \brief include more detail about sub-steps */
-  NUM_STATUS_OUTPUT_LEVELS};
+  NO_STATUS,         /*!< \brief don't display status/debug messages */
+  BASIC_STATUS,      /*!< \brief the status at each high level step */
+  DETAILED_STATUS,   /*!< \brief sub-steps, each method's entry and exit */
+  VERBOSE_DETAILED_STATUS, /*!< \brief include more detail about sub-steps */
+  NUM_STATUS_OUTPUT_LEVELS
+};
 
-/*! \brief Whether profiling information should be local or should include
- *             global reductions.
+/*! \brief The type of timers which should be active.
  *
- *  This is unused.
- * \todo It would be good for timing and memory profiling to include an
- *          option to print out local values (which would be faster) or
- *          includes global min, max, average, total, etc.
+ *  If timing is requested, \c timer_type can specify MACRO timing
+ *  or MICRO timing.  For example, a MACRO timer would time an
+ *  algorithm.  A MICRO timer would time steps in the algorithm.
+ *  You can also ask for BOTH, but be aware that your MACRO timer
+ *  is also timing the MICRO timers as well as the algorithm.
+ *  
+ *  If Zoltan2 is compiled with \b Z2_OMIT_ALL_PROFILING
+ *  timing messages are ignored.
  */
-enum MessageSummaryLevel{
-  LOCAL_SUMMARY,              /*!< \brief messages should display local info only */
-  GLOBAL_SUMMARY,             /*!< \brief include global min, max, avg, etc. */
-  NUM_STATUS_SUMMARY_LEVELS};
+ 
+enum TimerType {
+  NO_TIMERS,    /*!< \brief No timing data will be collected (the default). */
+  MACRO_TIMERS, /*!< \brief Time an algorithm (or other entity) as a whole. */
+  MICRO_TIMERS, /*!< \brief Time the substeps of an entity. */
+  BOTH_TIMERS,  /*!< \brief Run both MACRO and MICRO timers. */
+  NUM_TIMING_OPTIONS
+};
+
+/*! \brief Output stream types.
+ */
+ 
+enum OSType {
+  COUT_STREAM,    /*!< \brief std::cout */
+  CERR_STREAM,    /*!< \brief std::cerr */
+  NULL_STREAM,    /*!< \brief /dev/null: do actions but don't output results */
+  NUM_OUTPUT_STREAMS
+};
 
 ////////////////////////////////////////////////////////////////////
 // A validator for integer range lists.
@@ -122,7 +144,8 @@ enum RangeType {
   RANGE_INCLUDES_ALL,    /*!< \brief all values were listed */
   RANGE_IS_EMPTY,        /*!< \brief no values were listed */
   RANGE_IS_LISTED,       /*!< \brief the listed values are in the Array<int> */
-  NUM_RANGE_TYPES};
+  NUM_RANGE_TYPES
+};
 
 /*! \class IntegerRangeListValidator
  *  \brief A ParameterList validator for integer range lists

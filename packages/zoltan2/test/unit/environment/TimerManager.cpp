@@ -14,27 +14,30 @@
 #include <unistd.h>
 
 using Zoltan2::TimerManager;
+using Zoltan2::MACRO_TIMERS;
+using Zoltan2::MICRO_TIMERS;
+using Zoltan2::BOTH_TIMERS;
 
 typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> myTypes_t;
 typedef Zoltan2::BasicIdentifierInput<myTypes_t> inputAdapter_t;
 
 void goToSleep(const RCP<const Zoltan2::Environment> &env)
 {
-  env->timerStart(string("sleep for 5 seconds"));
+  env->timerStart(MICRO_TIMERS, string("sleep for 5 seconds"));
   sleep(5);
-  env->timerStop(string("sleep for 5 seconds"));
+  env->timerStop(MICRO_TIMERS, string("sleep for 5 seconds"));
 
-  env->timerStart(string("sleep for 3 seconds (twice)"));
+  env->timerStart(MICRO_TIMERS, string("sleep for 3 seconds (twice)"));
   sleep(3);
-  env->timerStop(string("sleep for 3 seconds (twice)"));
+  env->timerStop(MICRO_TIMERS, string("sleep for 3 seconds (twice)"));
 
-  env->timerStart(string("sleep for 2 seconds"));
+  env->timerStart(MICRO_TIMERS, string("sleep for 2 seconds"));
   sleep(2);
-  env->timerStop(string("sleep for 2 seconds"));
+  env->timerStop(MICRO_TIMERS, string("sleep for 2 seconds"));
 
-  env->timerStart(string("sleep for 3 seconds (twice)"));
+  env->timerStart(MICRO_TIMERS, string("sleep for 3 seconds (twice)"));
   sleep(3);
-  env->timerStop(string("sleep for 3 seconds (twice)"));
+  env->timerStop(MICRO_TIMERS, string("sleep for 3 seconds (twice)"));
 }
 
 
@@ -47,7 +50,8 @@ int main(int argc, char *argv[])
   // Create a problem, requesting that Timing be enabled.
 
   Teuchos::ParameterList pl("test list");
-  pl.set("timing_output_stream" , "std::cout");
+  pl.set("timer_output_stream" , "std::cout");
+  pl.set("timer_type" , "both_timers");
   std::vector<const scalar_t * >weights;
   std::vector<int> strides;
   Array<gno_t> someIds(10,1);
@@ -67,13 +71,14 @@ int main(int argc, char *argv[])
   if (comm->getRank() == 0)
     std::cout << "Sleeping..." << std::endl;
 
-  env->timerStart(string("Do the sleep test"));
+  env->timerStart(MACRO_TIMERS, string("Do the sleep test"));
   goToSleep(env);
-  env->timerStop(string("Do the sleep test"));
+  env->timerStop(MACRO_TIMERS, string("Do the sleep test"));
 
   comm->barrier();
 
-  env->timerStop(string("unstarted timer"));
+  // Should show an error
+  env->timerStop(MACRO_TIMERS, string("unstarted timer"));
 
   problem.printTimers();
 

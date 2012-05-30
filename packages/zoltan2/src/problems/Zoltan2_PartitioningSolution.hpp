@@ -531,6 +531,8 @@ template <typename Adapter>
   ArrayRCP<ArrayRCP<scalar_t> > sizes(noSizes, 0, weightDim_, true);
 
   setPartSizes(ids.view(0, weightDim_), sizes.view(0, weightDim_));
+
+  env_->memory("After construction of solution");
 }
 
 template <typename Adapter>
@@ -551,6 +553,8 @@ template <typename Adapter>
   setPartDistribution();
 
   setPartSizes(reqPartIds, reqPartSizes);
+
+  env_->memory("After construction of solution");
 }
 
 template <typename Adapter>
@@ -1379,6 +1383,8 @@ template <typename Adapter>
   Z2_THROW_OUTSIDE_ERROR(*env_);
 
   haveSolution_ = true;
+
+  env_->memory("After Solution has processed algorithm's solution");
 }
 
 template <typename Adapter>

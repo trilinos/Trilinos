@@ -67,8 +67,7 @@ void AlgRCB(
   string strChoice;
   int intChoice;
 
-  if (env->doStatus())
-    env->debug(DETAILED_STATUS, string("Entering AlgPartRCB"));
+  env->debug(DETAILED_STATUS, string("Entering AlgPartRCB"));
 
   const Teuchos::ParameterList &pl = env->getParameters();
 
@@ -100,8 +99,10 @@ void AlgRCB(
     params.set(rcb_balanceTotalMaximum);
     mcnorm = normBalanceTotalMaximum;
   }
-  else
+  else{
     params.set(rcb_balanceWeight);
+    mcnorm = normBalanceTotalMaximum;
+  }
 
   double tol;
 
@@ -312,7 +313,11 @@ void AlgRCB(
 
   imbalanceTolerance /= imbalanceReductionFactor;
 
-  env->timerStart("Parallel RCB");
+  int iteration = 1;
+
+  env->memory("RCB algorithm set up");
+
+  env->timerStart(MACRO_TIMERS, "Parallel RCB");
 
   while (part1>part0 && groupSize>1 && numGlobalCoords>0 && sanityCheck--){
 
@@ -324,6 +329,8 @@ void AlgRCB(
     int cutDimension=0;
     scalar_t imbalance=0, weightLeft=0, weightRight=0;
     partId_t leftHalfNumParts=0;
+
+    env->timerStart(MICRO_TIMERS, "Find cut", iteration);
 
     try{
       determineCut<mvector_t, Adapter>(env, comm, 
@@ -337,6 +344,8 @@ void AlgRCB(
     }
     Z2_FORWARD_EXCEPTIONS
 
+    env->timerStop(MICRO_TIMERS, "Find cut", iteration);
+
     // Do we have empty left or right halves?
 
     bool skipLeft = (weightLeft == 0);
@@ -347,12 +356,16 @@ void AlgRCB(
 
     int leftHalfNumProcs=0;
 
+    env->timerStart(MICRO_TIMERS, "Migrate", iteration);
+
     try{ // on return mvector has my new data
 
       migrateData<mvector_t>( env, comm, lrflags.view(0,numLocalCoords), 
         mvector, leftHalfNumProcs);
     }
     Z2_FORWARD_EXCEPTIONS
+
+    env->timerStop(MICRO_TIMERS, "Migrate", iteration);
 
     env->localBugAssertion(__FILE__, __LINE__, "num procs in half",
       leftHalfNumProcs > 0 && leftHalfNumProcs < groupSize,
@@ -368,6 +381,8 @@ void AlgRCB(
 
     ////////////////////////////////////////////////////////
     // Divide into two subgroups.
+
+    env->timerStart(MICRO_TIMERS, "Create sub group, sub data", iteration);
 
     int *ids = NULL;
 
@@ -426,14 +441,18 @@ void AlgRCB(
         subMap, subVectors.view(0, multiVectorDim), multiVectorDim));
     }
     Z2_THROW_OUTSIDE_ERROR(*env)
+
+    env->timerStop(MICRO_TIMERS, "Create sub group, sub data", iteration);
   
     mvector = subMvector;
 
     numLocalCoords = mvector->getLocalLength();
     numGlobalCoords = mvector->getGlobalLength();
+
+    iteration++;
   } 
 
-  env->timerStop("Parallel RCB");
+  env->timerStop(MACRO_TIMERS, "Parallel RCB");
 
   env->localBugAssertion(__FILE__, __LINE__, "partitioning failure", 
     sanityCheck, BASIC_ASSERTION);
@@ -452,7 +471,7 @@ void AlgRCB(
     // int cutDimension;
     // scalar_t imbalance;
 
-    env->timerStart("Serial RCB");
+    env->timerStart(MACRO_TIMERS, "Serial RCB");
 
     try{
       ArrayView<lno_t> emptyIndex;
@@ -465,7 +484,7 @@ void AlgRCB(
     }
     Z2_FORWARD_EXCEPTIONS
 
-    env->timerStop("Serial RCB");
+    env->timerStop(MACRO_TIMERS, "Serial RCB");
 
   }
   else{
@@ -480,7 +499,7 @@ void AlgRCB(
   // It provides the solution to the PartitioningSolution.
   // Metrics can be computed with a method that takes
   // a model and a solution.
-  
+
   ArrayRCP<MetricValues<scalar_t> > metrics;
   partId_t numParts, numNonemptyParts;
 
@@ -515,6 +534,7 @@ void AlgRCB(
     
     env->debug(VERBOSE_DETAILED_STATUS, oss.str());
   }
+
 
   solution->setParts(gnoList, partId, metrics);
 }

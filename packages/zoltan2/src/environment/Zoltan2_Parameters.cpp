@@ -109,7 +109,8 @@ void createAllParameters(Teuchos::ParameterList &pList)
   // a string. Retrieval methods are getIntegralValue, getStringValue,
   // and getStringDocs.
   //
-  // We use it for on/off boolean values, and for levels of verbosity.
+  // We use it for on/off boolean values, for levels of verbosity,
+  // and for output streams.
 
   using Teuchos::StringToIntegralParameterEntryValidator;
   typedef StringToIntegralParameterEntryValidator<int> str2intValidator;
@@ -122,6 +123,16 @@ void createAllParameters(Teuchos::ParameterList &pList)
 
   Tuple<int,8> yesNoIntegrals = 
     tuple<int>( 1, 1, 1, 1, 0, 0, 0, 0);
+
+  // allowed values for output streams
+
+  Tuple<string,8> ostreamStrings = 
+    tuple<string>( "std::cout", "cout", "stdout",
+                   "std::cerr", "cerr", "stderr",
+                   "/dev/null", "null");
+                  
+  Tuple<int,8> ostreamIntegrals = 
+    tuple<int>( 0, 0, 0, 1, 1, 1, 2, 2);
 
   // IntegerRangeList is a Zoltan2 validator defined in this file's
   // header file.  An integer range list is entered as a string of 
@@ -168,24 +179,29 @@ void createAllParameters(Teuchos::ParameterList &pList)
 
   str2intValidatorP = rcp(new str2intValidator(
 
-    tuple<string>("basic_assertions",
+    tuple<string>("no_assertions",
+                  "basic_assertions",
                   "complex_assertions",
                   "debug_mode_assertions"),
 
     tuple<string>(
-      "those always done unless -DZ2_OMIT_ALL_ERROR_CHECKING (fast, default)",
-      "those that take more time, i.e. is input graph a valid graph (slow)",
+      "no assertions will be performed",
+      "typical checks of argument validity (fast, default)",
+      "additional checks, i.e. is input graph a valid graph)",
       "check for everything including logic errors (slowest)"),
 
-    tuple<int>(BASIC_ASSERTION, 
+    tuple<int>(NO_ASSERTIONS,
+               BASIC_ASSERTION, 
                COMPLEX_ASSERTION, 
                DEBUG_MODE_ASSERTION),
 
     parameterName));
 
+  string omitInfo("the amount of error checking performed\n");
+  omitInfo.append("(If the compile flag Z2_OMIT_ALL_ERROR_CHECKING was set,\n");
+  omitInfo.append("then error checking code is not executed at runtime.)\n");
   docString.str("");
-  str2intValidatorP->printDoc(
-    "the amount of error checking performed\n", docString); 
+  str2intValidatorP->printDoc(omitInfo, docString); 
       
   pList.set<string>(parameterName, "basic_assertions", docString.str(),
     str2intValidatorP);
@@ -200,8 +216,8 @@ void createAllParameters(Teuchos::ParameterList &pList)
                   "verbose_detailed_status"),
 
      tuple<string>(
-      "library outputs no information (timing and memory profiling default)",
-      "library outputs basic status information (debug message default)",
+      "library outputs no status information",
+      "library outputs basic status information (default)",
       "library outputs detailed information",
       "library outputs very detailed information"),
 
@@ -213,48 +229,87 @@ void createAllParameters(Teuchos::ParameterList &pList)
    
      parameterName));
 
+  omitInfo = string("the amount of status/warning/debugging info printed\n");
+  omitInfo.append("(If the compile flag Z2_OMIT_ALL_STATUS_MESSAGES was set,\n");
+  omitInfo.append("then message output code is not executed at runtime.)\n");
   docString.str("");
   str2intValidatorP->printDoc(
-    "the amount of status/debugging information to print\n", docString);
+    "the amount of status/debugging/warning information to print\n", docString);
 
   pList.set<string>(parameterName, "basic_status", docString.str(), 
+    str2intValidatorP);
+
+  ////////// topLevel/timer_type
+
+  parameterName = string("timer_type");
+
+  str2intValidatorP = rcp(new str2intValidator(
+     tuple<string>("no_timers", "macro_timers", "micro_timers", "both_timers"),
+
+     tuple<string>(
+      "No timing data will be collected (the default).",
+      "Time an algorithm (or other entity) as a whole.",
+      "Time the substeps of an entity.",
+      "Run both MACRO and MICRO timers."),
+
+     tuple<int>(NO_TIMERS, MACRO_TIMERS, MICRO_TIMERS, BOTH_TIMERS),
+   
+     parameterName));
+
+  omitInfo = string("the type of timing information to collect\n");
+  omitInfo.append("(If the compile flag Z2_OMIT_ALL_PROFILING was set,\n");
+  omitInfo.append("then the timing code is not executed at runtime.)\n");
+  docString.str("");
+  str2intValidatorP->printDoc(omitInfo, docString);
+
+  pList.set<string>(parameterName, "no_timers", docString.str(), 
     str2intValidatorP);
 
   //////////
   // Debug, timing, and memory profiling output streams
   //////////
 
-  strValidatorP = rcp(new StringValidator(
-    tuple<string>("std::cout", "std::cerr", "/dev/null")));
-
   ////////// topLevel/debug_output_stream
   parameterName = string("debug_output_stream");
 
-  docString.str("");
-  strValidatorP->printDoc(
-    "output stream for debug messages (default std::cout)\n",
-     docString);
-
-  pList.set<string>(parameterName, "std::cout", docString.str(), strValidatorP);
-
-  ////////// topLevel/timing_output_stream
-  parameterName = string("timing_output_stream");
+  str2intValidatorP =
+    rcp(new str2intValidator(ostreamStrings, ostreamIntegrals, parameterName));
 
   docString.str("");
-  strValidatorP->printDoc(
-    "output stream for timing messages (default std::cout)\n", docString);
+  str2intValidatorP->printDoc(
+    "output stream for debug/status/warning messages (default cout)\n",
+    docString);
 
-  pList.set<string>(parameterName, "std::cout", docString.str(), strValidatorP);
+  pList.set<string>(parameterName, "cout", docString.str(),
+    str2intValidatorP);
+
+  ////////// topLevel/timer_output_stream
+  parameterName = string("timer_output_stream");
+
+  str2intValidatorP =
+    rcp(new str2intValidator(ostreamStrings, ostreamIntegrals, parameterName));
+
+  docString.str("");
+  str2intValidatorP->printDoc(
+    "output stream for timing report (default cout)\n",
+    docString);
+
+  pList.set<string>(parameterName, "cout", docString.str(),
+    str2intValidatorP);
 
   ////////// topLevel/memory_profiling_output_stream
   parameterName = string("memory_profiling_output_stream");
 
+  str2intValidatorP =
+    rcp(new str2intValidator(ostreamStrings, ostreamIntegrals, parameterName));
+
   docString.str("");
-  strValidatorP->printDoc(
-    "output stream for memory profiling messages (default std::cout)\n",
+  str2intValidatorP->printDoc(
+    "output stream for memory usage messages (default cout)\n",
     docString);
 
-  pList.set<string>(parameterName, "std::cout", docString.str(), strValidatorP);
+  pList.set<string>(parameterName, "cout", docString.str(),
+    str2intValidatorP);
 
   //////////
   // Debug, timing and memory profiling file name parameters
@@ -273,8 +328,8 @@ void createAllParameters(Teuchos::ParameterList &pList)
 
   pList.set<string>(parameterName, "/dev/null", docString.str(), fnameValidatorP);
 
-  ////////// topLevel/timing_output_file
-  parameterName = string("timing_output_file");
+  ////////// topLevel/timer_output_file
+  parameterName = string("timer_output_file");
 
   docString.str("");
   fnameValidatorP->printDoc(
@@ -307,16 +362,6 @@ void createAllParameters(Teuchos::ParameterList &pList)
   docString.str("");
   intRangeValidatorP->printDoc(
     "list of ranks that output debugging/status messages (default \"0\")\n",
-     docString);
-
-  pList.set<string>(parameterName, "0", docString.str(), intRangeValidatorP);
-
-  ////////// topLevel/timing_procs            // TODO we don't need this
-  parameterName = string("timing_procs");
-
-  docString.str("");
-  intRangeValidatorP->printDoc(
-    "list of ranks that output timing information (default \"0\")\n",
      docString);
 
   pList.set<string>(parameterName, "0", docString.str(), intRangeValidatorP);

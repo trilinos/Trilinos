@@ -38,13 +38,12 @@ int main(int argc, char *argv[])
   myParams.set("debug_procs", "all");   
   myParams.set("debug_output_stream", "std::cout");
 
-  myParams.set("timing_procs", "0"); 
-  myParams.set("timing_output_file", "appPerformance.txt");
+  myParams.set("timer_output_file", "appPerformance.txt");
 
   // Normally an application would not call this.  The
   // Environment object will validate the entered parameters.
-  // Since debug_procs and timing_procs are IntegerRangeLists,
-  // this call will convert them to Teuchos::Arrays that use
+  // Since debug_procs is an IntegerRangeList,
+  // this call will convert it to a Teuchos::Array that uses
   // a special flag to indicate "all" or "none".
 
   try{
@@ -68,11 +67,6 @@ int main(int argc, char *argv[])
   rangeList_t &a1 = myParams.get<rangeList_t>("debug_procs");
   std::cout << "debug_procs translation: ";
   Zoltan2::printIntegralRangeList(std::cout, a1);
-  std::cout << std::endl;
-
-  a1 = myParams.get<rangeList_t>("timing_procs");
-  std::cout << "timing_procs translation: ";
-  Zoltan2::printIntegralRangeList(std::cout, a1); 
   std::cout << std::endl;
 
   // Now let's enter a bad value for a parameter and make sure
@@ -105,16 +99,15 @@ int main(int argc, char *argv[])
   all.set("debug_level", "basic_status");
 
   all.set("debug_procs", "1,2,5-10,2");
-  all.set("timing_procs", "10-2");
   all.set("memory_profiling_procs", "1,2,3,4,all");
 
   all.set("debug_output_stream", "std::cerr");
-  all.set("timing_output_stream", "std::cout");
+  all.set("timer_output_stream", "std::cout");
   all.set("memory_profiling_output_stream", "/dev/null");
 
 
   all.set("debug_output_file", "/home/me/debug.txt");
-  all.set("timing_output_file", "/home/me/performance.txt");
+  all.set("timer_output_file", "/home/me/performance.txt");
   all.set("memory_profiling_output_file", "/home/me/memoryUsed.txt");
 
   all.set("speed_versus_quality", "speed");
@@ -168,11 +161,6 @@ int main(int argc, char *argv[])
 
   a1 = all.get<rangeList_t>("debug_procs");
   std::cout << "debug_procs translation: ";
-  Zoltan2::printIntegralRangeList(std::cout, a1);
-  std::cout << std::endl;
-
-  a1 = all.get<rangeList_t>("timing_procs");
-  std::cout << "timing_procs translation: ";
   Zoltan2::printIntegralRangeList(std::cout, a1);
   std::cout << std::endl;
 

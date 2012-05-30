@@ -337,6 +337,8 @@ template <typename mvector_t>
   }
   Z2_FORWARD_EXCEPTIONS
 
+  env->memory("RCB migrate data");
+
   if (nobj > 0){
     delete [] sendBufView.getRawPtr();
     delete [] sendCountView.getRawPtr();
@@ -616,8 +618,7 @@ template <typename mvector_t>
     typename mvector_t::local_ordinal_type &localCountLeft, // output
     typename mvector_t::scalar_type &imbalance)        // output
 {
-  if (env->doStatus())
-    env->debug(DETAILED_STATUS, string("Entering BSPfindCut"));
+  env->debug(DETAILED_STATUS, string("Entering BSPfindCut"));
 
   // initialize output
   bool useIndices = index.size() > 0;
@@ -1037,8 +1038,7 @@ template <typename mvector_t>
   env->globalInputAssertion(__FILE__, __LINE__, "partitioning not solvable",
     done, DEBUG_MODE_ASSERTION, comm);
 
-  if (env->doStatus())
-    env->debug(DETAILED_STATUS, string("Exiting BSPfindCut"));
+  env->debug(DETAILED_STATUS, string("Exiting BSPfindCut"));
 
   return;
 }
@@ -1254,11 +1254,13 @@ template <typename mvector_t, typename Adapter>
 
   lno_t numLocalCoords=0;
   bool useIndices;
+  bool firstCall=false;
 
   if (index.size() == 0){
     // First time through there are no indices.
     useIndices = false;
     numLocalCoords = vectors->getLocalLength();
+    firstCall = true;
   }
   else{
     useIndices = true;
@@ -1355,6 +1357,9 @@ template <typename mvector_t, typename Adapter>
       totalLeft, totalRight, localCountLeft, imbalance);
   }
   Z2_FORWARD_EXCEPTIONS
+
+  if (firstCall)
+    env->memory("serial RCB");
 
   ///////////////////////////////////////////////////////
   // Adjust indices for left half and right half

@@ -19,6 +19,8 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::Comm;
 
+#ifdef HAVE_ZOLTAN2_ZOLTAN
+
 //
 // A few of the RCB tests done by Zoltan in nightly testing.
 //
@@ -63,10 +65,10 @@ static string testArgs[NUMTESTS*3] = {
 };
 #else
 #define NUMTESTS 2
-static int testNumProcs[NUMTESTS] = {3,3};
+static int testNumProcs[NUMTESTS] = {4,4};
 
 static string testArgs[NUMTESTS*3] = {
-"simple", "no", "no",
+"grid20x19", "no", "no",
 "simple", "no", "no"};
 #endif
 
@@ -153,7 +155,7 @@ int runRCB(const RCP<const Comm<int> > &comm,
  // Parameters
 
   Teuchos::ParameterList params;
-  params.set("timing_output_stream" , "std::cout");
+  params.set("timer_output_stream" , "std::cout");
   //params.set("debug_level" , "verbose_detailed_status");
 
   Teuchos::ParameterList &parParams = params.sublist("partitioning");
@@ -231,7 +233,6 @@ int main(int argc, char *argv[])
   int rank = comm->getRank();
   int nprocs = comm->getSize();
   bool ac = false, rb = false;
-  string fname;
 
   if (getenv("DEBUGME")){
     std::cout << getpid() << std::endl;
@@ -240,7 +241,6 @@ int main(int argc, char *argv[])
 
   int fail=0;
 
-#ifdef HAVE_ZOLTAN2_ZOLTAN
   if (argc > 1){
    
     Teuchos::CommandLineProcessor cmdp (false, false);
@@ -298,10 +298,24 @@ int main(int argc, char *argv[])
       fail = runRCB(comm, "grid20x19", "yes", "yes", nprocs);
     }
   }
-#endif
   
   if (rank == 0 && !fail)
     std::cout << "PASS" << std::endl;
   
   return 0;
 }
+
+#else
+
+int main(int argc, char *argv[])
+{
+  Teuchos::GlobalMPISession session(&argc, &argv);
+  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  int rank = comm->getRank();
+  
+  if (rank == 0 )
+    std::cout << "PASS" << std::endl;
+  
+  return 0;
+}
+#endif
