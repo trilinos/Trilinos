@@ -1,0 +1,4 @@
+      COMMON /XYLAB/  XLAB, YLAB
+      CHARACTER*1024 XLAB, YLAB
+C      --XLAB, YLAB - X and Y axis labels
+

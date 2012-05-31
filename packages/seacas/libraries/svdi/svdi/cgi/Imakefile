@@ -1,0 +1,94 @@
+XCOMM Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
+XCOMM DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+XCOMM certain rights in this software
+XCOMM 
+XCOMM Redistribution and use in source and binary forms, with or without
+XCOMM modification, are permitted provided that the following conditions are
+XCOMM met:
+XCOMM 
+XCOMM     * Redistributions of source code must retain the above copyright
+XCOMM       notice, this list of conditions and the following disclaimer.
+XCOMM 
+XCOMM     * Redistributions in binary form must reproduce the above
+XCOMM       copyright notice, this list of conditions and the following
+XCOMM       disclaimer in the documentation and/or other materials provided
+XCOMM       with the distribution.
+XCOMM 
+XCOMM     * Neither the name of Sandia Corporation nor the names of its
+XCOMM       contributors may be used to endorse or promote products derived
+XCOMM       from this software without specific prior written permission.
+XCOMM 
+XCOMM THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+XCOMM "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+XCOMM LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+XCOMM A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+XCOMM OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+XCOMM SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+XCOMM LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+XCOMM DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+XCOMM THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+XCOMM (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+XCOMM OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+XCOMM 
+
+XCOMM $Id: Imakefile,v 1.7 2004/12/14 19:08:48 gdsjaar Exp $
+XCOMM Imakefile for svdi/cgi
+XCOMM Support for devices x11, met, and pst only
+
+DEFINES = -D$(SYSTEM)
+EXTRA_INCLUDES = $(X11INCLUDES)
+F77CPPFLAGS = F77CppFlags 
+
+SRCScgif = sdcgif.f vdicgi_char.f
+SRCScgic = cgisdum.c mdcgi.c sdcgi.c
+OBJScgif = ${SRCScgif:.f=.o}
+OBJScgic = ${SRCScgic:.c=.o}
+
+XCOMM vdicgi...
+SRCSCGI = vdicgi.c
+OBJSCGI = ${SRCSCGI:.c=.o}
+
+XCOMM x11
+SRCSx11c = x11_vdix11.c x11_x11xlate.c
+OBJSx11c = ${SRCSx11c:.c=.o}
+SRCS1 = x11_cgisx11.c
+OBJS1 = x11_cgisx11.o
+
+XCOMM met
+SRCSmetf = met_vdimet.f
+SRCSmetc = met_metxlate.c
+OBJSmetf = ${SRCSmetf:.f=.o}
+OBJSmetc = ${SRCSmetc:.c=.o}
+SRCS2 = met_cgismet.c
+OBJS2 = met_cgismet.o
+
+XCOMM pst
+SRCSpstf = pst_vdipst.f
+SRCSpstc = pst_pstxlate.c
+OBJSpstf = ${SRCSpstf:.f=.o}
+OBJSpstc = ${SRCSpstc:.c=.o}
+SRCS3 = pst_cgispst.c
+OBJS3 = pst_cgispst.o
+
+XCOMM Object files for cgi library
+OBJScgi = $(OBJScgif) $(OBJScgic)
+OBJSx11 = $(OBJSx11c)
+OBJSmet = $(OBJSmetf) $(OBJSmetc)
+OBJSpst = $(OBJSpstf) $(OBJSpstc)
+
+XCOMM Wrapper for 64-bit build
+SRCSwrap = addrwrap.f
+OBJSwrap = ${SRCSwrap:.f=.o}
+
+NormalLibraryTarget(cgi,$(OBJScgi) $(OBJSx11) $(OBJSmet) $(OBJSpst) $(OBJSwrap))
+
+InstallLibrary(cgi,$(LIBDIR))
+
+AllTarget($(OBJSCGI) $(OBJS1) $(OBJS2) $(OBJS3))
+
+InstallNamedTarget(install,$(OBJSCGI),$(INSTLIBFLAGS),$(LIBDIR),$(OBJSCGI))
+InstallNamedTarget(install,$(OBJS1),$(INSTLIBFLAGS),$(LIBDIR),cgisx11.o)
+InstallNamedTarget(install,$(OBJS2),$(INSTLIBFLAGS),$(LIBDIR),cgismet.o)
+InstallNamedTarget(install,$(OBJS3),$(INSTLIBFLAGS),$(LIBDIR),cgispst.o)
+
+CleanupCapF(addrwrap.f)

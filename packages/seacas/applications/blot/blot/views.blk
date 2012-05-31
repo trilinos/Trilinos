@@ -1,0 +1,15 @@
+      COMMON /VIEWS/  MULTIM,
+     &   XISSYM, YISSYM, XAXSYM, YAXSYM, LFTSYM, BOTSYM
+      LOGICAL MULTIM, XISSYM, YISSYM, LFTSYM, BOTSYM
+C      --MULTIM - true iff times are overlaid
+C      --XISSYM - true iff X views are symmetric vs copies
+C      --   (false if X not divided)
+C      --YISSYM - IN - true iff Y views are symmetric vs copies
+C      --   (false if Y not divided)
+C      --XAXSYM - the vertical symmetry axis
+C      --YAXSYM - the horizontal symmetry axis
+C      --LFTSYM - true iff symmetry line to left of main view
+C      --   (stays set when symmetric views are not defined)
+C      --BOTSYM - true iff symmetry line to bottom of main view
+C      --   (stays set when symmetric views are not defined)
+

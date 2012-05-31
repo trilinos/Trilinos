@@ -1,0 +1,150 @@
+XCOMM $Id: Imakefile,v 1.33 2004/12/14 19:08:40 gdsjaar Exp $
+XCOMM
+
+STATICFLAGS = FortranStaticFlags
+
+FLDOPTIONS = RetainRelocationEntries
+
+#if defined(HPArchitecture) || defined(CougarArchitecture)
+.IGNORE: $(CODE3)
+#endif
+
+#if defined(SunArchitecture)
+#if HasGcc
+EXTRA_LOAD_FLAGS =  -Wl,-z muldefs
+#else
+EXTRA_LOAD_FLAGS =  -z muldefs
+#endif
+#endif
+
+#if defined(SGIArchitecture)
+#if Build64BitAccess == YES
+F77OPTIONS      = DefaultF77Options -G0
+EXTRA_LDOPTIONS = ExtraLoadOptions -G0
+#endif
+#endif
+
+#if NeedsDoubleEscape
+STD_CPP_DEFINES = StandardCppDefines -DNeedsDoubleEscape
+#endif
+
+CODE  =	fastq
+CODE1 = fastq.x11
+CODE2 = fastq.cps
+CODE3 = fastq.dual
+CODE5 = fastq.xcps
+SRCS  = fastq.f
+OBJS  =	fastq.o
+
+SRCS1 = \
+add1cn.f  add2cn.f  add2el.f  add2nd.f  add3nd.f  addjut.f \
+addkxl.f  addlxn.f  addnod.f  addrow.f  addsnp.f  addtuk.f \
+addwdg.f  addwt.f   adjmsh.f  adjrow.f  adjtri.f  alpclr.f \
+amxbm.f   apalib.f  apalsm.f  arcpar.f  arcy.f    arelax.f \
+b4bad.f   bcross.f  bfnode.f  bisect.f  bmschm.f  boxit.f  \
+bpinch.f  bubble.f  casmo.f   cclock.f  ch3to4.f  chcond.f \
+check.f   chkhol.f  chkkxl.f  chkrgn.f  chkwt.f   ciapal.f \
+close2.f  close4.f  close6.f  closeg.f  closel.f  closep.f \
+cntcrn.f  colaps.f  comsrt.f  condno.f  connod.f  cornp.f  \
+cpubrk.f  crcsiz.f  cross.f   csmang.f  d2grid.f  d2node.f \
+dataok.f  delem.f   delfsq.f  delhol.f  dellxn.f  digit.f  \
+disclm.f  disctp.f  dline.f   dlpara.f  dmess.f   dpread.f \
+dread.f   dstort.f  elaray.f  elipse.f  elpspr.f  endtan.f \
+eqlang.f  erase.f   erasec.f  erasel.f  esolve.f  etheta.f \
+excorn.f  exdsct.f  exisop.f  exside.f  extnd1.f  extnd3.f \
+extnd5.f  fexit.f   filsmo.f  fixlxn.f  fixsub.f  flagd.f  \
+flagk.f   flmnmx.f  fndlin.f  fndlnk.f  fxnuid.f
+
+SRCS2 = \
+gdata.f   getang.f  getcrn.f  getdum.f  getext.f  getfrm.f \
+geti12.f  geti1r.f  getime.f  getkxn.f  getlxn.f  getm1.f  \
+getm3.f   getm5.f   getnxn.f  getplp.f  getr12.f  getrow.f \
+getsbc.f  getsiz.f  gettrn.f  getwt.f   gkxn.f    gmesh.f  \
+gnlist.f  gnxka.f   gtxdum.f  help.f    inattr.f  inbody.f \
+inboun.f  inbrst.f  indexi.f  indexr.f  indx.f    infact.f \
+ingrid.f  ingrpn.f  inhole.f  inintr.f  initdg.f  inline.f \
+innerh.f  inpoin.f  inqstr.f  inqtru.f  inregn.f  inrenm.f \
+inschm.f  inside.f  intrup.f  intsct.f  invert.f  invmap.f \
+ioccur.f  irever.f  isolap.f  jumplp.f  keep3.f   keep34.f \
+keyin.f   kxnadd.f  l2smo.f   labove.f  lcolor.f  linepr.f \
+linkbc.f  linken.f  linlen.f  list.f    listbf.f  llist.f  \
+longel.f  lowfnd.f  lpntin.f  lswap.f   ltadd.f   ltnew.f  \
+ltsort.f  lupang.f  mak2el.f  marksm.f  match2.f  matchk.f \
+mesage.f  mesh.f    midnod.f  minmax.f  mixvar.f  mkused.f \
+mmschm.f  mnmxk.f   mnorm.f   movep.f   ncklce.f  ndstat.f \
+nickc.f   nicks.f   node12.f  nodord.f  normnd.f  nps.f
+
+SRCS3 = \
+nsplit.f  nxkbdy.f  nxkord.f  parc.f    paving.f  pcross.f \
+pdata.f   perim.f   periml.f  pickm1.f  pickm3.f  pickm5.f \
+picktr.f  pinch.f   pline.f   plotl.f   pmesh.f   pmschm.f \
+pschem.f  putcrs.f  putlxn.f  qaaval.f  qmesh.f   qual2.f  \
+qual2n.f  qual3.f   qual4.f   rdfsq.f   rdgens.f  rdmesh.f \
+refrsh.f  regext.f  renum.f   repsmo.f  resta.f   restry.f \
+revers.f  rgdstr.f  rgnsch.f  ringbl.f  rmesh.f   rotate.f \
+rowsmo.f  rplotl.f  savreg.f  setaxs.f  setcir.f  setlop.f \
+setn02.f  sew2.f    sflush.f  shrunk.f  sidep.f   skinit.f \
+skprnt.f  smogs.f   snapit.f  snappt.f  snapxy.f  snpin1.f \
+solve.f   sort.f    sortia.f  sortst.f  spaced.f  spawn.f  \
+spiral.f  spring.f  squash.f  srtnbc.f  srtsbc.f  strait.f \
+strcut.f  strlng.f  strsiz.f  subpen.f  subtri.f  subtrn.f \
+symbol.f  tabint.f  tablet.f  tmschm.f  tridel.f  trifix.f \
+tuck.f    umschm.f  undelm.f  unisnp.f  vinter.f \
+wedge.f   wrabqs.f  wrfsq.f   wrgens.f  wrjerr.f  wrnast.f \
+wrex2.f   zhole.f   zoomlt.f  dbpini.f  lenstr.f
+
+SRCSF = \
+bisect.F digit.F erase.F erasel.F movep.F pmesh.F refrsh.F symbol.F
+
+SRCSf = ${SRCSF:.F=.f}
+OBJS1 = ${SRCS1:.f=.o}
+OBJS2 = ${SRCS2:.f=.o}
+OBJS3 = ${SRCS3:.f=.o}
+OBJSF = ${SRCSF:.F=.o}
+
+ALLSRCS  = $(SRCS1) $(SRCS2) $(SRCS3) $(SRCSF)
+ALLOBJS  = $(OBJS1) $(OBJS2) $(OBJS3) $(OBJSF)
+
+LIBS     = $(EXOIIV2FOR) $(EXOIIV2C) $(NETCDF) $(SUPES) $(PLT)
+CGIOBJ   = $(LIBDIR)/vdicgi.o
+
+OBJSX11  = $(LIBDIR)/cdrabc.o $(LIBDIR)/cgisx11.o $(CGIOBJ)
+LIBS1    = $(LIBS) $(CGI) $(CDR) $(X11) $(EXTRA_LIBRARIES)
+
+OBJSCPS  = $(LIBDIR)/vdicps.o $(LIBDIR)/cdrabc.o
+LIBS2    = $(LIBS) $(CGI) $(CDR) $(EXTRA_LIBRARIES)
+
+#if defined (__APPLE__)
+OBJSDUAL = $(LIBDIR)/cdrabc.o $(LIBDIR)/vdx11met.o 
+#else
+OBJSDUAL = $(LIBDIR)/cdrabc.o $(LIBDIR)/vdx11met.o $(LIBDIR)/wmet.o 
+#endif
+LIBS3    = $(LIBS) $(CGI) $(CDR) $(X11) $(EXTRA_LIBRARIES)
+
+OBJSXCPS = $(LIBDIR)/cdrabc.o $(LIBDIR)/vdx11cps.o $(LIBDIR)/vdicps_dual.o
+LIBS5    = $(LIBS) $(CGI) $(CDR) $(X11) $(EXTRA_LIBRARIES)
+
+NormalLibraryTarget3($(CODE),$(OBJS1),$(OBJS2),$(OBJS3))
+
+NormalFortranTarget($(CODE1),$(OBJS) $(OBJSX11),libfastq.a,libfastq.a,$(LIBS1))
+
+NormalFortranTarget($(CODE2),$(OBJS) $(OBJSCPS),libfastq.a,libfastq.a,$(LIBS2))
+
+NormalFortranTarget($(CODE3),$(OBJS) $(OBJSDUAL),libfastq.a,libfastq.a,$(LIBS3))
+
+NormalFortranTarget($(CODE5),$(OBJS) $(OBJSXCPS),libfastq.a,libfastq.a,$(LIBS5))
+
+InstallProgram($(OBJS),$(BINDIR))
+
+InstallLibrary($(CODE),$(LIBDIR))
+
+InstallProgram($(CODE1),$(BINDIR))
+
+InstallProgram($(CODE2),$(BINDIR))
+
+InstallProgram($(CODE3),$(BINDIR))
+
+InstallProgram($(CODE5),$(BINDIR))
+
+CleanupCapF($(SRCSf))
+

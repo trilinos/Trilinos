@@ -1,0 +1,5 @@
+      COMMON /PLCOLR/ BCKGND, FORGND
+      CHARACTER*32 BCKGND, FORGND
+C        --BCKGND -- The background color
+C        --FORGND -- The foreground color
+

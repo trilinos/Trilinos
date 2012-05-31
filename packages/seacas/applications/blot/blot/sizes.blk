@@ -1,0 +1,4 @@
+      COMMON /SIZES/  NPSIZ
+C      --NPSIZ - the size of the nodal coordinate arrays passed to the
+C      --   HIDDEN routine for partial line
+
