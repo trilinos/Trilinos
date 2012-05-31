@@ -482,6 +482,7 @@ int ncmpi_def_var(
 /**
  * Collective function for put_att.
  */
+extern "C"
 static int _ncmpi_put_att_type(
         int ncid,
         int varid,
