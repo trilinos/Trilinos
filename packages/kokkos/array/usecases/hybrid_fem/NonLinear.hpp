@@ -200,6 +200,7 @@ PerformanceData run( comm::Machine machine ,
   // Allocate linear system coefficients and rhs:
 
   const size_t local_owned_length = jacobian.graph.row_map.length();
+  const size_t local_total_length = mesh.node_coords.dimension(0);
 
   jacobian.coefficients =
     KokkosArray::create_multivector< matrix_coefficients_type >( jacobian.graph.entries.dimension(0) );
@@ -209,7 +210,7 @@ PerformanceData run( comm::Machine machine ,
   delta =
     KokkosArray::create_multivector< vector_type >( local_owned_length );
   nodal_solution = 
-    KokkosArray::create_multivector< vector_type >( local_owned_length );
+    KokkosArray::create_multivector< vector_type >( local_total_length );
 
   //------------------------------------
   // Allocation of arrays to fill the linear system
@@ -238,6 +239,36 @@ PerformanceData run( comm::Machine machine ,
                                   0 , 1 );
     
   do { // Nonlinear loop
+
+#if defined( HAVE_MPI )
+
+    { //------------------------------------
+      // Import off-processor solution values
+      // for residual and jacobian computations
+
+      KokkosArray::AsyncExchange< typename vector_type::value_type , Device ,
+                                  KokkosArray::ParallelDataMap >
+        exchange( mesh.parallel_data_map , 1 );
+
+      KokkosArray::PackArray< vector_type >
+        ::pack( exchange.buffer() ,
+                mesh.parallel_data_map.count_interior ,
+                mesh.parallel_data_map.count_send ,
+                nodal_solution );
+
+      exchange.send();
+
+      // If interior & boundary matrices then could launch interior multiply
+
+      exchange.receive();
+
+      KokkosArray::UnpackArray< vector_type >
+        ::unpack( nodal_solution , exchange.buffer() ,
+                  mesh.parallel_data_map.count_owned ,
+                  mesh.parallel_data_map.count_receive );
+    }
+
+#endif
 
     //------------------------------------
     // Compute element matrices and vectors:
