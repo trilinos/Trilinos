@@ -4,7 +4,10 @@
  * as a guideline for developing your own functions.
  */
 
+#ifndef __STDC_CONSTANT_MACROS
 #define __STDC_CONSTANT_MACROS
+#endif
+
 #include <stdint.h>
 #include <inttypes.h>
 #include <sys/stat.h>
@@ -79,6 +82,11 @@ typedef struct nc_file_state nc_file_state;
 
 /** Association between ncid and netcdf file state */
 map<int, nc_file_state *> file_state_map;
+
+
+
+#define MANIPULATE_ARGS(netcdf_id) { netcdf_id--; }
+
 
 
 /* ************************ Private functions ******************* */
@@ -234,6 +242,28 @@ static int get_config_from_env(struct netcdf_config *netcdf_cfg)
 }
 
 
+extern "C"
+void netcdf_client_fini(void)
+{
+    int rc=NSSI_OK;
+    nssi_request *req=NULL;
+
+    log_debug(netcdf_debug_level, "enter");
+
+    if (collective_op_rank == 0) {
+        rc=nssi_kill(&svcs[default_svc], 0, 1000);
+
+        MPI_Bcast(&rc, 1, MPI_INT, 0, ncmpi_collective_op_comm);
+    } else {
+        MPI_Bcast(&rc, 1, MPI_INT, 0, ncmpi_collective_op_comm);
+    }
+
+    log_debug(netcdf_debug_level, "exit");
+
+    return;
+}
+
+
 /**
  * Initialize the netcdf client interface.
  *
@@ -274,7 +304,7 @@ int netcdf_client_init(void)
     MPI_Comm_size(MPI_COMM_WORLD, &np);
 
     /* if we exit normally, we should cleanup after ourselves */
-    atexit(nc_fini);
+    atexit(netcdf_client_fini);
 
     log_level_str=getenv("NSSI_LOG_LEVEL");
     logfile_base=getenv("NSSI_LOG_FILE");
@@ -433,27 +463,6 @@ int netcdf_client_init(void)
     return 0;
 }
 
-extern "C"
-int nc_fini(void)
-{
-    int rc=NSSI_OK;
-    nssi_request *req=NULL;
-
-    log_debug(netcdf_debug_level, "enter");
-
-    if (collective_op_rank == 0) {
-        rc=nssi_kill(&svcs[default_svc], 0, 1000);
-
-        MPI_Bcast(&rc, 1, MPI_INT, 0, ncmpi_collective_op_comm);
-    } else {
-        MPI_Bcast(&rc, 1, MPI_INT, 0, ncmpi_collective_op_comm);
-    }
-
-    log_debug(netcdf_debug_level, "exit");
-
-    return rc;
-}
-
 
 static int check_var_type(const int ncid, const int varid, nc_type xtype)
 {
@@ -486,7 +495,7 @@ nc_file_state *new_file_state(nc_data_mode new_mode)
  * These functions replace the normal netcdf library functions.
  */
 extern "C"
-int nc__create(
+static int _nc_create(
                 const char *path,
                 int cmode,
                 size_t initialsz,
@@ -511,7 +520,7 @@ int nc__create(
 
     log_debug(netcdf_debug_level, "enter");
 
-    log_debug(debug_level, "Calling nc__create");
+    log_debug(debug_level, "Calling _nc_create");
 
     rc = netcdf_client_init();
     if (rc != 0) {
@@ -527,7 +536,7 @@ int nc__create(
     args.write_type = nc_cfg.write_type;
     args.num_participants = nc_cfg.num_participants;
 
-    log_debug(debug_level, "calling nc_create(%s, %d)", path, cmode);
+    log_debug(debug_level, "calling _nc_create(%s, %d)", path, cmode);
 
     if (collective_op_rank == 0) {
         Start_Timer(MulticastTime);
@@ -631,14 +640,19 @@ int nc_create(
                 int cmode,
                 int *ncidp)
 {
+    int rc=NC_NOERR;
     size_t initialsz = 0;
     size_t chunksizehint = NC_SIZEHINT_DEFAULT;
 
-    return nc__create(path, cmode, initialsz, &chunksizehint, ncidp);
+    rc = _nc_create(path, cmode, initialsz, &chunksizehint, ncidp);
+
+    (*ncidp)++;
+
+    return(rc);
 }
 
 extern "C"
-int nc__open(
+static int _nc_open(
         const char *path,
         int mode,
         size_t *chunksizehintp,
@@ -660,7 +674,7 @@ int nc__open(
 
     log_debug(netcdf_debug_level, "enter");
 
-    log_debug(netcdf_debug_level, "Calling nc__open");
+    log_debug(netcdf_debug_level, "Calling _nc_open");
 
     rc = netcdf_client_init();
     if (rc != 0) {
@@ -676,7 +690,7 @@ int nc__open(
     args.write_type = nc_cfg.write_type;
     args.num_participants = nc_cfg.num_participants;
 
-    log_debug(debug_level, "calling nc__open(%s, %d)", path, mode);
+    log_debug(debug_level, "calling _nc_open(%s, %d)", path, mode);
 
     if (collective_op_rank == 0) {
         Start_Timer(MulticastTime);
@@ -780,10 +794,16 @@ int nc_open(
         int mode,
         int *ncidp)
 {
+    int rc=NC_NOERR;
+
     size_t initialsz = 0;
     size_t chunksizehint = NC_SIZEHINT_DEFAULT;
 
-    return nc__open(path, mode, &chunksizehint, ncidp);
+    rc = _nc_open(path, mode, &chunksizehint, ncidp);
+
+    (*ncidp)++;
+
+    return(rc);
 }
 
 /**
@@ -799,7 +819,7 @@ int nc_delete(const char *filename)
 }
 
 extern "C"
-int nc_set_fill(int ncid, int fillmode, int *old_modep)
+static int _nc_set_fill(int ncid, int fillmode, int *old_modep)
 {
     *old_modep = fillmode;
     int rc = NC_NOERR;
@@ -815,7 +835,7 @@ int nc_set_fill(int ncid, int fillmode, int *old_modep)
 
     log_debug(netcdf_debug_level, "enter");
 
-    log_debug(netcdf_debug_level, "Calling nc_set_fill");
+    log_debug(netcdf_debug_level, "Calling _nc_set_fill (fillmode=%d)", fillmode);
 
     nc_set_fill_args args;
     memset(&args, 0, sizeof(args));
@@ -834,7 +854,7 @@ int nc_set_fill(int ncid, int fillmode, int *old_modep)
                 NULL,
                 0,
                 &res);
-        Stop_Timer("nc_set_fill Multicast", MulticastTime);
+        Stop_Timer("_nc_set_fill Multicast", MulticastTime);
 
         MPI_Bcast(&rc, 1, MPI_INT, 0, ncmpi_collective_op_comm);
     } else {
@@ -843,22 +863,29 @@ int nc_set_fill(int ncid, int fillmode, int *old_modep)
 
     *old_modep=res.old_fill_mode;
 
-    log_debug(netcdf_debug_level, "got result from nc_set_fill: rc=%d, old_modep=%d",rc, *old_modep);
+    log_debug(netcdf_debug_level, "got result from _nc_set_fill: rc=%d, fillmode=%d, old_modep=%d",rc, fillmode, *old_modep);
 
     log_debug(netcdf_debug_level, "exit");
 
     return rc;
 }
+extern "C"
+int nc_set_fill(int ncid, int fillmode, int *old_modep)
+{
+    MANIPULATE_ARGS(ncid);
+
+    return _nc_set_fill(ncid, fillmode, old_modep);
+}
 
 extern "C"
-int nc_begin_indep_data(int ncid)
+static int _nc_begin_indep_data(int ncid)
 {
     int rc = NC_NOERR;
     log_level debug_level = netcdf_debug_level;
 
     log_debug(netcdf_debug_level, "enter");
 
-    log_debug(debug_level, "Calling remote nc_begin_indep_stub");
+    log_debug(debug_level, "Calling remote _nc_begin_indep_stub");
 
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -901,16 +928,23 @@ int nc_begin_indep_data(int ncid)
 
     return rc;
 }
+extern "C"
+int nc_begin_indep_data(int ncid)
+{
+    MANIPULATE_ARGS(ncid);
+
+    return _nc_begin_indep_data(ncid);
+}
 
 extern "C"
-int nc_end_indep_data(int ncid)
+static int _nc_end_indep_data(int ncid)
 {
     int rc = NC_NOERR;
     log_level debug_level = netcdf_debug_level;
 
     log_debug(netcdf_debug_level, "enter");
 
-    log_debug(debug_level, "Calling remote nc_end_indep_stub");
+    log_debug(debug_level, "Calling remote _nc_end_indep_stub");
 
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -953,12 +987,19 @@ int nc_end_indep_data(int ncid)
 
     return rc;
 }
+extern "C"
+int nc_end_indep_data(int ncid)
+{
+    MANIPULATE_ARGS(ncid);
+
+    return _nc_end_indep_data(ncid);
+}
 
 /**
  * Add a new dimension to an open netCDF dataset.
  */
 extern "C"
-int nc_def_dim(
+static int _nc_def_dim(
                 int ncid,
                 const char *name,
                 size_t len,
@@ -977,7 +1018,7 @@ int nc_def_dim(
 
     log_debug(netcdf_debug_level, "enter");
 
-    log_debug(netcdf_debug_level, "Calling nc_def_dim");
+    log_debug(netcdf_debug_level, "Calling _nc_def_dim");
 
     assert(file_state_map[ncid]->mode == NC_DEFINE_MODE);
 
@@ -1048,7 +1089,7 @@ int nc_def_dim(
     /* share the file descriptor with the rest of our group */
     MPI_Bcast(dimidp, 1, MPI_INT, 0, ncmpi_collective_op_comm);
 
-    log_debug(netcdf_debug_level, "got result from nc_def_dim: rc=%d, dimidp=%d",rc, *dimidp);
+    log_debug(netcdf_debug_level, "got result from _nc_def_dim: rc=%d, dimidp=%d",rc, *dimidp);
 
     if (global_rank == 0) {
         /* add the dimension to the open dataset */
@@ -1069,13 +1110,24 @@ cleanup:
 
     return rc;
 }
+extern "C"
+int nc_def_dim(
+                int ncid,
+                const char *name,
+                size_t len,
+                int *dimidp)
+{
+    MANIPULATE_ARGS(ncid);
+
+    return _nc_def_dim(ncid, name, len, dimidp);
+}
 
 
 /**
  * Define a variable for an open netCDF dataset.
  */
 extern "C"
-int nc_def_var(
+static int _nc_def_var(
                 int ncid,
                 const char *name,
                 nc_type xtype,
@@ -1107,7 +1159,7 @@ int nc_def_var(
     args.dimids.dimids_len = ndims;
     args.dimids.dimids_val = (int *)&dimids[0];
 
-    log_debug(netcdf_debug_level, "Calling nc_def_var(ncid=%d, name=\"%s\", xtype=%d,"
+    log_debug(netcdf_debug_level, "Calling _nc_def_var(ncid=%d, name=\"%s\", xtype=%d,"
             " ndims=%d, dimids[0]=%d", ncid, name, xtype, ndims, args.dimids.dimids_val[0]);
 
     if (collective_op_rank == 0) {
@@ -1171,7 +1223,7 @@ int nc_def_var(
     /* share the file descriptor with the rest of our group */
     MPI_Bcast(varidp, 1, MPI_INT, 0, ncmpi_collective_op_comm);
 
-    log_debug(netcdf_debug_level, "got result from nc_def_var: rc=%d, varidp=%d",rc, *varidp);
+    log_debug(netcdf_debug_level, "got result from _nc_def_var: rc=%d, varidp=%d",rc, *varidp);
 
     if (global_rank == 0) {
         /* add the variable to the open dataset */
@@ -1192,12 +1244,24 @@ cleanup:
 
     return rc;
 }
+extern "C"
+int nc_def_var(
+                int ncid,
+                const char *name,
+                nc_type xtype,
+                int ndims,
+                const int dimids[],
+                int *varidp)
+{
+    MANIPULATE_ARGS(ncid);
 
+    return _nc_def_var(ncid, name, xtype, ndims, dimids, varidp);
+}
 
 /* ************** INQUIRY FUNCTIONS ***************** */
 
 extern "C"
-int nc_inq(
+static int _nc_inq(
         int ncid,
         int *ndimsp,
         int *nvarsp,
@@ -1213,9 +1277,21 @@ int nc_inq(
         return group_map[ncid]->inq(ndimsp, nvarsp, nattsp, unlimdimidp);
     }
 }
+extern "C"
+int nc_inq(
+        int ncid,
+        int *ndimsp,
+        int *nvarsp,
+        int *nattsp,
+        int *unlimdimidp)
+{
+    MANIPULATE_ARGS(ncid);
+
+    return _nc_inq(ncid, ndimsp, nvarsp, nattsp, unlimdimidp);
+}
 
 extern "C"
-int nc_inq_attlen(
+static int _nc_inq_attlen(
         int ncid,
         int varid,
         const char *name,
@@ -1237,9 +1313,20 @@ int nc_inq_attlen(
 
     return rc;
 }
+extern "C"
+int nc_inq_attlen(
+        int ncid,
+        int varid,
+        const char *name,
+        size_t *lenp)
+{
+    MANIPULATE_ARGS(ncid);
+
+    return _nc_inq_attlen(ncid, varid, name, lenp);
+}
 
 extern "C"
-int nc_inq_atttype(
+static int _nc_inq_atttype(
         int ncid,
         int varid,
         const char *name,
@@ -1259,9 +1346,20 @@ int nc_inq_atttype(
 
     return rc;
 }
+extern "C"
+int nc_inq_atttype(
+        int ncid,
+        int varid,
+        const char *name,
+        nc_type *xtypep)
+{
+    MANIPULATE_ARGS(ncid);
+
+    return _nc_inq_atttype(ncid, varid, name, xtypep);
+}
 
 extern "C"
-int nc_inq_att(
+static int _nc_inq_att(
         int ncid,
         int varid,
         const char *name,
@@ -1270,15 +1368,15 @@ int nc_inq_att(
 {
     int rc = NC_NOERR;
 
-    log_debug(netcdf_debug_level, "enter");
+    log_debug(netcdf_debug_level, "enter (name=%s)", name);
 
-    rc = nc_inq_attlen(ncid, varid, name, lenp);
+    rc = _nc_inq_attlen(ncid, varid, name, lenp);
     if (rc != NC_NOERR) {
         log_error(netcdf_debug_level, "%s", nc_strerror(rc));
         return rc;
     }
 
-    rc = nc_inq_atttype(ncid, varid, name, xtypep);
+    rc = _nc_inq_atttype(ncid, varid, name, xtypep);
     if (rc != NC_NOERR) {
         log_error(netcdf_debug_level, "%s", nc_strerror(rc));
         return rc;
@@ -1288,9 +1386,21 @@ int nc_inq_att(
 
     return rc;
 }
+extern "C"
+int nc_inq_att(
+        int ncid,
+        int varid,
+        const char *name,
+        nc_type *xtypep,
+        size_t *lenp)
+{
+    MANIPULATE_ARGS(ncid);
+
+    return _nc_inq_att(ncid, varid, name, xtypep, lenp);
+}
 
 extern "C"
-int nc_inq_attname(
+static int _nc_inq_attname(
         int ncid,
         int varid,
         int attnum,
@@ -1310,10 +1420,20 @@ int nc_inq_attname(
 
     return rc;
 }
+extern "C"
+int nc_inq_attname(
+        int ncid,
+        int varid,
+        int attnum,
+        char *name)
+{
+    MANIPULATE_ARGS(ncid);
 
+    return _nc_inq_attname(ncid, varid, attnum, name);
+}
 
 extern "C"
-int nc_inq_dim(
+static int _nc_inq_dim(
         int ncid,
         int dimid,
         char *name,
@@ -1336,9 +1456,20 @@ int nc_inq_dim(
 
     return rc;
 }
+extern "C"
+int nc_inq_dim(
+        int ncid,
+        int dimid,
+        char *name,
+        size_t *lenp)
+{
+    MANIPULATE_ARGS(ncid);
+
+    return _nc_inq_dim(ncid, dimid, name, lenp);
+}
 
 extern "C"
-int nc_inq_dimlen(
+static int _nc_inq_dimlen(
         int ncid,
         int dimid,
         size_t *lenp)
@@ -1360,9 +1491,19 @@ int nc_inq_dimlen(
 
     return rc;
 }
+extern "C"
+int nc_inq_dimlen(
+        int ncid,
+        int dimid,
+        size_t *lenp)
+{
+    MANIPULATE_ARGS(ncid);
+
+    return _nc_inq_dimlen(ncid, dimid, lenp);
+}
 
 extern "C"
-int nc_inq_dimid(
+static int _nc_inq_dimid(
         int ncid,
         const char *name,
         int *dimidp)
@@ -1386,9 +1527,19 @@ int nc_inq_dimid(
 
     return rc;
 }
+extern "C"
+int nc_inq_dimid(
+        int ncid,
+        const char *name,
+        int *dimidp)
+{
+    MANIPULATE_ARGS(ncid);
+
+    return _nc_inq_dimid(ncid, name, dimidp);
+}
 
 extern "C"
-int nc_inq_unlimdim(
+static int _nc_inq_unlimdim(
         int ncid,
         int *unlimdimidp)
 {
@@ -1409,9 +1560,18 @@ int nc_inq_unlimdim(
 
     return rc;
 }
+extern "C"
+int nc_inq_unlimdim(
+        int ncid,
+        int *unlimdimidp)
+{
+    MANIPULATE_ARGS(ncid);
+
+    return _nc_inq_unlimdim(ncid, unlimdimidp);
+}
 
 extern "C"
-int nc_inq_var(
+static int _nc_inq_var(
         int ncid,
         int varid,
         char *name,
@@ -1424,7 +1584,7 @@ int nc_inq_var(
 
     log_debug(netcdf_debug_level, "enter");
 
-    log_debug(netcdf_debug_level, "Calling nc_inq_var");
+    log_debug(netcdf_debug_level, "Calling _nc_inq_var");
 
     /* find dataset */
     if (group_map.find(ncid) == group_map.end()) {
@@ -1441,6 +1601,20 @@ cleanup:
 
     return rc;
 }
+extern "C"
+int nc_inq_var(
+        int ncid,
+        int varid,
+        char *name,
+        nc_type *xtypep,
+        int *ndimsp,
+        int *dimids,
+        int *nattsp)
+{
+    MANIPULATE_ARGS(ncid);
+
+    return _nc_inq_var(ncid, varid, name, xtypep, ndimsp, dimids, nattsp);
+}
 
 /**
  * Return the name and size of an nc_type.
@@ -1448,7 +1622,7 @@ cleanup:
  * TODO: add support for user-defined types.
  */
 extern "C"
-int nc_inq_type(
+static int _nc_inq_type(
         int ncid,
         nc_type xtype,
         char *name,
@@ -1500,9 +1674,20 @@ int nc_inq_type(
 
     return rc;
 }
+extern "C"
+int nc_inq_type(
+        int ncid,
+        nc_type xtype,
+        char *name,
+        size_t *sizep)
+{
+    MANIPULATE_ARGS(ncid);
+
+    return _nc_inq_type(ncid, xtype, name, sizep);
+}
 
 extern "C"
-int nc_inq_varid(
+static int _nc_inq_varid(
         int ncid,
         const char *name,
         int *varidp)
@@ -1527,9 +1712,19 @@ int nc_inq_varid(
 
     return rc;
 }
+extern "C"
+int nc_inq_varid(
+        int ncid,
+        const char *name,
+        int *varidp)
+{
+    MANIPULATE_ARGS(ncid);
+
+    return _nc_inq_varid(ncid, name, varidp);
+}
 
 extern "C"
-int nc_inq_vardimid(
+static int _nc_inq_vardimid(
         int ncid,
         int varid,
         int dimids[])
@@ -1551,9 +1746,19 @@ int nc_inq_vardimid(
 
     return rc;
 }
+extern "C"
+int nc_inq_vardimid(
+        int ncid,
+        int varid,
+        int dimids[])
+{
+    MANIPULATE_ARGS(ncid);
+
+    return _nc_inq_vardimid(ncid, varid, dimids);
+}
 
 extern "C"
-int nc_inq_varndims(
+static int _nc_inq_varndims(
         int ncid,
         int varid,
         int *ndimsp)
@@ -1574,9 +1779,19 @@ int nc_inq_varndims(
 
     return rc;
 }
+extern "C"
+int nc_inq_varndims(
+        int ncid,
+        int varid,
+        int *ndimsp)
+{
+    MANIPULATE_ARGS(ncid);
+
+    return _nc_inq_varndims(ncid, varid, ndimsp);
+}
 
 extern "C"
-int nc_inq_vartype(
+static int _nc_inq_vartype(
         int ncid,
         int varid,
         nc_type *xtypep)
@@ -1598,7 +1813,16 @@ int nc_inq_vartype(
 
     return rc;
 }
+extern "C"
+int nc_inq_vartype(
+        int ncid,
+        int varid,
+        nc_type *xtypep)
+{
+    MANIPULATE_ARGS(ncid);
 
+    return _nc_inq_vartype(ncid, varid, xtypep);
+}
 
 
 
@@ -1608,6 +1832,7 @@ int nc_inq_vartype(
  * WARN: This approach does not work if the client and server
  * use different byte ordering.
  */
+extern "C"
 int _nc_put_att_type(
         int ncid,
         int varid,
@@ -1622,7 +1847,7 @@ int _nc_put_att_type(
 
     log_debug(netcdf_debug_level, "enter");
 
-    log_debug(netcdf_debug_level, "Calling nc_put_att");
+    log_debug(netcdf_debug_level, "Calling _nc_put_att");
 
     memset(&args, 0, sizeof(args));
     args.ncid = ncid;
@@ -1657,7 +1882,7 @@ int _nc_put_att_type(
 //                                 NULL,
 //                                 0);
     if (rc != NSSI_OK) {
-        log_error(netcdf_debug_level, "unable to call remote nc_put_att: %s",
+        log_error(netcdf_debug_level, "unable to call remote _nc_put_att: %s",
                 nssi_err_str(rc));
         goto cleanup;
     }
@@ -1709,6 +1934,8 @@ int nc_put_att (
 {
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     return _nc_put_att_type(ncid, varid, name, xtype, NC_ARG_VOID, len, obj_p);
 }
 
@@ -1721,6 +1948,8 @@ int nc_put_att_text(
                 const char *tp)
 {
     log_debug(netcdf_debug_level, "enter");
+
+    MANIPULATE_ARGS(ncid);
 
     return _nc_put_att_type(ncid, varid, name, NC_CHAR, NC_ARG_TEXT, len*sizeof(char), tp);
 }
@@ -1736,6 +1965,8 @@ int nc_put_att_uchar(
 {
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     return _nc_put_att_type(ncid, varid, name, xtype, NC_ARG_UCHAR, len*sizeof(unsigned char), up);
 }
 
@@ -1749,6 +1980,8 @@ int nc_put_att_schar(
                 const signed char *cp)
 {
     log_debug(netcdf_debug_level, "enter");
+
+    MANIPULATE_ARGS(ncid);
 
     return _nc_put_att_type(ncid, varid, name, xtype, NC_ARG_SCHAR, len*sizeof(signed char), cp);
 }
@@ -1764,6 +1997,8 @@ int nc_put_att_short (
 {
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     return _nc_put_att_type(ncid, varid, name, xtype, NC_ARG_SHORT, len*sizeof(short), sp);
 }
 
@@ -1777,6 +2012,8 @@ int nc_put_att_int(
                 const int *ip)
 {
     log_debug(netcdf_debug_level, "enter");
+
+    MANIPULATE_ARGS(ncid);
 
     return _nc_put_att_type(ncid, varid, name, xtype, NC_ARG_INT, len*sizeof(int), ip);
 }
@@ -1792,6 +2029,8 @@ int nc_put_att_long(
 {
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     return _nc_put_att_type(ncid, varid, name, xtype, NC_ARG_LONG, len*sizeof(long), lp);
 }
 
@@ -1805,6 +2044,8 @@ int nc_put_att_float(
                 const float *fp)
 {
     log_debug(netcdf_debug_level, "enter");
+
+    MANIPULATE_ARGS(ncid);
 
     return _nc_put_att_type(ncid, varid, name, xtype, NC_ARG_FLOAT, len*sizeof(float), fp);
 }
@@ -1820,6 +2061,8 @@ int nc_put_att_double(
 {
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     return _nc_put_att_type(ncid, varid, name, xtype, NC_ARG_DOUBLE, len*sizeof(double), dp);
 }
 
@@ -1833,6 +2076,8 @@ int nc_put_att_ubyte(
                 const unsigned char *op)
 {
     log_debug(netcdf_debug_level, "enter");
+
+    MANIPULATE_ARGS(ncid);
 
     return _nc_put_att_type(ncid, varid, name, xtype, NC_ARG_UBYTE, len*sizeof(unsigned char), op);
 }
@@ -1848,6 +2093,8 @@ int nc_put_att_ushort(
 {
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     return _nc_put_att_type(ncid, varid, name, xtype, NC_ARG_USHORT, len*sizeof(unsigned short), op);
 }
 
@@ -1861,6 +2108,8 @@ int nc_put_att_uint(
                 const unsigned int *op)
 {
     log_debug(netcdf_debug_level, "enter");
+
+    MANIPULATE_ARGS(ncid);
 
     return _nc_put_att_type(ncid, varid, name, xtype, NC_ARG_UINT, len*sizeof(unsigned int), op);
 }
@@ -1876,6 +2125,8 @@ int nc_put_att_longlong(
 {
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     return _nc_put_att_type(ncid, varid, name, xtype, NC_ARG_LONGLONG, len*sizeof(long long), op);
 }
 
@@ -1890,6 +2141,8 @@ int nc_put_att_ulonglong(
 {
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     return _nc_put_att_type(ncid, varid, name, xtype, NC_ARG_ULONGLONG, len*sizeof(unsigned long long), op);
 }
 
@@ -1901,7 +2154,7 @@ int nc_put_att_ulonglong(
  * use different byte ordering.
  */
 extern "C"
-int nc_get_att(
+static int _nc_get_att(
         int ncid,
         int varid,
         const char *name,
@@ -1916,9 +2169,9 @@ int nc_get_att(
 
     log_level debug_level = netcdf_debug_level;
 
-    log_debug(netcdf_debug_level, "enter");
+    log_debug(netcdf_debug_level, "enter (name=%s)", name);
 
-    log_debug(debug_level, "Calling nc_get_att");
+    log_debug(debug_level, "Calling _nc_get_att");
 
     memset(&args, 0, sizeof(args));
     args.ncid = ncid;
@@ -1926,13 +2179,13 @@ int nc_get_att(
     args.name = const_cast<char *>(name);
 
     /* Need to get information about the attribute */
-    rc = nc_inq_att(ncid, varid, name, &xtype, &attlen);
+    rc = _nc_inq_att(ncid, varid, name, &xtype, &attlen);
     if (rc != NC_NOERR) {
         log_error(debug_level, "Could not inquire about attribute: %s", nc_strerror(rc));
         goto cleanup;
     }
 
-    rc = nc_inq_type(ncid, xtype, NULL, &typesize);
+    rc = _nc_inq_type(ncid, xtype, NULL, &typesize);
     if (rc != NC_NOERR) {
         log_error(debug_level, "Could not inquire about type: %s", nc_strerror(rc));
         goto cleanup;
@@ -1964,15 +2217,27 @@ int nc_get_att(
 //                                 NULL,
 //                                 0);
     if (rc != NSSI_OK) {
-        log_error(netcdf_debug_level, "unable to call remote nc_get_att: %s",
+        log_error(netcdf_debug_level, "unable to call remote _nc_get_att: %s",
                 nssi_err_str(rc));
         goto cleanup;
     }
 
 cleanup:
-    log_debug(netcdf_debug_level, "exit");
+    log_debug(netcdf_debug_level, "exit (rc=%d)", rc);
 
     return rc;
+}
+
+extern "C"
+int nc_get_att(
+        int ncid,
+        int varid,
+        const char *name,
+        void *data)
+{
+    MANIPULATE_ARGS(ncid);
+
+    return _nc_get_att(ncid, varid, name, data);
 }
 
 extern "C"
@@ -1987,8 +2252,10 @@ int nc_get_att_text(
 
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     /* make sure the type is NC_CHAR */
-    rc = nc_inq_atttype(ncid, varid, name, &xtype);
+    rc = _nc_inq_atttype(ncid, varid, name, &xtype);
     if (rc != NC_NOERR) {
         return rc;
     }
@@ -1997,7 +2264,7 @@ int nc_get_att_text(
         return NC_EBADTYPE;
     }
 
-    rc = nc_get_att(ncid, varid, name, data);
+    rc = _nc_get_att(ncid, varid, name, data);
 
     log_debug(netcdf_debug_level, "exit");
 
@@ -2016,8 +2283,10 @@ int nc_get_att_uchar(
 
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     /* make sure the type is NC_UBYTE */
-    rc = nc_inq_atttype(ncid, varid, name, &xtype);
+    rc = _nc_inq_atttype(ncid, varid, name, &xtype);
     if (rc != NC_NOERR) {
         return rc;
     }
@@ -2026,7 +2295,7 @@ int nc_get_att_uchar(
         return NC_EBADTYPE;
     }
 
-    rc = nc_get_att(ncid, varid, name, data);
+    rc = _nc_get_att(ncid, varid, name, data);
 
     log_debug(netcdf_debug_level, "exit");
 
@@ -2045,8 +2314,10 @@ int nc_get_att_schar(
 
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     /* make sure the type is NC_BYTE */
-    rc = nc_inq_atttype(ncid, varid, name, &xtype);
+    rc = _nc_inq_atttype(ncid, varid, name, &xtype);
     if (rc != NC_NOERR) {
         return rc;
     }
@@ -2055,7 +2326,7 @@ int nc_get_att_schar(
         return NC_EBADTYPE;
     }
 
-    rc = nc_get_att(ncid, varid, name, data);
+    rc = _nc_get_att(ncid, varid, name, data);
 
     log_debug(netcdf_debug_level, "exit");
 
@@ -2074,8 +2345,10 @@ int nc_get_att_short(
 
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     /* make sure the type is NC_SHORT */
-    rc = nc_inq_atttype(ncid, varid, name, &xtype);
+    rc = _nc_inq_atttype(ncid, varid, name, &xtype);
     if (rc != NC_NOERR) {
         return rc;
     }
@@ -2084,7 +2357,7 @@ int nc_get_att_short(
         return NC_EBADTYPE;
     }
 
-    rc = nc_get_att(ncid, varid, name, data);
+    rc = _nc_get_att(ncid, varid, name, data);
 
     log_debug(netcdf_debug_level, "exit");
 
@@ -2103,8 +2376,10 @@ int nc_get_att_int(
 
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     /* make sure the type is NC_INT */
-    rc = nc_inq_atttype(ncid, varid, name, &xtype);
+    rc = _nc_inq_atttype(ncid, varid, name, &xtype);
     if (rc != NC_NOERR) {
         return rc;
     }
@@ -2113,7 +2388,7 @@ int nc_get_att_int(
         return NC_EBADTYPE;
     }
 
-    rc = nc_get_att(ncid, varid, name, data);
+    rc = _nc_get_att(ncid, varid, name, data);
 
     log_debug(netcdf_debug_level, "exit");
 
@@ -2132,8 +2407,10 @@ int nc_get_att_long(
 
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     /* make sure the type is NC_INT */
-    rc = nc_inq_atttype(ncid, varid, name, &xtype);
+    rc = _nc_inq_atttype(ncid, varid, name, &xtype);
     if (rc != NC_NOERR) {
         return rc;
     }
@@ -2142,7 +2419,7 @@ int nc_get_att_long(
         return NC_EBADTYPE;
     }
 
-    rc = nc_get_att(ncid, varid, name, data);
+    rc = _nc_get_att(ncid, varid, name, data);
 
     log_debug(netcdf_debug_level, "exit");
 
@@ -2161,8 +2438,10 @@ int nc_get_att_float(
 
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     /* make sure the type is NC_FLOAT */
-    rc = nc_inq_atttype(ncid, varid, name, &xtype);
+    rc = _nc_inq_atttype(ncid, varid, name, &xtype);
     if (rc != NC_NOERR) {
         return rc;
     }
@@ -2171,7 +2450,7 @@ int nc_get_att_float(
         return NC_EBADTYPE;
     }
 
-    rc = nc_get_att(ncid, varid, name, data);
+    rc = _nc_get_att(ncid, varid, name, data);
 
     log_debug(netcdf_debug_level, "exit");
 
@@ -2190,8 +2469,10 @@ int nc_get_att_double(
 
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     /* make sure the type is NC_DOUBLE */
-    rc = nc_inq_atttype(ncid, varid, name, &xtype);
+    rc = _nc_inq_atttype(ncid, varid, name, &xtype);
     if (rc != NC_NOERR) {
         return rc;
     }
@@ -2200,7 +2481,7 @@ int nc_get_att_double(
         return NC_EBADTYPE;
     }
 
-    rc = nc_get_att(ncid, varid, name, data);
+    rc = _nc_get_att(ncid, varid, name, data);
 
     log_debug(netcdf_debug_level, "exit");
 
@@ -2219,8 +2500,10 @@ int nc_get_att_ubyte(
 
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     /* make sure the type is NC_UBYTE */
-    rc = nc_inq_atttype(ncid, varid, name, &xtype);
+    rc = _nc_inq_atttype(ncid, varid, name, &xtype);
     if (rc != NC_NOERR) {
         return rc;
     }
@@ -2229,7 +2512,7 @@ int nc_get_att_ubyte(
         return NC_EBADTYPE;
     }
 
-    rc = nc_get_att(ncid, varid, name, data);
+    rc = _nc_get_att(ncid, varid, name, data);
 
     log_debug(netcdf_debug_level, "exit");
 
@@ -2248,8 +2531,10 @@ int nc_get_att_ushort(
 
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     /* make sure the type is NC_USHORT */
-    rc = nc_inq_atttype(ncid, varid, name, &xtype);
+    rc = _nc_inq_atttype(ncid, varid, name, &xtype);
     if (rc != NC_NOERR) {
         return rc;
     }
@@ -2258,7 +2543,7 @@ int nc_get_att_ushort(
         return NC_EBADTYPE;
     }
 
-    rc = nc_get_att(ncid, varid, name, data);
+    rc = _nc_get_att(ncid, varid, name, data);
 
     log_debug(netcdf_debug_level, "exit");
 
@@ -2277,8 +2562,10 @@ int nc_get_att_uint(
 
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     /* make sure the type is NC_UINT */
-    rc = nc_inq_atttype(ncid, varid, name, &xtype);
+    rc = _nc_inq_atttype(ncid, varid, name, &xtype);
     if (rc != NC_NOERR) {
         return rc;
     }
@@ -2287,7 +2574,7 @@ int nc_get_att_uint(
         return NC_EBADTYPE;
     }
 
-    rc = nc_get_att(ncid, varid, name, data);
+    rc = _nc_get_att(ncid, varid, name, data);
 
     log_debug(netcdf_debug_level, "exit");
 
@@ -2306,8 +2593,10 @@ int nc_get_att_longlong(
 
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     /* make sure the type is NC_INT64 */
-    rc = nc_inq_atttype(ncid, varid, name, &xtype);
+    rc = _nc_inq_atttype(ncid, varid, name, &xtype);
     if (rc != NC_NOERR) {
         return rc;
     }
@@ -2316,7 +2605,7 @@ int nc_get_att_longlong(
         return NC_EBADTYPE;
     }
 
-    rc = nc_get_att(ncid, varid, name, data);
+    rc = _nc_get_att(ncid, varid, name, data);
 
     log_debug(netcdf_debug_level, "exit");
 
@@ -2335,8 +2624,10 @@ int nc_get_att_ulonglong(
 
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     /* make sure the type is NC_UINT64 */
-    rc = nc_inq_atttype(ncid, varid, name, &xtype);
+    rc = _nc_inq_atttype(ncid, varid, name, &xtype);
     if (rc != NC_NOERR) {
         return rc;
     }
@@ -2345,7 +2636,7 @@ int nc_get_att_ulonglong(
         return NC_EBADTYPE;
     }
 
-    rc = nc_get_att(ncid, varid, name, data);
+    rc = _nc_get_att(ncid, varid, name, data);
 
     log_debug(netcdf_debug_level, "exit");
 
@@ -2380,7 +2671,7 @@ static int update_unlimdim_dimlen(const int ncid, const size_t dimlen)
  * This function is sufficient for all other netcdf write functions.
  */
 extern "C"
-int nc_put_vars(
+static int _nc_put_vars(
                 int ncid, int varid,
                 const size_t *startp,
                 const size_t *countp,
@@ -2432,19 +2723,19 @@ int nc_put_vars(
     dimlens = (size_t *) calloc(ndims, sizeof(size_t));
 
     /* get the diminsion IDs for this variable */
-    rc = nc_inq_vardimid(ncid, varid, dimids);
+    rc = _nc_inq_vardimid(ncid, varid, dimids);
     if (rc != NC_NOERR) {
         log_error(debug_level, "could not get dimids");
         goto cleanup;
     }
 
-    rc = nc_inq_unlimdim(ncid, &unlimdimid); /* get ID of unlimited dimension */
+    rc = _nc_inq_unlimdim(ncid, &unlimdimid); /* get ID of unlimited dimension */
     if (rc != NC_NOERR) {
         log_error(debug_level, "could not get unlimdimid");
         goto cleanup;
     }
     for (i = 0; i<ndims; i++) {
-        rc = nc_inq_dimlen(ncid, dimids[i], &dimlens[i]);
+        rc = _nc_inq_dimlen(ncid, dimids[i], &dimlens[i]);
         if (rc != NC_NOERR) {
             log_error(debug_level, "could not get dimlen");
             goto cleanup;
@@ -2491,13 +2782,13 @@ int nc_put_vars(
         }
 
         /* Get the datatype information so we know the size of the buffer */
-        rc = nc_inq_vartype(ncid, varid, &vartype);
+        rc = _nc_inq_vartype(ncid, varid, &vartype);
         if (rc != NC_NOERR) {
             log_error(debug_level, "Unable to get variable type");
             goto cleanup;
         }
 
-        rc = nc_inq_type(ncid, vartype, NULL, &varsize);
+        rc = _nc_inq_type(ncid, vartype, NULL, &varsize);
         if (rc != NC_NOERR) {
             log_error(debug_level, "Unable to get variable type");
             goto cleanup;
@@ -2589,21 +2880,21 @@ int nc_put_vars(
                     if (((nc_cfg.write_type != WRITE_AGGREGATE_COLLECTIVE) &&
                          (nc_cfg.write_type != WRITE_CACHING_COLLECTIVE)) &&
                             (file_state_map[ncid]->mode != NC_INDEP_DATA_MODE)) {
-                        nc_begin_indep_data(ncid);
+                        _nc_begin_indep_data(ncid);
                         /* Send request to remote service */
                         rc = nssi_call_rpc_sync(&svcs[svc_index], NETCDF_PUT_VARS_OP, &args,
                                 ((char *)data)+(*vector_iter)->offset_into_superchunk, (*vector_iter)->nbytes, NULL);
                         if (rc != NSSI_OK) {
-                            log_error(debug_level, "unable to call remote nc_put_vars");
+                            log_error(debug_level, "unable to call remote _nc_put_vars");
                             goto cleanup;
                         }
-                        nc_end_indep_data(ncid);
+                        _nc_end_indep_data(ncid);
                     } else {
                         /* Send request to remote service */
                         rc = nssi_call_rpc_sync(&svcs[svc_index], NETCDF_PUT_VARS_OP, &args,
                                 ((char *)data)+(*vector_iter)->offset_into_superchunk, (*vector_iter)->nbytes, NULL);
                         if (rc != NSSI_OK) {
-                            log_error(debug_level, "unable to call remote nc_put_vars");
+                            log_error(debug_level, "unable to call remote _nc_put_vars");
                             goto cleanup;
                         }
                     }
@@ -2645,19 +2936,19 @@ int nc_put_vars(
             if (((nc_cfg.write_type != WRITE_AGGREGATE_COLLECTIVE) &&
                  (nc_cfg.write_type != WRITE_CACHING_COLLECTIVE)) &&
                     (file_state_map[ncid]->mode != NC_INDEP_DATA_MODE)) {
-                nc_begin_indep_data(ncid);
+                _nc_begin_indep_data(ncid);
                 /* Send request to remote service */
                 rc = nssi_call_rpc_sync(&svcs[svc_index], NETCDF_PUT_VARS_OP, &args, (char *)data, nbytes, NULL);
                 if (rc != NSSI_OK) {
-                    log_error(debug_level, "unable to call remote nc_put_vars");
+                    log_error(debug_level, "unable to call remote _nc_put_vars");
                     goto cleanup;
                 }
-                nc_end_indep_data(ncid);
+                _nc_end_indep_data(ncid);
             } else {
                 /* Send request to remote service */
                 rc = nssi_call_rpc_sync(&svcs[svc_index], NETCDF_PUT_VARS_OP, &args, (char *)data, nbytes, NULL);
                 if (rc != NSSI_OK) {
-                    log_error(debug_level, "unable to call remote nc_put_vars");
+                    log_error(debug_level, "unable to call remote _nc_put_vars");
                     goto cleanup;
                 }
             }
@@ -2681,11 +2972,23 @@ cleanup:
     if (stride_copy) free(stride_copy);
     if (dimids) free(dimids);
 
-    Stop_Timer("nc_put_vars", callTime);
+    Stop_Timer("_nc_put_vars", callTime);
 
     log_debug(netcdf_debug_level, "exit");
 
     return rc;
+}
+extern "C"
+int nc_put_vars(
+                int ncid, int varid,
+                const size_t *startp,
+                const size_t *countp,
+                const ptrdiff_t *stridep,
+                const void *data)
+{
+    MANIPULATE_ARGS(ncid);
+
+    return _nc_put_vars(ncid, varid, startp, countp, stridep, data);
 }
 
 /**
@@ -2701,8 +3004,10 @@ int nc_put_vars_float(
 {
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     log_debug(netcdf_debug_level, "Calling nc_put_vars_float");
-    return nc_put_vars(ncid, varid, startp, countp, stridep, (void*)data);
+    return _nc_put_vars(ncid, varid, startp, countp, stridep, (void*)data);
 }
 
 /**
@@ -2718,8 +3023,10 @@ int nc_put_vars_double(
 {
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     log_debug(netcdf_debug_level, "Calling nc_put_vars_double");
-    return nc_put_vars(ncid, varid, startp, countp, stridep, (void*)data);
+    return _nc_put_vars(ncid, varid, startp, countp, stridep, (void*)data);
 }
 
 /**
@@ -2730,8 +3037,10 @@ int nc_put_var_text(int ncid, int varid, const char *tp)
 {
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     log_debug(netcdf_debug_level, "Calling nc_put_var_text");
-    return nc_put_vars(ncid, varid, NULL, NULL, NULL, tp);
+    return _nc_put_vars(ncid, varid, NULL, NULL, NULL, tp);
 }
 
 
@@ -2743,8 +3052,10 @@ int nc_put_var_int(int ncid, int varid, const int *ip)
 {
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     log_debug(netcdf_debug_level, "Calling nc_put_var_int");
-    return nc_put_vars(ncid, varid, NULL, NULL, NULL, ip);
+    return _nc_put_vars(ncid, varid, NULL, NULL, NULL, ip);
 }
 
 /**
@@ -2755,8 +3066,10 @@ int nc_put_var_float(int ncid, int varid, const float *fp)
 {
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     log_debug(netcdf_debug_level, "Calling nc_put_var_float (%f, %f,...)", fp[0], fp[1]);
-    return nc_put_vars(ncid, varid, NULL, NULL, NULL, fp);
+    return _nc_put_vars(ncid, varid, NULL, NULL, NULL, fp);
 }
 
 /**
@@ -2767,8 +3080,10 @@ int nc_put_var_double(int ncid, int varid, const double *fp)
 {
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     log_debug(netcdf_debug_level, "Calling nc_put_var_double (%f, %f,...)", fp[0], fp[1]);
-    return nc_put_vars(ncid, varid, NULL, NULL, NULL, fp);
+    return _nc_put_vars(ncid, varid, NULL, NULL, NULL, fp);
 }
 
 /**
@@ -2788,8 +3103,10 @@ int nc_put_vara(
 
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     log_debug(netcdf_debug_level, "Calling nc_put_vara");
-    rc = nc_put_vars(ncid, varid, startp, countp, NULL, data);
+    rc = _nc_put_vars(ncid, varid, startp, countp, NULL, data);
 
     return rc;
 }
@@ -2806,8 +3123,10 @@ int nc_put_vara_text(
 
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     log_debug(netcdf_debug_level, "Calling nc_put_vara_text");
-    rc = nc_put_vars(ncid, varid, startp, countp, NULL, data);
+    rc = _nc_put_vars(ncid, varid, startp, countp, NULL, data);
 
     return rc;
 }
@@ -2824,8 +3143,10 @@ int nc_put_vara_int(
 
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     log_debug(netcdf_debug_level, "Calling nc_put_vara_int");
-    rc = nc_put_vars(ncid, varid, startp, countp, NULL, data);
+    rc = _nc_put_vars(ncid, varid, startp, countp, NULL, data);
 
     return rc;
 }
@@ -2842,8 +3163,10 @@ int nc_put_vara_longlong(
 
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     log_debug(netcdf_debug_level, "Calling nc_put_vara_longlong");
-    rc = nc_put_vars(ncid, varid, startp, countp, NULL, data);
+    rc = _nc_put_vars(ncid, varid, startp, countp, NULL, data);
 
     return rc;
 }
@@ -2860,8 +3183,10 @@ int nc_put_vara_float(
 
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     log_debug(netcdf_debug_level, "Calling nc_put_vara_float");
-    rc = nc_put_vars(ncid, varid, startp, countp, NULL, data);
+    rc = _nc_put_vars(ncid, varid, startp, countp, NULL, data);
 
     return rc;
 }
@@ -2878,8 +3203,10 @@ int nc_put_vara_double(
 
     log_debug(netcdf_debug_level, "enter");
 
+    MANIPULATE_ARGS(ncid);
+
     log_debug(netcdf_debug_level, "Calling nc_put_vara_double");
-    rc = nc_put_vars(ncid, varid, startp, countp, NULL, data);
+    rc = _nc_put_vars(ncid, varid, startp, countp, NULL, data);
 
     return rc;
 }
@@ -2893,7 +3220,7 @@ int nc_put_vara_double(
  * This function is sufficient for all other netcdf write functions.
  */
 extern "C"
-int nc_get_vars(
+static int _nc_get_vars(
         int ncid, int varid,
         const size_t *startp,
         const size_t *countp,
@@ -2922,7 +3249,7 @@ int nc_get_vars(
     log_debug(netcdf_debug_level, "enter");
 
 
-    log_debug(debug_level, "calling nc_get_vars");
+    log_debug(debug_level, "calling _nc_get_vars");
 
 
     /* calculate the size of the buffer. What happens on overruns? Segfault? */
@@ -2943,7 +3270,7 @@ int nc_get_vars(
     dimlens = (size_t *) calloc(ndims, sizeof(size_t));
 
     /* get the diminsion IDs for this variable */
-    rc = nc_inq_vardimid(ncid, varid, dimids);
+    rc = _nc_inq_vardimid(ncid, varid, dimids);
     if (rc != NC_NOERR) {
         log_error(debug_level, "could not get dimids");
         goto cleanup;
@@ -2951,7 +3278,7 @@ int nc_get_vars(
 
     /* set count[i] to dimlen[i] */
     for (i = 0; i<ndims; i++) {
-        rc = nc_inq_dimlen(ncid, dimids[i], &dimlens[i]);
+        rc = _nc_inq_dimlen(ncid, dimids[i], &dimlens[i]);
         if (rc != NC_NOERR) {
             log_error(debug_level, "could not get dimlen");
             goto cleanup;
@@ -2991,13 +3318,13 @@ int nc_get_vars(
         }
 
         /* Get the datatype information so we know the size of the buffer */
-        rc = nc_inq_vartype(ncid, varid, &vartype);
+        rc = _nc_inq_vartype(ncid, varid, &vartype);
         if (rc != NC_NOERR) {
             log_error(netcdf_debug_level, "Unable to get variable type");
             goto cleanup;
         }
 
-        rc = nc_inq_type(ncid, vartype, NULL, &varsize);
+        rc = _nc_inq_type(ncid, vartype, NULL, &varsize);
         if (rc != NC_NOERR) {
             log_error(netcdf_debug_level, "Unable to get variable type");
             goto cleanup;
@@ -3035,19 +3362,19 @@ int nc_get_vars(
         log_debug(netcdf_debug_level, "svc_index(%d)", svc_index);
 
         if (file_state_map[ncid]->mode != NC_INDEP_DATA_MODE) {
-            nc_begin_indep_data(ncid);
+            _nc_begin_indep_data(ncid);
             /* Send request to remote service */
             rc = nssi_call_rpc_sync(&svcs[svc_index], NETCDF_GET_VARS_OP, &args, (char *)data, nbytes, NULL);
             if (rc != NSSI_OK) {
-                log_error(netcdf_debug_level, "unable to call remote nc_get_vars");
+                log_error(netcdf_debug_level, "unable to call remote _nc_get_vars");
                 goto cleanup;
             }
-            nc_end_indep_data(ncid);
+            _nc_end_indep_data(ncid);
         } else {
             /* Send request to remote service */
             rc = nssi_call_rpc_sync(&svcs[svc_index], NETCDF_GET_VARS_OP, &args, (char *)data, nbytes, NULL);
             if (rc != NSSI_OK) {
-                log_error(netcdf_debug_level, "unable to call remote nc_get_vars");
+                log_error(netcdf_debug_level, "unable to call remote _nc_get_vars");
                 goto cleanup;
             }
         }
@@ -3069,6 +3396,17 @@ cleanup:
     return rc;
 }
 
+extern "C"
+int nc_get_vars(
+        int ncid, int varid,
+        const size_t *startp,
+        const size_t *countp,
+        const ptrdiff_t *stridep,
+        void *data)
+{
+    return _nc_get_vars(ncid, varid, startp, countp, stridep, data);
+}
+
 /**
  * Write a subsampled array of float values.
  */
@@ -3084,8 +3422,10 @@ int nc_get_vars_float(
 
     log_debug(netcdf_debug_level, "enter");
 
-    log_debug(netcdf_debug_level, "Calling nc_get_vars_float");
-    rc = nc_get_vars(ncid, varid, startp, countp, stridep, (char *)data);
+    MANIPULATE_ARGS(ncid);
+
+    log_debug(netcdf_debug_level, "Calling _nc_get_vars_float");
+    rc = _nc_get_vars(ncid, varid, startp, countp, stridep, (char *)data);
 
     log_debug(netcdf_debug_level, "exit");
 
@@ -3107,8 +3447,10 @@ int nc_get_vars_double(
 
     log_debug(netcdf_debug_level, "enter");
 
-    log_debug(netcdf_debug_level, "Calling nc_get_vars_double");
-    rc = nc_get_vars(ncid, varid, startp, countp, stridep, (char *)data);
+    MANIPULATE_ARGS(ncid);
+
+    log_debug(netcdf_debug_level, "Calling _nc_get_vars_double");
+    rc = _nc_get_vars(ncid, varid, startp, countp, stridep, (char *)data);
 
     log_debug(netcdf_debug_level, "exit");
 
@@ -3117,8 +3459,8 @@ int nc_get_vars_double(
 
 extern "C"
 int nc_get_var(
-        const int ncid,
-        const int varid,
+        int ncid,
+        int varid,
         void *data)
 {
     int rc = NC_NOERR;
@@ -3127,8 +3469,10 @@ int nc_get_var(
 
     log_debug(netcdf_debug_level, "enter");
 
-    log_debug(netcdf_debug_level, "Calling nc_get_var");
-    rc = nc_get_vars(ncid, varid, NULL, NULL, NULL, (char *)data);
+    MANIPULATE_ARGS(ncid);
+
+    log_debug(netcdf_debug_level, "Calling _nc_get_var");
+    rc = _nc_get_vars(ncid, varid, NULL, NULL, NULL, (char *)data);
 
     log_debug(netcdf_debug_level, "exit");
 
@@ -3143,8 +3487,10 @@ int nc_get_var_text(int ncid, int varid, char *tp)
 {
     log_debug(netcdf_debug_level, "enter");
 
-    log_debug(netcdf_debug_level, "Calling nc_get_var_text");
-    return nc_get_vars(ncid, varid, NULL, NULL, NULL, tp);
+    MANIPULATE_ARGS(ncid);
+
+    log_debug(netcdf_debug_level, "Calling _nc_get_var_text");
+    return _nc_get_vars(ncid, varid, NULL, NULL, NULL, tp);
 }
 
 /**
@@ -3155,8 +3501,10 @@ int nc_get_var_int(int ncid, int varid, int *ip)
 {
     log_debug(netcdf_debug_level, "enter");
 
-    log_debug(netcdf_debug_level, "Calling nc_get_var_int(ncid=%d)", ncid);
-    return nc_get_vars(ncid, varid, NULL, NULL, NULL, ip);
+    MANIPULATE_ARGS(ncid);
+
+    log_debug(netcdf_debug_level, "Calling _nc_get_var_int(ncid=%d)", ncid);
+    return _nc_get_vars(ncid, varid, NULL, NULL, NULL, ip);
 }
 
 /**
@@ -3167,8 +3515,10 @@ int nc_get_var_float(int ncid, int varid, float *ip)
 {
     log_debug(netcdf_debug_level, "enter");
 
-    log_debug(netcdf_debug_level, "Calling nc_get_var_float(ncid=%d)", ncid);
-    return nc_get_vars(ncid, varid, NULL, NULL, NULL, ip);
+    MANIPULATE_ARGS(ncid);
+
+    log_debug(netcdf_debug_level, "Calling _nc_get_var_float(ncid=%d)", ncid);
+    return _nc_get_vars(ncid, varid, NULL, NULL, NULL, ip);
 }
 
 /**
@@ -3179,8 +3529,10 @@ int nc_get_var_double(int ncid, int varid, double *ip)
 {
     log_debug(netcdf_debug_level, "enter");
 
-    log_debug(netcdf_debug_level, "Calling nc_get_var_double(ncid=%d)", ncid);
-    return nc_get_vars(ncid, varid, NULL, NULL, NULL, ip);
+    MANIPULATE_ARGS(ncid);
+
+    log_debug(netcdf_debug_level, "Calling _nc_get_var_double(ncid=%d)", ncid);
+    return _nc_get_vars(ncid, varid, NULL, NULL, NULL, ip);
 }
 
 /**
@@ -3196,8 +3548,10 @@ int nc_get_vara(
 {
     log_debug(netcdf_debug_level, "enter");
 
-    log_debug(netcdf_debug_level, "Calling nc_get_vara(ncid=%d)", ncid);
-    return nc_get_vars(ncid, varid, startp, countp, NULL, (char *)data);
+    MANIPULATE_ARGS(ncid);
+
+    log_debug(netcdf_debug_level, "Calling _nc_get_vara(ncid=%d)", ncid);
+    return _nc_get_vars(ncid, varid, startp, countp, NULL, (char *)data);
 }
 
 /**
@@ -3213,8 +3567,10 @@ int nc_get_vara_text(
 {
     log_debug(netcdf_debug_level, "enter");
 
-    log_debug(netcdf_debug_level, "Calling nc_get_vara_text(ncid=%d)", ncid);
-    return nc_get_vars(ncid, varid, startp, countp, NULL, (char *)data);
+    MANIPULATE_ARGS(ncid);
+
+    log_debug(netcdf_debug_level, "Calling _nc_get_vara_text(ncid=%d)", ncid);
+    return _nc_get_vars(ncid, varid, startp, countp, NULL, (char *)data);
 }
 
 /**
@@ -3230,8 +3586,10 @@ int nc_get_vara_int(
 {
     log_debug(netcdf_debug_level, "enter");
 
-    log_debug(netcdf_debug_level, "Calling nc_get_vara_int(ncid=%d)", ncid);
-    return nc_get_vars(ncid, varid, startp, countp, NULL, (char *)data);
+    MANIPULATE_ARGS(ncid);
+
+    log_debug(netcdf_debug_level, "Calling _nc_get_vara_int(ncid=%d)", ncid);
+    return _nc_get_vars(ncid, varid, startp, countp, NULL, (char *)data);
 }
 
 /**
@@ -3247,8 +3605,10 @@ int nc_get_vara_long(
 {
     log_debug(netcdf_debug_level, "enter");
 
-    log_debug(netcdf_debug_level, "Calling nc_get_vara_long(ncid=%d)", ncid);
-    return nc_get_vars(ncid, varid, startp, countp, NULL, (char *)data);
+    MANIPULATE_ARGS(ncid);
+
+    log_debug(netcdf_debug_level, "Calling _nc_get_vara_long(ncid=%d)", ncid);
+    return _nc_get_vars(ncid, varid, startp, countp, NULL, (char *)data);
 }
 
 /**
@@ -3264,8 +3624,10 @@ int nc_get_vara_longlong(
 {
     log_debug(netcdf_debug_level, "enter");
 
-    log_debug(netcdf_debug_level, "Calling nc_get_vara_longlong(ncid=%d)", ncid);
-    return nc_get_vars(ncid, varid, startp, countp, NULL, (char *)data);
+    MANIPULATE_ARGS(ncid);
+
+    log_debug(netcdf_debug_level, "Calling _nc_get_vara_longlong(ncid=%d)", ncid);
+    return _nc_get_vars(ncid, varid, startp, countp, NULL, (char *)data);
 }
 
 /**
@@ -3281,8 +3643,10 @@ int nc_get_vara_float(
 {
     log_debug(netcdf_debug_level, "enter");
 
-    log_debug(netcdf_debug_level, "Calling nc_get_vara_float(ncid=%d)", ncid);
-    return nc_get_vars(ncid, varid, startp, countp, NULL, (char *)data);
+    MANIPULATE_ARGS(ncid);
+
+    log_debug(netcdf_debug_level, "Calling _nc_get_vara_float(ncid=%d)", ncid);
+    return _nc_get_vars(ncid, varid, startp, countp, NULL, (char *)data);
 }
 
 /**
@@ -3298,8 +3662,10 @@ int nc_get_vara_double(
 {
     log_debug(netcdf_debug_level, "enter");
 
-    log_debug(netcdf_debug_level, "Calling nc_get_vara_double(ncid=%d)", ncid);
-    return nc_get_vars(ncid, varid, startp, countp, NULL, (char *)data);
+    MANIPULATE_ARGS(ncid);
+
+    log_debug(netcdf_debug_level, "Calling _nc_get_vara_double(ncid=%d)", ncid);
+    return _nc_get_vars(ncid, varid, startp, countp, NULL, (char *)data);
 }
 
 
@@ -3313,7 +3679,9 @@ int nc_put_var1(
 {
     log_debug(netcdf_debug_level, "enter");
 
-   return nc_put_vara(ncid, varid, coord, NC_coord_one, value);
+    MANIPULATE_ARGS(ncid);
+
+   return _nc_put_vars(ncid, varid, coord, NC_coord_one, NULL, value);
 }
 
 extern "C"
@@ -3325,7 +3693,9 @@ int nc_put_var1_text(
 {
     log_debug(netcdf_debug_level, "enter");
 
-   return nc_put_vara(ncid, varid, coord, NC_coord_one, value);
+    MANIPULATE_ARGS(ncid);
+
+   return _nc_put_vars(ncid, varid, coord, NC_coord_one, NULL, value);
 }
 
 extern "C"
@@ -3337,7 +3707,9 @@ int nc_put_var1_int(
 {
     log_debug(netcdf_debug_level, "enter");
 
-   return nc_put_vara(ncid, varid, coord, NC_coord_one, value);
+    MANIPULATE_ARGS(ncid);
+
+   return _nc_put_vars(ncid, varid, coord, NC_coord_one, NULL, value);
 }
 
 extern "C"
@@ -3349,7 +3721,9 @@ int nc_put_var1_float(
 {
     log_debug(netcdf_debug_level, "enter");
 
-   return nc_put_vara(ncid, varid, coord, NC_coord_one, value);
+    MANIPULATE_ARGS(ncid);
+
+   return _nc_put_vars(ncid, varid, coord, NC_coord_one, NULL, value);
 }
 
 extern "C"
@@ -3361,7 +3735,9 @@ int nc_put_var1_double(
 {
     log_debug(netcdf_debug_level, "enter");
 
-   return nc_put_vara(ncid, varid, coord, NC_coord_one, value);
+    MANIPULATE_ARGS(ncid);
+
+   return _nc_put_vars(ncid, varid, coord, NC_coord_one, NULL, value);
 }
 
 
@@ -3375,7 +3751,9 @@ int nc_get_var1(
 {
     log_debug(netcdf_debug_level, "enter");
 
-   return nc_get_vara(ncid, varid, coord, NC_coord_one, value);
+    MANIPULATE_ARGS(ncid);
+
+   return _nc_get_vars(ncid, varid, coord, NC_coord_one, NULL, value);
 }
 
 extern "C"
@@ -3387,18 +3765,20 @@ int nc_get_var1_int(
 {
     log_debug(netcdf_debug_level, "enter");
 
-   return nc_get_vara(ncid, varid, coord, NC_coord_one, value);
+    MANIPULATE_ARGS(ncid);
+
+   return _nc_get_vars(ncid, varid, coord, NC_coord_one, NULL, value);
 }
 
 
 extern "C"
-int nc_redef(int ncid)
+static int _nc_redef(int ncid)
 {
     int rc = NC_NOERR;
 
     log_debug(netcdf_debug_level, "enter");
 
-    log_debug(netcdf_debug_level, "Calling nc_redef");
+    log_debug(netcdf_debug_level, "Calling _nc_redef");
 
     if (collective_op_rank == 0) {
         /* call the remote method */
@@ -3423,7 +3803,7 @@ int nc_redef(int ncid)
 //                                 NULL,
 //                                 0);
     if (rc != NSSI_OK) {
-        log_error(netcdf_debug_level, "unable to call remote nc_redef: %s",
+        log_error(netcdf_debug_level, "unable to call remote _nc_redef: %s",
                 nssi_err_str(rc));
         goto cleanup;
     }
@@ -3434,9 +3814,16 @@ cleanup:
 
     return rc;
 }
+extern "C"
+int nc_redef(int ncid)
+{
+    MANIPULATE_ARGS(ncid);
+
+    return _nc_redef(ncid);
+}
 
 extern "C"
-int nc_enddef(int ncid)
+static int _nc_enddef(int ncid)
 {
     int rc = NC_NOERR;
     double MulticastTime;
@@ -3513,13 +3900,20 @@ int nc_enddef(int ncid)
 
     return rc;
 }
+extern "C"
+int nc_enddef(int ncid)
+{
+    MANIPULATE_ARGS(ncid);
+
+    return _nc_enddef(ncid);
+}
 
 
 /**
  * Sync an open netCDF dataset.
  */
 extern "C"
-int nc_sync_wait(int ncid)
+static int _nc_sync_wait(int ncid)
 {
     int rc=NSSI_OK;
     nssi_request *req=NULL;
@@ -3547,12 +3941,19 @@ int nc_sync_wait(int ncid)
 
     return rc;
 }
+extern "C"
+int nc_sync_wait(int ncid)
+{
+    MANIPULATE_ARGS(ncid);
+
+    return _nc_sync_wait(ncid);
+}
 
 /**
  * Sync an open netCDF dataset.
  */
 extern "C"
-int nc_sync(int ncid)
+static int _nc_sync(int ncid)
 {
     int rc=NSSI_OK;
     nssi_request *req=NULL;
@@ -3599,7 +4000,7 @@ int nc_sync(int ncid)
     file_state_map[ncid]->outstanding_sync_requests.push_back(req);
 
 #if !defined(USE_ASYNC_SYNC)
-    rc=nc_sync_wait(ncid);
+    rc=_nc_sync_wait(ncid);
 #endif
 
 cleanup:
@@ -3607,12 +4008,19 @@ cleanup:
 
     return rc;
 }
+extern "C"
+int nc_sync(int ncid)
+{
+    MANIPULATE_ARGS(ncid);
+
+    return _nc_sync(ncid);
+}
 
 /**
  * Close an open netCDF dataset.
  */
 extern "C"
-int nc_close_wait(int ncid)
+static int _nc_close_wait(int ncid)
 {
     int rc=NSSI_OK;
     nssi_request *req=NULL;
@@ -3642,12 +4050,19 @@ int nc_close_wait(int ncid)
 
     return rc;
 }
+extern "C"
+int nc_close_wait(int ncid)
+{
+    MANIPULATE_ARGS(ncid);
+
+    return _nc_close_wait(ncid);
+}
 
 /**
  * Close an open netCDF dataset.
  */
 extern "C"
-int nc_close(int ncid)
+static int _nc_close(int ncid)
 {
     int rc=NSSI_OK;
     nssi_request *req=NULL;
@@ -3695,13 +4110,20 @@ int nc_close(int ncid)
     file_state_map[ncid]->outstanding_close_requests.push_back(req);
 
 #if !defined(USE_ASYNC_CLOSE)
-    rc=nc_close_wait(ncid);
+    rc=_nc_close_wait(ncid);
 #endif
 
 cleanup:
     log_debug(netcdf_debug_level, "exit");
 
     return rc;
+}
+extern "C"
+int nc_close(int ncid)
+{
+    MANIPULATE_ARGS(ncid);
+
+    return _nc_close(ncid);
 }
 
 extern "C"
