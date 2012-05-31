@@ -113,7 +113,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_TSQR
   HAVE_KOKKOS_TSQR
   "Enable TSQR (Tall Skinny QR factorization) in Kokkos"
-  OFF
+  ON
   )
 
 # Whether to enable TSQR's complex arithmetic (std::complex<T>)
