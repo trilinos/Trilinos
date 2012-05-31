@@ -540,6 +540,8 @@ int nc_create_stub(
     }
 
 cleanup:
+    log_debug(netcdf_debug_level, "exit (ncid=%d)", ncid);
+
     /* send the ncipd and return code back to client */
     rc = nssi_send_result(caller, request_id, rc, &res, res_addr);
 
@@ -728,7 +730,7 @@ int get_group_metadata(
             goto cleanup;
         }
 
-        log_debug(debug_level, "Got info for var[%d]", i);
+        log_debug(debug_level, "Got info for var[%d], var->varid=%d, var->name=%s", i, var->varid, var->name);
 
         /* Get the attributes */
         var->atts.atts_val = (nc_att *)calloc(var->atts.atts_len, sizeof(nc_att));
@@ -868,6 +870,8 @@ int nc_open_stub(
     }
 
 cleanup:
+    log_debug(netcdf_debug_level, "exit (ncid=%d)", ncid);
+
     /* send the ncid and return code back to client */
     rc = nssi_send_result(caller, request_id, rc, &res, res_addr);
 
@@ -909,7 +913,7 @@ int nc_def_dim_stub(
     log_debug(netcdf_debug_level, "finished nc_def_dim(ncid=%d, name=%s, len=%d, dimid=%d)",
             ncid, name, len, dimid);
 
-    log_debug(netcdf_debug_level, "exit");
+    log_debug(netcdf_debug_level, "exit (dimid=%d)", dimid);
 
     return rc;
 }
@@ -955,7 +959,7 @@ int nc_def_var_stub(
     /* send the ncipd and return code back to client */
     rc = nssi_send_result(caller, request_id, rc, &varid, res_addr);
 
-    log_debug(netcdf_debug_level, "exit");
+    log_debug(netcdf_debug_level, "exit (varid=%d)", varid);
 
     return rc;
 }
@@ -1301,7 +1305,7 @@ int nc_put_vars_stub(
 
     log_debug(netcdf_debug_level, "enter");
 
-    log_debug(debug_level, "calling nc_put_vars_stub(%d, atype=%d)", ncid, atype);
+    log_debug(debug_level, "calling nc_put_vars_stub(ncid=%d, varid=%d, atype=%d, len=%d)", ncid, varid, atype, len);
 
     double callTime;
 
@@ -1333,36 +1337,36 @@ int nc_put_vars_stub(
             case NC_BYTE:
                 datatype = MPI_BYTE;
                 count = len;
-                log_debug(debug_level, "using MPI_BYTE");
+                log_debug(debug_level, "using MPI_BYTE (count=%d ; len=%d)", count, len);
                 break;
             case NC_CHAR:
                 datatype = MPI_CHAR;
                 count = len/sizeof(char);
-                log_debug(debug_level, "using MPI_CHAR");
+                log_debug(debug_level, "using MPI_CHAR (count=%d ; len=%d)", count, len);
                 break;
 
             case NC_SHORT:
                 datatype = MPI_SHORT;
                 count = len/sizeof(short);
-                log_debug(debug_level, "using MPI_SHORT");
+                log_debug(debug_level, "using MPI_SHORT (count=%d ; len=%d)", count, len);
                 break;
 
             case NC_INT:
                 datatype = MPI_INT;
                 count = len/sizeof(int);
-                log_debug(debug_level, "using MPI_INT");
+                log_debug(debug_level, "using MPI_INT (count=%d ; len=%d)", count, len);
                 break;
 
             case NC_FLOAT:
                 datatype = MPI_FLOAT;
                 count = len/sizeof(float);
-                log_debug(debug_level, "using MPI_FLOAT");
+                log_debug(debug_level, "using MPI_FLOAT (count=%d ; len=%d)", count, len);
                 break;
 
             case NC_DOUBLE:
                 datatype = MPI_DOUBLE;
                 count = len/sizeof(double);
-                log_debug(debug_level, "using MPI_DOUBLE");
+                log_debug(debug_level, "using MPI_DOUBLE (count=%d ; len=%d)", count, len);
                 break;
             default:
                 log_error(debug_level, "Operation=%d not supported", vartype);
@@ -1421,6 +1425,22 @@ int nc_put_vars_stub(
             /* defaults to 1,1,1... */
             fill(stride_copy, stride_copy+ndims, 1);
         }
+
+        fprintf(logger_get_file(), "start_copy = (");
+        for (i=0;i<ndims; i++) {
+            fprintf(logger_get_file(), "%s%d", !i ? "" : ", ", start_copy[i]);
+        }
+        fprintf(logger_get_file(), ")\n");
+        fprintf(logger_get_file(), "count_copy = (");
+        for (i=0;i<ndims; i++) {
+            fprintf(logger_get_file(), "%s%d", !i ? "" : ", ", count_copy[i]);
+        }
+        fprintf(logger_get_file(), ")\n");
+        fprintf(logger_get_file(), "stride_copy = (");
+        for (i=0;i<ndims; i++) {
+            fprintf(logger_get_file(), "%s%d", !i ? "" : ", ", stride_copy[i]);
+        }
+        fprintf(logger_get_file(), ")\n");
 
         ccount = 1;
         for (i=0;i<ndims; i++) {
