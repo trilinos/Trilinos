@@ -189,13 +189,13 @@ namespace Tpetra {
     /// \param pftype [in] Whether to allocate storage dynamically
     ///   (DynamicProfile) or statically (StaticProfile).
     ///
-    /// \param plist [in/out] Optional list of parameters.  If not
+    /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
                size_t maxNumEntriesPerRow, 
                ProfileType pftype = DynamicProfile,
-               const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
+               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying (possibly different) number of entries in each row.
     ///
@@ -211,13 +211,13 @@ namespace Tpetra {
     /// \param pftype [in] Whether to allocate storage dynamically
     ///   (DynamicProfile) or statically (StaticProfile).
     ///
-    /// \param plist [in/out] Optional list of parameters.  If not
+    /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
                const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc, 
                ProfileType pftype = DynamicProfile,
-               const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
+               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and fixed number of entries for each row.
     ///
@@ -238,14 +238,14 @@ namespace Tpetra {
     /// \param pftype [in] Whether to allocate storage dynamically
     ///   (DynamicProfile) or statically (StaticProfile).
     ///
-    /// \param plist [in/out] Optional list of parameters.  If not
+    /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
                const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap, 
                size_t maxNumEntriesPerRow, 
                ProfileType pftype = DynamicProfile,
-               const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
+               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and number of entries in each row.
     ///
@@ -266,14 +266,14 @@ namespace Tpetra {
     /// \param pftype [in] Whether to allocate storage dynamically
     ///   (DynamicProfile) or statically (StaticProfile).
     ///
-    /// \param plist [in/out] Optional list of parameters.  If not
+    /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
                const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap, 
                const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc, 
                ProfileType pftype = DynamicProfile,
-               const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
+               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying a previously constructed graph.
     ///
@@ -292,11 +292,11 @@ namespace Tpetra {
     ///
     /// \param graph [in] The graph structure of the sparse matrix.
     ///   The graph <i>must</i> be fill complete.
-    /// \param plist [in/out] Optional list of parameters.  If not
+    /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     explicit CrsMatrix (const Teuchos::RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >& graph,
-                        const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
+                        const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     //! Destructor.
     virtual ~CrsMatrix();
@@ -398,7 +398,7 @@ namespace Tpetra {
           \post  <tt>isFillActive() == true<tt>
           \post  <tt>isFillComplete() == false<tt>
        */
-      void resumeFill();
+      void resumeFill(const RCP<ParameterList> &params = null);
 
       /*! \brief Signal that data entry is complete, specifying domain and range maps.
 
@@ -886,9 +886,9 @@ namespace Tpetra {
       typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>       MV;
       typedef Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>             V;
       typedef CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>  Graph;
-      typedef typename LocalMatOps::bind_scalar<Scalar>::other_type                      SparseOps;
-      typedef typename SparseOps::template graph<LocalOrdinal,Node>::graph_type          local_graph_type;
-      typedef typename SparseOps::template matrix<Scalar,LocalOrdinal,Node>::matrix_type local_matrix_type;
+      typedef typename LocalMatOps::template bind_scalar<Scalar>::other_type                    sparse_ops_type;
+      typedef typename sparse_ops_type::template graph<LocalOrdinal,Node>::graph_type          local_graph_type;
+      typedef typename sparse_ops_type::template matrix<Scalar,LocalOrdinal,Node>::matrix_type local_matrix_type;
       // Enums
       enum GraphAllocationStatus {
         GraphAlreadyAllocated,
@@ -951,7 +951,7 @@ namespace Tpetra {
       ArrayView<      Scalar>    getViewNonConst(RowInfo rowinfo);
       // local Kokkos objects
       void fillLocalMatrix(const RCP<ParameterList> &params);
-      void fillLocalSparseOps();
+      void fillLocalGraphAndMatrix(const RCP<ParameterList> &params);
       // debugging
       void checkInternalState() const;
 
@@ -961,7 +961,7 @@ namespace Tpetra {
       RCP<const Graph> staticGraph_;
       RCP<      Graph>     myGraph_;
 
-      RCP<SparseOps>         lclMatOps_;
+      RCP<sparse_ops_type>   lclMatOps_;
       RCP<local_matrix_type> lclMatrix_;
 
       // matrix values. before allocation, both are null.
@@ -1010,12 +1010,12 @@ namespace Tpetra {
   Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   createCrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, 
                    size_t maxNumEntriesPerRow = 0,
-                   const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null)
+                   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
   {
     using Teuchos::rcp;
     typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
 
-    return rcp (new matrix_type (map, maxNumEntriesPerRow, DynamicProfile, plist));
+    return rcp (new matrix_type (map, maxNumEntriesPerRow, DynamicProfile, params));
   }
 
   /// \brief Nonmember CrsMatrix constructor that fuses Import and fillComplete().
@@ -1064,7 +1064,7 @@ namespace Tpetra {
   ///   null, we use the default, which is the range Map of the
   ///   source matrix.
   ///
-  /// \param plist [in/out] Optional list of parameters.  If not
+  /// \param params [in/out] Optional list of parameters.  If not
   ///   null, any missing parameters will be filled in with their
   ///   default values.
   template<class CrsMatrixType>
@@ -1079,7 +1079,7 @@ namespace Tpetra {
                                   const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type, 
                                                                typename CrsMatrixType::global_ordinal_type, 
                                                                typename CrsMatrixType::node_type> >& rangeMap = Teuchos::null,
-                                  const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null)
+                                  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
   {
     using Teuchos::as;
     using Teuchos::RCP;
@@ -1095,7 +1095,7 @@ namespace Tpetra {
       rcp (new CrsMatrixType (importer.getTargetMap (),
                               as<size_t> (0), 
                               DynamicProfile, 
-                              plist));
+                              params));
     destMat->doImport (*sourceMatrix, importer, INSERT);
 
     // Use the source matrix's domain Map as the default.
@@ -1139,7 +1139,7 @@ namespace Tpetra {
   ///   null, we use the default, which is the range Map of the
   ///   source matrix.
   ///
-  /// \param plist [in/out] Optional list of parameters.  If not
+  /// \param params [in/out] Optional list of parameters.  If not
   ///   null, any missing parameters will be filled in with their
   ///   default values.
   template<class CrsMatrixType>
@@ -1154,7 +1154,7 @@ namespace Tpetra {
                                   const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type, 
                                                                typename CrsMatrixType::global_ordinal_type, 
                                                                typename CrsMatrixType::node_type> >& rangeMap = Teuchos::null,
-                                  const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null)
+                                  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
   {
     using Teuchos::as;
     using Teuchos::RCP;
@@ -1170,7 +1170,7 @@ namespace Tpetra {
       rcp (new CrsMatrixType (exporter.getTargetMap (),
                               as<size_t> (0), 
                               DynamicProfile, 
-                              plist));
+                              params));
     destMat->doExport (*sourceMatrix, exporter, INSERT);
 
     // Use the source matrix's domain Map as the default.

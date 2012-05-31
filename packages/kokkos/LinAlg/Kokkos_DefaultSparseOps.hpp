@@ -697,10 +697,9 @@ namespace Kokkos {
   ArrayRCP<size_t> 
   DefaultHostSparseOps<Scalar,Ordinal,Node>::allocRowPtrs(const ArrayView<const size_t> &numEntriesPerRow) 
   {
-    const size_t totalNumEntries = std::accumulate( numEntriesPerRow.begin(), numEntriesPerRow.end(), (size_t)0 );
     ArrayRCP<size_t> ptrs = arcp<size_t>( numEntriesPerRow.size() + 1 );
     ptrs[0] = 0;
-    std::partial_sum( numEntriesPerRow.begin(), numEntriesPerRow.end(), ptrs.begin()+1 );
+    std::partial_sum( numEntriesPerRow.getRawPtr(), numEntriesPerRow.getRawPtr()+numEntriesPerRow.size(), ptrs.begin()+1 );
     return ptrs;
   }
 

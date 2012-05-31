@@ -117,7 +117,7 @@ namespace Kokkos {
     inline void execute() {
       if (NO_BETA_AND_OVERWRITE) {
         for (size_t j=0; j<numRHS; ++j) {
-          Scalar *yp = y+j*ystride;
+          RangeScalar *yp = y+j*ystride;
           for (size_t row=0; row<numRows; ++row) {
             yp[row] = Teuchos::ScalarTraits<RangeScalar>::zero();
           }
@@ -125,7 +125,7 @@ namespace Kokkos {
       }
       else {
         for (size_t j=0; j<numRHS; ++j) {
-          Scalar *yp = y+j*ystride;
+          RangeScalar *yp = y+j*ystride;
           for (size_t row=0; row<numRows; ++row) {
             yp[row] *= beta;
           }

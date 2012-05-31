@@ -153,13 +153,13 @@ namespace Tpetra {
     /// \param pftype [in] Whether to allocate storage dynamically
     ///   (DynamicProfile) or statically (StaticProfile).
     ///
-    /// \param plist [in/out] Optional list of parameters.  If not
+    /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsGraph (const RCP<const map_type>& rowMap, 
               size_t maxNumEntriesPerRow, 
               ProfileType pftype = DynamicProfile,
-              const RCP<ParameterList>& plist = null);
+              const RCP<ParameterList>& params = null);
 
     /// \brief Constructor specifying (possibly different) number of entries in each row.
     ///
@@ -175,13 +175,13 @@ namespace Tpetra {
     /// \param pftype [in] Whether to allocate storage dynamically
     ///   (DynamicProfile) or statically (StaticProfile).
     ///
-    /// \param plist [in/out] Optional list of parameters.  If not
+    /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
               const ArrayRCP<const size_t>& NumEntriesPerRowToAlloc, 
               ProfileType pftype = DynamicProfile,
-              const RCP<ParameterList>& plist = null);
+              const RCP<ParameterList>& params = null);
 
     /// \brief Constructor specifying column Map and fixed number of entries for each row.
     ///
@@ -202,14 +202,14 @@ namespace Tpetra {
     /// \param pftype [in] Whether to allocate storage dynamically
     ///   (DynamicProfile) or statically (StaticProfile).
     ///
-    /// \param plist [in/out] Optional list of parameters.  If not
+    /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
               const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap, 
               size_t maxNumEntriesPerRow, 
               ProfileType pftype = DynamicProfile,
-              const RCP<ParameterList>& plist = null);
+              const RCP<ParameterList>& params = null);
 
     /// \brief Constructor specifying column Map and number of entries in each row.
     ///
@@ -230,14 +230,14 @@ namespace Tpetra {
     /// \param pftype [in] Whether to allocate storage dynamically
     ///   (DynamicProfile) or statically (StaticProfile).
     ///
-    /// \param plist [in/out] Optional list of parameters.  If not
+    /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap, 
               const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap, 
               const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, 
               ProfileType pftype = DynamicProfile,
-              const RCP<ParameterList>& plist = null);
+              const RCP<ParameterList>& params = null);
 
     //! Destructor.
     virtual ~CrsGraph();
@@ -248,7 +248,7 @@ namespace Tpetra {
     //@{ 
 
     //! Set the given list of parameters (must be nonnull).
-    void setParameterList (const RCP<ParameterList>& plist);
+    void setParameterList (const RCP<ParameterList>& params);
 
     //! Default parameter list suitable for validation.
     RCP<const ParameterList> getValidParameters () const;
@@ -319,7 +319,7 @@ namespace Tpetra {
           \post  <tt>isFillActive() == true<tt>
           \post  <tt>isFillComplete() == false<tt>
        */
-      void resumeFill();
+      void resumeFill(const RCP<ParameterList> &params = null);
 
       /*! \brief Signal that data entry is complete, specifying domain and range maps. 
 
@@ -722,8 +722,8 @@ namespace Tpetra {
       size_t                          findGlobalIndex(RowInfo rowinfo, GlobalOrdinal ind) const;
       // local Kokkos objects
       void fillLocalGraph(const RCP<ParameterList> &params);
-      const RCP<const local_graph_type> & getLocalGraph() const;
-      const RCP<local_graph_type> & getLocalGraphNonConst();
+      const RCP<const local_graph_type> getLocalGraph() const;
+      const RCP<local_graph_type> getLocalGraphNonConst();
       // debugging
       void checkInternalState() const;
 

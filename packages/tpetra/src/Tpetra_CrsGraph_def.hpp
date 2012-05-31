@@ -64,7 +64,7 @@ namespace Tpetra {
   CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap,
             size_t maxNumEntriesPerRow,
             ProfileType pftype,
-            const RCP<ParameterList>& plist)
+            const RCP<ParameterList>& params)
   : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>(rowMap)
   , rowMap_(rowMap)
   , nodeNumEntries_(0)
@@ -76,16 +76,16 @@ namespace Tpetra {
   , indicesAreGlobal_(false)
   {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
-
-    lclGraph_ = rcp( new local_graph_type(rowMap->getNodeNumElements(), rowMap->getNode()) );
-
+    RCP<ParameterList> lclparams;
+    if (params != null) lclparams = sublist(params,"Local Graph");
+    lclGraph_ = rcp( new local_graph_type( rowMap->getNodeNumElements(), rowMap->getNode(), lclparams ) );
     staticAssertions();
     TEUCHOS_TEST_FOR_EXCEPTION(maxNumEntriesPerRow == OTST::invalid(),
       std::invalid_argument, "The allocation hint must be a valid size_t value, "
       "which in this case means it must not be Teuchos::OrdinalTraits<size_t>::"
       "invalid().");
-    if (! plist.is_null ()) {
-      this->setParameterList (plist);
+    if (! params.is_null ()) {
+      this->setParameterList (params);
     }
     resumeFill();
     checkInternalState();
@@ -98,7 +98,7 @@ namespace Tpetra {
             const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap,
             size_t maxNumEntriesPerRow,
             ProfileType pftype,
-            const RCP<ParameterList>& plist)
+            const RCP<ParameterList>& params)
   : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>(rowMap)
   , rowMap_(rowMap)
   , colMap_(colMap)
@@ -111,16 +111,16 @@ namespace Tpetra {
   , indicesAreGlobal_(false)
   {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
-
-    lclGraph_ = rcp( new local_graph_type(rowMap->getNodeNumElements(), rowMap->getNode()) );
-
+    RCP<ParameterList> lclparams;
+    if (params != null) lclparams = sublist(params,"Local Graph");
+    lclGraph_ = rcp( new local_graph_type( rowMap->getNodeNumElements(), rowMap->getNode(), lclparams ) );
     staticAssertions();
     TEUCHOS_TEST_FOR_EXCEPTION(maxNumEntriesPerRow == OTST::invalid(),
       std::invalid_argument, "The allocation hint must be a valid size_t value, "
       "which in this case means it must not be Teuchos::OrdinalTraits<size_t>::"
       "invalid().");
-    if (! plist.is_null ()) {
-      this->setParameterList (plist);
+    if (! params.is_null ()) {
+      this->setParameterList (params);
     }
     resumeFill();
     checkInternalState();
@@ -132,7 +132,7 @@ namespace Tpetra {
   CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap,
             const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc,
             ProfileType pftype,
-            const RCP<ParameterList>& plist)
+            const RCP<ParameterList>& params)
   : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>(rowMap)
   , rowMap_(rowMap)
   , nodeNumEntries_(0)
@@ -146,12 +146,12 @@ namespace Tpetra {
   {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
     std::string tfecfFuncName("CrsGraph(rowMap,NumEntriesPerRowToAlloc)");
-
-    lclGraph_ = rcp( new local_graph_type(rowMap->getNodeNumElements(), rowMap->getNode()) );
-
+    RCP<ParameterList> lclparams;
+    if (params != null) lclparams = sublist(params,"Local Graph");
+    lclGraph_ = rcp( new local_graph_type( rowMap->getNodeNumElements(), rowMap->getNode(), lclparams ) );
     staticAssertions();
-    if (! plist.is_null ()) {
-      this->setParameterList (plist);
+    if (! params.is_null ()) {
+      this->setParameterList (params);
     }
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC((size_t)NumEntriesPerRowToAlloc.size() != getNodeNumRows(), std::invalid_argument,
         ": NumEntriesPerRowToAlloc must have as many entries as specified by rowMap for this node.");
@@ -177,7 +177,7 @@ namespace Tpetra {
             const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap,
             const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc,
             ProfileType pftype,
-            const RCP<ParameterList>& plist)
+            const RCP<ParameterList>& params)
   : DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>(rowMap)
   , rowMap_(rowMap)
   , colMap_(colMap)
@@ -192,12 +192,12 @@ namespace Tpetra {
   {
     typedef Teuchos::OrdinalTraits<size_t> OTST;
     std::string tfecfFuncName("CrsGraph(rowMap,colMap,NumEntriesPerRowToAlloc)");
-
-    lclGraph_ = rcp( new local_graph_type(rowMap->getNodeNumElements(), rowMap->getNode()) );
-
+    RCP<ParameterList> lclparams;
+    if (params != null) lclparams = sublist(params,"Local Graph");
+    lclGraph_ = rcp( new local_graph_type( rowMap->getNodeNumElements(), rowMap->getNode(), lclparams ) );
     staticAssertions();
-    if (! plist.is_null ()) {
-      this->setParameterList (plist);
+    if (! params.is_null ()) {
+      this->setParameterList (params);
     }
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC((size_t)NumEntriesPerRowToAlloc.size() != getNodeNumRows(), std::invalid_argument,
         ": NumEntriesPerRowToAlloc must have as many entries as specified by rowMap for this node.");
@@ -226,7 +226,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   getValidParameters () const
   {
-    RCP<ParameterList> plist = parameterList ("Tpetra::CrsGraph");
+    RCP<ParameterList> params = parameterList ("Tpetra::CrsGraph");
 
     // Make a sublist for the Import.
     RCP<ParameterList> importSublist = parameterList ("Import");
@@ -242,25 +242,25 @@ namespace Tpetra {
     // Fill in Distributor default parameters by creating a
     // Distributor and asking it to do the work.
     Distributor distributor (rowMap_->getComm(), importSublist);
-    plist->set ("Import", *importSublist, "How the Import performs communication.");
+    params->set ("Import", *importSublist, "How the Import performs communication.");
 
     // Make a sublist for the Export.  For now, it's a clone of the
     // Import sublist.  It's not a shallow copy, though, since we
     // might like the Import to do communication differently than the
     // Export.
-    plist->set ("Export", *importSublist, "How the Export performs communication.");
+    params->set ("Export", *importSublist, "How the Export performs communication.");
 
-    return rcp_const_cast<const ParameterList> (plist);
+    return rcp_const_cast<const ParameterList> (params);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
-  setParameterList (const RCP<ParameterList>& plist)
+  setParameterList (const RCP<ParameterList>& params)
   {
     RCP<const ParameterList> validParams = getValidParameters ();
-    plist->validateParametersAndSetDefaults (*validParams);
-    this->setMyParamList (plist);
+    params->validateParametersAndSetDefaults (*validParams);
+    this->setMyParamList (params);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -551,8 +551,9 @@ namespace Tpetra {
     if (numAllocPerRow_ == null && getNodeNumRows() > 0) {
       // this wastes memory, temporarily, but it simplifies the code and interfaces to follow
       // TODO: it is a candidate for change
-      numAllocPerRow_ = arcp<size_t>(numRows);
-      std::fill(numAllocPerRow_.begin(), numAllocPerRow_.end(), numAllocForAllRows_);
+      ArrayRCP<size_t> tmpnumallocperrow = arcp<size_t>(numRows);
+      std::fill(tmpnumallocperrow.begin(), tmpnumallocperrow.end(), numAllocForAllRows_);
+      numAllocPerRow_ = tmpnumallocperrow;
     }
     if (getProfileType() == StaticProfile) {
       //
@@ -560,7 +561,7 @@ namespace Tpetra {
       //
       // have the graph do this for us, with thread appropriate allocation if possible
       // not important for globals, because we never multiply out of them, but we might as well use the code that we have
-      rowPtrs_ = LocalMatOps::template allocRowPtrs( numAllocPerRow_() );
+      rowPtrs_ = LocalMatOps::allocRowPtrs( numAllocPerRow_() );
       if (lg == LocalIndices) lclInds1D_ = LocalMatOps::template allocStorage< LocalOrdinal>( rowPtrs_() );
       else                    gblInds1D_ = LocalMatOps::template allocStorage<GlobalOrdinal>( rowPtrs_() );
       nodeNumAllocated_ = rowPtrs_[numRows];
@@ -818,8 +819,8 @@ namespace Tpetra {
       if (getProfileType() == StaticProfile) {
         ret.offset1D   = rowPtrs_[myRow];
         ret.allocSize  = rowPtrs_[myRow+1] - rowPtrs_[myRow];
-        if (numRowEntries_) ret.numEntries = numRowEntries_[myRow];
-        else                ret.numEntries = ret.allocSize;
+        if (numRowEntries_ == null) ret.numEntries = ret.allocSize;
+        else                        ret.numEntries = numRowEntries_[myRow];
       }
       else {
         ret.offset1D = STINV;
@@ -1945,14 +1946,16 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::resumeFill()
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::resumeFill(const RCP<ParameterList> &params)
   {
 #ifdef HAVE_TPETRA_DEBUG
     Teuchos::barrier( *rowMap_->getComm() );
 #endif
     clearGlobalConstants();
+    RCP<ParameterList> lclparams;
+    if (params != null) lclparams = sublist(params,"Local Graph");
     lclGraph_ = null;
-    lclGraph_ = rcp( new local_graph_type(rowMap_->getNodeNumElements(), rowMap_->getNode()) );
+    lclGraph_ = rcp( new local_graph_type( getRowMap()->getNodeNumElements(), getRowMap()->getNode(), lclparams ) );
     setSorted(true);
     lowerTriangular_  = false;
     upperTriangular_  = false;
@@ -2024,7 +2027,9 @@ namespace Tpetra {
     makeImportExport(); // Make Import and Export objects
     computeGlobalConstants();
     // fill local objects
-    fillLocalGraph(params->sublist("Local Graph"));
+    RCP<ParameterList> lclparams;
+    if (params != null) lclparams = sublist(params,"Local Fill");
+    fillLocalGraph(lclparams);
     //
     fillComplete_ = true;
 #ifdef HAVE_TPETRA_DEBUG
@@ -2045,18 +2050,18 @@ namespace Tpetra {
     ArrayRCP<size_t>       ptrs;
     if (getProfileType() == DynamicProfile) {
       // 2d -> 1d packed
-      ptrs = LocalMatOps::template allocRowPtrs( rowNumEntries_() );
+      ptrs = LocalMatOps::allocRowPtrs( numRowEntries_() );
       inds = LocalMatOps::template allocStorage<LocalOrdinal>( ptrs() );
-      for (size_t row=0; row < numRows_; ++row) {
-        std::copy( inds2D_[row].begin(), inds+ptrs[row], inds+ptrs[row+1] );
+      for (size_t row=0; row < numRows; ++row) {
+        std::copy( lclInds2D_[row].begin(), inds+ptrs[row], inds+ptrs[row+1] );
       }
     }
     else if (getProfileType() == StaticProfile) {
       // 1d non-packed -> 1d packed
       if (nodeNumEntries_ != nodeNumAllocated_) {
-        ptrs = LocalMatOps::template allocRowPtrs( rowNumEntries_() );
+        ptrs = LocalMatOps::allocRowPtrs( numRowEntries_() );
         inds = LocalMatOps::template allocStorage<LocalOrdinal>( ptrs() );
-        for (size_t row=0; row < numRows_; ++row) {
+        for (size_t row=0; row < numRows; ++row) {
           std::copy( lclInds1D_+rowPtrs_[row], inds+ptrs[row], inds+ptrs[row+1] );
         }
       }
@@ -2086,7 +2091,7 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const RCP<const local_graph_type> &
+  const RCP<const typename LocalMatOps::template graph<LocalOrdinal,Node>::graph_type> 
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalGraph() const
   {
     return lclGraph_;
@@ -2096,7 +2101,7 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  const RCP<local_graph_type> &
+  const RCP<typename LocalMatOps::template graph<LocalOrdinal,Node>::graph_type> 
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalGraphNonConst()
   {
     return lclGraph_;
@@ -2439,15 +2444,15 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION(! hasColMap (), std::logic_error, "Tpetra::"
       "CrsGraph: It's not allowed to call makeImportExport() unless the graph "
       "has a column Map.");
-    RCP<ParameterList> plist = this->getNonconstParameterList (); // could be null
+    RCP<ParameterList> params = this->getNonconstParameterList (); // could be null
 
     // Create the Import instance if necessary.
     if (domainMap_ != colMap_ && (! domainMap_->isSameAs (*colMap_))) {
-      if (plist.is_null () || ! plist->isSublist ("Import")) {
+      if (params.is_null () || ! params->isSublist ("Import")) {
         importer_ = rcp (new import_type (domainMap_, colMap_));
       }
       else {
-        RCP<ParameterList> importSublist = sublist (plist, "Import", true);
+        RCP<ParameterList> importSublist = sublist (params, "Import", true);
         importer_ = rcp (new import_type (domainMap_, colMap_, importSublist));
       }
     }
@@ -2457,11 +2462,11 @@ namespace Tpetra {
 
     // Create the Export instance if necessary.
     if (rangeMap_ != rowMap_ && (!rangeMap_->isSameAs(*rowMap_))) {
-      if (plist.is_null () || ! plist->isSublist ("Export")) {
+      if (params.is_null () || ! params->isSublist ("Export")) {
         exporter_ = rcp (new export_type (rowMap_, rangeMap_));
       }
       else {
-        RCP<ParameterList> exportSublist = sublist (plist, "Export", true);
+        RCP<ParameterList> exportSublist = sublist (params, "Export", true);
         exporter_ = rcp (new export_type (rowMap_, rangeMap_, exportSublist));
       }
     }
@@ -2770,7 +2775,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillComplete(OptimizeOption os)
   {
-    fillComplete(rowMap_,rowMap_,true);
+    fillComplete(rowMap_,rowMap_,os);
   }
 
 

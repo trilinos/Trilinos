@@ -101,12 +101,11 @@ namespace Tpetra {
   CrsMatrix (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap,
              size_t maxNumEntriesPerRow,
              ProfileType pftype,
-             const RCP<Teuchos::ParameterList>& plist) :
-    DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap),
-    lclMatOps_ (rowMap->getNode ())
+             const RCP<Teuchos::ParameterList>& params) 
+  : DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap)
   {
     try {
-      myGraph_ = rcp (new Graph (rowMap, maxNumEntriesPerRow, pftype, plist));
+      myGraph_ = rcp (new Graph (rowMap, maxNumEntriesPerRow, pftype, params));
     }
     catch (std::exception &e) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
@@ -114,8 +113,6 @@ namespace Tpetra {
         "CrsGraph object: " << std::endl << e.what ());
     }
     staticGraph_ = myGraph_;
-    lclMatrix_ = rcp(new local_matrix_type(staticGraph_->getLocalGraph(), sublist(params,"Local Matrix")) );
-
     // It is okay to create this now; this will prevent us from having
     // to check for it on every call to apply().  We will use a
     // nonowning RCP to wrap *this; this is safe as long as we do not
@@ -123,7 +120,7 @@ namespace Tpetra {
     // would allow the object to persist past the CrsMatrix's
     // destruction.
     sameScalarMultiplyOp_ = createCrsMatrixMultiplyOp<Scalar> (rcp (this,false).getConst ());
-    resumeFill();
+    resumeFill(params);
     checkInternalState();
   }
 
@@ -136,12 +133,11 @@ namespace Tpetra {
   CrsMatrix (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap,
              const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc,
              ProfileType pftype,
-             const RCP<Teuchos::ParameterList>& plist) :
-    DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap),
-    lclMatOps_ (rowMap->getNode ())
+             const RCP<Teuchos::ParameterList>& params) 
+  : DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap)
   {
     try {
-      myGraph_ = rcp (new Graph (rowMap, NumEntriesPerRowToAlloc, pftype, plist));
+      myGraph_ = rcp (new Graph (rowMap, NumEntriesPerRowToAlloc, pftype, params));
     }
     catch (std::exception &e) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
@@ -149,11 +145,9 @@ namespace Tpetra {
           << std::endl << e.what() << std::endl);
     }
     staticGraph_ = myGraph_;
-    lclMatrix_ = rcp(new local_matrix_type(staticGraph_->getLocalGraph(), sublist(params,"Local Matrix")) );
-
     // See comment in constructor implementation above.
     sameScalarMultiplyOp_ = createCrsMatrixMultiplyOp<Scalar> (rcp (this,false).getConst ());
-    resumeFill();
+    resumeFill(params);
     checkInternalState();
   }
 
@@ -167,12 +161,11 @@ namespace Tpetra {
              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
              size_t maxNumEntriesPerRow,
              ProfileType pftype,
-             const RCP<Teuchos::ParameterList>& plist) :
-    DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap),
-    lclMatOps_ (rowMap->getNode ())
+             const RCP<Teuchos::ParameterList>& params) 
+  : DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap)
   {
     try {
-      myGraph_ = rcp (new Graph (rowMap, colMap, maxNumEntriesPerRow, pftype, plist));
+      myGraph_ = rcp (new Graph (rowMap, colMap, maxNumEntriesPerRow, pftype, params));
     }
     catch (std::exception &e) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
@@ -180,11 +173,9 @@ namespace Tpetra {
         "CrsGraph object: " << std::endl << e.what ());
     }
     staticGraph_ = myGraph_;
-    lclMatrix_ = rcp(new local_matrix_type(staticGraph_->getLocalGraph(), sublist(params,"Local Matrix")) );
-
     // See comment in constructor implementation above.
     sameScalarMultiplyOp_ = createCrsMatrixMultiplyOp<Scalar> (rcp (this,false).getConst ());
-    resumeFill();
+    resumeFill(params);
     checkInternalState();
   }
 
@@ -198,13 +189,12 @@ namespace Tpetra {
              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
              const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc,
              ProfileType pftype,
-             const RCP<Teuchos::ParameterList>& plist) :
-    DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap),
-    lclMatOps_ (rowMap->getNode ())
+             const RCP<Teuchos::ParameterList>& params) 
+  : DistObject<char, LocalOrdinal, GlobalOrdinal, Node> (rowMap)
   {
     try {
       myGraph_ = rcp (new Graph (rowMap, colMap, NumEntriesPerRowToAlloc,
-                                 pftype, plist));
+                                 pftype, params));
     }
     catch (std::exception &e) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
@@ -212,11 +202,9 @@ namespace Tpetra {
         "CrsGraph object: " << std::endl << e.what ());
     }
     staticGraph_ = myGraph_;
-    lclMatrix_ = rcp(new local_matrix_type(staticGraph_->getLocalGraph(), sublist(params,"Local Matrix")) );
-
     // See comment in constructor implementation above.
     sameScalarMultiplyOp_ = createCrsMatrixMultiplyOp<Scalar> (rcp (this,false).getConst ());
-    resumeFill();
+    resumeFill(params);
     checkInternalState();
   }
 
@@ -228,17 +216,10 @@ namespace Tpetra {
            class LocalMatOps>
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   CrsMatrix (const RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &graph,
-             const RCP<Teuchos::ParameterList>& plist)
-    : DistObject<char, LocalOrdinal,GlobalOrdinal,Node> (graph->getRowMap ()),
-      staticGraph_ (graph),
-      lclMatOps_ (graph->getNode ())
+             const RCP<Teuchos::ParameterList>& params)
+  : DistObject<char, LocalOrdinal,GlobalOrdinal,Node> (graph->getRowMap ())
+  , staticGraph_ (graph)
   {
-    // mfh 02 Apr 2012: Parameters ignored for now.  The CrsGraph has
-    // its own parameters which govern communication behavior.  We
-    // don't attempt to override them here, since the graph is passed
-    // in as const.
-    (void) plist;
-
     const std::string tfecfFuncName("CrsMatrix(graph)");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(staticGraph_.is_null (),
       std::runtime_error, ": When calling the CrsMatrix constructor that "
@@ -250,13 +231,12 @@ namespace Tpetra {
       "CrsMatrix.  Note that calling resumeFill() makes the graph not fill-"
       "complete, even if you had previously called fillComplete().  In that "
       "case, you must call fillComplete() on the graph again.");
-    lclMatrix_ = rcp(new local_matrix_type(staticGraph_->getLocalGraph(), sublist(params,"Local Matrix")) );
     // See comment in constructor implementation above.
     sameScalarMultiplyOp_ = createCrsMatrixMultiplyOp<Scalar>( rcp(this,false).getConst() );
     // the graph has entries, and the matrix should have entries as well, set to zero. no need or point in lazy allocating in this case.
     // first argument LocalIndices is ignored; the graph is already allocated (local or global, we don't care here)
     allocateValues (LocalIndices, GraphAlreadyAllocated);
-    resumeFill();
+    resumeFill(params);
     checkInternalState();
   }
 
@@ -529,55 +509,59 @@ namespace Tpetra {
     // 
     if (getProfileType() == DynamicProfile) {
       // 2d -> 1d packed
-      ptrs = LocalMatOps::template allocRowPtrs( numRowEntries_() );
-      inds = LocalMatOps::template allocStorage<LocalOrdinal>( ptrs() );
-      vals = LocalMatOps::template allocStroage<Scalar      >( ptrs() );
-      for (size_t row=0; row < numRows_; ++row) {
+      ptrs = sparse_ops_type::allocRowPtrs( numRowEntries_() );
+      inds = sparse_ops_type::template allocStorage<LocalOrdinal>( ptrs() );
+      vals = sparse_ops_type::template allocStorage<Scalar      >( ptrs() );
+      for (size_t row=0; row < numRows; ++row) {
         std::copy( lclInds2D_[row].begin(), inds+ptrs[row], inds+ptrs[row+1] );
-        std::copy(    vals2D_[row].begin(), vals+ptrs[row], vals+ptrs[row+1] );
+        std::copy(  values2D_[row].begin(), vals+ptrs[row], vals+ptrs[row+1] );
       }
     }
     else if (getProfileType() == StaticProfile) {
       // 1d non-packed -> 1d packed
       if (nodeNumEntries_ != nodeNumAllocated_) {
-        ptrs = LocalMatOps::template allocRowPtrs( numRowEntries_() );
-        inds = LocalMatOps::template allocStorage<LocalOrdinal>( ptrs() );
-        vals = LocalMatOps::template allocStorage<Scalar      >( ptrs() );
-        for (size_t row=0; row < numRows_; ++row) {
+        ptrs = sparse_ops_type::allocRowPtrs( numRowEntries_() );
+        inds = sparse_ops_type::template allocStorage<LocalOrdinal>( ptrs() );
+        vals = sparse_ops_type::template allocStorage<Scalar      >( ptrs() );
+        for (size_t row=0; row < numRows; ++row) {
           std::copy( lclInds1D_+rowPtrs_[row], inds+ptrs[row], inds+ptrs[row+1] );
-          std::copy(    vals1D_+rowPtrs_[row], vals+ptrs[row], vals+ptrs[row+1] );
+          std::copy(  values1D_+rowPtrs_[row], vals+ptrs[row], vals+ptrs[row+1] );
         }
       }
       else {
         ptrs = rowPtrs_;
         inds = lclInds1D_;
-        vals = vals1D_;
+        vals = values1D_;
       }
     }
     // can we ditch the old allocations for the packed one?
-    if ( lclparams->get("Optimize Storage",true) ) {
+    if ( params->get("Optimize Storage",true) ) {
       lclInds2D_     = null;
       numRowEntries_ = null;
-      vals2D_ = null;
+      values2D_ = null;
       // keep the new stuff
       nodeNumAllocated_ = nodeNumEntries_;
       lclInds1D_ = inds;
       rowPtrs_   = ptrs;
-      vals1D_    = vals;
+      values1D_    = vals;
     }
     // hand the packed values to the graph
     myGraph_->lclGraph_->setStructure(ptrs,inds);
     ptrs = null;
     inds = null;
+    RCP<ParameterList> lclparams;
+    if (params != null) lclparams = sublist(params,"Local Matrix");
+    lclMatrix_ = rcp(new local_matrix_type(staticGraph_->getLocalGraph(), lclparams) );
     lclMatrix_->setValues(vals);
     vals = null;
     // finalize local graph and matrix
-    LocalMatOps::finalizeGraphAndMatrix(*myGraph_->lclGraph_,*lclMatrix_,lclparams);
+    sparse_ops_type::finalizeGraphAndMatrix(*myGraph_->lclGraph_,*lclMatrix_,params);
   }
 
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
+  // note: ogb: i'm not really happy about this, but it works
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillLocalMatrix(const RCP<ParameterList> &params)
   {
@@ -594,38 +578,41 @@ namespace Tpetra {
     size_t nodeNumAllocated = myGraph_->nodeNumAllocated_;
     if (getProfileType() == DynamicProfile) {
       // 2d -> 1d packed
-      ptrs = LocalMatOps::template allocRowPtrs( numRowEntries() );
-      vals = LocalMatOps::template allocStroage<Scalar      >( ptrs() );
-      for (size_t row=0; row < numRows_; ++row) {
-        std::copy(    vals2D_[row].begin(), vals+ptrs[row], vals+ptrs[row+1] );
+      ptrs = sparse_ops_type::allocRowPtrs( numRowEntries() );
+      vals = sparse_ops_type::template allocStorage<Scalar      >( ptrs() );
+      for (size_t row=0; row < numRows; ++row) {
+        std::copy( values2D_[row].begin(), vals+ptrs[row], vals+ptrs[row+1] );
       }
     }
     else if (getProfileType() == StaticProfile) {
       // 1d non-packed -> 1d packed
       if (nodeNumEntries != nodeNumAllocated) {
-        ptrs = LocalMatOps::template allocRowPtrs( numRowEntries() );
-        vals = LocalMatOps::template allocStorage<Scalar      >( ptrs() );
-        for (size_t row=0; row < numRows_; ++row) {
-          std::copy(    vals1D_+rowPtrs[row], vals+ptrs[row], vals+ptrs[row+1] );
+        ptrs = sparse_ops_type::allocRowPtrs( numRowEntries() );
+        vals = sparse_ops_type::template allocStorage<Scalar      >( ptrs() );
+        for (size_t row=0; row < numRows; ++row) {
+          std::copy( values1D_+rowPtrs[row], vals+ptrs[row], vals+ptrs[row+1] );
         }
       }
       else {
-        vals = vals1D_;
+        vals = values1D_;
       }
     }
     // done with these now
     ptrs = null;
     // can we ditch the old allocations for the packed one?
-    if ( lclparams->get("Optimize Storage",true) ) {
+    if ( params->get("Optimize Storage",true) ) {
       // out with the old, in with the new
-      vals2D_ = null;
-      vals1D_ = vals;
+      values2D_ = null;
+      values1D_ = vals;
     }
     // hand the packed values to the graph
+    RCP<ParameterList> lclparams;
+    if (params != null) lclparams = sublist(params,"Local Matrix");
+    lclMatrix_ = rcp(new local_matrix_type(staticGraph_->getLocalGraph(), lclparams) );
     lclMatrix_->setValues(vals);
     vals = null;
     // finalize local matrix
-    LocalMatOps::finalizeMatrix(*staticGraph_->getLocalGraph(),*lclMatrix_,lclparams);
+    sparse_ops_type::finalizeMatrix(*staticGraph_->getLocalGraph(),*lclMatrix_,params);
   }
 
 
@@ -1617,17 +1604,17 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::resumeFill() {
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::resumeFill(const RCP<ParameterList> &params) {
 #ifdef HAVE_TPETRA_DEBUG
     Teuchos::barrier( *getRowMap()->getComm() );
 #endif
     frobNorm_ = -ScalarTraits<Magnitude>::one();
     if (isStaticGraph() == false) {
-      myGraph_->resumeFill();
+      myGraph_->resumeFill(params);
     }
     clearGlobalConstants();
-    lclMatrix_.clear();
-    lclMatOps_.clear();
+    lclMatrix_ = null;
+    lclMatOps_ = null;
     fillComplete_ = false;
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( isFillActive() == false || isFillComplete() == true, std::logic_error,
@@ -1653,8 +1640,8 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillComplete(OptimizeOption os) {
-    fillComplete(getRowMap(),getRowMap(),os);
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillComplete(const RCP<ParameterList> &params) {
+    fillComplete(getRowMap(),getRowMap(),params);
   }
 
 
@@ -1668,7 +1655,7 @@ namespace Tpetra {
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   fillComplete (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap,
                 const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap,
-                OptimizeOption os)
+                const RCP<ParameterList> &params)
   {
     const std::string tfecfFuncName("fillComplete()");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive() || isFillComplete(),
@@ -1702,26 +1689,10 @@ namespace Tpetra {
         "An invalid entry (i.e., with row index not in the row Map) must have "
         "been submitted to the CrsMatrix.");
     }
-    // if we're not allowed to change a static graph, then we can't call optimizeStorage() on it.
-    // then we can't call fillComplete() on the matrix with DoOptimizeStorage
-    // throw a warning. this is an unfortunate late evaluation; however, we couldn't know when we received the graph
-    // that the user would try to optimize the storage later on.
-    if (os == DoOptimizeStorage && isStaticGraph() && ! staticGraph_->isStorageOptimized ()) {
-      TPETRA_ABUSE_WARNING(true, std::runtime_error,
-        "::fillComplete(): You requested optimized storage by setting the "
-        "OptimizeOption argument to os=DoOptimizeStorage, but CrsMatrix "
-        "currently cannot use optimize storage when constructed with a static "
-        "graph whose storage is not already optimized.  This is because a "
-        "CrsMatrix constructed with a static CrsGraph does not own the graph "
-        "(that's why it's passed in as an RCP<const CrsGraph>), so it can't ask "
-        "the graph to optimize its storage.  Thus, we must deny your request "
-        "to optimize storage.");
-      os = DoNotOptimizeStorage;
-    }
 
     if (isStaticGraph()) {
-      const bool domainMapsMatch = staticGraph_->getDomainMap() == getDomainMap;
-      const bool rangeMapsMatch = staticGraph_->getRangeMap() == getRangeMap;
+      const bool domainMapsMatch = staticGraph_->getDomainMap() == domainMap;
+      const bool rangeMapsMatch = staticGraph_->getRangeMap() == rangeMap;
       // FIXME (mfh 19 Mar 2012) Why can't we allow the Maps to be
       // different objects, but semantically the same (in the sense of
       // isSameAs())?
@@ -1751,12 +1722,15 @@ namespace Tpetra {
     }
     computeGlobalConstants();
     // fill local objects; will fill and finalize local graph if appropriate
-    if (myGraph_) {
-      fillLocalGraphAndMatrix(params);
+    RCP<ParameterList> lclparams;
+    if (params != null) lclparams = sublist(params,"Local Fill");
+    if (myGraph_ != null) {
+      fillLocalGraphAndMatrix(lclparams);
     }
     else {
-      fillLocalMatrix(params);
+      fillLocalMatrix(lclparams);
     }
+    lclMatOps_ = rcp(new sparse_ops_type(getNode()));
     lclMatOps_->setGraphAndMatrix(staticGraph_->getLocalGraph(), lclMatrix_);
     // Now we're fill complete!
     fillComplete_ = true;
@@ -1851,11 +1825,11 @@ namespace Tpetra {
     // Call the matvec
     if (beta == RST::zero()) {
       // Y = alpha*op(M)*X with overwrite semantics
-      lclMatOps_.template multiply<DomainScalar,RangeScalar>(mode, alpha, *lclX, *lclY);
+      lclMatOps_->template multiply<DomainScalar,RangeScalar>(mode, alpha, *lclX, *lclY);
     }
     else {
       // Y = alpha*op(M) + beta*Y
-      lclMatOps_.template multiply<DomainScalar,RangeScalar>(mode, alpha, *lclX, beta, *lclY);
+      lclMatOps_->template multiply<DomainScalar,RangeScalar>(mode, alpha, *lclX, beta, *lclY);
     }
   }
 
@@ -1885,18 +1859,18 @@ namespace Tpetra {
     Teuchos::EDiag diag = ( getNodeNumDiags() < getNodeNumRows() ? Teuchos::UNIT_DIAG : Teuchos::NON_UNIT_DIAG );
     if (mode == Teuchos::NO_TRANS) {
       if (isUpperTriangular()) {
-        lclMatOps_.template solve<DomainScalar,RangeScalar>(Teuchos::NO_TRANS, Teuchos::UPPER_TRI, diag, *lclY, *lclX);
+        lclMatOps_->template solve<DomainScalar,RangeScalar>(Teuchos::NO_TRANS, Teuchos::UPPER_TRI, diag, *lclY, *lclX);
       }
       else {
-        lclMatOps_.template solve<DomainScalar,RangeScalar>(Teuchos::NO_TRANS, Teuchos::LOWER_TRI, diag, *lclY, *lclX);
+        lclMatOps_->template solve<DomainScalar,RangeScalar>(Teuchos::NO_TRANS, Teuchos::LOWER_TRI, diag, *lclY, *lclX);
       }
     }
     else {
       if (isUpperTriangular()) {
-        lclMatOps_.template solve<DomainScalar,RangeScalar>(Teuchos::CONJ_TRANS, Teuchos::UPPER_TRI, diag, *lclY, *lclX);
+        lclMatOps_->template solve<DomainScalar,RangeScalar>(Teuchos::CONJ_TRANS, Teuchos::UPPER_TRI, diag, *lclY, *lclX);
       }
       else {
-        lclMatOps_.template solve<DomainScalar,RangeScalar>(Teuchos::CONJ_TRANS, Teuchos::LOWER_TRI, diag, *lclY, *lclX);
+        lclMatOps_->template solve<DomainScalar,RangeScalar>(Teuchos::CONJ_TRANS, Teuchos::LOWER_TRI, diag, *lclY, *lclX);
       }
     }
   }
@@ -2779,7 +2753,7 @@ namespace Tpetra {
                                   const RCP<const Map<CrsMatrix<SCALAR, LO, GO, NODE>::local_ordinal_type,      \
                                                                CrsMatrix<SCALAR, LO, GO, NODE>::global_ordinal_type,     \
                                                                CrsMatrix<SCALAR, LO, GO, NODE>::node_type> >& rangeMap,  \
-                                  const RCP<Teuchos::ParameterList>& plist);
+                                                               const RCP<Teuchos::ParameterList>& params);
 
 #define TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(SCALAR, LO, GO, NODE) \
   template<>                                                                        \
@@ -2794,6 +2768,6 @@ namespace Tpetra {
                                   const RCP<const Map<CrsMatrix<SCALAR, LO, GO, NODE>::local_ordinal_type,      \
                                                                CrsMatrix<SCALAR, LO, GO, NODE>::global_ordinal_type,     \
                                                                CrsMatrix<SCALAR, LO, GO, NODE>::node_type> >& rangeMap,  \
-                                  const RCP<Teuchos::ParameterList>& plist);
+                                                               const RCP<Teuchos::ParameterList>& params);
 
 #endif
