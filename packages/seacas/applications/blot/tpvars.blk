@@ -1,0 +1,8 @@
+      COMMON /TPVARS/ NTPCRV, NTPVAR, TIMPLT,
+     &   ITVID(MXTVAR), ITVNE(MXTVAR)
+      LOGICAL TIMPLT
+C      --NTPCRV - the number of curves in this set
+C      --NTPVAR - the number of plot variables requested in this set
+C      --TIMPLT - true if time plots versus X-Y plots
+C      --ITVID - variable record number
+C      --ITVNE - node or element number, global variable number

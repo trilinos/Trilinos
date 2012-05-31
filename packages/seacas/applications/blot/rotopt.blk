@@ -1,0 +1,9 @@
+      COMMON /ROTOPT/ NEWROT, ROTMAT(3,3), ROTCEN(3), EYE(3)
+      LOGICAL NEWROT
+C      --NEWROT - true iff coordinates are not set for the new rotation matrix
+C      --   or center
+C      --ROTMAT - the rotation matrix (3D only);
+C      --   ROTMAT(i,j) defines row i, column j
+C      --ROTCEN - the center of rotation (3D only)
+C      --EYE - the eye position corresponding to the rotation matrix
+

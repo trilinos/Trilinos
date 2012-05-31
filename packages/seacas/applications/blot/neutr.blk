@@ -1,0 +1,10 @@
+      COMMON /NEUTR/  NEU, NEUOPN, NUMCRV, INCCRV, NEUGRF, GRFOPN
+      LOGICAL NEUOPN, GRFOPN
+      COMMON /NEUTRC/ CRVNAM
+      CHARACTER*8 CRVNAM
+      COMMON /NEUMAX/ WXMIN, WXMAX, WYMIN, WYMAX
+C      --NEU - the neutral file channel number
+C      --NEUOPN - true iff the neutral file is opened (and must be closed)
+C      --NUMCRV - the neutral file curve number
+C      --INCCRV - the neutral file curve number increment
+C      --CRVNAM - the neutral file curve name

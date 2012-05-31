@@ -1,0 +1,8 @@
+      PARAMETER (MXLCRV = 50)
+C      --MXLCRV - the maximum number of defined pathlines
+
+      COMMON /LNVARS/ NLNCRV, ILVNE(MXLCRV), ILVID(3,MXLCRV)
+C      --NLNCRV - the number of defined pathlines
+C      --ILVNE - the node or element numbers of the pathline variables
+C      --ILVID - the variable record numbers of the pathline variables
+

@@ -1,0 +1,7 @@
+      COMMON /D3NUMS/ IS3DIM, NNPSUR, NUMNPF, LLNSET
+      LOGICAL IS3DIM
+C      --IS3DIM - true if and only if 3D versus 2D mesh
+C      --NNPSUR - the number of nodes in the surface faces
+C      --NUMNPF - the number of nodes defined
+C      --LLNSET - the length of a LINSET entry
+

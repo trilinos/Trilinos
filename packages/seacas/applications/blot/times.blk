@@ -1,0 +1,14 @@
+      COMMON /TIMES/  NPTIMS, NPTIMW, TMIN, TMAX, DELT, NINTV,
+     &   NTIMIN, WHONLY, HISTOK
+      LOGICAL WHONLY, HISTOK
+C      --NPTIMS - the number of selected times
+C      --NPTIMW - the number of selected whole times
+C      --TMIN - the minimum selected time
+C      --TMAX - the maximum selected time
+C      --DELT - the interval between selected times
+C      --NINTV - the number of times between tmin and tmax to select;
+C      --   negative if zero interval
+C      --NTIMIN - the number of times for initialization; passed to INITIM
+C      --WHONLY - use only whole time steps, may be false only if HISTOK true
+C      --HISTOK - true iff history time steps may be selected
+
