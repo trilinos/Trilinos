@@ -1,9 +1,0 @@
-      PARAMETER (MAXLIT=10)
-      COMMON /LIGHT/  LITE, NLIT, AMBIENT
-      REAL LITE(8,MAXLIT)
-      REAL AMBIENT
-C
-C ... LITE(1:3,*) = x, y, z vector components of light 
-C     LITE(4,  *) = brightness of light
-C     LITE(5:7,*) = normalized x, y, z vector components of light 
-C     LITE(8,  *) = brightness of light

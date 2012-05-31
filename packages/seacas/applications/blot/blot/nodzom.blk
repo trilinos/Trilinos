@@ -1,9 +1,0 @@
-      COMMON / NODZOM / NZMON, XZM, YZM, ZZM, RADZM, NODEZM
-      LOGICAL NZMON
-C     --NZMON - if true, node based zoom is enabled
-C     --XZM   - x location for desired zoom window
-C     --YZM   - y location for desired zoom window
-C     --ZZM   - y location for desired zoom window
-C     --RADZM - radius of desired zoom window
-C     --NODEZM - node id of node to use for centering zoom window,
-C                if nodezm=0, then use xzm,yzm,zzm

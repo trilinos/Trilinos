@@ -1,9 +1,0 @@
-      COMMON /PROGQA/ QAINFO(6)
-      CHARACTER*(MXQARC) QAINFO
-C      --QAINFO - the current program QA information:
-C      --   (1) = program name
-C      --   (2) = revision date
-C      --   (3) = version as "QA xx.xx" or "X  xx.xx" or "   xx.xx"
-C      --   (4) = program name with version appended
-C      --   (5) = date of current run
-C      --   (6) = time of current run

@@ -1,2 +1,0 @@
-      COMMON /ICEXCT/ IEXCON
-      SAVE /ICEXCT/

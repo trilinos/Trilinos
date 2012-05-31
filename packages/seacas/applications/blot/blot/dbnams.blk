@@ -1,4 +1,0 @@
-      COMMON /DBNAMS/ NAMECO(6)
-      CHARACTER*32 NAMECO
-C      --NAMECO - the coordinate names
-

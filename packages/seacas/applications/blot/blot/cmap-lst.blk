@@ -1,9 +1,0 @@
-      PARAMETER (NCOLOR=9)
-      REAL COLMAP(NCOLOR+2)
-      COMMON /CMAP/ COLMAP
-C        -- COLMAP -- Color indexes of currently mapped colors
-
-      CHARACTER*(MXSTLN) COLLST(NCOLOR+2)
-      COMMON /CLST/ COLLST
-C        -- COLLST -- character names of currently mapped colors
-

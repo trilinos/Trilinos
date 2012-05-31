@@ -1,6 +1,0 @@
-      COMMON /LAYOUT/ CHLSIZ, DBORD0(KTOP), DVIEW0(KTOP)
-C      --CHLSIZ - the character line size
-C      --DBORD0 - the display and label area boundary (device units)
-C      --   (1=left, 2=right, 3=bottom, 4=top)
-C      --DVIEW0 - the display area boundary (device units)
-

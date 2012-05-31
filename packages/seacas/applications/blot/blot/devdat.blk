@@ -1,4 +1,0 @@
-      COMMON /DEVDAT/ DTW, VWSCL
-C      --DTW - the conversion factor for device to window units
-C      --VWSCL - 1.0 if one view, 0.5 if multiple views
-

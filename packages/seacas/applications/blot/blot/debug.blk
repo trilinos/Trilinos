@@ -1,3 +1,0 @@
-      common /debugc/ cdebug
-      common /debugn/ idebug
-      character*8 cdebug

@@ -1,8 +1,0 @@
-      PARAMETER (MXQARC=32)
-      PARAMETER (MXSTLN=32)
-      PARAMETER (MXLNLN=80)
-      PARAMETER (MXSVAR=50)
-C     --MXTVAR - the maximum number of plot variables
-      PARAMETER (MXTVAR=100)
-C -- MXNAME - the maximum allowed size for an entity or variable name...
-      PARAMETER (MXNAME=256)

@@ -1,7 +1,0 @@
-      COMMON /DBTITL/ TITLE, CREATE(4), MODIFY(4), DRAW(4)
-      CHARACTER*80 TITLE
-      CHARACTER*32 CREATE, MODIFY, DRAW
-C      --TITLE - database title
-C      --CREATE - creation program name, version, date and time
-C      --MODIFY - modification program name, version, date and time
-C      --DRAW - current program name, version, date and time

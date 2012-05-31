@@ -1,7 +1,0 @@
-      COMMON /SELNE/  SELOK, NODVAR, NNENUM
-      LOGICAL SELOK, NODVAR
-C      --NOTE: this common is shared with DETOUR
-C      --SELOK - true iff nodes/elements are selected
-C      --NODVAR - true if nodes versus elements selected
-C      --NNENUM - the number of node/element numbers
-

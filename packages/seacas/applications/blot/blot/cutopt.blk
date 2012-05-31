@@ -1,7 +1,0 @@
-      COMMON /CUTOPT/ NEWCUT, ISCUT, CUTPT(3), CUTNRM(3)
-      LOGICAL NEWCUT, ISCUT
-C      --NEWCUT - true iff faces are not set for the new cut
-C      --ISCUT - true iff cutting plane is defined (3D only)
-C      --CUTPT - A Point on the cutting plane
-C      --CUTNRM - The normal (not necessarily unitized) of the cutting plane
-

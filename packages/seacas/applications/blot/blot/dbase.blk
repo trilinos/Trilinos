@@ -1,3 +1,0 @@
-      COMMON /DBASE/  NDB, NLOG
-C      --NDB - the database channel number
-C      --NLOG - the log unit number
