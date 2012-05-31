@@ -340,6 +340,10 @@ bool HostInternal::spawn_threads( const size_type gang_count ,
 
       // Check if the thread initialized and bound correctly:
       ok_spawn_threads = HostThread::ThreadActive == m_master_thread.m_state ;
+
+      if ( ok_spawn_threads ) { // Wait for spawned thread to deactivate
+        m_thread[ rank ]->wait( HostThread::ThreadActive );
+      }
     }
   }
 
