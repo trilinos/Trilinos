@@ -473,7 +473,7 @@ C     with mixed-case filenames.  GDS 7/1/91.
          else
             call filhnd ( nin, file, .FALSE., ecode,
      &         'o', 'f', 's', 0, *150)
- 152        continue
+
             if (.not. ecode) then
                call filhnd ( nin, filelc, .FALSE., ecode,
      &              'o', 'f', 's', 0, *150)

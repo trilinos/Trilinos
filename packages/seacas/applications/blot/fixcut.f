@@ -261,6 +261,5 @@ C               --Swap nodes to simulate surface being defined by facing element
   150    CONTINUE
   160 CONTINUE
 
-  170 CONTINUE
       RETURN
       END

@@ -187,5 +187,4 @@ C ... Open the output file.
      *  1pe11.3,' Center =',1pe11.3)
  930  FORMAT ('Z-coordinate of eye point =',1pe11.3,' for a ',
      *  0pf4.1,' degree field of view')
- 940  FORMAT (i10)
       END

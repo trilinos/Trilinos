@@ -339,6 +339,5 @@ C      --Force the re-calculation of which nodes are on the surface
 
       FIRST = .FALSE.
 
- 110  CONTINUE
       RETURN
       END

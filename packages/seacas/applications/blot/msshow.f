@@ -709,7 +709,6 @@ C *** Display options ***
       RETURN
 10140  FORMAT (A, 3 (A, ' '))
 10150  FORMAT (1X, 10A)
-10160  FORMAT (4 (A, ' '))
 10170  FORMAT ('(',I2,') X: ',1pe10.3,' Y: ',1pe10.3,' Z: ',1pe10.3,
      *   ' Br: ',1pe10.3)
       END

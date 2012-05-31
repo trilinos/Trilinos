@@ -135,7 +135,6 @@ C   --Write the begin curve record with the curve name
 C   --Write the title lines
       
 10020 FORMAT ('@ ',A,' "', A,'"')
-10030 FORMAT (A80)
 
 C   --Write the X and Y labels
 

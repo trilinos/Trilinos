@@ -149,6 +149,5 @@ C            --Get element variable, change to face variable
          END IF
   160 CONTINUE
 
-  170 CONTINUE
       RETURN
       END

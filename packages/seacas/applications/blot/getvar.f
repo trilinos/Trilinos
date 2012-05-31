@@ -89,6 +89,5 @@ C   --It is connected to unit 90.
       IF (IVAR .LE. 0) RETURN
       CALL RNDVAR (A, IVAR, IELBLK, INSTEP, LENVAR, VAR)
 
-  100 CONTINUE
       RETURN
       END

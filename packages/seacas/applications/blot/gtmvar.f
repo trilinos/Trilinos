@@ -29,17 +29,6 @@ C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-C $Log: gtmvar.f,v $
-C Revision 1.2  2009/03/25 12:36:45  gdsjaar
-C Add copyright and license notice to all files.
-C Permission to assert copyright has been granted; blot is now open source, BSD
-C
-C Revision 1.1  1994/04/07 20:03:03  gdsjaar
-C Initial checkin of ACCESS/graphics/blotII2
-C
-c Revision 1.2  1990/12/14  08:52:09  gdsjaar
-c Added RCS Id and Log to all files
-c
 C=======================================================================
       SUBROUTINE GTMVAR (A, IVAR, IELBLK, INSTEP, LENVAR, VAR)
 C=======================================================================
@@ -89,6 +78,5 @@ C   --It is connected to unit 90.
       IF (IVAR .LE. 0) RETURN
       CALL RNDVAR (A, IVAR, IELBLK, INSTEP, LENVAR, VAR)
 
-  100 CONTINUE
       RETURN
       END

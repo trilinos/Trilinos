@@ -173,9 +173,5 @@ C   --Reset the symbol size, do not exit before resetting
       LDUM = PLTSTT (KSCHSZ, SZSYM)
       RETURN
 
-  120 CONTINUE
-C   --Reset the symbol size, do not exit before resetting
-      LDUM = PLTSTT (KSCHSZ, SZSYM)
-      RETURN 1
       END
 

@@ -35,54 +35,6 @@ C=======================================================================
      &   NVARNP, NELBLK, NVAREL, ISEVOK,
      &   NSTEPS, NSTEPW, A, KTIMES, KWHOLE, *)
 C=======================================================================
-C$Log: dbitim.f,v $
-CRevision 1.3  2009/03/25 12:36:43  gdsjaar
-CAdd copyright and license notice to all files.
-CPermission to assert copyright has been granted; blot is now open source, BSD
-C
-CRevision 1.2  1997/11/11 14:55:54  gdsjaar
-CAdded 'external blkdat' to main program to ensure that the block data
-Cgets linked into the executable. Wasn't happening on dec alpha
-Csystems.
-C
-CRemoved unreachable lines in several routines
-C
-CFixed variable name spelling in contor.f
-C
-CUnsplit strings that were split across lines
-C
-CRemoved old error variables left over from exodusIIv1
-C
-CUpped version number
-C
-CRevision 1.1  1994/04/07 19:58:43  gdsjaar
-CInitial checkin of ACCESS/graphics/blotII2
-C
-C Revision 1.4  1993/10/13  15:03:54  gdsjaar
-C Change so does not die if there are variables on database, but no timesteps.
-C
-C Revision 1.3  1993/07/27  22:39:05  gdsjaar
-C Cleaned up some unused variables, fixed some parameter lists.
-C
-C Revision 1.2  1993/07/27  19:31:38  gdsjaar
-C Fixed setting of EXODUS logical
-C
-c Revision 1.1  1993/07/27  13:30:41  gdsjaar
-c Initial checkin of ACCESS/graphics/blotII
-c
-c Revision 1.2  1990/10/11  16:46:39  gdsjaar
-c Fixed problem with singly/doubly dimensioned array
-c
-c Revision 1.1.1.1  90/08/14  16:13:07  gdsjaar
-c Testing
-c 
-c Revision 1.1  90/08/14  16:13:06  gdsjaar
-c Initial revision
-c 
-c Revision 1.1  90/08/09  13:39:13  gdsjaar
-c Initial revision
-c 
-
 C   --*** DBITIM *** (EXOLIB) Read database time step times
 C   --   Written by Amy Gilkey - revised 11/11/87
 C   --
@@ -152,7 +104,6 @@ C      --Reserve memory for step times
       
 C   --Set NRECST = the number of database records in a whole time step
       
- 120  CONTINUE
       IF (.TRUE.) THEN
         
 C      --Read step time

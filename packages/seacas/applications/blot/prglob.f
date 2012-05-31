@@ -86,5 +86,4 @@ C   --   VARGL - IN - the global variables for the time step
  30   FORMAT ('(1X, A, '' = '',', A,')')
 
 10000  FORMAT (/, 1X, 'Global Time Step Variables')
-10010  FORMAT (1X, A)
       END
