@@ -495,7 +495,7 @@ nc_file_state *new_file_state(nc_data_mode new_mode)
  * These functions replace the normal netcdf library functions.
  */
 extern "C"
-static int _nc_create(
+int _nc_create(
                 const char *path,
                 int cmode,
                 size_t initialsz,
@@ -652,7 +652,7 @@ int nc_create(
 }
 
 extern "C"
-static int _nc_open(
+int _nc_open(
         const char *path,
         int mode,
         size_t *chunksizehintp,
@@ -819,7 +819,7 @@ int nc_delete(const char *filename)
 }
 
 extern "C"
-static int _nc_set_fill(int ncid, int fillmode, int *old_modep)
+int _nc_set_fill(int ncid, int fillmode, int *old_modep)
 {
     *old_modep = fillmode;
     int rc = NC_NOERR;
@@ -878,7 +878,7 @@ int nc_set_fill(int ncid, int fillmode, int *old_modep)
 }
 
 extern "C"
-static int _nc_begin_indep_data(int ncid)
+int _nc_begin_indep_data(int ncid)
 {
     int rc = NC_NOERR;
     log_level debug_level = netcdf_debug_level;
@@ -937,7 +937,7 @@ int nc_begin_indep_data(int ncid)
 }
 
 extern "C"
-static int _nc_end_indep_data(int ncid)
+int _nc_end_indep_data(int ncid)
 {
     int rc = NC_NOERR;
     log_level debug_level = netcdf_debug_level;
@@ -999,7 +999,7 @@ int nc_end_indep_data(int ncid)
  * Add a new dimension to an open netCDF dataset.
  */
 extern "C"
-static int _nc_def_dim(
+int _nc_def_dim(
                 int ncid,
                 const char *name,
                 size_t len,
@@ -1127,7 +1127,7 @@ int nc_def_dim(
  * Define a variable for an open netCDF dataset.
  */
 extern "C"
-static int _nc_def_var(
+int _nc_def_var(
                 int ncid,
                 const char *name,
                 nc_type xtype,
@@ -1261,7 +1261,7 @@ int nc_def_var(
 /* ************** INQUIRY FUNCTIONS ***************** */
 
 extern "C"
-static int _nc_inq(
+int _nc_inq(
         int ncid,
         int *ndimsp,
         int *nvarsp,
@@ -1291,7 +1291,7 @@ int nc_inq(
 }
 
 extern "C"
-static int _nc_inq_attlen(
+int _nc_inq_attlen(
         int ncid,
         int varid,
         const char *name,
@@ -1326,7 +1326,7 @@ int nc_inq_attlen(
 }
 
 extern "C"
-static int _nc_inq_atttype(
+int _nc_inq_atttype(
         int ncid,
         int varid,
         const char *name,
@@ -1359,7 +1359,7 @@ int nc_inq_atttype(
 }
 
 extern "C"
-static int _nc_inq_att(
+int _nc_inq_att(
         int ncid,
         int varid,
         const char *name,
@@ -1400,7 +1400,7 @@ int nc_inq_att(
 }
 
 extern "C"
-static int _nc_inq_attname(
+int _nc_inq_attname(
         int ncid,
         int varid,
         int attnum,
@@ -1433,7 +1433,7 @@ int nc_inq_attname(
 }
 
 extern "C"
-static int _nc_inq_dim(
+int _nc_inq_dim(
         int ncid,
         int dimid,
         char *name,
@@ -1469,7 +1469,7 @@ int nc_inq_dim(
 }
 
 extern "C"
-static int _nc_inq_dimlen(
+int _nc_inq_dimlen(
         int ncid,
         int dimid,
         size_t *lenp)
@@ -1503,7 +1503,7 @@ int nc_inq_dimlen(
 }
 
 extern "C"
-static int _nc_inq_dimid(
+int _nc_inq_dimid(
         int ncid,
         const char *name,
         int *dimidp)
@@ -1539,7 +1539,7 @@ int nc_inq_dimid(
 }
 
 extern "C"
-static int _nc_inq_unlimdim(
+int _nc_inq_unlimdim(
         int ncid,
         int *unlimdimidp)
 {
@@ -1571,7 +1571,7 @@ int nc_inq_unlimdim(
 }
 
 extern "C"
-static int _nc_inq_var(
+int _nc_inq_var(
         int ncid,
         int varid,
         char *name,
@@ -1622,7 +1622,7 @@ int nc_inq_var(
  * TODO: add support for user-defined types.
  */
 extern "C"
-static int _nc_inq_type(
+int _nc_inq_type(
         int ncid,
         nc_type xtype,
         char *name,
@@ -1687,7 +1687,7 @@ int nc_inq_type(
 }
 
 extern "C"
-static int _nc_inq_varid(
+int _nc_inq_varid(
         int ncid,
         const char *name,
         int *varidp)
@@ -1724,7 +1724,7 @@ int nc_inq_varid(
 }
 
 extern "C"
-static int _nc_inq_vardimid(
+int _nc_inq_vardimid(
         int ncid,
         int varid,
         int dimids[])
@@ -1758,7 +1758,7 @@ int nc_inq_vardimid(
 }
 
 extern "C"
-static int _nc_inq_varndims(
+int _nc_inq_varndims(
         int ncid,
         int varid,
         int *ndimsp)
@@ -1791,7 +1791,7 @@ int nc_inq_varndims(
 }
 
 extern "C"
-static int _nc_inq_vartype(
+int _nc_inq_vartype(
         int ncid,
         int varid,
         nc_type *xtypep)
@@ -2154,7 +2154,7 @@ int nc_put_att_ulonglong(
  * use different byte ordering.
  */
 extern "C"
-static int _nc_get_att(
+int _nc_get_att(
         int ncid,
         int varid,
         const char *name,
@@ -2671,7 +2671,7 @@ static int update_unlimdim_dimlen(const int ncid, const size_t dimlen)
  * This function is sufficient for all other netcdf write functions.
  */
 extern "C"
-static int _nc_put_vars(
+int _nc_put_vars(
                 int ncid, int varid,
                 const size_t *startp,
                 const size_t *countp,
@@ -2753,7 +2753,7 @@ static int _nc_put_vars(
     /* calculate the number of bytes in the user array */
     if (ndims) {
         size_t count = 1;
-        size_t nbytes = 0;
+//        size_t nbytes = 0;
 
         /* copy values */
         if (startp) {
@@ -2829,17 +2829,17 @@ static int _nc_put_vars(
                 for (;vector_iter != (*map_iter).second->end(); vector_iter++) {
                     sprintf(outstr, "service(%02ld) super_start[", (*map_iter).first);
                     char tmpstr[256];
-                    for (int i=0;i<ndims;i++) {
+                    for (i=0;i<ndims;i++) {
                         sprintf(tmpstr, "%04ld,", chunk.start[i]);
                         strcat(outstr, tmpstr);
                     }
                     strcat(outstr, "] start[");
-                    for (int i=0;i<ndims;i++) {
+                    for (i=0;i<ndims;i++) {
                         sprintf(tmpstr, "%04ld,", (*vector_iter)->start[i]);
                         strcat(outstr, tmpstr);
                     }
                     strcat(outstr, "] count[");
-                    for (int i=0;i<ndims;i++) {
+                    for (i=0;i<ndims;i++) {
                         sprintf(tmpstr, "%04ld,", (*vector_iter)->count[i]);
                         strcat(outstr, tmpstr);
                     }
@@ -2956,7 +2956,7 @@ static int _nc_put_vars(
         }
 
         if (unlimdimid != -1) {
-            for (int i=0;i<ndims;i++) {
+            for (i=0;i<ndims;i++) {
                 if ((unlimdimid == dimids[i]) && start_copy) {
                     rc = update_unlimdim_dimlen(ncid, start_copy[i]+1);
                 } else {
@@ -3220,7 +3220,7 @@ int nc_put_vara_double(
  * This function is sufficient for all other netcdf write functions.
  */
 extern "C"
-static int _nc_get_vars(
+int _nc_get_vars(
         int ncid, int varid,
         const size_t *startp,
         const size_t *countp,
@@ -3289,7 +3289,7 @@ static int _nc_get_vars(
     /* calculate the number of bytes in the user array */
     if (ndims) {
         size_t count = 1;
-        size_t nbytes = 0;
+//        size_t nbytes = 0;
 
         /* copy values */
         if (startp) {
@@ -3772,7 +3772,7 @@ int nc_get_var1_int(
 
 
 extern "C"
-static int _nc_redef(int ncid)
+int _nc_redef(int ncid)
 {
     int rc = NC_NOERR;
 
@@ -3823,7 +3823,7 @@ int nc_redef(int ncid)
 }
 
 extern "C"
-static int _nc_enddef(int ncid)
+int _nc_enddef(int ncid)
 {
     int rc = NC_NOERR;
     double MulticastTime;
@@ -3913,7 +3913,7 @@ int nc_enddef(int ncid)
  * Sync an open netCDF dataset.
  */
 extern "C"
-static int _nc_sync_wait(int ncid)
+int _nc_sync_wait(int ncid)
 {
     int rc=NSSI_OK;
     nssi_request *req=NULL;
@@ -3953,7 +3953,7 @@ int nc_sync_wait(int ncid)
  * Sync an open netCDF dataset.
  */
 extern "C"
-static int _nc_sync(int ncid)
+int _nc_sync(int ncid)
 {
     int rc=NSSI_OK;
     nssi_request *req=NULL;
@@ -4020,7 +4020,7 @@ int nc_sync(int ncid)
  * Close an open netCDF dataset.
  */
 extern "C"
-static int _nc_close_wait(int ncid)
+int _nc_close_wait(int ncid)
 {
     int rc=NSSI_OK;
     nssi_request *req=NULL;
@@ -4062,7 +4062,7 @@ int nc_close_wait(int ncid)
  * Close an open netCDF dataset.
  */
 extern "C"
-static int _nc_close(int ncid)
+int _nc_close(int ncid)
 {
     int rc=NSSI_OK;
     nssi_request *req=NULL;
