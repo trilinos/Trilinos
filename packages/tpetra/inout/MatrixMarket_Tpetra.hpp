@@ -54,7 +54,7 @@
 /// Market format") for interchange of sparse and dense matrices.
 ///
 #include "Tpetra_CrsMatrix.hpp"
-#include "MatrixMarket_raw.hpp"
+#include "MatrixMarket_Raw_Adder.hpp"
 #include "MatrixMarket_Banner.hpp"
 #include "MatrixMarket_CoordDataReader.hpp"
 #include "MatrixMarket_util.hpp"

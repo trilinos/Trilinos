@@ -39,7 +39,7 @@
 // ************************************************************************
 // @HEADER
 
-#include <MatrixMarket_raw.hpp>
+#include <MatrixMarket_Raw_Checker.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Kokkos_DefaultNode.hpp>

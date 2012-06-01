@@ -39,8 +39,8 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef __MatrixMarket_raw_hpp
-#define __MatrixMarket_raw_hpp
+#ifndef __MatrixMarket_Raw_Checker_hpp
+#define __MatrixMarket_Raw_Checker_hpp
 
 #include "MatrixMarket_Raw_Adder.hpp"
 #include "MatrixMarket_CoordDataReader.hpp"
@@ -515,4 +515,4 @@ namespace Teuchos {
   } // namespace MatrixMarket
 } // namespace Teuchos
 
-#endif // __MatrixMarket_raw_hpp
+#endif // __MatrixMarket_Raw_Checker_hpp
