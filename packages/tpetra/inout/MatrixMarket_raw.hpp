@@ -59,11 +59,27 @@
 
 namespace Teuchos {
   namespace MatrixMarket {
+    /// \namespace Raw
+    /// \brief "Raw" input of sparse matrices from Matrix Market files.
+    ///
+    /// "Raw" means serial (not MPI or otherwise distributed over
+    /// parallel processes), with storage as a collection of matrix
+    /// indices and values.  This is useful if you want to read the
+    /// sparse matrix on one (MPI) process and store it in a custom
+    /// format.  For reading in a Tpetra::CrsMatrix, use the
+    /// Tpetra::MatrixMarket::Reader class.
     namespace Raw {
-
       /// \class Element
       /// \author Mark Hoemmen
-      /// \brief An Element stores one entry of a sparse matrix.
+      /// \brief Stores one entry of a sparse matrix.
+      ///
+      /// \tparam Scalar The type of entries of the sparse matrix.
+      /// \tparam Ordinal The type of indices of the sparse matrix.
+      ///
+      /// This class is mainly useful as an implementation detail of
+      /// Adder.  We expose it to users only if they wish to convert
+      /// the sparse matrix read in by Adder into a storage format
+      /// other than CSR (compressed sparse row).
       ///
       /// An array of Elements implements the so-called "array of
       /// structs" representation of a coordinate format sparse
@@ -76,28 +92,33 @@ namespace Teuchos {
       /// sequence of Elements will put them in an order suitable for
       /// extracting the CSR (compressed sparse row) representation of
       /// the sparse matrix.
-      ///
       template<class Scalar, class Ordinal>
       class Element {
       public:
-        //! Default constructor: an invalid structural nonzero element
+        /// \brief Default constructor: an invalid entry of the matrix.
+        ///
+        /// FIXME (mfh 31 May 2012) This currently only works for
+        /// signed Ordinal types to which -1 can be assigned.  It
+        /// would be better to use
+        /// Teuchos::OrdinalTraits<Ordinal>::invalid() as the default
+        /// invalid value.
         Element () : rowIndex_ (-1), colIndex_ (-1), value_ (0) {}
 
-        //! A structural nonzero element at (i,j) with value Aij
+        //! Create a sparse matrix entry at (i,j) with value Aij.
         Element (const Ordinal i, const Ordinal j, const Scalar& Aij) :
           rowIndex_ (i), colIndex_ (j), value_ (Aij) {}
 
-        //! Ignore the nonzero value for comparisons.
+        //! Ignore the matrix value for comparisons.
         bool operator== (const Element& rhs) {
           return rowIndex_ == rhs.rowIndex_ && colIndex_ == rhs.colIndex_;
         }
 
-        //! Ignore the nonzero value for comparisons.
+        //! Ignore the matrix value for comparisons.
         bool operator!= (const Element& rhs) {
           return ! (*this == rhs);
         }
 
-        //! Lex order first by row index, then by column index.
+        //! Lexicographic order first by row index, then by column index.
         bool operator< (const Element& rhs) const {
           if (rowIndex_ < rhs.rowIndex_)
             return true;
@@ -105,6 +126,22 @@ namespace Teuchos {
             return false;
           else { // equal
             return colIndex_ < rhs.colIndex_;
+          }
+        }
+
+        /// \brief Merge rhs into this Element, using custom binary function.
+        ///
+        /// This replaces the current value Aij with f(rhs.value_,
+        /// Aij).  The object f must be a binary function that takes
+        /// two Scalar arguments and returns a Scalar.
+        template<class BinaryFunction>
+        void merge (const Element& rhs, const BinaryFunction& f) {
+          if (rowIndex() != rhs.rowIndex() || colIndex() != rhs.colIndex()) {
+            throw std::invalid_argument ("Can only merge elements at the same "
+                                         "location in the sparse matrix");
+          }
+          else {
+            value_ = f (rhs.value_, value_);
           }
         }
 
@@ -417,6 +454,27 @@ namespace Teuchos {
         /// elements.  Return a CSR (compressed sparse row) version of
         /// the data, with zero-based indices.
         ///
+        /// We combine merge and conversion to CSR because the latter
+        /// requires the former.
+        ///
+        /// \param numUniqueElts [out] Same as the first return value
+        ///   of merge().
+        ///
+        /// \param numRemovedElts [out] Same as the second return
+        ///   value of merge().
+        ///
+        /// \param rowptr [out] Array of numRows+1 offsets, where
+        ///   numRows is the number of rows in the sparse matrix.  For
+        ///   row i (zero-based indexing), the entries of that row are
+        ///   in indices rowptr[i] .. rowptr[i+1]-1 of colind and
+        ///   values.
+        ///
+        /// \param colind [out] Column indices of the matrix.  Same
+        ///   number of entries as values.  colind[k] is the column
+        ///   index of values[k].
+        ///
+        /// \param values [out] Values stored in the matrix.
+        ///
         /// \param replace [in] If true, replace each duplicate
         ///   element with the next element sharing the same row and
         ///   column index.  This means that results will depend on
@@ -425,8 +483,6 @@ namespace Teuchos {
         ///   together; in that case, the result is independent (in
         ///   exact arithmetic, not in finite-precision arithmetic) of
         ///   their order.
-        ///
-        /// \return (# unique elements, # removed elements)
         ///
         /// \note This method does not change the "expected" or "seen"
         ///   numbers of entries, since both of those count entries
@@ -448,14 +504,16 @@ namespace Teuchos {
           // At this point, elts_ is already in CSR order.
           // Now we can allocate and fill the ind and val arrays.
           ArrayRCP<Ordinal> ind = arcp<Ordinal> (elts_.size ());
-          ArrayRCP<Ordinal> val = arcp<Scalar> (elts_.size ());
+          ArrayRCP<Scalar> val = arcp<Scalar> (elts_.size ());
 
           // Number of rows in the matrix.
           const Ordinal numRows = tolerant_ ? seenNumRows_ : expectedNumRows_;
           ArrayRCP<Ordinal> ptr = arcp<Ordinal> (numRows + 1);
 
           // Copy over the elements, and fill in the ptr array with
-          // offsets.
+          // offsets.  Note that merge() sorted the entries by row
+          // index, so we can assume the row indices are increasing in
+          // the list of entries.
           Ordinal curRow = 0;
           Ordinal curInd = 0;
           typedef typename std::vector<element_type>::const_iterator iter_type;
