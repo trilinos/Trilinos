@@ -45,6 +45,7 @@
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_CommHelpers.hpp"
+#include "Teuchos_ParameterList.hpp"
 #include "MatrixMarket_Banner.hpp"
 #include "MatrixMarket_CoordDataReader.hpp"
 #include "MatrixMarket_util.hpp"
@@ -240,7 +241,7 @@ namespace Teuchos {
       }
 
       /// \class Adder
-      /// \brief To be used with Reader for "raw" sparse matrix input.
+      /// \brief To be used with Checker for "raw" sparse matrix input.
       ///
       /// \tparam Scalar The type of entries in the sparse matrix.
       /// \tparam Ordinal The type of indices in the sparse matrix.
@@ -579,88 +580,161 @@ namespace Teuchos {
         std::vector<element_type> elts_;
       };
 
-      /// \class Reader
-      /// \brief "Raw" reader for debugging a Matrix Market file.
+      /// \class Checker
+      /// \brief Tool for debugging the syntax of a Matrix Market file containing a sparse matrix.
       ///
-      /// This class' methods are useful for examining the contents of
-      /// a Matrix Market file, and checking the integrity of its
-      /// data.  See MatrixMarket_Tpetra.hpp for a Matrix Market
-      /// reader that constructs a Tpetra::CrsMatrix object.
+      /// This class is useful for checking the integrity of a Matrix
+      /// Market sparse matrix file and printing its contents.  Use
+      /// Tpetra::MatrixMarket::Reader if you want to read a
+      /// Tpetra::CrsMatrix from a Matrix Market file.
       template<class Scalar, class Ordinal>
-      class Reader {
+      class Checker {
       public:
+        /// \brief Constructor that takes Boolean parameters.
+        ///
+        /// \param echo [in] Whether to echo the sparse matrix to
+        ///   stdout on MPI Process 0, after reading the sparse matrix.
+        /// \param tolerant [in] Whether to parse the Matrix Market
+        ///   files tolerantly.
+        /// \param debug [in] Whether to print debugging output to
+        ///   stderr.  This will happen on all MPI processes, so it
+        ///   could be a lot of output.
+        Checker (const bool echo, const bool tolerant, const bool debug) :
+          echo_ (echo), tolerant_ (tolerant), debug_ (debug)
+        {}
+
+        //! Constructor that sets default Boolean parameters.
+        Checker () :
+          echo_ (false), tolerant_ (false), debug_ (false)
+        {}
+
+        /// \brief Constructor that takes a ParameterList of parameters.
+        ///
+        /// Parameters (all of them have type bool, all default to false):
+        /// - "Echo to stdout": Whether to echo the sparse matrix to
+        ///   stdout on MPI Process 0, after reading the sparse matrix.
+        /// - "Parse tolerantly": Whether to parse Matrix Market files
+        ///   tolerantly.
+        /// - "Debug mode" Whether to print debugging output to
+        ///   stderr.  This will happen on all MPI processes, so it
+        ///   could be a lot of output.
+        Checker (const RCP<ParameterList>& params) :
+          echo_ (false), tolerant_ (false), debug_ (false)
+        {
+          setParameters (params);
+        }
+
+        /// \brief Set parameters from the given ParameterList.
+        ///
+        /// See constructor documentation for the accepted parameters.
+        void
+        setParameters (const RCP<ParameterList>& params)
+        {
+          // Default parameter values.
+          bool echo = false;
+          bool tolerant = false;
+          bool debug = false;
+
+          // Read parameters.
+          echo = params->get ("Echo to stdout", echo);
+          tolerant = params->get ("Parse tolerantly", tolerant);
+          debug = params->get ("Debug mode", debug);
+
+          // No side effects on the class until ParameterList
+          // processing is complete.
+          echo_ = echo;
+          tolerant_ = tolerant;
+          debug_ = debug;
+        }
+
+        RCP<const ParameterList>
+        getValidParameters () const
+        {
+          // Default parameter values.
+          const bool echo = false;
+          const bool tolerant = false;
+          const bool debug = false;
+
+          // Set default parameters with documentation.
+          RCP<ParameterList> params = parameterList ("Matrix Market Checker");
+          params->set ("Echo to stdout", echo, "Whether to echo the sparse "
+                       "matrix to stdout after reading it");
+          params->set ("Parse tolerantly", tolerant, "Whether to tolerate "
+                       "syntax errors when parsing the Matrix Market file");
+          params->set ("Debug mode", debug, "Whether to print debugging output "
+                       "to stderr, on all participating MPI processes");
+
+          return rcp_const_cast<const ParameterList> (params);
+        }
+
         /// \brief Read the sparse matrix from the given file.
         ///
-        /// This is a collective operation.  Only Rank 0 opens the
-        /// file and reads data from it, but all ranks participate and
-        /// wait for the final result.
+        /// This is a collective operation.  Only MPI Process 0 opens
+        /// the file and reads data from it, but all ranks participate
+        /// and wait for the final result.
         ///
         /// \note This whole "raw" reader is meant for debugging and
         ///   diagnostics of syntax errors in the Matrix Market file;
         ///   it's not performance-oriented.  That's why we do all the
         ///   broadcasts of and checks for "success".
-        static bool
+        bool
         readFile (const Teuchos::Comm<int>& comm,
-                  const std::string& filename,
-                  const bool echo,
-                  const bool tolerant,
-                  const bool debug=false)
+                  const std::string& filename)
         {
           using std::cerr;
           using std::endl;
 
-          const int myRank = Teuchos::rank (comm);
+          const int myRank = comm.getRank ();
           // Teuchos::broadcast doesn't accept a bool; we use an int
           // instead, with the usual 1->true, 0->false Boolean
           // interpretation.
           int readFile = 0;
           RCP<std::ifstream> in; // only valid on Rank 0
           if (myRank == 0) {
-            if (debug) {
+            if (debug_) {
               cerr << "Attempting to open file \"" << filename
                    << "\" on Rank 0...";
             }
             in = rcp (new std::ifstream (filename.c_str()));
             if (! *in) {
               readFile = 0;
-              if (debug)
+              if (debug_) {
                 cerr << "failed." << endl;
+              }
             }
             else {
               readFile = 1;
-              if (debug)
+              if (debug_) {
                 cerr << "succeeded." << endl;
+              }
             }
           }
           Teuchos::broadcast (comm, 0, &readFile);
+          // All MPI processes should throw at the same time, or none.
           TEUCHOS_TEST_FOR_EXCEPTION(! readFile, std::runtime_error,
-                             "Failed to open input file \"" + filename + "\".");
+            "Failed to open input file \"" + filename + "\".");
           // Only Rank 0 will try to dereference "in".
-          return read (comm, in, echo, tolerant, debug);
+          return read (comm, in);
         }
-
 
         /// \brief Read the sparse matrix from the given input stream.
         ///
-        /// This is a collective operation.  Only Rank 0 reads from
-        /// the given input stream, but all ranks participate and wait
-        /// for the final result.
+        /// This is a collective operation.  Only MPI Process 0 reads
+        /// from the given input stream, but all MPI processes
+        /// participate and wait for the final result.
         ///
         /// \note This whole "raw" reader is meant for debugging and
         ///   diagnostics of syntax errors in the Matrix Market file;
         ///   it's not performance-oriented.  That's why we do all the
         ///   broadcasts of and checks for "success".
-        static bool
+        bool
         read (const Teuchos::Comm<int>& comm,
-              const RCP<std::istream>& in,
-              const bool echo,
-              const bool tolerant,
-              const bool debug=false)
+              const RCP<std::istream>& in)
         {
           using std::cerr;
           using std::endl;
 
-          const int myRank = Teuchos::rank (comm);
+          const int myRank = comm.getRank ();
           std::pair<bool, std::string> result;
           int msgSize = 0; // Size of error message (if any)
           if (myRank == 0) {
@@ -669,11 +743,11 @@ namespace Teuchos {
               result.second = "Input stream is null on Rank 0";
             }
             else {
-              if (debug) {
+              if (debug_) {
                 cerr << "About to read from input stream on Rank 0" << endl;
               }
-              result = readOnRank0 (*in, echo, tolerant, debug);
-              if (debug) {
+              result = readOnRank0 (*in);
+              if (debug_) {
                 if (result.first) {
                   cerr << "Successfully read sparse matrix from "
                     "input stream on Rank 0" << endl;
@@ -694,7 +768,7 @@ namespace Teuchos {
           int success = result.first ? 1 : 0;
           Teuchos::broadcast (comm, 0, &success);
           if (! success) {
-            if (! tolerant) {
+            if (! tolerant_) {
               // Tell all ranks how long the error message is, so
               // they can make space for it in order to receive
               // the broadcast of the error message.
@@ -706,7 +780,7 @@ namespace Teuchos {
                   std::copy (result.second.begin(), result.second.end(),
                              errMsg.begin());
                 }
-                Teuchos::broadcast (comm, 0, static_cast<int>(msgSize), &errMsg[0]);
+                Teuchos::broadcast (comm, 0, static_cast<int> (msgSize), &errMsg[0]);
                 TEUCHOS_TEST_FOR_EXCEPTION(! success, std::runtime_error, errMsg);
               }
               else {
@@ -726,12 +800,19 @@ namespace Teuchos {
         }
 
       private:
+        //! Whether to echo the sparse matrix to stdout after reading it.
+        bool echo_;
+        //! Whether to parse the Matrix Market file tolerantly.
+        bool tolerant_;
+        //! Whether to print debugging output to stderr.
+        bool debug_;
+
         /// \brief Read in the Banner line from the given input stream.
         ///
-        /// Only call this method on Rank 0.
+        /// \warning Only call this method on MPI Process 0.
         ///
         /// \param in [in/out] Input stream from which to read the
-        ///   Banner line.
+        ///   Banner line.  This must be valid on the calling process.
         ///
         /// \param lineNumber [in/out] On input: Current line number
         ///   of the input stream.  On output: if any line(s) were
@@ -739,12 +820,9 @@ namespace Teuchos {
         ///   incremented by the number of line(s) read.  (This
         ///   includes comment lines.)
         ///
-        /// \return Banner [non-null]
-        static RCP<const Teuchos::MatrixMarket::Banner>
-        readBanner (std::istream& in,
-                    size_t& lineNumber,
-                    const bool tolerant=false,
-                    const bool debug=false)
+        /// \return The Matrix Market file's Banner line (never null).
+        RCP<const Teuchos::MatrixMarket::Banner>
+        readBanner (std::istream& in, size_t& lineNumber)
         {
           typedef ScalarTraits<Scalar> STS;
 
@@ -761,34 +839,38 @@ namespace Teuchos {
             // Try to read a line from the input stream.
             const bool readFailed = ! getline(in, line);
             TEUCHOS_TEST_FOR_EXCEPTION(readFailed, std::invalid_argument,
-                               "Failed to get Matrix Market banner line "
-                               "from input, after reading " << numLinesRead
-                               << "line" << (numLinesRead != 1 ? "s." : "."));
+              "Failed to get Matrix Market banner line from input, after reading "
+              << numLinesRead << "line" << (numLinesRead != 1 ? "s." : "."));
             // We read a line from the input stream.
             lineNumber++;
             numLinesRead++;
             size_t start, size; // Output args of checkCommentLine
-            commentLine = checkCommentLine (line, start, size,
-                                            lineNumber, tolerant);
+            commentLine =
+              checkCommentLine (line, start, size, lineNumber, tolerant_);
           } while (commentLine); // Loop until we find a noncomment line.
 
           // Assume that the noncomment line we found is the banner line.
           try {
-            pBanner = rcp (new Banner (line, tolerant));
+            pBanner = rcp (new Banner (line, tolerant_));
           } catch (std::exception& e) {
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-                               "Matrix Market banner line contains syntax "
-                               "error(s): " << e.what());
+              "Matrix Market file's banner line contains syntax error(s): "
+              << e.what ());
           }
           return pBanner;
         }
 
-        //! To be called only on MPI Rank 0.
-        static std::pair<bool, std::string>
-        readOnRank0 (std::istream& in,
-                     const bool echo,
-                     const bool tolerant,
-                     const bool debug=false)
+        /// \brief Read the sparse matrix on MPI Rank 0.
+        ///
+        /// \warning To be called only on MPI Rank 0.
+        ///
+        /// \param in [in/out] The input stream from which to read.
+        ///   This must be valid on the calling process.
+        ///
+        /// \return First value: Whether reading was successful.  If
+        ///   false, the second value is the error message.
+        std::pair<bool, std::string>
+        readOnRank0 (std::istream& in)
         {
           using std::cerr;
           using std::cout;
@@ -813,36 +895,35 @@ namespace Teuchos {
           std::ostringstream err;
           RCP<const Banner> pBanner;
           try {
-            pBanner = readBanner (in, lineNumber, tolerant, debug);
+            pBanner = readBanner (in, lineNumber);
           }
           catch (std::exception& e) {
-            err << "Failed to read Banner: " << e.what();
+            err << "Failed to read Matrix Market file's Banner: " << e.what();
             return std::make_pair (false, err.str());
           }
           //
           // Validate the metadata in the Banner.
           //
-          if (pBanner->matrixType() != "coordinate") {
-            err << "Matrix Market input file must contain a "
-              "\"coordinate\"-format sparse matrix in "
-              "order to create a sparse matrix object "
+          if (pBanner->matrixType () != "coordinate") {
+            err << "Matrix Market input file must contain a \"coordinate\"-"
+              "format sparse matrix in order to create a sparse matrix object "
               "from it.";
-            return std::make_pair (false, err.str());
+            return std::make_pair (false, err.str ());
           }
-          else if (! STS::isComplex && pBanner->dataType() == "complex") {
+          else if (! STS::isComplex && pBanner->dataType () == "complex") {
             err << "The Matrix Market sparse matrix file contains complex-"
               "valued data, but you are try to read the data into a sparse "
               "matrix containing real values (your matrix's Scalar type is "
               "real).";
-            return std::make_pair (false, err.str());
+            return std::make_pair (false, err.str ());
           }
-          else if (pBanner->dataType() != "real" &&
-                   pBanner->dataType() != "complex") {
+          else if (pBanner->dataType () != "real" &&
+                   pBanner->dataType () != "complex") {
             err << "Only real or complex data types (no pattern or integer "
               "matrices) are currently supported.";
-            return std::make_pair (false, err.str());
+            return std::make_pair (false, err.str ());
           }
-          if (debug) {
+          if (debug_) {
             cerr << "Banner line:" << endl << *pBanner << endl;
           }
 
@@ -858,11 +939,11 @@ namespace Teuchos {
           // separate entries)).  The second element of the pair tells
           // us whether the values were gotten successfully.
           std::pair<Tuple<Ordinal, 3>, bool> dims =
-            reader.readDimensions (in, lineNumber, tolerant);
+            reader.readDimensions (in, lineNumber, tolerant_);
           if (! dims.second) {
             err << "Error reading Matrix Market sparse matrix "
               "file: failed to read coordinate dimensions.";
-            return std::make_pair (false, err.str());
+            return std::make_pair (false, err.str ());
           }
           // These are "expected" values read from the input stream's
           // metadata.  The actual matrix entries read from the input
@@ -872,7 +953,7 @@ namespace Teuchos {
           const Ordinal numRows = dims.first[0];
           const Ordinal numCols = dims.first[1];
           const Ordinal numEntries = dims.first[2];
-          if (debug) {
+          if (debug_) {
             cerr << "Reported dimensions: " << numRows << " x " << numCols
                  << ", with " << numEntries << " entries (counting possible "
                  << "duplicates)." << endl;
@@ -882,10 +963,10 @@ namespace Teuchos {
           // dimensions, but doesn't know about symmetry.
           RCP<raw_adder_type> rawAdder =
             rcp (new raw_adder_type (numRows, numCols, numEntries,
-                                     tolerant, debug));
+                                     tolerant_, debug_));
           // The symmetrizing adder knows about symmetry.
           RCP<adder_type> adder =
-            rcp (new adder_type (rawAdder, pBanner->symmType()));
+            rcp (new adder_type (rawAdder, pBanner->symmType ()));
 
           // Give the adder to the reader.
           reader.setAdder (adder);
@@ -894,8 +975,8 @@ namespace Teuchos {
           // and where there were any bad lines of input.  The actual
           // sparse matrix entries are stored in the (raw) Adder object.
           std::pair<bool, std::vector<size_t> > results =
-            reader.read (in, lineNumber, tolerant, debug);
-          if (debug) {
+            reader.read (in, lineNumber, tolerant_, debug_);
+          if (debug_) {
             if (results.first) {
               cerr << "Matrix Market file successfully read" << endl;
             }
@@ -906,15 +987,15 @@ namespace Teuchos {
 
           // Report any bad line number(s).
           if (! results.first) {
-            if (! tolerant) {
+            if (! tolerant_) {
               err << "The Matrix Market input stream had syntax error(s)."
                 "  Here is the error report." << endl;
               reportBadness (err, results);
               err << endl;
-              return std::make_pair (false, err.str());
+              return std::make_pair (false, err.str ());
             }
             else {
-              if (debug) {
+              if (debug_) {
                 reportBadness (cerr, results);
               }
             }
@@ -922,7 +1003,7 @@ namespace Teuchos {
           // We're done reading in the sparse matrix.  If we're in
           // "echo" mode, print out the matrix entries to stdout.  The
           // entries will have been symmetrized if applicable.
-          if (echo) {
+          if (echo_) {
             const bool doMerge = false;
             const bool replace = false;
             rawAdder->print (cout, doMerge, replace);
@@ -932,7 +1013,7 @@ namespace Teuchos {
         }
 
         //! To be called only on MPI Rank 0.
-        static void
+        void
         reportBadness (std::ostream& out,
                        const std::pair<bool, std::vector<size_t> >& results)
         {

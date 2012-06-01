@@ -150,23 +150,23 @@ main (int argc, char *argv[])
     success = 1;
   }
   else {
-    using Teuchos::MatrixMarket::Raw::Reader;
+    using Teuchos::MatrixMarket::Raw::Checker;
     typedef double scalar_type;
     typedef int ordinal_type;
-    typedef Reader<scalar_type, ordinal_type> reader_type;
-    const bool theSuccess =
-      reader_type::readFile (*pComm, filename, echo, tolerant, debug);
+    typedef Checker<scalar_type, ordinal_type> checker_type;
+    checker_type checker (echo, tolerant, debug);
+    const bool theSuccess = checker.readFile (*pComm, filename);
     success = theSuccess ? 1 : 0;
   }
   if (debug) {
     // Make sure that all the processes finish.  This should not be
     // necessary, since readFile is a collective for which all ranks
     // agree on the returned Boolean result.
-    Teuchos::barrier (*pComm);
+    pComm->barrier ();
   }
 
   // Only Rank 0 gets to write to cout.
-  if (Teuchos::rank (*pComm) == 0) {
+  if (pComm->getRank () == 0) {
     if (success) {
       std::cout << "End Result: TEST PASSED" << endl;
     }
