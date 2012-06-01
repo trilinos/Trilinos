@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -45,20 +45,21 @@
 #include <string>
 #include <vector>
 
-namespace Tpetra {
+
+namespace Teuchos {
   namespace MatrixMarket {
     namespace details {
 
       //! Trim whitespace from both sides of \c in
-      std::string 
+      std::string
       trim (const std::string& in);
 
       //! Return lowercase version of \c in
-      std::string 
+      std::string
       lowercase (const std::string& in);
 
       //! Trim whitespace from both sides, and make lowercase
-      std::string 
+      std::string
       trim_and_lowercase (const std::string& in);
 
       /// \brief Split \c str using the given set of delimiters
@@ -75,12 +76,12 @@ namespace Tpetra {
       /// \return Vector of zero or more tokens, none of which contain any
       ///   of the delimiter character(s)
       std::vector<std::string>
-      split (const std::string& str, 
-	     const std::string& delimiters, 
-	     const size_t start=0);
+      split (const std::string& str,
+             const std::string& delimiters,
+             const size_t start=0);
 
     } // namespace details
   } // namespace MatrixMarket
-} // namespace Tpetra
+} // namespace Teuchos
 
 #endif // __MatrixMarket_split_hpp

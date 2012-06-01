@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -46,7 +46,7 @@
 #include <ostream>
 #include <string>
 
-namespace Tpetra {
+namespace Teuchos {
   namespace MatrixMarket {
 
     /// \class Banner
@@ -94,7 +94,7 @@ namespace Tpetra {
       /// mean that only the upper or lower triangle (including the
       /// diagonal) of the matrix is stored.  There's no way to tell
       /// from the banner whether the upper or lower triangle is stored;
-      /// you have to examine the matrix entries.  
+      /// you have to examine the matrix entries.
       ///
       /// \note An error condition is possible for sparse matrices
       /// (matrixType() == "coordinate"): If only the upper or lower
@@ -134,6 +134,6 @@ namespace Tpetra {
     std::ostream& operator<< (std::ostream& out, const Banner& banner);
 
   } // namespace MatrixMarket
-} // namespace Tpetra
+} // namespace Teuchos
 
 #endif // __MatrixMarket_Banner_hpp
