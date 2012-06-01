@@ -412,7 +412,7 @@ namespace Tpetra {
        */ 
       void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, 
                         const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, 
-                        const RCP<ParameterList> &params);
+                        const RCP<ParameterList> &params = null);
 
       /*! \brief Signal that data entry is complete. 
 
@@ -426,7 +426,7 @@ namespace Tpetra {
           \post <tt>isFillActive() == false<tt>
           \post <tt>isFillComplete() == true<tt>
        */
-      void fillComplete(const RCP<ParameterList> &params);
+      void fillComplete(const RCP<ParameterList> &params = null);
 
       //@}
 
@@ -782,10 +782,10 @@ namespace Tpetra {
       void solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const;
 
       //! Deprecated. Now takes a ParameterList.
-      TPETRA_DEPRECATED void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, OptimizeOption os = DoOptimizeStorage);
+      TPETRA_DEPRECATED void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, OptimizeOption os);
 
       //! Deprecated. Now takes a ParameterList.
-      TPETRA_DEPRECATED void fillComplete(OptimizeOption os = DoOptimizeStorage);
+      TPETRA_DEPRECATED void fillComplete(OptimizeOption os);
 
       //@}
 

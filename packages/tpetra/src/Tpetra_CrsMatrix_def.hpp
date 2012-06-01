@@ -513,8 +513,9 @@ namespace Tpetra {
       inds = sparse_ops_type::template allocStorage<LocalOrdinal>( ptrs() );
       vals = sparse_ops_type::template allocStorage<Scalar      >( ptrs() );
       for (size_t row=0; row < numRows; ++row) {
-        std::copy( lclInds2D_[row].begin(), inds+ptrs[row], inds+ptrs[row+1] );
-        std::copy(  values2D_[row].begin(), vals+ptrs[row], vals+ptrs[row+1] );
+        const size_t numentrs = numRowEntries_[row];
+        std::copy( lclInds2D_[row].begin(), lclInds2D_[row].begin() + numentrs, inds+ptrs[row] );
+        std::copy(  values2D_[row].begin(),  values2D_[row].begin() + numentrs, vals+ptrs[row] );
       }
     }
     else if (getProfileType() == StaticProfile) {
@@ -524,8 +525,9 @@ namespace Tpetra {
         inds = sparse_ops_type::template allocStorage<LocalOrdinal>( ptrs() );
         vals = sparse_ops_type::template allocStorage<Scalar      >( ptrs() );
         for (size_t row=0; row < numRows; ++row) {
-          std::copy( lclInds1D_+rowPtrs_[row], inds+ptrs[row], inds+ptrs[row+1] );
-          std::copy(  values1D_+rowPtrs_[row], vals+ptrs[row], vals+ptrs[row+1] );
+          const size_t numentrs = numRowEntries_[row];
+          std::copy( lclInds1D_.begin()+rowPtrs_[row], lclInds1D_.begin()+rowPtrs_[row]+numentrs, inds+ptrs[row] );
+          std::copy(  values1D_.begin()+rowPtrs_[row],  values1D_.begin()+rowPtrs_[row]+numentrs, vals+ptrs[row] );
         }
       }
       else {
@@ -535,7 +537,7 @@ namespace Tpetra {
       }
     }
     // can we ditch the old allocations for the packed one?
-    if ( params->get("Optimize Storage",true) ) {
+    if ( params != null && params->get("Optimize Storage",true) ) {
       lclInds2D_     = null;
       numRowEntries_ = null;
       values2D_ = null;
@@ -544,18 +546,27 @@ namespace Tpetra {
       lclInds1D_ = inds;
       rowPtrs_   = ptrs;
       values1D_    = vals;
+      myGraph_->pftype_ = StaticProfile;
     }
-    // hand the packed values to the graph
+    RCP<ParameterList> lclparams; 
+    // build the graph, hand over the indices
+    if (params == null) lclparams = parameterList();
+    else                lclparams = sublist(params,"Local Graph");
+    myGraph_->lclGraph_ = null;
+    myGraph_->lclGraph_ = rcp( new local_graph_type( getRowMap()->getNodeNumElements(), getRowMap()->getNode(), lclparams ) );
     myGraph_->lclGraph_->setStructure(ptrs,inds);
     ptrs = null;
     inds = null;
-    RCP<ParameterList> lclparams;
-    if (params != null) lclparams = sublist(params,"Local Matrix");
-    lclMatrix_ = rcp(new local_matrix_type(staticGraph_->getLocalGraph(), lclparams) );
+    // build the matrix, hand over the values
+    if (params == null) lclparams = parameterList();
+    else                lclparams = sublist(params,"Local Matrix");
+    lclMatrix_ = rcp(new local_matrix_type(staticGraph_->getLocalGraph(), lclparams ) );
     lclMatrix_->setValues(vals);
     vals = null;
     // finalize local graph and matrix
-    sparse_ops_type::finalizeGraphAndMatrix(*myGraph_->lclGraph_,*lclMatrix_,params);
+    if (params == null) lclparams = parameterList();
+    else                lclparams = sublist(params,"Local Sparse Ops");
+    sparse_ops_type::finalizeGraphAndMatrix(*myGraph_->getLocalGraphNonConst(),*lclMatrix_, lclparams);
   }
 
 
@@ -569,19 +580,37 @@ namespace Tpetra {
     // here's what we want...
     ArrayRCP<size_t>       ptrs;
     ArrayRCP<Scalar>       vals;
-    // get data from myGraph_
-    ArrayRCP<LocalOrdinal>            lclInds1D     = myGraph_->lclInds1D_;
-    ArrayRCP<ArrayRCP<LocalOrdinal> > lclInds2D     = myGraph_->lclInds2D_;
-    ArrayRCP<size_t>                  rowPtrs       = myGraph_->rowPtrs_;
-    ArrayRCP<size_t>                  numRowEntries = myGraph_->numRowEntries_;
-    size_t nodeNumEntries   = myGraph_->nodeNumEntries_;
-    size_t nodeNumAllocated = myGraph_->nodeNumAllocated_;
+    // get data from staticGraph_
+    ArrayRCP<LocalOrdinal>            lclInds1D     = staticGraph_->lclInds1D_;
+    ArrayRCP<ArrayRCP<LocalOrdinal> > lclInds2D     = staticGraph_->lclInds2D_;
+    ArrayRCP<size_t>                  rowPtrs       = staticGraph_->rowPtrs_;
+    ArrayRCP<size_t>                  numRowEntries = staticGraph_->numRowEntries_;
+    size_t nodeNumEntries   = staticGraph_->nodeNumEntries_;
+    size_t nodeNumAllocated = staticGraph_->nodeNumAllocated_;
+
+    bool requestOptimizedStorage = true;
+    if (params != null && params->get("Optimize Storage",true) == false) requestOptimizedStorage = false;
+    // if we're not allowed to change a static graph, then we can't change the storage of the matrix, either. 
+    // this means that if storage isn't already optimized, we can't do it now. 
+    // check and give warning, as appropriate
+    if (staticGraph_->isStorageOptimized() == false && requestOptimizedStorage) 
+    {
+      TPETRA_ABUSE_WARNING(true, std::runtime_error, 
+          "::fillLocalMatrix(): You requested optimized storage by setting the"
+          "\"Optimize Storage\" flag to \"true\" in the parameter list, or by virtue"
+          "of default behavior. However, the associated CrsGraph was filled separately"
+          "and requested not to optimize storage. Therefore, the CrsMatrix cannot"
+          "optimize storage.")
+      requestOptimizedStorage = false;
+    }
+
     if (getProfileType() == DynamicProfile) {
       // 2d -> 1d packed
       ptrs = sparse_ops_type::allocRowPtrs( numRowEntries() );
       vals = sparse_ops_type::template allocStorage<Scalar      >( ptrs() );
       for (size_t row=0; row < numRows; ++row) {
-        std::copy( values2D_[row].begin(), vals+ptrs[row], vals+ptrs[row+1] );
+        const size_t numentrs = numRowEntries[row];
+        std::copy( values2D_[row].begin(), values2D_[row].begin()+numentrs, vals+ptrs[row] );
       }
     }
     else if (getProfileType() == StaticProfile) {
@@ -590,7 +619,8 @@ namespace Tpetra {
         ptrs = sparse_ops_type::allocRowPtrs( numRowEntries() );
         vals = sparse_ops_type::template allocStorage<Scalar      >( ptrs() );
         for (size_t row=0; row < numRows; ++row) {
-          std::copy( values1D_+rowPtrs[row], vals+ptrs[row], vals+ptrs[row+1] );
+          const size_t numentrs = numRowEntries[row];
+          std::copy( values1D_.begin()+rowPtrs[row], values1D_.begin()+rowPtrs[row]+numentrs, vals+ptrs[row] );
         }
       }
       else {
@@ -600,19 +630,22 @@ namespace Tpetra {
     // done with these now
     ptrs = null;
     // can we ditch the old allocations for the packed one?
-    if ( params->get("Optimize Storage",true) ) {
+    if ( requestOptimizedStorage ) {
       // out with the old, in with the new
       values2D_ = null;
       values1D_ = vals;
     }
-    // hand the packed values to the graph
+    // build the matrix, hand over the values
     RCP<ParameterList> lclparams;
-    if (params != null) lclparams = sublist(params,"Local Matrix");
-    lclMatrix_ = rcp(new local_matrix_type(staticGraph_->getLocalGraph(), lclparams) );
+    if (params == null) lclparams = parameterList();
+    else                lclparams = sublist(params,"Local Matrix");
+    lclMatrix_ = rcp(new local_matrix_type(staticGraph_->getLocalGraph(), lclparams ) );
     lclMatrix_->setValues(vals);
     vals = null;
     // finalize local matrix
-    sparse_ops_type::finalizeMatrix(*staticGraph_->getLocalGraph(),*lclMatrix_,params);
+    if (params == null) lclparams = parameterList();
+    else                lclparams = sublist(params,"Local Sparse Ops");
+    sparse_ops_type::finalizeMatrix(*staticGraph_->getLocalGraph(),*lclMatrix_, lclparams );
   }
 
 
@@ -1722,13 +1755,11 @@ namespace Tpetra {
     }
     computeGlobalConstants();
     // fill local objects; will fill and finalize local graph if appropriate
-    RCP<ParameterList> lclparams;
-    if (params != null) lclparams = sublist(params,"Local Fill");
     if (myGraph_ != null) {
-      fillLocalGraphAndMatrix(lclparams);
+      fillLocalGraphAndMatrix(params);
     }
     else {
-      fillLocalMatrix(lclparams);
+      fillLocalMatrix(params);
     }
     lclMatOps_ = rcp(new sparse_ops_type(getNode()));
     lclMatOps_->setGraphAndMatrix(staticGraph_->getLocalGraph(), lclMatrix_);
@@ -1925,6 +1956,10 @@ namespace Tpetra {
     //
     // a dynamic graph, depending on which constructor was used.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( staticGraph_ == null,                                             std::logic_error, err);
+    // if active, i have no local matrix
+    TEUCHOS_TEST_FOR_EXCEPTION( isFillActive() && lclMatrix_ != null,                                        std::logic_error, err );
+    // if active, i have no local sparse ops
+    TEUCHOS_TEST_FOR_EXCEPTION( isFillActive() && lclMatOps_ != null,                                        std::logic_error, err );
     // myGraph == null means that the matrix has a static graph.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( myGraph_ != null && myGraph_ != staticGraph_,                     std::logic_error, err);
     // if matrix is fill complete, then graph must be fill complete
@@ -2008,7 +2043,7 @@ namespace Tpetra {
       // O(1) globals, minus what was already printed by description()
       if (isFillComplete() && myImageID == 0) {
         out << "Global number of diagonals = " << getGlobalNumDiags() << std::endl;
-        out << "Global max number of entries = " << getGlobalMaxNumRowEntries() << std::endl;
+        out << "Global max number of row entries = " << getGlobalMaxNumRowEntries() << std::endl;
       }
       // constituent objects
       if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME) {

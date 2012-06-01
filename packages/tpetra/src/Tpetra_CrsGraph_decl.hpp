@@ -347,7 +347,7 @@ namespace Tpetra {
           \post <tt>isFillComplete() == true<tt>
           \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>. See isStorageOptimized() for consequences.
        */
-      void fillComplete(const RCP<ParameterList> &params);
+      void fillComplete(const RCP<ParameterList> &params = null);
 
       //@}
 
@@ -624,10 +624,10 @@ namespace Tpetra {
       TPETRA_DEPRECATED ArrayRCP<const LocalOrdinal> getLocalRowView(LocalOrdinal LocalRow) const;
 
       //! \brief Signal that data entry is complete, specifying domain and range maps. 
-      TPETRA_DEPRECATED void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, OptimizeOption os = DoOptimizeStorage);
+      TPETRA_DEPRECATED void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, OptimizeOption os);
 
       //! \brief Signal that data entry is complete. 
-      TPETRA_DEPRECATED void fillComplete(OptimizeOption os = DoOptimizeStorage);
+      TPETRA_DEPRECATED void fillComplete(OptimizeOption os);
 
       //@}
 
