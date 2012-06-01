@@ -709,7 +709,7 @@ namespace Kokkos {
   ArrayRCP<T> 
   DefaultHostSparseOps<Scalar,Ordinal,Node>::allocStorage(const ArrayView<const size_t> &rowPtrs)
   { 
-    const size_t totalNumEntries = *rowPtrs.end();
+    const size_t totalNumEntries = *(rowPtrs.end()-1);
     // alloc data
     ArrayRCP<T> vals;
     if (totalNumEntries > 0) vals = arcp<T>(totalNumEntries);
