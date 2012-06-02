@@ -40,6 +40,7 @@
 // @HEADER
 
 #include <MatrixMarket_Raw_Checker.hpp>
+#include <MatrixMarket_Raw_Reader.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
@@ -84,8 +85,8 @@ namespace {
   {
     using Teuchos::ArrayView;
     using std::endl;
-    typedef ArrayView<OrdinalType>::size_type size_type;
-    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef typename ArrayView<OrdinalType>::size_type size_type;
+    typedef Teuchos::ScalarTraits<ScalarType> STS;
 
     out << "%%MatrixMarket matrix coordinate ";
     if (STS::isComplex) {
@@ -110,55 +111,6 @@ namespace {
       }
     }
   }
-
-
-  // Return an RCP to a Kokkos Node instance.
-  template<class NodeType>
-  Teuchos::RCP<NodeType>
-  getNode() {
-    throw std::runtime_error ("This Kokkos Node type not supported (compile-time error)");
-  }
-
-  template<>
-  Teuchos::RCP<Kokkos::SerialNode>
-  getNode() {
-    static Teuchos::RCP<Kokkos::SerialNode> node;
-    if (node.is_null ()) {
-      Teuchos::ParameterList defaultParams;
-      node = Teuchos::rcp (new Kokkos::SerialNode (defaultParams));
-    }
-    return node;
-  }
-
-#if defined(HAVE_KOKKOS_TBB)
-  template<>
-  Teuchos::RCP<Kokkos::TBBNode>
-  getNode() {
-    static Teuchos::RCP<Kokkos::TBBNode> node;
-    if (node.is_null ()) {
-      // "Num Threads" specifies the number of threads.  Defaults to an
-      // automatically chosen value.
-      Teuchos::ParameterList defaultParams;
-      node = Teuchos::rcp (new Kokkos::TBBNode (defaultParams));
-    }
-    return node;
-  }
-#endif // defined(HAVE_KOKKOS_TBB)
-
-#if defined(HAVE_KOKKOS_TPL)
-  template<>
-  Teuchos::RCP<Kokkos::TPLNode>
-  getNode() {
-    static Teuchos::RCP<Kokkos::TBBNode> node;
-    if (node.is_null ()) {
-      // "Num Threads" specifies the number of threads.  Defaults to an
-      // automatically chosen value.
-      Teuchos::ParameterList defaultParams;
-      node = Teuchos::rcp (new Kokkos::TPLNode (defaultParams));
-    }
-    return node;
-  }
-#endif // defined(HAVE_KOKKOS_TPL)
 } // namespace (anonymous)
 
 // Benchmark driver
@@ -174,11 +126,15 @@ main (int argc, char *argv[])
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::rcpFromRef;
   using Teuchos::SerialComm;
+  using std::cout;
+  using std::cerr;
   typedef double scalar_type;
   typedef int ordinal_type;
 
-  // Name of the Matrix Market sparse matrix file to read.
+  // Name of the Matrix Market sparse matrix file to read.  If empty,
+  // use the Matrix Market example embedded as a string in this file.
   std::string filename;
   // If true, just check the sparse matrix file.  Otherwise,
   // do a full conversion to CSR (compressed sparse row) format.
@@ -227,48 +183,131 @@ main (int argc, char *argv[])
   // Test reading in the sparse matrix.  If no filename or an empty
   // filename is specified, the test passes trivially.
   bool success = true;
-    if (checkOnly) {
-      typedef Checker<scalar_type, ordinal_type> checker_type;
-      checker_type checker (echo, tolerant, debug);
+  if (checkOnly) {
+    typedef Checker<scalar_type, ordinal_type> checker_type;
+    checker_type checker (echo, tolerant, debug);
 
-      RCP<const Comm<int> > comm = rcp (new SerialComm);
-      if (filename != "") {
-        success = success && checker.readFile (*comm, filename);
+    RCP<const Comm<int> > comm = rcp (new SerialComm<int>);
+    if (filename != "") {
+      if (verbose) {
+        cout << "Checking syntax of the Matrix Market file \"" << filename
+             << "\"" << endl;
       }
-      else {
-        std::istringstream inStr (sampleMatrixMarketFile);
-        success = success && checker.read (*comm, inStr);
+      success = success && checker.readFile (*comm, filename);
+      if (verbose) {
+        if (success) {
+          cout << "The given file is a valid Matrix Market file." << endl;
+        }
+        else {
+          cout << "The given file has syntax errors." << endl;
+        }
       }
     }
     else {
-      typedef Reader<scalar_type, ordinal_type> reader_type;
-      reader_type reader (tolerant, debug);
-      ArrayRCP<ordinal_type> ptr, ind;
-      ArrayRCP<scalar_type> val;
-      ordinal_type numRows, numCols;
-      if (filename != "") {
-        success = success && reader.readFile (ptr, ind, val, numRows, numCols, filename);
+      if (verbose) {
+        cout << "Checking syntax of the Matrix Market string example" << endl;
       }
-      else {
-        std::istringstream inStr (sampleMatrixMarketFile);
-        success = success && reader.read (ptr, ind, val, numRows, numCols, inStr);
+      std::istringstream in (sampleMatrixMarketFile);
+      RCP<std::istream> inStream = rcpFromRef (in);
+      success = success && checker.read (*comm, inStream);
+      if (verbose) {
+        if (success) {
+          cout << "The example has valid Matrix Market syntax." << endl;
+        }
+        else {
+          cout << "The example has syntax errors." << endl;
+        }
       }
-      TEUCHOS_TEST_FOR_EXCEPTION(! success, std::runtime_error, "Matrix Market "
-        "reader failed to read the given file or input stream.");
+    }
+  }
+  else {
+    typedef Reader<scalar_type, ordinal_type> reader_type;
+    reader_type reader (tolerant, debug);
+    ArrayRCP<ordinal_type> ptr, ind;
+    ArrayRCP<scalar_type> val;
+    ordinal_type numRows, numCols;
+    if (filename != "") {
+      if (verbose) {
+        cout << "Reading the Matrix Market file \"" << filename << "\"" << endl;
+      }
+      success = success && reader.readFile (ptr, ind, val,
+                                            numRows, numCols, filename);
+    }
+    else {
+      if (verbose) {
+        cout << "Reading the Matrix Market string example" << endl;
+      }
+      std::istringstream inStr (sampleMatrixMarketFile);
+      success = success && reader.read (ptr, ind, val, numRows, numCols, inStr);
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(! success, std::runtime_error, "Matrix Market "
+      "reader failed to read the given file or input stream.");
+    if (success && verbose) {
+      cout << "Successfully read the Matrix Market string example" << endl;
+    }
 
-      // Here's the fun part.  Output the CSR data to an output
-      // stream.  Then read in the output stream.  The resulting
-      // matrix should be exactly the same (unless the original file
-      // had elements at the same location that were added together
-      // with rounding error).
-      std::ostringstream outStr;
-      csrToMatrixMarket (outStr, ptr, ind, val, numRows, numCols);
+    // Here's the fun part.  Output the CSR data to an output stream.
+    // Then read in the output stream.  The resulting matrix should be
+    // exactly the same (unless the original file had elements at the
+    // same location that were added together with rounding error).
+    std::ostringstream outStr;
+    if (success && verbose) {
+      cout << "Printing the CSR arrays to a Matrix Market output stream" << endl;
+    }
+    csrToMatrixMarket<ordinal_type, scalar_type> (outStr, ptr (), ind (), val (),
+                                                  numRows, numCols);
 
-      std::istringstream inStr (outStr.str ());
-      ArrayRCP<ordinal_type> newptr, newind;
-      ArrayRCP<scalar_type> newval;
-      ordinal_type newNumRows, newNumCols;
-      success = success && reader.read (newptr, newind, newval, newNumRows, newNumCols, inStr);
+    std::istringstream inStr (outStr.str ());
+    ArrayRCP<ordinal_type> newptr, newind;
+    ArrayRCP<scalar_type> newval;
+    ordinal_type newNumRows, newNumCols;
+    if (success && verbose) {
+      cout << "Reading the Matrix Market output back into CSR arrays" << endl;
+    }
+    success = success && reader.read (newptr, newind, newval,
+                                      newNumRows, newNumCols, inStr);
+    TEUCHOS_TEST_FOR_EXCEPTION(! success, std::logic_error, "Matrix Market "
+      "reader failed to read the output back into CSR arrays.");
+    if (success && verbose) {
+      cout << "Successfully read the Matrix Market output back into CSR arrays"
+           << endl;
+    }
+
+    // The old arrays should equal the new arrays.
+    TEUCHOS_TEST_FOR_EXCEPTION(ptr.size () != newptr.size (), std::logic_error,
+      "New ptr array has a different length than old ptr array");
+    TEUCHOS_TEST_FOR_EXCEPTION(ind.size () != newind.size (), std::logic_error,
+      "New ind array has a different length than old ind array");
+    TEUCHOS_TEST_FOR_EXCEPTION(val.size () != newval.size (), std::logic_error,
+      "New val array has a different length than old val array");
+    TEUCHOS_TEST_FOR_EXCEPTION(newNumRows != numRows || newNumCols != numCols,
+      std::logic_error, "New dimensions differ from old dimensions");
+    TEUCHOS_TEST_FOR_EXCEPTION(ptr.size () != numRows+1, std::logic_error,
+      "ptr.size() != numRows+1");
+    TEUCHOS_TEST_FOR_EXCEPTION(newptr.size () != newNumRows+1, std::logic_error,
+      "newptr.size() != newNumRows+1");
+
+    for (ordinal_type rowIndex = 0; rowIndex < numRows; ++rowIndex) {
+      TEUCHOS_TEST_FOR_EXCEPTION(ptr[rowIndex] != newptr[rowIndex],
+        std::logic_error, "At row index " << rowIndex << ", ptr[rowIndex] = "
+        << ptr[rowIndex] << " != newptr[rowIndex] = " << newptr[rowIndex]
+        << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION(ptr[rowIndex+1] != newptr[rowIndex+1],
+        std::logic_error, "At row index " << rowIndex << ", ptr[rowIndex+1] = "
+        << ptr[rowIndex+1] << " != newptr[rowIndex+1] = " << newptr[rowIndex+1]
+        << ".");
+      for (ordinal_type k = ptr[rowIndex]; k < ptr[rowIndex+1]; ++k) {
+        TEUCHOS_TEST_FOR_EXCEPTION(ind[k] != newind[k], std::logic_error,
+          "At row index " << rowIndex << ", ind[k=" << k << "] = "
+          << ind[k] << " != newind[k] = " << newind[k] << ".");
+        // You may want to relax this inequality if the original
+        // Matrix Market file had multiple entries at the same
+        // location and if adding them together resulted in rounding
+        // error.
+        TEUCHOS_TEST_FOR_EXCEPTION(val[k] != newval[k], std::logic_error,
+          "At row index " << rowIndex << ", val[k=" << k << "] = "
+          << val[k] << " != newval[k] = " << newval[k] << ".");
+      }
     }
   }
 

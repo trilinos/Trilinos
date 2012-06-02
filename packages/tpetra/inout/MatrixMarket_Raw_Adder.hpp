@@ -531,7 +531,8 @@ namespace Teuchos {
             }
             curRow = i;
 
-            TEUCHOS_TEST_FOR_EXCEPTION(curInd >= elts_.size (),
+            TEUCHOS_TEST_FOR_EXCEPTION(
+              static_cast<size_t> (curInd) >= elts_.size (),
               std::logic_error, "The current index " << curInd << " into ind "
               "and val is >= the number of matrix entries " << elts_.size ()
               << ".");
