@@ -9,8 +9,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES
     MatrixMarket_Raw_InOutTest.cpp
   ARGS ""
-  COMM serial mpi
-  NUM_MPI_PROCS 1
+  COMM serial
   STANDARD_PASS_OUTPUT
   DEPLIBS kokkos kokkoslinalg kokkosnodeapi tpetrainout tpetratestlib
   )

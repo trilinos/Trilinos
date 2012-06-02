@@ -41,68 +41,148 @@
 
 #include <MatrixMarket_Raw_Checker.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
-#include <Tpetra_CrsMatrix.hpp>
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
+#include <Teuchos_DefaultSerialComm.hpp>
 #include <algorithm>
 
 using std::endl;
 
-namespace Tpetra {
-  namespace MatrixMarket {
-    namespace Test {
+namespace {
+  // Sample Matrix Market sparse matrix file.  We include this so we
+  // can test without needing to read in a file.  Notice that all the
+  // decimal floating-point values in this example can be represented
+  // exactly in binary floating point.  This example has correct
+  // syntax, so you won't need to use tolerant mode to parse it.
+  const char sampleMatrixMarketFile[] =
+    "%%MatrixMarket matrix coordinate real general\n"
+    "5 5 10\n"
+    "5 5 55.0\n"
+    "4 4 44.0\n"
+    "3 3 33.0\n"
+    "2 2 22.0\n"
+    "1 1 11.0\n"
+    "4 5 45.0\n"
+    "3 4 34.0\n"
+    "2 3 23.0\n"
+    "1 2 12.0\n"
+    "1 5 15.0\n";
 
-      /// \fn getNode
-      /// \brief Return an RCP to a Kokkos Node
-      ///
-      template<class NodeType>
-      Teuchos::RCP<NodeType>
-      getNode() {
-        throw std::runtime_error ("This Kokkos Node type not supported (compile-time error)");
-      }
+  // Given the three arrays of a CSR data structure, along with the
+  // numbers of rows and columns, print the result to the given output
+  // stream as a MatrixMarket file.
+  template<class OrdinalType, class ScalarType>
+  void
+  csrToMatrixMarket (std::ostream& out,
+                     Teuchos::ArrayView<OrdinalType> ptr,
+                     Teuchos::ArrayView<OrdinalType> ind,
+                     Teuchos::ArrayView<ScalarType> val,
+                     const OrdinalType numRows,
+                     const OrdinalType numCols)
+  {
+    using Teuchos::ArrayView;
+    using std::endl;
+    typedef ArrayView<OrdinalType>::size_type size_type;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
 
-      template<>
-      Teuchos::RCP<Kokkos::SerialNode>
-      getNode() {
-        Teuchos::ParameterList defaultParams;
-        return Teuchos::rcp (new Kokkos::SerialNode (defaultParams));
+    out << "%%MatrixMarket matrix coordinate ";
+    if (STS::isComplex) {
+      out << "complex ";
+    }
+    else {
+      out << "real ";
+    }
+    out << "general" << endl;
+    out << numRows << " " << numCols << " " << ptr[numRows] << endl;
+    for (OrdinalType rowIndex = 0; rowIndex < numRows; ++rowIndex) {
+      for (OrdinalType k = ptr[rowIndex]; k < ptr[rowIndex+1]; ++k) {
+        // Matrix Market files use 1-based row and column indices.
+        out << (rowIndex+1) << " " << (ind[k]+1) << " ";
+        if (STS::isComplex) {
+          out << STS::real (val[k]) << " " << STS::imag (val[k]);
+        }
+        else {
+          out << val[k];
+        }
+        out << endl;
       }
+    }
+  }
+
+
+  // Return an RCP to a Kokkos Node instance.
+  template<class NodeType>
+  Teuchos::RCP<NodeType>
+  getNode() {
+    throw std::runtime_error ("This Kokkos Node type not supported (compile-time error)");
+  }
+
+  template<>
+  Teuchos::RCP<Kokkos::SerialNode>
+  getNode() {
+    static Teuchos::RCP<Kokkos::SerialNode> node;
+    if (node.is_null ()) {
+      Teuchos::ParameterList defaultParams;
+      node = Teuchos::rcp (new Kokkos::SerialNode (defaultParams));
+    }
+    return node;
+  }
 
 #if defined(HAVE_KOKKOS_TBB)
-      template<>
-      Teuchos::RCP<Kokkos::TBBNode>
-      getNode() {
-        // "Num Threads" specifies the number of threads.  Defaults to an
-        // automatically chosen value.
-        Teuchos::ParameterList defaultParams;
-        return Teuchos::rcp (new Kokkos::TBBNode (defaultParams));
-      }
+  template<>
+  Teuchos::RCP<Kokkos::TBBNode>
+  getNode() {
+    static Teuchos::RCP<Kokkos::TBBNode> node;
+    if (node.is_null ()) {
+      // "Num Threads" specifies the number of threads.  Defaults to an
+      // automatically chosen value.
+      Teuchos::ParameterList defaultParams;
+      node = Teuchos::rcp (new Kokkos::TBBNode (defaultParams));
+    }
+    return node;
+  }
 #endif // defined(HAVE_KOKKOS_TBB)
 
-    } // namespace Test
-  } // namespace MatrixMarket
-} // namespace Tpetra
+#if defined(HAVE_KOKKOS_TPL)
+  template<>
+  Teuchos::RCP<Kokkos::TPLNode>
+  getNode() {
+    static Teuchos::RCP<Kokkos::TBBNode> node;
+    if (node.is_null ()) {
+      // "Num Threads" specifies the number of threads.  Defaults to an
+      // automatically chosen value.
+      Teuchos::ParameterList defaultParams;
+      node = Teuchos::rcp (new Kokkos::TPLNode (defaultParams));
+    }
+    return node;
+  }
+#endif // defined(HAVE_KOKKOS_TPL)
+} // namespace (anonymous)
 
-
-/// \fn main
-/// \brief Benchmark driver
+// Benchmark driver
 int
 main (int argc, char *argv[])
 {
+  using Teuchos::MatrixMarket::Raw::Checker;
+  using Teuchos::MatrixMarket::Raw::Reader;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
   using Teuchos::Comm;
   using Teuchos::CommandLineProcessor;
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
-
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &std::cout);
-  RCP<const Comm<int> > pComm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  using Teuchos::SerialComm;
+  typedef double scalar_type;
+  typedef int ordinal_type;
 
   // Name of the Matrix Market sparse matrix file to read.
   std::string filename;
+  // If true, just check the sparse matrix file.  Otherwise,
+  // do a full conversion to CSR (compressed sparse row) format.
+  bool checkOnly = true;
   // Whether to echo the sparse matrix to stdout after reading it
   // successfully.
   bool echo = false;
@@ -116,15 +196,18 @@ main (int argc, char *argv[])
   CommandLineProcessor cmdp (false, true);
   cmdp.setOption ("filename", &filename,
                   "Name of the Matrix Market sparse matrix file to read.");
+  cmdp.setOption ("checkOnly", "fullTest", &checkOnly,
+                  "If true, just check the syntax of the input file.  "
+                  "Otherwise, do a full test.");
   cmdp.setOption ("echo", "noecho", &echo,
                   "Whether to echo the sparse matrix contents to stdout "
                   "after reading it successfully.");
   cmdp.setOption ("tolerant", "strict", &tolerant,
-                  "Whether to parse the Matrix Market file tolerantly.");
+                  "Whether to tolerate syntax errors in the Matrix Market file.");
   cmdp.setOption ("verbose", "quiet", &verbose,
-                  "Print messages and results.");
+                  "Print status output to stdout.");
   cmdp.setOption ("debug", "nodebug", &debug,
-                  "Print debugging information.");
+                  "Print possibly copious debugging output to stderr.");
   // Parse the command-line arguments.
   {
     const CommandLineProcessor::EParseCommandLineReturn parseResult =
@@ -133,9 +216,7 @@ main (int argc, char *argv[])
     // explicitly say to run the benchmark, we let this "test" pass
     // trivially.
     if (parseResult == CommandLineProcessor::PARSE_HELP_PRINTED) {
-      if (Teuchos::rank(*pComm) == 0) {
-        std::cout << "End Result: TEST PASSED" << endl;
-      }
+      std::cout << "End Result: TEST PASSED" << endl;
       return EXIT_SUCCESS;
     }
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -145,39 +226,58 @@ main (int argc, char *argv[])
 
   // Test reading in the sparse matrix.  If no filename or an empty
   // filename is specified, the test passes trivially.
-  int success;
-  if (filename == "") {
-    success = 1;
-  }
-  else {
-    using Teuchos::MatrixMarket::Raw::Checker;
-    typedef double scalar_type;
-    typedef int ordinal_type;
-    typedef Checker<scalar_type, ordinal_type> checker_type;
-    checker_type checker (echo, tolerant, debug);
-    const bool theSuccess = checker.readFile (*pComm, filename);
-    success = theSuccess ? 1 : 0;
-  }
-  if (debug) {
-    // Make sure that all the processes finish.  This should not be
-    // necessary, since readFile is a collective for which all ranks
-    // agree on the returned Boolean result.
-    pComm->barrier ();
-  }
+  bool success = true;
+    if (checkOnly) {
+      typedef Checker<scalar_type, ordinal_type> checker_type;
+      checker_type checker (echo, tolerant, debug);
 
-  // Only Rank 0 gets to write to cout.
-  if (pComm->getRank () == 0) {
-    if (success) {
-      std::cout << "End Result: TEST PASSED" << endl;
+      RCP<const Comm<int> > comm = rcp (new SerialComm);
+      if (filename != "") {
+        success = success && checker.readFile (*comm, filename);
+      }
+      else {
+        std::istringstream inStr (sampleMatrixMarketFile);
+        success = success && checker.read (*comm, inStr);
+      }
     }
     else {
-      std::cout << "End Result: TEST FAILED" << endl;
+      typedef Reader<scalar_type, ordinal_type> reader_type;
+      reader_type reader (tolerant, debug);
+      ArrayRCP<ordinal_type> ptr, ind;
+      ArrayRCP<scalar_type> val;
+      ordinal_type numRows, numCols;
+      if (filename != "") {
+        success = success && reader.readFile (ptr, ind, val, numRows, numCols, filename);
+      }
+      else {
+        std::istringstream inStr (sampleMatrixMarketFile);
+        success = success && reader.read (ptr, ind, val, numRows, numCols, inStr);
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(! success, std::runtime_error, "Matrix Market "
+        "reader failed to read the given file or input stream.");
+
+      // Here's the fun part.  Output the CSR data to an output
+      // stream.  Then read in the output stream.  The resulting
+      // matrix should be exactly the same (unless the original file
+      // had elements at the same location that were added together
+      // with rounding error).
+      std::ostringstream outStr;
+      csrToMatrixMarket (outStr, ptr, ind, val, numRows, numCols);
+
+      std::istringstream inStr (outStr.str ());
+      ArrayRCP<ordinal_type> newptr, newind;
+      ArrayRCP<scalar_type> newval;
+      ordinal_type newNumRows, newNumCols;
+      success = success && reader.read (newptr, newind, newval, newNumRows, newNumCols, inStr);
     }
   }
+
   if (success) {
+    std::cout << "End Result: TEST PASSED" << endl;
     return EXIT_SUCCESS;
   }
   else {
+    std::cout << "End Result: TEST FAILED" << endl;
     return EXIT_FAILURE;
   }
 }

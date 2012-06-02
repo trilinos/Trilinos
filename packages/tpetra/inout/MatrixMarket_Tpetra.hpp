@@ -2610,7 +2610,7 @@ namespace Tpetra {
                         << (globalColIndex + 1 - colIndexBase) << " ";
                     if (STS::isComplex)
                       out << STS::real(*valIter) << " " << STS::imag(*valIter);
-    else
+                    else
                       out << *valIter;
                     out << endl;
                   }
