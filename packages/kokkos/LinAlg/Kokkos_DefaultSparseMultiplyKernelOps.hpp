@@ -118,7 +118,7 @@ namespace Kokkos {
       if (NO_BETA_AND_OVERWRITE) {
         for (size_t j=0; j<numRHS; ++j) {
           RangeScalar *yp = y+j*ystride;
-          for (size_t row=0; row<numRows; ++row) {
+          for (size_t row=0; row<numCols; ++row) {
             yp[row] = Teuchos::ScalarTraits<RangeScalar>::zero();
           }
         }
@@ -126,7 +126,7 @@ namespace Kokkos {
       else {
         for (size_t j=0; j<numRHS; ++j) {
           RangeScalar *yp = y+j*ystride;
-          for (size_t row=0; row<numRows; ++row) {
+          for (size_t row=0; row<numCols; ++row) {
             yp[row] *= beta;
           }
         }
@@ -141,7 +141,7 @@ namespace Kokkos {
           while (i != ie) {
             const  Scalar val = Teuchos::ScalarTraits<RangeScalar>::conjugate(*v++);
             const Ordinal ind = *i++;
-            for (size_t j=0; j<numRHS; ++j) y[j*ystride+ind] = (RangeScalar)val * (RangeScalar)x[j*xstride+colAt];
+            for (size_t j=0; j<numRHS; ++j) y[j*ystride+ind] += (RangeScalar)val * (RangeScalar)x[j*xstride+colAt];
           }
         }
       }
@@ -154,7 +154,7 @@ namespace Kokkos {
           while (i != ie) {
             const  Scalar val = Teuchos::ScalarTraits<RangeScalar>::conjugate(*v++);
             const Ordinal ind = *i++;
-            for (size_t j=0; j<numRHS; ++j) y[j*ystride+ind] = alpha * (RangeScalar)val * (RangeScalar)x[j*xstride+colAt];
+            for (size_t j=0; j<numRHS; ++j) y[j*ystride+ind] += alpha * (RangeScalar)val * (RangeScalar)x[j*xstride+colAt];
           }
         }
       }

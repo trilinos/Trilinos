@@ -1190,6 +1190,7 @@ namespace {
     TEST_EQUALITY_CONST( A.getProfileType() == DynamicProfile, true );
     A.fillComplete(lclmap,rowmap);
     out << "A: " << endl << A << endl;
+    //A.describe(out, VERB_EXTREME);
     // build the input multivector X
     MV X(rowmap,numVecs);
     for (size_t i=myImageID*M; i<myImageID*M+M; ++i) {
@@ -1206,11 +1207,13 @@ namespace {
     }
     // test the action
     Bout.randomize();
+    X.setObjectLabel("Input");
+    //X.describe(out, VERB_EXTREME);
     A.apply(X,Bout,CONJ_TRANS);
     Bout.setObjectLabel("Actual output");
     Bexp.setObjectLabel("Expected output");
-    Bout.describe(out, Teuchos::VERB_EXTREME);
-    Bexp.describe(out, Teuchos::VERB_EXTREME);
+    //Bout.describe(out, VERB_EXTREME);
+    //Bexp.describe(out, VERB_EXTREME);
     Bout.update(-ST::one(),Bexp,ST::one());
     Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
     Bout.norm2(norms());
