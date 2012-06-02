@@ -97,10 +97,11 @@ namespace {
     }
     out << "general" << endl;
     out << numRows << " " << numCols << " " << ptr[numRows] << endl;
-    for (OrdinalType rowIndex = 0; rowIndex < numRows; ++rowIndex) {
-      for (OrdinalType k = ptr[rowIndex]; k < ptr[rowIndex+1]; ++k) {
+    OrdinalType k;
+    for (OrdinalType i = 0; i < numRows; ++i) {
+      for (k = ptr[i]; k < ptr[i+1]; ++k) {
         // Matrix Market files use 1-based row and column indices.
-        out << (rowIndex+1) << " " << (ind[k]+1) << " ";
+        out << (i+1) << " " << (ind[k]+1) << " ";
         if (STS::isComplex) {
           out << STS::real (val[k]) << " " << STS::imag (val[k]);
         }
@@ -110,6 +111,10 @@ namespace {
         out << endl;
       }
     }
+    TEUCHOS_TEST_FOR_EXCEPTION(k != ptr[numRows], std::logic_error,
+      "csrToMatrixMarket: Failed to print all the matrix entries!  The last k "
+      "index value is " << k << ", but the number of entries is " << ptr[numRows]
+      << ".");
   }
 } // namespace (anonymous)
 
@@ -138,7 +143,7 @@ main (int argc, char *argv[])
   std::string filename;
   // If true, just check the sparse matrix file.  Otherwise,
   // do a full conversion to CSR (compressed sparse row) format.
-  bool checkOnly = true;
+  bool checkOnly = false;
   // Whether to echo the sparse matrix to stdout after reading it
   // successfully.
   bool echo = false;
@@ -205,7 +210,12 @@ main (int argc, char *argv[])
     }
     else {
       if (verbose) {
-        cout << "Checking syntax of the Matrix Market string example" << endl;
+        cout << "Checking syntax of the Matrix Market string example" << endl
+             << std::flush;// for debug output next
+      }
+      if (debug) {
+        cerr << "Matrix Market string example: " << endl
+             << sampleMatrixMarketFile << endl;
       }
       std::istringstream in (sampleMatrixMarketFile);
       RCP<std::istream> inStream = rcpFromRef (in);
@@ -237,13 +247,27 @@ main (int argc, char *argv[])
       if (verbose) {
         cout << "Reading the Matrix Market string example" << endl;
       }
+      if (debug) {
+        cerr << "Matrix Market string example:" << endl
+             << sampleMatrixMarketFile << endl;
+      }
       std::istringstream inStr (sampleMatrixMarketFile);
       success = success && reader.read (ptr, ind, val, numRows, numCols, inStr);
     }
     TEUCHOS_TEST_FOR_EXCEPTION(! success, std::runtime_error, "Matrix Market "
       "reader failed to read the given file or input stream.");
     if (success && verbose) {
-      cout << "Successfully read the Matrix Market string example" << endl;
+      cout << "Successfully read the Matrix Market string example" << endl
+           << std::flush; // for following debug output
+    }
+    if (debug) {
+      cerr << "CSR output info:" << endl
+           << "  ptr.size() = " << ptr.size()
+           << ", ind.size() = " << ind.size()
+           << ", val.size() = " << val.size()
+           << ", numRows = " << numRows
+           << ", numCols = " << numCols
+           << endl;
     }
 
     // Here's the fun part.  Output the CSR data to an output stream.
@@ -252,10 +276,43 @@ main (int argc, char *argv[])
     // same location that were added together with rounding error).
     std::ostringstream outStr;
     if (success && verbose) {
-      cout << "Printing the CSR arrays to a Matrix Market output stream" << endl;
+      cout << "Printing the CSR arrays to a Matrix Market output stream"
+           << endl << std::flush;
     }
     csrToMatrixMarket<ordinal_type, scalar_type> (outStr, ptr (), ind (), val (),
                                                   numRows, numCols);
+    if (debug && echo) {
+      cerr << "CSR data:" << endl
+           << "- ptr = [";
+      for (ordinal_type i = 0; i < ptr.size(); ++i) {
+        cerr << ptr[i];
+        if (i+1 != ptr.size()) { // don't subtract from zero if unsigned
+          cerr << ", ";
+        }
+      }
+      cerr << "]" << endl
+           << "- ind = [";
+      for (ordinal_type i = 0; i < ind.size(); ++i) {
+        cerr << ind[i];
+        if (i+1 != ind.size()) { // don't subtract from zero if unsigned
+          cerr << ", ";
+        }
+      }
+      cerr << "]" << endl
+           << "- val = [";
+      for (ordinal_type i = 0; i < val.size(); ++i) {
+        cerr << val[i];
+        if (i+1 != val.size()) { // don't subtract from zero if unsigned
+          cerr << ", ";
+        }
+      }
+      cerr << "]" << endl;
+
+      cerr << "CSR data, converted back to Matrix Market format" << endl;
+      csrToMatrixMarket<ordinal_type, scalar_type> (cerr, ptr (), ind (), val (),
+                                                    numRows, numCols);
+      cerr << endl;
+    }
 
     std::istringstream inStr (outStr.str ());
     ArrayRCP<ordinal_type> newptr, newind;
@@ -270,6 +327,15 @@ main (int argc, char *argv[])
       "reader failed to read the output back into CSR arrays.");
     if (success && verbose) {
       cout << "Successfully read the Matrix Market output back into CSR arrays"
+           << endl << std::flush;
+    }
+    if (debug) {
+      cerr << "CSR output info:" << endl
+           << "  newptr.size() = " << newptr.size()
+           << ", newind.size() = " << newind.size()
+           << ", newval.size() = " << newval.size()
+           << ", newNumRows = " << newNumRows
+           << ", newNumCols = " << newNumCols
            << endl;
     }
 

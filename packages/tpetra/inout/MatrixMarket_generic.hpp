@@ -61,20 +61,41 @@ namespace Teuchos {
     /// restriction is relaxed.
     int maxLineLength();
 
-    /// \brief True if line is a comment line, false otherwise.
+    /// \brief True if the line is a comment line, false otherwise.
     ///
-    /// If false is returned, line.substr(start,size) is a string
-    /// containing valid, possibly noncomment data.  (size could be
-    /// std::string::npos, indicating that there is no comment
-    /// character in the line.  In that case, the substr() call with
-    /// size==npos does the right thing.)  In tolerant mode, empty or
-    /// whitespace-only lines are considered comment lines.
+    /// If this function returns false, then line.substr(start,size)
+    /// is a string containing valid, possibly noncomment data.  (The
+    /// value of size could be std::string::npos, indicating that
+    /// there is no comment character in the line.  In that case, the
+    /// substr() call with size==npos does the right thing.)
+    ///
+    /// In tolerant mode, empty or whitespace-only lines are
+    /// considered comment lines.
+    ///
+    /// \param line [in] The line of text to process.
+    /// \param start [out] Starting index of valid data in the line.
+    /// \param size [out] Starting index of the first comment character
+    ///   in the line, or std::string::npos if there is none.
+    /// \param lineNumber [in] The current line number in the Matrix
+    ///   Market file.  Used to generate exception messages in case of
+    ///   banner syntax errors.
+    /// \param tolerant [in] Whether to tolerant syntax errors in the
+    ///   banner line.  If a syntax error is detected, this function
+    ///   will try its best to extract useful information, but it may
+    ///   not be correct.
+    /// \param maybeBannerLine [in] Whether the line may potentially
+    ///   be a Matrix Market banner line.  These start with
+    ///   "%%MatrixMarket", and since "%" is also a comment character,
+    ///   we have to handle them specially.
+    ///
+    /// \return True if the line is a comment line, else false.
     bool
     checkCommentLine (const std::string& line,
                       size_t& start,
                       size_t& size,
                       const size_t lineNumber,
-                      const bool tolerant);
+                      const bool tolerant,
+                      const bool maybeBannerLine = false);
 
     /// \fn readPatternData
     /// \brief Read "<rowIndex> <colIndex>" from a line.

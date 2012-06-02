@@ -53,7 +53,8 @@ namespace Teuchos {
                       size_t& start,
                       size_t& size,
                       const size_t lineNumber,
-                      const bool tolerant)
+                      const bool tolerant,
+                      const bool maybeBannerLine)
     {
       // In tolerant mode, empty lines are considered comment lines.
       if (line.empty ()) {
@@ -94,10 +95,26 @@ namespace Teuchos {
         return false;
       }
       else if (commentPos == start) {
-        // The line has 0 or more whitespace characters, followed by
-        // a start-of-comment character.  That means it's a comment.
-        size = 0;
-        return true;
+        // The line has 0 or more whitespace characters, followed by a
+        // start-of-comment character.  However, the Matrix Market
+        // banner line starts with "%%MatrixMarket", so we have to
+        // look for this, if the caller allows this.
+        if (maybeBannerLine) {
+          const size_t bannerStart =
+            line.substr (commentPos).find ("%%MatrixMarket");
+          if (bannerStart != std::string::npos) { // It's a banner line!
+            size = line.size() - commentPos;
+            return false;
+          }
+          else { // It's a comment line.  Ah well.
+            size = 0;
+            return true;
+          }
+        }
+        else {
+          size = 0;
+          return true;
+        }
       }
       else {
         // [start, start+size-1] is the (inclusive) range of

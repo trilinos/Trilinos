@@ -72,12 +72,16 @@ namespace Teuchos {
         ///   debugging output to stderr.
         Reader (const bool tolerant, const bool debug) :
           tolerant_ (tolerant), debug_ (debug)
-        {}
+        {
+          init ();
+        }
 
         //! Constructor that sets default Boolean parameters.
         Reader () :
           tolerant_ (false), debug_ (false)
-        {}
+        {
+          init ();
+        }
 
         /// \brief Constructor that takes a ParameterList of parameters.
         ///
@@ -90,6 +94,7 @@ namespace Teuchos {
           tolerant_ (false), debug_ (false)
         {
           setParameters (params);
+          init ();
         }
 
         /// \brief Set parameters from the given ParameterList.
@@ -388,6 +393,23 @@ namespace Teuchos {
         //! Whether to print debugging output to stderr.
         bool debug_;
 
+        /// \brief "Initialize" the Reader.
+        ///
+        /// Right now, this means print debugging output on creation
+        /// of the Reader, if the user selected that option.  We put
+        /// this into a function to avoid duplicated debugging output
+        /// code in the different constructors.
+        void init () {
+          using std::cerr;
+          using std::endl;
+
+          if (debug_) {
+            cerr << "MatrixMarket::Raw::Reader:" << endl
+                 << "- Tolerant mode: " << tolerant_ << endl
+                 << "- Debug mode: " << debug_ << endl;
+          }
+        }
+
         /// \brief Read in the Banner line from the given input stream.
         ///
         /// \param in [in/out] Input stream from which to read the
@@ -403,23 +425,44 @@ namespace Teuchos {
         RCP<const Banner>
         readBanner (std::istream& in, size_t& lineNumber)
         {
-          // Keep reading lines until we get a noncomment line.
-          std::string line;
-          size_t numLinesRead = 0;
-          bool commentLine = false;
-          do {
-            // Try to read a line from the input stream.
+          using std::cerr;
+          using std::endl;
+          std::string line; // The presumed banner line
+
+          // The first line of the Matrix Market file should always be
+          // the banner line.  In tolerant mode, we allow comment
+          // lines before the banner line.  This complicates detection
+          // of comment lines a bit.
+          if (tolerant_) {
+            // Keep reading lines until we get a noncomment line.
+            const bool maybeBannerLine = true;
+            size_t numLinesRead = 0;
+            bool commentLine = false;
+            do {
+              // Try to read a line from the input stream.
+              const bool readFailed = ! getline (in, line);
+              TEUCHOS_TEST_FOR_EXCEPTION(readFailed, std::invalid_argument,
+                "Failed to get Matrix Market banner line from input, after reading "
+                << numLinesRead << "line" << (numLinesRead != 1 ? "s." : "."));
+              // We read a line from the input stream.
+              ++lineNumber;
+              ++numLinesRead;
+              size_t start, size; // Output args of checkCommentLine
+              commentLine = checkCommentLine (line, start, size, lineNumber,
+                                              tolerant_, maybeBannerLine);
+            } while (commentLine); // Loop until we find a noncomment line.
+          }
+          else {
             const bool readFailed = ! getline (in, line);
             TEUCHOS_TEST_FOR_EXCEPTION(readFailed, std::invalid_argument,
-              "Failed to get Matrix Market banner line from input, after reading "
-              << numLinesRead << "line" << (numLinesRead != 1 ? "s." : "."));
-            // We read a line from the input stream.
-            ++lineNumber;
-            ++numLinesRead;
-            size_t start, size; // Output args of checkCommentLine
-            commentLine =
-              checkCommentLine (line, start, size, lineNumber, tolerant_);
-          } while (commentLine); // Loop until we find a noncomment line.
+              "Failed to get Matrix Market banner line from input.  This "
+              "probably means that the file is empty (contains zero lines).");
+          }
+
+          if (debug_) {
+            cerr << "Raw::Reader::readBanner: Here is the presumed banner line:"
+                 << endl << line << endl;
+          }
 
           // Assume that the noncomment line we found is the banner line.
           RCP<Banner> banner;

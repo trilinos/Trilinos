@@ -297,40 +297,55 @@ namespace Teuchos {
         RCP<const Teuchos::MatrixMarket::Banner>
         readBanner (std::istream& in, size_t& lineNumber)
         {
-          typedef ScalarTraits<Scalar> STS;
+          using std::cerr;
+          using std::endl;
+          std::string line; // The presumed banner line
 
-          // The pointer will be non-null on return only on MPI Rank 0.
-          // Using a pointer lets the data persist outside the
-          // "myRank==0" scopes.
-          RCP<Banner> pBanner;
-
-          // Keep reading lines until we get a noncomment line.
-          std::string line;
-          size_t numLinesRead = 0;
-          bool commentLine = false;
-          do {
-            // Try to read a line from the input stream.
-            const bool readFailed = ! getline(in, line);
+          // The first line of the Matrix Market file should always be
+          // the banner line.  In tolerant mode, we allow comment
+          // lines before the banner line.  This complicates detection
+          // of comment lines a bit.
+          if (tolerant_) {
+            // Keep reading lines until we get a noncomment line.
+            const bool maybeBannerLine = true;
+            size_t numLinesRead = 0;
+            bool commentLine = false;
+            do {
+              // Try to read a line from the input stream.
+              const bool readFailed = ! getline (in, line);
+              TEUCHOS_TEST_FOR_EXCEPTION(readFailed, std::invalid_argument,
+                "Failed to get Matrix Market banner line from input, after reading "
+                << numLinesRead << "line" << (numLinesRead != 1 ? "s." : "."));
+              // We read a line from the input stream.
+              ++lineNumber;
+              ++numLinesRead;
+              size_t start, size; // Output args of checkCommentLine
+              commentLine = checkCommentLine (line, start, size, lineNumber,
+                                              tolerant_, maybeBannerLine);
+            } while (commentLine); // Loop until we find a noncomment line.
+          }
+          else {
+            const bool readFailed = ! getline (in, line);
             TEUCHOS_TEST_FOR_EXCEPTION(readFailed, std::invalid_argument,
-              "Failed to get Matrix Market banner line from input, after reading "
-              << numLinesRead << "line" << (numLinesRead != 1 ? "s." : "."));
-            // We read a line from the input stream.
-            lineNumber++;
-            numLinesRead++;
-            size_t start, size; // Output args of checkCommentLine
-            commentLine =
-              checkCommentLine (line, start, size, lineNumber, tolerant_);
-          } while (commentLine); // Loop until we find a noncomment line.
+              "Failed to get Matrix Market banner line from input.  This "
+              "probably means that the file is empty (contains zero lines).");
+          }
+
+          if (debug_) {
+            cerr << "Raw::Checker::readBanner: Here is the presumed banner line:"
+                 << endl << line << endl;
+          }
 
           // Assume that the noncomment line we found is the banner line.
+          RCP<Banner> banner;
           try {
-            pBanner = rcp (new Banner (line, tolerant_));
+            banner = rcp (new Banner (line, tolerant_));
           } catch (std::exception& e) {
             TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
               "Matrix Market file's banner line contains syntax error(s): "
               << e.what ());
           }
-          return pBanner;
+          return rcp_const_cast<const Banner> (banner);
         }
 
         /// \brief Read the sparse matrix on MPI Rank 0.

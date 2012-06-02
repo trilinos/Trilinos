@@ -41,6 +41,7 @@
 
 #include "MatrixMarket_Banner.hpp"
 #include "MatrixMarket_split.hpp"
+#include "Teuchos_TestForException.hpp"
 #include <algorithm>
 #include <iostream>
 #include <sstream>
@@ -191,8 +192,9 @@ namespace Teuchos {
           tokenStart = start; // Just ignore the missing %%
         }
         else {
-          throw std::invalid_argument ("The banner line should always start "
-                                       "with \"%%\".");
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "The Matrix "
+            "Market file's banner line should always start with \"%%\".  Here "
+            "is the offending line: " << std::endl << line);
         }
       }
       else {
@@ -204,8 +206,9 @@ namespace Teuchos {
             return;
           }
           else {
-            throw std::invalid_argument ("The banner line needs to contain "
-                                         "information after the \"%%\" marker.");
+            TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "The Matrix "
+              "Market file's banner line needs to contain information after the "
+              "\"%%\" marker.  Here is the offending line: " << std::endl << line);
           }
         }
       }
@@ -222,25 +225,28 @@ namespace Teuchos {
           return;
         }
         else {
-          throw std::invalid_argument("The banner line must begin with "
-                                      "the \"MatrixMarket\" keyword.");
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "The Matrix "
+            "Market file's banner line must always begin with the \"Matrix"
+            "Market\" keyword.  Here is the offending line: " << std::endl
+            << line);
         }
       }
       // In tolerant mode, just ignore the first token.
       if (! tolerant && tokens[0] != "MatrixMarket") {
-        throw std::invalid_argument("The banner line must begin with "
-                                    "the \"MatrixMarket\" keyword.");
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "The Matrix "
+          "Market file's banner line must always begin with the \"Matrix"
+          "Market\" keyword.  Here is the offending line: " << std::endl
+          << line);
       }
       if (numTokens < 5) {
         if (tolerant) {
           setDefaults (5 - numTokens); // how many defaults to set
         }
         else {
-          std::ostringstream os;
-          os << "In the banner line, 5 tokens are required, but only "
-             << numTokens << (numTokens == 1 ? " are " : " is ")
-             << "provided.";
-          throw std::invalid_argument (os.str());
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "The Matrix "
+            "Market file's banner line must always have 5 tokens, but yours "
+            "only has " << numTokens << "token" << (numTokens != 1 ? "s" : "")
+            << ".  Here is the offending line: " << std::endl << line);
         }
       }
       if (numTokens >= 2) {

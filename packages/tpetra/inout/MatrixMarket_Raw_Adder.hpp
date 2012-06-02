@@ -518,6 +518,7 @@ namespace Teuchos {
           Ordinal curRow = 0;
           Ordinal curInd = 0;
           typedef typename std::vector<element_type>::const_iterator iter_type;
+          ptr[0] = 0; // ptr always has at least one entry.
           for (iter_type it = elts_.begin(); it != elts_.end(); ++it) {
             const Ordinal i = it->rowIndex ();
             const Ordinal j = it->colIndex ();
@@ -526,7 +527,7 @@ namespace Teuchos {
             TEUCHOS_TEST_FOR_EXCEPTION(i < curRow, std::logic_error, "The "
               "current matrix entry's row index " << i << " is less then what "
               "should be the current row index lower bound " << curRow << ".");
-            for (Ordinal k = curRow; k < i; ++k) {
+            for (Ordinal k = curRow+1; k <= i; ++k) {
               ptr[k] = curInd;
             }
             curRow = i;
@@ -540,7 +541,7 @@ namespace Teuchos {
             val[curInd] = Aij;
             ++curInd;
           }
-          for (Ordinal k = curRow; k <= numRows; ++k) {
+          for (Ordinal k = curRow+1; k <= numRows; ++k) {
             ptr[k] = curInd;
           }
 
