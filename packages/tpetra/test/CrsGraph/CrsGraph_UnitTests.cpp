@@ -64,9 +64,6 @@ namespace {
   using Teuchos::outArg;
   using Teuchos::arcpClone;
   using Tpetra::Map;
-  using Tpetra::OptimizeOption;
-  using Tpetra::DoOptimizeStorage;
-  using Tpetra::DoNotOptimizeStorage;
   using Tpetra::DefaultPlatform;
   using Tpetra::createUniformContigMap;
   using Tpetra::createContigMap;
@@ -83,6 +80,8 @@ namespace {
   using Teuchos::Array;
   using Teuchos::TypeTraits::is_same;
   using Teuchos::ArrayView;
+  using Teuchos::ParameterList;
+  using Teuchos::parameterList;
   using Tpetra::CrsGraph;
   using Tpetra::RowGraph;
   using Tpetra::global_size_t;
@@ -284,12 +283,12 @@ namespace {
     {
       // create static-profile graph, fill-complete without inserting (and therefore, without allocating)
       GRAPH graph(map,1,StaticProfile);
-      graph.fillComplete(DoOptimizeStorage);
+      graph.fillComplete();
     }
     {
       // create dynamic-profile graph, fill-complete without inserting (and therefore, without allocating)
       GRAPH graph(map,1,DynamicProfile);
-      graph.fillComplete(DoOptimizeStorage);
+      graph.fillComplete();
     }
   }
 
@@ -344,7 +343,9 @@ namespace {
     }
     TEST_EQUALITY_CONST(graph.isSorted(), false);
     // fill complete; should be sorted now
-    graph.fillComplete(DoNotOptimizeStorage);
+    RCP<ParameterList> params = parameterList();
+    params->set("Optimize Storage",false);
+    graph.fillComplete(params);
     {
       bool sortingCheck = true;
       for (LO i=map->getMinLocalIndex(); i <= map->getMaxLocalIndex(); ++i) {
@@ -374,7 +375,8 @@ namespace {
     graph.insertLocalIndices(0, tuple<LO>(0));
     TEST_EQUALITY_CONST(graph.isSorted(), false);
     // fill complete, check one more time
-    graph.fillComplete(DoOptimizeStorage);
+    params->set("Optimize Storage",true);
+    graph.fillComplete(params);
     {
       bool sortingCheck = true;
       for (LO i=map->getMinLocalIndex(); i <= map->getMaxLocalIndex(); ++i) {
@@ -449,7 +451,7 @@ namespace {
       TEST_EQUALITY_CONST( G->hasColMap(), true );
       const GO myrowind = rmap->getGlobalElement(0);
       TEST_NOTHROW( G->insertGlobalIndices( myrowind, tuple<GO>(myrowind,myrowind+1) ) );
-      TEST_NOTHROW( G->fillComplete(DoOptimizeStorage) );
+      TEST_NOTHROW( G->fillComplete() );
       TEST_EQUALITY( G->getRowMap(), rmap );
       TEST_EQUALITY( G->getColMap(), cmap );
       TEST_EQUALITY( G->getNumEntriesInGlobalRow(myrowind), 1 );
@@ -498,9 +500,10 @@ namespace {
     Array<LO> linds(ginds.size());
     for (typename Array<LO>::size_type i=0; i<linds.size(); ++i) linds[i] = i;
     RCP<const Map<LO,GO,Node> > cmap = rcp( new Map<LO,GO,Node>(INVALID,ginds,0,comm) );
+    RCP<ParameterList> params = parameterList();
     for (int T=0; T<4; ++T) {
       ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : DynamicProfile;
-      OptimizeOption os  = ( (T & 2) == 2 ) ? DoOptimizeStorage : DoNotOptimizeStorage;
+      params->set("Optimize Storage",((T & 2) == 2));
       GRAPH trigraph(rmap,cmap, ginds.size(),pftype);   // only allocate as much room as necessary
       Array<GO> GCopy(4); Array<LO> LCopy(4);
       ArrayView<const GO> GView; 
@@ -520,7 +523,7 @@ namespace {
       if (pftype == StaticProfile) {
         TEST_THROW( trigraph.insertGlobalIndices(myrowind,tuple<GO>(myrowind)), std::runtime_error );
       }
-      trigraph.fillComplete(os);
+      trigraph.fillComplete(params);
       // check that inserting global entries throws (inserting local entries is still allowed)
       {
         Array<GO> zero(0);
@@ -596,7 +599,7 @@ namespace {
         RCP<CrsGraph<LO,GO,Node> > test_crs = rcp(new CrsGraph<LO,GO,Node>(map,0));
         TEST_EQUALITY_CONST( test_crs->getNodeAllocationSize(), STINV ); // invalid, because none are allocated yet
         if (myImageID != 1) test_crs->insertGlobalIndices( map->getMinGlobalIndex(), tuple<GO>(map->getMinGlobalIndex()) );
-        test_crs->fillComplete(DoOptimizeStorage);
+        test_crs->fillComplete();
         TEST_EQUALITY( test_crs->getNodeAllocationSize(), numLocal );
         test_row = test_crs;
       }
@@ -627,7 +630,7 @@ namespace {
         // allocate with no space
         RCP<CrsGraph<LO,GO,Node> > zero_crs = rcp(new CrsGraph<LO,GO,Node>(map,0));
         TEST_EQUALITY_CONST( zero_crs->getNodeAllocationSize(), STINV ); // invalid, because none are allocated yet
-        zero_crs->fillComplete(DoOptimizeStorage);
+        zero_crs->fillComplete();
         TEST_EQUALITY_CONST( zero_crs->getNodeAllocationSize(), 0     ); // zero, because none were allocated.
         zero = zero_crs;
       }
@@ -658,7 +661,7 @@ namespace {
         // allocate with no space
         RCP<CrsGraph<LO,GO,Node> > zero_crs = rcp(new CrsGraph<LO,GO,Node>(map,0));
         TEST_EQUALITY_CONST( zero_crs->getNodeAllocationSize(), STINV ); // invalid, because none are allocated yet
-        zero_crs->fillComplete(DoOptimizeStorage);
+        zero_crs->fillComplete();
         TEST_EQUALITY_CONST( zero_crs->getNodeAllocationSize(), 0     ); // zero, because none were allocated.
         zero = zero_crs;
       }
@@ -704,7 +707,7 @@ namespace {
       // allocated with space for one entry per row
       RCP<CrsGraph<LO,GO,Node> > zero_crs = rcp(new CrsGraph<LO,GO,Node>(map,1));
       TEST_EQUALITY( zero_crs->getNodeAllocationSize(), STINV ); // zero, because none are allocated yet
-      zero_crs->fillComplete(DoOptimizeStorage);
+      zero_crs->fillComplete();
       zero = zero_crs;
     }
     RCP<const Map<LO,GO,Node> > cmap = zero->getColMap();
@@ -742,9 +745,10 @@ namespace {
     const size_t numLocal = 3;
     RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,numLocal,comm);
     GO mymiddle = map->getGlobalElement(1);  // get my middle row
+    RCP<ParameterList> params = parameterList();
     for (int T=0; T<4; ++T) {
       ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : DynamicProfile;
-      OptimizeOption os  = ( (T & 2) == 2 ) ? DoOptimizeStorage : DoNotOptimizeStorage;
+      params->set("Optimize Storage",((T & 2) == 2));
       {
         // create a diagonal graph, but where only my middle row has an entry
         ArrayRCP<size_t> toalloc = arcpClone<size_t>( tuple<size_t>(0,1,0) );
@@ -760,7 +764,7 @@ namespace {
           TEST_THROW( ddgraph.insertGlobalIndices(mymiddle  ,tuple<GO>(mymiddle)), std::runtime_error );
           TEST_THROW( ddgraph.insertGlobalIndices(mymiddle+1,tuple<GO>(mymiddle)), std::runtime_error );
         }
-        ddgraph.fillComplete(os);
+        ddgraph.fillComplete(params);
         // after fillComplete(), there should be a single entry on my middle, corresponding to the diagonal, none on the others
         ArrayView<const LO> myrow_lcl;
         TEST_EQUALITY_CONST( ddgraph.getNumEntriesInLocalRow(0), 0 );
@@ -799,9 +803,10 @@ namespace {
     const size_t numLocal = 1;
     RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,numLocal,comm);
     GO myrowind = map->getGlobalElement(0);
+    RCP<ParameterList> params = parameterList();
     for (int T=0; T<4; ++T) {
       ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : DynamicProfile;
-      OptimizeOption os  = ( (T & 2) == 2 ) ? DoOptimizeStorage : DoNotOptimizeStorage;
+      params->set("Optimize Storage",((T & 2) == 2));
       {
         // create a diagonal graph, where the graph entries are contributed by a single off-node contribution, no filtering
         // let node i contribute to row i+1, where node the last node contributes to row 0
@@ -821,7 +826,7 @@ namespace {
         if (pftype == StaticProfile) { // no room for more
           TEST_THROW( diaggraph.insertGlobalIndices(myrowind,tuple<GO>(myrowind)), std::runtime_error );
         }
-        diaggraph.fillComplete(os);
+        diaggraph.fillComplete(params);
         // after fillComplete(), there should be a single entry on my row, corresponding to the diagonal
         ArrayView<const LO> myrow_lcl; 
         diaggraph.getLocalRowView(0, myrow_lcl);
@@ -859,7 +864,7 @@ namespace {
         if (pftype == StaticProfile) {
           TEST_THROW( ngraph.insertGlobalIndices(myImageID,tuple<GO>(myImageID)), std::runtime_error );  // adding an addition entry under static allocation should fail
         }
-        ngraph.fillComplete(os);
+        ngraph.fillComplete(params);
         // after fillComplete(), there should be entries for me and my neighbors on my row
         ArrayView<const LO> myrow_lcl; 
         ngraph.getLocalRowView(0, myrow_lcl);
@@ -955,13 +960,15 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     // create Map
     RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,1,comm);
+    RCP<ParameterList> params = parameterList();
     {
       GRAPH graph(map,map,0,DynamicProfile);
       TEST_EQUALITY_CONST( graph.isFillActive(),   true );
       TEST_EQUALITY_CONST( graph.isFillComplete(), false );
       graph.insertLocalIndices( 0, tuple<LO>(0) );
       //
-      graph.fillComplete(DoNotOptimizeStorage);
+      params->set("Optimize Storage",false);
+      graph.fillComplete(params);
       TEST_EQUALITY_CONST( graph.isFillActive(),   false );
       TEST_EQUALITY_CONST( graph.isFillComplete(), true );
       TEST_THROW( graph.insertLocalIndices( 0, tuple<LO>(0) ), std::runtime_error );
@@ -975,7 +982,8 @@ namespace {
       TEST_EQUALITY_CONST( graph.isFillComplete(), false );
       graph.insertLocalIndices( 0, tuple<LO>(0) );
       //
-      graph.fillComplete(DoNotOptimizeStorage);
+      params->set("Optimize Storage",false);
+      graph.fillComplete(params);
       TEST_EQUALITY_CONST( graph.isFillActive(),   false );
       TEST_EQUALITY_CONST( graph.isFillComplete(), true );
       //

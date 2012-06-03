@@ -351,7 +351,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   bool CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::isStorageOptimized() const
   {
-    bool isOpt = indicesAreAllocated_ && (numRowEntries_ == null);
+    bool isOpt = indicesAreAllocated_ && (numRowEntries_ == null) && (getNodeNumRows() > 0);
 #ifdef HAVE_TPETRA_DEBUG
     std::string tfecfFuncName("isStorageOptimized()");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( (isOpt == true) && (getProfileType() == DynamicProfile), std::logic_error,

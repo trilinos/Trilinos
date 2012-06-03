@@ -62,14 +62,13 @@ APPEND_SET(SOURCES
 #                 Kokkos_DefaultBlockSparseOps.cu 
 #                 Kokkos_DefaultSparseOps.cu 
 #                 Kokkos_DefaultRelaxation.cu
-#                 Kokkos_CuspSparseOps.cu
 #   )
 #
 #ASSERT_DEFINED(Kokkos_ENABLE_Thrust)
 #IF (Kokkos_ENABLE_Thrust)
 #  # this pulls in Thrust, CUSP, and Kokkos/NodeAPI
 #  include_directories(${Kokkos_INCLUDE_DIRS})
-#  PACKAGE_ADD_CUDA_LIBRARY(kokkoslinalg_cuda Kokkos_DefaultArithmetic.cu Kokkos_DefaultBlockSparseOps.cu Kokkos_DefaultSparseOps.cu Kokkos_DefaultRelaxation.cu Kokkos_CuspSparseOps.cu)
+#  PACKAGE_ADD_CUDA_LIBRARY(kokkoslinalg_cuda Kokkos_DefaultArithmetic.cu Kokkos_DefaultBlockSparseOps.cu Kokkos_DefaultSparseOps.cu Kokkos_DefaultRelaxation.cu)
 #  APPEND_SET(KOKKOS_LINALG_CUDALIBS "kokkoslinalg_cuda")
 #  TARGET_LINK_LIBRARIES(kokkoslinalg_cuda teuchos)
 #  SET(KOKKOS_LINALG_CUDALIBS "kokkoslinalg_cuda")

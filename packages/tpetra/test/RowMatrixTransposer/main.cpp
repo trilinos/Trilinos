@@ -182,8 +182,8 @@ int main(int argc, char* argv[]){
 	}
 	
 	// Finish up
-	A.fillComplete(Tpetra::DoOptimizeStorage);
-	AT.fillComplete(Tpetra::DoOptimizeStorage);
+	A.fillComplete();
+	AT.fillComplete();
 
 	
 	Tpetra::RowMatrixTransposer<Scalar, Ordinal> transposer(A);

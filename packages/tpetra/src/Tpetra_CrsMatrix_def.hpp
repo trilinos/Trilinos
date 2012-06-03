@@ -537,7 +537,8 @@ namespace Tpetra {
       }
     }
     // can we ditch the old allocations for the packed one?
-    if ( params != null && params->get("Optimize Storage",true) ) {
+    const bool default_OptimizeStorage = ( isStaticGraph() == false || staticGraph_->isStorageOptimized() );
+    if ( params != null && params->get("Optimize Storage",default_OptimizeStorage) ) {
       lclInds2D_     = null;
       numRowEntries_ = null;
       values2D_ = null;
@@ -589,7 +590,8 @@ namespace Tpetra {
     size_t nodeNumAllocated = staticGraph_->nodeNumAllocated_;
 
     bool requestOptimizedStorage = true;
-    if (params != null && params->get("Optimize Storage",true) == false) requestOptimizedStorage = false;
+    const bool default_OptimizeStorage = ( isStaticGraph() == false || staticGraph_->isStorageOptimized() );
+    if (params != null && params->get("Optimize Storage",default_OptimizeStorage) == false) requestOptimizedStorage = false;
     // if we're not allowed to change a static graph, then we can't change the storage of the matrix, either. 
     // this means that if storage isn't already optimized, we can't do it now. 
     // check and give warning, as appropriate
@@ -1915,8 +1917,6 @@ namespace Tpetra {
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::convert() const
   {
     const std::string tfecfFuncName("convert()");
-    // FINISH: we have a problem here: converted matrices will be statically allocated, and therefore will not benefit from first touch
-    // allocation. must address this in the future.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isFillComplete() == false, std::runtime_error, ": fill must be complete.");
     RCP<CrsMatrix<T,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > newmat;
     newmat = rcp(new CrsMatrix<T,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(getCrsGraph()));
@@ -1933,9 +1933,7 @@ namespace Tpetra {
         newmat->replaceLocalValues(li, rowinds, newvals());
       }
     }
-    // we don't choose here; we have to abide by the existing graph
-    const OptimizeOption oo = (this->isStorageOptimized() == true ? DoOptimizeStorage : DoNotOptimizeStorage);
-    newmat->fillComplete(this->getDomainMap(), this->getRangeMap(), oo);
+    newmat->fillComplete(this->getDomainMap(), this->getRangeMap());
     return newmat;
   }
 
