@@ -39,9 +39,9 @@
 // ************************************************************************
 // @HEADER
 
-#include <MatrixMarket_Raw_Checker.hpp>
-#include <MatrixMarket_Raw_Reader.hpp>
-#include <MatrixMarket_SetScientific.hpp>
+#include <Teuchos_MatrixMarket_Raw_Checker.hpp>
+#include <Teuchos_MatrixMarket_Raw_Reader.hpp>
+#include <Teuchos_MatrixMarket_SetScientific.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
