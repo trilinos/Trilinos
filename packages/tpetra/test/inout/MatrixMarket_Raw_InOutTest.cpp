@@ -41,6 +41,7 @@
 
 #include <MatrixMarket_Raw_Checker.hpp>
 #include <MatrixMarket_Raw_Reader.hpp>
+#include <MatrixMarket_SetScientific.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
@@ -87,6 +88,12 @@ namespace {
     using std::endl;
     typedef typename ArrayView<OrdinalType>::size_type size_type;
     typedef Teuchos::ScalarTraits<ScalarType> STS;
+
+    // Make the output stream write floating-point numbers in
+    // scientific notation.  It will politely put the output
+    // stream back to its state on input, when this scope
+    // terminates.
+    Teuchos::MatrixMarket::details::SetScientific<ScalarType> sci (out);
 
     out << "%%MatrixMarket matrix coordinate ";
     if (STS::isComplex) {

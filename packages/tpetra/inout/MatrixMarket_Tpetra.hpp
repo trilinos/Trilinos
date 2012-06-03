@@ -58,6 +58,7 @@
 #include "MatrixMarket_Raw_SymmetrizingAdder.hpp"
 #include "MatrixMarket_Banner.hpp"
 #include "MatrixMarket_CoordDataReader.hpp"
+#include "MatrixMarket_SetScientific.hpp"
 
 #include <algorithm>
 #include <fstream>
