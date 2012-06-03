@@ -165,7 +165,7 @@ namespace Teuchos {
           // Teuchos::broadcast doesn't accept a bool; we use an int
           // instead, with the usual 1->true, 0->false Boolean
           // interpretation.
-          int readFile = 0;
+          int didReadFile = 0;
           RCP<std::ifstream> in; // only valid on Rank 0
           if (myRank == 0) {
             if (debug_) {
@@ -174,21 +174,21 @@ namespace Teuchos {
             }
             in = rcp (new std::ifstream (filename.c_str()));
             if (! *in) {
-              readFile = 0;
+              didReadFile = 0;
               if (debug_) {
                 cerr << "failed." << endl;
               }
             }
             else {
-              readFile = 1;
+              didReadFile = 1;
               if (debug_) {
                 cerr << "succeeded." << endl;
               }
             }
           }
-          Teuchos::broadcast (comm, 0, &readFile);
+          Teuchos::broadcast (comm, 0, &didReadFile);
           // All MPI processes should throw at the same time, or none.
-          TEUCHOS_TEST_FOR_EXCEPTION(! readFile, std::runtime_error,
+          TEUCHOS_TEST_FOR_EXCEPTION(! didReadFile, std::runtime_error,
             "Failed to open input file \"" + filename + "\".");
           // Only Rank 0 will try to dereference "in".
           return read (comm, in);

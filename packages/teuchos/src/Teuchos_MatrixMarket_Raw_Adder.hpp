@@ -498,8 +498,8 @@ namespace Teuchos {
           ArrayRCP<Scalar> val = arcp<Scalar> (elts_.size ());
 
           // Number of rows in the matrix.
-          const Ordinal numRows = tolerant_ ? seenNumRows_ : expectedNumRows_;
-          ArrayRCP<Ordinal> ptr = arcp<Ordinal> (numRows + 1);
+          const Ordinal nrows = tolerant_ ? seenNumRows_ : expectedNumRows_;
+          ArrayRCP<Ordinal> ptr = arcp<Ordinal> (nrows + 1);
 
           // Copy over the elements, and fill in the ptr array with
           // offsets.  Note that merge() sorted the entries by row
@@ -531,7 +531,7 @@ namespace Teuchos {
             val[curInd] = Aij;
             ++curInd;
           }
-          for (Ordinal k = curRow+1; k <= numRows; ++k) {
+          for (Ordinal k = curRow+1; k <= nrows; ++k) {
             ptr[k] = curInd;
           }
 
