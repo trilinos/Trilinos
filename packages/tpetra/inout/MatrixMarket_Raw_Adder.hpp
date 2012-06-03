@@ -48,7 +48,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "MatrixMarket_Banner.hpp"
 #include "MatrixMarket_CoordDataReader.hpp"
-#include "MatrixMarket_util.hpp"
+//#include "MatrixMarket_util.hpp"
 
 #include <algorithm>
 #include <fstream>

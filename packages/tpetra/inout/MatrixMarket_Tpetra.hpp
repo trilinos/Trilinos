@@ -56,6 +56,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "MatrixMarket_Raw_Adder.hpp"
 #include "MatrixMarket_Raw_SymmetrizingAdder.hpp"
+#include "MatrixMarket_assignScalar.hpp"
 #include "MatrixMarket_Banner.hpp"
 #include "MatrixMarket_CoordDataReader.hpp"
 #include "MatrixMarket_SetScientific.hpp"

@@ -42,7 +42,7 @@
 #ifndef __MatrixMarket_Raw_SymmetrizingAdder_hpp
 #define __MatrixMarket_Raw_SymmetrizingAdder_hpp
 
-#include <MatrixMarket_util.hpp>
+//#include <MatrixMarket_util.hpp>
 #include <Teuchos_as.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <string>
