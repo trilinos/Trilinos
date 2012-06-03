@@ -55,7 +55,7 @@
 ///
 #include "Tpetra_CrsMatrix.hpp"
 #include "Teuchos_MatrixMarket_Raw_Adder.hpp"
-#include "Teuchos_MatrixMarket_Raw_SymmetrizingAdder.hpp"
+#include "Teuchos_MatrixMarket_SymmetrizingAdder.hpp"
 #include "Teuchos_MatrixMarket_assignScalar.hpp"
 #include "Teuchos_MatrixMarket_Banner.hpp"
 #include "Teuchos_MatrixMarket_CoordDataReader.hpp"

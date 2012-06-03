@@ -43,7 +43,7 @@
 #define __Teuchos_MatrixMarket_Raw_Checker_hpp
 
 #include "Teuchos_MatrixMarket_Raw_Adder.hpp"
-#include "Teuchos_MatrixMarket_Raw_SymmetrizingAdder.hpp"
+#include "Teuchos_MatrixMarket_SymmetrizingAdder.hpp"
 #include "Teuchos_MatrixMarket_CoordDataReader.hpp"
 
 
