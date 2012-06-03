@@ -59,21 +59,6 @@
 
 namespace Teuchos {
   namespace MatrixMarket {
-    /// \namespace Raw
-    /// \brief "Raw" input of sparse matrices from Matrix Market files.
-    ///
-    /// "Raw" means serial (not MPI or otherwise distributed over
-    /// parallel processes), with storage as a collection of matrix
-    /// indices and values.  This is useful if you want to read the
-    /// sparse matrix on one (MPI) process and store it in a custom
-    /// format.
-    ///
-    /// For reading a sparse matrix from a Matrix Market file into raw
-    /// compressed sparse row (CSR) arrays on a single (MPI) process,
-    /// use the Reader class.  For reading in a Tpetra::CrsMatrix, use
-    /// the Tpetra::MatrixMarket::Reader class.  Nearly everything
-    /// else in this namespace is of interest only to Teuchos
-    /// developers.
     namespace Raw {
       /// \class Element
       /// \author Mark Hoemmen

@@ -48,7 +48,42 @@
 
 
 namespace Teuchos {
+  /// \namespace MatrixMarket
+  /// \brief Matrix Market file utilities
+  /// \author Mark Hoemmen
+  ///
+  /// The Matrix Market (see their <a
+  /// href="http://math.nist.gov/MatrixMarket"> web site </a> for
+  /// details) defines a human-readable ASCII text file format
+  /// ("Matrix Market format") for interchange of sparse and dense
+  /// matrices.  This namespace defines utility classes for input and
+  /// output of Matrix Market files or input streams.  Users will
+  /// likely find Raw::Reader most useful; it reads from a Matrix
+  /// Market file or input stream into raw compressed sparse row (CSR)
+  /// arrays.  Other classes and functions will probably be more
+  /// useful for Trilinos developers.
+  ///
+  /// Matrix Market files are designed for easy reading and writing of
+  /// test matrices by both humans and computers.  They are not
+  /// intended for high-performance or parallel file input and output.
+  /// You should use a true parallel file format if you want to do
+  /// parallel input and output of sparse or dense matrices.
   namespace MatrixMarket {
+    /// \namespace Raw
+    /// \brief "Raw" input of sparse matrices from Matrix Market files.
+    ///
+    /// "Raw" means serial (not MPI or otherwise distributed over
+    /// parallel processes), with storage as a collection of matrix
+    /// indices and values.  This is useful if you want to read the
+    /// sparse matrix on one (MPI) process and store it in a custom
+    /// format.
+    ///
+    /// For reading a sparse matrix from a Matrix Market file into raw
+    /// compressed sparse row (CSR) arrays on a single (MPI) process,
+    /// use the Reader class.  For reading in a Tpetra::CrsMatrix, use
+    /// the Tpetra::MatrixMarket::Reader class.  Nearly everything
+    /// else in this namespace is of interest only to Trilinos
+    /// developers.
     namespace Raw {
       /// \class Reader
       /// \brief Read a sparse matrix from a Matrix Market file into
