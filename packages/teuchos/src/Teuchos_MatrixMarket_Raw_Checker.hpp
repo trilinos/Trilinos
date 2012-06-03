@@ -39,12 +39,12 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef __MatrixMarket_Raw_Checker_hpp
-#define __MatrixMarket_Raw_Checker_hpp
+#ifndef __Teuchos_MatrixMarket_Raw_Checker_hpp
+#define __Teuchos_MatrixMarket_Raw_Checker_hpp
 
-#include "MatrixMarket_Raw_Adder.hpp"
-#include "MatrixMarket_Raw_SymmetrizingAdder.hpp"
-#include "MatrixMarket_CoordDataReader.hpp"
+#include "Teuchos_MatrixMarket_Raw_Adder.hpp"
+#include "Teuchos_MatrixMarket_Raw_SymmetrizingAdder.hpp"
+#include "Teuchos_MatrixMarket_CoordDataReader.hpp"
 
 
 namespace Teuchos {
@@ -58,9 +58,12 @@ namespace Teuchos {
       /// \tparam Ordinal The type of indices of the sparse matrix.
       ///
       /// This class is useful for checking the integrity of a Matrix
-      /// Market sparse matrix file and printing its contents.  Use
-      /// Tpetra::MatrixMarket::Reader if you want to read a
-      /// Tpetra::CrsMatrix from a Matrix Market file.
+      /// Market sparse matrix file and printing its contents.  For
+      /// reading a sparse matrix from a Matrix Market file into raw
+      /// compressed sparse row (CSR) arrays on a single (MPI)
+      /// process, use the Reader class.  For reading in a
+      /// Tpetra::CrsMatrix, use the Tpetra::MatrixMarket::Reader
+      /// class.
       template<class Scalar, class Ordinal>
       class Checker {
       public:
@@ -531,4 +534,4 @@ namespace Teuchos {
   } // namespace MatrixMarket
 } // namespace Teuchos
 
-#endif // __MatrixMarket_Raw_Checker_hpp
+#endif // __Teuchos_MatrixMarket_Raw_Checker_hpp

@@ -39,7 +39,7 @@
 // ************************************************************************
 // @HEADER
 
-#include "MatrixMarket_split.hpp"
+#include "Teuchos_MatrixMarket_split.hpp"
 #include <algorithm>
 #include <cctype> // tolower
 #include <utility> // std::pair

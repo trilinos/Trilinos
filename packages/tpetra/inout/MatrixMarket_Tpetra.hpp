@@ -54,12 +54,12 @@
 /// Market format") for interchange of sparse and dense matrices.
 ///
 #include "Tpetra_CrsMatrix.hpp"
-#include "MatrixMarket_Raw_Adder.hpp"
-#include "MatrixMarket_Raw_SymmetrizingAdder.hpp"
-#include "MatrixMarket_assignScalar.hpp"
-#include "MatrixMarket_Banner.hpp"
-#include "MatrixMarket_CoordDataReader.hpp"
-#include "MatrixMarket_SetScientific.hpp"
+#include "Teuchos_MatrixMarket_Raw_Adder.hpp"
+#include "Teuchos_MatrixMarket_Raw_SymmetrizingAdder.hpp"
+#include "Teuchos_MatrixMarket_assignScalar.hpp"
+#include "Teuchos_MatrixMarket_Banner.hpp"
+#include "Teuchos_MatrixMarket_CoordDataReader.hpp"
+#include "Teuchos_MatrixMarket_SetScientific.hpp"
 
 #include <algorithm>
 #include <fstream>

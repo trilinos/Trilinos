@@ -39,8 +39,8 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef __MatrixMarket_generic_hpp
-#define __MatrixMarket_generic_hpp
+#ifndef __Teuchos_MatrixMarket_generic_hpp
+#define __Teuchos_MatrixMarket_generic_hpp
 
 #include "Teuchos_ConfigDefs.hpp"
 #ifdef HAVE_TEUCHOS_COMPLEX
@@ -649,11 +649,11 @@ namespace Teuchos {
       // This function only increments the line number when it reads a
       // comment line successfully, or when it reads all the
       // coordinate dimensions successfully.
-      lineNumber++;
+      ++lineNumber;
       return true;
     }
 
   } // namespace MatrixMarket
 } // namespace Teuchos
 
-#endif // __MatrixMarket_generic_hpp
+#endif // __Teuchos_MatrixMarket_generic_hpp

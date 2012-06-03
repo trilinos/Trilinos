@@ -39,8 +39,8 @@
 // ************************************************************************
 // @HEADER
 
-#include "MatrixMarket_generic.hpp"
-#include "MatrixMarket_split.hpp"
+#include "Teuchos_MatrixMarket_generic.hpp"
+#include "Teuchos_MatrixMarket_split.hpp"
 #include <algorithm>
 
 namespace Teuchos {

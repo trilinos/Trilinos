@@ -39,8 +39,8 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef __MatrixMarket_assignScalar_hpp
-#define __MatrixMarket_assignScalar_hpp
+#ifndef __Teuchos_MatrixMarket_assignScalar_hpp
+#define __Teuchos_MatrixMarket_assignScalar_hpp
 
 #include <Teuchos_as.hpp>
 #include <Teuchos_ScalarTraits.hpp>
@@ -115,4 +115,4 @@ namespace Teuchos {
   } // namespace MatrixMarket
 } // namespace Teuchos
 
-#endif // __MatrixMarket_assignScalar_hpp
+#endif // __Teuchos_MatrixMarket_assignScalar_hpp

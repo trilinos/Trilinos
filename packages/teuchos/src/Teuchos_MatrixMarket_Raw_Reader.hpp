@@ -39,12 +39,12 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef __MatrixMarket_Raw_Reader_hpp
-#define __MatrixMarket_Raw_Reader_hpp
+#ifndef __Teuchos_MatrixMarket_Raw_Reader_hpp
+#define __Teuchos_MatrixMarket_Raw_Reader_hpp
 
-#include "MatrixMarket_Raw_Adder.hpp"
-#include "MatrixMarket_Raw_SymmetrizingAdder.hpp"
-#include "MatrixMarket_CoordDataReader.hpp"
+#include "Teuchos_MatrixMarket_Raw_Adder.hpp"
+#include "Teuchos_MatrixMarket_Raw_SymmetrizingAdder.hpp"
+#include "Teuchos_MatrixMarket_CoordDataReader.hpp"
 
 
 namespace Teuchos {
@@ -507,4 +507,4 @@ namespace Teuchos {
   } // namespace MatrixMarket
 } // namespace Teuchos
 
-#endif // __MatrixMarket_Raw_Reader_hpp
+#endif // __Teuchos_MatrixMarket_Raw_Reader_hpp

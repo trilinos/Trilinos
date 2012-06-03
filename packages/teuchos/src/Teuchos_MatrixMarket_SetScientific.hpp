@@ -39,8 +39,8 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef __MatrixMarket_SetScientific_hpp
-#define __MatrixMarket_SetScientific_hpp
+#ifndef __Teuchos_MatrixMarket_SetScientific_hpp
+#define __Teuchos_MatrixMarket_SetScientific_hpp
 
 #include <Teuchos_as.hpp>
 #include <Teuchos_ScalarTraits.hpp>
@@ -50,7 +50,6 @@
 namespace Teuchos {
   namespace MatrixMarket {
     namespace details {
-
       /// \class SetScientific
       /// \brief Temporarily make an output stream use scientific
       ///   notation with sufficient precision.
@@ -147,4 +146,4 @@ namespace Teuchos {
   } // namespace MatrixMarket
 } // namespace Teuchos
 
-#endif // __MatrixMarket_SetScientific_hpp
+#endif // __Teuchos_MatrixMarket_SetScientific_hpp

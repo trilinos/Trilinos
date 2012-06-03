@@ -39,10 +39,10 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef __MatrixMarket_CoordDataReader_hpp
-#define __MatrixMarket_CoordDataReader_hpp
+#ifndef __Teuchos_MatrixMarket_CoordDataReader_hpp
+#define __Teuchos_MatrixMarket_CoordDataReader_hpp
 
-#include "MatrixMarket_generic.hpp"
+#include "Teuchos_MatrixMarket_generic.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_Tuple.hpp"
@@ -57,10 +57,13 @@ namespace Teuchos {
     /// This class provides common functionality for reading
     /// coordinate-format sparse matrix or graph data from a Matrix
     /// Market file.  In particular, this class does not depend on the
-    /// type of matrix entries.  If you want to read a sparse matrix,
-    /// use CoordDataReader.  If you want to read a sparse graph (a
-    /// "pattern matrix" in Matrix Market terms), use
-    /// CoordPatternReader.
+    /// type of matrix entries.  If you are writing a function to read
+    /// a sparse matrix, use CoordDataReader.  If you are writing a
+    /// function to read a sparse graph (a "pattern matrix" in Matrix
+    /// Market terms), use CoordPatternReader.  If you just want to
+    /// read a sparse matrix into raw compressed sparse row (CSR)
+    /// arrays, use Raw::Reader.  This class is mainly for Teuchos
+    /// developers.
     ///
     /// \tparam Callback The type of a callback (a.k.a. closure) that
     ///   knows how to add entries to the sparse graph or matrix.
@@ -655,4 +658,4 @@ namespace Teuchos {
   } // namespace MatrixMarket
 } // namespace Teuchos
 
-#endif // __MatrixMarket_CoordDataReader_hpp
+#endif // __Teuchos_MatrixMarket_CoordDataReader_hpp

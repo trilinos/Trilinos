@@ -39,8 +39,8 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef __MatrixMarket_split_hpp
-#define __MatrixMarket_split_hpp
+#ifndef __Teuchos_MatrixMarket_split_hpp
+#define __Teuchos_MatrixMarket_split_hpp
 
 #include <string>
 #include <vector>
@@ -50,19 +50,19 @@ namespace Teuchos {
   namespace MatrixMarket {
     namespace details {
 
-      //! Trim whitespace from both sides of \c in
+      //! Trim whitespace from both sides of the given string.
       std::string
       trim (const std::string& in);
 
-      //! Return lowercase version of \c in
+      //! Return lowercase version of the given string.
       std::string
       lowercase (const std::string& in);
 
-      //! Trim whitespace from both sides, and make lowercase
+      //! Trim whitespace from both sides, and make lowercase.
       std::string
       trim_and_lowercase (const std::string& in);
 
-      /// \brief Split \c str using the given set of delimiters
+      /// \brief Split the given string using the given set of delimiters.
       ///
       /// Split the string \c str, optionally starting at position \c
       /// start, into zero or more tokens separated by one or more of the
@@ -84,4 +84,4 @@ namespace Teuchos {
   } // namespace MatrixMarket
 } // namespace Teuchos
 
-#endif // __MatrixMarket_split_hpp
+#endif // __Teuchos_MatrixMarket_split_hpp

@@ -39,16 +39,15 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef __MatrixMarket_Raw_Adder_hpp
-#define __MatrixMarket_Raw_Adder_hpp
+#ifndef __Teuchos_MatrixMarket_Raw_Adder_hpp
+#define __Teuchos_MatrixMarket_Raw_Adder_hpp
 
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "MatrixMarket_Banner.hpp"
-#include "MatrixMarket_CoordDataReader.hpp"
-//#include "MatrixMarket_util.hpp"
+#include "Teuchos_MatrixMarket_Banner.hpp"
+#include "Teuchos_MatrixMarket_CoordDataReader.hpp"
 
 #include <algorithm>
 #include <fstream>
@@ -67,8 +66,14 @@ namespace Teuchos {
     /// parallel processes), with storage as a collection of matrix
     /// indices and values.  This is useful if you want to read the
     /// sparse matrix on one (MPI) process and store it in a custom
-    /// format.  For reading in a Tpetra::CrsMatrix, use the
-    /// Tpetra::MatrixMarket::Reader class.
+    /// format.
+    ///
+    /// For reading a sparse matrix from a Matrix Market file into raw
+    /// compressed sparse row (CSR) arrays on a single (MPI) process,
+    /// use the Reader class.  For reading in a Tpetra::CrsMatrix, use
+    /// the Tpetra::MatrixMarket::Reader class.  Nearly everything
+    /// else in this namespace is of interest only to Teuchos
+    /// developers.
     namespace Raw {
       /// \class Element
       /// \author Mark Hoemmen
@@ -585,4 +590,4 @@ namespace Teuchos {
   } // namespace MatrixMarket
 } // namespace Teuchos
 
-#endif // #ifndef __MatrixMarket_Raw_Adder_hpp
+#endif // #ifndef __Teuchos_MatrixMarket_Raw_Adder_hpp

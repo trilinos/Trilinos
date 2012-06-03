@@ -39,10 +39,9 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef __MatrixMarket_Raw_SymmetrizingAdder_hpp
-#define __MatrixMarket_Raw_SymmetrizingAdder_hpp
+#ifndef __Teuchos_MatrixMarket_SymmetrizingAdder_hpp
+#define __Teuchos_MatrixMarket_SymmetrizingAdder_hpp
 
-//#include <MatrixMarket_util.hpp>
 #include <Teuchos_as.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <string>
@@ -50,6 +49,7 @@
 
 namespace Teuchos {
   namespace MatrixMarket {
+    // Anonymous namespace for helper functions for SymmetrizingAdder.
     namespace {
       bool isSkew (const std::string& symmType) {
         return symmType.size() >= 4 && symmType.substr(0,4) == "skew";
@@ -143,4 +143,4 @@ namespace Teuchos {
   } // namespace MatrixMarket
 } // namespace Teuchos
 
-#endif // __MatrixMarket_Raw_SymmetrizingAdder_hpp
+#endif // __Teuchos_MatrixMarket_SymmetrizingAdder_hpp

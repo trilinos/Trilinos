@@ -39,13 +39,14 @@
 // ************************************************************************
 // @HEADER
 
-#include "MatrixMarket_Banner.hpp"
-#include "MatrixMarket_split.hpp"
+#include "Teuchos_MatrixMarket_Banner.hpp"
+#include "Teuchos_MatrixMarket_split.hpp"
 #include "Teuchos_TestForException.hpp"
 #include <algorithm>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+
 
 namespace Teuchos {
   namespace MatrixMarket {

@@ -39,12 +39,13 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef __MatrixMarket_Banner_hpp
-#define __MatrixMarket_Banner_hpp
+#ifndef __Teuchos_MatrixMarket_Banner_hpp
+#define __Teuchos_MatrixMarket_Banner_hpp
 
 #include <complex>
 #include <ostream>
 #include <string>
+
 
 namespace Teuchos {
   namespace MatrixMarket {
@@ -136,4 +137,4 @@ namespace Teuchos {
   } // namespace MatrixMarket
 } // namespace Teuchos
 
-#endif // __MatrixMarket_Banner_hpp
+#endif // __Teuchos_MatrixMarket_Banner_hpp
