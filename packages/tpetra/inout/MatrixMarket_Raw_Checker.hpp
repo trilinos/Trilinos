@@ -43,6 +43,7 @@
 #define __MatrixMarket_Raw_Checker_hpp
 
 #include "MatrixMarket_Raw_Adder.hpp"
+#include "MatrixMarket_Raw_SymmetrizingAdder.hpp"
 #include "MatrixMarket_CoordDataReader.hpp"
 
 
