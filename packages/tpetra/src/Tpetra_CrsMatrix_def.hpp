@@ -1777,9 +1777,11 @@ namespace Tpetra {
     lclMatOps_ = rcp(new sparse_ops_type(getNode()));
     lclMatOps_->setGraphAndMatrix(uplo,diag,staticGraph_->getLocalGraph(), lclMatrix_);
     // done with the local objects; release them and their memory (they will persist in the local sparse ops if necessary)
-    if (params != null && params->get("Delete Local Objects After Fill",true)) {
-      lclMatrix_ = null;
-      if (myGraph_ != null) myGraph_->lclGraph_ = null;
+    lclMatrix_ = null;
+    if (myGraph_ != null) {
+      bool preserveLocalGraph = false;
+      if (params != null) preserveLocalGraph = params->get("Preserve Local Graph",false);
+      if (!preserveLocalGraph) myGraph_->lclGraph_ = null;
     }
     // Now we're fill complete!
     fillComplete_ = true;
