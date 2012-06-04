@@ -59,8 +59,7 @@ namespace MueLu {
       if ( std::abs(work_[0]) > workSize_) {
         workSize_ = (int) std::abs(work_[0]);
         work_ = ArrayRCP<Scalar>(workSize_);
-      } else
-        workSize_ = (int) std::abs(work_[0]);
+      }
     }
   } //Compute()
 
@@ -91,8 +90,7 @@ namespace MueLu {
       if ( std::abs(work_[0]) > workSize_) {
         workSize_ = (int) std::abs(work_[0]);
         work_ = ArrayRCP<Scalar>(workSize_);
-      } else
-        workSize_ = (int) std::abs(work_[0]);
+      }
     }
   } //ExtractQ()
 
@@ -127,10 +125,9 @@ namespace MueLu {
         // CGEQRF (complex), work[0] is assigned an integer, so it's safe to take the magnitude.
         // Scalar type might be complex, so take absolute value.
         if ( std::abs(work_[0]) > workSize_) {
-            workSize_ = (int) std::abs(work_[0]);
+          workSize_ = (int) std::abs(work_[0]);
           work_ = ArrayRCP<Scalar>(workSize_);
-        } else
-        workSize_ = (int) std::abs(work_[0]);
+        }
       } //Compute
 
   template <class Scalar, class Storage, class LocalOrdinal>
@@ -154,8 +151,7 @@ namespace MueLu {
         if ( std::abs(work_[0]) > workSize_) {
           workSize_ = (int) std::abs(work_[0]);
           work_ = ArrayRCP<Scalar>(workSize_);
-        } else
-          workSize_ = (int) std::abs(work_[0]);
+        }
       } //ExtractQ
 #endif //ifdef HAVE_MUELU_STOKHOS
 
