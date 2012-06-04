@@ -553,6 +553,7 @@ namespace Tpetra {
     // build the graph, hand over the indices
     if (params == null) lclparams = parameterList();
     else                lclparams = sublist(params,"Local Graph");
+    // should be null, but delete it first so that any memory can be freed
     myGraph_->lclGraph_ = null;
     myGraph_->lclGraph_ = rcp( new local_graph_type( getRowMap()->getNodeNumElements(), getRowMap()->getNode(), lclparams ) );
     myGraph_->lclGraph_->setStructure(ptrs,inds);
@@ -561,6 +562,8 @@ namespace Tpetra {
     // build the matrix, hand over the values
     if (params == null) lclparams = parameterList();
     else                lclparams = sublist(params,"Local Matrix");
+    // should be null, but delete it first so that any memory can be freed
+    lclMatrix_ = null;
     lclMatrix_ = rcp(new local_matrix_type(staticGraph_->getLocalGraph(), lclparams ) );
     lclMatrix_->setValues(vals);
     vals = null;
@@ -641,6 +644,8 @@ namespace Tpetra {
     RCP<ParameterList> lclparams;
     if (params == null) lclparams = parameterList();
     else                lclparams = sublist(params,"Local Matrix");
+    // should be null, but delete it first so that any memory can be freed
+    lclMatrix_ = null;
     lclMatrix_ = rcp(new local_matrix_type(staticGraph_->getLocalGraph(), lclparams ) );
     lclMatrix_->setValues(vals);
     vals = null;
@@ -1771,6 +1776,11 @@ namespace Tpetra {
     //
     lclMatOps_ = rcp(new sparse_ops_type(getNode()));
     lclMatOps_->setGraphAndMatrix(uplo,diag,staticGraph_->getLocalGraph(), lclMatrix_);
+    // done with the local objects; release them and their memory (they will persist in the local sparse ops if necessary)
+    if (params != null && params->get("Delete Local Objects After Fill",true)) {
+      lclMatrix_ = null;
+      if (myGraph_ != null) myGraph_->lclGraph_ = null;
+    }
     // Now we're fill complete!
     fillComplete_ = true;
 
@@ -1949,10 +1959,12 @@ namespace Tpetra {
     //
     // a dynamic graph, depending on which constructor was used.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( staticGraph_ == null,                                             std::logic_error, err);
-    // if active, i have no local matrix
-    TEUCHOS_TEST_FOR_EXCEPTION( isFillActive() && lclMatrix_ != null,                                        std::logic_error, err );
+    // i only ever have a local matrix for a small moment in time
+    TEUCHOS_TEST_FOR_EXCEPTION( lclMatrix_ != null,                                                          std::logic_error, err );
     // if active, i have no local sparse ops
     TEUCHOS_TEST_FOR_EXCEPTION( isFillActive() && lclMatOps_ != null,                                        std::logic_error, err );
+    // if filled, i have a local sparse ops
+    TEUCHOS_TEST_FOR_EXCEPTION( isFillComplete() && lclMatOps_ == null,                                      std::logic_error, err );
     // myGraph == null means that the matrix has a static graph.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( myGraph_ != null && myGraph_ != staticGraph_,                     std::logic_error, err);
     // if matrix is fill complete, then graph must be fill complete
