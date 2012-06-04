@@ -28,7 +28,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal>
-  QR_Interface<Scalar,LocalOrdinal>::QR_Interface(const size_t NSDim) : workSize_(NSDim), info_(0) {
+  QR_Interface<Scalar,LocalOrdinal>::QR_Interface(const size_t NSDim) : workSize_(NSDim), NSDim_(NSDim), info_(0) {
     tau_ = ArrayRCP<Scalar>(NSDim);
     work_ = ArrayRCP<Scalar>(NSDim);
   }
@@ -37,7 +37,7 @@ namespace MueLu {
   void QR_Interface<Scalar,LocalOrdinal>::Compute(LocalOrdinal const &myAggSize, ArrayRCP<Scalar> &localQR)
   {
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
-    if (workSize_ == 1) {
+    if (NSDim_ == 1) {
       //only one nullspace vector, so normalize by hand
       Magnitude dtemp=0;
       //scalar type might be complex, so take absolute value.
@@ -46,7 +46,7 @@ namespace MueLu {
       tau_[0] = localQR[0];
       localQR[0] = dtemp;
     } else {
-      lapack_.GEQRF( myAggSize, Teuchos::as<int>(workSize_), localQR.getRawPtr(), myAggSize,
+      lapack_.GEQRF( myAggSize, Teuchos::as<int>(NSDim_), localQR.getRawPtr(), myAggSize,
                     tau_.getRawPtr(), work_.getRawPtr(), workSize_, &info_ );
       if (info_ != 0) {
         std::string msg = "QR_Interface: dgeqrf (LAPACK QR routine) returned error code " + Teuchos::toString(info_);
@@ -68,7 +68,7 @@ namespace MueLu {
   void QR_Interface<Scalar,LocalOrdinal>::ExtractQ(LocalOrdinal const &myAggSize, ArrayRCP<Scalar> &localQR)
   {
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
-    if (workSize_ == 1) {
+    if (NSDim_ == 1) {
       //again, only one nullspace vector, so calculate Q by hand
       Magnitude dtemp = std::abs(localQR[0]);
       localQR[0] = tau_[0];
@@ -79,7 +79,7 @@ namespace MueLu {
       //lapack_.ORGQR(myAggSize, Teuchos::as<int>(workSize_), Teuchos::as<int>(workSize_), localQR.getRawPtr(),
       //             myAggSize, tau_.getRawPtr(), work_.getRawPtr(), workSize_, &info_ );
       //call nonmember function (perhaps specialized)
-      LapackQR( lapack_, myAggSize, Teuchos::as<int>(workSize_), localQR, tau_, work_, workSize_, info_ );
+      LapackQR( lapack_, myAggSize, Teuchos::as<int>(NSDim_), localQR, tau_, work_, workSize_, info_ );
       if (info_ != 0) {
         std::string msg = "QR_Interface: dorgqr (LAPACK auxiliary QR routine) returned error code " + Teuchos::toString(info_);
         throw(Exceptions::RuntimeError(msg));
@@ -99,7 +99,7 @@ namespace MueLu {
 #if defined(HAVE_MUELU_STOKHOS) and defined(MUELU_SCALAR_IS_PCE_TYPE)
   //Specialization for polynomial chaos expansion (PCE) scalar types.
   template <class Scalar, class Storage, class LocalOrdinal>
-  QR_Interface< Sacado::PCE::OrthogPoly<Scalar, Storage>, LocalOrdinal>::QR_Interface(const size_t NSDim) : workSize_(NSDim), info_(0) {
+  QR_Interface< Sacado::PCE::OrthogPoly<Scalar, Storage>, LocalOrdinal>::QR_Interface(const size_t NSDim) : workSize_(NSDim), NSDim(NSDim_), info_(0) {
         tau_ = ArrayRCP<Scalar>(NSDim);
         work_ = ArrayRCP<Scalar>(NSDim);
       }
@@ -112,7 +112,7 @@ namespace MueLu {
         for (int i=0; i<localQR.size(); ++i) {
           localQR_[i] = (localQR[i]).coeff(0);
         }
-        lapack_.GEQRF( myAggSize, Teuchos::as<int>(workSize_), localQR_.getRawPtr(), myAggSize,
+        lapack_.GEQRF( myAggSize, Teuchos::as<int>(NSDim_), localQR_.getRawPtr(), myAggSize,
                       tau_.getRawPtr(), work_.getRawPtr(), workSize_, &info_ );
         if (info_ != 0) {
           std::string msg = "QR_Interface: dgeqrf (LAPACK QR routine) returned error code " + Teuchos::toString(info_);
@@ -138,7 +138,7 @@ namespace MueLu {
         //call nonmember function (perhaps specialized)
         //Note: localQR_ already contains the proper data because of prior call to Compute, so there is no need to resize or copy.
         //      If Compute is called twice in a row, all bets are off.
-        LapackQR( lapack_, myAggSize, Teuchos::as<int>(workSize_), localQR_, tau_, work_, workSize_, info_ );
+        LapackQR( lapack_, myAggSize, Teuchos::as<int>(NSDim_), localQR_, tau_, work_, workSize_, info_ );
         if (info_ != 0) {
           std::string msg = "QR_Interface: dorgqr (LAPACK auxiliary QR routine) returned error code " + Teuchos::toString(info_);
           throw(Exceptions::RuntimeError(msg));

@@ -48,6 +48,8 @@ namespace MueLu {
       Teuchos::LAPACK<LocalOrdinal,Scalar> lapack_;
       //! Length of work vectors. Must be at least dimension of nullspace.
       LocalOrdinal     workSize_;
+      //! Dimension of nullspace
+      LocalOrdinal     NSDim_;
       //! (out) =0: success; =i, i<0: i-th argument has illegal value
       LocalOrdinal     info_;
       //! Internal LAPACK variables.
@@ -91,6 +93,8 @@ namespace MueLu {
       Teuchos::LAPACK<LocalOrdinal,Scalar> lapack_;
       //! Length of work vectors. Must be at least dimension of nullspace.
       LocalOrdinal     workSize_;
+      //! Dimension of nullspace
+      LocalOrdinal     NSDim_;
       //! (out) =0: success; =i, i<0: i-th argument has illegal value
       LocalOrdinal     info_;
       //! Internal LAPACK variables.
