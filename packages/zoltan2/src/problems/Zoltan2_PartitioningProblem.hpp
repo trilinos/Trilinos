@@ -382,6 +382,7 @@ template <typename Adapter>
 void PartitioningProblem<Adapter>::solve(bool updateInputData)
 {
   HELLO;
+  this->env_->debug(DETAILED_STATUS, "Entering solve");
 
   // Create the computational model.
 
@@ -451,6 +452,9 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
 
 #endif
+
+  this->env_->memory("After solve method");
+  this->env_->debug(DETAILED_STATUS, "Exiting solve");
 }
 
 template <typename Adapter>

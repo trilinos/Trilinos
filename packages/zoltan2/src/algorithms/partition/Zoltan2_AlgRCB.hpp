@@ -450,6 +450,8 @@ void AlgRCB(
     numGlobalCoords = mvector->getGlobalLength();
 
     iteration++;
+
+    env->memory("End of subgroup bisection");
   } 
 
   env->timerStop(MACRO_TIMERS, "Parallel RCB");
@@ -492,7 +494,6 @@ void AlgRCB(
       partId[i] = part0;
   }
 
-
   ////////////////////////////////////////////////////////
   // Done: Compute quality metrics and update the solution
   // TODO: The algorithm will not compute the metrics.
@@ -522,6 +523,7 @@ void AlgRCB(
     partId.view(0, numLocalCoords),                    // input
     objWgt.view(0, criteriaDim), mcnorm,               // input
     numParts, numNonemptyParts, metrics);              // output
+
 
   ArrayRCP<const gno_t> gnoList = 
     arcpFromArrayView(mvector->getMap()->getNodeElementList());

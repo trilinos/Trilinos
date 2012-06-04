@@ -182,14 +182,18 @@ const RCP<tMVector_t> getMeshCoordinates(
   }
 
   lno_t next = 0;
-  for (scalar_t zval=zStart; next < numLocalCoords && zval < zdim; zval++)
-    for (scalar_t yval=yStart; next < numLocalCoords && yval < ydim; yval++)
+  for (scalar_t zval=zStart; next < numLocalCoords && zval < zdim; zval++){
+    for (scalar_t yval=yStart; next < numLocalCoords && yval < ydim; yval++){
       for (scalar_t xval=xStart; next < numLocalCoords && xval < xdim; xval++){
         x[next] = xval;
         y[next] = yval;
         z[next] = zval;
         next++;
       }
+      xStart = 0;
+    }
+    yStart = 0;
+  }
 
   ArrayView<const scalar_t> xArray(x, numLocalCoords);
   ArrayView<const scalar_t> yArray(y, numLocalCoords);
@@ -215,9 +219,10 @@ int main(int argc, char *argv[])
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   int rank = comm->getRank();
+  int nprocs = comm->getSize();
 
   if (rank==0)
-    cout << "Number of processes: " << rank << endl;
+    cout << "Number of processes: " << nprocs << endl;
 
   // Default values
   double numGlobalCoords = 1000;
@@ -225,15 +230,20 @@ int main(int argc, char *argv[])
   int weightDim = 0;
   string objective("balance_object_weight");
   string timingType("no_timers");
+  string debugLevel("basic_status");
   string memoryOn("memoryOn");
   string memoryOff("memoryOff");
+  string memoryProcs("0");
   bool doMemory=false;
+  int numGlobalParts = nprocs;
 
   CommandLineProcessor commandLine(false, true);
   commandLine.setOption("size", &numGlobalCoords, 
     "Approximate number of global coordinates.");
   commandLine.setOption("testCuts", &numTestCuts, 
     "Number of test cuts to make when looking for bisector.");
+  commandLine.setOption("numParts", &numGlobalParts, 
+    "Number of parts (default is one per proc).");
   commandLine.setOption("weightDim", &weightDim, 
     "Number of weights per coordinate, zero implies uniform weights.");
   commandLine.setOption("weightDim", &weightDim, 
@@ -250,8 +260,14 @@ int main(int argc, char *argv[])
   commandLine.setOption("timers", &timingType,
     "no_timers, micro_timers, macro_timers, both_timers");
 
+  commandLine.setOption("debug", &debugLevel,
+   "no_status, basic_status, detailed_status, verbose_detailed_status");
+
   commandLine.setOption(memoryOn.c_str(), memoryOff.c_str(), &doMemory,
     "do memory profiling");
+
+  commandLine.setOption("memoryProcs", &memoryProcs,
+   "list of processes that output memory usage");
 
   CommandLineProcessor::EParseCommandLineReturn rc = 
     commandLine.parse(argc, argv);
@@ -273,6 +289,22 @@ int main(int argc, char *argv[])
 
   RCP<tMVector_t> coordinates = getMeshCoordinates(comm, globalSize);
   size_t numLocalCoords = coordinates->getLocalLength();
+
+#if 0
+  comm->barrier();
+  for (int p=0; p < nprocs; p++){
+    if (p==rank){
+      cout << "Rank " << rank << ", " << numLocalCoords << "coords" << endl;
+      const scalar_t *x = coordinates->getData(0).getRawPtr();
+      const scalar_t *y = coordinates->getData(1).getRawPtr();
+      const scalar_t *z = coordinates->getData(2).getRawPtr();
+      for (lno_t i=0; i < numLocalCoords; i++)
+        cout << " " << x[i] << " " << y[i] << " " << z[i] << endl;
+    }
+    cout.flush();
+    comm->barrier();
+  }
+#endif
 
   Array<ArrayRCP<scalar_t> > weights(weightDim);
 
@@ -327,11 +359,15 @@ int main(int argc, char *argv[])
 
   if (doMemory){
     params.set("memory_output_stream" , "std::cout");
-    params.set("memory_procs" , "0");
+    params.set("memory_procs" , memoryProcs);
   }
 
-  params.set("debug_output_stream" , "std::cout");
+  params.set("debug_output_stream" , "std::cerr");
   params.set("debug_procs" , "0");
+
+  if (debugLevel != "basic_status"){
+    params.set("debug_level" , debugLevel);
+  }
 
   Teuchos::ParameterList &parParams = params.sublist("partitioning");
   parParams.set("algorithm", "rcb");
@@ -339,11 +375,16 @@ int main(int argc, char *argv[])
   double tolerance = 1.1;
   parParams.set("imbalance_tolerance", tolerance );
 
+  if (numGlobalParts != nprocs)
+    parParams.set("num_global_parts" , numGlobalParts);
+
   Teuchos::ParameterList &geoParams = parParams.sublist("geometric");
   geoParams.set("bisection_num_test_cuts", numTestCuts);
 
-  if (rank==0)
+  if (rank==0){
+    cout << "Number of parts: " << numGlobalParts << endl;
     cout << "bisection_num_test_cuts: " << numTestCuts << endl;
+  }
 
   // Create a problem, solve it, and display the quality.
 

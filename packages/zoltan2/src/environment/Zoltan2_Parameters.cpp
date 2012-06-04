@@ -79,6 +79,9 @@ void createAllParameters(Teuchos::ParameterList &pList)
 
   // AnyNumber allows entry of a string, real or integer value.
   // The value can be retrieved with getInt, getDouble, getString.
+  // NOTE: Errors seem to occur unless you retrieve the value as a double.
+  // TODO: Make sure we are not using defaults because we don't find
+  //    the int value.
 
   using Teuchos::AnyNumberParameterEntryValidator;
   RCP<const AnyNumberParameterEntryValidator> anyNumValidatorP;

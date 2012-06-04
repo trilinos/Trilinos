@@ -480,6 +480,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
     ArrayRCP<MetricValues<scalar_t> > &metrics,
     ArrayRCP<scalar_t> &globalSums)
 {
+  env->debug(DETAILED_STATUS, "Entering globalSumsByPart");
   //////////////////////////////////////////////////////////
   // Initialize return values
 
@@ -706,6 +707,8 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
 
   for (partId_t p=0; p < numParts; p++)
     if (obj[p] == 0) numNonemptyParts--;
+
+  env->debug(DETAILED_STATUS, "Exiting globalSumsByPart");
 }
 
 /*! \brief Compute the imbalance
@@ -992,6 +995,7 @@ template <typename scalar_t, typename lno_t>
     partId_t &numNonemptyParts,
     ArrayRCP<MetricValues<scalar_t> > &metrics)
 {
+  env->debug(DETAILED_STATUS, "Entering objectMetrics");
   ///////////////////////////////////////////////////////////////////////////
   // Get number of parts, and the number that are non-empty.
   // Get sums per part of objects, individual weights, and normed weight sums.
@@ -1015,6 +1019,8 @@ template <typename scalar_t, typename lno_t>
     psizes = partSizes[0].getRawPtr();
 
   scalar_t min, max, avg;
+
+  env->debug(DETAILED_STATUS, "  computeImbalances");
 
   computeImbalances<scalar_t>(numParts, targetNumParts, psizes, 
       metrics[0].getGlobalSum(), objCount, 
@@ -1040,6 +1046,8 @@ template <typename scalar_t, typename lno_t>
         psizesMultiple[vdim] = NULL;
     }
   
+    env->debug(DETAILED_STATUS, "  computeImbalances");
+
     computeImbalances<scalar_t>(numParts, targetNumParts, 
       vwgtDim, psizesMultiple.getRawPtr(),
       metrics[1].getGlobalSum(), wgts,
@@ -1062,6 +1070,8 @@ template <typename scalar_t, typename lno_t>
       if (partSizes[vdim].size() > 0)
         psizes = partSizes[vdim].getRawPtr();
 
+      env->debug(DETAILED_STATUS, "  computeImbalances");
+
       computeImbalances<scalar_t>(numParts, targetNumParts, psizes,
         metrics[next].getGlobalSum(), wgts,
         min, max, avg);
@@ -1072,6 +1082,7 @@ template <typename scalar_t, typename lno_t>
       next++;
     }
   }
+  env->debug(DETAILED_STATUS, "Exiting objectMetrics");
 }
 
 

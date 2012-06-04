@@ -562,29 +562,26 @@ template <typename Adapter>
 {
   // Did the caller define num_global_parts and/or num_local_parts?
 
+  const ParameterList &pl = env_->getParameters();
   size_t haveGlobalNumParts=0, haveLocalNumParts=0;
   int numLocal=0, numGlobal=0;
+  bool isSet;
+  double val;
 
-  const ParameterList *params = NULL;
-  if (env_->hasPartitioningParameters()){
-    const ParameterList &allParams = env_->getParameters();
-    const ParameterList &partitioningParams = allParams.sublist("partitioning");
-    params = &partitioningParams;
+  getParameterValue<double>(pl, "partitioning", "num_global_parts", isSet, val);
 
-    const int *entry1 = params->getPtr<int>(string("num_global_parts"));
-    const int *entry2 = params->getPtr<int>(string("num_local_parts"));
-  
-    if (entry1){
-      haveGlobalNumParts = 1;
-      numGlobal = *entry1;
-      nGlobalParts_ = gno_t(numGlobal);
-    }
-  
-    if (entry2){
-      haveLocalNumParts = 1;
-      numLocal = *entry2;
-      nLocalParts_ = scalar_t(numLocal);
-    }
+  if (isSet){
+    haveGlobalNumParts = 1;
+    numGlobal = static_cast<int>(val);
+    nGlobalParts_ = gno_t(numGlobal);
+  }
+
+  getParameterValue<double>(pl, "partitioning", "num_local_parts", isSet, val);
+
+  if (isSet){
+    haveLocalNumParts = 1;
+    numLocal = static_cast<int>(val);
+    nLocalParts_ = gno_t(numLocal);
   }
 
   try{
@@ -1101,6 +1098,7 @@ template <typename Adapter>
     ArrayRCP<const gno_t> &gnoList, ArrayRCP<partId_t> &partList,
     ArrayRCP<MetricValues<scalar_t> > &metrics) 
 {
+  env_->debug(DETAILED_STATUS, "Entering setParts");
   qualityMetrics_ = metrics;
 
   // We'll flag parts that are used, for calculation of nEmptyParts_.
@@ -1385,6 +1383,7 @@ template <typename Adapter>
   haveSolution_ = true;
 
   env_->memory("After Solution has processed algorithm's solution");
+  env_->debug(DETAILED_STATUS, "Exiting setParts");
 }
 
 template <typename Adapter>
@@ -1396,6 +1395,7 @@ template <typename Adapter>
 {
   env_->localInputAssertion(__FILE__, __LINE__, "no solution yet",
     haveSolution_, BASIC_ASSERTION);
+  env_->debug(DETAILED_STATUS, "Entering convertSolutionToImportList");
 
   int numProcs                = comm_->getSize();
   size_t localNumIds          = gids_.size();
@@ -1459,6 +1459,7 @@ template <typename Adapter>
       throw std::runtime_error("alltoallv 2");
     }
   }
+  env_->debug(DETAILED_STATUS, "Exiting convertSolutionToImportList");
   return imports.size();
 }
 

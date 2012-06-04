@@ -76,6 +76,7 @@ template <typename Adapter>
     ArrayRCP<double> &fractionLeft,
     partId_t &numPartsLeftHalf)
 {
+  env->debug(DETAILED_STATUS, string("Entering getFractionLeft"));
   partId_t numParts = part1 - part0 + 1;
   // TODO In LDRD, substitute call to machine model for
   // TODO computation of numPartsLeftHalf below.
@@ -104,6 +105,7 @@ template <typename Adapter>
       fractionLeft[wdim] /= total;
     }
   }
+  env->debug(DETAILED_STATUS, string("Exiting getFractionLeft"));
 }
 
 /*! \brief Choose a coordinate dimension for the next cut.
@@ -135,6 +137,7 @@ template <typename mvector_t>
     typename mvector_t::scalar_type &minCoord,      // output
     typename mvector_t::scalar_type &maxCoord)      // output
 {
+  env->debug(DETAILED_STATUS, string("Entering getCutDimension"));
   typedef typename mvector_t::scalar_type scalar_t;
   typedef typename mvector_t::local_ordinal_type lno_t;
 
@@ -213,6 +216,7 @@ template <typename mvector_t>
       maxCoord = max;
     }
   }
+  env->debug(DETAILED_STATUS, string("Exiting getCutDimension"));
 }
 
 /*! \brief Migrate coordinates and weights to new processes.
@@ -238,6 +242,7 @@ template <typename mvector_t>
     RCP<mvector_t> &vectors,    // on return is the new data
     int &leftNumProcs)          // on return is num procs with left data
 {
+  env->debug(DETAILED_STATUS, string("Entering migrateData"));
   typedef typename mvector_t::scalar_type scalar_t;
   typedef typename mvector_t::local_ordinal_type lno_t;
   typedef typename mvector_t::global_ordinal_type gno_t;
@@ -337,8 +342,6 @@ template <typename mvector_t>
   }
   Z2_FORWARD_EXCEPTIONS
 
-  env->memory("RCB migrate data");
-
   if (nobj > 0){
     delete [] sendBufView.getRawPtr();
     delete [] sendCountView.getRawPtr();
@@ -361,6 +364,7 @@ template <typename mvector_t>
   Z2_FORWARD_EXCEPTIONS
 
   vectors = rcp_const_cast<mvector_t>(newMultiVector);
+  env->debug(DETAILED_STATUS, string("Exiting migrateData"));
 }
 
 template <typename lno_t, typename scalar_t>
@@ -411,6 +415,7 @@ template <typename scalar_t>
    leftRightFlag &lrf,
    scalar_t &cutValue)
 {
+  env->debug(DETAILED_STATUS, string("Entering emptyPartsCheck"));
   // initialize return values
   lrf = leftFlag;
   cutValue = 0.0;
@@ -441,6 +446,7 @@ template <typename scalar_t>
     cutValue = maxCoord;
   }
 
+  env->debug(DETAILED_STATUS, string("Exiting emptyPartsCheck"));
   return true;
 }
 
@@ -471,6 +477,7 @@ template <typename lno_t, typename gno_t, typename scalar_t>
     ArrayView<unsigned char> lrFlags,
     scalar_t &globalWeightMovedRight)   // output
 {
+  env->debug(DETAILED_STATUS, string("Entering testCoordinatesOnRightBoundary"));
   int nprocs = comm->getSize();
   int rank = comm->getRank();
 
@@ -546,6 +553,7 @@ template <typename lno_t, typename gno_t, typename scalar_t>
   }
   Z2_THROW_OUTSIDE_ERROR(*env)
 
+  env->debug(DETAILED_STATUS, string("Exiting testCoordinatesOnRightBoundary"));
   return;
 }
 
@@ -662,7 +670,7 @@ template <typename mvector_t>
     info << coordGlobalMin << ", " << coordGlobalMax << "]";
     info << endl << "# test cuts " << numTestCuts;
     info << ", tolerance " << tolerance << endl;
-    env->debug(VERBOSE_DETAILED_STATUS, info.str());
+    env->debug(DETAILED_STATUS, info.str());
   }
 
   const scalar_t *coordValue = vectors->getData(cutDim).getRawPtr();
@@ -717,6 +725,7 @@ template <typename mvector_t>
   scalar_t min = coordGlobalMin;
   scalar_t max = coordGlobalMax;
   lno_t numRemaining = numCoords;
+  lno_t prevNumRemaining = numCoords;
   size_t sanityCheck = vectors->getGlobalLength();
 
   double totalWeight = 0;
@@ -761,7 +770,7 @@ template <typename mvector_t>
         int inRegion = 0;
         int idx = (useIndices ? index[i] : i);
         scalar_t value = coordValue[idx];
-  
+
         if (numRegions > 2){
        
           foundCut = std::lower_bound(
@@ -810,6 +819,33 @@ template <typename mvector_t>
         sums.getRawPtr(), globalSums.getRawPtr());
     }
     Z2_THROW_OUTSIDE_ERROR(*env)
+
+    if (env->doStatus()){
+      ostringstream info;
+      info << "  Region " << min << " - " << max << endl;
+      info << "  Remaining to classify: " << numRemaining << endl;
+      info << "  Boundaries: ";
+      for (int i=0; i < numBoundaries; i++)
+        info << boundaries[i] << " ";
+      info << endl << "  For searching: ";
+      for (int i=0; i < numBoundaries; i++)
+        info << searchBoundaries[i] << " ";
+      info << endl << "  Local sums: ";
+      double sumTotal=0;
+      for (int i=0; i < numSums; i++){
+        sumTotal == sums[i];
+        info << sums[i] << " ";
+      }
+      info << " total: " << sumTotal << endl;
+      info << endl << "  Global sums: ";
+      sumTotal=0;
+      for (int i=0; i < numSums; i++){
+        sumTotal == globalSums[i];
+        info << globalSums[i] << " ";
+      }
+      info << " total: " << sumTotal << endl;
+      env->debug(DETAILED_STATUS, info.str());
+    }
 
     if (totalWeight == 0){   // first time through only
 
@@ -892,22 +928,35 @@ template <typename mvector_t>
     if (diffLeftCut < diffRightCut){
       imbalance = diffLeftCut / target;
       if (imbalance <= tolerance){
+        env->debug(DETAILED_STATUS, "  Done, tolerance met");
         done = true;
         cutLocation--;
       }
     } 
     else{
       imbalance = diffRightCut / target;
-      if (imbalance <= tolerance)
+      if (imbalance <= tolerance){
+        env->debug(DETAILED_STATUS, "  Done, tolerance met");
         done = true;
+     }
     }
 
     bool cutLocIsRegion = (cutLocation % 2 == 1);
     bool cutLocIsBoundary = !cutLocIsRegion;
 
+    if (env->doStatus()){
+      ostringstream info;
+      info << "  Best cut location: " << cutLocation;
+      if (cutLocIsRegion) info << " just after a region." << endl;
+      else info << " just after a boundary." << endl;
+      env->debug(DETAILED_STATUS, info.str());
+    }
+
     if (!done && cutLocIsBoundary){
 
       done = true;    // can not divide space any more
+
+      env->debug(DETAILED_STATUS, "  Done, cutting at a region boundary");
 
       if (rectilinearBlocks){
         // Can not divide boundary points into two
@@ -1029,6 +1078,8 @@ template <typename mvector_t>
       msg << ossLeft.str() << endl << ossRight.str() << endl;
       env->debug(VERBOSE_DETAILED_STATUS, msg.str());
     }
+
+    prevNumRemaining = numRemaining;
   }  // while !done
 
   totalWeightRight = totalWeight - totalWeightLeft;
@@ -1093,6 +1144,7 @@ template <typename mvector_t, typename Adapter>
     typename mvector_t::scalar_type &weightRightHalf  // output
     )
 {
+  env->debug(DETAILED_STATUS, string("Entering determineCut"));
   typedef typename mvector_t::scalar_type scalar_t;
   typedef typename mvector_t::local_ordinal_type lno_t;
   typedef typename mvector_t::global_ordinal_type gno_t;
@@ -1188,6 +1240,7 @@ template <typename mvector_t, typename Adapter>
       weightLeftHalf = 0;
     }
 
+    env->debug(DETAILED_STATUS, string("Exiting determineCut"));
     return;
   }
 
@@ -1208,6 +1261,7 @@ template <typename mvector_t, typename Adapter>
       weightLeftHalf, weightRightHalf, localCountLeft, imbalance);
   }
   Z2_FORWARD_EXCEPTIONS
+  env->debug(DETAILED_STATUS, string("Exiting determineCut"));
 }
 
 
@@ -1247,6 +1301,7 @@ template <typename mvector_t, typename Adapter>
     partId_t part1,
     ArrayView<partId_t> partNum)   // output
 {
+  env->debug(DETAILED_STATUS, string("Entering serialRCB"));
   typedef typename mvector_t::scalar_type scalar_t;
   typedef typename mvector_t::local_ordinal_type lno_t;
 
@@ -1267,6 +1322,13 @@ template <typename mvector_t, typename Adapter>
     numLocalCoords = index.size();
   }
 
+  if (env->doStatus()){
+    ostringstream info;
+    info << "  Number of coordinates: " << numLocalCoords << endl;
+    info << "  Use index: " << useIndices << endl;
+    env->debug(DETAILED_STATUS, info.str());
+  }
+
   ///////////////////////////////////////////////////////
   // Are we done?
 
@@ -1278,6 +1340,7 @@ template <typename mvector_t, typename Adapter>
       for (lno_t i=0; i < numLocalCoords; i++)
         partNum[i] = part0;
 
+    env->debug(DETAILED_STATUS, string("Exiting serialRCB"));
     return;
   }
 
@@ -1334,6 +1397,7 @@ template <typename mvector_t, typename Adapter>
       }
       
       imbalance = 0.0;       // perfect
+      env->debug(DETAILED_STATUS, string("Exiting serialRCB"));
       return;
     }
   }
@@ -1420,6 +1484,7 @@ template <typename mvector_t, typename Adapter>
 
     delete [] newIndex;
   }
+  env->debug(DETAILED_STATUS, string("Exiting serialRCB"));
 }
 
 }// namespace Zoltan2
