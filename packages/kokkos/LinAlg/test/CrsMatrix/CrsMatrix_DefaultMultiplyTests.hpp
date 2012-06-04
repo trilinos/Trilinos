@@ -77,7 +77,7 @@
     out << "\n**\n** Can't submit the data twice\n**\n";
     {
       OPS dsm(node);
-      dsm.setGraphAndMatrix(G,A);
-      TEST_THROW( dsm.setGraphAndMatrix(G,A), std::runtime_error );
+      dsm.setGraphAndMatrix(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,G,A);
+      TEST_THROW( dsm.setGraphAndMatrix(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,G,A), std::runtime_error );
     }
   }

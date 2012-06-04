@@ -192,7 +192,7 @@ namespace {
     OPS::finalizeGraphAndMatrix(*G,*A,null);
     OPS dsm(node);
     out << "Testing with sparse ops: " << Teuchos::typeName(dsm) << std::endl;
-    dsm.setGraphAndMatrix(G,A);
+    dsm.setGraphAndMatrix(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,G,A);
 
     ArrayRCP<Scalar> xdat, axdat;
     xdat  = node->template allocBuffer<Scalar>(N);

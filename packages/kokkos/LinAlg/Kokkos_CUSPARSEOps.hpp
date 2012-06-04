@@ -54,41 +54,50 @@
 #include "Kokkos_NodeHelpers.hpp"
 #include "Kokkos_DefaultArithmetic.hpp"
 
+#include <cusparse_v2.h>
+
 namespace Kokkos {
+
+  namespace CUSPARSEdetails {
+    class CUSPARSEDestroyer {
+    public:
+      CUSPARSEDestroyer();
+      void free(void *ptr);
+    };
+    static RCP<cusparseHandle_t> session_handle;
+    void initCUSPARSEsession();
+  };
 
   //! \class CUSPARSECrsGraph
   /** \brief CRS sparse graph class supporting the CUSPARSE library.
   */
-  template <class Ordinal, 
-            class Node>
-  class CUSPARSECrsGraph : public CrsGraphBase<Ordinal,Node> 
+  template <class Node>
+  class CUSPARSECrsGraph : public CrsGraphBase<int,Node> 
   {
     public:
       CUSPARSECrsGraph(size_t numRows, const RCP<Node> &node, const RCP<ParameterList> &params);
       bool isEmpty() const;
       void setStructure(const ArrayRCP<const size_t>  &ptrs,
-                        const ArrayRCP<const Ordinal> &inds);
+                        const ArrayRCP<const int> &inds);
       inline ArrayRCP<const size_t> getPointers() const;
-      inline ArrayRCP<const Ordinal> getIndices() const;
+      inline ArrayRCP<const int>    getIndices() const;
       inline bool isInitialized() const;
     private:
       ArrayRCP<const size_t>  ptrs_;
-      ArrayRCP<const Ordinal> inds_;
+      ArrayRCP<const int> inds_;
       bool isInitialized_;
       bool isEmpty_;
-      // finish: what else?
   };
 
   //! \class CUSPARSECrsMatrix 
   /** \brief CRS sparse matrix class supporting the CUSPARSE library.
   */
   template <class Scalar, 
-            class Ordinal, 
             class Node> 
-  class CUSPARSECrsMatrix : public CrsMatrixBase<Scalar,Ordinal,Node> 
+  class CUSPARSECrsMatrix : public CrsMatrixBase<Scalar,int,Node> 
   {
     public:
-      CUSPARSECrsMatrix(const RCP<const CUSPARSECrsGraph<Ordinal,Node> > &graph, const RCP<ParameterList> &params);
+      CUSPARSECrsMatrix(const RCP<const CUSPARSECrsGraph<Node> > &graph, const RCP<ParameterList> &params);
       void setValues(const ArrayRCP<const Scalar> &vals);
       inline ArrayRCP<const Scalar> getValues() const;
       inline bool isInitialized() const;
@@ -97,8 +106,8 @@ namespace Kokkos {
       bool isInitialized_;
   };
 
-  template <class Ordinal, class Node>
-  CUSPARSECrsGraph<Ordinal,Node>::CUSPARSECrsGraph(size_t numRows, const RCP<Node> &node, const RCP<ParameterList> &params)
+  template <class Node>
+  CUSPARSECrsGraph<Node>::CUSPARSECrsGraph(size_t numRows, const RCP<Node> &node, const RCP<ParameterList> &params)
   : CrsGraphBase<Ordinal,Node>(numRows,node,params)
   , isInitialized_(false)
   , isEmpty_(false)
@@ -107,12 +116,12 @@ namespace Kokkos {
     Teuchos::CompileTimeAssert<Node::isHostNode == false> cta; (void)cta;
   }
 
-  template <class Ordinal, class Node>
-  bool CUSPARSECrsGraph<Ordinal,Node>::isEmpty() const
+  template <class Node>
+  bool CUSPARSECrsGraph<Node>::isEmpty() const
   { return isEmpty_; }
 
-  template <class Ordinal, class Node>
-  void CUSPARSECrsGraph<Ordinal,Node>::setStructure(
+  template <class Node>
+  void CUSPARSECrsGraph<Node>::setStructure(
                       const ArrayRCP<const size_t>  &ptrs,
                       const ArrayRCP<const Ordinal> &inds)
   {
@@ -135,20 +144,20 @@ namespace Kokkos {
     isInitialized_ = true;
   }
 
-  template <class Ordinal, class Node>
-  ArrayRCP<const size_t> CUSPARSECrsGraph<Ordinal,Node>::getPointers() const
+  template <class Node>
+  ArrayRCP<const size_t> CUSPARSECrsGraph<Node>::getPointers() const
   { return ptrs_; }
 
-  template <class Ordinal, class Node>
-  ArrayRCP<const Ordinal> CUSPARSECrsGraph<Ordinal,Node>::getIndices() const
+  template <class Node>
+  ArrayRCP<const Ordinal> CUSPARSECrsGraph<Node>::getIndices() const
   { return inds_; }
 
-  template <class Ordinal, class Node>
-  bool CUSPARSECrsGraph<Ordinal,Node>::isInitialized() const
+  template <class Node>
+  bool CUSPARSECrsGraph<Node>::isInitialized() const
   { return isInitialized_; }
 
-  template <class Scalar, class Ordinal, class Node>
-  CUSPARSECrsMatrix<Scalar,Ordinal,Node>::CUSPARSECrsMatrix(const RCP<const CUSPARSECrsGraph<Ordinal,Node> > &graph, const RCP<ParameterList> &params)
+  template <class Scalar, class Node>
+  CUSPARSECrsMatrix<Scalar,Node>::CUSPARSECrsMatrix(const RCP<const CUSPARSECrsGraph<Node> > &graph, const RCP<ParameterList> &params)
   : CrsMatrixBase<Scalar,Ordinal,Node>(graph,params) 
   , isInitialized_(false)
   {
@@ -156,8 +165,8 @@ namespace Kokkos {
     Teuchos::CompileTimeAssert<Node::isHostNode == false> cta; (void)cta;
   }
 
-  template <class Scalar, class Ordinal, class Node>
-  void CUSPARSECrsMatrix<Scalar,Ordinal,Node>::setValues(const ArrayRCP<const Scalar> &vals)
+  template <class Scalar, class Node>
+  void CUSPARSECrsMatrix<Scalar,Node>::setValues(const ArrayRCP<const Scalar> &vals)
   { 
     std::string tfecfFuncName("setValues(vals)");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -168,15 +177,13 @@ namespace Kokkos {
     isInitialized_ = true;
   }
 
-  template <class Scalar, class Ordinal, class Node>
-  ArrayRCP<const Scalar> CUSPARSECrsMatrix<Scalar,Ordinal,Node>::getValues() const
+  template <class Scalar, class Node>
+  ArrayRCP<const Scalar> CUSPARSECrsMatrix<Scalar,Node>::getValues() const
   { return vals_; }
 
-  template <class Scalar, class Ordinal, class Node>
-  bool CUSPARSECrsMatrix<Scalar,Ordinal,Node>::isInitialized() const
-  {
-    return isInitialized_;
-  }
+  template <class Scalar, class Node>
+  bool CUSPARSECrsMatrix<Scalar,Node>::isInitialized() const
+  { return isInitialized_; }
 
   /// \class CUSPARSEOps
   /// \brief Default implementation of sparse matrix-vector multiply
@@ -184,9 +191,8 @@ namespace Kokkos {
   /// \ingroup kokkos_crs_ops
   ///
   /// \tparam Scalar The type of entries of the sparse matrix.
-  /// \tparam Ordinal The type of (local) indices of the sparse matrix.
   /// \tparam Node The Kokkos Node type.
-  template <class Scalar, class Ordinal, class Node>
+  template <class Scalar, class Node>
   class CUSPARSEOps {
   public:
     //@{
@@ -195,22 +201,22 @@ namespace Kokkos {
     //! The type of the individual entries of the sparse matrix.
     typedef Scalar  scalar_type;
     //! The type of the (local) indices describing the structure of the sparse matrix.
-    typedef Ordinal ordinal_type;
+    typedef int     ordinal_type;
     //! The Kokkos Node type.
     typedef Node    node_type;
     //! The type of this object, the sparse operator object
-    typedef CUSPARSEOps<Scalar,Ordinal,Node> sparse_ops_type;
+    typedef CUSPARSEOps<Scalar,Node> sparse_ops_type;
 
     /** \brief Typedef for local graph class */
     template <class O, class N>
     struct graph {
-      typedef CUSPARSECrsGraph<O,N> graph_type;
+      typedef CUSPARSECrsGraph<N> graph_type;
     };
 
     /** \brief Typedef for local matrix class */
     template <class S, class O, class N>
     struct matrix {
-      typedef CUSPARSECrsMatrix<S,O,N> matrix_type;
+      typedef CUSPARSECrsMatrix<S,N> matrix_type;
     };
 
     /// \brief Sparse operations type for a different scalar type.
@@ -227,7 +233,7 @@ namespace Kokkos {
     /// \tparam S2 A scalar type possibly different from \c Scalar.
     template <class S2>
     struct bind_scalar {
-      typedef CUSPARSEOps<S2,Ordinal,Node> other_type;
+      typedef CUSPARSEOps<S2,Node> other_type;
     };
 
     //@}
@@ -260,16 +266,16 @@ namespace Kokkos {
     static ArrayRCP<T> allocStorage(const ArrayView<const size_t> &ptrs);
 
     //! Finalize a graph
-    static void finalizeGraph(CUSPARSECrsGraph<Ordinal,Node> &graph, const RCP<ParameterList> &params);
+    static void finalizeGraph(CUSPARSECrsGraph<Node> &graph, const RCP<ParameterList> &params);
 
     //! Finalize the matrix of an already-finalized graph.
-    static void finalizeMatrix(const CUSPARSECrsGraph<Ordinal,Node> &graph, CUSPARSECrsMatrix<Scalar,Ordinal,Node> &matrix, const RCP<ParameterList> &params);
+    static void finalizeMatrix(const CUSPARSECrsGraph<Node> &graph, CUSPARSECrsMatrix<Scalar,Node> &matrix, const RCP<ParameterList> &params);
     
     //! Finalize a graph and a matrix.
-    static void finalizeGraphAndMatrix(CUSPARSECrsGraph<Ordinal,Node> &graph, CUSPARSECrsMatrix<Scalar,Ordinal,Node> &matrix, const RCP<ParameterList> &params);
+    static void finalizeGraphAndMatrix(CUSPARSECrsGraph<Node> &graph, CUSPARSECrsMatrix<Scalar,Node> &matrix, const RCP<ParameterList> &params);
 
     //! Initialize sparse operations with a graph and matrix
-    void setGraphAndMatrix(const RCP<const CUSPARSECrsGraph<Ordinal,Node> > &graph, const RCP<const CUSPARSECrsMatrix<Scalar,Ordinal,Node> > &matrix);
+    void setGraphAndMatrix(const RCP<const CUSPARSECrsGraph<Node> > &graph, const RCP<const CUSPARSECrsMatrix<Scalar,Node> > &matrix);
 
     //@}
     //! @name Computational methods
@@ -381,20 +387,18 @@ namespace Kokkos {
     //! The Kokkos Node instance given to this object's constructor.
     RCP<Node> node_;
 
-    // we do this one of two ways:
-    // packed CRS: array of row pointers, array of indices, array of values.
-    ArrayRCP<const Ordinal> inds_;
-    ArrayRCP<const size_t>  ptrs_;
-    ArrayRCP<const Scalar>  vals_;
-
     size_t numRows_;
     bool isInitialized_;
-    bool isEmpty_; 
+           
+    RCP<cusparseHandle_t> session_handle_; // same as Kokkos::CUSPARSEdetails::session_handle
+    cusparseHybMat_t hybMat_;
+
+    cusparseSolveAnalysisInfo_t ctransSolveAnalysis_, transSolveAnalysis_, notransSolveAnalysis_;
   };
 
 
-  template <class Scalar, class Ordinal, class Node>
-  void CUSPARSEOps<Scalar,Ordinal,Node>::finalizeGraph(CUSPARSECrsGraph<Ordinal,Node> &graph, const RCP<ParameterList> &params)
+  template <class Scalar, class Node>
+  void CUSPARSEOps<Scalar,Node>::finalizeGraph(CUSPARSECrsGraph<Node> &graph, const RCP<ParameterList> &params)
   { 
     // nothing much to do here
     std::string FuncName("Kokkos::CUSPARSEOps::finalizeGraph(graph,params)");
@@ -404,8 +408,8 @@ namespace Kokkos {
     )
   }
 
-  template <class Scalar, class Ordinal, class Node>
-  void CUSPARSEOps<Scalar,Ordinal,Node>::finalizeMatrix(const CUSPARSECrsGraph<Ordinal,Node> &graph, CUSPARSECrsMatrix<Scalar,Ordinal,Node> &matrix, const RCP<ParameterList> &params)
+  template <class Scalar, class Node>
+  void CUSPARSEOps<Scalar,Node>::finalizeMatrix(const CUSPARSECrsGraph<Node> &graph, CUSPARSECrsMatrix<Scalar,Node> &matrix, const RCP<ParameterList> &params)
   { 
     // nothing much to do here
     std::string FuncName("Kokkos::CUSPARSEOps::finalizeMatrix(graph,matrix,params)");
@@ -415,8 +419,8 @@ namespace Kokkos {
     )
   }
 
-  template <class Scalar, class Ordinal, class Node>
-  void CUSPARSEOps<Scalar,Ordinal,Node>::finalizeGraphAndMatrix(CUSPARSECrsGraph<Ordinal,Node> &graph, CUSPARSECrsMatrix<Scalar,Ordinal,Node> &matrix, const RCP<ParameterList> &params)
+  template <class Scalar, class Node>
+  void CUSPARSEOps<Scalar,Node>::finalizeGraphAndMatrix(CUSPARSECrsGraph<Node> &graph, CUSPARSECrsMatrix<Scalar,Node> &matrix, const RCP<ParameterList> &params)
   { 
     // nothing much to do here
     std::string FuncName("Kokkos::CUSPARSEOps::finalizeGraphAndMatrix(graph,matrix,params)");
@@ -431,8 +435,8 @@ namespace Kokkos {
   }
 
 
-  template<class Scalar, class Ordinal, class Node>
-  CUSPARSEOps<Scalar,Ordinal,Node>::CUSPARSEOps(const RCP<Node> &node)
+  template<class Scalar, class Node>
+  CUSPARSEOps<Scalar,Node>::CUSPARSEOps(const RCP<Node> &node)
   : node_(node)
   , numRows_(0)
   , isInitialized_(false)
@@ -444,17 +448,21 @@ namespace Kokkos {
     Teuchos::CompileTimeAssert<Node::isHostNode == false> cta; (void)cta;
   }
 
-  template<class Scalar, class Ordinal, class Node>
-  CUSPARSEOps<Scalar,Ordinal,Node>::~CUSPARSEOps() {
+  template<class Scalar, class Node>
+  CUSPARSEOps<Scalar,Node>::~CUSPARSEOps() 
+  {
+    if (hybMat_) {
+      cusparseDestroyHybMat(hybMat_);
+    }
   }
 
-  template <class Scalar, class Ordinal, class Node>
-  RCP<Node> CUSPARSEOps<Scalar,Ordinal,Node>::getNode() const {
+  template <class Scalar, class Node>
+  RCP<Node> CUSPARSEOps<Scalar,Node>::getNode() const {
     return node_;
   }
 
-  template <class Scalar, class Ordinal, class Node>
-  void CUSPARSEOps<Scalar,Ordinal,Node>::setGraphAndMatrix(const RCP<const CUSPARSECrsGraph<Ordinal,Node> > &graph, const RCP<const CUSPARSECrsMatrix<Scalar,Ordinal,Node> > &matrix)
+  template <class Scalar, class Node>
+  void CUSPARSEOps<Scalar,Node>::setGraphAndMatrix(const RCP<const CUSPARSECrsGraph<Node> > &graph, const RCP<const CUSPARSECrsMatrix<Scalar,Node> > &matrix)
   {
     std::string tfecfFuncName("setGraphAndMatrix(graph,matrix)");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -478,84 +486,20 @@ namespace Kokkos {
     isInitialized_ = true;
   }
 
-  template <class Scalar, class Ordinal, class Node>
+  template <class Scalar, class Node>
   template <class DomainScalar, class RangeScalar>
-  void CUSPARSEOps<Scalar,Ordinal,Node>::solve(
+  void CUSPARSEOps<Scalar,Node>::solve(
                       Teuchos::ETransp trans, Teuchos::EUplo uplo, Teuchos::EDiag diag,
                       const MultiVector<DomainScalar,Node> &Y,
                             MultiVector< RangeScalar,Node> &X) const
   {
     std::string tfecfFuncName("solve(trans,uplo,diag,Y,X)");
-    typedef DefaultSparseSolveOp<Scalar,Ordinal,DomainScalar,RangeScalar>            Op;
-    typedef DefaultSparseTransposeSolveOp<Scalar,Ordinal,DomainScalar,RangeScalar>  TOp;
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        isInitialized_ == false,
-        std::runtime_error, " this solve was not fully initialized."
-    );
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        X.getNumCols() != Y.getNumCols(), 
-        std::runtime_error, " Left hand side and right hand side multivectors have differing numbers of vectors."
-    );
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        X.getNumRows() < numRows_, 
-        std::runtime_error, " Left-hand-side multivector does not have enough rows. "
-                            "Likely cause is that the column map was not provided to "
-                            "the Tpetra::CrsMatrix in the case of an implicit unit diagonal."
-    );
-
-    ReadyBufferHelper<Node> rbh(node_);
-    if (numRows_ == 0) {
-      // null op
-    }
-    else if (isEmpty_) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(diag != Teuchos::UNIT_DIAG, std::runtime_error,
-          " solve of empty matrix only valid for an implicit unit diagonal.");
-      // solve I * X = Y for X = Y
-      DefaultArithmetic<MultiVector<RangeScalar,Node> >::Assign(X,Y);
-    }
-    else {
-      if (trans == Teuchos::NO_TRANS) {
-        Op wdp;
-        rbh.begin();
-        wdp.x       = rbh.template addNonConstBuffer<DomainScalar>(X.getValuesNonConst());
-        wdp.y       = rbh.template addConstBuffer<RangeScalar>(Y.getValues());
-        wdp.ptrs    = rbh.template addConstBuffer<     size_t>(ptrs_);
-        wdp.inds    = rbh.template addConstBuffer<    Ordinal>(inds_);
-        wdp.vals    = rbh.template addConstBuffer<     Scalar>(vals_);
-        rbh.end();
-        wdp.numRows = numRows_;
-        wdp.unitDiag = (diag == Teuchos::UNIT_DIAG ? true : false);
-        wdp.upper    = (uplo == Teuchos::UPPER_TRI ? true : false);
-        wdp.xstride = X.getStride();
-        wdp.ystride = Y.getStride();
-        wdp.numRHS  = X.getNumCols();
-        // no parallel for you
-        wdp.execute();
-      }
-      else {
-        TOp wdp;
-        rbh.begin();
-        wdp.x       = rbh.template addNonConstBuffer<DomainScalar>(X.getValuesNonConst());
-        wdp.y       = rbh.template addConstBuffer<RangeScalar>(Y.getValues());
-        wdp.ptrs    = rbh.template addConstBuffer<     size_t>(ptrs_);
-        wdp.inds    = rbh.template addConstBuffer<    Ordinal>(inds_);
-        wdp.vals    = rbh.template addConstBuffer<     Scalar>(vals_);
-        rbh.end();
-        wdp.numRows = numRows_;
-        wdp.unitDiag = (diag == Teuchos::UNIT_DIAG ? true : false);
-        wdp.upper    = (uplo == Teuchos::UPPER_TRI ? true : false);
-        wdp.xstride = X.getStride();
-        wdp.ystride = Y.getStride();
-        wdp.numRHS  = X.getNumCols();
-        // no parallel for you
-        wdp.execute();
-      }
-    }
+    TEST_FOR_EXCEPT(true)
     return;
   }
 
 
-  template <class Scalar, class Ordinal, class Node>
+  template <class Scalar, class Node>
   template <class DomainScalar, class RangeScalar>
   void CUSPARSEOps<Scalar,Ordinal,Node>::multiply(
                                 Teuchos::ETransp trans,
@@ -564,65 +508,12 @@ namespace Kokkos {
                                       MultiVector<RangeScalar ,Node> &Y) const 
   {
     std::string tfecfFuncName("multiply(trans,alpha,X,Y)");
-    // the 1 template parameter below means that beta is not used in computations
-    // and the output multivector enjoys overwrite semantics (i.e., will overwrite data/NaNs in Y)
-    typedef DefaultSparseMultiplyOp<         Scalar,Ordinal,DomainScalar,RangeScalar, 1>  Op;
-    typedef DefaultSparseTransposeMultiplyOp<Scalar,Ordinal,DomainScalar,RangeScalar, 1> TOp;
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        isInitialized_ == false,
-        std::runtime_error, " sparse ops not initialized.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        X.getNumCols() != Y.getNumCols(),
-        std::runtime_error, " X and Y do not have the same number of columns.");
-    ReadyBufferHelper<Node> rbh(node_);
-    if (isEmpty_ == true) {
-      // Y <= 0 * X
-      //   <= 0
-      DefaultArithmetic<MultiVector<RangeScalar,Node> >::Init(Y,Teuchos::ScalarTraits<RangeScalar>::zero());
-    }
-    else {
-      if (trans == Teuchos::NO_TRANS) {
-        Op wdp;
-        rbh.begin();
-        wdp.alpha   = alpha;
-        wdp.beta    = Teuchos::ScalarTraits<RangeScalar>::zero(); // not used
-        wdp.numRows = numRows_;
-        wdp.y       = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
-        wdp.x       = rbh.template addConstBuffer<DomainScalar>(X.getValues());
-        wdp.ptrs    = rbh.template addConstBuffer<      size_t>(ptrs_);
-        wdp.inds    = rbh.template addConstBuffer<     Ordinal>(inds_);
-        wdp.vals    = rbh.template addConstBuffer<      Scalar>(vals_);
-        wdp.xstride = X.getStride();
-        wdp.ystride = Y.getStride();
-        wdp.numRHS  = X.getNumCols();
-        rbh.end();
-        node_->template parallel_for<Op>(0,numRows_,wdp);
-      }
-      else {
-        TOp wdp;
-        rbh.begin();
-        wdp.alpha   = alpha;
-        wdp.beta    = Teuchos::ScalarTraits<RangeScalar>::zero(); // not used
-        wdp.numRows = numRows_;
-        wdp.numCols = Y.getNumRows();
-        wdp.y       = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
-        wdp.x       = rbh.template addConstBuffer<DomainScalar>(X.getValues());
-        wdp.ptrs    = rbh.template addConstBuffer<      size_t>(ptrs_);
-        wdp.inds    = rbh.template addConstBuffer<     Ordinal>(inds_);
-        wdp.vals    = rbh.template addConstBuffer<      Scalar>(vals_);
-        wdp.xstride = X.getStride();
-        wdp.ystride = Y.getStride();
-        wdp.numRHS  = X.getNumCols();
-        rbh.end();
-        // no parallel for you
-        wdp.execute();
-      }
-    }
+    TEST_FOR_EXCEPT(true)
     return;
   }
 
 
-  template <class Scalar, class Ordinal, class Node>
+  template <class Scalar, class Node>
   template <class DomainScalar, class RangeScalar>
   void CUSPARSEOps<Scalar,Ordinal,Node>::multiply(
                                 Teuchos::ETransp trans,
@@ -630,69 +521,13 @@ namespace Kokkos {
                                 RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const
   {
     std::string tfecfFuncName("multiply(trans,alpha,X,beta,Y)");
-    // the 0 template parameter below means that beta is used in computations
-    // and the output multivector enjoys accumulation semantics (i.e., will not overwrite data/NaNs in Y)
-    typedef DefaultSparseMultiplyOp<         Scalar,Ordinal,DomainScalar,RangeScalar, 0>  Op;
-    typedef DefaultSparseTransposeMultiplyOp<Scalar,Ordinal,DomainScalar,RangeScalar, 0> TOp;
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        isInitialized_ == false,
-        std::runtime_error, " sparse ops not initialized.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        X.getNumCols() != Y.getNumCols(),
-        std::runtime_error, " X and Y do not have the same number of columns.");
-    ReadyBufferHelper<Node> rbh(node_);
-    if (isEmpty_ == true) {
-      // Y <= alpha * 0 * X + beta * Y
-      //   <= beta * Y
-      // NOTE: this neglects NaNs in X, which don't satisfy 0*NaN == 0
-      //       however, X and Y may be of different size, and we need entries to determine how to mix those potential NaNs in X into Y
-      //       therefore, the best we can do is scale Y to zero. Setting Y to zero would destroy NaNs in Y, which violates the semantics of the call.
-      DefaultArithmetic<MultiVector<RangeScalar,Node> >::Scale(Y,beta);
-    }
-    else {
-      if (trans == Teuchos::NO_TRANS) {
-        Op wdp;
-        rbh.begin();
-        wdp.alpha   = alpha;
-        wdp.beta    = beta;
-        wdp.numRows = numRows_;
-        wdp.y       = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
-        wdp.x       = rbh.template addConstBuffer<DomainScalar>(X.getValues());
-        wdp.ptrs    = rbh.template addConstBuffer<      size_t>(ptrs_);
-        wdp.inds    = rbh.template addConstBuffer<     Ordinal>(inds_);
-        wdp.vals    = rbh.template addConstBuffer<      Scalar>(vals_);
-        wdp.xstride = X.getStride();
-        wdp.ystride = Y.getStride();
-        wdp.numRHS  = X.getNumCols();
-        rbh.end();
-        node_->template parallel_for<Op>(0,numRows_,wdp);
-      }
-      else {
-        TOp wdp;
-        rbh.begin();
-        wdp.alpha   = alpha;
-        wdp.beta    = beta;
-        wdp.numRows = numRows_;
-        wdp.numCols = Y.getNumRows();
-        wdp.y       = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
-        wdp.x       = rbh.template addConstBuffer<DomainScalar>(X.getValues());
-        wdp.ptrs    = rbh.template addConstBuffer<      size_t>(ptrs_);
-        wdp.inds    = rbh.template addConstBuffer<     Ordinal>(inds_);
-        wdp.vals    = rbh.template addConstBuffer<      Scalar>(vals_);
-        wdp.xstride = X.getStride();
-        wdp.ystride = Y.getStride();
-        wdp.numRHS  = X.getNumCols();
-        rbh.end();
-        // no parallel for you
-        wdp.execute();
-      }
-    }
+    TEST_FOR_EXCEPT(true)
     return;
   }
 
 
   // ======= pointer allocation ===========
-  template <class Scalar, class Ordinal, class Node>
+  template <class Scalar, class Node>
   ArrayRCP<size_t> 
   CUSPARSEOps<Scalar,Ordinal,Node>::allocRowPtrs(const ArrayView<const size_t> &numEntriesPerRow) 
   {
@@ -703,7 +538,7 @@ namespace Kokkos {
   }
 
   // ======= other allocation ===========
-  template <class Scalar, class Ordinal, class Node>
+  template <class Scalar, class Node>
   template <class T>
   ArrayRCP<T> 
   CUSPARSEOps<Scalar,Ordinal,Node>::allocStorage(const ArrayView<const size_t> &rowPtrs)
@@ -719,4 +554,3 @@ namespace Kokkos {
 } // namespace Kokkos
 
 #endif /* KOKKOS_CUSPARSEOPS_HPP */
-

@@ -1763,8 +1763,14 @@ namespace Tpetra {
     else {
       fillLocalMatrix(params);
     }
+    //
+    Teuchos::EDiag diag = ( getNodeNumDiags() < getNodeNumRows() ? Teuchos::UNIT_DIAG : Teuchos::NON_UNIT_DIAG );
+    Teuchos::EUplo uplo = Teuchos::UNDEF_TRI;
+    if (isUpperTriangular()) uplo = Teuchos::UPPER_TRI;
+    else if (isLowerTriangular()) uplo = Teuchos::LOWER_TRI;
+    //
     lclMatOps_ = rcp(new sparse_ops_type(getNode()));
-    lclMatOps_->setGraphAndMatrix(staticGraph_->getLocalGraph(), lclMatrix_);
+    lclMatOps_->setGraphAndMatrix(uplo,diag,staticGraph_->getLocalGraph(), lclMatrix_);
     // Now we're fill complete!
     fillComplete_ = true;
 
@@ -1889,22 +1895,11 @@ namespace Tpetra {
 #endif
     //
     // Call the solve
-    Teuchos::EDiag diag = ( getNodeNumDiags() < getNodeNumRows() ? Teuchos::UNIT_DIAG : Teuchos::NON_UNIT_DIAG );
     if (mode == Teuchos::NO_TRANS) {
-      if (isUpperTriangular()) {
-        lclMatOps_->template solve<DomainScalar,RangeScalar>(Teuchos::NO_TRANS, Teuchos::UPPER_TRI, diag, *lclY, *lclX);
-      }
-      else {
-        lclMatOps_->template solve<DomainScalar,RangeScalar>(Teuchos::NO_TRANS, Teuchos::LOWER_TRI, diag, *lclY, *lclX);
-      }
+      lclMatOps_->template solve<DomainScalar,RangeScalar>(Teuchos::NO_TRANS, *lclY, *lclX);
     }
     else {
-      if (isUpperTriangular()) {
-        lclMatOps_->template solve<DomainScalar,RangeScalar>(Teuchos::CONJ_TRANS, Teuchos::UPPER_TRI, diag, *lclY, *lclX);
-      }
-      else {
-        lclMatOps_->template solve<DomainScalar,RangeScalar>(Teuchos::CONJ_TRANS, Teuchos::LOWER_TRI, diag, *lclY, *lclX);
-      }
+      lclMatOps_->template solve<DomainScalar,RangeScalar>(Teuchos::CONJ_TRANS, *lclY, *lclX);
     }
   }
 

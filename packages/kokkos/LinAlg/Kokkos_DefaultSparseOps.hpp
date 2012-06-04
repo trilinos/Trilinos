@@ -270,7 +270,16 @@ namespace Kokkos {
     static void finalizeGraphAndMatrix(DefaultCrsGraph<Ordinal,Node> &graph, DefaultCrsMatrix<Scalar,Ordinal,Node> &matrix, const RCP<ParameterList> &params);
 
     //! Initialize sparse operations with a graph and matrix
-    void setGraphAndMatrix(const RCP<const DefaultCrsGraph<Ordinal,Node> > &graph, const RCP<const DefaultCrsMatrix<Scalar,Ordinal,Node> > &matrix);
+    ///
+    /// \param uplo [in] UPPER_TRI if the matrix is upper triangular,
+    ///   else LOWER_TRI if the matrix is lower triangular.
+    ///
+    /// \param diag [in] UNIT_DIAG if the matrix has an implicit unit diagonal,
+    ///   else NON_UNIT_DIAG (diagonal entries are explicitly stored in the matrix).
+    ///
+    void setGraphAndMatrix(Teuchos::EUplo uplo, Teuchos::EDiag diag, 
+                           const RCP<const DefaultCrsGraph<Ordinal,Node> > &graph, 
+                           const RCP<const DefaultCrsMatrix<Scalar,Ordinal,Node> > &matrix);
 
     //@}
     //! @name Computational methods
@@ -356,20 +365,12 @@ namespace Kokkos {
     /// \param trans [in] Whether to solve with the matrix, its
     ///   transpose, or its conjugate transpose (if applicable).
     ///
-    /// \param uplo [in] UPPER_TRI if the matrix is upper triangular,
-    ///   else LOWER_TRI if the matrix is lower triangular.
-    ///
-    /// \param diag [in] UNIT_DIAG if the matrix has an implicit unit diagonal,
-    ///   else NON_UNIT_DIAG (diagonal entries are explicitly stored in the matrix).
-    ///
     /// \param Y [in] Input multivector.
     ///
     /// \param X [out] Result multivector.
     template <class DomainScalar, class RangeScalar>
     void
     solve (Teuchos::ETransp trans,
-           Teuchos::EUplo uplo,
-           Teuchos::EDiag diag,
            const MultiVector<DomainScalar,Node> &Y,
            MultiVector<RangeScalar,Node> &X) const;
 
@@ -387,6 +388,9 @@ namespace Kokkos {
     ArrayRCP<const Ordinal> inds_;
     ArrayRCP<const size_t>  ptrs_;
     ArrayRCP<const Scalar>  vals_;
+
+    Teuchos::EUplo  tri_uplo_; 
+    Teuchos::EDiag unit_diag_;
 
     size_t numRows_;
     bool isInitialized_;
@@ -455,21 +459,26 @@ namespace Kokkos {
   }
 
   template <class Scalar, class Ordinal, class Node>
-  void DefaultHostSparseOps<Scalar,Ordinal,Node>::setGraphAndMatrix(const RCP<const DefaultCrsGraph<Ordinal,Node> > &graph, const RCP<const DefaultCrsMatrix<Scalar,Ordinal,Node> > &matrix)
+  void DefaultHostSparseOps<Scalar,Ordinal,Node>::setGraphAndMatrix(
+              Teuchos::EUplo uplo, Teuchos::EDiag diag, 
+              const RCP<const DefaultCrsGraph<Ordinal,Node> > &opgraph, 
+              const RCP<const DefaultCrsMatrix<Scalar,Ordinal,Node> > &opmatrix)
   {
-    std::string tfecfFuncName("setGraphAndMatrix(graph,matrix)");
+    tri_uplo_  = uplo;
+    unit_diag_ = diag;
+    std::string tfecfFuncName("setGraphAndMatrix(uplo,diag,graph,matrix)");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         isInitialized_ == true, 
         std::runtime_error, " operators already initialized.");
-    numRows_ = graph->getNumRows();
-    if (graph->isEmpty() || numRows_ == 0) {
+    numRows_ = opgraph->getNumRows();
+    if (opgraph->isEmpty() || numRows_ == 0) {
       isEmpty_ = true;
     }
     else {
       isEmpty_ = false;
-      ptrs_ = graph->getPointers();
-      inds_ = graph->getIndices();
-      vals_ = matrix->getValues();
+      ptrs_ = opgraph->getPointers();
+      inds_ = opgraph->getIndices();
+      vals_ = opmatrix->getValues();
       // these checks just about the most that we can perform
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( 
           (size_t)ptrs_.size() != numRows_+1 
@@ -481,12 +490,11 @@ namespace Kokkos {
 
   template <class Scalar, class Ordinal, class Node>
   template <class DomainScalar, class RangeScalar>
-  void DefaultHostSparseOps<Scalar,Ordinal,Node>::solve(
-                      Teuchos::ETransp trans, Teuchos::EUplo uplo, Teuchos::EDiag diag,
-                      const MultiVector<DomainScalar,Node> &Y,
-                            MultiVector< RangeScalar,Node> &X) const
+  void DefaultHostSparseOps<Scalar,Ordinal,Node>::solve(Teuchos::ETransp trans,
+                                                        const MultiVector<DomainScalar,Node> &Y,
+                                                              MultiVector< RangeScalar,Node> &X) const
   {
-    std::string tfecfFuncName("solve(trans,uplo,diag,Y,X)");
+    std::string tfecfFuncName("solve(trans,Y,X)");
     typedef DefaultSparseSolveOp<Scalar,Ordinal,DomainScalar,RangeScalar>            Op;
     typedef DefaultSparseTransposeSolveOp<Scalar,Ordinal,DomainScalar,RangeScalar>  TOp;
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -509,7 +517,7 @@ namespace Kokkos {
       // null op
     }
     else if (isEmpty_) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(diag != Teuchos::UNIT_DIAG, std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(unit_diag_ != Teuchos::UNIT_DIAG, std::runtime_error,
           " solve of empty matrix only valid for an implicit unit diagonal.");
       // solve I * X = Y for X = Y
       DefaultArithmetic<MultiVector<RangeScalar,Node> >::Assign(X,Y);
@@ -525,8 +533,8 @@ namespace Kokkos {
         wdp.vals    = rbh.template addConstBuffer<     Scalar>(vals_);
         rbh.end();
         wdp.numRows = numRows_;
-        wdp.unitDiag = (diag == Teuchos::UNIT_DIAG ? true : false);
-        wdp.upper    = (uplo == Teuchos::UPPER_TRI ? true : false);
+        wdp.unitDiag = (unit_diag_ == Teuchos::UNIT_DIAG ? true : false);
+        wdp.upper    = ( tri_uplo_ == Teuchos::UPPER_TRI ? true : false);
         wdp.xstride = X.getStride();
         wdp.ystride = Y.getStride();
         wdp.numRHS  = X.getNumCols();
@@ -543,8 +551,8 @@ namespace Kokkos {
         wdp.vals    = rbh.template addConstBuffer<     Scalar>(vals_);
         rbh.end();
         wdp.numRows = numRows_;
-        wdp.unitDiag = (diag == Teuchos::UNIT_DIAG ? true : false);
-        wdp.upper    = (uplo == Teuchos::UPPER_TRI ? true : false);
+        wdp.unitDiag = (unit_diag_ == Teuchos::UNIT_DIAG ? true : false);
+        wdp.upper    = ( tri_uplo_ == Teuchos::UPPER_TRI ? true : false);
         wdp.xstride = X.getStride();
         wdp.ystride = Y.getStride();
         wdp.numRHS  = X.getNumCols();

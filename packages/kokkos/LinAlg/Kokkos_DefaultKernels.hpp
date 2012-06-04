@@ -88,23 +88,18 @@ namespace Kokkos {
       For ThrustGPUNode, defaults are the same as in general, except that the default sparse ops should be provided by 
       DefaultDeviceSparseOps.
    */
-// #ifdef HAVE_KOKKOS_CUSP
-//   class ThrustGPUNode;
-//   template <class Scalar, class Ordinal>
-//   struct DefaultKernels<Scalar,Ordinal,ThrustGPUNode> {
-//     typedef CuspSparseOps<void  ,Ordinal,ThrustGPUNode>           SparseOps;
-//     typedef DefaultBlockSparseOps <Scalar,Ordinal,ThrustGPUNode>  BlockSparseOps;
-//     typedef DefaultRelaxation     <Scalar,Ordinal,ThrustGPUNode>  Relaxations;
-//   };
-// #else
-//   class ThrustGPUNode;
-//   template <class Scalar, class Ordinal>
-//   struct DefaultKernels<Scalar,Ordinal,ThrustGPUNode> {
-//     typedef CUDASparseOps<void  ,Ordinal,ThrustGPUNode>           SparseOps;
-//     typedef DefaultBlockSparseOps <Scalar,Ordinal,ThrustGPUNode>  BlockSparseOps;
-//     typedef DefaultRelaxation     <Scalar,Ordinal,ThrustGPUNode>  Relaxations;
-//   };
-// #endif
+   class ThrustGPUNode;
+   template <class Scalar, class Ordinal>
+   struct DefaultKernels<Scalar,Ordinal,ThrustGPUNode> {
+     // empty == fail
+   };
+#ifdef HAVE_KOKKOS_CUSPARSE
+   template <class Scalar>
+   struct DefaultKernels<Scalar,int,ThrustGPUNode> {
+     typedef CUSPARSEOps<void,int,ThrustGPUNode> SparseOps;
+   };
+#else
+#endif
 
 }
 

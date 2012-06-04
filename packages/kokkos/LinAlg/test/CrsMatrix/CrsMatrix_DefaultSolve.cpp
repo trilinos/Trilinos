@@ -196,7 +196,7 @@ namespace {
     OPS::finalizeGraphAndMatrix(*G,*A,null);
     OPS dsm(node);
     out << "Testing with sparse ops: " << Teuchos::typeName(dsm) << std::endl;
-    dsm.setGraphAndMatrix(G,A);
+    dsm.setGraphAndMatrix(Teuchos::LOWER_TRI,Teuchos::NON_UNIT_DIAG,G,A);
 
     // A is the identity, which allows us to easily test transpose and non-transpose, upper and lower tri
     ArrayRCP<Scalar> ydat, x1dat, x3dat;
@@ -209,9 +209,9 @@ namespace {
     X3.initializeValues(N,1,x3dat,N);
     // solve A*X=Y
     DefaultArithmetic<MV>::Init(Y,1);
-    dsm.solve(Teuchos::NO_TRANS,Teuchos::LOWER_TRI,Teuchos::NON_UNIT_DIAG,Y,X1);
+    dsm.solve(Teuchos::NO_TRANS,Y,X1);
     TEST_DATA_FOR_ONES(x1dat)
-    dsm.solve(Teuchos::CONJ_TRANS,Teuchos::LOWER_TRI,Teuchos::NON_UNIT_DIAG,Y,X3);
+    dsm.solve(Teuchos::CONJ_TRANS,Y,X3);
     TEST_DATA_FOR_ONES(x3dat)
   }
 
@@ -262,7 +262,7 @@ namespace {
     OPS::finalizeGraphAndMatrix(*G,*A,null);
     OPS dsm(node);
     out << "Testing with sparse ops: " << Teuchos::typeName(dsm) << std::endl;
-    dsm.setGraphAndMatrix(G,A);
+    dsm.setGraphAndMatrix(Teuchos::LOWER_TRI,Teuchos::UNIT_DIAG,G,A);
 
     // A is the identity, which allows us to easily test transpose and non-transpose, upper and lower tri
     ArrayRCP<Scalar> ydat, x1dat, x3dat;
@@ -275,9 +275,9 @@ namespace {
     X3.initializeValues(N,1,x3dat,N);
     // solve A*X=Y
     DefaultArithmetic<MV>::Init(Y,1);
-    dsm.solve(Teuchos::NO_TRANS,Teuchos::LOWER_TRI,Teuchos::UNIT_DIAG,Y,X1);
+    dsm.solve(Teuchos::NO_TRANS,Y,X1);
     TEST_DATA_FOR_ONES(x1dat)
-    dsm.solve(Teuchos::CONJ_TRANS,Teuchos::LOWER_TRI,Teuchos::UNIT_DIAG,Y,X3);
+    dsm.solve(Teuchos::CONJ_TRANS,Y,X3);
     TEST_DATA_FOR_ONES(x3dat)
   }
 
@@ -330,7 +330,7 @@ namespace {
     OPS::finalizeGraphAndMatrix(*G,*A,null);
     OPS dsm(node);
     out << "Testing with sparse ops: " << Teuchos::typeName(dsm) << std::endl;
-    dsm.setGraphAndMatrix(G,A);
+    dsm.setGraphAndMatrix(Teuchos::UPPER_TRI,Teuchos::NON_UNIT_DIAG,G,A);
 
     // A is the identity, which allows us to easily test transpose and non-transpose, upper and lower tri
     ArrayRCP<Scalar> ydat, x1dat, x3dat;
@@ -343,9 +343,9 @@ namespace {
     X3.initializeValues(N,1,x3dat,N);
     // solve A*X=Y
     DefaultArithmetic<MV>::Init(Y,1);
-    dsm.solve(Teuchos::NO_TRANS,Teuchos::UPPER_TRI,Teuchos::NON_UNIT_DIAG,Y,X1);
+    dsm.solve(Teuchos::NO_TRANS,Y,X1);
     TEST_DATA_FOR_ONES(x1dat)
-    dsm.solve(Teuchos::CONJ_TRANS,Teuchos::UPPER_TRI,Teuchos::NON_UNIT_DIAG,Y,X3);
+    dsm.solve(Teuchos::CONJ_TRANS,Y,X3);
     TEST_DATA_FOR_ONES(x3dat)
   }
 
@@ -396,7 +396,7 @@ namespace {
     OPS::finalizeGraphAndMatrix(*G,*A,null);
     OPS dsm(node);
     out << "Testing with sparse ops: " << Teuchos::typeName(dsm) << std::endl;
-    dsm.setGraphAndMatrix(G,A);
+    dsm.setGraphAndMatrix(Teuchos::UPPER_TRI,Teuchos::UNIT_DIAG,G,A);
 
     // A is the identity, which allows us to easily test transpose and non-transpose, upper and lower tri
     ArrayRCP<Scalar> ydat, x1dat, x3dat;
@@ -409,9 +409,9 @@ namespace {
     X3.initializeValues(N,1,x3dat,N);
     // solve A*X=Y
     DefaultArithmetic<MV>::Init(Y,1);
-    dsm.solve(Teuchos::NO_TRANS,Teuchos::UPPER_TRI,Teuchos::UNIT_DIAG,Y,X1);
+    dsm.solve(Teuchos::NO_TRANS,Y,X1);
     TEST_DATA_FOR_ONES(x1dat)
-    dsm.solve(Teuchos::CONJ_TRANS,Teuchos::UPPER_TRI,Teuchos::UNIT_DIAG,Y,X3);
+    dsm.solve(Teuchos::CONJ_TRANS,Y,X3);
     TEST_DATA_FOR_ONES(x3dat)
   }
 
