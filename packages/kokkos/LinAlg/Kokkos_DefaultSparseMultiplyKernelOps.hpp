@@ -68,7 +68,6 @@ namespace Kokkos {
     RangeScalar         *y;
     size_t numRHS, xstride, ystride;
 
-    // TODO: cgb: this code needs review for efficiency
     inline KERNEL_PREFIX void execute(size_t row) {
       const Scalar  *v = vals + ptrs[row];
       const Ordinal *i = inds + ptrs[row],

@@ -41,18 +41,18 @@
 //@HEADER
 */
 
-#include "KokkosExamples_DummySparseKernelClass.hpp"
+#include "KokkosExamples_EmptySparseKernelClass.hpp"
 #include <Kokkos_MultiVector.hpp>
 #include <Kokkos_DefaultNode.hpp>
 
-/** \file DummySparseKernelDriver.cpp
-    \brief A file testing the build of the DummySparseKernel class and illustrating its usage.
+/** \file EmptySparseKernelDriver.cpp
+    \brief A file testing the build of the EmptySparseKernel class and illustrating its usage.
  */
 
 int main() {
 
   typedef Kokkos::DefaultNode::DefaultNodeType                          Node;
-  typedef KokkosExamples::DummySparseKernel<Node>                     SOBASE;
+  typedef KokkosExamples::EmptySparseKernel<void,Node>                SOBASE;
   typedef typename SOBASE::graph<int,Node>::graph_type                 Graph;
   typedef typename SOBASE::bind_scalar<float>::other_type           FloatOps;
   typedef typename FloatOps::matrix< float,int,Node>::matrix_type    FMatrix;
