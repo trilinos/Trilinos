@@ -833,14 +833,14 @@ template <typename mvector_t>
       info << endl << "  Local sums: ";
       double sumTotal=0;
       for (int i=0; i < numSums; i++){
-        sumTotal == sums[i];
+        sumTotal += sums[i];
         info << sums[i] << " ";
       }
       info << " total: " << sumTotal << endl;
       info << endl << "  Global sums: ";
       sumTotal=0;
       for (int i=0; i < numSums; i++){
-        sumTotal == globalSums[i];
+        sumTotal += globalSums[i];
         info << globalSums[i] << " ";
       }
       info << " total: " << sumTotal << endl;
