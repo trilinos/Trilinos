@@ -75,13 +75,13 @@ int main() {
   DoubleOps doubleKernel(node);
   // initialize it with G and dM
   DoubleOps::finalizeGraphAndMatrix(*G,*dM,Teuchos::null);
-  doubleKernel.setGraphAndMatrix(G,dM);
+  doubleKernel.setGraphAndMatrix(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,G,dM);
   // create double-valued vectors and initialize them
   DoubleVec dx(node), dy(node);
-  // test the sparse kernel operator interfaces
+  // call the sparse kernel operator interfaces
   doubleKernel.multiply( Teuchos::NO_TRANS, 1.0, dx, dy);
   doubleKernel.multiply( Teuchos::NO_TRANS, 1.0, dx, 1.0, dy);
-  doubleKernel.solve( Teuchos::NO_TRANS, Teuchos::UPPER_TRI, Teuchos::UNIT_DIAG, dy, dx);
+  doubleKernel.solve( Teuchos::NO_TRANS, dy, dx);
 
   // create a float-valued matrix fM using the graph G
   Teuchos::RCP<FMatrix> fM = Teuchos::rcp(new FMatrix(G,Teuchos::null));
@@ -89,13 +89,13 @@ int main() {
   FloatOps floatKernel(node);
   // initialize it with G and fM
   FloatOps::finalizeMatrix(*G,*fM,Teuchos::null);
-  floatKernel.setGraphAndMatrix(G,fM);
+  floatKernel.setGraphAndMatrix(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,G,fM);
   // create float-valued vectors and initialize them
   FloatVec fx(node), fy(node);
-  // test the sparse kernel operator interfaces
+  // call the sparse kernel operator interfaces
   floatKernel.multiply( Teuchos::NO_TRANS, 1.0f, fx, fy);
   floatKernel.multiply( Teuchos::NO_TRANS, 1.0f, fx, 1.0f, fy);
-  floatKernel.solve( Teuchos::NO_TRANS, Teuchos::UPPER_TRI, Teuchos::UNIT_DIAG, fy, fx);
+  floatKernel.solve( Teuchos::NO_TRANS, fy, fx);
 
   std::cout << "End Result: TEST PASSED" << std::endl;
   return 0;

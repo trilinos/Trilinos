@@ -221,7 +221,8 @@ namespace KokkosExamples {
         copy, callers should not change the Kokkos::CrsGraph after
         calling this method.
       */
-    void setGraphAndMatrix(const RCP<const EmptyCrsGraph<Node> >         &graph,
+    void setGraphAndMatrix(Teuchos::EUplo uplo, Teuchos::EDiag diag, 
+                           const RCP<const EmptyCrsGraph<Node> >         &graph,
                            const RCP<const EmptyCrsMatrix<Scalar,Node> > &node) {};
 
     //@}
@@ -322,8 +323,6 @@ namespace KokkosExamples {
     template <class DomainScalar, class RangeScalar>
     void
     solve (Teuchos::ETransp trans,
-           Teuchos::EUplo uplo,
-           Teuchos::EDiag diag,
            const Kokkos::MultiVector<DomainScalar,Node> &Y,
            Kokkos::MultiVector<RangeScalar,Node> &X) const
     {}
