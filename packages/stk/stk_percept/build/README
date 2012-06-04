@@ -15,3 +15,10 @@ which is processed by a doxy2py script to create python docstrings in
 Percept_dox.i which are then %include'd in PerceptMesh.i.  This script
 also must perform a make and follows it with a pydoc command to build
 the PerceptMesh.html doc file.
+
+Sierra users note:
+------------------
+
+Avoid the links used in Sierra for stk.  Instead, cd into 
+   <path_to_Trilnos>/Trilinos/packages/stk/stk_percept/build
+to build PyPercept.

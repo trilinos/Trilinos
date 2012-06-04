@@ -1,6 +1,6 @@
 import sys
 
-sys.path.insert(0,"../build/build.dir/packages/PyTrilinos/src/stk/PyPercept")
+#sys.path.insert(0,"../build/build.dir/packages/PyTrilinos/src/stk/PyPercept")
 
 from mpi4py import MPI
 from PerceptMesh import *
