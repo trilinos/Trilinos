@@ -66,7 +66,7 @@ namespace Kokkos {
     };
     static RCP<cusparseHandle_t> session_handle;
     void initCUSPARSEsession();
-  };
+  }
 
   //! \class CUSPARSECrsGraph
   /** \brief CRS sparse graph class supporting the CUSPARSE library.
@@ -108,7 +108,7 @@ namespace Kokkos {
 
   template <class Node>
   CUSPARSECrsGraph<Node>::CUSPARSECrsGraph(size_t numRows, const RCP<Node> &node, const RCP<ParameterList> &params)
-  : CrsGraphBase<Ordinal,Node>(numRows,node,params)
+  : CrsGraphBase<int,Node>(numRows,node,params)
   , isInitialized_(false)
   , isEmpty_(false)
   {
@@ -123,7 +123,7 @@ namespace Kokkos {
   template <class Node>
   void CUSPARSECrsGraph<Node>::setStructure(
                       const ArrayRCP<const size_t>  &ptrs,
-                      const ArrayRCP<const Ordinal> &inds)
+                      const ArrayRCP<const int> &inds)
   {
     std::string tfecfFuncName("setStructure(ptrs,inds)");
     const size_t numrows = this->getNumRows();
@@ -149,7 +149,7 @@ namespace Kokkos {
   { return ptrs_; }
 
   template <class Node>
-  ArrayRCP<const Ordinal> CUSPARSECrsGraph<Node>::getIndices() const
+  ArrayRCP<const int> CUSPARSECrsGraph<Node>::getIndices() const
   { return inds_; }
 
   template <class Node>
@@ -158,7 +158,7 @@ namespace Kokkos {
 
   template <class Scalar, class Node>
   CUSPARSECrsMatrix<Scalar,Node>::CUSPARSECrsMatrix(const RCP<const CUSPARSECrsGraph<Node> > &graph, const RCP<ParameterList> &params)
-  : CrsMatrixBase<Scalar,Ordinal,Node>(graph,params) 
+  : CrsMatrixBase<Scalar,int,Node>(graph,params) 
   , isInitialized_(false)
   {
     // Make sure that users only specialize for Kokkos Node types that are host Nodes (vs. device Nodes, such as GPU Nodes)
@@ -265,7 +265,7 @@ namespace Kokkos {
     template <class T> 
     static ArrayRCP<T> allocStorage(const ArrayView<const size_t> &ptrs);
 
-    //! Finalize a graph
+    //! Finalize a graph is null for CUSPARSE.
     static void finalizeGraph(CUSPARSECrsGraph<Node> &graph, const RCP<ParameterList> &params);
 
     //! Finalize the matrix of an already-finalized graph.
@@ -400,7 +400,7 @@ namespace Kokkos {
   template <class Scalar, class Node>
   void CUSPARSEOps<Scalar,Node>::finalizeGraph(CUSPARSECrsGraph<Node> &graph, const RCP<ParameterList> &params)
   { 
-    // nothing much to do here
+    // nothing to do here
     std::string FuncName("Kokkos::CUSPARSEOps::finalizeGraph(graph,params)");
     TEUCHOS_TEST_FOR_EXCEPTION(
         graph.isInitialized() == false, 
@@ -440,7 +440,6 @@ namespace Kokkos {
   : node_(node)
   , numRows_(0)
   , isInitialized_(false)
-  , isEmpty_(false)
   {
     // Make sure that users only specialize CUSPARSEOps for
     // Kokkos Node types that are host Nodes (vs. device Nodes, such
@@ -469,20 +468,7 @@ namespace Kokkos {
         isInitialized_ == true, 
         std::runtime_error, " operators already initialized.");
     numRows_ = graph->getNumRows();
-    if (graph->isEmpty() || numRows_ == 0) {
-      isEmpty_ = true;
-    }
-    else {
-      isEmpty_ = false;
-      ptrs_ = graph->getPointers();
-      inds_ = graph->getIndices();
-      vals_ = matrix->getValues();
-      // these checks just about the most that we can perform
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( 
-          (size_t)ptrs_.size() != numRows_+1 
-          || inds_.size() != vals_.size(),
-          std::runtime_error, " matrix and graph seem incongruent.");
-    }
+    // get cusparse objects from the matrix
     isInitialized_ = true;
   }
 
@@ -494,34 +480,34 @@ namespace Kokkos {
                             MultiVector< RangeScalar,Node> &X) const
   {
     std::string tfecfFuncName("solve(trans,uplo,diag,Y,X)");
-    TEST_FOR_EXCEPT(true)
+    TEUCHOS_TEST_FOR_EXCEPT(true)
     return;
   }
 
 
   template <class Scalar, class Node>
   template <class DomainScalar, class RangeScalar>
-  void CUSPARSEOps<Scalar,Ordinal,Node>::multiply(
+  void CUSPARSEOps<Scalar,Node>::multiply(
                                 Teuchos::ETransp trans,
                                 RangeScalar alpha,
                                 const MultiVector<DomainScalar,Node> &X, 
                                       MultiVector<RangeScalar ,Node> &Y) const 
   {
     std::string tfecfFuncName("multiply(trans,alpha,X,Y)");
-    TEST_FOR_EXCEPT(true)
+    TEUCHOS_TEST_FOR_EXCEPT(true)
     return;
   }
 
 
   template <class Scalar, class Node>
   template <class DomainScalar, class RangeScalar>
-  void CUSPARSEOps<Scalar,Ordinal,Node>::multiply(
+  void CUSPARSEOps<Scalar,Node>::multiply(
                                 Teuchos::ETransp trans,
                                 RangeScalar alpha, const MultiVector<DomainScalar,Node> &X,
                                 RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const
   {
     std::string tfecfFuncName("multiply(trans,alpha,X,beta,Y)");
-    TEST_FOR_EXCEPT(true)
+    TEUCHOS_TEST_FOR_EXCEPT(true)
     return;
   }
 
@@ -529,7 +515,7 @@ namespace Kokkos {
   // ======= pointer allocation ===========
   template <class Scalar, class Node>
   ArrayRCP<size_t> 
-  CUSPARSEOps<Scalar,Ordinal,Node>::allocRowPtrs(const ArrayView<const size_t> &numEntriesPerRow) 
+  CUSPARSEOps<Scalar,Node>::allocRowPtrs(const ArrayView<const size_t> &numEntriesPerRow) 
   {
     ArrayRCP<size_t> ptrs = arcp<size_t>( numEntriesPerRow.size() + 1 );
     ptrs[0] = 0;
@@ -541,7 +527,7 @@ namespace Kokkos {
   template <class Scalar, class Node>
   template <class T>
   ArrayRCP<T> 
-  CUSPARSEOps<Scalar,Ordinal,Node>::allocStorage(const ArrayView<const size_t> &rowPtrs)
+  CUSPARSEOps<Scalar,Node>::allocStorage(const ArrayView<const size_t> &rowPtrs)
   { 
     const size_t totalNumEntries = *(rowPtrs.end()-1);
     // alloc data

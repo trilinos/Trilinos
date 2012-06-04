@@ -58,6 +58,11 @@ APPEND_SET(SOURCES
     Kokkos_LinAlgVersion.cpp
   )
 
+IF (Kokkos_ENABLE_CUSPARSE)
+  APPEND_SET(SOURCES Kokkos_CUSPARSEOps.cpp)
+  APPEND_SET(HEADERS Kokkos_CUSPARSEOps.hpp)
+ENDIF()
+
 #SET(CUDA_SOURCES Kokkos_DefaultArithmetic.cu 
 #                 Kokkos_DefaultBlockSparseOps.cu 
 #                 Kokkos_DefaultSparseOps.cu 

@@ -6,7 +6,7 @@ Kokkos::CUSPARSEdetails::CUSPARSEDestroyer::CUSPARSEDestroyer() {}
 void Kokkos::CUSPARSEdetails::CUSPARSEDestroyer::free(void *ptr) 
 {
   if (ptr) {
-    cusparseStatus_t status = cusparseDestory( (cusparseHandle_t)ptr );
+    cusparseStatus_t status = cusparseDestroy( (cusparseHandle_t)ptr );
     TEUCHOS_TEST_FOR_EXCEPTION(status == CUSPARSE_STATUS_SUCCESS, std::runtime_error,
         "Kokkos::CUSPARSEdetails::CUSPARSEDestroyer::free(): library was never initialized; we should not have been called.")
   }
