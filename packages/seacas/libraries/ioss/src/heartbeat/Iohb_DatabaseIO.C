@@ -90,7 +90,7 @@ namespace {
     }
   }
 
-  std::ostream *open_stream(const std::string &filename, bool *needs_delete) {
+  std::ostream *open_stream(const std::string &filename, bool *needs_delete, bool append_file) {
     // A little wierdness and ambiguity is possible here.  We want to
     // minimize the number of commands, but maximize the
     // functionality. For example, we want to be able to specify output
@@ -119,7 +119,10 @@ namespace {
       // something better here if we want to share streams among
       // different heartbeats or logging mechanisms.  Need perhaps a
       // 'logger' class which handles sharing and destruction...
-      log_stream = new std::ofstream(filename.c_str());
+      if(append_file)
+        log_stream = new std::ofstream(filename.c_str(),std::ios::out | std::ios::app);
+      else
+        log_stream = new std::ofstream(filename.c_str());
       *needs_delete = true;
     }
     return log_stream;
@@ -152,8 +155,8 @@ namespace Iohb {
 			 const Ioss::PropertyManager &properties) :
     Ioss::DatabaseIO(region, filename, db_usage, communicator, properties),
     logStream(NULL), layout_(NULL), legend_(NULL),
-    tsFormat("[%H:%M:%S]"), precision_(5), showLabels(true), showLegend(false), initialized_(false),
-    streamNeedsDelete(false), fileFormat(DEFAULT)
+    tsFormat("[%H:%M:%S]"), precision_(5), showLabels(true), showLegend(false), appendOutput(false),
+    initialized_(false), streamNeedsDelete(false), fileFormat(DEFAULT)
   { }
 
   DatabaseIO::~DatabaseIO()
@@ -179,9 +182,14 @@ namespace Iohb {
 	  new_this->fileFormat = SPYHIS;
       }
 
+       if (region->property_exists("append_output")) {
+       new_this->appendOutput = (region->get_property("append_output").get_int() == 1);
+      }
+
       if (util().parallel_rank() == 0) {
 	new_this->logStream = open_stream(get_filename().c_str(),
-					  &(new_this->streamNeedsDelete));
+					  &(new_this->streamNeedsDelete),
+					  new_this->appendOutput);
       } else {
 	// All processors except processor 0
 	new_this->logStream = NULL;
@@ -201,7 +209,7 @@ namespace Iohb {
       }
 
       if (region->property_exists("show_legend")) {
-	new_this->showLegend = (region->get_property("show_legend").get_int() == 1);
+	new_this->showLegend = (region->get_property("show_legend").get_int() == 1 && !new_this->appendOutput);
       }
 
       if (fileFormat == SPYHIS) {

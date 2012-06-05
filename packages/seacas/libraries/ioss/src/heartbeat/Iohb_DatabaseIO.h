@@ -165,6 +165,7 @@ namespace Iohb {
     int precision_;
     bool showLabels;
     bool showLegend;
+    bool appendOutput;
 
     bool initialized_;
     bool streamNeedsDelete;
