@@ -179,6 +179,65 @@ cleanup:
     return rc;
 }
 
+static int flush_aggregated_chunks(
+        const int ncid,
+        const int varid)
+{
+    int rc=NC_NOERR;
+    int chunk_count=0;
+    double callTime;
+
+    Start_Timer(callTime);
+    try_aggregation(ncid, varid);
+    Stop_Timer("agg", callTime);
+
+    aggregation_chunk_details_t **chunks = get_chunks(ncid, varid, &chunk_count);
+    if (chunk_count == 0) {
+        log_debug(netcdf_debug_level, "chunk_count is 0, but I must participate in the collective.");
+    } else {
+        log_debug(netcdf_debug_level, "chunk_count is %d.", chunk_count);
+    }
+//    log_level old_log=netcdf_debug_level;
+//    netcdf_debug_level = netcdf_debug_level;
+//    for (int i=0;i<chunk_count;i++) {
+//    	print_chunk(chunks[i]);
+//    }
+//    netcdf_debug_level = old_log;
+
+    if (use_collective(ncid)) {
+        Start_Timer(callTime);
+        rc = do_put_vars_all(ncid, varid, chunks, chunk_count);
+        if (rc == NC_EINDEP) {
+            rc = do_put_vars(chunks, chunk_count);
+        }
+        Stop_Timer("put_vars_all", callTime);
+
+        free(chunks);
+        cleanup_aggregation_chunks(ncid, varid);
+
+        log_debug(netcdf_debug_level, "do_put_vars_all: rc==%d", rc);
+        if (rc != NC_NOERR) {
+            log_error(netcdf_debug_level, "Failed to put variable: %s", ncmpi_strerror(rc));
+        }
+    } else {
+        Start_Timer(callTime);
+        rc = do_put_vars(chunks, chunk_count);
+        if (rc == NC_ENOTINDEP) {
+            rc = do_put_vars_all(ncid, varid, chunks, chunk_count);
+        }
+        Stop_Timer("put_vars", callTime);
+
+        free(chunks);
+        cleanup_aggregation_chunks(ncid, varid);
+
+        log_debug(netcdf_debug_level, "do_put_vars: rc==%d", rc);
+        if (rc != NC_NOERR) {
+            log_error(netcdf_debug_level, "Failed to put variable: %s", ncmpi_strerror(rc));
+        }
+    }
+
+    return rc;
+}
 static int flush_aggregated_chunks(const int ncid)
 {
     int rc=NC_NOERR;
@@ -208,35 +267,7 @@ static int flush_aggregated_chunks(const int ncid)
             for (int i=0;i<var_count;i++) {
                 varid=i;
 
-                Start_Timer(callTime);
-                try_aggregation(ncid, varid);
-                Stop_Timer("agg", callTime);
-
-                aggregation_chunk_details_t **chunks = get_chunks(ncid, varid, &chunk_count);
-                if (chunk_count == 0) {
-                    log_debug(netcdf_debug_level, "chunk_count is 0, but I must participate in the collective.");
-                } else {
-                    log_debug(netcdf_debug_level, "chunk_count is %d.", chunk_count);
-                }
-//                log_level old_log=netcdf_debug_level;
-//                netcdf_debug_level = netcdf_debug_level;
-//                for (int i=0;i<chunk_count;i++) {
-//                    print_chunk(chunks[i]);
-//                }
-//                netcdf_debug_level = old_log;
-
-                Start_Timer(callTime);
-                rc = do_put_vars_all(ncid, varid, chunks, chunk_count);
-
-                free(chunks);
-                cleanup_aggregation_chunks(ncid, varid);
-
-                log_debug(netcdf_debug_level, "do_put_vars_all: rc==%d", rc);
-                if (rc != NC_NOERR) {
-                    log_error(netcdf_debug_level, "Failed to put variable: %s", ncmpi_strerror(rc));
-                    goto cleanup;
-                }
-                Stop_Timer("put_vars_all", callTime);
+                flush_aggregated_chunks(ncid, varid);
             }
 
         } else {
@@ -263,15 +294,14 @@ static int flush_aggregated_chunks(const int ncid)
 
             Start_Timer(callTime);
             rc = do_put_vars(chunks, chunk_count);
+            Stop_Timer("put_vars", callTime);
 
             free(chunks);
             cleanup_aggregation_chunks(ncid);
 
             if (rc != NC_NOERR) {
                 log_error(netcdf_debug_level, "Failed to put variable: %s", ncmpi_strerror(rc));
-                goto cleanup;
             }
-            Stop_Timer("put_vars", callTime);
         }
     }
 
@@ -280,6 +310,59 @@ cleanup:
     return rc;
 }
 
+static int flush_cached_chunks(
+        const int ncid,
+        const int varid)
+{
+    int rc=NC_NOERR;
+    int chunk_count=0;
+    double callTime;
+
+    aggregation_chunk_details_t **chunks = get_chunks(ncid, varid, &chunk_count);
+    if (chunk_count == 0) {
+        log_debug(netcdf_debug_level, "chunk_count is 0, but I must participate in the collective.");
+    } else {
+        log_debug(netcdf_debug_level, "chunk_count is %d.", chunk_count);
+    }
+//    log_level old_log=netcdf_debug_level;
+//    netcdf_debug_level = netcdf_debug_level;
+//    for (int i=0;i<chunk_count;i++) {
+//    	print_chunk(chunks[i]);
+//    }
+//    netcdf_debug_level = old_log;
+
+    if (use_collective(ncid)) {
+        Start_Timer(callTime);
+        rc = do_put_vars_all(ncid, varid, chunks, chunk_count);
+        if (rc == NC_EINDEP) {
+            rc = do_put_vars(chunks, chunk_count);
+        }
+        Stop_Timer("put_vars_all", callTime);
+
+        free(chunks);
+        cleanup_aggregation_chunks(ncid, varid);
+
+        if (rc != NC_NOERR) {
+            log_error(netcdf_debug_level, "Failed to put variable: %s", ncmpi_strerror(rc));
+        }
+    } else {
+        Start_Timer(callTime);
+        rc = do_put_vars(chunks, chunk_count);
+        if (rc == NC_ENOTINDEP) {
+            rc = do_put_vars_all(ncid, varid, chunks, chunk_count);
+        }
+        Stop_Timer("put_vars", callTime);
+
+        free(chunks);
+        cleanup_aggregation_chunks(ncid, varid);
+
+        if (rc != NC_NOERR) {
+            log_error(netcdf_debug_level, "Failed to put variable: %s", ncmpi_strerror(rc));
+        }
+    }
+
+    return rc;
+}
 static int flush_cached_chunks(const int ncid)
 {
     int rc=NC_NOERR;
@@ -309,29 +392,7 @@ static int flush_cached_chunks(const int ncid)
             for (int i=0;i<var_count;i++) {
                 varid=i;
 
-                aggregation_chunk_details_t **chunks = get_chunks(ncid, varid, &chunk_count);
-                if (chunk_count == 0) {
-                    log_debug(netcdf_debug_level, "chunk_count is 0, but I must participate in the collective.");
-                } else {
-                    log_debug(netcdf_debug_level, "chunk_count is %d.", chunk_count);
-                }
-//                log_level old_log=netcdf_debug_level;
-//                netcdf_debug_level = netcdf_debug_level;
-//                for (int i=0;i<chunk_count;i++) {
-//                    print_chunk(chunks[i]);
-//                }
-//                netcdf_debug_level = old_log;
-
-                Start_Timer(callTime);
-                rc = do_put_vars_all(ncid, varid, chunks, chunk_count);
-                if (rc != NC_NOERR) {
-                    log_error(netcdf_debug_level, "Failed to put variable: %s", ncmpi_strerror(rc));
-                    free(chunks);
-                    goto cleanup;
-                }
-                Stop_Timer("put_vars_all", callTime);
-                free(chunks);
-                cleanup_aggregation_chunks(ncid, varid);
+                flush_cached_chunks(ncid, varid);
             }
 
         } else {
@@ -354,14 +415,15 @@ static int flush_cached_chunks(const int ncid)
 
             Start_Timer(callTime);
             rc = do_put_vars(chunks, chunk_count);
-            if (rc != NC_NOERR) {
-                log_error(netcdf_debug_level, "Failed to put variable: %s", ncmpi_strerror(rc));
-                free(chunks);
-                goto cleanup;
-            }
             Stop_Timer("put_vars", callTime);
+
             free(chunks);
             cleanup_aggregation_chunks(ncid);
+
+            if (rc != NC_NOERR) {
+                log_error(netcdf_debug_level, "Failed to put variable: %s", ncmpi_strerror(rc));
+                goto cleanup;
+            }
         }
     }
 
@@ -1285,21 +1347,23 @@ int nc_put_vars_stub(
     const int ncid = args->ncid;
     const int varid = args->varid;
     const int atype = args->atype;
-    const size_t len = args->len;
+    const nc_type buftype = (nc_type)args->buftype;
+    const size_t count    = args->element_count;
+    const size_t len      = args->len;
     const nc_size_t *startp = args->start.start_val;
     const nc_size_t *countp = args->count.count_val;
     const nc_size_t *stridep = args->stride.stride_val;
-
     MPI_Offset *count_copy = NULL;
     MPI_Offset *start_copy = NULL;
     MPI_Offset *stride_copy = NULL;
     int *dimids = NULL;
 
-    nc_type vartype;
     log_level debug_level = netcdf_debug_level;
 
     MPI_Datatype datatype;
-    int count = 1, ccount = 1;
+
+    int ccount = 1;
+
     void *buf=NULL;
 
 
@@ -1322,54 +1386,40 @@ int nc_put_vars_stub(
     }
 
     if (ndims) {
-        size_t count = 1;
         size_t nbytes = 0;
 
-        /* find out the right type for this variable */
-        rc = ncmpi_inq_vartype(ncid, varid, &vartype);
-        if (rc != NC_NOERR) {
-            log_error(netcdf_debug_level, "Unable to get variable type");
-            goto cleanup;
-        }
-
         /* Treat each arg type differently */
-        switch (vartype) {
+        switch (buftype) {
             case NC_BYTE:
                 datatype = MPI_BYTE;
-                count = len;
                 log_debug(debug_level, "using MPI_BYTE (count=%d ; len=%d)", count, len);
                 break;
             case NC_CHAR:
                 datatype = MPI_CHAR;
-                count = len/sizeof(char);
                 log_debug(debug_level, "using MPI_CHAR (count=%d ; len=%d)", count, len);
                 break;
 
             case NC_SHORT:
                 datatype = MPI_SHORT;
-                count = len/sizeof(short);
                 log_debug(debug_level, "using MPI_SHORT (count=%d ; len=%d)", count, len);
                 break;
 
             case NC_INT:
                 datatype = MPI_INT;
-                count = len/sizeof(int);
                 log_debug(debug_level, "using MPI_INT (count=%d ; len=%d)", count, len);
                 break;
 
             case NC_FLOAT:
                 datatype = MPI_FLOAT;
-                count = len/sizeof(float);
                 log_debug(debug_level, "using MPI_FLOAT (count=%d ; len=%d)", count, len);
                 break;
 
             case NC_DOUBLE:
                 datatype = MPI_DOUBLE;
-                count = len/sizeof(double);
                 log_debug(debug_level, "using MPI_DOUBLE (count=%d ; len=%d)", count, len);
                 break;
             default:
-                log_error(debug_level, "Operation=%d not supported", vartype);
+                log_error(debug_level, "Operation=%d not supported", buftype);
                 rc = NC_ENOTSUPP;
                 goto cleanup;
         }
@@ -1463,8 +1513,6 @@ int nc_put_vars_stub(
             log_error(debug_level, "Could not fetch var data from client");
             goto cleanup;
         }
-
-        log_debug(debug_level, "recvd float data (%f, %f, ...)", ((float *)buf)[0], ((float *)buf)[1]);
 
         if (use_aggregation(ncid)) {
             log_debug(netcdf_debug_level, "using agg");
@@ -1662,7 +1710,17 @@ int nc_get_vars_stub(
 
     log_debug(netcdf_debug_level, "enter");
 
-    log_debug(debug_level, "calling nc_get_vars_stub(%d, atype=%d)", ncid, atype);
+    log_debug(debug_level, "calling nc_get_vars_stub(ncid=%d, varid=%d, atype=%d, len=%d)", ncid, varid, atype, len);
+
+    double callTime;
+    Start_Timer(callTime);
+    if (use_aggregation(ncid)) {
+        flush_aggregated_chunks(ncid, varid);
+    } else if (use_caching(ncid)) {
+        flush_cached_chunks(ncid, varid);
+    }
+    Stop_Timer("flush on sync", callTime);
+
 
     rc = ncmpi_inq_varndims(ncid, varid, &ndims);
     if (rc != NC_NOERR) {
@@ -1800,9 +1858,6 @@ int nc_get_vars_stub(
             log_error(debug_level, "Failed to put variable: %s", ncmpi_strerror(rc));
             goto cleanup;
         }
-
-        log_debug(debug_level, "first two vals = %d, %d, ...",
-                ((int *)buf)[0], ((int *)buf)[1]);
 
         /* push the data to the client */
         rc = nssi_put_data(caller, buf, len, data_addr, -1);

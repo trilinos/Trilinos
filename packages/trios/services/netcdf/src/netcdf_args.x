@@ -214,6 +214,8 @@ struct nc_put_vars_args {
     nc_size_t count<NC_MAX_DIMS>;
     nc_size_t stride<NC_MAX_DIMS>;
     arg_type atype;
+    int32_t   buftype;
+    nc_size_t element_count;
     nc_size_t len;
 };
 
