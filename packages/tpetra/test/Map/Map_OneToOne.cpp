@@ -45,7 +45,6 @@
 #include <Teuchos_Tuple.hpp>
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_Map.hpp"
-#include "example.hpp"
 
 #define NUM_GLOBAL_ELEMENTS 100
 
