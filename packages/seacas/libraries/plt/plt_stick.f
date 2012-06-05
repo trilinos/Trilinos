@@ -1,5 +1,8 @@
       SUBROUTINE PLT_STICK()
       
+      REAL TEXTP(40)
+      COMMON /TEXT/TEXTP
+
       INTEGER IDEX(200,2)
       INTEGER NVECT(200,2)
       REAL XSIZE(200,2)
@@ -1956,6 +1959,8 @@
       
       CHSP = 2.0
       POINT = 7.0
+      TEXTP(39) = CHSP
+      TEXTP(40) = POINT
 
       I = 0
       DO 2060 IC = 1, 2
