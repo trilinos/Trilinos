@@ -52,34 +52,11 @@ void test_cuda_nonlinear( comm:: Machine machine ,
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-int main( int argc , char ** argv )
+namespace {
+
+void run( const std::string & argline , comm::Machine machine )
 {
-  comm::Machine machine = comm::Machine::init( & argc , & argv );
-
-  //--------------------------------------------------
-  // Turn command line into a string,
-  // broadcast it to all processes,
-  // turn string into an input stream for parsing.
-
-  std::string argline ;
-  if ( 0 == comm::rank( machine ) ) {
-    for ( int i = 1 ; i < argc ; ++i ) {
-      argline.append(" ").append( argv[i] );
-    }
-  }
-
-#ifdef HAVE_MPI
-  {
-    int length = argline.length();
-    MPI_Bcast( & length , 1 , MPI_INT , 0 , machine.mpi_comm );
-    argline.resize( length , ' ' );
-    MPI_Bcast( (void*) argline.data() , length , MPI_CHAR , 0 , machine.mpi_comm );
-  }
-#endif /* HAVE_MPI */
-
   std::istringstream input( argline );
-
-  //--------------------------------------------------
 
   bool cmd_error = false ;
 
@@ -182,8 +159,49 @@ int main( int argc , char ** argv )
               << "    nonlinear NumNodeBegin NumNodeEnd NumRun" << std::endl ;
 
   }
+}
 
-  //--------------------------------------------------
+} // namespace
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+int main( int argc , char ** argv )
+{
+  comm::Machine machine = comm::Machine::init( & argc , & argv );
+
+  const unsigned comm_rank = comm::rank( machine );
+
+  // Turn command line into a string,
+  // broadcast it to all processes,
+  // turn string into an input stream for parsing.
+
+  std::string argline ;
+
+  if ( 0 == comm_rank ) {
+    for ( int i = 1 ; i < argc ; ++i ) {
+      argline.append(" ").append( argv[i] );
+    }
+  }
+
+#ifdef HAVE_MPI
+  {
+    int length = argline.length();
+    MPI_Bcast( & length , 1 , MPI_INT , 0 , machine.mpi_comm );
+    argline.resize( length , ' ' );
+    MPI_Bcast( (void*) argline.data() , length , MPI_CHAR , 0 , machine.mpi_comm );
+  }
+#endif /* HAVE_MPI */
+
+  try {
+    run( argline , machine );
+  }
+  catch( const std::exception & x ) {
+    std::cerr << "P" << comm_rank << " throw: " << x.what() << std::endl ;
+  }
+  catch( ... ) {
+    std::cerr << "P" << comm_rank << " throw: unknown exception" << std::endl ;
+  }
 
   comm::Machine::finalize();
 
