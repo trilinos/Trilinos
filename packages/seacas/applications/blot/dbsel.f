@@ -322,6 +322,7 @@ C *** EXODUS Movement Commands ***
 
       ELSE IF ((STYP .EQ. 'READ') .OR. (STYP .EQ. 'STEP')
      &   .OR. (STYP .EQ. 'TIME')) THEN
+         nstep = 0
          CALL FFADDC (STYP, INLINE(1))
          CALL CKEXOD (EXODUS, *220)
          CALL CKNONE (NSTEPS, .FALSE., 'time steps', *220)

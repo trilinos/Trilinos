@@ -1,14 +1,14 @@
 C Copyright(C) 2009 Sandia Corporation. Under the terms of Contract
 C DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 C certain rights in this software.
-C         
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
@@ -16,7 +16,7 @@ C       with the distribution.
 C     * Neither the name of Sandia Corporation nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -82,15 +82,15 @@ C   --   Uses NUMNP, NELBLK of /DBNUMS/
       CHARACTER*(MXSTLN) NAMELB(*)
 
       logical hastet
-      
+
       INTEGER NPFRAT(8)
       SAVE NPFRAT
 
 C      --NPFRAT(i) is the maximum number of faces that a node can be
 C        in if the number of elements that the node is in = i
 C        NOTE: Will fail for collapsed hexes...
-C        For i <= 4, assumes possible strange connections, for 
-C        i > 4, assumes a somewhat regular connectivity      
+C        For i <= 4, assumes possible strange connections, for
+C        i > 4, assumes a somewhat regular connectivity
       DATA NPFRAT / 3, 6, 9, 12, 12, 12, 12, 12 /
 C   --Reserve storage for node-to-face pointers
 
@@ -177,7 +177,7 @@ C   --Match faces in different element blocks
                   ELSE
                     IMATCH = 0
                   END IF
-                  
+
                   IF (IMATCH .GT. 0) THEN
                     NFACES = NFACES - 1
                     LENLNK = LENLNK - NLNKSC(IELB)
@@ -195,7 +195,7 @@ C   --Match faces in different element blocks
  130      CONTINUE
         end if
  140  CONTINUE
-      
+
       CALL MDDEL ('NPFS')
   150 CONTINUE
       RETURN

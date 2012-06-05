@@ -29,26 +29,6 @@ C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-C $Log: grinit.f,v $
-C Revision 1.2  2009/03/25 12:36:44  gdsjaar
-C Add copyright and license notice to all files.
-C Permission to assert copyright has been granted; blot is now open source, BSD
-C
-C Revision 1.1  1994/04/07 20:02:30  gdsjaar
-C Initial checkin of ACCESS/graphics/blotII2
-C
-CRevision 1.5  1991/12/13  16:49:02  gdsjaar
-CFixed false determination that dual device exists
-C
-CRevision 1.4  1991/12/12  17:36:49  gdsjaar
-CAdded code for dual device
-C
-CRevision 1.3  1991/07/24  16:09:23  gdsjaar
-CKludge to set to single device
-C
-CRevision 1.2  1990/12/14  08:51:43  gdsjaar
-CAdded RCS Id and Log to all files
-C
 C=======================================================================
       SUBROUTINE GRINIT (DBORD0, CHLSIZ)
 C=======================================================================
@@ -162,7 +142,7 @@ C   --Get graphic output devices ready
 
 C ... Get graphics device name from executable (follows . in executable name)
       CALL GET_ARGUMENT(0,scratch, lfil)
-      last = indexr(scratch, '.')
+      last = indexr(scratch, '_')
       if (last .gt. 2) then
         device = scratch(last+1:lfil)
         if (device(:lenstr(device)) .eq. 'dual') then

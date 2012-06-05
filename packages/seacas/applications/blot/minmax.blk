@@ -1,1 +1,1 @@
-	common /minmx/ minnod, maxnod
+        common /minmx/ minnod, maxnod

@@ -1,14 +1,14 @@
 C Copyright(C) 2009 Sandia Corporation. Under the terms of Contract
 C DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 C certain rights in this software.
-C         
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
@@ -16,7 +16,7 @@ C       with the distribution.
 C     * Neither the name of Sandia Corporation nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -57,6 +57,8 @@ C   --
 C   --Common Variables:
 C   --   Uses NUMNP of /DBNUMS/
 
+
+
       include 'params.blk'
       include 'dbnums.blk'
       include 'minmax.blk'
@@ -76,16 +78,15 @@ C   --   Uses NUMNP of /DBNUMS/
       CALL ININPF (minnod, maxnod, MAXNPF, NPFS)
       maxnod = 1
       minnod = numnp
-      
+
       NOVER = 0
       NFACES = 0
       IXF = 1
       IF (NLNKE .EQ. 8) THEN
         DO 110 IEL = LENE(IELB-1)+1, LENE(IELB)
           IXEL = IEL - LENE(IELB-1)
-          
           IF (LINKE(1,IXEL) .NE. 0) THEN
-            
+
             DO 100 IFACE = 1, 6
               CALL FNODES (IFACE, LINKE(1,IXEL), LINKF1)
               IF (    (NPFS(LINKF1(1),0) .GT. 0)
@@ -96,28 +97,28 @@ C   --   Uses NUMNP of /DBNUMS/
               else
                 imatch = 0
               endif
-              
+
               IF (IMATCH .LE. 0) THEN
                 NFACES = NFACES + 1
                 CALL CPYINT (NLNKSC, LINKF1, LINKSC(IXF))
                 IXF = IXF + NLNKSC
                 IF2ESC(1,NFACES) = IEL
                 IF2ESC(2,NFACES) = 0
-                
+
                 CALL FILNPF (NLNKSC, LINKF1, NFACES,
      &            MAXNPF, NPFS, NOVER, NUMNP)
-                
+
               ELSE
                 IF2ESC(2,IMATCH) = IEL
               END IF
  100        CONTINUE
           end if
  110    continue
-        
+
       ELSE IF (NLNKE .eq. 4 .and. istet) THEN
         DO 210 IEL = LENE(IELB-1)+1, LENE(IELB)
           IXEL = IEL - LENE(IELB-1)
-          
+
           IF (LINKE(1,IXEL) .NE. 0) THEN
 
             DO 200 IFACE = 1, 4
@@ -129,7 +130,7 @@ C   --   Uses NUMNP of /DBNUMS/
               else
                 imatch = 0
               endif
-              
+
               IF (IMATCH .LE. 0) THEN
                 NFACES = NFACES + 1
 c                     CALL CPYINT (4, LINKF1, LINKSC(IXF))
@@ -154,7 +155,7 @@ c                     CALL CPYINT (4, LINKF1, LINKSC(IXF))
       ELSE IF (NLNKE .LT. 8) THEN
         DO 310 IEL = LENE(IELB-1)+1, LENE(IELB)
           IXEL = IEL - LENE(IELB-1)
-          
+
           IF (LINKE(1,IXEL) .NE. 0) THEN
 
             NFACES = NFACES+1
