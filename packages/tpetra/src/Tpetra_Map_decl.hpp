@@ -744,6 +744,15 @@ namespace Tpetra {
                                    const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                                    const Teuchos::RCP<Node> &node);
 
+  /** \brief Creates a one-to-one version of the given Map where each GID is owned by only one process.
+   
+      The user must guarantee there are no duplicate GID on the same processor. Unexepected behavior may result.
+
+      \relatesalso Map
+   */
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > 
+  createOneToOne(Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &M);
 } // Tpetra namespace
 
 /// \brief True if map1 is the same as (in the sense of isSameAs()) map2, else false.

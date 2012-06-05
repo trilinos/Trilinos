@@ -1238,8 +1238,56 @@ Tpetra::createWeightedContigMapWithNode(int myWeight, Tpetra::global_size_t numE
   }
   // std::cout << "(after) localNumElements: " << localNumElements << std::endl;
   return createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements,localNumElements,comm,node);
+
 }
 
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > 
+createOneToOne(Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &M){
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  typedef LocalOrdinal LO;
+  typedef GlobalOrdinal GO;
+  typedef Tpetra::Map<LO,GO,Node> map_type;
+  int myID = M->getComm()->getRank();
+  int numProc = M->getComm()->getSize();
+
+  //Based off Epetra's one to one.
+
+  Tpetra::Directory<LO, GO, Node> directory(M);
+
+  size_t numMyElems = M->getNodeNumElements();
+
+  ArrayView<const GlobalOrdinal> myElems = M->getNodeElementList();
+
+  Array<int> owner_procs_vec (numMyElems);
+
+  directory.getDirectoryEntries(myElems, owner_procs_vec ());
+
+  Array<GO> myOwned_vec (numMyElems);
+  size_t numMyOwnedElems = 0;
+
+  for(size_t i=0; i<numMyElems; ++i)
+  {
+    GO GID = myElems[i];
+    int owner = owner_procs_vec[i];
+
+    if (myID == owner)
+    {
+      myOwned_vec[numMyOwnedElems++]=GID;
+    }
+  }
+  myOwned_vec.resize (numMyOwnedElems);
+
+  RCP< const Tpetra::Map<LO,GO,Node> > one_to_one_map = 
+    rcp (new map_type (Teuchos::OrdinalTraits<GO>::invalid (), myOwned_vec (), 
+                       M->getIndexBase (), M->getComm (), M->getNode()));
+
+  return(one_to_one_map);
+
+}
 //
 // Explicit instantiation macro
 //
