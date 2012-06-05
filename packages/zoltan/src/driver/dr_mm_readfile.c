@@ -460,10 +460,11 @@ int error = 0;  /* flag to indicate status */
               vwgts[iptr->i] = iptr->v;
           }
           else { /* Off-diagonal */
-            adj[start[iptr->i]+cnt[iptr->i]] = iptr->j;
+            int idx = start[iptr->i]+cnt[iptr->i];
+            adj[idx] = iptr->j;
+            if (*ch_ewgt_dim) 
+              ewgts[idx] = iptr->v;
             cnt[iptr->i]++;
-            if (*ch_ewgt_dim)
-              ewgts[k] = iptr->v;
           }
         }
       else /* chunky style, use myVals */
