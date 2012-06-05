@@ -3,12 +3,18 @@
 #include <cmath>
 #include <iostream>
 
+#ifdef HAVE_KOKKOS_STOKHOS
+#include "Stokhos_LegendreBasis.hpp"
+#include "Stokhos_CompletePolynomialBasis.hpp"
+#include "Stokhos_Sparse3Tensor.hpp"
+#endif
+
 namespace unit_test {
 
 template< unsigned P >
 void test_integration()
 {
-  Kokkos::GaussLegendre<P> rule ;
+  KokkosArray::GaussLegendre<P> rule ;
   double result_1 = 0 ;
   double result_x = 0 ;
   double result_x2 = 0 ;
@@ -29,8 +35,8 @@ void test_inner_product_legengre_polynomial()
 {
   const double tolerance = 1e-14 ;
 
-  Kokkos::GaussLegendre<P*2> rule ;
-  Kokkos::NormalizedLegendrePolynomialBases<P,Device> poly ;
+  KokkosArray::GaussLegendre<P*2> rule ;
+  KokkosArray::NormalizedLegendrePolynomialBases<P,Device> poly ;
 
   double values[P+1];
   double result[P+1][P+1];
@@ -77,8 +83,8 @@ void test_triple_product_legendre_polynomial()
 {
   const double tolerance = 1e-14 ;
 
-  Kokkos::GaussLegendre<P*3+1> rule ;
-  Kokkos::NormalizedLegendrePolynomialBases<P,Device> poly ;
+  KokkosArray::GaussLegendre<P*3+1> rule ;
+  KokkosArray::NormalizedLegendrePolynomialBases<P,Device> poly ;
 
   double values[P+1];
   double result[P+1][P+1][P+1];
@@ -123,10 +129,10 @@ void test_triple_product_legendre_polynomial()
 template< class Device , template< unsigned , typename , class > class TensorType >
 void test_product_tensor( const std::vector<int> & var_degree )
 {
-  typedef Kokkos::NormalizedLegendrePolynomialBases<4,Device> polynomial ;
-  typedef Kokkos::StochasticProductTensor< double , polynomial , Device , TensorType > tensor_type ;
+  typedef KokkosArray::NormalizedLegendrePolynomialBases<4,Device> polynomial ;
+  typedef KokkosArray::StochasticProductTensor< double , polynomial , Device , TensorType > tensor_type ;
 
-  tensor_type tensor = Kokkos::create_product_tensor< tensor_type >( var_degree );
+  tensor_type tensor = KokkosArray::create_product_tensor< tensor_type >( var_degree );
 
   // Verification?
 }
@@ -143,13 +149,13 @@ test_product_tensor_matrix(
   const bool print_flag = false )
 {
   typedef ScalarType value_type ;
-  typedef Kokkos::MultiVector< value_type , Device > vector_type ;
+  typedef KokkosArray::MultiVector< value_type , Device > vector_type ;
 
-  typedef Kokkos::NormalizedLegendrePolynomialBases<4,Device> polynomial ;
+  typedef KokkosArray::NormalizedLegendrePolynomialBases<4,Device> polynomial ;
 
-  typedef Kokkos::StochasticProductTensor< value_type , polynomial , Device , TensorType > tensor_type ;
+  typedef KokkosArray::StochasticProductTensor< value_type , polynomial , Device , TensorType > tensor_type ;
 
-  typedef Kokkos::BlockCrsMatrix< tensor_type , value_type , Device > matrix_type ;
+  typedef KokkosArray::BlockCrsMatrix< tensor_type , value_type , Device > matrix_type ;
   typedef typename matrix_type::graph_type graph_type ;
 
   //------------------------------
@@ -165,18 +171,18 @@ test_product_tensor_matrix(
 
   matrix_type matrix ;
 
-  matrix.block = Kokkos::create_product_tensor< tensor_type >( var_degree );
-  matrix.graph = Kokkos::create_crsarray<graph_type>( std::string("test crs graph") , graph );
+  matrix.block = KokkosArray::create_product_tensor< tensor_type >( var_degree );
+  matrix.graph = KokkosArray::create_crsarray<graph_type>( std::string("test crs graph") , graph );
 
   const size_t inner_length      = matrix.block.dimension();
   const size_t inner_matrix_size = matrix.block.dimension();
 
-  matrix.values = Kokkos::create_multivector<vector_type>( inner_matrix_size , graph_length );
+  matrix.values = KokkosArray::create_multivector<vector_type>( inner_matrix_size , graph_length );
 
-  vector_type x = Kokkos::create_multivector<vector_type>( inner_length , outer_length );
-  vector_type y = Kokkos::create_multivector<vector_type>( inner_length , outer_length );
+  vector_type x = KokkosArray::create_multivector<vector_type>( inner_length , outer_length );
+  vector_type y = KokkosArray::create_multivector<vector_type>( inner_length , outer_length );
 
-  typename vector_type::HostMirror hM = Kokkos::create_mirror( matrix.values );
+  typename vector_type::HostMirror hM = KokkosArray::create_mirror( matrix.values );
   
   for ( size_t i = 0 ; i < graph_length ; ++i ) {
     for ( size_t j = 0 ; j < inner_length ; ++j ) {
@@ -184,12 +190,12 @@ test_product_tensor_matrix(
     }
   }
   
-  Kokkos::deep_copy( matrix.values , hM );
+  KokkosArray::deep_copy( matrix.values , hM );
 
   //------------------------------
   // Generate input multivector:
   
-  typename Kokkos::MultiVector<value_type,Device>::HostMirror hx = Kokkos::create_mirror( x );
+  typename KokkosArray::MultiVector<value_type,Device>::HostMirror hx = KokkosArray::create_mirror( x );
 
   for ( size_t i = 0 ; i < outer_length ; ++i ) {
     for ( size_t j = 0 ; j < inner_length ; ++j ) {
@@ -197,13 +203,13 @@ test_product_tensor_matrix(
     }
   }
 
-  Kokkos::deep_copy( x , hx );
+  KokkosArray::deep_copy( x , hx );
 
   //------------------------------
 
-  Kokkos::Impl::Timer clock ;
+  KokkosArray::Impl::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
-    Kokkos::multiply( matrix , x , y );
+    KokkosArray::multiply( matrix , x , y );
   }
   Device::fence();
 
@@ -212,9 +218,9 @@ test_product_tensor_matrix(
   //------------------------------
 
   if ( print_flag ) {
-    typename Kokkos::MultiVector<value_type,Device>::HostMirror hy = Kokkos::create_mirror( y );
+    typename KokkosArray::MultiVector<value_type,Device>::HostMirror hy = KokkosArray::create_mirror( y );
 
-    Kokkos::deep_copy( hy , y );
+    KokkosArray::deep_copy( hy , y );
 
     std::cout << std::endl << "test_product_tensor_matrix" << std::endl ;
     for ( size_t i = 0 ; i < outer_length ; ++i ) {
@@ -232,7 +238,7 @@ test_product_tensor_matrix(
 //----------------------------------------------------------------------------
 
 template< typename ScalarType , class Device >
-std::pair<size_t,double>
+std::vector<double>
 test_product_tensor_diagonal_matrix(
   const std::vector<int> & var_degree ,
   const int nGrid ,
@@ -240,19 +246,19 @@ test_product_tensor_diagonal_matrix(
   const bool print_flag = false )
 {
   typedef ScalarType value_type ;
-  typedef Kokkos::MultiVector<value_type,Device> vector_type ;
+  typedef KokkosArray::MultiVector<value_type,Device> vector_type ;
 
-  typedef Kokkos::NormalizedLegendrePolynomialBases<4,Kokkos::Host> polynomial ;
-  typedef Kokkos::StochasticProductTensor< value_type , polynomial , Kokkos::Host , Kokkos::SparseProductTensor > tensor_type ;
+  typedef KokkosArray::NormalizedLegendrePolynomialBases<4,KokkosArray::Host> polynomial ;
+  typedef KokkosArray::StochasticProductTensor< value_type , polynomial , KokkosArray::Host , KokkosArray::SparseProductTensor > tensor_type ;
 
   //------------------------------
 
-  typedef Kokkos::Impl::Multiply<
+  typedef KokkosArray::Impl::Multiply<
             typename tensor_type::tensor_type ,
-            Kokkos::SymmetricDiagonalSpec< Kokkos::Host > ,
+            KokkosArray::SymmetricDiagonalSpec< KokkosArray::Host > ,
             void > multiply_type ;
 
-  typedef Kokkos::BlockCrsMatrix< Kokkos::SymmetricDiagonalSpec< Device > ,
+  typedef KokkosArray::BlockCrsMatrix< KokkosArray::SymmetricDiagonalSpec< Device > ,
                                   value_type , Device > matrix_type ;
 
   typedef typename matrix_type::graph_type  graph_type ;
@@ -268,7 +274,7 @@ test_product_tensor_diagonal_matrix(
   // Generate product tensor from variables' degrees
 
   const tensor_type tensor =
-    Kokkos::create_product_tensor< tensor_type >( var_degree );
+    KokkosArray::create_product_tensor< tensor_type >( var_degree );
 
   const size_t inner_length = tensor.dimension();
 
@@ -277,14 +283,14 @@ test_product_tensor_diagonal_matrix(
 
   matrix_type matrix ;
 
-  matrix.block  = Kokkos::SymmetricDiagonalSpec< Device >( inner_length );
-  matrix.graph  = Kokkos::create_crsarray<graph_type>( std::string("test product tensor graph") , graph );
-  matrix.values = Kokkos::create_multivector<vector_type>( matrix.block.matrix_size() , graph_length );
+  matrix.block  = KokkosArray::SymmetricDiagonalSpec< Device >( inner_length );
+  matrix.graph  = KokkosArray::create_crsarray<graph_type>( std::string("test product tensor graph") , graph );
+  matrix.values = KokkosArray::create_multivector<vector_type>( matrix.block.matrix_size() , graph_length );
 
-  Kokkos::MultiVector<value_type,Device> x = Kokkos::create_multivector<vector_type>( inner_length , outer_length );
-  Kokkos::MultiVector<value_type,Device> y = Kokkos::create_multivector<vector_type>( inner_length , outer_length );
+  KokkosArray::MultiVector<value_type,Device> x = KokkosArray::create_multivector<vector_type>( inner_length , outer_length );
+  KokkosArray::MultiVector<value_type,Device> y = KokkosArray::create_multivector<vector_type>( inner_length , outer_length );
 
-  typename Kokkos::MultiVector< value_type , Device >::HostMirror hM = Kokkos::create_mirror( matrix.values );
+  typename KokkosArray::MultiVector< value_type , Device >::HostMirror hM = KokkosArray::create_mirror( matrix.values );
 
   {
     std::vector< value_type > a( inner_length );
@@ -298,11 +304,11 @@ test_product_tensor_diagonal_matrix(
     }
   }
 
-  Kokkos::deep_copy( matrix.values , hM );
+  KokkosArray::deep_copy( matrix.values , hM );
 
   //------------------------------
 
-  typename Kokkos::MultiVector< value_type , Device >::HostMirror hx = Kokkos::create_mirror( x );
+  typename KokkosArray::MultiVector< value_type , Device >::HostMirror hx = KokkosArray::create_mirror( x );
 
   for ( size_t i = 0 ; i < outer_length ; ++i ) {
     for ( size_t j = 0 ; j < inner_length ; ++j ) {
@@ -310,24 +316,25 @@ test_product_tensor_diagonal_matrix(
     }
   }
 
-  Kokkos::deep_copy( x , hx );
+  KokkosArray::deep_copy( x , hx );
 
   //------------------------------
 
-  Kokkos::Impl::Timer clock ;
+  KokkosArray::Impl::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
-    Kokkos::multiply( matrix , x , y );
+    KokkosArray::multiply( matrix , x , y );
   }
   Device::fence();
 
   const double seconds_per_iter = clock.seconds() / ((double) iterCount );
+  const double flops = 2.0*1e-9*graph_length*inner_length*inner_length / seconds_per_iter;
 
   //------------------------------
 
   if ( print_flag ) {
-    typename Kokkos::MultiVector< value_type , Device >::HostMirror hy = Kokkos::create_mirror( y );
+    typename KokkosArray::MultiVector< value_type , Device >::HostMirror hy = KokkosArray::create_mirror( y );
 
-    Kokkos::deep_copy( hy , y );
+    KokkosArray::deep_copy( hy , y );
 
     std::cout << std::endl << "test_product_tensor_diagonal_matrix"
               << std::endl ;
@@ -340,14 +347,18 @@ test_product_tensor_diagonal_matrix(
     }
   }
 
-  return std::pair<size_t,double>( outer_length * inner_length , seconds_per_iter );
+  std::vector<double> perf(3);
+  perf[0] = outer_length * inner_length ;
+  perf[1] = seconds_per_iter;
+  perf[2] = flops;
+  return perf;
 }
 
 //----------------------------------------------------------------------------
 // Flatten to a plain CRS matrix
 
 template< typename ScalarType , class Device >
-std::pair<size_t,double>
+std::vector<double>
 test_product_flat_commuted_matrix(
   const std::vector<int> & var_degree ,
   const int nGrid ,
@@ -355,19 +366,19 @@ test_product_flat_commuted_matrix(
   const bool print_flag = false )
 {
   typedef ScalarType value_type ;
-  typedef Kokkos::MultiVector< value_type , Device > vector_type ;
+  typedef KokkosArray::MultiVector< value_type , Device > vector_type ;
 
-  typedef Kokkos::NormalizedLegendrePolynomialBases<4,Kokkos::Host> polynomial ;
+  typedef KokkosArray::NormalizedLegendrePolynomialBases<4,KokkosArray::Host> polynomial ;
 
-  typedef Kokkos::StochasticProductTensor<
+  typedef KokkosArray::StochasticProductTensor<
      value_type , polynomial ,
-     Kokkos::Host ,
-     Kokkos::CrsProductTensor > tensor_type ;
+     KokkosArray::Host ,
+     KokkosArray::CrsProductTensor > tensor_type ;
 
   //------------------------------
 
-  typedef Kokkos::CrsMatrix<value_type,Device> matrix_type ;
-  typedef Kokkos::CrsArray<int,Device,int> crsarray_type ;
+  typedef KokkosArray::CrsMatrix<value_type,Device> matrix_type ;
+  typedef KokkosArray::CrsArray<int,Device,int> crsarray_type ;
 
   //------------------------------
   // Generate FEM graph:
@@ -381,7 +392,7 @@ test_product_flat_commuted_matrix(
   // Generate product tensor from variables' degrees
 
   const tensor_type tensor =
-    Kokkos::create_product_tensor< tensor_type >( var_degree );
+    KokkosArray::create_product_tensor< tensor_type >( var_degree );
 
   const size_t inner_length = tensor.dimension();
 
@@ -390,7 +401,7 @@ test_product_flat_commuted_matrix(
   for ( size_t iInnerRow = 0 ; iInnerRow < inner_length ; ++iInnerRow ) {
   for ( size_t iInnerCol = 0 ; iInnerCol < inner_length ; ++iInnerCol ) {
 
-    for ( Kokkos::Host::size_type
+    for ( KokkosArray::Host::size_type
             n = tensor.tensor().entry_begin( iInnerRow ) ;
             n < tensor.tensor().entry_end(   iInnerRow ) ; ++n ) {
 
@@ -442,57 +453,58 @@ test_product_flat_commuted_matrix(
 
   matrix_type matrix ;
 
-  matrix.graph = Kokkos::create_crsarray<crsarray_type>( std::string("testing") , flat_graph );
+  matrix.graph = KokkosArray::create_crsarray<crsarray_type>( std::string("testing") , flat_graph );
 
   const size_t flat_graph_length = matrix.graph.entries.dimension(0);
 
   matrix.values =
-    Kokkos::create_multivector<vector_type>( flat_graph_length );
+    KokkosArray::create_multivector<vector_type>( flat_graph_length );
 
-  Kokkos::MultiVector<value_type,Device> x =
-    Kokkos::create_multivector<vector_type>( flat_length );
+  KokkosArray::MultiVector<value_type,Device> x =
+    KokkosArray::create_multivector<vector_type>( flat_length );
 
-  Kokkos::MultiVector<value_type,Device> y =
-    Kokkos::create_multivector<vector_type>( flat_length );
+  KokkosArray::MultiVector<value_type,Device> y =
+    KokkosArray::create_multivector<vector_type>( flat_length );
 
   {
-    typename Kokkos::MultiVector< value_type , Device >::HostMirror hM =
-      Kokkos::create_mirror( matrix.values );
+    typename KokkosArray::MultiVector< value_type , Device >::HostMirror hM =
+      KokkosArray::create_mirror( matrix.values );
 
     for ( size_t i = 0 ; i < flat_graph_length ; ++i ) {
       hM(i) = 1 + i ;
     }
 
-    Kokkos::deep_copy( matrix.values , hM );
+    KokkosArray::deep_copy( matrix.values , hM );
   }
 
   //------------------------------
 
-  typename Kokkos::MultiVector< value_type , Device >::HostMirror hx =
-    Kokkos::create_mirror( x );
+  typename KokkosArray::MultiVector< value_type , Device >::HostMirror hx =
+    KokkosArray::create_mirror( x );
 
   for ( size_t i = 0 ; i < flat_length ; ++i ) {
     hx(i) = 1 + i ;
   }
 
-  Kokkos::deep_copy( x , hx );
+  KokkosArray::deep_copy( x , hx );
 
   //------------------------------
 
-  Kokkos::Impl::Timer clock ;
+  KokkosArray::Impl::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
-    Kokkos::multiply( matrix , x , y );
+    KokkosArray::multiply( matrix , x , y );
   }
   Device::fence();
 
   const double seconds_per_iter = clock.seconds() / ((double) iterCount );
+  const double flops = 2.0*1e-9*flat_graph_length / seconds_per_iter;
 
   //------------------------------
 
   if ( print_flag ) {
-    typename Kokkos::MultiVector< value_type , Device >::HostMirror hy = Kokkos::create_mirror( y );
+    typename KokkosArray::MultiVector< value_type , Device >::HostMirror hy = KokkosArray::create_mirror( y );
 
-    Kokkos::deep_copy( hy , y );
+    KokkosArray::deep_copy( hy , y );
 
     std::cout << std::endl << "test_product_flat_matrix"
               << std::endl ;
@@ -505,14 +517,18 @@ test_product_flat_commuted_matrix(
     }
   }
 
-  return std::pair<size_t,double>( outer_length * inner_length , seconds_per_iter );
+  std::vector<double> perf(3);
+  perf[0] = outer_length * inner_length ;
+  perf[1] = seconds_per_iter;
+  perf[2] = flops;
+  return perf;
 }
 
 //----------------------------------------------------------------------------
 // Flatten to a plain CRS matrix
 
 template< typename ScalarType , class Device >
-std::pair<size_t,double>
+std::vector<double>
 test_product_flat_original_matrix(
   const std::vector<int> & var_degree ,
   const int nGrid ,
@@ -520,19 +536,19 @@ test_product_flat_original_matrix(
   const bool print_flag = false )
 {
   typedef ScalarType value_type ;
-  typedef Kokkos::MultiVector< value_type , Device > vector_type ;
+  typedef KokkosArray::MultiVector< value_type , Device > vector_type ;
 
-  typedef Kokkos::NormalizedLegendrePolynomialBases<4,Kokkos::Host> polynomial ;
+  typedef KokkosArray::NormalizedLegendrePolynomialBases<4,KokkosArray::Host> polynomial ;
 
-  typedef Kokkos::StochasticProductTensor<
+  typedef KokkosArray::StochasticProductTensor<
     value_type , polynomial ,
-    Kokkos::Host ,
-    Kokkos::CrsProductTensor > tensor_type ;
+    KokkosArray::Host ,
+    KokkosArray::CrsProductTensor > tensor_type ;
 
   //------------------------------
 
-  typedef Kokkos::CrsMatrix<value_type,Device> matrix_type ;
-  typedef Kokkos::CrsArray<int,Device,int> crsarray_type ;
+  typedef KokkosArray::CrsMatrix<value_type,Device> matrix_type ;
+  typedef KokkosArray::CrsArray<int,Device,int> crsarray_type ;
 
   //------------------------------
   // Generate FEM graph:
@@ -546,7 +562,7 @@ test_product_flat_original_matrix(
   // Generate product tensor from variables' degrees
 
   const tensor_type tensor =
-    Kokkos::create_product_tensor< tensor_type >( var_degree );
+    KokkosArray::create_product_tensor< tensor_type >( var_degree );
 
   const size_t inner_length = tensor.dimension();
 
@@ -555,7 +571,7 @@ test_product_flat_original_matrix(
   for ( size_t iInnerRow = 0 ; iInnerRow < inner_length ; ++iInnerRow ) {
   for ( size_t iInnerCol = 0 ; iInnerCol < inner_length ; ++iInnerCol ) {
 
-    for ( Kokkos::Host::size_type
+    for ( KokkosArray::Host::size_type
             n = tensor.tensor().entry_begin( iInnerRow ) ;
             n < tensor.tensor().entry_end(   iInnerRow ) ; ++n ) {
 
@@ -607,54 +623,57 @@ test_product_flat_original_matrix(
 
   matrix_type matrix ;
 
-  matrix.graph = Kokkos::create_crsarray<crsarray_type>( std::string("testing") , flat_graph );
+  matrix.graph = KokkosArray::create_crsarray<crsarray_type>( std::string("testing") , flat_graph );
 
   const size_t flat_graph_length = matrix.graph.entries.dimension(0);
 
   matrix.values =
-    Kokkos::create_multivector<vector_type>( flat_graph_length );
+    KokkosArray::create_multivector<vector_type>( flat_graph_length );
 
-  vector_type x = Kokkos::create_multivector<vector_type>( flat_length );
-  vector_type y = Kokkos::create_multivector<vector_type>( flat_length );
+  vector_type x = KokkosArray::create_multivector<vector_type>( flat_length );
+  vector_type y = KokkosArray::create_multivector<vector_type>( flat_length );
 
   {
-    typename Kokkos::MultiVector< value_type , Device >::HostMirror hM =
-      Kokkos::create_mirror( matrix.values );
+    typename KokkosArray::MultiVector< value_type , Device >::HostMirror hM =
+      KokkosArray::create_mirror( matrix.values );
 
     for ( size_t i = 0 ; i < flat_graph_length ; ++i ) {
       hM(i) = 1 + i ;
     }
 
-    Kokkos::deep_copy( matrix.values , hM );
+    KokkosArray::deep_copy( matrix.values , hM );
   }
+
+  //KokkosArray::write_matrix_market(matrix, "flat_original.mm");
 
   //------------------------------
 
-  typename Kokkos::MultiVector< value_type , Device >::HostMirror hx =
-    Kokkos::create_mirror( x );
+  typename KokkosArray::MultiVector< value_type , Device >::HostMirror hx =
+    KokkosArray::create_mirror( x );
 
   for ( size_t i = 0 ; i < flat_length ; ++i ) {
     hx(i) = 1 + i ;
   }
 
-  Kokkos::deep_copy( x , hx );
+  KokkosArray::deep_copy( x , hx );
 
   //------------------------------
 
-  Kokkos::Impl::Timer clock ;
+  KokkosArray::Impl::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
-    Kokkos::multiply( matrix , x , y );
+    KokkosArray::multiply( matrix , x , y );
   }
   Device::fence();
 
   const double seconds_per_iter = clock.seconds() / ((double) iterCount );
+  const double flops = 2.0*1e-9*flat_graph_length / seconds_per_iter;
 
   //------------------------------
 
   if ( print_flag ) {
-    typename Kokkos::MultiVector< value_type , Device >::HostMirror hy = Kokkos::create_mirror( y );
+    typename KokkosArray::MultiVector< value_type , Device >::HostMirror hy = KokkosArray::create_mirror( y );
 
-    Kokkos::deep_copy( hy , y );
+    KokkosArray::deep_copy( hy , y );
 
     std::cout << std::endl << "test_product_flat_matrix"
               << std::endl ;
@@ -667,8 +686,171 @@ test_product_flat_original_matrix(
     }
   }
 
-  return std::pair<size_t,double>( outer_length * inner_length , seconds_per_iter );
+  std::vector<double> perf(3);
+  perf[0] = outer_length * inner_length ;
+  perf[1] = seconds_per_iter;
+  perf[2] = flops;
+  return perf;
 }
+
+//----------------------------------------------------------------------------
+// Outer original matrix-free block algorithm
+#ifdef HAVE_KOKKOS_STOKHOS
+template< typename ScalarType , class Device >
+std::vector<double>
+test_original_matrix_free_block(
+  const std::vector<int> & var_degree ,
+  const int nGrid ,
+  const int iterCount ,
+  const bool print_flag = false )
+{
+  typedef ScalarType value_type ;
+  typedef Stokhos::OneDOrthogPolyBasis<int,value_type> abstract_basis_type;
+  typedef Stokhos::LegendreBasis<int,value_type> basis_type;
+  typedef Stokhos::CompletePolynomialBasis<int,value_type> product_basis_type;
+  typedef Stokhos::Sparse3Tensor<int,double> Cijk_type;
+
+  using Teuchos::rcp;
+  using Teuchos::RCP;
+  using Teuchos::Array;
+
+  // Create Stochastic Galerkin basis and expansion
+  const size_t num_KL = var_degree.size();
+  Array< RCP<const abstract_basis_type> > bases(num_KL); 
+  for (size_t i=0; i<num_KL; i++)
+    bases[i] = Teuchos::rcp(new basis_type(var_degree[i],true));
+  RCP<const product_basis_type> basis = 
+    rcp(new product_basis_type(bases, 1e-12));
+  const size_t outer_length = basis->size();
+  RCP<Cijk_type> Cijk = basis->computeTripleProductTensor(outer_length);
+
+  //------------------------------
+
+  typedef KokkosArray::CrsMatrix<value_type,Device> matrix_type ;
+  typedef KokkosArray::CrsArray<int,Device,int> crsarray_type ;
+
+  //------------------------------
+  // Generate FEM graph:
+
+  std::vector< std::vector<size_t> > fem_graph ;
+
+  const size_t inner_length = nGrid * nGrid * nGrid ;
+  unit_test::generate_fem_graph( nGrid , fem_graph );
+
+  //------------------------------
+  
+  typedef KokkosArray::MultiVector<value_type,Device> multivec_type ;
+
+  std::vector<matrix_type> matrix( outer_length ) ;
+  std::vector<multivec_type> x( outer_length ) ;
+  std::vector<multivec_type> y( outer_length ) ;
+  std::vector<multivec_type> tmp( outer_length ) ;
+
+  for (size_t block=0; block<outer_length; ++block) {
+    matrix[block].graph = KokkosArray::create_crsarray<crsarray_type>( std::string("testing") , fem_graph );
+
+    const size_t graph_length = matrix[block].graph.entries.dimension(0);
+
+    matrix[block].values =
+      KokkosArray::create_multivector<multivec_type>( graph_length );
+
+    x[block] = KokkosArray::create_multivector<multivec_type>( inner_length );
+
+    y[block] = KokkosArray::create_multivector<multivec_type>( inner_length );
+
+    tmp[block] = KokkosArray::create_multivector<multivec_type>( inner_length );
+
+    typename KokkosArray::MultiVector< value_type , Device >::HostMirror hM =
+      KokkosArray::create_mirror( matrix[block].values );
+
+    for ( size_t i = 0 ; i < graph_length ; ++i ) {
+      hM(i) = 1 + i ;
+    }
+
+    KokkosArray::deep_copy( matrix[block].values , hM );
+
+    typename KokkosArray::MultiVector< value_type , Device >::HostMirror hx =
+      KokkosArray::create_mirror( x[block] );
+
+    for ( size_t i = 0 ; i < inner_length ; ++i ) {
+      hx(i) = 1 + i ;
+    }
+
+    KokkosArray::deep_copy( x[block] , hx );
+  }
+  
+
+  KokkosArray::Impl::Timer clock ;
+  int n_apply = 0;
+  for ( int iter = 0 ; iter < iterCount ; ++iter ) {
+
+    // Original matrix-free multiply algorithm using a block apply
+    n_apply = 0;
+    Cijk_type::k_iterator k_begin = Cijk->k_begin();
+    Cijk_type::k_iterator k_end = Cijk->k_end();
+    for (Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
+      int nj = Cijk->num_j(k_it);
+      if (nj > 0) {
+	int k = index(k_it);
+	Cijk_type::kj_iterator j_begin = Cijk->j_begin(k_it);
+	Cijk_type::kj_iterator j_end = Cijk->j_end(k_it);
+	std::vector<multivec_type> xx(nj), yy(nj);
+	int jdx = 0;
+	for (Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
+	  int j = index(j_it);
+	  xx[jdx] = x[j];
+	  yy[jdx] = tmp[j];
+	  jdx++;
+	}
+        KokkosArray::multiply( matrix[k] , xx , yy );
+        n_apply += nj;
+	jdx = 0;
+	for (Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
+	  Cijk_type::kji_iterator i_begin = Cijk->i_begin(j_it);
+	  Cijk_type::kji_iterator i_end =  Cijk->i_end(j_it);
+	  for (Cijk_type::kji_iterator i_it = i_begin; i_it != i_end; ++i_it) {
+	    int i = index(i_it);
+	    value_type c = value(i_it);
+	    KokkosArray::update( 1.0 , y[i] , c , yy[jdx] );
+	  }
+	  jdx++;
+	}
+      }
+    }
+
+  }
+  Device::fence();
+
+  const double seconds_per_iter = clock.seconds() / ((double) iterCount );
+  const double flops = 2.0*1.0e-9*n_apply*matrix[0].graph.entries.dimension(0);
+
+  //------------------------------
+
+  if ( print_flag ) {
+    std::cout << std::endl << "test_product_flat_matrix"
+              << std::endl ;
+    for ( size_t i = 0 ; i < outer_length ; ++i ) {
+      typename KokkosArray::MultiVector< value_type , Device >::HostMirror hy = KokkosArray::create_mirror( y[i] );
+
+      KokkosArray::deep_copy( hy , y[i] );
+
+      std::cout << "hy(:," << i << ") =" ;
+      for ( size_t j = 0 ; j < inner_length ; ++j ) {
+        std::cout << " " << hy(j);
+      }
+      std::cout << std::endl ;
+    }
+  }
+
+  std::vector<double> perf(4);
+  perf[0] = outer_length * inner_length;
+  perf[1] = seconds_per_iter ;
+  perf[2] = flops/seconds_per_iter;
+  perf[3] = flops;
+
+  return perf;
+}
+#endif
 
 //----------------------------------------------------------------------------
 // A plain CRS matrix
@@ -681,12 +863,12 @@ test_flat_matrix(
   const bool print_flag = false )
 {
   typedef ScalarType value_type ;
-  typedef Kokkos::MultiVector< value_type , Device > vector_type ;
+  typedef KokkosArray::MultiVector< value_type , Device > vector_type ;
 
   //------------------------------
 
-  typedef Kokkos::CrsMatrix<value_type,Device> matrix_type ;
-  typedef Kokkos::CrsArray<int,Device,int> crsarray_type ;
+  typedef KokkosArray::CrsMatrix<value_type,Device> matrix_type ;
+  typedef KokkosArray::CrsArray<int,Device,int> crsarray_type ;
 
   //------------------------------
   // Generate FEM graph:
@@ -701,39 +883,39 @@ test_flat_matrix(
 
   matrix_type matrix ;
 
-  matrix.graph = Kokkos::create_crsarray<crsarray_type>( std::string("testing") , fem_graph );
+  matrix.graph = KokkosArray::create_crsarray<crsarray_type>( std::string("testing") , fem_graph );
 
-  matrix.values = Kokkos::create_multivector<vector_type>( graph_length );
-  vector_type x = Kokkos::create_multivector<vector_type>( length );
-  vector_type y = Kokkos::create_multivector<vector_type>( length );
+  matrix.values = KokkosArray::create_multivector<vector_type>( graph_length );
+  vector_type x = KokkosArray::create_multivector<vector_type>( length );
+  vector_type y = KokkosArray::create_multivector<vector_type>( length );
 
   {
-    typename Kokkos::MultiVector< value_type , Device >::HostMirror hM =
-      Kokkos::create_mirror( matrix.values );
+    typename KokkosArray::MultiVector< value_type , Device >::HostMirror hM =
+      KokkosArray::create_mirror( matrix.values );
 
     for ( size_t i = 0 ; i < graph_length ; ++i ) {
       hM(i) = 1 + i ;
     }
 
-    Kokkos::deep_copy( matrix.values , hM );
+    KokkosArray::deep_copy( matrix.values , hM );
   }
 
   //------------------------------
 
-  typename Kokkos::MultiVector< value_type , Device >::HostMirror hx =
-    Kokkos::create_mirror( x );
+  typename KokkosArray::MultiVector< value_type , Device >::HostMirror hx =
+    KokkosArray::create_mirror( x );
 
   for ( size_t i = 0 ; i < length ; ++i ) {
     hx(i) = 1 + i ;
   }
 
-  Kokkos::deep_copy( x , hx );
+  KokkosArray::deep_copy( x , hx );
 
   //------------------------------
 
-  Kokkos::Impl::Timer clock ;
+  KokkosArray::Impl::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
-    Kokkos::multiply( matrix , x , y );
+    KokkosArray::multiply( matrix , x , y );
   }
   Device::fence();
 
@@ -742,9 +924,9 @@ test_flat_matrix(
   //------------------------------
 
   if ( print_flag ) {
-    typename Kokkos::MultiVector< value_type , Device >::HostMirror hy = Kokkos::create_mirror( y );
+    typename KokkosArray::MultiVector< value_type , Device >::HostMirror hy = KokkosArray::create_mirror( y );
 
-    Kokkos::deep_copy( hy , y );
+    KokkosArray::deep_copy( hy , y );
 
     std::cout << std::endl << "test_flat_matrix"
               << std::endl ;
@@ -760,96 +942,200 @@ test_flat_matrix(
 //----------------------------------------------------------------------------
 
 template< class Device >
-void performance_test_driver( const int pdeg ,
-                              const int minvar ,
-                              const int maxvar ,
-                              const int nGrid ,
-                              const int nIter ,
-                              const bool print )
+void performance_test_driver_all( const int pdeg ,
+				  const int minvar ,
+				  const int maxvar ,
+				  const int nGrid ,
+				  const int nIter ,
+				  const bool print )
 {
-  typedef Kokkos::NormalizedLegendrePolynomialBases<8,Device> polynomial ;
-  typedef Kokkos::StochasticProductTensor< double , polynomial , Device , Kokkos::SparseProductTensor > tensor_type ;
+  typedef KokkosArray::NormalizedLegendrePolynomialBases<8,Device> polynomial ;
+  typedef KokkosArray::StochasticProductTensor< double , polynomial , Device , KokkosArray::SparseProductTensor > tensor_type ;
 
   std::cout.precision(8);
 
   //------------------------------
 
   std::cout << std::endl
+	    << "\"#nGrid\" , "
             << "\"#Variable\" , \"PolyDegree\" , \"#Bases\" , "
             << "\"#TensorEntry\" , "
             << "\"VectorSize\" , "
-            << "\"Original-Flat MXV-Time\" , "
-            << "\"Original-Flat MXV-Speedup\" , "
-            << "\"Commuted-Flat MXV-Speedup\" , "
-            << "\"Block-Coord-Tensor MXV-Speedup\" , "
-            << "\"Block-Crs-Tensor MXV-Speedup\" , "
-            << "\"Block-Diagonal MXV-Speedup\""
+	    << "\"Original-Flat MXV-Time\" , "
+	    << "\"Original-Flat MXV-Speedup\" , "
+            << "\"Original-Flat MXV-GFLOPS\" , "
+	    << "\"Commuted-Flat MXV-Speedup\" , "
+            << "\"Commuted-Flat MXV-GFLOPS\" , "
+#ifdef HAVE_KOKKOS_STOKHOS
+            << "\"Original-Matrix-Free-Block MXV-Speedup\" , "
+            << "\"Original-Matrix-Free-Block MXV-GFLOPS\" , "
+#endif
+	    << "\"Block-Diagonal MXV-Speedup\" , "
+            << "\"Block-Diagonal MXV-GFLOPS\" , "
+    //<< "\"Block-Coord-Tensor MXV-Speedup\" , "
+	    << "\"Block-Crs-Tensor MXV-Speedup\" , "
+	    << "\"Block-Crs-Tensor MXV-Time\" , "
+#ifdef HAVE_KOKKOS_STOKHOS
+            << "\"Block-Crs-Tensor MXV-GFLOPS\" , "
+#endif
             << std::endl ;
 
   for ( int nvar = minvar ; nvar <= maxvar ; ++nvar ) {
     std::vector<int> var_degree( nvar , pdeg );
 
-    const tensor_type tensor = Kokkos::create_product_tensor< tensor_type >( var_degree );
+    const tensor_type tensor = KokkosArray::create_product_tensor< tensor_type >( var_degree );
 
-    const std::pair<size_t,double> perf_matrix =
+    const std::vector<double> perf_matrix =
       test_product_tensor_diagonal_matrix<double,Device>( var_degree , nGrid , nIter , print );
 
-    const std::pair<size_t,double> perf_tensor =
-      test_product_tensor_matrix<double,Device,Kokkos::SparseProductTensor>( var_degree , nGrid , nIter , print );
+    // const std::pair<size_t,double> perf_tensor =
+    //   test_product_tensor_matrix<double,Device,KokkosArray::SparseProductTensor>( var_degree , nGrid , nIter , print );
 
     const std::pair<size_t,double> perf_crs_tensor =
-      test_product_tensor_matrix<double,Device,Kokkos::CrsProductTensor>( var_degree , nGrid , nIter , print );
+      test_product_tensor_matrix<double,Device,KokkosArray::CrsProductTensor>( var_degree , nGrid , nIter , print );
 
-    const std::pair<size_t,double> perf_flat_commuted =
+    const std::vector<double> perf_flat_commuted =
       test_product_flat_commuted_matrix<double,Device>( var_degree , nGrid , nIter , print );
 
-    const std::pair<size_t,double> perf_flat_original =
+    const std::vector<double> perf_flat_original =
       test_product_flat_original_matrix<double,Device>( var_degree , nGrid , nIter , print );
 
-     std::cout << nvar << " , " << pdeg << " , "
-               << tensor.dimension() << " , "
-               << tensor.tensor().entry_count() << " , "
-               << perf_flat_original.first << " , "
-               << perf_flat_original.second << " , "
-               << perf_flat_original.second / perf_flat_original.second << " , "
-               << perf_flat_original.second / perf_flat_commuted.second << " , "
-               << perf_flat_original.second / perf_tensor.second << " , "
-               << perf_flat_original.second / perf_crs_tensor.second << " , "
-               << perf_flat_original.second / perf_matrix.second
-               << std::endl ;
+#ifdef HAVE_KOKKOS_STOKHOS
+    const std::vector<double> perf_original_mat_free_block =
+      test_original_matrix_free_block<double,Device>( var_degree , nGrid , nIter , print );
+#endif
+
+    std::cout << nGrid << " , " << nvar << " , " << pdeg << " , "
+	      << tensor.dimension() << " , "
+	      << tensor.tensor().entry_count() << " , "
+	      << perf_flat_original[0] << " , "
+	      << perf_flat_original[1] << " , "
+	      << perf_flat_original[1] / perf_flat_original[1] << " , "
+              << perf_flat_original[2] << " , "
+	      << perf_flat_original[1] / perf_flat_commuted[1] << " , "
+              << perf_flat_commuted[2] << " , "
+#ifdef HAVE_KOKKOS_STOKHOS
+	      << perf_flat_original[1] / perf_original_mat_free_block[1] << " , "
+              << perf_original_mat_free_block[2] << " , "
+#endif
+	      << perf_flat_original[1] / perf_matrix[1] << " , "
+              << perf_matrix[2] << " , "
+      //<< perf_flat_original.second / perf_tensor.second << " , "
+	      << perf_flat_original[1] / perf_crs_tensor.second << " , "
+	      << perf_crs_tensor.second << " , "
+#ifdef HAVE_KOKKOS_STOKHOS
+	      << perf_original_mat_free_block[3] / perf_crs_tensor.second << " , "
+#endif
+	      << std::endl ;
   }
 
   //------------------------------
 }
 
+#ifdef HAVE_KOKKOS_STOKHOS
 template< class Device >
-void performance_test_driver()
+void performance_test_driver_poly( const int pdeg ,
+				   const int minvar ,
+				   const int maxvar ,
+				   const int nGrid ,
+				   const int nIter ,
+				   const bool print )
 {
-  const int nGrid = 5 ;
-  const int nIter = 10 ; 
-  const bool print = false ;
+  typedef KokkosArray::NormalizedLegendrePolynomialBases<8,Device> polynomial ;
+  typedef KokkosArray::StochasticProductTensor< double , polynomial , Device , KokkosArray::SparseProductTensor > tensor_type ;
 
-  performance_test_driver<Device>( 3 , 4 , 11 , nGrid , nIter , print );
-  performance_test_driver<Device>( 4 , 3 ,  7 , nGrid , nIter , print );
+  std::cout.precision(8);
 
   //------------------------------
 
   std::cout << std::endl
+	    << "\"#nGrid\" , "
+            << "\"#Variable\" , \"PolyDegree\" , \"#Bases\" , "
+            << "\"#TensorEntry\" , "
+            << "\"VectorSize\" , "
+	    << "\"Original-Matrix-Free-Block-MXV-Time\" , "
+	    << "\"Original-Matrix-Free-Block-MXV-Speedup\" , "
+            << "\"Original-Matrix-Free-Block-MXV-GFLOPS\" , "
+	    << "\"Block-Crs-Tensor MXV-Time\" , "
+	    << "\"Block-Crs-Tensor MXV-Speedup\" , "
+            << "\"Block-Crs-Tensor MXV-GFLOPS\" , "
+            << std::endl ;
+
+  for ( int nvar = minvar ; nvar <= maxvar ; ++nvar ) {
+    std::vector<int> var_degree( nvar , pdeg );
+
+    const tensor_type tensor = KokkosArray::create_product_tensor< tensor_type >( var_degree );
+
+    const std::pair<size_t,double> perf_crs_tensor =
+      test_product_tensor_matrix<double,Device,KokkosArray::CrsProductTensor>( var_degree , nGrid , nIter , print );
+
+    const std::vector<double> perf_original_mat_free_block =
+      test_original_matrix_free_block<double,Device>( var_degree , nGrid , nIter , print );
+
+    std::cout << nGrid << " , " << nvar << " , " << pdeg << " , "
+	      << tensor.dimension() << " , "
+	      << tensor.tensor().entry_count() << " , "
+	      << perf_original_mat_free_block[0] << " , "
+	      << perf_original_mat_free_block[1] << " , "
+	      << perf_original_mat_free_block[1] / perf_original_mat_free_block[1] << " , "
+              << perf_original_mat_free_block[2] << " , "
+	      << perf_crs_tensor.second << " , "
+	      << perf_original_mat_free_block[1] / perf_crs_tensor.second << " , "
+              << perf_original_mat_free_block[3] / perf_crs_tensor.second << " , "
+
+	      << std::endl ;
+  }
+
+  //------------------------------
+}
+#endif
+
+
+template< class Device >
+void performance_test_driver()
+{
+  int nGrid;
+  int nIter; 
+  bool print;
+
+  // All methods compared against flat-original
+  nGrid = 5 ;
+  nIter = 10 ; 
+  print = false ;
+  performance_test_driver_all<Device>( 3 , 1 , 12 , nGrid , nIter , print );
+  performance_test_driver_all<Device>( 5 , 1 ,  6 , nGrid , nIter , print );
+
+#ifdef HAVE_KOKKOS_STOKHOS
+  // Just polynomial methods compared against original
+  nGrid = 32 ;
+  nIter = 1 ; 
+  print = false ;
+  performance_test_driver_poly<Device>( 3 , 1 , 12 , nGrid , nIter , print );
+  performance_test_driver_poly<Device>( 5 , 1 ,  6 , nGrid , nIter , print );
+#endif
+
+  //------------------------------
+
+  /*
+  std::cout << std::endl
             << "\"CRS flat-matrix ~27 nonzeros/row (CUDA uses cusparse)\""
             << std::endl
+	    << "\"nGrid\" , "
             << "\"VectorSize\" , "
             << "\"MXV-Time\""
             << std::endl ;
 
-  for ( int n_grid = nGrid ; n_grid <= ( nGrid << 5 ) ; n_grid <<= 1 ) {
+  for ( int n_grid = 10 ; n_grid <= 100 ; n_grid += 5 ) {
 
     const std::pair<size_t,double> perf_flat =
       test_flat_matrix<double,Device>( n_grid , nIter , print );
 
-    std::cout << perf_flat.first << " , "
+    std::cout << n_grid << " , "
+	      << perf_flat.first << " , "
               << perf_flat.second
               << std::endl ;
   }
+  */
 
   //------------------------------
 }

@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -54,8 +54,8 @@ struct Integrate<Scalar , KOKKOS_MACRO_DEVICE >
 	typedef KOKKOS_MACRO_DEVICE 		device_type;
 	typedef device_type::size_type 		size_type;
 	
-	typedef typename Kokkos::MDArrayView<Scalar,device_type> array_type;
-	typedef typename Kokkos::MDArrayView<Scalar,Kokkos::DeviceHost> host_array;
+	typedef typename KokkosArray::MDArrayView<Scalar,device_type> array_type;
+	typedef typename KokkosArray::MDArrayView<Scalar,KokkosArray::DeviceHost> host_array;
 	
   private:
 	

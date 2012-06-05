@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -45,25 +45,26 @@
 #define SPARSELINEARSYSTEM_HPP
 
 #include <cmath>
-#include <impl/Kokkos_Timer.hpp>
-#include <Kokkos_MultiVector.hpp>
-#include <Kokkos_CrsArray.hpp>
+#include <impl/KokkosArray_Timer.hpp>
+#include <KokkosArray_MultiVector.hpp>
+#include <KokkosArray_CrsArray.hpp>
 
-namespace Kokkos {
+namespace KokkosArray {
 namespace Impl {
 
 template< class Scalar , class DeviceType , class > struct Dot ;
 template< class Scalar , class DeviceType > struct WAXPBY ;
 template< class Scalar , class DeviceType > struct AXPBY ;
+template< class Scalar , class DeviceType > struct FILL ;
 template< class AType , class XType , class YType > struct Multiply ;
 
 } /* namespace Impl */
-} /* namespace Kokkos */
+} /* namespace KokkosArray */
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-namespace Kokkos {
+namespace KokkosArray {
 
 //----------------------------------------------------------------------------
 
@@ -95,6 +96,13 @@ void waxpby( const ParallelDataMap & data_map ,
   else {
     Impl::WAXPBY<Scalar,Device>::apply( data_map.count_owned , alpha , x , beta , y , w );
   }
+}
+
+template< typename Scalar , class Device >
+void fill( const double alpha ,
+           const MultiVector< Scalar , Device > & w )
+{
+  Impl::FILL<Scalar,Device>::apply( w.length() , alpha , w );
 }
 
 //----------------------------------------------------------------------------
@@ -149,38 +157,62 @@ double dot( const ParallelDataMap & data_map ,
 template< typename AScalarType ,
           typename VScalarType ,
           class Device >
-void multiply( const ParallelDataMap                  & data_map ,
-               const CrsMatrix<AScalarType,Device>    & A ,
-               const MultiVector<VScalarType,Device>  & x ,
-               const MultiVector<VScalarType,Device>  & y )
-{
+class Operator {
   typedef CrsMatrix<AScalarType,Device>    matrix_type ;
   typedef MultiVector<VScalarType,Device>  vector_type ;
 
+private:
+  const CrsMatrix<AScalarType,Device> A ;
+
 #if defined( HAVE_MPI )
-  // Gather off-processor data for 'x'
 
-  AsyncExchange< VScalarType , Device , ParallelDataMap >
-    exchange( data_map , 1 );
+  ParallelDataMap                                         data_map ;
+  AsyncExchange< VScalarType , Device , ParallelDataMap > exchange ;
 
-  PackArray< vector_type >::pack( exchange.buffer() ,
-                                  data_map.count_interior ,
-                                  data_map.count_send , x );
+public:
 
-  exchange.send();
+  Operator( const ParallelDataMap                  & arg_data_map ,
+            const CrsMatrix<AScalarType,Device>    & arg_A )
+    : A( arg_A )
+    , data_map( arg_data_map )
+    , exchange( arg_data_map , 1 )
+    {}
 
-  // If interior & boundary matrices then could launch interior multiply
+#else /* ! defined( HAVE_MPI ) */
 
-  exchange.receive();
+public:
 
-  UnpackArray< vector_type >::unpack( x , exchange.buffer() ,
-                                      data_map.count_owned ,
-                                      data_map.count_receive );
+  Operator( const ParallelDataMap                  & ,
+            const CrsMatrix<AScalarType,Device>    & arg_A )
+    : A( arg_A ) {}
+
 #endif
 
-  Impl::Multiply<matrix_type,vector_type,vector_type>
-    ::apply( A , x , y );
-}
+  void apply( const MultiVector<VScalarType,Device>  & x ,
+              const MultiVector<VScalarType,Device>  & y )
+  {
+#if defined( HAVE_MPI )
+    // Gather off-processor data for 'x'
+
+    PackArray< vector_type >::pack( exchange.buffer() ,
+                                    data_map.count_interior ,
+                                    data_map.count_send , x );
+
+    exchange.send();
+
+    // If interior & boundary matrices then could launch interior multiply
+
+    exchange.receive();
+
+    UnpackArray< vector_type >::unpack( x , exchange.buffer() ,
+                                        data_map.count_owned ,
+                                        data_map.count_receive );
+#endif
+
+    Impl::Multiply<matrix_type,vector_type,vector_type>
+      ::apply( A , x , y );
+  }
+};
 
 //----------------------------------------------------------------------------
 
@@ -201,12 +233,14 @@ void cgsolve(
   const size_t count_owned = data_map.count_owned ;
   const size_t count_total = data_map.count_owned + data_map.count_receive ;
 
+  Operator<AScalarType,VScalarType,Device> matrix_operator( data_map , A );
+
   vector_type r  = create_multivector< vector_type >( "cg::r" , count_owned );
   vector_type p  = create_multivector< vector_type >( "cg::p" , count_total );
   vector_type Ap = create_multivector< vector_type >( "cg::Ap", count_owned );
 
   /* p  = x      */ deep_copy( p , x , count_owned );
-  /* Ap = A * p  */ multiply( data_map , A , p , Ap );
+  /* Ap = A * p  */ matrix_operator.apply( p , Ap );
   /* r  = b - Ap */ waxpby( data_map , 1.0 , b , -1.0 , Ap , r );
   /* p  = r      */ deep_copy( p , r , count_owned );
 
@@ -215,11 +249,11 @@ void cgsolve(
   normr     = sqrt( old_rdot );
   iteration = 0 ;
 
-  Kokkos::Impl::Timer wall_clock ;
+  KokkosArray::Impl::Timer wall_clock ;
 
   while ( tolerance < normr && iteration < maximum_iteration ) {
 
-    /* Ap = A * p  */ multiply( data_map , A , p , Ap );
+    /* Ap = A * p  */ matrix_operator.apply( p , Ap );
 
     const double pAp_dot = dot( data_map , p , Ap );
     const double alpha   = old_rdot / pAp_dot ;
@@ -236,12 +270,12 @@ void cgsolve(
     ++iteration ;
   }
 
-  iter_time = iteration ? wall_clock.seconds() / iteration : 0 ;
+  iter_time = wall_clock.seconds();
 }
 
 //----------------------------------------------------------------------------
 
-} // namespace Kokkos
+} // namespace KokkosArray
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

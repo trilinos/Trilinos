@@ -109,7 +109,6 @@ template<class Scalar>
 RCP<Tpetra::Operator<Scalar,int> >
 createTriDiagonalTpetraOperator(const int numLocalRows)
 {
-  typedef int Ordinal;
   typedef Tpetra::global_size_t global_size_t;
 
   RCP<const Tpetra::Map<int> > map = createTpetraMap(numLocalRows);
@@ -117,7 +116,7 @@ createTriDiagonalTpetraOperator(const int numLocalRows)
   const size_t numMyElements = map->getNodeNumElements();
   const global_size_t numGlobalElements = map->getGlobalNumElements();
 
-  ArrayView<const Ordinal> myGlobalElements = map->getNodeElementList();
+  ArrayView<const int> myGlobalElements = map->getNodeElementList();
 
   // Create an OTeger vector numNz that is used to build the Petra Matrix.
   // numNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
@@ -139,8 +138,8 @@ createTriDiagonalTpetraOperator(const int numLocalRows)
   }
 
   // Create a Tpetra::Matrix using the Map, with a static allocation dictated by numNz
-  RCP< Tpetra::CrsMatrix<Scalar,Ordinal> > A =
-    Teuchos::rcp( new Tpetra::CrsMatrix<Scalar,Ordinal>(map, numNz, Tpetra::StaticProfile) );
+  RCP< Tpetra::CrsMatrix<Scalar,int> > A =
+    Teuchos::rcp( new Tpetra::CrsMatrix<Scalar,int>(map, numNz, Tpetra::StaticProfile) );
   
   // We are done with NumNZ
   numNz = Teuchos::null;
@@ -153,19 +152,19 @@ createTriDiagonalTpetraOperator(const int numLocalRows)
   for (size_t i = 0; i < numMyElements; i++) {
     if (myGlobalElements[i] == 0) {
       A->insertGlobalValues( myGlobalElements[i],
-        tuple<Ordinal>(myGlobalElements[i], myGlobalElements[i]+1)(),
+        tuple<int>(myGlobalElements[i], myGlobalElements[i]+1)(),
         tuple<Scalar> (two, posOne)()
         );
     }
     else if (static_cast<global_size_t>(myGlobalElements[i]) == numGlobalElements-1) {
       A->insertGlobalValues( myGlobalElements[i],
-        tuple<Ordinal>(myGlobalElements[i]-1, myGlobalElements[i])(),
+        tuple<int>(myGlobalElements[i]-1, myGlobalElements[i])(),
         tuple<Scalar> (negOne, two)()
         );
     }
     else {
       A->insertGlobalValues( myGlobalElements[i],
-        tuple<Ordinal>(myGlobalElements[i]-1, myGlobalElements[i], myGlobalElements[i]+1)(),
+        tuple<int>(myGlobalElements[i]-1, myGlobalElements[i], myGlobalElements[i]+1)(),
         tuple<Scalar> (negOne, two, posOne)()
         );
     }

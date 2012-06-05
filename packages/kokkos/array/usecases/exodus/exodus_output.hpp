@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -45,7 +45,7 @@
 #include <vector>
 #include <exodusII.h>
 
-namespace Kokkos {
+namespace KokkosArray {
 namespace Exodus {
 
 /** \brief  Create output mesh
@@ -368,7 +368,7 @@ void output_mesh_element_variable( const int exo_id ,
 //----------------------------------------------------------------------------
 
 } // namespace Exodus 
-} // namespace Kokkos 
+} // namespace KokkosArray 
 
 
 

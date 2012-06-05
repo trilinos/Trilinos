@@ -1,7 +1,0 @@
-To generate the TrilinosPackagesDiagram.pdf file:
-
-- Modify TrilinosPackagesDiagram.mmp using MindManager.
-- Export using File->Export-Clipboard  (as Map Graphic)
-- Using MS Powerpoint, create a new presentation with a single blank slide and paste the
-  clipboard contents into the slide.  Save the slide as a PDF document
-- Read TrilinosPackagesDiagram.pdf into Acrobat and save as TrilinosPackageDiagram.eps

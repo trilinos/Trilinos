@@ -1,16 +1,19 @@
 #!/bin/sh
-
-#copy this script and place in outside the the Trilinos director
 #
-#Additional command-line arguments will be passed directly to cmake
+# Copy this script, put it outside the Trilinos source directory, and
+# build there.
+#
+# Additional command-line arguments given to this script will be
+# passed directly to CMake.
 #
 EXTRA_ARGS=$@
 
 #
-#Force cmake to re-evaluate build options
+# Force CMake to re-evaluate build options.
 #
 rm -rf CMakeCache.txt
 
+# You will have to edit the paths below.
 cmake \
   -D CMAKE_BUILD_TYPE:STRING="RELEASE" \
   -D CMAKE_CXX_COMPILER:FILEPATH=/path/to/c++/compilier \

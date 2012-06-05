@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -45,36 +45,36 @@
 #include <iostream>
 #include <iomanip>
 
-#include <Kokkos_DeviceHost.hpp>
-#include <Kokkos_DeviceHost_ValueView.hpp>
-#include <Kokkos_DeviceHost_MultiVectorView.hpp>
-#include <Kokkos_DeviceHost_MDArrayView.hpp>
+#include <KokkosArray_DeviceHost.hpp>
+#include <KokkosArray_DeviceHost_ValueView.hpp>
+#include <KokkosArray_DeviceHost_MultiVectorView.hpp>
+#include <KokkosArray_DeviceHost_MDArrayView.hpp>
 
-#include <Kokkos_DeviceFerry.hpp>
-#include <Kokkos_DeviceFerry_ValueView.hpp>
-#include <Kokkos_DeviceFerry_MultiVectorView.hpp>
-#include <Kokkos_DeviceFerry_MDArrayView.hpp>
-#include <Kokkos_DeviceFerry_ParallelFor.hpp>
-#include <Kokkos_DeviceFerry_ParallelReduce.hpp>
+#include <KokkosArray_DeviceFerry.hpp>
+#include <KokkosArray_DeviceFerry_ValueView.hpp>
+#include <KokkosArray_DeviceFerry_MultiVectorView.hpp>
+#include <KokkosArray_DeviceFerry_MDArrayView.hpp>
+#include <KokkosArray_DeviceFerry_ParallelFor.hpp>
+#include <KokkosArray_DeviceFerry_ParallelReduce.hpp>
 
-#include <Kokkos_DeviceFerry_macros.hpp>
+#include <KokkosArray_DeviceFerry_macros.hpp>
 #include <PerfTestHexGrad.hpp>
 #include <PerfTestGramSchmidt.hpp>
 #include <PerfTestDriver.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
+#include <KokkosArray_DeviceClear_macros.hpp>
 
 namespace Test {
 
 void run_test_ferry_hexgrad( int beg , int end )
 {
-  Kokkos::DeviceFerry::initialize();
-  Test::run_test_hexgrad< Kokkos::DeviceFerry>( beg , end );
+  KokkosArray::DeviceFerry::initialize();
+  Test::run_test_hexgrad< KokkosArray::DeviceFerry>( beg , end );
 };
 
 void run_test_ferry_gramschmidt( int beg , int end )
 {
-  Kokkos::DeviceFerry::initialize();
-  Test::run_test_gramschmidt< Kokkos::DeviceFerry>( beg , end );
+  KokkosArray::DeviceFerry::initialize();
+  Test::run_test_gramschmidt< KokkosArray::DeviceFerry>( beg , end );
 };
 
 }

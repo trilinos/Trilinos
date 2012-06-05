@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -61,7 +61,7 @@ void init_crsgraph(
 
   //----------------------------------
 
-  graph_col_offset = Kokkos::create_multivector< int_multivector >(nnode + 1);
+  graph_col_offset = KokkosArray::create_multivector< int_multivector >(nnode + 1);
 
   graph_col_offset(0) = 0 ;
 
@@ -91,7 +91,7 @@ void init_crsgraph(
     col_ids.insert( col_ids.end(), node_node_ids.begin(), node_node_ids.end() );
   }
 
-  graph_col_index = Kokkos::create_multivector< int_multivector >( col_ids.size() );
+  graph_col_index = KokkosArray::create_multivector< int_multivector >( col_ids.size() );
 
   for ( size_t i = 0 ; i < col_ids.size() ; ++i ) {
     graph_col_index(i) = col_ids[i] ;

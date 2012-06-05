@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -51,10 +51,10 @@
 #include <sstream>
 #include <iostream>
 
-#include <Kokkos_Value.hpp>
-#include <Kokkos_ParallelReduce.hpp>
+#include <KokkosArray_Value.hpp>
+#include <KokkosArray_ParallelReduce.hpp>
 
-#include <impl/Kokkos_Preprocessing_macros.hpp>
+#include <impl/KokkosArray_Preprocessing_macros.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -141,13 +141,13 @@ public:
   {
     value_type result ;
 
-    typedef Kokkos::Value< value_type , device_type > result_type ;
+    typedef KokkosArray::Value< value_type , device_type > result_type ;
 
-    result_type device_result = Kokkos::create_value< result_type >();
+    result_type device_result = KokkosArray::create_value< result_type >();
 
-    Kokkos::parallel_reduce( nwork , functor_type( nwork ) , device_result );
+    KokkosArray::parallel_reduce( nwork , functor_type( nwork ) , device_result );
 
-    Kokkos::deep_copy( result , device_result );
+    KokkosArray::deep_copy( result , device_result );
 
     const unsigned long nw   = nwork ;
     const unsigned long nsum = nw % 2 ? nw * (( nw + 1 )/2 )

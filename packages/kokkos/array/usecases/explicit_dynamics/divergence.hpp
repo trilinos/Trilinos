@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -87,10 +87,10 @@ template<typename Scalar>
 struct divergence<Scalar, KOKKOS_MACRO_DEVICE>{
 
   typedef KOKKOS_MACRO_DEVICE     device_type ;
-  typedef typename Kokkos::MDArray<Scalar,device_type> array_type ;
-  typedef typename Kokkos::MDArray<int,device_type>    int_array_type ;
+  typedef typename KokkosArray::MDArray<Scalar,device_type> array_type ;
+  typedef typename KokkosArray::MDArray<int,device_type>    int_array_type ;
 
-  typedef Kokkos::Value<Scalar,device_type>     scalar;
+  typedef KokkosArray::Value<Scalar,device_type>     scalar;
 
   typedef Scalar value_type;
 

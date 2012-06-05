@@ -46,7 +46,7 @@ typedef struct RIB_Struct {
     ZZ_Transform       Tran;     /* transformation for degenerate geometry */
 } RIB_STRUCT;
 
-extern int Zoltan_RIB_Build_Structure(ZZ *, int *, int *, int, double, int);
+extern int Zoltan_RIB_Build_Structure(ZZ *, int *, int *, int, double, int,int);
 extern void Zoltan_RIB_Print_Structure(ZZ *zz, int howMany);
 
 

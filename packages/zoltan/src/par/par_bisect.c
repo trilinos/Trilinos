@@ -270,8 +270,8 @@ int Zoltan_RB_find_bisector(
   } /* if (dotnum > 0) */
 
   /* Allocate space for bisector structs */
-  med   = (struct bisector *) ZOLTAN_MALLOC(sizeof(struct bisector));
-  medme = (struct bisector *) ZOLTAN_MALLOC(sizeof(struct bisector));
+  med   = (struct bisector *) ZOLTAN_CALLOC(1, sizeof(struct bisector));
+  medme = (struct bisector *) ZOLTAN_CALLOC(1, sizeof(struct bisector));
   if ((!med) || (!medme)){
     ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
     ierr = ZOLTAN_MEMERR;
@@ -295,7 +295,7 @@ int Zoltan_RB_find_bisector(
 
   /* create MPI data and function types for bisector */
   {
-    /* Describe struct bisector to MPI. Add MPI_UB at the end just to be safe. */
+    /* Describe struct bisector to MPI. Add MPI_UB at the end just to be safe.*/
     int lengths[5] = {2,2,3,4*MAX_BISECT_WGTS,1};
     MPI_Aint ind[5], offset;
     MPI_Datatype types[5];

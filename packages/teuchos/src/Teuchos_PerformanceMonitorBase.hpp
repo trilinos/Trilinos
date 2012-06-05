@@ -48,9 +48,10 @@
 */
 
 #include "Teuchos_ConfigDefs.hpp"
+#include "Teuchos_Array.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_Array.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_TableFormat.hpp"
 
 namespace Teuchos
@@ -75,7 +76,7 @@ namespace Teuchos
   /// reduce-and-broadcast rather than just a reduction, so that all
   /// participating processes can use the resulting list of global
   /// names as lookup keys for computing global statistics.
-  /// 
+  ///
   /// \param comm [in] Communicator over which to merge.
   ///
   /// \param localNames [in] The calling MPI process' list of (local)
@@ -89,10 +90,10 @@ namespace Teuchos
   ///   Union, globalNames on output contains the union of all sets of
   ///   counter names.
   void
-  mergeCounterNames (const Comm<int>& comm, 
-		     const Array<std::string>& localNames,
-		     Array<std::string>& globalNames,
-		     const ECounterSetOp setOp);
+  mergeCounterNames (const Comm<int>& comm,
+                     const Array<std::string>& localNames,
+                     Array<std::string>& globalNames,
+                     const ECounterSetOp setOp);
 
   /// \class PerformanceMonitorBase
   ///
@@ -125,7 +126,7 @@ namespace Teuchos
   ///
   /// // Return the name of the counter.
   /// const std::string& name () const;
-  /// 
+  ///
   /// // Add one to the number of calls (the number of times the counter
   /// // was started).
   /// void incrementNumCalls ();
@@ -137,7 +138,7 @@ namespace Teuchos
   /// bool isRunning () const;
   /// \endcode
   ///
-  template <class T> 
+  template <class T>
   class PerformanceMonitorBase
   {
   public:
@@ -154,7 +155,7 @@ namespace Teuchos
     /// The destructor for the base class does nothing.  We provide a
     /// virtual destructor for memory safety of derived classes.
     virtual ~PerformanceMonitorBase() {}
-    
+
     /** \brief Create a new counter with the specified name and append it to a
      * global list of counters of this type.
      *
@@ -178,8 +179,8 @@ namespace Teuchos
       // WARNING This is not thread safe!  In particular, if multiple
       // threads call this method for the "first time" at the same
       // time, the RCP may be initialized incorrectly.
-      static RCP<TableFormat> rtn=rcp(new TableFormat()); 
-      return *rtn; 
+      static RCP<TableFormat> rtn=rcp(new TableFormat());
+      return *rtn;
     }
 
     /// \brief Return the first counter with the given name, or null if none.
@@ -202,7 +203,7 @@ namespace Teuchos
     /// timer name.  If timers that don't exist yet are created
     /// silently, misspelled timer names can cause hard-to-find bugs.
     /// (Analogies: Fortran's "implicit none" or Perl's "use strict.")
-    static RCP<T> 
+    static RCP<T>
     lookupCounter (const std::string& name);
 
     /// \brief "Forget" about all counters created with \c getNewCounter().
@@ -223,14 +224,14 @@ namespace Teuchos
     static TEUCHOS_DEPRECATED void clearTimers ();
 
     /// \brief "Forget" about any counters with the given name.
-    /// 
+    ///
     /// If one or more counters with the given name was created using
     /// \c getNewCounter(), calling this method with that name will
     /// remove them from the global list of counters.
     static void clearCounter (const std::string& name);
 
     /// \brief "Forget" about any counters with the given name.
-    /// 
+    ///
     /// If one or more counters with the given name was created using
     /// \c getNewCounter(), calling this method with that name will
     /// remove them from the global list of counters.
@@ -242,10 +243,10 @@ namespace Teuchos
     static TEUCHOS_DEPRECATED void clearTimer (const std::string& name);
 
   protected:
-    
+
     //! Constant access to the counter reference.
     const T& counter() const { return counter_; }
-    
+
     //! Nonconstant access to the counter reference.
     T& counter() { return counter_; }
 
@@ -256,9 +257,9 @@ namespace Teuchos
     /// matters in cases such as timing, where we don't want to start
     /// and stop timers multiple times within a single call stack.
     bool isRecursiveCall() const { return isRecursiveCall_; }
-      
+
     //! The array of all counters created using \c getNewCounter().
-    static Array<RCP<T> >& counters() 
+    static Array<RCP<T> >& counters()
     {
       // Use the "Meyers Trick" to create static data safely.
       //
@@ -273,25 +274,25 @@ namespace Teuchos
 
     //! Reference to the counter being wrapped.
     T& counter_;
-    
+
     //! Whether we are currently in a recursive call of the counter.
     bool isRecursiveCall_;
   };
 
 
   template<class T>
-  RCP<T> 
+  RCP<T>
   PerformanceMonitorBase<T>::lookupCounter (const std::string& name)
   {
     Array<RCP<T> >& ctrs = counters();
 
     // This will have to change if we change how we store the
     // counters.
-    for (typename Array<RCP<T> >::const_iterator it = ctrs.begin(); 
-	 it != ctrs.end(); ++it)
+    for (typename Array<RCP<T> >::const_iterator it = ctrs.begin();
+         it != ctrs.end(); ++it)
       if ((*it)->name() == name)
-	return *it;
-      
+        return *it;
+
     return null;
   }
 
@@ -306,10 +307,10 @@ namespace Teuchos
     typedef typename Array<RCP<T> >::const_iterator iter_t;
     for (iter_t it = counters().begin(); it != counters().end(); ++it)
       {
-	// The variable 'it' is an Array iterator; '*it' is a 'const
-	// RCP<T>&'.  We want the latter.
-	if ((*it)->name() != name)
-	  newCounters.push_back (*it);
+        // The variable 'it' is an Array iterator; '*it' is a 'const
+        // RCP<T>&'.  We want the latter.
+        if ((*it)->name() != name)
+          newCounters.push_back (*it);
       }
     counters().swap (newCounters);
   }
@@ -338,7 +339,7 @@ namespace Teuchos
     Array<RCP<T> > newCounters;
     counters().swap (newCounters);
   }
-  
+
 } // namespace Teuchos
 
 #endif // TEUCHOS_PERFORMANCEMONITORBASE_H

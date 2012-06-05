@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -44,9 +44,9 @@
 #ifndef KOKKOS_BSBCSR_HPP
 #define KOKKOS_BSBCSR_HPP
 
-#include <Kokkos_Cuda_MultiVector.hpp>
+#include <KokkosArray_Cuda_MultiVector.hpp>
 
-namespace Kokkos {
+namespace KokkosArray {
 
 //----------------------------------------------------------------------------
 /** \brief  Dense symmetric matrix diagonal storage.

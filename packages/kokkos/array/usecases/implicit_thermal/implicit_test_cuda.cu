@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -44,29 +44,29 @@
 #include <iostream>
 #include <math.h>
 
-#include <Kokkos_Value.hpp>
-#include <Kokkos_MultiVector.hpp>
-#include <Kokkos_MDArray.hpp>
+#include <KokkosArray_Value.hpp>
+#include <KokkosArray_MultiVector.hpp>
+#include <KokkosArray_MDArray.hpp>
 
-#include <Kokkos_Host.hpp>
-#include <Kokkos_Cuda.hpp>
+#include <KokkosArray_Host.hpp>
+#include <KokkosArray_Cuda.hpp>
 
-#include <Kokkos_Cuda_macros.hpp>
+#include <KokkosArray_Cuda_macros.hpp>
 #include <Element.hpp>
 #include <CRSMatrixGatherFill.hpp>
 #include <Dirichlet.hpp>
 #include <CG_Solve.hpp>
 #include <driver.hpp>
-#include <Kokkos_Clear_macros.hpp>
+#include <KokkosArray_Clear_macros.hpp>
 
 namespace Test {
 
 void test_Cuda(int beg, int end, int runs)
 {
-  Kokkos::Cuda::initialize();
-  MiniImplTherm<double, Kokkos::Cuda >::driver( "CUDA-double" , beg , end , runs );
-  MiniImplTherm<float,  Kokkos::Cuda >::driver( "CUDA-float" , beg , end , runs );
-  Kokkos::Cuda::finalize();
+  KokkosArray::Cuda::initialize();
+  MiniImplTherm<double, KokkosArray::Cuda >::driver( "CUDA-double" , beg , end , runs );
+  MiniImplTherm<float,  KokkosArray::Cuda >::driver( "CUDA-float" , beg , end , runs );
+  KokkosArray::Cuda::finalize();
 }
 
 }// namespace

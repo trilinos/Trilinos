@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 //
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -48,8 +48,8 @@
 #include <iostream>
 #include <iomanip>
 
-#include <Kokkos_Array.hpp>
-#include <Kokkos_MultiVector.hpp>
+#include <KokkosArray_Array.hpp>
+#include <KokkosArray_MultiVector.hpp>
 #include <SparseLinearSystem.hpp>
 #include <SparseLinearSystemFill.hpp>
 #include <FEMesh.hpp>
@@ -127,12 +127,12 @@ PerformanceData run( comm::Machine machine ,
   //------------------------------------
   // Sparse linear system types:
 
-  typedef Kokkos::MultiVector< Scalar , Device >   vector_type ;
-  typedef Kokkos::CrsMatrix< Scalar , Device >     matrix_type ;
+  typedef KokkosArray::MultiVector< Scalar , Device >   vector_type ;
+  typedef KokkosArray::CrsMatrix< Scalar , Device >     matrix_type ;
   typedef typename matrix_type::graph_type         matrix_graph_type ;
   typedef typename matrix_type::coefficients_type  matrix_coefficients_type ;
 
-  typedef Kokkos::Impl::Factory< matrix_graph_type , mesh_type > graph_factory ;
+  typedef KokkosArray::Impl::Factory< matrix_graph_type , mesh_type > graph_factory ;
 
   //------------------------------------
   // Problem setup types:
@@ -154,7 +154,7 @@ PerformanceData run( comm::Machine machine ,
   //------------------------------------
   // Generate mesh and corresponding sparse matrix graph
 
-  Kokkos::Impl::Timer wall_clock ;
+  KokkosArray::Impl::Timer wall_clock ;
 
   mesh_type mesh =
     box_mesh_fixture< coordinate_scalar_type , device_type >
@@ -184,27 +184,27 @@ PerformanceData run( comm::Machine machine ,
   const size_t local_owned_length = linsys_matrix.graph.row_map.length();
 
   linsys_matrix.coefficients =
-    Kokkos::create_multivector< matrix_coefficients_type >( linsys_matrix.graph.entries.dimension(0) );
+    KokkosArray::create_multivector< matrix_coefficients_type >( linsys_matrix.graph.entries.dimension(0) );
 
   linsys_rhs =
-    Kokkos::create_multivector< vector_type >( local_owned_length );
+    KokkosArray::create_multivector< vector_type >( local_owned_length );
   linsys_solution =
-    Kokkos::create_multivector< vector_type >( local_owned_length );
+    KokkosArray::create_multivector< vector_type >( local_owned_length );
 
   //------------------------------------
   // Fill linear system
   {
-    typedef Kokkos::Array< scalar_type[ElementNodeCount][ElementNodeCount] , device_type > elem_matrices_type ;
-    typedef Kokkos::Array< scalar_type[ElementNodeCount] , device_type > elem_vectors_type ;
+    typedef KokkosArray::Array< scalar_type[ElementNodeCount][ElementNodeCount] , device_type > elem_matrices_type ;
+    typedef KokkosArray::Array< scalar_type[ElementNodeCount] , device_type > elem_vectors_type ;
     elem_matrices_type elem_matrices ;
     elem_vectors_type  elem_vectors ;
 
     if ( element_count ) {
       elem_matrices =
-        Kokkos::create_array< elem_matrices_type >( element_count );
+        KokkosArray::create_array< elem_matrices_type >( element_count );
 
       elem_vectors =
-        Kokkos::create_array< elem_vectors_type >( element_count );
+        KokkosArray::create_array< elem_vectors_type >( element_count );
     }
 
     //------------------------------------
@@ -256,13 +256,13 @@ PerformanceData run( comm::Machine machine ,
   if ( print_sample ) {
 
     typename mesh_type::node_coords_type::HostMirror coords_h =
-      Kokkos::create_mirror( mesh.node_coords );
+      KokkosArray::create_mirror( mesh.node_coords );
 
     typename vector_type::HostMirror X_h =
-      Kokkos::create_mirror( linsys_solution );
+      KokkosArray::create_mirror( linsys_solution );
 
-    Kokkos::deep_copy( coords_h , mesh.node_coords );
-    Kokkos::deep_copy( X_h , linsys_solution );
+    KokkosArray::deep_copy( coords_h , mesh.node_coords );
+    KokkosArray::deep_copy( X_h , linsys_solution );
 
     for ( size_t i = 0 ; i < mesh.parallel_data_map.count_owned ; ++i ) {
       const coordinate_scalar_type x = coords_h(i,0);
@@ -289,7 +289,7 @@ void driver( const char * label ,
 
   if ( comm::rank( machine ) == 0 ) {
     std::cout << std::endl ;
-    std::cout << "\"Kokkos::HybridFE::Implicit " << label << "\"" << std::endl;
+    std::cout << "\"KokkosArray::HybridFE::Implicit " << label << "\"" << std::endl;
     std::cout << "\"Size\" ,  \"Meshing\" ,  \"Graphing\" , \"Element\" , \"Fill\" ,   \"Boundary\" ,  \"CG-Iter\"" << std::endl
               << "\"nodes\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\"" << std::endl ;
   }

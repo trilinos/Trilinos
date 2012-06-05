@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -41,7 +41,7 @@
 //@HEADER
 */
 
-namespace Kokkos {
+namespace KokkosArray {
 namespace Impl {
 
 //----------------------------------------------------------------------------
@@ -119,6 +119,38 @@ public:
 }; //Dot
 
 //----------------------------------------------------------------------------
+
+template < typename Scalar >
+struct FILL<Scalar , KOKKOS_MACRO_DEVICE >
+{
+  typedef KOKKOS_MACRO_DEVICE               device_type ;
+  typedef device_type::size_type            size_type ;
+  typedef MultiVector<Scalar, device_type>  scalar_vector ;
+
+private:
+
+  scalar_vector w ;
+  Scalar alpha ;
+
+public:
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()(int inode) const
+  {
+    w(inode) = alpha ;
+  }
+
+  inline static
+  void apply( const size_t n ,
+              const double          alpha ,
+              const scalar_vector & w )
+  {
+    FILL op ;
+    op.w = w ;
+    op.alpha = alpha ;
+    parallel_for( n , op );
+  }
+};
 
 template < typename Scalar >
 struct WAXPBY<Scalar , KOKKOS_MACRO_DEVICE >
@@ -205,5 +237,5 @@ public:
 //----------------------------------------------------------------------------
 
 } // namespace Impl
-} // namespace Kokkos
+} // namespace KokkosArray
 
