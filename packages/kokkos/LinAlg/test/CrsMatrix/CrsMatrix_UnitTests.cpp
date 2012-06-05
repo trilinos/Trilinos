@@ -99,12 +99,14 @@ namespace {
     typedef Kokkos::DefaultKernels<double,int,Node>::SparseOps SparseOps;
     typedef SparseOps::graph<int,Node>::graph_type             Graph;
     const size_t N = 10;
+    ArrayRCP<size_t> ptrs = arcp<size_t>(N+1);
+    std::fill(ptrs.begin(), ptrs.end(), 0);
     RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
     RCP<Graph> G = rcp(new Graph(N,node,parameterList()));
+    G->setStructure(ptrs,null);
     RCP<ParameterList> params = parameterList();
     SparseOps::finalizeGraph(*G,params);
     TEST_EQUALITY_CONST( G->isEmpty(), true );
-    TEST_EQUALITY_CONST( params->get<bool>("Optimize Storage"), true );
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsMatrix, StaticGraph, Scalar, Ordinal )
