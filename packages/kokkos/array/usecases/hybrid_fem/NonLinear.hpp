@@ -342,7 +342,7 @@ PerformanceData run( comm::Machine machine ,
     // Convergence criteria:
     // if the Dx norm is computed to be less than some epsilon, 
     // or if the total number of iterations exceeds some N 
-		
+
     delta_norm = sqrt( dot(mesh.parallel_data_map, delta) );
 
     ++newton_iteration_count ;
