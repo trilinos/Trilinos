@@ -1318,6 +1318,8 @@ Tpetra::createOneToOne (Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdina
   template Teuchos::RCP< const Map<LO,GO,NODE> > \
   createWeightedContigMapWithNode<LO,GO,NODE>(int thisNodeWeight, global_size_t numElements, \
                                               const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< NODE > &node); \
-
+  \
+  template Teuchos::RCP<const Map<LO,GO,NODE> > \
+  createOneToOne (Teuchos::RCP<const Map<LO,GO,NODE> > &M); \
 
 #endif // TPETRA_MAP_DEF_HPP
