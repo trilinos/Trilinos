@@ -1242,8 +1242,9 @@ Tpetra::createWeightedContigMapWithNode(int myWeight, Tpetra::global_size_t numE
 }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > 
-createOneToOne(Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &M){
+Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > 
+Tpetra::createOneToOne (Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > &M)
+{
   using Teuchos::Array;
   using Teuchos::ArrayView;
   using Teuchos::RCP;
