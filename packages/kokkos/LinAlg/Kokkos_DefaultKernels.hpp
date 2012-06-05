@@ -48,9 +48,9 @@
 #include "Kokkos_DefaultSparseOps.hpp"
 #include "Kokkos_DefaultBlockSparseOps.hpp"
 #include "Kokkos_DefaultRelaxation.hpp"
-// #ifdef HAVE_KOKKOS_CUSP
-// #include "Kokkos_CuspSparseOps.hpp"
-// #endif
+#ifdef HAVE_KOKKOS_CUSPARSE
+#include "Kokkos_CUSPARSEOps.hpp"
+#endif
 // #include "Kokkos_FirstTouchSparseOps.hpp"
 
 namespace Kokkos {
@@ -96,7 +96,7 @@ namespace Kokkos {
 #ifdef HAVE_KOKKOS_CUSPARSE
    template <class Scalar>
    struct DefaultKernels<Scalar,int,ThrustGPUNode> {
-     typedef CUSPARSEOps<void,int,ThrustGPUNode> SparseOps;
+     typedef CUSPARSEOps<void,ThrustGPUNode> SparseOps;
    };
 #else
 #endif

@@ -56,16 +56,55 @@
 
 #include <cusparse_v2.h>
 
+namespace Teuchos {
+  template<>
+  class TypeNameTraits<cusparseHandle_t> {
+  public:
+    static std::string name() { return std::string("cusparseHandle_t"); }
+    static std::string concreteName( const cusparseHandle_t& ) { return std::string("cusparseHandle_t"); }
+  };
+  template<>
+  class TypeNameTraits<cusparseMatDescr_t> {
+  public:
+    static std::string name() { return std::string("cusparseMatDescr_t"); }
+    static std::string concreteName( const cusparseMatDescr_t& ) { return std::string("cusparseMatDescr_t"); }
+  };
+  template<>
+  class TypeNameTraits<cusparseSolveAnalysisInfo_t> {
+  public:
+    static std::string name() { return std::string("cusparseSolveAnalysisInfo_t"); }
+    static std::string concreteName( const cusparseSolveAnalysisInfo_t& ) { return std::string("cusparseSolveAnalysisInfo_t"); }
+  };
+}
+
 namespace Kokkos {
 
   namespace CUSPARSEdetails {
-    class CUSPARSEDestroyer {
-    public:
-      CUSPARSEDestroyer();
-      void free(void *ptr);
-    };
-    static RCP<cusparseHandle_t> session_handle;
+
     void initCUSPARSEsession();
+
+    static RCP<cusparseHandle_t> session_handle;
+
+    RCP<cusparseMatDescr_t>           createMatDescr();
+    RCP<cusparseSolveAnalysisInfo_t>  createSolveAnalysisInfo();
+
+    class CUSPARSESessionDestroyer {
+    public:
+      CUSPARSESessionDestroyer();
+      void free(cusparseHandle_t *ptr);
+    };
+
+    class CUSPARSEMatDescDestroyer {
+    public:
+      CUSPARSEMatDescDestroyer();
+      void free(cusparseMatDescr_t *ptr);
+    };
+
+    class CUSPARSESolveAnalysisDestroyer {
+    public:
+      CUSPARSESolveAnalysisDestroyer();
+      void free(cusparseSolveAnalysisInfo_t *ptr);
+    };
   }
 
   //! \class CUSPARSECrsGraph
@@ -87,6 +126,8 @@ namespace Kokkos {
       ArrayRCP<const int> inds_;
       bool isInitialized_;
       bool isEmpty_;
+      // cusparse matrix description handle
+      RCP<cusparseMatDescr_t> matdesc_;
   };
 
   //! \class CUSPARSECrsMatrix 
@@ -104,6 +145,8 @@ namespace Kokkos {
     private:
       ArrayRCP<const Scalar> vals_;
       bool isInitialized_;
+      // cusparse analysis handles
+      RCP<cusparseSolveAnalysisInfo_t> analysisNoTransSolve_, analysisConjTransSolve_, analysisTransSolve_;
   };
 
   template <class Node>
@@ -112,6 +155,7 @@ namespace Kokkos {
   , isInitialized_(false)
   , isEmpty_(false)
   {
+    CUSPARSEdetails::initCUSPARSEsession();
     // Make sure that users only specialize for Kokkos Node types that are host Nodes (vs. device Nodes, such as GPU Nodes)
     Teuchos::CompileTimeAssert<Node::isHostNode == false> cta; (void)cta;
   }
@@ -161,6 +205,7 @@ namespace Kokkos {
   : CrsMatrixBase<Scalar,int,Node>(graph,params) 
   , isInitialized_(false)
   {
+    CUSPARSEdetails::initCUSPARSEsession();
     // Make sure that users only specialize for Kokkos Node types that are host Nodes (vs. device Nodes, such as GPU Nodes)
     Teuchos::CompileTimeAssert<Node::isHostNode == false> cta; (void)cta;
   }
@@ -411,7 +456,6 @@ namespace Kokkos {
   template <class Scalar, class Node>
   void CUSPARSEOps<Scalar,Node>::finalizeMatrix(const CUSPARSECrsGraph<Node> &graph, CUSPARSECrsMatrix<Scalar,Node> &matrix, const RCP<ParameterList> &params)
   { 
-    // nothing much to do here
     std::string FuncName("Kokkos::CUSPARSEOps::finalizeMatrix(graph,matrix,params)");
     TEUCHOS_TEST_FOR_EXCEPTION(
         matrix.isInitialized() == false, 
@@ -422,7 +466,6 @@ namespace Kokkos {
   template <class Scalar, class Node>
   void CUSPARSEOps<Scalar,Node>::finalizeGraphAndMatrix(CUSPARSECrsGraph<Node> &graph, CUSPARSECrsMatrix<Scalar,Node> &matrix, const RCP<ParameterList> &params)
   { 
-    // nothing much to do here
     std::string FuncName("Kokkos::CUSPARSEOps::finalizeGraphAndMatrix(graph,matrix,params)");
     TEUCHOS_TEST_FOR_EXCEPTION(
         graph.isInitialized() == false, 

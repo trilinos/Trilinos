@@ -48,15 +48,15 @@
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_DefaultArithmetic.hpp"
 #include "Kokkos_DefaultSparseOps.hpp"
-#include "Kokkos_CUSPSparseOps.hpp"
+#include "Kokkos_CUSPARSEOps.hpp"
 #include "Kokkos_LinAlgVersion.hpp"
 
 #include "Kokkos_ThrustGPUNode.hpp"
 
-#include <cuda.h>
-#include <cusp/version.h>
-#include <cusp/io/matrix_market.h>
-#include <cusp/csr_matrix.h>
+// #include <cuda.h>
+// #include <cusp/version.h>
+// #include <cusp/io/matrix_market.h>
+// #include <cusp/csr_matrix.h>
 
 namespace {
 
@@ -107,15 +107,6 @@ namespace {
   }
 
   template <>
-  RCP<SerialNode> getNode<SerialNode>() {
-    if (serialnode == null) {
-      Teuchos::ParameterList pl;
-      serialnode = rcp(new SerialNode(pl));
-    }
-    return serialnode;
-  }
-
-  template <>
   RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
     if (thrustnode == null) {
       Teuchos::ParameterList pl;
@@ -147,7 +138,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( SparseOps, SimplePowerMethod, SparseOps, Node )
   {
     RCP<Node> node = getNode<Node>();
-    typedef typename SparseOps<void,int,Node>  OPS;
+    typedef typename SparseOps::  OPS;
     typedef CrsGraph<int,Node,OPS>            GRPH;
     typedef CrsMatrix<double,int,Node,OPS>     MAT;
     typedef MultiVector<double,Node>            MV;
@@ -169,16 +160,16 @@ namespace {
       // create Kokkos CrsGraph and CrsMatrix objects, put data there
       GRPH G(numRows,node);
       MAT  A(G);
-      G.set1DStructure(colIndices, rowOffsets(0,numRows), rowOffsets(1,numRows));
-      A.set1DValues(values);
-      A.finalize(true);
+      G.setStructure(rowOffsets, colIndices);
+      A.setValues(values);
+      OPS::finalizeGraphAndMatrix(*G,*A,parameterList());
       // init sparse ops class
       dsm.initializeStructure(G);
       dsm.initializeValues(A);
     }
     MV z(node), q(node);
-    z.initializeValues( numRows,1,node->template allocBuffer<double>(numRows),numRows);
-    q.initializeValues(numRows,1,node->template allocBuffer<double>(numRows),numRows);
+    z.initializeValues( numRows,1,node->template allocBuffer<double>(numRows),numRows );
+    q.initializeValues( numRows,1,node->template allocBuffer<double>(numRows),numRows );
     BLAS::Init( z, ONE);
     BLAS::Init( q, ZERO);
     // power method, ten iterations
