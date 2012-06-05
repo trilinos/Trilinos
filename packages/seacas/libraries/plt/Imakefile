@@ -1,0 +1,107 @@
+# Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
+# DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+# certain rights in this software
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+# 
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+# 
+#     * Redistributions in binary form must reproduce the above
+#       copyright notice, this list of conditions and the following
+#       disclaimer in the documentation and/or other materials provided
+#       with the distribution.
+# 
+#     * Neither the name of Sandia Corporation nor the names of its
+#       contributors may be used to endorse or promote products derived
+#       from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+
+XCOMM $Id: Imakefile,v 1.10 2004/12/14 19:08:47 gdsjaar Exp $
+XCOMM Imakefile for ACCESS/graphics/plt
+
+#if NeedsDoubleEscape
+STD_CPP_DEFINES = StandardCppDefines -DNeedsDoubleEscape
+#endif
+
+LIB =	plt
+
+
+SRCSF = \
+pltaxs.F  pltlax.F
+
+SRCS1 = \
+chrci.f  chrcmp.f chrcr.f  chrdn.f  chric.f  chrlen.f \
+chrrvc.f chrstr.f chrtrm.f chrup.f  cpucml.f cpudac.f \
+cpudat.f cpuerr.f cpumvu.f cpunal.f cpunde.f cpuqa.f  \
+cputbk.f cpuwat.f ldrota.f ldscal.f ldtran.f lxany.f  \
+lxcln.f  lxerr.f  lxgtbp.f lxgtch.f lxgtqt.f lxgtwh.f \
+lxnbs.f  lxnumb.f lxreal.f lxrem.f  lxrnl.f  lxrs.f   \
+lxrst.f  lxscan.f lxscnp.f lxset.f  lxsetp.f lxstk.f  \
+lxsv.f   lxsym2.f lxsymb.f memall.f memcmp.f memext.f \
+memfre.f memini.f memtrc.f mp2pg.f  mp2pt.f  mp2vc.f  \
+mp3pg.f  mp3pt.f  mp3vc.f  mpclp2.f mpclp3.f mpd2pg.f \
+mpd2pt.f mpd2sy.f mpd2vc.f mpd3pg.f mpd3pt.f mpd3vc.f \
+mpgetm.f mpinit.f mplook.f mpmul2.f mpmul3.f mpmul4.f \
+mport2.f mport3.f mppers.f mppola.f mppopm.f mppshm.f \
+mpputm.f mprese.f mprloc.f mprota.f mpscal.f mptran.f \
+mpview.f mpwind.f mxcopy.f mxiden.f mxmult.f mxvect.f \
+mxzero.f pltarr.f pltav2.f pltav3.f pltbel.f \
+pltbgn.f pltblk.f pltcg2.f pltcnm.f pltcol.f pltcp2.f \
+pltcp3.f pltcpy.f pltcrs.f pltcur.f pltcv2.f pltcv3.f \
+pltd2g.f pltd2p.f pltdg2.f pltdp2.f pltdp3.f pltdrw.f \
+pltdv2.f pltdv3.f pltend.f pltesc.f pltflu.f pltfnt.f \
+plt_sanserif.f plt_roman.f plt_stick.f
+
+SRCS2 = \
+pltfrc.f pltfrm.f pltg2d.f pltgm2.f pltgm3.f pltgph.f \
+pltgtc.f pltgtd.f pltgtg.f pltgtm.f pltgtt.f pltgtv.f \
+plticl.f pltini.f pltino.f pltint.f pltiqc.f pltiqd.f \
+pltisp.f pltitl.f pltitm.f pltix2.f pltiy2.f \
+pltlgx.f pltlgy.f pltli1.f pltli2.f pltli3.f pltli4.f \
+pltlig.f pltloa.f pltlod.f pltlxy.f pltmaa.f pltmg2.f \
+pltmix.f pltmiy.f pltmiz.f pltmmo.f pltmmv.f pltmor.f \
+pltmov.f pltmp2.f pltmp3.f pltmv2.f pltmv3.f pltmzm.f \
+pltncf.f pltner.f pltnic.f pltnor.f pltnxy.f pltp2d.f \
+pltpal.f pltpgz.f pltply.f pltpnt.f pltptm.f pltrdc.f \
+pltred.f pltreg.f pltrem.f pltret.f pltrev.f pltrim.f \
+pltrot.f pltrsc.f pltrsd.f pltrsg.f pltrsm.f pltrst.f \
+pltrsv.f pltrtx.f pltrty.f pltrtz.f pltrxy.f pltsbm.f \
+pltspc.f pltsta.f pltstc.f pltstd.f pltstg.f pltstm.f \
+pltstt.f pltstv.f pltsub.f pltsup.f pltsvd.f pltsvg.f \
+pltsvm.f pltsvt.f pltsvv.f pltsym.f pltuwn.f pltvcm.f \
+pltvct.f pltvwg.f pltvwp.f pltvwv.f pltwai.f pltxhe.f \
+pltxhl.f pltxhn.f pltxse.f pltxsl.f pltxsn.f pltxtc.f \
+pltxth.f pltxts.f pltzcp.f pltzcv.f siorpt.f ttyifc.f \
+vecrgp.f vecrgs.f iand.f
+
+SRCSf = ${SRCSF:.F=.f}
+OBJSF = ${SRCSF:.F=.o}
+OBJS1 = ${SRCS1:.f=.o}
+OBJS2 = ${SRCS2:.f=.o}
+OBJSf = $(OBJS1) $(OBJS2)
+
+NormalLibraryTarget2($(LIB),$(OBJSF),$(OBJSf))
+
+InstallLibrary($(LIB),$(LIBDIR))
+
+#ifdef CrayArchitecture
+pltply.o: pltply.f
+	cf77 -O0 -c pltply.f
+#endif
+
+CleanupCapF($(SRCSf))
