@@ -319,6 +319,7 @@ namespace {
 
   int main(int argc, char* argv[])
   {
+    interface.Set_Max_Names(DEFAULT_MAX_NUMBER_OF_NAMES);
     bool ok = interface.parse_options(argc, argv);
 
     if (!ok)
@@ -334,8 +335,6 @@ namespace {
     // for GNU, this seems to be needed to turn on trapping
     feenableexcept(FE_DIVBYZERO | FE_OVERFLOW | FE_INVALID);
 #endif
-  
-    interface.Set_Max_Names(DEFAULT_MAX_NUMBER_OF_NAMES);
   
     string file1_name    = interface.file1;
     string file2_name    = interface.file2;

@@ -483,6 +483,7 @@ void SystemInterface::enroll_options()
 
 void SystemInterface::Set_Max_Names(int size)
 {
+  max_number_of_names = size;
   glob_var.resize(max_number_of_names, default_tol);
   node_var.resize(max_number_of_names, default_tol);
   elmt_var.resize(max_number_of_names, default_tol);
@@ -775,13 +776,16 @@ bool SystemInterface::parse_options(int argc, char **argv)
       int tmp = atoi(temp);  SMART_ASSERT(errno == 0);
       if (tmp > 0) Set_Max_Names(tmp);
     }
-    if (options_.retrieve( "status")) {
-      exit_status_switch = true;
-    }
-    if (options_.retrieve("use_old_floor")) {
-      Tolerance::use_old_floor = true;  // Change type to relative.
-    }
+  }
 
+  if (options_.retrieve( "status")) {
+    exit_status_switch = true;
+  }
+  if (options_.retrieve("use_old_floor")) {
+    Tolerance::use_old_floor = true;  // Change type to relative.
+  }
+
+  {
     // Reset default tolerances in case the -t flag was given.
     time_tol         = default_tol;
     glob_var_default = default_tol;
@@ -791,18 +795,6 @@ bool SystemInterface::parse_options(int argc, char **argv)
     ns_var_default   = default_tol;
     ss_var_default   = default_tol;
 
-    for (int k = 0; k < max_number_of_names; ++k)
-      {
-	glob_var[k] = default_tol;
-	node_var[k] = default_tol;
-	elmt_var[k] = default_tol;
-	elmt_att[k] = default_tol;
-	ss_var[k]   = default_tol;
-	ns_var[k]   = default_tol;
-      }
-  }
-
-  {
     const char *temp = options_.retrieve("file");
     if (temp) {
       command_file = temp;

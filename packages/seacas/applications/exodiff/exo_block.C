@@ -190,11 +190,10 @@ int Exo_Block<INT>::Check_State() const
 {
   SMART_ASSERT(id_ >= EX_INVALID_ID);
   SMART_ASSERT( !( id_ == EX_INVALID_ID && elmt_type != "" ) );
-  SMART_ASSERT( !( id_ == EX_INVALID_ID ) );
   SMART_ASSERT( !( id_ == EX_INVALID_ID && num_nodes_per_elmt >= 0 ) );
   SMART_ASSERT( !( id_ == EX_INVALID_ID && conn ) );
   
-  SMART_ASSERT( !( conn && (numEntity <= 0 || num_nodes_per_elmt <= 0) ) );
+  SMART_ASSERT( !( conn && (numEntity == 0 || num_nodes_per_elmt <= 0) ) );
   
   return 1;
 }

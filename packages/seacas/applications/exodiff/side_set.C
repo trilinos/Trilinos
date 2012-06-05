@@ -214,7 +214,6 @@ template <typename INT>
 int Side_Set<INT>::Check_State() const
 {
   SMART_ASSERT(id_ >= EX_INVALID_ID);
-  
   SMART_ASSERT( !( id_ == EX_INVALID_ID && numEntity > 0 ) );
   SMART_ASSERT( !( id_ == EX_INVALID_ID && num_dist_factors > 0 ) );
   SMART_ASSERT( !( id_ == EX_INVALID_ID && elmts ) );

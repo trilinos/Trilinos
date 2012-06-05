@@ -35,8 +35,8 @@
 static char const *qainfo[] =
 {
   "EXODIFF",
-  "2012-05-30",
-  "2.57",
+  "2012-06-04",
+  "2.58",
 };
 
 #endif // SEACAS_Version_h

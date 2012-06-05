@@ -68,8 +68,7 @@ Node_Set<INT>::Node_Set(int file_id, size_t id, size_t nnodes, size_t ndfs)
     nodes(NULL),
     nodeIndex(NULL),
     dist_factors(NULL)
-{
-}
+{}
 
 template <typename INT>
 Node_Set<INT>::~Node_Set()
@@ -180,8 +179,7 @@ template <typename INT>
 int Node_Set<INT>::Check_State() const
 {
   SMART_ASSERT(id_ >= EX_INVALID_ID);
-  
-  SMART_ASSERT( !( id_ == EX_INVALID_ID ) );
+  SMART_ASSERT( !( id_ == EX_INVALID_ID && numEntity > 0 ) );
   SMART_ASSERT( !( id_ == EX_INVALID_ID && num_dist_factors > 0 ) );
   SMART_ASSERT( !( id_ == EX_INVALID_ID && nodes ) );
   SMART_ASSERT( !( id_ == EX_INVALID_ID && dist_factors ) );
