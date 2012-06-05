@@ -73,7 +73,7 @@ namespace {
   
     RCP<const Map> map = Tpetra::createUniformContigMapWithNode<LO, GO>(NUM_GLOBAL_ELEMENTS, comm, node);
 
-    RCP<const Map> new_map = createOneToOne<LO,GO,Node>(map);
+    RCP<const Map> new_map = Tpetra::createOneToOne<LO,GO,Node>(map);
 
     TEST_ASSERT(map->isSameAs(*new_map));
   }
@@ -117,7 +117,7 @@ namespace {
 
     RCP<const Map> map = Tpetra::createNonContigMapWithNode<LO,GO>(elementList,comm,node);
     //std::cout<<map->description();
-    RCP<const Map> new_map = createOneToOne<LO,GO,Node>(map);
+    RCP<const Map> new_map = Tpetra::createOneToOne<LO,GO,Node>(map);
     //std::cout<<new_map->description();
     //Now we need to test if we lost anything.
     
@@ -170,7 +170,7 @@ namespace {
       elementList = Array<GO>(0);
     }
     RCP<const Map> map = Tpetra::createNonContigMapWithNode<LO,GO>(elementList,comm,node);
-    RCP<const Map> new_map = createOneToOne<LO,GO,Node>(map);
+    RCP<const Map> new_map = Tpetra::createOneToOne<LO,GO,Node>(map);
     TEST_ASSERT(map->isSameAs(*new_map));
   }
   
@@ -186,7 +186,7 @@ namespace {
     Array<GO> elementList (0);
 
     RCP<const Map> map = Tpetra::createNonContigMapWithNode<LO,GO>(elementList,comm,node);
-    RCP<const Map> new_map = createOneToOne<LO,GO,Node>(map);
+    RCP<const Map> new_map = Tpetra::createOneToOne<LO,GO,Node>(map);
     TEST_ASSERT(map->isSameAs(*new_map));
 
 
@@ -210,7 +210,7 @@ namespace {
       elementList[i]=i;
     }
     RCP<const Map> map = Tpetra::createNonContigMapWithNode<LO,GO>(elementList,comm,node);
-    RCP<const Map> new_map = createOneToOne<LO,GO,Node>(map);
+    RCP<const Map> new_map = Tpetra::createOneToOne<LO,GO,Node>(map);
     
     if(myRank<numProc-1)//I shouldn't have any elements.
     {
@@ -246,7 +246,7 @@ namespace {
   
     RCP<const Map> map = Tpetra::createUniformContigMapWithNode<LO, GO>(NUM_GLOBAL_ELEMENTS, comm, node);
 
-    RCP<const Map> new_map = createOneToOne<LO,GO,Node>(map);
+    RCP<const Map> new_map = Tpetra::createOneToOne<LO,GO,Node>(map);
 
     TEST_ASSERT(map->isSameAs(*new_map));
   }
@@ -290,7 +290,7 @@ namespace {
 
     RCP<const Map> map = Tpetra::createNonContigMapWithNode<LO,GO>(elementList,comm,node);
     //std::cout<<map->description();
-    RCP<const Map> new_map = createOneToOne<LO,GO,Node>(map);
+    RCP<const Map> new_map = Tpetra::createOneToOne<LO,GO,Node>(map);
     //std::cout<<new_map->description();
     //Now we need to test if we lost anything.
     
