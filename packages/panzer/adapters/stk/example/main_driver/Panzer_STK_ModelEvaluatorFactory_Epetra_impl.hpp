@@ -1035,8 +1035,57 @@ namespace panzer_stk {
 
        Teko::addTekoToStratimikosBuilder(linearSolverBuilder,reqHandler);
     }
-    else
+    else {
        Teko::addTekoToStratimikosBuilder(linearSolverBuilder);
+
+       bool writeCoordinates = p.sublist("Options").get("Write Coordinates",false);
+       if(writeCoordinates) {
+          Teuchos::RCP<const panzer::BlockedDOFManager<int,int> > blkDofs =
+             Teuchos::rcp_dynamic_cast<const panzer::BlockedDOFManager<int,int> >(globalIndexer);
+
+          // loop over blocks
+          const std::vector<Teuchos::RCP<panzer::DOFManager<int,int> > > & dofVec
+             = blkDofs->getFieldDOFManagers(); 
+          for(std::size_t i=0;i<dofVec.size();i++) { 
+            std::string fieldName;
+            Teuchos::RCP<const panzer::DOFManager<int,int> > dofs = dofVec[i];
+
+            // add in the coordinate parameter list callback handler
+            TEUCHOS_ASSERT(determineCoordinateField(*dofs,fieldName)); 
+
+            std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > fieldPatterns;
+            fillFieldPatternMap(*dofs,fieldName,fieldPatterns);
+            panzer_stk::ParameterListCallback<int,int> plCall(fieldName,fieldPatterns,stkConn_manager,dofs);
+            plCall.buildArrayToVector();
+            plCall.buildCoordinates();
+
+            // extract coordinate vectors
+            const std::vector<double> & xcoords = plCall.getXCoordsVector();
+            const std::vector<double> & ycoords = plCall.getYCoordsVector();
+            const std::vector<double> & zcoords = plCall.getZCoordsVector();
+
+            // use epetra to write coordinates to matrix market files
+            Epetra_MpiComm ep_comm(*mpi_comm->getRawMpiComm());
+            Epetra_Map map(-1,xcoords.size(),0,ep_comm);
+
+            Teuchos::RCP<Epetra_Vector> vec;
+            switch(mesh->getDimension()) {
+            case 3:
+               vec = Teuchos::rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&zcoords[0])));
+               EpetraExt::VectorToMatrixMarketFile((fieldName+"_zcoords.mm").c_str(),*vec);
+            case 2:
+               vec = Teuchos::rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&ycoords[0])));
+               EpetraExt::VectorToMatrixMarketFile((fieldName+"_ycoords.mm").c_str(),*vec);
+            case 1:
+               vec = Teuchos::rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&xcoords[0])));
+               EpetraExt::VectorToMatrixMarketFile((fieldName+"_xcoords.mm").c_str(),*vec);
+               break;
+            default:
+               TEUCHOS_ASSERT(false);
+            }
+          }
+       }
+    }
     #endif
 
     #ifdef HAVE_MUELU

@@ -85,9 +85,10 @@ public:
    Teuchos::RCP<const panzer::ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node> > getArrayToFieldVector() const
    { return arrayToVector_; }
 
-private:
    void buildCoordinates();
    void buildArrayToVector();
+
+private:
 
    void setFieldByKey(const std::string & key,Teuchos::ParameterList & pl) const;
 
