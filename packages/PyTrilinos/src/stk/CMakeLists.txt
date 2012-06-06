@@ -106,6 +106,7 @@ INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/PyPercept/PerceptMesh.py DESTINATION s
 INSTALL(TARGETS PyPercept DESTINATION site-packages)
 
 set(dirs
+  ${NETCDF_LIB_DIR}
   ${CMAKE_BINARY_DIR}/packages/seacas/libraries/nemesis
   ${CMAKE_BINARY_DIR}/packages/seacas/libraries/ioss/src
   ${CMAKE_BINARY_DIR}/packages/seacas/libraries/ioss/src/exodusII
@@ -133,7 +134,6 @@ set(dirs
   ${CMAKE_BINARY_DIR}/packages/stk/stk_expreval/stk_expreval
   ${CMAKE_BINARY_DIR}/packages/stk/stk_adapt/stk_adapt
   ${BoostLib_LIBRARY_DIRS}
-  ${NETCDF_LIB_DIR}
   ${MPI_LIB_DIR}
 )
 

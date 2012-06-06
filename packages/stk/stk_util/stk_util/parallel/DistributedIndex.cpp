@@ -819,8 +819,19 @@ void DistributedIndex::generate_new_keys_global_planning(
 
   if (m_comm_size > 1) { // Gather requests into per-process spans
 
-    // There is a possible bug in MPI_Allgather, for openmpi 1.4.3; use MPI_Allreduce instead
-    if (0)
+    // There is a possible bug in MPI_Allgather, for Intel 12;  use MPI_Gather instead
+#if defined(__INTEL_COMPILER) && (__INTEL_COMPILER >= 1200)
+      {
+        // MPI doesn't do 'const' in its interface, but the send buffer is const
+        void * send_buf = const_cast<void*>( (void *)( (new_request.empty() ? NULL : & new_request[0]) ));
+        void * recv_buf = (new_request_global.empty() ? NULL : & new_request_global[0]) ;
+        for (int root = 0; root < m_comm_size; ++root)
+          {
+            MPI_Gather( send_buf , m_span_count , MPI_LONG ,
+                        recv_buf , m_span_count , MPI_LONG , root, m_comm );
+          }
+      }
+#else
       {
         // MPI doesn't do 'const' in its interface, but the send buffer is const
         void * send_buf = const_cast<void*>( (void *)( (new_request.empty() ? NULL : & new_request[0]) ));
@@ -828,15 +839,7 @@ void DistributedIndex::generate_new_keys_global_planning(
         MPI_Allgather( send_buf , m_span_count , MPI_LONG ,
                        recv_buf , m_span_count , MPI_LONG , m_comm );
       }
-    else
-      {
-        std::vector<long> new_request_local( m_comm_size * m_span_count, long(0) );
-        for (unsigned i=0; i < new_request.size(); i++)
-          {
-            new_request_local[i + m_comm_rank * m_span_count] = new_request[i];
-          }
-        MPI_Allreduce( &new_request_local[0] , &new_request_global[0] , m_comm_size*m_span_count , MPI_LONG , MPI_SUM , m_comm );
-      }
+#endif
 
   }
   else {
