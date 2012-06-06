@@ -85,6 +85,8 @@ namespace Kokkos {
     //! @name Data entry and accessor methods.
     //@{
 
+    RCP<Node> getNode() const;
+
     //! Return the number of rows in the graph.
     size_t getNumRows() const;
 
@@ -124,6 +126,12 @@ namespace Kokkos {
   template <class Ordinal, class Node>
   size_t CrsGraphBase<Ordinal,Node>::getNumRows() const {
     return numRows_;
+  }
+
+  // ======= node ===========
+  template <class Ordinal, class Node>
+  RCP<Node> CrsGraphBase<Ordinal,Node>::getNode() const {
+    return node_;
   }
 
 } // namespace Kokkos

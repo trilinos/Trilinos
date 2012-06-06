@@ -74,8 +74,8 @@ int main() {
   Teuchos::RCP<DMatrix> dM = Teuchos::rcp(new DMatrix(G,Teuchos::null));
   DoubleOps doubleKernel(node);
   // initialize it with G and dM
-  DoubleOps::finalizeGraphAndMatrix(*G,*dM,Teuchos::null);
-  doubleKernel.setGraphAndMatrix(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,G,dM);
+  DoubleOps::finalizeGraphAndMatrix(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,*G,*dM,Teuchos::null);
+  doubleKernel.setGraphAndMatrix(G,dM);
   // create double-valued vectors and initialize them
   DoubleVec dx(node), dy(node);
   // call the sparse kernel operator interfaces
@@ -89,7 +89,7 @@ int main() {
   FloatOps floatKernel(node);
   // initialize it with G and fM
   FloatOps::finalizeMatrix(*G,*fM,Teuchos::null);
-  floatKernel.setGraphAndMatrix(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,G,fM);
+  floatKernel.setGraphAndMatrix(G,fM);
   // create float-valued vectors and initialize them
   FloatVec fx(node), fy(node);
   // call the sparse kernel operator interfaces

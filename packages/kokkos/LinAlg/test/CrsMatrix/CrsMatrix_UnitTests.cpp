@@ -105,7 +105,7 @@ namespace {
     RCP<Graph> G = rcp(new Graph(N,node,parameterList()));
     G->setStructure(ptrs,null);
     RCP<ParameterList> params = parameterList();
-    SparseOps::finalizeGraph(*G,params);
+    SparseOps::finalizeGraph(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,*G,params);
     TEST_EQUALITY_CONST( G->isEmpty(), true );
   }
 
@@ -136,7 +136,7 @@ namespace {
     RCP<Graph> G = rcp(new Graph(N,node,parameterList()));
     TEST_EQUALITY( G->getNumRows(), N );
     G->setStructure(ptrs, inds);
-    SparseOps::finalizeGraph(*G,null);
+    SparseOps::finalizeGraph(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,*G,null);
     ArrayRCP<const Ordinal> chkInds;
     ArrayRCP<const size_t> chkPtrs;
     chkInds = G->getIndices();
@@ -191,7 +191,7 @@ namespace {
     TEST_EQUALITY( ptrs, chkPtrs );
     TEST_EQUALITY( inds, chkInds );
     TEST_EQUALITY( vals, chkVals );
-    SparseOps::finalizeGraphAndMatrix(*G,M,null);
+    SparseOps::finalizeGraphAndMatrix(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,*G,M,null);
     TEST_EQUALITY_CONST( G->isEmpty(),     false );
   }
 

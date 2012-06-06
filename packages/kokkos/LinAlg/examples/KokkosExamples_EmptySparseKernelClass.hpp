@@ -199,13 +199,13 @@ namespace KokkosExamples {
     }
 
     //! Finalize a graph
-    inline static void finalizeGraph(EmptyCrsGraph<Node> &graph, const RCP<ParameterList> &params) {}
+    inline static void finalizeGraph(Teuchos::EUplo uplo, Teuchos::EDiag diag, EmptyCrsGraph<Node> &graph, const RCP<ParameterList> &params) {}
 
     //! Finalize the matrix of an already-finalized graph.
     inline static void finalizeMatrix(const EmptyCrsGraph<Node> &graph, EmptyCrsMatrix<Scalar,Node> &matrix, const RCP<ParameterList> &params) {}
     
     //! Finalize a graph and a matrix.
-    inline static void finalizeGraphAndMatrix(EmptyCrsGraph<Node> &graph, EmptyCrsMatrix<Scalar,Node> &matrix, const RCP<ParameterList> &params) {}
+    inline static void finalizeGraphAndMatrix(Teuchos::EUplo uplo, Teuchos::EDiag diag, EmptyCrsGraph<Node> &graph, EmptyCrsMatrix<Scalar,Node> &matrix, const RCP<ParameterList> &params) {}
 
     /** \brief Initialize the kernels with the graph and matrix.
 
@@ -221,8 +221,7 @@ namespace KokkosExamples {
         copy, callers should not change the Kokkos::CrsGraph after
         calling this method.
       */
-    void setGraphAndMatrix(Teuchos::EUplo uplo, Teuchos::EDiag diag, 
-                           const RCP<const EmptyCrsGraph<Node> >         &graph,
+    void setGraphAndMatrix(const RCP<const EmptyCrsGraph<Node> >         &graph,
                            const RCP<const EmptyCrsMatrix<Scalar,Node> > &node) {};
 
     //@}

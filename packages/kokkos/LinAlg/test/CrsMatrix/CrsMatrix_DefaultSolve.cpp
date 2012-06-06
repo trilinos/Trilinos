@@ -193,10 +193,15 @@ namespace {
     inds = Teuchos::null;
     A->setValues(vals);
     vals = Teuchos::null;
-    OPS::finalizeGraphAndMatrix(*G,*A,null);
+    OPS::finalizeGraphAndMatrix(Teuchos::LOWER_TRI,Teuchos::NON_UNIT_DIAG,*G,*A,null);
+    Teuchos::EDiag diag; 
+    Teuchos::EUplo uplo;
+    G->getMatDesc(uplo,diag);
+    TEST_EQUALITY_CONST( uplo, Teuchos::LOWER_TRI );
+    TEST_EQUALITY_CONST( diag, Teuchos::NON_UNIT_DIAG );
     OPS dsm(node);
     out << "Testing with sparse ops: " << Teuchos::typeName(dsm) << std::endl;
-    dsm.setGraphAndMatrix(Teuchos::LOWER_TRI,Teuchos::NON_UNIT_DIAG,G,A);
+    dsm.setGraphAndMatrix(G,A);
 
     // A is the identity, which allows us to easily test transpose and non-transpose, upper and lower tri
     ArrayRCP<Scalar> ydat, x1dat, x3dat;
@@ -259,10 +264,15 @@ namespace {
     inds = Teuchos::null;
     A->setValues(vals);
     vals = Teuchos::null;
-    OPS::finalizeGraphAndMatrix(*G,*A,null);
+    OPS::finalizeGraphAndMatrix(Teuchos::LOWER_TRI,Teuchos::UNIT_DIAG,*G,*A,null);
+    Teuchos::EDiag diag; 
+    Teuchos::EUplo uplo;
+    G->getMatDesc(uplo,diag);
+    TEST_EQUALITY_CONST( uplo, Teuchos::LOWER_TRI );
+    TEST_EQUALITY_CONST( diag, Teuchos::UNIT_DIAG );
     OPS dsm(node);
     out << "Testing with sparse ops: " << Teuchos::typeName(dsm) << std::endl;
-    dsm.setGraphAndMatrix(Teuchos::LOWER_TRI,Teuchos::UNIT_DIAG,G,A);
+    dsm.setGraphAndMatrix(G,A);
 
     // A is the identity, which allows us to easily test transpose and non-transpose, upper and lower tri
     ArrayRCP<Scalar> ydat, x1dat, x3dat;
@@ -327,10 +337,15 @@ namespace {
     inds = Teuchos::null;
     A->setValues(vals);
     vals = Teuchos::null;
-    OPS::finalizeGraphAndMatrix(*G,*A,null);
+    OPS::finalizeGraphAndMatrix(Teuchos::UPPER_TRI,Teuchos::NON_UNIT_DIAG,*G,*A,null);
+    Teuchos::EDiag diag; 
+    Teuchos::EUplo uplo;
+    G->getMatDesc(uplo,diag);
+    TEST_EQUALITY_CONST( uplo, Teuchos::UPPER_TRI );
+    TEST_EQUALITY_CONST( diag, Teuchos::NON_UNIT_DIAG );
     OPS dsm(node);
     out << "Testing with sparse ops: " << Teuchos::typeName(dsm) << std::endl;
-    dsm.setGraphAndMatrix(Teuchos::UPPER_TRI,Teuchos::NON_UNIT_DIAG,G,A);
+    dsm.setGraphAndMatrix(G,A);
 
     // A is the identity, which allows us to easily test transpose and non-transpose, upper and lower tri
     ArrayRCP<Scalar> ydat, x1dat, x3dat;
@@ -393,10 +408,15 @@ namespace {
     inds = Teuchos::null;
     A->setValues(vals);
     vals = Teuchos::null;
-    OPS::finalizeGraphAndMatrix(*G,*A,null);
+    OPS::finalizeGraphAndMatrix(Teuchos::UPPER_TRI,Teuchos::UNIT_DIAG,*G,*A,null);
+    Teuchos::EDiag diag; 
+    Teuchos::EUplo uplo;
+    G->getMatDesc(uplo,diag);
+    TEST_EQUALITY_CONST( uplo, Teuchos::UPPER_TRI );
+    TEST_EQUALITY_CONST( diag, Teuchos::UNIT_DIAG );
     OPS dsm(node);
     out << "Testing with sparse ops: " << Teuchos::typeName(dsm) << std::endl;
-    dsm.setGraphAndMatrix(Teuchos::UPPER_TRI,Teuchos::UNIT_DIAG,G,A);
+    dsm.setGraphAndMatrix(G,A);
 
     // A is the identity, which allows us to easily test transpose and non-transpose, upper and lower tri
     ArrayRCP<Scalar> ydat, x1dat, x3dat;

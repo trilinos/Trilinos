@@ -189,10 +189,15 @@ namespace {
     inds = Teuchos::null;
     A->setValues(vals);
     vals = Teuchos::null;
-    OPS::finalizeGraphAndMatrix(*G,*A,null);
+    OPS::finalizeGraphAndMatrix(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,*G,*A,null);
+    Teuchos::EDiag diag; 
+    Teuchos::EUplo uplo;
+    G->getMatDesc(uplo,diag);
+    TEST_EQUALITY_CONST( uplo, Teuchos::UNDEF_TRI );
+    TEST_EQUALITY_CONST( diag, Teuchos::NON_UNIT_DIAG );
     OPS dsm(node);
     out << "Testing with sparse ops: " << Teuchos::typeName(dsm) << std::endl;
-    dsm.setGraphAndMatrix(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,G,A);
+    dsm.setGraphAndMatrix(G,A);
 
     ArrayRCP<Scalar> xdat, axdat;
     xdat  = node->template allocBuffer<Scalar>(N);

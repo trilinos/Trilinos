@@ -73,11 +73,14 @@
     RCP<MAT>  A = rcp( new MAT(G,null) );
     G->setStructure(ptrs,null);
     A->setValues(null);
-    OPS::finalizeGraphAndMatrix(*G,*A,null);
+    OPS::finalizeGraphAndMatrix(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,*G,*A,null);
+    Teuchos::EDiag diag; 
+    Teuchos::EUplo uplo;
+    G->getMatDesc(uplo,diag);
+    TEST_EQUALITY_CONST( uplo, Teuchos::UNDEF_TRI );
+    TEST_EQUALITY_CONST( diag, Teuchos::NON_UNIT_DIAG );
     out << "\n**\n** Can't submit the data twice\n**\n";
-    {
-      OPS dsm(node);
-      dsm.setGraphAndMatrix(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,G,A);
-      TEST_THROW( dsm.setGraphAndMatrix(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,G,A), std::runtime_error );
-    }
+    OPS dsm(node);
+    dsm.setGraphAndMatrix(G,A);
+    TEST_THROW( dsm.setGraphAndMatrix(G,A), std::runtime_error );
   }

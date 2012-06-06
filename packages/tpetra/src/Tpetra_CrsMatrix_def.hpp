@@ -570,7 +570,11 @@ namespace Tpetra {
     // finalize local graph and matrix
     if (params == null) lclparams = parameterList();
     else                lclparams = sublist(params,"Local Sparse Ops");
-    sparse_ops_type::finalizeGraphAndMatrix(*myGraph_->getLocalGraphNonConst(),*lclMatrix_, lclparams);
+    Teuchos::EDiag diag = ( getNodeNumDiags() < getNodeNumRows() ? Teuchos::UNIT_DIAG : Teuchos::NON_UNIT_DIAG );
+    Teuchos::EUplo uplo = Teuchos::UNDEF_TRI;
+    if      (isUpperTriangular()) uplo = Teuchos::UPPER_TRI;
+    else if (isLowerTriangular()) uplo = Teuchos::LOWER_TRI;
+    sparse_ops_type::finalizeGraphAndMatrix(uplo,diag,*myGraph_->getLocalGraphNonConst(),*lclMatrix_, lclparams);
   }
 
 
@@ -1769,13 +1773,8 @@ namespace Tpetra {
       fillLocalMatrix(params);
     }
     //
-    Teuchos::EDiag diag = ( getNodeNumDiags() < getNodeNumRows() ? Teuchos::UNIT_DIAG : Teuchos::NON_UNIT_DIAG );
-    Teuchos::EUplo uplo = Teuchos::UNDEF_TRI;
-    if (isUpperTriangular()) uplo = Teuchos::UPPER_TRI;
-    else if (isLowerTriangular()) uplo = Teuchos::LOWER_TRI;
-    //
     lclMatOps_ = rcp(new sparse_ops_type(getNode()));
-    lclMatOps_->setGraphAndMatrix(uplo,diag,staticGraph_->getLocalGraph(), lclMatrix_);
+    lclMatOps_->setGraphAndMatrix(staticGraph_->getLocalGraph(), lclMatrix_);
     // done with the local objects; release them and their memory (they will persist in the local sparse ops if necessary)
     lclMatrix_ = null;
     if (myGraph_ != null) {

@@ -73,11 +73,15 @@ namespace Kokkos {
       inline ArrayRCP<const size_t> getPointers() const;
       inline ArrayRCP<const Ordinal> getIndices() const;
       inline bool isInitialized() const;
+      inline void setMatDesc(Teuchos::EUplo uplo, Teuchos::EDiag diag);
+      inline void getMatDesc(Teuchos::EUplo &uplo, Teuchos::EDiag &diag) const;
     private:
       ArrayRCP<const size_t>  ptrs_;
       ArrayRCP<const Ordinal> inds_;
       bool isInitialized_;
       bool isEmpty_;
+      Teuchos::EUplo  tri_uplo_; 
+      Teuchos::EDiag unit_diag_;
   };
 
   //! \class DefaultCrsMatrix 
@@ -144,9 +148,24 @@ namespace Kokkos {
   ArrayRCP<const Ordinal> DefaultCrsGraph<Ordinal,Node>::getIndices() const
   { return inds_; }
 
+
   template <class Ordinal, class Node>
   bool DefaultCrsGraph<Ordinal,Node>::isInitialized() const
   { return isInitialized_; }
+
+  template <class Ordinal, class Node>
+  void DefaultCrsGraph<Ordinal,Node>::setMatDesc(Teuchos::EUplo uplo, Teuchos::EDiag diag)
+  {
+    tri_uplo_ = uplo;
+    unit_diag_ = diag;
+  }
+
+  template <class Ordinal, class Node>
+  void DefaultCrsGraph<Ordinal,Node>::getMatDesc(Teuchos::EUplo &uplo, Teuchos::EDiag &diag) const
+  {
+    uplo = tri_uplo_;
+    diag = unit_diag_;
+  }
 
   template <class Scalar, class Ordinal, class Node>
   DefaultCrsMatrix<Scalar,Ordinal,Node>::DefaultCrsMatrix(const RCP<const DefaultCrsGraph<Ordinal,Node> > &graph, const RCP<ParameterList> &params)
@@ -261,13 +280,13 @@ namespace Kokkos {
     static ArrayRCP<T> allocStorage(const ArrayView<const size_t> &rowPtrs);
 
     //! Finalize a graph
-    static void finalizeGraph(DefaultCrsGraph<Ordinal,Node> &graph, const RCP<ParameterList> &params);
+    static void finalizeGraph(Teuchos::EUplo uplo, Teuchos::EDiag diag, DefaultCrsGraph<Ordinal,Node> &graph, const RCP<ParameterList> &params);
 
     //! Finalize the matrix of an already-finalized graph.
     static void finalizeMatrix(const DefaultCrsGraph<Ordinal,Node> &graph, DefaultCrsMatrix<Scalar,Ordinal,Node> &matrix, const RCP<ParameterList> &params);
     
     //! Finalize a graph and a matrix.
-    static void finalizeGraphAndMatrix(DefaultCrsGraph<Ordinal,Node> &graph, DefaultCrsMatrix<Scalar,Ordinal,Node> &matrix, const RCP<ParameterList> &params);
+    static void finalizeGraphAndMatrix(Teuchos::EUplo uplo, Teuchos::EDiag diag, DefaultCrsGraph<Ordinal,Node> &graph, DefaultCrsMatrix<Scalar,Ordinal,Node> &matrix, const RCP<ParameterList> &params);
 
     //! Initialize sparse operations with a graph and matrix
     ///
@@ -277,8 +296,7 @@ namespace Kokkos {
     /// \param diag [in] UNIT_DIAG if the matrix has an implicit unit diagonal,
     ///   else NON_UNIT_DIAG (diagonal entries are explicitly stored in the matrix).
     ///
-    void setGraphAndMatrix(Teuchos::EUplo uplo, Teuchos::EDiag diag, 
-                           const RCP<const DefaultCrsGraph<Ordinal,Node> > &graph, 
+    void setGraphAndMatrix(const RCP<const DefaultCrsGraph<Ordinal,Node> > &graph, 
                            const RCP<const DefaultCrsMatrix<Scalar,Ordinal,Node> > &matrix);
 
     //@}
@@ -399,9 +417,10 @@ namespace Kokkos {
 
 
   template <class Scalar, class Ordinal, class Node>
-  void DefaultHostSparseOps<Scalar,Ordinal,Node>::finalizeGraph(DefaultCrsGraph<Ordinal,Node> &graph, const RCP<ParameterList> &params)
+  void DefaultHostSparseOps<Scalar,Ordinal,Node>::finalizeGraph(Teuchos::EUplo uplo, Teuchos::EDiag diag, DefaultCrsGraph<Ordinal,Node> &graph, const RCP<ParameterList> &params)
   { 
     // nothing much to do here
+    graph.setMatDesc(uplo,diag);
     std::string FuncName("Kokkos::DefaultHostSparseOps::finalizeGraph(graph,params)");
     TEUCHOS_TEST_FOR_EXCEPTION(
         graph.isInitialized() == false, 
@@ -421,9 +440,10 @@ namespace Kokkos {
   }
 
   template <class Scalar, class Ordinal, class Node>
-  void DefaultHostSparseOps<Scalar,Ordinal,Node>::finalizeGraphAndMatrix(DefaultCrsGraph<Ordinal,Node> &graph, DefaultCrsMatrix<Scalar,Ordinal,Node> &matrix, const RCP<ParameterList> &params)
+  void DefaultHostSparseOps<Scalar,Ordinal,Node>::finalizeGraphAndMatrix(Teuchos::EUplo uplo, Teuchos::EDiag diag, DefaultCrsGraph<Ordinal,Node> &graph, DefaultCrsMatrix<Scalar,Ordinal,Node> &matrix, const RCP<ParameterList> &params)
   { 
     // nothing much to do here
+    graph.setMatDesc(uplo,diag);
     std::string FuncName("Kokkos::DefaultHostSparseOps::finalizeGraphAndMatrix(graph,matrix,params)");
     TEUCHOS_TEST_FOR_EXCEPTION(
         graph.isInitialized() == false, 
@@ -460,12 +480,9 @@ namespace Kokkos {
 
   template <class Scalar, class Ordinal, class Node>
   void DefaultHostSparseOps<Scalar,Ordinal,Node>::setGraphAndMatrix(
-              Teuchos::EUplo uplo, Teuchos::EDiag diag, 
               const RCP<const DefaultCrsGraph<Ordinal,Node> > &opgraph, 
               const RCP<const DefaultCrsMatrix<Scalar,Ordinal,Node> > &opmatrix)
   {
-    tri_uplo_  = uplo;
-    unit_diag_ = diag;
     std::string tfecfFuncName("setGraphAndMatrix(uplo,diag,graph,matrix)");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         isInitialized_ == true, 
@@ -485,6 +502,7 @@ namespace Kokkos {
           || inds_.size() != vals_.size(),
           std::runtime_error, " matrix and graph seem incongruent.");
     }
+    opgraph->getMatDesc( tri_uplo_, unit_diag_ );
     isInitialized_ = true;
   }
 

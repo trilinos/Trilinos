@@ -205,7 +205,7 @@ namespace {
     inds = Teuchos::null;
     A->setValues(vals);
     vals = Teuchos::null;
-    DSM::finalizeGraphAndMatrix(*G,*A,null);
+    DSM::finalizeGraphAndMatrix(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,*G,*A,null);
 
     int its=10;
 
@@ -284,7 +284,7 @@ namespace {
     inds = Teuchos::null;
     A->setValues(vals);
     vals = Teuchos::null;
-    DSM::finalizeGraphAndMatrix(*G,*A,null);
+    DSM::finalizeGraphAndMatrix(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,*G,*A,null);
 
     int its=10;
 
@@ -368,7 +368,7 @@ namespace {
     inds = Teuchos::null;
     A->setValues(vals);
     vals = Teuchos::null;
-    DSM::finalizeGraphAndMatrix(*G,*A,null);
+    DSM::finalizeGraphAndMatrix(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,*G,*A,null);
 
     printf("\n");
 
