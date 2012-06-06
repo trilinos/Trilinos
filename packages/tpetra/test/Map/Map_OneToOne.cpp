@@ -117,7 +117,7 @@ namespace {
 
     RCP<const Map> map = Tpetra::createNonContigMapWithNode<LO,GO>(elementList,comm,node);
     //std::cout<<map->description();
-    RCP<const Map> new_map = createOneToOne<LO,GO,Node>(map);
+    RCP<const Map> new_map = Tpetra::createOneToOne<LO,GO,Node>(map);
     //std::cout<<new_map->description();
     //Now we need to test if we lost anything.
     
