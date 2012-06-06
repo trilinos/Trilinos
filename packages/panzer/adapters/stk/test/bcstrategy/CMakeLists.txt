@@ -12,6 +12,8 @@ SET(SOURCES
     bcstrategy.cpp
     user_app_BCStrategy_Dirichlet_Constant.hpp
     user_app_BCStrategy_Dirichlet_Constant_impl.hpp
+    user_app_BCStrategy_Neumann_Constant.hpp
+    user_app_BCStrategy_Neumann_Constant_impl.hpp
     user_app_BCStrategy_Factory.hpp
     ) 
 

@@ -40,59 +40,49 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef USER_APP_BCSTRATEGY_FACTORY_HPP
-#define USER_APP_BCSTRATEGY_FACTORY_HPP
+#ifndef PANZER_CONSTANT_FLUX_IMPL_HPP
+#define PANZER_CONSTANT_FLUX_IMPL_HPP
 
-#include "Teuchos_RCP.hpp"
-#include "Panzer_Traits.hpp"
-#include "Panzer_BCStrategy_TemplateManager.hpp"
-#include "Panzer_BCStrategy_Factory.hpp"
-#include "Panzer_BCStrategy_Factory_Defines.hpp"
-#include "Panzer_GlobalData.hpp"
+namespace panzer {
 
-// Add my bcstrategies here
-#include "user_app_BCStrategy_Dirichlet_Constant.hpp"
-#include "user_app_BCStrategy_Neumann_Constant.hpp"
+//**********************************************************************
+PHX_EVALUATOR_CTOR(ConstantFlux,p) :
+  flux( p.get<std::string>("Flux Field Name"), 
+	p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") )
+{
+  const Teuchos::ParameterList& flux_values = p.sublist("Flux Values");
 
-namespace user_app {
+  for (Teuchos::ParameterList::ConstIterator i = flux_values.begin(); i != flux_values.end(); ++i)
+    values.push_back(Teuchos::getValue<double>(i->second));
+
+  this->addEvaluatedField(flux);
   
-  PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER("Constant", 
-					     user_app::BCStrategy_Dirichlet_Constant,
-					     BCStrategy_Dirichlet_Constant)
+  std::string n = "Constant: " + flux.fieldTag().name();
+  this->setName(n);
+}
 
-  PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER("Neumann Constant", 
-					     user_app::BCStrategy_Neumann_Constant,
-					     BCStrategy_Neumann_Constant)
+//**********************************************************************
+PHX_POST_REGISTRATION_SETUP(ConstantFlux,worksets,fm)
+{
+  using namespace PHX;
+  this->utils.setFieldData(flux,fm);
 
-  struct BCFactory : public panzer::BCStrategyFactory {
+  std::cout << "ROGER fd = " << flux.dimension(2) << ", values = " << values.size() << std::endl;
 
-    Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> >
-    buildBCStrategy(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data) const
-    {
+  TEUCHOS_ASSERT(static_cast<std::size_t>(flux.dimension(2)) == values.size());
 
-      Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> > bcs_tm = 
-	Teuchos::rcp(new panzer::BCStrategy_TemplateManager<panzer::Traits>);
-      
-      bool found = false;
+  for (int cell = 0; cell < flux.dimension(0); ++cell)
+    for (int ip = 0; ip < flux.dimension(1); ++ip)
+      for (int dim = 0; dim < flux.dimension(2); ++dim)
+	flux(cell,ip,dim) = values[dim];
+}
 
-      PANZER_BUILD_BCSTRATEGY_OBJECTS("Constant", 
-				      user_app::BCStrategy_Dirichlet_Constant,
-				      BCStrategy_Dirichlet_Constant)
+//**********************************************************************
+PHX_EVALUATE_FIELDS(ConstantFlux,d)
+{ }
 
-      PANZER_BUILD_BCSTRATEGY_OBJECTS("Neumann Constant", 
-				      user_app::BCStrategy_Neumann_Constant,
-				      BCStrategy_Neumann_Constant)
+//**********************************************************************
 
-      TEUCHOS_TEST_FOR_EXCEPTION(!found, std::logic_error, 
-			 "Error - the BC Strategy called \"" << bc.strategy() <<
-			 "\" is not a valid identifier in the BCStrategyFactory.  Either add a valid implementation to your factory or fix your input file.  The relevant boundary condition is:\n\n" << bc << std::endl);
-      
-      return bcs_tm;
-
-    }
-
-  };
-  
 }
 
 #endif

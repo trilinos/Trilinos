@@ -157,12 +157,27 @@ int main(int argc, char *argv[])
 
     // Add in the application specific observer factories
     {
-      Teuchos::RCP<const panzer_stk::RythmosObserverFactory> rof = 
-	Teuchos::rcp(new user_app::RythmosObserverFactory_Epetra(stkIOResponseLibrary));
-      input_params->sublist("Solver Factories").set("Rythmos Observer Factory", rof);
-      Teuchos::RCP<const panzer_stk::NOXObserverFactory> nof = 
-	Teuchos::rcp(new user_app::NOXObserverFactory_Epetra(stkIOResponseLibrary));
-      input_params->sublist("Solver Factories").set("NOX Observer Factory", nof);
+      // Rythmos
+      {
+	Teuchos::RCP<const panzer_stk::RythmosObserverFactory> rof = 
+	  Teuchos::rcp(new user_app::RythmosObserverFactory_Epetra(stkIOResponseLibrary));
+	input_params->sublist("Solver Factories").set("Rythmos Observer Factory", rof);
+      }
+
+      // NOX
+      {
+	Teuchos::RCP<user_app::NOXObserverFactory_Epetra> nof = 
+	  Teuchos::rcp(new user_app::NOXObserverFactory_Epetra(stkIOResponseLibrary));
+
+	Teuchos::RCP<Teuchos::ParameterList> observers_to_build = 
+	  Teuchos::parameterList(input_params->sublist("Solver Factories").sublist("NOX Observers"));
+	  
+	input_params->sublist("Solver Factories").remove("NOX Observers");
+
+	nof->setParameterList(observers_to_build);
+
+	input_params->sublist("Solver Factories").set<Teuchos::RCP<const panzer_stk::NOXObserverFactory> >("NOX Observer Factory", nof);
+      }
     }
 
     Teuchos::RCP<Thyra::ModelEvaluator<double> > physics;
