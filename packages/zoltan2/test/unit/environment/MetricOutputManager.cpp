@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 
   try {
     intmom = new MetricOutputManager<int>(
-      rank, iPrint, std::cout, someOnePrints);
+      rank, iPrint, std::cout, someOnePrints, string("units"), 10);
   }
   catch(std::exception &e){
     fail=true;
@@ -73,8 +73,8 @@ int main(int argc, char *argv[])
   }
 
   try{
-    intmom->print(string("number of things"), string(), 10); 
-    intmom->print(string("number of other things"), string(), 5); 
+    intmom->print(string("number of things"), 10); 
+    intmom->print(string("number of other things"), 5); 
   }
   catch(std::exception &e){
     fail=true;
@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
   try {
     floatmom = new MetricOutputManager<float>(
 
-      rank, iPrint, std::cout, someOnePrints);
+      rank, iPrint, std::cout, someOnePrints, string("dollars"), 10);
   }
   catch(std::exception &e){
     fail=true;
@@ -112,8 +112,8 @@ int main(int argc, char *argv[])
   }
 
   try{
-    floatmom->print(string("Price of things"), string("dollars"), 10.10); 
-    floatmom->print(string("Price of other things"), string("dollars"), 25.25); 
+    floatmom->print(string("Price of things"), 10.10); 
+    floatmom->print(string("Price of other things"), 25.25); 
   }
   catch(std::exception &e){
     fail=true;
@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
   ofstream outF("testMetricFile.txt", flags);
 
   try {
-    doublemom = new MetricOutputManager<double>( rank, iPrint, outF, someOnePrints);
+    doublemom = new MetricOutputManager<double>( rank, iPrint, outF, someOnePrints, string("microseconds"), 10);
   }
   catch(std::exception &e){
     fail=true;
@@ -148,9 +148,9 @@ int main(int argc, char *argv[])
   }
 
   try{
-    doublemom->print(string("Time to do something"), string("microseconds"), 
+    doublemom->print(string("Time to do something"), 
       10.101012345); 
-    doublemom->print(string("Time to do something else"), string("microseconds"), 
+    doublemom->print(string("Time to do something else"), 
       25.2500024); 
   }
   catch(std::exception &e){

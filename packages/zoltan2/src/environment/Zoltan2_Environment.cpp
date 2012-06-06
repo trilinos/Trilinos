@@ -212,7 +212,8 @@ void Environment::commitParameters()
       iPrint = IsInRangeList(myRank_, *reporters2);
 
     try{
-      makeMetricOutputManager<long>(myRank_, iPrint, f2, os2, memoryOut_);
+      makeMetricOutputManager<long>(myRank_, iPrint, f2, os2, memoryOut_,
+        string("KB"), 10);
     }
     catch (std::exception &e){
       std::ostringstream oss;

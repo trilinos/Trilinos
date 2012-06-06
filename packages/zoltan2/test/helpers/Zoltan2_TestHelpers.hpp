@@ -1,5 +1,6 @@
 #include <Tpetra_config.h>
 #include <Kokkos_DefaultNode.hpp>
+#include <iostream>
 
 typedef Kokkos::DefaultNode::DefaultNodeType node_t;
 
@@ -66,6 +67,16 @@ typedef double scalar_t;
 #define HAVE_EPETRA_DATA_TYPES
 
 #endif
+
+#define MEMORY_CHECK(iPrint, msg) \
+  if (iPrint){ \
+    long kb = Zoltan2::getProcessKilobytes(); \
+    std::cout.width(10); \
+    std::cout.fill('*'); \
+    std::cout << kb << " KB, " << msg << std::endl; \
+    std::cout.width(0); \
+    std::cout.fill(' '); \
+  }
 
 #include <ErrorHandlingForTests.hpp>  
 #include <UserInputForTests.hpp>

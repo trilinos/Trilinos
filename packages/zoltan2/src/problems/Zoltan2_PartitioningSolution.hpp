@@ -1382,7 +1382,7 @@ template <typename Adapter>
 
   haveSolution_ = true;
 
-  env_->memory("After Solution has processed algorithm's solution");
+  env_->memory("After Solution has processed algorithm's answer");
   env_->debug(DETAILED_STATUS, "Exiting setParts");
 }
 

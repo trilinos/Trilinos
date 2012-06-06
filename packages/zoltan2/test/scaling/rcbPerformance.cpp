@@ -216,10 +216,14 @@ const RCP<tMVector_t> getMeshCoordinates(
 
 int main(int argc, char *argv[])
 {
+  MEMORY_CHECK(true, "Before initializing MPI");
+
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   int rank = comm->getRank();
   int nprocs = comm->getSize();
+
+  MEMORY_CHECK(rank==0, "After initializing MPI");
 
   if (rank==0)
     cout << "Number of processes: " << nprocs << endl;
@@ -285,6 +289,8 @@ int main(int argc, char *argv[])
     }
   }
 
+  MEMORY_CHECK(doMemory && rank==0, "After processing parameters");
+
   gno_t globalSize = static_cast<gno_t>(numGlobalCoords);
 
   RCP<tMVector_t> coordinates = getMeshCoordinates(comm, globalSize);
@@ -321,6 +327,8 @@ int main(int argc, char *argv[])
     }
   }
 
+  MEMORY_CHECK(doMemory && rank==0, "After creating input");
+
   // Create an input adapter.
   const RCP<const tMap_t> &coordmap = coordinates->getMap();
   ArrayView<const gno_t> ids = coordmap->getNodeElementList();
@@ -347,6 +355,8 @@ int main(int argc, char *argv[])
     ia = rcp(new inputAdapter_t (localCount, globalIds, 
       values, valueStrides, weightPtrs, weightStrides));
   }
+
+  MEMORY_CHECK(doMemory && rank==0, "After creating input adapter");
 
   // Parameters
 

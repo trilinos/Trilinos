@@ -364,6 +364,7 @@ template <typename mvector_t>
   Z2_FORWARD_EXCEPTIONS
 
   vectors = rcp_const_cast<mvector_t>(newMultiVector);
+  env->memory("Former problem data replaced with new data");
   env->debug(DETAILED_STATUS, string("Exiting migrateData"));
 }
 
@@ -1089,6 +1090,8 @@ template <typename mvector_t>
   env->globalInputAssertion(__FILE__, __LINE__, "partitioning not solvable",
     done, DEBUG_MODE_ASSERTION, comm);
 
+  env->memory("End of bisection");
+
   env->debug(DETAILED_STATUS, string("Exiting BSPfindCut"));
 
   return;
@@ -1340,6 +1343,7 @@ template <typename mvector_t, typename Adapter>
       for (lno_t i=0; i < numLocalCoords; i++)
         partNum[i] = part0;
 
+    env->memory("serial RCB end");
     env->debug(DETAILED_STATUS, string("Exiting serialRCB"));
     return;
   }
@@ -1423,7 +1427,7 @@ template <typename mvector_t, typename Adapter>
   Z2_FORWARD_EXCEPTIONS
 
   if (firstCall)
-    env->memory("serial RCB");
+    env->memory("serial RCB start");
 
   ///////////////////////////////////////////////////////
   // Adjust indices for left half and right half

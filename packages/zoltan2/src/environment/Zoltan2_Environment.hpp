@@ -422,11 +422,11 @@ public:
 #else
   void memory(const char *msg) const
     {if (memoryOn_)
-       memoryOut_->print(msg, "KB", getProcessKilobytes());}
+       memoryOut_->print(msg, getProcessKilobytes());}
 
   void memory(const std::string &msg) const
     {if (memoryOn_)
-      memoryOut_->print(msg, "KB", getProcessKilobytes());}
+      memoryOut_->print(msg, getProcessKilobytes());}
 #endif
 
   /*! \brief Returns true if the parameter list has the named sublist.
@@ -567,7 +567,8 @@ private:
 template<typename metric_t>
   void makeMetricOutputManager(int rank, bool iPrint, 
     std::string fname, int ost,
-    Teuchos::RCP<MetricOutputManager<metric_t> > &mgr)
+    Teuchos::RCP<MetricOutputManager<metric_t> > &mgr,
+    std::string units, int fieldWidth)
 {
   typedef MetricOutputManager<metric_t> manager_t;
 
@@ -577,7 +578,8 @@ template<typename metric_t>
   bool haveStreamName = (os != NUM_OUTPUT_STREAMS);
 
   if (!haveFname && !haveStreamName){
-    mgr = Teuchos::rcp(new manager_t(rank, iPrint, std::cout, true));
+    mgr = Teuchos::rcp(new manager_t(rank, iPrint, std::cout, true,
+      units, fieldWidth));
     return;
   }
 
@@ -593,16 +595,20 @@ template<typename metric_t>
         throw std::runtime_error(e.what());
       }
     }
-    mgr = Teuchos::rcp(new manager_t(rank, iPrint, *oFile, true));
+    mgr = Teuchos::rcp(new manager_t(rank, iPrint, *oFile, true,
+      units, fieldWidth));
     return;
   }
 
   if (os == COUT_STREAM)
-    mgr = Teuchos::rcp(new manager_t(rank, iPrint, std::cout, true));
+    mgr = Teuchos::rcp(new manager_t(rank, iPrint, std::cout, true,
+      units, fieldWidth));
   else if (os == CERR_STREAM)
-    mgr = Teuchos::rcp(new manager_t(rank, iPrint, std::cerr, true));
+    mgr = Teuchos::rcp(new manager_t(rank, iPrint, std::cerr, true,
+      units, fieldWidth));
   else if (os == NULL_STREAM)
-    mgr = Teuchos::rcp(new manager_t(rank, false, std::cout, true));
+    mgr = Teuchos::rcp(new manager_t(rank, false, std::cout, true,
+      units, fieldWidth));
   else
     throw std::logic_error("invalid metric output stream was not caught");
 }

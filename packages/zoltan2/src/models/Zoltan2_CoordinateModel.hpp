@@ -496,6 +496,159 @@ template <typename User>
 }
 
 ////////////////////////////////////////////////////////////////
+// Coordinate model derived from VectorInput.
+////////////////////////////////////////////////////////////////
+
+#if 0
+template <typename User>
+class CoordinateModel<VectorInput<User> > : 
+  public Model<VectorInput<User> >
+{
+public:
+
+  typedef StridedData<lno_t, scalar_t> input_t;
+  typedef typename VectorInput<User>::scalar_t  scalar_t;
+  typedef typename VectorInput<User>::gno_t     gno_t;
+  typedef typename VectorInput<User>::lno_t     lno_t;
+  
+  CoordinateModel( const VectorInput<User> *ia, 
+    const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
+    modelFlag_t flags);
+
+  int getCoordinateDim() const { return 0;}
+  size_t getLocalNumCoordinates() const { return 0;}
+  global_size_t getGlobalNumCoordinates() const {return 0;}
+  int getCoordinateWeightDim() const { return 0;}
+  size_t getCoordinates(ArrayView<const gno_t>  &Ids,
+    ArrayView<input_t> &xyz,
+    ArrayView<input_t> &wgts) const { return 0;}
+
+  ////////////////////////////////////////////////////
+  // The Model interface.
+  ////////////////////////////////////////////////////
+
+  size_t getLocalNumObjects() const {return 0;}
+  size_t getGlobalNumObjects() const {return 0;}
+  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const {return;}
+
+private:
+
+  bool gnosAreGids_;
+  gno_t numGlobalCoordinates_;
+  const RCP<const Environment> env_;
+  const RCP<const Comm<int> > comm_;
+  int coordinateDim_;
+  ArrayRCP<const gid_t> gids_;
+  ArrayRCP<input_t> xyz_;
+  int weightDim_;
+  ArrayRCP<input_t> weights_;
+  ArrayRCP<gno_t> gnos_;
+  ArrayRCP<const gno_t> gnosConst_;
+
+};
+
+template <typename User>
+class CoordinateModel<VectorInput<User> > :CoordinateModel( 
+    const VectorInput<User> *ia, 
+    const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
+    modelFlag_t flags)
+{
+  bool consecutiveIds = flags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
+
+  size_t nLocalIds = ia->getLocalLength();
+
+  // Get coordinates and weights (if any)
+
+  coordinateDim_ = ia->getNumberOfVectors();
+  weightDim_ = ia->getNumberOfWeights();
+
+  env_->localBugAssertion(__FILE__, __LINE__, "coordinate dimension",
+    coordinateDim_ > 0, COMPLEX_ASSERTION);
+
+  input_t *coordArray = new input_t [coordinateDim_];
+  input_t *weightArray = NULL;
+  if (weightDim_)
+    weightArray = new input_t [weightDim_];
+
+  env_->localMemoryAssertion(__FILE__, __LINE__, weightDim_+coordinateDim_,
+    coordArray && (!weightDim_ || weightArray));
+
+  Array<lno_t> arrayLengths(weightDim_, 0);
+
+  if (nLocalIds){
+    for (int dim=0; dim < coordinateDim_; dim++){
+      int stride;
+      const gid_t *gids=NULL;
+      const scalar_t *coords=NULL;
+      try{
+        ia->getVector(dim, gids, coords, stride);
+      }
+      Z2_FORWARD_EXCEPTIONS;
+
+      ArrayRCP<const scalar_t> cArray(coords, 0, nLocalIds*stride, false);
+      coordArray[dim] = input_t(cArray, stride);
+
+      if (dim==0)
+        gids_ = arcp(gids, 0, nLocalIds, false);
+    }
+
+    for (int wdim=0; wdim < weightDim_; wdim++){
+      int stride;
+      const scalar_t *weights;
+      try{
+        ia->getVectorWeights(wdim, weights, stride);
+      }
+      Z2_FORWARD_EXCEPTIONS;
+
+      if (weights){
+        ArrayRCP<const scalar_t> wArray(weights, 0, nLocalIds*stride, false);
+        weightArray[wdim] = input_t(wArray, stride);
+        arrayLengths[wdim] = nLocalIds;
+      }
+    }
+  }
+
+  xyz_ = arcp(coordArray, 0, coordinateDim_);
+
+  if (weightDim_)
+    weights_ = arcp(weightArray, 0, weightDim_);
+
+  this->setWeightArrayLengths(arrayLengths, *comm_);
+
+  // Create identifier map.
+
+  RCP<const idmap_t> idMap;
+
+  try{
+    idMap = rcp(new idmap_t(env_, comm_, gids_, consecutiveIds));
+  }
+  Z2_FORWARD_EXCEPTIONS;
+
+  numGlobalCoordinates_ = idMap->getGlobalNumberOfIds();
+  gnosAreGids_ = idMap->gnosAreGids();
+
+  this->setIdentifierMap(idMap);
+
+  if (!gnosAreGids_ && nLocalIds>0){
+    gno_t *tmpGno = new gno_t [nLocalIds];
+    env_->localMemoryAssertion(__FILE__, __LINE__, nLocalIds, tmpGno);
+    gnos_ = arcp(tmpGno, 0, nLocalIds);
+
+    try{
+      ArrayRCP<gid_t> gidsNonConst = arcp_const_cast<gid_t>(gids_);
+      idMap->gidTranslate( gidsNonConst(0,nLocalIds),  gnos_(0,nLocalIds), 
+        TRANSLATE_APP_TO_LIB);
+    }
+    Z2_FORWARD_EXCEPTIONS;
+  }
+
+  gnosConst_ = arcp_const_cast<const gno_t>(gnos_);
+
+  env_->memory("After construction of coordinate model");
+}
+#endif
+
+////////////////////////////////////////////////////////////////
 // Coordinate model derived from IdentifierInput.
 // A coordinate model can not be built from IdentifierInput.
 // This specialization exists so that other code can compile.

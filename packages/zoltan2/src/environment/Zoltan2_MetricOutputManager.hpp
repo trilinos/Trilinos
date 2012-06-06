@@ -45,12 +45,16 @@ template <typename T>
      *   \param doPrinting  true if this process outputs messages.
      *   \param messageOs      the output stream for messages.
      *   \param metricsOn   true if any process outputs messages.
+     *   \param units     name of units for metrics printed
+     *   \param width     field width for metric value
      */
 
     MetricOutputManager (int rank, bool doPrinting, std::ofstream &Os, 
-      bool metricsOn): me_(rank), 
+      bool metricsOn, std::string units=std::string(""), int width=10): 
+        me_(rank), 
         os_(static_cast<std::ostream *>(&Os)), osFile_(&Os),
-        iPrint_(doPrinting), wePrint_(metricsOn){}
+        iPrint_(doPrinting), wePrint_(metricsOn), 
+        units_(units), width_(width){}
 
 
     /*! \brief Constructor
@@ -58,11 +62,15 @@ template <typename T>
      *   \param doPrinting  true if this process outputs messages.
      *   \param messageOs      the output stream for messages.
      *   \param metricsOn   true if any process outputs messages.
+     *   \param units     name of units for metrics printed
+     *   \param width     field width for metric value
      */
 
     MetricOutputManager (int rank, bool doPrinting, std::ostream &Os, 
-      bool metricsOn): me_(rank), os_(&Os), osFile_(NULL), 
-        iPrint_(doPrinting), wePrint_(metricsOn){}
+      bool metricsOn, std::string units=std::string(""), int width=10): 
+        me_(rank), os_(&Os), osFile_(NULL), 
+        iPrint_(doPrinting), wePrint_(metricsOn),
+        units_(units), width_(width){}
 
     /*! \brief Destructor
      */
@@ -84,13 +92,21 @@ template <typename T>
 
     /*! \brief Print a line of information
      *   \param msg  a message to go with the information
-     *   \param units  the units in which the value is measured
      *   \param val  the value to print
      */
-    inline void print(const std::string &msg, const std::string &units, 
-      const T val){
-      if (iPrint_)
-        *os_ << me_ << ": " << msg << ": " << val << " " << units << std::endl;
+    inline void print(const std::string &msg, const T val){
+      if (iPrint_){
+        if (os_){
+          os_->width(10); os_->fill('*');
+          *os_ << me_ << ": " << val << " " << units_ << ", " << msg << std::endl;
+          os_->width(0); os_->fill(' ');
+        }
+        else{
+          osFile_->width(10); osFile_->fill('*');
+          *osFile_ << me_ << ": " << val << " " << units_ << ", " << msg << std::endl;
+          osFile_->width(0); osFile_->fill(' ');
+        }
+      }
     }
 
     /*! \brief A version of print that takes char to avoid the cost
@@ -99,9 +115,19 @@ template <typename T>
      *   \param units  the units in which the value is measured
      *   \param val  the value to print
      */
-    inline void print(const char *msg, const char *units, T val){
-      if (iPrint_)
-        *os_ << me_ << ": " << msg << ": " << val << " " << units << std::endl;
+    inline void print(const char *msg, T val){
+      if (iPrint_){
+        if (os_){
+          os_->width(10); os_->fill('*');
+          *os_ << me_ << ": " << val << " " << units_ << ", " << msg << std::endl;
+          os_->width(0); os_->fill(' ');
+        }
+        else{
+          osFile_->width(10); osFile_->fill('*');
+          *osFile_ << me_ << ": " << val << " " << units_ << ", " << msg << std::endl;
+          osFile_->width(0); osFile_->fill(' ');
+        }
+      }
     }
 
 private:
@@ -111,6 +137,8 @@ private:
     std::ofstream *osFile_;
     bool iPrint_;    // I am printing metrics
     bool wePrint_;   // at least one process is printing metrics
+    std::string units_;
+    int width_;  
 };
 
 } //namespace Zoltan2

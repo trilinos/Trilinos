@@ -451,7 +451,7 @@ void AlgRCB(
 
     iteration++;
 
-    env->memory("End of subgroup bisection");
+    env->memory("New subgroup data created");
   } 
 
   env->timerStop(MACRO_TIMERS, "Parallel RCB");
@@ -466,6 +466,8 @@ void AlgRCB(
     env->localMemoryAssertion(__FILE__, __LINE__, numLocalCoords, tmp);
     partId = arcp(tmp, 0, numLocalCoords, true);
   }
+
+  env->memory("Solution array created");
 
   if ((part1 > part0) && (numLocalCoords > 0)){ // Serial partitioning
 

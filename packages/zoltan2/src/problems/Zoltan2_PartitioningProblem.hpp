@@ -332,6 +332,8 @@ template <typename Adapter>
       << " input adapter type.\n";
     this->env_->debug(DETAILED_STATUS, msg.str());
   }
+
+  this->env_->memory("After initializeProblem");
 }
 
 template <typename Adapter>
@@ -419,6 +421,8 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
   this->env_->timerStop(MACRO_TIMERS, "create solution");
 
+  this->env_->memory("After creating Solution");
+
   // Call the algorithm
 
   try {
@@ -453,7 +457,6 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
 #endif
 
-  this->env_->memory("After solve method");
   this->env_->debug(DETAILED_STATUS, "Exiting solve");
 }
 
@@ -803,6 +806,8 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       cout << __func__ << " Invalid model" << modelType_ << endl;
       break;
     }
+
+    this->env_->memory("After creating Model");
   }
 }
 
