@@ -46,6 +46,7 @@
 #include <ostream>
 #include <string>
 
+#include "Teuchos_ConfigDefs.hpp"
 
 namespace Teuchos {
   namespace MatrixMarket {
@@ -58,7 +59,7 @@ namespace Teuchos {
     /// line," contains information for interpreting the rest of the
     /// file.  This class parses the first line, canonicalizes the
     /// information therein, and stores it for later use.
-    class Banner {
+    class TEUCHOS_LIB_DLL_EXPORT Banner {
     public:
       /// Constructor
       ///
@@ -132,7 +133,7 @@ namespace Teuchos {
     /// \param banner [in] The Matrix Market banner to print
     ///
     /// \return The output stream \c out
-    std::ostream& operator<< (std::ostream& out, const Banner& banner);
+    TEUCHOS_LIB_DLL_EXPORT std::ostream& operator<< (std::ostream& out, const Banner& banner);
 
   } // namespace MatrixMarket
 } // namespace Teuchos
