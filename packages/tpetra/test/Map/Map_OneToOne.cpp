@@ -195,6 +195,8 @@ namespace {
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
     RCP<const Teuchos::Comm<int> > comm = platform.getComm();
     RCP<Node> node = platform.getNode();
+    const int myRank = comm->getRank();
+    const int numProc = comm->getSize();
     
     Array<GO> elementList (NUM_GLOBAL_ELEMENTS);
 
