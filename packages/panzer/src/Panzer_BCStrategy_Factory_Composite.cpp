@@ -60,20 +60,23 @@ namespace panzer {
     
     bool found = false;
 
-    for (std::vector<Teuchos::RCP<panzer::BCStrategyFactory> >::const_iterator factory = m_bc_strategy_factories.begin(); factory != m_bc_strategy_factories.end(); ++factory) {
+    for (std::vector<Teuchos::RCP<panzer::BCStrategyFactory> >::const_iterator factory = m_bc_strategy_factories.begin(); 
+         factory != m_bc_strategy_factories.end(); ++factory) {
 
       bcs_tm = (*factory)->buildBCStrategy(bc,global_data);
       
       if (nonnull(bcs_tm)) {
-	found = true;
-	break;
+        found = true;
+        break;
       }
 
     }
         
     TEUCHOS_TEST_FOR_EXCEPTION(!found, std::logic_error, 
 			       "Error - the BC Strategy called \"" << bc.strategy() <<
-			       "\" is not a valid identifier in the BCStrategyFactory.  Either add a valid implementation to the factory or fix the input file.  The relevant boundary condition is:\n\n" << bc << std::endl);
+			       "\" is not a valid identifier in the BCStrategyFactory.  Either add " <<
+                               "a valid implementation to the factory or fix the input file.  The " <<
+                               "relevant boundary condition is:\n\n" << bc << std::endl);
     
     return bcs_tm;
     
