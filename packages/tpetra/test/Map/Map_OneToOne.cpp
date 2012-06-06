@@ -87,6 +87,7 @@ namespace {
     const int numProc = comm->getSize();
     
     int unit = (NUM_GLOBAL_ELEMENTS/(numProc+1));
+    int left_overs = (NUM_GLOBAL_ELEMENTS%(numProc+1));
     int num_loc_elems=0;
     Array<GO> elementList;
 
@@ -97,8 +98,8 @@ namespace {
     }
     else //I'm the last proc and need to take the leftover elements.
     {
-      elementList = Array<GO>((2*unit)+(NUM_GLOBAL_ELEMENTS%numProc));
-      num_loc_elems=(2*unit)+(NUM_GLOBAL_ELEMENTS%numProc);
+      elementList = Array<GO>((2*unit)+(left_overs));
+      num_loc_elems=(2*unit)+(left_overs);
     }
 
     for(int i=(myRank*unit),j=0;i<(myRank*unit)+(2*unit);++i,++j)
@@ -106,7 +107,7 @@ namespace {
       elementList[j]=i;
     }
     //Don't forget to assign leftovers to the last proc!
-    if(myRank==numProc-1 && NUM_GLOBAL_ELEMENTS%numProc != 0)
+    if(myRank==numProc-1 && left_overs!= 0)
     {
       for(int i=(myRank*unit)+2*unit, j=2*unit;i<NUM_GLOBAL_ELEMENTS;++i,++j)
       {
@@ -116,7 +117,7 @@ namespace {
 
     RCP<const Map> map = Tpetra::createNonContigMapWithNode<LO,GO>(elementList,comm,node);
     //std::cout<<map->description();
-    RCP<const Map> new_map = Tpetra::createOneToOne<LO,GO,Node>(map);
+    RCP<const Map> new_map = createOneToOne<LO,GO,Node>(map);
     //std::cout<<new_map->description();
     //Now we need to test if we lost anything.
     
