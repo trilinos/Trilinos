@@ -1253,7 +1253,6 @@ Tpetra::createOneToOne (Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdina
   typedef GlobalOrdinal GO;
   typedef Tpetra::Map<LO,GO,Node> map_type;
   int myID = M->getComm()->getRank();
-  int numProc = M->getComm()->getSize();
 
   //Based off Epetra's one to one.
 

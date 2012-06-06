@@ -67,8 +67,6 @@ namespace {
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
     RCP<const Teuchos::Comm<int> > comm = platform.getComm();
     RCP<Node> node = platform.getNode();
-    const int myRank = comm->getRank();
-    const int numProc = comm->getSize();
   
     RCP<const Map> map = Tpetra::createUniformContigMapWithNode<LO, GO>(NUM_GLOBAL_ELEMENTS, comm, node);
 
@@ -154,7 +152,6 @@ namespace {
     RCP<const Teuchos::Comm<int> > comm = platform.getComm();
     RCP<Node> node = platform.getNode();
     const int myRank = comm->getRank();
-    const int numProc = comm->getSize();
 
     Array<GO> elementList;
     if(myRank==0)
@@ -180,8 +177,6 @@ namespace {
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
     RCP<const Teuchos::Comm<int> > comm = platform.getComm();
     RCP<Node> node = platform.getNode();
-    const int myRank = comm->getRank();
-    const int numProc = comm->getSize();
 
     Array<GO> elementList (0);
 
@@ -200,8 +195,6 @@ namespace {
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
     RCP<const Teuchos::Comm<int> > comm = platform.getComm();
     RCP<Node> node = platform.getNode();
-    const int myRank = comm->getRank();
-    const int numProc = comm->getSize();
     
     Array<GO> elementList (NUM_GLOBAL_ELEMENTS);
 
