@@ -44,6 +44,7 @@
 
 #include <Teuchos_DataAccess.hpp>
 #include <Teuchos_CompileTimeAssert.hpp>
+#include <Teuchos_TypeTraits.hpp>
 #include <stdexcept>
 
 #include "Kokkos_ConfigDefs.hpp"
@@ -148,6 +149,7 @@ namespace Kokkos {
     };
 
     // float support
+#ifdef HAVE_KOKKOS_CUDA_FLOAT
     template <>
     class CUSPARSETemplateAdaptors<float> {
       public:
@@ -183,7 +185,126 @@ namespace Kokkos {
                                     alpha,descrA,csrValA,csrRowPtrA,csrColIndA,
                                     info,X,ldx,Y,ldy); }
     };
-  }
+#endif
+
+#ifdef HAVE_KOKKOS_CUDA_DOUBLE
+    // double support
+    template <>
+    class CUSPARSETemplateAdaptors<double> {
+      public:
+      //
+      static inline cusparseStatus_t
+      CSRMM(cusparseHandle_t handle, cusparseOperation_t transA,
+            int m, int n, int k, int nnz, const double *alpha,
+            const cusparseMatDescr_t descrA, const double *csrValA,
+            const int *csrRowPtrA, const int *csrColIndA,
+            const double *B, int ldb,
+            const double *beta, double *C, int ldc) 
+      { return cusparseDcsrmm(handle,transA,m,n,k,nnz,
+                              alpha,descrA,csrValA,csrRowPtrA,csrColIndA,
+                              B,ldb,beta,C,ldc); }
+      //
+      static inline cusparseStatus_t
+      CSRSM_analysis(cusparseHandle_t handle, cusparseOperation_t transA,
+                     int m, int nnz, const cusparseMatDescr_t descrA,
+                     const double *csrValA, const int *csrRowPtrA,
+                     const int *csrColIndA, cusparseSolveAnalysisInfo_t info)
+      { return cusparseDcsrsm_analysis(handle,transA,m,nnz,descrA,
+                                       csrValA,csrRowPtrA,csrColIndA,info); }
+      //
+      static inline cusparseStatus_t
+      CSRSM_solve(cusparseHandle_t handle, cusparseOperation_t transA,
+                  int m, int n, const double *alpha,
+                  const cusparseMatDescr_t descrA,
+                  const double *csrValA, const int *csrRowPtrA,
+                  const int *csrColIndA, cusparseSolveAnalysisInfo_t info,
+                  const double *X, int ldx,
+                  double *Y, int ldy)
+      { return cusparseDcsrsm_solve(handle,transA,m,n,
+                                    alpha,descrA,csrValA,csrRowPtrA,csrColIndA,
+                                    info,X,ldx,Y,ldy); }
+    };
+#endif
+
+#ifdef HAVE_KOKKOS_CUDA_COMPLEX_FLOAT
+    // complex<float> support
+    template <>
+    class CUSPARSETemplateAdaptors<std::complex<float> > {
+      public:
+      //
+      static inline cusparseStatus_t
+      CSRMM(cusparseHandle_t handle, cusparseOperation_t transA,
+            int m, int n, int k, int nnz, const cuComplex *alpha,
+            const cusparseMatDescr_t descrA, const cuComplex *csrValA,
+            const int *csrRowPtrA, const int *csrColIndA,
+            const cuComplex *B, int ldb,
+            const cuComplex *beta, cuComplex *C, int ldc) 
+      { return cusparseCcsrmm(handle,transA,m,n,k,nnz,
+                              alpha,descrA,csrValA,csrRowPtrA,csrColIndA,
+                              B,ldb,beta,C,ldc); }
+      //
+      static inline cusparseStatus_t
+      CSRSM_analysis(cusparseHandle_t handle, cusparseOperation_t transA,
+                     int m, int nnz, const cusparseMatDescr_t descrA,
+                     const cuComplex *csrValA, const int *csrRowPtrA,
+                     const int *csrColIndA, cusparseSolveAnalysisInfo_t info)
+      { return cusparseCcsrsm_analysis(handle,transA,m,nnz,descrA,
+                                       csrValA,csrRowPtrA,csrColIndA,info); }
+      //
+      static inline cusparseStatus_t
+      CSRSM_solve(cusparseHandle_t handle, cusparseOperation_t transA,
+                  int m, int n, const cuComplex *alpha,
+                  const cusparseMatDescr_t descrA,
+                  const cuComplex *csrValA, const int *csrRowPtrA,
+                  const int *csrColIndA, cusparseSolveAnalysisInfo_t info,
+                  const cuComplex *X, int ldx,
+                  cuComplex *Y, int ldy)
+      { return cusparseCcsrsm_solve(handle,transA,m,n,
+                                    alpha,descrA,csrValA,csrRowPtrA,csrColIndA,
+                                    info,X,ldx,Y,ldy); }
+    };
+#endif
+
+#ifdef HAVE_KOKKOS_CUDA_COMPLEX_DOUBLE
+    // complex<double> support
+    template <>
+    class CUSPARSETemplateAdaptors<std::complex<double> > {
+      public:
+      //
+      static inline cusparseStatus_t
+      CSRMM(cusparseHandle_t handle, cusparseOperation_t transA,
+            int m, int n, int k, int nnz, const cuDoubleComplex *alpha,
+            const cusparseMatDescr_t descrA, const cuDoubleComplex *csrValA,
+            const int *csrRowPtrA, const int *csrColIndA,
+            const cuDoubleComplex *B, int ldb,
+            const cuDoubleComplex *beta, cuDoubleComplex *C, int ldc) 
+      { return cusparseZcsrmm(handle,transA,m,n,k,nnz,
+                              alpha,descrA,csrValA,csrRowPtrA,csrColIndA,
+                              B,ldb,beta,C,ldc); }
+      //
+      static inline cusparseStatus_t
+      CSRSM_analysis(cusparseHandle_t handle, cusparseOperation_t transA,
+                     int m, int nnz, const cusparseMatDescr_t descrA,
+                     const cuDoubleComplex *csrValA, const int *csrRowPtrA,
+                     const int *csrColIndA, cusparseSolveAnalysisInfo_t info)
+      { return cusparseZcsrsm_analysis(handle,transA,m,nnz,descrA,
+                                       csrValA,csrRowPtrA,csrColIndA,info); }
+      //
+      static inline cusparseStatus_t
+      CSRSM_solve(cusparseHandle_t handle, cusparseOperation_t transA,
+                  int m, int n, const cuDoubleComplex *alpha,
+                  const cusparseMatDescr_t descrA,
+                  const cuDoubleComplex *csrValA, const int *csrRowPtrA,
+                  const int *csrColIndA, cusparseSolveAnalysisInfo_t info,
+                  const cuDoubleComplex *X, int ldx,
+                  cuDoubleComplex *Y, int ldy)
+      { return cusparseZcsrsm_solve(handle,transA,m,n,
+                                    alpha,descrA,csrValA,csrRowPtrA,csrColIndA,
+                                    info,X,ldx,Y,ldy); }
+    };
+#endif
+
+  } // end of namespace CUSPARSEdetails
 
   //! \class CUSPARSECrsGraph
   /** \brief CRS sparse graph class supporting the CUSPARSE library.
@@ -860,9 +981,60 @@ namespace Kokkos {
                                        const MultiVector<DomainScalar,Node> &Y,
                                              MultiVector< RangeScalar,Node> &X) const
   {
-    std::string tfecfFuncName("solve(trans,uplo,diag,Y,X)");
-    TEUCHOS_TEST_FOR_EXCEPT(true)
-    // finish
+    // CUSPARSE doesn't support mixed precision; partial specialize, then nix the generic versions
+    Teuchos::CompileTimeAssert<Teuchos::TypeTraits::is_same<DomainScalar,Scalar>::value == true &&
+                               Teuchos::TypeTraits::is_same< RangeScalar,Scalar>::value == true > cta; (void)cta;
+    // 
+    std::string tfecfFuncName("solve()");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( 
+        isInitialized_ == false,
+        std::runtime_error, "sparse operators have not been initialized with graph and matrix data; call setGraphAndMatrix() first.")
+    // get pointers,stride from X and Y
+    int stride_x = (int)X.getStride(),
+        stride_y = (int)Y.getStride();
+    const Scalar * data_y = Y.getValues().getRawPtr();
+    Scalar * data_x = X.getValuesNonConst().getRawPtr();
+    const int numMatRows = X.getNumRows(); 
+    const int numRHS     = X.getNumCols();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( 
+        X.getNumRows() != Y.getNumRows(), 
+        std::runtime_error, "X and Y do not have the same number of row vectors.")
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( 
+        X.getNumCols() != Y.getNumCols(), 
+        std::runtime_error, "X and Y do not have the same number of column vectors.")
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( 
+        Y.getNumRows() != numRows_,
+        std::runtime_error, "Y does not have the same number of rows as does the matrix.")
+    //
+    RCP<cusparseSolveAnalysisInfo_t> solveInfo;
+    cusparseOperation_t                     op;
+    if (trans == Teuchos::NO_TRANS) {
+      solveInfo = aiNoTrans_;
+      op = CUSPARSE_OPERATION_NON_TRANSPOSE;
+    }
+    else if (trans == Teuchos::TRANS) {
+      solveInfo = aiTrans_;
+      op = CUSPARSE_OPERATION_TRANSPOSE;
+    }
+    else if (trans == Teuchos::CONJ_TRANS) {
+      solveInfo = aiConjTrans_;
+      op = CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE;
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+          true, std::runtime_error, "invalid transformation (none ofe of NO_TRANS, TRANS or CONJ_TRANS): " << trans);
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      solveInfo == null, std::runtime_error, 
+      "solve info not computed at matrix finalization time for requested transformation: " << trans);
+    const Scalar s_alpha = Teuchos::ScalarTraits<Scalar>::one();
+    cusparseStatus_t stat = CUSPARSEdetails::CUSPARSETemplateAdaptors<Scalar>::CSRSM_solve(
+        *session_handle_, op, numMatRows, numRHS, &s_alpha, 
+        *matdescr_, rowVals_.getRawPtr(), rowPtrs_.getRawPtr(), colInds_.getRawPtr(), *solveInfo, 
+        data_y, stride_y, data_x, stride_x);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        stat != CUSPARSE_STATUS_SUCCESS, 
+        std::runtime_error, ": CSRSM_solve returned error " << stat);
     return;
   }
 
@@ -872,8 +1044,12 @@ namespace Kokkos {
   void CUSPARSEOps<Scalar,Node>::multiply(Teuchos::ETransp trans,
                                           RangeScalar alpha,
                                           const MultiVector<DomainScalar,Node> &X, 
-                                                MultiVector<RangeScalar ,Node> &Y) const 
+                                                MultiVector< RangeScalar,Node> &Y) const 
   {
+    // CUSPARSE doesn't support mixed precision; partial specialize, then nix the generic versions
+    Teuchos::CompileTimeAssert<Teuchos::TypeTraits::is_same<DomainScalar,Scalar>::value == true &&
+                               Teuchos::TypeTraits::is_same< RangeScalar,Scalar>::value == true > cta; (void)cta;
+    // 
     std::string tfecfFuncName("multiply(trans,alpha,X,Y)");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( 
         isInitialized_ == false,
@@ -881,8 +1057,8 @@ namespace Kokkos {
     // get pointers,stride from X and Y
     int stride_x = (int)X.getStride(),
         stride_y = (int)Y.getStride();
-    const DomainScalar * data_x = X.getValues().getRawPtr();
-    DomainScalar * data_y = Y.getValuesNonConst().getRawPtr();
+    const Scalar * data_x = X.getValues().getRawPtr();
+    Scalar * data_y = Y.getValuesNonConst().getRawPtr();
     const int numMatRows = Y.getNumRows(); 
     const int numMatCols = X.getNumRows();
     const int numRHS     = X.getNumCols();
@@ -916,6 +1092,10 @@ namespace Kokkos {
                                           RangeScalar alpha, const MultiVector<DomainScalar,Node> &X,
                                           RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const
   {
+    // CUSPARSE doesn't support mixed precision; partial specialize, then nix the generic versions
+    Teuchos::CompileTimeAssert<Teuchos::TypeTraits::is_same<DomainScalar,Scalar>::value == true &&
+                               Teuchos::TypeTraits::is_same< RangeScalar,Scalar>::value == true > cta; (void)cta;
+    // 
     std::string tfecfFuncName("multiply(trans,alpha,X,beta,Y)");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( 
         isInitialized_ == false,
@@ -923,8 +1103,8 @@ namespace Kokkos {
     // get pointers,stride from X and Y
     int stride_x = (int)X.getStride(),
         stride_y = (int)Y.getStride();
-    const DomainScalar * data_x = X.getValues().getRawPtr();
-    DomainScalar * data_y = Y.getValuesNonConst().getRawPtr();
+    const Scalar * data_x = X.getValues().getRawPtr();
+    Scalar * data_y = Y.getValuesNonConst().getRawPtr();
     const int numMatRows = Y.getNumRows(); 
     const int numMatCols = X.getNumRows();
     const int numRHS     = X.getNumCols();

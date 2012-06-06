@@ -61,6 +61,27 @@
 #include "Kokkos_OpenMPNode.hpp"
 #endif
 
+#if defined(HAVE_KOKKOS_CUSPARSE) && defined(HAVE_KOKKOS_THRUST)
+#define TEST_CUSPARSE
+#ifdef HAVE_KOKKOS_CUDA_FLOAT
+#define TEST_CUSPARSE_FLOAT
+#endif
+#ifdef HAVE_KOKKOS_CUDA_DOUBLE
+#define TEST_CUSPARSE_DOUBLE
+#endif
+#ifdef HAVE_KOKKOS_CUDA_COMPLEX_FLOAT
+#define TEST_CUSPARSE_COMPLEX_FLOAT
+#endif
+#ifdef HAVE_KOKKOS_CUDA_COMPLEX_DOUBLE
+#define TEST_CUSPARSE_COMPLEX_DOUBLE
+#endif
+#endif
+
+#ifdef TEST_CUSPARSE
+#include "Kokkos_ThrustGPUNode.hpp"
+#include "Kokkos_CUSPARSEOps.hpp"
+#endif
+
 namespace {
 
   using Kokkos::MultiVector;
@@ -84,7 +105,11 @@ namespace {
 #endif
 #ifdef HAVE_KOKKOS_OPENMP
   using Kokkos::OpenMPNode;
-  RCP<OMPNode> ompnode;
+  RCP<OpenMPNode> ompnode;
+#endif
+#ifdef TEST_CUSPARSE
+  using Kokkos::ThrustGPUNode;
+  RCP<ThrustGPUNode> gpunode;
 #endif
 
   int N = 1000;
@@ -131,6 +156,18 @@ namespace {
       tpinode = rcp(new TPINode(pl));
     }
     return tpinode;
+  }
+#endif
+
+#ifdef TEST_CUSPARSE
+  template <>
+  RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
+    if (gpunode == null) {
+      Teuchos::ParameterList pl;
+      pl.set<int>("Num Threads",0);
+      gpunode = rcp(new ThrustGPUNode(pl));
+    }
+    return gpunode;
   }
 #endif
 
@@ -276,6 +313,21 @@ namespace {
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, int) \
         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, float)
+
+typedef std::complex<float> ComplexFloat;
+typedef std::complex<double> ComplexDouble;
+#ifdef TEST_CUSPARSE_FLOAT
+ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, float, ThrustGPUNode )
+#endif
+#ifdef TEST_CUSPARSE_DOUBLE
+ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, double, ThrustGPUNode )
+#endif
+#ifdef TEST_CUSPARSE_COMPLEX_FLOAT
+ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, ComplexFloat, ThrustGPUNode )
+#endif
+#ifdef TEST_CUSPARSE_COMPLEX_DOUBLE
+ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, ComplexDouble, ThrustGPUNode )
+#endif
 
      UNIT_TEST_GROUP_ORDINAL(int)
      typedef short int ShortInt; UNIT_TEST_GROUP_ORDINAL(ShortInt)

@@ -98,7 +98,6 @@ namespace Kokkos {
    struct DefaultKernels<Scalar,int,ThrustGPUNode> {
      typedef CUSPARSEOps<void,ThrustGPUNode> SparseOps;
    };
-#else
 #endif
 
 }
