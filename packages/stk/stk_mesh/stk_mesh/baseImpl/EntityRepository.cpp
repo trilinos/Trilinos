@@ -25,6 +25,9 @@ EntityRepository::~EntityRepository()
       internal_expunge_entity( m_entities.begin() );
     }
   } catch(...){}
+
+  boost::singleton_pool<boost::fast_pool_allocator_tag, sizeof(Entity)>::release_memory();
+  boost::singleton_pool<boost::fast_pool_allocator_tag, sizeof(fmwk_attributes)>::release_memory();
 }
 
 void EntityRepository::internal_expunge_entity( EntityMap::iterator i )
