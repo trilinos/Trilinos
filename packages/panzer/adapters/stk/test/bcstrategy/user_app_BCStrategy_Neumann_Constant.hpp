@@ -40,59 +40,46 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef USER_APP_BCSTRATEGY_FACTORY_HPP
-#define USER_APP_BCSTRATEGY_FACTORY_HPP
+
+#ifndef PANZER_BCSTRATEGY_NEUMANN_CONSTANT_HPP
+#define PANZER_BCSTRATEGY_NEUMANN_CONSTANT_HPP
+
+#include <vector>
+#include <string>
 
 #include "Teuchos_RCP.hpp"
+#include "Panzer_BCStrategy_Neumann_DefaultImpl.hpp"
 #include "Panzer_Traits.hpp"
-#include "Panzer_BCStrategy_TemplateManager.hpp"
-#include "Panzer_BCStrategy_Factory.hpp"
-#include "Panzer_BCStrategy_Factory_Defines.hpp"
-#include "Panzer_GlobalData.hpp"
-
-// Add my bcstrategies here
-#include "user_app_BCStrategy_Dirichlet_Constant.hpp"
-#include "user_app_BCStrategy_Neumann_Constant.hpp"
+#include "Panzer_PureBasis.hpp"
+#include "Phalanx_FieldManager.hpp"
 
 namespace user_app {
-  
-  PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER("Constant", 
-					     user_app::BCStrategy_Dirichlet_Constant,
-					     BCStrategy_Dirichlet_Constant)
 
-  PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER("Neumann Constant", 
-					     user_app::BCStrategy_Neumann_Constant,
-					     BCStrategy_Neumann_Constant)
+  template <typename EvalT>
+  class BCStrategy_Neumann_Constant : public panzer::BCStrategy_Neumann_DefaultImpl<EvalT> {
+    
+  public:    
+    
+    BCStrategy_Neumann_Constant(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data);
+    
+    void setup(const panzer::PhysicsBlock& side_pb,
+	       const Teuchos::ParameterList& user_data);
+    
+    void buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+				    const panzer::PhysicsBlock& pb,
+				    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
+				    const Teuchos::ParameterList& models,
+				    const Teuchos::ParameterList& user_data) const;
 
-  struct BCFactory : public panzer::BCStrategyFactory {
+    virtual void postRegistrationSetup(typename panzer::Traits::SetupData d,
+				       PHX::FieldManager<panzer::Traits>& vm);
 
-    Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> >
-    buildBCStrategy(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data) const
-    {
-
-      Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> > bcs_tm = 
-	Teuchos::rcp(new panzer::BCStrategy_TemplateManager<panzer::Traits>);
-      
-      bool found = false;
-
-      PANZER_BUILD_BCSTRATEGY_OBJECTS("Constant", 
-				      user_app::BCStrategy_Dirichlet_Constant,
-				      BCStrategy_Dirichlet_Constant)
-
-      PANZER_BUILD_BCSTRATEGY_OBJECTS("Neumann Constant", 
-				      user_app::BCStrategy_Neumann_Constant,
-				      BCStrategy_Neumann_Constant)
-
-      TEUCHOS_TEST_FOR_EXCEPTION(!found, std::logic_error, 
-			 "Error - the BC Strategy called \"" << bc.strategy() <<
-			 "\" is not a valid identifier in the BCStrategyFactory.  Either add a valid implementation to your factory or fix your input file.  The relevant boundary condition is:\n\n" << bc << std::endl);
-      
-      return bcs_tm;
-
-    }
+    virtual void evaluateFields(typename panzer::Traits::EvalData d);
 
   };
-  
+
 }
+
+#include "user_app_BCStrategy_Neumann_Constant_impl.hpp"
 
 #endif

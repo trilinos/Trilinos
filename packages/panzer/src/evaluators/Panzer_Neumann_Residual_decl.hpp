@@ -40,59 +40,35 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef USER_APP_BCSTRATEGY_FACTORY_HPP
-#define USER_APP_BCSTRATEGY_FACTORY_HPP
+#ifndef PANZER_EVALUATOR_NEUMANN_RESIDUAL_DECL_HPP
+#define PANZER_EVALUATOR_NEUMANN_RESIDUAL_DECL_HPP
 
-#include "Teuchos_RCP.hpp"
-#include "Panzer_Traits.hpp"
-#include "Panzer_BCStrategy_TemplateManager.hpp"
-#include "Panzer_BCStrategy_Factory.hpp"
-#include "Panzer_BCStrategy_Factory_Defines.hpp"
-#include "Panzer_GlobalData.hpp"
+#include "Phalanx_Evaluator_Macros.hpp"
+#include "Phalanx_MDField.hpp"
 
-// Add my bcstrategies here
-#include "user_app_BCStrategy_Dirichlet_Constant.hpp"
-#include "user_app_BCStrategy_Neumann_Constant.hpp"
+namespace panzer {
+    
+  /** \brief Evaluates a Neumann BC residual contribution
 
-namespace user_app {
+      computes the surface integral term resulting from integration
+      by parts for a particular dof:
+
+      int(n \cdot (flux * phi) )
+  */
+PHX_EVALUATOR_CLASS(NeumannResidual)
   
-  PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER("Constant", 
-					     user_app::BCStrategy_Dirichlet_Constant,
-					     BCStrategy_Dirichlet_Constant)
+  PHX::MDField<ScalarT> residual;
+  PHX::MDField<ScalarT> normal_dot_flux;
+  PHX::MDField<ScalarT> flux;
+  PHX::MDField<ScalarT> normal;
 
-  PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER("Neumann Constant", 
-					     user_app::BCStrategy_Neumann_Constant,
-					     BCStrategy_Neumann_Constant)
+  std::string basis_name;
+  std::size_t basis_index;
+  std::size_t num_ip;
+  std::size_t num_dim;
 
-  struct BCFactory : public panzer::BCStrategyFactory {
+PHX_EVALUATOR_CLASS_END
 
-    Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> >
-    buildBCStrategy(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data) const
-    {
-
-      Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> > bcs_tm = 
-	Teuchos::rcp(new panzer::BCStrategy_TemplateManager<panzer::Traits>);
-      
-      bool found = false;
-
-      PANZER_BUILD_BCSTRATEGY_OBJECTS("Constant", 
-				      user_app::BCStrategy_Dirichlet_Constant,
-				      BCStrategy_Dirichlet_Constant)
-
-      PANZER_BUILD_BCSTRATEGY_OBJECTS("Neumann Constant", 
-				      user_app::BCStrategy_Neumann_Constant,
-				      BCStrategy_Neumann_Constant)
-
-      TEUCHOS_TEST_FOR_EXCEPTION(!found, std::logic_error, 
-			 "Error - the BC Strategy called \"" << bc.strategy() <<
-			 "\" is not a valid identifier in the BCStrategyFactory.  Either add a valid implementation to your factory or fix your input file.  The relevant boundary condition is:\n\n" << bc << std::endl);
-      
-      return bcs_tm;
-
-    }
-
-  };
-  
 }
 
 #endif

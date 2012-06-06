@@ -11,6 +11,7 @@ SET(main_driver_SOURCES
   main_driver.cpp
   user_app_NOXObserverFactory_Epetra.hpp
   user_app_NOXObserver_EpetraToExodus.hpp
+  user_app_NOXObserver_NeumannBCAnalyticSystemTest.hpp
   user_app_RythmosObserverFactory_Epetra.hpp
   user_app_RythmosObserver_EpetraToExodus.hpp
   Panzer_STK_ModelEvaluatorFactory_Epetra.hpp
@@ -26,7 +27,7 @@ TRIBITS_ADD_EXECUTABLE(
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(main_driver_files
   SOURCE_FILES energy-ss.xml energy-transient.xml energy-ss-blocked.xml
-energy-transient-blocked.xml
+energy-transient-blocked.xml energy-neumann.xml
   EXEDEPS main_driver
   )
 
@@ -49,6 +50,14 @@ TRIBITS_ADD_ADVANCED_TEST(
   TEST_0 EXEC main_driver 
     ARGS  --i=energy-ss-blocked.xml
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
+  )
+
+TRIBITS_ADD_ADVANCED_TEST(
+  main_driver_energy-neumann
+  TEST_0 EXEC main_driver 
+    ARGS  --i=energy-neumann.xml
+    PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
+    NUM_MPI_PROCS 1
   )
 
 IF(${PACKAGE_NAME}_ENABLE_Teko)

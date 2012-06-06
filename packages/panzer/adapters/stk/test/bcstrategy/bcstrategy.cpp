@@ -85,7 +85,7 @@ namespace panzer {
   {
 
     std::size_t bc_id = 0;
-    panzer::BCType neumann = BCT_Dirichlet;
+    panzer::BCType dirichlet = BCT_Dirichlet;
     std::string sideset_id = "4";
     std::string element_block_id = "fluid";
     std::string dof_name = "UX";
@@ -93,7 +93,7 @@ namespace panzer {
     double value = 5.0;
     Teuchos::ParameterList p;
     p.set("Value",value);
-    panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+    panzer::BC bc(bc_id, dirichlet, sideset_id, element_block_id, dof_name, 
 		  strategy, p);
 
     Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> > bcs;
@@ -275,7 +275,7 @@ namespace panzer {
 
     {
       std::size_t bc_id = 0;
-      panzer::BCType neumann = BCT_Dirichlet;
+      panzer::BCType dirichlet = BCT_Dirichlet;
       std::string sideset_id = "left";
       std::string element_block_id = "eblock-0_0";
       std::string dof_name = "TEMPERATURE";
@@ -283,13 +283,13 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, dirichlet, sideset_id, element_block_id, dof_name, 
 		    strategy, p);
       bcs.push_back(bc);
     }    
     {
       std::size_t bc_id = 1;
-      panzer::BCType neumann = BCT_Dirichlet;
+      panzer::BCType dirichlet = BCT_Dirichlet;
       std::string sideset_id = "right";
       std::string element_block_id = "eblock-0_0";
       std::string dof_name = "TEMPERATURE";
@@ -297,13 +297,13 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, dirichlet, sideset_id, element_block_id, dof_name, 
 		    strategy, p);
       bcs.push_back(bc);
     }   
     {
       std::size_t bc_id = 2;
-      panzer::BCType neumann = BCT_Dirichlet;
+      panzer::BCType dirichlet = BCT_Dirichlet;
       std::string sideset_id = "top";
       std::string element_block_id = "eblock-0_0";
       std::string dof_name = "TEMPERATURE";
@@ -311,13 +311,13 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, dirichlet, sideset_id, element_block_id, dof_name, 
 		    strategy, p);
       bcs.push_back(bc);
     }  
     {
       std::size_t bc_id = 3;
-      panzer::BCType neumann = BCT_Dirichlet;
+      panzer::BCType dirichlet = BCT_Dirichlet;
       std::string sideset_id = "bottom";
       std::string element_block_id = "eblock-0_0";
       std::string dof_name = "TEMPERATURE";
@@ -325,7 +325,7 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, dirichlet, sideset_id, element_block_id, dof_name, 
 		    strategy, p);
       bcs.push_back(bc);
     }
