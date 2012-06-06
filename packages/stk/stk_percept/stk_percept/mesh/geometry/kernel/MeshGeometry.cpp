@@ -117,11 +117,13 @@ int MeshGeometry::classify_bucket_internal(const stk::mesh::Bucket& bucket, size
       bool selector_has_bucket = geomEvaluators[s]->mMesh(bucket);
       if (selector_has_bucket)
         {
-          if (geomKernel->is_curve(s))
+          //if (geomKernel->is_curve(s))
+          if (geomKernel->is_curve(geomEvaluators[s]->mGeometry))
             {
               curveEvaluators.push_back(s);
             }
-          else if (geomKernel->is_surface(s))
+          //else if (geomKernel->is_surface(s))
+          else if (geomKernel->is_surface(geomEvaluators[s]->mGeometry))
             {
               surfEvaluators.push_back(s);
             }
@@ -162,52 +164,74 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh)
 {
   BulkData& bulkData = *eMesh->get_bulk_data();
 
+  // Get all of the nodes.
   std::vector<Entity*> nodes;
   stk::mesh::get_entities(bulkData, stk::mesh::fem::FEMMetaData::NODE_RANK, nodes);
 
-  VectorFieldType* coordField = eMesh->getCoordinatesField();
+  VectorFieldType* coordField = eMesh->get_coordinates_field();
+
+  // Loop through all of the nodes and choose the "best" projection.
   for(int i=nodes.size()-1; i>-1; i--)
   {
     Entity *cur_node = nodes[i];
     Bucket &node_bucket = cur_node->bucket();
-    std::vector<int> evaluators;
+    std::vector<int> evaluators, curve_evals, surf_evals;
     size_t s;
     for (s=0; s<geomEvaluators.size(); s++)
     {
       if(geomEvaluators[s]->mMesh(node_bucket))
-        evaluators.push_back(s);
-    }
-    
-    double * coords = stk::mesh::field_data(*coordField , *cur_node);
-    double orig_pos[3] = {coords[0], coords[1], coords[2]};
-    double smallest_dist_sq = 9999999.9;
-    double best_pos[3];
-    for(s=0; s<evaluators.size(); s++)
-    {
-      coords[0] = orig_pos[0];
-      coords[1] = orig_pos[1];
-      coords[2] = orig_pos[2];
-      snap_node(eMesh, *cur_node, evaluators[s]);
-      double diff[3];
-      diff[0] = orig_pos[0] - coords[0];
-      diff[1] = orig_pos[1] - coords[1];
-      diff[2] = orig_pos[2] - coords[2];
-      double dist_sq = diff[0]*diff[0] + diff[1]*diff[1] + diff[2]*diff[2];
-      if(dist_sq < smallest_dist_sq)
       {
-        smallest_dist_sq = dist_sq;
-        best_pos[0] = coords[0];
-        best_pos[1] = coords[1];
-        best_pos[2] = coords[2];
+        if(geomKernel->is_curve(geomEvaluators[s]->mGeometry))
+          curve_evals.push_back(s);
+        else if(geomKernel->is_surface(geomEvaluators[s]->mGeometry))
+          surf_evals.push_back(s);
       }
     }
-    coords[0] = best_pos[0];
-    coords[1] = best_pos[1];
-    coords[2] = best_pos[2];
+    // favor lower order evaluators if they exist
+    if(surf_evals.size() > 0)
+      evaluators = surf_evals;
+    if(curve_evals.size() > 0)
+      evaluators = curve_evals;
+    
+    // If we have more than one evaluator we will project to each and
+    // keep the best one.
+    if(evaluators.size() > 1)
+    {
+      double * coords = stk::mesh::field_data(*coordField , *cur_node);
+      double orig_pos[3] = {coords[0], coords[1], coords[2]};
+      double smallest_dist_sq = 9999999.9;
+      double best_pos[3] = {0,0,0};
+      for(s=0; s<evaluators.size(); s++)
+      {
+        // Always start with the original position.	
+        for(int f=0; f<3; f++)
+          coords[f] = orig_pos[f];
+        // Do the projection (changes "coords" variable).
+        snap_node(eMesh, *cur_node, evaluators[s]);
+        // See if this projection is closer to the original point
+        // than any of the previous ones.
+        double dist_sq = 0.0;
+        for(int f=0; f<3; f++)
+          dist_sq += (orig_pos[f] - coords[f]) * (orig_pos[f] - coords[f]);
+        if(dist_sq < smallest_dist_sq)
+        {
+          smallest_dist_sq = dist_sq;
+          for(int f=0; f<3; f++)
+            best_pos[f] = coords[f];
+        }
+      }
+      // Load the best projection into the actual coordinates.
+      for(int f=0; f<3; f++)
+        coords[f] = best_pos[f];
+    }
+    // If we know we only have one evaluator don't bother with all
+    // of the saving/restoring of positions.
+    else if(evaluators.size() > 0)
+      snap_node(eMesh, *cur_node, evaluators[0]);
   }
 
 #if 0
-  BulkData& bulkData = *eMesh->getBulkData();
+  BulkData& bulkData = *eMesh->get_bulk_data();
   const std::vector<Bucket*> & buckets = bulkData.buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
 
   for ( std::vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
