@@ -414,11 +414,11 @@ STKUNIT_UNIT_TEST( GearsDemo, skin_gear ) {
       if (   t == "skin_hex8_quad4_4" || t == "skin_hex20_quad8_5") {
         if  (t == "skin_hex8_quad4_4")   t = "skin_wedge6_quad4_4";
         else                             t = "skin_wedge15_quad4_8";
-        stk::mesh::Part & topo_skin_part = fixture.meta_data.declare_part(t, fixture.element_rank-1);
-        skin_io_parts.insert(&topo_skin_part);
-        stk::io::put_io_part_attribute(topo_skin_part);
-        fixture.meta_data.declare_part_subset(topo_part, topo_skin_part);
-        fixture.meta_data.declare_part_subset(skin_part, topo_skin_part);
+        stk::mesh::Part & topo_skin_part2 = fixture.meta_data.declare_part(t, fixture.element_rank-1);
+        skin_io_parts.insert(&topo_skin_part2);
+        stk::io::put_io_part_attribute(topo_skin_part2);
+        fixture.meta_data.declare_part_subset(topo_part, topo_skin_part2);
+        fixture.meta_data.declare_part_subset(skin_part, topo_skin_part2);
       }
     } 
   }
