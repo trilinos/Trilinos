@@ -224,11 +224,11 @@ public:
                                     data_map.count_interior ,
                                     data_map.count_send , x );
 
-    exchange.send();
+    exchange.setup();
 
     // If interior & boundary matrices then could launch interior multiply
 
-    exchange.receive();
+    exchange.send_receive();
 
     UnpackArray< vector_type >::unpack( x , exchange.buffer() ,
                                         data_map.count_owned ,

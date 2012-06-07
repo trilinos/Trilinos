@@ -336,11 +336,9 @@ PerformanceData run( comm::Machine machine ,
                 mesh.parallel_data_map.count_send ,
                 nodal_solution );
 
-      exchange.send();
+      exchange.setup();
 
-      // If interior & boundary matrices then could launch interior multiply
-
-      exchange.receive();
+      exchange.send_receive();
 
       KokkosArray::UnpackArray< vector_type >
         ::unpack( nodal_solution , exchange.buffer() ,

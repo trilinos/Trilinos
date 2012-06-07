@@ -98,11 +98,11 @@ void verify_parallel(
 
   pack_type::pack( exchange.buffer(), send_begin, send_count, mesh.node_coords );
 
-  exchange.send();
+  exchange.setup();
 
   // Launch local-action device kernels
 
-  exchange.receive();
+  exchange.send_receive();
 
   unsigned long local[3] ;
   local[0] = mesh.parallel_data_map.count_owned ;
