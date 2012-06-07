@@ -12,10 +12,6 @@
 */
 
 #include <Zoltan2_TestHelpers.hpp>
-#include <Zoltan2_BasicCoordinateInput.hpp>
-#include <Zoltan2_PartitioningSolution.hpp>
-#include <Zoltan2_PartitioningProblem.hpp>
-
 #include <Teuchos_CommandLineProcessor.hpp>
 
 #include <vector>
@@ -36,7 +32,6 @@ using Teuchos::CommandLineProcessor;
 
 typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
 typedef Tpetra::Map<lno_t, gno_t, node_t> tMap_t;
-typedef Zoltan2::BasicCoordinateInput<tMVector_t> inputAdapter_t;
 
 static Array<ArrayRCP<scalar_t> > weights;
 static RCP<tMVector_t> coordinates;
@@ -366,35 +361,6 @@ int main(int argc, char *argv[])
 
   MEMORY_CHECK(doMemory && rank==0, "After creating input");
 
-  // Create an input adapter.
-  const RCP<const tMap_t> &coordmap = coordinates->getMap();
-  ArrayView<const gno_t> ids = coordmap->getNodeElementList();
-  const gno_t *globalIds = ids.getRawPtr();
-  
-  size_t localCount = coordinates->getLocalLength();
-  RCP<inputAdapter_t> ia;
-  
-  if (weightDim == 0){
-    ia = rcp(new inputAdapter_t (localCount, globalIds, 
-      coordinates->getData(0).getRawPtr(), coordinates->getData(1).getRawPtr(),
-      coordinates->getData(2).getRawPtr(), 1,1,1));
-  }
-  else{
-    vector<const scalar_t *> values(3);
-    for (int i=0; i < 3; i++)
-      values[i] = coordinates->getData(i).getRawPtr();
-    vector<int> valueStrides(0);  // implies stride is one
-    vector<const scalar_t *> weightPtrs(weightDim);
-    for (int i=0; i < weightDim; i++)
-      weightPtrs[i] = weights[i].getRawPtr();
-    vector<int> weightStrides(0); // implies stride is one
-
-    ia = rcp(new inputAdapter_t (localCount, globalIds, 
-      values, valueStrides, weightPtrs, weightStrides));
-  }
-
-  MEMORY_CHECK(doMemory && rank==0, "After creating input adapter");
-
   // Now call Zoltan to partition the problem.
 
   float ver;
@@ -407,16 +373,17 @@ int main(int argc, char *argv[])
 
   struct Zoltan_Struct *zz;
   zz = Zoltan_Create(MPI_COMM_WORLD);
-
   
   Zoltan_Set_Param(zz, "LB_METHOD", "RCB");
-  Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1");
+  Zoltan_Set_Param(zz, "LB_APPROACH", "PARTITION");
+  Zoltan_Set_Param(zz, "CHECK_GEOM", "0");
+  Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); // compiled with ULONG option
   Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "0");
   std::ostringstream oss;
   oss << weightDim;
   Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", oss.str().c_str());
   Zoltan_Set_Param(zz, "RETURN_LISTS", "NONE");
-  Zoltan_Set_Param(zz, "IMBALANCE_TOLERANCE", "1.1");
+  Zoltan_Set_Param(zz, "IMBALANCE_TOL", "1.1");
   oss.str("");
   oss << numGlobalParts;
   Zoltan_Set_Param(zz, "NUM_GLOBAL_PARTS", oss.str().c_str());
