@@ -235,8 +235,12 @@ public:
                                         data_map.count_receive );
 #endif
 
+    const typename Device::size_type nrow = data_map.count_owned ;
+    const typename Device::size_type ncol = data_map.count_owned +
+                                            data_map.count_receive ;
+
     Impl::Multiply<matrix_type,vector_type,vector_type>
-      ::apply( A , x , y );
+      ::apply( A , nrow , ncol , x , y );
   }
 };
 

@@ -92,17 +92,18 @@ private:
 public:
 
   static void apply( const matrix_type & A ,
+                     const size_type nrow ,
+                     const size_type ncol ,
                      const vector_type & x ,
                      const vector_type & y )
   {
     CudaSparseSingleton & s = CudaSparseSingleton::singleton();
     const scalar_type alpha = 1 , beta = 0 ;
-    const int n = A.graph.row_map.length();
 
     cusparseStatus_t status =
       cusparseDcsrmv( s.handle ,
                       CUSPARSE_OPERATION_NON_TRANSPOSE ,
-                      n , n ,
+                      nrow , ncol ,
                       alpha ,
                       s.descra ,
                       A.coefficients.ptr_on_device() ,
@@ -139,6 +140,8 @@ private:
 public:
 
   static void apply( const matrix_type & A ,
+                     const size_type nrow ,
+                     const size_type ncol ,
                      const vector_type & x ,
                      const vector_type & y )
   {
@@ -149,7 +152,7 @@ public:
     cusparseStatus_t status =
       cusparseScsrmv( s.handle ,
                       CUSPARSE_OPERATION_NON_TRANSPOSE ,
-                      n , n ,
+                      nrow , ncol ,
                       alpha ,
                       s.descra ,
                       A.coefficients.ptr_on_device() ,
