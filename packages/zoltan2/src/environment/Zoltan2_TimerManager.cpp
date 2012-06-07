@@ -43,8 +43,8 @@ TimerManager::~TimerManager()
 void TimerManager::stop(TimerType tt, const string &name)
 {
   if ((ttype_ == NO_TIMERS) ||
-      (ttype_ == MACRO_TIMERS && tt != MACRO_TIMERS) ||
-      (ttype_ == MICRO_TIMERS && tt != MICRO_TIMERS)    )
+      (ttype_ == MACRO_TIMERS && tt != MACRO_TIMERS && tt != BOTH_TIMERS) ||
+      (ttype_ == MICRO_TIMERS && tt != MICRO_TIMERS && tt != BOTH_TIMERS)  )
     return;
 
   if (stopHint>0 && timers[stopHint]->name() == name){
@@ -69,8 +69,8 @@ void TimerManager::stop(TimerType tt, const string &name)
 void TimerManager::start(TimerType tt, const string &name)
 {
   if ((ttype_ == NO_TIMERS) ||
-      (ttype_ == MACRO_TIMERS && tt != MACRO_TIMERS) ||
-      (ttype_ == MICRO_TIMERS && tt != MICRO_TIMERS)    )
+      (ttype_ == MACRO_TIMERS && tt != MACRO_TIMERS && tt != BOTH_TIMERS) ||
+      (ttype_ == MICRO_TIMERS && tt != MICRO_TIMERS && tt != BOTH_TIMERS)  )
     return;
 
   std::map<string, int>::iterator curr = timerMap.find(name);

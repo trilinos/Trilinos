@@ -71,6 +71,8 @@ void AlgRCB(
 
   const Teuchos::ParameterList &pl = env->getParameters();
 
+  env->timerStart(BOTH_TIMERS, "RCB set up");
+
   ////////////////////////////////////////////////////////
   // Partitioning problem parameters of interest:
   //    objective
@@ -294,6 +296,8 @@ void AlgRCB(
       map, vectors.view(0, multiVectorDim), multiVectorDim));
   }
   Z2_THROW_OUTSIDE_ERROR(*env)
+
+  env->timerStop(BOTH_TIMERS, "RCB set up");
 
   ////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////

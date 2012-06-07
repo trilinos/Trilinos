@@ -515,21 +515,31 @@ public:
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t flags);
 
-  int getCoordinateDim() const { return 0;}
-  size_t getLocalNumCoordinates() const { return 0;}
-  global_size_t getGlobalNumCoordinates() const {return 0;}
-  int getCoordinateWeightDim() const { return 0;}
+  int getCoordinateDim() const { return coordinateDim_;}
+
+  size_t getLocalNumCoordinates() const { return gids_.size();}
+
+  global_size_t getGlobalNumCoordinates() const {return numGlobalCoordinates_;}
+
+  int getCoordinateWeightDim() const { return weightDim_;}
+
   size_t getCoordinates(ArrayView<const gno_t>  &Ids,
     ArrayView<input_t> &xyz,
-    ArrayView<input_t> &wgts) const { return 0;}
+    ArrayView<input_t> &wgts) const;
 
   ////////////////////////////////////////////////////
   // The Model interface.
   ////////////////////////////////////////////////////
 
-  size_t getLocalNumObjects() const {return 0;}
-  size_t getGlobalNumObjects() const {return 0;}
-  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const {return;}
+  size_t getLocalNumObjects() const {return gids_.size();}
+
+  size_t getGlobalNumObjects() const {return numGlobalCoordinates_;}
+
+  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const {
+    ArrayView<input_t> a, b;
+    getCoordinates(gnos, a, b);
+    return;
+  }
 
 private:
 

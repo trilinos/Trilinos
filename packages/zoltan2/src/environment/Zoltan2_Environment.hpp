@@ -332,15 +332,15 @@ public:
 
 #ifdef Z2_OMIT_ALL_PROFILING
 
-  void timerStart(const char * timerName) const  {return;}
-  void timerStart(const string &timerName) const  {return;}
-  void timerStart(const char * timerName, int) const  {return;}
-  void timerStart(const string &timerName, int) const  {return;}
+  void timerStart(TimerType tt, const char * timerName) const  {return;}
+  void timerStart(TimerType tt, const string &timerName) const  {return;}
+  void timerStart(TimerType tt, const char * timerName, int) const  {return;}
+  void timerStart(TimerType tt, const string &timerName, int) const  {return;}
 
-  void timerStop(const char * timerName) const {return;}
-  void timerStop(const string &timerName) const {return;}
-  void timerStop(const char * timerName, int) const {return;}
-  void timerStop(const string &timerName, int) const {return;}
+  void timerStop(TimerType tt, const char * timerName) const {return;}
+  void timerStop(TimerType tt, const string &timerName) const {return;}
+  void timerStop(TimerType tt, const char * timerName, int) const {return;}
+  void timerStop(TimerType tt, const string &timerName, int) const {return;}
 
 #else
   /*! \brief  Start a named timer.
