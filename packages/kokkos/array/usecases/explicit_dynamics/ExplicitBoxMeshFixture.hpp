@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -182,8 +182,8 @@ public:
     const int ny = elems_y + 1;
     const int nz = elems_z + 1;
 
-    elem_node_ids    = Kokkos::create_mdarray< int_mdarray    >(nelems, 8);
-    node_coords      = Kokkos::create_mdarray< scalar_mdarray >(nnodes, 3);
+    elem_node_ids    = KokkosArray::create_mdarray< int_mdarray    >(nelems, 8);
+    node_coords      = KokkosArray::create_mdarray< scalar_mdarray >(nnodes, 3);
 
     // Initialize node coordinates of grid.
 
@@ -228,9 +228,9 @@ public:
 
     // node-element connectivity:
 
-    node_elem_offset = Kokkos::create_mdarray< int_mdarray >(nnodes + 1);
+    node_elem_offset = KokkosArray::create_mdarray< int_mdarray >(nnodes + 1);
 
-    int_mdarray node_elem_count = Kokkos::create_mdarray< int_mdarray >( nnodes );
+    int_mdarray node_elem_count = KokkosArray::create_mdarray< int_mdarray >( nnodes );
 
     for(int i = 0; i < nnodes ; i++){
       node_elem_count( i ) = 0 ;
@@ -250,7 +250,7 @@ public:
 
     const int count_node_elem = node_elem_offset( nnodes );
 
-    node_elem_ids = Kokkos::create_mdarray< int_mdarray >( count_node_elem , 2 );
+    node_elem_ids = KokkosArray::create_mdarray< int_mdarray >( count_node_elem , 2 );
 
     for ( int i = 0 ; i < nelems ; ++i ) {
       for ( int n = 0 ; n < 8 ; ++n ) {

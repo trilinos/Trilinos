@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -50,9 +50,9 @@
 #include <sstream>
 #include <stdexcept>
 
-#include <Kokkos_Array.hpp>
-#include <Kokkos_CrsArray.hpp>
-#include <Kokkos_MultiVector.hpp>
+#include <KokkosArray_Array.hpp>
+#include <KokkosArray_CrsArray.hpp>
+#include <KokkosArray_MultiVector.hpp>
 
 #include <ParallelComm.hpp>
 #include <ParallelDataMap.hpp>
@@ -69,14 +69,14 @@ struct FEMesh {
 
   static const size_type element_node_count = ElemNodeCount ;
 
-  typedef Kokkos::Array< CoordScalarType[3] , Device >  node_coords_type ;
-  typedef Kokkos::Array< size_type[ElemNodeCount], Device >  elem_node_ids_type ;
-  typedef Kokkos::CrsArray< size_type[2] ,  Device >  node_elem_ids_type ;
+  typedef KokkosArray::Array< CoordScalarType[3] , Device >  node_coords_type ;
+  typedef KokkosArray::Array< size_type[ElemNodeCount], Device >  elem_node_ids_type ;
+  typedef KokkosArray::CrsArray< size_type[2] ,  Device >  node_elem_ids_type ;
 
   node_coords_type         node_coords ;
   elem_node_ids_type       elem_node_ids ;
   node_elem_ids_type       node_elem_ids ;
-  Kokkos::ParallelDataMap  parallel_data_map ;
+  KokkosArray::ParallelDataMap  parallel_data_map ;
 };
 
 //----------------------------------------------------------------------------

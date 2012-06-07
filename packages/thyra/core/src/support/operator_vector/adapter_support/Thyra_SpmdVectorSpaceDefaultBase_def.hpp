@@ -166,10 +166,8 @@ void SpmdVectorSpaceDefaultBase<Scalar>::updateState( const Ordinal globalDim )
     comm = this->getComm();
   if( localSubDim_ >= 0 ) {
     int numProc = 1;
-    int procRank = 0;
     if( comm.get() ) {
       numProc = comm->getSize();
-      procRank = comm->getRank();
     }
     if( numProc > 1 && (localSubDim_ < globalDim || globalDim < 0) ) {
       mapCode_ = SpmdVectorSpaceUtilities::computeMapCode(*comm,localSubDim_);

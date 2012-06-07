@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -49,9 +49,9 @@
 #include <stdexcept>
 #include <sstream>
 
-#include <Kokkos_Array.hpp>
-#include <Kokkos_CrsArray.hpp>
-#include <Kokkos_MultiVector.hpp>
+#include <KokkosArray_Array.hpp>
+#include <KokkosArray_CrsArray.hpp>
+#include <KokkosArray_MultiVector.hpp>
 
 #include <BoxMeshPartition.hpp>
 #include <FEMesh.hpp>
@@ -252,12 +252,12 @@ box_mesh_fixture( const size_t proc_count ,
 
   if ( node_count_total ) {
     mesh.node_coords =
-      Kokkos::create_array< node_coords_type >( node_count_total );
+      KokkosArray::create_array< node_coords_type >( node_count_total );
   }
 
   if ( elem_count_total ) {
     mesh.elem_node_ids =
-      Kokkos::create_array< elem_node_ids_type >( elem_count_total );
+      KokkosArray::create_array< elem_node_ids_type >( elem_count_total );
   }
 
   mesh.parallel_data_map.count_interior = node_count_interior ;
@@ -267,22 +267,22 @@ box_mesh_fixture( const size_t proc_count ,
 
   if ( recv_msg_count ) {
     mesh.parallel_data_map.host_recv =
-      Kokkos::create_array< Kokkos::Array< unsigned[2] , Kokkos::Host > >( recv_msg_count );
+      KokkosArray::create_array< KokkosArray::Array< unsigned[2] , KokkosArray::Host > >( recv_msg_count );
   }
 
   if ( send_msg_count ) {
     mesh.parallel_data_map.host_send =
-      Kokkos::create_array< Kokkos::Array< unsigned[2] , Kokkos::Host > >( send_msg_count );
+      KokkosArray::create_array< KokkosArray::Array< unsigned[2] , KokkosArray::Host > >( send_msg_count );
 
     mesh.parallel_data_map.host_send_item =
-      Kokkos::create_array< Kokkos::Array< unsigned , Kokkos::Host > >( send_count );
+      KokkosArray::create_array< KokkosArray::Array< unsigned , KokkosArray::Host > >( send_count );
   }
 
   typename node_coords_type::HostMirror node_coords =
-    Kokkos::create_mirror( mesh.node_coords );
+    KokkosArray::create_mirror( mesh.node_coords );
 
   typename elem_node_ids_type::HostMirror elem_node_ids =
-    Kokkos::create_mirror( mesh.elem_node_ids );
+    KokkosArray::create_mirror( mesh.elem_node_ids );
 
   //------------------------------------
   // node coordinates of grid.
@@ -353,10 +353,10 @@ box_mesh_fixture( const size_t proc_count ,
   }
 
   mesh.node_elem_ids =
-    Kokkos::create_crsarray< node_elem_ids_type >( node_elem_work );
+    KokkosArray::create_crsarray< node_elem_ids_type >( node_elem_work );
 
   typename node_elem_ids_type::HostMirror
-    node_elem_ids = Kokkos::create_mirror( mesh.node_elem_ids );
+    node_elem_ids = KokkosArray::create_mirror( mesh.node_elem_ids );
 
   for ( size_t i = 0 ; i < node_count_total ; ++i ) {
     node_elem_work[i] = node_elem_ids.row_map[i];
@@ -378,9 +378,9 @@ box_mesh_fixture( const size_t proc_count ,
 
   box_mesh_fixture_verify<femesh_type>( node_coords , elem_node_ids , node_elem_ids );
 
-  Kokkos::deep_copy( mesh.node_coords ,   node_coords );
-  Kokkos::deep_copy( mesh.elem_node_ids , elem_node_ids );
-  Kokkos::deep_copy( mesh.node_elem_ids , node_elem_ids );
+  KokkosArray::deep_copy( mesh.node_coords ,   node_coords );
+  KokkosArray::deep_copy( mesh.elem_node_ids , elem_node_ids );
+  KokkosArray::deep_copy( mesh.node_elem_ids , node_elem_ids );
 
   //------------------------------------
   // Communication lists:
@@ -390,6 +390,11 @@ box_mesh_fixture( const size_t proc_count ,
     send_count = 0 ;
 
     for ( size_t i = 1 ; i < proc_count ; ++i ) {
+
+      // Order sending starting with the local processor rank 
+      // to try to smooth out the amount of messages simultaneously
+      // send to a particular processor.
+
       const int proc = ( proc_local + i ) % proc_count ;
       if ( node_part_counts[i] ) {
         mesh.parallel_data_map.host_recv(recv_msg_count,0) = proc ;

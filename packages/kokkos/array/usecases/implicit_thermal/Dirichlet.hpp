@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -50,8 +50,8 @@ struct Dirichlet<Scalar , KOKKOS_MACRO_DEVICE >
   
   typedef KOKKOS_MACRO_DEVICE                            device_type;
   typedef device_type::size_type                         index_type;
-  typedef Kokkos::MultiVector<Scalar, device_type>      scalar_vector;  
-  typedef Kokkos::MultiVector<index_type, device_type>  index_vector;
+  typedef KokkosArray::MultiVector<Scalar, device_type>      scalar_vector;  
+  typedef KokkosArray::MultiVector<index_type, device_type>  index_vector;
 
   scalar_vector A ;
   index_vector  A_row ;

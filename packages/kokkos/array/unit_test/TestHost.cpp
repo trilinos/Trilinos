@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -43,20 +43,20 @@
 
 #include <gtest/gtest.h>
 
-#include <impl/Kokkos_MemoryView.hpp>
-#include <Kokkos_Value.hpp>
-#include <Kokkos_MultiVector.hpp>
-#include <Kokkos_Array.hpp>
-#include <Kokkos_MDArray.hpp>
-#include <Kokkos_PrefixSum.hpp>
-#include <Kokkos_CrsArray.hpp>
+#include <impl/KokkosArray_MemoryView.hpp>
+#include <KokkosArray_Value.hpp>
+#include <KokkosArray_MultiVector.hpp>
+#include <KokkosArray_Array.hpp>
+#include <KokkosArray_MDArray.hpp>
+#include <KokkosArray_PrefixSum.hpp>
+#include <KokkosArray_CrsArray.hpp>
 
-#include <Kokkos_Host.hpp>
+#include <KokkosArray_Host.hpp>
 
 //----------------------------------------------------------------------------
 
-#include <Kokkos_Host_macros.hpp>
-#include <impl/Kokkos_IndexMapLeft_macros.hpp>
+#include <KokkosArray_Host_macros.hpp>
+#include <impl/KokkosArray_IndexMapLeft_macros.hpp>
 #include <TestMemoryManagement.hpp>
 #include <TestValue.hpp>
 #include <TestMultiVector.hpp>
@@ -67,7 +67,7 @@
 #include <TestReduce.hpp>
 #include <TestMultiReduce.hpp>
 
-#include <Kokkos_Clear_macros.hpp>
+#include <KokkosArray_Clear_macros.hpp>
 
 namespace Test {
 
@@ -75,82 +75,82 @@ class host : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
-    const size_t node_count = Kokkos::Host::detect_node_count();
-    const size_t node_core_count = Kokkos::Host::detect_node_core_count();
-    std::cout << "Kokkos::Host node_count(" << node_count
+    const size_t node_count = KokkosArray::Host::detect_node_count();
+    const size_t node_core_count = KokkosArray::Host::detect_node_core_count();
+    std::cout << "KokkosArray::Host node_count(" << node_count
               << ") X node_core_count(" << node_core_count
               << ")" << std::endl ;
-    Kokkos::Host::initialize( node_count , 2 );
+    KokkosArray::Host::initialize( node_count , 2 );
   }
 
   static void TearDownTestCase()
   {
-    Kokkos::Host::finalize();
+    KokkosArray::Host::finalize();
   }
 };
 
 TEST_F( host, memory_management_double) {
-  TestMemoryManagement< double, Kokkos::Host >();
+  TestMemoryManagement< double, KokkosArray::Host >();
 }
 
 TEST_F( host, memory_management_int) {
-  TestMemoryManagement< int, Kokkos::Host >();
+  TestMemoryManagement< int, KokkosArray::Host >();
 }
 
 TEST_F( host, value_view_double) {
-  TestValue< double, Kokkos::Host >();
+  TestValue< double, KokkosArray::Host >();
 }
 
 TEST_F( host, value_view_int) {
-  TestValue< int, Kokkos::Host >();
+  TestValue< int, KokkosArray::Host >();
 }
 
 TEST_F( host, multivector_double) {
-  TestMultiVector< double, Kokkos::Host >();
+  TestMultiVector< double, KokkosArray::Host >();
 }
 
 TEST_F( host, multivector_int) {
-  TestMultiVector< int, Kokkos::Host >();
+  TestMultiVector< int, KokkosArray::Host >();
 }
 
 TEST_F( host, crsarray) {
-  TestCrsArray< Kokkos::Host >();
+  TestCrsArray< KokkosArray::Host >();
 }
 
 TEST_F( host, mdarray_view_double) {
-  TestMDArray< double, Kokkos::Host >();
+  TestMDArray< double, KokkosArray::Host >();
 }
 
 TEST_F( host, mdarray_view_int) {
-  TestMDArray< int, Kokkos::Host >();
+  TestMDArray< int, KokkosArray::Host >();
 }
 
 TEST_F( host, mdarray_index_map) {
-  TestMDArrayIndexMap< Kokkos::Host >();
+  TestMDArrayIndexMap< KokkosArray::Host >();
 }
 
 TEST_F( host, array_view_double) {
-  TestArray< double, Kokkos::Host >();
+  TestArray< double, KokkosArray::Host >();
 }
 
 TEST_F( host, array_view_int) {
-  TestArray< int, Kokkos::Host >();
+  TestArray< int, KokkosArray::Host >();
 }
 
 // TEST_F( host, array_index_map) {
-//   TestArrayIndexMap< Kokkos::Host >();
+//   TestArrayIndexMap< KokkosArray::Host >();
 // }
 
 TEST_F( host, long_reduce) {
-  TestReduce< long ,   Kokkos::Host >( 1000000 );
+  TestReduce< long ,   KokkosArray::Host >( 1000000 );
 }
 
 TEST_F( host, double_reduce) {
-  TestReduce< double ,   Kokkos::Host >( 1000000 );
+  TestReduce< double ,   KokkosArray::Host >( 1000000 );
 }
 
 TEST_F( host, long_multi_reduce) {
-  TestReduceMulti< long , Kokkos::Host >( 1000000 , 7 );
+  TestReduceMulti< long , KokkosArray::Host >( 1000000 , 7 );
 }
 
 

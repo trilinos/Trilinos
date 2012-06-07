@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -43,30 +43,30 @@
 
 #include <iostream>
 
-#include <Kokkos_ProductTensor.hpp>
-#include <Kokkos_SymmetricDiagonalSpec.hpp>
-#include <Kokkos_BlockCrsMatrix.hpp>
-#include <Kokkos_CrsMatrix.hpp>
-#include <Kokkos_LegendrePolynomial.hpp>
-#include <Kokkos_StochasticProductTensor.hpp>
+#include <KokkosArray_ProductTensor.hpp>
+#include <KokkosArray_SymmetricDiagonalSpec.hpp>
+#include <KokkosArray_BlockCrsMatrix.hpp>
+#include <KokkosArray_CrsMatrix.hpp>
+#include <KokkosArray_LegendrePolynomial.hpp>
+#include <KokkosArray_StochasticProductTensor.hpp>
 
 
 //
 
-#include <Kokkos_Host.hpp>
+#include <KokkosArray_Host.hpp>
 
-#include <Kokkos_Host_macros.hpp>
-#include <impl/Kokkos_ProductTensor_macros.hpp>
-#include <impl/Kokkos_SymmetricDiagonalSpec_macros.hpp>
-#include <impl/Kokkos_LegendrePolynomial_macros.hpp>
-#include <impl/Kokkos_StochasticProductTensor_macros.hpp>
-#include <Kokkos_Clear_macros.hpp>
+#include <KokkosArray_Host_macros.hpp>
+#include <impl/KokkosArray_ProductTensor_macros.hpp>
+#include <impl/KokkosArray_SymmetricDiagonalSpec_macros.hpp>
+#include <impl/KokkosArray_LegendrePolynomial_macros.hpp>
+#include <impl/KokkosArray_StochasticProductTensor_macros.hpp>
+#include <KokkosArray_Clear_macros.hpp>
 
-#include <Host/Kokkos_Host_ProductTensor.hpp>
-#include <Host/Kokkos_Host_StochasticProductTensor.hpp>
-#include <Host/Kokkos_Host_SymmetricDiagonalSpec.hpp>
-#include <Host/Kokkos_Host_BlockCrsMatrix.hpp>
-#include <Host/Kokkos_Host_CrsMatrix.hpp>
+#include <Host/KokkosArray_Host_ProductTensor.hpp>
+#include <Host/KokkosArray_Host_StochasticProductTensor.hpp>
+#include <Host/KokkosArray_Host_SymmetricDiagonalSpec.hpp>
+#include <Host/KokkosArray_Host_BlockCrsMatrix.hpp>
+#include <Host/KokkosArray_Host_CrsMatrix.hpp>
 
 //
 
@@ -76,14 +76,14 @@
 
 int mainHost()
 {
-  const size_t node_count = Kokkos::Host::detect_node_count();
-  const size_t node_thread_count = Kokkos::Host::detect_node_core_count() / 2 ;
+  const size_t node_count = KokkosArray::Host::detect_node_count();
+  const size_t node_thread_count = KokkosArray::Host::detect_node_core_count() / 2 ;
 
-  Kokkos::Host::initialize( node_count , node_thread_count );
+  KokkosArray::Host::initialize( node_count , node_thread_count );
 
-//  unit_test::test_dense<Kokkos::Host>();
-//  unit_test::test_diagonal<Kokkos::Host>();
-//  unit_test::test_other<Kokkos::Host>();
+//  unit_test::test_dense<KokkosArray::Host>();
+//  unit_test::test_diagonal<KokkosArray::Host>();
+//  unit_test::test_other<KokkosArray::Host>();
 
   unit_test::test_integration<1>();
   unit_test::test_integration<2>();
@@ -95,37 +95,37 @@ int mainHost()
   unit_test::test_integration<8>();
   unit_test::test_integration<9>();
   unit_test::test_integration<10>();
-  unit_test::test_inner_product_legengre_polynomial<10,Kokkos::Host>();
-  unit_test::test_triple_product_legendre_polynomial<4,Kokkos::Host>();
+  unit_test::test_inner_product_legengre_polynomial<10,KokkosArray::Host>();
+  unit_test::test_triple_product_legendre_polynomial<4,KokkosArray::Host>();
 
-  unit_test::test_product_tensor<Kokkos::Host,Kokkos::SparseProductTensor>( std::vector<int>( 2 , 1 ) );
-  unit_test::test_product_tensor<Kokkos::Host,Kokkos::SparseProductTensor>( std::vector<int>( 3 , 2 ) );
-  unit_test::test_product_tensor<Kokkos::Host,Kokkos::SparseProductTensor>( std::vector<int>( 5 , 1 ) );
+  unit_test::test_product_tensor<KokkosArray::Host,KokkosArray::SparseProductTensor>( std::vector<int>( 2 , 1 ) );
+  unit_test::test_product_tensor<KokkosArray::Host,KokkosArray::SparseProductTensor>( std::vector<int>( 3 , 2 ) );
+  unit_test::test_product_tensor<KokkosArray::Host,KokkosArray::SparseProductTensor>( std::vector<int>( 5 , 1 ) );
 
-  unit_test::test_block_crs_matrix<Kokkos::Host>( 1 , 2 );
-  unit_test::test_block_crs_matrix<Kokkos::Host>( 1 , 5 );
-  unit_test::test_block_crs_matrix<Kokkos::Host>( 2 , 1 );
-  unit_test::test_block_crs_matrix<Kokkos::Host>( 3 , 1 );
+  unit_test::test_block_crs_matrix<KokkosArray::Host>( 1 , 2 );
+  unit_test::test_block_crs_matrix<KokkosArray::Host>( 1 , 5 );
+  unit_test::test_block_crs_matrix<KokkosArray::Host>( 2 , 1 );
+  unit_test::test_block_crs_matrix<KokkosArray::Host>( 3 , 1 );
 
-  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 1 , 2 );
-  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 1 , 5 );
-  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 2 , 1 );
-  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 5 , 1 );
-  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 5 , 5 );
+  unit_test_tensor::test_tensor_crs_matrix<KokkosArray::Host,long>( 1 , 2 );
+  unit_test_tensor::test_tensor_crs_matrix<KokkosArray::Host,long>( 1 , 5 );
+  unit_test_tensor::test_tensor_crs_matrix<KokkosArray::Host,long>( 2 , 1 );
+  unit_test_tensor::test_tensor_crs_matrix<KokkosArray::Host,long>( 5 , 1 );
+  unit_test_tensor::test_tensor_crs_matrix<KokkosArray::Host,long>( 5 , 5 );
 
   std::cout << "Stress tests:" << std::endl ;
 
-  unit_test::test_block_crs_matrix<Kokkos::Host>( 10 , 8 );
-  unit_test::test_block_crs_matrix<Kokkos::Host>( 11 , 8 );
-  unit_test::test_block_crs_matrix<Kokkos::Host>( 12 , 10 );
-  unit_test::test_block_crs_matrix<Kokkos::Host>( 13 , 10 );
-  unit_test_tensor::test_tensor_crs_matrix<Kokkos::Host,long>( 100 , 10 );
+  unit_test::test_block_crs_matrix<KokkosArray::Host>( 10 , 8 );
+  unit_test::test_block_crs_matrix<KokkosArray::Host>( 11 , 8 );
+  unit_test::test_block_crs_matrix<KokkosArray::Host>( 12 , 10 );
+  unit_test::test_block_crs_matrix<KokkosArray::Host>( 13 , 10 );
+  unit_test_tensor::test_tensor_crs_matrix<KokkosArray::Host,long>( 100 , 10 );
 
   std::cout << std::endl << "\"Host Performance with "
             << node_count * node_thread_count << " threads\"" << std::endl ;
-  unit_test::performance_test_driver<Kokkos::Host>();
+  unit_test::performance_test_driver<KokkosArray::Host>();
 
-  Kokkos::Host::finalize();
+  KokkosArray::Host::finalize();
 
   return 0 ;
 }

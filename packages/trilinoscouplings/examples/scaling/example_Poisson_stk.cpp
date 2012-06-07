@@ -29,7 +29,7 @@
 // @HEADER
 
 /** \file   example_Poisson_stk.cpp
-    \brief  Example solution of a Poisson equation on a hexahedral or 
+    \brief  Example solution of a Poisson equation on a hexahedral or
             tetrahedral mesh using nodal (Hgrad) elements.
 
             This example requires a hexahedral or tetrahedral mesh in Exodus
@@ -41,7 +41,7 @@
     \verbatim
 
      Poisson system:
- 
+
             div A grad u = f in Omega
                        u = g on Gamma
 
@@ -186,7 +186,7 @@ void exactSolutionGrad(Scalar gradExact[3], const Scalar& x, const Scalar& y, co
 
 
 /** \brief Computes source term: f = -div(A.grad u).  Requires user-defined exact solution
-           and material tensor. 
+           and material tensor.
 
     \param  x          [in]    x-coordinate of the evaluation point
     \param  y          [in]    y-coordinate of the evaluation point
@@ -261,12 +261,12 @@ int TestMultiLevelPreconditioner(char                        ProblemType[],
     \param  order         [in]    basis function order, currently unused
     \param  basis         [out]   pointer to Intrepid basis
 
-    \return Intrepid basis 
+    \return Intrepid basis
  */
 
-void getBasis(Teuchos::RCP<Intrepid::Basis<double,Intrepid::FieldContainer<double> > > &basis, 
+void getBasis(Teuchos::RCP<Intrepid::Basis<double,Intrepid::FieldContainer<double> > > &basis,
                const shards::CellTopology & cellTopology,
-               int order); 
+               int order);
 
 /**********************************************************************************/
 /**********************************************************************************/
@@ -352,9 +352,9 @@ int main(int argc, char *argv[]) {
        if (MyPID == 0)
         std::cout << "\nReading parameter list from the XML file \""<<xmlSolverInFileName<<"\" ...\n\n";
 
-       Teuchos::updateParametersFromXmlFile(xmlSolverInFileName,&inputSolverList);
+       Teuchos::updateParametersFromXmlFile (xmlSolverInFileName, Teuchos::ptr (&inputSolverList));
 
-     } 
+     }
      else if (MyPID == 0) std::cout << "Using default solver values ..." << std::endl;
 
 
@@ -409,22 +409,22 @@ int main(int argc, char *argv[]) {
     }
 
    // get coordinates field
-    stk::mesh::Field<double, stk::mesh::Cartesian> *coords = 
+    stk::mesh::Field<double, stk::mesh::Cartesian> *coords =
        femMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian> >("coordinates");
-    
+
    // get buckets containing entities of node rank
     const std::vector<stk::mesh::Bucket*> & nodeBuckets = bulkData.buckets( nodeRank );
     std::vector<stk::mesh::Entity*> bcNodes;
 
-   // loop over all mesh parts 
+   // loop over all mesh parts
     const stk::mesh::PartVector & all_parts = femMetaData.get_parts();
     for (stk::mesh::PartVector::const_iterator i  = all_parts.begin();
                                                 i != all_parts.end(); ++i) {
 
          stk::mesh::Part & part = **i ;
 
-        // if part only contains nodes, then it is a node set 
-        //   ! this assumes that the only node set defined is the set 
+        // if part only contains nodes, then it is a node set
+        //   ! this assumes that the only node set defined is the set
         //   ! of boundary nodes
          if (part.primary_entity_rank() == nodeRank) {
             stk::mesh::Selector bcNodeSelector(part);
@@ -456,11 +456,11 @@ int main(int argc, char *argv[]) {
    // get the part labeled block_1
     stk::mesh::Part* const part = femMetaData.get_part("block_1");
 
-   // get the topology of this part 
+   // get the topology of this part
    //  (stk::mesh::fem::CellTopology is shards::CellTopology)
     stk::mesh::fem::CellTopology cellType = femMetaData.get_cell_topology( *part );
 
-   // Get dimensions 
+   // Get dimensions
     int numNodesPerElem = cellType.getNodeCount();
 
     if(MyPID==0) {std::cout << "Get cell topology                           "
@@ -484,7 +484,7 @@ int main(int argc, char *argv[]) {
 
     cellCubature -> getCubature(cubPoints, cubWeights);
 
-    if(MyPID==0) {std::cout << "Getting cubature                            " 
+    if(MyPID==0) {std::cout << "Getting cubature                            "
                  << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
 
 /**********************************************************************************/
@@ -505,7 +505,7 @@ int main(int argc, char *argv[]) {
     HGradBasis->getValues(basisValues, cubPoints, Intrepid::OPERATOR_VALUE);
     HGradBasis->getValues(basisGrads, cubPoints, Intrepid::OPERATOR_GRAD);
 
-    if(MyPID==0) {std::cout << "Getting basis                               " 
+    if(MyPID==0) {std::cout << "Getting basis                               "
                  << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
 
 
@@ -517,11 +517,11 @@ int main(int argc, char *argv[]) {
 
     // For parallel need a map like this:
     // Epetra_Map globalMapG(-1,ownedNodes,ownedGIDs,0,Comm);
- 
+
     Epetra_Map   globalMapG(numNodes, 0, Comm);
     Epetra_FECrsMatrix StiffMatrix(Copy, globalMapG, numFieldsG);
     Epetra_FEVector rhsVector(globalMapG);
- 
+
     if(MyPID==0) {std::cout <<  "Build global maps                           "
                  << Time.ElapsedTime() << " sec \n";  Time.ResetStartTime();}
 
@@ -541,9 +541,9 @@ int main(int argc, char *argv[]) {
     // Loop over elements
      for (size_t j = 0; j < elems.size(); j++) {
 
-       // get nodes attached to this element 
+       // get nodes attached to this element
         const stk::mesh::PairIterRelation elem_nodes = elems[j]->relations(nodeRank);
-   
+
        // loop over nodes and fill element to node map
            // local ids
            //    element id : elems[j]->identifier()-1
@@ -577,7 +577,7 @@ int main(int argc, char *argv[]) {
     int * bcNodeVec = new int [bcNodes.size()];
     // Loop over boundary nodes
      for (unsigned i = 0; i < bcNodes.size(); i++) {
-       
+
         int bcNodeId = bcNodes[i]->identifier() - 1;
         bcNodeVec[i] = bcNodeId;
 
@@ -624,7 +624,7 @@ int main(int argc, char *argv[]) {
 
        // when numElems is not divisible by desiredWorksetSize, the last workset ends at numElems
         worksetEnd   = (worksetEnd <= numElems) ? worksetEnd : numElems;
- 
+
        // allocate the array for the cell nodes
         worksetSize  = worksetEnd - worksetBegin;
         Intrepid::FieldContainer<double> cellWorkset(worksetSize, numNodesPerElem, spaceDim);
@@ -633,12 +633,12 @@ int main(int argc, char *argv[]) {
         int cellCounter = 0;
         for(int cell = worksetBegin; cell < worksetEnd; cell++){
 
-          // Get element entity from id of cell 
+          // Get element entity from id of cell
            stk::mesh::Entity * worksetElem = bulkData.get_entity(elementRank,cell+1);
 
-          // get nodes attached to this element 
+          // get nodes attached to this element
            const stk::mesh::PairIterRelation worksetNodes = worksetElem->relations(nodeRank);
-   
+
           // loop over nodes and get coordinates to fill workset array
            for (size_t i = 0; i < worksetNodes.size(); i++) {
                double * coord = stk::mesh::field_data(*coords, *worksetNodes[i].entity());
@@ -646,7 +646,7 @@ int main(int argc, char *argv[]) {
                cellWorkset(cellCounter, i, 1) = coord[1];
                cellWorkset(cellCounter, i, 2) = coord[2];
            }
- 
+
          cellCounter++;
 
       } // end cell loop
@@ -718,26 +718,26 @@ int main(int argc, char *argv[]) {
  /**********************************************************************************/
 
      // Transform basis gradients to physical frame:                        DF^{-T}(grad u)
-      IntrepidFSTools::HGRADtransformGRAD<double>(worksetBasisGrads,                
+      IntrepidFSTools::HGRADtransformGRAD<double>(worksetBasisGrads,
                                                 worksetJacobInv,   basisGrads);
 
      // Compute integration measure for workset cells:                      Det(DF)*w = J*w
-      IntrepidFSTools::computeCellMeasure<double>(worksetCubWeights,              
+      IntrepidFSTools::computeCellMeasure<double>(worksetCubWeights,
                                                 worksetJacobDet, cubWeights);
 
 
      // Multiply transformed (workset) gradients with weighted measure:     DF^{-T}(grad u)*J*w
-      IntrepidFSTools::multiplyMeasure<double>(worksetBasisGradsWeighted,           
+      IntrepidFSTools::multiplyMeasure<double>(worksetBasisGradsWeighted,
                                              worksetCubWeights, worksetBasisGrads);
 
 
      // Compute material tensor applied to basis grads:                     A*(DF^{-T}(grad u)
-      IntrepidFSTools::tensorMultiplyDataField<double>(worksetDiffusiveFlux,      
+      IntrepidFSTools::tensorMultiplyDataField<double>(worksetDiffusiveFlux,
                                                      worksetMaterialVals,
                                                      worksetBasisGrads);
 
      // Integrate to compute contribution to global stiffness matrix:      (DF^{-T}(grad u)*J*w)*(A*DF^{-T}(grad u))
-      IntrepidFSTools::integrate<double>(worksetStiffMatrix,                      
+      IntrepidFSTools::integrate<double>(worksetStiffMatrix,
                                        worksetBasisGradsWeighted,
                                        worksetDiffusiveFlux, Intrepid::COMP_BLAS);
 
@@ -749,15 +749,15 @@ int main(int argc, char *argv[]) {
  /**********************************************************************************/
 
      // Transform basis values to physical frame:                        clones basis values (u)
-      IntrepidFSTools::HGRADtransformVALUE<double>(worksetBasisValues,              
+      IntrepidFSTools::HGRADtransformVALUE<double>(worksetBasisValues,
                                                  basisValues);
 
      // Multiply transformed (workset) values with weighted measure:     (u)*J*w
-      IntrepidFSTools::multiplyMeasure<double>(worksetBasisValuesWeighted,        
+      IntrepidFSTools::multiplyMeasure<double>(worksetBasisValuesWeighted,
                                              worksetCubWeights, worksetBasisValues);
 
      // Integrate worksetSourceTerm against weighted basis function set:  f.(u)*J*w
-      IntrepidFSTools::integrate<double>(worksetRHS,                             
+      IntrepidFSTools::integrate<double>(worksetRHS,
                                        worksetSourceTerm,
                                        worksetBasisValuesWeighted, Intrepid::COMP_BLAS);
 
@@ -774,12 +774,12 @@ int main(int argc, char *argv[]) {
         // Compute cell ordinal relative to the current workset
          int worksetCellOrdinal = cell - worksetBegin;
 
-        // Get element entity from id of cell 
+        // Get element entity from id of cell
          stk::mesh::Entity * worksetElem = bulkData.get_entity(elementRank,cell+1);
 
-         // get nodes attached to this element 
+         // get nodes attached to this element
           const stk::mesh::PairIterRelation worksetNodes = worksetElem->relations(nodeRank);
-   
+
          // "CELL EQUATION" loop for the workset cell: cellRow is relative to the cell DoF numbering
           for (int cellRow = 0; cellRow < numFieldsG; cellRow++){
 
@@ -793,12 +793,12 @@ int main(int argc, char *argv[]) {
                int globalCol = worksetNodes[cellCol].entity()->identifier() - 1;
                double operatorMatrixContribution = worksetStiffMatrix(worksetCellOrdinal, cellRow, cellCol);
                StiffMatrix.InsertGlobalValues(1, &globalRow, 1, &globalCol, &operatorMatrixContribution);
- 
-            }// end cell col loop 
 
-         }// end cell row loop 
+            }// end cell col loop
 
-      }// end workset cell loop 
+         }// end cell row loop
+
+      }// end workset cell loop
 
     } // end workset loop
 
@@ -822,7 +822,7 @@ int main(int argc, char *argv[]) {
 
     // Loop over boundary nodes and replace rhs values with boundary values
      for (size_t i = 0; i < bcNodes.size(); i++) {
-       
+
         int bcNodeId = bcNodes[i]->identifier() - 1;
         rhsVector[0][bcNodeId]=v[0][bcNodeId];
 
@@ -857,14 +857,14 @@ int main(int argc, char *argv[]) {
 
     // Get exact solution at nodes
      for (unsigned inode = 0; inode < nodes.size(); inode++) {
-       
+
         int nodeId = nodes[inode]->identifier() - 1;
 
         // get coordinates for this node
         stk::mesh::Entity * currentNode = bulkData.get_entity(nodeRank,nodes[inode]->identifier());
         double * coord = stk::mesh::field_data(*coords, *currentNode);
 
-        // look up exact value of function 
+        // look up exact value of function
         double x  = coord[0];
         double y  = coord[1];
         double z  = coord[2];
@@ -921,7 +921,7 @@ int main(int argc, char *argv[]) {
      Intrepid::FieldContainer<double> cubPointsErr(numCubPointsErr, cubDimErr);
      Intrepid::FieldContainer<double> cubWeightsErr(numCubPointsErr);
      cellCubatureErr->getCubature(cubPointsErr, cubWeightsErr);
- 
+
     // Evaluate basis values and gradients at cubature points
      Intrepid::FieldContainer<double> uhGVals(numFieldsG, numCubPointsErr);
      Intrepid::FieldContainer<double> uhGrads(numFieldsG, numCubPointsErr, spaceDim);
@@ -948,12 +948,12 @@ int main(int argc, char *argv[]) {
         int cellCounter = 0;
         for(int cell = worksetBegin; cell < worksetEnd; cell++){
 
-          // Get element entity from id of cell 
+          // Get element entity from id of cell
            stk::mesh::Entity * worksetElem = bulkData.get_entity(elementRank,cell+1);
 
-          // get nodes attached to this element 
+          // get nodes attached to this element
            const stk::mesh::PairIterRelation worksetNodes = worksetElem->relations(nodeRank);
-   
+
           // loop over nodes and get coordinates to fill workset array
            for (size_t i = 0; i < worksetNodes.size(); i++) {
                double * coord = stk::mesh::field_data(*coords, *worksetNodes[i].entity());
@@ -967,7 +967,7 @@ int main(int argc, char *argv[]) {
                worksetApproxSolnCoef(cellCounter, i) = femCoefficients.Values()[rowIndex];
 #endif
            }
- 
+
          cellCounter++;
 
        } // end cell loop
@@ -1023,17 +1023,17 @@ int main(int argc, char *argv[]) {
       // apply cubature weights to differences in values and grads for use in integration
        Intrepid::FieldContainer<double> worksetDeltaSolnWeighted(worksetSize, numCubPointsErr);
        Intrepid::FieldContainer<double> worksetDeltaSolnGradWeighted(worksetSize, numCubPointsErr, spaceDim);
-       IntrepidFSTools::scalarMultiplyDataData<double>(worksetDeltaSolnWeighted, 
+       IntrepidFSTools::scalarMultiplyDataData<double>(worksetDeltaSolnWeighted,
                                                 worksetCubWeightsE, worksetDeltaSoln);
-       IntrepidFSTools::scalarMultiplyDataData<double>(worksetDeltaSolnGradWeighted, 
+       IntrepidFSTools::scalarMultiplyDataData<double>(worksetDeltaSolnGradWeighted,
                                                 worksetCubWeightsE, worksetDeltaSolnGrad);
 
       // integrate to get errors on each element
        Intrepid::FieldContainer<double> worksetL2err(worksetSize);
        Intrepid::FieldContainer<double> worksetH1err(worksetSize);
-       IntrepidFSTools::integrate<double>(worksetL2err, worksetDeltaSoln, 
+       IntrepidFSTools::integrate<double>(worksetL2err, worksetDeltaSoln,
                                           worksetDeltaSolnWeighted, Intrepid::COMP_BLAS);
-       IntrepidFSTools::integrate<double>(worksetH1err, worksetDeltaSolnGrad, 
+       IntrepidFSTools::integrate<double>(worksetH1err, worksetDeltaSolnGrad,
                                           worksetDeltaSolnGradWeighted, Intrepid::COMP_BLAS);
 
       // loop over cells to get errors for total workset
@@ -1047,9 +1047,9 @@ int main(int argc, char *argv[]) {
 
             }
 
-             L2err += worksetL2err(cellCounter); 
+             L2err += worksetL2err(cellCounter);
              H1err += worksetH1err(cellCounter);
- 
+
          cellCounter++;
 
       } // end cell loop
@@ -1180,7 +1180,7 @@ const Scalar sourceTerm(Scalar& x, Scalar& y, Scalar& z){
     }
   }
 
-  // Compute source term (right hand side): f = -div(A.grad u) 
+  // Compute source term (right hand side): f = -div(A.grad u)
   f = -(flux[0].dx(0) + flux[1].dx(1) + flux[2].dx(2));
 
   return f;
@@ -1367,14 +1367,14 @@ int TestMultiLevelPreconditioner(char ProblemType[],
 /**********************************************************************************/
 
 
-void getBasis(Teuchos::RCP<Intrepid::Basis<double,Intrepid::FieldContainer<double> > > &basis, 
+void getBasis(Teuchos::RCP<Intrepid::Basis<double,Intrepid::FieldContainer<double> > > &basis,
                const shards::CellTopology & cellTopology,
                int order)  {
 
 
  // select basis based on cell topology only for now, and assume first order basis
     switch (cellTopology.getKey()) {
-       
+
        case shards::Tetrahedron<4>::key:
          basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_TET_C1_FEM<double, Intrepid::FieldContainer<double> > );
          break;
@@ -1393,7 +1393,7 @@ void getBasis(Teuchos::RCP<Intrepid::Basis<double,Intrepid::FieldContainer<doubl
 
 }
 
-  
-     
+
+
 
 

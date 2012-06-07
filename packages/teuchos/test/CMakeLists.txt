@@ -15,6 +15,7 @@ ADD_SUBDIRECTORIES(
   FilteredIterator
   FunctionObjects
   LAPACK
+  MatrixMarket
   MemoryManagement
   ObjectBuilder
   Polynomial

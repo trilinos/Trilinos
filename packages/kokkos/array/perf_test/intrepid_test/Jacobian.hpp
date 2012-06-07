@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -55,8 +55,8 @@ struct Jacobian<Scalar , KOKKOS_MACRO_DEVICE , shards::Hexahedron<8> >
 	typedef KOKKOS_MACRO_DEVICE 		device_type;
 	typedef device_type::size_type 		size_type;
 	
-	typedef typename Kokkos::MDArrayView<Scalar,device_type> array_type;
-	typedef typename Kokkos::MDArrayView<Scalar,Kokkos::DeviceHost> host_array;
+	typedef typename KokkosArray::MDArrayView<Scalar,device_type> array_type;
+	typedef typename KokkosArray::MDArrayView<Scalar,KokkosArray::DeviceHost> host_array;
 	
   private:
   
@@ -86,15 +86,15 @@ struct Jacobian<Scalar , KOKKOS_MACRO_DEVICE , shards::Hexahedron<8> >
   		basisCardinality = HGRAD_Basis.getCardinality();
   		
   		//Create local temporary host MDArray to get basisGrad on host
-  		host_array basisGrads = Kokkos::create_mdarray<host_array>(basisCardinality, numPoints , spaceDim);
+  		host_array basisGrads = KokkosArray::create_mdarray<host_array>(basisCardinality, numPoints , spaceDim);
   		
   		//Data shared among all calls
-  		basisGrads_device = Kokkos::create_mdarray<array_type>(basisCardinality, numPoints , spaceDim);
+  		basisGrads_device = KokkosArray::create_mdarray<array_type>(basisCardinality, numPoints , spaceDim);
   		
         HGRAD_Basis.getValues(basisGrads, arg_points_host, Intrepid::OPERATOR_GRAD);
 		
 		//Copy basisGrads onto device       
-        Kokkos::deep_copy(basisGrads_device , basisGrads);
+        KokkosArray::deep_copy(basisGrads_device , basisGrads);
 
   	}
   	

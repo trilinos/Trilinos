@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -45,9 +45,9 @@
 #define SPARSELINEARSYSTEM_HOST_HPP
 
 #include <SparseLinearSystem.hpp>
-#include <Kokkos_Host.hpp>
+#include <KokkosArray_Host.hpp>
 
-namespace Kokkos {
+namespace KokkosArray {
 namespace Impl {
 
 template< typename AScalarType , typename VScalarType >
@@ -98,7 +98,7 @@ public:
 };
 
 } /* namespace Impl */
-} /* namespace Kokkos */
+} /* namespace KokkosArray */
 
 
 #endif /* #ifndef SPARSELINEARSYSTEM_HOST_HPP */

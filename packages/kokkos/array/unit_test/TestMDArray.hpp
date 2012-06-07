@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: Node API and Parallel Node Kernels
+//          KokkosArray: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -51,7 +51,7 @@
 #include <sstream>
 #include <iostream>
 
-#include <impl/Kokkos_Preprocessing_macros.hpp>
+#include <impl/KokkosArray_Preprocessing_macros.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -64,9 +64,9 @@ class TestMDArray< T, KOKKOS_MACRO_DEVICE >
 {
 public:
   typedef KOKKOS_MACRO_DEVICE device ;
-  typedef Kokkos::Host        host ;
+  typedef KokkosArray::Host        host ;
 
-  typedef Kokkos::MDArray< T , device > dView ;
+  typedef KokkosArray::MDArray< T , device > dView ;
   typedef typename dView::HostMirror hView ;
 
   TestMDArray() { run_test(); }
@@ -83,8 +83,8 @@ public:
     ASSERT_FALSE(hy);
     ASSERT_FALSE(hz);
 
-    dx = Kokkos::create_mdarray<dView> ( "dx" , NP , N1 , N2 );
-    dy = Kokkos::create_mdarray<dView> ( "dy" , NP , N1 , N2 );
+    dx = KokkosArray::create_mdarray<dView> ( "dx" , NP , N1 , N2 );
+    dy = KokkosArray::create_mdarray<dView> ( "dy" , NP , N1 , N2 );
 
     ASSERT_TRUE(dx);
     ASSERT_TRUE(dy);
@@ -100,8 +100,8 @@ public:
     ASSERT_EQ( dy.dimension(2) , N2 );
     ASSERT_EQ( dy.dimension(3) , (host::size_type) 0 );
 
-    hx = Kokkos::create_mirror( dx );
-    hy = Kokkos::create_mirror( dy );
+    hx = KokkosArray::create_mirror( dx );
+    hy = KokkosArray::create_mirror( dy );
 
     size_t count = 0 ;
     for ( size_t ip = 0 ; ip < NP ; ++ip ) {
@@ -110,9 +110,9 @@ public:
       hx(ip,i1,i2) = ++count ;
     }}}
 
-    Kokkos::deep_copy( dx , hx );
-    Kokkos::deep_copy( dy , dx );
-    Kokkos::deep_copy( hy , dy );
+    KokkosArray::deep_copy( dx , hx );
+    KokkosArray::deep_copy( dy , dx );
+    KokkosArray::deep_copy( hy , dy );
 
     for ( size_t ip = 0 ; ip < NP ; ++ip ) {
     for ( size_t i1 = 0 ; i1 < N1 ; ++i1 ) {
