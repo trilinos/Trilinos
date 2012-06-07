@@ -67,8 +67,6 @@ PHX_POST_REGISTRATION_SETUP(ConstantFlux,worksets,fm)
   using namespace PHX;
   this->utils.setFieldData(flux,fm);
 
-  std::cout << "ROGER fd = " << flux.dimension(2) << ", values = " << values.size() << std::endl;
-
   TEUCHOS_ASSERT(static_cast<std::size_t>(flux.dimension(2)) == values.size());
 
   for (int cell = 0; cell < flux.dimension(0); ++cell)
