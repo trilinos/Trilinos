@@ -1,6 +1,8 @@
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_CUSPARSEOps.hpp"
 
+Teuchos::RCP<cusparseHandle_t> Kokkos::CUSPARSEdetails::session_handle = Teuchos::null;
+
 void Kokkos::CUSPARSEdetails::initCUSPARSEsession() 
 {
   if (session_handle == null) {

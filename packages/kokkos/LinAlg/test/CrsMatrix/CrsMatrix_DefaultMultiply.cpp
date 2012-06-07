@@ -314,7 +314,7 @@ namespace {
         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, int) \
         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, float)
 
-typedef std::complex<float> ComplexFloat;
+typedef std::complex<float>  ComplexFloat;
 typedef std::complex<double> ComplexDouble;
 #ifdef TEST_CUSPARSE_FLOAT
 ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( int, float, ThrustGPUNode )

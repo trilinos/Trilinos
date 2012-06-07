@@ -60,9 +60,9 @@
 #ifdef HAVE_KOKKOS_THREADPOOL
 #include "Kokkos_TPINode.hpp"
 #endif
-#ifdef HAVE_KOKKOS_THRUST
-#include "Kokkos_ThrustGPUNode.hpp"
-#endif
+//#ifdef HAVE_KOKKOS_THRUST
+//#include "Kokkos_ThrustGPUNode.hpp"
+//#endif
 
 namespace {
 
@@ -87,10 +87,10 @@ namespace {
   using Kokkos::TPINode;
   RCP<TPINode> tpinode;
 #endif
-#ifdef HAVE_KOKKOS_THRUST
-  using Kokkos::ThrustGPUNode;
-  RCP<ThrustGPUNode> thrustnode;
-#endif
+//#ifdef HAVE_KOKKOS_THRUST
+//  using Kokkos::ThrustGPUNode;
+//  RCP<ThrustGPUNode> thrustnode;
+//#endif
 
   int N = 1000;
 
@@ -139,18 +139,18 @@ namespace {
   }
 #endif
 
-#ifdef HAVE_KOKKOS_THRUST
-  template <>
-  RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
-    if (thrustnode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      pl.set<int>("Verbose",1);
-      thrustnode = rcp(new ThrustGPUNode(pl));
+/*#ifdef HAVE_KOKKOS_THRUST
+    template <>
+    RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
+      if (thrustnode == null) {
+        Teuchos::ParameterList pl;
+        pl.set<int>("Num Threads",0);
+        pl.set<int>("Verbose",1);
+        thrustnode = rcp(new ThrustGPUNode(pl));
+      }
+      return thrustnode;
     }
-    return thrustnode;
-  }
-#endif
+  #endif*/
 
   //
   // UNIT TESTS
@@ -1269,18 +1269,18 @@ namespace {
 #define UNIT_TEST_TPINODE(ORDINAL, SCALAR)
 #endif
 
-#ifdef HAVE_KOKKOS_THRUST
-#define UNIT_TEST_THRUSTGPUNODE(ORDINAL, SCALAR) \
-      ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, ThrustGPUNode )
-#else
-#define UNIT_TEST_THRUSTGPUNODE(ORDINAL, SCALAR)
-#endif
+/*#ifdef HAVE_KOKKOS_THRUST
+  #define UNIT_TEST_THRUSTGPUNODE(ORDINAL, SCALAR) \
+        ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, ThrustGPUNode )
+  #else
+  #define UNIT_TEST_THRUSTGPUNODE(ORDINAL, SCALAR)
+  #endif*/
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
         UNIT_TEST_SERIALNODE( ORDINAL, SCALAR ) \
         UNIT_TEST_TBBNODE( ORDINAL, SCALAR ) \
-        UNIT_TEST_TPINODE( ORDINAL, SCALAR ) \
-        UNIT_TEST_THRUSTGPUNODE( ORDINAL, SCALAR )
+        UNIT_TEST_TPINODE( ORDINAL, SCALAR ) 
+        //UNIT_TEST_THRUSTGPUNODE( ORDINAL, SCALAR )
 
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, int) \

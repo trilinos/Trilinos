@@ -63,23 +63,23 @@ IF (Kokkos_ENABLE_CUSPARSE)
   APPEND_SET(HEADERS Kokkos_CUSPARSEOps.hpp)
 ENDIF()
 
-#SET(CUDA_SOURCES Kokkos_DefaultArithmetic.cu 
-#                 Kokkos_DefaultBlockSparseOps.cu 
-#                 Kokkos_DefaultSparseOps.cu 
-#                 Kokkos_DefaultRelaxation.cu
-#   )
-#
-#ASSERT_DEFINED(Kokkos_ENABLE_Thrust)
-#IF (Kokkos_ENABLE_Thrust)
-#  # this pulls in Thrust, CUSP, and Kokkos/NodeAPI
-#  include_directories(${Kokkos_INCLUDE_DIRS})
-#  PACKAGE_ADD_CUDA_LIBRARY(kokkoslinalg_cuda Kokkos_DefaultArithmetic.cu Kokkos_DefaultBlockSparseOps.cu Kokkos_DefaultSparseOps.cu Kokkos_DefaultRelaxation.cu)
-#  APPEND_SET(KOKKOS_LINALG_CUDALIBS "kokkoslinalg_cuda")
-#  TARGET_LINK_LIBRARIES(kokkoslinalg_cuda teuchos)
-#  SET(KOKKOS_LINALG_CUDALIBS "kokkoslinalg_cuda")
+SET(CUDA_SOURCES Kokkos_DefaultArithmetic.cu 
+#                Kokkos_DefaultBlockSparseOps.cu 
+#                Kokkos_DefaultSparseOps.cu 
+#                Kokkos_DefaultRelaxation.cu
+   )
+
+ASSERT_DEFINED(Kokkos_ENABLE_Thrust)
+IF (Kokkos_ENABLE_Thrust)
+  # this pulls in Thrust, CUSP, and Kokkos/NodeAPI
+  #include_directories(${Kokkos_INCLUDE_DIRS})
+  PACKAGE_ADD_CUDA_LIBRARY(kokkoslinalg_cuda SOURCES ${CUDA_SOURCES})
+  #APPEND_SET(KOKKOS_LINALG_CUDALIBS "kokkoslinalg_cuda")
+  #TARGET_LINK_LIBRARIES(kokkoslinalg_cuda teuchos)
+  #SET(KOKKOS_LINALG_CUDALIBS "kokkoslinalg_cuda")
 #ELSE()
 #  SET(KOKKOS_LINALG_CUDALIBS "")
-#ENDIF()
+ENDIF()
 
 #
 # C) Define the targets for package's library(s)
@@ -89,7 +89,7 @@ TRIBITS_ADD_LIBRARY(
   kokkoslinalg
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS kokkos kokkosnodeapi ${KOKKOS_LINALG_CUDALIBS}
+  #DEPLIBS kokkos kokkosnodeapi ${KOKKOS_LINALG_CUDALIBS}
   )
 
 TRIBITS_ADD_TEST_DIRECTORIES(examples)

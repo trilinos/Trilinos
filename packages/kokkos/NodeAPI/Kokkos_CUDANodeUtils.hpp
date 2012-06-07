@@ -172,7 +172,9 @@ namespace Kokkos {
 
   template <class T>
   CUDANodeHostPinnedDeallocator<T>::CUDANodeHostPinnedDeallocator()
+#ifdef HAVE_KOKKOS_DEBUG 
   : originalHostPtr_(NULL)
+#endif
   { }
 
   template <class T>
