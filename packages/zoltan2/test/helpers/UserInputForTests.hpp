@@ -7,6 +7,9 @@
  *  \brief Generate input for testing purposes.
  */
 
+#ifndef USERINPUTFORTESTS
+#define USERINPUTFORTESTS
+
 #include <Zoltan2_XpetraTraits.hpp>
 
 #include <Tpetra_MultiVector.hpp>
@@ -1135,3 +1138,5 @@ string UserInputForTests::shortPathName(std::ostringstream &oss, string dirName)
     shorterName = shorterName.substr(pos+1);
   return shorterName;
 }
+
+#endif

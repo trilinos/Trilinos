@@ -1,5 +1,18 @@
-#include <Tpetra_config.h>
-#include <Kokkos_DefaultNode.hpp>
+// @HEADER
+// ***********************************************************************
+//
+//                Copyright message goes here.
+//
+// ***********************************************************************
+// @HEADER
+
+/*! \file Zoltan2_TestHelpers.hpp
+    \brief common code used by tests
+*/
+#ifndef ZOLTAN2_TESTHELPERS_HPP
+#define ZOLTAN2_TESTHELPERS_HPP
+
+#include <Zoltan2_Util.hpp>
 #include <iostream>
 
 typedef Kokkos::DefaultNode::DefaultNodeType node_t;
@@ -81,3 +94,4 @@ typedef double scalar_t;
 #include <ErrorHandlingForTests.hpp>  
 #include <UserInputForTests.hpp>
 
+#endif
