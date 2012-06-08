@@ -40,11 +40,9 @@ void ML_qr_fix_setNumDeadNod(int num)
      QRFixStructure->numAggsWithDeadDofs = num;
 }
 
-/*
-   nodeNum -- local aggregate number
-   aggSize -- number of DOFs in this aggregate
-   nullspaceDim -- dimension of nullspace
-*/
+//   nodeNum -- local aggregate number
+//   aggSize -- number of DOFs in this aggregate
+//   nullspaceDim -- dimension of nullspace
 void ML_qr_fix_markDOFsAsDead(const int nodeNum, const int aggSize, const int nullspaceDim)
 {
   if (QRFixStructure == NULL) return;
