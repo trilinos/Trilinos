@@ -243,8 +243,14 @@ namespace {
     X.initializeValues( N,1, xdat,N);
     AX.initializeValues(N,1,axdat,N);
     DefaultArithmetic<MV>::Init( X,1);
+#ifdef HAVE_KOKKOS_DEBUG
+    node->sync();
+#endif
     // AX = A*X
     dsm.multiply(Teuchos::NO_TRANS,ONE,X,AX);
+#ifdef HAVE_KOKKOS_DEBUG
+    node->sync();
+#endif
     // AX should be all ones
     {
       ArrayRCP<const Scalar> axview = node->template viewBuffer<Scalar>(N,axdat);

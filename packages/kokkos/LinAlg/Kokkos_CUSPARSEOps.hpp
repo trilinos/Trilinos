@@ -83,9 +83,17 @@ namespace Kokkos {
 
   namespace CUSPARSEdetails {
 
-    void initCUSPARSEsession();
+    class Session {
+      public:
+        //! Must be called to initialize the CUSPARSE session.
+        static void init();
 
-    static RCP<cusparseHandle_t> session_handle;
+        //! Accessor for CUSPARSE session.
+        static RCP<const cusparseHandle_t> getHandle();
+
+      private:
+        static RCP<cusparseHandle_t> session_handle_;
+    };
 
     RCP<cusparseMatDescr_t>           createMatDescr();
     RCP<cusparseSolveAnalysisInfo_t>  createSolveAnalysisInfo();
@@ -375,7 +383,7 @@ namespace Kokkos {
   , isInitialized_(false)
   , isEmpty_(false)
   {
-    CUSPARSEdetails::initCUSPARSEsession();
+    CUSPARSEdetails::Session::init();
     // Make sure that users only specialize for Kokkos Node types that are CUDA Nodes 
     Teuchos::CompileTimeAssert<Node::isCUDANode == false> cta; (void)cta;
   }
@@ -735,7 +743,7 @@ namespace Kokkos {
 
     //@}
 
-  protected:
+  private:
     //! Copy constructor (protected and unimplemented)
     CUSPARSEOps(const CUSPARSEOps& source);
 
@@ -864,12 +872,13 @@ namespace Kokkos {
     ArrayRCP<const int> devptrs = graph.getDevPointers(),
                         devinds = graph.getDevIndices();
 
+    RCP<const cusparseHandle_t> hndl = CUSPARSEdetails::Session::getHandle();
     // look at the parameter list and do any analyses requested for solves
     RCP<cusparseSolveAnalysisInfo_t> ai_non, ai_trans, ai_conj;
     if (params != null && params->get("Prepare Solve",false)) {
       ai_non = CUSPARSEdetails::createSolveAnalysisInfo();
       cusparseStatus_t stat = CUSPARSEdetails::CUSPARSETemplateAdaptors<Scalar>::CSRSM_analysis(
-          *CUSPARSEdetails::session_handle,CUSPARSE_OPERATION_NON_TRANSPOSE,numRows,
+          *hndl, CUSPARSE_OPERATION_NON_TRANSPOSE,numRows,
           numnz, *descr, devvals.getRawPtr(), devptrs.getRawPtr(), devinds.getRawPtr(),
           *ai_non);
       TEUCHOS_TEST_FOR_EXCEPTION(stat != CUSPARSE_STATUS_SUCCESS, std::runtime_error,
@@ -878,7 +887,7 @@ namespace Kokkos {
     if (params != null && params->get("Prepare Tranpose Solve",false)) {
       ai_trans = CUSPARSEdetails::createSolveAnalysisInfo();
       cusparseStatus_t stat = CUSPARSEdetails::CUSPARSETemplateAdaptors<Scalar>::CSRSM_analysis(
-          *CUSPARSEdetails::session_handle,CUSPARSE_OPERATION_TRANSPOSE,numRows,
+          *hndl, CUSPARSE_OPERATION_TRANSPOSE,numRows,
           numnz, *descr, devvals.getRawPtr(), devptrs.getRawPtr(), devinds.getRawPtr(),
           *ai_trans);
       TEUCHOS_TEST_FOR_EXCEPTION(stat != CUSPARSE_STATUS_SUCCESS, std::runtime_error,
@@ -887,7 +896,7 @@ namespace Kokkos {
     if (params != null && params->get("Prepare Conjugate Tranpose Solve",false)) {
       ai_conj = CUSPARSEdetails::createSolveAnalysisInfo();
       cusparseStatus_t stat = CUSPARSEdetails::CUSPARSETemplateAdaptors<Scalar>::CSRSM_analysis(
-          *CUSPARSEdetails::session_handle,CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE,numRows,
+          *hndl, CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE,numRows,
           numnz, *descr, devvals.getRawPtr(), devptrs.getRawPtr(), devinds.getRawPtr(),
           *ai_conj);
       TEUCHOS_TEST_FOR_EXCEPTION(stat != CUSPARSE_STATUS_SUCCESS, std::runtime_error,
@@ -955,7 +964,7 @@ namespace Kokkos {
   , numNZ_(0)
   , isInitialized_(false)
   {
-    CUSPARSEdetails::initCUSPARSEsession();
+    CUSPARSEdetails::Session::init();
     // Make sure that users only specialize for Kokkos Node types that are CUDA Nodes 
     Teuchos::CompileTimeAssert<Node::isCUDANode == false> cta; (void)cta;
   }
@@ -1039,9 +1048,10 @@ namespace Kokkos {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       solveInfo == null, std::runtime_error, 
       "solve info not computed at matrix finalization time for requested transformation: " << trans);
+    RCP<const cusparseHandle_t> hndl = CUSPARSEdetails::Session::getHandle();
     const Scalar s_alpha = Teuchos::ScalarTraits<Scalar>::one();
     cusparseStatus_t stat = CUSPARSEdetails::CUSPARSETemplateAdaptors<Scalar>::CSRSM_solve(
-        *CUSPARSEdetails::session_handle, op, numMatRows, numRHS, &s_alpha, 
+        *hndl, op, numMatRows, numRHS, &s_alpha, 
         *matdescr_, rowVals_.getRawPtr(), rowPtrs_.getRawPtr(), colInds_.getRawPtr(), *solveInfo, 
         data_y, stride_y, data_x, stride_x);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -1085,13 +1095,58 @@ namespace Kokkos {
     if      (trans == Teuchos::NO_TRANS)   op = CUSPARSE_OPERATION_NON_TRANSPOSE;
     else if (trans == Teuchos::TRANS)      op = CUSPARSE_OPERATION_TRANSPOSE;
     else if (trans == Teuchos::CONJ_TRANS) op = CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE;
-    RCP<cusparseHandle_t> sess = CUSPARSEdetails::session_handle;
+    RCP<const cusparseHandle_t> sess = CUSPARSEdetails::Session::getHandle();
     const Scalar s_alpha = (Scalar)alpha,
                  s_beta  = Teuchos::ScalarTraits<Scalar>::zero();
-    cusparseStatus_t stat = CUSPARSEdetails::CUSPARSETemplateAdaptors<Scalar>::CSRMM(
-        *sess, op, numMatRows, numMatCols, numRHS, numNZ_, &s_alpha, 
-        *matdescr_, rowVals_.getRawPtr(), rowPtrs_.getRawPtr(), colInds_.getRawPtr(), 
-        data_x, stride_x, &s_beta, data_y, stride_y);
+#ifdef HAVE_KOKKOS_DEBUG
+    cudaError_t err = cudaGetLastError();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( cudaSuccess != err, std::runtime_error, 
+        ": cudaGetLastError() returned error after function call:\n"
+        << cudaGetErrorString(err) );
+    err = cudaThreadSynchronize();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( cudaSuccess != err, std::runtime_error, 
+        ": cudaThreadSynchronize() returned error after function call:\n"
+        << cudaGetErrorString(err) );
+#endif
+    cusparseStatus_t stat;
+    //stat = CUSPARSEdetails::CUSPARSETemplateAdaptors<Scalar>::CSRMM(
+    //    *sess, op, numMatRows, numMatCols, numRHS, numNZ_, &s_alpha, 
+    //    *matdescr_, rowVals_.getRawPtr(), rowPtrs_.getRawPtr(), colInds_.getRawPtr(), 
+    //    data_x, stride_x, &s_beta, data_y, stride_y);
+    // TEST METHODOLOGY
+    {
+      cusparseHandle_t hndl;
+      stat = cusparseCreate(&hndl);
+      TEUCHOS_TEST_FOR_EXCEPT(stat != CUSPARSE_STATUS_SUCCESS);
+      cusparseMatDescr_t desc;
+      stat = cusparseCreateMatDescr(&desc);
+      TEUCHOS_TEST_FOR_EXCEPT(stat != CUSPARSE_STATUS_SUCCESS);
+      stat = cusparseSetMatDiagType(desc, CUSPARSE_DIAG_TYPE_NON_UNIT);
+      TEUCHOS_TEST_FOR_EXCEPT(stat != CUSPARSE_STATUS_SUCCESS);
+      stat = cusparseSetMatIndexBase(desc, CUSPARSE_INDEX_BASE_ZERO);
+      TEUCHOS_TEST_FOR_EXCEPT(stat != CUSPARSE_STATUS_SUCCESS);
+      stat = cusparseSetMatType(desc, CUSPARSE_MATRIX_TYPE_GENERAL);
+      TEUCHOS_TEST_FOR_EXCEPT(stat != CUSPARSE_STATUS_SUCCESS);
+      cusparseStatus_t stat = CUSPARSEdetails::CUSPARSETemplateAdaptors<Scalar>::CSRMM(
+          hndl, op, numMatRows, numMatCols, numRHS, numNZ_, &s_alpha, 
+          desc, rowVals_.getRawPtr(), rowPtrs_.getRawPtr(), colInds_.getRawPtr(), 
+          data_x, stride_x, &s_beta, data_y, stride_y);
+      stat = cusparseDestroyMatDescr(desc);
+      TEUCHOS_TEST_FOR_EXCEPT(stat != CUSPARSE_STATUS_SUCCESS);
+      stat = cusparseDestroy(hndl);
+      TEUCHOS_TEST_FOR_EXCEPT(stat != CUSPARSE_STATUS_SUCCESS);
+    }
+    // END TEST
+#ifdef HAVE_KOKKOS_DEBUG
+    err = cudaGetLastError();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( cudaSuccess != err, std::runtime_error, 
+        ": cudaGetLastError() returned error after function call:\n"
+        << cudaGetErrorString(err) );
+    err = cudaThreadSynchronize();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( cudaSuccess != err, std::runtime_error, 
+        ": cudaThreadSynchronize() returned error after function call:\n"
+        << cudaGetErrorString(err) );
+#endif
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         stat != CUSPARSE_STATUS_SUCCESS, 
         std::runtime_error, ": CSRMM returned error " << stat);
@@ -1129,15 +1184,26 @@ namespace Kokkos {
         std::runtime_error, "Y does not have the same number of rows as does the matrix.")
     // call mat-vec
     cusparseOperation_t op;
+    RCP<const cusparseHandle_t> hndl = CUSPARSEdetails::Session::getHandle();
     if      (trans == Teuchos::NO_TRANS)   op = CUSPARSE_OPERATION_NON_TRANSPOSE;
     else if (trans == Teuchos::TRANS)      op = CUSPARSE_OPERATION_TRANSPOSE;
     else if (trans == Teuchos::CONJ_TRANS) op = CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE;
     const Scalar s_alpha = (Scalar)alpha,
                  s_beta  = (Scalar)beta;
     cusparseStatus_t stat = CUSPARSEdetails::CUSPARSETemplateAdaptors<Scalar>::CSRMM(
-        *CUSPARSEdetails::session_handle, op, numMatRows, numMatCols, numRHS, numNZ_, &s_alpha, 
+        *hndl, op, numMatRows, numMatCols, numRHS, numNZ_, &s_alpha, 
         *matdescr_, rowVals_.getRawPtr(), rowPtrs_.getRawPtr(), colInds_.getRawPtr(), 
         data_x, stride_x, &s_beta, data_y, stride_y);
+#ifdef HAVE_KOKKOS_DEBUG
+    cudaError_t err = cudaGetLastError();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( cudaSuccess != err, std::runtime_error, 
+        ": cudaGetLastError() returned error after function call:\n"
+        << cudaGetErrorString(err) );
+    err = cudaThreadSynchronize();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( cudaSuccess != err, std::runtime_error, 
+        ": cudaThreadSynchronize() returned error after function call:\n"
+        << cudaGetErrorString(err) );
+#endif
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         stat != CUSPARSE_STATUS_SUCCESS, 
         std::runtime_error, ": CSRMM returned error " << stat);

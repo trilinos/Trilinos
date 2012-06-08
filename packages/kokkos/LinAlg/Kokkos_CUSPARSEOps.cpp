@@ -1,23 +1,27 @@
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_CUSPARSEOps.hpp"
 
-Teuchos::RCP<cusparseHandle_t> Kokkos::CUSPARSEdetails::session_handle = Teuchos::null;
+Teuchos::RCP<cusparseHandle_t> Kokkos::CUSPARSEdetails::Session::session_handle_ = Teuchos::null;
 
-void Kokkos::CUSPARSEdetails::initCUSPARSEsession() 
+void Kokkos::CUSPARSEdetails::Session::init() 
 {
-  if (session_handle == null) {
+  if (session_handle_ == null) {
     cusparseHandle_t *hndl = new cusparseHandle_t;
     cusparseStatus_t status = cusparseCreate(hndl);
     TEUCHOS_TEST_FOR_EXCEPTION(status == CUSPARSE_STATUS_NOT_INITIALIZED, std::runtime_error, 
-        "Kokkos::CUSPARSEdetails::initCUSPARSEsession(): the CUDA Runtime initialization failed.")
+        "Kokkos::CUSPARSEdetails::init(): the CUDA Runtime initialization failed.")
     TEUCHOS_TEST_FOR_EXCEPTION(status == CUSPARSE_STATUS_ALLOC_FAILED, std::runtime_error, 
-        "Kokkos::CUSPARSEdetails::initCUSPARSEsession(): the resources could not be allocated.")
+        "Kokkos::CUSPARSEdetails::init(): the resources could not be allocated.")
     TEUCHOS_TEST_FOR_EXCEPTION(status == CUSPARSE_STATUS_ARCH_MISMATCH, std::runtime_error, 
-        "Kokkos::CUSPARSEdetails::initCUSPARSEsession(): the device compute capability (CC) is less than 1.1.")
+        "Kokkos::CUSPARSEdetails::init(): the device compute capability (CC) is less than 1.1.")
     TEUCHOS_TEST_FOR_EXCEPTION(status != CUSPARSE_STATUS_SUCCESS, std::runtime_error, 
-        "Kokkos::CUSPARSEdetails::initCUSPARSEsession(): unspecified error.")
-    session_handle = Teuchos::rcpWithDealloc(hndl,CUSPARSESessionDestroyer(),true);
+        "Kokkos::CUSPARSEdetails::init(): unspecified error.")
+    session_handle_ = Teuchos::rcpWithDealloc(hndl,CUSPARSESessionDestroyer(),true);
   }
+}
+
+Teuchos::RCP<const cusparseHandle_t> Kokkos::CUSPARSEdetails::Session::getHandle() {
+  return session_handle_;
 }
 
 Teuchos::RCP<cusparseMatDescr_t> Kokkos::CUSPARSEdetails::createMatDescr() 
