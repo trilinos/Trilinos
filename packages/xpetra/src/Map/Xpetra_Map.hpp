@@ -45,19 +45,19 @@ namespace Xpetra {
     //! The minimum local index.
     virtual LocalOrdinal getMinLocalIndex() const = 0;
 
-    //! The maximum local index.
+    //! The maximum local index on the calling process.
     virtual LocalOrdinal getMaxLocalIndex() const = 0;
 
-    //! The minimum global index owned by this node.
+    //! The minimum global index owned by the calling process.
     virtual GlobalOrdinal getMinGlobalIndex() const = 0;
 
-    //! The maximum global index owned by this node.
+    //! The maximum global index owned by the calling process.
     virtual GlobalOrdinal getMaxGlobalIndex() const = 0;
 
-    //! The minimum global index over all nodes.
+    //! The minimum global index over all processes in the communicator.
     virtual GlobalOrdinal getMinAllGlobalIndex() const = 0;
 
-    //! The maximum global index over all nodes.
+    //! The maximum global index over all processes in the communicator.
     virtual GlobalOrdinal getMaxAllGlobalIndex() const = 0;
 
     //! The local index corresponding to the given global index.
@@ -66,10 +66,10 @@ namespace Xpetra {
     //! The global index corresponding to the given local index.
     virtual GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const = 0;
 
-    //! Process IDs and corresponding local IDs for a given list of global IDs.
+    //! Return the process IDs and corresponding local IDs for the given global IDs.
     virtual LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< LocalOrdinal > &LIDList) const = 0;
 
-    //! Return the node IDs for a given list of global IDs.
+    //! Return the process IDs for the given global IDs.
     virtual LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const = 0;
 
     //! Return a view of the global indices owned by this node.

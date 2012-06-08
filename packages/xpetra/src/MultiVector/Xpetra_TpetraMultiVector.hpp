@@ -39,26 +39,26 @@ namespace Xpetra {
 
   public:
 
-    //! @name Constructor/Destructor Methods
+    //! @name Constructors and destructor
     //@{
 
-    //! Basic MultiVector constuctor.
+    //! Basic constuctor.
     TpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, size_t NumVectors, bool zeroOut=true)
       : vec_(Teuchos::rcp(new Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(toTpetra(map), NumVectors, zeroOut))) {  }
 
-    //! MultiVector copy constructor.
+    //! Copy constructor (performs a deep copy).
     TpetraMultiVector(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source)
       : vec_(Teuchos::rcp(new Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(toTpetra(source)))) {  }
 
-    //! Set multi-vector values from two-dimensional array using Teuchos memory management classes. (copy).
+    //! Set multi-vector values from two-dimensional array (copy).
     TpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Scalar > &A, size_t LDA, size_t NumVectors)
       : vec_(Teuchos::rcp(new Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(toTpetra(map), A, LDA, NumVectors))) {  }
 
-    //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy).
+    //! Set multi-vector values from array of pointers (copy).
     TpetraMultiVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors)
       : vec_(Teuchos::rcp(new Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(toTpetra(map), ArrayOfPtrs, NumVectors))) {  }
 
-    //! MultiVector destructor.
+    //! Destructor (virtual for memory safety of derived classes).
     virtual ~TpetraMultiVector() {  }
 
     //@}

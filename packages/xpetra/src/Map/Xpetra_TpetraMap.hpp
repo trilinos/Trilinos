@@ -34,15 +34,15 @@ namespace Xpetra {
     //! @name Constructors and destructor
     //@{
 
-    //! Map constructor with Tpetra-defined contiguous uniform distribution.
+    //! Constructor with Tpetra-defined contiguous uniform distribution.
     TpetraMap(global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalGlobal lg=GloballyDistributed, const Teuchos::RCP< Node > &node=Kokkos::DefaultNode::getDefaultNode())
       : map_(Teuchos::rcp(new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalElements, indexBase, comm, toTpetra(lg), node))) {  }
 
-    //! Map constructor with a user-defined contiguous distribution.
+    //! Constructor with a user-defined contiguous distribution.
     TpetraMap(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=Kokkos::DefaultNode::getDefaultNode())
       : map_(Teuchos::rcp(new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalElements, numLocalElements, indexBase, comm, node))) {  }
 
-    //! Map constructor with user-defined non-contiguous (arbitrary) distribution.
+    //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
     TpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView< const GlobalOrdinal > &elementList, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=Kokkos::DefaultNode::getDefaultNode())
       : map_(Teuchos::rcp(new Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >(numGlobalElements, elementList, indexBase, comm, node))) {  }
 
@@ -66,19 +66,19 @@ namespace Xpetra {
     //! The minimum local index.
     LocalOrdinal getMinLocalIndex() const { XPETRA_MONITOR("TpetraMap::getMinLocalIndex"); return map_->getMinLocalIndex(); }
 
-    //! The maximum local index.
+    //! The maximum local index on the calling process.
     LocalOrdinal getMaxLocalIndex() const { XPETRA_MONITOR("TpetraMap::getMaxLocalIndex"); return map_->getMaxLocalIndex(); }
 
-    //! The minimum global index owned by this node.
+    //! The minimum global index owned by the calling process.
     GlobalOrdinal getMinGlobalIndex() const { XPETRA_MONITOR("TpetraMap::getMinGlobalIndex"); return map_->getMinGlobalIndex(); }
 
-    //! The maximum global index owned by this node.
+    //! The maximum global index owned by the calling process.
     GlobalOrdinal getMaxGlobalIndex() const { XPETRA_MONITOR("TpetraMap::getMaxGlobalIndex"); return map_->getMaxGlobalIndex(); }
 
-    //! The minimum global index over all nodes.
+    //! The minimum global index over all processes in the communicator.
     GlobalOrdinal getMinAllGlobalIndex() const { XPETRA_MONITOR("TpetraMap::getMinAllGlobalIndex"); return map_->getMinAllGlobalIndex(); }
 
-    //! The maximum global index over all nodes.
+    //! The maximum global index over all processes in the communicator.
     GlobalOrdinal getMaxAllGlobalIndex() const { XPETRA_MONITOR("TpetraMap::getMaxAllGlobalIndex"); return map_->getMaxAllGlobalIndex(); }
 
     //! The local index corresponding to the given global index.
@@ -87,10 +87,10 @@ namespace Xpetra {
     //! The global index corresponding to the given local index.
     GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const { XPETRA_MONITOR("TpetraMap::getGlobalElement"); return map_->getGlobalElement(localIndex); }
 
-    //! Process IDs and corresponding local IDs for a given list of global IDs.
+    //! Return the process IDs and corresponding local IDs for the given global IDs.
     LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< LocalOrdinal > &LIDList) const { XPETRA_MONITOR("TpetraMap::getRemoteIndexList"); return toXpetra(map_->getRemoteIndexList(GIDList, nodeIDList, LIDList)); }
 
-    //! Return the node IDs for a given list of global IDs.
+    //! Return the process IDs for the given global IDs.
     LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const { XPETRA_MONITOR("TpetraMap::getRemoteIndexList"); return toXpetra(map_->getRemoteIndexList(GIDList, nodeIDList)); }
 
     //! Return a view of the global indices owned by this node.

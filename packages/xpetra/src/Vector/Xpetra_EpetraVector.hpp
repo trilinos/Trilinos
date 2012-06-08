@@ -49,7 +49,7 @@ namespace Xpetra {
     //@{
 
     //! Sets all vector entries to zero.
-    explicit EpetraVector(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, bool zeroOut=true);
+    explicit EpetraVector(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, bool zeroOut=true);
 
     //! Vector copy constructor.
     EpetraVector(const Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source);
