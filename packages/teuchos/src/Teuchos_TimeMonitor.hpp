@@ -441,7 +441,7 @@ public:
   ///   its \c ptr() method:
   ///   \code
   ///   RCP<const Comm<int> > myComm = ...;
-  ///   TimeMonitor::summarize (myComm.ptr());
+  ///   TimeMonitor::report (myComm.ptr (), ...);
   ///   \endcode
   ///
   /// \param out [out] Output stream to which to write.  This will

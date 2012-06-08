@@ -291,6 +291,9 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   im_ex_get_init_l (id, title, &numDim, &numNodes, &numElems, &numElemBlk,
                     &numNodeSets, &numSideSets);
 
+  TEUCHOS_TEST_FOR_EXCEPTION(numElems == 0, std::runtime_error,
+    "The number of elements in the mesh is zero.");
+
   long long numNodesGlobal;
   long long numElemsGlobal;
   long long numElemBlkGlobal;

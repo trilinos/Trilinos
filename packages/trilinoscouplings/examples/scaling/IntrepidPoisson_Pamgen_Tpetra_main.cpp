@@ -71,6 +71,7 @@ main (int argc, char *argv[])
 
   using TpetraIntrepidPoissonExample::exactResidualNorm;
   using TpetraIntrepidPoissonExample::makeMatrixAndRightHandSide;
+  using TpetraIntrepidPoissonExample::solveWithBelos;
   using IntrepidPoissonExample::makeMeshInput;
   using IntrepidPoissonExample::setCommandLineArgumentDefaults;
   using IntrepidPoissonExample::setUpCommandLineArguments;
@@ -79,17 +80,19 @@ main (int argc, char *argv[])
   using Teuchos::Comm;
   using Teuchos::outArg;
   using Teuchos::ParameterList;
+  using Teuchos::parameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
   using Teuchos::getFancyOStream;
   using Teuchos::FancyOStream;
   using std::endl;
-  // Pull in typedefs from the IntrepidExample namespace.
+  // Pull in typedefs from the example's namespace.
   typedef TpetraIntrepidPoissonExample::ST ST;
   typedef TpetraIntrepidPoissonExample::Node Node;
   typedef Teuchos::ScalarTraits<ST> STS;
   typedef STS::magnitudeType MT;
+  typedef Teuchos::ScalarTraits<MT> STM;
   typedef TpetraIntrepidPoissonExample::sparse_matrix_type sparse_matrix_type;
   typedef TpetraIntrepidPoissonExample::vector_type vector_type;
 
@@ -149,6 +152,9 @@ main (int argc, char *argv[])
   // the number of cells along each dimension.
   std::string meshInput;
   if (xmlInputParamsFile == "") {
+    *out << "Generating mesh input string: nx = " << nx
+         << ", ny = " << ny
+         << ", nz = " << nz << endl;
     meshInput = makeMeshInput (nx, ny, nz);
   }
   else {
@@ -192,8 +198,18 @@ main (int argc, char *argv[])
        << "||B||_2 = " << norms[1] << endl
        << "||A||_F = " << norms[2] << endl;
 
+  bool converged = false;
+  int numItersPerformed = 0;
+  const MT tol = STM::squareroot (STM::eps ());
+  const int maxNumIters = 100;
+  solveWithBelos (converged, numItersPerformed, tol, maxNumIters,
+                  X, A, B, Teuchos::null, Teuchos::null);
+
   // Summarize timings
-  Teuchos::TimeMonitor::summarize (*out);
+  RCP<ParameterList> reportParams = parameterList ("TimeMonitor::report");
+  reportParams->set ("Report format", std::string ("YAML"));
+  reportParams->set ("writeGlobalStats", true);
+  Teuchos::TimeMonitor::report (*out, reportParams);
   return EXIT_SUCCESS;
 }
 

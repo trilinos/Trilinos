@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          KokkosArray: Node API and Parallel Node Kernels
+//          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -390,6 +390,11 @@ box_mesh_fixture( const size_t proc_count ,
     send_count = 0 ;
 
     for ( size_t i = 1 ; i < proc_count ; ++i ) {
+
+      // Order sending starting with the local processor rank 
+      // to try to smooth out the amount of messages simultaneously
+      // send to a particular processor.
+
       const int proc = ( proc_local + i ) % proc_count ;
       if ( node_part_counts[i] ) {
         mesh.parallel_data_map.host_recv(recv_msg_count,0) = proc ;

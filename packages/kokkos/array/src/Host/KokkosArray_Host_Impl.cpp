@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 //
-//          KokkosArray: Node API and Parallel Node Kernels
+//          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -340,6 +340,10 @@ bool HostInternal::spawn_threads( const size_type gang_count ,
 
       // Check if the thread initialized and bound correctly:
       ok_spawn_threads = HostThread::ThreadActive == m_master_thread.m_state ;
+
+      if ( ok_spawn_threads ) { // Wait for spawned thread to deactivate
+        m_thread[ rank ]->wait( HostThread::ThreadActive );
+      }
     }
   }
 

@@ -2215,7 +2215,6 @@ namespace Tpetra {
                   const ArrayView<const LocalOrdinal> &permuteFromLIDs)
   {
     using Teuchos::as;
-    typedef Scalar ST;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef Node NT;
@@ -2225,7 +2224,7 @@ namespace Tpetra {
 
     // This dynamic cast should succeed, because we've already tested
     // it in checkSizes().
-    typedef CrsMatrix<ST, LO, GO, NT, LocalMatOps> this_type;
+    typedef CrsMatrix<Scalar, LO, GO, NT, LocalMatOps> this_type;
     const this_type& sourceMatrix = dynamic_cast<const this_type&> (source);
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(permuteToLIDs.size() != permuteFromLIDs.size(),
@@ -2238,7 +2237,7 @@ namespace Tpetra {
     // This involves copying rows corresponding to LIDs [0, numSame-1].
     //
     Array<GO> rowInds;
-    Array<ST> rowVals;
+    Array<Scalar> rowVals;
     LO sourceLID = 0;
     for (size_t i = 0; i < numSameIDs; ++i, ++sourceLID) {
       // Global ID for the current row index in the source matrix.
@@ -2249,7 +2248,7 @@ namespace Tpetra {
 
       // Input views for the combineGlobalValues() call below.
       ArrayView<const GO> rowIndsConstView;
-      ArrayView<const ST> rowValsConstView;
+      ArrayView<const Scalar> rowValsConstView;
 
       if (sourceIsLocallyIndexed) {
         const size_t rowLength = sourceMatrix.getNumEntriesInGlobalRow (sourceGID);
@@ -2260,7 +2259,7 @@ namespace Tpetra {
         // Resizing invalidates an Array's views, so we must make new
         // ones, even if rowLength hasn't changed.
         ArrayView<GO> rowIndsView = rowInds.view (0, rowLength);
-        ArrayView<ST> rowValsView = rowVals.view (0, rowLength);
+        ArrayView<Scalar> rowValsView = rowVals.view (0, rowLength);
 
         // The source matrix is locally indexed, so we have to get a
         // copy.  Really it's the GIDs that have to be copied (because
@@ -2307,7 +2306,7 @@ namespace Tpetra {
 
       // Input views for the combineGlobalValues() call below.
       ArrayView<const GO> rowIndsConstView;
-      ArrayView<const ST> rowValsConstView;
+      ArrayView<const Scalar> rowValsConstView;
 
       if (sourceIsLocallyIndexed) {
         const size_t rowLength = sourceMatrix.getNumEntriesInGlobalRow (sourceGID);
@@ -2318,7 +2317,7 @@ namespace Tpetra {
         // Resizing invalidates an Array's views, so we must make new
         // ones, even if rowLength hasn't changed.
         ArrayView<GO> rowIndsView = rowInds.view (0, rowLength);
-        ArrayView<ST> rowValsView = rowVals.view (0, rowLength);
+        ArrayView<Scalar> rowValsView = rowVals.view (0, rowLength);
 
         // The source matrix is locally indexed, so we have to get a
         // copy.  Really it's the GIDs that have to be copied (because
@@ -2368,7 +2367,6 @@ namespace Tpetra {
                   size_t& constantNumPackets,
                   Distributor &distor)
   {
-    typedef Scalar ST;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef typename ArrayView<const LO>::size_type size_type;
@@ -2383,7 +2381,7 @@ namespace Tpetra {
     // checkSizes() and copyAndPermute() first.  At least one of the
     // latter two methods must have successfully done the cast in
     // order for doTransfer() to get to this point.
-    typedef CrsMatrix<ST, LO, GO, Node, LocalMatOps> this_type;
+    typedef CrsMatrix<Scalar, LO, GO, Node, LocalMatOps> this_type;
     const this_type& src_mat = dynamic_cast<const this_type&> (source);
     const bool src_is_locally_indexed = src_mat.isLocallyIndexed();
     constantNumPackets = 0;
@@ -2391,7 +2389,7 @@ namespace Tpetra {
     // first, set the contents of numPacketsPerLID, and accumulate a total-num-packets:
     // grab the max row size, while we're at it. may need it below.
     // Subtle: numPacketsPerLID is for byte-packets, so it needs to be multiplied
-    const size_t SizeOfOrdValPair = sizeof(GO) + sizeof(ST);
+    const size_t SizeOfOrdValPair = sizeof(GO) + sizeof(Scalar);
     size_t totalNumEntries = 0;
     size_t maxExpRowLength = 0;
     for (size_type i = 0; i < exportLIDs.size(); ++i) {
@@ -2413,7 +2411,7 @@ namespace Tpetra {
 
       ArrayView<char> avIndsC, avValsC;
       ArrayView<GO>   avInds;
-      ArrayView<ST>   avVals;
+      ArrayView<Scalar>   avVals;
 
       // now loop again and pack rows of indices into exports:
       // if global indices exist in the source, then we can use view semantics
@@ -2421,7 +2419,7 @@ namespace Tpetra {
       size_t curOffsetInBytes = 0;
       if (src_is_locally_indexed) {
         Array<GO> row_inds (maxExpRowLength);
-        Array<ST> row_vals (maxExpRowLength);
+        Array<Scalar> row_vals (maxExpRowLength);
         for (size_type i = 0; i < exportLIDs.size(); ++i) {
           // Get a copy of the current row's data.  We get a copy and
           // not a view, because the indices are stored as local
@@ -2436,7 +2434,7 @@ namespace Tpetra {
 
           // Get views of the spots in the exports array in which to
           // put the indices resp. values.  The type cast makes the
-          // views look like GO resp. ST, when the array they are
+          // views look like GO resp. Scalar, when the array they are
           // viewing is really an array of char.
           //
           // FIXME (mfh 14 Mar 2012): Why do we need the reinterpret
@@ -2444,9 +2442,9 @@ namespace Tpetra {
           // there are no Comm functions for sending and receiving
           // pairs?  How hard can that be to implement?
           avIndsC = exports(curOffsetInBytes, rowSize*sizeof(GO));
-          avValsC = exports(curOffsetInBytes+rowSize*sizeof(GO), rowSize*sizeof(ST));
+          avValsC = exports(curOffsetInBytes+rowSize*sizeof(GO), rowSize*sizeof(Scalar));
           avInds = av_reinterpret_cast<GO> (avIndsC);
-          avVals = av_reinterpret_cast<ST> (avValsC);
+          avVals = av_reinterpret_cast<Scalar> (avValsC);
           // Copy the source matrix's row data into the views of the
           // exports array for indices resp. values.
           std::copy (row_inds.begin(), row_inds.begin()+rowSize, avInds.begin());
@@ -2457,7 +2455,7 @@ namespace Tpetra {
       }
       else { // the source matrix's indices are stored as GIDs, not LIDs.
         ArrayView<const GO> row_inds;
-        ArrayView<const ST> row_vals;
+        ArrayView<const Scalar> row_vals;
         for (size_type i = 0; i < exportLIDs.size(); ++i) {
           // Get a view of the current row's data.  We don't need to
           // get a copy, since the source matrix's indices are stored
@@ -2468,9 +2466,9 @@ namespace Tpetra {
           // Get views of the spots in the exports array in which to
           // put the indices resp. values.  See notes and FIXME above.
           avIndsC = exports(curOffsetInBytes, rowSize*sizeof(GO));
-          avValsC = exports(curOffsetInBytes+rowSize*sizeof(GO), rowSize*sizeof(ST));
+          avValsC = exports(curOffsetInBytes+rowSize*sizeof(GO), rowSize*sizeof(Scalar));
           avInds = av_reinterpret_cast<GO> (avIndsC);
-          avVals = av_reinterpret_cast<ST> (avValsC);
+          avVals = av_reinterpret_cast<Scalar> (avValsC);
           // Copy the source matrix's row data into the views of the
           // exports array for indices resp. values.
           std::copy (row_inds.begin(), row_inds.end(), avInds.begin());

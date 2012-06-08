@@ -92,6 +92,16 @@ APPEND_SET(HEADERS
   Teuchos_LAPACK_wrappers.hpp
   Teuchos_LabeledObject.hpp
   Teuchos_LocalTestingHelpers.hpp
+  Teuchos_MatrixMarket_assignScalar.hpp
+  Teuchos_MatrixMarket_Banner.hpp
+  Teuchos_MatrixMarket_CoordDataReader.hpp
+  Teuchos_MatrixMarket_generic.hpp
+  Teuchos_MatrixMarket_Raw_Adder.hpp
+  Teuchos_MatrixMarket_Raw_Checker.hpp
+  Teuchos_MatrixMarket_Raw_Reader.hpp
+  Teuchos_MatrixMarket_SetScientific.hpp
+  Teuchos_MatrixMarket_split.hpp
+  Teuchos_MatrixMarket_SymmetrizingAdder.hpp
   Teuchos_MPIComm.hpp
   Teuchos_MPISession.hpp
   Teuchos_MPITraits.hpp
@@ -206,6 +216,9 @@ APPEND_SET(SOURCES
   Teuchos_GlobalMPISession.cpp
   Teuchos_LAPACK.cpp
   Teuchos_LabeledObject.cpp
+  Teuchos_MatrixMarket_Banner.cpp
+  Teuchos_MatrixMarket_generic.cpp
+  Teuchos_MatrixMarket_split.cpp
   Teuchos_MPIComm.cpp
   Teuchos_MPISession.cpp
   Teuchos_Object.cpp
@@ -359,7 +372,7 @@ ENDIF()
 #
 
 IF (CMAKE_CXX_COMPILER_ID STREQUAL GNU)
-  # Must suppress strick aliasing warnings for this file!
+  # Must suppress strict aliasing warnings for this file!
   SET_SOURCE_FILES_PROPERTIES(
     Teuchos_stacktrace.cpp
     PROPERTIES COMPILE_FLAGS -fno-strict-aliasing

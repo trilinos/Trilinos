@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          KokkosArray: Node API and Parallel Node Kernels
+//          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -46,6 +46,7 @@
 
 #include <cmath>
 #include <impl/KokkosArray_Timer.hpp>
+#include <KokkosArray_Value.hpp>
 #include <KokkosArray_MultiVector.hpp>
 #include <KokkosArray_CrsArray.hpp>
 
@@ -110,22 +111,59 @@ void fill( const double alpha ,
 template< typename Scalar , class Device >
 double dot( const ParallelDataMap & data_map ,
             const MultiVector< Scalar , Device > & x ,
-            const MultiVector< Scalar , Device > & y )
+            const MultiVector< Scalar , Device > & y ,
+            const Value< double , Device > & temp_result )
 {
   typedef Impl::Dot< Scalar , Device , Impl::unsigned_<2> > op_type ;
 
-  double local_result =
-    Impl::Dot< Scalar , Device , Impl::unsigned_<2> >
-        ::apply( data_map.count_owned , x , y );
+  Impl::Dot< Scalar , Device , Impl::unsigned_<2> >
+      ::apply( data_map.count_owned , x , y , temp_result );
 
   double global_result = 0 ;
 
+  deep_copy( global_result , temp_result );
+
 #if defined( HAVE_MPI )
+
+  double local_result = global_result ;
 
   MPI_Allreduce( & local_result , & global_result , 1 , MPI_DOUBLE , MPI_SUM ,
                  data_map.machine.mpi_comm );
-#else
-  global_result = local_result ;
+
+#endif
+
+  return global_result ;
+}
+
+template< typename Scalar , class Device >
+double dot( const ParallelDataMap & data_map ,
+            const MultiVector< Scalar , Device > & x ,
+            const MultiVector< Scalar , Device > & y )
+{
+  typedef Value< double , Device > value_type ;
+  value_type temp_result = create_value< value_type >();
+  return dot( data_map , x , y , temp_result );
+}
+
+template< typename Scalar , class Device >
+double dot( const ParallelDataMap & data_map ,
+            const MultiVector< Scalar , Device > & x ,
+            const Value< double , Device > & temp_result )
+{
+  Impl::Dot< Scalar , Device , Impl::unsigned_<1> >
+      ::apply( data_map.count_owned , x , temp_result );
+
+  double global_result = 0 ;
+
+  deep_copy( global_result , temp_result );
+
+#if defined( HAVE_MPI )
+
+  double local_result = global_result ;
+
+  MPI_Allreduce( & local_result , & global_result , 1 , MPI_DOUBLE , MPI_SUM ,
+                 data_map.machine.mpi_comm );
+
 #endif
 
   return global_result ;
@@ -135,21 +173,9 @@ template< typename Scalar , class Device >
 double dot( const ParallelDataMap & data_map ,
             const MultiVector< Scalar , Device > & x )
 {
-  double local_result =
-    Impl::Dot< Scalar , Device , Impl::unsigned_<1> >
-        ::apply( data_map.count_owned , x );
-
-  double global_result = 0 ;
-
-#if defined( HAVE_MPI )
-
-  MPI_Allreduce( & local_result , & global_result , 1 , MPI_DOUBLE , MPI_SUM ,
-                 data_map.machine.mpi_comm );
-#else
-  global_result = local_result ;
-#endif
-
-  return global_result ;
+  typedef Value< double , Device > value_type ;
+  value_type temp_result = create_value< value_type >();
+  return dot( data_map , x , temp_result );
 }
 
 //----------------------------------------------------------------------------
@@ -157,38 +183,66 @@ double dot( const ParallelDataMap & data_map ,
 template< typename AScalarType ,
           typename VScalarType ,
           class Device >
-void multiply( const ParallelDataMap                  & data_map ,
-               const CrsMatrix<AScalarType,Device>    & A ,
-               const MultiVector<VScalarType,Device>  & x ,
-               const MultiVector<VScalarType,Device>  & y )
-{
+class Operator {
   typedef CrsMatrix<AScalarType,Device>    matrix_type ;
   typedef MultiVector<VScalarType,Device>  vector_type ;
 
+private:
+  const CrsMatrix<AScalarType,Device> A ;
+
 #if defined( HAVE_MPI )
-  // Gather off-processor data for 'x'
 
-  AsyncExchange< VScalarType , Device , ParallelDataMap >
-    exchange( data_map , 1 );
+  ParallelDataMap                                         data_map ;
+  AsyncExchange< VScalarType , Device , ParallelDataMap > exchange ;
 
-  PackArray< vector_type >::pack( exchange.buffer() ,
-                                  data_map.count_interior ,
-                                  data_map.count_send , x );
+public:
 
-  exchange.send();
+  Operator( const ParallelDataMap                  & arg_data_map ,
+            const CrsMatrix<AScalarType,Device>    & arg_A )
+    : A( arg_A )
+    , data_map( arg_data_map )
+    , exchange( arg_data_map , 1 )
+    {}
 
-  // If interior & boundary matrices then could launch interior multiply
+#else /* ! defined( HAVE_MPI ) */
 
-  exchange.receive();
+public:
 
-  UnpackArray< vector_type >::unpack( x , exchange.buffer() ,
-                                      data_map.count_owned ,
-                                      data_map.count_receive );
+  Operator( const ParallelDataMap                  & ,
+            const CrsMatrix<AScalarType,Device>    & arg_A )
+    : A( arg_A ) {}
+
 #endif
 
-  Impl::Multiply<matrix_type,vector_type,vector_type>
-    ::apply( A , x , y );
-}
+  void apply( const MultiVector<VScalarType,Device>  & x ,
+              const MultiVector<VScalarType,Device>  & y )
+  {
+#if defined( HAVE_MPI )
+    // Gather off-processor data for 'x'
+
+    PackArray< vector_type >::pack( exchange.buffer() ,
+                                    data_map.count_interior ,
+                                    data_map.count_send , x );
+
+    exchange.setup();
+
+    // If interior & boundary matrices then could launch interior multiply
+
+    exchange.send_receive();
+
+    UnpackArray< vector_type >::unpack( x , exchange.buffer() ,
+                                        data_map.count_owned ,
+                                        data_map.count_receive );
+#endif
+
+    const typename Device::size_type nrow = data_map.count_owned ;
+    const typename Device::size_type ncol = data_map.count_owned +
+                                            data_map.count_receive ;
+
+    Impl::Multiply<matrix_type,vector_type,vector_type>
+      ::apply( A , nrow , ncol , x , y );
+  }
+};
 
 //----------------------------------------------------------------------------
 
@@ -205,20 +259,24 @@ void cgsolve(
   const double tolerance = std::numeric_limits<VScalarType>::epsilon() )
 {
   typedef MultiVector<VScalarType,Device> vector_type ;
+  typedef Value      <VScalarType,Device> value_type ;
 
   const size_t count_owned = data_map.count_owned ;
   const size_t count_total = data_map.count_owned + data_map.count_receive ;
 
+  Operator<AScalarType,VScalarType,Device> matrix_operator( data_map , A );
+
   vector_type r  = create_multivector< vector_type >( "cg::r" , count_owned );
   vector_type p  = create_multivector< vector_type >( "cg::p" , count_total );
   vector_type Ap = create_multivector< vector_type >( "cg::Ap", count_owned );
+  value_type dot_temp = create_value< value_type >( "cg::dot_temp" );
 
   /* p  = x      */ deep_copy( p , x , count_owned );
-  /* Ap = A * p  */ multiply( data_map , A , p , Ap );
+  /* Ap = A * p  */ matrix_operator.apply( p , Ap );
   /* r  = b - Ap */ waxpby( data_map , 1.0 , b , -1.0 , Ap , r );
   /* p  = r      */ deep_copy( p , r , count_owned );
 
-  double old_rdot = dot( data_map , r );
+  double old_rdot = dot( data_map , r , dot_temp );
 
   normr     = sqrt( old_rdot );
   iteration = 0 ;
@@ -227,15 +285,15 @@ void cgsolve(
 
   while ( tolerance < normr && iteration < maximum_iteration ) {
 
-    /* Ap = A * p  */ multiply( data_map , A , p , Ap );
+    /* Ap = A * p  */ matrix_operator.apply( p , Ap );
 
-    const double pAp_dot = dot( data_map , p , Ap );
+    const double pAp_dot = dot( data_map , p , Ap , dot_temp );
     const double alpha   = old_rdot / pAp_dot ;
 
     /* x += alpha * p ;  */ waxpby( data_map,  alpha, p , 1.0 , x , x );
     /* r -= alpha * Ap ; */ waxpby( data_map, -alpha, Ap, 1.0 , r , r );
 
-    const double r_dot = dot( data_map , r );
+    const double r_dot = dot( data_map , r , dot_temp );
     const double beta  = r_dot / old_rdot ;
 
     /* p = r + beta * p ; */ waxpby( data_map , 1.0 , r , beta , p , p );

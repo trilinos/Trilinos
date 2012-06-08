@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          KokkosArray: Node API and Parallel Node Kernels
+//          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -52,6 +52,7 @@ struct Dot< Scalar , KOKKOS_MACRO_DEVICE , Impl::unsigned_<2> >
   typedef KOKKOS_MACRO_DEVICE              device_type;
   typedef device_type::size_type           size_type;
   typedef MultiVector<Scalar, device_type> scalar_vector;  
+  typedef Value < double , device_type >   result_type ;  
   typedef double                           value_type;
 
 private:
@@ -75,11 +76,13 @@ public:
   { update = 0 ; }
 
   inline static
-  double apply( const size_t n ,
-                const scalar_vector & x , const scalar_vector & y )
+  void apply( const size_t n ,
+              const scalar_vector & x ,
+              const scalar_vector & y ,
+              const result_type   & result )
   {
     Dot op ; op.x = x ; op.y = y ;
-    return parallel_reduce( n , op );
+    parallel_reduce( n , op , result );
   }
 }; //Dot
 
@@ -89,6 +92,7 @@ struct Dot< Scalar , KOKKOS_MACRO_DEVICE , Impl::unsigned_<1> >
   typedef KOKKOS_MACRO_DEVICE              device_type;
   typedef device_type::size_type           size_type;
   typedef MultiVector<Scalar, device_type> scalar_vector;  
+  typedef Value < double , device_type >   result_type ;  
   typedef double                           value_type;
 
 private:
@@ -111,10 +115,12 @@ public:
   { update = 0 ; }
 
   inline static
-  double apply( const size_t n , const scalar_vector & x )
+  void apply( const size_t n ,
+              const scalar_vector & x ,
+              const result_type   & result )
   {
     Dot op ; op.x = x ;
-    return parallel_reduce( n , op );
+    parallel_reduce( n , op , result );
   }
 }; //Dot
 
