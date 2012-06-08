@@ -190,7 +190,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
      ml_ag->fine_complexity = 1.0 * m2;
      ml_ag->operator_complexity = 1.0 * m2;
    }
-   else ml_ag->operator_complexity += 1.0 * m;
+   else ml_ag->operator_complexity += 1.0 * m2;
 
    /* ------------------------------------------------------------- */
    /* extract the matrix using the getrow function                  */

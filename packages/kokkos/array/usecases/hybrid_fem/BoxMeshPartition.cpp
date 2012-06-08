@@ -71,30 +71,40 @@ void box_partition( size_t ip , size_t up ,
                                   ( n1 > n0 ? 1 : 0 );
 
     const size_t n = box[ axis ][1] - box[ axis ][0] ;
-    const size_t np_low = np / 2 ;  /* Rounded down */
-    const size_t np_upp = np - np_low ;
 
-    const size_t n_upp =
-      (size_t) (((double) n) * ( ((double)np_upp) / ((double)np)));
+    if ( 0 == np % 3 ) {
+      const size_t np_part = np / 3 ; // exact
 
-    const size_t n_low = n - n_upp ;
+      const size_t nbox_low = (size_t)(( (double) n ) * ( 1.0 / 3.0 ));
+      const size_t nbox_mid = (size_t)(( (double) n ) * ( 2.0 / 3.0 ));
 
-    if ( np_low ) { /* P = [ip,ip+np_low) */
-      BoxType dbox = box ;
+      BoxType dbox_low = box ; // P = [ip,ip+np/3) 
+      BoxType dbox_mid = box ; // P = [ip+np/3,ip+2*np/3) 
+      BoxType dbox_upp = box ; // P = [ip+2*np/3,ip+np) 
 
-      dbox[ axis ][1] = dbox[ axis ][0] + n_low ;
+      dbox_low[ axis ][1] = box[ axis ][0] + nbox_low ;
+      dbox_mid[ axis ][1] = box[ axis ][0] + nbox_mid ;
 
-      box_partition( ip, ip + np_low, dbox , p_box );
+      dbox_mid[ axis ][0] = dbox_low[ axis ][1];
+      dbox_upp[ axis ][0] = dbox_mid[ axis ][1];
+
+      box_partition( ip,           ip +   np_part, dbox_low , p_box );
+      box_partition( ip+  np_part, ip + 2*np_part, dbox_mid , p_box );
+      box_partition( ip+2*np_part, up,             dbox_upp , p_box );
     }
+    else {
+      const size_t np_low = np / 2 ; /* Rounded down */
+      const size_t nbox_low = (size_t)
+        (((double)n) * ( ((double) np_low ) / ((double) np ) ));
 
-    if ( np_upp ) { /* P = [ip+np_low,ip+np_low+np_upp) */
-      BoxType dbox = box ;
+      BoxType dbox_low = box ;
+      BoxType dbox_upp = box ;
 
-      ip += np_low ;
-      dbox[ axis ][0] += n_low ;
-      dbox[ axis ][1]  = dbox[ axis ][0] + n_upp ;
+      dbox_low[ axis ][1] = dbox_low[ axis ][0] + nbox_low ; 
+      dbox_upp[ axis ][0] = dbox_low[ axis ][1];
 
-      box_partition( ip, ip + np_upp, dbox , p_box );
+      box_partition( ip, ip + np_low, dbox_low , p_box );
+      box_partition( ip + np_low, up, dbox_upp , p_box );
     }
   }
 }

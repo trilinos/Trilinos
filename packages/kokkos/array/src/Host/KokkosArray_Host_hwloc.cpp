@@ -117,7 +117,7 @@ bool HostInternalHWLOC::bind_thread(
     const unsigned worker_rank = thread_rank % HostInternal::m_worker_count ;
 
     const unsigned node_rank =
-      ( gang_rank + HostInternal::m_node_rank ) % HostInternal::m_gang_count ;
+      ( gang_rank + HostInternal::m_node_rank ) % HostInternal::m_node_count ;
 
     const unsigned core_rank = 
       worker_rank < core_base_worker_count ?
