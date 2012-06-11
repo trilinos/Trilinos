@@ -79,7 +79,7 @@ ArrayRCP<scalar_t> makeWeights(
  */
 const RCP<tMVector_t> getMeshCoordinates(
     const RCP<const Teuchos::Comm<int> > & comm,
-    int numGlobalCoords)
+    gno_t numGlobalCoords)
 {
   int rank = comm->getRank();
   int nprocs = comm->getSize();
@@ -135,15 +135,15 @@ const RCP<tMVector_t> getMeshCoordinates(
 
   // Divide coordinates.
 
-  lno_t numLocalCoords = num / nprocs;
-  lno_t leftOver = num % nprocs;
+  gno_t numLocalCoords = num / nprocs;
+  gno_t leftOver = num % nprocs;
   gno_t gid0 = 0;
 
   if (rank <= leftOver)
-    gid0 = rank * (numLocalCoords+1);
+    gid0 = gno_t(rank) * (numLocalCoords+1);
   else
     gid0 = (leftOver * (numLocalCoords+1)) + 
-           ((rank - leftOver) * numLocalCoords);
+           ((gno_t(rank) - leftOver) * numLocalCoords);
 
   if (rank < leftOver)
     numLocalCoords++;
@@ -154,10 +154,6 @@ const RCP<tMVector_t> getMeshCoordinates(
   if (!ids)
     throw bad_alloc();
   ArrayRCP<gno_t> idArray(ids, 0, numLocalCoords, true);
-
-  if (rank == 0)
-    cerr << "gid memory allocated" << endl;
-  comm->barrier();
 
   for (gno_t i=gid0; i < gid1; i++)
     *ids++ = i;   
@@ -171,10 +167,6 @@ const RCP<tMVector_t> getMeshCoordinates(
   if (!x)
     throw bad_alloc();
   ArrayRCP<scalar_t> coordArray(x, 0, numLocalCoords*3, true);
-
-  if (rank == 0)
-    cerr << "coordinate memory allocated" << endl;
-  comm->barrier();
 
   scalar_t *y = x + numLocalCoords;
   scalar_t *z = y + numLocalCoords;
@@ -218,17 +210,13 @@ const RCP<tMVector_t> getMeshCoordinates(
   RCP<tMVector_t> meshCoords = rcp(new tMVector_t(
     idMap, constCoords.view(0,3), 3));
 
-  if (rank == 0)
-    cerr << "input multivector allocated" << endl;
-  comm->barrier();
-
   return meshCoords;
 }
 
 
 int main(int argc, char *argv[])
 {
-  MEMORY_CHECK(true, "Before initializing MPI");
+  //MEMORY_CHECK(true, "Before initializing MPI");
 
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();

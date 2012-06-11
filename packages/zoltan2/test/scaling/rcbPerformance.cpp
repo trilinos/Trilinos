@@ -79,7 +79,7 @@ ArrayRCP<scalar_t> makeWeights(
  */
 const RCP<tMVector_t> getMeshCoordinates(
     const RCP<const Teuchos::Comm<int> > & comm,
-    int numGlobalCoords)
+    gno_t numGlobalCoords)
 {
   int rank = comm->getRank();
   int nprocs = comm->getSize();
@@ -135,15 +135,15 @@ const RCP<tMVector_t> getMeshCoordinates(
 
   // Divide coordinates.
 
-  lno_t numLocalCoords = num / nprocs;
-  lno_t leftOver = num % nprocs;
+  gno_t numLocalCoords = num / nprocs;
+  gno_t leftOver = num % nprocs;
   gno_t gid0 = 0;
 
   if (rank <= leftOver)
-    gid0 = rank * (numLocalCoords+1);
+    gid0 = gno_t(rank) * (numLocalCoords+1);
   else
     gid0 = (leftOver * (numLocalCoords+1)) + 
-           ((rank - leftOver) * numLocalCoords);
+           ((gno_t(rank) - leftOver) * numLocalCoords);
 
   if (rank < leftOver)
     numLocalCoords++;
