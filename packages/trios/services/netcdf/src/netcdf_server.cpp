@@ -10,6 +10,8 @@
 
 #include "Trios_config.h"
 
+#ifdef HAVE_TRIOS_PNETCDF
+
 #ifndef __STDC_CONSTANT_MACROS
 #define __STDC_CONSTANT_MACROS
 #endif
@@ -2234,3 +2236,5 @@ int main(int argc, char **argv)
 
     return rc;
 }
+
+#endif // HAVE_TRIOS_PNETCDF
