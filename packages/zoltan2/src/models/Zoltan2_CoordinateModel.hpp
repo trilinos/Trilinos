@@ -17,6 +17,7 @@
 #include <Zoltan2_GraphInput.hpp>
 #include <Zoltan2_IdentifierInput.hpp>
 #include <Zoltan2_CoordinateInput.hpp>
+#include <Zoltan2_CoordinateInput.hpp>
 #include <Zoltan2_StridedData.hpp>
 
 namespace Zoltan2 {
@@ -116,6 +117,7 @@ template <typename User>
 class CoordinateModel<CoordinateInput<User> > : 
   public Model<CoordinateInput<User> >
 {
+
 public:
 
   typedef typename CoordinateInput<User>::scalar_t  scalar_t;
@@ -205,6 +207,7 @@ private:
   ArrayRCP<input_t> weights_;
   ArrayRCP<gno_t> gnos_;
   ArrayRCP<const gno_t> gnosConst_;
+
 };
 
 template <typename User>
@@ -499,18 +502,20 @@ template <typename User>
 // Coordinate model derived from VectorInput.
 ////////////////////////////////////////////////////////////////
 
-#if 0
 template <typename User>
 class CoordinateModel<VectorInput<User> > : 
   public Model<VectorInput<User> >
 {
+
 public:
 
-  typedef StridedData<lno_t, scalar_t> input_t;
   typedef typename VectorInput<User>::scalar_t  scalar_t;
   typedef typename VectorInput<User>::gno_t     gno_t;
+  typedef typename VectorInput<User>::gid_t     gid_t;
   typedef typename VectorInput<User>::lno_t     lno_t;
-  
+  typedef StridedData<lno_t, scalar_t> input_t;
+  typedef IdentifierMap<User> idmap_t;
+
   CoordinateModel( const VectorInput<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
     modelFlag_t flags);
@@ -554,14 +559,16 @@ private:
   ArrayRCP<input_t> weights_;
   ArrayRCP<gno_t> gnos_;
   ArrayRCP<const gno_t> gnosConst_;
-
 };
 
 template <typename User>
-class CoordinateModel<VectorInput<User> > :CoordinateModel( 
+CoordinateModel<VectorInput<User> >::CoordinateModel( 
     const VectorInput<User> *ia, 
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
-    modelFlag_t flags)
+    modelFlag_t flags):
+      gnosAreGids_(false), numGlobalCoordinates_(), env_(env), comm_(comm),
+      coordinateDim_(), gids_(), xyz_(), weightDim_(), weights_(), 
+      gnos_(), gnosConst_()
 {
   bool consecutiveIds = flags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
 
@@ -656,7 +663,6 @@ class CoordinateModel<VectorInput<User> > :CoordinateModel(
 
   env_->memory("After construction of coordinate model");
 }
-#endif
 
 ////////////////////////////////////////////////////////////////
 // Coordinate model derived from IdentifierInput.
