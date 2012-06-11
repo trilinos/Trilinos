@@ -530,7 +530,29 @@ public:
 
   size_t getCoordinates(ArrayView<const gno_t>  &Ids,
     ArrayView<input_t> &xyz,
-    ArrayView<input_t> &wgts) const;
+    ArrayView<input_t> &wgts) const
+  {
+    size_t n = getLocalNumCoordinates();
+
+    Ids =  ArrayView<const gno_t>();
+    xyz = ArrayView<input_t>();
+    wgts = ArrayView<input_t>();
+
+    if (n){
+      if (gnosAreGids_)
+        Ids = Teuchos::arrayView<const gno_t>(
+          reinterpret_cast<const gno_t *>(gids_.getRawPtr()), n);
+      else
+        Ids = gnosConst_.view(0, n);
+
+      xyz =  xyz_.view(0, coordinateDim_);
+
+      if (weightDim_)
+        wgts = weights_.view(0, weightDim_);
+    }
+
+    return n;
+  }
 
   ////////////////////////////////////////////////////
   // The Model interface.
