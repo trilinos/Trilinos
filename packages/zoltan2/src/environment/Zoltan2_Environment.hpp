@@ -334,13 +334,17 @@ public:
 
   void timerStart(TimerType tt, const char * timerName) const  {return;}
   void timerStart(TimerType tt, const string &timerName) const  {return;}
-  void timerStart(TimerType tt, const char * timerName, int) const  {return;}
-  void timerStart(TimerType tt, const string &timerName, int) const  {return;}
+  void timerStart(TimerType tt, const char * timerName, int, 
+    int fieldWidth=0) const  {return;}
+  void timerStart(TimerType tt, const string &timerName, int, 
+    int fieldWidth=0) const  {return;}
 
   void timerStop(TimerType tt, const char * timerName) const {return;}
   void timerStop(TimerType tt, const string &timerName) const {return;}
-  void timerStop(TimerType tt, const char * timerName, int) const {return;}
-  void timerStop(TimerType tt, const string &timerName, int) const {return;}
+  void timerStop(TimerType tt, const char * timerName, int, 
+    int fieldWidth=0) const {return;}
+  void timerStop(TimerType tt, const string &timerName, int, 
+    int fieldWidth=0) const {return;}
 
 #else
   /*! \brief  Start a named timer.
@@ -354,18 +358,30 @@ public:
 
   /*! \brief  Start a named timer, with a number as part of the name.
    */
-  void timerStart(TimerType tt, const char *timerName, int num) const  {
+  void timerStart(TimerType tt, const char *timerName, int num, 
+    int fieldWidth=0) const  {
     if (timingOn_){
       ostringstream oss;
-      oss << timerName << " " << num;
+      oss << timerName << " ";
+      if (fieldWidth > 0){
+        oss.width(fieldWidth);
+        oss.fill('0');
+      }
+      oss << num;
       timerOut_->start(tt, oss.str()); 
     }
   }
 
-  void timerStart(TimerType tt, const string &timerName, int num) const  {
+  void timerStart(TimerType tt, const string &timerName, int num, 
+    int fieldWidth=0) const  {
     if (timingOn_){
       ostringstream oss;
-      oss << timerName << " " << num;
+      oss << timerName << " ";
+      if (fieldWidth > 0){
+        oss.width(fieldWidth);
+        oss.fill('0');
+      }
+      oss << num;
       timerOut_->start(tt, oss.str()); 
     }
   }
@@ -382,18 +398,30 @@ public:
   /*! \brief  Stop a named timer, with a number as part of the name.
    */
 
-  void timerStop(TimerType tt, const char *timerName, int num) const {
+  void timerStop(TimerType tt, const char *timerName, int num, 
+    int fieldWidth=0) const {
     if (timingOn_){
       ostringstream oss;
-      oss << timerName << " " << num;
+      oss << timerName << " ";
+      if (fieldWidth > 0){
+        oss.width(fieldWidth);
+        oss.fill('0');
+      }
+      oss << num;
       timerOut_->stop(tt, oss.str()); 
     }
   }
 
-  void timerStop(TimerType tt, const string &timerName, int num) const {
+  void timerStop(TimerType tt, const string &timerName, int num, 
+    int fieldWidth=0) const {
     if (timingOn_){
       ostringstream oss;
-      oss << timerName << " " << num;
+      oss << timerName << " ";
+      if (fieldWidth > 0){
+        oss.width(fieldWidth);
+        oss.fill('0');
+      }
+      oss << num;
       timerOut_->stop(tt, oss.str()); 
     }
   }

@@ -334,7 +334,7 @@ void AlgRCB(
     scalar_t imbalance=0, weightLeft=0, weightRight=0;
     partId_t leftHalfNumParts=0;
 
-    env->timerStart(MICRO_TIMERS, "Find cut", iteration);
+    env->timerStart(MICRO_TIMERS, "Find cut", iteration, 2);
 
     try{
       determineCut<mvector_t, Adapter>(env, comm, 
@@ -348,7 +348,7 @@ void AlgRCB(
     }
     Z2_FORWARD_EXCEPTIONS
 
-    env->timerStop(MICRO_TIMERS, "Find cut", iteration);
+    env->timerStop(MICRO_TIMERS, "Find cut", iteration, 2);
 
     // Do we have empty left or right halves?
 
@@ -360,7 +360,7 @@ void AlgRCB(
 
     int leftHalfNumProcs=0;
 
-    env->timerStart(MICRO_TIMERS, "Migrate", iteration);
+    env->timerStart(MICRO_TIMERS, "Migrate", iteration, 2);
 
     try{ // on return mvector has my new data
 
@@ -369,7 +369,7 @@ void AlgRCB(
     }
     Z2_FORWARD_EXCEPTIONS
 
-    env->timerStop(MICRO_TIMERS, "Migrate", iteration);
+    env->timerStop(MICRO_TIMERS, "Migrate", iteration, 2);
 
     env->localBugAssertion(__FILE__, __LINE__, "num procs in half",
       leftHalfNumProcs > 0 && leftHalfNumProcs < groupSize,
@@ -386,7 +386,7 @@ void AlgRCB(
     ////////////////////////////////////////////////////////
     // Divide into two subgroups.
 
-    env->timerStart(MICRO_TIMERS, "Create sub group, sub data", iteration);
+    env->timerStart(MICRO_TIMERS, "Create sub group, sub data", iteration, 2);
 
     int *ids = NULL;
 
@@ -446,7 +446,7 @@ void AlgRCB(
     }
     Z2_THROW_OUTSIDE_ERROR(*env)
 
-    env->timerStop(MICRO_TIMERS, "Create sub group, sub data", iteration);
+    env->timerStop(MICRO_TIMERS, "Create sub group, sub data", iteration, 2);
   
     mvector = subMvector;
 

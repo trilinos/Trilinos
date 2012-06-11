@@ -1271,6 +1271,8 @@ template <typename mvector_t, typename Adapter>
 /*! \brief Perform RCB on the local process only.
  *
  *   \param env the Environment for the application.
+ *   \param depth  depth of recursion, for debugging, 
+ *           call with "1" first time.
  *   \param params a bit map of boolean parameters.
  *   \param numTestCuts the number of test cuts to make in one round.
  *   \param tolerance the maximum acceptable imbalance (0,1).
@@ -1292,6 +1294,7 @@ template <typename mvector_t, typename Adapter>
 template <typename mvector_t, typename Adapter>
  void serialRCB(
     const RCP<const Environment> &env,
+    int depth,
     const std::bitset<NUM_RCB_PARAMS> &params,
     int numTestCuts, 
     typename mvector_t::scalar_type tolerance, 
@@ -1305,7 +1308,7 @@ template <typename mvector_t, typename Adapter>
     ArrayView<partId_t> partNum)   // output
 {
   env->debug(DETAILED_STATUS, string("Entering serialRCB"));
-  static int iteration=0;
+  env->timerStart(MICRO_TIMERS, "serialRCB", depth, 2);
 
   typedef typename mvector_t::scalar_type scalar_t;
   typedef typename mvector_t::local_ordinal_type lno_t;
@@ -1321,13 +1324,10 @@ template <typename mvector_t, typename Adapter>
     useIndices = false;
     numLocalCoords = vectors->getLocalLength();
     firstCall = true;
-    iteration=1;
-    env->timerStart(MICRO_TIMERS, "serialRCB", iteration);
   }
   else{
     useIndices = true;
     numLocalCoords = index.size();
-    env->timerStart(MICRO_TIMERS, "serialRCB", ++iteration);
   }
 
   if (env->doStatus()){
@@ -1349,7 +1349,7 @@ template <typename mvector_t, typename Adapter>
         partNum[i] = part0;
 
     env->memory("serial RCB end");
-    env->timerStop(MICRO_TIMERS, "serialRCB", iteration--);
+    env->timerStop(MICRO_TIMERS, "serialRCB", depth, 2);
     env->debug(DETAILED_STATUS, string("Exiting serialRCB"));
 
     return;
@@ -1408,7 +1408,7 @@ template <typename mvector_t, typename Adapter>
       }
       
       imbalance = 0.0;       // perfect
-      env->timerStop(MICRO_TIMERS, "serialRCB", iteration--);
+      env->timerStop(MICRO_TIMERS, "serialRCB", depth, 2);
       env->debug(DETAILED_STATUS, string("Exiting serialRCB"));
       return;
     }
@@ -1461,14 +1461,14 @@ template <typename mvector_t, typename Adapter>
 
     partId_t newPart1 = part0 + numPartsLeftHalf - 1;
 
-    env->timerStop(MICRO_TIMERS, "serialRCB", iteration);
+    env->timerStop(MICRO_TIMERS, "serialRCB", depth, 2);
 
-    serialRCB<mvector_t, Adapter>(env, params, numTestCuts, tolerance, 
+    serialRCB<mvector_t, Adapter>(env, depth+1, params, numTestCuts, tolerance, 
       coordDim, vectors, leftIndices,
       uniformWeights.view(0, weightDim), solution,
       part0, newPart1, partNum);
 
-    env->timerStart(MICRO_TIMERS, "serialRCB", iteration);
+    env->timerStart(MICRO_TIMERS, "serialRCB", depth, 2);
 
     delete [] newIndex;
   }
@@ -1494,19 +1494,19 @@ template <typename mvector_t, typename Adapter>
 
     partId_t newPart0 = part0 + numPartsLeftHalf;
 
-    env->timerStop(MICRO_TIMERS, "serialRCB", iteration);
+    env->timerStop(MICRO_TIMERS, "serialRCB", depth, 2);
 
-    serialRCB<mvector_t, Adapter>(env, params, numTestCuts, tolerance, 
+    serialRCB<mvector_t, Adapter>(env, depth+1, params, numTestCuts, tolerance, 
       coordDim, vectors, rightIndices,
       uniformWeights.view(0, weightDim), solution,
       newPart0, part1, partNum);
 
-    env->timerStart(MICRO_TIMERS, "serialRCB", iteration);
+    env->timerStart(MICRO_TIMERS, "serialRCB", depth, 2);
 
     delete [] newIndex;
   }
 
-  env->timerStop(MICRO_TIMERS, "serialRCB", iteration--);
+  env->timerStop(MICRO_TIMERS, "serialRCB", depth, 2);
   env->debug(DETAILED_STATUS, string("Exiting serialRCB"));
 }
 
