@@ -12,6 +12,7 @@
 */
 
 #include <Zoltan2_TestHelpers.hpp>
+#include <zoltan.h>
 #include <Teuchos_CommandLineProcessor.hpp>
 
 #include <vector>
