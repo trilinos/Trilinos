@@ -17,7 +17,7 @@
 #include <Zoltan2_GraphInput.hpp>
 #include <Zoltan2_IdentifierInput.hpp>
 #include <Zoltan2_CoordinateInput.hpp>
-#include <Zoltan2_CoordinateInput.hpp>
+#include <Zoltan2_VectorInput.hpp>
 #include <Zoltan2_StridedData.hpp>
 
 namespace Zoltan2 {
