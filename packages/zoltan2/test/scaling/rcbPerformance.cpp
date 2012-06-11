@@ -216,7 +216,7 @@ const RCP<tMVector_t> getMeshCoordinates(
 
 int main(int argc, char *argv[])
 {
-  MEMORY_CHECK(true, "Before initializing MPI");
+  // MEMORY_CHECK(true, "Before initializing MPI");
 
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
