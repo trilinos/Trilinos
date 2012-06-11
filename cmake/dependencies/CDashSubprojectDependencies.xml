@@ -185,6 +185,7 @@
   </SubProject>
   <SubProject name="Trios">
     <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="ThreadPool" type="TR"/>
     <EmailAddresses>
       <Email address="trios-regression@software.sandia.gov"/>
     </EmailAddresses>
