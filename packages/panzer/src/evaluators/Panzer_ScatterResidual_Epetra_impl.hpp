@@ -55,6 +55,7 @@
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_EpetraLinearObjContainer.hpp"
+#include "Panzer_PtrFromStlVector.hpp"
 
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
@@ -285,7 +286,11 @@ evaluateFields(typename Traits::EvalData workset)
             // TEUCHOS_ASSERT_EQUALITY(jacRow.size(),GIDs.size());
     
             // Sum Jacobian
-            int err = Jac->SumIntoMyValues(row, scatterField.size(), &jacRow[0],&cLIDs[0]);
+            //int err = Jac->SumIntoMyValues(row, scatterField.size(), &jacRow[0],&cLIDs[0]);
+            int err = Jac->SumIntoMyValues(row,
+					   scatterField.size(),
+					   panzer::ptrFromStlVector(jacRow),
+					   panzer::ptrFromStlVector(cLIDs));
             TEUCHOS_ASSERT_EQUALITY(err,0);
          } // end rowBasisNum
       } // end fieldIndex
