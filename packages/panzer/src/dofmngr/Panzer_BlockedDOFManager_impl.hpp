@@ -335,12 +335,12 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::ownedIndices(const std::ve
  
    // build bool vector stating if each sub block is owned
    std::vector<std::vector<bool> > blockIsOwned(fieldBlockManagers_.size());
-   std::vector<std::vector<bool>::const_iterator> blockItrs(fieldBlockManagers_.size());
+   std::vector<std::vector<bool>::const_iterator> blockItrs;
    for(std::size_t fbm=0;fbm<fieldBlockManagers_.size();fbm++) {
       fieldBlockManagers_[fbm]->ownedIndices(blockIndices[fbm],blockIsOwned[fbm]);
 
       // setup iterators to boolean vectors
-      blockItrs[fbm] = blockIsOwned[fbm].begin();
+      blockItrs.push_back(blockIsOwned[fbm].begin());
    }
 
    // loop over indices, consider their block and look it up
