@@ -484,7 +484,7 @@ void AlgRCB(
     try{
       ArrayView<lno_t> emptyIndex;
 
-      serialRCB<mvector_t, Adapter>(env, params,
+      serialRCB<mvector_t, Adapter>(env, 1, params,
         numTestCuts, imbalanceTolerance,
         coordDim, mvector, emptyIndex, 
         uniformWeights.view(0,criteriaDim), solution,
