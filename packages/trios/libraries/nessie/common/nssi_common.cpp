@@ -71,7 +71,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "buffer_queue.h"
 #include "Trios_nssi_xdr.h"
 
-#include "nssi_debug.h"
+#include "Trios_nssi_debug.h"
 
 #include "nnti.h"
 

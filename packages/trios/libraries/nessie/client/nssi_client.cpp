@@ -57,9 +57,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "buffer_queue.h"
 #include "Trios_nssi_rpc.h"
 #include "Trios_nssi_xdr.h"
-
-
-#include "nssi_debug.h"
+#include "Trios_nssi_debug.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -77,8 +75,6 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include <stdlib.h>
 
 
-
-#include "nssi_debug.h"
 #include "nssi_opcodes.h"
 #include "nssi_service_args.h"
 
