@@ -9,6 +9,7 @@
 #define XFER_UTIL_H_
 
 #include <mpi.h>
+#include <string>
 #include <vector>
 #include "xfer_service_args.h"
 
