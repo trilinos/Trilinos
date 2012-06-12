@@ -63,6 +63,12 @@ INCLUDE(Split)
 #
 # Macro that processes the list of TPLs
 #
+# This macro reads from the varible
+# ${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS for a given repository and
+# and fills the variables ${PROJECT_NAME}_TPLS, ${PROJECT_NAME}_NUM_TPLS,
+# ${PROJECT_NAME}_REVERSE_TPLS.  For each TPL, it also sets the varible
+# ${TPL_NAME}_FINDMOD and ${TPL_NAME}_CLASSIFICATION.
+#
 
 MACRO(TRIBITS_PROCESS_TPLS_LISTS  REPOSITORY_NAME  REPOSITORY_DIR)
 
@@ -120,10 +126,20 @@ MACRO(TRIBITS_PROCESS_TPLS_LISTS  REPOSITORY_NAME  REPOSITORY_DIR)
         PRINT_VAR(TPL_CLASSIFICATION)
       ENDIF()
   
-      # Update TPLS list
-  
-      LIST(APPEND ${PROJECT_NAME}_TPLS ${TPL_NAME})
-  
+      # Update TPLS list (unless the TPL already exists)
+   
+      IF (${TPL_NAME}_FINDMOD)
+        # If the varaible ${TPL_NAME}_FINDMOD already exists, then this TPL
+        # has already been defined in a previous repository.  In this case, we
+        # will just leave the TPL in its current position.
+        IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+          MESSAGE("-- " "NOTE: The TPL ${TPL_NAME} has already been defined so leaving it"
+            " in the same location and not adding it again!") 
+        ENDIF()
+      ELSE()
+        LIST(APPEND ${PROJECT_NAME}_TPLS ${TPL_NAME})
+      ENDIF() 
+ 
       # Set ${TPL_NAME}_CLASSIFICATION
   
       IF (TPL_CLASSIFICATION STREQUAL PS
