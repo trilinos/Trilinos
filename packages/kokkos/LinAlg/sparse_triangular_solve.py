@@ -96,6 +96,15 @@ University of California Berkeley's Computer Science department for
 more information; Prof. Armando Fox is the main point of contact.)  I
 make no promises about the suitability of this code for that purpose.
 
+If you run this module as an executable script, like this:
+
+python sparse_triangular_solve.py
+
+it will write two header files to the current directory.
+Kokkos_Raw_SparseTriangularSolve_decl.hpp will contain function
+declarations, and Kokkos_Raw_SparseTriangularSolve_def.hpp will
+contain function definitions (see below).
+
 The top-level functions in this module, makeHeaderDeclFile() and
 makeHeaderDefFile(), create entire header files with all possible code
 variants.  The 'Decl' version makes a header file with just the
@@ -678,8 +687,8 @@ def makeHeaderDeclFile ():
 
     s = ''
     s = s + makeKokkosCopyrightNotice ()
-    s = s + '\n#ifndef __Kokkos_Raw_SpTM_decl_hpp\n' + \
-        '#define __Kokkos_Raw_SpTM_decl_hpp\n\n'
+    s = s + '\n#ifndef __Kokkos_Raw_SparseTriangularSolve_decl_hpp\n' + \
+        '#define __Kokkos_Raw_SparseTriangularSolve_decl_hpp\n\n'
     s = s + 'namespace Kokkos {\n' + \
         'namespace Raw {\n\n'
     for dataLayout in ['column major', 'row major']:
@@ -689,7 +698,7 @@ def makeHeaderDeclFile ():
                 s = s + makeFunctionDeclaration (upLo, dataLayout, unitDiag) + '\n\n'
     s = s + '} // namespace Raw\n' + \
         '} // namespace Kokkos\n\n' + \
-        '#endif // #ifndef __Kokkos_Raw_SpTM_decl_hpp'
+        '#endif // #ifndef __Kokkos_Raw_SparseTriangularSolve_decl_hpp'
     return s
 
 
@@ -705,8 +714,8 @@ def makeHeaderDefFile ():
 
     s = ''
     s = s + makeKokkosCopyrightNotice ()
-    s = s + '\n#ifndef __Kokkos_Raw_SpTM_def_hpp\n' + \
-        '#define __Kokkos_Raw_SpTM_def_hpp\n\n'
+    s = s + '\n#ifndef __Kokkos_Raw_SparseTriangularSolve_def_hpp\n' + \
+        '#define __Kokkos_Raw_SparseTriangularSolve_def_hpp\n\n'
     s = s + 'namespace Kokkos {\n' + \
         'namespace Raw {\n\n'
     for upLo in ['lower', 'upper']:
@@ -715,5 +724,37 @@ def makeHeaderDefFile ():
                 s = s + makeFunctionDefinition (upLo, dataLayout, unitDiag) + '\n\n'
     s = s + '} // namespace Raw\n' + \
         '} // namespace Kokkos\n\n' + \
-        '#endif // #ifndef __Kokkos_Raw_SpTM_def_hpp'
+        '#endif // #ifndef __Kokkos_Raw_SparseTriangularSolve_def_hpp'
     return s
+
+
+def run ():
+    '''Generate the two header files mentioned in the module's documentation.
+
+    This writes the header file of function declarations
+    'Kokkos_Raw_SparseTriangularSolve_decl.hpp', and the header file
+    of function definitions
+    'Kokkos_Raw_SparseTriangularSolve_def.hpp', for all variants of
+    sparse triangular solve that this module knows how to generate.
+    Both files are written to the current working directory.
+    '''
+
+    rootName = 'Kokkos_Raw_SparseTriangularSolve'
+    declName = rootName + '_decl.hpp'
+    defName = rootName + '_def.hpp'
+
+    with open(declName, 'w') as declFile:
+        declFile.write (makeHeaderDeclFile ())
+    with open(defName, 'w') as defFile:
+        defFile.write (makeHeaderDefFile ())
+
+
+# Code to execute if running the module as an executable script.
+if __name__ == "__main__":
+    import sys
+
+    if len (sys.argv) > 1:
+        raise ValueError ('This script does not currently take any command-line arguments.')
+    else:
+        run ()
+
