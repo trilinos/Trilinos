@@ -44,7 +44,7 @@
     \verbatim
 
      Poisson system:
- 
+
             div A grad u = f in Omega
                        u = g on Gamma
 
@@ -66,14 +66,14 @@
     \remark Usage:
     \code   ./TrilinosCouplings_examples_scaling_example_Poisson.exe \endcode
 
-    \remark Example driver requires input file named Poisson.xml with Pamgen 
-            formatted mesh description and settings for Isorropia (a version 
+    \remark Example driver requires input file named Poisson.xml with Pamgen
+            formatted mesh description and settings for Isorropia (a version
             is included in the Trilinos repository with this driver).
 
     \remark The exact solution (u) and material tensor (A) are set in the
             functions "exactSolution" and "materialTensor" and may be
             modified by the user.
-            
+
 */
 
 /*** Uncomment if you would like output data for plotting ***/
@@ -159,7 +159,7 @@ typedef Intrepid::CellTools<double>      IntrepidCTools;
 /** \brief  ML Preconditioner
 
     \param  ProblemType        [in]    problem type
-    \param  MLList             [in]    ML parameter list 
+    \param  MLList             [in]    ML parameter list
     \param  A                  [in]    discrete operator matrix
     \param  xexact             [in]    exact solution
     \param  b                  [in]    right-hand-side vector
@@ -169,7 +169,7 @@ typedef Intrepid::CellTools<double>      IntrepidCTools;
 
  */
 int TestMultiLevelPreconditionerLaplace(char ProblemType[],
-				 Teuchos::ParameterList   & MLList,
+                                 Teuchos::ParameterList   & MLList,
                                  Epetra_CrsMatrix   & A,
                                  const Epetra_MultiVector & xexact,
                                  Epetra_MultiVector & b,
@@ -324,7 +324,7 @@ int main(int argc, char *argv[]) {
 
 #ifdef HAVE_MPI
   if (MyPID == 0) {
-    std::cout << "PARALLEL executable \n"; 
+    std::cout << "PARALLEL executable \n";
   }
 #else
   if (MyPID == 0) {
@@ -350,7 +350,7 @@ int main(int argc, char *argv[]) {
      if (MyPID == 0) {
       std::cout << "\nReading parameter list from the XML file \""<<xmlMeshInFileName<<"\" ...\n\n";
      }
-      Teuchos::updateParametersFromXmlFile(xmlMeshInFileName,&inputMeshList);
+     Teuchos::updateParametersFromXmlFile (xmlMeshInFileName, Teuchos::ptr (&inputMeshList));
      if (MyPID == 0) {
       inputMeshList.print(std::cout,2,true,true);
       std::cout << "\n";
@@ -365,7 +365,7 @@ int main(int argc, char *argv[]) {
    if(xmlSolverInFileName.length()) {
      if (MyPID == 0)
         std::cout << "\nReading parameter list from the XML file \""<<xmlSolverInFileName<<"\" ...\n\n";
-     Teuchos::updateParametersFromXmlFile(xmlSolverInFileName,&inputSolverList);
+     Teuchos::updateParametersFromXmlFile (xmlSolverInFileName, Teuchos::ptr (&inputSolverList));
    } else if (MyPID == 0) std::cout << "Using default solver values ..." << std::endl;
 
    // Get pamgen mesh definition
@@ -387,7 +387,7 @@ int main(int argc, char *argv[]) {
    // Get cell topology for base hexahedron
     shards::CellTopology cellType(shards::getCellTopologyData<shards::Hexahedron<8> >() );
 
-   // Get dimensions 
+   // Get dimensions
     int numNodesPerElem = cellType.getNodeCount();
     int spaceDim = cellType.getDimension();
     int dim = 3;
@@ -412,7 +412,7 @@ int main(int argc, char *argv[]) {
 
     string msg("Poisson: ");
     if(MyPID == 0) {cout << msg << "Pamgen Setup     = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
-    
+
    // Get mesh size info
     char title[100];
     long long numDim;
@@ -423,7 +423,7 @@ int main(int argc, char *argv[]) {
     long long numSideSets;
     int id = 0;
 
-    im_ex_get_init_l(id, title, &numDim, &numNodes, 
+    im_ex_get_init_l(id, title, &numDim, &numNodes,
                                 &numElems, &numElemBlk, &numNodeSets,
                                 &numSideSets);
 
@@ -433,7 +433,7 @@ int main(int argc, char *argv[]) {
     long long numNodeSetsGlobal;
     long long numSideSetsGlobal;
 
-    im_ne_get_init_global_l(id, &numNodesGlobal, &numElemsGlobal, 
+    im_ne_get_init_global_l(id, &numNodesGlobal, &numElemsGlobal,
                          &numElemBlkGlobal, &numNodeSetsGlobal,
                          &numSideSetsGlobal);
 
@@ -456,12 +456,12 @@ int main(int argc, char *argv[]) {
 
     for(long long i = 0; i < numElemBlk; i ++){
       element_types[i] = new char [MAX_STR_LENGTH + 1];
-      error += im_ex_get_elem_block_l(id, 
-				      block_ids[i], 
-				      element_types[i],
-				      (long long*)&(elements[i]),
-				      (long long*)&(nodes_per_element[i]), 
-				      (long long*)&(element_attributes[i]));
+      error += im_ex_get_elem_block_l(id,
+                                      block_ids[i],
+                                      element_types[i],
+                                      (long long*)&(elements[i]),
+                                      (long long*)&(nodes_per_element[i]),
+                                      (long long*)&(element_attributes[i]));
     }
 
     /*connectivity*/
@@ -475,20 +475,20 @@ int main(int argc, char *argv[]) {
     FieldContainer<int> elemToNode(numElems,numNodesPerElem);
     for(long long b = 0; b < numElemBlk; b++){
       for(long long el = 0; el < elements[b]; el++){
-	for (int j=0; j<numNodesPerElem; j++) {
-	  elemToNode(telct,j) = elmt_node_linkage[b][el*numNodesPerElem + j]-1;
-	}
-	telct ++;
+        for (int j=0; j<numNodesPerElem; j++) {
+          elemToNode(telct,j) = elmt_node_linkage[b][el*numNodesPerElem + j]-1;
+        }
+        telct ++;
       }
     }
- 
+
    // Read node coordinates and place in field container
     FieldContainer<double> nodeCoord(numNodes,dim);
     double * nodeCoordx = new double [numNodes];
     double * nodeCoordy = new double [numNodes];
     double * nodeCoordz = new double [numNodes];
     im_ex_get_coord_l(id,nodeCoordx,nodeCoordy,nodeCoordz);
-    for (int i=0; i<numNodes; i++) {          
+    for (int i=0; i<numNodes; i++) {
       nodeCoord(i,0)=nodeCoordx[i];
       nodeCoord(i,1)=nodeCoordy[i];
       nodeCoord(i,2)=nodeCoordz[i];
@@ -505,15 +505,15 @@ int main(int argc, char *argv[]) {
     long long num_border_elems;
     long long num_node_comm_maps;
     long long num_elem_comm_maps;
-    im_ne_get_loadbal_param_l( id, 
-			       &num_internal_nodes,
-			       &num_border_nodes, 
-			       &num_external_nodes,
-			       &num_internal_elems, 
-			       &num_border_elems,
-			       &num_node_comm_maps,
-			       &num_elem_comm_maps,
-			       0/*unused*/ );
+    im_ne_get_loadbal_param_l( id,
+                               &num_internal_nodes,
+                               &num_border_nodes,
+                               &num_external_nodes,
+                               &num_internal_elems,
+                               &num_border_elems,
+                               &num_node_comm_maps,
+                               &num_elem_comm_maps,
+                               0/*unused*/ );
 
     if(num_node_comm_maps > 0){
       node_comm_proc_ids   = new long long  [num_node_comm_maps];
@@ -521,31 +521,31 @@ int main(int argc, char *argv[]) {
       node_cmap_ids        = new long long  [num_node_comm_maps];
       comm_node_ids        = new long long* [num_node_comm_maps];
       comm_node_proc_ids   = new long long* [num_node_comm_maps];
-  
+
       long long *  elem_cmap_ids        = new long long [num_elem_comm_maps];
       long long *  elem_cmap_elem_cnts  = new long long [num_elem_comm_maps];
 
 
-      if ( im_ne_get_cmap_params_l( id, 
-				  node_cmap_ids,
-				  (long long*)node_cmap_node_cnts, 
-				  elem_cmap_ids,
-				  (long long*)elem_cmap_elem_cnts, 
-				  0/*not used proc_id*/ ) < 0 )++error;
-      
+      if ( im_ne_get_cmap_params_l( id,
+                                  node_cmap_ids,
+                                  (long long*)node_cmap_node_cnts,
+                                  elem_cmap_ids,
+                                  (long long*)elem_cmap_elem_cnts,
+                                  0/*not used proc_id*/ ) < 0 )++error;
+
       for(long long j = 0; j < num_node_comm_maps; j++) {
-	comm_node_ids[j]       = new long long [node_cmap_node_cnts[j]];
-	comm_node_proc_ids[j]  = new long long [node_cmap_node_cnts[j]];
-	if ( im_ne_get_node_cmap_l( id, 
-				  node_cmap_ids[j], 
-				  comm_node_ids[j], 
-				  comm_node_proc_ids[j],
-				  0/*not used proc_id*/ ) < 0 )++error;
-	node_comm_proc_ids[j] = comm_node_proc_ids[j][0];
+        comm_node_ids[j]       = new long long [node_cmap_node_cnts[j]];
+        comm_node_proc_ids[j]  = new long long [node_cmap_node_cnts[j]];
+        if ( im_ne_get_node_cmap_l( id,
+                                  node_cmap_ids[j],
+                                  comm_node_ids[j],
+                                  comm_node_proc_ids[j],
+                                  0/*not used proc_id*/ ) < 0 )++error;
+        node_comm_proc_ids[j] = comm_node_proc_ids[j][0];
       }
 
       delete [] elem_cmap_ids;
-      delete [] elem_cmap_elem_cnts;      
+      delete [] elem_cmap_elem_cnts;
     }
 
     if(!Comm.MyPID()) {cout << msg << "Mesh Queries     = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
@@ -555,13 +555,13 @@ int main(int argc, char *argv[]) {
     bool * nodeIsOwned = new bool[numNodes];
 
     calc_global_node_ids(globalNodeIds,
-			 nodeIsOwned,
-			 numNodes,
-			 num_node_comm_maps,
-			 node_cmap_node_cnts,
-			 node_comm_proc_ids,
-			 comm_node_ids,
-			 rank);    
+                         nodeIsOwned,
+                         numNodes,
+                         num_node_comm_maps,
+                         node_cmap_node_cnts,
+                         node_comm_proc_ids,
+                         comm_node_ids,
+                         rank);
 
 
     if(MyPID==0) {cout << msg << "Global Node Nums = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
@@ -582,12 +582,12 @@ int main(int argc, char *argv[]) {
           long long * sideSetSideList = new long long [numSidesInSet];
           im_ex_get_side_set_l(id,sideSetIds[i],sideSetElemList,sideSetSideList);
           for (int j=0; j<numSidesInSet; j++) {
-             
+
              int sideNode0 = cellType.getNodeMap(2,sideSetSideList[j]-1,0);
              int sideNode1 = cellType.getNodeMap(2,sideSetSideList[j]-1,1);
              int sideNode2 = cellType.getNodeMap(2,sideSetSideList[j]-1,2);
              int sideNode3 = cellType.getNodeMap(2,sideSetSideList[j]-1,3);
-             
+
              nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode0))=1;
              nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode1))=1;
              nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode2))=1;
@@ -600,7 +600,7 @@ int main(int argc, char *argv[]) {
     delete [] sideSetIds;
 
    if(MyPID ==0) {cout << msg << "Boundary Conds   = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
- 
+
 
 
 /**********************************************************************************/
@@ -608,9 +608,9 @@ int main(int argc, char *argv[]) {
 /**********************************************************************************/
 
    // Get numerical integration points and weights
-    DefaultCubatureFactory<double>  cubFactory;                                   
+    DefaultCubatureFactory<double>  cubFactory;
     int cubDegree = 2;
-    Teuchos::RCP<Cubature<double> > hexCub = cubFactory.create(cellType, cubDegree); 
+    Teuchos::RCP<Cubature<double> > hexCub = cubFactory.create(cellType, cubDegree);
 
     int cubDim       = hexCub->getDimension();
     int numCubPoints = hexCub->getNumPoints();
@@ -629,11 +629,11 @@ int main(int argc, char *argv[]) {
 /*********************************** GET BASIS ************************************/
 /**********************************************************************************/
 
-   // Define basis 
+   // Define basis
      Basis_HGRAD_HEX_C1_FEM<double, FieldContainer<double> > hexHGradBasis;
      int numFieldsG = hexHGradBasis.getCardinality();
-     FieldContainer<double> HGBValues(numFieldsG, numCubPoints); 
-     FieldContainer<double> HGBGrads(numFieldsG, numCubPoints, spaceDim); 
+     FieldContainer<double> HGBValues(numFieldsG, numCubPoints);
+     FieldContainer<double> HGBGrads(numFieldsG, numCubPoints, spaceDim);
 
   // Evaluate basis values and gradients at cubature points
      hexHGradBasis.getValues(HGBValues, cubPoints, OPERATOR_VALUE);
@@ -654,7 +654,7 @@ int main(int argc, char *argv[]) {
 
     // Build a list of the OWNED global ids...
     // NTS: will need to switch back to long long
-    int *ownedGIDs=new int[ownedNodes];    
+    int *ownedGIDs=new int[ownedNodes];
     int oidx=0;
     for(int i=0;i<numNodes;i++)
       if(nodeIsOwned[i]){
@@ -679,13 +679,13 @@ int main(int argc, char *argv[]) {
     int overlappedNodes=numNodes;
 
     // Build a list of the OVERLAPPED global ids...
-    int *overlappedGIDs=new int[overlappedNodes];    
+    int *overlappedGIDs=new int[overlappedNodes];
     for(int i=0;i<numNodes;i++)
         overlappedGIDs[i]=(int)globalNodeIds[i];
 
     // Generate epetra map for nodes
     Epetra_Map overlappedMapG(-1,overlappedNodes,overlappedGIDs,0,Comm);
-   
+
     // build Export/Import
     Epetra_Export exporter(overlappedMapG,globalMapG);
     Epetra_Import importer(overlappedMapG,globalMapG);
@@ -693,7 +693,7 @@ int main(int argc, char *argv[]) {
 /**********************************************************************************/
 /********************* BUILD GRAPH FOR OVERLAPPED SOLUTION *************************/
 /**********************************************************************************/
- 
+
     Epetra_CrsGraph overlappedGraph(Copy,overlappedMapG,0);
     Epetra_CrsGraph ownedGraph(Copy,globalMapG,0);
 
@@ -703,38 +703,38 @@ int main(int argc, char *argv[]) {
       //int desiredWorksetSize = 100;                      // change to desired workset size!
       int numWorksets        = numElems/desiredWorksetSize;
       for(int workset = 0; workset < numWorksets; workset++){
-    
+
         // Compute cell numbers where the workset starts and ends
         int worksetSize  = 0;
         int worksetBegin = (workset + 0)*desiredWorksetSize;
         int worksetEnd   = (workset + 1)*desiredWorksetSize;
-    
+
         // When numElems is not divisible by desiredWorksetSize, the last workset ends at numElems
         worksetEnd   = (worksetEnd <= numElems) ? worksetEnd : numElems;
-    
+
         // Now we know the actual workset size and can allocate the array for the cell nodes
         worksetSize  = worksetEnd - worksetBegin;
-  
+
         //"WORKSET CELL" loop: local cell ordinal is relative to numElems
         for(int cell = worksetBegin; cell < worksetEnd; cell++){
-    
+
           // Compute cell ordinal relative to the current workset
           int worksetCellOrdinal = cell - worksetBegin;
-    
+
           // "CELL EQUATION" loop for the workset cell: cellRow is relative to the cell DoF numbering
           for (int cellRow = 0; cellRow < numFieldsG; cellRow++){
-    
+
             int localRow  = elemToNode(cell, cellRow);
             int globalRow = globalNodeIds[localRow];
 
             // "CELL VARIABLE" loop for the workset cell: cellCol is relative to the cell DoF numbering
             for (int cellCol = 0; cellCol < numFieldsG; cellCol++){
-    
+
               int localCol  = elemToNode(cell, cellCol);
               int globalCol = globalNodeIds[localCol];
-    
+
               overlappedGraph.InsertGlobalIndices(globalRow,1, &globalCol);
-    
+
             }// *** cell col loop ***
           }// *** cell row loop ***
         }// *** workset cell loop **
@@ -1097,7 +1097,7 @@ int main(int argc, char *argv[]) {
 
   char probType[10] = "laplace";
 
-   
+
     TestMultiLevelPreconditionerLaplace(probType,             MLList,
                                        gl_StiffMatrix,          exactNodalVals,
                                        gl_rhsVector,            femCoefficients,
@@ -1291,7 +1291,7 @@ int main(int argc, char *argv[]) {
 
 
    // Cleanup
-   for(long long b = 0; b < numElemBlk; b++){     
+   for(long long b = 0; b < numElemBlk; b++){
      delete [] elmt_node_linkage[b];
      delete [] element_types[b];
    }
@@ -1313,14 +1313,14 @@ int main(int argc, char *argv[]) {
         delete [] comm_node_ids[i];
         delete [] comm_node_proc_ids[i];
       }
-      
+
       delete [] comm_node_ids;
       delete [] comm_node_proc_ids;
    }
 
    // delete mesh
    Delete_Pamgen_Mesh();
-   
+
    return 0;
 
 }
@@ -1529,50 +1529,50 @@ void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
 
 // Test ML
 int TestMultiLevelPreconditionerLaplace(char ProblemType[],
-				 Teuchos::ParameterList   & MLList,
+                                 Teuchos::ParameterList   & MLList,
                                  Epetra_CrsMatrix   & A,
                                  const Epetra_MultiVector & xexact,
                                  Epetra_MultiVector & b,
                                  Epetra_MultiVector & uh,
                                  double & TotalErrorResidual,
-				 double & TotalErrorExactSol)
+                                 double & TotalErrorExactSol)
 {
   Epetra_MultiVector x(xexact);
   x.PutScalar(0.0);
-  
-  Epetra_LinearProblem Problem(&A,&x,&b); 
+
+  Epetra_LinearProblem Problem(&A,&x,&b);
   Epetra_MultiVector* lhs = Problem.GetLHS();
   Epetra_MultiVector* rhs = Problem.GetRHS();
-  
+
   Epetra_Time Time(A.Comm());
-  
+
   // =================== //
   // call ML and AztecOO //
   // =================== //
-  
-  AztecOO solver(Problem);  
+
+  AztecOO solver(Problem);
   ML_Epetra::MultiLevelPreconditioner *MLPrec = new ML_Epetra::MultiLevelPreconditioner(A, MLList, true);
-  
+
   // tell AztecOO to use this preconditioner, then solve
   solver.SetPrecOperator(MLPrec);
   solver.SetAztecOption(AZ_solver, AZ_cg);
   solver.SetAztecOption(AZ_output, 1);
 
   solver.Iterate(200, 1e-10);
-  
+
   delete MLPrec;
 
   uh = *lhs;
-  
+
   // ==================================================== //
   // compute difference between exact solution and ML one //
-  // ==================================================== //  
-  double d = 0.0, d_tot = 0.0;  
+  // ==================================================== //
+  double d = 0.0, d_tot = 0.0;
   for( int i=0 ; i<lhs->Map().NumMyElements() ; ++i )
     d += ((*lhs)[0][i] - xexact[0][i]) * ((*lhs)[0][i] - xexact[0][i]);
-  
+
   A.Comm().SumAll(&d,&d_tot,1);
-  
+
   // ================== //
   // compute ||Ax - b|| //
   // ================== //
@@ -1581,21 +1581,21 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
   A.Multiply(false, *lhs, Ax);
   Ax.Update(1.0, *rhs, -1.0);
   Ax.Norm2(&Norm);
-  
+
   string msg = ProblemType;
-  
+
   if (A.Comm().MyPID() == 0) {
     cout << msg << endl << "......Using " << A.Comm().NumProc() << " processes" << endl;
     cout << msg << "......||A x - b||_2 = " << Norm << endl;
     cout << msg << "......||x_exact - x||_2 = " << sqrt(d_tot) << endl;
     cout << msg << "......Total Time = " << Time.ElapsedTime() << endl;
   }
-  
+
   TotalErrorExactSol += sqrt(d_tot);
   TotalErrorResidual += Norm;
-  
+
   return( solver.NumIters() );
-  
+
 }
 
 

@@ -160,7 +160,7 @@ typedef Intrepid::CellTools<double>      IntrepidCTools;
 struct fecomp{
   bool operator () ( topo_entity* x,  topo_entity*  y )const
   {
-    if(x->sorted_local_node_ids < y->sorted_local_node_ids)return true;    
+    if(x->sorted_local_node_ids < y->sorted_local_node_ids)return true;
     return false;
   }
 };
@@ -169,11 +169,11 @@ struct fecomp{
 /***************** FUNCTION DECLARATIONS FOR ML PRECONDITIONER ********************/
 /**********************************************************************************/
 
-/** \brief Multiplies abs(A)x = y, where all non-zero entries of A are replaced with their absolute values value  
+/** \brief Multiplies abs(A)x = y, where all non-zero entries of A are replaced with their absolute values value
 
     \param  A          [in]    matrix
     \param  x          [in]    vector
-    \param  y          [out]   vector 
+    \param  y          [out]   vector
  */
 int Multiply_Abs(const Epetra_CrsMatrix &A,const Epetra_Vector &x,Epetra_Vector &y);
 
@@ -221,11 +221,11 @@ void TestMultiLevelPreconditioner_DivLSFEM(char ProblemType[],
     \param  y                  [in]    y coordinate
     \param  z                  [in]    z coordinate
  */
-int evalu(double & uExact0, 
-          double & uExact1, 
-          double & uExact2, 
-          double & x, 
-          double & y, 
+int evalu(double & uExact0,
+          double & uExact1,
+          double & uExact2,
+          double & x,
+          double & y,
           double & z);
 
 /** \brief  Divergence of exact solution.
@@ -236,8 +236,8 @@ int evalu(double & uExact0,
 
     \return Value of the divergence of exact solution at (x,y,z)
  */
-double evalDivu(double & x, 
-                double & y, 
+double evalDivu(double & x,
+                double & y,
                 double & z);
 
 /** \brief  Curl of exact solution.
@@ -250,12 +250,12 @@ double evalDivu(double & x,
     \param  z                  [in]    z coordinate
     \param  mu                 [in]    material parameter
  */
-int evalCurlu(double & curlu0, 
-              double & curlu1, 
-              double & curlu2, 
-              double & x, 
-              double & y, 
-              double & z, 
+int evalCurlu(double & curlu0,
+              double & curlu1,
+              double & curlu2,
+              double & x,
+              double & y,
+              double & z,
               double & mu);
 
 /** \brief  Curl of curl of exact solution.
@@ -268,12 +268,12 @@ int evalCurlu(double & curlu0,
     \param  z                  [in]    z coordinate
     \param  mu                 [in]    material parameter
  */
-int evalCurlCurlu(double & curlCurlu0, 
-                  double & curlCurlu1, 
-                  double & curlCurlu2, 
-                  double & x, 
-                  double & y, 
-                  double & z, 
+int evalCurlCurlu(double & curlCurlu0,
+                  double & curlCurlu1,
+                  double & curlCurlu2,
+                  double & x,
+                  double & y,
+                  double & z,
                   double & mu);
 /**********************************************************************************/
 /**********************************************************************************/
@@ -310,7 +310,7 @@ int main(int argc, char *argv[]) {
       std::cout <<"                             and material parameters for each block \nn";
       exit(1);
    }
-  
+
  if (MyPID == 0) {
   std::cout \
     << "===============================================================================\n" \
@@ -361,7 +361,7 @@ int main(int argc, char *argv[]) {
      if (MyPID == 0) {
       std::cout << "\nReading parameter list from the XML file \""<<xmlInFileName<<"\" ...\n\n";
      }
-      Teuchos::updateParametersFromXmlFile(xmlInFileName,&inputList);
+     Teuchos::updateParametersFromXmlFile(xmlInFileName, Teuchos::ptr (&inputList));
      if (MyPID == 0) {
       inputList.print(std::cout,2,true,true);
       std::cout << "\n";
@@ -375,7 +375,7 @@ int main(int argc, char *argv[]) {
 
   // Get pamgen mesh definition
     std::string meshInput = Teuchos::getParameter<std::string>(inputList,"meshInput");
- 
+
 
 /**********************************************************************************/
 /***************************** GET CELL TOPOLOGY **********************************/
@@ -385,7 +385,7 @@ int main(int argc, char *argv[]) {
     typedef shards::CellTopology    CellTopology;
     CellTopology cellType(shards::getCellTopologyData<shards::Hexahedron<8> >() );
 
-   // Get dimensions 
+   // Get dimensions
     int numNodesPerElem = cellType.getNodeCount();
     int numEdgesPerElem = cellType.getEdgeCount();
     int numFacesPerElem = cellType.getSideCount();
@@ -433,7 +433,7 @@ int main(int argc, char *argv[]) {
 
     long long maxInt = 9223372036854775807LL;
     Create_Pamgen_Mesh(meshInput.c_str(), dim, rank, numProcs, maxInt);
-    
+
    // Get local mesh size info
     char title[100];
     long long numDim;
@@ -444,7 +444,7 @@ int main(int argc, char *argv[]) {
     long long numSideSets;
     int id = 0;
 
-    im_ex_get_init_l(id, title, &numDim, &numNodes, 
+    im_ex_get_init_l(id, title, &numDim, &numNodes,
                                 &numElems, &numElemBlk, &numNodeSets,
                                 &numSideSets);
   // Get global mesh size info
@@ -472,12 +472,12 @@ int main(int argc, char *argv[]) {
 
     for(long long i = 0; i < numElemBlk; i ++){
       element_types[i] = new char [MAX_STR_LENGTH + 1];
-      error += im_ex_get_elem_block_l(id, 
-				      block_ids[i], 
-				      element_types[i],
-				      (long long*)&(elements[i]),
-				      (long long*)&(nodes_per_element[i]), 
-				      (long long*)&(element_attributes[i]));
+      error += im_ex_get_elem_block_l(id,
+                                      block_ids[i],
+                                      element_types[i],
+                                      (long long*)&(elements[i]),
+                                      (long long*)&(nodes_per_element[i]),
+                                      (long long*)&(element_attributes[i]));
     }
 
     /*connectivity*/
@@ -501,21 +501,21 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> muVal(numElems);
     for(long long b = 0; b < numElemBlk; b++){
       for(long long el = 0; el < elements[b]; el++){
-	for (int j=0; j<numNodesPerElem; j++) {
-	  elemToNode(telct,j) = elmt_node_linkage[b][el*numNodesPerElem + j]-1;
-	}
-        muVal(telct) = mu[b];     
-	telct ++;
+        for (int j=0; j<numNodesPerElem; j++) {
+          elemToNode(telct,j) = elmt_node_linkage[b][el*numNodesPerElem + j]-1;
+        }
+        muVal(telct) = mu[b];
+        telct ++;
       }
     }
- 
+
    // Read node coordinates and place in field container
     FieldContainer<double> nodeCoord(numNodes,dim);
     double * nodeCoordx = new double [numNodes];
     double * nodeCoordy = new double [numNodes];
     double * nodeCoordz = new double [numNodes];
     im_ex_get_coord_l(id,nodeCoordx,nodeCoordy,nodeCoordz);
-    for (int i=0; i<numNodes; i++) {          
+    for (int i=0; i<numNodes; i++) {
       nodeCoord(i,0)=nodeCoordx[i];
       nodeCoord(i,1)=nodeCoordy[i];
       nodeCoord(i,2)=nodeCoordz[i];
@@ -529,15 +529,15 @@ int main(int argc, char *argv[]) {
     long long num_border_elems;
     long long num_node_comm_maps;
     long long num_elem_comm_maps;
-    im_ne_get_loadbal_param_l( id, 
-			       &num_internal_nodes,
-			       &num_border_nodes, 
-			       &num_external_nodes,
-			       &num_internal_elems, 
-			       &num_border_elems,
-			       &num_node_comm_maps,
-			       &num_elem_comm_maps,
-			       0/*unused*/ );
+    im_ne_get_loadbal_param_l( id,
+                               &num_internal_nodes,
+                               &num_border_nodes,
+                               &num_external_nodes,
+                               &num_internal_elems,
+                               &num_border_elems,
+                               &num_node_comm_maps,
+                               &num_elem_comm_maps,
+                               0/*unused*/ );
 
     if(num_node_comm_maps > 0){
       node_comm_proc_ids   = new long long  [num_node_comm_maps];
@@ -545,27 +545,27 @@ int main(int argc, char *argv[]) {
       node_cmap_ids        = new long long  [num_node_comm_maps];
       comm_node_ids        = new long long* [num_node_comm_maps];
       comm_node_proc_ids   = new long long* [num_node_comm_maps];
-  
+
       long long *  elem_cmap_ids        = new long long [num_elem_comm_maps];
       long long *  elem_cmap_elem_cnts  = new long long [num_elem_comm_maps];
 
 
-      if ( im_ne_get_cmap_params_l( id, 
-				  node_cmap_ids,
-				  (long long*)node_cmap_node_cnts, 
-				  elem_cmap_ids,
-				  (long long*)elem_cmap_elem_cnts, 
-				  0/*not used proc_id*/ ) < 0 )++error;
-      
+      if ( im_ne_get_cmap_params_l( id,
+                                  node_cmap_ids,
+                                  (long long*)node_cmap_node_cnts,
+                                  elem_cmap_ids,
+                                  (long long*)elem_cmap_elem_cnts,
+                                  0/*not used proc_id*/ ) < 0 )++error;
+
       for(long long j = 0; j < num_node_comm_maps; j++) {
-	comm_node_ids[j]       = new long long [node_cmap_node_cnts[j]];
-	comm_node_proc_ids[j]  = new long long [node_cmap_node_cnts[j]];
-	if ( im_ne_get_node_cmap_l( id, 
-				  node_cmap_ids[j], 
-				  comm_node_ids[j], 
-				  comm_node_proc_ids[j],
-				  0/*not used proc_id*/ ) < 0 )++error;
-	node_comm_proc_ids[j] = comm_node_proc_ids[j][0];
+        comm_node_ids[j]       = new long long [node_cmap_node_cnts[j]];
+        comm_node_proc_ids[j]  = new long long [node_cmap_node_cnts[j]];
+        if ( im_ne_get_node_cmap_l( id,
+                                  node_cmap_ids[j],
+                                  comm_node_ids[j],
+                                  comm_node_proc_ids[j],
+                                  0/*not used proc_id*/ ) < 0 )++error;
+        node_comm_proc_ids[j] = comm_node_proc_ids[j][0];
       }
     }
 
@@ -575,13 +575,13 @@ int main(int argc, char *argv[]) {
     bool * nodeIsOwned = new bool[numNodes];
 
     calc_global_node_ids(globalNodeIds,
-			 nodeIsOwned,
-			 numNodes,
-			 num_node_comm_maps,
-			 node_cmap_node_cnts,
-			 node_comm_proc_ids,
-			 comm_node_ids,
-			 rank);    
+                         nodeIsOwned,
+                         numNodes,
+                         num_node_comm_maps,
+                         node_cmap_node_cnts,
+                         node_comm_proc_ids,
+                         comm_node_ids,
+                         rank);
   // Count owned nodes
     int ownedNodes=0;
     for(int i=0;i<numNodes;i++)
@@ -606,60 +606,60 @@ int main(int argc, char *argv[]) {
       if(nodes_per_element[b] == 4){
       }
       else if (nodes_per_element[b] == 8){
-	//loop over all elements and push their edges onto a set if they are not there already
-	for(long long el = 0; el < elements[b]; el++){
-	  std::set< topo_entity *, fecomp > ::iterator fit;
-	  for (int i=0; i < numEdgesPerElem; i++){
-	    topo_entity * teof = new topo_entity;
-	    for(int j = 0; j < numNodesPerEdge;j++){
-	      teof->add_node(elmt_node_linkage[b][el*numNodesPerElem + refEdgeToNode(i,j)],globalNodeIds);
-	    }
-	    teof->sort();
-	    fit = edge_set.find(teof);
-	    if(fit == edge_set.end()){
-	      teof->local_id = edge_vector.size();
-	      edge_set.insert(teof);
-	      elemToEdge(elct,i)= edge_vector.size();
-	      edge_vector.push_back(teof);
-	    }
-	    else{
-	      elemToEdge(elct,i) = (*fit)->local_id;
-	      delete teof;
-	    }
-	  }
-	  for (int i=0; i < numFacesPerElem; i++){
-	    topo_entity * teof = new topo_entity;
-	    for(int j = 0; j < numNodesPerFace;j++){
-	      teof->add_node(elmt_node_linkage[b][el*numNodesPerElem + refFaceToNode(i,j)],globalNodeIds);
-	    }
-	    teof->sort();
-	    fit = face_set.find(teof);
-	    if(fit == face_set.end()){
-	      teof->local_id = face_vector.size();
-	      face_set.insert(teof);
-	      elemToFace(elct,i)= face_vector.size();
-	      face_vector.push_back(teof);
-	    }
-	    else{
-	      elemToFace(elct,i) = (*fit)->local_id;
-	      delete teof;
-	    }
-	  }
-	  elct ++;
-	}
+        //loop over all elements and push their edges onto a set if they are not there already
+        for(long long el = 0; el < elements[b]; el++){
+          std::set< topo_entity *, fecomp > ::iterator fit;
+          for (int i=0; i < numEdgesPerElem; i++){
+            topo_entity * teof = new topo_entity;
+            for(int j = 0; j < numNodesPerEdge;j++){
+              teof->add_node(elmt_node_linkage[b][el*numNodesPerElem + refEdgeToNode(i,j)],globalNodeIds);
+            }
+            teof->sort();
+            fit = edge_set.find(teof);
+            if(fit == edge_set.end()){
+              teof->local_id = edge_vector.size();
+              edge_set.insert(teof);
+              elemToEdge(elct,i)= edge_vector.size();
+              edge_vector.push_back(teof);
+            }
+            else{
+              elemToEdge(elct,i) = (*fit)->local_id;
+              delete teof;
+            }
+          }
+          for (int i=0; i < numFacesPerElem; i++){
+            topo_entity * teof = new topo_entity;
+            for(int j = 0; j < numNodesPerFace;j++){
+              teof->add_node(elmt_node_linkage[b][el*numNodesPerElem + refFaceToNode(i,j)],globalNodeIds);
+            }
+            teof->sort();
+            fit = face_set.find(teof);
+            if(fit == face_set.end()){
+              teof->local_id = face_vector.size();
+              face_set.insert(teof);
+              elemToFace(elct,i)= face_vector.size();
+              face_vector.push_back(teof);
+            }
+            else{
+              elemToFace(elct,i) = (*fit)->local_id;
+              delete teof;
+            }
+          }
+          elct ++;
+        }
       }
     }
-    
+
    // Edge to Node connectivity
     FieldContainer<int> edgeToNode(edge_vector.size(), numNodesPerEdge);
     for(unsigned ect = 0; ect != edge_vector.size(); ect++){
       std::list<long long>::iterator elit;
       int nct = 0;
       for(elit  = edge_vector[ect]->local_node_ids.begin();
-	  elit != edge_vector[ect]->local_node_ids.end();
-	  elit ++){
-	edgeToNode(ect,nct) = *elit-1;
-	nct++;
+          elit != edge_vector[ect]->local_node_ids.end();
+          elit ++){
+        edgeToNode(ect,nct) = *elit-1;
+        nct++;
       }
     }
 
@@ -669,10 +669,10 @@ int main(int argc, char *argv[]) {
       std::list<long long>::iterator flit;
       int nct = 0;
       for(flit  = face_vector[fct]->local_node_ids.begin();
-	  flit != face_vector[fct]->local_node_ids.end();
-	  flit ++){
-	faceToNode(fct,nct) = *flit-1;
-	nct++;
+          flit != face_vector[fct]->local_node_ids.end();
+          flit ++){
+        faceToNode(fct,nct) = *flit-1;
+        nct++;
       }
     }
 
@@ -684,13 +684,13 @@ int main(int argc, char *argv[]) {
        for (int iface = 0; iface < numFacesPerElem; iface++){
          if (!faceDone(elemToFace(ielem,iface))){
            for (int iedge = 0; iedge < numEdgesPerFace; iedge++){
-              faceToEdge(elemToFace(ielem,iface),iedge) = 
+              faceToEdge(elemToFace(ielem,iface),iedge) =
                            elemToEdge(ielem,refFaceToEdge(iface,iedge));
               faceDone(elemToFace(ielem,iface))=1;
            }
          }
        }
-    }   
+    }
 
     int numEdges = edge_vector.size();
     int numFaces = face_vector.size();
@@ -699,22 +699,22 @@ int main(int argc, char *argv[]) {
     std::string doing_type;
     doing_type = "EDGES";
     calc_global_ids(edge_vector,
-	       comm_node_ids,
-	       node_comm_proc_ids, 
-	       node_cmap_node_cnts,
-	       num_node_comm_maps,
-	       rank,
-	       doing_type);
+               comm_node_ids,
+               node_comm_proc_ids,
+               node_cmap_node_cnts,
+               num_node_comm_maps,
+               rank,
+               doing_type);
 
 
     doing_type = "FACES";
     calc_global_ids(face_vector,
-	       comm_node_ids,
-	       node_comm_proc_ids, 
-	       node_cmap_node_cnts,
-	       num_node_comm_maps,
-	       rank,
-	       doing_type);
+               comm_node_ids,
+               node_comm_proc_ids,
+               node_cmap_node_cnts,
+               num_node_comm_maps,
+               rank,
+               doing_type);
 
   // Build list of owned global edge ids
     long long * globalEdgeIds = new long long[numEdges];
@@ -851,9 +851,9 @@ int main(int argc, char *argv[]) {
 /**********************************************************************************/
 
    // Get numerical integration points and weights
-    DefaultCubatureFactory<double>  cubFactory;                                   
+    DefaultCubatureFactory<double>  cubFactory;
     int cubDegree = 2;
-    Teuchos::RCP<Cubature<double> > hexCub = cubFactory.create(cellType, cubDegree); 
+    Teuchos::RCP<Cubature<double> > hexCub = cubFactory.create(cellType, cubDegree);
 
     int cubDim       = hexCub->getDimension();
     int numCubPoints = hexCub->getNumPoints();
@@ -892,7 +892,7 @@ int main(int argc, char *argv[]) {
 /*********************************** GET BASIS ************************************/
 /**********************************************************************************/
 
-   // Define basis 
+   // Define basis
     Basis_HCURL_HEX_I1_FEM<double, FieldContainer<double> > hexHCurlBasis;
     Basis_HDIV_HEX_I1_FEM<double, FieldContainer<double> > hexHDivBasis;
     Basis_HGRAD_HEX_C1_FEM<double, FieldContainer<double> > hexHGradBasis;
@@ -902,10 +902,10 @@ int main(int argc, char *argv[]) {
     int numFieldsG = hexHGradBasis.getCardinality();
 
   // Evaluate basis at cubature points
-     FieldContainer<double> HCVals(numFieldsC, numCubPoints, spaceDim); 
-     FieldContainer<double> HDVals(numFieldsD, numCubPoints, spaceDim); 
-     FieldContainer<double> HDivs(numFieldsD, numCubPoints); 
-     FieldContainer<double> HGVals(numFieldsG, numCubPoints); 
+     FieldContainer<double> HCVals(numFieldsC, numCubPoints, spaceDim);
+     FieldContainer<double> HDVals(numFieldsD, numCubPoints, spaceDim);
+     FieldContainer<double> HDivs(numFieldsD, numCubPoints);
+     FieldContainer<double> HGVals(numFieldsG, numCubPoints);
 
      hexHCurlBasis.getValues(HCVals, cubPoints, OPERATOR_VALUE);
      hexHDivBasis.getValues(HDVals, cubPoints, OPERATOR_VALUE);
@@ -1039,19 +1039,19 @@ int main(int argc, char *argv[]) {
                  vals[m]=1.0;}
               else vals[m]=-1.0;
 
-            // This is a convoluted way to account for edge orientations that 
+            // This is a convoluted way to account for edge orientations that
             // may be incorrect on the local processor because the edge is
             // not owned by the local processor.
              int edgeIndex = -1;
              if (!edgeIsOwned[faceToEdge(iface,m)]){
                  for (int l=0; l<numEdgesPerElem; l++){
-                    if (faceToEdge(iface,m)==elemToEdge(i,l)) 
+                    if (faceToEdge(iface,m)==elemToEdge(i,l))
                        edgeIndex=l;
                 }
              }
                if (edgeIndex != -1 && edgeIndex < 8){
                  if (edgeIndex < 4 && faceIsOwned[elemToFace(i,4)]){
-                   vals[m]=-1.0*vals[m];                 
+                   vals[m]=-1.0*vals[m];
                  }
                  else if (edgeIndex > 3 && faceIsOwned[elemToFace(i,5)]){
                    vals[m]=-1.0*vals[m];
@@ -1235,7 +1235,7 @@ int main(int argc, char *argv[]) {
            if (!faceIsOwned[elemToFace(cell,iface)]){
               worksetFaceSigns(cellCounter,iface)=-1.0*worksetFaceSigns(cellCounter,iface);
            }
-       } 
+       }
 
 #ifdef DUMP_DATA
        for (int iface=0; iface<numFacesPerElem; iface++) {
@@ -1352,8 +1352,8 @@ int main(int argc, char *argv[]) {
  /*                          Compute HCURL Mass Matrix                             */
  /**********************************************************************************/
 
-     // transform to physical coordinates 
-      IntrepidFSTools::HCURLtransformVALUE<double>(HCValsTransformed, worksetJacobInv, 
+     // transform to physical coordinates
+      IntrepidFSTools::HCURLtransformVALUE<double>(HCValsTransformed, worksetJacobInv,
                                    HCVals);
 
      // compute weighted measure
@@ -1389,8 +1389,8 @@ int main(int argc, char *argv[]) {
  /*                         Compute HDiv Mass Matrix                               */
  /**********************************************************************************/
 
-     // transform to physical coordinates 
-      IntrepidFSTools::HDIVtransformVALUE<double>(HDValsTransformed, worksetJacobian, 
+     // transform to physical coordinates
+      IntrepidFSTools::HDIVtransformVALUE<double>(HDValsTransformed, worksetJacobian,
                                                   worksetJacobDet, HDVals);
 
      // multiply by weighted measure
@@ -1414,7 +1414,7 @@ int main(int argc, char *argv[]) {
  /*                         Compute HDiv Stiffness Matrix                          */
  /**********************************************************************************/
 
-      // transform to physical coordinates 
+      // transform to physical coordinates
       IntrepidFSTools::HDIVtransformDIV<double>(HDivsTransformed, worksetJacobDet,
                                                 HDivs);
 
@@ -1447,7 +1447,7 @@ int main(int argc, char *argv[]) {
 
      // integrate to compute element mass matrix
       IntrepidFSTools::integrate<double>(massMatrixHGrad,
-                                         HGValsTransformed, HGValsTransformedWeighted, 
+                                         HGValsTransformed, HGValsTransformedWeighted,
                                          COMP_BLAS);
 
   if(MyPID==0) {std::cout << "Compute HGRAD Mass Matrix                   "
@@ -1477,7 +1477,7 @@ int main(int argc, char *argv[]) {
               rhsDatag(worksetCellOrdinal,nPt,0) = du1;
               rhsDatag(worksetCellOrdinal,nPt,1) = du2;
               rhsDatag(worksetCellOrdinal,nPt,2) = du3;
-         
+
               rhsDatah(worksetCellOrdinal,nPt) = evalDivu(x, y, z);
            }
 
@@ -1552,7 +1552,7 @@ int main(int argc, char *argv[]) {
                    double y = worksetFacePoints(0, nPt, 1);
                    double z = worksetFacePoints(0, nPt, 2);
 
-                   evalCurlu(curluFace(0,nPt,0), curluFace(0,nPt,1), 
+                   evalCurlu(curluFace(0,nPt,0), curluFace(0,nPt,1),
                              curluFace(0,nPt,2), x, y, z, muVal(cell));
                  }
 
@@ -1804,13 +1804,13 @@ int main(int argc, char *argv[]) {
 
    // Parameter list for ML
    Teuchos::ParameterList MLList,dummy,dummy2;
-   double TotalErrorResidual=0, TotalErrorExactSol=0;   
+   double TotalErrorResidual=0, TotalErrorExactSol=0;
    ML_Epetra::SetDefaultsRefMaxwell(MLList);
    Teuchos::ParameterList MLList2=MLList.get("refmaxwell: 11list",MLList);
    MLList2.set("aggregation: type","Uncoupled-MIS");
    MLList2.set("x-coordinates",&Nx[0]);
    MLList2.set("y-coordinates",&Ny[0]);
-   MLList2.set("z-coordinates",&Nz[0]);   
+   MLList2.set("z-coordinates",&Nz[0]);
    MLList2.set("ML output",10);
    MLList2.set("smoother: sweeps (level 0)",3);
    MLList2.set("smoother: sweeps",3);
@@ -1832,15 +1832,15 @@ int main(int argc, char *argv[]) {
    dummy.set("repartition: Zoltan dimensions",3);
    dummy.set("x-coordinates",&Nx[0]);
    dummy.set("y-coordinates",&Ny[0]);
-   dummy.set("z-coordinates",&Nz[0]);   
+   dummy.set("z-coordinates",&Nz[0]);
    MLList2.set("face matrix free: coarse",dummy);
    MLList2.set("edge matrix free: coarse","disabled");
-   
+
   if (MyPID == 0) {
    cout<<MLList2<<endl;
   }
 
-   Epetra_FEVector xh(rhsVector);  
+   Epetra_FEVector xh(rhsVector);
    MassMatrixG.SetLabel("M0");
    MassMatrixC.SetLabel("M1");
    MassMatrixD.SetLabel("M2");
@@ -1848,14 +1848,14 @@ int main(int argc, char *argv[]) {
    DGrad.SetLabel("D0");
    DCurl.SetLabel("D1");
    MassMatrixCinv.SetLabel("M1^{-1}");
-   
+
    char probType[12] = "div_lsfem";
 
    TestMultiLevelPreconditioner_DivLSFEM(probType, MLList2, StiffMatrixD,
-					 DGrad, DCurl, FaceNode,
-					 MassMatrixC, MassMatrixCinv,
-					 MassMatrixD, xh, rhsVector,
-					 TotalErrorResidual, TotalErrorExactSol);
+                                         DGrad, DCurl, FaceNode,
+                                         MassMatrixC, MassMatrixCinv,
+                                         MassMatrixD, xh, rhsVector,
+                                         TotalErrorResidual, TotalErrorExactSol);
 
 /**********************************************************************************/
 /**************************** CALCULATE ERROR *************************************/
@@ -2070,7 +2070,7 @@ int main(int argc, char *argv[]) {
     \param  y                [in]    vector
  */
 int Multiply_Ones(const Epetra_CrsMatrix &A,const Epetra_Vector &x,Epetra_Vector &y){
-  if(!A.Filled()) 
+  if(!A.Filled())
     EPETRA_CHK_ERR(-1); // Matrix must be filled.
 
   double* xp = (double*) x.Values();
@@ -2087,27 +2087,27 @@ int Multiply_Ones(const Epetra_CrsMatrix &A,const Epetra_Vector &x,Epetra_Vector
     ImportVector_ = new Epetra_Vector(Importer_->TargetMap());
   else if (Exporter_)
     ExportVector_ = new Epetra_Vector(Exporter_->SourceMap());
-  
+
 
   // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
   if(Importer_ != 0) {
     EPETRA_CHK_ERR(ImportVector_->Import(x, *Importer_, Insert));
     xp = (double*) ImportVector_->Values();
     }
-  
+
   // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
   if(Exporter_ != 0)  yp = (double*) ExportVector_->Values();
-  
+
   // Do actual computation
   for(int i = 0; i < A.NumMyRows(); i++) {
     int NumEntries,*RowIndices;
     A.Graph().ExtractMyRowView(i,NumEntries,RowIndices);
     double sum = 0.0;
-    for(int j = 0; j < NumEntries; j++) 
-      sum += xp[*RowIndices++];    
-    yp[i] = sum;    
+    for(int j = 0; j < NumEntries; j++)
+      sum += xp[*RowIndices++];
+    yp[i] = sum;
   }
-  
+
   if(Exporter_ != 0) {
     y.PutScalar(0.0); // Make sure target is zero
     EPETRA_CHK_ERR(y.Export(*ExportVector_, *Exporter_, Add)); // Fill y with Values from export vector
@@ -2126,9 +2126,9 @@ int Multiply_Ones(const Epetra_CrsMatrix &A,const Epetra_Vector &x,Epetra_Vector
 /*************************************************************************************/
 /****************************** Multiply Abs *****************************************/
 /*************************************************************************************/
-// Multiplies abs(A)x = y, where all non-zero entries of A are replaced with their absolute values value 
+// Multiplies abs(A)x = y, where all non-zero entries of A are replaced with their absolute values value
 int Multiply_Abs(const Epetra_CrsMatrix &A,const Epetra_Vector &x,Epetra_Vector &y){
-  if(!A.Filled()) 
+  if(!A.Filled())
     EPETRA_CHK_ERR(-1); // Matrix must be filled.
 
   double* xp = (double*) x.Values();
@@ -2145,17 +2145,17 @@ int Multiply_Abs(const Epetra_CrsMatrix &A,const Epetra_Vector &x,Epetra_Vector 
     ImportVector_ = new Epetra_Vector(Importer_->TargetMap());
   else if (Exporter_)
     ExportVector_ = new Epetra_Vector(Exporter_->SourceMap());
-  
+
 
   // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
   if(Importer_ != 0) {
     EPETRA_CHK_ERR(ImportVector_->Import(x, *Importer_, Insert));
     xp = (double*) ImportVector_->Values();
     }
-  
+
   // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
   if(Exporter_ != 0)  yp = (double*) ExportVector_->Values();
-  
+
   // Do actual computation
   for(int i = 0; i < A.NumMyRows(); i++) {
     int NumEntries,*RowIndices;
@@ -2164,11 +2164,11 @@ int Multiply_Abs(const Epetra_CrsMatrix &A,const Epetra_Vector &x,Epetra_Vector 
     double sum = 0.0;
     for(int j = 0; j < NumEntries; j++){
       double v=*RowValues++;
-      sum += ABS(v) * xp[*RowIndices++];	
+      sum += ABS(v) * xp[*RowIndices++];
     }
-    yp[i] = sum;    
+    yp[i] = sum;
   }
-  
+
   if(Exporter_ != 0) {
     y.PutScalar(0.0); // Make sure target is zero
     EPETRA_CHK_ERR(y.Export(*ExportVector_, *Exporter_, Add)); // Fill y with Values from export vector
@@ -2198,15 +2198,15 @@ int Multiply_Abs(const Epetra_CrsMatrix &A,const Epetra_Vector &x,Epetra_Vector 
                                                     for H(div) basis functions)
  */
 void solution_test(string msg, const Epetra_Operator &A,const Epetra_MultiVector &lhs,const Epetra_MultiVector &rhs,const Epetra_MultiVector &xexact,Epetra_Time & Time, double & TotalErrorExactSol, double& TotalErrorResidual){
-  // ==================================================== //  
+  // ==================================================== //
   // compute difference between exact solution and ML one //
-  // ==================================================== //  
-  double d = 0.0, d_tot = 0.0;  
+  // ==================================================== //
+  double d = 0.0, d_tot = 0.0;
   for( int i=0 ; i<lhs.Map().NumMyElements() ; ++i )
     d += (lhs[0][i] - xexact[0][i]) * (lhs[0][i] - xexact[0][i]);
-  
+
   A.Comm().SumAll(&d,&d_tot,1);
-  
+
   // ================== //
   // compute ||Ax - b|| //
   // ================== //
@@ -2215,14 +2215,14 @@ void solution_test(string msg, const Epetra_Operator &A,const Epetra_MultiVector
   A.Apply(lhs, Ax);
   Ax.Update(1.0, rhs, -1.0);
   Ax.Norm2(&Norm);
-  
+
   if (A.Comm().MyPID() == 0) {
     cout << msg << "......Using " << A.Comm().NumProc() << " processes" << endl;
     cout << msg << "......||A x - b||_2 = " << Norm << endl;
 //    cout << msg << "......||x_exact - x||_2 = " << sqrt(d_tot) << endl;
     cout << msg << "......Total Time = " << Time.ElapsedTime() << endl;
   }
-  
+
   TotalErrorExactSol += sqrt(d_tot);
   TotalErrorResidual += Norm;
 }
@@ -2244,14 +2244,14 @@ void TestMultiLevelPreconditioner_DivLSFEM(char ProblemType[],
                                            Epetra_MultiVector & b,
                                            double & TotalErrorResidual,
                                            double & TotalErrorExactSol){
-  
+
   /* Nuke M1 for D0, OAZ*/
   Epetra_CrsMatrix D1(D1clean);
-  ML_Epetra::Apply_BCsToGradient(GradDiv,D1);  
-  
+  ML_Epetra::Apply_BCsToGradient(GradDiv,D1);
+
   /* Get the BC faces*/
-  int numBCfaces;  
-  int* BCfaces=ML_Epetra::FindLocalDiricheltRowsFromOnesAndZeros(GradDiv,numBCfaces);  
+  int numBCfaces;
+  int* BCfaces=ML_Epetra::FindLocalDiricheltRowsFromOnesAndZeros(GradDiv,numBCfaces);
   ML_Epetra::Apply_OAZToMatrix(BCfaces,numBCfaces,M2);
   ArrayRCP<int> BCfaces_arcp(BCfaces,0,numBCfaces,false);
 
@@ -2260,21 +2260,21 @@ void TestMultiLevelPreconditioner_DivLSFEM(char ProblemType[],
 
   /* Build the (1,1) Block Operator */
   ML_Epetra::ML_RefMaxwell_11_Operator Operator11(GradDiv,D1,M1inv,M2);
-  
+
   /* Build the AztecOO stuff */
   Epetra_MultiVector x(xh);
   x.PutScalar(0.0);
-  
-  Epetra_LinearProblem Problem(&Operator11,&x,&b); 
+
+  Epetra_LinearProblem Problem(&Operator11,&x,&b);
   Epetra_MultiVector* lhs = Problem.GetLHS();
   Epetra_MultiVector* rhs = Problem.GetRHS();
-  
+
   Epetra_Time Time(GradDiv.Comm());
-    
+
   /* Build the aggregation guide matrix */
   Epetra_CrsMatrix *TMT_Agg_Matrix;
   ML_Epetra::ML_Epetra_PtAP(M1,D0clean,TMT_Agg_Matrix,false);
-  
+
   /* Approximate the diagonal for EMFP: 2a^2 b guy */
   Epetra_Vector Diagonal(GradDiv.DomainMap());
   Epetra_Vector EdgeDiagonal(D1.DomainMap());
@@ -2298,11 +2298,11 @@ void TestMultiLevelPreconditioner_DivLSFEM(char ProblemType[],
    EpetraExt::RowMatrixToMatlabFile("mag_tmt_matrix.dat",*TMT_Agg_Matrix);
 #endif
 
-  /* Build the EMFP Preconditioner */  
+  /* Build the EMFP Preconditioner */
   ML_Epetra::FaceMatrixFreePreconditioner FMFP(rcp(&Operator11,false),rcp(&Diagonal,false),rcp(&FaceNode,false),rcp(TMT_Agg_Matrix,false),BCfaces_arcp,MLList);
 
   /* Solve! */
-  AztecOO solver(Problem);  
+  AztecOO solver(Problem);
   solver.SetPrecOperator(&FMFP);
   solver.SetAztecOption(AZ_solver, AZ_cg);
   solver.SetAztecOption(AZ_output, 32);
@@ -2311,7 +2311,7 @@ void TestMultiLevelPreconditioner_DivLSFEM(char ProblemType[],
 
   Epetra_MultiVector xexact(xh);
   xexact.PutScalar(0.0);
-  
+
   // accuracy check
   string msg = ProblemType;
   solution_test(msg,Operator11,*lhs,*rhs,xexact,Time,TotalErrorExactSol,TotalErrorResidual);
@@ -2322,7 +2322,7 @@ void TestMultiLevelPreconditioner_DivLSFEM(char ProblemType[],
 
 
   xh = *lhs;
-  
+
   // Cleanup
   delete TMT_Agg_Matrix;
   delete [] BCfaces;
@@ -2342,7 +2342,7 @@ void TestMultiLevelPreconditioner_DivLSFEM(char ProblemType[],
     uExact1 = exp(x+z)*(y+1.0)*(y-1.0);
     uExact2 = exp(x+y)*(z+1.0)*(z-1.0);
 */
-  
+
 /*
    // Exact Solution 2 - homogeneous boundary conditions, nonzero curl
     uExact0 = cos(M_PI*y)*cos(M_PI*z)*(x+1.0)*(x-1.0);
@@ -2355,7 +2355,7 @@ void TestMultiLevelPreconditioner_DivLSFEM(char ProblemType[],
     uExact0 = x*x-1.0;
     uExact1 = y*y-1.0;
     uExact2 = z*z-1.0;
- */  
+ */
 
    // Exact solution 4 - patch test with inhomogeneous boundary conditions,
    //                    zero curl, linear field should be recovered
@@ -2369,14 +2369,14 @@ void TestMultiLevelPreconditioner_DivLSFEM(char ProblemType[],
 // Calculates divergence of exact solution u
  double evalDivu(double & x, double & y, double & z)
  {
-   
+
    // Exact Solution 1 - homogeneous boundary conditions, nonzero curl
    // double divu = 2.0*x*exp(y+z)+2.0*y*exp(x+z)+2.0*z*exp(x+y);
 
    // Exact Solution 2 - homogeneous boundary conditions, nonzero curl
    //double divu = 2.0*x*cos(M_PI*y)*cos(M_PI*z) + 2.0*y*cos(M_PI*x)*cos(M_PI*z)
    //               + 2.0*z*cos(M_PI*x)*cos(M_PI*y);
-   
+
    // Exact Solution 3 - homogeneous boundary conditions, zero curl
    // double divu = 2.0*(x + y + z);
 
@@ -2389,10 +2389,10 @@ void TestMultiLevelPreconditioner_DivLSFEM(char ProblemType[],
 
 
 // Calculates curl of exact solution u
- int evalCurlu(double & curlu0, double & curlu1, double & curlu2, 
+ int evalCurlu(double & curlu0, double & curlu1, double & curlu2,
                 double & x, double & y, double & z, double & mu)
  {
-  
+
   /*
    // Exact Solution 1 - homogeneous boundary conditions, nonzero curl
     double duxdy = exp(y+z)*(x+1.0)*(x-1.0);
@@ -2402,7 +2402,7 @@ void TestMultiLevelPreconditioner_DivLSFEM(char ProblemType[],
     double duzdx = exp(x+y)*(z+1.0)*(z-1.0);
     double duzdy = exp(x+y)*(z+1.0)*(z-1.0);
   */
- 
+
 
   /*
    // Exact Solution 2 - homogeneous boundary conditions, nonzero curl
@@ -2419,7 +2419,7 @@ void TestMultiLevelPreconditioner_DivLSFEM(char ProblemType[],
     curlu1 = (duxdz - duzdx)/mu;
     curlu2 = (duydx - duxdy)/mu;
   */
- 
+
   /*
    // Exact Solution 3 - homogeneous boundary conditions, zero curl
     curlu0 = 0;
@@ -2432,25 +2432,25 @@ void TestMultiLevelPreconditioner_DivLSFEM(char ProblemType[],
     curlu0 = 0;
     curlu1 = 0;
     curlu2 = 0;
-  
+
    return 0;
  }
 
 // Calculates curl of the curl of exact solution u
- int evalCurlCurlu(double & curlCurlu0, double & curlCurlu1, double & curlCurlu2, 
+ int evalCurlCurlu(double & curlCurlu0, double & curlCurlu1, double & curlCurlu2,
                     double & x, double & y, double & z, double & mu)
 {
-   
+
  /*
    // Exact Solution 1 - homogeneous boundary conditions, nonzero curl
     double dcurlu0dy = exp(x+y)*(z+1.0)*(z-1.0) - 2.0*y*exp(x+z);
-    double dcurlu0dz = 2.0*z*exp(x+y) - exp(x+z)*(y+1.0)*(y-1.0); 
-    double dcurlu1dx = 2.0*x*exp(y+z) - exp(x+y)*(z+1.0)*(z-1.0); 
+    double dcurlu0dz = 2.0*z*exp(x+y) - exp(x+z)*(y+1.0)*(y-1.0);
+    double dcurlu1dx = 2.0*x*exp(y+z) - exp(x+y)*(z+1.0)*(z-1.0);
     double dcurlu1dz = exp(y+z)*(x+1.0)*(x-1.0) - 2.0*z*exp(x+y);
     double dcurlu2dx = exp(x+z)*(y+1.0)*(y-1.0) - 2.0*x*exp(y+z);
     double dcurlu2dy = 2.0*y*exp(x+z) - exp(y+z)*(x+1.0)*(x-1.0);
   */
-                       
+
 
   /*
    // Exact Solution 2 - homogeneous boundary conditions, nonzero curl
@@ -2467,13 +2467,13 @@ void TestMultiLevelPreconditioner_DivLSFEM(char ProblemType[],
     double dcurlu2dy = -2.0*y*M_PI*sin(M_PI*x)*cos(M_PI*z)
                           + M_PI*M_PI*cos(M_PI*y)*cos(M_PI*z)*(x+1.0)*(x-1.0);
   */
-                       
+
   /*
     curlCurlu0 = (dcurlu2dy - dcurlu1dz)/mu;
     curlCurlu1 = (dcurlu0dz - dcurlu2dx)/mu;
     curlCurlu2 = (dcurlu1dx - dcurlu0dy)/mu;
   */
- 
+
  /*
    // Exact Solution 3 - homogeneous boundary conditions, zero curl
     curlCurlu0 = 0.0;

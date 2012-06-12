@@ -800,7 +800,7 @@
   <Package name="Trios" dir="packages/trios" type="EX">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="SEACASExodus"/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES value="ThreadPool"/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS value="MPI,Netcdf,Pnetcdf,Pthread,CrayPortals,Portals,Gemini,InfiniBand,Pablo"/>

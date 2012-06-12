@@ -42,7 +42,7 @@
     \verbatim
 
      Poisson system:
- 
+
             div A grad u = f in Omega
                        u = g on Gamma
 
@@ -65,14 +65,14 @@
     \remark Usage:
     \code   ./TrilinosCouplings_examples_scaling_example_Poisson.exe \endcode
 
-    \remark Example driver requires input file named Poisson.xml with Pamgen 
-            formatted mesh description and settings for Isorropia (a version 
+    \remark Example driver requires input file named Poisson.xml with Pamgen
+            formatted mesh description and settings for Isorropia (a version
             is included in the Trilinos repository with this driver).
 
     \remark The exact solution (u) and material tensor (A) are set in the
             functions "exactSolution" and "materialTensor" and may be
             modified by the user.
-            
+
 */
 
 /*** Uncomment if you would like output data for plotting ***/
@@ -126,29 +126,22 @@
 #include "im_ne_nemesisI_l.h"
 #include "pamgen_extras.h"
 
-// AztecOO includes
-#include "AztecOO.h"
-
 // Belos includes
 #include "BelosLinearProblem.hpp"
 #include "BelosPseudoBlockCGSolMgr.hpp"
 #include "BelosConfigDefs.hpp"
 #include "BelosTpetraAdapter.hpp"
 
-// ML Includes
-#include "ml_MultiLevelPreconditioner.h"
-#include "ml_epetra_utils.h"
-
 // Sacado includes
 #include "Sacado.hpp"
 
 using namespace std;
 using namespace Intrepid;
-using Tpetra::global_size_t; 
-using Teuchos::ParameterList; 
-using Teuchos::RCP; 
-using Teuchos::rcp; 
-using Teuchos::TimeMonitor; 
+using Tpetra::global_size_t;
+using Teuchos::ParameterList;
+using Teuchos::RCP;
+using Teuchos::rcp;
+using Teuchos::TimeMonitor;
 
 /*********************************************************/
 /*                     Typedefs                          */
@@ -158,21 +151,21 @@ typedef Intrepid::FunctionSpaceTools                            IntrepidFSTools;
 typedef Intrepid::RealSpaceTools<double>                        IntrepidRSTools;
 typedef Intrepid::CellTools<double>                             IntrepidCTools;
 //Tpetra typedefs
-typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform; 
+typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform;
 typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  Node;
-typedef double                                                  ST; 
-typedef int                                                     Ordinal; 
+typedef double                                                  ST;
+typedef int                                                     Ordinal;
 typedef Tpetra::Map<Ordinal,Ordinal,Node>                       Map;
 typedef Tpetra::Export<Ordinal,Ordinal,Node>                    export_type;
 typedef Tpetra::Import<Ordinal,Ordinal,Node>                    import_type;
-typedef Teuchos::ArrayView<Ordinal>::size_type                  size_type; 
+typedef Teuchos::ArrayView<Ordinal>::size_type                  size_type;
 typedef Tpetra::CrsMatrix<ST, Ordinal, Ordinal, Node>           sparse_matrix_type;
 typedef Tpetra::CrsGraph<Ordinal, Ordinal, Node>                sparse_graph_type;
-typedef Tpetra::MultiVector<ST, Ordinal, Ordinal, Node>         MV; 
-typedef Tpetra::Vector<ST, Ordinal, Ordinal, Node>              vector_type; 
-typedef Tpetra::Operator<ST, Ordinal, Ordinal, Node>            OP; 
-typedef Belos::MultiVecTraits<ST, MV>                           MVT; 
-typedef Belos::OperatorTraits<ST, MV, OP>                       OPT; 
+typedef Tpetra::MultiVector<ST, Ordinal, Ordinal, Node>         MV;
+typedef Tpetra::Vector<ST, Ordinal, Ordinal, Node>              vector_type;
+typedef Tpetra::Operator<ST, Ordinal, Ordinal, Node>            OP;
+typedef Belos::MultiVecTraits<ST, MV>                           MVT;
+typedef Belos::OperatorTraits<ST, MV, OP>                       OPT;
 
 
 
@@ -276,8 +269,8 @@ int main(int argc, char *argv[]) {
   int error = 0;
   int numProcs=1;
   int rank=0;
-   
-  Teuchos::FancyOStream fos(Teuchos::rcpFromRef(cout)); 
+
+  Teuchos::FancyOStream fos(Teuchos::rcpFromRef(cout));
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
   rank=mpiSession.getRank();
@@ -286,10 +279,10 @@ int main(int argc, char *argv[]) {
 
 //Get the default communicator and node for Tpetra
 //rewrite using with IFDEF for MPI/no MPI??
-  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform(); 
-  RCP<const Teuchos::Comm<int> > CommT = platform.getComm(); 
-  RCP<Node> node = platform.getNode(); 
-  int MyPID = CommT->getRank(); 
+  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
+  RCP<const Teuchos::Comm<int> > CommT = platform.getComm();
+  RCP<Node> node = platform.getNode();
+  int MyPID = CommT->getRank();
 
 
   //Check number of arguments
@@ -324,7 +317,7 @@ int main(int argc, char *argv[]) {
 
 #ifdef HAVE_MPI
   if (MyPID == 0) {
-    cout << "PARALLEL executable \n"; 
+    cout << "PARALLEL executable \n";
   }
 #else
   if (MyPID == 0) {
@@ -387,7 +380,7 @@ int main(int argc, char *argv[]) {
    // Get cell topology for base hexahedron
     shards::CellTopology cellType(shards::getCellTopologyData<shards::Hexahedron<8> >() );
 
-   // Get dimensions 
+   // Get dimensions
     int numNodesPerElem = cellType.getNodeCount();
     int spaceDim = cellType.getDimension();
     int dim = 3;
@@ -412,7 +405,7 @@ int main(int argc, char *argv[]) {
 
     string msg("Poisson: ");
 
-     
+
    // Get mesh size info
     char title[100];
     long long numDim;
@@ -423,7 +416,7 @@ int main(int argc, char *argv[]) {
     long long numSideSets;
     int id = 0;
 
-    im_ex_get_init_l(id, title, &numDim, &numNodes, 
+    im_ex_get_init_l(id, title, &numDim, &numNodes,
                                 &numElems, &numElemBlk, &numNodeSets,
                                 &numSideSets);
 
@@ -433,7 +426,7 @@ int main(int argc, char *argv[]) {
     long long numNodeSetsGlobal;
     long long numSideSetsGlobal;
 
-    im_ne_get_init_global_l(id, &numNodesGlobal, &numElemsGlobal, 
+    im_ne_get_init_global_l(id, &numNodesGlobal, &numElemsGlobal,
                          &numElemBlkGlobal, &numNodeSetsGlobal,
                          &numSideSetsGlobal);
 
@@ -456,12 +449,12 @@ int main(int argc, char *argv[]) {
 
     for(long long i = 0; i < numElemBlk; i ++){
       element_types[i] = new char [MAX_STR_LENGTH + 1];
-      error += im_ex_get_elem_block_l(id, 
-				      block_ids[i], 
-				      element_types[i],
-				      (long long*)&(elements[i]),
-				      (long long*)&(nodes_per_element[i]), 
-				      (long long*)&(element_attributes[i]));
+      error += im_ex_get_elem_block_l(id,
+                                      block_ids[i],
+                                      element_types[i],
+                                      (long long*)&(elements[i]),
+                                      (long long*)&(nodes_per_element[i]),
+                                      (long long*)&(element_attributes[i]));
     }
 
     /*connectivity*/
@@ -475,10 +468,10 @@ int main(int argc, char *argv[]) {
     FieldContainer<int> elemToNode(numElems,numNodesPerElem);
     for(long long b = 0; b < numElemBlk; b++){
       for(long long el = 0; el < elements[b]; el++){
-	for (int j=0; j<numNodesPerElem; j++) {
-	  elemToNode(telct,j) = elmt_node_linkage[b][el*numNodesPerElem + j]-1;
-	}
-	telct ++;
+        for (int j=0; j<numNodesPerElem; j++) {
+          elemToNode(telct,j) = elmt_node_linkage[b][el*numNodesPerElem + j]-1;
+        }
+        telct ++;
       }
     }
 
@@ -489,7 +482,7 @@ int main(int argc, char *argv[]) {
     double * nodeCoordy = new double [numNodes];
     double * nodeCoordz = new double [numNodes];
     im_ex_get_coord_l(id,nodeCoordx,nodeCoordy,nodeCoordz);
-    for (int i=0; i<numNodes; i++) {          
+    for (int i=0; i<numNodes; i++) {
       nodeCoord(i,0)=nodeCoordx[i];
       nodeCoord(i,1)=nodeCoordy[i];
       nodeCoord(i,2)=nodeCoordz[i];
@@ -507,15 +500,15 @@ int main(int argc, char *argv[]) {
     long long num_border_elems;
     long long num_node_comm_maps;
     long long num_elem_comm_maps;
-    im_ne_get_loadbal_param_l( id, 
-			       &num_internal_nodes,
-			       &num_border_nodes, 
-			       &num_external_nodes,
-			       &num_internal_elems, 
-			       &num_border_elems,
-			       &num_node_comm_maps,
-			       &num_elem_comm_maps,
-			       0/*unused*/ );
+    im_ne_get_loadbal_param_l( id,
+                               &num_internal_nodes,
+                               &num_border_nodes,
+                               &num_external_nodes,
+                               &num_internal_elems,
+                               &num_border_elems,
+                               &num_node_comm_maps,
+                               &num_elem_comm_maps,
+                               0/*unused*/ );
 
     if(num_node_comm_maps > 0){
       node_comm_proc_ids   = new long long  [num_node_comm_maps];
@@ -523,31 +516,31 @@ int main(int argc, char *argv[]) {
       node_cmap_ids        = new long long  [num_node_comm_maps];
       comm_node_ids        = new long long* [num_node_comm_maps];
       comm_node_proc_ids   = new long long* [num_node_comm_maps];
-  
+
       long long *  elem_cmap_ids        = new long long [num_elem_comm_maps];
       long long *  elem_cmap_elem_cnts  = new long long [num_elem_comm_maps];
 
 
-      if ( im_ne_get_cmap_params_l( id, 
-				  node_cmap_ids,
-				  (long long*)node_cmap_node_cnts, 
-				  elem_cmap_ids,
-				  (long long*)elem_cmap_elem_cnts, 
-				  0/*not used proc_id*/ ) < 0 )++error;
-      
+      if ( im_ne_get_cmap_params_l( id,
+                                  node_cmap_ids,
+                                  (long long*)node_cmap_node_cnts,
+                                  elem_cmap_ids,
+                                  (long long*)elem_cmap_elem_cnts,
+                                  0/*not used proc_id*/ ) < 0 )++error;
+
       for(long long j = 0; j < num_node_comm_maps; j++) {
-	comm_node_ids[j]       = new long long [node_cmap_node_cnts[j]];
-	comm_node_proc_ids[j]  = new long long [node_cmap_node_cnts[j]];
-	if ( im_ne_get_node_cmap_l( id, 
-				  node_cmap_ids[j], 
-				  comm_node_ids[j], 
-				  comm_node_proc_ids[j],
-				  0/*not used proc_id*/ ) < 0 )++error;
-	node_comm_proc_ids[j] = comm_node_proc_ids[j][0];
+        comm_node_ids[j]       = new long long [node_cmap_node_cnts[j]];
+        comm_node_proc_ids[j]  = new long long [node_cmap_node_cnts[j]];
+        if ( im_ne_get_node_cmap_l( id,
+                                  node_cmap_ids[j],
+                                  comm_node_ids[j],
+                                  comm_node_proc_ids[j],
+                                  0/*not used proc_id*/ ) < 0 )++error;
+        node_comm_proc_ids[j] = comm_node_proc_ids[j][0];
       }
 
       delete [] elem_cmap_ids;
-      delete [] elem_cmap_elem_cnts;      
+      delete [] elem_cmap_elem_cnts;
     }
 
 
@@ -557,13 +550,13 @@ int main(int argc, char *argv[]) {
     bool * nodeIsOwned = new bool[numNodes];
 
     calc_global_node_ids(globalNodeIds,
-			 nodeIsOwned,
-			 numNodes,
-			 num_node_comm_maps,
-			 node_cmap_node_cnts,
-			 node_comm_proc_ids,
-			 comm_node_ids,
-			 rank);    
+                         nodeIsOwned,
+                         numNodes,
+                         num_node_comm_maps,
+                         node_cmap_node_cnts,
+                         node_comm_proc_ids,
+                         comm_node_ids,
+                         rank);
 
 
 
@@ -582,12 +575,12 @@ int main(int argc, char *argv[]) {
           long long * sideSetSideList = new long long [numSidesInSet];
           im_ex_get_side_set_l(id,sideSetIds[i],sideSetElemList,sideSetSideList);
           for (int j=0; j<numSidesInSet; j++) {
-             
+
              int sideNode0 = cellType.getNodeMap(2,sideSetSideList[j]-1,0);
              int sideNode1 = cellType.getNodeMap(2,sideSetSideList[j]-1,1);
              int sideNode2 = cellType.getNodeMap(2,sideSetSideList[j]-1,2);
              int sideNode3 = cellType.getNodeMap(2,sideSetSideList[j]-1,3);
-             
+
              nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode0))=1;
              nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode1))=1;
              nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode2))=1;
@@ -599,17 +592,17 @@ int main(int argc, char *argv[]) {
     }
     delete [] sideSetIds;
 
- 
+
 
 
 /**********************************************************************************/
 /********************************* GET CUBATURE ***********************************/
 /**********************************************************************************/
-   
+
    // Get numerical integration points and weights
-    DefaultCubatureFactory<double>  cubFactory;                                   
+    DefaultCubatureFactory<double>  cubFactory;
     int cubDegree = 2;
-    RCP<Cubature<double> > hexCub = cubFactory.create(cellType, cubDegree); 
+    RCP<Cubature<double> > hexCub = cubFactory.create(cellType, cubDegree);
 
     int cubDim       = hexCub->getDimension();
     int numCubPoints = hexCub->getNumPoints();
@@ -625,16 +618,16 @@ int main(int argc, char *argv[]) {
 /*********************************** GET BASIS ************************************/
 /**********************************************************************************/
 
-   // Define basis 
+   // Define basis
      Basis_HGRAD_HEX_C1_FEM<double, FieldContainer<double> > hexHGradBasis;
      int numFieldsG = hexHGradBasis.getCardinality();
-     FieldContainer<double> HGBValues(numFieldsG, numCubPoints); 
-     FieldContainer<double> HGBGrads(numFieldsG, numCubPoints, spaceDim); 
+     FieldContainer<double> HGBValues(numFieldsG, numCubPoints);
+     FieldContainer<double> HGBGrads(numFieldsG, numCubPoints, spaceDim);
 
   // Evaluate basis values and gradients at cubature points
      hexHGradBasis.getValues(HGBValues, cubPoints, OPERATOR_VALUE);
      hexHGradBasis.getValues(HGBGrads, cubPoints, OPERATOR_GRAD);
-    
+
 
 
 
@@ -643,30 +636,30 @@ int main(int argc, char *argv[]) {
 /**********************************************************************************/
     //timer for building global maps
     RCP<Teuchos::Time> timerBuildGlobalMaps = TimeMonitor::getNewTimer("Build global maps: Total Time");
-    Teuchos::Array<int> ownedGIDs;  
+    Teuchos::Array<int> ownedGIDs;
     RCP<const Map > globalMapGT;
     {
-    TimeMonitor timerBuildGlobalMapsL(*timerBuildGlobalMaps); 
+    TimeMonitor timerBuildGlobalMapsL(*timerBuildGlobalMaps);
     // Count owned nodes
     int ownedNodes=0;
     for(int i=0;i<numNodes;i++){
       if(nodeIsOwned[i]) ownedNodes++;
     }
-     
-   
+
+
     // Build a list of the OWNED global ids...
     // NTS: will need to switch back to long long
-    ownedGIDs.resize(ownedNodes);  
+    ownedGIDs.resize(ownedNodes);
     int oidx=0;
     for(int i=0;i<numNodes;i++)
       if(nodeIsOwned[i]){
         ownedGIDs[oidx]=(int)globalNodeIds[i];
         oidx++;
       }
-    RCP<Teuchos::Time> timerBuildGlobalMaps1 = TimeMonitor::getNewTimer("Build global maps: globalMapGT"); 
+    RCP<Teuchos::Time> timerBuildGlobalMaps1 = TimeMonitor::getNewTimer("Build global maps: globalMapGT");
     {
-    TimeMonitor timerBuildGlobalMaps1L(*timerBuildGlobalMaps1);  
-    //Generate Tpetra map for nodes 
+    TimeMonitor timerBuildGlobalMaps1L(*timerBuildGlobalMaps1);
+    //Generate Tpetra map for nodes
     globalMapGT = rcp(new Map(-1, ownedGIDs(), 0, CommT));
     }
     }
@@ -676,105 +669,105 @@ int main(int argc, char *argv[]) {
 /********************* BUILD MAPS FOR OVERLAPPED SOLUTION *************************/
 /**********************************************************************************/
     RCP<Teuchos::Time> timerBuildOverlapMaps = TimeMonitor::getNewTimer("Build overlapped maps: Total Time");
-    Teuchos::Array<int> overlappedGIDs;     
+    Teuchos::Array<int> overlappedGIDs;
     RCP<const Map > overlappedMapGT;
-    RCP<const export_type> exporterT;   
+    RCP<const export_type> exporterT;
     {
-    TimeMonitor timerBuildOverlapMapsL(*timerBuildOverlapMaps); 
+    TimeMonitor timerBuildOverlapMapsL(*timerBuildOverlapMaps);
     // Count owned nodes
     int overlappedNodes=numNodes;
-   
+
     // Build a list of the OVERLAPPED global ids...
-    overlappedGIDs.resize(overlappedNodes); 
+    overlappedGIDs.resize(overlappedNodes);
     for(int i=0;i<numNodes;i++)
         overlappedGIDs[i]=(int)globalNodeIds[i];
- 
-    RCP<Teuchos::Time> timerBuildOverlapMaps1 = TimeMonitor::getNewTimer("Build overlapped maps: overlappedMapGT"); 
+
+    RCP<Teuchos::Time> timerBuildOverlapMaps1 = TimeMonitor::getNewTimer("Build overlapped maps: overlappedMapGT");
     {
-    TimeMonitor timerBuildOverlapMaps1L(*timerBuildOverlapMaps1);  
-    //Generate Tpetra map for nodes 
+    TimeMonitor timerBuildOverlapMaps1L(*timerBuildOverlapMaps1);
+    //Generate Tpetra map for nodes
     overlappedMapGT = rcp(new Map(-1, overlappedGIDs(), 0, CommT));
     }
     //build Tpetra Export/Import
-    RCP<Teuchos::Time> timerBuildOverlapMaps2 = TimeMonitor::getNewTimer("Build overlapped maps: exporterT"); 
+    RCP<Teuchos::Time> timerBuildOverlapMaps2 = TimeMonitor::getNewTimer("Build overlapped maps: exporterT");
     {
-    TimeMonitor timerBuildOverlapMaps2L(*timerBuildOverlapMaps2); 
-    exporterT = rcp(new export_type(overlappedMapGT, globalMapGT));   
+    TimeMonitor timerBuildOverlapMaps2L(*timerBuildOverlapMaps2);
+    exporterT = rcp(new export_type(overlappedMapGT, globalMapGT));
     }
-    RCP<Teuchos::Time> timerBuildOverlapMaps3 = TimeMonitor::getNewTimer("Build overlapped maps: importerT"); 
+    RCP<Teuchos::Time> timerBuildOverlapMaps3 = TimeMonitor::getNewTimer("Build overlapped maps: importerT");
     {
-    TimeMonitor timerBuildOverlapMaps3L(*timerBuildOverlapMaps3); 
-    RCP<const import_type> importerT = rcp(new import_type(overlappedMapGT, globalMapGT));  
+    TimeMonitor timerBuildOverlapMaps3L(*timerBuildOverlapMaps3);
+    RCP<const import_type> importerT = rcp(new import_type(overlappedMapGT, globalMapGT));
     }
     }
 
 /**********************************************************************************/
 /********************* BUILD GRAPH FOR OVERLAPPED SOLUTION *************************/
 /**********************************************************************************/
- 
+
     RCP<Teuchos::Time> timerBuildOverlapGraph = TimeMonitor::getNewTimer("Build graphs for overlapped and owned solutions: Total Time");
     RCP<sparse_matrix_type> gl_StiffMatrixT;
-    RCP<vector_type> gl_rhsVectorT; 
-    RCP<sparse_matrix_type> StiffMatrixT; 
+    RCP<vector_type> gl_rhsVectorT;
+    RCP<sparse_matrix_type> StiffMatrixT;
     RCP<vector_type> rhsVectorT;
     {
     TimeMonitor timerBuildOverlapGraphL(*timerBuildOverlapGraph);
-    RCP<sparse_graph_type> overlappedGraphT; 
-    RCP<sparse_graph_type> ownedGraphT; 
-    RCP<Teuchos::Time> timerBuildOverlapGraph2 = TimeMonitor::getNewTimer("Build graphs for overlapped and owned solutions: create overlappedGraphT & ownedGraphT"); 
+    RCP<sparse_graph_type> overlappedGraphT;
+    RCP<sparse_graph_type> ownedGraphT;
+    RCP<Teuchos::Time> timerBuildOverlapGraph2 = TimeMonitor::getNewTimer("Build graphs for overlapped and owned solutions: create overlappedGraphT & ownedGraphT");
     {
-    TimeMonitor timerBuildOverlapGraph2L(*timerBuildOverlapGraph2);  
+    TimeMonitor timerBuildOverlapGraph2L(*timerBuildOverlapGraph2);
     //construct Tpetra CrsGraphs
-    overlappedGraphT= rcp(new sparse_graph_type(overlappedMapGT, 0)); 
-    ownedGraphT= rcp(new sparse_graph_type(globalMapGT, 0)); 
+    overlappedGraphT= rcp(new sparse_graph_type(overlappedMapGT, 0));
+    ownedGraphT= rcp(new sparse_graph_type(globalMapGT, 0));
     }
 
     {
-     
-    RCP<Teuchos::Time> timerBuildOverlapGraph3 = TimeMonitor::getNewTimer("Build graphs for overlapped and owned solutions: insertGlobalIndices overlappedGraphT"); 
+
+    RCP<Teuchos::Time> timerBuildOverlapGraph3 = TimeMonitor::getNewTimer("Build graphs for overlapped and owned solutions: insertGlobalIndices overlappedGraphT");
     {
-    TimeMonitor timerBuildOverlapGraph3L(*timerBuildOverlapGraph3);  
+    TimeMonitor timerBuildOverlapGraph3L(*timerBuildOverlapGraph3);
       // Define desired workset size and count how many worksets there are on this processor's mesh block
       int desiredWorksetSize = numElems;                      // change to desired workset size!
       //int desiredWorksetSize = 100;                      // change to desired workset size!
       int numWorksets        = numElems/desiredWorksetSize;
       for(int workset = 0; workset < numWorksets; workset++){
-    
+
         // Compute cell numbers where the workset starts and ends
         int worksetSize  = 0;
         int worksetBegin = (workset + 0)*desiredWorksetSize;
         int worksetEnd   = (workset + 1)*desiredWorksetSize;
-    
+
         // When numElems is not divisible by desiredWorksetSize, the last workset ends at numElems
         worksetEnd   = (worksetEnd <= numElems) ? worksetEnd : numElems;
-    
+
         // Now we know the actual workset size and can allocate the array for the cell nodes
         worksetSize  = worksetEnd - worksetBegin;
-  
+
         //"WORKSET CELL" loop: local cell ordinal is relative to numElems
         for(int cell = worksetBegin; cell < worksetEnd; cell++){
-    
+
           // Compute cell ordinal relative to the current workset
           int worksetCellOrdinal = cell - worksetBegin;
-    
+
           // "CELL EQUATION" loop for the workset cell: cellRow is relative to the cell DoF numbering
           for (int cellRow = 0; cellRow < numFieldsG; cellRow++){
-    
+
             int localRow  = elemToNode(cell, cellRow);
             //globalRow for Tpetra Graph
-            global_size_t globalRowT = globalNodeIds[localRow]; 
+            global_size_t globalRowT = globalNodeIds[localRow];
 
             // "CELL VARIABLE" loop for the workset cell: cellCol is relative to the cell DoF numbering
             for (int cellCol = 0; cellCol < numFieldsG; cellCol++){
-    
+
               int localCol  = elemToNode(cell, cellCol);
               int globalCol = globalNodeIds[localCol];
-              //create ArrayView globalCol object for Tpetra 
-              Teuchos::ArrayView<int> globalColAV = Teuchos::arrayView(&globalCol, 1); 
-                
+              //create ArrayView globalCol object for Tpetra
+              Teuchos::ArrayView<int> globalColAV = Teuchos::arrayView(&globalCol, 1);
+
               //Update Tpetra overlap Graph
-              overlappedGraphT->insertGlobalIndices(globalRowT, globalColAV); 
-    
+              overlappedGraphT->insertGlobalIndices(globalRowT, globalColAV);
+
             }// *** cell col loop ***
           }// *** cell row loop ***
         }// *** workset cell loop **
@@ -782,33 +775,33 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    RCP<Teuchos::Time> timerBuildOverlapGraph3 = TimeMonitor::getNewTimer("Build graphs for overlapped and owned solutions: fillcomplete overlappedGraphT"); 
+    RCP<Teuchos::Time> timerBuildOverlapGraph3 = TimeMonitor::getNewTimer("Build graphs for overlapped and owned solutions: fillcomplete overlappedGraphT");
     {
-    TimeMonitor timerBuildOverlapGraph3L(*timerBuildOverlapGraph3);  
+    TimeMonitor timerBuildOverlapGraph3L(*timerBuildOverlapGraph3);
     //Fillcomplete Tpetra overlap Graph
     overlappedGraphT->fillComplete();
-    }    
-    
-    RCP<Teuchos::Time> timerBuildOverlapGraph4 = TimeMonitor::getNewTimer("Build graphs for overlapped and owned solutions: export and fillcomplete ownedGraphT"); 
-    {
-    TimeMonitor timerBuildOverlapGraph4L(*timerBuildOverlapGraph4);  
-    //build global map - Tpetra
-    ownedGraphT->doExport(*overlappedGraphT, *exporterT, Tpetra::INSERT); 
-    ownedGraphT->fillComplete();
-    } 
+    }
 
-    RCP<Teuchos::Time> timerBuildOverlapGraph5 = TimeMonitor::getNewTimer("Build graphs for overlapped and owned solutions: create and zero global/local matrices/vectors"); 
+    RCP<Teuchos::Time> timerBuildOverlapGraph4 = TimeMonitor::getNewTimer("Build graphs for overlapped and owned solutions: export and fillcomplete ownedGraphT");
     {
-    TimeMonitor timerBuildOverlapGraph5L(*timerBuildOverlapGraph5);  
+    TimeMonitor timerBuildOverlapGraph4L(*timerBuildOverlapGraph4);
+    //build global map - Tpetra
+    ownedGraphT->doExport(*overlappedGraphT, *exporterT, Tpetra::INSERT);
+    ownedGraphT->fillComplete();
+    }
+
+    RCP<Teuchos::Time> timerBuildOverlapGraph5 = TimeMonitor::getNewTimer("Build graphs for overlapped and owned solutions: create and zero global/local matrices/vectors");
+    {
+    TimeMonitor timerBuildOverlapGraph5L(*timerBuildOverlapGraph5);
     //build Tpetra analogs of Stiffness matrix and rhsVector
     gl_StiffMatrixT = rcp(new sparse_matrix_type(ownedGraphT.getConst()));
-    gl_rhsVectorT = rcp(new vector_type(globalMapGT)); 
+    gl_rhsVectorT = rcp(new vector_type(globalMapGT));
 
-    StiffMatrixT = rcp(new sparse_matrix_type(overlappedGraphT.getConst())); 
+    StiffMatrixT = rcp(new sparse_matrix_type(overlappedGraphT.getConst()));
     rhsVectorT = rcp(new vector_type(overlappedMapGT));
     StiffMatrixT->setAllToScalar(0.0);
-    rhsVectorT->putScalar(0.0); 
-    } 
+    rhsVectorT->putScalar(0.0);
+    }
 }
 
 #ifdef DUMP_DATA
@@ -818,8 +811,8 @@ int main(int argc, char *argv[]) {
 
 
    //Put coordinate in Tpetra multivector for ourput
-   RCP<MV> nCoordT = rcp(new MV(globalMapGT, 3)); 
-   RCP<MV> nBoundT = rcp(new MV(globalMapGT, 1)); 
+   RCP<MV> nCoordT = rcp(new MV(globalMapGT, 3));
+   RCP<MV> nBoundT = rcp(new MV(globalMapGT, 1));
 
      int indOwned = 0;
      for (int inode=0; inode<numNodes; inode++) {
@@ -836,9 +829,9 @@ int main(int argc, char *argv[]) {
       Tpetra::MatrixMarket::Writer<sparse_matrix_type >::writeDenseFile("nodesOnBoundT.dat",nBoundT);
 
 
-     //Put element to node mapping in Tpetra multivector for output  
-     RCP<const Map> globalMapElemT = rcp(new Map(numElemsGlobal, numElems, 0, CommT)); 
-     RCP<MV>elem2nodeT = rcp(new MV(globalMapElemT, numNodesPerElem));     
+     //Put element to node mapping in Tpetra multivector for output
+     RCP<const Map> globalMapElemT = rcp(new Map(numElemsGlobal, numElems, 0, CommT));
+     RCP<MV>elem2nodeT = rcp(new MV(globalMapElemT, numNodesPerElem));
      for (int ielem=0; ielem<numElems; ielem++) {
         for (int inode=0; inode<numNodesPerElem; inode++) {
           elem2nodeT->replaceLocalValue(ielem, inode, globalNodeIds[elemToNode(ielem,inode)]);
@@ -857,10 +850,10 @@ int main(int argc, char *argv[]) {
   //timer for Dirichlet BC setup
   RCP<Teuchos::Time> timerDirichletBC = TimeMonitor::getNewTimer("Get Dirichlet boundary values: Total Time");
   int numBCNodes = 0;
-  RCP<MV> vT; 
-  Teuchos::Array<int> BCNodes; 
-  { 
-  TimeMonitor timerDirichletBCL(*timerDirichletBC); 
+  RCP<MV> vT;
+  Teuchos::Array<int> BCNodes;
+  {
+  TimeMonitor timerDirichletBCL(*timerDirichletBC);
   for (int inode = 0; inode < numNodes; inode++){
      if (nodeOnBoundary(inode) && nodeIsOwned[inode]){
         numBCNodes++;
@@ -871,16 +864,16 @@ int main(int argc, char *argv[]) {
    //Vector for use in applying BCs - Tpetra
    RCP<Teuchos::Time> timerDirichletBC1 = TimeMonitor::getNewTimer("Get Dirichlet boundary values: create and zero vT");
    {
-   TimeMonitor timerDirichletBC1L(*timerDirichletBC1); 
-   vT = rcp(new MV(globalMapGT, true)); 
-   vT->putScalar(0.0);    
+   TimeMonitor timerDirichletBC1L(*timerDirichletBC1);
+   vT = rcp(new MV(globalMapGT, true));
+   vT->putScalar(0.0);
    }
    RCP<Teuchos::Time> timerDirichletBC2 = TimeMonitor::getNewTimer("Get Dirichlet boundary values: set vT for Dirichlet nodes");
    {
-   TimeMonitor timerDirichletBC2L(*timerDirichletBC2); 
+   TimeMonitor timerDirichletBC2L(*timerDirichletBC2);
    // Set v to boundary values on Dirichlet nodes
     //BCNodes = new int [numBCNodes];
-    BCNodes.resize(numBCNodes); 
+    BCNodes.resize(numBCNodes);
     int indbc=0;
     int iOwned=0;
     for (int inode=0; inode<numNodes; inode++){
@@ -891,13 +884,13 @@ int main(int argc, char *argv[]) {
            double x  = nodeCoord(inode, 0);
            double y  = nodeCoord(inode, 1);
            double z  = nodeCoord(inode, 2);
-           vT->replaceLocalValue(iOwned, 0, exactSolution(x,y,z));  
+           vT->replaceLocalValue(iOwned, 0, exactSolution(x,y,z));
         }
          iOwned++;
       }
     }
    }
-   } 
+   }
 
 
 
@@ -1029,7 +1022,7 @@ int main(int argc, char *argv[]) {
     IntrepidFSTools::integrate<double>(worksetStiffMatrix,                      // (DF^{-T}(grad u)*J*w)*(A*DF^{-T}(grad u))
                                        worksetHGBGradsWeighted,
                                        worksetDiffusiveFlux, COMP_BLAS);
-    
+
 
 
 
@@ -1050,7 +1043,7 @@ int main(int argc, char *argv[]) {
                                        worksetSourceTerm,
                                        worksetHGBValuesWeighted,  COMP_BLAS);
 
- 
+
 
  /**********************************************************************************/
  /*                         Assemble into Global Matrix                            */
@@ -1071,20 +1064,20 @@ int main(int argc, char *argv[]) {
         int localRow  = elemToNode(cell, cellRow);
         int globalRow = globalNodeIds[localRow];
         double sourceTermContribution =  worksetRHS(worksetCellOrdinal, cellRow);
-        Teuchos::ArrayView<double> sourceTermContributionAV = Teuchos::arrayView(&sourceTermContribution, 1); 
+        Teuchos::ArrayView<double> sourceTermContributionAV = Teuchos::arrayView(&sourceTermContribution, 1);
 
-        rhsVectorT->sumIntoGlobalValue(globalRow, sourceTermContribution); 
+        rhsVectorT->sumIntoGlobalValue(globalRow, sourceTermContribution);
 
         // "CELL VARIABLE" loop for the workset cell: cellCol is relative to the cell DoF numbering
         for (int cellCol = 0; cellCol < numFieldsG; cellCol++){
 
           int localCol  = elemToNode(cell, cellCol);
           int globalCol = globalNodeIds[localCol];
-          Teuchos::ArrayView<int> globalColAV = Teuchos::arrayView(&globalCol, 1); 
+          Teuchos::ArrayView<int> globalColAV = Teuchos::arrayView(&globalCol, 1);
           double operatorMatrixContribution = worksetStiffMatrix(worksetCellOrdinal, cellRow, cellCol);
-          Teuchos::ArrayView<double> operatorMatrixContributionAV = Teuchos::arrayView(&operatorMatrixContribution, 1); 
+          Teuchos::ArrayView<double> operatorMatrixContributionAV = Teuchos::arrayView(&operatorMatrixContribution, 1);
 
-          StiffMatrixT->sumIntoGlobalValues(globalRow, globalColAV, operatorMatrixContributionAV); 
+          StiffMatrixT->sumIntoGlobalValues(globalRow, globalColAV, operatorMatrixContributionAV);
 
         }// *** cell col loop ***
       }// *** cell row loop ***
@@ -1097,17 +1090,17 @@ int main(int argc, char *argv[]) {
 /********************* ASSEMBLE OVER MULTIPLE PROCESSORS **************************/
 /**********************************************************************************/
 
-  
+
    RCP<Teuchos::Time> timerAssembMultProc = TimeMonitor::getNewTimer("Global assembly over multiple processors: Total Time");
    {
-   TimeMonitor timerAssembMultProcL(*timerAssembMultProc); 
+   TimeMonitor timerAssembMultProcL(*timerAssembMultProc);
    gl_StiffMatrixT->setAllToScalar(0.0);
    gl_StiffMatrixT->doExport(*StiffMatrixT, *exporterT, Tpetra::ADD);
-   //if target of export has static graph, no need to do setAllToScalar(0.0); replace mode export will clobber values 
-   gl_StiffMatrixT->fillComplete(); 
-   
-   gl_rhsVectorT->putScalar(0.0); 
-   gl_rhsVectorT->doExport(*rhsVectorT, *exporterT, Tpetra::ADD); 
+   //if target of export has static graph, no need to do setAllToScalar(0.0); replace mode export will clobber values
+   gl_StiffMatrixT->fillComplete();
+
+   gl_rhsVectorT->putScalar(0.0);
+   gl_rhsVectorT->doExport(*rhsVectorT, *exporterT, Tpetra::ADD);
    }
 
 
@@ -1118,25 +1111,25 @@ int main(int argc, char *argv[]) {
    RCP<Teuchos::Time> timerAdjustMatrixBC = TimeMonitor::getNewTimer("Adjust global matrix and rhs due to BCs: Total Time");
    {
    TimeMonitor timerAdjustMatrixBCL(*timerAdjustMatrixBC);
-   
-   RCP<MV> rhsDirT; 
+
+   RCP<MV> rhsDirT;
    RCP<Teuchos::Time> timerAdjustMatrixBC1 = TimeMonitor::getNewTimer("Adjust global matrix and rhs due to BCs: apply stiffmatrix to vT");
    {
    TimeMonitor timerAdjustMatrixBC1L(*timerAdjustMatrixBC1);
    //Apply stiffness matrix to v - Tpetra
-   rhsDirT = rcp(new MV(globalMapGT, true)); 
-   gl_StiffMatrixT->apply(*vT.getConst(), *rhsDirT); 
+   rhsDirT = rcp(new MV(globalMapGT, true));
+   gl_StiffMatrixT->apply(*vT.getConst(), *rhsDirT);
    gl_StiffMatrixT->resumeFill(); //call to start messing w/ fillCompleted Matrix again
-   } 
+   }
 
    RCP<Teuchos::Time> timerAdjustMatrixBC2 = TimeMonitor::getNewTimer("Adjust global matrix and rhs due to BCs: update rhs");
    {
    TimeMonitor timerAdjustMatrixBC2L(*timerAdjustMatrixBC2);
    //Update right-hand side - Tpetra
-   gl_rhsVectorT->update(-1.0, *rhsDirT, 1.0); 
+   gl_rhsVectorT->update(-1.0, *rhsDirT, 1.0);
    }
- 
-    Teuchos::ArrayRCP<const double> vTArrayRCP = vT->getData(0); 
+
+    Teuchos::ArrayRCP<const double> vTArrayRCP = vT->getData(0);
    RCP<Teuchos::Time> timerAdjustMatrixBC3 = TimeMonitor::getNewTimer("Adjust global matrix and rhs due to BCs: adjust rhs to Dirichlet BCs");
    {
    TimeMonitor timerAdjustMatrixBC3L(*timerAdjustMatrixBC3);
@@ -1146,14 +1139,14 @@ int main(int argc, char *argv[]) {
         if (nodeOnBoundary(inode)){
            // get global node number
            int gni = globalNodeIds[inode];
-           int lidT = globalMapGT->getLocalElement(gni); 
-           double v_valT = vTArrayRCP[lidT];  
-           gl_rhsVectorT->replaceGlobalValue(gni, v_valT); 
+           int lidT = globalMapGT->getLocalElement(gni);
+           double v_valT = vTArrayRCP[lidT];
+           gl_rhsVectorT->replaceGlobalValue(gni, v_valT);
         }
       }
     }
     }
-   
+
    RCP<Teuchos::Time> timerAdjustMatrixBC4 = TimeMonitor::getNewTimer("Adjust global matrix and rhs due to BCs: zero out rows/cols of stiffness for Dirichlet edges");
    {
    TimeMonitor timerAdjustMatrixBC4L(*timerAdjustMatrixBC4);
@@ -1162,7 +1155,7 @@ int main(int argc, char *argv[]) {
    // The following is the Tpetra analog of Apply_OAZToMatrix function
 
    /* Find the local column numbers to nuke */
-   RCP<const Map> ColMapT = gl_StiffMatrixT->getColMap();  
+   RCP<const Map> ColMapT = gl_StiffMatrixT->getColMap();
    RCP<const Map> globalMapT = rcp(new Map(gl_StiffMatrixT->getGlobalNumCols(), 0, CommT));
    // create the exporter from this proc's column map to global 1-1 column map
    RCP<const export_type > ExporterT = rcp(new export_type(ColMapT, globalMapT));
@@ -1173,57 +1166,57 @@ int main(int argc, char *argv[]) {
    myColsToZeroT->putScalar(0);
    // flag all local columns corresponding to the local rows specified
    for (int i=0; i < numBCNodes; i++){
-       int globalRow = gl_StiffMatrixT->getRowMap()->getGlobalElement(BCNodes[i]); 
+       int globalRow = gl_StiffMatrixT->getRowMap()->getGlobalElement(BCNodes[i]);
        int localCol = gl_StiffMatrixT->getColMap()->getLocalElement(globalRow);
-       myColsToZeroT->replaceLocalValue(localCol, 1);  
+       myColsToZeroT->replaceLocalValue(localCol, 1);
    }
    // export to the global column map
     globColsToZeroT->doExport(*myColsToZeroT,*ExporterT,Tpetra::ADD);
     // now import from the global column map to the local column map
     myColsToZeroT->doImport(*globColsToZeroT,*ExporterT,Tpetra::INSERT);
-    
-    Teuchos::Array<double> values; 
-    Teuchos::Array<int> indices; 
-    Teuchos::ArrayRCP<const int> myColsToZeroArrayRCP = myColsToZeroT->getData(0); 
-    size_t NumEntries = 0; 
+
+    Teuchos::Array<double> values;
+    Teuchos::Array<int> indices;
+    Teuchos::ArrayRCP<const int> myColsToZeroArrayRCP = myColsToZeroT->getData(0);
+    size_t NumEntries = 0;
     /* Zero the columns */
     for (int i=0; i < gl_StiffMatrixT->getNodeNumRows(); i++) {
        NumEntries = gl_StiffMatrixT->getNumEntriesInLocalRow(i);
-       values.resize(NumEntries); 
-       indices.resize(NumEntries); 
-       gl_StiffMatrixT->getLocalRowCopy(i, indices(), values(), NumEntries);   
+       values.resize(NumEntries);
+       indices.resize(NumEntries);
+       gl_StiffMatrixT->getLocalRowCopy(i, indices(), values(), NumEntries);
        //Matrix.ExtractMyRowView(i,numEntries,vals,cols);
        for (int j=0; j < NumEntries; j++){
           //Teuchos::ArrayRCP<const int> myColsToZeroj = myColsToZeroT->getData();
           if (myColsToZeroArrayRCP[indices[j]] == 1)
-              values[j] = 0.0;          
+              values[j] = 0.0;
        }
-       gl_StiffMatrixT->replaceLocalValues(i, indices(), values());  
+       gl_StiffMatrixT->replaceLocalValues(i, indices(), values());
     }/*end for*/
- 
+
     /* Zero the rows, add ones to diagonal */
    for (int i = 0; i<numBCNodes; i++) {
-      NumEntries = gl_StiffMatrixT->getNumEntriesInLocalRow(BCNodes[i]); 
-      indices.resize(NumEntries); 
-      values.resize(NumEntries); 
+      NumEntries = gl_StiffMatrixT->getNumEntriesInLocalRow(BCNodes[i]);
+      indices.resize(NumEntries);
+      values.resize(NumEntries);
       gl_StiffMatrixT->getLocalRowCopy(BCNodes[i], indices(), values(), NumEntries);
       int globalRow = gl_StiffMatrixT->getRowMap()->getGlobalElement(BCNodes[i]);
-      int localCol = gl_StiffMatrixT->getColMap()->getLocalElement(globalRow); 
-      for (int j = 0; j<NumEntries; j++){ 
-         values[j] = 0.0;     
+      int localCol = gl_StiffMatrixT->getColMap()->getLocalElement(globalRow);
+      for (int j = 0; j<NumEntries; j++){
+         values[j] = 0.0;
          if (indices[j] == localCol)
-            values[j] = 1.0;  
+            values[j] = 1.0;
       }
       gl_StiffMatrixT->replaceLocalValues(BCNodes[i], indices(), values());
    }
-   } 
-   } 
-   gl_StiffMatrixT->fillComplete(); 
+   }
+   }
+   gl_StiffMatrixT->fillComplete();
 
    //save global stiffness matrix and rhs vector to matrix market file
    Tpetra::MatrixMarket::Writer<sparse_matrix_type >::writeSparseFile("gl_StiffMatrixT.dat",gl_StiffMatrixT);
    Tpetra::MatrixMarket::Writer<sparse_matrix_type >::writeDenseFile("gl_rhsVectorT.dat",gl_rhsVectorT);
-    
+
    /**********************************************************************************/
   /*******************SOLVE GLOBAL SYSTEM USING BELOS + CG **************************/
   /**********************************************************************************/
@@ -1232,7 +1225,7 @@ int main(int argc, char *argv[]) {
       cout << "Solving global linear system using Belos with unpreconditioned CG... \n\n";
     }
     RCP<Teuchos::Time> timerBelosSolve = TimeMonitor::getNewTimer("Solve global system using Belos + CG: Total Time");
-    RCP<vector_type> gl_solVectorT; 
+    RCP<vector_type> gl_solVectorT;
     RCP<Belos::SolverManager<ST, MV, OP > >solver;
     double tol = 1e-10;
     Belos::ReturnType ret;
@@ -1241,13 +1234,13 @@ int main(int argc, char *argv[]) {
     //Create vector to store solution & set initial guess
     gl_solVectorT = rcp(new vector_type(globalMapGT));
     gl_solVectorT->putScalar(1.0);
-    
+
     //create parameter list for block CG solver manager
     ParameterList belosList;
     belosList.set("Block Size", 1);
     belosList.set("Maximum Iterations", 200);
     belosList.set("Convergence Tolerance", tol);
-    
+
    //construct unpreconditioned linear problem
     RCP<Belos::LinearProblem<ST, MV, OP > > problem = rcp(new Belos::LinearProblem<ST, MV, OP >(gl_StiffMatrixT, gl_solVectorT, gl_rhsVectorT));
    //set problem
@@ -1256,9 +1249,9 @@ int main(int argc, char *argv[]) {
       cout << endl << "ERROR: Belos::LinearProblem failed to set up correctly!" << endl;
       return -1;
    }
-   //create an iterative solver manager 
+   //create an iterative solver manager
    solver = rcp(new Belos::PseudoBlockCGSolMgr<ST, MV, OP >(problem, rcp(&belosList, false)));
-   
+
    //Perform solve
    ret = solver->solve();
    }
@@ -1266,12 +1259,12 @@ int main(int argc, char *argv[]) {
    //Get # iterations for this solve
    int numIters = solver->getNumIters();
    if (MyPID == 0) cout << "Number of iterations performed for the linear solve: "<< numIters << endl;
-   
+
    //compute actual residuals
    bool badRes = false;
    vector<double> actual_resids(1);
    vector<double> rhs_norm(1);
-   RCP<MV> residT = rcp(new MV(globalMapGT, 1)); 
+   RCP<MV> residT = rcp(new MV(globalMapGT, 1));
    OPT::Apply(*gl_StiffMatrixT, *gl_solVectorT, *residT);
    MVT::MvAddMv(-1.0, *residT, 1.0, *gl_rhsVectorT, *residT);
    MVT::MvNorm(*residT, actual_resids);
@@ -1279,27 +1272,27 @@ int main(int argc, char *argv[]) {
    double actRes = actual_resids[0]/rhs_norm[0];
    if (MyPID == 0) cout << "Actual residual (normalized): " << actRes << endl;
    if (actRes > tol) badRes = true;
-   
+
    if (ret!=Belos::Converged || badRes) {
       if (MyPID == 0) cout << "ERROR: Belos failed to converge!" << endl;
       return -1;
    }
    if (MyPID == 0) cout << "Belos converged!" << endl;
-   
-   
+
+
    //write gl_solVector to MatrixMarket file
    Tpetra::MatrixMarket::Writer<sparse_matrix_type >::writeDenseFile("gl_solVectorT.dat", gl_solVectorT);
 
 
    //summarize timings
    TimeMonitor::summarize( cout );
-   
+
    // Cleanup
-   for(long long b = 0; b < numElemBlk; b++){     
+   for(long long b = 0; b < numElemBlk; b++){
      delete [] elmt_node_linkage[b];
      delete [] element_types[b];
    }
-   
+
    delete [] block_ids;
    delete [] nodes_per_element;
    delete [] element_attributes;

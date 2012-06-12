@@ -43,17 +43,17 @@
 
 #include <gtest/gtest.h>
 
-#include <Kokkos_MDArray.hpp>
-#include <Kokkos_MultiVector.hpp>
-#include <Kokkos_Value.hpp>
+#include <KokkosArray_MDArray.hpp>
+#include <KokkosArray_MultiVector.hpp>
+#include <KokkosArray_Value.hpp>
 
-#include <Kokkos_Host.hpp>
+#include <KokkosArray_Host.hpp>
 
-#include <Kokkos_Host_macros.hpp>
+#include <KokkosArray_Host_macros.hpp>
 #include <PerfTestHexGrad.hpp>
 #include <PerfTestGramSchmidt.hpp>
 #include <PerfTestDriver.hpp>
-#include <Kokkos_Clear_macros.hpp>
+#include <KokkosArray_Clear_macros.hpp>
 
 //------------------------------------------------------------------------
 
@@ -63,21 +63,21 @@ class host : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
-    Kokkos::Host::initialize( 1 , 8 );
+    KokkosArray::Host::initialize( 1 , 8 );
   }
   
   static void TearDownTestCase()
   { 
-    Kokkos::Host::finalize();
+    KokkosArray::Host::finalize();
   }
 };
 
 TEST_F( host, hexgrad ) {
-  EXPECT_NO_THROW(run_test_hexgrad< Kokkos::Host>( 10, 20 ));
+  EXPECT_NO_THROW(run_test_hexgrad< KokkosArray::Host>( 10, 20 ));
 }
 
 TEST_F( host, gramschmidt ) {
-  EXPECT_NO_THROW(run_test_gramschmidt< Kokkos::Host>( 10, 20 ));
+  EXPECT_NO_THROW(run_test_gramschmidt< KokkosArray::Host>( 10, 20 ));
 }
 
 } // namespace Test

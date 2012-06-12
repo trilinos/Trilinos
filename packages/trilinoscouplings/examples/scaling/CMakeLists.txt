@@ -89,52 +89,89 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
   ) 
 ENDIF()
 
-
-## TODO (mfh 13 Feb 2012) Change to Tpetra and Belos and Amesos2 (and
-## the multigrid package which I shall not name that hasn't gone
-## through copyright yet, once it finally makes it through copyright).
-IF(Trilinos_ENABLE_Tpetra AND
-   Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
-   Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND
-   Trilinos_ENABLE_Intrepid AND Trilinos_ENABLE_ML AND
-   Trilinos_ENABLE_Pamgen AND Trilinos_ENABLE_Teko)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    Example_Poisson_Tpetra
-    SOURCES example_Poisson_Tpetra.cpp
-    DEPLIBS tpetra epetra epetraext pamgen aztecoo amesos ml
-    NUM_MPI_PROCS 1
+# ik 20 Mar 2012, mfh 17 May 2012
+#
+# Just build this executable; don't run it as a test (yet).
+#
+# Intrepid has required dependencies on Teuchos, Shards, and Sacado,
+# so we don't have to name those packages explicitly here.
+# Belos and Tpetra also both have required dependencies on Teuchos.
+IF(Trilinos_ENABLE_Belos AND
+   Trilinos_ENABLE_Intrepid AND
+   Trilinos_ENABLE_Pamgen AND
+   Trilinos_ENABLE_Tpetra)
+  TRIBITS_ADD_EXECUTABLE(
+    Example_Poisson_NoFE_Tpetra
+    SOURCES example_Poisson_NoFE_Tpetra.cpp
+    COMM serial mpi
+    DEPLIBS belos intrepid pamgen tpetra
     ADD_DIR_TO_NAME
     )
 ENDIF()
 
+# ik 20 Mar 2012, mfh 17 May 2012
+#
+# Just build this executable; don't run it as a test (yet).
+#
+# Intrepid has required dependencies on Teuchos, Shards, and Sacado,
+# so we don't have to name those packages explicitly here.
+IF(Trilinos_ENABLE_AztecOO AND
+   Trilinos_ENABLE_Epetra AND
+   Trilinos_ENABLE_EpetraExt AND
+   Trilinos_ENABLE_Intrepid AND
+   Trilinos_ENABLE_ML AND
+   Trilinos_ENABLE_Pamgen)
+  TRIBITS_ADD_EXECUTABLE(
+    Example_Poisson_NoFE_Epetra
+    SOURCES example_Poisson_NoFE_Epetra.cpp
+    COMM serial mpi
+    DEPLIBS aztecoo epetra epetraext intrepid ml pamgen
+    ADD_DIR_TO_NAME
+    )
+ENDIF()
 
-## ik 20 Mar 2012
-#IF(Trilinos_ENABLE_Tpetra AND
-#   Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
-#   Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND
-#   Trilinos_ENABLE_Intrepid AND Trilinos_ENABLE_ML AND
-#   Trilinos_ENABLE_Pamgen AND Trilinos_ENABLE_Teko)
-#  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#    Example_Poisson_NoFE_Tpetra
-#    SOURCES example_Poisson_NoFE_Tpetra.cpp
-#    DEPLIBS tpetra epetra epetraext pamgen aztecoo amesos ml
-#    NUM_MPI_PROCS 1
-#    ADD_DIR_TO_NAME
-#    )
-#ENDIF()
+# mfh 18 May 2012
+#
+# Just build this executable; don't run it as a test (yet).
+#
+# Intrepid has required dependencies on Teuchos, Shards, and Sacado,
+# so we don't have to name those packages explicitly here.
+# Belos and Tpetra also both have required dependencies on Teuchos.
+IF(Trilinos_ENABLE_Belos AND
+   Trilinos_ENABLE_Intrepid AND
+   Trilinos_ENABLE_Pamgen AND
+   Trilinos_ENABLE_Tpetra)
+  TRIBITS_ADD_EXECUTABLE(
+    IntrepidPoisson_Pamgen_Tpetra
+    SOURCES IntrepidPoisson_Pamgen_Tpetra_main.cpp
+      TrilinosCouplings_IntrepidPoissonExampleHelpers.cpp
+      TrilinosCouplings_TpetraIntrepidPoissonExample.cpp
+      TrilinosCouplings_TpetraIntrepidPoissonExample_SolveWithBelos.cpp
+    COMM serial mpi
+    DEPLIBS belos intrepid pamgen tpetra
+    ADD_DIR_TO_NAME
+    )
+ENDIF()
 
-
-## ik 20 Mar 2012
-#IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
-#   Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_AztecOO AND
-#   Trilinos_ENABLE_Intrepid AND Trilinos_ENABLE_ML AND
-#   Trilinos_ENABLE_Pamgen AND Trilinos_ENABLE_Teko)
-#  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#    Example_Poisson_NoFE_Epetra
-#    SOURCES example_Poisson_NoFE_Epetra.cpp
-#    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
-#    NUM_MPI_PROCS 1
-#    ADD_DIR_TO_NAME
-#    )
-#ENDIF()
-
+# mfh 24 May 2012
+#
+# Just build this executable; don't run it as a test (yet).
+#
+# Intrepid has required dependencies on Teuchos, Shards, and Sacado,
+# so we don't have to name those packages explicitly here.
+# Belos both also have required dependencies on Teuchos.
+IF(Trilinos_ENABLE_Belos AND
+   Trilinos_ENABLE_Intrepid AND
+   Trilinos_ENABLE_Pamgen AND
+   Trilinos_ENABLE_Epetra)
+  TRIBITS_ADD_EXECUTABLE(
+    IntrepidPoisson_Pamgen_Epetra
+    SOURCES IntrepidPoisson_Pamgen_Epetra_main.cpp
+      TrilinosCouplings_IntrepidPoissonExampleHelpers.cpp
+      TrilinosCouplings_EpetraIntrepidPoissonExample.cpp
+      TrilinosCouplings_EpetraIntrepidPoissonExample_SolveWithBelos.cpp
+    COMM serial mpi
+    DEPLIBS belos intrepid pamgen epetra
+    ADD_DIR_TO_NAME
+    )
+ENDIF()

@@ -12,7 +12,7 @@ FILE(GLOB HEADERS *.hpp)
 #-----------------------------------------------------------------------------
 # Sources always included
 
-LIST(APPEND SOURCES Kokkos_Host_Impl.cpp Kokkos_Host_MemoryManager.cpp)
+LIST(APPEND SOURCES KokkosArray_Host_Impl.cpp KokkosArray_Host_MemoryManager.cpp)
 
 #-----------------------------------------------------------------------------
 # Hardware locality detection functionality depends upon TPL availability
@@ -22,21 +22,21 @@ IF( TPL_ENABLE_HWLOC )
 #  http://www.open-mpi.org/projects/hwloc/
 #  Version 1.3 or greater
 #
-LIST(APPEND SOURCES Kokkos_Host_hwloc.cpp)
+LIST(APPEND SOURCES KokkosArray_Host_hwloc.cpp)
 #
 ELSE()
-LIST(APPEND SOURCES Kokkos_Host_hwloc_unavailable.cpp)
+LIST(APPEND SOURCES KokkosArray_Host_hwloc_unavailable.cpp)
 ENDIF()
 
 #-----------------------------------------------------------------------------
 # Thread spawning functionality depend upon TPL availability
 
 IF( TPL_ENABLE_Pthread )
-LIST(APPEND SOURCES Kokkos_Host_pthread.cpp)
+LIST(APPEND SOURCES KokkosArray_Host_pthread.cpp)
 ELSEIF( TPL_ENABLE_Winthread )
-LIST(APPEND SOURCES Kokkos_Host_winthread.cpp)
+LIST(APPEND SOURCES KokkosArray_Host_winthread.cpp)
 ELSE()
-LIST(APPEND SOURCES Kokkos_Host_nothread.cpp)
+LIST(APPEND SOURCES KokkosArray_Host_nothread.cpp)
 ENDIF()
 
 #-----------------------------------------------------------------------------

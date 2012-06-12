@@ -3,14 +3,6 @@
  * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
  * For more info, see the README file in the top-level Zoltan directory.     *  
  *****************************************************************************/
-/*****************************************************************************
- * CVS File Information :
- *    $RCSfile$
- *    $Author$
- *    $Date$
- *    $Revision$
- ****************************************************************************/
-
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -26,7 +18,7 @@ extern "C" {
 /*****************************************************************************/
 
 int Zoltan_RIB_Build_Structure(ZZ *zz, int *num_obj, int *max_obj, int wgtflag,
-                               double overalloc, int use_ids)
+                               double overalloc, int use_ids, int gen_tree)
 {
 /* Function to build the geometry-based data structures for RIB method. */
 char           *yo = "Zoltan_RIB_Build_Structure";
@@ -51,20 +43,22 @@ int            i, ierr = 0;
 
     Zoltan_Initialize_Transformation(&(rib->Tran));
 
-    rib->Tree_Ptr = (struct rib_tree *)
-              ZOLTAN_MALLOC(zz->LB.Num_Global_Parts* sizeof(struct rib_tree));
-    if (rib->Tree_Ptr == NULL) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-      Zoltan_RIB_Free_Structure(zz);
-      return(ZOLTAN_MEMERR);
-    }
-    /* initialize Tree_Ptr */
-    for (i = 0; i < zz->LB.Num_Global_Parts; i++) {
-      treeptr = &(rib->Tree_Ptr[i]);
-      treeptr->cm[0] = treeptr->cm[1] = treeptr->cm[2] = 0.0;
-      treeptr->ev[0] = treeptr->ev[1] = treeptr->ev[2] = 0.0;
-      treeptr->cut = 0.0;
-      treeptr->parent = treeptr->left_leaf = treeptr->right_leaf = 0;
+    if (gen_tree) {
+      rib->Tree_Ptr = (struct rib_tree *)
+                ZOLTAN_CALLOC(zz->LB.Num_Global_Parts, sizeof(struct rib_tree));
+      if (rib->Tree_Ptr == NULL) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+        Zoltan_RIB_Free_Structure(zz);
+        return(ZOLTAN_MEMERR);
+      }
+      /* initialize Tree_Ptr */
+      for (i = 0; i < zz->LB.Num_Global_Parts; i++) {
+        treeptr = &(rib->Tree_Ptr[i]);
+        treeptr->cm[0] = treeptr->cm[1] = treeptr->cm[2] = 0.0;
+        treeptr->ev[0] = treeptr->ev[1] = treeptr->ev[2] = 0.0;
+        treeptr->cut = 0.0;
+        treeptr->parent = treeptr->left_leaf = treeptr->right_leaf = 0;
+      }
     }
   }
   else {

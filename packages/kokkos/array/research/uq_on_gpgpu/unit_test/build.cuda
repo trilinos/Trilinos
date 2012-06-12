@@ -6,10 +6,10 @@ export CXXFLAGS="-Wall"
 export INC_PATH="-I. -I../../src"
 
 set GCC_SOURCES="../src/impl/*.cpp"
-set GCC_SOURCES="${GCC_SOURCES} ../src/Host/Kokkos_Host_Impl.cpp"
-set GCC_SOURCES="${GCC_SOURCES} ../src/Host/Kokkos_Host_pthread.cpp"
-set GCC_SOURCES="${GCC_SOURCES} ../src/Host/Kokkos_Host_hwloc.cpp"
-set GCC_SOURCES="${GCC_SOURCES} ../src/Host/Kokkos_Host_MemoryManager.cpp"
+set GCC_SOURCES="${GCC_SOURCES} ../src/Host/KokkosArray_Host_Impl.cpp"
+set GCC_SOURCES="${GCC_SOURCES} ../src/Host/KokkosArray_Host_pthread.cpp"
+set GCC_SOURCES="${GCC_SOURCES} ../src/Host/KokkosArray_Host_hwloc.cpp"
+set GCC_SOURCES="${GCC_SOURCES} ../src/Host/KokkosArray_Host_MemoryManager.cpp"
 
 set LIB="-lpthread -L${HWLOC_PATH}/lib -lhwloc"
 

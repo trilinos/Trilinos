@@ -41,7 +41,7 @@
 //@HEADER
 */
 
-#include <impl/Kokkos_Preprocessing_macros.hpp>
+#include <impl/KokkosArray_Preprocessing_macros.hpp>
 
 namespace Test {
 
@@ -54,7 +54,7 @@ struct HexFill< Scalar , KOKKOS_MACRO_DEVICE >
 	typedef KOKKOS_MACRO_DEVICE		 device_type ;
 	typedef device_type::size_type	 size_type ;
 	
-	typedef typename Kokkos::MDArrayView<Scalar,device_type> array_type;
+	typedef typename KokkosArray::MDArrayView<Scalar,device_type> array_type;
 	
 	array_type coords;
 	
@@ -125,8 +125,8 @@ void poisson_run< KOKKOS_MACRO_DEVICE>(int beg , int end)
 	typedef double Scalar;
 	typedef KOKKOS_MACRO_DEVICE device_type;
 	typedef device_type::size_type size_type;
-	typedef Kokkos::MDArrayView<Scalar , device_type > array_type;
-	typedef Kokkos::MDArrayView<Scalar , Kokkos::DeviceHost > host_array;
+	typedef KokkosArray::MDArrayView<Scalar , device_type > array_type;
+	typedef KokkosArray::MDArrayView<Scalar , KokkosArray::DeviceHost > host_array;
 	
 	
 /*********************************************************/
@@ -143,11 +143,11 @@ void poisson_run< KOKKOS_MACRO_DEVICE>(int beg , int end)
 /*    Create hexahedral cell and copy into batch         */
 /*********************************************************/
 
-	array_type cellcoords = Kokkos::create_mdarray<array_type>(numCells , numNodesPerCell , spaceDim );
+	array_type cellcoords = KokkosArray::create_mdarray<array_type>(numCells , numNodesPerCell , spaceDim );
 
 
 	
-	Kokkos::parallel_for(numCells, HexFill<Scalar , device_type>(cellcoords) , temp);
+	KokkosArray::parallel_for(numCells, HexFill<Scalar , device_type>(cellcoords) , temp);
 	
 /*********************************************************/
 /*               Define cell cubature                    */
@@ -168,16 +168,16 @@ void poisson_run< KOKKOS_MACRO_DEVICE>(int beg , int end)
     numCubPoints = cellCubature.getNumPoints();
     
 
-	cubPointsHost = Kokkos::create_mdarray<host_array>(numCubPoints,cubDim);
-	cubWeightsHost = Kokkos::create_mdarray<host_array>(numCubPoints);
+	cubPointsHost = KokkosArray::create_mdarray<host_array>(numCubPoints,cubDim);
+	cubWeightsHost = KokkosArray::create_mdarray<host_array>(numCubPoints);
 	
 	//Device allocation
-	cubWeightsDevice = Kokkos::create_mdarray<array_type>(numCubPoints);
+	cubWeightsDevice = KokkosArray::create_mdarray<array_type>(numCubPoints);
 	
 	cellCubature.getCubature(cubPointsHost , cubWeightsHost);
 	}
 	//Deep Copy
-	Kokkos::deep_copy(cubWeightsDevice , cubWeightsHost);
+	KokkosArray::deep_copy(cubWeightsDevice , cubWeightsHost);
  
  
 /*********************************************************/
@@ -188,45 +188,45 @@ void poisson_run< KOKKOS_MACRO_DEVICE>(int beg , int end)
   		
   	int numFields = hexHGradBasis.getCardinality();
   	
-	host_array basisGrads = Kokkos::create_mdarray<host_array>(numFields , numCubPoints , spaceDim);
-	host_array basisValues = Kokkos::create_mdarray<host_array>(numFields, numCubPoints);
+	host_array basisGrads = KokkosArray::create_mdarray<host_array>(numFields , numCubPoints , spaceDim);
+	host_array basisValues = KokkosArray::create_mdarray<host_array>(numFields, numCubPoints);
 	
 	// Evaluate basis values and gradients at cubature points
     hexHGradBasis.getValues(basisValues, cubPointsHost, Intrepid::OPERATOR_VALUE);
     hexHGradBasis.getValues(basisGrads, cubPointsHost, Intrepid::OPERATOR_GRAD);
     
-    array_type basisGrads_device = Kokkos::create_mdarray<array_type>(numFields , numCubPoints , spaceDim);
-	array_type basisValues_device = Kokkos::create_mdarray<array_type>(numFields, numCubPoints);
+    array_type basisGrads_device = KokkosArray::create_mdarray<array_type>(numFields , numCubPoints , spaceDim);
+	array_type basisValues_device = KokkosArray::create_mdarray<array_type>(numFields, numCubPoints);
 	
 	//Copy to device
-	Kokkos::deep_copy(basisGrads_device , basisGrads);
-	Kokkos::deep_copy(basisValues_device , basisValues);
+	KokkosArray::deep_copy(basisGrads_device , basisGrads);
+	KokkosArray::deep_copy(basisValues_device , basisValues);
 	
 
 /*********************************************************/
 /*            Calculate cell Jacobians                   */
 /*********************************************************/
     
-    array_type worksetJacobian = Kokkos::create_mdarray<array_type>(numCells , numCubPoints , 
+    array_type worksetJacobian = KokkosArray::create_mdarray<array_type>(numCells , numCubPoints , 
 																	spaceDim , spaceDim );
 	
 
-	array_type worksetJacobianInv = Kokkos::create_mdarray<array_type>(numCells, numCubPoints, spaceDim, spaceDim);
+	array_type worksetJacobianInv = KokkosArray::create_mdarray<array_type>(numCells, numCubPoints, spaceDim, spaceDim);
 
-	array_type worksetJacobianDet = Kokkos::create_mdarray<array_type>(numCells, numCubPoints);
+	array_type worksetJacobianDet = KokkosArray::create_mdarray<array_type>(numCells, numCubPoints);
 	
 	//  Set Jacobian, inverse and determinant
-	Kokkos::parallel_for(numCells , Test::Jacobian<Scalar , device_type , CellTraits >(worksetJacobian , cubPointsHost , cellcoords) , temp );
+	KokkosArray::parallel_for(numCells , Test::Jacobian<Scalar , device_type , CellTraits >(worksetJacobian , cubPointsHost , cellcoords) , temp );
 
 	seconds = seconds + temp;
 
 	
-	Kokkos::parallel_for(numCells, Test::Invert<Scalar,device_type, 3>(worksetJacobian, worksetJacobianInv, 8), temp);
+	KokkosArray::parallel_for(numCells, Test::Invert<Scalar,device_type, 3>(worksetJacobian, worksetJacobianInv, 8), temp);
 	
 	seconds = seconds + temp;
 
 
-	Kokkos::parallel_for(numCells , Test::Determinant<Scalar , device_type>(worksetJacobianDet , worksetJacobian), temp);
+	KokkosArray::parallel_for(numCells , Test::Determinant<Scalar , device_type>(worksetJacobianDet , worksetJacobian), temp);
 	
 	seconds = seconds + temp;
 
@@ -237,26 +237,26 @@ void poisson_run< KOKKOS_MACRO_DEVICE>(int beg , int end)
 
 
 		// Containers for stiffness matrix
-	array_type worksetStiffMatrix = Kokkos::create_mdarray<array_type>(numCells, numFields , numFields);
-	array_type worksetCubWeights = Kokkos::create_mdarray<array_type>(numCells, numCubPoints);
-	array_type worksetBasisGrads = Kokkos::create_mdarray<array_type>(numCells, numFields , numCubPoints , spaceDim);
-	array_type worksetBasisGradsWeighted = Kokkos::create_mdarray<array_type>(numCells, numCubPoints , spaceDim);
+	array_type worksetStiffMatrix = KokkosArray::create_mdarray<array_type>(numCells, numFields , numFields);
+	array_type worksetCubWeights = KokkosArray::create_mdarray<array_type>(numCells, numCubPoints);
+	array_type worksetBasisGrads = KokkosArray::create_mdarray<array_type>(numCells, numFields , numCubPoints , spaceDim);
+	array_type worksetBasisGradsWeighted = KokkosArray::create_mdarray<array_type>(numCells, numCubPoints , spaceDim);
 		
-	Kokkos::parallel_for(numCells , Test::Transform<Scalar , device_type>(worksetBasisGrads , worksetJacobianInv , basisGrads_device) , temp);	
+	KokkosArray::parallel_for(numCells , Test::Transform<Scalar , device_type>(worksetBasisGrads , worksetJacobianInv , basisGrads_device) , temp);	
 	
 		seconds = seconds + temp;
 	
-	Kokkos::parallel_for(numCells , Test::computeCellMeasure<Scalar , device_type>(worksetCubWeights , worksetJacobianDet , cubWeightsDevice) , temp);	
+	KokkosArray::parallel_for(numCells , Test::computeCellMeasure<Scalar , device_type>(worksetCubWeights , worksetJacobianDet , cubWeightsDevice) , temp);	
 	
 		seconds = seconds + temp;
 	
 	
-	Kokkos::parallel_for(numCells , Test::Multiply<Scalar , device_type>(worksetBasisGradsWeighted , worksetCubWeights , worksetBasisGrads) , temp);
+	KokkosArray::parallel_for(numCells , Test::Multiply<Scalar , device_type>(worksetBasisGradsWeighted , worksetCubWeights , worksetBasisGrads) , temp);
 	
 		seconds = seconds + temp;
 		
 		
-	Kokkos::parallel_for(numCells , Test::Integrate<Scalar , device_type>(worksetStiffMatrix , worksetCubWeights , worksetBasisGrads) , temp);
+	KokkosArray::parallel_for(numCells , Test::Integrate<Scalar , device_type>(worksetStiffMatrix , worksetCubWeights , worksetBasisGrads) , temp);
 	
 		seconds = seconds + temp;
 	
@@ -265,26 +265,26 @@ void poisson_run< KOKKOS_MACRO_DEVICE>(int beg , int end)
 /*                                   Compute RHS                                  */
 /**********************************************************************************/	
 
-	array_type worksetRHS = Kokkos::create_mdarray<array_type>(numCells , numFields);
-	array_type worksetBasisValues  = Kokkos::create_mdarray<array_type>(numCells , numFields, numCubPoints);
-	array_type worksetBasisValuesWeighted  = Kokkos::create_mdarray<array_type>(numCells , numFields, numCubPoints);
+	array_type worksetRHS = KokkosArray::create_mdarray<array_type>(numCells , numFields);
+	array_type worksetBasisValues  = KokkosArray::create_mdarray<array_type>(numCells , numFields, numCubPoints);
+	array_type worksetBasisValuesWeighted  = KokkosArray::create_mdarray<array_type>(numCells , numFields, numCubPoints);
 
-	array_type worksetSourceTerm  = Kokkos::create_mdarray<array_type>(numCells , numCubPoints);
+	array_type worksetSourceTerm  = KokkosArray::create_mdarray<array_type>(numCells , numCubPoints);
 	
 	
-	Kokkos::parallel_for(numCells , Test::simpleFill<Scalar , device_type>(worksetSourceTerm) , temp);
-	
-		seconds = seconds + temp;
-	
-	Kokkos::parallel_for(numCells , Test::TransformValue<Scalar , device_type>(worksetBasisValues ,basisValues_device ) , temp);
+	KokkosArray::parallel_for(numCells , Test::simpleFill<Scalar , device_type>(worksetSourceTerm) , temp);
 	
 		seconds = seconds + temp;
 	
-	Kokkos::parallel_for(numCells , Test::Multiply<Scalar , device_type>(worksetBasisValuesWeighted,worksetCubWeights,worksetBasisValues) , temp);
+	KokkosArray::parallel_for(numCells , Test::TransformValue<Scalar , device_type>(worksetBasisValues ,basisValues_device ) , temp);
 	
 		seconds = seconds + temp;
 	
-	Kokkos::parallel_for(numCells , Test::Integrate<Scalar , device_type>(worksetRHS ,worksetSourceTerm ,  worksetBasisValuesWeighted) , temp);
+	KokkosArray::parallel_for(numCells , Test::Multiply<Scalar , device_type>(worksetBasisValuesWeighted,worksetCubWeights,worksetBasisValues) , temp);
+	
+		seconds = seconds + temp;
+	
+	KokkosArray::parallel_for(numCells , Test::Integrate<Scalar , device_type>(worksetRHS ,worksetSourceTerm ,  worksetBasisValuesWeighted) , temp);
 	
 		seconds = seconds + temp;
 	

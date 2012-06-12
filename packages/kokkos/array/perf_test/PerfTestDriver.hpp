@@ -41,7 +41,7 @@
 //@HEADER
 */
 
-#include <impl/Kokkos_Preprocessing_macros.hpp>
+#include <impl/KokkosArray_Preprocessing_macros.hpp>
 
 #include <iostream>
 #include <string>

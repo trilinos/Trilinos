@@ -50,12 +50,12 @@ struct finish_step<Scalar ,KOKKOS_MACRO_DEVICE>{
   typedef KOKKOS_MACRO_DEVICE       device_type;
   typedef device_type::size_type    size_type;
 
-  typedef Kokkos::MDArray<Scalar,device_type>   array_type;
-  typedef Kokkos::MDArray<int,device_type>      int_array;
+  typedef KokkosArray::MDArray<Scalar,device_type>   array_type;
+  typedef KokkosArray::MDArray<int,device_type>      int_array;
 
   typedef Region<Scalar,device_type> MyRegion;
 
-  typedef Kokkos::Value<Scalar,device_type>     scalar;
+  typedef KokkosArray::Value<Scalar,device_type>     scalar;
 
 
     finish_step(const MyRegion  & region,

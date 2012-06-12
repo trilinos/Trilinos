@@ -267,7 +267,6 @@ void DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>::evalModelImpl(
   using Thyra::get_mv;
   using Thyra::ConstDetachedSpmdVectorView;
   using Thyra::DetachedSpmdVectorView;
-  typedef Thyra::Ordinal Ordinal;
   typedef Thyra::ModelEvaluatorBase MEB;
   typedef MEB::DerivativeMultiVector<Scalar> DMV;
 

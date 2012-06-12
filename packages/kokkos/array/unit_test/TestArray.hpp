@@ -51,7 +51,7 @@
 #include <sstream>
 #include <iostream>
 
-#include <impl/Kokkos_Preprocessing_macros.hpp>
+#include <impl/KokkosArray_Preprocessing_macros.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -64,17 +64,17 @@ class TestArray< T, KOKKOS_MACRO_DEVICE >
 {
 public:
   typedef KOKKOS_MACRO_DEVICE device ;
-  typedef Kokkos::Host        host ;
+  typedef KokkosArray::Host        host ;
 
   enum { NP = 1000 ,
          N1 = 3 ,
          N2 = 5 ,
          N3 = 7 };
 
-  typedef Kokkos::Array< T , device > dView1 ;
-  typedef Kokkos::Array< T[N1] , device > dView2 ;
-  typedef Kokkos::Array< T[N1][N2] , device > dView3 ;
-  typedef Kokkos::Array< T[N1][N2][N3] , device > dView4 ;
+  typedef KokkosArray::Array< T , device > dView1 ;
+  typedef KokkosArray::Array< T[N1] , device > dView2 ;
+  typedef KokkosArray::Array< T[N1][N2] , device > dView3 ;
+  typedef KokkosArray::Array< T[N1][N2][N3] , device > dView4 ;
 
   typedef typename dView1::HostMirror  hView1 ;
   typedef typename dView2::HostMirror  hView2 ;
@@ -94,8 +94,8 @@ public:
     ASSERT_FALSE(hy);
     ASSERT_FALSE(hz);
 
-    dx = Kokkos::create_array<dView4>( "dx" , NP );
-    dy = Kokkos::create_array<dView4>( "dy" , NP );
+    dx = KokkosArray::create_array<dView4>( "dx" , NP );
+    dy = KokkosArray::create_array<dView4>( "dy" , NP );
 
     ASSERT_TRUE(dx);
     ASSERT_TRUE(dy);
@@ -111,8 +111,8 @@ public:
     ASSERT_EQ( dy.dimension(2) , N2 );
     ASSERT_EQ( dy.dimension(3) , N3 );
 
-    hx = Kokkos::create_mirror( dx );
-    hy = Kokkos::create_mirror( dy );
+    hx = KokkosArray::create_mirror( dx );
+    hy = KokkosArray::create_mirror( dy );
 
     size_t count = 0 ;
     for ( size_t ip = 0 ; ip < NP ; ++ip ) {
@@ -122,9 +122,9 @@ public:
       hx(ip,i1,i2,i3) = ++count ;
     }}}}
 
-    Kokkos::deep_copy( dx , hx );
-    Kokkos::deep_copy( dy , dx );
-    Kokkos::deep_copy( hy , dy );
+    KokkosArray::deep_copy( dx , hx );
+    KokkosArray::deep_copy( dy , dx );
+    KokkosArray::deep_copy( hy , dy );
 
     for ( size_t ip = 0 ; ip < NP ; ++ip ) {
     for ( size_t i1 = 0 ; i1 < N1 ; ++i1 ) {

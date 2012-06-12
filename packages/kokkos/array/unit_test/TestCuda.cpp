@@ -43,8 +43,8 @@
 
 #include <gtest/gtest.h>
 
-#include <Kokkos_Host.hpp>
-#include <Kokkos_Cuda.hpp>
+#include <KokkosArray_Host.hpp>
+#include <KokkosArray_Cuda.hpp>
 
 namespace Test {
 
@@ -54,11 +54,11 @@ class cuda : public ::testing::Test {
 protected:
   static void SetUpTestCase()
   {
-    Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
+    KokkosArray::Cuda::initialize( KokkosArray::Cuda::SelectDevice(0) );
   }
   static void TearDownTestCase()
   {
-    Kokkos::Cuda::finalize();
+    KokkosArray::Cuda::finalize();
   }
 };
 

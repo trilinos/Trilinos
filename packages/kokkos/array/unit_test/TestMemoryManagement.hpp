@@ -50,7 +50,7 @@
 #include <stdexcept>
 #include <sstream>
 #include <iostream>
-#include <impl/Kokkos_Preprocessing_macros.hpp>
+#include <impl/KokkosArray_Preprocessing_macros.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -64,8 +64,8 @@ class TestMemoryManagement< T, KOKKOS_MACRO_DEVICE >
 public:
   typedef KOKKOS_MACRO_DEVICE device ;
 
-  typedef Kokkos::Impl::MemoryManager< device::memory_space > Manager ;
-  typedef Kokkos::Impl::MemoryView< T , device::memory_space > dView ;
+  typedef KokkosArray::Impl::MemoryManager< device::memory_space > Manager ;
+  typedef KokkosArray::Impl::MemoryView< T , device::memory_space > dView ;
 
   TestMemoryManagement() { run_test(); }
 

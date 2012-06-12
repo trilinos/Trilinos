@@ -291,7 +291,7 @@ int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    ML_Aggregate_Viz_Stats * aggr_viz_and_stats;
 #ifdef MB_MODIF_QR
    int     numDeadNod;
-   ML_QR_FIX_TYPE dead;
+   int dead;
    int     nCDofTrunc, dof;
 #endif
 
@@ -1442,12 +1442,7 @@ Here is how we do all this:
 
 #  ifdef MB_MODIF_QR
    numDeadNod = 0;  /* number of nodes with dead dofs on current coarse lev */
-   ML_qr_fix_Create(aggr_count); /* alloc array in structure */
-   if (nullspace_dim > ML_qr_fix_Bitsize()) {
-       fprintf(stderr,"[SS] nullspace_dim=%d exceeds dim for xDeadNodDof\n",
-           nullspace_dim);
-       exit(1);
-   }
+   ML_qr_fix_Create(aggr_count, nullspace_dim); /* alloc array in structure */
 
    for (i = 0; i < aggr_count; i++) 
    {
@@ -1497,10 +1492,11 @@ Here is how we do all this:
       dead       = 0;
 
       if (nullspace_dim > aggr_cnt_array[i]) {
+          /* mark the coarse degree(s) of freedom that will be dead */
           nCDofTrunc = aggr_cnt_array[i];
-          for (dof=nCDofTrunc; dof < nullspace_dim; dof++) dead |= (1 << dof);
+          dead = 1;
+          ML_qr_fix_markDOFsAsDead(i,nCDofTrunc, nullspace_dim);
           numDeadNod++;
-          ML_qr_fix_setDeadNod(i, dead);
       }
 
       /* ---------------------------------------------------------- */
@@ -1532,7 +1528,7 @@ Here is how we do all this:
       if (dead) {
         for (k = 0; k < nullspace_dim; k++) {
           int off = i*nullspace_dim + k*Ncoarse*nullspace_dim;
-          if (dead & (1 << k)) {
+          if (ML_qr_fix_isDOFDead(i,k)) {
              for (j = 0; j < k+1; j++)
                 new_null[off + j] = 0.e0;
           } else {
@@ -1568,7 +1564,7 @@ Here is how we do all this:
       if (dead) {
         /* modify dead columns of Q if any */
         for (k = 0; k < nullspace_dim; k++) {
-          if (dead & (1 << k)) {
+          if (ML_qr_fix_isDOFDead(i,k)) {
             for (j = 0; j < aggr_cnt_array[i]; j++)
               qr_tmp[k*aggr_cnt_array[i] + j] = 0.e0;
           }
@@ -1615,10 +1611,10 @@ Here is how we do all this:
    } /*for (i = 0; i < aggr_count; i++) */
   /* set the number of nodes with dead dofs on current coarse grid */
    ML_qr_fix_setNumDeadNod(numDeadNod);
-/*
-   printf("[II] out of %d coarse nodes, %d have dead dofs\n",
-      aggr_count, numDeadNod);
-*/
+   k = numDeadNod;
+   ML_gsum_scalar_int(&k, &i, comm);
+   if (mypid == 0 && printflag  < ML_Get_PrintLevel())
+     printf("Aggregation(MIS) : QR factorization - too small aggregates = %d\n",k);
 #  else /*MB_MODIF_QR*/
    for (i = 0; i < aggr_count; i++) 
    {

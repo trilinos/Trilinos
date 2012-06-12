@@ -71,14 +71,14 @@ template<class Scalar , class scalar_vector_d, class HostMirror_scalar, class Ho
 void printGLUT(const std::string & filename , scalar_vector_d & X , HostMirror_scalar & elem_coords_h,
                       HostMirror_int & elem_nodeIDs_h , int x , int y, int z)
 {
-  typedef Kokkos::MultiVector<Scalar , Kokkos::Host> scalar_vector_h;
+  typedef KokkosArray::MultiVector<Scalar , KokkosArray::Host> scalar_vector_h;
 
   int nelem = x * y * z;
   int nnodes = X.length();
   std::ofstream outfile(filename.c_str());
   outfile<<x<<" "<<y<<" "<<z<< " " << 1<<std::endl;
-  scalar_vector_h X_host = Kokkos::create_multivector<scalar_vector_h>("X_host", nnodes);
-  Kokkos::deep_copy(X_host , X);
+  scalar_vector_h X_host = KokkosArray::create_multivector<scalar_vector_h>("X_host", nnodes);
+  KokkosArray::deep_copy(X_host , X);
   for(int i = 0 ; i < nelem ; i++)
   {
       for(int j = 0 ; j < 8 ; j++)

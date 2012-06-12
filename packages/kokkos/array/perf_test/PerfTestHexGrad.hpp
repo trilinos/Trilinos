@@ -53,11 +53,11 @@ struct HexSimpleFill< KOKKOS_MACRO_DEVICE >
   typedef device_type::size_type  size_type ;
 
   // 3D array : ( ParallelWork , Space , Node )
-  typedef Kokkos::MDArray<double,device_type> d_array ;
+  typedef KokkosArray::MDArray<double,device_type> d_array ;
 
-  Kokkos::MDArray<double,device_type> coords ;
+  KokkosArray::MDArray<double,device_type> coords ;
 
-  HexSimpleFill( const Kokkos::MDArray<double,device_type> & arg_coords )
+  HexSimpleFill( const KokkosArray::MDArray<double,device_type> & arg_coords )
     : coords( arg_coords ) {}
 
   KOKKOS_MACRO_DEVICE_FUNCTION
@@ -114,11 +114,11 @@ struct HexGrad< KOKKOS_MACRO_DEVICE >
 
   // 3D array : ( ParallelWork , Space , Node )
 
-  Kokkos::MDArray<double,device_type> coords ;
-  Kokkos::MDArray<float,device_type>  grad_op ;
+  KokkosArray::MDArray<double,device_type> coords ;
+  KokkosArray::MDArray<float,device_type>  grad_op ;
 
-  HexGrad( const Kokkos::MDArray<double,device_type> & arg_coords ,
-           const Kokkos::MDArray<float,device_type>  & arg_grad_op )
+  HexGrad( const KokkosArray::MDArray<double,device_type> & arg_coords ,
+           const KokkosArray::MDArray<float,device_type>  & arg_grad_op )
     : coords( arg_coords )
     , grad_op( arg_grad_op )
     {}
@@ -282,18 +282,18 @@ struct HexGrad< KOKKOS_MACRO_DEVICE >
 
   static double test( int count )
   {
-    typedef Kokkos::MDArray<double,device_type> darray ;
-    typedef Kokkos::MDArray<float,device_type>  farray ;
-    darray coord = Kokkos::create_mdarray< darray >( count , 3 , 8 );
-    farray grad  = Kokkos::create_mdarray< farray >( count , 3 , 8 );
+    typedef KokkosArray::MDArray<double,device_type> darray ;
+    typedef KokkosArray::MDArray<float,device_type>  farray ;
+    darray coord = KokkosArray::create_mdarray< darray >( count , 3 , 8 );
+    farray grad  = KokkosArray::create_mdarray< farray >( count , 3 , 8 );
 
     // Execute the parallel kernels on the arrays:
 
     double seconds = 0.0;
     
-    Kokkos::parallel_for( count , HexSimpleFill<device_type>( coord ) , seconds );
+    KokkosArray::parallel_for( count , HexSimpleFill<device_type>( coord ) , seconds );
 
-    Kokkos::parallel_for( count , HexGrad<device_type>( coord , grad ) , seconds );
+    KokkosArray::parallel_for( count , HexGrad<device_type>( coord , grad ) , seconds );
 
     return seconds ;
   }

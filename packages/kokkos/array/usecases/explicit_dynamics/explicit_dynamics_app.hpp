@@ -98,14 +98,14 @@ void explicit_dynamics_app( const size_t ex,
                             const size_t steps ,
                             PerformanceData & perf )
 {
-  typedef typename Kokkos::MDArray<Scalar,device_type>::HostMirror  scalar_array_h;
-  typedef typename Kokkos::MDArray<int,device_type>::HostMirror     int_array_h;
+  typedef typename KokkosArray::MDArray<Scalar,device_type>::HostMirror  scalar_array_h;
+  typedef typename KokkosArray::MDArray<int,device_type>::HostMirror     int_array_h;
 
-  typedef typename Kokkos::MDArray<Scalar,device_type>            scalar_array_d;
-  typedef typename Kokkos::MDArray<int,device_type>               int_array_d;
+  typedef typename KokkosArray::MDArray<Scalar,device_type>            scalar_array_d;
+  typedef typename KokkosArray::MDArray<int,device_type>               int_array_d;
 
-  typedef typename Kokkos::Value<Scalar,device_type>::HostMirror   scalar_h;
-  typedef typename Kokkos::Value<Scalar,device_type>             scalar_d;
+  typedef typename KokkosArray::Value<Scalar,device_type>::HostMirror   scalar_h;
+  typedef typename KokkosArray::Value<Scalar,device_type>             scalar_d;
 
   const int NumStates = 2;
 
@@ -127,19 +127,19 @@ void explicit_dynamics_app( const size_t ex,
   const Scalar poissons_ratio=0.0;
   const Scalar  density = 8.0e-4;
 
-  Kokkos::Impl::Timer wall_clock ;
+  KokkosArray::Impl::Timer wall_clock ;
 
   BoxMeshFixture<int_array_h, scalar_array_h> mesh(ex,ey,ez);
 
-  scalar_array_h  nodal_mass_h     =  Kokkos::create_mdarray< scalar_array_h >(mesh.nnodes);
-  scalar_array_h  elem_mass_h      =  Kokkos::create_mdarray< scalar_array_h >(mesh.nelems);
+  scalar_array_h  nodal_mass_h     =  KokkosArray::create_mdarray< scalar_array_h >(mesh.nnodes);
+  scalar_array_h  elem_mass_h      =  KokkosArray::create_mdarray< scalar_array_h >(mesh.nelems);
 
 
-  scalar_array_h  acceleration_h   =  Kokkos::create_mdarray< scalar_array_h >(mesh.nnodes, 3);
-  scalar_array_h  velocity_h     =   Kokkos::create_mdarray< scalar_array_h >(mesh.nnodes, 3, 2); // two state field
-  scalar_array_h  displacement_h   =  Kokkos::create_mdarray< scalar_array_h >(mesh.nnodes, 3, 2); // two state field
-  scalar_array_h  internal_force_h =  Kokkos::create_mdarray< scalar_array_h >(mesh.nnodes, 3);
-  scalar_array_h  stress_new_h     =  Kokkos::create_mdarray< scalar_array_h >(mesh.nelems,6);
+  scalar_array_h  acceleration_h   =  KokkosArray::create_mdarray< scalar_array_h >(mesh.nnodes, 3);
+  scalar_array_h  velocity_h     =   KokkosArray::create_mdarray< scalar_array_h >(mesh.nnodes, 3, 2); // two state field
+  scalar_array_h  displacement_h   =  KokkosArray::create_mdarray< scalar_array_h >(mesh.nnodes, 3, 2); // two state field
+  scalar_array_h  internal_force_h =  KokkosArray::create_mdarray< scalar_array_h >(mesh.nnodes, 3);
+  scalar_array_h  stress_new_h     =  KokkosArray::create_mdarray< scalar_array_h >(mesh.nelems,6);
 
 
   //setup the initial condition on velocity
@@ -163,7 +163,7 @@ void explicit_dynamics_app( const size_t ex,
                                       poissons_ratio,
                                       density);
 
-  Kokkos::deep_copy(region.velocity, velocity_h);
+  KokkosArray::deep_copy(region.velocity, velocity_h);
 
 
   perf.mesh_time = wall_clock.seconds(); // Mesh and graph allocation and population.
@@ -181,11 +181,11 @@ void explicit_dynamics_app( const size_t ex,
   // Global memory accees have read/write cost and memory subsystem contention cost.
   //--------------------------------------------------------------------------
 
-  Kokkos::parallel_for( region.num_elements,
+  KokkosArray::parallel_for( region.num_elements,
       initialize_element<Scalar,device_type>(region)
       );
 
-  Kokkos::parallel_for( region.num_nodes,
+  KokkosArray::parallel_for( region.num_nodes,
       initialize_node<Scalar,device_type>(region)
       );
 
@@ -212,14 +212,14 @@ void explicit_dynamics_app( const size_t ex,
 
     // First kernel 'grad_hgop' combines three functions:
     // gradient, velocity gradient, and hour glass operator.
-    Kokkos::parallel_for( region.num_elements ,
+    KokkosArray::parallel_for( region.num_elements ,
         grad_hgop<Scalar, device_type> ( region,
                                          current_state,
                                          previous_state
                                        ));
 
     // Combine tensor decomposition and rotation functions.
-    Kokkos::parallel_for( region.num_elements ,
+    KokkosArray::parallel_for( region.num_elements ,
         decomp_rotate<Scalar, device_type> ( region,
                                              current_state,
                                              previous_state
@@ -228,7 +228,7 @@ void explicit_dynamics_app( const size_t ex,
 
     // Single beastly function in this last functor,
     // did not notice any opportunity for splitting.
-    Kokkos::parallel_reduce( region.num_elements ,
+    KokkosArray::parallel_reduce( region.num_elements ,
         divergence<Scalar, device_type> ( region,
                                           user_dt,
                                           current_state,
@@ -246,7 +246,7 @@ void explicit_dynamics_app( const size_t ex,
     // a nodal force vector.  Update the accelerations, velocities,
     // displacements.
     // The same pattern can be used for matrix-free residual computations.
-    Kokkos::parallel_for( region.num_nodes ,
+    KokkosArray::parallel_for( region.num_nodes ,
         finish_step<Scalar, device_type>( region,
                                           ex,
                                           current_state,
@@ -259,11 +259,11 @@ void explicit_dynamics_app( const size_t ex,
 
 #ifdef KOKKOS_DEVICE_CUDA
     if (step%100 == 0 ) {
-      Kokkos::deep_copy(acceleration_h,region.acceleration);
-      Kokkos::deep_copy(velocity_h,region.velocity);
-      Kokkos::deep_copy(displacement_h,region.displacement);
-      Kokkos::deep_copy(internal_force_h,region.internal_force);
-      Kokkos::deep_copy(stress_new_h,region.stress_new);
+      KokkosArray::deep_copy(acceleration_h,region.acceleration);
+      KokkosArray::deep_copy(velocity_h,region.velocity);
+      KokkosArray::deep_copy(displacement_h,region.displacement);
+      KokkosArray::deep_copy(internal_force_h,region.internal_force);
+      KokkosArray::deep_copy(stress_new_h,region.stress_new);
     }
 #endif
 
@@ -282,7 +282,7 @@ static void driver( const char * label , int beg , int end , int runs )
   int shift = 20;
 
   std::cout << std::endl ;
-  std::cout << "\"MiniExplicitDynamics with Kokkos " << label << "\"" << std::endl;
+  std::cout << "\"MiniExplicitDynamics with KokkosArray " << label << "\"" << std::endl;
   std::cout << std::left << std::setw(shift) << "\"Size\" , ";
   std::cout << std::left << std::setw(shift) << "\"Time Steps\" , ";
   std::cout << std::left << std::setw(shift) << "\"Setup\" , ";

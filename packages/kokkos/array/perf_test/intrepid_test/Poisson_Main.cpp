@@ -90,16 +90,16 @@
 
 #include "Original.hpp"
 
-// Kokkos includes
-#include <Kokkos_DeviceHost.hpp>
-#include <Kokkos_DeviceHost_MDArrayView.hpp>
-#include <Kokkos_DeviceHost_MultiVectorView.hpp>
-#include <Kokkos_DeviceHost_ValueView.hpp>
-#include <Kokkos_DeviceHost_ParallelFor.hpp>
-#include <Kokkos_DeviceHost_ParallelReduce.hpp>
+// KokkosArray includes
+#include <KokkosArray_DeviceHost.hpp>
+#include <KokkosArray_DeviceHost_MDArrayView.hpp>
+#include <KokkosArray_DeviceHost_MultiVectorView.hpp>
+#include <KokkosArray_DeviceHost_ValueView.hpp>
+#include <KokkosArray_DeviceHost_ParallelFor.hpp>
+#include <KokkosArray_DeviceHost_ParallelReduce.hpp>
 
 
-#include <Kokkos_DeviceHost_macros.hpp>
+#include <KokkosArray_DeviceHost_macros.hpp>
 #include <Invert.hpp>
 #include <Multiply.hpp>
 #include <computeCellMeasure.hpp>
@@ -110,7 +110,7 @@
 #include <simpleFill.hpp>
 #include <TransformValue.hpp>
 #include <Poisson_Driver.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
+#include <KokkosArray_DeviceClear_macros.hpp>
 
 /**********************************************************************************/
 /******************************** MAIN ********************************************/
@@ -121,7 +121,7 @@ namespace Test {
 
 
 	void poisson_host(int beg , int end)
-	{	poisson_run< Kokkos::DeviceHost>(beg , end);  };	
+	{	poisson_run< KokkosArray::DeviceHost>(beg , end);  };	
 
 	void poisson_cuda(int,int);
 	void poisson_tpi(int ,int,int);

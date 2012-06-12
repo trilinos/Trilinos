@@ -41,7 +41,7 @@
 //@HEADER
 */
 
-namespace Kokkos {
+namespace KokkosArray {
 namespace Impl {
 
 //----------------------------------------------------------------------------
@@ -52,6 +52,7 @@ struct Dot< Scalar , KOKKOS_MACRO_DEVICE , Impl::unsigned_<2> >
   typedef KOKKOS_MACRO_DEVICE              device_type;
   typedef device_type::size_type           size_type;
   typedef MultiVector<Scalar, device_type> scalar_vector;  
+  typedef Value < double , device_type >   result_type ;  
   typedef double                           value_type;
 
 private:
@@ -75,11 +76,13 @@ public:
   { update = 0 ; }
 
   inline static
-  double apply( const size_t n ,
-                const scalar_vector & x , const scalar_vector & y )
+  void apply( const size_t n ,
+              const scalar_vector & x ,
+              const scalar_vector & y ,
+              const result_type   & result )
   {
     Dot op ; op.x = x ; op.y = y ;
-    return parallel_reduce( n , op );
+    parallel_reduce( n , op , result );
   }
 }; //Dot
 
@@ -89,6 +92,7 @@ struct Dot< Scalar , KOKKOS_MACRO_DEVICE , Impl::unsigned_<1> >
   typedef KOKKOS_MACRO_DEVICE              device_type;
   typedef device_type::size_type           size_type;
   typedef MultiVector<Scalar, device_type> scalar_vector;  
+  typedef Value < double , device_type >   result_type ;  
   typedef double                           value_type;
 
 private:
@@ -111,14 +115,48 @@ public:
   { update = 0 ; }
 
   inline static
-  double apply( const size_t n , const scalar_vector & x )
+  void apply( const size_t n ,
+              const scalar_vector & x ,
+              const result_type   & result )
   {
     Dot op ; op.x = x ;
-    return parallel_reduce( n , op );
+    parallel_reduce( n , op , result );
   }
 }; //Dot
 
 //----------------------------------------------------------------------------
+
+template < typename Scalar >
+struct FILL<Scalar , KOKKOS_MACRO_DEVICE >
+{
+  typedef KOKKOS_MACRO_DEVICE               device_type ;
+  typedef device_type::size_type            size_type ;
+  typedef MultiVector<Scalar, device_type>  scalar_vector ;
+
+private:
+
+  scalar_vector w ;
+  Scalar alpha ;
+
+public:
+
+  KOKKOS_MACRO_DEVICE_FUNCTION
+  void operator()(int inode) const
+  {
+    w(inode) = alpha ;
+  }
+
+  inline static
+  void apply( const size_t n ,
+              const double          alpha ,
+              const scalar_vector & w )
+  {
+    FILL op ;
+    op.w = w ;
+    op.alpha = alpha ;
+    parallel_for( n , op );
+  }
+};
 
 template < typename Scalar >
 struct WAXPBY<Scalar , KOKKOS_MACRO_DEVICE >
@@ -205,5 +243,5 @@ public:
 //----------------------------------------------------------------------------
 
 } // namespace Impl
-} // namespace Kokkos
+} // namespace KokkosArray
 
