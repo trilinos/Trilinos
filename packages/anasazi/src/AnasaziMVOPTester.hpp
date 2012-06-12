@@ -642,11 +642,15 @@ namespace Anasazi {
                                         [ |a1|*|b1|    ...    |ap|*|b1| ]
            [a1 ... ap]^H [b1 ... bq] <= [    ...    |ai|*|bj|    ...    ]
                                         [ |ap|*|b1|    ...    |ap|*|bq| ]
-        4) Zero B and check that C is zero
-        5) Zero A and check that C is zero
+        4) Zero B and check that B^H * C is zero
+        5) Zero C and check that B^H * C is zero
 
-        Note: Should we really require that C is correctly sized already?
-        Epetra does (and crashes if it isn't.)
+        Note 1: Test 4 is performed with a p x q Teuchos::SDM view of 
+                a (p+1) x (q+1) Teuchos::SDM that is initialized to ones.
+                This ensures the user is correctly accessing and filling the SDM.
+
+        Note 2: Should we really require that C is correctly sized already?
+                Epetra does (and crashes if it isn't.)
     *********************************************************************/
     {
       const int p = 7;
@@ -725,6 +729,30 @@ namespace Anasazi {
             om->stream(Warnings)
               << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
               << "Inner products not zero for B==0." << endl;
+            return false;
+          }
+        }
+      }
+
+      // A larger SDM is filled with ones, initially, and a smaller
+      // view is used for the MvTransMv method.  If the smaller SDM
+      // is not all zeroes, then the interface is improperly writing
+      // to the matrix object.
+      // Note:  Since we didn't fail above, we know that the general
+      //        inner product works, but we are checking to see if it
+      //        works for a view too.  This is common usage in Anasazi.
+      Teuchos::SerialDenseMatrix<int, ScalarType> largeSDM(p+1,q+1);
+      Teuchos::SerialDenseMatrix<int, ScalarType> SDM2(Teuchos::View, largeSDM, p, q);
+      largeSDM.putScalar( one );
+      MVT::MvInit(*C);
+      MVT::MvRandom(*B);
+      MVT::MvTransMv( one, *B, *C, SDM2 );
+      for (int i=0; i<p; i++) {
+        for (int j=0; j<q; j++) {
+          if ( SDM2(i,j) != zero ) {
+            om->stream(Warnings)
+              << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
+              << "Inner products not zero for C==0 when using a view into Teuchos::SerialDenseMatrix<>." << endl;
             return false;
           }
         }
