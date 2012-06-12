@@ -54,8 +54,8 @@ extern int xfer_block_partition(
         const int num_bins,
         const int num_vals,
         const int val,
-        int &bin,
-        int &rank);
+        int *bin,
+        int *rank);
 
 
 #ifdef __cplusplus

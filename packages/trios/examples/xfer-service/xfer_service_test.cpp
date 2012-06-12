@@ -425,7 +425,7 @@ int main(int argc, char *argv[])
             // For block distribution scheme use the utility function (in xfer_util.cpp)
             if (args.block_distribution) {
                 // Use this utility function to calculate the server_index
-                xfer_block_partition(args.num_servers, splitsize, splitrank, server_index, rank_in_server);
+                xfer_block_partition(args.num_servers, splitsize, splitrank, &server_index, &rank_in_server);
             }
 
             // Use a simple round robin distribution scheme
