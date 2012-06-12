@@ -359,9 +359,6 @@ int main(int argc, char *argv[])
         }
 
         MPI_Comm_split(MPI_COMM_WORLD, color, rank, &comm);
-
-        MPI_Comm_rank(comm, &splitrank);
-        MPI_Comm_size(comm, &splitsize);
     }
     else {
         if (args.client_flag)
@@ -374,6 +371,9 @@ int main(int argc, char *argv[])
         }
         MPI_Comm_dup(MPI_COMM_WORLD, &comm);
     }
+
+    MPI_Comm_rank(comm, &splitrank);
+    MPI_Comm_size(comm, &splitsize);
 
     log_debug(debug_level, "%d: Finished splitting communicators", rank);
 
@@ -460,13 +460,13 @@ int main(int argc, char *argv[])
         xfer_read_server_url_file(args.url_file.c_str(), urlbuf, comm);
         args.num_servers = urlbuf.size();
 
-        int server_index;
-        int rank_in_server;
+        int server_index=0;
+        int rank_in_server=0;
 
         // For block distribution scheme use the utility function (in xfer_util.cpp)
         if (args.block_distribution) {
             // Use this utility function to calculate the server_index
-            xfer_block_partition(args.num_servers, splitsize, splitrank, server_index, rank_in_server);
+            xfer_block_partition(args.num_servers, splitsize, splitrank, &server_index, &rank_in_server);
         }
 
         // Use a simple round robin distribution scheme
