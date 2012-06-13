@@ -106,8 +106,9 @@ void serialTest()
     randomCoords[0].getRawPtr(), randomCoords[1].getRawPtr(),
      randomCoords[2].getRawPtr(), 1,1,1);
 
-
   Teuchos::ParameterList params("test params");
+  params.set("debug_level", "basic_status");
+
   Teuchos::ParameterList &parParams = params.sublist("partitioning");
   parParams.set("num_global_parts", numParts);
   parParams.set("algorithm", "rcb");
