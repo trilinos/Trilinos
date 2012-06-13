@@ -124,7 +124,7 @@ int checkmap(Epetra_BlockMap & Map, long long NumGlobalElements, int NumMyElemen
   int MaxLID = Map.MaxLID();
   EPETRA_TEST_ERR(MaxLID!=NumMyElements-1,ierr);
 
-  int MaxMyGID = (Comm.MyPID()+1)*NumMyElements-1+IndexBase;
+  long long MaxMyGID = (Comm.MyPID()+1)*NumMyElements-1+IndexBase;
   if (Comm.MyPID()>2) MaxMyGID+=3;
   if (!DistributedGlobal) MaxMyGID = NumMyElements-1+IndexBase;
   EPETRA_TEST_ERR(Map.MaxMyGID()!=MaxMyGID,ierr);
@@ -140,7 +140,7 @@ int checkmap(Epetra_BlockMap & Map, long long NumGlobalElements, int NumMyElemen
   int MinLID = Map.MinLID();
   EPETRA_TEST_ERR(MinLID!=0,ierr);
 
-  int MinMyGID = Comm.MyPID()*NumMyElements+IndexBase;
+  long long MinMyGID = Comm.MyPID()*NumMyElements+IndexBase;
   if (Comm.MyPID()>2) MinMyGID+=3;
   if (!DistributedGlobal) MinMyGID = IndexBase; // Not really needed
   EPETRA_TEST_ERR(Map.MinMyGID()!=MinMyGID,ierr);

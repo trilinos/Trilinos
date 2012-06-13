@@ -59,7 +59,7 @@ SET(HEADERS ${HEADERS}
   AztecOO.h
   AztecOO_string_maps.h
   AztecOO_Operator.h
-#  Epetra_MsrMatrix.h
+  Epetra_MsrMatrix.h
   Aztec2Petra.h
   AZOO_iterate.h
   AZOO_printf.h
@@ -77,7 +77,7 @@ SET(SOURCES ${SOURCES}
   AztecOO.cpp
   AztecOO_string_maps.cpp
   AztecOO_Operator.cpp
-#  Epetra_MsrMatrix.cpp
+  Epetra_MsrMatrix.cpp
   Aztec2Petra.cpp
   AZOO_iterate.cpp
   AZOO_printf.cpp
