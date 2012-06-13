@@ -136,7 +136,6 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Belos                 packages/belos                    PS
   Ifpack2               packages/ifpack2                  PS
   Stratimikos           packages/stratimikos              PS
-  Meros                 packages/meros                    EX # no longer released
   FEI                   packages/fei                      PS
   Anasazi               packages/anasazi                  PS
   Teko                  packages/teko                     SS

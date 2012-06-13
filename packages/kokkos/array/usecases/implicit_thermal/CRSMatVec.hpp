@@ -51,8 +51,8 @@ struct CRSMatVec
   typedef DeviceType                                    device_type;
   typedef typename device_type::size_type               index_type ;
   typedef Scalar                                        scalar_type ;
-  typedef Kokkos::MultiVector<index_type,  device_type> index_vector;   
-  typedef Kokkos::MultiVector<scalar_type, device_type> scalar_vector;
+  typedef KokkosArray::MultiVector<index_type,  device_type> index_vector;   
+  typedef KokkosArray::MultiVector<scalar_type, device_type> scalar_vector;
   
 
   scalar_vector A ;
@@ -100,12 +100,12 @@ struct CRSMatVec
 // Specialize CRSMatVect for CUDA sparse library
 
 template<class Scalar>
-struct CRSMatVec<Scalar , Kokkos::DeviceCuda>
+struct CRSMatVec<Scalar , KokkosArray::DeviceCuda>
 {
-  typedef Kokkos::DeviceCuda      device_type ;
+  typedef KokkosArray::DeviceCuda      device_type ;
   typedef device_type::size_type  index_type ;
-  typedef Kokkos::MultiVector<Scalar, device_type>     scalar_vector;
-  typedef Kokkos::MultiVector<index_type, device_type> index_vector;   
+  typedef KokkosArray::MultiVector<Scalar, device_type>     scalar_vector;
+  typedef KokkosArray::MultiVector<index_type, device_type> index_vector;   
   
   Scalar * value, *x , *b ;
   int * row ,* col;
@@ -153,7 +153,7 @@ struct CRSMatVec<Scalar , Kokkos::DeviceCuda>
 //cuda sparse library function
 
 template<>
-void CRSMatVec<float, Kokkos::DeviceCuda >::apply() const
+void CRSMatVec<float, KokkosArray::DeviceCuda >::apply() const
 {
   float alpha = 1 , beta = 0 ;
   cusparseScsrmv(handle , CUSPARSE_OPERATION_NON_TRANSPOSE , m, m , alpha , 
@@ -161,7 +161,7 @@ void CRSMatVec<float, Kokkos::DeviceCuda >::apply() const
 }
 
 template<>
-void CRSMatVec<double, Kokkos::DeviceCuda>::apply() const
+void CRSMatVec<double, KokkosArray::DeviceCuda>::apply() const
 {
   double alpha = 1 , beta = 0 ;
   cusparseDcsrmv(handle , CUSPARSE_OPERATION_NON_TRANSPOSE , m, m , alpha , 

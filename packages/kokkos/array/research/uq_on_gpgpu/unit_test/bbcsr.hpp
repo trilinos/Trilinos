@@ -46,9 +46,9 @@
 
 #include <stdexcept>
 #include <sstream>
-#include <Kokkos_Cuda_MultiVector.hpp>
+#include <KokkosArray_Cuda_MultiVector.hpp>
 
-namespace Kokkos {
+namespace KokkosArray {
 
 //----------------------------------------------------------------------------
 /** \brief  Big Block CRS Graph

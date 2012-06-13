@@ -827,7 +827,6 @@ namespace Tpetra {
                              const Teuchos::ArrayView<const Scalar>        & values,
                              BinaryFunction f)
       {
-        typedef Scalar ST;
         typedef LocalOrdinal LO;
         typedef GlobalOrdinal GO;
         typedef Node NT;

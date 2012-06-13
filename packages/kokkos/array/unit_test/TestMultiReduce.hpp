@@ -51,9 +51,9 @@
 #include <sstream>
 #include <iostream>
 
-#include <Kokkos_ParallelReduce.hpp>
+#include <KokkosArray_ParallelReduce.hpp>
 
-#include <impl/Kokkos_Preprocessing_macros.hpp>
+#include <impl/KokkosArray_Preprocessing_macros.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -166,13 +166,13 @@ public:
   void run_test( const size_type nwork ,
                        const size_type nfunctor )
   {
-    typedef Kokkos::Value< value_type , device_type > result_type ;
+    typedef KokkosArray::Value< value_type , device_type > result_type ;
 
     value_type result ;
 
-    result_type result_view = Kokkos::create_value< result_type >();
+    result_type result_view = KokkosArray::create_value< result_type >();
 
-    Kokkos::MultiFunctorParallelReduce< reduce_traits , result_type , device_type >
+    KokkosArray::MultiFunctorParallelReduce< reduce_traits , result_type , device_type >
       reduce_op( result_view );
 
     for ( size_type j = 0 ; j < nfunctor ; ) {
@@ -185,7 +185,7 @@ public:
 
     reduce_op.execute();
 
-    Kokkos::deep_copy( result , result_view );
+    KokkosArray::deep_copy( result , result_view );
 
     const unsigned long nw   = nwork ;
     const unsigned long nsum = nw % 2 ? nw * (( nw + 1 )/2 )

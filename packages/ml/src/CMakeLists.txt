@@ -63,6 +63,7 @@ APPEND_SET(HEADERS
   Coarsen/ml_agg_Zoltan.h
   Coarsen/ml_agg_ParMETIS.h
   Coarsen/ml_qr_fix.h
+  Coarsen/ml_qr_fix.hpp
   FEGrid/ml_gridfunc.h
   FEGrid/ml_setup.h
   FEGrid/ml_elementagx.h
@@ -113,7 +114,7 @@ APPEND_SET(SOURCES
   Coarsen/ml_aggregate.c
   Coarsen/ml_ggraph.c
   Coarsen/ml_agg_reitzinger.c
-  Coarsen/ml_qr_fix.c
+  Coarsen/ml_qr_fix.cpp
   FEGrid/ml_gridagx.c
   FEGrid/ml_pde.c
   FEGrid/ml_bdrypts.c

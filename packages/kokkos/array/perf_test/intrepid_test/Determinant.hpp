@@ -53,8 +53,8 @@ struct Determinant<Scalar , KOKKOS_MACRO_DEVICE >
 	typedef KOKKOS_MACRO_DEVICE 		device_type;
 	typedef device_type::size_type 		size_type;
 	
-	typedef  Kokkos::MDArrayView<Scalar,device_type> device_array;
-	typedef  Kokkos::MDArrayView<Scalar,Kokkos::DeviceHost> host_array;
+	typedef  KokkosArray::MDArrayView<Scalar,device_type> device_array;
+	typedef  KokkosArray::MDArrayView<Scalar,KokkosArray::DeviceHost> host_array;
 	
   private:
 	

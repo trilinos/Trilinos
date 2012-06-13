@@ -45,9 +45,9 @@
 #define SPARSELINEARSYSTEM_HOST_HPP
 
 #include <SparseLinearSystem.hpp>
-#include <Kokkos_Host.hpp>
+#include <KokkosArray_Host.hpp>
 
-namespace Kokkos {
+namespace KokkosArray {
 namespace Impl {
 
 template< typename AScalarType , typename VScalarType >
@@ -86,6 +86,8 @@ public:
   }
 
   static void apply( const matrix_type & A ,
+                     const size_type nrow ,
+                     const size_type ncol ,
                      const vector_type & x ,
                      const vector_type & y )
   {
@@ -93,12 +95,12 @@ public:
     op.m_A = A ;
     op.m_x = x ;
     op.m_y = y ;
-    parallel_for( A.graph.row_map.length() , op );
+    parallel_for( nrow , op );
   }
 };
 
 } /* namespace Impl */
-} /* namespace Kokkos */
+} /* namespace KokkosArray */
 
 
 #endif /* #ifndef SPARSELINEARSYSTEM_HOST_HPP */

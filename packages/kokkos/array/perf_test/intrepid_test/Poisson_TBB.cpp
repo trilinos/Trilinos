@@ -61,32 +61,32 @@
 // Shards includes
 #include "Shards_CellTopology.hpp"
 
-#include <Kokkos_DeviceHost.hpp>
-#include <Kokkos_DeviceHost_ValueView.hpp>
-#include <Kokkos_DeviceHost_MultiVectorView.hpp>
-#include <Kokkos_DeviceHost_MDArrayView.hpp>
+#include <KokkosArray_DeviceHost.hpp>
+#include <KokkosArray_DeviceHost_ValueView.hpp>
+#include <KokkosArray_DeviceHost_MultiVectorView.hpp>
+#include <KokkosArray_DeviceHost_MDArrayView.hpp>
 
-#include <Kokkos_DeviceTBB.hpp>
-#include <Kokkos_DeviceTBB_ValueView.hpp>
-#include <Kokkos_DeviceTBB_MultiVectorView.hpp>
-#include <Kokkos_DeviceTBB_MDArrayView.hpp>
-#include <Kokkos_DeviceTBB_ParallelFor.hpp>
-#include <Kokkos_DeviceTBB_ParallelReduce.hpp>
+#include <KokkosArray_DeviceTBB.hpp>
+#include <KokkosArray_DeviceTBB_ValueView.hpp>
+#include <KokkosArray_DeviceTBB_MultiVectorView.hpp>
+#include <KokkosArray_DeviceTBB_MDArrayView.hpp>
+#include <KokkosArray_DeviceTBB_ParallelFor.hpp>
+#include <KokkosArray_DeviceTBB_ParallelReduce.hpp>
 
-#include <Kokkos_DeviceTBB_macros.hpp>
+#include <KokkosArray_DeviceTBB_macros.hpp>
 #include <Jacobian.hpp>
 #include <Invert.hpp>
 #include <Determinant.hpp>
 #include <Poisson_Driver.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
+#include <KokkosArray_DeviceClear_macros.hpp>
 
 namespace Test {
 
 
 void poisson_tbb(int beg , int end)
 {
-	Kokkos::DeviceTBB::initialize(1);
-	Test::poisson_run< Kokkos::DeviceTBB>(beg , end);
+	KokkosArray::DeviceTBB::initialize(1);
+	Test::poisson_run< KokkosArray::DeviceTBB>(beg , end);
 };
 
 } // namespace Test

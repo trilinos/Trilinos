@@ -51,7 +51,7 @@
 #include <sstream>
 #include <iostream>
 
-#include <impl/Kokkos_Preprocessing_macros.hpp>
+#include <impl/KokkosArray_Preprocessing_macros.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -65,7 +65,7 @@ class TestValue< T, KOKKOS_MACRO_DEVICE >
 public:
   typedef KOKKOS_MACRO_DEVICE device ;
 
-  typedef Kokkos::Value< T , device > dView ;
+  typedef KokkosArray::Value< T , device > dView ;
 
   TestValue() { run_test(); }
 
@@ -75,10 +75,10 @@ public:
 
     dView dx , dy ;
 
-    dx = Kokkos::create_value<dView> ( "dx" );
+    dx = KokkosArray::create_value<dView> ( "dx" );
 
-    Kokkos::deep_copy( dx , host_dx );
-    Kokkos::deep_copy( host_dy , dx );
+    KokkosArray::deep_copy( dx , host_dx );
+    KokkosArray::deep_copy( host_dy , dx );
     ASSERT_EQ( host_dy, host_dx);
 
     dView dz = dy = dx ;

@@ -44,46 +44,46 @@
 #include <iostream>
 #include <math.h>
 
-#include <Kokkos_Value.hpp>
-#include <Kokkos_MultiVector.hpp>
-#include <Kokkos_MDArray.hpp>
+#include <KokkosArray_Value.hpp>
+#include <KokkosArray_MultiVector.hpp>
+#include <KokkosArray_MDArray.hpp>
 
-#include <Kokkos_Host.hpp>
+#include <KokkosArray_Host.hpp>
 
-#include <Kokkos_Host_macros.hpp>
+#include <KokkosArray_Host_macros.hpp>
 #include <Element.hpp>
 #include <CRSMatrixGatherFill.hpp>
 #include <Dirichlet.hpp>
 #include <CG_Solve.hpp>
 #include <driver.hpp>
-#include <Kokkos_Clear_macros.hpp>
+#include <KokkosArray_Clear_macros.hpp>
 
 namespace Test{
 
 void test_Host(int beg, int end, int runs,int threads)
 {
-  const size_t node_count = Kokkos::Host::detect_node_count();
+  const size_t node_count = KokkosArray::Host::detect_node_count();
 
   if ( 0 < threads ) {
     const size_t node_thread_count = ( threads + node_count - 1 ) / node_count ;
 
-    Kokkos::Host::initialize( node_count , node_thread_count );
+    KokkosArray::Host::initialize( node_count , node_thread_count );
 
     std::cout << std::endl << "\"Host with manually set threads = \" , "
               << node_count * node_thread_count << std::endl ;
   }
   else {
-    const size_t node_thread_count = Kokkos::Host::detect_node_core_count();
+    const size_t node_thread_count = KokkosArray::Host::detect_node_core_count();
 
-    Kokkos::Host::initialize( node_count , node_thread_count );
+    KokkosArray::Host::initialize( node_count , node_thread_count );
 
     std::cout << std::endl << "\"Host with detected sequential threads = \" , "
               << node_count * node_thread_count << std::endl ;
   }
 
-  MiniImplTherm< float , Kokkos::Host >::driver( "Host-float" , beg , end , runs );
-  MiniImplTherm< double, Kokkos::Host >::driver( "Host-double" , beg , end , runs );
-  Kokkos::Host::finalize();
+  MiniImplTherm< float , KokkosArray::Host >::driver( "Host-float" , beg , end , runs );
+  MiniImplTherm< double, KokkosArray::Host >::driver( "Host-double" , beg , end , runs );
+  KokkosArray::Host::finalize();
 
 } //test_host
 

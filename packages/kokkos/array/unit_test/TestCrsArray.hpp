@@ -51,7 +51,7 @@
 #include <sstream>
 #include <iostream>
 
-#include <impl/Kokkos_Preprocessing_macros.hpp>
+#include <impl/KokkosArray_Preprocessing_macros.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -75,7 +75,7 @@ public:
 
   void run_test_void()
   {
-    typedef Kokkos::PrefixSum< int , device > dView ;
+    typedef KokkosArray::PrefixSum< int , device > dView ;
     typedef dView::HostMirror hView ;
 
     enum { LENGTH = 1000 };
@@ -98,8 +98,8 @@ public:
       sum += size ;
     }
 
-    dx = Kokkos::create_prefixsum<dView>( "dx" , x_size );
-    dy = Kokkos::create_prefixsum<dView>( "dy" , y_size );
+    dx = KokkosArray::create_prefixsum<dView>( "dx" , x_size );
+    dy = KokkosArray::create_prefixsum<dView>( "dy" , y_size );
 
     ASSERT_TRUE(dx);
     ASSERT_TRUE(dy);
@@ -110,8 +110,8 @@ public:
     ASSERT_EQ( (size_t) dx.sum() , sum );
     ASSERT_EQ( (size_t) dy.sum() , sum );
 
-    hx = Kokkos::create_mirror( dx );
-    hy = Kokkos::create_mirror( dy );
+    hx = KokkosArray::create_mirror( dx );
+    hy = KokkosArray::create_mirror( dy );
 
     ASSERT_EQ( hx.length() , LENGTH );
     ASSERT_EQ( hy.length() , LENGTH );
@@ -146,7 +146,7 @@ public:
 
   void run_test_graph()
   {
-    typedef Kokkos::CrsArray< unsigned , device > dView ;
+    typedef KokkosArray::CrsArray< unsigned , device > dView ;
     typedef dView::HostMirror hView ;
 
     enum { LENGTH = 1000 };
@@ -162,8 +162,8 @@ public:
       }
     }
 
-    dx = Kokkos::create_crsarray<dView>( "dx" , graph );
-    hx = Kokkos::create_mirror( dx );
+    dx = KokkosArray::create_crsarray<dView>( "dx" , graph );
+    hx = KokkosArray::create_mirror( dx );
    
     ASSERT_EQ( hx.row_map.length() , LENGTH );
 
@@ -179,7 +179,7 @@ public:
 
   void run_test_graph2()
   {
-    typedef Kokkos::CrsArray< unsigned[3] , device > dView ;
+    typedef KokkosArray::CrsArray< unsigned[3] , device > dView ;
     typedef dView::HostMirror hView ;
 
     enum { LENGTH = 10 };
@@ -192,8 +192,8 @@ public:
       total_length += ( sizes[i] = 6 + i % 4 );
     }
 
-    dView dx = Kokkos::create_crsarray<dView>( sizes );
-    hView hx = Kokkos::create_crsarray<hView>( sizes );
+    dView dx = KokkosArray::create_crsarray<dView>( sizes );
+    hView hx = KokkosArray::create_crsarray<hView>( sizes );
 
     ASSERT_EQ( (size_t) dx.row_map.length() , (size_t) LENGTH );
     ASSERT_EQ( (size_t) hx.row_map.length() , (size_t) LENGTH );
@@ -212,15 +212,15 @@ public:
       }
     }
 
-    Kokkos::deep_copy( dx , hx );
+    KokkosArray::deep_copy( dx , hx );
 
-    hView mx = Kokkos::create_mirror( dx );
+    hView mx = KokkosArray::create_mirror( dx );
 
     ASSERT_EQ( (size_t) mx.row_map.length() , (size_t) LENGTH );
     ASSERT_EQ( (size_t) mx.entries.dimension(0) , (size_t) total_length );
     ASSERT_EQ( (size_t) mx.entries.dimension(1) , (size_t) 3 );
 
-    Kokkos::deep_copy( mx , dx );
+    KokkosArray::deep_copy( mx , dx );
    
     ASSERT_EQ( mx.row_map.length() , LENGTH );
 

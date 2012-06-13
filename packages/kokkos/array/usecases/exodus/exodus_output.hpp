@@ -45,7 +45,7 @@
 #include <vector>
 #include <exodusII.h>
 
-namespace Kokkos {
+namespace KokkosArray {
 namespace Exodus {
 
 /** \brief  Create output mesh
@@ -368,7 +368,7 @@ void output_mesh_element_variable( const int exo_id ,
 //----------------------------------------------------------------------------
 
 } // namespace Exodus 
-} // namespace Kokkos 
+} // namespace KokkosArray 
 
 
 

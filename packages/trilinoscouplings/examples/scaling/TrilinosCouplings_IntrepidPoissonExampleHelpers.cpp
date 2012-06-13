@@ -42,6 +42,9 @@ makeMeshInput (const int nx, const int ny, const int nz)
   using std::endl;
   std::ostringstream os;
 
+  TEUCHOS_TEST_FOR_EXCEPTION( nx <= 0 || ny <= 0 || nz <= 0,
+    std::invalid_argument, "nx, ny, and nz must all be positive.");
+
   os << "mesh" << endl
      << "\trectilinear" << endl
      << "\t\tnx = " << nx << endl

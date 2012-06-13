@@ -50,10 +50,10 @@ struct Region<Scalar ,KOKKOS_MACRO_DEVICE>{
   typedef KOKKOS_MACRO_DEVICE       device_type;
   typedef device_type::size_type    size_type;
 
-  typedef Kokkos::MDArray<Scalar,device_type>   scalar_array;
-  typedef Kokkos::MDArray<int,device_type>      int_array;
+  typedef KokkosArray::MDArray<Scalar,device_type>   scalar_array;
+  typedef KokkosArray::MDArray<int,device_type>      int_array;
 
-  typedef Kokkos::Value<Scalar,device_type>     scalar;
+  typedef KokkosArray::Value<Scalar,device_type>     scalar;
 
   template <class Mesh>
   Region(
@@ -78,42 +78,42 @@ struct Region<Scalar ,KOKKOS_MACRO_DEVICE>{
     , bulk_modulus(youngs_modulus/(3*(1.0-2.0*poissons_ratio)))
     , density(arg_density)
     // mesh
-    , elem_node_connectivity(Kokkos::create_mdarray<int_array>(mesh.elem_node_ids.dimension(0),mesh.elem_node_ids.dimension(1)))
-    , node_elem_ids(Kokkos::create_mdarray<int_array>(mesh.node_elem_ids.dimension(0),mesh.node_elem_ids.dimension(1)))
-    , node_elem_offset(Kokkos::create_mdarray<int_array>(mesh.node_elem_offset.dimension(0),mesh.node_elem_offset.dimension(1)))
-    , model_coords(Kokkos::create_mdarray<scalar_array>(num_nodes,spatial_dim))
+    , elem_node_connectivity(KokkosArray::create_mdarray<int_array>(mesh.elem_node_ids.dimension(0),mesh.elem_node_ids.dimension(1)))
+    , node_elem_ids(KokkosArray::create_mdarray<int_array>(mesh.node_elem_ids.dimension(0),mesh.node_elem_ids.dimension(1)))
+    , node_elem_offset(KokkosArray::create_mdarray<int_array>(mesh.node_elem_offset.dimension(0),mesh.node_elem_offset.dimension(1)))
+    , model_coords(KokkosArray::create_mdarray<scalar_array>(num_nodes,spatial_dim))
     // input/output
-    , dt(Kokkos::create_value<scalar>())
-    , prev_dt(Kokkos::create_value<scalar>())
-    , displacement(Kokkos::create_mdarray<scalar_array>(num_nodes,spatial_dim,num_states))
-    , velocity(Kokkos::create_mdarray<scalar_array>(num_nodes,spatial_dim,num_states))
-    , acceleration(Kokkos::create_mdarray<scalar_array>(num_nodes,spatial_dim))
-    , nodal_mass(Kokkos::create_mdarray<scalar_array>(num_nodes))
-    , elem_mass(Kokkos::create_mdarray<scalar_array>(num_elements))
-    , stress_new(Kokkos::create_mdarray<scalar_array>(num_elements,6))
-    , internal_force(Kokkos::create_mdarray<scalar_array>(num_nodes,spatial_dim))
-    , internal_energy(Kokkos::create_mdarray<scalar_array>(num_elements))
+    , dt(KokkosArray::create_value<scalar>())
+    , prev_dt(KokkosArray::create_value<scalar>())
+    , displacement(KokkosArray::create_mdarray<scalar_array>(num_nodes,spatial_dim,num_states))
+    , velocity(KokkosArray::create_mdarray<scalar_array>(num_nodes,spatial_dim,num_states))
+    , acceleration(KokkosArray::create_mdarray<scalar_array>(num_nodes,spatial_dim))
+    , nodal_mass(KokkosArray::create_mdarray<scalar_array>(num_nodes))
+    , elem_mass(KokkosArray::create_mdarray<scalar_array>(num_elements))
+    , stress_new(KokkosArray::create_mdarray<scalar_array>(num_elements,6))
+    , internal_force(KokkosArray::create_mdarray<scalar_array>(num_nodes,spatial_dim))
+    , internal_energy(KokkosArray::create_mdarray<scalar_array>(num_elements))
     // temporary arrays
-    , hg_resist(Kokkos::create_mdarray<scalar_array>(num_elements,12,num_states))
-    , rotation(Kokkos::create_mdarray<scalar_array>(num_elements,9,num_states))
-    , gradop12(Kokkos::create_mdarray<scalar_array>(num_elements,3,8))
-    , element_force(Kokkos::create_mdarray<scalar_array>(num_elements,3,8))
-    , hgop(Kokkos::create_mdarray<scalar_array>(num_elements,32,num_states))
-    , vel_grad(Kokkos::create_mdarray<scalar_array>(num_elements,9))
-    , stretch(Kokkos::create_mdarray<scalar_array>(num_elements,6))
-    , vorticity(Kokkos::create_mdarray<scalar_array>(num_elements,3))
-    , rot_stretch(Kokkos::create_mdarray<scalar_array>(num_elements,6))
-    , rot_stress(Kokkos::create_mdarray<scalar_array>(num_elements,6))
-    , mid_vol(Kokkos::create_mdarray<scalar_array>(num_elements))
-    , shrmod(Kokkos::create_mdarray<scalar_array>(num_elements))
-    , dilmod(Kokkos::create_mdarray<scalar_array>(num_elements))
-    //, elem_t_step(Kokkos::create_mdarray<scalar_array>(num_elements))
-    , hg_energy(Kokkos::create_mdarray<scalar_array>(num_elements))
+    , hg_resist(KokkosArray::create_mdarray<scalar_array>(num_elements,12,num_states))
+    , rotation(KokkosArray::create_mdarray<scalar_array>(num_elements,9,num_states))
+    , gradop12(KokkosArray::create_mdarray<scalar_array>(num_elements,3,8))
+    , element_force(KokkosArray::create_mdarray<scalar_array>(num_elements,3,8))
+    , hgop(KokkosArray::create_mdarray<scalar_array>(num_elements,32,num_states))
+    , vel_grad(KokkosArray::create_mdarray<scalar_array>(num_elements,9))
+    , stretch(KokkosArray::create_mdarray<scalar_array>(num_elements,6))
+    , vorticity(KokkosArray::create_mdarray<scalar_array>(num_elements,3))
+    , rot_stretch(KokkosArray::create_mdarray<scalar_array>(num_elements,6))
+    , rot_stress(KokkosArray::create_mdarray<scalar_array>(num_elements,6))
+    , mid_vol(KokkosArray::create_mdarray<scalar_array>(num_elements))
+    , shrmod(KokkosArray::create_mdarray<scalar_array>(num_elements))
+    , dilmod(KokkosArray::create_mdarray<scalar_array>(num_elements))
+    //, elem_t_step(KokkosArray::create_mdarray<scalar_array>(num_elements))
+    , hg_energy(KokkosArray::create_mdarray<scalar_array>(num_elements))
   {
-    Kokkos::deep_copy(elem_node_connectivity, mesh.elem_node_ids);
-    Kokkos::deep_copy(node_elem_ids, mesh.node_elem_ids);
-    Kokkos::deep_copy(node_elem_offset, mesh.node_elem_offset);
-    Kokkos::deep_copy(model_coords, mesh.node_coords);
+    KokkosArray::deep_copy(elem_node_connectivity, mesh.elem_node_ids);
+    KokkosArray::deep_copy(node_elem_ids, mesh.node_elem_ids);
+    KokkosArray::deep_copy(node_elem_offset, mesh.node_elem_offset);
+    KokkosArray::deep_copy(model_coords, mesh.node_coords);
   }
 
   const int num_nodes;

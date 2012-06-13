@@ -26,6 +26,11 @@ enum IO_METHODS {
     XFER_READ_RDMA_ASYNC
 };
 
+enum DIST_SCHEME {
+    XFER_BLOCK_DISTRIBUTION,
+    XFER_ROUND_ROBIN_DISTRIBUTION
+};
+
 enum MPI_IO_METHODS {
     XFER_MPI_SEND=0,
     XFER_MPI_ISEND,
@@ -42,11 +47,14 @@ enum MPI_IO_METHODS {
 struct xfer_args {
         bool client_flag;
         bool server_flag;
+        int num_servers;  // used for the server only
+        int num_threads;  // used for the server only
+        bool block_distribution; // how to assign clients to servers
+        std::string server_url;
         int transport;
         std::string transport_name;
         int len;
         int io_method;
-        std::string server_url;
         std::string url_file;
         std::string io_method_name;
         log_level debug_level;

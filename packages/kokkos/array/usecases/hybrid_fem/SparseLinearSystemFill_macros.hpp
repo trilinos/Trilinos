@@ -50,7 +50,7 @@ namespace HybridFEM {
 template< typename ScalarType ,
           typename CoordScalarType >
 struct GatherFill< 
-  Kokkos::CrsMatrix< ScalarType , KOKKOS_MACRO_DEVICE > ,
+  KokkosArray::CrsMatrix< ScalarType , KOKKOS_MACRO_DEVICE > ,
   FEMesh< CoordScalarType , 8 , KOKKOS_MACRO_DEVICE > >
 {
   typedef KOKKOS_MACRO_DEVICE                              device_type ;
@@ -58,12 +58,12 @@ struct GatherFill<
 
   static const size_type ElemNodeCount = 8 ;
 
-  typedef Kokkos::CrsMatrix< ScalarType , device_type >    matrix_type ;
+  typedef KokkosArray::CrsMatrix< ScalarType , device_type >    matrix_type ;
   typedef typename matrix_type::coefficients_type   coefficients_type ;
-  typedef Kokkos::MultiVector< ScalarType , device_type >  vector_type ;
-  typedef Kokkos::Array< ScalarType[ElemNodeCount][ElemNodeCount] , device_type >      elem_matrices_type ;
-  typedef Kokkos::Array< ScalarType[ElemNodeCount] , device_type >      elem_vectors_type ;
-  typedef Kokkos::Array< size_type[ElemNodeCount][ElemNodeCount] , device_type >       elem_graph_type ;
+  typedef KokkosArray::MultiVector< ScalarType , device_type >  vector_type ;
+  typedef KokkosArray::Array< ScalarType[ElemNodeCount][ElemNodeCount] , device_type >      elem_matrices_type ;
+  typedef KokkosArray::Array< ScalarType[ElemNodeCount] , device_type >      elem_vectors_type ;
+  typedef KokkosArray::Array< size_type[ElemNodeCount][ElemNodeCount] , device_type >       elem_graph_type ;
 
   typedef FEMesh< CoordScalarType , ElemNodeCount , device_type > mesh_type ;
   typedef typename mesh_type::node_elem_ids_type node_elem_ids_type ;
@@ -128,7 +128,7 @@ public:
 
 //----------------------------------------------------------------------------
 
-} /* namespace Kokkos */
+} /* namespace KokkosArray */
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

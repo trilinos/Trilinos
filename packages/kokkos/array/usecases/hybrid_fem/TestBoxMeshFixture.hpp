@@ -85,7 +85,7 @@ void verify_parallel(
 
   const size_t chunk_size = 3 ;
 
-  Kokkos::AsyncExchange< coordinate_scalar_type, Device, Kokkos::ParallelDataMap >
+  KokkosArray::AsyncExchange< coordinate_scalar_type, Device, KokkosArray::ParallelDataMap >
     exchange( mesh.parallel_data_map , chunk_size );
 
   const size_t send_begin = mesh.parallel_data_map.count_interior ;
@@ -94,15 +94,15 @@ void verify_parallel(
   const size_t recv_begin = mesh.parallel_data_map.count_owned ;
   const size_t recv_count = mesh.parallel_data_map.count_receive ;
 
-  typedef Kokkos::PackArray< node_coords_type > pack_type ;
+  typedef KokkosArray::PackArray< node_coords_type > pack_type ;
 
   pack_type::pack( exchange.buffer(), send_begin, send_count, mesh.node_coords );
 
-  exchange.send();
+  exchange.setup();
 
   // Launch local-action device kernels
 
-  exchange.receive();
+  exchange.send_receive();
 
   unsigned long local[3] ;
   local[0] = mesh.parallel_data_map.count_owned ;

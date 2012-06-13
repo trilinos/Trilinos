@@ -45,22 +45,22 @@
 
 #include <iostream>
 
-#include <impl/Kokkos_MemoryView.hpp>
-#include <Kokkos_Value.hpp>
-#include <Kokkos_MultiVector.hpp>
-#include <Kokkos_Array.hpp>
-#include <Kokkos_MDArray.hpp>
-#include <Kokkos_PrefixSum.hpp>
-#include <Kokkos_CrsArray.hpp>
+#include <impl/KokkosArray_MemoryView.hpp>
+#include <KokkosArray_Value.hpp>
+#include <KokkosArray_MultiVector.hpp>
+#include <KokkosArray_Array.hpp>
+#include <KokkosArray_MDArray.hpp>
+#include <KokkosArray_PrefixSum.hpp>
+#include <KokkosArray_CrsArray.hpp>
 
-#include <Kokkos_Host.hpp>
-#include <Kokkos_Cuda.hpp>
+#include <KokkosArray_Host.hpp>
+#include <KokkosArray_Cuda.hpp>
 
 //----------------------------------------------------------------------------
 
-#include <Kokkos_Cuda_macros.hpp>
+#include <KokkosArray_Cuda_macros.hpp>
 
-#include <impl/Kokkos_IndexMapRight_macros.hpp>
+#include <impl/KokkosArray_IndexMapRight_macros.hpp>
 
 #include <TestMemoryManagement.hpp>
 #include <TestValue.hpp>
@@ -75,54 +75,54 @@
 #include <TestReduce.hpp>
 #include <TestMultiReduce.hpp>
 
-#include <Kokkos_Clear_macros.hpp>
+#include <KokkosArray_Clear_macros.hpp>
 
 namespace Test {
 
 void test_device_cuda_init() {
-  Kokkos::Cuda::initialize();
+  KokkosArray::Cuda::initialize();
 }
 
 void test_device_cuda_memory_management() {
-  TestMemoryManagement< int, Kokkos::Cuda >();
-  TestMemoryManagement< double, Kokkos::Cuda >();
+  TestMemoryManagement< int, KokkosArray::Cuda >();
+  TestMemoryManagement< double, KokkosArray::Cuda >();
 }
 
 void test_device_cuda_value() {
-  TestValue< int, Kokkos::Cuda >();
-  TestValue< double, Kokkos::Cuda >();
+  TestValue< int, KokkosArray::Cuda >();
+  TestValue< double, KokkosArray::Cuda >();
 }
 
 void test_device_cuda_multi_vector() {
-  TestMultiVector< int, Kokkos::Cuda >();
-  TestMultiVector< double, Kokkos::Cuda >();
+  TestMultiVector< int, KokkosArray::Cuda >();
+  TestMultiVector< double, KokkosArray::Cuda >();
 }
 
 void test_device_cuda_crsarray() {
-  TestCrsArray< Kokkos::Cuda >();
+  TestCrsArray< KokkosArray::Cuda >();
 }
 
 void test_device_cuda_array() {
-  TestArray< double, Kokkos::Cuda >();
-  TestArray< int, Kokkos::Cuda >();
+  TestArray< double, KokkosArray::Cuda >();
+  TestArray< int, KokkosArray::Cuda >();
 }
 
 void test_device_cuda_mdarray() {
-  TestMDArray< double, Kokkos::Cuda >();
-  TestMDArray< int, Kokkos::Cuda >();
+  TestMDArray< double, KokkosArray::Cuda >();
+  TestMDArray< int, KokkosArray::Cuda >();
 }
 
 void test_device_cuda_index_map() {
-  TestMDArrayIndexMap< Kokkos::Cuda >();
+  TestMDArrayIndexMap< KokkosArray::Cuda >();
 }
 
 void test_device_cuda_reduce() {
-  TestReduce< long ,   Kokkos::Cuda >( 1000000 );
-  TestReduce< double ,   Kokkos::Cuda >( 1000000 );
+  TestReduce< long ,   KokkosArray::Cuda >( 1000000 );
+  TestReduce< double ,   KokkosArray::Cuda >( 1000000 );
 }
 
 void test_device_cuda_multi_reduce() {
-  TestReduceMulti< long , Kokkos::Cuda >( 1000000 , 7 );
+  TestReduceMulti< long , KokkosArray::Cuda >( 1000000 , 7 );
 }
 
 }

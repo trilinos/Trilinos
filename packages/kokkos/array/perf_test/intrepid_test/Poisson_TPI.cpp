@@ -61,19 +61,19 @@
 // Shards includes
 #include "Shards_CellTopology.hpp"
 
-#include <Kokkos_DeviceHost.hpp>
-#include <Kokkos_DeviceHost_ValueView.hpp>
-#include <Kokkos_DeviceHost_MultiVectorView.hpp>
-#include <Kokkos_DeviceHost_MDArrayView.hpp>
+#include <KokkosArray_DeviceHost.hpp>
+#include <KokkosArray_DeviceHost_ValueView.hpp>
+#include <KokkosArray_DeviceHost_MultiVectorView.hpp>
+#include <KokkosArray_DeviceHost_MDArrayView.hpp>
 
-#include <Kokkos_DeviceTPI.hpp>
-#include <Kokkos_DeviceTPI_ValueView.hpp>
-#include <Kokkos_DeviceTPI_MultiVectorView.hpp>
-#include <Kokkos_DeviceTPI_MDArrayView.hpp>
-#include <Kokkos_DeviceTPI_ParallelFor.hpp>
-#include <Kokkos_DeviceTPI_ParallelReduce.hpp>
+#include <KokkosArray_DeviceTPI.hpp>
+#include <KokkosArray_DeviceTPI_ValueView.hpp>
+#include <KokkosArray_DeviceTPI_MultiVectorView.hpp>
+#include <KokkosArray_DeviceTPI_MDArrayView.hpp>
+#include <KokkosArray_DeviceTPI_ParallelFor.hpp>
+#include <KokkosArray_DeviceTPI_ParallelReduce.hpp>
 
-#include <Kokkos_DeviceTPI_macros.hpp>
+#include <KokkosArray_DeviceTPI_macros.hpp>
 #include <Jacobian.hpp>
 #include <Transform.hpp>
 #include <TransformValue.hpp>
@@ -84,17 +84,17 @@
 #include <Invert.hpp>
 #include <Determinant.hpp>
 #include <Poisson_Driver.hpp>
-#include <Kokkos_DeviceClear_macros.hpp>
+#include <KokkosArray_DeviceClear_macros.hpp>
 
 namespace Test {
 
 
 void poisson_tpi(int beg , int end,int threads)
 {
-	Kokkos::DeviceTPI::initialize(threads);
+	KokkosArray::DeviceTPI::initialize(threads);
 	std::cout<<"Intel TPI - "<<threads<<std::endl;
-	Test::poisson_run< Kokkos::DeviceTPI>(beg , end);
-	Kokkos::DeviceTPI::finalize();
+	Test::poisson_run< KokkosArray::DeviceTPI>(beg , end);
+	KokkosArray::DeviceTPI::finalize();
 };
 
 } // namespace Test

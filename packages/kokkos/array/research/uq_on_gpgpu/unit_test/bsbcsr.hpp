@@ -44,9 +44,9 @@
 #ifndef KOKKOS_BSBCSR_HPP
 #define KOKKOS_BSBCSR_HPP
 
-#include <Kokkos_Cuda_MultiVector.hpp>
+#include <KokkosArray_Cuda_MultiVector.hpp>
 
-namespace Kokkos {
+namespace KokkosArray {
 
 //----------------------------------------------------------------------------
 /** \brief  Dense symmetric matrix diagonal storage.

@@ -2642,7 +2642,6 @@ int ML_fixCoarseMtx(
     **************************************************************************/
     int           *bindx, i, j, nLocRows, nf, numDeadNodDof;
     double        *val, mxdia;
-    ML_QR_FIX_TYPE dead;
     struct ML_CSR_MSRdata* data = (struct ML_CSR_MSRdata*) Cmat->data;
 
     if (ML_qr_fix_NumDeadNodDof() < 1) {
@@ -2664,15 +2663,14 @@ int ML_fixCoarseMtx(
 
     if (numDeadNodDof < 1) return 0;
 
-    if (ML_Get_PrintLevel() > 9)
+    if (ML_Get_PrintLevel() > 9 && Cmat->comm->ML_mypid == 0)
       fprintf(stderr,"[II] fixing the coarse-level matrix dead dofs\n");
 
 #ifdef MB_CHATTY
     fprintf(stderr,"[DD] fixCoarse: nLocRows=%7d nf=%3d\n", nLocRows, nf);
 #endif
     for (i=0; i < nLocRows/nf; i++) {
-         dead =  ML_qr_fix_getDeadNod(i);
-         if (dead) {
+         if (ML_qr_fix_nodeHasDeadDOFs(i)) {
              mxdia = 0.e0;
              for (j=0; j < nf; j++) {
                  mxdia = ( mxdia > fabs(val[i*nf+j]) ) ?
@@ -2684,7 +2682,7 @@ int ML_fixCoarseMtx(
                 "[DD] fixCoarse: dead=%4d node=%7d dof=%3d val=%12.3e\n",
                 dead, i, j, val[i*nf + j]); 
 #endif
-                 if (dead & (1 << j)) {
+                 if (ML_qr_fix_isDOFDead(i,j)) {
                     /* this is a dead coarse dof */
                     if (val[i*nf + j] != 0.e0) {
                         fprintf(stderr,"[SS] dead dof diag val=%12.3e\n",

@@ -56,6 +56,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 #include "xfer_client.h"
 #include "xfer_debug.h"
+#include "xfer_util.h"
 
 
 #include <iostream>
@@ -84,10 +85,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 log_level client_debug_level = LOG_UNDEFINED;
 
-/* prototype for a function to initialize buffers */
-extern void xfer_init_data_array(const unsigned int seed, data_array_t *array);
-extern int xfer_compare_data_arrays(const data_array_t *arr1, const data_array_t *arr2);
-extern int xfer_validate_array(const int seed,  data_array_t *array);
+
 extern int print_args(
         std::ostream &out,
         const struct xfer_args &args,

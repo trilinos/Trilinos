@@ -50,11 +50,11 @@
 #include <sstream>
 #include <stdexcept>
 
-#include <Kokkos_Array.hpp>
-#include <Kokkos_Host.hpp>
+#include <KokkosArray_Array.hpp>
+#include <KokkosArray_Host.hpp>
 #include <ParallelComm.hpp>
 
-namespace Kokkos {
+namespace KokkosArray {
 
 //----------------------------------------------------------------------------
 /** \brief  Parallel distributed data mapping
@@ -86,7 +86,7 @@ template< class ArrayType , class Rank = void > struct UnpackArray ;
 template< class ValueType , class Device , class DataMap >
 class AsyncExchange ;
 
-} // namespace Kokkos
+} // namespace KokkosArray
 
 //----------------------------------------------------------------------------
 // Application call procedure:
@@ -103,16 +103,16 @@ class AsyncExchange ;
 
 #ifdef HAVE_MPI
 
-namespace Kokkos {
+namespace KokkosArray {
 
 template< class ValueType , class Device >
-class AsyncExchange< ValueType, Device , Kokkos::ParallelDataMap > {
+class AsyncExchange< ValueType, Device , KokkosArray::ParallelDataMap > {
 public:
 
   typedef Device                                              device_type ;
-  typedef Kokkos::ParallelDataMap                             data_map_type ;
-  typedef Kokkos::Impl::MemoryView< ValueType , device_type > buffer_dev_type ;
-  typedef Kokkos::Impl::MemoryView< ValueType , Host >        buffer_host_type ;
+  typedef KokkosArray::ParallelDataMap                             data_map_type ;
+  typedef KokkosArray::Impl::MemoryView< ValueType , device_type > buffer_dev_type ;
+  typedef KokkosArray::Impl::MemoryView< ValueType , Host >        buffer_host_type ;
 
 private:
 
@@ -121,8 +121,11 @@ private:
   const data_map_type  data_map ;
   unsigned             chunk_size ;
   unsigned             send_count_max ;
+  buffer_host_type     host_recv_buffer ;
   buffer_host_type     host_send_buffer ;
+  buffer_host_type     send_msg_buffer ;
   buffer_dev_type      dev_buffer ;
+  std::vector< MPI_Request > recv_request ;
 
 public:
 
@@ -133,54 +136,43 @@ public:
   : data_map( arg_data_map )
   , chunk_size( arg_chunk )
   , send_count_max( 0 )
+  , host_recv_buffer()
   , host_send_buffer()
+  , send_msg_buffer()
   , dev_buffer()
+  , recv_request()
   {
-    dev_buffer.allocate( arg_chunk * std::max( arg_data_map.count_send ,
-                                               arg_data_map.count_receive ),
-                         std::string() );
-
-    host_send_buffer.allocate( arg_chunk * data_map.count_send ,
-                               std::string() );
-
     const size_t send_msg_count = arg_data_map.host_send.dimension(0);
+    const size_t recv_msg_count = arg_data_map.host_recv.dimension(0);
 
     for ( size_t i = 0 ; i < send_msg_count ; ++i ) {
       send_count_max = std::max( send_count_max ,
                                  (unsigned) arg_data_map.host_send(i,1) );
     }
+
+    dev_buffer.allocate( arg_chunk * std::max( arg_data_map.count_send ,
+                                               arg_data_map.count_receive ),
+                         std::string("AsyncExchange dev_buffer") );
+
+    host_recv_buffer.allocate( arg_chunk * arg_data_map.count_receive ,
+                               std::string("AsyncExchange host_recv_buffer") );
+
+    host_send_buffer.allocate( arg_chunk * arg_data_map.count_send ,
+                               std::string("AsyncExchange host_send_buffer") );
+
+    send_msg_buffer.allocate( arg_chunk * send_count_max ,
+                              std::string("AsyncExchange send_msg_buffer") );
+
+    recv_request.assign( recv_msg_count , MPI_REQUEST_NULL );
   }
 
   //------------------------------------------------------------------------
 
-  void send()
+  void setup()
   {
-    // Copy send buffer from the device to host memory for sending
+    { // Post receives:
+      const size_t recv_msg_count = data_map.host_recv.dimension(0);
 
-    Kokkos::Impl::Factory< buffer_host_type , buffer_dev_type >
-      ::deep_copy( host_send_buffer , dev_buffer ,
-                   data_map.count_send * chunk_size );
-
-    // Done with the device until communication is complete.
-    // Application can dispatch asynchronous work on the device.
-  }
-
-  // Application can dispatch local work to device ...
-  // No communication progress until main thread calls 'complete'
-
-  void receive()
-  {
-    const size_t recv_msg_count = data_map.host_recv.dimension(0);
-    const size_t send_msg_count = data_map.host_send.dimension(0);
-
-    buffer_host_type host_recv_buffer ;
-
-    host_recv_buffer.allocate( data_map.count_receive * chunk_size ,
-                               std::string() );
-
-    std::vector< MPI_Request > recv_request(recv_msg_count,MPI_REQUEST_NULL);
-
-    {
       ValueType * ptr = host_recv_buffer.ptr_on_device();
 
       for ( size_t i = 0 ; i < recv_msg_count ; ++i ) {
@@ -195,33 +187,52 @@ public:
       }
     }
 
-    // Wait for all receives to be posted before ready-sending
+    // Copy send buffer from the device to host memory for sending
 
-    MPI_Barrier( data_map.machine.mpi_comm );
+    KokkosArray::Impl::Factory< buffer_host_type , buffer_dev_type >
+      ::deep_copy( host_send_buffer , dev_buffer ,
+                   data_map.count_send * chunk_size );
 
-    {
-      buffer_host_type send_msg_buffer ;
+    // Done with the device until communication is complete.
+    // Application can dispatch asynchronous work on the device.
+  }
 
-      send_msg_buffer.allocate( send_count_max * chunk_size , std::string() );
+  // Application can dispatch local work to device ...
+  // No communication progress until main thread calls 'send_receive'
 
-      for ( size_t i = 0 , j = 0 ; i < send_msg_count ; ++i ) {
-        const int proc  = data_map.host_send(i,0);
-        const int count = data_map.host_send(i,1);
+  void send_receive()
+  {
+    const size_t recv_msg_count = data_map.host_recv.dimension(0);
+    const size_t send_msg_count = data_map.host_send.dimension(0);
 
-        for ( int k = 0 , km = 0 ; k < count ; ++k , ++j ) {
-          const int km_end = km + chunk_size ;
-          int ki = chunk_size * data_map.host_send_item(j);
+    // Pack and send:
 
-          for ( ; km < km_end ; ++km , ++ki ) {
-            send_msg_buffer[km] = host_send_buffer[ki];
-          }
+    for ( size_t i = 0 , j = 0 ; i < send_msg_count ; ++i ) {
+      const int proc  = data_map.host_send(i,0);
+      const int count = data_map.host_send(i,1);
+
+      for ( int k = 0 , km = 0 ; k < count ; ++k , ++j ) {
+        const int km_end = km + chunk_size ;
+        int ki = chunk_size * data_map.host_send_item(j);
+
+        for ( ; km < km_end ; ++km , ++ki ) {
+          send_msg_buffer[km] = host_send_buffer[ki];
         }
-
-        MPI_Rsend( send_msg_buffer.ptr_on_device(),
-                   count * chunk_size * sizeof(ValueType) , MPI_BYTE ,
-                   proc , mpi_tag , data_map.machine.mpi_comm );
       }
+
+      // MPI_Ssend blocks until
+      // (1) a receive is matched for the message and
+      // (2) the send buffer can be re-used.
+      //
+      // It is suggested that MPI_Ssend will have the best performance:
+      // http://www.mcs.anl.gov/research/projects/mpi/sendmode.html .
+
+      MPI_Ssend( send_msg_buffer.ptr_on_device(),
+                 count * chunk_size * sizeof(ValueType) , MPI_BYTE ,
+                 proc , mpi_tag , data_map.machine.mpi_comm );
     }
+
+    // Wait for receives and verify:
 
     for ( size_t i = 0 ; i < recv_msg_count ; ++i ) {
       MPI_Status recv_status ;
@@ -254,9 +265,9 @@ public:
       }
     }
 
-    // Touching device:
+    // Copy received data to device memory.
 
-    Kokkos::Impl::Factory< buffer_dev_type , buffer_host_type >
+    KokkosArray::Impl::Factory< buffer_dev_type , buffer_host_type >
       ::deep_copy( dev_buffer , host_recv_buffer , 
                    data_map.count_receive * chunk_size );
   }

@@ -39,7 +39,7 @@ echo "#define HAVE_PTHREAD" > ThreadPool_config.h
 set GCC_FLAGS="-Wall -O3 ${INC_PATH}"
 
 icpc $GCC_FLAGS -c ${GCC_SOURCES}
-icpc $GCC_FLAGS -offload-build -o  perf_test.exe Kokkos_ArrayBounds.o Kokkos_DeviceHost.o Kokkos_ViewTracker.o PerfTestFerry.o Kokkos_DeviceTBB.o PerfTestCudaStub.o PerfTestMain.o Kokkos_DeviceFerry.o Kokkos_MemoryInfo.o PerfTestTPIStub.o PerfTestTBBStub.o ${LIB} -offload-ldopts:"-L${TBBROOT}/lib/mic -ltbb -ltbbmalloc"
+icpc $GCC_FLAGS -offload-build -o  perf_test.exe KokkosArray_ArrayBounds.o KokkosArray_DeviceHost.o KokkosArray_ViewTracker.o PerfTestFerry.o KokkosArray_DeviceTBB.o PerfTestCudaStub.o PerfTestMain.o KokkosArray_DeviceFerry.o KokkosArray_MemoryInfo.o PerfTestTPIStub.o PerfTestTBBStub.o ${LIB} -offload-ldopts:"-L${TBBROOT}/lib/mic -ltbb -ltbbmalloc"
 
 rm -f *.o *.a ThreadPool_config.h
 

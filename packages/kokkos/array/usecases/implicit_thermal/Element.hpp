@@ -47,7 +47,7 @@
 #include <cstdlib>
 #include <cmath>
 
-#include <impl/Kokkos_Preprocessing_macros.hpp>
+#include <impl/KokkosArray_Preprocessing_macros.hpp>
 
 /********************************************************/
 
@@ -221,9 +221,9 @@ struct ElementComp <Scalar, ScalarCoord, KOKKOS_MACRO_DEVICE> {
   typedef KOKKOS_MACRO_DEVICE                        device_type;
   typedef Scalar                                     scalar_type ;
   typedef device_type::size_type                     index_type ;
-  typedef Kokkos::MDArray<index_type,device_type>    index_array ;
-  typedef Kokkos::MDArray<Scalar,      device_type>  scalar_array ;
-  typedef Kokkos::MDArray<ScalarCoord, device_type>  coord_array ;
+  typedef KokkosArray::MDArray<index_type,device_type>    index_array ;
+  typedef KokkosArray::MDArray<Scalar,      device_type>  scalar_array ;
+  typedef KokkosArray::MDArray<ScalarCoord, device_type>  coord_array ;
   typedef ShapeFunctionEvaluation< Scalar > shape_function_data ;
 
   static const unsigned SpatialDimension = shape_function_data::SpatialDimension ;

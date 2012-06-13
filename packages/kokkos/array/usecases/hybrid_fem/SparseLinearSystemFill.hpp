@@ -61,18 +61,18 @@ template< class MatrixType , class MeshType > struct GatherFill ;
 
 //----------------------------------------------------------------------------
 
-namespace Kokkos {
+namespace KokkosArray {
 namespace Impl {
 
 template< typename IndexType , typename CoordScalar ,
           unsigned ElemNodeCount ,
           class Device >
-struct Factory< Kokkos::CrsArray< IndexType , Device , IndexType > ,
+struct Factory< KokkosArray::CrsArray< IndexType , Device , IndexType > ,
                 HybridFEM::FEMesh< CoordScalar , ElemNodeCount , Device > >
 {
   typedef Device                                     device_type ;
   typedef typename device_type::size_type            size_type  ;
-  typedef Kokkos::CrsArray< IndexType , Device , IndexType > graph_type ;
+  typedef KokkosArray::CrsArray< IndexType , Device , IndexType > graph_type ;
   typedef Array< size_type[ElemNodeCount][ElemNodeCount] , device_type >         element_map_type ;
 
   typedef HybridFEM::FEMesh< CoordScalar , ElemNodeCount , Device > mesh_type ;
@@ -184,7 +184,7 @@ if ( node_col != column[col_search] ) {
 };
 
 } /* namespace Impl */
-} /* namespace Kokkos */
+} /* namespace KokkosArray */
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
