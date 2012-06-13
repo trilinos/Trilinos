@@ -9,6 +9,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS value="MPI"/>
     <EmailAddresses>
+      <Checkin address="trilinosframework-checkins@software.sandia.gov"/>
       <Regression address="trilinosframework-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -23,6 +24,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="teuchos-checkins@software.sandia.gov"/>
       <Regression address="teuchos-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -37,6 +39,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="threadpool-checkins@software.sandia.gov"/>
       <Regression address="threadpool-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -51,6 +54,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS value="ADOLC,ADIC,CppUnit"/>
     <EmailAddresses>
+      <Checkin address="sacado-checkins@software.sandia.gov"/>
       <Regression address="sacado-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -65,6 +69,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="rtop-checkins@software.sandia.gov"/>
       <Regression address="thyra-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -79,6 +84,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="kokkos-checkins@software.sandia.gov"/>
       <Regression address="kokkos-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -93,6 +99,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="epetra-checkins@software.sandia.gov"/>
       <Regression address="epetra-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -107,6 +114,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="zoltan-checkins@software.sandia.gov"/>
       <Regression address="zoltan-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -121,6 +129,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="shards-checkins@software.sandia.gov"/>
       <Regression address="shards-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -135,6 +144,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="globipack-checkins@software.sandia.gov"/>
       <Regression address="globipack-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -149,6 +159,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="triutils-checkins@software.sandia.gov"/>
       <Regression address="triutils-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -163,6 +174,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="tpetra-checkins@software.sandia.gov"/>
       <Regression address="tpetra-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -177,6 +189,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS value="HYPRE"/>
     <EmailAddresses>
+      <Checkin address="epetraext-checkins@software.sandia.gov"/>
       <Regression address="epetraext-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -191,6 +204,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="thyra-checkins@software.sandia.gov"/>
       <Regression address="thyra-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="Thyra"/>
@@ -205,6 +219,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="thyra-checkins@software.sandia.gov"/>
       <Regression address="thyra-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="Thyra"/>
@@ -219,6 +234,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="thyra-checkins@software.sandia.gov"/>
       <Regression address="thyra-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="Thyra"/>
@@ -233,6 +249,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="thyra-checkins@software.sandia.gov"/>
       <Regression address="thyra-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="Thyra"/>
@@ -247,6 +264,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="thyra-checkins@software.sandia.gov"/>
       <Regression address="thyra-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -261,6 +279,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="optipack-checkins@software.sandia.gov"/>
       <Regression address="optipack-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -275,6 +294,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="isorropia-checkins@software.sandia.gov"/>
       <Regression address="isorropia-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -289,6 +309,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="pliris-checkins@software.sandia.gov"/>
       <Regression address="pliris-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -303,6 +324,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="claps-checkins@software.sandia.gov"/>
       <Regression address="claps-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -317,6 +339,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="aztecoo-checkins@software.sandia.gov"/>
       <Regression address="aztecoo-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -331,6 +354,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="galeri-checkins@software.sandia.gov"/>
       <Regression address="galeri-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -345,6 +369,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="amesos2-checkins@software.sandia.gov"/>
       <Regression address="amesos2-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -359,6 +384,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="amesos-checkins@software.sandia.gov"/>
       <Regression address="amesos-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -373,6 +399,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="pamgen-checkins@software.sandia.gov"/>
       <Regression address="pamgen-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -387,6 +414,7 @@
     <TEST_REQUIRED_DEP_TPLS value="Netcdf"/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -401,6 +429,7 @@
     <TEST_REQUIRED_DEP_TPLS value="Netcdf"/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -415,6 +444,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -429,6 +459,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -443,6 +474,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -457,6 +489,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -471,6 +504,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -485,6 +519,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -499,6 +534,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -513,6 +549,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -527,6 +564,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -541,6 +579,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -555,6 +594,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -569,6 +609,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -583,6 +624,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -597,6 +639,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -611,6 +654,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -625,6 +669,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -639,6 +684,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -653,6 +699,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -667,6 +714,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -681,6 +729,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -695,6 +744,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -709,6 +759,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -723,6 +774,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -737,6 +789,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -751,6 +804,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -765,6 +819,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -779,6 +834,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
@@ -793,6 +849,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="seacas-checkins@software.sandia.gov"/>
       <Regression address="seacas-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -807,6 +864,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="trios-checkins@software.sandia.gov"/>
       <Regression address="trios-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -821,6 +879,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS value="HYPRE,SuperLU,SPARSKIT"/>
     <EmailAddresses>
+      <Checkin address="ifpack-checkins@software.sandia.gov"/>
       <Regression address="ifpack-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -835,6 +894,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="komplex-checkins@software.sandia.gov"/>
       <Regression address="komplex-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -849,6 +909,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS value="METIS,ParMETIS,SuperLU"/>
     <EmailAddresses>
+      <Checkin address="ml-checkins@software.sandia.gov"/>
       <Regression address="ml-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -863,6 +924,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="belos-checkins@software.sandia.gov"/>
       <Regression address="belos-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -877,6 +939,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS value="QD"/>
     <EmailAddresses>
+      <Checkin address="ifpack2-checkins@software.sandia.gov"/>
       <Regression address="ifpack2-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -891,21 +954,8 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="stratimikos-checkins@software.sandia.gov"/>
       <Regression address="stratimikos-regression@software.sandia.gov"/>
-    </EmailAddresses>
-    <ParentPackage value=""/>
-  </Package>
-  <Package name="Meros" dir="packages/meros" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES value="Epetra,Thyra,EpetraExt"/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES value="Stratimikos,AztecOO"/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="MPI"/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS value="MPI"/>
-    <EmailAddresses>
-      <Regression address="meros-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
@@ -919,6 +969,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="fei-checkins@software.sandia.gov"/>
       <Regression address="fei-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -933,6 +984,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="anasazi-checkins@software.sandia.gov"/>
       <Regression address="anasazi-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -947,6 +999,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="teko-checkins@software.sandia.gov"/>
       <Regression address="teko-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -961,6 +1014,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="rbgen-checkins@software.sandia.gov"/>
       <Regression address="rbgen-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -975,6 +1029,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="trikota-checkins@software.sandia.gov"/>
       <Regression address="trikota-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -989,6 +1044,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="intrepid-checkins@software.sandia.gov"/>
       <Regression address="intrepid-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -1003,6 +1059,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS value="gtest"/>
     <EmailAddresses>
+      <Checkin address="stk-checkins@software.sandia.gov"/>
       <Regression address="stk-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -1017,6 +1074,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS value="TVMET"/>
     <EmailAddresses>
+      <Checkin address="phalanx-checkins@software.sandia.gov"/>
       <Regression address="phalanx-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -1031,6 +1089,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="phdmesh-checkins@software.sandia.gov"/>
       <Regression address="phdmesh-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -1045,6 +1104,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="nox-checkins@software.sandia.gov"/>
       <Regression address="nox-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -1059,6 +1119,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="moertel-checkins@software.sandia.gov"/>
       <Regression address="moertel-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -1073,6 +1134,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="trilinoscouplings-checkins@software.sandia.gov"/>
       <Regression address="trilinoscouplings-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -1087,6 +1149,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="rythmos-checkins@software.sandia.gov"/>
       <Regression address="rythmos-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -1101,6 +1164,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="moocho-checkins@software.sandia.gov"/>
       <Regression address="moocho-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -1115,6 +1179,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="aristos-checkins@software.sandia.gov"/>
       <Regression address="aristos-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -1129,6 +1194,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="stokhos-checkins@software.sandia.gov"/>
       <Regression address="stokhos-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -1143,6 +1209,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="piro-checkins@software.sandia.gov"/>
       <Regression address="piro-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -1157,6 +1224,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS value="Peano,MPI,Netcdf"/>
     <EmailAddresses>
+      <Checkin address="sundance-checkins@software.sandia.gov"/>
       <Regression address="sundance-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -1171,6 +1239,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="ctrilinos-checkins@software.sandia.gov"/>
       <Regression address="ctrilinos-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -1185,6 +1254,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="fortrilinos-checkins@software.sandia.gov"/>
       <Regression address="fortrilinos-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -1199,6 +1269,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="pytrilinos-checkins@software.sandia.gov"/>
       <Regression address="pytrilinos-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -1213,6 +1284,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="webtrilinos-checkins@software.sandia.gov"/>
       <Regression address="webtrilinos-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -1227,6 +1299,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS value="HYPRE"/>
     <EmailAddresses>
+      <Checkin address="didasko-checkins@software.sandia.gov"/>
       <Regression address="didasko-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -1241,6 +1314,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="newpackage-checkins@software.sandia.gov"/>
       <Regression address="newpackage-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -1255,6 +1329,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="optika-checkins@software.sandia.gov"/>
       <Regression address="optika-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -1269,6 +1344,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="mesquite-checkins@software.sandia.gov"/>
       <Regression address="mesquite-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
@@ -1283,6 +1359,7 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
+      <Checkin address="feapp-checkins@software.sandia.gov"/>
       <Regression address="feapp-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
