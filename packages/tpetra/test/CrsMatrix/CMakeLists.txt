@@ -55,25 +55,25 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 SET(TIMING_INSTALLS "")
 
-IF (Kokkos_ENABLE_TBB AND Tpetra_ENABLE_MPI)
-  TRIBITS_ADD_EXECUTABLE(
-      CRSTiming_TBB
-      SOURCES CRSTiming_TBB
-      COMM mpi
-      DEPLIBS kokkos kokkoslinalg kokkosnodeapi
-      )
-  APPEND_SET(TIMING_INSTALLS Tpetra_CRSTiming_TBB)
-ENDIF()
+#IF (Kokkos_ENABLE_TBB AND Tpetra_ENABLE_MPI)
+#  TRIBITS_ADD_EXECUTABLE(
+#      CRSTiming_TBB
+#      SOURCES CRSTiming_TBB
+#      COMM mpi
+#      DEPLIBS kokkos kokkoslinalg kokkosnodeapi
+#      )
+#  APPEND_SET(TIMING_INSTALLS Tpetra_CRSTiming_TBB)
+#ENDIF()
 
-IF (Kokkos_ENABLE_ThreadPool AND Tpetra_ENABLE_MPI)
-  TRIBITS_ADD_EXECUTABLE(
-      CRSTiming_TPI
-      SOURCES CRSTiming_TPI
-      COMM mpi
-      DEPLIBS kokkos kokkoslinalg kokkosnodeapi
-      )
-  APPEND_SET(TIMING_INSTALLS Tpetra_CRSTiming_TPI)
-ENDIF()
+#IF (Kokkos_ENABLE_ThreadPool AND Tpetra_ENABLE_MPI)
+#  TRIBITS_ADD_EXECUTABLE(
+#      CRSTiming_TPI
+#      SOURCES CRSTiming_TPI
+#      COMM mpi
+#      DEPLIBS kokkos kokkoslinalg kokkosnodeapi
+#      )
+#  APPEND_SET(TIMING_INSTALLS Tpetra_CRSTiming_TPI)
+#ENDIF()
 
 INSTALL(TARGETS ${TIMING_INSTALLS}
         RUNTIME DESTINATION "${${PROJECT_NAME}_INSTALL_RUNTIME_DIR}")
