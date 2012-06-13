@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
   const Tpetra::global_size_t numGlobalRows = numRows*comm->getSize();
   Teuchos::RCP<const Map> map = Tpetra::createUniformContigMapWithNode<int,int,Node>(numGlobalRows, comm, node);
   Teuchos::RCP<Matrix> matrix = Teuchos::rcp( new Matrix(map,1,Tpetra::DynamicProfile) );
-  matrix->fillComplete();
+  matrix->fillComplete(Teuchos::null);
 
   Teuchos::RCP<MultiVector> X = Tpetra::createMultiVector<float>(map, 2),
                             Y = Tpetra::createMultiVector<float>(map, 2);

@@ -62,7 +62,7 @@
 #include "Tpetra_CrsMatrixSolveOp_def.hpp"
 
 typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType DefNode;
-typedef KokkosExamples::EmptySparseKernel<DefNode>             SparseOp;
+typedef KokkosExamples::EmptySparseKernel<void,DefNode>           SparseOp;
 
 namespace Tpetra {
 
