@@ -959,21 +959,6 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="Meros" dir="packages/meros" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES value="Epetra,Thyra,EpetraExt"/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES value="Stratimikos,AztecOO"/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="MPI"/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS value="MPI"/>
-    <EmailAddresses>
-      <Checkin address="meros-checkins@software.sandia.gov"/>
-      <Regression address="meros-regression@software.sandia.gov"/>
-    </EmailAddresses>
-    <ParentPackage value=""/>
-  </Package>
   <Package name="FEI" dir="packages/fei" type="PS">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,AztecOO,Belos,Amesos,Ifpack,ML"/>
