@@ -786,7 +786,7 @@ namespace Kokkos {
       // therefore, because our API doesn't give us diags if TEUCHOS_UNIT_DIAG, then we must allocate space for them
       const size_t numnz = hostinds.size() + numRows;
       devptrs = node->template allocBuffer<int>( numRows+1 );
-      devinds = node->template allocBuffer<int>( numnz );
+      if (numnz) devinds = node->template allocBuffer<int>( numnz );
       ArrayRCP<int> h_devptrs = node->viewBufferNonConst(WriteOnly, numRows+1, devptrs);
       ArrayRCP<int> h_devinds = node->viewBufferNonConst(WriteOnly, numnz,     devinds);
       for (size_t r=0; r < numRows; ++r) {
@@ -809,12 +809,14 @@ namespace Kokkos {
       // our format == their format; just allocate and copy
       const size_t numnz = hostinds.size();
       devptrs = node->template allocBuffer<int>( numRows+1 );
-      devinds = node->template allocBuffer<int>( numnz );
       ArrayRCP<int> h_devptrs = node->viewBufferNonConst(WriteOnly, numRows+1, devptrs);
       // have to copy on host because of the cast from size_t to int
       std::copy(hostptrs.begin(), hostptrs.end(), h_devptrs.begin());
       h_devptrs = null;
-      node->copyToBuffer( numnz,     hostinds(), devinds );
+      if (numnz) {
+        devinds = node->template allocBuffer<int>( numnz );
+        node->copyToBuffer( numnz,     hostinds(), devinds );
+      }
     }
     // set the data
     graph.setDeviceData(devptrs,devinds);
@@ -862,8 +864,10 @@ namespace Kokkos {
     }
     else {
       const size_t numnz = hostptrs[numRows];
-      devvals = node->template allocBuffer<Scalar>( numnz );
-      node->copyToBuffer( numnz,     hostvals(), devvals );
+      if (numnz) {
+        devvals = node->template allocBuffer<Scalar>( numnz );
+        node->copyToBuffer( numnz,     hostvals(), devvals );
+      }
     }
     matrix.setDeviceData(devvals);
 
@@ -1109,34 +1113,10 @@ namespace Kokkos {
         << cudaGetErrorString(err) );
 #endif
     cusparseStatus_t stat;
-    //stat = CUSPARSEdetails::CUSPARSETemplateAdaptors<Scalar>::CSRMM(
-    //    *sess, op, numMatRows, numMatCols, numRHS, numNZ_, &s_alpha, 
-    //    *matdescr_, rowVals_.getRawPtr(), rowPtrs_.getRawPtr(), colInds_.getRawPtr(), 
-    //    data_x, stride_x, &s_beta, data_y, stride_y);
-    // TEST METHODOLOGY
-    {
-      cusparseHandle_t hndl;
-      stat = cusparseCreate(&hndl);
-      TEUCHOS_TEST_FOR_EXCEPT(stat != CUSPARSE_STATUS_SUCCESS);
-      cusparseMatDescr_t desc;
-      stat = cusparseCreateMatDescr(&desc);
-      TEUCHOS_TEST_FOR_EXCEPT(stat != CUSPARSE_STATUS_SUCCESS);
-      stat = cusparseSetMatDiagType(desc, CUSPARSE_DIAG_TYPE_NON_UNIT);
-      TEUCHOS_TEST_FOR_EXCEPT(stat != CUSPARSE_STATUS_SUCCESS);
-      stat = cusparseSetMatIndexBase(desc, CUSPARSE_INDEX_BASE_ZERO);
-      TEUCHOS_TEST_FOR_EXCEPT(stat != CUSPARSE_STATUS_SUCCESS);
-      stat = cusparseSetMatType(desc, CUSPARSE_MATRIX_TYPE_GENERAL);
-      TEUCHOS_TEST_FOR_EXCEPT(stat != CUSPARSE_STATUS_SUCCESS);
-      cusparseStatus_t stat = CUSPARSEdetails::CUSPARSETemplateAdaptors<Scalar>::CSRMM(
-          hndl, op, numMatRows, numMatCols, numRHS, numNZ_, &s_alpha, 
-          desc, rowVals_.getRawPtr(), rowPtrs_.getRawPtr(), colInds_.getRawPtr(), 
-          data_x, stride_x, &s_beta, data_y, stride_y);
-      stat = cusparseDestroyMatDescr(desc);
-      TEUCHOS_TEST_FOR_EXCEPT(stat != CUSPARSE_STATUS_SUCCESS);
-      stat = cusparseDestroy(hndl);
-      TEUCHOS_TEST_FOR_EXCEPT(stat != CUSPARSE_STATUS_SUCCESS);
-    }
-    // END TEST
+    stat = CUSPARSEdetails::CUSPARSETemplateAdaptors<Scalar>::CSRMM(
+        *sess, op, numMatRows, numRHS, numMatCols, numNZ_, &s_alpha, 
+        *matdescr_, rowVals_.getRawPtr(), rowPtrs_.getRawPtr(), colInds_.getRawPtr(), 
+        data_x, stride_x, &s_beta, data_y, stride_y);
 #ifdef HAVE_KOKKOS_DEBUG
     err = cudaGetLastError();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( cudaSuccess != err, std::runtime_error, 
@@ -1191,7 +1171,7 @@ namespace Kokkos {
     const Scalar s_alpha = (Scalar)alpha,
                  s_beta  = (Scalar)beta;
     cusparseStatus_t stat = CUSPARSEdetails::CUSPARSETemplateAdaptors<Scalar>::CSRMM(
-        *hndl, op, numMatRows, numMatCols, numRHS, numNZ_, &s_alpha, 
+        *hndl, op, numMatRows, numRHS, numMatCols, numNZ_, &s_alpha, 
         *matdescr_, rowVals_.getRawPtr(), rowPtrs_.getRawPtr(), colInds_.getRawPtr(), 
         data_x, stride_x, &s_beta, data_y, stride_y);
 #ifdef HAVE_KOKKOS_DEBUG
