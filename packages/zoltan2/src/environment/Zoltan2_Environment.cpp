@@ -41,22 +41,8 @@ void makeDebugManager(int rank, bool iPrint,
   Teuchos::RCP<DebugManager> &mgr)
 {
   MessageOutputLevel lvl = static_cast<MessageOutputLevel>(level);
-  OSType os = static_cast<OSType>(ost);
 
-  bool haveFname = (fname != Z2_UNSET_STRING);
-  bool haveStreamName = (os != NUM_OUTPUT_STREAMS);
-  bool haveLevel = (lvl != NUM_STATUS_OUTPUT_LEVELS);
-
-  if (!haveFname && !haveStreamName && !haveLevel) {
-    // The default if the user didn't specify anything.
-    mgr = Teuchos::rcp(new DebugManager(rank, iPrint, std::cout, BASIC_STATUS));
-    return;
-  }
-
-  if (!haveLevel)
-    lvl = BASIC_STATUS;
-
-  if (haveFname){
+  if (fname != Z2_UNSET_STRING){
     std::ofstream *dbgFile = new std::ofstream;
     if (iPrint){
       std::string newFname;
@@ -72,14 +58,14 @@ void makeDebugManager(int rank, bool iPrint,
     return;
   }
 
+  OSType os = static_cast<OSType>(ost);
+
   if (os == COUT_STREAM)
     mgr = Teuchos::rcp(new DebugManager(rank, iPrint, std::cout, lvl));
   else if (os == CERR_STREAM)
     mgr = Teuchos::rcp(new DebugManager(rank, iPrint, std::cerr, lvl));
   else if (os == NULL_STREAM)
     mgr = Teuchos::rcp(new DebugManager(rank, false, std::cout, lvl));
-  else   // should never happen
-    throw std::logic_error("invalid debug output stream was not caught");
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -154,7 +140,13 @@ void Environment::commitParameters()
   string &fname = params_.get<string>("debug_output_file", Z2_UNSET_STRING);
   int &os = params_.get<int>("debug_output_stream", NUM_OUTPUT_STREAMS);
 
-  bool iPrint = (myRank_ == 0);   // default
+  if (fname==Z2_UNSET_STRING && os==NUM_OUTPUT_STREAMS)
+    os = COUT_STREAM;        // default output target
+  if (level == NUM_STATUS_OUTPUT_LEVELS)
+    level = BASIC_STATUS;    // default level of verbosity
+
+  bool iPrint = (myRank_ == 0);   // default reporter
+
   const Array<int> *reporters = 
     params_.getPtr<Array<int> >("debug_procs");
   if (reporters)
