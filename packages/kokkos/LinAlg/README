@@ -1,0 +1,10 @@
+Last updated: 13 June 2012
+
+sparse_triangular_solve.py: Code generator IN PROGRESS for sequential
+sparse triangular solve.  TODO: compressed sparse column (CSC) format
+(for the transpose of compressed sparse row (CSR) matrices), routines
+that conjugate all the matrix entries.  CSC format sparse triangular
+solve will look much like the reference BLAS' triangular solve (in
+that it will overwrite the input vector), except that it will only
+pass over the sparse matrix once for all the right-hand sides.
+
