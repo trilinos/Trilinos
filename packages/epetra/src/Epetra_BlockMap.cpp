@@ -927,22 +927,51 @@ int Epetra_BlockMap::LID(long long gid) const
 	return (int) (gid - BlockMapData_->MinMyGID_); // Can compute with an offset
   }
 
-  if(BlockMapData_->GlobalIndicesInt_)
-  {
-	  if( gid >= BlockMapData_->MyGlobalElements_int_[0] &&
-		  gid <= BlockMapData_->LastContiguousGID_ ) {
-		return (int) ( gid - BlockMapData_->MyGlobalElements_int_[0] );
+  if(BlockMapData_->GlobalIndicesInt_) {
+	  if( (int) gid >= BlockMapData_->MyGlobalElements_int_[0] &&
+		  (int) gid <= BlockMapData_->LastContiguousGID_ ) {
+		return (int) gid - BlockMapData_->MyGlobalElements_int_[0];
 	  }
   }
-  else if(BlockMapData_->GlobalIndicesLongLong_)
-  {
+  else if(BlockMapData_->GlobalIndicesLongLong_) {
 	  if( gid >= BlockMapData_->MyGlobalElements_LL_[0] &&
 		  gid <= BlockMapData_->LastContiguousGID_ ) {
 		return (int) ( gid - BlockMapData_->MyGlobalElements_LL_[0] );
 	  }
   }
-  else
-  {
+  else {
+	throw ReportError("Epetra_BlockMap::LID ERROR, GlobalIndices type unknown.",-1);
+  }
+
+#ifdef EPETRA_BLOCKMAP_NEW_LID
+  return BlockMapData_->LIDHash_->Get( gid );
+#else
+  return(BlockMapData_->LID_[gid - BlockMapData_->MinMyGID_]); // Find it in LID array  
+#endif
+}
+
+//==============================================================================
+int Epetra_BlockMap::LID(int gid) const
+{
+  if ((gid < (int) BlockMapData_->MinMyGID_) || 
+	  (gid > (int) BlockMapData_->MaxMyGID_)) {
+	return(-1); // Out of range
+  }
+
+  if (BlockMapData_->LinearMap_) {
+	return (int) (gid - (int) BlockMapData_->MinMyGID_); // Can compute with an offset
+  }
+
+  if(BlockMapData_->GlobalIndicesInt_) {
+	  if( gid >= BlockMapData_->MyGlobalElements_int_[0] &&
+		  gid <= (int) BlockMapData_->LastContiguousGID_ ) {
+		return (int) ( gid - BlockMapData_->MyGlobalElements_int_[0] );
+	  }
+  }
+  else if(BlockMapData_->GlobalIndicesLongLong_) {
+	throw ReportError("Epetra_BlockMap::LID ERROR, int version called for long long map.",-1);
+  }
+  else {
 	throw ReportError("Epetra_BlockMap::LID ERROR, GlobalIndices type unknown.",-1);
   }
 

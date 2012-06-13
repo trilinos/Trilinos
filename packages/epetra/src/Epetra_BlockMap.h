@@ -385,6 +385,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
 
   //! Returns local ID of global ID, return -1 if not found on this processor.
   int  LID(long long GID) const;
+  int  LID(int GID) const;
   
   //! Returns global ID of local ID, return IndexBase-1 if not found on this processor.
   long long  GID(int LID) const; 

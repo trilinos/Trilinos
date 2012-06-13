@@ -1009,9 +1009,10 @@ int Epetra_CrsGraph::ComputeGlobalConstants()
     int* ColElementSizeList = RowElementSizeList;
     if(Importer() != 0) 
       ColElementSizeList = ColMap().ElementSizeList();
+      const Epetra_CrsGraphData::IndexData<int>& intData = CrsGraphData_->Data<int>();
     for(int i = 0; i < numMyBlockRows; i++){
       int NumEntries = CrsGraphData_->NumIndicesPerRow_[i];
-      int* indices = CrsGraphData_->Data<int>().Indices_[i];
+      int* indices = intData.Indices_[i];
       if(NumEntries > 0) {
 	int CurNumNonzeros = 0;
 	int RowDim = RowElementSizeList[i];
@@ -1099,9 +1100,10 @@ int Epetra_CrsGraph::SortIndices() {
   // Use shell sort, which is fast if indices are already sorted.
 
   const int numMyBlockRows = NumMyBlockRows();
+  const Epetra_CrsGraphData::IndexData<int>& intData = CrsGraphData_->Data<int>();
   for(int i = 0; i < numMyBlockRows; i++){
     int n = CrsGraphData_->NumIndicesPerRow_[i];
-    int* const list = CrsGraphData_->Data<int>().Indices_[i];
+    int* const list = intData.Indices_[i];
 
     epetra_shellsort(list, n);
 //    int m = n/2;
@@ -1206,6 +1208,7 @@ int Epetra_CrsGraph::RemoveRedundantIndices()
 
   if(NoRedundancies() == false) {
     int* numIndicesPerRow = CrsGraphData_->NumIndicesPerRow_.Values();
+    Epetra_CrsGraphData::IndexData<int>& intData = CrsGraphData_->Data<int>();
     for(int i=0; i<numMyBlockRows; ++i) {
       int NumIndices = numIndicesPerRow[i];
       int* col_indices = this->Indices(i);
@@ -1216,12 +1219,12 @@ int Epetra_CrsGraph::RemoveRedundantIndices()
       }
       // update vector size and address in memory
       if (!CrsGraphData_->StaticProfile_) {
-        CrsGraphData_->Data<int>().SortedEntries_[i].entries_.assign(col_indices, col_indices+numIndicesPerRow[i]);
+        intData.SortedEntries_[i].entries_.assign(col_indices, col_indices+numIndicesPerRow[i]);
         if (numIndicesPerRow[i] > 0) {
-          CrsGraphData_->Data<int>().Indices_[i] = &(CrsGraphData_->Data<int>().SortedEntries_[i].entries_[0]);
+          intData.Indices_[i] = &(intData.SortedEntries_[i].entries_[0]);
         }
         else {
-          CrsGraphData_->Data<int>().Indices_[i] = NULL;
+          intData.Indices_[i] = NULL;
         }
       }
     }
@@ -1315,9 +1318,10 @@ int Epetra_CrsGraph::MakeColMap_int(const Epetra_BlockMap& domainMap,
 
   int NumLocalColGIDs = 0;
   int NumRemoteColGIDs = 0;
+  const Epetra_CrsGraphData::IndexData<int>& intData = CrsGraphData_->Data<int>();
   for(i = 0; i < numMyBlockRows; i++) {
     const int NumIndices = CrsGraphData_->NumIndicesPerRow_[i];
-    int* ColIndices = CrsGraphData_->Data<int>().Indices_[i];
+    int* ColIndices = intData.Indices_[i];
     for(j = 0; j < NumIndices; j++) {
       int GID = ColIndices[j];
       // Check if GID matches a row GID
