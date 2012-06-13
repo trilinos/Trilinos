@@ -116,7 +116,7 @@ int main( int argc , char **argv )
 
   Array<Array<RCP<Basis<double,FieldContainer<double> > > > > &bases = basesByDim[space_dim]->getBases();
 
-  FieldContainer<double> coeff(1,basesByDim[space_dim]->getCardinality());
+  FieldContainer<double> coeff(1,1,basesByDim[space_dim]->getCardinality());
 
 
   
@@ -156,14 +156,14 @@ int main( int argc , char **argv )
   basisDVals[0] = Teuchos::rcp( &DPhix , false );
   basisDVals[1] = Teuchos::rcp( &DPhiy , false );
 
-  FieldContainer<double> vals(1,pts[0]->size() * pts[1]->size() );
+  FieldContainer<double> vals(1,1,pts[0]->size() * pts[1]->size() );
 
   // first basis function is the polynomial.
-  coeff(0,0) = 1.0;
+  coeff(0,0,0) = 1.0;
 
   Intrepid::TensorProductSpaceTools::evaluate<double,FieldContainer<double>,FieldContainer<double>,FieldContainer<double> >( vals , coeff , basisVals );
 
-  FieldContainer<double> grads( 1 , pts[0]->size() * pts[1]->size() , 2 );
+  FieldContainer<double> grads( 1 , 1, pts[0]->size() * pts[1]->size() , 2 );
 
   Intrepid::TensorProductSpaceTools::evaluateGradient<double,FieldContainer<double>,FieldContainer<double>,FieldContainer<double> >( grads , 
 																     coeff , 
@@ -187,7 +187,7 @@ int main( int argc , char **argv )
 
   for (int i=0;i<fullVals.dimension(1);i++)
     {
-      if (std::abs( fullVals(0,i) - vals(0,i) ) > Intrepid::INTREPID_TOL ) 
+      if (std::abs( fullVals(0,i) - vals(0,0,i) ) > Intrepid::INTREPID_TOL ) 
 	{
 	  errorFlag++;
 	  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -205,7 +205,7 @@ int main( int argc , char **argv )
     {
       for (int j=0;j<fullGrads.dimension(2);j++)
 	{
-	  if (std::abs( fullGrads(0,i,j) - grads(0,i,j) ) > Intrepid::INTREPID_TOL ) 
+	  if (std::abs( fullGrads(0,i,j) - grads(0,0,i,j) ) > Intrepid::INTREPID_TOL ) 
 	    {
 	      errorFlag++;
 	      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -214,8 +214,8 @@ int main( int argc , char **argv )
 	      *outStream << " Evaluating first bf At multi-index { ";
 	      *outStream << i << " " << j;
 	      *outStream << "}  brute force value: " << fullGrads(0,i,j)
-			 << " but tensor-product  value: " << grads(0,i,j) << "\n";
-	      *outStream << "Difference: " << std::abs( fullGrads(0,i,j) - grads(0,i,j) ) << "\n";
+			 << " but tensor-product  value: " << grads(0,0,i,j) << "\n";
+	      *outStream << "Difference: " << std::abs( fullGrads(0,i,j) - grads(0,0,i,j) ) << "\n";
 	    }
 	}
     }
@@ -234,33 +234,31 @@ int main( int argc , char **argv )
 	  for (int qptx=0;qptx<cubPoints.dimension(0);qptx++)
 	    {
 	      momentsNaive(0,i) += cubWeights(qpty) * cubWeights(qptx) *
-		vals( 0, qpty*cubPoints.dimension(0)+qptx )
+		vals( 0, 0, qpty*cubPoints.dimension(0)+qptx )
 		* fullVals(i,qpty*cubPoints.dimension(0)+qptx);
 	    }
 	}
     }
 
-  FieldContainer<double> momentsClever(1,basesByDim[space_dim]->getCardinality());
+  FieldContainer<double> momentsClever(1,1,basesByDim[space_dim]->getCardinality());
   Intrepid::TensorProductSpaceTools::moments<double,FieldContainer<double>,FieldContainer<double>,FieldContainer<double>,FieldContainer<double> >( momentsClever , 
 																		   vals ,
 																		   basisVals ,
 																		   wts );
-  for (int i=0;i<momentsClever.dimension(0);i++)
+  for (int j=0;j<momentsClever.dimension(0);j++)
     {
-      for (int j=0;j<momentsClever.dimension(0);j++)
+      if (std::abs( momentsClever(0,0,j) - momentsNaive(0,j) ) > Intrepid::INTREPID_TOL ) 
 	{
-          if (std::abs( momentsClever(i,j) - momentsNaive(i,j) ) > Intrepid::INTREPID_TOL ) {
-            errorFlag++;
-            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-            
-            // Output the multi-index of the value where the error is:
-            *outStream << " At multi-index { ";
-            *outStream << i << " " << j;
-            *outStream << "}  brute force value: " << momentsNaive(i,j)
-		       << " but sum-factored value: " << momentsClever(i,j) << "\n";
-            *outStream << "Difference: " << std::abs( momentsNaive(i,j) - momentsClever(i,j) ) << "\n";
-          }
-        }
+	  errorFlag++;
+	  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+	  
+	  // Output the multi-index of the value where the error is:
+	  *outStream << " At multi-index { ";
+	  *outStream << " " << j;
+	  *outStream << "}  brute force value: " << momentsNaive(0,j)
+		     << " but sum-factored value: " << momentsClever(0,0,j) << "\n";
+	  *outStream << "Difference: " << std::abs( momentsNaive(0,j) - momentsClever(0,0,j) ) << "\n";
+	}
     }
 
   if (errorFlag != 0)

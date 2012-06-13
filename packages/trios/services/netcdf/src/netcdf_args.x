@@ -39,7 +39,8 @@ enum netcdf_opcode {
     NETCDF_SYNC_OP,
     NETCDF_CLOSE_OP,
     NETCDF_BEGIN_INDEP_OP,
-    NETCDF_END_INDEP_OP
+    NETCDF_END_INDEP_OP,
+    NETCDF_SET_FILL_OP
 };
 
 
@@ -213,6 +214,8 @@ struct nc_put_vars_args {
     nc_size_t count<NC_MAX_DIMS>;
     nc_size_t stride<NC_MAX_DIMS>;
     arg_type atype;
+    int32_t   buftype;
+    nc_size_t element_count;
     nc_size_t len;
 };
 
@@ -223,6 +226,21 @@ typedef struct nc_put_vars_args nc_get_vars_args;
  */
 struct netcdf_put_args {
     int32_t unused;
+};
+
+/**
+ * Marshaled arguments for nc_set_fill
+ */
+struct nc_set_fill_args {
+    int32_t ncid;
+    int32_t new_fill_mode;
+};
+
+/**
+ * Result structure for nc_set_fill
+ */
+struct nc_set_fill_res {
+    int32_t old_fill_mode;
 };
 
 /*
