@@ -272,6 +272,48 @@ def makeTriSolveRowLoopBounds (upLo, startRow, endRowPlusOne):
     else:
         raise ValueError ('Invalid upLo "' + upLo + '"')
 
+
+def makeFunctionName (upLo, dataLayout, unitDiag):
+    '''Make the sparse triangular solve routine's name.
+    
+    upLo: 'lower' for lower triangular solve, or 'upper' for upper
+      triangular solve.
+
+    dataLayout: This describes how the multivectors' data are arranged
+      in memory.  Currently we only accept 'column major' or 'row
+      major'.
+
+    unitDiag: True if the routine is for a sparse matrix with unit
+      diagonal (which is not stored explicitly in the sparse matrix),
+      else False for a sparse matrix with explicitly stored diagonal
+      entries.
+    '''
+    if dataLayout == 'row major':
+        denseLayoutAbbr = 'RowMajor'
+    elif dataLayout == 'column major':
+        denseLayoutAbbr = 'ColMajor'
+    else:
+        raise ValueError ('Unknown data layout "' + dataLayout + '"')
+
+    if upLo == 'upper':
+        upLoAbbr = 'Upper'
+    elif upLo == 'lower':
+        upLoAbbr = 'Lower'
+    else:
+        raise ValueError ('Unknown upper/lower triangular designation "' + upLo + '"')
+
+    if unitDiag: # Boolean
+        unitDiagAbbr = 'UnitDiag'
+    else:
+        unitDiagAbbr = ''
+
+    # TODO (mfh 12 June 2012) Generate CSR and CSC variants.
+    # CSC variants will serve for transpose, with an additional
+    # option to use the conjugate of the matrix entries.
+    sparseLayoutAbbr = 'csr'
+
+    return sparseLayoutAbbr + upLoAbbr + 'TriSolve' + denseLayoutAbbr + unitDiagAbbr
+
 def makeFunctionSignature (upLo, dataLayout, unitDiag):
     '''Make the sparse triangular solve routine's signature.
     
@@ -290,25 +332,6 @@ def makeFunctionSignature (upLo, dataLayout, unitDiag):
       else False for a sparse matrix with explicitly stored diagonal
       entries.
     '''
-    if dataLayout == 'row major':
-        dataLayoutAbbr = 'RowMajor'
-    elif dataLayout == 'column major':
-        dataLayoutAbbr = 'ColMajor'
-    else:
-        raise ValueError ('Unknown data layout "' + dataLayout + '"')
-
-    if upLo == 'upper':
-        upLoAbbr = 'upper'
-    elif upLo == 'lower':
-        upLoAbbr = 'lower'
-    else:
-        raise ValueError ('Unknown upper/lower triangular designation "' + upLo + '"')
-
-    if unitDiag: # Boolean
-        unitDiagAbbr = 'UnitDiag'
-    else:
-        unitDiagAbbr = ''
-
     # "Yo dawg, I heard you like templates, so I made a template of a
     # template so you can substitute before you specialize."
     t = Template ('''template<class Ordinal,
@@ -316,7 +339,7 @@ def makeFunctionSignature (upLo, dataLayout, unitDiag):
          class DomainScalar,
          class RangeScalar>
 void
-${uplo}TriSolve${layout}${unitdiag} (
+${fnName} (
   const Ordinal startRow,
   const Ordinal endRowPlusOne,
   const Ordinal numColsX,
@@ -327,7 +350,7 @@ ${uplo}TriSolve${layout}${unitdiag} (
   const MatrixScalar* const val,
   const RangeScalar* const X,
   const Ordinal LDX)''')
-    return t.substitute (uplo=upLoAbbr, layout=dataLayoutAbbr, unitdiag=unitDiagAbbr)
+    return t.substitute (fnName=makeFunctionName (upLo, dataLayout, unitDiag))
 
 def makeFunctionDoc (upLo, dataLayout, unitDiag):
     '''Make the sparse triangular solve routine's documentation.
