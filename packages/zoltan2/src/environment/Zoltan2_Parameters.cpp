@@ -247,15 +247,17 @@ void createAllParameters(Teuchos::ParameterList &pList)
   parameterName = string("timer_type");
 
   str2intValidatorP = rcp(new str2intValidator(
-     tuple<string>("no_timers", "macro_timers", "micro_timers", "both_timers"),
+    tuple<string>(
+     "no_timers", "macro_timers", "micro_timers", "both_timers", "test_timers"),
 
-     tuple<string>(
+    tuple<string>(
       "No timing data will be collected (the default).",
       "Time an algorithm (or other entity) as a whole.",
       "Time the substeps of an entity.",
-      "Run both MACRO and MICRO timers."),
+      "Run both MACRO and MICRO timers.",
+      "Run timers added to code for testing, removed later"),
 
-     tuple<int>(NO_TIMERS, MACRO_TIMERS, MICRO_TIMERS, BOTH_TIMERS),
+    tuple<int>(NO_TIMERS, MACRO_TIMERS, MICRO_TIMERS, BOTH_TIMERS, TEST_TIMERS),
    
      parameterName));
 
