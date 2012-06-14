@@ -12,13 +12,15 @@ from PerceptMesh import *
 
 class LocalFixture:
   
-  def __init__(self, num_xyz, num_y, num_z):
+  def __init__(self, num_xyz, num_y, num_z, sidesets=False):
     
     self.eMesh = PerceptMesh()
     self.num_x = num_xyz
     self.num_y = num_y
     self.num_z = num_z
     config_mesh = str(self.num_x) + "x" + str(self.num_y) + "x" + str(self.num_z) + "|bbox:-0.5,-0.5,-0.5,0.5,0.5,0.5"
+    if sidesets:
+      config_mesh += "|sideset:xXyYzZ"
 
     self.eMesh.new_mesh(GMeshSpec(config_mesh))
     self.eMesh.commit()
@@ -66,22 +68,6 @@ def scalingMatrix(axis, scale):
     sm[axis][axis] = scale
     return sm
 
-class MeshTransformer(GenericFunction):
-     
-    def __init__(self, m):
-       self.rotMat = m
- 
-    def transform(self, domain, time_value_optional):
-       x = domain[0]
-       y = domain[1]
-       z = domain[2]
-       v = array([x, y, z])
-
-       v = self.rotMat * v
-       codomain[0] = v[0]
-       codomain[1] = v[1]
-       codomain[2] = v[2]
-
 def random01():
    rnd = random.randint(0, 32678)
    rnd = (rnd+1.0)/2.0
@@ -99,7 +85,6 @@ class NormUnitTests(unittest.TestCase):
        ff_coords = FieldFunction("ff_coords", coords_field, bulkData, Dimensions(3), Dimensions(3), FieldFunction.SIMPLE_SEARCH)
        
        identity = ConstantFunction(1.0, "identity") 
-       sqrt_volume = ConstantFunction(0.0, "sqrt_volume")
 
        l2Norm = L2Norm(bulkData) 
 
@@ -108,20 +93,21 @@ class NormUnitTests(unittest.TestCase):
        
        self.assertAlmostEqual(1.0, result)
 
-       print "TEST.norm.volume: writing gmesh_hex8_original_out.e .."
        eMesh.save_as("./gmesh_hex8_original_out.e")
-       print "TEST.norm.volume: writing gmesh_hex8_original_out.e done"
 
+       # rotate the mesh
        rmx = rotationMatrix(0, 30)
        rmy = rotationMatrix(1, -45)
        rmz = rotationMatrix(2, 30)   
-       rm = rmy*rmz
-       rm = rmx*rm
+       rm = dot(rmy,rmz)
+       rm = dot(rmx,rm)
+       eMesh.transform_mesh(rm)
 
-       print "TEST.norm.volume: writing gmesh_hex8_rotated_out.e .."
        eMesh.save_as("./gmesh_hex8_rotated_out.e")
-       print "TEST.norm.volume: writing gmesh_hex8_rotated_out.e done"
-
+       result = l2Norm.evaluate(identity)
+       self.assertAlmostEqual(1.0, result)
+       
+       # scale the mesh
        scx = pi 
        scy = e
        scz = sqrt(3.0)      
@@ -129,10 +115,62 @@ class NormUnitTests(unittest.TestCase):
        smx = scalingMatrix(0, scx)
        smy = scalingMatrix(1, scy)
        smz = scalingMatrix(2, scz)
-       sm = smy*smz
-       sm = smx*sm
-       meshScale = MeshTransformer(sm)
-       #eMesh.nodalOpLoop(meshScale, coords_field)
+       sm = dot(smy,smz)
+       sm = dot(smx,sm)
+       eMesh.transform_mesh(sm)
+       result = l2Norm.evaluate(identity)
+       self.assertAlmostEqual(sqrt(sc), result)
+       
+       eMesh.save_as("./gmesh_hex8_scaled_out.e")
+
+    def test_norm_area(self):
+       sidesets = True
+       fix = LocalFixture(3,3,12,sidesets)
+       metaData = fix.metaData
+       bulkData = fix.bulkData
+       eMesh = fix.eMesh
+       coords_field = fix.coords_field
+
+       ff_coords = FieldFunction("ff_coords", coords_field, bulkData, Dimensions(3), Dimensions(3), FieldFunction.SIMPLE_SEARCH)
+       
+       identity = ConstantFunction(1.0, "identity") 
+
+       surface = "surface_1"
+       is_surface_norm = True
+       l2Norm = L2Norm(bulkData, surface)
+       l2Norm.set_is_surface_norm(is_surface_norm)
+
+       result = l2Norm.evaluate(identity) 
+       #result = eval_norm(bulkData, identity, 2)
+       self.assertAlmostEqual(1.0, result)
+
+       eMesh.save_as("./gmesh_hex8_area_out.e")
+
+       rmx = rotationMatrix(0, 30)
+       rmy = rotationMatrix(1, -45)
+       rmz = rotationMatrix(2, 30)   
+       rm = dot(rmy,rmz)
+       rm = dot(rmx,rm)
+       eMesh.transform_mesh(rm)
+
+       eMesh.save_as("./gmesh_hex8_area_rotated_out.e")
+       result = l2Norm.evaluate(identity) 
+       self.assertAlmostEqual(1.0, result)
+
+       scx = pi 
+       scy = pi
+       scz = pi
+       sc = scx*scy;
+       smx = scalingMatrix(0, scx)
+       smy = scalingMatrix(1, scy)
+       smz = scalingMatrix(2, scz)
+       sm = dot(smy,smz)
+       sm = dot(smx,sm)
+       eMesh.transform_mesh(sm)
+
+       eMesh.save_as("./gmesh_hex8_area_scaled.e")
+       result = l2Norm.evaluate(identity) 
+       self.assertAlmostEqual(sqrt(sc), result)
        
     def test_norm_string_function(self):
       fix = LocalFixture(4,1,1)
@@ -161,8 +199,7 @@ class NormUnitTests(unittest.TestCase):
 
       rmz = rotationMatrix(2, 30)
       rm = rmz
-      meshRotate = MeshTransformer(rm)
-      #eMesh.nodalOpLoop(meshRotate, coords_field) #FIXME
+      eMesh.transform_mesh(rm)
 
       result = l2Norm.evaluate(sfxyz)
       sfx_expect = 0.0178406008037016

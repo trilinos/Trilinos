@@ -150,18 +150,46 @@ namespace stk
       TurboOption m_turboOpt;
       unsigned m_cubDegree;
     public:
+
+      Norm(mesh::BulkData& bulkData, std::string partName, TurboOption turboOpt=TURBO_NONE, bool is_surface_norm=false) :
+        FunctionOperator(bulkData, (mesh::Part*)0), m_is_surface_norm(is_surface_norm), m_turboOpt(turboOpt), m_cubDegree(2)
+      {
+        mesh::Part * part = stk::mesh::fem::FEMMetaData::get(bulkData).get_part(partName);
+        if (!part) throw std::runtime_error(std::string("No part named ") +partName);
+        init(part);
+      }
+
+      Norm(mesh::BulkData& bulkData, MDArrayString& partNames, TurboOption turboOpt=TURBO_NONE, bool is_surface_norm=false) :
+        FunctionOperator(bulkData, (mesh::Part*)0), m_is_surface_norm(is_surface_norm), m_turboOpt(turboOpt), m_cubDegree(2)
+      {
+        if (partNames.rank() != 1) throw std::runtime_error("Input array of strings should be rank 1 multi-d array (numpy array if from Python)");
+        VERIFY_OP_ON(m_own_selector , ==, true, "logic error 1");
+        VERIFY_OP_ON(m_selector, !=, 0, "logic error 2");
+        delete m_selector;
+        m_selector = new stk::mesh::Selector;
+        for (int i = 0; i < partNames.dimension(0); i++)
+          {
+            mesh::Part * part = stk::mesh::fem::FEMMetaData::get(bulkData).get_part(partNames(i));
+            if (!part) throw std::runtime_error(std::string("No part named ") +partNames(i));
+            *m_selector = (*m_selector) & (*part);
+          }
+      }
+
       Norm(mesh::BulkData& bulkData, mesh::Part *part = 0, TurboOption turboOpt=TURBO_NONE, bool is_surface_norm=false) :
         FunctionOperator(bulkData, part), m_is_surface_norm(is_surface_norm), m_turboOpt(turboOpt), m_cubDegree(2)
      {}
+
+#ifndef SWIG
       Norm(mesh::BulkData& bulkData, mesh::Selector * selector,TurboOption turboOpt=TURBO_NONE,  bool is_surface_norm = false) :
         FunctionOperator(bulkData, selector), m_is_surface_norm(is_surface_norm), m_turboOpt(turboOpt), m_cubDegree(2)
      {}
+#endif
 
       void setCubDegree(unsigned cubDegree) { m_cubDegree= cubDegree; }
       unsigned getCubDegree() { return m_cubDegree; }
 
-      void setIsSurfaceNorm(bool is_surface_norm) { m_is_surface_norm = is_surface_norm; }
-      bool getIsSurfaceNorm() { return m_is_surface_norm; }
+      void set_is_surface_norm(bool is_surface_norm) { m_is_surface_norm = is_surface_norm; }
+      bool get_is_surface_norm() { return m_is_surface_norm; }
 
       double evaluate(Function& integrand)
       {

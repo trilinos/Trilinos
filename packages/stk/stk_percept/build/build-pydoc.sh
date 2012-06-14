@@ -17,6 +17,7 @@ fi
 curwd=`pwd`
 
 cd $TRILINOS_CODE/packages/PyTrilinos/doc/Doxygen/
+make depend
 make Percept_dox.i
 
 cd $curwd
@@ -26,5 +27,6 @@ make -j8
 pydoc -w ./packages/PyTrilinos/src/stk/PyPercept/PerceptMesh.py
 
 cp PerceptMesh.html $TRILINOS_CODE/packages/stk/stk_percept/doc/
+
 
 

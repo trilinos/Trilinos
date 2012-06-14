@@ -1645,7 +1645,7 @@ namespace stk {
       stk::io::populate_bulk_data(bulk_data, mesh_data);
 
       int timestep_count = in_region.get_property("state_count").get_int();
-      std::cout << "tmp timestep_count= " << timestep_count << std::endl;
+      //std::cout << "tmp timestep_count= " << timestep_count << std::endl;
       //Util::pause(true, "tmp timestep_count");
 
       // FIXME
@@ -1757,6 +1757,28 @@ namespace stk {
 
       // Exodus steps are 1-based;
       read_database_at_step(step);
+    }
+
+    /// transform mesh by a given 3x3 matrix
+    void PerceptMesh::transform_mesh(MDArray& matrix)
+    {
+      if (matrix.rank() != 2) throw std::runtime_error("pass in a 3x3 matrix");
+      if (matrix.dimension(0) != 3 || matrix.dimension(1) != 3) throw std::runtime_error("pass in a 3x3 matrix");
+      Math::Matrix mat;
+      for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++)
+          {
+            mat(i,j) = matrix(i,j);
+          }
+      transform_mesh(mat);
+    }
+
+      //========================================================================================================================
+    /// transform mesh by a given 3x3 matrix
+    void PerceptMesh::transform_mesh(Math::Matrix& matrix)
+    {
+      MeshTransformer xform(matrix);
+      nodalOpLoop(xform, get_coordinates_field());
     }
 
     /// Convenience method to read a model's meta data, create some new fields, commit meta data then read the bulk data

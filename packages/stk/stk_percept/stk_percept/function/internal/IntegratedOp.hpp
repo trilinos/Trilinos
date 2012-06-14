@@ -320,7 +320,7 @@ namespace stk
         unsigned numCubPoints_child = imChild.m_cub->getNumPoints(); 
         im.m_Cub_Points_Tag = Cub_Points_Tag(numCubPoints_child);
 
-        if (1)
+        if (0)
           {
             std::cout << "numCubPoints_child= " << numCubPoints_child 
                       << " parent rank= " << element.entity_rank()

@@ -164,8 +164,7 @@ STKUNIT_UNIT_TEST(norm, volume)
     Math::Matrix rm;
     rm =  rmy * rmz;
     rm =  rmx * rm;
-    MeshTransformer meshRotate(rm);
-    eMesh.nodalOpLoop(meshRotate, coords_field);
+    eMesh.transform_mesh(rm);
 
     // for testing
 #if DO_IO_TESTING
@@ -194,8 +193,7 @@ STKUNIT_UNIT_TEST(norm, volume)
     sm =  smy * smz;
     sm =  smx * sm;
     //std::cout << "sm= " << sm << std::endl;
-    MeshTransformer meshScale(sm);
-    eMesh.nodalOpLoop(meshScale, coords_field);
+    eMesh.transform_mesh(sm);
 
     // for testing
 #if DO_IO_TESTING
@@ -261,17 +259,23 @@ STKUNIT_UNIT_TEST(norm, surface_area)
   /// This is a "writable" function (we may want to make this explicit - StringFunctions are not writable; FieldFunctions are
   /// since we interpolate values to them from other functions).
   ConstantFunction sqrt_area(0.0, "sqrt_area");
+  ConstantFunction sqrt_area1(0.0, "sqrt_area1");
 
   /// Create the operator that will do the work
   stk::mesh::Part *surface_part = eMesh.get_part("surface_1");
   stk::mesh::Selector selector(*surface_part);
   bool is_surface_norm = true;
   Norm<2> l2Norm(bulkData, &selector, TURBO_NONE, is_surface_norm);
+  Norm<2> l2Norm1(bulkData, "surface_1");
+  l2Norm1.set_is_surface_norm(true);
+
   /// get the l2 norm of identity
   l2Norm(identity, sqrt_area);
+  l2Norm1(identity, sqrt_area1);
 
   Teuchos::ScalarTraits<double>::seedrandom(12345);
   STKUNIT_EXPECT_DOUBLE_EQ_APPROX(1.0, sqrt_area.getValue());
+  STKUNIT_EXPECT_DOUBLE_EQ_APPROX(1.0, sqrt_area1.getValue());
 
   int niter=1;
   for (int iter=0; iter < niter; iter++)
@@ -293,8 +297,7 @@ STKUNIT_UNIT_TEST(norm, surface_area)
     Math::Matrix rm;
     rm =  rmy * rmz;
     rm =  rmx * rm;
-    MeshTransformer meshRotate(rm);
-    eMesh.nodalOpLoop(meshRotate, coords_field);
+    eMesh.transform_mesh(rm);
 
     // for testing
 #if DO_IO_TESTING
@@ -321,8 +324,7 @@ STKUNIT_UNIT_TEST(norm, surface_area)
     sm =  smy * smz;
     sm =  smx * sm;
     //std::cout << "sm= " << sm << std::endl;
-    MeshTransformer meshScale(sm);
-    eMesh.nodalOpLoop(meshScale, coords_field);
+    eMesh.transform_mesh(sm);
 
     // for testing
 #if DO_IO_TESTING
@@ -355,7 +357,7 @@ STKUNIT_UNIT_TEST(norm, string_function)
   mesh::fem::FEMMetaData&        metaData     = fix.metaData;
   mesh::BulkData&        bulkData     = fix.bulkData;
   PerceptMesh&        eMesh     = fix.eMesh;
-  mesh::FieldBase*       coords_field = fix.coords_field;
+  //mesh::FieldBase*       coords_field = fix.coords_field;
   StringFunction   sfx          = fix.sfx;
   ConstantFunction sfx_res      = fix.sfx_res;
 
@@ -401,8 +403,7 @@ STKUNIT_UNIT_TEST(norm, string_function)
   /// now rotate the mesh
   Math::Matrix rmz = Math::rotationMatrix(2, 30);
   Math::Matrix rm = rmz;
-  MeshTransformer meshRotate(rm);
-  eMesh.nodalOpLoop(meshRotate, coords_field);
+  eMesh.transform_mesh(rm);
 
   l2Norm(sfxyz, sfx_res);
   sfx_expect = 0.0178406008037016;
@@ -539,8 +540,7 @@ void TEST_norm_string_function_turbo_verify_correctness(TurboOption turboOpt)
   /// now rotate the mesh
   Math::Matrix rmz = Math::rotationMatrix(2, 30);
   Math::Matrix rm = rmz;
-  MeshTransformer meshRotate(rm);
-  eMesh.nodalOpLoop(meshRotate, coords_field);
+  eMesh.transform_mesh(rm);
 
   l2Norm(sfxyz, sfx_res);
   l2Norm_turbo(sfxyz, sfx_res_turbo);
@@ -696,8 +696,7 @@ void TEST_norm_string_function_turbo_timings(TurboOption turboOpt)
     /// now rotate the mesh
     Math::Matrix rmz = Math::rotationMatrix(2, 30);
     Math::Matrix rm = rmz;
-    MeshTransformer meshRotate(rm);
-    eMesh.nodalOpLoop(meshRotate, coords_field);
+    eMesh.transform_mesh(rm);
 
     TIME_IT2( l2Norm(sfxyz, sfx_res); , l2Norm_turbo(sfxyz, sfx_res_turbo); , "should be the same", turboOpt );
 

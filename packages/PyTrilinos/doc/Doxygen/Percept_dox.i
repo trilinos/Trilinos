@@ -593,43 +593,6 @@ codomain_dimensions=Dimensions(), unsigned integration_order=0) ";
 &v) ";
 
 
-// File: classCPPArray.xml
-%feature("docstring") CPPArray "";
-
-%feature("docstring")  CPPArray::dimension "const unsigned CPPArray<
-D0, D1, D2, T >::dimension(const unsigned d) const ";
-
-%feature("docstring")  CPPArray::rank "const unsigned CPPArray< D0,
-D1, D2, T >::rank() const ";
-
-%feature("docstring")  CPPArray::dimension "const unsigned CPPArray<
-D0, D1, D2, T >::dimension(const unsigned d) ";
-
-%feature("docstring")  CPPArray::rank "const unsigned CPPArray< D0,
-D1, D2, T >::rank() const ";
-
-%feature("docstring")  CPPArray::CPPArray "CPPArray< D0, D1, D2, T
->::CPPArray() ";
-
-%feature("docstring")  CPPArray::init "void CPPArray< D0, D1, D2, T
->::init() ";
-
-%feature("docstring")  CPPArray::dimension "const unsigned CPPArray<
-D0, D1, D2, T >::dimension(const unsigned d) const ";
-
-%feature("docstring")  CPPArray::rank "const unsigned CPPArray< D0,
-D1, D2, T >::rank() const ";
-
-%feature("docstring")  CPPArray::CPPArray "CPPArray< D0, D1, D2, T
->::CPPArray() ";
-
-%feature("docstring")  CPPArray::dimension "const unsigned CPPArray<
-D0, D1, D2, T >::dimension(const unsigned d) const ";
-
-%feature("docstring")  CPPArray::rank "const unsigned CPPArray< D0,
-D1, D2, T >::rank() const ";
-
-
 // File: classstk_1_1percept_1_1IntrepidManager_1_1CubaturePoints.xml
 %feature("docstring") stk::percept::IntrepidManager::CubaturePoints "
 
@@ -671,10 +634,6 @@ stk::percept::IntrepidManager::CubatureWeights::CubatureWeights "stk::percept::I
 %feature("docstring")  stk::percept::Dimensions::Dimensions "stk::percept::Dimensions::Dimensions(int i0, int i1) ";
 
 %feature("docstring")  stk::percept::Dimensions::Dimensions "stk::percept::Dimensions::Dimensions(int i0, int i1, int i2) ";
-
-
-// File: classElementFunctor.xml
-%feature("docstring") ElementFunctor "";
 
 
 // File: classstk_1_1percept_1_1ElementOp.xml
@@ -727,6 +686,19 @@ stk::percept::ExampleFunctionWithIntrepidRequest::ExampleFunctionWithIntrepidReq
 *pfname) ";
 
 %feature("docstring")  stk::percept::ExceptionWatch::~ExceptionWatch "stk::percept::ExceptionWatch::~ExceptionWatch() ";
+
+
+// File: classstk_1_1percept_1_1IntrepidManager_1_1FaceNormal.xml
+%feature("docstring") stk::percept::IntrepidManager::FaceNormal "
+
+([C], [P], [D])
+
+C++ includes: IntrepidManager.hpp ";
+
+%feature("docstring")
+stk::percept::IntrepidManager::FaceNormal::FaceNormal "stk::percept::IntrepidManager::FaceNormal::FaceNormal(IM &im)
+
+([C], [P], [D]) ";
 
 
 // File: structstk_1_1percept_1_1FieldCreateOrder.xml
@@ -848,16 +820,6 @@ each cell: ";
 %feature("docstring") stk::percept::unit_tests::FindMapItem2 "";
 
 
-// File: classFlux__.xml
-%feature("docstring") Flux_ "";
-
-%feature("docstring")  Flux_::Flux_ "Flux_< Mu, Mu2, Temperature
->::Flux_(Mu mu, Mu2 mu2, Temperature temperature) ";
-
-%feature("docstring")  Flux_::Flux_ "Flux_< Mu, Mu2, Temperature
->::Flux_(Mu mu, Mu2 mu2, Temperature temperature) ";
-
-
 // File: classstk_1_1percept_1_1Function.xml
 %feature("docstring") stk::percept::Function "";
 
@@ -968,6 +930,16 @@ dims) ";
 %feature("docstring")
 stk::percept::FunctionOperator::FunctionOperator "stk::percept::FunctionOperator::FunctionOperator(mesh::BulkData
 &bulkData, mesh::Part *part=0) ";
+
+%feature("docstring")
+stk::percept::FunctionOperator::FunctionOperator "stk::percept::FunctionOperator::FunctionOperator(mesh::BulkData
+&bulkData, mesh::Selector *selector) ";
+
+%feature("docstring")  stk::percept::FunctionOperator::init "void
+stk::percept::FunctionOperator::init(mesh::Part *part) ";
+
+%feature("docstring")  stk::percept::FunctionOperator::init "void
+stk::percept::FunctionOperator::init(mesh::Selector *selector) ";
 
 %feature("docstring")
 stk::percept::FunctionOperator::~FunctionOperator "virtual
@@ -1190,10 +1162,6 @@ Jacobian's sign by testing it at all the cubature points ";
 %feature("docstring")  stk::percept::GMeshSpec::GMeshSpec "stk::percept::GMeshSpec::GMeshSpec(const std::string &name) ";
 
 
-// File: classGRAD.xml
-%feature("docstring") GRAD "";
-
-
 // File: classstk_1_1percept_1_1HasConstValue.xml
 %feature("docstring") stk::percept::HasConstValue "";
 
@@ -1242,10 +1210,6 @@ stk::percept::HeterogeneousFixture::HeterogeneousFixture "stk::percept::Heteroge
 comm, bool doCommit=true, bool do_sidesets=false) ";
 
 %feature("docstring")  stk::percept::HeterogeneousFixture::populate "void stk::percept::HeterogeneousFixture::populate() ";
-
-
-// File: classHex__.xml
-%feature("docstring") Hex_ "";
 
 
 // File: classstk_1_1adapt_1_1IAdapter.xml
@@ -1347,10 +1311,6 @@ Following these examples we show the prototype for the operations that
 are performed on these predicates.
 
 C++ includes: IElementBasedAdapterPredicate.hpp ";
-
-
-// File: structInit.xml
-%feature("docstring") Init "";
 
 
 // File: classstk_1_1percept_1_1IntrepidManager_1_1Integral.xml
@@ -1539,6 +1499,10 @@ stk::percept::IntrepidManager::Jacobian::Jacobian "stk::percept::IntrepidManager
 
 ([C], [P], [D], [D]) ";
 
+%feature("docstring")  stk::percept::IntrepidManager::Jacobian::copyTo
+"void stk::percept::IntrepidManager::Jacobian::copyTo(MDArray &mda)
+";
+
 
 // File: classstk_1_1percept_1_1IntrepidManager_1_1JacobianDet.xml
 %feature("docstring") stk::percept::IntrepidManager::JacobianDet "
@@ -1581,10 +1545,6 @@ stk::percept::l2NormOpScalarFunction::l2NormOpScalarFunction "stk::percept::l2No
 &f) ";
 
 
-// File: classLine__.xml
-%feature("docstring") Line_ "";
-
-
 // File: classstk_1_1percept_1_1LN__NormOp.xml
 %feature("docstring") stk::percept::LN_NormOp "
 
@@ -1609,17 +1569,10 @@ stk::percept::LN_NormOp< Power >::finalOp(const std::vector< double >
 
 %feature("docstring")
 stk::percept::unit_tests::LocalFixture::LocalFixture "stk::percept::unit_tests::LocalFixture::LocalFixture(size_t num_xyz=4,
-size_t num_y=0, size_t num_z=0) ";
+size_t num_y=0, size_t num_z=0, bool sidesets=false) ";
 
 %feature("docstring")  stk::percept::unit_tests::LocalFixture::init "int stk::percept::unit_tests::LocalFixture::init(size_t num_xyz,
-size_t num_y_arg, size_t num_z_arg) ";
-
-%feature("docstring")
-stk::percept::unit_tests::LocalFixture::LocalFixture "stk::percept::unit_tests::LocalFixture::LocalFixture(size_t num_xyz=4,
-size_t num_y=0, size_t num_z=0) ";
-
-%feature("docstring")  stk::percept::unit_tests::LocalFixture::init "int stk::percept::unit_tests::LocalFixture::init(size_t num_xyz,
-size_t num_y_arg, size_t num_z_arg) ";
+size_t num_y_arg, size_t num_z_arg, bool sidesets=false) ";
 
 
 // File: structstk_1_1percept_1_1lstr.xml
@@ -1851,22 +1804,14 @@ stk::adapt::Elem::MeshObjTopology::getCellTopology() const ";
 %feature("docstring") stk::percept::MeshTopologyVerifier "";
 
 
-// File: classstk_1_1percept_1_1unit__tests_1_1MeshTransformer.xml
-%feature("docstring") stk::percept::unit_tests::MeshTransformer "";
+// File: classstk_1_1percept_1_1MeshTransformer.xml
+%feature("docstring") stk::percept::MeshTransformer "";
 
-%feature("docstring")
-stk::percept::unit_tests::MeshTransformer::MeshTransformer "stk::percept::unit_tests::MeshTransformer::MeshTransformer() ";
+%feature("docstring")  stk::percept::MeshTransformer::MeshTransformer
+"stk::percept::MeshTransformer::MeshTransformer() ";
 
-%feature("docstring")
-stk::percept::unit_tests::MeshTransformer::MeshTransformer "stk::percept::unit_tests::MeshTransformer::MeshTransformer(TransformationMatrix
-&m) ";
-
-%feature("docstring")
-stk::percept::unit_tests::MeshTransformer::MeshTransformer "stk::percept::unit_tests::MeshTransformer::MeshTransformer() ";
-
-%feature("docstring")
-stk::percept::unit_tests::MeshTransformer::MeshTransformer "stk::percept::unit_tests::MeshTransformer::MeshTransformer(TransformationMatrix
-&m) ";
+%feature("docstring")  stk::percept::MeshTransformer::MeshTransformer
+"stk::percept::MeshTransformer::MeshTransformer(Math::Matrix &m) ";
 
 
 // File: classstk_1_1percept_1_1MeshUtil.xml
@@ -1889,26 +1834,6 @@ stk::percept::minMaxAve::registerValue(unsigned id, double val) ";
 stk::percept::minMaxAve::finish(stk::mesh::BulkData &mesh) ";
 
 %feature("docstring")  stk::percept::minMaxAve::setStandardRanges "void stk::percept::minMaxAve::setStandardRanges() ";
-
-
-// File: classMu2__.xml
-%feature("docstring") Mu2_ "";
-
-%feature("docstring")  Mu2_::Mu2_ "Mu2_< Temperature
->::Mu2_(Temperature temperature) ";
-
-%feature("docstring")  Mu2_::Mu2_ "Mu2_< Temperature
->::Mu2_(Temperature temperature) ";
-
-
-// File: classMu__.xml
-%feature("docstring") Mu_ "";
-
-%feature("docstring")  Mu_::Mu_ "Mu_< Temperature >::Mu_(Temperature
-temperature) ";
-
-%feature("docstring")  Mu_::Mu_ "Mu_< Temperature >::Mu_(Temperature
-temperature) ";
 
 
 // File: classstk_1_1percept_1_1MultipleFieldFunction.xml
@@ -2447,14 +2372,33 @@ for Power = -1, compute the inf-norm
 C++ includes: Norm.hpp ";
 
 %feature("docstring")  stk::percept::Norm::Norm "stk::percept::Norm<
+Power >::Norm(mesh::BulkData &bulkData, std::string partName,
+TurboOption turboOpt=TURBO_NONE, bool is_surface_norm=false) ";
+
+%feature("docstring")  stk::percept::Norm::Norm "stk::percept::Norm<
+Power >::Norm(mesh::BulkData &bulkData, MDArrayString &partNames,
+TurboOption turboOpt=TURBO_NONE, bool is_surface_norm=false) ";
+
+%feature("docstring")  stk::percept::Norm::Norm "stk::percept::Norm<
 Power >::Norm(mesh::BulkData &bulkData, mesh::Part *part=0,
-TurboOption turboOpt=TURBO_NONE) ";
+TurboOption turboOpt=TURBO_NONE, bool is_surface_norm=false) ";
+
+%feature("docstring")  stk::percept::Norm::Norm "stk::percept::Norm<
+Power >::Norm(mesh::BulkData &bulkData, mesh::Selector *selector,
+TurboOption turboOpt=TURBO_NONE, bool is_surface_norm=false) ";
 
 %feature("docstring")  stk::percept::Norm::setCubDegree "void
 stk::percept::Norm< Power >::setCubDegree(unsigned cubDegree) ";
 
 %feature("docstring")  stk::percept::Norm::getCubDegree "unsigned
 stk::percept::Norm< Power >::getCubDegree() ";
+
+%feature("docstring")  stk::percept::Norm::set_is_surface_norm "void
+stk::percept::Norm< Power >::set_is_surface_norm(bool is_surface_norm)
+";
+
+%feature("docstring")  stk::percept::Norm::get_is_surface_norm "bool
+stk::percept::Norm< Power >::get_is_surface_norm() ";
 
 %feature("docstring")  stk::percept::Norm::evaluate "double
 stk::percept::Norm< Power >::evaluate(Function &integrand) ";
@@ -2489,10 +2433,6 @@ DATA_TYPE > &observer) ";
 
 %feature("docstring")  stk::percept::Observer::notify "virtual void
 stk::percept::Observer< DATA_TYPE >::notify(DATA_TYPE *data)=0 ";
-
-
-// File: classOnePointRule.xml
-%feature("docstring") OnePointRule "";
 
 
 // File: classstk_1_1percept_1_1ParallelMachineFinalize.xml
@@ -2809,6 +2749,14 @@ stk::percept::PerceptMesh::get_database_time_step_count()
 
 return the number of steps in the database ";
 
+%feature("docstring")  stk::percept::PerceptMesh::transform_mesh "void stk::percept::PerceptMesh::transform_mesh(MDArray &matrix)
+
+transform mesh by a given 3x3 matrix ";
+
+%feature("docstring")  stk::percept::PerceptMesh::transform_mesh "void stk::percept::PerceptMesh::transform_mesh(Math::Matrix &matrix)
+
+transform mesh by a given 3x3 matrix ";
+
 %feature("docstring")  stk::percept::PerceptMesh::get_non_const_part "stk::mesh::Part * stk::percept::PerceptMesh::get_non_const_part(const
 std::string &part_name) ";
 
@@ -2993,7 +2941,7 @@ stk::percept::PerceptMesh::node_field_data(stk::mesh::FieldBase
 
 %feature("docstring")  stk::percept::PerceptMesh::nodalOpLoop "void
 stk::percept::PerceptMesh::nodalOpLoop(GenericFunction &nodalOp,
-stk::mesh::FieldBase *field=0) ";
+stk::mesh::FieldBase *field=0, stk::mesh::Selector *selector=0) ";
 
 %feature("docstring")  stk::percept::PerceptMesh::elementOpLoop "void
 stk::percept::PerceptMesh::elementOpLoop(ElementOp &elementOp,
@@ -3008,13 +2956,7 @@ elementOp:  passing in the argument
 
 field:  to
 
-elementOp:
-
-double * coord = stk::mesh::field_data( *coords_field , bucket.begin()
-);
-
-unsigned stride = 0; double * output_nodal_field =
-PerceptMesh::field_data( field , bucket,  &stride); ";
+elementOp:  ";
 
 %feature("docstring")  stk::percept::PerceptMesh::bucketOpLoop "void
 stk::percept::PerceptMesh::bucketOpLoop(BucketOp &bucketOp,
@@ -3030,6 +2972,27 @@ bucketOp:  passing in the argument
 field:  to
 
 bucketOp:  ";
+
+%feature("docstring")  stk::percept::PerceptMesh::elementOpLoop "void
+stk::percept::PerceptMesh::elementOpLoop(ElementOp &elementOp,
+stk::mesh::FieldBase *field, stk::mesh::Selector *selector, bool
+is_surface_norm=false)
+
+Loop over all elements and apply.
+
+Parameters:
+-----------
+
+elementOp:  passing in the argument
+
+field:  to
+
+elementOp:  ";
+
+%feature("docstring")  stk::percept::PerceptMesh::bucketOpLoop "void
+stk::percept::PerceptMesh::bucketOpLoop(BucketOp &bucketOp,
+stk::mesh::FieldBase *field, stk::mesh::Selector *selector, bool
+is_surface_norm=false) ";
 
 %feature("docstring")  stk::percept::PerceptMesh::edge_length_ave "double stk::percept::PerceptMesh::edge_length_ave(const
 stk::mesh::Entity &entity) ";
@@ -4095,10 +4058,6 @@ void stk::percept::Searcher::setupSearch() ";
 stk::percept::Searcher::~Searcher() ";
 
 
-// File: classSENS.xml
-%feature("docstring") SENS "";
-
-
 // File: classstk_1_1adapt_1_1SerializeNodeRegistry.xml
 %feature("docstring") stk::adapt::SerializeNodeRegistry "";
 
@@ -4188,16 +4147,6 @@ Shape::area(void)=0 ";
 
 %feature("docstring")  Shape::perimeter "virtual double
 Shape::perimeter(void)=0 ";
-
-
-// File: classShape__.xml
-%feature("docstring") Shape_ "";
-
-%feature("docstring")  Shape_::Shape_ "Shape_< ElementType
->::Shape_(ElementType element_type) ";
-
-%feature("docstring")  Shape_::Shape_ "Shape_< ElementType
->::Shape_(ElementType element_type) ";
 
 
 // File: classstk_1_1percept_1_1ShardsInterfaceTable.xml
@@ -4458,42 +4407,6 @@ SDSEntityType > >::hashCode() ";
 %feature("docstring") stk::adapt::SubDimCellCompare "";
 
 
-// File: classstk_1_1utils_1_1SweepMesher.xml
-%feature("docstring") stk::utils::SweepMesher "
-
-A simple utility to product tensor product (line, quad, hex) meshes by
-sweeping as well as non-tensor product mesh by breaking into sub-
-elements (tri, tet, wedge, pyramid).
-
-Steve Kennon, Brian Carnes, Kevin Copps  Usage: initialize with a
-simple pair of node, element arrays, such as
-
-double coords[][3] = { {0,0,0}, {1,0,0}, {2,2,0}, {0,3,0}, {0,0,1},
-{1,0,1}, {2,2,1}, {0,3,1} };
-
-unsigned quad4Elems[] = { 0,1,2,3, 4,5,6,7 };
-
-SweepMesher tp; tp.initNodes(coords, 8); tp.initElems(elemType, // one
-of enum's defined below quad4Elems, 2);
-
-Then use sweep to create a hex mesh (this example breaks a quad to
-create two Tri's, then creates a mixed hex/wedge mesh)
-
-boost::array< double, 3> dir = {0,0,1}; std::vector<Transform *>
-xforms(1, &TransformDir( dir ) );
-
-// break one of the quads into tris unsigned quadElemIndex = 1;
-tp2.breakElem<SweepMesher::ET_Quad4,
-SweepMesher::ET_Tri3>(quadElemIndex); std::cout << \"after
-break\\\\n\"; tp2.dump();
-
-// sweep to make a hex mesh boost::array< double, 3> dir1 =
-{0,0,2.345}; xforms[0] = &TransformDir(dir1); tp2.sweep(
-SweepMesher::ET_Quad4, SweepMesher::ET_Hex8, xforms);
-
-C++ includes: SweepMesher.hpp ";
-
-
 // File: classstk_1_1percept_1_1SweepMesher.xml
 %feature("docstring") stk::percept::SweepMesher "";
 
@@ -4648,26 +4561,44 @@ stk::percept::SweepMesher::stkMeshCreateBulkAfterMetaCommit(stk::ParallelMachine
 stk::percept::SweepMesher::writeSTKMesh(const char *filename) ";
 
 
-// File: classTCoeff.xml
-%feature("docstring") TCoeff "";
+// File: classstk_1_1utils_1_1SweepMesher.xml
+%feature("docstring") stk::utils::SweepMesher "
 
-%feature("docstring")  TCoeff::TCoeff "TCoeff::TCoeff() ";
+A simple utility to product tensor product (line, quad, hex) meshes by
+sweeping as well as non-tensor product mesh by breaking into sub-
+elements (tri, tet, wedge, pyramid).
 
-%feature("docstring")  TCoeff::TCoeff "TCoeff::TCoeff() ";
+Steve Kennon, Brian Carnes, Kevin Copps  Usage: initialize with a
+simple pair of node, element arrays, such as
+
+double coords[][3] = { {0,0,0}, {1,0,0}, {2,2,0}, {0,3,0}, {0,0,1},
+{1,0,1}, {2,2,1}, {0,3,1} };
+
+unsigned quad4Elems[] = { 0,1,2,3, 4,5,6,7 };
+
+SweepMesher tp; tp.initNodes(coords, 8); tp.initElems(elemType, // one
+of enum's defined below quad4Elems, 2);
+
+Then use sweep to create a hex mesh (this example breaks a quad to
+create two Tri's, then creates a mixed hex/wedge mesh)
+
+boost::array< double, 3> dir = {0,0,1}; std::vector<Transform *>
+xforms(1, &TransformDir( dir ) );
+
+// break one of the quads into tris unsigned quadElemIndex = 1;
+tp2.breakElem<SweepMesher::ET_Quad4,
+SweepMesher::ET_Tri3>(quadElemIndex); std::cout << \"after
+break\\\\n\"; tp2.dump();
+
+// sweep to make a hex mesh boost::array< double, 3> dir1 =
+{0,0,2.345}; xforms[0] = &TransformDir(dir1); tp2.sweep(
+SweepMesher::ET_Quad4, SweepMesher::ET_Hex8, xforms);
+
+C++ includes: SweepMesher.hpp ";
 
 
 // File: classstk_1_1percept_1_1IntrepidManager_1_1temp.xml
 %feature("docstring") stk::percept::IntrepidManager::temp "";
-
-
-// File: classTemperature__.xml
-%feature("docstring") Temperature_ "";
-
-%feature("docstring")  Temperature_::Temperature_ "Temperature_<
-TCoeff, Shape >::Temperature_(TCoeff t, Shape shape) ";
-
-%feature("docstring")  Temperature_::Temperature_ "Temperature_<
-TCoeff, Shape >::Temperature_(TCoeff t, Shape shape) ";
 
 
 // File: classstk_1_1adapt_1_1TestLocalRefiner.xml
@@ -8829,14 +8760,6 @@ sub-elements of the refined element ";
 %feature("docstring") stk::percept::Util "";
 
 
-// File: classstk_1_1percept_1_1Math_1_1Vector.xml
-%feature("docstring") stk::percept::Math::Vector "";
-
-%feature("docstring")  stk::percept::Math::Vector::Vector "stk::percept::Math::Vector::Vector(double x=0.0) ";
-
-%feature("docstring")  stk::percept::Math::Vector::Vector "stk::percept::Math::Vector::Vector(double *x) ";
-
-
 // File: classstk_1_1percept_1_1Verifier.xml
 %feature("docstring") stk::percept::Verifier "";
 
@@ -8889,10 +8812,10 @@ stk::percept::IntrepidManager::WeightedMeasure::WeightedMeasure "stk::percept::I
 %feature("docstring") stk::percept::unit_tests::XF1 "";
 
 
-// File: namespace@193.xml
+// File: namespace@189.xml
 
 
-// File: namespace@203.xml
+// File: namespace@199.xml
 
 
 // File: namespaceIntrepid.xml
@@ -9123,10 +9046,10 @@ stk::adapt::Elem::StdMeshObjTopologies::getRefinementEdgePermutation "const UInt
 Elem::CellTopology &cell_topology, UInt permutation_ordinal) ";
 
 
-// File: namespacestk_1_1adapt_1_1Elem_1_1@290.xml
+// File: namespacestk_1_1adapt_1_1Elem_1_1@266.xml
 
 
-// File: namespacestk_1_1adapt_1_1Elem_1_1@296.xml
+// File: namespacestk_1_1adapt_1_1Elem_1_1@272.xml
 
 
 // File: namespacestk_1_1adapt_1_1Elem_1_1StdMeshObjTopologies.xml
@@ -10538,6 +10461,9 @@ stk::percept::getAccumulatedLap(stk::diag::Timer &timer, bool option)
 %feature("docstring")  stk::percept::interface_table::square "T
 stk::percept::square(T t) ";
 
+%feature("docstring")  stk::percept::interface_table::SQR "T
+stk::percept::SQR(T t) ";
+
 %feature("docstring")  stk::percept::interface_table::toInt "int
 stk::percept::toInt(std::string t) ";
 
@@ -10554,10 +10480,10 @@ stk::percept::toInt(std::string t) ";
 // File: namespacestk_1_1percept_1_1@110.xml
 
 
-// File: namespacestk_1_1percept_1_1@194.xml
+// File: namespacestk_1_1percept_1_1@190.xml
 
 
-// File: namespacestk_1_1percept_1_1@195.xml
+// File: namespacestk_1_1percept_1_1@191.xml
 
 
 // File: namespacestk_1_1percept_1_1interface__table.xml
@@ -10721,6 +10647,65 @@ involves a db write/read operation ";
 stk::percept::unit_tests::testSweepMesher(stk::ParallelMachine
 parallel_machine) ";
 
+%feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(function,
+fieldFunction_demo_1_0_0) ";
+
+%feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(function,
+fieldFunction_read_print) ";
+
+%feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(function,
+fieldFunction_demo_1) ";
+
+%feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(function,
+fieldFunction_demo_2) ";
+
+%feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(function,
+fieldFunction_readMesh_createField_interpolateFrom)
+
+the coordinates field is always created by the PerceptMesh read
+operation, here we just get the field
+
+get the new field created by readModelCreateOptionalFields()
+
+create a field function from the existing coordinates field
+
+here we could evaluate this field function
+
+create a field function to represent the new coordinate magnitude
+field, and interpolate the string function to its nodes
+
+check that the coordinates mag field is set correctly ";
+
+%feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(function,
+fieldFunction_multiplePoints)
+
+the coordinates field is always created by the PerceptMesh read
+operation, here we just get the field ";
+
+%feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(function,
+fieldFunction_point_eval_verify)
+
+test evaluation of field function at a point
+
+the coordinates field is always created by the PerceptMesh read
+operation, here we just get the field
+
+create a field function from the existing coordinates field
+
+here we evaluate this field function ";
+
+%feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(function,
+fieldFunction_point_eval_timing)
+
+test evaluation of field function at a point
+
+the coordinates field is always created by the PerceptMesh read
+operation, here we just get the field
+
+create a field function from the existing coordinates field
+
+! pts(0) = 0.2; pts(1) = 0.3; pts(2)= 0.4; ";
+
 %feature("docstring")  stk::percept::unit_tests::s_diagWriter "static
 stk::diag::Writer
 stk::percept::unit_tests::s_diagWriter(std::cout.rdbuf(), dw_enabled)
@@ -10730,16 +10715,6 @@ stk::percept::unit_tests::s_diagWriter(std::cout.rdbuf(), dw_enabled)
 stk::diag::Writer& stk::percept::unit_tests::dw() ";
 
 %feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(geom, volume) ";
-
-%feature("docstring")  stk::percept::unit_tests::rotationMatrix "static TransformationMatrix
-stk::percept::unit_tests::rotationMatrix(int axis, double
-angle_degrees) ";
-
-%feature("docstring")  stk::percept::unit_tests::scalingMatrix "static TransformationMatrix
-stk::percept::unit_tests::scalingMatrix(int axis, double scale) ";
-
-%feature("docstring")  stk::percept::unit_tests::random01 "static
-double stk::percept::unit_tests::random01() ";
 
 %feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(norm, volume)
 
@@ -10758,70 +10733,25 @@ Create the operator that will do the work
 get the l2 norm of identity
 
 Note: need to create new fields each time, which requires a change to
-the meta data
-
-create a field function from the existing coordinates field
-
-the function to be integrated - here it is just the identity, and when
-integrated should produce the volume
-
-A place to hold the result. This is a \"writable\" function (we may
-want to make this explicit - StringFunctions are not writable;
-FieldFunctions are since we interpolate values to them from other
-functions).
-
-Create the operator that will do the work
-
-get the l2 norm of identity
-
-Note: need to create new fields each time, which requires a change to
-the meta data
-
-create a field function from the existing coordinates field
-
-the function to be integrated - here it is just the identity, and when
-integrated should produce the volume
-
-A place to hold the result. This is a \"writable\" function (we may
-want to make this explicit - StringFunctions are not writable;
-FieldFunctions are since we interpolate values to them from other
-functions).
-
-Create the operator that will do the work
-
-get the l2 norm of identity
-
-Note: need to create new fields each time, which requires a change to
 the meta data ";
 
+%feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(norm, surface_area)
+
+create a field function from the existing coordinates field
+
+the function to be integrated - here it is just the identity, and when
+integrated should produce the area of faces
+
+A place to hold the result. This is a \"writable\" function (we may
+want to make this explicit - StringFunctions are not writable;
+FieldFunctions are since we interpolate values to them from other
+functions).
+
+Create the operator that will do the work
+
+get the l2 norm of identity ";
+
 %feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(norm, string_function)
-
-Create the operator that will do the work get the l2 norm
-
-the function to be integrated: (Integral[ abs(x), dxdydz]) =?= (2 *
-|x|^2/2 @ [0, 0.5]) ==> .25)
-
-the function to be integrated: sqrt(Integral[(x*y*z)^2, dxdydz]) =?=
-(see unitTest1.py)
-
-the function to be integrated (but over a rotated domain):
-sqrt(Integral[(x*y*z)^2, dxdydz]) =?= (see unitTest2.py) now rotate
-the mesh
-
-Create the operator that will do the work get the l2 norm
-
-the function to be integrated: (Integral[ abs(x), dxdydz]) =?= (2 *
-|x|^2/2 @ [0, 0.5]) ==> .25)
-
-the function to be integrated: (Max[ x^2+y^3+z^4, dxdydz]) =?= (@
-[-0.5, 0.5]^3 ) ==> .5^2+.5^3+.5^4)
-
-the function to be integrated: sqrt(Integral[(x*y*z)^2, dxdydz]) =?=
-(see unitTest1.py)
-
-the function to be integrated (but over a rotated domain):
-sqrt(Integral[(x*y*z)^2, dxdydz]) =?= (see unitTest2.py) now rotate
-the mesh
 
 Create the operator that will do the work get the l2 norm
 
@@ -10847,50 +10777,6 @@ turboOpt)
 This test uses a back door to the function that passes in the element
 to avoid the lookup of the element when the StringFunction contains
 references to FieldFunctions
-
-create a field function from the existing coordinates field
-
-the function to be integrated: sqrt(Integral[x^2, dxdydz]) =?=
-sqrt(x^3/3 @ [-0.5, 0.5]) ==> sqrt(0.25/3)
-
-A place to hold the result. This is a \"writable\" function (we may
-want to make this explicit - StringFunctions are not writable;
-FieldFunctions are since we interpolate values to them from other
-functions).
-
-Create the operator that will do the work get the l2 norm
-
-the function to be integrated: (Integral[ abs(x), dxdydz]) =?= (2 *
-|x|^2/2 @ [0, 0.5]) ==> .25)
-
------ here the function to be integrated: sqrt(Integral[(x*y*z)^2,
-dxdydz]) =?= (see unitTest1.py)
-
-the function to be integrated (but over a rotated domain):
-sqrt(Integral[(x*y*z)^2, dxdydz]) =?= (see unitTest2.py) now rotate
-the mesh
-
-create a field function from the existing coordinates field
-
-the function to be integrated: sqrt(Integral[x^2, dxdydz]) =?=
-sqrt(x^3/3 @ [-0.5, 0.5]) ==> sqrt(0.25/3)
-
-A place to hold the result. This is a \"writable\" function (we may
-want to make this explicit - StringFunctions are not writable;
-FieldFunctions are since we interpolate values to them from other
-functions).
-
-Create the operator that will do the work get the l2 norm
-
-the function to be integrated: (Integral[ abs(x), dxdydz]) =?= (2 *
-|x|^2/2 @ [0, 0.5]) ==> .25)
-
------ here the function to be integrated: sqrt(Integral[(x*y*z)^2,
-dxdydz]) =?= (see unitTest1.py)
-
-the function to be integrated (but over a rotated domain):
-sqrt(Integral[(x*y*z)^2, dxdydz]) =?= (see unitTest2.py) now rotate
-the mesh
 
 create a field function from the existing coordinates field
 
@@ -10957,66 +10843,6 @@ the function to be integrated: sqrt(Integral[(x*y*z)^2, dxdydz]) =?=
 
 the function to be integrated (but over a rotated domain):
 sqrt(Integral[(x*y*z)^2, dxdydz]) =?= (see unitTest2.py) now rotate
-the mesh
-
-create a meta data/bulk data empty pair
-
-the coordinates field is always created by the PerceptMesh read
-operation, here we just get the field
-
-create a field function from the existing coordinates field
-
-the function to be integrated: sqrt(Integral[x^2, dxdydz]) =?=
-sqrt(x^3/3 @ [-0.5, 0.5]) ==> sqrt(0.25/3)
-
-the function to be integrated: sqrt(Integral[x^2, dxdydz]) =?=
-sqrt(x^3/3 @ [-0.5, 0.5]) ==> sqrt(0.25/3)
-
-A place to hold the result. This is a \"writable\" function (we may
-want to make this explicit - StringFunctions are not writable;
-FieldFunctions are since we interpolate values to them from other
-functions).
-
-Create the operator that will do the work get the l2 norm
-
-the function to be integrated: (Integral[ abs(x), dxdydz]) =?= (2 *
-|x|^2/2 @ [0, 0.5]) ==> .25)
-
-the function to be integrated: sqrt(Integral[(x*y*z)^2, dxdydz]) =?=
-(see unitTest1.py)
-
-the function to be integrated (but over a rotated domain):
-sqrt(Integral[(x*y*z)^2, dxdydz]) =?= (see unitTest2.py) now rotate
-the mesh
-
-create a meta data/bulk data empty pair
-
-the coordinates field is always created by the PerceptMesh read
-operation, here we just get the field
-
-create a field function from the existing coordinates field
-
-the function to be integrated: sqrt(Integral[x^2, dxdydz]) =?=
-sqrt(x^3/3 @ [-0.5, 0.5]) ==> sqrt(0.25/3)
-
-the function to be integrated: sqrt(Integral[x^2, dxdydz]) =?=
-sqrt(x^3/3 @ [-0.5, 0.5]) ==> sqrt(0.25/3)
-
-A place to hold the result. This is a \"writable\" function (we may
-want to make this explicit - StringFunctions are not writable;
-FieldFunctions are since we interpolate values to them from other
-functions).
-
-Create the operator that will do the work get the l2 norm
-
-the function to be integrated: (Integral[ abs(x), dxdydz]) =?= (2 *
-|x|^2/2 @ [0, 0.5]) ==> .25)
-
-the function to be integrated: sqrt(Integral[(x*y*z)^2, dxdydz]) =?=
-(see unitTest1.py)
-
-the function to be integrated (but over a rotated domain):
-sqrt(Integral[(x*y*z)^2, dxdydz]) =?= (see unitTest2.py) now rotate
 the mesh ";
 
 %feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(norm,
@@ -11026,16 +10852,6 @@ string_function_turbo_timings) ";
 string_function_turbo_timings_bucket) ";
 
 %feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(norm, field_function)
-
-Create the operator that will do the work get the l2 norm
-
-the function to be integrated: (Integral[ abs(x), dxdydz]) =?= (2 *
-|x|^2/2 @ [0, 0.5]) ==> .25)
-
-Create the operator that will do the work get the l2 norm
-
-the function to be integrated: (Integral[ abs(x), dxdydz]) =?= (2 *
-|x|^2/2 @ [0, 0.5]) ==> .25)
 
 Create the operator that will do the work get the l2 norm
 
@@ -11073,13 +10889,13 @@ ensure it behaves as expected (two meshes are shown as identical) 5.
 modify one mesh and ensure mesh_difference shows the meshes as being
 different ";
 
+%feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(perceptMesh,
+create_skewed_mesh) ";
+
+%feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(perceptMesh,
+create_quad_streaming_mesh) ";
+
 %feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(search, test1)
-
-dw().m(LOG_SEARCH) << \"Use case 1\" << stk::diag::push <<
-stk::diag::dendl;
-
-dw().m(LOG_SEARCH) << \"Use case 1\" << stk::diag::push <<
-stk::diag::dendl;
 
 dw().m(LOG_SEARCH) << \"Use case 1\" << stk::diag::push <<
 stk::diag::dendl; ";
@@ -11121,20 +10937,17 @@ stringFunction_expressions) ";
 stringFunction_timing) ";
 
 %feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(unit_tests_percept,
-hashtable) ";
-
-%feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(unit_tests_percept,
 noMallocArray) ";
 
 %feature("docstring")  stk::percept::unit_tests::setupMap "static
 void stk::percept::unit_tests::setupMap(MAP &map, unsigned N) ";
 
 %feature("docstring")  stk::percept::unit_tests::find1 "static
-unsigned * stk::percept::unit_tests::find1(MAP &map, ITER &i, unsigned
+unsigned* stk::percept::unit_tests::find1(MAP &map, ITER &i, unsigned
 key) ";
 
 %feature("docstring")  stk::percept::unit_tests::find2 "static
-unsigned * stk::percept::unit_tests::find2(MAP &map, ITER &i, unsigned
+unsigned* stk::percept::unit_tests::find2(MAP &map, ITER &i, unsigned
 key) ";
 
 %feature("docstring")  stk::percept::unit_tests::dot1 "static double
@@ -11153,71 +10966,6 @@ compare_different_maps) ";
 %feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(geom, geomPrints) ";
 
 %feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(geom, geomEqui) ";
-
-%feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(function,
-fieldFunction_demo_1_0_0) ";
-
-%feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(function,
-fieldFunction_read_print) ";
-
-%feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(function,
-fieldFunction_demo_1) ";
-
-%feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(function,
-fieldFunction_demo_2) ";
-
-%feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(function,
-fieldFunction_readMesh_createField_interpolateFrom)
-
-the coordinates field is always created by the PerceptMesh read
-operation, here we just get the field
-
-get the new field created by readModelCreateOptionalFields()
-
-create a field function from the existing coordinates field
-
-here we could evaluate this field function
-
-create a field function to represent the new coordinate magnitude
-field, and interpolate the string function to its nodes
-
-check that the coordinates mag field is set correctly ";
-
-%feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(function,
-fieldFunction_multiplePoints)
-
-the coordinates field is always created by the PerceptMesh read
-operation, here we just get the field ";
-
-%feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(function,
-fieldFunction_point_eval_verify)
-
-test evaluation of field function at a point
-
-the coordinates field is always created by the PerceptMesh read
-operation, here we just get the field
-
-create a field function from the existing coordinates field
-
-here we evaluate this field function ";
-
-%feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(function,
-fieldFunction_point_eval_timing)
-
-test evaluation of field function at a point
-
-the coordinates field is always created by the PerceptMesh read
-operation, here we just get the field
-
-create a field function from the existing coordinates field
-
-! pts(0) = 0.2; pts(1) = 0.3; pts(2)= 0.4; ";
-
-%feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(perceptMesh,
-create_skewed_mesh) ";
-
-%feature("docstring")  stk::percept::unit_tests::STKUNIT_UNIT_TEST "stk::percept::unit_tests::STKUNIT_UNIT_TEST(perceptMesh,
-create_quad_streaming_mesh) ";
 
 
 // File: namespacestk_1_1percept_1_1util.xml
@@ -11271,10 +11019,6 @@ sideblock has the \"omitted\" property set to the value 1. The example
 then iterates each sideblock and defines any \"distribution factor\"
 and Ioss::Field::TRANSIENT fields that exist on the Ioss::SideBlock as
 fields on the corresponding part.
-
-<
-
-<
 
 <
 
@@ -11367,20 +11111,6 @@ as output fields and would probably have a mapping from the internally
 used name to some name picked by the user. In this example, all
 Ioss::Field::TRANSIENT fields defined on the stk::mesh are output to
 the results database and the internal stk::mesh field name is used as
-the name on the database....
-
-The real app would also only register a subset of the stk::mesh fields
-as output fields and would probably have a mapping from the internally
-used name to some name picked by the user. In this example, all
-Ioss::Field::TRANSIENT fields defined on the stk::mesh are output to
-the results database and the internal stk::mesh field name is used as
-the name on the database....
-
-The real app would also only register a subset of the stk::mesh fields
-as output fields and would probably have a mapping from the internally
-used name to some name picked by the user. In this example, all
-Ioss::Field::TRANSIENT fields defined on the stk::mesh are output to
-the results database and the internal stk::mesh field name is used as
 the name on the database.... ";
 
 %feature("docstring")  stk_example_io::process_surface_entity "void
@@ -11409,10 +11139,6 @@ stk_percept_unit::use_encr_case_1_driver(MPI_Comm comm)
 
 set cell topology for the part block_1
 
-set cell topology for the part block_1
-
-set cell topology for the part block_1
-
 set cell topology for the part block_1 ";
 
 %feature("docstring")  stk_percept_unit::myMain "int
@@ -11427,22 +11153,11 @@ ElementNodePointerFieldType &elem_node_coord, mesh::Part &hex_block)
 ";
 
 
-// File: namespaceTeuchos.xml
-%feature("docstring")  Teuchos::hashCode "int Teuchos::hashCode(const
-unsigned &x) ";
-
-%feature("docstring")  Teuchos::hashCode "int Teuchos::hashCode(const
-NMA1 &x) ";
-
-
 // File: AdaptMain_8cpp.xml
 %feature("docstring")  stk::main "int main(int argc, char **argv) ";
 
 
 // File: Allocate_8cpp.xml
-
-
-// File: Basis_8hpp.xml
 
 
 // File: BeamFixture_8cpp.xml
@@ -11488,25 +11203,6 @@ NMA1 &x) ";
 // File: ConstantFunction_8hpp.xml
 
 
-// File: CPPArray_8hpp.xml
-
-
-// File: CPPArray__unit_81_8cpp.xml
-%feature("docstring")  main "int main() ";
-
-
-// File: CPPArray__unit_81_8hpp.xml
-%feature("docstring")  init "static void init(double val[2], int
-dim[1]) ";
-
-
-// File: CPPArray__unit_8cpp.xml
-%feature("docstring")  init "static void init(double val[2], int
-dim[1]) ";
-
-%feature("docstring")  main "int main() ";
-
-
 // File: Dimensions_8cpp.xml
 
 
@@ -11525,16 +11221,10 @@ dim[1]) ";
 // File: example_8cpp.xml
 
 
-// File: save_8href_2example_8cpp.xml
-
-
 // File: example_8hpp.xml
 
 
 // File: example__wrap_8cpp.xml
-
-
-// File: save_8href_2example__wrap_8cpp.xml
 
 
 // File: ExceptionWatch_8hpp.xml
@@ -11544,12 +11234,6 @@ dim[1]) ";
 
 
 // File: FieldFunction_8hpp.xml
-
-
-// File: FiniteElement_81_8hpp.xml
-
-
-// File: FiniteElement_8hpp.xml
 
 
 // File: Fixture_8cpp.xml
@@ -11677,18 +11361,11 @@ dim[1]) ";
 %feature("docstring")  main "int main() ";
 
 
-// File: main_8cpp.xml
-%feature("docstring")  main "int main() ";
-
-
 // File: main1_8cpp.xml
 %feature("docstring")  main "int main(int argc, char **argv) ";
 
 
 // File: mainsh_8cpp.xml
-
-
-// File: save_8href_2mainsh_8cpp.xml
 
 
 // File: Math_8hpp.xml
@@ -11744,10 +11421,6 @@ dim[1]) ";
 
 
 // File: Observable_8hpp.xml
-
-
-// File: old-shape_8hpp.xml
-%feature("docstring")  main "int main() ";
 
 
 // File: OptionMask_8hpp.xml
@@ -11931,18 +11604,6 @@ dim[1]) ";
 
 
 // File: SameRankRelation_8hpp.xml
-
-
-// File: SCVFracMesquiteLaplaceSmoother_8cpp.xml
-
-
-// File: SCVFracMesquiteLaplaceSmoother_8hpp.xml
-
-
-// File: SCVFracMesquiteMesh_8cpp.xml
-
-
-// File: SCVFracMesquiteMesh_8hpp.xml
 
 
 // File: Searcher_8hpp.xml
@@ -12521,9 +12182,6 @@ dim[1]) ";
 // File: UnitTestFieldFunction_8cpp.xml
 
 
-// File: save_8href_2UnitTestGeometryVerifier_8cpp.xml
-
-
 // File: UnitTestGeometryVerifier_8cpp.xml
 
 
@@ -12542,13 +12200,7 @@ dim[1]) ";
 // File: UnitTestNodeRegistry_8cpp.xml
 
 
-// File: save_8href_2UnitTestNorm_8cpp.xml
-
-
 // File: UnitTestNorm_8cpp.xml
-
-
-// File: save_8href_2UnitTestPerceptMesh_8cpp.xml
 
 
 // File: UnitTestPerceptMesh_8cpp.xml
@@ -12557,13 +12209,7 @@ dim[1]) ";
 // File: UnitTestPerceptMesquiteMesh_8cpp.xml
 
 
-// File: save_8href_2UnitTestSearch_8cpp.xml
-
-
 // File: UnitTestSearch_8cpp.xml
-
-
-// File: save_8href_2UnitTestStringFunction_8cpp.xml
 
 
 // File: UnitTestStringFunction_8cpp.xml
@@ -12578,15 +12224,7 @@ dim[1]) ";
 // File: UnitTestSupport_8hpp.xml
 
 
-// File: save_8href_2UnitTestTimeMaps_8cpp.xml
-
-
 // File: UnitTestTimeMaps_8cpp.xml
-
-
-// File: save_8href_2UnitTestTopoCheck_8cpp.xml
-%feature("docstring")  stk_percept_unit::isParallel "static bool
-isParallel() ";
 
 
 // File: UnitTestTopoCheck_8cpp.xml
@@ -12595,11 +12233,6 @@ isParallel() ";
 
 
 // File: UnitTestUniformRefiner_8cpp.xml
-
-
-// File: save_8href_2UnitTestUtilities_8cpp.xml
-%feature("docstring")  stk_example_io::myMain "int myMain(int argc,
-char **argv) ";
 
 
 // File: UnitTestUtilities_8cpp.xml
@@ -12730,12 +12363,6 @@ char **argv) ";
 // File: dir_45ee8ae98f67f343e71aedeb361668fe.xml
 
 
-// File: dir_8293818d75a50cf720104118e12bcbac.xml
-
-
-// File: dir_284283e69be949e6849b276fc78912a8.xml
-
-
 // File: dir_d558d26576acd1c39a83ffd0505d3402.xml
 
 
@@ -12758,9 +12385,6 @@ char **argv) ";
 
 
 // File: dir_8476efa39462d68fa0fcb0fd9fbc6f41.xml
-
-
-// File: dir_bb76877bacd7903b45d18d5b03d8db4d.xml
 
 
 // File: dir_745a945aedff9456fe32200265e844a9.xml

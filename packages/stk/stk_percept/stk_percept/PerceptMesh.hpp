@@ -328,9 +328,15 @@ namespace stk {
       /// return the number of steps in the database
       int get_database_time_step_count();
       
-      //========================================================================================================================
-      /// low-level interfaces
+      /// transform mesh by a given 3x3 matrix
+      void transform_mesh(MDArray& matrix);
+
 #ifndef SWIG
+      //========================================================================================================================
+      // low-level interfaces
+
+      /// transform mesh by a given 3x3 matrix
+      void transform_mesh(Math::Matrix& matrix);
 
       /// return true if the two meshes are different; if @param print is true, print diffs; set print_all_field_diffs to get more output
       static bool mesh_difference(stk::mesh::fem::FEMMetaData& metaData_1,

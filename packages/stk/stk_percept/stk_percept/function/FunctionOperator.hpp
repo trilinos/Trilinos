@@ -26,25 +26,38 @@ namespace stk
     protected:
       mesh::BulkData& m_bulkData;
       stk::mesh::Selector *m_selector;
-      mesh::Part *m_part;
+      //mesh::Part *m_part;
       bool m_own_selector;
     public:
-      FunctionOperator(mesh::BulkData& bulkData, mesh::Part *part = 0) : m_bulkData(bulkData), m_selector(0), m_part(part), m_own_selector(false)
+
+      FunctionOperator(mesh::BulkData& bulkData, mesh::Part *part = 0) : m_bulkData(bulkData), m_selector(0), m_own_selector(false)
+      {
+        init(part);
+      }
+
+      FunctionOperator(mesh::BulkData& bulkData, mesh::Selector *selector) : m_bulkData(bulkData), m_selector(selector), m_own_selector(false)
+      {
+        init(selector);
+      }
+
+      void init(mesh::Part *part)
       {
         if (!part)
           {
-            m_part = &stk::mesh::fem::FEMMetaData::get(bulkData).universal_part();
+            m_selector = new stk::mesh::Selector(stk::mesh::fem::FEMMetaData::get(m_bulkData).universal_part());
           }
-        m_selector = new stk::mesh::Selector(*m_part);
+        else
+          {
+            m_selector = new stk::mesh::Selector(*part);
+          }
         m_own_selector = true;
       }
 
-      FunctionOperator(mesh::BulkData& bulkData, mesh::Selector *selector) : m_bulkData(bulkData), m_selector(selector), m_part(0), m_own_selector(false)
+      void init(mesh::Selector *selector)
       {
         if (!selector)
           {
-            m_part = &stk::mesh::fem::FEMMetaData::get(bulkData).universal_part();
-            m_selector = new stk::mesh::Selector(*m_part);
+            m_selector = new stk::mesh::Selector(stk::mesh::fem::FEMMetaData::get(m_bulkData).universal_part());
             m_own_selector = true;
           }
       }
