@@ -96,12 +96,11 @@ def getDefaultCDashDepsXmlFile(rootDir):
 
 class PackageEmailAddresses:
 
-  def __init__(self, checkin_in, regression_in):
-    self.checkin = checkin_in
+  def __init__(self, regression_in):
     self.regression = regression_in
 
   def __str__(self):
-    return "{checkin="+self.checkin+", regression="+self.regression+"}"
+    return "{regression="+self.regression+"}"
   
 
 class PackageDependencies:
@@ -646,9 +645,8 @@ def getSingleEmailAddress(emailEle, emailType):
 
 def getPackageEmailAddresses(packageEle):
   emailEle = packageEle.getElementsByTagName("EmailAddresses")[0]
-  checkinEmail = getSingleEmailAddress(emailEle, "Checkin")
   regressionEmail = getSingleEmailAddress(emailEle, "Regression")
-  return PackageEmailAddresses(checkinEmail, regressionEmail)
+  return PackageEmailAddresses(regressionEmail)
 
 
 def getParentPackage(packageEle):
