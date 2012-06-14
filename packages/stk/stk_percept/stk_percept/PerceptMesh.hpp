@@ -41,6 +41,8 @@
 #include <stk_percept/function/ElementOp.hpp>
 #include <stk_percept/function/BucketOp.hpp>
 
+#include <stk_percept/math/Math.hpp>
+
 #include <stk_percept/SameRankRelation.hpp>
 
 #include <stk_percept/function/internal/SimpleSearcher.hpp>
@@ -485,9 +487,11 @@ namespace stk {
       static BasisTypeRCP getBasis(shards::CellTopology& topo);
       static void setupBasisTable();
 
-      void nodalOpLoop(GenericFunction& nodalOp, stk::mesh::FieldBase *field=0);
+      void nodalOpLoop(GenericFunction& nodalOp, stk::mesh::FieldBase *field=0, stk::mesh::Selector* selector=0);
       void elementOpLoop(ElementOp& elementOp, stk::mesh::FieldBase *field=0, stk::mesh::Part *part = 0);
       void bucketOpLoop(BucketOp& bucketOp, stk::mesh::FieldBase *field=0, stk::mesh::Part *part = 0);
+      void elementOpLoop(ElementOp& elementOp, stk::mesh::FieldBase *field, stk::mesh::Selector* selector, bool is_surface_norm=false );
+      void bucketOpLoop(BucketOp& bucketOp, stk::mesh::FieldBase *field, stk::mesh::Selector* selector, bool is_surface_norm=false );
 
       static unsigned size1(const stk::mesh::Bucket& bucket) { return bucket.size(); }
       static unsigned size1(const stk::mesh::Entity& element) { return 1; }
@@ -634,6 +638,31 @@ namespace stk {
 
     }; // class PerceptMesh
 
+
+
+    class MeshTransformer : public GenericFunction
+    {
+      Math::Matrix m_rotMat;
+    public:
+
+      MeshTransformer(){}
+      MeshTransformer(Math::Matrix& m) : m_rotMat(m) {}
+      virtual void operator()(MDArray& domain, MDArray& codomain, double time_value_optional=0.0)
+      {
+        double x = domain(0);
+        double y = domain(1);
+        double z = domain(2);
+        Math::Vector v;
+        v(0)=x;
+        v(1)=y;
+        v(2)=z;
+        v = m_rotMat * v;
+        codomain(0)=v(0);
+        codomain(1)=v(1);
+        codomain(2)=v(2);
+      }
+
+    };
 
     template<>
     const CellTopologyData *

@@ -2213,25 +2213,36 @@ namespace stk {
     void PerceptMesh::bucketOpLoop(BucketOp& bucketOp, stk::mesh::FieldBase *field, stk::mesh::Part *part)
     {
       EXCEPTWATCH;
+      
+      if (part)
+        {
+          stk::mesh::Selector selector(*part);
+          bucketOpLoop(bucketOp, field, &selector);
+        }
+      else
+        {
+          bucketOpLoop(bucketOp, field, (stk::mesh::Selector *)0);
+        }
+    }
+
+    void PerceptMesh::bucketOpLoop(BucketOp& bucketOp, stk::mesh::FieldBase *field, stk::mesh::Selector *selector, bool is_surface_norm)
+    {
+      EXCEPTWATCH;
       //checkState("bucketOpLoop");
 
       //mesh::fem::FEMMetaData& metaData = *m_metaData;
       stk::mesh::BulkData& bulkData = *m_bulkData;
 
-      stk::mesh::Selector selector;
-      if (part)
-        {
-          selector = stk::mesh::Selector(*part);
-        }
-
       // FIXME consider caching the coords_field in FieldFunction
       //VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
 
-      const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( stk::mesh::fem::FEMMetaData::get(bulkData).element_rank() );
+      stk::mesh::EntityRank rank= element_rank();
+      if (is_surface_norm) rank = rank - 1;
+      const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( rank );
 
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
-          if (!part || selector(**k))  // this is where we do part selection
+          if (!selector || (*selector)(**k))  // this is where we do part selection
             {
               const stk::mesh::Bucket & bucket = **k ;
               bool breakLoop = bucketOp(bucket, field, bulkData);
@@ -2248,33 +2259,40 @@ namespace stk {
     void PerceptMesh::elementOpLoop(ElementOp& elementOp, stk::mesh::FieldBase *field, stk::mesh::Part *part)
     {
       EXCEPTWATCH;
+      
+      if (part)
+        {
+          stk::mesh::Selector selector(*part);
+          elementOpLoop(elementOp, field, &selector);
+        }
+      else
+        {
+          elementOpLoop(elementOp, field, (stk::mesh::Selector *)0);
+        }
+    }
+
+    /** \brief Loop over all elements and apply \param elementOp passing in the argument \param field to \param elementOp */
+    void PerceptMesh::elementOpLoop(ElementOp& elementOp, stk::mesh::FieldBase *field, stk::mesh::Selector *selector, bool is_surface_norm)
+    {
+      EXCEPTWATCH;
       //checkState("elementOpLoop");
       elementOp.init_elementOp();
 
       //mesh::fem::FEMMetaData& metaData = *m_metaData;
       stk::mesh::BulkData& bulkData = *m_bulkData;
 
-      stk::mesh::Selector selector;
-      if (part)
-        {
-          selector = stk::mesh::Selector(*part);
-        }
-
       // FIXME consider caching the coords_field in FieldFunction
       //VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
-      const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( element_rank() );
+      stk::mesh::EntityRank rank = element_rank();
+      if (is_surface_norm) rank = rank - 1;
+
+      const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( rank );
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
-          if (!part || selector(**k))  // this is where we do part selection
+          if (!selector || (*selector)(**k))  // this is where we do part selection
             {
               stk::mesh::Bucket & bucket = **k ;
               const unsigned num_elements_in_bucket   = bucket.size();
-
-              //!double * coord = stk::mesh::field_data( *coords_field , bucket.begin() );
-              //double * output_nodal_field = stk::mesh::field_data( *m_my_field , bucket.begin() );
-              //!            unsigned stride = 0;
-              //!            double * output_nodal_field = PerceptMesh::field_data( field , bucket,  &stride);
-
 
               // FIXME for multiple points
               for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
@@ -2296,7 +2314,7 @@ namespace stk {
       elementOp.fini_elementOp();
     }
 
-    void PerceptMesh::nodalOpLoop(GenericFunction& nodalOp, stk::mesh::FieldBase *field)
+    void PerceptMesh::nodalOpLoop(GenericFunction& nodalOp, stk::mesh::FieldBase *field, stk::mesh::Selector* selector)
     {
       EXCEPTWATCH;
       //checkState("nodalOpLoop");
@@ -2313,7 +2331,7 @@ namespace stk {
 
       for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
-          //if (select_owned(**k))  // this is where we do part selection
+          if (!selector || (*selector)(**k))  // this is where we do part selection
           {
             stk::mesh::Bucket & bucket = **k ;
             const unsigned num_nodes_in_bucket   = bucket.size();

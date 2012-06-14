@@ -233,6 +233,10 @@ namespace stk {
     inline
     T square(T t) { return t*t; }
 
+    template<class T> 
+    inline
+    T SQR(T t) { return t*t; }
+
     inline int toInt(std::string t) { return boost::lexical_cast<int>(t); }
 
     //========================================================================================================================

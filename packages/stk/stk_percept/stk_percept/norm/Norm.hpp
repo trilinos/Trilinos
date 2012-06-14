@@ -146,15 +146,22 @@ namespace stk
     template<int Power=2>
     class Norm : public FunctionOperator
     {
+      bool m_is_surface_norm;
       TurboOption m_turboOpt;
       unsigned m_cubDegree;
     public:
-      Norm(mesh::BulkData& bulkData, mesh::Part *part = 0, TurboOption turboOpt=TURBO_NONE) :
-        FunctionOperator(bulkData, part), m_turboOpt(turboOpt), m_cubDegree(2)
+      Norm(mesh::BulkData& bulkData, mesh::Part *part = 0, TurboOption turboOpt=TURBO_NONE, bool is_surface_norm=false) :
+        FunctionOperator(bulkData, part), m_is_surface_norm(is_surface_norm), m_turboOpt(turboOpt), m_cubDegree(2)
+     {}
+      Norm(mesh::BulkData& bulkData, mesh::Selector * selector,TurboOption turboOpt=TURBO_NONE,  bool is_surface_norm = false) :
+        FunctionOperator(bulkData, selector), m_is_surface_norm(is_surface_norm), m_turboOpt(turboOpt), m_cubDegree(2)
      {}
 
       void setCubDegree(unsigned cubDegree) { m_cubDegree= cubDegree; }
       unsigned getCubDegree() { return m_cubDegree; }
+
+      void setIsSurfaceNorm(bool is_surface_norm) { m_is_surface_norm = is_surface_norm; }
+      bool getIsSurfaceNorm() { return m_is_surface_norm; }
 
       double evaluate(Function& integrand)
       {
@@ -193,16 +200,17 @@ namespace stk
               integrated_LN_op.setAccumulationType(IntegratedOp::ACCUMULATE_MAX);
             }
 
+            const stk::mesh::Part& locally_owned_part = mesh::fem::FEMMetaData::get(m_bulkData).locally_owned_part();
+            stk::mesh::Selector selector(*m_selector & locally_owned_part);
             //eMesh.print_info("Norm");
             if (m_turboOpt == TURBO_NONE || m_turboOpt == TURBO_ELEMENT)
               {
-                eMesh.elementOpLoop(integrated_LN_op, 0, &mesh::fem::FEMMetaData::get(m_bulkData).locally_owned_part());
+                eMesh.elementOpLoop(integrated_LN_op, 0, &selector, m_is_surface_norm);
               }
             else if (m_turboOpt == TURBO_BUCKET)
               {
-                eMesh.bucketOpLoop(integrated_LN_op, 0, &mesh::fem::FEMMetaData::get(m_bulkData).locally_owned_part());
+                eMesh.bucketOpLoop(integrated_LN_op, 0, &selector, m_is_surface_norm);
               }
-
 
             unsigned vec_sz = integrated_LN_op.getValue().size();
             std::vector<double> local = integrated_LN_op.getValue();
@@ -210,7 +218,7 @@ namespace stk
             if (Power == -1)
               {
                 MaxOfNodeValues maxOfNodeValues(eMesh.get_spatial_dim(), integrand);
-                eMesh.nodalOpLoop(maxOfNodeValues);
+                eMesh.nodalOpLoop(maxOfNodeValues, 0, &selector);
                 for (unsigned iDim = 0; iDim < local.size(); iDim++)
                   local[iDim] = std::max(local[iDim], maxOfNodeValues.maxVal[iDim]);
               }

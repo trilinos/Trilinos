@@ -56,7 +56,7 @@ using namespace Intrepid;
   public:                                           \
     const char * name() const ;                     \
     static const ADT & tag();                       \
-    static int num;                                 \
+    int num;                                        \
     ADT(int n);                                     \
     ~ADT();                                         \
     ADT( const ADT & adt);                          \
@@ -69,7 +69,6 @@ using namespace Intrepid;
  *  \param ADT  name of the tag.
  */
 #define IM_SHARDS_ARRAY_DIM_TAG_IMPLEMENTATION( ADT )                   \
-  int ADT::num = 0;                                                     \
   const char * ADT::name() const                                        \
   { static const char n[] = # ADT ; return n; }                         \
   const ADT & ADT::tag() { static const ADT self ; return self ; }      \
@@ -269,15 +268,39 @@ namespace stk
       class Jacobian : public shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag, Spatial_Dim_Tag>
       {
 
+        IntrepidManager& m_im;
+
       public:
         typedef shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag, Spatial_Dim_Tag> BaseType;
 
         Jacobian(IM& im);
         void operator()(CubaturePoints& xi, CellWorkSet& c, CellTopology& topo);
 
+        void copyTo(MDArray& mda)
+        {
+          mda.resize(m_im.m_Elements_Tag.num, m_im.m_Cub_Points_Tag.num, m_im.m_Spatial_Dim_Tag.num, m_im.m_Spatial_Dim_Tag.num);
+          mda.setValues(contiguous_data(), size());
+        }
+
         double m_dummy;
         double&       operator()(int i1, int i2, int i3);
         const double& operator()(int i1, int i2, int i3) const;
+        using BaseType::operator();
+      };
+
+      /// ([C], [P], [D])
+      class FaceNormal : public shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag >
+      {
+        IntrepidManager& m_im;
+      public:
+        typedef shards::ArrayVector<double, shards::NaturalOrder, Elements_Tag, Cub_Points_Tag, Spatial_Dim_Tag > BaseType;
+
+        FaceNormal(IM& im);
+        void operator()(Jacobian& jac, int i_face, CellTopology& topo);
+
+        double m_dummy;
+        double&       operator()(int i1, int i2);
+        const double& operator()(int i1, int i2) const;
         using BaseType::operator();
       };
 

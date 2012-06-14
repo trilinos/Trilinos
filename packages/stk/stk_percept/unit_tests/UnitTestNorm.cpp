@@ -16,6 +16,7 @@
 #include <stk_percept/function/ConstantFunction.hpp>
 #include <stk_percept/Util.hpp>
 #include <stk_percept/norm/Norm.hpp>
+#include <stk_percept/math/Math.hpp>
 #include <stk_percept/PerceptMesh.hpp>
 #include <stk_percept/fixtures/Fixture.hpp>
 
@@ -25,10 +26,6 @@
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 #include <Teuchos_ScalarTraits.hpp>
-
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_expression.hpp>
-#include <boost/numeric/ublas/io.hpp>
 
 #include <stdexcept>
 #include <sstream>
@@ -72,7 +69,7 @@ struct LocalFixture
   StringFunction sfx;
   ConstantFunction sfx_res;
 
-  LocalFixture(size_t num_xyz = 4, size_t num_y=0, size_t num_z=0) : eMesh(3u), bogus_init(init(num_xyz, num_y, num_z)),
+  LocalFixture(size_t num_xyz = 4, size_t num_y=0, size_t num_z=0, bool sidesets=false) : eMesh(3u), bogus_init(init(num_xyz, num_y, num_z, sidesets)),
                                                                      metaData(*eMesh.get_fem_meta_data()), bulkData(*eMesh.get_bulk_data()),
                                                                      coords_field( metaData.get_field<mesh::FieldBase>("coordinates") ),
                                                                      sfx("x", Name("sfx"), Dimensions(3), Dimensions(1) ),
@@ -82,7 +79,7 @@ struct LocalFixture
 
   }
 
-  int init(size_t num_xyz, size_t num_y_arg, size_t num_z_arg)
+  int init(size_t num_xyz, size_t num_y_arg, size_t num_z_arg, bool sidesets=false)
   {
     // Need a symmetric mesh around the origin for some of the tests below to work correctly (i.e. have analytic solutions)
     const size_t num_x = num_xyz;
@@ -92,6 +89,7 @@ struct LocalFixture
       Ioss::Utils::to_string(num_x) + "x" +
       Ioss::Utils::to_string(num_y) + "x" +
       Ioss::Utils::to_string(num_z) + "|bbox:-0.5,-0.5,-0.5,0.5,0.5,0.5";
+    if (sidesets) config_mesh += "|sideset:xXyYzZ";
 	
     eMesh.new_mesh(GMeshSpec(config_mesh));
     eMesh.commit();
@@ -103,91 +101,6 @@ struct LocalFixture
 //=============================================================================
 //=============================================================================
 //=============================================================================
-
-//using namespace boost::numeric::ublas;
-namespace ublas =  boost::numeric::ublas;
-
-typedef ublas::c_matrix<double,3,3> TransformationMatrix;
-
-static TransformationMatrix rotationMatrix(int axis, double angle_degrees)
-{
-  TransformationMatrix rm;
-  rm.clear();
-  double theta = M_PI * angle_degrees / 180.0;
-  double cost = std::cos(theta);
-  double sint = std::sin(theta);
-  if (axis == 2)
-  {
-    rm(0,0) = cost; rm(0,1) = -sint;
-    rm(1,0) = sint; rm(1,1) = cost;
-    rm(2,2) = 1.0;
-  }
-  else if (axis == 1)
-  {
-    rm(0,0) = cost; rm(0,2) = -sint;
-    rm(2,0) = sint; rm(2,2) = cost;
-    rm(1,1) = 1.0;
-  }
-  else if (axis == 0)
-  {
-    rm(1,1) = cost; rm(1,2) = -sint;
-    rm(2,1) = sint; rm(2,2) = cost;
-    rm(0,0) = 1.0;
-  }
-  return rm;
-}
-
-static TransformationMatrix scalingMatrix(int axis, double scale)
-{
-  TransformationMatrix sm;
-  sm.clear();
-  sm(0,0)=1.0;
-  sm(1,1)=1.0;
-  sm(2,2)=1.0;
-  sm(axis,axis)=scale;
-  return sm;
-}
-
-class MeshTransformer : public GenericFunction
-{
-  TransformationMatrix m_rotMat;
-public:
-
-  MeshTransformer(){}
-  MeshTransformer(TransformationMatrix& m) : m_rotMat(m) {}
-  virtual void operator()(MDArray& domain, MDArray& codomain, double time_value_optional=0.0)
-  {
-    double x = domain(0);
-    double y = domain(1);
-    double z = domain(2);
-    ublas::c_vector<double,3> v;
-    v(0)=x;
-    v(1)=y;
-    v(2)=z;
-    v = ublas::prod(m_rotMat, v);
-    //           x=v(0);
-    //           y=v(1);
-    //           z=v(2);
-    codomain(0)=v(0);
-    codomain(1)=v(1);
-    codomain(2)=v(2);
-
-    //std::cout << "input pt=\n " << domain << "\n output pt= \n" << codomain << std::endl;
-    //           std::cout << "m_rotMat= \n" << m_rotMat << std::endl;
-    //           setDoPause(true);
-    //           pause(true);
-    //double v = EXPR_COORD_MAG;
-    //double cmag_field_node = codomain(0);
-
-  }
-
-};
-
-static double random01()
-{
-  double rnd = Teuchos::ScalarTraits<double>::random();
-  return (rnd+1.0)/2.0;
-}
 
 //stk::diag::WriterThrowSafe _write_throw_safe(dw());
 //dw().setPrintMask(dw_option_mask.parse(vm["dw"].as<std::string>().c_str()));
@@ -230,7 +143,7 @@ STKUNIT_UNIT_TEST(norm, volume)
   int niter=1;
   for (int iter=0; iter < niter; iter++)
   {
-    STKUNIT_EXPECT_DOUBLE_EQ_APPROX(1.0, eval(random01(), random01(), random01(), 0.0, sqrt_volume));
+    STKUNIT_EXPECT_DOUBLE_EQ_APPROX(1.0, eval(Math::random01(), Math::random01(), Math::random01(), 0.0, sqrt_volume));
   }
 
   //// rotate the mesh
@@ -245,13 +158,12 @@ STKUNIT_UNIT_TEST(norm, volume)
 
   if (1)
   {
-    TransformationMatrix rmx = rotationMatrix(0, 30);
-    TransformationMatrix rmy = rotationMatrix(1, -45);
-    TransformationMatrix rmz = rotationMatrix(2, 30);
-    TransformationMatrix rm;
-    //rm = ublas::prod(rmx, ublas::prod(rmy,rmz));
-    rm =  ublas::prod(rmy, rmz);
-    rm =  ublas::prod(rmx, rm);
+    Math::Matrix rmx = Math::rotationMatrix(0, 30);
+    Math::Matrix rmy = Math::rotationMatrix(1, -45);
+    Math::Matrix rmz = Math::rotationMatrix(2, 30);
+    Math::Matrix rm;
+    rm =  rmy * rmz;
+    rm =  rmx * rm;
     MeshTransformer meshRotate(rm);
     eMesh.nodalOpLoop(meshRotate, coords_field);
 
@@ -275,12 +187,12 @@ STKUNIT_UNIT_TEST(norm, volume)
     double scy = M_E;
     double scz = std::sqrt(3.0);
     double sc=scx*scy*scz;
-    TransformationMatrix smx = scalingMatrix(0, scx);
-    TransformationMatrix smy = scalingMatrix(1, scy);
-    TransformationMatrix smz = scalingMatrix(2, scz);
-    TransformationMatrix sm;
-    sm =  ublas::prod(smy, smz);
-    sm =  ublas::prod(smx, sm);
+    Math::Matrix smx = Math::scalingMatrix(0, scx);
+    Math::Matrix smy = Math::scalingMatrix(1, scy);
+    Math::Matrix smz = Math::scalingMatrix(2, scz);
+    Math::Matrix sm;
+    sm =  smy * smz;
+    sm =  smx * sm;
     //std::cout << "sm= " << sm << std::endl;
     MeshTransformer meshScale(sm);
     eMesh.nodalOpLoop(meshScale, coords_field);
@@ -324,6 +236,112 @@ STKUNIT_UNIT_TEST(norm, volume)
 //=============================================================================
 //=============================================================================
 
+STKUNIT_UNIT_TEST(norm, surface_area)
+{
+  EXCEPTWATCH;
+  MPI_Barrier( MPI_COMM_WORLD );
+
+  bool sidesets=true;
+  LocalFixture fix(3,3,12,sidesets);
+  //mesh::fem::FEMMetaData& metaData = fix.metaData;
+  mesh::BulkData& bulkData = fix.bulkData;
+  PerceptMesh& eMesh = fix.eMesh;
+  //eMesh.save_as("junk.123.e");
+
+  mesh::FieldBase *coords_field = fix.coords_field;
+
+  /// create a field function from the existing coordinates field
+  FieldFunction ff_coords("ff_coords", coords_field, &bulkData,
+                          Dimensions(3), Dimensions(3), FieldFunction::SIMPLE_SEARCH );
+
+  /// the function to be integrated - here it is just the identity, and when integrated should produce the area of faces
+  ConstantFunction identity(1.0, "identity");
+
+  /// A place to hold the result.
+  /// This is a "writable" function (we may want to make this explicit - StringFunctions are not writable; FieldFunctions are
+  /// since we interpolate values to them from other functions).
+  ConstantFunction sqrt_area(0.0, "sqrt_area");
+
+  /// Create the operator that will do the work
+  stk::mesh::Part *surface_part = eMesh.get_part("surface_1");
+  stk::mesh::Selector selector(*surface_part);
+  bool is_surface_norm = true;
+  Norm<2> l2Norm(bulkData, &selector, TURBO_NONE, is_surface_norm);
+  /// get the l2 norm of identity
+  l2Norm(identity, sqrt_area);
+
+  Teuchos::ScalarTraits<double>::seedrandom(12345);
+  STKUNIT_EXPECT_DOUBLE_EQ_APPROX(1.0, sqrt_area.getValue());
+
+  int niter=1;
+  for (int iter=0; iter < niter; iter++)
+  {
+    STKUNIT_EXPECT_DOUBLE_EQ_APPROX(1.0, eval(Math::random01(), Math::random01(), Math::random01(), 0.0, sqrt_area));
+  }
+
+  //// rotate the mesh
+
+#if DO_IO_TESTING
+  eMesh.save_as("./gmesh_hex8_area_original_out.e");
+#endif
+
+  if (1)
+  {
+    Math::Matrix rmx = Math::rotationMatrix(0, 30);
+    Math::Matrix rmy = Math::rotationMatrix(1, -45);
+    Math::Matrix rmz = Math::rotationMatrix(2, 30);
+    Math::Matrix rm;
+    rm =  rmy * rmz;
+    rm =  rmx * rm;
+    MeshTransformer meshRotate(rm);
+    eMesh.nodalOpLoop(meshRotate, coords_field);
+
+    // for testing
+#if DO_IO_TESTING
+    eMesh.save_as("./gmesh_hex8_area_rotated_out.e");
+#endif
+
+    l2Norm(identity, sqrt_area);
+
+    STKUNIT_EXPECT_DOUBLE_EQ_APPROX(1.0, sqrt_area.getValue());
+  }
+
+  //// scale the mesh
+  if (1)
+  {
+
+    double scx = M_PI;
+    double scy = M_PI;
+    double scz = M_PI;
+    double sc=scx*scy;
+    Math::Matrix smx = Math::scalingMatrix(0, scx);
+    Math::Matrix smy = Math::scalingMatrix(1, scy);
+    Math::Matrix smz = Math::scalingMatrix(2, scz);
+    Math::Matrix sm;
+    sm =  smy * smz;
+    sm =  smx * sm;
+    //std::cout << "sm= " << sm << std::endl;
+    MeshTransformer meshScale(sm);
+    eMesh.nodalOpLoop(meshScale, coords_field);
+
+    // for testing
+#if DO_IO_TESTING
+    eMesh.save_as("./gmesh_hex8_area_scaled_out.e");
+#endif
+
+    l2Norm(identity, sqrt_area);
+    
+    STKUNIT_EXPECT_DOUBLE_EQ_APPROX(std::sqrt(sc), sqrt_area.getValue());
+  }
+
+  //Function coords_l2_norm = ff_coords.norm_l2();
+
+}
+
+//=============================================================================
+//=============================================================================
+//=============================================================================
+
 STKUNIT_UNIT_TEST(norm, string_function)
 {
   EXCEPTWATCH;
@@ -353,7 +371,7 @@ STKUNIT_UNIT_TEST(norm, string_function)
   int niter=1;
   for (int iter=0; iter < niter; iter++)
   {
-    STKUNIT_EXPECT_DOUBLE_EQ_APPROX( sfx_expect, eval(random01(), random01(), random01(), 0.0, sfx_res));
+    STKUNIT_EXPECT_DOUBLE_EQ_APPROX( sfx_expect, eval(Math::random01(), Math::random01(), Math::random01(), 0.0, sfx_res));
   }
 
   /// the function to be integrated:  (Integral[ abs(x), dxdydz]) =?= (2 * |x|^2/2 @ [0, 0.5]) ==> .25)
@@ -381,8 +399,8 @@ STKUNIT_UNIT_TEST(norm, string_function)
 
   /// the function to be integrated (but over a rotated domain):  sqrt(Integral[(x*y*z)^2, dxdydz]) =?= (see unitTest2.py)
   /// now rotate the mesh
-  TransformationMatrix rmz = rotationMatrix(2, 30);
-  TransformationMatrix rm = rmz;
+  Math::Matrix rmz = Math::rotationMatrix(2, 30);
+  Math::Matrix rm = rmz;
   MeshTransformer meshRotate(rm);
   eMesh.nodalOpLoop(meshRotate, coords_field);
 
@@ -440,9 +458,9 @@ void TEST_norm_string_function_turbo_verify_correctness(TurboOption turboOpt)
   {
 
 
-    double x = -0.49+0.98*random01();
-    double y = -0.49+0.98*random01();
-    double z = -0.49+0.98*random01();
+    double x = -0.49+0.98*Math::random01();
+    double y = -0.49+0.98*Math::random01();
+    double z = -0.49+0.98*Math::random01();
 
     STKUNIT_EXPECT_DOUBLE_EQ_APPROX(eval(x,y,z,0.0, sfx), eval(x,y,z,0.0, sfx_mc));
     STKUNIT_EXPECT_DOUBLE_EQ_APPROX(eval(.034,0,0,0.0, sfx), eval(.034,0,0,0.0, sfx_mc));
@@ -519,8 +537,8 @@ void TEST_norm_string_function_turbo_verify_correctness(TurboOption turboOpt)
 
   /// the function to be integrated (but over a rotated domain):  sqrt(Integral[(x*y*z)^2, dxdydz]) =?= (see unitTest2.py)
   /// now rotate the mesh
-  TransformationMatrix rmz = rotationMatrix(2, 30);
-  TransformationMatrix rm = rmz;
+  Math::Matrix rmz = Math::rotationMatrix(2, 30);
+  Math::Matrix rm = rmz;
   MeshTransformer meshRotate(rm);
   eMesh.nodalOpLoop(meshRotate, coords_field);
 
@@ -676,8 +694,8 @@ void TEST_norm_string_function_turbo_timings(TurboOption turboOpt)
 
     /// the function to be integrated (but over a rotated domain):  sqrt(Integral[(x*y*z)^2, dxdydz]) =?= (see unitTest2.py)
     /// now rotate the mesh
-    TransformationMatrix rmz = rotationMatrix(2, 30);
-    TransformationMatrix rm = rmz;
+    Math::Matrix rmz = Math::rotationMatrix(2, 30);
+    Math::Matrix rm = rmz;
     MeshTransformer meshRotate(rm);
     eMesh.nodalOpLoop(meshRotate, coords_field);
 
