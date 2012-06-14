@@ -30,6 +30,39 @@ namespace stk {
 
       typedef ublas::c_vector<double,3> Vector;
 
+      typedef ublas::c_vector<double,3> ubvec;
+
+      class MyVector : public ubvec
+      {
+      public:
+
+        MyVector(double x=0.0) : ubvec()
+        {
+          (*this)(0) = x;
+          (*this)(1) = x;
+          (*this)(2) = x;
+        }
+
+        MyVector(double *x) : ubvec()
+        {
+          (*this)(0) = x[0];
+          (*this)(1) = x[1];
+          (*this)(2) = x[2];
+        }
+        //Vector(const ubvec& v) : ubvec(v) {}
+
+        MyVector& operator=(const ubvec& v) 
+        { 
+          //ubvec& v0 = ubvec::operator=(v); 
+          (*this)(0) = v(0);
+          (*this)(1) = v(1);
+          (*this)(2) = v(2);
+          return *this;
+        }
+
+        //v = ublas::prod(m_rotMat, v);
+
+      };
 
 
       static double random01()
