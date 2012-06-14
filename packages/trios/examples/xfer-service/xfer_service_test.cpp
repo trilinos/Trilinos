@@ -178,6 +178,7 @@ int main(int argc, char *argv[])
     args.timeout = 500;
     args.num_retries = 5;
     args.validate_flag = true;
+    args.block_distribution = true;
 
 
     bool success = true;
