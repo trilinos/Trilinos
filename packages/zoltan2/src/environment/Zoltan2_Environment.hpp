@@ -504,8 +504,11 @@ public:
    */
 #ifdef Z2_OMIT_ALL_STATUS_MESSAGES
   bool doStatus() const { return false;}
+  MessageOutputLevel getDebugLevel() const {return NO_STATUS;}
 #else
   bool doStatus() const { return debugOut_->getDebugLevel() > NO_STATUS;}
+
+  MessageOutputLevel getDebugLevel() const {return debugOut_->getDebugLevel(); }
 #endif
 
   /*! \brief Return true if memory usage output was requested, even if

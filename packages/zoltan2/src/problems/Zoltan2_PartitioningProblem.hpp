@@ -324,7 +324,7 @@ template <typename Adapter>
   partIds_ = arcp(noIds, 0, numberOfCriteria_, true);
   partSizes_ = arcp(noSizes, 0, numberOfCriteria_, true);
 
-  if (this->env_->doStatus()){
+  if (this->env_->getDebugLevel() >= DETAILED_STATUS){
     ostringstream msg;
     msg << problemComm_->getSize() << " procs,"
       << numberOfWeights_ << " user-defined weights, "

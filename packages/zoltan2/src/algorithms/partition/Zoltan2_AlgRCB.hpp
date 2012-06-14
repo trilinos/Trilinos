@@ -534,7 +534,8 @@ void AlgRCB(
   ArrayRCP<const gno_t> gnoList = 
     arcpFromArrayView(mvector->getMap()->getNodeElementList());
 
-  if (env->doStatus() && (numGlobalCoords < 500)){
+  if (env->getDebugLevel() >= VERBOSE_DETAILED_STATUS && 
+     (numGlobalCoords < 500)){
     ostringstream oss;
     oss << "Solution: ";
     for (gno_t i=0; i < gnoList.size(); i++)

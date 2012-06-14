@@ -177,7 +177,7 @@ void AlgBlock(
 
   // TODO assertion that last part sizes is about equal to 1.0
 
-  if (env->doStatus()){
+  if (env->getDebugLevel() >= VERBOSE_DETAILED_STATUS) {
     ostringstream oss("Part sizes: ");
     for (unsigned int i=0; i < numGlobalParts; i++)
       oss << part_sizes[i] << " ";

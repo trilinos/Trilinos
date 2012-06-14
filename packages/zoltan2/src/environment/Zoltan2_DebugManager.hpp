@@ -13,6 +13,7 @@
 #ifndef ZOLTAN2_DEBUGMANAGER_HPP
 #define ZOLTAN2_DEBUGMANAGER_HPP
 
+#include <Zoltan2_Parameters.hpp>
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -55,7 +56,7 @@ class DebugManager
      * in the destructor.
      */
     DebugManager ( int rank, bool doPrinting, std::ofstream &debugOs, 
-      int debugLevel) : myPID_(rank), debugLevel_(debugLevel),
+      MessageOutputLevel debugLevel) : myPID_(rank), debugLevel_(debugLevel),
         myOS_(static_cast<std::ostream *>(&debugOs)), fileOS_(&debugOs), 
         iPrint_(doPrinting) {}
 
@@ -67,7 +68,7 @@ class DebugManager
      *                      that are below this level will be ignored.
      */
     DebugManager ( int rank, bool doPrinting, std::ostream &debugOs, 
-      int debugLevel) : myPID_(rank), debugLevel_(debugLevel),
+      MessageOutputLevel debugLevel) : myPID_(rank), debugLevel_(debugLevel),
         myOS_(&debugOs), fileOS_(NULL), iPrint_(doPrinting) {}
 
     /*! \brief Destructor
@@ -85,7 +86,7 @@ class DebugManager
 
     /*! \brief Return the highest level of message that will be printed.
      */
-    inline int getDebugLevel() const { return debugLevel_; };
+    inline MessageOutputLevel getDebugLevel() const { return debugLevel_; };
 
     /*! \brief Print a debug or status message, if this process 
      *         is one of those that is supposed to be doing output.
@@ -95,7 +96,7 @@ class DebugManager
      *                 ignored.
      *  \param  output      The message.
      */
-    inline void print(int debugLevel, const std::string &output){
+    inline void print(MessageOutputLevel debugLevel, const std::string &output){
 #ifndef Z2_OMIT_ALL_STATUS_MESSAGES
       if (debugLevel <= debugLevel_ && iPrint_)
         *myOS_ << myPID_ << ": " << output << std::endl;
@@ -111,7 +112,7 @@ class DebugManager
      *                 ignored.
      *  \param  output      The message.
      */
-    inline void printInAllTasks(int debugLevel, const std::string &output){
+    inline void printInAllTasks(MessageOutputLevel debugLevel, const std::string &output){
 #ifndef Z2_OMIT_ALL_STATUS_MESSAGES
       if (debugLevel <= debugLevel_)
         *myOS_ << myPID_ << ": " << output << std::endl;
@@ -126,7 +127,7 @@ class DebugManager
      *                 ignored.
      *  \param  output      The message.
      */
-    inline void print(int debugLevel, const char *output){
+    inline void print(MessageOutputLevel debugLevel, const char *output){
 #ifndef Z2_OMIT_ALL_STATUS_MESSAGES
       if (debugLevel <= debugLevel_ && iPrint_)
         *myOS_ << myPID_ << ": " << output << std::endl;
@@ -141,7 +142,7 @@ class DebugManager
      *                 ignored.
      *  \param  output      The message.
      */
-    inline void printInAllTasks(int debugLevel, const char *output) {
+    inline void printInAllTasks(MessageOutputLevel debugLevel, const char *output) {
 #ifndef Z2_OMIT_ALL_STATUS_MESSAGES
     if (debugLevel <= debugLevel_)
         *myOS_ << "PID =" << myPID_ << " " << output << std::endl;
@@ -151,7 +152,7 @@ class DebugManager
     private:
 
     int myPID_;
-    int debugLevel_;
+    MessageOutputLevel debugLevel_;
     std::ostream *myOS_;
     std::ofstream *fileOS_;
     bool iPrint_;
