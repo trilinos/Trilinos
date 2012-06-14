@@ -53,13 +53,10 @@
 # ************************************************************************
 # @HEADER
 
-SET(LIB_REQUIRED_DEP_PACKAGES Teuchos)
-SET(LIB_OPTIONAL_DEP_PACKAGES)
-SET(TEST_REQUIRED_DEP_PACKAGES)
-SET(TEST_OPTIONAL_DEP_PACKAGES)
-SET(LIB_REQUIRED_DEP_TPLS)
-SET(LIB_OPTIONAL_DEP_TPLS)
-SET(TEST_REQUIRED_DEP_TPLS)
-SET(TEST_OPTIONAL_DEP_TPLS)
 
-SET(REGRESSION_EMAIL_LIST extra-one-package-override@some.url.gov)
+INCLUDE(TribitsListHelpers)
+
+SET( extraRepoTwoPackages_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
+  Ex2Package1     package1   PS
+  Ex2Package2     package2   SS
+  )

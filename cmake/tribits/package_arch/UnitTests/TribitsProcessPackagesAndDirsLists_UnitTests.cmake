@@ -53,13 +53,71 @@
 # ************************************************************************
 # @HEADER
 
-SET(LIB_REQUIRED_DEP_PACKAGES Teuchos)
-SET(LIB_OPTIONAL_DEP_PACKAGES)
-SET(TEST_REQUIRED_DEP_PACKAGES)
-SET(TEST_OPTIONAL_DEP_PACKAGES)
-SET(LIB_REQUIRED_DEP_TPLS)
-SET(LIB_OPTIONAL_DEP_TPLS)
-SET(TEST_REQUIRED_DEP_TPLS)
-SET(TEST_OPTIONAL_DEP_TPLS)
+MESSAGE("PROJECT_NAME = ${PROJECT_NAME}")
+MESSAGE("${PROJECT_NAME}_TRIBITS_DIR = ${${PROJECT_NAME}_TRIBITS_DIR}")
 
-SET(REGRESSION_EMAIL_LIST extra-one-package-override@some.url.gov)
+SET( CMAKE_MODULE_PATH
+  "${${PROJECT_NAME}_TRIBITS_DIR}/utils"
+  "${${PROJECT_NAME}_TRIBITS_DIR}/package_arch"
+  )
+
+INCLUDE(TribitsProcessPackagesAndDirsLists)
+INCLUDE(UnitTestHelpers)
+INCLUDE(GlobalSet)
+
+
+#####################################################################
+#
+# Unit tests for code in TribitsProcessPackagesAndDirsLists.cmake
+#
+#####################################################################
+
+
+FUNCTION(UNITTEST_BASIC_PACKAGE_LIST_READ)
+
+  MESSAGE("\n***")
+  MESSAGE("*** Testing the basic reading of packages list")
+  MESSAGE("***\n")
+
+  SET( ${PROJECT_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
+    Package0     packages/package0  PS
+    Package1     packages/package1  SS
+    Package2     packages/package2  EX
+    )
+
+  SET(PACKAGE_ABS_DIR "DummyBase")
+  SET(${PROJECT_NAME}_IGNORE_PACKAGE_EXISTS_CHECK TRUE)
+
+  TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS(${PROJECT_NAME} ".")
+
+  UNITTEST_COMPARE_CONST( ${PROJECT_NAME}_PACKAGES
+    "Package0;Package1;Package2")
+  UNITTEST_COMPARE_CONST( ${PROJECT_NAME}_PACKAGE_DIRS
+    "packages/package0;packages/package1;packages/package2")
+  UNITTEST_COMPARE_CONST( ${PROJECT_NAME}_NUM_PACKAGES 3 )
+  UNITTEST_COMPARE_CONST( ${PROJECT_NAME}_LAST_PACKAGE_IDX 2 )
+  UNITTEST_COMPARE_CONST( ${PROJECT_NAME}_REVERSE_PACKAGES
+    "Package2;Package1;Package0")
+
+ENDFUNCTION()
+
+
+
+#####################################################################
+#
+# Execute the unit tests
+#
+#####################################################################
+
+# Assume that all unit tests will pass by default
+GLOBAL_SET(UNITTEST_OVERALL_PASS TRUE)
+GLOBAL_SET(UNITTEST_OVERALL_NUMPASSED 0)
+GLOBAL_SET(UNITTEST_OVERALL_NUMRUN 0)
+
+# Set common/base options
+SET(PROJECT_NAME "DummyProject")
+
+UNITTEST_BASIC_PACKAGE_LIST_READ()
+
+# Pass in the number of expected tests that must pass!
+UNITTEST_FINAL_RESULT(5)
