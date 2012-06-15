@@ -166,7 +166,6 @@ namespace Kokkos {
           // sparse outer product: AT[:,colAt] * X[ind]
           while (i != ie) {
             const  Scalar val = ScalarTraits<Scalar>::conjugate (*v++);
-            const  Scalar val = *v++;
             const Ordinal ind = *i++;
             for (size_t j = 0; j < numRHS; ++j) {
               // mfh 15 June 2012: Casting Scalar to RangeScalar may produce a
