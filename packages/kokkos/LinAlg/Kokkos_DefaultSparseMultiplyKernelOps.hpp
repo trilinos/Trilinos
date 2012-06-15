@@ -159,9 +159,9 @@ namespace Kokkos {
       }
       else { // alpha != one
         for (size_t colAt=0; colAt < numRows; ++colAt) {
-          const Scalar  *v = vals + ptrs[colAt];
-          const Ordinal *i = inds + ptrs[colAt],
-                       *ie = inds + ptrs[colAt+1];
+          const Scalar  *v  = vals + ptrs[colAt];
+          const Ordinal *i  = inds + ptrs[colAt];
+          const Ordinal *ie = inds + ptrs[colAt+1];
           // sparse outer product: AT[:,colAt] * X[ind
           while (i != ie) {
             const  Scalar val = ScalarTraits<Scalar>::conjugate (*v++);
