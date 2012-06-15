@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -80,7 +80,7 @@ namespace Kokkos {
       }
       // save the extra multiplication if possible
       if (alpha == Teuchos::ScalarTraits<RangeScalar>::one()) {
-        while (i != ie) 
+        while (i != ie)
         {
           const  Scalar val = *v++;
           const Ordinal ind = *i++;
@@ -88,7 +88,7 @@ namespace Kokkos {
         }
       }
       else { // alpha != one
-        while (i != ie) 
+        while (i != ie)
         {
           const  Scalar val = *v++;
           const Ordinal ind = *i++;
@@ -114,11 +114,13 @@ namespace Kokkos {
     size_t numRHS, xstride, ystride;
 
     inline void execute() {
+      using Teuchos::ScalarTraits;
+
       if (NO_BETA_AND_OVERWRITE) {
         for (size_t j=0; j<numRHS; ++j) {
           RangeScalar *yp = y+j*ystride;
           for (size_t row=0; row<numCols; ++row) {
-            yp[row] = Teuchos::ScalarTraits<RangeScalar>::zero();
+            yp[row] = ScalarTraits<RangeScalar>::zero();
           }
         }
       }
@@ -131,16 +133,27 @@ namespace Kokkos {
         }
       }
       // save the extra multiplication if possible
-      if (alpha == Teuchos::ScalarTraits<RangeScalar>::one()) {
+      if (alpha == ScalarTraits<RangeScalar>::one()) {
         for (size_t colAt=0; colAt < numRows; ++colAt) {
           const Scalar  *v = vals + ptrs[colAt];
           const Ordinal *i = inds + ptrs[colAt],
                        *ie = inds + ptrs[colAt+1];
-          // sparse outer product: AT[:,colAt] * X[ind
+          // sparse outer product: AT[:,colAt] * X[ind]
           while (i != ie) {
-            const  Scalar val = Teuchos::ScalarTraits<RangeScalar>::conjugate(*v++);
+            const  Scalar val = ScalarTraits<Scalar>::conjugate (*v++);
             const Ordinal ind = *i++;
-            for (size_t j=0; j<numRHS; ++j) y[j*ystride+ind] += (RangeScalar)val * (RangeScalar)x[j*xstride+colAt];
+            for (size_t j = 0; j < numRHS; ++j) {
+              // mfh 15 June 2012: Casting Scalar to RangeScalar won't work if
+              // Scalar is int and RangeScalar is std::complex<double>.  (This
+              // came up in a test.  It should be valid code.)  The way to get
+              // it to work is not to rely on casting Scalar to RangeScalar;
+              // std::complex<double> doesn't have a constructor that takes one
+              // int argument.  Instead, rely on C++'s type promotion rules.
+              // For now, we just cast the vector to RangeScalar, to handle the
+              // common iterative refinement case of an output vector with
+              // higher precision.
+              y[j*ystride+ind] += val * static_cast<RangeScalar> (x[j*xstride+colAt]);
+            }
           }
         }
       }
@@ -151,9 +164,13 @@ namespace Kokkos {
                        *ie = inds + ptrs[colAt+1];
           // sparse outer product: AT[:,colAt] * X[ind
           while (i != ie) {
-            const  Scalar val = Teuchos::ScalarTraits<RangeScalar>::conjugate(*v++);
+            const  Scalar val = ScalarTraits<Scalar>::conjugate (*v++);
             const Ordinal ind = *i++;
-            for (size_t j=0; j<numRHS; ++j) y[j*ystride+ind] += alpha * (RangeScalar)val * (RangeScalar)x[j*xstride+colAt];
+            for (size_t j=0; j<numRHS; ++j) {
+              // mfh 15 June 2012: See notes above about it sometimes being
+              // invalid to cast val from Scalar to RangeScalar.
+              y[j*ystride+ind] += alpha * val * static_cast<RangeScalar> (x[j*xstride+colAt]);
+            }
           }
         }
       }
