@@ -2,9 +2,8 @@
 # This file assumes we are building in zoltan2/doc in the source directory.
 #
 
-#@INCLUDE = $(TRILINOS_HOME)/packages/common/Doxyfile
-
-@INCLUDE = ../../../packages/common/Doxyfile
+#@INCLUDE_PATH=$(TRILINOS_HOME)/packages
+#@INCLUDE=$(TRILINOS_HOME)/packages/common/Doxyfile
 
 #---------------------------------------------------------------------------
 # General configuration options
@@ -243,7 +242,7 @@ WARN_FORMAT            = "$file:$line: $text"
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces. 
 
-INPUT        = index.dox  ../src  ../test/unit ../test/helpers algorithm 
+INPUT        = index.dox  developer.dox ../src  ../test/unit ../test/helpers algorithm 
 
 # If the value of the INPUT tag contains directories, you can use the 
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 
@@ -274,7 +273,7 @@ EXCLUDE_PATTERNS       =
 # directories that contain example code fragments that are included (see 
 # the \include command). 
 
-EXAMPLE_PATH        = ../example
+EXAMPLE_PATH        = ../example ../../../packages/teuchos/src/ ../../src/algorithms/partition
 
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the 
 # EXAMPLE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 
@@ -287,7 +286,7 @@ EXAMPLE_PATTERNS       = *.cpp *.hpp
 # directories that contain image that are included in the documentation (see 
 # the \image command). 
 
-IMAGE_PATH             = 
+IMAGE_PATH             = ./images
 
 # The INPUT_FILTER tag can be used to specify a program that doxygen should 
 # invoke to filter for each input file. Doxygen will invoke the filter program 
@@ -563,17 +562,18 @@ EXPAND_AS_DEFINED      =
 
 # other Trilinos packages to which the Zoltan2 doxygen should hyperlink
 
-TAGFILES += \
-  $(TRILINOS_HOME)/packages/common/tag_files/teuchos.tag=$(TRILINOS_HOME)/packages/teuchos/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/epetra.tag=$(TRILINOS_HOME)/packages/epetra/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/tpetra.tag=$(TRILINOS_HOME)/packages/tpetra/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/kokkos.tag=$(TRILINOS_HOME)/packages/kokkos/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/muelu-xpetra.tag=$(TRILINOS_HOME)/MueLu/muelu/xpetra/doc/html
+TAGFILES = \
+  $(TRILINOS_HOME)/packages/common/tag_files/teuchos.tag=../$(TRILINOS_HOME)/packages/teuchos/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/epetra.tag=../$(TRILINOS_HOME)/packages/epetra/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/tpetra.tag=../$(TRILINOS_HOME)/packages/tpetra/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/kokkos.tag=../$(TRILINOS_HOME)/packages/kokkos/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/muelu-xpetra.tag=../$(TRILINOS_HOME)/MueLu/muelu/xpetra/doc/html
 
 # When a file name is specified after GENERATE_TAGFILE, doxygen will create 
 # a tag file that is based on the input files it reads. 
-
-GENERATE_TAGFILE       =  $(TRILINOS_HOME)/packages/common/zoltan.tag
+#  Let's not create a tag file until we have copyright.
+#GENERATE_TAGFILE       =  $(TRILINOS_HOME)/packages/common/tag_files/zoltan2.tag
+#
 
 # If the ALLEXTERNALS tag is set to YES all external classes will be listed 
 # in the class index. If set to NO only the inherited external classes 

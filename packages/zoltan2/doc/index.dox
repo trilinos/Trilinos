@@ -1,19 +1,20 @@
-/*! 
+/*! \mainpage Trilinos/Zoltan2: Dynamic parallel partitioning and ordering.
 
-\mainpage Trilinos/Zoltan2: Dynamic parallel partitioning and ordering.
+\section mainpage_contents Contents
+<ul>
+<li> \ref z2_main_intro
+<li> \ref z2_main_overview
+<li> \ref z2_main_examples
+</ul>
 
-\tableofcontents
+Information specifically for developers can be found at \ref z2_developer.
 
-\section zoltan2_intro Introduction to Zoltan2
+These pages are under construction...
 
-Zoltan2 is a refactoring of the 
-\htmlonly
-<a href=http://www.cs.sandia.gov/Zoltan>
-\endhtmlonly
-Zoltan
-\htmlonly
-</a> 
-\endhtmlonly
+\section z2_main_intro Introduction to Zoltan2
+
+Zoltan2 is a refactoring of the <a href=http://www.cs.sandia.gov/Zoltan >
+Zoltan </a>
 library into C++ in order to support template programming,
 to scale to larger problems, and to support architecture aware partitioning.
 This library is currently under active development, and is still 
@@ -38,17 +39,51 @@ Serial ordering available now is:
 <li> Random
 </ul>
 
-\section zoltan2_users Overview of Zoltan2 for users
+\section z2_main_overview Overview of the Zoltan2 library
 
-Parameters are listed at \ref parameterPage.
+\subsection Typical steps
 
-\section zoltan2_developers Overview of Zoltan2 for developers
+\image html usage.png
 
-Parameters are defined in the source file Zoltan2_Parameters.cpp.
+Here we describe the typical user interaction with Zoltan2.  We use partitioning as an example.
 
-\section zoltan2_examples Zoltan 2 examples
+1. Create a Zoltan2::InputAdapter object for your data.  This adapter provides a uniform interface to user data for the Zoltan2 library.  Adapter interfaces exist for the following classes of data:
 
-\section zoltan2_developers List of Developers
+<ul>
+<li> Zoltan2::MatrixInput (a row oriented matrix with optional row weights)
+<li> Zoltan2::GraphInput (an undirected weighted graph)
+<li> Zoltan2::VectorInput (a single or multi-vector with optional weights)
+<li> Zoltan2::CoordinateInput (arbitrary-dimension geometric coordinates)
+<li> Zoltan2::IdentifierInput (simple collection of identifiers)
+</ul>
+
+Zoltan2::MeshInput will be available soon.
+
+2. Create a Teuchos::ParameterList with your Zoltan2 parameters.  If you are using a third party library (PT-Scotch, ParMetis) you can include a sublist of parameters for this library.  Parameters are listed here. (TODO - generate doxygen list from xml file of parameters.)
+
+3. Create a Zoltan2::PartitioningProblem.  It is templated on your Zoltan2::InputAdapter type.  The constructor arguments are your input adapter and your parameter list.
+
+4. Call Zoltan2::PartitioningProblem::solve().
+
+5. Obtain a Zoltan2::PartitioningSolution object from the Zoltan2::PartitioningProblem.
+
+\section z2_main_examples Examples of Zoltan2 usage
+
+Parameters are defined in the source file Zoltan2_Parameters.cpp.  This will be changed to a definition in an xml string in a header file.  Then this file can be used to generate doxygen documentation of the Zoltan2 parameters.
+
+The Zoltan2::Environment is a class that is created by a Zoltan2::Problem.  It is available to almost every method in Zoltan2.  It governs the behavior of the library.  Available in the Environment is:
+
+<ul>
+<li> The user's parameter list.
+<li> Methods for debugging or status output.
+<li> Methods for timing your code.
+<li> Methods for printing out the total memory allocated to the current process (on Linux systems that have /proc/pid/statm).
+<li> Methods for exception handling.
+</ul>
+
+Algorithms are namespace methods that are called by a Zoltan2::Problem.  The algorithm command line arguments include a Zoltan2::Environment, a Teuchos::Comm (an MPI communicator wrapper), a Zoltan2::Model (a computation model built from the user's input data), and a Zoltan2::Solution.  
+
+For an example of a partitioning algorithm, see AlgRCB().  A good example of an ordering algorithm is ...
 
 
 */

@@ -1,12 +1,18 @@
-#!/bin/sh
+#!/bin/bash
 
-if [ $TRILINOS_HOME ]; then
-  echo "TRILINOS_HOME has already been set!"
-else
-  echo "TRILINOS_HOME has not been set.  Setting it!"
-  export TRILINOS_HOME=`pwd`/../../..
+if [ -z $TRILINOS_HOME ]; then
+  export TRILINOS_HOME=../../..
 fi
 
+for dirName in teuchos epetra kokkos tpetra muelu ; do
+  subDir=$TRILINOS_HOME/packages/$dirName/doc
+  if [ -f $subDir/html/index.html ] ; then
+    echo "$dirName documentation already built"
+  else
+    echo "Build $dirName documentation"
+    cd $subDir && build_docs && cd -
+  fi
+done
 
 doxygen Doxyfile
 
