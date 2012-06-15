@@ -157,6 +157,7 @@ namespace stk
         mesh::Part * part = stk::mesh::fem::FEMMetaData::get(bulkData).get_part(partName);
         if (!part) throw std::runtime_error(std::string("No part named ") +partName);
         init(part);
+        error_check_is_surface_norm();
       }
 
       Norm(mesh::BulkData& bulkData, MDArrayString& partNames, TurboOption turboOpt=TURBO_NONE, bool is_surface_norm=false) :
@@ -171,24 +172,32 @@ namespace stk
           {
             mesh::Part * part = stk::mesh::fem::FEMMetaData::get(bulkData).get_part(partNames(i));
             if (!part) throw std::runtime_error(std::string("No part named ") +partNames(i));
-            *m_selector = (*m_selector) & (*part);
+            *m_selector = (*m_selector) | (*part);
           }
+        error_check_is_surface_norm();
       }
 
       Norm(mesh::BulkData& bulkData, mesh::Part *part = 0, TurboOption turboOpt=TURBO_NONE, bool is_surface_norm=false) :
         FunctionOperator(bulkData, part), m_is_surface_norm(is_surface_norm), m_turboOpt(turboOpt), m_cubDegree(2)
-     {}
+     {
+        error_check_is_surface_norm();
+     }
 
 #ifndef SWIG
       Norm(mesh::BulkData& bulkData, mesh::Selector * selector,TurboOption turboOpt=TURBO_NONE,  bool is_surface_norm = false) :
         FunctionOperator(bulkData, selector), m_is_surface_norm(is_surface_norm), m_turboOpt(turboOpt), m_cubDegree(2)
-     {}
+     {
+        error_check_is_surface_norm();
+     }
 #endif
 
       void setCubDegree(unsigned cubDegree) { m_cubDegree= cubDegree; }
       unsigned getCubDegree() { return m_cubDegree; }
 
-      void set_is_surface_norm(bool is_surface_norm) { m_is_surface_norm = is_surface_norm; }
+      void set_is_surface_norm(bool is_surface_norm) { 
+        m_is_surface_norm = is_surface_norm; 
+        error_check_is_surface_norm();
+      }
       bool get_is_surface_norm() { return m_is_surface_norm; }
 
       double evaluate(Function& integrand)
@@ -196,6 +205,50 @@ namespace stk
         ConstantFunction sfx_res(0.0, "sfx_res");
         (*this)(integrand, sfx_res);
         return sfx_res.getValue();
+      }
+
+      /// if a Selector is specified with part(s) that are not auto-declared, make sure all parts are 
+      ///   of the same rank, and that m_is_surface_norm is set correctly (if not, warn...)
+      void error_check_is_surface_norm()
+      {
+        stk::mesh::EntityRank element_rank = mesh::fem::FEMMetaData::get(m_bulkData).element_rank();
+        const stk::mesh::PartVector& parts = mesh::fem::FEMMetaData::get(m_bulkData).get_parts();
+        stk::mesh::EntityRank all_ranks = 0;
+        unsigned nparts = parts.size();
+        for (unsigned ipart=0; ipart < nparts; ipart++)
+          {
+            stk::mesh::Part& part = *parts[ipart];
+            if (stk::mesh::is_auto_declared_part(part)) 
+              continue;
+
+            bool in_selector = stk::mesh::selector_contains_part(*m_selector, part);
+            stk::mesh::EntityRank rank = part.primary_entity_rank();
+            //std::cout << "tmp srk Part= " << part.name() << " rank= " << rank << " in_selector= " << in_selector << std::endl;
+            if (in_selector)
+              {
+                if (rank == element_rank || rank == element_rank-1)
+                  {
+                    if (all_ranks == 0) 
+                      all_ranks = rank;
+                    std::cout << "all_ranks= " << all_ranks << " rank= " << rank << std::endl;
+                    if (rank != all_ranks)
+                      {
+                        throw std::runtime_error("all parts in the Selector must be the same rank");
+                      }
+                  }
+              }
+          }
+
+        if ((all_ranks == 0 || all_ranks ==3) && m_is_surface_norm)
+          {
+            m_is_surface_norm = false;
+            std::cout << "WARNING: Norm was constructed with is_surface_norm, but no surface Parts given. Turning is_surface_norm off." << std::endl;
+          }
+        if (all_ranks == 2 && !m_is_surface_norm)
+          {
+            m_is_surface_norm = true;
+            std::cout << "WARNING: Norm was constructed with is_surface_norm=false, but surface Parts were given. Turning is_surface_norm on." << std::endl;
+          }
       }
 
       virtual void operator()(Function& integrand, Function& result)

@@ -215,6 +215,10 @@ private:
 
 };
 
+class Part;
+bool selector_contains_part(const Selector& selector, const Part& part);
+
+
 #ifndef SWIG
 std::ostream & operator<<( std::ostream & out, const Selector & selector);
 #endif

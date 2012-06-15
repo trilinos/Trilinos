@@ -293,6 +293,12 @@ Selector selectField( const FieldBase& field )
   return selector;
 }
 
+bool selector_contains_part(const Selector& selector, const Part& part)
+{
+  unsigned part_ord = part.mesh_meta_data_ordinal();
+  std::pair<const unsigned *, const unsigned *> part_ords(&part_ord, &part_ord+1);
+  return selector.apply(part_ords, PartOrdLess());
+}
 
 
 } // namespace mesh

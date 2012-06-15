@@ -132,6 +132,18 @@ STKUNIT_UNIT_TEST(norm, volume)
   /// since we interpolate values to them from other functions).
   ConstantFunction sqrt_volume(0.0, "sqrt_volume");
 
+  { 
+    bool expected_1 = false;
+    bool expected_2 = false;
+    Norm<2> l2Norm_test(bulkData, &metaData.universal_part(), TURBO_NONE, true); 
+    expected_1 = !l2Norm_test.get_is_surface_norm();
+    Norm<2> l2Norm_test1(bulkData, &metaData.universal_part(), TURBO_NONE, false); 
+    expected_2 = !l2Norm_test1.get_is_surface_norm();
+    STKUNIT_EXPECT_TRUE(expected_1);
+    STKUNIT_EXPECT_TRUE(expected_2);
+  }
+
+
   /// Create the operator that will do the work
   Norm<2> l2Norm(bulkData, &metaData.universal_part(), TURBO_NONE);
   /// get the l2 norm of identity
@@ -263,8 +275,30 @@ STKUNIT_UNIT_TEST(norm, surface_area)
 
   /// Create the operator that will do the work
   stk::mesh::Part *surface_part = eMesh.get_part("surface_1");
+  stk::mesh::Part *block_part = eMesh.get_part("block_1");
   stk::mesh::Selector selector(*surface_part);
+  stk::mesh::Selector selector_test(*block_part);
+  selector_test = selector_test | selector;
   bool is_surface_norm = true;
+
+  { 
+    bool expected_1 = false;
+    bool expected_2 = false;
+    bool expected_3 = false;
+    Norm<2> l2Norm_test(bulkData, &selector, TURBO_NONE, true); 
+    expected_1 = l2Norm_test.get_is_surface_norm();
+    Norm<2> l2Norm_test1(bulkData, &selector, TURBO_NONE, false); 
+    expected_2 = l2Norm_test1.get_is_surface_norm();
+    STKUNIT_EXPECT_TRUE(expected_1);
+    STKUNIT_EXPECT_TRUE(expected_2);
+    try { Norm<2> l2Norm_test2(bulkData, &selector_test, TURBO_NONE, true); } 
+    catch ( const std::exception & X ) {
+      std::cout << "expected exception: " << X.what() << std::endl;
+      expected_3 = true; 
+    }
+    STKUNIT_EXPECT_TRUE(expected_3);
+  }
+
   Norm<2> l2Norm(bulkData, &selector, TURBO_NONE, is_surface_norm);
   Norm<2> l2Norm1(bulkData, "surface_1");
   l2Norm1.set_is_surface_norm(true);
