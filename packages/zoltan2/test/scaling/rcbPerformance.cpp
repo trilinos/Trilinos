@@ -79,7 +79,7 @@ ArrayRCP<scalar_t> makeWeights(
  */
 const RCP<tMVector_t> getMeshCoordinates(
     const RCP<const Teuchos::Comm<int> > & comm,
-    int numGlobalCoords)
+    gno_t numGlobalCoords)
 {
   int rank = comm->getRank();
   int nprocs = comm->getSize();
@@ -135,15 +135,15 @@ const RCP<tMVector_t> getMeshCoordinates(
 
   // Divide coordinates.
 
-  lno_t numLocalCoords = num / nprocs;
-  lno_t leftOver = num % nprocs;
+  gno_t numLocalCoords = num / nprocs;
+  gno_t leftOver = num % nprocs;
   gno_t gid0 = 0;
 
   if (rank <= leftOver)
-    gid0 = rank * (numLocalCoords+1);
+    gid0 = gno_t(rank) * (numLocalCoords+1);
   else
     gid0 = (leftOver * (numLocalCoords+1)) + 
-           ((rank - leftOver) * numLocalCoords);
+           ((gno_t(rank) - leftOver) * numLocalCoords);
 
   if (rank < leftOver)
     numLocalCoords++;
@@ -216,7 +216,7 @@ const RCP<tMVector_t> getMeshCoordinates(
 
 int main(int argc, char *argv[])
 {
-  MEMORY_CHECK(true, "Before initializing MPI");
+  // MEMORY_CHECK(true, "Before initializing MPI");
 
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
@@ -232,7 +232,6 @@ int main(int argc, char *argv[])
   double numGlobalCoords = 1000;
   int numTestCuts = 1;
   int weightDim = 0;
-  string objective("balance_object_weight");
   string timingType("no_timers");
   string debugLevel("basic_status");
   string memoryOn("memoryOn");
@@ -250,19 +249,32 @@ int main(int argc, char *argv[])
     "Number of parts (default is one per proc).");
   commandLine.setOption("weightDim", &weightDim, 
     "Number of weights per coordinate, zero implies uniform weights.");
-  commandLine.setOption("weightDim", &weightDim, 
-    "Number of weights per coordinate, zero implies uniform weights.");
 
-  string doc("\"balance_object_count\": ignore weights\n");
-  doc.append("\"balance_object_weight\": balance on first weight\n");
-  doc.append("\"multicriteria_minimize_total_weight\": given multiple weights, balance their total.\n");
-  doc.append("\"multicriteria_minimize_maximum_weight\": given multiple weights, balance the maximum for each coordinate.\n");
-  doc.append("\"multicriteria_balance_total_maximum\": given multiple weights, balance the L2 norm of the weights.\n");
+  string balanceCount("balance_object_count");
+  string balanceWeight("balance_object_weight");
+  string mcnorm1("multicriteria_minimize_total_weight");
+  string mcnorm2("multicriteria_balance_total_maximum");
+  string mcnorm3("multicriteria_minimize_maximum_weight");
+
+  string objective(balanceWeight);   // default
+
+  string doc(balanceCount); doc.append(": ignore weights\n");
+
+  doc.append(balanceWeight); doc.append(": balance on first weight\n");
+
+  doc.append(mcnorm1);
+  doc.append(": given multiple weights, balance their total.\n");
+
+  doc.append(mcnorm3);
+  doc.append(": given multiple weights, balance the maximum for each coordinate.\n");
+
+  doc.append(mcnorm2);
+  doc.append(": given multiple weights, balance the L2 norm of the weights.\n");
 
   commandLine.setOption("objective", &objective,  doc.c_str());
 
   commandLine.setOption("timers", &timingType,
-    "no_timers, micro_timers, macro_timers, both_timers");
+    "no_timers, micro_timers, macro_timers, both_timers, test_timers");
 
   commandLine.setOption("debug", &debugLevel,
    "no_status, basic_status, detailed_status, verbose_detailed_status");
@@ -289,7 +301,7 @@ int main(int argc, char *argv[])
     }
   }
 
-  MEMORY_CHECK(doMemory && rank==0, "After processing parameters");
+  //MEMORY_CHECK(doMemory && rank==0, "After processing parameters");
 
   gno_t globalSize = static_cast<gno_t>(numGlobalCoords);
 

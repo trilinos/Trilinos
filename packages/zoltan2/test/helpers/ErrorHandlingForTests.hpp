@@ -1,11 +1,10 @@
 // @HEADER
 // ***********************************************************************
-//
-//         Zoltan2: Sandia Partitioning Ordering & Coloring Library
-//
 //                Copyright message goes here.   TODO
-//
 // ***********************************************************************
+
+#ifndef ERRORHANDLINGFORTESTS_HPP
+#define ERRORHANDLINGFORTESTS_HPP
 
 #include <Zoltan2_config.h>
 #include <iostream>
@@ -117,3 +116,4 @@ void printFailureCode(const RCP<const Comm<int> > &comm, int fail)
   exit(1);
 }
 
+#endif

@@ -332,15 +332,19 @@ public:
 
 #ifdef Z2_OMIT_ALL_PROFILING
 
-  void timerStart(const char * timerName) const  {return;}
-  void timerStart(const string &timerName) const  {return;}
-  void timerStart(const char * timerName, int) const  {return;}
-  void timerStart(const string &timerName, int) const  {return;}
+  void timerStart(TimerType tt, const char * timerName) const  {return;}
+  void timerStart(TimerType tt, const string &timerName) const  {return;}
+  void timerStart(TimerType tt, const char * timerName, int, 
+    int fieldWidth=0) const  {return;}
+  void timerStart(TimerType tt, const string &timerName, int, 
+    int fieldWidth=0) const  {return;}
 
-  void timerStop(const char * timerName) const {return;}
-  void timerStop(const string &timerName) const {return;}
-  void timerStop(const char * timerName, int) const {return;}
-  void timerStop(const string &timerName, int) const {return;}
+  void timerStop(TimerType tt, const char * timerName) const {return;}
+  void timerStop(TimerType tt, const string &timerName) const {return;}
+  void timerStop(TimerType tt, const char * timerName, int, 
+    int fieldWidth=0) const {return;}
+  void timerStop(TimerType tt, const string &timerName, int, 
+    int fieldWidth=0) const {return;}
 
 #else
   /*! \brief  Start a named timer.
@@ -354,18 +358,30 @@ public:
 
   /*! \brief  Start a named timer, with a number as part of the name.
    */
-  void timerStart(TimerType tt, const char *timerName, int num) const  {
+  void timerStart(TimerType tt, const char *timerName, int num, 
+    int fieldWidth=0) const  {
     if (timingOn_){
       ostringstream oss;
-      oss << timerName << " " << num;
+      oss << timerName << " ";
+      if (fieldWidth > 0){
+        oss.width(fieldWidth);
+        oss.fill('0');
+      }
+      oss << num;
       timerOut_->start(tt, oss.str()); 
     }
   }
 
-  void timerStart(TimerType tt, const string &timerName, int num) const  {
+  void timerStart(TimerType tt, const string &timerName, int num, 
+    int fieldWidth=0) const  {
     if (timingOn_){
       ostringstream oss;
-      oss << timerName << " " << num;
+      oss << timerName << " ";
+      if (fieldWidth > 0){
+        oss.width(fieldWidth);
+        oss.fill('0');
+      }
+      oss << num;
       timerOut_->start(tt, oss.str()); 
     }
   }
@@ -382,18 +398,30 @@ public:
   /*! \brief  Stop a named timer, with a number as part of the name.
    */
 
-  void timerStop(TimerType tt, const char *timerName, int num) const {
+  void timerStop(TimerType tt, const char *timerName, int num, 
+    int fieldWidth=0) const {
     if (timingOn_){
       ostringstream oss;
-      oss << timerName << " " << num;
+      oss << timerName << " ";
+      if (fieldWidth > 0){
+        oss.width(fieldWidth);
+        oss.fill('0');
+      }
+      oss << num;
       timerOut_->stop(tt, oss.str()); 
     }
   }
 
-  void timerStop(TimerType tt, const string &timerName, int num) const {
+  void timerStop(TimerType tt, const string &timerName, int num, 
+    int fieldWidth=0) const {
     if (timingOn_){
       ostringstream oss;
-      oss << timerName << " " << num;
+      oss << timerName << " ";
+      if (fieldWidth > 0){
+        oss.width(fieldWidth);
+        oss.fill('0');
+      }
+      oss << num;
       timerOut_->stop(tt, oss.str()); 
     }
   }
@@ -476,8 +504,11 @@ public:
    */
 #ifdef Z2_OMIT_ALL_STATUS_MESSAGES
   bool doStatus() const { return false;}
+  MessageOutputLevel getDebugLevel() const {return NO_STATUS;}
 #else
   bool doStatus() const { return debugOut_->getDebugLevel() > NO_STATUS;}
+
+  MessageOutputLevel getDebugLevel() const {return debugOut_->getDebugLevel(); }
 #endif
 
   /*! \brief Return true if memory usage output was requested, even if

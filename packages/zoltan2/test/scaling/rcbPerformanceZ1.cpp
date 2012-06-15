@@ -12,10 +12,7 @@
 */
 
 #include <Zoltan2_TestHelpers.hpp>
-#include <Zoltan2_BasicCoordinateInput.hpp>
-#include <Zoltan2_PartitioningSolution.hpp>
-#include <Zoltan2_PartitioningProblem.hpp>
-
+#include <zoltan.h>
 #include <Teuchos_CommandLineProcessor.hpp>
 
 #include <vector>
@@ -36,9 +33,8 @@ using Teuchos::CommandLineProcessor;
 
 typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
 typedef Tpetra::Map<lno_t, gno_t, node_t> tMap_t;
-typedef Zoltan2::BasicCoordinateInput<tMVector_t> inputAdapter_t;
 
-static Array<ArrayRCP<scalar_t> > weights;
+static ArrayRCP<ArrayRCP<scalar_t> > weights;
 static RCP<tMVector_t> coordinates;
 
 // Zoltan1 query functions
@@ -114,7 +110,7 @@ ArrayRCP<scalar_t> makeWeights(
   if (!wgts)
     throw bad_alloc();
 
-  ArrayRCP<scalar_t> weights(wgts, 0, len, true);
+  ArrayRCP<scalar_t> wgtArray(wgts, 0, len, true);
 
   if (how == upDown){
     scalar_t val = scale + rank%2;
@@ -125,7 +121,7 @@ ArrayRCP<scalar_t> makeWeights(
     for (int i=0; i < 10; i++){
       scalar_t val = (i + 10)*scale;
       for (int j=i; j < len; j += 10)
-         weights[j] = val;
+         wgts[j] = val;
     }
   }
   else if (how == increasing){
@@ -134,7 +130,7 @@ ArrayRCP<scalar_t> makeWeights(
       wgts[i] = val;
   }
 
-  return weights;
+  return wgtArray;
 }
 
 /*! \brief Create a mesh of approximately the desired size.
@@ -143,7 +139,7 @@ ArrayRCP<scalar_t> makeWeights(
  */
 const RCP<tMVector_t> getMeshCoordinates(
     const RCP<const Teuchos::Comm<int> > & comm,
-    int numGlobalCoords)
+    gno_t numGlobalCoords)
 {
   int rank = comm->getRank();
   int nprocs = comm->getSize();
@@ -199,15 +195,15 @@ const RCP<tMVector_t> getMeshCoordinates(
 
   // Divide coordinates.
 
-  lno_t numLocalCoords = num / nprocs;
-  lno_t leftOver = num % nprocs;
+  gno_t numLocalCoords = num / nprocs;
+  gno_t leftOver = num % nprocs;
   gno_t gid0 = 0;
 
   if (rank <= leftOver)
-    gid0 = rank * (numLocalCoords+1);
+    gid0 = gno_t(rank) * (numLocalCoords+1);
   else
     gid0 = (leftOver * (numLocalCoords+1)) + 
-           ((rank - leftOver) * numLocalCoords);
+           ((gno_t(rank) - leftOver) * numLocalCoords);
 
   if (rank < leftOver)
     numLocalCoords++;
@@ -280,14 +276,14 @@ const RCP<tMVector_t> getMeshCoordinates(
 
 int main(int argc, char *argv[])
 {
-  MEMORY_CHECK(true, "Before initializing MPI");
+  // MEMORY_CHECK(true, "Before initializing MPI");
 
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   int rank = comm->getRank();
   int nprocs = comm->getSize();
 
-  MEMORY_CHECK(rank==0, "After initializing MPI");
+  MEMORY_CHECK(rank==0 || rank==nprocs-1, "After initializing MPI");
 
   if (rank==0)
     cout << "Number of processes: " << nprocs << endl;
@@ -300,6 +296,7 @@ int main(int argc, char *argv[])
   string memoryOff("memoryOff");
   bool doMemory=false;
   int numGlobalParts = nprocs;
+  int dummyTimer=0;
 
   CommandLineProcessor commandLine(false, true);
   commandLine.setOption("size", &numGlobalCoords, 
@@ -309,8 +306,34 @@ int main(int argc, char *argv[])
   commandLine.setOption("weightDim", &weightDim, 
     "Number of weights per coordinate, zero implies uniform weights.");
   commandLine.setOption("debug", &debugLevel, "Zoltan1 debug level");
+  commandLine.setOption("timers", &dummyTimer, "ignored");
   commandLine.setOption(memoryOn.c_str(), memoryOff.c_str(), &doMemory,
     "do memory profiling");
+
+  string balanceCount("balance_object_count");
+  string balanceWeight("balance_object_weight");
+  string mcnorm1("multicriteria_minimize_total_weight");
+  string mcnorm2("multicriteria_balance_total_maximum");
+  string mcnorm3("multicriteria_minimize_maximum_weight");
+
+  string objective(balanceWeight);   // default
+
+  string doc(balanceCount);
+  doc.append(": ignore weights\n");
+
+  doc.append(balanceWeight);
+  doc.append(": balance on first weight\n");
+
+  doc.append(mcnorm1);
+  doc.append(": given multiple weights, balance their total.\n");
+
+  doc.append(mcnorm3);
+  doc.append(": given multiple weights, balance the maximum for each coordinate.\n");
+
+  doc.append(mcnorm2);
+  doc.append(": given multiple weights, balance the L2 norm of the weights.\n");
+
+  commandLine.setOption("objective", &objective,  doc.c_str());
 
   CommandLineProcessor::EParseCommandLineReturn rc = 
     commandLine.parse(argc, argv);
@@ -328,7 +351,7 @@ int main(int argc, char *argv[])
     }
   }
 
-  MEMORY_CHECK(doMemory && rank==0, "After processing parameters");
+  //MEMORY_CHECK(doMemory && rank==0, "After processing parameters");
 
   gno_t globalSize = static_cast<gno_t>(numGlobalCoords);
 
@@ -352,11 +375,16 @@ int main(int argc, char *argv[])
 #endif
 
   if (weightDim > 0){
+
+    weights = arcp(new ArrayRCP<scalar_t> [weightDim],
+      0, weightDim, true);
+
     int wt = 0;
     scalar_t scale = 1.0;
     for (int i=0; i < weightDim; i++){
       weights[i] = 
         makeWeights(comm, numLocalCoords, weightTypes(wt++), scale, rank);
+
       if (wt == numWeightTypes){
         wt = 0;
         scale++;
@@ -365,35 +393,6 @@ int main(int argc, char *argv[])
   }
 
   MEMORY_CHECK(doMemory && rank==0, "After creating input");
-
-  // Create an input adapter.
-  const RCP<const tMap_t> &coordmap = coordinates->getMap();
-  ArrayView<const gno_t> ids = coordmap->getNodeElementList();
-  const gno_t *globalIds = ids.getRawPtr();
-  
-  size_t localCount = coordinates->getLocalLength();
-  RCP<inputAdapter_t> ia;
-  
-  if (weightDim == 0){
-    ia = rcp(new inputAdapter_t (localCount, globalIds, 
-      coordinates->getData(0).getRawPtr(), coordinates->getData(1).getRawPtr(),
-      coordinates->getData(2).getRawPtr(), 1,1,1));
-  }
-  else{
-    vector<const scalar_t *> values(3);
-    for (int i=0; i < 3; i++)
-      values[i] = coordinates->getData(i).getRawPtr();
-    vector<int> valueStrides(0);  // implies stride is one
-    vector<const scalar_t *> weightPtrs(weightDim);
-    for (int i=0; i < weightDim; i++)
-      weightPtrs[i] = weights[i].getRawPtr();
-    vector<int> weightStrides(0); // implies stride is one
-
-    ia = rcp(new inputAdapter_t (localCount, globalIds, 
-      values, valueStrides, weightPtrs, weightStrides));
-  }
-
-  MEMORY_CHECK(doMemory && rank==0, "After creating input adapter");
 
   // Now call Zoltan to partition the problem.
 
@@ -407,22 +406,36 @@ int main(int argc, char *argv[])
 
   struct Zoltan_Struct *zz;
   zz = Zoltan_Create(MPI_COMM_WORLD);
-
   
   Zoltan_Set_Param(zz, "LB_METHOD", "RCB");
-  Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1");
+  Zoltan_Set_Param(zz, "LB_APPROACH", "PARTITION");
+  Zoltan_Set_Param(zz, "CHECK_GEOM", "0");
+  Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); // compiled with ULONG option
   Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "0");
-  std::ostringstream oss;
-  oss << weightDim;
-  Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", oss.str().c_str());
   Zoltan_Set_Param(zz, "RETURN_LISTS", "NONE");
-  Zoltan_Set_Param(zz, "IMBALANCE_TOLERANCE", "1.1");
-  oss.str("");
+  Zoltan_Set_Param(zz, "IMBALANCE_TOL", "1.1");
+  std::ostringstream oss;
   oss << numGlobalParts;
   Zoltan_Set_Param(zz, "NUM_GLOBAL_PARTS", oss.str().c_str());
   oss.str("");
   oss << debugLevel;
   Zoltan_Set_Param(zz, "DEBUG_LEVEL", oss.str().c_str());
+
+  if (objective != balanceCount){
+    oss.str("");
+    oss << weightDim;
+    Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", oss.str().c_str());
+
+    if (objective == mcnorm1)
+      Zoltan_Set_Param(zz, "RCB_MULTICRITERIA_NORM", "1");
+    else if (objective == mcnorm2)
+      Zoltan_Set_Param(zz, "RCB_MULTICRITERIA_NORM", "2");
+    else if (objective == mcnorm3)
+      Zoltan_Set_Param(zz, "RCB_MULTICRITERIA_NORM", "3");
+  }
+  else{
+    Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "0");
+  }
 
   Zoltan_Set_Num_Obj_Fn(zz, getNumObj, NULL);
   Zoltan_Set_Obj_List_Fn(zz, getObjList,NULL);

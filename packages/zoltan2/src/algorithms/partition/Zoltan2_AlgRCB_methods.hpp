@@ -21,6 +21,74 @@
 #include <cmath>
 #include <bitset>
 
+namespace Teuchos{
+
+/*! \brief A Teuchos::MPIComm reduction operation.
+ *
+ *  Given a list of values T, some number are added, the next group
+ *      is min'ed, the final group is max'ed.
+ */
+
+template <typename Ordinal, typename T>
+  class Zoltan2_RCBOperation : public ValueTypeReductionOp<Ordinal,T>
+{
+private:
+  Ordinal numSum_, numMin_, numMax_;
+
+public:
+  /*! \brief Default Constructor
+   */
+  Zoltan2_RCBOperation():numSum_(0), numMin_(0), numMax_(0){}
+
+  /*! \brief Constructor
+   *   \param nsum  the count of how many sums will be computed at the
+   *             start of the list.
+   *   \param nmin  following the sums, this many minimums will be computed.
+   *   \param nmax  following the minimums, this many maximums will be computed.
+   */
+  Zoltan2_RCBOperation(Ordinal nsum, Ordinal nmin, Ordinal nmax):
+    numSum_(nsum), numMin_(nmin), numMax_(nmax){}
+  
+  /*! \brief Implement Teuchos::ValueTypeReductionOp interface
+   */
+  void reduce( const Ordinal count, const T inBuffer[], T inoutBuffer[]) const
+  {
+    Ordinal next=0;
+    for (Ordinal i=0; i < numSum_; i++, next++)
+      inoutBuffer[next] += inBuffer[next];
+
+    for (Ordinal i=0; i < numMin_; i++, next++)
+      if (inoutBuffer[next] > inBuffer[next])
+        inoutBuffer[next] = inBuffer[next];
+
+    for (Ordinal i=0; i < numMax_; i++, next++)
+      if (inoutBuffer[next] < inBuffer[next])
+        inoutBuffer[next] = inBuffer[next];
+  }
+
+  /*! \brief Convenience method.
+   */
+  ArrayRCP<T> getInitializedBuffer(T minExtreme, T maxExtreme) const
+  {
+    Ordinal len = numSum_+numMin_+numMax_;
+    T *buf = new T [len];
+    if (!buf)
+      throw std::bad_alloc();
+
+    Ordinal next=0;
+    for (Ordinal i=0; i < numSum_; i++)
+      buf[next++] = 0;
+    for (Ordinal i=0; i < numMin_; i++)
+      buf[next++] = minExtreme;
+    for (Ordinal i=0; i < numMax_; i++)
+      buf[next++] = maxExtreme;
+
+    ArrayRCP<T> returnBuf = arcp(buf, 0, len, true);
+    return returnBuf;
+  }
+};
+} // namespace Teuchos
+
 namespace Zoltan2{
 
 /*! \brief The boolean parameters of interest to the RCB algorithm.
@@ -662,7 +730,7 @@ template <typename mvector_t>
       numNonUniformWeights++;
   }
 
-  if (env->doStatus()){
+  if (env->getDebugLevel() >= DETAILED_STATUS){
     ostringstream info;
     info << "Weight dim " << weightDim << ", Fraction left:";
     for (int i=0; i < weightDim; i++)
@@ -719,6 +787,14 @@ template <typename mvector_t>
   int endBoundary = numBoundaries - 1;
   vector<scalar_t> boundaries(numBoundaries);
   vector<scalar_t> searchBoundaries(numBoundaries);
+
+  int numSums = numBoundaries+numRegions;
+
+  Teuchos::Zoltan2_RCBOperation<int, scalar_t> reductionOp(
+    numSums,      // number of sums
+    numRegions,   // number of mins
+    numRegions);  // number of maxes
+
   typename std::vector<scalar_t>::iterator foundCut;
 
   bool done=false;
@@ -727,7 +803,8 @@ template <typename mvector_t>
   scalar_t max = coordGlobalMax;
   lno_t numRemaining = numCoords;
   lno_t prevNumRemaining = numCoords;
-  size_t sanityCheck = vectors->getGlobalLength();
+  size_t numGlobalPoints = vectors->getGlobalLength();
+  size_t sanityCheck = numGlobalPoints;
 
   double totalWeight = 0;
   double targetLeftScalar = 0;
@@ -747,14 +824,18 @@ template <typename mvector_t>
     // Move ends slightly so we catch points on boundary.
     searchBoundaries[0] = min - epsilon;
     searchBoundaries[endBoundary] = max + epsilon;
- 
-    Array<scalar_t> regionMin(numRegions, max+1.0); // lowest value in region
-    Array<scalar_t> regionMax(numRegions, min-1.0); // highest value in region
 
-    // boundary0, region0, boundary1, region1, ...
-    int numSums = numBoundaries+numRegions;
-    Array<scalar_t> sums(numSums, 0.0);
-    Array<scalar_t> globalSums(numSums, 0.0);
+    // Save region and boundary sums, and region min and max.
+ 
+    ArrayRCP<scalar_t> localSums = reductionOp.getInitializedBuffer(
+      searchBoundaries[endBoundary], searchBoundaries[0]);
+ 
+    ArrayRCP<scalar_t> globalSums = reductionOp.getInitializedBuffer(
+      searchBoundaries[endBoundary], searchBoundaries[0]);
+
+    scalar_t *sums = localSums.getRawPtr();
+    scalar_t *regionMin = sums + numSums;
+    scalar_t *regionMax = regionMin + numRegions;
 
     if (numRemaining > 0){
 
@@ -802,12 +883,10 @@ template <typename mvector_t>
 
         lrFlags[i] = (unsigned char)sumIdx;
 
-        if (averageCuts){
-          if (value < regionMin[inRegion])
-            regionMin[inRegion] = value;
-          if (value > regionMax[inRegion])
-            regionMax[inRegion] = value;
-        }
+        if (value < regionMin[inRegion])
+          regionMin[inRegion] = value;
+        if (value > regionMax[inRegion])
+          regionMax[inRegion] = value;
 
         sums[sumIdx] += getCoordWeight<lno_t, scalar_t>(idx, 
               mcnorm, weight.view(0, weightDim));
@@ -816,12 +895,16 @@ template <typename mvector_t>
     }
 
     try{
-      reduceAll<int, scalar_t>(*comm, Teuchos::REDUCE_SUM, numSums,
-        sums.getRawPtr(), globalSums.getRawPtr());
+      reduceAll<int, scalar_t>(*comm, reductionOp,
+        localSums.size(), localSums.getRawPtr(), globalSums.getRawPtr());
     }
     Z2_THROW_OUTSIDE_ERROR(*env)
 
-    if (env->doStatus()){
+    sums = globalSums.getRawPtr();
+    regionMin = sums + numSums;
+    regionMax = regionMin + numRegions;
+
+    if (env->getDebugLevel() >= DETAILED_STATUS){
       ostringstream info;
       info << "  Region " << min << " - " << max << endl;
       info << "  Remaining to classify: " << numRemaining << endl;
@@ -831,18 +914,11 @@ template <typename mvector_t>
       info << endl << "  For searching: ";
       for (int i=0; i < numBoundaries; i++)
         info << searchBoundaries[i] << " ";
-      info << endl << "  Local sums: ";
+      info << endl << "  Global sums: ";
       double sumTotal=0;
       for (int i=0; i < numSums; i++){
         sumTotal += sums[i];
         info << sums[i] << " ";
-      }
-      info << " total: " << sumTotal << endl;
-      info << endl << "  Global sums: ";
-      sumTotal=0;
-      for (int i=0; i < numSums; i++){
-        sumTotal += globalSums[i];
-        info << globalSums[i] << " ";
       }
       info << " total: " << sumTotal << endl;
       env->debug(DETAILED_STATUS, info.str());
@@ -851,7 +927,7 @@ template <typename mvector_t>
     if (totalWeight == 0){   // first time through only
 
       for (int i=0; i < numSums; i++)
-        totalWeight += globalSums[i];
+        totalWeight += sums[i];
 
       partSizeLeft.Scale(totalWeight);
       targetLeftVector = partSizeLeft;
@@ -892,7 +968,7 @@ template <typename mvector_t>
       while (++cutLocation< numSums){
 
         for (int i=0; i < weightDim; i++)
-          testVec[i] += globalSums[cutLocation];
+          testVec[i] += sums[cutLocation];
   
         diffVec = testVec;
         diffVec.Scale(-1.0);
@@ -915,7 +991,7 @@ template <typename mvector_t>
   
       while (++cutLocation < numSums){
      
-        testDiff += globalSums[cutLocation];
+        testDiff += sums[cutLocation];
         if (testDiff >= target)
           break;
   
@@ -945,7 +1021,7 @@ template <typename mvector_t>
     bool cutLocIsRegion = (cutLocation % 2 == 1);
     bool cutLocIsBoundary = !cutLocIsRegion;
 
-    if (env->doStatus()){
+    if (env->getDebugLevel() >= DETAILED_STATUS){
       ostringstream info;
       info << "  Best cut location: " << cutLocation;
       if (cutLocIsRegion) info << " just after a region." << endl;
@@ -973,7 +1049,7 @@ template <typename mvector_t>
 
         testCoordinatesOnRightBoundary<lno_t, gno_t, scalar_t>(
           env, comm, totalWeightLeft, targetLeftScalar, cutLocation, 
-          sums.view(0, numSums), globalSums.view(0, numSums),
+          localSums.view(0, numSums), globalSums.view(0, numSums),
           index, weight.view(0, weightDim), mcnorm, lrFlags,
           globalWeightMovedRight);
 
@@ -993,46 +1069,26 @@ template <typename mvector_t>
     int rightmostLeftNum=0, leftmostRightNum=0;
 
     if (!done){
-      // Narrow down the boundaries.
+      // Best cut is following a region.  Narrow down the boundaries.
 
-      int leftBoundary = (cutLocation - 1) / 2;
-      int rightBoundary = leftBoundary+1;
+      int regionNumber = (cutLocation - 1) / 2;
+
+      min = regionMin[regionNumber];
+      max = regionMax[regionNumber];
 
       rightmostLeftNum = cutLocation - 1;
       leftmostRightNum = cutLocation + 1;
-
-      min = boundaries[leftBoundary];
-      max = boundaries[rightBoundary];
     }
     else{
       rightmostLeftNum = cutLocation;
       leftmostRightNum = cutLocation + 1;
 
-      if (cutLocIsRegion)
-        cutLocation++;     // boundary following region
-      
-      int actualBoundary = cutLocation / 2;
-  
-      if (averageCuts){
-        int leftRegion = actualBoundary -1;
-        int rightRegion = actualBoundary;
-        scalar_t localExtrema[2], globalExtrema[2];
-        localExtrema[0] = regionMax[leftRegion];
-        localExtrema[1] = regionMin[rightRegion] * -1.0;
-  
-        try{
-          reduceAll<int, scalar_t>(*comm, Teuchos::REDUCE_MAX, 2,
-            localExtrema, globalExtrema);
-        }
-        Z2_THROW_OUTSIDE_ERROR(*env)
-  
-        scalar_t globalLeftOfCut = globalExtrema[0];
-        scalar_t globalRightOfCut = globalExtrema[1] * -1.0;
-  
-        cutValue = (globalRightOfCut + globalLeftOfCut) * 0.5;
-      }
-      else{
-        cutValue = boundaries[actualBoundary];
+      if (cutLocIsRegion && averageCuts){
+        int regionNumber = (cutLocation - 1) / 2;
+        cutValue = (
+          boundaries[regionNumber+1] + // boundary to right
+          regionMax[regionNumber])     // rightmost point in region
+          / 2.0;
       }
     }
 
@@ -1057,7 +1113,9 @@ template <typename mvector_t>
       }
     }
 
-    if (env->doStatus()){
+    if (env->getDebugLevel() >= VERBOSE_DETAILED_STATUS && numCoords < 100){
+      // For large numCoords, building this message
+      // takes an extraordinarily long time.
       ostringstream ossLeft;
       ostringstream ossRight;
       ossLeft << "left: ";
@@ -1085,6 +1143,9 @@ template <typename mvector_t>
 
   totalWeightRight = totalWeight - totalWeightLeft;
 
+  if (fail)
+    env->debug(BASIC_STATUS, "Warning: tolerance not achieved in sub-step");
+
   // TODO: If fail the warn that tolerance was not met.
 
   env->globalInputAssertion(__FILE__, __LINE__, "partitioning not solvable",
@@ -1092,7 +1153,12 @@ template <typename mvector_t>
 
   env->memory("End of bisection");
 
-  env->debug(DETAILED_STATUS, string("Exiting BSPfindCut"));
+  if (env->getDebugLevel() >= DETAILED_STATUS){
+    ostringstream oss;
+    oss << "Exiting BSPfindCut, ";
+    oss << "# iterations: " << numGlobalPoints - sanityCheck;    
+    env->debug(DETAILED_STATUS, oss.str());
+  }
 
   return;
 }
@@ -1271,6 +1337,8 @@ template <typename mvector_t, typename Adapter>
 /*! \brief Perform RCB on the local process only.
  *
  *   \param env the Environment for the application.
+ *   \param depth  depth of recursion, for debugging, 
+ *           call with "1" first time.
  *   \param params a bit map of boolean parameters.
  *   \param numTestCuts the number of test cuts to make in one round.
  *   \param tolerance the maximum acceptable imbalance (0,1).
@@ -1292,6 +1360,7 @@ template <typename mvector_t, typename Adapter>
 template <typename mvector_t, typename Adapter>
  void serialRCB(
     const RCP<const Environment> &env,
+    int depth,
     const std::bitset<NUM_RCB_PARAMS> &params,
     int numTestCuts, 
     typename mvector_t::scalar_type tolerance, 
@@ -1305,6 +1374,8 @@ template <typename mvector_t, typename Adapter>
     ArrayView<partId_t> partNum)   // output
 {
   env->debug(DETAILED_STATUS, string("Entering serialRCB"));
+  env->timerStart(MICRO_TIMERS, "serialRCB", depth, 2);
+
   typedef typename mvector_t::scalar_type scalar_t;
   typedef typename mvector_t::local_ordinal_type lno_t;
 
@@ -1325,7 +1396,7 @@ template <typename mvector_t, typename Adapter>
     numLocalCoords = index.size();
   }
 
-  if (env->doStatus()){
+  if (env->getDebugLevel() >= DETAILED_STATUS){
     ostringstream info;
     info << "  Number of coordinates: " << numLocalCoords << endl;
     info << "  Use index: " << useIndices << endl;
@@ -1344,7 +1415,9 @@ template <typename mvector_t, typename Adapter>
         partNum[i] = part0;
 
     env->memory("serial RCB end");
+    env->timerStop(MICRO_TIMERS, "serialRCB", depth, 2);
     env->debug(DETAILED_STATUS, string("Exiting serialRCB"));
+
     return;
   }
 
@@ -1401,6 +1474,7 @@ template <typename mvector_t, typename Adapter>
       }
       
       imbalance = 0.0;       // perfect
+      env->timerStop(MICRO_TIMERS, "serialRCB", depth, 2);
       env->debug(DETAILED_STATUS, string("Exiting serialRCB"));
       return;
     }
@@ -1453,13 +1527,18 @@ template <typename mvector_t, typename Adapter>
 
     partId_t newPart1 = part0 + numPartsLeftHalf - 1;
 
-    serialRCB<mvector_t, Adapter>(env, params, numTestCuts, tolerance, 
+    env->timerStop(MICRO_TIMERS, "serialRCB", depth, 2);
+
+    serialRCB<mvector_t, Adapter>(env, depth+1, params, numTestCuts, tolerance, 
       coordDim, vectors, leftIndices,
       uniformWeights.view(0, weightDim), solution,
       part0, newPart1, partNum);
 
+    env->timerStart(MICRO_TIMERS, "serialRCB", depth, 2);
+
     delete [] newIndex;
   }
+
 
   if (localCountRight){
 
@@ -1481,13 +1560,19 @@ template <typename mvector_t, typename Adapter>
 
     partId_t newPart0 = part0 + numPartsLeftHalf;
 
-    serialRCB<mvector_t, Adapter>(env, params, numTestCuts, tolerance, 
+    env->timerStop(MICRO_TIMERS, "serialRCB", depth, 2);
+
+    serialRCB<mvector_t, Adapter>(env, depth+1, params, numTestCuts, tolerance, 
       coordDim, vectors, rightIndices,
       uniformWeights.view(0, weightDim), solution,
       newPart0, part1, partNum);
 
+    env->timerStart(MICRO_TIMERS, "serialRCB", depth, 2);
+
     delete [] newIndex;
   }
+
+  env->timerStop(MICRO_TIMERS, "serialRCB", depth, 2);
   env->debug(DETAILED_STATUS, string("Exiting serialRCB"));
 }
 

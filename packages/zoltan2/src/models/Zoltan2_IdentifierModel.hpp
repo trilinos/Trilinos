@@ -15,6 +15,7 @@
 
 #include <Zoltan2_Model.hpp>
 #include <Zoltan2_MatrixInput.hpp>
+#include <Zoltan2_VectorInput.hpp>
 #include <Zoltan2_IdentifierInput.hpp>
 #include <Zoltan2_CoordinateInput.hpp>
 #include <Zoltan2_StridedData.hpp>
@@ -33,8 +34,10 @@ namespace Zoltan2 {
     Explicit instantiations exist for:
       \li MatrixInput
       \li IdentifierInput
+      \li VectorInput
+      \li CoordinateInput
 
-    \todo Add instantiations for GraphInput, VectorInput and MeshInput
+    \todo Add instantiations for GraphInput, MeshInput
 */
 
 template <typename Adapter>
@@ -631,6 +634,159 @@ template <typename User>
   env_->memory("After construction of identifier model");
 }
 
+////////////////////////////////////////////////////////////////
+// Identifier model derived from VectorInput.
+////////////////////////////////////////////////////////////////
+
+template <typename User>
+class IdentifierModel<VectorInput<User> > : public Model<VectorInput<User> >
+{
+public:
+
+  typedef typename VectorInput<User>::scalar_t  scalar_t;
+  typedef typename VectorInput<User>::gno_t     gno_t;
+  typedef typename VectorInput<User>::lno_t     lno_t;
+  typedef typename VectorInput<User>::gid_t     gid_t;
+  typedef IdentifierMap<User> idmap_t;
+  typedef StridedData<lno_t, scalar_t> input_t;
+  
+  IdentifierModel( const VectorInput<User> *ia, 
+    const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
+    modelFlag_t &modelFlags);
+
+  /*! Returns the number identifiers on this process.
+   */
+  size_t getLocalNumIdentifiers() const { return gids_.size(); }
+
+  /*! Returns the global number identifiers.
+   */
+  global_size_t getGlobalNumIdentifiers() const {return numGlobalIdentifiers_;}
+
+  /*! Returns the dimension (0 or greater) of identifier weights.
+   *    Weights are not yet implemented in VectorInput.
+   */
+  int getIdentifierWeightDim() const { return 0; }
+
+  /*! Sets pointers to this process' identifier Ids and their weights.
+      \param Ids will on return point to the list of the global Ids for
+        each identifier on this process.
+      \param wgts will on return point to a list of the weight or weights
+         associated with each identifier in the Ids list. Each weight
+         is represented as a StridedData object.
+
+       \return The number of ids in the Ids list.
+   */
+
+  size_t getIdentifierList(ArrayView<const gno_t>  &Ids,
+    ArrayView<input_t> &wgts) const            
+  {
+    size_t n = getLocalNumIdentifiers();
+    size_t nweights = 0;
+
+    Ids = ArrayView<const gno_t>(Teuchos::null);
+    wgts = ArrayView<input_t>(Teuchos::null);
+
+    if (n){
+      if (gnosAreGids_)
+        Ids = gids_(0, n);
+      else
+        Ids = gnosConst_(0, n);
+
+      if (nweights)
+        wgts = weights_(0, nweights);
+    }
+
+    return n;
+  }
+
+  ////////////////////////////////////////////////////
+  // The Model interface.
+  ////////////////////////////////////////////////////
+
+  size_t getLocalNumObjects() const
+  {
+    return getLocalNumIdentifiers();
+  }
+
+  size_t getGlobalNumObjects() const
+  {
+    return getGlobalNumIdentifiers();
+  }
+
+  void getGlobalObjectIds(ArrayView<const gno_t> &gnos) const 
+  { 
+    ArrayView<input_t> weights;
+    getIdentifierList(gnos, weights);
+  }
+
+private:
+
+  bool gnosAreGids_;
+  gno_t numGlobalIdentifiers_;
+  const RCP<const Environment> env_;
+  const RCP<const Comm<int> > comm_;
+  ArrayRCP<const gid_t> gids_;
+  ArrayRCP<input_t> weights_;
+  ArrayRCP<gno_t> gnos_;
+  ArrayRCP<const gno_t> gnosConst_;
+};
+
+  
+template <typename User>
+  IdentifierModel<VectorInput<User> >::IdentifierModel( 
+    const VectorInput<User> *ia, 
+    const RCP<const Environment> &env, const RCP<const Comm<int> > &comm, 
+    modelFlag_t &modelFlags):
+      gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), comm_(comm),
+      gids_(), weights_(), gnos_(), gnosConst_()
+{
+  size_t nLocalIds;
+  const gid_t *gids;
+  const scalar_t *elements;
+  int stride;
+
+  try{
+    nLocalIds = ia->getVector(gids, elements, stride);
+  }
+  Z2_FORWARD_EXCEPTIONS;
+
+  if (nLocalIds){
+    gids_ = arcp(gids, 0, nLocalIds, false);
+  }
+
+  RCP<const idmap_t> idMap;
+
+  try{
+    if (modelFlags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE) )
+      idMap = rcp(new idmap_t(env_, comm_, gids_, true));
+    else
+      idMap = rcp(new idmap_t(env_, comm_, gids_, false));
+  }
+  Z2_FORWARD_EXCEPTIONS;
+
+  numGlobalIdentifiers_ = idMap->getGlobalNumberOfIds();
+  gnosAreGids_ = idMap->gnosAreGids();
+
+  this->setIdentifierMap(idMap);   // Base Model methods
+  Array<lno_t> weightListSizes;
+  this->setWeightArrayLengths(weightListSizes, *comm_);
+
+  if (!gnosAreGids_ && nLocalIds>0){
+    gno_t *tmpGno = new gno_t [nLocalIds];
+    env_->localMemoryAssertion(__FILE__, __LINE__, nLocalIds, tmpGno);
+    gnos_ = arcp(tmpGno, 0, gids_.size());
+
+    try{
+     ArrayRCP<gid_t> gidsNonConst = arcp_const_cast<gid_t>(gids_);
+      idMap->gidTranslate(gidsNonConst(0, nLocalIds),
+        gnos_(0, nLocalIds), TRANSLATE_APP_TO_LIB);
+    }
+    Z2_FORWARD_EXCEPTIONS;
+  }
+
+  gnosConst_ = arcp_const_cast<const gno_t>(gnos_);
+  env_->memory("After construction of identifier model");
+}
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 

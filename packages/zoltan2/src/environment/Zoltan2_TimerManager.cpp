@@ -17,19 +17,35 @@ namespace Zoltan2{
 TimerManager::TimerManager(const RCP<const Comm<int> > &comm, 
   std::ofstream *os, TimerType tt):
   comm_(comm), myOS_(NULL), fileOS_(os), ttype_(tt), 
-  timers(), timerMap(), stopHint(-1) 
+  typeSelector_(), timers_(), timerMap_(), stopHint_(-1) 
 {
   if (fileOS_ == NULL)
     ttype_ = NO_TIMERS;
+
+  typeSelector_.reset();
+  typeSelector_.set(ttype_);
+
+  if (ttype_ == BOTH_TIMERS){
+    typeSelector_.set(MACRO_TIMERS);
+    typeSelector_.set(MICRO_TIMERS);
+  }
 }
 
 TimerManager::TimerManager(const RCP<const Comm<int> > &comm, 
   std::ostream *os, TimerType tt):
   comm_(comm), myOS_(os), fileOS_(NULL), ttype_(tt),
-  timers(), timerMap(), stopHint(-1) 
+  typeSelector_(), timers_(), timerMap_(), stopHint_(-1) 
 {
   if (myOS_ == NULL)
     ttype_ = NO_TIMERS;
+
+  typeSelector_.reset();
+  typeSelector_.set(ttype_);
+
+  if (ttype_ == BOTH_TIMERS){
+    typeSelector_.set(MACRO_TIMERS);
+    typeSelector_.set(MICRO_TIMERS);
+  }
 }
 
 TimerManager::~TimerManager()
@@ -42,52 +58,48 @@ TimerManager::~TimerManager()
 
 void TimerManager::stop(TimerType tt, const string &name)
 {
-  if ((ttype_ == NO_TIMERS) ||
-      (ttype_ == MACRO_TIMERS && tt != MACRO_TIMERS) ||
-      (ttype_ == MICRO_TIMERS && tt != MICRO_TIMERS)    )
+  if (!typeSelector_[tt])
     return;
 
-  if (stopHint>0 && timers[stopHint]->name() == name){
-    timers[stopHint]->stop();
-    stopHint--;
+  if (stopHint_>0 && timers_[stopHint_]->name() == name){
+    timers_[stopHint_]->stop();
+    stopHint_--;
     return;
   }
 
-  std::map<string, int>::iterator curr = timerMap.find(name);
-  if (curr != timerMap.end()){
-    timers[curr->second]->stop();
+  std::map<string, int>::iterator curr = timerMap_.find(name);
+  if (curr != timerMap_.end()){
+    timers_[curr->second]->stop();
   }
   else{  // Stopping a timer that doesn't exist.  Just create it.
     RCP<Teuchos::Time> newTimer = Teuchos::TimeMonitor::getNewTimer(name);
     newTimer->reset();     // reset to zero
-    timerMap[name] = timers.size();
-    timers.push_back(newTimer);
+    timerMap_[name] = timers_.size();
+    timers_.push_back(newTimer);
     cerr << comm_->getRank() << ": warning, stop with no start" << endl;
   }
 }
 
 void TimerManager::start(TimerType tt, const string &name)
 {
-  if ((ttype_ == NO_TIMERS) ||
-      (ttype_ == MACRO_TIMERS && tt != MACRO_TIMERS) ||
-      (ttype_ == MICRO_TIMERS && tt != MICRO_TIMERS)    )
+  if (!typeSelector_[tt])
     return;
 
-  std::map<string, int>::iterator curr = timerMap.find(name);
+  std::map<string, int>::iterator curr = timerMap_.find(name);
   int index = -1;
-  if (curr == timerMap.end()){
+  if (curr == timerMap_.end()){
     RCP<Teuchos::Time> newTimer = Teuchos::TimeMonitor::getNewTimer(name);
-    index = timers.size();
-    timerMap[name] = index;
-    timers.push_back(newTimer);
+    index = timers_.size();
+    timerMap_[name] = index;
+    timers_.push_back(newTimer);
   }
   else{
     index = curr->second;
   }
 
-  timers[index]->start();
-  timers[index]->incrementNumCalls();
-  stopHint = index;
+  timers_[index]->start();
+  timers_[index]->incrementNumCalls();
+  stopHint_ = index;
 }
 
 void TimerManager::print() const
