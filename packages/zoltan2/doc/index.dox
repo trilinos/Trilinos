@@ -43,8 +43,6 @@ Serial ordering available now is:
 
 \subsection Typical steps
 
-\image html usage.png
-
 Here we describe the typical user interaction with Zoltan2.  We use partitioning as an example.
 
 1. Create a Zoltan2::InputAdapter object for your data.  This adapter provides a uniform interface to user data for the Zoltan2 library.  Adapter interfaces exist for the following classes of data:
