@@ -294,6 +294,59 @@ namespace {
 
 
   ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, ExcessAllocation, LO, GO )
+  {
+    typedef CrsGraph<LO,GO,Node>  GRPH;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    // create a Map with numLocal entries per node
+    const int numLocal = 10;
+    RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,numLocal,comm);
+    {
+      // send in a parameterlist, check the defaults
+      RCP<ParameterList> params = parameterList();
+      // create static-profile graph, fill-complete without inserting (and therefore, without allocating)
+      GRPH graph(map,3,StaticProfile);
+      for (GO i=map->getMinGlobalIndex(); i <= map->getMaxGlobalIndex(); ++i) graph.insertGlobalIndices(i, tuple<GO>(i) );
+      params->set("Optimize Storage",false);
+      graph.fillComplete(params);
+      TEST_EQUALITY(graph.getNodeNumEntries(), (size_t)numLocal);
+      TEST_EQUALITY_CONST(graph.isStorageOptimized(), false);
+      //
+      graph.resumeFill();
+      for (int i=0; i < numLocal; ++i) graph.removeLocalIndices(i);
+      params->set("Optimize Storage",true);
+      graph.fillComplete(params);
+      TEST_EQUALITY_CONST(params->get<bool>("Optimize Storage"), true);
+      TEST_EQUALITY(graph.getNodeNumEntries(), 0);
+      TEST_EQUALITY_CONST(graph.getProfileType(), StaticProfile);
+      TEST_EQUALITY_CONST(graph.isStorageOptimized(), true);
+    }
+    {
+      // send in a parameterlist, check the defaults
+      RCP<ParameterList> params = parameterList();
+      // create dynamic-profile graph, fill-complete without inserting (and therefore, without allocating)
+      GRPH graph(map,3,DynamicProfile);
+      for (GO i=map->getMinGlobalIndex(); i <= map->getMaxGlobalIndex(); ++i) graph.insertGlobalIndices(i, tuple<GO>(i) );
+      params->set("Optimize Storage",false);
+      graph.fillComplete(params);
+      TEST_EQUALITY(graph.getNodeNumEntries(), (size_t)numLocal);
+      TEST_EQUALITY_CONST(graph.isStorageOptimized(), false);
+      //
+      graph.resumeFill();
+      for (int i=0; i < numLocal; ++i) graph.removeLocalIndices(i);
+      params->set("Optimize Storage",true);
+      graph.fillComplete(params);
+      TEST_EQUALITY_CONST(params->get<bool>("Optimize Storage"), true);
+      TEST_EQUALITY(graph.getNodeNumEntries(), 0);
+      TEST_EQUALITY_CONST(graph.getProfileType(), StaticProfile);
+      TEST_EQUALITY_CONST(graph.isStorageOptimized(), true);
+    }
+  }
+
+
+  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, insert_remove_LIDs, LO, GO )
   {
     typedef CrsGraph<LO,GO,Node> GRAPH;
@@ -1028,6 +1081,7 @@ namespace {
 #define UNIT_TEST_GROUP_LO_GO( LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, EmptyGraphAlloc0, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, EmptyGraphAlloc1, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, ExcessAllocation, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, BadConst  , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, BadGIDs   , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, BadLIDs   , LO, GO ) \

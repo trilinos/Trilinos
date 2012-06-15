@@ -386,7 +386,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, EmptyFillComplete, LO, GO, Scalar, Node )
   {
     RCP<Node> node = getNode<Node>();
-    // generate a tridiagonal matrix
     typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef CrsGraph<LO,GO,Node>  GRPH;

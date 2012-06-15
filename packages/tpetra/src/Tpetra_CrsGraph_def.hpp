@@ -1332,7 +1332,7 @@ namespace Tpetra {
         TEUCHOS_TEST_FOR_EXCEPTION(  isLocallyIndexed() == true && (size_t)lclInds1D_.size() != actualNumAllocated, std::logic_error, err );
         TEUCHOS_TEST_FOR_EXCEPTION( isGloballyIndexed() == true && (size_t)gblInds1D_.size() != actualNumAllocated, std::logic_error, err );
       }
-      TEUCHOS_TEST_FOR_EXCEPTION(indicesAreAllocated() == true && actualNumAllocated != nodeNumAllocated_, std::logic_error, err );
+      TEUCHOS_TEST_FOR_EXCEPTION(actualNumAllocated != nodeNumAllocated_, std::logic_error, err );
     }
 #endif
   }
@@ -1654,7 +1654,7 @@ namespace Tpetra {
     std::string tfecfFuncName("removeLocalIndices()");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isFillActive() == false,                    std::runtime_error, ": requires that fill is active.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isStorageOptimized() == true,               std::runtime_error, ": cannot remove indices after optimizeStorage() has been called.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isGloballyIndexed() == true,                std::runtime_error, ": graph indices are global; use removeGlobalIndices().");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( isGloballyIndexed() == true,                std::runtime_error, ": graph indices are global.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( rowMap_->isNodeLocalElement(lrow) == false, std::runtime_error, ": row does not belong to this node.");
     if (indicesAreAllocated() == false) {
       allocateIndices(LocalIndices);
@@ -1662,8 +1662,8 @@ namespace Tpetra {
     //
     clearGlobalConstants();
     //
-    RowInfo sizeInfo = getRowInfo(lrow);
-    if (sizeInfo.allocSize > 0 && numRowEntries_ != null) {
+    if (numRowEntries_ != null) {
+      nodeNumEntries_ -= numRowEntries_[lrow];
       numRowEntries_[lrow] = 0;
     }
 #ifdef HAVE_TPETRA_DEBUG
@@ -2778,7 +2778,7 @@ namespace Tpetra {
     RCP<ParameterList> params = parameterList();
     if (os == DoOptimizeStorage) params->set<bool>("Optimize Storage",true);
     else                         params->set<bool>("Optimize Storage",false);
-    fillComplete(domainMap,rangeMap,parameterList());
+    fillComplete(domainMap,rangeMap,params);
   }
 
   /////////////////////////////////////////////////////////////////////////////
