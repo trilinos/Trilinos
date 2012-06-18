@@ -137,8 +137,8 @@ int main(int argc, char *argv[]) {
                              tuple<Scalar> ( -1.0, 2.0, -1.0 ) );
     }
   }
-  // Complete the fill, ask that storage be reallocated and optimized
-  A->fillComplete(Tpetra::DoOptimizeStorage);
+  // Complete the fill
+  A->fillComplete();
   if (printMatrix) {
     RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     A->describe(*fos, Teuchos::VERB_EXTREME);

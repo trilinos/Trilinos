@@ -48,6 +48,7 @@
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_ParameterList.hpp>
 
 //! Namespace for Kokkos classes and methods
 namespace Kokkos {
@@ -62,6 +63,7 @@ namespace Kokkos {
   using Teuchos::null;
   using Teuchos::arcp_reinterpret_cast;
   using Teuchos::Array;
+  using Teuchos::ParameterList;
 }
 
 //! Namespace for Kokkos example classes

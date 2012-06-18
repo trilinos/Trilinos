@@ -98,7 +98,8 @@ namespace Teuchos {
   
   enum EUplo { 	
     UPPER_TRI,	/*!< Upper triangular */ 
-    LOWER_TRI 	/*!< Lower triangular */
+    LOWER_TRI,	/*!< Lower triangular */
+    UNDEF_TRI   /*!< Unspeficied/undefined triangular structure */
   };
   
   enum EDiag { 	

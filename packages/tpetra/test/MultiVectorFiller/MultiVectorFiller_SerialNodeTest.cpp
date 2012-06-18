@@ -81,7 +81,6 @@ main (int argc, char *argv[])
   Teuchos::oblackholestream blackHole;
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  const int myRank = comm->getRank();
 
   //
   // Read in command line arguments.

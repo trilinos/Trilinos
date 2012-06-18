@@ -53,18 +53,13 @@
 # ************************************************************************
 # @HEADER
 
+# Check for CUDA support
 INCLUDE(TribitsTplDeclareLibraries)
 
-# Thrust TPL requires CUDA
-IF (NOT TPL_ENABLE_CUDA)
-  MESSAGE(FATAL_ERROR "\nThrust TPL requires that CUDA support is enabled. Please set \n  TPL_ENABLE_CUDA=ON\n\n")
+IF (NOT TPL_ENABLE_CUDA OR CUDA_VERSION VERSION_LESS "4.1")
+  MESSAGE(FATAL_ERROR "\nCUSPARSE: did not find acceptable version of CUDA libraries (4.1 or greater)")
 ELSE()
-  IF (NOT TPL_Thrust_INCLUDE_DIRS AND NOT CUDA_VERSION VERSION_LESS "4.0")
-    #SET(TPL_Thrust_INCLUDE_DIRS ${TPL_CUDA_INCLUDE_DIRS} CACHE STRING "" FORCE)
-    SET(TPL_Thrust_INCLUDE_DIRS ${TPL_CUDA_INCLUDE_DIRS})
-  ENDIF()
-  TRIBITS_TPL_DECLARE_LIBRARIES( Thrust
-      REQUIRED_HEADERS thrust/for_each.h
-  )
+  GLOBAL_SET(TPL_CUSPARSE_LIBRARY_DIRS)
+  GLOBAL_SET(TPL_CUSPARSE_INCLUDE_DIRS ${TPL_CUDA_INCLUDE_DIRS})
+  GLOBAL_SET(TPL_CUSPARSE_LIBRARIES    ${CUDA_cusparse_LIBRARY})
 ENDIF()
-

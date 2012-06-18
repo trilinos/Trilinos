@@ -922,7 +922,7 @@ namespace Tpetra {
         myValues = null;
 
         if (callFillComplete)
-          A->fillComplete (pDomainMap, pRangeMap, DoOptimizeStorage);
+          A->fillComplete (pDomainMap, pRangeMap);
         return A;
       }
 

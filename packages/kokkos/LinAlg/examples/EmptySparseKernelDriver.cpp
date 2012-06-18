@@ -41,23 +41,25 @@
 //@HEADER
 */
 
-#include "Kokkos_DummySparseKernelClass.hpp"
+#include "KokkosExamples_EmptySparseKernelClass.hpp"
 #include <Kokkos_MultiVector.hpp>
 #include <Kokkos_DefaultNode.hpp>
 
-/** \file DummySparseKernelDriver.cpp
-    \brief A file testing the build of the DummySparseKernel class and illustrating its usage.
+/** \file EmptySparseKernelDriver.cpp
+    \brief A file testing the build of the EmptySparseKernel class and illustrating its usage.
  */
 
 int main() {
 
-  typedef Kokkos::DefaultNode::DefaultNodeType                 Node;
-  typedef KokkosExamples::DummySparseKernel<Node>         SparseOps;
-  typedef Kokkos::CrsGraph <       int,Node,SparseOps>        Graph;
-  typedef Kokkos::CrsMatrix<double,int,Node,SparseOps>    DoubleMat;
-  typedef Kokkos::CrsMatrix< float,int,Node,SparseOps>     FloatMat;
-  typedef Kokkos::MultiVector<double,Node>                DoubleVec;
-  typedef Kokkos::MultiVector<float,Node>                  FloatVec;
+  typedef Kokkos::DefaultNode::DefaultNodeType                          Node;
+  typedef KokkosExamples::EmptySparseKernel<void,Node>                SOBASE;
+  typedef typename SOBASE::graph<int,Node>::graph_type                 Graph;
+  typedef typename SOBASE::bind_scalar<float>::other_type           FloatOps;
+  typedef typename FloatOps::matrix< float,int,Node>::matrix_type    FMatrix;
+  typedef typename SOBASE::bind_scalar<double>::other_type         DoubleOps;
+  typedef typename DoubleOps::matrix<double,int,Node>::matrix_type   DMatrix;
+  typedef Kokkos::MultiVector<double,Node>                         DoubleVec;
+  typedef Kokkos::MultiVector<float,Node>                           FloatVec;
 
   std::cout << "Note, this class doesn't actually do anything. We are only testing that it compiles." << std::endl;
 
@@ -66,35 +68,34 @@ int main() {
 
   // create the graph G
   const size_t numRows = 5;
-  Graph G(numRows,node);
+  Teuchos::RCP<Graph> G = Teuchos::rcp(new Graph(numRows,node,Teuchos::null));
 
   // create a double-valued matrix dM using the graph G
-  DoubleMat dM(G);
-  // create a double-valued sparse kernel using the rebind functionality
-  SparseOps::rebind<double>::other doubleKernel(node);
+  Teuchos::RCP<DMatrix> dM = Teuchos::rcp(new DMatrix(G,Teuchos::null));
+  DoubleOps doubleKernel(node);
   // initialize it with G and dM
-  doubleKernel.initializeStructure(G);
-  doubleKernel.initializeValues(dM);
+  DoubleOps::finalizeGraphAndMatrix(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,*G,*dM,Teuchos::null);
+  doubleKernel.setGraphAndMatrix(G,dM);
   // create double-valued vectors and initialize them
   DoubleVec dx(node), dy(node);
-  // test the sparse kernel operator interfaces
+  // call the sparse kernel operator interfaces
   doubleKernel.multiply( Teuchos::NO_TRANS, 1.0, dx, dy);
   doubleKernel.multiply( Teuchos::NO_TRANS, 1.0, dx, 1.0, dy);
-  doubleKernel.solve( Teuchos::NO_TRANS, Teuchos::UPPER_TRI, Teuchos::UNIT_DIAG, dy, dx);
+  doubleKernel.solve( Teuchos::NO_TRANS, dy, dx);
 
   // create a float-valued matrix fM using the graph G
-  FloatMat fM(G);
+  Teuchos::RCP<FMatrix> fM = Teuchos::rcp(new FMatrix(G,Teuchos::null));
   // create a double-valued sparse kernel using the rebind functionality
-  SparseOps::rebind<float>::other floatKernel(node);
+  FloatOps floatKernel(node);
   // initialize it with G and fM
-  floatKernel.initializeStructure(G);
-  floatKernel.initializeValues(fM);
+  FloatOps::finalizeMatrix(*G,*fM,Teuchos::null);
+  floatKernel.setGraphAndMatrix(G,fM);
   // create float-valued vectors and initialize them
   FloatVec fx(node), fy(node);
-  // test the sparse kernel operator interfaces
+  // call the sparse kernel operator interfaces
   floatKernel.multiply( Teuchos::NO_TRANS, 1.0f, fx, fy);
   floatKernel.multiply( Teuchos::NO_TRANS, 1.0f, fx, 1.0f, fy);
-  floatKernel.solve( Teuchos::NO_TRANS, Teuchos::UPPER_TRI, Teuchos::UNIT_DIAG, fy, fx);
+  floatKernel.solve( Teuchos::NO_TRANS, fy, fx);
 
   std::cout << "End Result: TEST PASSED" << std::endl;
   return 0;

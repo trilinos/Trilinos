@@ -56,7 +56,6 @@
 #include "Kokkos_ThrustGPUNode.hpp"
 #include "Kokkos_TPINode.hpp"
 
-
 #include "PDP10_TestOps.hpp"
 
   struct CompStats {
@@ -74,6 +73,7 @@
   using Teuchos::rcp;
   using Teuchos::ArrayRCP;
   using Teuchos::null;
+  using Teuchos::parameterList;
 
   int numPthreads;
 
@@ -174,16 +174,16 @@
 
   /////////////////////////////////////////////////////////
   template <class Node>
-  RCP<typename Kokkos::DefaultKernels<float,int,Node>::SparseOps::template rebind<float>::other>
+  RCP<typename Kokkos::DefaultKernels<float,int,Node>::SparseOps::template bind_scalar<float>::other_type>
   gen_prob(RCP<Node> node, int N, int &totalNNZ)
   {
     typedef typename Kokkos::DefaultKernels<float,int,Node>::SparseOps   DSM;
-    typedef typename DSM::template rebind<float>::other                 fDSM;
-    typedef Kokkos::CrsGraph<int,Node,DSM>                              GRPH;
-    typedef Kokkos::CrsMatrix<float,int,Node,DSM>                        MAT;
+    typedef typename DSM::template bind_scalar<float>::other_type       fDSM;
+    typedef typename fDSM::template graph<int,Node>::graph_type                  GRPH;
+    typedef typename fDSM::template matrix<float,int,Node>::matrix_type           MAT;
     // generate symmetric tridiagonal matrix
-    GRPH G(N,node);
-    MAT  A(G);
+    RCP<GRPH> G = rcp(new GRPH(N,node,null));
+    RCP<MAT>  A= rcp(new MAT(G,null));
     // allocate buffers for offsets, indices and values
     totalNNZ = 3*N - 2;
     ArrayRCP<size_t> offsets(N+1);
@@ -206,17 +206,16 @@
       vals[NNZsofar] =  -1; vals[NNZsofar+1] = 2;
       NNZsofar += 2;
       offsets[N]   = NNZsofar;
-      TEUCHOS_TEST_FOR_EXCEPT(NNZsofar != totalNNZ);
+      TEUCHOS_TEST_FOR_EXCEPT(NNZsofar != (size_t)totalNNZ);
     }
-    G.set1DStructure(inds, offsets, offsets.persistingView(1,N));
+    G->setStructure(offsets, inds);
     offsets = Teuchos::null;
     inds    = Teuchos::null;
-    A.set1DValues(vals);
+    A->setValues(vals);
     vals    = Teuchos::null;
-    A.finalize(true);
+    fDSM::finalizeGraphAndMatrix(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,*G,*A,parameterList());
     RCP<fDSM> dsm = rcp(new fDSM(node));
-    dsm->initializeStructure(G);
-    dsm->initializeValues(A);
+    dsm->setGraphAndMatrix(G,A);
     return dsm;
   }
 
@@ -230,7 +229,7 @@
     RCP<Node> node = getNode<Node>();
     // create matrix
     int NNZ = 0;
-    RCP<typename Kokkos::DefaultKernels<float,int,Node>::SparseOps::template rebind<float>::other> A;
+    RCP<typename Kokkos::DefaultKernels<float,int,Node>::SparseOps::template bind_scalar<float>::other_type> A;
     A = gen_prob<Node>(node,N,NNZ);
     // Variables needed for iteration
     const float ONE  = 1.0f;
@@ -288,7 +287,7 @@
     RCP<Node> node = getNode<Node>();
     // create matrix
     int NNZ = 0;
-    RCP<typename Kokkos::DefaultKernels<float,int,Node>::SparseOps::template rebind<float>::other> A;
+    RCP<typename Kokkos::DefaultKernels<float,int,Node>::SparseOps::template bind_scalar<float>::other_type> A;
     A = gen_prob<Node>(node,N,NNZ);
     // Variables needed for iteration
     const float ONE  = 1.0f;

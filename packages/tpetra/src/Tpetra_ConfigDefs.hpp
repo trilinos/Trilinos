@@ -135,6 +135,8 @@ namespace Tpetra {
 // comm
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
+// misc
+#include <Teuchos_ParameterList.hpp>
 #endif
 
 //! Namespace for Tpetra classes and methods
@@ -216,10 +218,15 @@ namespace Tpetra {
   using Teuchos::arcp;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
+  using Teuchos::rcp_const_cast;
   using Teuchos::av_reinterpret_cast;
   using Teuchos::arcp_reinterpret_cast;
 
   using Teuchos::typeName;
+
+  using Teuchos::ParameterList;
+  using Teuchos::parameterList;
+  using Teuchos::sublist;
 #endif
 
   // Tpetra functor objects
