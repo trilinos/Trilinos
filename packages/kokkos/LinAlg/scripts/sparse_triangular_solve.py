@@ -235,6 +235,7 @@ def makeFunctionName (defDict):
     upLo = defDict['upLo']
     unitDiag = defDict['unitDiag']
     inPlace = defDict['inPlace']
+    conjugateMatrixElements = defDict['conjugateMatrixElements']
 
     if dataLayout == 'row major':
         denseLayoutAbbr = 'RowMajor'
