@@ -222,7 +222,7 @@ namespace stk
             if (stk::mesh::is_auto_declared_part(part)) 
               continue;
 
-            bool in_selector = stk::mesh::selector_contains_part(*m_selector, part);
+            bool in_selector = (*m_selector)(part);
             stk::mesh::EntityRank rank = part.primary_entity_rank();
             //std::cout << "tmp srk Part= " << part.name() << " rank= " << rank << " in_selector= " << in_selector << std::endl;
             if (in_selector)

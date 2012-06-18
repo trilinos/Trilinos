@@ -928,6 +928,45 @@ STKUNIT_UNIT_TEST( UnitTestSelector, selectField )
   }
 }
 
+/** \brief Verify operator()(Part&) works as expected
+ *
+ */
+STKUNIT_UNIT_TEST( UnitTestSelector, select_part )
+{
+  SelectorFixture fix ;
+  initialize(fix);
+
+  stk::mesh::Part & partA = fix.m_partA ;
+  stk::mesh::Part & partB = fix.m_partB ;
+  stk::mesh::Part & partC = fix.m_partC ;
+  stk::mesh::Part & partD = fix.m_partD ;
+  stk::mesh::Selector selector =  partA | partB | (!partC) | partD;
+  std::cout << "select_part selector = " << selector << std::endl;
+  STKUNIT_EXPECT_TRUE(selector(partA));
+  STKUNIT_EXPECT_TRUE(selector(partB));
+  STKUNIT_EXPECT_FALSE(selector(partC));
+  STKUNIT_EXPECT_TRUE(selector(partD));
+
+  selector =  
+    partA |  
+    ( !( (partA & partB) | partC)  
+      & 
+      (!partD | partB)
+      );
+
+  STKUNIT_EXPECT_TRUE(selector(partA));
+  STKUNIT_EXPECT_TRUE(selector(partB));
+  STKUNIT_EXPECT_FALSE(selector(partC));
+  STKUNIT_EXPECT_FALSE(selector(partD));
+
+  selector = partC & (!partD);
+  STKUNIT_EXPECT_FALSE(selector(partA));
+  STKUNIT_EXPECT_FALSE(selector(partB));
+  STKUNIT_EXPECT_TRUE(selector(partC));
+  STKUNIT_EXPECT_FALSE(selector(partD));
+
+}
+
 /** \} */
 
 

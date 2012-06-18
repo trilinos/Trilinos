@@ -138,6 +138,11 @@ public:
   Selector operator ! () const
     { Selector S( *this ); return S.complement(); }
 
+  /** \brief  Is this part a member of the
+   *          set defined by the selector expression.
+   */
+  bool operator()( const Part & part ) const;
+
   /** \brief  Is this bucket a subset of the
    *          set defined by the selector expression.
    */

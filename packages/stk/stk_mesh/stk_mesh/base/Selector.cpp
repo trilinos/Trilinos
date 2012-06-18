@@ -53,6 +53,13 @@ Selector & Selector::complement()
   return *this;
 }
 
+bool Selector::operator()( const Part & part ) const
+{
+  unsigned part_ord = part.mesh_meta_data_ordinal();
+  std::pair<const unsigned *, const unsigned *> part_ords(&part_ord, &part_ord+1);
+  return apply(part_ords, PartOrdLess());
+}
+
 bool Selector::operator()( const Bucket & candidate ) const
 { return apply( m_op.begin() , m_op.end() , candidate.superset_part_ordinals(), PartOrdLess() ); }
 
@@ -293,12 +300,6 @@ Selector selectField( const FieldBase& field )
   return selector;
 }
 
-bool selector_contains_part(const Selector& selector, const Part& part)
-{
-  unsigned part_ord = part.mesh_meta_data_ordinal();
-  std::pair<const unsigned *, const unsigned *> part_ords(&part_ord, &part_ord+1);
-  return selector.apply(part_ords, PartOrdLess());
-}
 
 
 } // namespace mesh
