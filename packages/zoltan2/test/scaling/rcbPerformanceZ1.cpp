@@ -41,31 +41,31 @@ static RCP<tMVector_t> coordinates;
 
 int getNumObj(void *data, int *ierr)
 {
-  *ierr = ZOLTAN_OK;
+  *ierr = 0;
   return coordinates->getLocalLength();
 }
 
 int getDim(void *data, int *ierr)
 {
-  *ierr = ZOLTAN_OK;
+  *ierr = 0;
   return 3;
 }
 
 void getObjList(void *data, int numGid, int numLid,
-  ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, 
+  gid_t * gids, gid_t * lids, 
   int wgt_dim, float *obj_wgts, int *ierr)
 {
-  *ierr = ZOLTAN_OK;
+  *ierr = 0;
   size_t localLen = coordinates->getLocalLength();
   const gno_t *ids = coordinates->getMap()->getNodeElementList().getRawPtr();
   gno_t *idsNonConst = const_cast<gno_t *>(ids);
 
-  if (sizeof(ZOLTAN_ID_TYPE) == sizeof(gno_t)){
-    memcpy(gids, idsNonConst, sizeof(ZOLTAN_ID_TYPE) * localLen);
+  if (sizeof(gid_t) == sizeof(gno_t)){
+    memcpy(gids, idsNonConst, sizeof(gid_t) * localLen);
   }
   else{
     for (size_t i=0; i < localLen; i++)
-      gids[i] = static_cast<ZOLTAN_ID_TYPE>(idsNonConst[i]);
+      gids[i] = static_cast<gid_t>(idsNonConst[i]);
   }
 
   if (wgt_dim > 0){
@@ -77,11 +77,11 @@ void getObjList(void *data, int numGid, int numLid,
 }
 
 void getCoordinates(void *data, int numGid, int numLid,
-  int numObj, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
+  int numObj, gid_t * gids, gid_t * lids,
   int dim, double *coords, int *ierr)
 {
   // I know that Zoltan asks for coordinates in gid order.
-  *ierr = ZOLTAN_OK;
+  *ierr = 0;
   double *val = coords;
   const scalar_t *x = coordinates->getData(0).getRawPtr();
   const scalar_t *y = coordinates->getData(1).getRawPtr();
@@ -399,7 +399,7 @@ int main(int argc, char *argv[])
   float ver;
   int aok = Zoltan_Initialize(argc, argv, &ver);
 
-  if (aok != ZOLTAN_OK){
+  if (aok != 0){
     printf("sorry...\n");
     exit(0);
   }
@@ -443,8 +443,8 @@ int main(int argc, char *argv[])
   Zoltan_Set_Geom_Multi_Fn(zz, getCoordinates,NULL);
 
   int changes, numGidEntries, numLidEntries, numImport, numExport;
-  ZOLTAN_ID_PTR importGlobalGids, importLocalGids;
-  ZOLTAN_ID_PTR exportGlobalGids, exportLocalGids;
+  gid_t * importGlobalGids, * importLocalGids;
+  gid_t * exportGlobalGids, * exportLocalGids;
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
 
   MEMORY_CHECK(doMemory && rank==0, "Before Zoltan_LB_Partition");
@@ -469,7 +469,7 @@ int main(int argc, char *argv[])
   MEMORY_CHECK(doMemory && rank==0, "After Zoltan_Destroy");
 
   if (rank==0){
-    if (aok != ZOLTAN_OK)
+    if (aok != 0)
       std::cout << "FAIL" << std::endl;
     else
       std::cout << "PASS" << std::endl;
