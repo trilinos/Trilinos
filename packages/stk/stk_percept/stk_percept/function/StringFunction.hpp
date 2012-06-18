@@ -42,6 +42,8 @@ namespace stk
       virtual Teuchos::RCP<Function > 
       derivative(MDArrayString& deriv_spec);
 
+      Teuchos::RCP<Function > gradient(int spatialDim=3);
+
       //========================================================================================================================
       // low-level interface
       StringFunction(const char *function_string, 

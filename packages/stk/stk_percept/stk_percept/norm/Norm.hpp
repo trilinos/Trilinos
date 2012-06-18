@@ -146,6 +146,7 @@ namespace stk
     template<int Power=2>
     class Norm : public FunctionOperator
     {
+    protected:
       bool m_is_surface_norm;
       TurboOption m_turboOpt;
       unsigned m_cubDegree;

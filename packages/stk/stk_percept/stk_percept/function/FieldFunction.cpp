@@ -22,7 +22,7 @@ namespace stk
       Function(name, Dimensions(domain_dimension), Dimensions(codomain_dimension), integration_order),
       m_my_field(field), m_bulkData(mesh.get_bulk_data()),
       m_cachedElement(0), m_searcher(0),
-      m_cached_topo_key(0), m_cached_basis(0), m_searchType(searchType)
+      m_cached_topo_key(0), m_cached_basis(0), m_searchType(searchType), m_get_derivative(false)
                                 //, m_parallelEval(true)
     {
     }
@@ -59,7 +59,7 @@ namespace stk
                                  unsigned integration_order) :
       Function(name, domain_dimensions, codomain_dimensions, integration_order),
       m_my_field(field), m_bulkData(bulk), m_cachedElement(0), m_searcher(0),
-      m_cached_topo_key(0), m_cached_basis(0), m_searchType(searchType)
+      m_cached_topo_key(0), m_cached_basis(0), m_searchType(searchType), m_get_derivative(false)
                                 //, m_parallelEval(true)
     {
     }
@@ -71,7 +71,7 @@ namespace stk
                                  unsigned integration_order) :
       Function(name, domain_dimensions, codomain_dimensions, integration_order),
       m_my_field(field), m_bulkData(eMesh.get_bulk_data()), m_cachedElement(0), m_searcher(0),
-      m_cached_topo_key(0), m_cached_basis(0), m_searchType(searchType)
+      m_cached_topo_key(0), m_cached_basis(0), m_searchType(searchType), m_get_derivative(false)
     {
     }
 

@@ -2469,7 +2469,7 @@ namespace stk {
         EXCEPTWATCH;
 
         // a part to hold new nodes
-        if (0)  // FIXME - this is causing an exception in parallel runs, why?
+        if (1)  // FIXME - this is causing an exception in parallel runs, why?
           {
             stk::mesh::Part* new_nodes_part = eMesh.get_non_const_part("refine_new_nodes_part");
             if (!new_nodes_part)

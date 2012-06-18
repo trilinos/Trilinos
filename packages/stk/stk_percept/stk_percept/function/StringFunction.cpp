@@ -286,6 +286,22 @@ namespace stk
       return Teuchos::rcp(new StringFunction(m_gradient_string.c_str(), Name(new_name), Dimensions(3), Dimensions(3) ));
     }
 
+    Teuchos::RCP<Function > StringFunction::gradient(int spatialDim)
+    {
+      if (m_gradient_string.length() == 0)
+        {
+          throw std::runtime_error("StringFunction::gradient: must set gradient strings first");
+        }
+      std::string xyz[] = {"x", "y", "z"};
+      MDArrayString mda(spatialDim);
+      for (int i = 0; i < spatialDim; i++)
+        {
+          mda(i) = xyz[i];
+        }
+      return derivative(mda);
+
+    }
+
     void StringFunction::operator()(MDArray& inp, MDArray& out, double time_value_optional)
     {
       EXCEPTWATCH;

@@ -97,6 +97,39 @@ namespace stk
 
       virtual ~FieldFunction();
 
+      virtual Teuchos::RCP<Function > derivative(MDArrayString& deriv_spec)
+      {
+        m_deriv_spec = deriv_spec;
+        Dimensions domain_dimensions = getDomainDimensions();
+        Dimensions codomain_dimensions = getCodomainDimensions();
+        //int meta_dimension = mesh::fem::FEMMetaData::get_meta_data(mesh::fem::FEMMetaData::get(*m_bulkData)).get_spatial_dimension();
+        int num_grad = deriv_spec.dimension(0);
+        //domain_dimensions.push_back(num_grad);
+        codomain_dimensions.back() = num_grad;
+
+        FieldFunction *deriv = new FieldFunction(this->getName().c_str(), 
+                                                 this->m_my_field,
+                                                 this->get_bulk_data(), 
+                                                 domain_dimensions, codomain_dimensions,
+                                                 this->m_searchType,
+                                                 this->getIntegrationOrder());
+        deriv->m_get_derivative = true;
+        Teuchos::RCP<Function > deriv_rcp = Teuchos::rcp(deriv);
+        return deriv_rcp;
+      }
+
+      virtual Teuchos::RCP<Function > gradient(int spatialDim=3)
+      {
+        int meta_dimension = mesh::fem::FEMMetaData::get_meta_data(mesh::fem::FEMMetaData::get(*m_bulkData)).get_spatial_dimension();
+        std::string xyz[] = {"x", "y", "z"};
+        MDArrayString mda(meta_dimension);
+        for (int i = 0; i < meta_dimension; i++)
+          {
+            mda(i) = xyz[i];
+          }
+        return derivative(mda);
+      }
+
       virtual void operator()(MDArray& in, MDArray& out, double time_value_optional=0.0);
       virtual void localEvaluation(MDArray& in, MDArray& out, double time_value_optional=0.0);
 
@@ -129,6 +162,8 @@ namespace stk
       SearchType m_searchType;
       bool m_found_on_local_owned_part;
 
+      bool m_get_derivative;
+      MDArrayString m_deriv_spec;
     };
 
     /** Evaluate the function on this element at the parametric coordinates and return in output_field_values.
@@ -146,6 +181,8 @@ namespace stk
       VERIFY_OP(output_field_values.rank(), ==, 2, "FieldFunction::operator() output_field_values bad rank");
 
       int numInterpPoints = parametric_coordinates.dimension(0);
+      int spatialDim = mesh::fem::FEMMetaData::get_meta_data(mesh::fem::FEMMetaData::get(*m_bulkData)).get_spatial_dimension();
+      int num_grad = getCodomainDimensions().back();
 
       VERIFY_OP(output_field_values.dimension(0), ==, numInterpPoints, "FieldFunction::operator() output_field_values bad dim(0)");
 
@@ -206,9 +243,14 @@ namespace stk
 
       // ([F],[P]), or ([F],[P],[D]) for GRAD
       MDArray basis_values(numBases, numInterpPoints); 
-
       // ([C],[F],[P]), or ([C],[F],[P],[D]) for GRAD
       MDArray transformed_basis_values(numCells, numBases, numInterpPoints); 
+      if (m_get_derivative)
+        {
+          basis_values.resize(numBases, numInterpPoints, spatialDim);
+          transformed_basis_values.resize(numCells, numBases, numInterpPoints, spatialDim);
+        }
+      
 
       if (EXTRA_PRINT_FF_HELPER) std::cout << "FieldFunction::operator()(elem,...) 4" << std::endl;
 
@@ -226,7 +268,7 @@ namespace stk
       if (EXTRA_PRINT_FF_HELPER) std::cout << "FieldFunction::operator()(elem,...) parametric_coordinates = \n " << parametric_coordinates << std::endl;
       {
         EXCEPTWATCH;
-        basis->getValues(basis_values, parametric_coordinates, Intrepid::OPERATOR_VALUE);
+        basis->getValues(basis_values, parametric_coordinates, m_get_derivative ?  Intrepid::OPERATOR_GRAD : Intrepid::OPERATOR_VALUE );
       }
 
       if (EXTRA_PRINT_FF_HELPER) std::cout << "FieldFunction::operator()(elem,...) basis_values = \n " << basis_values << std::endl;
@@ -237,6 +279,10 @@ namespace stk
 
       // ([C],[P]) - place for results of evaluation
       MDArray loc_output_field_values(numCells, numInterpPoints);
+      if (m_get_derivative)
+        {
+          loc_output_field_values.resize(numCells, numInterpPoints, spatialDim);
+        }
 
       PerceptMesh::fillCellNodes(bucket_or_element, m_my_field, field_data_values_dof);
 
@@ -264,6 +310,8 @@ namespace stk
           FunctionSpaceTools::evaluate<double>(loc_output_field_values, field_data_values, transformed_basis_values);
           if (EXTRA_PRINT_FF_HELPER) std::cout << "FieldFunction::operator()(elem,...) evaluate done " << std::endl;
 
+          VERIFY_OP_ON(numCells, ==, 1, "numCells...");
+
           for (int iCell = 0; iCell < numCells; iCell++)
             {
               for (int iPoint = 0; iPoint < numInterpPoints; iPoint++)
@@ -274,6 +322,27 @@ namespace stk
                   if (EXTRA_PRINT_FF_HELPER) std::cout << "tmp iDOF= " << iDOF << " ofd= " << output_field_values(iPoint, iDOF) << std::endl;
                 }
             }
+          if (m_get_derivative)
+            {
+              for (int iDim = 0; iDim < num_grad; iDim++)
+                {
+                  int jDim = -1;
+                  if (m_deriv_spec(iDim) == "x") jDim = 0;
+                  else if (m_deriv_spec(iDim) == "y") jDim = 1;
+                  else if (m_deriv_spec(iDim) == "z") jDim = 2;
+
+                  for (int iCell = 0; iCell < numCells; iCell++)
+                    {
+                      for (int iPoint = 0; iPoint < numInterpPoints; iPoint++)
+                        {
+                          output_field_values(iPoint, iDOF, iDim) = loc_output_field_values(iCell, iPoint, jDim);
+                          if (EXTRA_PRINT_FF_HELPER) std::cout << "tmp iDOF= " << iDOF << " iDim= " << iDim << 
+                            " ofd= " << output_field_values(iPoint, iDOF, iDim) << std::endl;
+                        }
+                    }
+                }
+            }
+
           if (EXTRA_PRINT_FF_HELPER) std::cout << "FieldFunction::operator()(elem,...) scatter done " << std::endl;
         }
     }

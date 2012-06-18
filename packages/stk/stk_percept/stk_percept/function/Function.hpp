@@ -166,6 +166,11 @@ namespace stk
         throw std::runtime_error("not implemented");
       }
 
+      virtual Teuchos::RCP<Function > gradient(int spatialDim=3)
+      {
+        throw std::runtime_error("not implemented");
+      }
+
       void derivativeAtPoint(MDArrayString& deriv_spec, MDArray& domain, MDArray& codomain, double time = 0.0)
       {
         derivative(deriv_spec)->operator()(domain, codomain, time);
