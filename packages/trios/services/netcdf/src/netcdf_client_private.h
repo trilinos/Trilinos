@@ -19,7 +19,7 @@ extern "C" {
     extern int nc_sync_wait(int ncid);
     extern int nc_close_wait(int ncid);
 
-    extern int nc_fini(void);
+    extern int netcdf_client_fini(void);
 
 #ifdef __cplusplus
 }

@@ -81,7 +81,6 @@ namespace {
   using Tpetra::CrsGraph;
   using Tpetra::CrsMatrix;
   using Tpetra::DefaultPlatform;
-  using Tpetra::DoOptimizeStorage;
   using Tpetra::DynamicProfile;
   using Tpetra::Export;
   using Tpetra::global_size_t;
@@ -386,7 +385,7 @@ namespace {
 				     tuple<Ordinal> (globalrow), 
 				     tuple<Scalar> (globalrow));
       }
-      src_mat->fillComplete (DoOptimizeStorage);
+      src_mat->fillComplete ();
 
       // Create the importer
       Import<Ordinal> importer (src_map, tgt_map, getImportParameterList ());

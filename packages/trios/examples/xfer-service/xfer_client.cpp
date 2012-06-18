@@ -62,13 +62,13 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include <ostream>
 #include <iomanip>
 #include <string>
+#include <cassert>
 
 
 #include <mpi.h>
 
 #include <math.h>
 #include <limits.h>
-#include <assert.h>
 #include <signal.h>
 #include <unistd.h>
 #include <time.h>
@@ -78,14 +78,13 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "Teuchos_CommandLineProcessor.hpp"
 
 #include "xfer_service_args.h"
+#include "xfer_util.h"
 
 
 
 log_level client_debug_level = LOG_UNDEFINED;
 
 /* prototype for a function to initialize buffers */
-extern void xfer_init_data_array(const unsigned int seed, data_array_t *array);
-extern int xfer_compare_data_arrays(const data_array_t *arr1, const data_array_t *arr2);
 extern int print_args(
         std::ostream &out,
         const struct xfer_args &args,
@@ -534,7 +533,6 @@ xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm clien
     int rc;
     int i,j;
     double time;
-    data_array_t array;
     double start_time;
     std::ofstream result_stream;
     log_level debug_level = LOG_WARN;
@@ -554,17 +552,6 @@ xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm clien
 
     MPI_Comm_rank(client_comm, &client_rank);
     MPI_Comm_size(client_comm, &client_size);
-
-    /* initialize logger */
-//    if (args.logfile.empty()) {
-//        logger_init(args.debug_level, NULL);
-//        debug_level = args.debug_level;
-//    } else {
-//        char fn[1024];
-//        sprintf(fn, "%s.%03d.log", args.logfile.c_str(), client_rank);
-//        logger_init(args.debug_level, fn);
-//        debug_level = args.debug_level;
-//    }
 
 
     /* divide the requests among the processors */

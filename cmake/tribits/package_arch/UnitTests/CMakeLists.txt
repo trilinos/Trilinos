@@ -1,14 +1,18 @@
 
 ADD_SUBDIRECTORY(DependencyUnitTests)
 
+
 ASSERT_DEFINED(CMAKE_HOST_SYSTEM_NAME)
 IF (NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
   ADD_SUBDIRECTORY(CTestScriptsUnitTests)
 ENDIF()
 
+
 INCLUDE(TribitsAddAdvancedTest)
 
+
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_MPI)
+
 
 TRIBITS_ADD_ADVANCED_TEST( TestingFunctionMacro_UnitTests
   OVERALL_WORKING_DIRECTORY TEST_NAME
@@ -22,6 +26,7 @@ TRIBITS_ADD_ADVANCED_TEST( TestingFunctionMacro_UnitTests
       "Final UnitTests Result: PASSED"
   )
 
+
 TRIBITS_ADD_ADVANCED_TEST( CompilerOptions_UnitTests
   OVERALL_WORKING_DIRECTORY TEST_NAME
   TEST_0 CMND ${CMAKE_COMMAND}
@@ -31,5 +36,31 @@ TRIBITS_ADD_ADVANCED_TEST( CompilerOptions_UnitTests
       -P "${CMAKE_CURRENT_SOURCE_DIR}/CompilerOptions_UnitTests.cmake"
     PASS_REGULAR_EXPRESSION_ALL
       "Final UnitTests Result: num_run = 135"
+      "Final UnitTests Result: PASSED"
+  )
+
+
+TRIBITS_ADD_ADVANCED_TEST( TribitsProcessPackagesAndDirsLists_UnitTests
+  OVERALL_WORKING_DIRECTORY TEST_NAME
+  TEST_0 CMND ${CMAKE_COMMAND}
+    ARGS
+      -DPROJECT_NAME=${PROJECT_NAME}
+      -D${PROJECT_NAME}_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
+      -P "${CMAKE_CURRENT_SOURCE_DIR}/TribitsProcessPackagesAndDirsLists_UnitTests.cmake"
+    PASS_REGULAR_EXPRESSION_ALL
+      "Final UnitTests Result: num_run = 5"
+      "Final UnitTests Result: PASSED"
+  )
+
+
+TRIBITS_ADD_ADVANCED_TEST( TribitsAdjustPackageEnables_UnitTests
+  OVERALL_WORKING_DIRECTORY TEST_NAME
+  TEST_0 CMND ${CMAKE_COMMAND}
+    ARGS
+      -DPROJECT_NAME=${PROJECT_NAME}
+      -D${PROJECT_NAME}_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
+      -P "${CMAKE_CURRENT_SOURCE_DIR}/TribitsAdjustPackageEnables_UnitTests.cmake"
+    PASS_REGULAR_EXPRESSION_ALL
+      "Final UnitTests Result: num_run = 133"
       "Final UnitTests Result: PASSED"
   )

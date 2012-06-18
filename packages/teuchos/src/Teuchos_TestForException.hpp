@@ -229,7 +229,7 @@ TEUCHOS_LIB_DLL_EXPORT bool TestForException_getEnableStacktrace();
 #define TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(throw_exception_test, Exception, msg) \
 { \
    TEUCHOS_TEST_FOR_EXCEPTION( (throw_exception_test), Exception, \
-   typeName(*this) << "::" << tfecfFuncName << msg ) \
+   Teuchos::typeName(*this) << "::" << tfecfFuncName << msg ) \
 }
 
 

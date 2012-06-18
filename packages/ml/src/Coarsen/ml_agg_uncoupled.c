@@ -73,8 +73,8 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    int     offset, jnode, index, info;
 #endif
 #ifdef MB_MODIF_QR
-   int     numDeadNod;
-   ML_QR_FIX_TYPE dead;
+   int     numDeadNod; /* number of nodes with dead dofs on current coarse lev */
+   int     dead;
    int     nCDofTrunc, dof;
 #endif
    int     iend, bdry_blk, *bdry_array;
@@ -633,13 +633,8 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 
    work[0] = lwork;
 #ifdef MB_MODIF_QR
-   ML_qr_fix_Create(aggr_count); /* alloc array in structure */
+   ML_qr_fix_Create(aggr_count, nullspace_dim); /* alloc array in structure */
    numDeadNod = 0;  /* number of nodes with dead dofs on current coarse lev */
-   if (nullspace_dim > ML_qr_fix_Bitsize()) {
-       fprintf(stderr,"[SS] nullspace_dim=%d exceeds dim for xDeadNodDof\n",
-           nullspace_dim);
-       exit(1);
-   }
 #endif
    for (i = 0; i < aggr_count; i++) 
    {
@@ -688,9 +683,9 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
       if (nullspace_dim > agg_sizes[i]) {
          /* mark the coarse degree(s) of freedom that will be dead */
           nCDofTrunc = agg_sizes[i];
-          for (dof=nCDofTrunc; dof < nullspace_dim; dof++) dead |= (1 << dof); 
+          dead = 1;
+          ML_qr_fix_markDOFsAsDead(i,nCDofTrunc, nullspace_dim);
           numDeadNod++;
-          ML_qr_fix_setDeadNod(i, dead);
       }
 
       /* now calculate QR using an LAPACK routine */
@@ -729,7 +724,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 
       if (dead) {
           for (k = 0; k < nullspace_dim; k++) {
-            if (dead & (1 << k)) {
+            if (ML_qr_fix_isDOFDead(i,k)) {
                for (j = 0; j < k+1; j++) 
                   new_null[i*nullspace_dim+j+k*Ncoarse] = 0.e0;
             } else {
@@ -762,13 +757,13 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
          if (info != 0)
             pr_error("ERROR (CoarsenUncoupled): dorgqr returned a non-zero\n");
          if (dead) {
-            /* modify dead columns of Q if any */
-            for (k = 0; k < nullspace_dim; k++) {
-                 if (dead & (1 << k)) {
-                     for (j = 0; j < agg_sizes[i]; j++) 
-                         qr_tmp[k*agg_sizes[i] + j] = 0.e0;
-                 }
-            }
+           /* modify dead columns of Q if any */
+           for (k = 0; k < nullspace_dim; k++) {
+             if (ML_qr_fix_isDOFDead(i,k)) {
+               for (j = 0; j < agg_sizes[i]; j++) 
+                 qr_tmp[k*agg_sizes[i] + j] = 0.e0;
+             }
+           }
          }
       }
      /* -mb: we could check cols of Q locally to see if more dofs are dead */
@@ -878,10 +873,10 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 #ifdef MB_MODIF_QR
   /* set the number of nodes with dead dofs on current coarse grid */
    ML_qr_fix_setNumDeadNod(numDeadNod);
-/*
-   printf("[II] out of %d coarse nodes, %d have dead dofs\n",
-      aggr_count, numDeadNod);
-*/
+   k = numDeadNod;
+   ML_gsum_scalar_int(&k, &i, comm);
+   if (mypid == 0 && printflag  < ML_Get_PrintLevel())          
+     printf("Aggregation(UC) : QR factorization - too small aggregates = %d\n",k);
 #endif
 	 
    ML_Aggregate_Set_NullSpace(ml_ag, nullspace_dim, nullspace_dim, 

@@ -22,7 +22,7 @@ FUNCTION(CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE TEST_NAME)
      #prefix
      PARSE
      #lists
-     "COPY_FILES;ARGS;PASS_REGULAR_EXPRESSION_ALL"
+     "COPY_FILES;ARGS;PASS_REGULAR_EXPRESSION_ALL;COMPARE_DEPS_FILE"
      #options
      "SKIP_STANDARD_DEPS_CHECK"
      ${ARGN}
@@ -92,10 +92,20 @@ FUNCTION(CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE TEST_NAME)
       )
     IF (PYTHON_EXECUTABLE)
       SET(TEST_BLOCKS ${TEST_BLOCKS}
-        "Dumping the HTML dependencies webpage file .*/${TEST_FULL_NAME}/TrilinosPackageDependenciesTable.html"
         "Dumping the CDash XML dependencies file .*/${TEST_FULL_NAME}/CDashSubprojectDependencies.xml"
         )
     ENDIF()
+  ENDIF()
+
+  MATH(EXPR TEST_IDX "${TEST_IDX}+1")
+
+  IF (PARSE_COMPARE_DEPS_FILE)
+    SET(TEST_BLOCKS ${TEST_BLOCKS}
+      TEST_${TEST_IDX} CMND ${CMAKE_COMMAND}
+        ARGS -E compare_files
+          "${PARSE_COMPARE_DEPS_FILE}"
+          "${CMAKE_CURRENT_BINARY_DIR}/${TEST_FULL_NAME}/TrilinosPackageDependencies.xml"
+      )
   ENDIF()
 
   TRIBITS_ADD_ADVANCED_TEST( ${TEST_CORE_NAME}
@@ -112,6 +122,8 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "Enabling all packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
     "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Stratimikos RBGen 19"
     "Final set of non-enabled packages:  Stokhos Sacado Belos Phalanx 4"
+  COMPARE_DEPS_FILE
+     "${CMAKE_CURRENT_SOURCE_DIR}/TrilinosPackageDependencies.Trilinos.xml"
   )
 
 
@@ -236,6 +248,8 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "Procesing current package Phalanx: libs='ON', tests='ON'"
     "Procesing current package Stalix: libs='OFF', tests=''"
     "Package Stalix is disabled, skipping configure, build, test"
+  COMPARE_DEPS_FILE
+     "${CMAKE_CURRENT_SOURCE_DIR}/TrilinosPackageDependencies.Continuos.xml"
   )
 
 

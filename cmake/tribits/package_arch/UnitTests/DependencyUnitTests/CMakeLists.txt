@@ -218,8 +218,8 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   ARGS -DTrilinos_ENABLE_EpetraExt:BOOL=ON -DTrilinos_ENABLE_AztecOO:BOOL=OFF
     -DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON
   PASS_REGULAR_EXPRESSION_ALL
-    "WARNING: Not Setting Trilinos_ENABLE_Belos=ON even though Stratimikos_ENABLE_Belos=ON because Trilinos_ENABLE_SECONDARY_STABLE_CODE=OFF"
-    "WARNING: Not Setting Trilinos_ENABLE_Sacado=ON even though Intrepid_ENABLE_Sacado=ON because Trilinos_ENABLE_SECONDARY_STABLE_CODE=OFF"
+    "WARNING: Not Setting Trilinos_ENABLE_Belos=ON even though Stratimikos has an optional dependence on Belos because Trilinos_ENABLE_SECONDARY_STABLE_CODE=OFF"
+    "WARNING: Not Setting Trilinos_ENABLE_Sacado=ON even though Intrepid has an optional dependence on Sacado because Trilinos_ENABLE_SECONDARY_STABLE_CODE=OFF"
     "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Thyra Isorropia Galeri Amesos Intrepid Ifpack ML Stratimikos RBGen 17"
   )
 
@@ -388,9 +388,9 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
     "Trilinos_NUM_TPLS='20'"
     "Explicitly enabled packages on input .* Teko 1"
     "Explicitly disabled packages on input .* Stokhos Stalix 2"
-    "Setting Trilinos_ENABLE_Teuchos=ON because Teko_ENABLE_Teuchos=ON"
-    "Setting Trilinos_ENABLE_Epetra=ON because Teko_ENABLE_Epetra=ON"
-    "Trilinos_ENABLE_Thyra=ON because Teko_ENABLE_Thyra=ON"
+    "Setting Trilinos_ENABLE_Teuchos=ON because Teko has an optional dependence on Teuchos"
+    "Setting Trilinos_ENABLE_Epetra=ON because Teko has an optional dependence on Epetra"
+    "Setting Trilinos_ENABLE_Thyra=ON because Teko has an optional dependence on Thyra"
     "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Ifpack ML Stratimikos Teko 16"
     "Final set of non-enabled packages:  TrilinosFramework Shards Stokhos Sacado Intrepid Belos RBGen Phalanx Stalix 9"
     "Final set of enabled TPLs:  BLAS LAPACK TekoDepTPL 3"
@@ -404,9 +404,9 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   PASS_REGULAR_EXPRESSION_ALL
     "Explicitly enabled packages on input .* Stalix 1"
     "Explicitly disabled packages on input .* Stokhos 1"
-    "WARNING: Not Setting Trilinos_ENABLE_Sacado=ON even though Stalix_ENABLE_Sacado=ON because Trilinos_ENABLE_SECONDARY_STABLE_CODE=OFF"
-    "Setting Trilinos_ENABLE_Tpetra=ON because Stalix_ENABLE_Tpetra=ON"
-    "Setting Trilinos_ENABLE_Thyra=ON because Stalix_ENABLE_Thyra=ON"
+    "WARNING: Not Setting Trilinos_ENABLE_Sacado=ON even though Stalix has an optional dependence on Sacado because Trilinos_ENABLE_SECONDARY_STABLE_CODE=OFF"
+    "Setting Trilinos_ENABLE_Tpetra=ON because Stalix has an optional dependence on Tpetra"
+    "Setting Trilinos_ENABLE_Thyra=ON because Stalix has an optional dependence on Thyra"
     "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Sacado Thyra Stalix 10"
     "Final set of non-enabled packages:  TrilinosFramework Shards Stokhos Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko 15"
   )
@@ -458,7 +458,7 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
     "Trilinos_NUM_TPLS='22'"
     "Explicitly enabled packages on input .* ExtraPack 1"
     "Explicitly disabled packages on input .* Stokhos Stalix 2"
-    "Setting Trilinos_ENABLE_Teuchos=ON because ExtraPack_ENABLE_Teuchos=ON"
+    "Setting Trilinos_ENABLE_Teuchos=ON because ExtraPack has an optional dependence on Teuchos"
     "Setting Trilinos_ENABLE_Teko=ON because Trilinos_ENABLE_ExtraPack=ON"
     "Final set of enabled packages:  Teuchos RTOp Epetra Triutils EpetraExt Thyra AztecOO Amesos Ifpack ML Stratimikos Teko ExtraPack 13"
     "Final set of non-enabled packages:  TrilinosFramework Zoltan Shards Tpetra Stokhos Sacado Isorropia Galeri Intrepid Belos RBGen Phalanx Stalix 13"
@@ -478,15 +478,26 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
 
 
 CREATE_DEPENDENCY_HANDLING_TEST_CASE(
+  extraTrilinosRepo_ReplacePackagesList
+  ARGS -DTrilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos
+    -DpreCopyrightTrilinos_PACKAGES_LIST_FILE=cmake/Reduced_preCopyrightTrilinos_PackagesList.cmake
+  PASS_REGULAR_EXPRESSION_ALL
+    "Reading a list of extra packages from .*/MockTrilinos/cmake/Reduced_preCopyrightTrilinos_PackagesList.cmake"
+    "Trilinos_NUM_PACKAGES='24'"
+    "Final set of non-enabled SE packages:  .* Phalanx Stalix 30"
+  )
+
+
+CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   ENABLE_KNOWN_EXTERNAL_REPOS_TYPE_CI_EnableTeko
   ARGS -DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Continuous
     -DTrilinos_ENABLE_Teko=ON
   PASS_REGULAR_EXPRESSION_ALL
     "Explicitly enabled packages on input .* Teko 1"
     "Explicitly disabled packages on input .* Stokhos Stalix 2"
-    "Setting Trilinos_ENABLE_Teuchos=ON because Teko_ENABLE_Teuchos=ON"
-    "Setting Trilinos_ENABLE_Epetra=ON because Teko_ENABLE_Epetra=ON"
-    "Trilinos_ENABLE_Thyra=ON because Teko_ENABLE_Thyra=ON"
+    "Setting Trilinos_ENABLE_Teuchos=ON because Teko has an optional dependence on Teuchos"
+    "Setting Trilinos_ENABLE_Epetra=ON because Teko has an optional dependence on Epetra"
+    "Setting Trilinos_ENABLE_Thyra=ON because Teko has an optional dependence on Thyra"
     "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Ifpack ML Stratimikos Teko 16"
     "Final set of non-enabled packages:  TrilinosFramework Shards Stokhos Sacado Intrepid Belos RBGen Phalanx Stalix 9"
   )
@@ -499,7 +510,7 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   PASS_REGULAR_EXPRESSION_ALL
     "Explicitly enabled packages on input .* ExtraPack 1"
     "Explicitly disabled packages on input .* Stokhos Stalix 2"
-    "Setting Trilinos_ENABLE_Teuchos=ON because ExtraPack_ENABLE_Teuchos=ON"
+    "Setting Trilinos_ENABLE_Teuchos=ON because ExtraPack has an optional dependence on Teuchos"
     "Setting Trilinos_ENABLE_Teko=ON because Trilinos_ENABLE_ExtraPack=ON"
     "Final set of enabled packages:  Teuchos RTOp Epetra Triutils EpetraExt Thyra AztecOO Amesos Ifpack ML Stratimikos Teko ExtraPack 13"
     "Final set of non-enabled packages:  TrilinosFramework Zoltan Shards Tpetra Stokhos Sacado Isorropia Galeri Intrepid Belos RBGen Phalanx Stalix 13"

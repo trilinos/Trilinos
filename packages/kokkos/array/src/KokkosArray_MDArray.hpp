@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 //
-//          KokkosArray: Node API and Parallel Node Kernels
+//          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
