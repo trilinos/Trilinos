@@ -15,8 +15,9 @@
 
 //Xpetra
 #include <Xpetra_MapExtractor_fwd.hpp>
-#include <Xpetra_CrsOperator.hpp>
-#include <Xpetra_Operator.hpp>
+#include <Xpetra_CrsOperator_fwd.hpp>
+#include <Xpetra_CrsMatrix_fwd.hpp>
+//#include <Xpetra_Operator.hpp>
 #include "Xpetra_Map_fwd.hpp"
 #include "Xpetra_StridedMap_fwd.hpp"
 
@@ -37,22 +38,9 @@ namespace MueLu {
     @class SchurComplementFactory class.
     @brief Factory for building the Schur Complement for a 2x2 block matrix.
 
-//TODO Update this!
-    Example
-    \code
-    Teuchos::RCP<Xpetra::BlockedCrsOperator<Scalar,LO,GO,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsOperator<Scalar,LO,GO>(mapExtractor,mapExtractor,10));
-    // ... let bOp be a 2x2 blocked operator ...
-    bOp->fillComplete();
-
-    // define factory for accessing block (0,0) in blocked operator A (assuming that the blocked operator is stored in Level class with NoFactory as generating factory)
-    RCP<SubBlockAFactory> A11Fact = Teuchos::rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(), 0, 0));
-
-    // define factory for accessing block (1,1) in blocked operator A
-    RCP<SubBlockAFactory> A22Fact = Teuchos::rcp(new SubBlockAFactory(MueLu::NoFactory::getRCP(), 1, 1));
-
-    RCP<Operator> A11 = level.Get<RCP<Operator> >("A", A11Fact); // extract (0,0) block from blocked operator A
-    RCP<Operator> A22 = level.Get<RCP<Operator> >("A", A22Fact); // extract (1,1) block from blocked operator A
-    \endcode
+    For a blocked matrix A = (F, G; D -Z) it computes the SchurComplement
+    S = - 1/omega D \hat{F}^{-1} G + Z
+    where omega is some scaling factor and \hat{F} an approximation of F (just the diagonal of F)
   */
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
@@ -65,7 +53,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    SchurComplementFactory(Teuchos::RCP<const FactoryBase> Afact,Scalar omega/*, size_t row, size_t col, LocalOrdinal blksize = 1*/);
+    SchurComplementFactory(Teuchos::RCP<const FactoryBase> AFact,Scalar omega/*, size_t row, size_t col, LocalOrdinal blksize = 1*/);
 
     //! Destructor.
     virtual ~SchurComplementFactory();
@@ -77,7 +65,7 @@ namespace MueLu {
     void DeclareInput(Level &currentLevel) const;
 
     //! Add a factory manager
-    void AddFactoryManager(RCP<const FactoryManagerBase> FactManager);
+    //void AddFactoryManager(RCP<const FactoryManagerBase> FactManager);
 
     //@}
 
@@ -91,12 +79,10 @@ namespace MueLu {
 
 
   private:
-    RCP<const FactoryManagerBase>       FactManager_;           //!< Factory manager for setting the schur complement
-    Teuchos::RCP<const FactoryBase> AFact_;   ///< generating factory of input variable
-    //const size_t                    row_;     ///< row id
-    //const size_t                    col_;     ///< column id
+    //RCP<const FactoryManagerBase>       FactManager_;           //!< Factory manager for setting the schur complement
+    Teuchos::RCP<const FactoryBase>     AFact_;                 ///< generating factory of input variable (blocked A operator)
 
-    Scalar                                                      omega_;         ///< damping parameter
+    Scalar                              omega_;         ///< damping parameter
 
     bool switchRowOrder_;                                               ///< NOT USED YET
 

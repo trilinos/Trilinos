@@ -58,9 +58,6 @@ namespace MueLu {
     // - Create and set the inverse of the diagonal of F (note that this means if a different approximation of F^-1 is desired, it must be coded again)
     // - Set the smoother for the Schur Complement
 
-//    typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixClass; //TODO
-//    typedef Xpetra::CrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsOperatorClass; //TODO
-
     FactoryMonitor m(*this, "Setup blocked Braess-Sarazin Smoother", currentLevel);
 
     if (SmootherPrototype::IsSetup() == true)
@@ -123,7 +120,7 @@ namespace MueLu {
     RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > residual = MultiVectorFactory::Build(B.getMap(), B.getNumVectors());
     RCP<MultiVector> rcpX = Teuchos::rcpFromRef(X);
 
-#define PRINT_RESIDUAL 0
+#define PRINT_RESIDUAL 1
 #if PRINT_RESIDUAL
      //This is necessary to print out the residual
      Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> normsvel(1);
