@@ -382,24 +382,20 @@ ENDIF()
 
 IF (Stokhos_ENABLE_Thrust)
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE(
     cuda_example
     SOURCES cuda_example.cpp
-    ARGS -v
     COMM serial mpi
-    NUM_MPI_PROCS 1
     DEPLIBS stokhos
   )
 
   IF(Stokhos_ENABLE_Sacado)
 
     CUDA_COMPILE(CUDA_SOURCES sacado_cuda_example.cu)
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TRIBITS_ADD_EXECUTABLE(
       sacado_cuda_example
       SOURCES ${CUDA_SOURCES}
-      ARGS -v
       COMM serial mpi
-      NUM_MPI_PROCS 1
       DEPLIBS stokhos
     )
 
