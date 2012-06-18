@@ -33,8 +33,10 @@ MLParameterListInterpreter
 #AggregationExportFactory
 BlockedPFactory
 SubBlockAFactory
+SchurComplementFactory
 BlockedGaussSeidelSmoother
+BraessSarazinSmoother
 AggregationExportFactory
-#MultiVectorTransferFactory
-#PermutedTransferFactory
+MultiVectorTransferFactory
+PermutedTransferFactory
 SubBlockAggregationFactory

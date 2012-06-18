@@ -138,31 +138,35 @@ typedef MueLu::BlockedPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOp
 typedef MueLu::SubBlockAFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SubBlockAFactory;
 #endif
 
+#ifdef MUELU_SCHURCOMPLEMENTFACTORY_SHORT
+typedef MueLu::SchurComplementFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SchurComplementFactory;
+#endif
+
 #ifdef MUELU_BLOCKEDGAUSSSEIDELSMOOTHER_SHORT
 typedef MueLu::BlockedGaussSeidelSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> BlockedGaussSeidelSmoother;
+#endif
+
+#ifdef MUELU_BRAESSSARAZINSMOOTHER_SHORT
+typedef MueLu::BraessSarazinSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> BraessSarazinSmoother;
 #endif
 
 #ifdef MUELU_AGGREGATIONEXPORTFACTORY_SHORT
 typedef MueLu::AggregationExportFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> AggregationExportFactory;
 #endif
 
-#ifdef MUELU_SUBBLOCKAGGREGATIONFACTORY_SHORT
-typedef MueLu::SubBlockAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SubBlockAggregationFactory;
+#ifdef MUELU_MULTIVECTORTRANSFERFACTORY_SHORT
+typedef MueLu::MultiVectorTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> MultiVectorTransferFactory;
 #endif
 
-#ifdef MUELU_VARIABLEINFORMATIONFACTORY_SHORT
-typedef MueLu::VariableInformationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> VariableInformationFactory;
+#ifdef MUELU_PERMUTEDTRANSFERFACTORY_SHORT
+typedef MueLu::PermutedTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PermutedTransferFactory;
+#endif
+
+#ifdef MUELU_SUBBLOCKAGGREGATIONFACTORY_SHORT
+typedef MueLu::SubBlockAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SubBlockAggregationFactory;
 #endif
 
 #ifdef MUELU_UTILITIES_SHORT
 typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils;
 typedef MueLu::Utils2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils2;
-#endif
-
-#ifdef MUELU_PERMUTEDTRANSFER_FACTORY_SHORT
-typedef MueLu::PermutedTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PermutedTransferFactory;
-#endif
-
-#ifdef MUELU_MULTIVECTORTRANSFER_FACTORY_SHORT
-typedef MueLu::MultiVectorTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> MultiVectorTransferFactory;
 #endif

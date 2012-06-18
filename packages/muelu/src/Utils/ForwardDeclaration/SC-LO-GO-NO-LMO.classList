@@ -30,8 +30,10 @@ RepartitionFactory
 BlockedPFactory
 SubBlockAFactory
 BlockedGaussSeidelSmoother
+BraessSarazinSmoother
 AggregationExportFactory
 VariableInformationFactory
 PermutedTransferFactory
 MultiVectorTransferFactory
 SubBlockAggregationFactory
+SchurComplementFactory

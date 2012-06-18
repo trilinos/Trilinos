@@ -118,6 +118,7 @@ namespace MueLu {
     RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tempres = MultiVectorFactory::Build(B.getMap(), B.getNumVectors());
     RCP<MultiVector> rcpX = Teuchos::rcpFromRef(X);
 
+
     //Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
 
 
@@ -153,13 +154,10 @@ namespace MueLu {
 
         // update corresponding part of rhs and lhs
         //*fos << "BGS sweep: " << run << ", finish substep i=" << i << std::endl;
-        domainMapExtractor_->InsertVector(Xi, bgsOrderingIndex2blockRowIndex_.at(i), rcpX); // TODO wrong! fix me
+        domainMapExtractor_->InsertVector(Xi, bgsOrderingIndex2blockRowIndex_.at(i), rcpX);
       }
-
-      //*fos << "BGS sweep: " << run << " finished " << std::endl;
     }
 
-    //*fos << "BGS finished " << std::endl;
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
