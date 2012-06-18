@@ -61,7 +61,7 @@ namespace MueLu {
 
         // When a fine nullspace have already been defined by user using Set("Nullspace", ...), we use it.
         nullspace = currentLevel.Get< RCP<MultiVector> >(nspName_);
-        GetOStream(Runtime1, 0) << "Use user-given nullspace " << nspName_ << ": nullspace dimension=" << nullspace->getNumVectors() << std::endl;
+        GetOStream(Runtime1, 0) << "Use user-given nullspace " << nspName_ << ": nullspace dimension=" << nullspace->getNumVectors() << " nullspace length=" << nullspace->getGlobalLength() << std::endl;
       
       } else {
         // "Nullspace" (nspName_) is not available
