@@ -441,6 +441,11 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
       AlgRCB<Adapter>(this->envConst_, problemComm_,
         this->coordinateModel_, solution_);
     }
+    else if (algorithm_ == string("mehmet")){
+      throw std::logic_error("partitioning algorithm mehmet not supported yet; uncomment call to AlgMehmet in Zoltan2_PartitioningProblem.hpp");
+//      AlgMehmet<Adapter>(this->envConst_, problemComm_,
+//        this->coordinateModel_, solution_);
+    }
     else{
       throw std::logic_error("partitioning algorithm not supported yet");
     }
@@ -541,6 +546,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     }
     else if (algorithm == string("rcb") ||
              algorithm == string("rib") ||
+             algorithm == string("mehmet") ||
              algorithm == string("hsfc")){
 
       modelType_ = CoordinateModelType;
