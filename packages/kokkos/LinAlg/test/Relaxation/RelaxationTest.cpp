@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -91,6 +91,10 @@ namespace {
 #ifdef HAVE_KOKKOS_THRUST
   using Kokkos::ThrustGPUNode;
   RCP<ThrustGPUNode> thrustnode;
+#endif
+#ifdef HAVE_KOKKOS_OPENMP
+  using Kokkos::OpenMPNode;
+  RCP<OpenMPNode> ompnode;
 #endif
 
   int N = 10;
@@ -155,7 +159,7 @@ namespace {
 
   //
   // UNIT TESTS
-  // 
+  //
 
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix_1D, Jacobi, Ordinal, Scalar, Node )
   {
@@ -305,8 +309,8 @@ namespace {
     // Set starting vector & run Chebyshev
     DefaultArithmetic<MV>::Init(X0,0);
     DefaultArithmetic<MV>::Init(RHS,1);
-    norms=-666;norm0=DefaultArithmetic<MV>::Norm2Squared(X0);    
-    norms=DefaultArithmetic<MV>::Norm2Squared(RHS);    
+    norms=-666;norm0=DefaultArithmetic<MV>::Norm2Squared(X0);
+    norms=DefaultArithmetic<MV>::Norm2Squared(RHS);
     dj.setup_chebyshev((Scalar)1.9594929736,(Scalar) 0.097974648681);
     for(int i=0;i<its;i++){
       dj.sweep_chebyshev(X0,RHS);
