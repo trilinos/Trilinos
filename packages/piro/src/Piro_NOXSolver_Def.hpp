@@ -86,12 +86,13 @@ template<typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::NOXSolver<Scalar>::get_p_space(int l) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(l >= num_p || l < 0, Teuchos::Exceptions::InvalidParameter,
+  TEUCHOS_TEST_FOR_EXCEPTION(l > num_p || l < 0, Teuchos::Exceptions::InvalidParameter,
                      std::endl <<
                      "Error in Piro::NOXSolver::get_p_map():  " <<
                      "Invalid parameter index l = " <<
                      l << std::endl);
-  return model->get_p_space(l);
+  if      (l < num_p) return model->get_p_space(l);
+  else return model->get_x_space(); // l == num_p
 }
 
 template<typename Scalar>
@@ -120,7 +121,7 @@ Thyra::ModelEvaluatorBase::InArgs<Scalar> Piro::NOXSolver<Scalar>::createInArgs(
 {
   Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
   inArgs.setModelEvalDescription(this->description());
-  inArgs.set_Np(num_p);
+  inArgs.set_Np(num_p+1);
   return inArgs;
 }
 
@@ -155,6 +156,10 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
 
   // Parse InArgs
 
+  // grab initial guess if user has provided one
+  RCP<const Thyra::VectorBase<Scalar> > initial_guess_in;
+  initial_guess_in = inArgs.get_p(num_p);
+
   RCP<const Thyra::VectorBase<Scalar> > p_in;
   if (num_p > 0) p_in = inArgs.get_p(0);
 
@@ -165,11 +170,13 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
 
   // Parse out-args for sensitivity calculation
 
-
   ::Thyra::SolveCriteria<double> solve_criteria;
   ::Thyra::SolveStatus<double> solve_status;
 
-  RCP< ::Thyra::VectorBase<double> >
+  RCP< ::Thyra::VectorBase<double> > initial_guess;
+  if(initial_guess_in!=Teuchos::null)
+    initial_guess = initial_guess_in->clone_v();
+  else
     initial_guess = model->getNominalValues().get_x()->clone_v();
 
   solve_status = solver->solve(initial_guess.get(), &solve_criteria, NULL);
