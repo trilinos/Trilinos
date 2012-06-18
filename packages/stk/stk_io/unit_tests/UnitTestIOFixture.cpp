@@ -189,3 +189,38 @@ STKUNIT_UNIT_TEST( IOFixture, active_and_all )
   // checking is left to the test XML.
 }
 
+STKUNIT_UNIT_TEST( IOFixture, large_mesh_test )
+{
+  // A simple test for reading and writing two exodus files using the IOFixture.
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk::io::util::IO_Fixture fixture(pm);
+
+  std::string input_base_filename = "1mCube_20x20x20.g";
+
+  // Initialize meta data from exodus file
+  fixture.initialize_meta_data( input_base_filename, "exodusii" );
+  stk::mesh::fem::FEMMetaData & meta_data = fixture.meta_data();
+
+  // Commit
+  meta_data.commit();
+
+  // bulk_data initialize (from exodus file)
+  fixture.initialize_bulk_data();
+  stk::mesh::BulkData &bulk_data = fixture.bulk_data();
+
+  const std::vector< stk::mesh::Bucket * > & element_buckets
+    = bulk_data.buckets( meta_data.element_rank());
+
+  // iterate elements and check num nodal relations
+  for ( std::vector<stk::mesh::Bucket*>::const_iterator ib = element_buckets.begin() ;
+        ib != element_buckets.end() ; ++ib ) {
+    stk::mesh::Bucket & b = **ib ;
+    const int length   = b.size();
+    for ( int k = 0 ; k < length ; ++k ) {
+      // get element
+      stk::mesh::Entity &elem = b[k];
+      stk::mesh::PairIterRelation elem_node_rels = elem.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
+      STKUNIT_EXPECT_EQ( 8u, elem_node_rels.size());
+    }
+  }
+}
