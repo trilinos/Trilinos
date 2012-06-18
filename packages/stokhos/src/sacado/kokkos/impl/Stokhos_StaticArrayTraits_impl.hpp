@@ -44,8 +44,8 @@ namespace Stokhos {
   /*!
    * \brief Static array allocation class that works for any type
    */
-  template <typename T, bool isScalar>
-  struct ss_array<T, KOKKOS_MACRO_DEVICE, isScalar> {
+  template <typename T>
+  struct StaticArrayTraits<T, KOKKOS_MACRO_DEVICE, false> {
 
     typedef T value_type;
     typedef KOKKOS_MACRO_DEVICE node_type;
@@ -80,9 +80,8 @@ namespace Stokhos {
    * \brief Static array allocation class that is specialized for scalar
    * i.e., fundamental or built-in types (float, double, etc...).
    */
-#if 0
   template <typename T>
-  struct ss_array<T,KOKKOS_MACRO_DEVICE,true> {
+  struct StaticArrayTraits<T,KOKKOS_MACRO_DEVICE,true> {
 
     typedef T value_type;
     typedef KOKKOS_MACRO_DEVICE node_type;
@@ -91,27 +90,26 @@ namespace Stokhos {
     static inline 
     KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
     void copy(const T* src, T* dest, std::size_t sz) {
-      std::memcpy(dest,src,sz*sizeof(T));
+      if (sz > 0) std::memcpy(dest,src,sz*sizeof(T));
     }
     
     //! Zero out array \c dest of length \c sz
     static inline 
     KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
     void zero(T* dest, std::size_t sz) {
-      if (sz > 0)
-	std::memset(dest,0,sz*sizeof(T));
+      if (sz > 0) std::memset(dest,0,sz*sizeof(T));
     }
 
     //! Fill array \c dest of length \c sz with value \c v
     static inline 
     KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
     void fill(T* dest, std::size_t sz, T v) {
-      if (sz > 0)
-	std::memset(dest,v,sz*sizeof(T));
+      //std::memset(dest,v,sz*sizeof(T)); // memset doesn't work if v != 0?
+      for (std::size_t i=0; i<sz; ++i)
+	*(dest++) = v;
     }
 
   };
-#endif
 
 } // namespace Stokhos
 

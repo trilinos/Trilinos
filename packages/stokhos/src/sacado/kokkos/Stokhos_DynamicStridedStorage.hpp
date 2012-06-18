@@ -28,16 +28,16 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_STATIC_FIXED_STORAGE_HPP
-#define STOKHOS_STATIC_FIXED_STORAGE_HPP
+#ifndef STOKHOS_DYNAMIC_STRIDED_STORAGE_HPP
+#define STOKHOS_DYNAMIC_STRIDED_STORAGE_HPP
 
-#include "Stokhos_StaticArrayTraits.hpp"
+#include "Stokhos_DynArrayTraits.hpp"
 
 namespace Stokhos {
 
-  //! Statically allocated storage class
-  template <typename ordinal_t, typename value_t, int Num, typename node_t>
-  class StaticFixedStorage {
+  //! Dynamically allocated storage class with striding
+  template <typename ordinal_t, typename value_t, typename node_t>
+  class DynamicStridedStorage {
   public:
 
     typedef ordinal_t ordinal_type;
@@ -47,26 +47,26 @@ namespace Stokhos {
     typedef const value_type& const_reference;
     typedef value_type* pointer;
     typedef const value_type* const_pointer;
-    typedef Stokhos::StaticArrayTraits<value_type,node_type> ss;
+    typedef Stokhos::DynArrayTraits<value_type,node_type> ds;
 
-    //! Turn StaticFixedStorage into a meta-function class usable with mpl::apply
+    //! Turn DynamicStridedStorage into a meta-function class usable with mpl::apply
     template <typename ord_t, typename val_t> 
     struct apply {
-      typedef StaticFixedStorage<ord_t,val_t,Num,node_type> type;
+      typedef DynamicStridedStorage<ord_t,val_t,node_type> type;
     };
 
     //! Constructor
-    StaticFixedStorage(const ordinal_type& sz,
-		       const value_type& x = value_type(0.0));
+    DynamicStridedStorage(const ordinal_type& sz,
+		  const value_type& x = value_type(0.0));
 
     //! Copy constructor
-    StaticFixedStorage(const StaticFixedStorage& s);
+    DynamicStridedStorage(const DynamicStridedStorage& s);
 
     //! Destructor
-    ~StaticFixedStorage();
+    ~DynamicStridedStorage();
 
     //! Assignment operator
-    StaticFixedStorage& operator=(const StaticFixedStorage& s);
+    DynamicStridedStorage& operator=(const DynamicStridedStorage& s);
 
     //! Initialize values to a constant value
     void init(const_reference v);
@@ -79,6 +79,10 @@ namespace Stokhos {
 
     //! Resize to new size (values are preserved)
     void resize(const ordinal_type& sz);
+
+    //! Reset storage to given array, size, and stride
+    void shallowReset(pointer v, const ordinal_type& sz, 
+		      const ordinal_type& stride, bool owned);
 
     //! Return size
     static ordinal_type size();
@@ -102,13 +106,13 @@ namespace Stokhos {
 // Host specialization
 #include "Kokkos_Host.hpp"
 #include "Kokkos_Host_macros.hpp"
-#include "Stokhos_StaticFixedStorage_impl.hpp"
+#include "Stokhos_DynamicStridedStorage_impl.hpp"
 #include "Kokkos_Clear_macros.hpp"
 
 // Cuda specialization
 #include "Kokkos_Cuda.hpp"
 #include "Kokkos_Cuda_macros.hpp"
-#include "Stokhos_StaticFixedStorage_impl.hpp"
+#include "Stokhos_DynamicStridedStorage_impl.hpp"
 #include "Kokkos_Clear_macros.hpp"
 
-#endif // STOKHOS_STATIC_FIXED_STORAGE_HPP
+#endif // STOKHOS_DYNAMIC_STORAGE_HPP

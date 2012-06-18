@@ -1,3 +1,5 @@
+// $Id$ 
+// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -26,24 +28,38 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_SACADO_KOKKOS_HPP
-#define STOKHOS_SACADO_KOKKOS_HPP
+#if ! defined(KOKKOS_MACRO_DEVICE_TEMPLATE_SPECIALIZATION) || \
+    ! defined(KOKKOS_MACRO_DEVICE)                  || \
+    ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
 
-#include "Stokhos_ConfigDefs.h"
+#error "Including <Stokhos_mpl_for_each_impl.hpp> without macros defined"
 
-#ifdef HAVE_STOKHOS_KOKKOS
+#else
 
-#include "Stokhos_Sacado_Kokkos_MathFunctions.hpp"
+namespace Stokhos {
 
-#include "Stokhos_StaticFixedStorage.hpp"
-#include "Stokhos_StaticStorage.hpp"
-#include "Stokhos_DynamicStorage.hpp"
-#include "Stokhos_DynamicStridedStorage.hpp"
-#include "Stokhos_DynamicThreadedStorage.hpp"
-#include "Stokhos_LocalStorage.hpp"
+  namespace mpl {
 
-#include "Sacado_MP_Vector.hpp"
+    template <class Seq, class Iter1, class Iter2>
+    struct for_each<Seq, KOKKOS_MACRO_DEVICE, Iter1, Iter2> {
+      typedef KOKKOS_MACRO_DEVICE node_type;
+      template <typename Op>
+      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      for_each(const Op& op) {
+	op(typename Sacado::mpl::deref<Iter1>::type());
+	for_each<Seq, node_type, typename Sacado::mpl::next<Iter1>::type, Iter2> f(op);
+      }
+    };
 
-#endif // HAVE_STOKHOS_KOKKOS
+    template <class Seq, class Iter1>
+    struct for_each<Seq, KOKKOS_MACRO_DEVICE, Iter1, Iter1> {
+      template <typename Op>
+      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      for_each(const Op& op) {}
+    };
 
-#endif // STOKHOS_SACADO_KOKKOS_HPP 
+  }
+
+}
+
+#endif

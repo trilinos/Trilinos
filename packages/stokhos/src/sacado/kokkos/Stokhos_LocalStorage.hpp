@@ -28,16 +28,14 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_STATIC_FIXED_STORAGE_HPP
-#define STOKHOS_STATIC_FIXED_STORAGE_HPP
-
-#include "Stokhos_StaticArrayTraits.hpp"
+#ifndef STOKHOS_LOCAL_STORAGE_HPP
+#define STOKHOS_LOCAL_STORAGE_HPP
 
 namespace Stokhos {
 
   //! Statically allocated storage class
   template <typename ordinal_t, typename value_t, int Num, typename node_t>
-  class StaticFixedStorage {
+  class LocalStorage {
   public:
 
     typedef ordinal_t ordinal_type;
@@ -49,24 +47,23 @@ namespace Stokhos {
     typedef const value_type* const_pointer;
     typedef Stokhos::StaticArrayTraits<value_type,node_type> ss;
 
-    //! Turn StaticFixedStorage into a meta-function class usable with mpl::apply
+    //! Turn LocalStorage into a meta-function class usable with mpl::apply
     template <typename ord_t, typename val_t> 
     struct apply {
-      typedef StaticFixedStorage<ord_t,val_t,Num,node_type> type;
+      typedef LocalStorage<ord_t,val_t,Num,node_type> type;
     };
 
     //! Constructor
-    StaticFixedStorage(const ordinal_type& sz,
-		       const value_type& x = value_type(0.0));
+    LocalStorage(const ordinal_type& sz, const value_type& x = value_type(0.0));
 
     //! Copy constructor
-    StaticFixedStorage(const StaticFixedStorage& s);
+    LocalStorage(const LocalStorage& s);
 
     //! Destructor
-    ~StaticFixedStorage();
+    ~LocalStorage();
 
     //! Assignment operator
-    StaticFixedStorage& operator=(const StaticFixedStorage& s);
+    LocalStorage& operator=(const LocalStorage& s);
 
     //! Initialize values to a constant value
     void init(const_reference v);
@@ -102,13 +99,13 @@ namespace Stokhos {
 // Host specialization
 #include "Kokkos_Host.hpp"
 #include "Kokkos_Host_macros.hpp"
-#include "Stokhos_StaticFixedStorage_impl.hpp"
+#include "Stokhos_LocalStorage_impl.hpp"
 #include "Kokkos_Clear_macros.hpp"
 
 // Cuda specialization
 #include "Kokkos_Cuda.hpp"
 #include "Kokkos_Cuda_macros.hpp"
-#include "Stokhos_StaticFixedStorage_impl.hpp"
+#include "Stokhos_LocalStorage_impl.hpp"
 #include "Kokkos_Clear_macros.hpp"
 
-#endif // STOKHOS_STATIC_FIXED_STORAGE_HPP
+#endif // STOKHOS_LOCAL_STORAGE_HPP

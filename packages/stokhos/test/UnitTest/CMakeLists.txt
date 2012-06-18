@@ -272,7 +272,7 @@ IF(Stokhos_ENABLE_Sacado)
     STANDARD_PASS_OUTPUT
   )
 
-  IF (Stokhos_ENABLE_Kokkos) 
+  IF (Stokhos_ENABLE_Kokkos AND Kokkos_ENABLE_Array) 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       SacadoMPVectorUnitTest
       SOURCES Stokhos_SacadoMPVectorUnitTest.cpp

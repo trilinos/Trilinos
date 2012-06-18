@@ -1,13 +1,13 @@
-// $Id$ 
+// $Id$
 // $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
-//                           Sacado Package
-//                 Copyright (2006) Sandia Corporation
+//                           Stokhos Package
+//                 Copyright (2009) Sandia Corporation
 // 
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
 // 
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
@@ -23,51 +23,43 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
-// (etphipp@sandia.gov).
+// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
 // 
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_STATIC_ARRAY_TRAITS_HPP
-#define STOKHOS_STATIC_ARRAY_TRAITS_HPP
+#ifndef STOKHOS_MPL_FOR_EACH_HPP
+#define STOKHOS_MPL_FOR_EACH_HPP
 
-#include "Sacado_Traits.hpp"
+#include "Sacado_mpl_begin.hpp"
+#include "Sacado_mpl_end.hpp"
+#include "Sacado_mpl_next.hpp"
+#include "Sacado_mpl_deref.hpp"
 
 namespace Stokhos {
 
-  /*!
-   * \brief Static array allocation class
-   */
-  template <typename T, typename node, 
-	    bool isScalar = Sacado::IsScalarType<T>::value>
-  struct StaticArrayTraits {
+  namespace mpl {
 
-    typedef T value_type;
-    typedef node node_type;
-    
-    //! Copy array from \c src to \c dest of length \c sz
-    static inline void copy(const T* src, T*  dest, std::size_t sz);
+    template <class Seq, 
+	      class node_t,
+	      class Iter1 = typename Sacado::mpl::begin<Seq>::type, 
+	      class Iter2 = typename Sacado::mpl::end<Seq>::type>
+    struct for_each {};
 
-    //! Zero out array \c dest of length \c sz
-    static inline void zero(T* dest, std::size_t sz);
+  }
 
-    //! Fill array \c dest of length \c sz with value \c v
-    static inline void fill(T* desk, std::size_t sz, const T& v);
-  };
-
-} // namespace Stokhos
+}
 
 // Host specialization
 #include "Kokkos_Host.hpp"
 #include "Kokkos_Host_macros.hpp"
-#include "Stokhos_StaticArrayTraits_impl.hpp"
+#include "Stokhos_mpl_for_each_impl.hpp"
 #include "Kokkos_Clear_macros.hpp"
 
 // Cuda specialization
 #include "Kokkos_Cuda.hpp"
 #include "Kokkos_Cuda_macros.hpp"
-#include "Stokhos_StaticArrayTraits_impl.hpp"
+#include "Stokhos_mpl_for_each_impl.hpp"
 #include "Kokkos_Clear_macros.hpp"
 
-#endif // STOKHOS_STATIC_ARRAY_TRAITS_HPP
+#endif // STOKHOS_MPL_FOR_EACH_HPP

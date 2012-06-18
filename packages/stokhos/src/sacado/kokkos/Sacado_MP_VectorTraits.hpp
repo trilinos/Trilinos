@@ -32,6 +32,12 @@
 #include "Sacado_Traits.hpp"
 #include "Sacado_mpl_apply.hpp"
 
+//
+// Currently only the type-style traits classes will work on the device
+// since the function-style traits don't have the needed specializations
+// for the device.  This is in particular true for the scalar traits.
+//
+
 // Forward declarations
 namespace Sacado {
   namespace MP {

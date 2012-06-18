@@ -33,6 +33,13 @@
 
 #include "Stokhos_Sacado_Kokkos.hpp"
 
+// 
+// Currently this doesn't test:
+//   * the device
+//   * threaded storage (needs the device)
+//   * strided storage with non-trivial stride
+//
+
 template<class ValueType, class VectorType>
 bool compareVecs(const VectorType& a1, 
 		 const std::string& a1_name,
@@ -98,7 +105,7 @@ struct UnitTestSetup {
     crtol = 1e-12;
     catol = 1e-12;
     a = 3.1;
-    sz = 7;
+    sz = 8;
     
     // Create vector
     x.reset(sz);
@@ -429,29 +436,49 @@ struct UnitTestSetup {
 								\
   SAXPY_UNIT_TEST(VEC)
 
-// namespace VecTest {
-//   typedef Stokhos::StandardStorage<int,double> storage_type;
-//   typedef Sacado::MP::Vector<double,storage_type> vec_type;
-//   typedef UnitTestSetup<vec_type> UTS;
-//   UTS setup;
-//   VECTOR_UNIT_TESTS(Vector)
-// }
+namespace DynamicVecTest {
+  typedef Kokkos::Host node_type;
+  typedef Stokhos::DynamicStorage<int,double,node_type> storage_type;
+  typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
+  typedef UnitTestSetup<vec_type> UTS;
+  UTS setup;
+  VECTOR_UNIT_TESTS(DynamicVector)
+}
 
-// namespace StaticVecTest {
-//   typedef Stokhos::StaticStandardStorage<int,double,7> storage_type;
-//   typedef Sacado::MP::Vector<double,storage_type> vec_type;
-//   typedef UnitTestSetup<vec_type> UTS;
-//   UTS setup;
-//   VECTOR_UNIT_TESTS(StaticVector)
-// }
+namespace DynamicStridedVecTest {
+  typedef Kokkos::Host node_type;
+  typedef Stokhos::DynamicStridedStorage<int,double,node_type> storage_type;
+  typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
+  typedef UnitTestSetup<vec_type> UTS;
+  UTS setup;
+  VECTOR_UNIT_TESTS(DynamicStridedVector)
+}
+
+namespace StaticVecTest {
+  typedef Kokkos::Host node_type;
+  typedef Stokhos::StaticStorage<int,double,8,node_type> storage_type;
+  typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
+  typedef UnitTestSetup<vec_type> UTS;
+  UTS setup;
+  VECTOR_UNIT_TESTS(StaticVector)
+}
 
 namespace StaticFixedVecTest {
   typedef Kokkos::Host node_type;
-  typedef Stokhos::StaticFixedStorage<int,double,7,node_type> storage_type;
+  typedef Stokhos::StaticFixedStorage<int,double,8,node_type> storage_type;
   typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
   typedef UnitTestSetup<vec_type> UTS;
   UTS setup;
   VECTOR_UNIT_TESTS(StaticFixedVector)
+}
+
+namespace LocalVecTest {
+  typedef Kokkos::Host node_type;
+  typedef Stokhos::LocalStorage<int,double,8,node_type> storage_type;
+  typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
+  typedef UnitTestSetup<vec_type> UTS;
+  UTS setup;
+  VECTOR_UNIT_TESTS(LocalVector)
 }
 
 int main( int argc, char* argv[] ) {

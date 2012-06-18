@@ -32,20 +32,19 @@
     ! defined(KOKKOS_MACRO_DEVICE)                  || \
     ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
 
-#error "Including <Stokhos_StaticFixedStorage_impl.hpp> without macros defined"
+#error "Including <Stokhos_DynamicStridedStorage_impl.hpp> without macros defined"
 
 #else
 
 namespace Stokhos {
 
-  //! Statically allocated storage class
-  template <typename ordinal_t, typename value_t, int Num>
-  class StaticFixedStorage<ordinal_t, value_t, Num, KOKKOS_MACRO_DEVICE> {
+  template <typename ordinal_t, typename value_t>
+  class DynamicStridedStorage<ordinal_t, value_t, KOKKOS_MACRO_DEVICE> {
   public:
 
-    static const bool is_static = true;
-    static const int static_size = Num;
-    static const bool supports_reset = false;
+    static const bool is_static = false;
+    static const int static_size = 0;
+    static const bool supports_reset = true;
 
     typedef ordinal_t ordinal_type;
     typedef value_t value_type;
@@ -54,81 +53,151 @@ namespace Stokhos {
     typedef const value_type& const_reference;
     typedef value_type* pointer;
     typedef const value_type* const_pointer;
-    typedef Stokhos::StaticArrayTraits<value_type,node_type> ss;
+    typedef Stokhos::DynArrayTraits<value_type,node_type> ds;
 
-    //! Turn StaticFixedStorage into a meta-function class usable with mpl::apply
+    //! Turn DynamicStridedStorage into a meta-function class usable with mpl::apply
     template <typename ord_t, typename val_t> 
     struct apply {
-      typedef StaticFixedStorage<ord_t,val_t,Num,node_type> type;
+      typedef DynamicStridedStorage<ord_t,val_t,node_type> type;
     };
 
     //! Constructor
     KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-    StaticFixedStorage(const ordinal_type& sz,
-		       const value_type& x = value_type(0.0)) { 
-      ss::fill(coeff_, Num, x); 
+    DynamicStridedStorage(const ordinal_type& sz,
+			  const value_type& x = value_type(0.0)) : 
+      sz_(sz), stride_(1), is_owned_(true) {
+      coeff_ = ds::get_and_fill(sz_, x);
     }
 
-    //! Copy constructor
+    //! Constructor
     KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-    StaticFixedStorage(const StaticFixedStorage& s) {
-      ss::copy(s.coeff_, coeff_, Num);
+    DynamicStridedStorage(const DynamicStridedStorage& s) : 
+    sz_(s.sz_), stride_(1), is_owned_(true) {
+      if (s.stride_ == 1)
+	coeff_ = ds::get_and_fill(s.coeff_, sz_);
+      else {
+	coeff_ = ds::get_and_fill(sz_);
+	for (ordinal_type i=0; i<sz_; ++i)
+	  coeff_[i] = s[i];
+      }
     }
 
     //! Destructor
     KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-    ~StaticFixedStorage() {}
+    ~DynamicStridedStorage() {
+      if (is_owned_) ds::destroy_and_release(coeff_, sz_*stride_);
+    }
 
     //! Assignment operator
     KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-    StaticFixedStorage& operator=(const StaticFixedStorage& s) {
-      ss::copy(s.coeff_, coeff_, Num);
+    DynamicStridedStorage& operator=(const DynamicStridedStorage& s) {
+      if (&s != this) { 
+	if (s.sz_ != sz_) {
+	  if (is_owned_)
+	    ds::destroy_and_release(coeff_, sz_*stride_);
+	  if (s.stride_ == 1)
+	    coeff_ = ds::get_and_fill(s.coeff_, s.sz_);
+	  else {
+	    coeff_ = ds::get_and_fill(s.sz_);
+	    for (ordinal_type i=0; i<s.sz_; ++i)
+	      coeff_[i] = s[i];
+	  }
+	  sz_ = s.sz_;
+	  stride_ = 1;
+	  is_owned_ = true;
+	}
+	else {
+	  if (stride_ == 1 and s.stride_ == 1)
+	    ds::copy(s.coeff_, coeff_, sz_);
+	  else
+	    for (ordinal_type i=0; i<s.sz_; ++i)
+	      coeff_[i*stride_] = s[i];
+	}
+      }
       return *this;
     }
 
     //! Initialize values to a constant value
     KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
     void init(const_reference v) { 
-      ss::fill(coeff_, Num, v); 
+      if (stride_ == 1)
+	ds::fill(coeff_, sz_, v); 
+      else
+	for (ordinal_type i=0; i<sz_; ++i)
+	  coeff_[i*stride_] = v;
     }
 
     //! Initialize values to an array of values
     KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
     void init(const_pointer v, const ordinal_type& sz = 0) {
+      ordinal_type my_sz = sz;
       if (sz == 0)
-      	ss::copy(v, coeff_, Num);
+	my_sz = sz_;
+      if (stride_ == 1)
+	ds::copy(v, coeff_, my_sz);
       else
-      	ss::copy(v, coeff_, sz);
+	for (ordinal_type i=0; i<my_sz; ++i)
+	  coeff_[i*stride_] = v[i];
     }
 
     //! Load values to an array of values
     KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-    void load(pointer v) { 
-      ss::copy(coeff_, v, Num); 
+    void load(pointer v) {
+      if (stride_ == 1)
+	ds::copy(coeff_, v, sz_); 
+      for (ordinal_type i=0; i<sz_; ++i)
+	coeff_[i*stride_] = v[i];
     }
 
     //! Resize to new size (values are preserved)
     KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-    void resize(const ordinal_type& sz) {}
+    void resize(const ordinal_type& sz) { 
+      if (sz != sz_) {
+	value_type *coeff_new = ds::get_and_fill(sz);
+	ordinal_type my_sz = sz_;
+	if (sz_ > sz)
+	  my_sz = sz;
+	if (stride_ == 1)
+	  ds::copy(coeff_, coeff_new, my_sz);
+	else
+	  for (ordinal_type i=0; i<my_sz; ++i)
+	    coeff_new[i] = coeff_[i*stride_];
+	if (is_owned_)
+	  ds::destroy_and_release(coeff_, sz_*stride_);
+	coeff_ = coeff_new;
+	sz_ = sz;
+	stride_ = 1;
+	is_owned_ = true;
+      }
+    }
 
     //! Reset storage to given array, size, and stride
     KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
     void shallowReset(pointer v, const ordinal_type& sz, 
-		      const ordinal_type& stride, bool owned) {}
+		      const ordinal_type& stride, bool owned) { 
+      if (is_owned_)
+	ds::destroy_and_release(coeff_, sz_*stride_);
+      coeff_ = v;
+      sz_ = sz;
+      stride_ = stride;
+      is_owned_ = owned;
+    }
 
     //! Return size
     KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-    static ordinal_type size() { return Num; }
+    ordinal_type size() const { return sz_; }
 
     //! Coefficient access (avoid if possible)
     KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-    const_reference operator[] (const ordinal_type& i) const { 
-      return coeff_[i];
+    const_reference operator[] (const ordinal_type& i) const {
+      return coeff_[i*stride_];
     }
 
     //! Coefficient access (avoid if possible)
     KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
-    reference operator[] (const ordinal_type& i) { return coeff_[i]; }
+    reference operator[] (const ordinal_type& i) {
+      return coeff_[i*stride_];
+    }
 
     template <int i>
     KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
@@ -149,10 +218,19 @@ namespace Stokhos {
   private:
 
     //! Coefficient values
-    value_type coeff_[Num];
+    pointer coeff_;
+
+    //! Size of array used
+    ordinal_type sz_;
+
+    //! Stride of array
+    ordinal_type stride_;
+
+    //! Do we own the array
+    bool is_owned_;
 
   };
 
 }
 
-#endif
+#endif // STOKHOS_STANDARD_STORAGE_HPP

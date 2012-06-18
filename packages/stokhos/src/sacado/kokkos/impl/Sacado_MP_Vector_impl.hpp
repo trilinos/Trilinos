@@ -36,6 +36,7 @@
 
 #include "Sacado_Traits.hpp"
 #include "Sacado_mpl_apply.hpp"
+#include "Sacado_mpl_range_c.hpp"
 
 #include <ostream>	// for std::ostream
 
@@ -146,9 +147,16 @@ namespace Sacado {
       KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
       Vector(const Expr<S,node_type>& xx) : 
 	s(xx.derived().size()) {
-	const typename Expr<S,node_type>::derived_type& x = xx.derived();
+	typedef typename Expr<S,node_type>::derived_type expr_type;
+	const expr_type& x = xx.derived();
 	
-	if (x.hasFastAccess(s.size())) {
+	if (storage_type::is_static) {
+	  typedef Sacado::mpl::range_c< int, 0, 
+					storage_type::static_size > range_type;
+	  StaticOp<expr_type> op(s,x);
+	  Stokhos::mpl::for_each< range_type, node_type > f(op);
+	}
+	else if (x.hasFastAccess(s.size())) {
 	  for (ordinal_type i=0; i<s.size(); i++)
 	    s[i] = x.fastAccessCoeff(i);
 	}
@@ -248,10 +256,17 @@ namespace Sacado {
       template <typename S> 
       KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
       Vector& operator=(const Expr<S,node_type>& xx) {
-	const typename Expr<S,node_type>::derived_type& x = xx.derived();
+	typedef typename Expr<S,node_type>::derived_type expr_type;
+	const expr_type& x = xx.derived();
 	
 	this->reset(x.size());
-	if (x.hasFastAccess(s.size())) {
+	if (storage_type::is_static) {
+	  typedef Sacado::mpl::range_c< int, 0, 
+					storage_type::static_size > range_type;
+	  StaticOp<expr_type > op(s,x);
+	  Stokhos::mpl::for_each< range_type, node_type > f(op);
+	}
+	else if (x.hasFastAccess(s.size())) {
 	  for (ordinal_type i=0; i<s.size(); i++)
 	    s[i] = x.fastAccessCoeff(i);
 	}
@@ -267,6 +282,14 @@ namespace Sacado {
       /*!
        * Accessor methods
        */
+
+      //! Returns storage object
+      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      const storage_type& storage() const { return s; }
+
+      //! Returns storage object
+      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      storage_type& storage() { return s; }
 
       /*!
        * @name Value accessor methods
@@ -316,6 +339,14 @@ namespace Sacado {
       //! Returns degree \c i term without bounds checking
       KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
       value_type fastAccessCoeff(ordinal_type i) const { return s[i];}
+
+      template <int i>
+      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      value_type getCoeff() const { return s.template getCoeff<i>(); }
+
+      template <int i>
+      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+      reference getCoeff() { return s.template getCoeff<i>(); }
     
       //@}
 
@@ -396,6 +427,23 @@ namespace Sacado {
     protected:
 
       Storage s;
+
+      template <typename expr_type>
+      struct StaticOp {
+	storage_type& s;
+	const expr_type& x;
+
+	KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+	StaticOp(storage_type& s_, const expr_type& x_) : s(s_), x(x_) {}
+
+	template <typename ArgT>
+	KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
+	void operator() (ArgT arg) const {
+	  const int Arg = ArgT::value;
+	  s.template getCoeff<Arg>() = x.template getCoeff<Arg>();
+	}
+
+      };
 
     }; // class Vector
 

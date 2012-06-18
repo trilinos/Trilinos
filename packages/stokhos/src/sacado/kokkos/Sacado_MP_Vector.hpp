@@ -35,6 +35,8 @@
 
 #include <ostream>	// for std::ostream
 
+#include "Stokhos_mpl_for_each.hpp"
+
 namespace Sacado {
 
   //! Namespace for multipoint classes
@@ -194,6 +196,12 @@ namespace Sacado {
        * @name Value accessor methods
        */
       //@{
+
+      //! Returns storage object
+      const storage_type& storage() const;
+
+      //! Returns storage object
+      storage_type& storage();
 
       //! Returns value
       const_reference val() const;

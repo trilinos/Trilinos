@@ -41,6 +41,13 @@
 #include "Sacado_mpl_apply.hpp"
 #include "Sacado_Random.hpp"
 
+// 
+// Currently this doesn't test:
+//   * the device
+//   * threaded storage (needs the device)
+//   * strided storage with non-trivial stride
+//
+
 using Teuchos::RCP;
 using Teuchos::rcp;
 
@@ -57,7 +64,7 @@ struct UnitTestSetup {
   RCP<FadVecSerializerT> fad_vec_serializer;
 
   UnitTestSetup() {
-    sz = 100;
+    sz = 8;
 
     // Serializers
     vec_serializer = 
@@ -654,35 +661,59 @@ TEUCHOS_UNIT_TEST( Vec##_Comm, FadVec_SendReceive ) {			\
     success = true;							\
 }
 
-// namespace VecTest {
-//   Sacado::Random<double> rnd;
-//   typedef int Ordinal;
-//   typedef Stokhos::StandardStorage<int,double> storage_type;
-//   typedef Sacado::Fad::DFad<double> fad_type;
-//   typedef Sacado::MP::Vector<double,storage_type> vec_type;
-//   UnitTestSetup<vec_type, fad_type> setup;
-//   VEC_COMM_TESTS(vec_type, fad_type, Vector, DFad)
-// }
+namespace DynamicVecTest {
+  Sacado::Random<double> rnd;
+  typedef int Ordinal;
+  typedef Kokkos::Host node_type;
+  typedef Stokhos::DynamicStorage<int,double,node_type> storage_type;
+  typedef Sacado::Fad::DFad<double> fad_type;
+  typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
+  UnitTestSetup<vec_type, fad_type> setup;
+  VEC_COMM_TESTS(vec_type, fad_type, DynamicVector, DFad)
+}
 
-// namespace StaticVecTest {
-//   Sacado::Random<double> rnd;
-//   typedef int Ordinal;
-//   typedef Stokhos::StaticStandardStorage<int,double,100> storage_type;
-//   typedef Sacado::Fad::DFad<double> fad_type;
-//   typedef Sacado::MP::Vector<double,storage_type> vec_type;
-//   UnitTestSetup<vec_type, fad_type> setup;
-//   VEC_COMM_TESTS(vec_type, fad_type, StaticVector, DFad)
-// }
+namespace DynamicStridedVecTest {
+  Sacado::Random<double> rnd;
+  typedef int Ordinal;
+  typedef Kokkos::Host node_type;
+  typedef Stokhos::DynamicStridedStorage<int,double,node_type> storage_type;
+  typedef Sacado::Fad::DFad<double> fad_type;
+  typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
+  UnitTestSetup<vec_type, fad_type> setup;
+  VEC_COMM_TESTS(vec_type, fad_type, DynamicStridedVector, DFad)
+}
+
+namespace StaticVecTest {
+  Sacado::Random<double> rnd;
+  typedef int Ordinal;
+  typedef Kokkos::Host node_type;
+  typedef Stokhos::StaticStorage<int,double,8,node_type> storage_type;
+  typedef Sacado::Fad::DFad<double> fad_type;
+  typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
+  UnitTestSetup<vec_type, fad_type> setup;
+  VEC_COMM_TESTS(vec_type, fad_type, StaticVector, DFad)
+}
 
 namespace StaticFixedVecTest {
   Sacado::Random<double> rnd;
   typedef int Ordinal;
   typedef Kokkos::Host node_type;
-  typedef Stokhos::StaticFixedStorage<int,double,100,node_type> storage_type;
+  typedef Stokhos::StaticFixedStorage<int,double,8,node_type> storage_type;
   typedef Sacado::Fad::DFad<double> fad_type;
   typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
   UnitTestSetup<vec_type, fad_type> setup;
   VEC_COMM_TESTS(vec_type, fad_type, StaticFixedVector, DFad)
+}
+
+namespace LocalVecTest {
+  Sacado::Random<double> rnd;
+  typedef int Ordinal;
+  typedef Kokkos::Host node_type;
+  typedef Stokhos::LocalStorage<int,double,8,node_type> storage_type;
+  typedef Sacado::Fad::DFad<double> fad_type;
+  typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
+  UnitTestSetup<vec_type, fad_type> setup;
+  VEC_COMM_TESTS(vec_type, fad_type, LocalVector, DFad)
 }
 
 int main( int argc, char* argv[] ) {

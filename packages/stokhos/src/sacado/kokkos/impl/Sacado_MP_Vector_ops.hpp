@@ -140,6 +140,12 @@ namespace Sacado {							\
 	return OPER(expr.fastAccessCoeff(i));				\
       }									\
 									\
+      template <int i>							\
+      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION				\
+      value_type getCoeff() const {					\
+	return OPER(expr.template getCoeff<i>());			\
+      }									\
+									\
     protected:								\
 									\
       typename const_expr_ref<T>::type expr;				\
@@ -235,6 +241,12 @@ namespace Sacado {							\
 	return (expr1.fastAccessCoeff(i) OPER expr2.fastAccessCoeff(i)); \
       }									\
       									\
+      template <int i>							\
+      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION				\
+      value_type getCoeff() const {					\
+	return expr1.template getCoeff<i>() OPER expr2.template getCoeff<i>(); \
+      }									\
+									\
     protected:								\
 									\
       typename const_expr_ref<T1>::type expr1;				\
@@ -263,7 +275,9 @@ namespace Sacado {							\
       }									\
 									\
       KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION				\
-      int size() const { return expr1.size(); }				\
+      int size() const {						\
+	return expr1.size();						\
+      }									\
 									\
       KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION				\
       bool hasFastAccess(int sz) const {				\
@@ -283,6 +297,12 @@ namespace Sacado {							\
       KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION				\
       value_type fastAccessCoeff(int i) const {				\
 	return (expr1.fastAccessCoeff(i) OPER c);			\
+      }									\
+									\
+      template <int i>							\
+      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION				\
+      value_type getCoeff() const {					\
+	return expr1.template getCoeff<i>() OPER c;			\
       }									\
 									\
     protected:								\
@@ -332,6 +352,12 @@ namespace Sacado {							\
       KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION				\
       value_type fastAccessCoeff(int i) const {				\
 	return (c OPER expr2.fastAccessCoeff(i));			\
+      }									\
+									\
+      template <int i>							\
+      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION				\
+      value_type getCoeff() const {					\
+	return c OPER expr2.template getCoeff<i>();			\
       }									\
       									\
     protected:								\
@@ -441,6 +467,12 @@ namespace Sacado {							\
       value_type fastAccessCoeff(int i) const {				\
 	return OPER(expr1.fastAccessCoeff(i), expr2.fastAccessCoeff(i)); \
       }									\
+									\
+      template <int i>							\
+      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION				\
+      value_type getCoeff() const {					\
+	return OPER(expr1.template getCoeff<i>(), expr2.template getCoeff<i>()); \
+      }									\
       									\
     protected:								\
 									\
@@ -492,6 +524,12 @@ namespace Sacado {							\
 	return OPER(expr1.fastAccessCoeff(i), c);			\
       }									\
 									\
+      template <int i>							\
+      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION				\
+      value_type getCoeff() const {					\
+	return OPER(expr1.template getCoeff<i>(), c);			\
+      }									\
+									\
     protected:								\
 									\
       typename const_expr_ref<T1>::type expr1;				\
@@ -539,6 +577,12 @@ namespace Sacado {							\
       KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION				\
       value_type fastAccessCoeff(int i) const {				\
 	return OPER(c, expr2.fastAccessCoeff(i));			\
+      }									\
+									\
+      template <int i>							\
+      KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION				\
+      value_type getCoeff() const {					\
+	return OPER(c, expr2.template getCoeff<i>());			\
       }									\
       									\
     protected:								\
