@@ -11,6 +11,7 @@
 #define USERINPUTFORTESTS
 
 #include <Zoltan2_XpetraTraits.hpp>
+#include <Zoltan2_ChacoReader.hpp>
 
 #include <Tpetra_MultiVector.hpp>
 #include <Xpetra_Vector.hpp>
@@ -28,29 +29,6 @@
 #include <Epetra_MpiComm.h>
 #else
 #include <Epetra_SerialComm.h>
-#endif
-
-#include <stdio.h> // For FILE* 
-
-#ifdef HAVE_ZOLTAN2_ZOLTAN
-
-#ifndef CH_INPUT_FILES
-#define CH_INPUT_FILES
-
-extern "C" {
-
-
-/*Zdrive global variables*/
-
-int Debug_Driver=0;
-int Debug_Chaco_Input=0;
-}
-
-#include <ch_input_read.c>    // read_int(), read_val()
-#include <ch_input_geom.c>    // chaco_input_geom()
-#include <ch_input_graph.c>   // chaco_input_graph()
-#endif
-
 #endif
 
 using Teuchos::RCP;
@@ -733,10 +711,6 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
 
 void UserInputForTests::readZoltanTestData(string path, string testData)
 {
-#ifndef HAVE_ZOLTAN2_ZOLTAN
-  throw std::runtime_error("Zoltan test data is not available.");
-#endif
-
   int rank = tcomm_->getRank();
   FILE *graphFile = NULL;
   FILE *coordFile = NULL;
@@ -813,14 +787,13 @@ void UserInputForTests::getChacoGraph(FILE *fptr, string fname)
   
     // This function is in the Zoltan C-library.
   
-#ifdef HAVE_ZOLTAN2_ZOLTAN
     // Reads in the file and closes it when done.
     char *nonConstName = new char [fname.size() + 1];
     strcpy(nonConstName, fname.c_str());
-    fail = chaco_input_graph(fptr, nonConstName,
+
+    fail = Zoltan2::chaco_input_graph(fptr, nonConstName,
       &start, &adj, &nvtxs, &vwgt_dim, &vwgts, &ewgt_dim, &ewgts);
     delete [] nonConstName;
-#endif
 
     // There are Zoltan2 test graphs that have no edges.
 
@@ -1065,14 +1038,12 @@ void UserInputForTests::getChacoCoords(FILE *fptr, string fname)
   
     // This function is in the Zoltan C-library.
   
-#ifdef HAVE_ZOLTAN2_ZOLTAN
     // Reads in the file and closes it when done.
     char *nonConstName = new char [fname.size() + 1];
     strcpy(nonConstName, fname.c_str());
-    fail = chaco_input_geom(fptr, nonConstName, globalNumVtx,
+    fail = Zoltan2::chaco_input_geom(fptr, nonConstName, globalNumVtx,
       &ndim, &x, &y, &z);
     delete [] nonConstName;
-#endif
 
     if (fail)
       ndim = 0;

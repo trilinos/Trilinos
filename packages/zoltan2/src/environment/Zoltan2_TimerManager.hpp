@@ -20,6 +20,7 @@
 #include <map>
 #include <iostream>
 #include <fstream>
+#include <bitset>
 
 namespace Zoltan2{
 
@@ -30,10 +31,11 @@ private:
   std::ostream *myOS_;
   std::ofstream *fileOS_;
   TimerType ttype_;
+  std::bitset<NUM_TIMING_OPTIONS> typeSelector_;
 
-  Array<RCP<Teuchos::Time> > timers;
-  std::map<string, int> timerMap;
-  int stopHint;
+  Array<RCP<Teuchos::Time> > timers_;
+  std::map<string, int> timerMap_;
+  int stopHint_;
 
 public:
 

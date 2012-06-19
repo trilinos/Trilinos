@@ -730,7 +730,7 @@ template <typename mvector_t>
       numNonUniformWeights++;
   }
 
-  if (env->doStatus()){
+  if (env->getDebugLevel() >= DETAILED_STATUS){
     ostringstream info;
     info << "Weight dim " << weightDim << ", Fraction left:";
     for (int i=0; i < weightDim; i++)
@@ -904,7 +904,7 @@ template <typename mvector_t>
     regionMin = sums + numSums;
     regionMax = regionMin + numRegions;
 
-    if (env->doStatus()){
+    if (env->getDebugLevel() >= DETAILED_STATUS){
       ostringstream info;
       info << "  Region " << min << " - " << max << endl;
       info << "  Remaining to classify: " << numRemaining << endl;
@@ -1021,7 +1021,7 @@ template <typename mvector_t>
     bool cutLocIsRegion = (cutLocation % 2 == 1);
     bool cutLocIsBoundary = !cutLocIsRegion;
 
-    if (env->doStatus()){
+    if (env->getDebugLevel() >= DETAILED_STATUS){
       ostringstream info;
       info << "  Best cut location: " << cutLocation;
       if (cutLocIsRegion) info << " just after a region." << endl;
@@ -1113,7 +1113,9 @@ template <typename mvector_t>
       }
     }
 
-    if (env->doStatus()){
+    if (env->getDebugLevel() >= VERBOSE_DETAILED_STATUS && numCoords < 100){
+      // For large numCoords, building this message
+      // takes an extraordinarily long time.
       ostringstream ossLeft;
       ostringstream ossRight;
       ossLeft << "left: ";
@@ -1151,7 +1153,7 @@ template <typename mvector_t>
 
   env->memory("End of bisection");
 
-  if (env->doStatus()){
+  if (env->getDebugLevel() >= DETAILED_STATUS){
     ostringstream oss;
     oss << "Exiting BSPfindCut, ";
     oss << "# iterations: " << numGlobalPoints - sanityCheck;    
@@ -1394,7 +1396,7 @@ template <typename mvector_t, typename Adapter>
     numLocalCoords = index.size();
   }
 
-  if (env->doStatus()){
+  if (env->getDebugLevel() >= DETAILED_STATUS){
     ostringstream info;
     info << "  Number of coordinates: " << numLocalCoords << endl;
     info << "  Use index: " << useIndices << endl;

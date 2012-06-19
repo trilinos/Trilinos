@@ -120,6 +120,7 @@ enum TimerType {
   MACRO_TIMERS, /*!< \brief Time an algorithm (or other entity) as a whole. */
   MICRO_TIMERS, /*!< \brief Time the substeps of an entity. */
   BOTH_TIMERS,  /*!< \brief Run both MACRO and MICRO timers. */
+  TEST_TIMERS,  /*!< \brief Timers added while testing, removed later. */
   NUM_TIMING_OPTIONS
 };
 

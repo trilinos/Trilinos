@@ -34,6 +34,8 @@ using Zoltan2::BASIC_STATUS;
 using Zoltan2::DETAILED_STATUS;
 using Zoltan2::VERBOSE_DETAILED_STATUS;
 
+typedef Zoltan2::MessageOutputLevel level_t;
+
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession session(&argc, &argv);
@@ -57,7 +59,7 @@ int main(int argc, char *argv[])
   verboseMsgs.insert(oss.str()+string(" verbose message."));
   verboseMsgs.insert(oss.str()+string("another verbose message."));
 
-  int numLevels = Zoltan2::NUM_STATUS_OUTPUT_LEVELS;
+  level_t numLevels = Zoltan2::NUM_STATUS_OUTPUT_LEVELS;
   DebugManager *dm = NULL;
 
   // all print to cout
@@ -66,7 +68,9 @@ int main(int argc, char *argv[])
 
   comm->barrier();
 
-  for (int level = 0; level < numLevels; level++){
+  for (int i = 0; i < numLevels; i++){
+
+    level_t level = static_cast<level_t>(i);
   
     try {
       dm = new DebugManager(rank, iPrint, std::cout, level);
@@ -112,7 +116,9 @@ int main(int argc, char *argv[])
   iPrint = (rank == 0);
   comm->barrier();
 
-  for (int level = 0; level < numLevels; level++){
+  for (int i = 0; i < numLevels; i++){
+
+    level_t level = static_cast<level_t>(i);
 
     ios_base::openmode flags = ios_base::out & ios_base::trunc;
 

@@ -34,38 +34,38 @@ using Teuchos::CommandLineProcessor;
 typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> tMVector_t;
 typedef Tpetra::Map<lno_t, gno_t, node_t> tMap_t;
 
-static Array<ArrayRCP<scalar_t> > weights;
+static ArrayRCP<ArrayRCP<scalar_t> > weights;
 static RCP<tMVector_t> coordinates;
 
 // Zoltan1 query functions
 
 int getNumObj(void *data, int *ierr)
 {
-  *ierr = ZOLTAN_OK;
+  *ierr = 0;
   return coordinates->getLocalLength();
 }
 
 int getDim(void *data, int *ierr)
 {
-  *ierr = ZOLTAN_OK;
+  *ierr = 0;
   return 3;
 }
 
 void getObjList(void *data, int numGid, int numLid,
-  ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, 
+  gid_t * gids, gid_t * lids, 
   int wgt_dim, float *obj_wgts, int *ierr)
 {
-  *ierr = ZOLTAN_OK;
+  *ierr = 0;
   size_t localLen = coordinates->getLocalLength();
   const gno_t *ids = coordinates->getMap()->getNodeElementList().getRawPtr();
   gno_t *idsNonConst = const_cast<gno_t *>(ids);
 
-  if (sizeof(ZOLTAN_ID_TYPE) == sizeof(gno_t)){
-    memcpy(gids, idsNonConst, sizeof(ZOLTAN_ID_TYPE) * localLen);
+  if (sizeof(gid_t) == sizeof(gno_t)){
+    memcpy(gids, idsNonConst, sizeof(gid_t) * localLen);
   }
   else{
     for (size_t i=0; i < localLen; i++)
-      gids[i] = static_cast<ZOLTAN_ID_TYPE>(idsNonConst[i]);
+      gids[i] = static_cast<gid_t>(idsNonConst[i]);
   }
 
   if (wgt_dim > 0){
@@ -77,11 +77,11 @@ void getObjList(void *data, int numGid, int numLid,
 }
 
 void getCoordinates(void *data, int numGid, int numLid,
-  int numObj, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
+  int numObj, gid_t * gids, gid_t * lids,
   int dim, double *coords, int *ierr)
 {
   // I know that Zoltan asks for coordinates in gid order.
-  *ierr = ZOLTAN_OK;
+  *ierr = 0;
   double *val = coords;
   const scalar_t *x = coordinates->getData(0).getRawPtr();
   const scalar_t *y = coordinates->getData(1).getRawPtr();
@@ -110,7 +110,7 @@ ArrayRCP<scalar_t> makeWeights(
   if (!wgts)
     throw bad_alloc();
 
-  ArrayRCP<scalar_t> weights(wgts, 0, len, true);
+  ArrayRCP<scalar_t> wgtArray(wgts, 0, len, true);
 
   if (how == upDown){
     scalar_t val = scale + rank%2;
@@ -121,7 +121,7 @@ ArrayRCP<scalar_t> makeWeights(
     for (int i=0; i < 10; i++){
       scalar_t val = (i + 10)*scale;
       for (int j=i; j < len; j += 10)
-         weights[j] = val;
+         wgts[j] = val;
     }
   }
   else if (how == increasing){
@@ -130,7 +130,7 @@ ArrayRCP<scalar_t> makeWeights(
       wgts[i] = val;
   }
 
-  return weights;
+  return wgtArray;
 }
 
 /*! \brief Create a mesh of approximately the desired size.
@@ -296,6 +296,7 @@ int main(int argc, char *argv[])
   string memoryOff("memoryOff");
   bool doMemory=false;
   int numGlobalParts = nprocs;
+  int dummyTimer=0;
 
   CommandLineProcessor commandLine(false, true);
   commandLine.setOption("size", &numGlobalCoords, 
@@ -305,8 +306,34 @@ int main(int argc, char *argv[])
   commandLine.setOption("weightDim", &weightDim, 
     "Number of weights per coordinate, zero implies uniform weights.");
   commandLine.setOption("debug", &debugLevel, "Zoltan1 debug level");
+  commandLine.setOption("timers", &dummyTimer, "ignored");
   commandLine.setOption(memoryOn.c_str(), memoryOff.c_str(), &doMemory,
     "do memory profiling");
+
+  string balanceCount("balance_object_count");
+  string balanceWeight("balance_object_weight");
+  string mcnorm1("multicriteria_minimize_total_weight");
+  string mcnorm2("multicriteria_balance_total_maximum");
+  string mcnorm3("multicriteria_minimize_maximum_weight");
+
+  string objective(balanceWeight);   // default
+
+  string doc(balanceCount);
+  doc.append(": ignore weights\n");
+
+  doc.append(balanceWeight);
+  doc.append(": balance on first weight\n");
+
+  doc.append(mcnorm1);
+  doc.append(": given multiple weights, balance their total.\n");
+
+  doc.append(mcnorm3);
+  doc.append(": given multiple weights, balance the maximum for each coordinate.\n");
+
+  doc.append(mcnorm2);
+  doc.append(": given multiple weights, balance the L2 norm of the weights.\n");
+
+  commandLine.setOption("objective", &objective,  doc.c_str());
 
   CommandLineProcessor::EParseCommandLineReturn rc = 
     commandLine.parse(argc, argv);
@@ -324,7 +351,7 @@ int main(int argc, char *argv[])
     }
   }
 
-  MEMORY_CHECK(doMemory && rank==0, "After processing parameters");
+  //MEMORY_CHECK(doMemory && rank==0, "After processing parameters");
 
   gno_t globalSize = static_cast<gno_t>(numGlobalCoords);
 
@@ -348,11 +375,16 @@ int main(int argc, char *argv[])
 #endif
 
   if (weightDim > 0){
+
+    weights = arcp(new ArrayRCP<scalar_t> [weightDim],
+      0, weightDim, true);
+
     int wt = 0;
     scalar_t scale = 1.0;
     for (int i=0; i < weightDim; i++){
       weights[i] = 
         makeWeights(comm, numLocalCoords, weightTypes(wt++), scale, rank);
+
       if (wt == numWeightTypes){
         wt = 0;
         scale++;
@@ -367,7 +399,7 @@ int main(int argc, char *argv[])
   float ver;
   int aok = Zoltan_Initialize(argc, argv, &ver);
 
-  if (aok != ZOLTAN_OK){
+  if (aok != 0){
     printf("sorry...\n");
     exit(0);
   }
@@ -380,17 +412,30 @@ int main(int argc, char *argv[])
   Zoltan_Set_Param(zz, "CHECK_GEOM", "0");
   Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); // compiled with ULONG option
   Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "0");
-  std::ostringstream oss;
-  oss << weightDim;
-  Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", oss.str().c_str());
   Zoltan_Set_Param(zz, "RETURN_LISTS", "NONE");
   Zoltan_Set_Param(zz, "IMBALANCE_TOL", "1.1");
-  oss.str("");
+  std::ostringstream oss;
   oss << numGlobalParts;
   Zoltan_Set_Param(zz, "NUM_GLOBAL_PARTS", oss.str().c_str());
   oss.str("");
   oss << debugLevel;
   Zoltan_Set_Param(zz, "DEBUG_LEVEL", oss.str().c_str());
+
+  if (objective != balanceCount){
+    oss.str("");
+    oss << weightDim;
+    Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", oss.str().c_str());
+
+    if (objective == mcnorm1)
+      Zoltan_Set_Param(zz, "RCB_MULTICRITERIA_NORM", "1");
+    else if (objective == mcnorm2)
+      Zoltan_Set_Param(zz, "RCB_MULTICRITERIA_NORM", "2");
+    else if (objective == mcnorm3)
+      Zoltan_Set_Param(zz, "RCB_MULTICRITERIA_NORM", "3");
+  }
+  else{
+    Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "0");
+  }
 
   Zoltan_Set_Num_Obj_Fn(zz, getNumObj, NULL);
   Zoltan_Set_Obj_List_Fn(zz, getObjList,NULL);
@@ -398,8 +443,8 @@ int main(int argc, char *argv[])
   Zoltan_Set_Geom_Multi_Fn(zz, getCoordinates,NULL);
 
   int changes, numGidEntries, numLidEntries, numImport, numExport;
-  ZOLTAN_ID_PTR importGlobalGids, importLocalGids;
-  ZOLTAN_ID_PTR exportGlobalGids, exportLocalGids;
+  gid_t * importGlobalGids, * importLocalGids;
+  gid_t * exportGlobalGids, * exportLocalGids;
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
 
   MEMORY_CHECK(doMemory && rank==0, "Before Zoltan_LB_Partition");
@@ -424,7 +469,7 @@ int main(int argc, char *argv[])
   MEMORY_CHECK(doMemory && rank==0, "After Zoltan_Destroy");
 
   if (rank==0){
-    if (aok != ZOLTAN_OK)
+    if (aok != 0)
       std::cout << "FAIL" << std::endl;
     else
       std::cout << "PASS" << std::endl;
