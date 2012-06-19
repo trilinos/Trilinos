@@ -85,6 +85,8 @@ void mpkernel(int offset, int stride, int n, int sz,
     	dev_y[offset+i*stride] = y.fastAccessCoeff(i);
     }
 
+    offset += stride*sz;
+
   }
 }
 
@@ -106,6 +108,8 @@ void kernel(int offset, int stride, int n, int sz, double *dev_x, double *dev_y)
       dev_y[offset+i*stride] = y;
 
     }
+
+    offset += stride*sz;
 
   }
 }
