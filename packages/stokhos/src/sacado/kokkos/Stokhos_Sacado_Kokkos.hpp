@@ -33,6 +33,8 @@
 
 #ifdef HAVE_STOKHOS_KOKKOS
 
+#include "Kokkos_config.h"
+
 #include "Stokhos_Sacado_Kokkos_MathFunctions.hpp"
 
 #include "Stokhos_StaticFixedStorage.hpp"

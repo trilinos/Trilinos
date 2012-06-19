@@ -66,8 +66,12 @@ int main(int argc, char **argv)
     bool test_host = true;
     CLP.setOption("host", "no-host", &test_host, "Test host");
 
+#ifdef HAVE_KOKKOS_CUDA
     bool test_cuda = true;
     CLP.setOption("cuda", "no-cuda", &test_cuda, "Test CUDA");
+#else
+    bool test_cuda = false;
+#endif
 
     CLP.parse( argc, argv );
 
@@ -83,6 +87,7 @@ int main(int argc, char **argv)
 	      << "\thost        = " << test_host << std::endl
 	      << "\tcuda        = " << test_cuda << std::endl << std::endl;
 
+#ifdef HAVE_KOKKOS_CUDA
     if (test_cuda) {
       bool status = MPVectorExample<MaxSize,KokkosArray::Cuda>::run(
 	storage_method, n, sz, nblocks, nthreads, reset, print);
@@ -92,6 +97,7 @@ int main(int argc, char **argv)
       else
 	std::cout << "CUDA Test Failed!" << std::endl;
     }
+#endif
 
      if (test_host) {
        bool status = MPVectorExample<MaxSize,KokkosArray::Host>::run(
