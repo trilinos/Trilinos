@@ -45,6 +45,7 @@
 #define __CrsMatrix_TestSparseOps_hpp
 
 #include <Teuchos_MatrixMarket_Raw_Reader.hpp>
+#include <Teuchos_as.hpp>
 #include <Teuchos_BLAS.hpp>
 #include <Teuchos_LAPACK.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
@@ -72,8 +73,8 @@ public:
   typedef typename sparse_ops_type::ordinal_type ordinal_type;
   typedef typename sparse_ops_type::node_type node_type;
 
-  typedef typename sparse_ops_type::template graph<ordinal_type, node_type> graph_type;
-  typedef typename sparse_ops_type::template matrix<scalar_type, ordinal_type, node_type> matrix_type;
+  typedef typename sparse_ops_type::template graph<ordinal_type, node_type>::graph_type graph_type;
+  typedef typename sparse_ops_type::template matrix<scalar_type, ordinal_type, node_type>::matrix_type matrix_type;
 
   /// \brief Read a CSR-format sparse matrix from a Matrix Market file.
   ///
@@ -210,6 +211,7 @@ public:
     using Teuchos::null;
     using Teuchos::RCP;
     using Teuchos::rcp;
+    using Teuchos::rcp_const_cast;
 
     const ordinal_type N = A.numRows ();
     const ordinal_type NNZ = (N*(N+1)) / 2;
@@ -241,10 +243,13 @@ public:
     }
     ptr[N] = counter;
 
-    RCP<graph_type> graph = rcp (new graph_type (as<size_t> (N), node, null));
-    graph->setStructure (ptr, ind);
-    RCP<matrix_type> matrix = rcp (new matrix_type (graph, null));
-    matrix->setValues (val);
+    RCP<graph_type> graph =
+      rcp (new graph_type (as<size_t> (N), node, null));
+    graph->setStructure (arcp_const_cast<const size_t> (ptr),
+                         arcp_const_cast<const ordinal_type> (ind));
+    RCP<matrix_type> matrix =
+      rcp (new matrix_type (rcp_const_cast<const graph_type> (graph), null));
+    matrix->setValues (arcp_const_cast<const scalar_type> (val));
 
     SparseOpsType::finalizeGraphAndMatrix (uplo, diag, *graph, *matrix, null);
     RCP<SparseOpsType> ops = rcp (new SparseOpsType (node));
@@ -389,9 +394,9 @@ public:
 
     // Convert L and U into separate sparse matrices.
     RCP<SparseOpsType> L_sparse =
-      denseTriToSparse (L_dense, node, LOWER_TRI, UNIT_DIAG);
+      denseTriToSparseOps (L_dense, node, LOWER_TRI, UNIT_DIAG);
     RCP<SparseOpsType> U_sparse =
-      denseTriToSparse (U_dense, node, UPPER_TRI, NON_UNIT_DIAG);
+      denseTriToSparseOps (U_dense, node, UPPER_TRI, NON_UNIT_DIAG);
 
     // Compute Z = U_sparse * X.
     U_sparse->template multiply<scalar_type, scalar_type> (NO_TRANS, STS::one (),
@@ -402,19 +407,20 @@ public:
     //
     // Compare Y and Y_hat columnwise.
     //
+    Array<magnitude_type> numerNorms (numColsX);
+    Array<magnitude_type> denomNorms (numColsX);
+
     MVT::Assign (*Z, (const MV) *Y_hat);
     MVT::GESUM (*Z, STS::one(), *Y, -STS::one()); // Z := Y - Y_hat
-    Array<magnitude_type> numerNorms (numColsX);
-    MVT::NormInf (Z, numerNorms ());
-    Array<magnitude_type> denomNorms (numColsX);
-    MVT::NormInf (Y_hat, denomNorms ());
+    MVT::NormInf (*Z, numerNorms ());
+    MVT::NormInf (*Y_hat, denomNorms ());
     for (size_type k = 0; k < numColsX; ++k) {
       const magnitude_type relNorm = (denomNorms[k] == STM::zero ()) ?
         numerNorms[k] : numerNorms[k] / denomNorms[k];
       TEUCHOS_TEST_FOR_EXCEPTION(relNorm > tol, std::runtime_error, "Sparse "
         "matrix-(multi)vector multiply test failed: Error in column " << k
         << " of the output matrix exceeds the specified tolerance.  "
-        "$\\|Y - \\hat{Y}\\|_\\infty / \\|\hat{Y}\\|_\\infty = " << relNorm
+        "$\\|Y - \\hat{Y}\\|_\\infty / \\|\\hat{Y}\\|_\\infty = " << relNorm
         << " > \\tau = " << tol << ".");
     }
     //
@@ -434,17 +440,15 @@ public:
     //
     MVT::Assign (*W, (const MV) *Z_hat);
     MVT::GESUM (*W, STS::one(), *Z, -STS::one()); // W := Z - Z_hat
-    Array<magnitude_type> numerNorms (numColsX);
-    MVT::NormInf (W, numerNorms ());
-    Array<magnitude_type> denomNorms (numColsX);
-    MVT::NormInf (Z_hat, denomNorms ());
+    MVT::NormInf (*W, numerNorms ());
+    MVT::NormInf (*Z_hat, denomNorms ());
     for (size_type k = 0; k < numColsX; ++k) {
       const magnitude_type relNorm = (denomNorms[k] == STM::zero ()) ?
         numerNorms[k] : numerNorms[k] / denomNorms[k];
       TEUCHOS_TEST_FOR_EXCEPTION(relNorm > tol, std::runtime_error, "Sparse "
         "triangular solve test with L failed: Error in column " << k
         << " of the output matrix exceeds the specified tolerance.  "
-        "$\\|Z - \\hat{Z}\\|_\\infty / \\|\hat{Z}\\|_\\infty = " << relNorm
+        "$\\|Z - \\hat{Z}\\|_\\infty / \\|\\hat{Z}\\|_\\infty = " << relNorm
         << " > \\tau = " << tol << ".");
     }
 
@@ -462,17 +466,15 @@ public:
     //
     MVT::Assign (*Z, (const MV) *W_hat);
     MVT::GESUM (*Z, STS::one(), *W, -STS::one()); // Z := W - W_hat
-    Array<magnitude_type> numerNorms (numColsX);
-    MVT::NormInf (Z, numerNorms ());
-    Array<magnitude_type> denomNorms (numColsX);
-    MVT::NormInf (W_hat, denomNorms ());
+    MVT::NormInf (*Z, numerNorms ());
+    MVT::NormInf (*W_hat, denomNorms ());
     for (size_type k = 0; k < numColsX; ++k) {
       const magnitude_type relNorm = (denomNorms[k] == STM::zero ()) ?
         numerNorms[k] : numerNorms[k] / denomNorms[k];
       TEUCHOS_TEST_FOR_EXCEPTION(relNorm > tol, std::runtime_error, "Sparse "
         "triangular solve test with U failed: Error in column " << k
         << " of the output matrix exceeds the specified tolerance.  "
-        "$\\|W - \\hat{W}\\|_\\infty / \\|\hat{W}\\|_\\infty = " << relNorm
+        "$\\|W - \\hat{W}\\|_\\infty / \\|\\hat{W}\\|_\\infty = " << relNorm
         << " > \\tau = " << tol << ".");
     }
 
