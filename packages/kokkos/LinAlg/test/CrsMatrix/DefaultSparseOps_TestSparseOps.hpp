@@ -173,7 +173,7 @@ public:
 
     const size_t numRows = static_cast<size_t> (ptr.size() == 0 ? 0 : ptr.size() - 1);
     RCP<ParameterList> graphParams = parameterList ("Graph");
-    RCP<graph_type> graph = rcp (new graph_type (numRows, node, params));
+    RCP<graph_type> graph = rcp (new graph_type (numRows, node, graphParams));
 
     graph->setStructure (ptr, ind);
     RCP<ParameterList> matParams = parameterList ("Matrix");
@@ -199,6 +199,7 @@ public:
   ///   (UNIT_DIAG) or not (NON_UNIT_DIAG).
   Teuchos::RCP<SparseOpsType>
   denseTriToSparseOps (const Teuchos::SerialDenseMatrix<int, scalar_type>& A,
+                       const Teuchos::RCP<node_type>& node,
                        const Teuchos::EUplo uplo,
                        const Teuchos::EDiag diag) const
   {
@@ -240,7 +241,7 @@ public:
     }
     ptr[N] = counter;
 
-    RCP<graph_type> graph = rcp (new graph_type (as<size_t> (numRows), node, null));
+    RCP<graph_type> graph = rcp (new graph_type (as<size_t> (N), node, null));
     graph->setStructure (ptr, ind);
     RCP<matrix_type> matrix = rcp (new matrix_type (graph, null));
     matrix->setValues (val);
@@ -256,7 +257,7 @@ public:
   /// \param node [in] The Kokkos Node instance.
   /// \param numRows [in] The number of rows in the MultiVector.
   /// \param numCols [in] The number of columns in the MultiVector.
-  Teuchos::RCP<MultiVector<scalar_type, node_type> >
+  Teuchos::RCP<Kokkos::MultiVector<scalar_type, node_type> >
   makeMultiVector (const Teuchos::RCP<node_type>& node,
                    const ordinal_type numRows,
                    const ordinal_type numCols) const
@@ -381,9 +382,9 @@ public:
 
     // Convert L and U into separate sparse matrices.
     RCP<SparseOpsType> L_sparse =
-      denseTriToSparse (L_dense, LOWER_TRI, UNIT_DIAG);
+      denseTriToSparse (L_dense, node, LOWER_TRI, UNIT_DIAG);
     RCP<SparseOpsType> U_sparse =
-      denseTriToSparse (U_dense, UPPER_TRI, NON_UNIT_DIAG);
+      denseTriToSparse (U_dense, node, UPPER_TRI, NON_UNIT_DIAG);
 
     // Compute Z = U_sparse * X.
     U_sparse->template multiply<scalar_type, scalar_type> (NO_TRANS, STS::one (),
