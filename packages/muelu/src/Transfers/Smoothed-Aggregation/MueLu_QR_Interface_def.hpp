@@ -97,7 +97,7 @@ namespace MueLu {
 #if defined(HAVE_MUELU_STOKHOS) and defined(MUELU_SCALAR_IS_PCE_TYPE)
   //Specialization for polynomial chaos expansion (PCE) scalar types.
   template <class Scalar, class Storage, class LocalOrdinal>
-  QR_Interface< Sacado::PCE::OrthogPoly<Scalar, Storage>, LocalOrdinal>::QR_Interface(const size_t NSDim) : workSize_(NSDim), NSDim(NSDim_), info_(0) {
+  QR_Interface< Sacado::PCE::OrthogPoly<Scalar, Storage>, LocalOrdinal>::QR_Interface(const size_t NSDim) : workSize_(NSDim), NSDim_(NSDim), info_(0) {
         tau_ = ArrayRCP<Scalar>(NSDim);
         work_ = ArrayRCP<Scalar>(NSDim);
       }
