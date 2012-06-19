@@ -71,12 +71,12 @@ void mpkernel(int offset, int stride, int n, int sz,
       std::cout << "x(0) = [ ";
       for (int i=0; i<sz; i++)
 	std::cout << x.coeff(i) << " ";
-      std::cout << std::endl << std::endl;
+      std::cout << "]" << std::endl << std::endl;
       
       std::cout << "y(0) = [ ";
       for (int i=0; i<sz; i++)
 	std::cout << y.coeff(i) << " ";
-      std::cout << std::endl << std::endl;
+      std::cout << "]" << std::endl << std::endl;
     }
 
     // Return result
