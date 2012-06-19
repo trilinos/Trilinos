@@ -2761,7 +2761,7 @@ namespace Tpetra {
     RCP<ParameterList> params = parameterList();
     if (os == DoOptimizeStorage) params->set<bool>("Optimize Storage",true);
     else                         params->set<bool>("Optimize Storage",false);
-    fillComplete(domainMap,rangeMap,parameterList());
+    fillComplete(domainMap,rangeMap,params);
   }
 
 } // namespace Tpetra
