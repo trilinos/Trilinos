@@ -45,6 +45,9 @@
 #define __CrsMatrix_TestSparseOps_hpp
 
 #include <Teuchos_MatrixMarket_Raw_Reader.hpp>
+#include <Teuchos_BLAS.hpp>
+#include <Teuchos_LAPACK.hpp>
+#include <Teuchos_SerialDenseMatrix.hpp>
 #include <Kokkos_MultiVector.hpp>
 #include <Kokkos_DefaultArithmetic.hpp>
 
@@ -113,7 +116,7 @@ public:
     ArrayRCP<scalar_type>  val;
     ordinal_type nrows = 0, ncols = 0;
 
-    Teuchos::MatrixMarket::Reader<scalar_type, ordinal_type> reader;
+    Teuchos::MatrixMarket::Raw::Reader<scalar_type, ordinal_type> reader;
 
     // In "intolerant" mode, this will throw an exception if there is
     // a syntax error in the file.
@@ -253,7 +256,7 @@ public:
   /// \param node [in] The Kokkos Node instance.
   /// \param numRows [in] The number of rows in the MultiVector.
   /// \param numCols [in] The number of columns in the MultiVector.
-  RCP<MultiVector<scalar_type, node_type> >
+  Teuchos::RCP<MultiVector<scalar_type, node_type> >
   makeMultiVector (const Teuchos::RCP<node_type>& node,
                    const ordinal_type numRows,
                    const ordinal_type numCols) const
