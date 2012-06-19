@@ -83,7 +83,7 @@ namespace Stokhos {
     //! Destructor
     __device__
     ~DynamicThreadedStorage() {
-      if (is_owned_) ds::destroy_and_release(coeff_, total_sz_);
+      destroy_coeff_array(coeff_, is_owned_, total_sz_);
     }
 
     //! Assignment operator
@@ -91,8 +91,7 @@ namespace Stokhos {
     DynamicThreadedStorage& operator=(const DynamicThreadedStorage& s) {
       if (&s != this) { 
 	if (s.sz_ != sz_) {
-	  if (is_owned_)
-	    ds::destroy_and_release(coeff_, total_sz_);
+	  destroy_coeff_array(coeff_, is_owned_, total_sz_);
 	  sz_ = s.sz_;
 	  stride_ = s.stride_;
 	  total_sz_ = sz_*stride_;
@@ -145,8 +144,7 @@ namespace Stokhos {
 	  my_tsz = total_sz_new;
 	for (ordinal_type i=0; i<my_tsz; i+=stride_)
 	  coeff_new[i] = coeff_[i];
-	if (is_owned_)
-	  ds::destroy_and_release(coeff_, total_sz_);
+	destroy_coeff_array(coeff_, is_owned_, total_sz_);
 	coeff_ = coeff_new;
 	sz_ = sz;
 	total_sz_ = total_sz_new;
@@ -158,8 +156,7 @@ namespace Stokhos {
     __device__
     void shallowReset(pointer v, const ordinal_type& sz, 
 		      const ordinal_type& stride, bool owned) { 
-      if (is_owned_)
-	ds::destroy_and_release(coeff_, total_sz_);
+      destroy_coeff_array(coeff_, is_owned_, total_sz_);
       coeff_ = v;
       sz_ = sz;
       stride_ = stride;
@@ -232,6 +229,14 @@ namespace Stokhos {
 
       // Give each thread its portion of the array
       c = ptr + tidx;
+    }
+
+    //! Destroy coefficient array
+    __device__
+    void destroy_coeff_array(pointer c, bool owned, ordinal_type total_size) {
+      __syncthreads();
+      if (owned)
+	ds::destroy_and_release(c, total_size);
     }
 
   private:
