@@ -5,6 +5,7 @@
 #include "ml_config.h"
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRAEXT) 
 #include <iostream>
+#include <vector>
 #include <string.h>
 #include "ml_RefMaxwell.h"
 #include "ml_epetra.h"
@@ -618,8 +619,8 @@ int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList 
     PreList.set("smoother: self list",List.sublist("smoother: self list"));
 
     // Aztec smoothing
-    Teuchos::RCP<vector<int> >    ridummy;
-    Teuchos::RCP<vector<double> > rddummy;
+    Teuchos::RCP<std::vector<int> >    ridummy;
+    Teuchos::RCP<std::vector<double> > rddummy;
     if(List.isParameter("smoother: Aztec options"))
       PreList.set("smoother: Aztec options",List.get("smoother: Aztec options",ridummy));
     if(List.isParameter("smoother: Aztec params"))
