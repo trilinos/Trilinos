@@ -268,6 +268,7 @@ public:
     using Teuchos::rcp;
     typedef Teuchos::ScalarTraits<scalar_type> STS;
     typedef Kokkos::MultiVector<scalar_type, node_type> MV;
+    typedef Kokkos::DefaultArithmetic<MV> MVT;
 
     RCP<MV> X = rcp (new MV (node));
     X->initializeValues (as<size_t> (numRows),
@@ -279,6 +280,11 @@ public:
   }
 
   /// \brief Test sparse matrix-(multi)vector multiply and sparse triangular solve.
+  ///
+  /// \param node [in/out] The Kokkos Node instance.
+  /// \param N [in] The number of rows (and columns) in the sparse
+  ///   matrices to test.
+  /// \param tol [in] Tolerance for relative errors.
   ///
   /// Test methodology
   /// ================
@@ -314,7 +320,8 @@ public:
   /// triangular matrices L and U.  That means the test is not
   /// guaranteed to succeed.
   void
-  testSparseOps (const ordinal_type N,
+  testSparseOps (const Teuchos::RCP<node_type>& node,
+                 const ordinal_type N,
                  const magnitude_type tol) const
   {
     using Teuchos::arcp;
@@ -407,7 +414,7 @@ public:
       TEUCHOS_TEST_FOR_EXCEPTION(relNorm > tol, std::runtime_error, "Sparse "
         "matrix-(multi)vector multiply test failed: Error in column " << k
         << " of the output matrix exceeds the specified tolerance.  "
-        "$\\|Y - \\hat{Y}\\|_\infty / \\|\hat{Y}\\|_\infty = " << relNorm
+        "$\\|Y - \\hat{Y}\\|_\\infty / \\|\hat{Y}\\|_\\infty = " << relNorm
         << " > \\tau = " << tol << ".");
     }
     //
@@ -437,7 +444,7 @@ public:
       TEUCHOS_TEST_FOR_EXCEPTION(relNorm > tol, std::runtime_error, "Sparse "
         "triangular solve test with L failed: Error in column " << k
         << " of the output matrix exceeds the specified tolerance.  "
-        "$\\|Z - \\hat{Z}\\|_\infty / \\|\hat{Z}\\|_\infty = " << relNorm
+        "$\\|Z - \\hat{Z}\\|_\\infty / \\|\hat{Z}\\|_\\infty = " << relNorm
         << " > \\tau = " << tol << ".");
     }
 
@@ -465,7 +472,7 @@ public:
       TEUCHOS_TEST_FOR_EXCEPTION(relNorm > tol, std::runtime_error, "Sparse "
         "triangular solve test with U failed: Error in column " << k
         << " of the output matrix exceeds the specified tolerance.  "
-        "$\\|W - \\hat{W}\\|_\infty / \\|\hat{W}\\|_\infty = " << relNorm
+        "$\\|W - \\hat{W}\\|_\\infty / \\|\hat{W}\\|_\\infty = " << relNorm
         << " > \\tau = " << tol << ".");
     }
 

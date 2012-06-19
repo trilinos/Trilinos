@@ -86,6 +86,6 @@ namespace {
     typedef Kokkos::DefaultHostSparseOps<scalar_type, ordinal_type, node_type> sparse_ops_type;
     RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
     TestSparseOps<sparse_ops_type> tester;
-    tester.testSparseOps (N, tol);
+    tester.testSparseOps (node, N, tol);
   }
 }
