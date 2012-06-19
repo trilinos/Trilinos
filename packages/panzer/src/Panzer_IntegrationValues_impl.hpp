@@ -60,7 +60,7 @@ namespace panzer {
   template<>
   inline
   void panzer::IntegrationValues<double,Intrepid::FieldContainer<double> >::
-  setupArraysForNodeRule(const Teuchos::RCP<panzer::IntegrationRule>& ir)
+  setupArraysForNodeRule(const Teuchos::RCP<const panzer::IntegrationRule>& ir)
   {
     int num_nodes = ir->topology->getNodeCount();
     int num_cells = ir->workset_size;
@@ -111,7 +111,7 @@ namespace panzer {
   template<>
   inline
   void panzer::IntegrationValues<double,Intrepid::FieldContainer<double> >::
-  setupArrays(const Teuchos::RCP<panzer::IntegrationRule>& ir)
+  setupArrays(const Teuchos::RCP<const panzer::IntegrationRule>& ir)
   {
     int_rule = ir;
     
