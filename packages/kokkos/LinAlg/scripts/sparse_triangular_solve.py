@@ -133,7 +133,7 @@ code for all matrices with that structure.
 from string import Template
 from os.path import basename
 from kokkos import makeCopyrightNotice
-from codegen_util import makeMultiVectorAref
+from codegen_util import makeMultiVectorAref, makeRowAndColStrides
 
 
 def makeCsrTriSolveRowLoopBounds (upLo, startRow, endRowPlusOne):
@@ -203,9 +203,10 @@ def makeCscTriSolveColLoopBounds (upLo, startCol, endColPlusOne):
     else:
         raise ValueError ('Invalid upLo "' + upLo + '"')
 
-def makeFunctionName (sparseFormat, upLo, dataLayout, unitDiag, 
-                      inPlace=False, conjugateMatrixElements=False)
+def makeFunctionName (defDict):
     '''Make the sparse triangular solve routine's name.
+
+    The input dictionary defDict must have the following fields:
 
     sparseFormat: 'CSR' for compressed sparse row, 'CSC' for
       compressed sparse column.
@@ -228,6 +229,13 @@ def makeFunctionName (sparseFormat, upLo, dataLayout, unitDiag,
 
     conjugateMatrixElements: Whether to use the conjugate of each
       matrix element.'''
+
+    sparseFormat = defDict['sparseFormat']
+    dataLayout = defDict['dataLayout']
+    upLo = defDict['upLo']
+    unitDiag = defDict['unitDiag']
+    inPlace = defDict['inPlace']
+    conjugateMatrixElements = defDict['conjugateMatrixElements']
 
     if dataLayout == 'row major':
         denseLayoutAbbr = 'RowMajor'
@@ -253,15 +261,20 @@ def makeFunctionName (sparseFormat, upLo, dataLayout, unitDiag,
     else:
         inPlaceStr = ''
 
-    return sparseFormat.lower() + upLoAbbr + 'TriSolve' + denseLayoutAbbr + \
-        unitDiagAbbr + inPlaceStr
+    if conjugateMatrixElements:
+        conjStr = 'Conj'
+    else:
+        conjStr = ''
 
-def makeFunctionSignature (sparseFormat, upLo, dataLayout, unitDiag, 
-                           inPlace=False, conjugateMatrixElements=False):
+    return sparseFormat.lower() + upLoAbbr + 'TriSolve' + denseLayoutAbbr + \
+        unitDiagAbbr + inPlaceStr + conjStr
+
+def makeFunctionSignature (defDict):
     '''Make the sparse triangular solve routine's signature.
     
     This generates the signature (declaration, without concluding
-    semicolon) for a sparse triangular solve routine.
+    semicolon) for a sparse triangular solve routine.  The input
+    dictionary must have the following fields:
 
     sparseFormat: 'CSR' for compressed sparse row, 'CSC' for
       compressed sparse column.
@@ -285,8 +298,9 @@ def makeFunctionSignature (sparseFormat, upLo, dataLayout, unitDiag,
     conjugateMatrixElements: Whether to use the conjugate of each
       matrix element.'''
 
-    fnName = makeFunctionName (sparseFormat, upLo, dataLayout, unitDiag, \
-                                   inPlace, conjugateMatrixElements))
+    fnName = makeFunctionName (defDict)
+    sparseFormat = defDict['sparseFormat']
+    inPlace = defDict['inPlace']
     if sparseFormat == 'CSR':
         if inPlace:
             raise ValueError ('In-place sparse triangular solve not supported ' \
@@ -347,42 +361,126 @@ ${fnName} (
 
     return t.substitute (fnName=fnName)
 
-def makeFunctionDoc (upLo, dataLayout, unitDiag, \
-                         inPlace=False, conjugateMatrixElements=False):
+def makeFunctionDoc (defDict):
     '''Make the sparse triangular solve routine's documentation.
     
     This generates the documentation (in Doxygen-compatible format)
-    for a sparse triangular solve routine.
+    for a sparse triangular solve routine.  The input dictionary must
+    have the following fields:
 
+    sparseFormat: 'CSC' for compressed sparse column, or 'CSR' for
+      compressed sparse row.
     upLo: 'lower' for lower triangular solve, or 'upper' for upper
       triangular solve.
-
     dataLayout: This describes how the multivectors' data are arranged
       in memory.  Currently we only accept 'column major' or 'row
       major'.
-
     unitDiag: True if the routine is for a sparse matrix with unit
       diagonal (which is not stored explicitly in the sparse matrix),
       else False for a sparse matrix with explicitly stored diagonal
       entries.
-
     inPlace: True if the routine overwrites the input vector with the
       output vector, else False if the routine does not overwrite the
       input vector.
-
     conjugateMatrixElements: Whether to use the conjugate of each
       matrix element.'''
 
-    if inPlace:
-        raise ValueError ('Documentation for in-place version not implemented yet')
+    sparseFormat = defDict['sparseFormat']
+    upLo = defDict['upLo']
+    dataLayout = defDict['dataLayout']
+    unitDiag = defDict['unitDiag']
+    inPlace = defDict['inPlace']
+    conjugateMatrixElements = defDict['conjugateMatrixElements']
 
+    if sparseFormat == 'CSC':
+        fmtColRow = 'row'
+        fmtRowCol = 'column'
+    elif sparseFormat == 'CSR':
+        fmtColRow = 'column'
+        fmtRowCol = 'row'
+    else:
+        raise ValueError ('Invalid sparse format "' + sparseFormat + '"')
+    if upLo == 'upper':
+        UpLo = 'Upper'
+    elif upLo == 'lower':
+        UpLo = 'Lower'
+    else:
+        raise ValueError ('Unknown upper/lower triangular designation "' + upLo + '"')
+    if dataLayout == 'row major':
+        colRow = 'row'
+        rowCol = 'column'
+        startIndex = 'startCol'
+        endIndex = 'endColPlusOne'
+        numIndices = 'numCols'
+    elif dataLayout == 'column major':
+        colRow = 'column'
+        rowCol = 'row'
+        startIndex = 'startRow'
+        endIndex = 'endRowPlusOne'
+        numIndices = 'numRows'
+    else:
+        raise ValueError ('Unknown data layout "' + dataLayout + '"')
+    if unitDiag:
+        unitDiagStr = ' implicitly stored unit diagonal entries and'
+    else:
+        unitDiagStr = ''
     if conjugateMatrixElements:
-        raise ValueError ('Documentation for conjugate version not implemented yet')
+        briefConj = ',\n///   using conjugate of sparse matrix elements'
+    else:
+        briefConj = ''
+
+    substDict = {'sparseFormat': sparseFormat, 'UpLo': UpLo,
+                 'unitDiagStr': unitDiagStr,
+                 'colRow': colRow, 'rowCol': rowCol,
+                 'briefConj': briefConj, 'numIndices': numIndices,
+                 'startIndex': startIndex, 'endIndex': endIndex,
+                 'fmtColRow': fmtColRow, 'fmtRowCol': fmtRowCol}
     
-    t = Template ('''/// \\brief ${UpLo} triangular solve of a CSR-format sparse matrix with${unitDiagStr}
-///   ${colRow}-major dense input and output matrices.
+    if inPlace:
+        docTmpl = Template ('''/// ${UpLo} triangular solve of a ${sparseFormat}-format sparse matrix
+///   with${unitDiagStr} a ${colRow}-major dense input/output matrix${briefConj}.
 ///
-/// Another word for the dense input and output matrices in this 
+/// Another word for the dense input / output matrices in this 
+/// context are "multivectors," that is, collections of one or more
+/// vectors.  The entries of each vector are stored contiguously, 
+/// and the stride between the same entry of consecutive vectors is
+/// constant.
+///
+/// \\tparam Ordinal The type of indices used to access the entries of
+///   the sparse and dense matrices.  Any signed or unsigned integer
+///   type which can be used in pointer arithmetic with raw arrays 
+///   will do.
+/// \\tparam MatrixScalar The type of entries in the sparse matrix.
+///   This may differ from the type of entries in the input/output
+///   matrix X.
+/// \\tparam RangeScalar The type of entries in the input/output matrix X.
+///
+/// \param ${startIndex} [in] The least (zero-based) ${fmtRowCol} index of the sparse 
+///   matrix over which to iterate.  For iterating over the whole sparse 
+///   matrix, this should be 0.
+/// \param ${endIndex} [in] The largest (zero-based) ${fmtRowCol} index of the 
+///   sparse matrix over which to iterate, plus one.  Adding one means 
+///   that ${startIndex}, ${endIndex} makes an exclusive index range.  For 
+///   iterating over the whole sparse matrix, this should be the total
+///   number of ${fmtRowCol}s in the sparse matrix (on the calling process).
+/// \param numColsX [in] Number of columns in X.
+/// \param X [in/out] Input/output dense matrix, stored in ${colRow}-major order.
+/// \param LDX [in] Stride between ${colRow}s of X.  We assume unit
+///   stride between ${rowCol}s of X.
+/// \param ptr [in] Length (${numIndices}+1) array of index offsets 
+///   between ${fmtRowCol}s of the sparse matrix.
+/// \param ind [in] Array of ${fmtColRow} indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the ${fmtColRow} indices of row i
+///   (zero-based) of the sparse matrix.
+/// \param val [in] Array of entries of the sparse matrix.
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of ${fmtRowCol} i
+///   (zero-based) of the sparse matrix.
+''')
+    else:
+        docTmpl = Template ('''/// ${UpLo} triangular solve of a ${sparseFormat}-format sparse matrix
+///   with${unitDiagStr} ${colRow}-major dense input and output matrices${briefConj}.
+///
+/// Another word for the dense input / output matrices in this 
 /// context are "multivectors," that is, collections of one or more
 /// vectors.  The entries of each vector are stored contiguously, 
 /// and the stride between the same entry of consecutive vectors is
@@ -400,74 +498,31 @@ def makeFunctionDoc (upLo, dataLayout, unitDiag, \
 /// \\tparam RangeScalar The type of entries in the output matrix X.
 ///   This may differ from the type of entries in the input matrix Y.
 ///
-/// \param startRow [in] The least (zero-based) row index of the sparse 
+/// \param ${startIndex} [in] The least (zero-based) ${fmtRowCol} index of the sparse 
 ///   matrix over which to iterate.  For iterating over the whole sparse 
 ///   matrix, this should be 0.
-/// \param endRowPlusOne [in] The largest (zero-based) row index of the 
+/// \param ${endIndex} [in] The largest (zero-based) ${fmtRowCol} index of the 
 ///   sparse matrix over which to iterate, plus one.  Adding one means 
-///   that startRow, endRowPlusOne makes an exclusive index range.  For 
+///   that ${startIndex}, ${endIndex} makes an exclusive index range.  For 
 ///   iterating over the whole sparse matrix, this should be the total
-///   number of rows in the sparse matrix (on the calling process).
+///   number of ${fmtRowCol}s in the sparse matrix (on the calling process).
 /// \param numColsX [in] Number of columns in X and Y.
 /// \param Y [in] Input dense matrix, stored in ${colRow}-major order.
 /// \param LDY [in] Stride between ${colRow}s of Y.  We assume unit
 ///   stride between ${rowCol}s of Y.
-/// \param ptr [in] Length (numRows+1) array of index offsets between
-///   rows of the sparse matrix.
-/// \param ind [in] Array of column indices of the sparse matrix.
-///   ind[ptr[i] .. ptr[i+1]-1] are the column indices of row i
+/// \param ptr [in] Length (${numIndices}+1) array of index offsets 
+///   between ${fmtRowCol}s of the sparse matrix.
+/// \param ind [in] Array of ${fmtColRow} indices of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the ${fmtColRow} indices of ${fmtRowCol} i
 ///   (zero-based) of the sparse matrix.
 /// \param val [in] Array of entries of the sparse matrix.
-///   val[ptr[i] .. ptr[i+1]-1] are the entries of row i
+///   val[ptr[i] .. ptr[i+1]-1] are the entries of ${fmtRowCol} i
 ///   (zero-based) of the sparse matrix.
 /// \param X [out] Output dense matrix, stored in ${colRow}-major order.
 /// \param LDX [in] Stride between ${colRow}s of X.  We assume unit
 ///   stride between ${rowCol}s of X.
 ''')
-
-    if upLo == 'upper':
-        UpLo = 'Upper'
-    elif upLo == 'lower':
-        UpLo = 'Lower'
-    else:
-        raise ValueError ('Unknown upper/lower triangular designation "' + upLo + '"')
-
-    if dataLayout == 'row major':
-        colRow = 'row'
-        rowCol = 'column'
-    elif dataLayout == 'column major':
-        colRow = 'column'
-        rowCol = 'row'
-    else:
-        raise ValueError ('Unknown data layout "' + dataLayout + '"')
-
-    if unitDiag: # Boolean
-        unitDiagStr = '\n///   implicitly stored unit diagonal entries and '
-    else:
-        unitDiagStr = ''
-
-    return t.substitute (UpLo=UpLo, colRow=colRow, rowCol=rowCol, unitDiagStr=unitDiagStr)
-
-def makeRowAndColStrides (varName, dataLayout):
-    '''Return two strings, representing row resp. column strides in a dense matrix.
-    
-    varName: Name of the identifier for which to generate the stride identifier names.
-
-    dataLayout: 'column major' or 'row major'.
-
-    One of the strings will be the constant 1.  The other will be some
-    identifier name, which the caller of the generated code should
-    provide.
-    '''
-    if dataLayout == 'row major':
-        rowStride = 'LD' + varName
-        colStride = '1'
-    elif dataLayout == 'column major':
-        rowStride = '1'
-        colStride = 'LD' + varName
-    else:
-        raise ValueError('Unknown data layout"' + dataLayout + '"')
-    return (rowStride, colStride)
+    return docTmpl.substitute (substDict)
 
 def makeInitLoopBody (dataLayout, unitDiag):
     rowStrideX, colStrideX = makeRowAndColStrides ('X', dataLayout)
@@ -493,8 +548,8 @@ def makeInnerMatrixLoopMultStmt (dataLayout):
     X_r_c_expr = makeMultiVectorAref ('X_r', dataLayout, rowStrideX, colStrideX, '', 'c')
     Y_j_c_expr = makeMultiVectorAref ('Y_j', dataLayout, rowStrideY, colStrideY, '', 'c')
 
-    t = Template('${X_r_c} = ${X_r_c} - A_rj * ${Y_j_c}')
-    return t.substitute (X_r_c=X_r_c_expr, Y_j_c=Y_j_c_expr)
+    substDict = {'X_r_c': X_r_c_expr, 'Y_j_c': Y_j_c_expr}
+    return Template ('${X_r_c} = ${X_r_c} - A_rj * ${Y_j_c}').substitute (substDict)
 
 def makeInnerMatrixLoopDivStmt (dataLayout):
     rowStrideX, colStrideX = makeRowAndColStrides ('X', dataLayout)
@@ -503,10 +558,10 @@ def makeInnerMatrixLoopDivStmt (dataLayout):
     X_r_c_expr = makeMultiVectorAref ('X_r', dataLayout, rowStrideX, colStrideX, '', 'c')
     Y_r_c_expr = makeMultiVectorAref ('Y_r', dataLayout, rowStrideY, colStrideY, '', 'c')
 
-    t = Template('${X_r_c_expr} = (${X_r_c_expr} + ${Y_r_c_expr}) / A_rr')
-    return t.substitute (X_r_c_expr=X_r_c_expr, Y_r_c_expr=Y_r_c_expr)
+    substDict = {'X_r_c': X_r_c_expr, 'Y_r_c': Y_r_c_expr}
+    return Template('${X_r_c} = (${X_r_c} + ${Y_r_c}) / A_rr').substitute (substDict)
 
-def makeInnerMatrixLoopBody (dataLayout, unitDiag, conjugateMatrixElements=False):
+def makeInnerMatrixLoopBody (dataLayout, unitDiag, conjugateMatrixElements):
     '''Make the inner loop body in CSR sparse triangular solve.
 
     dataLayout: This describes how the multivectors' data are arranged
@@ -579,8 +634,10 @@ def makeInnerMatrixLoopBody (dataLayout, unitDiag, conjugateMatrixElements=False
                          Y_j_expr=Y_j_expr,
                          inner_loop_mult_stmt=innerLoopMultStmt)
 
-def makeFunctionBody (upLo, dataLayout, unitDiag, conjugateMatrixElements=False):
+def makeFunctionBody (defDict):
     '''Make the body of the implementation of the sparse triangular solve routine.
+
+    The input dictionary defDict must have at least the following fields:
 
     upLo: 'lower' for lower triangular solve, or 'upper' for upper
       triangular solve.
@@ -596,6 +653,11 @@ def makeFunctionBody (upLo, dataLayout, unitDiag, conjugateMatrixElements=False)
 
     conjugateMatrixElements: Whether to use the conjugate of each
       matrix element.'''
+
+    upLo = defDict['upLo']
+    dataLayout = defDict['dataLayout']
+    unitDiag = defDict['unitDiag']
+    conjugateMatrixElements = defDict['conjugateMatrixElements']            
 
     t = Template ('''{
   typedef Teuchos::ScalarTraits<RangeScalar> STS;
@@ -649,28 +711,13 @@ def makeFunctionBody (upLo, dataLayout, unitDiag, conjugateMatrixElements=False)
                          set_diag_matrix_elt=setDiagMatrixElt,
                          inner_matrix_loop_body=innerMatrixLoopBody)
 
-def makeFunctionDeclaration (upLo, dataLayout, unitDiag):
+def makeFunctionDeclaration (defDict):
     '''Make the declaration of the sparse triangular solve routine.
 
-    upLo: 'lower' for lower triangular solve, or 'upper' for upper
-      triangular solve.
+    The input dictionary defDict must have the following fields:
 
-    dataLayout: This describes how the multivectors' data are arranged
-      in memory.  Currently we only accept 'column major' or 'row
-      major'.
-
-    unitDiag: True if the routine is for a sparse matrix with unit
-      diagonal (which is not stored explicitly in the sparse matrix),
-      else False for a sparse matrix with explicitly stored diagonal
-      entries.'''
-
-    inPlace = False
-    sig = makeFunctionSignature ('CSR', upLo, dataLayout, unitDiag, inPlace)
-    return sig + ';'
-
-def makeFunctionDefinition (upLo, dataLayout, unitDiag, 
-                            inPlace=False, conjugateMatrixElements=False)
-    '''Make the definition of the sparse triangular solve routine.
+    sparseFormat: 'CSC' for compressed sparse column, 'CSR' for
+      compressed sparse row.
 
     upLo: 'lower' for lower triangular solve, or 'upper' for upper
       triangular solve.
@@ -690,10 +737,16 @@ def makeFunctionDefinition (upLo, dataLayout, unitDiag,
 
     conjugateMatrixElements: Whether to use the conjugate of each
       matrix element.'''
+    return makeFunctionSignature (defDict) + ';'
 
-    sig = makeFunctionSignature ('CSR', upLo, dataLayout, unitDiag, \
-                                     inPlace, conjugateMatrixElements)
-    bdy = makeFunctionBody (upLo, dataLayout, unitDiag, conjugateMatrixElements)
+def makeFunctionDefinition (defDict):
+    '''Make the definition of the sparse triangular solve routine.
+
+    The input dictionary defDict must have the same fields as those of
+    the input dictionary of makeFunctionDeclaration().'''
+
+    sig = makeFunctionSignature (defDict)
+    bdy = makeFunctionBody (defDict)
     return sig + '\n' + bdy
 
 def makeHeaderDeclFile (filename):
@@ -736,11 +789,21 @@ namespace Raw {
 ''').substitute (baseFilename=basename(filename), \
                      headerizedFilename=headerizedFilename)
 
+    sparseFormat = 'CSR'
+    inPlace = False
+
     for dataLayout in ['column major', 'row major']:
         for upLo in ['lower', 'upper']:
             for unitDiag in [False, True]:
-                s = s + makeFunctionDoc (upLo, dataLayout, unitDiag)
-                s = s + makeFunctionDeclaration (upLo, dataLayout, unitDiag) + '\n\n'
+                for conjugateMatrixElements in [False, True]:
+                    defDict = {'sparseFormat': sparseFormat,
+                               'upLo': upLo,
+                               'dataLayout': dataLayout,
+                               'unitDiag': unitDiag,
+                               'inPlace': inPlace,
+                               'conjugateMatrixElements': conjugateMatrixElements}
+                    s = s + makeFunctionDoc (defDict) + \
+                        makeFunctionDeclaration (defDict) + '\n\n'
     s = s + '} // namespace Raw\n' + \
         '} // namespace Kokkos\n\n' + \
         '#endif // #ifndef __' + headerizedFilename + '\n'
@@ -760,8 +823,7 @@ def makeHeaderDefFile (filename):
     headerizedFilename = filename.replace ('.', '_')
 
     s = ''
-    s = s + makeCopyrightNotice ()
-    s = s + Template ('''
+    s = s + makeCopyrightNotice () + Template ('''
 #ifndef __${headerizedFilename}
 #define __${headerizedFilename}
 
@@ -777,10 +839,21 @@ namespace Raw {
 ''').substitute (baseFilename=basename(filename), \
                      headerizedFilename=headerizedFilename)
 
+    sparseFormat = 'CSR'
+    inPlace = False
+
+    defDict = {}    
     for dataLayout in ['column major', 'row major']:
         for upLo in ['lower', 'upper']:
             for unitDiag in [False, True]:
-                s = s + makeFunctionDefinition (upLo, dataLayout, unitDiag) + '\n\n'
+                for conjugateMatrixElements in [False, True]:
+                    defDict = {'sparseFormat': sparseFormat,
+                               'upLo': upLo,
+                               'dataLayout': dataLayout,
+                               'unitDiag': unitDiag,
+                               'inPlace': inPlace,
+                               'conjugateMatrixElements': conjugateMatrixElements}
+                    s = s + makeFunctionDefinition (defDict) + '\n\n'
     s = s + '} // namespace Raw\n' + \
         '} // namespace Kokkos\n\n' + \
         '#endif // #ifndef __' + headerizedFilename + '\n'

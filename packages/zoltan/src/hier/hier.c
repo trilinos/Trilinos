@@ -932,23 +932,33 @@ int Zoltan_Hier(
   ZOLTAN_FREE(&input_parts);
 
   /* build a graph */
-  if (hpp.use_graph)
+  if (hpp.use_graph){
     SET_GLOBAL_GRAPH(&graph_type);
-  else
-    graph_type |= (1 << NO_GRAPH);
+    ierr = Zoltan_Build_Graph(zz, &graph_type,
+	    hpp.checks, hpp.num_obj,
+	    global_ids, local_ids,       /* input ZOLTAN_ID_TYPEs */
+	    hpp.obj_wgt_dim, &hpp.edge_wgt_dim,
+	    &vtxdist, &hpp.xadj, &hpp.adjncy, /* internal ZOLTAN_GNO_TYPEs */
+	    &hpp.ewgts, &hpp.adjproc);
 
-  ierr = Zoltan_Build_Graph(zz, &graph_type,
-			    hpp.checks, hpp.num_obj,
-			    global_ids, local_ids,       /* input ZOLTAN_ID_TYPEs */
-			    hpp.obj_wgt_dim, &hpp.edge_wgt_dim,
-			    &vtxdist, &hpp.xadj, &hpp.adjncy, /* internal ZOLTAN_GNO_TYPEs */
-			    &hpp.ewgts, &hpp.adjproc);
+    hpp.invalid_gno = vtxdist[zz->Num_Proc];
+    gno1 = vtxdist[zz->Proc];
+    ZOLTAN_FREE(&vtxdist);
+  }
+  else{
+    MPI_Datatype MPI_GNOTYPE = Zoltan_mpi_gno_type();
+    ZOLTAN_GNO_TYPE localCount = hpp.num_obj, scanCount=0;
+    MPI_Scan(&localCount, &scanCount, 1, MPI_GNOTYPE, MPI_SUM, zz->Communicator);
+    ZOLTAN_GNO_TYPE totalCount = scanCount;
+    MPI_Bcast(&totalCount, 1, MPI_GNOTYPE, zz->Num_Proc-1, zz->Communicator);
+
+    hpp.invalid_gno = totalCount;
+    gno1 = scanCount - localCount + 1;
+  }
 
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
     ZOLTAN_HIER_ERROR(ierr, "Zoltan_Build_Graph returned error.");
   }
-
-  hpp.invalid_gno = vtxdist[zz->Num_Proc];
 
   /* Check that the space of global numbers fits in a ZOLTAN_ID_TYPE.  Caller is 
    * using tuples of ZOLTAN_ID_TYPE, which we mapped to singleton ZOLTAN_GNO_TYPE
@@ -971,8 +981,6 @@ int Zoltan_Hier(
     }
   }
 
-  gno1 = vtxdist[zz->Proc];
-  ZOLTAN_FREE(&vtxdist);
 
   if (hpp.num_obj){
     hpp.gno = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * hpp.num_obj);
