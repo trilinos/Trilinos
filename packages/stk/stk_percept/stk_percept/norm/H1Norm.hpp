@@ -15,23 +15,75 @@ namespace stk
   namespace percept
   {
 
-    /// compute the H1 norm or semi-norm
-    class H1Norm : public typename Norm<2>
+    class H1_NormOp  : public Function, public HasFinalOp<std::vector<double> >
     {
+      Function& m_integrand;
+      Teuchos::RCP<Function > m_grad_integrand;
+      MDArray m_grad_codomain;
+
     public:
 
+      /// integrand tells what fields Intrepid should compute, etc.
+      /// Note: this function is intended to be used to wrap a Function using CompositeFunction and thus its domain and codomain
+      /// are the same as the wrapped function's codomain
+      H1_NormOp(Function& integrand, int spatialDim=3) : Function("H1_NormOp",integrand.getCodomainDimensions(), integrand.getCodomainDimensions()) , m_integrand(integrand) {
+        m_grad_integrand = m_integrand.gradient(spatialDim);
+        m_grad_codomain = m_grad_integrand->getNewCodomain();
+        VERIFY_OP_ON(m_grad_codomain.size(), ==, spatialDim, "H1_NormOp only one point at a time...");
+      }
+
+      void operator()(MDArray& input_values, MDArray& output_values, double time_value_optional=0.0)
+      {
+        //VERIFY_OP(input_values.size(), ==, output_values.size(), "H1_NormOp::operator() bad sizes");
+        m_integrand(input_values, output_values, time_value_optional);
+        (*m_grad_integrand)(input_values, m_grad_codomain, time_value_optional);
+        double sum=0.0;
+        for (int i = 0; i < m_grad_codomain.size(); i++)
+          {
+            sum += SQR(m_grad_codomain(i));
+          }
+        VERIFY_OP_ON(output_values.size(), ==, 1, "H1_NormOp only one point at a time...");
+        for (int i = 0; i < output_values.size(); i++)
+          {
+            sum += SQR(output_values(i));
+          }
+      }
+
+      virtual void operator()(MDArray& domain, MDArray& codomain, const stk::mesh::Entity& element, const MDArray& parametric_coords, double time_value_optional=0.0)
+      {
+        (*this)(domain, codomain, time_value_optional);
+      }
+
+      virtual void operator()(MDArray& domain, MDArray& codomain, const stk::mesh::Bucket& element, const MDArray& parametric_coords, double time_value_optional=0.0)
+      {
+        (*this)(domain, codomain, time_value_optional);
+      }
+
+      void finalOp(const std::vector<double>& vin, std::vector<double>& vout)
+      {
+        for (unsigned i = 0; i < vin.size(); i++)
+          vout[i] = std::sqrt(vin[i]);
+      }
+    };
+
+    /// compute the H1 norm or semi-norm
+    class H1Norm : public  Norm<2>
+    {
+    public:
+      typedef Norm<2> Base;
+
       H1Norm(mesh::BulkData& bulkData, std::string partName, TurboOption turboOpt=TURBO_NONE, bool is_surface_norm=false) :
-        Norm(bulkData, partName, turboOpt, is_surface_norm) {}
+        Base(bulkData, partName, turboOpt, is_surface_norm) {}
 
       H1Norm(mesh::BulkData& bulkData, MDArrayString& partNames, TurboOption turboOpt=TURBO_NONE, bool is_surface_norm=false) :
-        Norm(bulkData, partNames, turboOpt, is_surface_norm) {}
+        Base(bulkData, partNames, turboOpt, is_surface_norm) {}
 
       H1Norm(mesh::BulkData& bulkData, mesh::Part *part = 0, TurboOption turboOpt=TURBO_NONE, bool is_surface_norm=false) :
-        Norm(bulkData, part, turboOpt, is_surface_norm) {}
+        Base(bulkData, part, turboOpt, is_surface_norm) {}
 
 #ifndef SWIG
       H1Norm(mesh::BulkData& bulkData, mesh::Selector * selector,TurboOption turboOpt=TURBO_NONE,  bool is_surface_norm = false) :
-        Norm(bulkData, selector, turboOpt, is_surface_norm) {}
+        Base(bulkData, selector, turboOpt, is_surface_norm) {}
 #endif
 
       virtual void operator()(Function& integrand, Function& result)
@@ -55,26 +107,26 @@ namespace stk
           {
             // FIXME - make all stk::percept code const-correct
             PerceptMesh eMesh(&mesh::fem::FEMMetaData::get(m_bulkData), &m_bulkData);
-            LN_NormOp<2> LN_op(integrand);
-            CompositeFunction LN_of_integrand("LN_of_integrand", integrand, LN_op);
-            IntegratedOp integrated_LN_op(LN_of_integrand, m_turboOpt);
-            integrated_LN_op.setCubDegree(m_cubDegree);
+            int spatialDim = eMesh.get_spatial_dim();
+            H1_NormOp H1_op(integrand, spatialDim);
+            //CompositeFunction H1_of_integrand("H1_of_integrand", integrand, H1_op);
+            IntegratedOp integrated_H1_op(H1_op, m_turboOpt);
+            integrated_H1_op.setCubDegree(m_cubDegree);
 
             const stk::mesh::Part& locally_owned_part = mesh::fem::FEMMetaData::get(m_bulkData).locally_owned_part();
             stk::mesh::Selector selector(*m_selector & locally_owned_part);
             //eMesh.print_info("Norm");
             if (m_turboOpt == TURBO_NONE || m_turboOpt == TURBO_ELEMENT)
               {
-                eMesh.elementOpLoop(integrated_LN_op, 0, &selector, m_is_surface_norm);
+                eMesh.elementOpLoop(integrated_H1_op, 0, &selector, m_is_surface_norm);
               }
             else if (m_turboOpt == TURBO_BUCKET)
               {
-                eMesh.bucketOpLoop(integrated_LN_op, 0, &selector, m_is_surface_norm);
+                eMesh.bucketOpLoop(integrated_H1_op, 0, &selector, m_is_surface_norm);
               }
 
-            unsigned vec_sz = integrated_LN_op.getValue().size();
-            std::vector<double> local = integrated_LN_op.getValue();
-
+            unsigned vec_sz = integrated_H1_op.getValue().size();
+            std::vector<double> local = integrated_H1_op.getValue();
 
             //unsigned p_rank = m_bulkData.parallel_rank();
             //std::cout  << "P["<<p_rank<<"] value = " << local << std::endl;
@@ -83,7 +135,7 @@ namespace stk
             stk::all_reduce_sum(m_bulkData.parallel(), &local[0], &global_sum[0], vec_sz);
 
             std::vector<double> result1(vec_sz);
-            LN_op.finalOp(global_sum, result1);
+            H1_op.finalOp(global_sum, result1);
 
             if (typeid(result) == typeid(ConstantFunction))
               {

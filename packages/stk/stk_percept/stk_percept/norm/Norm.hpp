@@ -54,35 +54,6 @@ namespace stk
     /// [DEPRECATED]
     inline double square(double x) { return x*x; }
 
-#if 0
-    class l2NormOp  : public Function, public HasFinalOp<double>
-    {
-    public:
-
-      /// integrand tells what fields Intrepid should compute, etc.
-      l2NormOp() : Function() {}
-
-      void operator()(MDArray& integrand_values, MDArray& output_values, double time_value_optional=0.0)
-      {
-        VERIFY_OP(integrand_values.size(), ==, output_values.size(), "l2NormOp::operator() bad sizes");
-        for (int i = 0; i < integrand_values.size(); i++)
-          {
-            output_values[i] = square(integrand_values[i]);
-          }
-      }
-      using Function::operator();
-      virtual void operator()(MDArray& domain, MDArray& codomain, const stk::mesh::Entity& element, const MDArray& parametric_coords, double time_value_optional=0.0)
-      {
-        (*this)(domain, codomain, time_value_optional);
-      }
-
-      void finalOp(const double& vin, double& vout)
-      {
-        vout = std::sqrt(vin);
-      }
-    };
-#endif
-
     /// for Power = -1, compute the inf-norm
     template<int Power=2>
     class LN_NormOp  : public Function, public HasFinalOp<std::vector<double> >

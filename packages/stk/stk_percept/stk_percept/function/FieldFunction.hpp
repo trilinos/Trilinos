@@ -121,6 +121,7 @@ namespace stk
       virtual Teuchos::RCP<Function > gradient(int spatialDim=3)
       {
         int meta_dimension = mesh::fem::FEMMetaData::get_meta_data(mesh::fem::FEMMetaData::get(*m_bulkData)).get_spatial_dimension();
+        VERIFY_OP_ON(meta_dimension, ==, spatialDim, "gradient: mismatch in spatial dimensions");
         std::string xyz[] = {"x", "y", "z"};
         MDArrayString mda(meta_dimension);
         for (int i = 0; i < meta_dimension; i++)

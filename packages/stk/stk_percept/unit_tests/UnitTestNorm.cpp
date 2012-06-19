@@ -16,6 +16,7 @@
 #include <stk_percept/function/ConstantFunction.hpp>
 #include <stk_percept/Util.hpp>
 #include <stk_percept/norm/Norm.hpp>
+#include <stk_percept/norm/H1Norm.hpp>
 #include <stk_percept/math/Math.hpp>
 #include <stk_percept/PerceptMesh.hpp>
 #include <stk_percept/fixtures/Fixture.hpp>
@@ -810,6 +811,97 @@ STKUNIT_UNIT_TEST(norm, field_function)
   STKUNIT_EXPECT_DOUBLE_EQ_APPROX( sfx_expect, sfx_res_vec.getValue()[0]);
 
   Util::setFlag(0, false);
+}
+
+//=============================================================================
+//=============================================================================
+//=============================================================================
+
+STKUNIT_UNIT_TEST(norm, h1_volume)
+{
+  EXCEPTWATCH;
+  if (1) return;
+  MPI_Barrier( MPI_COMM_WORLD );
+
+  LocalFixture fix(3,3,12);
+  mesh::fem::FEMMetaData& metaData = fix.metaData;
+  mesh::BulkData& bulkData = fix.bulkData;
+  //PerceptMesh& eMesh = fix.eMesh;
+
+  mesh::FieldBase *coords_field = fix.coords_field;
+
+  /// create a field function from the existing coordinates field
+  FieldFunction ff_coords("ff_coords", coords_field, &bulkData,
+                          Dimensions(3), Dimensions(3), FieldFunction::SIMPLE_SEARCH );
+
+  /// the function to be integrated - here it is just the identity, and when integrated should produce the volume
+  StringFunction identity("1.0", Name("identity"));
+  std::string grad[] = {"0", "0", "0"};
+  identity.set_gradient_strings(grad, 3);
+
+  /// A place to hold the result.
+  /// This is a "writable" function (we may want to make this explicit - StringFunctions are not writable; FieldFunctions are
+  /// since we interpolate values to them from other functions).
+  ConstantFunction sqrt_volume(0.0, "sqrt_volume");
+
+  /// Create the operator that will do the work
+  H1Norm h1Norm(bulkData, &metaData.universal_part(), TURBO_NONE);
+  /// get the l2 norm of identity
+  h1Norm(identity, sqrt_volume);
+
+  STKUNIT_EXPECT_DOUBLE_EQ_APPROX(1.0, sqrt_volume.getValue());
+}
+
+//=============================================================================
+//=============================================================================
+//=============================================================================
+
+STKUNIT_UNIT_TEST(norm, h1_volume_1)
+{
+  EXCEPTWATCH;
+  if (1) return;
+  MPI_Barrier( MPI_COMM_WORLD );
+
+  LocalFixture fix(3,3,12);
+  mesh::fem::FEMMetaData& metaData = fix.metaData;
+  mesh::BulkData& bulkData = fix.bulkData;
+  PerceptMesh& eMesh = fix.eMesh;
+
+  mesh::FieldBase *coords_field = fix.coords_field;
+
+  /// create a field function from the existing coordinates field
+  FieldFunction ff_coords("ff_coords", coords_field, &bulkData,
+                          Dimensions(3), Dimensions(3), FieldFunction::SIMPLE_SEARCH );
+
+  /// the function to be integrated - here it is just the identity, and when integrated should produce the volume
+  StringFunction plane("x+2.0*y+3.0*z", Name("plane"));
+  std::string grad[] = {"1", "2", "3"};
+  plane.set_gradient_strings(grad, 3);
+
+  /// A place to hold the result.
+  /// This is a "writable" function (we may want to make this explicit - StringFunctions are not writable; FieldFunctions are
+  /// since we interpolate values to them from other functions).
+  ConstantFunction result1(0.0, "result1");
+
+  /// Create the operator that will do the work
+  H1Norm h1Norm(bulkData, &metaData.universal_part(), TURBO_NONE);
+  /// get the l2 norm of plane
+  h1Norm(plane, result1);
+
+  STKUNIT_EXPECT_DOUBLE_EQ_APPROX(3.89444048184931, result1.getValue());
+
+  //// rotate the mesh
+
+  if (1)
+  {
+    Math::Matrix rm = Math::rotationMatrix(0, 30);
+    eMesh.transform_mesh(rm);
+
+    h1Norm(plane, result1);
+
+    STKUNIT_EXPECT_DOUBLE_EQ_APPROX(3.73050488093323, result1.getValue());
+  }
+
 }
 
 }
