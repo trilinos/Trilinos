@@ -47,7 +47,7 @@ namespace stk
           {
             double sum=0.0;
             for (int j = 0; j < m_spatialDim; j++)
-              sum += SQR(out_grad[i+j]);
+              sum += SQR(out_grad[i * m_spatialDim + j]);
 
             sum += SQR(iv_mda(i));
 
