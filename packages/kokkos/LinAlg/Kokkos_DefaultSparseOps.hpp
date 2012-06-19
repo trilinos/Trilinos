@@ -322,7 +322,8 @@ namespace Kokkos {
     ///   or its conjugate transpose (if applicable).
     ///
     /// \param alpha [in] Scalar constant \f$\alpha\f$ by which to
-    ///   multiply the result: \f$Y := \alpha A X\f$.
+    ///   multiply the result of the sparse matrix-(multi)vector
+    ///   multiply.
     ///
     /// \param X [in] Input multivector.
     ///
@@ -334,7 +335,7 @@ namespace Kokkos {
               const MultiVector<DomainScalar,Node> &X,
               MultiVector<RangeScalar,Node> &Y) const;
 
-    /// \brief Y := Y + alpha * Op(A) * X.
+    /// \brief Y := beta * Y + alpha * Op(A) * X.
     ///
     /// Apply the local sparse matrix A (or its transpose or conjugate
     /// transpose) to a multivector X, accumulating the result into Y.
@@ -353,9 +354,14 @@ namespace Kokkos {
     ///   or its conjugate transpose (if applicable).
     ///
     /// \param alpha [in] Scalar constant \f$\alpha\f$ by which to
-    ///   multiply the result: \f$Y := Y + \alpha A X\f$.
+    ///   multiply the result of the sparse matrix-(multi)vector
+    ///   multiply.
     ///
     /// \param X [in] Input multivector.
+    ///
+    /// \param alpha [in] Scalar constant \f$\beta\f$ by which to
+    ///   multiply Y when summing with the result of the sparse
+    ///   matrix-(multi)vector multiply.
     ///
     /// \param Y [in/out] Result multivector.
     template <class DomainScalar, class RangeScalar>
