@@ -86,6 +86,8 @@ namespace stk
       bool m_have_element;
       bool m_have_bucket;
 
+      int m_spatialDim;
+
       void init();
 
 

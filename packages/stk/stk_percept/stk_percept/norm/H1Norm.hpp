@@ -15,37 +15,43 @@ namespace stk
   namespace percept
   {
 
+
     class H1_NormOp  : public Function, public HasFinalOp<std::vector<double> >
     {
       Function& m_integrand;
       Teuchos::RCP<Function > m_grad_integrand;
       MDArray m_grad_codomain;
+      int m_spatialDim;
 
     public:
 
       /// integrand tells what fields Intrepid should compute, etc.
-      /// Note: this function is intended to be used to wrap a Function using CompositeFunction and thus its domain and codomain
-      /// are the same as the wrapped function's codomain
-      H1_NormOp(Function& integrand, int spatialDim=3) : Function("H1_NormOp",integrand.getCodomainDimensions(), integrand.getCodomainDimensions()) , m_integrand(integrand) {
+      H1_NormOp(Function& integrand, int spatialDim=3) : Function("H1_NormOp",integrand.getCodomainDimensions(), integrand.getCodomainDimensions()) , m_integrand(integrand), m_spatialDim(spatialDim) {
         m_grad_integrand = m_integrand.gradient(spatialDim);
         m_grad_codomain = m_grad_integrand->getNewCodomain();
-        VERIFY_OP_ON(m_grad_codomain.size(), ==, spatialDim, "H1_NormOp only one point at a time...");
       }
 
-      void operator()(MDArray& input_values, MDArray& output_values, double time_value_optional=0.0)
+      void operator()(MDArray& pc_mda, MDArray& iv_mda, double time_value_optional=0.0)
       {
-        //VERIFY_OP(input_values.size(), ==, output_values.size(), "H1_NormOp::operator() bad sizes");
-        m_integrand(input_values, output_values, time_value_optional);
-        (*m_grad_integrand)(input_values, m_grad_codomain, time_value_optional);
-        double sum=0.0;
-        for (int i = 0; i < m_grad_codomain.size(); i++)
+        //VERIFY_OP(pc_mda.size(), ==, iv_mda.size(), "H1_NormOp::operator() bad sizes");
+
+        m_integrand(pc_mda, iv_mda, time_value_optional);
+        std::vector<int> dims;
+        iv_mda.dimensions(dims);
+        dims.back() = m_grad_codomain.dimension(m_grad_codomain.rank()-1);
+        VERIFY_OP_ON(dims.back(), ==, m_spatialDim, "H1Norm::operator()");
+        MDArray out_grad(Teuchos::Array<int>(dims.begin(), dims.end()));
+        (*m_grad_integrand)(pc_mda, out_grad, time_value_optional);
+        VERIFY_OP_ON(out_grad.size(), ==, iv_mda.size()*m_spatialDim, "H1Norm::operator() 2");
+        for (int i = 0; i < out_grad.size()/ m_spatialDim; i++)
           {
-            sum += SQR(m_grad_codomain(i));
-          }
-        VERIFY_OP_ON(output_values.size(), ==, 1, "H1_NormOp only one point at a time...");
-        for (int i = 0; i < output_values.size(); i++)
-          {
-            sum += SQR(output_values(i));
+            double sum=0.0;
+            for (int j = 0; j < m_spatialDim; j++)
+              sum += SQR(out_grad[i+j]);
+
+            sum += SQR(iv_mda(i));
+
+            iv_mda(i) = sum;
           }
       }
 

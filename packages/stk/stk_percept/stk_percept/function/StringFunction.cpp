@@ -17,7 +17,7 @@ namespace stk
                                    int codomain_dimension,
                                    unsigned integration_order) :
       Function(name.getName().c_str(), Dimensions(domain_dimension), Dimensions(codomain_dimension), integration_order),
-      m_func_string(function_string), m_functionExpr(*this), m_gradient_string("") 
+      m_func_string(function_string), m_functionExpr(*this), m_gradient_string(""), m_spatialDim(0) 
     {
       init();
     }
@@ -28,14 +28,14 @@ namespace stk
                                    Dimensions codomain_dimensions,
                                    unsigned integration_order) :
       Function(name.getName().c_str(), domain_dimensions, codomain_dimensions, integration_order),
-      m_func_string(function_string), m_functionExpr(*this), m_gradient_string("") 
+      m_func_string(function_string), m_functionExpr(*this), m_gradient_string("") , m_spatialDim(0)
     {
       init();
     }
 
     StringFunction::StringFunction(const StringFunction& s) : 
       Function(s.m_name.c_str(), s.m_domain_dimensions, s.m_codomain_dimensions, s.m_integration_order),
-      m_func_string(s.m_func_string), m_functionExpr(*this), m_gradient_string(s.m_gradient_string)
+      m_func_string(s.m_func_string), m_functionExpr(*this), m_gradient_string(s.m_gradient_string), m_spatialDim(s.m_spatialDim)
     {
       init();
     }
@@ -57,6 +57,7 @@ namespace stk
     void StringFunction::set_gradient_strings(std::string gstring[3], int len)
     {
       m_gradient_string = "";
+      m_spatialDim = len;
       for (int i = 0; i < len; i++)
         m_gradient_string += "v["+boost::lexical_cast<std::string>(i)+"]= "+gstring[i]+";";
     }
@@ -67,6 +68,7 @@ namespace stk
       if (gstring.rank() != 1) throw std::runtime_error("set_gradient_strings takes a rank 1 matrix (i.e. a vector) of strings (MDArrayString)");
       int len = gstring.dimension(0);
       m_gradient_string = "";
+      m_spatialDim = len;
       for (int i = 0; i < len; i++)
         m_gradient_string += "v["+boost::lexical_cast<std::string>(i)+"]= "+gstring(i)+";";
     }

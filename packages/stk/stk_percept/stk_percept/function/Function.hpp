@@ -196,11 +196,12 @@ namespace stk
       static const Function& Identity;
       //static Function Zero;
 
+      bool argsAreValid(const MDArray& in, const MDArray& out);
+
     protected:
 
       static int last_dimension(MDArray& arr) { return arr.dimension(arr.rank()-1); }
       static NameToFunctionMap& getNameToFunctionMap();
-      bool argsAreValid(const MDArray& in, const MDArray& out);
 
       std::string m_name;
       unsigned m_integration_order;
