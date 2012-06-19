@@ -84,7 +84,7 @@ int main(int argc, char **argv)
 	      << "\tcuda        = " << test_cuda << std::endl << std::endl;
 
     if (test_cuda) {
-      bool status = MPVectorExample<MaxSize,Kokkos::Cuda>::run(
+      bool status = MPVectorExample<MaxSize,KokkosArray::Cuda>::run(
 	storage_method, n, sz, nblocks, nthreads, reset, print);
 
       if (status)
@@ -94,7 +94,7 @@ int main(int argc, char **argv)
     }
 
      if (test_host) {
-       bool status = MPVectorExample<MaxSize,Kokkos::Host>::run(
+       bool status = MPVectorExample<MaxSize,KokkosArray::Host>::run(
 	 storage_method, n, sz, nblocks, nthreads, reset, print);
        
        if (status)

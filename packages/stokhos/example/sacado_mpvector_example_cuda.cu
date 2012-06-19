@@ -141,8 +141,8 @@ void kernel(int n, int sz, double *dev_x, double *dev_y)
 
 // Partial specialization of vector example runner for CUDA
 template <int MaxSize>
-struct MPVectorExample<MaxSize,Kokkos::Cuda> {
-   typedef Kokkos::Cuda node_type;
+struct MPVectorExample<MaxSize,KokkosArray::Cuda> {
+   typedef KokkosArray::Cuda node_type;
 
   static bool 
   run(Storage_Method storage_method, int n, int sz, int nblocks, int nthreads, 
@@ -270,4 +270,4 @@ private:
 
 };
 
-template struct MPVectorExample<MaxSize, Kokkos::Cuda>;
+template struct MPVectorExample<MaxSize, KokkosArray::Cuda>;

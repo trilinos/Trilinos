@@ -106,9 +106,9 @@ namespace Stokhos {
 // No Host specialization
 
 // Cuda specialization
-#include "Kokkos_Cuda.hpp"
-#include "Kokkos_Cuda_macros.hpp"
+#include "KokkosArray_Cuda.hpp"
+#include "KokkosArray_Cuda_macros.hpp"
 #include "Stokhos_DynamicThreadedStorage_cuda_impl.hpp"
-#include "Kokkos_Clear_macros.hpp"
+#include "KokkosArray_Clear_macros.hpp"
 
 #endif // STOKHOS_DYNAMIC_STORAGE_HPP

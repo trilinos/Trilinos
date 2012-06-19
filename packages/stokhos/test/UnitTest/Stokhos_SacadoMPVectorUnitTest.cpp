@@ -437,7 +437,7 @@ struct UnitTestSetup {
   SAXPY_UNIT_TEST(VEC)
 
 namespace DynamicVecTest {
-  typedef Kokkos::Host node_type;
+  typedef KokkosArray::Host node_type;
   typedef Stokhos::DynamicStorage<int,double,node_type> storage_type;
   typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
   typedef UnitTestSetup<vec_type> UTS;
@@ -446,7 +446,7 @@ namespace DynamicVecTest {
 }
 
 namespace DynamicStridedVecTest {
-  typedef Kokkos::Host node_type;
+  typedef KokkosArray::Host node_type;
   typedef Stokhos::DynamicStridedStorage<int,double,node_type> storage_type;
   typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
   typedef UnitTestSetup<vec_type> UTS;
@@ -455,7 +455,7 @@ namespace DynamicStridedVecTest {
 }
 
 namespace StaticVecTest {
-  typedef Kokkos::Host node_type;
+  typedef KokkosArray::Host node_type;
   typedef Stokhos::StaticStorage<int,double,8,node_type> storage_type;
   typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
   typedef UnitTestSetup<vec_type> UTS;
@@ -464,7 +464,7 @@ namespace StaticVecTest {
 }
 
 namespace StaticFixedVecTest {
-  typedef Kokkos::Host node_type;
+  typedef KokkosArray::Host node_type;
   typedef Stokhos::StaticFixedStorage<int,double,8,node_type> storage_type;
   typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
   typedef UnitTestSetup<vec_type> UTS;
@@ -473,7 +473,7 @@ namespace StaticFixedVecTest {
 }
 
 namespace LocalVecTest {
-  typedef Kokkos::Host node_type;
+  typedef KokkosArray::Host node_type;
   typedef Stokhos::LocalStorage<int,double,8,node_type> storage_type;
   typedef Sacado::MP::Vector<storage_type,node_type> vec_type;
   typedef UnitTestSetup<vec_type> UTS;

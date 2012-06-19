@@ -87,15 +87,15 @@ namespace Stokhos {
 } // namespace Stokhos
 
 // Host specialization
-#include "Kokkos_Host.hpp"
-#include "Kokkos_Host_macros.hpp"
+#include "KokkosArray_Host.hpp"
+#include "KokkosArray_Host_macros.hpp"
 #include "Stokhos_DynArrayTraits_impl.hpp"
-#include "Kokkos_Clear_macros.hpp"
+#include "KokkosArray_Clear_macros.hpp"
 
 // Cuda specialization
-#include "Kokkos_Cuda.hpp"
-#include "Kokkos_Cuda_macros.hpp"
+#include "KokkosArray_Cuda.hpp"
+#include "KokkosArray_Cuda_macros.hpp"
 #include "Stokhos_DynArrayTraits_impl.hpp"
-#include "Kokkos_Clear_macros.hpp"
+#include "KokkosArray_Clear_macros.hpp"
 
 #endif // STOKHOS_DYN_ARRAY_TRAITS_HPP

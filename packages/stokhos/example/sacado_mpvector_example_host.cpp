@@ -112,8 +112,8 @@ void kernel(int offset, int stride, int n, int sz, double *dev_x, double *dev_y)
 
 // Partial specialization of vector example runner for CUDA
 template <int MaxSize>
-struct MPVectorExample<MaxSize,Kokkos::Host> {
-  typedef Kokkos::Host node_type;
+struct MPVectorExample<MaxSize,KokkosArray::Host> {
+  typedef KokkosArray::Host node_type;
 
   static bool 
   run(Storage_Method storage_method, int n, int sz, int nblocks, int nthreads, 
@@ -217,4 +217,4 @@ private:
 
 };
 
-template struct MPVectorExample<MaxSize, Kokkos::Host>;
+template struct MPVectorExample<MaxSize, KokkosArray::Host>;

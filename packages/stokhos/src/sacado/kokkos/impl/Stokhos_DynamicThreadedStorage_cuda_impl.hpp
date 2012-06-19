@@ -41,7 +41,7 @@
 namespace Stokhos {
 
   template <typename ordinal_t, typename value_t>
-  class DynamicThreadedStorage<ordinal_t, value_t, Kokkos::Cuda> {
+  class DynamicThreadedStorage<ordinal_t, value_t, KokkosArray::Cuda> {
   public:
 
     static const bool is_static = false;
@@ -50,7 +50,7 @@ namespace Stokhos {
 
     typedef ordinal_t ordinal_type;
     typedef value_t value_type;
-    typedef Kokkos::Cuda node_type;
+    typedef KokkosArray::Cuda node_type;
     typedef value_type& reference;
     typedef const value_type& const_reference;
     typedef value_type* pointer;

@@ -333,16 +333,16 @@ namespace Sacado {
 #include "Sacado_MP_VectorTraits.hpp"
 
 // Host specialization
-#include "Kokkos_Host.hpp"
-#include "Kokkos_Host_macros.hpp"
+#include "KokkosArray_Host.hpp"
+#include "KokkosArray_Host_macros.hpp"
 #include "Sacado_MP_Vector_impl.hpp"
-#include "Kokkos_Clear_macros.hpp"
+#include "KokkosArray_Clear_macros.hpp"
 
 // Cuda specialization
-#include "Kokkos_Cuda.hpp"
-#include "Kokkos_Cuda_macros.hpp"
+#include "KokkosArray_Cuda.hpp"
+#include "KokkosArray_Cuda_macros.hpp"
 #include "Sacado_MP_Vector_impl.hpp"
-#include "Kokkos_Clear_macros.hpp"
+#include "KokkosArray_Clear_macros.hpp"
 
 #endif // HAVE_STOKHOS_SACADO
 
