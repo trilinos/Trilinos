@@ -4,6 +4,7 @@
 /* ******************************************************************** */
 #include "ml_config.h"
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRAEXT) 
+#include <iostream>
 #include <string.h>
 #include "ml_RefMaxwell.h"
 #include "ml_epetra.h"
@@ -25,7 +26,7 @@ using Teuchos::ArrayRCP;
 // ================================================ ====== ==== ==== == = 
 
 void IVOUT(const Epetra_IntVector & A, const char *of){
-  ofstream os(of);
+  std::ofstream os(of);
   int i;
   int NumProc=A.Map().Comm().NumProc();
   int MyPID  =A.Map().Comm().MyPID();
