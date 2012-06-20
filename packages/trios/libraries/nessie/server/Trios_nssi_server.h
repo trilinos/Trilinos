@@ -321,11 +321,9 @@ extern "C" {
          * arrives.
          *
          * @param service  The service descriptor.
-         * @param num_threads  The number of threads to use for processing requests (default=0).
          */
         extern int nssi_service_start(
-                nssi_service *service,
-                const int num_threads);
+                nssi_service *service);
 
 
         /*

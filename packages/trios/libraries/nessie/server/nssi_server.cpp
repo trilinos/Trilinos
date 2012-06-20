@@ -47,35 +47,6 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
  *
  */
 
-/**
- * Thoughts on threaded event processing (14 Oct 2005):
- *
- * thread pooling
- * get a thread in nssi_service_start event loop
- * make this optional
- *   - some services may wish to be single threaded
- * thread.run() is process_request()
- *   - is process_request() reentrant?
- * synchronize on oid (_oid_el)
- *   - serialize events per object?
- *   - somebody else's problem?
- *   - how to handle read/write after remove?
- *   - add locking to the API
- *   - last write wins?
- *   - pthread_mutex?
- * nssi_service_start:cleanup should pthread_join()
- *   - wait for event processing to complete
- *   - timer to avoid hang
- * keep thread stats for tuning
- *   - events processed per thread
- *   - min/max/avg time per event
- *   - min/max/avg time per event by event type
- *   - total time per thread
- *   - num events by event type
- *   - min/max/avg bytes read/written per event
- *   - active/inactive thread counts
- *
- */
 
 #include "Trios_config.h"
 #include "Trios_nssi_server.h"
@@ -122,10 +93,6 @@ extern nssi_config_t nssi_config;
 
 extern trios_buffer_queue_t send_bq;
 extern trios_buffer_queue_t recv_bq;
-
-
-// TODO: Replace these with the threadpool rank
-int FIXRANK = 0;
 
 
 int rpc_get_service(
@@ -498,8 +465,7 @@ static int fetch_args(
     assert(header->fetch_args);
 
     log_debug(rpc_debug_level,
-            "%d: get args from client ",
-            FIXRANK);
+            "get args from client");
 
     /* fetch the buffer from the client */
     trios_start_timer(call_time);
@@ -529,8 +495,7 @@ static int fetch_args(
     }
 
     /* decode the arguments */
-    log_debug(rpc_debug_level,"thread_id(%d): decoding args, size=%d",
-            FIXRANK,
+    log_debug(rpc_debug_level,"decoding args, size=%d",
             encoded_args_size);
 
     /* create an xdr memory stream for the decoded args */
@@ -583,7 +548,6 @@ cleanup:
  * @param result            @input the result of the function.
  */
 static int send_result(const NNTI_peer_t   *caller,
-                       const int            thread_id,
                        const unsigned long  request_id,
                        const NNTI_buffer_t *dest_addr,
                        xdrproc_t            xdr_encode_result,
@@ -684,9 +648,9 @@ static int send_result(const NNTI_peer_t   *caller,
     /* If the result fits in the short result buffer, send it with the header */
     if (res_size < remaining) {
 
-        log_debug(rpc_debug_level, "thread_id(%d): sending short_result %lu, "
+        log_debug(rpc_debug_level, "sending short_result %lu, "
             "result buffer size = %d, header size = %d, available space = %d, result_size = %d",
-            thread_id, request_id, res_buf_size, hdr_size, remaining, res_size);
+            request_id, res_buf_size, hdr_size, remaining, res_size);
 
         /* client needs this information from the header */
         header.fetch_result = FALSE;
@@ -696,8 +660,7 @@ static int send_result(const NNTI_peer_t   *caller,
         header.rc           = return_code;
 
         /* encode the header  */
-        log_debug(rpc_debug_level, "thread_id(%d): encode result header",
-                thread_id);
+        log_debug(rpc_debug_level, "encode result header");
         trios_start_timer(call_time);
         if (!xdr_nssi_result_header(&hdr_xdrs, &header)) {
             log_fatal(rpc_debug_level, "failed to encode the result header");
@@ -706,8 +669,7 @@ static int send_result(const NNTI_peer_t   *caller,
         trios_stop_timer("xdr_nssi_result_header - encode", call_time);
 
         /* encode the result in the header */
-        log_debug(rpc_debug_level, "thread_id(%d), encode result data",
-                thread_id);
+        log_debug(rpc_debug_level, "encode result data");
         if (result != NULL) {
             trios_start_timer(call_time);
             if (!xdr_encode_result(&hdr_xdrs, result)) {
@@ -723,8 +685,8 @@ static int send_result(const NNTI_peer_t   *caller,
 
         res_counter++;
 
-        log_debug(rpc_debug_level, "thread_id(%d): sending long result %lu, "
-            "available space = %d, result_size = %d", thread_id, request_id, remaining,
+        log_debug(rpc_debug_level, "sending long result %lu, "
+            "available space = %d, result_size = %d", request_id, remaining,
                 res_size);
 
         /* allocate memory for the result
@@ -769,8 +731,8 @@ static int send_result(const NNTI_peer_t   *caller,
                 XDR_ENCODE);
 
         /* encode the header  */
-        log_debug(rpc_debug_level, "thread_id(%d): encode result %lu header",
-                thread_id, request_id);
+        log_debug(rpc_debug_level, "encode result %lu header",
+                request_id);
         trios_start_timer(call_time);
         if (!xdr_nssi_result_header(&hdr_xdrs, &header)) {
             log_fatal(rpc_debug_level, "failed to encode the result header");
@@ -780,8 +742,7 @@ static int send_result(const NNTI_peer_t   *caller,
         trios_stop_timer("xdr_nssi_result_header - encode", call_time);
 
         /* encode the result  */
-        log_debug(rpc_debug_level, "thread_id(%d): encode result %lu data",
-                thread_id, request_id);
+        log_debug(rpc_debug_level, "encode result %lu data", request_id);
         trios_start_timer(call_time);
         if (!xdr_encode_result(&res_xdrs, result)) {
             log_fatal(rpc_debug_level, "failed to encode the result");
@@ -810,9 +771,9 @@ static int send_result(const NNTI_peer_t   *caller,
     if (!header.fetch_result)
         valid_bytes += res_size;
 
-    log_debug(rpc_debug_level, "thread_id(%d): send short result %lu "
+    log_debug(rpc_debug_level, "send short result %lu "
         "(in xdr bytes:  len=%d bytes: encoded_header=%d bytes, res=%d bytes)",
-            thread_id, request_id, valid_bytes, hdr_size, res_size);
+            request_id, valid_bytes, hdr_size, res_size);
 
     /* TODO: Handle the timeout case.  This probably means the client died */
     trios_start_timer(call_time);
@@ -835,8 +796,8 @@ static int send_result(const NNTI_peer_t   *caller,
     /* if the client has to fetch the results, we need to wait for
      * the GET to complete */
     if (header.fetch_result) {
-        log_debug(rpc_debug_level, "thread_id(%d): waiting for client to "
-            "fetch result %lu", thread_id, request_id);
+        log_debug(rpc_debug_level, "waiting for client to "
+            "fetch result %lu", request_id);
 
         trios_start_timer(call_time);
         rc=NNTI_wait(
@@ -874,7 +835,7 @@ cleanup:
         free(buf);
     }
 
-    log_debug(rpc_debug_level, "thread_id(%d): result %lu sent", thread_id, request_id);
+    log_debug(rpc_debug_level, "result %lu sent", request_id);
 
     return rc;
 }
@@ -934,7 +895,6 @@ int nssi_send_result(
 {
     int rc = NSSI_OK;
     nssi_svc_op op;
-    int thread_id = FIXRANK;
 
     log_debug(rpc_debug_level, "enter");
 
@@ -945,11 +905,11 @@ int nssi_send_result(
     /* lookup the service description of the opcode */
     rc = lookup_service_op(args->opcode, &op);
     if (rc != NSSI_OK) {
-        log_warn(rpc_debug_level, "%d: Invalid opcode=%d", thread_id, args->opcode);
+        log_warn(rpc_debug_level, "Invalid opcode=%d", args->opcode);
         return rc;
     }
 
-    rc = send_result(caller, thread_id, request_id, result_addr, op.encode_res, return_code, result);
+    rc = send_result(caller, request_id, result_addr, op.encode_res, return_code, result);
     if (rc != NSSI_OK) {
         log_warn(rpc_debug_level, "Unable to send result to client: %s", nssi_err_str(rc));
     }
@@ -986,7 +946,6 @@ void *process_rpc_request(
     nssi_request_header header;
     int req_count = 0;
     log_level debug_level = rpc_debug_level;
-    int thread_id = FIXRANK;
 
     NNTI_buffer_t incoming_hdl;
 
@@ -1000,8 +959,8 @@ void *process_rpc_request(
 
     log_debug(debug_level, "req_buf=%p", req_buf);
 
-    log_debug(debug_level, "%d: Started processing request %d",
-            thread_id, req_count);
+    log_debug(debug_level, "Started processing request %d",
+            req_count);
 
     /* memory check - log memory statistics.  if memory in use
      * is greater than maximum memory allowed, then exit.
@@ -1012,15 +971,15 @@ void *process_rpc_request(
 //    rc = nthread_unlock(&meminfo_mutex);
 //
 //    log_debug(debug_level,
-//            "%d: max memory check (allowed=%lukB, in_use=%lukB, %%free=%f)",
-//            thread_id, max_mem_allowed, main_memory_in_use,
+//            "max memory check (allowed=%lukB, in_use=%lukB, %%free=%f)",
+//            max_mem_allowed, main_memory_in_use,
 //            100.0-(((float)main_memory_in_use/(float)max_mem_allowed)*100.0));
 //    if ((max_mem_allowed > 0) &&
 //            (main_memory_in_use > max_mem_allowed)) {
 //        rc = NSSI_OK;
 //        log_error(rpc_debug_level,
-//                "%d: max memory allowed exceeded (allowed=%lukB, in_use=%lukB), exiting",
-//                thread_id, max_mem_allowed, main_memory_in_use);
+//                "max memory allowed exceeded (allowed=%lukB, in_use=%lukB), exiting",
+//                max_mem_allowed, main_memory_in_use);
 //        goto cleanup;
 //    }
 
@@ -1035,19 +994,19 @@ void *process_rpc_request(
             XDR_DECODE);
 
     /* decode the request header */
-    log_debug(debug_level, "%d: decoding header for request %d...",
-            thread_id, req_count);
+    log_debug(debug_level, "decoding header for request %d...",
+            req_count);
     trios_start_timer(call_time);
     rc = xdr_nssi_request_header(&xdrs, &header);  // this allocates an xdr_string, must use xdr_free
     trios_stop_timer("xdr_nssi_request_header - decode", call_time);
     if (!rc) {
-        log_fatal(debug_level, "%d: failed to decode header", thread_id);
+        log_fatal(debug_level, "failed to decode header");
         rc = NSSI_EDECODE;
         goto cleanup;
     }
 
-    log_debug(debug_level, "%d: begin processing request %d with opcode (%u)",
-            thread_id, req_count, header.opcode);
+    log_debug(debug_level, "begin processing request %d with opcode (%u)",
+            req_count, header.opcode);
 
     if (logging_debug(rpc_debug_level)) {
         fprint_nssi_request_header(logger_get_file(), "request_header", "DEBUG", &header);
@@ -1057,7 +1016,7 @@ void *process_rpc_request(
     rc = lookup_service_op(header.opcode, &svc_op);
     if (rc != NSSI_OK) {
         /* if we get here, there is not match */
-        log_warn(debug_level, "%d: unrecognized request: opcode=%d", thread_id,
+        log_warn(debug_level, "unrecognized request: opcode=%d",
                 header.opcode);
         rc = NSSI_EBADRPC;
         goto cleanup;
@@ -1065,7 +1024,7 @@ void *process_rpc_request(
 
     log_debug(LOG_OFF, "header.id=%d", header.id);
 
-    log_info(debug_level, "%d: Found op for opcode=%d", thread_id, header.opcode);
+    log_info(debug_level, "Found op for opcode=%d", header.opcode);
 
 
     op_args = calloc(1, svc_op.sizeof_args);
@@ -1073,11 +1032,11 @@ void *process_rpc_request(
     op_res = calloc(1, svc_op.sizeof_res);
 
     /* start interval for decode args */
-    trace_start_interval(trace_interval_gid, thread_id);
+    trace_start_interval(trace_interval_gid, 0);
 
     /* initialize args and res */
-    log_debug(debug_level, "%d: NNTI_BUFFER_SIZE(&header.res_addr)==%d for request %d",
-            thread_id, NNTI_BUFFER_SIZE(&header.res_addr), req_count);
+    log_debug(debug_level, "NNTI_BUFFER_SIZE(&header.res_addr)==%d for request %d",
+            NNTI_BUFFER_SIZE(&header.res_addr), req_count);
 
     /* If the args fit in the header, extract them from the
      * header buffer.  Otherwise, get them from the client.
@@ -1091,8 +1050,8 @@ void *process_rpc_request(
     }
     else {
         /* fetch the operation arguments */
-        log_debug(debug_level, "%d: fetching args for request %d",
-                thread_id, req_count);
+        log_debug(debug_level, "fetching args for request %d",
+                req_count);
         // is reentrant??
         trios_start_timer(call_time);
         rc = fetch_args(
@@ -1103,22 +1062,22 @@ void *process_rpc_request(
         trios_stop_timer("fetch_args", call_time);
         if (rc != NSSI_OK) {
             log_fatal(debug_level,
-                    "%d: unable to fetch args", thread_id);
+                    "unable to fetch args");
             goto cleanup;
         }
     }
 
     /* end the decode args interval */
     trace_end_interval(trace_interval_gid, TRACE_RPC_DECODE,
-            thread_id, "decode request");
+            0, "decode request");
 
     /*
      ** Process the request (print warning if method fails), but
      ** don't return error, because some operations are meant to fail
      */
-    log_debug(debug_level, "%d: calling the server function"
+    log_debug(debug_level, "calling the server function"
             " for request %d (id=%lu, opcode=%d, func=%p)",
-            thread_id, req_count, header.id, header.opcode,
+            req_count, header.id, header.opcode,
             svc_op.func);
 
     req_args = (request_args_t *)malloc(sizeof(request_args_t));
@@ -1134,35 +1093,35 @@ void *process_rpc_request(
     trios_stop_timer("svc_op", call_time);
     if (rc != NSSI_OK) {
         log_info(rpc_debug_level,
-                "%d: user op failed: %s",
-                thread_id, nssi_err_str(rc));
+                "user op failed: %s",
+                nssi_err_str(rc));
     }
 
     /* send result back to client */
-    log_debug(debug_level, "%d: sending result for request %d "
-            "(%lu) back to client", thread_id, req_count, header.id);
+    log_debug(debug_level, "sending result for request %d "
+            "(%lu) back to client", req_count, header.id);
 
     if (rc != NSSI_OK) {
-        log_fatal(debug_level, "%d: unable to send result %lu"
-                " for opcode=%d",thread_id, header.id, header.opcode);
+        log_fatal(debug_level, "unable to send result %lu"
+                " for opcode=%d", header.id, header.opcode);
         goto cleanup;
     }
 
     /* free data structures created for the args and result */
-    log_debug(debug_level, "%d: xdr_freeing args for request %d",
-            thread_id, req_count);
+    log_debug(debug_level, "xdr_freeing args for request %d",
+            req_count);
     trios_start_timer(call_time);
     xdr_free((xdrproc_t)svc_op.decode_args, (char *)op_args);
     trios_stop_timer("xdr_free - args", call_time);
-    log_debug(debug_level, "%d: xdr_freeing result for request %d",
-            thread_id, req_count);
+    log_debug(debug_level, "xdr_freeing result for request %d",
+            req_count);
 
 
-    log_debug(debug_level, "%d: freeing args for request %d",
-            thread_id, req_count);
+    log_debug(debug_level, "freeing args for request %d",
+            req_count);
     free(op_args);
-    log_debug(debug_level, "%d: freeing result for request %d",
-            thread_id, req_count);
+    log_debug(debug_level, "freeing result for request %d",
+            req_count);
 
 
     /* This can be made the responsibility of the service */
@@ -1171,8 +1130,8 @@ void *process_rpc_request(
     trios_stop_timer("xdr_free - result", call_time);
     free(op_res);
 
-    log_debug(debug_level, "%d: result freed for request %d",
-            thread_id, req_count);
+    log_debug(debug_level, "result freed for request %d",
+            req_count);
 
 
 cleanup:
@@ -1180,7 +1139,7 @@ cleanup:
     // release space allocated by xdr calls:  leak found by valgrind
     xdr_free((xdrproc_t)xdr_nssi_request_header, (char *)&header);
 
-    log_debug(debug_level, "%d: finished processing request %d", thread_id, req_count);
+    log_debug(debug_level, "finished processing request %d", req_count);
 
     request_args_del(&caller, header.id);
 
@@ -1568,12 +1527,9 @@ double nssi_get_request_age(const NNTI_peer_t *caller, const int req_id)
  * processing requests from the two buffers.
  *
  * @param service  @input The service descriptor.
- * @param count @input The maximum number of requests to process.
- * @param svc_op_list    @input The list of available operations.
  */
 int nssi_service_start(
-        nssi_service *svc,
-        const int nthreads)
+        nssi_service *svc)
 {
     int rc = NSSI_OK, rc2;
     int req_count = 0;
@@ -1584,14 +1540,10 @@ int nssi_service_start(
     double processing_time = 0;
     trios_declare_timer(call_time);
     trios_declare_timer(loop_time);
-    int rank = FIXRANK;
-    //queue<struct thread_pool_task *> task_queue;
 
     log_level debug_level = rpc_debug_level;
 
     char *req_buf;
-
-    local_service.num_threads = nthreads;
 
     /* two incoming queues */
     char *req_queue_buffer = NULL;
@@ -1606,9 +1558,6 @@ int nssi_service_start(
     NNTI_buffer_t req_queue;
     NNTI_status_t status;
 
-    struct thread_pool *pool;
-    int num_threads = nthreads;
-
     progress_callback progress_cb       =NULL;
     int64_t           progress_timeout  =-1;
     uint64_t          progress_last_time=0;
@@ -1620,21 +1569,7 @@ int nssi_service_start(
         }
     }
 
-#ifdef __LIBCATAMOUNT__
-    if (num_threads) {
-        log_warn(debug_level, "Catamount does not support threads, setting num_threads to 0");
-        num_threads = 0;
-    }
-#endif
-
-    if (num_threads) {
-        log_debug(debug_level, "%d: starting thread pool with %d threads for rpc service",
-                rank, num_threads);
-        //pool = thread_pool_create(num_threads);
-    }
-    else {
-        log_debug(debug_level, "%d: starting single-threaded rpc service", rank);
-    }
+    log_debug(debug_level, "starting single-threaded rpc service");
 
     /* allocate enough memory for 2 request queues */
     req_queue_buffer = (char *) malloc(2*reqs_per_queue*req_size);
@@ -1681,7 +1616,7 @@ int nssi_service_start(
             goto cleanup;
         }
 
-        trace_start_interval(trace_interval_gid, rank);
+        trace_start_interval(trace_interval_gid, 0);
 
         /* measure idle time */
         if (req_count > 0) {
@@ -1716,12 +1651,12 @@ int nssi_service_start(
             req_buf = (char *)status.start+status.offset;
             log_debug(debug_level, "req_buf=%p", req_buf);
 
-            //trace_end_interval(trace_interval_gid, TRACE_THREAD_IDLE, rank, "idle time");
-            log_debug(debug_level, "%d: after end interval", rank);
+            //trace_end_interval(trace_interval_gid, TRACE_THREAD_IDLE, 0, "idle time");
+            log_debug(debug_level, "after end interval");
 
             /* capture the idle time */
             idle_time += trios_get_time() - t1;
-            log_debug(debug_level, "%d: out of job_loop", rank);
+            log_debug(debug_level, "out of job_loop");
 
             /* increment the number of requests */
             req_count++;
@@ -1734,33 +1669,20 @@ int nssi_service_start(
             rpc_req->req_buf       = req_buf;
             rpc_req->short_req_len = status.length;
 
-            if (num_threads) {
 
-                log_info(debug_level, "%d: adding request %d to threadpool",
-                        rank, req_count);
+            /* measure the processing time */
+            t1 = trios_get_time();
 
-                /* process the request in the thread pool (will initialize task) */
-                //thread_pool_add_task(pool, process_rpc_request, rpc_req, NULL);
-
-                /* add to the list of pending tasks */
+            trios_start_timer(call_time);
+            process_rpc_request(rpc_req);
+            trios_stop_timer("process_rpc_request", call_time);
+            if (rc != NSSI_OK) {
+                /* warn only... we do not exit */
+                log_warn(rpc_debug_level, "main: unable to process request.");
             }
-            else {
-                /* process the request directly */
 
-                /* measure the processing time */
-                t1 = trios_get_time();
-
-                trios_start_timer(call_time);
-                process_rpc_request(rpc_req);
-                trios_stop_timer("process_rpc_request", call_time);
-                if (rc != NSSI_OK) {
-                    /* warn only... we do not exit */
-                    log_warn(rpc_debug_level, "main: unable to process request.");
-                }
-
-                /* measure the processing time */
-                processing_time += trios_get_time() - t1;
-            }
+            /* measure the processing time */
+            processing_time += trios_get_time() - t1;
 
             if ((progress_cb) &&
                 (trios_get_time_ms() - progress_last_time) > progress_timeout) {
@@ -1791,16 +1713,6 @@ cleanup:
 
     log_debug(debug_level, "Free req_queue_buffer");
     free(req_queue_buffer);
-
-    if (num_threads) {
-        log_debug(debug_level, "shutting down thread pool");
-
-        /* set the exit_now flag */
-        //trios_abort();
-
-        /* wait for thread to finish */
-        //thread_pool_destroy(pool);
-    }
 
     /* print out stats about the server */
     log_info(debug_level, "Exiting nssi_service_start: %d "

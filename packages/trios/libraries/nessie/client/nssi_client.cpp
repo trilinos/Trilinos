@@ -418,7 +418,7 @@ int nssi_get_service(
     unsigned long len=0;
 
 
-    log_debug(rpc_debug_level, "thread_id(%llu): entered nssi_get_service, url=%s", nthread_self(), url);
+    log_debug(rpc_debug_level, "entered nssi_get_service");
 
     client_init();
 
@@ -955,7 +955,7 @@ complete:
 //    /* release the event queue for the short result */
 //    log_debug(rpc_debug_level, "unpinning req_array[*which]->short_result_hdl");
 //    nssi_ptl_unpin_memory(&req_array[*which]->short_result_hdl);
-////    log_debug(rpc_debug_level,"thread_id(%llu): freeing req_array[*which]->short_result_hdl.eq_h==%d...", nthread_self(), req_array[*which]->short_result_hdl.eq_h);
+////    log_debug(rpc_debug_level,"freeing req_array[*which]->short_result_hdl.eq_h==%d...", req_array[*which]->short_result_hdl.eq_h);
 ////    rc = nssi_PtlEQFree(req_array[*which]->short_result_hdl.eq_h);
 ////    if (rc != PTL_OK) {
 ////        log_error(rpc_debug_level, "failed to free short result EQ");
@@ -1577,7 +1577,7 @@ int nssi_call_rpc(
 
     unsigned long len=0;
 
-    log_debug(debug_level, "thread_id(%llu): entered nssi_call_rpc", nthread_self());
+    log_debug(rpc_debug_level, "entered nssi_call_rpc");
 
     /* increment global counter */
     local_count = nthread_counter_increment(&global_count);
@@ -1755,8 +1755,8 @@ int nssi_call_rpc(
     request->status = NSSI_PROCESSING_REQUEST;
 
 cleanup:
-    log_debug(rpc_debug_level, "thread_id(%llu): finished nssi_call_rpc (req.opcode=%d, req.id=%d)",
-            nthread_self(), request->opcode, request->id);
+    log_debug(rpc_debug_level, "finished nssi_call_rpc (req.opcode=%d, req.id=%d)",
+            request->opcode, request->id);
 
     if (nssi_config.use_buffer_queue) {
         trios_buffer_queue_push(&send_bq, short_req_hdl);
