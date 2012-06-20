@@ -399,6 +399,11 @@ namespace Tpetra {
       //
       // FIXME (mfh 09 Apr 2012) Permutation should be done on the
       // device, not on the host.
+      //
+      // FIXME (mfh 20 June 2012) For an Export with duplicate GIDs on
+      // the same process, this merges their values by replacement of
+      // the last encountered GID, not by the specified merge rule
+      // (such as ADD).
       for (pTo = permuteToLIDs.begin(), pFrom = permuteFromLIDs.begin();
            pTo != permuteToLIDs.end(); ++pTo, ++pFrom) {
         dstptr[*pTo] = srcptr[*pFrom];
