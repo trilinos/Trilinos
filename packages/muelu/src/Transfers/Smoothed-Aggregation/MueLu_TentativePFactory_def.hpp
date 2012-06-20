@@ -262,7 +262,7 @@ namespace MueLu {
             std::cout << "j*myAggSize + k = " << j*myAggSize + k << std::endl;
             std::cout << "aggToRowMap["<<agg<<"][" << k << "] = " << aggToRowMap[agg][k] << std::endl;
             std::cout << "id aggToRowMap[agg][k]=" << aggToRowMap[agg][k] << " is global element in colmap = " << colMap->isNodeGlobalElement(aggToRowMap[agg][k]) << std::endl;
-            std::cout << "fineNS...=" << fineNS[j][ colMap->getLocalElement(aggToRowMap[agg][k]) ] << std::endl;
+            //std::cout << "fineNS...=" << fineNS[j][ colMap->getLocalElement(aggToRowMap[agg][k]) ] << std::endl;
             std::cerr << "caught an error!" << std::endl;
           }
         } //for (LO k=0 ...
