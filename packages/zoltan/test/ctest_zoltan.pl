@@ -3,6 +3,7 @@
 use File::Copy;
 use File::Compare;
 use Getopt::Long;
+use Sys::Hostname;
 
 ##############################################################################
 ##############################################################################
@@ -43,6 +44,10 @@ $np = -1;
 $package = "zzzzz";
 $mpiexec = "mpiexec";
 $mpiexecarg = "-np";
+
+$host = hostname;
+$shorthost = substr $host, 0, 5;
+print "DEBUG HOSTNAME $host $shorthost\n";
 
 ### Assign the executable.
 $zdrive = "../zdrive.exe";
@@ -209,8 +214,14 @@ TEST:  foreach $file (@inpfiles) {
   ### Execute zdrive.exe.
   $zouterrfile = sprintf("%s.%s.%s.outerr", $dirname, $testname, $loop_np);
   if ($np > 1) {  # Test on $np because we want to know is the binary needs mpiexec
-    $cmd = sprintf("$mpiexec $mpiexecextraargs $mpiexecarg %d %s %s 2>&1 | tee %s\n", 
-                    $loop_np, $zdrive, $file, $zouterrfile);
+    if ($shorthost eq 'glory') {
+      $cmd = sprintf("$mpiexec --npernode %d $mpiexecextraargs $mpiexecarg %d %s %s 2>&1 | tee %s\n", 
+                      $loop_np, $loop_np, $zdrive, $file, $zouterrfile);
+    }
+    else {
+      $cmd = sprintf("$mpiexec $mpiexecextraargs $mpiexecarg %d %s %s 2>&1 | tee %s\n", 
+                      $loop_np, $zdrive, $file, $zouterrfile);
+    }
   }
   else {
     $cmd = sprintf("%s %s 2>&1 | tee %s\n", $zdrive, $file, $zouterrfile);
