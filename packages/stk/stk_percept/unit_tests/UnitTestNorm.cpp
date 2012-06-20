@@ -820,7 +820,8 @@ STKUNIT_UNIT_TEST(norm, field_function)
 STKUNIT_UNIT_TEST(norm, h1_volume)
 {
   EXCEPTWATCH;
-  if (1) return;
+  bool ret=true;
+  if (ret) return;
   MPI_Barrier( MPI_COMM_WORLD );
 
   LocalFixture fix(3,3,12);
