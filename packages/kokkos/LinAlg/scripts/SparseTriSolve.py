@@ -257,7 +257,11 @@ the University of California Berkeley's Computer Science department
 (point of contact: Prof. Armando Fox) lets programmers write in a
 high-level language like Python or Ruby.  A "specializer" then
 translates their code at run time to use generated code and/or
-optimized routines in a lower-level language.'''
+optimized routines in a lower-level language.  Our work differs from
+theirs because we're only using Python to generate code; we don't
+include source-to-source translation from Python into C++, and we
+don't intend end consumers of the generated routines to call them from
+Python.'''
 
 from string import Template
 from os.path import basename

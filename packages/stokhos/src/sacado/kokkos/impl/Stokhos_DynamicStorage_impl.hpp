@@ -44,7 +44,7 @@ namespace Stokhos {
 
     static const bool is_static = false;
     static const int static_size = 0;
-    static const bool supports_reset = true;
+    static const bool supports_reset = false;
 
     typedef ordinal_t ordinal_type;
     typedef value_t value_type;

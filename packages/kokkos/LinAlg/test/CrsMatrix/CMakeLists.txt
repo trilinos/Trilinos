@@ -40,3 +40,13 @@ IF (Kokkos_ENABLE_CUSPARSE)
     DEPLIBS kokkos kokkoslinalg kokkosnodeapi
   ) 
 ENDIF()
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST( DefaultSparseOps_TestSparseOps 
+  SOURCES   
+    DefaultSparseOps_TestSparseOps.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  DEPLIBS kokkos kokkoslinalg kokkosnodeapi
+) 
