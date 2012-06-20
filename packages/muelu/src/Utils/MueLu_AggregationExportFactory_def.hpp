@@ -75,7 +75,7 @@ namespace MueLu {
     }
 
     Teuchos::ArrayRCP<LocalOrdinal> aggSizes = aggregates->ComputeAggregateSizesDofs();
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<LocalOrdinal> > aggToRowMap(aggSizes.size());
+    Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> > aggToRowMap(aggSizes.size());
     aggregates->ComputeAggregateToRowMap(aggToRowMap);
 
     // write to file
