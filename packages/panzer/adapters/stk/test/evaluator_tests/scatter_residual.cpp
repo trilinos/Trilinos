@@ -240,6 +240,7 @@ namespace panzer {
 
     panzer::GlobalEvaluationDataContainer gedc;
     gedc.addDataObject("Solution Gather Container",loc);
+    gedc.addDataObject("Residual Scatter Container",loc);
     fm.preEvaluate<panzer::Traits::Residual>(gedc);
 
     // run tests
@@ -437,6 +438,7 @@ namespace panzer {
 
     panzer::GlobalEvaluationDataContainer gedc;
     gedc.addDataObject("Solution Gather Container",loc);
+    gedc.addDataObject("Residual Scatter Container",loc);
     fm.preEvaluate<panzer::Traits::Jacobian>(gedc);
 
     // run tests

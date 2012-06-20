@@ -651,7 +651,7 @@ template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & geomPattern)
 {
    if(!fieldsRegistered()) {
-      std::cout << "register fields in" << std::endl;
+      // std::cout << "register fields in" << std::endl;
       registerFields();
    }
 

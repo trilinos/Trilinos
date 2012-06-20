@@ -53,6 +53,7 @@
 #include "Panzer_Dimension.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_CloneableEvaluator.hpp"
+#include "Panzer_BlockedEpetraLinearObjContainer.hpp"
 
 class Epetra_Vector;
 class Epetra_CrsMatrix;
@@ -67,10 +68,6 @@ class BlockedDOFManager; //forward declaration
 
 /** \brief Pushes residual values into the residual vector for a 
            Newton-based solve
-
-    Currently makes an assumption that the stride is constant for dofs
-    and that the number of dofs is equal to the size of the solution
-    names vector.
 
 */
 template<typename EvalT, typename Traits,typename LO,typename GO> class ScatterResidual_BlockedEpetra
@@ -120,6 +117,8 @@ public:
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
+
+  void preEvaluate(typename Traits::PreEvalData d);
   
   void evaluateFields(typename Traits::EvalData workset);
   
@@ -146,11 +145,17 @@ private:
   //    fieldMap_["RESIDUAL_Velocity"] --> "Velocity"
   //    fieldMap_["RESIDUAL_Pressure"] --> "Pressure"
   Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
+
+  std::string globalDataKey_; // what global data does this fill?
+  Teuchos::RCP<const BlockedEpetraLinearObjContainer> blockedContainer_;
+
+  ScatterResidual_BlockedEpetra();
 };
 
 // **************************************************************
 // Jacobian
 // **************************************************************
+
 template<typename Traits,typename LO,typename GO>
 class ScatterResidual_BlockedEpetra<panzer::Traits::Jacobian,Traits,LO,GO>
   : public PHX::EvaluatorWithBaseImpl<Traits>,
@@ -159,6 +164,26 @@ class ScatterResidual_BlockedEpetra<panzer::Traits::Jacobian,Traits,LO,GO>
   
 public:
   
+  /** The parameter list passed takes the following values
+      \verbatim
+      <ParameterList>
+         <Parameter name="Scatter Name" type="string" value=(required)/>
+         <Parameter name="Dependent Names" type="RCP<vector<string> >" value="(required)"/>
+         <Parameter name="Dependent Map" type="RCP<map<string,string> >" value="(required)"/>
+         <Parameter name="Basis" type="RCP<const PureBasis>" value=(required)/>
+         <Parameter name="Global Data Key" type="string" value="Residual Scatter Container" (default)/>
+      </ParameterList>
+      \endverbatim
+
+  * The "Scatter Name" is the name for the dummy field that is computed by this evaluator.
+  * This field should be required so that the evaluators is guranteed to run. "Dependent Names"
+  * specifies the field to be scatter to the operator.  The "Dependent Map" gives a mapping from the
+  * dependent field to the field string used in the global indexer. "Basis" is the basis
+  * used to define the size of the "Dependent Names" fields. Finally "Global Data Key" is the key
+  * used to index into the GlobalDataContainer object, for finding the operator and residual
+  * linear algebra data structures that need to be filled. By default this is the simple residual/jacobian
+  * with key "Residual Scatter Container".
+  */
   ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer)
      : globalIndexer_(indexer) {}
   
@@ -167,6 +192,8 @@ public:
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
+
+  void preEvaluate(typename Traits::PreEvalData d);
   
   void evaluateFields(typename Traits::EvalData workset);
   
@@ -194,6 +221,9 @@ private:
   //    fieldMap_["RESIDUAL_Velocity"] --> "Velocity"
   //    fieldMap_["RESIDUAL_Pressure"] --> "Pressure"
   Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
+
+  std::string globalDataKey_; // what global data does this fill?
+  Teuchos::RCP<const BlockedEpetraLinearObjContainer> blockedContainer_;
 
   ScatterResidual_BlockedEpetra();
 };
