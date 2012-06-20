@@ -353,7 +353,7 @@ namespace Kokkos {
     ///
     /// \param X [in] Input multivector.
     ///
-    /// \param Y [out] Result multivector.
+    /// \param Y [out] Result multivector. Contents will be overwritten.
     template <class DomainScalar, class RangeScalar>
     void
     multiply (Teuchos::ETransp trans,
@@ -385,7 +385,7 @@ namespace Kokkos {
     ///
     /// \param X [in] Input multivector.
     ///
-    /// \param alpha [in] Scalar constant \f$\beta\f$ by which to
+    /// \param beta [in] Scalar constant \f$\beta\f$ by which to
     ///   multiply Y when summing with the result of the sparse
     ///   matrix-(multi)vector multiply.
     ///
