@@ -21,8 +21,26 @@ namespace MueLu {
       the fine level nullspace (Level 0 only). For all other levels it is used
       only to act as "generating factory" for the "Nullspace", which is actually
       handled by the TentativePFactory.
-
-     @todo TODO This factory can only generate the constant vector at the moment.
+      
+      There are two types of constructors:
+      \code{.cpp}
+      NullspaceFactory(RCP<const FactoryBase> AFact = Teuchos::null, RCP<const FactoryBase> nullspaceFact = Teuchos::null);
+      \endcode
+      This constructor uses AFact (or information from FactoyManager) for accessing
+      the fine level variable "A" and generates a constant null space approximation
+      for A on the finest level (with nPDE constant vectors).
+      The nullspaceFact_ defines which factory generates the intermedium and coarse-
+      level nullspaces. It must not be Teuchos::null but a TentativePFactory.
+      \note If there is a "Nullspace" variable stored on the finest level (given by
+      the user) this is is preferred to generating the nullspace from A.
+      
+      \code{.cpp}
+      NullspaceFactory(std::string nspName, RCP<const FactoryBase> nullspaceFact = Teuchos::null);
+      \endcode
+      This constructor uses the variable with the variable nspName on the finest level
+      as null space for the finest multigrid level.
+      The nullspaceFact_ defines which factory generates the intermedium and coarse-
+      level nullspaces. It must not be Teuchos::null but a TentativePFactory.
 
      @ingroup MueLuTransferClasses
   */
