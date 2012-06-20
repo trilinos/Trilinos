@@ -42,6 +42,11 @@ namespace stk
 
       void init(mesh::Part *part)
       {
+        if (m_own_selector)
+          {
+            VERIFY_OP_ON(m_selector, !=, 0, "FunctionOperator::init");
+            delete m_selector;
+          }
         if (!part)
           {
             m_selector = new stk::mesh::Selector(stk::mesh::fem::FEMMetaData::get(m_bulkData).universal_part());
@@ -57,6 +62,11 @@ namespace stk
       {
         if (!selector)
           {
+            if (m_own_selector)
+              {
+                VERIFY_OP_ON(m_selector, !=, 0, "FunctionOperator::init");
+                delete m_selector;
+              }
             m_selector = new stk::mesh::Selector(stk::mesh::fem::FEMMetaData::get(m_bulkData).universal_part());
             m_own_selector = true;
           }

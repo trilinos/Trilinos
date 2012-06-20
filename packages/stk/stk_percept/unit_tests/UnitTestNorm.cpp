@@ -370,7 +370,6 @@ STKUNIT_UNIT_TEST(norm, surface_area)
     
     STKUNIT_EXPECT_DOUBLE_EQ_APPROX(std::sqrt(sc), sqrt_area.getValue());
   }
-
   //Function coords_l2_norm = ff_coords.norm_l2();
 
 }
@@ -464,9 +463,6 @@ void TEST_norm_string_function_turbo_verify_correctness(TurboOption turboOpt)
   //stk::diag::WriterThrowSafe _write_throw_safe(dw());
   //dw().setPrintMask(dw_option_mask.parse(vm["dw"].as<std::string>().c_str()));
   //dw().setPrintMask(LOG_NORM+LOG_ALWAYS);
-
-  // not ready yet, just return
-  //if(1) return;
 
   dw().m(LOG_NORM) << "TEST.norm.string_function " << stk::diag::dendl;
 
@@ -621,9 +617,6 @@ void TEST_norm_string_function_turbo_timings(TurboOption turboOpt)
   //stk::diag::WriterThrowSafe _write_throw_safe(dw());
   //dw().setPrintMask(dw_option_mask.parse(vm["dw"].as<std::string>().c_str()));
   //dw().setPrintMask(LOG_NORM+LOG_ALWAYS);
-
-  // not ready yet, just return
-  //if(1) return;
 
   dw().m(LOG_NORM) << "TEST.norm.string_function " << stk::diag::dendl;
 
@@ -820,7 +813,7 @@ STKUNIT_UNIT_TEST(norm, field_function)
 STKUNIT_UNIT_TEST(norm, h1_volume)
 {
   EXCEPTWATCH;
-  bool ret=true;
+  bool ret=false;
   if (ret) return;
   MPI_Barrier( MPI_COMM_WORLD );
 
@@ -860,7 +853,8 @@ STKUNIT_UNIT_TEST(norm, h1_volume)
 STKUNIT_UNIT_TEST(norm, h1_volume_1)
 {
   EXCEPTWATCH;
-  if (1) return;
+  bool ret=false;
+  if (ret) return;
   MPI_Barrier( MPI_COMM_WORLD );
 
   LocalFixture fix(3,3,12);
@@ -891,16 +885,16 @@ STKUNIT_UNIT_TEST(norm, h1_volume_1)
 
   STKUNIT_EXPECT_DOUBLE_EQ_APPROX(3.89444048184931, result1.getValue());
 
-  //// rotate the mesh
+  //// rotate the mesh (result should be the same)
 
   if (1)
   {
     Math::Matrix rm = Math::rotationMatrix(0, 30);
     eMesh.transform_mesh(rm);
-
+    eMesh.save_as("h1Norm_rotate.e");
     h1Norm(plane, result1);
 
-    STKUNIT_EXPECT_DOUBLE_EQ_APPROX(3.73050488093323, result1.getValue());
+    STKUNIT_EXPECT_DOUBLE_EQ_APPROX(3.89444048184931, result1.getValue());
   }
 
 }

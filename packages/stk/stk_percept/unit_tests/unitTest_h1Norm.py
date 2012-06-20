@@ -15,7 +15,8 @@ def main():
    intf = integrate(intf, (y, -0.5, 0.5))
    intf = integrate(intf, (z, -0.5, 0.5))
    #  the answers should be as shown:
-   print intf, " ", intf**(0.5), "15.1666666666667   3.89444048184931"
+   print "expected: 15.1666666666667   3.89444048184931"
+   print "  actual: ", intf, " ", intf**(0.5)
 
 if __name__ == "__main__":
    main()

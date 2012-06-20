@@ -163,6 +163,8 @@ namespace stk
      }
 #endif
 
+      virtual ~Norm() {}
+
       void setCubDegree(unsigned cubDegree) { m_cubDegree= cubDegree; }
       unsigned getCubDegree() { return m_cubDegree; }
 
