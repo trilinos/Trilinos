@@ -51,11 +51,11 @@ Teuchos::RCP<const panzer::PureBasis> FieldLayoutLibrary::lookupBasis(const std:
    return layout->getBasis();
 }
 
-void FieldLayoutLibrary::uniqueBases(std::list<Teuchos::RCP<const panzer::PureBasis> > & bases) const
+void FieldLayoutLibrary::uniqueBases(std::vector<Teuchos::RCP<const panzer::PureBasis> > & bases) const
 {
    bases.clear();
    
-   // simply loop over map of basis name to pointers and add them to the list
+   // simply loop over map of basis name to pointers and add them to the vector
    std::map<std::string,Teuchos::RCP<const panzer::PureBasis> >::const_iterator itr;
    for(itr=basisNameToPointer_.begin();itr!=basisNameToPointer_.end();++itr) 
       bases.push_back(itr->second);
@@ -93,7 +93,7 @@ void FieldLayoutLibrary::print(std::ostream & os) const
    }
 }
 
-void FieldLayoutLibrary::basisPairs(std::list<std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > > & bases) const
+void FieldLayoutLibrary::basisPairs(std::vector<std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > > & bases) const
 {
    typedef std::map<std::string,Teuchos::RCP<panzer::BasisIRLayout> > Map;
    bases.clear();
@@ -118,11 +118,11 @@ Teuchos::RCP<const panzer::PureBasis> FieldLibrary::lookupBasis(const std::strin
    return Teuchos::null;
 }
 
-void FieldLibrary::uniqueBases(std::list<Teuchos::RCP<const panzer::PureBasis> > & bases) const
+void FieldLibrary::uniqueBases(std::vector<Teuchos::RCP<const panzer::PureBasis> > & bases) const
 {
    bases.clear();
    
-   // simply loop over map of basis name to pointers and add them to the list
+   // simply loop over map of basis name to pointers and add them to the vector
    std::map<std::string,Teuchos::RCP<const panzer::PureBasis> >::const_iterator itr;
    for(itr=basisNameToPointer_.begin();itr!=basisNameToPointer_.end();++itr) 
       bases.push_back(itr->second);
@@ -165,7 +165,7 @@ void FieldLibrary::print(std::ostream & os) const
 }
 
 //! Get vector of unique bases contained in this field library
-void FieldLibrary::basisPairs(std::list<std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > > & bases) const
+void FieldLibrary::basisPairs(std::vector<std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > > & bases) const
 {
    typedef std::map<std::string,Teuchos::RCP<panzer::PureBasis> > Map;
    bases.clear();
