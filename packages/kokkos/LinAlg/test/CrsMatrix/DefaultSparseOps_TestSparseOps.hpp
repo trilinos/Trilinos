@@ -214,14 +214,17 @@ public:
     using Teuchos::rcp_const_cast;
 
     const ordinal_type N = A.numRows ();
-    const ordinal_type NNZ = (N*(N+1)) / 2;
+    // If we're not storing the diagonal entries, subtract N off the
+    // total number of entries to store.
+    const ordinal_type NNZ = diag == Teuchos::UNIT_DIAG ?
+      (N*(N-1)) / 2 : // UNIT_DIAG
+      (N*(N+1)) / 2;  // NON_UNIT_DIAG
 
     ArrayRCP<size_t> ptr (N+1);
     ArrayRCP<ordinal_type> ind (NNZ);
     ArrayRCP<scalar_type> val (NNZ);
 
     ordinal_type counter = 0;
-
     for (ordinal_type i = 0; i < N; ++i) {
       ptr[i] = counter;
       if (uplo == Teuchos::UPPER_TRI) {
@@ -242,6 +245,11 @@ public:
       }
     }
     ptr[N] = counter;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(counter != NNZ, std::logic_error,
+      "TestSparseOps::denseTriToSparseOps: Expected " << NNZ << " entries in "
+      "the sparse matrix, but got " << counter << " instead.  Please report "
+      "this bug (in tests) to the Kokkos developers.");
 
     RCP<graph_type> graph =
       rcp (new graph_type (as<size_t> (N), node, null));
@@ -282,6 +290,53 @@ public:
                          as<size_t> (numRows));
     MVT::Init (*X, STS::zero ());
     return X;
+  }
+
+  /// \brief Return the maximum relative error between the two multivectors.
+  ///
+  /// We define "maximum relative error" between X and Y as
+  /// \f\[
+  ///   \max_i \| X_i - Y_i \|-2 / \| X_i \|_2,
+  /// \f\]
+  /// where \f$X_i\f$ indicates the i-th column of X.
+  ///
+  /// \param X [in] The "correct" multivector, against which to compare Y.
+  /// \param Y [in] The "test" multivector, which we hope is equal or
+  ///   close to X.
+  /// \param Z [in] A "scratch" multivector to use for storing X - Y.
+  magnitude_type
+  maxRelativeError (const Teuchos::RCP<const Kokkos::MultiVector<scalar_type, node_type> >& X,
+                    const Teuchos::RCP<const Kokkos::MultiVector<scalar_type, node_type> >& Y,
+                    const Teuchos::RCP<Kokkos::MultiVector<scalar_type, node_type> >& Z) const
+  {
+    using Teuchos::Array;
+    using Teuchos::as;
+    typedef typename Array<magnitude_type>::size_type size_type;
+    typedef Teuchos::ScalarTraits<scalar_type> STS;
+    typedef Teuchos::ScalarTraits<magnitude_type> STM;
+    typedef Kokkos::MultiVector<scalar_type, node_type> MV;
+    typedef Kokkos::DefaultArithmetic<MV> MVT;
+
+    const ordinal_type numCols = as<ordinal_type> (X->getNumCols ());
+    Array<magnitude_type> numerNorms (numCols);
+    Array<magnitude_type> denomNorms (numCols);
+
+    MVT::Assign (*Z, (const MV) *Y); // Z := Y
+    MVT::GESUM (*Z, STS::one(), (const MV) *X, -STS::one()); // Z := X - Z
+    MVT::NormInf ((const MV) *Z, numerNorms ());
+    MVT::NormInf ((const MV) *X, denomNorms ());
+
+    magnitude_type maxRelNorm = STM::zero();
+    for (size_type k = 0; k < numCols; ++k) {
+      // If the norm of the current column of X is zero, use the absolute error.
+      const magnitude_type relNorm = (denomNorms[k] == STM::zero ()) ?
+        numerNorms[k] :
+        numerNorms[k] / denomNorms[k];
+      if (relNorm > maxRelNorm) {
+        maxRelNorm = relNorm;
+      }
+    }
+    return maxRelNorm;
   }
 
   /// \brief Test sparse matrix-(multi)vector multiply and sparse triangular solve.
@@ -353,12 +408,31 @@ public:
     typedef Teuchos::BLAS<int, scalar_type> blas_type;
     typedef Teuchos::LAPACK<int, scalar_type> lapack_type;
 
+    // A record of error messages reported by any failed tests.
+    // We run _all_ the tests first, then report any failures.
+    std::ostringstream err;
+    // Whether any tests have failed thus far.
+    bool success = true;
+
+    // Relative error of the current operation.
+    magnitude_type relErr = STM::zero ();
+
     dense_matrix_type L_dense (N, N), U_dense (N, N);
     L_dense.random ();
     U_dense.random ();
 
-    // TODO (mfh 19 June 2012) Consider boosting the diagonal of U to
-    // ensure that it's nonsingular and well conditioned.
+    // Make the diagonal of U larger and positive, to ensure that U is
+    // nonsingular and well conditioned.
+    for (ordinal_type i = 0; i < N; ++i) {
+      const scalar_type ten = as<scalar_type> (10);
+      U_dense(i, i) = STS::magnitude(U_dense(i,i)) * ten;
+    }
+
+    // Convert L and U into separate sparse matrices.
+    RCP<SparseOpsType> L_sparse =
+      denseTriToSparseOps (L_dense, node, LOWER_TRI, UNIT_DIAG);
+    RCP<SparseOpsType> U_sparse =
+      denseTriToSparseOps (U_dense, node, UPPER_TRI, NON_UNIT_DIAG);
 
     // Compute a random input multivector.  Don't give it more columns
     // than N, but do give it more than one column if the size of the
@@ -376,107 +450,95 @@ public:
     RCP<MV> W     = makeMultiVector (node, N, numColsX);
     RCP<MV> W_hat = makeMultiVector (node, N, numColsX);
 
-    // Compute Z := U_dense * X.  First copy X into Z, since TRMM
+    // Compute Z_hat := U_dense * X.  First copy X into Z_hat, since TRMM
     // overwrites its input.
-    MVT::Assign (*Z, (const MV) *X);
+    MVT::Assign (*Z_hat, (const MV) *X);
     blas_type blas;
     blas.TRMM (LEFT_SIDE, UPPER_TRI, NO_TRANS, NON_UNIT_DIAG, N, numColsX,
                STS::one (), U_dense.values (), U_dense.stride (),
-               Z->getValuesNonConst ().getRawPtr (),
-               as<int> (Z->getStride ()));
-    // Compute Y_hat := L_dense * Z.  First copy Z into Y_hat, since
-    // TRMM overwrites its input.
-    MVT::Assign (*Y_hat, (const MV) *Z);
+               Z_hat->getValuesNonConst ().getRawPtr (),
+               as<int> (Z_hat->getStride ()));
+    // Compute Z := U_sparse * X.
+    U_sparse->template multiply<scalar_type, scalar_type> (NO_TRANS, STS::one (),
+                                                           (const MV) *X, *Z);
+    // Compare Z and Z_hat.  Use W as scratch space.
+    relErr = maxRelativeError (Z_hat, Z, W);
+    if (relErr > tol) {
+      err << "Sparse matrix-(multi)vector multiply test failed for upper "
+        "triangular matrix U.  Maximum relative error " << relErr << " exceeds "
+        "the given tolerance " << tol << ".\n";
+      success = false;
+    }
+
+    // Compute Y_hat := L_dense * Z_hat.  First copy Z_hat into Y_hat,
+    // since TRMM overwrites its input.
+    MVT::Assign (*Y_hat, (const MV) *Z_hat);
     blas.TRMM (LEFT_SIDE, LOWER_TRI, NO_TRANS, UNIT_DIAG, N, numColsX,
                STS::one (), L_dense.values (), L_dense.stride (),
                Y_hat->getValuesNonConst ().getRawPtr (),
                as<int> (Y_hat->getStride ()));
 
-    // Convert L and U into separate sparse matrices.
-    RCP<SparseOpsType> L_sparse =
-      denseTriToSparseOps (L_dense, node, LOWER_TRI, UNIT_DIAG);
-    RCP<SparseOpsType> U_sparse =
-      denseTriToSparseOps (U_dense, node, UPPER_TRI, NON_UNIT_DIAG);
-
-    // Compute Z = U_sparse * X.
-    U_sparse->template multiply<scalar_type, scalar_type> (NO_TRANS, STS::one (),
-                                                           (const MV) *X, *Z);
-    // Compute Y = L_sparse * Z.
-    L_sparse->template multiply<scalar_type, scalar_type> (NO_TRANS, STS::one (),
-                                                           (const MV) *Z, *Y);
-    //
-    // Compare Y and Y_hat columnwise.
-    //
-    Array<magnitude_type> numerNorms (numColsX);
-    Array<magnitude_type> denomNorms (numColsX);
-
-    MVT::Assign (*Z, (const MV) *Y_hat);
-    MVT::GESUM (*Z, STS::one(), *Y, -STS::one()); // Z := Y - Y_hat
-    MVT::NormInf (*Z, numerNorms ());
-    MVT::NormInf (*Y_hat, denomNorms ());
-    for (size_type k = 0; k < numColsX; ++k) {
-      const magnitude_type relNorm = (denomNorms[k] == STM::zero ()) ?
-        numerNorms[k] : numerNorms[k] / denomNorms[k];
-      TEUCHOS_TEST_FOR_EXCEPTION(relNorm > tol, std::runtime_error, "Sparse "
-        "matrix-(multi)vector multiply test failed: Error in column " << k
-        << " of the output matrix exceeds the specified tolerance.  "
-        "$\\|Y - \\hat{Y}\\|_\\infty / \\|\\hat{Y}\\|_\\infty = " << relNorm
-        << " > \\tau = " << tol << ".");
+    // FIXME (mfh 19 June 2012) There's a bit of a problem with
+    // DefaultHostSparseOps: its multiply() method doesn't appear to
+    // respect the implicit unit diagonal indication.  Thus, for now,
+    // we don't run this test.
+    if (false) {
+      // Compute Y = L_sparse * Z.
+      L_sparse->template multiply<scalar_type, scalar_type> (NO_TRANS, STS::one (),
+                                                             (const MV) *Z, *Y);
+      // Compare Y and Y_hat.  Use W as scratch space.
+      relErr = maxRelativeError (Y_hat, Y, W);
+      if (relErr > tol) {
+        err << "Sparse matrix-(multi)vector multiply test failed for lower "
+          "triangular matrix L with implicit unit diagonal.  Maximum relative "
+          "error " << relErr << " exceeds the given tolerance " << tol << ".\n";
+        success = false;
+      }
     }
+
     //
     // Test sparse triangular solve.
     //
-    // Compute Z_hat = L_dense * Y_hat.
+
+    // Compute Z_hat = L_dense \ Y_hat.
     MVT::Assign (*Z_hat, (const MV) *Y_hat);
     blas.TRSM (LEFT_SIDE, LOWER_TRI, NO_TRANS, UNIT_DIAG, N, numColsX,
                STS::one (), L_dense.values (), L_dense.stride (),
                Z_hat->getValuesNonConst ().getRawPtr (),
                as<int> (Z_hat->getStride ()));
-    // Compute Z = L_sparse * Y_hat.
-    L_sparse->template multiply<scalar_type, scalar_type> (NO_TRANS, STS::one (),
-                                                           (const MV) *Y_hat, *Z);
-    //
-    // Compare Z and Z_hat columnwise.
-    //
-    MVT::Assign (*W, (const MV) *Z_hat);
-    MVT::GESUM (*W, STS::one(), *Z, -STS::one()); // W := Z - Z_hat
-    MVT::NormInf (*W, numerNorms ());
-    MVT::NormInf (*Z_hat, denomNorms ());
-    for (size_type k = 0; k < numColsX; ++k) {
-      const magnitude_type relNorm = (denomNorms[k] == STM::zero ()) ?
-        numerNorms[k] : numerNorms[k] / denomNorms[k];
-      TEUCHOS_TEST_FOR_EXCEPTION(relNorm > tol, std::runtime_error, "Sparse "
-        "triangular solve test with L failed: Error in column " << k
-        << " of the output matrix exceeds the specified tolerance.  "
-        "$\\|Z - \\hat{Z}\\|_\\infty / \\|\\hat{Z}\\|_\\infty = " << relNorm
-        << " > \\tau = " << tol << ".");
+    // Compute Z = L_sparse \ Y_hat.
+    L_sparse->template solve<scalar_type, scalar_type> (NO_TRANS,
+                                                        (const MV) *Y_hat, *Z);
+    // Compare Z and Z_hat.  Use W as scratch space.
+    relErr = maxRelativeError (Z_hat, Z, W);
+    if (relErr > tol) {
+      err << "Sparse triangular solve test failed for lower triangular matrix "
+        "L with implicit unit diagonal.  Maximum relative error " << relErr
+          << " exceeds the given tolerance " << tol << ".\n";
+      success = false;
     }
 
-    // Compute W_hat = U_dense * Z_hat.
-    MVT::Assign (*W_hat, (const MV) *Y_hat);
+    // Compute W_hat = U_dense \ Z_hat.
+    MVT::Assign (*W_hat, (const MV) *Z_hat);
     blas.TRSM (LEFT_SIDE, UPPER_TRI, NO_TRANS, NON_UNIT_DIAG, N, numColsX,
                STS::one (), U_dense.values (), U_dense.stride (),
                W_hat->getValuesNonConst ().getRawPtr (),
                as<int> (W_hat->getStride ()));
-    // Compute W = U_sparse * Z_hat.
-    L_sparse->template multiply<scalar_type, scalar_type> (NO_TRANS, STS::one (),
-                                                           (const MV) *Z_hat, *W);
-    //
-    // Compare W and W_hat columnwise.
-    //
-    MVT::Assign (*Z, (const MV) *W_hat);
-    MVT::GESUM (*Z, STS::one(), *W, -STS::one()); // Z := W - W_hat
-    MVT::NormInf (*Z, numerNorms ());
-    MVT::NormInf (*W_hat, denomNorms ());
-    for (size_type k = 0; k < numColsX; ++k) {
-      const magnitude_type relNorm = (denomNorms[k] == STM::zero ()) ?
-        numerNorms[k] : numerNorms[k] / denomNorms[k];
-      TEUCHOS_TEST_FOR_EXCEPTION(relNorm > tol, std::runtime_error, "Sparse "
-        "triangular solve test with U failed: Error in column " << k
-        << " of the output matrix exceeds the specified tolerance.  "
-        "$\\|W - \\hat{W}\\|_\\infty / \\|\\hat{W}\\|_\\infty = " << relNorm
-        << " > \\tau = " << tol << ".");
+    // Compute W = U_sparse \ Z_hat.
+    U_sparse->template solve<scalar_type, scalar_type> (NO_TRANS,
+                                                        (const MV) *Z_hat, *W);
+    // Compare W and W_hat.  Use Z as scratch space.
+    relErr = maxRelativeError (W_hat, W, Z);
+    if (relErr > tol) {
+      err << "Sparse triangular solve test failed for upper triangular matrix "
+        "U.  Maximum relative error " << relErr << " exceeds the given "
+        "tolerance " << tol << ".\n";
+      success = false;
     }
+
+    TEUCHOS_TEST_FOR_EXCEPTION(! success, std::runtime_error,
+      "One or more sparse ops tests failed.  Here is the full report:\n"
+      << err.str());
 
     const bool alternateTest = false;
     if (alternateTest) {

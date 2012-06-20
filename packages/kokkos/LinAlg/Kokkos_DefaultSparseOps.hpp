@@ -123,16 +123,40 @@ namespace Kokkos {
   {
     std::string tfecfFuncName("setStructure(ptrs,inds)");
     const size_t numrows = this->getNumRows();
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        (size_t)ptrs.size() != numrows+1
-        || ptrs[0] != 0
-        || (size_t)inds.size() != ptrs[numrows],
-        std::runtime_error, " graph data not coherent."
-    )
+
+    const bool coherentInput =
+      ((size_t) ptrs.size() == numrows+1 &&
+       ptrs[0] == 0 &&
+       (size_t) inds.size() == ptrs[numrows]);
+
+    if (! coherentInput) {
+      std::ostringstream os;
+      os << ": Graph input data are not coherent:\n";
+      if ((size_t) ptrs.size() != numrows + 1) {
+        os << "-- ptrs.size() = " << ptrs.size() << " != numrows+1 = "
+           << (numrows+1) << ".\n";
+      }
+      if (ptrs[0] != 0) {
+        os << "-- ptrs[0] = " << ptrs[0] << " != 0.\n";
+      }
+      if ((size_t) inds.size() != ptrs[numrows]) {
+        os << "-- inds.size() = " << inds.size() << " != ptrs[numrows="
+           << numrows << "] = " << ptrs[numrows] << ".";
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        ! coherentInput, std::runtime_error, os.str ()
+      );
+    }
+    // TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    //     (size_t)ptrs.size() != numrows+1
+    //     || ptrs[0] != 0
+    //     || (size_t)inds.size() != ptrs[numrows],
+    //     std::runtime_error, " graph data not coherent."
+    // )
     const size_t numEntries = ptrs[numrows];
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         isInitialized_ == true,
-        std::runtime_error, " matrix has already been initialized"
+        std::runtime_error, " matrix has already been initialized."
     )
     if (numrows == 0 || numEntries == 0) isEmpty_ = true;
     ptrs_ = ptrs;

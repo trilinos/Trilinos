@@ -61,10 +61,13 @@ namespace {
   typedef int ordinal_type;
   typedef Kokkos::DefaultNode::DefaultNodeType node_type;
 
+  typedef Teuchos::ScalarTraits<double> STM;
+
   // Values of command-line arguments.  CommandLineProcessor only
   // accepts double for floating-point values, and int for integer
-  // values.
-  double tol = 1000 * Teuchos::ScalarTraits<double>::eps ();
+  // values.  Square root of machine precision is a generous tolerance
+  // which allows some rounding error for triangular solves.
+  double tol = STM::squareroot (STM::eps ());
   int N = 100;
 
   // Set up the extra command-line arguments.
