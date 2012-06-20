@@ -185,7 +185,6 @@ typedef std::map<struct caller_reqid, request_args_t *, caller_reqid_lt>::iterat
 typedef std::pair<struct caller_reqid, request_args_t *> request_args_map_pair_t;
 
 static nthread_mutex_t request_args_map_mutex=NTHREAD_MUTEX_INITIALIZER;
-static nthread_cond_t  request_args_map_cond =NTHREAD_COND_INITIALIZER;
 
 
 static void print_raw_buf(void *buf, uint32_t size)
