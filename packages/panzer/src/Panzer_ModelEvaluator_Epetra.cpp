@@ -230,10 +230,44 @@ initializeParameterVector(const std::vector<Teuchos::RCP<Teuchos::Array<std::str
 			  const Teuchos::RCP<panzer::ParamLib>& parameter_library)
 {
   parameter_vector_.resize(p_names.size());
+  is_distributed_parameter_.resize(p_names.size(),false);
   for (std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >::size_type p = 0; 
        p < p_names.size(); ++p) {
     parameter_library->fillVector<panzer::Traits::Residual>(*(p_names[p]), parameter_vector_[p]);
   }
+}
+
+// Post-Construction methods to add parameters and responses
+
+int panzer::ModelEvaluator_Epetra::
+addDistributedParameter(const std::string name,
+			const Teuchos::RCP<Epetra_Map>& global_map,
+			const Teuchos::RCP<Epetra_Import>& importer,
+			const Teuchos::RCP<Epetra_Vector>& ghosted_vector)
+{
+  // Will push_back a new parameter entry
+  int index = static_cast<int>(p_map_.size());
+
+  p_map_.push_back(global_map);
+  Teuchos::RCP<Epetra_Vector> ep_vec = Teuchos::rcp(new Epetra_Vector(*global_map));
+  ep_vec->PutScalar(0.0);
+  p_init_.push_back(ep_vec);
+
+  Teuchos::RCP<Teuchos::Array<std::string> > tmp_names = 
+    Teuchos::rcp(new Teuchos::Array<std::string>);
+  tmp_names->push_back(name);
+  p_names_.push_back(tmp_names);
+
+  is_distributed_parameter_.push_back(true);
+
+  // NOTE: we do not add this parameter to the sacado parameter
+  // library in the global data object.  That library is for scalars.
+  // We will need to do something different if we need sensitivities
+  // wrt distributed parameters.
+
+  distributed_parameter_container_.push_back(boost::make_tuple(name,index,importer,ghosted_vector));
+
+  return index;
 }
 
 // Overridden from EpetraExt::ModelEvaluator
@@ -359,7 +393,6 @@ panzer::ModelEvaluator_Epetra::createOutArgs() const
   return outArgs;
 }
 
-
 void panzer::ModelEvaluator_Epetra::evalModel( const InArgs& inArgs, 
 					       const OutArgs& outArgs ) const
 {
@@ -435,10 +468,10 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
     ae_inargs.evaluate_transient_terms = true;
   }
   
-  // Set input parameters
+  // Set locally replicated scalar input parameters
   for (int i=0; i<inArgs.Np(); i++) {
     Teuchos::RCP<const Epetra_Vector> p = inArgs.get_p(i);
-    if ( nonnull(p) ) {
+    if ( nonnull(p) && !is_distributed_parameter_[i]) {
       for (unsigned int j=0; j < parameter_vector_[i].size(); j++)
 	parameter_vector_[i][j].baseValue = (*p)[j];
     }
@@ -447,6 +480,21 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
   for (Teuchos::Array<panzer::ParamVec>::size_type i=0; i < parameter_vector_.size(); i++)
     for (unsigned int j=0; j < parameter_vector_[i].size(); j++)
       parameter_vector_[i][j].family->setRealValueForAllTypes(parameter_vector_[i][j].baseValue);
+
+  // Perform global to ghost and set distributed parameters
+  for (std::vector<boost::tuple<std::string,int,Teuchos::RCP<Epetra_Import>,Teuchos::RCP<Epetra_Vector> > >::const_iterator i = 
+	 distributed_parameter_container_.begin(); i != distributed_parameter_container_.end(); ++i) {
+    // do export if parameter exists in inArgs
+    Teuchos::RCP<const Epetra_Vector> global_vec = inArgs.get_p(i->get<1>());
+    if (nonnull(global_vec)) {
+      i->get<3>()->Import(*global_vec,*(i->get<2>()),Insert);
+      // set in ae_inargs_ string lookup container
+      Teuchos::RCP<panzer::EpetraLinearObjContainer> container = 
+	Teuchos::rcp(new panzer::EpetraLinearObjContainer(p_map_[i->get<1>()],p_map_[i->get<1>()]));
+      container->set_x(i->get<3>());
+      ae_inargs.addGlobalEvaluationData(i->get<0>(),container);
+    }
+  }
 
   // here we are building a container, this operation is fast, simply allocating a struct
   const RCP<panzer::EpetraLinearObjContainer> epGlobalContainer = 
@@ -788,7 +836,7 @@ copyThyraIntoEpetra(const Thyra::VectorBase<double>& thyraVec, Epetra_MultiVecto
     Teuchos::ArrayRCP<const double> thyraData;
     spmd_b->getLocalData(Teuchos::ptrFromRef(thyraData));
 
-    for (std::size_t i=0; i < thyraData.size(); ++i) {
+    for (Teuchos::ArrayRCP<const double>::size_type i=0; i < thyraData.size(); ++i) {
       epetraData[i+offset] = thyraData[i];
     }
     offset += thyraData.size();
@@ -828,7 +876,7 @@ copyEpetraIntoThyra(const Epetra_MultiVector& x, const Teuchos::Ptr<Thyra::Vecto
     Teuchos::ArrayRCP<double> thyraData;
     spmd_b->getNonconstLocalData(Teuchos::ptrFromRef(thyraData));
 
-    for (std::size_t i=0; i < thyraData.size(); ++i) {
+    for (Teuchos::ArrayRCP<double>::size_type i=0; i < thyraData.size(); ++i) {
       thyraData[i] = epetraData[i+offset];
     }
     offset += thyraData.size();

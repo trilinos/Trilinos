@@ -450,6 +450,82 @@ namespace panzer {
 
   }
 
+  // Testing Ditributed Parameter Support
+  TEUCHOS_UNIT_TEST(model_evaluator, distributed_parameters)
+  {
+
+    RCP<panzer::ModelEvaluator_Epetra> me;
+    int distributed_parameter_index = -1;
+    Teuchos::RCP<Epetra_Vector> ghosted_distributed_parameter;
+    {
+      bool parameter_on = true;
+      Teuchos::RCP<panzer::FieldManagerBuilder<int,int> > fmb;  
+      Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary; 
+      Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof;
+      Teuchos::RCP<panzer::GlobalData> gd;
+    
+      buildAssemblyPieces(parameter_on,fmb,rLibrary,gd,ep_lof);
+      std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names(1);
+      p_names[0] = Teuchos::rcp(new Teuchos::Array<std::string>(1));
+      (*p_names[0])[0] = "SOURCE_TEMPERATURE";
+      bool build_transient_support = false;
+      me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,ep_lof,p_names,gd,build_transient_support));
+
+      // add a distributed parameter
+      ghosted_distributed_parameter = Teuchos::rcp(new Epetra_Vector(*ep_lof->getGhostedMap()));
+
+      distributed_parameter_index = me->addDistributedParameter("Transient Predictor",
+								ep_lof->getMap(),
+								ep_lof->getGhostedImport(),
+								ghosted_distributed_parameter);
+    }
+
+    TEUCHOS_ASSERT(nonnull(me));
+
+    // solution
+    RCP<Epetra_Vector> x = Teuchos::rcp(new Epetra_Vector(*me->get_x_map()));
+    x->PutScalar(1.0);
+    
+    // locally replicated scalar parameter
+    RCP<Epetra_Vector> p = Teuchos::rcp(new Epetra_Vector(*me->get_p_map(0)));
+    p->PutScalar(1.0);
+
+    RCP<Epetra_Vector> f = Teuchos::rcp(new Epetra_Vector(*me->get_f_map()));
+
+    // Test that the distributed parameter is updated correctly
+    {
+      EpetraExt::ModelEvaluator::InArgs in_args = me->createInArgs();
+      EpetraExt::ModelEvaluator::OutArgs out_args = me->createOutArgs();
+      
+      TEST_ASSERT(in_args.Np() == 2);
+
+      in_args.set_x(x);
+      in_args.set_p(0,p);
+
+      // Set ghosted distributed parameter to 0
+      ghosted_distributed_parameter->PutScalar(0.0);
+
+      // Set global distributed parameter to 1 in in_args
+      RCP<Epetra_Vector> global_distributed_parameter = 
+	Teuchos::rcp(new Epetra_Vector(*me->get_p_map(distributed_parameter_index)));
+      global_distributed_parameter->PutScalar(1.0);
+      in_args.set_p(distributed_parameter_index,global_distributed_parameter);
+
+      out_args.set_f(f);
+      me->evalModel(in_args,out_args);
+    
+      // Export should have performed global to ghost, ghosted values should be 1
+      // Create a gold standard to compare against
+      RCP<Epetra_Vector> gold_standard = Teuchos::rcp(new Epetra_Vector(ghosted_distributed_parameter->Map()));
+      gold_standard->PutScalar(1.0);
+
+      double tol = 10.0 * Teuchos::ScalarTraits<double>::eps();
+
+      TEST_EQUALITY_CONST(testEqualityOfEpetraVectorValues(*ghosted_distributed_parameter,*gold_standard,tol), true);
+    }
+
+  }
+
 #ifdef HAVE_STOKHOS
   Teuchos::RCP<Stokhos::SGModelEvaluator> buildStochModel(const Teuchos::RCP<const Epetra_Comm> & Comm,
                                                           const Teuchos::RCP<EpetraExt::ModelEvaluator> & model,
