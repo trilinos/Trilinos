@@ -41,30 +41,59 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_STATICASSERT_HPP
-#define KOKKOS_STATICASSERT_HPP
+#ifndef KOKKOSARRAY_HOSTMEMORYSPACE_HPP
+#define KOKKOSARRAY_HOSTMEMORYSPACE_HPP
+
+#include <iosfwd>
+#include <typeinfo>
+#include <string>
+
+#include <impl/KokkosArray_forward.hpp>
+#include <impl/KokkosArray_MemoryTracking.hpp>
+
+/*--------------------------------------------------------------------------*/
 
 namespace KokkosArray {
 namespace Impl {
 
-template < bool , class T = void >
-struct StaticAssert ;
+/** \brief  Memory management on the host for devices */
 
-template< class T >
-struct StaticAssert< true , T > {
-  typedef T type ;
-  static const bool value = true ;
+class HostMemorySpace {
+public:
+
+  static int m_memory_view_tracking ;
+
+public:
+
+  typedef size_t size_type ;
+
+  static void * allocate( const std::string    & label ,
+                          const std::type_info & value_type ,
+                          const size_t           value_size ,
+                          const size_t           value_count );
+
+  static void increment( void * );
+
+  static void decrement( void * );
+
+  static void print_memory_view( std::ostream & );
+
+  /*--------------------------------*/
+
+  static void disable_memory_view_tracking();
+  static void enable_memory_view_tracking();
+
+  /*--------------------------------*/
+
+  static 
+  size_t preferred_alignment( size_t value_size , size_t value_count );
 };
 
-template < class A , class B >
-struct StaticAssertSame ;
-
-template < class A >
-struct StaticAssertSame<A,A> { typedef A type ; };
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 } // namespace Impl
 } // namespace KokkosArray
 
-#endif /* KOKKOS_STATICASSERT_HPP */
-
+#endif /* #define KOKKOSARRAY_HOSTMEMORYSPACE_HPP */
 

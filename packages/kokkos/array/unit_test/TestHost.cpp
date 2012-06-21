@@ -51,12 +51,24 @@
 #include <KokkosArray_PrefixSum.hpp>
 #include <KokkosArray_CrsArray.hpp>
 
+#include <KokkosArray_View.hpp>
+
 #include <KokkosArray_Host.hpp>
 
 //----------------------------------------------------------------------------
 
 #include <KokkosArray_Host_macros.hpp>
+#include <impl/KokkosArray_Layout_macros.hpp>
+#include <impl/KokkosArray_View_macros.hpp>
 #include <impl/KokkosArray_IndexMapLeft_macros.hpp>
+#include <KokkosArray_Clear_macros.hpp>
+
+//----------------------------------------------------------------------------
+
+#include <TestArrayImpl.hpp>
+
+#include <KokkosArray_Host_macros.hpp>
+#include <TestMemoryTracking.hpp>
 #include <TestMemoryManagement.hpp>
 #include <TestValue.hpp>
 #include <TestMultiVector.hpp>
@@ -88,6 +100,14 @@ protected:
     KokkosArray::Host::finalize();
   }
 };
+
+TEST_F( host, memory_tracking) {
+  TestMemoryTracking();
+}
+
+TEST_F( host, array_impl) {
+  test_array_impl();
+}
 
 TEST_F( host, memory_management_double) {
   TestMemoryManagement< double, KokkosArray::Host >();

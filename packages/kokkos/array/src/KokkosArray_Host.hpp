@@ -46,6 +46,7 @@
 
 #include <cstddef>
 #include <impl/KokkosArray_IndexMap.hpp>
+#include <Host/KokkosArray_Host_MemorySpace.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -71,6 +72,10 @@ public:
   struct IndexMap {
     typedef Impl::IndexMapRight<memory_space,Rank,N1,N2,N3,N4,N5,N6,N7> type ;
   };
+
+
+  typedef Impl::HostMemorySpace  memory_space_new ;
+
 
   //@}
   //! \name Functions that all KokkosArray devices must implement.

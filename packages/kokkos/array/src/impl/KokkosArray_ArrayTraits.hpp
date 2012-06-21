@@ -52,20 +52,17 @@ namespace Impl {
  * Prefer to use TR1 when portably available.
  */
 
-/** \brief  Rank of an array: rank<T>::value */
-template< class T > struct rank ;
+/** \brief  Remove 'const' from type */
+template< class T > struct remove_const ;
 
-/** \brief  Extent (a.k.a. dimension) of an array: extent<T,I>::value.
- *          If rank I is not a dimension of the array then value == 0.
- *          If rank I is the leading unspecified dimension [] then value == 0.
- */
-template< class T , unsigned I = 0 > struct extent ;
+/** \brief  If is the same type */
+template< class X , class Y > struct is_same ;
 
-/** \brief  Remove the first (left most) dimension of the type. */
-template< class T > struct remove_extent ;
+//----------------------------------------------------------------------------
 
-/** \brief  Remove all dimensions of the array */
-template< class T > struct remove_all_extents ;
+template< class T > struct remove_const< const T > { typedef T type ; };
+
+template< class T > struct remove_const { typedef T type ; };
 
 //----------------------------------------------------------------------------
 
@@ -80,55 +77,121 @@ struct integral_constant
 typedef integral_constant<bool,false> false_type ;
 typedef integral_constant<bool,true>  true_type ;
 
+template< bool B >
+struct bool_ : public integral_constant<bool,B> {};
+
 template< unsigned I >
 struct unsigned_ : public integral_constant<unsigned,I> {};
 
 template< int I >
 struct int_ : public integral_constant<int,I> {};
 
-template< class T > struct rank       : public unsigned_< 0> {};
-template<>          struct rank<void> {};
-template< class T > struct rank<T[]>  : public unsigned_< 1> {};
-template< class T , unsigned N > struct rank<T[N]>
-  : public unsigned_<rank<T>::value+1> {};
+//----------------------------------------------------------------------------
+
+template< class X , class Y >
+struct is_same : public false_type {};
+
+template< class X >
+struct is_same<X,X> : public true_type {};
+
+//----------------------------------------------------------------------------
+/** \brief  Whether an empty extent is different from a zero extent
+ *          is compiler-dependent.
+ */
+typedef bool_< ! is_same<int[],int[0]>::value >::type
+  extent_empty_not_same_extent_zero ;
+
+/** \brief  Rank of an array: rank<T>::value */
+template< class T , class = true_type > struct rank ;
+
+template< class T > struct rank<T,true_type> : public unsigned_<0> {};
+
+template< class T , unsigned N >
+struct rank< T[N] , true_type >
+  : public unsigned_< rank<T,true_type>::value + 1 > {};
+
+template< class T >
+struct rank< T[0] , true_type >
+  : public unsigned_< rank<T,true_type>::value + 1 > {};
+
+template< class T >
+struct rank< T[] , extent_empty_not_same_extent_zero >
+  : public unsigned_<1> {};
 
 //----------------------------------------------------------------------------
 
-template< class T > struct remove_extent { typedef T type ; };
-template< class T > struct remove_extent<T[]> { typedef T type ; };
-template< class T , unsigned N > struct remove_extent<T[N]>
+/** \brief  Remove the first (left most) dimension of the type. */
+template< class T , class = true_type > struct remove_extent ;
+
+template< class T >
+struct remove_extent<T,true_type> { typedef T type ; };
+
+template< class T >
+struct remove_extent<T[0],true_type> { typedef T type ; };
+
+template< class T , unsigned N >
+struct remove_extent<T[N],true_type> { typedef T type ; };
+
+template< class T >
+struct remove_extent<T[], extent_empty_not_same_extent_zero >
   { typedef T type ; };
 
 //----------------------------------------------------------------------------
 
-template< class T > struct remove_all_extents { typedef T type ; };
-template< class T > struct remove_all_extents<T[]>
+template< class T , class = true_type > struct remove_all_extents ;
+
+/** \brief  Remove all dimensions of the array */
+template< class T >
+struct remove_all_extents<T,true_type> { typedef T type ; };
+
+template< class T , unsigned N >
+struct remove_all_extents<T[N],true_type>
   { typedef typename remove_all_extents<T>::type type ; };
-template< class T , unsigned N > struct remove_all_extents<T[N]>
+
+template< class T >
+struct remove_all_extents<T[0],true_type>
+  { typedef typename remove_all_extents<T>::type type ; };
+
+template< class T >
+struct remove_all_extents<T[], extent_empty_not_same_extent_zero >
   { typedef typename remove_all_extents<T>::type type ; };
 
 //----------------------------------------------------------------------------
 
+/** \brief  Extent (a.k.a. dimension) of an array: extent<T,I>::value.
+ *          If rank I is not a dimension of the array then value == 0.
+ *          If rank I is the leading unspecified dimension [] then value == 0.
+ */
+template< class T , unsigned I = 0 , class = true_type > struct extent ;
+
 template< class T , unsigned I >
-struct extent : public unsigned_< 0> {};
+struct extent<T,I,true_type> : public unsigned_< 0> {};
 
-template< unsigned I >
-struct extent<void,I> {};
-
+/* To prevent roll-over */
 template< class T >
-struct extent<T,  ~0u> : public unsigned_< 0> {};
-
-template< class T >
-struct extent<T[], 0u> : public unsigned_< 0> {};
+struct extent<T, ~0u, true_type> : public unsigned_< 0> {};
 
 template< class T , unsigned N >
-struct extent<T[N],0u> : public unsigned_< N> {};
-
-template< class T , unsigned I >
-struct extent<T[], I> : public unsigned_< extent<T,I-1>::value > {};
+struct extent<T[N],0u,true_type> : public unsigned_< N> {};
 
 template< class T , unsigned N , unsigned I >
-struct extent<T[N],I> : public unsigned_< extent<T,I-1>::value > {};
+struct extent<T[N],I,true_type>
+  : public unsigned_< extent<T,I-1>::value > {};
+
+template< class T >
+struct extent<T[0],0u,true_type> : public unsigned_< 0> {};
+
+template< class T , unsigned I >
+struct extent<T[0],I,true_type>
+  : public unsigned_< extent<T,I-1>::value > {};
+
+template< class T >
+struct extent<T[], 0u, extent_empty_not_same_extent_zero >
+  : public unsigned_< 0> {};
+
+template< class T , unsigned I >
+struct extent<T[], I, extent_empty_not_same_extent_zero >
+  : public unsigned_< extent<T,I-1>::value > {};
 
 } // namespace Impl
 } // namespace KokkosArray

@@ -4,7 +4,7 @@
 # Quick and dirty build for unit testing with Host (serial) and TPI devices.
 # To be replace with CMake integration.
 
-set HWLOC_PATH="/usr/netpub/hwloc-1.3"
+set HWLOC_PATH="/home/sems/common/hwloc/current"
 
 set INC_PATH="-I. -I../src -I../TPL -I${HWLOC_PATH}/include"
 
