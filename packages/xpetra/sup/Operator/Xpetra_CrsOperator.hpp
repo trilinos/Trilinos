@@ -124,8 +124,8 @@ public:
     \post <tt>isFillComplete() == true<tt>
     \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
     */ 
-  void fillComplete(const RCP<const Map> &domainMap, const RCP<const Map> &rangeMap, OptimizeOption os = DoOptimizeStorage) {
-    matrixData_->fillComplete(domainMap, rangeMap, os);
+  void fillComplete(const RCP<const Map> &domainMap, const RCP<const Map> &rangeMap, const RCP<Teuchos::ParameterList> &params = null) {
+    matrixData_->fillComplete(domainMap, rangeMap, params);
 
     // Update default view with the colMap because colMap can be <tt>null</tt> until fillComplete() is called.
     updateDefaultView();
@@ -145,8 +145,8 @@ public:
   \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
   */
   //TODO : Get ride of "Tpetra"::OptimizeOption
-  void fillComplete(Xpetra::OptimizeOption os = Xpetra::DoOptimizeStorage) {
-    matrixData_->fillComplete(os);
+  void fillComplete(const RCP<ParameterList> &params = null) {
+    matrixData_->fillComplete(params);
 
     // Update default view with the colMap because colMap can be <tt>null</tt> until fillComplete() is called.
     updateDefaultView();

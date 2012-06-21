@@ -14,6 +14,8 @@ $TMPL_HEADERS
 
 #include "Xpetra_TpetraExport.hpp"
 
+using Teuchos::ParameterList;
+
 namespace Xpetra {
  
   // TODO: move that elsewhere
@@ -37,6 +39,7 @@ namespace Xpetra {
 
     // The following typedef is used by the XPETRA_DYNAMIC_CAST() macro.
     typedef TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> TpetraCrsGraphClass;
+    typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
   public:
 

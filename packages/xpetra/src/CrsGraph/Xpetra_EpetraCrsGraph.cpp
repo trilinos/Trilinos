@@ -65,18 +65,22 @@ namespace Xpetra {
     indices = ArrayView<const int>(eIndices, numEntries);
   }
 
-  void EpetraCrsGraph::fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, OptimizeOption os){ 
+  void EpetraCrsGraph::fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, const RCP< ParameterList > &params){
     XPETRA_MONITOR("EpetraCrsGraph::fillComplete"); 
 
     graph_->FillComplete(toEpetra(domainMap), toEpetra(rangeMap)); 
-    if (os == DoOptimizeStorage) graph_->OptimizeStorage();
+    bool doOptimizeStorage = true;
+    if (params != null && params->get("Optimize Storage",true) == false) doOptimizeStorage = false;
+    if (doOptimizeStorage) graph_->OptimizeStorage();
   }
   
-  void EpetraCrsGraph::fillComplete(OptimizeOption os) { 
+  void EpetraCrsGraph::fillComplete(const RCP< ParameterList > &params) {
     XPETRA_MONITOR("EpetraCrsGraph::fillComplete"); 
 
     graph_->FillComplete();
-    if (os == DoOptimizeStorage) graph_->OptimizeStorage();
+    bool doOptimizeStorage = true;
+    if (params != null && params->get("Optimize Storage",true) == false) doOptimizeStorage = false;
+    if (doOptimizeStorage) graph_->OptimizeStorage();
   }
 
   std::string EpetraCrsGraph::description() const { XPETRA_MONITOR("EpetraCrsGraph::description"); return "NotImplemented"; }

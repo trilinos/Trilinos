@@ -138,7 +138,7 @@ public:
     \post <tt>isFillComplete() == true<tt>
     \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
     */
-  void fillComplete(const RCP<const MapClass> &domainMap, const RCP<const MapClass> &rangeMap, OptimizeOption os = DoOptimizeStorage)
+  void fillComplete(const RCP<const MapClass> &domainMap, const RCP<const MapClass> &rangeMap, const RCP<ParameterList> &params=null)
   {
     TEUCHOS_TEST_FOR_EXCEPTION( true, Xpetra::Exceptions::RuntimeError,
         "fillComplete with arguments not supported for block matrices!" );
@@ -158,14 +158,14 @@ public:
   \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
   */
   //TODO : Get ride of "Tpetra"::OptimizeOption
-  void fillComplete(Xpetra::OptimizeOption os = Xpetra::DoOptimizeStorage)
+  void fillComplete(const RCP<ParameterList> &params=null)
   {
     for (size_t r=0; r<Rows(); ++r)
     {
       for (size_t c=0; c<Cols(); ++c)
       {
         if(getMatrix(r,c)->isFillComplete() == false)
-          getMatrix(r,c)->fillComplete(getDomainMap(c),getRangeMap(r),os);
+          getMatrix(r,c)->fillComplete(getDomainMap(c),getRangeMap(r),params);
       }
     }
 
