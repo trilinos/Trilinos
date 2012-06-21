@@ -90,6 +90,8 @@ public:
      */
    virtual int getFieldNum(const std::string & str) const;
 
+   virtual const std::string & getFieldString(int field) const;
+
    virtual Teuchos::RCP<Teuchos::Comm<int> > getComm() const
    { 
       #ifdef HAVE_MPI
@@ -201,6 +203,8 @@ public:
      */
    virtual int getFieldNum(const std::string & str) const;
 
+   virtual const std::string & getFieldString(int field) const;
+
    virtual Teuchos::RCP<Teuchos::Comm<int> > getComm() const
    { 
       #ifdef HAVE_MPI
@@ -306,6 +310,9 @@ public:
      */
    virtual int getFieldNum(const std::string & str) const
    { TEUCHOS_ASSERT(false); return -1; }
+
+   virtual const std::string & getFieldString(int field) const
+   { TEUCHOS_ASSERT(false); static std::string empty = "EMPTY"; return empty; }
 
    virtual Teuchos::RCP<Teuchos::Comm<int> > getComm() const
    { TEUCHOS_ASSERT(false); return Teuchos::null; }

@@ -87,6 +87,8 @@ public:
      */
    virtual int getFieldNum(const std::string & str) const;
 
+   virtual const std::string & getFieldString(int field) const;
+
    virtual Teuchos::RCP<Teuchos::Comm<int> > getComm() const
    { 
       #ifdef HAVE_MPI

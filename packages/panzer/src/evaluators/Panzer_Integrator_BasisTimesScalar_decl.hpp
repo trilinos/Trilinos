@@ -64,7 +64,7 @@ namespace panzer {
        <Parameter name="Value Name" type="string" value="(required)"/>
        <Parameter name="Basis" type="RCP<BasisIRLayout>" value=(required)/>
        <Parameter name="IR" type="RCP<IntegrationRule>" value="(required)"/>
-       <Parameter name="Multiplier" type="double" value="1.0" (default)/>
+       <Parameter name="Multiplier" type="double" value="(required)"/>
        <Parameter name="Field Multipliers" type="RCP<const std::vector>" value=Null (default)/>
     </ParameterList>
     \endverbatim

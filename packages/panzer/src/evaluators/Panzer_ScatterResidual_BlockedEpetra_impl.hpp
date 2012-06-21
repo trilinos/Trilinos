@@ -405,8 +405,9 @@ evaluateFields(typename Traits::EvalData workset)
             // loop over the sensitivity indices: all DOFs on a cell
             jacRow.resize(scatterField.size());
             
-            for(int sensIndex=0;sensIndex<scatterField.size();++sensIndex)
+            for(int sensIndex=0;sensIndex<scatterField.size();++sensIndex) {
                jacRow[sensIndex] = scatterField.fastAccessDx(sensIndex);
+            }
     
             for(int blockColIndex=0;blockColIndex<numFieldBlocks;blockColIndex++) {
                int start = blockOffsets[blockColIndex];

@@ -67,6 +67,20 @@ int UniqueGlobalIndexer<LocalOrdinalT>::getFieldNum(const std::string & str) con
 }
 
 template <typename LocalOrdinalT>
+const std::string & UniqueGlobalIndexer<LocalOrdinalT>::getFieldString(int field) const
+{
+   static std::string u = "U";
+   static std::string t = "T";
+
+   if(field==0)
+      return u;
+   else if(field==1)
+      return t;
+   else  
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"Can't find field \"" << field << "\" in unit_test::UniqueGlobalIndexer, try \'0\' or \'1\'");
+}
+
+template <typename LocalOrdinalT>
 void UniqueGlobalIndexer<LocalOrdinalT>::getElementBlockIds(std::vector<std::string> & elementBlockIds) const 
 {
    elementBlockIds.clear();
@@ -290,6 +304,20 @@ int UniqueGlobalIndexer_Element<LocalOrdinalT>::getFieldNum(const std::string & 
       return 1;
    else  
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"Can't find field \"" << str << "\" in unit_test::UniqueGlobalIndexer_Element, try \'U\' or \'T\'");
+}
+
+template <typename LocalOrdinalT>
+const std::string & UniqueGlobalIndexer_Element<LocalOrdinalT>::getFieldString(int field) const
+{
+   static std::string u = "U";
+   static std::string t = "T";
+
+   if(field==0)
+      return u;
+   else if(field==1)
+      return t;
+   else  
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"Can't find field \"" << field << "\" in unit_test::UniqueGlobalIndexer, try \'0\' or \'1\'");
 }
 
 template <typename LocalOrdinalT>

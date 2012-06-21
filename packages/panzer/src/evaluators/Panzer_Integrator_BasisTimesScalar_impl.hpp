@@ -78,14 +78,16 @@ PHX_EVALUATOR_CTOR(Integrator_BasisTimesScalar,p) :
 
 
   // build field multpliers if vector is nonnull (defaults to null)
-  RCP<const std::vector<std::string> > field_multiplier_names = 
-    p.get<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers");
-  if(field_multiplier_names!=Teuchos::null) {
-    for (std::vector<std::string>::const_iterator name = 
-	   field_multiplier_names->begin(); 
-	 name != field_multiplier_names->end(); ++name) {
-      PHX::MDField<ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
-      field_multipliers.push_back(tmp_field);
+  if(p.isType<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers")) {
+    RCP<const std::vector<std::string> > field_multiplier_names = 
+      p.get<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers");
+    if(field_multiplier_names!=Teuchos::null) {
+      for (std::vector<std::string>::const_iterator name = 
+  	     field_multiplier_names->begin(); 
+  	   name != field_multiplier_names->end(); ++name) {
+        PHX::MDField<ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
+        field_multipliers.push_back(tmp_field);
+      }
     }
   }
 

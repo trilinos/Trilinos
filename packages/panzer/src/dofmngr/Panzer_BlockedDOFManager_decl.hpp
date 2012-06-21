@@ -118,7 +118,7 @@ public:
      * \note This method will throw if invalid field number is 
      *       passed in as an argument.
      */
-   std::string getFieldString(int num) const;
+   const std::string & getFieldString(int num) const;
 
    /** What are the blockIds included in this connection manager?
      */

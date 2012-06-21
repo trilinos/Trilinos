@@ -329,6 +329,7 @@ evaluateVolumeFieldManagers(const panzer::AssemblyEngineInArgs & ae_in,
 
    GlobalEvaluationDataContainer preEvalData;
    preEvalData.addDataObject("Solution Gather Container",ae_in.ghostedContainer_);
+   ae_in.fillGlobalEvaluationDataContainer(preEvalData);
 
    // std::map<std::string,Teuchos::RCP<PHX::FieldManager<TraitsT> > >::iterator fm_itr;
    typename std::map<std::string,Teuchos::RCP<PHX::FieldManager<TraitsT> > >::iterator fm_itr;
@@ -377,6 +378,7 @@ evaluateVolumeFieldManagers(const std::map<std::string,Teuchos::RCP<std::vector<
 
   GlobalEvaluationDataContainer preEvalData;
   preEvalData.addDataObject("Solution Gather Container",ae_in.ghostedContainer_);
+  ae_in.fillGlobalEvaluationDataContainer(preEvalData);
 
   std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > >::const_iterator itr;
   for(itr=worksets.begin();itr!=worksets.end();++itr) {

@@ -76,6 +76,17 @@ public:
      */
    virtual int getFieldNum(const std::string & str) const = 0;
 
+   /** \brief Reverse lookup of the field string from
+     *        a field number.
+     *
+     * \param[in] num Field number. Assumed to be 
+     *                a valid field number.  Computed
+     *                from <code>getFieldNum</code>.
+     *
+     * \returns Field name. 
+     */
+   virtual const std::string & getFieldString(int num) const = 0;
+
    /** What are the blockIds included in this connection manager?
      */
    virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const = 0; 

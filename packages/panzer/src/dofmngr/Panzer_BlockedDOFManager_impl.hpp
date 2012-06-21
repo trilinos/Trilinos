@@ -89,7 +89,7 @@ int BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getFieldNum(const std::stri
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-std::string BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getFieldString(int number) const
+const std::string & BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::getFieldString(int number) const
 {
    std::map<int,std::string>::const_iterator itr = fieldNumToStr_.find(number);
 
