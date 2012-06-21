@@ -70,7 +70,7 @@ struct LocalFixture
   StringFunction sfx;
   ConstantFunction sfx_res;
 
-  LocalFixture(size_t num_xyz = 4, size_t num_y=0, size_t num_z=0, bool sidesets=false) : eMesh(3u), bogus_init(init(num_xyz, num_y, num_z, sidesets)),
+  LocalFixture(size_t num_xyz = 4, size_t num_y=0, size_t num_z=0, bool sidesets=false, bool commit=true) : eMesh(3u), bogus_init(init(num_xyz, num_y, num_z, sidesets, commit)),
                                                                      metaData(*eMesh.get_fem_meta_data()), bulkData(*eMesh.get_bulk_data()),
                                                                      coords_field( metaData.get_field<mesh::FieldBase>("coordinates") ),
                                                                      sfx("x", Name("sfx"), Dimensions(3), Dimensions(1) ),
@@ -80,7 +80,7 @@ struct LocalFixture
 
   }
 
-  int init(size_t num_xyz, size_t num_y_arg, size_t num_z_arg, bool sidesets=false)
+  int init(size_t num_xyz, size_t num_y_arg, size_t num_z_arg, bool sidesets=false, bool commit=true)
   {
     // Need a symmetric mesh around the origin for some of the tests below to work correctly (i.e. have analytic solutions)
     const size_t num_x = num_xyz;
@@ -93,7 +93,7 @@ struct LocalFixture
     if (sidesets) config_mesh += "|sideset:xXyYzZ";
 	
     eMesh.new_mesh(GMeshSpec(config_mesh));
-    eMesh.commit();
+    if (commit) eMesh.commit();
     return 1;
   }
 
@@ -898,6 +898,93 @@ STKUNIT_UNIT_TEST(norm, h1_volume_1)
   }
 
 }
+//=============================================================================
+//=============================================================================
+//=============================================================================
+
+STKUNIT_UNIT_TEST(norm, h1_volume_2)
+{
+  EXCEPTWATCH;
+  bool ret=false;
+  if (ret) return;
+  MPI_Barrier( MPI_COMM_WORLD );
+
+  LocalFixture fix(3,3,12, false, false);
+  PerceptMesh& eMesh = fix.eMesh;
+
+  int vectorDimension = 0;  // signifies a scalar field
+  stk::mesh::FieldBase *f_test = eMesh.add_field("test", mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
+  eMesh.commit();
+  mesh::fem::FEMMetaData& metaData = fix.metaData;
+  mesh::BulkData& bulkData = fix.bulkData;
+
+  mesh::FieldBase *coords_field = fix.coords_field;
+
+  /// create a field function from the existing coordinates field
+  FieldFunction ff_coords("ff_coords", coords_field, &bulkData,
+                          Dimensions(3), Dimensions(3), FieldFunction::SIMPLE_SEARCH );
+
+  /// the function to be integrated - here it is just the identity, and when integrated should produce the volume
+  StringFunction plane("x+2.0*y+3.0*z", Name("plane"));
+  std::string grad[] = {"1", "2", "3"};
+  plane.set_gradient_strings(grad, 3);
+
+  FieldFunction ff_plane("ff_plane", f_test, eMesh, 3, 1);
+  ff_plane.interpolateFrom(plane);
+
+  {
+    MDArray in(3), out(1), grad(3);
+    double x=0.21, y=0.32, z=0.43;
+    in(0) = x; in(1) = y; in(2) = z;
+    //ff_plane.gradient()
+    ff_plane(in, out);
+    std::cout << "in= " << in << std::endl;
+    std::cout << "out= " << out << std::endl;
+    (*(ff_plane.gradient()))(in, grad);
+    std::cout << "grad= " << grad << std::endl;
+    STKUNIT_EXPECT_DOUBLE_EQ_APPROX(x+2*y+3*z, out(0));
+    STKUNIT_EXPECT_DOUBLE_EQ_APPROX(1.0, grad(0));
+    STKUNIT_EXPECT_DOUBLE_EQ_APPROX(2.0, grad(1));
+    STKUNIT_EXPECT_DOUBLE_EQ_APPROX(3.0, grad(2));
+  }
+
+  /// A place to hold the result.
+  /// This is a "writable" function (we may want to make this explicit - StringFunctions are not writable; FieldFunctions are
+  /// since we interpolate values to them from other functions).
+  ConstantFunction result1(0.0, "result1");
+  ConstantFunction result2(0.0, "result2");
+  ConstantFunction result3(0.0, "result3");
+
+  /// Create the operator that will do the work
+
+  Norm<2> l2Norm(bulkData, &metaData.universal_part(), TURBO_NONE); 
+  H1Norm h1Norm(bulkData, &metaData.universal_part(), TURBO_NONE);
+  /// get the l2 norm of plane
+  h1Norm(plane, result2);
+  h1Norm(ff_plane, result1);
+
+  STKUNIT_EXPECT_DOUBLE_EQ_APPROX(result1.getValue(), result2.getValue());
+  STKUNIT_EXPECT_DOUBLE_EQ_APPROX(3.89444048184931, result1.getValue());
+
+  //// rotate the mesh (result should be the same)
+
+  if (1)
+  {
+    Math::Matrix rm = Math::rotationMatrix(0, 30);
+    eMesh.transform_mesh(rm);
+    ff_plane.interpolateFrom(plane);
+    eMesh.save_as("h1Norm_rotate.e");
+    h1Norm(ff_plane, result1);
+    l2Norm(plane, result3);
+
+    //STKUNIT_EXPECT_DOUBLE_EQ_APPROX(3.89444048184931, result3.getValue());
+
+    STKUNIT_EXPECT_DOUBLE_EQ_APPROX(3.89444048184931, result1.getValue());
+  }
+
+}
+
+
 
 }
 }

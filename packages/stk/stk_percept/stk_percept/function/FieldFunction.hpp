@@ -113,6 +113,7 @@ namespace stk
                                                  domain_dimensions, codomain_dimensions,
                                                  this->m_searchType,
                                                  this->getIntegrationOrder());
+        deriv->m_deriv_spec = deriv_spec;
         deriv->m_get_derivative = true;
         Teuchos::RCP<Function > deriv_rcp = Teuchos::rcp(deriv);
         return deriv_rcp;
@@ -165,6 +166,7 @@ namespace stk
 
       bool m_get_derivative;
       MDArrayString m_deriv_spec;
+      mesh::FieldBase *m_coordinatesField;
     };
 
     /** Evaluate the function on this element at the parametric coordinates and return in output_field_values.
@@ -197,8 +199,8 @@ namespace stk
       unsigned nDOF = stride;
 #ifndef NDEBUG
       int nOutDim = m_codomain_dimensions.back(); // FIXME for tensor
-      // FIXME 
-      VERIFY_OP((int)nDOF, == , nOutDim,
+
+      VERIFY_OP((int)(nDOF * (m_get_derivative? spatialDim : 1)), == , nOutDim,
                 "FieldFunction::operator(): invalid dimensions nDOF, m_codomain_dimensions[0]= ");
 #endif
 
@@ -246,13 +248,23 @@ namespace stk
       MDArray basis_values(numBases, numInterpPoints); 
       // ([C],[F],[P]), or ([C],[F],[P],[D]) for GRAD
       MDArray transformed_basis_values(numCells, numBases, numInterpPoints); 
+
+
+      MDArray Jac;
+      MDArray JacInverse;
       if (m_get_derivative)
         {
           basis_values.resize(numBases, numInterpPoints, spatialDim);
           transformed_basis_values.resize(numCells, numBases, numInterpPoints, spatialDim);
+          MDArray cellWorkset(numCells, numNodes, spatialDim);
+          PerceptMesh::fillCellNodes(bucket_or_element,  m_coordinatesField, cellWorkset, spatialDim);
+          //im.m_cub->getCubature(xi, wt);
+          Jac.resize(numCells, numInterpPoints, spatialDim, spatialDim);
+          JacInverse.resize(numCells, numInterpPoints, spatialDim, spatialDim);
+          CellTools<double>::setJacobian(Jac, parametric_coordinates, cellWorkset, topo);
+          CellTools<double>::setJacobianInv(JacInverse, Jac);
         }
       
-
       if (EXTRA_PRINT_FF_HELPER) std::cout << "FieldFunction::operator()(elem,...) 4" << std::endl;
 
       // FIXME - it appears that Intrepid only supports the evaluation of scalar-valued fields, so we have
@@ -275,7 +287,14 @@ namespace stk
       if (EXTRA_PRINT_FF_HELPER) std::cout << "FieldFunction::operator()(elem,...) basis_values = \n " << basis_values << std::endl;
 
       // this function just spreads (copies) the values of the basis to all elements in the workset (numCells)
-      FunctionSpaceTools::HGRADtransformVALUE<double>(transformed_basis_values, basis_values);
+      if (m_get_derivative)
+        {
+          FunctionSpaceTools::HGRADtransformGRAD<double>(transformed_basis_values, JacInverse, basis_values);
+        }
+      else
+        {
+          FunctionSpaceTools::HGRADtransformVALUE<double>(transformed_basis_values, basis_values);
+        }
       if (EXTRA_PRINT_FF_HELPER) std::cout << "FieldFunction::operator()(elem,...) transformed_basis_values =  " << transformed_basis_values << std::endl;
 
       // ([C],[P]) - place for results of evaluation
@@ -313,18 +332,10 @@ namespace stk
 
           VERIFY_OP_ON(numCells, ==, 1, "numCells...");
 
-          for (int iCell = 0; iCell < numCells; iCell++)
-            {
-              for (int iPoint = 0; iPoint < numInterpPoints; iPoint++)
-                {
-                  //output_field_values(iCell, iPoint, iDOF) = loc_output_field_values(iCell, iPoint);
-                  //output_field_values(0, iDOF) = loc_output_field_values(iCell, iPoint);
-                  output_field_values(iPoint, iDOF) = loc_output_field_values(iCell, iPoint);
-                  if (EXTRA_PRINT_FF_HELPER) std::cout << "tmp iDOF= " << iDOF << " ofd= " << output_field_values(iPoint, iDOF) << std::endl;
-                }
-            }
           if (m_get_derivative)
             {
+              //std::cout << "tmp srk num_grad= " << num_grad << std::endl;
+
               for (int iDim = 0; iDim < num_grad; iDim++)
                 {
                   int jDim = -1;
@@ -336,10 +347,25 @@ namespace stk
                     {
                       for (int iPoint = 0; iPoint < numInterpPoints; iPoint++)
                         {
-                          output_field_values(iPoint, iDOF, iDim) = loc_output_field_values(iCell, iPoint, jDim);
+                          // FIXME
+                          // output_field_values(iPoint, iDOF, iDim) = loc_output_field_values(iCell, iPoint, jDim);
+                          output_field_values(iPoint, iDOF*num_grad+ iDim) = loc_output_field_values(iCell, iPoint, jDim);
                           if (EXTRA_PRINT_FF_HELPER) std::cout << "tmp iDOF= " << iDOF << " iDim= " << iDim << 
                             " ofd= " << output_field_values(iPoint, iDOF, iDim) << std::endl;
                         }
+                    }
+                }
+            }
+          else
+            {
+              for (int iCell = 0; iCell < numCells; iCell++)
+                {
+                  for (int iPoint = 0; iPoint < numInterpPoints; iPoint++)
+                    {
+                      //output_field_values(iCell, iPoint, iDOF) = loc_output_field_values(iCell, iPoint);
+                      //output_field_values(0, iDOF) = loc_output_field_values(iCell, iPoint);
+                      output_field_values(iPoint, iDOF) = loc_output_field_values(iCell, iPoint);
+                      if (EXTRA_PRINT_FF_HELPER) std::cout << "tmp iDOF= " << iDOF << " ofd= " << output_field_values(iPoint, iDOF) << std::endl;
                     }
                 }
             }

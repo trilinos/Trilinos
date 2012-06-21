@@ -62,6 +62,8 @@ namespace stk
       m_cached_topo_key(0), m_cached_basis(0), m_searchType(searchType), m_get_derivative(false)
                                 //, m_parallelEval(true)
     {
+      mesh::fem::FEMMetaData& metaData = stk::mesh::fem::FEMMetaData::get(*bulk);
+      m_coordinatesField = metaData.get_field<VectorFieldType >("coordinates");
     }
 
     FieldFunction::FieldFunction(const char *name, mesh::FieldBase *field, PerceptMesh& eMesh,
@@ -73,6 +75,10 @@ namespace stk
       m_my_field(field), m_bulkData(eMesh.get_bulk_data()), m_cachedElement(0), m_searcher(0),
       m_cached_topo_key(0), m_cached_basis(0), m_searchType(searchType), m_get_derivative(false)
     {
+
+      mesh::fem::FEMMetaData& metaData = stk::mesh::fem::FEMMetaData::get(*m_bulkData);
+      m_coordinatesField = metaData.get_field<VectorFieldType >("coordinates");
+
     }
 
     FieldFunction::~FieldFunction()

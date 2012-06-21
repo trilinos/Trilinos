@@ -30,6 +30,25 @@ namespace stk
       VecOfString m_array_1;  // rank one
       std::vector<VecOfString > m_array_2; // rank two
       //...
+
+      void clone(const MDArrayString& mda)
+      {
+        this->m_rank = mda.m_rank;
+        if (this->m_rank == 1)
+          {
+            this->m_array_1 = mda.m_array_1;
+          }
+        else
+          {
+            int dim0 = mda.dimension(0);
+            this->m_array_2.resize(dim0); 
+            for (int j = 0; j < dim0; j++)
+              {
+                this->m_array_2[j] = mda.m_array_2[j];
+              }
+          }
+      }
+
     public:
       MDArrayString() : m_rank(1) { m_array_1.resize(0); }
       MDArrayString(int dim) : m_rank(1) { m_array_1.resize(dim); }
@@ -41,6 +60,17 @@ namespace stk
             m_array_2[j].resize(dim1);
           }
       }
+
+      MDArrayString(const MDArrayString& mda) 
+      {
+        clone(mda);
+      }
+      MDArrayString& operator=(const MDArrayString& mda) 
+      {
+        clone(mda);
+        return *this;
+      }
+
       void resize(int dim)
       {
         m_rank = 1;
@@ -86,7 +116,7 @@ namespace stk
         return m_array_2[i1][i2];
       }
 
-      int dimension(int i1) { 
+      int dimension(int i1) const { 
         if (m_rank==1 && i1 > 0) throw std::runtime_error("MDArrayString:: rank 1 but asking for 2nd dim");
         if (m_rank == 1)
           {
