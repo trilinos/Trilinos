@@ -140,7 +140,7 @@ public:
                         Teuchos::RCP<dense_matrix_type>& L_out,
                         Teuchos::RCP<dense_matrix_type>& U_out,
                         Teuchos::Array<ordinal_type>& pivots,
-                        const ordinal_type numRows)
+                        const ordinal_type numRows) const
   {
     using Teuchos::Array;
     using Teuchos::RCP;
@@ -158,7 +158,7 @@ public:
     lapack_type lapack;
     int info = 0;
     Array<ordinal_type> ipiv (N);
-    lapack.GETRF (N, N, A.values (), A.stride (), ipiv.getRawPtr (), &info);
+    lapack.GETRF (N, N, A->values (), A->stride (), ipiv.getRawPtr (), &info);
     TEUCHOS_TEST_FOR_EXCEPTION(info < 0, std::logic_error, "LAPACK's _GETRF "
       "routine reported that its " << (-info) << "-th argument had an illegal "
       "value.  This probably indicates a bug in the way Kokkos is calling the "
@@ -175,12 +175,20 @@ public:
     // A into L resp. U.
     RCP<MT> L = rcp (new MT (N, N));
     RCP<MT> U = rcp (new MT (N, N));
-    for (ordinal_type i = 0; i < N; ++i) {
-      for (ordinal_type j = 0; j <= i; ++j) {
-        U(i,j) = A(i,j);
-      }
-      for (ordinal_type j = i+1; j < N; ++j) {
-        L(i,j) = A(i,j);
+    {
+      // Get the MT refs so we don't have to dereference the RCPs each
+      // time we change an entry.
+      MT& LL = *L;
+      MT& UU = *U;
+      MT& AA = *A;
+
+      for (ordinal_type i = 0; i < N; ++i) {
+        for (ordinal_type j = 0; j <= i; ++j) {
+          UU(i,j) = AA(i,j);
+        }
+        for (ordinal_type j = i+1; j < N; ++j) {
+          LL(i,j) = AA(i,j);
+        }
       }
     }
 
@@ -311,12 +319,13 @@ public:
   /// \brief Convert the given dense triangular matrix to a sparse kernels object.
   ///
   /// \param A [in] The dense (lower or upper) triangular matrix.
+  /// \param node [in/out] The Kokkos Node instance.
   /// \param uplo [in] Whether A is lower (LOWER_TRI) or upper
   ///   (UPPER_TRI) triangular.
   /// \param diag [in] Whether A has an implicit unit diagonal
   ///   (UNIT_DIAG) or not (NON_UNIT_DIAG).
   Teuchos::RCP<SparseOpsType>
-  denseTriToSparseOps (const Teuchos::SerialDenseMatrix<int, scalar_type>& A,
+  denseTriToSparseOps (const dense_matrix_type& A,
                        const Teuchos::RCP<node_type>& node,
                        const Teuchos::EUplo uplo,
                        const Teuchos::EDiag diag) const
@@ -381,6 +390,64 @@ public:
     ops->setGraphAndMatrix (graph, matrix);
     return ops;
   }
+
+
+  /// \brief Convert the given dense matrix to a sparse kernels object.
+  ///
+  /// \param A [in] The dense matrix.
+  /// \param node [in/out] The Kokkos Node instance.
+  Teuchos::RCP<SparseOpsType>
+  denseToSparseOps (const dense_matrix_type& A,
+                    const Teuchos::RCP<node_type>& node) const
+  {
+    using Teuchos::ArrayRCP;
+    using Teuchos::arcp;
+    using Teuchos::arcp_const_cast;
+    using Teuchos::as;
+    using Teuchos::null;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::rcp_const_cast;
+
+    const ordinal_type N = A.numRows ();
+    const ordinal_type NNZ = N*N;
+
+    ArrayRCP<size_t> ptr (N+1);
+    ArrayRCP<ordinal_type> ind (NNZ);
+    ArrayRCP<scalar_type> val (NNZ);
+
+    ordinal_type counter = 0;
+    for (ordinal_type i = 0; i < N; ++i) {
+      ptr[i] = counter;
+      for (ordinal_type j = 0; j < N; ++j) {
+        ind[counter] = j;
+        val[counter] = A(i, j);
+        ++counter;
+      }
+    }
+    ptr[N] = counter;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(counter != NNZ, std::logic_error,
+      "TestSparseOps::denseToSparseOps: Expected " << NNZ << " entries in "
+      "the sparse matrix, but got " << counter << " instead.  Please report "
+      "this bug (in tests) to the Kokkos developers.");
+
+    RCP<graph_type> graph =
+      rcp (new graph_type (as<size_t> (N), node, null));
+    graph->setStructure (arcp_const_cast<const size_t> (ptr),
+                         arcp_const_cast<const ordinal_type> (ind));
+    RCP<matrix_type> matrix =
+      rcp (new matrix_type (rcp_const_cast<const graph_type> (graph), null));
+    matrix->setValues (arcp_const_cast<const scalar_type> (val));
+
+    Teuchos::EUplo uplo = Teuchos::UNDEF_TRI;
+    Teuchos::EDiag diag = Teuchos::NON_UNIT_DIAG;
+    SparseOpsType::finalizeGraphAndMatrix (uplo, diag, *graph, *matrix, null);
+    RCP<SparseOpsType> ops = rcp (new SparseOpsType (node));
+    ops->setGraphAndMatrix (graph, matrix);
+    return ops;
+  }
+
 
   /// Return an initialized Kokkos::MultiVector, filled with zeros.
   ///
@@ -466,13 +533,14 @@ public:
   /// Test methodology
   /// ================
   ///
-  /// Summary: Imitate the L and U factors produced by an LU
-  /// factorization (no pivoting).  Use the factors to test sparse
-  /// matrix-vector multiply and sparse triangular solve.
+  /// Summary: Compute a dense LU factorization of a random matrix A.
+  /// Store its L and U factors as sparse matrices.  Use the factors
+  /// to test sparse matrix-vector multiply and sparse triangular
+  /// solve.
   ///
-  /// 1. Make random dense $\hat{L}$ and $\hat{U}$ matrices.
-  ///    $\hat{L}$ is upper triangular with unit diagonal, and
-  ///    $\hat{U}$ is lower triangular.
+  /// 1. Make dense $\hat{L}$ and $\hat{U}$ matrices in the way
+  ///    described above.  $\hat{L}$ is upper triangular with unit
+  ///    diagonal, and $\hat{U}$ is lower triangular.
   /// 2. Compute a random multivector X.  Give X > 1 column, to make
   ///    sure that the routine can handle multivectors correctly.
   /// 3. Compute $\hat{Y} = \hat{L} (\hat{U} X)$ using the BLAS.
@@ -488,14 +556,15 @@ public:
   ///    b. Compute $\hat{W} = \hat{U}^{-1} \hat{Z}$ and $W = L^{-1}
   ///       \hat{Z}$, and compare the results.
   ///
-  /// Possible issues
-  /// ===============
+  /// Discussion
+  /// ==========
   ///
   /// Random square matrices tend to be well conditioned on average
-  /// (this statement sounds vague, but can be made rigorous).
-  /// However, that doesn't say anything about the product of random
-  /// triangular matrices L and U.  That means the test is not
-  /// guaranteed to succeed.
+  /// (this statement sounds vague, but can be made rigorous), so the
+  /// L and U factors are likely to exist and be well conditioned on
+  /// average.  Of course, outliers are possible, so this test isn't
+  /// 100% guaranteed to succeed, but success is very likely and
+  /// passing falsely is even less likely.
   void
   testSparseOps (const Teuchos::RCP<node_type>& node,
                  const ordinal_type N,
@@ -504,26 +573,22 @@ public:
     using Teuchos::arcp;
     using Teuchos::Array;
     using Teuchos::as;
+    using Teuchos::null;
     using Teuchos::RCP;
     using Teuchos::rcp;
     using Teuchos::LEFT_SIDE;
+    using Teuchos::LOWER_TRI;
     using Teuchos::UPPER_TRI;
     using Teuchos::NO_TRANS;
+    using Teuchos::TRANS;
+    using Teuchos::CONJ_TRANS;
     using Teuchos::NON_UNIT_DIAG;
-    using Teuchos::LOWER_TRI;
     using Teuchos::UNIT_DIAG;
     typedef Array<size_t>::size_type size_type;
     typedef Teuchos::ScalarTraits<scalar_type> STS;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
     typedef Kokkos::MultiVector<scalar_type, node_type> MV;
     typedef Kokkos::DefaultArithmetic<MV> MVT;
-    // Teuchos' BLAS and LAPACK wrappers do accept an "OrdinalType"
-    // template parameter, but only work for int (unless you've built
-    // your BLAS and LAPACK with 64-bit integer indices).  Thus, in
-    // turn, we use int for SDM's ordinal_type for compatibility.
-    typedef Teuchos::SerialDenseMatrix<int, scalar_type> dense_matrix_type;
-    typedef Teuchos::BLAS<int, scalar_type> blas_type;
-    typedef Teuchos::LAPACK<int, scalar_type> lapack_type;
 
     // A record of error messages reported by any failed tests.
     // We run _all_ the tests first, then report any failures.
@@ -534,22 +599,17 @@ public:
     // Relative error of the current operation.
     magnitude_type relErr = STM::zero ();
 
-    dense_matrix_type L_dense (N, N), U_dense (N, N);
-    L_dense.random ();
-    U_dense.random ();
+    RCP<dense_matrix_type> A_dense, L_dense, U_dense;
+    Array<ordinal_type> ipiv;
+    makeDenseTestProblem (A_dense, L_dense, U_dense, ipiv, N);
 
-    // Make the diagonal of U larger and positive, to ensure that U is
-    // nonsingular and well conditioned.
-    for (ordinal_type i = 0; i < N; ++i) {
-      const scalar_type ten = as<scalar_type> (10);
-      U_dense(i, i) = STS::magnitude(U_dense(i,i)) * ten;
-    }
-
-    // Convert L and U into separate sparse matrices.
+    // Convert L_dense and U_dense into separate sparse matrices.
     RCP<SparseOpsType> L_sparse =
-      denseTriToSparseOps (L_dense, node, LOWER_TRI, UNIT_DIAG);
+      denseTriToSparseOps (*L_dense, node, LOWER_TRI, UNIT_DIAG);
     RCP<SparseOpsType> U_sparse =
-      denseTriToSparseOps (U_dense, node, UPPER_TRI, NON_UNIT_DIAG);
+      denseTriToSparseOps (*U_dense, node, UPPER_TRI, NON_UNIT_DIAG);
+    // Convert A_dense into a separate sparse matrix.
+    RCP<SparseOpsType> A_sparse = denseToSparseOps (*A_dense, node);
 
     // Compute a random input multivector.  Don't give it more columns
     // than N, but do give it more than one column if the size of the
@@ -567,12 +627,66 @@ public:
     RCP<MV> W     = makeMultiVector (node, N, numColsX);
     RCP<MV> W_hat = makeMultiVector (node, N, numColsX);
 
+    blas_type blas; // For dense matrix and vector operations.
+
+    // Compute Y_hat := A_dense * X and Y := A_sparse * X.
+    blas.GEMM (NO_TRANS, NO_TRANS, N, numColsX, N,
+               STS::one (), A_dense->values (), A_dense->stride (),
+               X->getValues ().getRawPtr (), as<int> (X->getStride ()),
+               STS::zero (), Y_hat->getValuesNonConst ().getRawPtr (),
+               as<int> (Y_hat->getStride ()));
+    A_sparse->template multiply<scalar_type, scalar_type> (NO_TRANS, STS::one (),
+                                                           (const MV) *X, *Y);
+    // Compare Y and Y_hat.  Use Z as scratch space.
+    relErr = maxRelativeError (Y_hat, Y, Z);
+    if (relErr > tol) {
+      err << "Sparse matrix-(multi)vector multiply test failed for general "
+        "matrix A.  Maximum relative error " << relErr << " exceeds "
+        "the given tolerance " << tol << ".\n";
+      success = false;
+    }
+
+    // Compute Y_hat := A_dense^T * X and Y := A_sparse^T * X.
+    blas.GEMM (TRANS, NO_TRANS, N, numColsX, N,
+               STS::one (), A_dense->values (), A_dense->stride (),
+               X->getValues ().getRawPtr (), as<int> (X->getStride ()),
+               STS::zero (), Y_hat->getValuesNonConst ().getRawPtr (),
+               as<int> (Y_hat->getStride ()));
+    A_sparse->template multiply<scalar_type, scalar_type> (TRANS, STS::one (),
+                                                           (const MV) *X, *Y);
+    // Compare Y and Y_hat.  Use Z as scratch space.
+    relErr = maxRelativeError (Y_hat, Y, Z);
+    if (relErr > tol) {
+      err << "Sparse matrix-(multi)vector multiply (transpose) test failed for "
+        "general matrix A.  Maximum relative error " << relErr << " exceeds "
+        "the given tolerance " << tol << ".\n";
+      success = false;
+    }
+
+    if (STS::isComplex) {
+      // Compute Y_hat := A_dense^H * X and Y := A_sparse^H * X.
+      blas.GEMM (CONJ_TRANS, NO_TRANS, N, numColsX, N,
+                 STS::one (), A_dense->values (), A_dense->stride (),
+                 X->getValues ().getRawPtr (), as<int> (X->getStride ()),
+                 STS::zero (), Y_hat->getValuesNonConst ().getRawPtr (),
+                 as<int> (Y_hat->getStride ()));
+      A_sparse->template multiply<scalar_type, scalar_type> (CONJ_TRANS, STS::one (),
+                                                             (const MV) *X, *Y);
+      // Compare Y and Y_hat.  Use Z as scratch space.
+      relErr = maxRelativeError (Y_hat, Y, Z);
+      if (relErr > tol) {
+        err << "Sparse matrix-(multi)vector multiply (conjugate transpose) "
+          "test failed for general matrix A.  Maximum relative error "
+            << relErr << " exceeds the given tolerance " << tol << ".\n";
+        success = false;
+      }
+    }
+
     // Compute Z_hat := U_dense * X.  First copy X into Z_hat, since TRMM
     // overwrites its input.
     MVT::Assign (*Z_hat, (const MV) *X);
-    blas_type blas;
     blas.TRMM (LEFT_SIDE, UPPER_TRI, NO_TRANS, NON_UNIT_DIAG, N, numColsX,
-               STS::one (), U_dense.values (), U_dense.stride (),
+               STS::one (), U_dense->values (), U_dense->stride (),
                Z_hat->getValuesNonConst ().getRawPtr (),
                as<int> (Z_hat->getStride ()));
     // Compute Z := U_sparse * X.
@@ -591,7 +705,7 @@ public:
     // since TRMM overwrites its input.
     MVT::Assign (*Y_hat, (const MV) *Z_hat);
     blas.TRMM (LEFT_SIDE, LOWER_TRI, NO_TRANS, UNIT_DIAG, N, numColsX,
-               STS::one (), L_dense.values (), L_dense.stride (),
+               STS::one (), L_dense->values (), L_dense->stride (),
                Y_hat->getValuesNonConst ().getRawPtr (),
                as<int> (Y_hat->getStride ()));
 
@@ -620,7 +734,7 @@ public:
     // Compute Z_hat = L_dense \ Y_hat.
     MVT::Assign (*Z_hat, (const MV) *Y_hat);
     blas.TRSM (LEFT_SIDE, LOWER_TRI, NO_TRANS, UNIT_DIAG, N, numColsX,
-               STS::one (), L_dense.values (), L_dense.stride (),
+               STS::one (), L_dense->values (), L_dense->stride (),
                Z_hat->getValuesNonConst ().getRawPtr (),
                as<int> (Z_hat->getStride ()));
     // Compute Z = L_sparse \ Y_hat.
@@ -638,7 +752,7 @@ public:
     // Compute W_hat = U_dense \ Z_hat.
     MVT::Assign (*W_hat, (const MV) *Z_hat);
     blas.TRSM (LEFT_SIDE, UPPER_TRI, NO_TRANS, NON_UNIT_DIAG, N, numColsX,
-               STS::one (), U_dense.values (), U_dense.stride (),
+               STS::one (), U_dense->values (), U_dense->stride (),
                W_hat->getValuesNonConst ().getRawPtr (),
                as<int> (W_hat->getStride ()));
     // Compute W = U_sparse \ Z_hat.
@@ -658,7 +772,53 @@ public:
       << err.str());
   }
 
+  void
+  benchmarkSparseOps (std::vector<std::pair<std::string, double> >& results,
+                      const Teuchos::RCP<node_type>& node,
+                      const ordinal_type numRows,
+                      const ordinal_type numVecs,
+                      const int numTrials) const
+  {
+    using Teuchos::arcp;
+    using Teuchos::Array;
+    using Teuchos::as;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::LOWER_TRI;
+    using Teuchos::UPPER_TRI;
+    using Teuchos::NON_UNIT_DIAG;
+    using Teuchos::UNIT_DIAG;
+    typedef Array<size_t>::size_type size_type;
+    typedef Teuchos::ScalarTraits<scalar_type> STS;
+    typedef Teuchos::ScalarTraits<magnitude_type> STM;
+    typedef Kokkos::MultiVector<scalar_type, node_type> MV;
+    typedef Kokkos::DefaultArithmetic<MV> MVT;
 
+    RCP<dense_matrix_type> A_dense, L_dense, U_dense;
+    Array<ordinal_type> ipiv;
+    makeDenseTestProblem (A_dense, L_dense, U_dense, ipiv, numRows);
+
+    // Convert A_dense, L_dense, and U_dense into sparse matrices.
+    RCP<SparseOpsType> L_sparse =
+      denseTriToSparseOps (*L_dense, node, LOWER_TRI, UNIT_DIAG);
+    RCP<SparseOpsType> U_sparse =
+      denseTriToSparseOps (*U_dense, node, UPPER_TRI, NON_UNIT_DIAG);
+    // Convert A_dense into a separate sparse matrix.
+    RCP<SparseOpsType> A_sparse = denseToSparseOps (*A_dense, node);
+
+    // Compute a random input multivector.
+    RCP<MV> X = makeMultiVector (node, numRows, numVecs);
+    MVT::Random (*X);
+    RCP<MV> Y = makeMultiVector (node, numRows, numVecs); // output MV.
+
+    benchmarkSparseMatVec (results, A_sparse, numRows, numVecs, numTrials);
+    benchmarkSparseTriSolve (results, L_sparse, "lower, unit diag",
+                             numRows, numVecs, numTrials);
+    benchmarkSparseTriSolve (results, U_sparse, "upper, non unit diag",
+                             numRows, numVecs, numTrials);
+  }
+
+private:
   /// \brief Benchmark sparse matrix-multivector multiply.
   ///
   /// Benchmark all variations of sparse matrix-multivector multiply
@@ -828,6 +988,9 @@ public:
   ///
   /// \param results [out] Pairs of (benchmark name, elapsed time for
   ///   that benchmark over all trials).
+  /// \param label [in] Extra timer label.  Use this to distinguish
+  ///   e.g., lower triangular solve benchmarks from upper triangular
+  ///   solve benchmarks.
   /// \param ops [in] The sparse kernels instance to benchmark.
   /// \param numRows [in] Number of rows in the linear operator
   ///   represented by ops.  We need this because SparseOpsType
@@ -839,6 +1002,7 @@ public:
   void
   benchmarkSparseTriSolve (std::vector<std::pair<std::string, double> >& results,
                            const SparseOpsType& ops,
+                           const std::string& label,
                            const ordinal_type numRows,
                            const ordinal_type numVecs,
                            const int numTrials) const
@@ -860,7 +1024,7 @@ public:
 
     // Time sparse triangular solve, no transpose.
     {
-      const std::string timerName ("Y = A \\ X");
+      const std::string timerName ("Y = A \\ X (" + label + ")");
       RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
       if (timer.is_null ()) {
         timer = TimeMonitor::getNewCounter (timerName);
@@ -876,7 +1040,7 @@ public:
 
     // Time sparse triangular solve, transpose.
     {
-      const std::string timerName ("Y = A^T \\ X");
+      const std::string timerName ("Y = A^T \\ X (" + label + ")");
       RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
       if (timer.is_null ()) {
         timer = TimeMonitor::getNewCounter (timerName);
@@ -893,7 +1057,7 @@ public:
     // Only test conjugate transpose if scalar_type is complex.
     if (STS::isComplex) {
       // Time sparse triangular solve, conjugate transpose.
-      const std::string timerName ("Y = A^H \\ X");
+      const std::string timerName ("Y = A^H \\ X (" + label + ")");
       RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
       if (timer.is_null ()) {
         timer = TimeMonitor::getNewCounter (timerName);

@@ -209,7 +209,12 @@ namespace Teuchos
     //! @name Level 3 BLAS Routines.
     //@{
 
-    //! Performs the matrix-matrix operation: \c C \c <- \c alpha*op(A)*op(B)+beta*C where \c op(A) is either \c A or \c A', \c op(B) is either \c B or \c B', and C is an \c m by \c k matrix.
+    /// \brief General matrix-matrix multiply.
+    ///
+    /// This computes C = alpha*op(A)*op(B) + beta*C.  op(X) here may
+    /// be either X, the transpose of X, or the conjugate transpose of
+    /// X.  op(A) has m rows and k columns, op(B) has k rows and n
+    /// columns, and C has m rows and n columns.
     template <typename alpha_type, typename A_type, typename B_type, typename beta_type>
     void GEMM(ETransp transa, ETransp transb, const OrdinalType m, const OrdinalType n, const OrdinalType k, const alpha_type alpha, const A_type* A, const OrdinalType lda, const B_type* B, const OrdinalType ldb, const beta_type beta, ScalarType* C, const OrdinalType ldc) const;
 
