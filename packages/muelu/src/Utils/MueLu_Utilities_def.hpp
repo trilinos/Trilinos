@@ -324,14 +324,16 @@ t0 = MPI_Wtime();
 #endif
     }
 
+    RCP<Teuchos::ParameterList> params = rcp(new ParameterList());
+    params->set("Optimize Storage",doOptimizeStorage);
     if (!doOptimizeStorage) {
       C->fillComplete((transposeB) ? B->getRangeMap() : B->getDomainMap(),
                       (transposeA) ? A->getDomainMap() : A->getRangeMap(),
-                      Xpetra::DoNotOptimizeStorage);
+                      params);
     } else {
       C->fillComplete((transposeB) ? B->getRangeMap() : B->getDomainMap(),
                       (transposeA) ? A->getDomainMap() : A->getRangeMap(),
-                      Xpetra::DoOptimizeStorage);
+                      params);
     }
 
     ///////////////////////// EXPERIMENTAL
@@ -1010,10 +1012,12 @@ if (mypid == 0)
       if (doFillComplete) {
         if (domainMap == Teuchos::null || rangeMap == Teuchos::null)
           throw(Exceptions::RuntimeError("In Utils::Scaling: cannot fillComplete because the domain and/or range map hasn't been defined"));
+        RCP<Teuchos::ParameterList> params = rcp(new ParameterList());
+        params->set("Optimize Storage",doOptimizeStorage);
         if (doOptimizeStorage)
-          Op->fillComplete(Op->getDomainMap(),Op->getRangeMap(),Xpetra::DoOptimizeStorage);
+          Op->fillComplete(Op->getDomainMap(),Op->getRangeMap(),params);
         else
-          Op->fillComplete(Op->getDomainMap(),Op->getRangeMap(),Xpetra::DoNotOptimizeStorage);
+          Op->fillComplete(Op->getDomainMap(),Op->getRangeMap(),params);
       }
 #else
       throw(Exceptions::RuntimeError("Matrix scaling is not possible because Tpetra has not been enabled."));

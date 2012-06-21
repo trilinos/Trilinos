@@ -149,7 +149,7 @@ namespace Xpetra {
     \post <tt>isFillComplete() == true<tt>
     \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
     */ 
-    virtual void fillComplete(const RCP<const Map> &domainMap, const RCP<const Map> &rangeMap, OptimizeOption os = DoOptimizeStorage) =0;
+    virtual void fillComplete(const RCP<const Map> &domainMap, const RCP<const Map> &rangeMap, const RCP<ParameterList> &params = null) =0;
 
     /*! \brief Signal that data entry is complete. 
 
@@ -165,7 +165,7 @@ namespace Xpetra {
     \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
     */
     //TODO : Get ride of "Tpetra"::OptimizeOption
-    virtual void fillComplete(Xpetra::OptimizeOption os = Xpetra::DoOptimizeStorage) =0;
+    virtual void fillComplete(const RCP<ParameterList> &params=null) =0;
 
     //@}
 
