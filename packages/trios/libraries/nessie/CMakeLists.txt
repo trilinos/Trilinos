@@ -67,7 +67,7 @@ APPEND_SET(SOURCES
   ${CMAKE_CURRENT_BINARY_DIR}/Trios_nnti_xdr.c
   ${CMAKE_CURRENT_BINARY_DIR}/Trios_nssi_types_xdr.c
   ${CMAKE_CURRENT_BINARY_DIR}/nssi_service_args.c
-  common/fprint_types.c
+  common/fprint_types.cpp
   common/nnti.c
   common/nnti_utils.c
   common/nssi_common.cpp
