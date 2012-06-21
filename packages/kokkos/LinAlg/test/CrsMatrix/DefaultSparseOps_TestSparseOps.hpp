@@ -49,6 +49,7 @@
 #include <Teuchos_BLAS.hpp>
 #include <Teuchos_LAPACK.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
+#include <Teuchos_TimeMonitor.hpp>
 #include <Kokkos_MultiVector.hpp>
 #include <Kokkos_DefaultArithmetic.hpp>
 
@@ -75,6 +76,122 @@ public:
 
   typedef typename sparse_ops_type::template graph<ordinal_type, node_type>::graph_type graph_type;
   typedef typename sparse_ops_type::template matrix<scalar_type, ordinal_type, node_type>::matrix_type matrix_type;
+
+  /// \name Dense matrix, BLAS, and LAPACK typedefs
+  ///
+  /// Teuchos' BLAS and LAPACK wrappers do accept an "OrdinalType"
+  /// template parameter, but they only work for OrdinalType=int
+  /// (unless you've built your BLAS and LAPACK with 64-bit integer
+  /// indices).  Thus, in turn, we use int for SerialDenseMatrix's
+  /// ordinal_type for compatibility.
+  ///
+  /// The BLAS and LAPACK typedefs are private because they are
+  /// implementation details.
+  //@{
+
+  //! The type of local dense matrices in column-major order.
+  typedef Teuchos::SerialDenseMatrix<int, scalar_type> dense_matrix_type;
+
+private:
+  //! The BLAS wrapper type.
+  typedef Teuchos::BLAS<int, scalar_type> blas_type;
+  //! The LAPACK wrapper type.
+  typedef Teuchos::LAPACK<int, scalar_type> lapack_type;
+
+public:
+  //@}
+
+  /// \brief Compute dense test matrices for sparse triangular solve.
+  ///
+  /// To make nonsingular lower and upper triangular matrices for
+  /// testing sparse triangular solve, we start with a dense random
+  /// matrix A and compute its LU factorization using LAPACK.  Random
+  /// matrices tend to be well conditioned, so the L and U factors
+  /// will also be well conditioned.  We output the dense matrices
+  /// here so that you can test sparse routines by comparing their
+  /// results with those of using the BLAS and LAPACK.
+  ///
+  /// \param A_out [out] A numRows by numRows random matrix, of which
+  ///   L_out, U_out is the LU factorization with permutation pivots.
+  /// \param L_out [out] The L factor in the LU factorization of
+  ///   A_out.
+  /// \param U_out [out] The U factor in the LU factorization of
+  ///   A_out.
+  /// \param pivots [out] The permutation array in the LU
+  ///   factorization of A_out.  Row i in the matrix A was
+  ///   interchanged with row pivots[i].
+  /// \param numRows [in] The number of rows and columns in A_out.
+  ///
+  /// If you're solving AX=B using the LU factorization, you first
+  /// have to apply the row permutation to B.  You can do this in the
+  /// same way that the reference _GETRS implementation does, using
+  /// the _LASWP BLAS routine.  Here's how the Fortran calls it (where
+  /// _ is replaced by D for the special case of scalar_type=double):
+  ///
+  /// CALL DLASWP( NRHS, B, LDB, 1, N, IPIV, 1 )
+  ///
+  /// Then, after the triangular solves, apply the reverse-direction
+  /// permutation (last parameter is -1 instead of 1) to the solution
+  /// vector X:
+  ///
+  /// CALL DLASWP( NRHS, X, LDX, 1, N, IPIV, -1 )
+  void
+  makeDenseTestProblem (Teuchos::RCP<dense_matrix_type>& A_out,
+                        Teuchos::RCP<dense_matrix_type>& L_out,
+                        Teuchos::RCP<dense_matrix_type>& U_out,
+                        Teuchos::Array<ordinal_type>& pivots,
+                        const ordinal_type numRows)
+  {
+    using Teuchos::Array;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    typedef dense_matrix_type MT;
+
+    const ordinal_type N = numRows;
+    RCP<MT> A = rcp (new MT (N, N));
+    A->random ();
+    // Keep a copy of A, since LAPACK's LU factorization overwrites
+    // its input matrix with the L and U factors.
+    RCP<MT> A_copy = rcp (new MT (*A));
+
+    // Compute the LU factorization of A.
+    lapack_type lapack;
+    int info = 0;
+    Array<ordinal_type> ipiv (N);
+    lapack.GETRF (N, N, A.values (), A.stride (), ipiv.getRawPtr (), &info);
+    TEUCHOS_TEST_FOR_EXCEPTION(info < 0, std::logic_error, "LAPACK's _GETRF "
+      "routine reported that its " << (-info) << "-th argument had an illegal "
+      "value.  This probably indicates a bug in the way Kokkos is calling the "
+      "routine.  Please report this bug to the Kokkos developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(info > 0, std::runtime_error, "LAPACK's _GETRF "
+      "routine reported that the " << info << "-th diagonal element of the U "
+      "factor is exactly zero.  This indicates that the matrix A is singular.  "
+      "A is pseudorandom, so it is possible but unlikely that it actually is "
+      "singular.  More likely is that the pseudorandom number generator isn't "
+      "working correctly.  This is not a Kokkos bug, but it could be a Teuchos "
+      "bug, since Teuchos is invoking the generator.");
+
+    // Create L and U, and copy out the lower resp. upper triangle of
+    // A into L resp. U.
+    RCP<MT> L = rcp (new MT (N, N));
+    RCP<MT> U = rcp (new MT (N, N));
+    for (ordinal_type i = 0; i < N; ++i) {
+      for (ordinal_type j = 0; j <= i; ++j) {
+        U(i,j) = A(i,j);
+      }
+      for (ordinal_type j = i+1; j < N; ++j) {
+        L(i,j) = A(i,j);
+      }
+    }
+
+    // "Commit" the outputs.
+    pivots.resize (N);
+    std::copy (ipiv.begin (), ipiv.end (), pivots.begin ());
+    A_out = A_copy; // Return the "original" A, before the factorization.
+    L_out = L;
+    U_out = U;
+  }
+
 
   /// \brief Read a CSR-format sparse matrix from a Matrix Market file.
   ///
@@ -401,7 +518,7 @@ public:
     typedef Kokkos::MultiVector<scalar_type, node_type> MV;
     typedef Kokkos::DefaultArithmetic<MV> MVT;
     // Teuchos' BLAS and LAPACK wrappers do accept an "OrdinalType"
-    // template parameter, but only work for int (unless you've build
+    // template parameter, but only work for int (unless you've built
     // your BLAS and LAPACK with 64-bit integer indices).  Thus, in
     // turn, we use int for SDM's ordinal_type for compatibility.
     typedef Teuchos::SerialDenseMatrix<int, scalar_type> dense_matrix_type;
@@ -539,27 +656,255 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(! success, std::runtime_error,
       "One or more sparse ops tests failed.  Here is the full report:\n"
       << err.str());
+  }
 
-    const bool alternateTest = false;
-    if (alternateTest) {
-      dense_matrix_type A (N, N);
-      A.random ();
 
-      lapack_type lapack;
-      int info = 0;
-      Array<int> ipiv (N);
-      lapack.GETRF (N, N, A.values (), A.stride (), ipiv.getRawPtr (), &info);
-      TEUCHOS_TEST_FOR_EXCEPTION(info < 0, std::logic_error, "LAPACK's _GETRF "
-        "routine reported that its " << (-info) << "-th argument had an illegal "
-        "value.  This probably indicates a bug in the way Kokkos is calling the "
-        "routine.  Please report this bug to the Kokkos developers.");
-      TEUCHOS_TEST_FOR_EXCEPTION(info > 0, std::runtime_error, "LAPACK's _GETRF "
-        "routine reported that the " << info << "-th diagonal element of the U "
-        "factor is exactly zero.  This indicates that the matrix A is singular.  "
-        "A is pseudorandom, so it is possible but unlikely that it actually is "
-        "singular.  More likely is that the pseudorandom number generator isn't "
-        "working correctly.  This is not a Kokkos bug, but it could be a Teuchos "
-        "bug, since Teuchos is invoking the generator.");
+  /// \brief Benchmark sparse matrix-multivector multiply.
+  ///
+  /// Benchmark all variations of sparse matrix-multivector multiply
+  /// as implemented by SparseOpsType.  This includes no transpose,
+  /// transpose, and conjugate transpose (if scalar_type is complex),
+  /// in both the overwrite (Y = A*X) and update (Y = Y - A*X) forms.
+  ///
+  /// We save benchmark results to the output std::vector, but they
+  /// are also stored by Teuchos::TimeMonitor, so that you can display
+  /// them using TimeMonitor::report() or TimeMonitor::summarize().
+  ///
+  /// \param results [out] Pairs of (benchmark name, elapsed time for
+  ///   that benchmark over all trials).
+  /// \param ops [in] The sparse kernels instance to benchmark.
+  /// \param numRows [in] Number of rows in the linear operator
+  ///   represented by ops.  We need this because SparseOpsType
+  ///   doesn't necessarily tell us.
+  /// \param numVecs [in] Number of columns in the multivectors to
+  ///   benchmark.
+  /// \param numTrials [in] Number of runs over which to measure
+  ///   elapsed time, for each benchmark.
+  void
+  benchmarkSparseMatVec (std::vector<std::pair<std::string, double> >& results,
+                         const SparseOpsType& ops,
+                         const ordinal_type numRows,
+                         const ordinal_type numVecs,
+                         const int numTrials) const
+  {
+    using Teuchos::RCP;
+    using Teuchos::Time;
+    using Teuchos::TimeMonitor;
+    typedef Teuchos::ScalarTraits<scalar_type> STS;
+    typedef Kokkos::MultiVector<scalar_type, node_type> MV;
+    typedef Kokkos::DefaultArithmetic<MV> MVT;
+
+    RCP<MV> X = makeMultiVector (ops.getNode (), numRows, numVecs);
+    RCP<MV> Y = makeMultiVector (ops.getNode (), numRows, numVecs);
+    //MVT::Init (*Y, STS::zero()); // makeMultiVector() already does this.
+    MVT::Random (*X);
+
+    const int numBenchmarks = STS::isComplex() ? 6 : 4;
+    results.reserve (numBenchmarks);
+
+    // Time sparse matrix-vector multiply, overwrite mode, no transpose.
+    {
+      const std::string timerName ("Y = A*X");
+      RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
+      if (timer.is_null ()) {
+        timer = TimeMonitor::getNewCounter (timerName);
+      }
+      {
+        TimeMonitor timeMon (*timer);
+        for (int i = 0; i < numTrials; ++i) {
+          ops.multiply (Teuchos::NO_TRANS, STS::one(), X, Y);
+        }
+      }
+      results.push_back (std::make_pair (timerName, timer->totalElapsedTime ()));
+    }
+
+    // Time sparse matrix-vector multiply, update mode, no transpose.
+    // We subtract to simulate a residual computation.
+    {
+      const std::string timerName ("Y = Y - A*X");
+      RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
+      if (timer.is_null ()) {
+        timer = TimeMonitor::getNewCounter (timerName);
+      }
+      {
+        TimeMonitor timeMon (*timer);
+        for (int i = 0; i < numTrials; ++i) {
+          ops.multiply (Teuchos::NO_TRANS, -STS::one(), X, STS::one(), Y);
+        }
+      }
+      results.push_back (std::make_pair (timerName, timer->totalElapsedTime ()));
+    }
+
+    // Time sparse matrix-vector multiply, overwrite mode, transpose.
+    {
+      const std::string timerName ("Y = A^T * X");
+      RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
+      if (timer.is_null ()) {
+        timer = TimeMonitor::getNewCounter (timerName);
+      }
+      {
+        TimeMonitor timeMon (*timer);
+        for (int i = 0; i < numTrials; ++i) {
+          ops.multiply (Teuchos::TRANS, STS::one(), X, Y);
+        }
+      }
+      results.push_back (std::make_pair (timerName, timer->totalElapsedTime ()));
+    }
+
+    // Time sparse matrix-vector multiply, update mode, transpose.
+    // We subtract to simulate a residual computation.
+    {
+      const std::string timerName ("Y = Y - A^T * X");
+      RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
+      if (timer.is_null ()) {
+        timer = TimeMonitor::getNewCounter (timerName);
+      }
+      {
+        TimeMonitor timeMon (*timer);
+        for (int i = 0; i < numTrials; ++i) {
+          ops.multiply (Teuchos::TRANS, -STS::one(), X, STS::one(), Y);
+        }
+      }
+      results.push_back (std::make_pair (timerName, timer->totalElapsedTime ()));
+    }
+
+    // Only test conjugate transpose if scalar_type is complex.
+    if (STS::isComplex) {
+      // Time sparse matrix-vector multiply, overwrite mode, conjugate transpose.
+      {
+        const std::string timerName ("Y = A^H * X");
+        RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
+        if (timer.is_null ()) {
+          timer = TimeMonitor::getNewCounter (timerName);
+        }
+        {
+          TimeMonitor timeMon (*timer);
+          for (int i = 0; i < numTrials; ++i) {
+            ops.multiply (Teuchos::CONJ_TRANS, STS::one(), X, Y);
+          }
+        }
+        results.push_back (std::make_pair (timerName, timer->totalElapsedTime ()));
+      }
+
+      // Time sparse matrix-vector multiply, update mode, conjugate transpose.
+      // We subtract to simulate a residual computation.
+      {
+        const std::string timerName ("Y = Y - A^H * X");
+        RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
+        if (timer.is_null ()) {
+          timer = TimeMonitor::getNewCounter (timerName);
+        }
+        {
+          TimeMonitor timeMon (*timer);
+          for (int i = 0; i < numTrials; ++i) {
+            ops.multiply (Teuchos::CONJ_TRANS, -STS::one(), X, STS::one(), Y);
+          }
+        }
+        results.push_back (std::make_pair (timerName, timer->totalElapsedTime ()));
+      }
+    }
+  }
+
+
+
+  /// \brief Benchmark sparse triangular solve.
+  ///
+  /// Benchmark all variations of sparse triangular solve as
+  /// implemented by SparseOpsType.  This includes the no transpose,
+  /// transpose, and conjugate transpose (if scalar_type is complex)
+  /// forms.
+  ///
+  /// \note This method only works correctly if SparseOpsType encodes
+  ///   a lower or upper triangular matrix.  Whether the sparse matrix
+  ///   is upper or lower triangular depends on ops, so if you want to
+  ///   benchmark both cases, you'll have to create two different
+  ///   SparseOpsType instances (one lower triangular, one upper
+  ///   triangular) and benchmark both.  The same goes for the
+  ///   implicit unit diagonal / explicit diagonal variants.
+  ///
+  /// We save benchmark results to the output std::vector, but they
+  /// are also stored by Teuchos::TimeMonitor, so that you can display
+  /// them using TimeMonitor::report() or TimeMonitor::summarize().
+  ///
+  /// \param results [out] Pairs of (benchmark name, elapsed time for
+  ///   that benchmark over all trials).
+  /// \param ops [in] The sparse kernels instance to benchmark.
+  /// \param numRows [in] Number of rows in the linear operator
+  ///   represented by ops.  We need this because SparseOpsType
+  ///   doesn't necessarily tell us.
+  /// \param numVecs [in] Number of columns in the multivectors to
+  ///   benchmark.
+  /// \param numTrials [in] Number of runs over which to measure
+  ///   elapsed time, for each benchmark.
+  void
+  benchmarkSparseTriSolve (std::vector<std::pair<std::string, double> >& results,
+                           const SparseOpsType& ops,
+                           const ordinal_type numRows,
+                           const ordinal_type numVecs,
+                           const int numTrials) const
+  {
+    using Teuchos::RCP;
+    using Teuchos::Time;
+    using Teuchos::TimeMonitor;
+    typedef Teuchos::ScalarTraits<scalar_type> STS;
+    typedef Kokkos::MultiVector<scalar_type, node_type> MV;
+    typedef Kokkos::DefaultArithmetic<MV> MVT;
+
+    RCP<MV> X = makeMultiVector (ops.getNode (), numRows, numVecs);
+    RCP<MV> Y = makeMultiVector (ops.getNode (), numRows, numVecs);
+    //MVT::Init (*X, STS::zero()); // makeMultiVector() already does this.
+    MVT::Random (*Y);
+
+    const int numBenchmarks = STS::isComplex() ? 6 : 4;
+    results.reserve (numBenchmarks);
+
+    // Time sparse triangular solve, no transpose.
+    {
+      const std::string timerName ("Y = A \\ X");
+      RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
+      if (timer.is_null ()) {
+        timer = TimeMonitor::getNewCounter (timerName);
+      }
+      {
+        TimeMonitor timeMon (*timer);
+        for (int i = 0; i < numTrials; ++i) {
+          ops.solve (Teuchos::NO_TRANS, STS::one(), Y, X);
+        }
+      }
+      results.push_back (std::make_pair (timerName, timer->totalElapsedTime ()));
+    }
+
+    // Time sparse triangular solve, transpose.
+    {
+      const std::string timerName ("Y = A^T \\ X");
+      RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
+      if (timer.is_null ()) {
+        timer = TimeMonitor::getNewCounter (timerName);
+      }
+      {
+        TimeMonitor timeMon (*timer);
+        for (int i = 0; i < numTrials; ++i) {
+          ops.solve (Teuchos::NO_TRANS, STS::one(), Y, X);
+        }
+      }
+      results.push_back (std::make_pair (timerName, timer->totalElapsedTime ()));
+    }
+
+    // Only test conjugate transpose if scalar_type is complex.
+    if (STS::isComplex) {
+      // Time sparse triangular solve, conjugate transpose.
+      const std::string timerName ("Y = A^H \\ X");
+      RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
+      if (timer.is_null ()) {
+        timer = TimeMonitor::getNewCounter (timerName);
+      }
+      {
+        TimeMonitor timeMon (*timer);
+        for (int i = 0; i < numTrials; ++i) {
+          ops.solve (Teuchos::NO_TRANS, STS::one(), Y, X);
+        }
+      }
+      results.push_back (std::make_pair (timerName, timer->totalElapsedTime ()));
     }
   }
 };
