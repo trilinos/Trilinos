@@ -65,10 +65,11 @@ namespace {
 
   // Values of command-line arguments.  CommandLineProcessor only
   // accepts double for floating-point values, and int for integer
-  // values.  Square root of machine precision is a generous tolerance
-  // which allows some rounding error for triangular solves.
-  double tol = STM::squareroot (STM::eps ());
+  // values.  The given tolerance allows some rounding error for
+  // triangular solves, given that the test problems we generate
+  // should be well conditioned on average.
   int N = 100;
+  double tol = 1000 * STM::eps ();
 
   // Set up the extra command-line arguments.
   TEUCHOS_STATIC_SETUP()
