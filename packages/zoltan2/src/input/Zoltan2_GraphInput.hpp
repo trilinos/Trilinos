@@ -58,7 +58,7 @@ namespace Zoltan2 {
 */
 
 template <typename User>
-  class GraphInput : public InputAdapter {
+  class GraphInput : public InputAdapter<User> {
 private:
 
 public:

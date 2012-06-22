@@ -62,7 +62,7 @@ namespace Zoltan2 {
 */
 
 template <typename User>
-  class VectorInput : public InputAdapter {
+  class VectorInput : public InputAdapter<User> {
 private:
 
 public:

@@ -64,7 +64,7 @@ namespace Zoltan2 {
 */
 
 template <typename User>
-  class MatrixInput : public InputAdapter {
+  class MatrixInput : public InputAdapter<User> {
 private:
 
 public:

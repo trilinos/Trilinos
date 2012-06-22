@@ -65,7 +65,7 @@ namespace Zoltan2 {
 */
 
 template <typename User>
-  class CoordinateInput : public InputAdapter {
+  class CoordinateInput : public InputAdapter<User> {
 
 public:
 
