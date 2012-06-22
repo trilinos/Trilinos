@@ -7,7 +7,6 @@ INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/tpetra/src)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/helpers)
 
 ADD_SUBDIRECTORIES(
-temp
 scaling
 correctness
 order
