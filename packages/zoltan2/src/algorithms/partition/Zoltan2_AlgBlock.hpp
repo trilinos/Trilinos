@@ -3,7 +3,6 @@
 
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
-#include <Zoltan2_Metric.hpp>
 #include <Zoltan2_GetParameter.hpp>
 
 #include <sstream>
@@ -211,25 +210,11 @@ void AlgBlock(
   }
 
   ////////////////////////////////////////////////////////////
-  // Compute the imbalance.
-
-  ArrayRCP<MetricValues<scalar_t> > metrics;
-  partId_t numParts;
-  partId_t numNonemptyParts;
-
-  try{
-    objectMetrics( env, problemComm, numGlobalParts, 
-      gnoPart.view(0, numGnos),  wgtList[0],
-      numParts, numNonemptyParts, metrics);
-  }
-  Z2_FORWARD_EXCEPTIONS;
-
-  ////////////////////////////////////////////////////////////
   // Done
 
   ArrayRCP<const gno_t> gnos = arcpFromArrayView(idList);
 
-  solution->setParts(gnos, gnoPart, metrics);
+  solution->setParts(gnos, gnoPart);
 
   env->debug(DETAILED_STATUS, string("Exiting AlgBlock"));
 }

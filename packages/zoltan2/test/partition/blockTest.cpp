@@ -59,6 +59,7 @@ int main(int argc, char **argv)
   adapter_t adapter(numMyIdentifiers, myIds, weightValues, weightStrides);
 
   Teuchos::ParameterList params("test parameters");
+  params.set("compute_metrics", "true");
   Teuchos::ParameterList &partitioningParams = params.sublist("partitioning");
   partitioningParams.set("num_local_parts", 1);
   partitioningParams.set("algorithm", "block");
@@ -76,7 +77,7 @@ int main(int argc, char **argv)
 
   const gno_t *idList = solution.getIdList();
   const zoltan2_partId_t *partList = solution.getPartList();
-  const scalar_t libImbalance = solution.getImbalance();
+  const scalar_t libImbalance = problem.getImbalance();
 
   for (lno_t i=0; !fail && i < numMyIdentifiers; i++){
     if (idList[i] != myIds[i])

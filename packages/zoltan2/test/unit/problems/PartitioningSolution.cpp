@@ -121,6 +121,8 @@ int main(int argc, char *argv[])
   /////////////
   // Create a solution object with part size information, and check it.
 
+  bool doMetrics = true;
+
   RCP<Zoltan2::PartitioningSolution<idInput_t> > solution;
 
   try{
@@ -130,7 +132,8 @@ int main(int argc, char *argv[])
       idMap,              // problem identifiers (global Ids, local Ids)
       weightDim,                  // weight dimension
       ids.view(0,weightDim),      // part ids
-      sizes.view(0,weightDim)));  // part sizes
+      sizes.view(0,weightDim)),  // part sizes
+      doMetrics);
   }
   catch (std::exception &e){
     fail=1;
@@ -183,22 +186,8 @@ int main(int argc, char *argv[])
   }
   ArrayRCP<partId_t> partList = arcp(partAssignments, 0, numIdsPerProc);
 
-  // empty metric values
-  int numMetrics = 1;
-  if (weightDim > 1)
-    numMetrics += (weightDim+1);
-  else
-    numMetrics += 1;
-  
-  ArrayRCP<Zoltan2::MetricValues<scalar_t> > metrics = 
-    arcp(new Zoltan2::MetricValues<scalar_t> [numMetrics], 0, numMetrics);
-
-  for (int i=0; i < numMetrics; i++){
-    metrics[i].setMaxImbalance(1.1);
-  }
-
   try{
-    solution->setParts(gidArray, partList, metrics); 
+    solution->setParts(gidArray, partList);
   }
   catch (std::exception &e){
     fail=10;
@@ -232,12 +221,6 @@ int main(int argc, char *argv[])
   }
 
   double epsilon = 10e-6;
-
-  if (!fail){
-    const scalar_t val = solution->getImbalance();
-    if (val < 1.1-epsilon || val > 1.1+epsilon)
-      fail = 14;
-  }
 
   gfail = globalFail(comm, fail);
   if (gfail){

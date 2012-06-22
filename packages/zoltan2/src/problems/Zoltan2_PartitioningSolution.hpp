@@ -16,7 +16,6 @@
 
 #include <Zoltan2_IdentifierMap.hpp>
 #include <Zoltan2_Solution.hpp>
-#include <Zoltan2_Metric.hpp>
 #include <Zoltan2_GetParameter.hpp>
 
 #include <cmath>
@@ -31,7 +30,9 @@ namespace Zoltan2 {
     written to by an algorithm, and may be read by the user or by
     a data migration routine in an input adapter.
     
-    \todo handle more metrics
+    \todo Problem computes metrics using the Solution.  Should
+  Solution have a pointer to the metrics, since it may persist after
+  the Problem is gone?
     \todo save an RCB tree, so it can be used in repartitioning, and
                 supplied to the caller.
     \todo doxyfy the comments in this file.
@@ -59,8 +60,8 @@ public:
  *    \param comm the communicator for the problem associated with 
  *             this solution
  *    \param idMap  the IdentifierMap corresponding to the solution
- *    \param userWeightDim  the number of weights supplied by the application
- *                         for each object.
+ *    \param userWeightDim  the number of weights supplied by the 
+ *         application for each object.
  *
  *   It is possible that part sizes were supplied on other processes,
  *   so this constructor does do a check to see if part sizes need
@@ -78,10 +79,11 @@ public:
  *   The rest of the Solution methods do not.
  *
  *    \param env the environment for the application
- *    \param comm the communicator for the problem associated with this solution
+ *    \param comm the communicator for the problem associated with 
+ *                        this solution
  *    \param idMap  the IdentifierMap corresponding to the solution
- *    \param userWeightDim  the number of weights supplied by the application
- *                         for each object.
+ *    \param userWeightDim  the number of weights supplied 
+ *                         by the application
  *    \param reqPartIds  reqPartIds[i] is a list of
  *          of part numbers for weight dimension i.
  *    \param reqPartSizes  reqPartSizes[i] is the list
@@ -104,7 +106,7 @@ public:
     RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<user_t> > &idMap,
     int userWeightDim, ArrayView<ArrayRCP<partId_t> > reqPartIds,
-    ArrayView<ArrayRCP<scalar_t> > reqPartSizes );
+    ArrayView<ArrayRCP<scalar_t> > reqPartSizes);
   
   ////////////////////////////////////////////////////////////////////
   // Information that the algorithm may wish to query.
@@ -229,8 +231,6 @@ public:
    *      should be in partList[i].  The partList is allocated and written
    *      by the algorithm.
    *
-   *   \param metrics An array of named MetricValues objects.
-   *
    * The global numbers supplied by the algorithm do not need to be
    * those representing the global Ids of that process.  But
    * all global numbers should be assigned a part by exactly one
@@ -239,14 +239,10 @@ public:
    * setParts() must be called by all processes in the problem, as
    * the part for each global identifier supplied by each process
    * in its InputAdapter is found and saved in this PartitioningSolution.
-   *
-   * TODO - metrics are only computed if the user sets a parameter 
-   * indicating that they want metrics.  Metrics will be calculated
-   * in the Solution, not in the algorithm.
    */
   
-  void setParts(ArrayRCP<const gno_t> &gnoList, ArrayRCP<partId_t> &partList,
-    ArrayRCP<MetricValues<scalar_t> > &metrics);
+  void setParts(ArrayRCP<const gno_t> &gnoList, 
+    ArrayRCP<partId_t> &partList);
   
   ////////////////////////////////////////////////////////////////////
   // Results that may be queried by the user, by migration methods,
@@ -311,40 +307,6 @@ public:
       ArrayRCP<Extra> &xtraInfo,
       ArrayRCP<typename Adapter::gid_t> &imports,
       ArrayRCP<Extra> &newXtraInfo) const;
-
-  /*! \brief Returns the imbalance of the solution.
-   *      \todo add more metrics
-   */
-  const scalar_t getImbalance() const { 
-    size_t len = qualityMetrics_.size();
-    if (len == 1)
-      return qualityMetrics_[0].getMaxImbalance();   // object counts
-    else if (len > 1)
-      return qualityMetrics_[1].getMaxImbalance();   // normed object weights
-    else
-      return 0.0;
-  }
-
-  /*! \brief Get the array of metrics
-   *
-   *   \todo We need a better interface for users to this data.
-   */
-  const ArrayRCP<MetricValues<scalar_t> > &getMetrics() const { 
-    return qualityMetrics_;
-  }
-
-  /*! \brief Print the array of metrics
-   *   \param os the output stream for the report.
-   */
-  void printMetrics(ostream &os) const {
-    size_t len = qualityMetrics_.size();
-    if (len)
-      Zoltan2::printMetrics<scalar_t>(os, 
-        nGlobalParts_, nGlobalParts_, nGlobalParts_ - nEmptyParts_,
-        qualityMetrics_.view(0, len));
-    else
-      os << "No metrics available." << endl;
-  };
 
   /*! \brief Get the parts belonging to a process.
    *  \param procId a process rank
@@ -493,7 +455,6 @@ private:
   ArrayRCP<const gid_t>  gids_;   // User's global IDs 
   ArrayRCP<partId_t> parts_;      // part number assigned to gids_[i]
 
-  ArrayRCP<MetricValues<scalar_t> > qualityMetrics_;
   bool haveSolution_;
 
   ////////////////////////////////////////////////////////////////
@@ -516,7 +477,7 @@ template <typename Adapter>
       nGlobalParts_(0), nEmptyParts_(0), nLocalParts_(0), weightDim_(),
       onePartPerProc_(false), partDist_(), procDist_(), 
       pSizeUniform_(), pCompactIndex_(), pSize_(),
-      gids_(), parts_(), qualityMetrics_(), haveSolution_(false), procs_()
+      gids_(), parts_(), haveSolution_(false), procs_()
 {
   weightDim_ = (userWeightDim ? userWeightDim : 1); 
 
@@ -546,7 +507,7 @@ template <typename Adapter>
       nGlobalParts_(0), nEmptyParts_(0), nLocalParts_(0), weightDim_(),
       onePartPerProc_(false), partDist_(), procDist_(), 
       pSizeUniform_(), pCompactIndex_(), pSize_(),
-      gids_(), parts_(), qualityMetrics_(), haveSolution_(false), procs_()
+      gids_(), parts_(), haveSolution_(false), procs_()
 {
   weightDim_ = (userWeightDim ? userWeightDim : 1); 
 
@@ -1095,16 +1056,11 @@ template <typename Adapter>
 
 template <typename Adapter>
   void PartitioningSolution<Adapter>::setParts(
-    ArrayRCP<const gno_t> &gnoList, ArrayRCP<partId_t> &partList,
-    ArrayRCP<MetricValues<scalar_t> > &metrics) 
+    ArrayRCP<const gno_t> &gnoList, ArrayRCP<partId_t> &partList)
 {
   env_->debug(DETAILED_STATUS, "Entering setParts");
-  qualityMetrics_ = metrics;
 
   // We'll flag parts that are used, for calculation of nEmptyParts_.
-  // TODO: Add a parameter where user indicates they will want
-  //   metrics.   And if that is not specified, we can skip
-  //   counting empty parts.
 
   char *inUse = new char [nGlobalParts_];
   env_->localMemoryAssertion(__FILE__, __LINE__, nGlobalParts_, inUse);

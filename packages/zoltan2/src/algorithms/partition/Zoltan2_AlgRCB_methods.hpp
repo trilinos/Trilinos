@@ -13,6 +13,7 @@
 
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_XpetraTraits.hpp>
+#include <Zoltan2_Metric.hpp>
 
 #include <Tpetra_Vector.hpp>
 

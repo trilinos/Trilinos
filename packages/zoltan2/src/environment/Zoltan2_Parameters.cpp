@@ -423,6 +423,7 @@ void createAllParameters(Teuchos::ParameterList &pList)
   anyNumValidatorP->printDoc("random seed\n", docString);
 
   pList.set<string>(parameterName, "0.5", docString.str(), anyNumValidatorP);
+
   ///////////////////////////////////////////////////////////
   // LEVEL: Sub list, ordering problem parameters
   ///////////////////////////////////////////////////////////
@@ -463,6 +464,19 @@ void createAllParameters(Teuchos::ParameterList &pList)
 
   ParameterList &partitioning = pList.sublist("partitioning", false, 
     string("Partitioning problem parameters"));
+
+ ////////// topLevel/partitioning/compute_metrics
+  parameterName = string("compute_metrics");
+
+  str2intValidatorP =
+    rcp(new str2intValidator(yesNoStrings, yesNoIntegrals, parameterName));
+
+  docString.str("");
+  str2intValidatorP->printDoc("Compute metrics after computing solution\n",
+    docString);
+
+  partitioning.set<string>(parameterName, "no", docString.str(),
+    str2intValidatorP);
 
   ////////// topLevel/partitioning/topology
   parameterName = string("topology");

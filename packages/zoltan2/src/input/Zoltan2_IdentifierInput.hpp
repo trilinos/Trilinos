@@ -63,7 +63,7 @@ namespace Zoltan2 {
 */
 
 template <typename User>
-  class IdentifierInput : public InputAdapter {
+  class IdentifierInput : public InputAdapter<User> {
 
 public:
 

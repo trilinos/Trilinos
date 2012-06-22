@@ -305,14 +305,9 @@ void AlgPTScotch(
     for (size_t i = 0; i < nVtx; i++) partList[i] = partloctab[i];
   }
 
-  // TODO compute the metrics using objectMetrics call
-
-  ArrayRCP<MetricValues<scalar_t> > metrics =
-    arcp(new MetricValues<scalar_t> [2], 0, 2);
-
   ArrayRCP<const gno_t> gnos = arcpFromArrayView(vtxID);
 
-  solution->setParts(gnos, partList, metrics);
+  solution->setParts(gnos, partList);
 
   env->memory("After creating solution", "Kbytes", getProcessKilobytes());
 
