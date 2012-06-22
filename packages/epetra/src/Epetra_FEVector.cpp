@@ -372,7 +372,12 @@ int Epetra_FEVector::GlobalAssemble(Epetra_CombineMode mode,
 
   EPETRA_CHK_ERR( Export(nonlocalVector, *exporter_, mode) );
 
-  zeroNonlocalData();
+  if (reuse_map_and_exporter) {
+    zeroNonlocalData();
+  }
+  else {
+    destroyNonlocalData();
+  }
 
   return(0);
 }
