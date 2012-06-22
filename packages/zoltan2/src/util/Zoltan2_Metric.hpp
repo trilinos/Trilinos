@@ -242,16 +242,6 @@ template <typename scalar_t>
  *          which weights should be computed.
  * \param parts the part Id for each object, which may range 
  *         from 0 to one less than \c numberOfParts
- *   \param partNumMin   If only a range of part IDs are to be counted,
- *          then \c partNumMin is the lowest part ID to count.  
- *          If \c partNumMin
- *          and \c partNumMax are the same, then all part IDs present 
- *          in the \c part list are counted.
- *   \param partNumMax   If only a range of part IDs are to be counted,
- *          then \c partNumMax is the highest part ID to count.
- *          If \c partNumMin
- *          and \c partNumMax are the same, then all part IDs present 
- *          in the \c part list are counted.
  * \param vwgts \c vwgts[w] is the StridedData object 
  *    representing weight dimension
  *    \c w.  vwgts[w][i] is the \c w'th weight for object \c i.
@@ -268,8 +258,6 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
     const RCP<const Environment> &env,
     int numberOfParts,
     const ArrayView<const pnum_t> &parts,
-    pnum_t partNumMin,
-    pnum_t partNumMax,
     const ArrayView<StridedData<lno_t, scalar_t> > &vwgts,
     multiCriteriaNorm mcNorm,
     scalar_t *weights)
@@ -277,7 +265,6 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
   env->localInputAssertion(__FILE__, __LINE__, "parts or weights", 
     numberOfParts > 0 && vwgts.size() > 0, BASIC_ASSERTION);
 
-  bool checkNum = (partNumMin < partNumMax);
   int numObjects = parts.size();
   int vwgtDim = vwgts.size();
 
@@ -298,15 +285,11 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
 
   if (!haveNonUniform){
     for (lno_t i=0; i < numObjects; i++){
-      if (checkNum && (parts[i] < partNumMin || parts[i] > partNumMax))
-        continue;
       weights[parts[i]]++;
     }
   }
   else if (vwgtDim == 1){
     for (lno_t i=0; i < numObjects; i++){
-      if (checkNum && (parts[i] < partNumMin || parts[i] > partNumMax))
-        continue;
       weights[parts[i]] += vwgts[0][i];
     }
   }
@@ -317,16 +300,12 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
         for (int wdim=0; wdim < vwgtDim; wdim++){
           if (vwgts[wdim].size() == 0){
             for (lno_t i=0; i < numObjects; i++){
-              if (checkNum && (parts[i] < partNumMin || parts[i] > partNumMax))
-                continue;
               weights[parts[i]]++;
             }
           }
           else{
             for (lno_t i=0; i < numObjects; i++){
-              if (checkNum && (parts[i] < partNumMin || parts[i] > partNumMax))
-                continue;
-                weights[parts[i]] += vwgts[wdim][i];
+              weights[parts[i]] += vwgts[wdim][i];
             }
           }
         }  // next weight dimension
@@ -335,8 +314,6 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
       case normBalanceTotalMaximum:   /*!< 2-norm = sqrt of sum of squares */
         if (!haveUniform){
           for (lno_t i=0; i < numObjects; i++){
-            if (checkNum && (parts[i] < partNumMin || parts[i] > partNumMax))
-              continue;
             scalar_t ssum = 0;
             for (int wdim=0; wdim < vwgtDim; wdim++)
               ssum += (vwgts[wdim][i] * vwgts[wdim][i]);
@@ -350,8 +327,6 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
               uniformFactor++;
               
           for (lno_t i=0; i < numObjects; i++){
-            if (checkNum && (parts[i] < partNumMin || parts[i] > partNumMax))
-              continue;
             scalar_t ssum = 0;
             for (int wdim=0; wdim < vwgtDim; wdim++){
               if (vwgts[wdim].size() > 0)
@@ -368,8 +343,6 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
         if (!haveUniform){
 
           for (lno_t i=0; i < numObjects; i++){
-            if (checkNum && (parts[i] < partNumMin || parts[i] > partNumMax))
-              continue;
             scalar_t max = 0;
             for (int wdim=0; wdim < vwgtDim; wdim++)
               if (vwgts[wdim][i] > max)
@@ -380,8 +353,6 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
         else{
 
           for (lno_t i=0; i < numObjects; i++){
-            if (checkNum && (parts[i] < partNumMin || parts[i] > partNumMax))
-              continue;
             scalar_t max = 1.0;
             for (int wdim=0; wdim < vwgtDim; wdim++)
               if (vwgts[wdim].size() > 0 && vwgts[wdim][i] > max)
@@ -404,12 +375,6 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
  *   \param env   Environment for error handling
  *   \param comm   communicator
  *   \param part   \c part[i] is the part ID for local object \c i
- *   \param partNumMin   If only a range of part IDs are to be counted,
- *          then \c partNumMin is the lowest part ID to count.  
- *          If <tt> partNumMin > partNumMax </tt> then all parts are counted.
- *   \param partNumMax   If only a range of part IDs are to be counted,
- *          then \c partNumMax is the highest part ID to count.
- *          If <tt> partNumMin > partNumMax </tt> then all parts are counted.
  *   \param vwgts  \c vwgts[w] is the StridedData object 
  *       representing weight dimension \c w. The weight dimension
  *       (which must be at least one) is taken to be \c vwgts.size().  
@@ -453,8 +418,6 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm, 
     const ArrayView<const pnum_t> &part, 
-    pnum_t partNumMin,
-    pnum_t partNumMax,
     const ArrayView<StridedData<lno_t, scalar_t> > &vwgts,
     multiCriteriaNorm mcNorm,
     partId_t &numParts, 
@@ -483,8 +446,6 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
 
   metrics = metricArray;
 
-  bool checkNum = (partNumMin <= partNumMax);
-
   //////////////////////////////////////////////////////////
   // Figure out the global number of parts in use.
   // Verify vertex weight dim is the same everywhere.
@@ -494,18 +455,8 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
   localNum[0] = static_cast<partId_t>(vwgtDim);  
   localNum[1] = 0;
 
-  if (!checkNum){
-    for (lno_t i=0; i < localNumObj; i++)
-      if (part[i] > localNum[1]) localNum[1] = part[i];
-  }
-  else{
-    for (lno_t i=0; i < localNumObj; i++){
-      if (part[i] < partNumMin || part[i] > partNumMax)
-        continue;
-      if (part[i] > localNum[1]) 
-        localNum[1] = part[i];
-    }
-  }
+  for (lno_t i=0; i < localNumObj; i++)
+    if (part[i] > localNum[1]) localNum[1] = part[i];
 
   try{
     reduceAll<int, partId_t>(*comm, Teuchos::REDUCE_MAX, 2, 
@@ -533,22 +484,15 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
 
   scalar_t *obj = localBuf;              // # of objects
 
-  if (!checkNum){
-    for (lno_t i=0; i < localNumObj; i++)
-      obj[part[i]]++;
-  }
-  else{
-    for (lno_t i=0; i < localNumObj; i++)
-      if (part[i] >= partNumMin && part[i] <= partNumMax)
-        obj[part[i]]++;
-  }
+  for (lno_t i=0; i < localNumObj; i++)
+    obj[part[i]]++;
 
   if (numMetrics > 1){
 
     scalar_t *wgt = localBuf + nparts; // single normed weight
     try{
       normedPartWeights<scalar_t, pnum_t, lno_t>(env, nparts, 
-        part, partNumMin, partNumMax, vwgts, mcNorm, wgt);
+        part, vwgts, mcNorm, wgt);
     }
     Z2_FORWARD_EXCEPTIONS
   
@@ -556,15 +500,8 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
       wgt += nparts;         // individual weights
       for (int vdim = 0; vdim < vwgtDim; vdim++){
         if (vwgts[vdim].size()){
-          if (!checkNum){
-            for (lno_t i=0; i < localNumObj; i++)
-              wgt[part[i]] += vwgts[vdim][i];
-          }
-          else{
-            for (lno_t i=0; i < localNumObj; i++)
-              if (part[i] >= partNumMin && part[i] <= partNumMax)
-                wgt[part[i]] += vwgts[vdim][i];
-          }
+         for (lno_t i=0; i < localNumObj; i++)
+           wgt[part[i]] += vwgts[vdim][i];
         }
         else{  // uniform weights
           for (int p=0; p < nparts; p++)
@@ -998,15 +935,18 @@ template <typename Adapter>
 
   // Relative part sizes, if any, assigned to the parts.
 
+  size_t partListLen = solution->getLocalNumberOfParts();
+  scalar_t *psizes = NULL;
+
   ArrayRCP<ArrayRCP<scalar_t> > partSizes(weightDim);
   for (int dim=0; dim < weightDim; dim++){
-    if (solution->criteriaHasUniformPartSizes(dim) != false){
-      scalar_t *psizes = new scalar_t [numParts];
+    if (solution->criteriaHasUniformPartSizes(dim) != true){
+      psizes = new scalar_t [partListLen];
       env->localMemoryAssertion(__FILE__, __LINE__, numParts, psizes);
-      for (partId_t i=0; i < numParts; i++){
+      for (partId_t i=0; i < partListLen; i++){
         psizes[i] = solution->getCriteriaPartSize(dim, i);
       }
-      partSizes[dim] = arcp(psizes, 0, numParts, true);
+      partSizes[dim] = arcp(psizes, 0, partListLen, true);
     }
   }
 
@@ -1018,7 +958,7 @@ template <typename Adapter>
 
   try{
     globalSumsByPart<scalar_t, partId_t, lno_t>(env, comm, 
-      partArray, 0, 0, weights.view(0, weightDim), mcNorm,
+      partArray, weights.view(0, weightDim), mcNorm,
       numParts, numNonemptyParts, metrics, globalSums);
   }
   Z2_FORWARD_EXCEPTIONS
@@ -1029,9 +969,12 @@ template <typename Adapter>
 
   scalar_t *objCount  = globalSums.getRawPtr();
   scalar_t min, max, avg;
+  psizes=NULL;
 
-  computeImbalances<scalar_t>(numParts, targetNumParts, 
-      partSizes[0].getRawPtr(),
+  if (weightDim > 0 && partSizes[0].size() > 0)
+    psizes = partSizes[0].getRawPtr(),
+
+  computeImbalances<scalar_t>(numParts, targetNumParts, psizes,
       metrics[0].getGlobalSum(), objCount, 
       min, max, avg);
 
@@ -1064,11 +1007,13 @@ template <typename Adapter>
 
     for (int vdim=0; vdim < weightDim; vdim++){
       wgts += numParts;
+      psizes = NULL;
 
-      computeImbalances<scalar_t>(numParts, targetNumParts, 
-        partSizes[vdim].getRawPtr(),
-        metrics[next].getGlobalSum(), wgts,
-        min, max, avg);
+      if (partSizes[vdim].size() > 0)
+         psizes = partSizes[vdim].getRawPtr();
+       
+      computeImbalances<scalar_t>(numParts, targetNumParts, psizes,
+        metrics[next].getGlobalSum(), wgts, min, max, avg);
 
       metrics[next].setMinImbalance(1.0 + min);
       metrics[next].setMaxImbalance(1.0 + max);

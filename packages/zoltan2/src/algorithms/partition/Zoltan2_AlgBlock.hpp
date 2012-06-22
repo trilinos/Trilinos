@@ -127,7 +127,7 @@ void AlgBlock(
 
   size_t numGlobalParts = solution->getGlobalNumberOfParts();
 
-  scalar_t numLocalParts = solution->getLocalNumberOfParts();
+  size_t numLocalParts = solution->getLocalNumberOfParts();
   if (numLocalParts != 1){
   }
   

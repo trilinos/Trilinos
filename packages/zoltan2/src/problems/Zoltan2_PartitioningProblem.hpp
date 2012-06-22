@@ -104,13 +104,17 @@ public:
   };
 
   /*! \brief Returns the imbalance of the solution.
+   *   \param dim If there are multiple weights per object,
+   *      specify the dimension for which the imbalance
+   *      is desired, ranging from zero to one less then
+   *     number of weights per object. 
    *   Imbalance was only computed if user requested
    *   metrics with a parameter.
    */
-  const scalar_t getImbalance() const {
+  const scalar_t getImbalance(int dim=0) const {
     scalar_t imb = 0;
     if (!metrics_.is_null())
-      metrics_->getObjectWeightImbalance(imb);
+      metrics_->getWeightImbalance(imb, dim);
 
     return imb;
   }
@@ -580,7 +584,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   // Did the user ask for computation of quality metrics?
 
   int yesNo;
-  getParameterValue(pl, "compute_metrics", isSet, yesNo);
+  getParameterValue(pl, "partitioning", "compute_metrics", isSet, yesNo);
   if (isSet && yesNo)
     metricsRequested_ = true;
 

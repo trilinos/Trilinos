@@ -59,8 +59,8 @@ int main(int argc, char **argv)
   adapter_t adapter(numMyIdentifiers, myIds, weightValues, weightStrides);
 
   Teuchos::ParameterList params("test parameters");
-  params.set("compute_metrics", "true");
   Teuchos::ParameterList &partitioningParams = params.sublist("partitioning");
+  partitioningParams.set("compute_metrics", "true");
   partitioningParams.set("num_local_parts", 1);
   partitioningParams.set("algorithm", "block");
   partitioningParams.set("approach", "partition");

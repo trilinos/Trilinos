@@ -14,6 +14,7 @@
 #define _ZOLTAN2_INPUTADAPTER_HPP_
 
 #include <Zoltan2_Standards.hpp>
+#include <Zoltan2_InputTraits.hpp>
 
 namespace Zoltan2 {
 

@@ -114,12 +114,12 @@ int main(int argc, char *argv[])
     std::cout << "Imbalance tolerance is " << tolerance << std::endl;
 
   Teuchos::ParameterList params("test params");
-  params.set("compute_metrics", "true");
   params.set("debug_level", "basic_status");
   params.set("debug_procs", "0");
   params.set("error_check_level", "debug_mode_assertions");
 
   Teuchos::ParameterList &parParams = params.sublist("partitioning");
+  parParams.set("compute_metrics", "true");
   parParams.set("algorithm", "rcb");
   parParams.set("imbalance_tolerance", tolerance );
   parParams.set("num_global_parts", nprocs);

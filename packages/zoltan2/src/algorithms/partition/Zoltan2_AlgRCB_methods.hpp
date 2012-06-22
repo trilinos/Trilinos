@@ -1292,7 +1292,6 @@ template <typename mvector_t, typename Adapter>
     
       globalSumsByPart<scalar_t, unsigned char, lno_t>(
         env, comm, lrflags, 
-        0, 0,                    // says to ignore flags
         wgts.view(0, weightDim), mcnorm,
         numParts, numNonemptyParts, metrics, weightSums);
 
