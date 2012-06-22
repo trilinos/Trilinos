@@ -118,7 +118,16 @@ public:
 /*! \brief Returns the number of parts (or fraction of one part) to 
             be assigned to this process.
  */
-  scalar_t getLocalNumberOfParts() const { return nLocalParts_; }
+  size_t getLocalNumberOfParts() const { return nLocalParts_; }
+  
+/*! \brief If parts are divided across processes, return the fraction of
+             a part on this process.
+    \return zero if parts are not split across processes, approximate
+                fraction of the part otherwise.
+    \todo More useful to get number of processes owning part?  Or
+              not useful at all - remove this?
+ */
+  scalar_t getLocalFractionOfPart() const { return localFraction_; }
   
 /*! \brief Is the part-to-process distribution is one-to-one.
      \return true if Process p owns part p for all p, and false if the part
@@ -378,7 +387,8 @@ private:
 
   gno_t nGlobalParts_; // the global number of parts
   gno_t nEmptyParts_; // number of parts in solution with no objects
-  scalar_t nLocalParts_; // Fraction of one part, or number of whole parts
+  lno_t nLocalParts_; // number of parts on this process
+  scalar_t localFraction_; // approx fraction of a part on this process
   int weightDim_;      // if user has no weights, this is 1
 
   // If process p is to be assigned part p for all p, then onePartPerProc_ 
@@ -474,7 +484,8 @@ template <typename Adapter>
     RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<user_t> > &idMap, int userWeightDim)
     : env_(env), comm_(comm), idMap_(idMap),
-      nGlobalParts_(0), nEmptyParts_(0), nLocalParts_(0), weightDim_(),
+      nGlobalParts_(0), nEmptyParts_(0), nLocalParts_(0),
+      localFraction_(0),  weightDim_(),
       onePartPerProc_(false), partDist_(), procDist_(), 
       pSizeUniform_(), pCompactIndex_(), pSize_(),
       gids_(), parts_(), haveSolution_(false), procs_()
@@ -504,7 +515,8 @@ template <typename Adapter>
     ArrayView<ArrayRCP<partId_t> > reqPartIds, 
     ArrayView<ArrayRCP<scalar_t> > reqPartSizes)
     : env_(env), comm_(comm), idMap_(idMap),
-      nGlobalParts_(0), nEmptyParts_(0), nLocalParts_(0), weightDim_(),
+      nGlobalParts_(0), nEmptyParts_(0), nLocalParts_(0), 
+      localFraction_(0), weightDim_(),
       onePartPerProc_(false), partDist_(), procDist_(), 
       pSizeUniform_(), pCompactIndex_(), pSize_(),
       gids_(), parts_(), haveSolution_(false), procs_()
@@ -542,7 +554,7 @@ template <typename Adapter>
   if (isSet){
     haveLocalNumParts = 1;
     numLocal = static_cast<int>(val);
-    nLocalParts_ = gno_t(numLocal);
+    nLocalParts_ = lno_t(numLocal);
   }
 
   try{
@@ -567,7 +579,8 @@ template <typename Adapter>
       int pend = partDist_[i];
       if (rank >= pstart && rank < pend){
         int numOwners = pend - pstart;
-        nLocalParts_ = 1.0 / numOwners;
+        nLocalParts_ = 1;
+        localFraction_ = 1.0 / numOwners;
         break;
       }
       pstart = pend;
