@@ -134,6 +134,11 @@ public:
 
   int getNumberOfWeightsPerObject() const { return 0;}
 
+  size_t getObjectWeights(int dim, const scalar_t *&wgt, int &stride) const
+  {
+    return getRowWeights(dim, wgt, stride);
+  }
+
   ////////////////////////////////////////////////////
   // The MatrixInput interface.
   ////////////////////////////////////////////////////

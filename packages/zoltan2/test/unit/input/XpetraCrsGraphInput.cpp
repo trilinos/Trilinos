@@ -140,8 +140,6 @@ int main(int argc, char *argv[])
 
   int weightDim = 1;
 
-  ArrayRCP<Zoltan2::MetricValues<scalar_t> > metrics;
-
   zoltan2_partId_t *p = new zoltan2_partId_t [nvtx];
   memset(p, 0, sizeof(zoltan2_partId_t) * nvtx);
   ArrayRCP<zoltan2_partId_t> solnParts(p, 0, nvtx, true);
@@ -149,7 +147,7 @@ int main(int argc, char *argv[])
   typedef Zoltan2::XpetraCrsGraphInput<tgraph_t>  adapter_t;
   typedef Zoltan2::PartitioningSolution<adapter_t> soln_t;
   soln_t solution(env, comm, idMap, weightDim);
-  solution.setParts(gidArray, solnParts, metrics);
+  solution.setParts(gidArray, solnParts);
 
   /////////////////////////////////////////////////////////////
   // User object is Tpetra::CrsGraph

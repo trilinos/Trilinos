@@ -71,6 +71,9 @@ public:
    */ 
   virtual int getNumberOfWeightsPerObject() const = 0;
 
+  virtual size_t getObjectWeights(int dim, const scalar_t *&wgt, int &stride) 
+    const = 0;
+
   /*! \brief Returns the name of the input adapter
    */
   static string inputAdapterTypeName(InputAdapterType iaType);

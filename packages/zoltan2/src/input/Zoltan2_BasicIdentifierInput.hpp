@@ -83,6 +83,11 @@ public:
 
   int getNumberOfWeightsPerObject() const { return weights_.size();}
 
+  size_t getObjectWeights(int dim, const scalar_t *&wgt, int &stride) const
+  {
+    return getIdentifierWeights(dim, wgt, stride);
+  }
+
   ////////////////////////////////////////////////////////////////
   // The IdentifierInput interface.
   // This is the interface that would be called by a model or a problem .
