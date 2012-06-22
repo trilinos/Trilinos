@@ -528,6 +528,7 @@ public:
   /// \param node [in/out] The Kokkos Node instance.
   /// \param N [in] The number of rows (and columns) in the sparse
   ///   matrices to test.
+  /// \param numVecs [in] The number of columns in the multivectors to test.
   /// \param tol [in] Tolerance for relative errors.
   ///
   /// Test methodology
@@ -568,6 +569,7 @@ public:
   void
   testSparseOps (const Teuchos::RCP<node_type>& node,
                  const ordinal_type N,
+                 const ordinal_type numVecs,
                  const magnitude_type tol) const
   {
     using Teuchos::arcp;
@@ -590,6 +592,10 @@ public:
     typedef Kokkos::MultiVector<scalar_type, node_type> MV;
     typedef Kokkos::DefaultArithmetic<MV> MVT;
 
+    TEUCHOS_TEST_FOR_EXCEPTION(N < numVecs, std::invalid_argument,
+      "testSparseOps: Number of rows N = " << N << " < numVecs = " << numVecs
+      << ".");
+
     // A record of error messages reported by any failed tests.
     // We run _all_ the tests first, then report any failures.
     std::ostringstream err;
@@ -611,26 +617,23 @@ public:
     // Convert A_dense into a separate sparse matrix.
     RCP<SparseOpsType> A_sparse = denseToSparseOps (*A_dense, node);
 
-    // Compute a random input multivector.  Don't give it more columns
-    // than N, but do give it more than one column if the size of the
-    // matrices allows it.
-    const ordinal_type numColsX = std::min (N, 5);
-    RCP<MV> X = makeMultiVector (node, N, numColsX);
+    // Compute a random input multivector.
+    RCP<MV> X = makeMultiVector (node, N, numVecs);
     MVT::Random (*X);
 
     // We make MVs both for results and for scratch space (since the
     // BLAS' dense triangular solve overwrites its input).
-    RCP<MV> Y     = makeMultiVector (node, N, numColsX);
-    RCP<MV> Y_hat = makeMultiVector (node, N, numColsX);
-    RCP<MV> Z     = makeMultiVector (node, N, numColsX);
-    RCP<MV> Z_hat = makeMultiVector (node, N, numColsX);
-    RCP<MV> W     = makeMultiVector (node, N, numColsX);
-    RCP<MV> W_hat = makeMultiVector (node, N, numColsX);
+    RCP<MV> Y     = makeMultiVector (node, N, numVecs);
+    RCP<MV> Y_hat = makeMultiVector (node, N, numVecs);
+    RCP<MV> Z     = makeMultiVector (node, N, numVecs);
+    RCP<MV> Z_hat = makeMultiVector (node, N, numVecs);
+    RCP<MV> W     = makeMultiVector (node, N, numVecs);
+    RCP<MV> W_hat = makeMultiVector (node, N, numVecs);
 
     blas_type blas; // For dense matrix and vector operations.
 
     // Compute Y_hat := A_dense * X and Y := A_sparse * X.
-    blas.GEMM (NO_TRANS, NO_TRANS, N, numColsX, N,
+    blas.GEMM (NO_TRANS, NO_TRANS, N, numVecs, N,
                STS::one (), A_dense->values (), A_dense->stride (),
                X->getValues ().getRawPtr (), as<int> (X->getStride ()),
                STS::zero (), Y_hat->getValuesNonConst ().getRawPtr (),
@@ -647,7 +650,7 @@ public:
     }
 
     // Compute Y_hat := A_dense^T * X and Y := A_sparse^T * X.
-    blas.GEMM (TRANS, NO_TRANS, N, numColsX, N,
+    blas.GEMM (TRANS, NO_TRANS, N, numVecs, N,
                STS::one (), A_dense->values (), A_dense->stride (),
                X->getValues ().getRawPtr (), as<int> (X->getStride ()),
                STS::zero (), Y_hat->getValuesNonConst ().getRawPtr (),
@@ -665,7 +668,7 @@ public:
 
     if (STS::isComplex) {
       // Compute Y_hat := A_dense^H * X and Y := A_sparse^H * X.
-      blas.GEMM (CONJ_TRANS, NO_TRANS, N, numColsX, N,
+      blas.GEMM (CONJ_TRANS, NO_TRANS, N, numVecs, N,
                  STS::one (), A_dense->values (), A_dense->stride (),
                  X->getValues ().getRawPtr (), as<int> (X->getStride ()),
                  STS::zero (), Y_hat->getValuesNonConst ().getRawPtr (),
@@ -685,7 +688,7 @@ public:
     // Compute Z_hat := U_dense * X.  First copy X into Z_hat, since TRMM
     // overwrites its input.
     MVT::Assign (*Z_hat, (const MV) *X);
-    blas.TRMM (LEFT_SIDE, UPPER_TRI, NO_TRANS, NON_UNIT_DIAG, N, numColsX,
+    blas.TRMM (LEFT_SIDE, UPPER_TRI, NO_TRANS, NON_UNIT_DIAG, N, numVecs,
                STS::one (), U_dense->values (), U_dense->stride (),
                Z_hat->getValuesNonConst ().getRawPtr (),
                as<int> (Z_hat->getStride ()));
@@ -704,7 +707,7 @@ public:
     // Compute Y_hat := L_dense * Z_hat.  First copy Z_hat into Y_hat,
     // since TRMM overwrites its input.
     MVT::Assign (*Y_hat, (const MV) *Z_hat);
-    blas.TRMM (LEFT_SIDE, LOWER_TRI, NO_TRANS, UNIT_DIAG, N, numColsX,
+    blas.TRMM (LEFT_SIDE, LOWER_TRI, NO_TRANS, UNIT_DIAG, N, numVecs,
                STS::one (), L_dense->values (), L_dense->stride (),
                Y_hat->getValuesNonConst ().getRawPtr (),
                as<int> (Y_hat->getStride ()));
@@ -733,7 +736,7 @@ public:
 
     // Compute Z_hat = L_dense \ Y_hat.
     MVT::Assign (*Z_hat, (const MV) *Y_hat);
-    blas.TRSM (LEFT_SIDE, LOWER_TRI, NO_TRANS, UNIT_DIAG, N, numColsX,
+    blas.TRSM (LEFT_SIDE, LOWER_TRI, NO_TRANS, UNIT_DIAG, N, numVecs,
                STS::one (), L_dense->values (), L_dense->stride (),
                Z_hat->getValuesNonConst ().getRawPtr (),
                as<int> (Z_hat->getStride ()));
@@ -751,7 +754,7 @@ public:
 
     // Compute W_hat = U_dense \ Z_hat.
     MVT::Assign (*W_hat, (const MV) *Z_hat);
-    blas.TRSM (LEFT_SIDE, UPPER_TRI, NO_TRANS, NON_UNIT_DIAG, N, numColsX,
+    blas.TRSM (LEFT_SIDE, UPPER_TRI, NO_TRANS, NON_UNIT_DIAG, N, numVecs,
                STS::one (), U_dense->values (), U_dense->stride (),
                W_hat->getValuesNonConst ().getRawPtr (),
                as<int> (W_hat->getStride ()));
@@ -811,10 +814,10 @@ public:
     MVT::Random (*X);
     RCP<MV> Y = makeMultiVector (node, numRows, numVecs); // output MV.
 
-    benchmarkSparseMatVec (results, A_sparse, numRows, numVecs, numTrials);
-    benchmarkSparseTriSolve (results, L_sparse, "lower, unit diag",
+    benchmarkSparseMatVec (results, *A_sparse, numRows, numVecs, numTrials);
+    benchmarkSparseTriSolve (results, *L_sparse, "lower, unit diag",
                              numRows, numVecs, numTrials);
-    benchmarkSparseTriSolve (results, U_sparse, "upper, non unit diag",
+    benchmarkSparseTriSolve (results, *U_sparse, "upper, non unit diag",
                              numRows, numVecs, numTrials);
   }
 
@@ -859,7 +862,7 @@ private:
     //MVT::Init (*Y, STS::zero()); // makeMultiVector() already does this.
     MVT::Random (*X);
 
-    const int numBenchmarks = STS::isComplex() ? 6 : 4;
+    const int numBenchmarks = STS::isComplex ? 6 : 4;
     results.reserve (numBenchmarks);
 
     // Time sparse matrix-vector multiply, overwrite mode, no transpose.
@@ -872,7 +875,8 @@ private:
       {
         TimeMonitor timeMon (*timer);
         for (int i = 0; i < numTrials; ++i) {
-          ops.multiply (Teuchos::NO_TRANS, STS::one(), X, Y);
+          ops.template multiply<scalar_type, scalar_type> (Teuchos::NO_TRANS,
+                                                           STS::one(), *X, *Y);
         }
       }
       results.push_back (std::make_pair (timerName, timer->totalElapsedTime ()));
@@ -889,7 +893,9 @@ private:
       {
         TimeMonitor timeMon (*timer);
         for (int i = 0; i < numTrials; ++i) {
-          ops.multiply (Teuchos::NO_TRANS, -STS::one(), X, STS::one(), Y);
+          ops.template multiply<scalar_type, scalar_type> (Teuchos::NO_TRANS,
+                                                           -STS::one(), *X,
+                                                           STS::one(), *Y);
         }
       }
       results.push_back (std::make_pair (timerName, timer->totalElapsedTime ()));
@@ -905,7 +911,8 @@ private:
       {
         TimeMonitor timeMon (*timer);
         for (int i = 0; i < numTrials; ++i) {
-          ops.multiply (Teuchos::TRANS, STS::one(), X, Y);
+          ops.template multiply<scalar_type, scalar_type> (Teuchos::TRANS,
+                                                           STS::one(), *X, *Y);
         }
       }
       results.push_back (std::make_pair (timerName, timer->totalElapsedTime ()));
@@ -922,7 +929,9 @@ private:
       {
         TimeMonitor timeMon (*timer);
         for (int i = 0; i < numTrials; ++i) {
-          ops.multiply (Teuchos::TRANS, -STS::one(), X, STS::one(), Y);
+          ops.template multiply<scalar_type, scalar_type> (Teuchos::TRANS,
+                                                           -STS::one(), *X,
+                                                           STS::one(), *Y);
         }
       }
       results.push_back (std::make_pair (timerName, timer->totalElapsedTime ()));
@@ -940,7 +949,8 @@ private:
         {
           TimeMonitor timeMon (*timer);
           for (int i = 0; i < numTrials; ++i) {
-            ops.multiply (Teuchos::CONJ_TRANS, STS::one(), X, Y);
+            ops.template multiply<scalar_type, scalar_type> (Teuchos::CONJ_TRANS,
+                                                             STS::one(), *X, *Y);
           }
         }
         results.push_back (std::make_pair (timerName, timer->totalElapsedTime ()));
@@ -957,7 +967,9 @@ private:
         {
           TimeMonitor timeMon (*timer);
           for (int i = 0; i < numTrials; ++i) {
-            ops.multiply (Teuchos::CONJ_TRANS, -STS::one(), X, STS::one(), Y);
+            ops.template multiply<scalar_type, scalar_type> (Teuchos::CONJ_TRANS,
+                                                             -STS::one(), *X,
+                                                             STS::one(), *Y);
           }
         }
         results.push_back (std::make_pair (timerName, timer->totalElapsedTime ()));
@@ -1019,7 +1031,7 @@ private:
     //MVT::Init (*X, STS::zero()); // makeMultiVector() already does this.
     MVT::Random (*Y);
 
-    const int numBenchmarks = STS::isComplex() ? 6 : 4;
+    const int numBenchmarks = STS::isComplex ? 6 : 4;
     results.reserve (numBenchmarks);
 
     // Time sparse triangular solve, no transpose.
@@ -1032,7 +1044,8 @@ private:
       {
         TimeMonitor timeMon (*timer);
         for (int i = 0; i < numTrials; ++i) {
-          ops.solve (Teuchos::NO_TRANS, STS::one(), Y, X);
+          ops.template solve<scalar_type, scalar_type> (Teuchos::NO_TRANS,
+                                                        *Y, *X);
         }
       }
       results.push_back (std::make_pair (timerName, timer->totalElapsedTime ()));
@@ -1048,7 +1061,8 @@ private:
       {
         TimeMonitor timeMon (*timer);
         for (int i = 0; i < numTrials; ++i) {
-          ops.solve (Teuchos::NO_TRANS, STS::one(), Y, X);
+          ops.template solve<scalar_type, scalar_type> (Teuchos::NO_TRANS,
+                                                        *Y, *X);
         }
       }
       results.push_back (std::make_pair (timerName, timer->totalElapsedTime ()));
@@ -1065,7 +1079,8 @@ private:
       {
         TimeMonitor timeMon (*timer);
         for (int i = 0; i < numTrials; ++i) {
-          ops.solve (Teuchos::NO_TRANS, STS::one(), Y, X);
+          ops.template solve<scalar_type, scalar_type> (Teuchos::NO_TRANS,
+                                                        *Y, *X);
         }
       }
       results.push_back (std::make_pair (timerName, timer->totalElapsedTime ()));

@@ -68,16 +68,32 @@ namespace {
   // values.  The given tolerance allows some rounding error for
   // triangular solves, given that the test problems we generate
   // should be well conditioned on average.
-  int N = 100;
   double tol = 1000 * STM::eps ();
+  // Number of rows (and columns) in the sparse matrices to test.
+  int numRows = 100;
+  // Number of benchmark trials; timings are cumulative over all trials.
+  int numTrials = 100;
+  // If true, run the benchmark instead of the test.
+  bool benchmark = false;
+  // Number of columns in the multivectors to benchmark.
+  // Must be at least as many as the number of rows.
+  int numVecs = 1;
 
   // Set up the extra command-line arguments.
   TEUCHOS_STATIC_SETUP()
   {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP ();
     clp.addOutputSetupOptions (true);
-    clp.setOption ("numRows", &N, "Number of rows (and columns) in the matrices to test.");
+    clp.setOption ("numRows", &numRows, "Number of rows (and columns) in the "
+                   "matrices to test.");
     clp.setOption ("tol", &tol, "Tolerance for relative error.");
+    clp.setOption ("benchmark", "test", &benchmark, "Whether to run the "
+                   "benchmark (if true) or the test (if false).");
+    clp.setOption ("numTrials", &numTrials, "If running the benchmark: number "
+                   "of benchmark trials.  Timings are cumulative over all "
+                   "trials.");
+    clp.setOption ("numVecs", &numVecs, "Number of columns in the multivectors "
+                   "to benchmark.");
   }
 
   //
@@ -87,9 +103,18 @@ namespace {
   // Test sparse matrix-(multi)vector multiply and sparse triangular solve.
   TEUCHOS_UNIT_TEST( DefaultHostSparseOps, TestSparseOps )
   {
-    typedef Kokkos::DefaultHostSparseOps<scalar_type, ordinal_type, node_type> sparse_ops_type;
+    using Kokkos::DefaultHostSparseOps;
+    typedef DefaultHostSparseOps<scalar_type, ordinal_type, node_type> sparse_ops_type;
     RCP<node_type> node = Kokkos::DefaultNode::getDefaultNode();
     TestSparseOps<sparse_ops_type> tester;
-    tester.testSparseOps (node, N, tol);
+
+    if (benchmark) {
+      std::vector<std::pair<std::string, double> > results;
+      tester.benchmarkSparseOps (results, node, numRows, numVecs, numTrials);
+      Teuchos::TimeMonitor::summarize ();
+    }
+    else {
+      tester.testSparseOps (node, numRows, numVecs, tol);
+    }
   }
 }
