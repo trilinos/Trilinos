@@ -926,8 +926,8 @@ STKUNIT_UNIT_TEST(norm, h1_volume_2)
 
   /// the function to be integrated - here it is just the identity, and when integrated should produce the volume
   StringFunction plane("x+2.0*y+3.0*z", Name("plane"));
-  std::string grad[] = {"1", "2", "3"};
-  plane.set_gradient_strings(grad, 3);
+  std::string grad_str[] = {"1", "2", "3"};
+  plane.set_gradient_strings(grad_str, 3);
 
   FieldFunction ff_plane("ff_plane", f_test, eMesh, 3, 1);
   ff_plane.interpolateFrom(plane);
