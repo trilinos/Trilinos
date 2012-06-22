@@ -121,8 +121,6 @@ int main(int argc, char *argv[])
   /////////////
   // Create a solution object with part size information, and check it.
 
-  bool doMetrics = true;
-
   RCP<Zoltan2::PartitioningSolution<idInput_t> > solution;
 
   try{
@@ -132,8 +130,7 @@ int main(int argc, char *argv[])
       idMap,              // problem identifiers (global Ids, local Ids)
       weightDim,                  // weight dimension
       ids.view(0,weightDim),      // part ids
-      sizes.view(0,weightDim)),  // part sizes
-      doMetrics);
+      sizes.view(0,weightDim))); // part sizes
   }
   catch (std::exception &e){
     fail=1;
