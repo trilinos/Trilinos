@@ -590,7 +590,7 @@
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="Sacado" type="LO"/>
     <Dependency name="RTOp" type="ILO"/>
-    <Dependency name="Kokkos" type="ILO"/>
+    <Dependency name="Kokkos" type="LO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>

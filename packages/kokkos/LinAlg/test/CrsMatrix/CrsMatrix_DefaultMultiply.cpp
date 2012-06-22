@@ -87,13 +87,13 @@ namespace {
   using Kokkos::MultiVector;
   using Kokkos::DefaultArithmetic;
   using Kokkos::DefaultKernels;
-  using Kokkos::SerialNode;
   using Teuchos::ArrayRCP;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::null;
   using std::endl;
 
+  using Kokkos::SerialNode;
   RCP<SerialNode> snode;
 #ifdef HAVE_KOKKOS_TBB
   using Kokkos::TBBNode;
@@ -147,25 +147,26 @@ namespace {
     return snode;
   }
 
-#ifdef HAVE_KOKKOS_OPENMP
-  template <>
-  RCP<SerialNode> getNode<SerialNode>() {
-    if (snode == null) {
-      Teuchos::ParameterList pl;
-      snode = rcp(new SerialNode(pl));
-    }
-    return snode;
-  }
-#endif // HAVE_KOKKOS_OPENMP
-
 #ifdef HAVE_KOKKOS_TBB
   template <>
-  RCP<OpenMPNode> getNode<OpenMPNode>() {
+  RCP<TBBNode> getNode<TBBNode>() {
     if (tbbnode == null) {
       Teuchos::ParameterList pl;
-      tbbnode = rcp (new OpenMPNode (pl));
+      tbbnode = rcp (new TBBNode (pl));
     }
     return tbbnode;
+  }
+#endif
+
+#ifdef HAVE_KOKKOS_OPENMP
+  template <>
+  RCP<OpenMPNode> getNode<OpenMPNode>() {
+    if (ompnode == null) {
+      Teuchos::ParameterList pl;
+      pl.set<int>("Num Threads",0);
+      ompnode = rcp (new OpenMPNode (pl));
+    }
+    return ompnode;
   }
 #endif
 

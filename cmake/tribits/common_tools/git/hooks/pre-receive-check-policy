@@ -42,7 +42,7 @@ EOF
 		exit 1
             fi
             ;;
-	*localhost.localdomain|*\(none\)|*@*.sandia.gov)
+	*localhost.localdomain|*.local|*\(none\)|*@*.sandia.gov|*@[0-9][0-9][0-9].[0-9][0-9][0-9].*)
 	    if ! in_import && ! forced ; then
 		cat <<EOF >&2
 ---

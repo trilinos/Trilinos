@@ -47,7 +47,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
  *
  */
 #include "Trios_logger.h"
-#include "nssi_debug.h"
+#include "Trios_nssi_debug.h"
 
 /* set to LOG_UNDEFINED -- log commands will use default level */
 log_level rpc_debug_level = LOG_UNDEFINED; 

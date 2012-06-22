@@ -3604,6 +3604,10 @@ static int new_client_connection(
 
     trios_declare_timer(callTime);
 
+    // Initialize to avoid an "uninitialized bytes messages from valgrind
+    memset(&param_out, 0, sizeof(param_out));
+    memset(&param_in, 0, sizeof(param_in));
+
     strcpy(param_out.name, transport_global_data.listen_name);
     param_out.addr = htonl((uint32_t)transport_global_data.listen_addr);
     param_out.port = htonl((uint32_t)transport_global_data.listen_port);
