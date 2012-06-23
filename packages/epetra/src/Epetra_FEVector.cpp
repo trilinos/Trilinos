@@ -387,9 +387,9 @@ void Epetra_FEVector::createNonlocalMapAndExporter()
 {
   delete nonlocalMap_;
   int* nlIDptr = nonlocalIDs_.size()>0 ? &nonlocalIDs_[0] : NULL;
+  int* nlElSzptr = nonlocalElementSize_.size()>0 ? &nonlocalElementSize_[0] : NULL;
   nonlocalMap_ = new Epetra_BlockMap (-1, nonlocalIDs_.size(), nlIDptr, 
-				      &nonlocalElementSize_[0], Map().IndexBase(), 
-				      Map().Comm());
+				      nlElSzptr, Map().IndexBase(), Map().Comm());
   delete exporter_;
   exporter_ = new Epetra_Export (*nonlocalMap_, Map());
 
