@@ -59,6 +59,7 @@
 
 #include "Thyra_VectorBase.hpp"
 
+#include <boost/tuple/tuple.hpp>
 #include <vector>
 #include <string>
 
@@ -125,6 +126,43 @@ namespace panzer {
     //! Get the response library used by this evaluator
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > getResponseLibrary() const
     { return responseLibrary_; }
+
+    /** \name Post-Construction methods to add parameters and/or responses */
+    //@{
+    
+    /** Add a distributed parameter to the model evaluator
+
+        Distributed parameters are special in that they most likely
+        will require a global to ghost call before being used in the
+        evaluator.  This function registers the parameter and any
+        needed machinery to perform the global to ghost call.
+
+        NOTE: We can't use the LinearObjFactory and
+        LinearObjContainers here because those objects require a
+        unique global indexer to build.  In general, the distributed
+        parameters may NOT be coming from an object that has an
+        associated unique global indexer.  An example of this is
+        multiphysics coupling.  The parameters will be coming form
+        another code that may not have a PDE discretization.
+        Generalizing this function to hide the linear algebra type may
+        not be possible unless we refactor the linear object support
+        or write new wrapper objects.  Also note that Thyra has no
+        concept of an import/export object so we can't use Thyra here
+        to abstract the objects.
+
+        \param[in] name Name of the distributed parameter
+	\param[in] global_map RCP to Epetra_Map used to construct the global parameter vector.
+	\param[in] importer RCP to a Epetra_Import object used for the global to ghost.  If set to null, then no global to ghost will be performed.  
+	\param[in] ghosted_vector RCP to the ghosted vector that is the target of the global to ghost.  If set to null, then no global to ghost will be performed.  
+
+	\return The index associated with this parameter for accessing it through the ModelEvaluator interface.
+    */
+    int addDistributedParameter(const std::string name,
+				const Teuchos::RCP<Epetra_Map>& global_map,
+				const Teuchos::RCP<Epetra_Import>& importer,
+				const Teuchos::RCP<Epetra_Vector>& ghosted_vector);
+
+    //@}
 
   private:
 
@@ -211,6 +249,19 @@ namespace panzer {
     mutable Teuchos::Array<panzer::ParamVec> parameter_vector_;
     Teuchos::RCP<panzer::GlobalData> global_data_;
     bool build_transient_support_;
+
+    /** Returns true if this is a distributed vector and false if it is a locally replicated scalar parameter.  This is used to determine when to call a global to ghost method which is required for distributed parameters only.
+    */
+    std::vector<bool> is_distributed_parameter_;
+
+    /** Vector of Boost tuples that contains objects needed for the global to ghost method for distributed parameters.
+
+       Tuple index 0: the string name for the parameter in the model evaluator.
+       Tuple index 1: the integer index for the parameter in the model evaluator.
+       Tuple index 2: an RCP to the linear object factory that performs the global to ghost operation.
+       Tuple index 3: an RCP to the GHOSTED vector that is the target of the global to ghost operation. 
+    */ 
+    std::vector<boost::tuple<std::string,int,Teuchos::RCP<Epetra_Import>,Teuchos::RCP<Epetra_Vector> > > distributed_parameter_container_;
 
     // basic specific linear object objects
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > lof_;

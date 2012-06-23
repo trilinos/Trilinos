@@ -64,7 +64,7 @@ namespace panzer {
   template<typename Scalar,typename Array>
   template <typename ArrayFactory>
   void panzer::BasisValues<Scalar,Array>::
-  setupArrays(const Teuchos::RCP<panzer::BasisIRLayout>& layout,
+  setupArrays(const Teuchos::RCP<const panzer::BasisIRLayout>& layout,
               const ArrayFactory & af)
   {
     basis_layout = layout;

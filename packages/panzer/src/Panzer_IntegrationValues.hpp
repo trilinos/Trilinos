@@ -53,10 +53,11 @@ namespace panzer {
   struct IntegrationValues {
     
     //! Sizes/allocates memory for arrays
-    void setupArrays(const Teuchos::RCP<panzer::IntegrationRule>& ir);
+    void setupArrays(const Teuchos::RCP<const panzer::IntegrationRule>& ir);
 
-    void setupArraysForNodeRule(const Teuchos::RCP<panzer::IntegrationRule>& ir);
+    void setupArraysForNodeRule(const Teuchos::RCP<const panzer::IntegrationRule>& ir);
 
+    //! node_coordinates are cell vertex coordinates, not basis coordinates
     template<typename NodeCoordinateArray>
     void evaluateValues(const NodeCoordinateArray& node_coordinates);
 
@@ -69,7 +70,7 @@ namespace panzer {
     Array jac_det;             // <Cell,IP>
     Array weighted_measure;    // <Cell,IP>
 
-    Teuchos::RCP<panzer::IntegrationRule> int_rule;
+    Teuchos::RCP<const panzer::IntegrationRule> int_rule;
 
     Teuchos::RCP< Intrepid::Cubature<Scalar,Array> > intrepid_cubature;
 
