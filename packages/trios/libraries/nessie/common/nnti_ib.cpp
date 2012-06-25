@@ -1604,8 +1604,6 @@ retry:
                     /* continue if the timeout has not expired */
                     log_debug(debug_level, "poll_comp_channel timedout... retrying");
 
-                    nthread_yield();
-
                     log_debug(debug_level, "***** disable debug logging.  will enable after polling success. *****");
                     logger_set_default_level(LOG_OFF);
 
@@ -1831,8 +1829,6 @@ retry:
                     /* continue if the timeout has not expired */
                     log_debug(debug_level, "poll_comp_channel timedout... retrying");
 
-                    nthread_yield();
-
                     goto retry;
                 }
                 /* case 3: poll was interupted */
@@ -2052,8 +2048,6 @@ retry:
                     }
                     /* continue if the timeout has not expired */
                     log_debug(debug_level, "poll_comp_channel timedout... retrying");
-
-                    nthread_yield();
 
                     goto retry;
                 }
@@ -4479,59 +4473,9 @@ static NNTI_result_t check_listen_socket_for_new_connections()
             fprint_NNTI_peer(logger_get_file(), "peer",
                     "end of check_listen_socket_for_new_connections", &peer);
         }
-
-        nthread_yield();
     }
 
 cleanup:
-    return rc;
-}
-
-/**
- * @brief Continually check for new connection attempts.
- *
- */
-static void *connection_listener_thread(void *args)
-{
-    NNTI_result_t rc=NNTI_OK;
-
-    log_debug(nnti_debug_level, "started thread to listen for client connection attempts");
-
-    /* SIGINT (Ctrl-C) will get us out of this loop */
-    while (!trios_exit_now()) {
-        log_debug(nnti_debug_level, "listening for new connection");
-        rc = check_listen_socket_for_new_connections();
-        if (rc != NNTI_OK) {
-            log_fatal(nnti_debug_level, "error returned from nssi_ib_server_listen_for_client: %d", rc);
-            continue;
-        }
-    }
-
-    nthread_exit(&rc);
-
-    log_debug(LOG_ALL, "exiting listener thread");
-
-    return(NULL);
-}
-
-/**
- * @brief Start a thread to check for new connection attempts.
- *
- */
-static int start_connection_listener_thread()
-{
-    int rc = 0;
-    nthread_t thread;
-
-    /* Create the thread. Do we want special attributes for this? */
-    rc = nthread_create(&thread, NULL, connection_listener_thread, NULL);
-    if (rc) {
-        log_error(nnti_debug_level, "could not spawn thread");
-        rc = 1;
-    } else {
-        /* Tell this thread to clean up after exit -- valgrind detected memory leak */
-        rc = nthread_detach(thread);
-    }
     return rc;
 }
 
