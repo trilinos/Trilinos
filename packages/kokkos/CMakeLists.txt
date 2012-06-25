@@ -207,6 +207,7 @@ TRIBITS_EXCLUDE_FILES(
   doc
   DistTSQR/doc
   array/research
+  LinAlg/doc/CrsRefactorNotesMay2012
   )
 
 #
