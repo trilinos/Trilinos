@@ -39,7 +39,7 @@
 # ************************************************************************
 #@HEADER
 
-'''Generate C++ code for sequential sparse triangular solve routines.
+'''Generate C++ code for sequential sparse matrix-(multi)vector multiply.
 
 Author: Mark Hoemmen <mhoemme@sandia.gov>
 Date: June 2012
@@ -47,17 +47,15 @@ Date: June 2012
 Introduction
 ============
 
-This module generates C++ code for sequential sparse triangular solve,
-where there may be one or more right-hand side vector(s).  We commonly
-abbreviate this as SpTM ("M" stands for "multiple vectors").  The
-module makes many routines, one for each combination of parameters
-relating to the following:
+This module generates C++ code for sequential sparse matrix-vector
+multiply, where there may be one or more right-hand side vector(s).
+We commonly abbreviate this as SpMV or SpMM (where the latter "M"
+stands for "multiple vectors").  The module makes many routines, one
+for each combination of parameters relating to the following:
 
 - The sparse matrix format: compressed sparse row (CSR) or compressed
   sparse column (CSC).
 - The dense matrix ("multivector") data layout: column or row major
-- Whether the sparse matrix is lower or upper triangular.
-- Whether the sparse matrix has an implicitly stored unit diagonal.
 - Whether the routine accepts a single input/output vector(s), or
   separate input and output vector(s).
 - Whether to use the conjugate of each sparse matrix element.
@@ -74,45 +72,11 @@ than the number of columns resp. rows.  All the routines take a dense
 matrix ("multivector") with one or more columns as input, and
 overwrite another dense matrix ("multivector") with the same number of
 columns as output.  These dense matrices may be stored in either
-column-major (Fortran style) or row-major (C style) order.
-
-Lower vs. upper triangular
---------------------------
-
-The current version of the code does not test whether the stored
-entries belong in the lower resp. upper triangle of the matrix; it
-merely uses them all.  This will not work if your sparse matrix stores
-both a lower and an upper triangular matrix in the same space.  For
-example, an incomplete LU factorization may compute the factors in
-place, overwriting the original input matrix, in order to save space.
-This is easy to fix, though the additional tests might slow down the
-code unless we introduce assumptions on the order of entries in each
-row (for CSR) or column (for CSC).
-
-Implicit unit diagonal
-----------------------
-
-'Implicit unit diagonal' means that the code assumes all the entries
-stored in any row of the sparse matrix are off-diagonal entries, and
-that every row has a diagonal entry of value 1 which is not stored in
-the matrix.  The opposite of this is 'Explicitly stored diagonal
-entries.'  That version searches for diagonal entries in each row.  If
-it finds multiple diagonal entries in a row, it sums them up and uses
-the result as a divisor.  No version assumes that the indices in a row
-resp. column are in order.
-
-In-place or out-of-place code
------------------------------
-
-The CSC variant comes in "in-place" or "out-of-place" versions.  The
-in-place version overwrites its input vector(s) with the output.  The
-out-of-place version does not modify its input vector(s).  We provide
-both for CSC because the "natural" sequential CSC sparse triangular
-solve algorithm (or rather, the sparse version most analogous to the
-dense algorithm in the reference BLAS implementation) overwrites its
-input vector(s).  The "natural" CSR algorithm works out of place and
-the in-place version would be inefficient, so we do not provide
-in-place CSR routines.
+column-major (Fortran style) or row-major (C style) order.  We assume
+that ptr, ind, and val encode exactly the matrix to use; there are no
+special cases for assuming an implicit unit diagonal or only using the
+lower or upper triangle.  We do support these in the sparse triangular
+solve case, but not in the sparse matrix-vector multiply case.
 
 Conjugate of each sparse matrix element
 ---------------------------------------
@@ -143,13 +107,28 @@ and RangeScalar the type of entries in the output (dense) matrix.  The
 in-place routines omit DomainScalar, since the input vector(s) is/are
 also the output vector(s).
 
+Output vector(s) do(es) not overwrite the input vector(s)
+---------------------------------------------------------
+
+CSR sparse matrix-vector multiply is best suited to "out-of-place"
+computation, where the output vector and input vector are separate.
+Since we favor CSR and include CSC only for the transpose case, we
+choose only to generate out-of-place versions of CSC.
+
 Expected performance
 --------------------
+
+We assume the following performance characteristics of sparse
+matrix-vector multiply:
+
+1. Reading the entries (indices and values) of the sparse matrix is
+   the main cost.
+2. Avoid branches whenever possible.
 
 Hard-coding each routine to its set of options avoids branches in
 inner loops, which should result in faster code.  The generated C++
 code favors cache-based CPU architectures.  It assumes that the main
-cost of sequential sparse triangular solve is reading the sparse
+cost of sequential sparse matrix-vector multiply is reading the sparse
 matrix.  Thus, all routines amortize the cost of reading the sparse
 matrix over all the columns of the input and output matrices.  This
 introduces little or no additional cost if there is only one column in
@@ -161,6 +140,14 @@ that can fit in a cache line.  Row-major storage should generally be
 faster than column-major storage if there are multiple input and
 output columns.  (This is because column-major storage accesses the
 input and output matrices with nonunit stride.)
+
+The usual CSC and CSR sparse matrix-vector multiply routines have two
+nested 'for' loops: one for the columns resp. rows, and one for the
+entries within a column resp. row.  We have chosen instead to generate
+a single 'for' loop over all the entries in the sparse matrix.  Within
+that 'for' loop is a 'while' loop for incrementing the current column
+resp. row index.  Epetra uses this variant, and our experience is that
+it performs slightly better.
 
 Note that sparse matrix data structures other than compressed sparse
 row or column often perform much better, especially if you make
@@ -176,14 +163,14 @@ Normal (nonexpert) use
 
 If you run this module as an executable script, like this:
 
-$ python SparseTriSolve.py
+$ python SparseMatVec.py
 
 it will write two header files to the current directory.
-Kokkos_Raw_SparseTriangularSolve_decl.hpp will contain function
-declarations, and Kokkos_Raw_SparseTriangularSolve_def.hpp will
-contain function definitions (see below).  Users who do not want to
-modify the generated code at all or change the output file names or
-output directory will use this script in that way.
+Kokkos_Raw_SparseMatVec_decl.hpp will contain function declarations,
+and Kokkos_Raw_SparseMatVec_def.hpp will contain function definitions
+(see below).  Users who do not want to modify the generated code at
+all or change the output file names or output directory will use this
+script in that way.
 
 Expert use
 ----------
@@ -224,22 +211,10 @@ generate.  It must have the following fields:
 
 sparseFormat: 'CSR' for compressed sparse row, 'CSC' for
   compressed sparse column.
-    
-upLo: 'lower' for lower triangular solve, or 'upper' for upper
-  triangular solve.
 
 dataLayout: This describes how the multivectors' data are arranged
   in memory.  Currently we only accept 'column major' or 'row
   major'.
-
-unitDiag: True if the routine is for a sparse matrix with unit
-  diagonal (which is not stored explicitly in the sparse matrix),
-  else False for a sparse matrix with explicitly stored diagonal
-  entries.
-
-inPlace: True if the routine overwrites the input vector with the
-  output vector, else False if the routine does not overwrite the
-  input vector.
 
 conjugateMatrixElements: Whether to use the conjugate of each
   matrix element.
@@ -268,65 +243,62 @@ from os.path import basename
 from kokkos import makeCopyrightNotice
 
 
-def makeDefDict (sparseFormat, upLo, dataLayout, unitDiag, \
-                     inPlace, conjugateMatrixEntries):
+def makeDefDict (sparseFormat, dataLayout, conjugateMatrixEntries):
     '''Make a suitable input dictionary for any function here that takes one.
 
-    This function is mainly useful for interactive debugging.'''
-    
+    This function is mainly useful for interactive debugging.
+
+    sparseFormat: Sparse matrix storage format.  'CSC' for compressed
+      sparse row, or 'CSR' for compressed sparse column.
+
+    dataLayout: Layout of the dense (multi)vectors which are the input
+      and output of the sparse matrix-vector multiply routines.  The
+      current valid values are 'column major' or 'row major'.
+
+   conjugateMatrixEntries: Whether to compute with the (complex)
+     conjugate of the matrix entries before using them.  We use this
+     option to implement sparse matrix-vector multiply with the
+     conjugate transpose of the matrix.  If the MatrixScalar type (the
+     type of entries in the sparse matrix) is real, then the option
+     does nothing.'''
     return {'sparseFormat': sparseFormat,
-            'upLo': upLo,
             'dataLayout': dataLayout,
-            'unitDiag': unitDiag,
-            'inPlace': inPlace,
             'conjugateMatrixEntries': conjugateMatrixEntries}
 
 def emitFuncDeclVariants (indent):
-    '''Generate declarations of all sensible sparse triangular solve variants.'''
+    '''Generate declarations of all sensible sparse matrix-vector multiply variants.'''
     return emitFuncVariants (emitFuncDecl, indent)
 
 def emitFuncDefVariants (indent):
-    '''Generate definitions of all sensible sparse triangular solve variants.'''
+    '''Generate definitions of all sensible sparse matrix-vector multiply variants.'''
     return emitFuncVariants (emitFuncDef, indent)
 
 def makesSense (defDict):
-    '''Whether the sparse triangular solve variant specified by defDict makes sense.'''
-    if defDict['sparseFormat'] == 'CSR' and defDict['inPlace']:
-        return False
-    else:
-        return True
+    '''Whether the sparse matrix-vector multiply variant specified by defDict makes sense.'''
+    return True
 
 def emitFuncVariants (f, indent):
-    '''String sum over all sensible sparse triangular solve variants.
+    '''String sum over all sensible sparse matrix-vector multiply variants.
 
     f: a function that takes (defDict, indent) and returns a string.
     indent: nonnegative integer indent level.
     '''
     s = ''
     for conjugateMatrixEntries in [False, True]:
-        for inPlace in [False, True]:
-            for upLo in ['lower', 'upper']:
-                for unitDiag in [False, True]:
-                    for dataLayout in ['column major', 'row major']:
-                        for sparseFormat in ['CSC', 'CSR']:
-                            d = {'sparseFormat': sparseFormat,
-                                 'upLo': upLo,
-                                 'dataLayout': dataLayout,
-                                 'unitDiag': unitDiag,
-                                 'inPlace': inPlace,
-                                 'conjugateMatrixEntries': conjugateMatrixEntries}
-                            # Not all sparse triangular solve variants make sense.
-                            if makesSense (d):
-                                s = s + f(d, indent) + '\n'
+        for dataLayout in ['column major', 'row major']:
+            for sparseFormat in ['CSC', 'CSR']:
+                d = makeDefDict (sparseFormat, dataLayout, conjugateMatrixEntries)
+                if makesSense (d):
+                    s = s + f(d, indent) + '\n'
     return s
     
 def emitFuncName (defDict):
     '''Emit the function's name.'''
     # Model:
-    # lowerTriSolveCsrColMajorUnitDiagInPlaceConj
+    # matVecCsrColMajorConj
 
     name = ''
-    name = name + defDict['upLo'] + 'TriSolve'
+    name = name + 'matVec'
     # Sparse matrix storage format.
     if defDict['sparseFormat'] == 'CSC':
         name = name + 'Csc'
@@ -342,10 +314,6 @@ def emitFuncName (defDict):
     else:
         raise ValueError('Invalid dataLayout "' + defDict['dataLayout'] + '"')
     # Various Boolean options
-    if defDict['unitDiag']:
-        name = name + 'UnitDiag'
-    if defDict['inPlace']:
-        name = name + 'InPlace'
     if defDict['conjugateMatrixEntries']:
         name = name + 'Conj'
     return name
@@ -364,26 +332,21 @@ def emitFuncSig (defDict, indent=0):
     sig = ''
     ind = ' '*indent
     sig = sig + ind + 'template<class Ordinal,\n' + \
-        ind + '         class MatrixScalar,\n'
-    if not defDict['inPlace']:
-        sig = sig + ind + '         class DomainScalar,\n'
-    sig = sig + ind + '         class RangeScalar>\n' + \
+        ind + '         class MatrixScalar,\n' + \
+        ind + '         class DomainScalar,\n' + \
+        ind + '         class RangeScalar>\n' + \
         ind + 'void\n' + \
         ind + emitFuncName(defDict) + ' (\n' + \
         ind + '  const Ordinal start${RowCol},\n' + \
         ind + '  const Ordinal end${RowCol}PlusOne,\n' + \
         ind + '  const Ordinal numColsX,\n' + \
-        ind + '  RangeScalar* const X,\n' + \
-        ind + '  const Ordinal ${denseRowCol}StrideX,\n' + \
-        ind + '  const Ordinal* const ptr,\n' + \
-        ind + '  const Ordinal* const ind,\n' + \
-        ind + '  const MatrixScalar* const val'
-    if not defDict['inPlace']:
-        sig = sig + ',\n' + \
-            ind + '  const DomainScalar* const Y,\n' + \
-            ind + '  const Ordinal ${denseRowCol}StrideY)'
-    else:
-        sig = sig + ')'
+        ind + '  RangeScalar Y[],\n' + \
+        ind + '  const Ordinal ${denseRowCol}StrideY,\n' + \
+        ind + '  const Ordinal ptr[],\n' + \
+        ind + '  const Ordinal ind[],\n' + \
+        ind + '  const MatrixScalar val[],\n' + \
+        ind + '  const DomainScalar X[],\n' + \
+        ind + '  const Ordinal ${denseRowCol}StrideX)'
 
     if defDict['dataLayout'] == 'column major':
         denseRowCol = 'col'
@@ -400,197 +363,212 @@ def emitFuncSig (defDict, indent=0):
 
 # Includes the curly braces.
 def emitFuncBody (defDict, indent=0):
-    '''Generate the sparse triangular solve function body, including { ... }.'''
+    '''Generate the sparse matrix-vector multiply function body, including { ... }.'''
 
-    body = ' '*indent + '{\n' + \
-        ' '*indent + '  ' + 'typedef Teuchos::ScalarTraits<Scalar> STS;\n\n'
-    if defDict['sparseFormat'] == 'CSC' and not defDict['inPlace']:
-        body = body + emitInPlaceCopy (defDict, indent+2)
-    return body + emitOuterLoop (defDict, indent+2) + ' '*indent + '}\n'
+    ind = ' '*indent
 
-def emitOuterLoop (defDict, indent=0):
-    '''Generate the outer loop in sparse triangular solve.'''
-    
+    body = ''
+    body = body + \
+        ind + '{\n' + \
+        ind + '  ' + 'typedef Teuchos::ScalarTraits<Scalar> STS;\n\n'
     if defDict['sparseFormat'] == 'CSC':
-        if defDict['upLo'] == 'upper':
-            loopBounds = 'for (Ordinal c = numCols; c >= 0; --c) {\n'
-        elif defDict['upLo'] == 'lower':            
-            loopBounds = 'for (Ordinal c = 0; c < numCols; ++c) {\n'
-        else:
-            raise ValueError ('Invalid upLo "' + defDict['upLo'] + '"')
-    elif defDict['sparseFormat'] == 'CSR':    
-        if defDict['upLo'] == 'upper':
-            loopBounds = 'for (Ordinal r = numRows; r >= 0; --r) {\n'
-        elif defDict['upLo'] == 'lower':            
-            loopBounds = 'for (Ordinal r = 0; c < numRows; ++r) {\n'
-        else:
-            raise ValueError ('Invalid upLo "' + defDict['upLo'] + '"')
-    else:
-        raise ValueError ('Invalid sparseFormat "' + \
-                              defDict['sparseFormat'] + '"')
-    # Descend into the outer loop body.
-    return ' ' * indent + loopBounds + \
-        emitOuterLoopBody (defDict, indent+2) + \
-        ' ' * indent + '}\n'
-
-def emitOuterLoopBody (defDict, indent=0):
-    '''Generate the body of the outer loop in sparse triangular solve.'''    
-    prelude = ''
-    if defDict['sparseFormat'] == 'CSC':
-        return prelude + emitCscOuterLoopBody (defDict, indent)
+        # CSC requires prescaling the output vector(s) Y.
+        body = body + emitPreScaleLoop (defDict, indent+2)
+        loopIndex = 'j'
+        otherIndex = 'i'
     elif defDict['sparseFormat'] == 'CSR':
-        return prelude + emitCsrOuterLoopBody (defDict, indent)
+        loopIndex = 'i'
+        otherIndex = 'j'
     else:
-        raise ValueError('Invalid sparseFormat "' + defDict['sparseFormat'] + '"')
+        raise ValueError ('Invalid sparseFormat "' + defDict['sparseFormat'] + '"')
 
-def emitCscOuterLoopBody (defDict, indent=0):
-    '''Generate the body of the outer loop for CSC sparse triangular solve.
+    return body + \
+        emitForLoopPreface (defDict, loopIndex, indent+2) + \
+        ind + ' '*2 + 'if (alpha == STS::zero()) {\n' + \
+        ind + ' '*4 + 'return; // Our work is done!\n' + \
+        ind + ' '*2 + '}\n' + \
+        emitForLoop (defDict, indent+2) + \
+        ' '*indent + '}\n'
 
-    This only works for CSC-format sparse matrices.  Sequential CSC
-    sparse triangular solve is always done in place, like the LAPACK
-    algorithm.  This is why the algorithm has to copy first if the
-    user doesn't want in-place behavior.
-    '''    
-    
-    if defDict['sparseFormat'] != 'CSC':
-        raise ValueError('This function requires CSC-format sparse matrices.')
-    
-    indStr = ' ' * indent
-    body = ''
-    X_rj = emitDenseAref(defDict, 'X', 'r', 'j')
-    X_cj = emitDenseAref(defDict, 'X', 'c', 'j')
-    if not defDict['unitDiag']:
-        body = body + \
-            indStr + 'Scalar A_cc = STS::zero ();\n' + \
-            indStr + 'for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {\n' + \
-            indStr + ' '*2 + 'const Ordinal r = ind[k];\n'
-        if defDict['conjugateMatrixEntries']:
-            body = body + indStr + ' '*2 + 'Scalar A_rc = STS::conjugate (val[k]);\n'
-        else:            
-            indStr + ' '*2 + 'Scalar A_rc = val[k];\n'
-        body = body + \
-            indStr + ' '*2 + 'if (r == c) {\n' + \
-            indStr + ' '*4 + 'A_cc = A_cc + A_rc;\n' + \
-            indStr + ' '*2 + '} else {\n' + \
-            indStr + ' '*4 + 'for (Ordinal j = 0; j < numColsX; ++j) {\n' + \
-            indStr + ' '*6 + X_rj + ' -= A_rc * ' + X_cj + ';\n' + \
-            indStr + ' '*4 + '}\n' + \
-            indStr + ' '*2 + '}\n' + \
-            indStr + ' '*2 + 'for (Ordinal j = 0; j < numColsX; ++j) {\n' + \
-            indStr + ' '*4 + X_cj + ' = ' + X_cj + ' / A_cc;\n' + \
-            indStr + ' '*2 + '}\n' + \
-            indStr + '}\n'
-    else:
-        body = body + \
-            indStr + 'for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {\n' + \
-            indStr + ' '*2 + 'const Ordinal r = ind[k];\n'
-        if defDict['conjugateMatrixEntries']:
-            body = body + indStr + ' '*2 + 'Scalar A_rc = STS::conjugate (val[k]);\n'
-        else:            
-            body = body + indStr + ' '*2 + 'Scalar A_rc = val[k];\n'
-        body = body + \
-            indStr + ' '*2 + 'const Scalar A_rc = val[k];\n' + \
-            indStr + ' '*2 + 'for (Ordinal j = 0; j < numColsX; ++j) {\n' + \
-            indStr + ' '*4 + X_rj + ' -= A_rc * ' + X_cj + ';\n' + \
-            indStr + ' '*2 + '}\n' + \
-            indStr + '}\n'
-    return body
+def emitPreScaleLoop (defDict, indent=0):
+    '''Emit the prescale loop for sparse matrix-vector multiply.
 
-# CSR sparse triangular solve is always out of place.
-def emitCsrOuterLoopBody (defDict, indent=0):
-    '''Generate the body of the outer loop for CSR sparse triangular solve.
+    Sparse matrix-vector multiply (SpMV) computes Y := beta*Y +
+    alpha*A*X, for scalar constants alpha and beta.  Some
+    implementations of SpMV need to start with Y := beta*Y.  We call
+    this a "prescale."  This function generates the prescale loop.
+    SpMV must pass over the entries of Y anyway, so prescaling is
+    suboptimal with respect to the number of reads and writes of the
+    entries of Y.  However, it's necessary sometimes.
 
-    This only works for CSR-format sparse matrices.  We implement
-    sequential CSR sparse triangular solve "out of place," and do not
-    provide an in-place version.
-    '''    
-    
-    if defDict['sparseFormat'] != 'CSR':
-        raise ValueError('This function requires CSR-format sparse matrices.')
-    if defDict['inPlace']:
-        raise ValueError('This function requires out-of-place computation.')
-
-    indStr = ' ' * indent
-    body = ''
-    X_rj = emitDenseAref(defDict, 'X', 'r', 'j')
-    Y_rj = emitDenseAref(defDict, 'Y', 'r', 'j')
-    Y_cj = emitDenseAref(defDict, 'Y', 'c', 'j')
-    if not defDict['unitDiag']:
-        body = body + \
-            indStr + 'Scalar A_rr = STS::zero ();\n' + \
-            indStr + 'for (Ordinal j = 0; j < numColsX; ++j) {\n' + \
-            indStr + ' '*2 + X_rj + ' = STS::zero ();\n' + \
-            indStr + '}\n' + \
-            indStr + 'for (Ordinal k = ptr[r]; k < ptr[r+1]; ++k) {\n' + \
-            indStr + ' '*2 + 'const Ordinal c = ind[k];\n'
-        if defDict['conjugateMatrixEntries']:
-            body = body + indStr + ' '*2 + 'Scalar A_rc = STS::conjugate (val[k]);\n'
-        else:            
-            indStr + ' '*2 + 'Scalar A_rc = val[k];\n'
-        body = body + \
-            indStr + ' '*2 + 'if (r == c) {\n' + \
-            indStr + ' '*4 + 'A_rr = A_rr + A_rc;\n' + \
-            indStr + ' '*2 + '} else {\n' + \
-            indStr + ' '*4 + 'for (Ordinal j = 0; j < numColsX; ++j) {\n' + \
-            indStr + ' '*6 + X_rj + ' -= A_rc * ' + Y_cj + ';\n' + \
-            indStr + ' '*4 + '}\n' + \
-            indStr + ' '*2 + '}\n' + \
-            indStr + ' '*2 + 'for (Ordinal j = 0; j < numColsX; ++j) {\n' + \
-            indStr + ' '*4 + X_rj + ' = (' + X_rj + ' + ' + Y_rj + ') / A_rr;\n' + \
-            indStr + ' '*2 + '}\n' + \
-            indStr + '}\n'
-    else:
-        body = body + \
-            indStr + 'for (Ordinal j = 0; j < numColsX; ++j) {\n' + \
-            indStr + ' '*2 + X_rj + ' = STS::zero ();\n' + \
-            indStr + '}\n' + \
-            indStr + 'for (Ordinal k = ptr[r]; k < ptr[r+1]; ++k) {\n' + \
-            indStr + ' '*2 + 'const Ordinal c = ind[k];\n'
-        if defDict['conjugateMatrixEntries']:
-            body = body + indStr + ' '*2 + 'Scalar A_rc = STS::conjugate (val[k]);\n'
-        else:            
-            body = body + indStr + ' '*2 + 'Scalar A_rc = val[k];\n'
-        body = body + \
-            indStr + ' '*2 + 'const Scalar A_rc = val[k];\n' + \
-            indStr + ' '*2 + 'for (Ordinal j = 0; j < numColsX; ++j) {\n' + \
-            indStr + ' '*4 + X_rj + ' -= A_rc * ' + Y_cj + ';\n' + \
-            indStr + ' '*2 + '}\n' + \
-            indStr + '}\n'
-    return body
-        
-def emitInPlaceCopy (defDict, indent=0):
-    '''Copy Y into X for CSC-format "out-of-place" sparse triangular solve.
-
-    Sequential CSC-format sparse triangular solve is naturally an
-    "in-place" algorithm, meaning that it overwrites the input vector
-    X with the output.  If the user wants "out-of-place" behavior, so
-    that the input vector isn't touched, then we first have to copy
-    the input vector Y into the output X.
+    Prescaling has two special cases: beta = 0, and beta = 1.  If beta
+    = 1, then a full prescale isn't necessary, because we already
+    formulate the sparse matrix-vector product as an update (Y(i) =
+    Y(i) + alpha * A(i,j) * X(j)).  If beta = 0, then we can simplify
+    the prescale by replacing the entries of Y with zeros.  (We follow
+    the Sparse BLAS convention that the result of a scale is zero if
+    beta is zero, regardless of any NaN or Inf entries in the vector.)
     '''
-    X_ij = emitDenseAref (defDict, 'X', 'i', 'j')
-    Y_ij = emitDenseAref (defDict, 'Y', 'i', 'j')
-    origIndent = ' ' * indent 
-    newIndent = ' ' * 2
-    s = ''
+
+    ind = ' ' * indent
     layout = defDict['dataLayout']
+    if layout != 'column major' and layout != 'row major':
+        raise ValueError ('Invalid dataLayout "' + layout + '"')
+
+    s = ind + '// Prescale: Y := beta * Y.\n' + \
+        ind + 'if (beta == STS::zero()) {\n'
+    if layout == 'column major':
+        Y_j = emitDenseAref (defDict, 'Y', '0', 'j')
+        s = s + \
+            ind + ' '*2 + 'for (Ordinal j = 0; j < numColsX; ++j) {\n' + \
+            ind + ' '*4 + 'RangeScalar* const Y_j = &' + Y_j + ';\n' + \
+            ind + ' '*4 + 'for (Ordinal i = 0; i < numRows; ++i) {\n' + \
+            ind + ' '*6 + '// Follow the Sparse BLAS convention for beta == 0. \n' + \
+            ind + ' '*6 + 'Y_j[i] = STS::zero();\n' + \
+            ind + ' '*4 + '}\n' + \
+            ind + ' '*2 + '}\n'
+    elif layout == 'row major':
+        Y_i = emitDenseAref (defDict, 'Y', 'i', '0')
+        s = s + \
+            ind + ' '*2 + 'for (Ordinal i = 0; i < numRows; ++i) {\n' + \
+            ind + ' '*4 + 'RangeScalar* const Y_i = &' + Y_i + ';\n' + \
+            ind + ' '*4 + 'for (Ordinal j = 0; j < numColsX; ++j) {\n' + \
+            ind + ' '*6 + '// Follow the Sparse BLAS convention for beta == 0. \n' + \
+            ind + ' '*6 + 'Y_i[j] = STS::zero();\n' + \
+            ind + ' '*4 + '}\n' + \
+            ind + ' '*2 + '}\n'
+    s = s + \
+        ind + '}\n' + \
+        ind + 'else if (beta != STS::one()) {\n'
     # It's more efficient to put stride-1 access in the inner loop.
     if layout == 'column major':
+        Y_j = emitDenseAref (defDict, 'Y', '0', 'j')
         s = s + \
-            origIndent + 'for (Ordinal j = 0; j < numColsX; ++j) {\n' + \
-            origIndent + newIndent + 'for (Ordinal i = 0; i < numRows; ++i) {\n' + \
-            origIndent + newIndent*2 + X_ij + ' = ' + Y_ij + ';\n' + \
-            origIndent + newIndent + '}\n' + \
-            origIndent + '}\n'
+            ind + ' '*2 + 'for (Ordinal j = 0; j < numColsX; ++j) {\n' + \
+            ind + ' '*4 + 'RangeScalar* const Y_j = &' + Y_j + ';\n' + \
+            ind + ' '*4 + 'for (Ordinal i = 0; i < numRows; ++i) {\n' + \
+            ind + ' '*6 + 'Y_j[i] = beta * Y_j[i];\n' + \
+            ind + ' '*4 + '}\n' + \
+            ind + ' '*2 + '}\n'
     elif layout == 'row major':
+        Y_i = emitDenseAref (defDict, 'Y', 'i', '0')
         s = s + \
-            origIndent + 'for (Ordinal i = 0; i < numRows; ++i) {\n' + \
-            origIndent + newIndent + 'for (Ordinal j = 0; j < numColsX; ++j) {\n' + \
-            origIndent + newIndent*2 + X_ij + ' = ' + Y_ij + ';\n' + \
-            origIndent + newIndent + '}\n' + \
-            origIndent + '}\n'
+            ind + ' '*2 + 'for (Ordinal i = 0; i < numRows; ++i) {\n' + \
+            ind + ' '*4 + 'RangeScalar* const Y_i = &' + Y_i + ';\n' + \
+            ind + ' '*4 + 'for (Ordinal j = 0; j < numColsX; ++j) {\n' + \
+            ind + ' '*6 + 'Y_i[j] = beta * Y_i[j];\n' + \
+            ind + ' '*4 + '}\n' + \
+            ind + ' '*2 + '}\n'
+    return s + ind + '}\n'
+
+def emitForLoopPreface (defDict, loopIndex, indent=0):
+    ind = ' '*indent
+    s = ind + 'Ordinal ' + loopIndex + ' = 0;\n'
+    if defDict['sparseFormat'] == 'CSR':
+        Y_0c = emitDenseAref (defDict, 'Y', '0', 'c')
+        # No real need to unroll this loop, since it's only for the
+        # first entry of Y.  We have to treat beta==0 separately in
+        # order to follow the Sparse BLAS convention to replace Inf
+        # and NaN entries in Y with zero if beta==0, rather than
+        # allowing them to propagate according to IEEE 754.
+        s = s + \
+            ind + '// Special case for CSR only: Y(0,:) = 0.\n' + \
+            ind + 'if (beta != STS::zero()) {\n' + \
+            ind + ' '*2 + 'for (Ordinal c = 0; c < numColsX; ++c) {\n' + \
+            ind + ' '*4 + Y_0c + ' = beta * ' + Y_0c + ';\n' + \
+            ind + ' '*2 + '}\n' + \
+            ind + '}\n' + \
+            ind + 'else {\n' + \
+            ind + ' '*2 + '// Follow the Sparse BLAS convention for beta == 0. \n' + \
+            ind + ' '*2 + 'for (Ordinal c = 0; c < numColsX; ++c) {\n' + \
+            ind + ' '*4 + Y_0c + ' = STS::zero();\n' + \
+            ind + ' '*2 + '}\n' + \
+            ind + '}\n'
+    return s
+
+def emitForLoop (defDict, indent=0):
+    '''Generate the 'for' loop in sparse matrix-vector multiply.'''
+
+    X_jc = emitDenseAref (defDict, 'X', 'j', 'c')
+    Y_ic = emitDenseAref (defDict, 'Y', 'i', 'c')
+
+    if defDict['sparseFormat'] == 'CSC':
+        loopIndex = 'j'
+        otherIndex = 'i'
+        RowCol = 'Col'
     else:
-        raise ValueError ('Invalid dataLayout "' + layout + '"')
-    return s + '\n'
+        loopIndex = 'i'
+        otherIndex = 'j'
+        RowCol = 'Col'
+
+    ind = ' '*indent
+    s = ind + 'const Ordinal startInd = ptr[start${RowCol}];\n' + \
+        ind + 'const Ordinal endInd = ptr[end${RowCol}PlusOne];\n' + \
+        ind + 'if (alpha == STS::one()) {\n' + \
+        ind + ' '*2 + 'for (Ordinal k = startInd; k < endInd; ++k) {\n' + \
+        ind + ' '*4 + 'const MatrixScalar A_ij = val[k];\n' + \
+        ind + ' '*4 + 'const Ordinal ${otherIndex} = ind[k];\n' + \
+        ind + ' '*4 + 'while (k > ptr[${loopIndex}]) {\n' + \
+        ind + ' '*6 + '++${loopIndex};\n'
+    if defDict['sparseFormat'] == 'CSR':
+        Y_i = emitDenseAref (defDict, 'Y', 'i', '0')
+        Y_ic = 'Y_i[c*colStrideY]' # A hack, but we make do
+        s = s + \
+            ind + ' '*6 + '// We haven\'t seen row i before; prescale Y(i,:).\n' + \
+            ind + ' '*6 + 'RangeScalar* const Y_i = &' + Y_i + ';\n' + \
+            ind + ' '*6 + 'for (Ordinal c = 0; c < numColsX; ++c) {\n' + \
+            ind + ' '*8 + Y_ic + ' = beta * ' + Y_ic + ';\n' + \
+            ind + ' '*6 + '}\n'
+    s = s + ind + ' '*4 + '}\n' + \
+        emitUpdateLoop (defDict, True, indent+2) + \
+        ind + ' '*2 + '}\n' + \
+        ind + '}\n' + \
+        ind + 'else { // alpha != STS::one()\n' + \
+        ind + ' '*2 + 'for (Ordinal k = startInd; k < endInd; ++k) {\n' + \
+        ind + ' '*4 + 'const MatrixScalar A_ij = val[k];\n' + \
+        ind + ' '*4 + 'const Ordinal ${otherIndex} = ind[k];\n' + \
+        ind + ' '*4 + 'while (k > ptr[${loopIndex}]) {\n' + \
+        ind + ' '*6 + '++${loopIndex};\n'
+    if defDict['sparseFormat'] == 'CSR':
+        Y_i = emitDenseAref (defDict, 'Y', 'i', '0')
+        Y_ic = 'Y_i[c*colStrideY]' # A hack, but we make do        
+        s = s + \
+            ind + ' '*6 + '// We haven\'t seen row i before; prescale Y(i,:).\n' + \
+            ind + ' '*6 + 'RangeScalar* const Y_i = &' + Y_i + ';\n' + \
+            ind + ' '*6 + 'for (Ordinal c = 0; c < numColsX; ++c) {\n' + \
+            ind + ' '*8 + Y_ic + ' = beta * ' + Y_ic + ';\n' + \
+            ind + ' '*6 + '}\n'
+    s = s + ind + ' '*4 + '}\n' + \
+        emitUpdateLoop (defDict, False, indent+2) + \
+        ind + ' '*2 + '}\n' + \
+        ind + '}\n'
+    return Template(s).substitute (loopIndex=loopIndex, \
+                                       otherIndex=otherIndex, \
+                                       RowCol=RowCol)
+
+def emitUpdateLoop (defDict, alphaIsOne, indent=0):
+    '''Return the update loop code for Y(i,:) = Y(i,:) + alpha*A_ij*X(j,:).
+
+    alphaIsOne (Boolean): if True, then we know that alpha is one and
+      don't have to multiply by alpha.  If False, we must multiply by
+      alpha.
+    '''
+    X_jc = emitDenseAref (defDict, 'X', 'j', 'c')
+    Y_ic = emitDenseAref (defDict, 'Y', 'i', 'c')
+
+    ind = ' '*indent
+    s = ''
+    s = s + \
+        ind + ' '*2 + 'for (Ordinal c = 0; c < numColsX; ++c) {\n'
+    if alphaIsOne:
+        s = s + \
+            ind + ' '*4 + Y_ic + ' = ' + Y_ic + ' + A_ij * ' + X_jc + ';\n'
+    else:
+        s = s + \
+            ind + ' '*4 + Y_ic + ' = ' + Y_ic + ' + alpha * A_ij * ' + X_jc + ';\n'
+    s = s + \
+        ind + ' '*2 + '}\n'
+    return s
 
 def emitDenseStrides (defDict, name):
     layout = defDict['dataLayout']
@@ -627,16 +605,13 @@ def emitDenseAref (defDict, varName, rowIndex, colIndex):
     return s
 
 def emitFuncDoc (defDict, indent=0):
-    '''Emit the sparse triangular solve routine's documentation.
+    '''Emit the sparse matrix-vector multiply routine's documentation.
     
     This generates the documentation (in Doxygen-compatible format)
-    for a sparse triangular solve routine.'''
+    for a sparse matrix-vector multiply routine.'''
 
     sparseFormat = defDict['sparseFormat']
-    upLo = defDict['upLo']
     dataLayout = defDict['dataLayout']
-    unitDiag = defDict['unitDiag']
-    inPlace = defDict['inPlace']
     conjugateMatrixEntries = defDict['conjugateMatrixEntries']
 
     if sparseFormat == 'CSC':
@@ -653,12 +628,6 @@ def emitFuncDoc (defDict, indent=0):
         numIndices = 'numRows'
     else:
         raise ValueError ('Invalid sparse format "' + sparseFormat + '"')
-    if upLo == 'upper':
-        UpLo = 'Upper'
-    elif upLo == 'lower':
-        UpLo = 'Lower'
-    else:
-        raise ValueError ('Unknown upper/lower triangular designation "' + upLo + '"')
     if dataLayout == 'row major':
         colRow = 'row'
         rowCol = 'column'
@@ -667,31 +636,21 @@ def emitFuncDoc (defDict, indent=0):
         rowCol = 'row'
     else:
         raise ValueError ('Unknown data layout "' + dataLayout + '"')
-    if unitDiag:
-        unitDiagStr = ' implicitly stored unit diagonal entries and'
-    else:
-        unitDiagStr = ''
     if conjugateMatrixEntries:
         briefConj = ',\n///   using conjugate of sparse matrix elements'
     else:
         briefConj = ''
 
-    substDict = {'sparseFormat': sparseFormat, 'UpLo': UpLo, 'upLo': upLo,
-                 'unitDiagStr': unitDiagStr,
+    substDict = {'sparseFormat': sparseFormat, 
                  'colRow': colRow, 'rowCol': rowCol,
                  'briefConj': briefConj, 'numIndices': numIndices,
                  'startIndex': startIndex, 'endIndex': endIndex,
                  'fmtColRow': fmtColRow, 'fmtRowCol': fmtRowCol}
 
-    brief = '/// ${UpLo} triangular solve of a ${sparseFormat}-format sparse matrix\n'
-    brief = brief + '///   with ${colRow}-major input / output vectors\n'
-    if inPlace:
-        brief = brief + '///   (overwriting input with output)\n'
-    if unitDiag:
-        brief = brief + '///   and implicitly stored unit diagonal entries\n'
+    brief = '/// ${sparseFormat} sparse matrix-(multi)vector multiply\n'
+    brief = brief + '///   with ${colRow}-major input / output (multi)vectors\n'
     if conjugateMatrixEntries:
         brief = brief + '///   using conjugate of sparse matrix entries\n'
-
 
     body = '''///
 /// \\tparam Ordinal The type of indices used to access the entries of
@@ -700,45 +659,32 @@ def emitFuncDoc (defDict, indent=0):
 ///   will do.
 /// \\tparam MatrixScalar The type of entries in the sparse matrix.
 ///   This may differ from the type of entries in the input/output
-///   matrices.'''
-    if not inPlace:
-        body = body + '\n' + \
-            '''/// \\tparam DomainScalar The type of entries in the input matrix Y.
-///   This may differ from the type of entries in the output matrix X.'''
-
-    body = body + '\n' + \
-        '''/// \param ${startIndex} [in] The least (zero-based) ${fmtRowCol} index of the sparse 
-///   matrix over which to iterate.  For iterating over the whole sparse 
-///   matrix, this should be 0.
-/// \param ${endIndex} [in] The largest (zero-based) ${fmtRowCol} index of the 
-///   sparse matrix over which to iterate, plus one.  Adding one means 
+///   matrices.
+/// \\tparam DomainScalar The type of entries in the input multivector Y.
+///   This may differ from the type of entries in the output multivector X.
+/// \\tparam RangeScalar The type of entries in the output multivector X.
+///
+/// \param ${startIndex} [in] The least (zero-based) ${fmtRowCol} index of 
+///   the sparse matrix matrix over which to iterate.  For iterating over 
+///   the whole sparse matrix, this should be 0.
+/// \param ${endIndex} [in] The largest (zero-based) ${fmtRowCol} index of 
+///   the sparse matrix over which to iterate, plus one.  Adding one means 
 ///   that ${startIndex}, ${endIndex} makes an exclusive index range.  For 
 ///   iterating over the whole sparse matrix, this should be the total
 ///   number of ${fmtRowCol}s in the sparse matrix (on the calling process).
-/// \param numColsX [in] Number of columns in X.'''
-
-    if inPlace:
-        body = body + \
-            '\n/// \param X [in/out] Input/output dense matrix, stored in ${colRow}-major order.'
-    else:
-        body = body + \
-            '\n/// \param X [out] Output dense matrix, stored in ${colRow}-major order.'
-
-    body = body + '\n' + \
-        '''/// \param LDX [in] Stride between ${colRow}s of X.  We assume unit
+/// \param numColsX [in] Number of columns in X.
+/// \param X [out] Output dense multivector, stored in ${colRow}-major order.
+/// \param LDX [in] Stride between ${colRow}s of X.  We assume unit
 ///   stride between ${rowCol}s of X.
 /// \param ptr [in] Length (${numIndices}+1) array of index offsets 
 ///   between ${fmtRowCol}s of the sparse matrix.
 /// \param ind [in] Array of ${fmtColRow} indices of the sparse matrix.
-///   ind[ptr[i] .. ptr[i+1]-1] are the ${fmtColRow} indices of row i
-///   (zero-based) of the sparse matrix.
+///   ind[ptr[i] .. ptr[i+1]-1] are the ${fmtColRow} indices of
+///   ${fmtRowCol} i (zero-based) of the sparse matrix.
 /// \param val [in] Array of entries of the sparse matrix.
 ///   val[ptr[i] .. ptr[i+1]-1] are the entries of ${fmtRowCol} i
-///   (zero-based) of the sparse matrix.'''
-
-    if not inPlace:
-        body = body + '\n' + \
-            '''/// \param Y [in] Input dense matrix, stored in ${colRow}-major order.
+///   (zero-based) of the sparse matrix.
+/// \param Y [in] Input dense matrix, stored in ${colRow}-major order.
 /// \param LDY [in] Stride between ${colRow}s of Y.  We assume unit
 ///   stride between ${rowCol}s of Y.'''
 
@@ -747,11 +693,6 @@ def emitFuncDoc (defDict, indent=0):
     body = '' # Release memory we don't need anymore    
     # Indent each line.
     return '\n'.join(' '*indent + line for line in doc.split('\n'))
-        
-        
-
-
-
 
 def emitHeaderDeclFile (filename):
     '''Make a header file with declarations of the sparse triangular solve routines.
@@ -772,28 +713,12 @@ def emitHeaderDeclFile (filename):
 #define __${headerizedFilename}
 
 /// \\file ${baseFilename}
-/// \\brief Declarations of "raw" sequential sparse triangular solve routines.
-/// \warning This code was generated by the SparseTriSolve.py script.  
+/// \\brief Declarations of "raw" sequential sparse matrix-vector multiply routines.
+/// \warning This code was generated by the SparseMatVec.py script.  
 ///   If you edit this header by hand, your edits will disappear the 
 ///   next time you run the generator script.
 
 namespace Kokkos {
-
-/// \\namespace Raw
-/// \\brief "Raw" intranode computational routines.
-///
-/// "Raw" means first that the routines only use standard data structures,
-/// rather than Kokkos data structures.  Second, it means that the routines
-/// do not depend on the Kokkos Node API (a generic intranode parallel
-/// programming model).  They are either sequential, or directly use a 
-/// standard shared-memory programming model, such as Pthreads, Intel's
-/// Threading Building Blocks, or the like.
-///
-/// The sparse matrix-vector multiply and sparse triangular solve routines
-/// defined in this namespace accept multiple vectors at a time.  These are
-/// really just dense matrices, but we sometimes call them "multivectors,"
-/// to highlight that we are considering them as collections of one or more
-/// vectors.
 namespace Raw {
 
 ''').substitute (baseFilename=basename(filename), \
@@ -849,7 +774,7 @@ def run ():
     Both files are written to the current working directory.
     '''
 
-    rootName = 'Kokkos_Raw_SparseTriangularSolve'
+    rootName = 'Kokkos_Raw_SparseMatVec'
     declName = rootName + '_decl.hpp'
     defName = rootName + '_def.hpp'
 
