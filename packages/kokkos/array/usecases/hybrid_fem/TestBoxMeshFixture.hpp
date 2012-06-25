@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          KokkosArray: Node API and Parallel Node Kernels
+//          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -98,11 +98,11 @@ void verify_parallel(
 
   pack_type::pack( exchange.buffer(), send_begin, send_count, mesh.node_coords );
 
-  exchange.send();
+  exchange.setup();
 
   // Launch local-action device kernels
 
-  exchange.receive();
+  exchange.send_receive();
 
   unsigned long local[3] ;
   local[0] = mesh.parallel_data_map.count_owned ;

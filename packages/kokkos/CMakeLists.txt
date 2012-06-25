@@ -1,6 +1,7 @@
 INCLUDE(TribitsPackageMacros)
 INCLUDE(TribitsAddOptionAndDefine)
 INCLUDE(CombinedOption)
+INCLUDE(GlobalSet)
 
 #
 # A) Define the package
@@ -69,19 +70,22 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   OFF
 )
 
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  Kokkos_ENABLE_CUDA_COMPLEX_FLOAT
-  HAVE_KOKKOS_CUDA_COMPLEX_FLOAT
-  "Enable complex<float> type for CUDA nodes."
-  OFF
-)
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  Kokkos_ENABLE_CUDA_COMPLEX_DOUBLE
-  HAVE_KOKKOS_CUDA_COMPLEX_DOUBLE
-  "Enable complex<double> type for CUDA nodes."
-  OFF
-)
+# TRIBITS_ADD_OPTION_AND_DEFINE(
+#   Kokkos_ENABLE_CUDA_COMPLEX_FLOAT
+#   HAVE_KOKKOS_CUDA_COMPLEX_FLOAT
+#   "Enable complex<float> type for CUDA nodes (requires Teuchos_ENABLE_COMPLEX)"
+#   OFF
+# )
+# TRIBITS_ADD_OPTION_AND_DEFINE(
+#   Kokkos_ENABLE_CUDA_COMPLEX_DOUBLE
+#   HAVE_KOKKOS_CUDA_COMPLEX_DOUBLE
+#   "Enable complex<double> type for CUDA nodes (requires Teuchos_ENABLE_COMPLEX)."
+#   OFF
+# )
+# IF((Kokkos_ENABLE_CUDA_COMPLEX_FLOAT OR Kokkos_ENABLE_CUDA_COMPLEX_DOUBLE) AND NOT (Teuchos_ENABLE_COMPLEX AND Kokkos_ENABLE_Cusp))
+#   MESSAGE(FATAL_ERROR 
+#     "\nKokkos support for Complex requires enabling Teuchos support for Complex via Teuchos_ENABLE_COMPLEX and the Cusp TPL")
+# ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Kokkos_CUDA_NODE_MEMORY_PROFILING

@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 //
-//          KokkosArray: Node API and Parallel Node Kernels
+//          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -239,15 +239,12 @@ private:
   elem_matrices_type                      element_matrices ;
   elem_vectors_type                       element_vectors ;
   scalar_type                             coeff_K ;
-  scalar_type                             coeff_P ;
-  scalar_type                             coeff_Q ;
 
   ElementComputation( const mesh_type   & arg_mesh ,
                       const elem_matrices_type  & arg_element_matrices , 
                       const elem_vectors_type   & arg_element_vectors ,
                       const value_vector_type   & arg_nodal_values ,
-	              const scalar_type   arg_coeff_K,
-	              const scalar_type   arg_coeff_P )
+	              const scalar_type   arg_coeff_K )
   : shape_eval()
   , elem_node_ids( arg_mesh.elem_node_ids )
   , node_coords(   arg_mesh.node_coords )
@@ -255,7 +252,6 @@ private:
   , element_matrices( arg_element_matrices )
   , element_vectors( arg_element_vectors )
   , coeff_K( arg_coeff_K )
-  , coeff_P( arg_coeff_P )
   {}
 
 public:
@@ -264,10 +260,9 @@ public:
                      const elem_matrices_type & elem_matrices ,
                      const elem_vectors_type  & elem_vectors ,
                      const value_vector_type  & nodal_values,
-		     const scalar_type  elem_coeff_K,
-		     const scalar_type  elem_coeff_P )
+		     const scalar_type  elem_coeff_K )
   {
-    ElementComputation comp( mesh ,  elem_matrices , elem_vectors , nodal_values , elem_coeff_K , elem_coeff_P );
+    ElementComputation comp( mesh ,  elem_matrices , elem_vectors , nodal_values , elem_coeff_K );
 
     const size_t elem_count = mesh.elem_node_ids.dimension(0);
 
@@ -355,9 +350,7 @@ public:
 
   KOKKOS_MACRO_DEVICE_FUNCTION
   void contributeResidualJacobian(
-    const scalar_type k ,
-    const scalar_type p ,
-    const scalar_type q ,
+    const scalar_type coeff_k ,
     const scalar_type dof_values[] ,
     const scalar_type detJ ,
     const scalar_type invJ[] ,
@@ -395,16 +388,16 @@ public:
 
     const scalar_type val_squared    = value_at_integ * value_at_integ ;
     const scalar_type detJ_weight    = detJ * integ_weight ;
-    const scalar_type k_detJ_weight  = k * detJ_weight ;
-    const scalar_type weight_value_2 = 2 * value_at_integ * p * detJ_weight ; 
+    const scalar_type k_detJ_weight  = coeff_k * detJ_weight ;
+    const scalar_type weight_value_2 = 2 * value_at_integ * detJ_weight ; 
 
     for( unsigned m = 0; m < FunctionCount; m++) {
 
-      // $$ R_i = \int_{\Omega} \nabla \phi_i \cdot (-k \nabla T) + \phi_i T^2 d \Omega $$ 
+      // $$ R_i = \int_{\Omega} \nabla \phi_i \cdot (k \nabla T) + \phi_i T^2 d \Omega $$ 
       elem_res[m] += k_detJ_weight * ( dpsidx[m] * gradx_at_integ +
                                        dpsidy[m] * grady_at_integ +
                                        dpsidz[m] * gradz_at_integ ) +
-                   val_squared * p * ( detJ_weight * bases_vals[m] ) ;
+                   val_squared * ( detJ_weight * bases_vals[m] ) ;
 
       for( unsigned n = 0; n < FunctionCount; n++) {
       
@@ -460,8 +453,6 @@ public:
       const scalar_type detJ = inverse_and_determinant3x3(J);
 
       contributeResidualJacobian( coeff_K ,
-                                  coeff_P ,
-                                  coeff_Q , 
                                   val ,
                                   detJ , J ,
                                   shape_eval.weight[i] ,

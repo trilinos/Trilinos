@@ -307,6 +307,28 @@ int NcGroupInfo::inq_dim (const int dimid, char *name, size_t *lenp)
     return rc;
 }
 
+/** Return the dimid of the dimension named 'name' */
+int NcGroupInfo::inq_dimid (const char *name, int *dimid)
+{
+    int rc = NC_EBADDIM;
+    std::map<int, NcDimInfo *>::iterator iter;
+
+    if (dims.empty()) {
+        rc=NC_EBADDIM;
+    } else {
+        iter = dims.begin();
+        for (;iter != dims.end(); iter++) {
+            if (!strcmp((*iter).second->name.c_str(), name)) {
+                *dimid=(*iter).first;
+                rc = NC_NOERR;
+                break;
+            }
+        }
+    }
+
+    return rc;
+}
+
 /** Return the dimension IDs */
 int NcGroupInfo::inq_vardimid (const int varid, int dimids[])
 {

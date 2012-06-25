@@ -54,6 +54,11 @@
 # @HEADER
 
 
+#
+# Function that searches for an element in a list and if found returns
+# true.  Otherwise returns false.
+#
+
 FUNCTION(FIND_LIST_ELEMENT LIST_NAME ELEMENT_VAL ELEMENT_FOUND_OUT)
   #MESSAGE("FIND_LIST_ELEMENT: ${LIST_NAME} ${ELEMENT_VAL}")
   #PRINT_VAR(${LIST_NAME})

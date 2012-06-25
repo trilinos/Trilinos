@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          KokkosArray: Node API and Parallel Node Kernels
+//          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -490,7 +490,7 @@ public:
 
     memory_manager::enable_memory_view_tracking();
 
-    cuda_parallel_launch( driver , grid , block , shmem_size );
+    CudaParallelLaunch< self_type >::execute( driver , grid , block , shmem_size );
   }
 };
 
@@ -616,6 +616,11 @@ public:
                         stream_block_offset , stream_block_recycle );
 
     memory_manager::enable_memory_view_tracking();
+
+    // Currently must be local memory launch for
+    // multiple kernel launches into multiple streams.
+    // For constant memory utilization each copy of a functors into
+    // constant memory would require a unique and managed location.
 
     cuda_parallel_launch_local_memory< driver_type ><<< grid , block , shmem_size , cuda_stream >>>( driver );
   }

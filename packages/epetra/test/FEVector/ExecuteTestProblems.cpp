@@ -570,9 +570,11 @@ int fevec6(Epetra_Comm& Comm, bool verbose)
     x1.ReplaceGlobalValues(1, &GID, &value);
   x1.GlobalAssemble (Insert);
 
-  if (Comm.MyPID()==0)
+  if (Comm.MyPID()==0) {
     std::cout << "Entry " << GID << " after PutScalar & set:      " 
         << x1[0][0] << std::endl;
+    if (x1[0][0] != value) return -1;
+  }
 
   return 0;
 }

@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 //
-//          KokkosArray: Node API and Parallel Node Kernels
+//          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -173,28 +173,39 @@ static void cuda_parallel_launch_local_memory( const DriverType driver )
   driver.execute_on_device();
 }
 
-template< class DriverType >
-inline
-void cuda_parallel_launch( const DriverType & driver ,
-                           const dim3       & grid ,
-                           const dim3       & block ,
-                           const int          shmem )
-{
-  if ( CudaTraits::ConstantMemoryUseThreshold < sizeof(DriverType) ) {
+template < class DriverType ,
+           bool Large = ( CudaTraits::ConstantMemoryUseThreshold < sizeof(DriverType) ) >
+struct CudaParallelLaunch ;
 
-    // Copy functor to constant memory on the device
-    cudaMemcpyToSymbol( kokkos_impl_cuda_constant_memory_buffer , & driver , sizeof(DriverType) );
+template < class DriverType >
+struct CudaParallelLaunch< DriverType , true > {
 
-    // Invoke the driver function on the device
-    cuda_parallel_launch_constant_memory< DriverType ><<< grid , block , shmem >>>();
+  inline
+  static void execute( const DriverType & driver ,
+                       const dim3       & grid ,
+                       const dim3       & block ,
+                       const int          shmem )
+    {
+      // Copy functor to constant memory on the device
+      cudaMemcpyToSymbol( kokkos_impl_cuda_constant_memory_buffer , & driver , sizeof(DriverType) );
 
-  }
-  else {
+      // Invoke the driver function on the device
+      cuda_parallel_launch_constant_memory< DriverType ><<< grid , block , shmem >>>();
+    }
+};
 
-    cuda_parallel_launch_local_memory< DriverType ><<< grid , block , shmem >>>( driver );
+template < class DriverType >
+struct CudaParallelLaunch< DriverType , false > {
 
-  }
-}
+  inline
+  static void execute( const DriverType & driver ,
+                       const dim3       & grid ,
+                       const dim3       & block ,
+                       const int          shmem )
+    {
+      cuda_parallel_launch_local_memory< DriverType ><<< grid , block , shmem >>>( driver );
+    }
+};
 
 //----------------------------------------------------------------------------
 

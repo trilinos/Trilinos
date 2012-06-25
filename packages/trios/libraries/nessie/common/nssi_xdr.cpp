@@ -64,8 +64,8 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "Trios_nssi_xdr.h"
 #include "Trios_logger.h"
 #include "Trios_threads.h"
+#include "Trios_nssi_debug.h"
 
-#include "nssi_debug.h"
 #include "nssi_opcodes.h"
 #include "nssi_service_args.h"
 

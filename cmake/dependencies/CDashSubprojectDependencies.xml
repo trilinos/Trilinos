@@ -185,6 +185,7 @@
   </SubProject>
   <SubProject name="Trios">
     <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="ThreadPool" type="TR"/>
     <EmailAddresses>
       <Email address="trios-regression@software.sandia.gov"/>
     </EmailAddresses>
@@ -278,29 +279,6 @@
     <Dependency name="Belos" type="LO"/>
     <EmailAddresses>
       <Email address="stratimikos-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </SubProject>
-  <SubProject name="Meros">
-    <Dependency name="Teuchos" type="ILR"/>
-    <Dependency name="ThreadPool" type="ILO"/>
-    <Dependency name="RTOp" type="ILR"/>
-    <Dependency name="Kokkos" type="ILO"/>
-    <Dependency name="Epetra" type="LR"/>
-    <Dependency name="Zoltan" type="ITO"/>
-    <Dependency name="Triutils" type="ITR"/>
-    <Dependency name="Tpetra" type="ILO"/>
-    <Dependency name="EpetraExt" type="LR"/>
-    <Dependency name="Thyra" type="LR"/>
-    <Dependency name="Isorropia" type="ITO"/>
-    <Dependency name="AztecOO" type="TR"/>
-    <Dependency name="Galeri" type="ITO"/>
-    <Dependency name="Amesos" type="ITO"/>
-    <Dependency name="Ifpack" type="ITO"/>
-    <Dependency name="ML" type="ITO"/>
-    <Dependency name="Belos" type="ITO"/>
-    <Dependency name="Stratimikos" type="TR"/>
-    <EmailAddresses>
-      <Email address="meros-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="FEI">
@@ -612,7 +590,7 @@
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="Sacado" type="LO"/>
     <Dependency name="RTOp" type="ILO"/>
-    <Dependency name="Kokkos" type="ILO"/>
+    <Dependency name="Kokkos" type="LO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>

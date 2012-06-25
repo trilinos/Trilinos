@@ -1,0 +1,63 @@
+Last updated: 25 June 2012
+
+This directory contains Python scripts for generating C++
+computational kernels, in particular sparse matrix kernels such as
+sparse matrix-(multi)vector multiply and sparse triangular solve.  The
+kernels are local, meaning that they operate within a single process
+and do not use MPI to communicate.  For now, we only implement
+sequential kernels, but we may choose to add (shared-memory) parallel
+kernels in the future.
+
+* SparseTriSolve.py
+
+Code generator for local sequential sparse matrix-(multi)vector
+multiply (SpMV).  This Python script generates templated C++ code for
+many different variants of SpMV for sparse matrices stored in
+compressed sparse row (CSR) or compressed sparse column (CSC) format,
+and dense input and output (multi)vectors stored in either
+column-major or row-major layout.
+
+The typical use case of the code is to generate two header files: one
+of declarations, and the other of definitions.  To do this, just run
+it as a script:
+
+$ python SparseMatVec.py
+
+That will create the two header files in the current working
+directory.  You can also import the SparseMatVec module from Python
+and use specific functions there.  Read the module's on-line
+documentation for more details.
+
+* SparseTriSolve.py
+
+Code generator for local sequential sparse triangular solve.  This
+Python script generates templated C++ code for many different variants
+of sparse triangular solve for sparse matrices stored in compressed
+sparse row (CSR) or compressed sparse column (CSC) format, and dense
+input and output (multi)vectors stored in either column-major or
+row-major layout.
+
+The typical use case of the code is to generate two header files: one
+of declarations, and the other of definitions.  To do this, just run
+it as a script:
+
+$ python SparseTriSolve.py
+
+That will create the two header files in the current working
+directory.  You can also import the SparseTriSolve module from Python
+and use specific functions there.  Read the module's on-line
+documentation for more details.
+
+* attic/
+
+Directory of older, deprecated scripts, such as
+sparse_triangular_solve.py.  I keep these around to mine for scraps of
+Python code, but there is no guarantee that they will run without
+errors or that they will generate correct or efficient code.
+
+TODO: 
+
+* Wouldn't it be nice if we could write kernels in a Python-like
+  pseudocode, and generate C++ code from them?  (We could use Python's
+  ast module for that.)
+

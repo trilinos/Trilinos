@@ -37,7 +37,6 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 *************************************************************************/
 
-
 /*
  * xfer_service_test.cpp
  *
@@ -49,6 +48,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "Trios_config.h"
 #include "Trios_nssi_client.h"
 #include "Trios_nssi_xdr.h"
+#include "Trios_nssi_debug.h"
 
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
@@ -57,6 +57,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include <xfer_service_args.h>
 #include "xfer_client.h"
 #include "xfer_debug.h"
+#include "xfer_util.h"
 
 
 #include <mpi.h>
@@ -66,7 +67,9 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include <iostream>
 #include <ostream>
 #include <fstream>
-
+#include <string>
+#include <vector>
+#include <algorithm>
 
 // Prototypes for client and server codes
 int xfer_server_main(nssi_rpc_transport transport, MPI_Comm server_comm);
@@ -81,6 +84,7 @@ int print_args(
         const struct xfer_args &args,
         const char *prefix)
 {
+
     if (args.client_flag && args.server_flag)
         out << prefix << " ------------  ARGUMENTS (client and server) ----------- " << std::endl;
     else if (args.client_flag && !args.server_flag)
@@ -88,7 +92,7 @@ int print_args(
     else if (!args.client_flag && args.server_flag)
         out << prefix << " ------------  ARGUMENTS (server) ----------- " << std::endl;
 
-    out << prefix << " \tserver-url       = " << args.server_url << std::endl;
+    out << prefix << " \tserver-url       = " << args.server_url.c_str() << std::endl;
 
     if (args.client_flag) {
         out << prefix << " \ttransport        = " << args.transport_name << std::endl;
@@ -170,10 +174,13 @@ int main(int argc, char *argv[])
     args.logfile = "";
     args.client_flag = true;
     args.server_flag = true;
+    args.num_servers = 1;
+    args.num_threads = 0;
     args.timeout = 500;
     args.num_retries = 5;
     args.validate_flag = true;
-    args.server_url = "";
+    args.block_distribution = true;
+
 
     bool success = true;
 
@@ -213,9 +220,12 @@ int main(int argc, char *argv[])
         parser.setOption("num-reqs", &args.num_reqs, "Number of reqs/trial");
         parser.setOption("result-file", &args.result_file, "Where to store results");
         parser.setOption("result-file-mode", &args.result_file_mode, "Write mode for the result");
-        parser.setOption("server-url", &args.server_url, "URL client uses to find the server");
         parser.setOption("server-url-file", &args.url_file, "File that has URL client uses to find server");
         parser.setOption("validate", "no-validate", &args.validate_flag, "Validate the data");
+        parser.setOption("num-servers", &args.num_servers, "Number of server processes");
+        parser.setOption("num-threads", &args.num_threads, "Number of threads used by each server process");
+        parser.setOption("block-distribution", "rr-distribution", &args.block_distribution,
+                "Use a block distribution scheme to assign clients to servers");
 
         // Set an enumeration command line option for the io_method
         parser.setOption("io-method", &args.io_method, num_io_methods, io_method_vals, io_method_names,
@@ -228,6 +238,7 @@ int main(int argc, char *argv[])
                 "\t\t\tread-encode-async: Read data through the RPC result - asynchronous\n"
                 "\t\t\tread-rdma-sync : Read data using RDMA (server puts) - synchronous\n"
                 "\t\t\tread-rdma-async: Read data using RDMA (server puts) - asynchronous");
+
 
         // Set an enumeration command line option for the io_method
         parser.setOption("transport", &args.transport, num_nssi_transports, nssi_transport_vals, nssi_transport_names,
@@ -332,28 +343,41 @@ int main(int argc, char *argv[])
      * a client and a server, we split the communicator so that the client thinks its
      * running by itself.
      */
+    int color = 0;  // color=0-->server, color=1-->client
     if (args.client_flag && args.server_flag) {
         if (np < 2) {
             log_error(debug_level, "Must use at least 2 MPI processes for client and server mode");
             MPI_Abort(MPI_COMM_WORLD, -1);
         }
 
-        // Split the communicators. Processors with color=0 are servers.
+        // Split the communicators. Put all the servers as the first ranks.
+        if (rank < args.num_servers) {
+            color = 0;
+            log_debug(LOG_ALL, "rank=%d is a server", rank);
+        }
+        else {
+            color = 1;  // all others are clients
+            log_debug(LOG_ALL, "rank=%d is a client", rank);
+        }
 
-        int color = (rank == 0) ? 0 : 1; // only one server
         MPI_Comm_split(MPI_COMM_WORLD, color, rank, &comm);
-
-        MPI_Comm_rank(comm, &splitrank);
-        MPI_Comm_size(comm, &splitsize);
-
-        //    std::cout << "rank=" << rank << "/" << np << ", color=" << color <<
-        //            ", new_rank=" << newrank << "/" << newsize << std::endl << std::endl;
-        //
-        //    std::cout << "my_url=" << my_url <<  ", server_url=" << args.server_url << std::endl;
     }
     else {
+        if (args.client_flag)
+            color=1;
+        else if (args.server_flag)
+            color=0;
+        else {
+            log_error(debug_level, "Must be either a client or a server");
+            MPI_Abort(MPI_COMM_WORLD, -1);
+        }
         MPI_Comm_dup(MPI_COMM_WORLD, &comm);
     }
+
+    MPI_Comm_rank(comm, &splitrank);
+    MPI_Comm_size(comm, &splitsize);
+
+    log_debug(debug_level, "%d: Finished splitting communicators", rank);
 
     /**
      * Initialize the Nessie interface by specifying a transport, encoding scheme, and a
@@ -365,83 +389,121 @@ int main(int argc, char *argv[])
      * the server, or NULL (as we did for the client).  This is a recommended value.  Use the
      * \ref nssi_get_url function to find the actual value.
      */
-    if (args.server_flag && !args.server_url.empty()) {
-        // use the server URL as suggested URL
-        nssi_rpc_init((nssi_rpc_transport)args.transport, NSSI_DEFAULT_ENCODE, args.server_url.c_str());
-    }
-    else {
-        nssi_rpc_init((nssi_rpc_transport)args.transport, NSSI_DEFAULT_ENCODE, NULL);
-    }
+    nssi_rpc_init((nssi_rpc_transport)args.transport, NSSI_DEFAULT_ENCODE, NULL);
 
     // Get the Server URL
     std::string my_url(NSSI_URL_LEN, '\0');
     nssi_get_url((nssi_rpc_transport)args.transport, &my_url[0], NSSI_URL_LEN);
 
-    // Broadcast the server URL to all the clients
+    // If running as both client and server, gather and distribute
+    // the server URLs to all the clients.
     if (args.server_flag && args.client_flag) {
-        args.server_url.resize(NSSI_URL_LEN, '\0');
-        args.server_url = my_url;
-        MPI_Bcast(&args.server_url[0], args.server_url.size(), MPI_CHAR, 0, MPI_COMM_WORLD);
+
+        std::string all_urls;
+
+        // This needs to be a vector of chars, not a string
+        all_urls.resize(args.num_servers * NSSI_URL_LEN, '\0');
+
+        // Have servers gather their URLs
+        if (color == 0) {
+            assert(args.num_servers == splitsize);  // these should be equal
+
+            log_debug(LOG_ALL, "%d: Gathering urls: my_url=%s", rank, my_url.c_str());
+
+            // gather all urls to rank 0 of the server comm (also rank 0 of MPI_COMM_WORLD)
+            MPI_Gather(&my_url[0], NSSI_URL_LEN, MPI_CHAR,
+                    &all_urls[0], NSSI_URL_LEN, MPI_CHAR, 0, comm);
+        }
+
+        // broadcast the full set of server urls to all processes
+        MPI_Bcast(&all_urls[0], all_urls.size(), MPI_CHAR, 0, MPI_COMM_WORLD);
+
+        log_debug(debug_level, "%d: Bcast urls, urls.size=%d", rank, all_urls.size());
+
+        if (color == 1) {
+
+            int server_index;
+            int rank_in_server;
+
+            // For block distribution scheme use the utility function (in xfer_util.cpp)
+            if (args.block_distribution) {
+                // Use this utility function to calculate the server_index
+                xfer_block_partition(args.num_servers, splitsize, splitrank, &server_index, &rank_in_server);
+            }
+
+            // Use a simple round robin distribution scheme
+            else {
+                server_index = splitrank % args.num_servers;
+            }
+
+            // Copy the server url out of the list of urls
+            int offset = server_index * NSSI_URL_LEN;
+
+            args.server_url = all_urls.substr(offset, NSSI_URL_LEN);
+
+            log_debug(debug_level, "client %d assigned to server \"%s\"", splitrank, args.server_url.c_str());
+        }
+
+
+        log_debug(debug_level, "%d: Finished distributing server urls, server_url=%s", rank, args.server_url.c_str());
     }
 
+    // If running as a client only, have to get the list of servers from the urlfile.
     else if (!args.server_flag && args.client_flag){
-        if (args.server_url.empty()) {
 
-            // check to see if we're supposed to get the URL from a file
-            if (!args.url_file.empty()) {
-                // Fetch the server URL from a file
-                sleep(1);
-                log_debug(debug_level, "Reading from file %s", args.url_file.c_str());
-                std::ifstream urlfile (args.url_file.c_str());
-                if (urlfile.is_open()) {
-                    if (urlfile.good())
-                        getline(urlfile, args.server_url);
-                }
-                else {
-                    log_error(debug_level, "Failed to open server_url_file=%s", args.url_file.c_str());
-                    exit(1);
-                }
-                urlfile.close();
-                log_debug(debug_level, "URL = %s", args.server_url.c_str());
-            }
-            else {
-                log_error(debug_level, "Need to set --server-url=[ADDR] or --server-url-file=[PATH]");
-            }
+        std::vector< std::string > urlbuf;
+        xfer_read_server_url_file(args.url_file.c_str(), urlbuf, comm);
+        args.num_servers = urlbuf.size();
+
+        int server_index=0;
+        int rank_in_server=0;
+
+        // For block distribution scheme use the utility function (in xfer_util.cpp)
+        if (args.block_distribution) {
+            // Use this utility function to calculate the server_index
+            xfer_block_partition(args.num_servers, splitsize, splitrank, &server_index, &rank_in_server);
         }
+
+        // Use a simple round robin distribution scheme
+        else {
+            server_index = splitrank % args.num_servers;
+        }
+
+        args.server_url = urlbuf[server_index];
+        log_debug(LOG_ALL, "client %d assigned to server \"%s\"", splitrank, args.server_url.c_str());
     }
 
     else if (args.server_flag && !args.client_flag) {
         args.server_url = my_url;
 
-        // If the url_file value is set, write the url to a file
-        if (!args.url_file.empty()) {
-            std::ofstream urlfile (args.url_file.c_str());
-            if (urlfile.is_open()) {
-                urlfile << args.server_url.c_str() << std::endl;
-            }
-            urlfile.close();
-            log_debug(debug_level, "Wrote url to file %s", args.url_file.c_str());
+        if (args.url_file.empty()) {
+            log_error(debug_level, "Must set --url-file");
+            MPI_Abort(MPI_COMM_WORLD, -1);
         }
+
+        xfer_write_server_url_file(args.url_file.c_str(), my_url.c_str(), comm);
     }
-
-
 
     // Set the debug level for the xfer service.
     xfer_debug_level = args.debug_level;
 
     // Print the arguments after they've all been set.
-    args.io_method_name = io_method_names[args.io_method];
-    args.transport_name = nssi_transport_names[args.transport];
+    args.io_method_name = std::string(io_method_names[args.io_method]);
+    args.transport_name = std::string(nssi_transport_names[args.transport]);
+
+    log_debug(LOG_ALL, "%d: server_url=%s", rank, args.server_url.c_str());
+
     print_args(out, args, "%");
 
+    log_debug(debug_level, "server_url=%s", args.server_url.c_str());
 
     //------------------------------------------------------------------------------
     /** If we're running this job with a server, the server always executes on node 0.
      *  In this example, the server is a single process.
      */
-    if (args.server_flag && (rank == 0)) {
+    if (color == 0) {
         rc = xfer_server_main((nssi_rpc_transport)args.transport, comm);
-        log_debug(debug_level, "Server is finished");
+        log_debug(LOG_ALL, "Server is finished");
     }
 
     // ------------------------------------------------------------------------------
@@ -466,7 +528,7 @@ int main(int argc, char *argv[])
 
             // connect to remote server
             for (i=0; i < args.num_retries; i++) {
-                log_debug(debug_level, "Try to connect to server: attempt #%d", i);
+                log_debug(debug_level, "Try to connect to server: attempt #%d, url=%s", i, args.server_url.c_str());
                 rc=nssi_get_service((nssi_rpc_transport)args.transport, args.server_url.c_str(), args.timeout, &xfer_svc);
                 if (rc == NSSI_OK)
                     break;

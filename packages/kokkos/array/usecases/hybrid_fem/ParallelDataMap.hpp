@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          KokkosArray: Node API and Parallel Node Kernels
+//          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -125,6 +125,7 @@ private:
   buffer_host_type     host_send_buffer ;
   buffer_host_type     send_msg_buffer ;
   buffer_dev_type      dev_buffer ;
+  std::vector< MPI_Request > recv_request ;
 
 public:
 
@@ -139,8 +140,10 @@ public:
   , host_send_buffer()
   , send_msg_buffer()
   , dev_buffer()
+  , recv_request()
   {
     const size_t send_msg_count = arg_data_map.host_send.dimension(0);
+    const size_t recv_msg_count = arg_data_map.host_recv.dimension(0);
 
     for ( size_t i = 0 ; i < send_msg_count ; ++i ) {
       send_count_max = std::max( send_count_max ,
@@ -159,34 +162,17 @@ public:
 
     send_msg_buffer.allocate( arg_chunk * send_count_max ,
                               std::string("AsyncExchange send_msg_buffer") );
+
+    recv_request.assign( recv_msg_count , MPI_REQUEST_NULL );
   }
 
   //------------------------------------------------------------------------
 
-  void send()
+  void setup()
   {
-    // Copy send buffer from the device to host memory for sending
+    { // Post receives:
+      const size_t recv_msg_count = data_map.host_recv.dimension(0);
 
-    KokkosArray::Impl::Factory< buffer_host_type , buffer_dev_type >
-      ::deep_copy( host_send_buffer , dev_buffer ,
-                   data_map.count_send * chunk_size );
-
-    // Done with the device until communication is complete.
-    // Application can dispatch asynchronous work on the device.
-  }
-
-  // Application can dispatch local work to device ...
-  // No communication progress until main thread calls 'complete'
-
-  void receive()
-  {
-    const size_t recv_msg_count = data_map.host_recv.dimension(0);
-    const size_t send_msg_count = data_map.host_send.dimension(0);
-
-    std::vector< MPI_Request > recv_request(recv_msg_count,MPI_REQUEST_NULL);
-
-    // Post receives:
-    {
       ValueType * ptr = host_recv_buffer.ptr_on_device();
 
       for ( size_t i = 0 ; i < recv_msg_count ; ++i ) {
@@ -200,6 +186,24 @@ public:
         ptr += count ;
       }
     }
+
+    // Copy send buffer from the device to host memory for sending
+
+    KokkosArray::Impl::Factory< buffer_host_type , buffer_dev_type >
+      ::deep_copy( host_send_buffer , dev_buffer ,
+                   data_map.count_send * chunk_size );
+
+    // Done with the device until communication is complete.
+    // Application can dispatch asynchronous work on the device.
+  }
+
+  // Application can dispatch local work to device ...
+  // No communication progress until main thread calls 'send_receive'
+
+  void send_receive()
+  {
+    const size_t recv_msg_count = data_map.host_recv.dimension(0);
+    const size_t send_msg_count = data_map.host_send.dimension(0);
 
     // Pack and send:
 
@@ -261,7 +265,7 @@ public:
       }
     }
 
-    // Copy received data to device memory:
+    // Copy received data to device memory.
 
     KokkosArray::Impl::Factory< buffer_dev_type , buffer_host_type >
       ::deep_copy( dev_buffer , host_recv_buffer , 

@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          KokkosArray: Node API and Parallel Node Kernels
+//          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -50,7 +50,7 @@ struct PackArray< Array< ValueType[N1] , KOKKOS_MACRO_DEVICE > , void >
 {
   typedef KOKKOS_MACRO_DEVICE                         device_type ;
   typedef KOKKOS_MACRO_DEVICE::size_type              size_type ;
-  typedef Array< ValueType[N1] , device_type >         array_type ;
+  typedef Array< ValueType[N1] , device_type >        array_type ;
   typedef Impl::MemoryView< ValueType , device_type > buffer_type ;
 
 private:

@@ -33,6 +33,7 @@ struct superchunk_t {
 
     size_t len;   /* length of buf in bytes */
 
+    nc_type      buftype;  /* the netcdf type of the data in buf */
     size_t datatype_size;
 
     nc_size_t *start;  /* starting corner (eg. 0,0,0 is the origin of a cube) */

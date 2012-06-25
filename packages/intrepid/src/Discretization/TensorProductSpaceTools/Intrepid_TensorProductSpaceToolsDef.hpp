@@ -57,11 +57,11 @@ namespace Intrepid {
     const unsigned space_dim = bases.size();
 
 #ifdef HAVE_INTREPID_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION( vals.rank() != 2 , std::invalid_argument ,
-				">>> ERROR (TensorProductSpaceTools::evaluate): vals must be rank 2 array." );
+    TEUCHOS_TEST_FOR_EXCEPTION( vals.rank() != 3 , std::invalid_argument ,
+				">>> ERROR (TensorProductSpaceTools::evaluate): vals must be rank 3 array." );
 
-    TEUCHOS_TEST_FOR_EXCEPTION( coeffs.rank() != 2 , std::invalid_argument ,
-				">>> ERROR (TensorProductSpaceTools::evaluate): coeffs must be rank 2 array." );
+    TEUCHOS_TEST_FOR_EXCEPTION( coeffs.rank() != 3 , std::invalid_argument ,
+				">>> ERROR (TensorProductSpaceTools::evaluate): coeffs must be rank 3 array." );
 
     for (unsigned d=0;d<space_dim;d++)
       {
@@ -71,6 +71,9 @@ namespace Intrepid {
 
     TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(0) != coeffs.dimension(0) , std::invalid_argument,
 				">>> ERROR (TensorProductSpaceTools::evaluate): Number of cells for vals and coeffs must match." );
+
+    TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(1) != coeffs.dimension(1) , std::invalid_argument,
+				">>> ERROR (TensorProductSpaceTools::evaluate): Number of fields for vals and coeffs must match." );
     
     int product_of_basis_dimensions = 1;
     int product_of_basis_points = 1;
@@ -80,10 +83,10 @@ namespace Intrepid {
 	product_of_basis_points *= bases[d]->dimension(1);
       }
     
-    TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(1) != product_of_basis_points , std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(2) != product_of_basis_points , std::invalid_argument,
 				">>> ERROR (TensorProductSpaceTools::evaluate): Incompatible number of points in vals and bases ." );
     
-    TEUCHOS_TEST_FOR_EXCEPTION( coeffs.dimension(1) != product_of_basis_dimensions , std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( coeffs.dimension(2) != product_of_basis_dimensions , std::invalid_argument,
 				">>> ERROR (TensorProductSpaceTools::evaluate): Incompatible number of basis functions in coeffs and bases ." );
 #endif    
     
@@ -110,11 +113,11 @@ namespace Intrepid {
     const unsigned space_dim = bases.size();
 
 #ifdef HAVE_INTREPID_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION( vals.rank() != 3 , std::invalid_argument ,
-				">>> ERROR (TensorProductSpaceTools::evaluate): vals must be rank 2 array." );
+    TEUCHOS_TEST_FOR_EXCEPTION( vals.rank() != 4 , std::invalid_argument ,
+				">>> ERROR (TensorProductSpaceTools::evaluate): vals must be rank 3 array." );
 
-    TEUCHOS_TEST_FOR_EXCEPTION( coeffs.rank() != 2 , std::invalid_argument ,
-				">>> ERROR (TensorProductSpaceTools::evaluate): coeffs must be rank 2 array." );
+    TEUCHOS_TEST_FOR_EXCEPTION( coeffs.rank() != 3 , std::invalid_argument ,
+				">>> ERROR (TensorProductSpaceTools::evaluate): coeffs must be rank 3 array." );
 
     TEUCHOS_TEST_FOR_EXCEPTION( Dbases.size() != (int)space_dim , std::invalid_argument ,
 				">>> ERROR (TensorProductSpaceTools::evaluate): bases and Dbases must be same size." );
@@ -125,11 +128,14 @@ namespace Intrepid {
 				    ">>> ERROR (TensorProductSpaceTools::evaluate): each tabulated basis must be rank 2 array." );
 
 	TEUCHOS_TEST_FOR_EXCEPTION( Dbases[d]->rank() != 3 , std::invalid_argument ,
-				    ">>> ERROR (TensorProductSpaceTools::evaluate): each tabulated Dbasis must be rank 2 array." );
+				    ">>> ERROR (TensorProductSpaceTools::evaluate): each tabulated Dbasis must be rank 3 array." );
       }
 
     TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(0) != coeffs.dimension(0) , std::invalid_argument,
 				">>> ERROR (TensorProductSpaceTools::evaluate): Number of cells for vals and coeffs must match." );
+
+    TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(1) != coeffs.dimension(1) , std::invalid_argument,
+				">>> ERROR (TensorProductSpaceTools::evaluate): Number of fields for vals and coeffs must match." );
     
     int product_of_basis_dimensions = 1;
     int product_of_basis_points = 1;
@@ -139,10 +145,10 @@ namespace Intrepid {
 	product_of_basis_points *= bases[d]->dimension(1);
       }
     
-    TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(1) != product_of_basis_points , std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(2) != product_of_basis_points , std::invalid_argument,
 				">>> ERROR (TensorProductSpaceTools::evaluate): Incompatible number of points in vals and bases ." );
     
-    TEUCHOS_TEST_FOR_EXCEPTION( coeffs.dimension(1) != product_of_basis_dimensions , std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( coeffs.dimension(2) != product_of_basis_dimensions , std::invalid_argument,
 				">>> ERROR (TensorProductSpaceTools::evaluate): Incompatible number of basis functions in coeffs and bases ." );
 
     for (unsigned d=0;d<space_dim;d++)
@@ -177,11 +183,11 @@ namespace Intrepid {
     const unsigned space_dim = basisVals.size();
 
 #ifdef HAVE_INTREPID_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION( vals.rank() != 2 , std::invalid_argument ,
-				">>> ERROR (TensorProductSpaceTools::evaluate): vals must be rank 2 array." );
+    TEUCHOS_TEST_FOR_EXCEPTION( vals.rank() != 3 , std::invalid_argument ,
+				">>> ERROR (TensorProductSpaceTools::evaluate): vals must be rank 3 array." );
 
-    TEUCHOS_TEST_FOR_EXCEPTION( data.rank() != 2 , std::invalid_argument ,
-				">>> ERROR (TensorProductSpaceTools::evaluate): coeffs must be rank 2 array." );
+    TEUCHOS_TEST_FOR_EXCEPTION( data.rank() != 3 , std::invalid_argument ,
+				">>> ERROR (TensorProductSpaceTools::evaluate): coeffs must be rank 3 array." );
 
     TEUCHOS_TEST_FOR_EXCEPTION( basisVals.size() != (int)space_dim , std::invalid_argument ,
 				">>> ERROR (TensorProductSpaceTools::evaluate): bases ill-sized." );
@@ -200,6 +206,9 @@ namespace Intrepid {
 
     TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(0) != data.dimension(0) , std::invalid_argument,
 				">>> ERROR (TensorProductSpaceTools::evaluate): Number of cells for vals and coeffs must match." );
+
+    TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(1) != data.dimension(1) , std::invalid_argument,
+				">>> ERROR (TensorProductSpaceTools::evaluate): Number of fields for vals and coeffs must match." );
     
     int product_of_basis_dimensions = 1;
     int product_of_basis_points = 1;
@@ -209,10 +218,10 @@ namespace Intrepid {
 	product_of_basis_points *= basisVals[d]->dimension(1);
       }
     
-    TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(1) != product_of_basis_dimensions , std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( vals.dimension(2) != product_of_basis_dimensions , std::invalid_argument,
 				">>> ERROR (TensorProductSpaceTools::evaluate): Incompatible number of points in vals and bases ." );
     
-    TEUCHOS_TEST_FOR_EXCEPTION( data.dimension(1) != product_of_basis_points , std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( data.dimension(2) != product_of_basis_points , std::invalid_argument,
 				">>> ERROR (TensorProductSpaceTools::evaluate): Incompatible number of basis functions in data and bases ." );
 
 #endif    
@@ -241,10 +250,10 @@ namespace Intrepid {
 
 #ifdef HAVE_INTREPID_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( vals.rank() != 3 , std::invalid_argument ,
-				">>> ERROR (TensorProductSpaceTools::evaluate): vals must be rank 2 array." );
+				">>> ERROR (TensorProductSpaceTools::evaluate): vals must be rank 3 array." );
 
-    TEUCHOS_TEST_FOR_EXCEPTION( data.rank() != 3 , std::invalid_argument ,
-				">>> ERROR (TensorProductSpaceTools::evaluate): coeffs must be rank 2 array." );
+    TEUCHOS_TEST_FOR_EXCEPTION( data.rank() != 4 , std::invalid_argument ,
+				">>> ERROR (TensorProductSpaceTools::evaluate): coeffs must be rank 4 array." );
 
     TEUCHOS_TEST_FOR_EXCEPTION( basisVals.size() != (int)space_dim , std::invalid_argument ,
 				">>> ERROR (TensorProductSpaceTools::evaluate): bases ill-sized." );
@@ -261,7 +270,7 @@ namespace Intrepid {
 				    ">>> ERROR (TensorProductSpaceTools::evaluate): each tabulated basis must be rank 2 array." );
 
 	TEUCHOS_TEST_FOR_EXCEPTION( basisDVals[d]->rank() != 3 , std::invalid_argument ,
-				    ">>> ERROR (TensorProductSpaceTools::evaluate): each tabulated derivative basis must be rank 2 array." );
+				    ">>> ERROR (TensorProductSpaceTools::evaluate): each tabulated derivative basis must be rank 3 array." );
 
 	TEUCHOS_TEST_FOR_EXCEPTION( wts[d]->rank() != 1 , std::invalid_argument ,
 				    ">>> ERROR (TensorProductSpaceTools::evaluate): each tabulated Dbasis must be rank 2 array." );
@@ -312,49 +321,53 @@ namespace Intrepid {
     const int numPtsy = bases[1]->dimension(1);
     
     const int numCells = vals.dimension(0);
-    
+    const int numFields = vals.dimension(1);
+
     const ArrayTypeBasis &Phix = *bases[0];
     const ArrayTypeBasis &Phiy = *bases[1];
     
     FieldContainer<double> Xi(numCells,numBfy,numPtsx);
     
     // sum factorization step
-    
-    for (int cell=0;cell<numCells;cell++)
+
+    for (int f=0;f<numFields;f++)
       {
-	for (int j=0;j<numBfy;j++)
+	for (int cell=0;cell<numCells;cell++)
 	  {
-	    for (int i=0;i<numBfx;i++)
+	    for (int j=0;j<numBfy;j++)
 	      {
-		const int I = j * numBfx + i;
-		for (int k=0;k<numPtsx;k++)
+		for (int i=0;i<numBfx;i++)
 		  {
-		    Xi(cell,j,k) += coeffs(cell,I) * Phix(i,k);
+		    const int I = j * numBfx + i;
+		    for (int k=0;k<numPtsx;k++)
+		      {
+			Xi(cell,j,k) += coeffs(cell,f,I) * Phix(i,k);
+		      }
 		  }
 	      }
 	  }
-      }
-    
-    for (int cell=0;cell<numCells;cell++)
-      {
-	for (int kpty=0;kpty<numPtsy;kpty++)
-	  {
-	    for (int kptx=0;kptx<numPtsx;kptx++)
-	      {
-		vals(cell,kptx+numPtsx*kpty) = 0.0;
-	      }
-	  }
 	
-	// evaluation step
-	for (int kpty=0;kpty<numPtsy;kpty++)
+	for (int cell=0;cell<numCells;cell++)
 	  {
-	    for (int kptx=0;kptx<numPtsx;kptx++)
+	    for (int kpty=0;kpty<numPtsy;kpty++)
 	      {
-		const int I=kptx+numPtsx*kpty;
-		
-		for (int j=0;j<numBfy;j++)
+		for (int kptx=0;kptx<numPtsx;kptx++)
 		  {
-		    vals(cell,I) += Phiy(j,kpty) * Xi(cell,j,kptx);
+		    vals(cell,f,kptx+numPtsx*kpty) = 0.0;
+		  }
+	      }
+	    
+	    // evaluation step
+	    for (int kpty=0;kpty<numPtsy;kpty++)
+	      {
+		for (int kptx=0;kptx<numPtsx;kptx++)
+		  {
+		    const int I=kptx+numPtsx*kpty;
+		    
+		    for (int j=0;j<numBfy;j++)
+		      {
+			vals(cell,f,I) += Phiy(j,kpty) * Xi(cell,j,kptx);
+		      }
 		  }
 	      }
 	  }
@@ -383,6 +396,7 @@ namespace Intrepid {
     const int numPtsz = bases[2]->dimension(1);
     
     const int numCells = vals.dimension(0);
+    const int numFields = vals.dimension(1);
     
     const ArrayTypeBasis &Phix = *bases[0];
     const ArrayTypeBasis &Phiy = *bases[1];
@@ -395,56 +409,60 @@ namespace Intrepid {
 				 numBfz , numPtsy, numPtsx );
     
     
-    // Xi section
-    for (int c=0;c<numCells;c++)
+    for (int f=0;f<numFields;f++)
       {
-	for (int k=0;k<numBfz;k++)
+
+	// Xi section
+	for (int c=0;c<numCells;c++)
 	  {
-	    for (int j=0;j<numBfy;j++)
+	    for (int k=0;k<numBfz;k++)
 	      {
-		for (int l=0;l<numPtsx;l++)
+		for (int j=0;j<numBfy;j++)
 		  {
-		    for (int i=0;i<numBfx;i++)
+		    for (int l=0;l<numPtsx;l++)
 		      {
-			const int coeffIndex = k*numBfz*numBfx + j * numBfx + i;
-			Xi(c,k,j,l) += Phix(i,l) * coeffs(c,coeffIndex);
+			for (int i=0;i<numBfx;i++)
+			  {
+			    const int coeffIndex = k*numBfz*numBfx + j * numBfx + i;
+			    Xi(c,k,j,l) += Phix(i,l) * coeffs(c,f,coeffIndex);
+			  }
 		      }
 		  }
 	      }
 	  }
-      }
     
-    // Theta section
-    for (int c=0;c<numCells;c++)
-      {
-	for (int k=0;k<numBfz;k++)
+	// Theta section
+	for (int c=0;c<numCells;c++)
 	  {
-	    for (int m=0;m<numPtsy;m++)
+	    for (int k=0;k<numBfz;k++)
 	      {
-		for (int l=0;l<numPtsx;l++)
+		for (int m=0;m<numPtsy;m++)
 		  {
-		    for (int j=0;j<numBfy;j++)
+		    for (int l=0;l<numPtsx;l++)
 		      {
-			Theta(c,k,m,l) += Phiy(j,m) * Xi(c,k,j,l);
+			for (int j=0;j<numBfy;j++)
+			  {
+			    Theta(c,k,m,l) += Phiy(j,m) * Xi(c,k,j,l);
+			  }
 		      }
 		  }
 	      }
 	  }
-      }
     
-    // final section
-    for (int c=0;c<numCells;c++)
-      {
-	for (int n=0;n<numPtsz;n++)
+	// final section
+	for (int c=0;c<numCells;c++)
 	  {
-	    for (int m=0;m<numPtsy;m++)
+	    for (int n=0;n<numPtsz;n++)
 	      {
-		for (int l=0;l<numPtsx;l++)
+		for (int m=0;m<numPtsy;m++)
 		  {
-		    vals(c,n*numPtsx*numPtsy+m*numPtsx+l) = 0.0;
-		    for (int k=0;k<numBfz;k++)
+		    for (int l=0;l<numPtsx;l++)
 		      {
-			vals(c,n*numPtsx*numPtsy+m*numPtsx+l) += Theta(c,k,m,l) * Phiz(k,n);
+			vals(c,f,n*numPtsx*numPtsy+m*numPtsx+l) = 0.0;
+			for (int k=0;k<numBfz;k++)
+			  {
+			    vals(c,f,n*numPtsx*numPtsy+m*numPtsx+l) += Theta(c,k,m,l) * Phiz(k,n);
+			  }
 		      }
 		  }
 	      }
@@ -469,106 +487,110 @@ namespace Intrepid {
     const int numPtsx = bases[0]->dimension(1);
     const int numPtsy = bases[1]->dimension(1);
     const int numCells = vals.dimension(0);
+    const int numFields = vals.dimension(1);
     const ArrayTypeBasis &Phix = *bases[0];
     const ArrayTypeBasis &Phiy = *bases[1];
     const ArrayTypeBasis &DPhix = *Dbases[0];
     const ArrayTypeBasis &DPhiy = *Dbases[1];
     
     FieldContainer<double> Xi(numBfy,numPtsx);
-    
-    for (int cell=0;cell<numCells;cell++)
+
+    for (int f=0;f<numFields;f++)
       {
-	// x derivative
-	
-	// sum factorization step
-	for (int j=0;j<numBfy;j++)
-	  {
-	    for (int k=0;k<numPtsx;k++)
-	      {
-		Xi(j,k) = 0.0;
-	      }
-	  }
-	
-	for (int j=0;j<numBfy;j++)
-	  {
-	    for (int i=0;i<numBfx;i++)
-	      {
-		const int I = j * numBfx + i;
-		for (int k=0;k<numPtsx;k++)
-		  {
-		    Xi(j,k) += coeffs(cell,I) * DPhix(i,k,0);
-		  }
-	      }
-	  }
-	
-	for (int kpty=0;kpty<numPtsy;kpty++)
-	  {
-	    for (int kptx=0;kptx<numPtsx;kptx++)
-	      {
-		vals(cell,kptx+numPtsx*kpty,0) = 0.0;
-	      }
-	  }
-	
-	// evaluation step
-	for (int kpty=0;kpty<numPtsy;kpty++)
-	  {
-	    for (int kptx=0;kptx<numPtsx;kptx++)
-	      {
-		const int I=kptx+numPtsx*kpty;
-		
-		for (int j=0;j<numBfy;j++)
-		  {
-		    vals(cell,I,0) += Phiy(j,kpty) * Xi(j,kptx);
-		  }
-	      }
-	  }
-	
-	// y derivative
-	
-	// sum factorization step
-	for (int j=0;j<numBfy;j++)
-	  {
-	    for (int k=0;k<numPtsx;k++)
-	      {
-		Xi(j,k) = 0.0;
-	      }
-	  }
-	
-	for (int j=0;j<numBfy;j++)
-	  {
-	    for (int i=0;i<numBfx;i++)
-	      {
-		const int I = j * numBfx + i;
-		for (int k=0;k<numPtsx;k++)
-		  {
-		    Xi(j,k) += coeffs(cell,I) * Phix(i,k);
-		  }
-	      }
-	  }
-	
-	for (int kpty=0;kpty<numPtsy;kpty++)
-	  {
-	    for (int kptx=0;kptx<numPtsx;kptx++)
-	      {
-		vals(cell,kptx+numPtsx*kpty,1) = 0.0;
-	      }
-	  }
-	
-	// evaluation step
-	for (int kpty=0;kpty<numPtsy;kpty++)
-	  {
-	    for (int kptx=0;kptx<numPtsx;kptx++)
-	      {
-		const int I=kptx+numPtsx*kpty;
-		
-		for (int j=0;j<numBfy;j++)
-		  {
-		    vals(cell,I,1) += DPhiy(j,kpty,0) * Xi(j,kptx);
-		  }
-	      }
-	  }
-      }
     
+	for (int cell=0;cell<numCells;cell++)
+	  {
+	    // x derivative
+	
+	    // sum factorization step
+	    for (int j=0;j<numBfy;j++)
+	      {
+		for (int k=0;k<numPtsx;k++)
+		  {
+		    Xi(j,k) = 0.0;
+		  }
+	      }
+	
+	    for (int j=0;j<numBfy;j++)
+	      {
+		for (int i=0;i<numBfx;i++)
+		  {
+		    const int I = j * numBfx + i;
+		    for (int k=0;k<numPtsx;k++)
+		      {
+			Xi(j,k) += coeffs(cell,f,I) * DPhix(i,k,0);
+		      }
+		  }
+	      }
+	
+	    for (int kpty=0;kpty<numPtsy;kpty++)
+	      {
+		for (int kptx=0;kptx<numPtsx;kptx++)
+		  {
+		    vals(cell,f,kptx+numPtsx*kpty,0) = 0.0;
+		  }
+	      }
+	
+	    // evaluation step
+	    for (int kpty=0;kpty<numPtsy;kpty++)
+	      {
+		for (int kptx=0;kptx<numPtsx;kptx++)
+		  {
+		    const int I=kptx+numPtsx*kpty;
+		
+		    for (int j=0;j<numBfy;j++)
+		      {
+			vals(cell,f,I,0) += Phiy(j,kpty) * Xi(j,kptx);
+		      }
+		  }
+	      }
+	
+	    // y derivative
+	
+	    // sum factorization step
+	    for (int j=0;j<numBfy;j++)
+	      {
+		for (int k=0;k<numPtsx;k++)
+		  {
+		    Xi(j,k) = 0.0;
+		  }
+	      }
+	
+	    for (int j=0;j<numBfy;j++)
+	      {
+		for (int i=0;i<numBfx;i++)
+		  {
+		    const int I = j * numBfx + i;
+		    for (int k=0;k<numPtsx;k++)
+		      {
+			Xi(j,k) += coeffs(cell,f,I) * Phix(i,k);
+		      }
+		  }
+	      }
+	
+	    for (int kpty=0;kpty<numPtsy;kpty++)
+	      {
+		for (int kptx=0;kptx<numPtsx;kptx++)
+		  {
+		    vals(cell,f,kptx+numPtsx*kpty,1) = 0.0;
+		  }
+	      }
+	
+	    // evaluation step
+	    for (int kpty=0;kpty<numPtsy;kpty++)
+	      {
+		for (int kptx=0;kptx<numPtsx;kptx++)
+		  {
+		    const int I=kptx+numPtsx*kpty;
+		
+		    for (int j=0;j<numBfy;j++)
+		      {
+			vals(cell,f,I,1) += DPhiy(j,kpty,0) * Xi(j,kptx);
+		      }
+		  }
+	      }
+	  }
+      }    
     return;
   }
 
@@ -591,6 +613,7 @@ namespace Intrepid {
     const int numPtsy = bases[1]->dimension(1);
     const int numPtsz = bases[2]->dimension(1);
     const int numCells = vals.dimension(0);
+    const int numFields = vals.dimension(1);
     const ArrayTypeBasis &Phix = *bases[0];
     const ArrayTypeBasis &Phiy = *bases[1];
     const ArrayTypeBasis &Phiz = *bases[2];
@@ -604,72 +627,74 @@ namespace Intrepid {
     FieldContainer<double> Theta(numCells, 
 				 numBfz , numPtsy, numPtsx , 3);
   
-
-    // Xi section
-    for (int c=0;c<numCells;c++)
+    for (int f=0;f<numFields;f++)
       {
-	for (int k=0;k<numBfz;k++)
+
+	// Xi section
+	for (int c=0;c<numCells;c++)
 	  {
-	    for (int j=0;j<numBfy;j++)
+	    for (int k=0;k<numBfz;k++)
 	      {
-		for (int l=0;l<numPtsx;l++)
+		for (int j=0;j<numBfy;j++)
 		  {
-		    for (int i=0;i<numBfx;i++)
+		    for (int l=0;l<numPtsx;l++)
 		      {
-			const int coeffIndex = k*numBfz*numBfx + j * numBfx + i;
-			Xi(c,k,j,l,0) += DPhix(i,l,0) * coeffs(c,coeffIndex);
-			Xi(c,k,j,l,1) += Phix(i,l) * coeffs(c,coeffIndex);
-			Xi(c,k,j,l,2) += Phix(i,l) * coeffs(c,coeffIndex);
+			for (int i=0;i<numBfx;i++)
+			  {
+			    const int coeffIndex = k*numBfz*numBfx + j * numBfx + i;
+			    Xi(c,k,j,l,0) += DPhix(i,l,0) * coeffs(c,f,coeffIndex);
+			    Xi(c,k,j,l,1) += Phix(i,l) * coeffs(c,f,coeffIndex);
+			    Xi(c,k,j,l,2) += Phix(i,l) * coeffs(c,f,coeffIndex);
+			  }
+		      }
+		  }
+	      }
+	  }
+
+	// Theta section
+	for (int c=0;c<numCells;c++)
+	  {
+	    for (int k=0;k<numBfz;k++)
+	      {
+		for (int m=0;m<numPtsy;m++)
+		  {
+		    for (int l=0;l<numPtsx;l++)
+		      {
+			for (int j=0;j<numBfy;j++)
+			  {
+			    Theta(c,k,m,l,0) += Phiy(j,m) * Xi(c,k,j,l,0);
+			    Theta(c,k,m,l,1) += DPhiy(j,m,0) * Xi(c,k,j,l,1);
+			    Theta(c,k,m,l,2) += Phiy(j,m) * Xi(c,k,j,l,2);
+			  }
+		      }
+		  }
+	      }
+	  }
+
+	// final section
+	for (int c=0;c<numCells;c++)
+	  {
+	    for (int n=0;n<numPtsz;n++)
+	      {
+		for (int m=0;m<numPtsy;m++)
+		  {
+		    for (int l=0;l<numPtsx;l++)
+		      {
+			vals(c,f,n*numPtsx*numPtsy+m*numPtsx+l,0) = 0.0;
+			vals(c,f,n*numPtsx*numPtsy+m*numPtsx+l,1) = 0.0;
+			vals(c,f,n*numPtsx*numPtsy+m*numPtsx+l,2) = 0.0;
+			for (int k=0;k<numBfz;k++)
+			  {
+			    vals(c,f,n*numPtsx*numPtsy+m*numPtsx+l,0) += Theta(c,k,m,l,0) * Phiz(k,n);
+			    vals(c,f,n*numPtsx*numPtsy+m*numPtsx+l,1) += Theta(c,k,m,l,1) * Phiz(k,n);
+			    vals(c,f,n*numPtsx*numPtsy+m*numPtsx+l,2) += Theta(c,k,m,l,2) * DPhiz(k,n,0);
+
+			  }
 		      }
 		  }
 	      }
 	  }
       }
-
-    // Theta section
-    for (int c=0;c<numCells;c++)
-      {
-	for (int k=0;k<numBfz;k++)
-	  {
-	    for (int m=0;m<numPtsy;m++)
-	      {
-		for (int l=0;l<numPtsx;l++)
-		  {
-		    for (int j=0;j<numBfy;j++)
-		      {
-			Theta(c,k,m,l,0) += Phiy(j,m) * Xi(c,k,j,l,0);
-			Theta(c,k,m,l,1) += DPhiy(j,m,0) * Xi(c,k,j,l,1);
-			Theta(c,k,m,l,2) += Phiy(j,m) * Xi(c,k,j,l,2);
-		      }
-		  }
-	      }
-	  }
-      }
-
-    // final section
-    for (int c=0;c<numCells;c++)
-      {
-	for (int n=0;n<numPtsz;n++)
-	  {
-	    for (int m=0;m<numPtsy;m++)
-	      {
-		for (int l=0;l<numPtsx;l++)
-		  {
-		    vals(c,n*numPtsx*numPtsy+m*numPtsx+l,0) = 0.0;
-		    vals(c,n*numPtsx*numPtsy+m*numPtsx+l,1) = 0.0;
-		    vals(c,n*numPtsx*numPtsy+m*numPtsx+l,2) = 0.0;
-		    for (int k=0;k<numBfz;k++)
-		      {
-			vals(c,n*numPtsx*numPtsy+m*numPtsx+l,0) += Theta(c,k,m,l,0) * Phiz(k,n);
-			vals(c,n*numPtsx*numPtsy+m*numPtsx+l,1) += Theta(c,k,m,l,1) * Phiz(k,n);
-			vals(c,n*numPtsx*numPtsy+m*numPtsx+l,2) += Theta(c,k,m,l,2) * DPhiz(k,n,0);
-
-		      }
-		  }
-	      }
-	  }
-      }
-
     return;
   }
 
@@ -685,6 +710,7 @@ namespace Intrepid {
     const int numPtsx = basisVals[0]->dimension(1);
     const int numPtsy = basisVals[1]->dimension(1);
     const int numCells = vals.dimension(0);
+    const int numFields = vals.dimension(1);
     const ArrayTypeBasis &Phix = *basisVals[0];
     const ArrayTypeBasis &Phiy = *basisVals[1];
     
@@ -692,50 +718,52 @@ namespace Intrepid {
     
     const ArrayTypeWeights &wtsx = *wts[0];
     const ArrayTypeWeights &wtsy = *wts[1];
-    
-    for (int cell=0;cell<numCells;cell++)
+
+    for (int f=0;f<numFields;f++)
       {
-	// sum factorization step
-	for (int i=0;i<numBfx;i++)
+	for (int cell=0;cell<numCells;cell++)
 	  {
-	    for (int k=0;k<numPtsy;k++)
-	      {
-		Xi(i,k) = 0.0;
-	      }
-	  }
-	
-	for (int i=0;i<numBfx;i++)
-	  {
-	    for (int l=0;l<numPtsy;l++)
-	      {
-		for (int k=0;k<numPtsx;k++)
-		  {
-		    Xi(i,l) += wtsx(k) * data(cell,l*numPtsx+k) * Phix(i,k);
-		  }
-	      }
-	  }
-	
-	for (int j=0;j<numBfy;j++)
-	  {
+	    // sum factorization step
 	    for (int i=0;i<numBfx;i++)
 	      {
-		vals(cell,j*numBfx+i) = 0.0;
+		for (int k=0;k<numPtsy;k++)
+		  {
+		    Xi(i,k) = 0.0;
+		  }
 	      }
-	  }
-
-	// evaluate moments with sum factorization
-	for (int j=0;j<numBfy;j++)
-	  {
+	
 	    for (int i=0;i<numBfx;i++)
 	      {
 		for (int l=0;l<numPtsy;l++)
 		  {
-		    vals(cell,j*numBfx+i) += wtsy(l) * Phiy(j,l) * Xi(i,l);
+		    for (int k=0;k<numPtsx;k++)
+		      {
+			Xi(i,l) += wtsx(k) * data(cell,f,l*numPtsx+k) * Phix(i,k);
+		      }
+		  }
+	      }
+	
+	    for (int j=0;j<numBfy;j++)
+	      {
+		for (int i=0;i<numBfx;i++)
+		  {
+		    vals(cell,f,j*numBfx+i) = 0.0;
+		  }
+	      }
+
+	    // evaluate moments with sum factorization
+	    for (int j=0;j<numBfy;j++)
+	      {
+		for (int i=0;i<numBfx;i++)
+		  {
+		    for (int l=0;l<numPtsy;l++)
+		      {
+			vals(cell,f,j*numBfx+i) += wtsy(l) * Phiy(j,l) * Xi(i,l);
+		      }
 		  }
 	      }
 	  }
       }
-
     return;
 
   }
@@ -756,7 +784,7 @@ namespace Intrepid {
     const int numPtsz = basisVals[2]->dimension(1);
 
     const int numCells = vals.dimension(0);
-
+    
     const ArrayTypeBasis &Phix = *basisVals[0];
     const ArrayTypeBasis &Phiy = *basisVals[1];
     const ArrayTypeBasis &Phiz = *basisVals[2];
@@ -768,28 +796,10 @@ namespace Intrepid {
     FieldContainer<double> Xi(numCells,numBfx,numPtsz,numPtsy);
     FieldContainer<double> Theta(numCells,numBfy,numBfx,numPtsz);
 
-    // Xi phase
-    for (int c=0;c<numCells;c++)
+    for (int f=0;f<numCells;f++)
       {
-	for (int i=0;i<numBfx;i++)
-	  {
-	    for (int n=0;n<numPtsz;n++)
-	      {
-		for (int m=0;m<numPtsy;m++)
-		  {
-		    for (int l=0;l<numPtsx;l++)
-		      {
-			Xi(c,i,n,m) += Wtx(l) * Phix(i,l) * data(c,n*numPtsy*numPtsx+m*numPtsx+l);
-		      }
-		  }
-	      }
-	  }
-      }
-
-    // Theta phase
-    for (int c=0;c<numCells;c++)
-      {
-	for (int j=0;j<numBfy;j++)
+	// Xi phase
+	for (int c=0;c<numCells;c++)
 	  {
 	    for (int i=0;i<numBfx;i++)
 	      {
@@ -797,33 +807,53 @@ namespace Intrepid {
 		  {
 		    for (int m=0;m<numPtsy;m++)
 		      {
-			Theta(c,j,i,n) += Wty(m) * Phiy(j,m) * Xi(c,i,n,m);
+			for (int l=0;l<numPtsx;l++)
+			  {
+			    Xi(c,i,n,m) += Wtx(l) * Phix(i,l) * data(c,f,n*numPtsy*numPtsx+m*numPtsx+l);
+			  }
 		      }
 		  }
 	      }
 	  }
-      }
 
-    // Final phase
-    for (int c=0;c<numCells;c++)
-      {
-	for (int k=0;k<numBfz;k++)
+	// Theta phase
+	for (int c=0;c<numCells;c++)
 	  {
 	    for (int j=0;j<numBfy;j++)
 	      {
 		for (int i=0;i<numBfx;i++)
 		  {
-		    const int momIdx = k*numBfx*numBfy+j*numBfx+i;
 		    for (int n=0;n<numPtsz;n++)
 		      {
-			vals(c,momIdx) += Wtz(n) * Phiz(k,n) * Theta(c,j,i,n);
+			for (int m=0;m<numPtsy;m++)
+			  {
+			    Theta(c,j,i,n) += Wty(m) * Phiy(j,m) * Xi(c,i,n,m);
+			  }
 		      }
 		  }
 	      }
 	  }
+
+	// Final phase
+	for (int c=0;c<numCells;c++)
+	  {
+	    for (int k=0;k<numBfz;k++)
+	      {
+		for (int j=0;j<numBfy;j++)
+		  {
+		    for (int i=0;i<numBfx;i++)
+		      {
+			const int momIdx = k*numBfx*numBfy+j*numBfx+i;
+			for (int n=0;n<numPtsz;n++)
+			  {
+			    vals(c,f,momIdx) += Wtz(n) * Phiz(k,n) * Theta(c,j,i,n);
+			  }
+		      }
+		  }
+	      }
+	  }
+
       }
-
-
     return;
 
   }
@@ -846,6 +876,7 @@ namespace Intrepid {
     const int numPtsx = basisVals[0]->dimension(1);
     const int numPtsy = basisVals[1]->dimension(1);
     const int numCells = vals.dimension(0);
+    const int numFields = vals.dimension(1);
     const ArrayTypeBasis &Phix = *basisVals[0];
     const ArrayTypeBasis &Phiy = *basisVals[1];
     const ArrayTypeBasis &DPhix = *Dbases[0];
@@ -854,41 +885,43 @@ namespace Intrepid {
     const ArrayTypeWeights &wtsy = *wts[1];
     
     FieldContainer<double> Xi(numBfx,numPtsy,2);
-    
-    // Xi phase
-    for (int c=0;c<numCells;c++)
-      {
-	for (int i=0;i<numBfx;i++)
-	  {
-	    for (int m=0;m<numPtsy;m++)
-	      {
-		for (int l=0;l<numPtsx;l++)
-		  {
-		    Xi(i,m,0) += wtsx(l) * data(c,m*numPtsy+l,0) * DPhix(i,l);
-		    Xi(i,m,1) += wtsx(l) * data(c,m*numPtsy+l,1) * Phix(i,l);
-		  }
-	      }
-	  }
-      }
 
-    // main phase
-    for (int c=0;c<numCells;c++)
+    for (int f=0;f<numFields;f++)
       {
-	for (int j=0;j<numBfy;j++)
+	// Xi phase
+	for (int c=0;c<numCells;c++)
 	  {
 	    for (int i=0;i<numBfx;i++)
 	      {
-		const int bfIdx = j*numBfx+i;
-		vals(c,bfIdx) = 0.0;
 		for (int m=0;m<numPtsy;m++)
 		  {
-		    vals(c,bfIdx) += wtsy(m) * Xi(i,m,0) * Phiy(j,m);
-		    vals(c,bfIdx) += wtsy(m) * Xi(i,m,1) * DPhiy(j,m);
+		    for (int l=0;l<numPtsx;l++)
+		      {
+			Xi(i,m,0) += wtsx(l) * data(c,f,m*numPtsy+l,0) * DPhix(i,l);
+			Xi(i,m,1) += wtsx(l) * data(c,f,m*numPtsy+l,1) * Phix(i,l);
+		      }
+		  }
+	      }
+	  }
+
+	// main phase
+	for (int c=0;c<numCells;c++)
+	  {
+	    for (int j=0;j<numBfy;j++)
+	      {
+		for (int i=0;i<numBfx;i++)
+		  {
+		    const int bfIdx = j*numBfx+i;
+		    vals(c,f,bfIdx) = 0.0;
+		    for (int m=0;m<numPtsy;m++)
+		      {
+			vals(c,f,bfIdx) += wtsy(m) * Xi(i,m,0) * Phiy(j,m);
+			vals(c,f,bfIdx) += wtsy(m) * Xi(i,m,1) * DPhiy(j,m);
+		      }
 		  }
 	      }
 	  }
       }
-
     return;
 
   }
@@ -909,6 +942,7 @@ namespace Intrepid {
     const int numPtsy = basisVals[1]->dimension(1);
     const int numPtsz = basisVals[2]->dimension(1);
     const int numCells = vals.dimension(0);
+    const int numFields = vals.dimension(1);
     const ArrayTypeBasis &Phix = *basisVals[0];
     const ArrayTypeBasis &Phiy = *basisVals[1];
     const ArrayTypeBasis &Phiz = *basisVals[2];
@@ -923,30 +957,9 @@ namespace Intrepid {
     FieldContainer<double> Theta(numCells,numBfy,numBfx,numPtsz,3);
   
     // Xi phase
-    for (int c=0;c<numCells;c++)
+    for (int f=0;f<numFields;f++)
       {
-	for (int i=0;i<numBfx;i++)
-	  {
-	    for (int n=0;n<numPtsz;n++)
-	      {
-		for (int m=0;m<numPtsy;m++)
-		  {
-		    for (int l=0;l<numPtsx;l++)
-		      {
-			const int dataIdx = n * numPtsy * numPtsx + m * numPtsx + l;
-			Xi(c,i,n,m,0) += wtsx(l) * DPhix(i,l,0) * data(c,dataIdx);
-			Xi(c,i,n,m,1) += wtsx(l) * Phix(i,l) * data(c,dataIdx);
-			Xi(c,i,n,m,2) += wtsx(l) * Phix(i,l) * data(c,dataIdx);
-		      }
-		  }
-	      }
-	  }
-      }
-
-    // Theta phase
-    for (int c=0;c<numCells;c++)
-      {
-	for (int j=0;j<numBfy;j++)
+	for (int c=0;c<numCells;c++)
 	  {
 	    for (int i=0;i<numBfx;i++)
 	      {
@@ -954,36 +967,59 @@ namespace Intrepid {
 		  {
 		    for (int m=0;m<numPtsy;m++)
 		      {
-			Theta(c,j,i,n,0) += wtsy(j) * Phiy(j,m) * Xi(c,i,n,m,0);
-			Theta(c,j,i,n,1) += wtsy(j) * DPhiy(j,m,0) * Xi(c,i,n,m,1);
-			Theta(c,j,i,n,2) += wtsy(j) * Phiy(j,m) * Xi(c,i,n,m,2);
+			for (int l=0;l<numPtsx;l++)
+			  {
+			    const int dataIdx = n * numPtsy * numPtsx + m * numPtsx + l;
+			    Xi(c,i,n,m,0) += wtsx(l) * DPhix(i,l,0) * data(c,f,dataIdx);
+			    Xi(c,i,n,m,1) += wtsx(l) * Phix(i,l) * data(c,f,dataIdx);
+			    Xi(c,i,n,m,2) += wtsx(l) * Phix(i,l) * data(c,f,dataIdx);
+			  }
+		      }
+		  }
+	      }
+	  }
+
+	// Theta phase
+	for (int c=0;c<numCells;c++)
+	  {
+	    for (int j=0;j<numBfy;j++)
+	      {
+		for (int i=0;i<numBfx;i++)
+		  {
+		    for (int n=0;n<numPtsz;n++)
+		      {
+			for (int m=0;m<numPtsy;m++)
+			  {
+			    Theta(c,j,i,n,0) += wtsy(j) * Phiy(j,m) * Xi(c,i,n,m,0);
+			    Theta(c,j,i,n,1) += wtsy(j) * DPhiy(j,m,0) * Xi(c,i,n,m,1);
+			    Theta(c,j,i,n,2) += wtsy(j) * Phiy(j,m) * Xi(c,i,n,m,2);
+			  }
+		      }
+		  }
+	      }
+	  }
+
+	// last phase
+	for (int c=0;c<numCells;c++)
+	  {
+	    for (int k=0;k<numBfz;k++)
+	      {
+		for (int j=0;j<numBfy;j++)
+		  {
+		    for (int i=0;i<numBfx;i++)
+		      {
+			const int momIdx = k * numBfx * numBfy + j * numBfx + i;
+			for (int n=0;n<numPtsz;n++)
+			  {
+			    vals(c,f,momIdx) += wtsz(n) * Theta(c,j,i,n,0) * Phiz(k,n);
+			    vals(c,f,momIdx) += wtsz(n) * Theta(c,j,i,n,1) * Phiz(k,n);
+			    vals(c,f,momIdx) += wtsz(n) * Theta(c,j,i,n,2) * DPhiz(k,n,0);
+			  }
 		      }
 		  }
 	      }
 	  }
       }
-
-    // last phase
-    for (int c=0;c<numCells;c++)
-      {
-	for (int k=0;k<numBfz;k++)
-	  {
-	    for (int j=0;j<numBfy;j++)
-	      {
-	      for (int i=0;i<numBfx;i++)
-		{
-		  const int momIdx = k * numBfx * numBfy + j * numBfx + i;
-		  for (int n=0;n<numPtsz;n++)
-		    {
-		      vals(c,momIdx) += wtsz(n) * Theta(c,j,i,n,0) * Phiz(k,n);
-		      vals(c,momIdx) += wtsz(n) * Theta(c,j,i,n,1) * Phiz(k,n);
-		      vals(c,momIdx) += wtsz(n) * Theta(c,j,i,n,2) * DPhiz(k,n,0);
-		    }
-		}
-	    }
-	}
-    }
-
 
 }
 

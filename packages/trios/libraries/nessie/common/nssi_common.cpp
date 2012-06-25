@@ -71,10 +71,14 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "buffer_queue.h"
 #include "Trios_nssi_xdr.h"
 
-#include "nssi_debug.h"
+#include "Trios_nssi_debug.h"
 
 #include "nnti.h"
 
+
+nssi_config_t nssi_config;
+static void config_init(nssi_config_t *c);
+static void config_get_from_env(nssi_config_t *c);
 
 
 /* --------------------- Private methods ------------------- */
@@ -84,12 +88,11 @@ NNTI_transport_t transports[NSSI_RPC_COUNT];
 static bool       rpc_initialized = FALSE;
 static nssi_rpc_encode encoding   = NSSI_DEFAULT_ENCODE;
 
-#ifdef USE_BUFFER_QUEUE
 #define BQ_MIN   50
 #define BQ_MAX 1000
 trios_buffer_queue_t send_bq;
 trios_buffer_queue_t recv_bq;
-#endif
+
 
 void *memdup(void *src, int size)
 {
@@ -189,24 +192,26 @@ int nssi_rpc_init(
             return rc;
     }
 
-#ifdef USE_BUFFER_QUEUE
-    trios_buffer_queue_init(
-            &send_bq,
-            BQ_MIN,
-            BQ_MAX,
-            TRUE,
-            &transports[rpc_transport],
-            NNTI_SEND_SRC,
-            NSSI_SHORT_REQUEST_SIZE);
-    trios_buffer_queue_init(
-            &recv_bq,
-            BQ_MIN,
-            BQ_MAX,
-            TRUE,
-            &transports[rpc_transport],
-            NNTI_RECV_DST,
-            NSSI_SHORT_REQUEST_SIZE);
-#endif
+    config_init(&nssi_config);
+    config_get_from_env(&nssi_config);
+    if (nssi_config.use_buffer_queue) {
+        trios_buffer_queue_init(
+                &send_bq,
+                nssi_config.buffer_queue_initial_size,
+                nssi_config.buffer_queue_max_size,
+                nssi_config.buffer_queue_create_if_empty,
+                &transports[rpc_transport],
+                NNTI_SEND_SRC,
+                NSSI_SHORT_REQUEST_SIZE);
+        trios_buffer_queue_init(
+                &recv_bq,
+                nssi_config.buffer_queue_initial_size,
+                nssi_config.buffer_queue_max_size,
+                nssi_config.buffer_queue_create_if_empty,
+                &transports[rpc_transport],
+                NNTI_RECV_DST,
+                NSSI_SHORT_REQUEST_SIZE);
+    }
 
     initialized = TRUE;
     rpc_initialized = TRUE;
@@ -269,12 +274,12 @@ int nssi_rpc_fini(const nssi_rpc_transport rpc_transport)
 {
     int rc;
 
-#ifdef USE_BUFFER_QUEUE
-    trios_buffer_queue_fini(
-            &send_bq);
-    trios_buffer_queue_fini(
-            &recv_bq);
-#endif
+    if (nssi_config.use_buffer_queue) {
+        trios_buffer_queue_fini(
+                &send_bq);
+        trios_buffer_queue_fini(
+                &recv_bq);
+    }
 
     /* initialize the transport mechanism */
     rc = NNTI_fini(&transports[rpc_transport]);
@@ -301,4 +306,65 @@ int nssi_rpc_fini(const nssi_rpc_transport rpc_transport)
     }
 
     return NSSI_OK;
+}
+
+static void config_init(nssi_config_t *c)
+{
+    c->use_buffer_queue            =false;
+    c->buffer_queue_initial_size   =50;
+    c->buffer_queue_max_size       =1000;
+    c->buffer_queue_create_if_empty=true;
+}
+static void config_get_from_env(nssi_config_t *c)
+{
+    char *env_str=NULL;
+
+    if ((env_str=getenv("TRIOS_NSSI_USE_BUFFER_QUEUE")) != NULL) {
+        if ((!strcasecmp(env_str, "TRUE")) ||
+            (!strcmp(env_str, "1"))) {
+            log_debug(rpc_debug_level, "setting c->use_buffer_queue to TRUE");
+            c->use_buffer_queue=true;
+        } else {
+            log_debug(rpc_debug_level, "setting c->use_buffer_queue to FALSE");
+            c->use_buffer_queue=false;
+        }
+    } else {
+        log_debug(rpc_debug_level, "TRIOS_NNTI_USE_BUFFER_QUEUE is undefined.  using c->use_buffer_queue default");
+    }
+    if ((env_str=getenv("TRIOS_NSSI_BUFFER_QUEUE_INITIAL_SIZE")) != NULL) {
+        errno=0;
+        uint32_t initial_size=strtoul(env_str, NULL, 0);
+        if (errno == 0) {
+            log_debug(rpc_debug_level, "setting c->buffer_queue_initial_size to %lu", initial_size);
+            c->buffer_queue_initial_size=initial_size;
+        } else {
+            log_debug(rpc_debug_level, "TRIOS_NSSI_BUFFER_QUEUE_INITIAL_SIZE value conversion failed (%s).  using c->buffer_queue_initial_size default.", strerror(errno));
+        }
+    } else {
+        log_debug(rpc_debug_level, "TRIOS_NSSI_BUFFER_QUEUE_INITIAL_SIZE is undefined.  using c->buffer_queue_initial_size default");
+    }
+    if ((env_str=getenv("TRIOS_NSSI_BUFFER_QUEUE_MAX_SIZE")) != NULL) {
+        errno=0;
+        uint32_t max_size=strtoul(env_str, NULL, 0);
+        if (errno == 0) {
+            log_debug(rpc_debug_level, "setting c->buffer_queue_max_size to %lu", max_size);
+            c->buffer_queue_max_size=max_size;
+        } else {
+            log_debug(rpc_debug_level, "TRIOS_NSSI_BUFFER_QUEUE_MAX_SIZE value conversion failed (%s).  using c->buffer_queue_max_size default.", strerror(errno));
+        }
+    } else {
+        log_debug(rpc_debug_level, "TRIOS_NSSI_BUFFER_QUEUE_MAX_SIZE is undefined.  using c->buffer_queue_max_size default");
+    }
+    if ((env_str=getenv("TRIOS_NSSI_BUFFER_QUEUE_CREATE_IF_EMPTY")) != NULL) {
+        if ((!strcasecmp(env_str, "TRUE")) ||
+            (!strcmp(env_str, "1"))) {
+            log_debug(rpc_debug_level, "setting c->buffer_queue_create_if_empty to TRUE");
+            c->buffer_queue_create_if_empty=true;
+        } else {
+            log_debug(rpc_debug_level, "setting c->buffer_queue_create_if_empty to FALSE");
+            c->buffer_queue_create_if_empty=false;
+        }
+    } else {
+        log_debug(rpc_debug_level, "TRIOS_NNTI_USE_BUFFER_QUEUE is undefined.  using c->use_buffer_queue default");
+    }
 }

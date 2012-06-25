@@ -57,8 +57,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "Trios_nssi_server.h"
 #include "Trios_logger.h"
 #include "Trios_timer.h"
-
-#include "nssi_debug.h"
+#include "Trios_nssi_debug.h"
 
 #include <iostream>
 #include <string>
@@ -70,15 +69,15 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include <string.h>
 #include <stdlib.h>
 
+#include "xfer_util.h"
+
+//#include <TPI.hpp>   // Thread Pool Interface (Trilinos Package)
+
 
 
 #include <xfer_service_args.h>
 
 log_level xfer_debug_level = LOG_UNDEFINED;
-
-/* prototype for a function to initialize buffers */
-extern void xfer_init_data_array(const unsigned int seed, data_array_t *array);
-extern int xfer_compare_data_arrays( const data_array_t *arr1,  const data_array_t *arr2);
 
 
 /**

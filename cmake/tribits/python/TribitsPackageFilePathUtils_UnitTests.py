@@ -216,24 +216,6 @@ class testProjectPackageFilePathUtils(unittest.TestCase):
     self.assertEqual( packagesList, packagesList_expected )
 
 
-  def test_getPackageCheckinEmailAddressesListFromFilePathsList_01(self):
-
-    filesList = extractFilesListMatchingPattern( updateOutputList,
-      re.compile(r"^[AMP] (.+)$") )
-    
-    packagesList = getPackageCheckinEmailAddressesListFromFilePathsList(
-      trilinosDependencies, filesList )
-
-    packagesList_expected = [
-      u"trilinos-checkins@software.sandia.gov",
-      u"trilinosframework-checkins@software.sandia.gov",
-      u"stratimikos-checkins@software.sandia.gov",
-      u"thyra-checkins@software.sandia.gov",
-      ]
-
-    self.assertEqual( packagesList, packagesList_expected )
-
-
   def test_get_trilinos_packages_from_files_list_01(self):
 
     writeStrToFile( "modifiedFiles.txt",

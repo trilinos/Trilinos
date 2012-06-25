@@ -2,13 +2,13 @@
 How to CMakeify an Existing Trilinos Package
 --------------------------------------------
 
-Last updated: 2009/02/16
+Last updated: 2012/05/04
 
-Here, we describe how to add full CMake/CTest support to an existing
-Trilinos package.  The process of providing CMake/CTest support for a
-Trilinos package will be referred to as "CMakeifying" a package.  For
-this howto, we will draw on examples from existing CMakeified packages
-like Thyra (thyra), Epetra (epetra), and EpetraExt (epetraext).
+Here, we describe how to add full CMake/CTest support to an existing TriBITS
+package.  The process of providing CMake/CTest support for a Trilinos package
+will be referred to as "CMakeifying" a package.  For this howto, we will draw
+on examples from existing CMakeified packages like Thyra (thyra), Epetra
+(epetra), and EpetraExt (epetraext).
 
 Let PACKAGE_NAME and PACKAGE_DIR represent the package name and the
 directory name for the Trilinos package that you are CMakeifying.  For
@@ -23,14 +23,14 @@ Note, however, there is no such thing as a configure.ac file with
 CMake so once you create the CMakeLists.txt files and tie them
 together with ADD_SUBDIRECTORY(...) calls, you are finished!
 
-Here are the steps for CMakeifying a Trilinos package:
+Here are the steps for CMakeifying a TriBITS project package:
 
 
-1) Add the package in Trilinos/cmake/TrilinosPackages.cmake
+1) Add the package in <PROJECT_DIR>/PackagesList.cmake
 
 Add the package name PACKAGE_NAME and the package directory name PACKAGE_DIR
 to the list of supported Trilinos packages in the file
-Trilinos/cmake/TrilinosPackages.cmake in the variable
+<PROJECT_DIR>/PackagesList.cmake in the variable
 Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS.
 
 NOTE: You have to list the packages in strictly increasing order of
@@ -43,17 +43,18 @@ file
 
 Copy the top-level CMakeLists.txt from:
 
-  Trilinos/packages/epetraext/CMakeLists.txt
+  <PROJECT_DIR>/packages/<PACKAGE_DIR>/CMakeLists.txt
 
-(or any other Trilinos package) to:
+to:
 
-  Trilinos/packages/PACKAGE_DIR/CMakeLists.txt
+  <PROJECT_DIR>/packages/<PACKAGE_DIR>/CMakeLists.txt
 
-In the new PACKAGE_DIR/CMakeLists.txt file, change the name of the package in
-the TRIBITS_PACKAGE(...) macro to the name of the Trilinos package PACKAGE_NAME.  You
-can also turn on shadowing warnings with 'ENABLE_SHADOWING_WARNINGS' and mark
-the package as being 'CLEANED' (which elevates warnings to errors).  See
-packages/teuchos/CMakeLists.txt for an example.
+In the new <PACKAGE_DIR>/CMakeLists.txt file, change the name of the package
+in the TRIBITS_PACKAGE(...) macro to the name of the TriBITS package
+PACKAGE_NAME.  You can also turn on shadowing warnings with
+'ENABLE_SHADOWING_WARNINGS' and mark the package as being 'CLEANED' (which
+elevates warnings to errors).  See packages/teuchos/CMakeLists.txt for an
+example.
 
 NOTE: If the name you pass into TRIBITS_PACKAGE(...) is not the same as you specified
 in the Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS variable mentioned
@@ -84,43 +85,25 @@ it is called, you must have Epetra, AztecOO, and Ifpack.  See the example of
 how to do this in packages/nox/CMakeLists.txt.
 
 
-3) Create the directory PACKAGE_DIR/cmake
+3) Create the directory <PACKAGE_DIR>/cmake
 
-This directory should already be created for your package.  If this is
-a new package, then it can be created with:
+If this is a new package, then it can be created with:
 
-  $ cd Trilinos/packages/PACKAGE_DIR
+  $ cd <PROJECT_DIR>/packages/PACKAGE_DIR
   $ mkdir cmake
   $ cvs add cmake
 
 
-4) Create or modify the PACKAGE_DIR/cmake/Dependencies.cmake file
+4) Create or modify the <PACKAGE_DIR>/cmake/Dependencies.cmake file
 
 The dependencies file:
 
-  Trilinos/packages/PACKAGE_DIR/cmake/Dependencies.cmake
+  <PROJECT_DIR>/packages/<PACKAGE_DIR>/cmake/Dependencies.cmake
 
-should already exist for this package.  If not, then copy a Dependencies.cmake
-file from some other package to get started.
+Copy a Dependencies.cmake file from some other package to get started.
 
-You have to modify PACKAGE_DIR/cmake/Dependencies.cmake for this package's
+You have to modify <PACKAGE_DIR>/cmake/Dependencies.cmake for this package's
 various dependencies.
-
-To get the list of package dependencies, look at the file
-
-  Trilinos/packages/PACKAGE_DIR/Makefile.export.PACKAGE_DIR
-
-for hints as to what packages to list here.  This file does not always list
-all of the test dependencies so you will need to look in other places also.
-Another place to look for test dependencies is look for the M4 macro
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(...) used in:
-
-  Trilinos/packages/PACKAGE_DIR/configure.ac
-
-You should be able to find all of the optional dependencies in the
-above two files.  However, you may not find all of the required test
-dependencies.  The last of those will have to be discovered in the
-Makefile.am files in the various test directories.
 
 NOTE: Don't worry if you don't find all of the package dependencies
 right away.  If you leave any out, the compile/link cycle will tell
@@ -155,16 +138,13 @@ to the optional TPLs listed in [LIB,TEST]_OPTIONAL_DEP_TPLS.
 
 5) Copy and modify the PACKAGE_config.h.in file
 
-Copy the package's autotools-generated <TRIBITS_PACKAGE>_config.h.in file from:
+Create the skeleton for the file
 
-  Trilinos/packages/PACKAGE_DIR/src/<TRIBITS_PACKAGE>_config.h.in
+  <PROJECT_DIR>/packages/<PACKAGE_DIR>/cmake/<TRIBITS_PACKAGE>_config.h.in
 
-to:
-
-  Trilinos/packages/PACKAGE_DIR/cmake/<TRIBITS_PACKAGE>_config.h.in
-
+by copying an existing autotools generated file or create it from scratch.
 You will then to need to manually modify the file
-PACKAGE_DIR/cmake/<TRIBITS_PACKAGE>_config.h.in to replace '#undef' with
+<PACKAGE_DIR>/cmake/<TRIBITS_PACKAGE>_config.h.in to replace '#undef' with
 '#cmakedefine'.  Also use this opportunity to strip out the mess of extra
 macro defines that the package does not need.  Compare the files:
 
@@ -183,11 +163,10 @@ conditional code.  Always clean out all of the autotool generated junk like
 PACKAGE_NAME.
 
 
-6) Create the package's library PACKAGE_DIR/src/CMakeLists.txt file
+6) Create the package's library <PACKAGE_DIR>/src/CMakeLists.txt file
 
-Most Trilinos packages just create a single library from a single Makefile.am
-file with autotools.  This is the case that is described here.  More general
-cases are mentioned after that.
+Most TriBITS packages just create a single library.  This is the case that is
+described here.  More general cases are mentioned after that.
 
 Start by copying over an existing library CMakelists file from another
 package.  For example, copy the file:
@@ -196,34 +175,14 @@ package.  For example, copy the file:
 
 (or any other Trilinos package) to:
 
-  Trilinos/packages/PACKAGE_DIR/src/CMakeLists.txt
+  <PROJECT_DIR>/packages/<PACKAGE_DIR>/src/CMakeLists.txt
 
-Now, modify the file PACKAGE_DIR/src/CMakeLists.txt as follows:
+Now, modify the file <PACKAGE_DIR>/src/CMakeLists.txt as follows:
 
 6.a) Specify the list of HEADERS and SOURCES:
 
-Copy the list of headers and sources from:
-
-  Trilinos/packages/PACKAGE_DIR/src/Makefile.am
-
-to:
-
-  Trilinos/packages/PACKAGE_DIR/src/CMakeLists.txt
-
-and make the appropriate modifications.  If you compare the files
-
-  Trilinos/packages/teuchos/src/CMakeLists.txt
-
-to
-
-  Trilinos/packages/teuchos/src/Makefile.am
-
-you will see the nature of the changes to these lists that is needed.
-
 NOTE: You can easily glob the header and source files in a CMakeLists.txt
-file.  See an example of this in:
-
-  Trilinos/packages/thyra/src/CMakeLists.txt
+file.
 
 NOTE: If you have headers that are not part of your "public" interface and you
 do not want to install, then see zoltan/src/CMakeLists.txt for an example of

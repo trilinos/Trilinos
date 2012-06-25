@@ -186,6 +186,7 @@ namespace Kokkos {
 
       //@{
 
+      //! Node accessor
       RCP<Node> getNode() const {return node_;}
 
       //! Number of rows

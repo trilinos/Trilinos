@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          KokkosArray: Node API and Parallel Node Kernels
+//          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -224,19 +224,28 @@ public:
                                     data_map.count_interior ,
                                     data_map.count_send , x );
 
-    exchange.send();
+    exchange.setup();
 
     // If interior & boundary matrices then could launch interior multiply
 
-    exchange.receive();
+    exchange.send_receive();
 
     UnpackArray< vector_type >::unpack( x , exchange.buffer() ,
                                         data_map.count_owned ,
                                         data_map.count_receive );
+    const typename Device::size_type nrow = data_map.count_owned ;
+    const typename Device::size_type ncol = data_map.count_owned +
+                                            data_map.count_receive ;
+#else /* ! defined( HAVE_MPI ) */
+
+    const typename Device::size_type nrow = A.graph.row_map.length();
+    const typename Device::size_type ncol = A.graph.row_map.length();
+
 #endif
 
+
     Impl::Multiply<matrix_type,vector_type,vector_type>
-      ::apply( A , x , y );
+      ::apply( A , nrow , ncol , x , y );
   }
 };
 

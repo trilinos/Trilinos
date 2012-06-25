@@ -57,9 +57,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "buffer_queue.h"
 #include "Trios_nssi_rpc.h"
 #include "Trios_nssi_xdr.h"
-
-
-#include "nssi_debug.h"
+#include "Trios_nssi_debug.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -77,8 +75,6 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include <stdlib.h>
 
 
-
-#include "nssi_debug.h"
 #include "nssi_opcodes.h"
 #include "nssi_service_args.h"
 
@@ -89,11 +85,10 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 
 extern NNTI_transport_t transports[NSSI_RPC_COUNT];
+extern nssi_config_t nssi_config;
 
-#ifdef USE_BUFFER_QUEUE
 extern trios_buffer_queue_t send_bq;
 extern trios_buffer_queue_t recv_bq;
-#endif
 
 /**
  *   @addtogroup rpc_ptl_impl
@@ -423,7 +418,7 @@ int nssi_get_service(
     unsigned long len=0;
 
 
-    log_debug(rpc_debug_level, "thread_id(%llu): entered nssi_get_service", nthread_self());
+    log_debug(rpc_debug_level, "thread_id(%llu): entered nssi_get_service, url=%s", nthread_self(), url);
 
     client_init();
 
@@ -442,55 +437,55 @@ int nssi_get_service(
     /*------ Initialize variables and buffers ------*/
     memset(&req_header, 0, sizeof(nssi_request_header));
 
-#ifdef USE_BUFFER_QUEUE
+    if (nssi_config.use_buffer_queue) {
         short_req_hdl=trios_buffer_queue_pop(&send_bq);
         assert(short_req_hdl);
 
         short_res_hdl=trios_buffer_queue_pop(&recv_bq);
         assert(short_res_hdl);
-#else
-    /* allocate memory for the short request buffer */
-    short_req_len = NSSI_SHORT_REQUEST_SIZE;
-    buf= (char*) malloc(short_req_len);
-    if (!buf)   {
-        log_fatal(rpc_debug_level, "malloc() failed!");
-        rc = NSSI_ENOMEM;
-        goto cleanup;
-    }
-    memset(buf, 0, short_req_len);  // fixes uninitialized bytes error from valgrind
-    rc=NNTI_register_memory(
-            &transports[rpc_transport],
-            buf,
-            short_req_len,
-            1,
-            NNTI_SEND_SRC,
-            &peer_hdl,
-            short_req_hdl);
-    if (rc != NNTI_OK) {
-        log_error(rpc_debug_level, "failed registering short request: %s",
-                nnti_err_str(rc));
-    }
+    } else {
+        /* allocate memory for the short request buffer */
+        short_req_len = NSSI_SHORT_REQUEST_SIZE;
+        buf= (char*) malloc(short_req_len);
+        if (!buf)   {
+            log_fatal(rpc_debug_level, "malloc() failed!");
+            rc = NSSI_ENOMEM;
+            goto cleanup;
+        }
+        memset(buf, 0, short_req_len);  // fixes uninitialized bytes error from valgrind
+        rc=NNTI_register_memory(
+                &transports[rpc_transport],
+                buf,
+                short_req_len,
+                1,
+                NNTI_SEND_SRC,
+                &peer_hdl,
+                short_req_hdl);
+        if (rc != NNTI_OK) {
+            log_error(rpc_debug_level, "failed registering short request: %s",
+                    nnti_err_str(rc));
+        }
 
-    buf=(char *)malloc(NSSI_SHORT_RESULT_SIZE);
-    memset(buf, 0, NSSI_SHORT_RESULT_SIZE);
-    if (!buf)   {
-        log_fatal(rpc_debug_level, "malloc() failed!");
-        rc = NSSI_ENOMEM;
-        goto cleanup;
+        buf=(char *)malloc(NSSI_SHORT_RESULT_SIZE);
+        memset(buf, 0, NSSI_SHORT_RESULT_SIZE);
+        if (!buf)   {
+            log_fatal(rpc_debug_level, "malloc() failed!");
+            rc = NSSI_ENOMEM;
+            goto cleanup;
+        }
+        rc=NNTI_register_memory(
+                &transports[rpc_transport],
+                buf,
+                NSSI_SHORT_RESULT_SIZE,
+                1,
+                NNTI_RECV_DST,
+                &peer_hdl,
+                short_res_hdl);
+        if (rc != NNTI_OK) {
+            log_error(rpc_debug_level, "failed registering short result: %s",
+                    nnti_err_str(rc));
+        }
     }
-    rc=NNTI_register_memory(
-            &transports[rpc_transport],
-            buf,
-            NSSI_SHORT_RESULT_SIZE,
-            1,
-            NNTI_RECV_DST,
-            &peer_hdl,
-            short_res_hdl);
-    if (rc != NNTI_OK) {
-        log_error(rpc_debug_level, "failed registering short result: %s",
-                nnti_err_str(rc));
-    }
-#endif
 
     req_header.res_addr=*short_res_hdl;
 
@@ -568,29 +563,29 @@ int nssi_get_service(
     }
 
 cleanup:
-#ifdef USE_BUFFER_QUEUE
-    trios_buffer_queue_push(&send_bq, short_req_hdl);
-    short_req_hdl=NULL;
+    if (nssi_config.use_buffer_queue) {
+        trios_buffer_queue_push(&send_bq, short_req_hdl);
+        short_req_hdl=NULL;
 
-    trios_buffer_queue_push(&recv_bq, short_res_hdl);
-    short_res_hdl=NULL;
-#else
-    buf=NNTI_BUFFER_C_POINTER(short_req_hdl);
-    cleanup_rc=NNTI_unregister_memory(short_req_hdl);
-    if (cleanup_rc != NNTI_OK) {
-        log_error(rpc_debug_level, "failed unregistering short request: %s",
-                nnti_err_str(cleanup_rc));
-    }
-    free(buf);
+        trios_buffer_queue_push(&recv_bq, short_res_hdl);
+        short_res_hdl=NULL;
+    } else {
+        buf=NNTI_BUFFER_C_POINTER(short_req_hdl);
+        cleanup_rc=NNTI_unregister_memory(short_req_hdl);
+        if (cleanup_rc != NNTI_OK) {
+            log_error(rpc_debug_level, "failed unregistering short request: %s",
+                    nnti_err_str(cleanup_rc));
+        }
+        free(buf);
 
-    buf=NNTI_BUFFER_C_POINTER(short_res_hdl);
-    cleanup_rc=NNTI_unregister_memory(short_res_hdl);
-    if (cleanup_rc != NNTI_OK) {
-        log_error(rpc_debug_level, "failed unregistering short result: %s",
-                nnti_err_str(cleanup_rc));
+        buf=NNTI_BUFFER_C_POINTER(short_res_hdl);
+        cleanup_rc=NNTI_unregister_memory(short_res_hdl);
+        if (cleanup_rc != NNTI_OK) {
+            log_error(rpc_debug_level, "failed unregistering short result: %s",
+                    nnti_err_str(cleanup_rc));
+        }
+        free(buf);
     }
-    free(buf);
-#endif
 
     log_debug(rpc_debug_level, "%llu: finished nssi_get_service (rc=%d)", nthread_self(), rc);
 
@@ -1228,11 +1223,7 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
         log_debug(debug_level, "calling NNTI_wait for result");
         trios_start_timer(call_time);
         rc=NNTI_wait(
-#ifdef USE_BUFFER_QUEUE
                 req->short_result_hdl,
-#else
-                &req->short_result_hdl,
-#endif
                 NNTI_RECV_DST,
                 timeout,
                 &status);
@@ -1269,9 +1260,6 @@ int nssi_timedwait(nssi_request *req, int timeout, int *remote_rc)
     }
 
 
-
-
-
 cleanup:
 
     /* Did we get here because of an error in this code? */
@@ -1285,22 +1273,23 @@ cleanup:
         req->callback(req);
     }
 
-#ifdef USE_BUFFER_QUEUE
-    trios_buffer_queue_push(&recv_bq, req->short_result_hdl);
-    req->short_result_hdl=NULL;
-#else
-    /* Free data allocated for the short result */
-    void *buf = NNTI_BUFFER_C_POINTER(&req->short_result_hdl);
-    if (buf) free(buf);
+    if (nssi_config.use_buffer_queue) {
+        trios_buffer_queue_push(&recv_bq, req->short_result_hdl);
+        req->short_result_hdl=NULL;
+    } else {
+        /* Free data allocated for the short result */
+        void *buf = NNTI_BUFFER_C_POINTER(req->short_result_hdl);
+        if (buf) free(buf);
 
-    log_debug(debug_level, "Unregister memory for short_result");
-    /* TODO: Fix this so an error or timeout cleans up data structures */
-    rc=NNTI_unregister_memory(&req->short_result_hdl);
-    if (rc != NNTI_OK) {
-        log_error(rpc_debug_level, "failed unregistering short result: %s",
-                nnti_err_str(rc));
+        log_debug(debug_level, "Unregister memory for short_result");
+        /* TODO: Fix this so an error or timeout cleans up data structures */
+        rc=NNTI_unregister_memory(req->short_result_hdl);
+        if (rc != NNTI_OK) {
+            log_error(rpc_debug_level, "failed unregistering short result: %s",
+                    nnti_err_str(rc));
+        }
+        req->short_result_hdl=NULL;
     }
-#endif
 
     /* If the request has data associated with it, the data should
      * be transferred by now (server would not have sent result).
@@ -1575,6 +1564,8 @@ int nssi_call_rpc(
     /* local variables */
     int rc=NSSI_OK;  /* return code */
 
+    log_level debug_level = rpc_debug_level;
+
     nssi_request_header header;   /* the request header */
     char *buf;
     int short_req_len = 0;
@@ -1586,7 +1577,7 @@ int nssi_call_rpc(
 
     unsigned long len=0;
 
-    log_debug(rpc_debug_level, "thread_id(%llu): entered nssi_call_rpc", nthread_self());
+    log_debug(debug_level, "thread_id(%llu): entered nssi_call_rpc", nthread_self());
 
     /* increment global counter */
     local_count = nthread_counter_increment(&global_count);
@@ -1608,42 +1599,44 @@ int nssi_call_rpc(
     /* set the opcode for the request header */
     header.opcode = opcode;
 
-#ifdef USE_BUFFER_QUEUE
-    short_req_hdl=trios_buffer_queue_pop(&send_bq);
-#else
-    /* allocate memory for the short request buffer */
-    short_req_len = NNTI_BUFFER_SIZE(&svc->req_addr);
-    trios_start_timer(call_time);
-    buf=(char*)malloc(short_req_len);
-    trios_stop_timer("malloc - short req", call_time);
-    if (!buf)   {
-        log_fatal(rpc_debug_level, "malloc() failed!");
-        rc = NSSI_ENOMEM;
-        goto cleanup;
+    if (nssi_config.use_buffer_queue) {
+        short_req_hdl=trios_buffer_queue_pop(&send_bq);
+    } else {
+        /* allocate memory for the short request buffer */
+        short_req_len = NNTI_BUFFER_SIZE(&svc->req_addr);
+        trios_start_timer(call_time);
+        buf=(char*)malloc(short_req_len);
+        trios_stop_timer("malloc - short req", call_time);
+        if (!buf)   {
+            log_fatal(debug_level, "malloc() failed!");
+            rc = NSSI_ENOMEM;
+            goto cleanup;
+        }
+
+        log_debug(rpc_debug_level, "Allocated short req buffer");
+
+        trios_start_timer(call_time);
+        rc=NNTI_register_memory(
+                &transports[svc->transport_id],
+                buf,
+                short_req_len,
+                1,
+                NNTI_SEND_SRC,
+                &svc->svc_host,
+                short_req_hdl);
+        trios_stop_timer("NNTI_register_memory - short req", call_time);
+        if (rc != NNTI_OK) {
+            log_error(debug_level, "failed registering short request: %s",
+                    nnti_err_str(rc));
+            goto cleanup;
+        }
     }
 
-    log_debug(rpc_debug_level, "Allocated short req buffer");
-
-    trios_start_timer(call_time);
-    rc=NNTI_register_memory(
-            &transports[svc->transport_id],
-            buf,
-            short_req_len,
-            1,
-            NNTI_SEND_SRC,
-            &svc->svc_host,
-            short_req_hdl);
-    trios_stop_timer("NNTI_register_memory - short req", call_time);
-    if (rc != NNTI_OK) {
-        log_error(rpc_debug_level, "failed registering short request: %s",
-                nnti_err_str(rc));
-        goto cleanup;
-    }
-#endif
-
-    log_debug(rpc_debug_level, "Registered short req buffer");
+    log_debug(debug_level, "Registered short req buffer");
 
     if (data_size > 0) {
+
+        log_debug (debug_level, "Registering data buffer (size=%d)", data_size);
         trios_start_timer(call_time);
         rc=NNTI_register_memory(
                 &transports[svc->transport_id],
@@ -1664,38 +1657,39 @@ int nssi_call_rpc(
         log_debug(rpc_debug_level, "Registered long args buffer");
     }
 
-#ifdef USE_BUFFER_QUEUE
-    request->short_result_hdl=trios_buffer_queue_pop(&recv_bq);
+    if (nssi_config.use_buffer_queue) {
+        request->short_result_hdl=trios_buffer_queue_pop(&recv_bq);
+    } else {
+        log_debug (debug_level, "allocating short result (size=%d)", NSSI_SHORT_RESULT_SIZE);
+        request->short_result_hdl=&request->short_result;
+        trios_start_timer(call_time);
+        buf=(char *)malloc(NSSI_SHORT_RESULT_SIZE);  // Freed in cleanup portion of timedwait
+        trios_stop_timer("malloc - short result", call_time);
+        if (!buf)   {
+            log_fatal(rpc_debug_level, "malloc() failed!");
+            rc = NSSI_ENOMEM;
+            goto cleanup;
+        }
+
+        log_debug(rpc_debug_level, "Allocated short result buffer buf=%p", buf);
+
+        trios_start_timer(call_time);
+        rc=NNTI_register_memory(
+                &transports[svc->transport_id],
+                buf,
+                NSSI_SHORT_RESULT_SIZE,
+                1,
+                NNTI_RECV_DST,
+                &svc->svc_host,
+                request->short_result_hdl);
+        trios_stop_timer("NNTI_register_memory - short result", call_time);
+        if (rc != NNTI_OK) {
+            log_error(rpc_debug_level, "failed registering short result: %s",
+                    nnti_err_str(rc));
+            goto cleanup;
+        }
+    }
     header.res_addr=*request->short_result_hdl;
-#else
-    trios_start_timer(call_time);
-    buf=(char *)malloc(NSSI_SHORT_RESULT_SIZE);  // Freed in cleanup portion of timedwait
-    trios_stop_timer("malloc - short result", call_time);
-    if (!buf)   {
-        log_fatal(rpc_debug_level, "malloc() failed!");
-        rc = NSSI_ENOMEM;
-        goto cleanup;
-    }
-
-    log_debug(rpc_debug_level, "Allocated short result buffer buf=%p", buf);
-
-    trios_start_timer(call_time);
-    rc=NNTI_register_memory(
-            &transports[svc->transport_id],
-            buf,
-            NSSI_SHORT_RESULT_SIZE,
-            1,
-            NNTI_RECV_DST,
-            &svc->svc_host,
-            &request->short_result_hdl);
-    trios_stop_timer("NNTI_register_memory - short result", call_time);
-    if (rc != NNTI_OK) {
-        log_error(rpc_debug_level, "failed registering short result: %s",
-                nnti_err_str(rc));
-        goto cleanup;
-    }
-    header.res_addr=request->short_result_hdl;
-#endif
 
     log_debug(rpc_debug_level, "Registered short result buffer");
 
@@ -1764,31 +1758,32 @@ cleanup:
     log_debug(rpc_debug_level, "thread_id(%llu): finished nssi_call_rpc (req.opcode=%d, req.id=%d)",
             nthread_self(), request->opcode, request->id);
 
-#ifdef USE_BUFFER_QUEUE
-    trios_buffer_queue_push(&send_bq, short_req_hdl);
-    short_req_hdl=NULL;
-#else
-    buf=NNTI_BUFFER_C_POINTER(short_req_hdl);
-    trios_start_timer(call_time);
-    NNTI_unregister_memory(short_req_hdl);
-    trios_stop_timer("NNTI_unregister_memory - send req", call_time);
-    trios_start_timer(call_time);
-    free(buf);
-    trios_stop_timer("free", call_time);
-#endif
+    if (nssi_config.use_buffer_queue) {
+        trios_buffer_queue_push(&send_bq, short_req_hdl);
+        short_req_hdl=NULL;
+    } else {
+        buf=NNTI_BUFFER_C_POINTER(short_req_hdl);
+        trios_start_timer(call_time);
+        NNTI_unregister_memory(short_req_hdl);
+        trios_stop_timer("NNTI_unregister_memory - send req", call_time);
+        trios_start_timer(call_time);
+        free(buf);
+        trios_stop_timer("free", call_time);
+    }
 
     if (rc != NSSI_OK) {
         if (data_size > 0) {
             NNTI_unregister_memory(&request->data_hdl);
         }
-#ifdef USE_BUFFER_QUEUE
-        trios_buffer_queue_push(&recv_bq, request->short_result_hdl);
-        request->short_result_hdl=NULL;
-#else
-        buf=NNTI_BUFFER_C_POINTER(&request->short_result_hdl);
-        NNTI_unregister_memory(&request->short_result_hdl);
-        free(buf);
-#endif
+        if (nssi_config.use_buffer_queue) {
+            trios_buffer_queue_push(&recv_bq, request->short_result_hdl);
+            request->short_result_hdl=NULL;
+        } else {
+            buf=NNTI_BUFFER_C_POINTER(request->short_result_hdl);
+            NNTI_unregister_memory(request->short_result_hdl);
+            free(buf);
+            request->short_result_hdl=NULL;
+        }
     }
 
     return rc;

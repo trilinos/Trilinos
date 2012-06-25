@@ -63,6 +63,13 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 static nthread_mutex_t logger_mutex; // = NTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 
 void logger_mutex_lock() {
+
+    static bool mutex_initialized = false;
+
+    if (!mutex_initialized) {
+        mutex_initialized = true;
+        nthread_mutex_init(&logger_mutex, NTHREAD_MUTEX_RECURSIVE);
+    }
     nthread_lock(&logger_mutex);
 }
 void logger_mutex_unlock() {
@@ -84,8 +91,6 @@ static FILE *log_file = NULL;
  */
 int logger_init(const log_level debug_level,  const char *logfile)  {
     int rc = 0;
-
-    nthread_mutex_init(&logger_mutex, NTHREAD_MUTEX_RECURSIVE);
 
     /* initialize the default debug level */
     if (debug_level == 0)

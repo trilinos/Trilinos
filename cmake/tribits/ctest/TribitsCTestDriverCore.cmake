@@ -429,6 +429,7 @@ MACRO(TRIBITS_SETUP_PACKAGES)
   SET(${PROJECT_NAME}_IGNORE_PACKAGE_EXISTS_CHECK TRUE)
   SET(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES FALSE)
   SET(${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR "${PROJECT_BINARY_DIR}")
+  SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE)
 
   # Don't ignore missing repos.  This will allow processing to continue but this outer
   # CTest script will fail (thereby sending a CDash email from the TDD
@@ -438,6 +439,8 @@ MACRO(TRIBITS_SETUP_PACKAGES)
   SET(${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES FALSE)
 
   TRIBITS_READ_IN_NATIVE_REPOSITORIES()
+  SET(${PROJECT_NAME}_ALL_REPOSITORIES ${${PROJECT_NAME}_NATIVE_REPOSITORIES}
+    ${${PROJECT_NAME}_EXTRA_REPOSITORIES})
   TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()
 
   # When we get here, we will have the basic dependency structure set up
@@ -785,6 +788,9 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
 
   # The build type (e.g. DEBUG, RELEASE, NONE)
   SET_DEFAULT_AND_FROM_ENV( BUILD_TYPE NONE )
+
+  # Verobse configure or now
+  SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_VERBOSE_CONFIGURE OFF )
 
   # Set the default compiler version
   SET_DEFAULT_AND_FROM_ENV(COMPILER_VERSION UNKNOWN)
@@ -1193,6 +1199,16 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   SET(DO_PROCESS_MPI_ENABLES FALSE) # Should not be needed but CMake is messing up
   TRIBITS_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES() # Sets ${PROJECT_NAME}_NUM_ENABLED_PACKAGES
 
+  MESSAGE(
+    "\n***"
+    "\n*** Disabling packages to be excluded from being implicitly enabled on a repository basis ..."
+    "\n***"
+    )
+
+  TRIBITS_APPLY_REPOSITORY_NO_IMPLICIT_PACKAGE_ENABLE_DISABLE()  
+
+  TRIBITS_PRINT_ENABLED_PACKAGE_LIST(
+    "\nFinal set of packages to be explicitly processed by CTest/CDash" ON FALSE)
   
   MESSAGE(
     "\n***"

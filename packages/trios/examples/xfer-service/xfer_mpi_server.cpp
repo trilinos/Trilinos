@@ -57,8 +57,9 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "Trios_nssi_server.h"
 #include "Trios_logger.h"
 #include "Trios_timer.h"
+#include "Trios_nssi_debug.h"
 
-#include "nssi_debug.h"
+#include "xfer_util.h"
 
 #include <iostream>
 #include <string>
@@ -75,14 +76,6 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include <xfer_service_args.h>
 
 log_level xfer_debug_level = LOG_UNDEFINED;
-
-/* prototype for a function to initialize buffers */
-extern void xfer_init_data_array(const unsigned int seed, data_array_t *array);
-extern int xfer_compare_data_arrays( const data_array_t *arr1,  const data_array_t *arr2);
-extern int xfer_validate_array(const int seed,  data_array_t *array);
-
-
-
 
 /**
  * @brief Send the data through the MPI_Send function

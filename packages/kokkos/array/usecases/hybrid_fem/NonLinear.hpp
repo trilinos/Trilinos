@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 //
-//          KokkosArray: Node API and Parallel Node Kernels
+//          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -67,6 +67,9 @@ struct PerformanceData {
   double matrix_gather_fill_time ;
   double matrix_boundary_condition_time ;
   double cg_iteration_time ;
+  size_t cg_iteration_count ;
+  size_t newton_iteration_count ;
+  double error_max ;
 
   PerformanceData()
     : mesh_time(0)
@@ -75,6 +78,9 @@ struct PerformanceData {
     , matrix_gather_fill_time(0)
     , matrix_boundary_condition_time(0)
     , cg_iteration_time(0)
+    , cg_iteration_count(0)
+    , newton_iteration_count(0)
+    , error_max(0)
     {}
 
   void best( const PerformanceData & rhs )
@@ -85,6 +91,9 @@ struct PerformanceData {
     matrix_gather_fill_time = std::min( matrix_gather_fill_time , rhs.matrix_gather_fill_time );
     matrix_boundary_condition_time = std::min( matrix_boundary_condition_time , rhs.matrix_boundary_condition_time );
     cg_iteration_time = std::min( cg_iteration_time , rhs.cg_iteration_time );
+    cg_iteration_count = std::min( cg_iteration_count , rhs.cg_iteration_count );
+    newton_iteration_count = std::min( newton_iteration_count , rhs.newton_iteration_count );
+    error_max = std::min( error_max , rhs.error_max );
   }
 };
 
@@ -100,17 +109,83 @@ template< typename ScalarType , typename ScalarCoordType , class Device >
 struct DirichletResidual ;
 
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+class ManufacturedSolution {
+public:
+
+  // Manufactured solution for one dimensional nonlinear PDE
+  //
+  //  -K T_zz + T^2 = 0 ; T(zmin) = T_zmin ; T(zmax) = T_zmax
+  //
+  //  Has an analytic solution of the form:
+  //
+  //    T(z) = ( a ( z - zmin ) + b )^(-2) where K = 1 / ( 6 a^2 )
+  //
+  //  Given T_0 and T_L compute K for this analytic solution.
+  //
+  //  Two analytic solutions:
+  //
+  //    Solution with singularity:
+  //    , a( ( 1.0 / sqrt(T_zmax) + 1.0 / sqrt(T_zmin) ) / ( zmax - zmin ) )
+  //    , b( -1.0 / sqrt(T_zmin) )
+  //
+  //    Solution without singularity:
+  //    , a( ( 1.0 / sqrt(T_zmax) - 1.0 / sqrt(T_zmin) ) / ( zmax - zmin ) )
+  //    , b( 1.0 / sqrt(T_zmin) )
+
+  const double zmin ;
+  const double zmax ;
+  const double T_zmin ;
+  const double T_zmax ;
+  const double a ;
+  const double b ;
+  const double K ;
+
+  ManufacturedSolution( const double arg_zmin ,
+                        const double arg_zmax ,
+                        const double arg_T_zmin ,
+                        const double arg_T_zmax )
+    : zmin( arg_zmin )
+    , zmax( arg_zmax )
+    , T_zmin( arg_T_zmin )
+    , T_zmax( arg_T_zmax )
+    , a( ( 1.0 / sqrt(T_zmax) - 1.0 / sqrt(T_zmin) ) / ( zmax - zmin ) )
+    , b( 1.0 / sqrt(T_zmin) )
+    , K( 1.0 / ( 6.0 * a * a ) )
+    {}
+
+  double operator()( const double z ) const
+  {
+    const double tmp = a * ( z - zmin ) + b ;
+    return 1.0 / ( tmp * tmp );
+  }
+};
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 template< typename Scalar , class Device >
 PerformanceData run( comm::Machine machine ,
                      const int global_count_x ,
                      const int global_count_y ,
                      const int global_count_z ,
-                     const bool print_sample )
+                     const bool print_error )
 {
   typedef Device                           device_type;
   typedef typename device_type::size_type  size_type ;
   typedef Scalar                           scalar_type ;
+
+  //------------------------------------
+  // The amount of nonlinearity is proportional to the ratio
+  // between T(zmax) and T(zmin).  For the manufactured solution
+  // 0 < T(zmin) and 0 < T(zmax)
+
+  const ManufacturedSolution 
+   exact_solution( /* zmin */ 0 ,
+                   /* zmax */ global_count_z - 1 , 
+                   /* T(zmin) */ 1 ,
+                   /* T(zmax) */ 20 );
 
   //-----------------------------------
   // Convergence Criteria and perf data:
@@ -122,14 +197,11 @@ PerformanceData run( comm::Machine machine ,
   const double newton_tolerance = 1e-14 ;
 
   size_t cg_iteration_count_total = 0 ;
-  size_t cg_iteration_count = 0 ;
   double cg_iteration_time = 0 ;
-  double cg_residual_norm = 0 ;
 
   size_t newton_iteration_count = 0 ;
-  double delta_norm = 0 ;
-
-  bool not_converged = true;
+  double residual_norm_init = 0 ;
+  double residual_norm = 0 ;
 
   PerformanceData perf_data ;
 
@@ -137,8 +209,11 @@ PerformanceData run( comm::Machine machine ,
   // FEMesh types:
 
   enum { ElementNodeCount = 8 };
+
   typedef double coordinate_scalar_type ;
-  typedef FEMesh< coordinate_scalar_type , ElementNodeCount , device_type > mesh_type ;
+
+  typedef FEMesh< coordinate_scalar_type ,
+                  ElementNodeCount , device_type > mesh_type ;
 
   //------------------------------------
   // Sparse linear system types:
@@ -158,9 +233,6 @@ PerformanceData run( comm::Machine machine ,
   typedef DirichletResidual  < Scalar , Scalar , device_type > DirichletResidualFunctor ;
 
   //------------------------------------
-
-  const Scalar elem_coeff_K = 1 ;
-  const Scalar elem_coeff_P = 0.6 ;
 
   matrix_type jacobian ;
   vector_type residual ;
@@ -205,12 +277,17 @@ PerformanceData run( comm::Machine machine ,
   jacobian.coefficients =
     KokkosArray::create_multivector< matrix_coefficients_type >( jacobian.graph.entries.dimension(0) );
 
+  // Nonlinear residual for owned nodes:
   residual =
     KokkosArray::create_multivector< vector_type >( local_owned_length );
-  delta =
-    KokkosArray::create_multivector< vector_type >( local_owned_length );
+
+  // Nonlinear solution for owned and ghosted nodes:
   nodal_solution = 
     KokkosArray::create_multivector< vector_type >( local_total_length );
+
+  // Nonlinear solution update for owned nodes:
+  delta =
+    KokkosArray::create_multivector< vector_type >( local_owned_length );
 
   //------------------------------------
   // Allocation of arrays to fill the linear system
@@ -229,21 +306,24 @@ PerformanceData run( comm::Machine machine ,
       KokkosArray::create_array< elem_vectors_type >( element_count );
   }
 
+  //------------------------------------
   // For boundary condition set the correct values in the solution vector
-  // One face of the rectangular mesh is held at 0 potential, and its opposite
-  // face is 1.
+  //   The 'zmin' face is assigned to 'T_zmin'.
+  //   The 'zmax' face is assigned to 'T_zmax'.
+  //   The resulting solution is one dimensional along the 'Z' axis.
 
-  DirichletSolutionFunctor::apply(nodal_solution ,
-                                  mesh ,
-                                  0 , global_count_z - 1 ,
-                                  0 , 1 );
+  DirichletSolutionFunctor::apply( nodal_solution , mesh , 
+                                   exact_solution.zmin , 
+                                   exact_solution.zmax ,
+                                   exact_solution.T_zmin ,
+                                   exact_solution.T_zmax );
     
-  do { // Nonlinear loop
+  for(;;) { // Nonlinear loop
 
 #if defined( HAVE_MPI )
 
     { //------------------------------------
-      // Import off-processor solution values
+      // Import off-processor nodal solution values
       // for residual and jacobian computations
 
       KokkosArray::AsyncExchange< typename vector_type::value_type , Device ,
@@ -256,11 +336,9 @@ PerformanceData run( comm::Machine machine ,
                 mesh.parallel_data_map.count_send ,
                 nodal_solution );
 
-      exchange.send();
+      exchange.setup();
 
-      // If interior & boundary matrices then could launch interior multiply
-
-      exchange.receive();
+      exchange.send_receive();
 
       KokkosArray::UnpackArray< vector_type >
         ::unpack( nodal_solution , exchange.buffer() ,
@@ -279,8 +357,7 @@ PerformanceData run( comm::Machine machine ,
                            elem_matrices , 
                            elem_vectors ,
                            nodal_solution ,
-                           elem_coeff_K , 
-                           elem_coeff_P );
+                           exact_solution.K );
 
     device_type::fence();
     perf_data.elem_time += comm::max( machine , wall_clock.seconds() );
@@ -309,16 +386,32 @@ PerformanceData run( comm::Machine machine ,
 
     // Updates jacobian matrix to 1 on the diagonal, zero elsewhere,
     // and 0 in the residual due to the solution vector having the correct value
-    DirichletResidualFunctor::apply( jacobian,
-                                     residual,
-                                     mesh , 
-                                     0 , global_count_z - 1 );
+    DirichletResidualFunctor::apply( jacobian, residual, mesh ,
+                                     exact_solution.zmin ,
+                                     exact_solution.zmax );
 
     device_type::fence();
-    perf_data.matrix_boundary_condition_time += comm::max( machine , wall_clock.seconds() );
+    perf_data.matrix_boundary_condition_time +=
+      comm::max( machine , wall_clock.seconds() );
+
+    //------------------------------------
+    // Has the residual converged?
+
+    residual_norm = sqrt( dot(mesh.parallel_data_map, residual) );
+
+    if ( 0 == newton_iteration_count ) {
+      residual_norm_init = residual_norm ;
+    }
+
+    if ( residual_norm / residual_norm_init < newton_tolerance ) {
+      break ;
+    }
 
     //------------------------------------
     // Solve linear sytem
+
+    size_t cg_iteration_count = 0 ;
+    double cg_residual_norm = 0 ;
 
     cgsolve( mesh.parallel_data_map ,
              jacobian , residual , delta ,
@@ -337,21 +430,16 @@ PerformanceData run( comm::Machine machine ,
     // text:
     // x[n+1] = x[n] + Dx
 
-    waxpby( mesh.parallel_data_map, 1.0, nodal_solution, -1.0, delta, nodal_solution);
-
-    // Convergence criteria:
-    // if the Dx norm is computed to be less than some epsilon, 
-    // or if the total number of iterations exceeds some N 
-
-    delta_norm = sqrt( dot(mesh.parallel_data_map, delta) );
+    waxpby( mesh.parallel_data_map,
+            1.0, nodal_solution,
+           -1.0, delta, nodal_solution);
 
     ++newton_iteration_count ;
 
-    if ( newton_iteration_count >= newton_iteration_limit ||
-         delta_norm < newton_tolerance ) {
-	not_converged = false;
+    if ( newton_iteration_limit < newton_iteration_count ) {
+      break ;
     }
-  } while( not_converged );
+  };
 
   if ( newton_iteration_count ) {
     perf_data.elem_time /= newton_iteration_count ;
@@ -363,29 +451,43 @@ PerformanceData run( comm::Machine machine ,
     perf_data.cg_iteration_time /= cg_iteration_count_total ;
   }
 
+  perf_data.newton_iteration_count = newton_iteration_count ;
+  perf_data.cg_iteration_count = cg_iteration_count_total ;
+
   //------------------------------------
 
-  if ( print_sample ) {
+  {
+    // For extracting the nodal solution and its coordinates:
 
-    typename mesh_type::node_coords_type::HostMirror coords_h =
+    typename mesh_type::node_coords_type::HostMirror node_coords_host =
       KokkosArray::create_mirror( mesh.node_coords );
 
-    typename vector_type::HostMirror X_h =
+    typename vector_type::HostMirror nodal_solution_host =
       KokkosArray::create_mirror( nodal_solution );
 
-    KokkosArray::deep_copy( coords_h , mesh.node_coords );
-    KokkosArray::deep_copy( X_h , nodal_solution );
+    KokkosArray::deep_copy( node_coords_host , mesh.node_coords );
+    KokkosArray::deep_copy( nodal_solution_host , nodal_solution );
+
+    double tmp = 0 ;
 
     for ( size_t i = 0 ; i < mesh.parallel_data_map.count_owned ; ++i ) {
-      const coordinate_scalar_type x = coords_h(i,0);
-      const coordinate_scalar_type y = coords_h(i,1);
-      const coordinate_scalar_type z = coords_h(i,2);
+      const coordinate_scalar_type x = node_coords_host(i,0);
+      const coordinate_scalar_type y = node_coords_host(i,1);
+      const coordinate_scalar_type z = node_coords_host(i,2);
 
-      if ( x <= 0 && y <= 0 ) {
-        std::cout << "  node( " << x << " " << y << " " << z << " ) =\t"
-                  << X_h(i) << std::endl ;
+      const double Tx = exact_solution(z);
+      const double Ts = nodal_solution_host(i);
+      const double Te = std::abs( Tx - Ts ) / std::abs( Tx );
+
+      tmp = std::max( tmp , Te );
+
+      if ( print_error && 0.02 < Te ) {
+        std::cout << "  node( " << x << " " << y << " " << z << " ) = "
+                  << Ts << " != exact_solution " << Tx
+                  << std::endl ;
       }
     }
+    perf_data.error_max = comm::max( machine , tmp );
   }
 
   return perf_data ;
@@ -402,43 +504,47 @@ void driver( const char * label ,
   if ( comm::rank( machine ) == 0 ) {
     std::cout << std::endl ;
     std::cout << "\"KokkosArray::HybridFE::NonLinear " << label << "\"" << std::endl;
-    std::cout << "\"Size\" ,  \"Meshing\" ,  \"Graphing\" , \"Element\" , \"Fill\" ,   \"Boundary\" ,  \"CG-Iter\"" << std::endl
-              << "\"nodes\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\"" << std::endl ;
+    std::cout
+      << "\"Size\" ,  \"Meshing\" ,  \"Graphing\" , \"Element\" , \"Fill\" ,   \"Boundary\" ,  \"CG-Iter\" , \"CG-Iter\" , \"Newton-Iter\" , \"Max-node-error\"" 
+      << std::endl
+      << "\"nodes\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"millisec\" , \"total-count\" , \"total-count\" , \"ratio\""
+      << std::endl ;
   }
 
   for(int i = beg ; i < end ; i *= 2 )
   {
-    const int ix = (int) cbrt( (double) i );
-    const int iy = ix + 1 ;
-    const int iz = iy + 1 ;
+    const int ix = 1 + std::max( 1 , (int) cbrt( ((double) i) / 2.0 ) );
+    const int iy = 1 + ix ;
+    const int iz = 2 * iy ;
     const int n  = ix * iy * iz ;
 
     PerformanceData perf_data , perf_best ;
 
     for(int j = 0; j < runs; j++){
 
-     perf_data = run<Scalar,Device>(machine,ix,iy,iz, false );
+      perf_data = run<Scalar,Device>(machine,ix,iy,iz, false );
 
-     if( j == 0 ) {
-       perf_best = perf_data ;
-     }
-     else {
-       perf_best.best( perf_data );
-     }
-   }
+      if( j == 0 ) {
+        perf_best = perf_data ;
+      }
+      else {
+        perf_best.best( perf_data );
+      }
+    }
 
-   /// TODO: reduction across processors
+    if ( comm::rank( machine ) == 0 ) {
 
-  if ( comm::rank( machine ) == 0 ) {
-
-     std::cout << std::setw(8) << n << " , "
-               << std::setw(10) << perf_best.mesh_time * 1000 << " , "
-               << std::setw(10) << perf_best.graph_time * 1000 << " , "
-               << std::setw(10) << perf_best.elem_time * 1000 << " , "
-               << std::setw(10) << perf_best.matrix_gather_fill_time * 1000 << " , "
-               << std::setw(10) << perf_best.matrix_boundary_condition_time * 1000 << " , "
-               << std::setw(10) << perf_best.cg_iteration_time * 1000
-               << std::endl ;
+      std::cout << std::setw(8) << n << " , "
+                << std::setw(10) << perf_best.mesh_time * 1000 << " , "
+                << std::setw(10) << perf_best.graph_time * 1000 << " , "
+                << std::setw(10) << perf_best.elem_time * 1000 << " , "
+                << std::setw(10) << perf_best.matrix_gather_fill_time * 1000 << " , "
+                << std::setw(10) << perf_best.matrix_boundary_condition_time * 1000 << " , "
+                << std::setw(10) << perf_best.cg_iteration_time * 1000 << " , "
+                << std::setw(7) << perf_best.cg_iteration_count << " , "
+                << std::setw(3) << perf_best.newton_iteration_count << " , "
+                << std::setw(10) << perf_best.error_max
+                << std::endl ;
     }
   }
 }

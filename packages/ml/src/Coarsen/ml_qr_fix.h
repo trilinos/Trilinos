@@ -35,114 +35,48 @@
   complicated.  Second, we can somehow mark columns that are invalid. ML implements the second option
   as follows.
 
-  ML maintains a "dead DOF" data structure for each multigrid level.  The data structure keeps
-  the level number, the total number of aggregtes, the total number of dead DOFs, and an array of chars or
-  integers that maybe short, unsigned, or long.  The array has one entry per aggregate.  This entry
-  is treated as an array of bits, with the first bit (bit 0) being the rightmost.  If nullspace
-  vector i can be represented in the current aggregate, then bit i is set to 0.  If vector i *cannot* be
-  represented, then bit i is set to 1.
+  ML maintains a "dead DOF" data structure during each multigrid level's construction.  The data structure keeps
+  the total number of aggregates, the total number of dead DOFs, and a std::vector with one entry per aggregate.
+  This entry is itself a std::vector of bools.  Due to a quirk in the standard library, std::vector<bool> uses
+  bits for storage.  So for example, given std::vector<bool> v(8), v is 8 bits, rather than 8 bytes.
 
-  So for the above example, the array of (char) entries looks like the following
-
-  00000000
-  00001000
-  00001100
-
-  Why use bits?  First, it's very space efficient.  Second, it's very easy to populate each entry e as follows:
-
-    for myAgg=0:2
-      e=0;
-      for i= size(myAgg) : size(nullSpace)-1
-        e |= (1<<i);
-      end
-    end
-
-  which will give the three entries above.
-
-  Finally, it'also easy to figure out which DOFs are "dead":
-
-  for i = 0: size(nullspace)-1
-     if (dead & (1 << k))
-       printf("DOF %d is dead\n",i);
-     end
-  end
-
-  In fact, these two operations are used in ml_agg_uncoupled.c, ml_agg_MIS.c, and ml_struct.c.
-
-  Observations:
-  1) Only the rightmost 4 bits matter here.  There's room in fact to encode information for 4 more
-     (for a total of 8) nullspace vectors.
-
-  2) On my Linux workstation, a long int is 64 bits.  This is the largest nullspace that can be encoded
-     using this approach, as only integers can be bit shifted.  So if you have nullspace with dimension > 64,
-     you're out of luck with the current scheme.
-
+  If nullspace vector i can be represented in the current aggregate, then entry i is set to false.  If vector i *cannot* be
+  represented, then bit i is set to true.
 
   This encoding scheme is used in two spots.  The first is to zero out (local to an aggregate) NS vectors that
-  cannot be represented because the aggregate is too small.  The second is to fix up the coarse grid matrix A
-  so that it does not have a zero on the diagonal.
+  cannot be represented because the aggregate is too small (ml_agg_uncoupled.c and ml_agg_MIS.c).  The second is to fix up
+  the coarse grid matrix A so that it does not have a zero on the diagonal (ml_struct.c).
 
 */
 
-/* If we need more than 16 kernel components, define ML_QR_FIX_TYPE
- * as unsigned int, otherwise use unsigned short int to conserve memory */
-#define ML_QR_FIX_TYPE long int
-
-typedef struct ML_qr_fix {
-
-  int                 level;
-  int                 numDeadNodDof;
- /* -mb: can later replace the following two with a hash structure */ 
-  int                 nDeadNodDof;     /*=number of aggregates*/
-  ML_QR_FIX_TYPE     *xDeadNodDof;
-
-} ML_qr_fix;
-
 #ifdef __cplusplus
 extern "C" {
-  int ML_qr_fix_Create(const int nCoarseNod);
+#endif
 
-  int ML_qr_fix_Destroy(void);
+   int ML_qr_fix_Create(const int nCoarseNod, const int nullspaceDim);
 
-  int ML_qr_fix_Print(ML_qr_fix* ptr);
+   int ML_qr_fix_Destroy(void);
 
-  int ML_qr_fix_NumDeadNodDof(void);
+   int ML_qr_fix_NumDeadNodDof(void);
 
-  ML_QR_FIX_TYPE ML_qr_fix_getDeadNod(const int inx);
+   void ML_qr_fix_setNumDeadNod(int num);
 
-  void ML_qr_fix_setNumDeadNod(int num);
-
-  void ML_qr_fix_setDeadNod( const int inx, ML_QR_FIX_TYPE val);
-
-  int  ML_fixCoarseMtx(
+   int  ML_fixCoarseMtx(
           ML_Operator *Cmat,          /*-up- coarse operator in MSR format   */
           const int    CoarseMtxType  /*-in- coarse-lev mtx storage type     */
   );
  
-  int  ML_qr_fix_Bitsize(void);
+  /* Mark all appropriate coarse DOFs as dead. */
+   void ML_qr_fix_markDOFsAsDead(const int aggNum, const int aggSize, const int nullspaceDim);
+
+  /* Returns status of coarse DOF. */
+   int ML_qr_fix_isDOFDead(const int aggNum, const int coarseDOF);
+
+  /* Returns 1 if aggregate (node) has dead coarse DOFs associated with it.  Returns 0 otherwise. */
+   int ML_qr_fix_nodeHasDeadDOFs(const int aggNum);
+
+#ifdef __cplusplus
 }
-#else
-
-int ML_qr_fix_Create(const int nCoarseNod);
-
-int ML_qr_fix_Destroy(void);
-
-int ML_qr_fix_Print(ML_qr_fix* ptr);
-
-int ML_qr_fix_NumDeadNodDof(void);
-
-ML_QR_FIX_TYPE ML_qr_fix_getDeadNod(const int inx);
-
-void ML_qr_fix_setNumDeadNod(int num);
-
-void ML_qr_fix_setDeadNod( const int inx, ML_QR_FIX_TYPE val);
-
-int  ML_fixCoarseMtx(
-        ML_Operator *Cmat,          /*-up- coarse operator in MSR format     */
-        const int    CoarseMtxType  /*-in- coarse-lev mtx storage type       */
-     );
-
-int  ML_qr_fix_Bitsize(void);
-
 #endif
-#endif
+
+#endif /*ifndef ML_QR_FIX_H*/

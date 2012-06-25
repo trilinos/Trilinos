@@ -110,9 +110,10 @@
 SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   yaml-cpp        "cmake/TPLs/"    EX
   Peano           "cmake/TPLs/"    EX
-  CUDA            "cmake/TPLs/"    EX
-  Thrust          "cmake/TPLs/"    EX
-  Cusp            "cmake/TPLs/"    EX
+  CUDA            "cmake/TPLs/"    SS
+  CUSPARSE        "cmake/TPLs/"    SS
+  Thrust          "cmake/TPLs/"    SS
+  Cusp            "cmake/TPLs/"    SS
   TBB             "cmake/TPLs/"    EX
   Pthread         "cmake/TPLs/"    SS
   HWLOC           "cmake/TPLs/"    SS

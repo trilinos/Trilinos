@@ -44,26 +44,26 @@
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
 
-#include <examples/Kokkos_DummySparseKernelClass.hpp>
+#include <examples/KokkosExamples_EmptySparseKernelClass.hpp>
 #include <Kokkos_DefaultNode.hpp>
 
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
 /** \file LocalMatOpsExample.cpp
-    \brief A file testing the build of the KokkosExamples::DummySparseKernel and illustrating a custom sparse mat-vec with Tpetra::CrsMatrix.
+    \brief A file testing the build of the KokkosExamples::EmptySparseKernel and illustrating a custom sparse mat-vec with Tpetra::CrsMatrix.
  */
 
 int main(int argc, char *argv[]) {
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType           Platform;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
-  typedef KokkosExamples::DummySparseKernel<Node>                SparseOps;
-  typedef Tpetra::Map<int,int,Node>                              Map;
-  typedef Tpetra::CrsMatrix<float,int,int,Node,SparseOps>        Matrix;
-  typedef Tpetra::MultiVector<float,int,int,Node>                MultiVector;
+  typedef Tpetra::DefaultPlatform::DefaultPlatformType              Platform;
+  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType    Node;
+  typedef KokkosExamples::EmptySparseKernel<void,Node>              SparseOps;
+  typedef Tpetra::Map<int,int,Node>                                 Map;
+  typedef Tpetra::CrsMatrix<float,int,int,Node,SparseOps>           Matrix;
+  typedef Tpetra::MultiVector<float,int,int,Node>                   MultiVector;
 
   // 
   // Get the default communicator and node
@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
   const Tpetra::global_size_t numGlobalRows = numRows*comm->getSize();
   Teuchos::RCP<const Map> map = Tpetra::createUniformContigMapWithNode<int,int,Node>(numGlobalRows, comm, node);
   Teuchos::RCP<Matrix> matrix = Teuchos::rcp( new Matrix(map,1,Tpetra::DynamicProfile) );
-  matrix->fillComplete();
+  matrix->fillComplete(Teuchos::null);
 
   Teuchos::RCP<MultiVector> X = Tpetra::createMultiVector<float>(map, 2),
                             Y = Tpetra::createMultiVector<float>(map, 2);

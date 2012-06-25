@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//          KokkosArray: Node API and Parallel Node Kernels
+//          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -117,7 +117,7 @@ public:
 
     memory_manager::enable_memory_view_tracking();
 
-    cuda_parallel_launch( driver , grid , block , 0 );
+    CudaParallelLaunch< ParallelFor >::execute( driver , grid , block , 0 );
   }
 };
 

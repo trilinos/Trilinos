@@ -952,13 +952,11 @@ int Zoltan_Hier(
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
       ZOLTAN_HIER_ERROR(ierr, "Zoltan_Build_Graph returned error.");
     }
-
     hpp.invalid_gno = vtxdist[zz->Num_Proc];
     gno1 = vtxdist[zz->Proc];
     ZOLTAN_FREE(&vtxdist);
   }
   else{
-
     MPI_Datatype MPI_GNOTYPE = Zoltan_mpi_gno_type();
     ZOLTAN_GNO_TYPE localCount = hpp.num_obj, scanCount=0;
     MPI_Scan(&localCount, &scanCount, 1, MPI_GNOTYPE, MPI_SUM, zz->Communicator);
@@ -966,7 +964,7 @@ int Zoltan_Hier(
     MPI_Bcast(&totalCount, 1, MPI_GNOTYPE, zz->Num_Proc-1, zz->Communicator);
 
     hpp.invalid_gno = totalCount;
-    gno1 = scanCount - localCount;
+    gno1 = scanCount - localCount; 
   }
 
   /* Check that the space of global numbers fits in a ZOLTAN_ID_TYPE.  Caller is 

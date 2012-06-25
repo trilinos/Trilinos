@@ -235,7 +235,7 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
 
   try {
     
-    out << "\nSorting tests by group name then by the order they where added ...";
+    out << "\nSorting tests by group name then by the order they were added ...";
     timer.start(true);
     std::sort( data.unitTests.begin(), data.unitTests.end() );
     timer.stop();

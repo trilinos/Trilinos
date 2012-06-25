@@ -55,7 +55,7 @@
 #if defined(HAVE_KOKKOS_OPENMP)
 #  include <Kokkos_OpenMPNode.hpp>
 #endif
-#if defined(HAVE_KOKKOS_THRUST)
+#if defined(HAVE_KOKKOS_CUSPARSE)
 #  include <Kokkos_ThrustGPUNode.hpp>
 #endif
 
@@ -94,12 +94,12 @@ namespace Tpetra {
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(double, int, int, Kokkos::OpenMPNode)
 #endif // HAVE_KOKKOS_OPENMP
 
-#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
+#if defined(HAVE_KOKKOS_CUSPARSE) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
   TPETRA_CRSMATRIX_INSTANT(double,int,int,Kokkos::ThrustGPUNode)
   TPETRA_CRSMATRIX_CONVERT_INSTANT(double,double,int,int,Kokkos::ThrustGPUNode)
   TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(double, int, int, Kokkos::ThrustGPUNode)
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(double, int, int, Kokkos::ThrustGPUNode)
-#endif // HAVE_KOKKOS_THRUST && HAVE_KOKKOS_CUDA_DOUBLE
+#endif // HAVE_KOKKOS_CUSPARSE && HAVE_KOKKOS_CUDA_DOUBLE
 #endif // DOUBLE
 
 #if defined(HAVE_TPETRA_INST_FLOAT)
@@ -142,7 +142,7 @@ namespace Tpetra {
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(float, int, int, Kokkos::OpenMPNode)
 #endif
 
-#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_FLOAT)
+#if defined(HAVE_KOKKOS_CUSPARSE) && defined(HAVE_KOKKOS_CUDA_FLOAT)
   TPETRA_CRSMATRIX_INSTANT(float,int,int,Kokkos::ThrustGPUNode)
 #  if defined(HAVE_KOKKOS_CUDA_DOUBLE)
   TPETRA_CRSMATRIX_CONVERT_INSTANT(float,double,int,int,Kokkos::ThrustGPUNode)
@@ -178,7 +178,7 @@ namespace Tpetra {
 //
 // No std::complex<double> on GPU support for now.
 //
-//#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
+//#if defined(HAVE_KOKKOS_CUSPARSE) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
 //  TPETRA_CRSMATRIX_INSTANT(std::complex<double>,int,int,Kokkos::ThrustGPUNode)
 //  TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(std::complex<double>, int, int, Kokkos::ThrustGPUNode)
 //  TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(std::complex<double>, int, int, Kokkos::ThrustGPUNode)
@@ -210,7 +210,7 @@ namespace Tpetra {
 //
 // No std::complex<float> on GPU support for now.
 //
-//#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
+//#if defined(HAVE_KOKKOS_CUSPARSE) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
 //  TPETRA_CRSMATRIX_INSTANT(double,int,int,Kokkos::ThrustGPUNode)
 //  TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(std::complex<float>, int, int, Kokkos::ThrustGPUNode)
 //  TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(std::complex<float>, int, int, Kokkos::ThrustGPUNode)
@@ -244,11 +244,11 @@ namespace Tpetra {
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(double, int, long, Kokkos::OpenMPNode)
 #endif // HAVE_KOKKOS_OPENMP
 
-#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
+#if defined(HAVE_KOKKOS_CUSPARSE) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
   TPETRA_CRSMATRIX_INSTANT(double,int,long,Kokkos::ThrustGPUNode)
   TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(double, int, long, Kokkos::ThrustGPUNode)
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(double, int, long, Kokkos::ThrustGPUNode)
-#endif // HAVE_KOKKOS_THRUST && HAVE_KOKKOS_CUDA_DOUBLE
+#endif // HAVE_KOKKOS_CUSPARSE && HAVE_KOKKOS_CUDA_DOUBLE
 #endif // DOUBLE
 
 #if defined(HAVE_TPETRA_INST_FLOAT)
@@ -274,7 +274,7 @@ namespace Tpetra {
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(float, int, long, Kokkos::OpenMPNode)
 #endif
 
-#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_FLOAT)
+#if defined(HAVE_KOKKOS_CUSPARSE) && defined(HAVE_KOKKOS_CUDA_FLOAT)
   TPETRA_CRSMATRIX_INSTANT(float,int,long,Kokkos::ThrustGPUNode)
   TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(float, int, long, Kokkos::ThrustGPUNode)
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(float, int, long, Kokkos::ThrustGPUNode)
@@ -306,7 +306,7 @@ namespace Tpetra {
 //
 // No std::complex<double> on GPU support for now.
 //
-//#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
+//#if defined(HAVE_KOKKOS_CUSPARSE) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
 //  TPETRA_CRSMATRIX_INSTANT(std::complex<double>,int,long,Kokkos::ThrustGPUNode)
 //  TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(std::complex<double>, int, long, Kokkos::ThrustGPUNode)
 //  TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(std::complex<double>, int, long, Kokkos::ThrustGPUNode)
@@ -338,7 +338,7 @@ namespace Tpetra {
 //
 // No std::complex<float> on GPU support for now.
 //
-//#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
+//#if defined(HAVE_KOKKOS_CUSPARSE) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
 //  TPETRA_CRSMATRIX_INSTANT(double,int,long,Kokkos::ThrustGPUNode)
 //  TPETRA_CRSMATRIX_IMPORT_AND_FILL_COMPLETE_INSTANT(std::complex<float>, int, long, Kokkos::ThrustGPUNode)
 //  TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT(std::complex<float>, int, long, Kokkos::ThrustGPUNode)

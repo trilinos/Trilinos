@@ -60,9 +60,9 @@ extern "C"
 int ncmpi_fini(void)
 {
     int rc = NC_NOERR;
-    extern int nc_fini(void);
+    extern int netcdf_client_fini(void);
 
-    rc=nc_fini();
+    rc=netcdf_client_fini();
 
     return rc;
 }
@@ -482,7 +482,8 @@ int ncmpi_def_var(
 /**
  * Collective function for put_att.
  */
-static int _ncmpi_put_att_type(
+extern "C"
+int _ncmpi_put_att_type(
         int ncid,
         int varid,
         const char *name,
@@ -890,7 +891,7 @@ int ncmpi_put_att_ushort(
                 int varid,
                 const char *name,
                 nc_type xtype,
-                size_t len,
+                MPI_Offset len,
                 const unsigned short *op)
 {
     return _ncmpi_put_att_type(ncid, varid, name, xtype, NC_ARG_USHORT, len*sizeof(unsigned short), op);
@@ -902,7 +903,7 @@ int ncmpi_put_att_uint(
                 int varid,
                 const char *name,
                 nc_type xtype,
-                size_t len,
+                MPI_Offset len,
                 const unsigned int *op)
 {
     return _ncmpi_put_att_type(ncid, varid, name, xtype, NC_ARG_UINT, len*sizeof(unsigned int), op);
@@ -914,7 +915,7 @@ int ncmpi_put_att_longlong(
                 int varid,
                 const char *name,
                 nc_type xtype,
-                size_t len,
+                MPI_Offset len,
                 const long long *op)
 {
     return _ncmpi_put_att_type(ncid, varid, name, xtype, NC_ARG_LONGLONG, len*sizeof(long long), op);
@@ -926,7 +927,7 @@ int ncmpi_put_att_ulonglong(
                 int varid,
                 const char *name,
                 nc_type xtype,
-                size_t len,
+                MPI_Offset len,
                 const unsigned long long *op)
 {
     return _ncmpi_put_att_type(ncid, varid, name, xtype, NC_ARG_ULONGLONG, len*sizeof(unsigned long long), op);

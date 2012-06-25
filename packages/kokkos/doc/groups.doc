@@ -260,13 +260,13 @@
   In order to facilitate the substitution of sparse matrix kernels in classes
   such as Tpetra::CrsMatrix, %Kokkos separates the data structure interface for
   a compressed-sparse-row (CRS) matrix from the kernel for implemeneting sparse
-  matrix-vector multiplication and solves. However, the appropriate implementation 
-  of these kernels for a particular platform may dictate some of the design of the 
-  storage classes. Furthermore, for efficiency reasons, these decisions must be
-  implemented statically. The approach that Tpetra employs is to template 
-  the distributed Tpetra::CrsMatrix objects on the type of the local matrix kernels.
-  This decision permeates down to the level of the CRS objects in the %Kokkos linear 
-  algebra library.
+  matrix-vector multiplication and solves. However, the appropriate
+  implementation of these kernels for a particular platform may dictate some of
+  the design of the storage classes. Furthermore, for reasons of efficiency and
+  generic programming reach, these are implemented statically. The
+  approach that Tpetra employs is to template the distributed Tpetra::CrsMatrix
+  objects on the type of the local matrix kernels.  This decision permeates down
+  to the level of the CRS objects in the %Kokkos linear algebra library.
 
   The primary object in this discussion is the class providing the sparse
   matrix kernels. The simplest way to modify the operation of the Tpetra
@@ -281,16 +281,18 @@
 
   The following simplified code demonstrates the relationship between these objects and their typical usage:
   \code
-    Graph<          int, SparseKernels > G;
-    Matrix< double, int, SparseKernels > M(G);
+    typedef typename SparseKernels::graph<        int,Node>::graph_type  Graph;
+    typedef typename SparseKernels::matrix<double,int,Node>::matrix_type Matrix;
+    Graph G(numRows,node);
+    Matri M(G);
     SparseKernels ops;
-    ops.submitData( M );
+    ops.setGraphAndMatrix( G, M );
     ops.multiply( x, y );
     ops.solve( b, x );
   \endcode
-  In this example, we instantiate a graph and a matrix. Note, the sparse kernel object \c SparseKernels is a template parameter of the 
-  \c CrsGraph and \c CrsMatrix objects. By parametrizing these classes in this way, we can effect the design of these classes according to 
-  the sparse kernels that we are interested in using, for example, by specializing these classes. After creating the sparse graph and sparse matrix objets,
+  In this example, we instantiate a graph and a matrix. Note, the type of 
+  \c CrsGraph and \c CrsMatrix is dictated by the \c SparesKernels class. By parametrizing these classes in this way, we can effect the design of these classes according to 
+  the sparse kernels that we are interested in using. After creating the sparse graph and sparse matrix objets,
   we instantiate a \c SparseKernel object and submit the data. Finally, the sparse kernel object can be used to apply the sparse matrix mutiply and solve routines.
 
   The sparse kernel class must obviously provide the functionality for matrix-vector multiply and matrix-vector solve. Some other functionality is required of this class as well.

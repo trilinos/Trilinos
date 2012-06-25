@@ -90,7 +90,7 @@ clp.add_option(
 
 clp.add_option(
   "--output-cdash-deps-xml-file", dest="outputCDashDepsXmlFile", type="string",
-  help="Output XML file giving the Trilinos dependices CDash language.")
+  help="Output XML file giving the TriBITS project dependices in XML form that CDash understands.")
 
 (options, args) = clp.parse_args()
 
@@ -102,8 +102,8 @@ clp.add_option(
 
 from TribitsDependencies import getProjectDependenciesFromXmlFile
 
-trilinosDependencies = getProjectDependenciesFromXmlFile(
+tribitsDependencies = getProjectDependenciesFromXmlFile(
   options.inputXmlDepsFile)
 
-trilinosDependencies.writeCDashXmlDepsFile(
+tribitsDependencies.writeCDashXmlDepsFile(
   options.outputCDashDepsXmlFile)

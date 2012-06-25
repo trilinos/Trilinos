@@ -56,8 +56,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "Trios_nssi_server.h"
 #include "Trios_logger.h"
 #include "Trios_timer.h"
-
-#include "nssi_debug.h"
+#include "Trios_nssi_debug.h"
 
 #include "injection_test.h"
 
