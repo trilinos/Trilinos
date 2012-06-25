@@ -295,6 +295,7 @@ static void copy_peer(
         NNTI_peer_t *dest);
 static int init_server_listen_socket(void);
 static int start_connection_listener_thread(void);
+static NNTI_result_t check_listen_socket_for_new_connections();
 static struct ibv_device *get_ib_device(void);
 static int tcp_read(int sock, void *incoming, size_t len);
 static int tcp_write(int sock, const void *outgoing, size_t len);
@@ -607,7 +608,7 @@ NNTI_result_t NNTI_ib_init (
         }
 
         init_server_listen_socket();
-        start_connection_listener_thread();
+//        start_connection_listener_thread();
 
         if (logging_info(nnti_debug_level)) {
             fprintf(logger_get_file(), "InfiniBand Initialized: host(%s) port(%u)\n",
@@ -1505,6 +1506,8 @@ NNTI_result_t NNTI_ib_wait (
     q_hdl     =&transport_global_data.req_queue;
     assert(q_hdl);
 
+    check_listen_socket_for_new_connections();
+
     ib_mem_hdl=(ib_memory_handle *)reg_buf->transport_private;
     assert(ib_mem_hdl);
     wr=first_incomplete_wr(ib_mem_hdl);
@@ -1537,6 +1540,8 @@ NNTI_result_t NNTI_ib_wait (
                 nnti_rc=NNTI_ECANCELED;
                 break;
             }
+
+            check_listen_socket_for_new_connections();
 
             memset(&wc, 0, sizeof(struct ibv_wc));
             trios_start_timer(call_time);
@@ -1571,6 +1576,8 @@ NNTI_result_t NNTI_ib_wait (
                 }
             } else {
 retry:
+                check_listen_socket_for_new_connections();
+
 //            nthread_lock(&nnti_ib_lock);
                 trios_start_timer(call_time);
                 rc = poll_comp_channel(comp_channel, cq, timeout_per_call);
@@ -1718,6 +1725,8 @@ NNTI_result_t NNTI_ib_waitany (
 
     log_debug(debug_level, "enter");
 
+    check_listen_socket_for_new_connections();
+
     if (!config.use_rdma_target_ack) {
         if ((remote_op==NNTI_GET_SRC) || (remote_op==NNTI_PUT_DST) || (remote_op==(NNTI_GET_SRC|NNTI_PUT_DST))) {
             memset(status, 0, sizeof(NNTI_status_t));
@@ -1760,6 +1769,8 @@ NNTI_result_t NNTI_ib_waitany (
                 break;
             }
 
+            check_listen_socket_for_new_connections();
+
             memset(&wc, 0, sizeof(struct ibv_wc));
             trios_start_timer(call_time);
             ibv_rc = ibv_poll_cq(transport_global_data.data_cq, 1, &wc);
@@ -1793,6 +1804,8 @@ NNTI_result_t NNTI_ib_waitany (
                 }
             } else {
 retry:
+                check_listen_socket_for_new_connections();
+
 //            nthread_lock(&nnti_ib_lock);
                 trios_start_timer(call_time);
                 rc = poll_comp_channel(transport_global_data.data_comp_channel, transport_global_data.data_cq, timeout_per_call);
@@ -1933,6 +1946,8 @@ NNTI_result_t NNTI_ib_waitall (
 
     log_debug(debug_level, "enter");
 
+    check_listen_socket_for_new_connections();
+
     if (!config.use_rdma_target_ack) {
         if ((remote_op==NNTI_GET_SRC) || (remote_op==NNTI_PUT_DST) || (remote_op==(NNTI_GET_SRC|NNTI_PUT_DST))) {
             for (int i=0;i<buf_count;i++) {
@@ -1976,6 +1991,8 @@ NNTI_result_t NNTI_ib_waitall (
                 break;
             }
 
+            check_listen_socket_for_new_connections();
+
             memset(&wc, 0, sizeof(struct ibv_wc));
             trios_start_timer(call_time);
             ibv_rc = ibv_poll_cq(transport_global_data.data_cq, 1, &wc);
@@ -2009,6 +2026,8 @@ NNTI_result_t NNTI_ib_waitall (
                 }
             } else {
 retry:
+                check_listen_socket_for_new_connections();
+
 //            nthread_lock(&nnti_ib_lock);
                 trios_start_timer(call_time);
                 rc = poll_comp_channel(transport_global_data.data_comp_channel, transport_global_data.data_cq, timeout_per_call);
@@ -3308,9 +3327,13 @@ static int init_server_listen_socket()
     transport_global_data.listen_sock = socket(AF_INET, SOCK_STREAM, 0);
     if (transport_global_data.listen_sock < 0)
         log_error(nnti_debug_level, "failed to create tcp socket: %s", strerror(errno));
+
     flags = 1;
     if (setsockopt(transport_global_data.listen_sock, SOL_SOCKET, SO_REUSEADDR, &flags, sizeof(flags)) < 0)
         log_error(nnti_debug_level, "failed to set tcp socket REUSEADDR flag: %s", strerror(errno));
+
+    flags=fcntl(transport_global_data.listen_sock, F_GETFL, 0);
+    fcntl(transport_global_data.listen_sock, F_SETFL, flags | O_NONBLOCK);
 
     if (transport_global_data.listen_name[0]!='\0') {
         log_debug(nnti_debug_level, "using hostname from command-line (%s).", transport_global_data.listen_name);
@@ -4406,9 +4429,14 @@ static NNTI_result_t check_listen_socket_for_new_connections()
     len = sizeof(ssin);
     s = accept(transport_global_data.listen_sock, (struct sockaddr *) &ssin, &len);
     if (s < 0) {
-        if (!(errno == EAGAIN)) {
+        if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+            log_debug(nnti_debug_level, "no connections waiting to be accepted: %s", strerror(errno));
+            rc = NNTI_OK;
+            goto cleanup;
+        } else {
             log_error(nnti_debug_level, "failed to accept tcp socket connection: %s", strerror(errno));
             rc = NNTI_EIO;
+            goto cleanup;
         }
     } else {
         char         *peer_hostname = strdup(inet_ntoa(ssin.sin_addr));
