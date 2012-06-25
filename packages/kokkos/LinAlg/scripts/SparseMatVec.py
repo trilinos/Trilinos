@@ -340,8 +340,10 @@ def emitFuncSig (defDict, indent=0):
         ind + '  const Ordinal start${RowCol},\n' + \
         ind + '  const Ordinal end${RowCol}PlusOne,\n' + \
         ind + '  const Ordinal numColsX,\n' + \
+        ind + '  const RangeScalar& beta,\n' + \
         ind + '  RangeScalar Y[],\n' + \
         ind + '  const Ordinal ${denseRowCol}StrideY,\n' + \
+        ind + '  const RangeScalar alpha,\n' + \
         ind + '  const Ordinal ptr[],\n' + \
         ind + '  const Ordinal ind[],\n' + \
         ind + '  const MatrixScalar val[],\n' + \
