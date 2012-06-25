@@ -11,8 +11,9 @@
 
 void test_box_partition( bool print )
 {
-  const size_t ghost_layer = 1 ;
   const size_t np_max = 10000 ;
+
+  const BoxBounds use_box ;
 
   BoxType root_box ;
 
@@ -61,7 +62,8 @@ void test_box_partition( bool print )
 
       size_t count_verify = 0 ;
 
-      box_partition_maps( root_box , part_boxes , ghost_layer , my_part ,
+      box_partition_maps( root_box , part_boxes ,
+                          use_box , my_part ,
                           my_use_box , my_use_id_map ,
                           my_count_interior ,
                           my_count_owned ,
@@ -98,7 +100,8 @@ void test_box_partition( bool print )
           std::vector<size_t> ip_recv_counts ;
           std::vector<std::vector<size_t> > ip_send_map ;
 
-          box_partition_maps( root_box , part_boxes , ghost_layer , ip ,
+          box_partition_maps( root_box , part_boxes ,
+                              use_box , ip ,
                               ip_use_box , ip_use_id_map ,
                               ip_count_interior ,
                               ip_count_owned ,

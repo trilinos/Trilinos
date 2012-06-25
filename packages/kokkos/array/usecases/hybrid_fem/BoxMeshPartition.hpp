@@ -120,6 +120,36 @@ std::ostream & operator << ( std::ostream & s , const BoxType & box )
 }
 
 //----------------------------------------------------------------------------
+
+class BoxBounds {
+public:
+  /** \brief  Default bounds to one layer of ghosting */
+  virtual
+  void apply( const BoxType & box_global ,
+              const BoxType & box_part ,
+                    BoxType & box_interior ,
+                    BoxType & box_use ) const ;
+
+  virtual ~BoxBounds() {}
+  BoxBounds() {}
+};
+
+class BoxBoundsQuadratic : public BoxBounds {
+public:
+  /** \brief  Quadratic mesh: even ordinates have two layers,
+   *          odd ordinates have one layer.
+   */
+  virtual
+  void apply( const BoxType & box_global ,
+              const BoxType & box_part ,
+                    BoxType & box_interior ,
+                    BoxType & box_use ) const ;
+
+  virtual ~BoxBoundsQuadratic() {}
+  BoxBoundsQuadratic() {}
+};
+
+//----------------------------------------------------------------------------
 /* Partition box into part_boxes.size() sub-boxes */
 
 void box_partition_rcb( const BoxType        & root_box ,
@@ -140,11 +170,10 @@ void box_partition_rcb( const BoxType        & root_box ,
  *  (1) received data to be copied into a contiguous block of memory
  *  (2) send data to be extracted from a contiguous block of memory.
  */
-
 void box_partition_maps(
   const BoxType              & root_box ,   // [in] Global box
   const std::vector<BoxType> & part_boxes , // [in] Partitioned boxes
-  const size_t          ghost_layer ,       // [in] Size of ghost layer
+  const BoxBounds            & use_boxes ,  // [in] Ghost boundaries
   const size_t          my_part ,           // [in] My local part
   BoxType             & my_use_box ,        // [out] My used box with ghost
   std::vector<size_t> & my_use_id_map ,     // [out] Local ordering map

@@ -166,7 +166,6 @@ box_mesh_fixture( const size_t proc_count ,
                   const size_t nodes_z )
 {
   enum { element_node_count = 8 };
-  enum { ghost_layer = 1 };
 
   typedef typename Device::size_type  size_type ;
   typedef Scalar                      scalar_type ;
@@ -175,6 +174,8 @@ box_mesh_fixture( const size_t proc_count ,
   const size_t elem_node_local_coord[ element_node_count ][3] =
     { { 0 , 0 , 0 } , { 1 , 0 , 0 } , { 1 , 1 , 0 } , { 0 , 1 , 0 } ,
       { 0 , 0 , 1 } , { 1 , 0 , 1 } , { 1 , 1 , 1 } , { 0 , 1 , 1 } };
+
+  const BoxBounds use_boxes ;
 
   BoxType node_box_global ;
   BoxType node_box_local_used ;
@@ -193,7 +194,8 @@ box_mesh_fixture( const size_t proc_count ,
 
   box_partition_rcb( node_box_global , node_box_parts );
 
-  box_partition_maps( node_box_global , node_box_parts , ghost_layer ,
+  box_partition_maps( node_box_global , node_box_parts ,
+                      use_boxes ,
                       proc_local ,
                       node_box_local_used ,
                       node_used_id_map ,
