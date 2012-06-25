@@ -190,7 +190,7 @@ buildSrcToDestMap(const std::string & elementBlock,
   TEUCHOS_ASSERT(indexerSrc.getComm()!=Teuchos::null);
   TEUCHOS_ASSERT(indexerDest.getComm()!=Teuchos::null);
 
-  const std::vector<int> dstFieldsNum = indexerDest.getBlockFieldNumbers(elementBlock);
+  const std::vector<int> & dstFieldsNum = indexerDest.getBlockFieldNumbers(elementBlock);
 
   // build a map between destination field numbers and source field numbers
   std::map<int,int> fieldNumberMaps;
@@ -199,7 +199,7 @@ buildSrcToDestMap(const std::string & elementBlock,
 
     int srcFieldNum = indexerSrc.getFieldNum(fieldName);
     if(srcFieldNum>=0)
-      fieldNumberMaps[srcFieldNum] = dstFieldsNum[dstFieldsNum[i]];
+      fieldNumberMaps[srcFieldNum] = dstFieldsNum[i];
     else
       out << "Warning: Reorder AD Values can't find field \"" << fieldName << "\"" << std::endl;
   }
@@ -224,7 +224,8 @@ buildSrcToDestMap(const std::string & elementBlock,
   }
 
   // Build map
-  dstFromSrcMap_ = std::vector<int>(maxDest,-1);
+  TEUCHOS_ASSERT(maxDest>0);
+  dstFromSrcMap_ = std::vector<int>(maxDest+1,-1);
   for(std::map<int,int>::const_iterator itr=offsetMap.begin();
       itr!=offsetMap.end();++itr) {
     dstFromSrcMap_[itr->second] = itr->first;
