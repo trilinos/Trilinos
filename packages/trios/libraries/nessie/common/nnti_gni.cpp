@@ -24,6 +24,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
+#include <sched.h>
 #include <alps/libalpslli.h>
 #include <gni_pub.h>
 
@@ -415,7 +416,6 @@ static void copy_peer(
         NNTI_peer_t *src,
         NNTI_peer_t *dest);
 static int init_server_listen_socket(void);
-static int start_connection_listener_thread(void);
 static int check_listen_socket_for_new_connections(void);
 static uint32_t get_cpunum(void);
 static void get_alps_info(alpsAppGni_t *alps_info);
@@ -1889,8 +1889,6 @@ NNTI_result_t NNTI_gni_wait (
                 //                        "NNTI_wait() timeout(5+ sec)", reg_buf);
                 //            }
 
-                nthread_yield();
-
                 continue;
             }
             /* case 3: failure */
@@ -2118,8 +2116,6 @@ NNTI_result_t NNTI_gni_waitany (
                 //                fprint_NNTI_buffer(logger_get_file(), "reg_buf",
                 //                        "NNTI_wait() timeout(5+ sec)", reg_buf);
                 //            }
-
-                nthread_yield();
 
                 continue;
             }
@@ -2349,8 +2345,6 @@ NNTI_result_t NNTI_gni_waitall (
                 //                fprint_NNTI_buffer(logger_get_file(), "reg_buf",
                 //                        "NNTI_wait() timeout(5+ sec)", reg_buf);
                 //            }
-
-                nthread_yield();
 
                 continue;
             }
@@ -5000,8 +4994,6 @@ static int check_listen_socket_for_new_connections()
             fprint_NNTI_peer(logger_get_file(), "peer",
                     "end of check_listen_socket_for_new_connections", peer);
         }
-
-        nthread_yield();
     }
 
 cleanup:
@@ -5012,51 +5004,6 @@ cleanup:
     }
     return rc;
 }
-
-/**
- * @brief Continually check for new connection attempts.
- *
- */
-static void *connection_listener_thread(void *args)
-{
-    int rc=NNTI_OK;
-
-    log_debug(nnti_debug_level, "started thread to listen for client connection attempts");
-
-    /* SIGINT (Ctrl-C) will get us out of this loop */
-    while (!trios_exit_now()) {
-        log_debug(nnti_debug_level, "listening for new connection");
-        rc = check_listen_socket_for_new_connections();
-        if (rc != NNTI_OK) {
-            log_fatal(nnti_debug_level, "error returned from trios_gni_server_listen_for_client: %d", rc);
-            continue;
-        }
-    }
-
-    nthread_exit(&rc);
-
-    return(NULL);
-}
-
-/**
- * @brief Start a thread to check for new connection attempts.
- *
- */
-static int start_connection_listener_thread()
-{
-    int rc = NNTI_OK;
-    nthread_t thread;
-
-    /* Create the thread. Do we want special attributes for this? */
-    rc = nthread_create(&thread, NULL, connection_listener_thread, NULL);
-    if (rc) {
-        log_error(nnti_debug_level, "could not spawn thread");
-        rc = NNTI_EBADRPC;
-    }
-
-    return rc;
-}
-
 
 static uint32_t get_cpunum(void)
 {
