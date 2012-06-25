@@ -416,6 +416,7 @@ static void copy_peer(
         NNTI_peer_t *dest);
 static int init_server_listen_socket(void);
 static int start_connection_listener_thread(void);
+static int check_listen_socket_for_new_connections(void);
 static uint32_t get_cpunum(void);
 static void get_alps_info(alpsAppGni_t *alps_info);
 static int tcp_read(int sock, void *incoming, size_t len);
@@ -858,9 +859,9 @@ NNTI_result_t NNTI_gni_init (
         trios_start_timer(call_time);
         init_server_listen_socket();
         trios_stop_timer("init_server_listen_socket", call_time);
-        trios_start_timer(call_time);
-        start_connection_listener_thread();
-        trios_stop_timer("start_connection_listener_thread", call_time);
+//        trios_start_timer(call_time);
+//        start_connection_listener_thread();
+//        trios_stop_timer("start_connection_listener_thread", call_time);
 
         if (logging_info(nnti_debug_level)) {
             fprintf(logger_get_file(), "Gemini Initialized: host(%s) port(%u)\n",
@@ -1789,9 +1790,10 @@ NNTI_result_t NNTI_gni_wait (
 
     q_hdl      =&transport_global_data.req_queue;
     gni_mem_hdl=(gni_memory_handle *)reg_buf->transport_private;
-
     assert(q_hdl);
     assert(gni_mem_hdl);
+
+    check_listen_socket_for_new_connections();
 
     if (!config.use_rdma_target_ack) {
         if ((remote_op==NNTI_GET_SRC) || (remote_op==NNTI_PUT_DST) || (remote_op==(NNTI_GET_SRC|NNTI_PUT_DST))) {
@@ -1817,6 +1819,8 @@ NNTI_result_t NNTI_gni_wait (
                 nnti_rc=NNTI_ECANCELED;
                 break;
             }
+
+            check_listen_socket_for_new_connections();
 
             cq_hdl=get_cq(reg_buf);
 
@@ -2026,6 +2030,8 @@ NNTI_result_t NNTI_gni_waitany (
 
     log_debug(nnti_ee_debug_level, "enter");
 
+    check_listen_socket_for_new_connections();
+
     if (!config.use_rdma_target_ack) {
         if ((remote_op==NNTI_GET_SRC) || (remote_op==NNTI_PUT_DST) || (remote_op==(NNTI_GET_SRC|NNTI_PUT_DST))) {
             log_error(nnti_ee_debug_level, "Target buffer ACKs are disabled.  You cannot wait on RDMA target buffers.");
@@ -2068,6 +2074,8 @@ NNTI_result_t NNTI_gni_waitany (
                 nnti_rc=NNTI_ECANCELED;
                 break;
             }
+
+            check_listen_socket_for_new_connections();
 
             memset(&ev_data, 0, sizeof(ev_data));
             log_debug(nnti_event_debug_level, "calling CqVectorWaitEvent(wait)");
@@ -2251,6 +2259,8 @@ NNTI_result_t NNTI_gni_waitall (
 
     log_debug(nnti_ee_debug_level, "enter");
 
+    check_listen_socket_for_new_connections();
+
     if (!config.use_rdma_target_ack) {
         if ((remote_op==NNTI_GET_SRC) || (remote_op==NNTI_PUT_DST) || (remote_op==(NNTI_GET_SRC|NNTI_PUT_DST))) {
             log_error(nnti_ee_debug_level, "Target buffer ACKs are disabled.  You cannot wait on RDMA target buffers.");
@@ -2295,6 +2305,8 @@ NNTI_result_t NNTI_gni_waitall (
                 nnti_rc=NNTI_ECANCELED;
                 break;
             }
+
+            check_listen_socket_for_new_connections();
 
             memset(&ev_data, 0, sizeof(ev_data));
             log_debug(nnti_event_debug_level, "calling CqVectorWaitEvent(wait)");
@@ -3938,11 +3950,15 @@ static int init_server_listen_socket()
     trios_stop_timer("socket", call_time);
     if (transport_global_data.listen_sock < 0)
         log_error(nnti_debug_level, "failed to create tcp socket: %s", strerror(errno));
+
     flags = 1;
     trios_start_timer(call_time);
     if (setsockopt(transport_global_data.listen_sock, SOL_SOCKET, SO_REUSEADDR, &flags, sizeof(flags)) < 0)
         log_error(nnti_debug_level, "failed to set tcp socket REUSEADDR flag: %s", strerror(errno));
     trios_stop_timer("setsockopt", call_time);
+
+    flags=fcntl(transport_global_data.listen_sock, F_GETFL, 0);
+    fcntl(transport_global_data.listen_sock, F_SETFL, flags | O_NONBLOCK);
 
     log_debug(nnti_debug_level, "listen_name (%s).", transport_global_data.listen_name);
     if (transport_global_data.listen_name[0]!='\0') {
@@ -4926,9 +4942,14 @@ static int check_listen_socket_for_new_connections()
     len = sizeof(ssin);
     s = accept(transport_global_data.listen_sock, (struct sockaddr *) &ssin, &len);
     if (s < 0) {
-        if (!(errno == EAGAIN)) {
+        if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+            log_debug(nnti_debug_level, "no connections waiting to be accepted: %s", strerror(errno));
+            rc = NNTI_OK;
+            goto cleanup;
+        } else {
             log_error(nnti_debug_level, "failed to accept tcp socket connection: %s", strerror(errno));
             rc = NNTI_EIO;
+            goto cleanup;
         }
     } else {
         peer=(NNTI_peer_t *)malloc(sizeof(NNTI_peer_t));
@@ -4987,6 +5008,7 @@ cleanup:
     if (rc != NNTI_OK) {
         if (peer!=NULL) free(peer);
         if (conn!=NULL) free(conn);
+        if (key!=NULL)  free(key);
     }
     return rc;
 }
