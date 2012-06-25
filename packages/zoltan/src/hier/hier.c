@@ -494,7 +494,6 @@ int migrate_to_next_subgroups(HierPartParams *hpp, int num_export,
 
   ierr = Zoltan_Comm_Create(&plan, nVtx, to_proc, comm, tag, &nNewVtx);
 
-  ZOLTAN_FREE(&to_proc);
   if (ierr != ZOLTAN_OK)
     goto End;
 
@@ -557,6 +556,7 @@ int migrate_to_next_subgroups(HierPartParams *hpp, int num_export,
     Zoltan_Comm_Destroy(&plan);
     Zoltan_DD_Destroy(&dd);
     ZOLTAN_FREE(&id_map);
+    ZOLTAN_FREE(&to_proc);
     return ierr;
   }
 
