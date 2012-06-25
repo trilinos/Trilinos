@@ -1,10 +1,30 @@
-Last updated: 17 June 2012
+Last updated: 25 June 2012
 
 * SparseTriSolve.py
 
-Code generator for sequential sparse triangular solve.  This Python
-script generates templated C++ code for many different variants of
-sparse triangular solve for sparse matrices stored in compressed
+Code generator for local sequential sparse matrix-(multi)vector
+multiply (SpMV).  This Python script generates templated C++ code for
+many different variants of SpMV for sparse matrices stored in
+compressed sparse row (CSR) or compressed sparse column (CSC) format,
+and dense input and output (multi)vectors stored in either
+column-major or row-major layout.
+
+The typical use case of the code is to generate two header files: one
+of declarations, and the other of definitions.  To do this, just run
+it as a script:
+
+$ python SparseMatVec.py
+
+That will create the two header files in the current working
+directory.  You can also import the SparseMatVec module from Python
+and use specific functions there.  Read the module's on-line
+documentation for more details.
+
+* SparseTriSolve.py
+
+Code generator for local sequential sparse triangular solve.  This
+Python script generates templated C++ code for many different variants
+of sparse triangular solve for sparse matrices stored in compressed
 sparse row (CSR) or compressed sparse column (CSC) format, and dense
 input and output (multi)vectors stored in either column-major or
 row-major layout.
@@ -17,11 +37,12 @@ $ python SparseTriSolve.py
 
 That will create the two header files in the current working
 directory.  You can also import the SparseTriSolve module from Python
-and use specific functions there.
+and use specific functions there.  Read the module's on-line
+documentation for more details.
 
 * sparse_triangular_solve.py
 
-Older version (DEPRECATED) of the above code generator.
+Older version (DEPRECATED) of SparseTriSolve.py.  Don't use this.
 
 TODO: 
 

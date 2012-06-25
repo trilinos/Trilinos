@@ -856,7 +856,7 @@ def run ():
     # No side effects (files opened for output or modified) until all
     # code generation has completed successfully.
     declStr = emitHeaderDeclFile (declName)
-    defStr = emitHeaderDefFile (declName)
+    defStr = emitHeaderDefFile (defName)
 
     # Write the header files.
     with open(declName, 'w') as declFile:
