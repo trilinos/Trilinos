@@ -4,5 +4,7 @@ File Name		= hammond
 Parallel Disk Info	= number=0
 Test Drops		= 0
 Test null export lists  = 1
+test hypergraph callbacks = 0
+test graph callbacks = 0
 zoltanParams file       = hier-rcb4-hsfc.inp
 gnuplot output = 2
