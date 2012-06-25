@@ -440,10 +440,8 @@ int migrate_to_next_subgroups(HierPartParams *hpp, int num_export,
   zz = hpp->hierzz;
   comm = zz->Communicator;
   vdim = hpp->obj_wgt_dim;
-  edim = hpp->edge_wgt_dim;
   gdim = hpp->ndims;
   nVtx = hpp->num_obj;
-  nEdge = hpp->xadj[nVtx];
 
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
@@ -462,12 +460,6 @@ int migrate_to_next_subgroups(HierPartParams *hpp, int num_export,
 
   MPI_Allgather(ids, 2, MPI_INT, id_map, 2, MPI_INT, comm);
   
-  /*
-   * Migrate exported objects to their new process. Include only adjacencies that
-   * will be owned by a process in the new process' next sub group.  For adjproc
-   * field, use the rank of the owner in the new sub group.
-   */
-
   /* Global mapping of gno's to their new owner in the current group. */
 
   gnos_per_gid = sizeof(ZOLTAN_GNO_TYPE) / sizeof(ZOLTAN_ID_TYPE);
@@ -496,10 +488,90 @@ int migrate_to_next_subgroups(HierPartParams *hpp, int num_export,
   if (ierr != ZOLTAN_OK)
     goto End;
 
+  /* Export objects and weights */
+
+  tag = 11111;
+
+  ierr = Zoltan_Comm_Create(&plan, nVtx, to_proc, comm, tag, &nNewVtx);
+
+  ZOLTAN_FREE(&to_proc);
+  if (ierr != ZOLTAN_OK)
+    goto End;
+
+  if (nNewVtx > 0){
+    ierr = ZOLTAN_MEMERR;
+
+    newVtx = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(nNewVtx * sizeof(ZOLTAN_GNO_TYPE));
+    if (!newVtx)
+      goto End;
+
+    if (vdim > 0){
+      newVwgts = (float *)ZOLTAN_MALLOC(nNewVtx * sizeof(float) * vdim);
+      if (!newVwgts)
+        goto End;
+    }
+
+    if (gdim){
+      newGeom= (double *)ZOLTAN_MALLOC(nNewVtx * sizeof(double) * gdim);
+      if (!newGeom)
+        goto End;
+    }
+
+    ierr = ZOLTAN_OK;
+  }
+
+  tag++;
+  ierr = Zoltan_Comm_Do(plan, tag, (char *)hpp->gno, sizeof(ZOLTAN_GNO_TYPE), (char *)newVtx);
+
+  if (ierr != ZOLTAN_OK)
+    goto End;
+
+  ZOLTAN_FREE(&hpp->gno);
+  hpp->gno = newVtx;
+
+  if (vdim > 0){
+    tag++;
+    ierr = Zoltan_Comm_Do(plan, tag, (char *)hpp->vwgt, sizeof(float) * vdim, (char *)newVwgts);
+
+    if (ierr != ZOLTAN_OK)
+      goto End;
+
+    ZOLTAN_FREE(&hpp->vwgt);
+    hpp->vwgt= newVwgts;
+  }
+
+  if (gdim){
+    tag++;
+    ierr = Zoltan_Comm_Do(plan, tag, (char *)hpp->geom_vec, sizeof(double) * gdim, (char *)newGeom);
+
+    if (ierr != ZOLTAN_OK)
+      goto End;
+
+    ZOLTAN_FREE(&hpp->geom_vec);
+    hpp->geom_vec= newGeom;
+  }
+
+  hpp->num_obj = nNewVtx;
+
+  if (!hpp->use_graph){
+    Zoltan_Comm_Destroy(&plan);
+    Zoltan_DD_Destroy(&dd);
+    ZOLTAN_FREE(&id_map);
+    return ierr;
+  }
+
+  /* Export graph. Include only adjacencies that will be owned by a process 
+   * in the new process' next sub group.  For adjproc field, use the rank 
+   * of the owner in the new sub group.
+   */
+
+  edim = hpp->edge_wgt_dim;
+  nEdge = hpp->xadj[nVtx];
+
   /* A map of neighbor vertices to their new owners in current group. */
 
   keySize = sizeof(ZOLTAN_GNO_TYPE);
-  hashTableSize = Zoltan_Recommended_Hash_Size(hpp->num_obj * 1.1);
+  hashTableSize = Zoltan_Recommended_Hash_Size(nVtx * 1.1);
 
   nborMap = Zoltan_Map_Create(zz, 
             hashTableSize,
@@ -616,74 +688,11 @@ int migrate_to_next_subgroups(HierPartParams *hpp, int num_export,
   ZOLTAN_FREE(&id_map);
   Zoltan_Map_Destroy(zz, &nborMap);
 
-  /* Export vertices and edges */
-
-  tag = 11111;
-
-  ierr = Zoltan_Comm_Create(&plan, nVtx, to_proc, comm, tag, &nNewVtx);
-
-  if (ierr != ZOLTAN_OK)
-    goto End;
-
-  ZOLTAN_FREE(&to_proc);
-
-  if (nNewVtx > 0){
-    ierr = ZOLTAN_MEMERR;
-
-    newVtx = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(nNewVtx * sizeof(ZOLTAN_GNO_TYPE));
-    if (!newVtx)
-      goto End;
-
-    if (vdim > 0){
-      newVwgts = (float *)ZOLTAN_MALLOC(nNewVtx * sizeof(float) * vdim);
-      if (!newVwgts)
-        goto End;
-    }
-
-    if (gdim){
-      newGeom= (double *)ZOLTAN_MALLOC(nNewVtx * sizeof(double) * gdim);
-      if (!newGeom)
-        goto End;
-    }
-
-    ierr = ZOLTAN_OK;
-  }
 
   newXadj = (int *)ZOLTAN_MALLOC((nNewVtx+1) * sizeof(int));
   if (!newXadj){
     ierr = ZOLTAN_MEMERR;
     goto End;
-  }
-
-  tag++;
-  ierr = Zoltan_Comm_Do(plan, tag, (char *)hpp->gno, sizeof(ZOLTAN_GNO_TYPE), (char *)newVtx);
-
-  if (ierr != ZOLTAN_OK)
-    goto End;
-
-  ZOLTAN_FREE(&hpp->gno);
-  hpp->gno = newVtx;
-
-  if (vdim > 0){
-    tag++;
-    ierr = Zoltan_Comm_Do(plan, tag, (char *)hpp->vwgt, sizeof(float) * vdim, (char *)newVwgts);
-
-    if (ierr != ZOLTAN_OK)
-      goto End;
-
-    ZOLTAN_FREE(&hpp->vwgt);
-    hpp->vwgt= newVwgts;
-  }
-
-  if (gdim){
-    tag++;
-    ierr = Zoltan_Comm_Do(plan, tag, (char *)hpp->geom_vec, sizeof(double) * gdim, (char *)newGeom);
-
-    if (ierr != ZOLTAN_OK)
-      goto End;
-
-    ZOLTAN_FREE(&hpp->geom_vec);
-    hpp->geom_vec= newGeom;
   }
 
   tag++;
@@ -763,7 +772,6 @@ int migrate_to_next_subgroups(HierPartParams *hpp, int num_export,
     hpp->ewgts= newEwgts;
   }
 
-  hpp->num_obj = nNewVtx;
   
 End:
 
@@ -932,23 +940,34 @@ int Zoltan_Hier(
   ZOLTAN_FREE(&input_parts);
 
   /* build a graph */
-  if (hpp.use_graph)
+  if (hpp.use_graph){
     SET_GLOBAL_GRAPH(&graph_type);
-  else
-    graph_type |= (1 << NO_GRAPH);
+    ierr = Zoltan_Build_Graph(zz, &graph_type,
+	    hpp.checks, hpp.num_obj,
+	    global_ids, local_ids,       /* input ZOLTAN_ID_TYPEs */
+	    hpp.obj_wgt_dim, &hpp.edge_wgt_dim,
+	    &vtxdist, &hpp.xadj, &hpp.adjncy, /* internal ZOLTAN_GNO_TYPEs */
+	    &hpp.ewgts, &hpp.adjproc);
 
-  ierr = Zoltan_Build_Graph(zz, &graph_type,
-			    hpp.checks, hpp.num_obj,
-			    global_ids, local_ids,       /* input ZOLTAN_ID_TYPEs */
-			    hpp.obj_wgt_dim, &hpp.edge_wgt_dim,
-			    &vtxdist, &hpp.xadj, &hpp.adjncy, /* internal ZOLTAN_GNO_TYPEs */
-			    &hpp.ewgts, &hpp.adjproc);
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
+      ZOLTAN_HIER_ERROR(ierr, "Zoltan_Build_Graph returned error.");
+    }
 
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
-    ZOLTAN_HIER_ERROR(ierr, "Zoltan_Build_Graph returned error.");
+    hpp.invalid_gno = vtxdist[zz->Num_Proc];
+    gno1 = vtxdist[zz->Proc];
+    ZOLTAN_FREE(&vtxdist);
   }
+  else{
 
-  hpp.invalid_gno = vtxdist[zz->Num_Proc];
+    MPI_Datatype MPI_GNOTYPE = Zoltan_mpi_gno_type();
+    ZOLTAN_GNO_TYPE localCount = hpp.num_obj, scanCount=0;
+    MPI_Scan(&localCount, &scanCount, 1, MPI_GNOTYPE, MPI_SUM, zz->Communicator);
+    ZOLTAN_GNO_TYPE totalCount = scanCount;
+    MPI_Bcast(&totalCount, 1, MPI_GNOTYPE, zz->Num_Proc-1, zz->Communicator);
+
+    hpp.invalid_gno = totalCount;
+    gno1 = scanCount - localCount;
+  }
 
   /* Check that the space of global numbers fits in a ZOLTAN_ID_TYPE.  Caller is 
    * using tuples of ZOLTAN_ID_TYPE, which we mapped to singleton ZOLTAN_GNO_TYPE
@@ -971,9 +990,6 @@ int Zoltan_Hier(
     }
   }
 
-  gno1 = vtxdist[zz->Proc];
-  ZOLTAN_FREE(&vtxdist);
-
   if (hpp.num_obj){
     hpp.gno = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * hpp.num_obj);
     if (!hpp.gno)
@@ -986,7 +1002,6 @@ int Zoltan_Hier(
   
   /* if we're going to need coordinates */
   if (hpp.use_geom){
-
     /* Get coordinate information */
     ierr = Zoltan_Get_Coordinates(zz, hpp.num_obj, global_ids, 
 				  local_ids, &hpp.ndims, &hpp.geom_vec);
