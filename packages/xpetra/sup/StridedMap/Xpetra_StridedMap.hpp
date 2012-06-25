@@ -72,7 +72,6 @@ namespace Xpetra {
     {
     }
 
-#if 0
     StridedMap(global_size_t numGlobalElements, const Teuchos::ArrayView< const GlobalOrdinal > &elementList, GlobalOrdinal indexBase, std::vector<size_t>& stridingInfo, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId=-1)
     : stridingInfo_(stridingInfo), stridedBlockId_(stridedBlockId)
     {
@@ -80,8 +79,7 @@ namespace Xpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(numGlobalElements % getFixedBlockSize() != 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: getFixedBlockSize is not an integer multiple of numGlobalElements.");
       TEUCHOS_TEST_FOR_EXCEPTION(elementList.size() % getFixedBlockSize() != 0, Exceptions::RuntimeError, "StridedMap::StridedMap: stridingInfo not valid: getFixedBlockSize is not an integer multiple of elementList.size().");
        
-    }     
-#endif     
+    }
      
     //! Destructor.
     virtual ~StridedMap() { }
@@ -91,7 +89,7 @@ namespace Xpetra {
     //! @name Access functions for striding data
     //@{
     
-    std::vector<size_t> getStridingData() { return stridingInfo_; }
+    std::vector<size_t> getStridingData() const { return stridingInfo_; }
 
     void setStridingData(std::vector<size_t> stridingInfo) { stridingInfo_ = stridingInfo; }
 
@@ -120,6 +118,23 @@ namespace Xpetra {
     
     void setOffset( GlobalOrdinal offset ) { offset_ = offset; }
     
+    // returns number of strided block id which gid belongs to.
+    size_t GID2StridingBlockId( GlobalOrdinal gid ) const {
+      GlobalOrdinal tgid = gid - offset_;
+      tgid = tgid % getFixedBlockSize();
+
+      size_t nStridedOffset = 0;
+      size_t stridedBlockId = 0;
+      for(size_t j=0; j<stridingInfo_.size(); j++) {
+        nStridedOffset += stridingInfo_[j];
+        if(Teuchos::as<size_t>(tgid) < nStridedOffset) {
+          stridedBlockId = j;
+          break;
+        }
+      }
+      return stridedBlockId;
+    }
+
     /* // function currently not needed but maybe useful
     std::vector<GlobalOrdinal> NodeId2GlobalDofIds(GlobalOrdinal nodeId) const {
       TEUCHOS_TEST_FOR_EXCEPTION(stridingInfo_.size() == 0, Exceptions::RuntimeError, "StridedMap::NodeId2GlobalDofIds: stridingInfo not valid: stridingInfo.size() = 0?");
