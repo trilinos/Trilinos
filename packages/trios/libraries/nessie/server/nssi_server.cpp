@@ -119,7 +119,7 @@ int rpc_trace_reset(
 typedef void (*progress_callback)(bool is_idle);
 
 
-//static nthread_mutex_t meminfo_mutex = NTHREAD_MUTEX_INITIALIZER;
+//static nthread_lock_t meminfo_mutex;
 
 static bool time_to_die = false;
 
@@ -138,7 +138,7 @@ struct rpc_request {
 
 static std::map<int, struct nssi_svc_op> supported_ops;
 typedef std::map<int, struct nssi_svc_op>::iterator supported_ops_iterator_t;
-static nthread_mutex_t supported_ops_mutex = NTHREAD_MUTEX_INITIALIZER;
+static nthread_lock_t supported_ops_mutex;
 
 
 unsigned long max_mem_allowed=0;
@@ -184,7 +184,7 @@ static std::map<struct caller_reqid, request_args_t *, caller_reqid_lt> request_
 typedef std::map<struct caller_reqid, request_args_t *, caller_reqid_lt>::iterator request_args_map_iterator_t;
 typedef std::pair<struct caller_reqid, request_args_t *> request_args_map_pair_t;
 
-static nthread_mutex_t request_args_map_mutex=NTHREAD_MUTEX_INITIALIZER;
+static nthread_lock_t request_args_map_mutex;
 
 
 static void print_raw_buf(void *buf, uint32_t size)
@@ -1382,6 +1382,10 @@ int nssi_service_init(
         nssi_service            *service)
 {
     int rc = NSSI_OK;
+
+//    nthread_lock_init(&meminfo_mutex);
+    nthread_lock_init(&supported_ops_mutex);
+    nthread_lock_init(&request_args_map_mutex);
 
     /* initialize the service descriptors */
     memset(service, 0, sizeof(nssi_service));
