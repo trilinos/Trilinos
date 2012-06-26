@@ -15,6 +15,7 @@
 #include <stk_util/util/string_case_compare.hpp>
 
 #include <stk_mesh/base/Field.hpp>
+#include <stk_mesh/base/FieldState.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
@@ -331,6 +332,17 @@ namespace stk {
       /// transform mesh by a given 3x3 matrix
       void transform_mesh(MDArray& matrix);
 
+      /// set number of coordinate field states needed (for example, to use smoothing of geometry-projected refined
+      ///   meshes, set to 3
+      /// NOTE: must set this before reading the mesh
+      void set_num_coordinate_field_states(unsigned ncfs) { m_num_coordinate_field_states = ncfs; }
+
+      /// get number of coordinate field states needed
+      unsigned get_num_coordinate_field_states() { return m_num_coordinate_field_states; }
+
+      /// copy field state data from one state (src_state) to another (dest_state)
+      void copy_field_state(stk::mesh::FieldBase* field, unsigned dest_state, unsigned src_state);
+
 #ifndef SWIG
       //========================================================================================================================
       // low-level interfaces
@@ -636,6 +648,10 @@ namespace stk {
       int                                   m_exodusStep;
       double                                m_exodusTime;
 
+      // state manipulation - set to 3 to enable smoothing for example
+      unsigned                              m_num_coordinate_field_states;
+
+    private:
       void checkStateSpec(const std::string& function, bool cond1=true, bool cond2=true, bool cond3=true);
 
       void checkState(const std::string& function) {

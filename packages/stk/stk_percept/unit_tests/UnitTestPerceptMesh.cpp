@@ -477,6 +477,22 @@ namespace stk
         eMesh.save_as("quad_streaming.e");
       }
 
+      STKUNIT_UNIT_TEST(perceptMesh, test_states)
+      {
+        fixture_setup();
+        PerceptMesh eMesh(0);
+        eMesh.set_num_coordinate_field_states(3);
+        eMesh.open(input_files_loc+"hex_fixture.e");
+        eMesh.commit();
+        std::cout << "eMesh.get_coordinates_field()->number_of_states() = "  << eMesh.get_coordinates_field()->number_of_states() << std::endl;
+        eMesh.copy_field_state(eMesh.get_coordinates_field(), stk::mesh::StateN, stk::mesh::StateNone);
+        Math::Matrix rm = Math::rotationMatrix(0, 30);
+        eMesh.transform_mesh(rm);
+        eMesh.save_as(output_files_loc+"hex_copy_fields_rot.e");
+        eMesh.copy_field_state(eMesh.get_coordinates_field(), stk::mesh::StateNone, stk::mesh::StateN);
+        eMesh.save_as(output_files_loc+"hex_copy_fields.e");
+      }
+
     }
   }
 }

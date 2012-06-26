@@ -164,7 +164,16 @@ namespace stk {
       getAlwaysInitializeNodeRegistry() { return m_alwaysInitNodeRegistry; }
 
 #if defined( STK_ADAPT_HAS_GEOMETRY )
-      void smoothGeometry(MeshGeometry& mesh_geometry);
+
+      enum SMOOTHING_OPTIONS {
+        // snaps and discards original coord field, tries to smooth
+        SNAP_PLUS_SMOOTH,    
+        // keeps original and snapped states; does line search between; tries to keep always-valid mesh
+        USE_LINE_SEARCH_WITH_MULTIPLE_STATES
+        //,END_OPTIONS
+      };
+
+      void smoothGeometry(MeshGeometry& mesh_geometry, SMOOTHING_OPTIONS option);
 #endif
 
       void deleteParentElements();

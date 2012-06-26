@@ -95,6 +95,7 @@ namespace stk {
       m_comm(comm),
       m_streaming_size(0),
       m_searcher(0)
+      ,m_num_coordinate_field_states(1)
     {
       init( m_comm);
     }
@@ -855,6 +856,7 @@ namespace stk {
         m_comm(),
         m_streaming_size(0),
         m_searcher(0)
+      ,m_num_coordinate_field_states(1)
     {
       if (!bulkData)
         throw std::runtime_error("PerceptMesh::PerceptMesh: must pass in non-null bulkData");
@@ -1579,6 +1581,7 @@ namespace stk {
       m_iossMeshData = Teuchos::rcp( new stk::io::MeshData() );
       stk::io::MeshData& mesh_data = *m_iossMeshData;
       mesh_data.m_input_region = &(*m_iossRegion);
+      mesh_data.m_num_coordinate_field_states = m_num_coordinate_field_states;
       stk::io::create_input_mesh(dbtype, in_filename, comm, meta_data, mesh_data);
 
       stk::io::define_input_fields(mesh_data, meta_data);
@@ -3575,6 +3578,44 @@ namespace stk {
                       }
                   }
               }
+            }
+        }
+    }
+
+    /// copy field state data from one state (src_state) to another (dest_state)
+    void PerceptMesh::copy_field_state(stk::mesh::FieldBase* field, unsigned dest_state, unsigned src_state)
+    {
+      stk::mesh::FieldBase* field_dest = field->field_state((stk::mesh::FieldState)dest_state);
+      VERIFY_OP_ON(field_dest, !=, 0, "copy_field_state dest null");
+      stk::mesh::FieldBase* field_src = field->field_state((stk::mesh::FieldState)src_state);
+      VERIFY_OP_ON(field_src, !=, 0, "copy_field_state src null");
+      stk::mesh::Selector on_locally_owned_part =  ( get_fem_meta_data()->locally_owned_part() );
+      const std::vector<stk::mesh::Bucket*> & buckets = get_bulk_data()->buckets( node_rank() );
+      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        {
+          if (on_locally_owned_part(**k)) 
+            {
+              stk::mesh::Bucket & bucket = **k ;
+              unsigned fd_size = bucket.field_data_size(*field_dest);
+              unsigned stride = fd_size/sizeof(double);
+              // FIXME
+              //VERIFY_OP_ON((int)stride, ==, get_spatial_dim(), "stride...");
+              const unsigned num_nodes_in_bucket = bucket.size();
+              for (unsigned iNode = 0; iNode < num_nodes_in_bucket; iNode++)
+                {
+                  stk::mesh::Entity& node = bucket[iNode];
+                  unsigned stride0=0;
+                  double *fdata_dest = PerceptMesh::field_data( field_dest , node, &stride0 );
+                  VERIFY_OP_ON(stride, ==, stride0,"strides...");
+                  double *fdata_src = PerceptMesh::field_data( field_src , node );
+                  if (fdata_dest && fdata_src)
+                    {
+                      for (unsigned istride = 0; istride < stride; istride++)
+                        {
+                          fdata_dest[istride] = fdata_src[istride];
+                        }
+                    }
+                }
             }
         }
     }

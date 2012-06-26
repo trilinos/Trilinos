@@ -153,7 +153,7 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
     process_surface_entity(sset, bulk, (int64_t)0);
 }
 
-void process_nodeblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta)
+void process_nodeblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta, unsigned num_coordinate_field_states = 1)
 {
   const Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
   assert(node_blocks.size() == 1);
@@ -165,7 +165,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_m
   int spatial_dim = coordinates.transformed_storage()->component_count();
 
   stk::mesh::Field<double,stk::mesh::Cartesian> & coord_field =
-    fem_meta.declare_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
+    fem_meta.declare_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates", num_coordinate_field_states);
 
   stk::mesh::put_field( coord_field, fem_meta.node_rank(), fem_meta.universal_part(), spatial_dim);
 }
@@ -576,7 +576,7 @@ void create_input_mesh(const std::string &mesh_type,
   initialize_spatial_dimension(fem_meta, spatial_dimension, stk::mesh::fem::entity_rank_names(spatial_dimension));
 
   process_elementblocks(*in_region, fem_meta);
-  process_nodeblocks(*in_region,    fem_meta);
+  process_nodeblocks(*in_region,    fem_meta, mesh_data.m_num_coordinate_field_states);
   process_sidesets(*in_region,      fem_meta);
   process_nodesets(*in_region,      fem_meta);
 }
