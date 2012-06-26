@@ -192,7 +192,7 @@ void AlgPTScotch(
 
   int ierr = 0;
 
-  size_t numGlobalParts = solution->getGlobalNumberOfParts();
+  size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
 
   SCOTCH_Num partnbr;
   SCOTCH_Num_Traits<size_t>::ASSIGN_TO_SCOTCH_NUM(partnbr, numGlobalParts, env);

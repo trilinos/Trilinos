@@ -34,8 +34,9 @@ private:
 
   const RCP<const Environment> env_;
 
-  partId_t numGlobalParts_;
-  partId_t numNonEmpty_;
+  partId_t numGlobalParts_;           // desired
+  partId_t targetGlobalParts_;        // actual
+  partId_t numNonEmpty_;              // of actual
 
   ArrayRCP<MetricValues<scalar_t> > metrics_;
   ArrayRCP<const MetricValues<scalar_t> > metricsConst_;
@@ -67,7 +68,7 @@ public:
    *  \param imbalance on return is the object count imbalance.
    */
   void getObjectCountImbalance(scalar_t &imbalance) const{
-    metrics_[0].getMaxImbalance();
+    imbalance = metrics_[0].getMaxImbalance();
   }
 
   /*! \brief Return the object normed weight imbalance.
@@ -90,11 +91,11 @@ public:
    */
   void getWeightImbalance(scalar_t &imbalance, int dim=0) const{
     imbalance = 0;
-    if (metrics_.size() > 2)
-      imbalance = metrics_[dim].getMaxImbalance();
-    else if (metrics_.size() == 2)
+    if (metrics_.size() > 2)  // dimension dim of multiple weights
+      imbalance = metrics_[dim+2].getMaxImbalance();
+    else if (metrics_.size() == 2)   //  only one weight
       imbalance = metrics_[1].getMaxImbalance();
-    else
+    else                       // no weights, return object count imbalance
       imbalance = metrics_[0].getMaxImbalance();
   }  
 
@@ -102,7 +103,7 @@ public:
    */
   void printMetrics(ostream &os) const {
     Zoltan2::printMetrics<scalar_t>(os, 
-      numGlobalParts_, numGlobalParts_, numNonEmpty_, 
+      targetGlobalParts_, numGlobalParts_, numNonEmpty_, 
       metrics_.view(0, metrics_.size()));
   }
 };
@@ -113,7 +114,7 @@ template <typename Adapter>
   const RCP<const Comm<int> > &problemComm,
   const RCP<const Adapter> &ia, 
   const RCP<const PartitioningSolution<Adapter> > &soln):
-    env_(env), numGlobalParts_(0), numNonEmpty_(0),
+    env_(env), numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0),
     metrics_(),  metricsConst_()
 {
 
@@ -143,16 +144,15 @@ template <typename Adapter>
       mcnorm = normMinimizeMaximumWeight;
   } 
 
-  numGlobalParts_ = soln->getGlobalNumberOfParts();
-
   partId_t dummy;
 
   try{
-    objectMetrics<Adapter>(env, problemComm, 
-      numGlobalParts_, mcnorm, ia, soln,
-      dummy, numNonEmpty_, metrics_);
+    objectMetrics<Adapter>(env, problemComm, mcnorm, ia, soln,
+      numGlobalParts_, numNonEmpty_, metrics_);
   }
   Z2_FORWARD_EXCEPTIONS;
+
+  targetGlobalParts_ = soln->getTargetGlobalNumberOfParts();
 
   env->timerStop(MACRO_TIMERS, "Computing metrics");
   env->debug(DETAILED_STATUS, string("Exiting PartitioningSolutionQuality"));

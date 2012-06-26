@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
 
   // Test the Solution queries that are used by algorithms
 
-  if (solution->getGlobalNumberOfParts() != size_t(numGlobalParts))
+  if (solution->getTargetGlobalNumberOfParts() != size_t(numGlobalParts))
     fail=2;
 
   if (!fail && solution->getLocalNumberOfParts() != 1)

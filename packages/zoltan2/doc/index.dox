@@ -67,21 +67,11 @@ Zoltan2::MeshInput will be available soon.
 
 \section z2_main_examples Examples of Zoltan2 usage
 
-Parameters are defined in the source file Zoltan2_Parameters.cpp.  This will be changed to a definition in an xml string in a header file.  Then this file can be used to generate doxygen documentation of the Zoltan2 parameters.
+Examples include the following:
 
-The Zoltan2::Environment is a class that is created by a Zoltan2::Problem.  It is available to almost every method in Zoltan2.  It governs the behavior of the library.  Available in the Environment is:
+- Block partitioning (block.cpp)
+- RCB partitioning for a C++ novice (rcb_C.cpp)
 
-<ul>
-<li> The user's parameter list.
-<li> Methods for debugging or status output.
-<li> Methods for timing your code.
-<li> Methods for printing out the total memory allocated to the current process (on Linux systems that have /proc/pid/statm).
-<li> Methods for exception handling.
-</ul>
-
-Algorithms are namespace methods that are called by a Zoltan2::Problem.  The algorithm command line arguments include a Zoltan2::Environment, a Teuchos::Comm (an MPI communicator wrapper), a Zoltan2::Model (a computation model built from the user's input data), and a Zoltan2::Solution.  
-
-For an example of a partitioning algorithm, see AlgRCB().  A good example of an ordering algorithm is ...
 
 
 */

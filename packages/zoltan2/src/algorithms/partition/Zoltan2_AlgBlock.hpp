@@ -125,7 +125,7 @@ void AlgBlock(
   ////////////////////////////////////////////////////////
   // From the Solution we get part information.
 
-  size_t numGlobalParts = solution->getGlobalNumberOfParts();
+  size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
 
   size_t numLocalParts = solution->getLocalNumberOfParts();
   if (numLocalParts != 1){
