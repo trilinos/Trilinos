@@ -230,7 +230,7 @@ typedef struct {
 
 
 
-static nthread_mutex_t nnti_ib_lock;
+static nthread_lock_t nnti_ib_lock;
 
 
 static int register_memory(
@@ -418,26 +418,26 @@ static uint32_t hash6432shift(uint64_t key)
 static std::map<addrport_key, ib_connection *> connections_by_peer;
 typedef std::map<addrport_key, ib_connection *>::iterator conn_by_peer_iter_t;
 typedef std::pair<addrport_key, ib_connection *> conn_by_peer_t;
-static nthread_mutex_t nnti_conn_peer_lock;
+static nthread_lock_t nnti_conn_peer_lock;
 
 static std::map<NNTI_qp_num, ib_connection *> connections_by_qpn;
 typedef std::map<NNTI_qp_num, ib_connection *>::iterator conn_by_qpn_iter_t;
 typedef std::pair<NNTI_qp_num, ib_connection *> conn_by_qpn_t;
-static nthread_mutex_t nnti_conn_qpn_lock;
+static nthread_lock_t nnti_conn_qpn_lock;
 
 static std::map<uint32_t, NNTI_buffer_t *> buffers_by_bufhash;
 typedef std::map<uint32_t, NNTI_buffer_t *>::iterator buf_by_bufhash_iter_t;
 typedef std::pair<uint32_t, NNTI_buffer_t *> buf_by_bufhash_t;
-static nthread_mutex_t nnti_buf_bufhash_lock;
+static nthread_lock_t nnti_buf_bufhash_lock;
 
 static std::map<uint32_t, ib_work_request *> wr_by_wrhash;
 typedef std::map<uint32_t, ib_work_request *>::iterator wr_by_wrhash_iter_t;
 typedef std::pair<uint32_t, ib_work_request *> wr_by_wrhash_t;
-static nthread_mutex_t nnti_wr_wrhash_lock;
+static nthread_lock_t nnti_wr_wrhash_lock;
 
 typedef std::deque<ib_work_request *>           wr_pool_t;
 typedef std::deque<ib_work_request *>::iterator wr_pool_iter_t;
-static nthread_mutex_t nnti_wr_pool_lock;
+static nthread_lock_t nnti_wr_pool_lock;
 
 static wr_pool_t rdma_wr_pool;
 static wr_pool_t sendrecv_wr_pool;
@@ -493,14 +493,14 @@ NNTI_result_t NNTI_ib_init (
 
     if (!initialized) {
 
-        nthread_mutex_init(&nnti_ib_lock, NTHREAD_MUTEX_NORMAL);
+        nthread_lock_init(&nnti_ib_lock);
 
-        nthread_mutex_init(&nnti_conn_peer_lock, NTHREAD_MUTEX_NORMAL);
-        nthread_mutex_init(&nnti_conn_qpn_lock, NTHREAD_MUTEX_NORMAL);
-        nthread_mutex_init(&nnti_wr_wrhash_lock, NTHREAD_MUTEX_RECURSIVE);
-        nthread_mutex_init(&nnti_buf_bufhash_lock, NTHREAD_MUTEX_RECURSIVE);
+        nthread_lock_init(&nnti_conn_peer_lock);
+        nthread_lock_init(&nnti_conn_qpn_lock);
+        nthread_lock_init(&nnti_wr_wrhash_lock);
+        nthread_lock_init(&nnti_buf_bufhash_lock);
 
-        nthread_mutex_init(&nnti_wr_pool_lock, NTHREAD_MUTEX_NORMAL);
+        nthread_lock_init(&nnti_wr_pool_lock);
 
         config_init(&config);
         config_get_from_env(&config);
@@ -4029,10 +4029,10 @@ static NNTI_result_t insert_wr_wrhash(ib_work_request *wr)
     NNTI_result_t  rc=NNTI_OK;
     uint32_t h=hash6432shift((uint64_t)wr);
 
-    nthread_lock(&nnti_wr_wrhash_lock);
+//    nthread_lock(&nnti_wr_wrhash_lock);
     assert(wr_by_wrhash.find(h) == wr_by_wrhash.end());
     wr_by_wrhash[h] = wr;
-    nthread_unlock(&nnti_wr_wrhash_lock);
+//    nthread_unlock(&nnti_wr_wrhash_lock);
 
     log_debug(nnti_debug_level, "wrhash work request added (wr=%p hash=%x)", wr, h);
 
