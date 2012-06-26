@@ -216,7 +216,7 @@ dataLayout: This describes how the multivectors' data are arranged
   in memory.  Currently we only accept 'column major' or 'row
   major'.
 
-conjugateMatrixElements: Whether to use the conjugate of each
+conjugateMatrixEntries: Whether to use the conjugate of each
   matrix element.
 
 Related work
@@ -255,12 +255,12 @@ def makeDefDict (sparseFormat, dataLayout, conjugateMatrixEntries):
       and output of the sparse matrix-vector multiply routines.  The
       current valid values are 'column major' or 'row major'.
 
-   conjugateMatrixEntries: Whether to compute with the (complex)
-     conjugate of the matrix entries before using them.  We use this
-     option to implement sparse matrix-vector multiply with the
-     conjugate transpose of the matrix.  If the MatrixScalar type (the
-     type of entries in the sparse matrix) is real, then the option
-     does nothing.'''
+    conjugateMatrixEntries: Whether to compute with the (complex)
+      conjugate of the matrix entries before using them.  We use this
+      option to implement sparse matrix-vector multiply with the
+      conjugate transpose of the matrix.  If the MatrixScalar type
+      (the type of entries in the sparse matrix) is real, then the
+      option does nothing.'''
     return {'sparseFormat': sparseFormat,
             'dataLayout': dataLayout,
             'conjugateMatrixEntries': conjugateMatrixEntries}
@@ -337,9 +337,10 @@ def emitFuncSig (defDict, indent=0):
         ind + '         class RangeScalar>\n' + \
         ind + 'void\n' + \
         ind + emitFuncName(defDict) + ' (\n' + \
+        ind + '  const Ordinal numRows,\n' + \
         ind + '  const Ordinal start${RowCol},\n' + \
         ind + '  const Ordinal end${RowCol}PlusOne,\n' + \
-        ind + '  const Ordinal numColsX,\n' + \
+        ind + '  const Ordinal numVecs,\n' + \
         ind + '  const RangeScalar& beta,\n' + \
         ind + '  RangeScalar Y[],\n' + \
         ind + '  const Ordinal ${denseRowCol}StrideY,\n' + \
@@ -372,7 +373,7 @@ def emitFuncBody (defDict, indent=0):
     body = ''
     body = body + \
         ind + '{\n' + \
-        ind + '  ' + 'typedef Teuchos::ScalarTraits<Scalar> STS;\n\n'
+        ind + '  ' + 'typedef Teuchos::ScalarTraits<RangeScalar> STS;\n\n'
     if defDict['sparseFormat'] == 'CSC':
         # CSC requires prescaling the output vector(s) Y.
         body = body + emitPreScaleLoop (defDict, indent+2)
@@ -422,7 +423,7 @@ def emitPreScaleLoop (defDict, indent=0):
     if layout == 'column major':
         Y_j = emitDenseAref (defDict, 'Y', '0', 'j')
         s = s + \
-            ind + ' '*2 + 'for (Ordinal j = 0; j < numColsX; ++j) {\n' + \
+            ind + ' '*2 + 'for (Ordinal j = 0; j < numVecs; ++j) {\n' + \
             ind + ' '*4 + 'RangeScalar* const Y_j = &' + Y_j + ';\n' + \
             ind + ' '*4 + 'for (Ordinal i = 0; i < numRows; ++i) {\n' + \
             ind + ' '*6 + '// Follow the Sparse BLAS convention for beta == 0. \n' + \
@@ -434,7 +435,7 @@ def emitPreScaleLoop (defDict, indent=0):
         s = s + \
             ind + ' '*2 + 'for (Ordinal i = 0; i < numRows; ++i) {\n' + \
             ind + ' '*4 + 'RangeScalar* const Y_i = &' + Y_i + ';\n' + \
-            ind + ' '*4 + 'for (Ordinal j = 0; j < numColsX; ++j) {\n' + \
+            ind + ' '*4 + 'for (Ordinal j = 0; j < numVecs; ++j) {\n' + \
             ind + ' '*6 + '// Follow the Sparse BLAS convention for beta == 0. \n' + \
             ind + ' '*6 + 'Y_i[j] = STS::zero();\n' + \
             ind + ' '*4 + '}\n' + \
@@ -446,7 +447,7 @@ def emitPreScaleLoop (defDict, indent=0):
     if layout == 'column major':
         Y_j = emitDenseAref (defDict, 'Y', '0', 'j')
         s = s + \
-            ind + ' '*2 + 'for (Ordinal j = 0; j < numColsX; ++j) {\n' + \
+            ind + ' '*2 + 'for (Ordinal j = 0; j < numVecs; ++j) {\n' + \
             ind + ' '*4 + 'RangeScalar* const Y_j = &' + Y_j + ';\n' + \
             ind + ' '*4 + 'for (Ordinal i = 0; i < numRows; ++i) {\n' + \
             ind + ' '*6 + 'Y_j[i] = beta * Y_j[i];\n' + \
@@ -457,7 +458,7 @@ def emitPreScaleLoop (defDict, indent=0):
         s = s + \
             ind + ' '*2 + 'for (Ordinal i = 0; i < numRows; ++i) {\n' + \
             ind + ' '*4 + 'RangeScalar* const Y_i = &' + Y_i + ';\n' + \
-            ind + ' '*4 + 'for (Ordinal j = 0; j < numColsX; ++j) {\n' + \
+            ind + ' '*4 + 'for (Ordinal j = 0; j < numVecs; ++j) {\n' + \
             ind + ' '*6 + 'Y_i[j] = beta * Y_i[j];\n' + \
             ind + ' '*4 + '}\n' + \
             ind + ' '*2 + '}\n'
@@ -476,13 +477,13 @@ def emitForLoopPreface (defDict, loopIndex, indent=0):
         s = s + \
             ind + '// Special case for CSR only: Y(0,:) = 0.\n' + \
             ind + 'if (beta != STS::zero()) {\n' + \
-            ind + ' '*2 + 'for (Ordinal c = 0; c < numColsX; ++c) {\n' + \
+            ind + ' '*2 + 'for (Ordinal c = 0; c < numVecs; ++c) {\n' + \
             ind + ' '*4 + Y_0c + ' = beta * ' + Y_0c + ';\n' + \
             ind + ' '*2 + '}\n' + \
             ind + '}\n' + \
             ind + 'else {\n' + \
             ind + ' '*2 + '// Follow the Sparse BLAS convention for beta == 0. \n' + \
-            ind + ' '*2 + 'for (Ordinal c = 0; c < numColsX; ++c) {\n' + \
+            ind + ' '*2 + 'for (Ordinal c = 0; c < numVecs; ++c) {\n' + \
             ind + ' '*4 + Y_0c + ' = STS::zero();\n' + \
             ind + ' '*2 + '}\n' + \
             ind + '}\n'
@@ -501,24 +502,35 @@ def emitForLoop (defDict, indent=0):
     else:
         loopIndex = 'i'
         otherIndex = 'j'
-        RowCol = 'Col'
+        RowCol = 'Row'
 
     ind = ' '*indent
     s = ind + 'const Ordinal startInd = ptr[start${RowCol}];\n' + \
         ind + 'const Ordinal endInd = ptr[end${RowCol}PlusOne];\n' + \
         ind + 'if (alpha == STS::one()) {\n' + \
-        ind + ' '*2 + 'for (Ordinal k = startInd; k < endInd; ++k) {\n' + \
-        ind + ' '*4 + 'const MatrixScalar A_ij = val[k];\n' + \
+        ind + ' '*2 + 'for (Ordinal k = startInd; k < endInd; ++k) {\n'
+    if defDict['conjugateMatrixEntries']:
+        s = s + \
+            ind + ' '*4 + 'const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);\n'
+    else:
+        s = s + \
+            ind + ' '*4 + 'const MatrixScalar A_ij = val[k];\n'
+    s = s + \
         ind + ' '*4 + 'const Ordinal ${otherIndex} = ind[k];\n' + \
         ind + ' '*4 + 'while (k > ptr[${loopIndex}]) {\n' + \
         ind + ' '*6 + '++${loopIndex};\n'
     if defDict['sparseFormat'] == 'CSR':
         Y_i = emitDenseAref (defDict, 'Y', 'i', '0')
-        Y_ic = 'Y_i[c*colStrideY]' # A hack, but we make do
+        if defDict['dataLayout'] == 'column major':
+            Y_ic = 'Y_i[c*colStrideY]' # A hack, but we make do
+        elif defDict['dataLayout'] == 'row major':
+            Y_ic = 'Y_i[c*rowStrideY]' # A hack, but we make do
+        else:
+            raise ValueError('Invalid dataLayout "' + defDict['dataLayout'] + '"')
         s = s + \
             ind + ' '*6 + '// We haven\'t seen row i before; prescale Y(i,:).\n' + \
             ind + ' '*6 + 'RangeScalar* const Y_i = &' + Y_i + ';\n' + \
-            ind + ' '*6 + 'for (Ordinal c = 0; c < numColsX; ++c) {\n' + \
+            ind + ' '*6 + 'for (Ordinal c = 0; c < numVecs; ++c) {\n' + \
             ind + ' '*8 + Y_ic + ' = beta * ' + Y_ic + ';\n' + \
             ind + ' '*6 + '}\n'
     s = s + ind + ' '*4 + '}\n' + \
@@ -526,18 +538,29 @@ def emitForLoop (defDict, indent=0):
         ind + ' '*2 + '}\n' + \
         ind + '}\n' + \
         ind + 'else { // alpha != STS::one()\n' + \
-        ind + ' '*2 + 'for (Ordinal k = startInd; k < endInd; ++k) {\n' + \
-        ind + ' '*4 + 'const MatrixScalar A_ij = val[k];\n' + \
+        ind + ' '*2 + 'for (Ordinal k = startInd; k < endInd; ++k) {\n'
+    if defDict['conjugateMatrixEntries']:
+        s = s + \
+            ind + ' '*4 + 'const MatrixScalar A_ij = Teuchos::ScalarTraits<MatrixScalar>::conjugate (val[k]);\n'
+    else:
+        s = s + \
+            ind + ' '*4 + 'const MatrixScalar A_ij = val[k];\n'
+    s = s + \
         ind + ' '*4 + 'const Ordinal ${otherIndex} = ind[k];\n' + \
         ind + ' '*4 + 'while (k > ptr[${loopIndex}]) {\n' + \
         ind + ' '*6 + '++${loopIndex};\n'
     if defDict['sparseFormat'] == 'CSR':
         Y_i = emitDenseAref (defDict, 'Y', 'i', '0')
-        Y_ic = 'Y_i[c*colStrideY]' # A hack, but we make do        
+        if defDict['dataLayout'] == 'column major':
+            Y_ic = 'Y_i[c*colStrideY]' # A hack, but we make do
+        elif defDict['dataLayout'] == 'row major':
+            Y_ic = 'Y_i[c*rowStrideY]' # A hack, but we make do
+        else:
+            raise ValueError('Invalid dataLayout "' + defDict['dataLayout'] + '"')
         s = s + \
             ind + ' '*6 + '// We haven\'t seen row i before; prescale Y(i,:).\n' + \
             ind + ' '*6 + 'RangeScalar* const Y_i = &' + Y_i + ';\n' + \
-            ind + ' '*6 + 'for (Ordinal c = 0; c < numColsX; ++c) {\n' + \
+            ind + ' '*6 + 'for (Ordinal c = 0; c < numVecs; ++c) {\n' + \
             ind + ' '*8 + Y_ic + ' = beta * ' + Y_ic + ';\n' + \
             ind + ' '*6 + '}\n'
     s = s + ind + ' '*4 + '}\n' + \
@@ -561,7 +584,7 @@ def emitUpdateLoop (defDict, alphaIsOne, indent=0):
     ind = ' '*indent
     s = ''
     s = s + \
-        ind + ' '*2 + 'for (Ordinal c = 0; c < numColsX; ++c) {\n'
+        ind + ' '*2 + 'for (Ordinal c = 0; c < numVecs; ++c) {\n'
     if alphaIsOne:
         s = s + \
             ind + ' '*4 + Y_ic + ' = ' + Y_ic + ' + A_ij * ' + X_jc + ';\n'
@@ -674,7 +697,8 @@ def emitFuncDoc (defDict, indent=0):
 ///   that ${startIndex}, ${endIndex} makes an exclusive index range.  For 
 ///   iterating over the whole sparse matrix, this should be the total
 ///   number of ${fmtRowCol}s in the sparse matrix (on the calling process).
-/// \param numColsX [in] Number of columns in X.
+/// \param numVecs [in] Number of columns in X or Y 
+///   (must be the same for both).
 /// \param X [out] Output dense multivector, stored in ${colRow}-major order.
 /// \param LDX [in] Stride between ${colRow}s of X.  We assume unit
 ///   stride between ${rowCol}s of X.

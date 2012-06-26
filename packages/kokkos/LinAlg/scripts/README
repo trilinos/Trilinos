@@ -55,6 +55,16 @@ sparse_triangular_solve.py.  I keep these around to mine for scraps of
 Python code, but there is no guarantee that they will run without
 errors or that they will generate correct or efficient code.
 
+FIXME:
+
+* The kernels take a start{Row,Col}, end{Row,Col}PlusOne exclusive
+  range, as if they could be invoked in parallel as tasks.  However,
+  the prescale (in sparse mat-vec) or preassign (in sparse triangular
+  solve) loops in some of the kernels would clobber each other's
+  output if the routines were invoked in parallel.  It would be better
+  just to make the kernels sequential and not pretend that they are
+  ready for use as parallel tasks.
+
 TODO: 
 
 * Wouldn't it be nice if we could write kernels in a Python-like

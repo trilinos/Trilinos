@@ -640,6 +640,7 @@ public:
                as<int> (Y_hat->getStride ()));
     A_sparse->template multiply<scalar_type, scalar_type> (NO_TRANS, STS::one (),
                                                            (const MV) *X, *Y);
+
     // Compare Y and Y_hat.  Use Z as scratch space.
     relErr = maxRelativeError (Y_hat, Y, Z);
     if (relErr > tol) {
@@ -648,6 +649,12 @@ public:
         "the given tolerance " << tol << ".\n";
       success = false;
     }
+
+    // FIXME (mfh 26 Jun 2012) Eventually we have to test everything
+    // else, but for now, stop early if a test fails.
+    TEUCHOS_TEST_FOR_EXCEPTION(! success, std::runtime_error,
+      "One or more sparse ops tests failed.  Here is the full report:\n"
+      << err.str());
 
     // Compute Y_hat := A_dense^T * X and Y := A_sparse^T * X.
     blas.GEMM (TRANS, NO_TRANS, N, numVecs, N,

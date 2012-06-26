@@ -370,9 +370,10 @@ def emitFuncSig (defDict, indent=0):
     sig = sig + ind + '         class RangeScalar>\n' + \
         ind + 'void\n' + \
         ind + emitFuncName(defDict) + ' (\n' + \
+        ind + '  const Ordinal numRows,\n' + \
         ind + '  const Ordinal start${RowCol},\n' + \
         ind + '  const Ordinal end${RowCol}PlusOne,\n' + \
-        ind + '  const Ordinal numColsX,\n' + \
+        ind + '  const Ordinal numVecs,\n' + \
         ind + '  RangeScalar* const X,\n' + \
         ind + '  const Ordinal ${denseRowCol}StrideX,\n' + \
         ind + '  const Ordinal* const ptr,\n' + \
@@ -403,7 +404,7 @@ def emitFuncBody (defDict, indent=0):
     '''Generate the sparse triangular solve function body, including { ... }.'''
 
     body = ' '*indent + '{\n' + \
-        ' '*indent + '  ' + 'typedef Teuchos::ScalarTraits<Scalar> STS;\n\n'
+        ' '*indent + '  ' + 'typedef Teuchos::ScalarTraits<MatrixScalar> STS;\n\n'
     if defDict['sparseFormat'] == 'CSC' and not defDict['inPlace']:
         body = body + emitInPlaceCopy (defDict, indent+2)
     return body + emitOuterLoop (defDict, indent+2) + ' '*indent + '}\n'
@@ -413,16 +414,16 @@ def emitOuterLoop (defDict, indent=0):
     
     if defDict['sparseFormat'] == 'CSC':
         if defDict['upLo'] == 'upper':
-            loopBounds = 'for (Ordinal c = numCols; c >= 0; --c) {\n'
+            loopBounds = 'for (Ordinal c = endColPlusOne - 1; c >= startCol; --c) {\n'
         elif defDict['upLo'] == 'lower':            
-            loopBounds = 'for (Ordinal c = 0; c < numCols; ++c) {\n'
+            loopBounds = 'for (Ordinal c = startCol; c < endColPlusOne; ++c) {\n'
         else:
             raise ValueError ('Invalid upLo "' + defDict['upLo'] + '"')
     elif defDict['sparseFormat'] == 'CSR':    
         if defDict['upLo'] == 'upper':
-            loopBounds = 'for (Ordinal r = numRows; r >= 0; --r) {\n'
+            loopBounds = 'for (Ordinal r = endRowPlusOne - 1; r >= startRow; --r) {\n'
         elif defDict['upLo'] == 'lower':            
-            loopBounds = 'for (Ordinal r = 0; c < numRows; ++r) {\n'
+            loopBounds = 'for (Ordinal r = startRow; r < endRowPlusOne; ++r) {\n'
         else:
             raise ValueError ('Invalid upLo "' + defDict['upLo'] + '"')
     else:
@@ -461,22 +462,24 @@ def emitCscOuterLoopBody (defDict, indent=0):
     X_cj = emitDenseAref(defDict, 'X', 'c', 'j')
     if not defDict['unitDiag']:
         body = body + \
-            indStr + 'Scalar A_cc = STS::zero ();\n' + \
+            indStr + 'MatrixScalar A_cc = STS::zero ();\n' + \
             indStr + 'for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {\n' + \
             indStr + ' '*2 + 'const Ordinal r = ind[k];\n'
         if defDict['conjugateMatrixEntries']:
-            body = body + indStr + ' '*2 + 'Scalar A_rc = STS::conjugate (val[k]);\n'
+            body = body + \
+                indStr + ' '*2 + 'MatrixScalar A_rc = STS::conjugate (val[k]);\n'
         else:            
-            indStr + ' '*2 + 'Scalar A_rc = val[k];\n'
+            body = body + \
+                indStr + ' '*2 + 'MatrixScalar A_rc = val[k];\n'
         body = body + \
             indStr + ' '*2 + 'if (r == c) {\n' + \
             indStr + ' '*4 + 'A_cc = A_cc + A_rc;\n' + \
             indStr + ' '*2 + '} else {\n' + \
-            indStr + ' '*4 + 'for (Ordinal j = 0; j < numColsX; ++j) {\n' + \
+            indStr + ' '*4 + 'for (Ordinal j = 0; j < numVecs; ++j) {\n' + \
             indStr + ' '*6 + X_rj + ' -= A_rc * ' + X_cj + ';\n' + \
             indStr + ' '*4 + '}\n' + \
             indStr + ' '*2 + '}\n' + \
-            indStr + ' '*2 + 'for (Ordinal j = 0; j < numColsX; ++j) {\n' + \
+            indStr + ' '*2 + 'for (Ordinal j = 0; j < numVecs; ++j) {\n' + \
             indStr + ' '*4 + X_cj + ' = ' + X_cj + ' / A_cc;\n' + \
             indStr + ' '*2 + '}\n' + \
             indStr + '}\n'
@@ -485,12 +488,13 @@ def emitCscOuterLoopBody (defDict, indent=0):
             indStr + 'for (Ordinal k = ptr[c]; k < ptr[c+1]; ++k) {\n' + \
             indStr + ' '*2 + 'const Ordinal r = ind[k];\n'
         if defDict['conjugateMatrixEntries']:
-            body = body + indStr + ' '*2 + 'Scalar A_rc = STS::conjugate (val[k]);\n'
+            body = body + \
+                indStr + ' '*2 + 'MatrixScalar A_rc = STS::conjugate (val[k]);\n'
         else:            
-            body = body + indStr + ' '*2 + 'Scalar A_rc = val[k];\n'
+            body = body + \
+                indStr + ' '*2 + 'MatrixScalar A_rc = val[k];\n'
         body = body + \
-            indStr + ' '*2 + 'const Scalar A_rc = val[k];\n' + \
-            indStr + ' '*2 + 'for (Ordinal j = 0; j < numColsX; ++j) {\n' + \
+            indStr + ' '*2 + 'for (Ordinal j = 0; j < numVecs; ++j) {\n' + \
             indStr + ' '*4 + X_rj + ' -= A_rc * ' + X_cj + ';\n' + \
             indStr + ' '*2 + '}\n' + \
             indStr + '}\n'
@@ -517,42 +521,45 @@ def emitCsrOuterLoopBody (defDict, indent=0):
     Y_cj = emitDenseAref(defDict, 'Y', 'c', 'j')
     if not defDict['unitDiag']:
         body = body + \
-            indStr + 'Scalar A_rr = STS::zero ();\n' + \
-            indStr + 'for (Ordinal j = 0; j < numColsX; ++j) {\n' + \
+            indStr + 'MatrixScalar A_rr = STS::zero ();\n' + \
+            indStr + 'for (Ordinal j = 0; j < numVecs; ++j) {\n' + \
             indStr + ' '*2 + X_rj + ' = STS::zero ();\n' + \
             indStr + '}\n' + \
             indStr + 'for (Ordinal k = ptr[r]; k < ptr[r+1]; ++k) {\n' + \
             indStr + ' '*2 + 'const Ordinal c = ind[k];\n'
         if defDict['conjugateMatrixEntries']:
-            body = body + indStr + ' '*2 + 'Scalar A_rc = STS::conjugate (val[k]);\n'
+            body = body + \
+                indStr + ' '*2 + 'const MatrixScalar A_rc = STS::conjugate (val[k]);\n'
         else:            
-            indStr + ' '*2 + 'Scalar A_rc = val[k];\n'
+            body = body + \
+                indStr + ' '*2 + 'const MatrixScalar A_rc = val[k];\n'
         body = body + \
             indStr + ' '*2 + 'if (r == c) {\n' + \
             indStr + ' '*4 + 'A_rr = A_rr + A_rc;\n' + \
             indStr + ' '*2 + '} else {\n' + \
-            indStr + ' '*4 + 'for (Ordinal j = 0; j < numColsX; ++j) {\n' + \
+            indStr + ' '*4 + 'for (Ordinal j = 0; j < numVecs; ++j) {\n' + \
             indStr + ' '*6 + X_rj + ' -= A_rc * ' + Y_cj + ';\n' + \
             indStr + ' '*4 + '}\n' + \
             indStr + ' '*2 + '}\n' + \
-            indStr + ' '*2 + 'for (Ordinal j = 0; j < numColsX; ++j) {\n' + \
+            indStr + ' '*2 + 'for (Ordinal j = 0; j < numVecs; ++j) {\n' + \
             indStr + ' '*4 + X_rj + ' = (' + X_rj + ' + ' + Y_rj + ') / A_rr;\n' + \
             indStr + ' '*2 + '}\n' + \
             indStr + '}\n'
     else:
         body = body + \
-            indStr + 'for (Ordinal j = 0; j < numColsX; ++j) {\n' + \
+            indStr + 'for (Ordinal j = 0; j < numVecs; ++j) {\n' + \
             indStr + ' '*2 + X_rj + ' = STS::zero ();\n' + \
             indStr + '}\n' + \
             indStr + 'for (Ordinal k = ptr[r]; k < ptr[r+1]; ++k) {\n' + \
             indStr + ' '*2 + 'const Ordinal c = ind[k];\n'
         if defDict['conjugateMatrixEntries']:
-            body = body + indStr + ' '*2 + 'Scalar A_rc = STS::conjugate (val[k]);\n'
+            body = body + \
+                indStr + ' '*2 + 'const MatrixScalar A_rc = STS::conjugate (val[k]);\n'
         else:            
-            body = body + indStr + ' '*2 + 'Scalar A_rc = val[k];\n'
+            body = body + \
+                indStr + ' '*2 + 'const MatrixScalar A_rc = val[k];\n'
         body = body + \
-            indStr + ' '*2 + 'const Scalar A_rc = val[k];\n' + \
-            indStr + ' '*2 + 'for (Ordinal j = 0; j < numColsX; ++j) {\n' + \
+            indStr + ' '*2 + 'for (Ordinal j = 0; j < numVecs; ++j) {\n' + \
             indStr + ' '*4 + X_rj + ' -= A_rc * ' + Y_cj + ';\n' + \
             indStr + ' '*2 + '}\n' + \
             indStr + '}\n'
@@ -576,7 +583,7 @@ def emitInPlaceCopy (defDict, indent=0):
     # It's more efficient to put stride-1 access in the inner loop.
     if layout == 'column major':
         s = s + \
-            origIndent + 'for (Ordinal j = 0; j < numColsX; ++j) {\n' + \
+            origIndent + 'for (Ordinal j = 0; j < numVecs; ++j) {\n' + \
             origIndent + newIndent + 'for (Ordinal i = 0; i < numRows; ++i) {\n' + \
             origIndent + newIndent*2 + X_ij + ' = ' + Y_ij + ';\n' + \
             origIndent + newIndent + '}\n' + \
@@ -584,7 +591,7 @@ def emitInPlaceCopy (defDict, indent=0):
     elif layout == 'row major':
         s = s + \
             origIndent + 'for (Ordinal i = 0; i < numRows; ++i) {\n' + \
-            origIndent + newIndent + 'for (Ordinal j = 0; j < numColsX; ++j) {\n' + \
+            origIndent + newIndent + 'for (Ordinal j = 0; j < numVecs; ++j) {\n' + \
             origIndent + newIndent*2 + X_ij + ' = ' + Y_ij + ';\n' + \
             origIndent + newIndent + '}\n' + \
             origIndent + '}\n'
@@ -715,7 +722,7 @@ def emitFuncDoc (defDict, indent=0):
 ///   that ${startIndex}, ${endIndex} makes an exclusive index range.  For 
 ///   iterating over the whole sparse matrix, this should be the total
 ///   number of ${fmtRowCol}s in the sparse matrix (on the calling process).
-/// \param numColsX [in] Number of columns in X.'''
+/// \param numVecs [in] Number of columns in X.'''
 
     if inPlace:
         body = body + \
