@@ -68,3 +68,7 @@
  *    global id type is int
  */
 #cmakedefine HAVE_ZOLTAN2_INST_DOUBLE_INT_INT
+
+/* Zoltan (1) is included in the Trilinos build.
+ */
+#cmakedefine HAVE_ZOLTAN2_ZOLTAN

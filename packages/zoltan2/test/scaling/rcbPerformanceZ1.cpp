@@ -11,6 +11,8 @@
     \todo  get the imbalance when done
 */
 
+#ifdef HAVE_ZOLTAN2_ZOLTAN
+
 #include <Zoltan2_TestHelpers.hpp>
 #include <zoltan.h>
 #include <Teuchos_CommandLineProcessor.hpp>
@@ -478,3 +480,10 @@ int main(int argc, char *argv[])
   return 0;
 }
 
+#else
+#include <iostream>
+int main(int argc, char *argv[])
+{
+  std::cout << "PASS" << std::endl;
+}
+#endif
