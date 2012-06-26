@@ -471,6 +471,7 @@ if (mypid == 0)
     if (bindx) ML_free(bindx);
     if (val) ML_free(val);
     ML_Operator_Destroy(&ml_AtimesB);
+    ML_Comm_Destroy(&comm);
 
     return result;
 #else // no MUELU_ML
