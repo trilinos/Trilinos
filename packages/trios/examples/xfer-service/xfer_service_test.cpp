@@ -37,7 +37,6 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 
 *************************************************************************/
 
-
 /*
  * xfer_service_test.cpp
  *
@@ -49,6 +48,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 #include "Trios_config.h"
 #include "Trios_nssi_client.h"
 #include "Trios_nssi_xdr.h"
+#include "Trios_nssi_debug.h"
 
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
@@ -84,6 +84,7 @@ int print_args(
         const struct xfer_args &args,
         const char *prefix)
 {
+
     if (args.client_flag && args.server_flag)
         out << prefix << " ------------  ARGUMENTS (client and server) ----------- " << std::endl;
     else if (args.client_flag && !args.server_flag)
@@ -91,7 +92,7 @@ int print_args(
     else if (!args.client_flag && args.server_flag)
         out << prefix << " ------------  ARGUMENTS (server) ----------- " << std::endl;
 
-    out << prefix << " \tserver-url       = " << args.server_url << std::endl;
+    out << prefix << " \tserver-url       = " << args.server_url.c_str() << std::endl;
 
     if (args.client_flag) {
         out << prefix << " \ttransport        = " << args.transport_name << std::endl;
@@ -178,6 +179,7 @@ int main(int argc, char *argv[])
     args.timeout = 500;
     args.num_retries = 5;
     args.validate_flag = true;
+    args.block_distribution = true;
 
 
     bool success = true;
@@ -359,9 +361,6 @@ int main(int argc, char *argv[])
         }
 
         MPI_Comm_split(MPI_COMM_WORLD, color, rank, &comm);
-
-        MPI_Comm_rank(comm, &splitrank);
-        MPI_Comm_size(comm, &splitsize);
     }
     else {
         if (args.client_flag)
@@ -374,6 +373,9 @@ int main(int argc, char *argv[])
         }
         MPI_Comm_dup(MPI_COMM_WORLD, &comm);
     }
+
+    MPI_Comm_rank(comm, &splitrank);
+    MPI_Comm_size(comm, &splitsize);
 
     log_debug(debug_level, "%d: Finished splitting communicators", rank);
 
@@ -397,9 +399,10 @@ int main(int argc, char *argv[])
     // the server URLs to all the clients.
     if (args.server_flag && args.client_flag) {
 
-        // This needs to be a vector of chars, not a string
-        std::vector<char> all_urls(args.num_servers * NSSI_URL_LEN, '\0');
+        std::string all_urls;
 
+        // This needs to be a vector of chars, not a string
+        all_urls.resize(args.num_servers * NSSI_URL_LEN, '\0');
 
         // Have servers gather their URLs
         if (color == 0) {
@@ -409,13 +412,13 @@ int main(int argc, char *argv[])
 
             // gather all urls to rank 0 of the server comm (also rank 0 of MPI_COMM_WORLD)
             MPI_Gather(&my_url[0], NSSI_URL_LEN, MPI_CHAR,
-                    &all_urls[0], (args.num_servers*NSSI_URL_LEN), MPI_CHAR, 0, comm);
+                    &all_urls[0], NSSI_URL_LEN, MPI_CHAR, 0, comm);
         }
 
         // broadcast the full set of server urls to all processes
         MPI_Bcast(&all_urls[0], all_urls.size(), MPI_CHAR, 0, MPI_COMM_WORLD);
 
-        log_debug(LOG_ALL, "%d: Bcast urls, urls.size=%d, url[1]=%s", rank, all_urls.size(),&all_urls[128]);
+        log_debug(debug_level, "%d: Bcast urls, urls.size=%d", rank, all_urls.size());
 
         if (color == 1) {
 
@@ -425,7 +428,7 @@ int main(int argc, char *argv[])
             // For block distribution scheme use the utility function (in xfer_util.cpp)
             if (args.block_distribution) {
                 // Use this utility function to calculate the server_index
-                xfer_block_partition(args.num_servers, splitsize, splitrank, server_index, rank_in_server);
+                xfer_block_partition(args.num_servers, splitsize, splitrank, &server_index, &rank_in_server);
             }
 
             // Use a simple round robin distribution scheme
@@ -436,22 +439,14 @@ int main(int argc, char *argv[])
             // Copy the server url out of the list of urls
             int offset = server_index * NSSI_URL_LEN;
 
-            std::copy(all_urls.begin() + offset, all_urls.begin() + (offset + NSSI_URL_LEN), args.server_url.begin());
+            args.server_url = all_urls.substr(offset, NSSI_URL_LEN);
 
-            log_debug(LOG_ALL, "client %d assigned to server \"%s\"", splitrank, args.server_url.c_str());
+            log_debug(debug_level, "client %d assigned to server \"%s\"", splitrank, args.server_url.c_str());
         }
+
+
+        log_debug(debug_level, "%d: Finished distributing server urls, server_url=%s", rank, args.server_url.c_str());
     }
-
-    log_debug(debug_level, "%d: Finished distributing server urls", rank);
-
-
-    // Structure of the URL file
-    //
-    // line 1:  num_servers
-    // line 2:  url[0]
-    // ...
-    // line n:  url[num_servers-1]
-    ///
 
     // If running as a client only, have to get the list of servers from the urlfile.
     else if (!args.server_flag && args.client_flag){
@@ -460,13 +455,13 @@ int main(int argc, char *argv[])
         xfer_read_server_url_file(args.url_file.c_str(), urlbuf, comm);
         args.num_servers = urlbuf.size();
 
-        int server_index;
-        int rank_in_server;
+        int server_index=0;
+        int rank_in_server=0;
 
         // For block distribution scheme use the utility function (in xfer_util.cpp)
         if (args.block_distribution) {
             // Use this utility function to calculate the server_index
-            xfer_block_partition(args.num_servers, splitsize, splitrank, server_index, rank_in_server);
+            xfer_block_partition(args.num_servers, splitsize, splitrank, &server_index, &rank_in_server);
         }
 
         // Use a simple round robin distribution scheme
@@ -489,16 +484,18 @@ int main(int argc, char *argv[])
         xfer_write_server_url_file(args.url_file.c_str(), my_url.c_str(), comm);
     }
 
-
-
     // Set the debug level for the xfer service.
     xfer_debug_level = args.debug_level;
 
     // Print the arguments after they've all been set.
-    args.io_method_name = io_method_names[args.io_method];
-    args.transport_name = nssi_transport_names[args.transport];
+    args.io_method_name = std::string(io_method_names[args.io_method]);
+    args.transport_name = std::string(nssi_transport_names[args.transport]);
+
+    log_debug(LOG_ALL, "%d: server_url=%s", rank, args.server_url.c_str());
+
     print_args(out, args, "%");
 
+    log_debug(debug_level, "server_url=%s", args.server_url.c_str());
 
     //------------------------------------------------------------------------------
     /** If we're running this job with a server, the server always executes on node 0.
@@ -531,7 +528,7 @@ int main(int argc, char *argv[])
 
             // connect to remote server
             for (i=0; i < args.num_retries; i++) {
-                log_debug(debug_level, "Try to connect to server: attempt #%d", i);
+                log_debug(debug_level, "Try to connect to server: attempt #%d, url=%s", i, args.server_url.c_str());
                 rc=nssi_get_service((nssi_rpc_transport)args.transport, args.server_url.c_str(), args.timeout, &xfer_svc);
                 if (rc == NSSI_OK)
                     break;

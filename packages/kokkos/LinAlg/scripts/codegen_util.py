@@ -153,4 +153,24 @@ def testMakeMultiVectorAref ():
     if out != expected:
         raise ValueError ('Expected "' + expected + '", got "' + out + '"')
 
+def makeRowAndColStrides (varName, dataLayout):
+    '''Return two strings, representing row resp. column strides in a dense matrix.
+    
+    varName: Name of the identifier for which to generate the stride identifier names.
+
+    dataLayout: 'column major' or 'row major'.
+
+    One of the strings will be the constant 1.  The other will be some
+    identifier name, which the caller of the generated code should
+    provide.
+    '''
+    if dataLayout == 'row major':
+        rowStride = 'LD' + varName
+        colStride = '1'
+    elif dataLayout == 'column major':
+        rowStride = '1'
+        colStride = 'LD' + varName
+    else:
+        raise ValueError('Unknown data layout"' + dataLayout + '"')
+    return (rowStride, colStride)
 

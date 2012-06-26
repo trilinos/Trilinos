@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -87,13 +87,13 @@ namespace {
   using Kokkos::MultiVector;
   using Kokkos::DefaultArithmetic;
   using Kokkos::DefaultKernels;
-  using Kokkos::SerialNode;
   using Teuchos::ArrayRCP;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::null;
   using std::endl;
 
+  using Kokkos::SerialNode;
   RCP<SerialNode> snode;
 #ifdef HAVE_KOKKOS_TBB
   using Kokkos::TBBNode;
@@ -121,9 +121,21 @@ namespace {
     clp.setOption("test-size",&N,"Vector length for tests.");
   }
 
+  // The default version of getNode() throws an exception.  You may
+  // invoke getNode() for one of the supported Node types below, or
+  // specialize getNode() if you wish to invoke it for a different
+  // Node type.
+  //
+  // mfh 18 June 2012: This should help us diagnose the assert(false)
+  // reported in the failed test below:
+  //
+  // http://testing.sandia.gov/cdash/testDetails.php?test=7210650&build=544260
   template <class Node>
   RCP<Node> getNode() {
-    assert(false);
+    using Teuchos::TypeNameTraits;
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "getNode() has not been "
+      "specialized for the Kokkos Node type \"" << TypeNameTraits<Node>::name ()
+      << "\".  Please report this bug to the Kokkos developers.");
   }
 
   template <>
@@ -140,10 +152,21 @@ namespace {
   RCP<TBBNode> getNode<TBBNode>() {
     if (tbbnode == null) {
       Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      tbbnode = rcp(new TBBNode(pl));
+      tbbnode = rcp (new TBBNode (pl));
     }
     return tbbnode;
+  }
+#endif
+
+#ifdef HAVE_KOKKOS_OPENMP
+  template <>
+  RCP<OpenMPNode> getNode<OpenMPNode>() {
+    if (ompnode == null) {
+      Teuchos::ParameterList pl;
+      pl.set<int>("Num Threads",0);
+      ompnode = rcp (new OpenMPNode (pl));
+    }
+    return ompnode;
   }
 #endif
 
@@ -173,7 +196,7 @@ namespace {
 
   //
   // UNIT TESTS
-  // 
+  //
 
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, SparseMultiply, Ordinal, Scalar, Node )
   {
@@ -227,7 +250,7 @@ namespace {
     A->setValues(vals);
     vals = Teuchos::null;
     OPS::finalizeGraphAndMatrix(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,*G,*A,null);
-    Teuchos::EDiag diag; 
+    Teuchos::EDiag diag;
     Teuchos::EUplo uplo;
     G->getMatDesc(uplo,diag);
     TEST_EQUALITY_CONST( uplo, Teuchos::UNDEF_TRI );

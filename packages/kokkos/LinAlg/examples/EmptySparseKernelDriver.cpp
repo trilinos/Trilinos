@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -51,15 +51,15 @@
 
 int main() {
 
-  typedef Kokkos::DefaultNode::DefaultNodeType                          Node;
-  typedef KokkosExamples::EmptySparseKernel<void,Node>                SOBASE;
-  typedef typename SOBASE::graph<int,Node>::graph_type                 Graph;
-  typedef typename SOBASE::bind_scalar<float>::other_type           FloatOps;
-  typedef typename FloatOps::matrix< float,int,Node>::matrix_type    FMatrix;
-  typedef typename SOBASE::bind_scalar<double>::other_type         DoubleOps;
-  typedef typename DoubleOps::matrix<double,int,Node>::matrix_type   DMatrix;
-  typedef Kokkos::MultiVector<double,Node>                         DoubleVec;
-  typedef Kokkos::MultiVector<float,Node>                           FloatVec;
+  typedef Kokkos::DefaultNode::DefaultNodeType                      Node;
+  typedef KokkosExamples::EmptySparseKernel<void,Node>            SOBASE;
+  typedef SOBASE::graph<int,Node>::graph_type                      Graph;
+  typedef SOBASE::bind_scalar<float>::other_type                FloatOps;
+  typedef FloatOps::matrix< float,int,Node>::matrix_type         FMatrix;
+  typedef SOBASE::bind_scalar<double>::other_type              DoubleOps;
+  typedef DoubleOps::matrix<double,int,Node>::matrix_type        DMatrix;
+  typedef Kokkos::MultiVector<double,Node>                     DoubleVec;
+  typedef Kokkos::MultiVector<float,Node>                       FloatVec;
 
   std::cout << "Note, this class doesn't actually do anything. We are only testing that it compiles." << std::endl;
 

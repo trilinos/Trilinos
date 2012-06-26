@@ -360,9 +360,16 @@ void Thyra::NOXNonlinearSolver::setupRowSumScalingObjects()
     RCP<NOX::Abstract::PrePostOperator> user_observer = 
       nox_parameters.sublist("Solver Options").get< RCP<NOX::Abstract::PrePostOperator> >("User Defined Pre/Post Operator");
     
+    // NOTE: the row_sum_observer should be evalauted after any user
+    // oberservers to make sure that the jacobian is accurate.  This
+    // is needed, for example, if we have a model evaluator decorator
+    // that adds extra input parameters to the model such as a
+    // predictor or previous time step solution to be used for
+    // semi-implicit models.  The row sum would accidentally use the
+    // previous predicted value which would be bad.
     RCP<NOX::PrePostOperatorVector> observer_vector = Teuchos::rcp(new NOX::PrePostOperatorVector);
-    observer_vector->pushBack(row_sum_observer);
     observer_vector->pushBack(user_observer);
+    observer_vector->pushBack(row_sum_observer);
     
     nox_parameters.sublist("Solver Options").set< RCP<NOX::Abstract::PrePostOperator> >("User Defined Pre/Post Operator", observer_vector);
 

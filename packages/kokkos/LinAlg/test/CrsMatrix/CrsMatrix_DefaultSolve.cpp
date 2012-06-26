@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -84,7 +84,7 @@ namespace {
 #endif
 #ifdef HAVE_KOKKOS_OPENMP
   using Kokkos::OpenMPNode;
-  RCP<OMPNode> ompnode;
+  RCP<OpenMPNode> ompnode;
 #endif
 
   int N = 1000;
@@ -136,7 +136,7 @@ namespace {
 
   //
   // UNIT TESTS
-  // 
+  //
 
 #define TEST_DATA_FOR_ONES(dat) {                                               \
     ArrayRCP<const Scalar> view = node->template viewBuffer<Scalar>(N,dat);     \
@@ -145,7 +145,7 @@ namespace {
       err += ST::magnitude(ONE - view[i]);                                    \
     }                                                                           \
     TEST_EQUALITY_CONST(err, ZERO);                                             \
-  }                                                                             
+  }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, SparseSolveIdentityLower, Ordinal, Scalar, Node )
   {
@@ -194,7 +194,7 @@ namespace {
     A->setValues(vals);
     vals = Teuchos::null;
     OPS::finalizeGraphAndMatrix(Teuchos::LOWER_TRI,Teuchos::NON_UNIT_DIAG,*G,*A,null);
-    Teuchos::EDiag diag; 
+    Teuchos::EDiag diag;
     Teuchos::EUplo uplo;
     G->getMatDesc(uplo,diag);
     TEST_EQUALITY_CONST( uplo, Teuchos::LOWER_TRI );
@@ -265,7 +265,7 @@ namespace {
     A->setValues(vals);
     vals = Teuchos::null;
     OPS::finalizeGraphAndMatrix(Teuchos::LOWER_TRI,Teuchos::UNIT_DIAG,*G,*A,null);
-    Teuchos::EDiag diag; 
+    Teuchos::EDiag diag;
     Teuchos::EUplo uplo;
     G->getMatDesc(uplo,diag);
     TEST_EQUALITY_CONST( uplo, Teuchos::LOWER_TRI );
@@ -338,7 +338,7 @@ namespace {
     A->setValues(vals);
     vals = Teuchos::null;
     OPS::finalizeGraphAndMatrix(Teuchos::UPPER_TRI,Teuchos::NON_UNIT_DIAG,*G,*A,null);
-    Teuchos::EDiag diag; 
+    Teuchos::EDiag diag;
     Teuchos::EUplo uplo;
     G->getMatDesc(uplo,diag);
     TEST_EQUALITY_CONST( uplo, Teuchos::UPPER_TRI );
@@ -409,7 +409,7 @@ namespace {
     A->setValues(vals);
     vals = Teuchos::null;
     OPS::finalizeGraphAndMatrix(Teuchos::UPPER_TRI,Teuchos::UNIT_DIAG,*G,*A,null);
-    Teuchos::EDiag diag; 
+    Teuchos::EDiag diag;
     Teuchos::EUplo uplo;
     G->getMatDesc(uplo,diag);
     TEST_EQUALITY_CONST( uplo, Teuchos::UPPER_TRI );

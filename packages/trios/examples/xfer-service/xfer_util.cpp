@@ -244,8 +244,8 @@ int xfer_block_partition(
         const int num_bins,
         const int num_vals,
         const int val,
-        int &bin,
-        int &rank)
+        int *bin,
+        int *rank)
 {
 
     int per_bin = num_vals / num_bins;
@@ -254,13 +254,13 @@ int xfer_block_partition(
     int barrier = num_large * (per_bin + 1);  // total number of vals in large bins
 
     if (val < barrier) {
-        bin = val / (per_bin + 1);
-        rank = val % (per_bin + 1);
+        *bin = val / (per_bin + 1);
+        *rank = val % (per_bin + 1);
     }
 
     else {
-        bin = num_large + (val - barrier)/per_bin;
-        rank = (val - barrier) % per_bin;
+        *bin = num_large + (val - barrier)/per_bin;
+        *rank = (val - barrier) % per_bin;
     }
 
     //std::cout << "num_bins=" << num_bins << ", num_vals=" << num_vals;
