@@ -200,7 +200,8 @@ template<typename Scalar, typename LO, typename GO, typename NODE>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 panzer::ModelEvaluator<Scalar,LO,GO,NODE>::get_g_space(int i) const
 {
-  TEUCHOS_ASSERT(i>=0 && i<g_space_.size());
+  TEUCHOS_ASSERT(i>=0 && 
+		 static_cast<typename std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > >::size_type>(i)<g_space_.size());
 
   return g_space_[i];
 }

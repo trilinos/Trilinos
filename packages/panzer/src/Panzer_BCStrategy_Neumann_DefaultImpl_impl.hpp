@@ -100,25 +100,8 @@ buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   using std::pair;
 
   // Gather
-  for (vector<string>::const_iterator dof_name = m_required_dof_names.begin();
-       dof_name != m_required_dof_names.end(); ++dof_name) {
-    
-    ParameterList p("BC Gather");
-    
-    RCP<vector<string> > gather_names_vec = rcp(new vector<string>);
-    gather_names_vec->push_back(*dof_name);
-    
-    p.set("DOF Names", gather_names_vec);
-    p.set("Indexer Names", gather_names_vec);
-    
-    RCP<panzer::PureBasis> basis = this->getBasis(*dof_name,pb);
-    p.set("Basis", basis);
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGather<EvalT>(p);
-    
-    fm.template registerEvaluator<EvalT>(op);
-  }
-  
+  pb.buildAndRegisterGatherAndOrientationEvaluators(fm,lof,user_data);
+
   // Iterate over each residual contribution
   for (vector<boost::tuples::tuple<std::string,std::string,std::string,int,Teuchos::RCP<panzer::PureBasis>,Teuchos::RCP<panzer::IntegrationRule> > >::const_iterator eq = 
 	 m_residual_contributions.begin(); eq != m_residual_contributions.end(); ++eq) {

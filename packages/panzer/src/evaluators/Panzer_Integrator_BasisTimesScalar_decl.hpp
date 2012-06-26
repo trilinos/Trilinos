@@ -50,7 +50,25 @@
 #include "Intrepid_FieldContainer.hpp"
 
 namespace panzer {
-    
+
+/** Computes the integral
+  * \f[
+    \int s(x) \phi(x) \, d x
+    \f]
+  * where \f$\phi\f$is the test function and \f$s\f$ is
+  * the scalar quantity. The parameter list passed into the construction
+  * is formatted as follows
+    \verbatim
+    <ParameterList>
+       <Parameter name="Residual Name" type="string" value=(required)/>
+       <Parameter name="Value Name" type="string" value="(required)"/>
+       <Parameter name="Basis" type="RCP<BasisIRLayout>" value=(required)/>
+       <Parameter name="IR" type="RCP<IntegrationRule>" value="(required)"/>
+       <Parameter name="Multiplier" type="double" value="(required)"/>
+       <Parameter name="Field Multipliers" type="RCP<const std::vector>" value=Null (default)/>
+    </ParameterList>
+    \endverbatim
+  */
 PHX_EVALUATOR_CLASS(Integrator_BasisTimesScalar)
   
   PHX::MDField<ScalarT,Cell,BASIS> residual;

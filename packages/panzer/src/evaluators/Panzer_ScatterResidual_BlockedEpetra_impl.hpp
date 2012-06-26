@@ -105,6 +105,7 @@ panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Residual, Traits,LO,GO>::
 ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
                               const Teuchos::ParameterList& p)
   : globalIndexer_(indexer) 
+  , globalDataKey_("Residual Scatter Container")
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ = 
@@ -132,6 +133,9 @@ ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int>
   // this is what this evaluator provides
   this->addEvaluatedField(*scatterHolder_);
 
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
+
   this->setName(scatterName+" Scatter Residual");
 }
 
@@ -157,6 +161,17 @@ postRegistrationSetup(typename Traits::SetupData d,
 // **********************************************************************
 template<typename Traits,typename LO,typename GO>
 void panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Residual, Traits,LO,GO>::
+preEvaluate(typename Traits::PreEvalData d)
+{
+   typedef BlockedEpetraLinearObjContainer BLOC;
+
+   // extract linear object container
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const BLOC>(d.getDataObject(globalDataKey_),true);
+}
+
+// **********************************************************************
+template<typename Traits,typename LO,typename GO>
+void panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Residual, Traits,LO,GO>::
 evaluateFields(typename Traits::EvalData workset)
 { 
    using Teuchos::RCP;
@@ -177,7 +192,8 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   RCP<BLOC> blockedContainer = rcp_dynamic_cast<BLOC>(workset.ghostedLinContainer);
+   // RCP<BLOC> blockedContainer = rcp_dynamic_cast<BLOC>(workset.ghostedLinContainer);
+   RCP<const BLOC> blockedContainer = blockedContainer_; // rcp_dynamic_cast<BLOC>(workset.ghostedLinContainer);
 
    RCP<ProductVectorBase<double> > r = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer->get_f(),true);
 
@@ -232,6 +248,7 @@ panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Jacobian, Traits,LO,GO>::
 ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
                               const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
+   , globalDataKey_("Residual Scatter Container")
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
   scatterHolder_ = 
@@ -259,6 +276,9 @@ ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int>
   // this is what this evaluator provides
   this->addEvaluatedField(*scatterHolder_);
 
+  if (p.isType<std::string>("Global Data Key"))
+     globalDataKey_ = p.get<std::string>("Global Data Key");
+
   this->setName(scatterName+" Scatter Residual (Jacobian)");
 }
 
@@ -279,6 +299,17 @@ postRegistrationSetup(typename Traits::SetupData d,
     // fill field data object
     this->utils.setFieldData(scatterFields_[fd],fm);
   }
+}
+
+// **********************************************************************
+template<typename Traits,typename LO,typename GO>
+void panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Jacobian, Traits,LO,GO>::
+preEvaluate(typename Traits::PreEvalData d)
+{
+   typedef BlockedEpetraLinearObjContainer BLOC;
+
+   // extract linear object container
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const BLOC>(d.getDataObject(globalDataKey_),true);
 }
 
 // **********************************************************************
@@ -310,7 +341,8 @@ evaluateFields(typename Traits::EvalData workset)
    std::string blockId = workset.block_id;
    const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
 
-   RCP<BLOC> blockedContainer = rcp_dynamic_cast<BLOC>(workset.ghostedLinContainer);
+   // RCP<BLOC> blockedContainer = rcp_dynamic_cast<BLOC>(workset.ghostedLinContainer);
+   RCP<const BLOC> blockedContainer = blockedContainer_;
 
    RCP<ProductVectorBase<double> > r = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer->get_f());
    Teuchos::RCP<BlockedLinearOpBase<double> > Jac = rcp_dynamic_cast<BlockedLinearOpBase<double> >(blockedContainer->get_A());
@@ -373,8 +405,9 @@ evaluateFields(typename Traits::EvalData workset)
             // loop over the sensitivity indices: all DOFs on a cell
             jacRow.resize(scatterField.size());
             
-            for(int sensIndex=0;sensIndex<scatterField.size();++sensIndex)
+            for(int sensIndex=0;sensIndex<scatterField.size();++sensIndex) {
                jacRow[sensIndex] = scatterField.fastAccessDx(sensIndex);
+            }
     
             for(int blockColIndex=0;blockColIndex<numFieldBlocks;blockColIndex++) {
                int start = blockOffsets[blockColIndex];

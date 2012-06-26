@@ -40,47 +40,15 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_CONSTANT_FLUX_IMPL_HPP
-#define PANZER_CONSTANT_FLUX_IMPL_HPP
+#include "Panzer_config.hpp"
 
-namespace panzer {
+#ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
 
-//**********************************************************************
-PHX_EVALUATOR_CTOR(ConstantFlux,p) :
-  flux( p.get<std::string>("Flux Field Name"), 
-	p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") )
-{
-  const Teuchos::ParameterList& flux_values = p.sublist("Flux Values");
+#include "Panzer_ExplicitTemplateInstantiation.hpp"
 
-  for (Teuchos::ParameterList::ConstIterator i = flux_values.begin(); i != flux_values.end(); ++i)
-    values.push_back(Teuchos::getValue<double>(i->second));
+#include "Panzer_ReorderADValues_Evaluator_decl.hpp"
+#include "Panzer_ReorderADValues_Evaluator_impl.hpp"
 
-  this->addEvaluatedField(flux);
-  
-  std::string n = "Constant: " + flux.fieldTag().name();
-  this->setName(n);
-}
-
-//**********************************************************************
-PHX_POST_REGISTRATION_SETUP(ConstantFlux,worksets,fm)
-{
-  using namespace PHX;
-  this->utils.setFieldData(flux,fm);
-
-  TEUCHOS_ASSERT(static_cast<std::size_t>(flux.dimension(2)) == values.size());
-
-  for (int cell = 0; cell < flux.dimension(0); ++cell)
-    for (int ip = 0; ip < flux.dimension(1); ++ip)
-      for (int dim = 0; dim < flux.dimension(2); ++dim)
-	flux(cell,ip,dim) = values[dim];
-}
-
-//**********************************************************************
-PHX_EVALUATE_FIELDS(ConstantFlux,d)
-{ }
-
-//**********************************************************************
-
-}
+PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer::ReorderADValues_Evaluator)
 
 #endif

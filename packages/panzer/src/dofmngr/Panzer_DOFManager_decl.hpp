@@ -230,7 +230,7 @@ public:
    
    /**  Returns the connection manager current being used.
      */
-   Teuchos::RCP<const ConnManager<LocalOrdinalT,GlobalOrdinalT> > getConnManager() const 
+   Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > getConnManager() const 
    { return connMngr_; } 
 
    /** build the global unknown numberings

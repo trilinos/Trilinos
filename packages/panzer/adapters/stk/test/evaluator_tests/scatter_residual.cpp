@@ -83,6 +83,7 @@ using Teuchos::rcp;
 #include <string>
 
 namespace panzer {
+  typedef Teuchos::ArrayRCP<const double>::size_type size_type;
 
   Teuchos::RCP<panzer::PureBasis> buildBasis(std::size_t worksetSize,const std::string & basisName);
   void testInitialization(panzer::InputPhysicsBlock& ipb);
@@ -240,6 +241,7 @@ namespace panzer {
 
     panzer::GlobalEvaluationDataContainer gedc;
     gedc.addDataObject("Solution Gather Container",loc);
+    gedc.addDataObject("Residual Scatter Container",loc);
     fm.preEvaluate<panzer::Traits::Residual>(gedc);
 
     // run tests
@@ -264,21 +266,21 @@ namespace panzer {
     
     Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double> >(f_vec->getVectorBlock(0))->getLocalData(Teuchos::ptrFromRef(data));
     TEST_EQUALITY(data.size(),b_loc->getMapForBlock(0)->NumMyElements());
-    for(std::size_t i=0;i<data.size();i++) {
+    for(size_type i=0;i<data.size();i++) {
        double target = 123.0+myRank;
        TEST_ASSERT(data[i]==target || data[i]==2.0*target);
     }
 
     Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double> >(f_vec->getVectorBlock(1))->getLocalData(Teuchos::ptrFromRef(data));
     TEST_EQUALITY(data.size(),b_loc->getMapForBlock(1)->NumMyElements());
-    for(std::size_t i=0;i<data.size();i++) {
+    for(size_type i=0;i<data.size();i++) {
        double target = 456.0+myRank;
        TEST_ASSERT(data[i]==target || data[i]==2.0*target);
     }
 
     Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double> >(f_vec->getVectorBlock(2))->getLocalData(Teuchos::ptrFromRef(data));
     TEST_EQUALITY(data.size(),b_loc->getMapForBlock(2)->NumMyElements());
-    for(std::size_t i=0;i<data.size();i++) {
+    for(size_type i=0;i<data.size();i++) {
        double target = 789.0+myRank;
        TEST_ASSERT(data[i]==target || data[i]==2.0*target);
     }
@@ -293,7 +295,6 @@ namespace panzer {
    #endif
 
     int myRank = eComm->MyPID();
-    int numProcs = eComm->NumProc();
 
     const std::size_t workset_size = 4;
     const std::string fieldName1_q1 = "U";
@@ -437,6 +438,7 @@ namespace panzer {
 
     panzer::GlobalEvaluationDataContainer gedc;
     gedc.addDataObject("Solution Gather Container",loc);
+    gedc.addDataObject("Residual Scatter Container",loc);
     fm.preEvaluate<panzer::Traits::Jacobian>(gedc);
 
     // run tests
@@ -462,7 +464,7 @@ namespace panzer {
     Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double> >(f_vec->getVectorBlock(0))->getLocalData(Teuchos::ptrFromRef(data));
     TEST_EQUALITY(data.size(),b_loc->getMapForBlock(0)->NumMyElements());
     out << std::endl;
-    for(std::size_t i=0;i<data.size();i++) {
+    for(size_type i=0;i<data.size();i++) {
        double target = 123.0+myRank;
        TEST_ASSERT(data[i]==target || data[i]==2.0*target);
        out << data[i] << std::endl;
@@ -471,7 +473,7 @@ namespace panzer {
     Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double> >(f_vec->getVectorBlock(1))->getLocalData(Teuchos::ptrFromRef(data));
     TEST_EQUALITY(data.size(),b_loc->getMapForBlock(1)->NumMyElements());
     out << std::endl;
-    for(std::size_t i=0;i<data.size();i++) {
+    for(size_type i=0;i<data.size();i++) {
        double target = 456.0+myRank;
        TEST_ASSERT(data[i]==target || data[i]==2.0*target); 
        out << data[i] << std::endl;
@@ -480,7 +482,7 @@ namespace panzer {
     Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double> >(f_vec->getVectorBlock(2))->getLocalData(Teuchos::ptrFromRef(data));
     TEST_EQUALITY(data.size(),b_loc->getMapForBlock(2)->NumMyElements());
     out << std::endl;
-    for(std::size_t i=0;i<data.size();i++) {
+    for(size_type i=0;i<data.size();i++) {
        double target = 789.0+myRank;
        TEST_ASSERT(data[i]==target || data[i]==2.0*target);
        out << data[i] << std::endl;

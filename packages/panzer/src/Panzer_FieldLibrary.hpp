@@ -51,7 +51,7 @@
 #include "Panzer_PointRule.hpp"
 #include "Panzer_PureBasis.hpp"
 
-#include <list>
+#include <vector>
 
 namespace panzer {
 
@@ -61,10 +61,10 @@ public:
    virtual Teuchos::RCP<const panzer::PureBasis> lookupBasis(const std::string & fieldName) const = 0;
 
    //! Get vector of unique bases contained in this field library
-   virtual void uniqueBases(std::list<Teuchos::RCP<const panzer::PureBasis> > & bases) const = 0;
+   virtual void uniqueBases(std::vector<Teuchos::RCP<const panzer::PureBasis> > & bases) const = 0;
 
    //! Get vector of unique bases contained in this field library
-   virtual void basisPairs(std::list<std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > > & bases) const = 0;
+   virtual void basisPairs(std::vector<std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > > & bases) const = 0;
 };
 
 /** There is one of these objects per equation set.
@@ -77,7 +77,7 @@ public:
                          const Teuchos::RCP<panzer::BasisIRLayout> & basis);   
 
    //! Get vector of unique bases contained in this field library
-   void uniqueBases(std::list<Teuchos::RCP<const panzer::PureBasis> > & bases) const;
+   void uniqueBases(std::vector<Teuchos::RCP<const panzer::PureBasis> > & bases) const;
 
    //! Get the basis associated with a particular field.
    virtual Teuchos::RCP<const panzer::PureBasis> lookupBasis(const std::string & fieldName) const;
@@ -91,7 +91,7 @@ public:
    void print(std::ostream & os) const;
 
    //! Get vector of unique bases contained in this field library
-   virtual void basisPairs(std::list<std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > > & bases) const;
+   virtual void basisPairs(std::vector<std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > > & bases) const;
 
 private:
 
@@ -115,7 +115,7 @@ public:
    virtual Teuchos::RCP<const panzer::PureBasis> lookupBasis(const std::string & fieldName) const;
 
    //! Get vector of unique bases contained in this field library
-   void uniqueBases(std::list<Teuchos::RCP<const panzer::PureBasis> > & bases) const;
+   void uniqueBases(std::vector<Teuchos::RCP<const panzer::PureBasis> > & bases) const;
 
    /** Add a field associated witha basis to the library.
      */
@@ -134,7 +134,7 @@ public:
    void print(std::ostream & os) const;
 
    //! Get vector of unique bases contained in this field library
-   virtual void basisPairs(std::list<std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > > & bases) const;
+   virtual void basisPairs(std::vector<std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > > & bases) const;
 
 private:
 

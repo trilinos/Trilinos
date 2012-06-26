@@ -80,6 +80,8 @@ public:
      */
    virtual int getFieldNum(const std::string & str) const;
 
+   virtual const std::string & getFieldString(int fieldNum) const;
+
    /** Get the communicator 
      */
    virtual Teuchos::RCP<Teuchos::Comm<int> > getComm() const;

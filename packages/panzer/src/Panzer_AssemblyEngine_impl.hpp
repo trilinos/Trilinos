@@ -105,6 +105,7 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
 
   GlobalEvaluationDataContainer gedc;
   gedc.addDataObject("Solution Gather Container",in.ghostedContainer_);
+  gedc.addDataObject("Residual Scatter Container",in.ghostedContainer_);
   in.fillGlobalEvaluationDataContainer(gedc);
 
   // Loop over element blocks
@@ -197,6 +198,7 @@ evaluateBCs(const panzer::BCType bc_type,
 
   gedc.addDataObject("Dirichlet Counter",preEval_loc);
   gedc.addDataObject("Solution Gather Container",in.ghostedContainer_);
+  gedc.addDataObject("Residual Scatter Container",in.ghostedContainer_);
   in.fillGlobalEvaluationDataContainer(gedc);
 
   {
