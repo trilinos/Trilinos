@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
 
   PrintMemoryUsage("Memory after InsertGlobalValues()", "tpetra-after-insert.heap");
 
-  A->fillComplete(Tpetra::DoOptimizeStorage);
+  A->fillComplete(); // DoOptimizeStorage by default
 
   PrintMemoryUsage("Memory after FillComplete()", "tpetra-after-fillcomplete.heap");
 
