@@ -144,16 +144,15 @@ template <typename Adapter>
       mcnorm = normMinimizeMaximumWeight;
   } 
 
-  targetGlobalParts_ = soln->getTargetGlobalNumberOfParts();
-
   partId_t dummy;
 
   try{
-    objectMetrics<Adapter>(env, problemComm, 
-      targetGlobalParts_, mcnorm, ia, soln,
+    objectMetrics<Adapter>(env, problemComm, mcnorm, ia, soln,
       numGlobalParts_, numNonEmpty_, metrics_);
   }
   Z2_FORWARD_EXCEPTIONS;
+
+  targetGlobalParts_ = soln->getTargetGlobalNumberOfParts();
 
   env->timerStop(MACRO_TIMERS, "Computing metrics");
   env->debug(DETAILED_STATUS, string("Exiting PartitioningSolutionQuality"));

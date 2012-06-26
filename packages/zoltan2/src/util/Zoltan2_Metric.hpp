@@ -858,22 +858,12 @@ template <typename scalar_t>
  *
  *   \param env   The problem environment.
  *   \param comm  The problem communicator.
- *   \param targetNumParts is usually the same as \c numParts, which is the
- *         global number of different parts to which objects have been 
- *         assigned in the \c parts array.  
- *         However if we are calling objectMetrics() before
- *         and after partitioning, it is possible that before partitioning
- *         the number of parts which have objects is not the same as
- *         targetNumParts.  For example, if all objects are in part 0,
- *         then \c numParts is one and \c targetNumParts is likely larger.
- *         We calculate the imbalance with respect to \c targetNumParts 
- *         and not \c numParts.
  *   \param ia the InputAdapter object which corresponds to the Solution.
  *   \param solution the PartitioningSolution to be evaluated.
  *   \param mcNorm  is the multicriteria norm to use if the weight dimension
  *           is greater than one.  See the multiCriteriaNorm enumerator for
  *           \c mcNorm values.
- *   \param numParts on return is the global number of parts
+ *   \param numParts on return is the global number of parts in the solution
  *   \param numNonemptyParts on return is the global number of parts to which 
  *                                objects are assigned.
  *   \param metrics on return points to a list of named MetricValues objects 
@@ -897,7 +887,6 @@ template <typename Adapter>
   void objectMetrics(
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm,
-    partId_t targetNumParts, 
     multiCriteriaNorm mcNorm,
     const RCP<const Adapter> &ia,
     const RCP<const PartitioningSolution<Adapter> > &solution,
@@ -945,18 +934,18 @@ template <typename Adapter>
 
   // Relative part sizes, if any, assigned to the parts.
 
-  size_t numGlobalParts = solution->getGlobalNumberOfParts();
+  partId_t targetNumParts = solution->getTargetGlobalNumberOfParts();
   scalar_t *psizes = NULL;
 
   ArrayRCP<ArrayRCP<scalar_t> > partSizes(numCriteria);
   for (int dim=0; dim < numCriteria; dim++){
     if (solution->criteriaHasUniformPartSizes(dim) != true){
-      psizes = new scalar_t [numGlobalParts];
+      psizes = new scalar_t [targetNumParts];
       env->localMemoryAssertion(__FILE__, __LINE__, numParts, psizes);
-      for (partId_t i=0; i < numGlobalParts; i++){
+      for (partId_t i=0; i < targetNumParts; i++){
         psizes[i] = solution->getCriteriaPartSize(dim, i);
       }
-      partSizes[dim] = arcp(psizes, 0, numGlobalParts, true);
+      partSizes[dim] = arcp(psizes, 0, targetNumParts, true);
     }
   }
 

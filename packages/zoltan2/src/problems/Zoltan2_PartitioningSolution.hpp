@@ -1094,7 +1094,7 @@ template <typename Adapter>
   partId_t gMax, gMin;
 
   IdentifierTraits<partId_t>::globalMinMax(*comm_, 
-    minMaxLocal.first(), minMaxLocal.second(), gMin, gMax);
+    minMaxLocal.first, minMaxLocal.second, gMin, gMax);
       
   nGlobalPartsSolution_ = gMax - gMin + 1;
 
