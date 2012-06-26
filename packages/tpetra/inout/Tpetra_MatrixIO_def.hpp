@@ -105,7 +105,8 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
                              const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
                              const Teuchos::RCP<Node> &node,
                              Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &A,
-                             Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap)
+                             Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap, 
+                             const Teuchos::RCP<ParameterList> &params)
 {
   const int myRank = comm->getRank();
   int numRows,numCols,numNZ;
@@ -267,7 +268,7 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
   colinds = Teuchos::null;
   svals   = Teuchos::null;
   rowptrs = Teuchos::null;
-  A->fillComplete(domMap,rowMap);
+  A->fillComplete(domMap,rowMap,params);
 }
 
 

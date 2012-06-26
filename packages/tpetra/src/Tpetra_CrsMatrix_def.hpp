@@ -1712,19 +1712,13 @@ namespace Tpetra {
     // allocate if unallocated
     if (! getCrsGraph()->indicesAreAllocated()) {
       // allocate global, in case we do not have a column map
-      //
-      // mfh 03 May 2012: This calls CrsGraph::allocateValues(), which
-      // in turn only calls arcp() to allocate values1D_ or values2D_;
-      // it doesn't call the Kokkos Node's allocBuffer() method to
-      // allocate compute buffers.
       allocateValues( GlobalIndices, GraphNotYetAllocated );
     }
     // Global assemble, if we need to (we certainly don't need to if
     // there's only one process).  This call only costs a single
     // all-reduce if we don't need global assembly.
     if (getComm()->getSize() > 1) {
-      // mfh 03 May 2012: This calls insertGlobalValues(), one entry
-      // at a time.  No allocation of compute buffers here.
+      // mfh 03 May 2012: This calls insertGlobalValues(), one entry at a time.
       globalAssemble();
     }
     else {
@@ -1924,6 +1918,10 @@ namespace Tpetra {
   {
     const std::string tfecfFuncName("convert()");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isFillComplete() == false, std::runtime_error, ": fill must be complete.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(getCrsGraph()->getLocalGraph() == null, std::runtime_error, 
+        ": local graph data was deleted during fillComplete().\n"
+        "To allow convert(), set the following to fillComplete():\n"
+        "   \"Preserve Local Graph\" == true ");
     RCP<CrsMatrix<T,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > newmat;
     newmat = rcp(new CrsMatrix<T,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(getCrsGraph()));
     const Map<LocalOrdinal,GlobalOrdinal,Node> &rowMap = *getRowMap();
