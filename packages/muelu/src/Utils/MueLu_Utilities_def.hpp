@@ -326,15 +326,9 @@ t0 = MPI_Wtime();
 
     RCP<Teuchos::ParameterList> params = rcp(new ParameterList());
     params->set("Optimize Storage",doOptimizeStorage);
-    if (!doOptimizeStorage) {
-      C->fillComplete((transposeB) ? B->getRangeMap() : B->getDomainMap(),
-                      (transposeA) ? A->getDomainMap() : A->getRangeMap(),
-                      params);
-    } else {
-      C->fillComplete((transposeB) ? B->getRangeMap() : B->getDomainMap(),
-                      (transposeA) ? A->getDomainMap() : A->getRangeMap(),
-                      params);
-    }
+    C->fillComplete((transposeB) ? B->getRangeMap() : B->getDomainMap(),
+                    (transposeA) ? A->getDomainMap() : A->getRangeMap(),
+                    params);
 
     ///////////////////////// EXPERIMENTAL
     C->CreateView("stridedMaps", A, transposeA, B, transposeB);
@@ -1015,10 +1009,7 @@ if (mypid == 0)
           throw(Exceptions::RuntimeError("In Utils::Scaling: cannot fillComplete because the domain and/or range map hasn't been defined"));
         RCP<Teuchos::ParameterList> params = rcp(new ParameterList());
         params->set("Optimize Storage",doOptimizeStorage);
-        if (doOptimizeStorage)
-          Op->fillComplete(Op->getDomainMap(),Op->getRangeMap(),params);
-        else
-          Op->fillComplete(Op->getDomainMap(),Op->getRangeMap(),params);
+        Op->fillComplete(Op->getDomainMap(),Op->getRangeMap(),params);
       }
 #else
       throw(Exceptions::RuntimeError("Matrix scaling is not possible because Tpetra has not been enabled."));
