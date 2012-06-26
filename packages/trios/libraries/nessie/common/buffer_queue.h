@@ -60,7 +60,7 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 typedef std::deque<NNTI_buffer_t *>  buffer_queue_t;
 
 typedef struct trios_buffer_queue {
-    nthread_mutex_t   mutex;
+    nthread_lock_t    mutex;
     buffer_queue_t    queue;
     uint32_t          current_size;
     uint32_t          initial_size;
