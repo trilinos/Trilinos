@@ -40,18 +40,34 @@
 // ***********************************************************************
 // @HEADER
 
+#include "Panzer_CellTopologyInfo.hpp"
+#include "Panzer_IntegrationRule.hpp"
+#include "Panzer_IntrepidBasisFactory.hpp"
 
-#include "Panzer_Dimension.hpp"
+#include "Teuchos_Assert.hpp"
+#include "Phalanx_DataLayout_MDALayout.hpp"
 
-namespace panzer {
+panzer::CellTopologyInfo::
+CellTopologyInfo(int numCells, const Teuchos::RCP<const shards::CellTopology>& cellTopo)
+{
+  num_cells = numCells; 
 
-  SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Dim)
-  SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(IP)
-  SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(BASIS)
-  SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(NODE)
-  SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Point)
-  SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Cell)
-  SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Dummy)
-  SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Edge)
+  dimension = cellTopo->getDimension();
+  num_edges = cellTopo->getEdgeCount();
+  cell_topo_name = cellTopo->getName();
+  
+  topology = cellTopo;
+
+  initializeDataLayouts();
+}
+
+
+void panzer::CellTopologyInfo::initializeDataLayouts()
+{
+  using Teuchos::rcp;
+  using PHX::MDALayout;
+
+  edge_scalar = rcp(new MDALayout<Cell,Edge>(num_cells, num_edges));
+  edge_vector = rcp(new MDALayout<Cell,Edge,Dim>(num_cells, num_edges, dimension));
 
 }

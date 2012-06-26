@@ -52,10 +52,12 @@
 
 #include "Panzer_Dimension.hpp"
 #include "Panzer_PureBasis.hpp"
+#include "Panzer_CellTopologyInfo.hpp"
 
 namespace panzer {
 
   class PointRule;
+  class CellTopologyInfo;   
 
   class BasisIRLayout { 
 
@@ -76,7 +78,7 @@ namespace panzer {
     int getDimension() const;
 
     // int integrationRuleDegree() const;
-    
+
     std::string name() const;
     
     std::string fieldName() const;
@@ -91,6 +93,11 @@ namespace panzer {
     Teuchos::RCP<const PureBasis> getBasis() const;
 
     void print(std::ostream & os) const;
+
+    // Added by Suzey: 06/18/2012
+    Teuchos::RCP<const CellTopologyInfo> getCellTopologyInfo() const
+    { return cell_topo_info; } 
+    
 
   public:
     
@@ -126,8 +133,11 @@ namespace panzer {
     int num_ip;
     int dimension;
     // int int_rule_degree;
-
+    
     Teuchos::RCP<const PureBasis> basis_data;
+    
+    // Added by Suzey: 06/18/2012
+    Teuchos::RCP<const CellTopologyInfo> cell_topo_info;
   };
 
   typedef std::pair<std::string,Teuchos::RCP<panzer::BasisIRLayout> > StrBasisPair;

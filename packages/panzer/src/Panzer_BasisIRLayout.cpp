@@ -46,6 +46,7 @@
 
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
+#include "Panzer_CellTopologyInfo.hpp"
 
 panzer::BasisIRLayout::
 BasisIRLayout(std::string basis_type, const panzer::PointRule& int_rule) :
@@ -82,7 +83,7 @@ setup(const Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double
   num_ip = int_rule.dl_vector->dimension(1);
   dimension = int_rule.dl_vector->dimension(2);
   // int_rule_degree = int_rule.cubature_degree;
-
+  
   using Teuchos::rcp;
   using PHX::MDALayout;
   
@@ -120,6 +121,11 @@ setup(const Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double
 							cardinality,
 							dimension,
 							dimension));
+
+  // Added by Suzey: 06/18/2012, to obtain the CellTopologyInfo object
+  const Teuchos::RCP<const shards::CellTopology>& topology = basis_data->getCellTopology();
+  cell_topo_info = rcp(new panzer::CellTopologyInfo(num_cells, topology) );
+  
 }
 
 int panzer::BasisIRLayout::getCardinality() const

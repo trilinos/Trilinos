@@ -62,6 +62,8 @@ namespace panzer {
   SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(Cell)
   //! Dummy Tag
   SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(Dummy)
+  //! Edge Tag
+  SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(Edge)  // Suzey: 06/11/201
 
 }
 
