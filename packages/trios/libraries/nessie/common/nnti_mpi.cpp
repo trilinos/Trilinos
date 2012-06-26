@@ -162,7 +162,7 @@ typedef struct mpi_transport_global {
 
 
 
-static nthread_mutex_t nnti_mpi_lock;
+static nthread_lock_t nnti_mpi_lock;
 
 
 //static const NNTI_buffer_t *decode_event_buffer(
@@ -254,16 +254,16 @@ static uint32_t hash6432shift(uint64_t key)
 static std::map<uint32_t, NNTI_buffer_t *> buffers_by_bufhash;
 typedef std::map<uint32_t, NNTI_buffer_t *>::iterator buf_by_bufhash_iter_t;
 typedef std::pair<uint32_t, NNTI_buffer_t *> buf_by_bufhash_t;
-static nthread_mutex_t nnti_buf_bufhash_lock;
+static nthread_lock_t nnti_buf_bufhash_lock;
 
 static std::map<uint32_t, mpi_work_request *> wr_by_wrhash;
 typedef std::map<uint32_t, mpi_work_request *>::iterator wr_by_wrhash_iter_t;
 typedef std::pair<uint32_t, mpi_work_request *> wr_by_wrhash_t;
-static nthread_mutex_t nnti_wr_wrhash_lock;
+static nthread_lock_t nnti_wr_wrhash_lock;
 
 typedef std::deque<NNTI_buffer_t *>           target_buffer_queue_t;
 typedef std::deque<NNTI_buffer_t *>::iterator target_buffer_queue_iter_t;
-static nthread_mutex_t                        nnti_target_buffer_queue_lock;
+static nthread_lock_t                        nnti_target_buffer_queue_lock;
 
 target_buffer_queue_t target_buffers;
 
@@ -307,7 +307,10 @@ int NNTI_mpi_init (
 
     if (!initialized) {
 
-        nthread_mutex_init(&nnti_mpi_lock, NTHREAD_MUTEX_NORMAL);
+        nthread_lock_init(&nnti_mpi_lock);
+        nthread_lock_init(&nnti_buf_bufhash_lock);
+        nthread_lock_init(&nnti_wr_wrhash_lock);
+        nthread_lock_init(&nnti_target_buffer_queue_lock);
 
         if (my_url != NULL) {
             log_error(nnti_debug_level,"The MPI transport does not accept a URL at init.  Ignoring URL.");
