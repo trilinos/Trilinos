@@ -41,58 +41,20 @@
 //@HEADER
 */
 
-#ifndef KOKKOSARRAY_HOSTMEMORYSPACE_HPP
-#define KOKKOSARRAY_HOSTMEMORYSPACE_HPP
-
-#include <iosfwd>
-#include <typeinfo>
-#include <string>
-
-#include <impl/KokkosArray_forward.hpp>
-
-/*--------------------------------------------------------------------------*/
+#ifndef KOKKOSARRAY_LAYOUT_HPP
+#define KOKKOSARRAY_LAYOUT_HPP
 
 namespace KokkosArray {
-namespace Impl {
 
-/** \brief  Memory management on the host for devices */
+/** \brief  Left-to-right striding of multi-indices (Fortran scheme). */
+struct LayoutLeft { typedef LayoutLeft array_layout ; };
 
-class HostMemorySpace {
-public:
+/** \brief  Right-to-left striding of multi-indices
+ *         (C or lexigraphical scheme).
+ */
+struct LayoutRight { typedef LayoutRight array_layout ; };
 
-  static int m_memory_view_tracking ;
+} /* namespace KokkosArray */
 
-public:
-
-  typedef size_t size_type ;
-
-  static void * allocate( const std::string    & label ,
-                          const std::type_info & value_type ,
-                          const size_t           value_size ,
-                          const size_t           value_count );
-
-  static void increment( const void * );
-
-  static void decrement( const void * );
-
-  static void print_memory_view( std::ostream & );
-
-  /*--------------------------------*/
-
-  static void disable_memory_view_tracking();
-  static void enable_memory_view_tracking();
-
-  /*--------------------------------*/
-
-  static 
-  size_t preferred_alignment( size_t value_size , size_t value_count );
-};
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-} // namespace Impl
-} // namespace KokkosArray
-
-#endif /* #define KOKKOSARRAY_HOSTMEMORYSPACE_HPP */
+#endif /* #ifndef KOKKOSARRAY_LAYOUT_HPP */
 

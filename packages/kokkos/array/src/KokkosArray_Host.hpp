@@ -45,8 +45,10 @@
 #define KOKKOS_HOST_HPP
 
 #include <cstddef>
-#include <impl/KokkosArray_IndexMap.hpp>
+#include <KokkosArray_Layout.hpp>
 #include <Host/KokkosArray_Host_MemorySpace.hpp>
+
+#include <impl/KokkosArray_IndexMap.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -75,6 +77,7 @@ public:
 
 
   typedef Impl::HostMemorySpace  memory_space_new ;
+  typedef LayoutRight            array_layout ;
 
 
   //@}
@@ -192,6 +195,11 @@ template<> struct HostMapped<Host> { typedef Host type ; };
 
 //----------------------------------------------------------------------------
 /* Partial specializations for optional data structures */
+
+#if   defined( KOKKOS_VIEW_HPP ) && \
+    ! defined( KOKKOS_HOST_VIEW_HPP )
+#include <Host/KokkosArray_Host_View.hpp>
+#endif
 
 #if   defined( KOKKOS_VALUE_HPP ) && \
     ! defined( KOKKOS_HOST_VALUE_HPP )

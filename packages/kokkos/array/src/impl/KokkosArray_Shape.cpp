@@ -41,58 +41,69 @@
 //@HEADER
 */
 
-#ifndef KOKKOSARRAY_HOSTMEMORYSPACE_HPP
-#define KOKKOSARRAY_HOSTMEMORYSPACE_HPP
 
-#include <iosfwd>
-#include <typeinfo>
-#include <string>
+#include <sstream>
+#include <stdexcept>
+#include <impl/KokkosArray_Shape.hpp>
 
-#include <impl/KokkosArray_forward.hpp>
-
-/*--------------------------------------------------------------------------*/
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 namespace KokkosArray {
 namespace Impl {
 
-/** \brief  Memory management on the host for devices */
+void assert_shapes_are_equal_throw(
+  const std::type_info & x_layout ,
+  const std::type_info & x_value_type ,
+  const unsigned x_rank , const unsigned x_stride ,
+  const unsigned x_N0 , const unsigned x_N1 ,
+  const unsigned x_N2 , const unsigned x_N3 ,
+  const unsigned x_N4 , const unsigned x_N5 ,
+  const unsigned x_N6 , const unsigned x_N7 ,
 
-class HostMemorySpace {
-public:
+  const std::type_info & y_layout ,
+  const std::type_info & y_value_type ,
+  const unsigned y_rank , const unsigned y_stride ,
+  const unsigned y_N0 , const unsigned y_N1 ,
+  const unsigned y_N2 , const unsigned y_N3 ,
+  const unsigned y_N4 , const unsigned y_N5 ,
+  const unsigned y_N6 , const unsigned y_N7 )
+{
+  std::ostringstream msg ;
 
-  static int m_memory_view_tracking ;
+  msg << "KokkosArray::Impl::assert_shape_are_equal_throw( {"
+      << " layout(" << x_layout.name()
+      << ") value(" << x_value_type.name()
+      << ") rank(" << x_rank
+      << ") stride(" << x_stride
+      << ") dimension("
+      << " " << x_N0
+      << " " << x_N1
+      << " " << x_N2
+      << " " << x_N3
+      << " " << x_N4
+      << " " << x_N5
+      << " " << x_N6
+      << " " << x_N7
+      << " ) } != { "
+      << " layout(" << y_layout.name()
+      << ") value(" << y_value_type.name()
+      << ") rank(" << y_rank
+      << ") stride(" << y_stride
+      << ") dimension("
+      << " " << y_N0
+      << " " << y_N1
+      << " " << y_N2
+      << " " << y_N3
+      << " " << y_N4
+      << " " << y_N5
+      << " " << y_N6
+      << " " << y_N7
+      << " ) } )" ;
 
-public:
+  throw std::runtime_error( msg.str() );
+}
 
-  typedef size_t size_type ;
-
-  static void * allocate( const std::string    & label ,
-                          const std::type_info & value_type ,
-                          const size_t           value_size ,
-                          const size_t           value_count );
-
-  static void increment( const void * );
-
-  static void decrement( const void * );
-
-  static void print_memory_view( std::ostream & );
-
-  /*--------------------------------*/
-
-  static void disable_memory_view_tracking();
-  static void enable_memory_view_tracking();
-
-  /*--------------------------------*/
-
-  static 
-  size_t preferred_alignment( size_t value_size , size_t value_count );
-};
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-} // namespace Impl
-} // namespace KokkosArray
-
-#endif /* #define KOKKOSARRAY_HOSTMEMORYSPACE_HPP */
+}
+}
 

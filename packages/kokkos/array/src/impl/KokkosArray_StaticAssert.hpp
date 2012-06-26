@@ -62,6 +62,15 @@ struct StaticAssertSame ;
 template < class A >
 struct StaticAssertSame<A,A> { typedef A type ; };
 
+template < class A , class B >
+struct StaticAssertAssignable ;
+
+template < class A >
+struct StaticAssertAssignable<A,A> { typedef A type ; };
+
+template < class A >
+struct StaticAssertAssignable< const A , A > { typedef const A type ; };
+
 } // namespace Impl
 } // namespace KokkosArray
 

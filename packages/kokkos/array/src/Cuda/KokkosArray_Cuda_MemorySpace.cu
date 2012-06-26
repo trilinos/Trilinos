@@ -46,8 +46,9 @@
 #include <stdexcept>
 #include <sstream>
 
-#include <KokkosArray_Host.hpp>
-#include <Host/KokkosArray_Host_MemorySpace.hpp>
+#include <KokkosArray_Cuda.hpp>
+#include <Cuda/KokkosArray_Cuda_MemorySpace.hpp>
+#include <Cuda/KokkosArray_Cuda_Internal.hpp>
 #include <impl/KokkosArray_MemoryTracking.hpp>
 
 /*--------------------------------------------------------------------------*/
@@ -57,30 +58,30 @@ namespace Impl {
 
 namespace {
 
-class HostMemoryImpl {
+class CudaMemoryImpl {
 public:
   MemoryTracking m_allocations ;
 
-  HostMemoryImpl();
-  ~HostMemoryImpl();
+  CudaMemoryImpl();
+  ~CudaMemoryImpl();
 
-  static HostMemoryImpl & singleton();
+  static CudaMemoryImpl & singleton();
 };
 
-HostMemoryImpl::HostMemoryImpl()
+CudaMemoryImpl::CudaMemoryImpl()
   : m_allocations()
 {}
 
-HostMemoryImpl & HostMemoryImpl::singleton()
+CudaMemoryImpl & CudaMemoryImpl::singleton()
 {
-  static HostMemoryImpl self ;
+  static CudaMemoryImpl self ;
   return self ;
 }
 
-HostMemoryImpl::~HostMemoryImpl()
+CudaMemoryImpl::~CudaMemoryImpl()
 {
   if ( ! m_allocations.empty() ) {
-    std::cerr << "KokkosArray::Host memory leaks:" << std::endl ;
+    std::cerr << "KokkosArray::Cuda memory leaks:" << std::endl ;
     m_allocations.print( std::cerr , std::string("  ") );
   }
 }
@@ -89,19 +90,50 @@ HostMemoryImpl::~HostMemoryImpl()
 
 /*--------------------------------------------------------------------------*/
 
-void * HostMemorySpace::allocate(
+void CudaMemorySpace::copy_to_device_from_device(
+  void * dst, void * src, size_t n )
+{
+  CUDA_SAFE_CALL( cudaMemcpy( dst , src , n , cudaMemcpyDefault ) );
+}
+
+void CudaMemorySpace::copy_to_device_from_host(
+  void * dst, void * src, size_t n )
+{
+  CUDA_SAFE_CALL( cudaMemcpy( dst , src , n , cudaMemcpyDefault ) );
+}
+
+void CudaMemorySpace::copy_to_host_from_device(
+  void * dst, void * src, size_t n )
+{
+  CUDA_SAFE_CALL( cudaMemcpy( dst , src , n , cudaMemcpyDefault ) );
+}
+
+
+
+/*--------------------------------------------------------------------------*/
+
+void * CudaMemorySpace::allocate(
   const std::string    & label ,
   const std::type_info & value_type ,
   const size_t           value_size ,
   const size_t           value_count )
 {
-  HostMemoryImpl & s = HostMemoryImpl::singleton();
+  CudaMemoryImpl & s = CudaMemoryImpl::singleton();
 
-  void * const ptr = malloc( value_size * value_count );
+  const size_t size = value_size * value_count ;
 
-  if ( 0 == ptr ) {
+  void * ptr = 0 ;
+
+  bool ok = true ;
+
+  if ( ok ) ok = cudaSuccess == cudaMalloc( & ptr , size );
+  if ( ok ) ok = 0 != ptr ;
+  if ( ok ) ok = cudaSuccess == cudaMemset( ptr , 0 , size );
+  if ( ok ) ok = cudaSuccess == cudaThreadSynchronize();
+
+  if ( ! ok ) {
     std::ostringstream msg ;
-    msg << "KokkosArray::Impl::HostMemorySpace::allocate( "
+    msg << "KokkosArray::Impl::CudaMemorySpace::allocate( "
         << label
         << " , " << value_type.name()
         << " , " << value_size
@@ -115,68 +147,76 @@ void * HostMemorySpace::allocate(
   return ptr ;
 }
 
-void HostMemorySpace::increment( const void * ptr )
+#if ! defined( __CUDA_ARCH__ )
+
+void CudaMemorySpace::increment( const void * ptr )
 {
   if ( 0 != ptr && m_memory_view_tracking ) {
-    HostMemoryImpl & s = HostMemoryImpl::singleton();
+    CudaMemoryImpl & s = CudaMemoryImpl::singleton();
 
-    (void) s.m_allocations.increment( ptr );
+    s.m_allocations.increment( ptr );
   }
 }
 
-void HostMemorySpace::decrement( const void * ptr )
+void CudaMemorySpace::decrement( const void * ptr )
 {
   if ( 0 != ptr && m_memory_view_tracking ) {
-    HostMemoryImpl & s = HostMemoryImpl::singleton();
+
+    CudaMemoryImpl & s = CudaMemoryImpl::singleton();
 
     MemoryTracking::Info info = s.m_allocations.decrement( ptr );
 
     if ( 0 == info.count ) {
-      free( const_cast<void*>( info.begin ) );
+      const bool failed =
+        cudaSuccess != cudaFree( const_cast<void*>( info.begin ) );
+
+      if ( failed ) {
+        std::string msg("KokkosArray::Impl::CudaMemorySpace::decrement() failed cudaFree");
+        throw std::runtime_error( msg );
+      }
     }
   }
 }
 
-void HostMemorySpace::print_memory_view( std::ostream & o )
+#endif
+
+void CudaMemorySpace::print_memory_view( std::ostream & o )
 {
-  HostMemoryImpl & s = HostMemoryImpl::singleton();
+  CudaMemoryImpl & s = CudaMemoryImpl::singleton();
 
   s.m_allocations.print( o , std::string("  ") );
 }
 
 
-size_t HostMemorySpace::preferred_alignment(
+size_t CudaMemorySpace::preferred_alignment(
   size_t value_size , size_t value_count )
 {
-  const size_t page = Host::detect_memory_page_size();
-  if ( 0 == page % value_size ) {
-    const size_t align = page / value_size ;
-    const size_t rem   = value_count % align ;
-    if ( rem ) value_count += align - rem ;
-  }
+  const size_t align = ( Impl::CudaTraits::WarpSize * value_size ) / sizeof(Cuda::size_type);
+  const size_t rem = value_count % align ;
+  if ( rem ) value_count += align - rem ;
   return value_count ;
 }
 
 /*--------------------------------------------------------------------------*/
 
-int HostMemorySpace::m_memory_view_tracking = true ;
+int CudaMemorySpace::m_memory_view_tracking = true ;
 
-void HostMemorySpace::disable_memory_view_tracking()
+void CudaMemorySpace::disable_memory_view_tracking()
 {
   if ( ! m_memory_view_tracking ) {
     std::string msg ;
-    msg.append( "KokkosArray::Impl::HostMemory::disable_memory_view_tracking ");
+    msg.append( "KokkosArray::Impl::CudaMemory::disable_memory_view_tracking ");
     msg.append( " FAILED memory_view_tracking already disabled" );
     throw std::runtime_error( msg );
   }
   m_memory_view_tracking = false ;
 }
 
-void HostMemorySpace::enable_memory_view_tracking()
+void CudaMemorySpace::enable_memory_view_tracking()
 {
   if ( m_memory_view_tracking ) {
     std::string msg ;
-    msg.append( "KokkosArray::Impl::HostMemory::enable_memory_view_tracking ");
+    msg.append( "KokkosArray::Impl::CudaMemory::enable_memory_view_tracking ");
     msg.append( " FAILED memory_view_tracking already enabled" );
     throw std::runtime_error( msg );
   }

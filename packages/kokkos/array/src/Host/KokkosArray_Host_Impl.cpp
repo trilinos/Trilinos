@@ -176,8 +176,6 @@ bool HostInternal::initialize_thread(
     thread.m_fan_count = fan_count ;
   }
 
-  m_thread[ thread_rank ] = & thread ;
-
   return true ;
 }
 
@@ -186,14 +184,6 @@ bool HostInternal::bind_thread(
 {
   (void) thread_rank; // Prevent compiler warning for unused argument
   return true ;
-}
-
-void HostInternal::clear_thread( const HostThread::size_type thread_rank )
-{
-  m_thread[ thread_rank ] = 0 ;
-
-  // Inform master thread:
-  m_master_thread.set( HostThread::ThreadTerminating );
 }
 
 //----------------------------------------------------------------------------
@@ -244,6 +234,8 @@ void HostInternal::driver( const size_t thread_rank )
 
     HostThread this_thread ;
 
+    m_thread[ thread_rank ] = & this_thread ;
+
     // Initialize thread ranks and fan-in relationships:
 
     if ( initialize_thread( thread_rank , this_thread ) ) {
@@ -282,9 +274,11 @@ void HostInternal::driver( const size_t thread_rank )
     }
   }
 
-  // Notify master process that thread has terminated:
+  // Notify master thread that this thread has terminated.
 
-  clear_thread( thread_rank );
+  m_thread[ thread_rank ] = 0 ;
+
+  m_master_thread.set( HostThread::ThreadTerminating );
 }
 
 //----------------------------------------------------------------------------
@@ -342,7 +336,9 @@ bool HostInternal::spawn_threads( const size_type gang_count ,
       ok_spawn_threads = HostThread::ThreadActive == m_master_thread.m_state ;
 
       if ( ok_spawn_threads ) { // Wait for spawned thread to deactivate
-        m_thread[ rank ]->wait( HostThread::ThreadActive );
+        HostThread * volatile * const threads = m_thread ;
+        threads[ rank ]->wait( HostThread::ThreadActive );
+        // m_thread[ rank ]->wait( HostThread::ThreadActive );
       }
     }
   }

@@ -45,6 +45,7 @@
 #define KOKKOSARRAY_MEMORY_TRACKING_HPP
 
 #include <cstddef>
+#include <utility>
 #include <vector>
 #include <string>
 #include <typeinfo>
@@ -58,24 +59,25 @@ public:
 
   struct Info {
     std::string            label ;
-    const void           * ptr ;
+    const void           * begin ;
+    const void           * end ;
     const std::type_info * type ;
     size_t                 size ;
     size_t                 length ;
     size_t                 count ;
 
     Info()
-    : label(), ptr(0), type(0)
+    : label(), begin(0), end(0), type(0)
     , size(0), length(0), count(0)
     {}
 
     Info( const Info & rhs )
-    : label(rhs.label), ptr(rhs.ptr), type(rhs.type)
+    : label(rhs.label), begin(rhs.begin), end(rhs.end), type(rhs.type)
     , size(rhs.size), length(rhs.length), count(rhs.count)
     {}
 
     Info & operator = ( const Info & rhs )
-    { label = rhs.label ; ptr = rhs.ptr ; type = rhs.type ;
+    { label = rhs.label ; begin = rhs.begin ; end = rhs.end ; type = rhs.type ;
       size  = rhs.size ;  length = rhs.length ; count = rhs.count ;
       return *this ;
     }
@@ -98,13 +100,13 @@ public:
   /** \brief  Increment the tracking count.
    *          Return the post-incremented count.
    */
-  size_t increment( const void * ptr );
+  Info increment( const void * ptr );
 
   /** \brief  Decrement the tracking count.
    *          Return the post-decremented count.
    *          If zero then the entry is deleted.
    */
-  size_t decrement( const void * ptr );
+  Info decrement( const void * ptr );
 
   /** \brief  Query a tracked pointer */
   Info query( const void * ptr ) const ;

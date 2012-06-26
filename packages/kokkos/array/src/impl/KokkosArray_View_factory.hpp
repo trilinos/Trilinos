@@ -41,11 +41,11 @@
 //@HEADER
 */
 
-#ifndef KOKKOS_IMPL_ARRAY_FACTORY_HPP
-#define KOKKOS_IMPL_ARRAY_FACTORY_HPP
+#ifndef KOKKOS_IMPL_VIEW_FACTORY_HPP
+#define KOKKOS_IMPL_VIEW_FACTORY_HPP
 
-#include <vector>
-#include <impl/KokkosArray_MemoryView.hpp>
+#include <impl/KokkosArray_StaticAssert.hpp>
+#include <impl/KokkosArray_ArrayTraits.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -54,196 +54,184 @@ namespace KokkosArray {
 
 template< class ViewType >
 inline
-ViewType create( const std::string & label )
+View< typename ViewType::data_type ,
+      typename ViewType::layout_spec ,
+      typename ViewType::device_type >
+create( const std::string & label )
 {
-  typename StaticAssertSame<
-             ViewType ,
-             View< typename ViewType::data_type ,
-                   typename ViewType::layout_spec ,
-                   typename ViewType::device_type > >::type view_type ;
+  typedef View< typename ViewType::data_type ,
+                typename ViewType::layout_spec ,
+                typename ViewType::device_type > view_type ;
 
   return Impl::Factory< view_type , void >::create( label );
 }
 
 template< class ViewType >
 inline
-ViewType create( const std::string & label , const size_t n0 )
+View< typename ViewType::data_type ,
+      typename ViewType::layout_spec ,
+      typename ViewType::device_type >
+create( const std::string & label , const size_t n0 )
 {
-  typename StaticAssertSame<
-             ViewType ,
-             View< typename ViewType::data_type ,
-                   typename ViewType::layout_spec ,
-                   typename ViewType::device_type > >::type view_type ;
+  typedef View< typename ViewType::data_type ,
+                typename ViewType::layout_spec ,
+                typename ViewType::device_type > view_type ;
 
-  return Impl::Factory< view_type , unsigned<1> >::create( label , n0 );
+  return Impl::Factory< view_type , Impl::unsigned_<1> >::create( label , n0 );
 }
 
 template< class ViewType >
 inline
-ViewType create( const std::string & label , const size_t n0 , 
-                                             const size_t n1 )
+View< typename ViewType::data_type ,
+      typename ViewType::layout_spec ,
+      typename ViewType::device_type >
+create( const std::string & label , const size_t n0 , const size_t n1 )
 {
-  typename StaticAssertSame<
-             ViewType ,
-             View< typename ViewType::data_type ,
-                   typename ViewType::layout_spec ,
-                   typename ViewType::device_type > >::type view_type ;
+  typedef View< typename ViewType::data_type ,
+                typename ViewType::layout_spec ,
+                typename ViewType::device_type > view_type ;
 
-  return Impl::Factory< view_type , unsigned<2> >
+  return Impl::Factory< view_type , Impl::unsigned_<2> >
     ::create( label , n0 , n1 );
 }
 
 template< class ViewType >
 inline
-ViewType create( const std::string & label , const size_t n0 , 
-                                             const size_t n1 ,
-                                             const size_t n2 )
+View< typename ViewType::data_type ,
+      typename ViewType::layout_spec ,
+      typename ViewType::device_type >
+create( const std::string & label , const size_t n0 , const size_t n1 ,
+                                    const size_t n2 )
 {
-  typename StaticAssertSame<
-             ViewType ,
-             View< typename ViewType::data_type ,
-                   typename ViewType::layout_spec ,
-                   typename ViewType::device_type > >::type view_type ;
+  typedef View< typename ViewType::data_type ,
+                typename ViewType::layout_spec ,
+                typename ViewType::device_type > view_type ;
 
-  return Impl::Factory< view_type , unsigned<3> >
+  return Impl::Factory< view_type , Impl::unsigned_<3> >
     ::create( label , n0 , n1 , n2 );
 }
 
 template< class ViewType >
 inline
-ViewType create( const std::string & label , const size_t n0 , 
-                                             const size_t n1 ,
-                                             const size_t n2 ,
-                                             const size_t n3 )
+View< typename ViewType::data_type ,
+      typename ViewType::layout_spec ,
+      typename ViewType::device_type >
+create( const std::string & label , const size_t n0 , const size_t n1 ,
+                                    const size_t n2 , const size_t n3 )
 {
-  typename StaticAssertSame<
-             ViewType ,
-             View< typename ViewType::data_type ,
-                   typename ViewType::layout_spec ,
-                   typename ViewType::device_type > >::type view_type ;
+  typedef View< typename ViewType::data_type ,
+                typename ViewType::layout_spec ,
+                typename ViewType::device_type > view_type ;
 
-  return Impl::Factory< view_type , unsigned<4> >
+  return Impl::Factory< view_type , Impl::unsigned_<4> >
     ::create( label , n0 , n1 , n2 , n3 );
 }
 
 template< class ViewType >
 inline
-ViewType create( const std::string & label , const size_t n0 , 
-                                             const size_t n1 ,
-                                             const size_t n2 ,
-                                             const size_t n3 ,
-                                             const size_t n4 )
+View< typename ViewType::data_type ,
+      typename ViewType::layout_spec ,
+      typename ViewType::device_type >
+create( const std::string & label , const size_t n0 , const size_t n1 ,
+                                    const size_t n2 , const size_t n3 ,
+                                    const size_t n4 )
 {
-  typename StaticAssertSame<
-             ViewType ,
-             View< typename ViewType::data_type ,
-                   typename ViewType::layout_spec ,
-                   typename ViewType::device_type > >::type view_type ;
+  typedef View< typename ViewType::data_type ,
+                typename ViewType::layout_spec ,
+                typename ViewType::device_type > view_type ;
 
-  return Impl::Factory< view_type , unsigned<5> >
+  return Impl::Factory< view_type , Impl::unsigned_<5> >
     ::create( label , n0 , n1 , n2 , n3 , n4 );
 }
 
 template< class ViewType >
 inline
-ViewType create( const std::string & label , const size_t n0 , 
-                                             const size_t n1 ,
-                                             const size_t n2 ,
-                                             const size_t n3 ,
-                                             const size_t n4 ,
-                                             const size_t n5 )
+View< typename ViewType::data_type ,
+      typename ViewType::layout_spec ,
+      typename ViewType::device_type >
+create( const std::string & label , const size_t n0 , const size_t n1 ,
+                                    const size_t n2 , const size_t n3 ,
+                                    const size_t n4 , const size_t n5 )
 {
-  typename StaticAssertSame<
-             ViewType ,
-             View< typename ViewType::data_type ,
-                   typename ViewType::layout_spec ,
-                   typename ViewType::device_type > >::type view_type ;
+  typedef View< typename ViewType::data_type ,
+                typename ViewType::layout_spec ,
+                typename ViewType::device_type > view_type ;
 
-  return Impl::Factory< view_type , unsigned<6> >
+  return Impl::Factory< view_type , Impl::unsigned_<6> >
     ::create( label , n0 , n1 , n2 , n3 , n4 , n5 );
 }
 
 template< class ViewType >
 inline
-ViewType create( const std::string & label , const size_t n0 , 
-                                             const size_t n1 ,
-                                             const size_t n2 ,
-                                             const size_t n3 ,
-                                             const size_t n4 ,
-                                             const size_t n5 ,
-                                             const size_t n6 )
+View< typename ViewType::data_type ,
+      typename ViewType::layout_spec ,
+      typename ViewType::device_type >
+create( const std::string & label , const size_t n0 , const size_t n1 ,
+                                    const size_t n2 , const size_t n3 ,
+                                    const size_t n4 , const size_t n5 ,
+                                    const size_t n6 )
 {
-  typename StaticAssertSame<
-             ViewType ,
-             View< typename ViewType::data_type ,
-                   typename ViewType::layout_spec ,
-                   typename ViewType::device_type > >::type view_type ;
+  typedef View< typename ViewType::data_type ,
+                typename ViewType::layout_spec ,
+                typename ViewType::device_type > view_type ;
 
-  return Impl::Factory< view_type , unsigned<7> >
+  return Impl::Factory< view_type , Impl::unsigned_<7> >
     ::create( label , n0 , n1 , n2 , n3 , n4 , n5 , n6 );
 }
 
 template< class ViewType >
 inline
-ViewType create( const std::string & label , const size_t n0 , 
-                                             const size_t n1 ,
-                                             const size_t n2 ,
-                                             const size_t n3 ,
-                                             const size_t n4 ,
-                                             const size_t n5 ,
-                                             const size_t n6 ,
-                                             const size_t n7 )
+View< typename ViewType::data_type ,
+      typename ViewType::layout_spec ,
+      typename ViewType::device_type >
+create( const std::string & label , const size_t n0 , const size_t n1 ,
+                                    const size_t n2 , const size_t n3 ,
+                                    const size_t n4 , const size_t n5 ,
+                                    const size_t n6 , const size_t n7 )
 {
-  typename StaticAssertSame<
-             ViewType ,
-             View< typename ViewType::data_type ,
-                   typename ViewType::layout_spec ,
-                   typename ViewType::device_type > >::type view_type ;
+  typedef View< typename ViewType::data_type ,
+                typename ViewType::layout_spec ,
+                typename ViewType::device_type > view_type ;
 
-  return Impl::Factory< view_type , unsigned<8> >
+  return Impl::Factory< view_type , Impl::unsigned_<8> >
     ::create( label , n0 , n1 , n2 , n3 , n4 , n5 , n6 , n7 );
 }
 
 //----------------------------------------------------------------------------
 
-template< class DataType ,
-          class LayoutDst , class DeviceDst ,
-          class LayoutSrc , DeviceSrc >
+template< class DataTypeDst , class LayoutDst , class DeviceDst ,
+          class DataTypeSrc , class LayoutSrc , class DeviceSrc >
 inline
-void deep_copy( const View<DataType,LayoutDst,DeviceDst> & dst ,
-                const View<DataType,LayoutSrc,DeviceSrc> & src )
+void deep_copy( const View<DataTypeDst,LayoutDst,DeviceDst> & dst ,
+                const View<DataTypeSrc,LayoutSrc,DeviceSrc> & src )
 {
-  typedef View<DataType,LayoutDst,DeviceDst> dst_type ;
-  typedef View<DataType,LayoutSrc,DeviceSrc> src_type ;
+  typedef View<DataTypeDst,LayoutDst,DeviceDst> dst_type ;
+  typedef View<DataTypeSrc,LayoutSrc,DeviceSrc> src_type ;
 
-  if ( dst.operator!=(src) ) {
-
-    Impl::array_require_equal_dimension( dst.dimension(0) , src.dimension(0) );
-
-    Impl::Factory< dst_type , src_type >::deep_copy( dst , src );
-  }
+  Impl::Factory< dst_type , src_type >::deep_copy( dst , src );
 }
 
 } /* namespace KokkosArray */
 
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 namespace KokkosArray {
 namespace Impl {
 
-template< class ArrayType , class DeviceOutput >
-struct Factory< Array< ArrayType , DeviceOutput > , MirrorUseView >
+template< class DataType , class LayoutSpec , class DeviceOutput >
+struct Factory< View< DataType , LayoutSpec , DeviceOutput > , MirrorUseView >
 {
-  typedef Array< ArrayType , DeviceOutput > output_type ;
+  typedef View< DataType , LayoutSpec , DeviceOutput > output_type ;
 
   static inline
   const output_type & create( const output_type & input ) { return input ; }
 
   template< class DeviceInput >
   static inline
-  output_type create( const Array< ArrayType , DeviceInput > & input )
+  output_type create( const View< DataType, LayoutSpec, DeviceInput > & input )
   {
-    typedef Array< ArrayType , DeviceInput > input_type ;
+    typedef View< DataType , LayoutSpec , DeviceInput > input_type ;
     return Factory< output_type , input_type >::create( input );
   }
 };
@@ -254,5 +242,5 @@ struct Factory< Array< ArrayType , DeviceOutput > , MirrorUseView >
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#endif /* #ifndef KOKKOS_IMPL_ARRAY_FACTORY_HPP */
+#endif /* #ifndef KOKKOS_IMPL_VIEW_FACTORY_HPP */
 

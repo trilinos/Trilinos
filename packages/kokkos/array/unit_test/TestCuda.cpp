@@ -62,6 +62,8 @@ protected:
   }
 };
 
+extern void test_device_cuda_view_impl();
+extern void test_device_cuda_view_api();
 extern void test_device_cuda_memory_management();
 extern void test_device_cuda_value();
 extern void test_device_cuda_multi_vector();
@@ -71,6 +73,16 @@ extern void test_device_cuda_array();
 extern void test_device_cuda_index_map();
 extern void test_device_cuda_reduce();
 extern void test_device_cuda_multi_reduce();
+
+TEST_F( cuda, view_impl )
+{
+  test_device_cuda_view_impl();
+}
+
+TEST_F( cuda, view_api )
+{
+  test_device_cuda_view_api();
+}
 
 TEST_F( cuda, memory_management )
 {

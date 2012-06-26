@@ -58,17 +58,17 @@
 //----------------------------------------------------------------------------
 
 #include <KokkosArray_Host_macros.hpp>
-#include <impl/KokkosArray_Layout_macros.hpp>
-#include <impl/KokkosArray_View_macros.hpp>
 #include <impl/KokkosArray_IndexMapLeft_macros.hpp>
 #include <KokkosArray_Clear_macros.hpp>
 
 //----------------------------------------------------------------------------
 
-#include <TestArrayImpl.hpp>
+#include <TestViewImpl.hpp>
 
 #include <KokkosArray_Host_macros.hpp>
 #include <TestMemoryTracking.hpp>
+#include <TestViewAPI.hpp>
+
 #include <TestMemoryManagement.hpp>
 #include <TestValue.hpp>
 #include <TestMultiVector.hpp>
@@ -88,10 +88,12 @@ protected:
   static void SetUpTestCase()
   {
     const size_t node_count = KokkosArray::Host::detect_node_count();
+/*
     const size_t node_core_count = KokkosArray::Host::detect_node_core_count();
     std::cout << "KokkosArray::Host node_count(" << node_count
               << ") X node_core_count(" << node_core_count
               << ")" << std::endl ;
+*/
     KokkosArray::Host::initialize( node_count , 2 );
   }
 
@@ -105,9 +107,14 @@ TEST_F( host, memory_tracking) {
   TestMemoryTracking();
 }
 
-TEST_F( host, array_impl) {
-  test_array_impl();
+TEST_F( host, view_impl) {
+  test_view_impl< KokkosArray::Host >();
 }
+
+TEST_F( host, view_api) {
+  TestViewAPI< double , KokkosArray::Host >();
+}
+
 
 TEST_F( host, memory_management_double) {
   TestMemoryManagement< double, KokkosArray::Host >();

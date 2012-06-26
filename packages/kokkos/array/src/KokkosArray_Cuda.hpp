@@ -44,6 +44,9 @@
 #ifndef KOKKOS_CUDA_HPP
 #define KOKKOS_CUDA_HPP
 
+#include <KokkosArray_Layout.hpp>
+#include <Cuda/KokkosArray_Cuda_MemorySpace.hpp>
+
 #include <impl/KokkosArray_IndexMap.hpp>
 
 /*--------------------------------------------------------------------------*/
@@ -73,6 +76,11 @@ public:
   struct IndexMap {
     typedef Impl::IndexMapLeft<memory_space,Rank,N1,N2,N3,N4,N5,N6,N7> type ;
   };
+
+  typedef Impl::CudaMemorySpace  memory_space_new ;
+  typedef LayoutLeft             array_layout ;
+
+  //--------------------------------------------------------------------------
 
   struct SelectDevice {
     int cuda_device_id ;
@@ -141,6 +149,11 @@ public:
 
 //----------------------------------------------------------------------------
 /* Partial specializations for optional data structures */
+
+#if   defined( KOKKOS_VIEW_HPP ) && \
+    ! defined( KOKKOS_CUDA_VIEW_HPP )
+#include <Cuda/KokkosArray_Cuda_View.hpp>
+#endif
 
 #if   defined( KOKKOS_MULTIVECTOR_HPP ) && \
     ! defined( KOKKOS_CUDA_MULTIVECTOR_HPP )

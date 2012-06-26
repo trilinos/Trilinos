@@ -49,18 +49,23 @@
 
 namespace KokkosArray {
 namespace Impl {
+namespace {
+
+bool contains( const MemoryTracking::Info & block ,
+               const void * const ptr )
+{
+  return block.begin <= ptr && ptr < block.end ;
+}
+
+} // namespace
 
 struct LessMemoryTrackingInfo {
 
   LessMemoryTrackingInfo() {}
 
   bool operator()( const MemoryTracking::Info & lhs ,
-                   const MemoryTracking::Info & rhs ) const
-  { return lhs.ptr < rhs.ptr ; }
-
-  bool operator()( const MemoryTracking::Info & lhs ,
                    const void * const rhs_ptr ) const
-  { return lhs.ptr < rhs_ptr ; }
+  { return lhs.end < rhs_ptr ; }
 };
 
 void MemoryTracking::track(
@@ -75,7 +80,7 @@ void MemoryTracking::track(
   std::vector<Info>::iterator i =
     std::lower_bound( m_tracking.begin() , m_tracking.end() , ptr , compare );
 
-  if ( i != m_tracking.end() && i->ptr == ptr ) {
+  if ( i != m_tracking.end() && contains( *i , ptr ) ) {
     std::ostringstream msg ;
     msg << "MemoryTracking::track( "
         << "ptr(" << ptr << ") ,"
@@ -84,6 +89,8 @@ void MemoryTracking::track(
         << "length(" << length << ") ,"
         << "label(" << label << ") )"
         << " ERROR, already exists as { "
+        << "begin(" << i->begin << ") ,"
+        << "end(" << i->end << ") ,"
         << "typeid(" << i->type->name() << ") ,"
         << "size(" << i->size << ") ,"
         << "length(" << i->length << ") ,"
@@ -94,41 +101,46 @@ void MemoryTracking::track(
 
   Info info ;
 
-  info.ptr    = ptr ;
+  info.label  = label ;
+  info.begin  = ptr ;
+  info.end    = ((const char *)ptr) + size * length ;
   info.type   = type ;
   info.size   = size ;
   info.length = length ;
-  info.label  = label ;
   info.count  = 1 ;
 
   m_tracking.insert( i , info );
 }
 
-size_t MemoryTracking::increment( const void * ptr )
+MemoryTracking::Info
+MemoryTracking::increment( const void * ptr )
 {
   const LessMemoryTrackingInfo compare ;
 
   std::vector<Info>::iterator i =
     std::lower_bound( m_tracking.begin() , m_tracking.end() , ptr , compare );
 
-  if ( i == m_tracking.end() || i->ptr != ptr ) {
+  if ( i == m_tracking.end() || ! contains( *i , ptr ) ) {
     std::ostringstream msg ;
     msg << "MemoryTracking::increment( "
         << "ptr(" << ptr << ") ) ERROR, not being tracked" ;
     throw std::runtime_error(msg.str());
   }
 
-  return ++( i->count );
+  ++( i->count );
+
+  return *i ;
 }
 
-size_t MemoryTracking::decrement( const void * ptr )
+MemoryTracking::Info
+MemoryTracking::decrement( const void * ptr )
 {
   const LessMemoryTrackingInfo compare ;
 
   std::vector<Info>::iterator i =
     std::lower_bound( m_tracking.begin() , m_tracking.end() , ptr , compare );
 
-  if ( i == m_tracking.end() || i->ptr != ptr ) {
+  if ( i == m_tracking.end() || ! contains( *i , ptr ) ) {
     std::ostringstream msg ;
     msg << "MemoryTracking::decrement( "
         << "ptr(" << ptr << ") ) ERROR, not being tracked" ;
@@ -138,10 +150,13 @@ size_t MemoryTracking::decrement( const void * ptr )
   const size_t count = --( i->count );
 
   if ( 0 == count ) {
+    Info entry = *i ;
     m_tracking.erase( i );
+    return entry ;
   }
-
-  return count ;
+  else {
+    return *i ;
+  }
 }
 
 MemoryTracking::Info
@@ -152,7 +167,7 @@ MemoryTracking::query( const void * ptr ) const
   std::vector<Info>::const_iterator i =
     std::lower_bound( m_tracking.begin() , m_tracking.end() , ptr , compare );
 
-  return ( i != m_tracking.end() && ptr == i->ptr ) ? *i : Info();
+  return ( i != m_tracking.end() && contains( *i , ptr ) ) ? *i : Info();
 }
 
 void MemoryTracking::print( std::ostream & s , const std::string & lead ) const
@@ -160,8 +175,9 @@ void MemoryTracking::print( std::ostream & s , const std::string & lead ) const
   for ( std::vector<Info>::const_iterator
         i = m_tracking.begin() ; i != m_tracking.end() ; ++i ) {
     s << lead
-      << "{ ptr(" << i->ptr << "), "
-      << "typeid(" << i->type->name() << "),"
+      << "{ begin(" << i->begin << "), "
+      << "end(" << i->end << "), "
+      << "typeid(" << i->type->name() << "), "
       << "size(" << i->size << "), "
       << "length(" << i->length << "), "
       << "label(" << i->label << "), "

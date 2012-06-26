@@ -89,8 +89,8 @@ public:
     ASSERT_TRUE( info.length == 10 );
     ASSERT_TRUE( info.count  == 1 );
 
-    ASSERT_TRUE( 2 == tracking.increment( & a ) );
-    ASSERT_TRUE( 3 == tracking.increment( & a ) );
+    ASSERT_TRUE( 2 == tracking.increment( & a ).count );
+    ASSERT_TRUE( 3 == tracking.increment( & a ).count );
 
     info = tracking.query( & a );
     ASSERT_TRUE( info.label  == std::string("a") );
@@ -106,17 +106,17 @@ public:
     ASSERT_TRUE( info.length == 1 );
     ASSERT_TRUE( info.count  == 1 );
     
-    ASSERT_TRUE( 0 == tracking.decrement( & b ) );
+    ASSERT_TRUE( 0 == tracking.decrement( & b ).count );
 
     info = tracking.query( & b );
     ASSERT_TRUE( info.label  == std::string() );
-    ASSERT_TRUE( info.ptr    == 0 );
+    ASSERT_TRUE( info.begin  == 0 );
     ASSERT_TRUE( info.type   == 0 );
     ASSERT_TRUE( info.size   == 0 );
     ASSERT_TRUE( info.length == 0 );
     ASSERT_TRUE( info.count  == 0 );
 
-    ASSERT_TRUE( 2 == tracking.decrement( & a ) );
+    ASSERT_TRUE( 2 == tracking.decrement( & a ).count );
 
     info = tracking.query( & a );
     ASSERT_TRUE( info.label  == std::string("a") );
@@ -125,18 +125,21 @@ public:
     ASSERT_TRUE( info.length == 1 );
     ASSERT_TRUE( info.count  == 2 );
     
-    ASSERT_TRUE( 1 == tracking.decrement( & a ) );
-    ASSERT_TRUE( 0 == tracking.decrement( & a ) );
+    ASSERT_TRUE( 1 == tracking.decrement( & a ).count );
+    ASSERT_TRUE( 0 == tracking.decrement( & a ).count );
 
     info = tracking.query( & a );
     ASSERT_TRUE( info.label  == std::string() );
-    ASSERT_TRUE( info.ptr    == 0 );
+    ASSERT_TRUE( info.begin  == 0 );
     ASSERT_TRUE( info.type   == 0 );
     ASSERT_TRUE( info.size   == 0 );
     ASSERT_TRUE( info.length == 0 );
     ASSERT_TRUE( info.count  == 0 );
 
-    ASSERT_TRUE( 0 == tracking.decrement( c ) );
+    ASSERT_EQ( 2u , tracking.increment( & c[2] ).count );
+    ASSERT_EQ( 1u , tracking.decrement( & c[3] ).count );
+
+    ASSERT_TRUE( 0 == tracking.decrement( c ).count );
     ASSERT_TRUE( tracking.empty() );
   }
 };

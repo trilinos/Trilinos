@@ -53,12 +53,18 @@
 #include <KokkosArray_PrefixSum.hpp>
 #include <KokkosArray_CrsArray.hpp>
 
+#include <KokkosArray_View.hpp>
+
 #include <KokkosArray_Host.hpp>
 #include <KokkosArray_Cuda.hpp>
 
 //----------------------------------------------------------------------------
 
+#include <TestViewImpl.hpp>
+
 #include <KokkosArray_Cuda_macros.hpp>
+
+#include <TestViewAPI.hpp>
 
 #include <impl/KokkosArray_IndexMapRight_macros.hpp>
 
@@ -81,6 +87,16 @@ namespace Test {
 
 void test_device_cuda_init() {
   KokkosArray::Cuda::initialize();
+}
+
+void test_device_cuda_view_impl()
+{
+  test_view_impl< KokkosArray::Cuda >();
+}
+
+void test_device_cuda_view_api()
+{
+  TestViewAPI< double , KokkosArray::Cuda >();
 }
 
 void test_device_cuda_memory_management() {

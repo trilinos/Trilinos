@@ -128,8 +128,6 @@ private:
 
   bool initialize_thread( const size_type thread_rank, HostThread & thread );
 
-  void clear_thread( const size_type thread_rank );
-
 public:
   /// \brief Assert at run time that the calling worker thread is inactive.
   ///

@@ -41,8 +41,8 @@
 //@HEADER
 */
 
-#ifndef KOKKOSARRAY_HOSTMEMORYSPACE_HPP
-#define KOKKOSARRAY_HOSTMEMORYSPACE_HPP
+#ifndef KOKKOSARRAY_CUDAMEMORYSPACE_HPP
+#define KOKKOSARRAY_CUDAMEMORYSPACE_HPP
 
 #include <iosfwd>
 #include <typeinfo>
@@ -57,7 +57,7 @@ namespace Impl {
 
 /** \brief  Memory management on the host for devices */
 
-class HostMemorySpace {
+class CudaMemorySpace {
 public:
 
   static int m_memory_view_tracking ;
@@ -71,9 +71,13 @@ public:
                           const size_t           value_size ,
                           const size_t           value_count );
 
+#if ! defined( __CUDA_ARCH__ )
   static void increment( const void * );
-
   static void decrement( const void * );
+#else
+  static __device__ void increment( const void * ) {}
+  static __device__ void decrement( const void * ) {}
+#endif
 
   static void print_memory_view( std::ostream & );
 
@@ -86,6 +90,12 @@ public:
 
   static 
   size_t preferred_alignment( size_t value_size , size_t value_count );
+
+  /*--------------------------------*/
+
+  static void copy_to_device_from_device( void * , void * , size_t );
+  static void copy_to_device_from_host(   void * , void * , size_t );
+  static void copy_to_host_from_device(   void * , void * , size_t );
 };
 
 //----------------------------------------------------------------------------
@@ -94,5 +104,5 @@ public:
 } // namespace Impl
 } // namespace KokkosArray
 
-#endif /* #define KOKKOSARRAY_HOSTMEMORYSPACE_HPP */
+#endif /* #define KOKKOSARRAY_CUDAMEMORYSPACE_HPP */
 

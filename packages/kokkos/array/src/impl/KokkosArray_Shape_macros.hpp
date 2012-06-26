@@ -45,22 +45,23 @@
     ! defined(KOKKOS_MACRO_DEVICE)                  || \
     ! defined(KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION)
 
-#error "Including <impl/KokkosArray_Layout_macros.hpp> without macros defined"
+#error "Including <impl/KokkosArray_Shape_macros.hpp> without macros defined"
 
 #else
 
-#include <impl/KokkosArray_Layout.hpp>
+#include <impl/KokkosArray_Shape.hpp>
 
 //----------------------------------------------------------------------------
 
 namespace KokkosArray {
 namespace Impl {
 
-template < class T >
-struct LayoutMap< Shape<T,Left> , KOKKOS_MACRO_DEVICE::memory_space_new >
+template < class T , unsigned RankDynamic , unsigned Rank >
+struct ShapeMap< Shape<LayoutLeft,T,RankDynamic,Rank> ,
+                 KOKKOS_MACRO_DEVICE::memory_space_new >
 {
   typedef KOKKOS_MACRO_DEVICE::memory_space_new::size_type size_type ;
-  typedef Shape<T,Left> shape_type ;
+  typedef Shape<LayoutLeft,T,RankDynamic,Rank> shape_type ;
 
   template < typename iType0 , typename iType1 >
   inline static KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
@@ -166,11 +167,12 @@ struct LayoutMap< Shape<T,Left> , KOKKOS_MACRO_DEVICE::memory_space_new >
 
 //----------------------------------------------------------------------------
 
-template < class T >
-struct LayoutMap< Shape<T,Right> , KOKKOS_MACRO_DEVICE::memory_space_new >
+template < class T , unsigned RankDynamic , unsigned Rank >
+struct ShapeMap< Shape<LayoutRight,T,RankDynamic,Rank> ,
+                 KOKKOS_MACRO_DEVICE::memory_space_new >
 {
   typedef KOKKOS_MACRO_DEVICE::memory_space_new::size_type size_type ;
-  typedef Shape<T,Right> shape_type ;
+  typedef Shape<LayoutRight,T,RankDynamic,Rank> shape_type ;
 
   template < typename iType0 , typename iType1 >
   inline static KOKKOS_MACRO_DEVICE_AND_HOST_FUNCTION
