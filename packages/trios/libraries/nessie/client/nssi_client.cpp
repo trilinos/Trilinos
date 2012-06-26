@@ -87,6 +87,8 @@ Questions? Contact Ron A. Oldfield (raoldfi@sandia.gov)
 extern NNTI_transport_t transports[NSSI_RPC_COUNT];
 extern nssi_config_t nssi_config;
 
+static nthread_counter_t request_count;
+
 extern trios_buffer_queue_t send_bq;
 extern trios_buffer_queue_t recv_bq;
 
@@ -116,6 +118,8 @@ client_init ()
     }
 
 //    register_service_encodings();
+
+    nthread_counter_init(&request_count);
 
     NSSI_REGISTER_CLIENT_STUB(NSSI_OP_GET_SERVICE, void, void, nssi_service);
     NSSI_REGISTER_CLIENT_STUB(NSSI_OP_KILL_SERVICE, nssi_kill_service_args, void, void);
@@ -587,7 +591,7 @@ cleanup:
         free(buf);
     }
 
-    log_debug(rpc_debug_level, "%llu: finished nssi_get_service (rc=%d)", nthread_self(), rc);
+    log_debug(rpc_debug_level, "finished nssi_get_service (rc=%d)", rc);
 
     return rc;
 }
@@ -1554,8 +1558,6 @@ int nssi_call_rpc(
         void *result,
         nssi_request *request)
 {
-    /* global counter that needs mutex protection */
-    static nthread_counter_t global_count = NTHREAD_COUNTER_INITIALIZER;
     long timeout = (10)*(DEFAULT_RPC_TIMEOUT);
 
     /* local count does not need protection */
@@ -1580,7 +1582,7 @@ int nssi_call_rpc(
     log_debug(rpc_debug_level, "entered nssi_call_rpc");
 
     /* increment global counter */
-    local_count = nthread_counter_increment(&global_count);
+    local_count = nthread_counter_increment(&request_count);
 
     /*------ Initialize variables and buffers ------*/
     memset(request, 0, sizeof(nssi_request));
