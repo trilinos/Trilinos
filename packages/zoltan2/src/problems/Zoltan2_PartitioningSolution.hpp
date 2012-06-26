@@ -111,12 +111,15 @@ public:
   ////////////////////////////////////////////////////////////////////
   // Information that the algorithm may wish to query.
   
-/*! \brief Returns the global number of parts.
+/*! \brief Returns the global number of parts desired in the solution.
  */
-  size_t getGlobalNumberOfParts() const { return nGlobalParts_; }
+  size_t getTargetGlobalNumberOfParts() const { return nGlobalParts_; }
   
-/*! \brief Returns the number of parts (or fraction of one part) to 
-            be assigned to this process.
+/*! \brief Returns the actual global number of parts provided in setParts().
+ */
+  size_t getActualGlobalNumberOfParts() const { return nGlobalPartsSolution_; }
+  
+/*! \brief Returns the number of parts to be assigned to this process.
  */
   size_t getLocalNumberOfParts() const { return nLocalParts_; }
   
@@ -385,9 +388,9 @@ private:
   RCP<const Comm<int> > comm_;             // the problem communicator
   RCP<const IdentifierMap<user_t> > idMap_;
 
-  gno_t nGlobalParts_; // the global number of parts
-  gno_t nEmptyParts_; // number of parts in solution with no objects
-  lno_t nLocalParts_; // number of parts on this process
+  gno_t nGlobalParts_;// target global number of parts
+  lno_t nLocalParts_; // number of parts to be on this process
+
   scalar_t localFraction_; // approx fraction of a part on this process
   int weightDim_;      // if user has no weights, this is 1
 
@@ -467,6 +470,8 @@ private:
 
   bool haveSolution_;
 
+  gno_t nGlobalPartsSolution_; // global number of parts in solution
+
   ////////////////////////////////////////////////////////////////
   // The solution calculates this from the part assignments,
   // unless onePartPerProc_.
@@ -484,11 +489,12 @@ template <typename Adapter>
     RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<user_t> > &idMap, int userWeightDim)
     : env_(env), comm_(comm), idMap_(idMap),
-      nGlobalParts_(0), nEmptyParts_(0), nLocalParts_(0),
+      nGlobalParts_(0), nLocalParts_(0),
       localFraction_(0),  weightDim_(),
       onePartPerProc_(false), partDist_(), procDist_(), 
       pSizeUniform_(), pCompactIndex_(), pSize_(),
-      gids_(), parts_(), haveSolution_(false), procs_()
+      gids_(), parts_(), haveSolution_(false), nGlobalPartsSolution_(0),
+      procs_()
 {
   weightDim_ = (userWeightDim ? userWeightDim : 1); 
 
@@ -515,11 +521,12 @@ template <typename Adapter>
     ArrayView<ArrayRCP<partId_t> > reqPartIds, 
     ArrayView<ArrayRCP<scalar_t> > reqPartSizes)
     : env_(env), comm_(comm), idMap_(idMap),
-      nGlobalParts_(0), nEmptyParts_(0), nLocalParts_(0), 
-      localFraction_(0), weightDim_(),
+      nGlobalParts_(0), nLocalParts_(0), 
+      localFraction_(0),  weightDim_(),
       onePartPerProc_(false), partDist_(), procDist_(), 
       pSizeUniform_(), pCompactIndex_(), pSize_(),
-      gids_(), parts_(), haveSolution_(false), procs_()
+      gids_(), parts_(), haveSolution_(false), nGlobalPartsSolution_(0), 
+      procs_()
 {
   weightDim_ = (userWeightDim ? userWeightDim : 1); 
 
@@ -1073,16 +1080,26 @@ template <typename Adapter>
 {
   env_->debug(DETAILED_STATUS, "Entering setParts");
 
-  // We'll flag parts that are used, for calculation of nEmptyParts_.
+  size_t len = partList.size();
 
-  char *inUse = new char [nGlobalParts_];
-  env_->localMemoryAssertion(__FILE__, __LINE__, nGlobalParts_, inUse);
-  memset(inUse, 0, nGlobalParts_);
-  ArrayRCP<char> partFlag(inUse, 0, nGlobalParts_, true);
+  // Find the actual number of parts in the solution, which can
+  // be more or less than the nGlobalParts_ target.
+  // (We may want to compute the imbalance of a given solution with
+  // respect to a desired solution.  This solution may have more or
+  // fewer parts that the desired solution.)
 
-  // Find the owners of the global numbers.
+  std::pair<partId_t, partId_t> minMaxLocal =
+    IdentifierTraits<partId_t>::minMax(partList.getRawPtr(), len);
 
-  size_t len = gnoList.size();
+  partId_t gMax, gMin;
+
+  IdentifierTraits<partId_t>::globalMinMax(*comm_, 
+    minMaxLocal.first(), minMaxLocal.second(), gMin, gMax);
+      
+  nGlobalPartsSolution_ = gMax - gMin + 1;
+
+  // We send part information to the process that "owns" the global number.
+
   ArrayView<gid_t> emptyView;
   ArrayView<int> procList;
 
@@ -1133,7 +1150,6 @@ template <typename Adapter>
     
       for (size_t i=0; i < len; i++){
         countOutBuf[procList[i]]+=2;
-        partFlag[partList[i]] = 1;
       }
     
       offsetBuf[0] = 0;
@@ -1148,7 +1164,6 @@ template <typename Adapter>
         offsetBuf[p]+=2;
       }
   
-      delete [] procList.getRawPtr();
       delete [] tmpOff;
     }
   
@@ -1197,13 +1212,8 @@ template <typename Adapter>
     partList = parts;
     len = newLen;
   }
-  else{
-    if (len){
-      delete [] procList.getRawPtr();
-      for (size_t i=0; i < len; i++)
-        partFlag[partList[i]] = 1;
-    }
-  }
+
+  delete [] procList.getRawPtr();
   
   if (idMap_->gnosAreGids()){
     gids_ = Teuchos::arcp_reinterpret_cast<const gid_t>(gnoList);
@@ -1245,8 +1255,8 @@ template <typename Adapter>
     }
     else{  // harder - we need to split the parts across multiple procs
 
-      lno_t *partCounter = new lno_t [nGlobalParts_];
-      env_->localMemoryAssertion(__FILE__, __LINE__, nGlobalParts_, 
+      lno_t *partCounter = new lno_t [nGlobalPartsSolution_];
+      env_->localMemoryAssertion(__FILE__, __LINE__, nGlobalPartsSolution_, 
         partCounter);
 
       int numProcs = comm_->getSize();
@@ -1281,6 +1291,12 @@ template <typename Adapter>
       delete [] partCounter;
 
       for (lno_t i=0; i < partList.size(); i++){
+        if (partList[i] >= nGlobalParts_){
+          // Solution has more parts that targeted.  These
+          // objects just remain on this process.
+          procs[i] = comm_->getRank();
+          continue;
+        }
         partId_t partNum = parts[i];
         int proc1 = partDist_[partNum];
         int proc2 = partDist_[partNum + 1];
@@ -1300,54 +1316,6 @@ template <typename Adapter>
       delete [] procCounter;
     }
   }
-
-  // Globally, how many empty parts are there.  This is helpful
-  // information when looking at imbalance numbers.
-  // TODO: Add a parameter where user indicates they will want
-  //   metrics.   And if that is not specified, we can skip
-  //   counting non empty parts.
-
-  int *rcounts = new int [nprocs];
-  env_->localMemoryAssertion(__FILE__, __LINE__, nprocs, rcounts);
-  memset(rcounts, 0, sizeof(int) * nprocs);
-  ArrayRCP<int> recvCounts(rcounts, 0, nprocs, true);
-
-  if (onePartPerProc_)
-    for (int i=0; i < nprocs; i++)
-      recvCounts[i] = 1;
-  else if (procDist_.size())
-    for (int i=0; i < nprocs; i++)
-      recvCounts[i] = procDist_[i+1] - procDist_[i];
-  else
-    for (partId_t i=0; i < nGlobalParts_; i++)
-      recvCounts[partDist_[i]] = 1;
-
-  partId_t numMyFlags = recvCounts[rank];
-  ArrayRCP<char> myFlags;
-  char *recvBuf = NULL;
-  if (numMyFlags > 0){
-    recvBuf = new char [numMyFlags];
-    env_->localMemoryAssertion(__FILE__, __LINE__, numMyFlags, recvBuf);
-    myFlags = arcp(recvBuf, 0, numMyFlags, true);
-  }
-
-  try{
-    Teuchos::reduceAllAndScatter<int, char>(*comm_, Teuchos::REDUCE_MAX,
-      nGlobalParts_, partFlag.getRawPtr(), 
-      recvCounts.getRawPtr(), recvBuf);
-  }
-  Z2_THROW_OUTSIDE_ERROR(*env_);
-
-  gno_t myNumEmptyParts = 0;
-  for (int i=0; i < numMyFlags; i++)
-    if (recvBuf[i] == 0)
-      myNumEmptyParts++;
-
-  try{
-    Teuchos::reduceAll<int, gno_t>(*comm_, Teuchos::REDUCE_SUM, 
-      1, &myNumEmptyParts, &nEmptyParts_);
-  }
-  Z2_THROW_OUTSIDE_ERROR(*env_);
 
   haveSolution_ = true;
 
@@ -1462,6 +1430,12 @@ template <typename Adapter>
   void PartitioningSolution<Adapter>::partToProcsMap(partId_t partId, 
     int &procMin, int &procMax) const
 {
+  if (partId >= nGlobalParts_){
+    // setParts() may be given an initial solution which uses a
+    // different number of parts than the desired solution.  It is
+    // still a solution.  We keep it on this process.
+    procMin = procMax = comm_->getRank();
+  }
   if (onePartPerProc_){
     procMin = procMax = int(partId);
   }

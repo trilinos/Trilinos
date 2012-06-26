@@ -115,7 +115,7 @@ public:
 
 #else
 
-  /*! \brief Test for valid user input on local process only.
+  /*! \brief %Test for valid user input on local process only.
    *
    *   \param file     the __FILE__ value of the caller.
    *   \param lineNum  the __LINE__ value of the caller.
@@ -139,7 +139,7 @@ public:
       throw std::runtime_error(emsg.str()); 
     }
   }
-  /*! \brief Test globally for valid user input.
+  /*! \brief %Test globally for valid user input.
    *
    *   \param file     the __FILE__ value of the caller.
    *   \param lineNum  the __LINE__ value of the caller.
@@ -176,7 +176,7 @@ public:
     }
   }
 
-  /*! \brief Test for valid library behavior on local process only.
+  /*! \brief %Test for valid library behavior on local process only.
    *
    *   \param file     the __FILE__ value of the caller.
    *   \param lineNum  the __LINE__ value of the caller.
@@ -207,7 +207,7 @@ public:
     }
   }
 
-  /*! \brief Test for valid library behavior on every process.
+  /*! \brief %Test for valid library behavior on every process.
    *
    *   \param file     the __FILE__ value of the caller.
    *   \param lineNum  the __LINE__ value of the caller.
@@ -250,7 +250,7 @@ public:
     }
   }
 
-  /*! \brief Test for successful memory allocation on local process only.
+  /*! \brief %Test for successful memory allocation on local process only.
    *
    *   \param file     the __FILE__ value of the caller.
    *   \param lineNum  the __LINE__ value of the caller.
@@ -273,7 +273,7 @@ public:
     } 
   }
 
-  /*! \brief Test for successful memory allocation on every process.
+  /*! \brief %Test for successful memory allocation on every process.
    *
    *   \param file     the __FILE__ value of the caller.
    *   \param lineNum  the __LINE__ value of the caller.

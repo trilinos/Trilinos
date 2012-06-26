@@ -212,7 +212,7 @@ void AlgRCB(
   // If the part sizes for a given criteria are not uniform,
   // then they are values that sum to 1.0.
 
-  size_t numGlobalParts = solution->getGlobalNumberOfParts();
+  size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
 
   Array<bool> uniformParts(criteriaDim);
   Array<ArrayRCP<scalar_t> > partSizes(criteriaDim);

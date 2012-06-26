@@ -918,35 +918,45 @@ template <typename Adapter>
   // Parts to which objects are assigned.
 
   const partId_t *parts = solution->getPartList();
+  env->localInputAssertion(__FILE__, __LINE__, "parts not set", 
+    parts, BASIC_ASSERTION);
   ArrayView<const partId_t> partArray(parts, numLocalObjects);
 
   // Weights, if any, for each object.
 
   int weightDim = ia->getNumberOfWeightsPerObject();
-  Array<sdata_t> weights(weightDim);
+  int numCriteria = (weightDim > 0 ? weightDim : 1);
+  Array<sdata_t> weights(numCriteria);
 
-  for (int i=0; i < weightDim; i++){
-    int stride;
-    const scalar_t *wgt;
-    size_t len = ia->getObjectWeights(i, wgt, stride); 
-    ArrayRCP<const scalar_t> wgtArray(wgt, 0, len, false);
-    weights[i] = sdata_t(wgtArray, stride);
+  if (weightDim == 0){
+    // One dimension of uniform weights is implied.
+    // StridedData default constructor creates length 0 strided array.
+    weights[0] = sdata_t();
+  }
+  else{
+    for (int i=0; i < weightDim; i++){
+      int stride;
+      const scalar_t *wgt;
+      size_t len = ia->getObjectWeights(i, wgt, stride); 
+      ArrayRCP<const scalar_t> wgtArray(wgt, 0, len, false);
+      weights[i] = sdata_t(wgtArray, stride);
+    }
   }
 
   // Relative part sizes, if any, assigned to the parts.
 
-  size_t partListLen = solution->getLocalNumberOfParts();
+  size_t numGlobalParts = solution->getGlobalNumberOfParts();
   scalar_t *psizes = NULL;
 
-  ArrayRCP<ArrayRCP<scalar_t> > partSizes(weightDim);
-  for (int dim=0; dim < weightDim; dim++){
+  ArrayRCP<ArrayRCP<scalar_t> > partSizes(numCriteria);
+  for (int dim=0; dim < numCriteria; dim++){
     if (solution->criteriaHasUniformPartSizes(dim) != true){
-      psizes = new scalar_t [partListLen];
+      psizes = new scalar_t [numGlobalParts];
       env->localMemoryAssertion(__FILE__, __LINE__, numParts, psizes);
-      for (partId_t i=0; i < partListLen; i++){
+      for (partId_t i=0; i < numGlobalParts; i++){
         psizes[i] = solution->getCriteriaPartSize(dim, i);
       }
-      partSizes[dim] = arcp(psizes, 0, partListLen, true);
+      partSizes[dim] = arcp(psizes, 0, numGlobalParts, true);
     }
   }
 
@@ -958,7 +968,7 @@ template <typename Adapter>
 
   try{
     globalSumsByPart<scalar_t, partId_t, lno_t>(env, comm, 
-      partArray, weights.view(0, weightDim), mcNorm,
+      partArray, weights.view(0, numCriteria), mcNorm,
       numParts, numNonemptyParts, metrics, globalSums);
   }
   Z2_FORWARD_EXCEPTIONS
@@ -971,8 +981,8 @@ template <typename Adapter>
   scalar_t min, max, avg;
   psizes=NULL;
 
-  if (weightDim > 0 && partSizes[0].size() > 0)
-    psizes = partSizes[0].getRawPtr(),
+  if (partSizes[0].size() > 0)
+    psizes = partSizes[0].getRawPtr();
 
   computeImbalances<scalar_t>(numParts, targetNumParts, psizes,
       metrics[0].getGlobalSum(), objCount, 
@@ -990,36 +1000,38 @@ template <typename Adapter>
   if (metrics.size() > 1){
   
     computeImbalances<scalar_t>(numParts, targetNumParts, 
-      weightDim, partSizes.view(0, weightDim),
+      numCriteria, partSizes.view(0, numCriteria),
       metrics[1].getGlobalSum(), wgts,
       min, max, avg);
   
     metrics[1].setMinImbalance(1.0 + min);
     metrics[1].setMaxImbalance(1.0 + max);
     metrics[1].setAvgImbalance(1.0 + avg);
-  }
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Compute imbalances for each individual weight dimension.
+    if (metrics.size() > 2){
 
-  if (metrics.size() > 2){
-    int next = 2;
+    ///////////////////////////////////////////////////////////////////////////
+    // Compute imbalances for each individual weight dimension.
 
-    for (int vdim=0; vdim < weightDim; vdim++){
-      wgts += numParts;
-      psizes = NULL;
-
-      if (partSizes[vdim].size() > 0)
-         psizes = partSizes[vdim].getRawPtr();
-       
-      computeImbalances<scalar_t>(numParts, targetNumParts, psizes,
-        metrics[next].getGlobalSum(), wgts, min, max, avg);
-
-      metrics[next].setMinImbalance(1.0 + min);
-      metrics[next].setMaxImbalance(1.0 + max);
-      metrics[next].setAvgImbalance(1.0 + avg);
-      next++;
+      int next = 2;
+  
+      for (int vdim=0; vdim < numCriteria; vdim++){
+        wgts += numParts;
+        psizes = NULL;
+  
+        if (partSizes[vdim].size() > 0)
+           psizes = partSizes[vdim].getRawPtr();
+         
+        computeImbalances<scalar_t>(numParts, targetNumParts, psizes,
+          metrics[next].getGlobalSum(), wgts, min, max, avg);
+  
+        metrics[next].setMinImbalance(1.0 + min);
+        metrics[next].setMaxImbalance(1.0 + max);
+        metrics[next].setAvgImbalance(1.0 + avg);
+        next++;
+      }
     }
+
   }
   env->debug(DETAILED_STATUS, "Exiting objectMetrics");
 }
