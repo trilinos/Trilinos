@@ -359,7 +359,7 @@ typedef struct {
 
 
 
-static nthread_mutex_t nnti_gni_lock;
+static nthread_lock_t nnti_gni_lock;
 
 
 static NNTI_result_t register_memory(
@@ -613,26 +613,26 @@ static uint32_t hash6432shift(uint64_t key)
 static std::map<addrport_key, gni_connection *> connections_by_peer;
 typedef std::map<addrport_key, gni_connection *>::iterator conn_by_peer_iter_t;
 typedef std::pair<addrport_key, gni_connection *> conn_by_peer_t;
-static nthread_mutex_t nnti_conn_peer_lock;
+static nthread_lock_t nnti_conn_peer_lock;
 
 static std::map<NNTI_instance_id, gni_connection *> connections_by_instance;
 typedef std::map<NNTI_instance_id, gni_connection *>::iterator conn_by_inst_iter_t;
 typedef std::pair<NNTI_instance_id, gni_connection *> conn_by_inst_t;
-static nthread_mutex_t nnti_conn_instance_lock;
+static nthread_lock_t nnti_conn_instance_lock;
 
 static std::map<uint32_t, NNTI_buffer_t *> buffers_by_bufhash;
 typedef std::map<uint32_t, NNTI_buffer_t *>::iterator buf_by_bufhash_iter_t;
 typedef std::pair<uint32_t, NNTI_buffer_t *> buf_by_bufhash_t;
-static nthread_mutex_t nnti_buf_bufhash_lock;
+static nthread_lock_t nnti_buf_bufhash_lock;
 
 static std::map<uint32_t, gni_work_request *> wr_by_wrhash;
 typedef std::map<uint32_t, gni_work_request *>::iterator wr_by_wrhash_iter_t;
 typedef std::pair<uint32_t, gni_work_request *> wr_by_wrhash_t;
-static nthread_mutex_t nnti_wr_wrhash_lock;
+static nthread_lock_t nnti_wr_wrhash_lock;
 
 typedef std::deque<gni_work_request *>           wr_pool_t;
 typedef std::deque<gni_work_request *>::iterator wr_pool_iter_t;
-static nthread_mutex_t nnti_wr_pool_lock;
+static nthread_lock_t nnti_wr_pool_lock;
 
 static wr_pool_t target_wr_pool;
 static wr_pool_t initiator_wr_pool;
@@ -694,15 +694,15 @@ NNTI_result_t NNTI_gni_init (
         nnti_event_debug_level=nnti_debug_level;
         nnti_ee_debug_level=nnti_debug_level;
 
-        nthread_mutex_init(&nnti_gni_lock, NTHREAD_MUTEX_NORMAL);
+        nthread_lock_init(&nnti_gni_lock);
 
         // initialize the mutexes for the connection maps
-        nthread_mutex_init(&nnti_conn_peer_lock, NTHREAD_MUTEX_NORMAL);
-        nthread_mutex_init(&nnti_conn_instance_lock, NTHREAD_MUTEX_NORMAL);
-        nthread_mutex_init(&nnti_wr_wrhash_lock, NTHREAD_MUTEX_NORMAL);
-        nthread_mutex_init(&nnti_buf_bufhash_lock, NTHREAD_MUTEX_NORMAL);
+        nthread_lock_init(&nnti_conn_peer_lock);
+        nthread_lock_init(&nnti_conn_instance_lock);
+        nthread_lock_init(&nnti_wr_wrhash_lock);
+        nthread_lock_init(&nnti_buf_bufhash_lock);
 
-        nthread_mutex_init(&nnti_wr_pool_lock, NTHREAD_MUTEX_NORMAL);
+        nthread_lock_init(&nnti_wr_pool_lock);
 
         config_init(&config);
         config_get_from_env(&config);
