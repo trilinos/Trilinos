@@ -119,6 +119,7 @@ int main(int argc, char *argv[])
   params.set("error_check_level", "debug_mode_assertions");
 
   Teuchos::ParameterList &parParams = params.sublist("partitioning");
+  parParams.set("compute_metrics", "true");
   parParams.set("algorithm", "rcb");
   parParams.set("imbalance_tolerance", tolerance );
   parParams.set("num_global_parts", nprocs);
@@ -149,18 +150,13 @@ int main(int argc, char *argv[])
 
   problem1.solve();
    
-  // Obtain the solution
-
-  const Zoltan2::PartitioningSolution<inputAdapter_t> &solution1 = 
-    problem1.getSolution();
-   
   // Check the solution.
 
   if (rank == 0)
-    solution1.printMetrics(cout);
+    problem1.printMetrics(cout);
 
   if (rank == 0){
-    scalar_t imb = solution1.getImbalance();
+    scalar_t imb = problem1.getImbalance();
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
     else
@@ -210,18 +206,13 @@ int main(int argc, char *argv[])
 
   problem2.solve();
 
-  // Obtain the solution
-
-  const Zoltan2::PartitioningSolution<inputAdapter_t> &solution2 =
-    problem2.getSolution();
-
   // Check the solution.
 
   if (rank == 0)
-    solution2.printMetrics(cout);
+    problem2.printMetrics(cout);
 
   if (rank == 0){
-    scalar_t imb = solution2.getImbalance();
+    scalar_t imb = problem2.getImbalance();
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
     else
@@ -282,18 +273,13 @@ int main(int argc, char *argv[])
 
   problem3.solve();
 
-  // Obtain the solution
-
-  const Zoltan2::PartitioningSolution<inputAdapter_t> &solution3 =
-    problem3.getSolution();
-
   // Check the solution.
 
   if (rank == 0)
-    solution3.printMetrics(cout);
+    problem3.printMetrics(cout);
 
   if (rank == 0){
-    scalar_t imb = solution3.getImbalance();
+    scalar_t imb = problem3.getImbalance();
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
     else
@@ -309,11 +295,9 @@ int main(int argc, char *argv[])
   parParams.set("objective", "multicriteria_minimize_maximum_weight");
   problem3.resetParameters(&params);
   problem3.solve(dataHasChanged);    
-  const Zoltan2::PartitioningSolution<inputAdapter_t> &solution3a =
-    problem3.getSolution();
   if (rank == 0){
-    solution3a.printMetrics(cout);
-    scalar_t imb = solution3a.getImbalance();
+    problem3.printMetrics(cout);
+    scalar_t imb = problem3.getImbalance();
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
     else
@@ -324,11 +308,9 @@ int main(int argc, char *argv[])
   parParams.set("objective", "multicriteria_balance_total_maximum");
   problem3.resetParameters(&params);
   problem3.solve(dataHasChanged);    
-  const Zoltan2::PartitioningSolution<inputAdapter_t> &solution3b =
-    problem3.getSolution();
   if (rank == 0){
-    solution3b.printMetrics(cout);
-    scalar_t imb = solution3b.getImbalance();
+    problem3.printMetrics(cout);
+    scalar_t imb = problem3.getImbalance();
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
     else
@@ -394,10 +376,10 @@ int main(int argc, char *argv[])
   // Check the solution.
 
   if (rank == 0)
-    solution4.printMetrics(cout);
+    problem1.printMetrics(cout);
 
   if (rank == 0){
-    scalar_t imb = solution4.getImbalance();
+    scalar_t imb = problem1.getImbalance();
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
     else

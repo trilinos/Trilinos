@@ -152,7 +152,6 @@ int main(int argc, char *argv[])
   RCP<const idmap_t> idMap = rcp(new idmap_t(env, comm, gidArray));
 
   int weightDim = 1;
-  ArrayRCP<Zoltan2::MetricValues<scalar_t> > metrics;
 
   zoltan2_partId_t *p = new zoltan2_partId_t [vlen];
   memset(p, 0, sizeof(zoltan2_partId_t) * vlen);
@@ -164,7 +163,7 @@ int main(int argc, char *argv[])
   typedef Zoltan2::XpetraVectorInput<tvector_t> adapter_t;
   Zoltan2::PartitioningSolution<adapter_t> solution(
     env, comm, idMap, weightDim);
-  solution.setParts(gidArray, solnParts, metrics);
+  solution.setParts(gidArray, solnParts);
 
   /////////////////////////////////////////////////////////////
   // User object is Tpetra::Vector, no weights

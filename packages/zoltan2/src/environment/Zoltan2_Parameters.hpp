@@ -134,6 +134,15 @@ enum OSType {
   NUM_OUTPUT_STREAMS
 };
 
+/*!\brief  Enumerator used in code for multicriteria norm choice.
+ */
+enum multiCriteriaNorm{
+  normMinimizeTotalWeight,   /*!< 1-norm = Manhattan norm */
+  normBalanceTotalMaximum,   /*!< 2-norm = sqrt of sum of squares */
+  normMinimizeMaximumWeight, /*!< inf-norm = maximum norm */
+  normNumNorms
+};
+
 ////////////////////////////////////////////////////////////////////
 // A validator for integer range lists.
 

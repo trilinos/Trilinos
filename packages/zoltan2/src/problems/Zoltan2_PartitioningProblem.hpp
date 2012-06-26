@@ -16,6 +16,7 @@
 #include <Zoltan2_Problem.hpp>
 #include <Zoltan2_PartitioningAlgorithms.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
+#include <Zoltan2_PartitioningSolutionQuality.hpp>
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_IdentifierModel.hpp>
 
@@ -100,6 +101,47 @@ public:
 
   const PartitioningSolution<Adapter> &getSolution() {
     return *(solution_.getRawPtr());
+  };
+
+  /*! \brief Returns the imbalance of the solution.
+   *   \param dim If there are multiple weights per object,
+   *      specify the dimension for which the imbalance
+   *      is desired, ranging from zero to one less then
+   *     number of weights per object. 
+   *   Imbalance was only computed if user requested
+   *   metrics with a parameter.
+   */
+  const scalar_t getImbalance(int dim=0) const {
+    scalar_t imb = 0;
+    if (!metrics_.is_null())
+      metrics_->getWeightImbalance(imb, dim);
+
+    return imb;
+  }
+
+  /*! \brief Get the array of metrics
+   *   Metrics were only computed if user requested
+   *   metrics with a parameter.
+   */
+  const ArrayRCP<MetricValues<scalar_t> > &getMetrics() const {
+   if (metrics_.is_null()){
+      ArrayRCP<const MetricValues<scalar_t> > emptyMetrics;
+      return emptyMetrics;
+    }
+    else
+      return metrics_->getMetrics();
+  }
+
+  /*! \brief Print the array of metrics
+   *   \param os the output stream for the report.
+   *   Metrics were only computed if user requested
+   *   metrics with a parameter.
+   */
+  void printMetrics(ostream &os) const {
+    if (metrics_.is_null())
+      os << "No metrics available." << endl;
+    else
+      metrics_->printMetrics(os);
   };
 
   /*! \brief Set or reset relative sizes for the partitions that Zoltan2 will create.
@@ -245,6 +287,11 @@ private:
   // Create a Timer if the user asked for timing stats.
 
   RCP<TimerManager> timer_;
+
+  // Did the user request metrics?
+
+  bool metricsRequested_;
+  RCP<const PartitioningSolutionQuality<Adapter> > metrics_;
 };
 ////////////////////////////////////////////////////////////////////////
 
@@ -257,7 +304,8 @@ template <typename Adapter>
       inputType_(InvalidAdapterType), modelType_(InvalidModel), 
       graphFlags_(), idFlags_(), coordFlags_(), algorithm_(),
       numberOfWeights_(), partIds_(), partSizes_(), 
-      numberOfCriteria_(), levelNumberParts_(), hierarchical_(false), timer_()
+      numberOfCriteria_(), levelNumberParts_(), hierarchical_(false), 
+      timer_(), metricsRequested_(false), metrics_()
 {
   initializeProblem();
 }
@@ -272,7 +320,8 @@ template <typename Adapter>
       graphFlags_(), idFlags_(), coordFlags_(), algorithm_(),
       numberOfWeights_(), 
       partIds_(), partSizes_(), numberOfCriteria_(), 
-      levelNumberParts_(), hierarchical_(false), timer_()
+      levelNumberParts_(), hierarchical_(false), timer_(),
+      metricsRequested_(false), metrics_()
 {
   initializeProblem();
 }
@@ -328,7 +377,7 @@ template <typename Adapter>
     ostringstream msg;
     msg << problemComm_->getSize() << " procs,"
       << numberOfWeights_ << " user-defined weights, "
-      << InputAdapter::inputAdapterTypeName(inputType_)
+      << this->inputAdapter_->inputAdapterName() 
       << " input adapter type.\n";
     this->env_->debug(DETAILED_STATUS, msg.str());
   }
@@ -441,6 +490,11 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
       AlgRCB<Adapter>(this->envConst_, problemComm_,
         this->coordinateModel_, solution_);
     }
+    else if (algorithm_ == string("mehmet")){
+      throw std::logic_error("partitioning algorithm mehmet not supported yet; uncomment call to AlgMehmet in Zoltan2_PartitioningProblem.hpp");
+//      AlgMehmet<Adapter>(this->envConst_, problemComm_,
+//        this->coordinateModel_, solution_);
+    }
     else{
       throw std::logic_error("partitioning algorithm not supported yet");
     }
@@ -456,6 +510,23 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
 
 #endif
+
+  if (metricsRequested_){
+    typedef PartitioningSolution<Adapter> ps_t;
+    typedef PartitioningSolutionQuality<Adapter> psq_t;
+
+    psq_t *quality = NULL;
+    RCP<const ps_t> solutionConst = rcp_const_cast<const ps_t>(solution_);
+    RCP<const Adapter> adapter = rcp(this->inputAdapter_, false);
+
+    try{
+      quality = new psq_t(this->envConst_, problemCommConst_, adapter, 
+        solutionConst);
+    }
+    Z2_FORWARD_EXCEPTIONS
+
+    metrics_ = rcp(quality);
+  }
 
   this->env_->debug(DETAILED_STATUS, "Exiting solve");
 }
@@ -510,6 +581,13 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   bool isSet;
   string defString("default");
 
+  // Did the user ask for computation of quality metrics?
+
+  int yesNo;
+  getParameterValue(pl, "partitioning", "compute_metrics", isSet, yesNo);
+  if (isSet && yesNo)
+    metricsRequested_ = true;
+
   // Did the user specify a computational model?
 
   string model(defString);
@@ -541,6 +619,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     }
     else if (algorithm == string("rcb") ||
              algorithm == string("rib") ||
+             algorithm == string("mehmet") ||
              algorithm == string("hsfc")){
 
       modelType_ = CoordinateModelType;

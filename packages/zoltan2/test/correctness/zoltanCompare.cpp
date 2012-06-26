@@ -216,7 +216,7 @@ int runRCB(const RCP<const Comm<int> > &comm,
   }
 
   if (rank == 0){
-    problem->getSolution().printMetrics(cout);
+    problem->printMetrics(cout);
   }
 
   problem->printTimers();

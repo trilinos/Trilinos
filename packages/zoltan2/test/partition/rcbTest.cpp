@@ -79,7 +79,7 @@ void testFromDataFile(const RCP<const Teuchos::Comm<int> > & comm)
     problem.getSolution();
 
   if (comm->getRank() == 0)
-    solution.printMetrics(cout);
+    problem.printMetrics(cout);
 }
 
 void serialTest()
@@ -129,7 +129,7 @@ void serialTest()
   const Zoltan2::PartitioningSolution<inputAdapter_t> &serialSolution = 
     serialProblem.getSolution();
 
-  serialSolution.printMetrics(cout);
+  serialProblem.printMetrics(cout);
 }
 
 void meshCoordinatesTest(const RCP<const Teuchos::Comm<int> > & comm)
@@ -172,7 +172,7 @@ void meshCoordinatesTest(const RCP<const Teuchos::Comm<int> > & comm)
     problem.getSolution();
 
   if (comm->getRank()  == 0)
-    solution.printMetrics(cout);
+    problem.printMetrics(cout);
 }
 
 int main(int argc, char *argv[])

@@ -14,9 +14,8 @@
 #ifndef ZOLTAN2_METRIC_HPP
 #define ZOLTAN2_METRIC_HPP
 
-#include <Zoltan2_Standards.hpp>
-#include <Zoltan2_Environment.hpp>
 #include <Zoltan2_StridedData.hpp>
+#include <Zoltan2_PartitioningSolution.hpp>
 
 #include <Epetra_SerialDenseVector.h>
 
@@ -25,19 +24,6 @@
 #include <iostream>
 
 namespace Zoltan2{
-
-///////////////////////////////////////////////////////////////////
-// Enumerators
-///////////////////////////////////////////////////////////////////
-
-/*!\brief  Enumerator for handling of weight dimension > 1
- */
-enum multiCriteriaNorm{
-  normMinimizeTotalWeight,   /*!< 1-norm = Manhattan norm */
-  normBalanceTotalMaximum,   /*!< 2-norm = sqrt of sum of squares */
-  normMinimizeMaximumWeight, /*!< inf-norm = maximum norm */
-  normNumNorms
-};
 
 ///////////////////////////////////////////////////////////////////
 // Classes
@@ -236,8 +222,8 @@ template <typename scalar_t>
  *   \param sum on return, max will hold the sum of the values.
  */
 template <typename scalar_t>
- void getStridedStats(const ArrayView<scalar_t> &v, int stride, int offset,
-                      scalar_t &min, scalar_t &max, scalar_t &sum)
+ void getStridedStats(const ArrayView<scalar_t> &v, int stride, 
+   int offset, scalar_t &min, scalar_t &max, scalar_t &sum)
 {
   if (v.size() < 1) return;
   min = max = sum = v[offset];
@@ -256,23 +242,13 @@ template <typename scalar_t>
  *          which weights should be computed.
  * \param parts the part Id for each object, which may range 
  *         from 0 to one less than \c numberOfParts
- *   \param partNumMin   If only a range of part IDs are to be counted,
- *          then \c partNumMin is the lowest part ID to count.  
- *          If \c partNumMin
- *          and \c partNumMax are the same, then all part IDs present in the
- *          \c part list are counted.
- *   \param partNumMax   If only a range of part IDs are to be counted,
- *          then \c partNumMax is the highest part ID to count.
- *          If \c partNumMin
- *          and \c partNumMax are the same, then all part IDs present in the
- *          \c part list are counted.
  * \param vwgts \c vwgts[w] is the StridedData object 
  *    representing weight dimension
  *    \c w.  vwgts[w][i] is the \c w'th weight for object \c i.
- * \param mcNorm the multiCriteria norm, to be used if weight dimension is 
- *             greater than one.
- * \param weights on return, \c weights[p] is the total weight for part \c p. 
- *                    \c weights is allocated by the caller
+ * \param mcNorm the multiCriteria norm, to be used if weight dimension 
+ *           is greater than one.
+ * \param weights on return, \c weights[p] is the total weight for part 
+      \c p. \c weights is allocated by the caller
  *
  * \todo - Zoltan_norm() in Zoltan may scale the weight. Do we ever need this?
  */
@@ -281,9 +257,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
   void normedPartWeights(
     const RCP<const Environment> &env,
     int numberOfParts,
-    const ArrayView<pnum_t> &parts,
-    pnum_t partNumMin,
-    pnum_t partNumMax,
+    const ArrayView<const pnum_t> &parts,
     const ArrayView<StridedData<lno_t, scalar_t> > &vwgts,
     multiCriteriaNorm mcNorm,
     scalar_t *weights)
@@ -291,7 +265,6 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
   env->localInputAssertion(__FILE__, __LINE__, "parts or weights", 
     numberOfParts > 0 && vwgts.size() > 0, BASIC_ASSERTION);
 
-  bool checkNum = (partNumMin < partNumMax);
   int numObjects = parts.size();
   int vwgtDim = vwgts.size();
 
@@ -312,15 +285,11 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
 
   if (!haveNonUniform){
     for (lno_t i=0; i < numObjects; i++){
-      if (checkNum && (parts[i] < partNumMin || parts[i] > partNumMax))
-        continue;
       weights[parts[i]]++;
     }
   }
   else if (vwgtDim == 1){
     for (lno_t i=0; i < numObjects; i++){
-      if (checkNum && (parts[i] < partNumMin || parts[i] > partNumMax))
-        continue;
       weights[parts[i]] += vwgts[0][i];
     }
   }
@@ -331,16 +300,12 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
         for (int wdim=0; wdim < vwgtDim; wdim++){
           if (vwgts[wdim].size() == 0){
             for (lno_t i=0; i < numObjects; i++){
-              if (checkNum && (parts[i] < partNumMin || parts[i] > partNumMax))
-                continue;
               weights[parts[i]]++;
             }
           }
           else{
             for (lno_t i=0; i < numObjects; i++){
-              if (checkNum && (parts[i] < partNumMin || parts[i] > partNumMax))
-                continue;
-                weights[parts[i]] += vwgts[wdim][i];
+              weights[parts[i]] += vwgts[wdim][i];
             }
           }
         }  // next weight dimension
@@ -349,8 +314,6 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
       case normBalanceTotalMaximum:   /*!< 2-norm = sqrt of sum of squares */
         if (!haveUniform){
           for (lno_t i=0; i < numObjects; i++){
-            if (checkNum && (parts[i] < partNumMin || parts[i] > partNumMax))
-              continue;
             scalar_t ssum = 0;
             for (int wdim=0; wdim < vwgtDim; wdim++)
               ssum += (vwgts[wdim][i] * vwgts[wdim][i]);
@@ -364,8 +327,6 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
               uniformFactor++;
               
           for (lno_t i=0; i < numObjects; i++){
-            if (checkNum && (parts[i] < partNumMin || parts[i] > partNumMax))
-              continue;
             scalar_t ssum = 0;
             for (int wdim=0; wdim < vwgtDim; wdim++){
               if (vwgts[wdim].size() > 0)
@@ -382,8 +343,6 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
         if (!haveUniform){
 
           for (lno_t i=0; i < numObjects; i++){
-            if (checkNum && (parts[i] < partNumMin || parts[i] > partNumMax))
-              continue;
             scalar_t max = 0;
             for (int wdim=0; wdim < vwgtDim; wdim++)
               if (vwgts[wdim][i] > max)
@@ -394,8 +353,6 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
         else{
 
           for (lno_t i=0; i < numObjects; i++){
-            if (checkNum && (parts[i] < partNumMin || parts[i] > partNumMax))
-              continue;
             scalar_t max = 1.0;
             for (int wdim=0; wdim < vwgtDim; wdim++)
               if (vwgts[wdim].size() > 0 && vwgts[wdim][i] > max)
@@ -418,25 +375,15 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
  *   \param env   Environment for error handling
  *   \param comm   communicator
  *   \param part   \c part[i] is the part ID for local object \c i
- *   \param partNumMin   If only a range of part IDs are to be counted,
- *          then \c partNumMin is the lowest part ID to count.  
- *          If \c partNumMin
- *          and \c partNumMax are the same, then all part IDs present in the
- *          \c part list are counted.
- *   \param partNumMax   If only a range of part IDs are to be counted,
- *          then \c partNumMax is the highest part ID to count.
- *          If \c partNumMin
- *          and \c partNumMax are the same, then all part IDs present in the
- *          \c part list are counted.
  *   \param vwgts  \c vwgts[w] is the StridedData object 
  *       representing weight dimension \c w. The weight dimension
  *       (which must be at least one) is taken to be \c vwgts.size().  
- *       If <tt>vwgts[wdim].size()</tt> is
- *       zero, we assume uniform weights for weight dimension \c wdim.
+ *       If <tt>vwgts[wdim].size() == 0</tt>,
+ *       we assume uniform weights for weight dimension \c wdim.
  *   \param mcNorm the multiCriteria norm, to be used if weight dimension is
  *             greater than one.
- *   \param numParts  on return this is the total number of parts globally.
- *   \param numNonemptyParts  on return this is the number of 
+ *   \param numParts  on return this is the global number of parts.
+ *   \param numNonemptyParts  on return this is the number of those
  *          parts that are non-empty.
  *   \param metrics on return points to a list of named MetricValues objects 
  *     that each contains the global min, max and avg over parts of 
@@ -470,9 +417,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
   void globalSumsByPart( 
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm, 
-    const ArrayView<pnum_t> &part, 
-    pnum_t partNumMin,
-    pnum_t partNumMax,
+    const ArrayView<const pnum_t> &part, 
     const ArrayView<StridedData<lno_t, scalar_t> > &vwgts,
     multiCriteriaNorm mcNorm,
     partId_t &numParts, 
@@ -501,8 +446,6 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
 
   metrics = metricArray;
 
-  bool checkNum = (partNumMin < partNumMax);
-
   //////////////////////////////////////////////////////////
   // Figure out the global number of parts in use.
   // Verify vertex weight dim is the same everywhere.
@@ -512,18 +455,8 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
   localNum[0] = static_cast<partId_t>(vwgtDim);  
   localNum[1] = 0;
 
-  if (!checkNum){
-    for (lno_t i=0; i < localNumObj; i++)
-      if (part[i] > localNum[1]) localNum[1] = part[i];
-  }
-  else{
-    for (lno_t i=0; i < localNumObj; i++){
-      if (part[i] < partNumMin || part[i] > partNumMax)
-        continue;
-      if (part[i] > localNum[1]) 
-        localNum[1] = part[i];
-    }
-  }
+  for (lno_t i=0; i < localNumObj; i++)
+    if (part[i] > localNum[1]) localNum[1] = part[i];
 
   try{
     reduceAll<int, partId_t>(*comm, Teuchos::REDUCE_MAX, 2, 
@@ -551,22 +484,15 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
 
   scalar_t *obj = localBuf;              // # of objects
 
-  if (!checkNum){
-    for (lno_t i=0; i < localNumObj; i++)
-      obj[part[i]]++;
-  }
-  else{
-    for (lno_t i=0; i < localNumObj; i++)
-      if (part[i] >= partNumMin && part[i] <= partNumMax)
-        obj[part[i]]++;
-  }
+  for (lno_t i=0; i < localNumObj; i++)
+    obj[part[i]]++;
 
   if (numMetrics > 1){
 
     scalar_t *wgt = localBuf + nparts; // single normed weight
     try{
       normedPartWeights<scalar_t, pnum_t, lno_t>(env, nparts, 
-        part, partNumMin, partNumMax, vwgts, mcNorm, wgt);
+        part, vwgts, mcNorm, wgt);
     }
     Z2_FORWARD_EXCEPTIONS
   
@@ -574,15 +500,8 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
       wgt += nparts;         // individual weights
       for (int vdim = 0; vdim < vwgtDim; vdim++){
         if (vwgts[vdim].size()){
-          if (!checkNum){
-            for (lno_t i=0; i < localNumObj; i++)
-              wgt[part[i]] += vwgts[vdim][i];
-          }
-          else{
-            for (lno_t i=0; i < localNumObj; i++)
-              if (part[i] >= partNumMin && part[i] <= partNumMax)
-                wgt[part[i]] += vwgts[vdim][i];
-          }
+         for (lno_t i=0; i < localNumObj; i++)
+           wgt[part[i]] += vwgts[vdim][i];
         }
         else{  // uniform weights
           for (int p=0; p < nparts; p++)
@@ -831,7 +750,7 @@ template <typename scalar_t>
 
 template <typename scalar_t>
  void computeImbalances(partId_t numParts, partId_t targetNumParts,
-   int numSizes, const scalar_t * const *psizes, 
+   int numSizes, ArrayView<ArrayRCP<scalar_t> > psizes,
    scalar_t sumVals , const scalar_t *vals, 
    scalar_t &min, scalar_t &max, scalar_t &avg)
 {
@@ -841,14 +760,14 @@ template <typename scalar_t>
   if (sumVals <= 0 || targetNumParts < 1 || numParts < 1)
     return;
 
-  if (targetNumParts==1 || numParts==1){
+  if (targetNumParts==1 && numParts==1){
     min = max = avg = 0;  // 0 imbalance
     return;
   }
 
   bool allUniformParts = true;
   for (int i=0; i < numSizes; i++){
-    if (psizes[i] != NULL){
+    if (psizes[i].size() != 0){
       allUniformParts = false;
       break;
     }
@@ -879,7 +798,7 @@ template <typename scalar_t>
     // Vector of target amounts: T
 
     for (int i=0; i < numSizes; i++)
-      if (psizes[i])
+      if (psizes[i].size() > 0)
         sizeVec[i] = psizes[i][p];
 
     Epetra_SerialDenseVector target(View, sizeVec.getRawPtr(), numSizes);
@@ -916,7 +835,7 @@ template <typename scalar_t>
   for (partId_t p=numParts; p < targetNumParts; p++){
     bool nonEmptyPart = false;
     for (int i=0; !nonEmptyPart && i < numSizes; i++)
-      if (psizes[i] && psizes[i][p] > 0.0)
+      if (psizes[i].size() > 0 && psizes[i][p] > 0.0)
         nonEmptyPart = true;
 
     if (nonEmptyPart){
@@ -937,34 +856,26 @@ template <typename scalar_t>
 
 /*! \brief Compute imbalance metrics for a distribution.
  *
- *   \param env   Environment for error handling
- *   \param comm   communicator
+ *   \param env   The problem environment.
+ *   \param comm  The problem communicator.
  *   \param targetNumParts is usually the same as \c numParts, which is the
  *         global number of different parts to which objects have been 
  *         assigned in the \c parts array.  
  *         However if we are calling objectMetrics() before
  *         and after partitioning, it is possible that before partitioning
  *         the number of parts which have objects is not the same as
- *         targetNumParts.  For example, all objects may be on process zero.
+ *         targetNumParts.  For example, if all objects are in part 0,
+ *         then \c numParts is one and \c targetNumParts is likely larger.
  *         We calculate the imbalance with respect to \c targetNumParts 
  *         and not \c numParts.
- *   \param partSizes \c partSizes[w][p] is the desired part size for 
- *         weight dimension \w for part \c p. For each weight there should
- *         be \c targetNumParts part sizes. However if \c partSizes[w].size() 
- *         is zero we assume uniform part sizes. Weight dimension must be at
- *         least one.  If part sizes are supplied, they must sum
- *         to 1.0 for any weight dimension.
- *   \param parts  \c parts[i] is the part assigned to object \c i.
- *   \param vwgts  \c vwgts[w][i] is the weight for weight dimension \c w for
- *                      object \c i. If \c vwgts[w].size() is zero we
- *                     assume uniform weights. Weight dimension must be at
- *                     least one.
+ *   \param ia the InputAdapter object which corresponds to the Solution.
+ *   \param solution the PartitioningSolution to be evaluated.
  *   \param mcNorm  is the multicriteria norm to use if the weight dimension
  *           is greater than one.  See the multiCriteriaNorm enumerator for
  *           \c mcNorm values.
  *   \param numParts on return is the global number of parts
  *   \param numNonemptyParts on return is the global number of parts to which 
- *                                objects have been assigned.
+ *                                objects are assigned.
  *   \param metrics on return points to a list of named MetricValues objects 
  *     that each contains the global min, max and avg over parts and
  *     also imbalance measures of 
@@ -982,20 +893,63 @@ template <typename scalar_t>
  *   \todo check that part sizes sum to one if we're doing COMPLEX_ASSERTION
  */
 
-template <typename scalar_t, typename lno_t>
+template <typename Adapter>
   void objectMetrics(
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm,
     partId_t targetNumParts, 
-    const ArrayView<ArrayView<scalar_t> > &partSizes,
-    const ArrayView<partId_t> &parts,
-    const ArrayView<StridedData<lno_t, scalar_t> > &vwgts,
     multiCriteriaNorm mcNorm,
+    const RCP<const Adapter> &ia,
+    const RCP<const PartitioningSolution<Adapter> > &solution,
     partId_t &numParts,
     partId_t &numNonemptyParts,
-    ArrayRCP<MetricValues<scalar_t> > &metrics)
+    ArrayRCP<MetricValues<typename Adapter::scalar_t> > &metrics)
 {
   env->debug(DETAILED_STATUS, "Entering objectMetrics");
+
+  typedef typename Adapter::scalar_t scalar_t;
+  typedef typename Adapter::lno_t lno_t;
+  typedef StridedData<lno_t, scalar_t> sdata_t;
+
+  // Local number of objects.
+
+  size_t numLocalObjects = ia->getLocalNumberOfObjects();
+
+  // Parts to which objects are assigned.
+
+  const partId_t *parts = solution->getPartList();
+  ArrayView<const partId_t> partArray(parts, numLocalObjects);
+
+  // Weights, if any, for each object.
+
+  int weightDim = ia->getNumberOfWeightsPerObject();
+  Array<sdata_t> weights(weightDim);
+
+  for (int i=0; i < weightDim; i++){
+    int stride;
+    const scalar_t *wgt;
+    size_t len = ia->getObjectWeights(i, wgt, stride); 
+    ArrayRCP<const scalar_t> wgtArray(wgt, 0, len, false);
+    weights[i] = sdata_t(wgtArray, stride);
+  }
+
+  // Relative part sizes, if any, assigned to the parts.
+
+  size_t partListLen = solution->getLocalNumberOfParts();
+  scalar_t *psizes = NULL;
+
+  ArrayRCP<ArrayRCP<scalar_t> > partSizes(weightDim);
+  for (int dim=0; dim < weightDim; dim++){
+    if (solution->criteriaHasUniformPartSizes(dim) != true){
+      psizes = new scalar_t [partListLen];
+      env->localMemoryAssertion(__FILE__, __LINE__, numParts, psizes);
+      for (partId_t i=0; i < partListLen; i++){
+        psizes[i] = solution->getCriteriaPartSize(dim, i);
+      }
+      partSizes[dim] = arcp(psizes, 0, partListLen, true);
+    }
+  }
+
   ///////////////////////////////////////////////////////////////////////////
   // Get number of parts, and the number that are non-empty.
   // Get sums per part of objects, individual weights, and normed weight sums.
@@ -1004,7 +958,7 @@ template <typename scalar_t, typename lno_t>
 
   try{
     globalSumsByPart<scalar_t, partId_t, lno_t>(env, comm, 
-      parts, 0, 0, vwgts, mcNorm,
+      partArray, weights.view(0, weightDim), mcNorm,
       numParts, numNonemptyParts, metrics, globalSums);
   }
   Z2_FORWARD_EXCEPTIONS
@@ -1014,15 +968,13 @@ template <typename scalar_t, typename lno_t>
   // (Use first dimension of part sizes.) 
 
   scalar_t *objCount  = globalSums.getRawPtr();
-  scalar_t *psizes = NULL;
-  if (partSizes[0].size() > 0)
-    psizes = partSizes[0].getRawPtr();
-
   scalar_t min, max, avg;
+  psizes=NULL;
 
-  env->debug(DETAILED_STATUS, "  computeImbalances");
+  if (weightDim > 0 && partSizes[0].size() > 0)
+    psizes = partSizes[0].getRawPtr(),
 
-  computeImbalances<scalar_t>(numParts, targetNumParts, psizes, 
+  computeImbalances<scalar_t>(numParts, targetNumParts, psizes,
       metrics[0].getGlobalSum(), objCount, 
       min, max, avg);
 
@@ -1033,23 +985,12 @@ template <typename scalar_t, typename lno_t>
   ///////////////////////////////////////////////////////////////////////////
   // Compute imbalances for the normed weight sum.
 
-  int vwgtDim = vwgts.size();
   scalar_t *wgts = globalSums.getRawPtr() + numParts;
 
   if (metrics.size() > 1){
-    Array<scalar_t *>psizesMultiple(vwgtDim);
   
-    for (int vdim=0; vdim < vwgtDim; vdim++){
-      if (partSizes[vdim].size() > 0)
-        psizesMultiple[vdim] = partSizes[vdim].getRawPtr();
-      else
-        psizesMultiple[vdim] = NULL;
-    }
-  
-    env->debug(DETAILED_STATUS, "  computeImbalances");
-
     computeImbalances<scalar_t>(numParts, targetNumParts, 
-      vwgtDim, psizesMultiple.getRawPtr(),
+      weightDim, partSizes.view(0, weightDim),
       metrics[1].getGlobalSum(), wgts,
       min, max, avg);
   
@@ -1064,17 +1005,15 @@ template <typename scalar_t, typename lno_t>
   if (metrics.size() > 2){
     int next = 2;
 
-    for (int vdim=0; vdim < vwgtDim; vdim++){
+    for (int vdim=0; vdim < weightDim; vdim++){
       wgts += numParts;
       psizes = NULL;
+
       if (partSizes[vdim].size() > 0)
-        psizes = partSizes[vdim].getRawPtr();
-
-      env->debug(DETAILED_STATUS, "  computeImbalances");
-
+         psizes = partSizes[vdim].getRawPtr();
+       
       computeImbalances<scalar_t>(numParts, targetNumParts, psizes,
-        metrics[next].getGlobalSum(), wgts,
-        min, max, avg);
+        metrics[next].getGlobalSum(), wgts, min, max, avg);
 
       metrics[next].setMinImbalance(1.0 + min);
       metrics[next].setMaxImbalance(1.0 + max);
@@ -1085,227 +1024,7 @@ template <typename scalar_t, typename lno_t>
   env->debug(DETAILED_STATUS, "Exiting objectMetrics");
 }
 
-
-/*! \brief Compute object metrics when weight dimension is one and 
- *           there are no part sizes.
- *   \param env   Environment for error handling
- *   \param comm   communicator
- *   \param targetNumParts is usually the same as \c numParts, which is the
- *         global number of different parts to which objects have been
- *         assigned in the \c parts array.
- *         However if we are calling objectMetrics() before
- *         and after partitioning, it is possible that before partitioning
- *         the number of parts which have objects is not the same as
- *         targetNumParts.  For example, all objects may be on process zero.
- *         We calculate the imbalance with respect to \c targetNumParts
- *         and not \c numParts.
- *   \param parts  \c parts[i] is the part assigned to object \c i.
- *   \param vwgts  is the StridedData object containing the weights.  
- *            If \c vwgts.size()
- *                    is zero, we assume uniform weights.
- *   \param numParts on return is the global number of parts
- *   \param numNonemptyParts on return is the global number of parts to which
- *                                objects have been assigned.
- *   \param metrics on return points to a list of named MetricValues objects 
- *     that each contains the global min, max and avg over parts and
- *     also imbalance measures of 
- *     the item being measured. The list may contain "object count",
- *     "normed weight", "weight 1", "weight 2" and so on in that order.
- *     If uniform weights were given, then only "object count" appears.
- *     If one dimension of non-uniform weights were given, then
- *     "object count" and "weight 1" appear.  Finally, if multiple
- *     weights were given, we have "object count", then "normed weight",
- *     then the individual weights "weight 1", "weight 2", and so on.
- *
- */
-
-template <typename scalar_t, typename lno_t>
-  void objectMetrics(
-    const RCP<const Environment> &env,
-    const RCP<const Comm<int> > &comm,
-    partId_t targetNumParts, 
-    const ArrayView<partId_t> &parts,
-    const StridedData<lno_t, scalar_t>  &vwgts,
-    partId_t &numParts,
-    partId_t &numNonemptyParts,
-    ArrayRCP<MetricValues<scalar_t> > &metrics)  
-{
-  Array<ArrayView<scalar_t> > psArray(1);
-  Array<StridedData<lno_t, scalar_t> > wgts(1, vwgts);
-
-  return objectMetrics(env, comm, targetNumParts,
-    psArray.view(0,1), parts, wgts.view(0, 1), normMinimizeTotalWeight,
-    numParts, numNonemptyParts, metrics);
-}
-
-/*! \brief Compute object metrics when weight dimension is one and we
- *                 have non-uniform part sizes.
- *   \param env   Environment for error handling
- *   \param comm   communicator
- *   \param targetNumParts is usually the same as \c numParts, which is the
- *         global number of different parts to which objects have been
- *         assigned in the \c parts array.
- *         However if we are calling objectMetrics() before
- *         and after partitioning, it is possible that before partitioning
- *         the number of parts which have objects is not the same as
- *         targetNumParts.  For example, all objects may be on process zero.
- *         We calculate the imbalance with respect to \c targetNumParts
- *         and not \c numParts.
- *   \param partSizes \c partSizes[p] is the desired part size for
- *         part \c p.  However if \c partSizes.size()
- *         is zero we assume uniform part sizes.
- *   \param parts  \c parts[i] is the part assigned to object \c i.
- *   \param vwgts  is the StridedData object containing the object weights. 
- *                 If \c vwgts.size() is zero we assume uniform weights.
- *   \param mcNorm  is the multicriteria norm to use if the weight dimension
- *           is greater than one.  See the multiCriteriaNorm enumerator for
- *           \c mcNorm values.
- *   \param numParts on return is the global number of parts
- *   \param numNonemptyParts on return is the global number of parts to which
- *                                objects have been assigned.
- *   \param metrics on return points to a list of named MetricValues objects 
- *     that each contains the global min, max and avg over parts and
- *     also imbalance measures of 
- *     the item being measured. The list may contain "object count",
- *     "normed weight", "weight 1", "weight 2" and so on in that order.
- *     If uniform weights were given, then only "object count" appears.
- *     If one dimension of non-uniform weights were given, then
- *     "object count" and "weight 1" appear.  Finally, if multiple
- *     weights were given, we have "object count", then "normed weight",
- *     then the individual weights "weight 1", "weight 2", and so on.
- *
- */
-
-template <typename scalar_t, typename lno_t>
-  void objectMetrics(
-    const RCP<const Environment> &env,
-    const RCP<const Comm<int> > &comm,
-    partId_t targetNumParts, 
-    const ArrayView<scalar_t> &partSizes,
-    const ArrayView<partId_t> &parts,
-    const StridedData<lno_t, scalar_t>  &vwgts,
-    partId_t &numParts,
-    partId_t &numNonemptyParts,
-    ArrayRCP<MetricValues<scalar_t> > &metrics)
-{
-  Array<ArrayView<scalar_t> > psArray(1, partSizes);
-  Array<StridedData<lno_t, scalar_t> > wgts(1, vwgts);
-
-  return objectMetrics(env, comm, targetNumParts,
-    psArray.view(0,1), parts, wgts.view(0, 1), normMinimizeTotalWeight,
-    numParts, numNonemptyParts, metrics);
-  
-}
-
-/*! \brief Compute object metrics when there are no part sizes or weights.
- *   \param env   Environment for error handling
- *   \param comm   communicator
- *   \param targetNumParts is usually the same as \c numParts, which is the
- *         global number of different parts to which objects have been
- *         assigned in the \c parts array.
- *         However if we are calling objectMetrics() before
- *         and after partitioning, it is possible that before partitioning
- *         the number of parts which have objects is not the same as
- *         targetNumParts.  For example, all objects may be on process zero.
- *         We calculate the imbalance with respect to \c targetNumParts
- *         and not \c numParts.
- *   \param parts  \c parts[i] is the part assigned to object \c i.
- *   \param numParts on return is the global number of parts
- *   \param numNonemptyParts on return is the global number of parts to which
- *                                objects have been assigned.
- *   \param metrics on return points to a list of named MetricValues objects 
- *     that each contains the global min, max and avg over parts and
- *     also imbalance measures of 
- *     the item being measured. The list may contain "object count",
- *     "normed weight", "weight 1", "weight 2" and so on in that order.
- *     If uniform weights were given, then only "object count" appears.
- *     If one dimension of non-uniform weights were given, then
- *     "object count" and "weight 1" appear.  Finally, if multiple
- *     weights were given, we have "object count", then "normed weight",
- *     then the individual weights "weight 1", "weight 2", and so on.
- *
- */
-template <typename scalar_t, typename lno_t>
-  void objectMetrics(
-    const RCP<const Environment> &env,
-    const RCP<const Comm<int> > &comm,
-    partId_t targetNumParts, 
-    const ArrayView<partId_t> &parts,
-    partId_t &numParts,
-    partId_t &numNonemptyParts,
-    ArrayRCP<MetricValues<scalar_t> > &metrics)
-{
-  Array<ArrayView<scalar_t> > noPartSizes(1);
-  Array<StridedData<lno_t, scalar_t> > noWeights(1);
-
-  return objectMetrics(env, comm, targetNumParts,
-    noPartSizes.view(0,1), parts, noWeights.view(0, 1), 
-    normMinimizeTotalWeight,
-    numParts, numNonemptyParts, metrics);
-}
-
-/*! \brief Compute object metrics when there are no part sizes but there are
- *                 multiple weights.
- *   \param env   Environment for error handling
- *   \param comm   communicator
- *   \param targetNumParts is usually the same as \c numParts, which is the
- *         global number of different parts to which objects have been
- *         assigned in the \c parts array.
- *         However if we are calling objectMetrics() before
- *         and after partitioning, it is possible that before partitioning
- *         the number of parts which have objects is not the same as
- *         targetNumParts.  For example, all objects may be on process zero.
- *         We calculate the imbalance with respect to \c targetNumParts
- *         and not \c numParts.
- *   \param parts  \c parts[i] is the part assigned to object \c i.
- *   \param vwgts  \c vwgts[w][i] is the weight for weight dimension \c w for
- *                      object \c i. If \c vwgts[w].size() is zero we
- *                     assume uniform weights. Weight dimension must be at
- *                     least one.
- *   \param mcNorm  is the multicriteria norm to use if the weight dimension
- *           is greater than one.  See the multiCriteriaNorm enumerator for
- *           \c mcNorm values.
- *   \param numParts on return is the global number of parts
- *   \param numNonemptyParts on return is the global number of parts to which
- *                                objects have been assigned.
- *   \param metrics on return points to a list of named MetricValues objects 
- *     that each contains the global min, max and avg over parts and
- *     also imbalance measures of 
- *     the item being measured. The list may contain "object count",
- *     "normed weight", "weight 1", "weight 2" and so on in that order.
- *     If uniform weights were given, then only "object count" appears.
- *     If one dimension of non-uniform weights were given, then
- *     "object count" and "weight 1" appear.  Finally, if multiple
- *     weights were given, we have "object count", then "normed weight",
- *     then the individual weights "weight 1", "weight 2", and so on.
- *
- *
- *  See the metricOffset enumerator for the interpretation of the
- *  evalNumMetrics quantities.
- */
-template <typename scalar_t, typename lno_t>
-    void objectMetrics(
-      const RCP<const Environment> &env,
-      const RCP<const Comm<int> > &comm,
-      partId_t targetNumParts, 
-      const ArrayView<partId_t> &parts,
-      const ArrayView<StridedData<lno_t, scalar_t> > &vwgts,
-      multiCriteriaNorm mcNorm,
-      partId_t &numParts,
-      partId_t &numNonemptyParts,
-      ArrayRCP<MetricValues<scalar_t> > &metrics)
-{
-  int vwgtDim = vwgts.size();
-  typedef ArrayView<scalar_t> av_t;
-
-  ArrayRCP<av_t> noPartSizes(new av_t [vwgtDim], 0, vwgtDim, true);
-
-  return objectMetrics(env, comm, targetNumParts,
-    noPartSizes.view(0,vwgtDim), parts, vwgts, mcNorm,
-    numParts, numNonemptyParts, metrics);
-}
-
-/*! \brief Print out a header and the list metric values.
+/*! \brief Print out a header and the values for a list of metrics.
  */
 
 template <typename scalar_t>
@@ -1331,7 +1050,7 @@ template <typename scalar_t>
   os << endl;
 }
 
-/*! \brief Print out a header and the metric values.
+/*! \brief Print out a header and the values for a single metric.
  */
 
 template <typename scalar_t>
@@ -1347,7 +1066,8 @@ template <typename scalar_t>
 /*! \brief Compute the norm of the vector of weights.
  */
 template <typename scalar_t>
-  scalar_t normedWeight(ArrayView <scalar_t> weights, multiCriteriaNorm norm)
+  scalar_t normedWeight(ArrayView <scalar_t> weights, 
+    multiCriteriaNorm norm)
 {
   size_t dim = weights.size();
   if (dim == 0)
@@ -1392,6 +1112,8 @@ template <typename scalar_t>
   return nweight;
 }
 
+/*! \brief Compute the norm of the vector of weights stored as StridedData.
+ */
 template<typename lno_t, typename scalar_t>
   scalar_t normedWeight(ArrayView<StridedData<lno_t, scalar_t> > weights, 
      lno_t idx, multiCriteriaNorm norm)
@@ -1407,10 +1129,6 @@ template<typename lno_t, typename scalar_t>
 
   return normedWeight(vec, norm);
 }
-
-
-
-
 
 } //namespace Zoltan2
 #endif
