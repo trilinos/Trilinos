@@ -32,6 +32,7 @@ public:
 
   EntityImpl( const EntityKey & arg_key );
   EntityImpl();
+  ~EntityImpl(){}
 
   // Exposed in external interface:
   EntityRank entity_rank() const { return stk::mesh::entity_rank( m_key ); }
