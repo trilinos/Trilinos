@@ -72,10 +72,10 @@ class SDDF : public TraceFile {
         RecordDossier *throughputRecord;
 
         /* need mutexes to protect the RecordDossier */
-        nthread_mutex_t genericMutex;
-        nthread_mutex_t countMutex;
-        nthread_mutex_t intervalMutex;
-        nthread_mutex_t throughputMutex;
+        nthread_lock_t genericMutex;
+        nthread_lock_t countMutex;
+        nthread_lock_t intervalMutex;
+        nthread_lock_t throughputMutex;
 
         /* Where to put the data */
         OutputFileStreamPipe *outFile;
