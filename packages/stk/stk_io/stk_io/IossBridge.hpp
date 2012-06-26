@@ -37,7 +37,7 @@ class Field;
 class ElementTopology;
 }
 
-class CellTopologyData;
+struct CellTopologyData;
 
 namespace stk {
 
