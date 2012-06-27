@@ -85,7 +85,7 @@ class RythmosSolver
   //@{
 
   /** \brief Takes the number of elements in the discretization . */
-  RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> appParams,
+  RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> piroParams,
                 Teuchos::RCP<EpetraExt::ModelEvaluator> model,
                 Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer = Teuchos::null
                 );
@@ -119,32 +119,33 @@ class RythmosSolver
   Teuchos::RCP<const Epetra_Vector> get_x_init() const;
   /** \brief . */
   Teuchos::RCP<const Epetra_Map> get_p_map(int l) const;
-  /** \brief . */
-  void setProblemParamDefaults(Teuchos::ParameterList* appParams_);
-  /** \brief . */
-  void setSolverParamDefaults(Teuchos::ParameterList* appParams_);
-  /** \brief . */
-  Teuchos::RCP<const Teuchos::ParameterList>
-    getValidRythmosParameters() const;
+
+  //! Valid list for old "Rythmos" parameter list style
+  Teuchos::RCP<const Teuchos::ParameterList> getValidRythmosParameters() const;
+  
+  //! Valid list for new "Rythmos Solver" parameter list style
+  Teuchos::RCP<const Teuchos::ParameterList> getValidRythmosSolverParameters() const;
 
   //@}
 
   private:
 
    //These are set in the constructor and used in evalModel
-   mutable Teuchos::RCP<Teuchos::ParameterList> appParams;
+   mutable Teuchos::RCP<Teuchos::ParameterList> piroParams;
    Teuchos::RCP<EpetraExt::ModelEvaluator> model;
 
    int num_p;
    int num_g;
 
-   Teuchos::RCP<Rythmos::StepperBase<Scalar> > fwdStateStepper;
    Teuchos::RCP<Teuchos::FancyOStream> out;
    Teuchos::EVerbosityLevel solnVerbLevel;
    Teuchos::RCP<Rythmos::DefaultIntegrator<Scalar> > fwdStateIntegrator;
    Teuchos::RCP<Thyra::ModelEvaluator<double> > fwdStateModel;
    Teuchos::RCP<Rythmos::TimeStepNonlinearSolver<double> > fwdTimeStepSolver;
    Scalar t_final;
+
+   bool oldListStyle;
+   Teuchos::RCP<Rythmos::StepperBase<Scalar> > fwdStateStepper;
 
 };
 
