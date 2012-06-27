@@ -100,6 +100,8 @@ namespace Xpetra {
 // comm
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
+// misc
+#include <Teuchos_ParameterList.hpp>
 #endif
 
 //! Namespace for Xpetra classes and methods
@@ -181,6 +183,10 @@ namespace Xpetra {
   using Teuchos::arcp_reinterpret_cast;
 
   using Teuchos::typeName;
+
+  using Teuchos::ParameterList;
+  using Teuchos::parameterList;
+  using Teuchos::sublist;
 #endif
 
   // Xpetra functor objects

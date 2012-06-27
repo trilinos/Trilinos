@@ -11,8 +11,6 @@
 
 #include "Xpetra_Map.hpp"
 
-using Teuchos::ParameterList;
-
 namespace Xpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
