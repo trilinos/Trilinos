@@ -44,6 +44,7 @@
 
 #include <Teuchos_DefaultSerialComm.hpp>
 #include <Teuchos_Describable.hpp>
+#include <Tpetra_ConfigDefs.hpp>
 #include <Kokkos_DefaultNode.hpp>
 
 namespace Tpetra {
