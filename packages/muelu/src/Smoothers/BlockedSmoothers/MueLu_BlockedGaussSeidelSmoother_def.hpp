@@ -62,7 +62,7 @@ namespace MueLu {
     //typedef Xpetra::BlockedCrsOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> BlockedCrsOOperator;
 
     FactoryMonitor m(*this, "Setup blocked Gauss-Seidel Smoother", currentLevel);
-    if (SmootherPrototype::IsSetup() == true) this->GetOStream(Warnings0, 0) << "Warning: MueLu::Amesos2Smoother::Setup(): Setup() has already been called";
+    if (SmootherPrototype::IsSetup() == true) this->GetOStream(Warnings0, 0) << "Warning: MueLu::BlockedGaussSeidelSmoother::Setup(): Setup() has already been called";
 
     // extract blocked operator A from current level
     A_ = currentLevel.Get< RCP<Operator> >("A", AFact_.get()); // A needed for extracting map extractors
@@ -109,10 +109,19 @@ namespace MueLu {
     SmootherPrototype::IsSetup(true);
   }
 
+  // This function is equivalent to the std::map 'at' method introduced in C++11.
+  // TODO: move to Utils
+  template <class StdMapType>
+  const typename StdMapType::mapped_type & at(const StdMapType& map, const typename StdMapType::key_type& x) {
+    typename StdMapType::const_iterator it = map.find(x);
+    TEUCHOS_TEST_FOR_EXCEPTION(it == map.end(), std::out_of_range, "MueLu::at(): element does not exist in the map");
+    return it->second;
+  }
+
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void BlockedGaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Apply(MultiVector &X, MultiVector const &B, bool const &InitialGuessIsZero) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::Amesos2Smoother::Apply(): Setup() has not been called");
+    TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::BlockedGaussSeidelSmoother::Apply(): Setup() has not been called");
 
     RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > residual = MultiVectorFactory::Build(B.getMap(), B.getNumVectors());
     RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tempres = MultiVectorFactory::Build(B.getMap(), B.getNumVectors());
@@ -139,10 +148,11 @@ namespace MueLu {
         A_->apply(X, *residual, Teuchos::NO_TRANS, -1.0, 1.0);
 
         // extract corresponding subvectors from X and residual
-        Teuchos::RCP<MultiVector> Xi = domainMapExtractor_->ExtractVector(rcpX, bgsOrderingIndex2blockRowIndex_.at(i));
-        Teuchos::RCP<MultiVector> ri = rangeMapExtractor_->ExtractVector(residual, bgsOrderingIndex2blockRowIndex_.at(i));
+        size_t blockRowIndex = at(bgsOrderingIndex2blockRowIndex_, i); // == bgsOrderingIndex2blockRowIndex_.at(i) (only available since C++11)
+        Teuchos::RCP<MultiVector> Xi = domainMapExtractor_->ExtractVector(rcpX, blockRowIndex);
+        Teuchos::RCP<MultiVector> ri = rangeMapExtractor_->ExtractVector(residual, blockRowIndex);
 
-        Teuchos::RCP<MultiVector> tXi = domainMapExtractor_->getVector(bgsOrderingIndex2blockRowIndex_.at(i), X.getNumVectors());
+        Teuchos::RCP<MultiVector> tXi = domainMapExtractor_->getVector(blockRowIndex, X.getNumVectors());
 
         // apply solver/smoother
         //*fos << "BGS sweep: " << run << ", x = A_ii^{-1} r with i = " << i << std::endl;
@@ -154,7 +164,7 @@ namespace MueLu {
 
         // update corresponding part of rhs and lhs
         //*fos << "BGS sweep: " << run << ", finish substep i=" << i << std::endl;
-        domainMapExtractor_->InsertVector(Xi, bgsOrderingIndex2blockRowIndex_.at(i), rcpX);
+        domainMapExtractor_->InsertVector(Xi, blockRowIndex, rcpX); // TODO wrong! fix me
       }
     }
 

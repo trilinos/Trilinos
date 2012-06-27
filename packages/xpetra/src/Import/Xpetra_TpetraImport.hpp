@@ -28,15 +28,18 @@ namespace Xpetra {
 
   public:
 
+    //! The specialization of Map used by this class.
+    typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
+
     //! @name Constructor/Destructor Methods
     //@{
 
     //! Construct an Import from the source and target Maps.
-    TpetraImport(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &source, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &target)
+    TpetraImport(const Teuchos::RCP< const map_type > &source, const Teuchos::RCP< const map_type > &target)
       : import_(Teuchos::rcp(new Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(source), toTpetra(target)))) {  }
 
     //! Constructor (with list of parameters).
-    TpetraImport(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &source, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &target, const Teuchos::RCP< Teuchos::ParameterList > &plist)
+    TpetraImport(const Teuchos::RCP< const map_type > &source, const Teuchos::RCP< const map_type > &target, const Teuchos::RCP< Teuchos::ParameterList > &plist)
       : import_(Teuchos::rcp(new Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(source), toTpetra(target), plist))) {  }
 
     //! Copy constructor.

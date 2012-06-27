@@ -17,6 +17,8 @@
 
 #include "Xpetra_TpetraExport.hpp"
 
+using Teuchos::ParameterList;
+
 namespace Xpetra {
  
   // TODO: move that elsewhere
@@ -40,6 +42,7 @@ namespace Xpetra {
 
     // The following typedef is used by the XPETRA_DYNAMIC_CAST() macro.
     typedef TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> TpetraCrsGraphClass;
+    typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
   public:
 
@@ -47,20 +50,20 @@ namespace Xpetra {
     //@{
 
     //! Constructor specifying fixed number of entries for each row.
-    TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null)
-      : graph_(Teuchos::rcp(new Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps >(toTpetra(rowMap), maxNumEntriesPerRow, toTpetra(pftype), plist))) {  }
+    TpetraCrsGraph(const RCP< const map_type > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null)
+      : graph_(Teuchos::rcp(new Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps >(toTpetra(rowMap), maxNumEntriesPerRow, toTpetra(pftype), params))) {  }
 
     //! Constructor specifying (possibly different) number of entries in each row.
-    TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null)
-      : graph_(Teuchos::rcp(new Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps >(toTpetra(rowMap), NumEntriesPerRowToAlloc, toTpetra(pftype), plist))) {  }
+    TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null)
+      : graph_(Teuchos::rcp(new Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps >(toTpetra(rowMap), NumEntriesPerRowToAlloc, toTpetra(pftype), params))) {  }
 
     //! Constructor specifying column Map and fixed number of entries for each row.
-    TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null)
-      : graph_(Teuchos::rcp(new Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps >(toTpetra(rowMap), toTpetra(colMap), maxNumEntriesPerRow, toTpetra(pftype), plist))) {  }
+    TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null)
+      : graph_(Teuchos::rcp(new Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps >(toTpetra(rowMap), toTpetra(colMap), maxNumEntriesPerRow, toTpetra(pftype), params))) {  }
 
     //! Constructor specifying column Map and number of entries in each row.
-    TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null)
-      : graph_(Teuchos::rcp(new Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps >(toTpetra(rowMap), toTpetra(colMap), NumEntriesPerRowToAlloc, toTpetra(pftype), plist))) {  }
+    TpetraCrsGraph(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const RCP< ParameterList > &params=null)
+      : graph_(Teuchos::rcp(new Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps >(toTpetra(rowMap), toTpetra(colMap), NumEntriesPerRowToAlloc, toTpetra(pftype), params))) {  }
 
     //! Destructor.
     virtual ~TpetraCrsGraph() {  }
@@ -85,10 +88,10 @@ namespace Xpetra {
     //@{
 
     //! Signal that data entry is complete, specifying domain and range maps.
-    void fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, OptimizeOption os=DoOptimizeStorage) { XPETRA_MONITOR("TpetraCrsGraph::fillComplete"); graph_->fillComplete(toTpetra(domainMap), toTpetra(rangeMap), toTpetra(os)); }
+    void fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, const RCP< ParameterList > &params=null) { XPETRA_MONITOR("TpetraCrsGraph::fillComplete"); graph_->fillComplete(toTpetra(domainMap), toTpetra(rangeMap), params); }
 
     //! Signal that data entry is complete.
-    void fillComplete(OptimizeOption os=DoOptimizeStorage) { XPETRA_MONITOR("TpetraCrsGraph::fillComplete"); graph_->fillComplete(toTpetra(os)); }
+    void fillComplete(const RCP< ParameterList > &params=null) { XPETRA_MONITOR("TpetraCrsGraph::fillComplete"); graph_->fillComplete(params); }
 
     //@}
 
@@ -195,6 +198,14 @@ namespace Xpetra {
 
     //! Print the object with some verbosity level to an FancyOStream object.
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { XPETRA_MONITOR("TpetraCrsGraph::describe"); graph_->describe(out, verbLevel); }
+
+    //@}
+
+    //! @name Advanced methods, at increased risk of deprecation.
+    //@{
+
+    //! Get an ArrayRCP of the row-offsets.
+    ArrayRCP< const size_t > getNodeRowPtrs() const { XPETRA_MONITOR("TpetraCrsGraph::getNodeRowPtrs"); return graph_->getNodeRowPtrs(); }
 
     //@}
 

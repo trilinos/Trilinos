@@ -317,4 +317,20 @@ namespace Xpetra {
     TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
 
+    void EpetraCrsMatrix::fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap,
+                                       const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap,
+                                       const RCP< ParameterList > &params) {
+      XPETRA_MONITOR("EpetraCrsMatrix::fillComplete");
+      bool doOptimizeStorage = true;
+      if (params != null && params->get("Optimize Storage",true) == false) doOptimizeStorage = false;
+      mtx_->FillComplete(toEpetra(domainMap), toEpetra(rangeMap), doOptimizeStorage);
+    }
+
+    void EpetraCrsMatrix::fillComplete(const RCP< ParameterList > &params) {
+      XPETRA_MONITOR("EpetraCrsMatrix::fillComplete");
+      bool doOptimizeStorage = true;
+      if (params != null && params->get("Optimize Storage",true) == false) doOptimizeStorage = false;
+      mtx_->FillComplete(doOptimizeStorage);
+    }
+
 }

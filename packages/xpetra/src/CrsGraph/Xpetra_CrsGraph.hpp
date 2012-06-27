@@ -11,6 +11,8 @@
 
 #include "Xpetra_Map.hpp"
 
+using Teuchos::ParameterList;
+
 namespace Xpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -64,10 +66,10 @@ namespace Xpetra {
     //@{
 
     //! Signal that data entry is complete, specifying domain and range maps.
-    virtual void fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, OptimizeOption os=DoOptimizeStorage)= 0;
+    virtual void fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, const RCP< ParameterList > &params=null)= 0;
 
     //! Signal that data entry is complete.
-    virtual void fillComplete(OptimizeOption os=DoOptimizeStorage)= 0;
+    virtual void fillComplete(const RCP< ParameterList > &params=null)= 0;
 
     //@}
 
