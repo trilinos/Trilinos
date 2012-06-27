@@ -1476,15 +1476,15 @@ NNTI_result_t NNTI_ib_wait (
 
     int ibv_rc=0;
     NNTI_result_t rc;
-    int elapsed_time = 0;
-    int timeout_per_call;
+    long elapsed_time = 0;
+    long timeout_per_call;
 
     struct ibv_comp_channel *comp_channel;
     struct ibv_cq           *cq;
 
     log_level debug_level=nnti_debug_level;
 
-    double entry_time=trios_get_time();
+    long entry_time=trios_get_time_ms();
 
     trios_declare_timer(call_time);
     trios_declare_timer(total_time);
@@ -1591,7 +1591,7 @@ retry:
                 }
                 /* case 2: timed out */
                 else if (rc==NNTI_ETIMEDOUT) {
-                    elapsed_time = (trios_get_time() - entry_time);
+                    elapsed_time = (trios_get_time_ms() - entry_time);
 
 //                    elapsed_time += timeout_per_call;
 
@@ -1707,8 +1707,8 @@ NNTI_result_t NNTI_ib_waitany (
 
     int ibv_rc=0;
     NNTI_result_t rc;
-    int elapsed_time = 0;
-    int timeout_per_call;
+    long elapsed_time = 0;
+    long timeout_per_call;
 
     log_level debug_level=nnti_debug_level;
 
@@ -1717,7 +1717,7 @@ NNTI_result_t NNTI_ib_waitany (
 
     struct ibv_wc wc;
 
-    double entry_time=trios_get_time();
+    long entry_time=trios_get_time_ms();
 
     trios_start_timer(total_time);
 
@@ -1816,7 +1816,7 @@ retry:
                 }
                 /* case 2: timed out */
                 else if (rc==NNTI_ETIMEDOUT) {
-                    elapsed_time = (trios_get_time() - entry_time);
+                    elapsed_time = (trios_get_time_ms() - entry_time);
 
 //                    elapsed_time += timeout_per_call;
 
@@ -1926,8 +1926,8 @@ NNTI_result_t NNTI_ib_waitall (
 
     int ibv_rc=0;
     NNTI_result_t rc;
-    int elapsed_time = 0;
-    int timeout_per_call;
+    long elapsed_time = 0;
+    long timeout_per_call;
 
     log_level debug_level=nnti_debug_level;
 
@@ -1936,7 +1936,7 @@ NNTI_result_t NNTI_ib_waitall (
 
     struct ibv_wc wc;
 
-    double entry_time=trios_get_time();
+    long entry_time=trios_get_time_ms();
 
     trios_start_timer(total_time);
 
@@ -2036,7 +2036,7 @@ retry:
                 }
                 /* case 2: timed out */
                 else if (rc==NNTI_ETIMEDOUT) {
-                    elapsed_time = (trios_get_time() - entry_time);
+                    elapsed_time = (trios_get_time_ms() - entry_time);
 
 //                  elapsed_time += timeout_per_call;
 

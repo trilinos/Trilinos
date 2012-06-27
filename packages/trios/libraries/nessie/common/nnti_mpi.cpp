@@ -990,8 +990,8 @@ int NNTI_mpi_wait (
 //    const NNTI_buffer_t  *wait_buf=NULL;
 
     int rc=MPI_SUCCESS;
-    int elapsed_time=0;
-    int timeout_per_call;
+    long elapsed_time=0;
+    long timeout_per_call;
     MPI_Status event;
     int done=FALSE;
 
@@ -1001,7 +1001,7 @@ int NNTI_mpi_wait (
 
     log_level debug_level=nnti_debug_level;
 
-    double entry_time=trios_get_time();
+    long entry_time=trios_get_time_ms();
 
     trios_declare_timer(call_time);
     trios_declare_timer(total_time);
@@ -1062,7 +1062,7 @@ int NNTI_mpi_wait (
                 }
                 /* case 2: timed out */
                 else {
-                    elapsed_time = (trios_get_time() - entry_time);
+                    elapsed_time = (trios_get_time_ms() - entry_time);
 
                     /* if the caller asked for a legitimate timeout, we need to exit */
                     if (((timeout > 0) && (elapsed_time >= timeout))) {
@@ -1225,10 +1225,10 @@ int NNTI_mpi_waitany (
 //    const NNTI_buffer_t  *wait_buf=NULL;
 
     int rc=MPI_SUCCESS;
-    int elapsed_time=0;
-    int timeout_per_call;
+    long elapsed_time=0;
+    long timeout_per_call;
 
-    double entry_time=trios_get_time();
+    long entry_time=trios_get_time_ms();
 
     log_level debug_level=nnti_debug_level;
 
@@ -1313,7 +1313,7 @@ int NNTI_mpi_waitany (
                 }
                 /* case 2: timed out */
                 else {
-                    elapsed_time = (trios_get_time() - entry_time);
+                    elapsed_time = (trios_get_time_ms() - entry_time);
 
                     /* if the caller asked for a legitimate timeout, we need to exit */
                     if (((timeout > 0) && (elapsed_time >= timeout))) {
@@ -1413,10 +1413,10 @@ int NNTI_mpi_waitall (
     int i=0;
 
     int rc=MPI_SUCCESS;
-    int elapsed_time=0;
-    int timeout_per_call;
+    long elapsed_time=0;
+    long timeout_per_call;
 
-    double entry_time=trios_get_time();
+    long entry_time=trios_get_time_ms();
 
     log_level debug_level=nnti_debug_level;
 
@@ -1502,7 +1502,7 @@ int NNTI_mpi_waitall (
                 }
                 /* case 2: timed out */
                 else {
-                    elapsed_time = (trios_get_time() - entry_time);
+                    elapsed_time = (trios_get_time_ms() - entry_time);
 
                     /* if the caller asked for a legitimate timeout, we need to exit */
                     if (((timeout > 0) && (elapsed_time >= timeout))) {

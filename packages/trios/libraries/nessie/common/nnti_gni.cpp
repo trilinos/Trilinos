@@ -968,9 +968,9 @@ NNTI_result_t NNTI_gni_connect (
 
     NNTI_peer_t *key;
 
-    double start_time;
-    uint64_t elapsed_time = 0;
-    int timeout_per_call;
+    long start_time;
+    long elapsed_time = 0;
+    long timeout_per_call;
 
 
     assert(trans_hdl);
@@ -1115,14 +1115,14 @@ NNTI_result_t NNTI_gni_connect (
         goto cleanup;
     }
     trios_start_timer(call_time);
-    start_time=trios_get_time();
+    start_time=trios_get_time_ms();
     while((timeout==-1) || (elapsed_time < timeout)) {
         log_debug(nnti_debug_level, "calling connect");
         if (connect(s, (struct sockaddr *)&skin, skin_size) == 0) {
             log_debug(nnti_debug_level, "connected");
             break;
         }
-        elapsed_time=(uint64_t)((trios_get_time()-start_time)*1000.0);
+        elapsed_time=trios_get_time_ms()-start_time;
         log_warn(nnti_debug_level, "failed to connect to server (%s:%u): errno=%d (%s)", hostname, port, errno, strerror(errno));
         if ((timeout>0) && (elapsed_time >= timeout)) {
             rc=NNTI_EIO;
@@ -1776,10 +1776,10 @@ NNTI_result_t NNTI_gni_wait (
 //    nnti_gni_work_completion wc;
 
     gni_return_t rc=GNI_RC_SUCCESS;
-    int elapsed_time = 0;
-    int timeout_per_call;
+    long elapsed_time = 0;
+    long timeout_per_call;
 
-    double entry_time=trios_get_time();
+    long entry_time=trios_get_time_ms();
 
     trios_declare_timer(call_time);
 
@@ -1872,7 +1872,7 @@ NNTI_result_t NNTI_gni_wait (
             }
             /* case 2: timed out */
             else if ((rc==GNI_RC_TIMEOUT) || (rc==GNI_RC_NOT_DONE)) {
-                elapsed_time = (trios_get_time() - entry_time);
+                elapsed_time = (trios_get_time_ms() - entry_time);
 
                 /* if the caller asked for a legitimate timeout, we need to exit */
                 if (((timeout > 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
@@ -2019,10 +2019,10 @@ NNTI_result_t NNTI_gni_waitany (
     nnti_gni_work_completion wc;
 
     gni_return_t rc=GNI_RC_SUCCESS;
-    int elapsed_time = 0;
-    int timeout_per_call;
+    long elapsed_time = 0;
+    long timeout_per_call;
 
-    double entry_time=trios_get_time();
+    long entry_time=trios_get_time_ms();
 
     trios_declare_timer(call_time);
 
@@ -2100,7 +2100,7 @@ NNTI_result_t NNTI_gni_waitany (
             }
             /* case 2: timed out */
             else if ((rc==GNI_RC_TIMEOUT) || (rc==GNI_RC_NOT_DONE)) {
-                elapsed_time = (trios_get_time() - entry_time);
+                elapsed_time = (trios_get_time_ms() - entry_time);
 
                 /* if the caller asked for a legitimate timeout, we need to exit */
                 if (((timeout > 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
@@ -2246,10 +2246,10 @@ NNTI_result_t NNTI_gni_waitall (
     nnti_gni_work_completion wc;
 
     gni_return_t rc=GNI_RC_SUCCESS;
-    int elapsed_time = 0;
-    int timeout_per_call;
+    long elapsed_time = 0;
+    long timeout_per_call;
 
-    double entry_time=trios_get_time();
+    long entry_time=trios_get_time_ms();
 
     trios_declare_timer(call_time);
 
@@ -2329,7 +2329,7 @@ NNTI_result_t NNTI_gni_waitall (
             }
             /* case 2: timed out */
             else if ((rc==GNI_RC_TIMEOUT) || (rc==GNI_RC_NOT_DONE)) {
-                elapsed_time = (trios_get_time() - entry_time);
+                elapsed_time = (trios_get_time_ms() - entry_time);
 
                 /* if the caller asked for a legitimate timeout, we need to exit */
                 if (((timeout > 0) && (elapsed_time >= timeout)) || trios_exit_now()) {
