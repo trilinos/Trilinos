@@ -183,11 +183,12 @@ public:
       MT& AA = *A;
 
       for (ordinal_type i = 0; i < N; ++i) {
-        for (ordinal_type j = 0; j <= i; ++j) {
-          UU(i,j) = AA(i,j);
-        }
-        for (ordinal_type j = i+1; j < N; ++j) {
+        // LL has an implicitly stored unit diagonal, so don't include j==i.
+        for (ordinal_type j = 0; j < i; ++j) {
           LL(i,j) = AA(i,j);
+        }
+        for (ordinal_type j = i; j < N; ++j) {
+          UU(i,j) = AA(i,j);
         }
       }
     }
@@ -649,12 +650,6 @@ public:
         "the given tolerance " << tol << ".\n";
       success = false;
     }
-
-    // FIXME (mfh 26 Jun 2012) Eventually we have to test everything
-    // else, but for now, stop early if a test fails.
-    TEUCHOS_TEST_FOR_EXCEPTION(! success, std::runtime_error,
-      "One or more sparse ops tests failed.  Here is the full report:\n"
-      << err.str());
 
     // Compute Y_hat := A_dense^T * X and Y := A_sparse^T * X.
     blas.GEMM (TRANS, NO_TRANS, N, numVecs, N,

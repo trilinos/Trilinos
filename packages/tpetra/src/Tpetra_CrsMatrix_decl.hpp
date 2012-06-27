@@ -102,9 +102,9 @@ namespace Tpetra {
      if you want to solve big problems.)
 
    \tparam Node A class implementing on-node shared-memory parallel
-     operations.  It must implement the \ref kokkos_node_api "Kokkos
-     Node API."  The default \c Node type depends on your build
-     options.
+     operations.  It must implement the
+     \ref kokkos_node_api "Kokkos Node API."
+     The default \c Node type depends on your Trilinos build options.
 
    \tparam LocalMatOps A local sparse matrix operations class.  It
      must implement the \ref kokkos_crs_ops "Kokkos CRS Ops API."
@@ -113,24 +113,25 @@ namespace Tpetra {
    and provides sparse matrix-vector multiply (including transpose)
    and sparse triangular solve operations.  It provides access by rows
    to the elements of the matrix, as if the local data were stored in
-   compressed sparse row format.  This class has an interface like
-   that of \c Epetra_CrsMatrix, but also allows insertion of data into
-   nonowned rows, much like Epetra_FECrsMatrix.
+   compressed sparse row format.  (Implementations are _not_ required
+   to store the data in this way internally.)  This class has an
+   interface like that of \c Epetra_CrsMatrix, but also allows
+   insertion of data into nonowned rows, much like \c Epetra_FECrsMatrix.
 
    <b>Local vs. Global</b>
 
    The distinction between local and global indices might confuse new
-   Tpetra users.  <it>Global</it> indices represent the rows and
-   columns uniquely over the entire matrix, which may be distributed
-   over multiple processes.  <it>Local</it> indices are local to the
-   process that owns them.  If global index G is owned by process P,
-   then there is a unique local index L on process P corresponding to
-   G.  If the local index L is valid on process P, then there is a
-   unique global index G owned by P corresponding to the pair (L, P).
-   However, multiple processes might own the same global index (an
-   "overlapping Map"), so a global index G might correspond to
-   multiple (L, P) pairs.  In summary, local indices on a process
-   correspond to matrix rows or columns owned by that process.
+   Tpetra users.  _Global_ indices represent the rows and columns
+   uniquely over the entire matrix, which may be distributed over
+   multiple processes.  _Local_ indices are local to the process that
+   owns them.  If global index G is owned by process P, then there is
+   a unique local index L on process P corresponding to G.  If the
+   local index L is valid on process P, then there is a unique global
+   index G owned by P corresponding to the pair (L, P).  However,
+   multiple processes might own the same global index (an "overlapping
+   Map"), so a global index G might correspond to multiple (L, P)
+   pairs.  In summary, local indices on a process correspond to matrix
+   rows or columns owned by that process.
 
    We summarize the different between local and global indices because
    many of CrsMatrix's methods for adding, modifying, or accessing
@@ -148,7 +149,7 @@ namespace Tpetra {
    take a global row index expect that row to be owned by the calling
    process.  Access to nonlocal (i.e., not owned by the calling
    process) rows requires performing an explicit communication via the
-   import/export capabilities of the CrsMatrix object; see \c
+   import/export capabilities of the \c CrsMatrix object; see \c
    DistObject.  However, the method \c insertGlobalValues() is an
    exception to this rule.  It allows you to add data to nonlocal
    rows.  These data are stored locally and communicated to the
