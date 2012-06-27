@@ -2,6 +2,7 @@
 #define MUELU_UTILITIES_DEF_HPP
 
 #include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_ParameterList.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -324,7 +325,7 @@ t0 = MPI_Wtime();
 #endif
     }
 
-    RCP<Teuchos::ParameterList> params = rcp(new ParameterList());
+    RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
     params->set("Optimize Storage",doOptimizeStorage);
     C->fillComplete((transposeB) ? B->getRangeMap() : B->getDomainMap(),
                     (transposeA) ? A->getDomainMap() : A->getRangeMap(),
@@ -1007,7 +1008,7 @@ if (mypid == 0)
       if (doFillComplete) {
         if (domainMap == Teuchos::null || rangeMap == Teuchos::null)
           throw(Exceptions::RuntimeError("In Utils::Scaling: cannot fillComplete because the domain and/or range map hasn't been defined"));
-        RCP<Teuchos::ParameterList> params = rcp(new ParameterList());
+        RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
         params->set("Optimize Storage",doOptimizeStorage);
         Op->fillComplete(Op->getDomainMap(),Op->getRangeMap(),params);
       }
