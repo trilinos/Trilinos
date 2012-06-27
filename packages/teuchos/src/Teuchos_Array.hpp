@@ -1570,6 +1570,15 @@ Teuchos::fromStringToArray(const std::string& arrayStr)
     //
     // Trim whitespace from beginning and end
     entryStr = Utils::trimWhiteSpace(entryStr);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      0 == entryStr.length(),
+      InvalidArrayStringRepresentation,
+      "Error, the std::string:\n"
+      "----------\n"
+      <<str<<
+      "\n----------\n"
+      "is not a valid array represntation because it has an empty array entry!"
+      );
     // Remove the final '}' if this is the last entry and we did not
     // actually terminate the above getline(...) on ','
     bool found_end = false;
@@ -1579,15 +1588,6 @@ Teuchos::fromStringToArray(const std::string& arrayStr)
       if( entryStr.length()==0 && a.size()==0 )
         return a; // This is the empty array "{}" (with any spaces in it!)
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      0 == entryStr.length()
-      ,InvalidArrayStringRepresentation
-      ,"Error, the std::string:\n"
-      "----------\n"
-      <<str<<
-      "\n----------\n"
-      "is not a valid array represntation!"
-      );
     // Finally we can convert the entry and add it to the array!
     std::istringstream entryiss(entryStr);
     T entry;
