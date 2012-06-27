@@ -27,7 +27,9 @@ EntityRepository::~EntityRepository()
   } catch(...){}
 
   boost::singleton_pool<boost::fast_pool_allocator_tag, sizeof(Entity)>::release_memory();
+#ifdef SIERRA_MIGRATION
   boost::singleton_pool<boost::fast_pool_allocator_tag, sizeof(fmwk_attributes)>::release_memory();
+#endif
 }
 
 void EntityRepository::internal_expunge_entity( EntityMap::iterator i )
