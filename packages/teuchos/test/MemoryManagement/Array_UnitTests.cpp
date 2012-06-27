@@ -66,6 +66,13 @@ using Teuchos::fromStringToArray;
 using Teuchos::InvalidArrayStringRepresentation;
 
 
+TEUCHOS_UNIT_TEST( Utils, trimWhiteSpace_empty )
+{
+  TEST_EQUALITY(Teuchos::Utils::trimWhiteSpace(""), "");
+}
+
+
+
 TEUCHOS_UNIT_TEST( Array, TypeNameTraits )
 {
   TEST_EQUALITY(Teuchos::TypeNameTraits<Array<double> >::name(),
@@ -138,6 +145,46 @@ TEUCHOS_UNIT_TEST( Array, stringToArray_invalid )
     InvalidArrayStringRepresentation);
   TEST_THROW(fromStringToArray<std::string>("a, b, c"),
     InvalidArrayStringRepresentation);
+}
+
+
+TEUCHOS_UNIT_TEST( Array, stringToArray_string_hyphens )
+{
+
+  {
+    std::string arrayString="{-}";
+    Array<std::string> arrayVal = fromStringToArray<std::string>(arrayString);
+    Array<std::string> arrayVal_exp = tuple<std::string>("-");
+    TEST_EQUALITY(arrayVal, arrayVal_exp);
+  }
+
+  {
+    std::string arrayString="{-,-}";
+    Array<std::string> arrayVal = fromStringToArray<std::string>(arrayString);
+    Array<std::string> arrayVal_exp = tuple<std::string>("-","-");
+    TEST_EQUALITY(arrayVal, arrayVal_exp);
+  }
+
+  {
+    std::string arrayString="{-,1,-}";
+    Array<std::string> arrayVal = fromStringToArray<std::string>(arrayString);
+    Array<std::string> arrayVal_exp = tuple<std::string>("-","1","-");
+    TEST_EQUALITY(arrayVal, arrayVal_exp);
+  }
+
+  {
+    std::string arrayString="{}";
+    Array<std::string> arrayVal = fromStringToArray<std::string>(arrayString);
+    Array<std::string> arrayVal_exp;
+    TEST_EQUALITY(arrayVal, arrayVal_exp);
+  }
+
+  {
+    std::string arrayString="{,}";
+    TEST_THROW(Array<std::string> arrayVal = fromStringToArray<std::string>(arrayString),
+      Teuchos::InvalidArrayStringRepresentation);
+  }
+
 }
 
 
